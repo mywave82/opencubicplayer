@@ -443,12 +443,14 @@ fi
 CXXFLAGS="$org_cxxflags"
 CPPFLAGS="$org_cppflags"
 if test "x$with_adplug" != "xno"; then
-	CXXFLAGS="$CXXFLAGS $ADPLUG_LIBS $ADPLUG_CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS $ADPLUG_CXXFLAGS"
+	LIBS="$LIBS $ADPLUG_LIBS"
 	AC_LINK_IFELSE(
 		[AC_LANG_PROGRAM([[#include <adplug/emuopl.h>]],[[CEmuopl opl = CEmuopl(48000, 1, 1)]])],
 		,
 		[AC_MSG_ERROR("Adplug was compiled with a different c++ compiler")]
 	)
+	LIBS=$push_LIBS
 	CXXFLAGS="$org_cxxflags"
 	CPPFLAGS="$org_cppflags"
 fi
