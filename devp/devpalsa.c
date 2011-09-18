@@ -84,6 +84,8 @@ static volatile int busy=0;
 uint32_t customfileref=0xffffffff;
 uint32_t custommixerref=0xffffffff;
 
+static int alsa_1_0_11_or_better;
+
 static int mlDrawBox(void)
 {
 	int mlTop=plScrHeight/2-2;
@@ -609,7 +611,10 @@ static FILE *alsaSelectPcmOut(struct modlistentry *entry)
 		if (!(t=strchr(entry->name, ',')))
 			return NULL;
 		device=atoi(t+1);
-		snprintf(alsaCardName, sizeof(alsaCardName), "plughw:%d,%d", card, device);
+		if (alsa_1_0_11_or_better)
+			snprintf(alsaCardName, sizeof(alsaCardName), "hw:%d,%d", card, device);
+		else
+			snprintf(alsaCardName, sizeof(alsaCardName), "plughw:%d,%d", card, device);
 		snprintf(alsaMixerName, sizeof(alsaMixerName), "hw:%d", card);
 	}
 out:
@@ -1381,8 +1386,36 @@ static int volalsaSetVolume(struct ocpvolstruct *v, int n)
 	}
 	return 0;
 }
+
 static int alsaInit(const struct deviceinfo *c)
 {
+	{
+		const char *version = snd_asoundlib_version ();
+		int major = 0;
+		int minor = 0;
+		int patch = 0;
+
+		major = atoi(version);
+		version = strchr(version, '.');
+		if (version)
+		{
+			version++;
+			minor = atoi(version);
+			version = strchr(version, '.');
+			if (version)
+			{
+				version++;
+				patch = atoi(version);
+			}
+		}
+		if (major > 255)
+			major = 255;
+		if (minor > 255)
+			minor = 255;
+		if (patch > 255)
+			patch = 255;
+		alsa_1_0_11_or_better = ((major << 16) | (minor << 8) | patch) >= 0x01000b;
+	}
 /*
 	memcpy(&currentcard, card, sizeof(struct deviceinfo));*/
 	dmSETUP=RegisterDrive("setup:");
