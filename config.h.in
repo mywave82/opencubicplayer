@@ -1,0 +1,283 @@
+#define _GNU_SOURCE 1
+
+#undef WORDS_BIGENDIAN
+
+#if __STDC_VERSION__ < 199901L
+# if __GNUC__ >= 2
+#  define __func__ __FUNCTION__
+# else
+#  define __func__ "<unknown>"
+# endif
+#endif
+
+#define MAXDLLLIST 150
+
+#define KEY_TAB 9
+#define KEY_CTRL_P 0x10
+#define KEY_SHIFT_TAB KEY_BTAB /*353*/ /* 0x0f00 curses.h gives us that SHIFT_TAB is BTAB*/
+
+#define _KEY_ENTER 13    /* 13 linux console and curses defines a KEY_ENTER that is something else */
+#define KEY_ESC 27
+#define KEY_CTRL_D  4  /*      4 linux console */
+#define KEY_CTRL_H  8  /*      8 linux console, maps to KEY_BACKSPACE */
+#define KEY_CTRL_J 10  /*     10 linux console */
+#define KEY_CTRL_K 11  /*     11 linux console */
+#define KEY_CTRL_L 12  /*     12 linux console */
+#define KEY_CTRL_Q  17 /*     17 linux console */
+#define KEY_CTRL_S  19 /*     19 linux console */
+#define KEY_CTRL_Z  26 /*     26 linux console */
+#define KEY_CTRL_BS 31 /* 0x007f linux console */
+
+#if 0
+#define KEY_DOWN 258   /* 0x5000 curses.h */
+#define KEY_UP 259     /* 0x4800 curses.h */
+#define KEY_LEFT 260   /* 0x4b00 curses.h */
+#define KEY_RIGHT 261  /* 0x4d00 curses.h */
+#endif
+
+#define KEY_ALT_A 0x1e00 /* 0x1e00 */
+#define KEY_ALT_B 0x3000 /* 0x3000 */
+#define KEY_ALT_C 0x2e00 /* 0x2e00 */
+/*#define KEY_ALT_D 0*/ /* TODO */
+#define KEY_ALT_E 0x1200 /* 0x1200 */
+/*#define KEY_ALT_F 0*/ /* TODO */
+#define KEY_ALT_G 0x2200 /* 0x2200 */
+/*#define KEY_ALT_H 0*/ /* TODO */
+#define KEY_ALT_I 0x1700 /* 0x1700 */
+/*#define KEY_ALT_J 0*/ /* TODO */
+#define KEY_ALT_K 0x2500 /* 0x2500 */
+#define KEY_ALT_L 0x2600 /* 0x2600 */
+#define KEY_ALT_M 0x3200 /* 0x3200 */
+/*#define KEY_ALT_N 0*/ /* TODO */
+#define KEY_ALT_O 0x1800 /* 0x1800 */
+#define KEY_ALT_P 0x1900 /* 0x1900 */
+/*#define KEY_ALT_Q 0*/ /* TODO */
+#define KEY_ALT_R 0x1300
+#define KEY_ALT_S 0x1f00 /* 0x1f00 */
+/*#define KEY_ALT_T 0*/ /* TODO */
+/*#define KEY_ALT_U 0*/ /* TODO */
+/*#define KEY_ALT_V 0*/ /* TODO */
+/*#define KEY_ALT_W 0*/ /* 0x1100 TODO */
+#define KEY_ALT_X 0x2d00 /* 0x2d00 */
+/*#define KEY_ALT_Y 0*/ /* TODO */
+#define KEY_ALT_Z 0x2c00 /* 0x2c00 */
+
+
+/*#define KEY_F(2) 266*/  /* 0x3c00 curses.h */
+/*#define KEY_F(3) 267*/  /* 0x3d00 curses.h */
+/*#define KEY_F(4) 268*/  /* 0x3e00 curses.h */
+/*#define KEY_F(5) 269*/  /* 0x3f00 curses.h */
+/*#define KEY_F(6) 270*/  /* 0x4000 curses.h */
+/*#define KEY_F(7) 271*/  /* 0x4100 curses.h */
+/*#define KEY_F(8) 272*/  /* 0x4200 curses.h */
+/*#define KEY_F(9) 273*/  /* 0x4300 curses.h */
+/*#define KEY_F(10) 274*/ /* 0x4400 curses.h */
+/*#define KEY_F(11) 275*/ /* 0x8500 curses.h */
+/*#define KEY_F(12) 276*/ /* 0x8600 curses.h */
+
+#if 0
+#define KEY_END   360  /* 0x4f00 curses.h */
+#define KEY_HOME  262  /* 0x4700 curses.h */
+#endif
+
+#define KEY_CTRL_UP     0x8d00 /* 0x8d00 */
+#define KEY_CTRL_DOWN   0x9100 /* 0x9100 */
+#define KEY_CTRL_LEFT   0x7300 /* 0x7300 */
+#define KEY_CTRL_RIGHT  0x7400 /* 0x7400 */
+#define KEY_CTRL_PGUP   0x8400 /* 0x8400 x11 only */
+#define KEY_CTRL_PGDN   0x7600 /* 0x7600 x11 only */
+#define KEY_CTRL_HOME   0x7700 /* 0x7700 x11 only */
+#define KEY_CTRL_END    0x7500 /* 0x7500 x11 only */
+#define KEY_CTRL_DELETE 0x9300 /* 0x9300 x11 only */
+#define KEY_CTRL_INSERT 0x9200 /* 0x9200 x11 only */
+
+
+#define KEY_DELETE KEY_DC/*330*/ /* 0x5300 curses.h delete-key is mapped to delete-character */
+#define KEY_INSERT KEY_IC/*331*/ /* 0x5200 curses.h insert-key is mapped to insert-character */
+
+#if 0
+#define KEY_NPAGE 338  /* 0x5100 curses.h */
+#define KEY_PPAGE 339  /* 0x4900 curses.h */
+#endif
+
+#define KEY_CTRL_ENTER 0xff00 /* x11 only */
+#define KEY_ALT_ENTER  0xff01 /* used to be 10, collides with ctrl+j */
+#define VIRT_KEY_RESIZE     0xff02 /* dummy key */
+
+/* keys we can't do
+ KEY_CTRL_F2     0x5f00
+ KEY_CTRL_F3     0x6000
+ KEY_CTRL_F4     0x6100
+ KEY_CTRL_F5     0x6200
+ KEY_CTRL_F6     0x6300
+ KEY_CTRL_F7     0x6400
+ KEY_CTRL_F8     0x6500
+ KEY_CTRL_F11    0x8900
+ KEY_CTRL_F12    0x8a00
+ KEY_CTRL_ENTER  10
+ KEY_ALT_F1      0x6800
+ KEY_ALT_F2      0x6900
+ KEY_ALT_F3      0x6a00
+ KEY_ALT_F4      0x6b00
+ KEY_ALT_F8      0x6f00
+ KEY_ALT_F9      0x7000
+
+ KEY_ALT_TAB     0xa500   pfilesel.c cpitrack.c cpigraph.c
+
+ keys we don't know
+ 0x2000  cdapplay.c
+*/
+
+#define CONSOLE_MAX_X 1024
+
+#undef HAVE_RESIZETERM
+
+#if (defined(_X86) || defined(__i386__)) && !defined(__APPLE__)
+#define I386_ASM 1
+#endif
+
+/* #define I386_ASM_EMU 1 */
+
+/* #define ZIP_DEBUG */
+/* #define DIRDB_DEBUG */
+/* #define PLR_DEBUG */ /* for now makes devposs/devpalsa offer some buffer info */
+/* #define SMP_DEBUG */ /* for now makes devsoss offer some buffer info - not complete */
+/* #define INITCLOSE_DEBUG 1*/
+#define LD_DEBUG 1
+/* #define TIMER_DEBUG 1 */
+/* #define OSS_DEBUG 1 */
+/* #define ALSA_DEBUG 1 */
+/* #define OSS_LOCK_DEBUG 1 */
+/* #define S3M_LOAD_DEBUG 1 */
+/* #define MIXER_DEBUG 1 */
+/* #define CONSOLE_DEBUG 1 */
+/* #define KEYBOARD_DEBUG 1 */
+/* #define KEYBOARDTEXT_DEBUG 1 */
+/* #define VCSA_DEBUG 1*/
+/* #define DEBUG_FRAMEBUFFER 1 */
+/* #define ID3_DEBUG 1 */
+/* #define PSETTING_DEBUG 1 */
+/* #define WAVE_DEBUG 1 */
+/* #define XM_LOAD_DEBUG 1 */
+/* #define IT_LOAD_DEBUG 1 */
+/* #define MIDI_LOAD_DEBUG 1 */
+/* #define OKT_LOAD_DEBUG 1 */
+/* #define MCP_DEBUG 1 */
+/* #define COREAUDIO_DEBUG 1 */
+/* #define SDL_DEBUG 1 */
+
+#define VERBOSE_FRAMEBUFFER 1
+#define VCSA_VERBOSE 1
+/* #define CDROM_VERBOSE 1 */
+
+#define PFONT_IDRAWBAR 1
+
+/* #define NO_BACKGROUND_MIXER 1 */ /* needed if you intent to use efence with glibc */
+#define FIX_BACKSPACE 1 /* lot of linux distroes has a broken backspace key in consoles. See stuff-vsca.c */
+
+/* Multibyte support, don't think so.. VGA hardware is hardwired to one byte, so fuck the stupid new standards, since they SUCK */
+#define VCSA_FONT "ISO-8859-1"
+/*#define VCSA_FONT "LATIN1"*/
+#define OCP_FONT "CP437"
+#define VCSA_PATH "/dev/vcsa"
+
+
+
+
+
+
+
+/* Stuff below here will be updated by ./configure */
+#undef DISABLE_SIGALRM
+
+#undef KICKSTART_GDB
+
+#undef HAVE_OV_PCM_SEEK_LAP
+
+#undef HAVE_OV_PCM_SEEK
+
+#undef DLLVERSION
+
+#undef HAVE_MEMMEM
+
+#undef HAVE_QSORT
+
+#undef HAVE_STRUPR
+
+#undef HAVE_GETCWD
+
+#undef HAVE_EFENCE
+
+#undef HAVE_DUMA
+
+#undef HAVE_X11
+
+#undef HAVE_SDL
+
+#undef HAVE_MAD
+
+#undef HAVE_STDINT_H
+
+#undef HAVE_INTTYPES_H
+
+#undef HAVE_BYTESWAP_H
+
+#undef HAVE_SYS_SOUNDCARD_H
+
+#undef HAVE_FRAMEBUFFER
+
+/* Using GNU libiconv */
+#undef USE_LIBICONV_GNU
+
+/* Using a native implementation of iconv in a separate library */
+#undef USE_LIBICONV_NATIVE
+
+#undef PACKAGE_VERSION
+#define VERSION PACKAGE_VERSION
+
+#undef HAVE_LZW
+
+#undef HAVE_LZH
+
+#ifdef HAVE_EFENCE
+#include <stdlib.h>
+#include <efence.h>
+#endif
+
+#ifdef HAVE_DUMA
+#include <stdlib.h>
+#include <string.h>
+#include <duma.h>
+#endif
+
+#if defined(HAVE_DUMA)|defined(HAVE_EFENCE)
+#define NO_DLCLOSE
+#endif
+
+#define PREFIX "/usr/local"
+#define LIBDIR "/usr/lib/ocp"
+#define DIR_SUFFIX ""
+
+#define LIB_SUFFIX ".so"
+
+#ifndef HAVE_MEMMEM
+#include <string.h>
+extern void *memmem(const void *haystack, size_t haystacklen,
+                    const void *needle, size_t needlelen);
+
+#endif
+
+
+#include <limits.h>
+/* A lot of structures etc. uses PATH_MAX, NAME_MAX and friends, so we
+ * still #include <limits.h> here
+ */
+
+
+#undef GCC_411_RUNTIMECHECK
+
+// #define SUPPORT_STATIC_PLUGINS 1
+
+#undef HAVE_SYSCONF
+
+#undef HAVE_STRUCT_DIRENT_D_TYPE

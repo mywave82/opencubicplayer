@@ -1,0 +1,16 @@
+TOPDIR=../../
+include $(TOPDIR)Rules.make
+
+CFLAGS+=-I../../
+
+all: pack
+
+clean:
+	rm -f pack *.o
+
+install:
+
+uninstall:
+
+pack: pack.o
+	$(CC) -o $@ $^

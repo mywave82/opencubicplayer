@@ -1,0 +1,31 @@
+First a big salute must be given to the Cubic Team for writing this player in
+the first place. You guys have done a great job. Actually 90% of it. This fork
+is mainly just a fork and re-embedding of all OS and assembler related stuff.
+
+And yes.. Most stuff is rewritten to plain C instead of C++. Mostly because I
+like strict C better than loose C++ that doesn't use classes for most of its
+stuff.
+
+
+
+
+List of betatesters and that stuff alike:
+
+Stian Sebastian Skjelstad aka mw| <stian@nixia.no> - Gentoo compile-tests (x86)
+                                                   - Maintainer of this fork of Cubic Player
+Lars AAge Kamfjord aka Laaknor <lak@globelan.net>  - Debian compile-tests (x86)
+                                                   - Skolelinux compile-tests (x86)
+Andreas Kristiansen aka Kafka                      - Comments
+Mathias Boeen                                      - Debian compile-tests (x86)
+Mathias Nilsen aka beta <matni@frisurf.no>         - Fedora Core 2 compile-tests
+Helge aka alge                                     - Debian SID compile-tests (x86)
+                                                   - Fedore Core 1 compile-tests (x86)
+Roman Y. Bogdanov <sam@brj.pp.ru>                  - BSD testing
+Emanuel Haupt <ehaupt@critical.ch>                 - FreeBSD packaging / testing
+Gürkan Sengün <gurkan@aiei.ch>                     - Debian packaging
+Reinaert Albrecht <reinaert.albrecht@easynet.be>   - Patch
+Luigi Auriemma                                     - Locating some buffer overflows in module-loaders
+Adam Sampson <ats@offog.org>                       - Minor patch
+Chuck Anderson <cra@WPI.EDU>                       - Patches
+François Revol <revol@free.fr>                     - SDL Audio, and Haiku support
+Jindřich Makovička <makovick@gmail.com>            - Minor fix in detection for glibc bug 4936, C version of FPU mixer

@@ -1,0 +1,665 @@
+@node configuration
+@chapter Configuration
+@section ocp.ini
+OCP can be widely configured using the @file{ocp.ini} file, which should
+reside in the home directory of the player itself. This file is
+processed at every startup and informs the player about various
+modules / plugins and their respective configuration. For average
+users the default configuration should be sufficient. However if you
+want to change certain aspects of the player permanently you have to
+modify this file. You can use every ascii editor to edit the ini file.
+
+The @file{ocp.ini} consists of many sections. Each section starts
+with a section identifier tag in square brackets [ ]. Examples of
+sections are @ref{configuration, [general]} or
+@ref{configuration, [sound]}. The sections id tag should be followed by
+a newline. After a section has been declared with the id tag the options
+describing the sections follow. Each options takes a single line and
+consists of a keyword followed by a ``='' and the parameters. Example:
+@example
+mixrate=44100
+@end example
+
+All options following a section id are options for that section. If a
+new section starts with a id tag all forthcoming options are assigned
+to the new section. All options for a section have to be grouped
+together. Multiple declarations of sections are not valid.
+@example
+[general]
+  link=dos4gfix
+[defaultconfig]
+  link=mchasm
+[general]
+  dos4gfix=off
+@end example
+the above example has to be written as:
+@example
+[general]
+  link=dos4gfix
+  dos4gfix=off
+[defaultconfig]
+  link=mchasm
+@end example
+@smallformat
+Note that in the above example the option @emph{link} has not
+been overridden by the @emph{defaultconfig} section. Both sections now
+can access an options named @emph{link}, but both options are totally
+independant of each other.
+@end smallformat
+
+Comments can be placed anywhere in the configuration file and are
+marked by a @emph{;}. The rest of the line starting from the
+@emph{;} is considered as a comment and not processed.
+
+Normally the definition for an option ends with the end of the
+line. If many parameters are needed to specify an option they may
+exceed the default line width of 80 characters. Although this is no
+problem for OCP it is not nice looking. You can extend a line
+logically by using the unix like @emph{backquote} at the end of a line
+to begin a newline without interupting the current option definition.
+@example
+[example]
+  option1=parameter1 parameter2
+  option2=parameter1 \
+          parameter2
+@end example
+Both options contain exactly the same parameters.
+
+When modifying the configuration you should always start with the
+default configuration file and configure it to your needs. Building a
+bug free config file from scratch is difficult. @footnote{And remember
+to make backups before changing vital parts of the @file{ocp.ini}}
+
+We will now have a look at the individual sections and their options.
+
+@section [general]
+The @emph{general} section describes which internal modules or plugins
+to load at startup. Most of them are required for normal operation of
+OCP so you should not remove any of the contents. All options listed
+in this section are loaded every time OCP starts!  The default
+@emph{general} section looks like:
+@example
+[general]
+  link=cpiface cphlpif fstypes
+  prelink=framelock pfilesel
+@end example
+
+@multitable @columnfractions .3 .7
+@item link @tab
+this options describes the modules to load when starting OCP.
+There is no need to change this option, unless you have coded a basic
+internal module.
+@item datapath @tab
+OCP searches for background pictures and animations in its
+home directory. If you want to store your artwork at a different place
+use this option to set the right directory.
+@item tempdir @tab
+this directory is used for extracting modules from archives.
+If you have set a DOS environment variable called either @emph{TEMP}
+or @emph{TMP} these will be used.
+@end multitable
+
+@section [defaultconfig]
+The @emph{defaultconfig} section is very similar to the @emph{general}
+section.  But unlike the @emph{general} section which is always
+processed the settings in the @emph{defaultconfig} section can be
+ommited with an alternative section and the @emph{-c} flag from the
+command line. If the @emph{-c} flag is not present the
+@emph{defaultconfig} section will be processed.@footnote{Therefore it
+was named @emph{defaultconfig}...}
+
+@example
+[defaultconfig] ; default configuration
+  link=devi plrbase mcpbase smpbase arctar mixclip medialib cdrom
+  prelink=poutput hardware cphelper sets mchasm compat
+@end example
+
+@multitable @columnfractions .2 .8
+@item link @tab
+just like in the @emph{general} section this option defines which
+modules should be loaded at startup. You can delete some entries if
+you will not need them -- however this is not recommended as they do
+not use much memory and do not require any processor power.
+@item prelink @tab
+these files will be loaded before starting the main module. If
+something goes wrong here OCP will continue to work.
+@end multitable
+
+@section [sound]
+This section is the most important one for using OCP. If you want to
+change the configuration permanently you have to modify the entries of
+this section.
+
+@example
+[sound]
+  playerdevices=devpOSS devpNone devpDisk
+  samplerdevices=devsOSS devsNone
+  wavetabledevices=devwMixF devwmixQ devwMix devwNone
+  mixrate=44100
+  mixprocrate=4096000
+  mix16bit=on
+  mixstereo=on
+  plrbufsize=200
+  mixbufsize=200
+  samprate=44100
+  samp16bit=on
+  sampstereo=on
+  smpbufsize=2000
+  defplayer=
+  defsampler=
+  defwavetable=
+  midichan=64
+  itchan=64
+  cdsamplelinein=off
+  bigmodules=devwMixF
+  wavetostereo=1
+  waveratetolerance=50
+  amplify=100
+  panning=100
+  volume=100
+  balance=0
+  reverb=0
+  chorus=0
+  surround=off
+  filter=2
+@end example
+
+@multitable @columnfractions .3 .7
+@item playerdevices @tab
+OCP uses three different devices to communicate with the
+hardware. The @emph{playerdevices} are used to play a stream of
+samples. As all sound cards support this feature you will find
+@emph{playerdevices} for every sound card supported by OCP. This
+device is needed for playing @file{.ogg}, @file{.wav} and
+@file{.mp3} files and if you want/have to use the software
+(quality) mixer. OCP searches for all devices listed in this option
+at startup and only those found are actually loaded. You can delete
+all devices you have not installed to speed up to startup
+procedure. If you have multiple sound cards installed be sure to list
+all devices if you want to use more than one sound card.@footnote{you
+can change devices by using the special
+@file{setup:} drive described in section @xref{fileselector}.} If more
+than one device is listed the first in the list will be used as default.
+@item samplerdevices @tab
+these devices are the least important ones. They are
+only needed if you want to use OCP when playing cd audio tracks or
+start the player in sample mode. The sample data is not calculated
+from files, but sampled from either the cd, line or microphone jack of
+the sound card. You can then use the graphical screens to view the
+sounds.
+@item wavetabledevices @tab
+for mixing several channels you have to use
+@emph{wavetabledevices}. Most sound cards are only able to play to channels
+simultaneously normally assigned to the left and right channel or your
+home stereo. The @emph{mixer} devices are used to mix the sample data
+of module files to those two channels. However modern sound cards have
+special hardware to mix channels ``onboard''. But all hardware mixers
+have a maximum amount of channels to mix@footnote{mostly 32
+channels}. Especially @file{.it} files often use more than 32
+channels so an errorfree playback can not be guaranteed when using
+hardware mixing. You should include one of the software mixers for
+this case.
+@item mixrate @tab
+the default mixrate. Unless you have a very old sound
+card@footnote{SoundBlaster 1.x or SoundBlaster Pro and compatibles} or
+a very old processor@footnote{Something like 386SX} there is no need
+to change this option.
+@item mixprocrate @tab
+if you have a slow cpu@footnote{@emph{<}486DX} you might
+not be able to play 32 channels at full mixrate. This value defines
+the maximum ``calculation power'' to which OCP tries to use the full
+mixrate.
+@item mix16bit @tab
+Leave this option enabled unless you have a 8bit sound card.
+@item mixstereo @tab
+dito for stereo cards
+@item plrbufsize @tab
+When using a @emph{playerdevice} to play sample streams a DMA
+buffer is used to minimize cpu resources for handling the sample
+stream. This option sets the DMA buffer length in miliseconds.
+@item mixbufsize @tab
+When running in a multitasking environment there is no
+guarantee for constant cpu resources. To avoid a break in the sample
+stream OCP will calculate in advance. This option sets the buffer lenth in
+miliseconds.
+@item samprate @tab
+When using a @emph{samplerdevice} this value will be used.
+@item samp16bit @tab
+dito
+@item sampstereo @tab
+dito
+@item smpbufsize @tab
+this options sets the length of the sample DMA buffer in
+miliseconds.
+@item defplayer @tab
+with this option you can override the default
+@emph{playerdevice}. Normally you don't need to set this option, as the
+default device can also be set by the order in the @emph{playerdevice}
+option.  This option can also be specified by using the @emph{-sp}
+options from command line.
+@item defwavetable @tab
+this option sets the default @emph{wavetabledevice}. Can
+also be set with @emph{-sw} command.
+@item defsampler @tab
+the same as the @emph{-ss} command line option.
+@item midichan @tab
+unlike the module file types the MIDI file format does not
+specify the exact amount of channles to use. Complex @file{.mid}
+files can easily try to play several dozens of channels
+simultaniously. This option sets the maximum amount of channels to mix
+when playing @file{.mid} files. Note that this value has no effect
+when a hardware mixing device is used, as the maximum number is
+limited by the hardware.
+@item itchan @tab
+the @file{.it} format can play more than one sample per channel
+simultaniously. A maximum number of channels to mix is required for
+this file type too. When playing @file{.it} files using a hardware
+mixer the maximum number of channels is again limited to the hardware.
+@item cdsamplelinein @tab
+If you select a @file{.cda} file the cd input of your
+sound card is used to sample the current music. If you do not have a
+cd input or if you have connected your cd-rom to the line-in jack
+enable this option to change to sample input.
+@item bigmodules @tab
+This option is of interest for users of hardware mixing
+devices only. Sound cards capable of mixing channels are not only
+limited by the amount of channels played simultaniously, but by the
+amount of onboard memory to store the sample data too. If files are
+marked as ``big'' in the fileselector this device listed in this
+option will be used for mixing this module.@footnote{See section
+@pxref{fileselector, bigmodules} for details about this feature}
+@item wavetostereo @tab
+When playing a mono wave the sound card can either be
+switched to mono mode or the wave can be played as a stereo
+file.@footnote{switching the soundcard may cause problems so enable
+this option.}
+@item waveratetolerance @tab
+if the sample rate of the wave file is not equal to
+a sample rate supported by your sound card, OCP will not resample
+unless this value is exceeded. Divide the value by 1000 to get the
+percentage.
+@item amplify @tab
+the default amplification to use within the player. The
+following options are described in section @pxref{player, General} in
+detail. The command line option @emph{-va} overrides this option.
+@item panning @tab
+the default panning (command @emph{-vp})
+@item volume @tab
+the default volume (command @emph{-vv})
+@item balance @tab
+the default balance (command @emph{-vb})
+@item reverb @tab
+some sound cards have an onboard effect processor @footnote{currently
+the SoundBlasterAWE and the TerraTecEWS} which features a reverb
+effect. This option controls the intensity of the onboard
+effect. (command @emph{-vr})
+@item chorus @tab
+dito as reverb (command @emph{-vc})
+@item surround @tab
+this options controls the fake surround effect @footnote{this
+has little to do with real Dolby Surround although there should be a
+certain effect if you have such an amplifier} (command @emph{-vs})
+@item filter @tab
+The software mixer can use a software filter to enhance the
+playback quality. Different algorithms can be used. (command
+@emph{-vf})
+@itemize
+@item 0     - no filter
+@item 1 AOI - only filter samples when filtering is necessary
+@item 2 FOI - filter every sample even if filtering has no effect
+@end itemize
+@end multitable
+
+@section [screen]
+When the player starts it will use the options in this section as the
+initial appearance.
+
+@example
+[screen]
+  usepics=*.gif *.tga
+  compomode=off
+  startupmode=text
+  screentype=7
+  analyser=on
+  mvoltype=1
+  pattern=on
+  insttype=0
+  channeltype=1
+  palette=0 1 2 3 4 5 6 7 8 9 a b c d e f
+  fps=20
+@end example
+
+@multitable @columnfractions .3 .7
+@item
+usepics
+@tab
+When using graphics modes you can use a picture to show in the
+background. OCP will load any TGA files with 640x384 dimensions and
+256 colors.  As the TGA format is poorly implemented in modern graphic
+programs this might change in the future. As some colors out of the
+256 are used by OCP you should leave either the first or the last 16
+colors in the palette black.  The pictures should be copied to the
+home directory of ocp, unless you specify a different location in the
+@emph{defaultconfig} section.
+@item compomode @tab
+this option will enable the compo mode. Section
+@pxref{player, Using the Compo mode} describes the details.
+@item startupmode @tab
+start the player in either text or graphic mode:
+@itemize
+@item coolhelp - show help screen
+@item dots - show note nots
+@item graph - show graphical spectrum analyzer
+@item links - show currenty linked DLLs/shared libraries
+@item msg - show module message
+@item phase - show phase analyzer
+@item scope - show oscilloscopes
+@item text - show standard text screen
+@item wuerfel2 - show animation
+@end itemize
+@item screentype @tab
+the default screentextmode:
+@itemize
+@item 0 - 80x25
+@item 1 - 80x30
+@item 2 - 80x50
+@item 3 - 80x60
+@item 4 - 132x25
+@item 5 - 132x30
+@item 6 - 132x50
+@item 7 - 132x60
+@end itemize
+@item analyzer @tab
+if the player starts in textmode show the analyzer (or not)
+@item mvoltype @tab
+the appearance of the peak power levels:
+@itemize
+@item 1 - big
+@item 2 - small
+@end itemize
+@item pattern @tab
+show the tracklist when starting OCP in textmode
+@item insttype @tab
+the appearance of the instrument function:
+@itemize
+@item 0 - short
+@item 1 - long
+@item 2 - side (only in 132 column modes)
+@end itemize
+@item channeltype @tab
+the appearance of the channels in textmode:
+@itemize
+@item 0 - short
+@item 1 - long
+@item 2 - side (only in 132 column mode)
+@end itemize
+@item palette @tab
+with this options you can redefine the default colors used in
+textmode. The first entry defines which color to use for the original
+color with number 0. Leave things as they are if you are satisfied
+with the visual appearance of OCP. We will provide new color schemes
+in the future.
+@item fps @tab
+This tells how many frames per second OCP should try to use, since UNIX
+isn't a real-time system, this is needed.
+@end multitable
+
+@section [fileselector]
+Except the first two options all options can also be specified at
+runtime by pressing @key{ALT}+@key{z} in the fileselector. However
+to make changes permanent you have to modify the @emph{fileselector}
+section.
+
+@example
+[fileselector] ; default fileselector section
+  modextensions=MOD S3M XM IT MDL DMF ULT AMS MTM 669 NST WOW \
+                OKT PTM MXM MID WAV RMI MP1 MP2 MP3 OGG SID DAT \
+		PLS M3U PLT OGG
+  movepath=  ; default path to move files
+  screentype=2
+  typecolors=on
+  editwin=on
+  writeinfo=on
+  scanmdz=on
+  scaninarcs=on
+  scanmnodinfo=on
+  scanarchives=on
+  putarchives=on
+  playonce=on
+  randomplay=on
+  loop=on
+  path=.
+@end example
+
+@multitable @columnfractions .3 .7
+@item
+modextensions
+@tab
+files containing these extensions will be scanned by the
+fileselector. Only those files will be shown. If you want to load
+files with different extensions you have to specify them at the
+command line.@footnote{however files with different extensions are
+likely to be no valid module format, so they will be refused to load}
+@item movepath @tab
+the standard path to move files into. This is describend in
+section @xref{fileselector, Advanced usage}.
+@item screentype @tab
+the textmode to use within the fileselector. The options are
+the same as in the @emph{screen} section.
+@item typecolors @tab
+show files in different colors depending on the file type
+@item editwin @tab
+show the edit window at the bottom of the screen
+@item writeinfo @tab
+write the info to the information database located in the
+home directory of OCP. This speeds up the processing of directories,
+as files have to be scanned only once.
+@item scanmdz @tab
+if @file{.mdz} files are found in the current directory, they
+will be scanned and the included information used.
+@item scanmodinfo @tab
+scan inside the music files for module information.
+@item scanarchives @tab
+if archives (like @file{.zip} or @file{.rar}) are
+found in the current directory the are scanned for modules.
+@item putarchives @tab
+show archives in the fileselector, so they can be used just
+like subdirectories.
+@item playonce @tab
+play every file only once (thus not looping it) and then
+procede with the next file in the playlist. If the file contains a
+loop command the loop command is ignored.
+@item randomplay @tab
+play files in the playlist in random order.
+@item loop @tab
+loop files after the end.
+@item path @tab
+the default path to use when starting the fileselector the first
+time. The default is the current directory (.). If you keep all your
+music files in one directory you can specfiy this directory here.
+@end multitable
+
+@section device configuration
+The following sections define the various devices for the
+player. Unless you really know what to do you should not change the
+following options. As most entries are similar only some educational
+examples are listed here. For a complete reference have a look at your
+personal @file{ocp.ini} file for details.
+
+The general form of a device looks like:
+@example
+[handle]
+  link=...
+  subtype=...
+  port=...
+  port2=...
+  irq=...
+  irq2=...
+  dma=...
+  dma2=...
+  bypass=...
+  keep=...
+@end example
+
+@multitable @columnfractions .3 .7
+@item handle @tab
+The internal name to use within the player. The @file{ocp.ini}
+file must contain all @emph{handles} listed in the devices options of
+the @emph{devices} section.
+@item link @tab
+the name of the dll function this device will be linked to.
+@item port(2) @tab
+the primary/secondary port of the sound card. This value has to
+be given in hexadecimal with preceeding @emph{0x} or appending @emph{h}!
+@item irq(2) @tab
+the primary/secondary IRQ of the sound card
+@item dma(2) @tab
+the primary/secondary DMA channel of the card
+@item bypass @tab
+skip the autodetection if it may encounter problems
+@item keep @item
+keep the driver resident in memory, even it is not currently
+needed.
+@tab
+@end multitable
+
+Most device functions of the standard dll contain autodetection
+routines for the supported sound cards, so there is normally no need
+to specify any of the port, irq or dma options. However if OCP is not
+able to detect your sound cards settings you can try to insert the
+appropriate values in the configuration file.
+
+The next subsections will look at the special features the different
+sound cards and drivers support. The original order of the
+@file{ocp.ini} has been slightly modified for the purpose of
+documentation.
+
+@subsection OSS
+Open Sound Sysstem is a generic portable UNIX sound interface for
+playing/recording pcm data, and adjusting mixer settings.
+
+@example
+[devpOSS]
+  link=devposs
+  revstereo=on
+  path=/dev/dsp
+  mixer=/dev/mixer
+
+[devsOSS]
+  link=devsoss
+  revstereo=on
+  path=/dev/dsp
+  mixer=/dev/mixer
+  igain=1
+@end example
+
+@multitable @columnfractions .3 .7
+@item path @tab
+where /dev/dsp is located. If you have more soundcards, this can be set to for
+instance /dev/dsp3. You can override config with the DSP environment variable.
+@item mixer @tab
+what mixerdevice to use. Override with the MIXER environment variable.
+@item igain @tab
+if you don't input from cdrom, try to set igain. With this option, you can
+automatically set igain to a given value (or -1 for not touching it)
+@end multitable
+
+@subsection software mixers
+By default OCP will use its own routines for mixing several channels
+to the two stereo output channels. You have the choice between to
+mixers. The normal mixer is faster in calculating, thus can mix more
+channels at the same time.  The quality mixer however produces better
+sound ouput. For average modules and a pentium processor the quality
+mixer should be fast enough for sufficient playback. If many channels
+are used you may have to change back to the normal mixer @footnote{You
+can toggle by using the @emph{bigmodule} feature described in
+@xref{fileselector, bigmodules}.}
+
+Both mixers take identical options. As the mixers will be rewritten in
+the future the options are likely to change. Therefore they are not
+documented here. Please have a look at future versions of this
+document if you want to change to mixer settings. However these
+devices never have caused any trouble/bugs and there should be no need
+for change.
+
+@section archivers
+When processing files inside archives OCP has to know how to call the
+programs. The following sections define the usage of different
+archivers supported by the OCP fileselector.
+
+When substituting the command line 4 special variables are processed
+by the fileselector for accessing the archives:
+@multitable @columnfractions .1 .9
+@item %% @tab evaluates to ``%''
+@item %a @tab evaluates to the archiv name preceeded by the path to process.
+@item %n @tab evaluates to the filename of the file to process inside the archive.
+@item %d @tab evaluates to the destination directory used to extract files out
+of archive.
+@end multitable
+
+Three default command are defined for the arc modules:
+@multitable @columnfractions .3 .7
+@item get @tab
+this command is used when a file should be extracted out of an
+archive.
+@item put @tab
+if a file should be added to the archive this command line is used.
+@item delete @tab
+with @key{ALT}+@key{k} you can delete files out of archives.
+@end multitable
+
+The following two archivers contain special options described below:
+@example
+[arcZIP]
+  get=pkunzip %a %d %n
+  put=pkzip %a %n
+  delete=pkzip -d %a %n
+  deleteempty=on
+@end example
+@multitable @columnfractions .3 .7
+@item deleteempty @tab
+the program pkzip/pkunzip used by OCP to process
+@file{.zip} files have a bug when deleting the last file inside an archive.
+An empty archive of 22 bytes is left on the hard disk. With this
+option enabled the fileselector will delete those ``zip zombies''.
+@end multitable
+
+@example
+[arcACE]
+  get=ace32 e %a %n %d
+  scaninsolid=false
+@end example
+@multitable @columnfractions .3 .7
+@item scaninsolid @tab
+scan in solid archives. As this takes more time you can
+disable this feature.
+@end multitable
+
+@section Filetypes
+The @file{ocp.ini} file contains descriptions for all supported file
+types.  These features will be included in the file loader devices in
+the next version of OCP, so these options will soon be obsolete. There
+should be no need to modify any of the file types.
+
+@section MIDI
+If you want to hear MIDI music you need samples for the
+general midi instrument set.@footnote{a so called midi patch set} This
+secion contains the paths to the midi patches. Section @pxref{player, MIDI files}
+describes how to set up OCP for midi playback. For use of timidity,
+@file{/etc/timidity.cfg} must be configured.
+@example
+[midi]
+  use=....  to force which option to use [ultradir fff freepats timidity]
+  fff=c:\iw\gsfull4m.fff
+  ultradir=/home/user/ultradir
+  freepats=/usr/local/share/freepats
+@end example
+@multitable @columnfractions .3 .7
+@item use @tab
+if you want to force usage of a specific patch-system, set this variable to one of these values: ultradir fff freepats timidity
+@item fff @tab path where the fff font is located
+@item ultradir @tab
+path where ULTRADIR.INI is stored. Please checkout @file{ultrafix.sh} for
+fixing cases in filenames.
+@item freepats @tab path to where freepats is located
+@end multitable

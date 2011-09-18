@@ -1,0 +1,97 @@
+@node starting
+@chapter Starting Open Cubic Player
+When starting OCP, it first tries to setup a directory in your home-directory
+where cache and configuration will be stored, aswell at locating where OCP
+has installed its main files.
+
+OCP then tries to detect the sound cards defined in the @file{ocp.ini} file.
+If the card is not found you cannot use it. If more than one sound card is
+installed and found by OCP the first one listed in the @file{ocp.ini} is
+used as the default device.@footnote{You can change this in the player by using
+the @file{setup:} device. See page @xref{specialdrive}, for detail.}
+
+By entering a filename as parameter onto the command line you can load a module.
+If a filename is given the file will be loaded and OCP starts with the
+player.@footnote{This will work if the file is inside an archive located in the
+current directory. If no (unpacked) file is found all archives in the current
+directory are searched for an appropriate filename.} When the parameter is
+the name of a directory the fileselector starts with the given directory.
+If the parameter equals a certain archive all files found inside the archive
+will be played (by adding them to the playlist).
+
+If more than one parameter is given a playlist will be set up, containing all
+found files. You can mix filenames of archives, files in archives and normal
+files on the hard disk.
+
+You normally don't have to supply the right file extensions, as they are
+guessed by the fileselector. If the filename is not complete the file will
+not be processed (unlike the quickfind function).
+
+OCP can be configured using the command line, although the configuration
+through the @file{ocp.ini} file is more comfortable. The options split up
+into three main sections each starting with ``-'' followed by a letter. For
+each section different options are given, which will configure the player
+accordingly. You can precede each option with the section prefix every time
+or supply multiple options seperated with ``,''. Some special options do not
+require the use of a sections prefix, like the @emph{help} switch.
+
+The command line looks like:
+@example
+ocp [prefix option[,option]] [specialOption] [filename]@footnote{Square
+brackets [] indicate an optional item that can be repeated.}
+@end example
+
+Special options include:
+@itemize
+@item -h                  show a help screen
+@item -c<name>            use a configuration defined in @file{ocp.ini}
+@end itemize
+
+Fileselector options are envoked with @emph{-f}. The values in square brackets define
+a choice that must be made when using one of these options.
+@itemize
+@item -r[0|1]             remove played files from playlist
+@item -o[0|1]             don't scramble playlist order
+@item -l[0|1]             loop modules
+@end itemize
+
+Playback options are preceded by @emph{-v}. Values in sharp brackets define a range
+in which the value must be taken.
+@itemize
+@item -a<0..800>          set amplification
+@item -v<0..100>          set volume
+@item -b<-100..100>       set balance
+@item -p<-100..100>       set panning
+@item -r<-100..100>       set reverb
+@item -c<-100..100>       set chorus
+@item -s[0|1]             set surround
+@item -f[0|1|2]           set filter (0=off, 1=AOI, 2=FOI)
+@end itemize
+
+Device setting are accomplished with the suffix @emph{-s}.
+@itemize
+@item -p<name>            use specific player device
+@item -s<name>            use specific sampler device
+@item -w<name>            use specific wavetable device
+@item -r<0..64000>        sample at specific rate
+@item -8                  play/sample/mix as 8bit
+@item -m                  play/sample/mix mono
+@end itemize
+
+Finally an example to illustrate the above features:
+@example
+ocp -fl0,r1 -va80,p50,f2 -spdevpdisk -sr44100 ftstar.xm
+@end example
+
+This will start OCP and load the file @file{ftstar.xm}@footnote{A marvelous piece of
+music composed by KB which won The Party 1997.}. The music will be played once
+and will not loop @emph{(-fl0, r1)}. Further the player is advised to amplify
+this file with 80%, set the panning to 50% and interpolate every sample
+(@emph{-va80, p50, f2}). The mixed output will be saved into @file{.wav}
+format through the @xref{player, Using the diskwriter}, device (@emph{-spdevpdisk}) with a
+sample rate of 44.1KHz (@emph{-sr44100}).
+
+You can burn this WAV file directly onto a CD-Audio and play it with every
+normal CD player. A much simpler and more convinient way to make such a
+@emph{sample image} of a module is by using predefined configurations with
+the @emph{-c} switch. Have a look at @xref{player, Using the diskwriter}.

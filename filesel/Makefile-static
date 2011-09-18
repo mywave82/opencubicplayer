@@ -1,0 +1,15 @@
+# arctar.so
+STATIC_OBJECTS += filesel/arctar.o
+
+# arczip.so
+STATIC_OBJECTS += filesel/arczip.o
+STATIC_LIBS += -lz
+
+# cdrom.so
+ifeq ($(CDROM_SUPPORT),1)
+STATIC_OBJECTS += filesel/cdrom.o
+endif
+
+# pfilesel.so
+STATIC_OBJECTS += filesel/adb.o filesel/cphlpfs.o filesel/dirdb.o filesel/pfilesel.o filesel/pfsmain.o filesel/modlist.o filesel/fsptype.o filesel/mdb.o filesel/pfspls.o filesel/pfsm3u.o filesel/gendir.o filesel/playlist.o
+STATIC_LIBS += $(MATH_LIBS)

@@ -1,0 +1,18 @@
+# mixclip_so
+STATIC_OBJECTS += dev/mixclip.o
+
+# plrbase_so
+STATIC_OBJECTS += dev/deviplay.o dev/plrasm.o dev/player.o
+
+# devi_so
+STATIC_OBJECTS += dev/devigen.o
+
+# mcpbase_so
+STATIC_OBJECTS += dev/deviwave.o dev/mcp.o dev/mix.o dev/mixasm.o dev/smpman.o
+
+# mchasm_so
+STATIC_OBJECTS += dev/mchasm.o
+
+# smpbase_so
+STATIC_OBJECTS += dev/devisamp.o dev/sampler.o
+

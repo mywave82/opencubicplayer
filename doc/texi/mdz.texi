@@ -1,0 +1,69 @@
+@node mdz
+@chapter .MDZ files
+This was written by Fabian Giesen, based on the original
+@file{.MDZ} description by Niklas Beisert.
+
+@section What are @file{.MDZ} files?
+
+@file{.MDZ} files are Module Description files (the @emph{MDZ} is a short
+form of @emph{DIZ}, which is in turn a short form of Description).
+The @file{.MDZ} format can, however, contain much more information than
+normal Module/Sound files, which normally only contain the song's title and
+sometimes a ``song message'', which can be freely entered by the author.
+Things like the name of the author of a song, its playtime, a comment about
+it etc. which can be entered in OCP's Fileselector cannot be stored inside
+the module file, so they have to be stored somewhere else. Usually this is
+in the file @file{CPMODNFO.DAT}, which normally perfectly suits this task.
+
+However, this format has some disadvantages. Imagine you give a module file
+to a friend. Simply copying your @file{CPMODNFO.DAT} together with the
+song on the disk is impractical, because this file overwrites your friend's
+@file{CPMODNFO.DAT} when he simply copies it. So he could take your
+description, write it down somewhere, and take it with him, but that is
+pretty uncomfortable.
+
+That's why the @file{.MDZ} files were invented. @file{.MDZ} files
+contain the description of one or more module file(s), just like the
+@file{CPMODNFO.DAT}, but have attributes which make them interesting:
+
+@itemize
+@item
+@file{.MDZ} files are normal text files and therefore human readable
+@item
+The content of @file{.MDZ} files gets automatically inserted in the
+module description database @file{CPMODNFO.DAT} without need for user
+interaction
+@item
+@file{.MDZ} files can be exported from within the OCP fileselector
+with one keystroke (see section @xref{fileselector, Reference}.)
+@end itemize
+
+@section Why should I use them?
+
+(This section is intended for composers)
+
+There are of course some good reasons for using them:
+
+@itemize
+@item
+Every OCP user sees your description automatically when he moves the
+cursor over the file
+@item
+The module type is also stored in @file{.MDZ} files, so you can
+explicitely force OCP to play your Module in Protracker (or FastTracker)
+mode, for example.
+@item
+Even if the user does not use OCP, he can still read your description,
+because @file{.MDZ} is a simple, human readable text format
+@item
+Creating @file{.MDZ} files is almost no extra work (you can create a
+complete @file{.MDZ} file from within OCP in less than one minute)
+@end itemize
+
+So, as you see, using @file{.MDZ} files has many advantages, but (almost)
+no disadvantages. It is surely worth trying.
+
+@section The @file{.MDZ} file format
+
+This is not documented here. If you want a complete description, wait for the
+soon to be released OCP Technical Reference Manual.

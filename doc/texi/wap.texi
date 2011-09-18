@@ -1,0 +1,216 @@
+@node wap
+@chapter WurfelAnimator WAP
+This chapter is written by Felix Domke, the author of WAP.
+
+@section What is the so called WurfelMode?
+In version 1.0 of the famous Cubic Player, pascal got a nice idea of playing
+silly animations inside the Player.
+
+He invented the @emph{WurfelMode} (@emph{Wurfel} is the german word for
+cube). The WurfelMode was able to play animations with a resolution of
+160x100 pixels in 256 colors in a special tweaked vga-mode. The animation
+format was a special one.
+
+@section How can I create such animations by myself?
+
+Long time, only the cubic team (or even only pascal?) itself was able to
+create such animations. The reason for this was that, as said, the animations
+had to be in a very special format, and the only tool that was be able to
+create this format were the not-so-famous @emph{WurfelTools}. Included
+there was a tool called @file{makedmp.exe}. It  took  various @file{.tga}
+files, and made a @file{.dat} animation out of them. But noone checked how
+this tools worked, mainly because it had no command-line-help and the sources
+weren't available anymore.
+
+But times are changing. Today, you don't have to guess how to use a utility
+anymore. You just have to read the documentation (yes, even you, Realtime ;).
+Today, you can even use a resolution of 320x200 (wow, THAT's highres).
+
+For people who didn't guess how pascal's tool worked, I made a new one.
+This time @emph{with} source available to all interested people. This time
+with @file{.pcx} images, not @emph{.tga} one, because @file{.pcx} is much
+easier to read, and also more widely supported. This time even with some
+palette-aligning, so you don't have to care about same palettes anymore.
+
+@section And how can I use your tool?
+First, you have to render/paint/rip a animation. It HAS to be 320x200, or,
+if you want to make an old, $<$ OCP 2.0q, animation, 160x100.
+In case you didn't notice, the OCP 2.0q and higher has a new WurfelMode,
+called @emph{WurfelMode ][} , with support for 320x200 pixels
+images, instead of the lowres 160x100 ones.
+
+Your  animation should be in the form of many, many @file{.pcx} files,
+called for example @file{PIC000.PCX}, @file{PIC001.PCX},
+@file{PIC002.PCX} and so on. They  must have only 256 colors, and they
+should have all the same palette. If  they don't have the same palette, the
+palette will be aligned. But my calculation of this isn't very good (but it
+works :), so for BEST results you have to do this in your favourite
+picture-editing-program. Next,  you have  to create  a @emph{script}. This
+script contains informations about the filenames of your frames, and a some
+other stuff.
+
+The script has the following format:
+@example
+Version
+[SFO] RLECompression
+Title
+NumFrames Delay Filename
+[NumFrames Delay Filename]
+[NumFrames Delay Filename]
+[...                     ]
+@end example
+
+@emph{Version} is either 0 or 1, 0 for 160x100 animations, 1 for 320x200.
+If you want to create a Version 0-animation, @emph{SFO} should be set to 1,
+if you want to create a Version 1-animtion, @emph{SFO} has to be left out.
+@footnote{If  you're interested what  this value means, well, just get the
+original documentation for professionals, it's described there}
+@emph{RLECompression} should be set to 1, it compresses the Animation a little
+bit.
+@emph{Title} is the title of the animation, it shouldn't be longer than 31
+chars, it's displayed inside the fileselector of OCP.
+
+After this @emph{header}, a random number of section follows (but at least
+ONE ;).
+
+Every section describes a sequence of some PCXs. In the final animation,
+all sections are joint together.
+
+@emph{NumFrames} is the number of frames in this sequence. For example, if
+you have PCXs that are named from @file{PIC000.PCX} up to
+@file{PIC199.PCX}, NumFrames should be 200.
+@emph{Delay} is handled a little bit different in the two versions. If you
+want to create a Version 0-animation, a @emph{Delay} of 1 means a framerate
+of about 21.3 frames per second, a @emph{Delay} of 2 is about 10.65 fps (the
+half), a @emph{Delay} of 3 is about 7.1 (a third) and so on.
+
+If  you  want  to create a Version 1-animation, @emph{Delay} is 65536/desired
+fps, so if you want to have 15fps, "Delay" should be 4369. This value has to
+be BELOW 65536 (and above 0, of course :)
+@emph{Filename} is the filename of your sequence. Because most animations
+have more than 1 frame, you can use %d (and other C-printf placeholders).
+For people whose native language is not C, here some short examples:
+
+@multitable @columnfractions .34 .33 .33
+@item
+@b{filename}
+@tab
+@b{framenumber}
+@tab
+@b{real filename}
+@item
+pic%d.pcx
+@tab
+0
+@tab
+pic0.pcx
+@item
+@tab
+1
+@tab
+pic1.pcx
+@item
+@tab
+2
+@tab
+pic2.pcx
+@item
+@tab
+3
+@tab
+pic3.pcx
+@item
+@tab
+9
+@tab
+pic9.pcx
+@item
+@tab
+10
+@tab
+pic10.pcx
+@item
+@tab
+11
+@tab
+pic11.pcx
+@item
+pic%03d.pcx
+@tab
+0
+@tab
+pic000.pcx
+@item
+@tab
+1
+@tab
+pic001.pcx
+@item
+@tab
+2
+@tab
+pic002.pcx
+@item
+@tab
+3
+@tab
+pic003.pcx
+@item
+@tab
+9
+@tab
+pic009.pcx
+@item
+@tab
+10
+@tab
+pic010.pcx
+@item
+@tab
+11
+@tab
+pic011.pcx
+@end multitable
+The framenumber always starts with 0, not with 1, keep this in mind!
+
+Here is an example script: (version 0)
+@example
+0
+1 1
+a basic cubic-player animation
+11 2 intro%d.pcx
+200 1 ani%03d.pcx
+@end example
+
+This animation would have 211 frames (@file{intro0.pcx} to
+@file{intro10.pcx}, then @file{ani000.pcx} to @file{ani199.pcx}).
+
+And here again one for version 1:
+@example
+1
+1
+an enhanced OpenCP animation
+11 3072 intro%x.pcx
+200 1000 ani%03d.pcx
+@end example
+
+To create the animation, just type in
+@example
+wap <scriptfilename.scr> <outputfilename.dat>
+@end example
+and hit @key{Enter}.
+
+The WurfelAnimator will now try to make the animation.
+To view the animation inside OCP, rename the created @file{.DAT}-file
+to @file{CPANU001.DAT} (or @file{CPANI002.DAT} and so on...) and press
+@key{w} inside the player.
+
+@section This tool doesn't work!
+No problem,I have always an open ear for your problems. Just write your
+problems to @url{mailto:tmbinc@@gmx.net}.
+
+Maybe you have luck and meet me on IRC, usually I am in @url{irc://#coders.ger}
+and some other channels, but if you don't know those, well, maybe you're
+not welcome on them ;)
+
+Anyway, maybe you have some fun with this tool.

@@ -1,0 +1,7 @@
+When Open Cubic Player is ran ssetuid, the kickstart program (the ocp
+executable) will not allow the libocp.so to be symlinked.
+
+TODO: Use the global configuration when ran setuid and not ~/.ocp/ocp.ini ?
+
+if (getuid()==0)&&(geteuid()==0)
+a seteuid(getuid()); will be issued

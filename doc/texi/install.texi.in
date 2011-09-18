@@ -1,0 +1,54 @@
+@node install
+@chapter Installation and files
+@section Installation
+Some UNIX variants allready have Open Cubic Player in their packaging systems.
+If not, you are going to need to download the source and extract it.
+
+@quotation
+wget http://stian.lunafish.org/ocp/ocp-@PACKAGE_VERSION@.tar.bz2
+tar xfz ocp-@PACKAGE_VERSION@.tar.bz2
+@end quotation
+
+Please make sure that you have development-packages of the following libraries
+installed:
+
+libmad
+libsidplay 1.x
+libvorbis / libogg
+ncurses
+Xlib
+libXpm
+
+
+To compile and install do the following
+
+@quotation
+cd ocp-@PACKAGE_VERSION@
+./configure && make install
+@end quotation
+
+If configure complains about any-missing headers/libraries, please consule the
+list above needed libraries.
+
+@section Files
+When OCP loads a module the information stored inside the file is read and
+stored in a special file( the @emph{module information cache}.) Actually the
+cache splits up into three files:
+@itemize
+@item
+CPARCHS.DAT   Information about archives and files stored inside
+@item
+CONDZTAG.DAT  Paths to @file{.MDZ} files (see appendix @xref{mdz}.)
+@item
+CPMODNFO.DAT  Informations about various modules
+@end itemize
+If you delete these files all file information gathered is permanently lost.
+
+The @file{doc} directory contains documentation files in various formats
+and release notes etc. You can safely delete this directory if you are running
+out of disk space.
+
+@section OCP and ALSA (linux)
+OCP doesn't support ALSA directly, since OCP is written for OSS which is
+cross-platform. Please load @file{snd-pcm-oss} and @file{snd-mixer-oss}, to
+provide a legacy OSS interface from ALSA.

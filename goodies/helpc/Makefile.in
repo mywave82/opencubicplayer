@@ -1,0 +1,19 @@
+TOPDIR=../../
+include $(TOPDIR)Rules.make
+
+all: ocphhc
+
+clean:
+	rm -f ocphhc *.o
+
+install:
+
+uninstall:
+
+ocphhc.o: ocphhc.c \
+	../../config.h \
+	../../types.h
+	$(CC) -I../../ ocphhc.c -o $@ -c
+
+ocphhc: ocphhc.o
+	$(CC) -o $@ $^ -lz @EFENCE_LIBS@ @DUMA_LIBS@

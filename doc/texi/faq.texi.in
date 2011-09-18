@@ -1,0 +1,108 @@
+@node faq
+@chapter Freqently Asked Questions
+
+This chapter was initially written by Mom/Cubic.
+@enumerate
+
+@item What is OCP?
+
+OCP is a music player which plays a variety of sound formats on several sound cards.
+
+@item What sound cards are supported?
+
+OSS, Open Sound System
+
+ALSA, via OSS legacy interface
+
+Disk Writer, writes .WAV output on disk.
+
+Quiet Player
+
+@item What music formats are supported?
+
+MOD/NST/WOW, XM, S3M, DMF, MTM, ULT, 669, OKT, PTM, AMS, MDL, IT, MIDI, SID, OGG and MPEG 1 audio layer 1/2/3
+
+@item Which is the last version of OCP for Unix?
+
+The last OCP version is the @PACKAGE_VERSION@ Version.
+
+
+@item Are you going to release new versions?
+
+Windows/DOS: Perhaps not. We are all busy doing other things.
+
+UNIX: Yes
+
+@item Now, how does that MIDI player thing work?
+
+OCP's MIDI player does not, like other programs, use the MIDI capabilities of your
+sound card / Korg Trinity or whatever, but uses the patch files of
+the famous Gravis Ultrasound to synthesize the MIDI output itself
+(just like Timidity or kmidi under KDE) via it''s normal wavetable
+system. So the only thing you need are the GUS patch files which
+are available at our site. Simply open a new subdir called "MIDI"
+in OCP's directory, copy all patch files ``.PAT'' into it and there
+you go.
+
+Users of a Gravis Ultrasound only have to make sure their
+ULTRADIR environment variable is set correctly or state the
+patch file and ``ULTRASND.INI'' location in ``ocp.ini''.
+
+@item Does that mean I can listen to MIDI files even with my old SBPro?
+
+Of course - if your soundcard works with the rest of OCP, you will
+be able to play MIDI files, too - as long you as got the GUS Patch
+files as written above.
+
+@item Hey, I have a module which OCP plays wrong! You SUCK!
+
+Well, it's in fact YOU who sucks, as you didn't send that module together
+with a bug report to @url{mailto:doj@@cubic.org}. How the hell can we
+fix bugs if we don't know them?
+
+@item OCP plays my ``.it'' files much too soft, IT's internal mixer
+sounds a lot better, why don't you just fix it?
+
+Because this is a
+religious question. OCP's mixing routines are designed for maximum
+sound quality which also includes things like declicking and
+quadratic interpolation, IT's mixing routines are just optimized
+for speed without really caring about sound quality (speaking of
+the non-MMX routines). So OCP's sound differs a bit, if you are
+not pleased with it, feel free to use IT again ;)
+
+@item Can you give me the source or a part of the source from OCP?
+
+The complete source code can be found on the official OCP sites,
+covered under the GNU GPL.
+
+@item I have a problem finding a small routine that will play mod files.
+I wanted to know if you can help finding a routine, lib or
+something like this.
+
+Try our Tiny XM Player, a free XM Player inc. source.
+
+@item Why don't you implement Nibbles, or similar game, in Cubic? Like
+FT2-nibbles? Or just plain Snake...
+
+Get ahold of a coder, give
+him the source and force him to implement it, if it's a GOOD
+nibbles version, we might include it into the "official" release ;)
+
+@item What does "Wurfel Mode" actually do?
+
+"Wurfel" is german word for cube/dice. The mode plays an animation.
+
+@item Can I make my own "Wurfel Mode" animation?
+
+Of course you can. On our site you'll find the program WAP (WurfelAnimator
+Professional) which can convert ``.pcx'' frames to a Wurfel Mode animation.
+
+@item How can I put a picture to the background on OCP?
+
+Convert your Picture to a TGA-file, these pics have to be 640x384x208 TGAs,
+the first or the last 48 colors must not be used.  You can also save
+your image as a 640x384x208 gif87 picture. Either the first or the
+last 48 colors of the palette have to be black.
+
+@end enumerate

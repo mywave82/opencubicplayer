@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Open Cubic Player
+GenericName=Music Player
+Comment=Open Cubic Player @PACKAGE_VERSION@ for UNIX
+Encoding=UTF-8
+Exec=@BINDIR@/ocp
+Icon=opencubicplayer
+Terminal=false
+Type=Application
+Categories=Application;AudioVideo;Audio;

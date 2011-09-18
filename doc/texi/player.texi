@@ -1,0 +1,934 @@
+@node player
+@chapter Player
+When OCP is started with a valid filename the file is loaded and the player
+interface is started. This is the main part of OCP and you have various ways
+to display all kinds of music information and data.
+
+@section General
+OCP displays general (status) information in the first 4 rows. Some of these
+entries can be changed by the user, others are static for each module. The
+following list will explain every entry.@footnote{Some special file types modify the
+appearance of the general field, but only static data is affected.}
+@multitable @columnfractions .1 .9
+@item vol
+@tab The bar display the current playback volume. The default value is
+100% or full volume. To change the volume press @key{F2} and @key{F3}. This
+will change the volume by one dot each time you press a key. The keys @key{+}
+and @key{-} on the numeric keypad will change the volume smoother.
+@item srnd
+@tab Toggle this option with @key{F4} to enable a simple surround
+effect.
+@item pan
+@tab If a voice should be played on the right speaker you can rearrange
+the stereo panning with this entry and @key{F5},@key{F6}. To get mono sound
+adjust the two @emph{riders} to the middle.
+@item bal
+@tab Just like the device on your stereo this option works. Press
+@key{F7},@key{F8} to adjust the stereo balance between full left and full
+right.
+@item spd
+@tab The playback speed can be changed with @key{F9},@key{F10}.
+@footnote{By default the speed and pitch options are linked (indicated by a
+small arrow). To disable linkage press @key{\}.
+Note that this will not work with all supported file types.}
+@item ptch
+@tab The pitch of the file can be altered with @key{F11},@key{F12}
+@item row
+@tab Most files of the module type are divided into rows and patterns.
+The first number shows the currently played row. The second number shows the
+total number of rows in the current pattern. All numbers are shown in hexadecimal
+format.
+@item ord
+@tab Modules are divided into several orders consisting of patterns. The
+first number shows the currently played order. The second number shows the
+total number of orders.@footnote{Not all orders have to be played, as modules
+can jump between different orders.} All Numbers are shown in hex.
+@item tempo
+@tab the current tempo of the file.
+@item bpm
+@tab These are not the physical beats per minute, but rather the speed
+at which the file is played (only valid for module types). This option is
+often refered by Trackers as BPM.
+@item gvol
+@tab Some file formats allow a global volume to be set.
+@item amp
+@tab This option lets you adjust an amplification. You can adjust this value with
+@key{CTRL}+@key{F2}, @key{CTRL}+@key{F3}.@footnote{This is not the same
+as Volume and @key{F2}, @key{F3}, because you are able to make the complete
+file louder than 100% with this option. Note that setting to values above
+100% might harm sound quality.}
+@item filter
+@tab You can select different types of interpolation by pressing @key{Backspace}:
+@item
+@tab off - no interpolation
+@item
+@tab AOI - OCP tries to determine if interpolation is neccessary for each
+note and sample indepentantly. This is the default option and should be enabled.
+@item
+@tab FOI - every sample is always interpolated. This option uses more processor
+power as AOI.
+@item module
+@tab shows the filename currently played and the title of the file
+@item time
+@tab time since starting the current file
+@end multitable
+
+@section Global functions
+Below the general information is a dark grey line. On the left side of the line
+the current screen mode is shown. In the middle a list of channels. Each file
+type has a maximum number of channels played simultaneously. For example simple
+file formats as @file{.WAV} can have one or two channels (responding to a mono
+or stereo sample). An audio CD always has 2 channels (left and right). Module
+file types can have many channels typically ranging from 4 to 32 channels.
+
+The currently selected channel is displayed in light grey. To select another
+channel use @key{Left},@key{Right}. You can also use
+@key{Up},@key{Down} which will loop through the channels if
+the left or right end is reached.
+
+Pressing @key{q} will @emph{quiet} the selected channel. This key is valid in
+every part of the player. To enable the channel press @key{q} a second time.
+The reverse logic can be accomplished with @key{s}. This disables all other
+channels than the selected, so only one channel plays solo. Another hit on
+@key{s} will @emph{unsolo} the channel again, so playing all channels. You
+can use any combination of the above keys. An example: Select channel 1 and
+press @key{s}. Now you will hear only channel 1. Go with the cursor keys
+to channel 3 and press @key{q}. As the channel is currently turned of (quiet)
+is it now played again. so you hear channels 1 and 3. Now switch to channel 2
+and press @key{s}. Now only channel 2 will be played, whiche channel 1 and 3
+are turned off again. By pressing @key{s} again all channels are enabled.
+
+You can directly @emph{solo} the first 10 channels by pressing keys @key{1}..@key{0}.
+This will act as if you had changed to the appropriate channel and pressed
+@key{s}. Channels 11-20 are accessed through @key{ALT}+@key{1}..@key{ALT}+@key{0}.
+
+To pause the file press @key{p}.
+
+The current file can be restarted by pressing @key{CTRL}+@key{Home}. To
+move a bit forward use @key{CTRL}+@key{Right}. If a module is played this
+will skip the current order and start playing the next order. In other file
+types this command skips a certain amount of time, depending on the estimated
+playing time. @key{CTRL}+@key{Left} will rewind the music. This is
+not possible for all file type (midi or sid files). When playing modules the
+current order is skipped and the previous order is playing from the beginning.
+To skip a smaller amount of the file use @key{CTRL}+@key{Up} and
+@key{CTRL}+@key{Down}. This will skip 8 rows when playing modules.
+If the files support jump or loop command using these functions can lead you
+to patterns not included in the original play order! Be aware that using these
+funtions can lead to somewhat crashed files.@footnote{This does not mean that
+OCP itself crashed, but that the order of the music file can be disturbed so
+heavily, that the player is not able to play the correct music anymore.}
+
+The next file in the playlist can be loaded with @key{Enter}. If no more files
+are left in the playlist the fileselector will be started so you can choose
+the next files. However the current module will continue playing. By pressing
+@key{Esc} you can switch back to the player again. The fileselector can also
+be invoked with @key{f}. The current playlist is shown and can be edited. When
+exiting the fileselector with @key{Esc} you can load the next module in the
+playlist with @key{Enter}. Leaving the fileselector with @key{Enter} will
+load the currently selected module and switching back to the player.
+
+By default a module is looped after its end was reached. You can change this
+behaviour by configuring the file selector @footnote{see
+@pxref{fileselector, Advanced usage} for details} or with @key{CTRL}+@key{l}. When
+looping is disabled the next module in the playlist will be loaded once a
+module has ended. If no modules are left in the playlist the fileselector is
+started.
+
+A DOS-Shell will be started when typing @key{d}. Note that OCP uses about
+200KB so not all programs might start or execute properly. However it should
+be enough to make simple tasks like copying, deleting etc. When running under
+Windows95 the free amount of memory should be the usual size.
+
+The screen mode can be changed by pressing @key{z}. This will toggle
+between 25 and 50 rows textmode, while
+@key{CTRL}+@key{z} toggle between 30 and 60 row textmode.
+@key{ALT}+@key{z} will toggle between 80 and 132 column mode.@footnote{80x25
+and 80x50 textmode are available on every VGA card. All other modes require a
+proper VESA bios (at least version 1.2) and may not be available on all cards.}
+
+The current configuration can be ``saved'' with @key{ALT}+@key{F2}. It is
+not stored permanently on hard disk, but only valid until OCP is quit. Normally
+the default configuration is loaded every time a new file is loaded. This
+function makes the current configuration the new default configuration. A
+previously saved configuration can be loaded with @key{ALT}+@key{F3}. The
+@emph{real} default values are loaded with @key{ALT}+@key{F4}. To modify
+the default values permanently you have to change the @file{ocp.ini} file
+as explained on page @xref{configuration, ocp.ini}.
+
+An online help is shown by @key{h}, @key{?} or @key{F1}. Use
+@key{Pgup} and
+@key{Pgdown} to scroll through this screen.
+
+Users of SoundBlasterAWE, Terratex EWS and Gravis Ultrasound PnP can
+use @key{CTRL}+@key{F5} and @key{CTRL}+@key{F6} to adjust the
+onboard reverb effect. The SBAWE can also add a chorus effect which is
+controlled via @key{CTRL}+@key{F7} and
+@key{CTRL}+@key{F8}.
+
+@section Text mode functions
+The player has two different operating modes. Text mode and graphics
+mode. In text mode you can enable various functions at once, while in
+graphics mode only a single function can be shown.
+
+Because there can be more than one text mode funtion visible at the
+same time you might have to press the according key more than once to
+get the wanted effect. Each function can be in one of the following
+states:
+@itemize
+@item
+invisible - inactive
+@item
+invisible - active
+@item
+visible - inactive
+@item
+visible - active
+@end itemize
+When pressing a key the according funtion is made active, but left
+invisible.  By pressing the same key a second time the function will
+be made visible.  An active function can be recognized by their title
+string displayed in bright blue, while inactive functions have their
+title string displayed in dark blue. Keys affecting the funtions are
+only processed for the currently active mode. So it might be necessary
+to change to the appropriate mode by pressing its key once to
+manipulate its behaviour.
+
+In the 132 column mode only one of the instruments* and channels*
+fields is active and used by the appropriate function. If a function
+is not visible the space is used by the other visible functions.
+
+@subsection Channels
+The channel function is invoked with @key{c}. The channels appear in
+two different modes. By default the short mode is enabled. Two
+channels are shown in one row. A grey number shows the channel
+number. Left to it a white number shows the currently played
+instrument / sample on this channel followed by the note. If the note
+starts to play it is shown in cyan for a short while.  The third
+number shows the current volume at which the intrument / sample is
+played. Behind the volume the current effect is shown.@footnote{All
+these informations are only shown when a module or similar type of
+file is played.  The nature of file like @file{.WAV} or
+@file{.MP3} permits those displays.}  At the rightmost of each entry
+the current (physical) volume splitted among left and right output
+channel is displayed in a bar graph.
+
+The currently selected channel is indicated by a small white $>$ to
+the left side of the channel number. When a channel is muted with
+@key{s} or @key{q} it is shown in dark grey. However OCP continues
+to play this channel, so that the music sounds correctly when turning
+on this channel again.
+
+When pressing @key{c} twice the channel function switches to the long
+format.  Each channel now uses a single row as more information is
+beeing displayed.  From left to right this is as follows: channel
+number, instrument / sample name, current note, instrument / sample
+volume, pan position, current, volume.
+@footnote{This layout is only valid for module type files. Other file types
+like @file{.SID} have a different layout, but basically showing the
+same information.}
+
+If the textmode is changed to 132 column mode the channel function can
+be displayed in short form at the upper right corner of the desktop.
+
+If there are more channels than space inside the screen area OCP will
+scroll automatically through the channel list when you use the cursor
+keys. This is indicated by white up and down
+characters.
+
+@smallformat
+The channel function has no title string which could indicate
+if it is active or inactive. So you might have to press @key{c} one
+time more often if the channel function was previously inactive.
+@end smallformat
+
+@subsection Instruments
+If the current file a module (or midi) the used instruments / samples
+are shown with the instruments function. The instruments are shown
+with @key{i}. Just like channels instruments come in two formats,
+short and long.
+
+In the short view only the intrument names are shown giving you space
+for two instruments per row in 80 column mode (4 instruments are shown
+in 132 column mode). An instrument / sample that is currently played
+is shown in bright cyan. If the sample is played ont the currently
+selected channel it is shown in bright green. All inactive intruments
+are drawn dark grey. If a sample has been played once a rectangular
+dot is placed left to the intrument number.
+
+When the intruments are switched to long mode various information is
+displayed.  From left to right this is as follows:
+@itemize
+@item
+a number from 00h to FFh giving the instrument number
+@item
+instrument name
+@item
+sample number (when using multiple samples per instrument)
+@item
+sample name (only in 132 column mode)
+@item
+length of the sample in bytes
+@item
+length of the loop in bytes
+@item
+bits per sample
+@item
+the base note. For modules the default is C-4
+@item
+finetune value
+@item
+standard volume at which the sample is played
+@item
+standard pan position
+@item
+various flags (volume, pan envelopes etc.)
+@item
+fadeout value (only in 132 column mode)
+@end itemize
+
+Often a file includes more instruments than can be shown on the
+screen. Use
+@key{Pgup},@key{Pgdown} to scroll through the instruments. If the
+instrument function is active @key{CTRL}+@{@key{Pgup},
+@key{Pgdown}@} will scroll for a complete page. When inactive you can
+scroll single lines by using
+@key{CTRL}+@{@key{Pgup},@key{Pgdown}@}. This is very useful if you
+have enabled more than one textmode function.
+
+The instrument flags (the rectangular dots left to the instrument
+number) are cleared with @key{ALT}+@key{i}. By pressing @key{Tab}
+you can toggle between the color mode and pure grey.
+
+@subsection Pattern view
+Modules are arranged in patterns. You can view these patterns with the
+pattern view function envoked with @key{t}. When enabling this
+funtion
+OCP tries to display all channels at once using the best display possible. For
+modules using few channels (<8) this default display is
+normally acceptable, but you might want to change it when playing
+modules with many channels.
+
+The pattern is shown in different columns. At the leftmost the row
+number is shown in hex. If the screen mode and pattern view allows the
+row number is shown again at the right side of the screen. Then follow
+some fields for global commands the module might contain. The biggest
+section of the screen use the channel columns, each one displaying on
+single channel indicated by the number on top of the column. Inside
+such a channel column various information can be displayed depending
+on the amount of space available. You can see the format of a channel
+column in the status line of the pattern view. The format of the
+column can be changed by pressing @key{Tab}. As there are many
+combinations of screen mode, channels and formats I will not go into
+detail here.
+
+The number of channel rows displayed at once can be changed by
+pressing
+@key{Pgup}, @key{Pgdown}. Normally the pattern view will follow the music
+as it progresses. With @key{Space} the pattern view will stop. The
+current play position is now displayed with a white special char. You
+can now browse through the module with
+@key{Pgup},@key{Pgdown}. @key{Space} will enable the follow mode
+again, bringing the pattern view to the current play position.
+
+The pattern view displays the different effects used in modules with
+different colors. Green is used for effects affecting the pitch of the
+sample, while blue command change the volume. Effects drawn in purple
+change the pan position. Red colors indicate the manipulition of the
+timeslice effected with this samples. Other effects are drawn
+white. Please have a look inside the online help @key{h}, @key{?} or
+@key{F1} for a complete reference on the effects shown.
+
+@subsection Spectrum Analyzer
+The spectrum analyzer uses the fast fourier transformation to gather
+information on the audio spectrum used in sample data. The analyzer is
+started with
+@key{a}. This function splits the sound data into many @emph{bands} of pure
+sine waves. This is called the spectrum of the sample.
+
+The status bar of this function shows you the range each bar covers
+and the highest frequency processed (the rightmost bar corresbonds to
+this frequency).  Use @key{Pgup}, @key{Pgdown} to change the
+range. @key{Home} will set the default value of 2756Hz.@footnote{The
+highest possible frequency is half the output frequency (22KHz when
+playing at 44Khz).}
+
+With @key{ALT}+@key{a} the mode of the spectrum function can be
+toggled.  Stereo using two analyzers, mono using only one and a single
+mode are available.  In the single mode the currently selected channel
+is used as sound source for the analyzer.
+
+@key{Tab} changes the color used for the analyzer.
+
+@smallformat
+To get a smooth view the default charset of the graphics
+adapter is modified. This is working fine with every graphics card
+under MS-DOS. However Windows95 does not allow the manipulition of
+characters, so the spectrum analyzer function is not shown properly
+when running under Windows95 (window-mode only). If you see a
+distorted screen while using the spectrum analyzer function this is
+normal.
+@end smallformat
+
+@subsection peak power levels
+This function shows the current physical volume of the output channels
+in a bar graph. You can use @key{v} to make this function visible -
+invisible.  In the 132 column mode the levels can also be shown at the
+right side of the screen.
+
+@subsection Volume control
+You can browse through the different items with @key{Up} and @key{Down}.
+If you want to change a value, try @key{Left} and @key{Right}. You can
+also toggle between a short mode, a long mode (only in 132 column
+modes) and invisible mode with @key{m} (Volume control is disabled in
+80 column modes and enabled in 132 column modes by default).
+
+@subsection Module message
+Some file types store messages which can be viewed with
+@key{ALT}+@key{F9} like in Multi Tracker. If the message is long use
+@key{Pgup}, @key{Pgdown} to scroll.
+
+@subsection eXtended mode
+All four text mode functions can be displayed simultaneously. This
+function enables channel, instrument, spectrum analyzer, pattern view
+and volume control function with a good preset in text mode. @key{x}
+will enable 132 column mode. @key{ALT}+@key{x} will switch to the
+default 80x25 mode with channel and instrument functions
+enabled.@footnote{If your VESA bios does not support 132 columns a
+80x50 mode is used.}
+
+@section Graphic mode functions
+The default graphics mode is 640x480x256. Only one graphics mode
+function can be shown at once. The screen therefore splits into the
+general window at the top side showing the usual informatin and the
+function window covering the rest of the screen.
+
+If you have included a background picture in the @file{ocp.ini} it
+will be shown in the graphics modes (expect the graphical spectrum
+analyzer).
+
+@subsection Oscilloscopes
+The oscilloscopes are started with @key{o} and come in 4 different
+modes: logical (the channels are sorted with the default panning
+position), physical (channels 1 to n from top to bottom), master
+(the mixed output channel(s)) and single (the currently selected
+channel is shown).
+
+By pressing @key{Tab} you can enable/disable triggering of the
+scopes. If the output is triggered a wave on the screen always starts
+with the upper halvwave. If triggering is turned off the wave will be
+drawn from the current position.
+
+The scale of the scopes can be altered with @key{Pgup},
+@key{Pgdown}.
+
+@subsection Note dots
+@key{n} starts the note dots function. Each channel is displayed on a horizontal row. The current note is represented
+by a dot or bar. Low notes are placed on the left side. High notes
+appear on the right side of the screen. By pressing @key{Pgup},
+@key{Pgdown} the scale of the rows can be changed. However the
+default scale fits the usual note scale of modules exactly, so there
+should be no need to change.
+
+By pressing @key{n} you can alter the output appearance of the
+dots. In the modes @emph{stereo note cones} and @emph{stereo note
+dots} the current pan position is indicated by the left / right half
+of the icon.
+
+@subsection Graphical Spectrum Analyzer
+The graphical spectrum function works in two video modes. By pressing
+@key{g} you will see the standard 640x480 mode. @key{SHIFT}+@key{g}
+will start the spectrum in 1024x768 mode. Apart from this difference
+the two video modes are equal.
+
+Pressing @key{g} more than once toggles between the usual stereo,
+mono and single channel mode for calculating and showing the
+spectrum. @key{Pgup} and
+@key{Pgdown} adjust the frequency range. @key{Home} will set the frequency
+to 2756Hz. To half the resolution (and yet speed up the calculation)
+press
+@key{ALT}+@key{g}.
+
+@key{Tab} change the palette of the graphical spectrum. @key{SHIFT}+@key{Tab}
+do the same for the standard spectrum analyzer at the bottom.
+
+@smallformat
+If you have difficulties interpreting this function here is a
+short explanation.  The standard spectrum analyzer at the bottom shows
+you the frequency spectrum at the current moment. The higher a single
+bar, the louder the frequency. Now imagine looking at this spectrum
+from top, now every bar becomes a single dot.  The height of the bar
+is now coded into different colors (from black leftrightarrow low
+to yellow leftrightarrow high). Now we can draw these point along
+the screen and see the spectrum as is progresses over time. This is
+somewhat a ``3D'' view of the spectrum, with the frequency coded along
+the y-axis, intensity coded in different colors and the time along the
+x-axis.
+@end smallformat
+
+@subsection Phase graphs
+The last graphical function is started with @key{b}. You can toggle
+between four modes which correspond exactly to those in the
+oscilloscope mode. This function displays the currently played samples
+in a phase graph. One full wave of the sample is drawn over the
+complete angle of a circle. The louder the sample the greater the
+radius of the circle. A sine sample would respond to a normal circle.
+
+@subsection Wurfel mode
+With @key{w} the wurfel mode is enabled. It's only purpose is to
+display an animation located in the home directory of OCP. The
+@key{Tab} key will change the play direction.
+@smallformat
+To save
+diskspace no animations are included in the distribution of OCP.  They
+can be found on the OCP homepage (page @uref{http://www.cubic.org/player}).
+Animations can be generated with the wap program from bitmap
+files.@footnote{See appendix @xref{wap}.}
+@end smallformat
+
+@section Using the diskwriter
+OCP can write all sound output directly to hard disk. Data is written in
+standard @file{.wav} format. You can use this feature to burn audio
+cds from any sound format supported by OCP.
+
+Although you can write @file{.wav} files in every possible sample
+format you should not alter the default of 44100KHz, 16bit,
+stereo. You should disable module looping so each module is written
+once onto harddisk. You can disable looping in the @file{ocp.ini}
+with the directive @emph{loop=on} in the @pxref{fileselector}
+section. You can also change looping temporarily with the
+fileselector configuration while OCP is running. See the
+fileselector advance usage @pxref{fileselector, Advanced usage} for details.
+
+To enable the diskwriter device you can change the @file{ocp.ini} file
+and select the @emph{devpDisk} as default device by moving it to the
+start of the @pxref{configuration, playerdevices} directive in the @pxref{configuration, [sound]}
+section. You can also select the @emph{devpDisk} device temporarily
+by selecting the @file{setup:/DEVICES/DEVPDISK.DEV} device.
+
+Now simply start OCP and select a module to play. You will hear no output
+and notice that the module is played with maximum speed@footnote{depending
+on your cpu power}. In the directory where you have started OCP (not
+necessaryly the directory where the module is located) subsequent
+@file{.wav} files named @file{CPOUT000.WAV}, @file{CPOUT001.WAV}
+will be created.
+
+@section Using the Compo mode
+If you enable the @emph{Compo mode} in the @file{ocp.ini} file all
+title and instrument string from modules will not be displayed.
+
+@section MIDI files
+OCP is able to play MIDI files. However there is a certain problem. Unlike the
+other file formats MIDI does not store the sample information needed to
+produce a sound output. The midi file only contains which instrument out of a
+set of 127@footnote{a set of drums is defined aswell}
+should play which note at a given time. This is the reason why @file{.MID}
+files are much smaller than other file types.
+
+This has of course some disadvantages. To hear a MIDI file you need to have
+some information how to play the used instruments. Back in the old days the
+OPL2 sound chip which was present on the SoundBlaster cards was used to play
+the midi instruments. Most people find the sound capabilites of the OPL series
+rather limited and midi files were no big deal back then.
+
+Things changed when so called wavetable cards became popular. Those card have
+sample data stored onboard in a ROM plus a hardware mixer capable of mixing
+several midi channels. The MPU-401 interface from Roland is the de facto
+standard for accessing those cards, but this feature is not supported by OCP
+yet.@footnote{however this might change in the near future} A disadvantage is
+that those wavetable cards only have a very limited memory for sample data
+typically 4MB. If you imagine 127 instruments and 64 drums fitting into just
+4MB you can guess what sound quality these cards have. Modern cards have normally
+much more onboard ROM/RAM, but in our opinion even 32MB are far too less for a
+good sound quality.
+
+OCP goes a different way. Instead of using the onboard ROM samples, the samples
+needed for a specific @file{.MID} file are loaded on demand from the harddisk
+into main memory and then processed by either the hardware mixer (if you have
+such a card and the samples fit into its memory) or by the software mixers.
+This has the advantage that you can easily change a single instrument, if you
+don't like the default sound.
+
+The instruments are stored in so called @emph{GUS-patches}, a file format
+introduced by Gravis with their UltraSound cards. At first you have to get a
+complete patch set. If you own a GUS classic or GUS max you will probably have
+those files already on your harddisk. All instruments are stored in files ending with
+@file{.PAT}.
+
+The original GUS patches are found on Advanced Gravis ftp server:
+@uref{ftp://ftp.gravis.com/Public/Sound/Patches}
+
+However I recommend looking at the following patch set:
+@uref{http://www.stardate.bc.ca/eawpatches/html/default.htm}
+
+If you unpack any of those archives to a folder on your harddrive, you have to adjust the path in the @file{ocp.ini} file. The configuratoin directive
+@example
+ultradir=/usr/share/ultradir  ; path to ULTRASND.INI
+@end example
+should be set to the folder where you extracted the patch files. Please check that a file called @file{ULTRASND.INI} is located in this folder, as OCP needs this file, to load the patch files.
+
+@subsection Mixer
+If your computer is too slow to play with proper speed remember that the new
+Float Mixer is the default device used by OCP when dealing with software
+mixing. If you enable the Normal Mixer you will gain a good speed up of your
+system.
+
+Look in the @pxref{configuration, [sound]} section of your @file{ocp.ini} file for the
+following line:
+@example
+wavetabledevices=devwMixF devwMixQ (...) devwMix devwNone
+@end example
+The leftmost device is used as default. So change the line to the following
+to enable the Normal Mixer:
+@example
+wavetabledevices=devwMix devwMixF (...) devwNone
+@end example
+
+If you don't understand all this right now, read chapter @pxref{configuration, ocp.ini} on how
+to configure OCP.
+
+@subsection Interpolation
+If the player still runs to slow you can disable the use of interpolation
+with software mixing. Look for the following line in the @pxref{configuration, [sound]}
+section of the configuration file:
+@example
+filter=1
+@end example
+and change it to:
+@example
+filter=0
+@end example
+
+Now the use of interpolation is disabled. You can enable the filters again
+in the player with @key{backspace}.
+
+@subsection still to slow?
+If you applied the above 4 tips and OCP is still running too slow, there's
+hardly anything left to tune. Remember that graphic modes are generally slower
+than text modes. And in text mode the analyzer uses most ressources. If you
+only display channels, instruments and track list there's almost no cpu
+consumption by visuals.
+
+If the player is still too slow your last chance is to lower the mixing /
+playing rate of the player. Locate the following line in the @pxref{configuration, [sound]}
+section of @file{ocp.ini}:
+@example
+mixrate=44100
+@end example
+Use the table @ref{player, mixingrate} as a guideline to set this value.
+
+@subsection mixingrate
+@multitable @columnfractions .2 .2
+@item 44100 @tab CD Quality
+@item 33000 @tab very close to CD
+@item 22050 @tab Radio Quality
+@item 11025 @tab Telefon Quality
+@item 8000 @tab
+@file{.au} Quality
+@end multitable
+
+While applying those patches please remember that modules with more channels
+will @emph{always} need more cpu power than those with few. If your Impulse
+Tracker modules (@file{.it}) always click and pop while old Amiga modules
+(@file{.mod}) play fine that's normal, because the modern trackers allow
+more than 4 channels.
+
+@section Key Reference
+@multitable @columnfractions .3 .7
+@item
+@key{ESC}
+@tab
+quit the player
+@item
+@key{F1}
+@tab
+help
+@item
+@key{F2}, @key{F3}
+@tab
+volume up/down
+@item
+@key{CTRL}+@{@key{F2}, @key{F3}@}
+@tab
+change amplification
+@item
+@key{ALT}+@key{F2}
+@tab
+@emph{save} current configuration
+@item
+@key{ALT}+@key{F3}
+@tab
+load previously saved configuration
+@item
+@key{F4}
+@tab
+surround on/off
+@item
+@key{ALT}+@key{F4}
+@tab
+load default configuration
+@item
+@key{F5}, @key{F6}
+@tab
+change panning
+@item
+@key{CTRL}+@{@key{F5}, @key{F6}@}
+@tab
+adjust reverb
+@item
+@key{F7}, @key{F8}
+@tab
+change balance
+@item
+@key{CTRL}+@{@key{F7}, @key{F8}@}
+@tab
+adjust chorus
+@item
+@key{F9}, @key{F10}
+@tab
+change speed
+@item
+@key{ALT}+@key{F9}
+@tab
+song message
+@item
+@key{F11}, @key{F12}
+@tab
+change pitch
+@item
+@key{F11}
+@tab
+toggle between 6581 and 8580 (sidplayer only)
+@item
+@key{F12}
+@tab
+toggle between PAL and NTSC (sidplayer only)
+@item
+@key{CTRL}+@key{F12}
+@tab
+(un)lock speed and pitch
+@item
+@key{1}..@key{0}
+@tab
+solo channel 1..10
+@item
+@key{ALT}+@key{1}..@key{0}
+@tab
+solo channel 11..20
+@item
+@key{CTRL}+@key{1}..@key{0}
+@tab
+solo channel 21..30
+@item
+@key{a}
+@tab
+textmode spectrum analyzer
+@item
+@key{ALT}+@key{a}
+@tab
+toggle analyzer mode
+@item
+@key{b}
+@tab
+phase graphs
+@item
+@key{c}
+@tab
+channel mode
+@item
+@key{d}
+@tab
+goto DOS
+@item
+@key{f}
+@tab
+goto fileselector
+@item
+@key{g}
+@tab
+graphic spectrum analyzer
+@item
+@key{SHIFT}+@key{g}
+@tab
+graphic spectrum analyzer in 1024x768
+@item
+@key{ALT}+@key{g}
+@tab
+toggle fast/fine algorithm
+@item
+@key{h}
+@tab
+help
+@item
+@key{i}
+@tab
+instrument mode
+@item
+@key{CTRL}+@key{i}
+@tab
+instrument mode colors on/off
+@item
+@key{ALT}+@key{i}
+@tab
+remove @emph{played} dots
+@item
+@key{CTRL}+@key{j}
+@tab
+same as @key{Enter}
+@item
+@key{CTRL}+@key{l}
+@tab
+song looping on/off
+@item
+@key{ALT}+@key{l}
+@tab
+pattern looping on/off
+@item
+@key{m}
+@tab
+volume control
+@item
+@key{CTRL}+@key{m}
+@tab
+same as @key{Enter}
+@item
+@key{n}
+@tab
+note dots
+@item
+@key{o}
+@tab
+oscilloscopes mode
+@item
+@key{ALT}+@key{o}
+@tab
+behaves like @key{Tab} in this mode
+@item
+@key{p}
+@tab
+pause
+@item
+@key{ALT}+@key{p}
+@tab
+pause screen
+@item
+@key{q}
+@tab
+quiet current channel
+@item
+@key{s}
+@tab
+solo current channel
+@item
+@key{t}
+@tab
+track/pattern mode
+@item
+@key{v}
+@tab
+peak power level mode
+@item
+@key{w}
+@tab
+wurfel mode
+@item
+@key{x}
+@tab
+eXtended mode
+@item
+@key{ALT}+@key{x}
+@tab
+normal mode
+@item
+@key{z}
+@tab
+toggle between 25/50 or 30/60 rows
+@item
+@key{CTRL}+@key{z}
+@tab
+change between 25/50 and 30/60 rows
+@item
+@key{ALT}+@key{z}
+@tab
+change between 80 and 132 column mode
+@item
+@key{Enter}
+@tab
+play next song in playlist
+@item
+@key{Space}
+@tab
+stop pattern mode flow
+@item
+@key{Pause}
+@tab
+pause screen output
+@item
+@key{Backspace}
+@tab
+toggle filter
+@item
+@key{Tab}
+@tab
+change option of the activated mode
+@item
+@key{'}
+@tab
+link view
+@c @item
+@c @key{°}
+@c @tab
+@c make screenshot
+@item
+@key{,}, @key{.}
+@tab
+fine panning
+@item
+@key{+}, @key{-}
+@tab
+fine volume
+@item
+@key{*}, @key{/}
+@tab
+fine balance
+@item
+@key{Right}, @key{Left}, @key{Up}, @key{Down}
+@tab
+change current channel
+@item
+@key{CTRL}+@key{Right}
+@tab
+skip the current pattern
+@item
+@key{CTRL}+@key{Left}
+@tab
+restart current pattern / goto previous pattern
+@item
+@key{CTRL}+@key{Down}
+@tab
+skip 8 rows
+@item
+@key{CTRL}+@key{Up}
+@tab
+skip -8 rows
+@item
+@key{Ins}
+@tab
+goto fileselector
+@item
+@key{Pgup}, @key{Pgdown}
+@tab
+scroll in current window
+@item
+@key{CTRL}+@{@key{Pgup}, @key{Pgdown}@}
+@tab
+scroll in instruments window (eXtended mode)
+@item
+@key{Home}, @key{End}
+@tab
+goto top/bottom of current window
+@item
+@key{CTRL}+@key{Home}
+@tab
+restart song
+@end multitable

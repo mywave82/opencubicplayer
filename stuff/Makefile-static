@@ -1,0 +1,28 @@
+ifeq ($(LINUX),1)
+LINUX_OBJ=stuff/poutput-vcsa.o stuff/poutput-fb.o
+LINUX_LIBS=$(ICONV_LIBS)
+endif
+
+# compat.so
+STATIC_OBJECTS += stuff/compat.o
+
+# framelock.so
+STATIC_OBJECTS += stuff/framelock.o
+
+# hardware.so
+STATIC_OBJECTS += stuff/timer.o stuff/irq.o stuff/hardware.o stuff/freq.o
+
+# sets.so
+STATIC_OBJECTS += stuff/sets.o
+
+# poutput.so
+STATIC_OBJECTS += stuff/console.o stuff/poutput-curses.o $(LINUX_OBJ) stuff/poutput-keyboard.o stuff/pfonts.o stuff/poutput.o
+STATIC_LIBS += $(LINUX_LIBS) -lncurses
+ifeq ($(HAVE_X11),1)
+STATIC_OBJECTS += stuff/poutput-x11.o stuff/x11-common.o
+STATIC_LIBS += $(X11_LIBS)
+endif
+ifeq ($(HAVE_SDL),1)
+STATIC_OBJECTS += stuff/poutput-sdl.o stuff/x11-common.o
+STATIC_LIBS += $(SDL_LIBS)
+endif

@@ -1,0 +1,102 @@
+WuerfelAnimator *PROFESSIONAL* ver 1.1á by Felix Domke
+
+(translation into english by KB, i tried to translate the original german
+ text as closely to the original as possible, so this weird style is NOT
+ mine, just in case you care ;)
+
+the WuerfelAnimator is THE tool to create OpenCP wuerfel mode animations.
+
+the absolutely genious features are:
+                - input format: PCX (no tga, tga sucks)
+                - palette optimization: the palette of all frames will be
+                  aligned to the first frame's palette.
+                - output format: 100% compatible to old OpenCP animations
+                  and new Wuerfel Mode 2.0 with hi-res (320x200) and frame
+                  rate control
+                - RLE compression on demand
+                - "strange frame optimization" which allows you creating
+                   delays without enlarging the animation
+the absolutely genious features, which are still missing, are:
+                - delta compression (never gave good results on me)
+                - start and loop frame (should be no problem to include, i
+                  was just too lazy and had no animation to test it out...)
+                - REAL palette optimization, actually, the first 16 colors
+                  are thrown away and replaced with other ones, but it makes
+                  more sense first finding 16 irrelevant colors (because
+                  unused or looking almost like another color).
+
+the WuerfelAnimator works with a script which has the following format:
+
+Version
+[StrangeFrameOptimization] RLECompression
+Title
+NumFrames Delay Filename
+NumFrames Delay Filename
+NumFrames Delay Filename
+...
+
+"Version" has to be 0 or 1, 0 is cpanim 1.0, 1 is cpanim 2.0, when using
+2.0-anims, the new wuerfel mode ][ has to be used ([KB] that is, openCP
+2.0q or higher ;). "StrangeFrameOptimization" is a nasty trick which enables
+using the same frame several times after each other without actually STORING
+it several times. Internally, the "framelen" value of the frame is simply
+set to 0 then, for a strange reason this works wonderfully.
+THIS VALUE HAS TO BE LEFT OUT WHEN CREATING 2.0 ANIMATIONS!
+"RLECompression" applies an RLE compression to the animation before
+saving ([KB] yes, really? ;). Sometimes this even has an effect, the file
+wouldn't get larger because of this, so it can be simply left on.
+"Title" is the max. 31 chars long title which is written in the anim file's
+header. I don't know if the title REALLY belongs there, but why not - the
+concerned 32 bytes were being set to 0 by makedmp.exe and skipped by openCP's
+anim reader.
+after this, a random number of "sections" follows.
+Each section consists of the number of frames, the delay between them and
+the file name.
+when using 2.0-animations the delay is some weird value, such like 65536/fps
+should work or stuff ([KB] EXACTLY!). when you state 3072 here, the anim
+will be as fast as an 1.0-"delay=1"-animation. So in case of doubt just
+state 3072 here and then look if it's too fast.
+This value mustn't go beyond 65535.
+The file name is supposed to contain some "%d"s or "%x"s, people not knowing
+C's "printf" command should better leave their fingers off this tool :)
+
+now a complete exampe for the lamers out there:
+
+0
+1 1
+cubic player sucks!
+11 2 intro%x.pcx
+200 1 ani%03d.pcx
+
+will create an animation of 200+10=210 frames, which are intro0.pcx to
+introa.pcx and then ani000.pcx up to ani199.pcx.
+Counting always starts with 0!
+
+another example for the anim2.0 mode:
+1
+1
+cubic player rocks!
+11 6000 intro%x.pcx
+200 3000 ani%03d.pcx
+
+wap then has to be called with "wap <script> <dest.dat>". I won't comment
+this further, if someone isn't able to do this, he's simply too dumb.
+
+btw: to correctly play them, the animations have to be called "CPANI001.DAT",
+"CPANI002.DAT" etc.
+CPANI000.DAT should better not be used, the chance of exactly this file being
+played is just too low.
+
+what's planned for the next version:
+
+                - delta compression
+                - start frame and loop frame
+                - real palette optimization
+                - input: FLC, maybe other bitmap formats
+
+
+err, yes, that was it.
+
+have fun with this useless tool!
+
+signing off, tmbinc

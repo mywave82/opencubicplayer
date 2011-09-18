@@ -1,0 +1,18 @@
+@node plugin
+@chapter Writing plugins
+@c Picture TODO is a schematic of the modules OCP is built
+@c from. It shows which parts of the player interact with each other.
+@c
+@c TODO picture here
+@c
+@c
+The capabilities of OCP can be extended by plugins. The type of
+plugin is not limited, so new graphics modes, file types and even
+enhanced players may be added by the user. As development for OCP is
+done using GNU C/C++, it is recommended to use this compiler for
+developing plugins aswell. We have not tested the plugin interface
+with other compilers.@footnote{This might change in the future.}
+
+As of UNIX version, we refer to the source-code and GNU tool-chain
+documentations when it comes to compiling and linking and to look at
+other plugins as templates for making new ones.

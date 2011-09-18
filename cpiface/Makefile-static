@@ -1,0 +1,10 @@
+GIF_O=
+ifeq ($(HAVE_LZW),1)
+GIF_O=cpiface/gif.o
+endif
+
+# cpiface.so
+STATIC_OBJECTS += cpiface/fft.o cpiface/cpianal.o cpiface/cpichan.o cpiface/cpidots.o cpiface/cpiface.o cpiface/cpigraph.o cpiface/cpiinst.o cpiface/cpikube.o cpiface/cpilinks.o cpiface/cpimsg.o cpiface/cpimvol.o cpiface/cpiphase.o cpiface/cpipic.o cpiface/cpiptype.o cpiface/cpiscope.o cpiface/cpitext.o cpiface/cpitrack.o cpiface/mcpedit.o $(GIF_O) cpiface/tga.o cpiface/volctrl.o
+
+# keyhelp.so
+STATIC_OBJECTS += cpiface/cpikeyhelp.o

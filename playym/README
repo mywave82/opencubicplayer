@@ -1,0 +1,51 @@
+STYMulator v0.2 - GNU/Linux player for Atari ST YM files.
+Copyright (c) 1995-2005 by Arnaud Carre
+Copyright (c) 2005-2006 by Grzegorz Tomasz Stanczyk
+Copyright (c) 2010 by Stian Skjelstad
+Project Home Page: http://stian.cubic.org/project-stymulator.php
+Old Project Home Page: http://atariarea.krap.pl/stymulator
+Old Old Project Home Page: http://leonard.oxg.free.fr/stsound.html
+
+
+ST-Sound (YM files player library)
+GNU/Linux port by Grzegorz Tomasz Stanczyk
+Fork/Maintainer by Stian Skjelstad
+
+
+Description:
+------------
+
+STYMulator is a free (under GNU GPL license - see gpl.txt) YM files music player with curses-based terminal interface for GNU/Linux. 
+It uses GNU/Linux port (stdoundlib directory) of the original ST-Sound GPL v1.2 library by Arnaud Carre (http://leonard.oxg.free.fr).
+
+
+Requirements:
+-------------
+
+1a. ALSA (Advanced Linux Sound Architecture) sound library (http://www.alsa-project.org)
+1b. OSS (Open Sound System)
+2. ncurses - a freeware implementation of the System V curses API (man ncurses if available)
+3. C/C++ compilator (GCC)
+
+STYMulator has been tested on Fedora Core 4, 5.
+
+Installation (compilation):
+---------------------------
+
+Go into src directory and do 'make' then (as root) 'make install' or su -c "make install".
+
+
+Usage:
+------
+
+To play music:			ymplayer <ym music file>
+To convert YM to WAV file:	ym2wav <ym music file> <output wav file>
+
+
+In the music directory you will find a few example YM tunes.
+Want more ? The one of the biggest YM music archive is ready to download from http://pacidemo.atarizone.com (YM tunes section)
+
+Contact (bugs & ideas):
+-----------------------
+
+e-mail: linuxdevelop@wp.pl or gstanczyk@mail.atr.bydgoszcz.pl

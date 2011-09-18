@@ -1,0 +1,31 @@
+@node support
+@chapter Support
+The official internet homepage of OCP can be found under:
+@url{http://www.cubic.org/player}
+
+Please send any suggestions and bug reports via electronic mail to Tammo
+Hinrichs @url{opencp@@gmx.net} and comments about this documentation to Dirk Jagdmann
+@url{doj@@cubic.org}.
+
+If you encountered a bug in OCP please send
+a detailed bug report to Tammo Hinrichs. Many people complain about music
+files not being played properly (especially with module formats). Please keep
+in mind that the original tracking/sequencing program is @emph{always} the
+reference for correct playback. If a music file sound different compared to
+another player, please keep in mind that perhaps the other program does not
+play it correct. This is especially true for Amiga 4channel modules. As those
+files can be produced using various trackers (Noise-, Sound-, Protracker and
+many, many more) and sadly all of those trackers play slightly different, a
+general player like OCP can not play @emph{all} modules correctly. We try to
+emulate the behaviour of ProTracker 1.1b, so that most modules are
+played correctly. However certain features of one tracker permit another
+feature of a different player.
+
+@section The Team
+Currently the core team of OCP devolopers consists of 5 people:
+
+Tammo Hinrichs - main coder & ruler
+Felix Domke - coder
+Fabian Giesen - coder
+Dirk Jagdmann - generic support, this and that
+Stian Skjelstad - unix port

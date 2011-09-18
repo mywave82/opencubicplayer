@@ -1,0 +1,2702 @@
+.Contents OpenCP 2.6.0 integrated hypertext help
+~[OpenCP 2.6.0 integrated hypertext help]~
+~[Dirk Jagdmann - Tammo Hinrichs]~
+~[documentation v2.6.0]~
+
+[OpenCP help browser & documentation conversion by F. Giesen]
+
+    ~Using help~
+
+  Using help should be easy. Scrolling/selecting links is both accomplished with
+~<>~ and ~<>~, you follow links by pressing ~<Space>~. Links are ^03cyan^07, selected ones
+are ^04red^07. And if you want to scroll pagewise, try ~<PgUp>~ and ~<PgDown>~.
+
+  There are also some pages you may jump to directly with ~<Alt>~+~<Key>~ combi-
+nations. They are:
+
+  Contents Page    ~<Alt>~+~<C>~
+  Index page       ~<Alt>~+~<I>~
+  License page     ~<Alt>~+~<L>~
+
+  If you want to quit help, please use one of the keys you activate it with,
+~<H>~, ~<?>~, or ~<F1>~.
+
+    ~Contents~
+
+  ÚÄÄ {Forew,Foreword}
+  ÃÄÂ {Instfile,Installation and Files}
+  ³ ÀÄÄÄÄ {TPPlugins,Third party plugins}
+  ÃÄÄ {StartOCP,Starting OpenCP}
+  ÃÄÂ {Filesel,Fileselector}
+  ³ ÀÄÂÄÄ {FSelMainSC,Main screen}
+  ³   ÃÄÄ {FSelUse,Usage of the fileselector}
+  ³   ÃÄÄ {FSelUseAdv,Advanced usage}
+  ³   ÀÄÄ {FSelRef,Reference}
+  ÃÄÂ {Player,Player}
+  ³ ÀÄÂÄÄ {PlayerGen,General}
+  ³   ÃÄÄ {PlayerQuick,Quickhelp}
+  ³   ÃÄÄ {PlayerGlob,Global functions}
+  ³   ÃÄÂ {PlayerText,Text mode functions}
+  ³   ³ ÀÄÂÄÄ {TXMChan,Channels}
+  ³   ³   ÃÄÄ {TXMInsts,Instruments}
+  ³   ³   ÃÄÄ {TXMPatts,Pattern view}
+  ³   ³   ÃÄÄ {TXMAnalyze,Spectrum Analyzer}
+  ³   ³   ÃÄÄ {TXMPeak,peak power levels}
+  ³   ³   ÃÄÄ {TXMMsg,Module message}
+  ³   ³   ÀÄÄ {TXMX,eXtended mode}
+  ³   ÃÄÂ {PlayerGraph,Graphic mode functions}
+  ³   ³ ÀÄÂÄÄ {GRMScopes,Oscilloscopes}
+  ³   ³   ÃÄÄ {GRMDots,Note dots}
+  ³   ³   ÃÄÄ {GRMAnalyze,Graphical Spectrum Analyzer}
+  ³   ³   ÃÄÄ {GRMPhase,Phase Graphs}
+  ³   ³   ÀÄÄ {GRMCube,Wuerfel mode}
+  ³   ÃÄÄ {UsingDW,Using the diskwriter}
+  ³   ÃÄÄ {UsingCM,Using the Compo mode}
+  ³   ÀÄÄ {MidiFile,MIDI Files}
+  ÃÄÂ {Config,Configuration}
+  ³ ÀÄÂÄÄ {ConfigGen,general}
+  ³   ÃÄÄ {ConfigDef,defaultconfig}
+  ³   ÃÄÄ {ConfigSound,sound}
+  ³   ÃÄÄ {ConfigScreen,screen}
+  ³   ÃÄÄ {CFilesel,fileselector}
+  ³   ÃÄÂ {ConfigDev,device configuration}
+  ³   ³ ÀÄÂÄÄ {DevCSB,Sound Blaster}
+  ³   ³   ÃÄÄ {DevCEWS,Terratec EWS}
+  ³   ³   ÃÄÄ {DevCWSS,Windows Sound System}
+  ³   ³   ÃÄÄ {DevCGUS,Gravis Ultrasound}
+  ³   ³   ÃÄÄ {DevCDWR,Diskwriter}
+  ³   ³   ÃÄÄ {DevCMPX,MPx writer}
+  ³   ³   ÀÄÄ {DevCMix,software mixers}
+  ³   ÃÄÄ {CArcs,archivers}
+  ³   ÀÄÄ {CFTypes,filetypes}
+  ÃÄÄ {WritePlug,Writing plugins}
+  ÃÄÄ {Thanks,Thanks}
+  ÃÄÄ {License,License}
+  ÀÄÄ {AboutDoc,About this document}
+
+~[OpenCP v2.6.0 documentation - written by Dirk Jagdmann & Tammo Hinrichs]~
+.Index Index
+[Help index]
+
+    ~A~
+
+  {AboutDoc,About this document}
+  {CArcs,archivers (Configuration)}
+
+    ~B~
+
+    ~C~
+
+  {Config,Configuration}
+    {ConfigGen,Configuration: general}
+    {ConfigDef,Configuration: defaultconfig}
+    {ConfigSound,Configuration: sound}
+    {ConfigScreen,Configuration: screen}
+    {CFilesel,Configuration: fileselector}
+    {ConfigDev,Configuration: device configuration}
+    {CArcs,Configuration: archivers}
+    {CFTypes,Configuration: filetypes}
+  {Contents,Contents}
+  {UsingCM,Compo Mode, using the}
+
+    ~D~
+
+  {UsingDW,Diskwriter, Using the}
+  {ConfigDef,Default configuration}
+  {ConfigDev,Device configuration}
+    {DevCSB,Device configuration: Sound Blaster}
+    {DevCEWS,Device configuration: Terratec EWS}
+    {DevCWSS,Device configuration: Windows Sound System}
+    {DevCGUS,Device configuration: Gravis Ultrasound}
+    {DevCDWR,Device configuration: Diskwriter}
+    {DevCMPX,Device configuration: MPx writer}
+    {DevCMix,Device configuration: Software mixers}
+
+    ~E~
+
+    ~F~
+
+  {Instfile,Files, Installation and}
+  {MidiFile,Files, MIDI}
+  {Filesel,Fileselector}
+    {FSelMainSC,Fileselector: Main screen}
+    {FSelUse,Fileselector: Usage}
+    {FSelUseAdv,Fileselector: Advanced usage}
+    {FSelRef,Fileselector: Reference}
+    {CFilesel,Configuration: Fileselector}
+  {CFTypes,Filetypes}
+  {Forew,Foreword}
+
+    ~G~
+
+  {ConfigGen,general (configuration)}
+  {PlayerGen,General (player)}
+  {PlayerGlob,Global functions (player)}
+  {PlayerGraph,Graphic mode functions}
+    {GRMScopes,Graphic mode functions: Oscilloscopes}
+    {GRMDots,Graphic mode functions: Note dots}
+    {GRMAnalyze,Graphic mode functions: Graphic spectrum analyzer}
+    {GRMPhase,Graphic mode functions: Phase graphs}
+    {GRMCube,Graphic mode functions: Wuerfel mode}
+  {GRMAnalyze,Graphic spectrum analyzer (Graphic mode functions)}
+  {DevCGUS,Gravis Ultrasound (Configuration)}
+
+    ~H~
+
+    ~I~
+
+  {Instfile,Installation and Files}
+  {TXMInts,Instruments (Text mode functions)}
+
+    ~J~
+
+    ~K~
+
+    ~L~
+
+  {License,License}
+
+    ~M~
+
+  {FSelMainSC,Main screen (Fileselector)}
+  {MidiFile,MIDI Files}
+  {DevCMix,mixers, Software (Device configuration)}
+  {DevCMPx,MPx writer (Device configuration)}
+
+    ~N~
+
+  {GRMDots,Note dots (Graphic mode functions)}
+
+    ~O~
+
+  {GRMScopes,Oscilloscopes (Graphic mode functions)}
+
+    ~P~
+
+  {TXMPatts,Pattern view (Text mode functions)}
+  {TXMPeak,peak power levels (Text mode functions)}
+  {GRMPhase,Phase graphs (Graphic mode functions)}
+  {Player,Player}
+    {PlayerGen,Player: General}
+    {PlayerGlob,Player: Global functions}
+    {PlayerText,Player: Text mode functions}
+    {PlayerGraph,Player: Graphic mode functions}
+    {UsingDW,Player: Using the diskwriter}
+    {UsingCM,Player: Using the Compo mode}
+    {MidiFile,Player: MIDI Files}
+  {TPPlugins,Plugins, third party}
+  {WritePlug,Plugins, writing}
+
+    ~Q~
+
+    ~R~
+
+  {FSelRef,Reference (fileselector)}
+
+    ~S~
+
+  {ConfigScreen,screen (Configuration)}
+  {DevCMix,Software mixers (Device configuration)}
+  {DevCSB,Sound Blaster (Device Configuration)}
+  {ConfigSound,sound (Configuration)}
+  {TXMAnalyzer,Spectrum analyzer (Text mode functions)}
+  {StartOCP,Starting OpenCP}
+
+    ~T~
+
+  {PlayerText,Text mode functions (Player)}
+    {TXMChan,Channels (Text mode functions)}
+    {TXMInsts,Instruments (Text mode functions)}
+    {TXMPatts,Pattern view (Text mode functions)}
+    {TXMAnalyze,Spectrum analyzer (Text mode functions)}
+    {TXMPeak,peak power levels (Text mode functions)}
+    {TXMMsg,Module message (Text mode functions)}
+    {TXMX,eXtended mode (Text mode functions)}
+  {Thanks,Thanks}
+  {TPPlugins,Third party plugins}
+
+    ~U~
+
+    ~V~
+
+    ~W~
+
+  {DevCWSS,Windows Sound System (Device configuration)}
+  {WritePlug,Writing Plugins}
+
+    ~X~
+
+    ~Y~
+
+    ~Z~
+
+.Forew Foreword
+[Foreword]
+
+  OpenCP is a music file player. It is derived from the Cubic Player 2.0appe
+which was developed by Niklas Beisert. Currently Tammo Hinrichs is maintaining
+OpenCP with help from Dirk Jagdmann and various other people. And a a new unix
+fork has started to take form by Stian Skjelstad.
+
+  OpenCP is published under the GNU General Public License (GPL). That means
+you can use this software free for personal use only. The source code is
+available to the public and everybody is encouraged to make changes to it.
+Please send any modifications and bugfixes to the authors. The authors do
+not take any warranty for any damages whatever kind produced by this software.
+For further details see the file "COPYING.TXT".
+
+  Official versions of OpenCP can be downloaded from our website,
+http://www.cubic.org/player.
+
+  Currently MS-DOS and Windows 95 are supported operating systems. A Linux
+version is planned for the future. A graphical GUI when running under Windows
+is in development too. Perhaps in the far future OpenCP can be ported to
+standard C++ code to compile well under all native Unix environments. If you
+are an experienced developer and would like to help us porting or improving
+this software please contact the authors.
+
+  ~Bugs~: If you encountered a bug in OpenCP please send a detailed bug report
+to Tammo Hinrichs. Many people complain about music files not being played
+properly (especially with module formats). Please keep in mind that the
+original tracking/sequencing program is ~always~ the reference for correct
+playback. If a music file sounds different compiled to another player, please
+keep in mind that perhaps the other program does not play it correct. This is
+espicially true for Amiga 4channel modules. As those files can be produced
+using various trackers (Noise-, Sound-, Protracker and many, many more) and
+sadly all of those trackers are slighty different, a general player like OpenCP
+can not play ~all~ modules correctly. We try to come as close to a reasonable
+mixture of them all, so that most modules are played correctly. However certain
+features of one tracker permit another feature of a different tracker.
+
+e-Mail contacts: Niklas Beisert        nbeisert@physik.tu-muenchen.de
+                 Tammo Hinrichs        kb@nwn.de
+                 Dirk Jagdmann         doj@cubic.org
+                 Stian Skjelstad       stian@nixia.no
+
+  {Contents,...but now please bring me back to contents}
+.Instfile Installation and Files
+[Installation and Files]
+
+  OpenCP needs no special install procedure. Simply copy all the files you
+found inside the archive into one directory. If you like you can add this
+directory to you path statement. Example:
+
+  Install OpenCP into "C:\\OpenCP" by typing:
+
+  ~C:~
+  ~CD \\~
+  ~MD OpenCP~
+  ~CD OpenCP~
+  ~PKUNZIP -D C:\\<theRightDirectory>OpenCP~
+
+  Then you can modify your AUTOEXEC.BAT and add the new directory to the
+path statement. The new path might look like
+
+  ~PATH C:\\WINDOWS;C:\\WINDOWS\\COMMAND;C:\\OpenCP~
+
+  The following files are (at least) required to start OpenCP:
+
+  ~cp.exe~         the startup file used to start the OpenCP runtime system
+  ~cp.ini~         the initialization file read by cp.exe to configure itself
+  ~cp.pak~         the DLL library where all modules are stored
+
+  As OpenCP is a Watcom program it normally needs the DOS4GW extender to use
+protected mode. But DOS4GW has some minor bugs and is a huge program. The
+file ~CPLAUNCH.EXE~ is an alternative dos extender started automatically by
+OpenCP. You should include this file in the directory too.
+
+  When OpenCP loads a module the information stored inside the file is read
+and stored in a special file (the ~module information cache~). Actually the
+cache splits up into three files:
+
+  ~cparcs.dat~     Information about archives and files stored inside
+  ~cpmdztag.dat~   ?
+  ~cpmodnfo.dat~   Informations about various modules
+
+  If you delete these files all file information gathered is permanently
+lost.
+
+  If you install third party plugins they will be located in the main directory
+too and included into the OpenCP runtime system at startup.
+
+  The "DOC" directory contains documentation files in various formats and
+release notes etc. You can safely delete this directory if you are running
+out of disk space.
+
+  ~Footnotes:~
+
+  It is possible to use DOS4GW instead of CPLAUNCH. Simply type "DOS4GW CP.EXE"
+at the command prompt or delete the file "CPLAUNCH.EXE".
+
+  {Contents,Back to contents page}
+.TPPlugins Third party plugins
+[Third party plugins]
+
+  If you want to use a plugin simply copy it inside the home directory. OpenCP
+will search the home directory for plugins each time it starts. If the plugin
+is valid and compatible with the player it will be loaded and its features
+enabled.
+
+  {Contents,Get back to contents}
+.StartOCP Starting OpenCP
+[Starting OpenCP]
+
+  After starting OpenCP from the command line the dos extender is loaded. By
+default OpenCP looks for a file "CPLAUNCH.EXE" in the home directory. If it
+can not find this file it will look for "DOS4GW.EXE" in all directories
+included in the path statement. When none of these files are found OpenCP
+exits with the error message "could not execute: No such file or directory".
+
+  OpenCP then tries to detect the sound cards defined in the "CP.INI" file.
+If the card is not found you can not use it. If more than one sound card is
+installed and found by OpenCP the first one listed in the "CP.INI" is used
+as the default device.
+
+  By entering a filename as parameter onto the command line you can load a
+module. If one file is given the module will be loaded and OpenCP starts with
+the player.
+
+  When the parameter is the name of a directory the fileselector starts with
+the given directory. If the parameter equals a certain archive all files
+found inside the archive will be played (by adding them to the playlist).
+
+  If more than one parameter is given a playlist will be set up, containing
+all found files. You can mix filenames of archives, files in archives and
+normal files on the hard disk.
+
+  You normally don't have to supply the right file extensions, as they are
+guessed by the fileselector. If the filename is not complete the file will not
+be processed (unlike the quickfind function).
+
+  OpenCP can be configured using the command line, although the configuration
+through the "CP.INI" file is more comfortable. The options split up into three
+main sections each starting with "-" followed by a letter. For each section
+different options are given, which will configure the player accordingly. You
+can precede each option with the section prefix every time or supply multiple
+options seperated with ",". Some special options do not require the use of a
+sections prefix, like the ~help~ switch.
+
+  The command line looks like:
+  cp [prefix option[,option]] [specialOption] [filename]
+
+  Special options include:
+
+  -h           show a help screen
+  -m           use a monochrome graphics card (hercules or mda). Useful when
+               starting under Windows.
+  -c<name>     use a configuration defined in "CP.INI"
+
+  Fileselector options are envoked with ~-f~. The values in square brackets
+define a choice that must be made when using one of these options.
+
+  r[0|1]       remove played files from module list
+  o[0|1]       don't scramble module list order
+  l[0|1]       loop modules
+
+  Playback options are preceded by ~-v~. Values in sharp brackets define a range
+in which the value must be taken.
+
+  a<0..800>    set amplification
+  v<0..100>    set volume
+  b<-100..100> set balance
+  p<-100..100> set panning
+  r<-100..100> set reverb
+  c<-100..100> set chorus
+  s[0|1]       set surround
+  f[0|1|2]     set filter (0=off, 1=AOI, 2=FOI)
+
+  Device settings are accomplished with the suffix ~-s~.
+
+  p<name>      use specific player device
+  s<name>      use specific sampler device
+  w<name>      use specific wavetable device
+  r<0..64000>  sample at specific rate
+  8            play/sample/mix as 8bit
+  m            play/sample/mix as mono
+
+  Finally an example to illustrate the above features:
+
+  cp -fl0,r1 -va80,p50,f2 -spdevdisk -sr44100 ftstar.xm
+
+  This will start OpenCP and load the file "FTSTAR.XM". The music will be
+played once and will not loop (-fl0,r1). Further the player is advised to
+amplify this file with 80%, set the panning to 50% and interpolate every
+sample (-va80,p50,f2). The mixed output will be saved into .WAV format through
+the ~diskwriter~ device (-spdevdisk) with a sample rate of 44.1kHz (-sr44100).
+
+  You can curn this .WAV file directly onto a CD-Audio and play it with every
+normal CD-Player. A much simpler and more convinient way to make such a ~sample~
+~image~ out of a module is by using predifined configurations with the -c
+switch. Have a look at the section {UsingDW,Using the diskwriter}.
+
+  {Contents,Up to the top!}
+.Filesel Fileselector
+[Fileselector]
+
+  If OpenCP is started without any command line arguments the fileselector will
+be loaded. With this powerful tool you can browse through modules and set up
+playlists to be processed by the player. If you switch to the player the
+selected files will be loaded and processed.
+
+  Files can be stored inside compressed archives to save space on the hard disk.
+Those files are automatically unpacked to a temporary directory before scanning/
+loading. If you have many modules you should use this feature, as storing
+modules inside archives is totally transparent when using the fileselector.
+
+    ~This section contains...~
+
+  - {FSelMainSC,Main screen}
+  - {FSelUse,Usage of the fileselector}
+  - {FSelUseAdv,Advanced usage}
+  - {FSelRef,Reference}
+
+  {Contents,Back to contents}
+.FSelMainSC Fileselector: main screen
+[Main screen]
+
+  The fileselector splits into three main windows: directory list, playlist
+and module information as shown in figure 3.1.
+
+  Figure 3.1: the fileselector screen
+
+  <...insert screenshot here...>
+
+  The path windows shows the current path and file mask. If you started OpenCP
+from the home directory you will get the following: ~C:\\OPENCP\\*.*~ means that
+the current directory is ~OPENCP~ on your ~C~ harddrive and all files are shown
+(~*.*~). You can edit the path and the mask by pressing ~<Alt>+<Enter>~. After
+editing the path press <Enter> to change to the appropriate directory. You can
+edit the file mask to include only some files.
+
+  "C:\\*.mod" will change to the root directory of hard disk ~C~ and show all
+files ending with ~.mod~. The default setting should be the current directory
+with a file mask ~*.*~ to show all files.
+
+  The most important window is the directory list. Here you can see all files
+in the current directory. If the extension is known to OpenCP the file
+information will be shown in different colours depending on the file type.
+Files not known to OpenCP will be shown in standard grey.
+
+  At the most left side the file name provided by the operating system is
+shown. The extension ~.???~ will specify the file type. (Note: by now OpenCP
+has not checked if the file is ~really~ of that type. It is just assumed). If
+you try to load a file with an extension that is not appropriate to the
+filetype OpenCP will show an error message. The next row shows the title of the
+file if the file type includes a title. In the third row the number of channels
+is displayed. Finally rightmost the filesize is shown in bytes. If the module
+is included in a ZIP archive the ~real~ file size is displayed.
+
+  Right to the directory list you can see the play list. All files listed in
+this window will be played, after you changed into the player. Entries in this
+window are normally sorted alphabetically. So the order in this window must not
+be the order in which files are loaded / played in the player.
+
+  The window at the bottom is the module information. Many music format can
+store general which is displayed here. If the file type does not support those
+information you can edit the fields inside this window manually and OpenCP will
+store the information for you.
+
+  Finally at the very bottom is the quick find feature, which lets you easily
+find files in the current directory.
+
+  Goto next topic: "{FSelUse,Usage of the fileselector}"
+
+  {Filesel,Back to "Fileselector"}
+  {Contents,Back to Contents}
+.FSelUse Usage of the fileselector
+[Usage of the fileselector]
+
+  The directory list shows you all files in the current directory which fit to
+the file mask set in the path window. Under the alphabetically sorted files the
+directories and drives are shown. Note: ~@:~ is a special drive which lets you
+configure OpenCP without editing the ~CP.INI~ file.
+
+  Use ~<>~ and ~<>~ keys to browse through the files. If you press ~<Enter>~ the
+selected file will be loaded and played with the player. Pressing ~<Enter>~ while
+selecting a directory or drive will switch to the selected item and the
+directory will be read. ~<PgUp>~, ~<PgDown>~, ~<Home>~ and ~<End>~ will work as
+expected.
+
+  If a module is played and you are in the player ~<F>~ will beam you to the
+fileselector. When you have edited a playlist after playing the last song the
+fileselector will be started automatically. You can always leave the file-
+selector by pressing <Esc> twice! If no module is playing the program will
+exit, while you will get back to the player if a module is played in the back-
+ground.
+
+  Playlists are shown in the playlist window at the right side of the screen.
+The currently selected file is appended to the playlist by pressing ~<ÄÄ>~ or
+~<Ins>~. ~<ÄÄ>~ or ~<Del>~ will remove it again. You can insert files multiple
+times into the playlist by pressing the appropriate keys more than once. If
+you have files in the playlist exit the fileselector by pressing ~<Esc>~! This
+might sound confusing in the beginning, but you will notice the logic very
+soon. In the player you start the next song in the Playlist by pressing
+~<Enter>~.
+
+  Normally you will start the fileselector from the player by pressing ~<F>~.
+The current module will continue playing in the background. After you have
+selected a file you have two choices:
+
+  - ~<Enter>~ will stop the currently playing module and load the selected one.
+    Then you will get back to the player. Use this key if you want to play the
+    selected module immiediatly.
+  - ~<Esc>~ will change to the player. Then you can start the next songs in the
+    playlist by pressing ~<Enter>~. So you should insert the selected files
+    into the playlist.
+
+  All files in the current directory will be inserted into the playlist by
+pressing ~<Ctrl>~+~<ÄÄ>~ or ~<Ctrl>~+~<Ins>~. The playlist will be deleted by
+pressing ~<Ctrl>~+~<ÄÄ>~ or ~<Ctrl>~+~<Del>~.
+
+  Although in the playlist window only the filename is shown, OpenCP stores
+the complete path information. So you can insert files into the playlist from
+totally different directories and drives. If files are inserted into the play-
+list you can change to the playlist window by pressing ~<Tab>~. Inside the
+playlist window all keys have full functionality. So you can load the selected
+module immiediatly by pressing ~<Enter>~ or remove the list by pressing ~<ÄÄ>~.
+If you are in the playlist window you can move the currently selected file by
+pressing ~<Ctrl>~+~<>~ and ~<Ctrl>~+~<>~. This will affect the order in which
+files are processed. ~<Ctrl>~+~\{<PgUp>, <PgDown>, <Home>, <End>\}~ work as expected.
+
+  If many files are inside a directory selecting a module by the cursor keys can
+be annoying, because it takes a long time to browse through the list. If you
+know the filename you can start typing it on the keyboard. This enables the
+quickfind feature. Characters already typed are shown in the quickfind window.
+The current directory is searched for files matching the typed characters. Often
+you don't have to type the complete filename, as it can be already determined by
+the leading chars.
+
+  At the bottom of the screen the fileinformation window is located. If the
+file includes any additional information it will be shown at the appropriate
+fields. You can edit each entry manually. (Note: all module information is read
+by the fileselector once if it runs along this module the first time. The data
+is stored in three files located in your home directory of OpenCP refered as the
+~module information cache~. If the fileselector scans a directory and finds a
+directory which has not been processed by the fileselector it may take some
+minutes to read all file information out of the files and store them in the
+module information cache).
+
+  To switch to the module information window press ~<Shift>~+~<Tab>~. You can
+use the cursor keys to select the entries. After pressing ~<Enter>~ the
+information can be edited. When pressing ~<Enter>~ again the changes are stored
+in the module information cache. Note: ~Do not change the entry "type" as the
+file could not be loaded properly when the wrong filetype is entered! Normally
+you never have to change this entry, except for old 15 instruments amiga
+noisetracker modules!~
+
+  Goto previous topic: "{FSelMainSC,Main screen}"
+  Goto next topic: "{FSelUseAdv,Advanced usage}"
+
+  {Filesel,Back to "Fileselector"}
+  {Contents,Back to Contents}
+.FSelUseAdv Fileselector: Advanced usage
+[Advanced Usage]
+
+  The appearance and behaviour of the fileselector can be edited in the ~CP.INI~
+(see also: {Config,Configuration}) file or by pressing ~<Alt>~+~<C>~. Changes made to the
+~CP.INI~ are permanently, while configuration applied with ~<Alt>~+~<C>~ is only
+valid while OpenCP is running.
+
+  After pressing ~<Alt>~+~<C>~ you can toggle 13 options with keys <1>..<9> and
+<A>...<D>. The following list will explain every option:
+
+  1 - ~screen mode:~ you can change the screen mode for the fileselector. 80x25
+      and 80x50 are standard screen modes and should be available on every VGA
+      card. 80x30, 80x60, 132x25, 132x30, 132x50 and 132x60 are only available
+      with a proper VESA BIOS installed.
+  2 - ~scramble module list order:~ if this option is enabled the files inside
+      the playlist will be played in random order. Otherwise the order shown in
+      the fileselector from top to bottom will be used.
+  3 - ~remove modules from playlist when played:~ normally you will want this
+      enabled as modules are only played once. If you disable this option your
+      playlist can be processed forever.
+  4 - ~loop modules:~ if the music file ends it will start again. The next file
+      will be played after pressing ~<Enter>~. If you turn off this option the
+      playlist will play all modules without any user interaction.
+  5 - ~scan module information:~ When entering a directory the files are process-
+      ed to gather module information which can be shown. If you disable this
+      option directories will be processed quicker.
+  6 - ~scan module information files:~ the module information cache in the home
+      directory of OpenCP will be read if this option is enabled.
+  7 - ~scan archive contents:~ to save hard disk space you can store your files
+      inside archives like .ARJ or .ZIP. If the fileselector finds an archive it
+      will open it to scan for files.
+  8 - ~scan module information in archives:~ if modules are found inside archives
+      they will be decrunched to find any module information. This option can
+      take several minutes if many modules are stored in archives.
+  9 - ~save module information to disk:~ toggles wether to save gathered info
+      in the module information cache.
+  A - ~edit window:~ If you don't want the module information window at the
+      bottom disable this option. The directory and playlist windows will
+      stretch over the complete screen.
+  B - ~module type colours:~ different file types are shown in different colours
+      on the screen. When watched on monochrome monitors or laptops you might
+      want to disable this option.
+  C - ~module information display mode:~ changes the contents of the directory
+      window. You can also use ~<Alt>~+\{~<I>~,~<Tab>~\} inside the fileselector.
+  D - ~put archives:~ Show archives, so they can be accessed like directories.
+      Normally this should be disabled if archives are scanned automatically.
+
+  The screen size can be changed by pressing ~<Alt>~+~<Z>~. In 132 columns mode
+some additional module information can be shown in the directory window. If the
+fileselector is busy scanning the directory for files, you can interrupt the
+scanning with ~<Alt>~+~<S>~.
+
+  You can delete a file with ~<Alt>~+~<K>~. You will be prompted if you really want
+to delete this file. When pressing ~<Y>~ the file will be deleted. If the file is
+stored inside an archive the file will be deleted from the archive. (Note: If
+only one file was stored inside a ~.ZIP~ archive PKZIP will leave an empty archive
+of 22 bytes on you harddisk. See section {Config,Configuration} on how to avoid this).
+The current file can be moved by ~<Alt>~+~<m>~. You will have to type the new path
+in the path window into which the file will be moved. If the file is inside an
+archive it will be extracted. You can specify an existing ~.ARJ~ file and the file
+will be packed into the archive.
+
+  The module information shown in the module information window can be saved to
+a portable ASCII file. You may want this feature if you are a composer of music
+and want to trade your music together with already processed module information
+files. Start the fileselector and edit the information for the file. Then switch
+back to the directory window and press ~<Alt>~+~<W>~. The fileselector will save
+a file with the extension ~.MDZ~ and the filename of the selected file, which
+stores all module information seen in the module information window. If a
+directory is scanned and the fileselector finds such ~.MDZ~ files they will be
+read and processed. The module information for all files in the current
+directory can be saved with ~<Alt>~+~<A>~. You have to type the filename manually
+in the path window without extension!
+
+  You may want to change the entry ~type~ in the module information window if you
+have old amiga modules or a non-standard MIDI file. Very old Noise- and Sound-
+Tracker modules only had 15 instruments and no file identification. So the file-
+selector is not able to detect those files and refuses to play them. You have to
+insert ~M15~ in the ~type~ entry. If the module does not differ between tempo and
+speed and is one of the 15 instrument type insert ~M15t~. Some ProTracker modules
+do not differ between tempo and speed to. If you have one of those modules use
+~MODt~. A module player for PC called DMP introduced a feature called panning. To
+enable this (non-standard) feature insert ~MODd~. If you want to play MIDI files
+with a second drum track on channel 16 use the ~MIDd~ option. Any other files
+should be autodetected correctly. (If you have renamed a module to a different
+extension, say ~hello.mod~ to ~hello.s3m~, OpenCP will refuse to play it, because
+the file type is wrong. You could correct this by inserting the right file type
+in the module information as shown above. But it is better to rename the file to
+the right extension than tweaking the autodetection of the player.
+
+  The current playlist can be saved into .PLS format by pressing ~<Alt>~+~<p>~. You
+have to type the filename without extension in the path window. A standard
+extension ~.PLS~ is appended. The playlist can be loaded just like any other
+module from the fileselector or at startup.
+
+  The drive ~@:~ is a special device which can be used to change the hardware
+configuration without leaving the player. If you access this drive you will see
+two subdirectories.
+
+  In the ~INPUTS~ subdirectory you can choose the device which will be used when
+sampling form external sources (when playing CD audio tracks or starting OpenCP
+in sample mode). The ~DEVICES~ directory displays all devices which were detected
+at startup. Normally you might want to change this if you want to save the next
+file as a ~.WAV~ or ~.MP3~ file to the harddisk. If you have a soundcard with
+hardware mixing support (Gravis, AWE, EWS) you can disable softwaremixing.
+
+  If you are the lucky owner of a soundcard capable of hardware sample playing
+you only have limited sample memory. If the sample data of the music is larger
+than the available RAM OpenCP will try to reduce the sample size by applying the
+following steps:
+
+  1. Convert 16bit to 8bit samples. This is indicated by a "!" in the bit entry
+     of the instrument section.
+  2. Half the size of an 8bit sample. This is shown by a small «.
+  3. Quarter the size of an 8bit sample, indicated by a ¬.
+
+  Before ~downsampling~ the sample data OpenCP will search for the sample with
+the lowest frequency spectrum. This sample will be converted first. If enough
+space is freed up OpenCP will stop downsampling. If not the loader will continue
+until the sample data fits into the sound card memory.
+
+  The above behaviour can be avoided if a file is marked as ~big~ by pressing
+~<Alt>~+~<B>~ in the fileselector. The filesize will turn red. Now a file will
+not be loaded into the soundcard memory, but played with the internal mixing
+routines. This limits the size of files only to the size of physical memory.
+
+  Goto previous topic: "{FSelUse,Usage of the fileselector}"
+  Goto next topic: "{FSelRef,Reference}"
+
+  {Filesel,Back to "Fileselector"}
+  {Contents,Back to Contents}
+.FSelRef Fileselector: Reference
+[Reference]
+
+  ~<a>~..~<z>~                  quickfind
+  ~<>~,~<>~                   move cursor one entry up/down
+  ~<PgUp>~,~<PgDown>~           move cursor one page up/down
+  ~<Home>~,~<End>~              move cursor to top/bottom of the list
+  ~<ÄÄ>~,~<Ins>~               add file to playlist
+  ~<ÄÄ>~,~<Del>~               remove file to playlist
+  ~<Ctrl>~+\{~<ÄÄ>~,~<Ins>~\}      add all files to playlist
+  ~<Ctrl>~+\{~<ÄÄ>~,~<Del>~\}      clear playlist
+  ~<Ctrl>~+\{~<>~,~<>~\}          move module up/down in playlist
+  ~<Ctrl>~+\{~<PgUp>~,~<PgDown>~\}  move module one page up/down in playlist
+  ~<Ctrl>~+\{~<Home>~,~<End>~\}     move module to top/bottom of playlist
+  ~<Alt>~+~<C>~                 configure fileselector
+  ~<Alt>~+~<Z>~                 toggle screen mode
+  ~<Alt>~+~<S>~                 stop scanning module information
+  ~<Alt>~+~<W>~                 write module information ~.MDZ~ for selected file
+  ~<Alt>~+~<K>~                 delete file
+  ~<Alt>~+\{~<I>~,~<Tab>~\}         change display mode for directory window
+  ~<Enter>~                   play selected file
+                            change to directory/archive driver
+                            edit entry (in module info window)
+  ~<Alt>~+~<Enter>~             edit path window
+  ~<Tab>~                     change between directory and playlist
+  ~<Shift>~+~<Tab>~             change to module info window
+  ~<Esc>~                     exit fileselector
+
+  Supported filetypes - valid options for the ~type~ entry in the module
+information window.
+
+  ~669~        669 Composer module
+  ~AMS~        Velvet studio module
+  ~BPA~        Death Rallye archive
+  ~CDA~        compact disk CD audio track
+  ~DMF~        X Tracker module
+  ~IT~         Impulse Tracker module
+  ~MID~        standard MIDI file
+  ~MIDd~       standard MIDI file, channel 16 is a second drum track
+  ~MOD~        amiga ProTracker 1.1b module
+  ~MODt~       amiga ProTracker 1.1b module, effect Fxx is tempo
+  ~MODd~       amiga ProTracker 1.1b module, effect 8xx is panning
+  ~MODf~       PC FastTracker II .MOD file
+  ~M15~        amiga NoiseTracker module with 15 instruments
+  ~M15t~       amiga NoiseTracker module with 15 instruments, effect Fxx is tempo
+  ~MP3~        MPEG audio format level 1-3
+  ~MTM~        Multi Tracker module
+  ~MXM~        MXMPlay module
+  ~OKT~        Oktalyzer module
+  ~PLS~        OpenCP playlist (also works with M3U and PLT playlist files)
+  ~PTM~        Poly Tracker module
+  ~S3M~        Scream Tracker III module
+  ~SID~        PSID SID file
+  ~UMX~        Unreal module file
+  ~ULT~        Ultra Tracker module
+  ~WAV~        Microsoft RIFF wave file
+  ~WOW~        WOW Tracker module
+  ~XM~         FastTracker II module
+
+  Goto previous topic: "{FSelUseAdv,Advanced Usage}"
+
+  {Filesel,Back to "Fileselector"}
+  {Contents,Back to Contents}
+.Player player
+[Player]
+
+  When OpenCP is started with a valid filename the file is loaded and the player
+interface is started. This is the main part of OpenCP and you have various ways
+to display all kinds of music information and data.
+
+  Figure 4.1: screen layout in the player
+
+  (wait for next version of helpfile if you want screenshots...)
+
+    ~This section contains...~
+
+  - {PlayerGen,General}
+  - {PlayerGlob,Global functions}
+  - {PlayerText,Text mode functions}
+    - {TXMChan,Channels}
+    - {TXMInsts,Instruments}
+    - {TXMPatts,Pattern view}
+    - {TXMAnalyze,Spectrum analyzer}
+    - {TXMPeak,peak power levels}
+    - {TXMMsg,Module message}
+    - {TXMX,eXtended mode}
+  - {PlayerGraphic,Graphic mode functions}
+    - {GRMScopes,Oscilloscopes}
+    - {GRMDots,Note dots}
+    - {GRMAnalyze,Graphical spectrum analyzer}
+    - {GRMPhase,Phase graphs}
+    - {GRMCube,Wuerfel mode}
+  - {UsingDW,Using the diskwriter}
+  - {UsingCM,Using the Compo mode}
+  - {MidiFile,MIDI files}
+
+  {Contents,Back to Contents}
+.PlayerGen Player: General
+[General]
+
+  OpenCP display general (status) information in the first 4 rows. Some of these
+entries can be changed by the user, others are static for each module. The
+following list will explain every entry.
+
+  ~vol~      The bar displays the current playback volume. The default value is
+           100 and you can change it by pressing ~<+>~/~<->~ on the numeric keypad.
+  ~srnd~     Toggle this option with ~<F4>~ to enable a simple surround effect.
+  ~pan~      If a voice should be played on the right speaker you can rearrange
+           the stereo panning with this entry and ~<F5>~,~<F6>~. To get mono sound
+           adjust the two ~riders~ to the middle.
+  ~bal~      Just like the device on your stereo this option works. Press ~<F7>~,
+           ~<F8>~ to adjust the stereo balance between full left and full right.
+  ~spd~      The playback speed can be changed with ~<F9>~,~<F10>~.
+  ~ptch~     The pitch of the file can be altered with ~<F11>~,~<F12>~.
+  ~row~      Most files of module type are devided into rows and patterns.
+  ~row~      Most files of module type are device into rows and patterns. The
+           1st number shows the currently played row. The 2nd number shows the
+           total number of rows in the current pattern. All numbers are shown
+           in hexadecimal format.
+  ~ord~      Modules are devided into several orders consisting of patterns.
+           The 1st number shows the currently played order. The 2nd number
+           shows the total count of orders.
+  ~tempo~    the current tempo of the file.
+  ~bpm~      These are not the physical beats per minute, but rather the speed
+           at which the file is played (only valid for module types). This
+           option is often refered by Trackers as BPM.
+  ~gvol~     Some file formats allow a global volume to be set.
+  ~amp~      This option lets you adjust an amplification. You can adjust this
+           value with ~<Ctrl>~+\{~<F2>~,~<F3>~\}.
+  ~filter~   You can selected different types of interpolation by pressing
+           ~<BackSp>~:
+
+           ~off~ - no interpolation.
+           ~AOI~ - OpenCP tries to determine if interpolation is really
+                 necessary for each note and sample independently. This is the
+                 default option and should be enabled.
+           ~FOI~ - every sample is always interpolated. This option uses more
+                 processor power than AOI.
+  ~module~   shows the filename currently played and the title of the file.
+  ~time~     time since starting the current file.
+
+  Goto next page: "{PlayerQuick,Quickhelp}"
+
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.PlayerQuick Player: Quickhelp
+[Player: Quickhelp]
+
+You can use all these keys throughout the player except in special modes.
+
+  ^0f-^07 ^0fMode^07 ^0fKeys^07 ^0f-^07                                 ^0f-^07 ^0fVolume^07 ^0fKeys^07 ^0f-^07
+^0fi^07 : instruments                                     ^0fF1^07 : help                   
+^0ft^07 : track view                                 ^0fF2^07 , ^0fF3^07 : change volume (^0f+^07,^0f-^07)    
+^0fa^07 : textmode analyser                         c^0fF2^07 ,c^0fF3^07 : change amplification   
+^0fx^07 : xtended mode (i,t,a&c)                          ^0fF4^07 : surround sound         
+^0fo^07 : scopes                                     ^0fF5^07 , ^0fF6^07 : change panning (^0f,^07;^0f.^07)   
+^0fg^07 : graphic analyser (shift-^0fg^07 for big gsa)     ^0fF7^07 , ^0fF8^07 : change balance (^0f/^07,^0f*^07)   
+^0fn^07 : note dots                                  ^0fF9^07 , ^0fF10^07: change speed           
+^0fw^07 : wuerfel mode                               ^0fF11^07, ^0fF12^07: change pitch          
+^0fm^07 : song message                                     ^0f\\^07 : lock pitch+speed       
+^0fh^07 : help                                        alt-^0fF2^07 : save settings (session 
+^0ff^07 : file-selector                               alt-^0fF3^07 : reset settings    only)
+^0fe^07 : echo menu / editor                          alt-^0fF4^07 : "factory defaults"     
+                                              ^0fbackspace^07: toggle interpolation   
+  ^0f-^07 ^0fModule^07 ^0fKeys^07 ^0f-^07                              ctrl-^0f<-^07 : change filter          
+     ^0f>^07   : next pattern                                                         
+     ^0f<^07   : previous pattern                        ^0f-^07 ^0fChannel^07 ^0fKeys^07 ^0f-^07             
+ctrl-^0f^07   : go 8 rows up                         ^0f^07, ^0f^07 : select previous channel  
+ctrl-^0f^07   : go 8 rows down                       ^0f\d^07, ^0f^07 : select next channel      
+ctrl-^0fhome^07: restart module                       ^0f1^07..^0f0^07 : goto and toggle channel  
+                                           ctrl-^0f1^07..^0f0^07 : goto and solo channel
+  ^0f-^07 ^0fPlayer^07 ^0fKeys^07 ^0f-^07                                  ^0fq^07 : toggle selected channel  
+(c-)^0freturn^07 : play next module (fadeout)            ^0fs^07 : solo selected channl     
+  (ctrl-)^0fp^07 : pause module (immediate)       ctrl-^0fq^07/^0fs^07 : turn on all channels     
+  (ctrl-)^0fd^07 : dos-shell (no reminder)               ^0fc^07 : toggle channel mode      
+   ^0fesc^07 ^0fesc^07 : e-s-c-a-p-e                               (none/short/long/side)   
+    ^0fins^07, ^0ff^07 : file-selector                                                      
+         ^0fe^07 : echo menu / editor                                                 
+         ^0fz^07 : tog. scr. hgt. (25/50)                                             
+    ctrl-^0fz^07 : tog. scr. hgt. (25/30)                                             
+     alt-^0fz^07 : tog. scr. wid. (80/132)                                            
+     alt-^0fx^07 : norm. scr. mode (80*25)                                            
+         ^0fx^07 : xtended scr. mode (132*60)                                         
+                                                                                
+^0bInstrument^07 ^0bMode:^07  ^0b<i>^07                                                           
+=====================                                                           
+                                                                                
+     ^0fi^07 - toggle instrument mode  (none / short / full / \[side\])                 
+  ^0fpgup^07 - scroll up                         ctrl-^0fpgup^07 - scroll up fast
+  ^0fpgdn^07 - scroll down                       ctrl-^0fpgdn^07 - scroll down fast         
+  ^0fhome^07 - go to the top                         alt-^0fi^07 - clear instrument flags   
+   ^0ftab^07 - toggle show played instruments                                         
+                                                                                
+^0bPattern^07 ^0bView:^07  ^0b<t>^07                                                              
+==================                                                              
+                                                                                
+       ^0fspace^07 - toggle track mode (follow / manual)                              
+ctrl-^0fpgup^07/^0fdn^07 - scroll instruments (for multiview)                               
+        ^0fhome^07 - optimum channel number for current module                        
+                                                                                
+in follow mode:                                                                 
+      ^0fpgup^07/^0fup^07 - change channel number / detail level                            
+          ^0ftab^07 - toggle between notes only and notes & fx                        
+                                                                                
+in manual mode:                                                                 
+      ^0fpgup^07/^0fup^07 - scroll pattern                                                  
+  sh-^0ftab^07, ^0ftab^07 - change channel number / detail level
+                                                                                
+                             ^0f-^07 ^0fChannel^07 ^0fEffects^07 ^0f-^07                                
+ ^0aC-4^07 ^0a-^07 ^0aporta^07 ^0ato^07 ^0anote^07           ^09v??^07 ^09-^07 ^09set^07 ^09volume^07          ^05p??^07 ^05-^07 ^05set^07 ^05panning^07      
+ ^02??^07 ^02-^07 ^02pitch^07 ^02slide^07             ^09??^07 ^09-^07 ^09volume^07 ^09slide^07        ^05??^07 ^05-^07 ^05panning^07 ^05slide^07    
+ ^02ñ??^07 ^02-^07 ^02row^07 ^02pitch^07 ^02slide^07         ^09ñ??^07 ^09-^07 ^09row^07 ^09vol^07 ^09slide^07                              
+ ^02\r??^07 ^02-^07 ^02porta^07 ^02to^07 ^02note^07                                                            
+ ^02\~??^07 ^02-^07 ^02vibrato^07                 ^09\~??^07 ^09-^07 ^09tremolo^07             ^05\~??^07 ^05-^07 ^05panning^07 ^05vibrato^07  
+ ^02\~\d?^07 ^02-^07 ^02vibrato^07 ^02speed^07                                                            
+ ^02\~=?^07 ^02-^07 ^02vibrato^07 ^02waveform^07        ^09\~=?^07 ^09-^07 ^09tremolo^07 ^09waveform^07                           
+ ^02ð??^07 ^02-^07 ^02arpeggio^07                ^09Ú??^07 ^09-^07 ^09tremor^07              ^05><^07 ^05-^07 ^05Surround^07 ^05Sound^07   
+                                                                                
+ ^0fC-4^07 ^0f-^07 ^0fplay^07 ^0fnote^07               ^04d??^07 ^04-^07 ^04delay^07                                      
+ i?? - set instrument          ^04??^07 ^04-^07 ^04retrigger^07                                  
+ off - key off                 ^04\d??^07 ^04-^07 ^04sample^07 ^04offset^07                              
+ \d?? - set envelope position   ^04\^??^07 ^04-^07 ^04note^07 ^04cut^07                                   
+                                                                                
+                                                                                
+                              ^0f-^07 ^0fGlobal^07 ^0fEffects^07 ^0f-^07                                
+ ^02t??^07 ^02-^07 ^02set^07 ^02tempo^07               ^09v??^07 ^09-^07 ^09global^07 ^09volume^07       ^04??^07 ^04-^07 ^04break^07 ^04pattern^07
+ ^02s??^07 ^02-^07 ^02set^07 ^02bpm^07                 ^09??^07 ^09-^07 ^09global^07 ^09vol^07 ^09slide^07    ^04\d??^07 ^04-^07 ^04goto^07 ^04pattern^07     
+                                                         ^04pl?^07 ^04-^07 ^04pattern^07 ^04loop^07     
+                                                         ^04pd?^07 ^04-^07 ^04pattern^07 ^04delay^07    
+                                                                                
+^0bText^07 ^0bMode^07 ^0bSpectrum^07 ^0bAnalyser:^07  ^0b<a>^07                                               
+=================================                                               
+                                                                                
+      ^0ftab^07 - toggle analyser's colors                                            
+        ^0fa^07 - toggle channel mode (mixed output / single channel)                 
+     ^0fhome^07 - set maximum frequency range to appoximately 2500Hz                  
+  ^0fpgup^07/^0fdn^07 - change visible frequency range                                      
+c-^0fpgup^07/^0fdn^07 - scroll instruments (for multiview)                                  
+                                                                                
+^0bGraphic^07 ^0bSpectrum^07 ^0bAnalyser:^07  ^0b<g>^07                                                 
+===============================                                                 
+
+        ^0fg^07 - toggle channel mode (stereo / mono / single channel)                
+  shift-^0fg^07 - toggle screen mode (640*480 / 1024*768)                             
+    alt-^0fg^07 - toggle resolution (fast / fine)                                     
+  ^0fpgup^07/^0fdn^07 - change visible frequency range                                      
+     ^0fhome^07 - set maximum frequency to approximately 3000Hz                       
+      ^0ftab^07 - set next palette                                                    
+  alt-^0ftab^07 - set previous palette                                                
+shift-^0ftab^07 - set normal analysers palette                                        
+                                                                                
+^0bScopes:^07  ^0b<o>^07                                                                    
+============                                                                    
+                                                                                
+           ^0fo^07 - toggle mode (all / single scope)                                 
+  ^0ftab^07, alt-^0fo^07 - toggle triggered scopes                                          
+     ^0fpgup^07/^0fdn^07 - stretch / squeeze scope output                                   
+                                                                                
+^0bNote^07 ^0bDots:^07 ^0b<n>^07                                                                  
+==============                                                                  
+                                                                                
+           ^0fn^07 - toggle mode (dots/bars/s.cones/s.dots)                           
+         ^0fpg^07 - slide range                                                      
+    ctrl-^0fpg^07 - slide scale                                                      
+        ^0fhome^07 - reset range and scale                                            
+
+  Goto previous page: "{PlayerGen,General}"
+  Goto next page: "{PlayerGlob,Global functions}"
+
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.PlayerGlob Player: Global functions
+[Global functions]
+
+  Below the general information is a dark grey line. On the left side of the
+line the current screen mode is shown. In the middle is a list of channels. Each
+file type has a maximum number of channels played simultaeniously. For example
+simple file formats as ~.WAV~ can only have one or two channels (corresponding to
+a mono or stereo sample). An audio CD always has 2 channels (left and right).
+Module file types can have many channels typically ranging from 4 to 32
+channels.
+
+  The currently selected channel is displayed in light grey. To select another
+channel use ~<ÄÄ>~, ~<ÄÄ>~. You can also use ~<>~, ~<>~ which will loop through the
+channels if the left or right end is reached.
+
+  Pressing ~<Q>~ will ~quiet~ the selected channel. This key is valid in every part
+of the player. To enable the channel press ~<Q>~ a second time. The reverse logic
+can be accomplished with ~<S>~. This disables all other channels than the
+selected one, so this channel plays solo. Another hit on ~<S>~ will ~unsolo~ the
+channel again, so playing all channels. You can use any combination of the above
+keys. An example: Select channel 1 and press ~<S>~. Now you will hear only channel
+1. Now select channel 3 with the cursor keys and press ~<Q>~. As the channel
+currently is turned off, it will be played again, so you hear channels 1 and 3.
+Then switch to channel 2 and press ~<S>~. Now only channel 2 is played, channels
+1 and 3 are turned off again. By pressing ~<S>~ again all channels are enabled.
+
+  You can directly ~solo~ the first channels by pressing keys ~<1>~..~<0>~. This
+will act as if you had changed to the appropriate channel and pressed ~<S>~.
+Channels 11-20 are accessed throught ~<Alt>~+\{~<1>~..~<0>~\}.
+
+  To pause playback press ~<P>~.
+
+  The current file can be restarted by pressing ~<Ctrl>~+~<Home>~. To move a bit
+forward use ~<Ctrl>~+~<ÄÄ>~. If a module is played this will skip the current
+order and start playing the next one. In other file types this command skips a
+certain amount of time, depending on the estimated playing time. ~<Ctrl>~+~<ÄÄ>~
+will rewind the music. This is not possible for all file types (MIDI or SID
+files). When playing modules the current order is skipped and the previous one
+is played from the beginning. To skip a smaller amout of the file use ~<Ctrl>~+~<>~
+and ~<Ctrl>~+~<>~. This will skip 8 rows when playing modules. If the files
+support jump or loop commands using these functions can lead you to patterns not
+included in the original play order! Be aware that using these functions can
+lead to somewhat crashed files.
+
+  The next file in the playlist can be loaded with ~<Enter>~. If no more files are
+left in the playlist the fileselector will be started so you can choose the next
+files. However the current module will continue playing. By pressing ~<Esc>~ you
+can switch back to the player again. The fileselector can also be invoked with
+~<F>~. The current playlist is shown and can be edited. When exiting the file-
+selector with ~<Esc>~ you can load the next module in the playlist with ~<Enter>~.
+Leaving the fileselector with ~<Enter>~ will load the currently selected module
+and switch back to the player.
+
+  By default a module is looped after its end was reached. You can change this
+behaviour by configuring the fileselector or with ~<Ctrl>~+~<L>~. When looping
+is disabled the next module in the playlist will be loaded once a module has
+ended. If no modules are left in the playlist the fileselector is started.
+
+  A DOS-Shell will be started when typing ~<D>~. Note that OpenCP uses about 200KB
+of conventional DOS memory so not all programs might start or execute properly.
+However it should be enough to do simple tasks like copying, deleting etc. When
+running under Windows95 the free amount of memory should be the usual size.
+
+  The screen mode can be changed by pressing ~<Z>~. This will toggle between 25
+and 50 rows textmode, while ~<Ctrl>~+~<Z>~ toggles between 30 and 60 rows textmode.
+~<Alt>~+~<Z>~ will toggle between 80 and 132 column mode.
+
+  The current configuration can be "saved" with ~<Alt>~+~<F2>~. It is not stored
+permanently on hard disk, but only valid until OpenCP is quit. Normally the
+default configuration is loaded every time a new file is played. This function
+makes the current configuration the new default configuration. A previously
+saved configuration can be loaded with ~<Alt>~+~<F3>~. The ~real~ default values are
+loaded with ~<Alt>~+~<F4>~. To modify the default values permanently you have to
+change the ~CP.INI~ file as explained on page "{Config,Configuration}".
+
+  If the ~diskwriter~ device has been prepared you can manually start the harddisk
+sampling by pressing ~<Alt>~+~<S>~. See "{Config,Configuration}" for details on configuring
+OpenCP.
+
+  An online help is shown by ~<H>~, ~<?>~, ~<F1>~ or ~<!>~. You're currently
+reading it. ~Note~: The ~<!>~ key was introduced in this help browser because
+at the moment I'm writing this the browser only is a plugin. The standard help
+is registered first and so will be processed first, so I had to add a new key.
+
+  Users of SoundBlaster AWE, Terratec EWS or Gravis Ultrasound can use
+~<Ctrl>~+~<F5>~ and ~<Ctrl>~+~<F6>~ to adjust the onboard reverb effect. The SBAWE
+can also add a chorus effect which is controlled via ~<Ctrl>~+~<F7>~ and
+~<Ctrl>~+~<F8>~.
+
+  Goto previous page: "{PlayerQuick,Quickhelp}"
+  Goto next page: "{PlayerText,Text mode functions}"
+
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.PlayerText Player: Text mode functions
+[Text mode functions]
+
+  The player has two different operating modes. Text mode and graphics mode. In
+text mode you can enable various functions at once, while in graphics mode only
+one single function can be shown.
+
+  Because there can be more than one text mode function visible at the same time
+you might have to press the according key more than once to get the wanted
+effect. Each function can be in one of the following states:
+
+  - invisible/inactive
+  - invisible/active
+  - visible/inactive
+  - visible/active
+
+  When pressing a key the according function is made active, but left invisible.
+By pressing the same key a second time the function will be made visible. An
+active function can be recognized by their title string displayed in bright
+blue, while inactive functions have their title string displayed in dark blue.
+Keys affecting the functions are only processed for the currently active mode.
+So it might be necessary to change to the appropriate mode by pressing its key
+once to manipulate its behaviour.
+
+  The textmode functions divide the screen into fields shown in figure 4.2.
+
+  Figure 4.2: screen arrangements in 80 and 132 column text mode
+  <as all screenshots or screenshot-like things this is not ready yet...>
+
+  In the 132 column mode only one of the instruments* and channels* field is
+active and used by the appropriate function. If a function is not visible the
+space is used by the other visible functions.
+
+    ~This section contains...~
+
+  - {TXMChan,Channels}
+  - {TXMInsts,Instruments}
+  - {TXMPatts,Pattern view}
+  - {TXMAnalyze,Spectrum analyzer}
+  - {TXMPeak,peak power levels}
+  - {TXMMsg,Module message}
+  - {TXMX,eXtended mode}
+
+  Goto previous page: "{PlayerGlob,Global functions}"
+  Goto next page: "{PlayerGraph,Graphic mode functions}"
+
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.TXMChan Player: Text mode functions: Channels
+[Channels text mode function]
+
+  The channel function is invoked with ~<C>~. The channels appear in two different
+modes. By default the short mode is enabled. Two channels are shown in one row.
+A grey number shows the selected channel. Left to it a white number shows the
+currently played instrument/sample on this channel followed by the note. If the
+note starts to play it is displayed in cyan for a short while. The third number
+shows the current volume at which the instrument/sample is played. Behind the
+volume the current effect is shown. At the rightmost of each entry the current
+real (physical) volume splitted among left and right output channel is displayed
+in a bar graph.
+
+  The currently selected channel is indicated by a small white "~>~" to the left
+side of the channel number. When a channel is muted with ~<S>~ or ~<Q>~ it is shown
+in dark grey. However OpenCP continues to play this channel, so that the music
+sounds correctly when turning on this channel again.
+
+  When pressing ~<C>~ twice the channel function switches to the long format. Each
+channel now uses a single row as more information is being displayed. From left
+to right this is as follows: channel number, instrument/sample name, current
+note, instrument/sample volume, pan position, current volume.
+
+  If the textmode is changed to 132 column mode the channel function can be
+displayed in short form at the upper right corner of the free space as shown in
+figure 4.2.
+
+  If there are more channels than space inside the screen area OpenCP will
+scroll automatically through the channel list when you use the cursor keys. This
+is indicated by white ~~ and ~~ characters.
+
+  The channel function has no title string which could indicate if it is active
+or inactive. So you might have to press ~<C>~ one time more often if the channel
+function was previously inactive.
+
+  Goto next mode: "{TXMInsts,Instruments}"
+
+  {PlayerText,Back to "Text mode functions"}
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.TXMInsts Player: Text mode functions: Instruments
+[Instruments text mode function]
+
+  If the current file is of module file type (or MIDI) the used instruments/
+samples are shown with the instruments function. The instruments are shown
+with ~<I>~. Just like channels instruments come in two formats, short and long.
+
+  In the short view only the instrument names are shown giving you space for two
+instruments for row in 80 column mode (4 instruments are shown in 132 column
+mode). An instrument/sample that is currently played is shown in bright cyan. If
+the sample is played on the currently selected channel it is shown in bright
+green. All inactive instruments are drawn dark grey. If a sample has been
+played once a rectangular dot is placed left to the instrument number.
+
+  When the instruments are switched to long mode various information is
+displayed. From left to right this is as follows:
+
+  - a number from 00h to FFh giving the instrument number
+  - instrument name
+  - sample number (when using multiple samples per instrument)
+  - sample name (only in 132 column mode)
+  - length of the sample in bytes
+  - length of the loop in bytes
+  - bits per sample
+  - the base note. For modules the default is ~C-4~
+  - finetune value
+  - standard volume at which the sample is played.
+  - standard pan position
+  - various flags (volume, pan envelopes etc.)
+  - fadeout value (only in 132 column mode)
+
+  Often a file includes more instruments than can be shown on the screen. Use
+~<PgUp>~, ~<PgDown>~ to scroll through the instruments. If the instrument function
+is active ~<Ctrl>~+\{~<PgUp>~, ~<PgDown>~\} will scroll for a complete page. When
+inactive you can scroll single lines by using ~<Ctrl>~+\{~<PgUp>~, ~<PgDown>~\}. This is
+very useful if you have enabled more than one textmode function.
+
+  The instrument flags (the rectangular dots left to the instrument number) are
+cleared with ~<Alt>~+~<I>~. By pressing ~<Tab>~ you can toggle between the colour
+mode and pure grey.
+
+  Goto previous mode: "{TXMChan,Channels}"
+  Goto next mode: "{TXMPatts,Pattern view}"
+
+  {PlayerText,Back to "Text mode functions"}
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.TXMPatts Player: Text mode functions: Pattern view
+[Pattern view text mode function]
+
+  Modules are arranged in patterns. You can view these patterns with the pattern
+view function invoked with ~<T>~. When enabling this function OpenCP tries to
+display all channels at once using the best display possible. For modules using
+few channels (<8) this default display is acceptable, but you might want to
+change it when playing modules with many channels.
+
+  The pattern is shown in different columns. At the leftmost the row number is
+shown in hex. If the screen mode and pattern view allows the row number is shown
+again at the right side of the screen. Then follow some fields for global
+commands the module might contain. The biggest section of the screen is used by
+the channel columns, each one displaying a single channel indicated by the
+number on top of the column. Inside such a channel column various information
+can be displayed depending on the amount of space available. You can see the
+format of a channel column in the status line of the pattern view. The format of
+the column can be changed by pressing ~<Tab>~. As there are many combinations of
+screen mode, channels and formats I will not go into detail here.
+
+  The number of channel rows displayed at once can be changed by pressing
+~<PgUp>~, ~<PgDown>~. Normally the pattern view will follow as it progresses. With
+~<Space>~ the pattern view will stop. The current play position is now displayed
+with a white ~~ char. You can now browse through the module with ~<PgUp>~,
+~<PgDown>~. ~<Space>~ will enable the follow mode again, bringing the pattern
+view to the current play position.
+
+  The pattern view displays the different effects used in modules with different
+colours. Green is used for effects affecting the pitch of the sample while blue
+commands change the volume. Effects drawn in purple change the pan position. Red
+colours indicate the manipulation of the timeslice effected with this samples.
+Other effects are drawn white. (In the HTML documentation there now follows an
+reference to the online help, but, unfortunately, this list is not included at
+the moment... wait for next version of help where also screenshots will be
+included).
+
+  Goto previous mode: "{TXMInsts,Instruments}"
+  Goto next mode: "{TXMAnalyze,Spectrum Analyzer}"
+
+  {PlayerText,Back to "Text mode functions"}
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.TXMAnalyze Player: Text mode functions: Spectrum Analyzer
+[Spectrum Analyzer text mode function]
+
+  The spectrum analyzer uses the fast fourier transform (FFT) to gather infor-
+mation on the audio spectrum used in sample data. The analyzer is started with
+~<A>~. This function splits the sound data into many ~bands~ of pure sine waves.
+This is called the spectrum of the sample.
+
+  The status bar of this function shows you the range each bar covers and the
+highest frequency processed (the leftmost bar corresponds to this frequency).
+Use ~<PgUp>~, ~<PgDown>~ to change the range. ~<Home>~ will set the default value
+of 2756 Hertz.
+
+  With ~<Alt>~+~<A>~ the mode of the spectrum function can be toggled. Stereo using
+two analyzers, mono using only one and a solo mode are available. In the solo
+mode the currently selected channel is used as sound source for the analyzer.
+
+  ~<Tab>~ changes the colour used for the analyzer.
+
+  To get a smooth view the default charset of the graphics adapter is modified.
+This is working fine with every graphics card working under MS-DOS. However
+Windows 95 does not allow the manipulation of characters, so the spectrum
+analyzer function is not shown properly when running under Windows 95. If you
+see a distorted screen while using the spectrum analyzer function under Windows
+95 this is normal.
+
+  Goto previous mode: "{TXMPatts,Pattern view}"
+  Goto next mode: "{TXMPeak,peak power levels}"
+
+  {PlayerText,Back to "Text mode functions"}
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.TXMPeak Player: Text mode functions: peak power levels
+[peak power levels text mode function]
+
+  This function shows the current physical volume of the output channels in a
+bar graph. You can use ~<V>~ to make this function visible/invisible. In 132
+columns mode the levels can also be shown at the right side of the screen.
+
+  Goto previous mode: "{TXMAnalyze,Spectrum analyzer}"
+  Goto next mode: "{TXMMsg,Module message}"
+
+  {PlayerText,Back to "Text mode functions"}
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.TXMMsg Player: Text mode functions: Module message
+[Module message text mode function]
+
+  Some file types store messages which can be viewed with ~<M>~, ~<Alt>~+~<F9>~ or
+~|~. If the message is long use ~<PgUp>~,~<PgDown>~ to scroll.
+
+  Goto previous mode: "{TXMPeak,peak power levels}"
+  Goto next mode: "{TXMX,eXtended mode}"
+
+  {PlayerText,Back to "Text mode functions"}
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.TXMX Player: Text mode functions: eXtended mode
+[eXtended mode text mode function]
+
+  All four text mode functions can be displayed simultaneously. This function
+enables channel, instrument, spectrum analyzer and pattern view function with
+a good preset in text mode. ~<X>~ will enable 132 column mode. ~<Alt>~+~<X>~ will
+switch to the default 80x25 mode with channel and instrument functions enabled.
+
+  Goto previous mode: "{TXMMsg,Module message}"
+
+  {PlayerText,Back to "Text mode functions"}
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.PlayerGraph Player: Graphic mode functions
+[Graphic mode functions]
+
+  The default graphics mode is 640x480x256. Only one graphics mode function can
+be shown simultaneously. The screen therefore splits into the general window at
+the top side showing the usual information and the function window covering the
+rest of the screen. When running under Windows 95 the graphics mode can not be
+displayed in a window. So there may be excessive mode switches if you switch
+between graphics and textmodes, because windows will try to display the textmode
+screen in a window. Use the full screen option of Windows 95 by pressing
+~<Alt>~+~<Enter>~.
+
+  If you have included a background picture in the ~CP.INI~ it will be shown
+in the graphics modes (except the graphical spectrum analyzer and Wuerfel
+mode).
+
+    ~This section contains...~
+
+  - {GRMScopes,Oscilloscopes}
+  - {GRMDots,Note dots}
+  - {GRMAnalyze,Graphical spectrum analyzer}
+  - {GRMPhase,Phase graphs}
+  - {GRMCube,Wuerfel mode}
+
+  Goto previous page: "{PlayerText,Text mode functions}"
+  Goto next page: "{UsingDW,Using the diskwriter}"
+
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.GRMScopes Player: Graphic mode functions: Oscilloscopes
+[Oscilloscopes graphic mode function]
+
+  The oscilloscopes are started with ~<O>~ and come in 4 different modes:
+logical (the channels are sorted with the default panning position), physical
+(channels 1 to n from top to bottom), master (the mixed output channel(s)) and
+single (the currently selected channel is shown).
+
+  By pressing ~<Tab>~ you can enable/disable triggering of the scopes. If the
+output is triggered a wave on the screen always starts with the upper halfwave.
+If triggering is turned off the wave will be drawn from the current position.
+
+  The scale of the scopes can be altered with ~<PgUp>~, ~<PgDown>~.
+
+  Goto next mode: "{GRMDots,Note dots}"
+
+  {PlayerGraph,Back to "Graphic mode functions"}
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.GRMDots Player: Graphic mode functions: Note dots
+[Note dots graphic mode function]
+
+  ~<N>~ starts the note dots function. Each channel is displayed on a horizontal
+row. The current note is represented by a dot or a bar. Low notes are placed on
+the left side. High notes appear on the right side of the screen. By pressing
+~<PgUp>~, ~<PgDown>~ the scale of the rows can be changed. However the default
+scale fits the usual note scale of modules exactly, so there should be no need
+to change.
+
+  By pressing ~<N>~ you can alter the output appearance of the dots. In the modes
+~stereo note cones~ and ~stereo note dots~ the current pan position is indicated by
+the left/right half of the icon.
+
+  Goto previous mode: "{GRMScopes,Oscilloscopes}"
+  Goto next mode: "{GRMAnalyze,Graphical spectrum analyzer}"
+
+  {PlayerGraph,Back to "Graphic mode functions"}
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.GRMAnalyze Player: Graphic mode functions: Graphical spectrum analyzer
+[Graphical spectrum analyzer graphic mode function]
+
+  The graphical spectrum function works in two video modes. By pressing ~<G>~ you
+will see the standard 640x480 mode. ~<Shift>~+~<G>~ will start the spectrum in
+1024x768 mode. Apart from this difference the two video modes are equal.
+
+  Pressing ~<G>~ more than once will toggle between the usual stereo, mono and
+single channel mode for calculating and showing the spectrum. ~<PgUp>~ and
+~<PgDown>~ adjust the frequency range. ~<Home>~ will set the frequency to 2756 Hz.
+To half the resolution (and so speed up the calculation) press ~<Alt>~+~<G>~.
+
+  ~<Tab>~ changes the palette of the graphical spectrum. ~<Shift>~+~<Tab>~ will do the
+same for the standard spectrum analyzer at the bottom.
+
+  If you have difficulties interpreting this function here is a short expla-
+nation: The standard spectrum analyzer at the bottom shows you the current
+frequency spectrum. The higher a single bar, the louder the frequency. Now
+imagine looking at this spectrum from top, so every bar becomes a single dot.
+The height of the bar is now coded with different colours (from black  low to
+yellow  high). Now we can draw these points along the screen and see the
+spectrum as it progresses over time. This is somewhat a "3D" view of the
+spectrum, with the frequency coded along the y-axis, intensity coded in
+different colours and the time along the x-axis.
+
+  Goto previous mode: "{GRMDots,Note dots}"
+  Goto next mode: "{GRMPhase,Phase graphs}"
+
+  {PlayerGraph,Back to "Graphic mode functions"}
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.GRMPhase Player: Graphic mode functions: Phase graphs
+[Phase graphs graphic mode function]
+
+  The last graphical function is started with ~<B>~. You can toggle between four
+modes which refer exactly to those in the oscilloscope mode. This function
+displays the currently played samples in a phase graph. One full wave of the
+sample is drawn over the complete angle of a circle. The louder the sample the
+greater the radius of the circle. A sine sample would correspond to a normal
+circle.
+
+  Goto previous mode: "{GRMAnalyze,Graphical spectrum analyzer}"
+  Goto next mode: "{GRMCube,Wuerfel mode}"
+
+  {PlayerGraph,Back to "Graphic mode functions"}
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.GRMCube Player: Graphic mode functions: Wuerfel mode
+[Wuerfel mode graphic mode function]
+
+  With ~<W>~ the wuerfel mode is enabled. Its only purpose is to display an ani-
+mation located in the home directory of OpenCP. The ~<Tab>~ key will change the
+play direction. To save diskspace no animations are included in the standard
+distribution of OpenCP. They can be found on the OpenCP homepage (its address
+is http://www.cubic.org/player). Animations can be generated with the ~CPWAP~
+program from bitmap files. This program is available on the homepage aswell.
+
+  Goto previous mode: "{GRMPhase,Phase graphs}"
+
+  {PlayerGraph,Back to "Graphic mode functions"}
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.UsingDW Using the diskwriter
+[Using the diskwriter]
+
+  Sorrily this page is not written yet...
+
+  Goto previous page: "{PlayerGraph,Graphic mode functions}"
+  Goto next page: "{UsingCM,Using the compo mode}"
+
+  {Player,So get back to "Player" and wait till it's finished}
+  {Contents,Or jump directly to Contents}
+.UsingCM Using the compo mode
+[Using the compo mode]
+
+  This page is as inexistent as the previous one.
+
+  Goto previous page: "{UsingDW,Using the diskwriter}"
+  Goto next page: "{MidiFile,MIDI files}"
+
+  {Player,Back to "Player" now!}
+  {Contents,Contents are also nice}
+.MidiFile MIDI files
+[MIDI files]
+
+  OpenCP is able to play MIDI files. However there is a certain problem. Unlike
+the other formats MIDI does not store the sample information needed to produce a
+sound output. The MIDI file only contains which instrument out of a set of 127
+should play which note at a given time. This is the reason why ~.MID~ files are
+much smaller than other file types.
+
+  This has of course some disadvantages. To hear a MIDI file you need to have
+some information about how to play the used instruments. Back in the old days
+the OPL2 sound chip which was present on the SoundBlaster cards was used to play
+the MIDI instruments. Most people find the sound capabilities of the OPL series
+rather limited and MIDI files were no big deal back then.
+
+  Things changed when so-called wavetable cards became popular. Those cards have
+sample data stored onboard in a ROM plus a hardware mixer capable of mixing
+several MIDI channels. The MPU-401 interface from Roland is the de facto
+standard for accessing those cards, but this features is not supported by OpenCP
+yet. A disadvantage is that those wavetable cards only have a very limited
+memory for sample data, typically 4 MB. If you imagine 127 instruments and 64
+drums fitting into just 4 MB you can guess what sound quality these cards have.
+Modern cards have normally much more onboard ROM/RAM, but in our opinion even 32
+MB are far to less for a good sound quality.
+
+  OpenCP goes a different way. Instead of using the onboard ROM samples, the
+samples needed for a specific ~.MID~ file are loaded on demand from the hard-
+disk into main memory and then processed by either the hardware mixer (if you
+have such a card and the samples fit into its memory) or by the software mixers.
+This has the advantage that you can easily change a single instrument, if you
+don't like the default sound and that only instruments are loaded (and therefore
+memory needed) which are actually used by the file.
+
+  At the moment two different formats for those MIDI patches are supported. Both
+were introduced with the Gravis Ultrasound Cards. The older one using files with
+the extension ~.PAT~ and a file describing the patch set ~DEFAULT.CFG~. With the GUS
+PnP a new MIDI patch format was introduced using ~.FF~ files and a configuration
+file called ~ULTRASND.INI~.
+
+  To use those patch sets simply copy all files into one directory and use the
+~ultradir~ option of the ~general~ section to point to the appropriate directory.
+OpenCP will then process this file if a ~.MID~ file is selected and load the
+defined patch sets.
+
+  If you are not owning a Gravis Card you will have to get a patch set from our
+homepage (or a different source) and install it in any directory. Note that most
+patch sets are not public domain or freeware, so check out it you are allowed to
+copy and use those samples.
+
+  Goto previous page: "{UsingCM,Using the compo mode}"
+  Goto next page: "{Config,Configuration}"
+
+  {Player,Back to "Player"}
+  {Contents,Back to Contents}
+.Config Configuration
+[Configuration]
+
+  OpenCP can be widely configured using the ~CP.INI~ file, which should reside in
+the home directory of the player itself. This file is processed at every startup
+and informs the player about various modules/plugins and their respective confi-
+guration. For average users the default configuration should be sufficient.
+However if you want to change certain aspects of the player permanently you have
+to modify this file. You can use every ASCII editor to edit the INI file.
+
+  The ~CP.INI~ consists of many sections. Each section starts with a section
+identifier tag in square brackets \[\]. Examples of sections are ~\[general\]~ or
+~\[sound\]~. The sections ID tag should be followed by a newline. After a section
+has been declared with the ID tag the options describing the sections follow.
+Each option takes a single line and consists of a keyword followed by a "=" and
+the parameters. Example: ~mixrate=44100~.
+
+  All options following a section ID are options for that section. If a new
+section starts with an ID tag all forthcoming options are assigned to the new
+section. All options for a section have to be grouped together. Multiple decla-
+rations of sections are not valid.
+
+  \[general\]
+    link=dos4gfix
+  \[defaultconfig\]
+    link=mchasm
+  \[general\]
+    dos4gfix=off
+
+  the above example has to be written as:
+
+  \[general\]
+    link=dos4gfix
+    dos4gfix=off
+  \[defaultconfig\]
+    link=mchasm
+
+  Note that in the above example the option ~link~ has not been overridden by the
+~defaultconfig~ section. Both sections now can access an option named ~link~, but
+both options are totally independent of each other.
+
+  Comments can be placed anywhere in the configuration file and are marked by a
+~;~. The rest of the line starting from the ~;~ is considered as a comment and not
+processed.
+
+  Normally the definition for an option ends with the end of the line. If many
+parameters are needed to specify an option they may exceed the default line
+width of 80 characters. Although this is no problem for OpenCP it is not nice
+looking. You can extend a line logically by using the unix like ~backquote~ at
+the end of a line to begin a new line without interrupting the current option
+definition.
+
+  \[example\]
+    option1=parameter1 parameter2
+    option2=parameter1 \\
+            parameter2
+
+  Both optains contain exactly the same parameters.
+
+  When modifying the configuration you should always start with the default
+configuration file and configure it to your needs. Building a bug free config
+file from scratch is difficult.
+
+  We will now have a look at the individual section and their options.
+
+    ~This section contains...~
+
+  - {ConfigGen,general}
+  - {ConfigDef,defaultconfig}
+  - {ConfigSound,sound}
+  - {ConfigScreen,screen}
+  - {CFilesel,fileselector}
+  - {ConfigDev,device configuration}
+  - {CArcs,archivers}
+  - {CFTypes,filetypes}
+
+  Goto previous page: "{Player,Player}"
+  Goto next page: "{WritePlug,Writing plugins}"
+
+  {Contents,Back to Contents}
+.ConfigGen Configuration: general
+[Configuration: general]
+
+  The ~general~ section describes which internal modules or plugins to load at
+startup. Most of them are required for normal operation of OpenCP so you should
+not remove any of the contents. All options in this section are loaded every
+time OpenCP starts! The default ~general~ section looks like:
+
+  \[general\]
+    link=dos4gfix mmcmphlp poutput hardware pfilesel cpiface fstypes
+    ultradir=c:\sys\iw
+    dos4gfix=off
+    ;datapath=
+    ;tempdir=
+
+  ~link~             this option describes the modules to load when starting
+                   OpenCP. There is no need to change this option, unless you
+                   have coded a basic internal module.
+  ~ultradir~         If you want to hear MIDI music you need samples for the
+                   general MIDI instrument set.
+  ~dos4gfix~         DOS4GW is a protected mode extender used by the Watcom C++
+                   compiler. However this extender has problems with IRQs
+                   greater than 7. If you use the default dos extender ~CPLAUNCH~
+                   you should disable this option. If you want to use DOS4GW for
+                   whatever reason and your soundcard uses an IRQ greater than 7
+                   you have to enable this.
+  ~datapath~         OpenCP searches for background pictures and animations in its
+                   home directory. If you want to store your artwork at a
+                   different place use this option to set the right directory.
+  ~tempdir~          this directory is used for extracting modules from archives.
+                   If you have set a DOS environment variable called either ~TEMP~
+                   or ~TMP~ these will be used.
+
+  Goto next page: "{ConfigDef,defaultconfig}"
+
+  {Config,Back to "Configuration"}
+  {Contents,Back to Contents}
+.ConfigDef Configuration: defaultconfig
+[Configuration: defaultconfig]
+
+  The ~defaultconfig~ section is very similar to the ~general~ section. But unlike
+the ~general~ section which is always processed the settings in the ~defaultconfig~
+section can be ommited with an alternative section and the ~-c~ flag from the
+command line. If the ~-c~ flag is not present the ~defaultconfig~ section will be
+processed.
+
+  \[defaultconfig\] ; default configuration
+    link=mchasm devi sets smpbase plrbase mcpbase arcarj arczip arcrar arcumx \\
+         arcbpa arclha arcace playcda playinp
+    prelink=
+
+  ~link~             just like in the ~general~ section this option defines which
+                   modules should be loaded at startup. You can delete some
+                   entries if you will not need them - however this is not
+                   recommended as they do not use much memory and do not require
+                   any processor power when they are not used.
+  ~prelink~          these files will be loaded before starting the main module.
+                   If something goes wrong here OpenCP will continue to work.
+
+  Goto previous page: "{ConfigGen,general}"
+  Goto next page: "{ConfigSound,sound}"
+
+  {Config,Back to "Configuration"}
+  {Contents,Back to Contents}
+.ConfigSound Configuration: sound
+[Configuration: sound]
+
+  This section is the most important one for using OpenCP. If you want to change
+the configuration permanently you have to modify the entries of this section.
+
+  \[sound\]
+    playerdevices=devpWSS devpEWS devpSB devpESS devpGUS devpPAS devpNone \\
+                  devpDisk devpMPx
+    samplerdevices=devsWSS devsSB devsGUS devsNone
+    wavetabledevices=devwMixQ devwIW devwGUS devwSB32 devwDGUS devwMix devwNone
+    ampegtomono=off
+    ampegmixrate=48000
+    mixrate=44100
+    mixprocrate=4096000
+    mix16bit=on
+    mixstereo=on
+    plrbufsize=500
+    mixbufsize=500
+    samprate=44100
+    samp16bit=on
+    sampstereo=on
+    smpbufsize=2000
+    defplayer=
+    defsampler=
+    defwavetable=
+    midichan=64
+    itchan=64
+    cdsamplelinein=off
+    bigmodules=devwMixQ
+    wavetostereo=1
+    waveratetolerance=50
+    amplify=100
+    panning=100
+    volume=100
+    balance=0
+    reverb=0
+    chorus=0
+    surround=off
+    filter=1
+
+  ~playerdevices~    OpenCP uses three different devices to communicate with the
+                   hardware. The ~playerdevices~ are used to play a stream of
+                   samples. As all sound cards support this feature you will
+                   find ~playerdevices~ for every soundcard supported by OpenCP.
+                   This device is needed for playing ~.WAV~ and ~.MP3~ files and if
+                   you want/have to use the software (quality) mixer. OpenCP
+                   searches for all devices listed in this option at startup and
+                   only those found are actually loaded. You can delete all
+                   devices you do not have installed to speed up the startup
+                   procedure. If you have multiple sound cards installed be sure
+                   to list all devices if you want to use more than one sound
+                   card.
+  ~samplerdevices~   these devices are the least important ones. They are only
+                   needed if you want to use OpenCP when playing CD Audio tracks
+                   or start the player in sample mode. The sample data is not
+                   calculated from files, but sampled from either the CD, line
+                   or microphone jack of the sound card. You can then use the
+                   graphical screens to view the sounds.
+  ~wavetabledevices~ for mixing several channels you have to use ~wavetabledevices~.
+                   Most sound cards are only able to play two channels
+                   simultaneously normally assigned to the left and right chan-
+                   nel or your home stereo. The ~mixer~ devices are used to mix
+                   the sample data of module files to those two channels. How-
+                   ever modern sound cards have special hardware to mix channels
+                   "onboard". But all hardware mixers have a maximum amount of
+                   channels to mix. Especially ~.IT~ files often use more than 32
+                   channels so an errorfree playback can not be guaranteed when
+                   using hardware mixing. You should include one of the software
+                   mixers for this case.
+  ~ampegtomono~      play ~.MP3~ files only mono. This might be necessary if you
+                   don't have the latest generation of Intel processors.
+  ~ampegmaxrate~     the highest playback sample rate to use for ~.MP3~ files.
+  ~mixrate~          the default mixrate. Unless you have a very old sound card or
+                   a very old processor there is no need to change this option.
+  ~mixprocrate~      if you have a slow CPU you might not to be able to play 32
+                   channels at full mixrate. This value defines the maximum
+                   "calculation power" to which OpenCP tries to use the full
+                   mixrate.
+  ~mix16bit~         Leave this option enabled unless you have a 8bit sound card.
+  ~mixstereo~        dito for stereo cards
+  ~plrbufsize~       When using a ~playerdevice~ to play sample streams a DMA
+                   buffer is used to minimize CPU resources for handling the
+                   sample stream. This option sets the DMA buffer length in
+                   milliseconds.
+  ~mixbufsize~       When running OpenCP in a multitasking environment there is
+                   no guarantee for constant CPU resources. To avoid a break in
+                   the sample stream OpenCP will calculate in advance. This
+                   option sets the buffer length in milliseconds.
+  ~samprate~         When using a ~samplerdevice~ this value will be used.
+  ~samp16bit~        dito
+  ~sampstereo~       dito
+  ~smpbufsize~       this option sets the length of the sample DMA buffer in
+                   milliseconds.
+  ~defplayer~        with this option you can override the default ~playerdevice~.
+                   Normally you don't need to set this option, as the default
+                   device can also be set by order in the ~playerdevice~ option.
+                   This option can also be specified by using the ~-sp~ options
+                   from command line.
+  ~defwavetable~     this option sets the default ~wavetabledevice~. Can also be set
+                   with ~-sw~ command.
+  ~defsampler~       the same as the ~-ss~ command line option.
+  ~midichan~         unlike the module file types the MIDI file format does not
+                   specify the exact amount of channels to use. Complex ~.MID~
+                   files can easily try to play several dozens of channels
+                   simultaneously. This option sets the maximum number of
+                   channels to mix when playing ~.MID~ files. Note that this value
+                   has no effect when a hardware mixing device is used, as the
+                   maximum number is limited by the hardware.
+  ~itchan~           the ~.IT~ format can play more than one sample per channel
+                   simultaneously. A maximum number of channels to mix is
+                   required for this file type too. When playing ~.IT~ files using
+                   a hardware mixer the maximum number of channels is again
+                   limited by the hardware.
+  ~cdsamplelinein~   If you select a ~.CDA~ file the CD Input of your sound card
+                   is used to sample the current music. If you do not have a CD
+                   input or if you have connected your CD-ROM to the line-in
+                   jack enable this option to change to sample input.
+  ~bigmodules~       This option is of interest for users of hardware mixing
+                   devices only. Sound cards capable of mixing channels are not
+                   only limited by the amount of channels played simultaneously,
+                   but by the amount of onboard memory to store the sample data
+                   too. If files are marked as "big" in the fileselector the
+                   device listed in this option will be used for mixing this
+                   module.
+  ~wavetostereo~     When playing a mono wave the sound card can either be
+                   switched to mono mode or the wave can be played as a stereo
+                   file.
+  ~waveratetolerance~ if the sample rate of the wave file is not equal to a
+                   sample rate supported by your sound card, OpenCP will not
+                   resample unless this value is exceeded. Divide the value
+                   by 1000 to get the percentage.
+  ~amplify~          the default amplification to use within the player. The
+                   following options are described in "{PlayerGen,Player: General}" in
+                   detail. The command line option ~-va~ overrides this option.
+  ~panning~          the default panning (command ~-vp~)
+  ~volume~           the default volume (comand ~-vv~)
+  ~balance~          the default balance (command ~-vb~)
+  ~reverb~           some sound cards have a onboard effect processor which
+                   features a reverb effect. This option controls the intensity
+                   of the onboard effect. (command ~-vr~)
+  ~chorus~           dito as reverb (command ~-vc~)
+  ~surround~         this option controls the fake surround effect (command ~-vs~)
+  ~filter~           The software mixer can use a software filter to enhance the
+                   playback quality. Different algorithms can be used. (command
+                   ~-vf~)
+
+                   ~0~  no filter
+                   ~1~  AOI - only filter samples when filtering is necessary
+                   ~2~  FOI - filter every sample even if filtering has no effect
+
+  Goto previous page: "{ConfigDef,defaultconfig}"
+  Goto next page: "{ConfigScreen,screen}"
+
+  {Config,Back to "Configuration"}
+  {Contents,Back to Contents}
+.ConfigScreen Configuration: screen
+[Configuration: screen]
+
+  When the player starts it will use the options in this section as the start
+appearance.
+
+  \[screen\]
+    usepics=opencp01.tga
+    compomode=off
+    startupmode=text
+    screentype=2
+    analyser=on
+    mvoltype=1
+    pattern=on
+    insttype=0
+    channeltype=1
+    palette=0 1 2 3 4 5 6 7 8 9 a b c d e f
+
+  ~usepics~          When using graphics modes you can use a picture to show in
+                   the background. OpenCP will load any TGA files with 640x384
+                   pixels and 256 colours. As the TGA format is poorly implemen-
+                   ted in modern graphic programs this might change in the
+                   future. As some colours out of 256 are used by OpenCP you
+                   should leave either the first or the last 16 colours in the
+                   palette black. The pictures should be copied to the home
+                   directory of OpenCP, unless you specify a different location
+                   in the ~defaultconfig~ section.
+  ~compomode~        this option will enable the compo mode. The page
+                   "{UsingCM,Using the compomode}" describes the details.
+  ~startupmode~      start the player in either text or graphic mode. Valid
+                     values are: coolhelp, dots, graph, links, msg, phase,
+                                 scope, text, wuerfel2.
+  ~screentype~       the default screentextmode:
+
+                     ~0~  80x25
+                     ~1~  80x30
+                     ~2~  80x50
+                     ~3~  80x60
+                     ~4~  132x25
+                     ~5~  132x30
+                     ~6~  132x50
+                     ~7~  132x60
+  ~analyzer~         if the player starts in textmode show the analyzer (or not)
+  ~mvoltype~         the appearance of the peak power levels:
+
+                     ~1~  big
+                     ~2~  small
+  ~pattern~          show the tracklist when starting OpenCP in textmode
+  ~insttype~         the appearance of the instrument function:
+
+                     ~0~  short
+                     ~1~  long
+                     ~2~  side (only in 132 column modes)
+  ~channeltype~      the appearance of the channels in textmode:
+
+                     ~0~  short
+                     ~1~  long
+                     ~2~  side (only in 132 column modes)
+  ~palette~          with this option you can redefine the default colours used
+                     in textmode. The first entry defines which colour to use
+                     for the original colour with number 0. Leave things as they
+                     are if you are satisfied with the visual appearance of
+                     OpenCP. We will provide new colour schemes in the future.
+
+  Goto previous page: "{ConfigSound,sound}"
+  Goto next page: "{CFilesel,fileselector}"
+
+  {Config,Back to "Configuration"}
+  {Contents,Back to Contents}
+.CFilesel Configuration: fileselector
+[Configuration: fileselector]
+
+  Except the first two options all options can also be specified at runtime by
+pressing ~<Alt>~+~<C>~ in the fileselector. However to make changes permanent
+you have to modify the ~fileselector~ section.
+
+  \[fileselector\] ; default fileselector section
+    modextensions=MOD S3M XM  IT  MDL DMF ULT AMS MTM 669 NST WOW \\
+                  OKT PTM MXM MID WAV RMI MP1 MP2 MP3 SID DAT PLS \\
+                  M3U PLT
+    movepath= ; default path to move files
+    screentype=2
+    typecolors=on
+    editwin=on
+    writeinfo=on
+    scanmdz=on
+    scaninarcs=on
+    putarchives=on
+    playonce=on
+    randomplay=on
+    loop=on
+    path=.
+
+  ~modextensions~    files containing these extensions will be scanned by the
+                   fileselector. Only those files will be shown. If you want to
+                   load files with different extensions you have to specify them
+                   at the command line.
+  ~movepath~         the standard path to move files into. This is described on
+                   page "{FSelUseAdv,Fileselector: Advanced usage}".
+  ~screentype~       the textmode to use within the fileselector. The options
+                   are the same as in the {ConfigScreen,screen} section.
+  ~typecolors~       show files in different colours depending on the file type.
+  ~editwin~          show the edit window at the bottom of the screen
+  ~writeinfo~        write the info to the information database located in the
+                   home directory of OpenCP. This speeds up the processing of
+                   directories, as files have to be scanned only once.
+  ~scanmdz~          if ~.MDZ~ files are found in the current directory, they will
+                   be scanned and the included information used.
+  ~scanmodinfo~      scan inside the music files for module information.
+  ~scanarchives~     if archives (like ~.ZIP~ or ~.RAR~) are found in the current
+                   directory they are scanned for modules.
+  ~putarchives~      show archives in the fileselector, so they can be used just
+                   like subdirectories.
+  ~playonce~         play every file only once (thus not looping it) and then
+                   procede with the next file in the playlist. If the file
+                   contains a loop the loop command is ignored.
+  ~randomplay~       play files in the playlist in random order.
+  ~loop~             loop files after the end. This option has no effect if the
+                   file contains a loop command.
+  ~path~             the default path to use when starting the fileselector the
+                   first time. The default is the current directory (.). If you
+                   keep all your music files in one directory you can specify
+                   this directory here.
+
+  Goto previous page: "{ConfigScreen,screen}"
+  Goto next page: "{ConfigDev,device configuration}"
+
+  {Config,Back to "Configuration"}
+  {Contents,Back to Contents}
+.ConfigDev Configuration: device configuration
+[Configuration: device configuration]
+
+  The following sections define the various devices for the player. Unless you
+really know what to do you should not change the following options. As most
+entries are similar only some educational examples are listed here. For a
+complete reference have a look at your personal ~CP.INI~ file for details.
+
+  The general form of a device looks like:
+
+  \[handle\]
+    link=...
+    subtype=...
+    port=...
+    port2=...
+    irq=...
+    irq2=...
+    dma=...
+    dma2=...
+    bypass=...
+    keep=...
+
+  ~handle~           The internal name to use within the player. The ~CP.INI~ file
+                   must contain all ~handles~ listed in the devices options of the
+                   ~devices~ section.
+  ~link~             the name of the DLL function this device will be linked to.
+  ~port(2)~          the primary/secondary port of the sound card. This value has
+                   to be given in hexadecimal with preceeding ~0x~ or appending ~h~!
+  ~irq(2)~           the primary/secondary IRQ of the sound card
+  ~dma(2)~           the primary/secondary DMA of the sound card
+  ~bypass~           skip the autodetection if it may encounter problems
+  ~keep~             keep the driver resident in memory, even it is not currently
+                   needed. This will save some time by needing some memory.
+
+  Most device functions of the standard DLL contain autodetection routines for
+the supported sound cards, so there is normally no need to specify any of the
+port, IRQ or DMA options. However if OpenCP is not able to detect your sound
+cards settings you can try to insert the appropriate values in the configuration
+file.
+
+  The next subsections will look at the special features the different sound
+cards and drivers support. The original order of the ~CP.INI~ has been slightly
+modified for the purpose of documentation.
+
+    ~This section contains...~
+
+  - {DevCSB,Sound Blaster}
+  - {DevCEWS,Terratec EWS}
+  - {DevCWSS,Windows Sound System}
+  - {DevCGUS,Gravis Ultrasound}
+  - {DevCDWR,Diskwriter}
+  - {DevCMPX,MPx writer}
+  - {DevCMix,software mixers}
+
+  {Config,Back to "Configuration"}
+  {Contents,Back to Contents}
+.DevCSB Configuration: device configuration: Sound Blaster
+[Configuration: device configuration: Sound Blaster]
+
+  Most compatibles should work with the following sections and options aswell.
+Be sure to include a mixing device aswell if you want to play module file types.
+
+  \[devpSB\]
+    link=devpSB
+    sbrevstereo=off
+    subtype= ; 1:sb 1.x, 2:sb 2.x, 3:sb pro, 4:sb16/32/64/awe
+
+  \[devsSB\]
+    link=devsSB
+    sbrevstereo=off
+
+  ~sbrevstereo~      some revisions of the Sound Blaster Pro (and clones) have a
+                   bug when playing stereo. The right and left channels are
+                   switched. To get the right order enable this option.
+  ~subtype~          if your card is not properly detected (this can happen when
+                   clones are not 100% compatible) you can set the type of card
+                   with this option)
+
+                     ~1~  normal mono SoundBlaster 22kHz 8bit
+                     ~2~  SoundBlaster mono 44kHz 8bit
+                     ~3~  SoundBlaster Pro either mono 44kHz 8bit
+                                             or stereo 22kHz 8bit
+                     ~4~  SoundBlaster 16+ stereo 44kHz 16bit
+
+  Goto next device: "{DevCEWS,Terratec EWS}"
+
+  {ConfigDevC,Back to "Configuration: device configuration"}
+  {Config,Back to "Configuration"}
+  {Contents,Back to Contents}
+.DevCEWS Configuration: device configuration: Terratec EWS
+[Configuration: device configuration: Terratec EWS]
+
+  \[devpEWS\]
+    link=devpEWS
+    reverb=75
+    surround=10
+
+  ~reverb~           the onboard effect processor will use this amount of reverb
+                   on the output.
+  ~surround~         dito
+
+  When starting OpenCP in a Windows 95 DOS-Box those settings will not work,
+because Windows refuses to set up the effect processor. You have to use the
+Windows control panel to change the default values set up at windows startup.
+
+  Goto previous device: "{DevCSB,Sound Blaster}"
+  Goto next device: "{DevCWSS,Windows Sound System}"
+
+  {ConfigDevC,Back to "Configuration: device configuration"}
+  {Config,Back to "Configuration"}
+  {Contents,Back to Contents}
+.DevCWSS Configuration: device configuration: Windows Sound System
+[Configuration: device configuration: Windows Sound System]
+
+  Sound cards using the Crystal Codec are normally Windows Sound System compa-
+tible. The Gravis Ultrasound Max series has this codec aswell, but located at a
+non-standard port. You might have to specify the soundcard type manually.
+
+  \[devpWSS\]
+    link=devpWSS
+    wss64000=off
+  ; subtype=
+  \[devsWSS\]
+    link=devsWSS
+    wss64000=off
+
+  ~wss64000~         as the Crystal Analog Codec can use sample rates up to
+                   64kHz you should enable this feature to get crystal clear
+                   sound playback.
+  ~subtype~          if your sound card is not detected automatically use this
+                   options to set it:
+
+                     ~0~  Windows Sound System
+                     ~1~  Gravis Ultrasound with 16bit Daugther board
+                     ~2~  Gravis Ultrasound Max
+
+  Goto previous device: "{DevCEWS,Terratec EWS}"
+  Goto next device: "{DevCGUS,Gravis Ultrasound}"
+
+  {ConfigDevC,Back to "Configuration: device configuration"}
+  {Config,Back to "Configuration"}
+  {Contents,Back to Contents}
+.DevCGUS Configuration: device configuration: Gravis Ultrasound
+[Configuration: device configuration: Gravis Ultrasound]
+
+  The Gravis Ultrasound series devides into two subseries. The old standard
+includes the Gravis Ultrasound (with daughterboard), Gravis Ultrasound Max and
+Gravis Ultrasound ACE which use the old GF1 chip for hardware mixing. The new
+Gravis Ultrasound PnP uses the AMD Interwave chip for hardware playback.
+
+  \[devwGUS\]
+    link=devwGUS
+    gusFastUpload=on
+    gusGUSTimer=on
+
+  ~gusFastUpload~    use a non-standard feature to upload the sample data to
+                   the fast RAM. If you experience problems with corrupted
+                   playback, or if your system locks when loading a file disable
+                   this option.
+  ~gusGUSTimer~      use the internal GUS Timer for looping and synchronization.
+                   This enables more precise playback, but may cause problems.
+
+  If you own two GUS cards of the old series you can use a special feature of
+OpenCP using both sound cards to enable quadruple or 3D playback.
+
+  \[devwDGUS\]
+    link=devwDGUS
+  ; port2=250
+  ; subtype=
+
+  ~port2~            the base port of the secondary GUS, if it was not
+                   autodetected.
+  ~subtype~          you can specify how OpenCP will use the second GUS:
+
+                     ~0~  the second GUS will play the rear stereo channels.
+                        This is true quadrophony. Of course you have to have a
+                        second stereo and a second pair of boxes.
+                     ~1~  this will enable 3D playback. The additional boxes have
+                        to be placed exactly behind the audience, one on the
+                        floor and the other at the ceiling.
+
+  OpenCP will still use the panning information provided by the music files and
+place the channels randomly in the remaining dimensions. If you have access to
+a second GUS be sure to check this feature one day, as the sound experience is
+really amazing.
+
+  For users of the new GUS PnP with the Interwave chip the following section is
+relevant.
+
+  \[devwIW\]
+    link=devwIW
+    iwIWTimer=off
+    iwEffects=on
+    iwForceEffects=off
+
+  ~iwIWTimer~        use the internal sound card timer for synchronization. When
+                   using OpenCP under DOS there is no need to use this feature.
+                   However if you want to use the player under Windows 95 you
+                   should enable this to prevent timer inconsenties from
+                   Windows.
+  ~iwEffects~        enable the onboard effects (reverb). This feature uses 64 KB
+                   of the soundcard memory and 4 channels. So the maximum amount
+                   of channels is reduced to 28. If the music uses more channels
+                   OpenCP will turn off the effect to use the last channels or
+                   memory.
+  ~iwForceEffects~   if you enable this option the effects will always be present,
+                   thus overriding the above option.
+
+  Goto previous device: "{DevCWSS,Windows Sound System}"
+  Goto next device: "{DevCDWR,Diskwriter}"
+
+  {ConfigDevC,Back to "Configuration: device configuration"}
+  {Config,Back to "Configuration"}
+  {Contents,Back to Contents}
+.DevCDWR Configuration: device configuration: Diskwriter
+[Configuration: device configuration: Diskwriter]
+
+  \[devpDisk\]
+    link=devpDisk
+    diskManual=off
+
+  ~diskManual~       enable this if you want to start the disk writer from within
+                   the player with ~<Alt>~+~<S>~.
+
+  Goto previous device: "{DevCGUS,Gravis Ultrasound}"
+  Goto next device: "{DevCMPX,MPx writer}"
+
+  {ConfigDevC,Back to "Configuration: device configuration"}
+  {Config,Back to "Configuration"}
+  {Contents,Back to Contents}
+.DevCMPX Configuration: device configuration: MPx writer
+[Configuration: device configuration: MPx writer]
+
+  OpenCP is able to store the sample data directly to MPEG compressed audio
+streams. At the moment only MP1 and MP2 is supported, but this might change in
+the near future.
+
+  \[devpMPx\]
+    link=devpMPx
+    diskManual=off
+    layer=2
+    mode=1
+    freq=44100
+    rate=112000
+    model=2
+    crc=off
+    extension=off
+    copyright=off
+    original=off
+    emphasis=0
+
+  ~diskManual~       start MPx writing with ~<Alt>~+~<S>~. Note that this option
+                   interferes with the same option in the ~devpDisk~ section.
+  ~layer~            save the audio in either layer 1 or layer 2 format.
+  ~mode~             set the audio output format:
+
+                     ~0~  stereo
+                     ~1~  joint stereo
+                     ~2~  dual channel
+                     ~3~  mono
+  ~freq~             the mixing frequency used to calculate the input sample
+                   stream. Valid options are 32000, 44100 and 48000.
+  ~rate~             set the MPEG audio bitrate/s.
+  ~model~            set the psychoacustic model. This is used for the internal
+                   encoding of audio data. Valid options are either 1 or 2.
+  ~crc~              save CRC checksums into the audio stream. As this enlarges
+                   the file this option should be disabled.
+  ~extension~        set the extension flag
+  ~copyright~        set the copyright flag
+  ~original~         set the original flag
+  ~emphasis~         set the emphasis flag
+
+  Goto previous device: "{DevCDWR,Diskwriter}"
+  Goto next device: "{DevCMix,software mixers}"
+
+  {ConfigDevC,Back to "Configuration: device configuration"}
+  {Config,Back to "Configuration"}
+  {Contents,Back to Contents}
+.DevCMix Configuration: device configuration: software mixers
+[Configuration: device configuration: software mixers]
+
+  By default OpenCP will use its own routines for mixing several channels to the
+two stereo output channels. You have the choice between two mixers. The normal
+mixer is faster in calculating, thus can mix more channels at the same time. The
+quality mixer however produces better sound output. For average modules and a
+pentium processor the quality mixer should be fast enough for sufficient play-
+back. If many channels are used you may have to change back to the normal mixer.
+
+  Both mixers take identical options. As the mixers will be rewritten in the
+future the options are likely to change. Therefore they are not documented here.
+Please have a look at future versions of this document if you want to change the
+mixer settings. However these devices never have caused any trouble and there
+should be no need for change.
+
+  Goto previous device: "{DevCMPX,MPx writer}"
+
+  {ConfigDevC,Back to "Configuration: device configuration"}
+  {Config,Back to "Configuration"}
+  {Contents,Back to Contents}
+.CArcs Configuration: archivers
+[Configuration: archivers]
+
+  When processing files inside archives OpenCP has to know how to call the
+programs. The following sections define the usage of different archivers
+supported by the OpenCP fileselector.
+
+  ~%%~     evaluates to "%"
+  ~%a~     evaluates to the archive name preceeded by the path to process.
+  ~%n~     evaluates to the filename of the file to process inside the archive.
+  ~%d~     evaluates to the destination directory used to extract files out of
+         archive.
+
+  Three default commands are defined for the archive modules:
+
+  ~get~    this command is used when a file should be extracted out of an archive.
+  ~put~    if a file should be added to the archive this command line is used.
+  ~delete~ with ~<Alt>~+~<K>~ you can delete files out of archives.
+
+  \[arcZIP\]
+    get=pkunzip %a %d %n
+    put=pkzip %a %n
+    delete=pkzip -d %a %n
+    deleteempty=on
+
+  ~deleteempty~      the program PKZIP/PKUNZIP used by OpenCP to process ~.ZIP~
+                   files have a bug when deleting the last file inside an
+                   archive. An empty archive of 22 bytes is left on the hard
+                   disk. With this option enabled the fileselector will delete
+                   those "zip zombies".
+
+  \[arcACE\]
+    get=ace32 e %a %n %d
+    scaninsolid=false
+
+  ~scaninsolid~      ?
+
+                   (Remark: I think this option disables scanning in solid ACE
+                   archives, because it takes much time)
+
+  Goto previous page: "{ConfigDevC,Device configuration}"
+  Goto next page: "{CFTypes,file types}"
+
+  {Config,Back to "Configuration"}
+  {Contents,Back to Contents}
+.CFTypes Configuration: file types
+[Configuration: file types]
+
+  The ~CP.INI~ file contains descriptions for all supported file types. These
+features will be included in the file loaded devices in the next version of
+OpenCP, so these options will soon be obsolete. There should be no need to
+modify any of the file types.
+
+  Goto previous page: "{CArcs,Configuration: archivers}"
+  Goto next page: "{WritePlug,Writing plugins}"
+
+  {Config,Back to "Configuration"}
+  {Contents,Back to Contents}
+.WritePlug Writing plugins
+[Writing plugins]
+
+  Figure: Block diagram of OpenCP
+
+  /ÄÄÄÄÄÄÄÄÄÄÄÄÄ\\                 ÚÄÄÄÄÄÄÄÄ¿                  /ÄÄÄÄÄÄÄÄÄÄÄÄÄÄ\\
+  ³ Sound input ³                 ³ cp.ini ³                  ³ Sound output ³
+  \\ÄÄÄÄÄÄÂÄÄÄÄÄÄ/                 ÀÄÄÄÄÂÄÄÄÙ                  \\ÄÄÄÄÄÄÄÄÄÄÄÄÄÄ/
+         ³                                                           
+ÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄ
+                        ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ³
+     ÚÄÄÄÄÄÄ¿        ÚÄÄÄÁÄÄ¿    ÚÄÄÄÄÄÄÄ¿    ÚÄÄÄÄÄÄÄÄÄÄÄ¿       ÚÄÄÄÁÄÄ¿
+     ³ devs ³        ³ devw ÃÄÄ ³ mixer ÃÄÄ ³ postprocs ÃÄÄÄÄÄ ³ devp ³
+     ÀÄÄÄÂÄÄÙ        ÀÄÄÄÄÄÄÙ    ÀÄÄÄÄÄÄÄÙ    ÀÄÄÄÄÄÄÄÄÄÄÄÙ       ÀÄÄÄÄÄÄÙ
+         ³                                                           
+                        ³                                            ³
+    ÚÄÄÄÄÄÄÄÄÄ¿     ÚÄÄÄÄÁÄÄÄÄ¿                                  ÚÄÄÄÄÁÄÄÄÄ¿
+    ³ playinp ³     ³ playgmd ³                                  ³ plaympx ³
+    ÃÄÄÄÄÄÄÄÄÄ´     ÃÄÄÄÄÄÄÄÄÄ´                                  ÃÄÄÄÄÄÄÄÄÄ´
+    ³ playcda ³     ³  playit ³                                  ³ playwav ³
+    ÀÄÄÄÄÂÄÄÄÄÙ     ÃÄÄÄÄÄÄÄÄÄ´                                  ÀÄÄÄÄÄÄÄÄÄÙ
+         ³          ³  playxm ³                                       
+         ³          ÃÄÄÄÄÄÄÄÄÄ´                                       ³
+         ³          ³ playgmi ³                                       ³
+         ³          ÀÄÄÄÄÄÄÄÄÄÙ                                       ³
+         ³                                                           ³
+         ³               ³                                            ³
+         ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+         ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿           ³
+         ³   file types   ³           ³
+         ÀÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÙ           ³
+                 ³                    ³           ÚÄÄÄÄÄÄÄÄÄÄÄÄ¿
+                                                ³   scopes   ³
+         ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿   ~ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ»~  ³  note dots ³  ÚÄÄÄÄÄÄÄÄÄÄÄÄ¿
+         ³                ³   ~º                º~  ³phase graphs³  ³ main volume³
+         ³                ³   ~º                º~  ³gfx analyzer³  ³  channels  ³
+         ³  fileselector  ³Ä~º    cpiface     Ç~Ä³ wuerfel mode³  ³ instruments³
+         ³                ³   ~º                º~  ÃÄÄÄÄÄÄÄÄÄÄÄÄ´  ³ track view ³
+         ³                ³   ~º                º~  ³ text modes ÃÄ³txt analyzer³
+         ÀÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÙ   ~ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼~  ÀÄÄÄÄÄÄÄÄÄÄÄÄÙ  ÀÄÄÄÄÄÄÄÄÄÄÄÄÙ
+                 ³                                                     
+                 ³                    ³                 ³                ³
+                             ÚÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄ¿
+         ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿   ³ prelinked dlls: dos4gfix, hardware, mmcmphlp,  ³
+         ³    archives    ³ÄÄ´ poutput, inflate, chasm, devicebase, sets      ³
+         ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ   ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+         cp.exe: runtime, clib, system, linker, configuration, binfiles
+
+[(and now one should say ASCII art is lame :)]
+
+  The capatibilities of OpenCP can be extended by plugins. The type of plugin is
+not limited, so new graphics modes, file types and even enhanced players may be
+added by the user. As development for OpenCP is done using Watcom C++ 11.0 it is
+recommended to use this compiler for developing plugins aswell. We have not
+tested the plugin interface with other compilers. (This might change in the
+future).
+
+  If there are questions, don't hesitate to contact the authors. You may also
+ask me for simple problems (like: why CP just flickers instead of switching to
+my brand new ultra-cool interface mode? Or: What the heck means 'W?cpiTrkSetup$\\
+n(rnx$cpitrakdisplaystruct$$i)v'?). My mail address is gfabian@jdcs.su.nw.schul\\
+e.de. (A \\ means a word is continued in next line without a space).
+
+  {Contents,Take me back to contents}
+.Thanks Thanks
+[Thanks]
+
+  The OpenCP maintainers thank the following people for supporting us in the
+development of the player and its associated tools:
+
+  Thomas Carey
+  Jacob Poon
+  Igor Shterv
+  Michael Schwendt
+  Felix Domke
+  Moritz Grimm
+  Maximilian Rehkops
+  Luciano Golino
+  Oleg Prokhorov
+  Vladimir Sojka
+  Pham Dank Quang
+  Evzen Polenka
+
+  Without you OpenCP would not have the current face and features. We also like
+to thank the hundreds of unnamed people supplying us with bug reports and
+general suggestions concerning the player. Please keep on using and supporting
+OpenCP!
+
+  {Contents,Back to contents}
+.License License
+~[GNU GENERAL PUBLIC LICENSE]~
+~[Version 2, June 1991]~
+
+ Copyright (C) 1989, 1991 Free Software Foundation, Inc.
+                          675 Mass Ave, Cambridge, MA 02139, USA
+
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+
+~[Preamble]~
+
+  The licenses for most software are designed to take away your freedom to share
+and change it.  By contrast, the GNU General Public License is intended to
+guarantee your freedom to share and change free software--to make sure the soft-
+ware is free for all its users.  This General Public License applies to most of
+the Free Software Foundation's software and to any other program whose authors
+commit to using it.  (Some other Free Software Foundation software is covered by
+the GNU Library General Public License instead.) You can apply it to your
+programs, too.
+
+  When we speak of free software, we are referring to freedom, not price.  Our
+General Public Licenses are designed to make sure that you have the freedom to
+distribute copies of free software (and charge for this service if you wish),
+that you receive source code or can get it if you want it, that you can change
+the software or use pieces of it in new free programs; and that you know you can
+do these things.
+
+  To protect your rights, we need to make restrictions that forbid anyone to
+deny you these rights or to ask you to surrender the rights. These restrictions
+translate to certain responsibilities for you if you distribute copies of the
+software, or if you modify it.
+
+  For example, if you distribute copies of such a program, whether gratis or
+for a fee, you must give the recipients all the rights that you have.  You must
+make sure that they, too, receive or can get the source code.  And you must show
+them these terms so they know their rights.
+
+  We protect your rights with two steps: (1) copyright the software, and (2)
+offer you this license which gives you legal permission to copy, distribute
+and/or modify the software.
+
+  Also, for each author's protection and ours, we want to make certain that
+everyone understands that there is no warranty for this free software.  If the
+software is modified by someone else and passed on, we want its recipients to
+know that what they have is not the original, so that any problems introduced by
+others will not reflect on the original authors' reputations.
+
+  Finally, any free program is threatened constantly by software patents.  We
+wish to avoid the danger that redistributors of a free program will individually
+obtain patent licenses, in effect making the program proprietary.  To prevent
+this, we have made it clear that any patent must be licensed for everyone's free
+use or not licensed at all.
+
+  The precise terms and conditions for copying, distribution and modification
+follow.
+
+~[GNU GENERAL PUBLIC LICENSE]~
+~[TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION]~
+
+  0. This License applies to any program or other work which contains a notice
+placed by the copyright holder saying it may be distributed under the terms of
+this General Public License.  The "Program", below, refers to any such program
+or work, and a "work based on the Program" means either the Program or any
+derivative work under copyright law: that is to say, a work containing the
+Program or a portion of it, either verbatim or with modifications and/or trans-
+lated into another language.  (Hereinafter, translation is included without
+limitation in the term "modification".)  Each licensee is addressed as "you".
+
+Activities other than copying, distribution and modification are not covered by
+this License; they are outside its scope.  The act of running the Program is not
+restricted, and the output from the Program is covered only if its contents
+constitute a work based on the Program (independent of having been made by
+running the Program). Whether that is true depends on what the Program does.
+
+  1. You may copy and distribute verbatim copies of the Program's source code
+as you receive it, in any medium, provided that you conspicuously and appro-
+priately publish on each copy an appropriate copyright notice and disclaimer of
+warranty; keep intact all the notices that refer to this License and to the
+absence of any warranty; and give any other recipients of the Program a copy of
+this License along with the Program.
+
+You may charge a fee for the physical act of transferring a copy, and you may at
+your option offer warranty protection in exchange for a fee.
+
+  2. You may modify your copy or copies of the Program or any portion of it,
+thus forming a work based on the Program, and copy and distribute such
+modifications or work under the terms of Section 1 above, provided that you
+also meet all of these conditions:
+
+    a) You must cause the modified files to carry prominent notices
+    stating that you changed the files and the date of any change.
+
+    b) You must cause any work that you distribute or publish, that in
+    whole or in part contains or is derived from the Program or any
+    part thereof, to be licensed as a whole at no charge to all third
+    parties under the terms of this License.
+
+    c) If the modified program normally reads commands interactively
+    when run, you must cause it, when started running for such
+    interactive use in the most ordinary way, to print or display an
+    announcement including an appropriate copyright notice and a
+    notice that there is no warranty (or else, saying that you provide
+    a warranty) and that users may redistribute the program under
+    these conditions, and telling the user how to view a copy of this
+    License.  (Exception: if the Program itself is interactive but
+    does not normally print such an announcement, your work based on
+    the Program is not required to print an announcement.)
+
+These requirements apply to the modified work as a whole.  If identifiable
+sections of that work are not derived from the Program, and can be reasonably
+considered independent and separate works in themselves, then this License, and
+its terms, do not apply to those sections when you distribute them as separate
+works.  But when you distribute the same sections as part of a whole which is a
+work based on the Program, the distribution of the whole must be on the terms of
+this License, whose permissions for other licensees extend to the entire whole,
+and thus to each and every part regardless of who wrote it.
+
+Thus, it is not the intent of this section to claim rights or contest your
+rights to work written entirely by you; rather, the intent is to exercise the
+right to control the distribution of derivative or collective works based on
+the Program.
+
+In addition, mere aggregation of another work not based on the Program with the
+Program (or with a work based on the Program) on a volume of a storage or
+distribution medium does not bring the other work under the scope of this
+License.
+
+  3. You may copy and distribute the Program (or a work based on it, under
+Section 2) in object code or executable form under the terms of Sections 1 and 2
+above provided that you also do one of the following:
+
+    a) Accompany it with the complete corresponding machine-readable
+    source code, which must be distributed under the terms of Sections
+    1 and 2 above on a medium customarily used for software interchange; or,
+
+    b) Accompany it with a written offer, valid for at least three
+    years, to give any third party, for a charge no more than your
+    cost of physically performing source distribution, a complete
+    machine-readable copy of the corresponding source code, to be
+    distributed under the terms of Sections 1 and 2 above on a medium
+    customarily used for software interchange; or,
+
+    c) Accompany it with the information you received as to the offer
+    to distribute corresponding source code.  (This alternative is
+    allowed only for noncommercial distribution and only if you
+    received the program in object code or executable form with such
+    an offer, in accord with Subsection b above.)
+
+The source code for a work means the preferred form of the work for making
+modifications to it.  For an executable work, complete source code means all
+the source code for all modules it contains, plus any associated interface
+definition files, plus the scripts used to control compilation and installation
+of the executable.  However, as a special exception, the source code distributed
+need not include anything that is normally distributed (in either source or
+binary form) with the major components (compiler, kernel, and so on) of the
+operating system on which the executable runs, unless that component itself
+accompanies the executable.
+
+If distribution of executable or object code is made by offering access to copy
+from a designated place, then offering equivalent access to copy the source code
+from the same place counts as distribution of the source code, even though third
+parties are not compelled to copy the source along with the object code.
+
+  4. You may not copy, modify, sublicense, or distribute the Program except as
+expressly provided under this License.  Any attempt otherwise to copy, modify,
+sublicense or distribute the Program is void, and will automatically terminate
+your rights under this License. However, parties who have received copies, or
+rights, from you under this License will not have their licenses terminated so
+long as such parties remain in full compliance.
+
+  5. You are not required to accept this License, since you have not signed it.
+However, nothing else grants you permission to modify or distribute the Program
+or its derivative works.  These actions are prohibited by law if you do not
+accept this License.  Therefore, by modifying or distributing the Program (or
+any work based on the Program), you indicate your acceptance of this License to
+do so, and all its terms and conditions for copying, distributing or modifying
+the Program or works based on it.
+
+  6. Each time you redistribute the Program (or any work based on the Program),
+the recipient automatically receives a license from the original licensor to
+copy, distribute or modify the Program subject to these terms and conditions.
+You may not impose any further restrictions on the recipients' exercise of the
+rights granted herein. You are not responsible for enforcing compliance by third
+parties to this License.
+
+  7. If, as a consequence of a court judgment or allegation of patent infringe-
+ment or for any other reason (not limited to patent issues), conditions are im-
+posed on you (whether by court order, agreement or otherwise) that contradict
+the conditions of this License, they do not excuse you from the conditions of
+this License.  If you cannot distribute so as to satisfy simultaneously your ob-
+ligations under this License and any other pertinent obligations, then as a con-
+sequence you may not distribute the Program at all.  For example, if a patent
+license would not permit royalty-free redistribution of the Program by all those
+who receive copies directly or indirectly through you, then the only way you
+could satisfy both it and this License would be to refrain entirely from distri-
+bution of the Program.
+
+If any portion of this section is held invalid or unenforceable under any parti-
+cular circumstance, the balance of the section is intended to apply and the
+section as a whole is intended to apply in other circumstances.
+
+It is not the purpose of this section to induce you to infringe any patents or
+other property right claims or to contest validity of any such claims; this
+section has the sole purpose of protecting the integrity of the free software
+distribution system, which is implemented by public license practices.  Many
+people have made generous contributions to the wide range of software distri-
+buted through that system in reliance on consistent application of that system;
+it is up to the author/donor to decide if he or she is willing to distribute
+software through any other system and a licensee cannot impose that choice.
+
+This section is intended to make thoroughly clear what is believed to be a con-
+sequence of the rest of this License.
+
+  8. If the distribution and/or use of the Program is restricted in certain
+countries either by patents or by copyrighted interfaces, the original copyright
+holder who places the Program under this License may add an explicit geograph-
+ical distribution limitation excluding those countries, so that distribution
+is permitted only in or among countries not thus excluded.  In such case, this
+License incorporates the limitation as if written in the body of this License.
+
+  9. The Free Software Foundation may publish revised and/or new versions of
+the General Public License from time to time.  Such new versions will be similar
+in spirit to the present version, but may differ in detail to address new
+problems or concerns.
+
+Each version is given a distinguishing version number.  If the Program specifies
+a version number of this License which applies to it and "any later version",
+you have the option of following the terms and conditions either of that version
+or of any later version published by the Free Software Foundation.  If the Pro-
+gram does not specify a version number of this License, you may choose any
+version ever published by the Free Software Foundation.
+
+  10. If you wish to incorporate parts of the Program into other free programs
+whose distribution conditions are different, write to the author to ask for per-
+mission.  For software which is copyrighted by the Free Software Foundation,
+write to the Free Software Foundation; we sometimes make exceptions for this.
+Our decision will be guided by the two goals of preserving the free status of
+all derivatives of our free software and of promoting the sharing and reuse of
+software generally.
+
+~[NO WARRANTY]~
+
+  11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY FOR
+THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN OTHERWISE
+STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE
+PROGRAM "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY AND PERFOR-
+MANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE PROGRAM PROVE DEFECTIVE, YOU
+ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
+
+  12. IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
+WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR REDISTRIBUTE
+THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY
+GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR
+INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA
+BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
+FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS), EVEN IF SUCH HOLDER
+OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+~[END OF TERMS AND CONDITIONS]~
+
+  {Contents,Leave all this legal stuff behind and go to Contents}
+.AboutDoc About this document
+[About this document]
+
+  ~OpenCP 2.5 manual~ (hypertext version for use with CPHELPER)
+
+  Original document by:
+[Dirk Jagdmann and Tammo Hinrichs]
+
+  Original document converted to HTML with:
+[LaTeX2HTML v98.1p1 release, by Nikos Drakos]
+
+  HTML->Help conversion, Help format design, CPHELPER plugin:
+[Fabian Giesen (RYG/Chrome Design)]
+
+~[NOW QUIT THIS STUPID HELP TOOL AND ENJOY OPENCP!!!!]~
+
+  ~Note~: For questions about the documentation, please mail doj, ~doj@cubic.org~,
+but for questions about this, please mail me, ~fabian@jdcs.su.nw.schule.de~.
+(that means, if you have problems with the contents, mail doj, if you have
+problems with the help/helpfiles, mail me).
+
+  {Contents,Flee to contents, fast!}
+.end

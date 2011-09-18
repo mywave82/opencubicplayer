@@ -1,0 +1,32 @@
+* Move freq.c into mcpbase.so
+
+* http://www.zophar.net/tech/files/psf_format15.txt
+
+* MED files
+
+* Finish off all the TODO's and fix all bugs :-)
+
+* Embedd error-messages and such alike.
+
+* Write C-friends of all assembler inlines.. easier later when porting
+  - devwmixf is the only thing left
+
+* Update help files with all keyboard stuff that needs to be changed due to
+  compat with vt100 consoles
+
+* mif.c / MDZ files
+
+* make adb.c and mdb.c use mmap instead of malloc+fread.. makes swapping better
+  for the host if the files grows like.. BIG
+
+* mmcmp compressed files - I need a mmcmp-compressed file
+
+* arj and other archive files
+
+* file detection routines need to check the buffer len
+
+* Make assembler inlines for PANPROC in playmp2 and playogg
+
+* ALT-R on ARC-entry in filebrowser should rescan archieve
+
+http://alsa.opensrc.org/DmixPlugin

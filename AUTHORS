@@ -1,0 +1,19 @@
+Original authors of Cubic Player is the Cubic Team (www.cubic.org)
+DOJ and Pascal really rocks on that kind of software, so all respect goes to
+those guys who made this player.
+
+Linux rewrite/porting is done by Stian Skjelstad (and hopefully a couple of
+other people soon). The player itself is just rewritten to Linux, and assembler
+stuff in wrapped into C instead of using external assembler. With time
+C-replacers will be availble as a start for those who intend to port this
+beyond to other architechures. Filehandling is more-or-less redone from
+scratch, with the old one on my mind.
+
+playay plugin is cut'n paste from the aylet project. Copyright holders here are
+Russell Marks, Ian Collier and the MAME project.
+
+playopl plugin contains some code from the original AdPlug project (which is
+also links too). This code has been released under GPLv2 with the permission
+from the original copyright holder, Simon Peter.
+
+Stian Skjelstad

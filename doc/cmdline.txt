@@ -1,0 +1,31 @@
+OpenCP command line help
+
+Usage: cp [<options>]* [@<playlist>]* [<modulename>]*
+
+Options:
+
+-h                : show this help
+-c<name>          : use specific configuration
+-f : fileselector settings
+     r[0|1]       : remove played files from module list
+     o[0|1]       : don't scramble module list order
+     l[0|1]       : loop modules
+-v : sound settings
+     a{0..800}    : set amplification
+     v{0..100}    : set volume
+     b{-100..100} : set balance
+     p{-100..100} : set panning
+     r{-100..100} : set reverb
+     c{-100..100} : set chorus
+     s{0|1}       : set surround
+     f{0..2}      : set filter (0=off, 1=AOI, 2=FOI)
+-s : device settings
+     p<name>      : use specific player device
+     s<name>      : use specific sampler device
+     w<name>      : use specific wavetable device
+     r{0..64000}  : sample at specific rate
+     8            : play/sample/mix as 8bit
+     m            : play/sample/mix mono
+
+Example : cp -fl0,r1 -va80,p50,f2 -spdevpdisk -sr48000 ftstar.xm
+          (for nice HD rendering of modules)

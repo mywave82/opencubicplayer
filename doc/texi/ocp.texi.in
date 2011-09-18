@@ -1,0 +1,74 @@
+\input texinfo
+@setfilename ocp
+@settitle Open Cubic Player
+
+@copying
+This documentiation falls under the GPL license.
+
+Copyright @copyright{} 2005 Stian Skjelstad.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+@end copying
+
+@dircategory Audio
+@direntry
+* OCP: (ocp).                   Open Cubic Player
+@end direntry
+
+@titlepage
+@title Open Cubic Player @PACKAGE_VERSION@ for UNIX
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@ifnottex
+@node Top
+@top Index
+
+OCP is a music file player. It is derived from the @emph{Cubic Player 2.0appe}
+which was developed by Niklas Beisert. The latest version of UNIX port is @PACKAGE_VERSION@
+See @pxref{install} on how to get a copy of OCP.
+
+OCP is published under the GNU General Public License (GPL). That means you
+can use this software without charging for it. However OCP is not in the public domain!
+
+The source code is available to the public and everybody is encouraged to make
+changes to it. Please send any modifications and bugfixes to the authors. The
+authors do not take any warranty for any damages whatever kind produced by this
+software. For further details see the file
+@url{http://www.gnu.org/copyleft/gpl.html}
+
+@insertcopying
+@end ifnottex
+
+@menu
+Users Manual
+* install::
+* starting::
+* fileselector::
+* player::
+* configuration::
+* support::
+* faq::
+
+Developers Manual
+* plugin::
+* mdz::
+* wap::
+@end menu
+
+@include install.texi
+@include starting.texi
+@include fileselector.texi
+@include player.texi
+@include configuration.texi
+@include support.texi
+@include faq.texi
+@include plugin.texi
+@include mdz.texi
+@include wap.texi
+
+@bye

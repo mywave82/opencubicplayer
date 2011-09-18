@@ -1,0 +1,486 @@
+[version]
+ epoch=20110319
+
+[general]
+;link=
+;prelink=
+;mmcmphlp
+;  datapath=     ; path to opencp's pictures and animations.
+;  tempdir=
+
+
+[defaultconfig] ; default configuration
+link=medialib
+;  prelink= ; preloaded dlls
+
+[sound] ; default sound section
+; these drivers will be loaded at startup. change parameters at the
+; sections for the devices.
+; take those drivers out of the list, you will not need, because it
+; will speed up the loading process and require less memory
+; you can also add new devices by copying the section and renaming it.
+; (8 chars only)
+; note: the first device found in each list will be uses as default
+
+  playerdevices=devpALSA devpOSS devpCA devpSDL devpNone devpDisk
+  samplerdevices=devsOSS devsNone
+  wavetabledevices=devwMixF devwmixQ devwMix devwNone
+  mixrate=44100           ; -sr44100
+  mixprocrate=4096000     ; max channels*rate (for slow cpus) (4096000==64*64000)
+  mix16bit=on             ; -s8-
+  mixstereo=on            ; -sm-
+  plrbufsize=200          ; milliseconds
+  mixbufsize=200          ; milliseconds
+  samprate=44100          ; -sr44100
+  samp16bit=on            ; -s8-
+  sampstereo=on           ; -sm-
+  smpbufsize=2000         ; milliseconds
+  defplayer=              ; -sp
+  defsampler=             ; -ss
+  defwavetable=           ; -sw
+  midichan=64             ; number of channels used for midi playback
+  itchan=64               ; number of channels used for .it playback
+  cdsamplelinein=off      ; if you turn this one on, cp will sample line in
+                          ; instead of cd in when playing cdaudio
+  digitalcd=on            ; use digital playback instead of analog
+  bigmodules=devwMixF     ; this wavetable device will be used if a module
+                          ; was tagged "big" with alt-b in the fileselector.
+                          ; (use if wavetable ram is not enough by far)
+  wavetostereo=1          ; conv mono waves to stereo. turn off with sbpro
+  waveratetolerance=50    ; samprate can vary up to 50/1000
+  amplify=100             ; -va100
+  panning=100             ; -vp100
+  volume=100              ; -vv100
+  balance=0               ; -vb0
+  reverb=0                ; -vr0
+  chorus=0                ; -vc0
+  surround=off            ; -vs-
+  filter=2                ; -vf2   (FOI)
+
+
+[screen] ; default screen section
+  usepics=*.gif *.tga
+  compomode=off      ; compomode will remove all texts and display
+                     ; fileselector comment as the name (put compo # there!)
+  startupmode=text   ; any of: coolhelp, dots, graph, links, msg, phase, scope, text, wuerfel2
+  screentype=7       ; screenmode
+
+; palette=0 4 1 5 2 6 3 7 8 c 9 d a e b f   ; text mode color mapping
+; palette=0 6 6 6 6 6 6 e 6 6 e e e e e e
+; palette=0 2 2 2 2 2 2 a 2 2 a a a a a a
+; palette=1 2 4 7 5 3 6 7 9 a c f d b e f
+
+  analyser=on
+  mvoltype=1
+  pattern=on
+  insttype=0
+  channeltype=1
+  uselfb=yes          ; disable use of VESA 2.0
+  fps=20
+
+[x11]
+  autodetect=on   ; Use X instead of curses when possible
+  font=1	  ; 0 => 4x4, 1 => 8x8, 2 => 16x8
+  xvidmode=on     ; Change resolution on fullscreen
+
+[curses]
+  fixbadgraphic=off       ; ncurses on redhat 7.3 atleast is known to fail sometime to blank some cells of text
+
+
+[fileselector] ; default fileselector section
+; files with these extensions will be scanned by the fileselector
+; you might add 001 002 003 004 if you are a fan of imphobia :)
+  modextensions=MOD S3M XM IT MDL DMF ULT AMS MTM 669 NST WOW OKT PTM MXM MID WAV RMI MP1 MP2 MP3 OGG OGA SID DAT PLS M3U PLT OGG AY YM OGA
+  movepath=  ; default path to move files
+  typecolors=on
+  editwin=on
+  writeinfo=on
+  scanmdz=on
+  scaninarcs=on
+  scanmodinfo=on
+  scanarchives=off
+  putarchives=on
+  playonce=on
+  randomplay=off
+  loop=off
+  path=.
+
+
+[midi]
+;  use=....  to force which option to use [ultradir fff freepats timidity]
+  fff=c:\iw\gsfull4m.fff
+  ultradir=@ULTRADIR@
+  freepats=@FREEPATS@
+
+;device configuration:
+;[handle]
+;  link=...                                     (internal) link drivers
+;  subtype=...                                  subtype
+;  port=...                                     primary port (hex)
+;  port2=...                                    secondary port (hex)
+;  irq=...                                      primary irq
+;  irq2=...                                     secondary irq
+;  dma=...                                      primary dma
+;  dma2=...                                     secondary dma
+;  bypass=...                                   bypass detect on/off
+
+[devpALSA]
+  link=devpalsa
+
+[devpCA]
+  link=devpcoreaudio
+
+[devpOSS]
+  link=devposs
+  revstereo=off
+  path=/dev/dsp
+  mixer=/dev/mixer
+
+[devpDisk]
+  link=devpdisk
+
+[devpMPx]
+  link=devpmpx
+  bitrate=128000
+  vbr=off
+
+[devpNone]
+  link=devpnone
+
+[devsOSS]
+  link=devsoss
+  revstereo=off
+  path=/dev/dsp
+  mixer=/dev/mixer
+  igain=1  ; -1 to 100 :How much IGAIN do you need to sample. -1 to leave it.. Some buggy soundcards give zero sound if this is not set
+
+[devpSDL]
+  link=devpsdl
+
+[devsNone]
+  link=devsnone
+
+[devwNone]
+  link=devwnone
+
+[devwMix]
+  link=devwmix
+  mixResample=off
+  subtype=0
+  postprocs=_iReverb
+  postprocadds=
+
+[devwMixQ]
+  link=devwmix
+  subtype=1
+  mixResample=off
+  postprocs=_iReverb
+  postprocadds=
+
+[devwMixF]
+  link=devwmixf
+  mixResample=off
+  volramp=on       ; turn this off if the mixer sounds too "soft" for you
+  declick=on
+  postprocs=_fReverb
+  postprocadds=
+
+
+; archiver configuration
+; %% -> %
+; %a -> archive path
+; %n -> filename
+; %d -> destination path
+
+[arcZIP]
+  get=pkunzip %a %d %n
+  put=pkzip %a %n
+  delete=pkzip -d %a %n
+  deleteempty=on ; pkzip will not remove empty archives, this will delete
+                 ; all 22 byte archives.
+
+[arcARJ]
+  get=arj e %a %d %n
+  put=arj a %a %n
+  delete=arj d %a %n
+  moveto=arj m %a %n
+
+[arcRAR]
+  get=rar e -std %a %d %n
+  put=rar a -std %a %n
+
+[arcLHA]
+  get=lha e -a %a %d %n
+
+[arcACE]
+  get=ace32 e %a %n %d
+  scaninsolid=false    ; scan in solid archives? (better no ;)
+
+
+[filetype 0]
+  color=1
+  name=MOD
+  interface=plOpenCP
+  pllink=playxm
+  player=xmpPlayer
+
+[filetype 1]
+  color=4
+  name=MODd
+  interface=plOpenCP
+  pllink=playxm
+  player=xmpPlayer
+
+[filetype 2]
+  color=4
+  name=MODt
+  interface=plOpenCP
+  pllink=playxm
+  player=xmpPlayer
+
+[filetype 3]
+  color=4
+  name=M31
+  interface=plOpenCP
+  pllink=playxm
+  player=xmpPlayer
+
+[filetype 6]
+  color=4
+  name=M15
+  interface=plOpenCP
+  pllink=playxm
+  player=xmpPlayer
+
+[filetype 7]
+  color=4
+  name=M15t
+  interface=plOpenCP
+  pllink=playxm
+  player=xmpPlayer
+
+[filetype 8]
+  color=4
+  name=WOW
+  interface=plOpenCP
+  pllink=playxm
+  player=xmpPlayer
+
+[filetype 9]
+  color=2
+  name=S3M
+  interface=plOpenCP
+  pllink=playgmd
+  player=gmdPlayer
+  ldlink=loads3m
+  loader=mpLoadS3M
+
+[filetype 10]
+  color=3
+  name=XM
+  interface=plOpenCP
+  pllink=playxm
+  player=xmpPlayer
+
+[filetype 11]
+  color=1
+  name=MTM
+  interface=plOpenCP
+  pllink=playgmd
+  player=gmdPlayer
+  ldlink=loadmtm
+  loader=mpLoadMTM
+
+[filetype 12]
+  color=2
+  name=669
+  interface=plOpenCP
+  pllink=playgmd
+  player=gmdPlayer
+  ldlink=load669
+  loader=mpLoad669
+
+[filetype 13]
+  color=5
+  name=ULT
+  interface=plOpenCP
+  pllink=playgmd
+  player=gmdPlayer
+  ldlink=loadult
+  loader=mpLoadULT
+
+[filetype 14]
+  color=6
+  name=DMF
+  interface=plOpenCP
+  pllink=playgmd
+  player=gmdPlayer
+  ldlink=loaddmf
+  loader=mpLoadDMF
+
+[filetype 15]
+  color=5
+  name=OKT
+  interface=plOpenCP
+  pllink=playgmd
+  player=gmdPlayer
+  ldlink=loadokt
+  loader=mpLoadOKT
+
+[filetype 16]
+  color=3
+  name=MID
+  interface=plOpenCP
+  pllink=playgmi
+  player=gmiPlayer
+
+[filetype 17]
+  color=3
+  name=CDA
+  interface=plOpenCP
+  pllink=playcda
+  player=cdaPlayer
+
+[filetype 18]
+  color=4
+  name=MIDd
+  interface=plOpenCP
+  pllink=playgmi
+  player=gmiPlayer
+
+[filetype 19]
+  color=2
+  name=PTM
+  interface=plOpenCP
+  pllink=playgmd
+  player=gmdPlayer
+  ldlink=loadptm
+  loader=mpLoadPTM
+
+[filetype 21]
+  color=6
+  name=MDL
+  interface=plOpenCP
+  pllink=playgmd
+  player=gmdPlayer
+  ldlink=loadmdl
+  loader=mpLoadMDL
+
+[filetype 22]
+  color=3
+  name=AMS
+  interface=plOpenCP
+  pllink=playgmd
+  player=gmdPlayer
+  ldlink=loadams
+  loader=mpLoadAMS
+
+[filetype 23]
+  color=2
+  name=INP
+  interface=plOpenCP
+  pllink=playinp
+  player=inpPlayer
+
+[filetype 24]
+  color=6
+  name=DEVp
+  interface=plrIntr
+
+[filetype 25]
+  color=5
+  name=DEVs
+  interface=smpIntr
+
+[filetype 26]
+  color=3
+  name=DEVw
+  interface=mcpIntr
+
+[filetype 27]
+  color=5
+  name=IT
+  interface=plOpenCP
+  pllink=playit
+  player=itpPlayer
+
+[filetype 28]
+  color=14
+  name=WAV
+  interface=plOpenCP
+  pllink=playwav
+  player=wavPlayer
+
+[filetype 30]
+  color=6
+  name=MPx
+  interface=plOpenCP
+  pllink=playmp2
+  player=mpegPlayer
+
+[filetype 31]
+  color=6
+  name=SID
+  interface=plOpenCP
+  pllink=playsid
+  player=sidPlayer
+
+; I have disabled this filetype, because the new mxmplay0.9 files crash ocp
+;[filetype 32]
+;  color=3
+;  name=MXM
+;  interface=plOpenCP
+;  pllink=playxm
+;  player=xmpPlayer
+
+[filetype 33]
+  color=3
+  name=MODf
+  interface=plOpenCP
+  pllink=playxm
+  player=xmpPlayer
+
+[filetype 35]
+  color=6
+  name=OGG
+  interface=plOpenCP
+  pllink=playogg
+  player=oggPlayer
+
+[filetype 36]
+  color=6
+  name=OPL
+  interface=plOpenCP
+  pllink=playopl
+  player=oplPlayer
+
+[filetype 37]
+  color=6
+  name=AY
+  interface=plOpenCP
+  pllink=playay
+  player=ayPlayer
+
+[filetype 38]
+  color=6
+  name=FLA
+  interface=plOpenCP
+  pllink=playflac
+  player=flacPlayer
+
+[filetype 39]
+  color=6
+  name=YM
+  interface=plOpenCP
+  pllink=playym
+  player=ymPlayer
+
+[filetype 128]
+  color=7
+  name=PLS
+  handler=fsAddPLS
+
+[filetype 129]
+  color=7
+  name=M3U
+  handler=fsAddM3U

@@ -1,0 +1,801 @@
+* Changelog was created 31. Aug 2004. About time perhaps
+
+2004-08-31: filesel/modlist.c: updated fs12name to use rindex, and removed bug using strncpy instead of strcat
+
+2004-08-31: boot/plinkman.c: updated lnkDoLoad do work if LD_DEBUG is not defined (STUPID BUG), and made dll-load only available via cfProgramDir. Needed if ran as setuid.
+
+2004-08-31: boot/kickload.c: on crash, loose setuid permissions before we kick off gdb and other cool stuff
+
+2004-08-31: filesel/*: removed all modlist->pathtothis stuff, and renamed dmPath to curdirpath since original ocp used that
+
+2004-08-31: filesel/pfilesel.c: updated bugs in fsEditPath, when doing strlen() on uinitilized data, path-buffer-overrun and that enter is named _KEY_ENTER. Still behaves a bit not userfriendly until we make the filemask stuff
+
+2004-08-31: config.h: removed FNAME_MAX and EXT_MAX, since they should be local to each plugin.
+
+2004-09-01: Makefile: added DESTDIR
+
+2004-09-01: ocp.spec: Created a redhat build spec file
+
+2004-09-02: poutput-cursor (and some other): added support for setcur* and plDosShell
+
+2004-09-06: boot/kickload.c Renamed ".ocp" to ".ocp-" VERSION
+
+2004-09-06: Makefile: Remove backup files
+
+2004-09-06: boot/plinkman,c: better error message if no dllextinfo is found and LD_DEBUG is on
+
+2004-09-06: *: fix non-local characters in sources.
+
+2004-09-06: dev/Makefile: don't run the tests
+
+2004-09-06: devp/devposs.c: release /dev/dsp when it is not in use
+
+2004-09-06: devs/devsoss.c: First release.. Welcome buddy
+
+2004-09-06: dev/sampler.c dev/player.c devs/devsnone.c: Drivers allocate their own memory, since they might do funny things like mmap()
+
+2004-09-06: dev/devisamp.c dev/deviplay.c dev/deviwave.c: Forgot to flag to modlist that we are a file, so no device info was shown in filelist
+
+2004-09-07: stuff/timer.c: use gettimeofday() to calculate cpu-usage.
+
+2004-09-07: VERSION 0.0.9
+
+2004-09-08: __asm__ : updated all statemens to correctly identify registers, and dirty registers. But still miss to tag incomming registers as dirty.
+
+2004-09-08: playit/itplay.c: copy 5 bytes instead of sizeof(c->delayed) in playtick(). We don't want to touch unmapped memory
+
+2004-09-10: playmp2:* initial version.. based on playwav and playmp and links against libmad
+
+2004-09-11: playogg: initial version.. based on playwav and playmp and links agains ogg vorbis
+
+2004-09-11: configure configure.ac config.h.in Rules.make.in: autoconf has been introduced
+
+2004-09-11: Makefile */Makefile */*/Makefile: autoconf
+
+2004-09-11: help/cphelper.c: Stupid misstake prevented cp.hlp to be loaded from cp.pak
+
+2004-09-13: binfile/binfpak.c: added a missing fseek
+
+2004-09-13: goodies/pack/pack.c: Removed a bogus fwrite
+
+2004-09-11: VERSION 0.1.0
+
+2004-09-13: configure.ac: Check that gcc is version 3 or higher
+
+2004-09-14: boot/kickload.c: use execvp on "gdb" aswell and honor $PATH
+
+2004-09-14: filesel/pfilesel.c filesel/adb.c: Make sure the *ReadHandle() does not survive a fork
+
+2004-09-14: play*/*pplay.c*: Make sure 128 is the big-screen value, and not 132 in *GDrawStrings()
+
+2004-09-16: playogg/oggplay.c: fixed problem regarding random-sound in the first buffer-run and a signess problem around the PANPROC function
+
+2004-09-16: rules.make Makefile configure.ac */Makefile: Don't use ld, but gcc/g++ instead, else the shared libraries wont be linked to libc, stdlibc+ etc when compiler without optimization. Wierd that it worked with optimization though.
+
+2004-09-16: cpiface/cpiphase.c: gcc 3.3.3 has an optimizebug when using -O2 or higher. NASTY
+
+2004-09-17: VERSION 0.1.1
+
+2004-09-17: playogg/oggplay.c: Fixed the problem in bitrate reporting
+
+2004-09-17: filesel/fsmain.c: Fixed problem with dos-shell not setting the screen-mode
+
+2004-09-18: filesel/fsmain.c filesel/pfilesel.c stuff/poutput-curses.c: tweakings and fixing regarding outputting and restoring of the screen
+
+2004-09-18: cpiface/cpitrack.c: Fixed a bug when scrolling channels, when they are zoomed wider than the screen
+
+2004-09-18: play*/*pplay.c*: GStrings(): clear the part of the buffer we want to be blank at the right
+
+2004-09-18: filesel/pfilesel.c filesel/adb.c: dump out "Scanning archive" message to the console
+
+2004-09-18: stuff/poutput-vcsa.c: Implemented conSave/conRestore
+
+2004-09-18: stuff/poutput-fb.c: devfs/linux kernel 2.6 support in device filename
+
+2004-09-20: stuff/poutput-dga.c: DGA in XFree86 atleast leaves a descriptor open to /dev/mem across exec-calls, so we manually flag it to be closed
+
+2004-09-20: filesel/cdrom.c: Duplicate filedescriptor, so we can try to avoid the kernel re-reading the toc when we access the cdrom from the fileselector while in use
+
+2004-09-20: config.h autoconfig.ac */*.c*: DLLVERSION tagging
+
+2004-09-20: VERSION 0.1.2
+
+2004-09-26: boot/kickload.c: Get out of graphicmode on signals.
+
+2004-10-04: playmp2/mpplay.c: Close file on exec
+
+2005-01-18: configure.ac */Makefile.in and some few other c files: merged in some BSD related defines
+
+2005-01-18: boot/kickload.c: jump out of graphical-mode on crashes
+
+2005-01-18: playmp2/mpplay.c: close file on exec
+
+2005-01-18: stuff/framelock.*: first implementation
+
+2005-01-18: VERSION 0.1.3
+
+2005-02-08: cpiface/mcpedit.c Added \ as key to split speed/pitch (ctrl-f12 in dos/win32 version)
+
+2005-01-24: filesel/cphlpfs.c framelock the right way
+
+2005-01-24: filesel/* make filemask work
+
+2005-02-07: * */*.c: -fPIC support
+
+2005-04-09: filesel/pfilesel.c: dynamic width in fileinfobox
+
+2005-04-09: VERSION 0.1.4
+
+2005-04-23: renamed ocplinux.ini(.in) to ocp.ini(.in) to reflect we now support BSD
+
+2005-04-23: changed all comments/messages from linux to unix.
+
+2005-04-23: keyboard updates
+
+2005-04-23: detect gcc-versions better in ./configure
+
+2005-04-23: make cdrom-support optional since current cdrom driver is linux-only.
+
+2005-04-23: Removed support for config having other names like cp.ini etc in the kickloader
+
+2005-04-23: Removed lots of out-commented code and watcom-assembler inlines.
+
+2005-04-23: Moved some duplicated mixer-code from play*/ to a common dev/mixclip.c file.
+
+2005-04-23: devw/dwnone_asminc.c no longer requires assembler inlines.
+
+2005-04-23: Made filesel/modlist.c a little more intelligent in cpu-usage.
+
+2005-04-23: Updated all copyrights to 2005
+
+2005-04-23: Made support for various PAT config layouts for playgmi/* and cleaned up the code, so midi works for unix users
+
+2005-04-23: Fixed keyboard handling in stuff/poutput-dga.c to support ALT keys.
+
+2005-04-23: Added more escape-codes into stuff/poutput-keyboard.c
+
+2005-04-23: VERSION 0.1.5
+
+2005-05-01: Cleaned up Makefile.in install routines to consider --prefix from configure
+
+2005-05-01: medialib/* implemented
+
+2005-05-01: --with-dir-suffix added to ./configure to make BSD users happy (drop version from path-names)
+
+2005-05-01: Made X11 fullscreen driver, and implemented wurfel-mode again
+
+2005-05-01: Let kickload close X11 on crash
+
+2005-05-01: keyboard updates
+
+2005-05-01: detect if ncurses can resize (old versions of ncurses can't) in configure
+
+2005-05-01: detect if libc has memmem in configure
+
+2005-05-01: ALT-C from player added
+
+2005-05-01: background support (needed palette flushing)
+
+2005-05-01: Crash-bug in devw/dwmixfa.c fixed
+
+2005-05-01: Remove debuging in filesel/mdb.c that was VERY slow
+
+2005-05-01: Make some graphic-routines in stuff/poutput*.c
+
+2005-05-01: VERSION 0.1.6
+
+2005-05-04: freedesk.org icon/menu-entry
+
+2005-05-04: don't crash in kickload if player fails to init.
+
+2005-05-04: Let .ocp in $HOME not use version. Tag ocp.ini instead with a variable
+
+2005-05-04: Redid loading-order of modules in ocp.ini
+
+2005-05-04: Keyboard updates
+
+2005-05-04: --with-debug in configure makes ocp drop optimizations, drop usage of SIGALRM, and enables kickloading of gdb
+
+2005-05-04: Fix wurfel and picture loading (make it more userfriendly)
+
+2005-05-04: Update freedesktop.org files.
+
+2005-05-04: Documentation converted into texinfo
+
+2005-05-04: Let fileselector and player use same screen-resolution
+
+2005-05-04: Make private variables static in help/cphelper.c medialib/medialib.c
+
+2005-05-04: playgmi/*: freepats and timidity should somewhat work (note= and other parameters aren't interprated yet)
+
+2005-05-04: VERSION 0.1.7
+
+2005-05-09: Make cpi-anal sample enough data for it's output to avoid random-noise
+
+2005-05-10: Makefile.in update to respect ./configure paths
+
+2005-05-10: Removed lrmi
+
+2005-05-10: Removed not-used code-paths in console-driver
+
+2005-05-10: Updated freedesktop.org files
+
+2005-05-10: Compile-issue with dev/mixasm.c and -fPIC solved
+
+2005-05-10: Let console-drivers take-over keyboard interface completley when they are used
+
+2005-05-10: X11 and DGA tries to respect rootwindow changes more.
+
+2005-05-10: Handle curses/vcsa key-throttles better
+
+2005-05-13: configure.ac set LIBDIR very wrong when using --libdir= or --with-dir-suffix=
+
+2005-05-13: filesel/pfilesel.c parse ocp.ini before adding drives, init rootfs etc
+
+2005-05-18: filesel/adb.c filesel/mdb.c medialib/medialib.c: More verbose init to tell user what ocp does
+
+2005-05-28: filesel/pfilsel.c: RD_PUTDSUBS, recursive directory adding
+
+2005-05-31: filesel/*: bufferchecks in arctar, and made adb take 127 chars names instead of 63
+
+2005-05-31: filesel/pfilesel.c: Changing directory, places to marker at the directory you came from
+
+2005-06-01: playmp2/*: Scan file-length, since VBR files are ... vbr in time
+
+2005-06-01: playopl/* adplug support (beta)
+
+2005-06-01: VERSION 0.1.8
+
+2005-05-05: Don't crash loading modules after playopl has been used
+
+2005-06-07: Don't crash when using curses and x11 is present
+
+2005-06-08: Some gcc 4.x fixes and a adplug get-extention buffer-overflow
+
+2005-06-08: filesel/cdrom.c: strncpy instead strncmp doesn't really work as expected
+
+2005-06-09: VERSION 0.1.9
+
+2005-07-11: Make sure all x11_init() are inside HAVE_X11 defines
+
+2005-12-02: Aylet support
+
+2005-12-02: Don't crash after ALT-C if in graphical mode
+
+2005-12-02: X11 crash-fix
+
+2005-12-02: Various crash-fixes
+
+2005-12-02: Putting myself as author (of this fork)
+
+2005-12-02: VERSION 0.1.10-rc1
+
+2005-12-06: -ldl must be checked without altered CFLAGS, since some libs might link -ldl
+
+2005-12-06: VERSION 0.1.10-rc2
+
+2005-12-06: configure.ac: -ldl fix
+
+2005-12-18: alsa initial support
+
+2005-12-18: VERSION 0.1.10-rc3
+
+2005-12-18: Make it possible to browse files by long filenames
+
+2005-12-18: ALSA Buffer underruns are now handled
+
+2005-12-18: VERSION 0.1.10-rc4
+
+2005-12-29: cdrom updates
+
+2005-12-31: Read .m3u and .pls files
+
+2005-12-31: Write .pls files
+
+2005-12-18: VERSION 0.1.10-rc5
+
+2006-01-01: Better handling of paths in kickload
+
+2006-04-28: Improve the ocp.ini parser, and some minor updates from cp.ini=>ocp.ini
+
+2006-04-28: cfStoreConfig, can be called from ALT_C dialog
+
+2006-04-28: dev/devi*.c: Handle failure of the first init call (check if *curdev is valid)
+
+2006-04-28: devp/devpalsa.c: Don't crash if alsa is not available
+
+2006-05-18: filesel/pfilesel.c: Add a filetype editor and color-editor
+
+2006-05-20: playgmd/gmdptype.c: Send adlib s3mfiles to adplug, and length check all buffers
+
+2006-06-20: filesel/fstypes.c: Handle headerless pls and m3u files
+
+2006-07-23: *: Changed some paths in the configure/build system, so some files might have moved around
+
+2006-08-02: Thanks to Luigi Auriemma for reporting some overflow issues. Fixed a bunch of overflows like this.
+
+2006-08-02: Some trackers sets unused samples to strange values, and OCP sent them to adlib, when they shouldn't have been
+
+2006-08-02: VERSION 0.1.10-rc6
+
+2006-08-08: filesel/pfilesel.c: Removed a memory-leak
+
+2006-08-08: playmp2/mpptype.c: Removed a buffer overrun (buffer was from heap)
+
+2006-08-08: filesel/gendir.c: Use a tempbuffer, to avoid strcpy with same source and dest. Valgrind complained on those
+
+2006-08-25: */type*: make opltype work in detection
+
+2006-08-25: filesel/arczip.c zip file support (read-only and deflate only)
+
+2006-08-25: cpiface/cpitrack: Remove some small bugs/graphical issues
+
+2006-10-29: *: Detect broken adplug installations (it doesn't have correct path for libbinio)
+
+2006-10-30: *: Try to use pkg-config for adplug (version 2.x and above has this)
+
+2006-10-30: *: Try to use pkg-config for id3tag and mad
+
+2006-10-30: *: Try to use pkg-config for ogg, vorbis and vorbisfile
+
+2006-11-01: devw/devwmixf.c: -fstrict-aliasing fix for gcc 4.x
+
+2006-11-01: VERSION 0.1.10-rc7
+
+2006-11-04: devw/devwmix.c:
+		compiler barrier for the "thread" lock
+		a sign error in volume, causing ticking sounds
+
+2006-11-07: configure.ac: Detect broken signed char to signed int conversions (gcc 4.1.1. with -O or higher bug)
+
+2006-11-08: VERSION 0.1.10-rc8
+
+2006-11-14: boot/kickload.c: fix stderr for reset
+
+2006-11-14: Various assembler->C updates
+
+2006-11-16: devwmix and devwmixq without assembler now works
+
+2006-11.18: Renamed cp.pak to ocp.pak
+            Renamed cp.hlp to ocp.hlp
+
+2006-11-25: Lots up endian updates (and some other minor updates along the same run)
+
+2006-11-26: New logic in playlist:
+            If scramble/random, you see no difference.
+            If non-scramle, the the cursor tells the next song to play
+            If non-scramle and no-remove, the cursor in playlist will step down as you play the list
+
+2006-11-28: Always display filter to off on streams
+
+2006-11-28: Fix noise when starting to play streams
+
+2006-11-28: Allow to use modes that aren't supported in fullscreen when we are in a window.
+
+2006-11-28: Fix recursive add files
+
+2006-11-28: VERSION 0.1.10_rc9
+
+2006-11-29: Fixed a crash in .xm loader that was introduced in 0.1.10_rc9
+
+2006-11-29: Fixed a buffer-error in boot/psetting.c when saving settings
+
+2006-11-30: It compiles on darwin. Don't know if it works as excepted though
+
+2006-12-01: boot/psetting.c: Storing ocp.ini didn't flush/close itself, corrupting the ini file for next time you ran ocp
+
+2006-12-01: filesel/pfilesel.c: Small memoryleak when exiting ocp fixed
+
+2006-12-01: playmp2/mpplay.c: Memory leak fixed
+
+2006-12-01: Added -p flag, that causes ocp to quit when playlist reaches empty (or when hitting f for filebrowser).
+
+2006-12-01: devp/devwmixf.c: Don't implement minimum buffersize. Fixes the problem with devpdisk.dev hanging
+
+2006-12-01: stuff/poutput.c: Endian introduced a signed error, causing character >=0x80 causing white cells
+
+2006-12-03: stuff/poutput-curses.c stuff/poutput-x11.c config.h.in: Fixed ALT_S and disabled keys that are not used/defined
+
+2006-12-03: filesel/pfilesel.c: Fixed file: to use RegisterDrive, and not to manipulate dmDrives. It messed up when cleaning up
+
+2006-12-03: stuff/poutput-x11.c: Added some caching in the text routines
+
+2006-12-08: devp/devpalsa.c: Try to set the bufferspace to 0.5 secs
+
+2006-12-08: Add big_endian fixes (don't use htons/htonl)
+
+2006-12-12: VERSION 0.1.10
+
+2006-12-12: boot/kickload.c: Don't try to dump regs on non-x86 arcs running linux
+
+2006-12-13: cpiface/cpiface.c: Display height above 99 with 3 digits
+
+2006-12-13: filesel/*: Started to implement the new directory database scheme
+
+2006-12-14: filesel/*: Made the databases more endian aware, and alignment friendly
+
+2006-12-14: playmp2/mpptype: fix dectection for systems that needs proper alignment
+
+2006-12-14: We just confirmed that OCP runs on sparc (32bit)
+
+2006-12-14: VERSION 0.1.11
+
+2006-12-14: Updates for dirdb
+
+2006-12-14: remove endian-mess in devposs
+
+2006-12-14: Fix endian in x11 output
+
+2006-12-14: Fixed xmlmod.c to handle endians better
+
+2006-12-14: goodies/helpc/ocphhc.c: Make it endian-aware
+
+2006-12-14: */*: Make volumebars endian aware
+
+2006-12-14: help/*: endian updates
+
+2006-12-14: VERSION 0.1.12
+
+2006-12-18: playmp2/mpptype.c: detection of mp3files where broken
+
+2006-12-18: */*: dirdb implementation and update, part 1
+
+2006-12-18: configure.ac goodies/helpc/*: Make the help compiler work with efence/duma, and clean up memory when done
+
+2006-12-18: playsid/sidplay.c: Use the proper delete[] statement
+
+2006-12-18: poutput/x11-common.c: Close down xlib properly
+
+2006-12-19: */*: dirdb implementation and update, part 2
+
+2006-12-22: */*: Coreaudio initial code
+
+2006-12-24: */*: Endian updates and CoreAudio update
+
+2007-01-01: playay/ayplay.c: don't import libmad header files
+
+2007-01-17: boot/kickload.c: just look for sigcontext on linux (should fix building for solaris)
+
+2007-01-18: config.h playogg/*: Endian needs to be checked correctly
+
+2007-01-18: Don't fetch functionpointers directory from libs, use structs instead (removes warnings from gcc / makes compiling for embedded systems more possible)
+
+2007-01-21: dev/mixer.c: gcc/binutils optimizes away $0 offset in data-addreses. It caused mp3 and wav files to crash on some hosts
+
+2007-01-27: dev/dwmixfa.c: handle extreem loops better (and make some more code PIC)
+
+2007-02-04: cpiface/cpitrack.c: Increase intelligens of the renderer (to avoid crashes when viewing files with long patterns, and black lines on small ones)
+
+2007-02-05: VERSION 0.1.13
+
+2007-02-10: Removed outdated DGA support
+
+2007-02-10: Removed the old plSetGraphPage code. Since it sometimes where used wrong, and that all the current graphic drivers are linear, and not paged.
+
+2007-02-19: Updated the build system regarding "make install" and "make uninstall", and prepared the support for autoload a directory of plugins (so that we can start to strip down ocp.ini)
+
+2007-03-02: Internal changes: Remove a lot of symbol lookups for init/close stuff
+
+2007-05-27: Add support for .flac files
+
+2007-06-20: Fix the support for compressed archieves again
+
+2007-07-09: medialib: now somewhat works again
+
+2007-07-13: cpiface: alt+k now displays some help about keys
+
+2007-07-22: devw/*: Some crash-fixes regarding 64bit archs (uint32_t/int32_t index behaves differently on 32bit and 64bit systems)
+
+2007-09-17: playmp2/mpptype.c playmp2/charset.*: id3 v2.x support (and some lame charset handling)
+
+2007-09-18: ALT-K updates (support for graphical modes)
+
+2007-09-18: make FLAC support optional, and add some stuff to ocp.ini.in that was lost regarding FLAC support
+
+2007-10-13: Support FLAC the "new" 1.1.3 API
+
+2007-10-15: Edit FPS from ALT-C setup window
+
+2007-10-18: filesel/pfilesel.c: minor buffer-overflow by a byte in fsEditModType()
+
+2007-10-19: playmp2/mpptype.c: id3 v2.3/v.2.4 parser updates
+
+2007-10-19: */*: ALT+R in the fileselector for rescanning the selected file.
+
+2007-10-21: VERSION 0.1.14
+
+2007-10-27: cpiface/cpiscope.c: Draw the entire background picture if present
+
+2007-10-27: playgmi/gmitimidity.c: Now it should work with configs that has several search-dirs
+
+2007-11-11: playcda/*.c: Disk size is now correct (displayed on track to little), and removed a crash when you were done playing cd
+
+2007-11-16: cpiface/cpigraph.c: palette updates for "palette2", replaceable with shift-tab (works in X11 atleast)
+
+2007-11-16: cpiface/volctrl.c: Don't swallow key we didn't use it
+
+2007-11-16: cpiface/cpitext.c: Don't send "focused" keyboard events to interfaces that no more is active
+
+2007-11-16: playmp2/mpptype.c: Mac OS X needs sys/types.h
+
+2007-11-16: configure.ac: detect libiconv if needed
+
+2007-11-17: playxm/xmload.c: check if fread/fseek calls failes, and free memory properly when we abort to load
+
+2007-11-17: filesel/arczip.c: removed an invalid unlink() that tried to remove a tempfile no longer used in the code
+
+2007-11-17: filesel/arczip.c: Taking padding into account when calculating mmap length (crash bug)
+
+2007-11-18: playxm/xmload.c: more sanity-checks and an error in the endian-fixups
+
+2007-11-18: playxm/xmload.c: support .xm files with truncated headers (and files with maleformed headers)
+
+2007-12-13: medialib/medialib.c: buffer overflow when reading string from user
+
+2007-12-13: devp/devpalsa.c (and some others): support for "default" and custom device strings
+
+2007-12-14: dev/smpman.c: boundarycheck loops properly
+
+2007-12-15: playxm/xmplay.c: Playing a note without a valid instrument/sample could cause a null-pointer dereference/segfault
+
+2007-12-15: stuff/console.c and others: -dx11 -dcurses -dvcsa flag, to force display driver to use
+
+2008-01-04: stuff/poutput-x11.c cpiface/cpikeykelp.c: don't crash on wurfel-mode + ALT-K
+
+2008-01-14: VERSION 0.1.15
+
+2008-01-20: */*: Removed some overhead in `struct modlist` and fixed sorting logic when adding a directory to the playlist, and added recursivity to the logic when deleting a directory from the playlist aswell.
+
+2008-01-29: */*: Removed the dependency on libid3tag (we only used one simple function from it)
+
+2008-02-01: boot/plinkman.c: missing closedir() fixed
+
+2008-02-02: playxm/xmlmxm.c: Added a length-check constraint, fixes crash when loading broken MXM files (however, they are played wrong then)
+
+2008-02-20: */*: Added KEY_CTRL_PGUP, KEY_CTRL_PGDN, KEY_CTRL_UP and KEY_CTRL_DOWN (not reachable from curses driver) and relevant code
+
+2008-03-20: filesel/pfilesel.c boot/psetting.c: Add support for @some.m3u support as stated on the help text.
+
+2008-03-30: ctrl+j and alt+enter was mapped to the same key id. Also added two missing key names in the keyhelp (alt+k window)
+
+2008-04-24: boot/* cpiface/cpikeyhelp.c stuff/*: Grey-out keys in the keyhelp that aren't available in the currently used consoledriver.
+
+2008-06-24: desktop/opencubicplayer.desktop.in: Changed encoding to UTF-8, thanks to Adam Sampson <ats@offog.org>
+
+2008-06-24: devp/devpalsa: Various updates: "default" mixer device, bugfix for the ALSA PulseAudio plugin, thanks to Chuck Anderson <cra@WPI.EDU>
+
+2008-06-24: *: Make MAD (mpeg) support optional, thanks to Chuck Anderson <cra@WPI.EDU>
+
+2008-06-24: configure.ac: exec_prefix should now expand to prefix unless specicied with --exec-prefix=
+
+2008-06-26: devw/dwmixa.c: Minor updates in the low-quality-mixer (both assembler and C versions)
+
+2008-06-29: Makefile.in ocp.spec: move documentation stuff into prefix/doc/ocp-version  instead of prefix/share/ocp-version, Chuck Anderson <cra@WPI.EDU>
+
+2008-06-29: Makefile.in: relative symlink on ocp-suffix instead of absolute, thanks to Chuck Anderson <cra@WPI.EDU>
+
+2008-06-29: doc/texi/Makefile doc/texi/ocp.texi.in: Add ocp to the global info directory, thanks to Chuck Anderson <cra@WPI.EDU>
+
+2008-08-03: playxm/xmplay: Fixed a crash bug when playing certain files.
+
+2008-11-06: */*: Various small array underflow/overflow warnings were fixed (non-fatal all of them)
+
+2008-11-06: ocp.ini.in: renamed [x11]:framebuffer to [x11]:autodetect and added [x11]:font
+
+2008-11-16: stuff/poutput-x11.c Redid resolution and fullscreen handling
+
+2008-11-16: configure.ac install-sh config.sub config.guess: Enabled cross-compiling (and added needed files from automake 1.10)
+
+2008-11-16: help/cphelper.c: KEY_UP was broken, and rendering errors on big-screens
+
+2008-11-16: cpiface/cpimvol.c: One of the volumebars were insymetrical.
+
+2008-11-17: *: use autoload feature in boot/plinkman.c; This makes it possible to have filesupport in different packages without regenerating ocp.ini
+
+2008-11-21: config.h.in playmp2/mpptype.c: Added debug-info and fixed a minor parsing bug (could cause random data at end of strings)
+
+2008-11-21: filesel/pfilsel.c: KEY_PPAGE/KEY_UP would cause wrap-around, now all UP/DOWN movements are boundary checked
+
+2008-11-21: pfilesel/modlist.c: playing the last song on a playlist would cause strange behaviour and random crashes
+
+2008-11-22: *: Add support for "previous" in playlist (see ALT-K for keys CTRL-J and CTRL-K). Keys make even more sense if you disable "remove from playlist" on ALT-C setup screen
+
+2008-11-25: Added fnmatch from gnulib, so that OS-X can compile without patches, and behave the same (other issues remain on OS-X however).
+
+2008-12-05: filesel/fsmain.c: increased the intelligence of esc-handling, fileselector interaction and broken files handling (several freeze conditions)
+
+2008-12-30: stuff/poutput-x11.c configure.ac: Add icons on x11 window (Adds libXpm dependency)
+
+2008-12-30: playxm/xmload.c: try to load even more module files correct
+
+2008-12-30: playit/itload.c: don't fail to load .it files without instruments
+
+2008-12-30: updated gnulib
+
+2008-12-31: cpiface/cpikube.c: Fixed some segfaults
+
+2008-12-31: VERSION 0.1.16
+
+2009-01-02: playgmd/gmdlokt.c: endian-issue made the file fail to load on little-endian (x86) hosts.
+
+2009-02-01: devp/devpcoreaudio.c: Re-arranged code a bit, made x11 support work-aswell (no idea why that bOrked before)
+
+2009-02-08: remove autoload away from ocp.ini (no need to have it there, since it will change for each version of OCP. OCP should know this statically, based on where it found libocp.so
+
+2009-02-08: boot/pmain.c: auto-update ocp.ini from earlier versions of ocp
+
+2009-02-09: filesel/pfilesel.c: playlist now cover entire screen when selected. Pressing INSERT while in playlist now also works as expected
+
+2009-02-11: binfile/*: removed support for ocp.pak. We only had one file left in it, and we don't bother if ocp spans of multiple files either any more (dlopen() is more easy to use when you don't use an archieve aswell)
+
+2009-02-13: design change: remove interface= and preprocess= away from dllinfo, and let plugins call apropriate register/unregister instead.
+
+2009-03-28: playopl/oplplay.cpp: big-endian hosts didn't play right.
+
+2009-04-24: boot/plinkman* cpiface/cpilink.c: Added backend support for static plugins, however it is not used yet
+
+2009-05-12: playgmi/gmiload.c: Fixed a small possible buffer overflow (readonly while parsing) that could lead to SEGFAULT on broken midi files. Also removed a optimization that were broken (only some gcc setups hit it in a wrong maner)
+
+2009-06-04: doc/texi/Makefile: Don't fail if install-info isn't available
+
+2009-06-04: dev/mix.c: typecast pointers via long int, and not just uint32_t when you want to do shifting on them (even though other arcs not using x86  assembler inlines doesn't use the variables, but we still want it beeing sane)
+
+2009-06-04: dev/player.*: Fixed issues regarding x86_64 (segfaulting). Mixing 64bit unsigned and 32bit signed variables doing simple + math can lead to undefined behaviour.
+
+2009-06-04: playflac/flacplay.c: wrong footprint on a callback (visible on 64bit hosts)
+
+2009-06-04: playit/itload.c playxm/xmload.c: (debug) printf format string warnings on 64 hosts fixed
+
+2009-06-15: boot/kickload.c playmp2/charset.c: getenv() pointers are safe to keep for long. Also added some more constraints (const, etc).
+
+2009-06-27: VERSION 0.1.17
+
+2009-06-29: devpcoreaudio didn't compile on darwin
+
+2009-07-19: dev/smpman.c: x86_64 crashed when expanding loops
+
+2009-07-20: configure.ac: missing AC_DEFINE, made compiling on ubuntu flash a lot of warnings due to we not knowing about some header files
+
+2009-07-20: platit/itplay.c: http://eval.sovietrussia.org/wiki/Player_abuse_tests#Out-of-range_note_delays
+
+2009-07-20: playit/itplay.c: http://eval.sovietrussia.org/wiki/Player_abuse_tests#Pattern_loop
+
+2009-07-20: playit/itptrack.c: track-visualizer didn't show SBx commands (now appears like plx - pattern loop)
+
+2009-07-20: *: use sysconf(_SC_PAGESIZE) if available, before trying to use PAGESIZE, and defaulting to 4096
+
+2009-07-21: playit/itplay.c: http://eval.sovietrussia.org/wiki/Player_abuse_tests#Tremor_effect
+
+2009-07-21: playit/itplay.c: http://eval.sovietrussia.org/wiki/Player_abuse_tests#Ping-pong_loop_and_sample_number
+
+2009-07-22: playit/itplay.c: http://eval.sovietrussia.org/wiki/Player_abuse_tests#Retrigger
+
+2009-07-22: stuff/*x11*: Borrowed some code from mplayer (don't attemt to use SHM on network connected X11 servers)
+
+2009-07-23: playit/itplay.c: http://eval.sovietrussia.org/wiki/Player_abuse_tests#Pattern_row_delay
+
+2009-07-23: stuff/poutput-x11.c: Added XSync() after resize-windows, else XGetImage sometimes fails, since local structure isn't ajour with server fast enough (window resize on remote X11 would sometime exit ocp with X11 error)
+
+2009-07-23: playit/itplay.c: http://eval.sovietrussia.org/wiki/Player_abuse_tests#Random_waveform
+
+2009-07-25: playit/itplay.c: http://eval.sovietrussia.org/wiki/Player_abuse_tests#Pan_swing_and_set_panning_effect
+
+2009-07-26: playit/itplay.c: http://eval.sovietrussia.org/wiki/Player_abuse_tests#Zero_value_for_note_cut_and_note_delay
+
+2009-07-26: playit/itplay.c: http://eval.sovietrussia.org/wiki/Player_abuse_tests#Portamento_with_no_note
+
+2009-07-28: playit/itplay.c: http://eval.sovietrussia.org/wiki/Player_abuse_tests#Portamento_and_pitch_slide
+
+2009-07-29: playgmi/*: Added buffer overrun protection to the MIDI file parser
+
+2009-07-30: playit/itload.c: use Impulse Tracker 2.15 sample decompression, only when needed
+
+2009-08-07: *: Remove the need for keep=1 on certain drivers. The drivers can tell themselfs if they need it.
+
+2009-08-07: devp/devpcoreaudio.c: Major updates
+
+2009-09-24: stuff/*: Added support for SDL video
+
+2009-09-24: dev*/dev*oss.c: Only warn if GET_VERSION fails (some BSDs fails on this)
+
+2009-09-24: ocp-*: Make even faster method for forcing SDL, etc video drivers
+
+2009-09-25: Compiling SDL support without X11 gave a missing symbol
+
+2009-11-18: configure.ac: AC_MSG_ERROR was used wrong some places
+
+2009-12-25: *: medialib didn't handle archived files very well. This is now fixed, however, a rescan is needed in order to make them work (database didn't store archive data)
+
+2009-12-26: playit/itload.c: Don't fail on loading samples with length set to zero, skip them instead
+
+2009-12-26: VERSION 0.1.18
+
+2010-01-03: devw/dwmixqa.c [DEVWMIXQ.DEV]: Both assembler and non-assembler version updates (crash bug-fixes)
+
+2010-01-10: configure.ac, Makefile.in desktop/*: Use desktop-file-install, and remove the wmconfig stuff
+
+2010-01-10: dev/mixasm.c: Random crash that affects all non-x86 platforms.
+
+2010-01-10: ocp.spec: Major overhaul (partly tested on OpenSUSE only)
+
+2010-01-19: stuff/putput-x11.c: support for 24bit resolution (qemu uses this in virtual machines)
+
+2010-02-12: devw/devwmix.c: Non x86 platforms would randomly crash when using effects like "b" and "o" views
+
+2010-02-12: stuff/poutput-x11.c stuff/poutput-sdl.c: Even better support for 24/32 bit resolutions
+
+2010-02-12: ocp.spec: Relax SELinux on x86 (we use textrels), and give install-info the correct flags
+
+2010-03-29: asm_emu/*: Added a x86-asm-emulator (used for debuging x86-assembler mixers)
+
+2010-03-29: devw/*: Non-x86 now plays long samples correct (thanks to Chuck Anderson for bugreport)
+
+2010-03-31: playgmd/gmdlptm.c: One block of data-load wasn't endian-safe
+
+2010-04-01: playxm/*.c: Accept .XM files with bogus header (no 0x1a mark at offset 37)
+
+2010-04-01: playopl/oplplay.cpp: Disable endian swap for data that comes from adplug
+
+2010-04-15: devp/devpalsa.c: Try to compensate for pulseaudio returning a delay of zero samples
+
+2010-04-16: Removed gnulib (it violated the GPLv2+ license OCP is released under)
+
+2010-04-19: playay/sound.c: Update to aylet 5.0
+
+2010-04-19: *: Specify GPLv2+ on all source files
+
+2010-05-19: playay/ayplay.c: pause made noise
+
+2010-05-11: playopl/oplplay.c: Minor error could cause noise on high cpu-load
+
+2010-05-11: playym/*: First release of YM file support (Based on STYMulator)
+
+2010-05-12: filesel/arczip.c: Compression method 0 didn't work as expected
+
+2010-05-12: filesel/*: Split fileselector init into two separate parts. Starting ocp in a directory with uncached archieves caused a segfault due to usage of uninitalized modules.
+
+2010-05-12: cpiface/cpichan.c: Full-width view with width of 81..127 where drawn in 128 wide mode, causing non-visible-output.
+
+2010-05-14: playmp2/mppplay.c: RIFF contained files were unable to play (usually only used on MP2 files)
+
+2010-05-15: VERSION 0.1.19
+
+2010-05-16: Make it possible to disable 'desktop-file-install' (Fink needs this)
+
+2010-05-17: configure.ac: removed a syntax error
+
+2010-05-18: ocp.ini boot/pmain.c: ocp.ini shipped with version 0.1.19 wasn't correct
+
+2010-05-18: VERSION 0.1.20
+
+2010-05-18: playgmd/gmdldmf.c: Remove a nested function
+
+2011-03-19: compat/stuff.*: strupr is actually implemented on some systems
+
+2011-03-19: configure.ac */*: -lm is not required on all platforms
+
+2011-03-19: * */*: AC_STRUCT_DIRENT_D_TYPE; not all platforms has dirent.d_type
+
+2011-03-19: config.guess, config.sub, install-sh: update to more recent versions (used the ones present in automake-1.11 in ubuntu 10.10)
+
+2011-03-19: configure.ac Makefile.in: Only link to pthread if on OS-X / CoreAudio
+
+2011-03-19: Support getcwd() for retrieving current working directory
+
+2011-03-20: Added support for SDL audio
+
+2011-03-20: cpiface/cpilinks.c: crash-bug when resizing window while link viewer was active
+
+2011-03-20: devpcoreaudio devpsdl: gettimer() didn't work as expected (needed by cpitrack.c)
+
+2011-06-01: play*/*: Some of the players didn't have volatile on the "timer" lock
+
+2011-06-08: playwav/wavplay.c: Race condition that caused some audio artifacts (some parts could be replayed randomly)
+
+2011-06-19: playmp2/charset.c: Detection of glibc bug 4936 alrways returned true (thanks to Jindrich Makovicka)
+
+2011-07-11: devw/dwmixfa*: 8087 fpu version is now able to compile in PIC mode without use of text-rels.
+
+2011-07-13: devw/dwmixfa: Added support for proper C verion of the FPU mixer (Thanks to Jindřich Makovička)
+
+2011-07-13: devw/dwmixfa: 8087_asm_emu code made some annoying clicking sounds

@@ -1,0 +1,105 @@
+WuerfelAnimator *PROFESSIONAL* ver 1.1á by Felix Domke
+
+
+der WuerfelAnimtor ist DAS tool, um OpenCP-WuerfelMode-Animationen
+zu erstellen.
+
+die absolut genialen features wren:
+                - InputFormat: PCX (kein tga, tga suckt! :)
+                - PalettenOptimierung, wenn die anderen Frames eine andere
+                  Palette haben als der erste, werden sie angepat.
+                - OutputFormat: 100% kompatibel zum cp, hoffe ich jedenfalls
+                         sowie: 100% inkompatibel zum alten wuerfelmode,
+                         dafuer mit hires (320x200) und framerate-control
+                         (WuerfelMode 2.0)
+                - RLE-komprimierte animationen werden auf wunsch erzeugt
+                - "strangeframeoptimization" sorgt dafuer, dass bei delays
+                  die animationen nicht groesser werden...
+die absolut genialen features, die noch fehlen, waeren folgende:
+                - Delta-Kompression (hat bei mir nie was gebracht)
+                - Startframe und Loopframe, sollte theoretisch kein problem
+                  sein das einzubauen, war nur zu faul und hatte keine
+                  anim zu ausprobieren...
+                - Eine echte Palettenoptimierung, momentan werden die ersten
+                  16 Farben weggeschnitten und ersetzt, aber es ist sinnvoller,
+                  erstmal 16 Farben zu finden, die irrelevant sind, weil sie
+                  entweder nicht benutzt sind, oder einer anderen ziemlich
+                  aehnlich sehen...
+
+der WuerfelAnimator arbeitet mit einem script. der hat folgendes format:
+
+Version
+[StrangeFrameOptimization] RLECompression
+Title
+NumFrames Delay Filename
+NumFrames Delay Filename
+NumFrames Delay Filename
+...
+
+"Version" muss entweder 0 oder 1 sein, 0 ist cpanim 1.0, 1 ist cpanim 2.0,
+bei 2.0-animationen muss auf jeden fall der neue wuerfelmode benutzt werden
+"StrangeFrameOptimization" ist ein fieser Trick, der dafuer sorgt, dass
+jeder Frame mehrmals hintereinander angezeigt werden kann, ohne das
+jeder Frame mehrmals gespeichert werden muss. Es wird bei "framelen" einfach
+0 eingetragen, das funktioniert seltsamerweise praechtig.
+BEI 2.0-ANIMATIONEN DARF HIER NICHTS STEHEN!
+"RLECompression" komprimiert das ganze nochmal RLE, bevor es abgespeichert
+wird ([KB] echt jetzt? ;). Bringt manchmal sogar was, groesser kann die Datei nicht werden, also
+kann diese Option eigentlich immer an sein.
+"Title" ist der maximal 31 Zeichen lange Titel, der in der Header
+geschrieben wird. Ob da wirklich ein Titel hinsoll, weiss ich nicht,
+aber warum nicht. die fraglichen 32 bytes werden von makedmp jedenfalls
+auf 0 gesetzt, und vom cpikube beim einlesen uebersprungen..
+danach folgt eine beliebige anzahl von "sections".
+jede section besteht aus der anzahl der frames, dem delay zwischen diesen
+frames, und dem dateinamen.
+bei cpanim2.0-animationen ist das delay irgendso ein kranker wert,
+etwa 65536/fps sollte gehen oder so ([KB] GENAU!). wenn hier 3072 steht,
+isses so schnell wie eine 1.0-"delay=1"-anmation. also im zweifelsfall 3072
+angeben, und dann sehen obs zu schnell ist.
+dieser wert hier darf 65535 nicht ueberschreiten..
+der dateiname sollte irgendwelche "%d"s oder "%x"s enthalten, wer kein
+c kann, sollte von diesem tool lieber die finger lassen :)
+
+nun mal ein komplettes beispiel fuer die lamer:
+
+0
+1 1
+cubic player ist doof!
+11 2 intro%x.pcx
+200 1 ani%03d.pcx
+
+
+sorgt dafuer, das eine animation erzeugt wird, die aus 200+10=210 frames
+besteht, und zwar aus intro0.pcx bis introa.pcx und dann aus ani000.pcx
+bis ani199.pcx.
+angefangen zu zaehlen wird immer bei 0!
+
+und noch ein fuer den anim2.0-mode:
+1
+1
+cubic player rockt!
+11 6000 intro%x.pcx
+200 3000 ani%03d.pcx
+
+aufrufen muss man den wap dann mit "wap <script> <dest.dat>".
+dazu sage ich nun nichts, wer das nicht kann, ist einfach zu dumm dafuer.
+
+achso: zum abspielen muessen die DATs "CPANI001.DAT", "CPANI002.DAT" usw.
+heissen...
+CPANI000.DAT sollte lieber nicht verwendet werden, die chance, das gerade
+dieses file abgespielt wird ist doch verschwindend gering.
+
+what's planned for the next version:
+
+                - Delta-Kompression
+                - Startframe und Loopframe
+                - echte Palettenoptimierung
+                - Input: FLC, eventuell andere bitmap-formate
+
+em, ja, das wars.
+
+viel spass mit diesem nutzlosen tool!
+
+
+signing off, tmbinc

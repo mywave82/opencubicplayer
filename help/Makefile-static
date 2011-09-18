@@ -1,0 +1,5 @@
+# cphelper.so
+STATIC_OBJECTS += help/cphelper.o
+
+#cphlpif.so
+STATIC_OBJECTS += help/cphlpif.o

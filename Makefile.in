@@ -1,0 +1,263 @@
+TOPDIR=./
+include $(TOPDIR)Rules.make
+
+ifeq ($(HAVE_MAD),1)
+	FSTYPES_SO_MAD=playmp2/mpptype.o playmp2/charset.o
+else
+	FSTYPES_SO_MAD=
+endif
+
+
+.PHONY: all clean dirs
+
+ifeq ($(STATIC_BUILD),1)
+STATIC_OBJECTS=
+include cpiface/Makefile-static
+include filesel/Makefile-static
+include stuff/Makefile-static
+include dev/Makefile-static
+include help/Makefile-static
+fstypes_so=playgmd/gmdptype.o playgmi/gmiptype.o playit/itpptype.o playogg/oggtype.o $(FSTYPES_SO_MAD) playwav/wavptype.o playxm/xmpptype.o filesel/fstypes.o
+libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o stuff/err.o boot/console.o $(fstypes_so) $(STATIC_OBJECTS) boot/plinkman_end.o
+
+all: dirs ocp ocp.hlp libocp$(LIB_SUFFIX)
+
+else
+fstypes_so=playgmd/gmdptype.o playgmi/gmiptype.o playit/itpptype.o playogg/oggtype.o $(FSTYPES_SO_MAD) playwav/wavptype.o playxm/xmpptype.o filesel/fstypes.o
+libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o stuff/err.o boot/console.o boot/plinkman_end.o
+
+all: dirs ocp ocp.hlp fstypes$(LIB_SUFFIX) libocp$(LIB_SUFFIX)
+
+endif
+
+
+
+
+
+install: all
+	mkdir -p "$(DESTDIR)$(PREFIX)/share/doc/ocp$(DIR_SUFFIX)"
+	$(CP) AUTHORS BUGS COPYING CREDITS KEYBOARD_REMAPS SUID TODO "$(DESTDIR)$(PREFIX)/share/doc/ocp$(DIR_SUFFIX)"
+	mkdir -p "$(DESTDIR)$(PREFIX)/share/ocp$(DIR_SUFFIX)/data"
+	$(CP) ocp.hlp "$(DESTDIR)$(PREFIX)/share/ocp$(DIR_SUFFIX)/data"
+	mkdir -p "$(DESTDIR)$(PREFIX)/share/ocp$(DIR_SUFFIX)/etc"
+	$(CP) ocp.ini "$(DESTDIR)$(PREFIX)/share/ocp$(DIR_SUFFIX)/etc"
+	mkdir -p "$(DESTDIR)$(LIBDIR)"
+	$(CP) libocp$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+	mkdir -p "$(DESTDIR)$(LIBDIR)/autoload"
+ifneq ($(STATIC_BUILD),1)
+	$(CP) fstypes$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-fstypes$(LIB_SUFFIX)"
+endif
+	mkdir -p "$(DESTDIR)$(BINDIR)"
+	$(CP) ocp "$(DESTDIR)$(BINDIR)/ocp$(DIR_SUFFIX)"
+	if ! test -z $(DIR_SUFFIX); then ln -sf "ocp$(DIR_SUFFIX)" "$(DESTDIR)$(BINDIR)/ocp"; fi
+	$(CP) ocp-curses "$(DESTDIR)$(BINDIR)/ocp-curses"
+ifeq ($(LINUX),1)
+	$(CP) ocp-vcsa "$(DESTDIR)$(BINDIR)/ocp-vcsa"
+endif
+ifeq ($(HAVE_SDL),1)
+	$(CP) ocp-sdl "$(DESTDIR)$(BINDIR)/ocp-sdl"
+endif
+ifeq ($(HAVE_X11),1)
+	$(CP) ocp-x11 "$(DESTDIR)$(BINDIR)/ocp-x11"
+endif
+	$(CP) ultrafix.sh "$(DESTDIR)$(BINDIR)/ultrafix.sh"
+	mkdir -p "$(DESTDIR)$(ULTRADIR)"
+	$(MAKE) -C doc DESTDIR="$(DESTDIR)" install TOPDIR="../$(TOPDIR)"
+
+ifeq ($(HAVE_X11),1)
+	mkdir -p "$(DESTDIR)$(PREFIX)/share/applications" "$(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/" "$(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/"
+	$(CP) desktop/opencubicplayer.xpm "$(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/opencubicplayer.xpm"
+	$(CP) desktop/opencubicplayer_mini.xpm "$(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/opencubicplayer.xpm"
+endif
+
+ifneq ($(DESKTOP_FILE_INSTALL),)
+	$(DESKTOP_FILE_INSTALL) --vendor="cubic.org" --dir="$(DESTDIR)$(PREFIX)/share/applications" desktop/opencubicplayer.desktop
+endif
+	$(MAKE) -C asm_emu TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C boot TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C cpiface TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C dev TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C devp TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C devs TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C devw TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C filesel TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C goodies TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C help TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C playay TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C playcda TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C playflac TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C playgmd TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C playgmi TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C playit TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C playogg TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C playopl TOPDIR=../$(TOPDIR) install
+ifeq ($(HAVE_MAD),1)
+	$(MAKE) -C playmp2 TOPDIR=../$(TOPDIR) install
+endif
+	$(MAKE) -C playsid TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C playwav TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C playxm TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C playym TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C stuff TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C medialib TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C doc TOPDIR="../$(TOPDIR)" install
+
+uninstall:
+	$(MAKE) -C asm_emu TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C boot TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C cpiface TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C dev TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C devp TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C devs TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C devw TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C filesel TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C goodies TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C help TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C playay TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C playcda TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C playflac TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C playgmd TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C playgmi TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C playit TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C playogg TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C playopl TOPDIR=../$(TOPDIR) uninstall
+ifeq ($(HAVE_MAD),1)
+	$(MAKE) -C playmp2 TOPDIR=../$(TOPDIR) uninstall
+endif
+	$(MAKE) -C playsid TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C playwav TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C playxm TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C playym TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C stuff TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C medialib TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C doc TOPDIR="../$(TOPDIR)" uninstall
+	rm -Rf "$(DESTDIR)$(PREFIX)/share/doc/ocp$(DIR_SUFFIX)" "$(DESTDIR)$(PREFIX)/share/ocp$(DIR_SUFFIX)" "$(DESTDIR)$(LIBDIR)" "$(DESTDIR)$(BINDIR)/ocp$(DIR_SUFFIX)" "$(DESTDIR)$(BINDIR)/ocp" "$(DESTDIR)$(BINDIR)/ocp-curses" "$(DESTDIR)$(BINDIR)/ocp-sdl" "$(DESTDIR)$(BINDIR)/ocp-vcsa" "$(DESTDIR)$(BINDIR)/ocp-x11" "$(DESTDIR)$(BINDIR)/ultrafix.sh"
+	rm -f "$(DESTDIR)$(PREFIX)/share/applications/opencubicplayer.desktop" "$(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/opencubicplayer.xpm" "$(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/opencubicplayer.xpm"
+
+dirs:
+	$(MAKE) -C asm_emu TOPDIR=../$(TOPDIR)
+	$(MAKE) -C boot TOPDIR=../$(TOPDIR)
+	$(MAKE) -C cpiface TOPDIR=../$(TOPDIR)
+	$(MAKE) -C dev TOPDIR=../$(TOPDIR)
+	$(MAKE) -C devp TOPDIR=../$(TOPDIR)
+	$(MAKE) -C devs TOPDIR=../$(TOPDIR)
+	$(MAKE) -C devw TOPDIR=../$(TOPDIR)
+	$(MAKE) -C filesel TOPDIR=../$(TOPDIR)
+	$(MAKE) -C goodies TOPDIR=../$(TOPDIR)
+	$(MAKE) -C help TOPDIR=../$(TOPDIR)
+	$(MAKE) -C playay TOPDIR=../$(TOPDIR)
+	$(MAKE) -C playcda TOPDIR=../$(TOPDIR)
+	$(MAKE) -C playflac TOPDIR=../$(TOPDIR)
+	$(MAKE) -C playgmd TOPDIR=../$(TOPDIR)
+	$(MAKE) -C playgmi TOPDIR=../$(TOPDIR)
+	$(MAKE) -C playit TOPDIR=../$(TOPDIR)
+	$(MAKE) -C playogg TOPDIR=../$(TOPDIR)
+	$(MAKE) -C playopl TOPDIR=../$(TOPDIR)
+ifeq ($(HAVE_MAD),1)
+	$(MAKE) -C playmp2 TOPDIR=../$(TOPDIR)
+endif
+	$(MAKE) -C playsid TOPDIR=../$(TOPDIR)
+	$(MAKE) -C playwav TOPDIR=../$(TOPDIR)
+	$(MAKE) -C playxm TOPDIR=../$(TOPDIR)
+	$(MAKE) -C playym TOPDIR=../$(TOPDIR)
+	$(MAKE) -C stuff TOPDIR=../$(TOPDIR)
+	$(MAKE) -C medialib TOPDIR=../$(TOPDIR)
+	$(MAKE) -C doc TOPDIR="../$(TOPDIR)"
+
+ocp: boot/kickload.o
+	$(CC) $(LDFLAGS) -o $@ $^ @DL_LIBS@ @EFENCE_LIBS@ @DUMA_LIBS@
+
+ocp.hlp: doc/opencp.dox goodies/helpc/ocphhc
+	goodies/helpc/ocphhc doc/opencp.dox $@
+
+clean:
+	$(MAKE) -C asm_emu TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C boot TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C cpiface TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C dev TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C devp TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C devs TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C devw TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C filesel TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C goodies TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C help TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C playay TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C playcda TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C playflac TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C playgmd TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C playgmi TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C playit TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C playogg TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C playopl TOPDIR=../$(TOPDIR) clean
+ifeq ($(HAVE_MAD),1)
+	$(MAKE) -C playmp2 TOPDIR=../$(TOPDIR) clean
+endif
+	$(MAKE) -C playsid TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C playwav TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C playxm TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C playym TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C stuff TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C medialib TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C doc TOPDIR="../$(TOPDIR)" clean
+	find . -name '*~' -exec rm {} ';'
+	rm -f ocp.hlp ocp *$(LIB_SUFFIX)
+	rm -f CPARCH.DAT
+
+distclean: clean
+	rm -Rf config.h autom4te.cache Rules.make config.log config.status Makefile ocp.ini desktop/opencubicplayer.desktop doc/texi/faq.texi doc/texi/install.texi doc/texi/ocp.texi goodies/pack/Makefile goodies/helpc/Makefile Makefile
+
+fstypes$(LIB_SUFFIX): dirs $(fstypes_so)
+	$(CC) $(SHARED_FLAGS) $(LDFLAGS) $(ICONV_LIBS) -o $@ $(fstypes_so)
+
+libocp$(LIB_SUFFIX): $(libocp_so)
+	$(CC) $(SHARED_FLAGS) $(LDFLAGS) $(STATIC_LIBS) -o $@ $(libocp_so)
+
+# DUMMIES
+
+boot/compdate.o:
+	$(MAKE) -C boot TOPDIR=../$(TOPDIR)
+
+boot/psetting.o:
+	$(MAKE) -C boot TOPDIR=../$(TOPDIR)
+
+boot/plinkman.o:
+	$(MAKE) -C boot TOPDIR=../$(TOPDIR)
+
+boot/pmain.o:
+	$(MAKE) -C boot TOPDIR=../$(TOPDIR)
+
+stuff/err.o:
+	$(MAKE) -C stuff TOPDIR=../$(TOPDIR)
+
+boot/console.o:
+	$(MAKE) -C boot TOPDIR=../$(TOPDIR)
+
+playgmd/gmdptype.o:
+	$(MAKE) -C playgmd TOPDIR=../$(TOPDIR)
+
+playgmi/gmiptype.o:
+	$(MAKE) -C playgmi TOPDIR=../$(TOPDIR)
+
+playit/itpptype.o:
+	$(MAKE) -C playit TOPDIR=../$(TOPDIR)
+
+playogg/oggtype.o:
+	$(MAKE) -C playogg TOPDIR=../$(TOPDIR)
+
+playmp2/mpptype.o:
+	$(MAKE) -C playmp2 TOPDIR=../$(TOPDIR)
+
+playwav/wavptype.o:
+	$(MAKE) -C playwav TOPDIR=../$(TOPDIR)
+
+playxm/xmpptype.o:
+	$(MAKE) -C playxm TOPDIR=../$(TOPDIR)
+
+filesel/fstypes.o:
+	$(MAKE) -C filesel TOPDIR=../$(TOPDIR)
+
+boot/kickload.o:
+	$(MAKE) -C boot TOPDIR=../$(TOPDIR)
+
+goodies/helpc/ocphhc:
+	$(MAKE) -C goodies TOPDIR=../$(TOPDIR)

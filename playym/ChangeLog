@@ -1,0 +1,41 @@
+- Use stdint.h on all non-windows platforms
+- Update Makefiles
+- Rename src/ui.c to src/ui.cpp (it uses c++ syntax)
+- Proper typecasting of parameters to printf
+- Avoid these: warning: operation on ‘pw’ may be undefined
+- Avoid signed vs unsignd compare
+- Constant strings should be respected
+- Variable declared twice made a volume-effect not work
+- Avoid multichar's
+- Avoid ambiguous else
+- Invalid loopframe could case invalid operations
+- Fail on bogus data
+- Added configure script
+- Added OSS support
+- update() call didn't wasn't 100% deterministic on register updates
+- Relayout the directory structure
+- Added man-pages
+
+v0.21a
+15-March-2007
+
+- Fixed directory structure and install path for correct RPM packaging
+
+v0.21
+06-March-2007
+
+- Added GNU/Linux 64bit compatibility (small changes in YmTypes.h, YmUserInterface.cpp files). Verified on RHEL v4 U4 x86_64
+- Removed not needed ;-) snd_pcm_hw_params_set_rate_resample function (added to alsa-lib since 1.0.9rc2) due to more portability (sound.cpp)
+- Added platform info in ym2wav & ymplayer
+
+v0.2
+11-Jul-2006
+
+- Updated ST-Sound GPL library to version 1.2
+- Removed unneeded file player.cpp
+
+v0.1
+December 2005
+
+- Initial release
+
