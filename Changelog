@@ -803,3 +803,5 @@
 2011-09-05: configure.ac: AC_LINK_IFELSE for ADPLUG could fail if "ld --as-needed" was used
 
 2011-09-18: devp/devpalsa: newer versions of libalsa does not need plughw syntax, and in some cases works better without
+
+2011-09-18: configure.ac: removed a warning visible when using autoconf >= 2.68

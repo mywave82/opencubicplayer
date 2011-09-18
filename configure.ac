@@ -135,9 +135,9 @@ fi
 
 AC_MSG_CHECKING([for broken signed char to signed int in loops (gcc version 4.1.1)])
 AC_RUN_IFELSE(
-[
-@%:@include <stdio.h>
-@%:@include <unistd.h>
+[AC_LANG_SOURCE([
+#include <stdio.h>
+#include <unistd.h>
 void failcheck(signed int source, signed int filter)
 {
 	if ((source>128)&&(filter>0))
@@ -155,7 +155,7 @@ int main(int arg, char *argv@<:@@:>@)
 	}
 	return 0;
 }
-],
+])],
 	AC_MSG_RESULT([ok]),
 	AC_MSG_ERROR([failed.
 Try to remove any -O flag or to add -fwrapv to CFLAGS and CXXFLAGS]),
