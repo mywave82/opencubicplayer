@@ -805,3 +805,5 @@
 2011-09-18: devp/devpalsa: newer versions of libalsa does not need plughw syntax, and in some cases works better without
 
 2011-09-18: configure.ac: removed a warning visible when using autoconf >= 2.68
+
+2011-09-30: devp/devpcoreaudio.c: Didn't compile

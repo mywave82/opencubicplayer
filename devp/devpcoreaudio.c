@@ -171,7 +171,7 @@ static OSStatus theRenderProc(void *inRefCon, AudioUnitRenderActionFlags *inActi
 	cachelen -= i;
 	cachepos = kernpos;
 
-	playpos += i (2/*stereo+bit16*/);
+	playpos += i<<(2/*stereo+bit16*/);
 
 	if ((i+kernpos)>buflen)
 	{

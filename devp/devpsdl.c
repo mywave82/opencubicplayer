@@ -98,7 +98,7 @@ void theRenderProc(void *userdata, Uint8 *stream, int len)
 	kernlen = done = i;
 	cachelen -= i;
 	cachepos = kernpos;
-	playpos += len<<(2/*stereo+bit16*/);
+	playpos += i<<(2/*stereo+bit16*/);
 
 	if ((i+kernpos)>buflen)
 	{
