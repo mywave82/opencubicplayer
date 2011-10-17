@@ -111,6 +111,32 @@ static inline void putcmd(unsigned char **p, unsigned char c, unsigned char d)
   *(*p)++=d;
 }
 
+struct LoadMDLResources
+{
+	struct gmdsample **msmps;
+	unsigned int *inssampnum;
+};
+
+static void FreeResources(struct LoadMDLResources *r)
+{
+	int j;
+	if (r->msmps)
+	{
+		for (j=0; j<255; j++)
+		{
+			if (r->msmps[j])
+				free(r->msmps[j]);
+		}
+		free(r->msmps);
+		r->msmps=0;
+	}
+	if (r->inssampnum)
+	{
+		free(r->inssampnum);
+		r->inssampnum=0;
+	}
+}
+
 static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 {
 	uint32_t waste1;
@@ -149,30 +175,12 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 	uint8_t packtype[255];
 
 	uint8_t inssav;
-	struct gmdsample **msmps = 0;
-	unsigned int *inssampnum = 0;
 	unsigned int maxins;
 	unsigned int smpnum;
 
-	void FreeResources(void)
-	{
-		int j;
-		if (msmps)
-		{
-			for (j=0; j<255; j++)
-			{
-				if (msmps[j])
-					free(msmps[j]);
-			}
-			free(msmps);
-			msmps=0;
-		}
-		if (inssampnum)
-		{
-			free(inssampnum);
-			inssampnum=0;
-		}
-	}
+	struct LoadMDLResources r;
+	r.msmps = 0;
+	r.inssampnum = 0;
 
 	mpReset(m);
 
@@ -818,12 +826,12 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 	m->envnum=192;
 
 /*  envelope **envs=new envelope *[255]; */
-	msmps=calloc(sizeof(struct gmdsample *), 255);
-	inssampnum=calloc(sizeof(int), 255);
+	r.msmps=calloc(sizeof(struct gmdsample *), 255);
+	r.inssampnum=calloc(sizeof(int), 255);
 /*  int *insenvnum=new int [255]; */
-	if (/*!envs||!insenvnum||*/!inssampnum||!msmps||!mpAllocInstruments(m, m->instnum))
+	if (/*!envs||!insenvnum||*/!r.inssampnum||!r.msmps||!mpAllocInstruments(m, m->instnum))
 	{
-		FreeResources();
+		FreeResources(&r);
 		return errAllocMem;
 	}
 
@@ -841,38 +849,38 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 		if (fread(&insnum, sizeof(uint8_t), 1, file) != 1)
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #24\n");
-			FreeResources();
+			FreeResources(&r);
 			return errFormStruc;
 		}
 		insnum--;
 
 		ip=&m->instruments[insnum];
 
-		if (fread(&inssampnum[j], sizeof(uint8_t), 1, file) != 1)
+		if (fread(&r.inssampnum[j], sizeof(uint8_t), 1, file) != 1)
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #25\n");
-			FreeResources();
+			FreeResources(&r);
 			return errFormStruc;
 		}
 		if (fread(ip->name, 32, 1, file) != 1)
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #26\n");
-			FreeResources();
+			FreeResources(&r);
 			return errFormStruc;
 		}
 		ip->name[31]=0;
-		msmps[j]=malloc(sizeof(struct gmdsample)*inssampnum[j]);
+		r.msmps[j]=malloc(sizeof(struct gmdsample)*r.inssampnum[j]);
 /*
-		envs[insnum]=new envelope [inssampnum[j]];
+		envs[insnum]=new envelope [r.inssampnum[j]];
 */
-		if (!msmps[j]/*||!envs[insnum]*/)
+		if (!r.msmps[j]/*||!envs[insnum]*/)
 		{
-			FreeResources();
+			FreeResources(&r);
 			return errAllocMem;
 		}
 
 		note=0;
-		for (i=0; i<inssampnum[j]; i++)
+		for (i=0; i<r.inssampnum[j]; i++)
 		{
 			struct __attribute__((packed))
 			{
@@ -895,7 +903,7 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 			if (fread(&mdlmsmp, sizeof(mdlmsmp), 1, file) != 1)
 			{
 				fprintf(stderr, __FILE__ ": fread() failed #27\n");
-				FreeResources();
+				FreeResources(&r);
 				return errFormStruc;
 			}
 			mdlmsmp.fadeout = uint16_little (mdlmsmp.fadeout);
@@ -905,7 +913,7 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 				ip->samples[note++]=m->modsampnum;
 			m->modsampnum++;
 
-			sp=&msmps[j][i];
+			sp=&r.msmps[j][i];
 			*sp->name=0;
 			sp->handle=mdlmsmp.smp-1;
 			sp->normnote=0;
@@ -970,14 +978,14 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 	/*  int envnum=192; */
 	for (j=0; j<255; j++)
 	{
-		memcpy(m->modsamples+smpnum, msmps[j], sizeof (*m->modsamples)*inssampnum[j]);
-		smpnum+=inssampnum[j];
+		memcpy(m->modsamples+smpnum, r.msmps[j], sizeof (*m->modsamples)*r.inssampnum[j]);
+		smpnum+=r.inssampnum[j];
 /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  *    for (i=0; i<insenvnum[j]; i++)
  *      memcpy(&m.envelopes[envnum++], &envs[j][i], sizeof (*m.envelopes));*/
 /*    delete envs[j]; */
 	}
-	FreeResources();
+	FreeResources(&r);
 /*  delete envs;*/
 /*  delete insenvnum;*/
 

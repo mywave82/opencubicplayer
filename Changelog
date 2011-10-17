@@ -807,3 +807,5 @@
 2011-09-18: configure.ac: removed a warning visible when using autoconf >= 2.68
 
 2011-09-30: devp/devpcoreaudio.c: Didn't compile
+
+2011-10-17: playgmd/gmdlmdl.c: Removed a nested function (GCC on OS-X dislikes them)
