@@ -38,6 +38,26 @@ static inline void putcmd(uint8_t **p, uint8_t c, uint8_t d)
 	*(*p)++=d;
 }
 
+struct LoadPTMResources
+{
+	uint8_t *buffer;
+	uint8_t *temptrack;
+};
+
+static void FreeResources (struct LoadPTMResources *r)
+{
+	if (r->buffer)
+	{
+		free(r->buffer);
+		r->buffer = 0;
+	}
+	if (r->temptrack)
+	{
+		free(r->temptrack);
+		r->temptrack = 0;
+	}
+}
+
 static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 {
 
@@ -48,17 +68,11 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 	struct gmdpattern *pp;
 	uint32_t inspos[256];
 	uint16_t bufSize;
-	uint8_t *buffer = 0;
-	uint8_t *temptrack = 0;
+	struct LoadPTMResources r;
 
-	int safeout(int err)
-	{
-		if (buffer)
-			free(buffer);
-		if (temptrack)
-			free(temptrack);
-		return err;
-	}
+	r.buffer = 0;
+	r.temptrack = 0;
+
 
 	struct __attribute__((packed))
 	{
@@ -211,10 +225,13 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 	}
 
 	bufSize=1024;
-	buffer=malloc(sizeof(uint8_t)*bufSize);
-	temptrack=malloc(sizeof(uint8_t)*2000);
-	if (!temptrack||!buffer)
-		return safeout(errAllocMem);
+	r.buffer=malloc(sizeof(uint8_t)*bufSize);
+	r.temptrack=malloc(sizeof(uint8_t)*2000);
+	if (!r.temptrack||!r.buffer)
+	{
+		FreeResources (&r);
+		return errAllocMem;
+	}
 
 	for (t=0; t<hdr.pats; t++)
 	{
@@ -232,18 +249,21 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 		if (patSize>bufSize)
 		{
 			bufSize=patSize;
-			free(buffer);
-			buffer=malloc(sizeof(uint8_t)*bufSize);
-			if (!buffer)
-				return safeout(errAllocMem);
+			free(r.buffer);
+			r.buffer=malloc(sizeof(uint8_t)*bufSize);
+			if (!r.buffer)
+			{
+				FreeResources (&r);
+				return errAllocMem;
+			}
 		}
-		if (fread(buffer, patSize, 1, file) != 1)
+		if (fread(r.buffer, patSize, 1, file) != 1)
 			fprintf(stderr, __FILE__ ": warning, read failed #5\n");
 
 		for (j=0; j<m->channum; j++)
 		{
-			uint8_t *bp=buffer;
-			uint8_t *tp=temptrack;
+			uint8_t *bp=r.buffer;
+			uint8_t *tp=r.temptrack;
 
 			uint8_t *cp=tp+2;
 			char setorgpan=t==orders[0];
@@ -505,7 +525,7 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 			}
 
 			trk=&m->tracks[t*(m->channum+1)+j];
-			len=tp-temptrack;
+			len=tp-r.temptrack;
 
 			if (!len)
 				trk->ptr=trk->end=0;
@@ -513,13 +533,16 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 				trk->ptr=malloc(sizeof(uint8_t)*len);
 				trk->end=trk->ptr+len;
 				if (!trk->ptr)
-					return safeout(errAllocMem);
-				memcpy(trk->ptr, temptrack, len);
+				{
+					FreeResources (&r);
+					return errAllocMem;
+				}
+				memcpy(trk->ptr, r.temptrack, len);
 			}
 		}
 
-		tp=temptrack;
-		bp=buffer;
+		tp=r.temptrack;
+		bp=r.buffer;
 		cp=tp+2;
 
 		if (t==orders[0])
@@ -604,7 +627,7 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 		}
 
 		trk=&m->tracks[t*(m->channum+1)+m->channum];
-		len=tp-temptrack;
+		len=tp-r.temptrack;
 
 		if (!len)
 			trk->ptr=trk->end=0;
@@ -612,14 +635,14 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 			trk->ptr=malloc(sizeof(uint8_t)*len);
 			trk->end=trk->ptr+len;
 			if (!trk->ptr)
-				return safeout(errAllocMem);
-			memcpy(trk->ptr, temptrack, len);
+			{
+				FreeResources (&r);
+				return errAllocMem;
+			}
+			memcpy(trk->ptr, r.temptrack, len);
 		}
 	}
-	free(buffer);
-	free(temptrack);
-	buffer=0;
-	temptrack=0;
+	FreeResources (&r);
 
 	for (i=0; i<m->instnum; i++)
 	{

@@ -39,6 +39,26 @@ static inline void putcmd(uint8_t **p, uint8_t c, uint8_t d)
 	*(*p)++=d;
 }
 
+struct LoadOKTResources
+{
+	uint8_t *temptrack;
+	uint8_t *buffer;
+};
+
+static void FreeResources(struct LoadOKTResources *r)
+{
+	if (r->temptrack)
+	{
+		free(r->temptrack);
+		r->temptrack = 0;
+	}
+	if (r->buffer)
+	{
+		free(r->buffer);
+		r->buffer = 0;
+	}
+}
+
 static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 {
 
@@ -56,16 +76,10 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 	uint16_t ordn;
 	uint8_t orders[128];
 	struct gmdpattern *pp;
-	uint8_t *temptrack = 0;
-	uint8_t *buffer = 0;
-	int safeout(int err)
-	{
-		if (temptrack)
-			free(temptrack);
-		if (buffer)
-			free(buffer);
-		return err;
-	}
+	struct LoadOKTResources r;
+
+	r.temptrack = 0;
+	r.buffer = 0;
 
 	mpReset(m);
 
@@ -368,10 +382,13 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 		pp->gtrack=orders[t]*(m->channum+1)+m->channum;
 	}
 
-	temptrack=malloc(sizeof(uint8_t)*3000);
-	buffer=malloc(sizeof(uint8_t)*(1024*m->channum));
-	if (!buffer||!temptrack)
-		return safeout(errAllocMem);
+	r.temptrack=malloc(sizeof(uint8_t)*3000);
+	r.buffer=malloc(sizeof(uint8_t)*(1024*m->channum));
+	if (!r.buffer||!r.temptrack)
+	{
+		FreeResources (&r);
+		return errAllocMem;
+	}
 
 	for (t=0; t<pn; t++)
 	{
@@ -386,7 +403,8 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 		if (fread(&chunk, sizeof(chunk), 1, file) != 1)
 		{
 			fprintf(stderr, __FILE__ ": read failed #20\n");
-			return safeout(errFormStruc);
+			FreeResources (&r);
+			return errFormStruc;
 		}
 #ifdef OKT_LOAD_DEBUG
 		fprintf(stderr, __FILE__ ": comparing header \"%c%c%c%c\" against \"PBOD\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
@@ -394,7 +412,8 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 		if (memcmp(chunk.sig, "PBOD", 4))
 		{
 			fprintf(stderr, __FILE__ ": header \"PBOD\" failed\n");
-			return safeout(errFormStruc);
+			FreeResources (&r);
+			return errFormStruc;
 		}
 		chunk.blen=uint32_big(chunk.blen);
 		if (fread(&patlen, sizeof(uint16_t), 1, file) != 1)
@@ -406,22 +425,24 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 		if ((chunk.blen!=(2+4*m->channum*patlen))||(patlen>256))
 		{
 			fprintf(stderr, __FILE__ ": invalid patlen: %d\n", (int)patlen);
-			return safeout(errFormStruc);
+			FreeResources (&r);
+			return errFormStruc;
 		}
 
 		for (q=0; q<m->patnum; q++)
 			if (t==orders[q])
 				m->patterns[q].patlen=patlen;
 
-		if (fread(buffer, 4*m->channum*patlen, 1, file) != 1)
+		if (fread(r.buffer, 4*m->channum*patlen, 1, file) != 1)
 		{
 			fprintf(stderr, __FILE__ ": read failed #23\n");
-			return safeout(errFormStruc);
+			FreeResources (&r);
+			return errFormStruc;
 		}
 		for (q=0; q<m->channum; q++)
 		{
-			uint8_t *tp=temptrack;
-			uint8_t *buf=buffer+4*q;
+			uint8_t *tp=r.temptrack;
+			uint8_t *buf=r.buffer+4*q;
 
 			struct gmdtrack *trk;
 			uint16_t len;
@@ -514,7 +535,7 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 				}
 			}
 			trk=&m->tracks[t*(m->channum+1)+q];
-			len=tp-temptrack;
+			len=tp-r.temptrack;
 
 			if (!len)
 				trk->ptr=trk->end=0;
@@ -522,13 +543,16 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 				trk->ptr=malloc(sizeof(uint8_t)*len);
 				trk->end=trk->ptr+len;
 				if (!trk->ptr)
-					return safeout(errAllocMem);
-				memcpy(trk->ptr, temptrack, len);
+				{
+					FreeResources (&r);
+					return errAllocMem;
+				}
+				memcpy(trk->ptr, r.temptrack, len);
 			}
 		}
 
-		tp=temptrack;
-		buf=buffer;
+		tp=r.temptrack;
+		buf=r.buffer;
 		for (row=0; row<patlen; row++)
 		{
 			uint8_t *cp=tp+2;
@@ -562,7 +586,7 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 		}
 
 		trk=&m->tracks[t*(m->channum+1)+m->channum];
-		len=tp-temptrack;
+		len=tp-r.temptrack;
 
 		if (!len)
 			trk->ptr=trk->end=0;
@@ -570,14 +594,14 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 			trk->ptr=malloc(sizeof(uint8_t)*len);
 			trk->end=trk->ptr+len;
 			if (!trk->ptr)
-				return safeout(errAllocMem);
-			memcpy(trk->ptr, temptrack, len);
+			{
+				FreeResources (&r);
+				return errAllocMem;
+			}
+			memcpy(trk->ptr, r.temptrack, len);
 		}
 	}
-	free(temptrack);
-	free(buffer);
-	temptrack=0;
-	buffer=0;
+	FreeResources (&r);
 
 	for (i=0; i<m->instnum; i++)
 	{

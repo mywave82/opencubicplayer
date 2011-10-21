@@ -38,6 +38,26 @@ static inline void putcmd(uint8_t **p, uint8_t c, uint8_t d)
 	*(*p)++=d;
 }
 
+struct LoadULTResources
+{
+	uint8_t *temptrack;
+	uint8_t *buffer;
+};
+
+static void FreeResources(struct LoadULTResources *r)
+{
+	if (r->temptrack)
+	{
+		free(r->temptrack);
+		r->temptrack = 0;
+	}
+	if (r->buffer)
+	{
+		free(r->buffer);
+		r->buffer = 0;
+	}
+}
+
 static int _mpLoadULT(struct gmdmodule *m, FILE *file)
 {
 	char id[15];
@@ -54,22 +74,15 @@ static int _mpLoadULT(struct gmdmodule *m, FILE *file)
 	struct gmdpattern *pp;
 	unsigned int t;
 	uint32_t patlength;
-	uint8_t *temptrack=0;
-	uint8_t *buffer=0;
 	uint8_t *bp;
 	uint8_t *chbp[32];
 	unsigned int q;
 	uint8_t *chcurcmd[32];
 	uint8_t chrepn[32];
+	struct LoadULTResources r;
 
-	int safeout(int err)
-	{
-		if (buffer)
-			free(buffer);
-		if (temptrack)
-			free(temptrack);
-		return err;
-	}
+	r.buffer=0;
+	r.temptrack=0;
 
 	mpReset(m);
 
@@ -247,15 +260,18 @@ static int _mpLoadULT(struct gmdmodule *m, FILE *file)
 		fseek(file, temp, SEEK_SET);
 	}
 
-	temptrack=malloc(sizeof(uint8_t)*2000);
-	buffer=malloc(sizeof(uint8_t)*patlength);
-	if (!buffer||!temptrack)
-		return safeout(errAllocMem);
+	r.temptrack=malloc(sizeof(uint8_t)*2000);
+	r.buffer=malloc(sizeof(uint8_t)*patlength);
+	if (!r.buffer||!r.temptrack)
+	{
+		FreeResources(&r);
+		return errAllocMem;
+	}
 
-	if (fread(buffer, patlength, 1, file) != 1)
+	if (fread(r.buffer, patlength, 1, file) != 1)
 		fprintf(stderr, __FILE__ ": warning, read failed #6\n");
 
-	bp=buffer;
+	bp=r.buffer;
 
 	for (q=0; q<m->channum; q++)
 	{
@@ -266,7 +282,7 @@ static int _mpLoadULT(struct gmdmodule *m, FILE *file)
 			uint8_t *curcmd=0;
 			uint8_t repn=0;
 
-			uint8_t *tp=temptrack;
+			uint8_t *tp=r.temptrack;
 
 			uint8_t  row;
 
@@ -305,7 +321,8 @@ static int _mpLoadULT(struct gmdmodule *m, FILE *file)
 				if (!curcmd)
 				{
 					fprintf(stderr, "playgmd: gmdlult.c: curcmd==NULL\n");
-					return safeout(errFormStruc);
+					FreeResources (&r);
+					return errFormStruc;
 				}
 				ins=(int16_t)curcmd[1]-1;
 				nte=curcmd[0]?(curcmd[0]+35):-1;
@@ -449,7 +466,7 @@ static int _mpLoadULT(struct gmdmodule *m, FILE *file)
 			}
 
 			trk=&m->tracks[t*(m->channum+1)+q];
-			len=tp-temptrack;
+			len=tp-r.temptrack;
 
 			if (!len)
 				trk->ptr=trk->end=0;
@@ -458,7 +475,7 @@ static int _mpLoadULT(struct gmdmodule *m, FILE *file)
 				trk->end=trk->ptr+len;
 				if (!trk->ptr)
 					return errAllocMem;
-				memcpy(trk->ptr, temptrack, len);
+				memcpy(trk->ptr, r.temptrack, len);
 			}
 		}
 	}
@@ -466,7 +483,7 @@ static int _mpLoadULT(struct gmdmodule *m, FILE *file)
 
 	for (t=0; t<=patn; t++)
 	{
-		uint8_t *tp=temptrack;
+		uint8_t *tp=r.temptrack;
 		uint8_t row;
 		struct gmdtrack *trk;
 		uint16_t len;
@@ -530,7 +547,7 @@ static int _mpLoadULT(struct gmdmodule *m, FILE *file)
 		}
 
 		trk=&m->tracks[t*(m->channum+1)+m->channum];
-		len=tp-temptrack;
+		len=tp-r.temptrack;
 
 		if (!len)
 			trk->ptr=trk->end=0;
@@ -539,13 +556,10 @@ static int _mpLoadULT(struct gmdmodule *m, FILE *file)
 			trk->end=trk->ptr+len;
 			if (!trk->ptr)
 				return errAllocMem;
-			memcpy(trk->ptr, temptrack, len);
+			memcpy(trk->ptr, r.temptrack, len);
 		}
 	}
-	free(temptrack);
-	free(buffer);
-	temptrack=0;
-	buffer=0;
+	FreeResources(&r);
 
 	for (i=0; i<m->instnum; i++)
 	{

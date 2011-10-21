@@ -117,7 +117,7 @@ struct LoadMDLResources
 	unsigned int *inssampnum;
 };
 
-static void FreeResources(struct LoadMDLResources *r)
+static void FreeResources (struct LoadMDLResources *r)
 {
 	int j;
 	if (r->msmps)
