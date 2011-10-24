@@ -34,6 +34,40 @@
 #include "xmplay.h"
 #include "stuff/err.h"
 
+struct LoadModuleResources
+{
+	struct sampleinfo **smps;
+	struct xmpsample **msmps;
+	unsigned int *instsmpnum;
+};
+
+static void FreeResources(struct LoadModuleResources *r, uint_fast16_t ninst)
+{
+	int l;
+	if (r->smps)
+	{
+		for (l=0;l<ninst;l++)
+			if (r->smps[l])
+				free(r->smps[l]);
+		free(r->smps);
+		r->smps = 0;
+	}
+	if (r->msmps)
+	{
+		for (l=0;l<ninst;l++)
+			if (r->msmps[l])
+				free(r->msmps[l]);
+		free(r->msmps);
+		r->msmps = 0;
+	}
+	if (r->instsmpnum)
+	{
+		free(r->instsmpnum);
+		r->instsmpnum = 0;
+	}
+}
+
+
 int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, FILE *file)
 {
 	struct __attribute__((packed))
@@ -59,35 +93,13 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 		uint8_t ord[256];
 	} head2;
 
-	struct sampleinfo **smps = 0;
-	struct xmpsample **msmps = 0;
-	unsigned int *instsmpnum = 0;
-
 	unsigned int i,j,k;
 
-	int cleanup(int retval)
-	{
-		int l;
-		if (smps)
-		{
-			for (l=0;l<head2.ninst;l++)
-				if (smps[l])
-					free(smps[l]);
-			free(smps);
-		}
-		if (msmps)
-		{
-			for (l=0;l<head2.ninst;l++)
-				if (msmps[l])
-					free(msmps[l]);
-			free(msmps);
-		}
-		if (instsmpnum)
-		{
-			free(instsmpnum);
-		}
-		return retval;
-	}
+	struct LoadModuleResources r;
+
+	r.smps = 0;
+	r.msmps = 0;
+	r.instsmpnum = 0;
 
 	m->envelopes=0;
 	m->samples=0;
@@ -101,31 +113,37 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 	if (fread(&head1, sizeof(head1), 1, file)!=1)
 	{
 		fprintf(stderr, __FILE__ ": fread failed #1\n");
-		return cleanup(errFormStruc);
+		FreeResources (&r, head2.ninst);
+		return errFormStruc;
 	}
 	head1.ver     = uint16_little (head1.ver);
 	head1.hdrsize = uint32_little (head1.hdrsize);
 	if (memcmp(head1.sig, "Extended Module: ", 17))
 	{
 		fprintf(stderr, __FILE__ ": Malformed header (\"Extended Module: \" string missing)\n");
-		return cleanup(errFormStruc);
+		FreeResources (&r, head2.ninst);
+		return errFormStruc;
 	}
 	if (head1.eof!=26)
 	{
 		fprintf(stderr, __FILE__ ": Malformed header (head1.eof!=26), trying to ignore\n");
-/*
-		return cleanup(errFormStruc); */
+		/*
+		FreeResources (&r, head2.ninst);
+		return errFormStruc;
+		*/
 	}
 	if (head1.ver<0x104)
 	{
 		fprintf(stderr, __FILE__ ": File too old\n");
-		return cleanup(errFormOldVer);
+		FreeResources (&r, head2.ninst);
+		return errFormOldVer;
 	}
 
 	if (fread(&head2, sizeof(head2), 1, file)!=1)
 	{
 		fprintf(stderr, __FILE__ ": fread failed #2\n");
-		return cleanup(errFormStruc);
+		FreeResources (&r, head2.ninst);
+		return errFormStruc;
 	}
 	head2.nord    = uint16_little (head2.nord);
 	head2.loopord = uint16_little (head2.loopord);
@@ -138,13 +156,15 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 	if (fseek(file, head1.hdrsize-4-sizeof(head2), SEEK_CUR)<0)
 	{
 		fprintf(stderr, __FILE__ ": fseek failed #1\n");
-		return cleanup(errFormStruc);
+		FreeResources (&r, head2.ninst);
+		return errFormStruc;
 	}
 
 	if (!head2.ninst)
 	{
 		fprintf(stderr, __FILE__ ": No instruments\n");
-		return cleanup(errFormMiss);
+		FreeResources (&r, head2.ninst);
+		return errFormMiss;
 	}
 
 	memcpy(m->name, head1.name, 20);
@@ -165,14 +185,15 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 	m->patlens=malloc(sizeof(uint16_t)*(head2.npat+1));
 	m->instruments=malloc(sizeof(struct xmpinstrument)*head2.ninst);
 	m->envelopes=calloc(sizeof(struct xmpenvelope), head2.ninst*2);
-	smps=calloc(sizeof(struct sampleinfo *), head2.ninst);
-	msmps=calloc(sizeof(struct xmpsample *), head2.ninst);
-	instsmpnum=malloc(sizeof(int)*head2.ninst);
+	r.smps=calloc(sizeof(struct sampleinfo *), head2.ninst);
+	r.msmps=calloc(sizeof(struct xmpsample *), head2.ninst);
+	r.instsmpnum=malloc(sizeof(int)*head2.ninst);
 
-	if (!smps||!msmps||!instsmpnum||!m->instruments||!m->envelopes||!m->patterns||!m->orders||!m->patlens)
+	if (!r.smps||!r.msmps||!r.instsmpnum||!m->instruments||!m->envelopes||!m->patterns||!m->orders||!m->patlens)
 	{
-		fprintf(stderr, __FILE__ ": malloc failed #1 (debug %p %p %p %p %p %p %p %p)\n", smps, msmps, instsmpnum, m->instruments, m->envelopes, m->patterns, m->orders, m->patlens);
-		return cleanup(errAllocMem);
+		fprintf(stderr, __FILE__ ": malloc failed #1 (debug %p %p %p %p %p %p %p %p)\n", r.smps, r.msmps, r.instsmpnum, m->instruments, m->envelopes, m->patterns, m->orders, m->patlens);
+		FreeResources (&r, head2.ninst);
+		return errAllocMem;
 	}
 
 	for (i=0; i<m->nchan; i++)
@@ -186,7 +207,8 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 	if (!m->patterns[head2.npat])
 	{
 		fprintf(stderr, __FILE__ ": malloc failed #1 (size=%d)\n", (int)sizeof(uint8_t)*64*head2.nchan*5);
-		return cleanup(errAllocMem);
+		FreeResources (&r, head2.ninst);
+		return errAllocMem;
 	}
 
 	for (i=0; i<head2.npat; i++)
@@ -203,7 +225,8 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 		if (fread(&pathead, sizeof(pathead), 1, file)!=1)
 		{
 			fprintf(stderr, __FILE__ ": fread failed #3\n");
-			return cleanup(errFormStruc);
+			FreeResources (&r, head2.ninst);
+			return errFormStruc;
 		}
 		pathead.len     = uint32_little (pathead.len);
 		pathead.rows    = uint16_little (pathead.rows);
@@ -211,14 +234,16 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 		if (fseek(file, pathead.len-sizeof(pathead), SEEK_CUR)<0)
 		{
 			fprintf(stderr, __FILE__ ": fseek failed #2\n");
-			return cleanup(errFormStruc);
+			FreeResources (&r, head2.ninst);
+			return errFormStruc;
 		}
 		m->patlens[i]=pathead.rows;
 		m->patterns[i]=calloc(sizeof(uint8_t), pathead.rows*head2.nchan*5);
 		if (!m->patterns[i])
 		{
 			fprintf(stderr, __FILE__ ": malloc failed #3 (i=%d/%d, size=%d)\n", i, head2.npat, (int)sizeof(uint8_t)*pathead.rows*head2.nchan*5);
-			return cleanup(errAllocMem);
+			FreeResources (&r, head2.ninst);
+			return errAllocMem;
 		}
 		if (!pathead.patdata)
 			continue;
@@ -226,12 +251,14 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 		if (!pbuf)
 		{
 			fprintf(stderr, __FILE__ ": malloc failed #4 (i=%d/%d, size=%d)\n", i, head2.npat, (int)sizeof(uint8_t)*pathead.patdata);
-			return cleanup(errAllocMem);
+			FreeResources (&r, head2.ninst);
+			return errAllocMem;
 		}
 		if (fread(pbuf, pathead.patdata, 1, file)!=1)
 		{
 			fprintf(stderr, __FILE__ ": fread failed #4\n");
-			return cleanup(errFormStruc);
+			FreeResources (&r, head2.ninst);
+			return errFormStruc;
 		}
 		cur=(uint8_t *)(m->patterns[i]);
 		for (j=0; j<((unsigned int)pathead.rows*head2.nchan); j++)
@@ -282,8 +309,11 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 
 		if (fread(&ins1, sizeof(ins1.size), 1, file)!=1)
 		{
-			/*fprintf(stderr, __FILE__ ": fread failed #5.1 (%d/%d)\n", i, m->ninst);
-			return cleanup(errFormStruc);*/
+			/*
+			fprintf(stderr, __FILE__ ": fread failed #5.1 (%d/%d)\n", i, m->ninst);
+			FreeResources (&r, head2.ninst);
+			return errFormStruc;
+			*/
 			fprintf(stderr, __FILE__ ": warning, fread failed #5.1\n");
 			ins1.size=0;
 		}
@@ -299,14 +329,16 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 			if (fread(/*no need to take pointer of array */ins1.name, ins1.size-sizeof(ins1.size), 1, file)!=1)
 			{
 				fprintf(stderr, __FILE__ ": fread failed #5.2\n");
-				return cleanup(errFormStruc);
+				FreeResources (&r, head2.ninst);
+				return errFormStruc;
 			}
 			memset(/*no need to take pointer of array */ins1.name+ins1.size-sizeof(ins1.size), 0, sizeof(ins1)-(ins1.size-sizeof(ins1.size)));
 		} else {
 			if (fread(ins1.name, sizeof(ins1)-sizeof(ins1.size), 1, file)!=1)
 			{
 				fprintf(stderr, __FILE__ ": fread failed #5.2\n");
-				return cleanup(errFormStruc);
+				FreeResources (&r, head2.ninst);
+				return errFormStruc;
 			}
 		}
 
@@ -316,14 +348,15 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 		ip->name[22]=0;
 		memset(ip->samples, 0xff, 2*128);
 
-		instsmpnum[i]=ins1.samp;
+		r.instsmpnum[i]=ins1.samp;
 		if (!ins1.samp)
 		{
 			if (ins1.size>sizeof(ins1))
 				if (fseek(file, ins1.size-sizeof(ins1), SEEK_CUR)<0)
 				{
 					fprintf(stderr, __FILE__ ": fseek failed #3\n");
-					return cleanup(errFormStruc);
+					FreeResources (&r, head2.ninst);
+					return errFormStruc;
 				}
 			continue;
 		}
@@ -339,19 +372,22 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 			if (fread(&ins2, ins1.size-sizeof(ins1), 1, file)!=1)
 			{
 				fprintf(stderr, __FILE__ ": fread failed #6.1\n");
-				return cleanup(errFormStruc);
+				FreeResources (&r, head2.ninst);
+				return errFormStruc;
 			}
 			memset((char *)(&ins2)+ins1.size-sizeof(ins1), 0, sizeof(ins2)-(ins1.size-sizeof(ins1)));
 		} else {
 			if (fread(&ins2, sizeof(ins2), 1, file)!=1)
 			{
 				fprintf(stderr, __FILE__ ": fread failed #6.2\n");
-				return cleanup(errFormStruc);
+				FreeResources (&r, head2.ninst);
+				return errFormStruc;
 			}
 			if (fseek(file, ins1.size-sizeof(ins1)-sizeof(ins2), SEEK_CUR)<0)
 			{
 				fprintf(stderr, __FILE__ ": fseek failed #4\n");
-				return cleanup(errFormStruc);
+				FreeResources (&r, head2.ninst);
+				return errFormStruc;
 			}
 		}
 
@@ -419,12 +455,13 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 			}
 		ins2.volfade = uint16_little (ins2.volfade);
 		/*ins2.res     = uint16_little (ins2.res);*/
-		smps[i]=calloc(sizeof(struct sampleinfo), ins1.samp);
-		msmps[i]=calloc(sizeof(struct xmpsample), ins1.samp);
-		if (!smps[i]||!msmps[i])
+		r.smps[i]=calloc(sizeof(struct sampleinfo), ins1.samp);
+		r.msmps[i]=calloc(sizeof(struct xmpsample), ins1.samp);
+		if (!r.smps[i]||!r.msmps[i])
 		{
-			fprintf(stderr, __FILE__ ": malloc failed #5 (i=%d/%d, %p(%d) %p(%d))\n", i, m->ninst, smps[i], (int)sizeof(struct sampleinfo)*ins1.samp, msmps[i], (int)sizeof(struct xmpsample)*ins1.samp);
-			return cleanup(errAllocMem);
+			fprintf(stderr, __FILE__ ": malloc failed #5 (i=%d/%d, %p(%d) %p(%d))\n", i, m->ninst, r.smps[i], (int)sizeof(struct sampleinfo)*ins1.samp, r.msmps[i], (int)sizeof(struct xmpsample)*ins1.samp);
+			FreeResources (&r, head2.ninst);
+			return errAllocMem;
 		}
 
 		for (j=0; j<96; j++)
@@ -442,7 +479,8 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 			if (!env[0].env)
 			{
 				fprintf(stderr, __FILE__ ": malloc failed #6 (size=%d)\n", (int)sizeof(uint8_t)*(ins2.venv[ins2.vnum-1][0]+1));
-				return cleanup(errAllocMem);
+				FreeResources (&r, head2.ninst);
+				return errAllocMem;
 			}
 			p=0;
 			h=ins2.venv[0][1]*4;
@@ -488,7 +526,8 @@ bail1:
 			if (!env[1].env)
 			{
 				fprintf(stderr, __FILE__ ": malloc failed #7 (size=%d)\n", (int)sizeof(uint8_t)*(ins2.penv[ins2.pnum-1][0]+1));
-				return cleanup(errAllocMem);
+				FreeResources (&r, head2.ninst);
+				return errAllocMem;
 			}
 			p=0;
 			h=ins2.penv[0][1]*4;
@@ -538,13 +577,14 @@ bail2:
 				uint8_t res;
 				int8_t name[22];
 			} samp;
-			struct xmpsample *sp=&msmps[i][j];
-			struct sampleinfo *sip=&smps[i][j];
+			struct xmpsample *sp=&r.msmps[i][j];
+			struct sampleinfo *sip=&r.smps[i][j];
 
 			if (fread(&samp, sizeof (samp), 1, file)!=1)
 			{
 				fprintf(stderr, __FILE__ ": fread() failed #7\n");
-				return cleanup(errFormStruc);
+				FreeResources (&r, head2.ninst);
+				return errFormStruc;
 			}
 			samp.samplen   = uint32_little (samp.samplen);
 			samp.loopstart = uint32_little (samp.loopstart);
@@ -553,7 +593,8 @@ bail2:
 			if (fseek(file, ins2.shsize-sizeof(samp), SEEK_CUR)<0)
 			{
 				fprintf(stderr, __FILE__ ": fseek failed #5\n");
-				return cleanup(errFormStruc);
+				FreeResources (&r, head2.ninst);
+				return errFormStruc;
 			}
 			if (samp.type&16)
 			{
@@ -589,8 +630,8 @@ bail2:
 
 		for (j=0; j<ins1.samp; j++)
 		{
-			struct xmpsample *sp=&msmps[i][j];
-			struct sampleinfo *sip=&smps[i][j];
+			struct xmpsample *sp=&r.msmps[i][j];
+			struct sampleinfo *sip=&r.smps[i][j];
 			uint32_t l=sip->length<<(!!(sip->type&mcpSamp16Bit));
 			if (!l)
 				continue;
@@ -598,12 +639,14 @@ bail2:
 			if (!sip->ptr)
 			{
 				fprintf(stderr, __FILE__ ": malloc failed #8 (i=%d, j=%d/%d size=%d)\n", i, j, ins1.samp, (int)sizeof(uint8_t)*(l+528));
-				return cleanup(errAllocMem);
+				FreeResources (&r, head2.ninst);
+				return errAllocMem;
 			}
 			if (fread(sip->ptr, l, 1, file)!=1)
 			{
 				fprintf(stderr, __FILE__ ": fread failed #8\n");
-				return cleanup(errFormStruc);
+				FreeResources (&r, head2.ninst);
+				return errFormStruc;
 			}
 			sp->handle=m->nsampi++;
 		}
@@ -615,25 +658,26 @@ bail2:
 	if (!m->samples||!m->sampleinfos)
 	{
 		fprintf(stderr, __FILE__ ": malloc failed #9 (%p(%d) %p(%d))\n", m->samples, (int)sizeof(struct xmpsample)*m->nsamp, m->sampleinfos, (int)sizeof(struct sampleinfo)*m->nsampi);
-		return cleanup(errAllocMem);
+		FreeResources (&r, head2.ninst);
+		return errAllocMem;
 	}
 
 	m->nsampi=0;
 	m->nsamp=0;
 	for (i=0; i<m->ninst; i++)
 	{
-		for (j=0; j<instsmpnum[i]; j++)
+		for (j=0; j<r.instsmpnum[i]; j++)
 		{
-			m->samples[m->nsamp++]=msmps[i][j];
-			if (smps[i][j].ptr)
-				m->sampleinfos[m->nsampi++]=smps[i][j];
+			m->samples[m->nsamp++]=r.msmps[i][j];
+			if (r.smps[i][j].ptr)
+				m->sampleinfos[m->nsampi++]=r.smps[i][j];
 		}
-		free(smps[i]);
-		free(msmps[i]);
+		free(r.smps[i]);
+		free(r.msmps[i]);
 	}
-	free(smps);
-	free(msmps);
-	free(instsmpnum);
+	free(r.smps);
+	free(r.msmps);
+	free(r.instsmpnum);
 
 	return errOk;
 }

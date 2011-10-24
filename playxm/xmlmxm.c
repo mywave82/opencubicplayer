@@ -32,6 +32,45 @@
 #include "xmplay.h"
 #include "stuff/err.h"
 
+struct LoadMXMResources
+{
+	struct sampleinfo **smps;
+	struct xmpsample **msmps;
+	unsigned int *instsmpnum;
+};
+
+
+static void FreeResources(struct LoadMXMResources *r, struct xmodule *m)
+{
+	int i;
+
+	if (r->smps||r->msmps)
+		for (i=0; i<m->ninst; i++)
+		{
+			if (r->smps)
+				if (r->smps[i])
+					free(r->smps[i]);
+			if (r->msmps)
+				if (r->msmps[i])
+				free(r->msmps[i]);
+		}
+	if (r->smps)
+	{
+		free(r->smps);
+		r->smps = 0;
+	}
+	if (r->msmps)
+	{
+		free(r->msmps);
+		r->msmps = 0;
+	}
+	if (r->instsmpnum)
+	{
+		free(r->instsmpnum);
+		r->instsmpnum = 0;
+	}
+}
+
 int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE *file)
 {
 	uint8_t deltasamps, modpanning;
@@ -58,33 +97,15 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 		uint32_t patofs[256];
 	} mxmhead;
 
-	struct sampleinfo **smps = 0;
-	struct xmpsample **msmps = 0;
-	unsigned int *instsmpnum = 0;
 
 	unsigned int i,j;
 
 	uint32_t guspos[128*16];
+	struct LoadMXMResources r;
 
-	void cleanup_memory(void)
-	{
-		if (smps||msmps)
-			for (i=0; i<m->ninst; i++)
-			{
-				if (smps)
-					if (smps[i])
-						free(smps[i]);
-				if (msmps)
-					if (msmps[i])
-					free(msmps[i]);
-			}
-		if (smps)
-			free(smps);
-		if (msmps)
-			free(msmps);
-		if (instsmpnum)
-			free(instsmpnum);
-	}
+	r.smps = 0;
+	r.msmps = 0;
+	r.instsmpnum = 0;
 
 	m->envelopes=0;
 	m->samples=0;
@@ -150,13 +171,13 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 	m->instruments=calloc(sizeof(struct xmpinstrument), m->ninst);
 	m->envelopes=calloc(sizeof(struct xmpenvelope), m->nenv);
 
-	smps = calloc(sizeof(struct sampleinfo *),m->ninst);
-	msmps = calloc(sizeof(struct xmpsample *),m->ninst);
-	instsmpnum = malloc(sizeof(int)*m->ninst);
+	r.smps = calloc(sizeof(struct sampleinfo *),m->ninst);
+	r.msmps = calloc(sizeof(struct xmpsample *),m->ninst);
+	r.instsmpnum = malloc(sizeof(int)*m->ninst);
 
-	if (!smps||!msmps||!instsmpnum||!m->instruments||!m->envelopes||!m->patterns||!m->orders||!m->patlens)
+	if (!r.smps||!r.msmps||!r.instsmpnum||!m->instruments||!m->envelopes||!m->patterns||!m->orders||!m->patlens)
 	{
-		cleanup_memory();
+		FreeResources (&r, m);
 		return errAllocMem;
 	}
 
@@ -170,7 +191,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 	m->patterns[mxmhead.patnum]= calloc(sizeof(uint8_t)*64,mxmhead.channum*5);
 	if (!m->patterns[mxmhead.patnum])
 	{
-		cleanup_memory();
+		FreeResources (&r, m);
 		return errAllocMem;
 	}
 
@@ -204,8 +225,10 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 
 		fseek(file, mxmhead.insofs[i], SEEK_SET);
 
-		/*smps[i]=0;
-		msmps[i]=0;*/
+		/*
+		r.smps[i]=0;
+		r.msmps[i]=0;
+		*/
 
 		if (fread(&mxmins, sizeof(mxmins), 1, file)!=1)
 			fprintf(stderr, __FILE__ ": warning, read failed #1\n");
@@ -222,14 +245,14 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 		ip->name[22]=0;
 
 		memset(ip->samples, 0xff, 2*128);
-		instsmpnum[i]=mxmins.sampnum;
+		r.instsmpnum[i]=mxmins.sampnum;
 
-		smps[i]=calloc(sizeof(struct sampleinfo), mxmins.sampnum);
-		msmps[i]=calloc(sizeof(struct xmpsample), mxmins.sampnum);
+		r.smps[i]=calloc(sizeof(struct sampleinfo), mxmins.sampnum);
+		r.msmps[i]=calloc(sizeof(struct xmpsample), mxmins.sampnum);
 
-		if (!smps[i]||!msmps[i])
+		if (!r.smps[i]||!r.msmps[i])
 		{
-			cleanup_memory();
+			FreeResources (&r, m);
 			return errAllocMem;
 		}
 
@@ -246,7 +269,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 		env[0].env=malloc(sizeof(uint8_t)*(el+1));
 		if (!env[0].env)
 		{
-			cleanup_memory();
+			FreeResources (&r, m);
 			return errAllocMem;
 		}
 		h=mxmins.venv[0][1]*4;
@@ -288,7 +311,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 		env[1].env=malloc(sizeof(uint8_t)*(el+1));
 		if (!env[1].env)
 		{
-			cleanup_memory();
+			FreeResources (&r, m);
 			return errAllocMem;
 		}
 		p=0;
@@ -341,8 +364,8 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 				uint8_t res[2];
 			} mxmsamp;
 			uint8_t bit16, sloop, sbidi;
-			struct xmpsample *sp=&msmps[i][j];
-			struct sampleinfo *sip=&smps[i][j];
+			struct xmpsample *sp=&r.msmps[i][j];
+			struct sampleinfo *sip=&r.smps[i][j];
 
 			int8_t rpf;
 			uint32_t sampstart, loopstart, loopend;
@@ -408,7 +431,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 			sip->ptr=malloc(sizeof(uint8_t)*(l+528));
 			if (!sip->ptr)
 			{
-				cleanup_memory();
+				FreeResources (&r, m);
 				return errAllocMem;
 			}
 			sp->handle=m->nsampi++;
@@ -422,7 +445,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 
 	if (!m->samples||!m->sampleinfos)
 	{
-		cleanup_memory();
+		FreeResources (&r, m);
 		return errAllocMem;
 	}
 
@@ -430,21 +453,21 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 	m->nsamp=0;
 	for (i=0; i<m->ninst; i++)
 	{
-		for (j=0; j<instsmpnum[i]; j++)
+		for (j=0; j<r.instsmpnum[i]; j++)
 		{
-			m->samples[m->nsamp++]=msmps[i][j];
-			if (smps[i][j].ptr)
-				m->sampleinfos[m->nsampi++]=smps[i][j];
+			m->samples[m->nsamp++]=r.msmps[i][j];
+			if (r.smps[i][j].ptr)
+				m->sampleinfos[m->nsampi++]=r.smps[i][j];
 		}
-		free(smps[i]);
-		free(msmps[i]);
+		free(r.smps[i]);
+		free(r.msmps[i]);
 	}
-	free(smps);
-	free(msmps);
-	free(instsmpnum);
-	smps=0;
-	msmps=0;
-	instsmpnum=0;
+	free(r.smps);
+	free(r.msmps);
+	free(r.instsmpnum);
+	r.smps=0;
+	r.msmps=0;
+	r.instsmpnum=0;
 
 	for (i=0; i<mxmhead.patnum; i++)
 	{
