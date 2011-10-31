@@ -32,10 +32,36 @@
 #include "gmdplay.h"
 #include "stuff/err.h"
 
+struct LoadMTMResources
+{
+	uint8_t *temptrack;
+	uint8_t *tbuffer;
+	uint16_t (*trackseq)[32];
+};
+
 static inline void putcmd(uint8_t **p, uint8_t c, uint8_t d)
 {
 	*(*p)++=c;
 	*(*p)++=d;
+}
+
+static void FreeResources (struct LoadMTMResources *r)
+{
+	if (r->temptrack)
+	{
+		free(r->temptrack);
+		r->temptrack = 0;
+	}
+	if (r->tbuffer)
+	{
+		free(r->tbuffer);
+		r->tbuffer = 0;
+	}
+	if (r->trackseq)
+	{
+		free(r->trackseq);
+		r->trackseq = 0;
+	}
 }
 
 static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
@@ -60,20 +86,11 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 
 	struct gmdpattern *pp;
 	uint32_t filetracks;
-	uint8_t *temptrack=0;
-	uint8_t *tbuffer=0;
-	uint16_t (*trackseq)[32]=0;
+	struct LoadMTMResources r;
 
-	int safeout(int err)
-	{
-		if (temptrack)
-			free(temptrack);
-		if (tbuffer)
-			free(tbuffer);
-		if (trackseq)
-			free(trackseq);
-		return err;
-	}
+	r.temptrack = 0;
+	r.tbuffer = 0;
+	r.trackseq = 0;
 
 	mpReset(m);
 
@@ -173,16 +190,19 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 
 	filetracks=ftell(file);
 
-	temptrack=malloc(sizeof(uint8_t)*2000);
-	tbuffer=malloc(sizeof(uint8_t)*(192*header.trknum+192));
-	trackseq=malloc(sizeof(uint16_t)*(header.patnum+1)*32);
-	if (!tbuffer||!temptrack||!trackseq)
-		return safeout(errAllocMem);
+	r.temptrack=malloc(sizeof(uint8_t)*2000);
+	r.tbuffer=malloc(sizeof(uint8_t)*(192*header.trknum+192));
+	r.trackseq=malloc(sizeof(uint16_t)*(header.patnum+1)*32);
+	if (!r.tbuffer||!r.temptrack||!r.trackseq)
+	{
+		FreeResources (&r);
+		return errAllocMem;
+	}
 
-	memset(tbuffer, 0, 192);
-	if (fread(tbuffer+192, 192*header.trknum, 1, file) != 1)
+	memset(r.tbuffer, 0, 192);
+	if (fread(r.tbuffer+192, 192*header.trknum, 1, file) != 1)
 		fprintf(stderr, __FILE__ ": warning, read failed #4\n");
-	if (fread(trackseq, 64*(header.patnum+1), 1, file) != 1)
+	if (fread(r.trackseq, 64*(header.patnum+1), 1, file) != 1)
 		fprintf(stderr, __FILE__ ": warning, read failed #5\n");
 
 	for (t=0; t<=header.patnum; t++)
@@ -202,9 +222,9 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 			struct gmdtrack *trk;
 			uint16_t len;
 
-			buffer[i]=tbuffer+192*trackseq[t][i]; /* needs checks, since this can CRASH player on broken modules TODO */
+			buffer[i]=r.tbuffer+192*r.trackseq[t][i]; /* needs checks, since this can CRASH player on broken modules TODO */
 
-			tp=temptrack;
+			tp=r.temptrack;
 			buf=buffer[i]; /* needs checks, since this can CRASH player on broken modules TODO */
 
 			for (row=0; row<64; row++, buf+=3)
@@ -389,7 +409,7 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 			}
 
 			trk=&m->tracks[t*(m->channum+1)+i];
-			len=tp-temptrack;
+			len=tp-r.temptrack;
 
 			if (!len)
 				trk->ptr=trk->end=0;
@@ -397,12 +417,15 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 				trk->ptr=malloc(sizeof(uint8_t)*len);
 				trk->end=trk->ptr+len;
 				if (!trk->ptr)
-					return safeout(errAllocMem);
-				memcpy(trk->ptr, temptrack, len);
+				{
+					FreeResources (&r);
+					return errAllocMem;
+				}
+				memcpy(trk->ptr, r.temptrack, len);
 			}
 		}
 
-		tp=temptrack;
+		tp=r.temptrack;
 		for (row=0; row<64; row++)
 		{
 			uint8_t *cp=tp+2;
@@ -457,7 +480,7 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 		}
 
 		trk=&m->tracks[t*(m->channum+1)+m->channum];
-		len=tp-temptrack;
+		len=tp-r.temptrack;
 
 		if (!len)
 			trk->ptr=trk->end=0;
@@ -465,17 +488,15 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 			trk->ptr=malloc(sizeof(uint8_t)*len);
 			trk->end=trk->ptr+len;
 			if (!trk->ptr)
-				return safeout(errAllocMem);
-			memcpy(trk->ptr, temptrack, len);
+			{
+				FreeResources (&r);
+				return errAllocMem;
+			}
+			memcpy(trk->ptr, r.temptrack, len);
 		}
 	}
 
-	free(temptrack);
-	free(tbuffer);
-	free(trackseq);
-	temptrack=0;
-	tbuffer=0;
-	trackseq=0;
+	FreeResources (&r);
 
 	if (header.comlen&&!(header.comlen%40))
 	{
