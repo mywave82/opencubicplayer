@@ -56,7 +56,7 @@ static void parse_config(FILE *input, int level)
 		if ((pos=strchr(line, '#')))
 			*pos=0;
 		base=line;
-		while ((*base)&&(*base==' '))
+		while ((*base)&&isspace(*base))
 			base++;
 		if (!base)
 			continue;
@@ -103,8 +103,11 @@ no_add_dir:{}
 				if ((strlen(base)+strlen(DirectoryStack[i]+1))<=PATH_MAX)
 				{
 					FILE *file;
-					strcpy(path, DirectoryStack[i]);
-					strcat(path, "/");
+					if (base[0] != '/')
+					{
+						strcpy(path, DirectoryStack[i]);
+						strcat(path, "/");
+					}
 					strcat(path, base);
 					if ((file=fopen(path, "r")))
 					{
@@ -186,7 +189,11 @@ static int loadpatchTimidity( struct minstrument *ins,
 	}
 	for (i=DirectoryStackIndex-1;i>=0;i--)
 	{
-		snprintf(path, sizeof(path), "%s/%s.pat", DirectoryStack[i], midInstrumentNames[program]);
+		int needpat = 1;
+		int len = strlen(midInstrumentNames[program]);
+		if (len >= 4)
+			needpat = strcasecmp(midInstrumentNames[program]+len-4, ".pat");
+		snprintf(path, sizeof(path), "%s/%s%s", DirectoryStack[i], midInstrumentNames[program], needpat?".pat":"");
 		if ((file=fopen(path, "r"))!=NULL)
 			break;
 	}
@@ -222,7 +229,11 @@ static int addpatchTimidity( struct minstrument *ins,
 	}
 	for (i=DirectoryStackIndex-1;i>=0;i--)
 	{
-		snprintf(path, sizeof(path), "%s/%s.pat", DirectoryStack[i], midInstrumentNames[program]);
+		int needpat = 1;
+		int len = strlen(midInstrumentNames[program]);
+		if (len >= 4)
+			needpat = strcasecmp(midInstrumentNames[program]+len-4, ".pat");
+		snprintf(path, sizeof(path), "%s/%s%s", DirectoryStack[i], midInstrumentNames[program], needpat?".pat":"");
 		if ((file=fopen(path, "r"))!=NULL)
 			break;
 	}
@@ -255,15 +266,23 @@ int __attribute__ ((visibility ("internal"))) midInitTimidity(void)
 	if ((inifile=fopen("/etc/timidity.cfg", "r")))
 	{
 		fprintf(stderr, "[timidity] parsing /etc/timitidy.cfg\n");
+		strcpy(DirectoryStack[DirectoryStackIndex++], "/etc/");
+	} else if ((inifile=fopen("/etc/timidity/timidity.cfg", "r")))
+	{
+		fprintf(stderr, "[timidity] parsing /etc/timidity/timitidy.cfg\n");
+		strcpy(DirectoryStack[DirectoryStackIndex++], "/etc/timidity/");
 	} else if ((inifile=fopen("/usr/local/etc/timidity.cfg", "r")))
 	{
 		fprintf(stderr, "[timidity] parsing /usr/local/etc/timitidy.cfg\n");
+		strcpy(DirectoryStack[DirectoryStackIndex++], "/usr/local/etc/");
 	} else if ((inifile=fopen("/usr/share/timidity/timidity.cfg", "r")))
 	{
 		fprintf(stderr, "[timidity] /usr/share/timidity/timidity.cfg\n");
+		strcpy(DirectoryStack[DirectoryStackIndex++], "/usr/share/timidity/");
 	} else if ((inifile=fopen("/usr/local/share/timidity/timidity.cfg", "r")))
 	{
 		fprintf(stderr, "[timidity] /usr/local/share/timidity/timidity.cfg\n");
+		strcpy(DirectoryStack[DirectoryStackIndex++], "/usr/local/share/timidity");
 	} else {
 		fprintf(stderr, "[timididy] failed to open /etc/timidity.cfg\n");
 		return 0;

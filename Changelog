@@ -809,3 +809,5 @@
 2011-09-30: devp/devpcoreaudio.c: Didn't compile
 
 2011-10-21: playgmd/gmdl*.c: Removed a nested function (GCC on OS-X dislikes them)
+
+2011-11-03: playgmi/gmitimitidy.c: Updated against ubuntu 11.10 configfile structure, closing ticket #3
