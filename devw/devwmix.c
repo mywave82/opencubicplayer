@@ -54,7 +54,7 @@
 #include "dwmixa.h"
 #include "dwmixqa.h"
 
-#if defined(__PIC__) || defined(I386_ASM)
+#if defined(__PIC__) && defined(I386_ASM)
 #warning I386_ASM is disabled in non FPU mixers when compiled PIC
 #undef I386_ASM
 #endif
