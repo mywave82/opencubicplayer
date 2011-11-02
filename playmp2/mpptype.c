@@ -687,7 +687,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *buf, 
 	int ver;
 	int rateidx;
 	int frqidx;
-	int stereo;
+	/* int stereo; */
 	int rate;
 	/*int gottag = 0;*/
 
@@ -858,7 +858,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *buf, 
 		return 0;
 	rateidx=(hdr>>20)&15;
 	frqidx=(hdr>>18)&3;
-	stereo="\x01\x01\x02\x00"[(hdr>>30)&3];
+	/* stereo="\x01\x01\x02\x00"[(hdr>>30)&3]; */
 	if (frqidx==3)
 		return 0;
 	if (!ver)

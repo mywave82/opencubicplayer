@@ -1,5 +1,3 @@
-#include "asm_emu/x86.h"
-
 /*static uint32_t (*mixrFadeChannelvoltab)[256];*/
 static int32_t ramping[2];
 static int32_t (*mixrFadeChannelvoltab)[256];

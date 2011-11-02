@@ -169,8 +169,8 @@ void cpiDrawGStrings()
 		int chann;
 		int chan0;
 		int i;
-		int limit=plScrWidth-(80-32);
 		int offset;
+		int limit=plScrWidth-(80-32);
 		char lstr[CONSOLE_MAX_X+1];
 
 
@@ -247,7 +247,7 @@ void cpiDrawGStrings()
 			int chan0;
 			int i;
 			int limit=plScrWidth-(80-32);
-			int offset;
+			/* int offset; */
 
 			if (limit<2)
 				limit=2;
@@ -260,7 +260,7 @@ void cpiDrawGStrings()
 			if (chan0<0)
 				chan0=0;
 
-			offset=plScrWidth/2-chann/2;
+			/* offset=plScrWidth/2-chann/2; */
 
 			for (i=0; i<chann; i++)
 			{ /* needs tuning... TODO */

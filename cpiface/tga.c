@@ -118,7 +118,7 @@ int TGAread(unsigned char *filedata, int _ignore, unsigned char *pic, unsigned c
 	uint16_t yOrigin;
 	uint16_t width;
 	uint16_t height;
-	uint8_t imagePixelSize;
+	/* uint8_t imagePixelSize; */
 	uint8_t imageDescriptor;
 
 	/* check if the image is color mapped. If not return */
@@ -167,7 +167,11 @@ int TGAread(unsigned char *filedata, int _ignore, unsigned char *pic, unsigned c
 		height=picHeight;
 
 	/* number of bits in a stored pixel (ignored) */
+#if 0
 	imagePixelSize=*filedata++;
+#else
+	filedata++;
+#endif
 
 	/* image descriptor. Only information about the position of the origin is
 	 * used

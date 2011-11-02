@@ -201,9 +201,8 @@ static void plotbuf(uint32_t *buf, int len)
 {
 	int i;
 	uint8_t *b=(uint8_t*)buf;
-	uint32_t *buf2;
 
-	for (i=0, buf2=buf; i<len; i++, b+=4)
+	for (i=0; i<len; i++, b+=4)
 		*(uint8_t*)(plVidMem+(buf[i]&0x00ffffff))=(buf[i])>>24;
 }
 

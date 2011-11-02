@@ -201,7 +201,7 @@ static uint8_t donotloopmodule;
 static uint8_t donotshutup;
 static int realpos;
 
-static int (*que)[4];
+static int (*que)[4]; /* one int is padding */
 static int querpos;
 static int quewpos;
 static int quelen;
@@ -213,7 +213,7 @@ static int quelen;
 
 static void readque(void)
 {
-	int type,val1,val2;
+	int type,val1/*,val2*/;
 	int time=mcpGet(-1, mcpGTimer);
 	while (1)
 	{
@@ -223,7 +223,7 @@ static void readque(void)
 			break;
 		type=que[querpos][1];
 		val1=que[querpos][2];
-		val2=que[querpos][3];
+		/* val2=que[querpos][3] */;
 		querpos=(querpos+1)%quelen;
 		if (type==-1)
 			realpos=val1;
@@ -1284,7 +1284,7 @@ static void PlayTick(void)
 	for (td=tdata; td<tdataend; td++)
 	{
 		int16_t vol, pan;
-		const struct gmdinstrument *f;
+		/* const struct gmdinstrument *f; */
 		const struct gmdsample *fs;
 		if (!td->instr)
 			continue;
@@ -1292,7 +1292,7 @@ static void PlayTick(void)
 			continue;
 		vol=(td->finalvol*globalvol)>>8;
 		pan=td->finalpan-0x80;
-		f=&*td->instr;
+		/* f=&*td->instr; */
 		fs=&*td->samp;
 
 		if (!td->sustain&&fs->volfade)

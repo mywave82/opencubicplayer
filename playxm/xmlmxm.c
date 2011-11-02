@@ -73,7 +73,7 @@ static void FreeResources(struct LoadMXMResources *r, struct xmodule *m)
 
 int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE *file)
 {
-	uint8_t deltasamps, modpanning;
+	uint8_t deltasamps/*, modpanning*/;
 
 	struct __attribute__((packed))
 	{
@@ -146,7 +146,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 	memcpy(m->name, "MXMPlay module      ", 20);
 	m->name[20]=0;
 
-	modpanning = !!(mxmhead.opt&2);
+	/* TODO? modpanning = !!(mxmhead.opt&2);*/
 	deltasamps = !!(mxmhead.opt&4);
 
 	m->linearfreq=!!(mxmhead.opt&1);

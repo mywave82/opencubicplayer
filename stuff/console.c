@@ -82,9 +82,10 @@ static int console_init(void)
 #ifdef __linux
 	char _stdout[128];
 	char _stdin[128];
-
+# ifdef HAVE_FRAMEBUFFER
 	int test_fb=0;
 	int test_vcsa=0;
+# endif
 #endif
 
 	vgaMakePal();
@@ -220,8 +221,10 @@ static int console_init(void)
 	{
 		case TTY_MAJOR:
 			fprintf(stderr, "We have a tty, testing:\n    Framebuffer (/dev/fb)\n    VCSA (/dev/vcsa)\n    Curses\n");
+#ifdef HAVE_FRAMEBUFFER
 			test_fb=1;
 			test_vcsa=1;
+#endif
 			break;
 		case UNIX98_PTY_SLAVE_MAJOR:
 #if (UNIX98_PTY_MAJOR_COUNT>=2)

@@ -175,7 +175,6 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 	uint8_t packtype[255];
 
 	uint8_t inssav;
-	unsigned int maxins;
 	unsigned int smpnum;
 
 	struct LoadMDLResources r;
@@ -834,8 +833,6 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 		FreeResources(&r);
 		return errAllocMem;
 	}
-
-	maxins=0;
 
 /*  memset(envs, 0, 4*255); */
 /*  memset(insenvnum, 0, 4*255); */

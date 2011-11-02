@@ -297,7 +297,6 @@ static int _mpLoadULT(struct gmdmodule *m, FILE *file)
 				int16_t nte;
 				int16_t pan;
 				int16_t vol;
-				uint8_t pansrnd;
 				uint8_t command[2];
 				uint8_t data[2];
 				int16_t f;
@@ -328,7 +327,6 @@ static int _mpLoadULT(struct gmdmodule *m, FILE *file)
 				nte=curcmd[0]?(curcmd[0]+35):-1;
 				pan=-1;
 				vol=-1;
-				pansrnd=0;
 				command[0]=curcmd[2]>>4;
 				command[1]=curcmd[2]&0xF;
 				data[0]=curcmd[4];

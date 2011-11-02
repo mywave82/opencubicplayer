@@ -282,7 +282,7 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 				uint8_t command;
 				uint8_t data;
 				signed int pan;
-				uint8_t pansrnd;
+				/* uint8_t pansrnd; */
 
 				uint8_t c=*bp++;
 				if (!c)
@@ -316,7 +316,7 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 				command=0;
 				data=0;
 				pan=-1;
-				pansrnd=0;
+				/* pansrnd=0; */
 
 				if (!row&&(t==orders[0]))
 				{

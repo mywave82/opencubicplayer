@@ -432,9 +432,13 @@ static void ymIdler(void)
 static struct channel_info_t Registers;
 static void ymUpdateRegisters(void)
 {
-	int bufplayed;
+#if 0
+/*	int bufplayed;
 
-	bufplayed=plrGetBufPos()>>(devp_stereo+devp_bit16);
+	bufplayed=plrGetBufPos()>>(devp_stereo+devp_bit16);*/
+#else
+	plrGetBufPos();
+#endif
 	while (1)
 	{
 		if (timeslot_tail_devp == timeslot_head_devp)

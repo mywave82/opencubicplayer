@@ -43,7 +43,6 @@ static int mode;
 static void plDisplayHelp(void)
 {
 	int y;
-	int x;
 	struct linkinfostruct l;
 
 	plHelpHeight=lnkCountLinks()*(mode?2:1);
@@ -54,7 +53,6 @@ static void plDisplayHelp(void)
 	displaystr(plWinFirstLine, 0, 0x09, "  Link View", 15);
 	displaystr(plWinFirstLine, 15, 0x08, "press tab to toggle copyright                               ", 65);
 
-	x=0;
 	for (y=0; y<plWinHeight; y++)
 	{
 		uint16_t buf[/*80*/132];

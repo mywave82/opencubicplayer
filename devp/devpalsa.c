@@ -1550,39 +1550,41 @@ static void __attribute__((destructor))fini(void)
 	mdbUnregisterReadDir(&readdirAlsa);
 	if (alsa_pcm)
 	{
+
+#ifdef ALSA_DEBUG
 		int err;
-#ifdef ALSA_DEBUG
+
 		fprintf(stderr, "ALSA(fini) snd_pcm_drain(alsa_pcm) = ");
-#endif
 		err=snd_pcm_drain(alsa_pcm);
-#ifdef ALSA_DEBUG
 		if (err)
 			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
 		else
 			fprintf(stderr, "ok\n");
+
 		fprintf(stderr, "ALSA(fini) snd_pcm_close(alsa_pcm) = ");
-#endif
 		err=snd_pcm_close(alsa_pcm);
-#ifdef ALSA_DEBUG
 		if (err)
 			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
 		else
 			fprintf(stderr, "ok\n");
+#else
+		snd_pcm_drain(alsa_pcm);
+		snd_pcm_close(alsa_pcm);
 #endif
 		alsa_pcm=NULL;
 	}
 	if (mixer)
 	{
+#ifdef ALSA_DEBUG
 		int err;
-#ifdef ALSA_DEBUG
 		fprintf(stderr, "ALSA(fini) snd_mixer_close(mixer) = ");
-#endif
 		err=snd_mixer_close(mixer);
-#ifdef ALSA_DEBUG
 		if (err)
 			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
 		else
 			fprintf(stderr, "ok\n");
+#else
+		snd_mixer_close(mixer);
 #endif
 		mixer=NULL;
 	}

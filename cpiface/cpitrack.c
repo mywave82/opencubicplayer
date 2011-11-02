@@ -516,7 +516,7 @@ static void gmdDrawPattern(int sel)
 	int curpat=pat;
 	signed int crow=currow;
 	signed int i,j,row;
-	int plen;
+	/* int plen; */
 
 	if (plPatManualPat!=-1)
 	{
@@ -574,7 +574,7 @@ static void gmdDrawPattern(int sel)
 	displaystrattr(plPatFirstLine-1, 0, pattitle2, plPatWidth);
 	/* done */
 
-	plen=getpatlen(pat);
+	/* plen=getpatlen(pat); */
 	for (i=0, row=crow-min(plPatHeight/3, 20); i<plPatHeight; i++, row++)
 	{
 		/* if no manual position, and we are not at the current position, display the buffer normal */

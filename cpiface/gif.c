@@ -416,9 +416,9 @@ int GIF87read(unsigned char *fd, int filesize, unsigned char *pic, unsigned char
 	uint16_t GIFscreenHeight;
 	uint8_t byte;
 	int GIFglobalColorMap;
-	int GIFcolorResolution;
+	/* int GIFcolorResolution; */
 	int GIFbitPerPixel;
-	uint8_t GIFbackground;
+	/* uint8_t GIFbackground; */
 	uint16_t GIFimageLeft;
 	uint16_t GIFimageTop;
 	uint16_t GIFimageWidth;
@@ -451,10 +451,16 @@ int GIF87read(unsigned char *fd, int filesize, unsigned char *pic, unsigned char
 
 	byte=*filedata++;
 	GIFglobalColorMap=byte&128;
+#if 0
 	GIFcolorResolution=((byte&(64+32+16))>>4)+1;
+#endif
 	GIFbitPerPixel=(byte&7)+1;
 
+#if 0
 	GIFbackground=*filedata++;
+#else
+	filedata++;
+#endif
 
 	if(*filedata++!=0)
 		return -1;

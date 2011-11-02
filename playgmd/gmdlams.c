@@ -216,7 +216,7 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 		} envs[3];
 		uint16_t envflags;
 
-		uint8_t vibsweep;
+		/* uint8_t vibsweep; */
 		uint8_t shadowinst;
 		uint16_t volfade;
 
@@ -272,13 +272,13 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 				fprintf(stderr, __FILE__ ": warning, read failed #11\n");
 		}
 
-		vibsweep=0;
+		/* vibsweep=0; */
 
 		if (fread(&shadowinst, sizeof(shadowinst), 1, file) != 1)
 			fprintf(stderr, __FILE__ ": warning, read failed #12\n");
 		if (filever==0x201)
 		{
-			vibsweep=shadowinst;
+			/* TODO? vibsweep=shadowinst; */
 			shadowinst=0;
 		}
 		shadowedby[i]=shadowinst;
@@ -514,7 +514,7 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 		uint32_t patlen;
 		uint8_t maxrow;
 		uint8_t chan;
-		uint8_t maxcmd;
+		/* uint8_t maxcmd; */
 		char patname[11];
 		struct gmdpattern *pp;
 
@@ -550,7 +550,7 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 		if (fread(patname, namelen, 1, file) != 1)
 			fprintf(stderr, __FILE__ ": warning, read failed #28\n");
 		patname[namelen]=0;
-		maxcmd=chan>>5;
+		/* maxcmd=chan>>5; */
 		chan&=0x1F;
 		chan++;
 		if (chan>m->channum)

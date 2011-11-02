@@ -85,7 +85,6 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 	uint8_t orders[128];
 
 	struct gmdpattern *pp;
-	uint32_t filetracks;
 	struct LoadMTMResources r;
 
 	r.temptrack = 0;
@@ -187,8 +186,6 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 			pp->tracks[i]=orders[t]*(m->channum+1)+i;
 		pp->gtrack=orders[t]*(m->channum+1)+m->channum;
 	}
-
-	filetracks=ftell(file);
 
 	r.temptrack=malloc(sizeof(uint8_t)*2000);
 	r.tbuffer=malloc(sizeof(uint8_t)*(192*header.trknum+192));

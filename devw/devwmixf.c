@@ -385,7 +385,7 @@ static void mixmain(/*int min*/)
 	{
 		unsigned int bufdelta=(bufdeltatot>MIXF_MIXBUFLEN)?MIXF_MIXBUFLEN:bufdeltatot;
 		uint32_t ticks2go;
-		float invt2g;
+		/* float invt2g; */
 		if (bufdelta>(buflen-bufpos))
 			bufdelta=buflen-bufpos;
 
@@ -394,7 +394,7 @@ static void mixmain(/*int min*/)
 		if (bufdelta>ticks2go)
 			bufdelta=ticks2go;
 
-		invt2g=1.0/(float)ticks2go;
+		/* invt2g=1.0/(float)ticks2go; */
 
 		/* set-up mixing core variables */
 		for (i=0; i<channelnum; i++) if (dwmixfa_state.voiceflags[i]&MIXF_PLAYING)
