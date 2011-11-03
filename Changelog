@@ -811,3 +811,5 @@
 2011-10-21: playgmd/gmdl*.c: Removed a nested function (GCC on OS-X dislikes them)
 
 2011-11-03: playgmi/gmitimitidy.c: Updated against ubuntu 11.10 configfile structure, closing ticket #3
+
+2011-11-03: dev/mixclip.c: wav and sid files would crash on non-x86 platforms (optimization for assembler mixer in lookup-tables were fixed for 32bit pointers)

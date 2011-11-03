@@ -31,6 +31,10 @@
 #include "mixclip.h"
 #include "boot/plinkman.h"
 
+#ifdef I386_ASM
+
+/* assembler versions uses the first 512 entries as 32bit pointers */
+
 void mixCalcClipTab(uint16_t *ct, int32_t amp)
 {
 	signed long i,j,a,b;
@@ -46,6 +50,7 @@ void mixCalcClipTab(uint16_t *ct, int32_t amp)
 	for (i=0; i<256; i++)
 	{
 		if (b<0x000000)
+		{
 			if ((b+amp)<0x000000)
 			{
 				((unsigned short **)ct)[i]=ct+1024;
@@ -59,31 +64,30 @@ void mixCalcClipTab(uint16_t *ct, int32_t amp)
 				}
 				((unsigned short **)ct)[i]=ct+1280;
 				ct[i+512]=0x0000;
-			} else if ((b+amp)>0xFFFFFF)
-			{
-				if (b>0xFFFFFF)
-				{
-					((unsigned short **)ct)[i]=ct+1024;
-					ct[i+512]=0xFFFF;
-				} else {
-					a=0;
-					for (j=0; j<256; j++)
-					{
-						ct[j+1536]=(((a>>8)+b)>0xFFFFFF)?0x0000:((((a>>8)+b)>>8)+1);
-						a+=amp;
-					}
-					((unsigned short **)ct)[i]=ct+1536;
-					ct[i+512]=0xFFFF;
-				}
-			} else {
-				((unsigned short **)ct)[i]=ct+768;
-				ct[i+512]=b>>8;
 			}
+		} else if ((b+amp)>0xFFFFFF)
+		{
+			if (b>0xFFFFFF)
+			{
+				((unsigned short **)ct)[i]=ct+1024;
+				ct[i+512]=0xFFFF;
+			} else {
+				a=0;
+				for (j=0; j<256; j++)
+				{
+					ct[j+1536]=(((a>>8)+b)>0xFFFFFF)?0x0000:((((a>>8)+b)>>8)+1);
+					a+=amp;
+				}
+				((unsigned short **)ct)[i]=ct+1536;
+				ct[i+512]=0xFFFF;
+			}
+		} else {
+			((unsigned short **)ct)[i]=ct+768;
+			ct[i+512]=b>>8;
+		}
 		b+=amp;
 	}
 }
-
-#ifdef I386_ASM
 
 void mixClipAlt(uint16_t *dst, const uint16_t *src, uint32_t len, const uint16_t *tab)
 {
@@ -196,7 +200,6 @@ void mixClipAlt2(uint16_t *dst, const uint16_t *src, uint32_t len, const uint16_
 		"  jmp *%%eax\n"
 
 		"block2:\n"
-
 /*
 		"  nop\n"
 		"  nop\n" */
@@ -204,7 +207,7 @@ void mixClipAlt2(uint16_t *dst, const uint16_t *src, uint32_t len, const uint16_
 		"  movb 1+\\from(%%esi), %%dl\n"
 		"  movl (%%ebx,%%edx,4), %%ebp\n"
 		"  movl 1024(%%ebx,%%edx,2), %%eax\n"
-		".byte 0x8A\n.byte 0x56\n.byte \\from\n" /* since some gcc/binutils patct-sets optimze away 0 offset, we do this "  movb \\from(%%esi), %%dl\n"*/
+		".byte 0x8A\n.byte 0x56\n.byte \\from\n" /* since some gcc/binutils patch-sets optimze away 0 offset, we do this "  movb \\from(%%esi), %%dl\n"*/
 		"  addl (%%ebp,%%edx,2), %%eax\n"
 		".byte 0x66\n.byte 0x89\n.byte 0x47\n.byte \\from\n" /* since some gcc/binutils patct-sets optimze away 0 offset, we do this "movw %%ax, \\from(%%edi)\n" */
 		".if \\to-\\from\n"
@@ -237,11 +240,65 @@ void mixClipAlt2(uint16_t *dst, const uint16_t *src, uint32_t len, const uint16_
 
 #else
 
+void mixCalcClipTab(uint16_t *ct, int32_t amp)
+{
+	signed long i,j,a,b;
+
+	a=-amp;
+	for (i=0; i<256; i++)
+		ct[i+768]=(a+=amp)>>16;
+
+	for (i=0; i<256; i++)
+		ct[i+1024]=0;
+
+	b=0x800000-(amp<<7);
+	for (i=0; i<256; i++)
+	{
+		if (b<0x000000)
+		{
+			if ((b+amp)<0x000000)
+			{
+				ct[i]=1024;
+				ct[i+512]=0x0000;
+			} else {
+				a=0;
+				for (j=0; j<256; j++)
+				{
+					ct[j+1280]=(((a>>8)+b)<0x000000)?0x0000:(((a>>8)+b)>>8);
+					a+=amp;
+				}
+				ct[i]=1280;
+				ct[i+512]=0x0000;
+			}
+		} else if ((b+amp)>0xFFFFFF)
+		{
+			if (b>0xFFFFFF)
+			{
+				ct[i]=1024;
+				ct[i+512]=0xFFFF;
+			} else {
+				a=0;
+				for (j=0; j<256; j++)
+				{
+					ct[j+1536]=(((a>>8)+b)>0xFFFFFF)?0x0000:((((a>>8)+b)>>8)+1);
+					a+=amp;
+				}
+				ct[i]=1536;
+				ct[i+512]=0xFFFF;
+			}
+		} else {
+			ct[i]=768;
+			ct[i+512]=b>>8;
+		}
+		b+=amp;
+	}
+}
+
 void mixClipAlt(uint16_t *dst, const uint16_t *src, uint32_t len, const uint16_t *tab)
 {
 	while (len)
 	{
-		const uint16_t *tabfine=((const uint16_t **)tab)[(*src)>>8];
+		const uint16_t *tabfine=tab+tab[(*src)>>8];
 		*dst=tab[512+((*src)>>8)]+tabfine[(*src)&0xff];
 		dst++;
 		src++;
@@ -253,7 +310,7 @@ void mixClipAlt2(uint16_t *dst, const uint16_t *src, uint32_t len, const uint16_
 {
 	while (len)
 	{
-		const uint16_t *tabfine=((const uint16_t **)tab)[(*src)>>8];
+		const uint16_t *tabfine=tab+tab[(*src)>>8];
 		*dst=tab[512+((*src)>>8)]+tabfine[(*src)&0xff];
 		dst+=2;
 		src+=2;
