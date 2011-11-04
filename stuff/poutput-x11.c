@@ -735,6 +735,7 @@ static void x11_common_event_loop(void)
 				key=0;
 				if ((n_chars==1)/*&&(buf[0]>=32*/&&ks!=XK_Delete)
 				{
+					/* fprintf (stderr, "PRESS: %d %c, ShiftMask=%d, ControlMask=%d, Mod1Mask=%d\n", buf[0], buf[0], event.xkey.state & ShiftMask, event.xkey.state & ControlMask, event.xkey.state & Mod1Mask); */
 					if ((event.xkey.state&(ShiftMask|ControlMask|Mod1Mask))==ControlMask)
 					{
 						switch (toupper(buf[0]))
@@ -798,6 +799,8 @@ static void x11_common_event_loop(void)
 					{
 						case XK_ISO_Left_Tab:
 						case XK_Tab: ___push_key(KEY_SHIFT_TAB); return;
+						default:
+							___push_key(buf[0]);
 					}
 				} else switch (ks)
 				{
