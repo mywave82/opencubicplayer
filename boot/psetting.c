@@ -522,7 +522,7 @@ void cfRemoveEntry(const char *app, const char *key)
 							free(cfINIApps[i].keys[j].key);
 						if (cfINIApps[i].keys[j].comment)
 							free(cfINIApps[i].keys[j].comment);
-						memmove(cfINIApps[i].keys + j, cfINIApps[i].keys + j + 1, cfINIApps[i].nkeys * sizeof(cfINIApps[i].keys[0]));
+						memmove(cfINIApps[i].keys + j, cfINIApps[i].keys + j + 1, (cfINIApps[i].nkeys - j  - 1) * sizeof(cfINIApps[i].keys[0]));
 						cfINIApps[i].nkeys--;
 						if (cfINIApps[i].nkeys)
 						{

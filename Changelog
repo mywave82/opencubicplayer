@@ -815,3 +815,5 @@
 2011-11-03: dev/mixclip.c: wav and sid files would crash on non-x86 platforms (optimization for assembler mixer in lookup-tables were fixed for 32bit pointers)
 
 2011-11-04: playwav/wavpplay.c: pause on wave files caused crash. Also did some minor cleanups in pause-handling in other file-plugins aswell
+
+2011-11-05: boot/psetting.c: ocp.ini upgrade code could crash due memmove moved too much memory
