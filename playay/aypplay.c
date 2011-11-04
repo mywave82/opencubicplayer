@@ -36,6 +36,7 @@
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
+#include "stuff/err.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 #include "stuff/timer.h"
@@ -278,6 +279,7 @@ static int ayProcessKey(uint16_t key)
 			startpausefade();
 			break;
 		case KEY_CTRL_P:
+			pausefadedirect=0;
 			if (plPause)
 				starttime=starttime+dos_clock()-pausetime;
 			else
@@ -359,7 +361,10 @@ static int ayOpenFile(const char *path, struct moduleinfostruct *info, FILE *fil
 	}
 
 	starttime=dos_clock();
+	plPause=0;
 	normalize();
+	pausefadedirect=0;
+
 
 /*
 	ayGetInfo(&ay);
@@ -367,7 +372,7 @@ static int ayOpenFile(const char *path, struct moduleinfostruct *info, FILE *fil
 	ayrate=inf.rate;
 */
 
-	return 0;
+	return errOk;
 }
 
 struct cpifaceplayerstruct ayPlayer = {ayOpenFile, ayCloseFile};

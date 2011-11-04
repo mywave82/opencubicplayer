@@ -42,6 +42,7 @@ wavpplay.o: wavpplay.c wave.h\
 	../boot/psetting.h \
 	../stuff/sets.h \
 	../stuff/compat.h \
+	../stuff/err.h \
 	../dev/devigen.h \
 	../cpiface/cpiface.h
 	$(CC) wavpplay.c -o $@ -c

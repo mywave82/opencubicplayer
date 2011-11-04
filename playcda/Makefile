@@ -49,6 +49,7 @@ cdapplay.o: cdapplay.c cdaudio.h \
 	../dev/devisamp.h \
 	../filesel/mdb.h \
 	../stuff/compat.h \
+	../stuff/err.h \
 	../stuff/poutput.h \
 	../stuff/sets.h \
 	../filesel/pfilesel.h

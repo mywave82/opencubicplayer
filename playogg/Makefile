@@ -46,6 +46,7 @@ oggpplay.o: oggpplay.c \
 	oggplay.h \
 	../stuff/sets.h \
 	../stuff/compat.h \
+	../stuff/err.h \
 	../dev/deviplay.h \
 	../cpiface/cpiface.h
 	$(CC) oggpplay.c -o $@ $(OGG_CFLAGS) $(VORBIS_CFLAGS) $(VORBISFILE_CFLAGS) -c

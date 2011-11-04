@@ -532,6 +532,7 @@ static int ymProcessKey(uint16_t key)
 			startpausefade();
 			break;
 		case KEY_CTRL_P:
+			pausefadedirect=0;
 			if (plPause)
 				starttime=starttime+dos_clock()-pausetime;
 			else
@@ -607,7 +608,9 @@ static int ymOpenFile(const char *path, struct moduleinfostruct *info, FILE *fil
 		return -1;
 
 	starttime=dos_clock();
+	plPause=0;
 	normalize();
+	pausefadedirect=0;
 
 	plNLChan=plNPChan=5;
 	plUseChannels(drawchannel);

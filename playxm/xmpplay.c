@@ -150,6 +150,7 @@ static int xmpProcessKey(uint16_t key)
 			startpausefade();
 			break;
 		case KEY_CTRL_P:
+			pausefadedirect=0;
 			if (plPause)
 				starttime=starttime+dos_clock()-pausetime;
 			else
@@ -712,6 +713,7 @@ static int xmpOpenFile(const char *path, struct moduleinfostruct *info, FILE *fi
 	starttime=dos_clock();
 	plPause=0;
 	mcpSet(-1, mcpMasterPause, 0);
+	pausefadedirect=0;
 
 	return errOk;
 }

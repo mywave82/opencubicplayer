@@ -30,6 +30,7 @@
 #include "boot/psetting.h"
 #include "stuff/sets.h"
 #include "stuff/compat.h"
+#include "stuff/err.h"
 #include "dev/deviplay.h"
 #include "cpiface/cpiface.h"
 #include "flacplay.h"
@@ -298,6 +299,7 @@ static int flacProcessKey(uint16_t key)
 			startpausefade();
 			break;
 		case KEY_CTRL_P:
+			pausefadedirect=0;
 			if (plPause)
 				starttime=starttime+dos_clock()-pausetime;
 			else
@@ -517,13 +519,16 @@ static int flacOpenFile(const char *path, struct moduleinfostruct *info, FILE *f
 		return -1;
 
 	starttime=dos_clock();
+	plPause=0;
 	normalize();
+	pausefadedirect=0;
+
 
 	flacGetInfo(&inf);
 	flaclen=inf.len;
 	flacrate=inf.rate;
 
-	return 0;
+	return errOk;
 }
 
 struct cpifaceplayerstruct flacPlayer = {flacOpenFile, flacCloseFile};

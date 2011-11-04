@@ -36,6 +36,7 @@ extern "C"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "stuff/compat.h"
+#include "stuff/err.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 #include "stuff/timer.h"
@@ -380,6 +381,7 @@ static int oplProcessKey(uint16_t key)
 			startpausefade();
 			break;
 		case KEY_CTRL_P:
+			pausefadedirect=0;
 			if (plPause)
 				starttime=starttime+dos_clock()-pausetime;
 			else
@@ -507,7 +509,9 @@ static int oplOpenFile(const char *path, struct moduleinfostruct *info, FILE *fi
 	unlink(_path);
 
 	starttime=dos_clock();
+	plPause=0;
 	normalize();
+	pausefadedirect=0;
 
 	plNLChan=plNPChan=18;
 	plUseChannels(drawchannel);
@@ -515,7 +519,7 @@ static int oplOpenFile(const char *path, struct moduleinfostruct *info, FILE *fi
 
 	oplpGetGlobInfo(globinfo);
 
-	return 0;
+	return errOk;
 }
 
 extern "C"

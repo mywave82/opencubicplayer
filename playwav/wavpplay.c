@@ -43,6 +43,7 @@
 #include "dev/deviplay.h"
 #include "cpiface/cpiface.h"
 #include "stuff/compat.h"
+#include "stuff/err.h"
 
 #define _MAX_FNAME 8
 #define _MAX_EXT 4
@@ -68,8 +69,63 @@ static short speed;
 static short reverb;
 static short chorus;
 static char finespeed=8;
+static uint32_t pausefadestart;
+static uint8_t pausefaderelspeed;
+static int8_t pausefadedirect;
 
+static void startpausefade(void)
+{
+	if (plPause)
+		starttime=starttime+dos_clock()-pausetime;
 
+	if (pausefadedirect)
+	{
+		if (pausefadedirect<0)
+			plPause=1;
+		pausefadestart=2*dos_clock()-DOS_CLK_TCK-pausefadestart;
+	} else
+		pausefadestart=dos_clock();
+
+	if (plPause)
+	{
+		plChanChanged=1;
+		wpPause(plPause=0);
+		pausefadedirect=1;
+	} else
+		pausefadedirect=-1;
+}
+
+static void dopausefade(void)
+{
+	int16_t i;
+	if (pausefadedirect>0)
+	{
+		i=((int32_t)dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
+		if (i<0)
+			i=0;
+		if (i>=64)
+		{
+			i=64;
+			pausefadedirect=0;
+		}
+	} else {
+		i=64-((int32_t)dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
+		if (i>=64)
+			i=64;
+		if (i<=0)
+		{
+			i=0;
+			pausefadedirect=0;
+			pausetime=dos_clock();
+			wpPause(plPause=1);
+			plChanChanged=1;
+			wpSetSpeed(speed);
+			return;
+		}
+	}
+	pausefaderelspeed=i;
+	wpSetSpeed(speed*i/64);
+}
 static void wavDrawGStrings(unsigned short (*buf)[CONSOLE_MAX_X])
 {
 	struct waveinfo inf;
@@ -216,8 +272,8 @@ static int wavProcessKey(unsigned short key)
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('p', "Start/stop pause");
-			cpiKeyHelp('P', "Start/stop pause");
+			cpiKeyHelp('p', "Start/stop pause with fade");
+			cpiKeyHelp('P', "Start/stop pause with fade");
 			cpiKeyHelp(KEY_CTRL_P, "Start/stop pause");
 			cpiKeyHelp('<', "Jump back (big)");
 			cpiKeyHelp(KEY_CTRL_LEFT, "Jump back (big)");
@@ -246,7 +302,11 @@ static int wavProcessKey(unsigned short key)
 				plrProcessKey(key);
 			return 0;
 
-		case 'p': case 'P': case KEY_CTRL_P:
+		case 'p': case 'P':
+			startpausefade();
+			break;
+		case KEY_CTRL_P:
+			pausefadedirect=0;
 			if (plPause)
 				starttime=starttime+time(NULL)-pausetime;
 			else
@@ -405,6 +465,8 @@ static int wavProcessKey(unsigned short key)
 
 static int wavLooped(void)
 {
+	if (pausefadedirect)
+		dopausefade();
 	wpSetLoop(fsLoopMods);
 	wpIdle();
 	if (plrIdle)
@@ -451,13 +513,15 @@ static int wavOpenFile(const char *path, struct moduleinfostruct *info, FILE *wa
 	}
 
 	starttime=time(NULL);
+	plPause=0;
 	normalize();
+	pausefadedirect=0;
 
 	wpGetInfo(&inf);
 	wavelen=inf.len;
 	waverate=inf.rate;
 
-	return 0;
+	return errOk;
 }
 
 struct cpifaceplayerstruct wavPlayer = {wavOpenFile, wavCloseFile};

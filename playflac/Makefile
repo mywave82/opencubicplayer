@@ -55,6 +55,7 @@ flacpplay.o: flacpplay.c \
 	flacplay.h \
 	../stuff/sets.h \
 	../stuff/compat.h \
+	../stuff/err.h \
 	../dev/deviplay.h \
 	../cpiface/cpiface.h
 	$(CC) flacpplay.c -o $@ $(FLAC_CFLAGS) -c

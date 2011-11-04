@@ -307,6 +307,7 @@ static int mpegProcessKey(uint16_t key)
 			startpausefade();
 			break;
 		case KEY_CTRL_P:
+			pausefadedirect=0;
 			if (plPause)
 				starttime=starttime+dos_clock()-pausetime;
 			else
@@ -599,13 +600,15 @@ static int mpegOpenFile(const char *path, struct moduleinfostruct *info, FILE *m
 		return -1;
 
 	starttime=dos_clock();
+	plPause=0;
 	normalize();
+	pausefadedirect=0;
 
 	mpegGetInfo(&inf);
 	mpeglen=inf.len;
 	mpegrate=inf.rate;
 
-	return 0;
+	return errOk;
 }
 
 struct cpifaceplayerstruct mpegPlayer = {mpegOpenFile, mpegCloseFile};

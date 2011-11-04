@@ -225,6 +225,7 @@ static void timerproc(void)
 
 	quietlen=0;
 	bufdelta=(buflen+bufplayed-bufpos)%buflen;
+
 	if (wavebuflen!=wavelen)
 	{
 		uint_fast32_t towrap=(unsigned)imuldiv((((wavebuflen+wavebufread-wavebufpos-1)%wavebuflen)>>(wavestereo+wave16bit)), 65536, wavebufrate);
@@ -238,23 +239,27 @@ static void timerproc(void)
 	if (pause)
 	{
 		quietlen=bufdelta;
-		buflen=0;
 	}
 
-	toloop=(unsigned)imuldiv(((bufloopat-wavebufpos)>>(wave16bit+wavestereo)), 65536, wavebufrate);
-	if (looped)
-		toloop=0;
-
-	if (bufdelta>=toloop)
+	/* when pitching low, the wave file can appear to be VERY long in samples, cauding overflow, thereby we first need this check */
+	if ((wavebufpos + imuldiv(bufdelta, wavebufrate, 65536) + 2) > bufloopat)
 	{
-		looped=1;
-		if (donotloop)
-			bufdelta=toloop;
+		toloop=(unsigned)imuldiv(((bufloopat-wavebufpos)>>(wave16bit+wavestereo)), 65536, wavebufrate);
+		if (looped)
+			toloop=0;
+
+		if (bufdelta>=toloop)
+		{
+			looped=1;
+			if (donotloop)
+				bufdelta=toloop;
+		}
 	}
 
 	if (bufdelta)
 	{
 		unsigned int i;
+
 		if ((bufpos+bufdelta)>buflen)
 			pass2=bufpos+bufdelta-buflen;
 		else

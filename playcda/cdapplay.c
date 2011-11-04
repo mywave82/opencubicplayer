@@ -41,6 +41,7 @@
 #include "filesel/mdb.h"
 #include "stuff/compat.h"
 #include "stuff/poutput.h"
+#include "stuff/err.h"
 #include "stuff/sets.h"
 
 #include <curses.h>
@@ -228,6 +229,7 @@ static int cdaProcessKey(uint16_t key)
 			startpausefade();
 			break;
 		case KEY_CTRL_P:
+			pausefadedirect=0;
 			plPause=!plPause;
 			if (plPause)
 				cdPause(fileno(cdpDrive));
@@ -448,8 +450,9 @@ static int cdaOpenFile(const char *path, struct moduleinfostruct *info, FILE *fi
 		return -1;
 
 	normalize();
+	pausefadedirect=0;
 
-	return 0;
+	return errOk;
 }
 
 struct cpifaceplayerstruct cdaPlayer = {cdaOpenFile, cdaCloseFile};

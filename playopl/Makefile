@@ -50,6 +50,7 @@ oplpplay.o: oplpplay.cpp \
 	../boot/plinkman.h \
 	oplplay.h \
 	../stuff/compat.h \
+	../stuff/err.h \
 	../stuff/sets.h \
 	../stuff/poutput.h \
 	../stuff/timer.h \

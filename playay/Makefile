@@ -54,6 +54,7 @@ aypplay.o: aypplay.c ayplay.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
+	../stuff/err.h \
 	../stuff/poutput.h \
 	../stuff/sets.h \
 	../stuff/timer.h
