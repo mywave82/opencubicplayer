@@ -819,3 +819,5 @@
 2011-11-05: boot/psetting.c: ocp.ini upgrade code could crash due memmove moved too much memory
 
 2011-11-06: VERSION 0.1.21
+
+2012-01-10  stuff/poutput-sdl.c: Enabled auto-repeat for keyboard and added num-lock status into keyboard flags we ignore. (Thanks to Jester01)
