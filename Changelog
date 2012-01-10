@@ -312,7 +312,7 @@
 
 2006-07-23: *: Changed some paths in the configure/build system, so some files might have moved around
 
-2006-08-02: Thanks to Luigi Auriemma for reporting some overflow issues. Fixed a bunch of overflows like this.
+2006-08-02: Thanks to Luigi Auriemma for reporting some overflow issues. Fixed a bunch of overflows like these.
 
 2006-08-02: Some trackers sets unused samples to strange values, and OCP sent them to adlib, when they shouldn't have been
 
