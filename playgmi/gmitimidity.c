@@ -74,15 +74,21 @@ static void parse_config(FILE *input, int level)
 			{
 				if ((*base)=='~')
 				{
-					if ((pos+strlen(home))>PATH_MAX)
+					if ((pos+strlen(home))>=PATH_MAX)
 					{
 						fprintf(stderr, "[timidity] a dir entry is too long\n");
 						goto no_add_dir;
 					}
 					strcpy(DirectoryStack[DirectoryStackIndex]+pos, home);
 					pos+=strlen(home);
-				} else
+				} else {
+					if (pos>=PATH_MAX)
+					{
+						fprintf(stderr, "[timidity] a dir entry is too long\n");
+						goto no_add_dir;
+					}
 					DirectoryStack[DirectoryStackIndex][pos++]=*base;
+				}
 				base++;
 			}
 			DirectoryStack[DirectoryStackIndex++][pos]=0;
