@@ -9,10 +9,10 @@ all: ocp.info.gz
 
 ocp.info.gz: $(SOURCES)
 	rm -Rf ocp ocp.html ocp.info ocp.info.gz
-	makeinfo ocp.texi
+	LC_ALL=POSIX makeinfo ocp.texi
 	mv ocp ocp.info
 	gzip ocp.info
-	makeinfo --html ocp.texi
+	LC_ALL=POSIX makeinfo --html ocp.texi
 	mv ocp ocp.html
 
 install: all
