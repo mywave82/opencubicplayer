@@ -19,12 +19,12 @@ install: all
 	mkdir -p "$(DESTDIR)$(INFODIR)"
 	$(CP) ocp.info.gz "$(DESTDIR)$(INFODIR)"
 	install-info --dir-file="$(DESTDIR)$(INFODIR)/dir" "$(DESTDIR)$(INFODIR)/ocp.info.gz" || true
-	mkdir -p "$(DESTDIR)$(PREFIX)/share/doc/ocp$(DIR_SUFFIX)/html"
-	$(CP) -R ocp.html/* "$(DESTDIR)$(PREFIX)/share/doc/ocp$(DIR_SUFFIX)/html"
+	mkdir -p "$(DESTDIR)$(DOCDIR)/html"
+	$(CP) -R ocp.html/* "$(DESTDIR)$(DOCDIR)/html"
 uninstall:
 	install-info --delete --dir-file="$(DESTDIR)$(INFODIR)/dir" "$(DESTDIR)$(INFODIR)/ocp.info.gz"
 	rm -f "$(DESTDIR)$(INFODIR)/ocp.info.gz"
-	rm -Rf "$(DESTDIR)$(PREFIX)/share/doc/ocp$(DIR_SUFFIX)/html"
+	rm -Rf "$(DESTDIR)$(DOCDIR)/html"
 else
 all:
 

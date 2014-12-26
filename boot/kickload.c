@@ -159,9 +159,9 @@ static const char *locate_ocp_ini(void)
 		} else*/if ((retval=locate_ocp_ini_try(temp)))
 				return retval;
 	}
-	if ((retval=locate_ocp_ini_try(PREFIX "/share/ocp" DIR_SUFFIX "/etc/")))
+	if ((retval=locate_ocp_ini_try(DATADIR "/ocp" DIR_SUFFIX "/etc/")))
 		return retval;
-	if ((retval=locate_ocp_ini_try(PREFIX "/share/ocp/" DIR_SUFFIX)))
+	if ((retval=locate_ocp_ini_try(DATADIR "/share/ocp/" DIR_SUFFIX)))
 		return retval;
 	if ((retval=locate_ocp_ini_try(PREFIX "/etc/ocp/" DIR_SUFFIX)))
 		return retval;
@@ -198,9 +198,9 @@ static const char *locate_ocp_hlp(void)
 	if ((temp=getenv("OCPDIR")))
 		if ((retval=locate_ocp_hlp_try(temp)))
 			return retval;
-	if ((retval=locate_ocp_hlp_try(PREFIX "/share/ocp" DIR_SUFFIX "/")))
+	if ((retval=locate_ocp_hlp_try(DATADIR "/ocp" DIR_SUFFIX "/")))
 		return retval;
-	if ((retval=locate_ocp_hlp_try(PREFIX "/share/ocp" DIR_SUFFIX "/data/")))
+	if ((retval=locate_ocp_hlp_try(DATADIR "/ocp" DIR_SUFFIX "/data/")))
 		return retval;
 	if ((retval=locate_ocp_hlp_try(LIBDIR)))
 		return retval;
