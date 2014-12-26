@@ -33,11 +33,12 @@ struct it_sample
 	uint8_t dfp;
 };
 
+#define IT_KEYTABS 120
 struct it_instrument
 {
 	char name[32];
 	uint8_t handle;
-	uint8_t keytab[120][2];
+	uint8_t keytab[IT_KEYTABS][2];
 	int32_t fadeout;
 	struct it_envelope envs[3];
 	uint8_t nna;

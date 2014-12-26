@@ -457,7 +457,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 					maxchan=chn+1;
 				if (c&1)
 				{
-					lastnote[chn]=(*pp<=120)?(*pp+1):*pp;
+					lastnote[chn]=(*pp<=IT_KEYTABS)?(*pp+1):*pp;
 					pp++;
 				}
 				if (c&2)
@@ -685,7 +685,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 			uint8_t mch;
 			uint8_t mpr;
 			uint16_t midibnk;
-			uint8_t keytab[120][2];
+			uint8_t keytab[IT_KEYTABS][2];
 			struct env envs[3];
 		};
 		struct itiheader ihdr;
@@ -714,7 +714,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 #ifdef _WATCOM_
 			if(ihdr.dosname); /*suppress stupid watcom warning */
 #endif
-			for (i=0; i<120; i++)
+			for (i=0; i<IT_KEYTABS; i++)
 			{
 				ihdr.keytab[i][0]=i;
 				ihdr.keytab[i][1]=k+1;
@@ -748,7 +748,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 		ip->rv=ihdr.rv;
 		ip->rp=ihdr.rp;
 
-		memcpy(ip->keytab, ihdr.keytab, 120*2);
+		memcpy(ip->keytab, ihdr.keytab, IT_KEYTABS*2);
 
 		for (i=0; i<3; i++)
 		{
