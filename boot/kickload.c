@@ -428,17 +428,18 @@ int validate_home(void)
 	{
 		if (errno==ENOENT)
 		{
-			fprintf(stderr, "Creating $HOME/.ocp\n");
+			fprintf(stderr, "Creating %s\n", temp);
 			if (mkdir(temp, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)<0)
 			{
 				perror("mkdir()");
 				return -1;
 			}
 		} else {
-			perror("stat($HOME)");
+			fprintf (stderr, "stat(%s): %s\n", temp, strerror(errno));
 			return -1;
 		}
 	}
+
 	temp=malloc(strlen(_cfConfigDir)+12);
 	strcpy(temp, _cfConfigDir);
 	strcat(temp, "ocp.ini");
@@ -446,7 +447,7 @@ int validate_home(void)
 	{
 		if (errno!=ENOENT)
 		{
-			perror("stat($HOME/.ocp/ocp.ini)");
+			fprintf (stderr, "stat(%s): %s\n", temp, strerror(errno));
 			free(temp);
 			return -1;
 		}
@@ -456,7 +457,7 @@ int validate_home(void)
 		{
 			if (errno!=ENOENT)
 			{
-				perror("stat($HOME/.ocp/ocp.ini)");
+				fprintf (stderr, "stat(%s): %s\n", temp, strerror(errno));
 				free(temp);
 				return -1;
 			}
@@ -470,11 +471,11 @@ int validate_home(void)
 			strcat(temp, "ocp.ini");
 			if (cp(temp2, temp))
 			{
-				perror("cp(global ocp.ini, $HOME/.ocp/ocp.ini)");
+				fprintf(stderr, "cp(%s, %s): %s\n", temp2, temp, strerror(errno));
 				free(temp);
 				return -1;
 			}
-			fprintf(stderr, "$HOME/.ocp/ocp.ini created\n");
+			fprintf(stderr, "%s created\n", temp);
 		}
 	}
 	free(temp);
