@@ -31,6 +31,7 @@ AC_C_BIGENDIAN
 AC_SUBST(SHARED_FLAGS)
 AC_SUBST(LIB_SUFFIX)
 AC_SUBST(PTHREAD_LIBS)
+AC_SUBST(HAIKU)
 target=`gcc -dumpmachine`
 case "$target" in
 	*-darwin*)
@@ -45,6 +46,7 @@ case "$target" in
 		LIB_SUFFIX=.so
 		PTHREAD_LIBS=
 		with_desktop_file_install=no
+		HAIKU=1
 		;;
 	*)
 		SHARED_FLAGS=-shared
