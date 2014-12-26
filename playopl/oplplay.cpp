@@ -753,12 +753,12 @@ void oplpGetGlobInfo(oplTuneInfo &si)
 	si.title[0]=0;
 	if ((author=p->getauthor().c_str()))
 	{
-		strncat(si.author, author, sizeof(si.author));
+		strncat(si.author, author, sizeof(si.author)-1);
 		si.author[sizeof(si.author)-1]=0;
 	}
 	if ((title=p->gettitle().c_str()))
 	{
-		strncat(si.title, title, sizeof(si.title));
+		strncat(si.title, title, sizeof(si.title)-1);
 		si.title[sizeof(si.title)-1]=0;
 	}
 }
