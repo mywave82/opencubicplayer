@@ -49,6 +49,9 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
+#ifdef __HAIKU__
+#include <FindDirectory.h>
+#endif
 #include "types.h"
 #include "pmain.h"
 
@@ -405,6 +408,20 @@ int validate_home(void)
 	if (temp[strlen(temp)-1]!='/')
 		strcat(temp, "/");
 	strcat(temp, ".ocp/");
+
+#ifdef __HAIKU__
+	{
+		char settingsPath[PATH_MAX];
+		if (find_directory(B_USER_SETTINGS_DIRECTORY, -1, false, settingsPath, sizeof(settingsPath)) == B_OK)
+		{
+			free(temp);
+			temp=malloc(strlen(settingsPath)+1+4+1);
+			strcpy(temp, settingsPath);
+			strcat(temp, "/ocp/");
+		}
+	}
+#endif
+
 	_cfConfigDir=temp;
 
 	if (stat(temp, &st)<0)
