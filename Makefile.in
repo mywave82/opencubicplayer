@@ -166,6 +166,11 @@ endif
 
 ocp: boot/kickload.o
 	$(CC) $(LDFLAGS) -o $@ $^ @DL_LIBS@ @EFENCE_LIBS@ @DUMA_LIBS@
+ifeq ($(HAIKU),1)
+	rc -o ocp.rsrc ocp.rdef
+	xres -o $@ ocp.rsrc
+	mimeset $@
+endif
 
 ocp.hlp: doc/opencp.dox goodies/helpc/ocphhc
 	goodies/helpc/ocphhc doc/opencp.dox $@
@@ -202,6 +207,7 @@ endif
 	find . -name '*~' -exec rm {} ';'
 	rm -f ocp.hlp ocp *$(LIB_SUFFIX)
 	rm -f CPARCH.DAT
+	rm -f ocp.rsrc
 
 distclean: clean
 	rm -Rf config.h autom4te.cache Rules.make config.log config.status Makefile ocp.ini desktop/opencubicplayer.desktop doc/texi/faq.texi doc/texi/install.texi doc/texi/ocp.texi goodies/pack/Makefile goodies/helpc/Makefile Makefile
