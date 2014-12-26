@@ -451,32 +451,19 @@ int validate_home(void)
 			free(temp);
 			return -1;
 		}
-		strcpy(temp, _cfConfigDir);
-		strcat(temp, "ocp.ini");
-		if (stat(temp, &st)<0)
+		if (!(temp2=locate_ocp_ini()))
 		{
-			if (errno!=ENOENT)
-			{
-				fprintf (stderr, "stat(%s): %s\n", temp, strerror(errno));
-				free(temp);
-				return -1;
-			}
-			if (!(temp2=locate_ocp_ini()))
-			{
-				fprintf(stderr, "Global ocp.ini not found\n");
-				free(temp);
-				return -1;
-			}
-			strcpy(temp, _cfConfigDir);
-			strcat(temp, "ocp.ini");
-			if (cp(temp2, temp))
-			{
-				fprintf(stderr, "cp(%s, %s): %s\n", temp2, temp, strerror(errno));
-				free(temp);
-				return -1;
-			}
-			fprintf(stderr, "%s created\n", temp);
+			fprintf(stderr, "Global ocp.ini not found\n");
+			free(temp);
+			return -1;
 		}
+		if (cp(temp2, temp))
+		{
+			fprintf(stderr, "cp(%s, %s): %s\n", temp2, temp, strerror(errno));
+			free(temp);
+			return -1;
+		}
+		fprintf(stderr, "%s created\n", temp);
 	}
 	free(temp);
 	return 0;
