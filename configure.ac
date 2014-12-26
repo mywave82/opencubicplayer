@@ -582,7 +582,7 @@ AC_DEFINE_UNQUOTED(DATADIR, "$DATADIR")
 AC_DEFINE_UNQUOTED(PREFIX, "$PREFIX")
 
 
-AC_ARG_WITH(ultradir, [  --with-ultradir=        default ultradir path to put into ocp.ini], true, with_ultradir="\${datadir}/ocp/ultradir")
+AC_ARG_WITH(ultradir, [  --with-ultradir=        default ultradir path to put into ocp.ini], true, with_ultradir="\${datadir}/ocp${DIR_SUFFIX}/ultradir")
 AS_AC_EXPAND(ULTRADIR, $with_ultradir)
 
 AC_ARG_WITH(freepats, [  --with-freepats=        default path for freepats to put into ocp.ini], true, with_freepats="\${datadir}/freepats")
