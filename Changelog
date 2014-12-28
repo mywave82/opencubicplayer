@@ -820,4 +820,28 @@
 
 2011-11-06: VERSION 0.1.21
 
-2012-01-10  stuff/poutput-sdl.c: Enabled auto-repeat for keyboard and added num-lock status into keyboard flags we ignore. (Thanks to Jester01)
+2012-01-10: stuff/poutput-sdl.c: Enabled auto-repeat for keyboard and added num-lock status into keyboard flags we ignore. (Thanks to Jester01)
+
+2014-12-11: filesel/fsptype.c: check length before access memory
+
+2014-12-11: playgmi/gmitimidity.c: add string overflow protection in dir statement
+
+2014-12-26: Rules.make.in configure.ac: Set __HAIKU__ on Haiku systems (Thanks to Francois Revol)
+
+2014-12-26: Makefile.in ocp.rdef: Icon for Haiku (Thanks to Francois Revol)
+
+2014-12-26: *: Replace hardcoded data and doc dirs, and use --datadir and --docdir from configure (Thanks to Francois Revol)
+
+2014-12-26: texi/Makefile: makeinfo did not run correctly if locales are set. Force LC_ALL=POSIX (Thanks to Francois Revol)
+
+2014-12-26: playgmi/gmitimitidy.c: Charles R. Anderson pointed out that absolute filenames did not work in timitidy instrument patches
+
+2014-12-26: configure.ac: ultradir was set to non-versions ocp directory
+
+2014-12-26: boot/kickload.c: Haiku introduces non-standard directories. Use the actually directories in the error messages
+
+2014-12-26: playit/*: overflow when initializing instruments on load
+
+2014-12-26: playopl/oplplay.cpp: possible string overflow on load
+
+2014-12-26: boot/kickload.c: simplify logic somewhat

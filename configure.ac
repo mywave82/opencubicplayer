@@ -31,6 +31,7 @@ AC_C_BIGENDIAN
 AC_SUBST(SHARED_FLAGS)
 AC_SUBST(LIB_SUFFIX)
 AC_SUBST(PTHREAD_LIBS)
+AC_SUBST(HAIKU)
 target=`gcc -dumpmachine`
 case "$target" in
 	*-darwin*)
@@ -45,6 +46,7 @@ case "$target" in
 		LIB_SUFFIX=.so
 		PTHREAD_LIBS=
 		with_desktop_file_install=no
+		HAIKU=1
 		;;
 	*)
 		SHARED_FLAGS=-shared
@@ -571,12 +573,16 @@ AC_DEFINE_UNQUOTED(LIBDIR, "$LIBDIR")
 AS_AC_EXPAND(BINDIR, $exec_prefix/bin)
 
 AS_AC_EXPAND(PREFIX, $prefix)
+AS_AC_EXPAND(DOCDIR, $docdir)
 AS_AC_EXPAND(INFODIR, $infodir)
 AS_AC_EXPAND(SYSCONFDIR, $sysconfdir)
+AS_AC_EXPAND(DATADIR, $datadir)
+AS_AC_EXPAND(DATAROOTDIR, $datarootdir)
+AC_DEFINE_UNQUOTED(DATADIR, "$DATADIR")
 AC_DEFINE_UNQUOTED(PREFIX, "$PREFIX")
 
 
-AC_ARG_WITH(ultradir, [  --with-ultradir=        default ultradir path to put into ocp.ini], true, with_ultradir="\${datadir}/ocp/ultradir")
+AC_ARG_WITH(ultradir, [  --with-ultradir=        default ultradir path to put into ocp.ini], true, with_ultradir="\${datadir}/ocp${DIR_SUFFIX}/ultradir")
 AS_AC_EXPAND(ULTRADIR, $with_ultradir)
 
 AC_ARG_WITH(freepats, [  --with-freepats=        default path for freepats to put into ocp.ini], true, with_freepats="\${datadir}/freepats")

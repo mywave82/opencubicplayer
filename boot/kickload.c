@@ -49,6 +49,9 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
+#ifdef __HAIKU__
+#include <FindDirectory.h>
+#endif
 #include "types.h"
 #include "pmain.h"
 
@@ -159,9 +162,9 @@ static const char *locate_ocp_ini(void)
 		} else*/if ((retval=locate_ocp_ini_try(temp)))
 				return retval;
 	}
-	if ((retval=locate_ocp_ini_try(PREFIX "/share/ocp" DIR_SUFFIX "/etc/")))
+	if ((retval=locate_ocp_ini_try(DATADIR "/ocp" DIR_SUFFIX "/etc/")))
 		return retval;
-	if ((retval=locate_ocp_ini_try(PREFIX "/share/ocp/" DIR_SUFFIX)))
+	if ((retval=locate_ocp_ini_try(DATADIR "/share/ocp/" DIR_SUFFIX)))
 		return retval;
 	if ((retval=locate_ocp_ini_try(PREFIX "/etc/ocp/" DIR_SUFFIX)))
 		return retval;
@@ -198,9 +201,9 @@ static const char *locate_ocp_hlp(void)
 	if ((temp=getenv("OCPDIR")))
 		if ((retval=locate_ocp_hlp_try(temp)))
 			return retval;
-	if ((retval=locate_ocp_hlp_try(PREFIX "/share/ocp" DIR_SUFFIX "/")))
+	if ((retval=locate_ocp_hlp_try(DATADIR "/ocp" DIR_SUFFIX "/")))
 		return retval;
-	if ((retval=locate_ocp_hlp_try(PREFIX "/share/ocp" DIR_SUFFIX "/data/")))
+	if ((retval=locate_ocp_hlp_try(DATADIR "/ocp" DIR_SUFFIX "/data/")))
 		return retval;
 	if ((retval=locate_ocp_hlp_try(LIBDIR)))
 		return retval;
@@ -405,23 +408,38 @@ int validate_home(void)
 	if (temp[strlen(temp)-1]!='/')
 		strcat(temp, "/");
 	strcat(temp, ".ocp/");
+
+#ifdef __HAIKU__
+	{
+		char settingsPath[PATH_MAX];
+		if (find_directory(B_USER_SETTINGS_DIRECTORY, -1, false, settingsPath, sizeof(settingsPath)) == B_OK)
+		{
+			free(temp);
+			temp=malloc(strlen(settingsPath)+1+4+1);
+			strcpy(temp, settingsPath);
+			strcat(temp, "/ocp/");
+		}
+	}
+#endif
+
 	_cfConfigDir=temp;
 
 	if (stat(temp, &st)<0)
 	{
 		if (errno==ENOENT)
 		{
-			fprintf(stderr, "Creating $HOME/.ocp\n");
+			fprintf(stderr, "Creating %s\n", temp);
 			if (mkdir(temp, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)<0)
 			{
 				perror("mkdir()");
 				return -1;
 			}
 		} else {
-			perror("stat($HOME)");
+			fprintf (stderr, "stat(%s): %s\n", temp, strerror(errno));
 			return -1;
 		}
 	}
+
 	temp=malloc(strlen(_cfConfigDir)+12);
 	strcpy(temp, _cfConfigDir);
 	strcat(temp, "ocp.ini");
@@ -429,36 +447,23 @@ int validate_home(void)
 	{
 		if (errno!=ENOENT)
 		{
-			perror("stat($HOME/.ocp/ocp.ini)");
+			fprintf (stderr, "stat(%s): %s\n", temp, strerror(errno));
 			free(temp);
 			return -1;
 		}
-		strcpy(temp, _cfConfigDir);
-		strcat(temp, "ocp.ini");
-		if (stat(temp, &st)<0)
+		if (!(temp2=locate_ocp_ini()))
 		{
-			if (errno!=ENOENT)
-			{
-				perror("stat($HOME/.ocp/ocp.ini)");
-				free(temp);
-				return -1;
-			}
-			if (!(temp2=locate_ocp_ini()))
-			{
-				fprintf(stderr, "Global ocp.ini not found\n");
-				free(temp);
-				return -1;
-			}
-			strcpy(temp, _cfConfigDir);
-			strcat(temp, "ocp.ini");
-			if (cp(temp2, temp))
-			{
-				perror("cp(global ocp.ini, $HOME/.ocp/ocp.ini)");
-				free(temp);
-				return -1;
-			}
-			fprintf(stderr, "$HOME/.ocp/ocp.ini created\n");
+			fprintf(stderr, "Global ocp.ini not found\n");
+			free(temp);
+			return -1;
 		}
+		if (cp(temp2, temp))
+		{
+			fprintf(stderr, "cp(%s, %s): %s\n", temp2, temp, strerror(errno));
+			free(temp);
+			return -1;
+		}
+		fprintf(stderr, "%s created\n", temp);
 	}
 	free(temp);
 	return 0;

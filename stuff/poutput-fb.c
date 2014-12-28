@@ -334,7 +334,8 @@ int fb_init(int minor)
 	fprintf(stderr, "fb:  mmio_start=0x%08lx\n", fix.mmio_start);
 	fprintf(stderr, "fb:  mmio_len=0x%08x\n", fix.mmio_len);
 	fprintf(stderr, "fb:  accel=%d\n", fix.accel);
-	fprintf(stderr, "fb:  reserved0=0x%04x reserved1=0x%04x reserved2=0x%04x\n", fix.reserved[0], fix.reserved[1], fix.reserved[2]);
+	fprintf(stderr, "fb:  capabilities=0x%04x\n", fix.capabilities);
+	fprintf(stderr, "fb:  reserved0=0x%04x reserved1=0x%04x\n", fix.reserved[0], fix.reserved[1]);
 #endif
 	if (ioctl(fd, FBIOGET_VSCREENINFO, &orgmode))
 	{

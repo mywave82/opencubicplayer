@@ -295,7 +295,7 @@ void __attribute__ ((visibility ("internal"))) itpInstSetup(const struct it_inst
 		const struct it_instrument *ins=&plInstr[i];
 		int num=0;
 
-		for (j=0; j<128; j++)
+		for (j=0; j<IT_KEYTABS; j++)
 			if (ins->keytab[j][1]&&(ins->keytab[j][1]<=sampnum))
 				if (plModSamples[ins->keytab[j][1]-1].handle<nsmp)
 					plSampUsed[ins->keytab[j][1]-1]=1;
@@ -319,7 +319,7 @@ void __attribute__ ((visibility ("internal"))) itpInstSetup(const struct it_inst
 
 		memset(plSampUsed, 0, sampnum);
 
-		for (j=0; j<128; j++)
+		for (j=0; j<IT_KEYTABS; j++)
 			if (ins->keytab[j][1]&&(ins->keytab[j][1]<=sampnum))
 				if (plModSamples[ins->keytab[j][1]-1].handle<nsmp)
 					plSampUsed[ins->keytab[j][1]-1]=1;

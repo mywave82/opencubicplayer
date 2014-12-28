@@ -46,7 +46,7 @@ static int fsReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len
 			if (b[pos]!=0x0a && b[pos]!=0x0d)
 				pos++;
 			else {
-				while (isspace(b[pos]) && pos<len)
+				while ((pos<len) && isspace(b[pos]))
 					pos++;
 				if (len-pos>18 && !memcmp(b+pos,"NumberOfEntries=",16))
 				{
