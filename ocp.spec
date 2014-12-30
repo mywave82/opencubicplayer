@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 0.1.21
+%define version 0.1.22
 
 # Default to _with_libmad if neither _with_libmad or _without_libmad is defined
 %{!?_with_libmad: %{!?_without_libmad: %define _with_libmad --with-libmad}}
