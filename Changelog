@@ -845,3 +845,5 @@
 2014-12-26: playopl/oplplay.cpp: possible string overflow on load
 
 2014-12-26: boot/kickload.c: simplify logic somewhat
+
+2015-01-04: stuff/poutout-curses.c: workaround broken ncurses version (library did not take into acount that write() might not digest all data at first attempt. SIGALRM is a problem here)
