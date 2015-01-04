@@ -33,6 +33,8 @@
  *     expect
  *  -ss040919   Stian Skjelstad <stian@nixia.no>
  *    -New logic for setcurshape
+ *  -ss150104   Stian Skjelstad <stian.skjelstad@gmail.com>
+ *    -Work around for broken write() support inside ncurses library when application receives SIGALRM
  */
 #define _CONSOLE_DRIVER
 
@@ -240,7 +242,45 @@ static void plSetTextMode(unsigned char x)
 		displayvoid(i, 0, plScrWidth);
 }
 
+#if (defined(NCURSES_VERSION_MAJOR)&&((NCURSES_VERSION_MAJOR<5)||((NCURSES_VERSION_MAJOR==5)&&(NCURSES_VERSION_MINOR<9))||((NCURSES_VERSION_MAJOR==5)&&(NCURSES_VERSION_MINOR==9)&&(NCURSES_VERSION_PATCH<20150103))))
 
+#warning NCURSES_VERSION <= 5.9-20150103 has broken write() when using TIMERS, disabling SIGALRM curing ncurses library calls
+
+static int block_level = 0;
+static sigset_t block_mask;
+
+static void curses_block_signals ()
+{
+	if (!block_level)
+	{
+		sigset_t copy_mask;
+		sigprocmask (SIG_SETMASK, 0, &block_mask);
+		copy_mask = block_mask;
+		sigaddset (&copy_mask, SIGALRM);
+		sigprocmask (SIG_SETMASK, &copy_mask, 0);
+	}
+	block_level ++;
+}
+
+static void curses_unblock_signals ()
+{
+	block_level --;
+	if (!block_level)
+	{
+		sigprocmask (SIG_SETMASK, &block_mask, 0);
+	}
+}
+
+#else
+static void curses_block_signals ()
+{
+}
+
+static void curses_unblock_signals ()
+{
+}
+
+#endif
 
 #ifdef CAN_RESIZE
 int resized=0;
@@ -252,6 +292,8 @@ static void adjust(int sig)
 static void do_resize(void)
 {
 	struct winsize size;
+
+	curses_block_signals();
 
 	if (ioctl(fileno(stdout), TIOCGWINSZ, &size) == 0)
 	{
@@ -267,16 +309,22 @@ static void do_resize(void)
 		___push_key(VIRT_KEY_RESIZE);
 	}
 	resized=0;
+
+	curses_unblock_signals();
 }
 #endif /* CAN_RESIZE */
 
 static void RefreshScreen(void)
 {
+	curses_block_signals ();
+
 #ifdef CAN_RESIZE
 	if (resized)
 		do_resize();
 #endif
 	refresh();
+
+	curses_unblock_signals ();
 }
 
 static int buffer=ERR;
@@ -285,26 +333,44 @@ static int ekbhit(void)
 {
 	if (buffer!=ERR)
 		return 1;
+
+	curses_block_signals ();
+
 	buffer=getch();
 	if (buffer!=ERR)
+	{
+		curses_unblock_signals ();
 		return 1;
+	}
 	RefreshScreen();
+
+	curses_unblock_signals ();
 	return 0;
 }
 
 static int egetch(void)
 {
 	int retval;
+
+	curses_block_signals ();
+
 	RefreshScreen();
 	if (buffer!=ERR)
 	{
 		retval=buffer;
 		buffer=ERR;
+
+		curses_unblock_signals ();
+
 		return retval;
 	}
 	retval=getch();
+
+	curses_unblock_signals ();
+
 	if (retval==ERR)
 		retval=0;
+
 	return retval;
 }
 
