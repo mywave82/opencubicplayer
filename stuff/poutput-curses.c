@@ -466,6 +466,12 @@ int curses_init(void)
 		fprintf(stderr, "curses failed to init\n");
 		return -1;
 	}
+
+	if (!getenv("ESCDELAY"))
+	{
+		set_escdelay (25);
+	}
+
 	conSave();
 #if CAN_RESIZE
 	signal(SIGWINCH, adjust);        /* arrange interrupts to resize */
