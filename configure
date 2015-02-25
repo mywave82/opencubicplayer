@@ -4448,7 +4448,7 @@ $as_echo "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
 
 
 
-target=`gcc -dumpmachine`
+target=`$CC -dumpmachine`
 case "$target" in
 	*-darwin*)
 		SHARED_FLAGS="-dynamiclib -flat_namespace -undefined suppress"

@@ -32,7 +32,7 @@ AC_SUBST(SHARED_FLAGS)
 AC_SUBST(LIB_SUFFIX)
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(HAIKU)
-target=`gcc -dumpmachine`
+target=`$CC -dumpmachine`
 case "$target" in
 	*-darwin*)
 		SHARED_FLAGS="-dynamiclib -flat_namespace -undefined suppress"
