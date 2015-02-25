@@ -144,7 +144,8 @@ static struct cpimoderegstruct plMessageMode = {"msg", msgSetMode, msgDraw, msgI
 void plUseMessage(char **msg)
 {
 	plSongMessage=msg;
-	for (plMsgHeight=0; plSongMessage[plMsgHeight]; plMsgHeight++);
-		plMsgScroll=0;
+	for (plMsgHeight=0; plSongMessage[plMsgHeight]; plMsgHeight++)
+		;
+	plMsgScroll=0;
 	cpiRegisterMode(&plMessageMode);
 }
