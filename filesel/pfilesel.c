@@ -817,7 +817,6 @@ int fsInit(void)
 
 void fsClose(void)
 {
-
 	doneRootDir();
 	adbClose();
 	mdbClose();
@@ -841,10 +840,12 @@ void fsClose(void)
 	delete viewlist.files;
 	viewlist.files=0;
 	*/
-	if (dmCurDrive)
-		dirdbUnref(dmCurDrive->currentpath); /* due to curpath */
-	if (dmCurDrive)
-		dirdbUnref(dmCurDrive->currentpath); /* due to curpath */
+
+	if (dirdbcurdirpath != DIRDB_NOPARENT)
+	{
+		dirdbUnref(dirdbcurdirpath); /* due to curpath */
+		dirdbcurdirpath = DIRDB_NOPARENT;
+	}
 
 	{
 		struct dmDrive *drive = dmDrives, *next;
@@ -2125,9 +2126,9 @@ static char fsEditViewPath(void)
 				dirdbUnref(dirdbcurdirpath);
 				dirdbUnref(dmCurDrive->currentpath);
 				dirdbcurdirpath = dmCurDrive->currentpath = newcurrentpath;
+				dirdbRef(dirdbcurdirpath);
 			}
 			dirdbGetFullName(dirdbcurdirpath, curdirpath, DIRDB_FULLNAME_ENDSLASH);
-			dirdbRef(dirdbcurdirpath);
 			if (strlen(curdirpath)+strlen(_name)+strlen(_ext)<=PATH_MAX)
 			{
 				strcpy(curmask, _name);
@@ -2761,6 +2762,7 @@ static int stdReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 			m.dirdbfullpath=d->currentpath;
 			dirdbRef(m.dirdbfullpath);
 			modlist_append(ml, &m);
+			dirdbUnref(m.dirdbfullpath);
 		}
 	}
 	return 1;
