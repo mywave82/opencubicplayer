@@ -240,4 +240,4 @@ static void __attribute__((destructor))done(void)
 
 static struct mdbreadinforegstruct flacReadInfoReg = {flacReadMemInfo, flacReadInfo, flacEvent MDBREADINFOREGSTRUCT_TAIL};
 char *dllinfo = "";
-struct linkinfostruct dllextinfo = {"flacptype", "OpenCP FLAC Detection (c) 2007-09 Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "flacptype", .desc = "OpenCP FLAC Detection (c) 2007-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

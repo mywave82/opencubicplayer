@@ -520,4 +520,4 @@ static int oggOpenFile(const char *path, struct moduleinfostruct *info, FILE *og
 
 
 struct cpifaceplayerstruct oggPlayer = {oggOpenFile, oggCloseFile};
-struct linkinfostruct dllextinfo = {"playogg", "OpenCP Ogg Vorbis Player (c) 1994-09 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "playogg", .desc = "OpenCP Ogg Vorbis Player (c) 1994-09 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

@@ -136,4 +136,4 @@ static void __attribute__((destructor))done(void)
 
 static struct mdbreadinforegstruct ayReadInfoReg = {ayReadMemInfo, ayReadInfo, ayEvent MDBREADINFOREGSTRUCT_TAIL};
 char *dllinfo = "";
-struct linkinfostruct dllextinfo = {"aytype", "OpenCP AY Detection (c) 2005-09 Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "aytype", .desc = "OpenCP AY Detection (c) 2005-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

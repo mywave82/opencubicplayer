@@ -376,4 +376,4 @@ static int ayOpenFile(const char *path, struct moduleinfostruct *info, FILE *fil
 }
 
 struct cpifaceplayerstruct ayPlayer = {ayOpenFile, ayCloseFile};
-struct linkinfostruct dllextinfo = {"playay", "OpenCP aylet Player (c) 2005-09 Russell Marks, Ian Collier & Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "playay", .desc = "OpenCP aylet Player (c) 2005-09 Russell Marks, Ian Collier & Stian Skjelstad", .ver = DLLVERSION, .size = 0};

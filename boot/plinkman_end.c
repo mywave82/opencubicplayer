@@ -23,5 +23,5 @@
 #include "plinkman.h"
 
 #ifdef SUPPORT_STATIC_PLUGINS
-DLLEXTINFO_PREFIX struct linkinfostruct staticdlls = {0, 0, 0, 0 LINKINFOSTRUCT_NOEVENTS};
+DLLEXTINFO_PREFIX struct linkinfostruct staticdlls = {0};
 #endif

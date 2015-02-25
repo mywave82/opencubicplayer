@@ -572,4 +572,4 @@ static void reset_api(void)
 #ifndef SUPPORT_STATIC_PLUGINS
 char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {"poutput", "OpenCP Output Routines (c) 1994-10 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", DLLVERSION, 0, Init: console_init, Close: console_done};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "poutput", .desc = "OpenCP Output Routines (c) 1994-10 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = console_init, .Close = console_done};

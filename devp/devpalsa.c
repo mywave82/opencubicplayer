@@ -1615,4 +1615,4 @@ struct ocpvolregstruct volalsa={volalsaGetNumVolume, volalsaGetVolume, volalsaSe
 static struct mdbreaddirregstruct readdirAlsa = {alsaReadDir MDBREADDIRREGSTRUCT_TAIL};
 
 char *dllinfo="driver plrAlsa; volregs volalsa";
-struct linkinfostruct dllextinfo = {"devpalsa", "OpenCP Player Device: ALSA (c) 2005-10 Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "devpalsa", .desc = "OpenCP Player Device: ALSA (c) 2005-10 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

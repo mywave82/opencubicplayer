@@ -76,4 +76,4 @@ rerun:
 #ifndef SUPPORT_STATIC_PLUGINS
 char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {"fps", "OpenCP Frames Per Second lock (c) 2005-09 Stian Skjelstad", DLLVERSION, 0, Init: fpsInit};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "fps", .desc = "OpenCP Frames Per Second lock (c) 2005-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = fpsInit};

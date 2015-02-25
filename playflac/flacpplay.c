@@ -532,4 +532,4 @@ static int flacOpenFile(const char *path, struct moduleinfostruct *info, FILE *f
 }
 
 struct cpifaceplayerstruct flacPlayer = {flacOpenFile, flacCloseFile};
-struct linkinfostruct dllextinfo = {"playflac", "OpenCP FLAC Player (c) 2007-09 Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "playflac", .desc = "OpenCP FLAC Player (c) 2007-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

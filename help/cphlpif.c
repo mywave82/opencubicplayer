@@ -133,4 +133,4 @@ static void __attribute__((destructor))done(void)
 #ifndef SUPPORT_STATIC_PLUGINS
 char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {"cphlpif", "OpenCP help browser CPIFACE wrapper (c) 1998-09 Fabian Giesen", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cphlpif", .desc = "OpenCP help browser CPIFACE wrapper (c) 1998-09 Fabian Giesen", .ver = DLLVERSION, .size = 0};

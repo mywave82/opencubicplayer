@@ -1207,4 +1207,4 @@ safeout:
 
 struct gmdloadstruct mpLoadAMS = { _mpLoadAMS };
 
-struct linkinfostruct dllextinfo = {"gmdlams", "OpenCP Module Loader: *.669 (c) 1994-09 Niklas Beisert", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "gmdlams", .desc = "OpenCP Module Loader: *.669 (c) 1994-09 Niklas Beisert", .ver = DLLVERSION, .size = 0};

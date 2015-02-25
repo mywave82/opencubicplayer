@@ -719,4 +719,4 @@ static int xmpOpenFile(const char *path, struct moduleinfostruct *info, FILE *fi
 }
 
 struct cpifaceplayerstruct xmpPlayer = {xmpOpenFile, xmpCloseFile};
-struct linkinfostruct dllextinfo = {"playxm", "OpenCP XM/MOD Player (c) 1995-09 Niklas Beisert, Tammo Hinrichs", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "playxm", .desc = "OpenCP XM/MOD Player (c) 1995-09 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

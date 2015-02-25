@@ -643,4 +643,4 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 
 struct gmdloadstruct mpLoadOKT = { _mpLoadOKT };
 
-struct linkinfostruct dllextinfo = {"gmdlokt", "OpenCP Module Loader: *.OKT (c) 1994-09 Niklas Beisert, Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "gmdlokt", .desc = "OpenCP Module Loader: *.OKT (c) 1994-09 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

@@ -759,4 +759,4 @@ struct sounddevice plrOSS={SS_PLAYER, 0, "OSS player", ossDetect,  ossInit,  oss
 struct ocpvolregstruct voloss={volossGetNumVolume, volossGetVolume, volossSetVolume};
 
 char *dllinfo = "driver plrOSS; volregs voloss";
-struct linkinfostruct dllextinfo = {"devposs", "OpenCP Player Device: OSS (c) 2004-09 Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "devposs", .desc = "OpenCP Player Device: OSS (c) 2004-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

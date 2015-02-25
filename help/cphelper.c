@@ -995,4 +995,4 @@ static void hlpGlobalClose(void)
 #ifndef SUPPORT_STATIC_PLUGINS
 char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {"cphelper", "OpenCP help browser (c) 1998-09 Fabian Giesen", DLLVERSION, 0, Init: hlpGlobalInit, Close: hlpGlobalClose};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cphelper", .desc = "OpenCP help browser (c) 1998-09 Fabian Giesen", .ver = DLLVERSION, .size = 0, .Init = hlpGlobalInit, .Close = hlpGlobalClose};

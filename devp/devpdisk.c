@@ -329,4 +329,4 @@ static int dwDetect(struct deviceinfo *card)
 struct sounddevice plrDiskWriter={SS_PLAYER, 0, "Disk Writer", dwDetect, dwInit, dwClose, 0};
 
 char *dllinfo = "driver plrDiskWriter;";
-struct linkinfostruct dllextinfo = {"devpdisk", "OpenCP Player Device: Disk Writer (c) 1994-09 Niklas Beisert, Tammo Hinrichs", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "devpdisk", .desc = "OpenCP Player Device: Disk Writer (c) 1994-09 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

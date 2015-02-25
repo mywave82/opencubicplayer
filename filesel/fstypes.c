@@ -68,4 +68,4 @@ static void __attribute__((destructor))done(void)
 char *dllinfo = "";
 #endif
 
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {"fstypes", "OpenCP Module Detection (c) 1994-09 Niklas Beisert, Tammo Hinrichs", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "fstypes", .desc = "OpenCP Module Detection (c) 1994-09 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

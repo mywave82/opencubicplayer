@@ -561,4 +561,4 @@ static void mlclose(void)
 static struct mdbreaddirregstruct mlReadDirReg = {mlReadDir MDBREADDIRREGSTRUCT_TAIL};
 
 char *dllinfo = "";
-struct linkinfostruct dllextinfo = {"medialib", "OpenCP medialib (c) 2005-09 Stian Skjelstad", DLLVERSION, 0, Init: mlint, Close: mlclose, PreInit:0, LateInit: 0, PreClose:0, LateClose: 0};
+struct linkinfostruct dllextinfo = {.name = "medialib", .desc = "OpenCP medialib (c) 2005-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = mlint, .Close = mlclose};

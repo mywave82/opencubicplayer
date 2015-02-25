@@ -153,4 +153,4 @@ static int qpDetect(struct deviceinfo *card)
 struct sounddevice plrNone={SS_PLAYER, 0, "Super High Quality Quiet Player", qpDetect, qpInit, qpClose, 0};
 
 char *dllinfo="driver plrNone";
-struct linkinfostruct dllextinfo = {"devpnone", "OpenCP Player Device: None (c) 1994-09 Niklas Beisert, Tammo Hinrichs", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "devpnone", .desc = "OpenCP Player Device: None (c) 1994-09 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

@@ -15,7 +15,6 @@ struct __attribute__ ((aligned (64))) linkinfostruct
 	void (*Close)(void);
 	void (*LateClose)(void); /* low priority Close */
 };
-#define LINKINFOSTRUCT_NOEVENTS ,0,0,0,0,0,0
 
 struct dll_handle
 {

@@ -495,4 +495,4 @@ static void __attribute__((destructor))done(void)
 char *dllinfo = "";
 #endif
 
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {"arctar", "OpenCP Archive Reader: .TAR (c) 2004-09 Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "arctar", .desc = "OpenCP Archive Reader: .TAR (c) 2004-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

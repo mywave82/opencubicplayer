@@ -457,4 +457,4 @@ static int cdaOpenFile(const char *path, struct moduleinfostruct *info, FILE *fi
 
 struct cpifaceplayerstruct cdaPlayer = {cdaOpenFile, cdaCloseFile};
 char *dllinfo = "";
-struct linkinfostruct dllextinfo = {"playcda", "OpenCP CDA Player (c) 1995-09 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "playcda", .desc = "OpenCP CDA Player (c) 1995-09 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

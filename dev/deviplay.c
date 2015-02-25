@@ -291,4 +291,4 @@ static struct preprocregstruct plrPreprocess = {plrPrep PREPROCREGSTRUCT_TAIL};
 #ifndef SUPPORT_STATIC_PLUGINS
 char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {"plrbase", "OpenCP Player Devices System (c) 1994-10 Niklas Beisert, Tammo Hinrichs", DLLVERSION, 0, Init: playdevinit, Close: playdevclose};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "plrbase", .desc = "OpenCP Player Devices System (c) 1994-10 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0, .Init = playdevinit, .Close = playdevclose};

@@ -124,4 +124,4 @@ static void __attribute__((destructor))done(void)
 }
 
 char *dllinfo = "";
-struct linkinfostruct dllextinfo = {"sidtype", "OpenCP SID Detection (c) 2005-09 Tammo Hinrichs, Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "sidtype", .desc = "OpenCP SID Detection (c) 2005-09 Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

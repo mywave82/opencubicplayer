@@ -121,4 +121,4 @@ static int ndDetect(struct deviceinfo *c)
 
 struct sounddevice smpNone={SS_SAMPLER, 0, "Eternal Silence Recorder", ndDetect, ndInit, ndClose, 0};
 char *dllinfo="driver smpNone";
-struct linkinfostruct dllextinfo = {"devsnone", "OpenCP Sampler Device: None (c) 1994-09 Niklas Beisert", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "devsnone", .desc = "OpenCP Sampler Device: None (c) 1994-09 Niklas Beisert", .ver = DLLVERSION, .size = 0};
