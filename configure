@@ -6079,16 +6079,20 @@ fi
 fi
 CXXFLAGS="$org_cxxflags"
 CPPFLAGS="$org_cppflags"
+
 if test "x$with_adplug" != "xno"; then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking If AdPlug was compiled with another C++ ABI" >&5
+$as_echo_n "checking If AdPlug was compiled with another C++ ABI... " >&6; }
 	CXXFLAGS="$CXXFLAGS $ADPLUG_CXXFLAGS"
 	LIBS="$LIBS $ADPLUG_LIBS"
+
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <adplug/emuopl.h>
 int
 main ()
 {
-CEmuopl opl = CEmuopl(48000, 1, 1)
+CEmuopl opl = CEmuopl(48000, 1, 1);
   ;
   return 0;
 }
@@ -6101,10 +6105,51 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <adplug/adplug.h>
+#include <adplug/players.h>
+#include <adplug/player.h>
+
+int
+main ()
+{
+
+	int j;
+	CPlayers::const_iterator i;
+
+	for (i = CAdPlug::players.begin(); i != CAdPlug::players.end(); i++)
+	{
+		for (j = 0; (*i)->get_extension(j); j++)
+		{
+			if (CFileProvider::extension("OPL", (*i)->get_extension(j)))
+			{
+				return 0;
+			}
+		}
+	}
+	return 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+else
+  as_fn_error $? "\"Adplug was compiled with a different c++ compiler\"" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 	LIBS=$push_LIBS
 	CXXFLAGS="$org_cxxflags"
 	CPPFLAGS="$org_cppflags"
 fi
+
 if test "x$with_sidplay" != "xno"; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for sidEmuFillFunc in -lsidplay" >&5
 $as_echo_n "checking for sidEmuFillFunc in -lsidplay... " >&6; }

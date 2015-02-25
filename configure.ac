@@ -444,18 +444,47 @@ dnl Fall back to non-pkg-config method
 fi
 CXXFLAGS="$org_cxxflags"
 CPPFLAGS="$org_cppflags"
+
 if test "x$with_adplug" != "xno"; then
+AC_MSG_CHECKING([If AdPlug was compiled with another C++ ABI])
 	CXXFLAGS="$CXXFLAGS $ADPLUG_CXXFLAGS"
 	LIBS="$LIBS $ADPLUG_LIBS"
+
 	AC_LINK_IFELSE(
-		[AC_LANG_PROGRAM([[#include <adplug/emuopl.h>]],[[CEmuopl opl = CEmuopl(48000, 1, 1)]])],
-		,
+		[AC_LANG_PROGRAM([[#include <adplug/emuopl.h>]],[[CEmuopl opl = CEmuopl(48000, 1, 1);]])],
+		[],
+		[AC_MSG_ERROR("Adplug was compiled with a different c++ compiler")]
+	)
+
+	AC_LINK_IFELSE(
+		[AC_LANG_PROGRAM([[
+#include <adplug/adplug.h>
+#include <adplug/players.h>
+#include <adplug/player.h>
+                                 ]],[[
+	int j;
+	CPlayers::const_iterator i;
+
+	for (i = CAdPlug::players.begin(); i != CAdPlug::players.end(); i++)
+	{
+		for (j = 0; (*i)->get_extension(j); j++)
+		{
+			if (CFileProvider::extension("OPL", (*i)->get_extension(j)))
+			{
+				return 0;
+			}
+		}
+	}
+	return 0;
+                                 ]])],
+		[AC_MSG_RESULT([ok])],
 		[AC_MSG_ERROR("Adplug was compiled with a different c++ compiler")]
 	)
 	LIBS=$push_LIBS
 	CXXFLAGS="$org_cxxflags"
 	CPPFLAGS="$org_cppflags"
 fi
+
 if test "x$with_sidplay" != "xno"; then
 	AC_CHECK_LIB(sidplay, sidEmuFillFunc, , if test "x$with_sidplay" = "xyes"; then AC_MSG_ERROR("sidplay (1.x) libraries not found"); else with_sidplay="no"; fi)
 	LIBS=$push_LIBS
