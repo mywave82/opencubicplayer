@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # OpenCP Module Player
 # copyright (c) '94-'05 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
 #
