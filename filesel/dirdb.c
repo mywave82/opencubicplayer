@@ -69,7 +69,7 @@ static void dumpdb_parent(uint32_t parent, int ident)
 			fprintf(stderr, "0x%08x ", i);
 			for (j=0;j<ident;j++)
 				fprintf(stderr, " ");
-			fprintf(stderr, "%s (mdb 0x%08x adb 0x%08x)\n", dirdbData[i].name, dirdbData[i].mdbref, dirdbData[i].adbref);
+			fprintf(stderr, "%s (refcount=%d mdb 0x%08x adb 0x%08x)\n", dirdbData[i].name, dirdbData[i].refcount, dirdbData[i].mdbref, dirdbData[i].adbref);
 			dumpdb_parent(i, ident+1);
 		}
 	}
@@ -407,13 +407,16 @@ void dirdbUnref(uint32_t node)
 #endif
 	if (node>=dirdbNum)
 	{
+		fprintf(stderr, "dirdbUnref: invalid node (node %d >= dirdbNum %d)\n", node, dirdbNum);
 err:
-		fprintf(stderr, "dirdbUnref: invalid node\n");
 		abort();
 		return;
 	}
 	if (!dirdbData[node].refcount)
+	{
+		fprintf (stderr, "dirdbUnref: refcount == 0\n");
 		goto err;
+	}
 	/* fprintf(stderr, "--- %s (%d p=%d)\n", dirdbData[node].name, node, dirdbData[node].parent);*/
 	dirdbData[node].refcount--;
 	if (dirdbData[node].refcount)
