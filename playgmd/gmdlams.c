@@ -228,7 +228,7 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 
 		if (fread(&namelen, sizeof(namelen), 1, file) != 1)
 			fprintf(stderr, __FILE__ ": warning, read failed #6\n");
-		if (namelen>=(sizeof(ip->name-1)))
+		if (namelen>=(sizeof(ip->name)-1))
 		{
 			fprintf(stderr, "AMS: Instrument name too long\n");
 			retval=errFormStruc;
