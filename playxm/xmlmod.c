@@ -279,6 +279,11 @@ static int loadmod(struct xmodule *m, FILE *file, int chan, int sig, int opt)
 
 	if (fread(&ordn, 1, 1, file)!=1)
 		fprintf(stderr, "xmlmod.c: warning: fread() failed #4\n");
+	if (!ordn)
+	{
+		fprintf (stderr, "xmlmod.c: error, order count == 0\n");
+		return errFormSig;
+	}
 	if (fread(&loopp, 1, 1, file)!=1)
 		fprintf(stderr, "xmlmod.c: warning: fread() failed #5\n");
 	if (fread(orders, 128, 1, file)!=1)
