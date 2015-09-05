@@ -31,8 +31,8 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 ymtype_so=ymtype.o
-ymtype$(LIB_SUFFIX): $(ymtype_so)
-	$(CXX) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(LZH_LIB) -Llzh
+ymtype$(LIB_SUFFIX): $(ymtype_so) lzh_dir
+	$(CXX) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $(ymtype_so) $(LZH_LIB) -Llzh
 
 playym_so=ympplay.o ymplay.o
 playym$(LIB_SUFFIX): $(playym_so) lzh_dir stsoundlib_dir
