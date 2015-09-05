@@ -24,6 +24,7 @@
 
 #include "config.h"
 #include <ctype.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -200,13 +201,13 @@ static int loadpatchTimidity( struct minstrument *ins,
 	if (len >= 4)
 		needpat = strcasecmp(midInstrumentNames[program]+len-4, ".pat");
 
-	if (midInstrumentNames[program][0] != '/') /* Is the path absolute? */
+	if (midInstrumentNames[program][0] == '/') /* Is the path absolute? */
 	{
 		snprintf(path, sizeof(path), "%s%s", midInstrumentNames[program], needpat?".pat":"");
 
 		if ((file=fopen(path, "r"))==NULL)
 		{
-			fprintf(stderr, "[timidity] '%s': failed to open file\n", path);
+			fprintf(stderr, "[timidity] '%s': failed to open file: %s\n", path, strerror (errno));
 		}
 	} else {
 		for (i=DirectoryStackIndex-1;i>=0;i--)
@@ -241,22 +242,37 @@ static int addpatchTimidity( struct minstrument *ins,
 	int retval;
 	char path[PATH_MAX+NAME_MAX];
 	int i;
+	int needpat = 1;
+	int len;
 
 	if (!*midInstrumentNames[program])
 	{
 		fprintf(stderr, "[timidity] not entry configured for program %d\n", program);
 		return errFileMiss;
 	}
-	for (i=DirectoryStackIndex-1;i>=0;i--)
+
+	len = strlen(midInstrumentNames[program]);
+	if (len >= 4)
+		needpat = strcasecmp(midInstrumentNames[program]+len-4, ".pat");
+
+	if (midInstrumentNames[program][0] == '/') /* Is the path absolute? */
 	{
-		int needpat = 1;
-		int len = strlen(midInstrumentNames[program]);
-		if (len >= 4)
-			needpat = strcasecmp(midInstrumentNames[program]+len-4, ".pat");
-		snprintf(path, sizeof(path), "%s/%s%s", DirectoryStack[i], midInstrumentNames[program], needpat?".pat":"");
-		if ((file=fopen(path, "r"))!=NULL)
-			break;
+		snprintf(path, sizeof(path), "%s%s", midInstrumentNames[program], needpat?".pat":"");
+
+		if ((file=fopen(path, "r"))==NULL)
+		{
+			fprintf(stderr, "[timidity] '%s': failed to open file: %s\n", path, strerror (errno));
+		}
+	} else {
+		for (i=DirectoryStackIndex-1;i>=0;i--)
+		{
+			snprintf(path, sizeof(path), "%s/%s%s", DirectoryStack[i], midInstrumentNames[program], needpat?".pat":"");
+			if ((file=fopen(path, "r"))!=NULL)
+				break;
+			fprintf(stderr, "[timidity] '%s': failed to open file (we might try other directory prefixes before we give up)\n", path);
+		}
 	}
+
 	if (!file)
 	{
 		fprintf(stderr, "[timidity] '%s': failed to open file\n", midInstrumentNames[program]);

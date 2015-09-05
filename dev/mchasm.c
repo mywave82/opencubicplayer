@@ -1900,4 +1900,4 @@ void RP3 mixGetMasterSampleSU16SR(int16_t *_dst, const void *_src, uint32_t len,
 
 #endif
 
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {"mchasm", "OpenCP Player/Sampler Auxiliary Routines (c) 1994-10 Niklas Beisert, Tammo Hinrichs", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "mchasm", .desc = "OpenCP Player/Sampler Auxiliary Routines (c) 1994-10 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

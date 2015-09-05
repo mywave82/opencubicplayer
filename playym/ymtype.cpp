@@ -377,5 +377,5 @@ static void __attribute__((destructor))done(void)
 
 extern "C" {
 	const char *dllinfo = "";
-	struct linkinfostruct dllextinfo = {"ymtype", "OpenCP YM Detection (c) 2010-2011 Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+	struct linkinfostruct dllextinfo = {.name = "ymtype", .desc = "OpenCP YM Detection (c) 2010-2011 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
 }

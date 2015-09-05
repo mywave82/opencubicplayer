@@ -1406,4 +1406,4 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 
 struct gmdloadstruct mpLoadMDL = { _mpLoadMDL };
 
-struct linkinfostruct dllextinfo = {"gmdlmdl", "OpenCP Module Loader: *.MDL (c) 1994-09 Niklas Beisert", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "gmdlmdl", .desc = "OpenCP Module Loader: *.MDL (c) 1994-09 Niklas Beisert", .ver = DLLVERSION, .size = 0};

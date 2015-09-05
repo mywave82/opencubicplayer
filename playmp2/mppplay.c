@@ -612,4 +612,4 @@ static int mpegOpenFile(const char *path, struct moduleinfostruct *info, FILE *m
 }
 
 struct cpifaceplayerstruct mpegPlayer = {mpegOpenFile, mpegCloseFile};
-struct linkinfostruct dllextinfo = {"playmp2", "OpenCP Audio MPEG Player (c) 1994-09 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "playmp2", .desc = "OpenCP Audio MPEG Player (c) 1994-09 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

@@ -482,4 +482,4 @@ static int Detect(struct deviceinfo *c)
 struct sounddevice mcpNone={SS_WAVETABLE, 0, "None", Detect, Init, Close, 0};
 char *dllinfo = "driver mcpNone";
 
-struct linkinfostruct dllextinfo = {"devwnone", "OpenCP Wavetable Device: None (c) 1994-09 Niklas Beisert, Tammo Hinrichs", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "devwnone", .desc = "OpenCP Wavetable Device: None (c) 1994-09 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

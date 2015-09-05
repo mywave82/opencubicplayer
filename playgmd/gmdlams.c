@@ -228,7 +228,7 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 
 		if (fread(&namelen, sizeof(namelen), 1, file) != 1)
 			fprintf(stderr, __FILE__ ": warning, read failed #6\n");
-		if (namelen>=(sizeof(ip->name-1)))
+		if (namelen>=(sizeof(ip->name)-1))
 		{
 			fprintf(stderr, "AMS: Instrument name too long\n");
 			retval=errFormStruc;
@@ -1207,4 +1207,4 @@ safeout:
 
 struct gmdloadstruct mpLoadAMS = { _mpLoadAMS };
 
-struct linkinfostruct dllextinfo = {"gmdlams", "OpenCP Module Loader: *.669 (c) 1994-09 Niklas Beisert", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "gmdlams", .desc = "OpenCP Module Loader: *.669 (c) 1994-09 Niklas Beisert", .ver = DLLVERSION, .size = 0};

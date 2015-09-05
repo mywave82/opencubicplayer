@@ -845,5 +845,5 @@ static struct interfacestruct plOpenCP = {plmpOpenFile, plmpCallBack, plmpCloseF
 #ifndef SUPPORT_STATIC_PLUGINS
 char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {"cpiface", "OpenCP Interface (c) 1994-09 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", DLLVERSION, 0, LateInit: plmpInit, PreClose: plmpClose};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cpiface", .desc = "OpenCP Interface (c) 1994-09 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .LateInit = plmpInit, .PreClose = plmpClose};
 /* OpenCP Module Player */

@@ -66,4 +66,4 @@ static int ssInit(void)
 #ifndef SUPPORT_STATIC_PLUGINS
 char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {"sets", "OpenCP Sound Settings Auxiliary Routines (c) 1994-09 Niklas Beisert, Tammo Hinrichs", DLLVERSION, 0, Init: ssInit};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "sets", .desc = "OpenCP Sound Settings Auxiliary Routines (c) 1994-09 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0, .Init = ssInit};

@@ -207,4 +207,4 @@ int deviReadDevices(const char *list, struct devinfonode **devs)
 	return 1;
 }
 
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {"devi", "OpenCP Devices Auxiliary Routines (c) 1994-10 Niklas Beisert, Tammo Hinrichs", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "devi", .desc = "OpenCP Devices Auxiliary Routines (c) 1994-10 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

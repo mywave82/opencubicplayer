@@ -675,4 +675,4 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 
 struct gmdloadstruct mpLoadPTM = { _mpLoadPTM };
 
-struct linkinfostruct dllextinfo = {"gmdlptm", "OpenCP Module Loader: *.PTM (c) 1994-10 Niklas Beisert, Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "gmdlptm", .desc = "OpenCP Module Loader: *.PTM (c) 1994-10 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

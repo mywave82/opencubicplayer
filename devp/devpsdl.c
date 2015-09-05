@@ -320,4 +320,4 @@ static int sdlDetect(struct deviceinfo *card)
 struct sounddevice plrSDL={SS_PLAYER, 0, "SDL Player", sdlDetect, sdlInit, sdlClose, 0};
 
 char *dllinfo="driver plrSDL";
-struct linkinfostruct dllextinfo = {"devpsdl", "OpenCP Player Device: None (c) 2011 Fran\x87ois Revol", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "devpsdl", .desc = "OpenCP Player Device: None (c) 2011 Fran\x87ois Revol", .ver = DLLVERSION, .size = 0};

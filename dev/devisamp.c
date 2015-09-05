@@ -339,4 +339,4 @@ static struct preprocregstruct smpPreprocess = {smpPrep PREPROCREGSTRUCT_TAIL};
 #ifndef SUPPORT_STATIC_PLUGINS
 char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {"smpbase", "OpenCP Sampler Devices System (c) 1994-10 Niklas Beisert, Tammo Hinrichs", DLLVERSION, 0, Init: sampdevinit, Close: sampdevclose};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "smpbase", .desc = "OpenCP Sampler Devices System (c) 1994-10 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0, .Init = sampdevinit, .Close = sampdevclose};

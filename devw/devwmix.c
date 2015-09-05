@@ -1295,4 +1295,4 @@ struct devaddstruct mcpMixAdd = {mixGetOpt, mixrInit, 0, mixProcKey};
 struct sounddevice mcpMixer={SS_WAVETABLE|SS_NEEDPLAYER, 0, "Mixer", wmixDetect, wmixInit, wmixClose, &mcpMixAdd};
 char *dllinfo="driver mcpMixer";
 
-struct linkinfostruct dllextinfo = {"devwmix", "OpenCP Wavetable Device: Mixer (c) 1994-10 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "devwmix", .desc = "OpenCP Wavetable Device: Mixer (c) 1994-10 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

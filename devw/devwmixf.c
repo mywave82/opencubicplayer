@@ -1160,4 +1160,4 @@ struct devaddstruct mcpFMixAdd = {mixfGetOpt, mixfInit, 0, mixfProcKey};
 struct sounddevice mcpFMixer={SS_WAVETABLE|SS_NEEDPLAYER, 0, "FPU Mixer", Detect, Init, Close, &mcpFMixAdd};
 char *dllinfo="driver mcpFMixer";
 
-struct linkinfostruct dllextinfo = {"devwmixf", "OpenCP Wavetable Device: FPU HighQuality Mixer (c) 1999-10 Tammo Hinrichs, Fabian Giesen, Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "devwmixf", .desc = "OpenCP Wavetable Device: FPU HighQuality Mixer (c) 1999-10 Tammo Hinrichs, Fabian Giesen, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

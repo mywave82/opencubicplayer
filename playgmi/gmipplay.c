@@ -288,4 +288,4 @@ static int gmiOpenFile(const char *path, struct moduleinfostruct *info, FILE *fi
 }
 
 struct cpifaceplayerstruct gmiPlayer = {gmiOpenFile, gmiCloseFile};
-struct linkinfostruct dllextinfo = {"playgmi", "OpenCP GUSPatch Midi Player (c) 1994-08 Niklas Beisert, Tammo Hinrichs", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "playgmi", .desc = "OpenCP GUSPatch Midi Player (c) 1994-08 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

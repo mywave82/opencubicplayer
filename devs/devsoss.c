@@ -385,4 +385,4 @@ struct devaddstruct smpOSSAdd = {ossGetOpt, 0, 0, 0};
 struct sounddevice smpOSS={SS_SAMPLER, 0, "OSS Recorder", ossDetect, ossInit, ossClose, &smpOSSAdd};
 
 char *dllinfo="driver smpOSS";
-struct linkinfostruct dllextinfo = {"devsoss", "OpenCP Sampler Device: OSS (c) 2004-09 Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "devsoss", .desc = "OpenCP Sampler Device: OSS (c) 2004-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

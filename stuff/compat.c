@@ -244,4 +244,4 @@ void *memmem(const void *haystack, size_t haystacklen,
 }
 #endif
 
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {"compat", "OpenCP DOS compatible function-wrappers (c) 2004-09 Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "compat", .desc = "OpenCP DOS compatible function-wrappers (c) 2004-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

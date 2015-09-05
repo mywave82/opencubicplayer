@@ -816,4 +816,4 @@ safeout:
 
 struct gmdloadstruct mpLoadDMF = { _mpLoadDMF };
 
-struct linkinfostruct dllextinfo = {"gmdldmf", "OpenCP Module Loader: *.DMF (c) 1994-0999999999Beisert", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "gmdldmf", .desc = "OpenCP Module Loader: *.DMF (c) 1994-09 Beisert", .ver = DLLVERSION, .size = 0};

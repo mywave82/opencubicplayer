@@ -544,4 +544,4 @@ static void __attribute__((destructor))fini(void)
 struct sounddevice plrCoreAudio={SS_PLAYER, 1, "CoreAudio player", CoreAudioDetect,  CoreAudioInit,  CoreAudioClose};
 
 char *dllinfo="driver plrCoreAudio";
-struct linkinfostruct dllextinfo = {"devpcoreaudio", "OpenCP Player Device: CoreAudio (c) 2006-09 Stian Skjelstad", DLLVERSION, 0};
+struct linkinfostruct dllextinfo = {.name = "devpcoreaudio", .desc = "OpenCP Player Device: CoreAudio (c) 2006-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

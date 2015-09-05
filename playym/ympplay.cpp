@@ -622,5 +622,5 @@ static int ymOpenFile(const char *path, struct moduleinfostruct *info, FILE *fil
 extern "C"
 {
   cpifaceplayerstruct ymPlayer = {ymOpenFile, ymCloseFile};
-  struct linkinfostruct dllextinfo = {"playym", "OpenCP STYMulator Player (c) 2010-2011 Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+  struct linkinfostruct dllextinfo = {.name = "playym", .desc = "OpenCP STYMulator Player (c) 2010-2011 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
 }

@@ -582,4 +582,4 @@ static int _mpLoadULT(struct gmdmodule *m, FILE *file)
 
 struct gmdloadstruct mpLoadULT = { _mpLoadULT };
 
-struct linkinfostruct dllextinfo = {"gmdlult", "OpenCP Module Loader: *.ULT (c) 1994-09 Niklas Beisert", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "gmdlult", .desc = "OpenCP Module Loader: *.ULT (c) 1994-09 Niklas Beisert", .ver = DLLVERSION, .size = 0};

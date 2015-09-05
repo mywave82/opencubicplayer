@@ -645,4 +645,4 @@ static int itpOpenFile(const char *path, struct moduleinfostruct *info, FILE *fi
 }
 
 struct cpifaceplayerstruct itpPlayer = {itpOpenFile, itpCloseFile};
-struct linkinfostruct dllextinfo = {"playit", "OpenCP IT Player (c) 1997-09 Tammo Hinrichs, Niklas Beisert, Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "playit", .desc = "OpenCP IT Player (c) 1997-09 Tammo Hinrichs, Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

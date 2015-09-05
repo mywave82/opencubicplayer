@@ -56,7 +56,7 @@ struct dll_handle loadlist[MAXDLLLIST];
 int loadlist_n;
 
 #ifdef SUPPORT_STATIC_PLUGINS
-DLLEXTINFO_PREFIX struct linkinfostruct staticdlls = {"static", "Compiled in plugins (c) 2009 Stian Skjelstad", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+DLLEXTINFO_PREFIX struct linkinfostruct staticdlls = {.name = "static", .desc = "Compiled in plugins (c) 2009 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
 #endif
 
 static char reglist[1024];

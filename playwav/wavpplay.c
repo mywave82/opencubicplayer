@@ -525,4 +525,4 @@ static int wavOpenFile(const char *path, struct moduleinfostruct *info, FILE *wa
 }
 
 struct cpifaceplayerstruct wavPlayer = {wavOpenFile, wavCloseFile};
-struct linkinfostruct dllextinfo = {"playwav", "OpenCP Wave Player (c) 1994-09 Niklas Beisert, Tammo Hinrichs", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "playwav", .desc = "OpenCP Wave Player (c) 1994-09 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

@@ -489,4 +489,4 @@ static int gmdOpenFile(const char *path, struct moduleinfostruct *info, FILE *fi
 struct cpifaceplayerstruct gmdPlayer = {gmdOpenFile, gmdCloseFile};
 
 char *dllinfo = "";
-struct linkinfostruct dllextinfo = {"playgmd", "OpenCP General Module Player (c) 1994-09 Niklas Beisert, Tammo Hinrichs", DLLVERSION, 0 LINKINFOSTRUCT_NOEVENTS};
+struct linkinfostruct dllextinfo = {.name = "playgmd", .desc = "OpenCP General Module Player (c) 1994-09 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};
