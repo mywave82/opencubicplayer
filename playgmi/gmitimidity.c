@@ -59,7 +59,7 @@ static void parse_config(FILE *input, int level)
 		base=line;
 		while ((*base)&&isspace(*base))
 			base++;
-		if (!base)
+		if (!*base)
 			continue;
 		if (!strncmp(base, "dir ", 4))
 		{
@@ -114,6 +114,8 @@ no_add_dir:{}
 					{
 						strcpy(path, DirectoryStack[i]);
 						strcat(path, "/");
+					} else {
+						path[0] = 0;
 					}
 					strcat(path, base);
 					if ((file=fopen(path, "r")))
