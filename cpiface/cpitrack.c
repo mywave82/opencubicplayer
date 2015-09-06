@@ -78,7 +78,7 @@ static void (*getgcmd)(uint16_t *bp, int n);
 
 static int plPatternNum;
 static int plPrepdPat;
-static signed int  plPatType;
+static signed int plPatType = -1;
 static int plPatFirstLine;
 static int plPatHeight;
 static int plPatWidth;
@@ -508,6 +508,52 @@ static int min(int a, int b)
 		return b;
 }
 
+struct calcPatTypeProbe
+{
+	int PatType;
+	struct patviewtype *ref;
+};
+static const struct calcPatTypeProbe ProbeNarrow[] = /* less than 128 characters wide screens */
+{
+	{13, &pat480},
+	{11, &pat880f},
+	{ 9, &pat1680f},
+	{ 7, &pat2480f},
+	{ 5, &pat3280},
+	{ 3, &pat4880},
+	{ 1, &pat6480} /* default */
+};
+static const struct calcPatTypeProbe ProbeWide[] = /* larger or equal than 128 characters wide screens */
+{
+	{13, &pat4132},
+	{11, &pat8132},
+	{ 9, &pat16132},
+	{ 7, &pat24132f},
+	{ 5, &pat32132f},
+	{ 3, &pat48132},
+	{ 1, &pat64132}
+};
+/*
+	calcPatType will try to detect the best zoom that can fit all channels on the screen. maxch is the same formula as gmdDrawPattern uses, and the ProbeNarrow/ProbeWide uses the same references aswell
+*/
+static void calcPatType(void)
+{
+	const struct calcPatTypeProbe *Probes = (plPatWidth<128)?ProbeNarrow:ProbeWide;
+	int i;
+
+	for (i=0; i<6 /* the sixth entry we do not care to probe, since it will be the default */; i++)
+	{
+		int maxch=(plPatWidth-Probes[i].ref->gcmd*4-3)/Probes[i].ref->width;
+		if (maxch >= plNLChan) /* all channels can fit in this mode */
+		{
+			break;
+		}
+	}
+
+	plPatType=Probes[i].PatType;
+}
+
+
 static void gmdDrawPattern(int sel)
 {
 	int pos=getcurpos();
@@ -517,6 +563,11 @@ static void gmdDrawPattern(int sel)
 	signed int crow=currow;
 	signed int i,j,row;
 	/* int plen; */
+
+	if (plPatType < 0)
+	{
+		calcPatType();
+	}
 
 	if (plPatManualPat!=-1)
 	{
@@ -605,6 +656,11 @@ static void gmdDrawPattern(int sel)
 
 static int gmdTrkProcessKey(uint16_t key)
 {
+	if (plPatType < 0)
+	{ /* more an assertion... should not be able to get so far without this beeing calculated. Usually we would draw atleast one frame before processing keyboard presses */
+		calcPatType();
+	}
+
 	switch (key)
 	{
 		case KEY_ALT_K:
@@ -668,7 +724,7 @@ static int gmdTrkProcessKey(uint16_t key)
     break;
 */
 		case KEY_HOME:
-			plPatType=(plNLChan<=4)?13:(plNLChan<=8)?11:(plNLChan<=16)?9:(plNLChan<=24)?7:(plNLChan<=32)?5:(plNLChan<=48)?3:1;
+			calcPatType();
 /* TODO   winrecalc(); */
 			break;
 		case KEY_TAB: /* tab */
@@ -747,11 +803,12 @@ static int TrakIProcessKey(uint16_t key)
 	{
 		case KEY_ALT_K:
 			cpiKeyHelp('t', "Enable track viewer");
-			cpiKeyHelp('T', "Eanble track viewer");
+			cpiKeyHelp('T', "Enable track viewer");
 			return 0;
 		case 't': case 'T':
 			plTrackActive=1;
 			cpiTextSetMode("trak");
+			calcPatType();
 			break;
 		case 'x': case 'X':
 			plTrackActive=1;
@@ -805,7 +862,7 @@ void cpiTrkSetup(const struct cpitrakdisplaystruct *c, int npat)
 	plPatternNum=npat;
 	plPatManualPat=-1;
 	plPrepdPat=-1;
-	plPatType=(plNLChan<=4)?13:(plNLChan<=8)?11:(plNLChan<=16)?9:(plNLChan<=24)?7:(plNLChan<=32)?5:(plNLChan<=48)?3:1;
+	plPatType=-1;
 	getcurpos=c->getcurpos;
 	getpatlen=c->getpatlen;
 	getpatname=c->getpatname;
