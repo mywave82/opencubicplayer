@@ -166,8 +166,8 @@ static int ChanIProcessKey(uint16_t key)
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('c', "Activate channel viewer");
-			cpiKeyHelp('C', "Activate channel viewer");
+			cpiKeyHelp('c', "Enable channel viewer");
+			cpiKeyHelp('C', "Enable channel viewer");
 			return 0;
 		case 'c': case 'C':
 			if (!plChannelType)

@@ -450,8 +450,8 @@ static int dotIProcessKey(uint16_t key)
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('n', "Activate note dots mode");
-			cpiKeyHelp('N', "Activate note dots mode");
+			cpiKeyHelp('n', "Enable note dots mode");
+			cpiKeyHelp('N', "Enable note dots mode");
 			return 0;
 		case 'n': case 'N':
 			cpiSetMode("dots");

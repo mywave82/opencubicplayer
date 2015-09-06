@@ -203,8 +203,8 @@ static int AnalIProcessKey(uint16_t key)
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('a', "Activate analalyzer mode");
-			cpiKeyHelp('A', "Activate analalyzer mode");
+			cpiKeyHelp('a', "Enable analalyzer mode");
+			cpiKeyHelp('A', "Enable analalyzer mode");
 			return 0;
 		case 'a': case 'A':
 			analactive=1;
