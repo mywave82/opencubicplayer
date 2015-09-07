@@ -186,18 +186,37 @@ void cpiTextRecalc(void)
 		if (mode->GetWin(&win[nwin]))
 			win[nwin++].owner=mode;
 	}
+#ifdef CPIFACE_DEBUG
+	fprintf (stderr, "cpiTextRecalc\n");
+	fprintf (stderr, "step 1, found all active modes\n");
+	for (i=0; i<nwin; i++)
+	{
+		fprintf (stderr, "[%d] %-8s xmode=%d\n", i, win[i].owner->handle, win[i].xmode);
+	};
+#endif
 
-	/* xmode bit0 = 132 request
-	 *       bit1 = sidmode request
+	/* xmode bit0 = left column request
+	 *       bit1 = right column request
 	 */
 	if (plScrWidth<132)
 		for (i=0; i<nwin; i++)
 			win[i].xmode&=1;
 
+#ifdef CPIFACE_DEBUG
+	fprintf (stderr, "step 2, masked away xmode bit1 if display can not fit 132 width\n");
+	for (i=0; i<nwin; i++)
+	{
+		fprintf (stderr, "[%d] %-8s xmode=%d\n", i, win[i].owner->handle, win[i].xmode);
+	}
+#endif
+
+	/* can we fit all the columned windows (not checking the header ones)? */
 	while (1)
 	{
+		/* initialize all the probes back to zero */
 		sidemin=sidemax=sidesize=0;
 		winmin=winmax=winsize=0;
+		/* sum all the left and right windows */
 		for (i=0; i<nwin; i++)
 		{
 			if (win[i].xmode&1)
@@ -215,6 +234,7 @@ void cpiTextRecalc(void)
 		}
 		if ((winmin<=winheight)&&(sidemin<=sideheight))
 			break;
+		/* if we were too heigh, hide windows by setting the xmode to 0 */
 		if (sidemin>sideheight)
 		{
 			int worst=0;
@@ -236,146 +256,199 @@ void cpiTextRecalc(void)
 			continue;
 		}
 	}
+
+	/* Disable all windows. We are about to actually pick out one and one window until the screen is full */
+	for (i=0; i<nwin; i++)
+		win[i].owner->active=0;
+
+	/* first we want to fill the screen with all the windows that requested both left and right column, starting with the highest priority ones */
+#ifdef CPIFACE_DEBUG
+	fprintf (stderr, "step 3, place all xmode==3 windows\n");
+#endif
+	while (1)
 	{
+		int best=-1;
+		int whgt,shgt,hgt;
+
 		for (i=0; i<nwin; i++)
-			win[i].owner->active=0;
-		while (1)
-		{
-			int best=-1;
-			int whgt,shgt,hgt;
-
-			for (i=0; i<nwin; i++)
-				if ((win[i].xmode==3)&&!win[i].owner->active)
-					if ((best==-1)||(win[i].viewprio>win[best].viewprio)) /* can crash in theory, TODO */
-						best=i;
-			if (best==-1)
-				break;
-			if (!win[best].size)
-				hgt=win[best].hgtmin;
-			else {
-				whgt=win[best].hgtmin+(winheight-winmin)*win[best].size/winsize;
-				if ((winheight-whgt)>(winmax-win[best].hgtmax))
-					whgt=winheight-(winmax-win[best].hgtmax);
-				shgt=win[best].hgtmin+(sideheight-sidemin)*win[best].size/sidesize;
-				if ((sideheight-shgt)>(sidemax-win[best].hgtmax))
-					shgt=sideheight-(sidemax-win[best].hgtmax);
-				hgt=(whgt<shgt)?whgt:shgt;
-			}
-			if (hgt>win[best].hgtmax)
-				hgt=win[best].hgtmax;
-			if (win[best].top)
-			{
-				win[best].owner->SetWin(0, plScrWidth, winfirst, hgt);
-				winfirst+=hgt;
-				sidefirst+=hgt;
-			} else
-				win[best].owner->SetWin(0, plScrWidth, winfirst+winheight-hgt, hgt);
-			win[best].owner->active=1;
-			winheight-=hgt;
-			sideheight-=hgt;
-			winmin-=win[best].hgtmin;
-			winsize-=win[best].size;
-			sidemin-=win[best].hgtmin;
-			sidesize-=win[best].size;
-
-			winmax-=win[best].hgtmax;
-			sidemax-=win[best].hgtmax;
-		}
-		while (1)
-		{
-			int best=-1;
-			int hgt;
-
-			for (i=0; i<nwin; i++)
-				if ((win[i].xmode==2)&&!win[i].owner->active)
-					if ((best==-1)||(win[i].viewprio>win[best].viewprio)) /* can crash in theory, TODO */
-						best=i;
-			if (best==-1)
-				break;
+			if ((win[i].xmode==3)&&!win[i].owner->active)
+				if ((best==-1)||(win[i].viewprio>win[best].viewprio))
+					best=i;
+		if (best==-1)
+			break;
+		if (!win[best].size)
 			hgt=win[best].hgtmin;
-			if (win[best].size)
+		else {
+			whgt=win[best].hgtmin+(winheight-winmin)*win[best].size/winsize;
+			if ((winheight-whgt)>(winmax-win[best].hgtmax))
+				whgt=winheight-(winmax-win[best].hgtmax);
+			shgt=win[best].hgtmin+(sideheight-sidemin)*win[best].size/sidesize;
+			if ((sideheight-shgt)>(sidemax-win[best].hgtmax))
+				shgt=sideheight-(sidemax-win[best].hgtmax);
+			hgt=(whgt<shgt)?whgt:shgt;
+		}
+		if (hgt>win[best].hgtmax)
+			hgt=win[best].hgtmax;
+		if (win[best].top)
+		{
+#ifdef CPIFACE_DEBUG
+			fprintf (stderr, "Placing window %-8s top %d %d %d %d\n", win[best].owner->handle, 0, plScrWidth, winfirst, hgt);
+#endif
+			win[best].owner->SetWin(0, plScrWidth, winfirst, hgt);
+			winfirst+=hgt;
+			sidefirst+=hgt;
+		} else {
+#ifdef CPIFACE_DEBUG
+			fprintf (stderr, "Placing window %-8s bot %d %d %d %d\n", win[best].owner->handle, 0, plScrWidth, winfirst+winheight-hgt, hgt);
+#endif
+			win[best].owner->SetWin(0, plScrWidth, winfirst+winheight-hgt, hgt);
+		}
+		win[best].owner->active=1;
+		winheight-=hgt;
+		sideheight-=hgt;
+		winmin-=win[best].hgtmin;
+		winsize-=win[best].size;
+		sidemin-=win[best].hgtmin;
+		sidesize-=win[best].size;
+
+		winmax-=win[best].hgtmax;
+		sidemax-=win[best].hgtmax;
+	}
+#ifdef CPIFACE_DEBUG
+	fprintf (stderr, "step 4, place all xmode==2 windows (right column)\n");
+#endif
+
+	while (1)
+	{
+		int best=-1;
+		int hgt;
+
+		for (i=0; i<nwin; i++)
+			if ((win[i].xmode==2)&&!win[i].owner->active)
+				if ((best==-1)||(win[i].viewprio>win[best].viewprio)) /* can crash in theory, TODO */
+					best=i;
+		if (best==-1)
+			break;
+		hgt=win[best].hgtmin;
+		if (win[best].size)
+		{
+			hgt+=(sideheight-sidemin)*win[best].size/sidesize;
+			if ((sideheight-hgt)>(sidemax-win[best].hgtmax))
+				hgt=sideheight-(sidemax-win[best].hgtmax);
+		}
+		if (hgt>win[best].hgtmax)
+			hgt=win[best].hgtmax;
+		if (win[best].top)
+		{
+#ifdef CPIFACE_DEBUG
+			fprintf (stderr, "Placing window %-8s top %d %d %d %d\n", win[best].owner->handle, plScrWidth-52, 52, sidefirst, hgt);
+#endif
+			win[best].owner->SetWin(plScrWidth-52, 52, sidefirst, hgt);
+			sidefirst+=hgt;
+		} else {
+#ifdef CPIFACE_DEBUG
+			fprintf (stderr, "Placing window %-8s bot %d %d %d %d\n", win[best].owner->handle, plScrWidth-52, 52, sidefirst+sideheight-hgt, hgt);
+#endif
+			win[best].owner->SetWin(plScrWidth-52, 52, sidefirst+sideheight-hgt, hgt);
+		}
+		win[best].owner->active=1;
+		sideheight-=hgt;
+		sidemin-=win[best].hgtmin;
+		sidesize-=win[best].size;
+		sidemax-=win[best].hgtmax;
+	}
+
+#ifdef CPIFACE_DEBUG
+	fprintf (stderr, "step 5, place all xmode==1 windows (left column)\n");
+#endif
+
+	while (1)
+	{
+		int best=-1;
+		int hgt;
+		int wid;
+
+		for (i=0; i<nwin; i++)
+			if ((win[i].xmode==1)&&!win[i].owner->active)
+				if ((best==-1)||(win[i].viewprio>win[best].viewprio))
+					best=i;
+		if (best==-1)
+			break;
+		if (winmax<=winheight)
+			hgt=win[best].hgtmax;
+		else {
+			hgt=win[best].hgtmin;
+			if (win[best].size) /* if size were requested, we try to adjust up from minsize */
 			{
-				hgt+=(sideheight-sidemin)*win[best].size/sidesize;
-				if ((sideheight-hgt)>(sidemax-win[best].hgtmax))
-					hgt=sideheight-(sidemax-win[best].hgtmax);
+/*
+				        / free space left
+				        |         / min space that has to be used
+				        |         |                / size requested
+				        |         |                |     / total size requested
+*/
+				hgt+=(winheight-winmin)*win[best].size/winsize;
+				if ((winheight-hgt)>(winmax-win[best].hgtmax))
+					hgt=winheight-(winmax-win[best].hgtmax);
 			}
 			if (hgt>win[best].hgtmax)
 				hgt=win[best].hgtmax;
-			if (win[best].top)
-			{
-				win[best].owner->SetWin(plScrWidth-52, 52, sidefirst, hgt);
-				sidefirst+=hgt;
-			} else
-				win[best].owner->SetWin(plScrWidth-52, 52, sidefirst+sideheight-hgt, hgt);
-			win[best].owner->active=1;
-			sideheight-=hgt;
-			sidemin-=win[best].hgtmin;
-			sidesize-=win[best].size;
-			sidemax-=win[best].hgtmax;
 		}
-		while (1)
+		if (win[best].top)
 		{
-			int best=-1;
-			int hgt;
-			int wid;
 
-			for (i=0; i<nwin; i++)
-				if ((win[i].xmode==1)&&!win[i].owner->active)
-					if ((best==-1)||(win[i].viewprio>win[best].viewprio))
-						best=i;
-			if (best==-1)
-				break;
-			if (winmax<=winheight)
-				hgt=win[best].hgtmax;
-			else {
-				hgt=win[best].hgtmin;
-				if (win[best].size)
-				{
-					hgt+=(winheight-winmin)*win[best].size/winsize;
-					if ((winheight-hgt)>(winmax-win[best].hgtmax))
-						hgt=winheight-(winmax-win[best].hgtmax);
-				}
-				if (hgt>win[best].hgtmax)
-					hgt=win[best].hgtmax;
-			}
-			if (win[best].top)
+			if (plScrWidth < 132)
 			{
-				wid=((winfirst>=sidefirst)&&((winfirst+hgt)<=(sidefirst+sideheight))&&(plScrWidth>=132))?plScrWidth:plScrWidth-52;
-				if (plScrWidth<132) /* dirty hack */
-					wid=plScrWidth;
-
-				win[best].owner->SetWin(0, wid, winfirst, hgt);
-				winfirst+=hgt;
-				sidefirst=winfirst+hgt; /* dirty hack... not supposed to be here.... */
+				wid=plScrWidth;
 			} else {
-				wid=(((winfirst+winheight)<=(sidefirst+sideheight))&&((winfirst+winheight-hgt)>=sidefirst)&&(plScrWidth>=132))?plScrWidth:plScrWidth-52;
-				if (plScrWidth<132) /* dirty hack */
-					wid=plScrWidth;
-
-				win[best].owner->SetWin(0, wid, winfirst+winheight-hgt, hgt);
+/*
+				              /-------------- does our new window start below (the last used) sidewindow?
+				              |                            /-- does our new window stop before the sidewindow have anything to display?
+				              |                            |                             /-- then use the hole width
+				              |                            |                             |           /-- or make room for the sidewindow
+*/
+				wid=((winfirst>=sidefirst)&&((winfirst+hgt)<=(sidefirst+sideheight)))?plScrWidth:plScrWidth-52;
 			}
-			win[best].owner->active=1;
-			winheight-=hgt;
-			winmin-=win[best].hgtmin;
-			winsize-=win[best].size;
-			winmax-=win[best].hgtmax;
+#ifdef CPIFACE_DEBUG
+			fprintf (stderr, "Placing window %-8s top %d %d %d %d\n", win[best].owner->handle, 0, wid, winfirst, hgt);
+#endif
+
+			win[best].owner->SetWin(0, wid, winfirst, hgt);
+			winfirst+=hgt;
+		} else {
+			if (plScrWidth < 132)
+			{
+				wid=plScrWidth;
+			} else {
+				wid=(((winfirst+winheight)<=(sidefirst+sideheight))&&((winfirst+winheight-hgt)>=sidefirst))?plScrWidth:plScrWidth-52;
+			}
+#ifdef CPIFACE_DEBUG
+			fprintf (stderr, "Placing window %-8s bot %d %d %d %d\n", win[best].owner->handle, 0, wid, winfirst+winheight-hgt, hgt);
+#endif
+
+			win[best].owner->SetWin(0, wid, winfirst+winheight-hgt, hgt);
+		}
+		win[best].owner->active=1;
+		winheight-=hgt;
+		winmin-=win[best].hgtmin;
+		winsize-=win[best].size;
+		winmax-=win[best].hgtmax;
 
 /*
-			if (wid>=132)
+	Old code for filling the void. It does not work well with dynamic resolutions
+		if (wid>=132)
+		{
+			if (win[best].top)
 			{
-				if (win[best].top)
-				{
-					for (i=sidefirst; i<winfirst; i++)
-						displayvoid(i, plScrWidth-52, 52);
-					sideheight=sidefirst+sideheight-winfirst;
-					sidefirst=winfirst;
-				} else {
-					for (i=winfirst+hgt; i<(sidefirst+sideheight); i++)
-						displayvoid(i, plScrWidth-52, 52);
-					sideheight=winfirst+winheight-sidefirst;
-				}
-			}*/
-		}
+				for (i=sidefirst; i<winfirst; i++)
+					displayvoid(i, plScrWidth-52, 52);
+				sideheight=sidefirst+sideheight-winfirst;
+				sidefirst=winfirst;
+			} else {
+				for (i=winfirst+hgt; i<(sidefirst+sideheight); i++)
+					displayvoid(i, plScrWidth-52, 52);
+				sideheight=winfirst+winheight-sidefirst;
+			}
+		}*/
 	}
 #if 0
 	for (i=0; i<winheight; i++)
@@ -398,7 +471,7 @@ static void txtSetMode(void)
 	fsScrType=plScrType;
 	for (mode=cpiTextActModes; mode; mode=mode->nextact)
 		if (mode->Event)
-	mode->Event(cpievSetMode);
+			mode->Event(cpievSetMode);
 	cpiTextRecalc();
 }
 

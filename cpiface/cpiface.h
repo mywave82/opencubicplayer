@@ -69,10 +69,16 @@ struct cpitextmoderegstruct;
 struct cpitextmodequerystruct
 {
   unsigned char top;
-  unsigned char xmode;
+  unsigned char xmode; /* bit0, want to be main left column
+                          bit1, want to be the right column
+                         0x00 = not visible / reserved
+                         0x01 = left column (we might cover the hole width)
+                         0x02 = right column (we might not be visible, if screen is to narrow)
+                         0x03 = we want to cover the hole width
+                       */
   unsigned char killprio;
   unsigned char viewprio;
-  unsigned char size;
+  unsigned char size; /* used to demand more height than hgtmin. Can be bigger than hgtmax to increase the priority when space is distributed */
   int hgtmin;
   int hgtmax;
   struct cpitextmoderegstruct *owner;
