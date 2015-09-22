@@ -483,7 +483,7 @@ ymbool	CYmMusic::ymDecode(void)
 				}
 				pDataStream = ptr;
 				streamInc = 16;
-				setAttrib(A_STREAMINTERLEAVED|A_TIMECONTROL);
+				setAttrib(attrib|A_TIMECONTROL);
 				pSongPlayer = mstrdup("YM-Chip driver.");
 				break;
 
