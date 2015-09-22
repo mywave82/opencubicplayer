@@ -340,7 +340,7 @@ ymbool	CYmMusic::ymDecode(void)
 				pDataStream = pBigMalloc+4;
 				streamInc = 14;
 				nbDrum = 0;
-				setAttrib(A_STREAMINTERLEAVED|A_TIMECONTROL);
+				setAttrib(attrib|A_TIMECONTROL);
 				pSongName = mstrdup("Unknown");
 				pSongAuthor = mstrdup("Unknown");
 				pSongComment = mstrdup("");
