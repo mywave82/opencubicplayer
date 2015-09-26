@@ -105,12 +105,12 @@ int loadsamplePAT( FILE               *file,
 		highnote=(getnote(sh.high_frequency)+0x80)>>8;
 		if (highnote>=sizeof(ins->note))
 		{
-			fprintf(stderr, "[*.PAT loader] highnote to high (sh.high_frequency=%d highnote=%d sizeof(ins->note)=%d\n", sh.high_frequency, highnote, (int)sizeof(ins->note));
+			fprintf(stderr, "[*.PAT loader] highnote too high (sh.high_frequency=%d highnote=%d sizeof(ins->note)=%d\n", sh.high_frequency, highnote, (int)sizeof(ins->note));
 			highnote=sizeof(ins->note)-1;
 		}
 		if (lownote>=sizeof(ins->note))
 		{
-			fprintf(stderr, "[*.PAT loader] lownote to high (sh.low_requency=%d highnote=%d sizeof(ins->note)=%d\n", sh.low_frequency, highnote, (int)sizeof(ins->note));
+			fprintf(stderr, "[*.PAT loader] lownote too high (sh.low_requency=%d highnote=%d sizeof(ins->note)=%d\n", sh.low_frequency, highnote, (int)sizeof(ins->note));
 			lownote=sizeof(ins->note)-1;
 		}
 		if (highnote<lownote)
