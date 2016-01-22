@@ -869,6 +869,9 @@ int mcpReduceSamples(struct sampleinfo *si, int n, long mem, int opt)
 	if (totalsmpsize(samples, samplenum, opt&mcpRedAlways16Bit)>memmax)
 	{
 		uint32_t *redpars=malloc(sizeof(uint32_t)*samplenum);
+
+		fprintf (stderr, "[smpman] Sample bank size %d is bigger than maximum configured in ocp.ini %d. Reducing quality\n", totalsmpsize (samples, samplenum, opt&mcpRedAlways16Bit), (int)memmax);
+
 		if (!redpars)
 			return 0;
 		if ((opt&mcpRedAlways16Bit)||!reduce16(samples, samplenum, redpars, memmax))
