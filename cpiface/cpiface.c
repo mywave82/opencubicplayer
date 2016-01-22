@@ -485,7 +485,7 @@ static int plmpOpenFile(const char *path, struct moduleinfostruct *info, FILE **
 	{
 		lnkFree(linkhandle);
 		fprintf(stderr, "Error finding symbol (player in ocp.ini) %s\n", name);
-		fprintf(stderr, "link error\r\n");
+		fprintf(stderr, "link error\n");
 		sleep(1);
 		return 0;
 	}
@@ -497,7 +497,7 @@ static int plmpOpenFile(const char *path, struct moduleinfostruct *info, FILE **
 	if (retval)
 	{
 		lnkFree(linkhandle);
-		fprintf(stderr, "error: %s\r\n", errGetShortString(retval));
+		fprintf(stderr, "error: %s\n", errGetShortString(retval));
 		sleep(1);
 		return 0;
 	}

@@ -344,7 +344,7 @@ static int ayOpenFile(const char *path, struct moduleinfostruct *info, FILE *fil
 	modname=info->modname;
 	composer=info->composer;
 
-	fprintf(stderr, "Loading %s%s...\r\n", currentmodname, currentmodext);
+	fprintf(stderr, "Loading %s%s...\n", currentmodname, currentmodext);
 
 	plIsEnd=ayLooped;
 	plProcessKey=ayProcessKey;

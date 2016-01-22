@@ -494,7 +494,7 @@ static int wavOpenFile(const char *path, struct moduleinfostruct *info, FILE *wa
 	modname=info->modname;
 	composer=info->composer;
 
-	fprintf(stderr, "preloading %s%s...\r\n", currentmodname, currentmodext);
+	fprintf(stderr, "preloading %s%s...\n", currentmodname, currentmodext);
 
 	wavefile=wavf;
 
