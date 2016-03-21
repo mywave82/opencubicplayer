@@ -317,9 +317,20 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileString("devpSDL", "link", "devpsdl");
 		}
 
-		if (epoch < 20110319)
+		if (epoch < 20160321)
 		{
-			cfSetProfileInt("version", "epoch", 20110319, 10);
+			fprintf (stderr, "ocp.ini update (0.2.0) replaces playgmi with playtimidity for playback of MIDI files\n");
+
+			if (!strcmp (cfGetProfileString ("filetype 16", "pllink", "playgmi"), "playgmi"))
+			{
+				cfSetProfileString ("filetype 16", "pllink", "playtimidity");
+				cfSetProfileString ("filetype 16", "player", "timidityPlayer");
+			}
+		}
+
+		if (epoch < 20160321)
+		{
+			cfSetProfileInt("version", "epoch", 20160321, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -330,13 +341,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10)!=20110319)
+	if (cfGetProfileInt("version", "epoch", 0, 10)!=20160321)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20110319\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20160321\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20110319\033[0m\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20160321\033[0m\n\n");
 		}
 		sleep(5);
 	}

@@ -1,5 +1,5 @@
 [version]
- epoch=20110319
+ epoch=20160321
 
 [general]
 ;link=
@@ -331,8 +331,8 @@ link=medialib
   color=3
   name=MID
   interface=plOpenCP
-  pllink=playgmi
-  player=gmiPlayer
+  pllink=playtimidity
+  player=timidityPlayer
 
 [filetype 17]
   color=3
