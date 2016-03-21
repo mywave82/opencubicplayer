@@ -706,7 +706,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 			ihdr.tver    = uint16_little (ihdr.tver);
 			ihdr.midibnk = uint16_little (ihdr.midibnk);
 			for (i=0;i<4;i++)
-				for (j=0;j<26;j++)
+				for (j=0;j<25;j++)
 					ihdr.envs[i].pts[j].p = uint16_little (ihdr.envs[i].pts[j].p);
 		} else {
 			memset(&ihdr, 0, sizeof(ihdr));
