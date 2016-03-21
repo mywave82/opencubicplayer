@@ -6984,9 +6984,9 @@ fi
 $as_echo "$ac_cv_lib_ncursesw_initscr" >&6; }
 if test "x$ac_cv_lib_ncursesw_initscr" = xyes; then :
 
-	$as_echo "#define USE_NCURSESW 1" >>confdefs.h
+		$as_echo "#define USE_NCURSESW 1" >>confdefs.h
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for resize_term in -lncursesw" >&5
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for resize_term in -lncursesw" >&5
 $as_echo_n "checking for resize_term in -lncursesw... " >&6; }
 if ${ac_cv_lib_ncursesw_resize_term+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -7027,12 +7027,28 @@ if test "x$ac_cv_lib_ncursesw_resize_term" = xyes; then :
 
 fi
 
-	NCURSES_LIBS="-lncursesw"
-	ac_fn_c_check_header_mongrel "$LINENO" "ncursesw/curses.h" "ac_cv_header_ncursesw_curses_h" "$ac_includes_default"
+		NCURSES_LIBS="-lncursesw"
+		ac_fn_c_check_header_mongrel "$LINENO" "ncursesw/curses.h" "ac_cv_header_ncursesw_curses_h" "$ac_includes_default"
 if test "x$ac_cv_header_ncursesw_curses_h" = xyes; then :
 
 else
   as_fn_error $? "\"ncursesw header files was not found\"" "$LINENO" 5
+fi
+
+
+		ac_fn_c_check_header_mongrel "$LINENO" "locale.h" "ac_cv_header_locale_h" "$ac_includes_default"
+if test "x$ac_cv_header_locale_h" = xyes; then :
+
+else
+  as_fn_error $? "\"locale header file was not found (needed when using ncursesw)\"" "$LINENO" 5
+fi
+
+
+		ac_fn_c_check_header_mongrel "$LINENO" "langinfo.h" "ac_cv_header_langinfo_h" "$ac_includes_default"
+if test "x$ac_cv_header_langinfo_h" = xyes; then :
+
+else
+  as_fn_error $? "\"langinfo header file was not found (needed when using ncursesw)\"" "$LINENO" 5
 fi
 
 

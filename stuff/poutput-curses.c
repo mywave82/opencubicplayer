@@ -39,7 +39,10 @@
 #define _CONSOLE_DRIVER
 
 #include "config.h"
-
+#ifdef USE_NCURSESW
+#include <locale.h>
+#include <langinfo.h>
+#endif
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -67,159 +70,365 @@
 static void adjust(int sig);
 #endif
 
-static chtype attr_table[256];
+static NCURSES_ATTR_T attr_table[256];
 static chtype chr_table[256];
+
 
 static int Width, Height;
 
 static int fixbadgraphic;
 
+#ifdef USE_NCURSESW
+static int useunicode = 0;
+#endif
+
 static void displayvoid(unsigned short y, unsigned short x, unsigned short len)
 {
-	move(y, x);
-	while(len)
+#ifdef USE_NCURSESW
+	if (useunicode)
 	{
-		chtype output;
-		output='X'|attr_table[plpalette[0]];
+		wchar_t buffer[CONSOLE_MAX_X+1];
+		wchar_t *ptr = buffer;
 
-		addch(output);
-		len--;
+		while(len)
+		{
+			*(ptr++) = chr_table[' '];
+			len--;
+		}
+		attrset (attr_table[plpalette[0]]);
+		*ptr = 0;
+		mvaddwstr(y, x, buffer);
+
+	} else {
+#endif
+		move(y, x);
+		while(len)
+		{
+			chtype output;
+			output='X'|attr_table[plpalette[0]];
+
+			addch(output);
+			len--;
+		}
+#ifdef USE_NCURSESW
 	}
+#endif
+
 }
 
 static void displaystr(unsigned short y, unsigned short x, unsigned char attr, const char *buf, unsigned short len)
 {
-	move(y, x);
-	while(len)
+#ifdef USE_NCURSESW
+	if (useunicode)
 	{
-		unsigned char ch=(*buf)&0xff;
-		chtype output;
-		if (((!ch)||(ch==' '))&&(!(attr&0x80))&&fixbadgraphic)
-		{
-			output=chr_table['X']|attr_table[plpalette[(attr&0xf0)+((attr>>4)&0xf)]];
-			addch(output);
-		} else {
-			output=chr_table[ch]|attr_table[plpalette[attr]];
-			addch(output);
-		}
+		wchar_t buffer[CONSOLE_MAX_X+1];
+		wchar_t *ptr = buffer;
 
-		if (*buf)
-			buf++;
-		len--;
+		while(len)
+		{
+			unsigned char ch=(*buf)&0xff;
+			*(ptr++) = chr_table[ch] ? chr_table[ch] : ' ';
+
+			if (*buf)
+				buf++;
+			len--;
+		}
+		attrset (attr_table[plpalette[attr]]);
+		*ptr = 0;
+		mvaddwstr(y, x, buffer);
+	} else {
+#endif
+		move(y, x);
+		while(len)
+		{
+			unsigned char ch=(*buf)&0xff;
+			chtype output;
+			if (((!ch)||(ch==' '))&&(!(attr&0x80))&&fixbadgraphic)
+			{
+				output=chr_table['X']|attr_table[plpalette[(attr&0xf0)+((attr>>4)&0xf)]];
+				addch(output);
+			} else {
+				output=chr_table[ch]|attr_table[plpalette[attr]];
+				addch(output);
+			}
+
+			if (*buf)
+				buf++;
+			len--;
+		}
+#ifdef USE_NCURSESW
 	}
+#endif
 }
 
 
 static void displaystrattr(unsigned short y, unsigned short x, const uint16_t *buf, unsigned short len)
 {
-	int first=1; /* we need this since we sometimes place the cursor at empty spots... dirty */
-
-	move(y, x);
-	while(len)
+#ifdef USE_NCURSESW
+	if (useunicode)
 	{
-		unsigned char ch=(*buf)&0xff;
-		unsigned char attr=((*buf)>>8);
-		chtype output;
+		wchar_t buffer[CONSOLE_MAX_X+1];
+		wchar_t *ptr = buffer;
+		unsigned char lastattr = ((*buf)>>8);
+		move (y, x);
 
-		if (((!ch)||(ch==' '))&&(!(attr&0x80))&&fixbadgraphic)
+		while(len)
 		{
-			if (first)
+			unsigned char ch=(*buf)&0xff;
+			unsigned char attr=((*buf)>>8);
+
+			if (lastattr != attr)
 			{
-				output=chr_table[ch]|attr_table[plpalette[attr]];
-				first=0;
-			} else
-				output=chr_table['X']|attr_table[plpalette[(attr&0xf0)+((attr>>4)&0xf)]];
-			addch(output);
-		} else {
-			first=1;
-			output=chr_table[ch]|attr_table[plpalette[attr]];
-			addch(output);
+				attrset (attr_table[plpalette[lastattr]]);
+				*ptr = 0;
+				addwstr (buffer);
+				ptr = buffer;
+				lastattr = attr;
+			}
+
+			*(ptr++) = chr_table[ch] ? chr_table[ch] : ' ';
+
+			buf++;
+			len--;
 		}
-		buf++;
-		len--;
+		attrset (attr_table[plpalette[lastattr]]);
+		*ptr=0;
+		addwstr(buffer);
+	} else {
+#endif
+		int first=1; /* we need this since we sometimes place the cursor at empty spots... dirty */
+
+		move(y, x);
+		while(len)
+		{
+			unsigned char ch=(*buf)&0xff;
+			unsigned char attr=((*buf)>>8);
+			chtype output;
+
+			if (((!ch)||(ch==' '))&&(!(attr&0x80))&&fixbadgraphic)
+			{
+				if (first)
+				{
+					output=chr_table[ch]|attr_table[plpalette[attr]];
+					first=0;
+				} else
+					output=chr_table['X']|attr_table[plpalette[(attr&0xf0)+((attr>>4)&0xf)]];
+				addch(output);
+			} else {
+				first=1;
+				output=chr_table[ch]|attr_table[plpalette[attr]];
+				addch(output);
+			}
+			buf++;
+			len--;
+		}
+#ifdef USE_NCURSESW
 	}
+#endif
+
 }
+
+#ifdef USE_NCURSESW
+static wchar_t bartops_unicode[17] = {
+' ',
+L'\u2581', L'\u2581',
+L'\u2582', L'\u2582',
+L'\u2583', L'\u2583',
+L'\u2584', L'\u2584',
+L'\u2585', L'\u2585',
+L'\u2586', L'\u2586',
+L'\u2587', L'\u2587',
+L'\u2588', L'\u2588'};
+#endif
 
 static unsigned char bartops[18]="  ___...---===**#";
 static unsigned char ibartops[18]="  ```^^^~~~===**#";
+
+static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c);
+
 static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
 {
-	char buf[60];
-	unsigned int i;
-	uint16_t yh1=(height+2)/3;
-	uint16_t yh2=(height+yh1+1)/2;
-
-	if (value>((unsigned int)(height*16)-4))
-		value=(height*16)-4;
-
-	for (i=0; i<height; i++)
+#ifdef USE_NCURSESW
+	if (useunicode)
 	{
-		if (value>=16)
+		drawbar (x, y, height, value, c);
+#if 0
+		reversal of colors is not stable on curses, and is needed in order to get nice graphs
+		wchar_t buffer[2] = {0, 0};
+		unsigned int i;
+		uint16_t yh1=(height+2)/3;
+		uint16_t yh2=(height+yh1+1)/2;
+
+		uint8_t _c;
+
+		y-=height-1;
+
+		if (value>((unsigned int)(height*16)-4))
 		{
-			buf[i]=ibartops[16];
-			value-=16;
-		} else {
-			buf[i]=ibartops[value];
-			value=0;
+			value=(height*16)-4;
 		}
+
+		_c = ((c << 4) & 0xf0) | (((c >> 4) & 15));
+		attrset (attr_table[plpalette[_c]]);
+
+		for (i=0; i < yh1; i++)
+		{
+			buffer[0] = bartops_unicode[16 - ((value>16)?16:value&15)];
+			value-=(value>16)?16:value;
+			mvaddwstr (y++, x, buffer);
+		}
+
+		c>>=8;
+		_c = (c << 4) | ((c >> 4) & 15);
+		attrset (attr_table[plpalette[_c]]);
+
+		for (i=yh1; i < yh2; i++)
+		{
+			buffer[0] = bartops_unicode[16 - ((value>16)?16:value&15)];
+			value-=(value>16)?16:value;
+			mvaddwstr (y++, x, buffer);
+		}
+
+		c>>=8;
+		_c = (c << 4) | ((c >> 4) & 15);
+		attrset (attr_table[plpalette[_c]]);
+
+		for (i=yh2; i < height; i++)
+		{
+			buffer[0] = bartops_unicode[16 - ((value>16)?16:value&15)];
+			value-=(value>16)?16:value;
+			mvaddwstr (y++, x, buffer);
+		}
+#endif
+	} else {
+#endif
+		char buf[60];
+		unsigned int i;
+		uint16_t yh1=(height+2)/3;
+		uint16_t yh2=(height+yh1+1)/2;
+
+		if (value>((unsigned int)(height*16)-4))
+			value=(height*16)-4;
+
+		for (i=0; i<height; i++)
+		{
+			if (value>=16)
+			{
+				buf[i]=ibartops[16];
+				value-=16;
+			} else {
+				buf[i]=ibartops[value];
+				value=0;
+			}
+		}
+		y-=height-1;
+		for (i=0; i<yh1; i++)
+		{
+			displaystr(y, x, c&0xff, buf+i, 1);
+			y++;
+		}
+		c>>=8;
+		for (i=yh1; i<yh2; i++)
+		{
+			displaystr(y, x, c&0xff, buf+i, 1);
+			y++;
+		}
+		c>>=8;
+		for (i=yh2; i<height; i++)
+		{
+			displaystr(y, x, c&0xff, buf+i, 1);
+			y++;
+		}
+#ifdef USE_NCURSESW
 	}
-	y-=height-1;
-	for (i=0; i<yh1; i++)
-	{
-		displaystr(y, x, c&0xff, buf+i, 1);
-		y++;
-	}
-	c>>=8;
-	for (i=yh1; i<yh2; i++)
-	{
-		displaystr(y, x, c&0xff, buf+i, 1);
-		y++;
-	}
-	c>>=8;
-	for (i=yh2; i<height; i++)
-	{
-		displaystr(y, x, c&0xff, buf+i, 1);
-		y++;
-	}
+#endif
 }
+
 static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
 {
-	char buf[60];
-	unsigned int i;
-	uint16_t yh1=(height+2)/3;
-	uint16_t yh2=(height+yh1+1)/2;
-
-	if (value>((unsigned int)(height*16)-4))
-		value=(height*16)-4;
-
-	for (i=0; i<height; i++)
+#ifdef USE_NCURSESW
+	if (useunicode)
 	{
-		if (value>=16)
+		wchar_t buffer[2] = {0, 0};
+		unsigned int i;
+		uint16_t yh1=(height+2)/3;
+		uint16_t yh2=(height+yh1+1)/2;
+
+		if (value>((unsigned int)(height*16)-4))
 		{
-			buf[i]=bartops[16];
-			value-=16;
-		} else {
-			buf[i]=bartops[value];
-			value=0;
+			value=(height*16)-4;
 		}
+
+		attrset (attr_table[plpalette[c & 0xff]]);
+		c>>=8;
+
+		for (i=0; i < yh1; i++)
+		{
+			buffer[0] = bartops_unicode[(value>16)?16:value&15];
+			value-=(value>16)?16:value;
+			mvaddwstr (y--, x, buffer);
+		}
+
+		attrset (attr_table[plpalette[c & 0xff]]);
+		c>>=8;
+
+		for (i=yh1; i < yh2; i++)
+		{
+			buffer[0] = bartops_unicode[(value>16)?16:value&15];
+			value-=(value>16)?16:value;
+			mvaddwstr (y--, x, buffer);
+		}
+
+		attrset (attr_table[plpalette[c & 0xff]]);
+		c>>=8;
+
+		for (i=yh2; i < height; i++)
+		{
+			buffer[0] = bartops_unicode[(value>16)?16:value&15];
+			value-=(value>16)?16:value;
+			mvaddwstr (y--, x, buffer);
+		}
+	} else {
+#endif
+		char buf[60];
+		unsigned int i;
+		uint16_t yh1=(height+2)/3;
+		uint16_t yh2=(height+yh1+1)/2;
+
+		if (value>((unsigned int)(height*16)-4))
+			value=(height*16)-4;
+
+		for (i=0; i<height; i++)
+		{
+			if (value>=16)
+			{
+				buf[i]=bartops[16];
+				value-=16;
+			} else {
+				buf[i]=bartops[value];
+				value=0;
+			}
+		}
+		for (i=0; i<yh1; i++)
+		{
+			displaystr(y, x, c&0xff, buf+i, 1);
+			y--;
+		}
+		c>>=8;
+		for (i=yh1; i<yh2; i++)
+		{
+			displaystr(y, x, c&0xff, buf+i, 1);
+			y--;
+		}
+		c>>=8;
+		for (i=yh2; i<height; i++)
+		{
+			displaystr(y, x, c&0xff, buf+i, 1);
+			y--;
+		}
+#ifdef USE_NCURSESW
 	}
-	for (i=0; i<yh1; i++)
-	{
-		displaystr(y, x, c&0xff, buf+i, 1);
-		y--;
-	}
-	c>>=8;
-	for (i=yh1; i<yh2; i++)
-	{
-		displaystr(y, x, c&0xff, buf+i, 1);
-		y--;
-	}
-	c>>=8;
-	for (i=yh2; i<height; i++)
-	{
-		displaystr(y, x, c&0xff, buf+i, 1);
-		y--;
-	}
+#endif
 }
 
 static int ekbhit(void);
@@ -460,6 +669,20 @@ int curses_init(void)
 	if ((fixbadgraphic=cfGetProfileBool("curses", "fixbadgraphic", 0, 0)))
 		fprintf(stderr, "curses: fixbadgraphic is enabled in config\n");
 
+#ifdef USE_NCURSESW
+	setlocale(LC_CTYPE, "");
+
+	{
+		char *temp = nl_langinfo (CODESET);
+		if (temp && strstr (temp, "UTF-8"))
+		{
+			useunicode = 1;
+			fprintf (stderr, "curses: will use UTF-8 characters instead of ASCII + ACS\n");
+		}
+	}
+#endif
+
+
 	if (!initscr())
 	{
 		fprintf(stderr, "curses failed to init\n");
@@ -512,15 +735,21 @@ int curses_init(void)
 		bg=color_table[(ch&0x38)>>3];
 		init_pair(i, fg, bg);
 	}
+
 	for (i=0;i<256;i++)
 	{
 		attr_table[i]=COLOR_PAIR((((i&0x7)^0x07)+((i&0x70)>>1)));
 
+		if (!i)
+			attr_table[i] |= A_INVIS;
 		if (i&0x08)
-			attr_table[i]|=A_BOLD;
+			attr_table[i] |= A_BOLD;
 		if (i&0x80)
-			attr_table[i]|=A_STANDOUT;
+			attr_table[i] |= A_STANDOUT;
+	}
 
+	for (i=0;i<256;i++)
+	{
 		if (i<32)
 			chr_table[i]=i+32;
 		else if (i>127)
@@ -529,42 +758,84 @@ int curses_init(void)
 			chr_table[i]=i;
 	}
 
-	chr_table[0x00]=' ';
-	chr_table[0x01]='S'; /* Surround */
-	chr_table[0x04]=ACS_DIAMOND; /* looks good on the header line */
-	chr_table[0x08]='?'; /* ??? */
-	chr_table[0x09]='?'; /* ??? */
+#ifdef USE_NCURSESW
+	if (useunicode)
+	{
+		chr_table[0x00]=' ';
+		chr_table[0x01]='S'; /* Surround */
+		chr_table[0x04]=L'\u2666'; /* diamond */
+		chr_table[0x08]='?'; /* ??? */
+		chr_table[0x09]='?'; /* ??? */
 
-	chr_table[0x0a]='@'; /* when the heck does this occure */
-	chr_table[0x07]='@'; /* and this?*/
+		chr_table[0x0a]='@'; /* when the heck does this occure */
+		chr_table[0x07]='@'; /* and this?*/
 
-	chr_table[0x0d]='@'; /* we want a note */
-	chr_table[0x10]=ACS_RARROW;
-	chr_table[0x11]=ACS_LARROW;
-	chr_table[0x12]=ACS_PLMINUS; /* we want an up+down arrow */
-/*
-	chr_table[0x12]='&'; *//* retrigger */
-	chr_table[0x18]=ACS_UARROW;
-	chr_table[0x19]=ACS_DARROW;
-	chr_table[0x1a]='`'; /* pitch? */
-	chr_table[0x1b]='\''; /* pitch? */
-	chr_table[0x1d]=ACS_PLUS; /* speed pitch lock */
-	chr_table[(unsigned char)0x81]='u'; /* ?? */
-	chr_table[(unsigned char)0xb3]=ACS_VLINE;
-	chr_table[(unsigned char)0xba]=ACS_VLINE;
-	chr_table[(unsigned char)0xbf]=ACS_URCORNER;
-	chr_table[(unsigned char)0xc0]=ACS_LLCORNER;
-	chr_table[(unsigned char)0xc1]=ACS_BTEE;
-	chr_table[(unsigned char)0xc2]=ACS_TTEE;
-	chr_table[(unsigned char)0xc3]=ACS_LTEE;
-	chr_table[(unsigned char)0xc4]=ACS_HLINE;
-	chr_table[(unsigned char)0xd9]=ACS_LRCORNER;
-	chr_table[(unsigned char)0xda]=ACS_ULCORNER;
-	chr_table[(unsigned char)0xdd]='#';
-	chr_table[(unsigned char)0xf0]='#'; /* mid char of long peak power level */
-	chr_table[(unsigned char)0xfa]=ACS_BULLET;
-	chr_table[(unsigned char)0xf9]=ACS_BULLET/*|A_BOLD*/;
-	chr_table[(unsigned char)0xfe]=ACS_BLOCK; /* used by volume bars */
+		chr_table[0x0d]=L'\u266a'; /* we want a note */
+		chr_table[0x10]=L'\u2192'; /* right arrow */
+		chr_table[0x11]=L'\u2190'; /* left arrow */
+		chr_table[0x12]=L'\u2195'; /* up+down arrow */
+
+		chr_table[0x18]=L'\u2191'; /* up arrow */
+		chr_table[0x19]=L'\u2193'; /* down arrow */
+		chr_table[0x1a]='`'; /* pitch? */
+		chr_table[0x1b]='\''; /* pitch? */
+		chr_table[0x1d]=L'\u2194'; /* left+right arrow */
+		chr_table[(unsigned char)0x81]='u'; /* ?? */
+		chr_table[(unsigned char)0xb3]=L'\u2502';
+		chr_table[(unsigned char)0xba]=L'\u2551';
+		chr_table[(unsigned char)0xbf]=L'\u2514';
+		chr_table[(unsigned char)0xc0]=L'\u2510';
+		chr_table[(unsigned char)0xc1]=L'\u2534';
+		chr_table[(unsigned char)0xc2]=L'\u252c';
+		chr_table[(unsigned char)0xc3]=L'\u251c';
+		chr_table[(unsigned char)0xc4]=L'\u2500';
+		chr_table[(unsigned char)0xd9]=L'\u250c';
+		chr_table[(unsigned char)0xda]=L'\u2518';
+		chr_table[(unsigned char)0xdd]='#';
+		chr_table[(unsigned char)0xf0]='#'; /* mid char of long peak power level */
+		chr_table[(unsigned char)0xfa]=L'\u00b7'; /* bullet */
+		chr_table[(unsigned char)0xf9]=L'\u2219'; /* bullet */
+		chr_table[(unsigned char)0xfe]=L'\u25a0'; /* used by volume bars */
+	} else {
+#endif
+		chr_table[0x00]=' ';
+		chr_table[0x01]='S'; /* Surround */
+		chr_table[0x04]=ACS_DIAMOND; /* looks good on the header line */
+		chr_table[0x08]='?'; /* ??? */
+		chr_table[0x09]='?'; /* ??? */
+
+		chr_table[0x0a]='@'; /* when the heck does this occure */
+		chr_table[0x07]='@'; /* and this?*/
+
+		chr_table[0x0d]='@'; /* we want a note */
+		chr_table[0x10]=ACS_RARROW;
+		chr_table[0x11]=ACS_LARROW;
+		chr_table[0x12]=ACS_PLMINUS; /* we want an up+down arrow */
+
+		chr_table[0x18]=ACS_UARROW;
+		chr_table[0x19]=ACS_DARROW;
+		chr_table[0x1a]='`'; /* pitch? */
+		chr_table[0x1b]='\''; /* pitch? */
+		chr_table[0x1d]=ACS_PLUS; /* speed pitch lock */
+		chr_table[(unsigned char)0x81]='u'; /* ?? */
+		chr_table[(unsigned char)0xb3]=ACS_VLINE;
+		chr_table[(unsigned char)0xba]=ACS_VLINE;
+		chr_table[(unsigned char)0xbf]=ACS_URCORNER;
+		chr_table[(unsigned char)0xc0]=ACS_LLCORNER;
+		chr_table[(unsigned char)0xc1]=ACS_BTEE;
+		chr_table[(unsigned char)0xc2]=ACS_TTEE;
+		chr_table[(unsigned char)0xc3]=ACS_LTEE;
+		chr_table[(unsigned char)0xc4]=ACS_HLINE;
+		chr_table[(unsigned char)0xd9]=ACS_LRCORNER;
+		chr_table[(unsigned char)0xda]=ACS_ULCORNER;
+		chr_table[(unsigned char)0xdd]='#';
+		chr_table[(unsigned char)0xf0]='#'; /* mid char of long peak power level */
+		chr_table[(unsigned char)0xfa]=ACS_BULLET;
+		chr_table[(unsigned char)0xf9]=ACS_BULLET/*|A_BOLD*/;
+		chr_table[(unsigned char)0xfe]=ACS_BLOCK; /* used by volume bars */
+#ifdef USE_NCURSESW
+	}
+#endif
 
 	plVidType=vidNorm;
 	plScrType=0;
