@@ -57,7 +57,7 @@ void make_title(char *part)
 		writestring(sbuf, plScrWidth-58, 0x30, part, strlen(part));
 	else
 		writestring(sbuf, (plScrWidth-strlen(part))/2, 0x30, part, strlen(part));
-	writestring(sbuf, plScrWidth-28, 0x30, "(c) 1994-2011 Stian Skjelstad", 27);
+	writestring(sbuf, plScrWidth-28, 0x30, "(c) 1994-2016 Stian Skjelstad", 27);
 	displaystrattr(0, 0, sbuf, plScrWidth);
 }
 

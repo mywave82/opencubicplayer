@@ -131,7 +131,7 @@ void cpiSetTextMode(int size)
 void cpiDrawGStrings()
 {
 	char *verstr="  opencp v" VERSION;
-	char *author="(c) 1994-2011 Stian Skjelstad ";
+	char *author="(c) 1994-2016 Stian Skjelstad ";
 	char tstr[CONSOLE_MAX_X+1];
 
 #ifdef DEBUG
