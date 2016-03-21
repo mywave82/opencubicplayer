@@ -40,8 +40,6 @@
 #include "stuff/imsrtns.h"
 #include "cpipic.h"
 
-#include <curses.h>
-
 #define HIGHLIGHT 11
 #define MAXDOTS (64*128   *10)
 #define MAXSAMPLEN 1024

@@ -10,6 +10,15 @@
 # endif
 #endif
 
+#undef USE_NCURSESW
+#ifndef NO_CURSES
+#ifdef USE_NCURSESW
+#include <ncursesw/curses.h>
+#else
+#include <curses.h>
+#endif
+#endif
+
 #define MAXDLLLIST 150
 
 #define KEY_TAB 9

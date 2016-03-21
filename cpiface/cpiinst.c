@@ -36,8 +36,6 @@
 #include "stuff/poutput.h"
 #include "cpiface.h"
 
-#include <curses.h>
-
 static struct insdisplaystruct plInsDisplay;
 
 static int plInstScroll;

@@ -20,7 +20,6 @@
 
 #define _CONSOLE_DRIVER
 #include "config.h"
-#include <curses.h> /* for key-codes */
 #include <stdio.h>
 #include <time.h>
 #include <SDL.h>

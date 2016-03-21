@@ -52,7 +52,6 @@
 
 #include "config.h"
 #include <ctype.h>
-#include <curses.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <fnmatch.h>

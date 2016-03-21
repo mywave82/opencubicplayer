@@ -16,6 +16,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#define NO_CURSES
 #include "config.h"
 #include <stdio.h>
 #include <signal.h>

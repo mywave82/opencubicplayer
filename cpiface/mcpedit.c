@@ -25,7 +25,6 @@
  */
 
 #include "config.h"
-#include <curses.h>
 #include <stdlib.h>
 #include <string.h>
 #include "types.h"
@@ -34,8 +33,6 @@
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 #include "cpiface.h"
-
-#include <curses.h>
 
 static int vol;
 static int bal;

@@ -166,7 +166,7 @@ CFLAGS+= -Itimidity-git/interface -Itimidity-git/libarc -Itimidity-git/libunimod
 	%.c \
 	../config.h \
 	../types.h
-	$(CC) $< -o $@ -c
+	$(CC) $< -o $@ -c -DNO_CURSES
 
 libarc_obj=\
 	timidity-git/libarc/arc.o \

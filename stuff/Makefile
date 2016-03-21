@@ -34,7 +34,7 @@ framelock$(LIB_SUFFIX): $(framelock_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 poutput$(LIB_SUFFIX): $(poutput_so)
-	$(CC) $(SHARED_FLAGS) $(LINUX_LIBS) -o $@ $^ -lncurses $(poutput_so_libs)
+	$(CC) $(SHARED_FLAGS) $(LINUX_LIBS) -o $@ $^ $(NCURSES_LIBS) $(poutput_so_libs)
 
 hardware$(LIB_SUFFIX): $(hardware_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^

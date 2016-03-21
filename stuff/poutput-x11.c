@@ -24,7 +24,6 @@
 
 #define _CONSOLE_DRIVER
 #include "config.h"
-#include <curses.h> /* for key-codes */
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>

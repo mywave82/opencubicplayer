@@ -67,7 +67,6 @@
 #ifdef PLR_DEBUG
 #include "dev/player.h"
 #endif
-#include <curses.h>
 #include <unistd.h>
 #include <time.h>
 

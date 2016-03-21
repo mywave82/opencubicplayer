@@ -339,16 +339,16 @@ static void playnote(struct itplayer *this, struct it_logchan *c, const uint8_t 
 			p->notecut=0;
 			p->noteoff=0;
 			p->looptype=0;
-			p->volenv=in->envs[0].type&active;
-			p->panenv=in->envs[1].type&active;
-			p->penvtype=(in->envs[2].type&filter);
-			p->pitchenv=(in->envs[2].type&active) && !p->penvtype;
-			p->filterenv=(in->envs[2].type&active) && p->penvtype;
-			if (!(in->envs[0].type&carry))
+			p->volenv=in->envs[0].type&env_type_active;
+			p->panenv=in->envs[1].type&env_type_active;
+			p->penvtype=(in->envs[2].type&env_type_filter);
+			p->pitchenv=(in->envs[2].type&env_type_active) && !p->penvtype;
+			p->filterenv=(in->envs[2].type&env_type_active) && p->penvtype;
+			if (!(in->envs[0].type&env_type_carry))
 				p->volenvpos=0;
-			if (!(in->envs[1].type&carry))
+			if (!(in->envs[1].type&env_type_carry))
 				p->panenvpos=0;
-			if (!(in->envs[2].type&carry))
+			if (!(in->envs[2].type&env_type_carry))
 			{
 				p->pitchenvpos=0;
 				p->filterenvpos=0;
@@ -1299,7 +1299,7 @@ static void updatechan(struct it_logchan *c)
 	p->srnd=c->srnd;
 }
 
-static int processenvelope(const struct it_envelope *env, int *pos, int noteoff, int active)
+static int processenvelope(const struct it_envelope *env, int *pos, int noteoff, int env_type_active)
 {
 	int i, x;
 
@@ -1314,14 +1314,14 @@ static int processenvelope(const struct it_envelope *env, int *pos, int noteoff,
 		x=256.0*((1-s)*env->y[i]+s*env->y[i+1]);
 	}
 
-	if (active)
+	if (env_type_active)
 		(*pos)++;
 
-	if (!noteoff&&(env->type&slooped))
+	if (!noteoff&&(env->type&env_type_slooped))
 	{
 		if ((*pos)==(env->x[env->sloope]+1))
 			(*pos)=env->x[env->sloops];
-	} else if (env->type&looped)
+	} else if (env->type&env_type_looped)
 	{
 		if ((*pos)==(env->x[env->loope]+1))
 			(*pos)=env->x[env->loops];
@@ -1342,9 +1342,9 @@ static void processchan(struct itplayer *this, struct it_physchan *p)
 	if (p->volenv)
 	{
 		const struct it_envelope *env=&p->inst->envs[0];
-		if (p->noteoff&&(p->inst->envs[0].type&looped))
+		if (p->noteoff&&(p->inst->envs[0].type&env_type_looped))
 			p->notefade=1;
-		if ((p->volenvpos==env->x[env->len])&&!(p->inst->envs[0].type&looped)&&(!(p->inst->envs[0].type&slooped)||p->noteoff))
+		if ((p->volenvpos==env->x[env->len])&&!(p->inst->envs[0].type&env_type_looped)&&(!(p->inst->envs[0].type&env_type_slooped)||p->noteoff))
 		{
 			if (!env->y[env->len])
 				p->notecut=1;

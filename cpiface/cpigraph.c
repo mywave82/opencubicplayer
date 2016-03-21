@@ -36,7 +36,6 @@
 #include "cpiface.h"
 #include "cpipic.h"
 #include "fft.h"
-#include <curses.h>
 
 static unsigned char plStripePal1;
 static unsigned char plStripePal2;

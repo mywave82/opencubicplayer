@@ -26,7 +26,6 @@
  */
 
 #include "config.h"
-#include <curses.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
@@ -43,8 +42,6 @@
 #include "stuff/poutput.h"
 #include "stuff/err.h"
 #include "stuff/sets.h"
-
-#include <curses.h>
 
 void _splitpath(const char *src, char *drive, char *path, char *file, char *ext); /* defined in stuff/compat.h but this header clashed with linux/cdrom.h */
 

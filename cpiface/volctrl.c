@@ -42,7 +42,6 @@
  */
 
 #include "config.h"
-#include <curses.h>
 #include <string.h>
 #include "types.h"
 #include "boot/plinkman.h"

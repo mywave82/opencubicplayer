@@ -23,6 +23,7 @@
  *    -added _dllinfo record
  */
 
+#define NO_CURSES
 #include "config.h"
 #include <string.h>
 #include <stdlib.h>
@@ -32,7 +33,6 @@
 #include "dev/mcp.h"
 #include "stuff/timer.h"
 #include "dev/mix.h"
-/*#include "dma.h"*/
 #include "stuff/imsrtns.h"
 
 #define TIMERRATE 17100

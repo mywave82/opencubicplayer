@@ -40,7 +40,6 @@
 #include "cpiface.h"
 #include "stuff/timer.h"
 #include "boot/psetting.h"
-#include <curses.h>
 
 static unsigned char *plWuerfel=NULL;
 static int plWuerfelDirect;

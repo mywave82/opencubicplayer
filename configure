@@ -678,6 +678,7 @@ HAVE_MAD
 MAD_LIBS
 MAD_CFLAGS
 DL_LIBS
+NCURSES_LIBS
 HAVE_MACHINE_ENDIAN_H
 HAVE_SYS_PARAM_H
 HAVE_SYS_TYPES_H
@@ -6943,7 +6944,104 @@ $as_echo "#define TIMIDITYPKGDATADIR TIMIDITY_DEFAULT_PATH" >>confdefs.h
 
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncurses" >&5
+push_LIBS=$LIBS
+LIBS=
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncursesw" >&5
+$as_echo_n "checking for initscr in -lncursesw... " >&6; }
+if ${ac_cv_lib_ncursesw_initscr+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lncursesw  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char initscr ();
+int
+main ()
+{
+return initscr ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_ncursesw_initscr=yes
+else
+  ac_cv_lib_ncursesw_initscr=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ncursesw_initscr" >&5
+$as_echo "$ac_cv_lib_ncursesw_initscr" >&6; }
+if test "x$ac_cv_lib_ncursesw_initscr" = xyes; then :
+
+	$as_echo "#define USE_NCURSESW 1" >>confdefs.h
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for resize_term in -lncursesw" >&5
+$as_echo_n "checking for resize_term in -lncursesw... " >&6; }
+if ${ac_cv_lib_ncursesw_resize_term+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lncursesw  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char resize_term ();
+int
+main ()
+{
+return resize_term ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_ncursesw_resize_term=yes
+else
+  ac_cv_lib_ncursesw_resize_term=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ncursesw_resize_term" >&5
+$as_echo "$ac_cv_lib_ncursesw_resize_term" >&6; }
+if test "x$ac_cv_lib_ncursesw_resize_term" = xyes; then :
+  $as_echo "#define HAVE_RESIZETERM 1" >>confdefs.h
+
+fi
+
+	NCURSES_LIBS="-lncursesw"
+	ac_fn_c_check_header_mongrel "$LINENO" "ncursesw/curses.h" "ac_cv_header_ncursesw_curses_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncursesw_curses_h" = xyes; then :
+
+else
+  as_fn_error $? "\"ncursesw header files was not found\"" "$LINENO" 5
+fi
+
+
+
+else
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: ncursesw not found, reverting to ncurses" >&5
+$as_echo "$as_me: ncursesw not found, reverting to ncurses" >&6;}
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncurses" >&5
 $as_echo_n "checking for initscr in -lncurses... " >&6; }
 if ${ac_cv_lib_ncurses_initscr+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -6987,10 +7085,10 @@ _ACEOF
   LIBS="-lncurses $LIBS"
 
 else
-  as_fn_error $? "\"ncurses not found\"" "$LINENO" 5
+  as_fn_error $? "\"ncurses or ncursesw not found\"" "$LINENO" 5
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for resize_term in -lncurses" >&5
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for resize_term in -lncurses" >&5
 $as_echo_n "checking for resize_term in -lncurses... " >&6; }
 if ${ac_cv_lib_ncurses_resize_term+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -7030,6 +7128,21 @@ if test "x$ac_cv_lib_ncurses_resize_term" = xyes; then :
   $as_echo "#define HAVE_RESIZETERM 1" >>confdefs.h
 
 fi
+
+		NCURSES_LIBS="-lncurses"
+		ac_fn_c_check_header_mongrel "$LINENO" "curses.h" "ac_cv_header_curses_h" "$ac_includes_default"
+if test "x$ac_cv_header_curses_h" = xyes; then :
+
+else
+  as_fn_error $? "\"ncurses header files was not found\"" "$LINENO" 5
+fi
+
+
+
+
+fi
+
+LIBS=$push_LIBS
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for zlibVersion in -lz" >&5
@@ -7585,15 +7698,6 @@ else
 	HAVE_FLAC=1
 	FLAC_INI=flacptype
 fi
-
-ac_fn_c_check_header_mongrel "$LINENO" "curses.h" "ac_cv_header_curses_h" "$ac_includes_default"
-if test "x$ac_cv_header_curses_h" = xyes; then :
-
-else
-  as_fn_error $? "\"curses header files was not found\"" "$LINENO" 5
-fi
-
-
 
 ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_zlib_h" = xyes; then :

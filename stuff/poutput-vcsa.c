@@ -28,7 +28,6 @@
 
 #include "config.h"
 
-#include <curses.h> /* for keyboard shortcuts */
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/vt.h>

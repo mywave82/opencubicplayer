@@ -39,8 +39,6 @@
 #include "boot/psetting.h"
 #include "cpiface.h"
 
-#include <curses.h>
-
 #define COLPTNOTE 0x0A
 #define COLNOTE 0x0F
 #define COLPITCH 0x02

@@ -26,8 +26,10 @@
  *    -use compatible timing, and not cputime/clock()
 */
 
+extern "C"
+{
 #include "config.h"
-#include <curses.h>
+}
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>

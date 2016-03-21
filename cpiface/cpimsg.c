@@ -34,8 +34,6 @@
 #include "stuff/poutput.h"
 #include "cpiface.h"
 
-#include <curses.h>
-
 static short plWinFirstLine;
 static short plWinHeight;
 

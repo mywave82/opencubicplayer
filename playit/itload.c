@@ -754,11 +754,11 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 		{
 			struct env *ie=&ihdr.envs[i];
 			struct it_envelope *e=&ip->envs[i];
-			e->type=((ie->flags&1)?active:0)|
-				((ie->flags&2)?looped:0)|
-				((ie->flags&4)?slooped:0)|
-				((ie->flags&8)?carry:0)|
-				((ie->flags&128)?filter:0);
+			e->type=((ie->flags&1)?env_type_active:0)|
+				((ie->flags&2)?env_type_looped:0)|
+				((ie->flags&4)?env_type_slooped:0)|
+				((ie->flags&8)?env_type_carry:0)|
+				((ie->flags&128)?env_type_filter:0);
 			e->len=ie->num-1;
 			e->sloops=ie->slb;
 			e->sloope=ie->sle;

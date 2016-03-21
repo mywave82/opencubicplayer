@@ -37,8 +37,6 @@
 #include "cpiface.h"
 #include "cpipic.h"
 
-#include <curses.h>
-
 #define MAXDOTS 16384
 #define MAXSAMPLEN 1280
 #define MAXVIEWCHAN2 16

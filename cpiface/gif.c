@@ -27,6 +27,7 @@
  *   -included hack to load GIF89a-pics
  */
 
+#define NO_CURSES
 #include "config.h"
 #include <stdlib.h>
 #include "types.h"

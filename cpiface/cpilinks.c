@@ -30,8 +30,6 @@
 #include "cpiface.h"
 #include "boot/plinkman.h"
 
-#include <curses.h>
-
 static const int plWinFirstLine = 5;
 static int plWinHeight;
 

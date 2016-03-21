@@ -19,7 +19,6 @@
  */
 
 #include "config.h"
-#include <curses.h>
 #include "types.h"
 #include "boot/plinkman.h"
 #include "stuff/poutput.h"

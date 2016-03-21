@@ -40,7 +40,6 @@
 
 #include "config.h"
 
-#include <curses.h>
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>

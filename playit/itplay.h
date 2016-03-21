@@ -12,7 +12,7 @@ struct it_envelope
 	int type;
 	enum
 	{
-		active=1, looped=2, slooped=4, carry=8, filter=128
+		env_type_active=1, env_type_looped=2, env_type_slooped=4, env_type_carry=8, env_type_filter=128
 	} env_types;
 	uint16_t x[26];
 	int8_t y[28];

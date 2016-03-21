@@ -24,7 +24,6 @@
 
 #include "config.h"
 #include <ctype.h>
-#include <curses.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>

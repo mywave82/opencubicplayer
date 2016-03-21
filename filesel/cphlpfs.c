@@ -29,8 +29,6 @@
 #include "stuff/framelock.h"
 #include "cphlpfs.h"
 
-#include <curses.h>
-
 int fsmode;
 
 /* ripped from fileselector */

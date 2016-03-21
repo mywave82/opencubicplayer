@@ -102,7 +102,6 @@
 #include "stuff/err.h"
 #include "help/cphelper.h"
 #include "cpiface/cpiface.h"
-#include <curses.h>
 
 static unsigned int plWinFirstLine, plWinHeight, plHelpHeight, plHelpScroll;
 

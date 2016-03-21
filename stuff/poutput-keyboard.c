@@ -27,7 +27,6 @@
 #ifdef KEYBOARD_DEBUG
 #include <stdio.h>
 #endif
-#include <curses.h> /* for key codes */
 #include "types.h"
 #include "poutput.h"
 

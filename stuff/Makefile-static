@@ -17,7 +17,7 @@ STATIC_OBJECTS += stuff/sets.o
 
 # poutput.so
 STATIC_OBJECTS += stuff/console.o stuff/poutput-curses.o $(LINUX_OBJ) stuff/poutput-keyboard.o stuff/pfonts.o stuff/poutput.o
-STATIC_LIBS += $(LINUX_LIBS) -lncurses
+STATIC_LIBS += $(LINUX_LIBS) $(NCURSES_LIBS)
 ifeq ($(HAVE_X11),1)
 STATIC_OBJECTS += stuff/poutput-x11.o stuff/x11-common.o
 STATIC_LIBS += $(X11_LIBS)

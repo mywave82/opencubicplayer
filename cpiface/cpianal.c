@@ -40,8 +40,6 @@
 #include "boot/psetting.h"
 #include "fft.h"
 
-#include <curses.h>
-
 #define COLBACK 0x00
 #define COLTITLE 0x01
 #define COLTITLEH 0x09

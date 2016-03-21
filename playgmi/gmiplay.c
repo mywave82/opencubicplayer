@@ -24,6 +24,7 @@
  *    -implemented sustain pedal handling (yes, really :)
  */
 
+#define NO_CURSES
 #include "config.h"
 #include <math.h>
 #include <string.h>

@@ -37,7 +37,6 @@
 #include "stuff/poutput.h"
 #include "cpiface.h"
 #include "cpipic.h"
-#include <curses.h>
 
 #define MAXPCHAN 64
 #define MAXVIEWCHAN 32
