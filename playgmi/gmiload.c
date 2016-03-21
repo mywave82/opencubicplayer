@@ -87,20 +87,12 @@
 #define TRACK_BUFFER_OVERFLOW_WINDOW 4 /* 4 bytes of zero should be "plenty" to avoid buffer overflows on correupt files */
 
 int __attribute__ ((visibility ("internal")))
-	(*loadpatch)( struct minstrument *ins,
-	              uint8_t             program,
-	              uint8_t            *sampused,
-	              struct sampleinfo **smps,
-	              uint16_t           *samplenum) = 0;
+	(*loadpatch)( struct minstrument *ins, /* bank MSB, LSB and program is pre-filled into instrument */
+	              uint8_t            *notesused,
+	              struct sampleinfo **samples,
+	              uint16_t           *samplenum);
 
-int __attribute__ ((visibility ("internal")))
-	(*addpatch)( struct minstrument *ins,
-	             uint8_t             program,
-	             uint8_t             sn,
-	             uint8_t             sampnum,
-	             struct sampleinfo  *sip,
-	             uint16_t           *samplenum) = 0;
-
+#warning Remove midInstrumentNames (used internally by some font-loaders)
 __attribute__ ((visibility ("internal"))) char midInstrumentNames[256][NAME_MAX+1];
 
 static inline unsigned long readvlnum(unsigned char **ptr, unsigned char *endptr, int *eof)
@@ -126,10 +118,21 @@ static inline unsigned long readvlnum(unsigned char **ptr, unsigned char *endptr
 	return num;
 }
 
+struct instused_t
+{
+	uint8_t bankmsb;
+	uint8_t banklsb;
+	uint8_t program;
+	uint8_t notesused[16];
+};
+
 char __attribute__ ((visibility ("internal"))) midLoadMidi( struct midifile *m,
                   FILE            *file,
                   uint32_t         opt)
 {
+	char retval;
+	int inited=0;
+
 	uint8_t drumch2;
 	uint32_t len;
 
@@ -137,15 +140,47 @@ char __attribute__ ((visibility ("internal"))) midLoadMidi( struct midifile *m,
 	uint16_t mtype;
 
 	uint32_t dummy;
-	int i, j;
-	int samplenum;
+	int i;
 
-	uint8_t (*sampused)[16];
-	uint8_t instused[0x81];
-	uint8_t chaninst[16];
+	struct instused_t **instused = 0;
+	int instused_n = 0;
 
-	struct sampleinfo **smps;
-	uint16_t inst;
+	struct instused_t *lookup_instused(uint8_t bankmsb, uint8_t banklsb, uint8_t program)
+	{
+		int k;
+		void *tmp;
+
+		for (k=0; k < instused_n; k++)
+		{
+			if ((instused[k]->banklsb == banklsb) && (instused[k]->bankmsb == bankmsb) && (instused[k]->program==program))
+			{
+				return instused[k];
+			}
+		}
+		tmp = realloc (instused, (instused_n+1) * sizeof (*instused));
+		if (!tmp)
+		{
+			fprintf (stderr, "[midi-load]: fatal error, realloc() failed\n");
+			free (instused);
+			instused = 0;
+			return 0;
+		}
+		instused = tmp;
+		instused_n++;
+
+		instused[k] = calloc (sizeof (**instused), 1);
+		instused[k]->bankmsb = bankmsb;
+		instused[k]->banklsb = banklsb;
+		instused[k]->program = program;
+		return instused[k];
+	}
+
+	struct instused_t *chaninst[16];
+	uint8_t bank_msb[16];
+	uint8_t bank_lsb[16];
+	uint8_t program[16];
+
+//	struct sampleinfo **smps = 0;
 
 	mid_free(m);
 
@@ -280,7 +315,7 @@ char __attribute__ ((visibility ("internal"))) midLoadMidi( struct midifile *m,
 		m->tracks[i].trkend=0;
 	}
 
-	for (i=0; i<trknum; i++)
+	for (i=0; i<m->tracknum; i++)
 	{
 		while (1)
 		{
@@ -319,14 +354,14 @@ char __attribute__ ((visibility ("internal"))) midLoadMidi( struct midifile *m,
 		}
 	}
 
-	if (!(sampused=calloc(0x81, 16)))
-		return errAllocMem;
-
-	memset(instused, 0, 0x81);
-	memset(chaninst, 0, 16);
-	chaninst[9]=0x80;
-	if (drumch2<16)
-		chaninst[drumch2]=0x80;
+	memset(chaninst, 0, sizeof(chaninst));
+	
+	for (i=0; i < 16; i++)
+	{ /* drumch2 will be outside the 0-15 range if not in use */
+		bank_msb[i] = ( (i==9) || (i==drumch2) ) ? 120 : 121;
+		bank_lsb[i] = 0;
+		program[i] = 0;
+	}
 
 	m->ticknum=0;
 	for (i=0; i<m->tracknum; i++)
@@ -335,6 +370,7 @@ char __attribute__ ((visibility ("internal"))) midLoadMidi( struct midifile *m,
 		uint8_t status=0;
 		uint32_t trackticks=0;
 		int eof=0;
+
 		while (trkptr<m->tracks[i].trkend)
 		{
 #ifdef MIDI_LOAD_DEBUG
@@ -343,9 +379,9 @@ char __attribute__ ((visibility ("internal"))) midLoadMidi( struct midifile *m,
 			trackticks+=readvlnum(&trkptr, m->tracks[i].trkend, &eof);
 			if (eof)
 			{
-				m->ticknum=0; /* abort the song */
 				fprintf(stderr, "[midi-load] #1 premature end-of-data in track %d\n", i);
-				break;
+				retval = errFormStruc;
+				goto failed;
 			}
 #ifdef MIDI_LOAD_DEBUG
 			fprintf(stderr, " timeslice\n");
@@ -353,16 +389,16 @@ char __attribute__ ((visibility ("internal"))) midLoadMidi( struct midifile *m,
 			if (*trkptr&0x80)
 				fprintf(stderr, "    0x%02x event type and channel\n", *trkptr);
 			else
-				fprintf(stderr, "           event type is cached\n");
+				fprintf(stderr, "         event type is cached\n");
 #endif
 			if (*trkptr&0x80)
 			{
 				status=*trkptr++;
 				if (trkptr>m->tracks[i].trkend)
 				{
-					m->ticknum=0; /* abort the song */
 					fprintf(stderr, "[midi-load] #2 premature end-of-data in track %d\n", i);
-					break;
+					retval = errFormStruc;
+					goto failed;
 				}
 			}
 			else if ((status&0xf0) == 0xf0)
@@ -380,9 +416,9 @@ char __attribute__ ((visibility ("internal"))) midLoadMidi( struct midifile *m,
 					trkptr++;
 					if (trkptr>=m->tracks[i].trkend)
 					{
-						m->ticknum=0; /* abort the song */
 						fprintf(stderr, "[midi-load] #3 premature end-of-data in track %d\n", i);
-						break;
+						retval = errFormStruc;
+						goto failed;
 					}
 				}
 #ifdef MIDI_LOAD_DEBUG
@@ -391,18 +427,18 @@ char __attribute__ ((visibility ("internal"))) midLoadMidi( struct midifile *m,
 				len=readvlnum(&trkptr, m->tracks[i].trkend, &eof);
 				if (eof)
 				{
-					m->ticknum=0; /* abort the song */
 					fprintf(stderr, "[midi-load] #4 premature end-of-data in track %d\n", i);
-					break;
+					retval = errFormStruc;
+					goto failed;
 				}
 
 				trkptr+=len;
 
 				if (trkptr>m->tracks[i].trkend)
 				{
-					m->ticknum=0; /* abort the song */
 					fprintf(stderr, "[midi-load] #5 premature end-of-data in track %d\n", i);
-					break;
+					retval = errFormStruc;
+					goto failed;
 				}
 
 #ifdef MIDI_LOAD_DEBUG
@@ -414,26 +450,65 @@ char __attribute__ ((visibility ("internal"))) midLoadMidi( struct midifile *m,
 					case 0x90: /* note on */
 						if ((trkptr+1)>=m->tracks[i].trkend)
 						{
-							m->ticknum=0; /* abort the song */
 							fprintf(stderr, "[midi-load] #6 premature end-of-data in track %d\n", i);
-							break;
+							retval = errFormStruc;
+							goto failed;
 						}
 						if (trkptr[1])
 						{
-							sampused[chaninst[status&0xF]][trkptr[0]>>3]|=1<<(trkptr[0]&7);
-							instused[chaninst[status&0xF]]=1;
+							uint8_t ch=status&0x0F;
+							if (!chaninst[ch])
+							{
+								chaninst[ch]=lookup_instused(bank_msb[ch], bank_lsb[ch], program[ch]);
+							}
+							if (!chaninst[ch])
+							{
+								retval = errAllocMem;
+								goto failed;
+							}
+							chaninst[ch]->notesused[trkptr[0]>>3]|=1<<(trkptr[0]&7);
+						}
+						trkptr+=2;
+						break;
+					case 0xB0: /* control-change */
+						if ((trkptr+1)>=m->tracks[i].trkend)
+						{
+							fprintf(stderr, "[midi-load] #7 premature end-of-data in track %d\n", i);
+							retval = errFormStruc;
+							goto failed;
+						}
+						if (trkptr[0] == 0x00) /* BANK MSB */
+						{
+							if (trkptr[1] & 0x80)
+							{
+								fprintf (stderr, "[midi-load] bank MSB out of range\n");
+								retval = errFormStruc;
+								goto failed;
+							}
+
+							bank_msb[status&0x0f] = trkptr[1];
+						}
+						if (trkptr[0] == 0x20) /* BANK LSB */
+						{
+							if (trkptr[1] & 0x80)
+							{
+								fprintf (stderr, "[midi-load] bank LSB out of range\n");
+								retval = errFormStruc;
+								goto failed;
+							}
+
+							bank_lsb[status&0x0f] = (trkptr[1] & 0x7f);
 						}
 						trkptr+=2;
 						break;
 					case 0x80: /* note off */
 					case 0xA0: /* aftertouch */
-					case 0xB0: /* control-change */
 					case 0xE0: /* pitch wheel */
 						if ((trkptr+1)>=m->tracks[i].trkend)
 						{
-							m->ticknum=0; /* abort the song */
 							fprintf(stderr, "[midi-load] #7 premature end-of-data in track %d\n", i);
-							break;
+							retval = errFormStruc;
+							goto failed;
 						}
 						trkptr+=2;
 						break;
@@ -441,12 +516,20 @@ char __attribute__ ((visibility ("internal"))) midLoadMidi( struct midifile *m,
 						trkptr++;
 						break;
 					case 0xC0: /* Program change */
-						if (((status&0xF)!=9)&&((status&0xF)!=drumch2))
 						{
-							chaninst[status&0xF]=trkptr[0];
-							/* shit! */
-							memset(sampused[trkptr[0]], 0xFF, 16);
-							instused[trkptr[0]]=1;
+							uint_fast8_t ch = status & 0x0f;
+
+							fprintf (stderr, "INST CHANNEL=%d BANK=%d 0x%2x 0x%02x PROGRAM=%d\n", ch, ((int)bank_msb[ch]<<7) | bank_lsb[ch], bank_msb[ch], bank_lsb[ch], trkptr[0] & 0x7f);
+
+							if (trkptr[0] & 0x80)
+							{
+								fprintf (stderr, "[midi-load] program out of range\n");
+								retval = errFormStruc;
+								goto failed;
+							}
+
+							program[status&0xF]=trkptr[0];
+							chaninst[status&0x0F]=0;
 						}
 						trkptr++;
 						break;
@@ -460,55 +543,63 @@ char __attribute__ ((visibility ("internal"))) midLoadMidi( struct midifile *m,
 #endif
 		if (m->ticknum<trackticks)
 			m->ticknum=trackticks;
-	}
+	}	
 	if (!m->ticknum)
 	{
-		free(sampused);
-		return errFormStruc;
+		fprintf(stderr, "[midi-load] no time-slices\n");
+		retval = errFormStruc;
+		goto failed;
 	}
 
-	m->instnum=0;
-	for (i=0; i<0x81; i++)
-		if (instused[i])
-			m->instnum++;
-
-	if (!m->instnum)
+	if (!instused_n)
 	{
-		instused[0]=1;
-		memset(sampused[0], 0xFF, 16);
-		m->instnum++;
+		fprintf(stderr, "[midi-load] no instruments used\n");
+		retval = errFormStruc;
+		goto failed;
 	}
 
+	m->instnum=instused_n;
+
+/*
 	if (!(smps=calloc(sizeof(struct sampleinfo *), m->instnum)))
 	{
-		free(sampused);
-		return errAllocMem;
+		retval = errAllocMem;
+		goto failed;
 	}
+*/
 	if (!(m->instruments=calloc(sizeof(struct minstrument), m->instnum)))
 	{
-		free(sampused);
-		free(smps);
-		return errAllocMem;
+		retval = errAllocMem;
+		goto failed;
 	}
 
-	for (i=0; i<m->instnum; i++)
-	{
-		m->instruments[i].sampnum=0;
-		m->instruments[i].samples=0;
-		smps[i]=0;
-	}
-
+	inited=1;
 	if (!midInit())
 	{
-		free(sampused);
-		free(smps);
-		midClose();
-		return errFileMiss;
+		retval = errFileMiss;
+		goto failed;
 	}
 
 	m->sampnum=0;
-	memset(m->instmap, 0, 0x81);
-	inst=0;
+
+	for (i=0; i<m->instnum; i++)
+	{
+		int stat;
+
+		m->instruments[i].bankmsb = instused[i]->bankmsb;
+		m->instruments[i].banklsb = instused[i]->banklsb;
+		m->instruments[i].prognum = instused[i]->program;
+
+		stat=loadpatch(m->instruments + i, instused[i]->notesused, &m->samples, &m->sampnum);
+
+		if (stat)
+		{
+			retval = stat;
+			goto failed;
+		}
+	}
+
+#if 0
 	for (i=0; i<0x80; i++)
 		if (instused[i])
 		{
@@ -516,10 +607,8 @@ char __attribute__ ((visibility ("internal"))) midLoadMidi( struct midifile *m,
 			stat=loadpatch(&m->instruments[inst], i, sampused[i], &smps[inst], &m->sampnum);
 			if (stat)
 			{
-				free(sampused);
-				midClose();
-				free(smps);
-				return stat;
+				retval = stat;
+				goto failed;
 			}
 			m->instruments[inst].prognum=i;
 			m->instmap[i]=inst;
@@ -539,13 +628,11 @@ char __attribute__ ((visibility ("internal"))) midLoadMidi( struct midifile *m,
 		ins=&m->instruments[inst];
 		ins->prognum=0x80;
 		ins->sampnum=drums;
-		smps[inst]=calloc(sizeof(struct sampleinfo), drums);
-		if (!(ins->samples=calloc(sizeof(struct msample), drums)))
+		smps[inst]=calloc(sizeof(struct sampleinfo), drums);        /* OCP sample */
+		if (!(ins->samples=calloc(sizeof(struct msample), drums)))  /* midi-sample */
 		{
-			free(sampused);
-			midClose();
-			free(smps);
-			return errAllocMem;
+			retval = errAllocMem;
+			goto failed;
 		}
 		memset(ins->note, 0xFF, 0x80);
 		strcpy(ins->name, "drums");
@@ -559,29 +646,69 @@ char __attribute__ ((visibility ("internal"))) midLoadMidi( struct midifile *m,
 					stat=addpatch(ins, i+0x80, sn, i, &smps[inst][sn], &m->sampnum);
 					if (stat)
 					{
-						free(sampused);
-						midClose();
-						return stat;
+						retval = stat;
+						goto failed;
 					}
 					sn++;
 				}
 		inst++;
 	}
-	free(sampused);
+	free(instused);
+	instused=0;
+#endif
 
-	m->samples=calloc(sizeof(struct sampleinfo), m->sampnum);
+//	m->samples=calloc(sizeof(struct sampleinfo), m->sampnum);
 
+#if 0
+loadpatch should append to global sample-list using realloc() etc.
 	samplenum=0;
-	for (i=0; i<inst; i++)
+	for (i=0; i<m->instnum; i++)
 	{
 		for (j=0; j<m->instruments[i].sampnum; j++)
-			m->samples[samplenum++]=smps[i][j];
-		free(smps[i]);
+			m->samples[samplenum++]=m->instruments[i].samples[j];
+//#warning what is the free-logic here, vs non-drums?
+//		free(smps[i]);
 	}
-	free(smps);
+//	free(smps);
+#endif
 
 	midClose();
 	return errOk;
+
+failed:
+//	if (smps)
+//	{
+/*		for (i=0; i<inst; i++)
+		{
+			if (smps[i])
+			{
+				for (j=0; j<m->instruments[i].sampnum; j++)
+				{
+					if (smps[i][j])
+					{
+						free (smps[i][j]->ptr);
+					}
+					free(smps[i][j];
+			free(smps[i]);
+		}
+*/
+//		free(smps);
+//		smps=0;
+//	}
+
+	for (i=0; i < instused_n; i++)
+	{
+		free (instused[i]);
+	}
+	free(instused);
+	instused=0;
+
+	if (inited)
+	{
+		midClose();
+	}
+
+	return retval;
 }
 
 void __attribute__ ((visibility ("internal"))) mid_reset(struct midifile *mf)

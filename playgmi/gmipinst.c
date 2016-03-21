@@ -77,7 +77,7 @@ static void gmiDisplayIns52(uint16_t *buf, int n, int plInstMode)
 	sm=&ins->samples[j];
 
 	writestring(buf, 26, col, (!plInstMode&&plSampUsed[plInstSampNum[i]+j])?"\376##: ":" ##: ", 5);
-	_writenum(buf, 27, col, sm->sampnum, 16, 2);
+//	_writenum(buf, 27, col, sm->sampnum, 16, 2);
 	writestring(buf, 31, col, sm->name, 16);
 }
 
@@ -105,7 +105,7 @@ static void gmiDisplayIns80(uint16_t *buf, int n, int plInstMode)
 	sm=&ins->samples[j];
 
 	writestring(buf, 22, col, (!plInstMode&&plSampUsed[plInstSampNum[i]+j])?"\376##: ":" ##: ", 5);
-	_writenum(buf, 23, col, sm->sampnum, 16, 2);
+//	_writenum(buf, 23, col, sm->sampnum, 16, 2);
 	writestring(buf, 27, col, sm->name, 16);
 
 	if (sm->handle!=-1)
@@ -155,7 +155,7 @@ static void gmiDisplayIns132(uint16_t *buf, int n, int plInstMode)
 	sm=&ins->samples[j];
 
 	writestring(buf, 22, col, (!plInstMode&&plSampUsed[plInstSampNum[i]+j])?"\376##: ":" ##: ", 5);
-	_writenum(buf, 23, col, sm->sampnum, 16, 2);
+//	_writenum(buf, 23, col, sm->sampnum, 16, 2);
 	writestring(buf, 27, col, sm->name, 16);
 
 	if (sm->handle!=-1)

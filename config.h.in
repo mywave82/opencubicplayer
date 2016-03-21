@@ -138,6 +138,7 @@
 
 /* #define I386_ASM_EMU 1 */
 
+/* #define TIMIDITY_DEBUG */
 /* #define ZIP_DEBUG */
 /* #define DIRDB_DEBUG */
 /* #define PLR_DEBUG */ /* for now makes devposs/devpalsa offer some buffer info */
@@ -183,12 +184,11 @@
 #define VCSA_PATH "/dev/vcsa"
 
 
-
-
-
-
-
 /* Stuff below here will be updated by ./configure */
+
+#undef TIMIDITY_DEFAULT_PATH
+#undef TIMIDITYPKGDATADIR
+
 #undef DISABLE_SIGALRM
 
 #undef KICKSTART_GDB
@@ -199,13 +199,46 @@
 
 #undef DLLVERSION
 
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+#undef HAVE_GETOPT
+
 #undef HAVE_MEMMEM
 
 #undef HAVE_QSORT
 
 #undef HAVE_STRUPR
 
+#undef HAVE_POPEN
+
+#undef HAVE_STRDUP
+
 #undef HAVE_GETCWD
+
+#undef HAVE_STRSTR
+
+#undef HAVE_STRERROR
+
+#undef HAVE_SNPRINTF
+
+#undef HAVE_VSNPRINTF
+
+#undef HAVE_STRNCASECMP
+
+#undef HAVE_SLEEP
+
+#undef HAVE_USLEEP
+
+#undef HAVE_MKSTEMP
+
+#undef HAVE_OPEN
+
+#undef HAVE_STRLCPY
+
+#undef HAVE_STRLCAT
+
+#undef HAVE_GETTIMEOFDAY
 
 #undef HAVE_EFENCE
 
@@ -217,13 +250,53 @@
 
 #undef HAVE_MAD
 
+#undef HAVE_ERRNO_H
+
+#undef HAVE_LIMITS_H
+
+#undef HAVE_SYS_STAT_H
+
+#undef HAVE_SYS_SYSCTL_H
+
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
+#undef TIME_WITH_SYS_TIME
+
+/* Define to 1 if your <sys/time.h> declares `struct tm'. */
+#undef TM_IN_SYS_TIME
+
+#undef HAVE_SYS_PARAM_H
+
+#undef HAVE_SYS_TYPES_H
+
+#undef HAVE_DIRENT_H
+
+#undef HAVE_FCNTL_H
+
+#undef HAVE_NDIR_H
+
+#undef HAVE_SYS_NDIR_H
+
+#undef HAVE_SYS_DIR_H
+
 #undef HAVE_STDINT_H
 
 #undef HAVE_INTTYPES_H
 
 #undef HAVE_BYTESWAP_H
 
+#undef HAVE_GETOPT_H
+
+#undef HAVE_UNISTD_H
+
+#undef HAVE_MACHINE_ENDIAN_H
+
 #undef HAVE_SYS_SOUNDCARD_H
+
+#undef HAVE_STRING_H
+
+#undef NO_STRING_H
 
 #undef HAVE_FRAMEBUFFER
 

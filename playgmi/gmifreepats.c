@@ -107,6 +107,7 @@ static void parse_config(FILE *input)
 	}
 }
 
+#if 0
 static int loadpatchFreePats( struct minstrument *ins,
                               uint8_t             program,
                               uint8_t            *sampused,
@@ -171,6 +172,92 @@ static int addpatchFreePats( struct minstrument *ins,
 		fprintf(stderr, "Invalid PAT file\n");
 	return retval;
 }
+#endif
+
+static int loadpatchFreePats( struct minstrument *ins, /* bank MSB, LSB and program is pre-filled into instrument */
+                              uint8_t            *notesused,
+                              struct sampleinfo **samples,
+                              uint16_t           *samplenum)
+{
+	FILE *file;
+	int retval;
+	char path[PATH_MAX+NAME_MAX];
+
+	if (ins->bankmsb == 120) /* drums */
+	{
+		int drum;
+		int drum_sample = 0;
+
+		strcpy(ins->name, "Drums");
+
+		/* first we count/predict the number of samples */
+		for (drum=0; drum<128; drum++)
+		{
+			if (notesused[drum>>3]&(1<<(drum&7)))
+			{
+				drum_sample++;
+			}
+		}
+		/* allocate */
+		ins->sampnum=drum_sample;
+		ins->samples=calloc(sizeof(struct msample), drum_sample);
+#warning fetch alloc failed here
+
+		/* *smps=realloc(*smps, sizeof(struct sampleinfo) * ((*samplenum)+drum_sample)); */
+		/* put the counter back to zero, and do the actual loading */
+		drum_sample = 0;
+
+		for (drum=0; drum<128; drum++)
+		{
+			if (notesused[drum>>3]&(1<<(drum&7)))
+			{
+				if (!*midInstrumentNames[drum + 128])
+				{
+					fprintf(stderr, "[freepats] not entry configured for drum %d\n", drum);
+					return errFileMiss;
+				}
+				snprintf(path, sizeof(path), "%s%s", fpdir, midInstrumentNames[drum + 128]);
+				if ((file=fopen(path, "r"))==NULL)
+				{
+					fprintf(stderr, "[freepats] '%s': %s\n", path, strerror(errno));
+					return errFileMiss;
+				}
+
+				fprintf(stderr, "[freepats] loading file %s\n", path);
+
+				ins->note[drum]=drum_sample; /* link the drum into the virtual midi-note */
+				retval=addpatchPAT(/*file, ins, program, sn, sampnum, sip, samplenum*/ file, midInstrumentNames[drum+128], ins, drum_sample++, samples, samplenum);
+				fclose(file);
+				if (retval)
+				{
+					fprintf(stderr, "Invalid PAT file\n");
+					return retval;
+				}
+			}
+		}
+		return errOk;
+	}
+
+	if (!*midInstrumentNames[ins->prognum])
+	{
+		fprintf(stderr, "[freepats] not entry configured for program %d\n", ins->prognum);
+		return errFileMiss;
+	}
+
+	snprintf(path, sizeof(path), "%s%s", fpdir, midInstrumentNames[ins->prognum]);
+	if ((file=fopen(path, "r"))==NULL)
+	{
+		fprintf(stderr, "[freepats] '%s': %s\n", path, strerror(errno));
+		return errFileMiss;
+	}
+
+	fprintf(stderr, "[freepats] loading file %s\n", path);
+	retval=loadpatchPAT(/*file ins program sampused smps samplenum*/ file, midInstrumentNames[ins->prognum], ins, notesused, samples, samplenum);
+	fclose(file);
+	if (retval)
+		fprintf(stderr, "Invalid PAT file\n");
+	return retval;
+}
 
 int __attribute__ ((visibility ("internal"))) midInitFreePats(void)
 {
@@ -207,6 +294,5 @@ int __attribute__ ((visibility ("internal"))) midInitFreePats(void)
 		return 0;
 	}
 	loadpatch = loadpatchFreePats;
-	addpatch = addpatchFreePats;
 	return 1;
 }

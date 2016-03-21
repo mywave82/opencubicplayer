@@ -1,3 +1,5 @@
+#include "config.h"
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -8,150 +10,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-struct SF2_phdr
-{
-	uint8_t PresetName[20];
-	uint16_t Preset;
-	uint16_t Bank;
-	uint16_t PresetBagIndex;
-	uint32_t Library;
-	uint32_t Genre;
-	uint32_t Morphology;
-};
-
-struct SF2_pbag
-{
-	uint16_t GenIndex;
-	uint16_t ModIndex;
-};
-
-struct SF2_pmod
-{
-	uint16_t SrcOper;
-	uint16_t DestOper;
-	int16_t  Amount;
-	uint16_t AmountSrcOper;
-	uint16_t TransOper;
-};
-
-struct SF2_pgen
-{
-	uint16_t GenOper;
-	uint16_t Amount;
-};
-
-struct SF2_inst
-{
-	char InstName[21];
-	uint16_t InstBagIndex;
-};
-
-struct SF2_ibag
-{
-	uint16_t InstGenIndex;
-	uint16_t InstModIndex;
-};
-
-struct SF2_imod
-{
-	uint16_t SrcOper;
-	uint16_t DestOper;
-	int16_t  Amount;
-	uint16_t AmountSrcOper;
-	uint16_t TransOper;
-};
-
-struct SF2_igen
-{
-	uint16_t GenOper;
-	uint16_t Amount;
-};
-
-struct SF2_shdr
-{
-	char SampleName[21];
-	uint32_t Start;
-	uint32_t End;
-	uint32_t StartLoop;
-	uint32_t EndLoop;
-	uint32_t SampleRate;
-	uint8_t  RootNote;
-	int8_t   PitchCorrection; /* cents 100 = 1 half note */
-	uint16_t SampleLink; /* ID */
-	uint16_t SampleType;
-};
-
-#define DETECTED_sfbk 0x00000001
-#define DETECTED_INFO 0x00000002
-#define DETECTED_ifil 0x00000004
-#define DETECTED_isng 0x00000008
-#define DETECTED_INAM 0x00000010
-#define DETECTED_irom 0x00000020
-#define DETECTED_iver 0x00000040
-#define DETECTED_ICRD 0x00000080
-#define DETECTED_IENG 0x00000100
-#define DETECTED_IPRD 0x00000200
-#define DETECTED_ICOP 0x00000400
-#define DETECTED_ICMT 0x00000800
-#define DETECTED_ISFT 0x00001000
-#define DETECTED_sdta 0x00002000
-#define DETECTED_smpl 0x00004000
-#define DETECTED_sm24 0x00008000
-#define DETECTED_pdta 0x00010000
-#define DETECTED_phdr 0x00020000
-#define DETECTED_pbag 0x00040000
-#define DETECTED_pmod 0x00080000
-#define DETECTED_pgen 0x00100000
-#define DETECTED_inst 0x00200000
-#define DETECTED_ibag 0x00400000
-#define DETECTED_imod 0x00800000
-#define DETECTED_igen 0x01000000
-#define DETECTED_shdr 0x02000000
-
-struct SF2_Session
-{
-	int fd;
-	unsigned char *data;
-	size_t data_len;
-	size_t data_mmaped_len;
-
-	int detected;
-
-	struct SF2_phdr *phdr;
-	int phdr_n;
-
-	struct SF2_pbag *pbag;
-	int pbag_n;
-
-	struct SF2_pmod *pmod;
-	int pmod_n;
-
-	struct SF2_pgen *pgen;
-	int pgen_n;
-
-	struct SF2_inst *inst;
-	int inst_n;
-
-	struct SF2_ibag *ibag;
-	int ibag_n;
-
-	struct SF2_imod *imod;
-	int imod_n;
-
-	struct SF2_igen *igen;
-	int igen_n;
-
-	struct SF2_shdr *shdr;
-	int shdr_n;
-
-	/* file-format version */
-	uint16_t ifil_major;
-	uint16_t ifil_minor;
-
-	uint16_t *samples;
-	uint8_t *samples24; /* optional last 24bit of presicion if available */
-	uint32_t samples_n;
-};
+#include "gmiplay.h"
+#include "gmisf2.h"
 
 #define roundup(x,y) (((x) + (y) - 1) & ~((y) - 1))
 
@@ -1245,151 +1105,192 @@ static int parse_RIFF(struct SF2_Session *s, unsigned char *head, unsigned char 
 	return 0;
 }
 
-static void dump_SF2(struct SF2_Session *s)
+void
+__attribute__ ((visibility ("internal")))
+SF2_Free(struct SF2_Session *s)
 {
-	int i;
-
-	fprintf (stderr, "\n\n\nSTRUCTURED OUTPUT\n=================\n\n");
-
-	for (i=0; i < (s->phdr_n-1); i++)
+	if (s->data_mmap_len)
 	{
-		int j;
-
-		fprintf (stderr, "preset %d bank %d presetbagindex %d name \"%s\"\n", s->phdr[i].Preset, s->phdr[i].Bank, s->phdr[i].PresetBagIndex, s->phdr[i].PresetName);
-		for (j=s->phdr[i].PresetBagIndex; j<s->phdr[i+1].PresetBagIndex; j++)
-		{
-			int k;
-
-			if (j >= s->pbag_n+1)
-				break; /* out of boundaries */
-			fprintf (stderr, " presetbag[%d] GenIndex %d ModIndex %d\n", j, s->pbag[j].GenIndex, s->pbag[j].ModIndex);
-			for (k=s->pbag[j].GenIndex; k<s->pbag[j+1].GenIndex; k++)
-			{
-				if (k >= s->pgen_n)
-					break; /* out of boundaries */
-				fprintf (stderr, "  generator[%d] GenOper %d(%s) Amount 0x%04x\n", k, s->pgen[k].GenOper, SFGeneratorToText(s->pgen[k].GenOper), s->pgen[k].Amount);
-				if (s->pgen[k].GenOper == 41) /* Instrument */
-				{
-					int l = s->pgen[k].Amount;
-					if (l < (s->inst_n+1)) /* inside boundries? */
-					{
-						fprintf (stderr, "   instrument[%d] InstrumentBagIndex %d Name \"%s\"\n", l, s->inst[l].InstBagIndex, s->inst[l].InstName);
-						int m;
-						for (m=s->inst[l].InstBagIndex; m<s->inst[l+1].InstBagIndex; m++)
-						{
-							int n;
-							fprintf (stderr, "    instrumentbag[%d] InstGenIndex %d InstModIndex %d\n", m, s->ibag[m].InstGenIndex, s->ibag[m].InstModIndex);
-
-							for (n=s->ibag[m].InstGenIndex; n<s->ibag[m+1].InstGenIndex; n++)
-							{
-								if (n >= s->igen_n)
-									break; /* out of boundaries */
-								fprintf (stderr, "     instrumentgenerator[%d] GenOper %d(%s), Amount 0x%04x\n", n, s->igen[n].GenOper, SFGeneratorToText(s->igen[n].GenOper), s->igen[n].Amount);
-								if (s->igen[n].GenOper == 53) /* Sample ID */
-								{
-									int o = s->igen[n].Amount;
-									if (o >= s->shdr_n)
-										break; /* out of boundaries */
-										fprintf (stderr, "      sample[%d] Start %u, End %u, LoopStart %u, LoopEnd %u, SampleRate %u, RootNode %u, PitchCorrection %d, SampleLink %d, SampleType %u(%s), Name \"%s\"\n", o, (unsigned)s->shdr[o].Start, (unsigned)s->shdr[o].End, (unsigned)s->shdr[o].StartLoop, (unsigned)s->shdr[o].EndLoop, (unsigned)s->shdr[o].SampleRate, s->shdr[o].RootNote, s->shdr[o].PitchCorrection, (unsigned)s->shdr[o].SampleLink, (unsigned)s->shdr[o].SampleType, SFSampleTypeToText(s->shdr[o].SampleType), s->shdr[o].SampleName);
-								}
-								
-							}
-							for (n=s->ibag[m].InstModIndex; n<s->ibag[m+1].InstModIndex; n++)
-							{
-								char a[128], b[128];
-								if (n >= s->imod_n)
-									break; /* out of boundaries */
-								SFModulatorSourceToText (s->imod[n].SrcOper, a, sizeof(a));
-								SFModulatorSourceToText (s->imod[n].AmountSrcOper, b, sizeof(b));
-								fprintf (stderr, "     instrumentmodulator[%d] SrcOper %d(%s) DestOper %d(%s) Amount %d AmountSrcOper %d(%s) TransOper %d(%s)\n", n, s->imod[n].SrcOper, a, s->imod[n].DestOper, SFGeneratorToText(s->imod[n].DestOper), s->imod[n].Amount, s->imod[n].AmountSrcOper, b, s->imod[n].TransOper, SFTransformToText(s->imod[n].TransOper));
-							}
-						}
-					}
-				}
-			}
-			for (k=s->pbag[j].ModIndex; k<s->pbag[j+1].ModIndex; k++)
-			{
-				char a[128], b[128];
-
-				if (k >= s->pmod_n)
-					break; /* out of boundaries */
-
-				SFModulatorSourceToText (s->pmod[k].SrcOper, a, sizeof(a));
-				SFModulatorSourceToText (s->pmod[k].AmountSrcOper, b, sizeof(b));
-
-				fprintf (stderr, "  modulator[%d] SrcOper %d(%s) DestOper %d(%s) Amount %d AmountSrcOper %d(%s) TransOper %d(%s)\n", k, s->pmod[k].SrcOper, a, s->pmod[k].DestOper, SFGeneratorToText(s->pmod[k].DestOper), s->pmod[k].Amount, s->pmod[k].AmountSrcOper, b, s->pmod[k].TransOper, SFTransformToText(s->pmod[k].TransOper));
-			}
-		}
+		munmap (s->data, s->data_mmap_len);
 	}
+	if (s->data_malloc_len)
+	{
+		free (s->data);
+	}
+	free (s->phdr);
+	free (s->pbag);
+	free (s->pmod);
+	free (s->pgen);
+	free (s->inst);
+	free (s->ibag);
+	free (s->imod);
+	free (s->igen);
+	free (s->shdr);
+	free (s);
 }
 
-int main(int argc, char *argv[])
+__attribute__ ((visibility ("internal")))
+struct SF2_Session *
+SF2_Load_FILE(FILE *file)
 {
-	struct SF2_Session s;
+	struct SF2_Session *s = calloc (1, sizeof (*s));
+	unsigned char buffer[8];
+	uint32_t datasize;
+
+	fseek (file, 0, SEEK_SET);
+
+	if (fread (buffer, 8, 1, file) != 1)
+	{
+		fprintf (stderr, "[SF2]: SF2_Load_FILE failed to read initial header\n");
+		free (s);
+		return 0;
+	}
+
+	datasize = (buffer[7] << 24) |
+	           (buffer[6] << 16) |
+	           (buffer[5] << 8) |
+	            buffer[4];
+
+	s->data_malloc_len = datasize + 8;
+	s->data = malloc (s->data_malloc_len);
+
+	if (!s->data)
+	{
+		fprintf (stderr, "[SF2]: SF2_Load_FILE: malloc failed\n");
+		free (s);
+		return 0;
+	}
+
+	memcpy (s->data, buffer, 8);
+	if (fread (s->data + 8, datasize, 1, file) != 1)
+	{
+		fprintf (stderr, "[SF2]: SF2_Load_File failed to read file body\n");
+		free (s);
+		return 0;
+	}
+
+	if (riff_dechunk (s, s->data, s->data_len, parse_RIFF))
+	{
+		goto failed;
+	}
+	if (!(s->detected & DETECTED_sfbk))
+	{
+		fprintf (stderr, "[SF2]: Failed to detect SF2 file\n");
+		goto failed;
+	}
+
+	return s;
+
+failed:
+	SF2_Free (s);
+	return 0;
+}
+
+__attribute__ ((visibility ("internal")))
+struct SF2_Session *
+SF2_Load_fd(int fd)
+{
+	struct SF2_Session *s = calloc (1, sizeof (*s));
 	struct stat st;
 	size_t ps = sysconf(_SC_PAGE_SIZE);
 
-	bzero (&s, sizeof (s));
-
-	if (argc != 2)
+	if (fstat(fd, &st))
 	{
-		fprintf (stderr, "No file given\n");
-		return 0;
-	}
-
-	s.fd = open (argv[1], O_RDONLY);
-	if (s.fd < 0)
-	{
-		perror ("open()");
-		return 0;
-	}
-	if (fstat(s.fd, &st))
-	{
-		perror("fstat()");
-		close (s.fd);
+		perror("[SF2]: fstat()");
+		free (s);
 		return 0;
 	}
 	if (!st.st_size)
 	{
-		fprintf (stderr, "Zero-size file\n");
-		close (s.fd);
+		fprintf (stderr, "[SF2]: Zero-size file\n");
+		free (s);
 		return 0;
 	}
 
-	s.data_len = st.st_size;
-	s.data_mmaped_len = roundup (s.data_len, ps);
-	s.data = mmap (0, s.data_mmaped_len, PROT_READ, MAP_FILE|MAP_SHARED, s.fd, 0);
+	s->data_len = st.st_size;
+	s->data_mmap_len = roundup (s->data_len, ps);
+	s->data = mmap (0, s->data_mmap_len, PROT_READ, MAP_FILE|MAP_SHARED, fd, 0);
 
-	if (s.data == MAP_FAILED)
+	if (s->data == MAP_FAILED)
 	{
-		perror ("mmap() failed");
-		close (s.fd);
+		perror ("[SF2]: mmap() failed");
+		free (s);
 		return 0;
 	}
 
-	if (riff_dechunk (&s, s.data, s.data_len, parse_RIFF))
+	if (riff_dechunk (s, s->data, s->data_len, parse_RIFF))
 	{
 		goto failed;
 	}
-	if (!(s.detected & DETECTED_sfbk))
+	if (!(s->detected & DETECTED_sfbk))
 	{
-		fprintf (stderr, "Failed to detect SF2 file\n");
+		fprintf (stderr, "[SF2]: Failed to detect SF2 file\n");
 		goto failed;
 	}
 
-	dump_SF2(&s);
+	return s;
 
 failed:
-	munmap (s.data, s.data_mmaped_len);
-	free (s.phdr); s.phdr = 0;
-	free (s.pbag); s.pbag = 0;
-	free (s.pmod); s.pmod = 0;
-	free (s.pgen); s.pgen = 0;
-	free (s.inst); s.inst = 0;
-	free (s.ibag); s.ibag = 0;
-	free (s.imod); s.imod = 0;
-	free (s.igen); s.igen = 0;
-	free (s.shdr); s.shdr = 0;
-	close (s.fd);
+	SF2_Free (s);
 	return 0;
+}
+
+struct SF2_Session *global_session = 0;
+
+static void
+closeSF2(void)
+{
+	if (global_session)
+	{
+		SF2_Free (global_session);
+		global_session = 0;
+	}
+}
+
+static int
+loadpatchSF2 (struct minstrument *ins,
+              uint8_t             program,
+              uint8_t            *sampused,
+              struct sampleinfo **smps,
+              uint16_t           *samplenum)
+{
+#error implement me
+}
+
+int
+addpatchSF2 (struct minstrument *ins,
+             uint8_t             program,
+             uint8_t             sn,
+             uint8_t             sampnum,
+             struct sampleinfo  *sip,
+             uint16_t           *samplenum)
+{
+#error implement me
+}
+
+int __attribute__ ((visibility ("internal"))) midInitSF2(void)
+{
+	int fd;
+
+#warning FIXME (hardcoded SF2 file for the time-beeing)
+	fd = open ("/usr/share/sounds/sf2/FluidR3_GM.sf2", O_RDONLY);
+
+	if (fd < 0)
+	{
+		fprintf (stderr, "[SF2]: failed to open %s: %s\n", "/usr/share/sounds/sf2/FluidR3_GM.sf2", strerror (errno));
+		return 0;
+	}
+
+	global_session = SF2_Load_fd(fd);
+	close (fd);
+	if (!global_session)
+	{
+		return 0;
+	}
+
+	_midClose = closeSF2;
+
+	loadpatch = loadpatchSF2;
+	addpatch = addpatchSF2;
+	return 1;
 }

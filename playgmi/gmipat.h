@@ -99,6 +99,7 @@ static inline void PATCHDATA_endian(struct PATCHDATA *a) {
 struct minstrument;
 struct sampleinfo;
 
+#if 0
 extern int __attribute__ ((visibility ("internal")))
 loadpatchPAT( FILE               *file,
               struct minstrument *ins,
@@ -115,6 +116,24 @@ addpatchPAT ( FILE               *file,
               uint8_t             sampnum,
               struct sampleinfo  *sip,
               uint16_t           *samplenum);
+#endif
+
+extern int __attribute__ ((visibility ("internal")))
+loadpatchPAT( FILE                *file,
+              const char          *filepath,
+              struct minstrument  *ins,
+              uint8_t             *sampused,
+              struct sampleinfo  **sips,
+              uint16_t            *samplenum);
+
+extern int __attribute__ ((visibility ("internal")))
+addpatchPAT ( FILE                *file,
+              const char          *filepath,
+              struct minstrument  *ins,
+              uint8_t              sampnum,
+              struct sampleinfo  **sips,
+              uint16_t            *samplenum);
+
 
 extern __attribute__ ((visibility ("internal"))) uint32_t pocttab[16];
 extern __attribute__ ((visibility ("internal"))) uint16_t pnotetab[12];

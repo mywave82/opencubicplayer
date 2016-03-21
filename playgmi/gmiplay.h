@@ -4,19 +4,20 @@
 struct msample
 {
 	char name[32];
+#warning We can probably remove sampnum below here
 	uint8_t sampnum;    /* instrument-mode sample number */
 	int16_t handle;     /* mcp handle */
 	uint16_t normnote;
 	uint32_t volrte[6];
 	uint16_t volpos[6];
 	uint8_t end;
-	int8_t sustain;
+	int8_t sustain; /* The number of envelopes, if any, which also is used for sustain probably */
 	uint16_t tremswp;
 	uint16_t tremrte;
-	uint16_t tremdep;
+	int16_t tremdep;
 	uint16_t vibswp;
 	uint16_t vibrte;
-	uint16_t vibdep;
+	int16_t vibdep;
 	uint16_t sclfac;
 	uint8_t sclbas;
 };
@@ -24,7 +25,9 @@ struct msample
 struct minstrument
 {
 	char name[32];
-	uint8_t prognum;
+	uint8_t bankmsb;
+	uint8_t banklsb;
+	uint8_t prognum; /* program / patch */
 	uint16_t sampnum; /* number of (struct msample *) below */
 	struct msample *samples;
 	uint8_t note[128];
@@ -43,7 +46,6 @@ struct midifile
 	uint16_t tempo;
 	struct miditrack *tracks;
 	uint32_t ticknum;
-	uint8_t instmap[129];
 	uint16_t instnum;
 	uint16_t sampnum;
 	struct minstrument *instruments;
@@ -118,25 +120,35 @@ extern int __attribute__ ((visibility ("internal"))) gmiGetDots(struct notedotsd
 
 extern __attribute__ ((visibility ("internal"))) char midInstrumentNames[256][NAME_MAX+1];
 
+extern int __attribute__ ((visibility ("internal"))) midInitSF2(void);
 extern int __attribute__ ((visibility ("internal"))) midInitUltra(void);
 extern int __attribute__ ((visibility ("internal"))) midInitFFF(void);
 extern int __attribute__ ((visibility ("internal"))) midInitFreePats(void);
 extern int __attribute__ ((visibility ("internal"))) midInitTimidity(void);
 
-extern int __attribute__ ((visibility ("internal")))
+#if 0
+extern int __attribute__ ((visibility ("internal")))      in the past used to load GeneralMidi melody instruments
 	(*loadpatch)( struct minstrument *ins,
 	              uint8_t             program,
 	              uint8_t            *sampused,
 	              struct sampleinfo **smps,
 	              uint16_t           *samplenum);
 
-extern int __attribute__ ((visibility ("internal")))
+extern int __attribute__ ((visibility ("internal")))      in the past used for loading drums
 	(*addpatch)( struct minstrument *ins,
 	             uint8_t             program,
 	             uint8_t             sn,
 	             uint8_t             sampnum,
 	             struct sampleinfo  *sip,
 	             uint16_t           *samplenum);
+#else
+extern int __attribute__ ((visibility ("internal")))
+	(*loadpatch)( struct minstrument *ins, /* bank MSB, LSB and program is pre-filled into instrument */
+	              uint8_t            *notesused,
+	              struct sampleinfo **samples,
+	              uint16_t           *samplenum);
+#endif
+
 extern void __attribute__ ((visibility ("internal")))
 	(*_midClose)(void);
 

@@ -19,7 +19,10 @@ AC_DEFINE(KICKSTART_GDB, 1) AC_DEFINE(DISABLE_SIGALRM)
 fi
 )
 
+AC_HEADER_TIME
+
 AC_PROG_CC
+AX_PROG_CC_FOR_BUILD
 AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_CXXCPP
@@ -184,10 +187,24 @@ AC_LINK_IFELSE(
 )
 
 AC_CHECK_FUNCS(memmem)
+AC_CHECK_FUNCS(getopt)
+AC_CHECK_FUNCS(popen)
 AC_CHECK_FUNCS(qsort)
+AC_CHECK_FUNCS(gettimeofday)
+AC_CHECK_FUNCS(sleep)
 AC_CHECK_FUNCS(sysconf)
+AC_CHECK_FUNCS(strerror)
+AC_CHECK_FUNCS(strdup)
+AC_CHECK_FUNCS(strstr)
 AC_CHECK_FUNCS(strupr)
 AC_CHECK_FUNCS(getcwd)
+AC_CHECK_FUNCS(snprintf)
+AC_CHECK_FUNCS(usleep)
+AC_CHECK_FUNCS(vsnprintf)
+AC_CHECK_FUNCS(strncasecmp)
+AC_CHECK_FUNCS(mkstemp)
+AC_CHECK_FUNCS(strlcpy)
+AC_CHECK_FUNCS(strlcat)
 
 AC_SUBST(MATH_LIBS)
 AC_CHECK_FUNCS(sqrt,
@@ -203,6 +220,38 @@ AC_STRUCT_DIRENT_D_TYPE
 
 AC_CONFIG_HEADERS(config.h)
 
+AC_HEADER_STDC
+
+AC_SUBST(HAVE_DIRENT_H)
+AC_CHECK_HEADER(dirent.h,
+                HAVE_DIRENT_H=1
+                AC_DEFINE(HAVE_DIRENT_H, 1),
+               )
+AC_SUBST(HAVE_FCNTL_H)
+AC_CHECK_HEADER(fcntl.h,
+                HAVE_FCNTL_H=1
+                AC_DEFINE(HAVE_FCNTL_H, 1),
+               )
+AC_SUBST(HAVE_GETOPT_H)
+AC_CHECK_HEADER(getopt.h,
+                HAVE_GETOPT_H=1
+                AC_DEFINE(HAVE_GETOPT_H, 1),
+               )
+AC_SUBST(HAVE_NDIR_H)
+AC_CHECK_HEADER(ndir.h,
+                HAVE_NDIR_H=1
+                AC_DEFINE(HAVE_NDIR_H, 1),
+               )
+AC_SUBST(HAVE_SYS_NDIR_H)
+AC_CHECK_HEADER(sys/ndir.h,
+                HAVE_SYS_NDIR_H=1
+                AC_DEFINE(HAVE_SYS_NDIR_H, 1),
+               )
+AC_SUBST(HAVE_SYS_DIR_H)
+AC_CHECK_HEADER(sys/dir.h,
+                HAVE_SYS_DIR_H=1
+                AC_DEFINE(HAVE_SYS_DIR_H, 1),
+               )
 AC_SUBST(HAVE_STDINT_H)
 AC_CHECK_HEADER(stdint.h,
                 HAVE_STDINT_H=1
@@ -218,6 +267,80 @@ AC_CHECK_HEADER(byteswap.h,
                 HAVE_BYTESWAP_H=1
                 AC_DEFINE(HAVE_BYTESWAP_H, 1),
                )
+AC_SUBST(HAVE_UNISTD_H)
+AC_CHECK_HEADER(unistd.h,
+                HAVE_UNISTD_H=1
+                AC_DEFINE(HAVE_UNISTD_H, 1),
+               )
+AC_SUBST(HAVE_LIMITS_H)
+AC_CHECK_HEADER(limits.h,
+                HAVE_LIMITS_H=1
+                AC_DEFINE(HAVE_LIMITS_H, 1),
+               )
+AC_SUBST(NO_STRING_H)
+AC_SUBST(HAVE_STRING_H)
+AC_CHECK_HEADER(string.h,
+                HAVE_STRING_H=1
+                AC_DEFINE(HAVE_STRING_H, 1),
+                [ AC_DEFINE(NO_STRING_H,1,Define to 1 if you do not have <string.h>.)]
+               )
+AC_SUBST(HAVE_STRINGS_H)
+AC_CHECK_HEADER(strings.h,
+                HAVE_STRINGS_H=1
+                AC_DEFINE(HAVE_STRINGS_H, 1),
+               )
+
+AC_SUBST(HAVE_ERRNO_H)
+AC_CHECK_HEADER(errno.h,
+                HAVE_ERRNO_H=1
+                AC_DEFINE(HAVE_ERRNO_H, 1),
+               )
+AC_SUBST(HAVE_SYS_STAT_H)
+AC_CHECK_HEADER(sys/stat.h,
+                HAVE_SYS_STAT_H=1
+                AC_DEFINE(HAVE_SYS_STAT_H, 1),
+               )
+AC_SUBST(HAVE_SYS_SYSCTL_H)
+AC_CHECK_HEADER(sys/sysctl.h,
+                HAVE_SYS_SYSCTL_H=1
+                AC_DEFINE(HAVE_SYS_SYSCTL_H, 1),
+               )
+AC_SUBST(HAVE_SYS_TIME_H)
+AC_CHECK_HEADER(sys/time.h,
+                HAVE_SYS_TIME_H=1
+                AC_DEFINE(HAVE_SYS_TIME_H, 1),
+               )
+AC_SUBST(HAVE_SYS_TYPES_H)
+AC_CHECK_HEADER(sys/types.h,
+                HAVE_SYS_TYPES_H=1
+                AC_DEFINE(HAVE_SYS_TYPES_H, 1),
+               )
+AC_SUBST(HAVE_SYS_PARAM_H)
+AC_CHECK_HEADER(sys/param.h,
+                HAVE_SYS_PARAM_H=1
+                AC_DEFINE(HAVE_SYS_PARAM_H, 1),
+               )
+AC_SUBST(HAVE_MACHINE_ENDIAN_H)
+AC_CHECK_HEADER(machine/endian.h,
+                HAVE_MACHINE_ENDIAN_H=1
+                AC_DEFINE(HAVE_MACHINE_ENDIAN_H, 1),
+               )
+
+dnl timidity patch dir
+AC_ARG_WITH(timidity-default-path,
+  AS_HELP_STRING([--with-timidity-default-path=DIR], [Where timidity.cfg is  (PREFIX/share/timidity)]),
+  [timiditypkgdatadir=$withval],
+  [
+   if test "x$prefix" != "xNONE"; then
+      timiditypkgdatadir='${prefix}/share/timidity'
+   else
+      timiditypkgdatadir='/usr/local/share/timidity'
+   fi
+  ])
+tmpdefpath="`eval \"echo ${timiditypkgdatadir}\"`"
+AC_DEFINE_UNQUOTED(TIMIDITY_DEFAULT_PATH,"$tmpdefpath",place to install patches)
+AC_DEFINE(TIMIDITYPKGDATADIR,TIMIDITY_DEFAULT_PATH,a compatibility matter. ignore it.)
+
 
 AC_CHECK_LIB(ncurses, initscr, , AC_MSG_ERROR("ncurses not found"))
 AC_CHECK_LIB(ncurses, resize_term, AC_DEFINE(HAVE_RESIZETERM))

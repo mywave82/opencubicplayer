@@ -67,13 +67,13 @@ static int16_t getnote(uint32_t frq)  /* frq=freq*1000, res=(oct*12+note)*256 (a
 
 static
 int loadsamplePAT( FILE               *file,
+                   const char         *filepath,
                    struct minstrument *ins,
-                   uint8_t             j,
-                   uint8_t             vox,
-                   int                 setnote, /* local boolean */
-                   uint8_t             sampnum,
-                   uint8_t            *sampused,
-                   struct sampleinfo  *sip,
+                   uint8_t             j,       /* sample index into the instrument */
+                   uint8_t             vox,     /* number of voices => volume adjustments */
+                   int                 setnote, /* local boolean. maps the sample into the instruments note-map */
+                   uint8_t            *sampused, /*  if setnote is set, this map is used when checking if the sample is needed before adding it to the note-map and load */
+                   struct sampleinfo **sips,
                    uint16_t           *samplenum)
 {
 	struct msample *s=&ins->samples[j];
@@ -81,6 +81,7 @@ int loadsamplePAT( FILE               *file,
 	struct PATCHDATA sh;
 	int q;
 	uint8_t *smpp;
+	struct sampleinfo *sip;
 
 	if (fread(&sh, sizeof(sh), 1, file)!=1)
 	{
@@ -130,10 +131,23 @@ int loadsamplePAT( FILE               *file,
 		memset(ins->note+lownote, j, highnote-lownote);
 	}
 
+	*sips = realloc (*sips, sizeof (**sips) * ( (*samplenum) + 1 ) );
+#warning catch realloc failure here!
+	sip = *sips + (*samplenum);
+	s->handle=-1;
+
+#warning TODO, filename....
+#if 0
+	{
+		char name[NAME_MAX+1];
+		_splitpath(filepath, 0, 0, name, 0);
+		snprintf(s->name, sizeof(s->name), "%s", name);
+	}
+#endif
+
 	memcpy(s->name, sh.wave_name, 7);
 	s->name[7]=0;
-	s->sampnum=sampnum;
-	s->handle=-1;
+	s->sampnum=0;
 	s->normnote=getnote(sh.root_frequency);
 	if ((s->normnote&0xFF)>=0xFE)
 		s->normnote=(s->normnote+2)&~0xFF;
@@ -142,6 +156,8 @@ int loadsamplePAT( FILE               *file,
 	sip->length=sh.wave_size;
 	sip->loopstart=sh.start_loop;
 	sip->loopend=sh.end_loop;
+	sip->sloopstart = 0;
+	sip->sloopend = 0;
 	sip->samprate=sh.sample_rate;
 	sip->type=((sh.modes&4)?(mcpSampLoop|((sh.modes&8)?mcpSampBiDi:0)):0)|(bit16?mcpSamp16Bit:0)|((sh.modes&2)?mcpSampUnsigned:0);
 	/* fprintf(stderr, "env: "); */
@@ -187,10 +203,10 @@ int loadsamplePAT( FILE               *file,
 
 int __attribute__ ((visibility ("internal")))
 loadpatchPAT( FILE               *file,
+              const char         *filepath,
               struct minstrument *ins,
-              uint8_t             program,
               uint8_t            *sampused,
-              struct sampleinfo **smps,
+              struct sampleinfo **sips,
               uint16_t           *samplenum)
 {
 	struct PATCHHEADER ph;
@@ -231,15 +247,18 @@ loadpatchPAT( FILE               *file,
 		fprintf(stderr, "[*.PAT loader] We don't know how to handle layers (#1 = %d)\n", ih.layers);
 		return errFormStruc;
 	}
+
+#warning fix-me!
 	strcpy(ins->name, ih.instrument_name);
 	ins->name[16]=0;
-	if (!*ins->name)
+/*	if (!*ins->name)
 	if (midInstrumentNames[program])
 	{
 		char name[NAME_MAX+1];
 		_splitpath(midInstrumentNames[program], 0, 0, name, 0);
 		snprintf(ins->name, sizeof(ins->name), "%s", name);
 	}
+*/
 
 	if (fread(&lh, sizeof(lh), 1, file) != 1)
 	{
@@ -249,16 +268,16 @@ loadpatchPAT( FILE               *file,
 	LAYERDATA_endian(&lh);
 	if (!(ins->samples=calloc(sizeof(struct msample), lh.samples)))
 		return errAllocMem;
-	if (!(*smps=calloc(sizeof(struct sampleinfo), lh.samples)))
-		return errAllocMem;
+/*	if (!(*smps=calloc(sizeof(struct sampleinfo), lh.samples)))
+		return errAllocMem;*/
 	ins->sampnum=lh.samples;
-	memset(*smps, 0, lh.samples*sizeof(**smps));
+/*	memset(*smps, 0, lh.samples*sizeof(**smps));*/
 
 	memset(ins->note, 0xFF, 0x80);
 
 	for (i=0; i<ins->sampnum; i++)
 	{
-		int st=loadsamplePAT(file, ins, cursamp, ph.voices, 1, i, sampused, (*smps)+cursamp, samplenum);
+		int st=loadsamplePAT(file, filepath, ins, cursamp, ph.voices, 1, sampused, sips, samplenum);
 		if (st<errOk)
 			return st;
 		if (st!=1)
@@ -284,11 +303,10 @@ loadpatchPAT( FILE               *file,
 
 int __attribute__ ((visibility ("internal")))
 addpatchPAT (FILE               *file,
+             const char         *filepath,
              struct minstrument *ins,
-             uint8_t             program,
              uint8_t             sn,
-             uint8_t             sampnum,
-             struct sampleinfo  *sip,
+             struct sampleinfo **sips,
              uint16_t           *samplenum)
 {
 	struct msample *s;
@@ -325,16 +343,27 @@ addpatchPAT (FILE               *file,
 	{
 		int q;
 		uint8_t *smpp;
+		struct sampleinfo *sip;
+
+		if (!(smpp=malloc(sizeof(uint8_t))))
+			return errAllocMem;
+
+		*sips = realloc (*sips, sizeof (**sips) * ( (*samplenum) + 1 ) );
+#warning catch realloc failure here!
+		sip = *sips + (*samplenum);
+		s->handle=(*samplenum)++;
 /*
 		struct msample s=ins->samples[sn];  overkill */
 
 		strcpy(s->name, "no sample");
-		s->handle=-1;
-		s->sampnum=sampnum;
+		s->handle=*samplenum;
+		s->sampnum=1;
 		s->normnote=getnote(440000);
 		sip->length=1;
 		sip->loopstart=0;
 		sip->loopend=0;
+		sip->sloopstart=0;
+		sip->sloopend=0;
 		sip->samprate=44100;
 		sip->type=0;
 		for (q=0; q<6; q++)
@@ -353,11 +382,8 @@ addpatchPAT (FILE               *file,
 		s->sclfac=256;
 		s->sclbas=60;
 
-		if (!(smpp=malloc(sizeof(uint8_t))))
-			return errAllocMem;
 		*smpp=0;
 		sip->ptr=smpp;
-		s->handle=(*samplenum)++;
 		return 0;
 	}
 
@@ -373,17 +399,8 @@ addpatchPAT (FILE               *file,
 		return errFormStruc;
 	}
 
-	if ((st=loadsamplePAT(file, ins, sn, ph.voices, 0, sampnum, 0, sip, samplenum)))
+	if ((st=loadsamplePAT(file, filepath, ins, sn, ph.voices, 0, 0, sips, samplenum)))
 		return st;
-
-	strcpy(s->name, ih.instrument_name);
-	s->name[16]=0;
-	if (!*s->name)
-	{
-		char name[NAME_MAX+1];
-		_splitpath(midInstrumentNames[program], 0, 0, name, 0);
-		snprintf(s->name, sizeof(s->name), "%s", name);
-	}
 
 	return errOk;
 }

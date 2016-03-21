@@ -40,6 +40,21 @@
 #define DirStackSize 5
 #define maxlevel 10
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static char DirectoryStack[DirStackSize][PATH_MAX+1];
 static int DirectoryStackIndex;
 
@@ -177,6 +192,7 @@ no_add_dir:{}
 	}
 }
 
+#if 0
 static int loadpatchTimidity( struct minstrument *ins,
                               uint8_t             program,
                               uint8_t            *sampused,
@@ -288,6 +304,7 @@ static int addpatchTimidity( struct minstrument *ins,
 		fprintf(stderr, "Invalid PAT file\n");
 	return retval;
 }
+#endif
 
 int __attribute__ ((visibility ("internal"))) midInitTimidity(void)
 {
@@ -328,6 +345,5 @@ int __attribute__ ((visibility ("internal"))) midInitTimidity(void)
 	parse_config(inifile, 0);
 	fclose(inifile);
 	loadpatch = loadpatchTimidity;
-	addpatch = addpatchTimidity;
 	return 1;
 }

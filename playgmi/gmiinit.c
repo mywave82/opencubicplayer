@@ -58,25 +58,30 @@ int __attribute__ ((visibility ("internal"))) midInit(void)
 	const char *midUsePref=cfGetProfileString("midi", "use", 0);
 	if (midUsePref)
 	{
-		if ((!strcmp(midUsePref, "ultradir"))||(!strcmp(midUsePref, "ultrasnd"))||(!strcmp(midUsePref, "ultra")))
-			return midInitUltra();
+//		if ((!strcmp(midUsePref, "ultradir"))||(!strcmp(midUsePref, "ultrasnd"))||(!strcmp(midUsePref, "ultra")))
+//			return midInitUltra();
 		if (!strcmp(midUsePref, "fff"))
 			return midInitFFF();
 		if (!strcmp(midUsePref, "freepats"))
 			return midInitFreePats();
-		if (!strcmp(midUsePref, "timidity"))
-			return midInitTimidity();
+//		if (!strcmp(midUsePref, "timidity"))
+//			return midInitTimidity();
+//		if (!strcmp(midUsePref, "sf2"))
+//			return midInitSF2();
 		fprintf(stderr, "Invalid use= in [midi] section of ocp.ini\n");
 		return 0;
 	}
+#warning implement me again
+//	if (midInitSF2())
+//		return 1;
+//	if (midInitTimidity())
+//		return 1;
 	if (midInitFreePats())
 		return 1;
 	if (midInitFFF())
 		return 1;
-	if (midInitUltra())
-		return 1;
-	if (midInitTimidity())
-		return 1;
+//	if (midInitUltra())
+//		return 1;
 	fprintf(stderr, "No midi font loaded\n");
 	return 0;
 }

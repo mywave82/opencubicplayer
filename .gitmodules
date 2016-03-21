@@ -1,0 +1,3 @@
+[submodule "playgmi/timidity-git"]
+	path = playgmi/timidity-git
+	url = git://git.code.sf.net/u/mywave/timidity

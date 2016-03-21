@@ -25,6 +25,7 @@
  */
 
 #include "config.h"
+#include <math.h>
 #include <string.h>
 #include "types.h"
 #include "dev/mcp.h"
@@ -60,14 +61,17 @@ struct pchandata
 
 struct mchandata
 {
-	uint8_t ins;
+	uint16_t ins;
+	uint8_t bank_msb;
+	uint8_t bank_lsb;
 	uint8_t pan;
 	uint8_t reverb;
 	uint8_t chorus;
-	int16_t pitch;
 	uint8_t gvol;
+	int16_t pitch;
 	uint16_t rpn;
-	uint8_t pitchsens;
+	uint8_t pitchsenssemitones;
+	uint8_t pitchsenscents;
 	uint8_t mute;
 	uint8_t susp;
 
@@ -82,13 +86,13 @@ static uint16_t quatertick;
 static uint16_t tracknum;
 static struct miditrack *tracks;
 static struct minstrument *instr;
+static int instnum;
 static uint32_t ticknum;
 static uint32_t curtick;
 static uint32_t outtick;
 static struct mtrackdata trk[64];
 static struct mchandata mchan[16];
 static struct pchandata pchan[MAXCHAN];
-static uint8_t instmap[128];
 static uint8_t channelnum;
 static uint8_t drumchannel2=16;
 
@@ -395,17 +399,26 @@ static void playticks(struct mtrackdata *t, uint32_t ticks)
 					case 0xB0:
 						switch (*t->pos.trk++)
 						{
+							case 0x00:
+								mchan[cc].bank_msb=*t->pos.trk;
+								break;
+							case 0x20:
+								mchan[cc].bank_lsb=*t->pos.trk;
+								break;
 							case 0x06:
 								switch (mchan[cc].rpn)
 								{
 									case 0:
-										mchan[cc].pitchsens=*t->pos.trk;
+										mchan[cc].pitchsenssemitones=*t->pos.trk; /* semitones */
 										break;
 								}
 								break;
 							case 0x26:
 								switch (mchan[cc].rpn)
 								{
+									case 0:
+										mchan[cc].pitchsenscents=*t->pos.trk;
+										break;
 								}
 								break;
 							case 0x07:
@@ -457,8 +470,20 @@ static void playticks(struct mtrackdata *t, uint32_t ticks)
 						t->pos.trk++;
 						break;
 					case 0xC0:
-						if ((cc!=9)&&(cc!=drumchannel2))
-							mchan[cc].ins=instmap[*t->pos.trk];
+						for (i=0; i < instnum; i++)
+						{
+							if ((instr[i].bankmsb==mchan[cc].bank_msb) && 
+							    (instr[i].banklsb==mchan[cc].bank_lsb) &&
+							    (instr[i].prognum==*t->pos.trk))
+							{
+								mchan[cc].ins = i;
+								break;
+							}
+						}
+						if (i==instnum)
+						{
+							fprintf (stderr, "[gmiplay] warning, we missing instrument bank[%d %d] program[%d] from our loader\n", instr[i].bankmsb, instr[i].banklsb, instr[i].prognum);
+						}
 						t->pos.trk++;
 						break;
 					case 0xD0:
@@ -557,28 +582,50 @@ static void PlayTick(void)
 /*
 			pc->resvol=(getlinvolg(pc->curvol)*(getlinvol((mc->vol[pc->notenum]-0x80)*8)>>8)*mc->gvol)>>14; */
 			pc->resvol=(((uint32_t)getlinvolg(pc->curvol))*((int)mc->vol[pc->notenum])*((int)mc->gvol))>>14;
-			pc->resfrq=((int)mc->noteval[pc->notenum])+((((int)mc->pitch)*((int)mc->pitchsens))>>5);
+
+//			pc->resfrq=((int)mc->noteval[pc->notenum])+((((int)mc->pitch)*((int)mc->pitchsens))>>5);
+#if 1
+			if (mc->pitch)
+				pc->resfrq=round((float)mc->noteval[pc->notenum] * exp2f(-mc->pitch * (mc->pitchsenssemitones*100.0+mc->pitchsenscents)/(12.0*8192.0*100.0)));
+			else
+				pc->resfrq=mc->noteval[pc->notenum];
+#else
+#error this would be a fast-path for non-fpu capable systems. It lacks precision, but hey, it should work
+			if (pitch)
+			{
+				if (pitch > 0)
+				{
+					pc->resfrq=(int)mc->noteval[pc->notenum] * (mc->pitch+8192) * (pitchsenssemitones*100+pitchsenscents) / (100*12*8192);
+				} else {
+					we need some linear downward too??
+				}
+			} else
+				pc->resfrq=mc->noteval[pc->notenum];
+#endif
+
 			if ((pc->epos+1)>=e->sustain)
 			{
-				uint16_t curvdep;
-				uint16_t curtdep;
+				int16_t curvdep;
+				int16_t curtdep;
+
 				if (pc->vibswp<e->vibswp)
-					curvdep=((uint32_t)e->vibdep)*((int)pc->vibswp++)/(int)e->vibswp;
+					curvdep=((int32_t)e->vibdep)*((int)pc->vibswp++)/(int)e->vibswp;
 				else
 					curvdep=e->vibdep;
+
 				if (pc->tremswp<e->tremswp)
-					curtdep=((uint32_t)e->tremdep)*((int)pc->tremswp++)/(int)e->tremswp;
+					curtdep=((int32_t)e->tremdep)*((int)pc->tremswp++)/(int)e->tremswp;
 				else
 					curtdep=e->tremdep;
-				pc->resfrq+=((uint32_t)curvdep)*((int)sintab[(pc->vibpos>>8)&0xFF])/2048;
-				pc->resvol=((uint32_t)pc->resvol)*((int)getlinvol(((uint32_t)curtdep)*sintab[(pc->trempos>>8)&0xFF]/2048))/32768;
+
+				pc->resfrq+=((int32_t)curvdep)*((int)sintab[(pc->vibpos>>8)&0xFF])/2048;
+				pc->resvol=((int32_t)pc->resvol)*((int)getlinvol(((int32_t)curtdep)*sintab[(pc->trempos>>8)&0xFF]/2048))/32768;
 				pc->vibpos+=e->vibrte;
 				pc->trempos+=e->tremrte;
 			}
 
 			mcpSet(i, mcpCVolume, (looped&&donotloop)?0:pc->resvol);
 			mcpSet(i, mcpCPanning, mc->pan-0x80);
-
 			mcpSet(i, mcpCPitch, pc->resfrq);
 			mcpSet(i, mcpCReverb, mc->reverb<<1);
 			mcpSet(i, mcpCChorus, mc->chorus<<1);
@@ -615,6 +662,7 @@ int __attribute__ ((visibility ("internal"))) midPlayMidi(const struct midifile 
 
 	looped=0;
 	instr=m->instruments;
+	instnum=m->instnum;
 	quatertick=m->tempo;
 	tracknum=m->tracknum;
 	tracks=m->tracks;
@@ -627,7 +675,6 @@ int __attribute__ ((visibility ("internal"))) midPlayMidi(const struct midifile 
 		trk[i].pos=tracks[i];
 		trk[i].tickpos=0;
 	}
-	memcpy(instmap, m->instmap, 128);
 	for (i=0; i<MAXCHAN; i++)
 		pchan[i].mch=0xFF;
 	for (i=0; i<16; i++)
@@ -637,11 +684,14 @@ int __attribute__ ((visibility ("internal"))) midPlayMidi(const struct midifile 
 		mchan[i].pan=0x80;
 		mchan[i].reverb=0;
 		mchan[i].chorus=0;
-		mchan[i].ins=((i==9)||(i==drumchannel2))?m->instmap[128]:0;
 		mchan[i].pitch=0;
 		mchan[i].mute=0;
 		mchan[i].rpn=0x7F7F;
-		mchan[i].pitchsens=2;
+		mchan[i].pitchsenssemitones=2; /* RPN (MSB=0x00 LSB=0x00) MSB=pitch bend sensitivity semitones */
+		mchan[i].pitchsenscents=0; /* RPN (MSB=0x00 LSB=0x00) LSB=pitch bend sensitivity cents */
+		mchan[i].bank_msb=((i==9) || (i==drumchannel2) ) ? 120 : 121;
+		mchan[i].bank_lsb=0;
+		mchan[i].ins=0;
 	}
 
 	channelnum=1;
@@ -679,7 +729,7 @@ void __attribute__ ((visibility ("internal"))) midGetChanInfo(uint8_t ch, struct
 	ci->reverb=mchan[ch].reverb;
 	ci->chorus=mchan[ch].chorus;
 	ci->pedal=mchan[ch].susp;
-	ci->pitch=((mchan[ch].pitch*mchan[ch].pitchsens)>>5);
+	ci->pitch=mchan[ch].pitch * (mchan[ch].pitchsenssemitones*100.0+mchan[ch].pitchsenscents)/(12.0*8192.0*100.0);
 	ci->notenum=0;
 	for (i=0; i<MAXCHANNOTE; i++)
 		if (mchan[ch].note[i]!=0xFF)
@@ -716,7 +766,8 @@ void __attribute__ ((visibility ("internal"))) midGetRealNoteVol(uint8_t ch, str
 			ci->volr[ci->notenum]=r;
 			ci->opt[ci->notenum]=pc->sus;
 			ci->note[ci->notenum]=pc->resfrq+pc->samp->normnote-12*256;
-			ci->ins[ci->notenum++]=(instr[mc->ins].prognum==0x80)?(0x80+pc->samp->sampnum):instr[mc->ins].prognum;
+#warning prognum == 0x80 for detecting drums are wrong....
+			ci->ins[ci->notenum++]=(instr[mc->ins].prognum==0x80)?(0x80+mc->note[i]):instr[mc->ins].prognum; /* used for making colors on dot-view, so if possible, each instrument and each drum should have "uniqe" numbers */
 		}
 }
 
