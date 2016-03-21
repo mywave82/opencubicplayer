@@ -151,7 +151,7 @@ static int   mastersrnd;
 static int   masterrvb;
 static int   masterchr;
 
-inline float frchk(float a)
+static inline float frchk(float a)
 {
 	switch (fpclassify(a))
 	{
