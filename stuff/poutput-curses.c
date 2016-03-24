@@ -39,7 +39,7 @@
 #define _CONSOLE_DRIVER
 
 #include "config.h"
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 #include <locale.h>
 #include <langinfo.h>
 #endif
@@ -78,13 +78,13 @@ static int Width, Height;
 
 static int fixbadgraphic;
 
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 static int useunicode = 0;
 #endif
 
 static void displayvoid(unsigned short y, unsigned short x, unsigned short len)
 {
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 	if (useunicode)
 	{
 		wchar_t buffer[CONSOLE_MAX_X+1];
@@ -110,7 +110,7 @@ static void displayvoid(unsigned short y, unsigned short x, unsigned short len)
 			addch(output);
 			len--;
 		}
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 	}
 #endif
 
@@ -118,7 +118,7 @@ static void displayvoid(unsigned short y, unsigned short x, unsigned short len)
 
 static void displaystr(unsigned short y, unsigned short x, unsigned char attr, const char *buf, unsigned short len)
 {
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 	if (useunicode)
 	{
 		wchar_t buffer[CONSOLE_MAX_X+1];
@@ -156,7 +156,7 @@ static void displaystr(unsigned short y, unsigned short x, unsigned char attr, c
 				buf++;
 			len--;
 		}
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 	}
 #endif
 }
@@ -164,7 +164,7 @@ static void displaystr(unsigned short y, unsigned short x, unsigned char attr, c
 
 static void displaystrattr(unsigned short y, unsigned short x, const uint16_t *buf, unsigned short len)
 {
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 	if (useunicode)
 	{
 		wchar_t buffer[CONSOLE_MAX_X+1];
@@ -222,13 +222,13 @@ static void displaystrattr(unsigned short y, unsigned short x, const uint16_t *b
 			buf++;
 			len--;
 		}
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 	}
 #endif
 
 }
 
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 static wchar_t bartops_unicode[17] = {
 ' ',
 L'\u2581', L'\u2581',
@@ -248,7 +248,7 @@ static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uin
 
 static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
 {
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 	if (useunicode)
 	{
 		drawbar (x, y, height, value, c);
@@ -339,14 +339,14 @@ static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, ui
 			displaystr(y, x, c&0xff, buf+i, 1);
 			y++;
 		}
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 	}
 #endif
 }
 
 static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
 {
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 	if (useunicode)
 	{
 		wchar_t buffer[2] = {0, 0};
@@ -426,7 +426,7 @@ static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uin
 			displaystr(y, x, c&0xff, buf+i, 1);
 			y--;
 		}
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 	}
 #endif
 }
@@ -669,7 +669,7 @@ int curses_init(void)
 	if ((fixbadgraphic=cfGetProfileBool("curses", "fixbadgraphic", 0, 0)))
 		fprintf(stderr, "curses: fixbadgraphic is enabled in config\n");
 
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 	setlocale(LC_CTYPE, "");
 
 	{
@@ -758,7 +758,7 @@ int curses_init(void)
 			chr_table[i]=i;
 	}
 
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 	if (useunicode)
 	{
 		chr_table[0x00]=' ';
@@ -833,7 +833,7 @@ int curses_init(void)
 		chr_table[(unsigned char)0xfa]=ACS_BULLET;
 		chr_table[(unsigned char)0xf9]=ACS_BULLET/*|A_BOLD*/;
 		chr_table[(unsigned char)0xfe]=ACS_BLOCK; /* used by volume bars */
-#ifdef USE_NCURSESW
+#ifdef HAVE_NCURSESW
 	}
 #endif
 

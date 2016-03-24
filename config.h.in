@@ -10,13 +10,32 @@
 # endif
 #endif
 
-#undef USE_NCURSESW
-#ifndef NO_CURSES
-#ifdef USE_NCURSESW
-#include <ncursesw/curses.h>
-#else
-#include <curses.h>
-#endif
+
+#undef HAVE_CURSES
+#undef HAVE_CURSES_ENHANCED
+#undef HAVE_CURSES_COLOR
+#undef HAVE_CURSES_OBSOLETE
+#undef HAVE_NCURSESW
+#undef HAVE_NCURSES
+#undef HAVE_CURSES_H
+#undef HAVE_NCURSESW_H
+#undef HAVE_NCURSES_H
+#undef HAVE_NCURSESW_CURSES_H
+#undef HAVE_NCURSES_CURSES_H
+#ifndef NO_CURSES /* some source files have symbols that crashes with ncurses macros etc. */
+#  if defined HAVE_NCURSESW_CURSES_H
+#    include <ncursesw/curses.h>
+#  elif defined HAVE_NCURSESW_H
+#    include <ncursesw.h>
+#  elif defined HAVE_NCURSES_CURSES_H
+#    include <ncurses/curses.h>
+#  elif defined HAVE_NCURSES_H
+#    include <ncurses.h>
+#  elif defined HAVE_CURSES_H
+#    include <curses.h>
+#  else
+#    error "SysV or X/Open-compatible Curses header file required"
+#  endif
 #endif
 
 #define MAXDLLLIST 150

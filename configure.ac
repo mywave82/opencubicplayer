@@ -342,27 +342,13 @@ AC_DEFINE_UNQUOTED(TIMIDITY_DEFAULT_PATH,"$tmpdefpath",place to install patches)
 AC_DEFINE(TIMIDITYPKGDATADIR,TIMIDITY_DEFAULT_PATH,a compatibility matter. ignore it.)
 
 dnl We first check for ncursesw, if that fails we revert back to ncurses
-AC_SUBST(NCURSES_LIBS)
-push_LIBS=$LIBS
-LIBS=
-AC_CHECK_LIB(ncursesw, initscr,
-	[
-		AC_DEFINE(USE_NCURSESW, 1)
-		AC_CHECK_LIB(ncursesw, resize_term, AC_DEFINE(HAVE_RESIZETERM))
-		NCURSES_LIBS="-lncursesw"
-		AC_CHECK_HEADER(ncursesw/curses.h, , AC_MSG_ERROR("ncursesw header files was not found"))
-		AC_CHECK_HEADER(locale.h, , AC_MSG_ERROR(["locale header file was not found (needed when using ncursesw)"]))
-		AC_CHECK_HEADER(langinfo.h, , AC_MSG_ERROR(["langinfo header file was not found (needed when using ncursesw)"]))
-	],[
-		AC_MSG_NOTICE([ncursesw not found, reverting to ncurses])
-		AC_CHECK_LIB(ncurses, initscr, , AC_MSG_ERROR("ncurses or ncursesw not found"))
-		AC_CHECK_LIB(ncurses, resize_term, AC_DEFINE(HAVE_RESIZETERM))
-		NCURSES_LIBS="-lncurses"
-		AC_CHECK_HEADER(curses.h, , AC_MSG_ERROR("ncurses header files was not found"))
-	]
-)
-LIBS=$push_LIBS
-
+AX_WITH_CURSES
+if test "x$ax_cv_ncursesw" != xyes && test "x$ax_cv_ncurses" != xyes; then
+	AC_MSG_ERROR([requires either NcursesW or Ncurses library])
+fi
+if test "x$ax_cv_curses_color" != xyes; then
+	AC_MSG_ERROR([requires an X/Open-compatible Curses library with color])
+fi
 
 AC_CHECK_LIB(z, zlibVersion, , AC_MSG_ERROR("zlib not found"))
 AC_SUBST(DL_LIBS)
