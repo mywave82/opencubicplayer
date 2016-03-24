@@ -1,6 +1,8 @@
 #ifndef _TIMIDITYPLAY_H
 #define _TIMIDITYPLAY_H
 
+struct notedotsdata;
+
 struct mglobinfo
 {
 	uint32_t curtick;
@@ -44,5 +46,6 @@ extern void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct
 extern void __attribute__ ((visibility ("internal"))) timidityGetChanInfo(uint8_t ch, struct mchaninfo *ci);
 
 extern void __attribute__ ((visibility ("internal"))) timidityChanSetup(/*const struct midifile *mid*/);
+extern int __attribute__ ((visibility ("internal"))) timidityGetDots(struct notedotsdata *d, int max);
 
 #endif

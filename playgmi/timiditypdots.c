@@ -26,28 +26,30 @@
 #include "types.h"
 
 #include "dev/mcp.h"
-#include "gmiplay.h"
+#include "timidityplay.h"
 #include "cpiface/cpiface.h"
 
-int __attribute__ ((visibility ("internal"))) gmiGetDots(struct notedotsdata *d, int max)
+int __attribute__ ((visibility ("internal"))) timidityGetDots(struct notedotsdata *d, int max)
 {
 	int i,j;
 	int pos=0;
 	for (i=0; i<plNLChan; i++)
 	{
-		struct mchaninfo2 ci;
+		struct mchaninfo ci;
 
 		if (pos>=max)
 			break;
-		midGetRealNoteVol(i, &ci);
+/*		timidityGetRealNoteVol(i, &ci);*/
+		timidityGetChanInfo(i, &ci);
+
 		for (j=0; j<ci.notenum; j++)
 		{
 			uint16_t vl, vr;
 
 			if (pos>=max)
 				break;
-			vl=ci.voll[j];
-			vr=ci.volr[j];
+			vl=ci.vol[j];//ci.voll[j];
+			vr=ci.vol[j];//ci.volr[j];
 
 			if (!vl&&!vr&&!ci.opt[j])
 				continue;
@@ -55,8 +57,8 @@ int __attribute__ ((visibility ("internal"))) gmiGetDots(struct notedotsdata *d,
 			d[pos].voll=vl<<1;
 			d[pos].volr=vr<<1;
 			d[pos].chan=i;
-			d[pos].note=ci.note[j]+12*256;
-			d[pos].col=(ci.ins[j]&15)+(ci.opt[j]?32:16);
+			d[pos].note=(ci.note[j]+12)*256;
+			d[pos].col=(ci.program&15/*ci.ins[j]&15*/)+(ci.opt[j]?32:16);
 			pos++;
 		}
 	}

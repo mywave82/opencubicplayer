@@ -1,123 +1,22 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-all: gmiptype.o playgmi$(LIB_SUFFIX) playtimidity$(LIB_SUFFIX)
-
-playgmi_so=gmiinit.o gmiload.o gmipchan.o gmipdots.o gmipinst.o gmipplay.o gmiplay.o gmifff.o gmifreepats.o gmipat.o #gmitimidity.o gmiultra.o
-playgmi$(LIB_SUFFIX): $(playgmi_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
+all: gmiptype.o playtimidity$(LIB_SUFFIX)
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) dumpfff dumpmidi dumppat dumpsf2 timidity-git/timidity/newton_table.c timidity-git/interface/*.o timidity-git/libarc/*.o timidity-git/timidity/*.o timidity-git/utils/*.o
+	rm -f *.o *$(LIB_SUFFIX) dumpmidi timidity-git/timidity/newton_table.c timidity-git/interface/*.o timidity-git/libarc/*.o timidity-git/timidity/*.o timidity-git/utils/*.o
 
 install:
-	$(CP) playgmi$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
 	$(CP) playtimidity$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/playgmi$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(LIBDIR)/playtimidity$(LIB_SUFFIX)"
-
-gmipat.o: gmipat.c gmipat.h gmiplay.h \
-	../config.h \
-	../types.h \
-	../dev/mcp.h \
-	../stuff/compat.h \
-	../stuff/err.h \
-	../stuff/imsrtns.h
-	$(CC) gmipat.c -o $@ -c
-
-gmisf2.o: gmisf2.c \
-	gmisf2.h \
-	gmiplay.h \
-	../config.h
-	$(CC) gmisf2.c -o $@ -c
-
-gmiultra.o: gmiultra.c gmipat.h gmiplay.h \
-	../config.h \
-	../types.h \
-	../boot/psetting.h \
-	../stuff/compat.h \
-	../stuff/err.h
-	$(CC) gmiultra.c -o $@ -c
-
-gmifreepats.o: gmifreepats.c gmipat.h gmiplay.h \
-	../config.h \
-	../types.h \
-	../boot/psetting.h \
-	../stuff/err.h
-	$(CC) gmifreepats.c -o $@ -c
 
 gmitimidity.o: gmitimidity.c gmipat.h gmiplay.h \
 	../config.h \
 	../types.h \
 	../stuff/err.h
 	$(CC) gmitimidity.c -o $@ -c
-
-gmifff.o: gmifff.c gmiplay.h \
-	../config.h \
-	../types.h
-	$(CC) gmifff.c -o $@ -c
-
-gmiinit.o: gmiinit.c gmiplay.h \
-	../config.h \
-	../types.h \
-	../dev/mcp.h \
-	../boot/psetting.h \
-	../stuff/compat.h
-	$(CC) gmiinit.c -o $@ -c
-
-gmiload.o: gmiload.c gmiplay.h \
-	../config.h \
-	../types.h \
-	../boot/psetting.h \
-	../dev/mcp.h \
-	../stuff/compat.h \
-	../stuff/err.h \
-	../stuff/imsrtns.h
-	$(CC) gmiload.c -o $@ -c
-
-gmipchan.o: gmipchan.c gmiplay.h \
-	../config.h \
-	../types.h \
-	../stuff/poutput.h \
-	../cpiface/cpiface.h
-	$(CC) gmipchan.c -o $@ -c
-
-gmipdots.o: gmipdots.c gmiplay.h \
-	../config.h \
-	../types.h \
-	../dev/mcp.h \
-	../cpiface/cpiface.h
-	$(CC) gmipdots.c -o $@ -c
-
-gmipinst.o: gmipinst.c gmiplay.h \
-	../config.h \
-	../types.h \
-	../dev/mcp.h \
-	../cpiface/cpiface.h
-	$(CC) gmipinst.c -o $@ -c
-
-gmipplay.o: gmipplay.c gmiplay.h \
-	../config.h \
-	../types.h \
-	../filesel/pfilesel.h \
-	../dev/mcp.h \
-	../boot/psetting.h \
-	../boot/plinkman.h \
-	../stuff/poutput.h \
-	../filesel/mdb.h \
-	../stuff/err.h \
-	../dev/deviwave.h \
-	../stuff/compat.h \
-	../cpiface/cpiface.h
-	$(CC) gmipplay.c -o $@ -c
-
-gmiplay.o: gmiplay.c gmiplay.h \
-	../config.h \
-	../types.h \
-	../dev/mcp.h
-	$(CC) gmiplay.c -o $@ -c
 
 gmiptype.o: gmiptype.c \
 	../config.h \
@@ -126,38 +25,12 @@ gmiptype.o: gmiptype.c \
 	../stuff/compat.h
 	$(CC) gmiptype.c -o $@ -c
 
-dumpfff.o: dumpfff.c \
-	../config.h \
-	../types.h \
-	gmifff-internals.h
-	$(CC) dumpfff.c -o $@ -c
-
-dumpfff: dumpfff.o
-	$(CC) -o $@ $^
-
-dumppat.o: dumppat.c \
-	../config.h \
-	../types.h \
-	gmipat.h
-	$(CC) dumppat.c -o $@ -c
-
-dumppat: dumppat.o
-	$(CC) -o $@ $^
-
 dumpmidi.o: dumpmidi.c \
 	../config.h \
 	../types.h
 	$(CC) dumpmidi.c -o $@ -c
 
 dumpmidi: dumpmidi.o
-	$(CC) -o $@ $^
-
-dumpsf2.o: dumpsf2.c \
-	../config.h \
-	../types.h
-	$(CC) dumpsf2.c -o $@ -c
-
-dumpsf2: dumpsf2.o
 	$(CC) -o $@ $^
 
 CFLAGS+= -Itimidity-git/interface -Itimidity-git/libarc -Itimidity-git/libunimod -Itimidity-git/timidity -Itimidity-git/utils -I. -DHAVE_CONFIG_H
@@ -284,6 +157,16 @@ timiditypchan.o: timiditypchan.c \
 	../cpiface/cpiface.h
 	$(CC) $< -o $@ -c
 
-playtimidity_so=timiditypchan.o timidityplay.o timiditypplay.o ocp-output.o $(interface_obj) $(libarc_obj) $(timidity_obj) $(utils_obj)
+timiditypdots.o: \
+	timiditypdots.c \
+	../config.h \
+	../types.h \
+	../dev/mcp.h \
+	timidityplay.h \
+	../stuff/poutput.h \
+	../cpiface/cpiface.h
+	$(CC) $< -o $@ -c
+
+playtimidity_so=timiditypchan.o timidityplay.o timiditypplay.o timiditypdots.o ocp-output.o $(interface_obj) $(libarc_obj) $(timidity_obj) $(utils_obj)
 playtimidity$(LIB_SUFFIX): $(playtimidity_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ -lm

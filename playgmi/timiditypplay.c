@@ -435,6 +435,7 @@ static int timidityOpenFile(const char *path, struct moduleinfostruct *info, FIL
 	plDrawGStrings=timidityDrawGStrings;
 	plGetMasterSample=plrGetMasterSample;
 	plGetRealMasterVolume=plrGetRealMasterVolume;
+	plUseDots(timidityGetDots);
 
 	plNLChan=16;
 	timidityChanSetup(/*&mid*/);
