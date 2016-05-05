@@ -7,7 +7,7 @@ plrbase_so=deviplay.o plrasm.o player.o
 
 devi_so=devigen.o
 
-mcpbase_so=deviwave.o mcp.o mix.o mixasm.o smpman.o
+mcpbase_so=deviwave.o mcp.o mix.o mixasm.o ringbuffer.o smpman.o
 
 mchasm_so=mchasm.o
 
@@ -165,6 +165,11 @@ plrasm.o: plrasm.c plrasm.h \
 	../config.h \
 	../types.h
 	$(CC) plrasm.c -o $@ -c
+
+ringbuffer.o: ringbuffer.c ringbuffer.h \
+	../config.h \
+	../types.h
+	$(CC) ringbuffer.c -o $@ -c
 
 sampler.o: sampler.c sampler.h \
 	../config.h \
