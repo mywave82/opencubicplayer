@@ -29,6 +29,7 @@ oggplay.o: oggplay.c \
 	../stuff/timer.h \
 	../dev/player.h \
 	../dev/deviplay.h \
+	../dev/ringbuffer.h \
 	../dev/plrasm.h \
 	../stuff/imsrtns.h \
 	oggplay.h

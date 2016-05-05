@@ -39,6 +39,7 @@
 #include "dev/player.h"
 #include "dev/deviplay.h"
 #include "dev/plrasm.h"
+#include "dev/ringbuffer.h"
 
 #include "oggplay.h"
 
@@ -55,7 +56,7 @@ static unsigned long voll,volr;
 static int pan;
 static int srnd;
 
-static uint16_t *buf16=NULL;
+static int16_t *buf16=NULL;
 static uint32_t bufpos;
 static uint32_t buflen;
 static void *plrbuf;
@@ -65,18 +66,19 @@ static void *plrbuf;
 static OggVorbis_File ov;
 static int oggstereo;
 static int oggrate;
-static uint32_t oggpos;
-static uint32_t ogglen;
-static uint8_t *oggbuf=NULL;
-static uint32_t oggbuflen;
-static uint32_t oggbufpos;
-static uint32_t oggbuffpos;
-static int32_t oggbufread;
-static uint32_t oggbufrate;
-static int active;
+static uint32_t oggpos; /* absolute sample position in the source stream */
+static uint32_t ogglen; /* absolute length in samples positions of the source stream */
+
+static uint16_t *oggbuf=NULL;
+static struct ringbuffer_t *oggbufpos;
+//static uint32_t oggbuflen;
+//static uint32_t oggbufpos;
+static uint_fast32_t oggbuffpos;
+//static int32_t oggbufread;
+static uint_fast32_t oggbufrate;
+static volatile int active;
 static int looped;
 static int donotloop;
-static uint32_t bufloopat;
 
 static int inpause;
 
@@ -85,6 +87,10 @@ static volatile int clipbusy=0;
 #define PANPROC \
 do { \
 	float _rs = rs, _ls = ls; \
+	if (reversestereo) \
+	{ \
+		pan = - pan; \
+	} \
 	if(pan==-64) \
 	{ \
 		float t=_ls; \
@@ -109,90 +115,62 @@ do { \
 
 static void oggIdler(void)
 {
-	size_t clean;
-
-	if ((ogglen==oggbuflen)||!active)
+	if (!active)
 		return;
 
-	clean=(oggbufpos+oggbuflen-oggbufread)%oggbuflen;
-	if (clean<8)
-		return;
-
-	clean-=8;
-	while (clean)
+	while (1)
 	{
-		size_t read=clean;
+		size_t read;
 		long result;
-		if ((ov_pcm_tell(&ov)<<(1+oggstereo))!=oggpos)
+		int pos1, pos2;
+		int length1, length2;
+
+		if (ov_pcm_tell(&ov)!=oggpos)
 #ifdef HAVE_OV_PCM_SEEK_LAP
-			ov_pcm_seek_lap(&ov, oggpos>>(1+oggstereo));
+			ov_pcm_seek_lap(&ov, oggpos);
 #else
-			ov_pcm_seek(&ov, oggpos>>(1+oggstereo));
+			ov_pcm_seek(&ov, oggpos);
 #endif
-		if ((oggbufread+read)>oggbuflen)
-			read=oggbuflen-oggbufread;
-		if ((oggpos+read)>=ogglen)
+		ringbuffer_get_head_bytes (oggbufpos, &pos1, &length1, &pos2, &length2);
+
+		if (!length1)
 		{
-			read=ogglen-oggpos;
-			bufloopat=oggbufread+read;
+			return;
 		}
-		if (read>0x10000)
-			read=0x10000;
+		read = length1;
+
+		/* check if we are going to read until EOF, and if so, do we allow loop or not */
+		if ((oggpos+(read<<(1+oggstereo)))>=ogglen)
+		{
+			if (donotloop)
+			{
+				looped |= 1;
+			} else {
+				looped &= ~1;
+				read=(ogglen-oggpos)<<(1+oggstereo);
+			}
+		}
 #ifndef WORDS_BIGENDIAN
-		result=ov_read(&ov, (char *)oggbuf+oggbufread, read, 0, 2, 1, &current_section);
+		result=ov_read(&ov, (char *)oggbuf+pos1, read, 0, 2, 1, &current_section);
 #else
-		result=ov_read(&ov, (char *)oggbuf+oggbufread, read, 1, 2, 1, &current_section);
+		result=ov_read(&ov, (char *)oggbuf+pos1, read, 1, 2, 1, &current_section);
 #endif
 		if (result<=0) /* broken data... we can survive */
 		{
-			memsetw(oggbuf+oggbufread, (uint16_t)0x8000, read>>1);
+			memsetw(oggbuf+pos1, (uint16_t)0x8000, read>>1);
 			result=read;
-		} else {
-			int16_t rs, ls;
-			int samples=result>>1;
-			int16_t *buffer=(int16_t *)(oggbuf+oggbufread);
-
-			if (oggstereo)
-			{
-				samples>>=1;
-				while (samples)
-				{
-					rs=buffer[0];
-					ls=buffer[1];
-					PANPROC;
-					buffer[0]=rs;
-					if (srnd)
-						buffer[1]=ls^0xffff;
-					else
-						buffer[1]=ls;
-					samples--;
-					buffer+=2;
-				}
-			} else while (samples)
-			{
-					rs=buffer[0];
-					ls=buffer[0];
-					PANPROC;
-					buffer[0]=((rs+ls)>>1);
-					samples--;
-					buffer++;
-			}
-
 		}
-		oggbufread=(oggbufread+result)%oggbuflen;
-		oggpos=(oggpos+result)%ogglen;
-		clean-=result;
+
+		ringbuffer_head_add_bytes (oggbufpos, result);
+		oggpos=(oggpos+(result>>(1+oggstereo)))%ogglen;
 	}
 }
 
 
 void __attribute__ ((visibility ("internal"))) oggIdle(void)
 {
-	uint32_t bufplayed;
 	uint32_t bufdelta;
 	uint32_t pass2;
-	int quietlen=0;
-	uint32_t toloop;
 
 	if (clipbusy++)
 	{
@@ -200,9 +178,14 @@ void __attribute__ ((visibility ("internal"))) oggIdle(void)
 		return;
 	}
 
-	bufplayed=plrGetBufPos()>>(stereo+bit16);
 
-	bufdelta=(buflen+bufplayed-bufpos)%buflen;
+	{
+		uint32_t bufplayed;
+
+		bufplayed=plrGetBufPos()>>(stereo+bit16);
+
+		bufdelta=(buflen+bufplayed-bufpos)%buflen;
+	}
 
 	if (!bufdelta)
 	{
@@ -212,404 +195,9 @@ void __attribute__ ((visibility ("internal"))) oggIdle(void)
 		return;
 	}
 	oggIdler();
-	if (oggbuflen!=ogglen)
-	{
-		uint32_t towrap=imuldiv((((oggbuflen+oggbufread-oggbufpos-1)%oggbuflen)>>(oggstereo+1)), 65536, oggbufrate);
-		if (bufdelta>towrap)
-			/*quietlen=bufdelta-towrap;*/
-			bufdelta=towrap;
-	}
 
 	if (inpause)
-		quietlen=bufdelta;
-
-	toloop=imuldiv(((bufloopat-oggbufpos)>>(1+oggstereo)), 65536, oggbufrate);
-	if (looped)
-		toloop=0;
-
-	bufdelta-=quietlen;
-
-	if (bufdelta>=toloop)
-	{
-		looped=1;
-		if (donotloop)
-		{
-			quietlen+=bufdelta-toloop;
-			bufdelta=toloop;
-		}
-	}
-
-
-	if (bufdelta)
-	{
-		uint32_t i;
-
-		if (oggbufrate==0x10000)
-		{
-			if (oggstereo)
-			{
-				uint32_t o=0;
-				while (o<bufdelta)
-				{
-					uint32_t w=(bufdelta-o)*4;
-					if ((oggbuflen-oggbufpos)<w)
-						w=oggbuflen-oggbufpos;
-					memcpy(buf16+2*o, oggbuf+oggbufpos, w);
-					o+=w>>2;
-					oggbufpos+=w;
-					if (oggbufpos>=oggbuflen)
-						oggbufpos-=oggbuflen;
-				}
-			} else {
-				uint32_t o=0;
-				while (o<bufdelta)
-				{
-					uint32_t w=(bufdelta-o)*2;
-					if ((oggbuflen-oggbufpos)<w)
-						w=oggbuflen-oggbufpos;
-					memcpy(buf16+o, oggbuf+oggbufpos, w);
-					o+=w>>1;
-					oggbufpos+=w;
-					if (oggbufpos>=oggbuflen)
-						oggbufpos-=oggbuflen;
-				}
-			}
-		} else if (oggstereo)
-		{
-			int32_t oggm1, c0, c1, c2, c3, ls, rs, vm1,v1,v2;
-			uint32_t ogg1, ogg2;
-			for (i=0; i<bufdelta; i++)
-			{
-
-				oggm1=oggbufpos-4; if (oggm1<0) oggm1+=oggbuflen;
-				ogg1=oggbufpos+4; if (ogg1>=oggbuflen) ogg1-=oggbuflen;
-				ogg2=oggbufpos+8; if (ogg2>=oggbuflen) ogg2-=oggbuflen;
-
-
-				c0 = *(uint16_t *)(oggbuf+oggbufpos)^0x8000;
-				vm1= *(uint16_t *)(oggbuf+oggm1)^0x8000;
-				v1 = *(uint16_t *)(oggbuf+ogg1)^0x8000;
-				v2 = *(uint16_t *)(oggbuf+ogg2)^0x8000;
-				c1 = v1-vm1;
-				c2 = 2*vm1-2*c0+v1-v2;
-				c3 = c0-vm1-v1+v2;
-				c3 =  imulshr16(c3,oggbuffpos);
-				c3 += c2;
-				c3 =  imulshr16(c3,oggbuffpos);
-				c3 += c1;
-				c3 =  imulshr16(c3,oggbuffpos);
-				ls = c3+c0;
-				if (ls<0)
-					ls=0;
-				if (ls>65535)
-					ls=65535;
-
-				c0 = *(uint16_t *)(oggbuf+oggbufpos+2)^0x8000;
-				vm1= *(uint16_t *)(oggbuf+oggm1+2)^0x8000;
-				v1 = *(uint16_t *)(oggbuf+ogg1+2)^0x8000;
-				v2 = *(uint16_t *)(oggbuf+ogg2+2)^0x8000;
-				c1 = v1-vm1;
-				c2 = 2*vm1-2*c0+v1-v2;
-				c3 = c0-vm1-v1+v2;
-				c3 =  imulshr16(c3,oggbuffpos);
-				c3 += c2;
-				c3 =  imulshr16(c3,oggbuffpos);
-				c3 += c1;
-				c3 =  imulshr16(c3,oggbuffpos);
-				rs = c3+c0;
-				if (rs<0)
-					rs=0;
-				if (rs>65535)
-					rs=65535;
-
-				buf16[2*i]=(uint16_t)ls^0x8000;
-				buf16[2*i+1]=(uint16_t)rs^0x8000;
-
-				oggbuffpos+=oggbufrate;
-				oggbufpos+=(oggbuffpos>>16)*4;
-				oggbuffpos&=0xFFFF;
-				if (oggbufpos>=oggbuflen)
-					oggbufpos-=oggbuflen;
-			}
-		} else {
-			int32_t oggm1, c0, c1, c2, c3, vm1,v1,v2;
-			uint32_t ogg1, ogg2;
-			for (i=0; i<bufdelta; i++)
-			{
-
-				oggm1=oggbufpos-2; if (oggm1<0) oggm1+=oggbuflen;
-				ogg1=oggbufpos+2; if (ogg1>=oggbuflen) ogg1-=oggbuflen;
-				ogg2=oggbufpos+4; if (ogg2>=oggbuflen) ogg2-=oggbuflen;
-
-				c0 = *(uint16_t *)(oggbuf+oggbufpos)^0x8000;
-				vm1= *(uint16_t *)(oggbuf+oggm1)^0x8000;
-				v1 = *(uint16_t *)(oggbuf+ogg1)^0x8000;
-				v2 = *(uint16_t *)(oggbuf+ogg2)^0x8000;
-				c1 = v1-vm1;
-				c2 = 2*vm1-2*c0+v1-v2;
-				c3 = c0-vm1-v1+v2;
-				c3 =  imulshr16(c3,oggbuffpos);
-				c3 += c2;
-				c3 =  imulshr16(c3,oggbuffpos);
-				c3 += c1;
-				c3 =  imulshr16(c3,oggbuffpos);
-				c3 += c0;
-				if (c3<0)
-					c3=0;
-				if (c3>65535)
-					c3=65535;
-
-				buf16[i]=(uint16_t)c3^0x8000;
-
-				oggbuffpos+=oggbufrate;
-				oggbufpos+=(oggbuffpos>>16)*2;
-				oggbuffpos&=0xFFFF;
-				if (oggbufpos>=oggbuflen)
-					oggbufpos-=oggbuflen;
-			}
-		}
-
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		bufdelta-=pass2;
-		if (bit16)
-		{
-			if (stereo)
-			{
-				if (reversestereo)
-				{
-					int16_t *p=(int16_t *)plrbuf+2*bufpos;
-					int16_t *b=(int16_t *)buf16;
-					if (signedout)
-					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[0];
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[0];
-							p+=2;
-							b+=2;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1]^0x8000;
-							p[1]=b[0]^0x8000;
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1]^0x8000;
-							p[1]=b[0]^0x8000;
-							p+=2;
-							b+=2;
-						}
-					}
-				} else {
-					int16_t *p=(int16_t *)plrbuf+2*bufpos;
-					int16_t *b=(int16_t *)buf16;
-					if (signedout)
-					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[0];
-							p[1]=b[1];
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[0];
-							p[1]=b[1];
-							p+=2;
-							b+=2;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[0]^0x8000;
-							p[1]=b[1]^0x8000;
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[0]^0x8000;
-							p[1]=b[1]^0x8000;
-							p+=2;
-							b+=2;
-						}
-					}
-				}
-			} else {
-				int16_t *p=(int16_t *)plrbuf+bufpos;
-				int16_t *b=(int16_t *)buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0];
-						p++;
-						b++;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0];
-						p++;
-						b++;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p++;
-						b++;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p++;
-						b++;
-					}
-				}
-			}
-		} else {
-			if (stereo)
-			{
-				if (reversestereo)
-				{
-					uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
-					uint8_t *b=(uint8_t *)buf16;
-					if (signedout)
-					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[3];
-							p[1]=b[1];
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[3];
-							p[1]=b[1];
-							p+=2;
-							b+=4;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[3]^0x80;
-							p[1]=b[1]^0x80;
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[3]^0x80;
-							p[1]=b[1]^0x80;
-							p+=2;
-							b+=4;
-						}
-					}
-				} else {
-					uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
-					uint8_t *b=(uint8_t *)buf16;
-					if (signedout)
-					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[3];
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[3];
-							p+=2;
-							b+=4;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1]^0x80;
-							p[1]=b[3]^0x80;
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1]^0x80;
-							p[1]=b[3]^0x80;
-							p+=2;
-							b+=4;
-						}
-					}
-				}
-			} else {
-				uint8_t *p=(uint8_t *)plrbuf+bufpos;
-				uint8_t *b=(uint8_t *)buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1];
-						p++;
-						b+=2;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1];
-						p++;
-						b+=2;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1]^0x80;
-						p++;
-						b+=2;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1]^0x80;
-						p++;
-						b+=2;
-					}
-				}
-			}
-		}
-		bufpos+=bufdelta+pass2;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
-	}
-
-	bufdelta=quietlen;
-	if (bufdelta)
-	{
+	{ /* If we are in pause, we fill buffer with the correct type of zeroes */
 		if ((bufpos+bufdelta)>buflen)
 			pass2=bufpos+bufdelta-buflen;
 		else
@@ -621,11 +209,459 @@ void __attribute__ ((visibility ("internal"))) oggIdle(void)
 				plrClearBuf((uint16_t *)plrbuf, pass2<<stereo, !signedout);
 		} else {
 			plrClearBuf(buf16, bufdelta<<stereo, !signedout);
-			plr16to8((uint8_t *)plrbuf+(bufpos<<stereo), buf16, (bufdelta-pass2)<<stereo);
+			plr16to8((uint8_t *)plrbuf+(bufpos<<stereo), (uint16_t *)buf16, (bufdelta-pass2)<<stereo);
 			if (pass2)
-				plr16to8((uint8_t *)plrbuf, buf16+((bufdelta-pass2)<<stereo), pass2<<stereo);
+				plr16to8((uint8_t *)plrbuf, (uint16_t *)buf16+((bufdelta-pass2)<<stereo), pass2<<stereo);
 		}
 		bufpos+=bufdelta;
+		if (bufpos>=buflen)
+			bufpos-=buflen;
+	} else {
+		int buf1, len1, buf2, len2;
+		int len;
+		int i;
+		int buf16_filled = 0;
+
+		/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
+		ringbuffer_get_tail_samples (oggbufpos, &buf1, &len1, &buf2, &len2);
+
+		len = len1 + len2;
+
+		/* are the speed 1:1, if so filling up buf16 is very easy */
+		if (oggbufrate==0x10000)
+		{
+			int16_t rs, ls;
+			int16_t *t = buf16;
+
+			if (oggstereo)
+			{
+				while (bufdelta && len)
+				{
+					rs = oggbuf[buf1<<1];
+					ls = oggbuf[(buf1<<1) + 1];
+
+					PANPROC;
+
+					*(t++) = rs;
+					*(t++) = ls;
+
+					buf16_filled++;
+					len--;
+					bufdelta--;
+					buf1++;
+
+					if (!--len1)
+					{
+						buf1 = buf2;
+						len1 = len2;
+						buf2 = -1;
+						len2 = 0;
+					}
+				}
+			} else {
+				while (bufdelta && len)
+				{
+					rs = ls = oggbuf[buf1];
+
+					PANPROC;
+
+					*(t++) = rs;
+					*(t++) = ls;
+
+					buf16_filled++;
+					len--;
+					bufdelta--;
+					buf1++;
+
+					if (!--len1)
+					{
+						buf1 = buf2;
+						len1 = len2;
+						buf2 = -1;
+						len2 = 0;
+					}
+				}
+			}
+			ringbuffer_tail_consume_samples (oggbufpos, buf16_filled); /* add this rate buf16_filled == tail_used */
+		} else {
+			/* We are going to perform cubic interpolation of rate conversion... this bit is tricky */
+			int tail_used = 0;
+			int16_t rs, ls;
+
+			uint_fast32_t oggbuffpos_new = oggbuffpos, len_consume;
+
+			oggbuffpos_new = oggbuffpos + oggbufrate;
+			len_consume = oggbuffpos_new >> 16;
+			oggbuffpos_new &= 0xffff;
+
+			len-=3; /* we need to look 3 samples into the future - or if we wanted to be perfect 1 sample into the passed and 2 into the future */
+			if (oggstereo)
+			{
+				while (bufdelta && (len > len_consume))
+				{
+					int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
+					int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
+
+					switch (len1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
+					{
+						default:
+							rvm1 = oggbuf[(buf1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
+							lvm1 = oggbuf[(buf1<<1)+1]^0x8000;
+							 rc0 = oggbuf[(buf1<<1)+2]^0x8000;
+							 lc0 = oggbuf[(buf1<<1)+3]^0x8000;
+							 rv1 = oggbuf[(buf1<<1)+4]^0x8000;
+							 lv1 = oggbuf[(buf1<<1)+5]^0x8000;
+							 rv2 = oggbuf[(buf1<<1)+6]^0x8000;
+							 lv2 = oggbuf[(buf1<<1)+7]^0x8000;
+							break;
+						case 3:
+							rvm1 = oggbuf[(buf1<<1)+0]^0x8000;
+							lvm1 = oggbuf[(buf1<<1)+1]^0x8000;
+							 rc0 = oggbuf[(buf1<<1)+2]^0x8000;
+							 lc0 = oggbuf[(buf1<<1)+3]^0x8000;
+							 rv1 = oggbuf[(buf1<<1)+4]^0x8000;
+							 lv1 = oggbuf[(buf1<<1)+5]^0x8000;
+							 rv2 = oggbuf[(buf2<<1)+0]^0x8000;
+							 lv2 = oggbuf[(buf2<<1)+1]^0x8000;
+							break;
+						case 2:
+							rvm1 = oggbuf[(buf1<<1)+0]^0x8000;
+							lvm1 = oggbuf[(buf1<<1)+1]^0x8000;
+							 rc0 = oggbuf[(buf1<<1)+2]^0x8000;
+							 lc0 = oggbuf[(buf1<<1)+3]^0x8000;
+							 rv1 = oggbuf[(buf2<<1)+0]^0x8000;
+							 lv1 = oggbuf[(buf2<<1)+1]^0x8000;
+							 rv2 = oggbuf[(buf2<<1)+2]^0x8000;
+							 lv2 = oggbuf[(buf2<<1)+3]^0x8000;
+							break;
+						case 1:
+							rvm1 = oggbuf[(buf1<<1)+0]^0x8000;
+							lvm1 = oggbuf[(buf1<<1)+1]^0x8000;
+							 rc0 = oggbuf[(buf2<<1)+0]^0x8000;
+							 lc0 = oggbuf[(buf2<<1)+1]^0x8000;
+							 rv1 = oggbuf[(buf2<<1)+2]^0x8000;
+							 lv1 = oggbuf[(buf2<<1)+3]^0x8000;
+							 rv2 = oggbuf[(buf2<<1)+4]^0x8000;
+							 lv2 = oggbuf[(buf2<<1)+5]^0x8000;
+							break;
+					}
+
+					rc1 = rv1-rvm1;
+					rc2 = 2*rvm1-2*rc0+rv1-rv2;
+					rc3 = rc0-rvm1-rv1+rv2;
+					rc3 =  imulshr16(rc3,oggbuffpos);
+					rc3 += rc2;
+					rc3 =  imulshr16(rc3,oggbuffpos);
+					rc3 += rc1;
+					rc3 =  imulshr16(rc3,oggbuffpos);
+					rc3 += rc0;
+					if (rc3<0)
+						rc3=0;
+					if (rc3>65535)
+						rc3=65535;
+
+					lc1 = lv1-lvm1;
+					lc2 = 2*lvm1-2*lc0+lv1-lv2;
+					lc3 = lc0-lvm1-lv1+lv2;
+					lc3 =  imulshr16(lc3,oggbuffpos);
+					lc3 += lc2;
+					lc3 =  imulshr16(lc3,oggbuffpos);
+					lc3 += lc1;
+					lc3 =  imulshr16(lc3,oggbuffpos);
+					lc3 += lc0;
+					if (lc3<0)
+						lc3=0;
+					if (lc3>65535)
+						lc3=65535;
+
+					rs = rc3 ^ 0x8000;
+					ls = lc3 ^ 0x8000;
+
+					PANPROC;
+
+					buf16[(buf16_filled<<1)+0] = rs;
+					buf16[(buf16_filled<<1)+1] = ls;
+
+					buf16_filled++;
+					bufdelta--;
+
+					{
+						oggbuffpos+=oggbufrate;
+
+						tail_used += len_consume;
+						len -= len_consume;
+
+						if (len_consume >= len1)
+						{
+							len_consume -= len1;
+
+							buf1 = buf2 + len_consume;
+							len1 = len2 - len_consume;
+							buf2 = -1;
+							len2 = 0;
+						} else {
+							len1 -= len_consume;
+							buf1 += len_consume;
+						}
+
+						oggbuffpos = oggbuffpos_new;
+
+						oggbuffpos_new = oggbuffpos + oggbufrate;
+						len_consume = oggbuffpos_new >> 16;
+						oggbuffpos_new &= 0xffff;
+					}
+				}
+			} else {
+				while (bufdelta && (len > len_consume))
+				{
+					int32_t c0, c1, c2, c3, vm1,v1,v2;
+
+					/* we temporary need data to be unsigned */
+					switch (len1)
+					{
+						default:
+							vm1 = oggbuf[buf1  ]^0x8000;
+							 c0 = oggbuf[buf1+1]^0x8000;
+							 v1 = oggbuf[buf1+2]^0x8000;
+							 v2 = oggbuf[buf1+3]^0x8000;
+							break;
+						case 3:
+							vm1 = oggbuf[buf1  ]^0x8000;
+							 c0 = oggbuf[buf1+1]^0x8000;
+							 v1 = oggbuf[buf1+2]^0x8000;
+							 v2 = oggbuf[buf2  ]^0x8000;
+							break;
+						case 2:
+							vm1 = oggbuf[buf1  ]^0x8000;
+							 c0 = oggbuf[buf1+1]^0x8000;
+							 v1 = oggbuf[buf2  ]^0x8000;
+							 v2 = oggbuf[buf2+1]^0x8000;
+							break;
+						case 1:
+							vm1 = oggbuf[buf1  ]^0x8000;
+							 c0 = oggbuf[buf2  ]^0x8000;
+							 v1 = oggbuf[buf2+1]^0x8000;
+							 v2 = oggbuf[buf2+2]^0x8000;
+							break;
+					}
+
+					c1 = v1-vm1;
+					c2 = 2*vm1-2*c0+v1-v2;
+					c3 = c0-vm1-v1+v2;
+					c3 =  imulshr16(c3,oggbuffpos);
+					c3 += c2;
+					c3 =  imulshr16(c3,oggbuffpos);
+					c3 += c1;
+					c3 =  imulshr16(c3,oggbuffpos);
+					c3 += c0;
+					if (c3<0)
+						c3=0;
+					if (c3>65535)
+						c3=65535;
+
+					rs = ls = c3 ^ 0x8000;
+
+					PANPROC;
+
+					buf16[(buf16_filled<<1)+0] = rs;
+					buf16[(buf16_filled<<1)+1] = ls;
+
+					buf16_filled++;
+					bufdelta--;
+
+					{
+						oggbuffpos+=oggbufrate;
+
+						tail_used += len_consume;
+						len -= len_consume;
+
+						if (len_consume >= len1)
+						{
+							len_consume -= len1;
+
+							buf1 = buf2 + len_consume;
+							len1 = len2 - len_consume;
+							buf2 = -1;
+							len2 = 0;
+						} else {
+							len1 -= len_consume;
+							buf1 += len_consume;
+						}
+
+						oggbuffpos = oggbuffpos_new;
+
+						oggbuffpos_new = oggbuffpos + oggbufrate;
+						len_consume = oggbuffpos_new >> 16;
+						oggbuffpos_new &= 0xffff;
+					}
+				}
+			}
+			ringbuffer_tail_consume_samples (oggbufpos, tail_used);
+		}
+
+		if (buf16_filled)
+		{
+			looped &= ~2;
+		} else {
+			looped |= 2;
+		}
+
+#warning instead of pass2 logic, we could initially make bufdelta only use first or second segment!!!
+		if ((bufpos+buf16_filled)>buflen)
+			pass2=bufpos+buf16_filled-buflen;
+		else
+			pass2=0;
+
+		buf16_filled-=pass2;
+		if (bit16)
+		{
+			if (stereo)
+			{
+				int16_t *p=(int16_t *)plrbuf+2*bufpos;
+				int16_t *b=buf16;
+				if (signedout)
+				{
+					for (i=0; i<buf16_filled; i++)
+					{
+						p[0]=b[0];
+						p[1]=b[1];
+						p+=2;
+						b+=2;
+					}
+					p=(int16_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[0];
+						p[1]=b[1];
+						p+=2;
+						b+=2;
+					}
+				} else {
+					for (i=0; i<buf16_filled; i++)
+					{
+						p[0]=b[0]^0x8000;
+						p[1]=b[1]^0x8000;
+						p+=2;
+						b+=2;
+					}
+					p=(int16_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[0]^0x8000;
+						p[1]=b[1]^0x8000;
+						p+=2;
+						b+=2;
+					}
+				}
+			} else {
+				int16_t *p=(int16_t *)plrbuf+bufpos;
+				int16_t *b=buf16;
+				if (signedout)
+				{
+					for (i=0; i<buf16_filled; i++)
+					{
+						p[0]=b[0];
+						p++;
+						b++;
+					}
+					p=(int16_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[0];
+						p++;
+						b++;
+					}
+				} else {
+					for (i=0; i<buf16_filled; i++)
+					{
+						p[0]=b[0]^0x8000;
+						p++;
+						b++;
+					}
+					p=(int16_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[0]^0x8000;
+						p++;
+						b++;
+					}
+				}
+			}
+		} else {
+			if (stereo)
+			{
+				uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
+				int16_t *b=buf16;
+				if (signedout)
+				{
+					for (i=0; i<buf16_filled; i++)
+					{
+						p[0]=b[0]>>8;
+						p[1]=b[1]>>8;
+						p+=2;
+						b+=2;
+					}
+					p=(uint8_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[0]>>8;
+						p[1]=b[1]>>8;
+						p+=2;
+						b+=2;
+					}
+				} else {
+					for (i=0; i<buf16_filled; i++)
+					{
+						p[0]=(b[0]>>8)^0x80;
+						p[1]=(b[0]>>8)^0x80;
+						p+=2;
+						b+=2;
+					}
+					p=(uint8_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=(b[0]>>8)^0x80;
+						p[1]=(b[1]>>8)^0x80;
+						p+=2;
+						b+=2;
+					}
+				}
+			} else {
+				uint8_t *p=(uint8_t *)plrbuf+bufpos;
+				int16_t *b=buf16;
+				if (signedout)
+				{
+					for (i=0; i<buf16_filled; i++)
+					{
+						p[0]=(b[0]+b[1])>>9;
+						p++;
+						b+=2;
+					}
+					p=(uint8_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[1];
+						p++;
+						b+=2;
+					}
+				} else {
+					for (i=0; i<buf16_filled; i++)
+					{
+						p[0]=((b[0]+b[1])>>9)^0x80;
+						p++;
+						b+=2;
+					}
+					p=(uint8_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=((b[0]+b[1])>>9)^0x80;
+						p++;
+						b+=2;
+					}
+				}
+			}
+		}
+		bufpos+=buf16_filled+pass2;
 		if (bufpos>=buflen)
 			bufpos-=buflen;
 	}
@@ -659,6 +695,7 @@ static int close_func(void *datasource)
 int __attribute__ ((visibility ("internal"))) oggOpenPlayer(FILE *oggf)
 {
 	struct vorbis_info *vi;
+	long res;
 	if (!plrPlay)
 		return 0;
 
@@ -681,33 +718,43 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(FILE *oggf)
 
 	oggbufrate=imuldiv(65536, oggrate, samprate);
 
-	ogglen=ov_pcm_total(&ov, -1)<<(1+oggstereo);
+	ogglen=ov_pcm_total(&ov, -1);
 	if (!ogglen)
 		return 0;
 
-	oggbuflen=16384;
-	if (oggbuflen>ogglen)
-	{
-		oggbuflen=ogglen;
-		bufloopat=oggbuflen;
-	} else
-		bufloopat=0x40000000;
-	oggbuf=malloc(oggbuflen);
+	oggbuf=malloc(4096 * 4);
 	if (!oggbuf)
 		return 0;
-	ogglen=ogglen&~((1<<(oggstereo+1))-1);
-	oggbufpos=0;
+	oggbufpos = ringbuffer_new_samples ((oggstereo?RINGBUFFER_FLAGS_STEREO:0) | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 4096);
+	if (!oggbufpos)
+	{
+		free(oggbuf);
+		oggbuf = 0;
+		return 0;
+	}
 	oggbuffpos=0;
 	current_section=0;
 #ifdef WORDS_BIGENDIAN
-	if ((oggbufread=oggpos=ov_read(&ov, (char *)oggbuf, oggbuflen, 1, 2, 1, &current_section))<0)
+	if ((res=ov_read(&ov, (char *)oggbuf, 4096*4-1024, 1, 2, 1, &current_section))<0)
 #else
-	if ((oggbufread=oggpos=ov_read(&ov, (char *)oggbuf, oggbuflen, 0, 2, 1, &current_section))<0)
+	if ((res=ov_read(&ov, (char *)oggbuf, 4096*4-1024, 0, 2, 1, &current_section))<0)
 #endif
-		oggbufread=oggpos=0;
+	{
+		oggpos=0;
+	} else {
+		oggpos=res>>(1 + oggstereo);
+		ringbuffer_head_add_bytes (oggbufpos, res);
+	}
 
 	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize))
+	{
+		ringbuffer_free (oggbufpos);
+		oggbufpos = 0;
+
+		free(oggbuf);
+		oggbuf = 0;
 		return 0;
+	}
 
 	inpause=0;
 	looped=0;
@@ -723,7 +770,12 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(FILE *oggf)
 	if (!buf16)
 	{
 		plrClosePlayer();
+
+		ringbuffer_free (oggbufpos);
+		oggbufpos = 0;
+
 		free(oggbuf);
+		oggbuf = 0;
 		return 0;
 	}
 	bufpos=0;
@@ -731,6 +783,16 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(FILE *oggf)
 	if (!pollInit(oggIdle))
 	{
 		plrClosePlayer();
+
+		free (buf16);
+		buf16 = 0;
+
+		ringbuffer_free (oggbufpos);
+		oggbufpos = 0;
+
+		free(oggbuf);
+		oggbuf = 0;
+
 		return 0;
 	}
 	active=1;
@@ -746,9 +808,13 @@ void __attribute__ ((visibility ("internal"))) oggClosePlayer(void)
 
 	plrClosePlayer();
 
+	ringbuffer_free (oggbufpos);
+	oggbufpos = 0;
+
 	free(oggbuf);
-	free(buf16);
 	oggbuf=NULL;
+
+	free(buf16);
 	buf16=NULL;
 
 	ov_clear(&ov);
@@ -756,7 +822,7 @@ void __attribute__ ((visibility ("internal"))) oggClosePlayer(void)
 
 char __attribute__ ((visibility ("internal"))) oggLooped(void)
 {
-	return looped;
+	return !!(looped & 3);
 }
 
 void __attribute__ ((visibility ("internal"))) oggSetLoop(uint8_t s)
@@ -789,17 +855,15 @@ void __attribute__ ((visibility ("internal"))) oggSetVolume(uint8_t vol_, int8_t
 
 uint32_t __attribute__ ((visibility ("internal"))) oggGetPos(void)
 {
-	if (ogglen==oggbuflen)
-		return oggbufpos>>(oggstereo+1);
-	else
-		return ((oggpos+ogglen-oggbuflen+((oggbufpos-oggbufread+oggbuflen)%oggbuflen))%ogglen)>>(oggstereo+1);
+#warning TODO, deduct devp buffer!
+	return (oggpos+ogglen-ringbuffer_get_tail_available_samples(oggbufpos))%ogglen;
 }
 
 void __attribute__ ((visibility ("internal"))) oggGetInfo(struct ogginfo *i)
 {
 	static int lastsafe=0;
 	i->pos=oggGetPos();
-	i->len=ogglen>>(oggstereo+1);
+	i->len=ogglen;
 	i->rate=oggrate;
 	i->stereo=oggstereo;
 	i->bit16=1;
@@ -812,19 +876,9 @@ void __attribute__ ((visibility ("internal"))) oggGetInfo(struct ogginfo *i)
 
 void __attribute__ ((visibility ("internal"))) oggSetPos(uint32_t pos)
 {
-	pos=((pos<<(1+oggstereo))+ogglen)%ogglen;
-	if (ogglen==oggbuflen)
-		oggbufpos=pos;
-	else
-	{
-		if (((pos+oggbuflen)>oggpos)&&(pos<oggpos))
-			oggbufpos=(oggbufread-(oggpos-pos)+oggbuflen)%oggbuflen;
-		else
-		{
-			oggpos=pos;
-			oggbufpos=0;
-			oggbufread=1<<(1+oggstereo);
-		}
-	}
+	pos=(pos+ogglen)%ogglen;
+
+	oggpos=pos;
+	ringbuffer_reset(oggbufpos);
 }
 
