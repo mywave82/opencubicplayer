@@ -901,6 +901,10 @@ static void create_image(void)
 {
 	if (mLocalDisplay && XShmQueryExtension(mDisplay) )
 	{
+		if (image)
+		{
+			fprintf (stderr, "image already set, memory will be lost\n");
+		}
 		shm_completiontype = XShmGetEventBase(mDisplay) + ShmCompletion;
 		if (!(image = XShmCreateImage(mDisplay, XDefaultVisual(mDisplay, mScreen), XDefaultDepth(mDisplay, mScreen), ZPixmap, NULL, &shminfo[0], plScrLineBytes, plScrLines)))
 		{
@@ -1217,9 +1221,8 @@ static void plSetTextMode(unsigned char x)
 
 /*
 	XSetWMProtocols (mDisplay, window, &wm_delete_window, 1);
-*/
-
 	create_image();
+*/
 
 	x11_gflushpal();
 }
