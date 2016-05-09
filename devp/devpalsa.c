@@ -1612,6 +1612,7 @@ static void __attribute__((destructor))fini(void)
 		snd_pcm_sw_params_free(swparams);
 		swparams=NULL;
 	}
+	snd_config_update_free_global ();
 	alsa_mixers_n=0;
 }
 
