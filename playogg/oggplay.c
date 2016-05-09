@@ -68,9 +68,10 @@ static int oggstereo;
 static int oggrate;
 static uint32_t oggpos; /* absolute sample position in the source stream */
 static uint32_t ogglen; /* absolute length in samples positions of the source stream */
+static int oggneedseek;
 
-static uint16_t *oggbuf=NULL;
-static struct ringbuffer_t *oggbufpos;
+static int16_t *oggbuf=NULL;
+static struct ringbuffer_t *oggbufpos = 0;
 //static uint32_t oggbuflen;
 //static uint32_t oggbufpos;
 static uint_fast32_t oggbuffpos;
@@ -87,10 +88,6 @@ static volatile int clipbusy=0;
 #define PANPROC \
 do { \
 	float _rs = rs, _ls = ls; \
-	if (reversestereo) \
-	{ \
-		pan = - pan; \
-	} \
 	if(pan==-64) \
 	{ \
 		float t=_ls; \
@@ -121,16 +118,25 @@ static void oggIdler(void)
 	while (1)
 	{
 		size_t read;
-		long result;
+		long result = 0;
 		int pos1, pos2;
 		int length1, length2;
 
-		if (ov_pcm_tell(&ov)!=oggpos)
+		if (oggneedseek)
+		{
+			oggneedseek=0;
 #ifdef HAVE_OV_PCM_SEEK_LAP
 			ov_pcm_seek_lap(&ov, oggpos);
 #else
 			ov_pcm_seek(&ov, oggpos);
 #endif
+
+		}
+		if (ov_pcm_tell(&ov)!=oggpos)
+		{
+			fprintf (stderr, "[playogg]: warning, frame position is broken in file (got=%ld, expected=%d)\n", ov_pcm_tell(&ov), oggpos);
+		}
+
 		ringbuffer_get_head_bytes (oggbufpos, &pos1, &length1, &pos2, &length2);
 
 		if (!length1)
@@ -140,32 +146,46 @@ static void oggIdler(void)
 		read = length1;
 
 		/* check if we are going to read until EOF, and if so, do we allow loop or not */
-		if ((oggpos+(read<<(1+oggstereo)))>=ogglen)
+		if ((oggpos+(read>>(1+oggstereo)))>=ogglen)
+		{
+			read=(ogglen-oggpos)<<(1+oggstereo);
+		}
+
+		if (read)
+		{
+#ifndef WORDS_BIGENDIAN
+			result=ov_read(&ov, (char *)oggbuf+pos1, read, 0, 2, 1, &current_section);
+#else
+			result=ov_read(&ov, (char *)oggbuf+pos1, read, 1, 2, 1, &current_section);
+#endif
+
+			if (result<=0) /* broken data... we can survive */
+			{
+				memsetw((char *)oggbuf+pos1, 0x0000, read>>1);
+				fprintf (stderr, "[playogg] ov_read failed: %ld\n", result);
+				result=read;
+			}
+
+			ringbuffer_head_add_bytes (oggbufpos, result);
+		}
+
+		if ((oggpos+(result>>(1+oggstereo))) >= ogglen)
 		{
 			if (donotloop)
 			{
 				looped |= 1;
+				oggpos = ogglen;
+				break;
 			} else {
 				looped &= ~1;
-				read=(ogglen-oggpos)<<(1+oggstereo);
+				oggpos = 0;
+				oggneedseek = 1;
 			}
+		} else {
+			oggpos += result>>(1+oggstereo);
 		}
-#ifndef WORDS_BIGENDIAN
-		result=ov_read(&ov, (char *)oggbuf+pos1, read, 0, 2, 1, &current_section);
-#else
-		result=ov_read(&ov, (char *)oggbuf+pos1, read, 1, 2, 1, &current_section);
-#endif
-		if (result<=0) /* broken data... we can survive */
-		{
-			memsetw(oggbuf+pos1, (uint16_t)0x8000, read>>1);
-			result=read;
-		}
-
-		ringbuffer_head_add_bytes (oggbufpos, result);
-		oggpos=(oggpos+(result>>(1+oggstereo)))%ogglen;
 	}
 }
-
 
 void __attribute__ ((visibility ("internal"))) oggIdle(void)
 {
@@ -305,44 +325,44 @@ void __attribute__ ((visibility ("internal"))) oggIdle(void)
 					switch (len1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
 					{
 						default:
-							rvm1 = oggbuf[(buf1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
-							lvm1 = oggbuf[(buf1<<1)+1]^0x8000;
-							 rc0 = oggbuf[(buf1<<1)+2]^0x8000;
-							 lc0 = oggbuf[(buf1<<1)+3]^0x8000;
-							 rv1 = oggbuf[(buf1<<1)+4]^0x8000;
-							 lv1 = oggbuf[(buf1<<1)+5]^0x8000;
-							 rv2 = oggbuf[(buf1<<1)+6]^0x8000;
-							 lv2 = oggbuf[(buf1<<1)+7]^0x8000;
+							rvm1 = (uint16_t)oggbuf[(buf1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
+							lvm1 = (uint16_t)oggbuf[(buf1<<1)+1]^0x8000;
+							 rc0 = (uint16_t)oggbuf[(buf1<<1)+2]^0x8000;
+							 lc0 = (uint16_t)oggbuf[(buf1<<1)+3]^0x8000;
+							 rv1 = (uint16_t)oggbuf[(buf1<<1)+4]^0x8000;
+							 lv1 = (uint16_t)oggbuf[(buf1<<1)+5]^0x8000;
+							 rv2 = (uint16_t)oggbuf[(buf1<<1)+6]^0x8000;
+							 lv2 = (uint16_t)oggbuf[(buf1<<1)+7]^0x8000;
 							break;
 						case 3:
-							rvm1 = oggbuf[(buf1<<1)+0]^0x8000;
-							lvm1 = oggbuf[(buf1<<1)+1]^0x8000;
-							 rc0 = oggbuf[(buf1<<1)+2]^0x8000;
-							 lc0 = oggbuf[(buf1<<1)+3]^0x8000;
-							 rv1 = oggbuf[(buf1<<1)+4]^0x8000;
-							 lv1 = oggbuf[(buf1<<1)+5]^0x8000;
-							 rv2 = oggbuf[(buf2<<1)+0]^0x8000;
-							 lv2 = oggbuf[(buf2<<1)+1]^0x8000;
+							rvm1 = (uint16_t)oggbuf[(buf1<<1)+0]^0x8000;
+							lvm1 = (uint16_t)oggbuf[(buf1<<1)+1]^0x8000;
+							 rc0 = (uint16_t)oggbuf[(buf1<<1)+2]^0x8000;
+							 lc0 = (uint16_t)oggbuf[(buf1<<1)+3]^0x8000;
+							 rv1 = (uint16_t)oggbuf[(buf1<<1)+4]^0x8000;
+							 lv1 = (uint16_t)oggbuf[(buf1<<1)+5]^0x8000;
+							 rv2 = (uint16_t)oggbuf[(buf2<<1)+0]^0x8000;
+							 lv2 = (uint16_t)oggbuf[(buf2<<1)+1]^0x8000;
 							break;
 						case 2:
-							rvm1 = oggbuf[(buf1<<1)+0]^0x8000;
-							lvm1 = oggbuf[(buf1<<1)+1]^0x8000;
-							 rc0 = oggbuf[(buf1<<1)+2]^0x8000;
-							 lc0 = oggbuf[(buf1<<1)+3]^0x8000;
-							 rv1 = oggbuf[(buf2<<1)+0]^0x8000;
-							 lv1 = oggbuf[(buf2<<1)+1]^0x8000;
-							 rv2 = oggbuf[(buf2<<1)+2]^0x8000;
-							 lv2 = oggbuf[(buf2<<1)+3]^0x8000;
+							rvm1 = (uint16_t)oggbuf[(buf1<<1)+0]^0x8000;
+							lvm1 = (uint16_t)oggbuf[(buf1<<1)+1]^0x8000;
+							 rc0 = (uint16_t)oggbuf[(buf1<<1)+2]^0x8000;
+							 lc0 = (uint16_t)oggbuf[(buf1<<1)+3]^0x8000;
+							 rv1 = (uint16_t)oggbuf[(buf2<<1)+0]^0x8000;
+							 lv1 = (uint16_t)oggbuf[(buf2<<1)+1]^0x8000;
+							 rv2 = (uint16_t)oggbuf[(buf2<<1)+2]^0x8000;
+							 lv2 = (uint16_t)oggbuf[(buf2<<1)+3]^0x8000;
 							break;
 						case 1:
-							rvm1 = oggbuf[(buf1<<1)+0]^0x8000;
-							lvm1 = oggbuf[(buf1<<1)+1]^0x8000;
-							 rc0 = oggbuf[(buf2<<1)+0]^0x8000;
-							 lc0 = oggbuf[(buf2<<1)+1]^0x8000;
-							 rv1 = oggbuf[(buf2<<1)+2]^0x8000;
-							 lv1 = oggbuf[(buf2<<1)+3]^0x8000;
-							 rv2 = oggbuf[(buf2<<1)+4]^0x8000;
-							 lv2 = oggbuf[(buf2<<1)+5]^0x8000;
+							rvm1 = (uint16_t)oggbuf[(buf1<<1)+0]^0x8000;
+							lvm1 = (uint16_t)oggbuf[(buf1<<1)+1]^0x8000;
+							 rc0 = (uint16_t)oggbuf[(buf2<<1)+0]^0x8000;
+							 lc0 = (uint16_t)oggbuf[(buf2<<1)+1]^0x8000;
+							 rv1 = (uint16_t)oggbuf[(buf2<<1)+2]^0x8000;
+							 lv1 = (uint16_t)oggbuf[(buf2<<1)+3]^0x8000;
+							 rv2 = (uint16_t)oggbuf[(buf2<<1)+4]^0x8000;
+							 lv2 = (uint16_t)oggbuf[(buf2<<1)+5]^0x8000;
 							break;
 					}
 
@@ -706,7 +726,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(FILE *oggf)
 
 
 	vi=ov_info(&ov,-1);
-	oggstereo=vi->channels>=2;
+	oggstereo=vi->channels-1; //vi->channels>=2;
 	oggrate=vi->rate;
 
 	plrSetOptions(oggrate, (PLR_SIGNEDOUT|PLR_16BIT)|((oggstereo)?PLR_STEREO:0));
@@ -734,6 +754,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(FILE *oggf)
 	}
 	oggbuffpos=0;
 	current_section=0;
+	oggneedseek=0;
 #ifdef WORDS_BIGENDIAN
 	if ((res=ov_read(&ov, (char *)oggbuf, 4096*4-1024, 1, 2, 1, &current_section))<0)
 #else
@@ -761,6 +782,11 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(FILE *oggf)
 	voll=256;
 	volr=256;
 	pan=64;
+	if (reversestereo)
+	{
+		pan = -pan;
+	}
+
 	srnd=0;
 	oggSetVolume(64, 0, 64, 0);
 /*
@@ -845,6 +871,10 @@ void __attribute__ ((visibility ("internal"))) oggSetSpeed(uint16_t sp)
 void __attribute__ ((visibility ("internal"))) oggSetVolume(uint8_t vol_, int8_t bal_, int8_t pan_, uint8_t opt)
 {
 	pan=pan_;
+	if (reversestereo)
+	{
+		pan = -pan;
+	}
 	volr=voll=vol_*4;
 	if (bal_<0)
 		volr=(volr*(64+bal_))>>6;
@@ -878,6 +908,7 @@ void __attribute__ ((visibility ("internal"))) oggSetPos(uint32_t pos)
 {
 	pos=(pos+ogglen)%ogglen;
 
+	oggneedseek=1;
 	oggpos=pos;
 	ringbuffer_reset(oggbufpos);
 }

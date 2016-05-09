@@ -319,12 +319,28 @@ static int oggProcessKey(uint16_t key)
 		case '<':
 		case KEY_CTRL_LEFT:
 		/* case 0x7300: //ctrl-left */
-			oggSetPos(oggGetPos()-(ogglen>>5));
+			{
+				uint32_t pos = oggGetPos();
+				uint32_t newpos = pos -(ogglen>>5);
+				if (newpos > pos)
+				{
+					newpos = 0;
+				}
+				oggSetPos(newpos);
+			}
 			break;
 		case '>':
 		case KEY_CTRL_RIGHT:
 		/* case 0x7400: //ctrl-right */
-			oggSetPos(oggGetPos()+(ogglen>>5));
+			{
+				uint32_t pos = oggGetPos();
+				uint32_t newpos = pos + (ogglen>>5);
+				if ((newpos < pos) || (newpos > ogglen)) /* catch both wrap around (not likely), and overshots */
+				{
+					newpos = ogglen - 4;
+				}
+				oggSetPos(newpos);
+			}
 			break;
 /*
 		case 0x7700: //ctrl-home TODO keys
