@@ -636,7 +636,9 @@ out:
 static int list_devices_for_card(int card, struct modlist *ml, const struct dmDrive *drive, const uint32_t parent, const char *mask, unsigned long opt)
 {
 	char dev[64];
-	char *card_name;
+#ifdef ALSA_DEBUG
+	char *card_name = 0;
+#endif
 	int err;
 	int pcm_device=-1;
 	int cards=0;
@@ -656,16 +658,14 @@ static int list_devices_for_card(int card, struct modlist *ml, const struct dmDr
 #ifdef ALSA_DEBUG
 	fprintf(stderr, "ok\n");
 	fprintf(stderr, "ALSA snd_card_get_name(%i, &card_name) = ", card);
-#endif
 	if ((err=snd_card_get_name(card, &card_name))!=0)
 	{
-#ifdef ALSA_DEBUG
 		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
-		card_name="Unknown card";
+	} else {
+		fprintf(stderr, "ok, %s name: %s\n", dev, card_name);
+		free (card_name);
+		card_name = 0;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok, %s name: %s\n", dev, card_name);
 #endif
 
 	while(1)
@@ -713,7 +713,10 @@ static int list_devices_for_card(int card, struct modlist *ml, const struct dmDr
 		}
 
 #ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA: hw:%d,%d: name %s\n", card, pcm_device, snd_pcm_info_get_name(pcm_info));
+		card_name = snd_pcm_info_get_name (pcm_info);
+		fprintf(stderr, "ALSA: hw:%d,%d: name %s\n", card, pcm_device, card_name);
+		free (card_name);
+		card_name = 0;
 #endif
 		if (ml)
 		{
@@ -852,7 +855,7 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 			{
 				struct modlistentry entry;
 				memset(&entry, 0, sizeof(entry));
-				char *card_name;
+				char *card_name = 0;
 				int err;
 
 				if ((err=snd_card_get_name(card, &card_name))!=0)
@@ -860,7 +863,7 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 #ifdef ALSA_DEBUG
 					fprintf(stderr, "failed: %s\n", snd_strerror(-err));
 #endif
-					card_name="Unknown card";
+					card_name=strdup("Unknown card");
 				}
 
 				snprintf(entry.shortname, sizeof(entry.shortname), "hw:%d.dev", card);
@@ -883,6 +886,8 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 				entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=alsaSelectMixer;
 				modlist_append(ml, &entry);
 				dirdbUnref(entry.dirdbfullpath);
+				free (card_name);
+				card_name = 0;
 			}
 		} else
 			cards+=list_devices_for_card(card, ml, drive, parent, mask, opt);
@@ -1607,6 +1612,7 @@ static void __attribute__((destructor))fini(void)
 		snd_pcm_sw_params_free(swparams);
 		swparams=NULL;
 	}
+	alsa_mixers_n=0;
 }
 
 struct sounddevice plrAlsa={SS_PLAYER, 1, "ALSA device driver", alsaDetect, alsaInit, alsaClose, NULL};
