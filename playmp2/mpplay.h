@@ -22,7 +22,7 @@ extern void __attribute__ ((visibility ("internal"))) mpegSetAmplify(uint32_t am
 extern void __attribute__ ((visibility ("internal"))) mpegSetSpeed(uint16_t sp);
 extern void __attribute__ ((visibility ("internal"))) mpegSetVolume(uint8_t vol, int8_t bal, int8_t pan, uint8_t opt);
 extern void __attribute__ ((visibility ("internal"))) mpegGetInfo(struct mpeginfo *);
-extern int32_t __attribute__ ((visibility ("internal"))) mpegGetPos(void);
+extern uint32_t __attribute__ ((visibility ("internal"))) mpegGetPos(void);
 extern void __attribute__ ((visibility ("internal"))) mpegSetPos(uint32_t pos);
 
 #endif

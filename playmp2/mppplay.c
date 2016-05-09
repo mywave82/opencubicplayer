@@ -326,20 +326,26 @@ static int mpegProcessKey(uint16_t key)
 		case KEY_CTRL_LEFT:
 		/* case 0x7300: //ctrl-left  */
 			{
-				int skip=mpeglen>>5;
-				if (skip<128*1024)
-					skip=128*1024;
-				mpegSetPos(mpegGetPos()-skip);
+				uint32_t pos = mpegGetPos();
+				uint32_t newpos = pos - (mpeglen>>5);
+				if (newpos > pos)
+				{
+					newpos = 0;
+				}
+				mpegSetPos(newpos);
 			}
 			break;
 		case '>':
 		case KEY_CTRL_RIGHT:
 		/* case 0x7400: //ctrl-right */
 			{
-				int skip=mpeglen>>5;
-				if (skip<128*1024)
-					skip=128*1024;
-				mpegSetPos(mpegGetPos()+skip);
+				uint32_t pos = mpegGetPos();
+				uint32_t newpos = pos + (mpeglen>>5);
+				if ((newpos < pos) || (newpos > mpeglen))
+				{
+					newpos = mpeglen - 4;
+				}
+				mpegSetPos(newpos);
 			}
 			break;
 /*
