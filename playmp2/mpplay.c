@@ -128,6 +128,10 @@ do { \
 	} \
 	rs = _rs * volr / 256.0; \
 	ls = _ls * voll / 256.0; \
+	if (srnd) \
+	{ \
+		ls ^= 0xffff; \
+	} \
 } while(0)
 
 
@@ -161,11 +165,8 @@ static void audio_pcm_s16(int16_t *data, unsigned int nsamples, mad_fixed_t cons
 {
 	unsigned int len;
 	int ls, rs;
-	unsigned short xormask=0x0000;
 
 	len = nsamples;
-	if (srnd)
-		xormask=0xffff;
 
 	if (right) /* stereo */
 		while (len--)
@@ -173,7 +174,7 @@ static void audio_pcm_s16(int16_t *data, unsigned int nsamples, mad_fixed_t cons
 			rs = audio_linear_round(16, *left++);
 			ls = audio_linear_round(16, *right++);
 			data[0] = rs;
-			data[1] = (int16_t)ls^xormask;
+			data[1] = ls;
 			data += 2;
 		}
 	else /* mono */
@@ -181,7 +182,7 @@ static void audio_pcm_s16(int16_t *data, unsigned int nsamples, mad_fixed_t cons
 		{
 			rs = ls = audio_linear_round(16, *left++);
 			data[0] = rs;
-			data[1] = (signed short)ls^xormask;
+			data[1] = ls;
 		}
 }
 
@@ -405,11 +406,11 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 			pass2=0;
 		if (bit16)
 		{
-			plrClearBuf((uint16_t *)plrbuf+(bufpos<<stereo), (bufdelta-pass2)<<stereo, !signedout);
+			plrClearBuf((uint16_t *)plrbuf+(bufpos<<stereo), (bufdelta-pass2)<<stereo, signedout);
 			if (pass2)
-				plrClearBuf((uint16_t *)plrbuf, pass2<<stereo, !signedout);
+				plrClearBuf((uint16_t *)plrbuf, pass2<<stereo, signedout);
 		} else {
-			plrClearBuf(buf16, bufdelta<<stereo, !signedout);
+			plrClearBuf(buf16, bufdelta<<stereo, signedout);
 			plr16to8((uint8_t *)plrbuf+(bufpos<<stereo), (uint16_t *)buf16, (bufdelta-pass2)<<stereo);
 			if (pass2)
 				plr16to8((uint8_t *)plrbuf, (uint16_t *)buf16+((bufdelta-pass2)<<stereo), pass2<<stereo);
@@ -783,14 +784,7 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(FILE *mpe
 
 	inpause=0;
 	looped=0;
-	voll=256;
-	volr=256;
-	pan=64;
-	if (reversestereo)
-	{
-		pan = -pan;
-	}
-	srnd=0;
+	mpegSetVolume(64, 0, 64, 0);
 	mpegSetAmplify(65536);
 
 	mad_stream_init(&stream);
@@ -895,7 +889,7 @@ void __attribute__ ((visibility ("internal"))) mpegSetLoop(uint8_t s)
 }
 char __attribute__ ((visibility ("internal"))) mpegIsLooped(void)
 {
-	return !!(looped & 3);
+	return looped == 3;
 }
 void __attribute__ ((visibility ("internal"))) mpegPause(uint8_t p)
 {
