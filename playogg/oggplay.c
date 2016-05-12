@@ -108,6 +108,10 @@ do { \
 	} \
 	rs = _rs * volr / 256.0; \
 	ls = _ls * voll / 256.0; \
+	if (srnd) \
+	{ \
+		ls ^= 0xffff; \
+	} \
 } while(0)
 
 static void oggIdler(void)
@@ -224,11 +228,11 @@ void __attribute__ ((visibility ("internal"))) oggIdle(void)
 			pass2=0;
 		if (bit16)
 		{
-			plrClearBuf((uint16_t *)plrbuf+(bufpos<<stereo), (bufdelta-pass2)<<stereo, !signedout);
+			plrClearBuf((uint16_t *)plrbuf+(bufpos<<stereo), (bufdelta-pass2)<<stereo, signedout);
 			if (pass2)
-				plrClearBuf((uint16_t *)plrbuf, pass2<<stereo, !signedout);
+				plrClearBuf((uint16_t *)plrbuf, pass2<<stereo, signedout);
 		} else {
-			plrClearBuf(buf16, bufdelta<<stereo, !signedout);
+			plrClearBuf(buf16, bufdelta<<stereo, signedout);
 			plr16to8((uint8_t *)plrbuf+(bufpos<<stereo), (uint16_t *)buf16, (bufdelta-pass2)<<stereo);
 			if (pass2)
 				plr16to8((uint8_t *)plrbuf, (uint16_t *)buf16+((bufdelta-pass2)<<stereo), pass2<<stereo);
@@ -779,15 +783,6 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(FILE *oggf)
 
 	inpause=0;
 	looped=0;
-	voll=256;
-	volr=256;
-	pan=64;
-	if (reversestereo)
-	{
-		pan = -pan;
-	}
-
-	srnd=0;
 	oggSetVolume(64, 0, 64, 0);
 /*
 	oggSetAmplify(amplify);   TODO */
@@ -848,7 +843,7 @@ void __attribute__ ((visibility ("internal"))) oggClosePlayer(void)
 
 char __attribute__ ((visibility ("internal"))) oggLooped(void)
 {
-	return !!(looped & 3);
+	return looped == 3;
 }
 
 void __attribute__ ((visibility ("internal"))) oggSetLoop(uint8_t s)
