@@ -1064,7 +1064,9 @@ static int __plSetGraphMode(int high)
 
 	set_state_graphmode (do_fullscreen);
 
+/*
 	create_image();
+*/
 
 	if ((plDepth!=8) || (plScrLineBytes!=image->bytes_per_line))
 	{
