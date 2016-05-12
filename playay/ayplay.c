@@ -40,6 +40,7 @@
 #include "dev/player.h"
 #include "dev/deviplay.h"
 #include "stuff/imsrtns.h"
+#include "dev/ringbuffer.h"
 #include "dev/plrasm.h"
 
 #include "ayplay.h"
@@ -78,7 +79,7 @@ static int pan;
 static int srnd;
 
 /* devp pre-buffer zone */
-static uint16_t *buf16; /* stupid dump that should go away */
+static int16_t *buf16; /* stupid dump that should go away */
 static uint16_t *_buf8; /* here we dump out data before it goes live... it now longer is 8bit, but the name sticks */
 static size_t _buf8_n; /* samples */
 /* devp buffer zone */
@@ -93,12 +94,13 @@ static int donotloop=1;
 
 
 /* ayIdler dumping locations */
-static uint8_t *aybuf;     /* the buffer */
-static uint32_t aybuflen;  /* total buffer size */
+static int16_t *aybuf;     /* the buffer */
+static struct ringbuffer_t *aybufpos = 0;
+//static uint32_t aybuflen;  /* total buffer size */
 /*static uint32_t aylen;*/     /* expected wave length */
-static uint32_t aybufread; /* actually this is the write head */
-static uint32_t aybufpos;  /* read pos */
-static uint32_t aybuffpos; /* read fine-pos.. when mpegbufrate has a fraction */
+//static uint32_t aybufread; /* actually this is the write head */
+//static uint32_t aybufpos;  /* read pos */
+static uint32_t aybuffpos; /* read fine-pos.. */
 static uint32_t aybufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
 
 /* clipper threadlock since we use a timer-signal */
@@ -127,31 +129,11 @@ do { \
 	} \
 	rs = _rs * volr / 256.0; \
 	ls = _ls * voll / 256.0; \
+	if (srnd) \
+	{ \
+		ls ^= 0xffff; \
+	} \
 } while(0)
-
-static void audio_pcm_s16(int16_t *dest, unsigned int nsamples, uint16_t *source)
-{
-	unsigned int len;
-	int ls, rs;
-	uint16_t xormask=0x0000;
-
-	len = nsamples;
-	if (srnd)
-		xormask=0xffff;
-
-	while (len--)
-	{
-		rs = *source;/*((*source) + ((*source)<<8))^0x8000;*/
-		source++;
-		ls = *source;/*((*source)+ ((*source)<<8))^0x8000;*/
-		source++;
-		PANPROC;
-		*dest = rs;
-		dest ++;
-		*dest = (int16_t)ls^xormask;
-		dest ++;
-	}
-}
 
 /* from main.c */
 unsigned int __attribute__ ((visibility ("internal"))) ay_in(int h,int l)
@@ -483,27 +465,28 @@ int __attribute__ ((visibility ("internal"))) ay_do_interrupt(void)
 		}
 	}
 
-	/* play frame, and stop if it's been silent for a while */
 	if(!sound_frame(1/*count==0 || !highspeed*/))
-		silent_for++;
-	else
-		silent_for=0;
-	if(silent_for>=silent_max)
 	{
-		silent_for=0;
-		/* do next track, or file, or just stop */
-		ay_track++;
-		if(ay_track>=aydata.num_tracks)
+		if((++silent_for) >= silent_max)
 		{
-			ay_track=0;
-			ay_looped=1;
-			/*/ playing=0;  TODO, here we must tag buffers */
+			if ( ((ay_track+1) >= aydata.num_tracks) && donotloop)
+			{
+				ay_looped |= 1;
+			} else {
+				/* do next track, or file, or just stop */
+				silent_for=0;
+				new_ay_track=ay_track+1;
+				if(new_ay_track>=aydata.num_tracks)
+				{
+					new_ay_track=0;
+				}
+			}
 		}
-		return 0;
+	} else {
+		ay_looped &= ~1;
+		silent_for = 0;
 	}
 
-/*
-	return(ui_frame());*/
 	return 0;
 }
 
@@ -511,33 +494,21 @@ void __attribute__ ((visibility ("internal"))) ay_driver_frame(uint16_t *stereo_
 {
 	_buf8=stereo_samples;
 	_buf8_n=bytes>>1;
-/*
-	while (bytes)
-	{
-		fprintf(stderr, "%02x ", *stereo_samples);
-		bytes--;
-		stereo_samples++;
-	}*/
 }
 
 static void ayIdler(void)
 {
-	size_t clean;
-
-	clean=(aybufpos+aybuflen-aybufread)%aybuflen;
-	if (clean<8)
 	{
-		clipbusy--;
-		return;
-	}
-
-	clean-=8;
-	while (clean)
-	{
-		size_t read=clean;
+		int pos1, pos2;
+		int length1, length2;
 
 		while (!_buf8_n)
 		{
+			if (donotloop && ay_looped)
+			{
+				return;
+			}
+
 			if (new_ay_track!=ay_track)
 			{
 				ay_track=new_ay_track;
@@ -550,29 +521,25 @@ static void ayIdler(void)
 				ay_z80_init(aydata.tracks[ay_track].data,
 				            aydata.tracks[ay_track].data_stacketc);
 			}
+
 			ay_z80loop();
 		}
-		if (read>_buf8_n)
-			read=_buf8_n;
-		if ((aybufread+read)>aybuflen)
-			read=aybuflen-aybufread;
-		audio_pcm_s16((int16_t *)(aybuf+(aybufread<<2)), read, _buf8);
-		/*memset(aybuf+(aybufread<<2), 0, read*4); */
-		aybufread=(aybufread+read)%aybuflen;
-		clean-=read;
-		_buf8+=read<<1;
-		_buf8_n-=read; /* 8bit + stereo as always */
-	}
+
+		ringbuffer_get_head_samples (aybufpos, &pos1, &length1, &pos2, &length2);
+
+		if (length1>_buf8_n)
+			length1=_buf8_n;
+		memcpy (aybuf + (pos1<<1), _buf8, length1<<2);
+		_buf8 += length1<<1;
+		_buf8_n -= length1;
+		ringbuffer_head_add_samples (aybufpos, length1);
+	} while (0);
 }
 
 void __attribute__ ((visibility ("internal"))) ayIdle(void)
 {
-	uint32_t bufplayed;
 	uint32_t bufdelta;
 	uint32_t pass2;
-	int quietlen=0;
-/*
-	uint32_t toloop;*/
 
 	if (clipbusy++)
 	{
@@ -580,11 +547,13 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 		return;
 	}
 
-	bufplayed=plrGetBufPos()>>(stereo+bit16);
-	bufdelta=(buflen+bufplayed-bufpos)%buflen;
+	{
+		uint32_t bufplayed;
 
+		bufplayed=plrGetBufPos()>>(stereo+bit16);
 
-	/* bufdelta is now in samples */
+		bufdelta=(buflen+bufplayed-bufpos)%buflen;
+	}
 
 	if (!bufdelta)
 	{
@@ -594,212 +563,256 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 		return;
 	}
 	ayIdler();
-	/* if (aybuflen!=aylen)  this has with looping TODO */
-	{
-		uint32_t towrap=imuldiv((((aybuflen+aybufread-aybufpos-1)%aybuflen)>>(/*aystereo+*/1)), 65536, aybufrate);
-		if (bufdelta>towrap)
-			/*quietlen=bufdelta-towrap;*/
-			bufdelta=towrap;
-	}
 
 	if (inpause)
-		quietlen=bufdelta;
-
-/* TODO, this has with lopping todo
-	toloop=imuldiv(((bufloopat-aybufpos)>>(1+aystereo)), 65536, aybufrate);
-	if (looped)
-		toloop=0;*/
-
-	bufdelta-=quietlen;
-
-/* TODO, this has with looping todo
-	if (bufdelta>=toloop)
-	{
-		looped=1;
-		if (donotloop)
-		{
-			quietlen+=bufdelta-toloop;
-			bufdelta=toloop;
-		}
-	}*/
-
-	if (bufdelta)
-	{
-		uint32_t i;
-
-		if (aybufrate==0x10000)
-		{
-			uint32_t o=0;
-			while (o<bufdelta)
-			{
-				uint32_t w=(bufdelta-o);
-				if ((aybuflen-aybufpos)<w)
-					w=aybuflen-aybufpos;
-				memcpy(buf16+(o<<1), aybuf+(aybufpos<<2), w<<2);
-		/*
-				{
-					unsigned char *c=aybuf+(aybufpos<<2);
-					int  a=w<<2;
-					while (a--)
-					{
-						fprintf(stderr, "%02x\n", *c);
-						c++;
-					}
-				}*/
-				o+=w;
-				aybufpos+=w;
-				if (aybufpos>=aybuflen)
-					aybufpos-=aybuflen;
-			}
-		} else {
-			int32_t aym1, c0, c1, c2, c3, ls, rs, vm1,v1,v2;
-			uint32_t ay1, ay2;
-			for (i=0; i<bufdelta; i++)
-			{
-
-				aym1=aybufpos-4; if (aym1<0) aym1+=aybuflen;
-				ay1=aybufpos+4; if (ay1>=aybuflen) ay1-=aybuflen;
-				ay2=aybufpos+8; if (ay2>=aybuflen) ay2-=aybuflen;
-
-
-				c0 = *(uint16_t *)(aybuf+(aybufpos<<2))^0x8000;
-				vm1= *(uint16_t *)(aybuf+(aym1<<2))^0x8000;
-				v1 = *(uint16_t *)(aybuf+(ay1<<2))^0x8000;
-				v2 = *(uint16_t *)(aybuf+(ay2<<2))^0x8000;
-				c1 = v1-vm1;
-				c2 = 2*vm1-2*c0+v1-v2;
-				c3 = c0-vm1-v1+v2;
-				c3 =  imulshr16(c3,aybuffpos);
-				c3 += c2;
-				c3 =  imulshr16(c3,aybuffpos);
-				c3 += c1;
-				c3 =  imulshr16(c3,aybuffpos);
-				ls = c3+c0;
-				if (ls<0)
-					ls=0;
-				if (ls>65535)
-					ls=65535;
-
-				c0 = *(uint16_t *)(aybuf+(aybufpos<<2)+2)^0x8000;
-				vm1= *(uint16_t *)(aybuf+(aym1<<2)+2)^0x8000;
-				v1 = *(uint16_t *)(aybuf+(ay1<<2)+2)^0x8000;
-				v2 = *(uint16_t *)(aybuf+(ay2<<2)+2)^0x8000;
-				c1 = v1-vm1;
-				c2 = 2*vm1-2*c0+v1-v2;
-				c3 = c0-vm1-v1+v2;
-				c3 =  imulshr16(c3,aybuffpos);
-				c3 += c2;
-				c3 =  imulshr16(c3,aybuffpos);
-				c3 += c1;
-				c3 =  imulshr16(c3,aybuffpos);
-				rs = c3+c0;
-				if (rs<0)
-					rs=0;
-				if (rs>65535)
-					rs=65535;
-
-				buf16[2*i]=(uint16_t)ls^0x8000;
-				buf16[2*i+1]=(uint16_t)rs^0x8000;
-
-				aybuffpos+=aybufrate;
-				aybufpos+=(aybuffpos>>16);
-				aybuffpos&=0xFFFF;
-				if (aybufpos>=aybuflen)
-					aybufpos-=aybuflen;
-			}
-		}
-
+	{ /* If we are in pause, we fill buffer with the correct type of zeroes */
 		if ((bufpos+bufdelta)>buflen)
 			pass2=bufpos+bufdelta-buflen;
 		else
 			pass2=0;
-		bufdelta-=pass2;
+		if (bit16)
+		{
+			plrClearBuf((uint16_t *)plrbuf+(bufpos<<stereo), (bufdelta-pass2)<<stereo, signedout);
+			if (pass2)
+				plrClearBuf((uint16_t *)plrbuf, pass2<<stereo, signedout);
+		} else {
+			plrClearBuf(buf16, bufdelta<<stereo, signedout);
+			plr16to8((uint8_t *)plrbuf+(bufpos<<stereo), (uint16_t *)buf16, (bufdelta-pass2)<<stereo);
+			if (pass2)
+				plr16to8((uint8_t *)plrbuf, (uint16_t *)buf16+((bufdelta-pass2)<<stereo), pass2<<stereo);
+		}
+		bufpos+=bufdelta;
+		if (bufpos>=buflen)
+			bufpos-=buflen;
+	} else {
+		int buf1, len1, buf2, len2;
+		int len;
+		int i;
+		int buf16_filled = 0;
+
+		/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
+		ringbuffer_get_tail_samples (aybufpos, &buf1, &len1, &buf2, &len2);
+
+		len = len1 + len2;
+
+		if (aybufrate==0x10000)
+		{
+			int16_t rs, ls;
+			int16_t *t = buf16;
+
+			while (bufdelta && len)
+			{
+				rs = aybuf[buf1<<1];
+				ls = aybuf[(buf1<<1) + 1];
+
+				PANPROC;
+
+				*(t++) = rs;
+				*(t++) = ls;
+
+				buf16_filled++;
+				len--;
+				bufdelta--;
+				buf1++;
+
+				if (!--len1)
+				{
+					buf1 = buf2;
+					len1 = len2;
+					buf2 = -1;
+					len2 = 0;
+				}
+			}
+			ringbuffer_tail_consume_samples (aybufpos, buf16_filled); /* add this rate buf16_filled == tail_used */
+		} else {
+			/* We are going to perform cubic interpolation of rate conversion... this bit is tricky */
+			int tail_used = 0;
+			int16_t rs, ls;
+
+			uint_fast32_t aybuffpos_new = aybuffpos, len_consume;
+
+			aybuffpos_new = aybuffpos + aybufrate;
+			len_consume = aybuffpos_new >> 16;
+			aybuffpos_new &= 0xffff;
+
+			len-=3; /* we need to look 3 samples into the future - or if we wanted to be perfect 1 sample into the passed and 2 into the future */
+			while (bufdelta && (len > len_consume))
+			{
+				int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
+				int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
+
+				switch (len1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
+				{
+					default:
+						rvm1 = (uint16_t)aybuf[(buf1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
+						lvm1 = (uint16_t)aybuf[(buf1<<1)+1]^0x8000;
+						 rc0 = (uint16_t)aybuf[(buf1<<1)+2]^0x8000;
+						 lc0 = (uint16_t)aybuf[(buf1<<1)+3]^0x8000;
+						 rv1 = (uint16_t)aybuf[(buf1<<1)+4]^0x8000;
+						 lv1 = (uint16_t)aybuf[(buf1<<1)+5]^0x8000;
+						 rv2 = (uint16_t)aybuf[(buf1<<1)+6]^0x8000;
+						 lv2 = (uint16_t)aybuf[(buf1<<1)+7]^0x8000;
+						break;
+					case 3:
+						rvm1 = (uint16_t)aybuf[(buf1<<1)+0]^0x8000;
+						lvm1 = (uint16_t)aybuf[(buf1<<1)+1]^0x8000;
+						 rc0 = (uint16_t)aybuf[(buf1<<1)+2]^0x8000;
+						 lc0 = (uint16_t)aybuf[(buf1<<1)+3]^0x8000;
+						 rv1 = (uint16_t)aybuf[(buf1<<1)+4]^0x8000;
+						 lv1 = (uint16_t)aybuf[(buf1<<1)+5]^0x8000;
+						 rv2 = (uint16_t)aybuf[(buf2<<1)+0]^0x8000;
+						 lv2 = (uint16_t)aybuf[(buf2<<1)+1]^0x8000;
+						break;
+					case 2:
+						rvm1 = (uint16_t)aybuf[(buf1<<1)+0]^0x8000;
+						lvm1 = (uint16_t)aybuf[(buf1<<1)+1]^0x8000;
+						 rc0 = (uint16_t)aybuf[(buf1<<1)+2]^0x8000;
+						 lc0 = (uint16_t)aybuf[(buf1<<1)+3]^0x8000;
+						 rv1 = (uint16_t)aybuf[(buf2<<1)+0]^0x8000;
+						 lv1 = (uint16_t)aybuf[(buf2<<1)+1]^0x8000;
+						 rv2 = (uint16_t)aybuf[(buf2<<1)+2]^0x8000;
+						 lv2 = (uint16_t)aybuf[(buf2<<1)+3]^0x8000;
+						break;
+					case 1:
+						rvm1 = (uint16_t)aybuf[(buf1<<1)+0]^0x8000;
+						lvm1 = (uint16_t)aybuf[(buf1<<1)+1]^0x8000;
+						 rc0 = (uint16_t)aybuf[(buf2<<1)+0]^0x8000;
+						 lc0 = (uint16_t)aybuf[(buf2<<1)+1]^0x8000;
+						 rv1 = (uint16_t)aybuf[(buf2<<1)+2]^0x8000;
+						 lv1 = (uint16_t)aybuf[(buf2<<1)+3]^0x8000;
+						 rv2 = (uint16_t)aybuf[(buf2<<1)+4]^0x8000;
+						 lv2 = (uint16_t)aybuf[(buf2<<1)+5]^0x8000;
+						break;
+				}
+
+				rc1 = rv1-rvm1;
+				rc2 = 2*rvm1-2*rc0+rv1-rv2;
+				rc3 = rc0-rvm1-rv1+rv2;
+				rc3 =  imulshr16(rc3,aybuffpos);
+				rc3 += rc2;
+				rc3 =  imulshr16(rc3,aybuffpos);
+				rc3 += rc1;
+				rc3 =  imulshr16(rc3,aybuffpos);
+				rc3 += rc0;
+				if (rc3<0)
+					rc3=0;
+				if (rc3>65535)
+					rc3=65535;
+
+				lc1 = lv1-lvm1;
+				lc2 = 2*lvm1-2*lc0+lv1-lv2;
+				lc3 = lc0-lvm1-lv1+lv2;
+				lc3 =  imulshr16(lc3,aybuffpos);
+				lc3 += lc2;
+				lc3 =  imulshr16(lc3,aybuffpos);
+				lc3 += lc1;
+				lc3 =  imulshr16(lc3,aybuffpos);
+				lc3 += lc0;
+				if (lc3<0)
+					lc3=0;
+				if (lc3>65535)
+					lc3=65535;
+
+				rs = rc3 ^ 0x8000;
+				ls = lc3 ^ 0x8000;
+
+				PANPROC;
+
+				buf16[(buf16_filled<<1)+0] = rs;
+				buf16[(buf16_filled<<1)+1] = ls;
+
+				buf16_filled++;
+				bufdelta--;
+
+				{
+					aybuffpos+=aybufrate;
+
+					tail_used += len_consume;
+					len -= len_consume;
+
+					if (len_consume >= len1)
+					{
+						len_consume -= len1;
+
+						buf1 = buf2 + len_consume;
+						len1 = len2 - len_consume;
+						buf2 = -1;
+						len2 = 0;
+					} else {
+						len1 -= len_consume;
+						buf1 += len_consume;
+					}
+
+					aybuffpos = aybuffpos_new;
+
+					aybuffpos_new = aybuffpos + aybufrate;
+					len_consume = aybuffpos_new >> 16;
+					aybuffpos_new &= 0xffff;
+				}
+			}
+			ringbuffer_tail_consume_samples (aybufpos, tail_used);
+		}
+
+		if (buf16_filled)
+		{
+			ay_looped &= ~2;
+		} else {
+			ay_looped |= 2;
+		}
+
+#warning instead of pass2 logic, we could initially make bufdelta only use first or second segment!!!
+		if ((bufpos+buf16_filled)>buflen)
+			pass2=bufpos+buf16_filled-buflen;
+		else
+			pass2=0;
+
+		buf16_filled-=pass2;
 		if (bit16)
 		{
 			if (stereo)
 			{
-				if (reversestereo)
+				int16_t *p=(int16_t *)plrbuf+2*bufpos;
+				int16_t *b=buf16;
+				if (signedout)
 				{
-					int16_t *p=(int16_t *)plrbuf+2*bufpos;
-					int16_t *b=(int16_t *)buf16;
-					if (signedout)
+					for (i=0; i<buf16_filled; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[0];
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[0];
-							p+=2;
-							b+=2;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1]^0x8000;
-							p[1]=b[0]^0x8000;
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1]^0x8000;
-							p[1]=b[0]^0x8000;
-							p+=2;
-							b+=2;
-						}
+						p[0]=b[0];
+						p[1]=b[1];
+						p+=2;
+						b+=2;
+					}
+					p=(int16_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[0];
+						p[1]=b[1];
+						p+=2;
+						b+=2;
 					}
 				} else {
-					int16_t *p=(int16_t *)plrbuf+2*bufpos;
-					int16_t *b=(int16_t *)buf16;
-					if (signedout)
+					for (i=0; i<buf16_filled; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[0];
-							p[1]=b[1];
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[0];
-							p[1]=b[1];
-							p+=2;
-							b+=2;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[0]^0x8000;
-							p[1]=b[1]^0x8000;
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[0]^0x8000;
-							p[1]=b[1]^0x8000;
-							p+=2;
-							b+=2;
-						}
+						p[0]=b[0]^0x8000;
+						p[1]=b[1]^0x8000;
+						p+=2;
+						b+=2;
+					}
+					p=(int16_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[0]^0x8000;
+						p[1]=b[1]^0x8000;
+						p+=2;
+						b+=2;
 					}
 				}
 			} else {
 				int16_t *p=(int16_t *)plrbuf+bufpos;
-				int16_t *b=(int16_t *)buf16;
+				int16_t *b=buf16;
 				if (signedout)
 				{
-					for (i=0; i<bufdelta; i++)
+					for (i=0; i<buf16_filled; i++)
 					{
 						p[0]=b[0];
 						p++;
@@ -813,7 +826,7 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 						b++;
 					}
 				} else {
-					for (i=0; i<bufdelta; i++)
+					for (i=0; i<buf16_filled; i++)
 					{
 						p[0]=b[0]^0x8000;
 						p++;
@@ -831,90 +844,50 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 		} else {
 			if (stereo)
 			{
-				if (reversestereo)
+				uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
+				int16_t *b=buf16;
+				if (signedout)
 				{
-					uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
-					uint8_t *b=(uint8_t *)buf16;
-					if (signedout)
+					for (i=0; i<buf16_filled; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[3];
-							p[1]=b[1];
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[3];
-							p[1]=b[1];
-							p+=2;
-							b+=4;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[3]^0x80;
-							p[1]=b[1]^0x80;
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[3]^0x80;
-							p[1]=b[1]^0x80;
-							p+=2;
-							b+=4;
-						}
+						p[0]=b[0]>>8;
+						p[1]=b[1]>>8;
+						p+=2;
+						b+=2;
+					}
+					p=(uint8_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[0]>>8;
+						p[1]=b[1]>>8;
+						p+=2;
+						b+=2;
 					}
 				} else {
-					uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
-					uint8_t *b=(uint8_t *)buf16;
-					if (signedout)
+					for (i=0; i<buf16_filled; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[3];
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[3];
-							p+=2;
-							b+=4;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1]^0x80;
-							p[1]=b[3]^0x80;
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1]^0x80;
-							p[1]=b[3]^0x80;
-							p+=2;
-							b+=4;
-						}
+						p[0]=(b[0]>>8)^0x80;
+						p[1]=(b[0]>>8)^0x80;
+						p+=2;
+						b+=2;
+					}
+					p=(uint8_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=(b[0]>>8)^0x80;
+						p[1]=(b[1]>>8)^0x80;
+						p+=2;
+						b+=2;
 					}
 				}
 			} else {
 				uint8_t *p=(uint8_t *)plrbuf+bufpos;
-				uint8_t *b=(uint8_t *)buf16;
+				int16_t *b=buf16;
 				if (signedout)
 				{
-					for (i=0; i<bufdelta; i++)
+					for (i=0; i<buf16_filled; i++)
 					{
-						p[0]=b[1];
+						p[0]=(b[0]+b[1])>>9;
 						p++;
 						b+=2;
 					}
@@ -926,46 +899,23 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 						b+=2;
 					}
 				} else {
-					for (i=0; i<bufdelta; i++)
+					for (i=0; i<buf16_filled; i++)
 					{
-						p[0]=b[1]^0x80;
+						p[0]=((b[0]+b[1])>>9)^0x80;
 						p++;
 						b+=2;
 					}
 					p=(uint8_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
-						p[0]=b[1]^0x80;
+						p[0]=((b[0]+b[1])>>9)^0x80;
 						p++;
 						b+=2;
 					}
 				}
 			}
 		}
-		bufpos+=bufdelta+pass2;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
-	}
-
-	bufdelta=quietlen;
-	if (bufdelta)
-	{
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		if (bit16)
-		{
-			plrClearBuf((uint16_t *)plrbuf+(bufpos<<stereo), (bufdelta-pass2)<<stereo, !signedout);
-			if (pass2)
-				plrClearBuf((uint16_t *)plrbuf, pass2<<stereo, !signedout);
-		} else {
-			plrClearBuf(buf16, bufdelta<<stereo, !signedout);
-			plr16to8((uint8_t *)plrbuf+(bufpos<<stereo), buf16, (bufdelta-pass2)<<stereo);
-			if (pass2)
-				plr16to8((uint8_t *)plrbuf, buf16+((bufdelta-pass2)<<stereo), pass2<<stereo);
-		}
-		bufpos+=bufdelta;
+		bufpos+=buf16_filled+pass2;
 		if (bufpos>=buflen)
 			bufpos-=buflen;
 	}
@@ -977,7 +927,6 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 
 	clipbusy--;
 }
-
 
 int __attribute__ ((visibility ("internal"))) ayOpenPlayer(FILE *file)
 {
@@ -999,49 +948,72 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(FILE *file)
 
 	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize))
 	{
-		if(aydata.tracks)
-			free(aydata.tracks);
-		if(aydata.filedata)
-			free(aydata.filedata);
+		free(aydata.tracks);
+		free(aydata.filedata);
+
+		aybufpos = 0;
+		aydata.tracks = 0;
+		aydata.filedata = 0;
 		return 0;
 	}
 
 	inpause=0;
-	voll=256;
-	volr=256;
-	pan=64;
-	srnd=0;
+	ay_looped=0;
 	aySetVolume(64, 0, 64, 0);
 /*
 	aySetAmplify(amplify);   TODO */
 	buf16=malloc(sizeof(uint16_t)*buflen*2);
 	if (!buf16)
 	{
-		if(aydata.tracks)
-			free(aydata.tracks);
-		if(aydata.filedata)
-			free(aydata.filedata);
 		plrClosePlayer();
+
+		free(aydata.tracks);
+		free(aydata.filedata);
+
+		aydata.tracks = 0;
+		aydata.filedata = 0;
+
 		return 0;
 	}
 	bufpos=0;
-	aybuflen=16384;
-	aybufread=0 /* stereo + 16bit */;
-	aybuf=malloc(aybuflen<<2/*stereo+16bit*/);
+	aybuf=malloc(16384<<2/*stereo+16bit*/);
 	if (!aybuf)
 	{
-		if(aydata.tracks)
-			free(aydata.tracks);
-		if(aydata.filedata)
-			free(aydata.filedata);
 		plrClosePlayer();
+
+		free(buf16);
+		free(aydata.tracks);
+		free(aydata.filedata);
+
+		aydata.tracks = 0;
+		aydata.filedata = 0;
+		buf16 = 0;
+
 		return 0;
 	}
-	aybufpos=10;
+
+	aybufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 16384);
+	if (!aybufpos)
+	{
+		plrClosePlayer();
+
+		free(buf16);
+		free(aybuf);
+		free(aydata.tracks);
+		free(aydata.filedata);
+
+		aydata.tracks = 0;
+		aydata.filedata = 0;
+		buf16 = 0;
+		aybuf = 0;
+
+		return 0;
+
+	}
+
 	aybuffpos=0;
 
 	ay_track=0;
-	ay_looped=0;
 /*
 	if(go_to_last)
 	{
@@ -1051,14 +1023,21 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(FILE *file)
 
 	if (!sound_init())
 	{
+		plrClosePlayer();
+
+		ringbuffer_free (aybufpos);
+
 		free(buf16);
 		free(aybuf);
+		free(aydata.tracks);
+		free(aydata.filedata);
 
-		if(aydata.tracks)
-			free(aydata.tracks);
-		if(aydata.filedata)
-			free(aydata.filedata);
-		plrClosePlayer();
+		aybufpos = 0;
+		aydata.tracks = 0;
+		aydata.filedata = 0;
+		buf16 = 0;
+		aybuf = 0;
+
 		return 0;
 	}
 
@@ -1075,14 +1054,21 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(FILE *file)
 	{
 		sound_end();
 
+		plrClosePlayer();
+
+		ringbuffer_free (aybufpos);
+
 		free(buf16);
 		free(aybuf);
+		free(aydata.tracks);
+		free(aydata.filedata);
 
-		if(aydata.tracks)
-			free(aydata.tracks);
-		if(aydata.filedata)
-			free(aydata.filedata);
-		plrClosePlayer();
+		aybufpos = 0;
+		aydata.tracks = 0;
+		aydata.filedata = 0;
+		buf16 = 0;
+		aybuf = 0;
+
 		return 0;
 	}
 
@@ -1097,19 +1083,23 @@ void __attribute__ ((visibility ("internal"))) ayClosePlayer(void)
 
 	plrClosePlayer();
 
+	ringbuffer_free (aybufpos);
+
 	free(buf16);
-
 	free(aybuf);
+	free(aydata.tracks);
+	free(aydata.filedata);
 
-	if(aydata.tracks)
-		free(aydata.tracks);
-	if(aydata.filedata)
-		free(aydata.filedata);
+	aybufpos = 0;
+	aydata.tracks = 0;
+	aydata.filedata = 0;
+	buf16 = 0;
+	aybuf = 0;
 }
 
 int __attribute__ ((visibility ("internal"))) ayIsLooped(void)
 {
-	return ay_looped;
+	return ay_looped == 3;
 }
 
 void __attribute__ ((visibility ("internal"))) aySetLoop(unsigned char s)
@@ -1132,11 +1122,15 @@ void __attribute__ ((visibility ("internal"))) aySetSpeed(uint16_t sp)
 void __attribute__ ((visibility ("internal"))) aySetVolume(unsigned char vol_, signed char bal_, signed char pan_, unsigned char opt)
 {
 	pan=pan_;
+	if (reversestereo)
+	{
+		pan = -pan;
+	}
 	volr=voll=vol_*4;
 	if (bal_<0)
-		volr=(volr*(64+bal_))>>6;
+		voll=(voll*(64+bal_))>>6;
 	else
-		voll=(voll*(64-bal_))>>6;
+		volr=(volr*(64-bal_))>>6;
 	srnd=opt;
 }
 
@@ -1153,4 +1147,5 @@ void __attribute__ ((visibility ("internal"))) ayGetInfo(struct ayinfo *info)
 void __attribute__ ((visibility ("internal"))) ayStartSong(int song)
 {
 	new_ay_track=song-1;
+	ringbuffer_reset(aybufpos);
 }

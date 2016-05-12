@@ -58,7 +58,7 @@ static int16_t amp;
 static int16_t speed;
 static int16_t reverb;
 static int16_t chorus;
-/*static char finespeed=8;*/
+static char finespeed=8;
 
 static uint32_t pausefadestart;
 static uint8_t pausefaderelspeed;
@@ -129,9 +129,7 @@ static void normalize(void)
 	srnd=set.srnd;
 	reverb=set.reverb;
 	chorus=set.chorus;
-/*
-	aySetAmplify(1024*amp);
-*/
+/*	aySetAmplify(1024*amp);*/
 	aySetVolume(vol, bal, pan, srnd);
 	aySetSpeed(speed);
 /*
@@ -175,6 +173,7 @@ static void ayDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 
 		writestring(buf[0], 0, 0x09, " vol: \372\372\372\372\372\372\372\372 ", 15);
 		writestring(buf[0], 15, 0x09, " srnd: \372  pan: l\372\372\372m\372\372\372r  bal: l\372\372\372m\372\372\372r ", 41);
+		writestring(buf[0], 56, 0x09, " spd: ---% \x1D ptch: ---% ", 24);
 		writestring(buf[0], 6, 0x0F, "\376\376\376\376\376\376\376\376", (vol+4)>>3);
 		writestring(buf[0], 22, 0x0F, srnd?"x":"o", 1);
 		if (((pan+70)>>4)==4)
@@ -184,21 +183,19 @@ static void ayDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 			writestring(buf[0], 38-((pan+70)>>4), 0x0F, "l", 1);
 		}
 		writestring(buf[0], 46+((bal+70)>>4), 0x0F, "I", 1);
+		_writenum(buf[0], 62, 0x0F, speed*100/256, 10, 3);
+		_writenum(buf[0], 75, 0x0F, speed*100/256, 10, 3);
 
-		writestring(buf[0], 57, 0x09, "amp: ...% filter: ...  ", 23);
-		_writenum(buf[0], 62, 0x0F, amp*100/64, 10, 3);
-/*
-		writestring(buf[0], 75, 0x0F, sidpGetFilter()?"on":"off", 3);
-*/
-		writestring(buf[0], 75, 0x0F, "off", 3);
 
-		writestring(buf[1],  0, 0x09," song .. of ..                                   cpu: ...%",80);
+		writestring(buf[1],  0, 0x09," song .. of ..                                 cpu: ...% amp: ...% filter: ...  ",80);
 		writenum(buf[1],  6, 0x0F, globinfo.track, 16, 2, 0);
 		writenum(buf[1], 12, 0x0F, globinfo.numtracks, 16, 2, 0);
-
-		_writenum(buf[1], 54, 0x0F, tmGetCpuUsage(), 10, 3);
-		writestring(buf[1], 57, 0x0F, "%", 1);
-
+		_writenum(buf[1], 52, 0x0F, tmGetCpuUsage(), 10, 3);
+		_writenum(buf[1], 62, 0x0F, amp*100/64, 10, 3);
+/*
+		writestring(buf[1], 75, 0x0F, sidpGetFilter()?"on":"off", 3);
+*/
+		writestring(buf[1], 75, 0x0F, "off", 3);
 
 		writestring(buf[2],  0, 0x09, " file \372\372\372\372\372\372\372\372.\372\372\372: .............................................  time: ..:.. ", 80);
 		writestring(buf[2],  6, 0x0F, currentmodname, _MAX_FNAME);
@@ -217,6 +214,7 @@ static void ayDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 
 		writestring(buf[0], 0, 0x09, "    volume: \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372  ", 30);
 		writestring(buf[0], 30, 0x09, " surround: \372   panning: l\372\372\372\372\372\372\372m\372\372\372\372\372\372\372r   balance: l\372\372\372\372\372\372\372m\372\372\372\372\372\372\372r  ", 72);
+		writestring(buf[0], 102, 0x09,  " speed: ---% \x1D pitch: ---%    ", 30);
 		writestring(buf[0], 12, 0x0F, "\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376", (vol+2)>>2);
 		writestring(buf[0], 41, 0x0F, srnd?"x":"o", 1);
 		if (((pan+68)>>3)==8)
@@ -226,6 +224,8 @@ static void ayDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 			writestring(buf[0], 70-((pan+68)>>3), 0x0F, "l", 1);
 		}
 		writestring(buf[0], 83+((bal+68)>>3), 0x0F, "I", 1);
+		_writenum(buf[0], 110, 0x0F, speed*100/256, 10, 3);
+		_writenum(buf[0], 124, 0x0F, speed*100/256, 10, 3);
 
 		writestring(buf[0], 105, 0x09, "amp: ...%                ", 23);
 		_writenum(buf[0], 110, 0x0F, amp*100/64, 10, 3);
@@ -272,6 +272,23 @@ static int ayProcessKey(uint16_t key)
 			cpiKeyHelp(KEY_CTRL_LEFT, "Jump to previous track");
 			cpiKeyHelp('>', "Jump to next track");
 			cpiKeyHelp(KEY_CTRL_RIGHT, "Jump to next track");
+			cpiKeyHelp('-', "Decrease volume (small)");
+			cpiKeyHelp('+', "Increase volume (small)");
+			cpiKeyHelp('/', "Move balance left (small)");
+			cpiKeyHelp('*', "Move balance right (small)");
+			cpiKeyHelp(',', "Move panning against normal (small)");
+			cpiKeyHelp('.', "Move panning against reverse (small)");
+			cpiKeyHelp(KEY_F(2), "Decrease volume");
+			cpiKeyHelp(KEY_F(3), "Increase volume");
+			cpiKeyHelp(KEY_F(4), "Toggle surround on/off");
+			cpiKeyHelp(KEY_F(5), "Move panning against normal");
+			cpiKeyHelp(KEY_F(6), "Move panning against reverse");
+			cpiKeyHelp(KEY_F(7), "Move balance left");
+			cpiKeyHelp(KEY_F(8), "Move balance right");
+			cpiKeyHelp(KEY_F(9), "Decrease pitch speed");
+			cpiKeyHelp(KEY_F(11), "Decrease pitch speed");
+			cpiKeyHelp(KEY_F(10), "Increase pitch speed");
+			cpiKeyHelp(KEY_F(12), "Increase pitch speed");
 			if (plrProcessKey)
 				plrProcessKey(key);
 			return 0;
@@ -306,6 +323,81 @@ static int ayProcessKey(uint16_t key)
 				ayStartSong(csg);
 				starttime=dos_clock();
 			}
+			break;
+		case '-':
+			if (vol>=2)
+				vol-=2;
+			aySetVolume(vol, bal, pan, srnd);
+			break;
+		case '+':
+			if (vol<=62)
+				vol+=2;
+			aySetVolume(vol, bal, pan, srnd);
+			break;
+		case '/':
+			if ((bal-=4)<-64)
+				bal=-64;
+			aySetVolume(vol, bal, pan, srnd);
+			break;
+		case '*':
+			if ((bal+=4)>64)
+				bal=64;
+			aySetVolume(vol, bal, pan, srnd);
+			break;
+		case ',':
+			if ((pan-=4)<-64)
+				pan=-64;
+			aySetVolume(vol, bal, pan, srnd);
+			break;
+		case '.':
+			if ((pan+=4)>64)
+				pan=64;
+			aySetVolume(vol, bal, pan, srnd);
+			break;
+		case KEY_F(2):
+			if ((vol-=8)<0)
+				vol=0;
+			aySetVolume(vol, bal, pan, srnd);
+			break;
+		case KEY_F(3):
+			if ((vol+=8)>64)
+				vol=64;
+			aySetVolume(vol, bal, pan, srnd);
+			break;
+		case KEY_F(4):
+			aySetVolume(vol, bal, pan, srnd=srnd?0:2);
+			break;
+		case KEY_F(5):
+			if ((pan-=16)<-64)
+				pan=-64;
+			aySetVolume(vol, bal, pan, srnd);
+			break;
+		case KEY_F(6):
+			if ((pan+=16)>64)
+				pan=64;
+			aySetVolume(vol, bal, pan, srnd);
+			break;
+		case KEY_F(7):
+			if ((bal-=16)<-64)
+				bal=-64;
+			aySetVolume(vol, bal, pan, srnd);
+			break;
+		case KEY_F(8):
+			if ((bal+=16)>64)
+				bal=64;
+			aySetVolume(vol, bal, pan, srnd);
+			break;
+		case KEY_F(9):
+		case KEY_F(11):
+			if ((speed-=finespeed)<16)
+				speed=16;
+			aySetSpeed(speed);
+			break;
+		case KEY_F(10):
+		case KEY_F(12):
+			if ((speed+=finespeed)>2048)
+				speed=2048;
+			aySetSpeed(speed);
 			break;
 
 		default:
