@@ -914,9 +914,9 @@ void __attribute__ ((visibility ("internal"))) mpegSetVolume(uint8_t vol_, int8_
 	}
 	volr=voll=vol_*4;
 	if (bal_<0)
-		volr=(volr*(64+bal_))>>6;
+		voll=(voll*(64+bal_))>>6;
 	else
-		voll=(voll*(64-bal_))>>6;
+		volr=(volr*(64-bal_))>>6;
 	srnd=opt;
 }
 void __attribute__ ((visibility ("internal"))) mpegGetInfo(struct mpeginfo *info)
