@@ -144,7 +144,7 @@ static unsigned long tmTicker;
 static volatile char overload;
 static volatile float cpuusage;
 
-static int stackused; /* we don't provide a stack, but is for locking */
+static volatile int stackused; /* we don't provide a stack, but is for locking */
 
 static void tmTimerHandler(int ignore)
 {
@@ -153,20 +153,19 @@ static void tmTimerHandler(int ignore)
 	gettimeofday(&pre, NULL);
 	tmTicker+=tmTimerRate;
 
-	tmIntCount+=tmTimerRate;
-	if (tmIntCount&0xFFFFc000)
-	{
-		tmIntCount&=0x3FFF;
-		if (tmTimerRoutineSlave)
-			tmTimerRoutineSlave();
-	}
-
 	if (stackused++)
 	{
 		stackused--;
 		cpuusage=100;
 		overload=1;
 		return;
+	}
+	tmIntCount+=tmTimerRate;
+	if (tmIntCount&0xFFFFc000)
+	{
+		tmIntCount&=0x3FFF;
+		if (tmTimerRoutineSlave)
+			tmTimerRoutineSlave();
 	}
 	if (!secure)
 	{
