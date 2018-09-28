@@ -29,9 +29,9 @@
 #include "types.h"
 #include "stuff/timer.h"
 #include "stuff/poll.h"
-
-#include "dev/player.h"
 #include "dev/deviplay.h"
+#include "dev/ringbuffer.h"
+#include "dev/player.h"
 #include "stuff/imsrtns.h"
 #include "dev/plrasm.h"
 #include "flacplay.h"
@@ -52,15 +52,14 @@ static FLAC__SeekableStreamDecoder *decoder = 0;
 #else
 FLAC__StreamDecoder *decoder = 0;
 #endif
-static int eof = 0, eof_eof = 0;
+static int eof_flacfile = 0;
+static int eof_buffer = 0;
 static uint64_t samples;
 
 /* flacIdler dumping locations */
 static uint16_t *flacbuf;    /* in 16bit samples */
-static uint32_t  flacbuflen; /* size of the flac buffer window in samples-pairs (stereo), so multiply by 4 in order to get it in bytes */
 static uint32_t  flacbufrate; /* This is the mix rate in 16:16 fixed format */
-static uint32_t  flacbufread; /* actually this is the write head, in samples */
-static uint32_t  flacbufpos;  /* read pos, in samples*/
+static struct ringbuffer_t *flacbufpos;
 static uint32_t  flacbuffpos; /* read fine-pos.. when flacbufrate has a fraction */
 /* source info from stream */
 static unsigned int flacrate; /* this is the source rate */
@@ -71,7 +70,7 @@ static int flacbits=0;
 static uint64_t  flaclastpos;
 
 /* devp pre-buffer zone */
-static uint16_t *buf16; /* here we dump out data before it goes live (so we can fix sign, 8bit, etc, but not rate) */
+static uint16_t *buf16; /* here we dump data, with correct rate, ready for converting, sample size, layout, etc */
 
 /* devp buffer zone */
 static uint32_t bufpos; /* devp write head location */
@@ -137,7 +136,7 @@ static FLAC__StreamDecoderReadStatus read_callback (
 	return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
 }
 
-static inline int16_t make_16bit(const FLAC__int32 const src, int bps)
+static inline int16_t make_16bit(const FLAC__int32 src, int bps)
 {
 	if (bps==16)
 		return src;
@@ -168,6 +167,8 @@ static FLAC__StreamDecoderWriteStatus write_callback (
 	unsigned int i;
 	unsigned short xormask=0x0000;
 
+	int pos1, length1, pos2, length2;
+
 	if (frame->header.number_type==FLAC__FRAME_NUMBER_TYPE_FRAME_NUMBER)
 		flaclastpos=(uint64_t)(frame->header.number.frame_number) * frame->header.blocksize;
 	else
@@ -176,18 +177,35 @@ static FLAC__StreamDecoderWriteStatus write_callback (
 	if (srnd)
 		xormask=0xffff;
 
+	ringbuffer_get_head_samples (flacbufpos, &pos1, &length1, &pos2, &length2);
+
+	if (frame->header.blocksize > (length1+length2))
+	{
+		fprintf (stderr, "playflac: ERROR: frame->header.blocksize %d >= available space in ring-buffer %d + %d\n", frame->header.blocksize, length1, length2);
+		return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
+	}
+
 	for (i=0;i<frame->header.blocksize;i++)
 	{
 		int ls, rs;
+
 		ls  = make_16bit(buffer[0][i], frame->header.bits_per_sample);
 		rs = make_16bit(buffer[1][i], frame->header.bits_per_sample);
 		/* append to buffer */
 		PANPROC;
-		flacbuf[flacbufread*2]=(int16_t)ls^xormask;
-		flacbuf[flacbufread*2+1]=rs;
-		if (++flacbufread>=flacbuflen)
-			flacbufread=0;
+		flacbuf[pos1*2]=(int16_t)ls^xormask;
+		flacbuf[pos1*2+1]=rs;
+		pos1++;
+		if (!--length1)
+		{
+			pos1 = pos2;
+			length1 = length2;
+			pos2 = 0;
+			length2 = 0;
+		}
 	}
+
+	ringbuffer_head_add_samples (flacbufpos, frame->header.blocksize);
 
 	return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
@@ -206,7 +224,7 @@ static void metadata_callback(
 {
 	if (metadata->type!=FLAC__METADATA_TYPE_STREAMINFO)
 	{
-		fprintf(stderr, "FLAC__METADATA_TYPE_STREAMINFO is not the first header\n");
+		fprintf(stderr, "playflac: FLAC__METADATA_TYPE_STREAMINFO is not the first header\n");
 		return;
 	}
 
@@ -218,7 +236,8 @@ static void metadata_callback(
 
 	samples = metadata->data.stream_info.total_samples;
 
-	/*fprintf(stderr, "metadata.min_blocksize: %d\n", metadata->data.stream_info.min_blocksize);
+	/*
+	fprintf(stderr, "metadata.min_blocksize: %d\n", metadata->data.stream_info.min_blocksize);
 	fprintf(stderr, "metadata.max_blocksize: %d\n", metadata->data.stream_info.max_blocksize);
 	fprintf(stderr, "metadata.min_framesize: %d\n", metadata->data.stream_info.min_framesize);
 	fprintf(stderr, "metadata.max_framesize: %d\n", metadata->data.stream_info.max_framesize);
@@ -227,7 +246,8 @@ static void metadata_callback(
 	fprintf(stderr, "metadata.bits_per_sample: %d\n", metadata->data.stream_info.bits_per_sample);
 	fprintf(stderr, "metadata.total_samples: %lld\n", metadata->data.stream_info.total_samples);
 
-	fprintf(stderr, "metadata_callback TODO\n");*/
+	fprintf(stderr, "metadata_callback TODO\n");
+	*/
 	return;
 }
 
@@ -339,8 +359,7 @@ static void error_callback(
 	FLAC__StreamDecoderErrorStatus status,
 	void *client_data)
 {
-	fprintf(stderr, "playflac: ERROR\n");
-	fprintf(stderr, "playflac: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
+	fprintf(stderr, "playflac: ERROR libflac: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
 }
 #else
 static void error_callback(
@@ -348,14 +367,15 @@ static void error_callback(
 	FLAC__StreamDecoderErrorStatus status,
 	void *client_data)
 {
-	fprintf(stderr, "playflac: ERROR\n");
-	fprintf(stderr, "playflac: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
+	fprintf(stderr, "playflac: ERROR libflac: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
 }
 #endif
 
 int __attribute__ ((visibility ("internal"))) flacOpenPlayer(FILE *file)
 {
 	int temp;
+	uint32_t flacbuflen;
+
 	flacfile = file;
 
 	inpause=0;
@@ -363,11 +383,13 @@ int __attribute__ ((visibility ("internal"))) flacOpenPlayer(FILE *file)
 	volr=256;
 	pan=64;
 	srnd=0;
-	eof=0;
+	eof_flacfile=0;
+	eof_buffer=0;
 	flacSetAmplify(65536);
 
 	buf16=0;
 	flacbuf=0;
+	flacbufpos = 0;
 #if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
 	decoder = FLAC__seekable_stream_decoder_new();
 #else
@@ -461,9 +483,8 @@ int __attribute__ ((visibility ("internal"))) flacOpenPlayer(FILE *file)
 		goto error_out;
 	}
 
-	flacbufpos=0;
+	flacbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_STEREO, flacbuflen);
 	flacbuffpos=0;
-	flacbufread=0;
 
 	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize))
 	{
@@ -501,6 +522,11 @@ void __attribute__ ((visibility ("internal"))) flacClosePlayer(void)
 		free(flacbuf);
 		flacbuf=0;
 	}
+	if (flacbufpos)
+	{
+		ringbuffer_free (flacbufpos);
+		flacbufpos = 0;
+	}
 	if (buf16)
 	{
 		free(buf16);
@@ -520,17 +546,10 @@ void __attribute__ ((visibility ("internal"))) flacClosePlayer(void)
 
 static void flacIdler(void)
 {
-	/*
-	fprintf(stderr, "flacIdler\n");
-
-	fprintf(stderr, "flacbuflen = %d\nflacbufread (write head) = %d\nflacbufpos (read head) = %d\n", flacbuflen, flacbufread, flacbufpos);
-	fprintf(stderr, "((flacbuflen+flacbufpos-flacbufread-1)%%flacbuflen) = %d\n", ((flacbuflen+flacbufpos-flacbufread-1)%flacbuflen));
-	fprintf(stderr, "flac_max_blocksize = %d\n", flac_max_blocksize);
-	*/
-	while (((flacbuflen+flacbufpos-flacbufread-1)%flacbuflen) > flac_max_blocksize)
+	while (ringbuffer_get_head_available_samples (flacbufpos) >= flac_max_blocksize)
 	{
 		/* fprintf(stderr, "we can fit more data\n"); */
-		if (eof)
+		if (eof_flacfile)
 		{
 			/* fprintf(stderr, "eof reached\n"); */
 			break;
@@ -540,12 +559,12 @@ static void flacIdler(void)
 		{
 			if (donotloop)
 			{
-				eof=1;
+				eof_flacfile=1;
 				break;
 			} else {
 				if (!FLAC__seekable_stream_decoder_seek_absolute(decoder, 0))
 				{
-					eof=1;
+					eof_flacfile=1;
 					break;
 				}
 			}
@@ -555,12 +574,12 @@ static void flacIdler(void)
 		{
 			if (donotloop)
 			{
-				eof=1;
+				eof_flacfile=1;
 				break;
 			} else {
 				if (!FLAC__stream_decoder_seek_absolute(decoder, 0))
 				{
-					eof=1;
+					eof_flacfile=1;
 					break;
 				}
 			}
@@ -574,8 +593,9 @@ void __attribute__ ((visibility ("internal"))) flacIdle(void)
 	uint32_t bufdelta;
 	uint32_t pass2;
 	uint32_t i;
-	uint32_t flacfill;
 	uint32_t written=0;
+
+	int pos1, length1, pos2, length2;
 
 	if (clipbusy++)
 	{
@@ -586,8 +606,6 @@ void __attribute__ ((visibility ("internal"))) flacIdle(void)
 	/* Where is our devp reading head? */
 	bufplayed=plrGetBufPos()>>(stereo+bit16);
 	bufdelta=(buflen+bufplayed-bufpos)%buflen; /* all these are in samples */
-
-	/* fprintf(stderr, "bufdelta=%d (buflen=%d bufplayed=%d bufpos=%d)\n", bufdelta, buflen, bufplayed, bufpos); */
 
 	/* No delta on the devp? */
 	if (!bufdelta)
@@ -631,50 +649,109 @@ void __attribute__ ((visibility ("internal"))) flacIdle(void)
 		return;
 	}
 
-	flacfill = (flacbuflen+flacbufread-flacbufpos)%flacbuflen;
+	ringbuffer_get_tail_samples (flacbufpos, &pos1, &length1, &pos2, &length2);
 
 	if (flacbufrate==0x10000) /* 1.0... just copy into buf16 direct until we run out of target buffer or source buffer */
 	{
 		written=0;
-		if (bufdelta>flacfill)
+		if (bufdelta>(length1+length2))
 		{
-			bufdelta=flacfill;
-			eof_eof=1;
-		} else
-			eof_eof=0;
+			bufdelta=(length1+length2);
+			eof_buffer=1;
+		} else {
+			eof_buffer=0;
+		}
+
 		while (written<bufdelta)
 		{
 			uint32_t w=bufdelta-written;
-			if ((flacbuflen-flacbufpos)<w)
-				w=flacbuflen-flacbufpos;
-			memcpy(buf16+2/*stereo*/*written, flacbuf+flacbufpos*2/*stereo*/, w*sizeof(uint16_t)*2/*stereo*/);
+
+			if (!length1)
+			{
+				pos1 = pos2;
+				length1 = length2;
+				pos2 = 0;
+				length2 = 0;
+			}
+
+			if (!length1)
+			{
+				fprintf (stderr, "playflac: ERROR, length1 == 0, in flacIdle\n");
+				_exit(1);
+			}
+
+			if (w>length1)
+			{
+				w=length1;
+			}
+			memcpy(buf16+2/*stereo*/*written, flacbuf+pos1*2/*stereo*/, w*sizeof(uint16_t)*2/*stereo*/);
 			written+=w;
-			flacbufpos=(flacbufpos+w)%flacbuflen;
+
+			length1-=w;
+			pos1+=w;
+
+			ringbuffer_tail_consume_samples (flacbufpos, w);
 		}
 	} else { /* re-sample intil we don't have more target-buffer or source-buffer */
-		int32_t c0, c1, c2, c3, ls, rs, vm1, v1, v2, wpm1;
-		uint32_t wp1, wp2;
-		eof_eof=0;
+		int32_t c0, c1, c2, c3, ls, rs, vm1, v1, v2;
+		uint32_t wpm1, wp0, wp1, wp2;
+		unsigned int accumulated_progress = 0;
+		unsigned int progress;
+
+		eof_buffer=0;
+
 		for (i=0; i<bufdelta; i++)
 		{
 			/* will the interpolation overflow? */
-			if (flacfill < 3)
+			if ((length1+length2) <= 3)
 			{
-				eof_eof=1;
+				eof_buffer=1;
 				break;
 			}
-			/* will we overflow the flacbuf if we grab one more sample? */
-			if (flacfill < ((flacbufrate>>16)+(((flacbufrate&0xffff)+flacbuffpos)>=0x10000)))
+			/* will we overflow the flacbuf if we advance? */
+			if ((length1+length2) < ((flacbufrate+flacbuffpos)>>16))
 			{
-				eof_eof=1;
+				eof_buffer=1;
 				break;
 			}
+
+#if 0
 			wpm1=flacbufpos-1; if (wpm1<0) wpm1+=flacbuflen;
+			wp0 = flacbufpos;
 			wp1=flacbufpos+1; if (wp1>=flacbuflen) wp1-=flacbuflen;
 			wp2=flacbufpos+2; if (wp2>=flacbuflen) wp2-=flacbuflen;
+#else
+			switch (length1)
+			{
+				case 1:
+					wpm1 = pos1;
+					wp0  = pos2;
+					wp1  = pos2+1;
+					wp2  = pos2+2;
+					break;
+				case 2:
+					wpm1 = pos1;
+					wp0  = pos1+1;
+					wp1  = pos2;
+					wp2  = pos2+1;
+					break;
+				case 3:
+					wpm1 = pos1;
+					wp0  = pos1+1;
+					wp1  = pos1+2;
+					wp2  = pos2;
+					break;
+				default:
+					wpm1 = pos1;
+					wp0  = pos1+1;
+					wp1  = pos1+2;
+					wp2  = pos1+3;
+					break;
+			}
+#endif
 
-			c0 = (unsigned)(flacbuf[flacbufpos*2])^0x8000;
 			vm1= (unsigned)(flacbuf[wpm1*2])^0x8000;
+			c0 = (unsigned)(flacbuf[wp0*2])^0x8000;
 			v1 = (unsigned)(flacbuf[wp1*2])^0x8000;
 			v2 = (unsigned)(flacbuf[wp2*2])^0x8000;
 			c1 = v1-vm1;
@@ -691,8 +768,8 @@ void __attribute__ ((visibility ("internal"))) flacIdle(void)
 			else if (ls<0)
 				ls=0;
 
-			c0 = (unsigned)(flacbuf[flacbufpos*2+1])^0x8000;
 			vm1= (unsigned)(flacbuf[wpm1*2+1])^0x8000;
+			c0 = (unsigned)(flacbuf[wp0*2+1])^0x8000;
 			v1 = (unsigned)(flacbuf[wp1*2+1])^0x8000;
 			v2 = (unsigned)(flacbuf[wp2*2+1])^0x8000;
 			c1 = v1-vm1;
@@ -714,11 +791,27 @@ void __attribute__ ((visibility ("internal"))) flacIdle(void)
 			written++;
 
 			flacbuffpos+=flacbufrate;
-			flacbufpos+=flacbuffpos>>16;
+			progress = flacbuffpos>>16;
 			flacbuffpos&=0xFFFF;
-			if (flacbufpos>=flacbuflen)
-				flacbufpos-=flacbuflen;
+
+			accumulated_progress += progress;
+
+			/* did we wrap? if so, progress up to the wrapping point */
+			if (progress >= length1)
+			{
+				progress -= length1;
+				pos1 = pos2;
+				length1 = length2;
+				pos2 = 0;
+				length2 = 0;
+			}
+			if (progress)
+			{
+				pos1 += progress;
+				length1 -= progress;
+			}
 		}
+		ringbuffer_tail_consume_samples (flacbufpos, accumulated_progress);
 	}
 
 	bufdelta=written;
@@ -974,7 +1067,7 @@ void __attribute__ ((visibility ("internal"))) flacSetLoop(uint8_t s)
 }
 int __attribute__ ((visibility ("internal"))) flacIsLooped(void)
 {
-	return eof_eof&&eof;
+	return eof_buffer&&eof_flacfile;
 }
 void __attribute__ ((visibility ("internal"))) flacPause(int p)
 {
@@ -990,7 +1083,9 @@ void __attribute__ ((visibility ("internal"))) flacSetSpeed(uint16_t sp)
 	if (sp<32)
 		sp=32;
 	flacbufrate=imuldiv(256*sp, flacrate, plrRate);
+	/*
 	fprintf(stderr, "flacbufrate=0x%08x\n", flacbufrate);
+	*/
 }
 void __attribute__ ((visibility ("internal"))) flacSetVolume(uint8_t vol_, int8_t bal_, int8_t pan_, uint8_t opt)
 {

@@ -65,8 +65,9 @@ flacplay.o: flacplay.c \
 	../types.h \
 	../stuff/poll.h \
 	../stuff/timer.h \
-	../dev/player.h \
 	../dev/deviplay.h \
+	../dev/ringbuffer.h \
+	../dev/player.h \
 	../dev/plrasm.h \
 	../stuff/imsrtns.h \
 	flacplay.h
