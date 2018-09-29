@@ -53,8 +53,8 @@ static FILE *wavefile;
 static unsigned long wavelen;
 static unsigned long waverate;
 
-static long starttime;
-static long pausetime;
+static time_t starttime;
+static time_t pausetime;
 static char currentmodname[_MAX_FNAME+1];
 static char currentmodext[_MAX_EXT+1];
 static char *modname;
@@ -68,7 +68,7 @@ static short speed;
 static short reverb;
 static short chorus;
 static char finespeed=8;
-static uint32_t pausefadestart;
+static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
 
@@ -99,7 +99,7 @@ static void dopausefade(void)
 	int16_t i;
 	if (pausefadedirect>0)
 	{
-		i=((int32_t)dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
+		i=(dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
 		if (i<0)
 			i=0;
 		if (i>=64)
@@ -108,7 +108,7 @@ static void dopausefade(void)
 			pausefadedirect=0;
 		}
 	} else {
-		i=64-((int32_t)dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
+		i=64-(dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
 		if (i>=64)
 			i=64;
 		if (i<=0)
@@ -324,12 +324,28 @@ static int wavProcessKey(unsigned short key)
 		case '<':
 		case KEY_CTRL_LEFT:
 		/* case 0x7300: //ctrl-left */
-			wpSetPos(wpGetPos()-(wavelen>>5));
+			{
+				uint32_t pos = wpGetPos();
+				uint32_t newpos = pos -(wavelen>>5);
+				if (newpos > pos)
+				{
+					newpos = 0;
+				}
+				wpSetPos(newpos);
+			}
 			break;
 		case '>':
 		case KEY_CTRL_RIGHT:
 		/* case 0x7400: //ctrl-right */
-			wpSetPos(wpGetPos()+(wavelen>>5));
+			{
+				uint32_t pos = wpGetPos();
+				uint32_t newpos = pos + (wavelen>>5);
+				if ((newpos < pos) || (newpos > wavelen)) /* catch both wrap around (not likely), and overshots */
+				{
+					newpos = wavelen - 4;
+				}
+				wpSetPos(newpos);
+			}
 			break;
 /*
 		case 0x7700: //ctrl-home TODO keys
@@ -503,10 +519,10 @@ static int wavOpenFile(const char *path, struct moduleinfostruct *info, FILE *wa
 	plGetMasterSample=plrGetMasterSample;
 	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-	if (!wpOpenPlayer(wavefile, cfGetProfileBool2(cfSoundSec, "sound", "wavetostereo", 1, 1), cfGetProfileInt2(cfSoundSec, "sound", "waveratetolerance", 50, 10)*65))
+	if (!wpOpenPlayer(wavefile))
 	{
 #ifdef INITCLOSE_DEBUG
-		fprintf(stderr, "wvOpenPlayer FAILED\n");
+		fprintf(stderr, "wpOpenPlayer FAILED\n");
 #endif
 		return -1;
 	}

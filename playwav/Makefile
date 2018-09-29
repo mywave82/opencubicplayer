@@ -20,11 +20,11 @@ wavplay.o: wavplay.c wave.h \
 	../config.h \
 	../types.h \
 	../dev/deviplay.h \
-	../dev/mixclip.h \
 	../stuff/imsrtns.h \
 	../stuff/poll.h \
 	../dev/player.h \
-	../dev/plrasm.h
+	../dev/plrasm.h \
+	../dev/ringbuffer.h
 	$(CC) wavplay.c -o $@ -c
 
 wavptype.o: wavptype.c \

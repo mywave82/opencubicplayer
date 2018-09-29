@@ -10,7 +10,7 @@ struct waveinfo
 	int bit16;
 };
 
-extern unsigned char __attribute__ ((visibility ("internal"))) wpOpenPlayer(FILE *fp, int tostereo, int tolerance);
+extern unsigned char __attribute__ ((visibility ("internal"))) wpOpenPlayer(FILE *fp);
 extern void __attribute__ ((visibility ("internal"))) wpClosePlayer(void);
 extern void __attribute__ ((visibility ("internal"))) wpIdle(void);
 extern void __attribute__ ((visibility ("internal"))) wpSetLoop(unsigned char s);
