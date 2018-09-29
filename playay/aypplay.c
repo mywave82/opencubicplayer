@@ -45,7 +45,7 @@
 #define _MAX_EXT 4
 
 static time_t starttime;
-static long pausetime;
+static time_t pausetime;
 static char currentmodname[_MAX_FNAME+1];
 static char currentmodext[_MAX_EXT+1];
 static char *modname;
@@ -60,7 +60,7 @@ static int16_t reverb;
 static int16_t chorus;
 static char finespeed=8;
 
-static uint32_t pausefadestart;
+static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
 
