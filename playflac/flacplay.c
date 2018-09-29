@@ -82,6 +82,9 @@ static int signedout; /* boolean */
 static int reversestereo; /* boolean */
 static int donotloop=1;
 
+static int flacPendingSeek = 0;
+static uint64_t flacPendingSeekPos;
+
 #define PANPROC \
 do { \
 	float _rs = rs, _ls = ls; \
@@ -548,6 +551,22 @@ static void flacIdler(void)
 {
 	while (ringbuffer_get_head_available_samples (flacbufpos) >= flac_max_blocksize)
 	{
+		/* Seek, causes a decoding to happen */
+		if (flacPendingSeek)
+		{
+#if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
+			if (!FLAC__seekable_stream_decoder_seek_absolute(decoder, flacPendingSeekPos))
+#else
+			if (!FLAC__stream_decoder_seek_absolute(decoder, flacPendingSeekPos))
+#endif
+			{
+				fprintf (stderr, "playflac: ERROR: Seek failed\n");
+				eof_flacfile = 1;
+			}
+			flacPendingSeek = 0;
+			continue;
+		}
+
 		/* fprintf(stderr, "we can fit more data\n"); */
 		if (eof_flacfile)
 		{
@@ -556,46 +575,27 @@ static void flacIdler(void)
 		}
 #if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
 		if ((FLAC__seekable_stream_decoder_get_state(decoder)==FLAC__SEEKABLE_STREAM_DECODER_END_OF_STREAM)||(!FLAC__seekable_stream_decoder_process_single(decoder)))
-		{
-			if (donotloop)
-			{
-				eof_flacfile=1;
-				break;
-			} else {
-				if (!FLAC__seekable_stream_decoder_seek_absolute(decoder, 0))
-				{
-					eof_flacfile=1;
-					break;
-				}
-			}
-		}
 #else
 		if ((FLAC__stream_decoder_get_state(decoder)==FLAC__STREAM_DECODER_END_OF_STREAM)||(!FLAC__stream_decoder_process_single(decoder)))
+#endif
 		{
 			if (donotloop)
 			{
 				eof_flacfile=1;
 				break;
 			} else {
-				if (!FLAC__stream_decoder_seek_absolute(decoder, 0))
-				{
-					eof_flacfile=1;
-					break;
-				}
+				flacPendingSeek = 1;
+				flacPendingSeekPos = 0;
 			}
 		}
-#endif
 	}
 }
+
 void __attribute__ ((visibility ("internal"))) flacIdle(void)
 {
 	uint32_t bufplayed;
 	uint32_t bufdelta;
 	uint32_t pass2;
-	uint32_t i;
-	uint32_t written=0;
-
-	int pos1, length1, pos2, length2;
 
 	if (clipbusy++)
 	{
@@ -639,420 +639,411 @@ void __attribute__ ((visibility ("internal"))) flacIdle(void)
 		bufpos+=bufdelta;
 		if (bufpos>=buflen)
 			bufpos-=buflen;
-
-		plrAdvanceTo(bufpos<<(stereo+bit16));
-
-		if (plrIdle)
-			plrIdle();
-
-		clipbusy--;
-		return;
-	}
-
-	ringbuffer_get_tail_samples (flacbufpos, &pos1, &length1, &pos2, &length2);
-
-	if (flacbufrate==0x10000) /* 1.0... just copy into buf16 direct until we run out of target buffer or source buffer */
-	{
-		written=0;
-		if (bufdelta>(length1+length2))
-		{
-			bufdelta=(length1+length2);
-			eof_buffer=1;
-		} else {
-			eof_buffer=0;
-		}
-
-		while (written<bufdelta)
-		{
-			uint32_t w=bufdelta-written;
-
-			if (!length1)
-			{
-				pos1 = pos2;
-				length1 = length2;
-				pos2 = 0;
-				length2 = 0;
-			}
-
-			if (!length1)
-			{
-				fprintf (stderr, "playflac: ERROR, length1 == 0, in flacIdle\n");
-				_exit(1);
-			}
-
-			if (w>length1)
-			{
-				w=length1;
-			}
-			memcpy(buf16+2/*stereo*/*written, flacbuf+pos1*2/*stereo*/, w*sizeof(uint16_t)*2/*stereo*/);
-			written+=w;
-
-			length1-=w;
-			pos1+=w;
-
-			ringbuffer_tail_consume_samples (flacbufpos, w);
-		}
-	} else { /* re-sample intil we don't have more target-buffer or source-buffer */
-		int32_t c0, c1, c2, c3, ls, rs, vm1, v1, v2;
-		uint32_t wpm1, wp0, wp1, wp2;
-		unsigned int accumulated_progress = 0;
-		unsigned int progress;
-
-		eof_buffer=0;
-
-		for (i=0; i<bufdelta; i++)
-		{
-			/* will the interpolation overflow? */
-			if ((length1+length2) <= 3)
-			{
-				eof_buffer=1;
-				break;
-			}
-			/* will we overflow the flacbuf if we advance? */
-			if ((length1+length2) < ((flacbufrate+flacbuffpos)>>16))
-			{
-				eof_buffer=1;
-				break;
-			}
-
-#if 0
-			wpm1=flacbufpos-1; if (wpm1<0) wpm1+=flacbuflen;
-			wp0 = flacbufpos;
-			wp1=flacbufpos+1; if (wp1>=flacbuflen) wp1-=flacbuflen;
-			wp2=flacbufpos+2; if (wp2>=flacbuflen) wp2-=flacbuflen;
-#else
-			switch (length1)
-			{
-				case 1:
-					wpm1 = pos1;
-					wp0  = pos2;
-					wp1  = pos2+1;
-					wp2  = pos2+2;
-					break;
-				case 2:
-					wpm1 = pos1;
-					wp0  = pos1+1;
-					wp1  = pos2;
-					wp2  = pos2+1;
-					break;
-				case 3:
-					wpm1 = pos1;
-					wp0  = pos1+1;
-					wp1  = pos1+2;
-					wp2  = pos2;
-					break;
-				default:
-					wpm1 = pos1;
-					wp0  = pos1+1;
-					wp1  = pos1+2;
-					wp2  = pos1+3;
-					break;
-			}
-#endif
-
-			vm1= (unsigned)(flacbuf[wpm1*2])^0x8000;
-			c0 = (unsigned)(flacbuf[wp0*2])^0x8000;
-			v1 = (unsigned)(flacbuf[wp1*2])^0x8000;
-			v2 = (unsigned)(flacbuf[wp2*2])^0x8000;
-			c1 = v1-vm1;
-			c2 = 2*vm1-2*c0+v1-v2;
-			c3 = c0-vm1-v1+v2;
-			c3 =  imulshr16(c3,flacbuffpos);
-			c3 += c2;
-			c3 =  imulshr16(c3,flacbuffpos);
-			c3 += c1;
-			c3 =  imulshr16(c3,flacbuffpos);
-			ls = c3+c0;
-			if (ls>65535)
-				ls=65535;
-			else if (ls<0)
-				ls=0;
-
-			vm1= (unsigned)(flacbuf[wpm1*2+1])^0x8000;
-			c0 = (unsigned)(flacbuf[wp0*2+1])^0x8000;
-			v1 = (unsigned)(flacbuf[wp1*2+1])^0x8000;
-			v2 = (unsigned)(flacbuf[wp2*2+1])^0x8000;
-			c1 = v1-vm1;
-			c2 = 2*vm1-2*c0+v1-v2;
-			c3 = c0-vm1-v1+v2;
-			c3 =  imulshr16(c3,flacbuffpos);
-			c3 += c2;
-			c3 =  imulshr16(c3,flacbuffpos);
-			c3 += c1;
-			c3 =  imulshr16(c3,flacbuffpos);
-			rs = c3+c0;
-			if (rs>65535)
-				rs=65535;
-			else if(rs<0)
-				rs=0;
-			buf16[2*i]=(uint16_t)ls^0x8000;
-			buf16[2*i+1]=(uint16_t)rs^0x8000;
-
-			written++;
-
-			flacbuffpos+=flacbufrate;
-			progress = flacbuffpos>>16;
-			flacbuffpos&=0xFFFF;
-
-			accumulated_progress += progress;
-
-			/* did we wrap? if so, progress up to the wrapping point */
-			if (progress >= length1)
-			{
-				progress -= length1;
-				pos1 = pos2;
-				length1 = length2;
-				pos2 = 0;
-				length2 = 0;
-			}
-			if (progress)
-			{
-				pos1 += progress;
-				length1 -= progress;
-			}
-		}
-		ringbuffer_tail_consume_samples (flacbufpos, accumulated_progress);
-	}
-
-	bufdelta=written;
-
-	/* when we copy out of buf16, pass the buffer-len that wraps around end-of-buffer till pass2 */
-	if ((bufpos+bufdelta)>buflen)
-		pass2=bufpos+bufdelta-buflen;
-	else
-		pass2=0;
-	bufdelta-=pass2;
-
-	if (bit16)
-	{
-		if (stereo)
-		{
-			if (reversestereo)
-			{
-				int16_t *p=(int16_t *)plrbuf+2*bufpos;
-				int16_t *b=(int16_t *)buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1];
-						p[1]=b[0];
-						p+=2;
-						b+=2;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1];
-						p[1]=b[0];
-						p+=2;
-						b+=2;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1]^0x8000;
-						p[1]=b[0]^0x8000;
-						p+=2;
-						b+=2;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1]^0x8000;
-						p[1]=b[0]^0x8000;
-						p+=2;
-						b+=2;
-					}
-				}
-			} else {
-				int16_t *p=(int16_t *)plrbuf+2*bufpos;
-				int16_t *b=(int16_t *)buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0];
-						p[1]=b[1];
-						p+=2;
-						b+=2;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0];
-						p[1]=b[1];
-						p+=2;
-						b+=2;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p[1]=b[1]^0x8000;
-						p+=2;
-						b+=2;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p[1]=b[1]^0x8000;
-						p+=2;
-						b+=2;
-					}
-				}
-			}
-		} else {
-			int16_t *p=(int16_t *)plrbuf+bufpos;
-			int16_t *b=(int16_t *)buf16;
-			if (signedout)
-			{
-				for (i=0; i<bufdelta; i++)
-				{
-					p[0]=b[0];
-					p++;
-					b++;
-				}
-				p=(int16_t *)plrbuf;
-				for (i=0; i<pass2; i++)
-				{
-					p[0]=b[0];
-					p++;
-					b++;
-				}
-			} else {
-				for (i=0; i<bufdelta; i++)
-				{
-					p[0]=b[0]^0x8000;
-					p++;
-					b++;
-				}
-				p=(int16_t *)plrbuf;
-				for (i=0; i<pass2; i++)
-				{
-					p[0]=b[0]^0x8000;
-					p++;
-					b++;
-				}
-			}
-		}
 	} else {
-		if (stereo)
+		int pos1, length1, pos2, length2;
+		int i;
+		unsigned int buf16_filled=0;
+
+		/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
+		ringbuffer_get_tail_samples (flacbufpos, &pos1, &length1, &pos2, &length2);
+
+		if (flacbufrate==0x10000) /* 1.0... just copy into buf16 direct until we run out of target buffer or source buffer */
 		{
-			if (reversestereo)
+			if (bufdelta>(length1+length2))
 			{
-				uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
-				uint8_t *b=(uint8_t *)buf16;
-				if (signedout)
+				bufdelta=(length1+length2);
+				eof_buffer=1;
+			} else {
+				eof_buffer=0;
+			}
+
+			while (buf16_filled<bufdelta)
+			{
+				uint32_t w=bufdelta-buf16_filled;
+
+				if (!length1)
 				{
-					for (i=0; i<bufdelta; i++)
+					pos1 = pos2;
+					length1 = length2;
+					pos2 = 0;
+					length2 = 0;
+				}
+
+				if (!length1)
+				{
+					fprintf (stderr, "playflac: ERROR, length1 == 0, in flacIdle\n");
+					_exit(1);
+				}
+
+				if (w>length1)
+				{
+					w=length1;
+				}
+				memcpy(buf16+2/*stereo*/*buf16_filled, flacbuf+pos1*2/*stereo*/, w*sizeof(uint16_t)*2/*stereo*/);
+				buf16_filled+=w;
+
+				length1-=w;
+				pos1+=w;
+
+				ringbuffer_tail_consume_samples (flacbufpos, w);
+			}
+		} else { /* re-sample intil we don't have more target-buffer or source-buffer */
+			unsigned int accumulated_progress = 0;
+
+			eof_buffer=0;
+
+			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
+			{
+				int32_t c0, c1, c2, c3, ls, rs, vm1, v1, v2;
+				uint32_t wpm1, wp0, wp1, wp2;
+				unsigned int progress;
+
+				/* will the interpolation overflow? */
+				if ((length1+length2) <= 3)
+				{
+					eof_buffer=1;
+					break;
+				}
+				/* will we overflow the flacbuf if we advance? */
+				if ((length1+length2) < ((flacbufrate+flacbuffpos)>>16))
+				{
+					eof_buffer=1;
+					break;
+				}
+
+				switch (length1)
+				{
+					case 1:
+						wpm1 = pos1;
+						wp0  = pos2;
+						wp1  = pos2+1;
+						wp2  = pos2+2;
+						break;
+					case 2:
+						wpm1 = pos1;
+						wp0  = pos1+1;
+						wp1  = pos2;
+						wp2  = pos2+1;
+						break;
+					case 3:
+						wpm1 = pos1;
+						wp0  = pos1+1;
+						wp1  = pos1+2;
+						wp2  = pos2;
+						break;
+					default:
+						wpm1 = pos1;
+						wp0  = pos1+1;
+						wp1  = pos1+2;
+						wp2  = pos1+3;
+						break;
+				}
+
+				vm1= (unsigned)(flacbuf[wpm1*2])^0x8000;
+				c0 = (unsigned)(flacbuf[wp0*2])^0x8000;
+				v1 = (unsigned)(flacbuf[wp1*2])^0x8000;
+				v2 = (unsigned)(flacbuf[wp2*2])^0x8000;
+				c1 = v1-vm1;
+				c2 = 2*vm1-2*c0+v1-v2;
+				c3 = c0-vm1-v1+v2;
+				c3 =  imulshr16(c3,flacbuffpos);
+				c3 += c2;
+				c3 =  imulshr16(c3,flacbuffpos);
+				c3 += c1;
+				c3 =  imulshr16(c3,flacbuffpos);
+				ls = c3+c0;
+				if (ls>65535)
+					ls=65535;
+				else if (ls<0)
+					ls=0;
+
+				vm1= (unsigned)(flacbuf[wpm1*2+1])^0x8000;
+				c0 = (unsigned)(flacbuf[wp0*2+1])^0x8000;
+				v1 = (unsigned)(flacbuf[wp1*2+1])^0x8000;
+				v2 = (unsigned)(flacbuf[wp2*2+1])^0x8000;
+				c1 = v1-vm1;
+				c2 = 2*vm1-2*c0+v1-v2;
+				c3 = c0-vm1-v1+v2;
+				c3 =  imulshr16(c3,flacbuffpos);
+				c3 += c2;
+				c3 =  imulshr16(c3,flacbuffpos);
+				c3 += c1;
+				c3 =  imulshr16(c3,flacbuffpos);
+				rs = c3+c0;
+				if (rs>65535)
+					rs=65535;
+				else if(rs<0)
+					rs=0;
+				buf16[buf16_filled*2+0]=(uint16_t)ls^0x8000;
+				buf16[buf16_filled*2+1]=(uint16_t)rs^0x8000;
+
+				flacbuffpos+=flacbufrate;
+				progress = flacbuffpos>>16;
+				flacbuffpos&=0xFFFF;
+
+				accumulated_progress += progress;
+
+				/* did we wrap? if so, progress up to the wrapping point */
+				if (progress >= length1)
+				{
+					progress -= length1;
+					pos1 = pos2;
+					length1 = length2;
+					pos2 = 0;
+					length2 = 0;
+				}
+				if (progress)
+				{
+					pos1 += progress;
+					length1 -= progress;
+				}
+			}
+			ringbuffer_tail_consume_samples (flacbufpos, accumulated_progress);
+		}
+
+		bufdelta=buf16_filled;
+
+		/* when we copy out of buf16, pass the buffer-len that wraps around end-of-buffer till pass2 */
+		if ((bufpos+bufdelta)>buflen)
+			pass2=bufpos+bufdelta-buflen;
+		else
+			pass2=0;
+		bufdelta-=pass2;
+
+		if (bit16)
+		{
+			if (stereo)
+			{
+				if (reversestereo)
+				{
+					int16_t *p=(int16_t *)plrbuf+2*bufpos;
+					int16_t *b=(int16_t *)buf16;
+					if (signedout)
 					{
-						p[0]=b[3];
-						p[1]=b[1];
-						p+=2;
-						b+=4;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[3];
-						p[1]=b[1];
-						p+=2;
-						b+=4;
+						for (i=0; i<bufdelta; i++)
+						{
+							p[0]=b[1];
+							p[1]=b[0];
+							p+=2;
+							b+=2;
+						}
+						p=(int16_t *)plrbuf;
+						for (i=0; i<pass2; i++)
+						{
+							p[0]=b[1];
+							p[1]=b[0];
+							p+=2;
+							b+=2;
+						}
+					} else {
+						for (i=0; i<bufdelta; i++)
+						{
+							p[0]=b[1]^0x8000;
+							p[1]=b[0]^0x8000;
+							p+=2;
+							b+=2;
+						}
+						p=(int16_t *)plrbuf;
+						for (i=0; i<pass2; i++)
+						{
+							p[0]=b[1]^0x8000;
+							p[1]=b[0]^0x8000;
+							p+=2;
+							b+=2;
+						}
 					}
 				} else {
-					for (i=0; i<bufdelta; i++)
+					int16_t *p=(int16_t *)plrbuf+2*bufpos;
+					int16_t *b=(int16_t *)buf16;
+					if (signedout)
 					{
-						p[0]=b[3]^0x80;
-						p[1]=b[1]^0x80;
-						p+=2;
-						b+=4;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[3]^0x80;
-						p[1]=b[1]^0x80;
-						p+=2;
-						b+=4;
+						for (i=0; i<bufdelta; i++)
+						{
+							p[0]=b[0];
+							p[1]=b[1];
+							p+=2;
+							b+=2;
+						}
+						p=(int16_t *)plrbuf;
+						for (i=0; i<pass2; i++)
+						{
+							p[0]=b[0];
+							p[1]=b[1];
+							p+=2;
+							b+=2;
+						}
+					} else {
+						for (i=0; i<bufdelta; i++)
+						{
+							p[0]=b[0]^0x8000;
+							p[1]=b[1]^0x8000;
+							p+=2;
+							b+=2;
+						}
+						p=(int16_t *)plrbuf;
+						for (i=0; i<pass2; i++)
+						{
+							p[0]=b[0]^0x8000;
+							p[1]=b[1]^0x8000;
+							p+=2;
+							b+=2;
+						}
 					}
 				}
 			} else {
-				uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
-				uint8_t *b=(uint8_t *)buf16;
+				int16_t *p=(int16_t *)plrbuf+bufpos;
+				int16_t *b=(int16_t *)buf16;
 				if (signedout)
 				{
 					for (i=0; i<bufdelta; i++)
 					{
-						p[0]=b[1];
-						p[1]=b[3];
-						p+=2;
-						b+=4;
+						p[0]=b[0];
+						p++;
+						b++;
 					}
-					p=(uint8_t *)plrbuf;
+					p=(int16_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
-						p[0]=b[1];
-						p[1]=b[3];
-						p+=2;
-						b+=4;
+						p[0]=b[0];
+						p++;
+						b++;
 					}
 				} else {
 					for (i=0; i<bufdelta; i++)
 					{
-						p[0]=b[1]^0x80;
-						p[1]=b[3]^0x80;
-						p+=2;
-						b+=4;
+						p[0]=b[0]^0x8000;
+						p++;
+						b++;
 					}
-					p=(uint8_t *)plrbuf;
+					p=(int16_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
-						p[0]=b[1]^0x80;
-						p[1]=b[3]^0x80;
-						p+=2;
-						b+=4;
+						p[0]=b[0]^0x8000;
+						p++;
+						b++;
 					}
 				}
 			}
 		} else {
-			uint8_t *p=(uint8_t *)plrbuf+bufpos;
-			uint8_t *b=(uint8_t *)buf16;
-			if (signedout)
+			if (stereo)
 			{
-				for (i=0; i<bufdelta; i++)
+				if (reversestereo)
 				{
-					p[0]=b[1];
-					p++;
-					b+=2;
-				}
-				p=(uint8_t *)plrbuf;
-				for (i=0; i<pass2; i++)
-				{
-					p[0]=b[1];
-					p++;
-					b+=2;
+					uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
+					uint8_t *b=(uint8_t *)buf16;
+					if (signedout)
+					{
+						for (i=0; i<bufdelta; i++)
+						{
+							p[0]=b[3];
+							p[1]=b[1];
+							p+=2;
+							b+=4;
+						}
+						p=(uint8_t *)plrbuf;
+						for (i=0; i<pass2; i++)
+						{
+							p[0]=b[3];
+							p[1]=b[1];
+							p+=2;
+							b+=4;
+						}
+					} else {
+						for (i=0; i<bufdelta; i++)
+						{
+							p[0]=b[3]^0x80;
+							p[1]=b[1]^0x80;
+							p+=2;
+							b+=4;
+						}
+						p=(uint8_t *)plrbuf;
+						for (i=0; i<pass2; i++)
+						{
+							p[0]=b[3]^0x80;
+							p[1]=b[1]^0x80;
+							p+=2;
+							b+=4;
+						}
+					}
+				} else {
+					uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
+					uint8_t *b=(uint8_t *)buf16;
+					if (signedout)
+					{
+						for (i=0; i<bufdelta; i++)
+						{
+							p[0]=b[1];
+							p[1]=b[3];
+							p+=2;
+							b+=4;
+						}
+						p=(uint8_t *)plrbuf;
+						for (i=0; i<pass2; i++)
+						{
+							p[0]=b[1];
+							p[1]=b[3];
+							p+=2;
+							b+=4;
+						}
+					} else {
+						for (i=0; i<bufdelta; i++)
+						{
+							p[0]=b[1]^0x80;
+							p[1]=b[3]^0x80;
+							p+=2;
+							b+=4;
+						}
+						p=(uint8_t *)plrbuf;
+						for (i=0; i<pass2; i++)
+						{
+							p[0]=b[1]^0x80;
+							p[1]=b[3]^0x80;
+							p+=2;
+							b+=4;
+						}
+					}
 				}
 			} else {
-				for (i=0; i<bufdelta; i++)
+				uint8_t *p=(uint8_t *)plrbuf+bufpos;
+				uint8_t *b=(uint8_t *)buf16;
+				if (signedout)
 				{
-					p[0]=b[1]^0x80;
-					p++;
-					b+=2;
-				}
-				p=(uint8_t *)plrbuf;
-				for (i=0; i<pass2; i++)
-				{
-					p[0]=b[1]^0x80;
-					p++;
-					b+=2;
+					for (i=0; i<bufdelta; i++)
+					{
+						p[0]=b[1];
+						p++;
+						b+=2;
+					}
+					p=(uint8_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[1];
+						p++;
+						b+=2;
+					}
+				} else {
+					for (i=0; i<bufdelta; i++)
+					{
+						p[0]=b[1]^0x80;
+						p++;
+						b+=2;
+					}
+					p=(uint8_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[1]^0x80;
+						p++;
+						b+=2;
+					}
 				}
 			}
 		}
+
+		bufpos+=buf16_filled;
+		if (bufpos>=buflen)
+			bufpos-=buflen;
 	}
 
-	bufpos=(bufpos+written)%buflen;
 	plrAdvanceTo(bufpos<<(stereo+bit16));
 
 	if (plrIdle)
@@ -1108,7 +1099,7 @@ void __attribute__ ((visibility ("internal"))) flacGetInfo(struct flacinfo *info
 }
 uint64_t __attribute__ ((visibility ("internal"))) flacGetPos(void)
 {
-	return flaclastpos;
+	return (flaclastpos + samples - ringbuffer_get_tail_available_samples (flacbufpos)) % samples;
 }
 void __attribute__ ((visibility ("internal"))) flacSetPos(uint64_t pos)
 {
@@ -1119,9 +1110,8 @@ void __attribute__ ((visibility ("internal"))) flacSetPos(uint64_t pos)
 		else
 			pos%=samples;
 	}
-#if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
-	FLAC__seekable_stream_decoder_seek_absolute(decoder, pos);
-#else
-	FLAC__stream_decoder_seek_absolute(decoder, pos);
-#endif
+
+	/* Seek, causes a decoding to happen, so we just flag it as pending, and let Idle perform it when buffer has space */
+	flacPendingSeek = 1;
+	flacPendingSeekPos = pos;
 }
