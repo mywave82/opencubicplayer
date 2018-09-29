@@ -227,9 +227,6 @@ static void ayDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		_writenum(buf[0], 110, 0x0F, speed*100/256, 10, 3);
 		_writenum(buf[0], 124, 0x0F, speed*100/256, 10, 3);
 
-		writestring(buf[0], 105, 0x09, "amp: ...%                ", 23);
-		_writenum(buf[0], 110, 0x0F, amp*100/64, 10, 3);
-
 		writestring(buf[1],  0, 0x09,"    song .. of ..                                   cpu: ...%",132);
 		writenum(buf[1],  9, 0x0F, globinfo.track, 16, 2, 0);
 		writenum(buf[1], 15, 0x0F, globinfo.numtracks, 16, 2, 0);
