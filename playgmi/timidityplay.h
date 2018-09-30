@@ -7,7 +7,6 @@ struct mglobinfo
 {
 	uint32_t curtick;
 	uint32_t ticknum;
-	uint32_t speed;
 };
 
 struct mchaninfo

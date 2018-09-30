@@ -1914,7 +1914,7 @@ void __attribute__ ((visibility ("internal"))) timidityPause(unsigned char p)
 
 void __attribute__ ((visibility ("internal"))) timiditySetSpeed(uint16_t sp)
 {
-#warning TODO
+	midi_time_ratio = (float)sp / 256.0f;
 }
 void __attribute__ ((visibility ("internal"))) timiditySetPitch(int16_t sp)
 {
@@ -1943,14 +1943,11 @@ void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct mglobi
 {
 	int pos = plrGetPlayPos () >> (stereo+bit16);
 
-
 	gi->curtick = current_sample
 - aq_soft_filled()
 - ( (aybufhead+aybuflen-aybuftail)%aybuflen ) /* aybuf length */
 - ( (bufpos-pos+buflen)%buflen); /* PlrBuf length */
 	gi->ticknum = timidity_main_session.nsamples;
-#warning TODO, speed...
-	gi->speed = 0;
 }
 
 

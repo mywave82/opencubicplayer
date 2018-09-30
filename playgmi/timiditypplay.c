@@ -23,7 +23,7 @@
 
 /* options */
 static time_t starttime;
-static long pausetime;
+static time_t pausetime;
 static char currentmodname[_MAX_FNAME+1];
 static char currentmodext[_MAX_EXT+1];
 static char *modname;
@@ -38,9 +38,7 @@ static int16_t pitch;
 static int16_t reverb;
 static int16_t chorus;
 
-static char finespeed=8;
-
-static uint32_t pausefadestart;
+static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
 
@@ -71,7 +69,7 @@ static void dopausefade(void)
 	int16_t i;
 	if (pausefadedirect>0)
 	{
-		i=((int32_t)dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
+		i=(dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
 		if (i<0)
 			i=0;
 		if (i>=64)
@@ -80,7 +78,7 @@ static void dopausefade(void)
 			pausefadedirect=0;
 		}
 	} else {
-		i=64-((int32_t)dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
+		i=64-(dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
 		if (i>=64)
 			i=64;
 		if (i<=0)
@@ -242,8 +240,6 @@ static void timidityDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 
 static int timidityProcessKey(uint16_t key)
 {
-	int csg;
-
 	switch (key)
 	{
 		case KEY_ALT_K:
@@ -270,9 +266,9 @@ static int timidityProcessKey(uint16_t key)
 			cpiKeyHelp(KEY_F(6), "Move panning against reverse");
 			cpiKeyHelp(KEY_F(7), "Move balance left");
 			cpiKeyHelp(KEY_F(8), "Move balance right");
+#endif
 			cpiKeyHelp(KEY_F(9), "Decrease pitch speed");
 			cpiKeyHelp(KEY_F(11), "Decrease pitch speed");
-#endif
 			cpiKeyHelp(KEY_F(10), "Increase pitch speed");
 			cpiKeyHelp(KEY_F(12), "Increase pitch speed");
 			if (plrProcessKey)
@@ -373,17 +369,17 @@ static int timidityProcessKey(uint16_t key)
 				bal=64;
 			timiditySetVolume(vol, bal, pan, srnd);
 			break;
+#endif
 		case KEY_F(9):
-			if ((speed-=finespeed)<16)
+			if ((speed-=8)<16)
 				speed=16;
 			timiditySetSpeed(speed);
 			break;
 		case KEY_F(10):
-			if ((speed+=finespeed)>2048)
+			if ((speed+=8)>2048)
 				speed=2048;
 			timiditySetSpeed(speed);
 			break;
-#endif
 		case KEY_F(11):
 			if ((pitch-=1)<-127)
 				pitch=-127;
@@ -441,7 +437,7 @@ static int timidityOpenFile(const char *path, struct moduleinfostruct *info, FIL
 	timidityChanSetup(/*&mid*/);
 
 
-	if (err = timidityOpenPlayer(path))
+	if ((err = timidityOpenPlayer(path)))
 	{
 		return err;
 	}
