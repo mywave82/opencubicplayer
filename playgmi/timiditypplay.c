@@ -174,10 +174,10 @@ static void timidityDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		_writenum(buf[1], 62, 0x0F, amp*100/64, 10, 3);
 		writestring(buf[1], 75, 0x0F, "off", 3);
 
-		writestring(buf[1],  0, 0x09, " pos: ......../........  spd: ....", 57);
+		writestring(buf[1],  0, 0x09, " pos: ......../........  spd: ...%", 57);
 		writenum(buf[1], 6, 0x0F, gi.curtick, 16, 8, 0);
 		writenum(buf[1], 15, 0x0F, gi.ticknum-1, 16, 8, 0);
-		writenum(buf[1], 30, 0x0F, gi.speed, 16, 4, 1);
+		writenum(buf[1], 30, 0x0F, speed*100/256, 16, 4, 1);
 
 		writestring(buf[2],  0, 0x09, "   midi \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................               time: ..:.. ", 80);
 		writestring(buf[2],  8, 0x0F, currentmodname, 8);
@@ -216,10 +216,10 @@ static void timidityDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		}
 
 
-		writestring(buf[1],  0, 0x09, "   position: ......../........  speed: ....", 80);
+		writestring(buf[1],  0, 0x09, "   position: ......../........  speed: ...%", 80);
 		writenum(buf[1], 13, 0x0F, gi.curtick, 16, 8, 0);
 		writenum(buf[1], 22, 0x0F, gi.ticknum-1, 16, 8, 0);
-		writenum(buf[1], 39, 0x0F, gi.speed, 16, 4, 1);
+		writenum(buf[1], 39, 0x0F, speed*100/256, 16, 4, 1);
 
 		writestring(buf[1], 92, 0x09, "   amplification: ...%  filter: ...     ", 40);
 		_writenum(buf[1], 110, 0x0F, amp*100/64, 10, 3);
@@ -267,8 +267,8 @@ static int timidityProcessKey(uint16_t key)
 			cpiKeyHelp(KEY_F(7), "Move balance left");
 			cpiKeyHelp(KEY_F(8), "Move balance right");
 #endif
-			cpiKeyHelp(KEY_F(9), "Decrease pitch speed");
-			cpiKeyHelp(KEY_F(11), "Decrease pitch speed");
+			cpiKeyHelp(KEY_F(9), "Decrease song speed");
+			cpiKeyHelp(KEY_F(11), "Decrease song speed");
 			cpiKeyHelp(KEY_F(10), "Increase pitch speed");
 			cpiKeyHelp(KEY_F(12), "Increase pitch speed");
 			if (plrProcessKey)

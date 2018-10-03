@@ -50,6 +50,8 @@ static int inpause;
 static unsigned long voll,volr;
 static int pan;
 static int srnd;
+static uint16_t speed;
+static int loading;
 
 /* devp pre-buffer zone */
 static uint16_t *buf16 = 0; /* stupid dump that should go away */
@@ -66,20 +68,20 @@ static int donotloop=1;
 static int report_no_fill = 0; /* hack, when system wants to purge buffers, due to parametric changes */
 
 /* ayIdler dumping locations */
-static uint8_t *aybuf = 0;     /* the buffer */
-static uint32_t aybuflen;  /* total buffer size */
+static uint8_t *gmibuf = 0;     /* the buffer */
+static uint32_t gmibuflen;  /* total buffer size */
 /*static uint32_t aylen;*/     /* expected wave length */
-static uint32_t aybufhead; /* actually this is the write head */
-static uint32_t aybuftail;  /* read pos */
-static uint32_t aybuffpos; /* read fine-pos.. when rate has a fraction */
-static uint32_t aybufrate = 0x10000; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
+static uint32_t gmibufhead; /* actually this is the write head */
+static uint32_t gmibuftail;  /* read pos */
+static uint32_t gmibuffpos; /* read fine-pos.. when rate has a fraction */
+static uint32_t gmibufrate = 0x10000; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
 
 /* clipper threadlock since we use a timer-signal */
 static volatile int clipbusy=0;
 static const char *current_path=0;
 
-static int ay_eof;
-static int ay_looped;
+static int gmi_eof;
+static int gmi_looped;
 
 static int ctl_next_result = RC_NONE;
 static int ctl_next_value = 0;
@@ -113,8 +115,8 @@ static CtlEventDelayed *EventDelayed_PlrBuf_head = 0;
 static CtlEventDelayed *EventDelayed_PlrBuf_tail = 0;
 int                     eventDelayed_PlrBuf_lastpos;
 
-static CtlEventDelayed *EventDelayed_aybuf_head = 0;
-static CtlEventDelayed *EventDelayed_aybuf_tail = 0;
+static CtlEventDelayed *EventDelayed_gmibuf_head = 0;
+static CtlEventDelayed *EventDelayed_gmibuf_tail = 0;
 
 static void free_EventDelayed (CtlEventDelayed *self)
 {
@@ -170,7 +172,7 @@ static void timidity_apply_EventDelayed (CtlEvent *event)
 						memmove (channelstat[event->v2].note + i + 1, channelstat[event->v2].note + i, channelstat[event->v2].notenum - i);
 						memmove (channelstat[event->v2].vol + i + 1, channelstat[event->v2].vol + i, channelstat[event->v2].notenum - i);
 						memmove (channelstat[event->v2].opt + i + 1, channelstat[event->v2].opt + i, channelstat[event->v2].notenum - i);
-							
+
 						channelstat[event->v2].note[i] = event->v3;
 						channelstat[event->v2].vol[i] = event->v4;
 						channelstat[event->v2].opt[i] = 1; /* no idea */
@@ -329,50 +331,50 @@ static void timidity_SetBufferPos_EventDelayed_PlrBuf (int old_pos, int new_pos)
 	}
 }
 
-static void timidity_append_EventDelayed_aybuf (CtlEvent *event)
+static void timidity_append_EventDelayed_gmibuf (CtlEvent *event)
 {
 	CtlEventDelayed *self = calloc (sizeof (*self), 1);
 	if (!self)
 	{
-		perror ("timidity_append_EventDelayed_aybuf malloc");
+		perror ("timidity_append_EventDelayed_gmibuf malloc");
 		_exit(1);
 	}
 
 	self->event = *event;
-	self->delay_samples = (aybufhead+aybuflen-aybuftail)%aybuflen;
+	self->delay_samples = (gmibufhead+gmibuflen-gmibuftail)%gmibuflen;
 
 	if (self->event.type == CTLE_PROGRAM)
 	{
-		self->event.v3 = (long)strdup((char *)self->event.v3);
+		self->event.v3 = (long)strdup(self->event.v3?(char *)self->event.v3:"");
 	}
 
-	if (EventDelayed_aybuf_head)
+	if (EventDelayed_gmibuf_head)
 	{
-		EventDelayed_aybuf_tail->next = self;
-		EventDelayed_aybuf_tail = self;
+		EventDelayed_gmibuf_tail->next = self;
+		EventDelayed_gmibuf_tail = self;
 	} else {
-		EventDelayed_aybuf_head = self;
-		EventDelayed_aybuf_tail = self;
+		EventDelayed_gmibuf_head = self;
+		EventDelayed_gmibuf_tail = self;
 	}
 }
 
-static void timidity_play_EventDelayed_aybuf (uint32_t samples)
+static void timidity_play_EventDelayed_gmibuf (uint32_t samples)
 {
 	CtlEventDelayed *iter, *next;
 
-	for (iter = EventDelayed_aybuf_head; iter; iter = next)
+	for (iter = EventDelayed_gmibuf_head; iter; iter = next)
 	{
 		next = iter->next;
 
 		if (iter->delay_samples <= samples)
 		{
-			assert (iter == EventDelayed_aybuf_head);
+			assert (iter == EventDelayed_gmibuf_head);
 
-			EventDelayed_aybuf_head = next;
+			EventDelayed_gmibuf_head = next;
 
 			if (!iter->next)
 			{
-				EventDelayed_aybuf_tail = 0; /* we are always deleting the head entry if any.. so list is empty if no next */
+				EventDelayed_gmibuf_tail = 0; /* we are always deleting the head entry if any.. so list is empty if no next */
 			} else {
 				iter->next = 0;
 			}
@@ -509,7 +511,7 @@ static int ocp_ctl_read (int32 *valp)
 	{
 		ctl_next_result = RC_NONE;
 		ctl_next_value = 0;
-	
+
 		PRINT ("[timidity] ctl->read=%d (val=%d)\n", retval, *valp);
 	}
 
@@ -530,12 +532,21 @@ static int ocp_ctl_cmsg(int type, int verbosity_level, char *fmt, ...)
 {
 	va_list ap;
 
-	if (!((type == CMSG_WARNING) || (type == CMSG_ERROR) || (type == CMSG_FATAL)))
-	{
 #ifndef TIMIDITY_DEBUG
-		return 0;
-#endif
+	if (verbosity_level == VERB_DEBUG_SILLY)
+	{
+		if (!loading)
+		{
+			return 0;
+		}
+	} else if (!((type == CMSG_WARNING) || (type == CMSG_ERROR) || (type == CMSG_FATAL)))
+	{
+		if (!loading)
+		{
+			return 0;
+		}
 	}
+#endif
 
 	fputs("[timidity] ", stderr);
 
@@ -674,7 +685,7 @@ static void ocp_ctl_event(CtlEvent *event)
 			     (event->v1 ==  8) || /* NOTE OFF */
 			     (event->v1 == 16))   /* NOTE DIE */
 			{
-				timidity_append_EventDelayed_aybuf (event);
+				timidity_append_EventDelayed_gmibuf (event);
 			}
 			break;
 		//case CTLE_MUTE:
@@ -686,7 +697,7 @@ static void ocp_ctl_event(CtlEvent *event)
 		case CTLE_CHORUS_EFFECT:
 		case CTLE_REVERB_EFFECT:
 		case CTLE_SUSTAIN:
-			timidity_append_EventDelayed_aybuf (event);
+			timidity_append_EventDelayed_gmibuf (event);
 			break;
 
 	}
@@ -695,7 +706,7 @@ static void ocp_ctl_event(CtlEvent *event)
 static ControlMode ocp_ctl =
 {
 	.id_name           = "Open Cubic Player Control API",
-	.id_character      = 0,
+	.id_character      = '_',
 	.id_short_name     = "OCP",
 	.verbosity         = 0,
 	.trace_playing     = 0, /* ? */
@@ -733,22 +744,22 @@ static int ocp_playmode_output_data(char *buf, int32 bytes)
 	/* return: -1=error, otherwise success */
 	/* TODO ... timidity normally makes this a blocking call */
 
-	if (aybufhead+(bytes>>2) >= aybuflen)
+	if (gmibufhead+(bytes>>2) >= gmibuflen)
 	{
-		assert (aybufhead > aybuftail); /* we are not going to overrun the buffer */
+		assert (gmibufhead > gmibuftail); /* we are not going to overrun the buffer */
 
-		memcpy (aybuf+(aybufhead<<2), buf, (aybuflen-aybufhead)<<2);
-		buf   += (aybuflen-aybufhead)<<2;
-		bytes -= (aybuflen-aybufhead)<<2;
-		aybufhead = 0;
+		memcpy (gmibuf+(gmibufhead<<2), buf, (gmibuflen-gmibufhead)<<2);
+		buf   += (gmibuflen-gmibufhead)<<2;
+		bytes -= (gmibuflen-gmibufhead)<<2;
+		gmibufhead = 0;
 	}
 
 	if (bytes)
 	{
-		assert ((aybuftail <= aybufhead) || ((aybufhead + (bytes>>2)) <= aybuftail)); /* we are not going to overrun the buffer */
+		assert ((gmibuftail <= gmibufhead) || ((gmibufhead + (bytes>>2)) <= gmibuftail)); /* we are not going to overrun the buffer */
 
-		memcpy (aybuf+(aybufhead<<2), buf, bytes);
-		aybufhead += (bytes>>2);
+		memcpy (gmibuf+(gmibufhead<<2), buf, bytes);
+		gmibufhead += (bytes>>2);
 	}
 
 	output_counter += (bytes>>2);
@@ -791,7 +802,7 @@ static int ocp_playmode_acntl(int request, void *arg)
 
 		case PM_REQ_GETSAMPLES:
 			PRINT ("[timidity] playmode->acntl(request=GETSAMPLES) => 0 (fixed)\n");
-#warning TODO, Timidity ALSA drivers subtracts the audio-delay ( aybuflen   in our case)
+#warning TODO, Timidity ALSA drivers subtracts the audio-delay ( gmibuflen   in our case)
 			*((int *)arg) = output_counter; /* samples */
 			return 0;
 
@@ -807,19 +818,19 @@ static int ocp_playmode_acntl(int request, void *arg)
 			{
 				ssize_t clean;
 
-				if (aybuftail != aybufhead)
+				if (gmibuftail != gmibufhead)
 				{
-					clean=(aybuftail+aybuflen-aybufhead)%aybuflen;
+					clean=(gmibuftail+gmibuflen-gmibufhead)%gmibuflen;
 				} else {
-					clean = aybuflen-1;
+					clean = gmibuflen-1;
 				}
 
 				/* Timidity always tries to overfill the buffer, since it normally waits for completion... */
-				clean -= aybuflen * 3 / 4;
+				clean -= gmibuflen * 3 / 4;
 				if (clean < 0)
 					clean = 0;
-//				if (clean > (aybuflen >> 2))
-//					clean = aybuflen >> 2;
+//				if (clean > (gmibuflen >> 2))
+//					clean = gmibuflen >> 2;
 
 				PRINT ("[timidity] playmode->acntl(request=GETFILLABLE) => %d\n", (int)clean);
 
@@ -833,7 +844,7 @@ static int ocp_playmode_acntl(int request, void *arg)
 			{
 				*((int *)arg) = 0; /* samples */
 			} else {
-				*((int *)arg) = aybuflen; /* samples */
+				*((int *)arg) = gmibuflen; /* samples */
 			}
 			PRINT ("[timidity] playmode->acntl(request=GETFILLED) => %d\n", *((int *)arg));
 			return 0;
@@ -864,7 +875,7 @@ static PlayMode ocp_playmode =
 	.fd = -1,
 	.extra_param = {0},
 	.id_name = "Open Cubic Player Output API",
-	.id_character = 0,
+	.id_character = '_',
 	.name = "NULL",
 	.open_output = ocp_playmode_open_output,
 	.close_output = ocp_playmode_close_output,
@@ -966,10 +977,12 @@ int emulate_timidity_play_main_start ()
 	}
 
 	/* Open output device */
+#if 0
 	ctl->cmsg(CMSG_INFO, VERB_DEBUG_SILLY,
 	          "Open output: %c, %s",
 	           play_mode->id_character,
 	           play_mode->id_name);
+#endif
 
 	if (play_mode->flag & PF_PCM_STREAM)
 	{
@@ -1200,18 +1213,18 @@ static int emulate_play_event (MidiEvent *ev)
 	{
 		int32 needed = cet - current_sample;
 		int32 canfit = aq_fillable();
- 
-		PRINT ("emulate_play_event, needed=%d canfit=%d (%d) -- ", needed, canfit, aybuflen >> 2);
 
-//		if (canfit <= (aybuflen >>2)) /* we only use the first quarter of the buffer... the last is reserved for flush at that happens at the end of the track */
+		PRINT ("emulate_play_event, needed=%d canfit=%d (%d) -- ", needed, canfit, gmibuflen >> 2);
+
+//		if (canfit <= (gmibuflen >>2)) /* we only use the first quarter of the buffer... the last is reserved for flush at that happens at the end of the track */
 		if (canfit <= 0)
 		{
 			PRINT ("short exit.. we want more buffer to be free\n");
 			return RC_ASYNC_HACK;
 		}
 
-//		if (canfit > (aybuflen >> 2))
-//			canfit = aybuflen >> 2;
+//		if (canfit > (gmibuflen >> 2))
+//			canfit = gmibuflen >> 2;
 
 		if (needed > canfit)
 		{
@@ -1231,6 +1244,7 @@ static int emulate_play_event (MidiEvent *ev)
 	PRINT ("Allow\n");
 
 	PRINT ("emulate_play_event calling play_event\n");
+
 	return dump_rc(play_event (ev));
 }
 
@@ -1246,7 +1260,15 @@ static int emulate_play_midi_iterate(void)
 		if(rc != RC_NONE)
 			break;
 		if (midi_restart_time)  /* don't skip the first event if == 0 */
+		{
+			if (speed != 0x100)
+			{
+				int32_t diff = (current_event[1].time - current_sample);
+				int32_t newdiff = diff * 0x100 / speed;
+				current_sample += (diff - newdiff);
+			}
 			current_event++;
+		}
 	}
 
 	return rc;
@@ -1325,7 +1347,7 @@ play_end:
 	{
 		goto play_reload;
 	} else {
-		ay_eof = 1;
+		gmi_eof = 1;
 	}
 
 	return rc;
@@ -1337,7 +1359,7 @@ static void timidityIdler(void)
 
 	while (1)
 	{
-		if (ay_eof)
+		if (gmi_eof)
 			break;
 
 		rc = emulate_play_midi_file_iterate(current_path, &timidity_main_session);
@@ -1374,14 +1396,14 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 		return;
 	}
 	timidityIdler();
-	/* if (aybuflen!=aylen)  this has with looping TODO */
+	/* if (gmibuflen!=aylen)  this has with looping TODO */
 	{
-		uint32_t towrap=imuldiv((((aybuflen+aybufhead-aybuftail)%aybuflen)), 65536, aybufrate);
+		uint32_t towrap=imuldiv((((gmibuflen+gmibufhead-gmibuftail)%gmibuflen)), 65536, gmibufrate);
 		if (towrap == 0)
 		{
-			if (ay_eof)
+			if (gmi_eof)
 			{
-				ay_looped = 1;
+				gmi_looped = 1;
 			}
 
 			clipbusy--;
@@ -1398,7 +1420,7 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 		quietlen=bufdelta;
 
 /* TODO, this has with lopping todo
-	toloop=imuldiv(((bufloopat-aybuftail)>>(1+aystereo)), 65536, aybufrate);
+	toloop=imuldiv(((bufloopat-gmibuftail)>>(1+aystereo)), 65536, gmibufrate);
 	if (looped)
 		toloop=0;*/
 
@@ -1419,60 +1441,60 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 	{
 		uint32_t i;
 
-		if (aybufrate==0x10000)
+		if (gmibufrate==0x10000)
 		{
 			uint32_t o=0;
 			while (o<bufdelta)
 			{
 				uint32_t w=(bufdelta-o);
-				if ((aybuflen-aybuftail)<w)
-					w=aybuflen-aybuftail;
-				memcpy(buf16+(o<<1), aybuf+(aybuftail<<2), w<<2);
+				if ((gmibuflen-gmibuftail)<w)
+					w=gmibuflen-gmibuftail;
+				memcpy(buf16+(o<<1), gmibuf+(gmibuftail<<2), w<<2);
 				o+=w;
-				timidity_play_EventDelayed_aybuf (w);
-				aybuftail+=w;
-				if (aybuftail>=aybuflen)
-					aybuftail-=aybuflen;
+				timidity_play_EventDelayed_gmibuf (w);
+				gmibuftail+=w;
+				if (gmibuftail>=gmibuflen)
+					gmibuftail-=gmibuflen;
 			}
 		} else {
 			int32_t aym1, c0, c1, c2, c3, ls, rs, vm1,v1,v2;
 			uint32_t ay1, ay2;
 			for (i=0; i<bufdelta; i++)
 			{
-				aym1=aybuftail-4; if (aym1<0) aym1+=aybuflen;
-				ay1=aybuftail+4; if (ay1>=aybuflen) ay1-=aybuflen;
-				ay2=aybuftail+8; if (ay2>=aybuflen) ay2-=aybuflen;
+				aym1=gmibuftail-4; if (aym1<0) aym1+=gmibuflen;
+				ay1=gmibuftail+4; if (ay1>=gmibuflen) ay1-=gmibuflen;
+				ay2=gmibuftail+8; if (ay2>=gmibuflen) ay2-=gmibuflen;
 
-				c0 = *(uint16_t *)(aybuf+(aybuftail<<2))^0x8000;
-				vm1= *(uint16_t *)(aybuf+(aym1<<2))^0x8000;
-				v1 = *(uint16_t *)(aybuf+(ay1<<2))^0x8000;
-				v2 = *(uint16_t *)(aybuf+(ay2<<2))^0x8000;
+				c0 = *(uint16_t *)(gmibuf+(gmibuftail<<2))^0x8000;
+				vm1= *(uint16_t *)(gmibuf+(aym1<<2))^0x8000;
+				v1 = *(uint16_t *)(gmibuf+(ay1<<2))^0x8000;
+				v2 = *(uint16_t *)(gmibuf+(ay2<<2))^0x8000;
 				c1 = v1-vm1;
 				c2 = 2*vm1-2*c0+v1-v2;
 				c3 = c0-vm1-v1+v2;
-				c3 =  imulshr16(c3,aybuffpos);
+				c3 =  imulshr16(c3,gmibuffpos);
 				c3 += c2;
-				c3 =  imulshr16(c3,aybuffpos);
+				c3 =  imulshr16(c3,gmibuffpos);
 				c3 += c1;
-				c3 =  imulshr16(c3,aybuffpos);
+				c3 =  imulshr16(c3,gmibuffpos);
 				ls = c3+c0;
 				if (ls<0)
 					ls=0;
 				if (ls>65535)
 					ls=65535;
 
-				c0 = *(uint16_t *)(aybuf+(aybuftail<<2)+2)^0x8000;
-				vm1= *(uint16_t *)(aybuf+(aym1<<2)+2)^0x8000;
-				v1 = *(uint16_t *)(aybuf+(ay1<<2)+2)^0x8000;
-				v2 = *(uint16_t *)(aybuf+(ay2<<2)+2)^0x8000;
+				c0 = *(uint16_t *)(gmibuf+(gmibuftail<<2)+2)^0x8000;
+				vm1= *(uint16_t *)(gmibuf+(aym1<<2)+2)^0x8000;
+				v1 = *(uint16_t *)(gmibuf+(ay1<<2)+2)^0x8000;
+				v2 = *(uint16_t *)(gmibuf+(ay2<<2)+2)^0x8000;
 				c1 = v1-vm1;
 				c2 = 2*vm1-2*c0+v1-v2;
 				c3 = c0-vm1-v1+v2;
-				c3 =  imulshr16(c3,aybuffpos);
+				c3 =  imulshr16(c3,gmibuffpos);
 				c3 += c2;
-				c3 =  imulshr16(c3,aybuffpos);
+				c3 =  imulshr16(c3,gmibuffpos);
 				c3 += c1;
-				c3 =  imulshr16(c3,aybuffpos);
+				c3 =  imulshr16(c3,gmibuffpos);
 				rs = c3+c0;
 				if (rs<0)
 					rs=0;
@@ -1482,12 +1504,12 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 				buf16[2*i]=(uint16_t)ls^0x8000;
 				buf16[2*i+1]=(uint16_t)rs^0x8000;
 
-				aybuffpos+=aybufrate;
-				timidity_play_EventDelayed_aybuf (aybuffpos>>16);
-				aybuftail+=(aybuffpos>>16);
-				aybuffpos&=0xFFFF;
-				if (aybuftail>=aybuflen)
-					aybuftail-=aybuflen;
+				gmibuffpos+=gmibufrate;
+				timidity_play_EventDelayed_gmibuf (gmibuffpos>>16);
+				gmibuftail+=(gmibuffpos>>16);
+				gmibuffpos&=0xFFFF;
+				if (gmibuftail>=gmibuflen)
+					gmibuftail-=gmibuflen;
 			}
 		}
 
@@ -1779,8 +1801,8 @@ static void doTimidityClosePlayer(int CloseDriver)
 	free(buf16);
 	buf16 = 0;
 
-	free(aybuf);
-	aybuf = 0;
+	free(gmibuf);
+	gmibuf = 0;
 
 	emulate_timidity_play_main_end ();
 
@@ -1796,19 +1818,21 @@ static void doTimidityClosePlayer(int CloseDriver)
 	}
 	EventDelayed_PlrBuf_tail = 0;
 
-	while (EventDelayed_aybuf_head)
+	while (EventDelayed_gmibuf_head)
 	{
-		CtlEventDelayed *next = EventDelayed_aybuf_head->next;
-		free_EventDelayed (EventDelayed_aybuf_head);
-		EventDelayed_aybuf_head = next;
+		CtlEventDelayed *next = EventDelayed_gmibuf_head->next;
+		free_EventDelayed (EventDelayed_gmibuf_head);
+		EventDelayed_gmibuf_head = next;
 	}
-	EventDelayed_aybuf_tail = 0;
+	EventDelayed_gmibuf_tail = 0;
 }
 
 int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *file)
 {
 	if (!plrPlay)
 		return errGen;
+
+	loading = 1;
 
 	plrSetOptions(44100, (PLR_SIGNEDOUT|PLR_16BIT)|PLR_STEREO);
 
@@ -1845,7 +1869,8 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *fil
 	volr=256;
 	pan=64;
 	srnd=0;
-//	aySetVolume(64, 0, 64, 0);
+	speed=0x100;
+	loading = 0;
 
 	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize))
 	{
@@ -1861,25 +1886,25 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *fil
 	}
 	bufpos=0;
 #warning rescale this to match play-rate, since that is the common factor here...
-	aybuflen=audio_buffer_size<<(2+6);
-	aybuftail=0;
-	aybufhead=0;
-	aybuf=malloc(aybuflen<<2/*stereo+16bit*/);
+	gmibuflen=audio_buffer_size<<(2+6);
+	gmibuftail=0;
+	gmibufhead=0;
+	gmibuf=malloc(gmibuflen<<2/*stereo+16bit*/);
 
-	if (!aybuf)
+	if (!gmibuf)
 	{
 		doTimidityClosePlayer (1);
 		return errAllocMem;
 	}
-	aybuffpos=0;
+	gmibuffpos=0;
 
-	ay_looped=0;
-	ay_eof=0;
+	gmi_looped=0;
+	gmi_eof=0;
 
 	eventDelayed_PlrBuf_lastpos = plrGetPlayPos() >> (stereo+bit16);
 
 	current_path = file;
-	emulate_play_midi_file_start(file, &timidity_main_session); /* aybuflen etc must be set, since we will start to get events already here... */
+	emulate_play_midi_file_start(file, &timidity_main_session); /* gmibuflen etc must be set, since we will start to get events already here... */
 
 	if (!pollInit(timidityIdle))
 	{
@@ -1899,7 +1924,7 @@ void __attribute__ ((visibility ("internal"))) timidityClosePlayer(void)
 
 int __attribute__ ((visibility ("internal"))) timidityIsLooped(void)
 {
-	return ay_looped;
+	return gmi_looped;
 }
 
 void __attribute__ ((visibility ("internal"))) timiditySetLoop(unsigned char s)
@@ -1914,15 +1939,14 @@ void __attribute__ ((visibility ("internal"))) timidityPause(unsigned char p)
 
 void __attribute__ ((visibility ("internal"))) timiditySetSpeed(uint16_t sp)
 {
-	midi_time_ratio = (float)sp / 256.0f;
+	speed = sp;
 }
 void __attribute__ ((visibility ("internal"))) timiditySetPitch(int16_t sp)
 {
-#warning Is this a good solution? Maybe using aybufrate is better, and only do SetSpeed via timidity API ?
 #if 0
 	if (sp<32)
 		sp=32;
-	aybufrate=256*sp;
+	gmibufrate=256*sp;
 #endif
 	ctl_next_value = sp - note_key_offset;
 	ctl_next_result = RC_KEYUP;
@@ -1945,7 +1969,7 @@ void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct mglobi
 
 	gi->curtick = current_sample
 - aq_soft_filled()
-- ( (aybufhead+aybuflen-aybuftail)%aybuflen ) /* aybuf length */
+- ( (gmibufhead+gmibuflen-gmibuftail)%gmibuflen ) /* gmibuf length */
 - ( (bufpos-pos+buflen)%buflen); /* PlrBuf length */
 	gi->ticknum = timidity_main_session.nsamples;
 }
