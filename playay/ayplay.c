@@ -554,6 +554,7 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 
 		bufdelta=(buflen+bufplayed-bufpos)%buflen;
 	}
+	/* No delta on the devp? */
 
 	if (!bufdelta)
 	{
@@ -846,39 +847,39 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 			if (stereo)
 			{
 				uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
-				int16_t *b=buf16;
+				uint8_t *b=(uint8_t *)buf16;
 				if (signedout)
 				{
 					for (i=0; i<bufdelta; i++)
 					{
-						p[0]=b[0]>>8;
-						p[1]=b[1]>>8;
+						p[0]=b[1];
+						p[1]=b[3];
 						p+=2;
-						b+=2;
+						b+=4;
 					}
 					p=(uint8_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
-						p[0]=b[0]>>8;
-						p[1]=b[1]>>8;
+						p[0]=b[1];
+						p[1]=b[3];
 						p+=2;
-						b+=2;
+						b+=4;
 					}
 				} else {
 					for (i=0; i<bufdelta; i++)
 					{
-						p[0]=(b[0]>>8)^0x80;
-						p[1]=(b[0]>>8)^0x80;
+						p[0]=b[1]^0x80;
+						p[1]=b[3]^0x80;
 						p+=2;
-						b+=2;
+						b+=4;
 					}
 					p=(uint8_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
-						p[0]=(b[0]>>8)^0x80;
-						p[1]=(b[1]>>8)^0x80;
+						p[0]=b[1]^0x80;
+						p[1]=b[3]^0x80;
 						p+=2;
-						b+=2;
+						b+=4;
 					}
 				}
 			} else {
@@ -895,7 +896,7 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 					p=(uint8_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
-						p[0]=b[1];
+						p[0]=(b[0]+b[1])>>9;
 						p++;
 						b+=2;
 					}
