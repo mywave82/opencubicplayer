@@ -385,8 +385,8 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 
 		bufdelta=(buflen+bufplayed-bufpos)%buflen;
 	}
-
 	/* No delta on the devp? */
+
 	if (!bufdelta)
 	{
 		clipbusy--;
@@ -399,7 +399,7 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 	mpegIdler();
 
 	if (inpause)
-	{
+	{ /* If we are in pause, we fill buffer with the correct type of zeroes */
 		if ((bufpos+bufdelta)>buflen)
 			pass2=bufpos+bufdelta-buflen;
 		else
@@ -419,106 +419,121 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 		if (bufpos>=buflen)
 			bufpos-=buflen;
 	} else {
-		int buf1, len1, buf2, len2;
-		int len;
+		int pos1, length1, pos2, length2;
 		int i;
 		int buf16_filled = 0;
 
 		/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-		ringbuffer_get_tail_samples (mpegbufpos, &buf1, &len1, &buf2, &len2);
-
-		len = len1 + len2;
+		ringbuffer_get_tail_samples (mpegbufpos, &pos1, &length1, &pos2, &length2);
 
 		if (mpegbufrate==0x10000) /* 1.0... just copy into buf16 direct until we run out of target buffer or source buffer */
 		{
-			int16_t rs, ls;
 			int16_t *t = buf16;
 
-			while (bufdelta && len)
+			if (bufdelta>(length1+length2))
 			{
-				rs = mpegbuf[buf1<<1];
-				ls = mpegbuf[(buf1<<1) + 1];
+				bufdelta=(length1+length2);
+				looped |= 2;
+
+			} else {
+				looped &= ~2;
+			}
+
+			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
+			{
+				int16_t rs, ls;
+
+				if (!length1)
+				{
+					pos1 = pos2;
+					length1 = length2;
+					pos2 = 0;
+					length2 = 0;
+				}
+
+				if (!length1)
+				{
+					fprintf (stderr, "mpplay: ERROR, length1 == 0, in mpegIdle\n");
+					_exit(1);
+				}
+
+
+				rs = mpegbuf[pos1<<1];
+				ls = mpegbuf[(pos1<<1) + 1];
 
 				PANPROC;
 
 				*(t++) = rs;
 				*(t++) = ls;
 
-				buf16_filled++;
-				len--;
-				bufdelta--;
-				buf1++;
-
-				if (!--len1)
-				{
-					buf1 = buf2;
-					len1 = len2;
-					buf2 = -1;
-					len2 = 0;
-				}
+				pos1++;
+				length1--;
 			}
+
 			ringbuffer_tail_consume_samples (mpegbufpos, buf16_filled); /* add this rate buf16_filled == tail_used */
 		} else {
 			/* We are going to perform cubic interpolation of rate conversion... this bit is tricky */
-			int tail_used = 0;
-			int16_t rs, ls;
+			unsigned int accumulated_progress = 0;
 
-			uint_fast32_t mpegbuffpos_new = mpegbuffpos, len_consume;
+			looped &= ~2;
 
-			mpegbuffpos_new = mpegbuffpos + mpegbufrate;
-			len_consume = mpegbuffpos_new >> 16;
-			mpegbuffpos_new &= 0xffff;
-
-			len-=3; /* we need to look 3 samples into the future - or if we wanted to be perfect 1 sample into the passed and 2 into the future */
-
-			while (bufdelta && (len > len_consume))
+			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
 			{
+				uint32_t wpm1, wp0, wp1, wp2;
 				int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
 				int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
+				unsigned int progress;
+				int16_t rs, ls;
 
-				switch (len1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
+				/* will the interpolation overflow? */
+				if ((length1+length2) <= 3)
 				{
-					default:
-						rvm1 = (uint16_t)mpegbuf[(buf1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
-						lvm1 = (uint16_t)mpegbuf[(buf1<<1)+1]^0x8000;
-						 rc0 = (uint16_t)mpegbuf[(buf1<<1)+2]^0x8000;
-						 lc0 = (uint16_t)mpegbuf[(buf1<<1)+3]^0x8000;
-						 rv1 = (uint16_t)mpegbuf[(buf1<<1)+4]^0x8000;
-						 lv1 = (uint16_t)mpegbuf[(buf1<<1)+5]^0x8000;
-						 rv2 = (uint16_t)mpegbuf[(buf1<<1)+6]^0x8000;
-						 lv2 = (uint16_t)mpegbuf[(buf1<<1)+7]^0x8000;
-						break;
-					case 3:
-						rvm1 = (uint16_t)mpegbuf[(buf1<<1)+0]^0x8000;
-						lvm1 = (uint16_t)mpegbuf[(buf1<<1)+1]^0x8000;
-						 rc0 = (uint16_t)mpegbuf[(buf1<<1)+2]^0x8000;
-						 lc0 = (uint16_t)mpegbuf[(buf1<<1)+3]^0x8000;
-						 rv1 = (uint16_t)mpegbuf[(buf1<<1)+4]^0x8000;
-						 lv1 = (uint16_t)mpegbuf[(buf1<<1)+5]^0x8000;
-						 rv2 = (uint16_t)mpegbuf[(buf2<<1)+0]^0x8000;
-						 lv2 = (uint16_t)mpegbuf[(buf2<<1)+1]^0x8000;
+					looped |= 2;
+					break;
+				}
+				/* will we overflow the wavebuf if we advance? */
+				if ((length1+length2) < ((mpegbufrate+mpegbuffpos)>>16))
+				{
+					looped |= 2;
+					break;
+				}
+
+				switch (length1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
+				{
+					case 1:
+						wpm1 = pos1;
+						wp0  = pos2;
+						wp1  = pos2+1;
+						wp2  = pos2+2;
 						break;
 					case 2:
-						rvm1 = (uint16_t)mpegbuf[(buf1<<1)+0]^0x8000;
-						lvm1 = (uint16_t)mpegbuf[(buf1<<1)+1]^0x8000;
-						 rc0 = (uint16_t)mpegbuf[(buf1<<1)+2]^0x8000;
-						 lc0 = (uint16_t)mpegbuf[(buf1<<1)+3]^0x8000;
-						 rv1 = (uint16_t)mpegbuf[(buf2<<1)+0]^0x8000;
-						 lv1 = (uint16_t)mpegbuf[(buf2<<1)+1]^0x8000;
-						 rv2 = (uint16_t)mpegbuf[(buf2<<1)+2]^0x8000;
-						 lv2 = (uint16_t)mpegbuf[(buf2<<1)+3]^0x8000;
+						wpm1 = pos1;
+						wp0  = pos1+1;
+						wp1  = pos2;
+						wp2  = pos2+1;
 						break;
-					case 1:
-						rvm1 = (uint16_t)mpegbuf[(buf1<<1)+0]^0x8000;
-						lvm1 = (uint16_t)mpegbuf[(buf1<<1)+1]^0x8000;
-						 rc0 = (uint16_t)mpegbuf[(buf2<<1)+0]^0x8000;
-						 lc0 = (uint16_t)mpegbuf[(buf2<<1)+1]^0x8000;
-						 rv1 = (uint16_t)mpegbuf[(buf2<<1)+2]^0x8000;
-						 lv1 = (uint16_t)mpegbuf[(buf2<<1)+3]^0x8000;
-						 rv2 = (uint16_t)mpegbuf[(buf2<<1)+4]^0x8000;
-						 lv2 = (uint16_t)mpegbuf[(buf2<<1)+5]^0x8000;
+					case 3:
+						wpm1 = pos1;
+						wp0  = pos1+1;
+						wp1  = pos1+2;
+						wp2  = pos2;
+						break;
+					default:
+						wpm1 = pos1;
+						wp0  = pos1+1;
+						wp1  = pos1+2;
+						wp2  = pos1+3;
 						break;
 				}
+
+				rvm1 = (uint16_t)mpegbuf[(wpm1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
+				lvm1 = (uint16_t)mpegbuf[(wpm1<<1)+1]^0x8000;
+				 rc0 = (uint16_t)mpegbuf[(wp0<<1)+0]^0x8000;
+				 lc0 = (uint16_t)mpegbuf[(wp0<<1)+1]^0x8000;
+				 rv1 = (uint16_t)mpegbuf[(wp1<<1)+0]^0x8000;
+				 lv1 = (uint16_t)mpegbuf[(wp1<<1)+1]^0x8000;
+				 rv2 = (uint16_t)mpegbuf[(wp2<<1)+0]^0x8000;
+				 lv2 = (uint16_t)mpegbuf[(wp2<<1)+1]^0x8000;
 
 				rc1 = rv1-rvm1;
 				rc2 = 2*rvm1-2*rc0+rv1-rv2;
@@ -556,50 +571,38 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 				buf16[(buf16_filled<<1)+0] = rs;
 				buf16[(buf16_filled<<1)+1] = ls;
 
-				buf16_filled++;
-				bufdelta--;
+				mpegbuffpos += mpegbufrate;
+				progress = mpegbuffpos>>16;
+				mpegbuffpos &= 0xffff;
 
+				accumulated_progress += progress;
+
+				/* did we wrap? if so, progress up to the wrapping point */
+				if (progress >= length1)
 				{
-					mpegbuffpos+=mpegbufrate;
-
-					tail_used += len_consume;
-					len -= len_consume;
-
-					if (len_consume >= len1)
-					{
-						len_consume -= len1;
-
-						buf1 = buf2 + len_consume;
-						len1 = len2 - len_consume;
-						buf2 = -1;
-						len2 = 0;
-					} else {
-						len1 -= len_consume;
-						buf1 += len_consume;
-					}
-
-					mpegbuffpos = mpegbuffpos_new;
-
-					mpegbuffpos_new = mpegbuffpos + mpegbufrate;
-					len_consume = mpegbuffpos_new >> 16;
-					mpegbuffpos_new &= 0xffff;
+					progress -= length1;
+					pos1 = pos2;
+					length1 = length2;
+					pos2 = 0;
+					length2 = 0;
 				}
+				if (progress)
+				{
+					pos1 += progress;
+					length1 -= progress;
+				}
+
 			}
-			ringbuffer_tail_consume_samples (mpegbufpos, tail_used);
+			ringbuffer_tail_consume_samples (mpegbufpos, accumulated_progress);
 		}
 
-		if (buf16_filled)
-		{
-			looped &= ~2;
-		} else {
-			looped |= 2;
-		}
+		bufdelta=buf16_filled;
 
-#warning instead of pass2 logic, we could initially make bufdelta only use first or second segment!!!
-		if ((bufpos+buf16_filled)>buflen)
-			pass2=bufpos+buf16_filled-buflen;
+		if ((bufpos+bufdelta)>buflen)
+			pass2=bufpos+bufdelta-buflen;
 		else
 			pass2=0;
+		bufdelta-=pass2;
 
 		buf16_filled-=pass2;
 
@@ -608,10 +611,10 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 			if (stereo)
 			{
 				int16_t *p=(int16_t *)plrbuf+2*bufpos;
-				int16_t *b=(int16_t *)buf16;
+				int16_t *b=buf16;
 				if (signedout)
 				{
-					for (i=0; i<buf16_filled; i++)
+					for (i=0; i<bufdelta; i++)
 					{
 						p[0]=b[0];
 						p[1]=b[1];
@@ -627,7 +630,7 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						b+=2;
 					}
 				} else {
-					for (i=0; i<buf16_filled; i++)
+					for (i=0; i<bufdelta; i++)
 					{
 						p[0]=b[0]^0x8000;
 						p[1]=b[1]^0x8000;
@@ -645,10 +648,10 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 				}
 			} else {
 				int16_t *p=(int16_t *)plrbuf+bufpos;
-				int16_t *b=(int16_t *)buf16;
+				int16_t *b=buf16;
 				if (signedout)
 				{
-					for (i=0; i<buf16_filled; i++)
+					for (i=0; i<bufdelta; i++)
 					{
 						p[0]=b[0];
 						p++;
@@ -662,7 +665,7 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						b++;
 					}
 				} else {
-					for (i=0; i<buf16_filled; i++)
+					for (i=0; i<bufdelta; i++)
 					{
 						p[0]=b[0]^0x8000;
 						p++;
@@ -684,7 +687,7 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 				uint8_t *b=(uint8_t *)buf16;
 				if (signedout)
 				{
-					for (i=0; i<buf16_filled; i++)
+					for (i=0; i<bufdelta; i++)
 					{
 						p[0]=b[1];
 						p[1]=b[3];
@@ -700,7 +703,7 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						b+=4;
 					}
 				} else {
-					for (i=0; i<buf16_filled; i++)
+					for (i=0; i<bufdelta; i++)
 					{
 						p[0]=b[1]^0x80;
 						p[1]=b[3]^0x80;
@@ -718,40 +721,40 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 				}
 			} else {
 				uint8_t *p=(uint8_t *)plrbuf+bufpos;
-				uint8_t *b=(uint8_t *)buf16;
+				int16_t *b=buf16;
 				if (signedout)
 				{
-					for (i=0; i<buf16_filled; i++)
+					for (i=0; i<bufdelta; i++)
 					{
-						p[0]=b[1];
+						p[0]=(b[0]+b[1])>>9;
 						p++;
 						b+=2;
 					}
 					p=(uint8_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
-						p[0]=b[1];
+						p[0]=(b[0]+b[1])>>9;
 						p++;
 						b+=2;
 					}
 				} else {
-					for (i=0; i<buf16_filled; i++)
+					for (i=0; i<bufdelta; i++)
 					{
-						p[0]=b[1]^0x80;
+						p[0]=((b[0]+b[1])>>9)^0x80;
 						p++;
 						b+=2;
 					}
 					p=(uint8_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
-						p[0]=b[1]^0x80;
+						p[0]=((b[0]+b[1])>>9)^0x80;
 						p++;
 						b+=2;
 					}
 				}
 			}
 		}
-		bufpos+=buf16_filled+pass2;
+		bufpos+=buf16_filled;
 		if (bufpos>=buflen)
 			bufpos-=buflen;
 	}
