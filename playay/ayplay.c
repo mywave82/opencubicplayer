@@ -48,6 +48,12 @@
 #include "sound.h"
 #include "z80.h"
 
+/* #define AY_DEBUG_OUTPUT 1 */
+
+#ifdef AY_DEBUG_OUTPUT
+int debug_output = -1;
+#endif
+
 /* from main.c */
 __attribute__ ((visibility ("internal"))) struct aydata_tag aydata;
 __attribute__ ((visibility ("internal"))) struct time_tag ay_tunetime;
@@ -80,7 +86,7 @@ static int srnd;
 
 /* devp pre-buffer zone */
 static int16_t *buf16; /* stupid dump that should go away */
-static uint16_t *_buf8; /* here we dump out data before it goes live... it no-longer is 8bit, but the name sticks */
+static int16_t *_buf8; /* here we dump out data before it goes live... it no-longer is 8bit, but the name sticks */
 static size_t _buf8_n; /* samples */
 /* devp buffer zone */
 static uint32_t bufpos; /* devp write head location */
@@ -179,7 +185,7 @@ write_dat:
 
 			case 0xfe:
 				do_cpc=-1;
-				sound_beeper(a&0x10);
+				sound_beeper(a&0x18, ay_tstates);
 				break;
 		}
 
@@ -490,10 +496,24 @@ int __attribute__ ((visibility ("internal"))) ay_do_interrupt(void)
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) ay_driver_frame(uint16_t *stereo_samples, size_t bytes)
+void __attribute__ ((visibility ("internal"))) ay_driver_frame(int16_t *stereo_samples, size_t bytes)
 {
+	int i;
+
+#ifdef AY_DEBUG_OUTPUT
+	write (debug_output, stereo_samples, bytes);
+#endif
+
+	/* 4 channel to 2 channel conversion */
+	for (i=0; i < (bytes>>3); i++)
+	{
+		int16_t left  = stereo_samples[(i<<2)+0] + (stereo_samples[(i<<2)+1]>>1) + (stereo_samples[(i<<2)+3]>>1);
+		int16_t right = stereo_samples[(i<<2)+2] + (stereo_samples[(i<<2)+1]>>1) + (stereo_samples[(i<<2)+3]>>1);
+		stereo_samples[(i<<1)+0] = left;
+		stereo_samples[(i<<1)+1] = right;
+	}
 	_buf8=stereo_samples;
-	_buf8_n=bytes>>1;
+	_buf8_n=bytes>>3;
 }
 
 static void ayIdler(void)
@@ -601,7 +621,6 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 			{
 				bufdelta=(length1+length2);
 				ay_looped |= 2;
-
 			} else {
 				ay_looped &= ~2;
 			}
@@ -1074,6 +1093,10 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(FILE *file)
 		return 0;
 	}
 
+#ifdef AY_DEBUG_OUTPUT
+	debug_output = open ("test.raw", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
+#endif
+
 	return 1;
 }
 
@@ -1097,6 +1120,11 @@ void __attribute__ ((visibility ("internal"))) ayClosePlayer(void)
 	aydata.filedata = 0;
 	buf16 = 0;
 	aybuf = 0;
+
+#ifdef AY_DEBUG_OUTPUT
+	close (debug_output);
+	debug_output = -1;
+#endif
 }
 
 int __attribute__ ((visibility ("internal"))) ayIsLooped(void)
