@@ -65,7 +65,10 @@ static uint32_t ay_tone_tick[3],ay_tone_high[3],ay_noise_tick;
 static uint32_t ay_tone_subcycles,ay_env_subcycles;
 static uint32_t ay_env_internal_tick,ay_env_tick;
 static uint32_t ay_tick_incr;
+static uint32_t ay_clock;
 static uint32_t ay_tone_period[3],ay_noise_period,ay_env_period;
+
+#define CLOCK_RESET(clock) {ay_clock=clock; ay_tick_incr=(int)(65536.*clock/sound_freq);}
 
 /* AY registers */
 /* we have 16 so we can fake an 8910 if needed (XXX any point?) */
@@ -104,13 +107,13 @@ int f;
 for(f=0;f<16;f++)
   ay_tone_levels[f]=(levels[f]*AMPL_AY_TONE+0x8000)/0xffff;
 
-ay_noise_tick=ay_noise_period=0;
-ay_env_internal_tick=ay_env_tick=ay_env_period=0;
+ay_noise_tick=0;
+ay_noise_period=1;
+ay_env_internal_tick=ay_env_tick=0;
+ay_env_period=1;
 ay_tone_subcycles=ay_env_subcycles=0;
 for(f=0;f<3;f++)
   ay_tone_tick[f]=ay_tone_high[f]=0,ay_tone_period[f]=1;
-
-#define CLOCK_RESET(clock) ay_tick_incr=(int)(65536.*clock/sound_freq)
 
 CLOCK_RESET(AY_CLOCK);
 
@@ -202,7 +205,7 @@ void __attribute__ ((visibility ("internal"))) sound_end(void)
 #define AY_ENV_ALT	2
 #define AY_ENV_HOLD	1
 
-static void sound_ay_overlay(void)
+static void sound_ay_overlay(struct ay_driver_frame_state_t *states)
 {
 	static int rng=1;
 	static int noise_toggle=0;
@@ -217,7 +220,7 @@ static void sound_ay_overlay(void)
 	int is_low,is_on;
 	int chan1,chan2,chan3;
 	int frametime=ay_tsmax*50;
-	uint32_t tone_count,noise_count;
+	uint32_t tone_count;
 
 	/* convert change times to sample offsets */
 	for(f=0;f<ay_change_count;f++)
@@ -275,7 +278,9 @@ static void sound_ay_overlay(void)
 						ay_tone_period[r]= ( (sound_ay_registers[ reg | 1 ] & 15 ) << 8) | sound_ay_registers[ reg & ~1 ];
 
 						if(!ay_tone_period[r])
-							ay_tone_period[r]++;
+						{
+							ay_tone_period[r]=1;
+						}
 
 						/* important to get this right, otherwise e.g. Ghouls 'n' Ghosts
 						 * has really scratchy, horrible-sounding vibrato.
@@ -286,11 +291,19 @@ static void sound_ay_overlay(void)
 					case 6:
 						ay_noise_tick=0;
 						ay_noise_period=(sound_ay_registers[reg]&31);
+						if (!ay_noise_period)
+						{
+							ay_noise_period = 1;
+						}
 						break;
 					case 11:
 					case 12:
 						/* this one *isn't* fixed-point */
 						ay_env_period=sound_ay_registers[11]|(sound_ay_registers[12]<<8);
+						if (!ay_env_period)
+						{
+							ay_env_period = 1;
+						}
 						break;
 					case 13:
 						ay_env_internal_tick=ay_env_tick=ay_env_subcycles=0;
@@ -320,12 +333,12 @@ static void sound_ay_overlay(void)
 		 * Has to be a while, as this is sub-output-sample res.
 		 */
 		ay_env_subcycles+=ay_tick_incr;
-		noise_count=0;
 		while(ay_env_subcycles>=(16<<16))
 		{
 			ay_env_subcycles-=(16<<16);
-			noise_count++;
+			ay_noise_tick++;
 			ay_env_tick++;
+
 			while(ay_env_tick>=ay_env_period)
 			{
 				ay_env_tick-=ay_env_period;
@@ -368,10 +381,6 @@ static void sound_ay_overlay(void)
 
 					env_first=0;
 				}
-
-				/* don't keep trying if period is zero */
-				if(!ay_env_period)
-					break;
 			}
 		}
 
@@ -410,7 +419,6 @@ static void sound_ay_overlay(void)
 		(*ptr++) = sound_oldval;
 
 		/* update noise RNG/filter */
-		ay_noise_tick+=noise_count;
 		while(ay_noise_tick>=ay_noise_period)
 		{
 			ay_noise_tick-=ay_noise_period;
@@ -423,12 +431,20 @@ static void sound_ay_overlay(void)
 			 */
 			rng|=((rng&1)^((rng&4)?1:0))?0x20000:0;
 			rng>>=1;
-
-			/* don't keep trying if period is zero */
-			if(!ay_noise_period)
-				break;
 		}
 	}
+
+	states->clockrate = ay_clock;
+	states->channel_a_period = ay_tone_period[0];
+	states->channel_b_period = ay_tone_period[1];
+	states->channel_c_period = ay_tone_period[2];
+	states->noise_period = ay_noise_period;
+	states->mixer = mixer & 0x3f;
+	states->amplitude_a = sound_ay_registers[ 8] & 0x1f;
+	states->amplitude_b = sound_ay_registers[ 9] & 0x1f;
+	states->amplitude_c = sound_ay_registers[10] & 0x1f;
+	states->envelope_period = ay_env_period;
+	states->envelope_shape = envshape & 0x0f;
 }
 
 
@@ -478,14 +494,14 @@ CLOCK_RESET(AY_CLOCK_CPC);
 
 
 /* returns zero if this frame was completely silent */
-int __attribute__ ((visibility ("internal"))) sound_frame(int really_play)
+int __attribute__ ((visibility ("internal"))) sound_frame(struct ay_driver_frame_state_t *states)
 {
-static int silent_level=-1;
 int16_t *ptr;
-int f,silent,chk;
+int f,silent;
+static int chk0=-1, chk1=-1, chk2=-1, chk3=-1;
 int fulllen=sound_framesiz*4;
 
-sound_ay_overlay();
+sound_ay_overlay(states);
 
 /* check for a silent frame.
  * bit nasty, but it's the only way to be sure. :-)
@@ -498,26 +514,33 @@ sound_ay_overlay();
  * *any* non-varying level as silence. Fair enough in a way, as it
  * will indeed be silent, but a bit of a pain.
  */
+
 silent=1;
+
 ptr=sound_buf;
-chk=*ptr++;
-for(f=1;f<fulllen;f++)
+for(f=0;f<fulllen;f++)
+{
+  if(*ptr++!=chk0)
   {
-  if(*ptr++!=chk)
-    {
     silent=0;
     break;
-    }
   }
-
-/* even if they're all the same, it doesn't count if the
- * level's changed since last time...
- */
-if(chk!=silent_level)
-  silent=0;
-
-/* save last sample for comparison next time */
-silent_level=sound_buf[fulllen-1];
+  if(*ptr++!=chk1)
+  {
+    silent=0;
+    break;
+  }
+  if(*ptr++!=chk2)
+  {
+    silent=0;
+    break;
+  }
+  if(*ptr++!=chk3)
+  {
+    silent=0;
+    break;
+  }
+}
 
 /* apply overall fade if we're in the middle of one. */
 if(fading)
@@ -545,8 +568,7 @@ if(fading)
     }
   }
 
-if(really_play)
-  ay_driver_frame(sound_buf,fulllen*sizeof(int16_t));
+ay_driver_frame(sound_buf,fulllen*sizeof(int16_t));
 
 ay_change_count=0;
 

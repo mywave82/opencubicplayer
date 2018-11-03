@@ -443,13 +443,10 @@ static void tunetime_reset(void)
 }
 
 /* rets zero if we want to exit the emulation (i.e. exit track) */
+static int silent_for=0;
 int __attribute__ ((visibility ("internal"))) ay_do_interrupt(void)
 {
-	static int count=0;
-	static int silent_for=0;
-
-	count++;
-	if(count>=4) count=0;
+	struct ay_driver_frame_state_t states;
 
 	/* check for fade needed */
 	if(!done_fade && stopafter && ay_tunetime.min*60+ay_tunetime.sec>=stopafter)
@@ -471,7 +468,7 @@ int __attribute__ ((visibility ("internal"))) ay_do_interrupt(void)
 		}
 	}
 
-	if(!sound_frame(1/*count==0 || !highspeed*/))
+	if(!sound_frame(&states))
 	{
 		if((++silent_for) >= silent_max)
 		{
