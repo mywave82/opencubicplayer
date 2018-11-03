@@ -356,7 +356,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 		fprintf(stderr, __FILE__ ": malloc(%d) failed #6\n", (int)(sizeof(uint16_t)*this->npat));
 		return errAllocMem;
 	}
-	if (!(this->patterns=malloc(sizeof(uint8_t*)*this->npat)))
+	if (!(this->patterns=calloc(sizeof(uint8_t*), this->npat)))
 	{
 		fprintf(stderr, __FILE__ ": malloc(%d) failed #7\n", (int)(sizeof(uint8_t*)*this->npat));
 		return errAllocMem;
