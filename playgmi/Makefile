@@ -140,13 +140,15 @@ timidity-git/timidity/wrdt.o: \
 timidityplay.o: timidityplay.c \
 	../config.h \
 	../boot/plinkman.h \
-	../cpiface/cpiface.h
+	../cpiface/cpiface.h \
+	timidityplay.h
 	$(CC) $< -o $@ -c -DANOTHER_MAIN -Dmain=timidity_main -DDEFAULT_PATH=TIMIDITY_DEFAULT_PATH -DPKGDATADIR=TIMIDITYPKGDATADIR
 
 timiditypplay.o: timiditypplay.c \
 	../config.h \
 	../boot/plinkman.h \
-	../cpiface/cpiface.h
+	../cpiface/cpiface.h \
+	timidityplay.h
 	$(CC) $< -o $@ -c
 
 timiditypchan.o: timiditypchan.c \
