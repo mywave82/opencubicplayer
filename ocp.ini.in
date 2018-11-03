@@ -1,5 +1,5 @@
 [version]
- epoch=20160321
+ epoch=20160606
 
 [general]
 ;link=
@@ -46,8 +46,6 @@ link=medialib
   bigmodules=devwMixF     ; this wavetable device will be used if a module
                           ; was tagged "big" with alt-b in the fileselector.
                           ; (use if wavetable ram is not enough by far)
-  wavetostereo=1          ; conv mono waves to stereo. turn off with sbpro
-  waveratetolerance=50    ; samprate can vary up to 50/1000
   amplify=100             ; -va100
   panning=100             ; -vp100
   volume=100              ; -vv100

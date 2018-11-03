@@ -328,9 +328,16 @@ static int init_modules(int argc, char *argv[])
 			}
 		}
 
-		if (epoch < 20160321)
+		if (epoch < 20160606)
 		{
-			cfSetProfileInt("version", "epoch", 20160321, 10);
+			fprintf (stderr, "ocp.ini update (0.2.0), remove wavetostereo and waveratetolerance\n");
+			cfRemoveEntry("sound", "wavetostereo");
+			cfRemoveEntry("sound", "waveratetolerance");
+		}
+
+		if (epoch < 20160606)
+		{
+			cfSetProfileInt("version", "epoch", 20160606, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -341,7 +348,7 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10)!=20160321)
+	if (cfGetProfileInt("version", "epoch", 0, 10)!=20160606)
 	{
 		if (isatty(2))
 		{
