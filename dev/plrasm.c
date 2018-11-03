@@ -101,6 +101,16 @@ void plr16to8(uint8_t *dst, const uint16_t *src, unsigned long len)
 		len--;
 	}
 }
+
+extern void plrMono16ToStereo16(int16_t *buf, int len)
+{
+	int i;
+	for (i = len; i >= 0; i--)
+	{
+		buf[i<<1] = buf[(i<<1)+1] = buf[i];
+	}
+}
+
 /*
 blockbeg2 macro exp
 blockexp=exp
