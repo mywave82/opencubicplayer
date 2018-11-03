@@ -59,7 +59,7 @@ static char vdev[8];
 
 static int16_t speed;
 static char finespeed=8;
-static uint32_t pausefadestart;
+static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
 
@@ -95,7 +95,7 @@ static void dopausefade(void)
 	int16_t i;
 	if (pausefadedirect>0)
 	{
-		i=((int32_t)dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
+		i=(dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
 		if (i<0)
 			i=0;
 		if (i>=64)
@@ -104,7 +104,7 @@ static void dopausefade(void)
 			pausefadedirect=0;
 		}
 	} else {
-		i=64-((int32_t)dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
+		i=64-(dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
 		if (i>=64)
 			i=64;
 		if (i<=0)

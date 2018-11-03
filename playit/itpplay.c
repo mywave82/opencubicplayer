@@ -61,8 +61,8 @@ static const char *composer;
 
 static char currentmodname[_MAX_FNAME+1];
 static char currentmodext[_MAX_EXT+1];
-static long starttime;
-static long pausetime;
+static time_t starttime;
+static time_t pausetime;
 
 
 void itpInstClear();

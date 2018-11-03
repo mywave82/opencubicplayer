@@ -108,7 +108,7 @@ static struct cpimoderegstruct *cpiDefModes;
 uint16_t plTitleBuf[5][CONSOLE_MAX_X];
 static uint16_t plTitleBufOld[4][CONSOLE_MAX_X];
 
-unsigned long plEscTick;
+time_t plEscTick;
 
 static struct cpimoderegstruct *curmode;
 static char curmodehandle[9];
