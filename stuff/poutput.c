@@ -30,7 +30,7 @@
  *    -faked in a LFB-mode (required some other changes)
  *  -doj20020418 Dirk Jagdmann <doj@cubic.org>
  *    -added screenshot routines
- *  -ss040613   Stian Skjelstad <stian@nixi.no>
+ *  -ss040613   Stian Skjelstad <stian@nixia.no>
  *    -more or less killed the entire file due to the unix implementation, but
  *     the generic functions is still kept in this file.
  */
@@ -57,7 +57,7 @@ void make_title(char *part)
 		writestring(sbuf, plScrWidth-58, 0x30, part, strlen(part));
 	else
 		writestring(sbuf, (plScrWidth-strlen(part))/2, 0x30, part, strlen(part));
-	writestring(sbuf, plScrWidth-28, 0x30, "(c) 1994-2016 Stian Skjelstad", 27);
+	writestring(sbuf, plScrWidth-30, 0x30, "(c) 1994-2018 Stian Skjelstad", 29);
 	displaystrattr(0, 0, sbuf, plScrWidth);
 }
 
