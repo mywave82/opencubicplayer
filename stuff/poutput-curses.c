@@ -60,7 +60,7 @@
 #include "stuff/poutput.h"
 #include "boot/psetting.h"
 
-#if defined(SIGWINCH) && defined(TIOCGWINSZ) && HAVE_RESIZETERM
+#if defined(SIGWINCH) && defined(TIOCGWINSZ) && HAVE_RESIZE_TERM
 #define CAN_RESIZE 1
 #else
 #undef CAN_RESIZE

@@ -8139,6 +8139,20 @@ fi
 if test "x$ax_cv_curses_color" != xyes; then
 	as_fn_error $? "requires an X/Open-compatible Curses library with color" "$LINENO" 5
 fi
+push_LIBS=$LIBS
+LIBS=$CURSES_LIB
+for ac_func in resize_term
+do :
+  ac_fn_c_check_func "$LINENO" "resize_term" "ac_cv_func_resize_term"
+if test "x$ac_cv_func_resize_term" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_RESIZE_TERM 1
+_ACEOF
+
+fi
+done
+
+LIBS=$push_LIBS
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for zlibVersion in -lz" >&5
 $as_echo_n "checking for zlibVersion in -lz... " >&6; }

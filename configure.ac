@@ -349,6 +349,10 @@ fi
 if test "x$ax_cv_curses_color" != xyes; then
 	AC_MSG_ERROR([requires an X/Open-compatible Curses library with color])
 fi
+push_LIBS=$LIBS
+LIBS=$CURSES_LIB
+AC_CHECK_FUNCS(resize_term)
+LIBS=$push_LIBS
 
 AC_CHECK_LIB(z, zlibVersion, , AC_MSG_ERROR("zlib not found"))
 AC_SUBST(DL_LIBS)
