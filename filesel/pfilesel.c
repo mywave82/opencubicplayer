@@ -801,6 +801,16 @@ int fsPreInit(void)
 	return 1;
 }
 
+int fsLateInit(void)
+{
+	if (plVidType == vidModern)
+	{
+		fsScrType=8;
+	}
+
+	return 1;
+}
+
 int fsInit(void)
 {
 	/*

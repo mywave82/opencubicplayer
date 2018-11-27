@@ -20,6 +20,10 @@ ifeq ($(HAVE_SDL),1)
 poutput_so+=poutput-sdl.o
 poutput_so_libs+=$(SDL_LIBS)
 endif
+ifeq ($(HAVE_SDL2),1)
+poutput_so+=poutput-sdl2.o
+poutput_so_libs+=$(SDL2_LIBS)
+endif
 
 ifeq ($(STATIC_BUILD),1)
 all: err.o $(compat_so) $(framelock_so) $(hardware_so) $(sets_so) $(poutput_so)
@@ -121,6 +125,16 @@ poutput-sdl.o: poutput-sdl.c poutput-sdl.h \
 	pfonts.h
 	$(CC) $(SDL_CFLAGS) poutput-sdl.c -o $@ -c
 
+poutput-sdl2.o: poutput-sdl2.c poutput-sdl2.h \
+	../config.h \
+	../types.h \
+	../boot/console.h \
+	../boot/psetting.h \
+	../stuff/framelock.h \
+	poutput.h \
+	pfonts.h
+	$(CC) $(SDL2_CFLAGS) poutput-sdl2.c -o $@ -c
+
 poutput-x11.o: poutput-x11.c poutput-x11.h \
 	../config.h \
 	../types.h \
@@ -170,6 +184,7 @@ console.o: console.c \
 	poutput-curses.h \
 	poutput-fb.h \
 	poutput-sdl.h \
+	poutput-sdl2.h \
 	poutput-x11.h \
 	poutput-vcsa.h
 	$(CC) console.c -o $@ -c

@@ -63,7 +63,12 @@ extern void markstring(uint16_t *buf, unsigned short ofs, unsigned short len);
 extern void fillstr(uint16_t *buf, const unsigned short ofs, const unsigned char chr, const unsigned char attr, unsigned short len);
 
 
-enum { vidNorm, vidVESA};
+enum
+{
+	vidNorm, /* text-only systems - console, curses etc.. can support setting video-mode */
+	vidVESA, /* text and graphical systems.. can support setting video-mode */
+	vidModern, /* text and graphical systems.. try to not override video-mode */
+};
 
 extern unsigned int plScrHeight;               /* How many textlines can we currently fit. Undefined for wurfel-mode */
 extern unsigned int plScrWidth;                /* How many characters can we currently fir on a line */

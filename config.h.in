@@ -194,6 +194,7 @@
 /* #define MCP_DEBUG 1 */
 /* #define COREAUDIO_DEBUG 1 */
 /* #define SDL_DEBUG 1 */
+/* #define SDL2_DEBUG 1 */
 /* #define CPIFACE_DEBUG 1 */
 
 #define VERBOSE_FRAMEBUFFER 1
@@ -275,6 +276,8 @@
 #undef HAVE_X11
 
 #undef HAVE_SDL
+
+#undef HAVE_SDL2
 
 #undef HAVE_MAD
 

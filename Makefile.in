@@ -57,6 +57,9 @@ endif
 ifeq ($(HAVE_SDL),1)
 	$(CP) ocp-sdl "$(DESTDIR)$(BINDIR)/ocp-sdl"
 endif
+ifeq ($(HAVE_SDL2),1)
+	$(CP) ocp-sdl2 "$(DESTDIR)$(BINDIR)/ocp-sdl2"
+endif
 ifeq ($(HAVE_X11),1)
 	$(CP) ocp-x11 "$(DESTDIR)$(BINDIR)/ocp-x11"
 endif

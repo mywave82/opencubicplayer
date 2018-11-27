@@ -398,6 +398,17 @@ static int fsint(void)
 	return errOk;
 }
 
+static int fslateint(void)
+{
+	if (!fsLateInit())
+	{
+		fprintf(stderr, "fileselector post-init failed!\n");
+		return errGen;
+	}
+
+	return errOk;
+}
+
 static void fsclose()
 {
 	mdbUnregisterReadDir(&adbReadDirReg);
@@ -617,4 +628,4 @@ static void __attribute__((destructor))done(void)
 char *dllinfo = "";
 #endif
 
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "pfilesel", .desc = "OpenCP Fileselector (c) 1994-10 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .PreInit = fspreint, .Init = fsint, .LateClose = fsclose};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "pfilesel", .desc = "OpenCP Fileselector (c) 1994-10 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .PreInit = fspreint, .Init = fsint, .LateInit = fslateint, .LateClose = fsclose};

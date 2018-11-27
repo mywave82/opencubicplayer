@@ -47,6 +47,9 @@
 #ifdef HAVE_SDL
 #include "poutput-sdl.h"
 #endif
+#ifdef HAVE_SDL2
+#include "poutput-sdl2.h"
+#endif
 #ifdef HAVE_FRAMEBUFFER
 #include "poutput-vcsa.h"
 #endif
@@ -164,6 +167,18 @@ static int console_init(void)
 				fprintf(stderr, "SDL driver not compiled in\n");
 #endif
 				return -1;
+			} else if (!strcmp(driver, "sdl2"))
+			{
+#ifdef HAVE_SDL2
+				if (!sdl2_init())
+				{
+					console_clean=sdl2_done;
+					return 0;
+				}
+				fprintf(stderr, "SDL2 init failed\n");
+#else
+				fprintf(stderr, "SDL2 driver not compiled in\n");
+#endif
 			}
 		}
 	}
@@ -190,6 +205,14 @@ static int console_init(void)
 		if (!x11_init(0))
 		{
 			console_clean=x11_done;
+			return 0;
+		}
+#endif
+#ifdef HAVE_SDL2
+		fprintf(stderr, "stdout and stdin does not come from the same device, trying SDL2\n");
+		if (!sdl2_init())
+		{
+			console_clean=sdl2_done;
 			return 0;
 		}
 #endif
@@ -298,6 +321,14 @@ static int console_init(void)
 	if (!x11_init(0))
 	{
 		console_clean=x11_done;
+		return 0;
+	}
+#endif
+
+#ifdef HAVE_SDL2
+	if (!sdl2_init())
+	{
+		console_clean=sdl2_done;
 		return 0;
 	}
 #endif

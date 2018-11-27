@@ -82,6 +82,7 @@ AC_ARG_WITH(coreaudio, [  --with-coreaudio        force/disable osx coreaudio su
 AC_ARG_WITH(flac, [  --with-flac             force/disable FLAC support (autodetect by default)],, with_flac=auto)
 
 AC_ARG_WITH(sdl,  [  --with-sdl              force/disable SDL video support (autodetect by default)],, with_sdl=auto)
+AC_ARG_WITH(sdl2, [  --with-sdl2             force/disable SDL2 video support (autodetect by default)],, with_sdl2=auto)
 AC_ARG_WITH(desktop_file_install, [  --without-desktop_file_install Do not install .desktop file (SDL and X11 normally does this)],, with_desktop_file_install=auto)
 
 
@@ -509,6 +510,23 @@ else
 	AC_DEFINE(HAVE_X11)
 fi
 
+AC_SUBST(SDL2_CFLAGS)
+AC_SUBST(SDL2_LIBS)
+if test "x$with_sdl2" != "xno"; then
+	AM_PATH_SDL2(["2.0.0"], with_sdl2=yes;, if test "x$with_sdl2" = "xyes"; then AC_MSG_ERROR("libSDL2 was not found"); else with_sdl2="no"; fi)
+fi
+SDL2_CFLAGS=$SDL_CFLAGS
+SDL2_LIBS=$SDL_LIBS
+SDL_CFLAGS=
+SDL_LIBS=
+AC_SUBST(HAVE_SDL2)
+if test "x$with_sdl2" = "xno"; then
+	HAVE_SDL2=
+else
+	HAVE_SDL2=1
+	AC_DEFINE(HAVE_SDL2)
+fi
+
 org_cflags="$CFLAGS"
 org_cppflags="$CPPFLAGS"
 AC_SUBST(SDL_CFLAGS)
@@ -841,7 +859,7 @@ case $with_libiconv in
 esac
 
 if ! test "x$with_desktop_file_install" = "xno"; then
-	if test "x$with_x11" != "xno" || test "x$with_sdl" != "xno"; then
+	if test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"; then
 		AC_CHECK_PROG(DESKTOP_FILE_INSTALL,desktop-file-install,desktop-file-install,failed)
 		if test "x$DESKTOP_FILE_INSTALL" = "xfailed"; then
 			AC_MSG_ERROR(Cannot find desktop-file-install (required by x11 and SDL driver).)
@@ -898,6 +916,11 @@ if test "x$with_sdl" = "xno"; then
 	echo "SDL:               OFF"
 else
 	echo "SDL:               ON"
+fi
+if test "x$with_sdl2" = "xno"; then
+	echo "SDL2:              OFF"
+else
+	echo "SDL2:              ON"
 fi
 if test "x$with_alsa" = "xno"; then
 	echo "ALSA:              OFF"

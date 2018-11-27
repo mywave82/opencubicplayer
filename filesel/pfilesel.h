@@ -10,6 +10,7 @@ extern int fsFilesLeft(void);
 extern signed int fsFileSelect(void);
 /* extern char fsAddFiles(const char *);      use the playlist instead..*/
 extern int fsPreInit(void);
+extern int fsLateInit(void);
 extern int fsInit(void);
 extern void fsClose(void);
 
