@@ -296,7 +296,7 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 			mode = MODE_1024_768;
 			break;
 		default:
-			fprintf(stderr, "[SDL-video] plSetGraphMode helpher: invalid graphmode\n");
+			fprintf(stderr, "[SDL-video] plSetGraphMode helper: invalid graphmode\n");
 			exit(-1);
 	}
 	width = mode_gui_data[mode].width;
