@@ -333,8 +333,7 @@ static int adbZIPScan(const char *path)
 						if ((destlen = decode_partial(mdbScanBuf, destlen, adbScanBuf, srclen, hdr.method)))
 							if (mdbGetModuleInfo(&mi, fileref))
 							{
-								int res;
-								res=mdbReadMemInfo(&mi, mdbScanBuf, destlen);
+								mdbReadMemInfo(&mi, mdbScanBuf, destlen); /* we do not care about the return-value. We do not want to decompress the file further */
 								mdbWriteModuleInfo(fileref, &mi);
 							}
 					}
