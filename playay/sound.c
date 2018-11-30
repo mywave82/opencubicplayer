@@ -22,6 +22,7 @@
  */
 
 #include "config.h"
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -221,6 +222,8 @@ static void sound_ay_overlay(struct ay_driver_frame_state_t *states)
 	int chan1,chan2,chan3;
 	int frametime=ay_tsmax*50;
 	uint32_t tone_count;
+
+	assert (sound_framesiz>0);
 
 	/* convert change times to sample offsets */
 	for(f=0;f<ay_change_count;f++)
