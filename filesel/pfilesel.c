@@ -1564,10 +1564,10 @@ static unsigned char fsEditModType(unsigned char oldtype)
 
 	const int Height=20;
 	const int iHeight=Height-1;
-	const int Width=15;
+	const int Width=18;
 	int Top=(plScrHeight-Height)/2;
 	int Left=(plScrWidth-Width)/2;
-	const int Mid = 5;
+	const int Mid = 7;
 
 	int editcol=0;
 
@@ -1623,24 +1623,25 @@ static unsigned char fsEditModType(unsigned char oldtype)
 		for (i=1;i<16;i++)
 		{
 			unsigned char col;
-			char buffer[9];
+			char buffer[11];
 			col=i;
 			if (editcol==i)
 				col|=0x80;
-			snprintf(buffer, sizeof(buffer), "color % 2d", i);
-			displaystr(Top+i, Left+Mid+1, col, buffer, 9);
+			snprintf(buffer, sizeof(buffer), " color %2d ", i);
+			displaystr(Top+i, Left+Mid+1, col, buffer, 10);
 		}
 		for (i=0;i<iHeight;i++)
 		{
 			unsigned char col;
-			if ((offset+i)>=length)
-				break;
 			if ((!editcol)&&((offset+i)==curindex))
 				col=0x80;
 			else
 				col=0;
+			displaystr(Top+i+1, Left+1, col, "      ", 6);
+			if ((offset+i)>=length)
+				break;
 			col|=fsTypeCols[index[offset+i]&0xFF];
-			displaystr(Top+i+1, Left+1, col, mdbGetModTypeString(index[offset+i]), 4);
+			displaystr(Top+i+1, Left+2, col, mdbGetModTypeString(index[offset+i]), 4);
 		}
 		framelock();
 		while (ekbhit())
@@ -2693,8 +2694,8 @@ signed int fsFileSelect(void)
 				break;
 			case KEY_CTRL_PGUP:
 			/* case 0x8400: //ctrl-pgup */
-			if (editmode||!win)
-				break;
+				if (editmode||!win)
+					break;
 				i=(playlist->pos>dirwinheight)?dirwinheight:playlist->pos;
 				modlist_swap(playlist, playlist->pos, playlist->pos-i);
 				playlist->pos-=i;
