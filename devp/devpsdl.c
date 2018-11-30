@@ -37,9 +37,9 @@
 #include "stuff/imsrtns.h"
 
 #ifdef SDL_DEBUG
- #define PRINT(a) fprintf(stderr, a)
+ #define PRINT(...) fprintf(stderr, __VA_ARGS__)
 #else
- #define PRINT(a) do {} while(0)
+ #define PRINT(...) do {} while(0)
 #endif
 
 extern struct sounddevice plrSDL;
@@ -85,7 +85,7 @@ void theRenderProc(void *userdata, Uint8 *stream, int len)
 	int i, i2;
 	int done = 0;
 
-	PRINT(("%s(,,%d)\n", __FUNCTION__, len));
+	PRINT("%s(,,%d)\n", __FUNCTION__, len);
 
 	memset(stream, 0, len);
 
@@ -117,7 +117,7 @@ void theRenderProc(void *userdata, Uint8 *stream, int len)
 	SDL_UnlockAudio();
 
 	if (done < len)
-		PRINT(("%s: got %d of %d\n", __FUNCTION__, done, len));
+		PRINT("%s: got %d of %d\n", __FUNCTION__, done, len);
 }
 
 
@@ -125,7 +125,7 @@ void theRenderProc(void *userdata, Uint8 *stream, int len)
 static int sdlGetBufPos(void)
 {
 	int retval;
-	PRINT(("%s()\n", __FUNCTION__));
+	PRINT("%s()\n", __FUNCTION__);
 
 	/* this thing is utterly broken */
 
@@ -147,7 +147,7 @@ static int sdlGetBufPos(void)
 static int sdlGetPlayPos(void)
 {
 	int retval;
-	PRINT(("%s()\n", __FUNCTION__));
+	PRINT("%s()\n", __FUNCTION__);
 
 	SDL_LockAudio();
 	retval=cachepos;
@@ -157,12 +157,12 @@ static int sdlGetPlayPos(void)
 
 static void sdlIdle(void)
 {
-	PRINT(("%s()\n", __FUNCTION__));
+	PRINT("%s()\n", __FUNCTION__);
 }
 
 static void sdlAdvanceTo(unsigned int pos)
 {
-	PRINT(("%s(%u)\n", __FUNCTION__, pos));
+	PRINT("%s(%u)\n", __FUNCTION__, pos);
 	SDL_LockAudio();
 
 	cachelen+=(pos-bufpos+buflen)%buflen;
@@ -174,7 +174,7 @@ static void sdlAdvanceTo(unsigned int pos)
 static uint32_t sdlGetTimer(void)
 {
 	long retval;
-	PRINT(("%s()\n", __FUNCTION__));
+	PRINT("%s()\n", __FUNCTION__);
 
 	SDL_LockAudio();
 
@@ -191,7 +191,7 @@ static uint32_t sdlGetTimer(void)
 
 static void sdlStop(void)
 {
-	PRINT(("%s()\n", __FUNCTION__));
+	PRINT("%s()\n", __FUNCTION__);
 	/* TODO, forceflush */
 
 	SDL_PauseAudio(1);
@@ -215,7 +215,7 @@ static int sdlPlay(void **buf, unsigned int *len)
 {
 	SDL_AudioSpec desired, obtained;
 	int status;
-	PRINT(("%s(,&%d)\n", __FUNCTION__, *len));
+	PRINT("%s(,&%d)\n", __FUNCTION__, *len);
 
 	if ((*len)<(plrRate&~3))
 		*len=plrRate&~3;
@@ -269,7 +269,7 @@ static int sdlPlay(void **buf, unsigned int *len)
 
 static void sdlSetOptions(unsigned int rate, int opt)
 {
-	PRINT(("%s(%u, %d)\n", __FUNCTION__, rate, opt));
+	PRINT("%s(%u, %d)\n", __FUNCTION__, rate, opt);
 	plrRate=rate; /* fixed */
 	plrOpt=PLR_STEREO|PLR_16BIT|PLR_SIGNEDOUT; /* fixed fixed fixed */
 }
@@ -278,7 +278,7 @@ static int sdlInit(const struct deviceinfo *c)
 {
 	char drivername[FILENAME_MAX];
 	int status;
-	PRINT(("%s()\n", __FUNCTION__));
+	PRINT("%s()\n", __FUNCTION__);
 	status = SDL_InitSubSystem(SDL_INIT_AUDIO);
 	if (status == 0)
 	{
@@ -294,7 +294,7 @@ static int sdlInit(const struct deviceinfo *c)
 
 static void sdlClose(void)
 {
-	PRINT(("%s()\n", __FUNCTION__));
+	PRINT("%s()\n", __FUNCTION__);
 	SDL_QuitSubSystem(SDL_INIT_AUDIO);
 	plrSetOptions=0;
 	plrPlay=0;
@@ -303,7 +303,7 @@ static void sdlClose(void)
 
 static int sdlDetect(struct deviceinfo *card)
 {
-	PRINT(("%s()\n", __FUNCTION__));
+	PRINT("%s()\n", __FUNCTION__);
 
 	/* ao is now created, the above is needed only ONCE */
 	card->devtype=&plrSDL;
@@ -320,4 +320,4 @@ static int sdlDetect(struct deviceinfo *card)
 struct sounddevice plrSDL={SS_PLAYER, 0, "SDL Player", sdlDetect, sdlInit, sdlClose, 0};
 
 char *dllinfo="driver plrSDL";
-struct linkinfostruct dllextinfo = {.name = "devpsdl", .desc = "OpenCP Player Device: None (c) 2011 Fran\x87ois Revol", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "devpsdl", .desc = "OpenCP Player Device: SDL (c) 2011 Fran\x87ois Revol", .ver = DLLVERSION, .size = 0};
