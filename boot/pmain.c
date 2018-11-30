@@ -335,9 +335,56 @@ static int init_modules(int argc, char *argv[])
 			cfRemoveEntry("sound", "waveratetolerance");
 		}
 
-		if (epoch < 20160606)
+		if (epoch < 20181129)
 		{
-			cfSetProfileInt("version", "epoch", 20160606, 10);
+			const char *list;
+			char temp1[1024];
+
+			fprintf (stderr, "ocp.ini update (0.2.0), add SDL2 audio driver\n");
+
+			list = cfGetProfileString("sound", "playerdevices", "");
+
+			if (strstr(list, "devpSDL2"))
+			{
+				snprintf(temp1, sizeof(temp1), "%s", list);
+			} else {
+				int added = 0;
+				temp1[0] = 0;
+				while (1)
+				{
+					char drvhand[9];
+					if (!cfGetSpaceListEntry(drvhand, &list, 8))
+						break;
+
+					if (!strcmp (drvhand, "devpSDL"))
+					{
+						added = 1;
+						if (strlen(temp1) < 1014)
+							strcat (temp1, " devpSDL2");
+					}
+					if (strlen(temp1) < 1014)
+					{
+						strcat (temp1, " ");
+						strcat (temp1, drvhand);
+					}
+				}
+
+				if (!added)
+				{
+					added = 1;
+					if (strlen(temp1) < 1014)
+						strcat (temp1, " devpSDL2");
+				}
+			}
+
+			cfSetProfileString("sound", "playerdevices", temp1);
+
+			cfSetProfileString("devpSDL2", "link", "devpsdl2");
+		}
+
+		if (epoch < 20181129)
+		{
+			cfSetProfileInt("version", "epoch", 20181129, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -348,13 +395,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10)!=20160606)
+	if (cfGetProfileInt("version", "epoch", 0, 10)!=20181129)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20160321\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20181129\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20160321\033[0m\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20181129\033[0m\n\n");
 		}
 		sleep(5);
 	}

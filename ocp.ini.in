@@ -1,5 +1,5 @@
 [version]
- epoch=20160606
+ epoch=20181129
 
 [general]
 ;link=
@@ -22,7 +22,7 @@ link=medialib
 ; (8 chars only)
 ; note: the first device found in each list will be uses as default
 
-  playerdevices=devpALSA devpOSS devpCA devpSDL devpNone devpDisk
+  playerdevices=devpALSA devpOSS devpCA devpSDL2 devpSDL devpNone devpDisk
   samplerdevices=devsOSS devsNone
   wavetabledevices=devwMixF devwmixQ devwMix devwNone
   mixrate=44100           ; -sr44100
@@ -154,6 +154,9 @@ link=medialib
 
 [devpSDL]
   link=devpsdl
+
+[devpSDL2]
+  link=devpsdl2
 
 [devsNone]
   link=devsnone

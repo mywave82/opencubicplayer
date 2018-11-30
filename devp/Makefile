@@ -17,7 +17,11 @@ ifeq ($(HAVE_SDL),1)
 SDL_SO=devpsdl$(LIB_SUFFIX)
 endif
 
-all: devpnone$(LIB_SUFFIX) devpdisk$(LIB_SUFFIX) $(OSS_SO) $(ALSA_SO) $(COREAUDIO_SO) $(SDL_SO)
+ifeq ($(HAVE_SDL2),1)
+SDL2_SO=devpsdl2$(LIB_SUFFIX)
+endif
+
+all: devpnone$(LIB_SUFFIX) devpdisk$(LIB_SUFFIX) $(OSS_SO) $(ALSA_SO) $(COREAUDIO_SO) $(SDL_SO) $(SDL2_SO)
 
 devpnone_so=devpnone.o
 devpnone$(LIB_SUFFIX): $(devpnone_so)
@@ -43,6 +47,10 @@ devpsdl_so=devpsdl.o
 devpsdl$(LIB_SUFFIX):$(devpsdl_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ $(SDL_LIBS)
 
+devpsdl2_so=devpsdl2.o
+devpsdl2$(LIB_SUFFIX):$(devpsdl2_so)
+	$(CC) $(SHARED_FLAGS) -o $@ $^ $(SDL2_LIBS)
+
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
@@ -60,6 +68,9 @@ endif
 ifeq ($(HAVE_SDL),1)
 	$(CP) $(SDL_SO) "$(DESTDIR)$(LIBDIR)"
 endif
+ifeq ($(HAVE_SDL2),1)
+	$(CP) $(SDL2_SO) "$(DESTDIR)$(LIBDIR)"
+endif
 
 uninstall:
 	rm -f  "$(DESTDIR)$(LIBDIR)/devpnone$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/devpdisk$(LIB_SUFFIX)"
@@ -74,6 +85,9 @@ ifeq ($(HAVE_COREAUDIO),1)
 endif
 ifeq ($(HAVE_SDL),1)
 	rm -f "$(DESTDIR)$(LIBDIR)/$(SDL_SO)"
+endif
+ifeq ($(HAVE_SDL2),1)
+	rm -f "$(DESTDIR)$(LIBDIR)/$(SDL2_SO)"
 endif
 
 devposs.o: devposs.c \
@@ -142,4 +156,13 @@ devpsdl.o: devpsdl.c \
 	../dev/imsdev.h \
 	../dev/player.h \
 	../stuff/imsrtns.h
-	$(CC) devpsdl.c -o $@ -c $(SDL_CFLAGS) $(DEVPSDL_CFLAGS)
+	$(CC) devpsdl.c -o $@ -c $(SDL_CFLAGS)
+
+devpsdl2.o: devpsdl2.c \
+	../config.h \
+	../types.h \
+	../boot/plinkman.h \
+	../dev/imsdev.h \
+	../dev/player.h \
+	../stuff/imsrtns.h
+	$(CC) devpsdl2.c -o $@ -c $(SDL2_CFLAGS)
