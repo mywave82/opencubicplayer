@@ -170,9 +170,9 @@ int mdbReadMemInfo(struct moduleinfostruct *m, const char *buf, int len)
 	struct mdbreadinforegstruct *rinfos;
 
 	for (rinfos=mdbReadInfos; rinfos; rinfos=rinfos->next)
-	if (rinfos->ReadMemInfo)
-		if (rinfos->ReadMemInfo(m, buf, len))
-			return 1;
+		if (rinfos->ReadMemInfo)
+			if (rinfos->ReadMemInfo(m, buf, len))
+				return 1;
 	return 0;
 }
 
@@ -194,7 +194,7 @@ int mdbReadInfo(struct moduleinfostruct *m, FILE *f)
 		if (rinfos->ReadInfo)
 			if (rinfos->ReadInfo(m, f, mdbScanBuf, maxl))
 				return 1;
-	return m->modtype==mtUnRead;;
+	return m->modtype==mtUnRead;
 }
 
 static uint32_t mdbGetNew(void)
