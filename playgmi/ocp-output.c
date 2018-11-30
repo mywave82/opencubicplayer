@@ -269,7 +269,7 @@ int validate_encoding(int enc, int include_enc, int exclude_enc)
 	enc &= ~(PE_24BIT|PE_16BIT|PE_SIGNED|PE_BYTESWAP);
     if(!(enc & PE_16BIT || enc & PE_24BIT))
 	enc &= ~PE_BYTESWAP;
-	if(enc & PE_24BIT)
+    if(enc & PE_24BIT)
 	enc &= ~PE_16BIT;	/* 24bit overrides 16bit */
     enc_name = output_encoding_string(enc);
     if(strcmp(orig_enc_name, enc_name) != 0)
