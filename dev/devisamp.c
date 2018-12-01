@@ -227,6 +227,12 @@ static int sampdevinit(void)
 	plsmpOpt=playopt;
 	plsmpRate=playrate;
 
+	if (!cursampdev)
+	{
+		fprintf (stderr, "Input device not set\n");
+		return errGen;
+	}
+
 	return errOk;
 }
 

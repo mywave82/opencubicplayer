@@ -197,6 +197,12 @@ static int wavedevinit(void)
 	mcpMixPoll=mcpMixBufSize;
 	mcpMixMax=mcpMixBufSize;
 
+	if (!curwavedev)
+	{
+		fprintf (stderr, "Wave device/mixer not set\n");
+		return errGen;
+	}
+
 	return errOk;
 }
 

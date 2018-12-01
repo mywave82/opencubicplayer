@@ -177,6 +177,12 @@ static int playdevinit(void)
 	fprintf(stderr, "\n");
 
 	plrBufSize=cfGetProfileInt2(cfSoundSec, "sound", "plrbufsize", 100, 10)*65;
+
+	if (!curplaydev)
+	{
+		fprintf (stderr, "Output device not set\n");
+		return errGen;
+	}
 	return errOk;
 }
 
@@ -272,7 +278,7 @@ out:
 
 static int plrSet(const char *path, struct moduleinfostruct *mi, FILE **fp)
 {
-	char name[9]; /* we never make names that are to big here */
+	char name[9]; /* we never make names that are too big here */
 	_splitpath(path, 0, 0, name, 0);
 	plrSetDevice(name, 1);
 	/*delay(1000); do we really need this ??? (doj)*/
