@@ -396,6 +396,7 @@ void cpiUnregisterDefMode(struct cpimoderegstruct *m)
 	}
 }
 
+static int plmpInited = 0;
 static int plmpInit(void)
 {
 	plCompoMode=cfGetProfileBool2(cfScreenSec, "screen", "compomode", 0, 0);
@@ -414,13 +415,19 @@ static int plmpInit(void)
 
 	plRegisterInterface (&plOpenCP);
 
+	plmpInited = 1;
+
 	return errOk;
 }
 
 static void plmpClose(void)
 {
-	plUnregisterInterface (&plOpenCP);
-	mdbUnregisterReadInfo(&cpiReadInfoReg);
+	if (plmpInited)
+	{
+		plUnregisterInterface (&plOpenCP);
+		mdbUnregisterReadInfo(&cpiReadInfoReg);
+		plmpInited = 0;
+	}
 
 	while (cpiDefModes)
 	{

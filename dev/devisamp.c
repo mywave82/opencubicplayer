@@ -169,11 +169,14 @@ static void smpResetDevice(void)
 
 static struct dmDrive *dmSETUP;
 
+static int smpdevinited = 0;
 static int sampdevinit(void)
 {
 	const char *def;
 	int playrate;
 	int playopt;
+
+	smpdevinited = 1;
 
 #ifdef INITCLOSE_DEBUG
 	fprintf(stderr, "sampdevinit.... trying to find all samplers   [sound]->samplerdevices\n");
@@ -241,10 +244,15 @@ static void sampdevclose(void)
 #ifdef INITCLOSE_DEBUG
 	fprintf(stderr, "sampdevclose...\n");
 #endif
-	mdbUnregisterReadDir(&smpReadDirReg);
+	if (smpdevinited)
+	{
+		mdbUnregisterReadDir(&smpReadDirReg);
 
-	plUnregisterInterface (&smpIntr);
-	plUnregisterPreprocess (&smpPreprocess);
+		plUnregisterInterface (&smpIntr);
+		plUnregisterPreprocess (&smpPreprocess);
+
+		smpdevinited = 0;
+	}
 
 	setdevice(&cursampdev, 0);
 

@@ -139,6 +139,7 @@ static void plrResetDevice(void)
 
 static struct dmDrive *dmSETUP;
 
+static int playdevinited = 0;
 static int playdevinit(void)
 {
 	const char *def;
@@ -146,6 +147,8 @@ static int playdevinit(void)
 #ifdef INITCLOSE_DEBUG
 	fprintf(stderr, "playdevinit... trying to init all sound devices [sound]->playerdevices\n");
 #endif
+
+	playdevinited = 1;
 
 	mdbRegisterReadDir(&plrReadDirReg);
 
@@ -191,11 +194,15 @@ static void playdevclose(void)
 #ifdef INITCLOSE_DEBUG
 	fprintf(stderr, "playdevclose...\n");
 #endif
+	if (playdevinited)
+	{
+		mdbUnregisterReadDir(&plrReadDirReg);
 
-	mdbUnregisterReadDir(&plrReadDirReg);
+		plUnregisterInterface (&plrIntr);
+		plUnregisterPreprocess (&plrPreprocess);
 
-	plUnregisterInterface (&plrIntr);
-	plUnregisterPreprocess (&plrPreprocess);
+		playdevinited = 0;
+	}
 
 	setdevice(&curplaydev, 0);
 	while (plPlayerDevices)

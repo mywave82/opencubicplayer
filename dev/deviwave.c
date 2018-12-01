@@ -140,6 +140,7 @@ static void mcpResetDevice(void)
 
 static struct dmDrive *dmSETUP;
 
+static int wavedevinited = 0;
 static int wavedevinit(void)
 {
 	const char *def;
@@ -148,6 +149,8 @@ static int wavedevinit(void)
 #ifdef INITCLOSE_DEBUG
 	fprintf(stderr, "wavedevinit... trying to find all wavetables    [sound]->wavetabledevices\n");
 #endif
+
+	wavedevinited = 1;
 
 	mdbRegisterReadDir(&mcpReadDirReg);
 
@@ -212,10 +215,15 @@ static void wavedevclose(void)
 	fprintf(stderr, "wavedevclose....\n");
 #endif
 
-	mdbUnregisterReadDir(&mcpReadDirReg);
+	if (wavedevinited)
+	{
+		mdbUnregisterReadDir(&mcpReadDirReg);
 
-	plUnregisterInterface (&mcpIntr);
-	plUnregisterPreprocess (&mcpPreprocess);
+		plUnregisterInterface (&mcpIntr);
+		plUnregisterPreprocess (&mcpPreprocess);
+
+		wavedevinited = 0;
+	}
 
 	setdevice(&curwavedev, 0);
 	while (plWaveTableDevices)
