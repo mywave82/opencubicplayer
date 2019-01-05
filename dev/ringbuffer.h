@@ -1,16 +1,18 @@
 #ifndef _RINGBUFFER_H
 #define _RINGBUFFER_H 1
 
-#define RINGBUFFER_FLAGS_STEREO 1
+#define RINGBUFFER_FLAGS_MONO   1 /* ignored for now */
+#define RINGBUFFER_FLAGS_STEREO 2
+#define RINGBUFFER_FLAGS_QUAD   4
 
 /* these are mutual exclusive */
-#define RINGBUFFER_FLAGS_8BIT   2
-#define RINGBUFFER_FLAGS_16BIT  4
-#define RINGBUFFER_FLAGS_FLOAT  8
+#define RINGBUFFER_FLAGS_8BIT   8 /* ignored for now */
+#define RINGBUFFER_FLAGS_16BIT  16
+#define RINGBUFFER_FLAGS_FLOAT  32
 
-#define RINGBUFFER_FLAGS_SIGNED 16 /* valid for 8BIT and 16BIT */
+#define RINGBUFFER_FLAGS_SIGNED 64 /* valid for 8BIT and 16BIT */
 
-#define RINGBUFFER_FLAGS_PROCESS 32 /* if present, processing and cache_process will be maintained */
+#define RINGBUFFER_FLAGS_PROCESS 128 /* if present, processing and cache_process will be maintained */
 
 struct ringbuffer_t;
 

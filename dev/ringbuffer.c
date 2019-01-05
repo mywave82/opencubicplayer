@@ -91,14 +91,15 @@ void ringbuffer_static_initialize (struct ringbuffer_t *self, int flags, int buf
 	if (self->flags & RINGBUFFER_FLAGS_STEREO)
 	{
 		self->cache_sample_shift++;
+	} else if (self->flags & RINGBUFFER_FLAGS_QUAD)
+	{
+		self->cache_sample_shift+=2;
 	}
 
 	if (self->flags & RINGBUFFER_FLAGS_16BIT)
 	{
 		self->cache_sample_shift++;
-	}
-
-	if (self->flags & RINGBUFFER_FLAGS_FLOAT)
+	} else if (self->flags & RINGBUFFER_FLAGS_FLOAT)
 	{
 		self->cache_sample_shift+=2;
 	}
