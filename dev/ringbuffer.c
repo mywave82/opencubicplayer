@@ -21,7 +21,15 @@
 #include "config.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 #include "ringbuffer.h"
+
+struct ringbuffer_callback_hook_t
+{
+	void (*callback)(void *arg, int samples_ago);
+	void *arg;
+	int samples;
+};
 
 struct ringbuffer_t
 {
@@ -37,10 +45,20 @@ struct ringbuffer_t
 	int tail;
 	int processing;
 	int head;
+
+	struct ringbuffer_callback_hook_t *tail_callbacks;
+	int tail_callbacks_size;
+	int tail_callbacks_fill;
+
+	struct ringbuffer_callback_hook_t *processing_callbacks;
+	int processing_callbacks_size;
+	int processing_callbacks_fill;
 };
 
 void ringbuffer_reset (struct ringbuffer_t *self)
 {
+	int i;
+
 	self->head = 0;
 	self->processing = 0;
 	self->tail = 0;
@@ -48,6 +66,18 @@ void ringbuffer_reset (struct ringbuffer_t *self)
 	self->cache_write_available = self->buffersize - 1;
 	self->cache_read_available = 0;
 	self->cache_processing_available = 0;
+
+	for (i=0; i < self->processing_callbacks_fill; i++)
+	{
+		self->processing_callbacks[i].callback (self->processing_callbacks[i].arg, 1 - self->processing_callbacks[i].samples);
+	}
+	self->processing_callbacks_fill = 0;
+
+	for (i=0; i < self->tail_callbacks_fill; i++)
+	{
+		self->tail_callbacks[i].callback (self->tail_callbacks[i].arg, 1 - self->tail_callbacks[i].samples);
+	}
+	self->tail_callbacks_fill = 0;
 }
 
 void ringbuffer_static_initialize (struct ringbuffer_t *self, int flags, int buffersize_samples)
@@ -75,13 +105,17 @@ void ringbuffer_static_initialize (struct ringbuffer_t *self, int flags, int buf
 
 	self->buffersize = buffersize_samples;
 
+	self->processing_callbacks_fill = 0;
+
+	self->tail_callbacks_fill = 0;
+
 	ringbuffer_reset (self);
 }
 
 
 struct ringbuffer_t *ringbuffer_new_samples(int flags, int buffersize_samples)
 {
-	struct ringbuffer_t *self = malloc (sizeof (*self));
+	struct ringbuffer_t *self = calloc (sizeof (*self), 1);
 
 	ringbuffer_static_initialize (self, flags, buffersize_samples);
 
@@ -90,6 +124,14 @@ struct ringbuffer_t *ringbuffer_new_samples(int flags, int buffersize_samples)
 
 void ringbuffer_free(struct ringbuffer_t *self)
 {
+	free (self->processing_callbacks);
+	self->processing_callbacks = 0;
+	self->processing_callbacks_size = 0;
+
+	free (self->tail_callbacks);
+	self->tail_callbacks = 0;
+	self->tail_callbacks_size = 0;
+
 	free (self);
 }
 
@@ -101,6 +143,25 @@ void ringbuffer_tail_consume_samples(struct ringbuffer_t *self, int samples)
 	self->cache_read_available -= samples;
 
 	self->cache_write_available += samples;
+
+	if (self->tail_callbacks_fill)
+	{
+		int i;
+		for (i=0; i < self->tail_callbacks_fill; i++)
+		{
+			self->tail_callbacks[i].samples -= samples;
+		}
+		while (self->tail_callbacks_fill)
+		{
+			if (self->tail_callbacks[0].samples >= 0)
+			{
+				break;
+			}
+			self->tail_callbacks[0].callback (self->tail_callbacks[0].arg, 1 - self->tail_callbacks[0].samples);
+			memmove (self->tail_callbacks, self->tail_callbacks + 1, (self->tail_callbacks_fill - 1) * sizeof (self->tail_callbacks[0]));
+			self->tail_callbacks_fill--;
+		}
+	}
 
 	assert ((self->cache_read_available + self->cache_write_available + self->cache_processing_available + 1) == self->buffersize);
 }
@@ -124,7 +185,25 @@ void ringbuffer_processing_consume_samples(struct ringbuffer_t *self, int sample
 	self->cache_processing_available -= samples;
 
 	self->cache_read_available += samples;
-	
+
+	if (self->processing_callbacks_fill)
+	{
+		int i;
+		for (i=0; i < self->processing_callbacks_fill; i++)
+		{
+			self->processing_callbacks[i].samples -= samples;
+		}
+		while (self->processing_callbacks_fill)
+		{
+			if (self->processing_callbacks[0].samples >= 0)
+			{
+				break;
+			}
+			self->processing_callbacks[0].callback (self->processing_callbacks[0].arg, 1 - self->processing_callbacks[0].samples);
+			memmove (self->processing_callbacks, self->processing_callbacks + 1, (self->processing_callbacks_fill - 1) * sizeof (self->processing_callbacks[0]));
+			self->processing_callbacks_fill--;
+		}
+	}
 	assert ((self->cache_read_available + self->cache_write_available + self->cache_processing_available + 1) == self->buffersize);
 }
 
@@ -149,7 +228,7 @@ void ringbuffer_head_add_samples(struct ringbuffer_t *self, int samples)
 	} else {
 		self->cache_read_available += samples;
 	}
-	
+
 	assert ((self->cache_read_available + self->cache_write_available + self->cache_processing_available + 1) == self->buffersize);
 }
 
@@ -351,8 +430,86 @@ int ringbuffer_get_head_available_bytes (struct ringbuffer_t *self)
 	return ringbuffer_get_head_available_samples (self) << self->cache_sample_shift;
 }
 
+/* samples = 0, the callback should happen when the next added samples passes tail
+ * samples = 1, the callback should happen when the last added samples passes tail
+ * samples = 10, the callback should happen when the 10th last added samples passes tail
+ */
+void ringbuffer_add_tail_callback_samples (struct ringbuffer_t *self, int samples, void (*callback)(void *arg, int samples_ago), const void *arg)
+{
+	int insertat, i;
+	if (samples < 0)
+	{
+		samples = 0;
+	} else if (samples > (self->cache_read_available + self->cache_processing_available))
+	{
+		samples = self->cache_read_available + self->cache_processing_available;
+	}
+	samples = self->cache_read_available + self->cache_processing_available - samples;;
+	if (self->tail_callbacks_size == self->tail_callbacks_fill)
+	{
+		self->tail_callbacks = realloc (self->tail_callbacks, (self->tail_callbacks_size+=10) * sizeof (self->tail_callbacks[0]));
+	}
+
+	insertat = self->tail_callbacks_fill;
+	for (i=0; i < self->tail_callbacks_fill; i++)
+	{
+		if (self->tail_callbacks[i].samples >= samples)
+		{
+			insertat = i;
+			break;
+		}
+	}
+
+	memmove (self->tail_callbacks+insertat+1, self->tail_callbacks+insertat, (self->tail_callbacks_fill - insertat) * sizeof (self->tail_callbacks[0]));
+	self->tail_callbacks[insertat].callback = callback;
+	self->tail_callbacks[insertat].arg = (void *)arg;
+	self->tail_callbacks[insertat].samples = samples;
+	self->tail_callbacks_fill++;
+}
+
+void ringbuffer_add_processing_callback_samples (struct ringbuffer_t *self, int samples, void (*callback)(void *arg, int samples_ago), const void *arg)
+{
+	int insertat, i;
+
+	if (!(self->flags & RINGBUFFER_FLAGS_PROCESS))
+	{
+		fprintf (stderr, "ringbuffer_add_processing_callback_samples() called for a buffer that does not have RINGBUFFER_FLAGS_PROCESS\n");
+		return;
+	}
+
+	if (samples < 0)
+	{
+		samples = 0;
+	} else if (samples > (self->cache_read_available))
+	{
+		samples = self->cache_read_available;
+	}
+	samples = self->cache_read_available - samples;
+	if (self->processing_callbacks_size == self->processing_callbacks_fill)
+	{
+		self->processing_callbacks = realloc (self->processing_callbacks, (self->processing_callbacks_size+=10) * sizeof (self->processing_callbacks[0]));
+	}
+
+	insertat = self->processing_callbacks_fill;
+	for (i=0; i < self->processing_callbacks_fill; i++)
+	{
+		if (self->processing_callbacks[i].samples >= samples)
+		{
+			insertat = i;
+			break;
+		}
+	}
+
+	memmove (self->processing_callbacks+insertat+1, self->processing_callbacks+insertat, (self->processing_callbacks_fill - insertat) * sizeof (self->processing_callbacks[0]));
+	self->processing_callbacks[insertat].callback = callback;
+	self->processing_callbacks[insertat].arg = (void *)arg;
+	self->processing_callbacks[insertat].samples = samples;
+	self->processing_callbacks_fill++;
+}
+
+
 /* UNIT TEST */
-#if 0
+#ifdef UNIT_TEST
 int ringbuffer_result_nonproc_samples(struct ringbuffer_t *instance, int tail1, int readsize1, int tail2, int readsize2, int head1, int writesize1, int head2, int writesize2)
 {
 	int i;
@@ -600,12 +757,68 @@ int ringbuffer_result_proc_samples(struct ringbuffer_t *instance, int tail1, int
 	return retval;
 }
 
+static int ringbuffer_processing_expect_callback = 0;
+static int ringbuffer_processing_expect_id = 0;
+static int callback_processing_errors = 0;
+static void processing_callback(void *arg, int samples_ago)
+{
+	printf (" processing_callback %d\n", *(int *)arg);
+	if (ringbuffer_processing_expect_callback < 0)
+	{
+		printf ("proc_callback, too many...\n");
+		callback_processing_errors++;
+	}
+	ringbuffer_processing_expect_callback--;
+	if (ringbuffer_processing_expect_id != *(int *)arg)
+	{
+		printf ("proc_callback, wrong id. Expected %d, got %d\n", ringbuffer_processing_expect_id, *(int *)arg);
+		callback_processing_errors++;
+	}
+}
+
+static int ringbuffer_tail_expect_callback = 0;
+static int ringbuffer_tail_expect_id = 0;
+static int callback_tail_errors = 0;
+static void tail_callback(void *arg, int samples_ago)
+{
+	printf (" tail_callback %d\n", *(int *)arg);
+	if (ringbuffer_tail_expect_callback < 0)
+	{
+		printf ("proc_callback, too many...\n");
+		callback_tail_errors++;
+	}
+	ringbuffer_tail_expect_callback--;
+	if (ringbuffer_tail_expect_id != *(int *)arg)
+	{
+		printf ("proc_callback, wrong id. Expected %d, got %d\n", ringbuffer_tail_expect_id, *(int *)arg);
+		callback_tail_errors++;
+	}
+}
+
+const int int_0 = 0;
+const int int_1 = 1;
+const int int_2 = 2;
+const int int_3 = 3;
+const int int_4 = 4;
+const int int_5 = 5;
+const int int_6 = 6;
+const int int_7 = 7;
+const int int_8 = 8;
+const int int_9 = 9;
+const int int_10 = 10;
+const int int_11 = 11;
+const int int_12 = 12;
+const int int_13 = 13;
+const int int_14 = 14;
+const int int_15 = 15;
+
 int main(int argc, char *argv[])
 {
 	int retval = 0;
 	struct ringbuffer_t *instance;
 
 	int testval;
+	int i;
 
 	printf ("BUFFERSIZE 8BIT MONO\n");
 	testval = 0;
@@ -921,6 +1134,89 @@ int main(int argc, char *argv[])
 	ringbuffer_free (instance);
 	retval += testval;
 
+	printf ("Going to test callbacks\n");
+	instance = ringbuffer_new_samples(RINGBUFFER_FLAGS_FLOAT | RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_PROCESS, 16);
+	ringbuffer_head_add_samples (instance, 12);
+	ringbuffer_processing_consume_samples (instance, 7);
+	ringbuffer_tail_consume_samples(instance, 2);
+
+	ringbuffer_add_processing_callback_samples (instance, 2, processing_callback, &int_10);
+	ringbuffer_add_processing_callback_samples (instance, 1, processing_callback, &int_11);
+	/* this will be one sample into the future, we allow zero, but not negative numbers per today */
+	ringbuffer_add_processing_callback_samples (instance, 0, processing_callback, &int_12); /* should not be called yet */
+	ringbuffer_add_processing_callback_samples (instance, 3, processing_callback, &int_9);
+	ringbuffer_add_processing_callback_samples (instance, 4, processing_callback, &int_8);
+	ringbuffer_add_processing_callback_samples (instance, 5, processing_callback, &int_7);
+
+	ringbuffer_add_tail_callback_samples (instance, 5, tail_callback, &int_7);
+	ringbuffer_add_tail_callback_samples (instance, 6, tail_callback, &int_6);
+	ringbuffer_add_tail_callback_samples (instance, 7, tail_callback, &int_5);
+	ringbuffer_add_tail_callback_samples (instance, 8, tail_callback, &int_4);
+	ringbuffer_add_tail_callback_samples (instance, 9, tail_callback, &int_3);
+	ringbuffer_add_tail_callback_samples (instance, 10, tail_callback, &int_2);
+	ringbuffer_add_tail_callback_samples (instance, 0, tail_callback, &int_12); /* should not be called yet */
+	ringbuffer_add_tail_callback_samples (instance, 1, tail_callback, &int_11);
+	ringbuffer_add_tail_callback_samples (instance, 2, tail_callback, &int_10);
+	ringbuffer_add_tail_callback_samples (instance, 3, tail_callback, &int_9);
+	ringbuffer_add_tail_callback_samples (instance, 4, tail_callback, &int_8);
+
+	for (i=7; i<12; i++)
+	{
+		printf (" process sample %d\n", i);
+		ringbuffer_processing_expect_callback = 1;
+		ringbuffer_processing_expect_id = i;
+		ringbuffer_processing_consume_samples (instance, 1);
+		if (ringbuffer_processing_expect_callback)
+		{
+			printf ("Wrong amount callbacks for `processing`, sample id %d  of 12\n", i);
+			retval++;
+		}
+	}
+
+	for (i=2; i<12; i++)
+	{
+		printf(" tail sample %d\n", i);
+		ringbuffer_tail_expect_callback = 1;
+		ringbuffer_tail_expect_id = i;
+		ringbuffer_tail_consume_samples(instance, 1);
+		if (ringbuffer_processing_expect_callback)
+		{
+			printf ("Wrong amount callbacks for `tail`, sample id %d of 12\n", i);
+			retval++;
+		}
+	}
+
+	printf ("adding 5 more callbacks + one should linger from previous round\n");
+	ringbuffer_head_add_samples (instance, 6);
+	ringbuffer_add_tail_callback_samples (instance, 5, tail_callback, &int_13);
+	ringbuffer_add_tail_callback_samples (instance, 4, tail_callback, &int_14);
+	ringbuffer_add_tail_callback_samples (instance, 3, tail_callback, &int_15);
+	ringbuffer_add_tail_callback_samples (instance, 2, tail_callback, &int_0);
+	ringbuffer_add_tail_callback_samples (instance, 1, tail_callback, &int_1);
+	{
+		ringbuffer_processing_expect_callback = 1;
+		ringbuffer_processing_expect_id = 12;
+		ringbuffer_processing_consume_samples (instance, 6);
+	}
+
+	for (i=12; i<18; i++)
+	{
+		printf(" tail sample %d\n", i%16);
+		ringbuffer_tail_expect_callback = 1;
+		ringbuffer_tail_expect_id = i%16;
+		ringbuffer_tail_consume_samples(instance, 1);
+		if (ringbuffer_processing_expect_callback)
+		{
+			printf ("Wrong amount callbacks for `tail`, sample id %d of 12\n", i);
+			retval++;
+		}
+	}
+
+	ringbuffer_free (instance);
+	retval += callback_processing_errors;
+	retval += callback_tail_errors;
+
+	printf ("\nFinal result: %d errors\n", retval);
 	return retval;
 }
 #endif

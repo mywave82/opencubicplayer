@@ -4,7 +4,7 @@
 #define RINGBUFFER_FLAGS_STEREO 1
 
 /* these are mutual exclusive */
-#define RINGBUFFER_FLAGS_8BIT   2 
+#define RINGBUFFER_FLAGS_8BIT   2
 #define RINGBUFFER_FLAGS_16BIT  4
 #define RINGBUFFER_FLAGS_FLOAT  8
 
@@ -14,6 +14,7 @@
 
 struct ringbuffer_t;
 
+/* causes all callbacks to be called */
 void ringbuffer_reset (struct ringbuffer_t *self);
 
 void ringbuffer_tail_consume_bytes(struct ringbuffer_t *self, int bytes);
@@ -54,5 +55,12 @@ struct ringbuffer_t *ringbuffer_new_samples(int flags, int buffersize_samples); 
 void ringbuffer_free(struct ringbuffer_t *self);
 
 void ringbuffer_static_initialize (struct ringbuffer_t *self, int flags, int ringbuffer_shift_samples);
+
+/* samples = 0, the callback should happen when the next added samples passes tail
+ * samples = 1, the callback should happen when the last added samples passes tail
+ * samples = 10, the callback should happen when the 10th last added samples passes tail
+ */
+void ringbuffer_add_tail_callback_samples (struct ringbuffer_t *self, int samples, void (*callback)(void *arg, int samples_ago), const void *arg);
+void ringbuffer_add_processing_callback_samples (struct ringbuffer_t *self, int samples, void (*callback)(void *arg, int samples_ago), const void *arg);
 
 #endif

@@ -38,7 +38,7 @@ smpbase$(LIB_SUFFIX): $(smpbase_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) mchasm_test smpman_asminctest
+	rm -f *.o *$(LIB_SUFFIX) mchasm_test smpman_asminctest ringbuffer-unit-test
 
 ifeq ($(STATIC_BUILD),1)
 install:
@@ -61,6 +61,15 @@ uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-mchasm$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-devi$(LIB_SUFFIX)"
 endif
+
+unit-test: ringbuffer-unit-test
+	./ringbuffer-unit-test
+
+ringbuffer-unit-test: \
+	ringbuffer.c \
+	../config.h \
+	../types.h
+	$(CC) ringbuffer.c -o $@ -DUNIT_TEST
 
 devigen.o: devigen.c devigen.h \
 	../config.h \
