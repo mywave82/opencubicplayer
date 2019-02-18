@@ -31,7 +31,7 @@ aytype.o: aytype.c \
 	../filesel/pfilesel.h
 	$(CC) aytype.c -o $@ -c
 
-playay_so=z80.o sound.o aypplay.o ayplay.o
+playay_so=z80.o sound.o aychan.o aypplay.o ayplay.o
 playay$(LIB_SUFFIX): $(playay_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
@@ -43,6 +43,16 @@ sound.o: sound.c main.h z80.h sound.h \
 	../types.h \
 	../dev/player.h
 	$(CC) -o $@ sound.c -c
+
+aychan.o: aychan.c \
+	ayplay.h \
+	sound.h \
+	../config.h \
+	../types.h \
+	../cpiface/cpiface.h \
+	../dev/mcp.h \
+	../stuff/poutput.h
+	$(CC) -o $@ aychan.c -c
 
 aypplay.o: aypplay.c ayplay.h \
 	../config.h \

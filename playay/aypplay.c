@@ -438,8 +438,12 @@ static int ayOpenFile(const char *path, struct moduleinfostruct *info, FILE *fil
 	plIsEnd=ayLooped;
 	plProcessKey=ayProcessKey;
 	plDrawGStrings=ayDrawGStrings;
+	plSetMute=aySetMute;
 	plGetMasterSample=plrGetMasterSample;
 	plGetRealMasterVolume=plrGetRealMasterVolume;
+
+	plNLChan=6;
+	ayChanSetup();
 
 	if (!ayOpenPlayer(file))
 	{

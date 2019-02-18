@@ -196,6 +196,7 @@
 /* #define SDL_DEBUG 1 */
 /* #define SDL2_DEBUG 1 */
 /* #define CPIFACE_DEBUG 1 */
+/* #define PLAYAY_DEBUG 1 */
 
 #define VERBOSE_FRAMEBUFFER 1
 #define VCSA_VERBOSE 1

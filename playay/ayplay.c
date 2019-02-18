@@ -1,3 +1,7 @@
+/* This file is based on main.c, and is VERY modified
+ *    - Stian Skjelstad
+ */
+
 /* aylet 0.3, a .AY music file player.
  * Copyright (C) 2001-2010 Russell Marks and Ian Collier.
  * See main.c for licence.
@@ -21,8 +25,31 @@
  * worse here. (It's actually a bit better, I think.))
  */
 
-/* This file is based on main.c, and is VERY modified
- *    - Stian Skjelstad
+/* buf8 <- dump of the last frame of audio (belongs to aylet internals)
+ * buf8_n  is the length on the last frame of audio
+ *
+ * we expunge buf8 into aybuf as fast as we can, when buf8 is empty, we rerun
+ * the aylet internals.
+ *
+ * aybuf (16bit, stereo, 16384 samples long)
+ * aybufpos ringbuffer_t tracker
+ * aybuffpos
+ * aybufrate -> conversion-rate converter if user requests speed changes
+ *
+ * We then measure plrBuffer, and we fill up buf16, we upto the amount we can
+ * fit, and also if we run out of data, we set one of the "song soon finish"
+ * variables
+ *
+ * buf16     - no track is needed, since we expunge it every time
+ *           - it is the same length as plrBuf + stereo + 16bit
+ *
+ * We convert if needed to target 8/16bit, signed/unsigned, mono/stereo
+ *
+ * plrbuf
+ * plrbuflen
+ * bufpos = old head position
+ * plrGetBufPos() gives the new possible target head position, in samples
+ * plrAdvanceTo() the new head position
  */
 
 #include "config.h"
@@ -88,16 +115,30 @@ static int srnd;
 static int16_t *buf16; /* stupid dump that should go away */
 static int16_t *_buf8; /* here we dump out data before it goes live... it no-longer is 8bit, but the name sticks */
 static size_t _buf8_n; /* samples */
+static char ayMute[4];
+
+#define MAX_BUF8_DELAYED_STATES 100 /* this will be 2 seconds of tracked data on a 5Hz system */
+struct buf8_delayed_states_t
+{
+	struct ay_driver_frame_state_t buf8_states;
+	int inaybuf;
+	int inplrbuf; /* if both of the in* flags are empty, entry is not in use */
+};
+static struct buf8_delayed_states_t buf8_delayed_states[MAX_BUF8_DELAYED_STATES];
+static struct buf8_delayed_states_t *buf8_delayed_state = 0;
+static struct buf8_delayed_states_t buf8_state_current;
+
 /* devp buffer zone */
 static uint32_t bufpos; /* devp write head location */
 static uint32_t buflen; /* devp buffer-size in samples */
+static uint32_t kernpos; /* devp read/tail location - used to track when to show buf8_states */
+static int buf16_filled = 0; /* number of samples we are about to add to plrAdvanceTo() */
 static void *plrbuf; /* the devp buffer */
 static int stereo; /* boolean */
 static int bit16; /* boolean */
 static int signedout; /* boolean */
 static int reversestereo; /* boolean */
 static int donotloop=1;
-
 
 /* ayIdler dumping locations */
 static int16_t *aybuf;     /* the buffer */
@@ -111,6 +152,23 @@ static uint32_t aybufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
 
 /* clipper threadlock since we use a timer-signal */
 static volatile int clipbusy=0;
+
+static struct buf8_delayed_states_t *buf8_delayed_states_get(void)
+{
+	int i;
+	for (i=0; i < MAX_BUF8_DELAYED_STATES; i++)
+	{
+		if (buf8_delayed_states[i].inaybuf) continue;
+		if (buf8_delayed_states[i].inplrbuf) continue;
+		return buf8_delayed_states + i;
+	}
+	return 0;
+}
+
+void __attribute__ ((visibility ("internal"))) ayGetChans(struct ay_driver_frame_state_t *dst)
+{
+	*dst = buf8_state_current.buf8_states;
+}
 
 #define PANPROC \
 do { \
@@ -446,8 +504,6 @@ static void tunetime_reset(void)
 static int silent_for=0;
 int __attribute__ ((visibility ("internal"))) ay_do_interrupt(void)
 {
-	struct ay_driver_frame_state_t states;
-
 	/* check for fade needed */
 	if(!done_fade && stopafter && ay_tunetime.min*60+ay_tunetime.sec>=stopafter)
 	{
@@ -468,7 +524,13 @@ int __attribute__ ((visibility ("internal"))) ay_do_interrupt(void)
 		}
 	}
 
-	if(!sound_frame(&states))
+	buf8_delayed_state = buf8_delayed_states_get();
+	if (!buf8_delayed_state)
+	{
+		fprintf (stderr, "WARNING: buf8_delayed_states_get() gave null\n");
+		return 0;
+	}
+	if(!sound_frame(&buf8_delayed_state->buf8_states))
 	{
 		if((++silent_for) >= silent_max)
 		{
@@ -493,64 +555,160 @@ int __attribute__ ((visibility ("internal"))) ay_do_interrupt(void)
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) ay_driver_frame(int16_t *stereo_samples, size_t bytes)
+void __attribute__ ((visibility ("internal"))) ay_driver_frame(int16_t *quad_samples, size_t bytes)
 {
 	int i;
 
 #ifdef AY_DEBUG_OUTPUT
-	write (debug_output, stereo_samples, bytes);
+	write (debug_output, quad_samples, bytes);
 #endif
 
-	/* 4 channel to 2 channel conversion */
-	for (i=0; i < (bytes>>3); i++)
+	/* down-mix from 6 channels down to 2 channels */
+	for (i=0; i < (bytes / 6); i++)
 	{
-		int16_t left  = stereo_samples[(i<<2)+0] + (stereo_samples[(i<<2)+1]>>1) + (stereo_samples[(i<<2)+3]>>1);
-		int16_t right = stereo_samples[(i<<2)+2] + (stereo_samples[(i<<2)+1]>>1) + (stereo_samples[(i<<2)+3]>>1);
-		stereo_samples[(i<<1)+0] = left;
-		stereo_samples[(i<<1)+1] = right;
+		int16_t left = 0;
+		int16_t right = 0;
+
+		if (!ayMute[0])
+		{
+			left += quad_samples[(i*6)+0];
+		}
+		if (!ayMute[1])
+		{
+			left += (quad_samples[(i*6)+1]>>1);
+			right +=  (quad_samples[(i*6)+1]>>1);
+		}
+		if (!ayMute[2])
+		{
+			right += quad_samples[(i*6)+2];
+		}
+		if (!ayMute[3])
+		{
+			left += (quad_samples[(i*6)+3]>>1);
+			right += (quad_samples[(i*6)+3]>>1);
+		}
+		quad_samples[(i<<1)+0] = left;
+		quad_samples[(i<<1)+1] = right;
 	}
-	_buf8=stereo_samples;
-	_buf8_n=bytes>>3;
+	_buf8=quad_samples;
+	_buf8_n=bytes / 12;
+}
+
+void __attribute__ ((visibility ("internal"))) aySetMute(int ch, int mute)
+{
+	switch (ch)
+	{
+		case 0: ayMute[0] = mute; break;
+		case 1: ayMute[1] = mute; break;
+		case 2: ayMute[2] = mute; break;
+		case 3: ayMute[3] = mute; break;
+	}
+}
+
+int  __attribute__ ((visibility ("internal"))) ayGetMute(int ch)
+{
+	switch (ch)
+	{
+		case 0: return ayMute[0];
+		case 1: return ayMute[1];
+		case 2: return ayMute[2];
+		case 3: return ayMute[3];
+		default: return 0;
+	}
+
+}
+
+static void ayUpdateKernPos (void)
+{
+	int i;
+	uint32_t delta, newpos;
+	newpos = plrGetPlayPos() >> (stereo+bit16);
+	delta = (buflen + newpos - kernpos) % buflen;
+
+	buf8_state_current.inplrbuf -= delta;
+
+	for (i=0; i < MAX_BUF8_DELAYED_STATES; i++)
+	{
+		if (buf8_delayed_states[i].inplrbuf)
+		{
+			buf8_delayed_states[i].inplrbuf -= delta;
+			if (buf8_delayed_states[i].inplrbuf <= 0)
+			{
+#ifdef PLAYAY_DEBUG
+				fprintf (stderr, " ayUpdateKernPos state %d is now activated at pos %d\n", i, buf8_delayed_states[i].inplrbuf);
+#endif
+				if (buf8_delayed_states[i].inplrbuf >= buf8_state_current.inplrbuf)
+				{
+					buf8_state_current = buf8_delayed_states[i];
+				}
+				buf8_delayed_states[i].inplrbuf = 0;
+			}
+		}
+	}
+
+	kernpos = newpos;
+}
+
+static void buf8_delay_callback_from_aybuf_to_plrbuf (void *arg, int samples_ago)
+{
+	struct buf8_delayed_states_t *state = arg;
+
+	int fill = (buflen + bufpos + buf16_filled - kernpos)%buflen;
+	int samples_until = buf16_filled - samples_ago * aybufrate / 65536;
+
+#ifdef PLAYAY_DEBUG
+	fprintf (stderr, "buf8_delay_callback_from_aybuf_to_plrbuf: buflen:%d bufpos:%d buf16_filled:%d kernpos:%d) => %d,   samples_until:%d   =>  %d\n",
+		buflen, bufpos, buf16_filled, kernpos, fill, samples_until, fill-samples_until);
+#endif
+
+	state->inaybuf = 0;
+	state->inplrbuf = fill-samples_until;
 }
 
 static void ayIdler(void)
 {
+	int pos1, pos2;
+	int length1, length2;
+
+	while (!_buf8_n)
 	{
-		int pos1, pos2;
-		int length1, length2;
-
-		while (!_buf8_n)
+		if (donotloop && (ay_looped&1))
 		{
-			if (donotloop && (ay_looped&1))
-			{
-				return;
-			}
-
-			if (new_ay_track!=ay_track)
-			{
-				ay_track=new_ay_track;
-				ay_current_reg=0;
-				sound_ay_reset();
-				mem_init(ay_track);
-				tunetime_reset();
-				ay_tsmax=FRAME_STATES_128;
-				do_cpc=0;
-				ay_z80_init(aydata.tracks[ay_track].data,
-				            aydata.tracks[ay_track].data_stacketc);
-			}
-
-			ay_z80loop();
+			return;
 		}
 
-		ringbuffer_get_head_samples (aybufpos, &pos1, &length1, &pos2, &length2);
+		if (new_ay_track!=ay_track)
+		{
+			ay_track=new_ay_track;
+			ay_current_reg=0;
+			sound_ay_reset();
+			mem_init(ay_track);
+			tunetime_reset();
+			ay_tsmax=FRAME_STATES_128;
+			do_cpc=0;
+			ay_z80_init(aydata.tracks[ay_track].data,
+			            aydata.tracks[ay_track].data_stacketc);
+		}
 
-		if (length1>_buf8_n)
-			length1=_buf8_n;
-		memcpy (aybuf + (pos1<<1), _buf8, length1<<2);
-		_buf8 += length1<<1;
-		_buf8_n -= length1;
-		ringbuffer_head_add_samples (aybufpos, length1);
-	} while (0);
+		ay_z80loop();
+	}
+
+	if (buf8_delayed_state)
+	{
+		ringbuffer_add_tail_callback_samples (aybufpos, 0, buf8_delay_callback_from_aybuf_to_plrbuf, buf8_delayed_state);
+		buf8_delayed_state->inaybuf = 1;
+		buf8_delayed_state = 0;
+	}
+	ringbuffer_get_head_samples (aybufpos, &pos1, &length1, &pos2, &length2);
+
+	if (length1>_buf8_n)
+	{
+		length1=_buf8_n;
+	}
+	memcpy (aybuf + (pos1<<1), _buf8, length1<<2);
+	_buf8 += length1<<1;
+	_buf8_n -= length1;
+	ringbuffer_head_add_samples (aybufpos, length1);
 }
 
 void __attribute__ ((visibility ("internal"))) ayIdle(void)
@@ -563,6 +721,8 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 		clipbusy--;
 		return;
 	}
+
+	ayUpdateKernPos ();
 
 	{
 		uint32_t bufplayed;
@@ -605,7 +765,6 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 	} else {
 		int pos1, length1, pos2, length2;
 		int i;
-		int buf16_filled = 0;
 
 		/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
 		ringbuffer_get_tail_samples (aybufpos, &pos1, &length1, &pos2, &length2);
@@ -948,6 +1107,8 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 
 int __attribute__ ((visibility ("internal"))) ayOpenPlayer(FILE *file)
 {
+	int i;
+
 	aydata.filedata=NULL;
 	aydata.tracks=NULL;
 	_buf8_n=0;
@@ -957,6 +1118,12 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(FILE *file)
 
 	if(!read_ay_file(file)) /* 0 meens error */
 		return 0;
+
+	for (i=0; i < MAX_BUF8_DELAYED_STATES; i++)
+	{
+		buf8_delayed_states[i].inaybuf = 0;
+		buf8_delayed_states[i].inplrbuf = 0;
+	}
 
 	plrSetOptions(44100, (PLR_SIGNEDOUT|PLR_16BIT)|PLR_STEREO);
 	stereo=!!(plrOpt&PLR_STEREO);
@@ -1039,6 +1206,8 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(FILE *file)
 		ay_track=aydata.num_tracks-1;
 	}*/
 
+	memset (ayMute, 0, sizeof(ayMute));
+
 	if (!sound_init())
 	{
 		plrClosePlayer();
@@ -1058,6 +1227,14 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(FILE *file)
 
 		return 0;
 	}
+
+	memset (&buf8_state_current, 0, sizeof (buf8_state_current));
+	buf8_state_current.buf8_states.clockrate = 1000000;;
+	buf8_state_current.buf8_states.channel_a_period = 1;
+	buf8_state_current.buf8_states.channel_b_period = 1;
+	buf8_state_current.buf8_states.channel_c_period = 1;
+	buf8_state_current.buf8_states.noise_period = 1;
+	buf8_state_current.buf8_states.envelope_period = 1;
 
 	ay_current_reg=0;
 	sound_ay_reset();

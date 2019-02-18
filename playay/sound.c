@@ -130,7 +130,7 @@ int __attribute__ ((visibility ("internal"))) sound_init(void)
 */
 	sound_framesiz=sound_freq/50;
 
-	sound_buf=malloc(sizeof(int16_t)*sound_framesiz*4);
+	sound_buf=malloc(sizeof(int16_t)*sound_framesiz*6);
 	if(sound_buf==NULL)
 	{
 		sound_end();
@@ -214,6 +214,7 @@ static void sound_ay_overlay(struct ay_driver_frame_state_t *states)
 	int tone_level[3];
 	int mixer,envshape;
 	int f,g,level,count;
+	int env_level;
 	int16_t *ptr;
 	struct ay_change_tag *change_ptr=ay_change;
 	int changes_left=ay_change_count;
@@ -229,10 +230,6 @@ static void sound_ay_overlay(struct ay_driver_frame_state_t *states)
 	for(f=0;f<ay_change_count;f++)
 	{
 		ay_change[f].ofs=(ay_change[f].tstates*sound_freq)/frametime;
-	}
-
-	for(f=0,ptr=sound_buf;f<sound_framesiz;f++)
-	{
 	}
 
 	for(f=0,ptr=sound_buf;f<sound_framesiz;f++)
@@ -326,11 +323,11 @@ static void sound_ay_overlay(struct ay_driver_frame_state_t *states)
 
 		/* envelope */
 		envshape=sound_ay_registers[13];
-		level=ay_tone_levels[env_counter];
+		env_level=ay_tone_levels[env_counter];
 
 		for(g=0;g<3;g++)
 			if(sound_ay_registers[8+g]&16)
-				tone_level[g]=level;
+				tone_level[g]=env_level;
 
 		/* envelope output counter gets incr'd every 16 AY cycles.
 		 * Has to be a while, as this is sub-output-sample res.
@@ -372,13 +369,17 @@ static void sound_ay_overlay(struct ay_driver_frame_state_t *states)
 						if(envshape&AY_ENV_HOLD)
 						{
 							if(env_first && (envshape&AY_ENV_ALT))
+							{
 								env_counter=(env_counter?0:15);
+							}
 						} else {
 							/* non-hold */
 							if(envshape&AY_ENV_ALT)
+							{
 								env_rev=!env_rev;
-							else
+							} else {
 								env_counter=(envshape&AY_ENV_ATTACK)?0:15;
+							}
 						}
 					}
 
@@ -420,6 +421,8 @@ static void sound_ay_overlay(struct ay_driver_frame_state_t *states)
 		(*ptr++) = chan2;
 		(*ptr++) = chan3;
 		(*ptr++) = sound_oldval;
+		(*ptr++) = noise_toggle ? -15000 : 15000;
+		(*ptr++) = env_level * 4 - 32760;
 
 		/* update noise RNG/filter */
 		while(ay_noise_tick>=ay_noise_period)
@@ -502,7 +505,7 @@ int __attribute__ ((visibility ("internal"))) sound_frame(struct ay_driver_frame
 int16_t *ptr;
 int f,silent;
 static int chk0=-1, chk1=-1, chk2=-1, chk3=-1;
-int fulllen=sound_framesiz*4;
+int fulllen=sound_framesiz*6;
 
 sound_ay_overlay(states);
 
@@ -543,6 +546,8 @@ for(f=0;f<fulllen;f++)
     silent=0;
     break;
   }
+  ptr++;
+  ptr++;
 }
 
 /* apply overall fade if we're in the middle of one. */
@@ -567,6 +572,9 @@ if(fading)
 
 	ptr++;
 	*ptr=(*ptr)*(sfadetime>>4)/(fadetotal>>4);
+
+	ptr++;
+	ptr++;
       }
     }
   }
