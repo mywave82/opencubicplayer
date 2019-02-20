@@ -20,6 +20,12 @@
  *  revision history: (please note changes here)
  */
 
+// #define ALSA_DEBUG_OUTPUT 1
+
+#ifdef ALSA_DEBUG_OUTPUT
+static int debug_output = -1;
+#endif
+
 #include "config.h"
 #define ALSA_PCM_NEW_HW_PARAMS_API
 #define ALSA_PCM_NEW_SW_PARAMS_API
@@ -268,6 +274,12 @@ static void flush(void)
 	fprintf(stderr, "ALSA snd_pcm_writei(alsa_pcm, buffer, %i) = ", n>>(bit16+stereo));
 #endif
 	result=snd_pcm_writei(alsa_pcm, playbuf+cachepos, n>>(bit16+stereo));
+#ifdef ALSA_DEBUG_OUTPUT
+	if (result > 0)
+	{
+		write (debug_output, playbuf+cachepos, result<<(bit16+stereo));
+	}
+#endif
 	if (result<0)
 	{
 #ifdef ALSA_DEBUG
@@ -306,6 +318,11 @@ static void advance(unsigned int pos)
 
 	cachelen+=(pos-bufpos+buflen)%buflen;
 	bufpos=pos;
+
+#ifdef ALSA_DEBUG
+	fprintf(stderr, "         cachelen=%d kernlen=%d sum=%d len=%d\n", cachelen, kernlen, cachelen+kernlen, buflen);
+#endif
+
 
 	busy--;
 }
@@ -715,7 +732,7 @@ static int list_devices_for_card(int card, struct modlist *ml, const struct dmDr
 #ifdef ALSA_DEBUG
 		card_name = snd_pcm_info_get_name (pcm_info);
 		fprintf(stderr, "ALSA: hw:%d,%d: name %s\n", card, pcm_device, card_name);
-		free (card_name);
+		//free (card_name);
 		card_name = 0;
 #endif
 		if (ml)
@@ -1164,6 +1181,9 @@ static int alsaPlay(void **buf, unsigned int *len)
 	plrDebug=alsaDebug;
 #endif
 
+#ifdef ALSA_DEBUG_OUTPUT
+	debug_output = open ("test-alsa.raw", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
+#endif
 
 	return 1;
 }
@@ -1174,6 +1194,12 @@ static void alsaStop(void)
 	plrDebug=0;
 #endif
 	free(playbuf);
+
+#ifdef ALSA_DEBUG_OUTPUT
+	close (debug_output);
+	debug_output = -1;
+#endif
+
 }
 
 /* plr API stop */
