@@ -198,6 +198,8 @@ static void audio_pcm_s16(int16_t *data, unsigned int nsamples, mad_fixed_t cons
 #ifdef MP_DEBUG_OUTPUT
 			write (debug_output1, data, 2);
 #endif
+			data += 2;
+
 		}
 }
 
@@ -632,8 +634,6 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 		else
 			pass2=0;
 		bufdelta-=pass2;
-
-		buf16_filled-=pass2;
 
 		if (bit16)
 		{
