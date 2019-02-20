@@ -44,6 +44,15 @@
 #include "dev/plrasm.h"
 #include "mpplay.h"
 
+// #define MP_DEBUG_OUTPUT 1
+
+#ifdef MP_DEBUG_OUTPUT
+static int debug_output1 = -1;
+static int debug_output2 = -1;
+static int debug_output3 = -1;
+static int debug_output4 = -1;
+#endif
+
 /* options */
 static int inpause;
 static int looped;
@@ -175,6 +184,9 @@ static void audio_pcm_s16(int16_t *data, unsigned int nsamples, mad_fixed_t cons
 			ls = audio_linear_round(16, *right++);
 			data[0] = rs;
 			data[1] = ls;
+#ifdef MP_DEBUG_OUTPUT
+			write (debug_output1, data, 4);
+#endif
 			data += 2;
 		}
 	else /* mono */
@@ -183,6 +195,9 @@ static void audio_pcm_s16(int16_t *data, unsigned int nsamples, mad_fixed_t cons
 			rs = ls = audio_linear_round(16, *left++);
 			data[0] = rs;
 			data[1] = ls;
+#ifdef MP_DEBUG_OUTPUT
+			write (debug_output1, data, 2);
+#endif
 		}
 }
 
@@ -348,15 +363,22 @@ static void mpegIdler(void)
 		looped |= 1;
 
 		if (!data_in_synth)
+		{
 			if (!stream_for_frame())
+			{
 				break;
+			}
+		}
+
 		if (!eof)
 		{
 			looped &= ~1;
 		}
 
 		if (read>(data_in_synth)) /* 16bit + stereo as always */
+		{
 			read=data_in_synth;
+		}
 
 		if (synth.pcm.channels==1) /* use channel 0 and 1 twize */
 			audio_pcm_s16(mpegbuf+(pos1<<1), read, synth.pcm.samples[0]+synth.pcm.length-data_in_synth, synth.pcm.samples[0]+synth.pcm.length-data_in_synth);
@@ -364,6 +386,9 @@ static void mpegIdler(void)
 			audio_pcm_s16(mpegbuf+(pos1<<1), read, synth.pcm.samples[0]+synth.pcm.length-data_in_synth, synth.pcm.samples[1]+synth.pcm.length-data_in_synth);
 		ringbuffer_head_add_samples (mpegbufpos, read);
 		data_in_synth-=read;
+#ifdef MP_DEBUG_OUTPUT
+		write (debug_output2, mpegbuf+(pos1<<1), 4*read);
+#endif
 	}
 }
 
@@ -469,6 +494,10 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 				pos1++;
 				length1--;
 			}
+
+#ifdef MP_DEBUG_OUTPUT
+			write (debug_output3, buf16, buf16_filled*4);
+#endif
 
 			ringbuffer_tail_consume_samples (mpegbufpos, buf16_filled); /* add this rate buf16_filled == tail_used */
 		} else {
@@ -621,6 +650,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p+=2;
 						b+=2;
 					}
+#ifdef MP_DEBUG_OUTPUT /* stereo 16bit */
+					write (debug_output4, (int16_t *)plrbuf+2*bufpos, bufdelta*4);
+#endif
 					p=(int16_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
@@ -629,6 +661,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p+=2;
 						b+=2;
 					}
+#ifdef MP_DEBUG_OUTPUT
+					write (debug_output4, plrbuf, pass2*4);
+#endif
 				} else {
 					for (i=0; i<bufdelta; i++)
 					{
@@ -637,6 +672,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p+=2;
 						b+=2;
 					}
+#ifdef MP_DEBUG_OUTPUT /* stereo 16bit */
+					write (debug_output4, (int16_t *)plrbuf+2*bufpos, bufdelta*4);
+#endif
 					p=(int16_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
@@ -645,6 +683,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p+=2;
 						b+=2;
 					}
+#ifdef MP_DEBUG_OUTPUT
+					write (debug_output4, plrbuf, pass2*4);
+#endif
 				}
 			} else {
 				int16_t *p=(int16_t *)plrbuf+bufpos;
@@ -657,6 +698,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p++;
 						b++;
 					}
+#ifdef MP_DEBUG_OUTPUT /* mono 16bit */
+					write (debug_output4, (int16_t *)plrbuf+bufpos, bufdelta*2);
+#endif
 					p=(int16_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
@@ -664,6 +708,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p++;
 						b++;
 					}
+#ifdef MP_DEBUG_OUTPUT
+					write (debug_output4, (int16_t *)plrbuf+bufpos, pass2*2);
+#endif
 				} else {
 					for (i=0; i<bufdelta; i++)
 					{
@@ -671,6 +718,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p++;
 						b++;
 					}
+#ifdef MP_DEBUG_OUTPUT /* stereo 16bit */
+					write (debug_output4, (int16_t *)plrbuf+bufpos, bufdelta*2);
+#endif
 					p=(int16_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
@@ -678,6 +728,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p++;
 						b++;
 					}
+#ifdef MP_DEBUG_OUTPUT /* stereo 16bit */
+					write (debug_output4, (int16_t *)plrbuf+bufpos, pass2*2);
+#endif
 				}
 			}
 		} else {
@@ -694,6 +747,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p+=2;
 						b+=4;
 					}
+#ifdef MP_DEBUG_OUTPUT /* stereo 8bit */
+					write (debug_output4, plrbuf+2*bufpos, bufdelta*2);
+#endif
 					p=(uint8_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
@@ -702,6 +758,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p+=2;
 						b+=4;
 					}
+#ifdef MP_DEBUG_OUTPUT
+					write (debug_output4, plrbuf, pass2*2);
+#endif
 				} else {
 					for (i=0; i<bufdelta; i++)
 					{
@@ -710,6 +769,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p+=2;
 						b+=4;
 					}
+#ifdef MP_DEBUG_OUTPUT /* stereo 8bit */
+					write (debug_output4, plrbuf+2*bufpos, bufdelta*2);
+#endif
 					p=(uint8_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
@@ -718,6 +780,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p+=2;
 						b+=4;
 					}
+#ifdef MP_DEBUG_OUTPUT
+					write (debug_output4, plrbuf, pass2 * 2);
+#endif
 				}
 			} else {
 				uint8_t *p=(uint8_t *)plrbuf+bufpos;
@@ -730,6 +795,10 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p++;
 						b+=2;
 					}
+#ifdef MP_DEBUG_OUTPUT /* mono 8bit */
+					write (debug_output4, plrbuf+bufpos, bufdelta);
+#endif
+
 					p=(uint8_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
@@ -737,6 +806,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p++;
 						b+=2;
 					}
+#ifdef MP_DEBUG_OUTPUT
+					write (debug_output4, plrbuf, pass2);
+#endif
 				} else {
 					for (i=0; i<bufdelta; i++)
 					{
@@ -744,6 +816,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p++;
 						b+=2;
 					}
+#ifdef MP_DEBUG_OUTPUT /* mono 8bit */
+					write (debug_output4, plrbuf+bufpos, bufdelta);
+#endif
 					p=(uint8_t *)plrbuf;
 					for (i=0; i<pass2; i++)
 					{
@@ -751,6 +826,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 						p++;
 						b+=2;
 					}
+#ifdef MP_DEBUG_OUTPUT
+					write (debug_output4, plrbuf, pass2);
+#endif
 				}
 			}
 		}
@@ -846,6 +924,13 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(FILE *mpe
 		goto error_out;
 	}
 
+#ifdef MP_DEBUG_OUTPUT
+	debug_output1 = open ("test1.raw", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
+	debug_output2 = open ("test2.raw", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
+	debug_output3 = open ("test3.raw", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
+	debug_output4 = open ("test4.raw", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
+#endif
+
 	active=1;
 	return 1;
 
@@ -884,6 +969,17 @@ void __attribute__ ((visibility ("internal"))) mpegClosePlayer(void)
 		mpegbufpos = 0;
 	}
 	free(mpegbuf); mpegbuf=0;
+
+#ifdef MP_DEBUG_OUTPUT
+	close (debug_output1);
+	close (debug_output2);
+	close (debug_output3);
+	close (debug_output4);
+	debug_output1 = -1;
+	debug_output2 = -1;
+	debug_output3 = -1;
+	debug_output4 = -1;
+#endif
 }
 
 void __attribute__ ((visibility ("internal"))) mpegSetLoop(uint8_t s)
