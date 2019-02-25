@@ -14,13 +14,15 @@ OSS, Open Sound System
 
 ALSA, via OSS legacy interface
 
+SDL, giving support for virtually any sound system
+
 Disk Writer, writes .WAV output on disk.
 
 Quiet Player
 
 @item What music formats are supported?
 
-MOD/NST/WOW, XM, S3M, DMF, MTM, ULT, 669, OKT, PTM, AMS, MDL, IT, MIDI, SID, OGG and MPEG 1 audio layer 1/2/3
+MOD/NST/WOW, XM, S3M, DMF, MTM, ULT, 669, OKT, PTM, AMS, MDL, IT, MIDI, SID, OGG and MPEG 1 audio layer 1/2/3, MIDI
 
 @item Which is the last version of OCP for Unix?
 
@@ -29,36 +31,29 @@ The last OCP version is the @PACKAGE_VERSION@ Version.
 
 @item Are you going to release new versions?
 
-Windows/DOS: Perhaps not. We are all busy doing other things.
+Windows/DOS: Perhaps not. The Cubic team are busy doing other things.
 
 UNIX: Yes
 
 @item Now, how does that MIDI player thing work?
 
-OCP's MIDI player does not, like other programs, use the MIDI capabilities of your
-sound card / Korg Trinity or whatever, but uses the patch files of
-the famous Gravis Ultrasound to synthesize the MIDI output itself
-(just like Timidity or kmidi under KDE) via it''s normal wavetable
-system. So the only thing you need are the GUS patch files which
-are available at our site. Simply open a new subdir called "MIDI"
-in OCP's directory, copy all patch files ``.PAT'' into it and there
-you go.
-
-Users of a Gravis Ultrasound only have to make sure their
-ULTRADIR environment variable is set correctly or state the
-patch file and ``ULTRASND.INI'' location in ``ocp.ini''.
+OCP's MIDI player does not, like other programs, use the MIDI capabilities of
+your sound card. The MIDI file is rendered to an audio stream using the
+Timidity+ rendering engine to perform this (special rendered version, since
+Timidity+ is designed to be a standalone application)
 
 @item Does that mean I can listen to MIDI files even with my old SBPro?
 
 Of course - if your soundcard works with the rest of OCP, you will
-be able to play MIDI files, too - as long you as got the GUS Patch
-files as written above.
+be able to play MIDI files, too - as long you as got a Timidity+ sound font
+installed.
 
 @item Hey, I have a module which OCP plays wrong! You SUCK!
 
 Well, it's in fact YOU who sucks, as you didn't send that module together
-with a bug report to @url{mailto:doj@@cubic.org}. How the hell can we
-fix bugs if we don't know them?
+with a bug report to @url{mailto:doj@@cubic.org} or
+@url{mailto:stian.skjelstad@@gmail.com}. How the hell can we fix bugs if we
+don't know them?
 
 @item OCP plays my ``.it'' files much too soft, IT's internal mixer
 sounds a lot better, why don't you just fix it?

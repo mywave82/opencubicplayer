@@ -39,7 +39,8 @@ path and file mask. If you started OCP from the home directory you will get
 the following: @file{file:/OPENCP/*} means
 that the current directory is @file{OPENCP} on your @file{file:} driver
 and all files are shown (@file{*}). You can edit the path and the mask
-by pressing @key{ALT}+@key{Enter}. After editing the path press @key{Enter}
+by pressing @key{ALT}+@key{Enter} or @key{CTRL}+@key{Enter} depending on the UI
+rendered in use. After editing the path press @key{Enter}
 to change to the appropriate directory. You can edit the file mask to include
 only some files.
 @quotation

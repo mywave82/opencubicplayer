@@ -5,7 +5,7 @@ Some UNIX variants allready have Open Cubic Player in their packaging systems.
 If not, you are going to need to download the source and extract it.
 
 @quotation
-wget http://stian.lunafish.org/ocp/ocp-@PACKAGE_VERSION@.tar.bz2
+wget https://sourceforge.net/projects/opencubicplayer/files/ocp-0.1.21/ocp-@PACKAGE_VERSION@.tar.bz2/download
 tar xfz ocp-@PACKAGE_VERSION@.tar.bz2
 @end quotation
 
@@ -15,7 +15,7 @@ installed:
 libmad
 libsidplay 1.x
 libvorbis / libogg
-ncurses
+ncurses / ncursesw (prefered)
 Xlib
 libXpm
 

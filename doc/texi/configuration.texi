@@ -2,12 +2,12 @@
 @chapter Configuration
 @section ocp.ini
 OCP can be widely configured using the @file{ocp.ini} file, which should
-reside in the home directory of the player itself. This file is
+reside in the home directory ($HOME/.ocp/ocp.ini). This file is
 processed at every startup and informs the player about various
 modules / plugins and their respective configuration. For average
 users the default configuration should be sufficient. However if you
 want to change certain aspects of the player permanently you have to
-modify this file. You can use every ascii editor to edit the ini file.
+modify this file. You can use any text editor to edit the ini file.
 
 The @file{ocp.ini} consists of many sections. Each section starts
 with a section identifier tag in square brackets [ ]. Examples of
@@ -73,15 +73,18 @@ to make backups before changing vital parts of the @file{ocp.ini}}
 We will now have a look at the individual sections and their options.
 
 @section [general]
-The @emph{general} section describes which internal modules or plugins
-to load at startup. Most of them are required for normal operation of
-OCP so you should not remove any of the contents. All options listed
-in this section are loaded every time OCP starts!  The default
+The @emph{general} section describes which internal modules or plugins to load
+at startup. The required modules for for normal operation of OCP is placed in a
+special directory, causing them to be automatically loaded. All options listed
+in this section are loaded every time OCP starts!
 @emph{general} section looks like:
 @example
 [general]
-  link=cpiface cphlpif fstypes
-  prelink=framelock pfilesel
+;  link=
+;  prelink=
+;  datapath=     ; path to opencp's pictures and animations.
+;  tempdir=
+
 @end example
 
 @multitable @columnfractions .3 .7
@@ -91,7 +94,7 @@ There is no need to change this option, unless you have coded a basic
 internal module.
 @item datapath @tab
 OCP searches for background pictures and animations in its
-home directory. If you want to store your artwork at a different place
+system directory. If you want to store your artwork at a different place
 use this option to set the right directory.
 @item tempdir @tab
 this directory is used for extracting modules from archives.
@@ -101,7 +104,7 @@ or @emph{TMP} these will be used.
 
 @section [defaultconfig]
 The @emph{defaultconfig} section is very similar to the @emph{general}
-section.  But unlike the @emph{general} section which is always
+section. But unlike the @emph{general} section which is always
 processed the settings in the @emph{defaultconfig} section can be
 ommited with an alternative section and the @emph{-c} flag from the
 command line. If the @emph{-c} flag is not present the
@@ -110,8 +113,8 @@ was named @emph{defaultconfig}...}
 
 @example
 [defaultconfig] ; default configuration
-  link=devi plrbase mcpbase smpbase arctar mixclip medialib cdrom
-  prelink=poutput hardware cphelper sets mchasm compat
+  link=medialib
+;  prelink=
 @end example
 
 @multitable @columnfractions .2 .8
@@ -132,7 +135,7 @@ this section.
 
 @example
 [sound]
-  playerdevices=devpOSS devpNone devpDisk
+  playerdevices=devpALSA devpOSS devpCA devpSDL devpNone devpDisk
   samplerdevices=devsOSS devsNone
   wavetabledevices=devwMixF devwmixQ devwMix devwNone
   mixrate=44100
@@ -148,7 +151,6 @@ this section.
   defplayer=
   defsampler=
   defwavetable=
-  midichan=64
   itchan=64
   cdsamplelinein=off
   bigmodules=devwMixF
@@ -242,14 +244,6 @@ this option sets the default @emph{wavetabledevice}. Can
 also be set with @emph{-sw} command.
 @item defsampler @tab
 the same as the @emph{-ss} command line option.
-@item midichan @tab
-unlike the module file types the MIDI file format does not
-specify the exact amount of channles to use. Complex @file{.mid}
-files can easily try to play several dozens of channels
-simultaniously. This option sets the maximum amount of channels to mix
-when playing @file{.mid} files. Note that this value has no effect
-when a hardware mixing device is used, as the maximum number is
-limited by the hardware.
 @item itchan @tab
 the @file{.it} format can play more than one sample per channel
 simultaniously. A maximum number of channels to mix is required for
@@ -406,9 +400,7 @@ isn't a real-time system, this is needed.
 
 @section [fileselector]
 Except the first two options all options can also be specified at
-runtime by pressing @key{ALT}+@key{z} in the fileselector. However
-to make changes permanent you have to modify the @emph{fileselector}
-section.
+runtime by pressing @key{ALT}+@key{z} in the fileselector.
 
 @example
 [fileselector] ; default fileselector section
@@ -642,24 +634,7 @@ the next version of OCP, so these options will soon be obsolete. There
 should be no need to modify any of the file types.
 
 @section MIDI
-If you want to hear MIDI music you need samples for the
-general midi instrument set.@footnote{a so called midi patch set} This
-secion contains the paths to the midi patches. Section @pxref{player, MIDI files}
-describes how to set up OCP for midi playback. For use of timidity,
-@file{/etc/timidity.cfg} must be configured.
-@example
-[midi]
-  use=....  to force which option to use [ultradir fff freepats timidity]
-  fff=c:\iw\gsfull4m.fff
-  ultradir=/home/user/ultradir
-  freepats=/usr/local/share/freepats
-@end example
-@multitable @columnfractions .3 .7
-@item use @tab
-if you want to force usage of a specific patch-system, set this variable to one of these values: ultradir fff freepats timidity
-@item fff @tab path where the fff font is located
-@item ultradir @tab
-path where ULTRADIR.INI is stored. Please checkout @file{ultrafix.sh} for
-fixing cases in filenames.
-@item freepats @tab path to where freepats is located
-@end multitable
+For MIDI playback, OCP now uses an internal compiled version of Timidity+,
+but you will need to install a Timidity+ sound font in order to utilize this
+playback engine. Please refer to Timidity+ project web pages or your OS
+package manager for sourcing these.
