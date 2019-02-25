@@ -78,7 +78,7 @@
 /* #define AY_DEBUG_OUTPUT 1 */
 
 #ifdef AY_DEBUG_OUTPUT
-int debug_output = -1;
+static int debug_output = -1;
 #endif
 
 /* from main.c */
