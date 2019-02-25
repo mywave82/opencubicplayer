@@ -399,7 +399,6 @@ static int OpenPlayer(int chan, void (*proc)(void))
 
 	if (!(channels=malloc(sizeof(struct channel)*chan)))
 	{
-		/*delete channels; <- that was actually a BUG! you can't free NULL */
 		return 0;
 	}
 
@@ -407,7 +406,11 @@ static int OpenPlayer(int chan, void (*proc)(void))
 	playerproc=proc;
 
 	if (!mixInit(GetMixChannel, 1, chan, amplify))
+	{
+		free(channels);
+		channels=0;
 		return 0;
+	}
 
 	memset(channels, 0, sizeof(struct channel)*chan);
 
@@ -433,6 +436,8 @@ static void ClosePlayer(void)
 	tmClose();
 	channelnum=0;
 	mixClose();
+	free(channels);
+	channels=0;
 }
 
 static int Init(const struct deviceinfo *c)
