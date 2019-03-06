@@ -11,7 +11,7 @@ ocp.info.gz: $(SOURCES)
 	rm -Rf ocp ocp.html ocp.info ocp.info.gz
 	LC_ALL=POSIX makeinfo ocp.texi
 	mv ocp ocp.info
-	gzip ocp.info
+	gzip -9 ocp.info
 	LC_ALL=POSIX makeinfo --html ocp.texi
 	mv ocp ocp.html
 
