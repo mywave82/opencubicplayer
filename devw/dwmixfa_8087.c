@@ -16,10 +16,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
-#ifndef NULL
-#define NULL (void *)0
-#endif
+#include <stddef.h>
 
 #define FLAG_DISABLED (~MIXF_PLAYING)
 
@@ -34,104 +31,113 @@ static const float __attribute__ ((used)) cremoveconst=0.992;
 static const float __attribute__ ((used)) minampl=0.0001;
 #endif
 
+#ifdef __PIC__
+# if __GNUC_PREREQ (4, 7)
+#  define GET_PC_THUNK_STR(reg) "__x86.get_pc_thunk." #reg
+# else
+#  define GET_PC_THUNK_STR(reg) "__i686.get_pc_thunk." #reg
+# endif
+#endif
+
+
 void start_dwmixfa(void)
 {
 	__asm__ __volatile__ (
-		".equ tempbuf_ofs,    %0\n"
-		".equ outbuf_ofs,     %1\n"
-		".equ nsamples_ofs,   %2\n"
-		".equ nvoices_ofs,    %3\n"
-		".equ freqw_ofs,      %4\n"
-		".equ freqf_ofs,      %5\n"
-		".equ smpposw_ofs,    %6\n"
-		".equ smpposf_ofs,    %7\n"
-		".equ loopend_ofs,    %8\n"
-		".equ looplen_ofs,    %9\n"
+		".equ tempbuf_ofs,    %c0\n"
+		".equ outbuf_ofs,     %c1\n"
+		".equ nsamples_ofs,   %c2\n"
+		".equ nvoices_ofs,    %c3\n"
+		".equ freqw_ofs,      %c4\n"
+		".equ freqf_ofs,      %c5\n"
+		".equ smpposw_ofs,    %c6\n"
+		".equ smpposf_ofs,    %c7\n"
+		".equ loopend_ofs,    %c8\n"
+		".equ looplen_ofs,    %c9\n"
 		:
-		: "m" (((dwmixfa_state_t *)NULL)->tempbuf),
-		  "m" (((dwmixfa_state_t *)NULL)->outbuf),
-		  "m" (((dwmixfa_state_t *)NULL)->nsamples),
-		  "m" (((dwmixfa_state_t *)NULL)->nvoices),
-		  "m" (((dwmixfa_state_t *)NULL)->freqw[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->freqf[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->smpposw[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->smpposf[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->loopend[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->looplen[0])
+		: "n" (offsetof(dwmixfa_state_t, tempbuf)),
+		  "n" (offsetof(dwmixfa_state_t, outbuf)),
+		  "n" (offsetof(dwmixfa_state_t, nsamples)),
+		  "n" (offsetof(dwmixfa_state_t, nvoices)),
+		  "n" (offsetof(dwmixfa_state_t, freqw[0])),
+		  "n" (offsetof(dwmixfa_state_t, freqf[0])),
+		  "n" (offsetof(dwmixfa_state_t, smpposw[0])),
+		  "n" (offsetof(dwmixfa_state_t, smpposf[0])),
+		  "n" (offsetof(dwmixfa_state_t, loopend[0])),
+		  "n" (offsetof(dwmixfa_state_t, looplen[0]))
 	);
 	__asm__ __volatile__ (
-		".equ volleft_ofs,    %0\n"
-		".equ volright_ofs,   %1\n"
-		".equ rampleft_ofs,   %2\n"
-		".equ rampright_ofs,  %3\n"
-		".equ voiceflags_ofs, %4\n"
-		".equ ffreq_ofs,      %5\n"
-		".equ freso_ofs,      %6\n"
-		".equ fadeleft_ofs,   %7\n"
-		".equ faderight_ofs,  %8\n"
-		".equ fl1_ofs,        %9\n"
+		".equ volleft_ofs,    %c0\n"
+		".equ volright_ofs,   %c1\n"
+		".equ rampleft_ofs,   %c2\n"
+		".equ rampright_ofs,  %c3\n"
+		".equ voiceflags_ofs, %c4\n"
+		".equ ffreq_ofs,      %c5\n"
+		".equ freso_ofs,      %c6\n"
+		".equ fadeleft_ofs,   %c7\n"
+		".equ faderight_ofs,  %c8\n"
+		".equ fl1_ofs,        %c9\n"
 		:
-		: "m" (((dwmixfa_state_t *)NULL)->volleft[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->volright[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->rampleft[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->rampright[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->voiceflags[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->ffreq[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->freso[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->fadeleft),
-		  "m" (((dwmixfa_state_t *)NULL)->faderight),
-		  "m" (((dwmixfa_state_t *)NULL)->fl1[0])
+		: "n" (offsetof(dwmixfa_state_t, volleft[0])),
+		  "n" (offsetof(dwmixfa_state_t, volright[0])),
+		  "n" (offsetof(dwmixfa_state_t, rampleft[0])),
+		  "n" (offsetof(dwmixfa_state_t, rampright[0])),
+		  "n" (offsetof(dwmixfa_state_t, voiceflags[0])),
+		  "n" (offsetof(dwmixfa_state_t, ffreq[0])),
+		  "n" (offsetof(dwmixfa_state_t, freso[0])),
+		  "n" (offsetof(dwmixfa_state_t, fadeleft)),
+		  "n" (offsetof(dwmixfa_state_t, faderight)),
+		  "n" (offsetof(dwmixfa_state_t, fl1[0]))
 	);
 	__asm__ __volatile__ (
-		".equ fb1_ofs,        %0\n"
-		".equ isstereo_ofs,   %1\n"
-		".equ outfmt_ofs,     %2\n"
-		".equ voll_ofs,       %3\n"
-		".equ volr_ofs,       %4\n"
-		".equ ct0_ofs,        %5\n"
-		".equ ct1_ofs,        %6\n"
-		".equ ct2_ofs,        %7\n"
-		".equ ct3_ofs,        %8\n"
-		".equ postprocs_ofs,  %9\n"
+		".equ fb1_ofs,        %c0\n"
+		".equ isstereo_ofs,   %c1\n"
+		".equ outfmt_ofs,     %c2\n"
+		".equ voll_ofs,       %c3\n"
+		".equ volr_ofs,       %c4\n"
+		".equ ct0_ofs,        %c5\n"
+		".equ ct1_ofs,        %c6\n"
+		".equ ct2_ofs,        %c7\n"
+		".equ ct3_ofs,        %c8\n"
+		".equ postprocs_ofs,  %c9\n"
 		:
-		: "m" (((dwmixfa_state_t *)NULL)->fb1[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->isstereo),
-		  "m" (((dwmixfa_state_t *)NULL)->outfmt),
-		  "m" (((dwmixfa_state_t *)NULL)->voll),
-		  "m" (((dwmixfa_state_t *)NULL)->volr),
-		  "m" (((dwmixfa_state_t *)NULL)->ct0[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->ct1[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->ct2[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->ct3[0]),
-		  "m" (((dwmixfa_state_t *)NULL)->postprocs)
+		: "n" (offsetof(dwmixfa_state_t, fb1[0])),
+		  "n" (offsetof(dwmixfa_state_t, isstereo)),
+		  "n" (offsetof(dwmixfa_state_t, outfmt)),
+		  "n" (offsetof(dwmixfa_state_t, voll)),
+		  "n" (offsetof(dwmixfa_state_t, volr)),
+		  "n" (offsetof(dwmixfa_state_t, ct0[0])),
+		  "n" (offsetof(dwmixfa_state_t, ct1[0])),
+		  "n" (offsetof(dwmixfa_state_t, ct2[0])),
+		  "n" (offsetof(dwmixfa_state_t, ct3[0])),
+		  "n" (offsetof(dwmixfa_state_t, postprocs))
 	);
 	__asm__ __volatile__ (
-		".equ samprate_ofs,   %0\n"
-		".equ volrl_ofs,      %1\n"
-		".equ volrr_ofs,      %2\n"
-		".equ clipval_ofs,    %3\n"
-		".equ mixlooplen_ofs, %4\n"
-		".equ looptype_ofs,   %5\n"
-		".equ magic1_ofs,     %6\n"
-		".equ ffrq_ofs,       %7\n"
-		".equ frez_ofs,       %8\n"
+		".equ samprate_ofs,   %c0\n"
+		".equ volrl_ofs,      %c1\n"
+		".equ volrr_ofs,      %c2\n"
+		".equ clipval_ofs,    %c3\n"
+		".equ mixlooplen_ofs, %c4\n"
+		".equ looptype_ofs,   %c5\n"
+		".equ magic1_ofs,     %c6\n"
+		".equ ffrq_ofs,       %c7\n"
+		".equ frez_ofs,       %c8\n"
 		:
-		: "m" (((dwmixfa_state_t *)NULL)->samprate),
-		  "m" (((dwmixfa_state_t *)NULL)->volrl),
-		  "m" (((dwmixfa_state_t *)NULL)->volrr),
-		  "m" (((dwmixfa_state_t *)NULL)->clipval),
-		  "m" (((dwmixfa_state_t *)NULL)->mixlooplen),
-		  "m" (((dwmixfa_state_t *)NULL)->looptype),
-		  "m" (((dwmixfa_state_t *)NULL)->magic1),
-		  "m" (((dwmixfa_state_t *)NULL)->ffrq),
-		  "m" (((dwmixfa_state_t *)NULL)->frez)
+		: "n" (offsetof(dwmixfa_state_t, samprate)),
+		  "n" (offsetof(dwmixfa_state_t, volrl)),
+		  "n" (offsetof(dwmixfa_state_t, volrr)),
+		  "n" (offsetof(dwmixfa_state_t, clipval)),
+		  "n" (offsetof(dwmixfa_state_t, mixlooplen)),
+		  "n" (offsetof(dwmixfa_state_t, looptype)),
+		  "n" (offsetof(dwmixfa_state_t, magic1)),
+		  "n" (offsetof(dwmixfa_state_t, ffrq)),
+		  "n" (offsetof(dwmixfa_state_t, frez))
 	);
 	__asm__ __volatile__ (
-		".equ __fl1_ofs,      %0\n"
-		".equ __fb1_ofs,      %1\n"
+		".equ __fl1_ofs,      %c0\n"
+		".equ __fb1_ofs,      %c1\n"
 		:
-		: "m" (((dwmixfa_state_t *)NULL)->__fl1),
-		  "m" (((dwmixfa_state_t *)NULL)->__fb1)
+		: "n" (offsetof(dwmixfa_state_t, __fl1)),
+		  "n" (offsetof(dwmixfa_state_t, __fb1))
 	);
 #if 0
 	volrl=volrl;
@@ -171,7 +177,7 @@ void prepare_mixer (void)
 /* store pointer to dwmixfa_state into EBX. Non PIC code already has this in place from stub */
 		"pushl %%ebx\n"
 
-		"call __i686.get_pc_thunk.bx\n"
+		"call " GET_PC_THUNK_STR(bx) "\n"
 		"addl $_GLOBAL_OFFSET_TABLE_, %%ebx\n"
 		"movl dwmixfa_state@GOT(%%ebx), %%ebx\n"
 #endif
@@ -249,7 +255,7 @@ void mixer (void)
 	(
 #ifdef __PIC__
 		"pushl %%ebx\n"
-		"call __i686.get_pc_thunk.bx\n"
+		"call " GET_PC_THUNK_STR(bx) "\n"
 		"addl $_GLOBAL_OFFSET_TABLE_, %%ebx\n"
 		"pushl %%ebx\n"
 		"movl dwmixfa_state@GOT(%%ebx), %%ebx\n"
@@ -257,6 +263,7 @@ void mixer (void)
 		"movl $dwmixfa_state, %%ebx\n"
 #endif
 		"pushl %%ebp\n"
+
 		"finit\n"
 
 
@@ -445,8 +452,7 @@ void mixer (void)
 		"    call *%%esi\n"
 		"    popl %%ebx\n"
 
-#warning 12 here should be asm-parameter
-		"    movl 12(%%esi), %%esi\n"
+		"    movl %c2(%%esi), %%esi\n"
 
 		"  jmp mixer_PostprocLoop\n"
 
@@ -481,8 +487,8 @@ void mixer (void)
 #endif
 		:
 		: "n"(MIXF_PLAYING),
-		  "n"(minampl)
-
+		  "n"(minampl),
+		  "n"(offsetof(struct mixfpostprocregstruct, next))
 #ifdef __PIC__
 		: "memory", "eax", "ecx", "edx", "edi", "esi"
 #else
@@ -493,6 +499,11 @@ void mixer (void)
 
 static __attribute__ ((used)) void dummy(void)
 {
+	__asm__ __volatile__
+	(
+		".cfi_endproc\n"
+	);
+
 /* clear routines:
  * edi : 32 bit float buffer
  * ecx : # of samples
@@ -508,7 +519,10 @@ static __attribute__ ((used)) void dummy(void)
 /* clears and declicks tempbuffer (mono) */
 	__asm__ __volatile__
 	(
+	".type clearbufm, @function\n"
 	"clearbufm:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 #ifdef __PIC__
 		"pushl %ebx\n"
 		"movl 12(%esp), %ebx\n"
@@ -530,6 +544,8 @@ static __attribute__ ((used)) void dummy(void)
 		"fstp %st\n"                  /* - */
 
 		"ret\n"
+	".cfi_endproc\n"
+	".size clearbufm, .-clearbufm\n"
 	);
 
 
@@ -539,7 +555,10 @@ static __attribute__ ((used)) void dummy(void)
  */
 	__asm__ __volatile__
 	(
+	".type clearbufs, @function\n"
 	"clearbufs:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 #ifdef __PIC__
 		"pushl %ebx\n"
 		"movl 12(%esp), %ebx\n"
@@ -567,6 +586,8 @@ static __attribute__ ((used)) void dummy(void)
 		"fstp %st\n"                   /* - */
 
 		"ret\n"
+	".cfi_endproc\n"
+	".size clearbufs, .-clearbufs\n"
 	);
 
 /* STACK: +20 (optional) caller EBX (PIC)
@@ -587,7 +608,10 @@ static __attribute__ ((used)) void dummy(void)
 
 	__asm__ __volatile__
 	(
+	".type mix_0, @function\n"
 	"mix_0:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* mixing, MUTED
 	 * quite sub-obtimal to do this with a loop, too, but this is really
 	 * the only way to ensure maximum precision - and it's fully using
@@ -622,6 +646,8 @@ static __attribute__ ((used)) void dummy(void)
 	"mix_0_loopme:\n"
 		"subl mixlooplen_ofs(%%ebx), %%ebp\n"
 		"jmp mix_0_looped\n"
+	".cfi_endproc\n"
+	".size mix_0, .-mix_0\n"
 		:
 		: "n"(MIXF_LOOPED),
 		  "n"(FLAG_DISABLED)
@@ -629,7 +655,10 @@ static __attribute__ ((used)) void dummy(void)
 
 	__asm__ __volatile__
 	(
+	".type mixm_n, @function\n"
 	"mixm_n:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* mixing, mono w/o interpolation
 	 */
 		"movl nsamples_ofs(%%ebx), %%ecx\n"
@@ -698,6 +727,8 @@ static __attribute__ ((used)) void dummy(void)
 		"decl %%ecx\n"
 		"jz mixm_n_ende\n"
 		"jmp mixm_n_next\n"
+	".cfi_endproc\n"
+	".size mixm_n, .-mixm_n\n"
 		:
 		: "n"(MIXF_LOOPED),
 		  "n"(FLAG_DISABLED)
@@ -705,7 +736,10 @@ static __attribute__ ((used)) void dummy(void)
 
 	__asm__ __volatile__
 	(
+	".type mixs_n, @function\n"
 	"mixs_n:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* mixing, stereo w/o interpolation
 	 */
 		"movl nsamples_ofs(%%ebx), %%ecx\n"
@@ -811,6 +845,8 @@ static __attribute__ ((used)) void dummy(void)
 		"decl %%ecx\n"
 		"jz mixs_n_ende\n"
 		"jmp mixs_n_next\n"
+	".cfi_endproc\n"
+	".size mixs_n, .-mixs_n\n"
 		:
 		: "n"(MIXF_LOOPED),
 		  "n"(FLAG_DISABLED)
@@ -818,7 +854,10 @@ static __attribute__ ((used)) void dummy(void)
 
 	__asm__ __volatile__
 	(
+	".type mixm_i, @function\n"
 	"mixm_i:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* mixing, mono+interpolation */
 		"movl nsamples_ofs(%%ebx), %%ecx\n"
 #if 1
@@ -911,6 +950,8 @@ static __attribute__ ((used)) void dummy(void)
 		"decl %%ecx\n"
 		"jz mixm_i_ende\n"
 		"jmp mixm_i_next\n"
+	".cfi_endproc\n"
+	".size mixm_i, .-mixm_i\n"
 		:
 		: "n"(MIXF_LOOPED),
 		  "n"(FLAG_DISABLED)
@@ -918,7 +959,10 @@ static __attribute__ ((used)) void dummy(void)
 
 	__asm__ __volatile__
 	(
+	".type mixs_i, @function\n"
 	"mixs_i:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* mixing, stereo+interpolation */
 		"movl nsamples_ofs(%%ebx), %%ecx\n"
 #if 1
@@ -1047,6 +1091,8 @@ static __attribute__ ((used)) void dummy(void)
 		"decl %%ecx\n"
 		"jz mixs_i_ende\n"
 		"jmp mixs_i_next\n"
+	".cfi_endproc\n"
+	".size mixs_i, .-mixs_i\n"
 		:
 		: "n"(MIXF_LOOPED),
 		  "n"(FLAG_DISABLED)
@@ -1054,7 +1100,10 @@ static __attribute__ ((used)) void dummy(void)
 
 	__asm__ __volatile__
 	(
+	".type mixm_i2, @function\n"
 	"mixm_i2:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* mixing, mono w/ cubic interpolation */
 		"movl nsamples_ofs(%%ebx), %%ecx\n"
 		"flds voll_ofs(%%ebx)\n"           /* (vl) */
@@ -1143,7 +1192,8 @@ static __attribute__ ((used)) void dummy(void)
 		"decl %%ecx\n"
 		"jz mixm_i2_ende\n"
 		"jmp mixm_i2_next\n"
-
+	".cfi_endproc\n"
+	".size mixm_i2, .-mixm_i2\n"
 		:
 		: "n"(MIXF_LOOPED),
 		  "n"(FLAG_DISABLED)
@@ -1151,7 +1201,10 @@ static __attribute__ ((used)) void dummy(void)
 
 	__asm__ __volatile__
 	(
+	".type mixs_i2, @function\n"
 	"mixs_i2:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* mixing, stereo w/ cubic interpolation */
 		"movl nsamples_ofs(%%ebx), %%ecx\n"
 		"flds voll_ofs(%%ebx)\n"           /* (vl) */
@@ -1276,6 +1329,8 @@ static __attribute__ ((used)) void dummy(void)
 		"decl %%ecx\n"
 		"jz mixs_i2_ende\n"
 		"jmp mixs_i2_next\n"
+	".cfi_endproc\n"
+	".size mixs_i2, .-mixs_i2\n"
 		:
 		: "n"(MIXF_LOOPED),
 		  "n"(FLAG_DISABLED)
@@ -1283,7 +1338,10 @@ static __attribute__ ((used)) void dummy(void)
 
 	__asm__ __volatile__
 	(
+	".type mixm_nf, @function\n"
 	"mixm_nf:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* mixing, mono w/o interpolation, FILTERED */
 		"movl nsamples_ofs(%%ebx), %%ecx\n"
 		"flds voll_ofs(%%ebx)\n"           /* (vl) */
@@ -1368,6 +1426,8 @@ static __attribute__ ((used)) void dummy(void)
 		"decl %%ecx\n"
 		"jz mixm_nf_ende\n"
 		"jmp mixm_nf_next\n"
+	".cfi_endproc\n"
+	".size mixm_nf, .-mixm_nf\n"
 		:
 		: "n"(MIXF_LOOPED),
 		  "n"(FLAG_DISABLED)
@@ -1375,7 +1435,10 @@ static __attribute__ ((used)) void dummy(void)
 
 	__asm__ __volatile__
 	(
+	".type mixs_nf, @function\n"
 	"mixs_nf:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* mixing, stereo w/o interpolation, FILTERED */
 		"movl nsamples_ofs(%%ebx), %%ecx\n"
 		"flds voll_ofs(%%ebx)\n"           /* (vl) */
@@ -1496,6 +1559,8 @@ static __attribute__ ((used)) void dummy(void)
 		"decl %%ecx\n"
 		"jz mixs_nf_ende\n"
 		"jmp mixs_nf_next\n"
+	".cfi_endproc\n"
+	".size mixs_nf, .-mixs_nf\n"
 		:
 		: "n"(MIXF_LOOPED),
 		  "n"(FLAG_DISABLED)
@@ -1503,7 +1568,10 @@ static __attribute__ ((used)) void dummy(void)
 
 	__asm__ __volatile__
 	(
+	".type mixm_if, @function\n"
 	"mixm_if:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* mixing, mono+interpolation, FILTERED */
 		"movl nsamples_ofs(%%ebx), %%ecx\n"
 #if 1
@@ -1612,6 +1680,8 @@ static __attribute__ ((used)) void dummy(void)
 		"decl %%ecx\n"
 		"jz mixm_if_ende\n"
 		"jmp mixm_if_next\n"
+	".cfi_endproc\n"
+	".size mixm_if, .-mixm_if\n"
 		:
 		: "n"(MIXF_LOOPED),
 		  "n"(FLAG_DISABLED)
@@ -1619,7 +1689,10 @@ static __attribute__ ((used)) void dummy(void)
 
 	__asm__ __volatile__
 	(
+	".type mixs_if, @function\n"
 	"mixs_if:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* mixing, stereo+interpolation, FILTERED */
 		"movl nsamples_ofs(%%ebx), %%ecx\n"
 #if 1
@@ -1763,6 +1836,8 @@ static __attribute__ ((used)) void dummy(void)
 		"decl %%ecx\n"
 		"jz mixs_if_ende\n"
 		"jmp mixs_if_next\n"
+	".cfi_endproc\n"
+	".size mixs_if, .-mixs_if\n"
 		:
 		: "n"(MIXF_LOOPED),
 		  "n"(FLAG_DISABLED)
@@ -1770,7 +1845,10 @@ static __attribute__ ((used)) void dummy(void)
 
 	__asm__ __volatile__
 	(
+	".type mim_i2f, @function\n"
 	"mixm_i2f:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* mixing, mono w/ cubic interpolation, FILTERED */
 		"movl nsamples_ofs(%%ebx), %%ecx\n"
 		"flds voll_ofs(%%ebx)\n"           /* (vl) */
@@ -1874,6 +1952,8 @@ static __attribute__ ((used)) void dummy(void)
 		"decl %%ecx\n"
 		"jz mixm_i2f_ende\n"
 		"jmp mixm_i2f_next\n"
+	".cfi_endproc\n"
+	".size mixm_i2f, .-mixm_i2f\n"
 		:
 		: "n"(MIXF_LOOPED),
 		  "n"(FLAG_DISABLED)
@@ -1881,7 +1961,10 @@ static __attribute__ ((used)) void dummy(void)
 
 	__asm__ __volatile__
 	(
+	".type mixs_i2f, @function\n"
 	"mixs_i2f:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* mixing, stereo w/ cubic interpolation, FILTERED */
 		"movl nsamples_ofs(%%ebx), %%ecx\n"
 		"flds voll_ofs(%%ebx)\n"           /* (vl) */
@@ -2021,6 +2104,8 @@ static __attribute__ ((used)) void dummy(void)
 		"decl %%ecx\n"
 		"jz mixs_i2f_ende\n"
 		"jmp mixs_i2f_next\n"
+	".cfi_endproc\n"
+	".size mixs_i2f, .-mixs_i2f\n"
 		:
 		: "n"(MIXF_LOOPED),
 		  "n"(FLAG_DISABLED)
@@ -2035,7 +2120,10 @@ static __attribute__ ((used)) void dummy(void)
  */
 	__asm__ __volatile__
 	(
+	".type clip_16s, @function\n"
 	"clip_16s:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* convert/clip samples, 16bit signed */
 #ifdef __PIC__
 		"flds clampmin@GOTOFF(%ebx)\n"            /* (min) */
@@ -2079,11 +2167,16 @@ static __attribute__ ((used)) void dummy(void)
 		"fstp %st\n"                 /* (min) */
 		"fstp %st\n"                 /* - */
 		"ret\n"
+	".cfi_endproc\n"
+	".size clip_16s, .-clip_16s\n"
 	);
 
 	__asm__ __volatile__
 	(
+	".type clip_16u, @function\n"
 	"clip_16u:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* convert/clip samples, 16bit unsigned */
 #ifdef __PIC__
 		"flds clampmin@GOTOFF(%ebx)\n"            /* (min) */
@@ -2130,11 +2223,16 @@ static __attribute__ ((used)) void dummy(void)
 		"fstp %st\n"                 /* (min) */
 		"fstp %st\n"                 /* - */
 		"ret\n"
+	".cfi_endproc\n"
+	".size clip_16u, .-clip_16u\n"
 	);
 
 	__asm__ __volatile__
 	(
+	".type clip_8s, @function\n"
 	"clip_8s:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* convert/clip samples, 8bit signed */
 #ifdef __PIC__
 		"flds clampmin@GOTOFF(%ebx)\n"            /* (min) */
@@ -2180,11 +2278,16 @@ static __attribute__ ((used)) void dummy(void)
 		"fstp %st\n"                 /* (min) */
 		"fstp %st\n"                 /* - */
 		"ret\n"
+	".cfi_endproc\n"
+	".size clip_8s, .-clip_8s\n"
 	);
 
 	__asm__ __volatile__
 	(
+	".type clip_8u, @function\n"
 	"clip_8u:\n"
+	".cfi_startproc\n"
+	".cfi_def_cfa_offset 4\n"
 	/* convert/clip samples, 8bit unsigned */
 #ifdef __PIC__
 		"flds clampmin@GOTOFF(%ebx)\n"            /* (min) */
@@ -2231,10 +2334,13 @@ static __attribute__ ((used)) void dummy(void)
 		"fstp %st\n"                 /* (min) */
 		"fstp %st\n"                 /* - */
 		"ret\n"
+	".cfi_endproc\n"
+	".size clip_8u, .-clip_8u\n"
 	);
 
 	__asm__ __volatile__
 	(
+	".cfi_startproc\n"
 	".data\n"
 	"clippers:\n"
 		".long clip_8s, clip_8u, clip_16s, clip_16u\n"
@@ -2264,7 +2370,7 @@ void getchanvol (int n, int len)
 	 */
 #ifdef __PIC__
 		"pushl %%ebx\n"
-		"call __i686.get_pc_thunk.bx\n"
+		"call " GET_PC_THUNK_STR(bx) "\n"
 		"addl $_GLOBAL_OFFSET_TABLE_, %%ebx\n"
 		"movl dwmixfa_state@GOT(%%ebx), %%ebx\n"
 #else
