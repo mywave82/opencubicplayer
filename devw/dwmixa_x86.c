@@ -1,6 +1,4 @@
-#ifndef NULL
-#define NULL ((void *)0)
-#endif
+#include <stddef.h>
 
 void remap_range1_start(void){}
 
@@ -9,14 +7,19 @@ void nonepublic_dwmixa3(void)
 {
 	__asm__ __volatile__
 	(
+		".cfi_endproc\n"
+
+		".type mixrFadeChannel_, @function\n"
 		"mixrFadeChannel_:\n"
-		"  movl %0(%%edi), %%ebx\n"       /*  %0 = curvol[0] */
-		"  movl %1(%%edi), %%ecx\n"       /*  %1 = curvol[1] */
+		".cfi_startproc\n"
+
+		"  movl %c0(%%edi), %%ebx\n"      /*  %0 = curvol[0] */
+		"  movl %c1(%%edi), %%ecx\n"      /*  %1 = curvol[1] */
 		"  shll $8, %%ebx\n"
 		"  shll $8, %%ecx\n"
-		"  movl %2(%%edi),%%eax\n"        /*  %2 = ch->samp */
-		"  addl %3(%%edi),%%eax\n"        /*  %3 = ch->pos */
-		"  testb %5, %4(%%edi)\n"         /*  %5 = MIXRQ_PLAY16BIT */
+		"  movl %c2(%%edi),%%eax\n"       /*  %2 = ch->samp */
+		"  addl %c3(%%edi),%%eax\n"       /*  %3 = ch->pos */
+		"  testb %5, %c4(%%edi)\n"        /*  %5 = MIXRQ_PLAY16BIT */
 		                                  /*  %4 = ch->status, */
 		"  jnz mixrFadeChannel16\n"
 		"    movb (%%eax), %%bl\n"
@@ -31,26 +34,37 @@ void nonepublic_dwmixa3(void)
 		"mixrFadeChannelvoltab2:\n"
 		"  addl %%ebx, (%%esi)\n"
 		"  addl %%ecx, 4(%%esi)\n"
-		"  movl $0, %0(%%edi)\n"          /* %0 = curvol[0] */
-		"  movl $0, %1(%%edi)\n"          /* %1 = curvol[1] */
+		"  movl $0, %c0(%%edi)\n"         /* %0 = curvol[0] */
+		"  movl $0, %c1(%%edi)\n"         /* %1 = curvol[1] */
 		"  ret\n"
+		".cfi_endproc\n"
+		".size mixrFadeChannel_, .-mixrFadeChannel_\n"
+
+		".type setupfade, @function\n"
 		"setupfade:\n" /* CALLED FROM EXTERNAL */
+		".cfi_startproc\n"
 		"  movl %%eax, (mixrFadeChannelvoltab1-4)\n"
 		"  movl %%eax, (mixrFadeChannelvoltab2-4)\n"
 		"  ret\n"
+		".cfi_endproc\n"
+		".size setupfade, .-setupfade\n"
+
+		".cfi_startproc\n"
 		:
-		: "m" (((struct channel *)NULL)->curvols[0]), /*  0  */
-		  "m" (((struct channel *)NULL)->curvols[1]), /*  1  */
-		  "m" (((struct channel *)NULL)->samp),       /*  2  */
-		  "m" (((struct channel *)NULL)->pos),        /*  3  */
-		  "m" (((struct channel *)NULL)->status),     /*  4  */
+		: "n" (offsetof(struct channel, curvols[0])), /*  0  */
+		  "n" (offsetof(struct channel, curvols[1])), /*  1  */
+		  "n" (offsetof(struct channel, samp)),       /*  2  */
+		  "n" (offsetof(struct channel, pos)),        /*  3  */
+		  "n" (offsetof(struct channel, status)),     /*  4  */
 		  "n" (MIXRQ_PLAY16BIT)                       /*  5  */
 	);
 }
 
+__attribute__((optimize("-fno-omit-frame-pointer"))) /* we use the stack, so we need all access to go via EBP, not ESP */
 void mixrFadeChannel(int32_t *fade, struct channel *ch)
 {
 	int d0, d1;
+
 	__asm__ __volatile__
 	(
 #ifdef __PIC__
@@ -76,13 +90,27 @@ void nonepublic_dwmixa1(void)
 {
 	__asm__ __volatile__
 	(
-		"playquiet:\n"
-		"  ret\n"
+		".cfi_endproc\n"
 	);
 
 	__asm__ __volatile__
 	(
+		".type playquiet, @function\n"
+		"playquiet:\n"
+		".cfi_startproc\n"
+
+		"  ret\n"
+
+		".cfi_endproc\n"
+		".size playquiet, .-playquiet\n"
+	);
+
+	__asm__ __volatile__
+	(
+		".type playmono, @function\n"
 		"playmono:\n"
+		".cfi_startproc\n"
+
 		"playmonolp:\n"
 		"    movb (%esi), %bl\n"
 		"    addl $1234,%edx\n"
@@ -100,14 +128,26 @@ void nonepublic_dwmixa1(void)
 		"  jb playmonolp\n"
 		"  ret\n"
 
+		".cfi_endproc\n"
+		".size playmono, .-playmono\n"
+
+		".type setupmono, @function\n"
 		"setupmono:\n" /* CALLED FROM EXTERNAL */
+		".cfi_startproc\n"
+
 		"  movl %eax, (playmonomonosteplvol1-4)\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size setupmono, .-setupmono\n"
 	);
 
 	__asm__ __volatile__
 	(
+		".type playmono16, @function\n"
 		"playmono16:\n"
+		".cfi_startproc\n"
+
 		"playmono16lp:\n"
 		"    movb 1(%esi,%esi), %bl\n"
 		"    addl $1234, %edx\n"
@@ -125,14 +165,26 @@ void nonepublic_dwmixa1(void)
 		"  jb playmono16lp\n"
 		"  ret\n"
 
+		".cfi_endproc\n"
+		".size playmono16, .-playmono16\n"
+
+		".type setupmono16, @function\n"
 		"setupmono16:\n" /* usual CALLED from EXTERNAL crap*/
+		".cfi_startproc\n"
+
 		"  movl %eax, (playmono16vol1-4)\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size setupmono16, .-setupmono16\n"
 	);
 
 	__asm__ __volatile__
 	(
+		".type playmonoi, @function\n"
 		"playmonoi:\n"
+		".cfi_startproc\n"
+
 		"playmonoilp:\n"
 		"    movl %edx, %eax\n"
 		"    shrl $20, %eax\n"
@@ -158,18 +210,30 @@ void nonepublic_dwmixa1(void)
 		"  jb playmonoilp\n"
 		"  ret\n"
 
+		".cfi_endproc\n"
+		".size playmonoi, .-playmonoi\n"
+
+		".type setupmonoi, @function\n"
 		"setupmonoi:\n" /* need to comment??? external */
+		".cfi_startproc\n"
+
 		"  movl %eax, (playmonoivol1-4)\n"
 		"  movl %ebx, (playmonoiint0-4)\n"
 		"  incl %ebx\n"
 		"  movl %ebx, (playmonoiint1-4)\n"
 		"  decl %ebx\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size setupmonoi, .-setupmonoi\n"
 	);
 
 	__asm__ __volatile__
 	(
+		".type playmonoi16, @function\n"
 		"playmonoi16:\n"
+		".cfi_startproc\n"
+
 		"playmonoi16lp:\n"
 		"    movl %edx, %eax\n"
 		"    shrl $20, %eax\n"
@@ -195,18 +259,30 @@ void nonepublic_dwmixa1(void)
 		"  jb playmonoi16lp\n"
 		"  ret\n"
 
+		".cfi_endproc\n"
+		".size playmonoi16, .-playmonoi16\n"
+
+		".type setupmonoi16, @function\n"
 		"setupmonoi16:\n" /* WE ARE NOT SHOCKED ABOUT EXTERNAL STUFF? */
+		".cfi_startproc\n"
+
 		"  movl %eax, (playmonoi16vol1-4)\n"
 		"  movl %ebx, (playmonoi16int0-4)\n"
 		"  incl %ebx\n"
 		"  movl %ebx, (playmonoi16int1-4)\n"
 		"  decl %ebx\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size setupmonoi16, .-setupmonoi16\n"
 	);
 
 	__asm__ __volatile__
 	(
+		".type playstereo, @function\n"
 		"playstereo:\n"
+		".cfi_startproc\n"
+
 		"playstereolp:\n"
 		"    movb (%esi), %bl\n"
 		"    addl $1234, %edx\n"
@@ -230,15 +306,27 @@ void nonepublic_dwmixa1(void)
 		"  jb playstereolp\n"
 		"  ret\n"
 
+		".cfi_endproc\n"
+		".size playstereo, .-playstereo\n"
+
+		".type setupstereo, @function\n"
 		"setupstereo:\n" /* TAKE A WILD GUESS */
+		".cfi_startproc\n"
+
 		"  movl %eax, (playstereovol1-4)\n"
 		"  movl %eax, (playstereovol2-4)\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size setupstereo, .-setupstereo\n"
 	);
 
 	__asm__ __volatile__
 	(
+		".type playstereo16, @function\n"
 		"playstereo16:\n"
+		".cfi_startproc\n"
+
 		"playstereo16lp:\n"
 		"    movb 1(%esi,%esi), %bl\n"
 		"    addl $1234, %edx\n"
@@ -262,15 +350,27 @@ void nonepublic_dwmixa1(void)
 		"  jb playstereo16lp\n"
 		"  ret\n"
 
+		".cfi_endproc\n"
+		".size playstereo16, .-playstereo16\n"
+
+		".type setupstereo16, @function\n"
 		"setupstereo16:\n" /* GUESS TWO TIMES? */
+		".cfi_startproc\n"
+
 		"  movl %eax, (playstereo16vol1-4)\n"
 		"  movl %eax, (playstereo16vol2-4)\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size setupstereo16, .-setupstereo16\n"
 	);
 
 	__asm__ __volatile__
 	(
+		".type playstereoi, @function\n"
 		"playstereoi:\n"
+		".cfi_startproc\n"
+
 		"playstereoilp:\n"
 		"    movl %edx, %eax\n"
 		"    shrl $20, %eax\n"
@@ -302,7 +402,13 @@ void nonepublic_dwmixa1(void)
 		"  jb playstereoilp\n"
 		"  ret\n"
 
+		".cfi_endproc\n"
+		".size playstereoi, .-playstereoi\n"
+
+		".type setupstereoi, @function\n"
 		"setupstereoi:\n" /* THESE ARE STARTING TO BECOME A HABIT NOW*/
+		".cfi_startproc\n"
+
 		"  movl %eax, (playstereoivol1-4)\n"
 		"  movl %eax, (playstereoivol2-4)\n"
 		"  movl %ebx, (playstereoiint0-4)\n"
@@ -310,11 +416,17 @@ void nonepublic_dwmixa1(void)
 		"  movl %ebx, (playstereoiint1-4)\n"
 		"  decl %ebx\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size playstereoi, .-playstereoi\n"
 	);
 
 	__asm__ __volatile__
 	(
+		".type playstereoi16, @function\n"
 		"playstereoi16:\n"
+		".cfi_startproc\n"
+
 		"playstereoi16lp:\n"
 		"    movl %edx, %eax\n"
 		"    shrl $20, %eax\n"
@@ -346,7 +458,13 @@ void nonepublic_dwmixa1(void)
 		"  jb playstereoi16lp\n"
 		"  ret\n"
 
+		".cfi_endproc\n"
+		".size playstereoi16, .-playstereoi16\n"
+
+		".type setupstereoi16, @function\n"
 		"setupstereoi16:" /* THIS IS THE LAST ONE!!!!!!!!!! */
+		".cfi_startproc\n"
+
 		"  movl %eax, (playstereoi16vol1-4)\n"
 		"  movl %eax, (playstereoi16vol2-4)\n"
 		"  movl %ebx, (playstereoi16int0-4)\n"
@@ -354,10 +472,15 @@ void nonepublic_dwmixa1(void)
 		"  movl %ebx, (playstereoi16int1-4)\n"
 		"  decl %ebx\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size setupstereoi16, .-setupstereoi16\n"
 	);
 
 	__asm__ __volatile__
 	(
+		".cfi_startproc\n"
+
 		".section .data\n"
 		"dummydd: .long 0\n"
 
@@ -377,6 +500,7 @@ void nonepublic_dwmixa1(void)
 	);
 }
 
+__attribute__((optimize("-fno-omit-frame-pointer"))) /* we use the stack, so we need all access to go via EBP, not ESP */
 void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channel *chan, int stereo)
 {
 	void *routptr;
@@ -391,7 +515,7 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 		"pushl %%ebx\n"
 #endif
 		"  movl %3, %%edi\n"              /*  %3 = chan */
-		"  testb %25, %12(%%edi)\n"       /* %25 = MIXRQ_PLAYING */
+		"  testb %25, %c12(%%edi)\n"      /* %25 = MIXRQ_PLAYING */
 		                                  /* %12 = status */
 		"  jz mixrPlayChannelexit\n"
 
@@ -403,12 +527,12 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 		"  je mixrPlayChannelnostereo\n"
 		"    addl $4, %%eax\n"
 		"mixrPlayChannelnostereo:\n"
-		"  testb %27, %12(%%edi)\n"       /* %27 = MIXRQ_INTERPOLATE */
+		"  testb %27, %c12(%%edi)\n"      /* %27 = MIXRQ_INTERPOLATE */
 		                                  /* %12 = ch->status */
 		"  jz mixrPlayChannelnointr\n"
 		"    addl $2, %%eax\n"
 		"mixrPlayChannelnointr:\n"
-		"  testb %26, %12(%%edi)\n"       /* %26 = MIXRQ_PLAY16BIT */
+		"  testb %26, %c12(%%edi)\n"      /* %26 = MIXRQ_PLAY16BIT */
 		                                  /* %12 = ch->status */
 		"  jz mixrPlayChannelpsetrtn\n"
 		"    incl %%eax\n"
@@ -419,9 +543,9 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 
 		"mixrPlayChannelbigloop:\n"
 		"  movl %2, %%ecx\n"              /*  %2 = len */
-		"  movl %13(%%edi), %%ebx\n"      /* %13 = ch->step */
-		"  movl %14(%%edi), %%edx\n"      /* %14 = ch->pos */
-		"  movw %15(%%edi), %%si\n"       /* %15 = ch->fpos */
+		"  movl %c13(%%edi), %%ebx\n"     /* %13 = ch->step */
+		"  movl %c14(%%edi), %%edx\n"     /* %14 = ch->pos */
+		"  movw %c15(%%edi), %%si\n"      /* %15 = ch->fpos */
 		"  movb $0, %9\n"                 /*  %9 = inloop */
 		"  cmpl $0, %%ebx\n"
 
@@ -429,25 +553,25 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 		"  jg mixrPlayChannelforward\n"
 		"    negl %%ebx\n"
 		"    movl %%edx, %%eax\n"
-		"    testb %28, %12(%%edi)\n"     /* %28 = MIXRQ_LOOPED */
+		"    testb %28, %c12(%%edi)\n"    /* %28 = MIXRQ_LOOPED */
 		                                  /* %12 = ch->status */
 		"    jz mixrPlayChannelmaxplaylen\n"
-		"    cmpl %16(%%edi), %%edx\n"    /* %16 = ch->loopstart */
+		"    cmpl %c16(%%edi), %%edx\n"   /* %16 = ch->loopstart */
 		"    jb mixrPlayChannelmaxplaylen\n"
-		"    subl %16(%%edi), %%eax\n"    /* %16 = ch->loopstart */
+		"    subl %c16(%%edi), %%eax\n"   /* %16 = ch->loopstart */
 		"    movb $1, %9\n"               /*  %9 = inloop */
 		"    jmp mixrPlayChannelmaxplaylen\n"
 		"mixrPlayChannelforward:\n"
-		"    movl %18(%%edi), %%eax\n"    /* %18 = length */
+		"    movl %c18(%%edi), %%eax\n"   /* %18 = length */
 		"    negw %%si\n"
 		"    sbbl %%edx, %%eax\n"
-		"    testb %28, %12(%%edi)\n"     /* %28 = MIXRQ_LOOPED */
+		"    testb %28, %c12(%%edi)\n"    /* %28 = MIXRQ_LOOPED */
 		                                  /* %12 = ch->status */
 		"    jz mixrPlayChannelmaxplaylen\n"
-		"    cmpl %17(%%edi), %%edx\n"    /* %17 = ch->loopend */
+		"    cmpl %c17(%%edi), %%edx\n"   /* %17 = ch->loopend */
 		"    jae mixrPlayChannelmaxplaylen\n"
-		"    subl %18(%%edi), %%eax\n"    /* %18 = ch->length */
-		"    addl %17(%%edi), %%eax\n"    /* %17 = ch->loopend*/
+		"    subl %c18(%%edi), %%eax\n"   /* %18 = ch->length */
+		"    addl %c17(%%edi), %%eax\n"   /* %17 = ch->loopend*/
 		"    movb $1, %9\n"               /*  %9 = inloop */
 
 		"mixrPlayChannelmaxplaylen:\n"
@@ -470,7 +594,7 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 #if MIXRQ_PLAYING != 1
 #error This line bellow depends on MIXRQ_PLAYING = 1
 #endif
-		"      andb $254, %12(%%edi)\n"   /* 254 = 255-MIXRQ_PLAYING */
+		"      andb $254, %c12(%%edi)\n"  /* 254 = 255-MIXRQ_PLAYING */
 		                                  /* %12 = ch->status */
 		"      movl $1, %11\n"            /* %11 = dofade */
 		"      movl %2, %%eax\n"          /*  %2 = len */
@@ -486,8 +610,8 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 		"  cmpl $0, %%ecx\n"
 		"  je mixrPlayChannelnoplay\n"
 
-		"  movl %21(%%edi), %%edx\n"      /* %21 = ch->dstvols[0] */
-		"  subl %19(%%edi), %%edx\n"      /* %19 = ch->curvols[0] */
+		"  movl %c21(%%edi), %%edx\n"     /* %21 = ch->dstvols[0] */
+		"  subl %c19(%%edi), %%edx\n"     /* %19 = ch->curvols[0] */
 		"  je mixrPlayChannelnoramp0\n"
 		"  jl mixrPlayChannelramp0down\n"
 		"    movl $1, %7\n"               /*  %7 = ramping[0] */
@@ -505,8 +629,8 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 		"      movl %%edx, %%ecx\n"
 		"mixrPlayChannelnoramp0:\n"
 
-		"  movl %22(%%edi), %%edx\n"      /* %22 = ch->dstvols[1] */
-		"  subl %20(%%edi), %%edx\n"      /* %20 = ch->curvols[1] */
+		"  movl %c22(%%edi), %%edx\n"     /* %22 = ch->dstvols[1] */
+		"  subl %c20(%%edi), %%edx\n"     /* %20 = ch->curvols[1] */
 		"  je mixrPlayChannelnoramp1\n"
 		"  jl mixrPlayChannelramp1down\n"
 		"    movl $1, %8\n"               /*  %8 = ramping[4] */
@@ -529,19 +653,19 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 		"  jne mixrPlayChannelnotquiet\n"
 		"  cmpl $0, %8\n"                 /*  %8 = ramping[1] */
 		"  jne mixrPlayChannelnotquiet\n"
-		"  cmpl $0, %19(%%edi)\n"         /* %19 = ch->curvols[0] */
+		"  cmpl $0, %c19(%%edi)\n"        /* %19 = ch->curvols[0] */
 		"  jne mixrPlayChannelnotquiet\n"
-		"  cmpl $0, %20(%%edi)\n"         /* %20 = ch->curvols[1] */
+		"  cmpl $0, %c20(%%edi)\n"        /* %20 = ch->curvols[1] */
 		"  jne mixrPlayChannelnotquiet\n"
 		"    movl $routq, %%edx\n"
 
 		"mixrPlayChannelnotquiet:\n"
 		"  movl 4(%%edx), %%ebx\n"
-		"  movl %13(%%edi), %%eax\n"      /* %13 = ch->step */
+		"  movl %c13(%%edi), %%eax\n"     /* %13 = ch->step */
 		"  shll $16, %%eax\n"
 		"  movl %%eax, (%%ebx)\n"
 		"  movl 8(%%edx), %%ebx\n"
-		"  movl %13(%%edi), %%eax\n"      /* %13 = ch->step */
+		"  movl %c13(%%edi), %%eax\n"     /* %13 = ch->step */
 		"  sarl $16, %%eax\n"
 		"  movl %%eax, (%%ebx)\n"
 		"  movl 12(%%edx), %%ebx\n"
@@ -563,14 +687,14 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 		"  pushl %%ecx\n"
 		"  movl (%%edx), %%eax\n"
 
-		"  movl %19(%%edi), %%ebx\n"      /* %19 = ch->curvols[0] */
+		"  movl %c19(%%edi), %%ebx\n"     /* %19 = ch->curvols[0] */
 		"  shll $8, %%ebx\n"
-		"  movl %20(%%edi), %%ecx\n"      /* %20 = ch->curvols[1] */
+		"  movl %c20(%%edi), %%ecx\n"     /* %20 = ch->curvols[1] */
 		"  shll $8, %%ecx\n"
-		"  movw %15(%%edi), %%dx\n"       /* %15 = ch->fpos */
+		"  movw %c15(%%edi), %%dx\n"      /* %15 = ch->fpos */
 		"  shll $16, %%edx\n"
-		"  movl %14(%%edi), %%esi\n"      /* %14 = ch->chpos */
-		"  addl %23(%%edi), %%esi\n"      /* %23 = ch->samp */
+		"  movl %c14(%%edi), %%esi\n"     /* %14 = ch->chpos */
+		"  addl %c23(%%edi), %%esi\n"     /* %23 = ch->samp */
 		"  movl %0, %%edi\n"              /*  %0 = buf */
 
 		"  call *%%eax\n"
@@ -588,18 +712,18 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 		"  addl %%eax, %0\n"              /*  %0 = buf */
 		"  subl %%ecx, %2\n"              /*  %2 = len */
 
-		"  movl %13(%%edi), %%eax\n"      /* %13 = ch->step */
+		"  movl %c13(%%edi), %%eax\n"     /* %13 = ch->step */
 		"  imul %%ecx\n"
 		"  shld $16, %%eax, %%edx\n"
-		"  addw %%ax, %15(%%edi)\n"       /* %15 = ch->fpos */
-		"  adcl %%edx, %14(%%edi)\n"      /* %14 = ch->pos */
+		"  addw %%ax, %c15(%%edi)\n"      /* %15 = ch->fpos */
+		"  adcl %%edx, %c14(%%edi)\n"     /* %14 = ch->pos */
 
 		"  movl %7, %%eax\n"              /*  %7 = ramping[0] */
 		"  imul %%ecx, %%eax\n"
-		"  addl %%eax, %19(%%edi)\n"      /* %19 = ch->curvols[0] */
+		"  addl %%eax, %c19(%%edi)\n"     /* %19 = ch->curvols[0] */
 		"  movl %8, %%eax\n"              /*  %8 = ramping[1] */
 		"  imul %%ecx, %%eax\n"
-		"  addl %%eax, %20(%%edi)\n"      /* %20 = ch->curvols[1] */
+		"  addl %%eax, %c20(%%edi)\n"     /* %20 = ch->curvols[1] */
 
 		"  cmpb $0, %10\n"                /* %10 = ramploop */
 		"  jnz mixrPlayChannelbigloop\n"
@@ -607,42 +731,42 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 		"  cmpb $0, %9\n"                 /*  %9 = inloop */
 		"  jz mixrPlayChannelfill\n"
 
-		"  movl %14(%%edi), %%eax\n"      /* %14 = ch->pos */
-		"  cmpl $0, %13(%%edi)\n"         /* %13 = ch->step */
+		"  movl %c14(%%edi), %%eax\n"     /* %14 = ch->pos */
+		"  cmpl $0, %c13(%%edi)\n"        /* %13 = ch->step */
 		"  jge mixrPlayChannelforward2\n"
-		"    cmpl %16(%%edi), %%eax\n"    /* %16 = ch->loopstart */
+		"    cmpl %c16(%%edi), %%eax\n"   /* %16 = ch->loopstart */
 		"    jge mixrPlayChannelexit\n"
-		"    testb %29, %12(%%edi)\n"     /* %29 = MIXRQ_PINGPONGLOOP */
+		"    testb %29, %c12(%%edi)\n"    /* %29 = MIXRQ_PINGPONGLOOP */
 		                                  /* %12 = ch->status */
 		"    jnz mixrPlayChannelpong\n"
-		"      addl %24(%%edi), %%eax\n"  /* %24 = ch->replen */
+		"      addl %c24(%%edi), %%eax\n" /* %24 = ch->replen */
 		"      jmp mixrPlayChannelloopiflen\n"
 		"mixrPlayChannelpong:\n"
-		"      negl %13(%%edi)\n"         /* %13 = ch->step */
-		"      negw %15(%%edi)\n"         /* %15 = ch->fpos */
+		"      negl %c13(%%edi)\n"        /* %13 = ch->step */
+		"      negw %c15(%%edi)\n"        /* %15 = ch->fpos */
 		"      adcl $0, %%eax\n"
 		"      negl %%eax\n"
-		"      addl %16(%%edi), %%eax\n"  /* %16 = ch->loopstart */
-		"      addl %16(%%edi), %%eax\n"  /* %16 = ch->loopstart */
+		"      addl %c16(%%edi), %%eax\n" /* %16 = ch->loopstart */
+		"      addl %c16(%%edi), %%eax\n" /* %16 = ch->loopstart */
 		"      jmp mixrPlayChannelloopiflen\n"
 		"mixrPlayChannelforward2:\n"
-		"    cmpl %17(%%edi), %%eax\n"    /* %17 = ch->loopend */
+		"    cmpl %c17(%%edi), %%eax\n"   /* %17 = ch->loopend */
 		"    jb mixrPlayChannelexit\n"
-		"    testb %29, %12(%%edi)\n"     /* %29 = MIXRQ_PINGPONGLOOP */
+		"    testb %29, %c12(%%edi)\n"    /* %29 = MIXRQ_PINGPONGLOOP */
 		                                  /* %12 = ch->status */
 		"    jnz mixrPlayChannelping\n"
-		"      subl %24(%%edi), %%eax\n"  /* %24 = ch->replen */
+		"      subl %c24(%%edi), %%eax\n" /* %24 = ch->replen */
 		"      jmp mixrPlayChannelloopiflen\n"
 		"mixrPlayChannelping:\n"
-		"      negl %13(%%edi)\n"         /* %13 = ch->step */
-		"      negw %15(%%edi)\n"         /* %15 = ch->fpos */
+		"      negl %c13(%%edi)\n"        /* %13 = ch->step */
+		"      negw %c15(%%edi)\n"        /* %15 = ch->fpos */
 		"      adcl $0, %%eax\n"
 		"      negl %%eax\n"
-		"      addl %17(%%edi), %%eax\n"  /* %17 = ch->loopend */
-		"      addl %17(%%edi), %%eax\n"  /* %17 = ch->loopend */
+		"      addl %c17(%%edi), %%eax\n" /* %17 = ch->loopend */
+		"      addl %c17(%%edi), %%eax\n" /* %17 = ch->loopend */
 
 		"mixrPlayChannelloopiflen:\n"
-		"  movl %%eax, %14(%%edi)\n"      /* %14 = ch->pos */
+		"  movl %%eax, %c14(%%edi)\n"     /* %14 = ch->pos */
 		"  cmpl $0, %2\n"                 /*  %2 = len */
 		"  jne mixrPlayChannelbigloop\n"
 		"  jmp mixrPlayChannelexit\n"
@@ -650,14 +774,14 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 		"mixrPlayChannelfill:\n"
 		"  cmpl $0, %6\n"                 /*  %6 = filllen */
 		"  je mixrPlayChannelfadechk\n"
-		"  movl %18(%%edi), %%eax\n"      /* %18 = ch->length */
-		"  movl %%eax, %14(%%edi)\n"      /* %14 = ch->pos */
-		"  addl %23(%%edi), %%eax\n"      /* %23 = ch->samp */
-		"  movl %19(%%edi), %%ebx\n"      /* %19 = ch->curvols[0] */
-		"  movl %20(%%edi), %%ecx\n"      /* %20 = ch->curvols[1] */
+		"  movl %c18(%%edi), %%eax\n"     /* %18 = ch->length */
+		"  movl %%eax, %c14(%%edi)\n"     /* %14 = ch->pos */
+		"  addl %c23(%%edi), %%eax\n"     /* %23 = ch->samp */
+		"  movl %c19(%%edi), %%ebx\n"     /* %19 = ch->curvols[0] */
+		"  movl %c20(%%edi), %%ecx\n"     /* %20 = ch->curvols[1] */
 		"  shll $8, %%ebx\n"
 		"  shll $8, %%ecx\n"
-		"  testb %26, %12(%%edi)\n"       /* %26 = MIXRQ_PLAY16BIT */
+		"  testb %26, %c12(%%edi)\n"      /* %26 = MIXRQ_PLAY16BIT */
 		                                  /* %12 = ch->status */
 		"  jnz mixrPlayChannelfill16\n"
 		"    movb (%%eax), %%bl\n"
@@ -719,19 +843,19 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 		  "m" (inloop),                               /*   9  */
 		  "m" (ramploop),                             /*  10  */
 		  "m" (dofade),                               /*  11  */
-		  "m" (((struct channel *)NULL)->status),     /*  12  */
-		  "m" (((struct channel *)NULL)->step),       /*  13  */
-		  "m" (((struct channel *)NULL)->pos),        /*  14  */
-		  "m" (((struct channel *)NULL)->fpos),       /*  15  */
-		  "m" (((struct channel *)NULL)->loopstart),  /*  16  */
-		  "m" (((struct channel *)NULL)->loopend),    /*  17  */
-		  "m" (((struct channel *)NULL)->length),     /*  18  */
-		  "m" (((struct channel *)NULL)->curvols[0]), /*  19  */
-		  "m" (((struct channel *)NULL)->curvols[1]), /*  20  */
-		  "m" (((struct channel *)NULL)->dstvols[0]), /*  21  */
-		  "m" (((struct channel *)NULL)->dstvols[1]), /*  22  */
-		  "m" (((struct channel *)NULL)->samp),       /*  23  */
-		  "m" (((struct channel *)NULL)->replen),     /*  24  */
+		  "n" (offsetof(struct channel, status)),     /*  12  */
+		  "n" (offsetof(struct channel, step)),       /*  13  */
+		  "n" (offsetof(struct channel, pos)),        /*  14  */
+		  "n" (offsetof(struct channel, fpos)),       /*  15  */
+		  "n" (offsetof(struct channel, loopstart)),  /*  16  */
+		  "n" (offsetof(struct channel, loopend)),    /*  17  */
+		  "n" (offsetof(struct channel, length)),     /*  18  */
+		  "n" (offsetof(struct channel, curvols[0])), /*  19  */
+		  "n" (offsetof(struct channel, curvols[1])), /*  20  */
+		  "n" (offsetof(struct channel, dstvols[0])), /*  21  */
+		  "n" (offsetof(struct channel, dstvols[1])), /*  22  */
+		  "n" (offsetof(struct channel, samp)),       /*  23  */
+		  "n" (offsetof(struct channel, replen)),     /*  24  */
 		  "n" (MIXRQ_PLAYING),                        /*  25  */
 		  "n" (MIXRQ_PLAY16BIT),                      /*  26  */
 		  "n" (MIXRQ_INTERPOLATE),                    /*  27  */
@@ -840,7 +964,12 @@ void nonepublic_dwmixa2(void)
 {
 	__asm__ __volatile__
 	(
+		".cfi_endproc\n"
+
+		".type mixrClip8_, @function\n"
 		"mixrClip8_:\n"
+		".cfi_startproc\n"
+
 		"  movl %ebx, (mixrClip8amp1-4)\n"
 		"  addl $512, %ebx\n"
 		"  movl %ebx, (mixrClip8amp2-4)\n"
@@ -919,6 +1048,11 @@ void nonepublic_dwmixa2(void)
 		"mixrClip8endp3:\n"
 		"  jb mixrClip8lp\n"
 		"  jmp mixrClip8done\n"
+
+		".cfi_endproc\n"
+		".size mixrClip8_, .-mixrClip8_\n"
+
+		".cfi_startproc\n"
 	);
 }
 
