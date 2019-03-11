@@ -27,16 +27,13 @@
  */
 
 #include "config.h"
+#include <stddef.h>
 #include <unistd.h>
 #include "types.h"
 #include "mix.h"
 #include "mixasm.h"
 
 #ifdef I386_ASM
-
-#ifndef NULL
- #define NULL ((void *)0)
-#endif
 
 static void __attribute__ ((used)) dummy55 (void)
 {
@@ -63,21 +60,21 @@ __asm__ __volatile__
 #endif
 __asm__ __volatile__
 (
-	".equ MIX_PINGPONGLOOP, %0\n"
-	".equ MIX_PLAYING, %1\n"
-	".equ MIX_LOOPED, %2\n"
-	".equ MIX_PLAYFLOAT, %3\n"
-	".equ MIX_PLAY16BIT, %4\n"
-	".equ MIX_MAX, %5\n"
-	".equ MIX_INTERPOLATE, %6\n"
+	".equ MIX_PINGPONGLOOP, %c0\n"
+	".equ MIX_PLAYING, %c1\n"
+	".equ MIX_LOOPED, %c2\n"
+	".equ MIX_PLAYFLOAT, %c3\n"
+	".equ MIX_PLAY16BIT, %c4\n"
+	".equ MIX_MAX, %c5\n"
+	".equ MIX_INTERPOLATE, %c6\n"
 	: :
-	  "m" (*(char *)(MIX_PINGPONGLOOP))/*MCP_PINGPONGLOOP*/,        /*   0  */
-	  "m" (*(char *)(MIX_PLAYING))/*(MCP_PLAYING)*/,                /*   1  */
-	  "m" (*(char *)(MIX_LOOPED))/*(MCP_LOOPED)*/,                  /*   2  */
-	  "m" (*(char *)(MIX_PLAYFLOAT))/*(MCP_PLAYFLOAT)*/,            /*   3  */
-	  "m" (*(char *)(MIX_PLAY16BIT))/*(MCP_PLAY16BIT)*/,            /*   4  */
-	  "m" (*(char *)(MIX_MAX))/*(MCP_MAX)*/,                        /*   5  */
-	  "m" (*(char *)(MIX_INTERPOLATE))/*(MCP_INTERPOLATE)*/         /*   6  */
+	  "n" (MIX_PINGPONGLOOP)/*MCP_PINGPONGLOOP*/,        /*   0  */
+	  "n" (MIX_PLAYING)/*(MCP_PLAYING)*/,                /*   1  */
+	  "n" (MIX_LOOPED)/*(MCP_LOOPED)*/,                  /*   2  */
+	  "n" (MIX_PLAYFLOAT)/*(MCP_PLAYFLOAT)*/,            /*   3  */
+	  "n" (MIX_PLAY16BIT)/*(MCP_PLAY16BIT)*/,            /*   4  */
+	  "n" (MIX_MAX)/*(MCP_MAX)*/,                        /*   5  */
+	  "n" (MIX_INTERPOLATE)/*(MCP_INTERPOLATE)*/         /*   6  */
 	  );
 }
 #ifndef __PIC__
@@ -94,6 +91,7 @@ static __attribute__((used)) int inloop;
 
 void mixasm_remap_start(void){}
 
+__attribute__((optimize("-fno-omit-frame-pointer"))) /* we use the stack, so we need all access to go via EBP, not ESP */
 void mixPlayChannel(int32_t *buf, uint32_t len, struct mixchannel *ch, int stereo)
 {
 	int d0;
@@ -110,23 +108,23 @@ void mixPlayChannel(int32_t *buf, uint32_t len, struct mixchannel *ch, int stere
 		"  movl $0, playfloat\n"
 		"  movl $0, render16bit\n"
 
-		"  testb $MIX_PLAYING, %8(%%edi)\n"
+		"  testb $MIX_PLAYING, %c8(%%edi)\n"
 		                                  /*  %8 = ch->status */
 		"  jz pcexit\n"
-		"  testb $MIX_INTERPOLATE, %8(%%edi)\n"
+		"  testb $MIX_INTERPOLATE, %c8(%%edi)\n"
 		                                  /*  %8 = ch->status */
 		"  jz mixPlayChannel_nointr\n"
 		"     movl $1, interpolate\n"
-		"     testb $MIX_MAX, %8(%%edi)\n"/*  %8 = ch->status */
+		"     testb $MIX_MAX, %c8(%%edi)\n"/*  %8 = ch->status */
 		"     jz mixPlayChannel_nointr\n"
 		"       movl $1, render16bit\n"
 		"mixPlayChannel_nointr:\n"
-		"  testb $MIX_PLAY16BIT, %8(%%edi)\n"
+		"  testb $MIX_PLAY16BIT, %c8(%%edi)\n"
 		                                  /*  %8 = ch->status */
 		"  jz mixPlayChannel_no16bit\n"
 		"    movl $1, play16bit\n"
 		"mixPlayChannel_no16bit:\n"
-		"  testb $MIX_PLAYFLOAT, %8(%%edi)\n"
+		"  testb $MIX_PLAYFLOAT, %c8(%%edi)\n"
 		                                  /*  %8= ch->status */
 		"  jz mixPlayChannel_no32bit\n"
 		"    movl $1, playfloat\n"
@@ -136,23 +134,23 @@ void mixPlayChannel(int32_t *buf, uint32_t len, struct mixchannel *ch, int stere
 		"  jne mixPlayChannel_pstereo\n"
 
 		"mixPlayChannel_pmono:\n"
-		"  movl %12(%%edi), %%eax\n"      /* %12 = ch->vol.voltabs[0] */
+		"  movl %c12(%%edi), %%eax\n"     /* %12 = ch->vol.voltabs[0] */
 		"  movl %%eax, voltabs+0\n"
 		"  movl $playmono, playrout\n"
 		"  jmp mixPlayChannel_bigloop\n"
 
 		"mixPlayChannel_pstereo:\n"
-		"  movl %12(%%edi), %%eax\n"      /* %12 = ch->vol.voltabs[0] */
-		"  movl %13(%%edi), %%ebx\n"      /* %13 = ch->vol.voltabs[1] */
+		"  movl %c12(%%edi), %%eax\n"     /* %12 = ch->vol.voltabs[0] */
+		"  movl %c13(%%edi), %%ebx\n"     /* %13 = ch->vol.voltabs[1] */
 		"  movl %%eax, voltabs\n"
 		"  movl %%ebx, voltabs+4\n"
 		"  movl $playodd, playrout\n"
 
 		"mixPlayChannel_bigloop:\n"
 		"  movl %2, %%ecx\n"              /*  %2 = len */
-		"  movl %11(%%edi), %%ebx\n"      /* %11 = ch->step */
-		"  movl %9(%%edi), %%edx\n"       /*  %9 = ch->pos */
-		"  movw %10(%%edi), %%si\n"       /* %10 = ch->->fpos */
+		"  movl %c11(%%edi), %%ebx\n"     /* %11 = ch->step */
+		"  movl %c9(%%edi), %%edx\n"      /*  %9 = ch->pos */
+		"  movw %c10(%%edi), %%si\n"      /* %10 = ch->->fpos */
 		"  movl $0, inloop\n"
 		"  cmpl $0, %%ebx\n"
 
@@ -160,25 +158,25 @@ void mixPlayChannel(int32_t *buf, uint32_t len, struct mixchannel *ch, int stere
 		"  jg mixPlayChannel_forward\n"
 		"    negl %%ebx\n"
 		"    movl %%edx, %%eax\n"
-		"    testb $MIX_LOOPED, %8(%%edi)\n"
+		"    testb $MIX_LOOPED, %c8(%%edi)\n"
 		                                  /*  %8 = ch->->status */
 		"    jz mixPlayChannel_maxplaylen\n"
-		"    cmpl %7(%%edi), %%edx\n"     /*  %7 = ch->loopstart */
+		"    cmpl %c7(%%edi), %%edx\n"    /*  %7 = ch->loopstart */
 		"    jb mixPlayChannel_maxplaylen\n"
-		"    subl %7(%%edi), %%eax\n"     /*  %7 = ch->loopstart */
+		"    subl %c7(%%edi), %%eax\n"    /*  %7 = ch->loopstart */
 		"    movl $1, inloop\n"
 		"    jmp mixPlayChannel_maxplaylen\n"
 		"mixPlayChannel_forward:\n"
-		"    movl %4(%%edi), %%eax\n"     /*  %4 = ch->length */
+		"    movl %c4(%%edi), %%eax\n"    /*  %4 = ch->length */
 		"    negw %%si\n"
 		"    sbbl %%edx, %%eax\n"
-		"    testb $MIX_LOOPED, %8(%%edi)\n"
+		"    testb $MIX_LOOPED, %c8(%%edi)\n"
 		                                  /*  %8 = ch->->status */
 		"    jz mixPlayChannel_maxplaylen\n"
-		"    cmpl %5(%%edi), %%edx\n"     /*  %5 = ch->loopend */
+		"    cmpl %c5(%%edi), %%edx\n"    /*  %5 = ch->loopend */
 		"    jae mixPlayChannel_maxplaylen\n"
-		"    subl %4(%%edi), %%eax\n"     /*  %4 = ch->length */
-		"    addl %5(%%edi), %%eax\n"     /*  %5 = ch->loopend */
+		"    subl %c4(%%edi), %%eax\n"    /*  %4 = ch->length */
+		"    addl %c5(%%edi), %%eax\n"    /*  %5 = ch->loopend */
 		"    movl $1, inloop\n"
 
 		"mixPlayChannel_maxplaylen:\n"
@@ -198,7 +196,7 @@ void mixPlayChannel(int32_t *buf, uint32_t len, struct mixchannel *ch, int stere
 		"    movl %%eax, %%ecx\n"
 		"    cmpl $0, inloop\n"
 		"    jnz mixPlayChannel_playecx\n"
-		"      andb $254, %8(%%edi)\n"    /*** 254 = MCP_PLAYING^255   no parameters left  ***
+		"      andb $254, %c8(%%edi)\n"   /*** 254 = MCP_PLAYING^255   no parameters left  ***
 		                                   *  %8 = ch->status */
 		"      movl %%ecx, %2\n"          /*  %2 = len */
 
@@ -225,51 +223,51 @@ void mixPlayChannel(int32_t *buf, uint32_t len, struct mixchannel *ch, int stere
 		"  addl %%eax, %3\n"              /*  %3 = buf */
 		"  subl %%ecx, %2\n"              /*  %2 = len */
 
-		"  movl %11(%%edi), %%eax\n"      /* %11 = ch->step */
+		"  movl %c11(%%edi), %%eax\n"     /* %11 = ch->step */
 		"  imul %%ecx\n"
 		"  shld $16, %%eax, %%edx\n"
-		"  addw %%ax, %10(%%edi)\n"       /* %10 = ch->->fpos */
-		"  adcl %%edx, %9(%%edi)\n"       /*  %9 = ch->pos */
-		"  movl %9(%%edi), %%eax\n"       /*  %9 = ch->pos */
+		"  addw %%ax, %c10(%%edi)\n"      /* %10 = ch->->fpos */
+		"  adcl %%edx, %c9(%%edi)\n"      /*  %9 = ch->pos */
+		"  movl %c9(%%edi), %%eax\n"      /*  %9 = ch->pos */
 
 		"  cmpl $0, inloop\n"
 		"  jz pcexit\n"
 
-		"  cmpl $0, %11(%%edi)\n"         /* %11 = ch->step */
+		"  cmpl $0, %c11(%%edi)\n"        /* %11 = ch->step */
 		"  jge mixPlayChannel_forward2\n"
-		"    cmpl %7(%%edi), %%eax\n"     /*  %7 = ch->->loopstart */
+		"    cmpl %c7(%%edi), %%eax\n"    /*  %7 = ch->->loopstart */
 		"    jge pcexit\n"
-		"    testb $MIX_PINGPONGLOOP, %8(%%edi)\n"
+		"    testb $MIX_PINGPONGLOOP, %c8(%%edi)\n"
 		                                  /*  %8 = ch->status */
 		"    jnz mixPlayChannel_pong\n"
-		"      addl %6(%%edi), %%eax\n"   /*  %6 = ch->replen */
+		"      addl %c6(%%edi), %%eax\n"  /*  %6 = ch->replen */
 		"      jmp mixPlayChannel_loopiflen\n"
 		"mixPlayChannel_pong:\n"
-		"      negl %11(%%edi)\n"         /* %11 = ch->step */
-		"      negw %10(%%edi)\n"         /* %10 = ch->->fpos */
+		"      negl %c11(%%edi)\n"        /* %11 = ch->step */
+		"      negw %c10(%%edi)\n"        /* %10 = ch->->fpos */
 		"      adcl $0, %%eax\n"
 		"      negl %%eax\n"
-		"      addl %7(%%edi), %%eax\n"   /*  %7 = ch->->loopstart */
-		"      addl %7(%%edi), %%eax\n"   /*  %7 = ch->->loopstart */
+		"      addl %c7(%%edi), %%eax\n"  /*  %7 = ch->->loopstart */
+		"      addl %c7(%%edi), %%eax\n"  /*  %7 = ch->->loopstart */
 		"      jmp mixPlayChannel_loopiflen\n"
 		"mixPlayChannel_forward2:\n"
-		"    cmpl %5(%%edi), %%eax\n"     /*  %5 = ch->->loopend */
+		"    cmpl %c5(%%edi), %%eax\n"    /*  %5 = ch->->loopend */
 		"    jb pcexit\n"
-		"    testb $MIX_PINGPONGLOOP, %8(%%edi)\n"
+		"    testb $MIX_PINGPONGLOOP, %c8(%%edi)\n"
 		                                  /*  %8 = ch->status */
 		"    jnz mixPlayChannel_ping\n"
-		"      sub %6(%%edi), %%eax\n"    /*  %6 = ch->replen */
+		"      sub %c6(%%edi), %%eax\n"   /*  %6 = ch->replen */
 		"      jmp mixPlayChannel_loopiflen\n"
 		"mixPlayChannel_ping:\n"
-		"      negl %11(%%edi)\n"         /* %11 = ch->step */
-		"      negw %10(%%edi)\n"         /* %10 = ch->->fpos */
+		"      negl %c11(%%edi)\n"        /* %11 = ch->step */
+		"      negw %c10(%%edi)\n"        /* %10 = ch->->fpos */
 		"      adcl $0, %%eax\n"
 		"      negl %%eax\n"
-		"      addl %5(%%edi), %%eax\n"   /*  %5 = ch->->loopend */
-		"      addl %5(%%edi), %%eax\n"   /*  %5 = ch->->loopend */
+		"      addl %c5(%%edi), %%eax\n"  /*  %5 = ch->->loopend */
+		"      addl %c5(%%edi), %%eax\n"  /*  %5 = ch->->loopend */
 
 		"mixPlayChannel_loopiflen:\n"
-		"  movl %%eax, %9(%%edi)\n"       /*  %9 = ch->pos */
+		"  movl %%eax, %c9(%%edi)\n"      /*  %9 = ch->pos */
 		"  cmpl $0, %2\n"                 /*  %2 = len */
 		"  jne mixPlayChannel_bigloop\n"
 
@@ -281,16 +279,16 @@ void mixPlayChannel(int32_t *buf, uint32_t len, struct mixchannel *ch, int stere
 		: "m" (stereo),                                      /*   1  */
 		  "m" (len),                                         /*   2  */
 		  "m" (buf),                                         /*   3  */
-		  "m" (((struct mixchannel *)NULL)->length),         /*   4  */
-		  "m" (((struct mixchannel *)NULL)->loopend),        /*   5  */
-		  "m" (((struct mixchannel *)NULL)->replen),         /*   6  */
-		  "m" (((struct mixchannel *)NULL)->loopstart),      /*   7  */
-		  "m" (((struct mixchannel *)NULL)->status),         /*   8  */
-		  "m" (((struct mixchannel *)NULL)->pos),            /*   9  */
-		  "m" (((struct mixchannel *)NULL)->fpos),           /*  10  */
-		  "m" (((struct mixchannel *)NULL)->step),           /*  11  */
-		  "m" (((struct mixchannel *)NULL)->vol.voltabs[0]), /*  12  */
-		  "m" (((struct mixchannel *)NULL)->vol.voltabs[1]), /*  13  */
+		  "n" (offsetof(struct mixchannel, length)),         /*   4  */
+		  "n" (offsetof(struct mixchannel, loopend)),        /*   5  */
+		  "n" (offsetof(struct mixchannel, replen)),         /*   6  */
+		  "n" (offsetof(struct mixchannel, loopstart)),      /*   7  */
+		  "n" (offsetof(struct mixchannel, status)),         /*   8  */
+		  "n" (offsetof(struct mixchannel, pos)),            /*   9  */
+		  "n" (offsetof(struct mixchannel, fpos)),           /*  10  */
+		  "n" (offsetof(struct mixchannel, step)),           /*  11  */
+		  "n" (offsetof(struct mixchannel, vol.voltabs[0])), /*  12  */
+		  "n" (offsetof(struct mixchannel, vol.voltabs[1])), /*  13  */
 #ifdef __PIC__
 		  "m" ((ebx)),                                       /*  14  */
 #endif
@@ -303,7 +301,12 @@ static void __attribute__ ((used)) dummy54 (void)
 {
 	__asm__ __volatile__
 	(
+		".cfi_endproc\n"
+
+		".type playmono, @function\n"
 		 "playmono:\n"
+		".cfi_startproc\n"
+
 		 "  cmpl $0, interpolate\n"
 		 "  jnz playmonoi\n"
 
@@ -318,17 +321,17 @@ static void __attribute__ ((used)) dummy54 (void)
 
 		 "  movl voltabs+0, %%eax\n"
 		 "  movl %%eax, (vol11-4)\n"
-		 "  movl %0(%%edi), %%eax\n"      /*  %0 = ch->step */
+		 "  movl %c0(%%edi), %%eax\n"     /*  %0 = ch->step */
 		 "  shll $16, %%eax\n"
 		 "  movl %%eax, (edx1-4)\n"
-		 "  movl %0(%%edi), %%eax\n"      /*  %0 = ch->step */
+		 "  movl %c0(%%edi), %%eax\n"     /*  %0 = ch->step */
 		 "  sarl $16, %%eax\n"
 		 "  movl %%eax, (ebp1-4)\n"
 
-		"  movw %1(%%edi), %%dx\n"        /*  %1 = ch->fpos */
+		"  movw %c1(%%edi), %%dx\n"       /*  %1 = ch->fpos */
 		"  shll $16, %%edx\n"
-		"  movl %2(%%edi), %%esi\n"       /*  %2 = ch->pos */
-		"  addl %3(%%edi), %%esi\n"       /*  %3 = ch->samp */
+		"  movl %c2(%%edi), %%esi\n"      /*  %2 = ch->pos */
+		"  addl %c3(%%edi), %%esi\n"      /*  %3 = ch->samp */
 		"  movl %%ecx, %%edi\n"
 		"  xorl %%ebx, %%ebx\n"
 
@@ -347,32 +350,39 @@ static void __attribute__ ((used)) dummy54 (void)
 
 		"done1:\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size playmono, .-playmono\n"
+
 		:
-		: "m" (((struct mixchannel *)NULL)->step), /* 0 */
-		  "m" (((struct mixchannel *)NULL)->fpos), /* 1 */
-		  "m" (((struct mixchannel *)NULL)->pos),  /* 2 */
-		  "m" (((struct mixchannel *)NULL)->samp)  /* 3 */
+		: "n" (offsetof(struct mixchannel, step)), /*  0  */
+		  "n" (offsetof(struct mixchannel, fpos)), /*  1  */
+		  "n" (offsetof(struct mixchannel, pos)),  /*  2  */
+		  "n" (offsetof(struct mixchannel, samp))  /*  3  */
 	);
 
 	__asm__ __volatile__
 	(
-		"playmono16:"
+		".type playmono16, @function\n"
+		"playmono16:\n"
+		".cfi_startproc\n"
+
 		"  cmp $0, %%ebp\n"
 		"  je done2\n"
 
 		"  movl voltabs+0, %%eax\n"
 		"  movl %%eax, (vol2-4)\n"
-		"  movl %1(%%edi), %%eax\n"       /*  %1 = ch->step */
+		"  movl %c1(%%edi), %%eax\n"      /*  %1 = ch->step */
 		"  shll $16, %%eax\n"
 		"  movl %%eax, (edx2-4)\n"
-		"  movl %1(%%edi), %%eax\n"       /*  %1 = ch->step */
+		"  movl %c1(%%edi), %%eax\n"      /*  %1 = ch->step */
 		"  sarl $16, %%eax\n"
 		"  movl %%eax, (ebp2-4)\n"
 
-		"  movw %2(%%edi), %%dx\n"        /*  %2 = ch->fpos */
+		"  movw %c2(%%edi), %%dx\n"       /*  %2 = ch->fpos */
 		"  shll $16, %%edx\n"
-		"  movl %3(%%edi), %%esi\n"       /*  %3 = ch->pos */
-		"  addl %0(%%edi), %%esi\n"       /*  %0 = ch->samp */
+		"  movl %c3(%%edi), %%esi\n"      /*  %3 = ch->pos */
+		"  addl %c0(%%edi), %%esi\n"      /*  %0 = ch->samp */
 		"  movl %%ecx, %%edi\n"
 		"  xorl %%ebx, %%ebx\n"
 
@@ -391,34 +401,41 @@ static void __attribute__ ((used)) dummy54 (void)
 
 		"done2:\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size playmono16, .-playmono16\n"
+
 		:
-		: "m" (((struct mixchannel *)NULL)->samp), /*  0  */
-		  "m" (((struct mixchannel *)NULL)->step), /*  1  */
-		  "m" (((struct mixchannel *)NULL)->fpos), /*  2  */
-		  "m" (((struct mixchannel *)NULL)->pos)   /*  3  */
+		: "n" (offsetof(struct mixchannel, samp)), /*  0  */
+		  "n" (offsetof(struct mixchannel, step)), /*  1  */
+		  "n" (offsetof(struct mixchannel, fpos)), /*  2  */
+		  "n" (offsetof(struct mixchannel, pos))   /*  3  */
 	);
 
 	  __asm__ __volatile__
 	(
-		"playmono32:"
+		".type playmono32, @function\n"
+		"playmono32:\n"
+		".cfi_startproc\n"
+
 		"  cmp $0, %%ebp\n"
 		"  je done3\n"
 
-		"  flds %0(%%edi)\n"              /*  %0 = ch->vol.voltabs[0] */
+		"  flds %c0(%%edi)\n"             /*  %0 = ch->vol.voltabs[0] */
 		"  fmuls gscale\n"
 		"  fstps scale\n"
 
-		"  movl %1(%%edi), %%eax\n"       /*  %1 = ch->step */
+		"  movl %c1(%%edi), %%eax\n"      /*  %1 = ch->step */
 		"  shll $16, %%eax\n"
 		"  movl %%eax, (edx3-4)\n"
-		"  movl %1(%%edi), %%eax\n"       /*  %1 = ch->step */
+		"  movl %c1(%%edi), %%eax\n"      /*  %1 = ch->step */
 		"  sarl $16, %%eax\n"
 		"  movl %%eax, (ebp3-4)\n"
 
-		"  movw %2(%%edi), %%dx\n"        /*  %2 = ch->fpos */
+		"  movw %c2(%%edi), %%dx\n"       /*  %2 = ch->fpos */
 		"  shll $16, %%edx\n"
-		"  movl %3(%%edi), %%esi\n"       /*  %3 = ch->pos */
-		"  addl %4(%%edi), %%esi\n"       /*  %4 = ch->samp */
+		"  movl %c3(%%edi), %%esi\n"      /*  %3 = ch->pos */
+		"  addl %c4(%%edi), %%esi\n"      /*  %4 = ch->samp */
 		"  movl %%ecx, %%edi\n"
 		"  xorl %%ebx, %%ebx\n"
 
@@ -440,22 +457,29 @@ static void __attribute__ ((used)) dummy54 (void)
 		"done3:\n"
 		"  ret\n"
 
+		".cfi_endproc\n"
+		".size playmono32, .-playmono32\n"
+
 		".data\n"
 		"integer: .long 0\n"
 		"scale: .float 0.0\n"
 		"gscale: .float 64.0\n"
 		".previous\n"
+
 		:
-		: "m" (((struct mixchannel *)NULL)->vol.voltabs[0]), /*  0  */
-		  "m" (((struct mixchannel *)NULL)->step),           /*  1  */
-		  "m" (((struct mixchannel *)NULL)->fpos),           /*  2  */
-		  "m" (((struct mixchannel *)NULL)->pos),            /*  3  */
-		  "m" (((struct mixchannel *)NULL)->samp)            /*  4  */
+		: "n" (offsetof(struct mixchannel, vol.voltabs[0])), /*  0  */
+		  "n" (offsetof(struct mixchannel, step)),           /*  1  */
+		  "n" (offsetof(struct mixchannel, fpos)),           /*  2  */
+		  "n" (offsetof(struct mixchannel, pos)),            /*  3  */
+		  "n" (offsetof(struct mixchannel, samp))            /*  4  */
 	);
 
 	__asm__ __volatile__
 	(
+		".type playmonoi, @function\n"
 		"playmonoi:\n"
+		".cfi_startproc\n"
+
 		"  cmpl $0, render16bit\n"
 		"  jnz playmonoir\n"
 
@@ -474,17 +498,17 @@ static void __attribute__ ((used)) dummy54 (void)
 		"  movl %%eax, (int14-4)\n"
 		"  movl voltabs+0, %%eax\n"
 		"  movl %%eax, (vol14-4)\n"
-		"  movl %0(%%edi), %%eax\n"       /*  %0 = ch->step */
+		"  movl %c0(%%edi), %%eax\n"      /*  %0 = ch->step */
 		"  shll $16, %%eax\n"
 		"  movl %%eax, (edx4-4)\n"
-		"  movl %0(%%edi), %%eax\n"       /*  %0 = ch->step */
+		"  movl %c0(%%edi), %%eax\n"      /*  %0 = ch->step */
 		"  sarl $16, %%eax\n"
 		"  movl %%eax, (ebp4-4)\n"
 
-		"  movw %1(%%edi), %%dx\n"        /*  %1 = ch->fpos */
+		"  movw %c1(%%edi), %%dx\n"       /*  %1 = ch->fpos */
 		"  shll $16, %%edx\n"
-		"  movl %2(%%edi), %%esi\n"       /*  %2 = ch->pos */
-		"  addl %3(%%edi), %%esi\n"       /*  %3 = ch->samp */
+		"  movl %c2(%%edi), %%esi\n"      /*  %2 = ch->pos */
+		"  addl %c3(%%edi), %%esi\n"      /*  %3 = ch->samp */
 		"  movl %%ecx, %%edi\n"
 		"  xorl %%ebx, %%ebx\n"
 
@@ -510,16 +534,23 @@ static void __attribute__ ((used)) dummy54 (void)
 		"  jnz lp4\n"
 
 		"done4:\n"
+
+		".cfi_endproc\n"
+		".size playmonoi, .-playmonoi\n"
+
 		:
-		: "m" (((struct mixchannel *)NULL)->step), /*  0  */
-		  "m" (((struct mixchannel *)NULL)->fpos), /*  1  */
-		  "m" (((struct mixchannel *)NULL)->pos),  /*  2  */
-		  "m" (((struct mixchannel *)NULL)->samp)  /*  3  */
+		: "n" (offsetof(struct mixchannel, step)), /*  0  */
+		  "n" (offsetof(struct mixchannel, fpos)), /*  1  */
+		  "n" (offsetof(struct mixchannel, pos)),  /*  2  */
+		  "n" (offsetof(struct mixchannel, samp))  /*  3  */
 	);
 
 	__asm__ __volatile__
 	(
+		".type playmonoi16, @function\n"
 		"playmonoi16:\n"
+		".cfi_startproc\n"
+
 		"   cmpl $0, %%ebp\n"
 		"   je done5\n"
 
@@ -529,17 +560,17 @@ static void __attribute__ ((used)) dummy54 (void)
 		"  movl %%eax, (int15-4)\n"
 		"  movl voltabs+0, %%eax\n"
 		"  movl %%eax, (vol15-4)\n"
-		"  movl %2(%%edi), %%eax\n"
+		"  movl %c0(%%edi), %%eax\n"      /*  %2 = ch->step - BUGFIX */
 		"  shll $16, %%eax\n"
 		"  movl %%eax, (edx5-4)\n"
-		"  movl %0(%%edi), %%eax\n"       /*  %0 = ch->step */
+		"  movl %c0(%%edi), %%eax\n"      /*  %0 = ch->step */
 		"  sarl $16, %%eax\n"
 		"  movl %%eax, (ebp5-4)\n"
 
-		"  movw %1(%%edi), %%dx\n"        /*  %1 = ch->fpos */
+		"  movw %c1(%%edi), %%dx\n"       /*  %1 = ch->fpos */
 		"  shll $16, %%edx\n"
-		"  movl %2(%%edi), %%esi\n"       /*  %2 = ch->pos */
-		"  addl %3(%%edi), %%esi\n"       /*  %3 = ch->samp */
+		"  movl %c2(%%edi), %%esi\n"      /*  %2 = ch->pos */
+		"  addl %c3(%%edi), %%esi\n"      /*  %3 = ch->samp */
 		"  movl %%ecx, %%edi\n"
 		"  xorl %%ebx, %%ebx\n"
 
@@ -566,16 +597,23 @@ static void __attribute__ ((used)) dummy54 (void)
 
 		"done5:\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size playmonoi16, .-playmonoi16\n"
+
 		:
-		: "m" (((struct mixchannel *)NULL)->step), /*  0  */
-		  "m" (((struct mixchannel *)NULL)->fpos), /*  1  */
-		  "m" (((struct mixchannel *)NULL)->pos),  /*  2  */
-		  "m" (((struct mixchannel *)NULL)->samp)  /*  3  */
+		: "n" (offsetof(struct mixchannel, step)), /*  0  */
+		  "n" (offsetof(struct mixchannel, fpos)), /*  1  */
+		  "n" (offsetof(struct mixchannel, pos)),  /*  2  */
+		  "n" (offsetof(struct mixchannel, samp))  /*  3  */
 	);
 
 	__asm__ __volatile__
 	(
+		".type playmonoir, @function\n"
 		"playmonoir:\n"
+		".cfi_startproc\n"
+
 		"  cmpl $0, play16bit\n"
 		"  jne playmonoi16r\n"
 
@@ -595,17 +633,17 @@ static void __attribute__ ((used)) dummy54 (void)
 		"  addl $1024, %%eax\n"
 		"  movl %%eax, (vol26-4)\n"
 
-		"  movl %0(%%edi),%%eax\n"        /*  %0 = ch->step */
+		"  movl %c0(%%edi),%%eax\n"       /*  %0 = ch->step */
 		"  shll $16, %%eax\n"
 		"  movl %%eax, (edx6-4)\n"
-		"  movl %0(%%edi),%%eax\n"        /*  %0 = ch->step */
+		"  movl %c0(%%edi),%%eax\n"       /*  %0 = ch->step */
 		"  sarl $16, %%eax\n"
 		"  movl %%eax, (ebp6-4)\n"
 
-		"  movw %1(%%edi), %%dx\n"        /*  %1 = ch->fpos */
+		"  movw %c1(%%edi), %%dx\n"       /*  %1 = ch->fpos */
 		"  shll $16, %%edx\n"
-		"  movl %2(%%edi), %%esi\n"       /*  %2 = ch->pos */
-		"  addl %3(%%edi), %%esi\n"       /*  %3 = ch->samp */
+		"  movl %c2(%%edi), %%esi\n"      /*  %2 = ch->pos */
+		"  addl %c3(%%edi), %%esi\n"      /*  %3 = ch->samp */
 		"  movl %%ecx, %%edi\n"
 		"  xorl %%ebx, %%ebx\n"
 
@@ -637,16 +675,22 @@ static void __attribute__ ((used)) dummy54 (void)
 		"done6:\n"
 		"  ret\n"
 
+		".cfi_endproc\n"
+		".size playmonoir, .-playmonoir\n"
+
 		:
-		: "m" (((struct mixchannel *)NULL)->step), /*  0  */
-		  "m" (((struct mixchannel *)NULL)->fpos), /*  1  */
-		  "m" (((struct mixchannel *)NULL)->pos),  /*  2  */
-		  "m" (((struct mixchannel *)NULL)->samp)  /*  3  */
+		: "n" (offsetof(struct mixchannel, step)), /*  0  */
+		  "n" (offsetof(struct mixchannel, fpos)), /*  1  */
+		  "n" (offsetof(struct mixchannel, pos)),  /*  2  */
+		  "n" (offsetof(struct mixchannel, samp))  /*  3  */
 	);
 
 	__asm__ __volatile__
 	(
+		".type playmonoir, @function\n"
 		"playmonoi16r:\n"
+		".cfi_startproc\n"
+
 		"  cmpl $0, %%ebp\n"
 		"  je done7\n"
 
@@ -660,17 +704,17 @@ static void __attribute__ ((used)) dummy54 (void)
 		"  addl $1024, %%eax\n"
 		"  movl %%eax, (vol27-4)\n"
 
-		"  movl %0(%%edi),%%eax\n"        /*  %0 = ch->step */
+		"  movl %c0(%%edi),%%eax\n"       /*  %0 = ch->step */
 		"  shll $16, %%eax\n"
 		"  movl %%eax, (edx7-4)\n"
-		"  movl %0(%%edi),%%eax\n"        /*  %0 = ch->step */
+		"  movl %c0(%%edi),%%eax\n"       /*  %0 = ch->step */
 		"  sarl $16, %%eax\n"
 		"  movl %%eax, (ebp7-4)\n"
 
-		"  movw %1(%%edi), %%dx\n"        /*  %1 = ch->fpos */
+		"  movw %c1(%%edi), %%dx\n"       /*  %1 = ch->fpos */
 		"  shll $16, %%edx\n"
-		"  movl %2(%%edi), %%esi\n"       /*  %2 = ch ->pos */
-		"  addl %3(%%edi), %%esi\n"       /*  %3 = ch->->samp */
+		"  movl %c2(%%edi), %%esi\n"      /*  %2 = ch ->pos */
+		"  addl %c3(%%edi), %%esi\n"      /*  %3 = ch->->samp */
 		"  movl %%ecx, %%edi\n"
 		"  xorl %%ebx, %%ebx\n"
 
@@ -701,15 +745,23 @@ static void __attribute__ ((used)) dummy54 (void)
 
 		"done7:\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size playmonoi16r, .-playmonoi16r\n"
+
 		:
-		: "m" (((struct mixchannel *)NULL)->step), /*  0  */
-		  "m" (((struct mixchannel *)NULL)->fpos), /*  1  */
-		  "m" (((struct mixchannel *)NULL)->pos),  /*  2  */
-		  "m" (((struct mixchannel *)NULL)->samp)  /*  3  */
+		: "n" (offsetof(struct mixchannel, step)), /*  0  */
+		  "n" (offsetof(struct mixchannel, fpos)), /*  1  */
+		  "n" (offsetof(struct mixchannel, pos)),  /*  2  */
+		  "n" (offsetof(struct mixchannel, samp))  /*  3  */
 	);
 
 	__asm__ __volatile__
 	(
+		".type playodd, @function\n"
+		"playodd:\n"
+		".cfi_startproc\n"
+
 		"playodd:\n"
 		"  cmpl $0, interpolate\n"
 		"  jnz playoddi\n"
@@ -727,17 +779,17 @@ static void __attribute__ ((used)) dummy54 (void)
 		"  movl %%eax, (vol18-4)\n"
 		"  movl voltabs+4, %%eax\n"
 		"  movl %%eax, (vol28-4)\n"
-		"  movl %0(%%edi), %%eax\n"       /*  %0 = ch->step */
+		"  movl %c0(%%edi), %%eax\n"       /*  %0 = ch->step */
 		"  shll $16, %%eax\n"
 		"  movl %%eax, (edx8-4)\n"
-		"  movl %0(%%edi), %%eax\n"       /*  %0 = ch->step */
+		"  movl %c0(%%edi), %%eax\n"       /*  %0 = ch->step */
 		"  sarl $16, %%eax\n"
 		"  movl %%eax, (ebp8-4)\n"
 
-		"  movw %1(%%edi), %%dx\n"        /*  %1 = ch->fpos */
+		"  movw %c1(%%edi), %%dx\n"        /*  %1 = ch->fpos */
 		"  shll $16, %%edx\n"
-		"  movl %2(%%edi),%%esi\n"        /*  %2 = ch->pos */
-		"  addl %3(%%edi),%%esi\n"        /*  %3 = ch->samp */
+		"  movl %c2(%%edi),%%esi\n"        /*  %2 = ch->pos */
+		"  addl %c3(%%edi),%%esi\n"        /*  %3 = ch->samp */
 		"  movl %%ecx, %%edi\n"
 		"  xorl %%ebx, %%ebx\n"
 
@@ -759,16 +811,23 @@ static void __attribute__ ((used)) dummy54 (void)
 
 		"done8:\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size playodd, .-playodd\n"
+
 		:
-		: "m" (((struct mixchannel *)NULL)->step), /*  0  */
-		  "m" (((struct mixchannel *)NULL)->fpos), /*  1  */
-		  "m" (((struct mixchannel *)NULL)->pos),  /*  2  */
-		  "m" (((struct mixchannel *)NULL)->samp)  /*  3  */
+		: "n" (offsetof(struct mixchannel, step)), /*  0  */
+		  "n" (offsetof(struct mixchannel, fpos)), /*  1  */
+		  "n" (offsetof(struct mixchannel, pos)),  /*  2  */
+		  "n" (offsetof(struct mixchannel, samp))  /*  3  */
 	);
 
 	__asm__ __volatile__
 	(
+		".type playodd16, @function\n"
 		"playodd16:\n"
+		".cfi_startproc\n"
+
 		"  cmpl $0, %%ebp\n"
 		"  je done9\n"
 
@@ -776,17 +835,17 @@ static void __attribute__ ((used)) dummy54 (void)
 		"  movl %%eax, (vol19-4)\n"
 		"  movl voltabs+4, %%eax\n"
 		"  movl %%eax, (vol29-4)\n"
-		"  movl %0(%%edi), %%eax\n"       /*  %0 = ch->step */
+		"  movl %c0(%%edi), %%eax\n"       /*  %0 = ch->step */
 		"  shll $16, %%eax\n"
 		"  movl %%eax, (edx9-4)\n"
-		"  movl %0(%%edi), %%eax\n"       /*  %0 = ch->step */
+		"  movl %c0(%%edi), %%eax\n"       /*  %0 = ch->step */
 		"  sarl $16, %%eax\n"
 		"  movl %%eax, (ebp9-4)\n"
 
-		"  movw %1(%%edi), %%dx\n"        /*  %1 = ch->fpos */
+		"  movw %c1(%%edi), %%dx\n"        /*  %1 = ch->fpos */
 		"  shll $16, %%edx\n"
-		"  movl %2(%%edi), %%esi\n"       /*  %2 = ch->pos */
-		"  addl %3(%%edi), %%esi\n"       /*  %3 = ch->samp */
+		"  movl %c2(%%edi), %%esi\n"       /*  %2 = ch->pos */
+		"  addl %c3(%%edi), %%esi\n"       /*  %3 = ch->samp */
 		"  movl %%ecx, %%edi\n"
 		"  xorl %%ebx, %%ebx\n"
 
@@ -808,17 +867,23 @@ static void __attribute__ ((used)) dummy54 (void)
 
 		"done9:\n"
 		"  ret\n"
-		:
-		: "m" (((struct mixchannel *)NULL)->step), /*  0  */
-		  "m" (((struct mixchannel *)NULL)->fpos), /*  1  */
-		  "m" (((struct mixchannel *)NULL)->pos),  /*  2  */
-		  "m" (((struct mixchannel *)NULL)->samp)  /*  3  */
 
+		".cfi_endproc\n"
+		".size playodd16, .-playodd16\n"
+
+		:
+		: "n" (offsetof(struct mixchannel, step)), /*  0  */
+		  "n" (offsetof(struct mixchannel, fpos)), /*  1  */
+		  "n" (offsetof(struct mixchannel, pos)),  /*  2  */
+		  "n" (offsetof(struct mixchannel, samp))  /*  3  */
 	);
 
 	__asm__ __volatile__
 	(
+		".type playoddi, @function\n"
 		"playoddi:\n"
+		".cfi_startproc\n"
+
 		"  cmpl $0, render16bit\n"
 		"  jnz playoddir\n"
 
@@ -839,17 +904,17 @@ static void __attribute__ ((used)) dummy54 (void)
 		"  movl %%eax, (vol110-4)\n"
 		"  movl voltabs+4, %%eax\n"
 		"  movl %%eax, (vol210-4)\n"
-		"  movl %0(%%edi), %%eax\n"       /*  %0 = ch->step */
+		"  movl %c0(%%edi), %%eax\n"       /*  %0 = ch->step */
 		"  shll $16, %%eax\n"
 		"  movl %%eax, (edx10-4)\n"
-		"  movl %0(%%edi), %%eax\n"       /*  %0 = ch->step */
+		"  movl %c0(%%edi), %%eax\n"       /*  %0 = ch->step */
 		"  sarl $16, %%eax\n"
 		"  movl %%eax, (ebp10-4)\n"
 
-		"  movw %1(%%edi), %%dx\n"        /*  %1 = ch->fpos */
+		"  movw %c1(%%edi), %%dx\n"        /*  %1 = ch->fpos */
 		"  shll $16, %%edx\n"
-		"  movl %2(%%edi), %%esi\n"       /*  %2 = ch->pos */
-		"  addl %3(%%edi), %%esi\n"       /*  %3 = ch->samp */
+		"  movl %c2(%%edi), %%esi\n"       /*  %2 = ch->pos */
+		"  addl %c3(%%edi), %%esi\n"       /*  %3 = ch->samp */
 		"  movl %%ecx, %%edi\n"
 		"  xorl %%ebx, %%ebx\n"
 
@@ -879,16 +944,23 @@ static void __attribute__ ((used)) dummy54 (void)
 
 		"done10:\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size playoddi, .-playoddi\n"
+
 		:
-		: "m" (((struct mixchannel *)NULL)->step), /*  0  */
-		  "m" (((struct mixchannel *)NULL)->fpos), /*  1  */
-		  "m" (((struct mixchannel *)NULL)->pos),  /*  2  */
-		  "m" (((struct mixchannel *)NULL)->samp)  /*  3  */
+		: "n" (offsetof(struct mixchannel, step)), /*  0  */
+		  "n" (offsetof(struct mixchannel, fpos)), /*  1  */
+		  "n" (offsetof(struct mixchannel, pos)),  /*  2  */
+		  "n" (offsetof(struct mixchannel, samp))  /*  3  */
 	);
 
 	__asm__ __volatile__
 	(
+		".type playoddi16, @function\n"
 		"playoddi16:\n"
+		".cfi_startproc\n"
+
 		"  cmpl $0, %%ebp\n"
 		"  je done11\n"
 
@@ -900,17 +972,17 @@ static void __attribute__ ((used)) dummy54 (void)
 		"  movl %%eax, (vol111-4)\n"
 		"  movl voltabs+4, %%eax\n"
 		"  movl %%eax, (vol211-4)\n"
-		"  movl %0(%%edi), %%eax\n"       /*  %0 = ch->step */
+		"  movl %c0(%%edi), %%eax\n"       /*  %0 = ch->step */
 		"  shll $16, %%eax\n"
 		"  movl %%eax, (edx11-4)\n"
-		"  movl %0(%%edi), %%eax\n"       /*  %0 = ch->step */
+		"  movl %c0(%%edi), %%eax\n"       /*  %0 = ch->step */
 		"  sarl $16, %%eax\n"
 		"  movl %%eax, (ebp11-4)\n"
 
-		"  movw %1(%%edi),%%dx\n"         /*  %1 = ch->fpos */
+		"  movw %c1(%%edi),%%dx\n"         /*  %1 = ch->fpos */
 		"  shll $16, %%edx\n"
-		"  movl %2(%%edi), %%esi\n"       /*  %2 = ch->pos */
-		"  addl %3(%%edi), %%esi\n"       /*  %3 = ch->samp */
+		"  movl %c2(%%edi), %%esi\n"       /*  %2 = ch->pos */
+		"  addl %c3(%%edi), %%esi\n"       /*  %3 = ch->samp */
 		"  movl %%ecx, %%edi\n"
 		"  xorl %%ebx, %%ebx\n"
 
@@ -940,16 +1012,23 @@ static void __attribute__ ((used)) dummy54 (void)
 
 		"done11:\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size playoddi16, .-playoddi16\n"
+
 		:
-		: "m" (((struct mixchannel *)NULL)->step), /*  0  */
-		  "m" (((struct mixchannel *)NULL)->fpos), /*  1  */
-		  "m" (((struct mixchannel *)NULL)->pos),  /*  2  */
-		  "m" (((struct mixchannel *)NULL)->samp)  /*  3  */
+		: "n" (offsetof(struct mixchannel, step)), /*  0  */
+		  "n" (offsetof(struct mixchannel, fpos)), /*  1  */
+		  "n" (offsetof(struct mixchannel, pos)),  /*  2  */
+		  "n" (offsetof(struct mixchannel, samp))  /*  3  */
 	);
 
 	__asm__ __volatile__
 	(
-		"playoddir:"
+		".type playoddir, @function\n"
+		"playoddir:\n"
+		".cfi_startproc\n"
+
 		"  cmpl $0, play16bit\n"
 		"  jne playoddi16r\n"
 
@@ -971,17 +1050,17 @@ static void __attribute__ ((used)) dummy54 (void)
 		"  movl %%eax, (vol212-4)\n"
 		"  addl $1024, %%eax\n"
 		"  movl %%eax, (vol2b12-4)\n"
-		"  movl %0(%%edi), %%eax\n"       /*  %0 = ch->step */
+		"  movl %c0(%%edi), %%eax\n"      /*  %0 = ch->step */
 		"  shll $16, %%eax\n"
 		"  movl %%eax, (edx12-4)\n"
-		"  movl %0(%%edi), %%eax\n"       /*  %0 = ch->step */
+		"  movl %c0(%%edi), %%eax\n"      /*  %0 = ch->step */
 		"  sarl $16, %%eax\n"
 		"  movl %%eax, (ebp12-4)\n"
 
-		"  movw %1(%%edi), %%dx\n"        /*  %1 = ch->->fpos */
+		"  movw %c1(%%edi), %%dx\n"       /*  %1 = ch->->fpos */
 		"  shll $16, %%edx\n"
-		"  movl %2(%%edi), %%esi\n"       /*  %2 = ch->pos */
-		"  addl %3(%%edi), %%esi\n"       /*  %3 = ch->samp */
+		"  movl %c2(%%edi), %%esi\n"      /*  %2 = ch->pos */
+		"  addl %c3(%%edi), %%esi\n"      /*  %3 = ch->samp */
 		"  movl %%ecx, %%edi\n"
 		"  xorl %%ecx, %%ebx\n"
 
@@ -1017,16 +1096,23 @@ static void __attribute__ ((used)) dummy54 (void)
 
 		"done12:\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size playoddir, .-playoddir\n"
+
 		:
-		: "m" (((struct mixchannel *)NULL)->step), /*  0  */
-		  "m" (((struct mixchannel *)NULL)->fpos), /*  1  */
-		  "m" (((struct mixchannel *)NULL)->pos),  /*  2  */
-		  "m" (((struct mixchannel *)NULL)->samp)  /*  3  */
+		: "n" (offsetof(struct mixchannel, step)), /*  0  */
+		  "n" (offsetof(struct mixchannel, fpos)), /*  1  */
+		  "n" (offsetof(struct mixchannel, pos)),  /*  2  */
+		  "n" (offsetof(struct mixchannel, samp))  /*  3  */
 	);
 
 	__asm__ __volatile__
 	(
+		".type playoddi16r, @function\n"
 		"playoddi16r:\n"
+		".cfi_startproc\n"
+
 		"  cmp $0, %%ebp\n"
 		"  je done13\n"
 
@@ -1042,17 +1128,17 @@ static void __attribute__ ((used)) dummy54 (void)
 		"  movl %%eax, (vol213-4)\n"
 		"  addl $1024, %%eax\n"
 		"  movl %%eax, (vol2b13-4)\n"
-		"  movl %0(%%edi), %%eax\n"       /*  %0 = ch->step */
+		"  movl %c0(%%edi), %%eax\n"      /*  %0 = ch->step */
 		"  shll $16, %%eax\n"
 		"  movl %%eax, (edx13-4)\n"
-		"  movl %0(%%edi), %%eax\n"       /*  %0 = ch->step */
+		"  movl %c0(%%edi), %%eax\n"      /*  %0 = ch->step */
 		"  sarl $16, %%eax\n"
 		"  movl %%eax, (ebp13-4)\n"
 
-		"  movw %1(%%edi), %%dx\n"        /*  %1 = ch->fpos */
+		"  movw %c1(%%edi), %%dx\n"       /*  %1 = ch->fpos */
 		"  shl $16, %%edx\n"
-		"  movl %2(%%edi), %%esi\n"       /*  %2 = ch->pos */
-		"  addl %3(%%edi), %%esi\n"       /*  %3 = ch->samp */
+		"  movl %c2(%%edi), %%esi\n"      /*  %2 = ch->pos */
+		"  addl %c3(%%edi), %%esi\n"      /*  %3 = ch->samp */
 		"  movl %%ecx, %%edi\n"
 		"  xorl %%ebx, %%ebx\n"
 
@@ -1088,11 +1174,16 @@ static void __attribute__ ((used)) dummy54 (void)
 
 		"done13:\n"
 		"  ret\n"
+
+		".cfi_endproc\n"
+		".size playoddi16r, .-playoddi16r\n"
+
+		".cfi_startproc\n"
 		:
-		: "m" (((struct mixchannel *)NULL)->step), /*  0 */
-		  "m" (((struct mixchannel *)NULL)->fpos), /*  1  */
-		  "m" (((struct mixchannel *)NULL)->pos),  /*  2  */
-		  "m" (((struct mixchannel *)NULL)->samp)  /*  3  */
+		: "n" (offsetof(struct mixchannel, step)), /*  0  */
+		  "n" (offsetof(struct mixchannel, fpos)), /*  1  */
+		  "n" (offsetof(struct mixchannel, pos)),  /*  2  */
+		  "n" (offsetof(struct mixchannel, samp))  /*  3  */
 	);
 
 }
@@ -1109,18 +1200,18 @@ uint32_t mixAddAbs(const struct mixchannel *ch, uint32_t len)
 #ifdef __PIC__
 		"movl %%ebx, %10\n"
 #endif
-		"  testb $MIX_PLAY16BIT, %3(%%eax)\n"
+		"  testb $MIX_PLAY16BIT, %c3(%%eax)\n"
 		                                  /*  %3 = ch->status */
 		"  jnz mixAddAbs_16bit\n"
-		"  testb $MIX_PLAYFLOAT, %3(%%eax)\n"
+		"  testb $MIX_PLAYFLOAT, %c3(%%eax)\n"
 		                                  /*  %3 = ch->status */
 		"  jnz mixAddAbs_32bit\n"
 
-		"  movl %4(%%eax), %%edx\n"       /*  %4 = ch->replen */
-		"  movl %5(%%eax), %%esi\n"       /*  %5 = ch->pos */
-		"  addl %6(%%eax), %%esi\n"       /*  %6 = ch->samp */
-		"  movl %7(%%eax), %%ebx\n"       /*  %7 = ch->length */
-		"  addl %6(%%eax), %%ebx\n"       /*  %6 = ch->samp */
+		"  movl %c4(%%eax), %%edx\n"      /*  %4 = ch->replen */
+		"  movl %c5(%%eax), %%esi\n"      /*  %5 = ch->pos */
+		"  addl %c6(%%eax), %%esi\n"      /*  %6 = ch->samp */
+		"  movl %c7(%%eax), %%ebx\n"      /*  %7 = ch->length */
+		"  addl %c6(%%eax), %%ebx\n"      /*  %6 = ch->samp */
 /* eax = ch
  * edi = target len
  *
@@ -1194,11 +1285,11 @@ uint32_t mixAddAbs(const struct mixchannel *ch, uint32_t len)
 		"  jmp mixAddAbs_bigloop\n"
 
 		"mixAddAbs_16bit:\n"
-		"  movl %4(%%eax), %%edx\n"       /*  %4 = ch->replen */
-		"  movl %5(%%eax), %%esi\n"       /*  %5 = ch->pos */
-		"  addl %6(%%eax), %%esi\n"       /*  %6 = ch->samp */
-		"  movl %7(%%eax), %%ebx\n"       /*  %7 = ch->length */
-		"  addl %6(%%eax), %%ebx\n"       /*  %6 = ch->samp */
+		"  movl %c4(%%eax), %%edx\n"      /*  %4 = ch->replen */
+		"  movl %c5(%%eax), %%esi\n"      /*  %5 = ch->pos */
+		"  addl %c6(%%eax), %%esi\n"      /*  %6 = ch->samp */
+		"  movl %c7(%%eax), %%ebx\n"      /*  %7 = ch->length */
+		"  addl %c6(%%eax), %%ebx\n"      /*  %6 = ch->samp */
 		"  addl %%esi, %%edi\n"
 		"  xorl %%ecx, %%ecx\n"
 		"mixAddAbs_16bigloop:\n"
@@ -1232,11 +1323,11 @@ uint32_t mixAddAbs(const struct mixchannel *ch, uint32_t len)
 		"  jmp mixAddAbs_16bigloop\n"
 
 		"mixAddAbs_32bit:\n"
-		"  movl %4(%%eax), %%edx\n"       /*  %4 = ch->replen*/
-		"  movl %5(%%eax), %%esi\n"       /*  %5 = ch->pos */
-		"  addl %6(%%eax), %%esi\n"       /*  %6 = ch->samp */
-		"  movl %7(%%eax), %%ebx\n"       /*  %7 = ch->length */
-		"  addl %6(%%eax), %%ebx\n"       /*  %6 = ch->samp */
+		"  movl %c4(%%eax), %%edx\n"      /*  %4 = ch->replen*/
+		"  movl %c5(%%eax), %%esi\n"      /*  %5 = ch->pos */
+		"  addl %c6(%%eax), %%esi\n"      /*  %6 = ch->samp */
+		"  movl %c7(%%eax), %%ebx\n"      /*  %7 = ch->length */
+		"  addl %c6(%%eax), %%ebx\n"      /*  %6 = ch->samp */
 		"  addl %%esi, %%edi\n"
 		"  xorl %%ecx, %%ecx\n"
 		"mixAddAbs_32bigloop:\n"
@@ -1279,11 +1370,11 @@ uint32_t mixAddAbs(const struct mixchannel *ch, uint32_t len)
 		: "=c"  (retval),                            /*   0  */
 		  "=&a" (d0),                                /*   1  */
 		  "=&D" (d1)                                 /*   2  */
-		: "m" (((struct mixchannel *)NULL)->status), /*   3  */
-		  "m" (((struct mixchannel *)NULL)->replen), /*   4  */
-		  "m" (((struct mixchannel *)NULL)->pos),    /*   5  */
-		  "m" (((struct mixchannel *)NULL)->samp),   /*   6  */
-		  "m" (((struct mixchannel *)NULL)->length), /*   7  */
+		: "n" (offsetof(struct mixchannel, status)), /*   3  */
+		  "n" (offsetof(struct mixchannel, replen)), /*   4  */
+		  "n" (offsetof(struct mixchannel, pos)),    /*   5  */
+		  "n" (offsetof(struct mixchannel, samp)),   /*   6  */
+		  "n" (offsetof(struct mixchannel, length)), /*   7  */
 		  "1" (ch),
 		  "2" (len)
 #ifdef __PIC__
