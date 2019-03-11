@@ -9124,7 +9124,7 @@ $as_echo_n "checking for SDL2.framework... " >&6; }
         done
       fi
 
-      if test -d $sdl_framework; then
+      if test x"$sdl_framework" != x && test -d "$sdl_framework"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: $sdl_framework" >&5
 $as_echo "$sdl_framework" >&6; }
         sdl_framework_dir=`dirname $sdl_framework`
