@@ -15,4 +15,5 @@ Makefile
 ocp
 ocp.hlp
 ocp.ini
+playgmi/calcnewt
 Rules.make
