@@ -32,6 +32,8 @@
 
 #ifdef I386_ASM
 
+#include <stddef.h>
+
 static void nonePlayChannel(unsigned long len, struct channel *ch)
 {
 	int d0;
@@ -44,14 +46,14 @@ static void nonePlayChannel(unsigned long len, struct channel *ch)
 #ifdef __PIC__
 		"movl %%ebx, %12\n"
 #endif
-		" movl $0, %3\n"              /*  3 = inloop */
+		" movl $0, %3\n"               /*  3 = inloop */
 
 		"1:\n"   /* bigloop */
-		" movl %2, %%ecx\n"           /*  2 = len */
+		" movl %2, %%ecx\n"            /*  2 = len */
 		" movl %c4(%%edi), %%ebx\n"    /*  4 = ->step */
 		" movl %c5(%%edi), %%edx\n"    /*  5 = ->pos */
 		" movw %c6(%%edi), %%si\n"     /*  6 = ->fpos */
-		" movb $0, %3\n"              /*  3 = inloop */
+		" movb $0, %3\n"               /*  3 = inloop */
 		" cmpl $0, %%ebx\n"
 		" je 5f\n" /* playecx */
 		" jg 2f\n" /* forward */
@@ -152,14 +154,14 @@ static void nonePlayChannel(unsigned long len, struct channel *ch)
 		: "0" (ch),                                 /*   1  */
 		  "m" (len),                                /*   2  */
 		  "m" (inloop),                             /*   3  */
-		  "n" (&(((struct channel *)0)->step)),        /*   4  */
-		  "n" (&(((struct channel *)0)->pos)),         /*   5  */
-		  "n" (&(((struct channel *)0)->fpos)),        /*   6  */
-		  "n" (&(((struct channel *)0)->status)),      /*   7  */
-		  "n" (&(((struct channel *)0)->loopstart)),   /*   8  */
-		  "n" (&(((struct channel *)0)->length)),      /*   9  */
-		  "n" (&(((struct channel *)0)->loopend)),     /*  10  */
-		  "n" (&(((struct channel *)0)->replen))       /*  11  */
+		  "n" (offsetof(struct channel, step)),     /*   4  */
+		  "n" (offsetof(struct channel, pos)),      /*   5  */
+		  "n" (offsetof(struct channel, fpos)),     /*   6  */
+		  "n" (offsetof(struct channel, status)),   /*   7  */
+		  "n" (offsetof(struct channel, loopstart)),/*   8  */
+		  "n" (offsetof(struct channel, length)),   /*   9  */
+		  "n" (offsetof(struct channel, loopend)),  /*  10  */
+		  "n" (offsetof(struct channel, replen))    /*  11  */
 #ifdef __PIC__
 		,
 		  "m"(ebx_save)                             /*  12  */
