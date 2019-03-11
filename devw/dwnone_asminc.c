@@ -48,32 +48,32 @@ static void nonePlayChannel(unsigned long len, struct channel *ch)
 
 		"1:\n"   /* bigloop */
 		" movl %2, %%ecx\n"           /*  2 = len */
-		" movl %4(%%edi), %%ebx\n"    /*  4 = ->step */
-		" movl %5(%%edi), %%edx\n"    /*  5 = ->pos */
-		" movw %6(%%edi), %%si\n"     /*  6 = ->fpos */
+		" movl %c4(%%edi), %%ebx\n"    /*  4 = ->step */
+		" movl %c5(%%edi), %%edx\n"    /*  5 = ->pos */
+		" movw %c6(%%edi), %%si\n"     /*  6 = ->fpos */
 		" movb $0, %3\n"              /*  3 = inloop */
 		" cmpl $0, %%ebx\n"
 		" je 5f\n" /* playecx */
 		" jg 2f\n" /* forward */
 		" negl %%ebx\n"
 		" movl %%edx, %%eax\n"
-		" testb $MIX_LOOPED, %7(%%edi)\n" /*  7 = ->status */
+		" testb $MIX_LOOPED, %c7(%%edi)\n" /*  7 = ->status */
 		" jz 4f\n" /* maxplaylen */
-		" cmpl %8(%%edi), %%edx\n"    /*  8 = ->loopstart */
+		" cmpl %c8(%%edi), %%edx\n"    /*  8 = ->loopstart */
 		" jb 4f\n" /* maxplaylen */
-		" sub %8(%%edi), %%eax\n"     /*  8 = ->loopstart */
+		" sub %c8(%%edi), %%eax\n"     /*  8 = ->loopstart */
 		" movb $1, %3\n"
 		" jmp 4f\n" /* maxplaylen */
 		"2:\n" /* forward */
-		" movl %9(%%edi), %%eax\n"    /*  9 = ->length */
+		" movl %c9(%%edi), %%eax\n"    /*  9 = ->length */
 		" negw %%si\n"
 		" sbbl %%edx, %%eax\n"
-		" testb $MIX_LOOPED, %7(%%edi)\n"
+		" testb $MIX_LOOPED, %c7(%%edi)\n"
 		" jz 4f\n" /* maxplaylen */
-		" cmpl %%edx, %10(%%edi)\n"   /* 10 = ->loopend */
+		" cmpl %%edx, %c10(%%edi)\n"   /* 10 = ->loopend */
 		" jae 4f\n" /* maxplaylen */
-		" subl %9(%%edi), %%eax\n"    /*  9 = ->length */
-		" addl %10(%%edi), %%eax\n"   /* 10 = ->loopend */
+		" subl %c9(%%edi), %%eax\n"    /*  9 = ->length */
+		" addl %c10(%%edi), %%eax\n"   /* 10 = ->loopend */
 		" movb $1, %3\n"
 
 		"4:\n" /* maxplaylen */
@@ -93,54 +93,54 @@ static void nonePlayChannel(unsigned long len, struct channel *ch)
 		"  movl %%eax, %%ecx\n"
 		"  cmpb $0, %3\n"
 		"  jnz 5f\n" /* playecx */
-		"     andb $0xfe, %7(%%edi)\n" /* 0xfe is NOT MIX_PLAYING */
+		"     andb $0xfe, %c7(%%edi)\n" /* 0xfe is NOT MIX_PLAYING */
 		"     movl %%ecx,%2\n"
 
 		"5:\n"
 		" subl %%ecx, %2\n"
-		" movl %4(%%edi), %%eax\n"    /*  4 = ->step */
+		" movl %c4(%%edi), %%eax\n"    /*  4 = ->step */
 		" imul %%ecx\n"
 		" shld $16, %%eax, %%edx\n"
-		" addw %%ax, %6(%%edi)\n"
-		" adcl %%edx, %5(%%edi)\n"
-		" movl %5(%%edi), %%eax\n"
+		" addw %%ax, %c6(%%edi)\n"
+		" adcl %%edx, %c5(%%edi)\n"
+		" movl %c5(%%edi), %%eax\n"
 
 		" cmpl $0, %3\n"
 		" jz 9f\n" /* exit */
 
-		" cmpl $0, %4(%%edi)\n"
+		" cmpl $0, %c4(%%edi)\n"
 		" jge 3f\n" /* forward2 */
-		"   cmpl %8(%%edi), %%eax\n"
+		"   cmpl %c8(%%edi), %%eax\n"
 		"   jge 9f\n" /* exit */
-		"   testb $MIX_PINGPONGLOOP,%7(%%edi)\n"
+		"   testb $MIX_PINGPONGLOOP,%c7(%%edi)\n"
 		"   jnz 6f\n" /* pong */
-		"     addl %11(%%edi), %%eax\n"
+		"     addl %c11(%%edi), %%eax\n"
 		"     jmp 8f\n" /* loopiflen */
 		"6:\n" /* pong */
-		"     negl %4(%%edi)\n"
-		"     negl %4(%%edi)\n"
+		"     negl %c4(%%edi)\n"
+		"     negl %c4(%%edi)\n"
 		"     adcl $0, %%eax\n"
 		"     negl %%eax\n"
-		"     add  %8(%%edi), %%eax\n"
-		"     add  %8(%%edi), %%eax\n"
+		"     add  %c8(%%edi), %%eax\n"
+		"     add  %c8(%%edi), %%eax\n"
 		"     jmp 8f\n" /* loopiflen */
 		"3:\n"
-		"   cmpl %10(%%edi), %%eax\n"
+		"   cmpl %c10(%%edi), %%eax\n"
 		"   jb 9f\n" /* exit */
-		"   testb $MIX_PINGPONGLOOP, %7(%%edi)\n"
+		"   testb $MIX_PINGPONGLOOP, %c7(%%edi)\n"
 		"   jnz 7f\n" /* ping */
-		"     subl %11(%%edi), %%eax\n"
+		"     subl %c11(%%edi), %%eax\n"
 		"     jmp 8f\n" /* loopiflen */
 		"7:\n" /* ping */
-		"     negl %4(%%edi)\n"
-		"     negw %6(%%edi)\n"
+		"     negl %c4(%%edi)\n"
+		"     negw %c6(%%edi)\n"
 		"     adcl $0, %%eax\n"
 		"     negl %%eax\n"
-		"     addl %10(%%edi), %%eax\n"
-		"     addl %10(%%edi), %%eax\n"
+		"     addl %c10(%%edi), %%eax\n"
+		"     addl %c10(%%edi), %%eax\n"
 
 		"8:\n" /* loopiflen */
-		" movl %%eax, %5(%%edi)\n"
+		" movl %%eax, %c5(%%edi)\n"
 		" cmpl $0, %0\n"
 		" jne 1b\n"
 
@@ -152,14 +152,14 @@ static void nonePlayChannel(unsigned long len, struct channel *ch)
 		: "0" (ch),                                 /*   1  */
 		  "m" (len),                                /*   2  */
 		  "m" (inloop),                             /*   3  */
-		  "m" (((struct channel *)0)->step),        /*   4  */
-		  "m" (((struct channel *)0)->pos),         /*   5  */
-		  "m" (((struct channel *)0)->fpos),        /*   6  */
-		  "m" (((struct channel *)0)->status),      /*   7  */
-		  "m" (((struct channel *)0)->loopstart),   /*   8  */
-		  "m" (((struct channel *)0)->length),      /*   9  */
-		  "m" (((struct channel *)0)->loopend),     /*  10  */
-		  "m" (((struct channel *)0)->replen)       /*  11  */
+		  "n" (&(((struct channel *)0)->step)),        /*   4  */
+		  "n" (&(((struct channel *)0)->pos)),         /*   5  */
+		  "n" (&(((struct channel *)0)->fpos)),        /*   6  */
+		  "n" (&(((struct channel *)0)->status)),      /*   7  */
+		  "n" (&(((struct channel *)0)->loopstart)),   /*   8  */
+		  "n" (&(((struct channel *)0)->length)),      /*   9  */
+		  "n" (&(((struct channel *)0)->loopend)),     /*  10  */
+		  "n" (&(((struct channel *)0)->replen))       /*  11  */
 #ifdef __PIC__
 		,
 		  "m"(ebx_save)                             /*  12  */
