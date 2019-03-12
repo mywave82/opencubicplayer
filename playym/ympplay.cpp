@@ -106,7 +106,7 @@ static void dopausefade(void)
 
 static char convnote(long freq)
 {
-	if (!freq) return 0xff;
+	if (!freq) return (char)0xff;
 
 	float frfac=(float)freq/220.0;
 
