@@ -46,7 +46,7 @@
 #define _MAX_EXT 4
 
 static FILE *oggfile;
-static uint32_t ogglen;
+static ogg_int64_t ogglen;
 static uint32_t oggrate;
 
 static time_t starttime;
@@ -320,8 +320,8 @@ static int oggProcessKey(uint16_t key)
 		case KEY_CTRL_LEFT:
 		/* case 0x7300: //ctrl-left */
 			{
-				uint32_t pos = oggGetPos();
-				uint32_t newpos = pos -(ogglen>>5);
+				ogg_int64_t pos = oggGetPos();
+				ogg_int64_t newpos = pos -(ogglen>>5);
 				if (newpos > pos)
 				{
 					newpos = 0;
@@ -333,8 +333,8 @@ static int oggProcessKey(uint16_t key)
 		case KEY_CTRL_RIGHT:
 		/* case 0x7400: //ctrl-right */
 			{
-				uint32_t pos = oggGetPos();
-				uint32_t newpos = pos + (ogglen>>5);
+				ogg_int64_t pos = oggGetPos();
+				ogg_int64_t newpos = pos + (ogglen>>5);
 				if ((newpos < pos) || (newpos > ogglen)) /* catch both wrap around (not likely), and overshots */
 				{
 					newpos = ogglen - 4;

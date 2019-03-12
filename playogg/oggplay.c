@@ -67,8 +67,8 @@ static void *plrbuf;
 static OggVorbis_File ov;
 static int oggstereo;
 static int oggrate;
-static uint32_t oggpos; /* absolute sample position in the source stream */
-static uint32_t ogglen; /* absolute length in samples positions of the source stream */
+static ogg_int64_t oggpos; /* absolute sample position in the source stream */
+static ogg_int64_t ogglen; /* absolute length in samples positions of the source stream */
 static int oggneedseek;
 
 static int16_t *oggbuf=NULL;
@@ -136,7 +136,7 @@ static void oggIdler(void)
 		}
 		if (ov_pcm_tell(&ov)!=oggpos)
 		{
-			fprintf (stderr, "[playogg]: warning, frame position is broken in file (got=%ld, expected=%d)\n", ov_pcm_tell(&ov), oggpos);
+			fprintf (stderr, "[playogg]: warning, frame position is broken in file (got=%" __PRI64_PREFIX "d, expected= %" __PRI64_PREFIX "d)\n", ov_pcm_tell(&ov), oggpos);
 		}
 
 		ringbuffer_get_head_samples (oggbufpos, &pos1, &length1, &pos2, &length2);
@@ -760,7 +760,7 @@ void __attribute__ ((visibility ("internal"))) oggSetVolume(uint8_t vol_, int8_t
 	srnd=opt;
 }
 
-uint32_t __attribute__ ((visibility ("internal"))) oggGetPos(void)
+ogg_int64_t __attribute__ ((visibility ("internal"))) oggGetPos(void)
 {
 #warning TODO, deduct devp buffer!
 	return (oggpos+ogglen-ringbuffer_get_tail_available_samples(oggbufpos))%ogglen;
@@ -781,7 +781,7 @@ void __attribute__ ((visibility ("internal"))) oggGetInfo(struct ogginfo *i)
 	i->bitrate/=1000;
 }
 
-void __attribute__ ((visibility ("internal"))) oggSetPos(uint32_t pos)
+void __attribute__ ((visibility ("internal"))) oggSetPos(ogg_int64_t pos)
 {
 	pos=(pos+ogglen)%ogglen;
 
