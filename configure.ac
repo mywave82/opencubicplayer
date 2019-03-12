@@ -3,6 +3,13 @@ AC_DEFINE(DLLVERSION, [0x00000114])
 
 AC_CANONICAL_HOST
 
+AC_MSG_CHECKING([GIT submodules are checked out])
+if ! test -f playgmi/timidity-git/Makefile.am; then
+  AC_MSG_ERROR([playgmi/timidity-git is missing - please execute 'git submodule update --init --recursive'])
+else
+  AC_MSG_RESULT([ok])
+fi
+
 AC_ARG_WITH(debug, [  --with-debug            compile with debug-flags and without SIGALRM],
 if test "x$with_debug" = "xyes"; then
 for i in $CFLAGS; do
