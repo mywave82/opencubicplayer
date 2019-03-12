@@ -2511,6 +2511,7 @@ static int ___valid_key(uint16_t key)
 		case '!':
 		case '>':
 		case '<':
+		case '|':
 		case KEY_SHIFT_TAB:
 		case KEY_CTRL_P:
 		case KEY_CTRL_D:

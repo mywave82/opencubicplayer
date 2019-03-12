@@ -728,6 +728,7 @@ struct keytranslate_t translate[] =
 	{88,                'X'},
 	{89,                'Y'},
 	{90,                'Z'},
+	{'|',               '|'},
 	{SDLK_LEFTBRACKET,  '['},
 	{SDLK_BACKSLASH,    '\\'},
 	{SDLK_RIGHTBRACKET, ']'},

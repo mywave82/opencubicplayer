@@ -92,6 +92,9 @@ static struct cpiKeyHelpKeyName KeyNames[] =
 	{KEY_CTRL_RIGHT, "ctrl+right"},
 	{KEY_CTRL_PGUP, "ctrl+page up"},
 	{KEY_CTRL_PGDN, "ctrl+page down"},
+	{KEY_CTRL_END, "ctrl+end"},
+	{KEY_CTRL_DELETE, "ctrl+delete"},
+	{KEY_CTRL_INSERT, "ctrl+insert"},
 	{KEY_DELETE, "delete"},
 	{KEY_INSERT, "insert"},
 	{KEY_ALT_ENTER, "alt+enter"},
@@ -170,7 +173,7 @@ static struct cpiKeyHelpKeyName KeyNames[] =
 	{'!', "!"},
 	{'>', ">"},
 	{'<', "<"},
-
+	{'|', "|"},
 };
 
 static unsigned int keymapping_n = 0;
@@ -272,7 +275,7 @@ void cpiKeyHelpDisplay(void)
 			}
 			if (validkey(KeyNames[i].key))
 			{
-			cola=0x0f;
+				cola=0x0f;
 				colb=0x0a;
 			} else {
 				cola=0x01;

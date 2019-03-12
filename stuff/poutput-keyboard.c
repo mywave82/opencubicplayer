@@ -599,6 +599,7 @@ int ___valid_key(uint16_t key)
 		case '*':
 		case '-':
 		case '+':
+		case '|':
 		case '\\':
 		case '\'':
 		case ',':
@@ -617,6 +618,7 @@ int ___valid_key(uint16_t key)
 		case KEY_CTRL_D:
 		case KEY_CTRL_H:
 		case KEY_CTRL_J:
+		case KEY_CTRL_K:
 		case KEY_CTRL_L:
 		case KEY_CTRL_Q:
 		case KEY_CTRL_S:
@@ -629,6 +631,10 @@ int ___valid_key(uint16_t key)
 		case KEY_CTRL_PGUP:
 		case KEY_CTRL_PGDN:
 		case KEY_CTRL_ENTER:
+		case KEY_CTRL_HOME:
+		case KEY_CTRL_END:
+		case KEY_CTRL_DELETE:
+		case KEY_CTRL_INSERT:
 			return 0;
 	}
 }
