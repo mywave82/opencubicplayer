@@ -52,8 +52,8 @@ static struct cdrom_t
 	int caps;
 	int fd;
 	uint32_t dirdbnode;
-	struct cdrom_t *next;
-} *root;
+} *cdroms = 0;
+static int cdromn = 0;
 
 static struct dmDrive *dmCDROM=0;
 static struct mdbreaddirregstruct cdReadDirReg;
@@ -71,15 +71,22 @@ static void try(const char *dev, const char *vdev)
 
 		if ((caps=ioctl(fd, CDROM_GET_CAPABILITY, 0))>=0)
 		{
-			temp=malloc(sizeof(struct cdrom_t));
-			strcpy(temp->dev, dev);
-			strcpy(temp->vdev, vdev);
-			temp->dirdbnode=dirdbFindAndRef(dmCDROM->basepath, vdev);
-			temp->caps=caps;
-			temp->next=root;
-			temp->fd=fd;
+			temp = realloc (cdroms, sizeof (struct cdrom_t) * (cdromn+1));
+			if (!temp)
+			{
+				fprintf (stderr, "cdrom.c: realloc() failed in try()\n");
+				close (fd);
+				return;
+			}
+			cdroms = temp;
+
+			strcpy(cdroms[cdromn].dev, dev);
+			strcpy(cdroms[cdromn].vdev, vdev);
+			cdroms[cdromn].dirdbnode=dirdbFindAndRef(dmCDROM->basepath, vdev);
+			cdroms[cdromn].caps=caps;
+			cdroms[cdromn].fd=fd;
 			fcntl(fd, F_SETFD, 1);
-			root=temp;
+			cdromn++;
 #ifdef CDROM_VERBOSE
 			fprintf(stderr, "%s is a cdrom\n", dev);
 			if (caps&CDC_CLOSE_TRAY)
@@ -102,8 +109,10 @@ static void try(const char *dev, const char *vdev)
 				fprintf(stderr, "CDC_PLAY_AUDIO\n");
 			if (caps&CDC_RESET)
 				fprintf(stderr, "CDC_RESET\n");
+#ifdef CDC_IOCTLS
 			if (caps&CDC_IOCTLS)
 				fprintf(stderr, "CDC_IOCTLS\n");
+#endif
 			if (caps&CDC_DRIVE_STATUS)
 				fprintf(stderr, "CDC_DRIVE_STATUS\n");
 			if (caps&CDC_GENERIC_PACKET)
@@ -118,10 +127,36 @@ static void try(const char *dev, const char *vdev)
 				fprintf(stderr, "CDC_DVD_R\n");
 			if (caps&CDC_DVD_RAM)
 				fprintf(stderr, "CDC_DVD_RAM\n");
+#ifdef CDC_MO_DRIVE
+			if (caps&CDC_MO_DRIVE)
+				fprintf(stderr, "CDC_MO_DRIVE\n");
+#endif
+#ifdef CDC_MRW
+			if (caps&CDC_MRW)
+				fprintf (stderr, "CDC_MRW\n");
+#endif
+#ifdef CDC_MRW_W
+			if (caps&CDC_MRW_W)
+				fprintf (stderr, "CDC_MRW_W\n");
+#endif
+#ifdef CDC_RAM
+			if (caps&CDC_RAM)
+				fprintf (stderr, "CDC_RAM\n");
+#endif
+
 			switch (ioctl(fd, CDROM_DISC_STATUS))
 			{
 				case CDS_NO_INFO: fprintf(stderr, "CDROM doesn't support CDROM_DISC_STATUS\n"); break;
 				case CDS_NO_DISC: fprintf(stderr, "No disc\n"); break;
+#ifdef CDS_TRAY_OPEN
+				case CDS_TRAY_OPEN: fprintf (stderr, "Tray open\n"); break;
+#endif
+#ifdef CDS_DRIVE_NOT_READY
+				case CDS_DRIVE_NOT_READY: fprintf (stderr, "Drive not ready\n"); break;
+#endif
+#ifdef CDS_DISC_OK
+				case CDS_DISC_OK: fprintf (stderr, "Disc OK (\?\?\?)\n"); break;
+#endif
 				case CDS_AUDIO: fprintf(stderr, "Audio CD\n"); break;
 				case CDS_DATA_1: fprintf(stderr, "Data CD, mode 1, form 1\n"); break;
 				case CDS_DATA_2: fprintf(stderr, "Data CD, mode 1, form 2\n"); break;
@@ -183,12 +218,23 @@ static int cdint(void)
 {
 	char dev[32], vdev[12];
 	char a;
-	root=0;
 
 	mdbRegisterReadDir(&cdReadDirReg);
 
 	dmCDROM=RegisterDrive("cdrom:");
-	fprintf(stderr, "Locating cdroms [  ]\010\010\010");
+	fprintf(stderr, "Locating cdroms [     ]\010\010\010\010\010\010");
+
+	sprintf(dev, "/dev/cdrom");
+	sprintf(vdev, "cdrom");
+	try(dev, vdev);
+	for (a=0;a<=32;a++)
+	{
+		sprintf(dev, "/dev/cdrom%d", a);
+		sprintf(vdev, "cdrom%d", a);
+		try(dev, vdev);
+	}
+	fprintf(stderr, ".");
+
 	for (a=0;a<=32;a++)
 	{
 		sprintf(dev, "/dev/cdroms/cdrom%d", a);
@@ -196,6 +242,15 @@ static int cdint(void)
 		try(dev, vdev);
 	}
 	fprintf(stderr, ".");
+
+	for (a=0;a<=32;a++)
+	{
+		sprintf(dev, "/dev/cdroms/cdrom%d", a);
+		sprintf(vdev, "cdrom%d", a);
+		try(dev, vdev);
+	}
+	fprintf(stderr, ".");
+
 	for (a=0;a<=32;a++)
 	{
 		sprintf(dev, "/dev/scd%d", a);
@@ -203,6 +258,7 @@ static int cdint(void)
 		try(dev, vdev);
 	}
 	fprintf(stderr, ".");
+
 	for (a='a';a<='z';a++)
 	{
 		sprintf(dev, "/dev/hd%c", a);
@@ -215,21 +271,21 @@ static int cdint(void)
 
 static void cdclose(void)
 {
-	struct cdrom_t *current=root;
-	while (current)
+	int i;
+
+	for (i=0; i < cdromn; i++)
 	{
-		struct cdrom_t *temp=current;
-		temp=current->next;
-		dirdbUnref(current->dirdbnode);
-		free(current);
-		current=temp;
+		dirdbUnref(cdroms[i].dirdbnode);
 	}
+	free (cdroms);
+	cdroms = 0;
+	cdromn = 0;
 	mdbUnregisterReadDir(&cdReadDirReg);
 }
 
 static FILE *cdrom_ReadHandle(struct modlistentry *entry)
 {
-	int fd=dup(((struct cdrom_t *)entry->adb_ref)->fd);
+	int fd=dup(cdroms[entry->adb_ref].fd);
 	if (fd>=0)
 		return fdopen(fd, "r");
 	return NULL;
@@ -243,13 +299,13 @@ static int cdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 		return 1;
 	if (path==drive->basepath) /* / */
 	{
-		struct cdrom_t *current=root;
-		while (current)
+		int i;
+		for (i=0; i<cdromn;i++)
 		{
-			strcpy(entry.shortname, current->vdev);
-			strcpy(entry.name, current->dev);
+			strcpy(entry.shortname, cdroms[i].vdev);
+			strcpy(entry.name, cdroms[i].dev);
 			entry.drive=drive;
-			entry.dirdbfullpath=current->dirdbnode;
+			entry.dirdbfullpath=cdroms[i].dirdbnode;
 			dirdbRef(entry.dirdbfullpath); /* overkill */
 			entry.flags=MODLIST_FLAG_DIR;
 			entry.fileref=0xffffffff;
@@ -257,13 +313,12 @@ static int cdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 			entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=0;
 			modlist_append(ml, &entry);
 			dirdbUnref(entry.dirdbfullpath); /* overkill */
-			current=current->next;
 		}
 	} else {
-		struct cdrom_t *current=root;
-		while (current)
+		int j;
+		for (j=0; j<cdromn;j++)
 		{
-			if (current->dirdbnode==path)
+			if (cdroms[j].dirdbnode==path)
 			{
 				struct cdrom_tochdr tochdr;
 				struct cdrom_tocentry tocentry;
@@ -271,9 +326,9 @@ static int cdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 				int initlba=-1;
 				int lastlba=lastlba; /* remove a warning */
 
-				if (!ioctl(current->fd, CDROMREADTOCHDR, &tochdr))
+				if (!ioctl(cdroms[j].fd, CDROMREADTOCHDR, &tochdr))
 				{
-					int i;
+					unsigned int i;
 					for (i=tochdr.cdth_trk0;i<=(tochdr.cdth_trk1);i++)
 					{
 /*
@@ -282,11 +337,11 @@ static int cdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 */
 						tocentry.cdte_track=i;
 						tocentry.cdte_format=CDROM_LBA; /* CDROM_MSF */
-						if (!ioctl(current->fd, CDROMREADTOCENTRY, &tocentry))
+						if (!ioctl(cdroms[j].fd, CDROMREADTOCENTRY, &tocentry))
 						{
 							tocentryN.cdte_track=(i==tochdr.cdth_trk1)?CDROM_LEADOUT:i+1;
 							tocentryN.cdte_format=CDROM_LBA;
-							ioctl(current->fd, CDROMREADTOCENTRY, &tocentryN);
+							ioctl(cdroms[j].fd, CDROMREADTOCENTRY, &tocentryN);
 /*
 							fprintf(stderr, "cdte_track:    %d%s\n", tocentry.cdte_track, (i==CDROM_LEADOUT)?" LEADOUT":"");
 							fprintf(stderr, "cdte_adr:      %d\n", tocentry.cdte_adr);
@@ -326,11 +381,11 @@ static int cdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 									mi.modtype=mtCDA;
 									mi.channels=2;
 									mi.playtime=(tocentryN.cdte_addr.lba - tocentry.cdte_addr.lba)/CD_FRAMES;
-									strcpy(mi.comment, current->vdev);
+									strcpy(mi.comment, cdroms[j].vdev);
 									strcpy(mi.modname, "CDROM audio track");
 									mdbWriteModuleInfo(entry.fileref, &mi);
 								}
-								entry.adb_ref=(int)current; /* nasty hack, but hey.. it is free of use */
+								entry.adb_ref=j; /* nasty hack, but hey.. it is free of use */
 #warning ADB_REF hack used here
 								entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=cdrom_ReadHandle;
 								modlist_append(ml, &entry);
@@ -358,11 +413,11 @@ static int cdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 							mi.modtype=mtCDA;
 							mi.channels=2;
 							mi.playtime=(lastlba - initlba)/CD_FRAMES;
-							strcpy(mi.comment, current->vdev);
+							strcpy(mi.comment, cdroms[j].vdev);
 							strcpy(mi.modname, "CDROM audio disc");
 							mdbWriteModuleInfo(entry.fileref, &mi);
 						}
-						entry.adb_ref=(int)current; /* nasty hack, but hey.. it is free of use */
+						entry.adb_ref=j; /* nasty hack, but hey.. it is free of use */
 #warning ADB_REF hack used here
 						entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=cdrom_ReadHandle;
 						modlist_append(ml, &entry);
@@ -371,7 +426,6 @@ static int cdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 				}
 				break;
 			}
-			current=current->next;
 		}
 	}
 	return 1;
