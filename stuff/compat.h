@@ -6,8 +6,12 @@
 #define DOS_CLK_TCK 0x10000
 
 extern time_t dos_clock(void);
-extern void _splitpath(const char *src, char *drive, char *path, char *file, char *ext);
-extern void _makepath(char *dst /* PATH_MAX+1 */, const char *drive, const char *path, const char *file, const char *ext);
+
+/* TO BE REMOVED */ extern void _splitpath(const char *src, char *drive, char *path, char *file, char *ext);
+/* TO BE REMOVED */ extern void _makepath(char *dst /* PATH_MAX+1 */, const char *drive, const char *path, const char *file, const char *ext);
+
+extern int splitpath_malloc(const char *src, char **drive, char **path, char **file, char **ext); /* returns non-zero on errors */
+extern int makepath_malloc(char **dst, const char *drive, const char *path, const char *file, const char *ext); /* returns non-zero on errors */
 
 #ifndef HAVE_STRUPR
 extern char *strupr(char *src);

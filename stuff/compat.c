@@ -229,6 +229,286 @@ void _makepath(char *dst, const char *drive, const char *path, const char *file,
 			strcat(dst, ext);
 }
 
+int splitpath_malloc(const char *src, char **drive, char **path, char **file, char **ext)
+{
+	/* returns non-zero on errors */
+	const char *ref1;
+	int len;
+
+	/* clear the target points, so our error-path can free-up data */
+	if (drive) *drive = 0;
+	if (path) *path = 0;
+	if (file) *file = 0;
+	if (ext) *ext = 0;
+
+	/* if src string starts with /, we do not have a drive string for sure */
+	if (*src!='/')
+	{
+		/* if src does not contain a :, we do not have a drive string for sure */
+		if ((ref1=strchr(src, ':')))
+		{
+			/* ref1 now points at the first occurance of : */
+
+			/* the first occurance of /, should be the character after :, unless src only contains the drive */
+			if (((ref1+1)==strchr(src, '/'))||(!ref1[1]))
+			{
+				if (drive)
+				{
+					len = ref1 - src + 1;
+					*drive = malloc (len + 1);
+					if (!*drive)
+					{
+						fprintf (stderr, "splitpath_malloc: *drive = malloc(%d) failed\n", len + 1);
+						goto error_out;
+					}
+					memcpy (*drive, src, len);
+					(*drive)[len] = 0;
+				}
+				src = ref1 + 1;
+			}
+		}
+	}
+	if (drive && !*drive)
+	{
+		*drive = strdup("");
+		if (!*drive)
+		{
+			fprintf (stderr, "splitpath_malloc: *drive = strdup(\"\") failed\n");
+			goto error_out;
+		}
+	}
+
+	if (*src!='/')
+	{
+		fprintf (stderr, "splitpath_malloc: PATH does not start with /\n");
+		goto error_out;
+	}
+
+	if ((ref1=rindex(src, '/')))
+	{
+		if (path)
+		{
+			len = ref1 - src + 1;
+			*path = malloc (len + 1);
+			if (!*path)
+			{
+				fprintf (stderr, "splitpath_malloc: *path = malloc(%d) failed\n", len + 1);
+				goto error_out;
+			}
+			memcpy (*path, src, len);
+			(*path)[len] = 0;
+		}
+		src = ref1 + 1;
+	}
+	if (path && !*path)
+	{
+		*path = strdup("");
+		if (!*path)
+		{
+			fprintf (stderr, "splitpath_malloc: *path = strdup(\"\") failed\n");
+			goto error_out;
+		}
+	}
+
+
+	len = strlen(src);
+	/* TODO: we need to make adb itself understand .tar.gz, or make a API to register these into */
+	if ((len >= 7) && (!strcasecmp (src - 7, ".tar.gz"))) /* I am a bad boy */
+	{
+		ref1 = src - 7;
+	} else if ((len >= 8) && (!strcasecmp (src - 8, ".tar.bz2"))) /* very bad */
+	{
+		ref1 = src - 8;
+	} else if ((len >= 6) && (!strcasecmp (src - 6, ".tar.Z"))) /* and this is creepy */
+	{
+		ref1 = src - 6;
+	} else {
+		ref1 = rindex (src, '.');
+	}
+	if (!ref1)
+	{
+		ref1 = src + len;
+	}
+	if (file)
+	{
+		len = ref1 - src;
+		*file = malloc (len + 1);
+		if (!*file)
+		{
+			fprintf (stderr, "splitpath_malloc: *file = malloc(%d) failed\n", len + 1);
+			goto error_out;
+		}
+		memcpy (*file, src, len);
+		(*file)[len] = 0;
+	}
+	src = ref1;
+
+	if (ext)
+	{
+		*ext = strdup(src);
+		if (!*ext)
+		{
+			fprintf (stderr, "splitpath_malloc: *ext = strdup(\"%s\") failed\n", src);
+			goto error_out;
+		}
+	}
+
+	return 0;
+
+error_out:
+	/* free any data allocated, before we return an error */
+	if (drive)
+	{
+		free(*drive);
+		*drive = 0;
+	}
+	if (path)
+	{
+		free(*path);
+		*path = 0;
+	}
+	if (file)
+	{
+		free (*file);
+		 *file = 0;
+	}
+	if (ext)
+	{
+		free (*ext);
+		*ext = 0;
+	}
+	return -1;
+}
+
+int makepath_malloc(char **dst, const char *drive, const char *path, const char *file, const char *ext)
+{
+	/* returns non-zero on errors */
+	unsigned int dstlen = 0;
+	int pathadd = 0;
+
+	if (drive)
+	{
+		char *pos1, *pos2;
+		dstlen+=strlen(drive);
+
+		/* Assertion tests */
+		if (strchr (drive, '/'))
+		{
+			fprintf (stderr, "makepath_malloc(): drive contains /\n");
+			return -1;
+		}
+		if (!drive[0])
+		{
+			fprintf (stderr, "makepath_malloc(): drive is non-null, but zero bytes long\n");
+			return -1;
+		}
+		if (drive[0] == ':')
+		{
+			fprintf (stderr, "makepath_malloc(): drive starts with :\n");
+			return -1;
+		}
+		pos1 = index (drive, ':');
+		pos2 = rindex (drive, ':');
+		if (!pos1)
+		{
+			fprintf (stderr, "makepath_malloc(): drive does not contain:\n");
+			return -1;
+		}
+		if (pos1 != pos2)
+		{
+			fprintf (stderr, "makepath_malloc(): drive contains multiple :\n");
+			return -1;
+		}
+		if (pos1[1])
+		{
+			fprintf (stderr, "makepath_malloc(): drive does not end with :\n");
+			return -1;
+		}
+	}
+
+	if (path)
+	{
+		int pathlen = strlen(path);
+
+		/* Assertion test */
+		if ((path[0] != '/') && (path[0] != 0))
+		{
+			fprintf (stderr, "makepath_malloc(): path does not start with /\n"); /* we path to miss the final /, hence empty string is allowed */
+			return -1;
+		}
+
+		dstlen += pathlen;
+		if (path[pathlen-1] != '/')
+		{
+			dstlen += 1;
+			pathadd++;
+		}
+	}
+
+	if (file)
+	{
+		/* Assertion test */
+		if (index (file, '/'))
+		{
+			fprintf (stderr, "makepath_malloc(): file contains /\n");
+			return -1;
+		}
+
+		dstlen += strlen(file);
+	}
+	if (ext)
+	{
+		/* Assertion tests */
+		if (index (ext, '/'))
+		{
+			fprintf (stderr, "makepath_malloc(): ext contains /\n");
+			return -1;
+		}
+		if (ext[0] != '.')
+		{
+			fprintf (stderr, "makepath_malloc(): ext does not start with .\n");
+			return -1;
+		}
+
+		dstlen += strlen (ext);
+	}
+
+	*dst = malloc (dstlen + 1);
+	if (!*dst)
+	{
+		fprintf (stderr, "makepath_malloc: malloc(%d) failed\n", dstlen+1);
+		return -1;
+	}
+
+	if (drive)
+	{
+		strcpy (*dst, drive);
+	} else {
+		(*dst)[0] = 0;
+	}
+
+	if (path)
+	{
+		strcat (*dst, path);
+		if (pathadd)
+		{
+			strcat (*dst, "/");
+		}
+	}
+
+	if (file)
+	{
+		strcat (*dst, file);
+	}
+
+	if (ext)
+	{
+		strcat (*dst, ext);
+	}
+
+	return 0;
+}
+
 #ifndef HAVE_STRUPR
 
 char *strupr(char *src)
@@ -301,19 +581,19 @@ static int printf_string_upper_bound (const char* format,
       int long_int = 0;
       int extra_long = 0;
       char c;
-      
+
       c = *format++;
-      
+
       if (c == '%')
 	{
 	  int done = 0;
-	  
+
 	  while (*format && !done)
 	    {
 	      switch (*format++)
 		{
 		  char *string_arg;
-		  
+
 		case '*':
 		  len += va_arg (args, int);
 		  break;
@@ -918,7 +1198,7 @@ int stat(const char *filename, struct stat *st)
 	Str255				pfilename;
 	CInfoPBRec			pb;
 	FSSpec				fss;
-	
+
 	c2pstrcpy(pfilename, filename);
 	if (FSMakeFSSpec(0, 0, pfilename, &fss) == noErr)
 	{
@@ -1065,7 +1345,7 @@ strlcat(char *dst, const char *src, size_t siz)
 int strcasecmp(const char *s1, const char *s2)
 {
 	int	c1,c2,i;
-	
+
 	for( i=0; ; i++){
 		if( !s1[i] && !s2[i] ) return 0; //equal
 		if( !s1[i] || !s2[i] ) return 1;
