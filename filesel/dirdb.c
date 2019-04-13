@@ -83,16 +83,17 @@ static void dumpdirdb(void)
 
 int dirdbInit(void)
 {
-	char path[PATH_MAX+1];
+	char *path;
 	struct dirdbheader header;
 	int f;
 	uint32_t i;
 	int retval;
 	int version;
 
-	if ((strlen(cfConfigDir)+11)>PATH_MAX)
+	path = malloc(strlen(cfConfigDir)+11+1);
+	if (!path)
 	{
-		fprintf(stderr, "dirdb: CPDIRDB.DAT path is too long\n");
+		fprintf(stderr, "dirdbInit: malloc() failed\n");
 		return 1;
 	}
 	strcpy(path, cfConfigDir);
@@ -101,10 +102,14 @@ int dirdbInit(void)
 	if ((f=open(path, O_RDONLY))<0)
 	{
 		perror("open(cfConfigDir/CPDIRDB.DAT)");
+		free (path);
 		return 1;
 	}
 
 	fprintf(stderr, "Loading %s .. ", path);
+
+	free (path);
+	path = 0;
 
 	if (read(f, &header, sizeof(header))!=sizeof(header))
 	{
@@ -119,10 +124,12 @@ int dirdbInit(void)
 			fprintf(stderr, "Invalid header\n");
 			close(f);
 			return 1;
-		} else
+		} else {
 			version = 2;
-	} else
+		}
+	} else {
 		version = 1;
+	}
 	dirdbNum=uint32_little(header.entries);
 	if (!dirdbNum)
 		goto endoffile;
@@ -138,9 +145,7 @@ int dirdbInit(void)
 		uint16_t len;
 		if (read(f, &len, sizeof(uint16_t))!=sizeof(uint16_t))
 		{
-			fprintf(stderr, "EOF\n");
-			close(f);
-			return 1;
+			goto endoffile;
 		}
 		if (len)
 		{
@@ -173,6 +178,13 @@ int dirdbInit(void)
 			dirdbData[i].name[len]=0; /* terminate the string */
 			if (dirdbData[i].mdbref!=DIRDB_NO_MDBREF)
 				dirdbData[i].refcount++;
+		} else {
+			dirdbData[i].parent = DIRDB_NOPARENT;
+			dirdbData[i].adbref = DIRDB_NO_ADBREF;
+			dirdbData[i].mdbref = DIRDB_NO_MDBREF;
+			dirdbData[i].newadbref=DIRDB_NO_ADBREF;
+			dirdbData[i].newmdbref=DIRDB_NO_MDBREF;
+			/* name is already NULL due to calloc() */
 		}
 	}
 	close(f);
@@ -182,10 +194,15 @@ int dirdbInit(void)
 		{
 			if (dirdbData[i].parent>=dirdbNum)
 			{
-				fprintf(stderr, "Invalid parent in a node ..");
+				fprintf(stderr, "Invalid parent in a node .. (out of range)\n");
 				dirdbData[i].parent=0;
-			} else
-				dirdbData[dirdbData[i].parent].refcount++;
+			} else if (!dirdbData[dirdbData[i].parent].name)
+			{
+				fprintf(stderr, "Invalid parent in a node .. (not in use)\n");
+				dirdbData[i].parent=0;
+			}
+
+			dirdbData[dirdbData[i].parent].refcount++;
 		}
 	}
 	fprintf(stderr, "Done\n");
@@ -226,26 +243,44 @@ void dirdbClose(void)
 }
 
 
-uint32_t dirdbFindAndRef(uint32_t parent, char const *name /* NAME_MAX + 1 */)
+uint32_t dirdbFindAndRef(uint32_t parent, char const *name)
 {
 	uint32_t i;
 	struct dirdbEntry *new;
 
 #ifdef DIRDB_DEBUG
-	fprintf(stderr, "dirdbFindAndRef(0x%08x, \"%s\")\n", parent, name);
+	fprintf(stderr, "dirdbFindAndRef(0x%08x, %s%40s%s)\n", parent, name?"\"":"", name?name:"NULL", name?"\"":"");
 #endif
 
-	if (strlen(name)>NAME_MAX)
+	if (!name)
 	{
-		fprintf(stderr, "dirdbFindAndRef: name too long\n");
+		fprintf (stderr, "dirdbFindAndRef: name is NULL\n");
+		return DIRDB_NOPARENT;
+	}
+	if (strlen(name) > UINT16_MAX)
+	{
+		fprintf (stderr, "dirdbFindAndRef: strlen(name) > UINT16_MAX, can not store this in DB\n");
 		return DIRDB_NOPARENT;
 	}
 
-	if ((parent!=DIRDB_NOPARENT)&&(parent>=dirdbNum))
+	if ((parent!=DIRDB_NOPARENT)&&((parent>=dirdbNum)||(!dirdbData[parent].name)))
 	{
-		fprintf(stderr, "dirdbFindAndRef: invalid parent\n");
+		fprintf (stderr, "dirdbFindAndRef: invalid parent\n");
 		return DIRDB_NOPARENT;
 	}
+
+	if (!strcmp(name, "."))
+	{
+		fprintf (stderr, "dirdbFindAndRef: . is not a valid name\n");
+		return DIRDB_NOPARENT;
+	}
+
+	if (!strcmp(name, ".."))
+	{
+		fprintf (stderr, "dirdbFindAndRef: .. is not a valid name\n");
+		return DIRDB_NOPARENT;
+	}
+
 	for (i=0;i<dirdbNum;i++)
 		if (dirdbData[i].name)
 			if ((dirdbData[i].parent==parent)&&(!strcmp(name, dirdbData[i].name)))
@@ -260,6 +295,11 @@ uint32_t dirdbFindAndRef(uint32_t parent, char const *name /* NAME_MAX + 1 */)
 		{
 reentry:
 			dirdbData[i].name=strdup(name);
+			if (!dirdbData[i].name)
+			{
+				fprintf (stderr, "dirdbFindAndRef: strdup() failed\n");
+				return DIRDB_NOPARENT;
+			}
 			dirdbData[i].parent=parent;
 			dirdbData[i].refcount++;
 			dirdbData[i].mdbref=DIRDB_NO_MDBREF;
@@ -278,8 +318,8 @@ reentry:
 	new=realloc(dirdbData, (dirdbNum+16)*sizeof(struct dirdbEntry));
 	if (!new)
 	{
-		fprintf(stderr, "dirdbFindAndRef: out of memory\n");
-		_exit(1); /* we could exit nice here to the caller */
+		fprintf(stderr, "dirdbFindAndRef: realloc() failed, out of memory\n");
+		return DIRDB_NOPARENT;
 	}
 	dirdbData=new;
 	memset(dirdbData+dirdbNum, 0, 16*sizeof(struct dirdbEntry));
@@ -293,6 +333,9 @@ reentry:
 			dirdbData[j].newadbref=DIRDB_NO_ADBREF;
 			dirdbData[j].mdbref=DIRDB_NO_MDBREF;
 			dirdbData[j].newmdbref=DIRDB_NO_MDBREF;
+			dirdbData[j].parent=DIRDB_NOPARENT;
+			dirdbData[j].name=0;
+			dirdbData[j].refcount=0;
 		}
 	}
 	goto reentry;
@@ -300,7 +343,11 @@ reentry:
 
 void dirdbRef(uint32_t node)
 {
-	if (node>=dirdbNum)
+	if (node == DIRDB_NOPARENT)
+	{
+		return;
+	}
+	if ((node>=dirdbNum) || (!dirdbData[node].name))
 	{
 		fprintf(stderr, "dirdbFindAndRef: invalid node\n");
 		return;
@@ -309,29 +356,37 @@ void dirdbRef(uint32_t node)
 	dirdbData[node].refcount++;
 }
 
-uint32_t dirdbResolvePathWithBaseAndRef(uint32_t base, const char *name /* PATH_MAX + 1 */)
+uint32_t dirdbResolvePathWithBaseAndRef(uint32_t base, const char *name)
 {
-	char segment[PATH_MAX+1];
+	char *segment;
 	const char *next;
 	char *split;
 	uint32_t retval=base, newretval;
 
 #ifdef DIRDB_DEBUG
-	fprintf(stderr, "dirdbResolvePathWithBaseAndRef(0x%08x, \"%s\")\n", base, name);
+	fprintf(stderr, "dirdbResolvePathWithBaseAndRef(0x%08x, %s%40s%s)\n", base, name?"\"":"", name?name:"NULL", name?"\"":"");
 #endif
-
-	if (strlen(name)>PATH_MAX)
+	if (!name)
 	{
-		fprintf(stderr, "dirdbResolvPathWithBase: name too long\n");
+		fprintf (stderr, "dirdbResolvePathWithBaseAndRef(): name is NULL\n");
 		return DIRDB_NOPARENT;
 	}
+
+	segment = malloc (strlen(name)+1); /* We never will need more than this */
+	if (!segment)
+	{
+		fprintf (stderr, "dirdbResolvePathWithBaseAndRef(): malloc() failed\n");
+		return DIRDB_NOPARENT;
+	}
+
 	next=name;
 	if (retval!=DIRDB_NOPARENT)
+	{
+		/* we unref each-time we change retval, so we need the initial reference */
 		dirdbRef(retval);
+	}
 	while (next)
 	{
-		if (*next=='/')
-			next++;
 		if ((split=strchr(next, '/')))
 		{
 			strncpy(segment, next, split-next);
@@ -343,38 +398,62 @@ uint32_t dirdbResolvePathWithBaseAndRef(uint32_t base, const char *name /* PATH_
 			strcpy(segment, next);
 			next=0;
 		}
+
 		if (!strlen(segment))
+		{ /* empty segment, happens if you have a // in the path */
 			continue;
+		}
+
 		newretval=dirdbFindAndRef(retval, segment);
-		dirdbUnref(retval);
+
+		if (retval!=DIRDB_NOPARENT)
+		{
+			dirdbUnref(retval);
+		}
+
+		if (newretval == DIRDB_NOPARENT)
+		{
+			fprintf (stderr, "dirdbResolvePathWithBaseAndRef: a part of the path failed\n");
+			return DIRDB_NOPARENT;
+		}
+
 		retval=newretval;
 	}
+	free (segment);
 #ifdef DIRDB_DEBUG
 	dumpdirdb();
 #endif
 	return retval;
 }
 
-extern uint32_t dirdbResolvePathAndRef(const char *name /*PATH_MAX + 1 */)
+extern uint32_t dirdbResolvePathAndRef(const char *name)
 {
-	char segment[PATH_MAX+1];
+	char *segment;
 	const char *next;
 	char *split;
 	uint32_t retval=DIRDB_NOPARENT, newretval;
 
 #ifdef DIRDB_DEBUG
-	fprintf(stderr, "dirdbResolvePathAndRef(\"%s\")\n", name);
+	fprintf(stderr, "dirdbResolvePathAndRef(%s%40s%s)\n", name?"\"":"", name?name:"NULL", name?"\"":"");
 #endif
-	if (strlen(name)>PATH_MAX)
+
+	segment = malloc (strlen(name)+1); /* We never will need more than this */
+	if (!segment)
 	{
-		fprintf(stderr, "dirdbResolvPathWithBase: name too long\n");
+		fprintf (stderr, "dirdbResolvePathAndRef(): malloc() failed\n");
 		return DIRDB_NOPARENT;
 	}
+
 	next=name;
 	while (next)
 	{
+#if 0 /* caught by the common if(!strlen(segment)) test further down */
 		if (*next=='/')
+		{
 			next++;
+			continue;
+		}
+#endif
 		if ((split=strchr(next, '/')))
 		{
 			strncpy(segment, next, split-next);
@@ -393,6 +472,7 @@ extern uint32_t dirdbResolvePathAndRef(const char *name /*PATH_MAX + 1 */)
 			dirdbUnref(retval);
 		retval=newretval;
 	}
+	free (segment);
 #ifdef DIRDB_DEBUG
 	dumpdirdb();
 #endif
@@ -405,6 +485,11 @@ void dirdbUnref(uint32_t node)
 #ifdef DIRDB_DEBUG
 	fprintf(stderr, "dirdbUnref(0x%08x)\n", node);
 #endif
+
+	if (node == DIRDB_NOPARENT)
+	{
+		return;
+	}
 	if (node>=dirdbNum)
 	{
 		fprintf(stderr, "dirdbUnref: invalid node (node %d >= dirdbNum %d)\n", node, dirdbNum);
@@ -424,7 +509,7 @@ err:
 	/* fprintf(stderr, "DELETE\n");*/
 	dirdbDirty=1;
 	parent = dirdbData[node].parent;
-	dirdbData[node].parent=0;
+	dirdbData[node].parent=DIRDB_NOPARENT;
 	free(dirdbData[node].name);
 	dirdbData[node].name=0;
 
@@ -440,6 +525,7 @@ err:
 		dirdbUnref(parent);
 }
 
+#warning REMOVE legacy dirdbGetname(), use dirdbGetName_malloc() instead
 void dirdbGetname(uint32_t node, char *name /*NAME_MAX+1*/)
 {
 	name[0]=0;
@@ -453,10 +539,47 @@ void dirdbGetname(uint32_t node, char *name /*NAME_MAX+1*/)
 		fprintf(stderr, "dirdbGetname: invalid node #2\n");
 		return;
 	}
-	strcpy(name, dirdbData[node].name);
+	snprintf (name, NAME_MAX+1, "%s", dirdbData[node].name);
 }
 
-static void dirdbGetFullnameR(uint32_t node, char *name, unsigned int *left, int nobase)
+void dirdbGetName_internalstr(uint32_t node, char **name)
+{
+	*name = 0;
+	if (node>=dirdbNum)
+	{
+		fprintf(stderr, "dirdbGetName_malloc: invalid node #1\n");
+		return;
+	}
+	if (!dirdbData[node].name)
+	{
+		fprintf(stderr, "dirdbGetName_malloc: invalid node #2\n");
+		return;
+	}
+	*name = dirdbData[node].name;
+}
+
+extern void dirdbGetName_malloc(uint32_t node, char **name)
+{
+	*name = 0;
+	if (node>=dirdbNum)
+	{
+		fprintf(stderr, "dirdbGetName_malloc: invalid node #1\n");
+		return;
+	}
+	if (!dirdbData[node].name)
+	{
+		fprintf(stderr, "dirdbGetName_malloc: invalid node #2\n");
+		return;
+	}
+	*name = strdup (dirdbData[node].name);
+	if (!*name)
+	{
+		fprintf (stderr, "dirdbGetName_malloc: strdup() failed\n");
+		return;
+	}
+}
+
+static int dirdbGetFullnameR(uint32_t node, char *name, unsigned int *left, int nobase)
 {
 	if (dirdbData[node].parent!=DIRDB_NOPARENT)
 	{
@@ -467,36 +590,122 @@ static void dirdbGetFullnameR(uint32_t node, char *name, unsigned int *left, int
 		(*left)--;
 	} else
 		if (nobase)
-			return;
+			return 0;
 
 	if ((*left)<=strlen(dirdbData[node].name))
 		goto errorout;
 	strcat(name, dirdbData[node].name);
 	(*left)-=strlen(dirdbData[node].name);
-	return;
+	return 0;
 errorout:
-	fprintf(stderr, "dirdbGetFullname: string grows to long\n");
-	return;
+	*left = 0;
+	fprintf(stderr, "dirdbGetFullname: string grows too long\n");
+	return -1;
 }
 
+#warning REMOVE legacy dirdbGetFullname(), use dirdbGetFullname_malloc() instead
 void dirdbGetFullName(uint32_t node, char *name /* PATH_MAX+1, ends not with a / */, int flags)
 {
 	unsigned int i = PATH_MAX;
-	*name=0;
+	name[0]=0;
 	if (node>=dirdbNum)
 	{
 		fprintf(stderr, "dirdbGetFullname: invalid node\n");
 		return;
 	}
-	dirdbGetFullnameR(node, name, &i, flags&DIRDB_FULLNAME_NOBASE);
+	if (dirdbGetFullnameR(node, name, &i, flags&DIRDB_FULLNAME_NOBASE))
+	{ /* Error, debug message already written */
+		return;
+	}
 	if (flags&DIRDB_FULLNAME_ENDSLASH)
+	{
 		if (strlen(name)+1<PATH_MAX)
+		{
 			strcat(name, "/");
+		} else {
+			fprintf (stderr, "dirdbGetFullName(): path to long for this legacy API\n");
+			return;
+		}
+	}
 }
+
+static void dirdbGetFullname_malloc_R(uint32_t node, char *name)
+{
+	if (node == DIRDB_NOPARENT)
+	{
+		return;
+	}
+	if (dirdbData[node].parent != DIRDB_NOPARENT)
+	{
+		dirdbGetFullname_malloc_R(dirdbData[node].parent, name);
+		strcat(name, "/");
+	}
+	strcat(name, dirdbData[node].name);
+}
+
+void dirdbGetFullname_malloc(uint32_t node, char **name, int flags)
+{
+	int length = 0;
+	int iter;
+
+	*name=0;
+	if ((node != DIRDB_NOPARENT) && ((node>=dirdbNum) || (!dirdbData[node].name)))
+	{
+		fprintf(stderr, "dirdbGetFullname_malloc: invalid node\n");
+		return;
+	}
+
+	if (node == DIRDB_NOPARENT)
+	{
+		length = (flags & (DIRDB_FULLNAME_NOBASE | DIRDB_FULLNAME_ENDSLASH)) != DIRDB_FULLNAME_NOBASE;
+	} else {
+		if (flags&DIRDB_FULLNAME_ENDSLASH)
+		{
+			length++;
+		}
+		for (iter = node; iter != DIRDB_NOPARENT; iter = dirdbData[iter].parent)
+		{
+			length += strlen (dirdbData[iter].name);
+			length += 1;
+		}
+		if (flags&DIRDB_FULLNAME_NOBASE)
+		{
+			length--;
+		}
+	}
+
+	*name = malloc(length+1);
+	if (!*name)
+	{
+		fprintf (stderr, "dirdbGetFullname_malloc(): malloc() failed\n");
+		return;
+	}
+	(*name)[0] = 0;
+
+	if (!(flags&DIRDB_FULLNAME_NOBASE))
+	{
+		strcat (*name, "/");
+	}
+	dirdbGetFullname_malloc_R (node, *name);
+
+	if (flags&DIRDB_FULLNAME_ENDSLASH)
+	{
+		if (strcmp(*name, "/"))
+		{
+			strcat(*name, "/");
+		}
+	}
+
+	if (strlen(*name) != length)
+	{
+		fprintf (stderr, "dirdbGetFullName_malloc: WARNING, length calculation was off. Expected %d, but got %d\n", length, (int)strlen (*name));
+	}
+}
+
 
 void dirdbFlush(void)
 {
-	char path[PATH_MAX+1];
+	char *path;
 	int f;
 	uint32_t i;
 	uint32_t max;
@@ -510,16 +719,20 @@ void dirdbFlush(void)
 	for (i=0;i<dirdbNum;i++)
 	{
 		if (dirdbData[i].name)
+		{
 			if (!dirdbData[i].refcount)
 			{
+				fprintf (stderr, "dirdbFlush: node had name, but no refcount...\n");
 				dirdbData[i].refcount++;
 				dirdbUnref(i);
 			}
+		}
 	}
 
-	if ((strlen(cfConfigDir)+11)>PATH_MAX)
+	path = malloc(strlen(cfConfigDir)+11+1);
+	if (!path)
 	{
-		fprintf(stderr, "dirdb: CPDIRDB.DAT path is too long\n");
+		fprintf(stderr, "dirdbFlush: malloc() failed\n");
 		return;
 	}
 	strcpy(path, cfConfigDir);
@@ -528,8 +741,11 @@ void dirdbFlush(void)
 	if ((f=open(path, O_WRONLY|O_CREAT|O_TRUNC, S_IREAD|S_IWRITE))<0)
 	{
 		perror("open(cfConfigDir/CPDIRDB.DAT)");
+		free (path);
 		return;
 	}
+	free (path);
+	path=0;
 
 	max=0;
 	for (i=0;i<dirdbNum;i++)
@@ -632,18 +848,21 @@ void dirdbTagSetParent(uint32_t node)
 		dirdbData[i].newadbref=DIRDB_NO_ADBREF; /* is this actually needed? */
 	}
 
-	if (node>=dirdbNum)
+	if ((node != DIRDB_NOPARENT) && ((node>=dirdbNum) || (!dirdbData[node].name)))
 	{
 		fprintf(stderr, "dirdbTagSetParent: invalid node\n");
 		return;
 	}
 	tagparentnode = node;
-	dirdbRef(node);
+	if (node != DIRDB_NOPARENT)
+	{
+		dirdbRef(node);
+	}
 }
 
 void dirdbMakeMdbAdbRef(uint32_t node, uint32_t mdbref, uint32_t adbref)
 {
-	if (node>=dirdbNum)
+	if ((node>=dirdbNum) || (!dirdbData[node].name))
 	{
 		fprintf(stderr, "dirdbMakeMdbRef: invalid node\n");
 		return;
@@ -685,7 +904,7 @@ void dirdbTagCancel(void)
 	}
 	if (tagparentnode==DIRDB_NOPARENT)
 	{
-		fprintf(stderr, "dirdbTagCancel: parent is not set\n");
+		//fprintf(stderr, "dirdbTagCancel: parent is not set\n");
 		return;
 	}
 	dirdbUnref(tagparentnode);
@@ -695,9 +914,10 @@ void dirdbTagCancel(void)
 static void _dirdbTagRemoveUntaggedAndSubmit(uint32_t node)
 {
 	uint32_t i;
+
 	for (i=0;i<dirdbNum;i++)
 	{
-		if (dirdbData[i].parent==node)
+		if ((dirdbData[i].parent==node) && dirdbData[i].name)
 		{
 			dirdbData[i].adbref=dirdbData[i].newadbref;
 			if (dirdbData[i].newmdbref==dirdbData[i].mdbref)
@@ -707,7 +927,7 @@ static void _dirdbTagRemoveUntaggedAndSubmit(uint32_t node)
 					/* probably a dir */
 					_dirdbTagRemoveUntaggedAndSubmit(i);
 				} else {
-					/* mdbref changed */
+					/* mdbref is the same */
 					dirdbData[i].mdbref=dirdbData[i].newmdbref;
 					dirdbData[i].newmdbref=DIRDB_NO_MDBREF;
 					dirdbUnref(i);
@@ -744,14 +964,20 @@ static void _dirdbTagRemoveUntaggedAndSubmit(uint32_t node)
 
 void dirdbTagRemoveUntaggedAndSubmit(void)
 {
+#if 0
+	/* removing from node / */
 	if (tagparentnode==DIRDB_NOPARENT)
 	{
 		fprintf(stderr, "dirdbTagRemoveUntaggedAndSubmit: parent is not set\n");
 		return;
 	}
+#endif
 	/* if parent has changed mdbref, we can't detect this.. NB NB NB */
 	_dirdbTagRemoveUntaggedAndSubmit(tagparentnode);
-	dirdbUnref(tagparentnode);
+	if (tagparentnode!=DIRDB_NOPARENT)
+	{
+		dirdbUnref(tagparentnode);
+	}
 	tagparentnode=DIRDB_NOPARENT;
 	dirdbDirty=1;
 }
