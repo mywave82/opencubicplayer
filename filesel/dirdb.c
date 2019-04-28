@@ -262,6 +262,11 @@ uint32_t dirdbFindAndRef(uint32_t parent, char const *name)
 		fprintf (stderr, "dirdbFindAndRef: strlen(name) > UINT16_MAX, can not store this in DB\n");
 		return DIRDB_NOPARENT;
 	}
+	if (!name[0])
+	{
+		fprintf (stderr, "dirdbFindAndRef: zero-length name\n");
+		return DIRDB_NOPARENT;
+	}
 
 	if ((parent!=DIRDB_NOPARENT)&&((parent>=dirdbNum)||(!dirdbData[parent].name)))
 	{
@@ -278,6 +283,11 @@ uint32_t dirdbFindAndRef(uint32_t parent, char const *name)
 	if (!strcmp(name, ".."))
 	{
 		fprintf (stderr, "dirdbFindAndRef: .. is not a valid name\n");
+		return DIRDB_NOPARENT;
+	}
+	if (strchr(name, '/'))
+	{
+		fprintf (stderr, "dirdbFindAndRef: name containes /\n");
 		return DIRDB_NOPARENT;
 	}
 
@@ -414,6 +424,7 @@ uint32_t dirdbResolvePathWithBaseAndRef(uint32_t base, const char *name)
 		if (newretval == DIRDB_NOPARENT)
 		{
 			fprintf (stderr, "dirdbResolvePathWithBaseAndRef: a part of the path failed\n");
+			free (segment);
 			return DIRDB_NOPARENT;
 		}
 
@@ -436,6 +447,11 @@ extern uint32_t dirdbResolvePathAndRef(const char *name)
 #ifdef DIRDB_DEBUG
 	fprintf(stderr, "dirdbResolvePathAndRef(%s%40s%s)\n", name?"\"":"", name?name:"NULL", name?"\"":"");
 #endif
+	if (!name)
+	{
+		fprintf (stderr, "dirdbResolvePathAndRef(): name is NULL\n");
+		return DIRDB_NOPARENT;
+	}
 
 	segment = malloc (strlen(name)+1); /* We never will need more than this */
 	if (!segment)
@@ -775,11 +791,8 @@ void dirdbFlush(void)
 			buf32=uint32_little(dirdbData[i].adbref);
 			if (write(f, &buf32, sizeof(uint32_t))!=sizeof(uint32_t))
 				goto writeerror;
-			if (dirdbData[i].name)
-			{
-				if (write(f, dirdbData[i].name, len)!=len)
-					goto writeerror;
-			}
+			if (write(f, dirdbData[i].name, len)!=len)
+				goto writeerror;
 		}
 	}
 	close(f);
@@ -793,9 +806,13 @@ writeerror:
 uint32_t dirdbGetParentAndRef (uint32_t node)
 {
 	uint32_t retval;
-	if (node>=dirdbNum)
+	if ((node>=dirdbNum) || (!dirdbData[node].name))
+	{
+		fprintf(stderr, "dirdbGetParentAndRef: invalid node\n");
 		return DIRDB_NOPARENT;
-	if ((retval=dirdbData[node].parent)!=DIRDB_NOPARENT)
+	}
+	retval=dirdbData[node].parent;
+	if (retval!=DIRDB_NOPARENT)
 		dirdbData[dirdbData[node].parent].refcount++;
 	return retval;
 }
@@ -849,7 +866,7 @@ void dirdbTagSetParent(uint32_t node)
 	}
 
 	if ((node != DIRDB_NOPARENT) && ((node>=dirdbNum) || (!dirdbData[node].name)))
-	{
+	{	/* DIRDB_NOPARENT is legal! */
 		fprintf(stderr, "dirdbTagSetParent: invalid node\n");
 		return;
 	}
@@ -876,7 +893,7 @@ void dirdbMakeMdbAdbRef(uint32_t node, uint32_t mdbref, uint32_t adbref)
 			dirdbUnref(node);
 		} /* else, no change */
 	} else {
-		if (dirdbData[node].mdbref==DIRDB_NO_MDBREF)
+		if (dirdbData[node].newmdbref==DIRDB_NO_MDBREF)
 		{
 			dirdbData[node].newmdbref=mdbref;
 			dirdbRef(node);
