@@ -25,10 +25,10 @@
  *     the toc when we access the cdrom from the fileselector while in use
  */
 
+#include <linux/cdrom.h>
 #include "config.h"
 #include <errno.h>
 #include <fcntl.h>
-#include <linux/cdrom.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -361,7 +361,7 @@ static int cdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 								char buffer[12];
 								struct moduleinfostruct mi;
 
-								snprintf(buffer, 12, "TRACK%02d.CDA", i);
+								snprintf(buffer, 12, "TRACK%02u.CDA", i);
 
 								if (initlba<0)
 									initlba=tocentry.cdte_addr.lba;
