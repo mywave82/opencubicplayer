@@ -95,5 +95,10 @@ static void __attribute__((destructor))done(void)
 
 extern "C" {
 	const char *dllinfo = "";
-	struct linkinfostruct dllextinfo = {.name = "opltype", .desc = "OpenCP OPL Detection (c) 2005-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+	struct linkinfostruct dllextinfo =
+	{
+		"opltype" /* name */,
+		"OpenCP OPL Detection (c) 2005-09 Stian Skjelstad" /* desc */,
+		DLLVERSION /* ver */
+	};
 }

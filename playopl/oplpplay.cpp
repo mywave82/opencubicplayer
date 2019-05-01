@@ -524,6 +524,11 @@ static int oplOpenFile(const char *path, struct moduleinfostruct *info, FILE *fi
 
 extern "C"
 {
-  cpifaceplayerstruct oplPlayer = {oplOpenFile, oplCloseFile};
-  struct linkinfostruct dllextinfo = {.name = "playopl", .desc = "OpenCP AdPlug (OPL) Player (c) 2005-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+	cpifaceplayerstruct oplPlayer = {oplOpenFile, oplCloseFile};
+	struct linkinfostruct dllextinfo =
+	{
+		"playopl" /* name */,
+		"OpenCP AdPlug (OPL) Player (c) 2005-09 Stian Skjelstad" /* desc */,
+		DLLVERSION /* ver */
+	};
 }

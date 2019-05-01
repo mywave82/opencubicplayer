@@ -695,5 +695,10 @@ static int sidpOpenFile(const char *path, struct moduleinfostruct *info, FILE *s
 extern "C"
 {
 	cpifaceplayerstruct sidPlayer = {sidpOpenFile, sidpCloseFile};
-	struct linkinfostruct dllextinfo = {.name = "playsid",  .desc = "OpenCP SID Player (c) 1993-09 Michael Schwendt, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};
+	struct linkinfostruct dllextinfo =
+	{
+		"playsid" /* name */,
+		"OpenCP SID Player (c) 1993-09 Michael Schwendt, Tammo Hinrichs" /* desc */,
+		DLLVERSION /* ver */
+	};
 }
