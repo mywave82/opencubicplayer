@@ -155,34 +155,42 @@ static int getplaypos(void)
 		int err;
 
 #ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA snd_pcm_status(alsa_pcm, alsa_pcm_status) = ");
+		fprintf(stderr, "ALSA: getplaypos()\n");
+		fprintf(stderr, "      snd_pcm_status(alsa_pcm, alsa_pcm_status) = ");
 #endif
 		if ((err=snd_pcm_status(alsa_pcm, alsa_pcm_status))<0)
 		{
 #ifdef ALSA_DEBUG
 			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
 #endif
-			fprintf(stderr, "ALSA: snd_pcm_status() failed: %s\n", snd_strerror(-err));
+			fprintf(stderr, "      snd_pcm_status() failed: %s\n", snd_strerror(-err));
 		} else {
 #ifdef ALSA_DEBUG
 			fprintf(stderr, "ok\n");
-			fprintf(stderr, "ALSA snd_pcm_status_get_delay(alsa_pcm_status = ");
+			fprintf(stderr, "      snd_pcm_status_get_delay(alsa_pcm_status = ");
 #endif
 			tmp=snd_pcm_status_get_delay(alsa_pcm_status);
 #ifdef ALSA_DEBUG
-			fprintf(stderr, "%ld\n", tmp);
+			fprintf(stderr, "%d\n", (int)tmp);
 #endif
-			tmp<<=(bit16+stereo);
-
-			if (tmp<0) /* we ignore buffer-underruns */
+			if (tmp<0)
+			{ /* we ignore buffer-underruns */
 				tmp=0;
-			else if (tmp==0)
-			{
-			/* ALSA sometimes (atlast on Stians Ubuntu laptop) gives odelay==0 always */
-				tmp = snd_pcm_status_get_avail_max(alsa_pcm_status) - snd_pcm_status_get_avail(alsa_pcm_status);
+			} else if (tmp==0)
+			{ /* ALSA sometimes (atlast on Stians Ubuntu laptop) gives odelay==0 always */
+				snd_pcm_sframes_t tmp1 = snd_pcm_status_get_avail_max(alsa_pcm_status);
+				snd_pcm_sframes_t tmp2 = snd_pcm_status_get_avail(alsa_pcm_status);
+				tmp = tmp1 - tmp2;
+#ifdef ALSA_DEBUG
+				fprintf(stderr, "      (no delay available) fallback:\n");
+				fprintf(stderr, "      snd_pcm_status_get_avail_max() = %d\n", (int)tmp1);
+				fprintf(stderr, "      snd_pcm_status_get_avail() = %d\n", (int)tmp2);
+				fprintf(stderr, "      => %d\n", (int)tmp);
+#endif
 				if (tmp<0)
 					tmp=0;
 			}
+			tmp<<=(bit16+stereo);
 
 			if (tmp>kernlen)
 			{
@@ -194,12 +202,15 @@ static int getplaypos(void)
 	}
 	retval=kernpos;
 	busy--;
+#ifdef ALSA_DEBUG
+	fprintf(stderr, " => %d\n", retval);
+#endif
 	return retval;
 }
 /* more or less stolen from devposs */
 static void flush(void)
 {
-	int result, n, odelay;
+	int result, n, odelay, tmp;
 	int err;
 
 	if (busy++)
@@ -209,35 +220,45 @@ static void flush(void)
 	}
 
 #ifdef ALSA_DEBUG
-	fprintf(stderr, "ALSA snd_pcm_status(alsa_pcm, alsa_pcm_status) = ");
+	fprintf(stderr, "ALSA: flush()\n");
+	fprintf(stderr, "      snd_pcm_status(alsa_pcm, alsa_pcm_status) = ");
 #endif
 	if ((err=snd_pcm_status(alsa_pcm, alsa_pcm_status))<0)
 	{
 #ifdef ALSA_DEBUG
 		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
+#else
 		fprintf(stderr, "ALSA: snd_pcm_status() failed: %s\n", snd_strerror(-err));
+#endif
 		busy--;
 		return;
 	}
 #ifdef ALSA_DEBUG
 	fprintf(stderr, "ok\n");
-	fprintf(stderr, "ALSA snd_pcm_status_get_delay(alsa_pcm_status) = ");
+	fprintf(stderr, "      snd_pcm_status_get_delay(alsa_pcm_status) = ");
 #endif
 	odelay=snd_pcm_status_get_delay(alsa_pcm_status);
 #ifdef ALSA_DEBUG
 	fprintf(stderr, "%i\n", odelay);
 #endif
-	odelay<<=(bit16+stereo);
-	if (odelay<0) /* we ignore buffer-underruns */
+	if (odelay<0)
+	{ /* we ignore buffer-underruns */
 		odelay=0;
-	else if (odelay==0)
-	{
-	/* ALSA sometimes (atlast on Stians Ubuntu laptop) gives odelay==0 always */
-		odelay = snd_pcm_status_get_avail_max(alsa_pcm_status) - snd_pcm_status_get_avail(alsa_pcm_status);
+	} else if (odelay==0)
+	{ /* ALSA sometimes (atlast on Stians Ubuntu laptop) gives odelay==0 always */
+		snd_pcm_sframes_t tmp1 = snd_pcm_status_get_avail_max(alsa_pcm_status);
+		snd_pcm_sframes_t tmp2 = snd_pcm_status_get_avail(alsa_pcm_status);
+		odelay = tmp1 - tmp2;
+#ifdef ALSA_DEBUG
+		fprintf(stderr, "      (no delay available) fallback:\n");
+		fprintf(stderr, "      snd_pcm_status_get_avail_max() = %d\n", (int)tmp1);
+		fprintf(stderr, "      snd_pcm_status_get_avail() = %d\n", (int)tmp2);
+		fprintf(stderr, "      => %d\n", (int)odelay);
+#endif
 		if (odelay<0)
 			odelay=0;
 	}
+	odelay<<=(bit16+stereo);
 
 	if (odelay>kernlen)
 	{
@@ -270,6 +291,11 @@ static void flush(void)
 		return;
 	}
 
+	tmp = snd_pcm_status_get_avail(alsa_pcm_status) << (bit16+stereo);
+	if (n > tmp)
+	{
+		n = tmp;
+	}
 #ifdef ALSA_DEBUG
 	fprintf(stderr, "ALSA snd_pcm_writei(alsa_pcm, buffer, %i) = ", n>>(bit16+stereo));
 #endif
@@ -338,31 +364,41 @@ static uint32_t gettimer(void)
 	} else {
 		int err;
 #ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA snd_pcm_status(alsa_pcm, alsa_pcm_status) = ");
+		fprintf(stderr, "ALSA: gettimer()");
+		fprintf(stderr, "      snd_pcm_status(alsa_pcm, alsa_pcm_status) = ");
 #endif
 		if ((err=snd_pcm_status(alsa_pcm, alsa_pcm_status))<0)
 		{
 #ifdef ALSA_DEBUG
 			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
+#else
 			fprintf(stderr, "ALSA: snd_pcm_status() failed: %s\n", snd_strerror(-err));
+#endif
 			odelay=kernlen;
 		} else {
 #ifdef ALSA_DEBUG
 			fprintf(stderr, "ok\n");
-			fprintf(stderr, "snd_pcm_status_get_delay(alsa_pcm_status) = ");
+			fprintf(stderr, "      snd_pcm_status_get_delay(alsa_pcm_status) = ");
 #endif
 
 			odelay=snd_pcm_status_get_delay(alsa_pcm_status);
 #ifdef ALSA_DEBUG
 			fprintf(stderr, "%i\n", odelay);
 #endif
-			if (odelay<0) /* we ignore buffer-underruns */
+			if (odelay<0)
+			{ /* we ignore buffer-underruns */
 				odelay=0;
-			else if (odelay==0)
-			{
-			/* ALSA sometimes (atlast on Stians Ubuntu laptop) gives odelay==0 always */
-				odelay = snd_pcm_status_get_avail_max(alsa_pcm_status) - snd_pcm_status_get_avail(alsa_pcm_status);
+			} else if (odelay==0)
+			{ /* ALSA sometimes (atlast on Stians Ubuntu laptop) gives odelay==0 always */
+				snd_pcm_sframes_t tmp1 = snd_pcm_status_get_avail_max(alsa_pcm_status);
+				snd_pcm_sframes_t tmp2 = snd_pcm_status_get_avail(alsa_pcm_status);
+				odelay = tmp1 - tmp2;
+#ifdef ALSA_DEBUG
+				fprintf(stderr, "      (no delay available) fallback:\n");
+				fprintf(stderr, "      snd_pcm_status_get_avail_max() = %d\n", (int)tmp1);
+				fprintf(stderr, "      snd_pcm_status_get_avail() = %d\n", (int)tmp2);
+				fprintf(stderr, "      => %d\n", (int)odelay);
+#endif
 				if (odelay<0)
 					odelay=0;
 			}
@@ -730,7 +766,7 @@ static int list_devices_for_card(int card, struct modlist *ml, const struct dmDr
 		}
 
 #ifdef ALSA_DEBUG
-		card_name = snd_pcm_info_get_name (pcm_info);
+		card_name = (char *)snd_pcm_info_get_name (pcm_info);
 		fprintf(stderr, "ALSA: hw:%d,%d: name %s\n", card, pcm_device, card_name);
 		//free (card_name);
 		card_name = 0;
