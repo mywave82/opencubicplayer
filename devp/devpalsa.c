@@ -86,8 +86,8 @@ static int stereo;
 static int bit16;
 
 static volatile int busy=0;
-uint32_t customfileref=0xffffffff;
-uint32_t custommixerref=0xffffffff;
+uint32_t custom_dsp_mdb_ref=0xffffffff;
+uint32_t custom_mixer_mdb_ref=0xffffffff;
 
 static int alsa_1_0_11_or_better;
 
@@ -503,12 +503,12 @@ out:
 	fprintf(stderr, "ALSA: Selected mixer %s\n", alsaMixerName);
 /* #endif */
 	{
-		if (custommixerref!=0xffffffff)
+		if (custom_mixer_mdb_ref!=0xffffffff)
 		{
 			struct moduleinfostruct mi;
-			mdbGetModuleInfo(&mi, custommixerref);
+			mdbGetModuleInfo(&mi, custom_mixer_mdb_ref);
 			snprintf(mi.modname, sizeof(mi.modname), "%s", alsaMixerName);
-			mdbWriteModuleInfo(custommixerref, &mi);
+			mdbWriteModuleInfo(custom_mixer_mdb_ref, &mi);
 		}
 
 	}
@@ -638,12 +638,12 @@ out:
 	fprintf(stderr, "ALSA: Selected card %s\n", alsaCardName);
 /* #endif */
 	{
-		if (customfileref!=0xffffffff)
+		if (custom_dsp_mdb_ref!=0xffffffff)
 		{
 			struct moduleinfostruct mi;
-			mdbGetModuleInfo(&mi, customfileref);
+			mdbGetModuleInfo(&mi, custom_dsp_mdb_ref);
 			snprintf(mi.modname, sizeof(mi.modname), "%s", alsaCardName);
-			mdbWriteModuleInfo(customfileref, &mi);
+			mdbWriteModuleInfo(custom_dsp_mdb_ref, &mi);
 		}
 
 	}
@@ -745,16 +745,16 @@ static int list_devices_for_card(int card, struct modlist *ml, const struct dmDr
 			entry.drive=drive;
 			entry.dirdbfullpath=dirdbFindAndRef(parent, entry.name);
 			entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-			entry.fileref=mdbGetModuleReference(entry.name, 0);
-			if (entry.fileref!=0xffffffff)
+			entry.mdb_ref=mdbGetModuleReference(entry.name, 0);
+			if (entry.mdb_ref!=0xffffffff)
 			{
 				struct moduleinfostruct mi;
-				mdbGetModuleInfo(&mi, entry.fileref);
+				mdbGetModuleInfo(&mi, entry.mdb_ref);
 				mi.flags1&=~MDB_VIRTUAL;
 				mi.channels=2;
 				snprintf(mi.modname, sizeof(mi.modname), "%s", snd_pcm_info_get_name(pcm_info));
 				mi.modtype=mtUnRead;
-				mdbWriteModuleInfo(entry.fileref, &mi);
+				mdbWriteModuleInfo(entry.mdb_ref, &mi);
 			}
 			entry.adb_ref=0xffffffff;
 			entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=alsaSelectPcmOut;
@@ -786,16 +786,16 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 		entry.drive=drive;
 		entry.dirdbfullpath=dirdbFindAndRef(parent, entry.name);
 		entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-		entry.fileref=mdbGetModuleReference(entry.name, 0);
-		if (entry.fileref!=0xffffffff)
+		entry.mdb_ref=mdbGetModuleReference(entry.name, 0);
+		if (entry.mdb_ref!=0xffffffff)
 		{
 			struct moduleinfostruct mi;
-			mdbGetModuleInfo(&mi, entry.fileref);
+			mdbGetModuleInfo(&mi, entry.mdb_ref);
 			mi.flags1&=~MDB_VIRTUAL;
 			mi.channels=2;
 			snprintf(mi.modname, sizeof(mi.modname), "default output");
 			mi.modtype=mtUnRead;
-			mdbWriteModuleInfo(entry.fileref, &mi);
+			mdbWriteModuleInfo(entry.mdb_ref, &mi);
 		}
 		entry.adb_ref=0xffffffff;
 		entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=mixercaponly?alsaSelectMixer:alsaSelectPcmOut;
@@ -807,16 +807,16 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 			entry.drive=drive;
 			entry.dirdbfullpath=dirdbFindAndRef(parent, entry.name);
 			entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-			entry.fileref=mdbGetModuleReference(entry.name, 0);
-			if (entry.fileref!=0xffffffff)
+			entry.mdb_ref=mdbGetModuleReference(entry.name, 0);
+			if (entry.mdb_ref!=0xffffffff)
 			{
 				struct moduleinfostruct mi;
-				mdbGetModuleInfo(&mi, entry.fileref);
+				mdbGetModuleInfo(&mi, entry.mdb_ref);
 				mi.flags1&=~MDB_VIRTUAL;
 				mi.channels=2;
 				mi.modname[0]=0;
 				mi.modtype=mtUnRead;
-				mdbWriteModuleInfo(entry.fileref, &mi);
+				mdbWriteModuleInfo(entry.mdb_ref, &mi);
 			}
 			entry.adb_ref=0xffffffff;
 			entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=alsaSelectMixer;
@@ -830,18 +830,18 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 		entry.dirdbfullpath=dirdbFindAndRef(parent, entry.name);
 		entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
 		if (mixercaponly)
-			custommixerref=entry.fileref=mdbGetModuleReference(entry.name, 0);
+			custom_mixer_mdb_ref=entry.mdb_ref=mdbGetModuleReference(entry.name, 0);
 		else
-			customfileref=entry.fileref=mdbGetModuleReference(entry.name, 0);
-		if (entry.fileref!=0xffffffff)
+			custom_dsp_mdb_ref=entry.mdb_ref=mdbGetModuleReference(entry.name, 0);
+		if (entry.mdb_ref!=0xffffffff)
 		{
 			struct moduleinfostruct mi;
-			mdbGetModuleInfo(&mi, entry.fileref);
+			mdbGetModuleInfo(&mi, entry.mdb_ref);
 			mi.flags1&=~MDB_VIRTUAL;
 			mi.channels=2;
 			snprintf(mi.modname, sizeof(mi.modname), "%s", mixercaponly?alsaMixerName:alsaCardName);
 			mi.modtype=mtUnRead;
-			mdbWriteModuleInfo(entry.fileref, &mi);
+			mdbWriteModuleInfo(entry.mdb_ref, &mi);
 		}
 		entry.adb_ref=0xffffffff;
 		entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=mixercaponly?alsaSelectMixer:alsaSelectPcmOut;
@@ -888,16 +888,16 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 				entry.drive=drive;
 				entry.dirdbfullpath=dirdbFindAndRef(parent, entry.name);
 				entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-				entry.fileref=mdbGetModuleReference(entry.name, 0);
-				if (entry.fileref!=0xffffffff)
+				entry.mdb_ref=mdbGetModuleReference(entry.name, 0);
+				if (entry.mdb_ref!=0xffffffff)
 				{
 					struct moduleinfostruct mi;
-					mdbGetModuleInfo(&mi, entry.fileref);
+					mdbGetModuleInfo(&mi, entry.mdb_ref);
 					mi.flags1&=~MDB_VIRTUAL;
 					mi.channels=2;
 					snprintf(mi.modname, sizeof(mi.modname), "%s", card_name);
 					mi.modtype=mtUnRead;
-					mdbWriteModuleInfo(entry.fileref, &mi);
+					mdbWriteModuleInfo(entry.mdb_ref, &mi);
 				}
 				entry.adb_ref=0xffffffff;
 				entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=alsaSelectMixer;
@@ -1508,7 +1508,7 @@ static int alsaReadDir(struct modlist *ml, const struct dmDrive *drive, const ui
 		entry.drive=drive;
 		entry.dirdbfullpath=dmalsa;
 		entry.flags=MODLIST_FLAG_DIR;
-		entry.fileref=0xffffffff;
+		entry.mdb_ref=0xffffffff;
 		entry.adb_ref=0xffffffff;
 		entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=0;
 		modlist_append(ml, &entry);
@@ -1523,7 +1523,7 @@ static int alsaReadDir(struct modlist *ml, const struct dmDrive *drive, const ui
 			entry.drive=drive;
 			entry.dirdbfullpath=dmpcmout;
 			entry.flags=MODLIST_FLAG_DIR;
-			entry.fileref=0xffffffff;
+			entry.mdb_ref=0xffffffff;
 			entry.adb_ref=0xffffffff;
 			entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=0;
 			modlist_append(ml, &entry);
@@ -1533,7 +1533,7 @@ static int alsaReadDir(struct modlist *ml, const struct dmDrive *drive, const ui
 			entry.drive=drive;
 			entry.dirdbfullpath=dmmixer;
 			entry.flags=MODLIST_FLAG_DIR;
-			entry.fileref=0xffffffff;
+			entry.mdb_ref=0xffffffff;
 			entry.adb_ref=0xffffffff;
 			entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=0;
 			modlist_append(ml, &entry);

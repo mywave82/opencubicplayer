@@ -334,21 +334,21 @@ static int adbTARScan(const char *path)
 				        if (fsScanInArc)
 					{
 						char shortname[12];
-						uint32_t fileref;
+						uint32_t mdb_ref;
 						struct moduleinfostruct mi;
 						fs12name(shortname, a.name);
-						fileref=mdbGetModuleReference(shortname, a.size);
-						if (fileref==0xffffffff)
+						mdb_ref=mdbGetModuleReference(shortname, a.size);
+						if (mdb_ref==0xffffffff)
 						{
 							pipe_done();
 							return 0;
 						}
-						if (!mdbInfoRead(fileref))
+						if (!mdbInfoRead(mdb_ref))
 						{
-							if (mdbGetModuleInfo(&mi, fileref))
+							if (mdbGetModuleInfo(&mi, mdb_ref))
 							{
 								mdbReadMemInfo(&mi, buffer+sizeof(struct posix_header), 1084);
-								mdbWriteModuleInfo(fileref, &mi);
+								mdbWriteModuleInfo(mdb_ref, &mi);
 							}
 						}
 						/* TODO MIF_EXT a.name....

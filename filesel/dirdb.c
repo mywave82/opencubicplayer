@@ -33,13 +33,13 @@
 struct dirdbEntry
 {
 	uint32_t parent;
-	uint32_t mdbref;
-	uint32_t adbref;
+	uint32_t mdb_ref;
+	uint32_t adb_ref;
 	char *name; /* we pollute malloc a lot with this */
 	int refcount;
 
-	uint32_t newadbref;
-	uint32_t newmdbref; /* used during scan to find new nodes */
+	uint32_t newadb_ref;
+	uint32_t newmdb_ref; /* used during scan to find new nodes */
 };
 static uint32_t tagparentnode = DIRDB_NOPARENT;
 
@@ -69,7 +69,7 @@ static void dumpdb_parent(uint32_t parent, int ident)
 			fprintf(stderr, "0x%08x ", i);
 			for (j=0;j<ident;j++)
 				fprintf(stderr, " ");
-			fprintf(stderr, "%s (refcount=%d mdb 0x%08x adb 0x%08x)\n", dirdbData[i].name, dirdbData[i].refcount, dirdbData[i].mdbref, dirdbData[i].adbref);
+			fprintf(stderr, "%s (refcount=%d mdb 0x%08x adb 0x%08x)\n", dirdbData[i].name, dirdbData[i].refcount, dirdbData[i].mdb_ref, dirdbData[i].adb_ref);
 			dumpdb_parent(i, ident+1);
 		}
 	}
@@ -155,17 +155,17 @@ int dirdbInit(void)
 				goto endoffile;
 			dirdbData[i].parent = uint32_little(dirdbData[i].parent);
 
-			if (read(f, &dirdbData[i].mdbref, sizeof(uint32_t))!=sizeof(uint32_t))
+			if (read(f, &dirdbData[i].mdb_ref, sizeof(uint32_t))!=sizeof(uint32_t))
 				goto endoffile;
-			dirdbData[i].mdbref = uint32_little(dirdbData[i].mdbref);
+			dirdbData[i].mdb_ref = uint32_little(dirdbData[i].mdb_ref);
 
 			if (version == 2)
 			{
-				if (read(f, &dirdbData[i].adbref, sizeof(uint32_t))!=sizeof(uint32_t))
+				if (read(f, &dirdbData[i].adb_ref, sizeof(uint32_t))!=sizeof(uint32_t))
 					goto endoffile;
-				dirdbData[i].adbref = uint32_little(dirdbData[i].adbref);
+				dirdbData[i].adb_ref = uint32_little(dirdbData[i].adb_ref);
 			} else
-				dirdbData[i].adbref = DIRDB_NO_ADBREF;
+				dirdbData[i].adb_ref = DIRDB_NO_ADBREF;
 
 			dirdbData[i].name=malloc(len+1);
 			if (!dirdbData[i].name)
@@ -176,14 +176,14 @@ int dirdbInit(void)
 				goto endoffile;
 			}
 			dirdbData[i].name[len]=0; /* terminate the string */
-			if (dirdbData[i].mdbref!=DIRDB_NO_MDBREF)
+			if (dirdbData[i].mdb_ref!=DIRDB_NO_MDBREF)
 				dirdbData[i].refcount++;
 		} else {
 			dirdbData[i].parent = DIRDB_NOPARENT;
-			dirdbData[i].adbref = DIRDB_NO_ADBREF;
-			dirdbData[i].mdbref = DIRDB_NO_MDBREF;
-			dirdbData[i].newadbref=DIRDB_NO_ADBREF;
-			dirdbData[i].newmdbref=DIRDB_NO_MDBREF;
+			dirdbData[i].adb_ref = DIRDB_NO_ADBREF;
+			dirdbData[i].mdb_ref = DIRDB_NO_MDBREF;
+			dirdbData[i].newadb_ref=DIRDB_NO_ADBREF;
+			dirdbData[i].newmdb_ref=DIRDB_NO_MDBREF;
 			/* name is already NULL due to calloc() */
 		}
 	}
@@ -312,8 +312,8 @@ reentry:
 			}
 			dirdbData[i].parent=parent;
 			dirdbData[i].refcount++;
-			dirdbData[i].mdbref=DIRDB_NO_MDBREF;
-			dirdbData[i].adbref=DIRDB_NO_ADBREF;
+			dirdbData[i].mdb_ref=DIRDB_NO_MDBREF;
+			dirdbData[i].adb_ref=DIRDB_NO_ADBREF;
 			if (parent!=DIRDB_NOPARENT)
 			{
 				/*fprintf(stderr, "  + %s (%d p=%d)\n", dirdbData[i].name, i, dirdbData[i].parent);*/
@@ -339,10 +339,10 @@ reentry:
 		uint32_t j;
 		for (j=i;j<dirdbNum;j++)
 		{
-			dirdbData[j].adbref=DIRDB_NO_ADBREF;
-			dirdbData[j].newadbref=DIRDB_NO_ADBREF;
-			dirdbData[j].mdbref=DIRDB_NO_MDBREF;
-			dirdbData[j].newmdbref=DIRDB_NO_MDBREF;
+			dirdbData[j].adb_ref=DIRDB_NO_ADBREF;
+			dirdbData[j].newadb_ref=DIRDB_NO_ADBREF;
+			dirdbData[j].mdb_ref=DIRDB_NO_MDBREF;
+			dirdbData[j].newmdb_ref=DIRDB_NO_MDBREF;
 			dirdbData[j].parent=DIRDB_NOPARENT;
 			dirdbData[j].name=0;
 			dirdbData[j].refcount=0;
@@ -529,10 +529,10 @@ err:
 	free(dirdbData[node].name);
 	dirdbData[node].name=0;
 
-	dirdbData[node].mdbref=DIRDB_NO_MDBREF; /* this should not be needed */
-	dirdbData[node].newmdbref=DIRDB_NO_MDBREF; /* this should not be needed */
-	dirdbData[node].adbref=DIRDB_NO_ADBREF; /* this should not be needed */
-	dirdbData[node].newadbref=DIRDB_NO_ADBREF; /* this should not be needed */
+	dirdbData[node].mdb_ref=DIRDB_NO_MDBREF; /* this should not be needed */
+	dirdbData[node].newmdb_ref=DIRDB_NO_MDBREF; /* this should not be needed */
+	dirdbData[node].adb_ref=DIRDB_NO_ADBREF; /* this should not be needed */
+	dirdbData[node].newadb_ref=DIRDB_NO_ADBREF; /* this should not be needed */
 
 #ifdef DIRDB_DEBUG
 	dumpdirdb();
@@ -785,10 +785,10 @@ void dirdbFlush(void)
 			buf32=uint32_little(dirdbData[i].parent);
 			if (write(f, &buf32, sizeof(uint32_t))!=sizeof(uint32_t))
 				goto writeerror;
-			buf32=uint32_little(dirdbData[i].mdbref);
+			buf32=uint32_little(dirdbData[i].mdb_ref);
 			if (write(f, &buf32, sizeof(uint32_t))!=sizeof(uint32_t))
 				goto writeerror;
-			buf32=uint32_little(dirdbData[i].adbref);
+			buf32=uint32_little(dirdbData[i].adb_ref);
 			if (write(f, &buf32, sizeof(uint32_t))!=sizeof(uint32_t))
 				goto writeerror;
 			if (write(f, dirdbData[i].name, len)!=len)
@@ -818,27 +818,27 @@ uint32_t dirdbGetParentAndRef (uint32_t node)
 }
 
 #if 0
-void dirdbMakeMdbRef(uint32_t node, uint32_t mdbref)
+void dirdbMakeMdbRef(uint32_t node, uint32_t mdb_ref)
 {
 #ifdef DIRDB_DEBUG
-	fprintf(stderr, "dirdbMakeMdbRef(node 0x%08x, mdbref 0x%08x)\n", node, mdbref);
+	fprintf(stderr, "dirdbMakeMdbRef(node 0x%08x, mdb_ref 0x%08x)\n", node, mdb_ref);
 #endif
 	if (node>=dirdbNum)
 	{
 		fprintf(stderr, "dirdbMakeMdbRef: invalid node\n");
 		return;
 	}
-	if (mdbref==DIRDB_NO_MDBREF)
+	if (mdb_ref==DIRDB_NO_MDBREF)
 	{
-		if (dirdbData[node].mdbref!=DIRDB_NO_MDBREF)
+		if (dirdbData[node].mdb_ref!=DIRDB_NO_MDBREF)
 		{
-			dirdbData[node].mdbref=DIRDB_NO_MDBREF;
+			dirdbData[node].mdb_ref=DIRDB_NO_MDBREF;
 			dirdbDirty=1;
 			dirdbUnref(node);
 		}
 	} else {
-		int doref = (dirdbData[node].mdbref==DIRDB_NO_MDBREF);
-		dirdbData[node].mdbref=mdbref;
+		int doref = (dirdbData[node].mdb_ref==DIRDB_NO_MDBREF);
+		dirdbData[node].mdb_ref=mdb_ref;
 		dirdbDirty=1;
 		if (doref)
 			dirdbRef(node);
@@ -861,8 +861,8 @@ void dirdbTagSetParent(uint32_t node)
 
 	for (i=0;i<dirdbNum;i++)
 	{
-		dirdbData[i].newmdbref=DIRDB_NO_MDBREF;
-		dirdbData[i].newadbref=DIRDB_NO_ADBREF; /* is this actually needed? */
+		dirdbData[i].newmdb_ref=DIRDB_NO_MDBREF;
+		dirdbData[i].newadb_ref=DIRDB_NO_ADBREF; /* is this actually needed? */
 	}
 
 	if ((node != DIRDB_NOPARENT) && ((node>=dirdbNum) || (!dirdbData[node].name)))
@@ -877,7 +877,7 @@ void dirdbTagSetParent(uint32_t node)
 	}
 }
 
-void dirdbMakeMdbAdbRef(uint32_t node, uint32_t mdbref, uint32_t adbref)
+void dirdbMakeMdbAdbRef(uint32_t node, uint32_t mdb_ref, uint32_t adb_ref)
 {
 	if ((node>=dirdbNum) || (!dirdbData[node].name))
 	{
@@ -885,26 +885,26 @@ void dirdbMakeMdbAdbRef(uint32_t node, uint32_t mdbref, uint32_t adbref)
 		return;
 	}
 	/* the madness below is in order to keep track of references the correct way */
-	if (mdbref==DIRDB_NO_MDBREF)
+	if (mdb_ref==DIRDB_NO_MDBREF)
 	{
-		if (dirdbData[node].newmdbref!=DIRDB_NO_MDBREF)
+		if (dirdbData[node].newmdb_ref!=DIRDB_NO_MDBREF)
 		{
-			dirdbData[node].newmdbref=DIRDB_NO_MDBREF;
+			dirdbData[node].newmdb_ref=DIRDB_NO_MDBREF;
 			dirdbUnref(node);
 		} /* else, no change */
 	} else {
-		if (dirdbData[node].newmdbref==DIRDB_NO_MDBREF)
+		if (dirdbData[node].newmdb_ref==DIRDB_NO_MDBREF)
 		{
-			dirdbData[node].newmdbref=mdbref;
+			dirdbData[node].newmdb_ref=mdb_ref;
 			dirdbRef(node);
 		} else {
 			/*dirdbUnref(node);*/
-			dirdbData[node].newmdbref=mdbref;
+			dirdbData[node].newmdb_ref=mdb_ref;
 			/*dirdbRef(node);  overkill to unref and re-ref just for the name's sake*/
 		}
 	}
 
-	dirdbData[node].newadbref = adbref;
+	dirdbData[node].newadb_ref = adb_ref;
 }
 
 void dirdbTagCancel(void)
@@ -912,12 +912,12 @@ void dirdbTagCancel(void)
 	uint32_t i;
 	for (i=0;i<dirdbNum;i++)
 	{
-		if (dirdbData[i].newmdbref!=DIRDB_NO_MDBREF)
+		if (dirdbData[i].newmdb_ref!=DIRDB_NO_MDBREF)
 		{
-			dirdbData[i].newmdbref=DIRDB_NO_MDBREF;
+			dirdbData[i].newmdb_ref=DIRDB_NO_MDBREF;
 			dirdbUnref(i);
 		}
-		dirdbData[i].newadbref = DIRDB_NO_ADBREF;
+		dirdbData[i].newadb_ref = DIRDB_NO_ADBREF;
 	}
 	if (tagparentnode==DIRDB_NOPARENT)
 	{
@@ -936,24 +936,24 @@ static void _dirdbTagRemoveUntaggedAndSubmit(uint32_t node)
 	{
 		if ((dirdbData[i].parent==node) && dirdbData[i].name)
 		{
-			dirdbData[i].adbref=dirdbData[i].newadbref;
-			if (dirdbData[i].newmdbref==dirdbData[i].mdbref)
+			dirdbData[i].adb_ref=dirdbData[i].newadb_ref;
+			if (dirdbData[i].newmdb_ref==dirdbData[i].mdb_ref)
 			{
-				if (dirdbData[i].mdbref==DIRDB_NO_MDBREF)
+				if (dirdbData[i].mdb_ref==DIRDB_NO_MDBREF)
 				{
 					/* probably a dir */
 					_dirdbTagRemoveUntaggedAndSubmit(i);
 				} else {
-					/* mdbref is the same */
-					dirdbData[i].mdbref=dirdbData[i].newmdbref;
-					dirdbData[i].newmdbref=DIRDB_NO_MDBREF;
+					/* mdb_ref is the same */
+					dirdbData[i].mdb_ref=dirdbData[i].newmdb_ref;
+					dirdbData[i].newmdb_ref=DIRDB_NO_MDBREF;
 					dirdbUnref(i);
 				}
 			} else {
-				if (dirdbData[i].mdbref==DIRDB_NO_MDBREF)
+				if (dirdbData[i].mdb_ref==DIRDB_NO_MDBREF)
 				{
-					dirdbData[i].mdbref=dirdbData[i].newmdbref;
-					dirdbData[i].newmdbref=DIRDB_NO_MDBREF;
+					dirdbData[i].mdb_ref=dirdbData[i].newmdb_ref;
+					dirdbData[i].newmdb_ref=DIRDB_NO_MDBREF;
 					/* no need to unref/ref, since we are
 					 * balanced. Since somebody can have
 					 * named a file, the same name
@@ -962,16 +962,16 @@ static void _dirdbTagRemoveUntaggedAndSubmit(uint32_t node)
 					 */
 					_dirdbTagRemoveUntaggedAndSubmit(i);
 					/* this can probably be done more elegant later */
-				} else if (dirdbData[i].newmdbref==DIRDB_NO_MDBREF)
+				} else if (dirdbData[i].newmdb_ref==DIRDB_NO_MDBREF)
 				{
-					dirdbData[i].mdbref=DIRDB_NO_MDBREF;
+					dirdbData[i].mdb_ref=DIRDB_NO_MDBREF;
 					dirdbUnref(i);
 					/* same as above regarding renaming */
 					_dirdbTagRemoveUntaggedAndSubmit(i);
 					/* this can probably be done more elegant later */
 				} else {
-					dirdbData[i].mdbref=dirdbData[i].newmdbref;
-					dirdbData[i].newmdbref=DIRDB_NO_MDBREF;
+					dirdbData[i].mdb_ref=dirdbData[i].newmdb_ref;
+					dirdbData[i].newmdb_ref=DIRDB_NO_MDBREF;
 					dirdbUnref(i);
 				}
 			}
@@ -989,7 +989,7 @@ void dirdbTagRemoveUntaggedAndSubmit(void)
 		return;
 	}
 #endif
-	/* if parent has changed mdbref, we can't detect this.. NB NB NB */
+	/* if parent has changed mdb_ref, we can't detect this.. NB NB NB */
 	_dirdbTagRemoveUntaggedAndSubmit(tagparentnode);
 	if (tagparentnode!=DIRDB_NOPARENT)
 	{
@@ -999,20 +999,20 @@ void dirdbTagRemoveUntaggedAndSubmit(void)
 	dirdbDirty=1;
 }
 
-int dirdbGetMdbAdb(uint32_t *dirdbnode, uint32_t *mdbnode, uint32_t *adbref, int *first)
+int dirdbGetMdbAdb(uint32_t *dirdbnode, uint32_t *mdb_ref, uint32_t *adb_ref, int *first)
 {
 	if (*first)
 	{
 		*dirdbnode=0;
-		*adbref=DIRDB_NO_ADBREF;
+		*adb_ref=DIRDB_NO_ADBREF;
 		*first=0;
 	} else
 		(*dirdbnode)++;
 	for (;*dirdbnode<dirdbNum;(*dirdbnode)++)
-		if ((dirdbData[*dirdbnode].name)&&(dirdbData[*dirdbnode].mdbref!=DIRDB_NO_MDBREF))
+		if ((dirdbData[*dirdbnode].name)&&(dirdbData[*dirdbnode].mdb_ref!=DIRDB_NO_MDBREF))
 		{
-			*mdbnode=dirdbData[*dirdbnode].mdbref;
-			*adbref=dirdbData[*dirdbnode].adbref;
+			*mdb_ref=dirdbData[*dirdbnode].mdb_ref;
+			*adb_ref=dirdbData[*dirdbnode].adb_ref;
 			return 0;
 		}
 	return -1;

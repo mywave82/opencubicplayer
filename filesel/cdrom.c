@@ -308,7 +308,7 @@ static int cdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 			entry.dirdbfullpath=cdroms[i].dirdbnode;
 			dirdbRef(entry.dirdbfullpath); /* overkill */
 			entry.flags=MODLIST_FLAG_DIR;
-			entry.fileref=0xffffffff;
+			entry.mdb_ref=0xffffffff;
 			entry.adb_ref=0xffffffff;
 			entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=0;
 			modlist_append(ml, &entry);
@@ -371,19 +371,19 @@ static int cdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 								entry.drive=drive;
 								entry.dirdbfullpath=dirdbFindAndRef(path, buffer);
 								entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-								if ((entry.fileref=mdbGetModuleReference(entry.shortname, 0))==0xffffffff)
+								if ((entry.mdb_ref=mdbGetModuleReference(entry.shortname, 0))==0xffffffff)
 								{
 									dirdbUnref(entry.dirdbfullpath);
 									return 0;
 								}
-								if (mdbGetModuleInfo(&mi, entry.fileref))
+								if (mdbGetModuleInfo(&mi, entry.mdb_ref))
 								{
 									mi.modtype=mtCDA;
 									mi.channels=2;
 									mi.playtime=(tocentryN.cdte_addr.lba - tocentry.cdte_addr.lba)/CD_FRAMES;
 									strcpy(mi.comment, cdroms[j].vdev);
 									strcpy(mi.modname, "CDROM audio track");
-									mdbWriteModuleInfo(entry.fileref, &mi);
+									mdbWriteModuleInfo(entry.mdb_ref, &mi);
 								}
 								entry.adb_ref=j; /* nasty hack, but hey.. it is free of use */
 #warning ADB_REF hack used here
@@ -403,19 +403,19 @@ static int cdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 						entry.drive=drive;
 						entry.dirdbfullpath=dirdbFindAndRef(path, buffer);
 						entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-						if ((entry.fileref=mdbGetModuleReference(entry.shortname, 0))==0xffffffff)
+						if ((entry.mdb_ref=mdbGetModuleReference(entry.shortname, 0))==0xffffffff)
 						{
 							dirdbUnref(entry.dirdbfullpath);
 							return 0;
 						}
-						if (mdbGetModuleInfo(&mi, entry.fileref))
+						if (mdbGetModuleInfo(&mi, entry.mdb_ref))
 						{
 							mi.modtype=mtCDA;
 							mi.channels=2;
 							mi.playtime=(lastlba - initlba)/CD_FRAMES;
 							strcpy(mi.comment, cdroms[j].vdev);
 							strcpy(mi.modname, "CDROM audio disc");
-							mdbWriteModuleInfo(entry.fileref, &mi);
+							mdbWriteModuleInfo(entry.mdb_ref, &mi);
 						}
 						entry.adb_ref=j; /* nasty hack, but hey.. it is free of use */
 #warning ADB_REF hack used here

@@ -108,9 +108,9 @@ static int mlSubScan(const uint32_t dirdbnode, int mlTop)
 			}
 		} else if (mle->flags&MODLIST_FLAG_FILE)
 		{
-			if (!mdbInfoRead(mle->fileref))
+			if (!mdbInfoRead(mle->mdb_ref))
 				mdbScan(mle);
-			dirdbMakeMdbAdbRef(mle->dirdbfullpath, mle->fileref, mle->adb_ref);
+			dirdbMakeMdbAdbRef(mle->dirdbfullpath, mle->mdb_ref, mle->adb_ref);
 		}
 	}
 	modlist_free(ml);
@@ -138,17 +138,25 @@ static int mlScan(const uint32_t dirdbnode)
 	return 0;
 }
 
+/* can never return a FILE handle */
 static FILE *mlSourcesAdd(struct modlistentry *entry)
 {
 	unsigned int mlTop=mlDrawBox();
 	int editpath=0;
 
 	/* these are for editing the path */
-	char str[PATH_MAX+6];
+	int str_size=512;
+	char *str=malloc(str_size);
 	unsigned int curpos;
 	unsigned int cmdlen;
 	int insmode=1;
 	unsigned int scrolled=0;
+
+	if (!str)
+	{
+		fprintf (stderr, "mlSourcesAdd(): str=malloc() failed\n");
+		return NULL;
+	}
 
 	strcpy(str, "file:/");
 	curpos=strlen(str);
@@ -173,30 +181,42 @@ static FILE *mlSourcesAdd(struct modlistentry *entry)
 		{
 			if (editpath)
 			{
+				/* grow the buffer if needed */
+				if ((cmdlen+2) > str_size)
+				{
+					char *temp;
+					str_size += 512;
+					temp = realloc(str, str_size+=512);
+					if (!temp)
+					{
+						fprintf (stderr, "mlSourcesAdd(): str=realloc() failed\n");
+						free (str);
+						return NULL;
+					}
+					str = temp;
+				}
+
 				if (insmode)
 				{
-					if (cmdlen<(PATH_MAX+5))
-					{
-						memmove(str+curpos+1, str+curpos, cmdlen-curpos+1);
-						str[curpos]=key;
-						curpos++;
-						cmdlen++;
-					}
+					memmove(str+curpos+1, str+curpos, cmdlen-curpos+1);
+					str[curpos]=key;
+					curpos++;
+					cmdlen++;
 				} else if (curpos==cmdlen)
 				{
-					if (cmdlen<(PATH_MAX+5))
-					{
-						str[curpos++]=key;
-						str[curpos]=0;
-						cmdlen++;
-					}
-				} else
-				str[curpos++]=key;
+
+					str[curpos++]=key;
+					str[curpos]=0;
+					cmdlen++;
+				} else {
+					str[curpos++]=key;
+				}
 			}
 		} else switch (key)
 		{
 			case 27:
 				setcurshape(0);
+				free (str);
 				return NULL;
 			case KEY_LEFT:
 				if (editpath)
@@ -258,7 +278,10 @@ static FILE *mlSourcesAdd(struct modlistentry *entry)
 				} else {
 					uint32_t node;
 					if (str[0]==0)
+					{
+						free (str);
 						return NULL;
+					}
 					node=dirdbResolvePathAndRef(str);
 					mlScan(node);
 					dirdbUnref(node);
@@ -301,7 +324,7 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 
 		entry.drive=drive;
 		entry.flags=MODLIST_FLAG_DIR;
-		entry.fileref=0xffffffff;
+		entry.mdb_ref=0xffffffff;
 		entry.adb_ref=0xffffffff;
 		entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=0;
 
@@ -331,9 +354,9 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 	{
 		int first=1;
 		uint32_t dirdbnode;
-		uint32_t mdbref;
-		uint32_t adbref;
-		while (!dirdbGetMdbAdb(&dirdbnode, &mdbref, &adbref, &first))
+		uint32_t mdb_ref;
+		uint32_t adb_ref;
+		while (!dirdbGetMdbAdb(&dirdbnode, &mdb_ref, &adb_ref, &first))
 		{
 			char cachefile[NAME_MAX+1];
 			dirdbGetname(dirdbnode, cachefile);
@@ -344,9 +367,9 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 			entry.drive=dmFILE;
 			entry.dirdbfullpath=dirdbnode; /*dirdbResolvePathAndRef(files[i].name);*/
 			entry.flags=MODLIST_FLAG_FILE;
-			entry.fileref=mdbref;
-			entry.adb_ref=adbref;
-			if (adbref==DIRDB_NO_ADBREF)
+			entry.mdb_ref=mdb_ref;
+			entry.adb_ref=adb_ref;
+			if (adb_ref==DIRDB_NO_ADBREF)
 			{
 				entry.Read=dosfile_Read;
 				entry.ReadHeader=dosfile_ReadHeader;
@@ -455,15 +478,15 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 						char buffer[PATH_MAX+1];
 						int first=1;
 						uint32_t dirdbnode;
-						uint32_t mdbref;
-						uint32_t adbref;
+						uint32_t mdb_ref;
+						uint32_t adb_ref;
 
 						setcurshape(0);
 
 						for (i=0;i<cmdlen;i++)
 							str[i]=toupper(str[i]);
 
-						while (!dirdbGetMdbAdb(&dirdbnode, &mdbref, &adbref, &first))
+						while (!dirdbGetMdbAdb(&dirdbnode, &mdb_ref, &adb_ref, &first))
 						{
 							char cachefile[NAME_MAX+1];
 							struct moduleinfostruct info;
@@ -475,7 +498,7 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 							if (strstr(buffer, str))
 								goto add;
 
-							mdbGetModuleInfo(&info, mdbref);
+							mdbGetModuleInfo(&info, mdb_ref);
 
 							for (j=0;j<sizeof(info.name);j++)
 								buffer[j]=toupper(info.name[j]);
@@ -511,9 +534,9 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 								entry.drive=dmFILE;
 								entry.dirdbfullpath=dirdbnode; /*dirdbResolvePathAndRef(files[i].name);*/
 								entry.flags=MODLIST_FLAG_FILE;
-								entry.fileref=mdbref;
-								entry.adb_ref=adbref;
-								if (adbref==DIRDB_NO_ADBREF)
+								entry.mdb_ref=mdb_ref;
+								entry.adb_ref=adb_ref;
+								if (adb_ref==DIRDB_NO_ADBREF)
 								{
 									entry.Read=dosfile_Read;
 									entry.ReadHeader=dosfile_ReadHeader;

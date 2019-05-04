@@ -806,7 +806,7 @@ static int arcReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 			m.ReadHeader=adb_ReadHeader;
 			m.ReadHandle=adb_ReadHandle;
 			fs12name(m.shortname, name);
-			m.fileref=mdbGetModuleReference(m.shortname, size);
+			m.mdb_ref=mdbGetModuleReference(m.shortname, size);
 			m.adb_ref=adb_ref;
 #if 0
 			m.modinfo.gen.size=size;

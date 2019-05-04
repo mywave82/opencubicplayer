@@ -103,13 +103,13 @@ const char *mdbGetModTypeString(unsigned char type)
 	return fsTypeNames[type&0xFF];
 }
 
-int mdbGetModuleType(uint32_t fileref)
+int mdbGetModuleType(uint32_t mdb_ref)
 {
-	if (fileref>=mdbNum)
+	if (mdb_ref>=mdbNum)
 		return -1;
-	if ((mdbData[fileref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL))
+	if ((mdbData[mdb_ref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL))
 		return -1;
-	return mdbData[fileref].gen.modtype;
+	return mdbData[mdb_ref].gen.modtype;
 }
 
 uint8_t mdbReadModType(const char *str)
@@ -123,13 +123,13 @@ uint8_t mdbReadModType(const char *str)
 }
 
 
-int mdbInfoRead(uint32_t fileref)
+int mdbInfoRead(uint32_t mdb_ref)
 {
-	if (fileref>=mdbNum)
+	if (mdb_ref>=mdbNum)
 		return -1;
-	if ((mdbData[fileref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL))
+	if ((mdbData[mdb_ref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL))
 		return -1;
-	return mdbData[fileref].gen.modtype!=mtUnRead;
+	return mdbData[mdb_ref].gen.modtype!=mtUnRead;
 }
 
 /* This thing will end up with a register of all valid pre-interprators for modules and friends
@@ -219,16 +219,16 @@ static uint32_t mdbGetNew(void)
 	return i;
 }
 
-int mdbWriteModuleInfo(uint32_t fileref, struct moduleinfostruct *m)
+int mdbWriteModuleInfo(uint32_t mdb_ref, struct moduleinfostruct *m)
 {
-	if (fileref>=mdbNum)
+	if (mdb_ref>=mdbNum)
 	{
-		fprintf(stderr, "mdbWriteModuleInfo, fileref(%d)<mdbNum(%d)\n", fileref, mdbNum);
+		fprintf(stderr, "mdbWriteModuleInfo, mdb_ref(%d)<mdbNum(%d)\n", mdb_ref, mdbNum);
 		return 0;
 	}
-	if ((mdbData[fileref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL))
+	if ((mdbData[mdb_ref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL))
 	{
-		 fprintf(stderr, "mdbWriteModuleInfo (mdbData[fileref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL) Failed\n");
+		 fprintf(stderr, "mdbWriteModuleInfo (mdbData[mdb_ref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL) Failed\n");
 		return 0;
 	}
 
@@ -256,21 +256,21 @@ int mdbWriteModuleInfo(uint32_t fileref, struct moduleinfostruct *m)
 	{
 		m->compref=mdbGetNew();
 		if (m->compref!=0xFFFFFFFF)
-			memcpy(mdbData+m->compref, &m->flags2, 70);
+			memcpy(mdbData+m->compref, &m->flags2, sizeof(*mdbData));
 	}
 	if (m->flags3&MDB_USED)
 	{
 		m->comref=mdbGetNew();
 		if (m->comref!=0xFFFFFFFF)
-			memcpy(mdbData+m->comref, &m->flags3, 70);
+			memcpy(mdbData+m->comref, &m->flags3, sizeof(*mdbData));
 	}
 	if (m->flags4&MDB_USED)
 	{
 		m->futref=mdbGetNew();
 		if (m->futref!=0xFFFFFFFF)
-			memcpy(mdbData+m->futref, &m->flags4, 70);
+			memcpy(mdbData+m->futref, &m->flags4, sizeof(*mdbData));
 	}
-	memcpy(mdbData+fileref, m, 70);
+	memcpy(mdbData+mdb_ref, m, sizeof(*mdbData));
 	mdbDirty=1;
 	return 1;
 }
@@ -280,7 +280,7 @@ void mdbScan(struct modlistentry *m)
 	if (!(m->flags&MODLIST_FLAG_FILE))
 		return;
 
-	if (!mdbInfoRead(m->fileref)) /* use mdbReadInfo again here ? */
+	if (!mdbInfoRead(m->mdb_ref)) /* use mdbReadInfo again here ? */
 	{
 		struct moduleinfostruct mdbEditBuf;
 		FILE *f;
@@ -288,10 +288,10 @@ void mdbScan(struct modlistentry *m)
 			return;
 		if (!(f=m->ReadHandle(m)))
 			return;
-		mdbGetModuleInfo(&mdbEditBuf, m->fileref);
+		mdbGetModuleInfo(&mdbEditBuf, m->mdb_ref);
 		mdbReadInfo(&mdbEditBuf, f);
 		fclose(f);
-		mdbWriteModuleInfo(m->fileref, &mdbEditBuf);
+		mdbWriteModuleInfo(m->mdb_ref, &mdbEditBuf);
 	}
 }
 
@@ -584,12 +584,12 @@ uint32_t mdbGetModuleReference(const char *name, uint32_t size)
 	return (uint32_t)i;
 }
 
-int mdbGetModuleInfo(struct moduleinfostruct *m, uint32_t fileref)
+int mdbGetModuleInfo(struct moduleinfostruct *m, uint32_t mdb_ref)
 {
 	memset(m, 0, sizeof(struct moduleinfostruct));
-	if (fileref>=mdbNum) /* needed, since we else might index mdbData wrong */
+	if (mdb_ref>=mdbNum) /* needed, since we else might index mdbData wrong */
 		goto invalid;
-	if ((mdbData[fileref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL))
+	if ((mdbData[mdb_ref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL))
 	{
 invalid:
 		m->modtype=0xFF;
@@ -598,12 +598,12 @@ invalid:
 		m->futref=0xFFFFFFFF;
 		return 0;
 	}
-	memcpy(m, mdbData+fileref, 70);
+	memcpy(m, mdbData+mdb_ref, sizeof(*mdbData));
 	if (m->compref!=0xFFFFFFFF)
-		memcpy(&m->flags2, mdbData+m->compref, 70);
+		memcpy(&m->flags2, mdbData+m->compref, sizeof(*mdbData));
 	if (m->comref!=0xFFFFFFFF)
-		memcpy(&m->flags3, mdbData+m->comref, 70);
+		memcpy(&m->flags3, mdbData+m->comref, sizeof(*mdbData));
 	if (m->futref!=0xFFFFFFFF)
-		memcpy(&m->flags4, mdbData+m->futref, 70);
+		memcpy(&m->flags4, mdbData+m->futref, sizeof(*mdbData));
 	return 1;
 }

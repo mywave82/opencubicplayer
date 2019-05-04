@@ -299,7 +299,7 @@ static void dosReadDirChild(struct modlist *ml,
 				if ((fnmatch(mask, childpath, FNM_CASEFOLD))||(!fsIsModule(curext)))
 					goto out;
 #endif
-				retval.fileref=mdbGetModuleReference(retval.shortname, st.st_size);
+				retval.mdb_ref=mdbGetModuleReference(retval.shortname, st.st_size);
 				retval.adb_ref=0xffffffff;
 				retval.flags=MODLIST_FLAG_FILE;
 			}
@@ -614,7 +614,7 @@ int fsGetPrevFile(char *path, struct moduleinfostruct *info, FILE **file)
 			break;
 	}
 
-	mdbGetModuleInfo(info, m->fileref);
+	mdbGetModuleInfo(info, m->mdb_ref);
 
 	dirdbGetFullName(m->dirdbfullpath, path, 0);
 
@@ -626,12 +626,12 @@ int fsGetPrevFile(char *path, struct moduleinfostruct *info, FILE **file)
 	} else
 		*file=NULL;
 
-	if (!mdbInfoRead(m->fileref)&&*file)
+	if (!mdbInfoRead(m->mdb_ref)&&*file)
 	{
 		mdbReadInfo(info, *file);
 		fseek(*file, 0, SEEK_SET);
-		mdbWriteModuleInfo(m->fileref, info);
-		mdbGetModuleInfo(info, m->fileref);
+		mdbWriteModuleInfo(m->mdb_ref, info);
+		mdbGetModuleInfo(info, m->mdb_ref);
 	}
 
 	retval=1;
@@ -678,7 +678,7 @@ int fsGetNextFile(char *path, struct moduleinfostruct *info, FILE **file)
 			return retval;
 	}
 
-	mdbGetModuleInfo(info, m->fileref);
+	mdbGetModuleInfo(info, m->mdb_ref);
 
 	dirdbGetFullName(m->dirdbfullpath, path, 0);
 
@@ -690,12 +690,12 @@ int fsGetNextFile(char *path, struct moduleinfostruct *info, FILE **file)
 	} else
 		*file=NULL;
 
-	if (!mdbInfoRead(m->fileref)&&*file)
+	if (!mdbInfoRead(m->mdb_ref)&&*file)
 	{
 		mdbReadInfo(info, *file);
 		fseek(*file, 0, SEEK_SET);
-		mdbWriteModuleInfo(m->fileref, info);
-		mdbGetModuleInfo(info, m->fileref);
+		mdbWriteModuleInfo(m->mdb_ref, info);
+		mdbGetModuleInfo(info, m->mdb_ref);
 	}
 
 	retval=1;
@@ -892,7 +892,7 @@ static void displayfile(const unsigned int y, const unsigned int x, const unsign
 	if (m->flags&MODLIST_FLAG_FILE)
 	{
 		col=0x07;
-		mdbGetModuleInfo(&mi, m->fileref);
+		mdbGetModuleInfo(&mi, m->mdb_ref);
 		if (mi.flags1&MDB_PLAYLIST)
 		{
 			col=0x0f;
@@ -1118,7 +1118,7 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 
 		if (mle->flags&MODLIST_FLAG_FILE)
 		{
-			mdbGetModuleInfo(&mi, mle->fileref);
+			mdbGetModuleInfo(&mi, mle->mdb_ref);
 			modtype=mdbGetModTypeString(mi.modtype);
 		} else {
 			memset(&mi, 0, sizeof(mi));
@@ -2036,9 +2036,9 @@ static void fsEditDate(int y, int x, uint32_t *date)
 	}
 }
 
-static int fsEditFileInfo(struct modlistentry *fileref)
+static int fsEditFileInfo(struct modlistentry *me)
 {
-	if (!mdbGetModuleInfo(&mdbEditBuf, fileref->fileref))
+	if (!mdbGetModuleInfo(&mdbEditBuf, me->mdb_ref))
 		return 1;
 
 	if (plScrWidth>=132)
@@ -2102,7 +2102,7 @@ static int fsEditFileInfo(struct modlistentry *fileref)
 		typeidx[4]=0;
 		mdbEditBuf.modtype=mdbReadModType(typeidx);
 	}*/
-	if (!mdbWriteModuleInfo(fileref->fileref, &mdbEditBuf))
+	if (!mdbWriteModuleInfo(me->mdb_ref, &mdbEditBuf))
 		return 0;
 	return 1;
 }
@@ -2224,14 +2224,14 @@ signed int fsFileSelect(void)
 
 		if (!ekbhit()&&fsScanNames)
 		{
-			if (curscanned||(mdbInfoRead(m->fileref)))
+			if (curscanned||(mdbInfoRead(m->mdb_ref)))
 			{
 				while (((!win)||(scanposp>=playlist->num)) && (scanposf<currentdir->num))
 				{
 					struct modlistentry *scanm;
 					if ((scanm=modlist_get(currentdir, scanposf++)))
 						if ((scanm->flags&MODLIST_FLAG_FILE)&&(!(scanm->flags&MODLIST_FLAG_VIRTUAL)))
-							if (!mdbInfoRead(scanm->fileref))
+							if (!mdbInfoRead(scanm->mdb_ref))
 							{
 								mdbScan(scanm);
 								break;
@@ -2242,7 +2242,7 @@ signed int fsFileSelect(void)
 					struct modlistentry *scanm;
 					if ((scanm=modlist_get(playlist, scanposp++)))
 						if ((scanm->flags&MODLIST_FLAG_FILE)&&(!(scanm->flags&MODLIST_FLAG_VIRTUAL)))
-							if (!mdbInfoRead(scanm->fileref))
+							if (!mdbInfoRead(scanm->mdb_ref))
 							{
 								mdbScan(scanm);
 								break;
@@ -2350,10 +2350,10 @@ signed int fsFileSelect(void)
 			case KEY_ALT_R:
 				if (m->flags&MODLIST_FLAG_FILE)
 				{
-					if (!mdbGetModuleInfo(&mdbEditBuf, m->fileref))
+					if (!mdbGetModuleInfo(&mdbEditBuf, m->mdb_ref))
 						return -1;
 					mdbEditBuf.modtype = mtUnRead;
-					if (!mdbWriteModuleInfo(m->fileref, &mdbEditBuf))
+					if (!mdbWriteModuleInfo(m->mdb_ref, &mdbEditBuf))
 						return -1;
 				}
 			case KEY_CTRL_BS:
@@ -2637,7 +2637,7 @@ signed int fsFileSelect(void)
     case 0x2500:  // alt-k TODO keys.... alt-k is now in use by key-helper
       if (editmode||win)
         break;
-      if (m.fileref<=0xFFFC)
+      if (m.mdb_ref<=0xFFFC)
         if (fsQueryKill(m))
           if (!fsScanDir(2))
             return -1;
@@ -2648,7 +2648,7 @@ signed int fsFileSelect(void)
     case 0x3200:  // alt-m TODO keys !!!!!!!! STRANGE THINGS HAPPENS IF YOU ENABLE HIS UNDER W32!!
       if (editmode||win)
         break;
-      if (m.fileref<=0xFFFC)
+      if (m.mdb_ref<=0xFFFC)
         if (fsQueryMove(m))
           if (!fsScanDir(1))
             return -1;
@@ -2656,16 +2656,16 @@ signed int fsFileSelect(void)
 #endif
 
     case 0x3000: // alt-b TODO keys
-      if (m.fileref<=0xFFFC)
+      if (m.mdb_ref<=0xFFFC)
       {
-        mdbGetModuleInfo(mdbEditBuf, m.fileref);
+        mdbGetModuleInfo(mdbEditBuf, m.mdb_ref);
         mdbEditBuf.flags1^=MDB_BIGMODULE;
-        mdbWriteModuleInfo(m.fileref, mdbEditBuf);
+        mdbWriteModuleInfo(m.mdb_ref, mdbEditBuf);
       }
       break;
 
     case 0x1100: // alt-w TODO keys
-      if (m.fileref<0xFFFC)
+      if (m.mdb_ref<0xFFFC)
         fsSaveModInfo(m);
       break;
     case 0x1e00: // alt-a TODO keys
@@ -3377,17 +3377,17 @@ char mifMemRead(const char *name, unsigned short size, char *ptr)
   char fname[12];
   unsigned long fsize;
   unsigned char flags=0;
-  unsigned short fileref=0xFFFF;
+  unsigned short mdb_ref=0xFFFF;
   while (1)
   {
     if (ptr==endp)
       close=1;
 
-    if (close&&(fileref!=0xFFFF))
+    if (close&&(mdb_ref!=0xFFFF))
     {
-      if (!mdbWriteModuleInfo(fileref, mdbEditBuf))
+      if (!mdbWriteModuleInfo(mdb_ref, mdbEditBuf))
         return 0;
-      fileref=0xFFFF;
+      mdb_ref=0xFFFF;
     }
     close=0;
 
@@ -3396,10 +3396,10 @@ char mifMemRead(const char *name, unsigned short size, char *ptr)
 
     if (flags==3)
     {
-      fileref=mdbGetModuleReference(fname, fsize);
-      if (fileref==0xFFFF)
+      mdb_ref=mdbGetModuleReference(fname, fsize);
+      if (mdb_ref==0xFFFF)
         return 0;
-      if (!mdbGetModuleInfo(mdbEditBuf, fileref))
+      if (!mdbGetModuleInfo(mdbEditBuf, mdb_ref))
         return 0;
       flags=0;
     }
@@ -3552,10 +3552,10 @@ static char mifRead(const char *name, unsigned short size, const char *path)
   return stat;
 }
 
-static void mifAppendInfo(short f, unsigned short fileref)
+static void mifAppendInfo(short f, unsigned short mdb_ref)
 {
   char buf[60];
-  modinfoentry *m=&mdbData[fileref];
+  modinfoentry *m=&mdbData[mdb_ref];
   strcpy(buf, "MODULE ");
   fsConv12FileName(buf+strlen(buf), m->gen.name);
   strcat(buf, "\r\nSIZE ");
@@ -3783,7 +3783,7 @@ static int dosReadDir(modlist &ml, unsigned short dirref, const char *mask, unsi
 
       fsConvFileName12(m.name, "A:", "");
       *m.name+=i;
-      m.fileref=0xFFFF;
+      m.mdb_ref=0xFFFF;
       m.dirref=dmGetDriveDir(i+1);
       if (!mdbAppendNew(ml,m))
         return 0;
@@ -3849,7 +3849,7 @@ static int dosReadDir(modlist &ml, unsigned short dirref, const char *mask, unsi
 				{
 					if (opt&RD_PUTSUBS)
 					{
-						m.fileref=0xFFFE;
+						m.mdb_ref=0xFFFE;
 						if (!ml.append(m))
 							return 0;
 					}
@@ -3858,7 +3858,7 @@ static int dosReadDir(modlist &ml, unsigned short dirref, const char *mask, unsi
 				{
 					if ((opt&RD_PUTSUBS)&&(fsPutArcs||!(opt&RD_ARCSCAN)))
 					{
-						m.fileref=0xFFFC;
+						m.mdb_ref=0xFFFC;
 						if (!ml.append(m))
 							return 0;
 					}
@@ -3883,8 +3883,8 @@ static int dosReadDir(modlist &ml, unsigned short dirref, const char *mask, unsi
 				continue;
 
 			m.dirref=dirref;
-			m.fileref=mdbGetModuleReference(m.name, fi.size);
-			if (m.fileref==0xFFFF)
+			m.mdb_ref=mdbGetModuleReference(m.name, fi.size);
+			if (m.mdb_ref==0xFFFF)
 				return 0;
 			if (!ml.append(m))
 				return 0;
@@ -4008,7 +4008,7 @@ static void fsSaveModInfo(const modlistentry &m)
   if (f<0)
     return;
   write(f, "MODINFO1\r\n\r\n", 12);
-  mifAppendInfo(f, m.fileref);
+  mifAppendInfo(f, m.mdb_ref);
   close(f);
 }
 
@@ -4035,9 +4035,9 @@ static void fsSaveModInfoML(const modlist &ml)
   for (i=0; i<ml.num; i++)
   {
     ml.get(&m, i, 1);
-    if (m.fileref<0xFFFC)
+    if (m.mdb_ref<0xFFFC)
     {
-      mifAppendInfo(f, m.fileref);
+      mifAppendInfo(f, m.mdb_ref);
       write(f, "\r\n", 2);
     }
   }
@@ -4214,7 +4214,7 @@ static int fsQueryMove(modlistentry &m)
   dmGetPath(path, m.dirref);
   if (isarchivepath(path))
     srctype=1;
-  if (m.fileref==0xFFFC)
+  if (m.mdb_ref==0xFFFC)
     srctype=2;
 
   char name[_MAX_NAME];
@@ -4223,7 +4223,7 @@ static int fsQueryMove(modlistentry &m)
   if (*fsDefMovePath)
     strcpy(path, fsDefMovePath);
   else
-    dmGetPath(path, (m.fileref==0xFFFC)?dmGetParent(m.dirref):m.dirref);
+    dmGetPath(path, (m.mdb_ref==0xFFFC)?dmGetParent(m.dirref):m.dirref);
   if (!fsEditPath(path))
     return 0;
   dmFullPath(path);
@@ -4271,7 +4271,7 @@ static int fsQueryMove(modlistentry &m)
   if ((desttype==1)&&(srctype==2))
     return 0;
 
-  dmGetPath(path2, (m.fileref==0xFFFC)?dmGetParent(m.dirref):m.dirref);
+  dmGetPath(path2, (m.mdb_ref==0xFFFC)?dmGetParent(m.dirref):m.dirref);
   strcat(path2, name);
   if ((desttype==0)&&(srctype!=1))
     return movefile(path, path2);
@@ -4298,7 +4298,7 @@ static unsigned char fsQueryKill(modlistentry &m)
   fsConv12FileName(name, m.name);
   dmGetPath(path, m.dirref);
 
-  if ((m.fileref!=0xFFFC)&&isarchivepath(path))
+  if ((m.mdb_ref!=0xFFFC)&&isarchivepath(path))
   {
     char ext[_MAX_EXT];
     path[strlen(path)-1]=0;
@@ -4318,7 +4318,7 @@ static unsigned char fsQueryKill(modlistentry &m)
   }
   else
   {
-    if (m.fileref!=0xFFFC)
+    if (m.mdb_ref!=0xFFFC)
       strcat(path, name);
     else
       path[strlen(path)-1]=0;
@@ -4383,12 +4383,12 @@ signed char fsFileSelect()
 
     if (!ekbhit()&&fsScanNames)
     {
-      if (curscanned||(m.fileref>=0xFFFC)||mdbInfoRead(m.fileref))
+      if (curscanned||(m.mdb_ref>=0xFFFC)||mdbInfoRead(m.mdb_ref))
       {
         while (scanpos<viewlist.num)
         {
           viewlist.get(&m, scanpos++, 1);
-          if ((m.fileref<0xFFFC)&&!mdbInfoRead(m.fileref))
+          if ((m.mdb_ref<0xFFFC)&&!mdbInfoRead(m.mdb_ref))
           {
             mdbScan(m);
             break;
@@ -4492,9 +4492,9 @@ signed char fsFileSelect()
       break;
     case 13:
       if (editmode)
-        if (m.fileref<0xFFFC)
+        if (m.mdb_ref<0xFFFC)
         {
-          if (!fsEditFileInfo(m.fileref))
+          if (!fsEditFileInfo(m.mdb_ref))
             return -1;
           break;
         }
@@ -4506,7 +4506,7 @@ signed char fsFileSelect()
       }
       else
       {
-        if (m.fileref<0xFFFC)
+        if (m.mdb_ref<0xFFFC)
         {
           nextplay=m;
           isnextplay=1;
@@ -4526,7 +4526,7 @@ signed char fsFileSelect()
             for (i=viewlist.num-1; i>=0; i--)
             {
               viewlist.get(&m, i, 1);
-              if ((m.fileref<0xFFFC)||(m.dirref!=parentdir))
+              if ((m.mdb_ref<0xFFFC)||(m.dirref!=parentdir))
                 continue;
               if (memcmp(m.name, "..", 2)&&(m.name[1]!=':'))
               {
@@ -4592,13 +4592,13 @@ signed char fsFileSelect()
       }
       else
       {
-        if (m.fileref==0xFFFC)
+        if (m.mdb_ref==0xFFFC)
         {
           if (!fsReadDir(playlist, m.dirref, curmask, 0))
             return -1;
         }
         else
-          if (m.fileref<0xFFFC)
+          if (m.mdb_ref<0xFFFC)
             if (!playlist.append(m))
               return -1;
       }
@@ -4620,14 +4620,14 @@ signed char fsFileSelect()
       else
       {
         long f;
-        if (m.fileref<0xFFFC)
+        if (m.mdb_ref<0xFFFC)
         {
           f=playlist.find(m);
           if (f!=-1)
             playlist.remove(f, 1);
         }
         else
-        if (m.fileref==0xFFFC)
+        if (m.mdb_ref==0xFFFC)
         {
           modlist tl;
           if (!fsReadDir(tl, m.dirref, curmask, 0))
@@ -4650,7 +4650,7 @@ signed char fsFileSelect()
       for (i=0; i<viewlist.num; i++)
       {
         viewlist.get(&m, i, 1);
-        if (m.fileref<0xFFFC)
+        if (m.mdb_ref<0xFFFC)
           if (!playlist.append(m))
             return -1;
       }
@@ -4666,7 +4666,7 @@ signed char fsFileSelect()
     case 0x2500:  /* alt-k */
       if (editmode||win)
         break;
-      if (m.fileref<=0xFFFC)
+      if (m.mdb_ref<=0xFFFC)
         if (fsQueryKill(m))
           if (!fsScanDir(2))
             return -1;
@@ -4677,7 +4677,7 @@ signed char fsFileSelect()
     case 0x3200:  /* alt-m !!!!!!!! STRANGE THINGS HAPPENS IF YOU ENABLE HIS UNDER W32!! */
       if (editmode||win)
         break;
-      if (m.fileref<=0xFFFC)
+      if (m.mdb_ref<=0xFFFC)
         if (fsQueryMove(m))
           if (!fsScanDir(1))
             return -1;
@@ -4685,11 +4685,11 @@ signed char fsFileSelect()
 #endif
 
     case 0x3000: /* alt-b */
-      if (m.fileref<=0xFFFC)
+      if (m.mdb_ref<=0xFFFC)
       {
-        mdbGetModuleInfo(mdbEditBuf, m.fileref);
+        mdbGetModuleInfo(mdbEditBuf, m.mdb_ref);
         mdbEditBuf.flags1^=MDB_BIGMODULE;
-        mdbWriteModuleInfo(m.fileref, mdbEditBuf);
+        mdbWriteModuleInfo(m.mdb_ref, mdbEditBuf);
       }
       break;
 
@@ -4700,7 +4700,7 @@ signed char fsFileSelect()
       break;
 
     case 0x1100: /* alt-w */
-      if (m.fileref<0xFFFC)
+      if (m.mdb_ref<0xFFFC)
         fsSaveModInfo(m);
       break;
     case 0x1e00: /* alt-a */

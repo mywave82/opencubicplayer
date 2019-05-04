@@ -136,7 +136,7 @@ void fsAddPlaylist(struct modlist *ml, const char *path, const char *mask, unsig
 				return;
 			}
 #endif
-			retval.fileref=mdbGetModuleReference(retval.shortname, st.st_size);
+			retval.mdb_ref=mdbGetModuleReference(retval.shortname, st.st_size);
 			retval.adb_ref=0xffffffff;
 			retval.flags=MODLIST_FLAG_FILE;
 		}

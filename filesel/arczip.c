@@ -307,15 +307,15 @@ static int adbZIPScan(const char *path)
 				if (fsScanInArc&&method_supported(hdr.method))
 				{
 					char shortname[12];
-					uint32_t fileref;
+					uint32_t mdb_ref;
 					fs12name(shortname, a.name);
-					fileref=mdbGetModuleReference(shortname, a.size);
-					if (fileref==0xffffffff)
+					mdb_ref=mdbGetModuleReference(shortname, a.size);
+					if (mdb_ref==0xffffffff)
 					{
 						close(extfd);
 						return 0;
 					}
-					if (!mdbInfoRead(fileref))
+					if (!mdbInfoRead(mdb_ref))
 					{
 						struct moduleinfostruct mi;
 						int destlen = sizeof(mdbScanBuf);
@@ -331,10 +331,10 @@ static int adbZIPScan(const char *path)
 						}
 
 						if ((destlen = decode_partial(mdbScanBuf, destlen, adbScanBuf, srclen, hdr.method)))
-							if (mdbGetModuleInfo(&mi, fileref))
+							if (mdbGetModuleInfo(&mi, mdb_ref))
 							{
 								mdbReadMemInfo(&mi, mdbScanBuf, destlen); /* we do not care about the return-value. We do not want to decompress the file further */
-								mdbWriteModuleInfo(fileref, &mi);
+								mdbWriteModuleInfo(mdb_ref, &mi);
 							}
 					}
 				}

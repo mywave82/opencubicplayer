@@ -305,23 +305,23 @@ static int smpReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 			if (fsMatchFileName12(m.name, mask)) */
 			{
 				char npath[64];
-				m.fileref=mdbGetModuleReference(m.name, dev->devinfo.mem);
-				if (m.fileref==0xffffffff)
+				m.mdb_ref=mdbGetModuleReference(m.name, dev->devinfo.mem);
+				if (m.mdb_ref==0xffffffff)
 					goto out;
 				m.drive=drive;
 				strncpy(m.shortname, m.name, 12);
 				snprintf(npath, 64, "%s.DEV", hnd);
 				m.dirdbfullpath=dirdbFindAndRef(path, npath);
 				m.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-				if (mdbGetModuleType(m.fileref)!=mtDEVs)
+				if (mdbGetModuleType(m.mdb_ref)!=mtDEVs)
 				{
 					struct moduleinfostruct mi;
-					mdbGetModuleInfo(&mi, m.fileref);
+					mdbGetModuleInfo(&mi, m.mdb_ref);
 					mi.flags1|=MDB_VIRTUAL;
 					mi.channels=dev->devinfo.chan;
 					strcpy(mi.modname, dev->name);
 					mi.modtype=mtDEVs;
-					mdbWriteModuleInfo(m.fileref, &mi);
+					mdbWriteModuleInfo(m.mdb_ref, &mi);
 				}
 				modlist_append(ml, &m);
 				dirdbUnref(m.dirdbfullpath);

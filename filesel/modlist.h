@@ -13,7 +13,6 @@ struct modlistentry
 {
 	char shortname[12]; /* the name that we present in the filelists.. 8:3 format looks so nice... yuck... but i works*/
 	const struct dmDrive *drive;
-	// char fullname[PATH_MAX+1]; /* the very full path to this object */
 	uint32_t dirdbfullpath; /* full path */
 	char name[NAME_MAX+1]; /* the very lonely filename */
 
@@ -23,7 +22,7 @@ struct modlistentry
 #define MODLIST_FLAG_VIRTUAL  8
 #define MODLIST_FLAG_DRV      16
 	int flags;
-	uint32_t fileref;
+	uint32_t mdb_ref;
 	/* uint32_t dirref; */
 	uint32_t adb_ref; /* new, until dirref is re-created later perhaps */
 
