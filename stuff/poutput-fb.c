@@ -341,6 +341,7 @@ int fb_init(int minor)
 #else
 	fprintf(stderr, "fb:  reserved0=0x%04x reserved1=0x%04x reserved2=0x%04x\n", fix.reserved[0], fix.reserved[1], fix.reserved[2]);
 #endif
+#endif
 	if (ioctl(fd, FBIOGET_VSCREENINFO, &orgmode))
 	{
 		perror("fb: ioctl(1, FBIOGET_VSCREENINFO, &orgmode)");
