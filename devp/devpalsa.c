@@ -22,11 +22,16 @@
 
 // #define ALSA_DEBUG_OUTPUT 1
 
+#include "config.h"
+
 #ifdef ALSA_DEBUG_OUTPUT
 static int debug_output = -1;
 #endif
-
-#include "config.h"
+#ifdef ALSA_DEBUG
+#define debug_printf(...) fprintf (stderr, __VA_ARGS__)
+#else
+#define debug_printf(format, args...) ((void)0)
+#endif
 #define ALSA_PCM_NEW_HW_PARAMS_API
 #define ALSA_PCM_NEW_SW_PARAMS_API
 #include <alsa/asoundlib.h>
@@ -52,7 +57,9 @@ static snd_pcm_t *alsa_pcm = NULL;
 static snd_mixer_t *mixer = NULL;
 
 static snd_pcm_status_t *alsa_pcm_status=NULL;
+#if SND_LIB_VERSION < 0x01000e
 static snd_pcm_info_t *pcm_info = NULL;
+#endif
 static snd_pcm_hw_params_t *hwparams = NULL;
 static snd_pcm_sw_params_t *swparams = NULL;
 
@@ -89,7 +96,10 @@ static volatile int busy=0;
 uint32_t custom_dsp_mdb_ref=0xffffffff;
 uint32_t custom_mixer_mdb_ref=0xffffffff;
 
+/* 1.0.14rc1 added support for snd_device_name_hint */
+#if SND_LIB_VERSION < 0x01000e
 static int alsa_1_0_11_or_better;
+#endif
 
 static int mlDrawBox(void)
 {
@@ -154,25 +164,18 @@ static int getplaypos(void)
 		snd_pcm_sframes_t tmp;
 		int err;
 
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA: getplaypos()\n");
-		fprintf(stderr, "      snd_pcm_status(alsa_pcm, alsa_pcm_status) = ");
-#endif
-		if ((err=snd_pcm_status(alsa_pcm, alsa_pcm_status))<0)
+		debug_printf("ALSA_getplaypos()\n");
+
+		err=snd_pcm_status(alsa_pcm, alsa_pcm_status);
+		debug_printf("      snd_pcm_status(alsa_pcm, alsa_pcm_status) = %s\n", snd_strerror(-err));
+
+		if (err < 0)
 		{
-#ifdef ALSA_DEBUG
-			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
-			fprintf(stderr, "      snd_pcm_status() failed: %s\n", snd_strerror(-err));
+			fprintf(stderr, "ALSA: snd_pcm_status() failed: %s\n", snd_strerror(-err));
 		} else {
-#ifdef ALSA_DEBUG
-			fprintf(stderr, "ok\n");
-			fprintf(stderr, "      snd_pcm_status_get_delay(alsa_pcm_status = ");
-#endif
 			tmp=snd_pcm_status_get_delay(alsa_pcm_status);
-#ifdef ALSA_DEBUG
-			fprintf(stderr, "%d\n", (int)tmp);
-#endif
+
+			debug_printf("      snd_pcm_status_get_delay(alsa_pcm_status = %d\n", (int)tmp);
 			if (tmp<0)
 			{ /* we ignore buffer-underruns */
 				tmp=0;
@@ -181,20 +184,21 @@ static int getplaypos(void)
 				snd_pcm_sframes_t tmp1 = snd_pcm_status_get_avail_max(alsa_pcm_status);
 				snd_pcm_sframes_t tmp2 = snd_pcm_status_get_avail(alsa_pcm_status);
 				tmp = tmp1 - tmp2;
-#ifdef ALSA_DEBUG
-				fprintf(stderr, "      (no delay available) fallback:\n");
-				fprintf(stderr, "      snd_pcm_status_get_avail_max() = %d\n", (int)tmp1);
-				fprintf(stderr, "      snd_pcm_status_get_avail() = %d\n", (int)tmp2);
-				fprintf(stderr, "      => %d\n", (int)tmp);
-#endif
+
+				debug_printf("      (no delay available) fallback:\n");
+				debug_printf("      snd_pcm_status_get_avail_max() = %d\n", (int)tmp1);
+				debug_printf("      snd_pcm_status_get_avail() = %d\n", (int)tmp2);
+				debug_printf("      => %d\n", (int)tmp);
+
 				if (tmp<0)
+				{
 					tmp=0;
+				}
 			}
 			tmp<<=(bit16+stereo);
 
-			if (tmp>kernlen)
+			if (tmp<kernlen)
 			{
-			} else {
 				kernlen=tmp;
 			}
 			kernpos=(cachepos-kernlen+buflen)%buflen;
@@ -202,11 +206,12 @@ static int getplaypos(void)
 	}
 	retval=kernpos;
 	busy--;
-#ifdef ALSA_DEBUG
-	fprintf(stderr, " => %d\n", retval);
-#endif
+
+	debug_printf(" => %d\n", retval);
+
 	return retval;
 }
+
 /* more or less stolen from devposs */
 static void flush(void)
 {
@@ -219,28 +224,20 @@ static void flush(void)
 		return;
 	}
 
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ALSA: flush()\n");
-	fprintf(stderr, "      snd_pcm_status(alsa_pcm, alsa_pcm_status) = ");
-#endif
-	if ((err=snd_pcm_status(alsa_pcm, alsa_pcm_status))<0)
+	debug_printf("ALSA_flush()\n");
+
+	err=snd_pcm_status(alsa_pcm, alsa_pcm_status);
+	debug_printf("      snd_pcm_status(alsa_pcm, alsa_pcm_status) = %s\n", snd_strerror(-err));
+	if (err<0)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#else
 		fprintf(stderr, "ALSA: snd_pcm_status() failed: %s\n", snd_strerror(-err));
-#endif
 		busy--;
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok\n");
-	fprintf(stderr, "      snd_pcm_status_get_delay(alsa_pcm_status) = ");
-#endif
+
 	odelay=snd_pcm_status_get_delay(alsa_pcm_status);
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "%i\n", odelay);
-#endif
+	debug_printf("      snd_pcm_status_get_delay(alsa_pcm_status) = %d\n", odelay);
+
 	if (odelay<0)
 	{ /* we ignore buffer-underruns */
 		odelay=0;
@@ -249,14 +246,16 @@ static void flush(void)
 		snd_pcm_sframes_t tmp1 = snd_pcm_status_get_avail_max(alsa_pcm_status);
 		snd_pcm_sframes_t tmp2 = snd_pcm_status_get_avail(alsa_pcm_status);
 		odelay = tmp1 - tmp2;
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "      (no delay available) fallback:\n");
-		fprintf(stderr, "      snd_pcm_status_get_avail_max() = %d\n", (int)tmp1);
-		fprintf(stderr, "      snd_pcm_status_get_avail() = %d\n", (int)tmp2);
-		fprintf(stderr, "      => %d\n", (int)odelay);
-#endif
+
+		debug_printf("      (no delay available) fallback:\n");
+		debug_printf("      snd_pcm_status_get_avail_max() = %d\n", (int)tmp1);
+		debug_printf("      snd_pcm_status_get_avail() = %d\n", (int)tmp2);
+		debug_printf("      => %d\n", (int)odelay);
+
 		if (odelay<0)
+		{
 			odelay=0;
+		}
 	}
 	odelay<<=(bit16+stereo);
 
@@ -291,15 +290,20 @@ static void flush(void)
 		return;
 	}
 
-	tmp = snd_pcm_status_get_avail(alsa_pcm_status) << (bit16+stereo);
+	tmp = snd_pcm_status_get_avail(alsa_pcm_status);
+
+	debug_printf ("      snd_pcm_status_get_avail() = %d\n", tmp);
+
+	tmp = tmp << (bit16+stereo);
+
 	if (n > tmp)
 	{
 		n = tmp;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ALSA snd_pcm_writei(alsa_pcm, buffer, %i) = ", n>>(bit16+stereo));
-#endif
 	result=snd_pcm_writei(alsa_pcm, playbuf+cachepos, n>>(bit16+stereo));
+
+	debug_printf ("      snd_pcm_writei (%d) = %d\n", n>>(bit16+stereo), result);
+
 #ifdef ALSA_DEBUG_OUTPUT
 	if (result > 0)
 	{
@@ -308,21 +312,14 @@ static void flush(void)
 #endif
 	if (result<0)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-result));
-#endif
 		if (result==-EPIPE)
 		{
 			fprintf(stderr, "ALSA: Machine is too slow, calling snd_pcm_prepare()\n");
-			fprintf(stderr, "ALSA snd_pcm_prepare(alsa_pcm)");
 			snd_pcm_prepare(alsa_pcm); /* TODO, can this fail? */
+			debug_printf ("      snd_pcm_prepare()\n");
 		}
 		busy--;
 		return;
-#ifdef ALSA_DEBUG
-	} else {
-		fprintf(stderr, "ok\n");
-#endif
 	}
 	result<<=(bit16+stereo);
 	cachepos=(cachepos+result+buflen)%buflen;
@@ -335,20 +332,14 @@ static void flush(void)
 /* stolen from devposs */
 static void advance(unsigned int pos)
 {
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "advance: oldpos=%d newpos=%d add=%d (busy=%d)\n", bufpos, pos, (pos-bufpos+buflen)%buflen, busy);
-#endif
-	if (busy++)
-	{
-	}
+	debug_printf ("ALSA_advance: oldpos=%d newpos=%d add=%d (busy=%d)\n", bufpos, pos, (pos-bufpos+buflen)%buflen, busy);
+
+	busy++;
 
 	cachelen+=(pos-bufpos+buflen)%buflen;
 	bufpos=pos;
 
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "         cachelen=%d kernlen=%d sum=%d len=%d\n", cachelen, kernlen, cachelen+kernlen, buflen);
-#endif
-
+	debug_printf ("         cachelen=%d kernlen=%d sum=%d len=%d\n", cachelen, kernlen, cachelen+kernlen, buflen);
 
 	busy--;
 }
@@ -363,28 +354,22 @@ static uint32_t gettimer(void)
 		odelay=kernlen;
 	} else {
 		int err;
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA: gettimer()");
-		fprintf(stderr, "      snd_pcm_status(alsa_pcm, alsa_pcm_status) = ");
-#endif
-		if ((err=snd_pcm_status(alsa_pcm, alsa_pcm_status))<0)
+
+		debug_printf("ALSA_gettimer()");
+
+		err=snd_pcm_status(alsa_pcm, alsa_pcm_status);
+
+		debug_printf ("      snd_pcm_status(alsa_pcm, alsa_pcm_status) = %s\n", snd_strerror(-err));
+
+		if (err<0)
 		{
-#ifdef ALSA_DEBUG
-			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#else
 			fprintf(stderr, "ALSA: snd_pcm_status() failed: %s\n", snd_strerror(-err));
-#endif
 			odelay=kernlen;
 		} else {
-#ifdef ALSA_DEBUG
-			fprintf(stderr, "ok\n");
-			fprintf(stderr, "      snd_pcm_status_get_delay(alsa_pcm_status) = ");
-#endif
 
 			odelay=snd_pcm_status_get_delay(alsa_pcm_status);
-#ifdef ALSA_DEBUG
-			fprintf(stderr, "%i\n", odelay);
-#endif
+			debug_printf ("      snd_pcm_status_get_delay() = %d\n", odelay);
+
 			if (odelay<0)
 			{ /* we ignore buffer-underruns */
 				odelay=0;
@@ -393,14 +378,16 @@ static uint32_t gettimer(void)
 				snd_pcm_sframes_t tmp1 = snd_pcm_status_get_avail_max(alsa_pcm_status);
 				snd_pcm_sframes_t tmp2 = snd_pcm_status_get_avail(alsa_pcm_status);
 				odelay = tmp1 - tmp2;
-#ifdef ALSA_DEBUG
-				fprintf(stderr, "      (no delay available) fallback:\n");
-				fprintf(stderr, "      snd_pcm_status_get_avail_max() = %d\n", (int)tmp1);
-				fprintf(stderr, "      snd_pcm_status_get_avail() = %d\n", (int)tmp2);
-				fprintf(stderr, "      => %d\n", (int)odelay);
-#endif
+
+				debug_printf("      (no delay available) fallback:\n");
+				debug_printf("      snd_pcm_status_get_avail_max() = %d\n", (int)tmp1);
+				debug_printf("      snd_pcm_status_get_avail() = %d\n", (int)tmp2);
+				debug_printf("      => %d\n", (int)odelay);
+
 				if (odelay<0)
+				{
 					odelay=0;
+				}
 			}
 
 			odelay<<=(bit16+stereo);
@@ -535,30 +522,23 @@ static FILE *alsaSelectMixer(struct modlistentry *entry)
 		snprintf(alsaMixerName, sizeof(alsaMixerName), "hw:%d", card);
 	}
 out:
-/* #ifdef ALSA_DEBUG */
-	fprintf(stderr, "ALSA: Selected mixer %s\n", alsaMixerName);
-/* #endif */
-	{
-		if (custom_mixer_mdb_ref!=0xffffffff)
-		{
-			struct moduleinfostruct mi;
-			mdbGetModuleInfo(&mi, custom_mixer_mdb_ref);
-			snprintf(mi.modname, sizeof(mi.modname), "%s", alsaMixerName);
-			mdbWriteModuleInfo(custom_mixer_mdb_ref, &mi);
-		}
 
+	fprintf(stderr, "ALSA: Selected mixer %s\n", alsaMixerName);
+
+	if (custom_mixer_mdb_ref!=0xffffffff)
+	{
+		struct moduleinfostruct mi;
+		mdbGetModuleInfo(&mi, custom_mixer_mdb_ref);
+		snprintf(mi.modname, sizeof(mi.modname), "%s", alsaMixerName);
+		mdbWriteModuleInfo(custom_mixer_mdb_ref, &mi);
 	}
+
 	return NULL;
 }
 
 static FILE *alsaSelectPcmOut(struct modlistentry *entry)
 {
-	char *t;
-	int card, device;
-	if (!strcmp(entry->name, "default.dev"))
-	{
-		strcpy(alsaCardName, "default");
-	} else if (!strcmp(entry->name, "custom.dev"))
+	if (!strcmp(entry->name, "custom.dev"))
 	{
 		int mlTop=mlDrawBox();
 		char str[DEVICE_NAME_MAX+1];
@@ -656,7 +636,33 @@ static FILE *alsaSelectPcmOut(struct modlistentry *entry)
 			while (((signed)curpos-(signed)scrolled)<0)
 				scrolled-=8;
 		}
+	}
+/* 1.0.14rc1 added support for snd_device_name_hint */
+#if SND_LIB_VERSION >= 0x01000e
+	else {
+		int len = strlen (entry->name);
+
+		if (!strncmp(entry->name, "ALSA-PCM-", 9)) /* should not happen */
+			return NULL;
+		if (len < (9+4)) /* should not happen */
+			return NULL;
+		len -= (9-4);
+		if (len > DEVICE_NAME_MAX) /* whoopise */
+			return NULL;
+		strncpy(alsaCardName, entry->name+9, len);
+		alsaCardName[len] = 0;
+
+		strncpy(alsaMixerName, entry->name+9, len);
+		alsaMixerName[len] = 0;
+	}
+#else
+	else if (!strcmp(entry->name, "default.dev"))
+	{
+		strcpy(alsaCardName, "default");
 	} else {
+		char *t;
+		int card, device;
+
 		if (!(t=strchr(entry->name, ':')))
 			return NULL;
 		card=atoi(t+1);
@@ -669,23 +675,166 @@ static FILE *alsaSelectPcmOut(struct modlistentry *entry)
 			snprintf(alsaCardName, sizeof(alsaCardName), "plughw:%d,%d", card, device);
 		snprintf(alsaMixerName, sizeof(alsaMixerName), "hw:%d", card);
 	}
+#endif
 out:
-/* #ifdef ALSA_DEBUG */
-	fprintf(stderr, "ALSA: Selected card %s\n", alsaCardName);
-/* #endif */
-	{
-		if (custom_dsp_mdb_ref!=0xffffffff)
-		{
-			struct moduleinfostruct mi;
-			mdbGetModuleInfo(&mi, custom_dsp_mdb_ref);
-			snprintf(mi.modname, sizeof(mi.modname), "%s", alsaCardName);
-			mdbWriteModuleInfo(custom_dsp_mdb_ref, &mi);
-		}
 
+	fprintf(stderr, "ALSA: Selected PCM %s\n", alsaCardName);
+	fprintf(stderr, "ALSA: Selected Mixer %s\n", alsaMixerName);
+
+
+	if (custom_dsp_mdb_ref!=0xffffffff)
+	{
+		struct moduleinfostruct mi;
+		mdbGetModuleInfo(&mi, custom_dsp_mdb_ref);
+		snprintf(mi.modname, sizeof(mi.modname), "%s", alsaCardName);
+		mdbWriteModuleInfo(custom_dsp_mdb_ref, &mi);
 	}
+	if (custom_mixer_mdb_ref!=0xffffffff)
+	{
+		struct moduleinfostruct mi;
+		mdbGetModuleInfo(&mi, custom_mixer_mdb_ref);
+		snprintf(mi.modname, sizeof(mi.modname), "%s", alsaMixerName);
+		mdbWriteModuleInfo(custom_mixer_mdb_ref, &mi);
+	}
+
 	return NULL;
 }
 
+/* 1.0.14rc1 added support for snd_device_name_hint */
+#if SND_LIB_VERSION >= 0x01000e
+static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t parent, const char *mask, unsigned long opt, int mixercaponly)
+{
+	int result;
+	int count = 1;
+	int retval = 0;
+	int i;
+	void **hints = 0;
+
+	debug_printf ("ALSA_list_cards (ml=%p, mixercaponly=%d)\n", ml, mixercaponly);
+
+	result=snd_device_name_hint(-1, "pcm", &hints);
+	debug_printf ("      snd_device_name_hint() = %s\n", snd_strerror(-result));
+
+	if (result)
+	{
+		return retval; /* zero cards found */
+	}
+
+	for (i=0; hints[i]; i++)
+	{
+		char *name, *descr, *io;
+		name = snd_device_name_get_hint(hints[i], "NAME");
+		descr = snd_device_name_get_hint(hints[i], "DESC");
+		io = snd_device_name_get_hint(hints[i], "IOID");
+
+		debug_printf ("       [%d] name=%s\n", i, name?name:"(NULL)");
+		debug_printf ("            desc=%s\n", descr?descr:"(NULL)");
+		debug_printf ("            io=%s\n", io?io:"(IO)");
+
+		if (!name) /* should never happen */
+		{
+			goto end;
+		}
+		if (io && (!strcmp(io, "Input"))) /* ignore input only cards */
+		{
+			goto end;
+		}
+
+		if (ml)
+		{
+			struct modlistentry entry;
+			memset(&entry, 0, sizeof(entry));
+			snprintf(entry.shortname, sizeof (entry.shortname), "dev-%03d.dev", count);
+			snprintf(entry.name, sizeof(entry.name), "ALSA-PCM-%s.dev", name);
+			entry.drive=drive;
+			entry.dirdbfullpath=dirdbFindAndRef(parent, entry.name);
+			entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
+			entry.mdb_ref=mdbGetModuleReference(entry.shortname, 0);
+			if (entry.mdb_ref!=0xffffffff)
+			{
+				struct moduleinfostruct mi;
+				mdbGetModuleInfo(&mi, entry.mdb_ref);
+				mi.flags1&=~MDB_VIRTUAL;
+				mi.channels=2;
+				snprintf(mi.modname, sizeof (mi.modname), "%s", name);
+				mi.composer[0] = 0;
+				mi.comment[0] = 0;
+
+				if (descr)
+				{
+					char *n = strchr (descr, '\n');
+					if (n)
+					{
+						int len = n - descr + 1;
+						if (len >= sizeof(mi.composer))
+						{
+							len = sizeof(mi.composer);
+						}
+						snprintf(mi.composer, len, "%s", descr);
+						snprintf(mi.comment, sizeof (mi.comment), "%s", n + 1);
+					} else {
+						if (strlen(descr) > sizeof (mi.composer))
+						{
+							n = descr+strlen(descr)-1;
+							while (n-descr > 0)
+							{
+								if ((*n) != ' ')
+								{
+									n--;
+									continue;
+								}
+								if (n-descr >= sizeof(mi.composer))
+								{
+									n--;
+									continue;
+								}
+								snprintf(mi.composer, n-descr+1, "%s", descr);
+								snprintf(mi.comment, sizeof (mi.comment), "%s", n + 1);
+								break;
+							}
+						} else {
+							snprintf(mi.composer, sizeof(mi.composer), "%s", descr);
+						}
+					}
+				}
+				mi.modtype=mtDEVp;
+				mdbWriteModuleInfo(entry.mdb_ref, &mi);
+			}
+			entry.adb_ref=0xffffffff;
+			entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=mixercaponly?alsaSelectMixer:alsaSelectPcmOut;
+			modlist_append(ml, &entry);
+			dirdbUnref(entry.dirdbfullpath);
+		}
+		if (strcmp(name, "default"))
+		{
+			retval++;
+		}
+		count++;
+end:
+		if (name)
+		{
+			free (name);
+		}
+		if (descr)
+		{
+			free (descr);
+		}
+		if (io)
+		{
+			free (io);
+		}
+	}
+
+	debug_printf ("     snd_device_name_free_hint()\n");
+
+	snd_device_name_free_hint (hints);
+
+	debug_printf (" => %d\n", retval);
+
+	return retval;
+}
+
+#else
 static int list_devices_for_card(int card, struct modlist *ml, const struct dmDrive *drive, const uint32_t parent, const char *mask, unsigned long opt)
 {
 	char dev[64];
@@ -698,24 +847,23 @@ static int list_devices_for_card(int card, struct modlist *ml, const struct dmDr
 	snd_ctl_t *ctl;
 
 	snprintf(dev, sizeof(dev), "hw:%i", card);
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ALSA snd_ctl_open(&ctl, \"%s\", 0) = ", dev);
-#endif
-	if ((err=snd_ctl_open(&ctl, dev, 0))<0)
+
+	err=snd_ctl_open(&ctl, dev, 0);
+
+	debug_printf("      snd_ctl_open(&ctl, \"%s\", 0) = %s\n", dev, snd_strerror(-err));
+
+	if (err<0)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 		return cards;
 	}
+
 #ifdef ALSA_DEBUG
-	fprintf(stderr, "ok\n");
-	fprintf(stderr, "ALSA snd_card_get_name(%i, &card_name) = ", card);
+	debug_printf("      snd_card_get_name(%i, &card_name) = ", card);
 	if ((err=snd_card_get_name(card, &card_name))!=0)
 	{
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
+		debug_printf("failed: %s\n", snd_strerror(-err));
 	} else {
-		fprintf(stderr, "ok, %s name: %s\n", dev, card_name);
+		debug_printf("ok, %s name: %s\n", dev, card_name);
 		free (card_name);
 		card_name = 0;
 	}
@@ -723,52 +871,41 @@ static int list_devices_for_card(int card, struct modlist *ml, const struct dmDr
 
 	while(1)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA snd_ctl_pcm_next_device(ctl, &pcm_device (%i)) = ", pcm_device);
-#endif
-		if ((err=snd_ctl_pcm_next_device(ctl, &pcm_device))<0)
+		err=snd_ctl_pcm_next_device(ctl, &pcm_device);
+		debug_printf("    snd_ctl_pcm_next_device(ctl, &pcm_device (%i)) = %s\n", pcm_device, snd_strerror(-err));
+		if (err<0)
 		{
-#ifdef ALSA_DEBUG
-			fprintf(stderr, " failed: %s\n", snd_strerror(-err));
-#endif
 			pcm_device=-1;
 		}
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "ok, pcm_device=%i\n", pcm_device);
-#endif
 		if (pcm_device<0)
+		{
 			break;
+		}
 
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA snd_pcm_info_set_device(pcm_info, %i)\n", pcm_device);
-#endif
 		snd_pcm_info_set_device(pcm_info, pcm_device);
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA snd_pcm_info_set_subdevice(pcm_info, 0)\n");
-#endif
+		debug_printf("      snd_pcm_info_set_device(pcm_info, %i)\n", pcm_device);
+
 		snd_pcm_info_set_subdevice(pcm_info, 0);
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA snd_pcm_info_set_stream(pcm_info, SND_PCM_STREAM_PLAYBACK)\n");
-#endif
+		debug_printf("      snd_pcm_info_set_subdevice(pcm_info, 0)\n");
+
 		snd_pcm_info_set_stream(pcm_info, SND_PCM_STREAM_PLAYBACK);
 
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA snd_ctl_pcm_info(ctl, pcm_info) = ");
-#endif
-		if ((err=snd_ctl_pcm_info(ctl, pcm_info))<0)
+		debug_printf("      snd_pcm_info_set_stream(pcm_info, SND_PCM_STREAM_PLAYBACK)\n");
+
+		err=snd_ctl_pcm_info(ctl, pcm_info);
+		debug_printf("      snd_ctl_pcm_info(ctl, pcm_info) = %s\n", snd_strerror(-err));
+		if (err<0)
 		{
-#ifdef ALSA_DEBUG
-			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 			if (err!=-ENOENT)
+			{
 				fprintf(stderr, "ALSA: snd_device_from_card(): snd_ctl_pcm_info(%d:%d) failed: %s\n", card, pcm_device, snd_strerror(-err));
+			}
 			continue;
 		}
 
 #ifdef ALSA_DEBUG
 		card_name = (char *)snd_pcm_info_get_name (pcm_info);
-		fprintf(stderr, "ALSA: hw:%d,%d: name %s\n", card, pcm_device, card_name);
-		//free (card_name);
+		fprintf(stderr, "  => hw:%d,%d: name %s\n", card, pcm_device, card_name);
 		card_name = 0;
 #endif
 		if (ml)
@@ -789,7 +926,7 @@ static int list_devices_for_card(int card, struct modlist *ml, const struct dmDr
 				mi.flags1&=~MDB_VIRTUAL;
 				mi.channels=2;
 				snprintf(mi.modname, sizeof(mi.modname), "%s", snd_pcm_info_get_name(pcm_info));
-				mi.modtype=mtUnRead;
+				mi.modtype=mtDEVp;
 				mdbWriteModuleInfo(entry.mdb_ref, &mi);
 			}
 			entry.adb_ref=0xffffffff;
@@ -799,14 +936,13 @@ static int list_devices_for_card(int card, struct modlist *ml, const struct dmDr
 		}
 		cards++;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ALSA snd_ctl_close(ctl)\n");
-#endif
+
 	snd_ctl_close(ctl);
+	debug_printf("      snd_ctl_close(ctl)\n");
 	return cards;
 }
 
-static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t parent, const char *mask,  unsigned long opt, int mixercaponly)
+static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t parent, const char *mask, unsigned long opt, int mixercaponly)
 {
 	int card=-1;
 	int result;
@@ -830,7 +966,7 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 			mi.flags1&=~MDB_VIRTUAL;
 			mi.channels=2;
 			snprintf(mi.modname, sizeof(mi.modname), "default output");
-			mi.modtype=mtUnRead;
+			mi.modtype=mtDEVp;
 			mdbWriteModuleInfo(entry.mdb_ref, &mi);
 		}
 		entry.adb_ref=0xffffffff;
@@ -851,7 +987,7 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 				mi.flags1&=~MDB_VIRTUAL;
 				mi.channels=2;
 				mi.modname[0]=0;
-				mi.modtype=mtUnRead;
+				mi.modtype=mtDEVp;
 				mdbWriteModuleInfo(entry.mdb_ref, &mi);
 			}
 			entry.adb_ref=0xffffffff;
@@ -876,7 +1012,7 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 			mi.flags1&=~MDB_VIRTUAL;
 			mi.channels=2;
 			snprintf(mi.modname, sizeof(mi.modname), "%s", mixercaponly?alsaMixerName:alsaCardName);
-			mi.modtype=mtUnRead;
+			mi.modtype=mtDEVp;
 			mdbWriteModuleInfo(entry.mdb_ref, &mi);
 		}
 		entry.adb_ref=0xffffffff;
@@ -886,21 +1022,16 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 
 	}
 
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ALSA snd_card_next(&card (%i)) = ", card);
-#endif
-        if ((result=snd_card_next(&card)))
-        {
-#ifdef ALSA_DEBUG
-                fprintf(stderr, "failed: %s\n", snd_strerror(-result));
-#endif
-                return cards;
-        }
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok\n");
-#endif
-        while (card>-1)
-        {
+	result=snd_card_next(&card);
+	debug_printf("      snd_card_next(&card (%i)) = %s\n", card, snd_strerror(-result));
+
+	if (result)
+	{
+		return cards;
+	}
+
+	while (card>-1)
+	{
 
 		if (mixercaponly)
 		{
@@ -911,11 +1042,10 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 				char *card_name = 0;
 				int err;
 
-				if ((err=snd_card_get_name(card, &card_name))!=0)
+				err=snd_card_get_name(card, &card_name);
+				debug_printf ("      snd_card_get_name() = %s\n", snd_strerror(-err));
+				if (err)
 				{
-#ifdef ALSA_DEBUG
-					fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 					card_name=strdup("Unknown card");
 				}
 
@@ -932,7 +1062,7 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 					mi.flags1&=~MDB_VIRTUAL;
 					mi.channels=2;
 					snprintf(mi.modname, sizeof(mi.modname), "%s", card_name);
-					mi.modtype=mtUnRead;
+					mi.modtype=mtDEVp;
 					mdbWriteModuleInfo(entry.mdb_ref, &mi);
 				}
 				entry.adb_ref=0xffffffff;
@@ -942,24 +1072,21 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 				free (card_name);
 				card_name = 0;
 			}
-		} else
+		} else {
 			cards+=list_devices_for_card(card, ml, drive, parent, mask, opt);
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA snd_card_next(&card (%i)) = ", card);
-#endif
-                if ((result=snd_card_next(&card)))
-                {
-#ifdef ALSA_DEBUG
-	                fprintf(stderr, "failed: %s\n", snd_strerror(-result));
-#endif
+		}
+
+		result=snd_card_next(&card);
+		debug_printf(stderr, "      snd_card_next(&card (%i)) = ", card);
+
+		if (result)
+		{
 			return cards;
 		}
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "ok\n");
-#endif
 	}
 	return cards;
 }
+#endif
 
 /* plr API start */
 
@@ -976,88 +1103,72 @@ static void SetOptions(unsigned int rate, int opt)
 	if (!alsa_pcm)
 		return;
 
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ALSA snd_pcm_hw_params_any(alsa_pcm, hwparams) = ");
-#endif
-	if ((err=snd_pcm_hw_params_any(alsa_pcm, hwparams))<0) /* we need to check for <0 here, due to a bug in the ALSA PulseAudio plugin */
+	debug_printf ("ALSA_SetOptions (rate=%d, opt=0x%x%s%s)\n", rate, opt, (opt&PLR_16BIT)?" 16bit":" 8bit", (opt&PLR_SIGNEDOUT)?" signed":" unsigned");
+
+	err=snd_pcm_hw_params_any(alsa_pcm, hwparams);
+	debug_printf("      snd_pcm_hw_params_any(alsa_pcm, hwparams) = %s\n", snd_strerror(err<0?-err:0));
+	if (err<0)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 		fprintf(stderr, "ALSA: snd_pcm_hw_params_any() failed: %s\n", snd_strerror(-err));
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok\n");
-	fprintf(stderr, "ALSA snd_pcm_hw_params_set_access(alsa_pcm, hwparams, SND_PCM_ACCESS_RW_INTERLEAVED) = ");
-#endif
 
-	if ((err=snd_pcm_hw_params_set_access(alsa_pcm, hwparams, SND_PCM_ACCESS_RW_INTERLEAVED)))
+	err=snd_pcm_hw_params_set_access(alsa_pcm, hwparams, SND_PCM_ACCESS_RW_INTERLEAVED);
+	debug_printf("      snd_pcm_hw_params_set_access(alsa_pcm, hwparams, SND_PCM_ACCESS_RW_INTERLEAVED) = %s\n", snd_strerror(-err));
+	if (err)
 	{
-
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 		fprintf(stderr, "ALSA: snd_pcm_hw_params_set_access() failed: %s\n", snd_strerror(-err));
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok\n");
-#endif
+
 	if (opt&PLR_16BIT)
-		if (opt&PLR_SIGNEDOUT)
-			format=SND_PCM_FORMAT_S16;
-		else
-			format=SND_PCM_FORMAT_U16;
-	else
-		if (opt&PLR_SIGNEDOUT)
-			format=SND_PCM_FORMAT_S8;
-		else
-			format=SND_PCM_FORMAT_U8;
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ALSA snd_pcm_hw_params_set_format(alsa_pcm, hwparams, format %i) = ", format);
-#endif
-	if ((err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, format)))
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-		fprintf(stderr, "ALSA snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S16) = ");
-#endif
-		if ((err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S16))==0)
+		if (opt&PLR_SIGNEDOUT)
+		{
+			format=SND_PCM_FORMAT_S16;
+		} else {
+			format=SND_PCM_FORMAT_U16;
+		}
+	} else {
+		if (opt&PLR_SIGNEDOUT)
+		{
+			format=SND_PCM_FORMAT_S8;
+		} else {
+			format=SND_PCM_FORMAT_U8;
+		}
+	}
+
+	err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, format);
+	debug_printf("      snd_pcm_hw_params_set_format(alsa_pcm, hwparams, format %i) = %s\n", format, snd_strerror(-err));
+	if (err)
+	{
+		err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S16);
+		debug_printf("      snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S16) = %s\n", snd_strerror(-err));
+		if (err==0)
 		{
 			opt|=PLR_16BIT|PLR_SIGNEDOUT;
 		} else {
-#ifdef ALSA_DEBUG
-			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-			fprintf(stderr, "ALSA snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U16) = ");
-#endif
-			if ((err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U16))==0)
+			err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U16);
+			debug_printf("      snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U16) = %s\n", snd_strerror(-err));
+			if (err==0)
 			{
 				opt&=~(PLR_16BIT|PLR_SIGNEDOUT);
 				opt|=PLR_16BIT;
-			} else
-			{
-#ifdef ALSA_DEBUG
-			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-			fprintf(stderr, "ALSA snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S8) = ");
-#endif
-			if ((err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S8))>=0)
+			} else {
+				err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S8);
+				debug_printf("      snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S8) = %s\n", snd_strerror(-err));
+				if (err==0)
 				{
 					opt&=~(PLR_16BIT|PLR_SIGNEDOUT);
 					opt|=PLR_SIGNEDOUT;
 				} else
 				{
-#ifdef ALSA_DEBUG
-				fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-				fprintf(stderr, "ALSA snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U8) = ");
-#endif
-					if ((err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U8))>=0)
+					err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U8);
+					debug_printf("      snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U8) = %s\n", snd_strerror(-err));
+					if (err==0)
 					{
 						opt&=~(PLR_16BIT|PLR_SIGNEDOUT);
 					} else {
-#ifdef ALSA_DEBUG
-						fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 						fprintf(stderr, "ALSA: snd_pcm_hw_params_set_format() failed: %s\n", snd_strerror(-err));
 						return;
 					}
@@ -1065,28 +1176,22 @@ static void SetOptions(unsigned int rate, int opt)
 			}
 		}
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok\n");
-#endif
+
 	bit16=!!(opt&PLR_16BIT);
 	if (opt&PLR_STEREO)
-		val=2;
-	else
-		val=1;
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ALSA snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &channels=%i) = ", val);
-#endif
-	if ((err=snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &val))<0)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
+		val=2;
+	} else {
+		val=1;
+	}
+
+	err=snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &val);
+	debug_printf("      snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &channels=%i) = %s\n", val, snd_strerror(-err));
+	if (err<0)
+	{
 		fprintf(stderr, "ALSA: snd_pcm_hw_params_set_channels_near() failed: %s\n", snd_strerror(-err));
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok (channels=%i)\n", val);
-#endif
 	if (val==1)
 	{
 		stereo=0;
@@ -1099,76 +1204,52 @@ static void SetOptions(unsigned int rate, int opt)
 		fprintf(stderr, "ALSA: snd_pcm_hw_params_set_channels_near() gave us %d channels\n", val);
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ALSA snd_pcm_hw_params_set_rate_near(alsa_pcm, hwparams, &rate = %i, 0) = ", rate);
-#endif
-	if ((err=snd_pcm_hw_params_set_rate_near(alsa_pcm, hwparams, &rate, 0))<0)
+
+	err=snd_pcm_hw_params_set_rate_near(alsa_pcm, hwparams, &rate, 0);
+	debug_printf("      snd_pcm_hw_params_set_rate_near(alsa_pcm, hwparams, &rate = %i, 0) = %s\n", rate, snd_strerror(-err));
+	if (err<0)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 		fprintf(stderr, "ALSA: snd_pcm_hw_params_set_rate_near() failed: %s\n", snd_strerror(-err));
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok, rate=%i\n", rate);
-#endif
 	if (rate==0)
 	{
 		fprintf(stderr, "ALSA: No usable samplerate available.\n");
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ALSA snd_pcm_hw_params_set_buffer_time_near(alsa_pcm, hwparams, 500000 uS, 0) = ");
-#endif
+
 	val = 500000;
-	if ((err=snd_pcm_hw_params_set_buffer_time_near(alsa_pcm, hwparams, &val, 0)))
+	err=snd_pcm_hw_params_set_buffer_time_near(alsa_pcm, hwparams, &val, 0);
+	fprintf(stderr, "ALSA snd_pcm_hw_params_set_buffer_time_near(alsa_pcm, hwparams, 500000 uS => %d, 0) = %s\n", val, snd_strerror(-err));
+	if (err)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 		fprintf(stderr, "ALSA: snd_pcm_hw_params_set_buffer_time_near() failed: %s\n", snd_strerror(-err));
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok, latency = %d uS\n", val);
-	fprintf(stderr, "ALSA snd_pcm_hw_params(alsa_pcm, hwparams) = ");
-#endif
-	if ((err=snd_pcm_hw_params(alsa_pcm, hwparams))<0)
+
+	err=snd_pcm_hw_params(alsa_pcm, hwparams);
+	debug_printf("      snd_pcm_hw_params(alsa_pcm, hwparams) = %s\n", snd_strerror(-err));
+	if (err<0)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 		fprintf(stderr, "ALSA: snd_pcm_hw_params() failed: %s\n", snd_strerror(-err));
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok\n");
-	fprintf(stderr, "ALSA snd_pcm_sw_params_current(alsa_pcm, swparams) = ");
-#endif
-	if ((err=snd_pcm_sw_params_current(alsa_pcm, swparams))<0)
+
+	err=snd_pcm_sw_params_current(alsa_pcm, swparams);
+	debug_printf("       snd_pcm_sw_params_current(alsa_pcm, swparams) = %s\n", snd_strerror(-err));
+	if (err<0)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 		fprintf(stderr, "ALSA: snd_pcm_sw_params_any() failed: %s\n", snd_strerror(-err));
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok\n");
-	fprintf(stderr, "ALSA snd_pcm_sw_params(alsa_pcm, swparams) = ");
-#endif
-	if ((err=snd_pcm_sw_params(alsa_pcm, swparams))<0)
+
+	err=snd_pcm_sw_params(alsa_pcm, swparams);
+	fprintf(stderr, "ALSA snd_pcm_sw_params(alsa_pcm, swparams) = %s\n", snd_strerror(-err));
+	if (err<0)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 		fprintf(stderr, "ALSA: snd_pcm_sw_params() failed: %s\n", snd_strerror(-err));
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok\n");
-#endif
 	plrRate=rate;
 	plrOpt=opt;
 }
@@ -1250,155 +1331,94 @@ static void alsaOpenDevice(void)
 
 	alsa_mixers_n=0;
 
+	/* if any device already open, please close it */
+	debug_printf ("alsaOpenDevice()\n");
 	if (alsa_pcm)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA snd_pcm_drain(alsa_pcm) = ");
-#endif
 		err=snd_pcm_drain(alsa_pcm);
-#ifdef ALSA_DEBUG
-		if (err)
-			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-		else
-			fprintf(stderr, "ok\n");
-		fprintf(stderr, "ALSA snd_pcm_close(alsa_pcm) = ");
-#endif
+		debug_printf("      snd_pcm_drain(alsa_pcm) = %s\n", snd_strerror(-err));
+
 		err=snd_pcm_close(alsa_pcm);
-#ifdef ALSA_DEBUG
-		if (err)
-			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-		else
-			fprintf(stderr, "ok\n");
-#endif
+		debug_printf("      snd_pcm_close(alsa_pcm) = %s\n", snd_strerror(-err));
 		alsa_pcm=NULL;
 	}
 
 	if (mixer)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA snd_mixer_close(mixer) = ");
-#endif
 		err=snd_mixer_close(mixer);
-#ifdef ALSA_DEBUG
-		if (err)
-			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-		else
-			fprintf(stderr, "ok\n");
-#endif
+		fprintf(stderr, "      snd_mixer_close(mixer) = %s\n", snd_strerror(-err));
 		mixer=NULL;
 	}
 
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ALSA snd_pcm_open(&alsa_pcm, device = \"%s\", SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK) = ", alsaCardName);
-#endif
-	if ((err=snd_pcm_open(&alsa_pcm, alsaCardName, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK))<0)
+	/* open PCM device */
+	err=snd_pcm_open(&alsa_pcm, alsaCardName, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK);
+	debug_printf("      snd_pcm_open(&alsa_pcm, device = \"%s\", SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK) = %s\n", alsaCardName, snd_strerror(-err));
+	if (err<0)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 		fprintf(stderr, "ALSA: failed to open pcm device (%s): %s\n", alsaCardName, snd_strerror(-err));
 		alsa_pcm=NULL;
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok\n");
-#endif
 
+	/* Any mixer to open ? */
 	if (!strlen(alsaMixerName))
 		return;
 
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ALSA snd_mixer_open(&mixer, 0) = ");
-#endif
-	if ((err=snd_mixer_open(&mixer, 0))<0)
+	err=snd_mixer_open(&mixer, 0);
+	debug_printf("      snd_mixer_open(&mixer, 0) = %s\n", snd_strerror(-err));
+	if (err<0)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 		fprintf(stderr, "ALSA: snd_mixer_open() failed: %s\n", snd_strerror(-err));
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok\n");
-	fprintf(stderr, "ALSA snd_mixer_attach(mixer, device = \"%s\") = ", alsaMixerName);
-#endif
-	if ((err=snd_mixer_attach(mixer, alsaMixerName))<0)
+
+	err=snd_mixer_attach(mixer, alsaMixerName);
+	debug_printf("      snd_mixer_attach(mixer, device = \"%s\") = %s\n", alsaMixerName, snd_strerror(-err));
+	if (err<0)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 		fprintf(stderr, "ALSA: snd_mixer_attach() failed: %s\n", snd_strerror(-err));
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA ans_mixer_close(mixer) = ");
-#endif
 		err=snd_mixer_close(mixer);
-#ifdef ALSA_DEBUG
-		if (err)
-			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-		else
-			fprintf(stderr, "ok\n");
-#endif
+		debug_printf("      snd_mixer_close(mixer) = %s\n", snd_strerror(-err));
 		mixer=NULL;
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok\n");
-	fprintf(stderr, "ALSA snd_mixer_selem_register(mixer, NULL, NULL) = ");
-#endif
-	if ((err=snd_mixer_selem_register(mixer, NULL, NULL))<0)
+
+	err=snd_mixer_selem_register(mixer, NULL, NULL);
+	debug_printf("      snd_mixer_selem_register(mixer, NULL, NULL) = %s\n", snd_strerror(-err));
+	if (err<0)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 		fprintf(stderr, "ALSA: snd_mixer_selem_register() failed: %s\n", snd_strerror(-err));
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA snd_mixer_close(mixer) = ");
-#endif
+
 		err=snd_mixer_close(mixer);
-#ifdef ALSA_DEBUG
-		if (err)
-			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-		else
-			fprintf(stderr, "ok\n");
-#endif
+		debug_printf("      snd_mixer_close(mixer) = %s\n", snd_strerror(-err));
 		mixer=NULL;
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok\n");
-	fprintf(stderr, "ALSA snd_mixer_load(mixer) = ");
-#endif
-	if ((err=snd_mixer_load(mixer))<0)
+
+	err=snd_mixer_load(mixer);
+	debug_printf("      snd_mixer_load(mixer) = %s\n", snd_strerror(-err));
+	if (err<0)
 	{
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-#endif
 		fprintf(stderr, "ALSA: snd_mixer_load() failed: %s\n", snd_strerror(-err));
-#ifdef ALSA_DEBUG
-		fprintf(stderr, "ALSA snd_mixer_close(mixer) = ");
-#endif
+
 		err=snd_mixer_close(mixer);
-#ifdef ALSA_DEBUG
-		if (err)
-			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-		else
-			fprintf(stderr, "ok\n");
-#endif
+		debug_printf("      snd_mixer_close(mixer) = %s\n", snd_strerror(-err));
 		mixer=NULL;
 		return;
 	}
-#ifdef ALSA_DEBUG
-	fprintf(stderr, "ok\n");
-#endif
+
 	current = snd_mixer_first_elem(mixer);
+	debug_printf ("      snd_mixer_first_elem(mixer) = %p\n", current);
 	while (current)
 	{
+		debug_printf ("        snd_mixer_selem_is_active(current) = %d\n", snd_mixer_selem_is_active(current));
+		debug_printf ("        snd_mixer_selem_has_playback_volume = %d\n", snd_mixer_selem_has_playback_volume(current));
 		if (snd_mixer_selem_is_active(current) &&
 			snd_mixer_selem_has_playback_volume(current) &&
 			(alsa_mixers_n<MAX_ALSA_MIXER))
 		{
 			long int a, b;
-			long min, max;
+			long int min, max;
 			snd_mixer_selem_get_playback_volume(current, SND_MIXER_SCHN_FRONT_LEFT, &a);
 			snd_mixer_selem_get_playback_volume(current, SND_MIXER_SCHN_FRONT_RIGHT, &b);
 			mixer_entries[alsa_mixers_n].val=(a+b)>>1;
@@ -1408,9 +1428,16 @@ static void alsaOpenDevice(void)
 			mixer_entries[alsa_mixers_n].step=1;
 			mixer_entries[alsa_mixers_n].log=0;
 			mixer_entries[alsa_mixers_n].name=snd_mixer_selem_get_name(current);
+
+			debug_printf ("          name=%s\n", mixer_entries[alsa_mixers_n].name);
+			debug_printf ("          SND_MIXER_SCHN_FRONT_LEFT  = %ld\n", a);
+			debug_printf ("          SND_MIXER_SCHN_FRONT_RIGHT = %ld\n", b);
+			debug_printf ("          min=%ld max=%ld\n", min, max);
+
 			alsa_mixers_n++;
 		}
 		current = snd_mixer_elem_next(current);
+		debug_printf ("      snd_mixer_elem_next(current) = %p\n", current);
 	}
 }
 
@@ -1431,8 +1458,11 @@ static int volalsaGetVolume(struct ocpvolstruct *v, int n)
 
 static int volalsaSetVolume(struct ocpvolstruct *v, int n)
 {
-	int count=0;
+	int count=0, err;
 	snd_mixer_elem_t *current;
+
+	debug_printf ("volalsaSetVolume(v->val=%d n=%d)\n", v->val, n);
+
 	current = snd_mixer_first_elem(mixer);
 	while (current)
 	{
@@ -1441,8 +1471,10 @@ static int volalsaSetVolume(struct ocpvolstruct *v, int n)
 		{
 			if (count==n)
 			{
-				snd_mixer_selem_set_playback_volume(current, SND_MIXER_SCHN_FRONT_LEFT, v->val);
-				snd_mixer_selem_set_playback_volume(current, SND_MIXER_SCHN_FRONT_RIGHT, v->val);
+				err = snd_mixer_selem_set_playback_volume(current, SND_MIXER_SCHN_FRONT_LEFT, v->val);
+				debug_printf ("      snd_mixer_selem_set_playback_volume(current %s, SND_MIXER_SCHN_FRONT_LEFT,  %d) = %s\n", snd_mixer_selem_get_name (current), v->val, snd_strerror(-err));
+				err = snd_mixer_selem_set_playback_volume(current, SND_MIXER_SCHN_FRONT_RIGHT, v->val);
+				debug_printf ("      snd_mixer_selem_set_playback_volume(current %s, SND_MIXER_SCHN_FRONT_RIGHT, %d) = %s\n", snd_mixer_selem_get_name (current), v->val, snd_strerror(-err));
 				mixer_entries[n].val=v->val;
 				return 1;
 			}
@@ -1455,6 +1487,8 @@ static int volalsaSetVolume(struct ocpvolstruct *v, int n)
 
 static int alsaInit(const struct deviceinfo *c)
 {
+/* 1.0.14rc1 added support for snd_device_name_hint */
+#if SND_LIB_VERSION < 0x01000e
 	{
 		const char *version = snd_asoundlib_version ();
 		int major = 0;
@@ -1482,6 +1516,7 @@ static int alsaInit(const struct deviceinfo *c)
 			patch = 255;
 		alsa_1_0_11_or_better = ((major << 16) | (minor << 8) | patch) >= 0x01000b;
 	}
+#endif
 /*
 	memcpy(&currentcard, card, sizeof(struct deviceinfo));*/
 	dmSETUP=RegisterDrive("setup:");
@@ -1594,11 +1629,13 @@ static void __attribute__((constructor))init(void)
 		fprintf(stderr, "snd_pcm_status_malloc() failed, %s\n", snd_strerror(-err));
 		exit(0);
 	}
+#if SND_LIB_VERSION < 0x01000e
 	if ((err = snd_pcm_info_malloc(&pcm_info)))
 	{
 		fprintf(stderr, "snd_pcm_info_malloc() failed, %s\n", snd_strerror(-err));
 		exit(0);
 	}
+#endif
 	if ((err = snd_pcm_hw_params_malloc(&hwparams)))
 	{
 		fprintf(stderr, "snd_pcm_hw_params_malloc failed, %s\n", snd_strerror(-err));
@@ -1606,75 +1643,65 @@ static void __attribute__((constructor))init(void)
 	}
 	if ((err = snd_pcm_sw_params_malloc(&swparams)))
 	{
-		fprintf(stderr, "snd_pcm_hw_params_malloc failed, %s\n", snd_strerror(-err));
+		fprintf(stderr, "snd_pcm_sw_params_malloc failed, %s\n", snd_strerror(-err));
 		exit(0);
 	}
 }
 
 static void __attribute__((destructor))fini(void)
 {
+	int err;
+
 	mdbUnregisterReadDir(&readdirAlsa);
+
+	debug_printf("ALSA_fini()\n");
+
 	if (alsa_pcm)
 	{
-
-#ifdef ALSA_DEBUG
-		int err;
-
-		fprintf(stderr, "ALSA(fini) snd_pcm_drain(alsa_pcm) = ");
 		err=snd_pcm_drain(alsa_pcm);
-		if (err)
-			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-		else
-			fprintf(stderr, "ok\n");
+		debug_printf("      snd_pcm_drain(alsa_pcm) = %s\n", snd_strerror(-err));
 
-		fprintf(stderr, "ALSA(fini) snd_pcm_close(alsa_pcm) = ");
 		err=snd_pcm_close(alsa_pcm);
-		if (err)
-			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-		else
-			fprintf(stderr, "ok\n");
-#else
-		snd_pcm_drain(alsa_pcm);
-		snd_pcm_close(alsa_pcm);
-#endif
+		debug_printf("      snd_pcm_close(alsa_pcm) = %s\n", snd_strerror(-err));
+
 		alsa_pcm=NULL;
 	}
+
 	if (mixer)
 	{
-#ifdef ALSA_DEBUG
-		int err;
-		fprintf(stderr, "ALSA(fini) snd_mixer_close(mixer) = ");
 		err=snd_mixer_close(mixer);
-		if (err)
-			fprintf(stderr, "failed: %s\n", snd_strerror(-err));
-		else
-			fprintf(stderr, "ok\n");
-#else
-		snd_mixer_close(mixer);
-#endif
+		debug_printf("      snd_mixer_close(mixer) = %s\n", snd_strerror(-err));
 		mixer=NULL;
 	}
+
 	if (alsa_pcm_status)
 	{
 		snd_pcm_status_free(alsa_pcm_status);
 		alsa_pcm_status = NULL;
 	}
+
+#if SND_LIB_VERSION < 0x01000e
 	if (pcm_info)
 	{
 		snd_pcm_info_free(pcm_info);
 		pcm_info = NULL;
 	}
+#endif
+
 	if (hwparams)
 	{
 		snd_pcm_hw_params_free(hwparams);
 		hwparams=NULL;
 	}
+
 	if (swparams)
 	{
 		snd_pcm_sw_params_free(swparams);
 		swparams=NULL;
 	}
+
 	snd_config_update_free_global ();
+
 	alsa_mixers_n=0;
 }
 
