@@ -95,7 +95,7 @@ void adbUnregister(struct adbregstruct *r)
 
 char adbInit(void)
 {
-	char path[PATH_MAX+1];
+	char *path;
 	int f;
 	struct adbheader header;
 
@@ -105,15 +105,27 @@ char adbInit(void)
 	adbDirty=0;
 	adbData=0;
 	adbNum=0;
-	if ((strlen(cfConfigDir)+10)>=PATH_MAX)
-		return 1; /* path is too long */
+
+	path = malloc(strlen(cfConfigDir)+10+1);
+	if (!path)
+	{
+		fprintf(stderr, "adbInit: malloc() failed\n");
+		return 1;
+	}
 	strcpy(path, cfConfigDir);
 	strcat(path, "CPARCS.DAT");
 
 	if ((f=open(path, O_RDONLY))<0)
+	{
+		perror("adbInit: open(cfConfigDir/CPARCS.DAT)");
+		free(path);
 		return 1;
+	}
 
 	fprintf(stderr, "Loading %s .. ", path);
+
+	free (path);
+	path = 0;
 
 	if (read(f, &header, sizeof(header))!=sizeof(header))
 	{
@@ -150,14 +162,14 @@ char adbInit(void)
 		{
 			uint8_t flags;
 			uint32_t parent;
-			char name[OLD_ARC_PATH_MAX+1]; /* some stupid archives needs full path, which can be long */
+			char name[OLD_ARC_PATH_MAX+1]; /* some archives needs full path, which can be long */
 			uint32_t size;
 		} oldentry;
 		for (i=0;i<adbNum;i++)
 		{
 			if (read(f, &oldentry, sizeof(oldentry))!=(sizeof(oldentry)))
 			{
-				fprintf(stderr, "EOF\n");
+				fprintf(stderr, "premature EOF\n");
 				/* File is broken / premature EOF */
 				free(adbData);
 				adbData=0;
@@ -174,7 +186,7 @@ char adbInit(void)
 	} else {
 		if (read(f, adbData, adbNum*sizeof(*adbData))!=(ssize_t)(adbNum*sizeof(*adbData)))
 		{
-			fprintf(stderr, "EOF\n");
+			fprintf(stderr, "premature EOF\n");
 			/* File is broken / premature EOF */
 			free(adbData);
 			adbData=0;
@@ -195,7 +207,7 @@ char adbInit(void)
 
 void adbUpdate(void)
 {
-	char path[PATH_MAX+1];
+	char *path;
 	int f;
 	uint32_t i, j;
 	struct adbheader header;
@@ -204,16 +216,23 @@ void adbUpdate(void)
 		return;
 	adbDirty=0;
 
-	if ((strlen(cfConfigDir)+10)>=PATH_MAX)
-		return; /* path is too long */
+	path = malloc(strlen(cfConfigDir)+10+1);
+	if (!path)
+	{
+		fprintf(stderr, "adbUpdate: malloc() failed\n");
+		return;
+	}
 	strcpy(path, cfConfigDir);
 	strcat(path, "CPARCS.DAT");
 
-	if ((f=open(path, O_WRONLY|O_CREAT, S_IREAD|S_IWRITE))<0)
+	if ((f=open(path, O_WRONLY|O_CREAT|O_TRUNC, S_IREAD|S_IWRITE))<0)
 	{
-		perror("open(CPARCS.DAT");
+		perror("adbUpdate: open(cfConfigDir/CPARCS.DAT)");
+		free (path);
 		return;
 	}
+	free (path);
+	path=0;
 
 	lseek(f, 0, SEEK_SET);
 	memcpy(header.sig, adbsigv2, 16);
@@ -228,12 +247,14 @@ void adbUpdate(void)
 				continue;
 			if (errno==EINTR)
 				continue;
-			fprintf(stderr, __FILE__ " write() to %s failed: %s\n", path, strerror(errno));
-			exit(1);
+			perror("adbUpdate: write() to cfConfigDir/CPARCS.DAT");
+			close (f);
+			return;
 		} else if (res != sizeof(header))
 		{
-			fprintf(stderr, __FILE__ " write() to %s returned only partial data\n", path);
-			exit(1);
+			fprintf(stderr, "adbUpdate: write() to cfConfigDir/CPARCS.DAT returned only partial data\n");
+			close (f);
+			return;
 		} else
 			break;
 	}
@@ -266,12 +287,14 @@ void adbUpdate(void)
 					continue;
 				if (errno==EINTR)
 					continue;
-				fprintf(stderr, __FILE__ " write() to %s failed: %s\n", path, strerror(errno));
-				exit(1);
+				perror("adbUpdate: write() to cfConfigDir/CPARCS.DAT");
+				close (f);
+				return;
 			} else if (res != (ssize_t)((j-i)*sizeof(*adbData)))
 			{
-				fprintf(stderr, __FILE__ " write() to %s returned only partial data\n", path);
-				exit(1);
+				fprintf(stderr, "adbUpdate: write() to cfConfigDir/CPARCS.DAT returned only partial data\n");
+				close (f);
+				return;
 			} else
 				break;
 		}
@@ -327,7 +350,7 @@ uint32_t adbFind(const char *arcname)
 		if ((adbData[i].flags&(ADB_USED|ADB_ARC))==(ADB_USED|ADB_ARC))
 			if (!memcmp(adbData[i].name, arcname, len))
 				return i;
-	return 0xFFFFFFFF;
+	return ADB_NONE;
 }
 
 int adbCallArc(const char *cmd, const char *arc, const char *name, const char *dir)
@@ -522,29 +545,19 @@ static int isarchive(const char *ext)
 	return 0;
 }
 
-int isarchivepath(const char *p)
+/* Path should never end with /, unless we ask for the root directory-itself */
+int isarchivepath(const char *path)
 {
-	char path[PATH_MAX+1];
-	char ext[NAME_MAX+1];
-/*
-	struct stat st;
-*/
+	char *ext = NULL;
+	int retval;
 
-	strcpy(path, p);
-	if (*p)
-		if (path[strlen(path)-1]=='/')
-			path[strlen(path)-1]=0;
+	splitpath_malloc(path, 0, 0, 0, &ext);
 
-/*
-	if (stat(path, &st))
-		return 0;
-	if (!S_ISREG(st.st_mode))
-		return 0;
-*/
+	retval = isarchive(ext);
 
-	_splitpath(path, 0, 0, 0, ext);
+	free (ext);
 
-	return isarchive(ext);
+	return retval;
 }
 
 static signed char adbFindNext(char *findname, uint32_t *findlen, uint32_t *adb_ref)
@@ -565,111 +578,148 @@ static signed char adbFindNext(char *findname, uint32_t *findlen, uint32_t *adb_
 
 static signed char adbFindFirst(const char *path, unsigned long arclen, char *findname, uint32_t *findlen, uint32_t *adb_ref)
 {
-	char ext[NAME_MAX+1]; /* makes life safe */
-	char name[NAME_MAX+1]; /* makes life safe */
 	char arcname[ARC_PATH_MAX+1]; /* makes life safe */
+
 	uint32_t ar, i;
+	char *ext = 0;
+	char *name = 0;
 
-	_splitpath(path, 0, 0, name, ext);
+	splitpath_malloc(path, 0, 0, &name, &ext);
 	if ((strlen(name)+strlen(ext))>ARC_PATH_MAX)
+	{
+		/* Current ADB cache format, can not have NAME+EXT longer than ARC_PATH_MAX */
+		free (name);
+		free (ext);
 		return -1;
+	}
 
-	strcpy(arcname, name);
-	strcat(arcname, ext);
+	snprintf (arcname, sizeof(arcname), "%s%s", name, ext);
+	free (name); name = 0;
 
 	ar=adbFind(arcname);
 
-	if ((ar==0xFFFFFFFF)||(arclen!=(ar!=0xffffffff?adbData[ar].size:0)))
-	{
-		if (ar!=0xFFFFFFFF)
+	/* ar = ADB_NONE, not found
+	 * adbData[ar].size is the filesize
+	 */
+	if ((ar==ADB_NONE)||(arclen!=(ar!=ADB_NONE?adbData[ar].size:0)))
+	{ // file not found, or filesize missmatch
+		if (ar!=ADB_NONE)
+		{ // file found, but size is wrong
+		  // we remove the archieve from the cache, since it has been changed
 			for (i=0; i<adbNum; i++)
+			{
 				if (adbData[i].parent==ar)
+				{
 					adbData[i].flags=(adbData[i].flags|ADB_DIRTY)&~ADB_USED;
+				}
+			}
+		}
 		adbDirty=1;
-		{
+		{ // rescan the archeive
 			struct adbregstruct *packers;
 			for (packers=adbPackers; packers; packers=packers->next)
+			{
 				if (!strcasecmp(ext, packers->ext))
 				{
 					conRestore();
 					if (!packers->Scan(path))
+					{
+						free (ext);
 						return -1;
-					else
+					} else
 						break;
 				}
+			}
 			if (!packers)
+			{
+				free (ext);
 				return 1;
+			}
 		}
 		ar=adbFind(arcname);
 	}
 	adbFindArc=ar;
 	adbFindPos=0;
+	free (ext);
 	return adbFindNext(findname, findlen, adb_ref);
 }
 
-
-
-
 FILE *adb_ReadHandle(struct modlistentry *entry)
 {
-	char dir[PATH_MAX+1];
+	char *dir;
 	int fd;
-	char path[PATH_MAX+1];
-	char temppath[PATH_MAX+1];
-	char ext[NAME_MAX+1];
+	char *temppath;
+	char *ext;
 
-	char npath[PATH_MAX+1];
+	char *npath;
 
 	struct arcentry *this/*, *parent*/;
 	this=&adbData[entry->adb_ref];
 
-	dirdbGetFullName(entry->dirdbfullpath, npath, DIRDB_FULLNAME_NOBASE);
+	dirdbGetFullname_malloc(entry->dirdbfullpath, &npath, DIRDB_FULLNAME_NOBASE);
+	splitpath_malloc(npath, NULL, &dir, NULL, NULL);
+	free (npath); npath = 0;
 
-	_splitpath(npath, NULL, dir, NULL, NULL);
+	if (dir[0])
+	{
+		dir[strlen(dir)-1]=0; /* Remove / suffix */
+	}
 
-	/* TODO, logic here should work / for / and stat for dir/file */
-
-	_makepath(path, 0, dir, 0, 0);
-	path[strlen(path)-1]=0; /* Remove / suffix */
-
-	if (!isarchivepath(path))
+	if (!isarchivepath(dir))
+	{
+		free (dir);
 		return 0;
+	}
 
-	if ((strlen(cfTempDir)+strlen("ocptmpXXXXXX"))>PATH_MAX)
+	temppath = malloc (strlen(cfTempDir) + 13);
+	if (!temppath)
+	{
+		perror ("adb_ReadHandle() malloc failed\n");
+		free (dir);
 		return 0;
-
-	_splitpath(path, 0, 0, 0, ext);
-
-	strcpy(temppath, cfTempDir);
-	strcat(temppath, "ocptmpXXXXXX");
+	}
+	sprintf (temppath, "%socptmpXXXXXX", cfTempDir);
 
 	if ((fd=mkstemp(temppath))<0)
 	{
-		perror("adc.c: mkstemp()");
+		perror("adb_ReadHandle() mkstemp failed");
+		free (dir);
+		free (temppath);
 		return 0;
 	}
 	/*fcntl(fd, F_SETFD, 1<<FD_CLOEXEC);*/
+
+	splitpath_malloc(dir, 0, 0, 0, &ext);
 
 	{
 		struct adbregstruct *packers;
 		for (packers=adbPackers; packers; packers=packers->next)
 			if (!strcasecmp(ext, packers->ext))
 			{
-				if (!packers->Call(adbCallGet, path, this->name, fd))
+				free (ext); ext = 0;
+
+				if (!packers->Call(adbCallGet, dir, this->name, fd))
 				{
+					free (dir);
 					close(fd);
 					unlink(temppath);
+					free (temppath);
 					fprintf(stderr, "adb.c: Failed to fetch file\n");
 					return 0;
 				} else {
+					free (dir); dir = 0;
 					lseek(fd, 0, SEEK_SET);
 					unlink(temppath);
+					free (temppath);
 					return fdopen(fd, "r");
 				}
 			}
 	}
 	fprintf(stderr, "adc.c: No packer found?\n");
 	close(fd);
+	free (ext);
+	free (dir);
+	free (temppath);
 	return 0;
 }
 
@@ -706,16 +756,16 @@ int adb_Read(struct modlistentry *entry, char **mem, size_t *size)
 	return 0;
 }
 
-static int arcReadDir(struct modlist *ml, const struct dmDrive *drive, const uint32_t path, const char *mask, unsigned long opt)
+static int arcReadDir(struct modlist *ml, const struct dmDrive *drive, const uint32_t dirdb_node, const char *mask, unsigned long opt)
 {
-	char _path[PATH_MAX+1];
+	char *_path;
 
 	struct modlistentry m;
 
 	if (drive!=dmFILE)
 		return 1;
 
-	dirdbGetFullName(path, _path, DIRDB_FULLNAME_NOBASE);
+	dirdbGetFullname_malloc(dirdb_node, &_path, DIRDB_FULLNAME_NOBASE);
 /*
 	dmGetPath(path, dirref);
 */
@@ -742,6 +792,7 @@ static int arcReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 				*iterate = toupper(*iterate);
 		} else {
 			perror("adb.c: strdup() failed");
+			free (_path);
 			return 1;
 		}
 #endif
@@ -752,6 +803,7 @@ static int arcReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 #ifndef FNM_CASEFOLD
 				free(mask_upper);
 #endif
+				free (_path);
 				return 1;
 			}
 		flength=filelength(tf);
@@ -759,9 +811,9 @@ static int arcReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 
 		for (done=adbFindFirst(_path, flength, newfilepath, &size, &adb_ref); !done; done=adbFindNext(newfilepath, &size, &adb_ref))
 		{
-			char name[NAME_MAX+1];
-			char ext[NAME_MAX+1];
-			char npath[PATH_MAX+1];
+			char *name;
+			char *ext;
+			char *npath;
 
 			char *tmp=rindex(newfilepath, '/');
 			if (!tmp)
@@ -793,19 +845,30 @@ static int arcReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 				continue;
 #endif
 
-			_splitpath(newfilepath, 0, 0, name, ext);
-			strcpy(m.name, newfilepath);
+			splitpath_malloc (newfilepath, 0, 0, &name, &ext);
+			snprintf (m.name, sizeof (m.name), "%s", newfilepath);
 
 			m.drive=drive;
-			_makepath(npath, 0, _path, name, ext);
+
+			/* this makes the files inside the ADB appear in the host directory */
+			makepath_malloc (&npath, 0, _path, name, ext);
 			m.dirdbfullpath=dirdbResolvePathWithBaseAndRef(drive->basepath, npath);
-			if ((strlen(name)+strlen(ext))<NAME_MAX)
-				strcat(name, ext);
+			{
+				char *temp = malloc (strlen (name) + strlen (ext) + 1);
+				if (temp != 0)
+				{
+					strcpy (temp, name);
+					strcat (temp, ext);
+					fs12name (m.shortname, temp);
+					free (temp);
+				} else {
+					fs12name (m.shortname, name);
+				}
+			}
 			m.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
 			m.Read=adb_Read;
 			m.ReadHeader=adb_ReadHeader;
 			m.ReadHandle=adb_ReadHandle;
-			fs12name(m.shortname, name);
 			m.mdb_ref=mdbGetModuleReference(m.shortname, size);
 			m.adb_ref=adb_ref;
 #if 0
@@ -815,13 +878,20 @@ static int arcReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 
 			modlist_append(ml, &m);
 			dirdbUnref(m.dirdbfullpath);
+			free (npath);
+			free (name);
+			free (ext);
 		}
 #ifndef FNM_CASEFOLD
 		free(mask_upper);
 #endif
 		if (done==-1)
+		{
+			free (_path);
 			return 0;
+		}
 	}
+	free (_path);
 	return 1;
 }
 

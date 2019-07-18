@@ -94,7 +94,6 @@ extern char mifMemRead(const char *name, unsigned short size, char *ptr);
 struct dmDrive
 {
 	char drivename[13];
-	/*char currentpath[PATH_MAX+1];*/
 	uint32_t basepath;
 	uint32_t currentpath;
 	struct dmDrive *next;

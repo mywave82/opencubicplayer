@@ -1,6 +1,8 @@
 #ifndef _ADB_H
 #define _ADB_H
 
+#define ADB_NONE 0xffffffff
+
 enum
 {
 	adbCallGet, adbCallDelete, adbCallMoveTo, adbCallMoveFrom, adbCallPut
