@@ -24,9 +24,10 @@
 
 #include "config.h"
 #include <ctype.h>
-#include <stdio.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <fnmatch.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -48,7 +49,7 @@ static int m3uReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 #if 0
 	char *s3;
 #endif
-	char newpath[PATH_MAX+1];
+	char *newpath;
 
 	char *readbuffer;
 
@@ -66,46 +67,53 @@ static int m3uReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 	if (drive!=dmFILE)
 		return 1;
 
-	dirdbGetFullName(path, newpath, DIRDB_FULLNAME_NOBASE); /* no file: */
+	dirdbGetFullname_malloc (path, &newpath, DIRDB_FULLNAME_NOBASE); /* no file: */
 
 	/* Does the file end in .M3U ? */
 	s1=newpath+strlen(newpath)-4;
-	if (s1<newpath)
+	if ((s1<newpath) || strcasecmp(s1, ".M3U"))
 	{
+		free (newpath);
 		return 1;
 	}
-	if (strcasecmp(s1, ".M3U"))
-		return 1;
 
 	/* Try to open the file */
 	if ((fd=open(newpath, O_RDONLY))<0)
+	{
+		fprintf (stderr, "failed to open (%s): %s\n", newpath, strerror (errno));
+		free (newpath);
 		return 1;
-
-	(*rindex(newpath, '/'))=0; /* remove ....pls from path-name */
+	}
 
 	if (fstat(fd, &st)<0)
 	{
+		fprintf (stderr, "failed to fstat (%s): %s\n", newpath, strerror (errno));
 		close(fd);
+		free (newpath);
 		return 1;
 	}
 	/* regular file? */
 	if (!S_ISREG(st.st_mode))
 	{
 		close(fd);
+		free (newpath);
 		return 1;
 	}
 	/* file too big? */
 	if (st.st_size>(1024*1024))
 	{
-		fprintf(stderr, "[M3U] File too big\n");
+		fprintf(stderr, "%s: File too big\n", newpath);
 		close(fd);
+		free (newpath);
 		return 1;
 	}
 
 	readbuffer=malloc(st.st_size);
 	if (read(fd, readbuffer, st.st_size)!=st.st_size)
 	{
+		fprintf (stderr, "Reading %s, gave only partial result\n", newpath);
 		close(fd);
+		free (newpath);
 		return 1;
 	}
 	close(fd);
@@ -120,9 +128,12 @@ static int m3uReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 			*iterate = toupper(*iterate);
 	} else {
 		perror("pfsm3u.c: strdup() failed");
+		free (newpath);
 		return 1;
 	}
 #endif
+
+	(*rindex(newpath, '/'))=0; /* remove XXX.M3U from path-name */
 
 	while (buftail_n>0)
 	{
@@ -160,6 +171,7 @@ newline:
 	free(mask_upper);
 #endif
 	free(readbuffer);
+	free (newpath);
 	return 1;
 }
 
