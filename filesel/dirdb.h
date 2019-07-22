@@ -10,7 +10,7 @@ extern const char dirdbsigv2[60];
 
 extern void dirdbFlush(void); /* removes all nodes that hasn't been ref'ed yet aswell */
 
-#define DIRDB_FULLNAME_NOBASE   1
+#define DIRDB_FULLNAME_NOBASE   1 /* without the drive: prefix */
 #define DIRDB_FULLNAME_ENDSLASH 2
 extern void dirdbGetFullName(uint32_t node, char *name /* PATH_MAX+1, ends not with a / */, int flags);
 extern void dirdbGetFullname_malloc(uint32_t node, char **name, int flags);

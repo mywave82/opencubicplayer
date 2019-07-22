@@ -645,15 +645,20 @@ void dirdbGetFullName(uint32_t node, char *name /* PATH_MAX+1, ends not with a /
 	}
 }
 
-static void dirdbGetFullname_malloc_R(uint32_t node, char *name)
+static void dirdbGetFullname_malloc_R(uint32_t node, char *name, int nobase)
 {
 	if (node == DIRDB_NOPARENT)
 	{
 		return;
 	}
-	if (dirdbData[node].parent != DIRDB_NOPARENT)
+	if (dirdbData[node].parent == DIRDB_NOPARENT)
 	{
-		dirdbGetFullname_malloc_R(dirdbData[node].parent, name);
+		if (nobase)
+		{
+			return;
+		}
+	} else {
+		dirdbGetFullname_malloc_R(dirdbData[node].parent, name, nobase);
 		strcat(name, "/");
 	}
 	strcat(name, dirdbData[node].name);
@@ -665,29 +670,28 @@ void dirdbGetFullname_malloc(uint32_t node, char **name, int flags)
 	int iter;
 
 	*name=0;
-	if ((node != DIRDB_NOPARENT) && ((node>=dirdbNum) || (!dirdbData[node].name)))
+	if ((node == DIRDB_NOPARENT) || (node >= dirdbNum) || (!dirdbData[node].name))
 	{
 		fprintf(stderr, "dirdbGetFullname_malloc: invalid node\n");
 		return;
 	}
 
-	if (node == DIRDB_NOPARENT)
+	for (iter = node; iter != DIRDB_NOPARENT; iter = dirdbData[iter].parent)
 	{
-		length = (flags & (DIRDB_FULLNAME_NOBASE | DIRDB_FULLNAME_ENDSLASH)) != DIRDB_FULLNAME_NOBASE;
-	} else {
-		if (flags&DIRDB_FULLNAME_ENDSLASH)
+		if (dirdbData[iter].parent == DIRDB_NOPARENT)
 		{
+			if (flags & DIRDB_FULLNAME_NOBASE)
+			{
+				continue;
+			}
+		} else {
 			length++;
 		}
-		for (iter = node; iter != DIRDB_NOPARENT; iter = dirdbData[iter].parent)
-		{
-			length += strlen (dirdbData[iter].name);
-			length += 1;
-		}
-		if (flags&DIRDB_FULLNAME_NOBASE)
-		{
-			length--;
-		}
+		length += strlen (dirdbData[iter].name);
+	}
+	if (flags&DIRDB_FULLNAME_ENDSLASH)
+	{
+		length++;
 	}
 
 	*name = malloc(length+1);
@@ -698,18 +702,11 @@ void dirdbGetFullname_malloc(uint32_t node, char **name, int flags)
 	}
 	(*name)[0] = 0;
 
-	if (!(flags&DIRDB_FULLNAME_NOBASE))
-	{
-		strcat (*name, "/");
-	}
-	dirdbGetFullname_malloc_R (node, *name);
+	dirdbGetFullname_malloc_R (node, *name, flags&DIRDB_FULLNAME_NOBASE);
 
 	if (flags&DIRDB_FULLNAME_ENDSLASH)
 	{
-		if (strcmp(*name, "/"))
-		{
-			strcat(*name, "/");
-		}
+		strcat(*name, "/");
 	}
 
 	if (strlen(*name) != length)
