@@ -78,10 +78,11 @@ static int mlSubScan(const uint32_t dirdbnode, int mlTop)
 	struct modlist *ml = modlist_create();
 	struct modlistentry *mle;
 	unsigned int i;
-	char npath[PATH_MAX+1];
+	char *npath;
 
-	dirdbGetFullName(dirdbnode, npath, DIRDB_FULLNAME_NOBASE|DIRDB_FULLNAME_ENDSLASH);
+	dirdbGetFullname_malloc (dirdbnode, &npath, DIRDB_FULLNAME_NOBASE|DIRDB_FULLNAME_ENDSLASH);
 	displaystr(mlTop+2, 5, 0x0f, npath, plScrWidth-10);
+	free (npath);
 	fsReadDir(ml, dmFILE, dirdbnode, "*", RD_SUBNOSYMLINK|RD_PUTSUBS/*|(fsScanArcs?RD_ARCSCAN:0)*/);
 
 	if (ekbhit())
@@ -100,9 +101,6 @@ static int mlSubScan(const uint32_t dirdbnode, int mlTop)
 			if (strcmp(mle->name, "."))
 			if (strcmp(mle->name, "/"))
 			{
-/*
-				dirdbGetFullName(mle->dirdbfullpath, npath, DIRDB_FULLNAME_NOBASE|DIRDB_FULLNAME_ENDSLASH);
-				if (mlSubScan(npath, mlTop))*/
 				if (mlSubScan(mle->dirdbfullpath, mlTop))
 					return -1;
 			}
@@ -268,8 +266,6 @@ static FILE *mlSourcesAdd(struct modlistentry *entry)
 					{
 						if (!strcmp(_dmDrives->drivename, "file:"))
 						{
-							/*char currentpath[PATH_MAX+1];*/
-							/*dirdbGetFullName(_dmDrives->currentpath, currentpath, DIRDB_FULLNAME_NOBASE|DIRDB_FULLNAME_ENDSLASH);*/
 							mlScan(_dmDrives->currentpath);
 							break;
 						}
