@@ -52,18 +52,16 @@
 
 #include "config.h"
 #include <ctype.h>
-#include <stdio.h>
+#include <dirent.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <fnmatch.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <dirent.h>
 #include <unistd.h>
-#include <errno.h>
 #include "types.h"
 
 #include "adb.h"
@@ -136,13 +134,21 @@ int dosfile_Read(struct modlistentry *entry, char **mem, size_t *size)
 {
 	int fd;
 	ssize_t result;
-	char path[PATH_MAX+1];
+	char *path;
 
-	dirdbGetFullName(entry->dirdbfullpath, path, DIRDB_FULLNAME_NOBASE);
+	dirdbGetFullname_malloc (entry->dirdbfullpath, &path, DIRDB_FULLNAME_NOBASE);
+
 	if (!(*size=_filelength(path)))
+	{
+		free (path);
 		return -1;
+	}
 	if ((fd=open(path, O_RDONLY))<0)
+	{
+		fprintf (stderr, "Failed to open %s: %s\n", path, strerror (errno));
+		free (path);
 		return -1;
+	}
 	*mem=malloc(*size);
 redo:
 	result=read(fd, *mem, *size);
@@ -152,30 +158,43 @@ redo:
 			goto redo;
 		if (errno==EINTR)
 			goto redo;
+		fprintf (stderr, "Failed to read %s: %s\n", path, strerror (errno));
 		free(*mem);
 		close(fd);
+		free (path);
 		return -1;
 	}
 	if (result!=(ssize_t)*size) /* short read ???? */
 	{
+		fprintf (stderr, "Failed to read entire file, only for %d of %d bytes\n", (int)result, (int)*size);
 		free(*mem);
 		close(fd);
+		free (path);
 		return -1;
 	}
 	close(fd);
+	free (path);
 	return 0;
 }
 
 int dosfile_ReadHeader(struct modlistentry *entry, char *mem, size_t *size) /* size is prefilled with max data, and mem is preset*/
 {
 	int fd, result;
-	char path[PATH_MAX+1];
+	char *path;
 
-	dirdbGetFullName(entry->dirdbfullpath, path, DIRDB_FULLNAME_NOBASE);
+	dirdbGetFullname_malloc (entry->dirdbfullpath, &path, DIRDB_FULLNAME_NOBASE);
+
 	if (!(*size=_filelength(path)))
+	{
+		free (path);
 		return -1;
+	}
 	if ((fd=open(path, O_RDONLY))<0)
+	{
+		fprintf (stderr, "Failed to open %s: %s\n", path, strerror (errno));
+		free (path);
 		return -1;
+	}
 redo:
 	result=read(fd, mem, *size);
 	if (result<0)
@@ -184,21 +203,28 @@ redo:
 			goto redo;
 		if (errno==EINTR)
 			goto redo;
+		fprintf (stderr, "Failed to read %s: %s\n", path, strerror (errno));
 		close(fd);
+		free (path);
 		return -1;
 	}
 	*size=result;
 	close(fd);
+	free (path);
 	return 0;
 }
 
 FILE *dosfile_ReadHandle(struct modlistentry *entry)
 {
 	FILE *retval;
-	char path[PATH_MAX+1];
-	dirdbGetFullName(entry->dirdbfullpath, path, DIRDB_FULLNAME_NOBASE);
+	char *path;
+	dirdbGetFullname_malloc (entry->dirdbfullpath, &path, DIRDB_FULLNAME_NOBASE);
+
 	if ((retval=fopen(path, "r")))
+	{
 		fcntl(fileno(retval), F_SETFD, 1<<FD_CLOEXEC);
+	}
+	free (path);
 	return retval;
 }
 
@@ -339,8 +365,7 @@ out:
 static int dosReadDir(struct modlist *ml, const struct dmDrive *drive, const uint32_t dirdbpath, const char *mask, unsigned long opt)
 {
 	DIR *dir;
-	char path[PATH_MAX+1];
-	char newpath[PATH_MAX+1];
+	char *path;
 	struct modlist *tl;
 
 	if (drive!=dmFILE)
@@ -348,7 +373,7 @@ static int dosReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 
 	tl = modlist_create();
 
-	dirdbGetFullName(dirdbpath, path, DIRDB_FULLNAME_NOBASE|DIRDB_FULLNAME_ENDSLASH);
+	dirdbGetFullname_malloc (dirdbpath, &path, DIRDB_FULLNAME_NOBASE|DIRDB_FULLNAME_ENDSLASH);
 	if ((dir=opendir(path)))
 	{
 		struct dirent *de;
@@ -357,8 +382,12 @@ static int dosReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 		if (strcmp(de->d_name, ".."))
 		if (((strlen(path)+strlen(de->d_name)+4)<PATH_MAX))
 		{
-			_makepath(newpath, 0, path, de->d_name, 0);
-			if (isarchivepath(newpath))
+			char *newpath;
+			int res;
+			makepath_malloc (&newpath, 0, path, de->d_name, 0);
+			res = isarchivepath(newpath); /* TODO, this API should take a filename, instead of full path */
+			free (newpath); newpath = 0;
+			if (res)
 			{
 				if ((opt&RD_PUTSUBS)&&(fsPutArcs/*||!(opt&RD_ARCSCAN)*/))
 				{
@@ -378,6 +407,7 @@ static int dosReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 						modlist_sort(tl);
 						modlist_append_modlist(ml, tl);
 						modlist_free(tl);
+						free (path);
 						return 0;
 					}
 					dirdbUnref(dirdbnewpath);
@@ -395,6 +425,7 @@ static int dosReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 	modlist_sort(tl);
 	modlist_append_modlist(ml, tl);
 	modlist_free(tl);
+	free (path);
 	return 1;
 }
 
@@ -2837,18 +2868,21 @@ static void fsSavePlayList(const struct modlist *ml)
 
 	for (i=0; i<ml->num; i++)
 	{
-		char npath[PATH_MAX+1];
+		char *npath, *nnpath;
 		struct modlistentry *m;
 		fprintf(f, "File%d=",i+1);
 		m=modlist_get(ml, i);
 		if (m->drive==dmFILE)
 		{
-			dirdbGetFullName(m->dirdbfullpath, npath, 0);
-			fputs(npath, f);
+			dirdbGetFullname_malloc (m->dirdbfullpath, &npath, 0);
+			fputs (npath, f);
+			free (npath);
 		} else {
-			dirdbGetFullName(m->dirdbfullpath, npath, DIRDB_FULLNAME_NOBASE);
-			genreldir(di, npath, path);
-			fputs(path, f);
+			dirdbGetFullname_malloc (m->dirdbfullpath, &npath, DIRDB_FULLNAME_NOBASE);
+			genreldir_malloc (di, npath, &nnpath);
+			fputs (nnpath, f);
+			free (npath);
+			free (nnpath);
 		}
 		fprintf(f, "\n");
 
