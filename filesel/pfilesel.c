@@ -83,7 +83,6 @@ static char fsScanDir(int pos);
 static struct modlist *currentdir=NULL;
 static struct modlist *playlist=NULL;
 
-char curdirpath[PATH_MAX+1]="file:/";
 uint32_t dirdbcurdirpath=DIRDB_NOPARENT;
 char curmask[NAME_MAX+1]="*";
 
@@ -284,7 +283,7 @@ static void dosReadDirChild(struct modlist *ml,
 		if (S_ISREG(st.st_mode))
 		{
 			_splitpath(path, 0, 0, 0, curext);
-			if (isarchivepath(path))
+			if (isarchiveext(curext))
 			{
 				retval.flags=MODLIST_FLAG_ARC;
 				if (strlen(path)<PATH_MAX)
@@ -382,11 +381,11 @@ static int dosReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 		if (strcmp(de->d_name, ".."))
 		if (((strlen(path)+strlen(de->d_name)+4)<PATH_MAX))
 		{
-			char *newpath;
-			int res;
-			makepath_malloc (&newpath, 0, path, de->d_name, 0);
-			res = isarchivepath(newpath); /* TODO, this API should take a filename, instead of full path */
-			free (newpath); newpath = 0;
+			char *ext;
+			getext_malloc (de->d_name, &ext);
+			int res = isarchiveext(ext);
+			free (ext);
+
 			if (res)
 			{
 				if ((opt&RD_PUTSUBS)&&(fsPutArcs/*||!(opt&RD_ARCSCAN)*/))
@@ -479,7 +478,8 @@ static int initRootDir(const char *sec)
 {
 	int count;
 
-	char currentpath[PATH_MAX+1];
+	int len = 4096; /* PATH_MAX on many systems */
+	char *currentpath, *currentpath2;
 	uint32_t newcurrentpath;
 
 	dmFILE = RegisterDrive("file:");
@@ -487,13 +487,25 @@ static int initRootDir(const char *sec)
 	currentdir=modlist_create();
 	playlist=modlist_create();
 
-	if (!getcwd(currentpath, PATH_MAX))
+	currentpath = malloc(len);
+	while (1)
 	{
-		perror(__FILE__ ", getcwd() failed, setting to /");
-		currentpath[0]='/';
-		currentpath[1]=0;
+		/* since get_current_dir_name() is not POSIX, we need to do this dance to support unknown lengths paths */
+		if (!getcwd (currentpath, len))
+		{
+			if (errno == ENAMETOOLONG)
+			{
+				len += 4096;
+				currentpath = realloc (currentpath, len);
+				continue;
+			}
+			fprintf (stderr, "getcwd() failed, using / instead: %s\n", strerror (errno));
+			strcpy (currentpath, "/");
+		}
+		break;
 	}
 	newcurrentpath = dirdbResolvePathWithBaseAndRef(dmFILE->basepath, currentpath);
+
 	dirdbUnref(dmFILE->currentpath);
 	dmFILE->currentpath = newcurrentpath;
 	dmCurDrive=dmFILE;
@@ -521,15 +533,17 @@ static int initRootDir(const char *sec)
 		dirdbUnref(dirdbfullpath);
 	}
 
-
 	/* change dir */
-	gendir(currentpath, cfGetProfileString2(sec, "fileselector", "path", "."), currentpath);
-	newcurrentpath = dirdbResolvePathWithBaseAndRef(dmFILE->basepath, currentpath);
+	gendir_malloc (currentpath, cfGetProfileString2(sec, "fileselector", "path", "."), &currentpath2);
+	free (currentpath);
+
+	newcurrentpath = dirdbResolvePathWithBaseAndRef(dmFILE->basepath, currentpath2);
+	free (currentpath2);
+
 	dirdbUnref(dmFILE->currentpath);
 	dmFILE->currentpath = newcurrentpath;
 
 	dirdbcurdirpath=dmFILE->currentpath;
-	dirdbGetFullName(dirdbcurdirpath, curdirpath, DIRDB_FULLNAME_ENDSLASH);
 	dirdbRef(dmFILE->currentpath);
 
 	return 1;
@@ -1101,8 +1115,6 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 	unsigned int prelpos= ~0;
 
 	uint16_t sbuf[CONSOLE_MAX_X];
-	unsigned int len;
-	char temppath[PATH_MAX*2+1];
 	const char *tmppos;
 	char npath[PATH_MAX+1];
 
@@ -1113,19 +1125,26 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 
 	make_title("file selector ][");
 	displayvoid(1, 0, plScrWidth);
-	strcpy(temppath, curdirpath);
-	strcat(temppath, curmask);
-	len=strlen(temppath);
+
 	if (selectv==(unsigned)~0)
 	{
 		displaystr(1, 0, 0x0f, "playlist://", plScrWidth);
 	} else {
+		unsigned int len;
+		char *temppath;
+
+		dirdbGetFullname_malloc (dirdbcurdirpath, &temppath, DIRDB_FULLNAME_ENDSLASH);
+		len = strlen (temppath) + strlen(curmask);
+		temppath = realloc (temppath, len + 1);
+		strcat(temppath, curmask);
+
 		if (len>plScrWidth)
 		{
 			displaystr(1, 0, 0x0F, temppath+len-plScrWidth, plScrWidth);
 		} else {
 			displaystr(1, 0, 0x0F, temppath, len);
 		}
+		free (temppath);
 	}
 	fillstr(sbuf, 0, 0x07, 0xc4, CONSOLE_MAX_X);
 	if (!playlistactive)
@@ -2140,43 +2159,52 @@ static int fsEditFileInfo(struct modlistentry *me)
 
 static char fsEditViewPath(void)
 {
-	char path[PATH_MAX+NAME_MAX+1];
-	/*char *p=path;*/
-	snprintf(path, sizeof(path), "%s%s", curdirpath, curmask);
+#warning fsEditString API should have a dynamic version, FIXME
+	char path[128*1024];
+
+	{
+		char *temppath;
+		dirdbGetFullname_malloc (dirdbcurdirpath, &temppath, DIRDB_FULLNAME_ENDSLASH);
+		free (temppath);
+		snprintf(path, sizeof(path), "%s%s", temppath, curmask);
+	}
 
 	if (fsEditString(1, 0, plScrWidth, sizeof(path), path))
 	{
-		struct dmDrive *drives=dmDrives;
-		char _drive[NAME_MAX+1];
-		char _path[PATH_MAX+1];
-		char _name[NAME_MAX+1];
-		char _ext[NAME_MAX+1];
+		struct dmDrive *drives;
+		char *drive;
+		char *path;
+		char *name;
+		char *ext;
 		uint32_t newcurrentpath;
-		_splitpath(path, _drive, _path, _name, _ext);
-		while (drives)
+
+		splitpath_malloc(path, &drive, &path, &name, &ext);
+		for (drives = dmDrives; drives; drives = drives->next)
 		{
-			if (strcasecmp(_drive, drives->drivename))
+			if (strcasecmp(drive, drives->drivename))
 			{
-				drives=drives->next;
 				continue;
 			}
 			dmCurDrive=drives;
-			if (strlen(_path))
+			if (strlen(path))
 			{
-				newcurrentpath = dirdbResolvePathWithBaseAndRef(dmCurDrive->basepath, _path);
+				newcurrentpath = dirdbResolvePathWithBaseAndRef(dmCurDrive->basepath, path);
 				dirdbUnref(dirdbcurdirpath);
 				dirdbUnref(dmCurDrive->currentpath);
 				dirdbcurdirpath = dmCurDrive->currentpath = newcurrentpath;
 				dirdbRef(dirdbcurdirpath);
 			}
-			dirdbGetFullName(dirdbcurdirpath, curdirpath, DIRDB_FULLNAME_ENDSLASH);
-			if (strlen(curdirpath)+strlen(_name)+strlen(_ext)<=PATH_MAX)
+			if (strlen(name)+strlen(ext)<=PATH_MAX)
 			{
-				strcpy(curmask, _name);
-				strcat(curmask, _ext);
+				strcpy(curmask, name);
+				strcat(curmask, ext);
 			}
 			break;
 		}
+		free (drive);
+		free (path);
+		free (name);
+		free (ext);
 
 		if (!fsScanDir(0))
 			return 0;
@@ -2453,7 +2481,6 @@ signed int fsFileSelect(void)
 						dirdbUnref(dirdbcurdirpath);
 
 						dirdbcurdirpath=m->dirdbfullpath;
-						dirdbGetFullName(dirdbcurdirpath, curdirpath, DIRDB_FULLNAME_ENDSLASH);
 						dirdbRef(dirdbcurdirpath);
 
 						dmCurDrive=(struct dmDrive *)m->drive;
@@ -2811,13 +2838,15 @@ static int stdReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 
 static void fsSavePlayList(const struct modlist *ml)
 {
-	char path[PATH_MAX+1];
+#warning fsEditString API should have a dynamic version, FIXME
+	char path[128*1024];
 	int mlTop=plScrHeight/2-2;
 	unsigned int i;
-	char dr[NAME_MAX+1];
-	char di[PATH_MAX+1];
-	char fn[NAME_MAX+1];
-	char ext[NAME_MAX+1];
+	char *dr;
+	char *di;
+	char *fn;
+	char *ext;
+	char *newpath;
 	FILE *f;
 
 	displayvoid(mlTop+1, 5, plScrWidth-10);
@@ -2840,29 +2869,49 @@ static void fsSavePlayList(const struct modlist *ml)
 
 	displaystr(mlTop+1, 5, 0x0b, "Store playlist, please give filename (.pls format):", 50);
 	displaystr(mlTop+3, 5, 0x0b, "-- Abort with escape --", 23);
-	_splitpath(curdirpath, dr, di, NULL, NULL);
-	*fn=0;
-	*ext=0;
-	_makepath(path, dr, di, fn, ext);
+
+	{
+		char *curdirpath;
+		dirdbGetFullname_malloc (dirdbcurdirpath, &curdirpath, DIRDB_FULLNAME_ENDSLASH);
+		snprintf (path, sizeof (path), "%s", curdirpath);
+		free (curdirpath);
+	}
 
 	if (!fsEditString(mlTop+2, 5, plScrWidth-10, sizeof(path), path))
+	{
 		return;
+	}
 
-	_splitpath(path, dr, di, fn, ext);
+	splitpath_malloc(path, &dr, &di, &fn, &ext);
 	if (!*ext)
-		strcpy(ext, ".pls");
+	{
+		free (ext);
+		ext = strdup (".pls");
+	}
+
 	if (strcmp(dr, "file:"))
 	{
 		fprintf(stderr, "[filesel] file: is the only supported transport currently\n");
+		free (dr);
+		free (di);
+		free (fn);
+		free (ext);
 		return;
 	}
-	_makepath(path, NULL, di, fn, ext);
 
-	if (!(f=fopen(path, "w")))
+	makepath_malloc (&newpath, NULL, di, fn, ext);
+	free (dr);
+	free (fn);
+	free (ext);
+
+	if (!(f=fopen(newpath, "w")))
 	{
-		perror("fopen()"); /* TODO */
+		fprintf (stderr, "Failed to create file %s: %s\n", newpath, strerror (errno));
+		free (di);
+		free (newpath);
 		return;
 	}
+	free (newpath);
 	fprintf(f, "[playlist]\n");
 	fprintf(f, "NumberOfEntries=%d\n", ml->num);
 
@@ -2872,7 +2921,7 @@ static void fsSavePlayList(const struct modlist *ml)
 		struct modlistentry *m;
 		fprintf(f, "File%d=",i+1);
 		m=modlist_get(ml, i);
-		if (m->drive==dmFILE)
+		if (m->drive!=dmFILE)
 		{
 			dirdbGetFullname_malloc (m->dirdbfullpath, &npath, 0);
 			fputs (npath, f);
@@ -2887,6 +2936,7 @@ static void fsSavePlayList(const struct modlist *ml)
 		fprintf(f, "\n");
 
 	}
+	free (di);
 	fclose(f);
 
 	fsScanDir(1);

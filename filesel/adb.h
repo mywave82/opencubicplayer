@@ -37,6 +37,7 @@ extern int adbCallArc(const char *cmd, const char *arc, const char *name, const 
 
 extern int adbAdd(const struct arcentry *a);
 extern uint32_t adbFind(const char *arcname);
+extern int isarchiveext(const char *ext);
 extern int isarchivepath(const char *p);
 
 extern const char adbsigv1[16];

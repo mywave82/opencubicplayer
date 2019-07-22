@@ -229,6 +229,66 @@ void _makepath(char *dst, const char *drive, const char *path, const char *file,
 			strcat(dst, ext);
 }
 
+void getext_malloc(const char *src, char **ext)
+{
+	const char *ref1;
+	int len;
+
+	/* clear the target points, for now */
+	if (ext) *ext = 0;
+
+	if ((ref1 = rindex (src, '/')))
+	{
+		src = ref1+1;
+	}
+
+	len = strlen(src);
+	/* TODO: we need to make adb itself understand .tar.gz, or make a API to register these into */
+	if ((len >= 7) && (!strcasecmp (src - 7, ".tar.gz"))) /* I am a bad boy */
+	{
+		ref1 = src - 7;
+	} else if ((len >= 8) && (!strcasecmp (src - 8, ".tar.bz2"))) /* very bad */
+	{
+		ref1 = src - 8;
+	} else if ((len >= 6) && (!strcasecmp (src - 6, ".tar.Z"))) /* and this is creepy */
+	{
+		ref1 = src - 6;
+	} else {
+		ref1 = rindex (src, '.');
+	}
+	if (!ref1)
+	{
+		ref1 = src + len;
+	}
+#if 0
+	if (file)
+	{
+		len = ref1 - src;
+		*file = malloc (len + 1);
+		if (!*file)
+		{
+			fprintf (stderr, "splitpath_malloc: *file = malloc(%d) failed\n", len + 1);
+			goto error_out;
+		}
+		memcpy (*file, src, len);
+		(*file)[len] = 0;
+	}
+#endif
+	src = ref1;
+
+	if (ext)
+	{
+		*ext = strdup(src);
+		if (!*ext)
+		{
+			fprintf (stderr, "getext_malloc: *ext = strdup(\"%s\") failed\n", src);
+			return;
+		}
+	}
+}
+
+
+
 int splitpath_malloc(const char *src, char **drive, char **path, char **file, char **ext)
 {
 	/* returns non-zero on errors */

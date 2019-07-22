@@ -536,12 +536,23 @@ fail:
 	return retval;
 }
 
-static int isarchive(const char *ext)
+int isarchiveext(const char *ext)
 {
 	struct adbregstruct *packers;
+
+	if (!ext)
+	{
+		return 0;
+	}
+
 	for (packers=adbPackers; packers; packers=packers->next)
+	{
 		if (!strcasecmp(ext, packers->ext))
+		{
 			return 1;
+		}
+	}
+
 	return 0;
 }
 
@@ -553,7 +564,7 @@ int isarchivepath(const char *path)
 
 	splitpath_malloc(path, 0, 0, 0, &ext);
 
-	retval = isarchive(ext);
+	retval = isarchiveext(ext);
 
 	free (ext);
 
@@ -665,8 +676,11 @@ FILE *adb_ReadHandle(struct modlistentry *entry)
 		dir[strlen(dir)-1]=0; /* Remove / suffix */
 	}
 
-	if (!isarchivepath(dir))
+	getext_malloc(dir, &ext);
+
+	if (!isarchiveext(ext))
 	{
+		free (ext);
 		free (dir);
 		return 0;
 	}
@@ -675,6 +689,7 @@ FILE *adb_ReadHandle(struct modlistentry *entry)
 	if (!temppath)
 	{
 		perror ("adb_ReadHandle() malloc failed\n");
+		free (ext);
 		free (dir);
 		return 0;
 	}
@@ -683,13 +698,13 @@ FILE *adb_ReadHandle(struct modlistentry *entry)
 	if ((fd=mkstemp(temppath))<0)
 	{
 		perror("adb_ReadHandle() mkstemp failed");
+		free (ext);
 		free (dir);
 		free (temppath);
 		return 0;
 	}
 	/*fcntl(fd, F_SETFD, 1<<FD_CLOEXEC);*/
 
-	splitpath_malloc(dir, 0, 0, 0, &ext);
 
 	{
 		struct adbregstruct *packers;
