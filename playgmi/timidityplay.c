@@ -78,7 +78,7 @@ static uint32_t gmibufrate = 0x10000; /* re-sampling rate.. fixed point 0x10000 
 
 /* clipper threadlock since we use a timer-signal */
 static volatile int clipbusy=0;
-static const char *current_path=0;
+static char *current_path=0;
 
 static int gmi_eof;
 static int gmi_looped;
@@ -1808,6 +1808,7 @@ static void doTimidityClosePlayer(int CloseDriver)
 
 	emulate_main_end ();
 
+	free (current_path);
 	current_path = 0;
 
 	while (EventDelayed_PlrBuf_head)
@@ -1827,6 +1828,7 @@ static void doTimidityClosePlayer(int CloseDriver)
 	EventDelayed_gmibuf_tail = 0;
 }
 
+#warning timidity internal API has support for memory-buffers, instead of file-objects
 int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *file)
 {
 	if (!plrPlay)
@@ -1903,8 +1905,8 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *fil
 
 	eventDelayed_PlrBuf_lastpos = plrGetPlayPos() >> (stereo+bit16);
 
-	current_path = file;
-	emulate_play_midi_file_start(file, &timidity_main_session); /* gmibuflen etc must be set, since we will start to get events already here... */
+	current_path = strdup (file);
+	emulate_play_midi_file_start(current_path, &timidity_main_session); /* gmibuflen etc must be set, since we will start to get events already here... */
 
 	if (!pollInit(timidityIdle))
 	{

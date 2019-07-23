@@ -4,8 +4,8 @@
 #include <stdio.h> /* FILE * */
 
 struct moduleinfostruct;
-extern int fsGetNextFile(char *path, struct moduleinfostruct *info, FILE **); /* info comes from external buffer */
-extern int fsGetPrevFile(char *path, struct moduleinfostruct *info, FILE **); /* info comes from external buffer */
+extern int fsGetNextFile(uint32_t *dirdbref, struct moduleinfostruct *info, FILE **); /* info comes from external buffer */
+extern int fsGetPrevFile(uint32_t *dirdbref, struct moduleinfostruct *info, FILE **); /* info comes from external buffer */
 extern int fsFilesLeft(void);
 extern signed int fsFileSelect(void);
 /* extern char fsAddFiles(const char *);      use the playlist instead..*/
@@ -36,7 +36,7 @@ extern int fsIsModule(const char *ext);
 
 struct preprocregstruct
 {
-	void (*Preprocess)(const char *path, struct moduleinfostruct *info, FILE **f);
+	void (*Preprocess)(const uint32_t dirdbref, struct moduleinfostruct *info, FILE **f);
 	struct preprocregstruct *next;
 };
 
@@ -44,7 +44,7 @@ struct preprocregstruct
 
 struct filehandlerstruct
 {
-	int (*Process)(const char *path, struct moduleinfostruct *m, FILE **f);
+	int (*Process)(const uint32_t dirdbref, struct moduleinfostruct *m, FILE **f);
 };
 
 typedef enum {
@@ -59,7 +59,7 @@ typedef enum {
 
 struct interfacestruct
 {
-	int (*Init)(const char *path, struct moduleinfostruct *info, FILE **f);
+	int (*Init)(const uint32_t dirdbref, struct moduleinfostruct *info, FILE **f);
 	interfaceReturnEnum (*Run)(void);
 	void (*Close)(void);
 	const char *name;
@@ -109,7 +109,7 @@ int fsMatchFileName12(const char *a, const char *b);
 
 extern void fsSetup(void);
 extern void fsRescanDir(void);
-extern void fsForceRemove(const char *path);
+extern void fsForceRemove(const uint32_t dirdbref);
 
 struct modlistentry;
 extern int dosfile_Read(struct modlistentry *entry, char **mem, size_t *size); /* used by medialib */

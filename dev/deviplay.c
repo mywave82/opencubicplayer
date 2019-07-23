@@ -283,17 +283,23 @@ out:
 	return 1;
 }
 
-static int plrSet(const char *path, struct moduleinfostruct *mi, FILE **fp)
+static int plrSet(const uint32_t dirdbref, struct moduleinfostruct *mi, FILE **fp)
 {
-	char name[9]; /* we never make names that are too big here */
-	_splitpath(path, 0, 0, name, 0);
+	char *path, *name;
+
+	dirdbGetFullname_malloc (dirdbref, &path, DIRDB_FULLNAME_NOBASE);
+	splitpath_malloc (path, 0, 0, &name, 0);
+
 	plrSetDevice(name, 1);
-	/*delay(1000); do we really need this ??? (doj)*/
+
+	free (name);
+	free (path);
+
 	return 0;
 }
 
 
-static void plrPrep(const char *path, struct moduleinfostruct *m, FILE **fp)
+static void plrPrep(const uint32_t dirdbref, struct moduleinfostruct *m, FILE **fp)
 {
 	plrResetDevice();
 }

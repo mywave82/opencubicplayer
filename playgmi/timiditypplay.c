@@ -1,5 +1,6 @@
 #include "config.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include "types.h"
@@ -8,6 +9,7 @@
 #include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/player.h"
+#include "filesel/dirdb.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
@@ -405,21 +407,15 @@ static int timidityProcessKey(uint16_t key)
 
 }
 
-static int timidityOpenFile(const char *path, struct moduleinfostruct *info, FILE *file)
+static int timidityOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
 {
-	char _modname[NAME_MAX+1];
-	char _modext[NAME_MAX+1];
 	int err;
 
 	if (!file)
 		return errGen;
 
-	_splitpath(path, 0, 0, _modname, _modext);
-
-	strncpy(currentmodname, _modname, _MAX_FNAME);
-	_modname[_MAX_FNAME]=0;
-	strncpy(currentmodext, _modext, _MAX_EXT);
-	_modext[_MAX_EXT]=0;
+	strncpy(currentmodname, info->name, _MAX_FNAME);
+	strncpy(currentmodext, info->name+ + _MAX_FNAME, _MAX_EXT);
 
 	modname=info->modname;
 	composer=info->composer;
@@ -436,10 +432,15 @@ static int timidityOpenFile(const char *path, struct moduleinfostruct *info, FIL
 	plNLChan=16;
 	timidityChanSetup(/*&mid*/);
 
-
-	if ((err = timidityOpenPlayer(path)))
 	{
-		return err;
+		char *path;
+		dirdbGetFullname_malloc (dirdbref, &path, DIRDB_FULLNAME_NOBASE);
+		err = timidityOpenPlayer(path);
+		free (path);
+		if (err)
+		{
+			return err;
+		}
 	}
 
 	starttime=dos_clock();

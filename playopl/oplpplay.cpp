@@ -30,6 +30,7 @@
 #include "types.h"
 extern "C"
 {
+#include "filesel/dirdb.h"
 #include "filesel/pfilesel.h"
 #include "filesel/mdb.h"
 #include "dev/player.h"
@@ -458,14 +459,16 @@ static void normalize(void)
 	mcpNormalize(0);
 }
 
-static int oplOpenFile(const char *path, struct moduleinfostruct *info, FILE *file)
+static int oplOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
 {
-	char _path[PATH_MAX+1];
-	char ext[NAME_MAX+1];
 	int n=1;
 	int fd;
+	char *ext;
+	char *path;
+	char _path[256];
 
-	_splitpath(path, NULL, NULL, NULL, ext);
+	dirdbGetName_internalstr (dirdbref, &path);
+	getext_malloc (path, &ext);
 
 	while (1)
 	{
@@ -473,8 +476,13 @@ static int oplOpenFile(const char *path, struct moduleinfostruct *info, FILE *fi
 		if ((fd=open(_path, O_RDWR|O_CREAT|O_EXCL, S_IRUSR|S_IWUSR))>=0)
 			break;
 		if (n>=100000)
+		{
+			free (ext);
 			return -1;
+		}
 	}
+	free (ext);
+	ext = 0;
 	{
 		char buffer[65536];
 		int res;
@@ -493,7 +501,7 @@ static int oplOpenFile(const char *path, struct moduleinfostruct *info, FILE *fi
 	}
 	close(fd);
 
-	fprintf(stderr, "loading %s via %s...\n", path, _path);
+	fprintf(stderr, "loading %s via %s\n", path, _path);
 
 	plIsEnd=oplLooped;
 	plProcessKey=oplProcessKey;
@@ -501,6 +509,7 @@ static int oplOpenFile(const char *path, struct moduleinfostruct *info, FILE *fi
 	plGetMasterSample=plrGetMasterSample;
 	plGetRealMasterVolume=plrGetRealMasterVolume;
 
+#warning this API should change to use FILE IO
 	if (!oplOpenPlayer(_path))
 	{
 		unlink(_path);

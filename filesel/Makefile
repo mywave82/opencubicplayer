@@ -146,6 +146,7 @@ fstypes.o: fstypes.c \
 pfsmain.o: pfsmain.c \
 	../config.h \
 	../types.h \
+	dirdb.h \
 	mdb.h \
 	pfilesel.h \
 	../boot/plinkman.h \

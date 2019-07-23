@@ -43,6 +43,7 @@ playopl$(LIB_SUFFIX): $(playopl_so)
 oplpplay.o: oplpplay.cpp \
 	../config.h \
 	../types.h \
+	../filesel/dirdb.h \
 	../filesel/pfilesel.h \
 	../filesel/mdb.h \
 	../dev/player.h \

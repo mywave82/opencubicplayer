@@ -338,7 +338,7 @@ int splitpath_malloc(const char *src, char **drive, char **path, char **file, ch
 		}
 	}
 
-	if (*src!='/')
+	if (drive && *drive && *src!='/') /* Paths with drive should always start with / */
 	{
 		fprintf (stderr, "splitpath_malloc: PATH does not start with /\n");
 		goto error_out;

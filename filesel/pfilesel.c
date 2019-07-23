@@ -629,16 +629,18 @@ void fsRescanDir(void)
 	conSave();
 }
 
-int fsGetPrevFile(char *path, struct moduleinfostruct *info, FILE **file)
+int fsGetPrevFile(uint32_t *dirdbref, struct moduleinfostruct *info, FILE **file)
 {
 	struct modlistentry *m;
 	int retval=0;
 	int pick;
 
+	*dirdbref = DIRDB_CLEAR;
+
 	switch (isnextplay)
 	{
 		default:
-			return fsGetNextFile(path, info, file);
+			return fsGetNextFile(dirdbref, info, file);
 		case NextPlayNone:
 			if (!playlist->num)
 			{
@@ -646,7 +648,7 @@ int fsGetPrevFile(char *path, struct moduleinfostruct *info, FILE **file)
 				return retval;
 			}
 			if (fsListScramble)
-				return fsGetNextFile(path, info, file);
+				return fsGetNextFile(dirdbref, info, file);
 			if (playlist->pos)
 				playlist->pos--;
 			else
@@ -661,7 +663,8 @@ int fsGetPrevFile(char *path, struct moduleinfostruct *info, FILE **file)
 
 	mdbGetModuleInfo(info, m->mdb_ref);
 
-	dirdbGetFullName(m->dirdbfullpath, path, 0);
+	dirdbRef (m->dirdbfullpath);
+	*dirdbref = m->dirdbfullpath;
 
 	if (!(info->flags1&MDB_VIRTUAL)) /* this should equal to if (m->ReadHandle) */
 	{
@@ -681,16 +684,23 @@ int fsGetPrevFile(char *path, struct moduleinfostruct *info, FILE **file)
 
 	retval=1;
 errorout:
+	if (!retval)
+	{
+		dirdbUnref (m->dirdbfullpath);
+		*dirdbref = DIRDB_CLEAR;
+	}
 	if (fsListRemove)
 		modlist_remove(playlist, pick, 1);
 	return retval;
 }
 
-int fsGetNextFile(char *path, struct moduleinfostruct *info, FILE **file)
+int fsGetNextFile(uint32_t *dirdbref, struct moduleinfostruct *info, FILE **file)
 {
 	struct modlistentry *m;
 	unsigned int pick=0;
 	int retval=0;
+
+	*dirdbref = DIRDB_CLEAR;
 
 	switch (isnextplay)
 	{
@@ -725,7 +735,8 @@ int fsGetNextFile(char *path, struct moduleinfostruct *info, FILE **file)
 
 	mdbGetModuleInfo(info, m->mdb_ref);
 
-	dirdbGetFullName(m->dirdbfullpath, path, 0);
+	dirdbRef (m->dirdbfullpath);
+	*dirdbref = m->dirdbfullpath;
 
 	if (!(info->flags1&MDB_VIRTUAL)) /* this should equal to if (m->ReadHandle) */
 	{
@@ -745,6 +756,11 @@ int fsGetNextFile(char *path, struct moduleinfostruct *info, FILE **file)
 
 	retval=1;
 errorout:
+	if (!retval)
+	{
+		dirdbUnref (m->dirdbfullpath);
+		*dirdbref = DIRDB_CLEAR;
+	}
 	switch (isnextplay)
 	{
 		case NextPlayBrowser:
@@ -766,14 +782,9 @@ errorout:
 	return retval;
 }
 
-void fsForceRemove(const char *path)
+void fsForceRemove(const uint32_t dirdbref)
 {
-	uint32_t handle;
-	handle = dirdbResolvePathAndRef(path);
-	if (handle == DIRDB_NO_MDBREF)
-		return;
-	modlist_remove_all_by_path(playlist, handle);
-	dirdbUnref(handle);
+	modlist_remove_all_by_path(playlist, dirdbref);
 }
 
 int fsPreInit(void)

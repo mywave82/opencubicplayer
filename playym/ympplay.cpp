@@ -596,7 +596,7 @@ static void normalize(void)
 {
 	mcpNormalize(0);
 }
-static int ymOpenFile(const char *path, struct moduleinfostruct *info, FILE *file)
+static int ymOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
 {
 	plIsEnd=ymLooped;
 	plProcessKey=ymProcessKey;

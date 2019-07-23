@@ -445,7 +445,7 @@ static void plmpClose(void)
 
 static int linkhandle;
 
-static int plmpOpenFile(const char *path, struct moduleinfostruct *info, FILE **fi)
+static int plmpOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE **fi)
 {
 	char secname[20];
 	const char *link;
@@ -498,7 +498,7 @@ static int plmpOpenFile(const char *path, struct moduleinfostruct *info, FILE **
 
 	curplayer=(struct cpifaceplayerstruct*)fp;
 
-	retval=curplayer->OpenFile(path, info, *fi);
+	retval=curplayer->OpenFile(dirdbref, info, *fi);
 
 	if (retval)
 	{

@@ -47,6 +47,7 @@ cdapplay.o: cdapplay.c cdaudio.h \
 	../cpiface/cpiface.h \
 	../dev/deviplay.h \
 	../dev/devisamp.h \
+	../filesel/dirdb.h \
 	../filesel/mdb.h \
 	../stuff/compat.h \
 	../stuff/err.h \

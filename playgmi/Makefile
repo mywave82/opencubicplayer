@@ -148,6 +148,7 @@ timiditypplay.o: timiditypplay.c \
 	../config.h \
 	../boot/plinkman.h \
 	../cpiface/cpiface.h \
+	../filesel/dirdb.h \
 	timidityplay.h
 	$(CC) $< -o $@ -c
 

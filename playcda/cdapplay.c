@@ -36,6 +36,7 @@
 #include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/devisamp.h"
+#include "filesel/dirdb.h"
 #include "filesel/pfilesel.h"
 #include "filesel/mdb.h"
 #include "stuff/compat.h"
@@ -392,20 +393,19 @@ static void cdaCloseFile(void)
 	cdStop(fileno(cdpDrive));
 }
 
-static int cdaOpenFile(const char *path, struct moduleinfostruct *info, FILE *file)
+static int cdaOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
 {
-	char name[NAME_MAX+1];
-	char ext[NAME_MAX+1];
+	char *name;
 	unsigned char tnum;
 
 	cdpDrive=file;
 
-	_splitpath(path, 0, 0, name, ext);
+	dirdbGetName_internalstr (dirdbref, &name);
 
-	if (!strcmp(name, "DISK"))
+	if (!strcmp(name, "DISK.CDA"))
 		tnum=0xFF;
 	else
-		if (!memcmp(name, "TRACK", 5)&&isdigit(name[5])&&isdigit(name[6])&&(strlen(name)==7))
+		if (!memcmp(name, "TRACK", 5)&&isdigit(name[5])&&isdigit(name[6])&&(name[7]=='.'))
 			tnum=(name[5]-'0')*10+(name[6]-'0');
 		else
 			return -1;

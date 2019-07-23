@@ -412,23 +412,16 @@ static int ayProcessKey(uint16_t key)
 
 }
 
-static int ayOpenFile(const char *path, struct moduleinfostruct *info, FILE *file)
+static int ayOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
 {
 /*
 	struct ayinfo ay;
 */
-	char _modname[NAME_MAX+1];
-	char _modext[NAME_MAX+1];
-
 	if (!file)
 		return -1;
 
-	_splitpath(path, 0, 0, _modname, _modext);
-
-	strncpy(currentmodname, _modname, _MAX_FNAME);
-	_modname[_MAX_FNAME]=0;
-	strncpy(currentmodext, _modext, _MAX_EXT);
-	_modext[_MAX_EXT]=0;
+	strncpy(currentmodname, info->name, _MAX_FNAME);
+	strncpy(currentmodext, info->name+ + _MAX_FNAME, _MAX_EXT);
 
 	modname=info->modname;
 	composer=info->composer;

@@ -20,7 +20,7 @@
 struct moduleinfostruct;
 struct cpifaceplayerstruct
 {
-	int (*OpenFile)(const char *path, struct moduleinfostruct *info, FILE *f);
+	int (*OpenFile)(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *f);
 	void (*CloseFile)();
 };
 

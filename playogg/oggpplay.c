@@ -489,26 +489,20 @@ static void oggCloseFile(void)
 	oggClosePlayer();
 }
 
-static int oggOpenFile(const char *path, struct moduleinfostruct *info, FILE *oggf)
+static int oggOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *oggf)
 {
-	char _modname[NAME_MAX+1];
-	char _modext[NAME_MAX+1];
 	struct ogginfo inf;
 
 	if (!oggf)
 		return -1;
 
-	_splitpath(path, 0, 0, _modname, _modext);
-
-	strncpy(currentmodname, _modname, _MAX_FNAME);
-	_modname[_MAX_FNAME]=0;
-	strncpy(currentmodext, _modext, _MAX_EXT);
-	_modext[_MAX_EXT]=0;
+	strncpy(currentmodname, info->name, _MAX_FNAME);
+	strncpy(currentmodext, info->name+ + _MAX_FNAME, _MAX_EXT);
 
 	modname=info->modname;
 	composer=info->composer;
 
-	fprintf(stderr, "loading %s%s...\n", _modname, _modext);
+	fprintf(stderr, "loading %s%s...\n", currentmodname, currentmodext);
 
 	oggfile=oggf;
 

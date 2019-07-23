@@ -374,12 +374,10 @@ static int gmdLooped(void)
 	return (!fsLoopMods&&mpLooped());
 }
 
-static int gmdOpenFile(const char *path, struct moduleinfostruct *info, FILE *file)
+static int gmdOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
 {
 	unsigned int i;
 	int retval;
-	char _modname[NAME_MAX+1];
-	char _modext[NAME_MAX+1];
 
 	if (!mcpOpenPlayer)
 		return errGen;
@@ -389,12 +387,8 @@ static int gmdOpenFile(const char *path, struct moduleinfostruct *info, FILE *fi
 
 	patlock=0;
 
-	_splitpath(path, 0, 0, _modname, _modext);
-
-	strncpy(currentmodname, _modname, _MAX_FNAME);
-	_modname[_MAX_FNAME]=0;
-	strncpy(currentmodext, _modext, _MAX_EXT);
-	_modext[_MAX_EXT]=0;
+	strncpy(currentmodname, info->name, _MAX_FNAME);
+	strncpy(currentmodext, info->name+ + _MAX_FNAME, _MAX_EXT);
 
 	fseek(file, 0, SEEK_END);
 	i=ftell(file);
