@@ -2,7 +2,7 @@
 #define _PLAYOPL_H 1
 
 extern void oplClosePlayer(void);
-extern int __attribute__ ((visibility ("internal"))) oplOpenPlayer(const char *filename);
+extern int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filename /* needed for detection */, const uint8_t *content, const size_t len);
 extern void oplSetLoop(int);
 extern int oplIsLooped(void);
 extern void oplPause(uint8_t p);

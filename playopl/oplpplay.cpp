@@ -461,47 +461,36 @@ static void normalize(void)
 
 static int oplOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
 {
-	int n=1;
-	int fd;
-	char *ext;
 	char *path;
-	char _path[256];
+	size_t buffersize = 16*1024;
+	uint8_t *buffer = (uint8_t *)malloc (buffersize);
+	size_t bufferfill = 0;
 
 	dirdbGetName_internalstr (dirdbref, &path);
-	getext_malloc (path, &ext);
 
-	while (1)
 	{
-		snprintf(_path, sizeof(_path), "%splayOPLtemp%08d%s", cfTempDir, n++, ext);
-		if ((fd=open(_path, O_RDWR|O_CREAT|O_EXCL, S_IRUSR|S_IWUSR))>=0)
-			break;
-		if (n>=100000)
-		{
-			free (ext);
-			return -1;
-		}
-	}
-	free (ext);
-	ext = 0;
-	{
-		char buffer[65536];
 		int res;
 		while (!feof(file))
 		{
-			res=fread(buffer, 1, sizeof(buffer), file);
+			if (buffersize == bufferfill)
+			{
+				if (buffersize >= 16*1024*1024)
+				{
+					fprintf (stderr, "oplOpenFile: %s is bigger than 16 Mb - further loading blocked\n", path);
+					free (buffer);
+					return -1;
+				}
+				buffersize += 16*1024;
+				buffer = (uint8_t *)realloc (buffer, buffersize);
+			}
+			res=fread(buffer + bufferfill, 1, buffersize - bufferfill, file);
 			if (res<=0)
 				break;
-			if (write(fd, buffer, res)!=res)
-			{
-				perror(__FILE__ ": write failed: ");
-				unlink(_path);
-				return -1;
-			}
+			bufferfill += res;
 		}
 	}
-	close(fd);
 
-	fprintf(stderr, "loading %s via %s\n", path, _path);
+	fprintf(stderr, "OPL/AdPlug: loading %s\n", path);
 
 	plIsEnd=oplLooped;
 	plProcessKey=oplProcessKey;
@@ -509,13 +498,12 @@ static int oplOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 	plGetMasterSample=plrGetMasterSample;
 	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-#warning this API should change to use FILE IO
-	if (!oplOpenPlayer(_path))
+	if (!oplOpenPlayer(path, buffer, bufferfill))
 	{
-		unlink(_path);
+		free (buffer);
 		return -1;
 	}
-	unlink(_path);
+	free (buffer);
 
 	starttime=dos_clock();
 	plPause=0;

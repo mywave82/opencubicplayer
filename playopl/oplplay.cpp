@@ -19,9 +19,12 @@
  */
 
 #include "config.h"
+#include <binio.h>
+#include <binstr.h>
 #include <cstdlib>
 #include <string.h>
 #include <adplug/adplug.h>
+#include <adplug/fprovide.h>
 #include "types.h"
 extern "C"
 {
@@ -166,7 +169,43 @@ static int GET(int ch, int opt)
 	return 0;
 }
 
-int __attribute__ ((visibility ("internal"))) oplOpenPlayer(const char *filename)
+class CProvider_Mem: public CFileProvider
+{
+	private:
+		const uint8_t *file_data;
+		int file_size;
+
+	public:
+		CProvider_Mem(const uint8_t *file_data, int file_size) :
+			file_data(file_data),
+			file_size(file_size)
+		{
+		}
+
+		virtual binistream *open(std::string filename) const;
+		virtual void close(binistream *f) const;
+};
+
+binistream *CProvider_Mem::open(std::string filename) const
+{
+	binisstream *f = new binisstream((uint8_t *)this->file_data, this->file_size);
+
+	if (!f) return 0;
+	if (f->error()) { delete f; return 0; }
+
+	// Open all files as little endian with IEEE floats by default
+	f->setFlag(binio::BigEndian, false);
+	f->setFlag(binio::FloatIEEE);
+
+	return f;
+}
+
+void CProvider_Mem::close(binistream *f) const
+{
+	delete f;
+}
+
+int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filename /* needed for detection */, const uint8_t *content, const size_t len)
 {
 	plrSetOptions(44100, (PLR_SIGNEDOUT|PLR_16BIT)|PLR_STEREO);
 
@@ -183,11 +222,13 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer(const char *filename
 	currentsong=1;
 
 	opl = new Cocpopl(plrRate);
-	if (!(p = CAdPlug::factory(filename, opl)))
+
+	CProvider_Mem prMem (content, len);
+	if (!(p = CAdPlug::factory(filename, opl, CAdPlug::players, prMem)))
 	{
 		mcpSet=_SET;
 		mcpGet=_GET;
-		delete(opl);
+		delete (opl);
 		return 0;
 	}
 
