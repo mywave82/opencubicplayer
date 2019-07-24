@@ -87,6 +87,10 @@ static int ctl_next_result = RC_NONE;
 static int ctl_next_value = 0;
 
 /* timidity.c */
+extern char *opt_aq_max_buff;
+extern char *opt_aq_fill_buff;
+extern int   opt_aq_fill_buff_free_needed;
+
 /* main interfaces (To be used another main) */
 #if defined(main) || defined(ANOTHER_MAIN) || defined ( IA_W32GUI ) || defined ( IA_W32G_SYN )
 #define MAIN_INTERFACE
@@ -308,7 +312,7 @@ static void timidity_SetBufferPos_EventDelayed_PlrBuf (int old_pos, int new_pos)
 		CtlEventDelayed *next = iter->next;
 
 		if ( ((old_pos < new_pos) && ((iter->delay_samples >= old_pos) && (iter->delay_samples <= new_pos))) || /* normal progression */
-                     ((old_pos > new_pos) && ((iter->delay_samples >= old_pos) || (iter->delay_samples <= new_pos))) ) /* position wrapped */
+		     ((old_pos > new_pos) && ((iter->delay_samples >= old_pos) || (iter->delay_samples <= new_pos))) ) /* position wrapped */
 		{
 			assert (EventDelayed_PlrBuf_head == iter);
 
@@ -454,7 +458,7 @@ int convert_mod_to_midi_file(MidiEvent * ev)
 {
 	ctl->cmsg(CMSG_INFO, VERB_NORMAL,
 	          "Aborting!  timidity attempted to convert module to midi file\n");
- 	return 1;
+	return 1;
 }
 
 char *
@@ -952,8 +956,23 @@ static void emulate_main_end()
 	if (user_mailaddr)
 		free(user_mailaddr);
 #endif
+
+	if (opt_aq_max_buff)
+		free(opt_aq_max_buff);
+	opt_aq_max_buff = NULL;
+
+	if (opt_aq_fill_buff && opt_aq_fill_buff_free_needed)
+		free(opt_aq_fill_buff);
+	opt_aq_fill_buff_free_needed = 1;
+	opt_aq_fill_buff = NULL;
+
+	if (output_text_code)
+		free(output_text_code);
+	output_text_code = NULL;
+
 	free_soft_queue();
 	free_instruments(0);
+	playmidi_stream_free();
 	free_soundfonts();
 	free_cache_data();
 	free_wrd();
@@ -962,7 +981,7 @@ static void emulate_main_end()
 	tmdy_free_config();
 	free_reverb_buffer();
 	free_effect_buffers();
-	free(voice);
+	free(voice); voice=0;
 	free_gauss_table();
 	for (i = 0; i < MAX_CHANNELS; i++)
 		free_drum_effect(i);
@@ -1314,13 +1333,7 @@ play_reload: /* Come here to reload MIDI file */
 	}
 
 play_end:
-	if(current_file_info->pcm_tf)
-	{
-		close_file(current_file_info->pcm_tf);
-		current_file_info->pcm_tf = NULL;
-		free( current_file_info->pcm_filename );
-		current_file_info->pcm_filename = NULL;
-	}
+	free_all_midi_file_info ();
 
 	if(wrdt->opened)
 		wrdt->end();
@@ -1808,6 +1821,9 @@ static void doTimidityClosePlayer(int CloseDriver)
 
 	emulate_main_end ();
 
+	free (timidity_main_session.event);
+	timidity_main_session.event = NULL;
+
 	free (current_path);
 	current_path = 0;
 
@@ -1826,6 +1842,8 @@ static void doTimidityClosePlayer(int CloseDriver)
 		EventDelayed_gmibuf_head = next;
 	}
 	EventDelayed_gmibuf_tail = 0;
+
+	free_all_midi_file_info ();
 }
 
 #warning timidity internal API has support for memory-buffers, instead of file-objects
