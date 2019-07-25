@@ -305,6 +305,7 @@ static void dosReadDirChild(struct modlist *ml,
 			}
 			if (isarchiveext(curext))
 			{
+				free (curext);
 				retval.flags=MODLIST_FLAG_ARC;
 				if (strlen(path)<PATH_MAX)
 					strcat(path, "/");
@@ -654,6 +655,7 @@ static char fsScanDir(int pos)
 			break;
 	}
 	modlist_remove(currentdir, 0, currentdir->num);
+	nextplay=0;
 
 	if (!fsReadDir(currentdir, dmCurDrive, dirdbcurdirpath, curmask, RD_PUTSUBS|(fsScanArcs?RD_ARCSCAN:0)))
 		return 0;
@@ -785,10 +787,13 @@ int fsGetNextFile(uint32_t *dirdbref, struct moduleinfostruct *info, FILE **file
 	if (!(info->flags1&MDB_VIRTUAL)) /* this should equal to if (m->ReadHandle) */
 	{
 		if (!(*file=m->ReadHandle(m)))
+		{
 			goto errorout;
+		}
 		/* strcpy(path, m->fullname); WTF WTF TODO */ /* arc's change the path */
-	} else
+	} else {
 		*file=NULL;
+	}
 
 	if (!mdbInfoRead(m->mdb_ref)&&*file)
 	{
