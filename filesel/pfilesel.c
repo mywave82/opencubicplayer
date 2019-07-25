@@ -136,6 +136,11 @@ int dosfile_Read(struct modlistentry *entry, char **mem, size_t *size)
 	char *path;
 
 	dirdbGetFullname_malloc (entry->dirdbfullpath, &path, DIRDB_FULLNAME_NOBASE);
+	if (!path)
+	{
+		perror ("pfilesel: dirdbGetFullname_malloc() failed #1");
+		return -1;
+	}
 
 	if (!(*size=_filelength(path)))
 	{
@@ -182,6 +187,11 @@ int dosfile_ReadHeader(struct modlistentry *entry, char *mem, size_t *size) /* s
 	char *path;
 
 	dirdbGetFullname_malloc (entry->dirdbfullpath, &path, DIRDB_FULLNAME_NOBASE);
+	if (!path)
+	{
+		perror ("pfilesel: dirdbGetFullname_malloc() failed #2");
+		return -1;
+	}
 
 	if (!(*size=_filelength(path)))
 	{
@@ -218,6 +228,11 @@ FILE *dosfile_ReadHandle(struct modlistentry *entry)
 	FILE *retval;
 	char *path;
 	dirdbGetFullname_malloc (entry->dirdbfullpath, &path, DIRDB_FULLNAME_NOBASE);
+	if (!path)
+	{
+		perror ("pfilesel: dirdbGetFullname_malloc() failed #3");
+		return -1;
+	}
 
 	if ((retval=fopen(path, "r")))
 	{
@@ -240,7 +255,6 @@ static void dosReadDirChild(struct modlist *ml,
 {
 	struct modlistentry retval;
 
-	char curext[NAME_MAX+1];
 	char path[PATH_MAX+1];
 
 	memset(&retval, 0, sizeof(struct modlistentry));
@@ -282,7 +296,13 @@ static void dosReadDirChild(struct modlist *ml,
 			memcpy(&st, &lst, sizeof(st));
 		if (S_ISREG(st.st_mode))
 		{
-			_splitpath(path, 0, 0, 0, curext);
+			char *curext;
+			getext_malloc (path, &curext);
+			if (!curext)
+			{
+				perror("pfilesel.c: getext_malloc() failed #2");
+				goto out;
+			}
 			if (isarchiveext(curext))
 			{
 				retval.flags=MODLIST_FLAG_ARC;
@@ -300,6 +320,7 @@ static void dosReadDirChild(struct modlist *ml,
 						*iterate = toupper(*iterate);
 				} else {
 					perror("pfilesel.c: strdup() failed");
+					free (curext);
 					goto out;
 				}
 
@@ -309,6 +330,7 @@ static void dosReadDirChild(struct modlist *ml,
 						*iterate = toupper(*iterate);
 				} else {
 					perror("pfilesel.c: strdup() failed");
+					free (curext);
 					goto out;
 				}
 
@@ -316,17 +338,22 @@ static void dosReadDirChild(struct modlist *ml,
 				{
 					free(childpath_upper);
 					free(mask_upper);
+					free (curext);
 					goto out;
 				}
 				free(childpath_upper);
 				free(mask_upper);
 #else
 				if ((fnmatch(mask, childpath, FNM_CASEFOLD))||(!fsIsModule(curext)))
+				{
+					free (curext);
 					goto out;
+				}
 #endif
 				retval.mdb_ref=mdbGetModuleReference(retval.shortname, st.st_size);
 				retval.adb_ref=0xffffffff;
 				retval.flags=MODLIST_FLAG_FILE;
+				free (curext);
 			}
 		} else if (S_ISDIR(st.st_mode))
 		{
@@ -370,9 +397,15 @@ static int dosReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 	if (drive!=dmFILE)
 		return 1;
 
+	dirdbGetFullname_malloc (dirdbpath, &path, DIRDB_FULLNAME_NOBASE|DIRDB_FULLNAME_ENDSLASH);
+	if (!path)
+	{
+		perror ("pfilesel: dirdbGetFullname_malloc() failed #4");
+		return -1;
+	}
+
 	tl = modlist_create();
 
-	dirdbGetFullname_malloc (dirdbpath, &path, DIRDB_FULLNAME_NOBASE|DIRDB_FULLNAME_ENDSLASH);
 	if ((dir=opendir(path)))
 	{
 		struct dirent *de;
@@ -382,8 +415,19 @@ static int dosReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 		if (((strlen(path)+strlen(de->d_name)+4)<PATH_MAX))
 		{
 			char *ext;
+			int res;
+
 			getext_malloc (de->d_name, &ext);
-			int res = isarchiveext(ext);
+
+			if (!ext)
+			{
+				perror ("pfilesel.c: getext_malloc() failed #1");
+				closedir (dir);
+				free (path);
+				return 0;
+
+			}
+			res = isarchiveext(ext);
 			free (ext);
 
 			if (res)
