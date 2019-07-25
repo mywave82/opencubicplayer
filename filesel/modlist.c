@@ -26,6 +26,7 @@
  */
 
 #include "config.h"
+#include <assert.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
@@ -106,6 +107,7 @@ void modlist_remove_all_by_path(struct modlist *modlist, uint32_t ref)
 void modlist_remove(struct modlist *modlist, unsigned int index, unsigned int count)
 {
 	unsigned int i;
+	assert ((index+count) <= (modlist->num));
 	if (index>=modlist->num)
 		return;
 	if (index+count>modlist->num)
