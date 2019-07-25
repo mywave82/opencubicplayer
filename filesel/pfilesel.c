@@ -231,7 +231,7 @@ FILE *dosfile_ReadHandle(struct modlistentry *entry)
 	if (!path)
 	{
 		perror ("pfilesel: dirdbGetFullname_malloc() failed #3");
-		return -1;
+		return NULL;
 	}
 
 	if ((retval=fopen(path, "r")))
