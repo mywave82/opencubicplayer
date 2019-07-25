@@ -595,56 +595,6 @@ extern void dirdbGetName_malloc(uint32_t node, char **name)
 	}
 }
 
-static int dirdbGetFullnameR(uint32_t node, char *name, unsigned int *left, int nobase)
-{
-	if (dirdbData[node].parent!=DIRDB_NOPARENT)
-	{
-		dirdbGetFullnameR(dirdbData[node].parent, name, left, nobase);
-		if (!*left)
-			goto errorout;
-		strcat(name, "/");
-		(*left)--;
-	} else
-		if (nobase)
-			return 0;
-
-	if ((*left)<=strlen(dirdbData[node].name))
-		goto errorout;
-	strcat(name, dirdbData[node].name);
-	(*left)-=strlen(dirdbData[node].name);
-	return 0;
-errorout:
-	*left = 0;
-	fprintf(stderr, "dirdbGetFullname: string grows too long\n");
-	return -1;
-}
-
-#warning REMOVE legacy dirdbGetFullname(), use dirdbGetFullname_malloc() instead
-void dirdbGetFullName(uint32_t node, char *name /* PATH_MAX+1, ends not with a / */, int flags)
-{
-	unsigned int i = PATH_MAX;
-	name[0]=0;
-	if (node>=dirdbNum)
-	{
-		fprintf(stderr, "dirdbGetFullname: invalid node\n");
-		return;
-	}
-	if (dirdbGetFullnameR(node, name, &i, flags&DIRDB_FULLNAME_NOBASE))
-	{ /* Error, debug message already written */
-		return;
-	}
-	if (flags&DIRDB_FULLNAME_ENDSLASH)
-	{
-		if (strlen(name)+1<PATH_MAX)
-		{
-			strcat(name, "/");
-		} else {
-			fprintf (stderr, "dirdbGetFullName(): path to long for this legacy API\n");
-			return;
-		}
-	}
-}
-
 static void dirdbGetFullname_malloc_R(uint32_t node, char *name, int nobase)
 {
 	if (node == DIRDB_NOPARENT)
@@ -711,7 +661,7 @@ void dirdbGetFullname_malloc(uint32_t node, char **name, int flags)
 
 	if (strlen(*name) != length)
 	{
-		fprintf (stderr, "dirdbGetFullName_malloc: WARNING, length calculation was off. Expected %d, but got %d\n", length, (int)strlen (*name));
+		fprintf (stderr, "dirdbGetFullname_malloc: WARNING, length calculation was off. Expected %d, but got %d\n", length, (int)strlen (*name));
 	}
 }
 
