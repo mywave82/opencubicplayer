@@ -103,8 +103,8 @@ void fsAddPlaylist(struct modlist *ml, const char *path, const char *mask, unsig
 			retval.flags=MODLIST_FLAG_ARC;
 			strncat(retval.fullname, "/", PATH_MAX-strlen(retval.fullname)-1);
 		} else */{
-			char curext[NAME_MAX+1];
-			_splitpath(fullpath, 0, 0, 0, curext);
+			char *curext;
+			getext_malloc (fullpath, &curext);
 
 #ifndef FNM_CASEFOLD
 			{
@@ -117,12 +117,14 @@ void fsAddPlaylist(struct modlist *ml, const char *path, const char *mask, unsig
 						*iterate = toupper(*iterate);
 				} else {
 					perror("pfsm3u.c: strdup() failed");
+					free (curext);
 					dirdbUnref(retval.dirdbfullpath);
 					return;
 				}
 
 				if (fnmatch(mask, name_upper, 0)||(!fsIsModule(curext)))
 				{
+					free (curext);
 					free(name_upper);
 					dirdbUnref(retval.dirdbfullpath);
 					return;
@@ -132,10 +134,12 @@ void fsAddPlaylist(struct modlist *ml, const char *path, const char *mask, unsig
 #else
 			if ((fnmatch(mask, retval.name, FNM_CASEFOLD))||(!fsIsModule(curext)))
 			{
+				free (curext);
 				dirdbUnref(retval.dirdbfullpath);
 				return;
 			}
 #endif
+			free (curext);
 			retval.mdb_ref=mdbGetModuleReference(retval.shortname, st.st_size);
 			retval.adb_ref=0xffffffff;
 			retval.flags=MODLIST_FLAG_FILE;
