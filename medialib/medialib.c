@@ -43,6 +43,8 @@
 #include "stuff/poutput.h"
 #include "stuff/framelock.h"
 
+#define MAX(a,b) ((a)>(b)?(a):(b))
+
 static struct mdbreaddirregstruct mlReadDirReg;
 
 static struct dmDrive *dmMEDIALIB;
@@ -283,7 +285,7 @@ static FILE *mlSourcesAdd(struct modlistentry *entry)
 					dirdbUnref(node);
 				}
 				setcurshape(0);
-				fsRescanDir();
+				free (str);
 				return NULL;
 			case KEY_UP:
 			case KEY_DOWN:
@@ -470,7 +472,6 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 				case _KEY_ENTER:
 					{
 						unsigned int i, j;
-						char buffer[PATH_MAX+1];
 						int first=1;
 						uint32_t dirdbnode;
 						uint32_t mdb_ref;
@@ -483,17 +484,32 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 
 						while (!dirdbGetMdbAdb(&dirdbnode, &mdb_ref, &adb_ref, &first))
 						{
-							char *cachefile;
+							char *cachefile, *cachefileUpper;
 
 							struct moduleinfostruct info;
+							char buffer[
+								MAX(MAX(sizeof(info.name)+1,
+								        sizeof(info.modname)+1),
+								    MAX(sizeof(info.composer)+1,
+								        sizeof(info.comment)+1))
+							];
+
 
 							dirdbGetName_internalstr (dirdbnode, &cachefile);
 
-							strncpy(buffer, cachefile, sizeof(buffer));
-							buffer[sizeof(buffer)-1]=0;
+							cachefileUpper = malloc (strlen (cachefile) + 1);
+							for (i=0; cachefile[i]; i++)
+							{
+								cachefileUpper[i] = toupper(cachefile[i]);
+							}
+							cachefileUpper[i]=0;
 
-							if (strstr(buffer, str))
+							if (strstr(cachefileUpper, str))
+							{
+								free (cachefileUpper);
 								goto add;
+							}
+							free (cachefileUpper);
 
 							mdbGetModuleInfo(&info, mdb_ref);
 
