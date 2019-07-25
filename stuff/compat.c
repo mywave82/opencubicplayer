@@ -201,15 +201,15 @@ void getext_malloc(const char *src, char **ext)
 
 	len = strlen(src);
 	/* TODO: we need to make adb itself understand .tar.gz, or make a API to register these into */
-	if ((len >= 7) && (!strcasecmp (src + 7, ".tar.gz"))) /* I am a bad boy */
+	if ((len >= 7) && (!strcasecmp (src + len - 7, ".tar.gz"))) /* I am a bad boy */
 	{
-		ref1 = src + 7;
-	} else if ((len >= 8) && (!strcasecmp (src + 8, ".tar.bz2"))) /* very bad */
+		ref1 = src + len - 7;
+	} else if ((len >= 8) && (!strcasecmp (src + len - 8, ".tar.bz2"))) /* very bad */
 	{
-		ref1 = src + 8;
-	} else if ((len >= 6) && (!strcasecmp (src + 6, ".tar.Z"))) /* and this is creepy */
+		ref1 = src + len - 8;
+	} else if ((len >= 6) && (!strcasecmp (src + len - 6, ".tar.Z"))) /* and this is creepy */
 	{
-		ref1 = src + 6;
+		ref1 = src + len - 6;
 	} else {
 		ref1 = rindex (src, '.');
 	}
@@ -330,15 +330,15 @@ int splitpath_malloc(const char *src, char **drive, char **path, char **file, ch
 
 	len = strlen(src);
 	/* TODO: we need to make adb itself understand .tar.gz, or make a API to register these into */
-	if ((len >= 7) && (!strcasecmp (src - 7, ".tar.gz"))) /* I am a bad boy */
+	if ((len >= 7) && (!strcasecmp (src + len - 7, ".tar.gz"))) /* I am a bad boy */
 	{
-		ref1 = src - 7;
-	} else if ((len >= 8) && (!strcasecmp (src - 8, ".tar.bz2"))) /* very bad */
+		ref1 = src + len - 7;
+	} else if ((len >= 8) && (!strcasecmp (src + len - 8, ".tar.bz2"))) /* very bad */
 	{
-		ref1 = src - 8;
-	} else if ((len >= 6) && (!strcasecmp (src - 6, ".tar.Z"))) /* and this is creepy */
+		ref1 = src + len - 8;
+	} else if ((len >= 6) && (!strcasecmp (src + len - 6, ".tar.Z"))) /* and this is creepy */
 	{
-		ref1 = src - 6;
+		ref1 = src + len - 6;
 	} else {
 		ref1 = rindex (src, '.');
 	}
