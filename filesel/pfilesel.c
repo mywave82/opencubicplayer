@@ -1126,8 +1126,6 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 	unsigned int prelpos= ~0;
 
 	uint16_t sbuf[CONSOLE_MAX_X];
-	const char *tmppos;
-	char npath[PATH_MAX+1];
 
 	if (currentdir->num>dirwinheight)
 		vrelpos=dirwinheight*currentdir->pos/currentdir->num;
@@ -1165,16 +1163,7 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 	if (fsEditWin||(selecte>=0))
 	{
 		int first=dirwinheight+3;
-/*
-		char longfile[270];
-		struct modinfoentry *m1=0, *m2=0, *m3=0;
-*/
 		const char *modtype="";
-/*
-		longptr   mle->fullpath
-		mle.name  mle->shortname
-		char *longptr;
-*/
 		struct moduleinfostruct mi;
 
 		if (mle->flags&MODLIST_FLAG_FILE)
@@ -1301,11 +1290,20 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 			displaystrattr(first+3, 0, sbuf, plScrWidth);
 
 			writestring(sbuf, 0, 0x07, "    long: ", plScrWidth);
-			dirdbGetFullName(mle->dirdbfullpath, npath, 0);
-			tmppos=npath;
-			if (strlen(tmppos)>=(plScrWidth - 10))
-				tmppos+=strlen(tmppos)-(plScrWidth - 10);
-			writestring(sbuf, 10, 0x0F, tmppos, plScrWidth - 10);
+			{
+				const char *tmppos;
+				char *npath;
+
+				dirdbGetFullname_malloc (mle->dirdbfullpath, &npath, 0);
+				tmppos=npath;
+				if (strlen(tmppos)>=(plScrWidth - 10))
+				{
+					tmppos+=strlen(tmppos)-(plScrWidth - 10);
+				}
+				writestring(sbuf, 10, 0x0F, tmppos, plScrWidth - 10);
+
+				free (npath);
+			}
 
 			displaystrattr(first+4, 0, sbuf, plScrWidth);
 		} else {
@@ -1427,11 +1425,21 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 			displaystrattr(first+4, 0, sbuf, plScrWidth);
 
 			writestring(sbuf, 0, 0x07, "   long: ", plScrWidth);
-			dirdbGetFullName(mle->dirdbfullpath, npath, 0);
-			tmppos=npath;
-			if (strlen(tmppos)>=(plScrWidth - 9))
-				tmppos+=strlen(tmppos)-(plScrWidth - 9);
-			writestring(sbuf, 9, 0x0F, tmppos, plScrWidth - 9);
+			{
+				const char *tmppos;
+				char *npath;
+
+				dirdbGetFullname_malloc (mle->dirdbfullpath, &npath, 0);
+
+				tmppos=npath;
+				if (strlen(tmppos)>=(plScrWidth - 9))
+				{
+					tmppos+=strlen(tmppos)-(plScrWidth - 9);
+				}
+				writestring(sbuf, 9, 0x0F, tmppos, plScrWidth - 9);
+
+				free (npath);
+			}
 
 			displaystrattr(first+5, 0, sbuf, plScrWidth);
 		}
