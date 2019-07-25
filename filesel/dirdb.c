@@ -541,23 +541,6 @@ err:
 		dirdbUnref(parent);
 }
 
-#warning REMOVE legacy dirdbGetname(), use dirdbGetName_malloc() instead
-void dirdbGetname(uint32_t node, char *name /*NAME_MAX+1*/)
-{
-	name[0]=0;
-	if (node>=dirdbNum)
-	{
-		fprintf(stderr, "dirdbGetname: invalid node #1\n");
-		return;
-	}
-	if (!dirdbData[node].name)
-	{
-		fprintf(stderr, "dirdbGetname: invalid node #2\n");
-		return;
-	}
-	snprintf (name, NAME_MAX+1, "%s", dirdbData[node].name);
-}
-
 void dirdbGetName_internalstr(uint32_t node, char **name)
 {
 	*name = 0;
