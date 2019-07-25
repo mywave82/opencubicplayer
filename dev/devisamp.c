@@ -337,13 +337,17 @@ static int smpSet(const uint32_t dirdbref, struct moduleinfostruct *mi, FILE **f
 {
 	char *path, *name;
 
-	dirdbGetFullname_malloc (dirdbref, &path, DIRDB_FULLNAME_NOBASE);
+	if (mi->modtype != mtDEVs)
+	{
+		return 0;
+	}
+
+	dirdbGetName_internalstr (dirdbref, &path);
 	splitpath_malloc (path, 0, 0, &name, 0);
 
 	smpSetDevice(name, 1);
 
 	free (name);
-	free (path);
 
 	return 0;
 }
