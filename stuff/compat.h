@@ -8,7 +8,6 @@
 extern time_t dos_clock(void);
 
 /* TO BE REMOVED */ extern void _splitpath(const char *src, char *drive, char *path, char *file, char *ext);
-/* TO BE REMOVED */ extern void _makepath(char *dst /* PATH_MAX+1 */, const char *drive, const char *path, const char *file, const char *ext);
 
 void getext_malloc(const char *src, char **ext);
 extern int splitpath_malloc(const char *src, char **drive, char **path, char **file, char **ext); /* returns non-zero on errors */

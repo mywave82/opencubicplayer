@@ -186,49 +186,6 @@ void _splitpath(const char *src, char *drive, char *path, char *file, char *ext)
 		*ext=0;
 }
 
-void _makepath(char *dst, const char *drive, const char *path, const char *file, const char *ext)
-{
-	unsigned int left=PATH_MAX;
-	unsigned int cache;
-	*dst=0;
-	if (drive)
-	{
-		cache=strlen(drive);
-		if (cache<=left)
-		{
-			strcat(dst, drive);
-			left-=cache;
-		}
-	}
-	if (path)
-	{
-		cache=strlen(path);
-		if (cache<=left)
-		{
-			strcat(dst, path);
-			left-=cache;
-			if (left)
-				if (dst[PATH_MAX-left-1]!='/')
-				{
-					strcat(dst, "/");
-					left--;
-				}
-		}
-	}
-	if (file)
-	{
-		cache=strlen(file);
-		if (cache<=left)
-		{
-			strcat(dst, file);
-			left-=cache;
-		}
-	}
-	if (ext)
-		if (strlen(ext)<=left)
-			strcat(dst, ext);
-}
-
 void getext_malloc(const char *src, char **ext)
 {
 	const char *ref1;
