@@ -1066,7 +1066,7 @@ struct emulate_play_midi_file_session
 
 static struct emulate_play_midi_file_session timidity_main_session;
 
-static int emulate_play_midi_file_start(const char *fn, struct emulate_play_midi_file_session *s)
+static int emulate_play_midi_file_start(const char *fn, uint8_t *data, size_t datalen, struct emulate_play_midi_file_session *s)
 {
 	int i, j, rc;
 
@@ -1076,6 +1076,8 @@ static int emulate_play_midi_file_start(const char *fn, struct emulate_play_midi
 
 	/* Set current file information */
 	current_file_info = get_midi_file_info((char *)fn, 1);
+	current_file_info->midi_data = data;
+	current_file_info->midi_data_size = datalen;
 
 	rc = check_apply_control();
 	if(RC_IS_SKIP_FILE(rc) && rc != RC_RELOAD)
@@ -1847,7 +1849,7 @@ static void doTimidityClosePlayer(int CloseDriver)
 }
 
 #warning timidity internal API has support for memory-buffers, instead of file-objects
-int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *file)
+int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen)
 {
 	if (!plrPlay)
 		return errGen;
@@ -1923,12 +1925,14 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *fil
 
 	eventDelayed_PlrBuf_lastpos = plrGetPlayPos() >> (stereo+bit16);
 
-	current_path = strdup (file);
-	emulate_play_midi_file_start(current_path, &timidity_main_session); /* gmibuflen etc must be set, since we will start to get events already here... */
+	current_path = strdup (path);
+	emulate_play_midi_file_start(current_path, buffer, bufferlen, &timidity_main_session); /* gmibuflen etc must be set, since we will start to get events already here... */
 
 	if (!pollInit(timidityIdle))
 	{
 		doTimidityClosePlayer (1);
+		current_file_info->midi_data = NULL;
+		current_file_info->midi_data_size = 0;
 		return errGen;
 	}
 

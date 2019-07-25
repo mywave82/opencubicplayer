@@ -434,11 +434,35 @@ static int timidityOpenFile(const uint32_t dirdbref, struct moduleinfostruct *in
 
 	{
 		char *path;
-		dirdbGetFullname_malloc (dirdbref, &path, DIRDB_FULLNAME_NOBASE);
-		err = timidityOpenPlayer(path);
-		free (path);
+		size_t buffersize = 64*1024;
+		uint8_t *buffer = (uint8_t *)malloc (buffersize);
+		size_t bufferfill = 0;
+
+		int res;
+		while (!feof(file))
+		{
+			if (buffersize == bufferfill)
+			{
+				if (buffersize >= 64*1024*1024)
+				{
+					fprintf (stderr, "timidityOpenFile: %s is bigger than 64 Mb - further loading blocked\n", path);
+					free (buffer);
+					return -1;
+				}
+				buffersize += 64*1024;
+				buffer = (uint8_t *)realloc (buffer, buffersize);
+			}
+			res=fread(buffer + bufferfill, 1, buffersize - bufferfill, file);
+			if (res<=0)
+				break;
+			bufferfill += res;
+		}
+
+		dirdbGetName_internalstr (dirdbref, &path);
+		err = timidityOpenPlayer(path, buffer, bufferfill); /* buffer will be owned by the player */
 		if (err)
 		{
+			free (buffer);
 			return err;
 		}
 	}

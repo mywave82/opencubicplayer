@@ -28,7 +28,7 @@ struct mchaninfo
 	uint8_t opt[32];
 };
 
-extern int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path);
+extern int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen);
 extern void __attribute__ ((visibility ("internal"))) timidityClosePlayer(void);
 extern void __attribute__ ((visibility ("internal"))) timidityIdle(void);
 extern void __attribute__ ((visibility ("internal"))) timiditySetLoop(uint8_t s);
