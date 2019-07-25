@@ -255,11 +255,14 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 		sins.loopend   = uint32_little (sins.loopend);
 		sins.c2spd     = uint32_little (sins.c2spd);
 		sins.magic     = uint32_little (sins.magic);
+		if ((sins.magic==0x49524353))
+		{
+			fprintf (stderr, "S3M: adlib sample detected, use OPL driver instead of GMD\n");
+			return errFormStruc;
+		}
 		if ((sins.magic!=0x53524353)&&(sins.magic!=0))
 		{
-#ifdef S3M_LOAD_DEBUG
 			fprintf(stderr, "S3M: Invalid magic on sample (%08x)\n", (int)sins.magic);
-#endif
 			return errFormStruc;
 		}
 		smppara[i]=sins.sampptr+(sins.sampptrh<<16);
@@ -280,7 +283,15 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 		if (!sins.length)
 			continue;
 		if (sins.type!=1)
+		{
+			/* type 0 = message / empty sample, 2-7 are different adlib types */
+			if (sins.type)
+			{
+				fprintf (stderr, "S3M: non-PCM type sample, try to use OPL driver instead of GMD\n");
+				return errFormStruc;
+			}
 			continue;
+		}
 		if (sins.pack)
 			continue;
 		if (sins.flag&2)

@@ -59,10 +59,10 @@ static unsigned char gmdGetModuleType(const char *buf, const size_t len)
 				else
 					if ((unsigned char)buf[0x40+i]!=0xff)
 						nopl++;
-			if (nopl)
-				return mtS3M;
 			if (opl)
 				return mtOPL; /* adlib sample, adplug handles these */
+			if (nopl)
+				return mtS3M;
 		}
 	}
 	if (len>=48)
