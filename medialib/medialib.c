@@ -354,11 +354,10 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 		uint32_t adb_ref;
 		while (!dirdbGetMdbAdb(&dirdbnode, &mdb_ref, &adb_ref, &first))
 		{
-			char cachefile[NAME_MAX+1];
-			dirdbGetname(dirdbnode, cachefile);
+			char *cachefile;
+			dirdbGetName_internalstr (dirdbnode, &cachefile);
 			fs12name(entry.shortname, cachefile);
-			strncpy(entry.name, cachefile, NAME_MAX);
-			entry.name[NAME_MAX]=0;
+			snprintf(entry.name, sizeof (entry.name), "%s", cachefile);
 
 			entry.drive=dmFILE;
 			entry.dirdbfullpath=dirdbnode; /*dirdbResolvePathAndRef(files[i].name);*/
@@ -484,10 +483,12 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 
 						while (!dirdbGetMdbAdb(&dirdbnode, &mdb_ref, &adb_ref, &first))
 						{
-							char cachefile[NAME_MAX+1];
+							char *cachefile;
+
 							struct moduleinfostruct info;
 
-							dirdbGetname(dirdbnode, cachefile);
+							dirdbGetName_internalstr (dirdbnode, &cachefile);
+
 							strncpy(buffer, cachefile, sizeof(buffer));
 							buffer[sizeof(buffer)-1]=0;
 
