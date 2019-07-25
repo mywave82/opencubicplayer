@@ -73,18 +73,24 @@ struct __attribute__((packed)) posix_header
 #define BLOCKSIZE 512
 
 static int format=0;
-static char ext[NAME_MAX+1];
-static char name[NAME_MAX+1];
 static char arcname[ARC_PATH_MAX+1];
 
 static int setupformat(const char *path)
 {
-	_splitpath(path, 0, 0, name, ext);
+	char *ext;
+	char *name;
+
+	splitpath_malloc(path, 0, 0, &name, &ext);
 
 	if ((strlen(name)+strlen(ext)+1)>ARC_PATH_MAX)
+	{
+		/* Path too long to store into ADB */
+		free (name);
+		free (ext);
 		return 0;
-	strcpy(arcname, name);
-	strcat(arcname, ext);
+	}
+
+	snprintf (arcname, sizeof (arcname), "%s%s", name, ext);
 
 	if (!strcasecmp(ext, ".tgz"))
 		format=1;
@@ -100,6 +106,10 @@ static int setupformat(const char *path)
 		format=2;
 	else
 		format=0;
+
+	free (name);
+	free (ext);
+
 	return 1;
 }
 
@@ -119,6 +129,7 @@ static int pipe_fd;
 static int pipe_done(void)
 {
 	int result=0;
+
 	if (pipe_fd>0)
 	{
 		close(pipe_fd);
@@ -203,8 +214,6 @@ static int adbTARScan(const char *path)
 	size_t skip=0;
 	size_t requiredata=0;
 
-	/* fprintf(stderr, "adbTARScan, %s\n", path);*/
-
 	if (!setupformat(path))
 		return 0;
 
@@ -274,6 +283,7 @@ static int adbTARScan(const char *path)
 			struct posix_header *entry=(struct posix_header *)buffer;
 			/* do we need this entry? */
 			size_t size;
+			char *name, *ext;
 
 			if (strncmp(entry->magic, "ustar", 5))
 			{
@@ -294,7 +304,7 @@ static int adbTARScan(const char *path)
 */
 			size=char12tosize_t(entry->size);
 
-			_splitpath(entry->name, 0, 0, name, ext);
+			splitpath_malloc (entry->name, 0, 0, &name, &ext);
 			if(fsIsModule(ext))
 			{
 				if
@@ -316,22 +326,29 @@ static int adbTARScan(const char *path)
 							requiredata=size;
 					}
 					if (bufferfill<(sizeof(struct posix_header)+requiredata))
+					{
+						free (name);
+						free (ext);
 						break; /* we need more data */
+					}
 
-					strcpy(a.name, entry->name);
+					snprintf (a.name, sizeof (a.name), "%s", entry->name); /* (strlen(entry->name)+1)<ARC_PATH_MAX) check above assures this, so this is redunant */
 					a.size=size;
 					a.flags=0;
 					a.parent=arcref;
 					if(!adbAdd(&a))
 					{
 						pipe_done();
+						free (name);
+						free (ext);
 						return 0;
 					}
 
+					snprintf (a.name, sizeof (a.name), "%s%s", name, ext);
 					strcpy(a.name, name);
 					strcat(a.name, ext);
 
-				        if (fsScanInArc)
+					if (fsScanInArc)
 					{
 						char shortname[12];
 						uint32_t mdb_ref;
@@ -341,6 +358,8 @@ static int adbTARScan(const char *path)
 						if (mdb_ref==0xffffffff)
 						{
 							pipe_done();
+							free (name);
+							free (ext);
 							return 0;
 						}
 						if (!mdbInfoRead(mdb_ref))
@@ -359,6 +378,8 @@ static int adbTARScan(const char *path)
 					requiredata=0;
 				}
 			}
+			free (name);
+			free (ext);
 			skip=(sizeof(struct posix_header)+size+BLOCKSIZE-1)&~(BLOCKSIZE-1);
 		}
 		if (skip)
