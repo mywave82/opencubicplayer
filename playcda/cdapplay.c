@@ -44,8 +44,6 @@
 #include "stuff/err.h"
 #include "stuff/sets.h"
 
-void _splitpath(const char *src, char *drive, char *path, char *file, char *ext); /* defined in stuff/compat.h but this header clashed with linux/cdrom.h */
-
 static unsigned long cdpTrackStarts[CDROM_LEADOUT+1];
 static unsigned char cdpFirstTrack;
 static unsigned char cdpPlayMode; /* 1 = disk, 0 = track */
