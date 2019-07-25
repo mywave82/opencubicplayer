@@ -229,18 +229,25 @@ static int openZIP(const char *path)
 
 static int adbZIPScan(const char *path)
 {
-	char ext[NAME_MAX+1];
-	char name[NAME_MAX+1];
 	char arcname[ARC_PATH_MAX+1];
 	int extfd=-1;
 	uint32_t arcref;
 	struct arcentry a;
 
-	_splitpath(path, 0, 0, name, ext);
-	if ((strlen(name)+strlen(ext)+1)>ARC_PATH_MAX)
-		return 0;
-	strcpy(arcname, name);
-	strcat(arcname, ext);
+	{
+		char *ext;
+		char *name;
+		splitpath_malloc (path, 0, 0, &name, &ext);
+		if ((strlen(name)+strlen(ext)+1)>ARC_PATH_MAX)
+		{
+			free (name);
+			free (ext);
+			return 0;
+		}
+		snprintf (arcname, sizeof (arcname), "%s%s", name, ext);
+		free (name);
+		free (ext);
+	}
 
 	if ((extfd=openZIP(path))<0)
 		return 0;
@@ -279,13 +286,15 @@ static int adbZIPScan(const char *path)
 		nextpos=lseek(extfd, 0, SEEK_CUR)+hdr.flen+hdr.xlen+hdr.csize;
 		if (((hdr.flen+1)<ARC_PATH_MAX)&&((hdr.flen+1)<NAME_MAX)&&!(hdr.opt&0x1))
 		{
+			char *name, *ext;
+
 			memset(a.name, 0, sizeof(arcname));
 			if (read(extfd, a.name, hdr.flen)!=hdr.flen)
 			{
 				close(extfd);
 				return 0;
 			}
-			_splitpath(a.name, NULL, NULL, name, ext);
+			splitpath_malloc (a.name, NULL, NULL, &name, &ext);
 		#ifdef ZIP_DEBUG
 			fprintf(stderr, "arcZIP: About to do %s as %s\n", arcname, a.name);
 		#endif
@@ -297,12 +306,13 @@ static int adbZIPScan(const char *path)
 				a.flags=0;
 				if (!adbAdd(&a))
 				{
+					free (name);
+					free (ext);
 					close(extfd);
 					return 0;
 				}
 
-				strcpy(a.name, name);
-				strcat(a.name, ext);
+				snprintf (a.name, sizeof (a.name), "%s%s", name, ext);
 
 				if (fsScanInArc&&method_supported(hdr.method))
 				{
@@ -312,6 +322,8 @@ static int adbZIPScan(const char *path)
 					mdb_ref=mdbGetModuleReference(shortname, a.size);
 					if (mdb_ref==0xffffffff)
 					{
+						free (name);
+						free (ext);
 						close(extfd);
 						return 0;
 					}
@@ -326,6 +338,8 @@ static int adbZIPScan(const char *path)
 
 						if (read(extfd, adbScanBuf, srclen)!=srclen)
 						{
+							free (name);
+							free (ext);
 							close(extfd);
 							return 0;
 						}
@@ -352,6 +366,8 @@ static int adbZIPScan(const char *path)
 				delete[] obuffer;
 				delete[] cbuffer;
 			}*/
+			free (name);
+			free (ext);
 		}
 		lseek(extfd, nextpos, SEEK_SET);
 	}
