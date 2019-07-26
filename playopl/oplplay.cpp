@@ -787,19 +787,12 @@ void oplpGetChanInfo(int i, oplChanInfo &ci)
 
 void oplpGetGlobInfo(oplTuneInfo &si)
 {
-	const char *author, *title;
+	std::string author = p->getauthor(); /* we need to keep a reference, else c_str() data will die before we get to use it */
+	std::string title = p->gettitle();  /* same here */
+
 	si.songs=p->getsubsongs();
 	si.currentSong=currentsong;
-	si.author[0]=0;
-	si.title[0]=0;
-	if ((author=p->getauthor().c_str()))
-	{
-		strncat(si.author, author, sizeof(si.author)-1);
-		si.author[sizeof(si.author)-1]=0;
-	}
-	if ((title=p->gettitle().c_str()))
-	{
-		strncat(si.title, title, sizeof(si.title)-1);
-		si.title[sizeof(si.title)-1]=0;
-	}
+
+	snprintf (si.author, sizeof (si.author), "%s", author.c_str());
+	snprintf (si.title, sizeof (si.title), "%s", title.c_str());
 }
