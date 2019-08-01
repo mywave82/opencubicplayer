@@ -532,23 +532,7 @@ static int initRootDir(const char *sec)
 	currentdir=modlist_create();
 	playlist=modlist_create();
 
-	currentpath = malloc(len);
-	while (1)
-	{
-		/* since get_current_dir_name() is not POSIX, we need to do this dance to support unknown lengths paths */
-		if (!getcwd (currentpath, len))
-		{
-			if (errno == ENAMETOOLONG)
-			{
-				len += 4096;
-				currentpath = realloc (currentpath, len);
-				continue;
-			}
-			fprintf (stderr, "getcwd() failed, using / instead: %s\n", strerror (errno));
-			strcpy (currentpath, "/");
-		}
-		break;
-	}
+	currentpath = getcwd_malloc ();
 	newcurrentpath = dirdbResolvePathWithBaseAndRef(dmFILE->basepath, currentpath);
 
 	dirdbUnref(dmFILE->currentpath);

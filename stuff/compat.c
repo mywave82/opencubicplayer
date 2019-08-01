@@ -28,6 +28,7 @@
 
 #include "config.h"
 #include <ctype.h>
+#include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -1084,20 +1085,47 @@ char *strdup(const char *s)
 
 
 #ifndef HAVE_GETCWD
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 1024	/* It must be defined in <sys/param.h> */
-#endif /* MAXPATHLEN */
-
-char *getcwd(char *buf, size_t size)
+char *getcwd_malloc (void)
 {
-    char path[MAXPATHLEN+1];
-    if(getwd(path) == NULL)
-	strcpy(path, ".");
-    if(buf != NULL)
-	return strncpy(buf, path, size);
-    return safe_strdup(path);
+#ifdef MAXPATHLEN
+	char path[MAXPATHLEN+1];
+#elif defined(PATH_MAX)
+	char path[PATH_MAX+1];
+#else
+	char path[4097];
+#endif /* MAXPATHLEN */
+	if(getwd(path) == NULL)
+	{
+		strcpy(path, "/");
+	}
+	return strdup(path);
 }
-#endif /* HAVE_GETCWD */
+#else
+char *getcwd_malloc (void)
+{
+	int len = 4096; /* PATH_MAX on many systems */
+	char *currentpath;
+
+	currentpath = malloc(len);
+	while (1)
+	{
+		/* since get_current_dir_name() is not POSIX, we need to do this dance to support unknown lengths paths */
+		if (!getcwd (currentpath, len))
+		{
+			if (errno == ENAMETOOLONG)
+			{
+				len += 4096;
+				currentpath = realloc (currentpath, len);
+				continue;
+			}
+			fprintf (stderr, "getcwd() failed, using / instead: %s\n", strerror (errno));
+			strcpy (currentpath, "/");
+		}
+		break;
+	}
+	return currentpath;
+}
+#endif
 
 
 #ifndef HAVE_STRNCASECMP

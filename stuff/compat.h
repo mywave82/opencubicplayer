@@ -51,9 +51,7 @@ extern int usleep(unsigned int usec);
 extern char *strdup(const char *s);
 #endif /* HAVE_STRDUP */
 
-#ifndef HAVE_GETCWD
-extern char *getcwd(char *buf, size_t size);
-#endif /* HAVE_GETCWD */
+char *getcwd_malloc (void);
 
 #ifndef HAVE_STRSTR
 #define strstr(s,c)	index(s,c)

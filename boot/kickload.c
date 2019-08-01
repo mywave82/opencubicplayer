@@ -59,8 +59,10 @@ static char *_cfConfigDir;
 static const char *_cfDataDir;
 static char *_cfProgramDir;
 
+#ifdef KICKSTART_GDB
 static char *argv0;
 static char *dir;
+#endif
 
 static int AllowSymlinked;
 
@@ -605,6 +607,7 @@ int main(int argc, char *argv[])
 	signal(SIGINT, sigsegv);
 #endif
 
+#ifdef KICKSTART_GDB
 	argv0=argv[0];
 
 #ifdef __linux
@@ -614,6 +617,8 @@ int main(int argc, char *argv[])
 #else /* BSD */
 	dir=getwd(malloc(PATH_MAX));
 #endif
+#endif
+
 	AllowSymlinked=(getuid()==geteuid());
 
 	if (validate_home())
@@ -633,9 +638,11 @@ int main(int argc, char *argv[])
 
 	retval = runocp(handle, argc, argv);
 
+#ifdef KICKSTART_GDB
 	free(dir);
 
 	dir=0;
+#endif
 
 	if (_cfConfigDir)
 		free(_cfConfigDir);
