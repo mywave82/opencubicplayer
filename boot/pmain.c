@@ -317,17 +317,6 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileString("devpSDL", "link", "devpsdl");
 		}
 
-		if (epoch < 20160321)
-		{
-			fprintf (stderr, "ocp.ini update (0.2.0) replaces playgmi with playtimidity for playback of MIDI files\n");
-
-			if (!strcmp (cfGetProfileString ("filetype 16", "pllink", "playgmi"), "playgmi"))
-			{
-				cfSetProfileString ("filetype 16", "pllink", "playtimidity");
-				cfSetProfileString ("filetype 16", "player", "timidityPlayer");
-			}
-		}
-
 		if (epoch < 20160606)
 		{
 			fprintf (stderr, "ocp.ini update (0.2.0), remove wavetostereo and waveratetolerance\n");
@@ -382,9 +371,25 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileString("devpSDL2", "link", "devpsdl2");
 		}
 
-		if (epoch < 20181129)
+		if (epoch < 20190801)
 		{
-			cfSetProfileInt("version", "epoch", 20181129, 10);
+			fprintf (stderr, "ocp.ini update (0.2.0) replaces playgmi with playtimidity for playback of MIDI files\n");
+
+			if (!strcmp (cfGetProfileString ("filetype 16", "pllink", "playgmi"), "playgmi"))
+			{
+				cfSetProfileString ("filetype 16", "pllink", "playtimidity");
+				cfSetProfileString ("filetype 16", "player", "timidityPlayer");
+			}
+			if (!strcmp (cfGetProfileString ("filetype 18", "pllink", "playgmi"), "playgmi"))
+			{
+				cfSetProfileString ("filetype 18", "pllink", "playtimidity");
+				cfSetProfileString ("filetype 18", "player", "timidityPlayer");
+			}
+		}
+
+		if (epoch < 20190801)
+		{
+			cfSetProfileInt("version", "epoch", 20190801, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -395,13 +400,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10)!=20181129)
+	if (cfGetProfileInt("version", "epoch", 0, 10)!=20190801)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20181129\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20190801\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20181129\033[0m\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20190801\033[0m\n\n");
 		}
 		sleep(5);
 	}

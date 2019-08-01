@@ -1,5 +1,5 @@
 [version]
- epoch=20181129
+ epoch=20190801
 
 [general]
 ;link=
@@ -346,7 +346,7 @@ link=medialib
   color=4
   name=MIDd
   interface=plOpenCP
-  pllink=playgmi
+  pllink=playtimidity
   player=gmiPlayer
 
 [filetype 19]
