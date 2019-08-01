@@ -473,17 +473,14 @@ int validate_home(void)
 
 static void *locate_libocp_try(const char *src, int verbose)
 {
-	char temp[PATH_MAX+1];
+	char *temp;
 	void *retval;
-	strcpy(temp, src);
-	if (strlen(temp)>(PATH_MAX-20))
-		return NULL;
-	if (*temp)
-	{
-		if (temp[strlen(temp)-1]!='/')
-			strcat(temp, "/");
-	}
-	strcat(temp, "libocp" LIB_SUFFIX);
+	int srclen = strlen (src);
+	int req = srclen + 32;
+
+	temp = malloc (req);
+
+	snprintf (temp, req, "%s%s" "libocp" LIB_SUFFIX, src, (srclen && (src[srclen-1] != '/')) ? "/" : "");
 
 	if (*src)
 	{
@@ -491,7 +488,10 @@ static void *locate_libocp_try(const char *src, int verbose)
 		if (!AllowSymlinked)
 		{
 			if (lstat(temp, &st))
+			{
+				free (temp);
 				return NULL;
+			}
 			if (S_ISLNK(st.st_mode))
 			{
 				fprintf(stderr, "Symlinked libocp" LIB_SUFFIX " is not allowed when running setuid\n");
@@ -502,14 +502,15 @@ static void *locate_libocp_try(const char *src, int verbose)
 
 	if ((retval=dlopen(temp, RTLD_NOW|RTLD_GLOBAL)))
 	{
-		_cfProgramDir=malloc(strlen(src)+2);
-		strcpy(_cfProgramDir, src);
-		if (*_cfProgramDir)
-			if (temp[strlen(_cfProgramDir)-1]!='/')
-				strcat(_cfProgramDir, "/");
+		_cfProgramDir=malloc(srclen+2);
 
+		snprintf (_cfProgramDir, srclen+2, "%s%s", src, (srclen && (src[srclen-1] != '/')) ? "/" : "");
 	} else if (verbose)
+	{
 		fprintf(stderr, "%s: %s\n", temp, dlerror());
+	}
+
+	free (temp);
 	return retval;
 }
 
@@ -526,7 +527,7 @@ static char *locate_libocp(void)
 	if ((retval=locate_libocp_try(PREFIX "/lib", 1)))
 		return retval;
 
-	return locate_libocp_try("", 1);
+	return locate_libocp_try("", 1); /* current working directory, for running OCP from build-directory AND it is not installed */
 }
 
 static int runocp(void *handle, int argc, char *argv[])
