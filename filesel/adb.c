@@ -861,7 +861,6 @@ static int arcReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 #endif
 
 			splitpath_malloc (newfilepath, 0, 0, &name, &ext);
-			snprintf (m.name, sizeof (m.name), "%s", newfilepath);
 
 			m.drive=drive;
 

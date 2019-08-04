@@ -89,8 +89,6 @@ void fsAddPlaylist(struct modlist *ml, const char *path, const char *mask, unsig
 	}
 
 	retval.drive=dmDrive;
-	strncpy(retval.name, s3, NAME_MAX);
-	retval.name[NAME_MAX]=0;
 
 	retval.dirdbfullpath = dirdbResolvePathWithBaseAndRef(dmDrive->basepath, fullpath);
 	fs12name(retval.shortname, s3);
@@ -104,14 +102,16 @@ void fsAddPlaylist(struct modlist *ml, const char *path, const char *mask, unsig
 			strncat(retval.fullname, "/", PATH_MAX-strlen(retval.fullname)-1);
 		} else */{
 			char *curext;
-			getext_malloc (fullpath, &curext);
+			char *name;
+			dirdbGetName_internalstr (retval.dirdbfullpath, &name);
+			getext_malloc (name, &curext);
 
 #ifndef FNM_CASEFOLD
 			{
 				char *name_upper;
 				char *iterate;
 
-				if ((name_upper = strdup(retval.name)))
+				if ((name_upper = strdup(name)))
 				{
 					for (iterate = name_upper; *iterate; iterate++)
 						*iterate = toupper(*iterate);
@@ -132,7 +132,7 @@ void fsAddPlaylist(struct modlist *ml, const char *path, const char *mask, unsig
 				free(name_upper);
 			}
 #else
-			if ((fnmatch(mask, retval.name, FNM_CASEFOLD))||(!fsIsModule(curext)))
+			if ((fnmatch(mask, name, FNM_CASEFOLD))||(!fsIsModule(curext)))
 			{
 				free (curext);
 				dirdbUnref(retval.dirdbfullpath);

@@ -99,9 +99,11 @@ static int mlSubScan(const uint32_t dirdbnode, int mlTop)
 		mle=modlist_get(ml, i);
 		if (mle->flags&MODLIST_FLAG_DIR)
 		{
-			if (strcmp(mle->name, ".."))
-			if (strcmp(mle->name, "."))
-			if (strcmp(mle->name, "/"))
+			char *name;
+			dirdbGetName_internalstr (mle->dirdbfullpath, &name);
+			if (strcmp (name, ".."))
+			if (strcmp (name, "."))
+			if (strcmp (name, "/"))
 			{
 				if (mlSubScan(mle->dirdbfullpath, mlTop))
 					return -1;
@@ -328,18 +330,15 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 
 		strcpy(entry.shortname, "all");
 		fs12name(entry.shortname, "all");
-		strcpy(entry.name, "all");
 		entry.dirdbfullpath=dmall;
 		modlist_append(ml, &entry);
 
 		strcpy(entry.shortname, "search");
-		strcpy(entry.name, "search");
 		fs12name(entry.shortname, "search");
 		entry.dirdbfullpath=dmsearch;
 		modlist_append(ml, &entry);
 
 		strcpy(entry.shortname, "addfiles");
-		strcpy(entry.name, "addfiles");
 		fs12name(entry.shortname, "addfiles");
 		entry.dirdbfullpath=dmadd;
 		entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
@@ -359,10 +358,9 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 			char *cachefile;
 			dirdbGetName_internalstr (dirdbnode, &cachefile);
 			fs12name(entry.shortname, cachefile);
-			snprintf(entry.name, sizeof (entry.name), "%s", cachefile);
 
 			entry.drive=dmFILE;
-			entry.dirdbfullpath=dirdbnode; /*dirdbResolvePathAndRef(files[i].name);*/
+			entry.dirdbfullpath=dirdbnode;
 			entry.flags=MODLIST_FLAG_FILE;
 			entry.mdb_ref=mdb_ref;
 			entry.adb_ref=adb_ref;
@@ -488,8 +486,7 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 
 							struct moduleinfostruct info;
 							char buffer[
-								MAX(MAX(sizeof(info.name)+1,
-								        sizeof(info.modname)+1),
+								MAX(sizeof(info.modname)+1,
 								    MAX(sizeof(info.composer)+1,
 								        sizeof(info.comment)+1))
 							];
@@ -513,12 +510,6 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 
 							mdbGetModuleInfo(&info, mdb_ref);
 
-							for (j=0;j<sizeof(info.name);j++)
-								buffer[j]=toupper(info.name[j]);
-							buffer[j]=0;
-							if (strstr(buffer, str))
-								goto add;
-
 							for (j=0;j<sizeof(info.modname);j++)
 								buffer[j]=toupper(info.modname[j]);
 							buffer[j]=0;
@@ -541,8 +532,6 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 							{
 							add:
 								fs12name(entry.shortname, cachefile);
-								strncpy(entry.name, cachefile, NAME_MAX);
-								entry.name[NAME_MAX]=0;
 
 								entry.drive=dmFILE;
 								entry.dirdbfullpath=dirdbnode; /*dirdbResolvePathAndRef(files[i].name);*/

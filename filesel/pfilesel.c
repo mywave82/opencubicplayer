@@ -259,8 +259,6 @@ static void dosReadDirChild(struct modlist *ml,
 
 	memset(&retval, 0, sizeof(struct modlistentry));
 	retval.drive=drive;
-	strncpy(retval.name, childpath, NAME_MAX);
-	retval.name[NAME_MAX]=0;
 
 	snprintf(path, PATH_MAX+1, "%s%s", parentpath, childpath);
 	retval.dirdbfullpath=dirdbResolvePathWithBaseAndRef(drive->basepath, path);
@@ -523,7 +521,6 @@ static int initRootDir(const char *sec)
 {
 	int count;
 
-	int len = 4096; /* PATH_MAX on many systems */
 	char *currentpath, *currentpath2;
 	uint32_t newcurrentpath;
 
@@ -1015,7 +1012,14 @@ static void displayfile(const unsigned int y, const unsigned int x, const unsign
 			}
 		}
 
-		writestring(sbuf, 2, col, m->name, width-13);
+		if ((m->flags & MODLIST_FLAG_DIR) && !strcmp (m->shortname, ".."))
+		{
+			writestring (sbuf, 2, col, m->shortname, width-13);
+		} else {
+			char *temp;
+			dirdbGetName_internalstr (m->dirdbfullpath, &temp);
+			writestring(sbuf, 2, col, temp, width-13);
+		}
 		if (mi.flags1&MDB_PLAYLIST)
 			writestring(sbuf, width-7, col, "<PLS>", 5);
 		else if (m->flags&MODLIST_FLAG_DIR)
@@ -2850,7 +2854,6 @@ static int stdReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 		{
 			memset(&m, 0, sizeof(struct modlistentry));
 			m.drive=drive;
-			strcpy(m.name, "/");
 			strcpy(m.shortname, "/");
 			m.flags=MODLIST_FLAG_DIR;
 			m.dirdbfullpath=drive->basepath;
@@ -2860,7 +2863,6 @@ static int stdReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 			{
 				memset(&m, 0, sizeof(struct modlistentry));
 				m.drive=drive;
-				strcpy(m.name, "..");
 				strcpy(m.shortname, "..");
 				m.flags=MODLIST_FLAG_DIR;
 				m.dirdbfullpath=dirdbparent;
@@ -2876,7 +2878,6 @@ static int stdReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 			memset(&m, 0, sizeof(struct modlistentry));
 
 			m.drive=d;
-			strcpy(m.name, d->drivename);
 			strncpy(m.shortname, d->drivename, 12);
 			m.flags=MODLIST_FLAG_DRV;
 			m.dirdbfullpath=d->currentpath;

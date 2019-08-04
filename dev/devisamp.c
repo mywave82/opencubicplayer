@@ -282,7 +282,6 @@ static int smpReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 			{
 				memset(&m, 0, sizeof(m));
 				m.drive=drive;
-				strcpy(m.name, "DEVICES");
 				strcpy(m.shortname, "DEVICES");
 				m.dirdbfullpath=node;
 				m.flags=MODLIST_FLAG_DIR;
@@ -296,21 +295,17 @@ static int smpReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 		struct devinfonode *dev;
 		for (dev=plSamplerDevices; dev; dev=dev->next)
 		{
-			char hnd[9];
-			strcpy(hnd, dev->handle);
+			char npath[64];
+			snprintf (npath, sizeof(npath), "%s.DEV", dev->handle);
 			memset(&m, 0, sizeof(m));
 
-			fsConvFileName12(m.name, hnd, ".DEV");
-/*
-			if (fsMatchFileName12(m.name, mask)) */
+			fsConvFileName12 (m.shortname, dev->handle, ".DEV");
+//			if (fsMatchFileName12(m.shortname, mask))
 			{
-				char npath[64];
-				m.mdb_ref=mdbGetModuleReference(m.name, dev->devinfo.mem);
+				m.mdb_ref=mdbGetModuleReference(m.shortname, dev->devinfo.mem);
 				if (m.mdb_ref==0xffffffff)
 					goto out;
 				m.drive=drive;
-				strncpy(m.shortname, m.name, 12);
-				snprintf(npath, 64, "%s.DEV", hnd);
 				m.dirdbfullpath=dirdbFindAndRef(path, npath);
 				m.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
 				if (mdbGetModuleType(m.mdb_ref)!=mtDEVs)

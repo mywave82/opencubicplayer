@@ -303,7 +303,6 @@ static int cdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 		for (i=0; i<cdromn;i++)
 		{
 			strcpy(entry.shortname, cdroms[i].vdev);
-			strcpy(entry.name, cdroms[i].dev);
 			entry.drive=drive;
 			entry.dirdbfullpath=cdroms[i].dirdbnode;
 			dirdbRef(entry.dirdbfullpath); /* overkill */
@@ -367,7 +366,6 @@ static int cdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 									initlba=tocentry.cdte_addr.lba;
 								lastlba=tocentryN.cdte_addr.lba;
 								fs12name(entry.shortname,buffer);
-								strcpy(entry.name, buffer);
 								entry.drive=drive;
 								entry.dirdbfullpath=dirdbFindAndRef(path, buffer);
 								entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
@@ -399,7 +397,6 @@ static int cdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 						struct moduleinfostruct mi;
 
 						fs12name(entry.shortname,buffer);
-						strcpy(entry.name, buffer);
 						entry.drive=drive;
 						entry.dirdbfullpath=dirdbFindAndRef(path, buffer);
 						entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
