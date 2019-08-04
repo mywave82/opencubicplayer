@@ -1091,6 +1091,8 @@ char *getcwd_malloc (void)
 	char path[MAXPATHLEN+1];
 #elif defined(PATH_MAX)
 	char path[PATH_MAX+1];
+#elif defined(_MAX_PATH)
+	char path[_MAX_PATH+1];
 #else
 	char path[4097];
 #endif /* MAXPATHLEN */
