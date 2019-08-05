@@ -38,7 +38,7 @@ FileHeader hdr;
 void DumpPrefix (unsigned char *mem, int len, int base, int baselen)
 {
 	int i;
-	printf ("[%s%04x%s]%s", FONT_BRIGHT_BLUE, base, FONT_RESET, FONT_BRIGHT_PURPLE);
+	printf ("[%s%08x%s]%s", FONT_BRIGHT_BLUE, base, FONT_RESET, FONT_BRIGHT_PURPLE);
 	for (i=0; i < baselen; i++)
 	{
 		if (base+i >= len)
@@ -50,10 +50,10 @@ void DumpPrefix (unsigned char *mem, int len, int base, int baselen)
 	}
 	switch (baselen)
 	{
-		case 2:  printf (              "%s ", FONT_RESET); break;
-		case 1:  printf (           "%s    ", FONT_RESET); break;
-		case 0:  printf (        "%s       ", FONT_RESET); break;
-		default: printf ("%s\n             ", FONT_RESET); break;
+		case 2:  printf (                  "%s ", FONT_RESET); break;
+		case 1:  printf (               "%s    ", FONT_RESET); break;
+		case 0:  printf (            "%s       ", FONT_RESET); break;
+		default: printf ("%s\n                 ", FONT_RESET); break;
 	}
 }
 
@@ -232,7 +232,7 @@ int ParseS3M (unsigned char *mem, int len)
 	printf ("SpecialData: ");
 	if (hdr.flags & 128)
 	{
-		printf ("ParaPointer 0x%04x => ptr 0x%08lx\n", hdr.special, 16*hdr.special + sizeof (hdr));
+		printf ("ParaPointer 0x%04x => ptr 0x%08x\n", hdr.special, 16*hdr.special);
 	} else {
 		printf ("not enabled in flags\n");
 	}
@@ -243,7 +243,7 @@ int ParseS3M (unsigned char *mem, int len)
 		printf ("ChannelSetting %2d: ", i + 1);
 		if (hdr.channels[i] < 8)
 		{
-			printf ("Left PCM Channel %d\n", hdr.channels[i]);
+			printf ("Left  PCM Channel %d\n", hdr.channels[i]);
 		} else if (hdr.channels[i] < 16)
 		{
 			printf ("Right PCM Channel %d\n", hdr.channels[i] - 8);
@@ -275,6 +275,51 @@ int ParseS3M (unsigned char *mem, int len)
 			printf ("Channel unused\n");
 		}
 	}
+
+	DumpPrefix(mem, len, sizeof(hdr), hdr.orders);
+	if ((sizeof (hdr) + hdr.orders) >= len)
+	{
+		printf ("Orders: Not enough data in the file\n");
+		return -1;
+	}
+	printf ("Orders: [");
+	for (i=0; i < hdr.orders; i++)
+	{
+		printf ("%s%d%s%s", i?", ":"", mem[sizeof(hdr)+i],
+		mem[sizeof(hdr)+i]==254?" marker/ignore this":"",
+		mem[sizeof(hdr)+i]==255?" end of song":""
+		);
+	}
+	printf ("]\n");
+
+	for (i=0; i < hdr.ins; i++)
+	{
+		DumpPrefix (mem, len, sizeof(hdr) + hdr.orders + 2*i, 2);
+
+		if ((sizeof (hdr) + hdr.orders + (i+1)*2) >= len)
+		{
+			printf ("Instrument %2d: Not enough data in the file\n", i + 1);
+			return -1;
+		} else {
+			uint16_t temp = uint16_little (((uint16_t *)(mem + sizeof(hdr) + hdr.orders))[i]);
+			printf ("Instrument %2d: ParaPointer 0x%04x => ptr 0x%08x\n", i + 1, temp, 16*temp);
+		}
+	}
+
+	for (i=0; i < hdr.ins; i++)
+	{
+		DumpPrefix (mem, len, sizeof(hdr) + hdr.orders + hdr.ins*2 + 2*i, 2);
+
+		if ((sizeof (hdr) + hdr.orders + (i+1)*2) >= len)
+		{
+			printf ("Pattern %2d: Not enough data in the file\n", i + 1);
+			return -1;
+		} else {
+			uint16_t temp = uint16_little (((uint16_t *)(mem + sizeof(hdr) + hdr.orders + hdr.ins*2))[i]);
+			printf ("Pattern %2d: ParaPointer 0x%04x => ptr 0x%08x\n", i + 1, temp, 16*temp);
+		}
+	}
+
 	return 0;
 }
 
