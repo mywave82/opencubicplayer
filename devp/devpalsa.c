@@ -411,13 +411,17 @@ static FILE *alsaSelectMixer(struct modlistentry *entry)
 {
 	char *t;
 	int card;
-	if (!strcmp(entry->name, "default.dev"))
+	char *name;
+
+	dirdbGetName_internalstr (entry->dirdbfullpath, &name);
+
+	if (!strcmp(name, "default.dev"))
 	{
 		strcpy(alsaMixerName, "default");
-	} else if (!strcmp(entry->name, "none.dev"))
+	} else if (!strcmp(name, "none.dev"))
 	{
 		strcpy(alsaMixerName, "");
-	} else if (!strcmp(entry->name, "custom.dev"))
+	} else if (!strcmp(name, "custom.dev"))
 	{
 		int mlTop=mlDrawBox();
 		char str[DEVICE_NAME_MAX+1];
@@ -516,7 +520,7 @@ static FILE *alsaSelectMixer(struct modlistentry *entry)
 				scrolled-=8;
 		}
 	} else {
-		if (!(t=strchr(entry->name, ':')))
+		if (!(t=strchr(name, ':')))
 			return NULL;
 		card=atoi(t+1);
 		snprintf(alsaMixerName, sizeof(alsaMixerName), "hw:%d", card);
@@ -538,7 +542,11 @@ out:
 
 static FILE *alsaSelectPcmOut(struct modlistentry *entry)
 {
-	if (!strcmp(entry->name, "custom.dev"))
+	char *name;
+
+	dirdbGetName_internalstr (entry->dirdbfullpath, &name);
+
+	if (!strcmp(name, "custom.dev"))
 	{
 		int mlTop=mlDrawBox();
 		char str[DEVICE_NAME_MAX+1];
@@ -639,34 +647,33 @@ static FILE *alsaSelectPcmOut(struct modlistentry *entry)
 	}
 /* 1.0.14rc1 added support for snd_device_name_hint */
 #if SND_LIB_VERSION >= 0x01000e
-	else {
-		int len = strlen (entry->name);
+	else if (!strncmp(name, "ALSA-PCM-", 9))
+	{
+		int len = strlen (name);
 
-		if (!strncmp(entry->name, "ALSA-PCM-", 9)) /* should not happen */
-			return NULL;
 		if (len < (9+4)) /* should not happen */
 			return NULL;
 		len -= (9-4);
 		if (len > DEVICE_NAME_MAX) /* whoopise */
 			return NULL;
-		strncpy(alsaCardName, entry->name+9, len);
+		strncpy(alsaCardName, name+9, len);
 		alsaCardName[len] = 0;
 
-		strncpy(alsaMixerName, entry->name+9, len);
+		strncpy(alsaMixerName, name+9, len);
 		alsaMixerName[len] = 0;
 	}
 #else
-	else if (!strcmp(entry->name, "default.dev"))
+	else if (!strcmp(name, "default.dev"))
 	{
 		strcpy(alsaCardName, "default");
 	} else {
 		char *t;
 		int card, device;
 
-		if (!(t=strchr(entry->name, ':')))
+		if (!(t=strchr(name, ':')))
 			return NULL;
 		card=atoi(t+1);
-		if (!(t=strchr(entry->name, ',')))
+		if (!(t=strchr(name, ',')))
 			return NULL;
 		device=atoi(t+1);
 		if (alsa_1_0_11_or_better)
@@ -742,12 +749,13 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 
 		if (ml)
 		{
+			char namebuffer[128];
 			struct modlistentry entry;
 			memset(&entry, 0, sizeof(entry));
 			snprintf(entry.shortname, sizeof (entry.shortname), "dev-%03d.dev", count);
-			snprintf(entry.name, sizeof(entry.name), "ALSA-PCM-%s.dev", name);
+			snprintf(namebuffer, sizeof(namebuffer), "ALSA-PCM-%s.dev", name);
 			entry.drive=drive;
-			entry.dirdbfullpath=dirdbFindAndRef(parent, entry.name);
+			entry.dirdbfullpath=dirdbFindAndRef(parent, namebuffer);
 			entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
 			entry.mdb_ref=mdbGetModuleReference(entry.shortname, 0);
 			if (entry.mdb_ref!=0xffffffff)
@@ -914,11 +922,10 @@ static int list_devices_for_card(int card, struct modlist *ml, const struct dmDr
 			memset(&entry, 0, sizeof(entry));
 
 			snprintf(entry.shortname, sizeof(entry.shortname), "hw:%d,%d.dev", card, pcm_device);
-			strcpy(entry.name, entry.shortname);
 			entry.drive=drive;
-			entry.dirdbfullpath=dirdbFindAndRef(parent, entry.name);
+			entry.dirdbfullpath=dirdbFindAndRef(parent, entry.shortname);
 			entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-			entry.mdb_ref=mdbGetModuleReference(entry.name, 0);
+			entry.mdb_ref=mdbGetModuleReference(entry.shortname, 0);
 			if (entry.mdb_ref!=0xffffffff)
 			{
 				struct moduleinfostruct mi;
@@ -954,11 +961,10 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 		memset(&entry, 0, sizeof(entry));
 
 		snprintf(entry.shortname, sizeof(entry.shortname), "default.dev");
-		strcpy(entry.name, entry.shortname);
 		entry.drive=drive;
-		entry.dirdbfullpath=dirdbFindAndRef(parent, entry.name);
+		entry.dirdbfullpath=dirdbFindAndRef(parent, entry.shortname);
 		entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-		entry.mdb_ref=mdbGetModuleReference(entry.name, 0);
+		entry.mdb_ref=mdbGetModuleReference(entry.shortname, 0);
 		if (entry.mdb_ref!=0xffffffff)
 		{
 			struct moduleinfostruct mi;
@@ -975,11 +981,10 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 		dirdbUnref(entry.dirdbfullpath);
 		if (mixercaponly) {
 			snprintf(entry.shortname, sizeof(entry.shortname), "none.dev");
-			strcpy(entry.name, entry.shortname);
 			entry.drive=drive;
-			entry.dirdbfullpath=dirdbFindAndRef(parent, entry.name);
+			entry.dirdbfullpath=dirdbFindAndRef(parent, entry.shortname);
 			entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-			entry.mdb_ref=mdbGetModuleReference(entry.name, 0);
+			entry.mdb_ref=mdbGetModuleReference(entry.shortname, 0);
 			if (entry.mdb_ref!=0xffffffff)
 			{
 				struct moduleinfostruct mi;
@@ -997,14 +1002,13 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 
 		}
 		snprintf(entry.shortname, sizeof(entry.shortname), "custom.dev");
-		strcpy(entry.name, entry.shortname);
 		entry.drive=drive;
-		entry.dirdbfullpath=dirdbFindAndRef(parent, entry.name);
+		entry.dirdbfullpath=dirdbFindAndRef(parent, entry.shortname);
 		entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
 		if (mixercaponly)
-			custom_mixer_mdb_ref=entry.mdb_ref=mdbGetModuleReference(entry.name, 0);
+			custom_mixer_mdb_ref=entry.mdb_ref=mdbGetModuleReference(entry.shortname, 0);
 		else
-			custom_dsp_mdb_ref=entry.mdb_ref=mdbGetModuleReference(entry.name, 0);
+			custom_dsp_mdb_ref=entry.mdb_ref=mdbGetModuleReference(entry.shortname, 0);
 		if (entry.mdb_ref!=0xffffffff)
 		{
 			struct moduleinfostruct mi;
@@ -1050,11 +1054,10 @@ static int list_cards(struct modlist *ml, const struct dmDrive *drive, uint32_t 
 				}
 
 				snprintf(entry.shortname, sizeof(entry.shortname), "hw:%d.dev", card);
-				strcpy(entry.name, entry.shortname);
 				entry.drive=drive;
-				entry.dirdbfullpath=dirdbFindAndRef(parent, entry.name);
+				entry.dirdbfullpath=dirdbFindAndRef(parent, entry.shortname);
 				entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-				entry.mdb_ref=mdbGetModuleReference(entry.name, 0);
+				entry.mdb_ref=mdbGetModuleReference(entry.shortname, 0);
 				if (entry.mdb_ref!=0xffffffff)
 				{
 					struct moduleinfostruct mi;
@@ -1575,7 +1578,6 @@ static int alsaReadDir(struct modlist *ml, const struct dmDrive *drive, const ui
 	if (path==dmSETUP->basepath)
 	{
 		strcpy(entry.shortname, "ALSA");
-		strcpy(entry.name, "ALSA");
 		entry.drive=drive;
 		entry.dirdbfullpath=dmalsa;
 		entry.flags=MODLIST_FLAG_DIR;
@@ -1590,7 +1592,6 @@ static int alsaReadDir(struct modlist *ml, const struct dmDrive *drive, const ui
 		if (path==dmalsa)
 		{
 			strcpy(entry.shortname, "PCM.OUT");
-			strcpy(entry.name, "PCM.OUT");
 			entry.drive=drive;
 			entry.dirdbfullpath=dmpcmout;
 			entry.flags=MODLIST_FLAG_DIR;
@@ -1600,7 +1601,6 @@ static int alsaReadDir(struct modlist *ml, const struct dmDrive *drive, const ui
 			modlist_append(ml, &entry);
 
 			strcpy(entry.shortname, "MIXER");
-			strcpy(entry.name, "MIXER");
 			entry.drive=drive;
 			entry.dirdbfullpath=dmmixer;
 			entry.flags=MODLIST_FLAG_DIR;
