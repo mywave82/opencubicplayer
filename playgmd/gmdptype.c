@@ -50,19 +50,47 @@ static unsigned char gmdGetModuleType(const char *buf, const size_t len)
 		/* TODO, endian */
 		if (!memcmp(buf+44, "SCRM", 4))
 		{
-			int opl=0;
-			int nopl=0;
+			int chan_opl=0;  /* channels, OPL3 */
+			int chan_nopl=0; /* channels, PCM */
+			int ins_opl = 0; /* instruments, OPL3 */
+			int ins_nopl = 0; /* instruments, PCM */
+			uint16_t orders = uint16_little (((uint16_t *)(buf+0x20))[0]);
+			uint16_t instruments = uint16_little (((uint16_t *)(buf+0x22))[0]);
 			int i;
 			for (i=0;i<0x20;i++)
 				if (((unsigned char)buf[0x40+i]>=0x10)&&((unsigned char)buf[0x40+i]<0x20))
-					opl++;
+					chan_opl++;
 				else
 					if ((unsigned char)buf[0x40+i]!=0xff)
-						nopl++;
-			if (opl)
+						chan_nopl++;
+			for (i=0; (i<instruments) && (len >= 0x60+orders+i*2); i++)
+			{
+				uint16_t paraptr = uint16_little (((uint16_t *)(buf+0x60+orders))[i]);
+				uint32_t offset = paraptr * 16;
+				if (len > (offset+1))
+				{
+					switch (buf[offset])
+					{
+						case 0: break;
+						case 1: ins_nopl++; break;
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+						case 6:
+						case 7: ins_opl++; break;
+					}
+				}
+			}
+
+			if (chan_opl && ins_opl)
 				return mtOPL; /* adlib sample, adplug handles these */
-			if (nopl)
+			if (chan_nopl && ins_nopl)
 				return mtS3M;
+			if (chan_nopl)
+				return mtS3M;
+			if (chan_opl)
+				return mtOPL;
 		}
 	}
 	if (len>=48)
