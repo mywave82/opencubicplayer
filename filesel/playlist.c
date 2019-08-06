@@ -20,7 +20,9 @@
 
 #include "config.h"
 #include <ctype.h>
+#include <errno.h>
 #include <fnmatch.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -39,7 +41,7 @@
 void fsAddPlaylist(struct modlist *ml, const char *path, const char *mask, unsigned long opt, const char *source)
 {
 	const struct dmDrive *dmDrive=0;
-	char fullpath[PATH_MAX+1];
+	char *fullpath;
 	struct stat st;
 	struct modlistentry retval;
 	char *s3;
@@ -73,7 +75,7 @@ void fsAddPlaylist(struct modlist *ml, const char *path, const char *mask, unsig
 		return;
 	}
 
-	gendir(path, source, fullpath); /* path's doesn't need to reflect dmDrive, if drive is given, path must be full */
+	gendir_malloc (path, source, &fullpath); /* path's doesn't need to reflect dmDrive, if drive is given, path must be full */
 	if ((s3=rindex(fullpath, '/')))
 		s3++;
 	else
@@ -84,7 +86,8 @@ void fsAddPlaylist(struct modlist *ml, const char *path, const char *mask, unsig
 
 	if (stat(fullpath, &st)<0)
 	{
-		fprintf(stderr, "[playlist] stat() failed for %s\n", fullpath);
+		fprintf(stderr, "[playlist] stat(%s) failed: %s\n", fullpath, strerror (errno));
+		free (fullpath);
 		return;
 	}
 
@@ -92,6 +95,7 @@ void fsAddPlaylist(struct modlist *ml, const char *path, const char *mask, unsig
 
 	retval.dirdbfullpath = dirdbResolvePathWithBaseAndRef(dmDrive->basepath, fullpath);
 	fs12name(retval.shortname, s3);
+	free (fullpath); fullpath=0;
 
 	if (S_ISREG(st.st_mode))
 	{
