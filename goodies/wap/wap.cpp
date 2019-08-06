@@ -13,11 +13,13 @@
 
 // code needs some cleanup, but works quite perfect ;)
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <conio.h>
 #include <memory.h>
-#include "ptypes.h"
+//#include "ptypes.h"
+
+typedef uint8_t uint1;
 
 int LoadPCX(FILE *fp, uint1 *outpix, uint1 * pal, int* width, int* height);
 void OptimizePalette(char *picture, int bytes, char *srcpal, char *pal);
@@ -35,7 +37,7 @@ struct cpaniheaderstruct
  short pallen;
 };
 
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
  printf("WuerfelAnimator *PROFESSIONAL* (c) 1998 by Felix Domke\n");
  if(argc!=3)
@@ -52,7 +54,7 @@ void main(int argc, char **argv)
  FILE *anim;
  if(!(anim=fopen(argv[2], "wb")))
  {
-  perror(argv[1]);
+  perror(argv[2]);
   exit(3);
  }
  int wuerfelversion=-1, strangeframeoptimization=0, rlecomp=0;
@@ -81,8 +83,8 @@ void main(int argc, char **argv)
  while(!feof(was))
  {
   int num=-1, length=-1;
-  char name[_MAX_PATH];
-  fscanf(was, "%d %d %s\n", &num, &length, name);
+  char name[1024];
+  fscanf(was, "%d %d %1023s\n", &num, &length, name);
   if(num<1)
   {
    printf("section must have at least one pic.\n");
@@ -99,10 +101,10 @@ void main(int argc, char **argv)
   }
   if(num>1)
   {
-   char test1[_MAX_PATH], test2[_MAX_PATH];
-   sprintf(test1, name, num);
-   sprintf(test2, name, 1);
-   if(!strcmp(test1, test2))
+   char *a = strchr (name, '%');
+   char *b = strrchr (name, '%');
+
+   if (!(a && (a==b) && (a[1] == 'd')))
    {
     printf("please use some %%ds in your name when more than one frame in section!\n");
     fclose(was);
@@ -178,15 +180,15 @@ void main(int argc, char **argv)
  while(curpic<numpics)
  {
   int num=-1, length=-1;
-  char name[_MAX_PATH];
-  fscanf(was, "%d %d %s\n", &num, &length, name);
+  char name[1024];
+  fscanf(was, "%d %d %1023s\n", &num, &length, name);
   for(int i=0; i<num; i++)
   {
    if(wuerfelversion) lens[curpic]=length;
    printf("pic %d/%d\r", curpic, numpics-1);
    fflush(stdout);
-   char fname[_MAX_PATH];
-   sprintf(fname, name, i);
+   char fname[1024+10];
+   snprintf(fname, sizeof (fname), name, i);
    FILE *fpcx;
    if(!(fpcx=fopen(fname, "rb")))
    {
@@ -296,10 +298,10 @@ void main(int argc, char **argv)
    printf("uncompressed (phys. only):     %dkb\n", physpics*(wuerfelversion?64000:16000)/1024);
   else
    printf("uncompressed:                  %dkb\n", numpics*(wuerfelversion?64000:16000)/1024);
-  printf("compressed:                    %dkb\n", ftell(anim)/1024);
-  printf("ratio:                         %d%%\n", (ftell(anim)*100/(physpics*(wuerfelversion?64000:16000))));
+  printf("compressed:                    %ldkb\n", ftell(anim)/1024);
+  printf("ratio:                         %d%%\n", (int)(ftell(anim)*100/(physpics*(wuerfelversion?64000:16000))));
  } else
- printf("                               %dkb\n", ftell(anim)/1024);
+ printf("                               %ldkb\n", ftell(anim)/1024);
 
  fseek(anim, framelenspos, SEEK_SET);
  fwrite(framelens, numpics, 2, anim);
