@@ -336,7 +336,7 @@ static int miecmp(const void *a, const void *b)
 
 int mdbInit(void)
 {
-	char path[PATH_MAX+1];
+	char *path;
 	int f;
 	struct mdbheader header;
 	uint32_t i;
@@ -348,21 +348,17 @@ int mdbInit(void)
 	mdbGenNum=0;
 	mdbGenMax=0;
 
-	if ((strlen(cfConfigDir)+12)>PATH_MAX)
-	{
-		fprintf(stderr, "mdb: CPMODNDO.DAT path is too long\n");
-		return 1;
-	}
-	strcpy(path, cfConfigDir);
-	strcat(path, "CPMODNFO.DAT");
+	makepath_malloc (0, cfConfigDir, "CPMODNFO.DAT", 0, &path);
 
 	if ((f=open(path, O_RDONLY))<0)
 	{
-		perror("open(cfConfigDir/CPMODNDO.DAT)");
+		fprintf (stderr, "open(%s): %s\n", path, strerror (errno));
+		free (path);
 		return 1;
 	}
 
 	fprintf(stderr, "Loading %s .. ", path);
+	free (path); path = 0;
 
 	if (read(f, &header, sizeof(header))!=sizeof(header))
 	{
@@ -422,7 +418,7 @@ int mdbInit(void)
 
 void mdbUpdate(void)
 {
-	char path[PATH_MAX+1];
+	char *path;
 	int f;
 	uint32_t i, j;
 	struct mdbheader header;
@@ -431,17 +427,12 @@ void mdbUpdate(void)
 		return;
 	mdbDirty=0;
 
-	if ((strlen(cfConfigDir)+12)>PATH_MAX)
-	{
-		fprintf(stderr, "mdb: CPMODNDO.DAT path is too long\n");
-		return;
-	}
-	strcpy(path, cfConfigDir);
-	strcat(path, "CPMODNFO.DAT");
 
+	makepath_malloc (0, cfConfigDir, "CPMODNFO.DAT", 0, &path);
 	if ((f=open(path, O_WRONLY|O_CREAT, S_IREAD|S_IWRITE))<0)
 	{
-		perror("open(CPMODNFO.DAT)");
+		fprintf (stderr, "open(%s): %s\n", path, strerror (errno));
+		free (path);
 		return;
 	}
 
@@ -502,6 +493,7 @@ void mdbUpdate(void)
 		}
 		i=j;
 	}
+	free (path);
 	lseek(f, 0, SEEK_END);
 	close(f);
 }
