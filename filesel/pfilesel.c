@@ -2216,16 +2216,16 @@ static int fsEditFileInfo(struct modlistentry *me)
 static char fsEditViewPath(void)
 {
 #warning fsEditString API should have a dynamic version, FIXME
-	char path[128*1024];
+	char pathbuffer[128*1024];
 
 	{
 		char *temppath;
 		dirdbGetFullname_malloc (dirdbcurdirpath, &temppath, DIRDB_FULLNAME_ENDSLASH);
+		snprintf(pathbuffer, sizeof(pathbuffer), "%s%s", temppath, curmask);
 		free (temppath);
-		snprintf(path, sizeof(path), "%s%s", temppath, curmask);
 	}
 
-	if (fsEditString(1, 0, plScrWidth, sizeof(path), path))
+	if (fsEditString(1, 0, plScrWidth, sizeof(pathbuffer), pathbuffer))
 	{
 		struct dmDrive *drives;
 		char *drive;
@@ -2234,7 +2234,7 @@ static char fsEditViewPath(void)
 		char *ext;
 		uint32_t newcurrentpath;
 
-		splitpath_malloc(path, &drive, &path, &name, &ext);
+		splitpath_malloc(pathbuffer, &drive, &path, &name, &ext);
 		for (drives = dmDrives; drives; drives = drives->next)
 		{
 			if (strcasecmp(drive, drives->drivename))
