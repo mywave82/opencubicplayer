@@ -611,7 +611,7 @@ AC_MSG_CHECKING([If AdPlug was compiled with another C++ ABI])
 		[AC_MSG_ERROR("Adplug was compiled with a different c++ compiler")]
 	)
 
-	AC_LINK_IFELSE(
+	AC_RUN_IFELSE(
 		[AC_LANG_PROGRAM([[
 #include <adplug/adplug.h>
 #include <adplug/players.h>
@@ -634,6 +634,42 @@ AC_MSG_CHECKING([If AdPlug was compiled with another C++ ABI])
                                  ]])],
 		[AC_MSG_RESULT([ok])],
 		[AC_MSG_ERROR("Adplug was compiled with a different c++ compiler")]
+	)
+	LIBS=$push_LIBS
+	CXXFLAGS="$org_cxxflags"
+	CPPFLAGS="$org_cppflags"
+fi
+
+if test "x$with_adplug" != "xno"; then
+AC_MSG_CHECKING([If libbinio used by AdPlug contains bugs https://github.com/adplug/libbinio/issues/2])
+	CXXFLAGS="$CXXFLAGS $ADPLUG_CXXFLAGS"
+	LIBS="$LIBS $ADPLUG_LIBS"
+
+	AC_RUN_IFELSE(
+		[AC_LANG_PROGRAM([[
+#include <binio.h>
+#include <binstr.h>
+#include <cstdlib>
+#include <string.h>
+#include <adplug/adplug.h>
+#include <adplug/fprovide.h>
+#include <string.h>
+                                 ]],[[
+	binisstream *f = new binisstream((void *)"foobar", 6);
+	long size;
+	char test[6] = {1,2,3,4,5,6};
+
+	f->seek(0, binio::End);
+	size = f->pos();
+	f->seek(0);
+
+	if (f->readString(test, size) != 6) return -1;
+
+	/* test should contain "foobar" if all is correct */
+	return memcmp(test, "foobar", 6);
+                                 ]])],
+		[AC_MSG_RESULT([ok])],
+		[AC_MSG_ERROR("libbinio fails to use memoryobjects")]
 	)
 	LIBS=$push_LIBS
 	CXXFLAGS="$org_cxxflags"
