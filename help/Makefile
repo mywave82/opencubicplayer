@@ -29,12 +29,13 @@ endif
 
 cphelper.o: cphelper.c cphelper.h \
 	../config.h \
-	../types.h \
-	../boot/psetting.h \
-	../stuff/poutput.h \
 	../boot/plinkman.h \
+	../boot/psetting.h \
+	../cpiface/cpiface.h \
 	../stuff/err.h \
-	../cpiface/cpiface.h
+	../stuff/compat.h \
+	../stuff/poutput.h \
+	../types.h
 	$(CC) cphelper.c -o $@ -c
 
 cphelper$(LIB_SUFFIX): $(cphelper_so)

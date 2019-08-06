@@ -91,17 +91,20 @@
  */
 
 #include "config.h"
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include <zlib.h>
-#include "types.h"
 #include "boot/psetting.h"
-#include "stuff/poutput.h"
 #include "boot/plinkman.h"
-#include "stuff/err.h"
-#include "help/cphelper.h"
 #include "cpiface/cpiface.h"
+#include "help/cphelper.h"
+#include "stuff/compat.h"
+#include "stuff/err.h"
+#include "stuff/poutput.h"
+#include "types.h"
 
 static unsigned int plWinFirstLine, plWinHeight, plHelpHeight, plHelpScroll;
 
@@ -337,41 +340,21 @@ static int doReadHelpFile(FILE *file)
 
 static char plReadHelpExternal(void)
 {
-	char    helpname[PATH_MAX+1];
+	char   *helpname;
 	FILE   *bf;
 
 	if (Page && (HelpfileErr==hlpErrOk))
 		return 1;
 
-	strcpy(helpname, cfDataDir);
-	strcat(helpname, "ocp.hlp");
-
+	makepath_malloc (&helpname, 0, cfDataDir, "ocp.hlp", 0);
 	if ((bf=fopen(helpname, "r")))
 	{
+		free (helpname);
 		HelpfileErr=doReadHelpFile(bf);
 		fclose(bf);
 	} else {
-		HelpfileErr=hlpErrNoFile;
-		return 0;
-	};
-
-	return (HelpfileErr==hlpErrOk);
-}
-
-static char plReadHelpPack(void)
-{
-	char path[PATH_MAX];
-	FILE *ref;
-
-	if (Page && (HelpfileErr==hlpErrOk))
-		return 1;
-
-	snprintf(path, sizeof(path), "%s%s", cfDataDir, "ocp.hlp");
-	if ((ref=fopen(path, "r")))
-	{
-		HelpfileErr=doReadHelpFile(ref);
-		fclose(ref);
-	} else {
+		fprintf (stderr, "Failed to open(%s): %s\n", helpname, strerror (errno));
+		free (helpname);
 		HelpfileErr=hlpErrNoFile;
 		return 0;
 	};
@@ -933,11 +916,8 @@ static int hlpGlobalInit(void)
 
 	if (!plReadHelpExternal())
 	{
-		if (!plReadHelpPack())
-		{
-			fprintf(stderr, "Warning. Failed to read help files\n");
-			return errOk; /* this error is not fatal to rest of the player */
-		}
+		fprintf(stderr, "Warning. Failed to read help files\n");
+		return errOk; /* this error is not fatal to rest of the player */
 	};
 
 	curpage=NULL;
