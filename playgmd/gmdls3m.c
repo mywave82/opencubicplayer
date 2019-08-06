@@ -65,7 +65,7 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 		uint16_t d1;
 		uint16_t orders,ins,pats,flags,cwt,ffv;
 		char magic[4];
-		uint8_t mv,it,is,mm,uc,dp;
+		uint8_t gv,it,is,mv,uc,dp;
 		uint32_t d2;
 		uint32_t d3;
 		uint16_t special;
@@ -172,9 +172,9 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 	for (i=0;i<(hdr.pats*(unsigned)2);i++)
 		patpara[i] = uint16_little (patpara[i]);
 
-	/*  hdr.mm|=0x80; */
+	/*  hdr.mv|=0x80; */
 	for (i=0; i<32; i++)
-		defpan[i]=(hdr.mm&0x80)?((hdr.channels[i]&8)?0x2F:0x20):0;
+		defpan[i]=(hdr.mv&0x80)?((hdr.channels[i]&8)?0x2F:0x20):0;
 	if (hdr.dp==0xFC)
 	{
 #ifdef S3M_LOAD_DEBUG
@@ -184,7 +184,7 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 			fprintf(stderr, __FILE__ ": warning, read failed #4\n");
 	}
 	for (i=0; i<32; i++)
-		defpan[i]=(defpan[i]&0x20)?((defpan[i]&0xF)*0x11):((hdr.mm&0x80)?((hdr.channels[i]&8)?0xCC:0x33):0x80);
+		defpan[i]=(defpan[i]&0x20)?((defpan[i]&0xF)*0x11):((hdr.mv&0x80)?((hdr.channels[i]&8)?0xCC:0x33):0x80);
 
 	if (!mpAllocInstruments(m, m->instnum)||!mpAllocTracks(m, m->tracknum)||!mpAllocPatterns(m, m->patnum)||!mpAllocSamples(m, m->sampnum)||!mpAllocModSamples(m, m->modsampnum)||!mpAllocOrders(m, m->ordnum))
 	{
@@ -649,8 +649,8 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 				putcmd(&cp, cmdTempo, hdr.it);
 			if (hdr.is!=125)
 				putcmd(&cp, cmdSpeed, hdr.is);
-			if (hdr.mv!=0x40)
-				putcmd(&cp, cmdGlobVol, hdr.mv*4);
+			if (hdr.gv!=0x40)
+				putcmd(&cp, cmdGlobVol, hdr.gv*4);
 		}
 
 		row=0;
