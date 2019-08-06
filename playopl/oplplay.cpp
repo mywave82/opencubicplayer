@@ -738,11 +738,11 @@ void oplIdle(void)
 			pass2=0;
 		if (bit16)
 		{
-			plrClearBuf((uint16_t *)plrbuf+(bufpos<<stereo), (bufdelta-pass2)<<stereo, !signedout);
+			plrClearBuf((uint16_t *)plrbuf+(bufpos<<stereo), (bufdelta-pass2)<<stereo, signedout);
 			if (pass2)
-				plrClearBuf((uint16_t *)plrbuf, pass2<<stereo, !signedout);
+				plrClearBuf((uint16_t *)plrbuf, pass2<<stereo, signedout);
 		} else {
-			plrClearBuf(buf16, bufdelta<<stereo, !signedout);
+			plrClearBuf(buf16, bufdelta<<stereo, signedout);
 			plr16to8((uint8_t *)plrbuf+(bufpos<<stereo), buf16, (bufdelta-pass2)<<stereo);
 			if (pass2)
 				plr16to8((uint8_t *)plrbuf, buf16+((bufdelta-pass2)<<stereo), pass2<<stereo);
