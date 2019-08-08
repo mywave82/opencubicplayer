@@ -348,7 +348,7 @@ int mdbInit(void)
 	mdbGenNum=0;
 	mdbGenMax=0;
 
-	makepath_malloc (0, cfConfigDir, "CPMODNFO.DAT", 0, &path);
+	makepath_malloc (&path, 0, cfConfigDir, "CPMODNFO.DAT", 0);
 
 	if ((f=open(path, O_RDONLY))<0)
 	{
@@ -428,7 +428,7 @@ void mdbUpdate(void)
 	mdbDirty=0;
 
 
-	makepath_malloc (0, cfConfigDir, "CPMODNFO.DAT", 0, &path);
+	makepath_malloc (&path, 0, cfConfigDir, "CPMODNFO.DAT", 0);
 	if ((f=open(path, O_WRONLY|O_CREAT, S_IREAD|S_IWRITE))<0)
 	{
 		fprintf (stderr, "open(%s): %s\n", path, strerror (errno));
