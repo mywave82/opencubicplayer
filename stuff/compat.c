@@ -310,6 +310,7 @@ int makepath_malloc(char **dst, const char *drive, const char *path, const char 
 	unsigned int dstlen = 0;
 	int pathadd = 0;
 
+	*dst = 0;
 	if (drive)
 	{
 		char *pos1, *pos2;
