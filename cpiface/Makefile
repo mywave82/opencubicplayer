@@ -92,11 +92,12 @@ cpiinst.o: cpiinst.c \
 
 cpikube.o: cpikube.c \
 	../config.h \
-	../types.h \
-	../stuff/poutput.h \
 	cpiface.h \
-	../stuff/timer.h \
-	../boot/psetting.h
+	../types.h \
+	../boot/psetting.h \
+	../stuff/compat.h \
+	../stuff/poutput.h \
+	../stuff/timer.h
 	$(CC) cpikube.c -o $@ -c
 
 cpilinks.o: cpilinks.c \

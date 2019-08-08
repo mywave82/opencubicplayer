@@ -38,6 +38,7 @@
 #include "types.h"
 #include "stuff/poutput.h"
 #include "cpiface.h"
+#include "stuff/compat.h"
 #include "stuff/timer.h"
 #include "boot/psetting.h"
 
@@ -120,7 +121,7 @@ static char plLoadWuerfel(void)
 	int i;
 	uint16_t maxframe;
 	uint32_t framemem;
-	char path[PATH_MAX+1];
+	char *path;
 
 	if (plWuerfel)
 		plCloseWuerfel();
@@ -135,15 +136,17 @@ static char plLoadWuerfel(void)
 	if (cfUseAnis >= wuerfelFilesCount)
 		cfUseAnis = wuerfelFilesCount-1;
 
-	snprintf(path, sizeof(path), "%s%s", cfDataDir, wuerfelFiles[cfUseAnis]);
+	makepath_malloc (&path, 0, cfDataDir, wuerfelFiles[cfUseAnis], 0);
 	fprintf(stderr, "Parsing %s\n", path);
 
 	wuerfelfile=fopen(path, "r");
 	if (!wuerfelfile)
 	{
 		perror(__FILE__" fopen:");
+		free (path);
 		return 0;
 	}
+	free (path); path=0;
 
 	if (fread(sig, 8, 1, wuerfelfile)!=1)
 	{
