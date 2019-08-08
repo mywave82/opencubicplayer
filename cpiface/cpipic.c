@@ -50,6 +50,7 @@
 #include "types.h"
 #include "boot/psetting.h"
 #include "cpiface.h"
+#include "stuff/compat.h"
 
 #ifdef HAVE_LZW
 #include "gif.h"
@@ -79,8 +80,10 @@ static int match(const char *name)
 		return 0;
 	if(name[l-4]!='.')
 		return 1;
+#ifdef HAVE_LZW
 	if(tolower(name[l-3])=='g' && tolower(name[l-2])=='i' && tolower(name[l-1])=='f')
 		return 1;
+#endif
 	if(tolower(name[l-3])=='t' && tolower(name[l-2])=='g' && tolower(name[l-1])=='a')
 		return 1;
 	return 0;
@@ -114,8 +117,8 @@ void plReadOpenCPPic(void)
 		n=cfCountSpaceList(picstr, 12);
 		for(i=0; i<n; i++)
 		{
-			char name[PATH_MAX+1];
-			if(cfGetSpaceListEntry(name, &picstr, 12) == 0)
+			char name[128];
+			if(cfGetSpaceListEntry(name, &picstr, sizeof(name)) == 0)
 				break;
 			if(!match(name))
 				continue;
@@ -138,9 +141,7 @@ void plReadOpenCPPic(void)
 						if(match(dp->d_name))
 						{
 							nd=calloc(1, sizeof(struct node_t));
-							nd->name=malloc(strlen(cfDataDir)+strlen(dp->d_name)+1);
-							strcpy(nd->name, cfDataDir);
-							strcat(nd->name, dp->d_name);
+							makepath_malloc(&nd->name, 0, cfDataDir, dp->d_name, 0);
 							nd->next=0;
 							*current=nd;
 							current=&nd->next;
@@ -158,9 +159,7 @@ void plReadOpenCPPic(void)
 						if(match(dp->d_name))
 						{
 							nd=calloc(1, sizeof(struct node_t));
-							nd->name=malloc(strlen(cfConfigDir)+strlen(dp->d_name)+1);
-							strcpy(nd->name, cfConfigDir);
-							strcat(nd->name, dp->d_name);
+							makepath_malloc(&nd->name, 0, cfConfigDir, dp->d_name, 0);
 							nd->next=0;
 							*current=nd;
 							current=&nd->next;

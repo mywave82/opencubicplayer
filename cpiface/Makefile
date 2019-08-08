@@ -139,7 +139,8 @@ cpipic.o: cpipic.c \
 	../boot/psetting.h \
 	cpiface.h \
 	gif.h \
-	tga.h
+	tga.h \
+	../stuff/compat.h
 	$(CC) cpipic.c -o $@ -c
 
 cpiptype.o: cpiptype.c \
