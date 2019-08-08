@@ -174,21 +174,21 @@ static int _lnkDoLoad(const char *file)
 
 static int lnkDoLoad(const char *file)
 {
-	char buffer[PATH_MAX+1];
+	int retval;
+	char *buffer;
 
 #ifdef LD_DEBUG
 	fprintf(stderr, "Request to load %s\n", file);
 #endif
-	if ((strlen(cfProgramDir)+strlen(file)+strlen(LIB_SUFFIX))>PATH_MAX)
-	{
-		fprintf(stderr, "File path to long %s%s%s\n", cfProgramDir, file, LIB_SUFFIX);
-		return -1;
-	}
-	strcat(strcat(strcpy(buffer, cfProgramDir), file), LIB_SUFFIX);
+	/* makepath_malloc is not available yet */
+	buffer = malloc (strlen (cfProgramDir) + strlen(file) + strlen (LIB_SUFFIX) + 1);
+	sprintf (buffer, "%s%s%s", cfProgramDir, file, LIB_SUFFIX);
 #ifdef LD_DEBUG
 	fprintf(stderr, "Attempting to load %s\n", buffer);
 #endif
-	return _lnkDoLoad(buffer);
+	retval = _lnkDoLoad(buffer);
+	free (buffer);
+	return retval;
 }
 
 #ifdef HAVE_QSORT
@@ -229,7 +229,8 @@ int lnkLinkDir(const char *dir)
 	DIR *d;
 	struct dirent *de;
 	char *filenames[1024];
-	char buffer[PATH_MAX+1];
+	char *buffer;
+	int dirlen = strlen (dir);
 	int files=0;
 	int n;
 	if (!(d=opendir(dir)))
@@ -262,20 +263,17 @@ int lnkLinkDir(const char *dir)
 #endif
 	for (n=0;n<files;n++)
 	{
-		if (snprintf(buffer, sizeof(buffer), "%s%s", dir, filenames[n])>=(signed)(sizeof(buffer)-1))
-		{
-			fprintf(stderr, "lnkLinkDir: path too long %s%s\n", dir, filenames[n]);
-			for (;n<files;n++)
-				free(filenames[n]);
-			return -1;
-		}
+		buffer = malloc (dirlen + strlen (filenames[n]) + 1);
+		sprintf(buffer, "%s%s", dir, filenames[n]);
 		if (_lnkDoLoad(buffer)<0)
 		{
+			free (buffer);
 			for (;n<files;n++)
 				free(filenames[n]);
 			return -1;
 		}
-		free(filenames[n]);
+		free (buffer);
+		free (filenames[n]);
 	}
 	return 0; /* all okey */
 }
