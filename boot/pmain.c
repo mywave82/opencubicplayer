@@ -418,13 +418,16 @@ static int init_modules(int argc, char *argv[])
 	lnkLink(cfGetProfileString("general", "prelink", ""));
 
 	{
-		char buffer[PATH_MAX];
-		snprintf(buffer, sizeof(buffer), "%sautoload/", cfProgramDir);
+		char *buffer;
+		buffer = malloc (strlen (cfProgramDir) + 9 + 1);
+		sprintf(buffer, "%sautoload/", cfProgramDir);
 		if (lnkLinkDir(buffer)<0)
 		{
 			fprintf(stderr, "could not autoload directory: %s\n", buffer);
+			free (buffer);
 			return -1;
 		}
+		free (buffer);
 	}
 
 	if (lnkLink(cfGetProfileString("general", "link", ""))<0)
