@@ -255,12 +255,12 @@ static void dosReadDirChild(struct modlist *ml,
 {
 	struct modlistentry retval;
 
-	char path[PATH_MAX+1];
+	char *path;
 
 	memset(&retval, 0, sizeof(struct modlistentry));
 	retval.drive=drive;
 
-	snprintf(path, PATH_MAX+1, "%s%s", parentpath, childpath);
+	makepath_malloc (&path, 0, parentpath, childpath, 0);
 	retval.dirdbfullpath=dirdbResolvePathWithBaseAndRef(drive->basepath, path);
 
 	fs12name(retval.shortname, childpath);
@@ -269,29 +269,41 @@ static void dosReadDirChild(struct modlist *ml,
 	if (d_type==DT_DIR)
 	{
 		if (!(opt&(RD_PUTRSUBS|RD_PUTSUBS)))
-			goto out;
-		retval.flags=MODLIST_FLAG_DIR;
-		if (strlen(path)<PATH_MAX)
 		{
-			strcat(path, "/");
-			if (opt&RD_PUTRSUBS)
-				fsReadDir(dl, drive, retval.dirdbfullpath, mask, opt);
+			goto out;
+		}
+
+		retval.flags=MODLIST_FLAG_DIR;
+
+		if (opt&RD_PUTRSUBS)
+		{
+			fsReadDir(dl, drive, retval.dirdbfullpath, mask, opt);
 		}
 		if (!(opt&RD_PUTSUBS))
+		{
 			goto out;
+		}
 	} else if ((d_type==DT_REG)||(d_type==DT_LNK)||(d_type==DT_UNKNOWN))
 #endif
 	{
 		struct stat st;
 		struct stat lst;
+
 		if (lstat(path, &lst))
+		{
 			goto out;
+		}
+
 		if (S_ISLNK(lst.st_mode))
 		{
 			if (stat(path, &st))
+			{
 				goto out;
-		} else
+			}
+		} else {
 			memcpy(&st, &lst, sizeof(st));
+		}
+
 		if (S_ISREG(st.st_mode))
 		{
 			char *curext;
@@ -305,8 +317,6 @@ static void dosReadDirChild(struct modlist *ml,
 			{
 				free (curext);
 				retval.flags=MODLIST_FLAG_ARC;
-				if (strlen(path)<PATH_MAX)
-					strcat(path, "/");
 			} else {
 #ifndef FNM_CASEFOLD
 				char *mask_upper;
@@ -357,18 +367,22 @@ static void dosReadDirChild(struct modlist *ml,
 		} else if (S_ISDIR(st.st_mode))
 		{
 			if (!(opt&(RD_PUTRSUBS|RD_PUTSUBS)))
-				goto out;
-			if (S_ISLNK(lst.st_mode)&&(opt&RD_SUBNOSYMLINK))
-				goto out;
-			retval.flags=MODLIST_FLAG_DIR;
-			if (strlen(path)<PATH_MAX)
 			{
-				strcat(path, "/");
-				if (opt&RD_PUTRSUBS)
-					fsReadDir(dl, drive, retval.dirdbfullpath, mask, opt);
+				goto out;
+			}
+			if (S_ISLNK(lst.st_mode)&&(opt&RD_SUBNOSYMLINK))
+			{
+				goto out;
+			}
+			retval.flags=MODLIST_FLAG_DIR;
+			if (opt&RD_PUTRSUBS)
+			{
+				fsReadDir(dl, drive, retval.dirdbfullpath, mask, opt);
 			}
 			if (!(opt&RD_PUTSUBS))
+			{
 				goto out;
+			}
 		} else
 			goto out;
 #ifdef HAVE_STRUCT_DIRENT_D_TYPE
@@ -384,6 +398,7 @@ static void dosReadDirChild(struct modlist *ml,
 	modlist_append(ml, &retval); /* this call no longer can fail */
 out:
 	dirdbUnref(retval.dirdbfullpath);
+	free (path);
 	return;
 }
 
@@ -409,12 +424,14 @@ static int dosReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 	{
 		struct dirent *de;
 		while ((de=readdir(dir)))
-		if (strcmp(de->d_name, "."))
-		if (strcmp(de->d_name, ".."))
-		if (((strlen(path)+strlen(de->d_name)+4)<PATH_MAX))
 		{
 			char *ext;
 			int res;
+
+			if (!(strcmp(de->d_name, ".") && strcmp(de->d_name, "..")))
+			{
+				continue;
+			}
 
 			getext_malloc (de->d_name, &ext);
 
