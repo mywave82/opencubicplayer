@@ -1362,7 +1362,7 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 			displaystrattr(first+4, 0, sbuf, plScrWidth);
 		} else {
 			writestring(sbuf, 0, 0x07, "  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa   \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa   title: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", plScrWidth - 13 );
-			writestring(sbuf, plScrWidth - 13 , 0x07, "  type: \xfa\xfa\xfa\xfa ", 80);
+			writestring(sbuf, plScrWidth - 13 , 0x07, "   type: \xfa\xfa\xfa\xfa ", 80);
 
 			writestring(sbuf, 2, 0x0F, mle->shortname, 12);
 
@@ -1427,7 +1427,7 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 			}
 
 			if (selecte==4)
-				markstring(sbuf, 13, plScrWidth - 47);
+				markstring(sbuf, 13, plScrWidth - 48);
 
 			displaystrattr(first+2, 0, sbuf, plScrWidth);
 
@@ -1449,7 +1449,7 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 				markstring(sbuf, plScrWidth - 22, 6);
 			if (mi.style[0])
 			{ /* we pad up here */
-				int w=plScrWidth - 49;
+				int w=plScrWidth - 48;
 				int l=sizeof(mi.style);
 				if (l>w)
 					l=w;
@@ -1458,7 +1458,7 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 			}
 
 			if (selecte==5)
-				markstring(sbuf, 13, plScrWidth - 49);
+				markstring(sbuf, 13, plScrWidth - 48);
 
 			displaystrattr(first+3, 0, sbuf, plScrWidth);
 
@@ -1840,9 +1840,10 @@ static unsigned char fsEditModType(unsigned char oldtype)
 	return oldtype;
 }
 
+/* s might not be zero-terminated */
 static int fsEditString(unsigned int y, unsigned int x, unsigned int w, unsigned int l, char *s)
 {
-	char str[PATH_MAX+NAME_MAX+1];
+	char *str = malloc(l+1);
 	char *p=str;
 
 	unsigned int curpos;
@@ -1850,12 +1851,8 @@ static int fsEditString(unsigned int y, unsigned int x, unsigned int w, unsigned
 	int insmode=1;
 	unsigned int scrolled=0;
 
-	/* ASSERT point */
-	if (l>=sizeof(str))
-		l=sizeof(str)-1;
-
-	strcpy(str, s);
-	str[l]=0;
+	strncpy(str, s, l);
+	str[l] = 0;
 
 	curpos=strlen(p);
 	cmdlen=strlen(p);
@@ -1929,10 +1926,12 @@ static int fsEditString(unsigned int y, unsigned int x, unsigned int w, unsigned
 					break;
 				case KEY_ESC:
 					setcurshape(0);
+					free (str);
 					return 0;
 				case _KEY_ENTER:
 					setcurshape(0);
 					strncpy(s, str, l);
+					free (str);
 					return 1;
 				case KEY_ALT_K:
 					cpiKeyHelp(KEY_RIGHT, "Move cursor right");
@@ -2197,7 +2196,6 @@ static int fsEditFileInfo(struct modlistentry *me)
 				fsEditString(plScrHeight-6, 35, plScrWidth - 48, sizeof(mdbEditBuf.modname), mdbEditBuf.modname);
 				break;
 			case 1:
-				/*fsEditString(plScrHeight-6, plScrWidth - 5, 4, 4, typeidx);*/
 				mdbEditBuf.modtype = fsEditModType(mdbEditBuf.modtype);
 				break;
 			case 2:
@@ -2207,10 +2205,10 @@ static int fsEditFileInfo(struct modlistentry *me)
 				fsEditPlayTime(plScrHeight-4, plScrWidth - 22, &mdbEditBuf.playtime);
 				break;
 			case 4:
-				fsEditString(plScrHeight-5, 13, plScrWidth - 47, sizeof(mdbEditBuf.composer), mdbEditBuf.composer);
+				fsEditString(plScrHeight-5, 13, plScrWidth - 48, sizeof(mdbEditBuf.composer), mdbEditBuf.composer);
 				break;
 			case 5:
-				fsEditString(plScrHeight-4, 13, plScrWidth - 49, sizeof(mdbEditBuf.style), mdbEditBuf.style);
+				fsEditString(plScrHeight-4, 13, plScrWidth - 48, sizeof(mdbEditBuf.style), mdbEditBuf.style);
 				break;
 			case 6:
 				fsEditDate(plScrHeight-5, plScrWidth - 22, &mdbEditBuf.date);
@@ -2242,7 +2240,7 @@ static char fsEditViewPath(void)
 		free (temppath);
 	}
 
-	if (fsEditString(1, 0, plScrWidth, sizeof(pathbuffer), pathbuffer))
+	if (fsEditString(1, 0, plScrWidth, sizeof(pathbuffer)-1, pathbuffer))
 	{
 		struct dmDrive *drives;
 		char *drive;
@@ -2267,7 +2265,7 @@ static char fsEditViewPath(void)
 				dirdbcurdirpath = dmCurDrive->currentpath = newcurrentpath;
 				dirdbRef(dirdbcurdirpath);
 			}
-			if (strlen(name)+strlen(ext)<=PATH_MAX)
+			if ((strlen(name)+strlen(ext)+1)<=sizeof (curmask))
 			{
 				strcpy(curmask, name);
 				strcat(curmask, ext);
@@ -2947,7 +2945,7 @@ static void fsSavePlayList(const struct modlist *ml)
 		free (curdirpath);
 	}
 
-	if (!fsEditString(mlTop+2, 5, plScrWidth-10, sizeof(path), path))
+	if (!fsEditString(mlTop+2, 5, plScrWidth-10, sizeof(path)-1, path))
 	{
 		return;
 	}
