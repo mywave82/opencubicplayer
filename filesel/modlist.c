@@ -233,10 +233,11 @@ void modlist_append_modlist(struct modlist *target, struct modlist *source)
 
 void fs12name(char *shortname, const char *source)
 {
-	char temppath[NAME_MAX+1];
+	char *temppath;
 	char *lastdot;
 	int length=strlen(source);
-	strcpy(temppath, source);
+
+	temppath = strdup (source);
 
 /*
 	if (length)
@@ -300,4 +301,5 @@ void fs12name(char *shortname, const char *source)
 		if ((length=strlen(temppath))<12)
 			strncpy(shortname+length, "            ", 12-length);
 	}
+	free (temppath);
 }
