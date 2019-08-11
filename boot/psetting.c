@@ -33,14 +33,16 @@
  */
 
 #include "config.h"
+#include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include "psetting.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include "psetting.h"
+#include "stuff/compat.h"
 
 char cfConfigDir[PATH_MAX+1];
 char cfDataDir[PATH_MAX+1]="";
@@ -149,7 +151,7 @@ static int readiniline(char *key, char *str, char *comment, const char *line)
 
 static int cfReadINIFile(int argc, char *argv[])
 {
-	char path[PATH_MAX+1];
+	char *path;
 	FILE *f;
 	int linenum=0;
 	int cfINIApps_index=-1;
@@ -161,8 +163,7 @@ static int cfReadINIFile(int argc, char *argv[])
 	char linebuffer[1024];
 	/*  int curapp=-1;*/
 
-	strcpy(path, cfConfigDir);
-	strcat(path, "ocp.ini");
+	makepath_malloc (&path, 0, cfConfigDir, "ocp.ini", 0);
 
 	strcpy(keybuf, "");
 
@@ -170,7 +171,12 @@ static int cfReadINIFile(int argc, char *argv[])
 	cfINInApps=0;
 
 	if (!(f=fopen(path, "r")))
+	{
+		fprintf (stderr, "fopen(\"%s\", \"r\"): %s\n", path, strerror (errno));
+		free (path);
 		return 1;
+	}
+	free (path); path=0;
 
 	while (fgets(linebuffer, sizeof(linebuffer), f))
 	{
@@ -671,16 +677,20 @@ int cfGetConfig(int argc, char *argv[])
 
 int cfStoreConfig(void)
 {
-	char path[PATH_MAX+1];
+	char *path;
 	FILE *f;
 	int i, j;
 	char buffer[2+KEYBUF_LEN+1+STRBUF_LEN+COMMENTBUF_LEN+32+1+1];
 
-	strcpy(path, cfConfigDir);
-	strcat(path, "ocp.ini");
+	makepath_malloc (&path, 0, cfConfigDir, "ocp.ini", 0);
 
 	if (!(f=fopen(path, "w")))
+	{
+		fprintf (stderr, "fopen(\"%s\", \"w\"): %s\n", path, strerror (errno));
+		free (path);
 		return 1;
+	}
+	free (path); path=0;
 
 	for (i=0;i<cfINInApps;i++)
 		if (cfINIApps[i].linenum>=0)

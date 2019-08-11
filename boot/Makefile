@@ -24,7 +24,8 @@ pmain.o: pmain.c pmain.h \
 	$(CC) pmain.c -o $@ -c
 
 psetting.o: psetting.c psetting.h \
-	../config.h
+	../config.h \
+	../stuff/compat.h
 	$(CC) psetting.c -o $@ -c
 
 plinkman.o: plinkman.c plinkman.h \
