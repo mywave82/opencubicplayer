@@ -3,9 +3,6 @@ LINUX_OBJ=stuff/poutput-vcsa.o stuff/poutput-fb.o
 LINUX_LIBS=$(ICONV_LIBS)
 endif
 
-# compat.so
-STATIC_OBJECTS += stuff/compat.o
-
 # framelock.so
 STATIC_OBJECTS += stuff/framelock.o
 

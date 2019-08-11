@@ -1310,6 +1310,3 @@ int strcasecmp(const char *s1, const char *s2)
 	return 0; //equal
 }
 #endif
-
-
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "compat", .desc = "OpenCP DOS compatible function-wrappers (c) 2004-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

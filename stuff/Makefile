@@ -6,7 +6,6 @@ LINUX_OBJ=poutput-vcsa.o poutput-fb.o
 LINUX_LIBS=$(ICONV_LIBS)
 endif
 
-compat_so=compat.o
 framelock_so=framelock.o
 hardware_so=timer.o irq.o hardware.o freq.o
 sets_so=sets.o
@@ -26,13 +25,10 @@ poutput_so_libs+=$(SDL2_LIBS)
 endif
 
 ifeq ($(STATIC_BUILD),1)
-all: err.o $(compat_so) $(framelock_so) $(hardware_so) $(sets_so) $(poutput_so)
+all: compat.o err.o $(framelock_so) $(hardware_so) $(sets_so) $(poutput_so)
 else
-all: hardware$(LIB_SUFFIX) err.o sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX) compat$(LIB_SUFFIX) framelock$(LIB_SUFFIX)
+all: compat.o hardware$(LIB_SUFFIX) err.o sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX) framelock$(LIB_SUFFIX)
 endif
-
-compat$(LIB_SUFFIX): $(compat_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 framelock$(LIB_SUFFIX): $(framelock_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
@@ -56,12 +52,11 @@ else
 install:
 	$(CP) poutput$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/12-poutput$(LIB_SUFFIX)"
 	$(CP) framelock$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/11-framelock$(LIB_SUFFIX)"
-	$(CP) compat$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-compat$(LIB_SUFFIX)"
 	$(CP) sets$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-sets$(LIB_SUFFIX)"
 	$(CP) hardware$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-hardware$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/hardware$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/12-poutput$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/10-compat$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/11-framelock$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/10-sets$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/10-hardware$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/hardware$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/12-poutput$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/11-framelock$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/10-sets$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/10-hardware$(LIB_SUFFIX)"
 endif
 
 poutput.o: poutput.h poutput.c \

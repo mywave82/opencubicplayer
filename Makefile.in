@@ -18,13 +18,13 @@ include stuff/Makefile-static
 include dev/Makefile-static
 include help/Makefile-static
 fstypes_so=playgmd/gmdptype.o playgmi/gmiptype.o playit/itpptype.o playogg/oggtype.o $(FSTYPES_SO_MAD) playwav/wavptype.o playxm/xmpptype.o filesel/fstypes.o
-libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o stuff/err.o boot/console.o $(fstypes_so) $(STATIC_OBJECTS) boot/plinkman_end.o
+libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o stuff/compat.o stuff/err.o boot/console.o $(fstypes_so) $(STATIC_OBJECTS) boot/plinkman_end.o
 
 all: dirs ocp ocp.hlp libocp$(LIB_SUFFIX)
 
 else
 fstypes_so=playgmd/gmdptype.o playgmi/gmiptype.o playit/itpptype.o playogg/oggtype.o $(FSTYPES_SO_MAD) playwav/wavptype.o playxm/xmpptype.o filesel/fstypes.o
-libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o stuff/err.o boot/console.o boot/plinkman_end.o
+libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o stuff/compat.o stuff/err.o boot/console.o boot/plinkman_end.o
 
 all: dirs ocp ocp.hlp fstypes$(LIB_SUFFIX) libocp$(LIB_SUFFIX)
 
