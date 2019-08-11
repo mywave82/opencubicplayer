@@ -51,6 +51,8 @@
 #include "psetting.h"
 #include "plinkman.h"
 
+#include "stuff/compat.h"
+
 static int handlecounter;
 struct dll_handle loadlist[MAXDLLLIST];
 int loadlist_n;
@@ -180,9 +182,7 @@ static int lnkDoLoad(const char *file)
 #ifdef LD_DEBUG
 	fprintf(stderr, "Request to load %s\n", file);
 #endif
-	/* makepath_malloc is not available yet */
-	buffer = malloc (strlen (cfProgramDir) + strlen(file) + strlen (LIB_SUFFIX) + 1);
-	sprintf (buffer, "%s%s%s", cfProgramDir, file, LIB_SUFFIX);
+	makepath_malloc (&buffer, 0, cfProgramDir, file, LIB_SUFFIX);
 #ifdef LD_DEBUG
 	fprintf(stderr, "Attempting to load %s\n", buffer);
 #endif
@@ -230,7 +230,6 @@ int lnkLinkDir(const char *dir)
 	struct dirent *de;
 	char *filenames[1024];
 	char *buffer;
-	int dirlen = strlen (dir);
 	int files=0;
 	int n;
 	if (!(d=opendir(dir)))
@@ -263,8 +262,7 @@ int lnkLinkDir(const char *dir)
 #endif
 	for (n=0;n<files;n++)
 	{
-		buffer = malloc (dirlen + strlen (filenames[n]) + 1);
-		sprintf(buffer, "%s%s", dir, filenames[n]);
+		makepath_malloc (&buffer, 0, dir, filenames[n], 0);
 		if (_lnkDoLoad(buffer)<0)
 		{
 			free (buffer);

@@ -30,7 +30,8 @@ psetting.o: psetting.c psetting.h \
 plinkman.o: plinkman.c plinkman.h \
 	../config.h \
 	../types.h \
-	psetting.h
+	psetting.h \
+	../stuff/compat.h
 	$(CC) plinkman.c -o $@ -c
 
 plinkman_end.o: plinkman_end.c plinkman.h \
