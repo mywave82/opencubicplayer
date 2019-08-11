@@ -246,28 +246,26 @@ static int init_modules(int argc, char *argv[])
 		if (epoch <= 20100515)
 		{
 			const char *temp;
-			char temp1[1024];
-			char temp2[1024];
+			char *new_temp;
 
 			temp = cfGetProfileString("fileselector", "modextensions", "");
+			new_temp = malloc (strlen (temp) + 8);
+			strcpy (new_temp, temp);
 
-			if (strstr(temp, " YM"))
+			if (!strstr(temp, " YM"))
 			{
-				snprintf(temp1, sizeof(temp1), "%s", temp);
-			} else {
 				fprintf(stderr, "ocp.ini update (0.1.19) adds YM to [fileselector] modextensions=....\n");
-				snprintf(temp1, sizeof(temp1), "%s YM", temp);
+				strcat (new_temp, " YM");
 			}
 
-			if (strstr(temp, " OGA"))
+			if (!strstr(temp, " OGA"))
 			{
-				snprintf(temp2, sizeof(temp2), "%s", temp1);
-			} else {
 				fprintf(stderr, "ocp.ini update (0.1.19) adds OGA to [fileselector] modextensions=....\n");
-				snprintf(temp2, sizeof(temp2), "%s OGA", temp1);
+				strcat (new_temp, " OGA");
 			}
 
-			cfSetProfileString("fileselector", "modextensions", temp2);
+			cfSetProfileString("fileselector", "modextensions", new_temp);
+			free (new_temp);
 		}
 
 		if (epoch < 20110319)
