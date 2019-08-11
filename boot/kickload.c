@@ -56,7 +56,7 @@
 #include "pmain.h"
 
 static char *_cfConfigDir;
-static const char *_cfDataDir;
+static char *_cfDataDir;
 static char *_cfProgramDir;
 
 #ifdef KICKSTART_GDB
@@ -183,22 +183,25 @@ static const char *locate_ocp_ini(void)
 	return NULL;
 }
 
-static const char *locate_ocp_hlp_try(const char *base)
+static char *locate_ocp_hlp_try(const char *base)
 {
-	static char buffer[256];
+	char *buffer;
+	int size = strlen (base) + 8;
 	struct stat st;
-	snprintf(buffer, sizeof(buffer), "%s%s", base, "ocp.hlp");
+	buffer = malloc (size);
+	snprintf(buffer, size, "%s%s", base, "ocp.hlp");
 	if (!stat(buffer, &st))
 	{
-		snprintf(buffer, sizeof(buffer), "%s", base);
-		return buffer; /* since input data might come from getenv, it is not safe to keep them */
+		free (buffer);
+		return strdup(base);
 	}
+	free (buffer);
 	return NULL;
 }
 
-static const char *locate_ocp_hlp(void)
+static char *locate_ocp_hlp(void)
 {
-	const char *retval;
+	char *retval;
 	const char *temp;
 	if ((temp=getenv("OCPDIR")))
 		if ((retval=locate_ocp_hlp_try(temp)))
@@ -532,30 +535,11 @@ static char *locate_libocp(void)
 
 static int runocp(void *handle, int argc, char *argv[])
 {
-	struct mainstruct *bootup;
-	char *cfConfigDir;
-	char *cfDataDir;
-	char *cfProgramDir;
+	struct bootupstruct *bootup;
 
 	if (!(bootup=dlsym(handle, "bootup")))
 	{
 		fprintf(stderr, "Failed to locate symbol bootup in libocp" LIB_SUFFIX ": %s\n", dlerror());
-		return -1;
-	}
-	if (!(cfConfigDir=(char *)dlsym(handle, "cfConfigDir")))
-	{
-		fprintf(stderr, "Failed to locate symbol cfConfigDir in libocp" LIB_SUFFIX ": %s\n", dlerror());
-		return -1;
-	}
-	if (!(cfDataDir=(char *)dlsym(handle, "cfDataDir")))
-	{
-		fprintf(stderr, "Failed to locate symbol cfDataDir in libocp" LIB_SUFFIX ": %s\n", dlerror());
-		return -1;
-	}
-
-	if (!(cfProgramDir=(char *)dlsym(handle, "cfProgramDir")))
-	{
-		fprintf(stderr, "Failed to locate symbol cfProgramDir in libocp " LIB_SUFFIX ": %s\n", dlerror());
 		return -1;
 	}
 
@@ -578,11 +562,8 @@ static int runocp(void *handle, int argc, char *argv[])
 	fprintf(stderr, "Setting to cfConfigDir to %s\n", _cfConfigDir);
 	fprintf(stderr, "Setting to cfDataDir to %s\n", _cfDataDir);
 	fprintf(stderr, "Setting to cfProgramDir to %s\n", _cfProgramDir);
-	strcpy(cfConfigDir, _cfConfigDir);
-	strcpy(cfDataDir, _cfDataDir);
-	strcpy(cfProgramDir, _cfProgramDir);
 
-	return bootup->main(argc, argv);
+	return bootup->main(argc, argv, _cfConfigDir, _cfDataDir, _cfProgramDir);
 }
 
 int main(int argc, char *argv[])
@@ -647,6 +628,8 @@ int main(int argc, char *argv[])
 
 	if (_cfConfigDir)
 		free(_cfConfigDir);
+	if (_cfDataDir)
+		free (_cfDataDir);
 	if (_cfProgramDir)
 		free(_cfProgramDir);
 

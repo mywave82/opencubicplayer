@@ -485,7 +485,7 @@ int failcheck(signed int source, signed int filter)
 }
 #endif
 
-static int _bootup(int argc, char *argv[])
+static int _bootup(int argc, char *argv[], const char *ConfigDir, const char *DataDir, const char *ProgramDir)
 {
 	int result;
 	if (isatty(2))
@@ -515,8 +515,18 @@ static int _bootup(int argc, char *argv[])
 	fprintf(stderr, "pass\n");
 #endif
 
+	cfConfigDir = (char *)ConfigDir;
+	cfDataDir = strdup (DataDir);
+	cfProgramDir = (char *)ProgramDir;
+
 	if (cfGetConfig(argc, argv))
+	{
+		cfConfigDir = 0;
+		free (cfDataDir); cfDataDir = 0;
+		cfProgramDir = 0;
+		free (cfTempDir); cfTempDir = 0;
 		return -1;
+	}
 
 	result=init_modules(argc, argv);
 	if (result)
@@ -527,7 +537,12 @@ static int _bootup(int argc, char *argv[])
 
 	cfCloseConfig();
 
+	cfConfigDir = 0;
+	free (cfDataDir); cfDataDir = 0;
+	cfProgramDir = 0;
+	free (cfTempDir); cfTempDir = 0;
+
 	return 0;
 }
 
-struct mainstruct bootup = { _bootup };
+struct bootupstruct bootup = { _bootup };

@@ -44,10 +44,10 @@
 #include "psetting.h"
 #include "stuff/compat.h"
 
-char cfConfigDir[PATH_MAX+1];
-char cfDataDir[PATH_MAX+1]="";
-char cfProgramDir[PATH_MAX+1]; /* we get this from argv[0] */
-char cfTempDir[PATH_MAX+1]="/tmp";
+char *cfConfigDir;
+char *cfDataDir;
+char *cfProgramDir;
+char *cfTempDir;
 
 #define KEYBUF_LEN 105
 #define STRBUF_LEN 405
@@ -597,41 +597,23 @@ int cfGetConfig(int argc, char *argv[])
 	t=cfGetProfileString("general", "datadir", NULL);
 	if (t)
 	{
-		if (strlen(t)>=(sizeof(cfDataDir)-1))
-		{
-			fprintf(stderr, "datadir in ~/.ocp/ocp.ini is too long\n");
-			return -1;
-		}
-		strcpy(cfDataDir, t);
+		free (cfDataDir);
+		cfDataDir = strdup (t);
 	}
-	if (!cfDataDir[0])
-		strcpy(cfDataDir, cfProgramDir);
-	if (cfDataDir[strlen(cfDataDir)-1]!='/')
-	{
-		if (strlen(cfDataDir)>=(sizeof(cfDataDir)-1))
-		{
-			fprintf(stderr, "datadir is too long, can't append / to it\n");
-			return -1;
-		}
-		strcat(cfDataDir, "/");
-	}
-	t=getenv("TEMP");
-	if (!t)
-		t=getenv("TMP");
-	if (t)
-		strncpy(cfTempDir, t, sizeof(cfTempDir));
+
 	if ((t=cfGetProfileString("general", "tempdir", t)))
-		strncpy(cfTempDir, t, sizeof(cfTempDir));
-	cfTempDir[sizeof(cfTempDir)-1]=0;
-	if (cfTempDir[strlen(cfTempDir)-1]!='/')
 	{
-		if (strlen(cfTempDir)>=(sizeof(cfTempDir)-1))
-		{
-			fprintf(stderr, "tempdir too long\n");
-			return -1;
-		}
-		strcat(cfTempDir, "/");
+		cfTempDir = strdup (t);
+	} else if (t=getenv("TEMP"))
+	{
+		cfTempDir = strdup (t);
+	} else if (t=getenv("TMP"))
+	{
+		cfTempDir = strdup (t);
+	} else {
+		cfTempDir = strdup ("/tmp/");
 	}
+
 #ifdef PSETTING_DEBUG
 	{
 		int i, j;

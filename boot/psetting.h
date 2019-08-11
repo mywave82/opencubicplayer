@@ -17,10 +17,10 @@ extern int cfGetProfileInt2(const char *app, const char *app2, const char *key, 
 extern void cfSetProfileInt(const char *app, const char *key, int str, int radix);
 extern void cfRemoveEntry(const char *app, const char *key);
 
-extern char cfConfigDir[];
-extern char cfDataDir[];
-extern char cfTempDir[];
-extern char cfProgramDir[];
+extern char *cfConfigDir;
+extern char *cfDataDir;
+extern char *cfTempDir;
+extern char *cfProgramDir;
 extern const char *cfConfigSec;
 extern const char *cfSoundSec;
 extern const char *cfScreenSec;
