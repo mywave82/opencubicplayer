@@ -383,7 +383,7 @@ static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint
 	if (path==dmsearch)
 	{
 		unsigned int mlTop=mlDrawBox();
-		char str[NAME_MAX];
+		char str[1024];
 		unsigned int curpos;
 		unsigned int cmdlen;
 		int insmode=1;
