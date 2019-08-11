@@ -34,10 +34,11 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
-#include "stuff/imsrtns.h"
 #include "mdb.h"
 #include "modlist.h"
 #include "pfilesel.h"
+#include "stuff/compat.h"
+#include "stuff/imsrtns.h"
 
 struct mdbreaddirregstruct *mdbReadDirs = 0;
 

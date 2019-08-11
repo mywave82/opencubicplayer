@@ -88,6 +88,7 @@ mdb.o: mdb.c mdb.h \
 	../boot/psetting.h \
 	modlist.h \
 	pfilesel.h \
+	../stuff/compat.h \
 	../stuff/imsrtns.h
 	$(CC) mdb.c -o $@ -c
 
