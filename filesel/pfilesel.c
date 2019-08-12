@@ -84,7 +84,7 @@ static struct modlist *currentdir=NULL;
 static struct modlist *playlist=NULL;
 
 uint32_t dirdbcurdirpath=DIRDB_NOPARENT;
-char curmask[NAME_MAX+1]="*";
+static char *curmask;
 
 struct dmDrive *dmDrives=0;
 struct dmDrive *dmCurDrive=0;
@@ -843,6 +843,8 @@ int fsPreInit(void)
 	const char *modexts;
 	int extnum;
 
+	curmask = strdup ("*");
+
 	if (!adbInit()) /* archive database cache */
 		return 0;
 
@@ -972,6 +974,8 @@ void fsClose(void)
 		dmDrives=0;
 	}
 	dirdbClose();
+
+	free (curmask); curmask = 0;
 }
 
 static void displayfile(const unsigned int y, const unsigned int x, const unsigned int width, /* TODO const*/ struct modlistentry *m, const unsigned char sel)
@@ -2264,10 +2268,9 @@ static char fsEditViewPath(void)
 				dirdbcurdirpath = dmCurDrive->currentpath = newcurrentpath;
 				dirdbRef(dirdbcurdirpath);
 			}
-			if ((strlen(filename)+1)<=sizeof (curmask))
-			{
-				snprintf (curmask, sizeof (curmask), "%s", filename);
-			}
+			free (curmask);
+			curmask = filename;
+			filename = 0;
 			break;
 		}
 		free (drive);
