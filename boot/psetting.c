@@ -604,10 +604,10 @@ int cfGetConfig(int argc, char *argv[])
 	if ((t=cfGetProfileString("general", "tempdir", t)))
 	{
 		cfTempDir = strdup (t);
-	} else if (t=getenv("TEMP"))
+	} else if ((t=getenv("TEMP")))
 	{
 		cfTempDir = strdup (t);
-	} else if (t=getenv("TMP"))
+	} else if ((t=getenv("TMP")))
 	{
 		cfTempDir = strdup (t);
 	} else {
