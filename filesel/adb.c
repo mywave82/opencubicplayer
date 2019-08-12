@@ -562,8 +562,7 @@ int isarchivepath(const char *path)
 	char *ext = NULL;
 	int retval;
 
-	splitpath_malloc(path, 0, 0, 0, &ext);
-
+	splitpath4_malloc(path, 0, 0, 0, &ext);
 	retval = isarchiveext(ext);
 
 	free (ext);
@@ -595,7 +594,7 @@ static signed char adbFindFirst(const char *path, unsigned long arclen, char *fi
 	char *ext = 0;
 	char *name = 0;
 
-	splitpath_malloc(path, 0, 0, &name, &ext);
+	splitpath4_malloc(path, 0, 0, &name, &ext);
 	if ((strlen(name)+strlen(ext))>ARC_PATH_MAX)
 	{
 		/* Current ADB cache format, can not have NAME+EXT longer than ARC_PATH_MAX */
@@ -668,7 +667,7 @@ FILE *adb_ReadHandle(struct modlistentry *entry)
 	this=&adbData[entry->adb_ref];
 
 	dirdbGetFullname_malloc(entry->dirdbfullpath, &npath, DIRDB_FULLNAME_NOBASE);
-	splitpath_malloc(npath, NULL, &dir, NULL, NULL);
+	splitpath_malloc(npath, NULL, &dir, NULL);
 	free (npath); npath = 0;
 
 	if (dir[0])
@@ -826,8 +825,7 @@ static int arcReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 
 		for (done=adbFindFirst(_path, flength, newfilepath, &size, &adb_ref); !done; done=adbFindNext(newfilepath, &size, &adb_ref))
 		{
-			char *name;
-			char *ext;
+			char *filename;
 			char *npath;
 
 			char *tmp=rindex(newfilepath, '/');
@@ -860,24 +858,15 @@ static int arcReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 				continue;
 #endif
 
-			splitpath_malloc (newfilepath, 0, 0, &name, &ext);
+			splitpath_malloc (newfilepath, 0, 0, &filename);
 
 			m.drive=drive;
 
 			/* this makes the files inside the ADB appear in the host directory */
-			makepath_malloc (&npath, 0, _path, name, ext);
+			makepath_malloc (&npath, 0, _path, filename, 0);
 			m.dirdbfullpath=dirdbResolvePathWithBaseAndRef(drive->basepath, npath);
 			{
-				char *temp = malloc (strlen (name) + strlen (ext) + 1);
-				if (temp != 0)
-				{
-					strcpy (temp, name);
-					strcat (temp, ext);
-					fs12name (m.shortname, temp);
-					free (temp);
-				} else {
-					fs12name (m.shortname, name);
-				}
+				fs12name (m.shortname, filename);
 			}
 			m.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
 			m.Read=adb_Read;
@@ -893,8 +882,7 @@ static int arcReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 			modlist_append(ml, &m);
 			dirdbUnref(m.dirdbfullpath);
 			free (npath);
-			free (name);
-			free (ext);
+			free (filename);
 		}
 #ifndef FNM_CASEFOLD
 		free(mask_upper);

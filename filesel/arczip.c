@@ -237,7 +237,7 @@ static int adbZIPScan(const char *path)
 	{
 		char *ext;
 		char *name;
-		splitpath_malloc (path, 0, 0, &name, &ext);
+		splitpath4_malloc (path, 0, 0, &name, &ext);
 		if ((strlen(name)+strlen(ext)+1)>ARC_PATH_MAX)
 		{
 			free (name);
@@ -294,7 +294,7 @@ static int adbZIPScan(const char *path)
 				close(extfd);
 				return 0;
 			}
-			splitpath_malloc (a.name, NULL, NULL, &name, &ext);
+			splitpath4_malloc (a.name, NULL, NULL, &name, &ext);
 		#ifdef ZIP_DEBUG
 			fprintf(stderr, "arcZIP: About to do %s as %s\n", arcname, a.name);
 		#endif

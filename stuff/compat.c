@@ -151,9 +151,7 @@ void getext_malloc(const char *src, char **ext)
 	}
 }
 
-
-
-int splitpath_malloc(const char *src, char **drive, char **path, char **file, char **ext)
+int splitpath4_malloc(const char *src, char **drive, char **path, char **file, char **ext)
 {
 	/* returns non-zero on errors */
 	const char *ref1;
@@ -300,6 +298,119 @@ error_out:
 	{
 		free (*ext);
 		*ext = 0;
+	}
+	return -1;
+}
+
+int splitpath_malloc(const char *src, char **drive, char **path, char **filename)
+{
+	/* returns non-zero on errors */
+	const char *ref1;
+	int len;
+
+	/* clear the target points, so our error-path can free-up data */
+	if (drive) *drive = 0;
+	if (path) *path = 0;
+	if (filename) *filename = 0;
+
+	/* if src string starts with /, we do not have a drive string for sure */
+	if (*src!='/')
+	{
+		/* if src does not contain a :, we do not have a drive string for sure */
+		if ((ref1=strchr(src, ':')))
+		{
+			/* ref1 now points at the first occurance of : */
+
+			/* the first occurance of /, should be the character after :, unless src only contains the drive */
+			if (((ref1+1)==strchr(src, '/'))||(!ref1[1]))
+			{
+				if (drive)
+				{
+					len = ref1 - src + 1;
+					*drive = malloc (len + 1);
+					if (!*drive)
+					{
+						fprintf (stderr, "splitpath_malloc: *drive = malloc(%d) failed\n", len + 1);
+						goto error_out;
+					}
+					memcpy (*drive, src, len);
+					(*drive)[len] = 0;
+				}
+				src = ref1 + 1;
+			}
+		}
+	}
+	if (drive && !*drive)
+	{
+		*drive = strdup("");
+		if (!*drive)
+		{
+			fprintf (stderr, "splitpath_malloc: *drive = strdup(\"\") failed\n");
+			goto error_out;
+		}
+	}
+
+	if (drive && *drive && *src!='/') /* Paths with drive should always start with / */
+	{
+		fprintf (stderr, "splitpath_malloc: PATH does not start with /\n");
+		goto error_out;
+	}
+
+	if ((ref1=rindex(src, '/')))
+	{
+		if (path)
+		{
+			len = ref1 - src + 1;
+			*path = malloc (len + 1);
+			if (!*path)
+			{
+				fprintf (stderr, "splitpath_malloc: *path = malloc(%d) failed\n", len + 1);
+				goto error_out;
+			}
+			memcpy (*path, src, len);
+			(*path)[len] = 0;
+		}
+		src = ref1 + 1;
+	}
+	if (path && !*path)
+	{
+		*path = strdup("");
+		if (!*path)
+		{
+			fprintf (stderr, "splitpath_malloc: *path = strdup(\"\") failed\n");
+			goto error_out;
+		}
+	}
+
+
+	if (filename)
+	{
+		*filename = strdup (src);
+		if (!*filename)
+		{
+			fprintf (stderr, "splitpath_malloc: *filename = strdup(%s) failed\n", src);
+			goto error_out;
+		}
+	}
+
+	return 0;
+
+error_out:
+	/* free any data allocated, before we return an error */
+	if (drive)
+	{
+		free(*drive);
+		*drive = 0;
+	}
+	if (path)
+	{
+		free(*path);
+		*path = 0;
+	}
+	if (filename)
+	{
+		free (*filename);
+		 *filename = 0;
 	}
 	return -1;
 }

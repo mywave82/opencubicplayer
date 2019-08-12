@@ -2245,11 +2245,10 @@ static char fsEditViewPath(void)
 		struct dmDrive *drives;
 		char *drive;
 		char *path;
-		char *name;
-		char *ext;
+		char *filename;
 		uint32_t newcurrentpath;
 
-		splitpath_malloc(pathbuffer, &drive, &path, &name, &ext);
+		splitpath_malloc(pathbuffer, &drive, &path, &filename);
 		for (drives = dmDrives; drives; drives = drives->next)
 		{
 			if (strcasecmp(drive, drives->drivename))
@@ -2265,17 +2264,15 @@ static char fsEditViewPath(void)
 				dirdbcurdirpath = dmCurDrive->currentpath = newcurrentpath;
 				dirdbRef(dirdbcurdirpath);
 			}
-			if ((strlen(name)+strlen(ext)+1)<=sizeof (curmask))
+			if ((strlen(filename)+1)<=sizeof (curmask))
 			{
-				strcpy(curmask, name);
-				strcat(curmask, ext);
+				snprintf (curmask, sizeof (curmask), "%s", filename);
 			}
 			break;
 		}
 		free (drive);
 		free (path);
-		free (name);
-		free (ext);
+		free (filename);
 
 		if (!fsScanDir(0))
 			return 0;
@@ -2950,7 +2947,7 @@ static void fsSavePlayList(const struct modlist *ml)
 		return;
 	}
 
-	splitpath_malloc(path, &dr, &di, &fn, &ext);
+	splitpath4_malloc(path, &dr, &di, &fn, &ext);
 	if (!*ext)
 	{
 		free (ext);

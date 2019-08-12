@@ -80,7 +80,7 @@ static int setupformat(const char *path)
 	char *ext;
 	char *name;
 
-	splitpath_malloc(path, 0, 0, &name, &ext);
+	splitpath4_malloc(path, 0, 0, &name, &ext);
 
 	if ((strlen(name)+strlen(ext)+1)>ARC_PATH_MAX)
 	{
@@ -304,7 +304,7 @@ static int adbTARScan(const char *path)
 */
 			size=char12tosize_t(entry->size);
 
-			splitpath_malloc (entry->name, 0, 0, &name, &ext);
+			splitpath4_malloc (entry->name, 0, 0, &name, &ext);
 			if(fsIsModule(ext))
 			{
 				if

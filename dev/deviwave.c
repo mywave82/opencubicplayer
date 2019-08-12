@@ -308,7 +308,7 @@ static int mcpSetDev(const uint32_t dirdbref, struct moduleinfostruct *mi, FILE 
 	}
 
 	dirdbGetName_internalstr (dirdbref, &path);
-	splitpath_malloc (path, 0, 0, &name, 0);
+	splitpath4_malloc (path, 0, 0, &name, 0);
 
 	mcpSetDevice(name, 1);
 

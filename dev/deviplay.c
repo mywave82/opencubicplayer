@@ -287,7 +287,7 @@ static int plrSet(const uint32_t dirdbref, struct moduleinfostruct *mi, FILE **f
 	}
 
 	dirdbGetName_internalstr (dirdbref, &path);
-	splitpath_malloc (path, 0, 0, &name, 0);
+	splitpath4_malloc (path, 0, 0, &name, 0);
 
 	plrSetDevice(name, 1);
 
