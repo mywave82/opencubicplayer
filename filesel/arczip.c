@@ -284,7 +284,7 @@ static int adbZIPScan(const char *path)
 		if (hdr.sig!=0x04034B50)
 			break;
 		nextpos=lseek(extfd, 0, SEEK_CUR)+hdr.flen+hdr.xlen+hdr.csize;
-		if (((hdr.flen+1)<ARC_PATH_MAX)&&((hdr.flen+1)<NAME_MAX)&&!(hdr.opt&0x1))
+		if (((hdr.flen+1)<ARC_PATH_MAX)&&!(hdr.opt&0x1))
 		{
 			char *name, *ext;
 
