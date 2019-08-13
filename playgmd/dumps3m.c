@@ -747,7 +747,7 @@ int ParseS3M (unsigned char *mem, int len)
 		}
 	}
 
-	for (i=0; i < hdr.ins; i++)
+	for (i=0; i < hdr.pats; i++)
 	{
 		DumpPrefix (mem, len, sizeof(hdr) + hdr.orders + hdr.ins*2 + 2*i, 2);
 
