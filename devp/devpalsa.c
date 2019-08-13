@@ -653,7 +653,7 @@ static FILE *alsaSelectPcmOut(struct modlistentry *entry)
 
 		if (len < (9+4)) /* should not happen */
 			return NULL;
-		len -= (9-4);
+		len -= (9+4);
 		if (len > DEVICE_NAME_MAX) /* whoopise */
 			return NULL;
 		strncpy(alsaCardName, name+9, len);
