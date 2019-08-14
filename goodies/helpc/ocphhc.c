@@ -42,6 +42,7 @@
  */
 
 #include "config.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -280,7 +281,7 @@ void process_text_line(char *line)
 
 			     while ((fptr=strchr(fptr, '\\')))
 			     {
-				     strcpy(fptr, fptr+1);
+				     memmove (fptr, fptr+1, strlen (fptr));
 				     fptr+=1;
 			     }
 
@@ -295,7 +296,7 @@ void process_text_line(char *line)
 
 			     while ((fptr=strchr(fptr, '\\')))
 			     {
-				     strcpy(fptr, fptr+1);
+				     memmove (fptr, fptr+1, strlen (fptr));
 				     fptr+=1;
 			     }
 
@@ -313,7 +314,7 @@ void process_text_line(char *line)
 
 			     while ((fptr=strchr(fptr, '\\')))
 			     {
-				     strcpy(fptr, fptr+1);
+				     memmove (fptr, fptr+1, strlen (fptr));
 				     fptr+=1;
 			     };
 
@@ -326,13 +327,16 @@ void process_text_line(char *line)
 		     } else {
 			     char *fptr;
 
-			     strcpy(strchr(buffer, '{')-1, strchr(buffer, '{'));
+			     {
+				     char *dst = strchr(buffer, '{')-1;
+				     memmove (dst, dst+1, strlen (dst));
+			     }
 
 			     fptr=&buffer[0];
 
 			     while ((fptr=strchr(fptr, '\\')))
 			     {
-				     strcpy(fptr, fptr+1);
+				     memmove (fptr, fptr+1, strlen (fptr));
 				     fptr+=1;
 			     }
 
@@ -344,7 +348,7 @@ void process_text_line(char *line)
 
 		     while ((fptr=strchr(fptr, '\\')))
 		     {
-			     strcpy(fptr, fptr+1);
+			     memmove (fptr, fptr+1, strlen (fptr));
 			     fptr+=1;
 		     }
 
@@ -510,7 +514,19 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	in=fopen(argv[1], "rb"); out=fopen(argv[2], "wb");
+	in=fopen(argv[1], "rb");
+	if (!in)
+	{
+		fprintf (stderr, "fopen(\"%s\", \"rb\"): %s\n", argv[1], strerror (errno));
+		return 1;
+	}
+	out=fopen(argv[2], "wb");
+	if (!out)
+	{
+		fprintf (stderr, "fopen(\"%s\", \"wb\"): %s\n", argv[2], strerror (errno));
+		fclose (in);
+		return 1;
+	}
 
 	totdatasize=totcompdatasize=0;
 
