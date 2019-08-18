@@ -12,6 +12,7 @@
 #define roundup(x,y) (((x) + (y) - 1) & ~((y) - 1))
 
 int usecolor = 0;
+int savesamples = 0;
 
 char *FONT_RESET = "";
 char *FONT_BRIGHT_BLACK = "";
@@ -21,6 +22,12 @@ char *FONT_BRIGHT_YELLOW = "";
 char *FONT_BRIGHT_BLUE = "";
 char *FONT_BRIGHT_PURPLE = "";
 char *FONT_BRIGHT_CYAN = "";
+
+struct
+{
+	uint32_t offset;
+	uint16_t length;
+} Instruments[31];
 
 #if 0
 typedef struct __attribute__((packed))
@@ -58,17 +65,22 @@ void DumpPrefix (unsigned char *mem, int len, int base, int baselen)
 
 int DumpInstrument (unsigned char *mem, int len, int base, int instrument)
 {
-	uint16_t ParaPtr    = uint16_little (((uint16_t *)(mem + base + 0x0e))[0]);
-	uint16_t Length     = uint16_little (((uint16_t *)(mem + base + 0x10))[0]);
-	uint16_t LoopStart  = uint16_little (((uint16_t *)(mem + base + 0x12))[0]);
-	uint16_t LoopEnd    = uint16_little (((uint16_t *)(mem + base + 0x14))[0]);
-	uint16_t C3Spd      = uint32_little (((uint16_t *)(mem + base + 0x18))[0]);
-	uint16_t LengthPara = uint16_little (((uint16_t *)(mem + base + 0x1e))[0]);
+	uint16_t ParaPtr;
+	uint16_t Length;
+	uint16_t LoopStart;
+	uint16_t LoopEnd;
+	uint16_t C3Spd;
+	uint16_t LengthPara;
 	int i;
 
-	printf ("[%sINSTRUMENT %02x / PCM Sample%s]\n", FONT_BRIGHT_CYAN, instrument, FONT_RESET);
+	printf ("[%sINSTRUMENT %02x / PCM Sample%s]\n", FONT_BRIGHT_CYAN, instrument + 1, FONT_RESET);
 
-	DumpPrefix (mem, len, base + 0x01, 12);
+	DumpPrefix (mem, len, base + 0x00, 12);
+	if ((base + 31) >= len)
+	{
+		fprintf (stderr, "\n%sERROR: Ran out of data (I #1)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+		return -1;
+	}
 	printf ("FileName: \"");
 	for (i=0; i < 12; i++)
 	{
@@ -80,43 +92,117 @@ int DumpInstrument (unsigned char *mem, int len, int base, int instrument)
 	}
 	printf("\"\n");
 
+
 	DumpPrefix (mem, len, base + 0x0c, 1);
+	if ((base + 0x0c) >= len)
+	{
+		fprintf (stderr, "\n%sERROR: Ran out of data (I #2)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+		return -1;
+	}
 	printf ("Type: %s%s%s\n",
 		(mem[base+0x0c] == 0x00) ? FONT_BRIGHT_GREEN : FONT_BRIGHT_RED,
 		(mem[base+0x0c] == 0x00) ? "PCM Sample" : "Unknown",
 		FONT_RESET);
 
+
 	DumpPrefix (mem, len, base + 0x0d, 1);
+	if ((base + 0x0d) >= len)
+	{
+		fprintf (stderr, "\n%sERROR: Ran out of data (I #3)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+		return -1;
+	}
 	printf ("Disk: %d\n", mem[base+0x0d]);
 
+
 	DumpPrefix (mem, len, base + 0x0e, 3);
+	if ((base + 0x0e) >= len)
+	{
+		fprintf (stderr, "\n%sERROR: Ran out of data (I #4)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+		return -1;
+	}
+	ParaPtr = uint16_little (((uint16_t *)(mem + base + 0x0e))[0]);
 	printf ("MemSeg: paraptr 0x%04x => 0x%08x\n", ParaPtr, ParaPtr << 4);
+	Instruments[instrument].offset = ParaPtr << 4;
+
 
 	DumpPrefix (mem, len, base + 0x10, 2);
+	if ((base + 0x10 + 1) >= len)
+	{
+		fprintf (stderr, "\n%sERROR: Ran out of data (I #5)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+		return -1;
+	}
+	Length = uint16_little (((uint16_t *)(mem + base + 0x10))[0]);
 	printf ("Length:     %d %s%s%s\n", (int)Length, Length>64000 ? FONT_BRIGHT_RED : FONT_BRIGHT_GREEN, (Length>64000) ? " Sample too long, will be cropped at 64000" : "", FONT_RESET);
+	Instruments[instrument].length = Length;
+
 
 	DumpPrefix (mem, len, base + 0x12, 2);
+	if ((base + 0x12 + 1) >= len)
+	{
+		fprintf (stderr, "\n%sERROR: Ran out of data (I #6)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+		return -1;
+	}
+	LoopStart = uint16_little (((uint16_t *)(mem + base + 0x12))[0]);
 	printf ("Loop-Start: %d %s%s%s\n", (int)LoopStart, (LoopStart>Length) ? FONT_BRIGHT_RED : FONT_BRIGHT_GREEN, (LoopStart>Length) ? " LoopStart > Length" : "", FONT_RESET);
 
+
 	DumpPrefix (mem, len, base + 0x14, 2);
+	if ((base + 0x14 + 1) >= len)
+	{
+		fprintf (stderr, "\n%sERROR: Ran out of data (I #7)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+		return -1;
+	}
+	LoopEnd = uint16_little (((uint16_t *)(mem + base + 0x14))[0]);
 	printf ("Loop-End: %d %s%s%s\n", (int)LoopEnd,
 		((LoopEnd>(Length+1)) && (LoopEnd != 0xffff)) ? FONT_BRIGHT_RED : FONT_BRIGHT_GREEN,
 		((LoopEnd>(Length+1)) && (LoopEnd != 0xffff)) ? " LoopEnd > Length + 1" : (LoopEnd == 0xffff) ? "No loop" : "", FONT_RESET);
 
+
 	DumpPrefix (mem, len, base + 0x16, 1);
+	if ((base + 0x16) >= len)
+	{
+		fprintf (stderr, "\n%sERROR: Ran out of data (I #8)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+		return -1;
+	}
 	printf ("Volume: %d %s%s%s\n", mem[base+0x16], (mem[base+0x16] > 64) ? FONT_BRIGHT_RED : FONT_BRIGHT_GREEN, (mem[base+0x16] > 64) ? " This is greater than 64" : "", FONT_RESET);
 
+
 	DumpPrefix (mem, len, base + 0x17, 1);
+	if ((base + 0x17) >= len)
+	{
+		fprintf (stderr, "\n%sERROR: Ran out of data (I #9)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+		return -1;
+	}
 	printf ("Reserved/unused\n");
 
+
 	DumpPrefix (mem, len, base + 0x18, 2);
+	if ((base + 0x18+1) >= len)
+	{
+		fprintf (stderr, "\n%sERROR: Ran out of data (I #10)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+		return -1;
+	}
+	C3Spd = uint32_little (((uint16_t *)(mem + base + 0x18))[0]);
 	printf ("C3 Sample Rate: %d\n", C3Spd);
-	
+
+
 	DumpPrefix (mem, len, base + 0x1a, 4);
+	if ((base + 0x1a + 3) >= len)
+	{
+		fprintf (stderr, "\n%sERROR: Ran out of data (I #11)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+		return -1;
+	}
 	printf ("Reserved / Internal use / leave at 0\n");
 
+
 	DumpPrefix (mem, len, base + 0x1e, 2);
-	printf ("Length-Para: %d (modules only)\n", LengthPara);
+	if ((base + 0x1e + 1) >= len)
+	{
+		fprintf (stderr, "\n%sERROR: Ran out of data (I #12)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+		return -1;
+	}
+	LengthPara = uint16_little (((uint16_t *)(mem + base + 0x1e))[0]);
+	printf ("Length-Para: %d (not used)\n", LengthPara);
 
 	return 0;
 }
@@ -154,24 +240,44 @@ int DumpPattern (unsigned char *mem, int len, int base, int pattern)
 	{
 		int j;
 
-		{
+		do {
 			int preoffset = offset; /* so we can rewind */
 
 			for (j=0; j < 4; j++)
 			{
+				if (base+preoffset >= len)
+				{
+					if (offset != len)
+					{
+						DumpPrefix (mem, len, base + offset, len - offset);
+					}
+					fprintf (stderr, "\n%sERROR: Ran out of data (P #1)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+					return -1;
+				}
 				switch (mem[base + preoffset])
 				{
 					case 0xfb:
 					case 0xfc:
-					case 0xfd: preoffset += 1; break;
-					default:   preoffset += 4; break;
+					case 0xfd:
+						preoffset += 1;
+						break;
+					default:
+						preoffset += 4;
+						if ((base + preoffset - 1) >= len)
+						{
+							if (offset != len)
+							{
+								DumpPrefix (mem, len, base + offset, len - offset);
+							}
+							fprintf (stderr, "\n%sERROR: Ran out of data (P #2)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+							return -1;
+						}
+						break;
 				}
 			}
 
 			DumpPrefix (mem, len, base + offset, preoffset - offset);
-
-
-		}
+		} while (0);
 
 		printf ("%02X |", i);
 
@@ -221,13 +327,13 @@ int DumpPattern (unsigned char *mem, int len, int base, int pattern)
 	return offset;
 }
 
-int ParseSTM (unsigned char *mem, int len)
+int DumpHeader (unsigned char *mem, int len)
 {
 	int i, j;
-	int patternlen = 0;
+
 	if (len < sizeof (0x30))
 	{
-		fprintf (stderr, "*** len < sizeof(FileHeader) ***\n");
+		fprintf (stderr, "%sERROR: len < sizeof(FileHeader)%s\n", FONT_BRIGHT_RED, FONT_RESET);
 		return 1;
 	}
 
@@ -296,24 +402,40 @@ int ParseSTM (unsigned char *mem, int len)
 	DumpPrefix (mem, len, 0x23, 13);
 	printf ("(Reserved/not used)\n");
 
-	for (i=0; i < 31; i++)
-	{
-		DumpInstrument (mem, len, 0x30 + i*0x20, i);
-	}	
+	return 0;
+}
+
+int DumpOrders (unsigned char *mem, int len, int count, int pats)
+{
+	int i;
 
 	printf ("[%sOrders%s]\n", FONT_BRIGHT_CYAN, FONT_RESET);
-	for (i=0; i < (mem[0x1f]?128:64); i++)
+	for (i=0; i < count; i++)
 	{
 		if ((i&15) != 0)
 		{
 			putchar (' ');
 		} else {
 			DumpPrefix (mem, len, 0x410 + i, 16);
+			if ((0x410 + i + 16) > len)
+			{
+				fprintf (stderr, "\n%sERROR: Ran out of data (S #1)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+				return -1;
+			}
 		};
-		printf ("%d%s%s", mem[0x410+i],
-		mem[0x410+i]==99?" (ignore) ":"",
-		mem[0x410+i]==255?" (EOS) ":""
-		);
+
+		if ( mem[0x410+i]==99 )
+		{
+			printf ("99(ignore) ");
+		} else if (mem[0x410+i]==255)
+		{
+			printf ("255(EOS) ");
+		} else if (mem[0x410+i]>=pats)
+		{
+			printf("%s%d(out of range)%s", FONT_BRIGHT_RED, mem[0x410+i], FONT_RESET);
+		} else {
+			printf ("%d", mem[0x410+i]);
+		}
 		if ((i&15) == 15)
 		{
 			putchar ('\n');
@@ -321,9 +443,71 @@ int ParseSTM (unsigned char *mem, int len)
 	}
 	printf ("]\n");
 
+
+	return 0;
+}
+
+int ParseSTM (unsigned char *mem, int len)
+{
+	int i;
+	int patternlen = 0;
+
+	if (DumpHeader (mem, len))
+	{
+		return -1;
+	}
+
+	for (i=0; i < 31; i++)
+	{
+		if (DumpInstrument (mem, len, 0x30 + i*0x20, i))
+		{
+			return -1;
+		}
+	}
+
+	if (DumpOrders (mem, len, mem[0x1f]?128:64, mem[0x21]))
+	{
+		return -1;
+	}
+
 	for (i=0; i < mem[0x21]; i++)
 	{
+		int retval = DumpPattern (mem, len, 0x30 + 0x20*31 + (mem[0x1f]?128:64) + patternlen, i);
+		if (retval < 0)
+		{
+			return -1;
+		}
 		patternlen += DumpPattern (mem, len, 0x30 + 0x20*31 + (mem[0x1f]?128:64) + patternlen, i);
+	}
+
+	for (i=0; i < 31; i++)
+	{
+		if (Instruments[i].length > 0)
+		{
+			printf ("[%sINSTRUMENT %02x SAMPLE DATA%s]\n", FONT_BRIGHT_CYAN, i + 1, FONT_RESET);
+
+			printf ("[%s%08x-%08x%s]%s\n", FONT_BRIGHT_BLUE, Instruments[i].offset, Instruments[i].offset + Instruments[i].length - 1, FONT_RESET, FONT_RESET);
+			if (savesamples)
+			{
+				if ((Instruments[i].offset + Instruments[i].length) > len)
+				{
+					printf ("%sWARNING: Unable to store instrument %d, missing data\n%s", FONT_BRIGHT_YELLOW, i + 1, FONT_RESET);
+				} else {
+					char filename[33];
+					int fd;
+					snprintf (filename, sizeof (filename), "Instrument %02d.signed 8bit.sample", i+1);
+					fd = open (filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+					if (fd < 0)
+					{
+						printf ("%sWARNING: Unable to open %s%s\n", FONT_BRIGHT_YELLOW, filename, FONT_RESET);
+					} else {
+						write (fd, mem + Instruments[i].offset, Instruments[i].length);
+						close (fd);
+						printf ("Saved %s\n", filename);
+					}
+				}
+			}
+		}
 	}
 
 	return 0;
@@ -346,12 +530,13 @@ int main(int argc, char *argv[])
 		int option_index = 0;
 		static struct option long_options[] =
 		{
-			{"color", required_argument, 0, 0},
-			{"help",  no_argument,       0, 'h'},
-			{0,       0,                 0, 0}
+			{"color",       required_argument, 0, 0},
+			{"help",        no_argument,       0, 'h'},
+			{"savesamples", no_argument,       0, 's'},
+			{0,             0,                 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "h", long_options, &option_index);
+		c = getopt_long(argc, argv, "hs", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -362,6 +547,9 @@ int main(int argc, char *argv[])
 				{
 					color = optarg;
 				}
+				break;
+			case 's':
+				savesamples = 1;
 				break;
 			case 'h':
 				help = 1;
@@ -391,7 +579,7 @@ int main(int argc, char *argv[])
 
 	if (help)
 	{
-		fprintf (stderr, "Usage:\n%s [--color=auto/never/on] [--help] file.s3m  (%d)\n", argv[0], help);
+		fprintf (stderr, "Usage:\n%s [--color=auto/never/on] [--savesamples -s] [--help] file.s3m  (%d)\n", argv[0], help);
 		return 1;
 	}
 
