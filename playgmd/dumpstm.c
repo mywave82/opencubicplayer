@@ -73,7 +73,7 @@ int DumpInstrument (unsigned char *mem, int len, int base, int instrument)
 	uint16_t LengthPara;
 	int i;
 
-	printf ("[%sINSTRUMENT %02x / PCM Sample%s]\n", FONT_BRIGHT_CYAN, instrument + 1, FONT_RESET);
+	printf ("[%sINSTRUMENT %02d / PCM Sample%s]\n", FONT_BRIGHT_CYAN, instrument + 1, FONT_RESET);
 
 	DumpPrefix (mem, len, base + 0x00, 12);
 	if ((base + 31) >= len)
@@ -216,7 +216,7 @@ void print_note (unsigned char note)
 		printf ("-0-");
 		return;
 	}
-	if ((note >= 0x60) || (note == 0x00))
+	if (note >= 0x60)
 	{
 		printf ("...");
 		return;
@@ -302,7 +302,7 @@ int DumpPattern (unsigned char *mem, int len, int base, int pattern)
 			{
 				printf ("..");
 			} else {
-				printf ("%02X", insvol>>3);
+				printf ("%02d", insvol>>3);
 			}
 
 			printf (" ");
@@ -311,13 +311,13 @@ int DumpPattern (unsigned char *mem, int len, int base, int pattern)
 			{
 				printf ("..");
 			} else {
-				printf ("%02X", (insvol & 0x07) | ((volcmd & 0x70) >> 1));
+				printf ("%02d", (insvol & 0x07) | ((volcmd & 0x70) >> 1));
 			}
 
 			printf (" ");
 
 			printf ("%c", ".ABCDEFGHIJKLMNO"[volcmd & 0x0f]);
-			printf ("%02X |", cmdinf);
+			printf ("%02d |", cmdinf);
 
 			next: {};
 		}
