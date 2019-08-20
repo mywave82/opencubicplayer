@@ -1,4 +1,5 @@
 #include "config.h"
+#include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <string.h>
@@ -13,6 +14,7 @@
 
 int usecolor = 0;
 int savesamples = 0;
+FILE *savepatterns = 0;
 
 char *FONT_RESET = "";
 char *FONT_BRIGHT_BLACK = "";
@@ -214,19 +216,35 @@ void print_note (unsigned char note)
 	if (note == 0xfe)
 	{
 		printf ("-0-");
+		if (savepatterns)
+		{
+			fprintf (savepatterns, "-0-");
+		}
 		return;
 	}
 	if (note >= 0x60)
 	{
 		printf ("...");
+		if (savepatterns)
+		{
+			fprintf (savepatterns, "...");
+		}
 		return;
 	}
 
 	if ((note & 0x0f) >= 12) printf ("%s", FONT_BRIGHT_RED);
 	printf ("%s", text[note & 0x0f]);
+	if (savepatterns)
+	{
+		fprintf (savepatterns, "%s", text[note & 0x0f]);
+	}
 	if ((note & 0x0f) >= 12) printf ("%s", FONT_RESET);
 
 	printf ("%d", note >> 4);
+	if (savepatterns)
+	{
+		fprintf (savepatterns, "%d", note>>4);
+	}
 }
 
 int DumpPattern (unsigned char *mem, int len, int base, int pattern)
@@ -235,6 +253,10 @@ int DumpPattern (unsigned char *mem, int len, int base, int pattern)
 	int i;
 
 	printf ("[%sPATTERN %d%s]\n", FONT_BRIGHT_CYAN, pattern, FONT_RESET);
+	if (savepatterns)
+	{
+		fprintf (savepatterns, "PATTERN %d\n", pattern);
+	}
 
 	for (i=0; i < 64; i++)
 	{
@@ -280,48 +302,102 @@ int DumpPattern (unsigned char *mem, int len, int base, int pattern)
 		} while (0);
 
 		printf ("%02X |", i);
+		if (savepatterns)
+		{
+			fprintf (savepatterns, "%02X |", i);
+		}
 
 		for (j=0; j < 4; j++)
 		{
 			uint8_t note, insvol, volcmd, cmdinf;
 			switch (mem[base+offset])
 			{
-				case 0xfb: offset += 1; note = insvol = volcmd = cmdinf = 0x00; break;
-				case 0xfc: offset += 1; printf (" ... .. .. .00 |"); goto next;
+				case 0xfb:
+					offset += 1;
+					note = insvol = volcmd = cmdinf = 0x00;
+					break;
+				case 0xfc:
+					offset += 1;
+					printf (" ... .. .. .00 |");
+					if (savepatterns)
+					{
+						fprintf (savepatterns, " ... .. .. .00 |");
+					}
+					goto next;
 				case 0xfd: offset += 1; printf(" -0- .. .. .00 |"); goto next;
 				default:   note=mem[base + offset++]; insvol=mem[base + offset++]; volcmd=mem[base + offset++]; cmdinf=mem[base + offset++]; break;
 			}
 
 			printf (" ");
+			if (savepatterns)
+			{
+				fprintf (savepatterns, " ");
+			}
 
 			print_note(note);
 
 			printf (" ");
+			if (savepatterns)
+			{
+				fprintf (savepatterns, " ");
+			}
 
 			if ((insvol >> 3) > 31)
 			{
 				printf ("..");
+				if (savepatterns)
+				{
+					fprintf (savepatterns, "..");
+				}
 			} else {
 				printf ("%02d", insvol>>3);
+				if (savepatterns)
+				{
+					fprintf (savepatterns, "%02d", insvol>>3);
+				}
 			}
 
 			printf (" ");
+			if (savepatterns)
+			{
+				fprintf (savepatterns, " ");
+			}
 
 			if ((note >= 0x60) /* || (((insvol & 0x07) | ((voldcmd & 0xf0) >> 1)) > 64) */)
 			{
 				printf ("..");
+				if (savepatterns)
+				{
+					fprintf (savepatterns, "..");
+				}
 			} else {
 				printf ("%02d", (insvol & 0x07) | ((volcmd & 0x70) >> 1));
+				if (savepatterns)
+				{
+					fprintf (savepatterns, "%02d", (insvol & 0x07) | ((volcmd & 0x70) >> 1));
+				}
 			}
 
 			printf (" ");
+			if (savepatterns)
+			{
+				fprintf (savepatterns, " ");
+			}
 
-			printf ("%c", ".ABCDEFGHIJKLMNO"[volcmd & 0x0f]);
-			printf ("%02d |", cmdinf);
+			printf ("%c%02d |", ".ABCDEFGHIJKLMNO"[volcmd & 0x0f], cmdinf);
+			if (savepatterns)
+			{
+				fprintf (savepatterns, "%c%02d |", ".ABCDEFGHIJKLMNO"[volcmd & 0x0f], cmdinf);
+			}
 
 			next: {};
 		}
+
 		printf ("\n");
+		if (savepatterns)
+		{
+			fprintf (savepatterns, "\n");
+		}
 	}
 
 	return offset;
@@ -479,6 +555,10 @@ int ParseSTM (unsigned char *mem, int len)
 		}
 		patternlen += DumpPattern (mem, len, 0x30 + 0x20*31 + (mem[0x1f]?128:64) + patternlen, i);
 	}
+	if (savepatterns)
+	{
+		fclose (savepatterns);
+	}
 
 	for (i=0; i < 31; i++)
 	{
@@ -530,13 +610,14 @@ int main(int argc, char *argv[])
 		int option_index = 0;
 		static struct option long_options[] =
 		{
-			{"color",       required_argument, 0, 0},
-			{"help",        no_argument,       0, 'h'},
-			{"savesamples", no_argument,       0, 's'},
-			{0,             0,                 0, 0}
+			{"color",        required_argument, 0, 0},
+			{"help",         no_argument,       0, 'h'},
+			{"savepatterns", no_argument,       0, 'p'},
+			{"savesamples",  no_argument,       0, 's'},
+			{0,              0,                 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "hs", long_options, &option_index);
+		c = getopt_long(argc, argv, "hsp", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -546,6 +627,17 @@ int main(int argc, char *argv[])
 				if (option_index == 0)
 				{
 					color = optarg;
+				}
+				break;
+			case 'p':
+				if (!savepatterns)
+				{
+					savepatterns = fopen ("patterns.txt", "w");
+					if (!savepatterns)
+					{
+						fprintf (stderr, "Unable to open patterns.txt for writing: %s\n", strerror (errno));
+						return 1;
+					}
 				}
 				break;
 			case 's':
@@ -579,7 +671,7 @@ int main(int argc, char *argv[])
 
 	if (help)
 	{
-		fprintf (stderr, "Usage:\n%s [--color=auto/never/on] [--savesamples -s] [--help] file.s3m  (%d)\n", argv[0], help);
+		fprintf (stderr, "Usage:\n%s [--color=auto/never/on] [--savesamples -s] [--savepatterns -p] [--help] file.stm  (%d)\n", argv[0], help);
 		return 1;
 	}
 
