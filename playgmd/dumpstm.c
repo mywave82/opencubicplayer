@@ -384,10 +384,10 @@ int DumpPattern (unsigned char *mem, int len, int base, int pattern)
 				fprintf (savepatterns, " ");
 			}
 
-			printf ("%c%02d |", ".ABCDEFGHIJKLMNO"[volcmd & 0x0f], cmdinf);
+			printf ("%c%02X |", ".ABCDEFGHIJKLMNO"[volcmd & 0x0f], cmdinf);
 			if (savepatterns)
 			{
-				fprintf (savepatterns, "%c%02d |", ".ABCDEFGHIJKLMNO"[volcmd & 0x0f], cmdinf);
+				fprintf (savepatterns, "%c%02X |", ".ABCDEFGHIJKLMNO"[volcmd & 0x0f], cmdinf);
 			}
 
 			next: {};
