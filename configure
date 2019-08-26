@@ -8984,6 +8984,18 @@ else
 
 fi
 
+if test "x$with_sdl" = "xyes" && test "x$with_sdl2" = "xyes"; then
+	as_fn_error $? "\"Can not use both --with-sdl and --with-sdl2\"" "$LINENO" 5
+fi
+
+if test "x$with_sdl" = "xyes"; then
+	with_sdl2="no"
+fi
+
+if test "x$with_sdl2" = "xyes"; then
+	with_sdl="no"
+fi
+
 
 
 if test "x$with_sdl2" != "xno"; then
@@ -9375,6 +9387,7 @@ else
 	HAVE_SDL2=1
 	$as_echo "#define HAVE_SDL2 1" >>confdefs.h
 
+	with_sdl="no"
 fi
 
 org_cflags="$CFLAGS"
@@ -9695,7 +9708,6 @@ fi
 	CXXFLAGS="$org_cxxflags"
 	CPPFLAGS="$org_cppflags"
 fi
-
 
 if test "x$with_sidplay" != "xno"; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for sidEmuFillFunc in -lsidplay" >&5

@@ -517,6 +517,18 @@ else
 	AC_DEFINE(HAVE_X11)
 fi
 
+if test "x$with_sdl" = "xyes" && test "x$with_sdl2" = "xyes"; then
+	AC_MSG_ERROR("Can not use both --with-sdl and --with-sdl2")
+fi
+
+if test "x$with_sdl" = "xyes"; then
+	with_sdl2="no"
+fi
+
+if test "x$with_sdl2" = "xyes"; then
+	with_sdl="no"
+fi
+
 AC_SUBST(SDL2_CFLAGS)
 AC_SUBST(SDL2_LIBS)
 if test "x$with_sdl2" != "xno"; then
@@ -532,6 +544,7 @@ if test "x$with_sdl2" = "xno"; then
 else
 	HAVE_SDL2=1
 	AC_DEFINE(HAVE_SDL2)
+	with_sdl="no"
 fi
 
 org_cflags="$CFLAGS"
