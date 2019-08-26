@@ -1389,9 +1389,9 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 			if (selecte==0)
 				markstring(sbuf, 35, plScrWidth - 48);
 			if (*modtype)
-				writestring(sbuf, plScrWidth - 5, /*(selecte==1)?0x8F:*/0x0F, modtype, 4);
+				writestring(sbuf, plScrWidth - 4, /*(selecte==1)?0x8F:*/0x0F, modtype, 4);
 			if (selecte==1)
-				markstring(sbuf, plScrWidth - 5, 4);
+				markstring(sbuf, plScrWidth - 4, 4);
 
 			displaystrattr(first+1, 0, sbuf, plScrWidth);
 
