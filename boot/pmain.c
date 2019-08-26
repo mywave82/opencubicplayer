@@ -385,9 +385,41 @@ static int init_modules(int argc, char *argv[])
 			}
 		}
 
-		if (epoch < 20190801)
+		if (epoch < 20190815)
 		{
-			cfSetProfileInt("version", "epoch", 20190801, 10);
+			fprintf(stderr, "ocp.ini update (0.2.0) adds [filetype 40]\n");
+			cfSetProfileInt("filetype 40", "color", 6, 10);
+			cfSetProfileString("filetype 40", "name", "STM");
+			cfSetProfileString("filetype 40", "interface", "plOpenCP");
+			cfSetProfileString("filetype 40", "pllink", "playgmd");
+			cfSetProfileString("filetype 40", "player", "gmdPlayer");
+			cfSetProfileString("filetype 40", "ldlink", "loadstm");
+			cfSetProfileString("filetype 40", "loader", "mpLoadSTM");
+		}
+
+		if (epoch < 20190815)
+		{
+			const char *temp;
+			char *new_temp;
+
+			temp = cfGetProfileString("fileselector", "modextensions", "");
+			new_temp = malloc (strlen (temp) + 5);
+			strcpy (new_temp, temp);
+
+			if (!strstr(temp, " STM"))
+			{
+				fprintf(stderr, "ocp.ini update (0.2.0) adds STM to [fileselector] modextensions=....\n");
+				strcat (new_temp, " STM");
+			}
+
+			cfSetProfileString("fileselector", "modextensions", new_temp);
+			free (new_temp);
+		}
+
+
+		if (epoch < 20190815)
+		{
+			cfSetProfileInt("version", "epoch", 20190815, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -398,13 +430,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10)!=20190801)
+	if (cfGetProfileInt("version", "epoch", 0, 10)!=20190815)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20190801\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20190815\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20190801\033[0m\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20190815\033[0m\n\n");
 		}
 		sleep(5);
 	}

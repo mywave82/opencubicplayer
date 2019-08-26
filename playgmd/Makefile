@@ -1,7 +1,7 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-all: gmdptype.o load669$(LIB_SUFFIX) loadams$(LIB_SUFFIX) loaddmf$(LIB_SUFFIX) loadmdl$(LIB_SUFFIX) loadmtm$(LIB_SUFFIX) loadokt$(LIB_SUFFIX) loadptm$(LIB_SUFFIX) loads3m$(LIB_SUFFIX) loadult$(LIB_SUFFIX) playgmd$(LIB_SUFFIX)
+all: gmdptype.o load669$(LIB_SUFFIX) loadams$(LIB_SUFFIX) loaddmf$(LIB_SUFFIX) loadmdl$(LIB_SUFFIX) loadmtm$(LIB_SUFFIX) loadokt$(LIB_SUFFIX) loadptm$(LIB_SUFFIX) loads3m$(LIB_SUFFIX) loadstm$(LIB_SUFFIX) loadult$(LIB_SUFFIX) playgmd$(LIB_SUFFIX)
 
 playgmd_so=gmdpchan.o gmdpdots.o gmdpinst.o gmdplay.o gmdpplay.o gmdptrak.o gmdrtns.o gmdtime.o
 playgmd$(LIB_SUFFIX): $(playgmd_so)
@@ -39,6 +39,10 @@ loads3m_so=gmdls3m.o
 loads3m$(LIB_SUFFIX): $(loads3m_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
+loadstm_so=gmdlstm.o
+loadstm$(LIB_SUFFIX): $(loadstm_so)
+	$(CC) $(SHARED_FLAGS) -o $@ $^
+
 loadult_so=gmdlult.o
 loadult$(LIB_SUFFIX): $(loadult_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
@@ -47,10 +51,10 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) load669$(LIB_SUFFIX) loadams$(LIB_SUFFIX) loaddmf$(LIB_SUFFIX) loadmdl$(LIB_SUFFIX) loadmtm$(LIB_SUFFIX) loadokt$(LIB_SUFFIX) loadptm$(LIB_SUFFIX) loads3m$(LIB_SUFFIX) loadult$(LIB_SUFFIX) playgmd$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+	$(CP) load669$(LIB_SUFFIX) loadams$(LIB_SUFFIX) loaddmf$(LIB_SUFFIX) loadmdl$(LIB_SUFFIX) loadmtm$(LIB_SUFFIX) loadokt$(LIB_SUFFIX) loadptm$(LIB_SUFFIX) loads3m$(LIB_SUFFIX) loadstm$(LIB_SUFFIX) loadult$(LIB_SUFFIX) playgmd$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/load669$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadams$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loaddmf$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadmdl$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadmtm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadokt$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadptm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loads3m$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadult$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/playgmd$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/load669$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadams$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loaddmf$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadmdl$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadmtm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadokt$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadptm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loads3m$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadstm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadult$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/playgmd$(LIB_SUFFIX)"
 
 
 gmdptype.o: gmdptype.c \

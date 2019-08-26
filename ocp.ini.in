@@ -1,5 +1,5 @@
 [version]
- epoch=20190801
+ epoch=20190815
 
 [general]
 ;link=
@@ -88,7 +88,7 @@ link=medialib
 [fileselector] ; default fileselector section
 ; files with these extensions will be scanned by the fileselector
 ; you might add 001 002 003 004 if you are a fan of imphobia :)
-  modextensions=MOD S3M XM IT MDL DMF ULT AMS MTM 669 NST WOW OKT PTM MXM MID WAV RMI MP1 MP2 MP3 OGG OGA SID DAT PLS M3U PLT OGG AY YM OGA
+  modextensions=MOD STM S3M XM IT MDL DMF ULT AMS MTM 669 NST WOW OKT PTM MXM MID WAV RMI MP1 MP2 MP3 OGG OGA SID DAT PLS M3U PLT OGG AY YM OGA
   movepath=  ; default path to move files
   typecolors=on
   editwin=on
@@ -475,6 +475,15 @@ link=medialib
   interface=plOpenCP
   pllink=playym
   player=ymPlayer
+
+[filetype 40]
+  color=2
+  name=STM
+  interface=plOpenCP
+  pllink=playgmd
+  player=gmdPlayer
+  ldlink=loadstm
+  loader=mpLoadSTM
 
 [filetype 128]
   color=7

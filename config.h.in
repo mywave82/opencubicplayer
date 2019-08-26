@@ -177,6 +177,7 @@
 /* #define OSS_DEBUG 1 */
 /* #define ALSA_DEBUG 1 */
 /* #define OSS_LOCK_DEBUG 1 */
+/* #define STM_LOAD_DEBUG 1 */
 /* #define S3M_LOAD_DEBUG 1 */
 /* #define MIXER_DEBUG 1 */
 /* #define CONSOLE_DEBUG 1 */

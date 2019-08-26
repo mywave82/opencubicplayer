@@ -45,6 +45,34 @@ static void getext(char *ext, const char *name)
 
 static unsigned char gmdGetModuleType(const char *buf, const size_t len)
 {
+	if (len>=0x30)
+	{ /* STM check */
+		int i;
+
+		/* first 20 bytes should be ASCII */
+		for (i=0; i < 20; i++)
+		{
+			if (buf[i] & 0x80) goto nostm;
+		}
+		/* next bytes, is the tracker / converter software */
+		for (i=0; i < 8; i++)
+		{
+			if (buf[i+0x14] & 0x80) goto nostm;
+		}
+
+		if ((buf[0x1c] != 0x1a) && (buf[i+0x1c] != 0x02)) goto nostm; /* signature */
+
+		if (buf[0x1d] != 0x02) goto nostm; /* type, we only support modules */
+
+		if (buf[0x1e] != 0x02) goto nostm; /* major */
+
+		if ((buf[0x1f] != 10) && (buf[0x1f] != 20) && (buf[0x1f] != 21)) goto nostm; /* minor */
+
+		if (memcmp (buf+0x14, "!Scream!", 4) && memcmp (buf+0x14, "BMOD2STM", 4) && memcmp (buf+0x14, "WUZAMOD!", 4)) goto nostm;
+
+		return mtSTM;
+	}
+nostm:
 	if (len>=0x60)
 	{
 		/* TODO, endian */
@@ -148,6 +176,30 @@ static int gmdReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 	m->modtype=type;
 	switch (type)
 	{
+		case mtSTM:
+			if (len > 0x1f)
+			{
+				memcpy (m->modname, buf, 20);
+				m->modname[20] = 0;
+				m->channels = 4;
+				if (!memcmp (buf+0x14, "!Scream!", 4))
+				{
+					if (buf[0x1f] == 21)
+					{
+						snprintf (m->comment, sizeof (m->comment), "ScreamTracker 2.21 or later");
+					} else {
+						snprintf (m->comment, sizeof (m->comment), "ScreamTracker 2.%d", (unsigned char)buf[0x1f]);
+					}
+				} else if (!memcmp (buf+0x14, "BMOD2STM", 4))
+				{
+					snprintf (m->comment, sizeof (m->comment), "BMOD2STM (STM 2.%d)", (unsigned char)buf[0x1f]);
+				} else if (!memcmp (buf+0x14, "WUZAMOD!", 4))
+				{
+					snprintf (m->comment, sizeof (m->comment), "Wuzamod (STM 2.%d)", (unsigned char)buf[0x1f]);
+				}
+				return 1;
+			}
+			break;
 		case mtS3M:
 			if (len>=(64+32))
 			{

@@ -72,6 +72,10 @@ static const char *getpatname(int n)
 
 static int getpatlen(int n)
 {
+	if (plOrders[n] == 0xffff)
+	{
+		return 0;
+	}
 	return plPatterns[plOrders[n]].patlen;
 }
 

@@ -47,7 +47,7 @@ enum
 	mtMID=16, mtCDA=17, mtMIDd=18, mtPTM=19, mtMED=20, mtMDL=21, mtAMS=22,
 	mtINP=23, mtDEVp=24, mtDEVs=25, mtDEVw=26, mtIT=27, mtWAV=28, mtVOC=29,
 	mtMPx=30, mtSID=31, mtMXM=32, mtMODf=33, mtWMA=34, mtOGG=35, mtOPL=36,
-	mtAY=37, mtFLAC=38, mtYM=39,
+	mtAY=37, mtFLAC=38, mtYM=39, mtSTM=40,
 	mtPLS=128, mtM3U=129, mtANI=130,
 	mtUnRead=0xFF
 };
