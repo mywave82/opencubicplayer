@@ -116,7 +116,7 @@ int DumpInstrument (unsigned char *mem, int len, int base, int instrument)
 	printf ("Disk: %d\n", mem[base+0x0d]);
 
 
-	DumpPrefix (mem, len, base + 0x0e, 3);
+	DumpPrefix (mem, len, base + 0x0e, 2);
 	if ((base + 0x0e) >= len)
 	{
 		fprintf (stderr, "\n%sERROR: Ran out of data (I #4)%s\n", FONT_BRIGHT_RED, FONT_RESET);
@@ -342,7 +342,7 @@ int DumpPattern (unsigned char *mem, int len, int base, int pattern)
 				fprintf (savepatterns, " ");
 			}
 
-			if ((insvol >> 3) > 31)
+			if ((insvol >> 3) == 0)
 			{
 				printf ("..");
 				if (savepatterns)
@@ -363,7 +363,7 @@ int DumpPattern (unsigned char *mem, int len, int base, int pattern)
 				fprintf (savepatterns, " ");
 			}
 
-			if ((note >= 0x60) /* || (((insvol & 0x07) | ((voldcmd & 0xf0) >> 1)) > 64) */)
+			if (((insvol & 0x07) | ((volcmd & 0xf0) >> 1)) > 64)
 			{
 				printf ("..");
 				if (savepatterns)
@@ -371,10 +371,10 @@ int DumpPattern (unsigned char *mem, int len, int base, int pattern)
 					fprintf (savepatterns, "..");
 				}
 			} else {
-				printf ("%02d", (insvol & 0x07) | ((volcmd & 0x70) >> 1));
+				printf ("%02d", (insvol & 0x07) | ((volcmd & 0xf0) >> 1));
 				if (savepatterns)
 				{
-					fprintf (savepatterns, "%02d", (insvol & 0x07) | ((volcmd & 0x70) >> 1));
+					fprintf (savepatterns, "%02d", (insvol & 0x07) | ((volcmd & 0xf0) >> 1));
 				}
 			}
 
@@ -610,7 +610,7 @@ int main(int argc, char *argv[])
 		int option_index = 0;
 		static struct option long_options[] =
 		{
-			{"color",        required_argument, 0, 0},
+			{"color",        optional_argument, 0, 0},
 			{"help",         no_argument,       0, 'h'},
 			{"savepatterns", no_argument,       0, 'p'},
 			{"savesamples",  no_argument,       0, 's'},
@@ -659,7 +659,10 @@ int main(int argc, char *argv[])
 		help = 4;
 	}
 
-	if (!strcmp (color, "auto"))
+	if (!color)
+	{
+		usecolor = 1;
+	} else if (!strcmp (color, "auto"))
 	{
 		usecolor = isatty ( 1 );
 	} else if ((strcmp (color, "never")) && (strcmp (color, "no")))
