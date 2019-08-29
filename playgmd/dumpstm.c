@@ -485,7 +485,7 @@ int DumpOrders (unsigned char *mem, int len, int count, int pats)
 {
 	int i;
 
-	printf ("[%sOrders%s]\n", FONT_BRIGHT_CYAN, FONT_RESET);
+	printf ("[%sORDERS%s]\n", FONT_BRIGHT_CYAN, FONT_RESET);
 	for (i=0; i < count; i++)
 	{
 		if ((i&15) != 0)
@@ -502,10 +502,10 @@ int DumpOrders (unsigned char *mem, int len, int count, int pats)
 
 		if ( mem[0x410+i]==99 )
 		{
-			printf ("99(ignore) ");
+			printf ("99(ignore)");
 		} else if (mem[0x410+i]==255)
 		{
-			printf ("255(EOS) ");
+			printf ("255(EOS)"); // End Of Song
 		} else if (mem[0x410+i]>=pats)
 		{
 			printf("%s%d(out of range)%s", FONT_BRIGHT_RED, mem[0x410+i], FONT_RESET);
@@ -517,8 +517,10 @@ int DumpOrders (unsigned char *mem, int len, int count, int pats)
 			putchar ('\n');
 		}
 	}
-	printf ("]\n");
-
+	if ((i&15) != 0)
+	{
+		printf ("\n");
+	}
 
 	return 0;
 }
