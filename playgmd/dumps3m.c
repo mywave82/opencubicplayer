@@ -1,4 +1,5 @@
 #include "config.h"
+#include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <string.h>
@@ -11,12 +12,17 @@
 
 #define roundup(x,y) (((x) + (y) - 1) & ~((y) - 1))
 
+#define MIN(a,b) (((a)<(b))?(a):(b))
+
 int usecolor = 0;
+int savesamples = 0;
+FILE *savepatterns = 0;
 
 char *FONT_RESET = "";
 char *FONT_BRIGHT_BLACK = "";
 char *FONT_BRIGHT_RED = "";
 char *FONT_BRIGHT_GREEN = "";
+char *FONT_BRIGHT_YELLOW = "";
 char *FONT_BRIGHT_BLUE = "";
 char *FONT_BRIGHT_PURPLE = "";
 char *FONT_BRIGHT_CYAN = "";
@@ -50,11 +56,330 @@ void DumpPrefix (unsigned char *mem, int len, int base, int baselen)
 	}
 	switch (baselen)
 	{
-		case 2:  printf (                  "%s ", FONT_RESET); break;
-		case 1:  printf (               "%s    ", FONT_RESET); break;
-		case 0:  printf (            "%s       ", FONT_RESET); break;
-		default: printf ("%s\n                 ", FONT_RESET); break;
+		case 5:  printf (                           "%s ", FONT_RESET); break;
+		case 4:  printf (                        "%s    ", FONT_RESET); break;
+		case 3:  printf (                     "%s       ", FONT_RESET); break;
+		case 2:  printf (                  "%s          ", FONT_RESET); break;
+		case 1:  printf (               "%s             ", FONT_RESET); break;
+		case 0:  printf (            "%s                ", FONT_RESET); break;
+		default: printf ("%s\n                          ", FONT_RESET); break;
 	}
+}
+
+int DumpHeader (unsigned char *mem, int len)
+{
+	int i;
+
+	printf ("[%sHEADER%s]\n", FONT_BRIGHT_CYAN, FONT_RESET);
+
+	if (len < sizeof (FileHeader))
+	{
+		fprintf (stderr, "*** len < sizeof(FileHeader) ***\n");
+		return -1;
+	}
+
+	memcpy (&hdr, mem, sizeof (FileHeader));
+	hdr.d1      = uint16_little (hdr.d1);
+	hdr.orders  = uint16_little (hdr.orders);
+	hdr.ins     = uint16_little (hdr.ins);
+	hdr.pats    = uint16_little (hdr.pats);
+	hdr.flags   = uint16_little (hdr.flags);
+	hdr.cwt     = uint16_little (hdr.cwt);
+	hdr.ffv     = uint16_little (hdr.ffv);
+	hdr.special = uint16_little (hdr.special);
+
+	/* hdr.name */
+	DumpPrefix (mem, len, offsetof (FileHeader, name), sizeof (hdr.name));
+	printf ("Name: \"");
+	for (i=0; i < sizeof (hdr.name); i++)
+	{
+		if (!hdr.name[i])
+			break;
+		printf ("%c", hdr.name[i]);
+	}
+	printf ("\"\n");
+
+	DumpPrefix (mem, len, offsetof (FileHeader, sig), sizeof (hdr.sig));
+	printf ("Signature: %s%s%s\n",
+		(hdr.sig == 0x1A) ? FONT_BRIGHT_GREEN : FONT_BRIGHT_RED,
+		(hdr.sig == 0x1A) ? "OK" : "Failed!!!!",
+		FONT_RESET);
+
+	DumpPrefix (mem, len, offsetof (FileHeader, type), sizeof (hdr.type));
+	printf ("Type: ");
+	switch (hdr.type)
+	{
+		case  1: printf ("STM song w/o samples, FAILED !!!!!!\n"); return 1;
+		case  2: printf ("STM module, FAILED !!!!!!\n"); return 1;
+		case 16: printf ("S3M module\n"); break;
+		default: printf ("Unknown, FAILED !!!!!\n"); return 1;
+	}
+
+	DumpPrefix (mem, len, offsetof (FileHeader, d1), sizeof (hdr.d1));
+	printf ("Reserved (%s%s%s)\n",
+		(hdr.d1 == 0) ? FONT_BRIGHT_GREEN : FONT_BRIGHT_RED,
+		(hdr.d1 == 0) ? "OK" : "Failed!!!!",
+		FONT_RESET);
+
+	DumpPrefix (mem, len, offsetof (FileHeader, orders), sizeof (hdr.orders));
+	printf ("Orders: %d%s\n",
+		hdr.orders,
+		hdr.orders & 1 ? " Warning, not an even number":"");
+
+	DumpPrefix (mem, len, offsetof (FileHeader, ins), sizeof (hdr.ins));
+	printf ("Instruments: %d\n", hdr.ins);
+
+	DumpPrefix (mem, len, offsetof (FileHeader, pats), sizeof (hdr.pats));
+	printf ("Patterns: %d\n", hdr.pats);
+
+	DumpPrefix (mem, len, offsetof (FileHeader, flags), sizeof (hdr.flags));
+	printf ("Flags:\n");
+	// deprecated flag
+	printf ("%s                   1: [%c] st2vibrato%s\n",
+		(hdr.ffv == 1) ? FONT_RESET : FONT_BRIGHT_BLACK,
+		(hdr.flags & 1) ? 'x' : ' ',
+		FONT_RESET);
+	// deprecated flag
+	printf ("%s                   2: [%c] st2tempo%s\n",
+		(hdr.ffv == 1) ? FONT_RESET : FONT_BRIGHT_BLACK,
+		(hdr.flags & 2) ? 'x' : ' ',
+		FONT_RESET);
+	// deprecated flag
+	printf ("%s                   4: [%c] amigaslides%s\n",
+		(hdr.ffv == 1) ? FONT_RESET : FONT_BRIGHT_BLACK,
+		(hdr.flags & 4) ? 'x' : ' ',
+		FONT_RESET);
+	printf ("                   8: [%c] 0vol optimizations" /* " (Automatically turn off looping notes whose volume is zero for >2 note rows)" */ "\n", (hdr.flags & 8) ? 'x' : ' ');
+	printf ("                  16: [%c] amiga limits" /*" (Disallow any notes that go beond the amiga hardware limits (like amiga does). This means that sliding up stops at B#5 etc. Also affects some minor amiga compatibility issues)" */ "\n", (hdr.flags & 16) ? 'x' : ' ');
+	// deprecated flag
+	printf ("%s                  32: [%c] enable filter/sfx with SoundBlaster%s\n",
+		(hdr.ffv == 1) ? FONT_RESET : FONT_BRIGHT_BLACK,
+		(hdr.flags & 32) ? 'x' : ' ',
+		FONT_RESET);
+	printf ("                  64: [%s] ST3.00 volume slides\n", (hdr.cwt == 0x1300) ? "implicit" : ((hdr.flags & 64) ? "x" : " "));
+	printf ("                 128: [%c] special custom data in file\n", (hdr.flags & 128) ? 'x' : ' ');
+
+	DumpPrefix (mem, len, offsetof (FileHeader, cwt), sizeof (hdr.cwt));
+	printf ("Created With Tracker/Version: ");
+	if ((hdr.cwt & 0xff00) == 0x1300)
+	{
+		printf ("ScreamTracker 3.%02x\n", hdr.cwt&0x00ff);
+	} else if ((hdr.cwt & 0xf000) == 0x2000)
+	{
+		printf ("Imago Orpheus %d.%d\n", (hdr.cwt >> 8) & 0x000f, hdr.cwt&0x00ff);
+	} else if ((hdr.cwt & 0xf000) == 0x3000)
+	{
+		printf ("Impulse Tracker %d.%d\n", (hdr.cwt >> 8) & 0x000f, hdr.cwt&0x00ff);
+	} else if (hdr.cwt == 0x4100)
+	{
+		printf ("old BeRoTracker version from between 2004 and 2012\n");
+	} else if ((hdr.cwt & 0xf000) == 0x4000)
+	{
+		printf ("Schism Tracker %d.%d\n", (hdr.cwt >> 8) & 0x000f, hdr.cwt&0x00ff);
+	} else if ((hdr.cwt & 0xf000) == 0x5000)
+	{
+		printf ("OpenMPT %d.%d\n", (hdr.cwt >> 8) & 0x000f, hdr.cwt&0x00ff);
+	} else if ((hdr.cwt & 0xf000) == 0x6000)
+	{
+		printf ("BeRoTracker %d.%d\n", (hdr.cwt >> 8) & 0x000f, hdr.cwt&0x00ff);
+	} else if ((hdr.cwt & 0xf000) == 0x7000)
+	{
+		printf ("CreamTracker %d.%d\n", (hdr.cwt >> 8) & 0x000f, hdr.cwt&0x00ff);
+	} else if (hdr.cwt == 0xca00)
+	{
+		printf ("Camoto/libgamemusic\n");
+	} else {
+		printf ("Unknown\n");
+	}
+
+	DumpPrefix (mem, len, offsetof (FileHeader, ffv), sizeof (hdr.ffv));
+	printf ("FileFormatVersion: ");
+	if (hdr.ffv == 0x0001)
+	{
+		printf("old version used long ago (samples signed)\n");
+	} else if (hdr.ffv == 0x0002)
+	{
+		printf("standard (samples unsigned)\n");
+	} else {
+		printf("unknown!!!!!!!!\n");
+	}
+
+	DumpPrefix (mem, len, offsetof (FileHeader, magic), sizeof (hdr.magic));
+	printf ("Signature: \"%c%c%c%c\" %s%s%s\n",
+		hdr.magic[0],
+		hdr.magic[1],
+		hdr.magic[2],
+		hdr.magic[3],
+		memcmp (hdr.magic, "SCRM", 4) ? FONT_BRIGHT_RED : FONT_BRIGHT_GREEN,
+		memcmp (hdr.magic, "SCRM", 4) ? "Failed!!!!" : "OK",
+		FONT_RESET);
+
+	DumpPrefix (mem, len, offsetof (FileHeader, gv), sizeof (hdr.gv));
+	printf ("Global Volume: %d\n", hdr.gv);
+
+	DumpPrefix (mem, len, offsetof (FileHeader, is), sizeof (hdr.is));
+	printf ("Initial Speed: %d\n", hdr.is);
+
+	DumpPrefix (mem, len, offsetof (FileHeader, it), sizeof (hdr.it));
+	printf ("Initial Tempo: %d\n", hdr.it);
+
+	DumpPrefix (mem, len, offsetof (FileHeader, mv), sizeof (hdr.mv));
+	printf ("Master Volume: %d\n", hdr.mv);
+
+	DumpPrefix (mem, len, offsetof (FileHeader, uc), sizeof (hdr.uc));
+	printf ("GUS hardware, click removal for %d channels\n", hdr.uc);
+
+	DumpPrefix (mem, len, offsetof (FileHeader, dp), sizeof (hdr.dp));
+	printf ("Default Pan: %s\n", (hdr.dp == 252) ? "Use data from header" : "Ignore data in header, use system default");
+
+	DumpPrefix (mem, len, offsetof (FileHeader, d2), sizeof (hdr.d2));
+	printf ("(Reserved/not used)\n");
+
+	DumpPrefix (mem, len, offsetof (FileHeader, special), sizeof (hdr.special));
+	printf ("SpecialData: ");
+	if (hdr.flags & 128)
+	{
+		printf ("ParaPointer 0x%04x => ptr 0x%08x\n", hdr.special, 16*hdr.special);
+	} else {
+		printf ("not enabled in flags\n");
+	}
+
+	for (i=0; i < 32; i++)
+	{
+		DumpPrefix (mem, len, offsetof (FileHeader, channels) + i, 1);
+		printf ("ChannelSetting %2d: ", i + 1);
+		if (hdr.channels[i] < 8)
+		{
+			printf ("Left  PCM Channel %d\n", hdr.channels[i]);
+		} else if (hdr.channels[i] < 16)
+		{
+			printf ("Right PCM Channel %d\n", hdr.channels[i] - 8);
+		} else if (hdr.channels[i] < 25)
+		{
+			printf ("Adlib melody channel %d\n", hdr.channels[i] - 16);
+		} else if (hdr.channels[i] == 25)
+		{
+			printf ("Adlib percussion channel: bass drum\n");
+		} else if (hdr.channels[i] == 26)
+		{
+			printf ("Adlib percussion channel: snare drum\n");
+		} else if (hdr.channels[i] == 27)
+		{
+			printf ("Adlib percussion channel: tom tom\n");
+		} else if (hdr.channels[i] == 28)
+		{
+			printf ("Adlib percussion channel: top cymbal\n");
+		} else if (hdr.channels[i] == 29)
+		{
+			printf ("Adlib percussion channel: hi-hat\n");
+		} else if (hdr.channels[i] < 128)
+		{
+			printf ("Invalid!!!!!\n");
+		} else if (hdr.channels[i] < 255)
+		{
+			printf ("Disabled (invalid\?\?\?)\n");
+		} else {
+			printf ("Channel unused\n");
+		}
+	}
+
+	return 0;
+}
+
+int DumpOrders (unsigned char *mem, int len)
+{
+	int i;
+
+	printf ("[%sORDERS%s]\n", FONT_BRIGHT_CYAN, FONT_RESET);
+//	DumpPrefix(mem, len, sizeof(hdr), hdr.orders);
+
+	if ((sizeof (hdr) + hdr.orders) >= len)
+	{
+		printf ("Orders: Not enough data in the file\n");
+		return -1;
+	}
+	for (i=0; i < hdr.orders; i++)
+	{
+		if ((i&15) != 0)
+		{
+			putchar (' ');
+		} else {
+			DumpPrefix (mem, len, sizeof (hdr) + i, MIN (16, hdr.orders - i));
+		};
+
+		if ((sizeof (hdr) + i) >= len)
+		{
+			fprintf (stderr, "\n%sERROR: Ran out of data (S #1)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+			return -1;
+		}
+
+		if (mem[sizeof(hdr)+i] == 254)
+		{
+			printf ("254(marker)");
+		} else if (mem[sizeof(hdr)+i] == 255)
+		{
+			printf ("255(EOS)"); // End Of Song
+		} else {
+			printf ("%d", mem[sizeof(hdr)+i]);
+		}
+
+		if ((i&15) == 15)
+		{
+			putchar ('\n');
+		}
+	}
+	if ((i&15) != 0)
+	{
+		printf ("\n");
+	}
+
+	return 0;
+}
+
+int DumpInstrumentPtrMap (unsigned char *mem, int len)
+{
+	int i;
+
+	printf ("[%sINSTRUMENT PTR MAP%s]\n", FONT_BRIGHT_CYAN, FONT_RESET);
+
+	for (i=0; i < hdr.ins; i++)
+	{
+		DumpPrefix (mem, len, sizeof(hdr) + hdr.orders + 2*i, 2);
+
+		if ((sizeof (hdr) + hdr.orders + (i+1)*2) >= len)
+		{
+			printf ("Instrument %2d: Not enough data in the file\n", i + 1);
+			return -1;
+		} else {
+			uint16_t temp = uint16_little (((uint16_t *)(mem + sizeof(hdr) + hdr.orders))[i]);
+			printf ("Instrument %2d: ParaPointer 0x%04x => ptr 0x%08x\n", i + 1, temp, 16*temp);
+		}
+	}
+
+	return 0;
+}
+
+int DumpPatternPtrMap (unsigned char *mem, int len)
+{
+	int i;
+
+	printf ("[%sPATTERN PTR MAP%s]\n", FONT_BRIGHT_CYAN, FONT_RESET);
+
+	for (i=0; i < hdr.pats; i++)
+	{
+		DumpPrefix (mem, len, sizeof(hdr) + hdr.orders + hdr.ins*2 + 2*i, 2);
+
+		if ((sizeof (hdr) + hdr.orders + (i+1)*2) >= len)
+		{
+			printf ("Pattern %2d: Not enough data in the file\n", i + 1);
+			return -1;
+		} else {
+			uint16_t temp = uint16_little (((uint16_t *)(mem + sizeof(hdr) + hdr.orders + hdr.ins*2))[i]);
+			printf ("Pattern %2d: ParaPointer 0x%04x => ptr 0x%08x\n", i + 1, temp, 16*temp);
+		}
+	}
+
+	return 0;
 }
 
 int DumpInstrumentEmpty (unsigned char *mem, int len, int base, int instrument)
@@ -117,6 +442,7 @@ int DumpInstrumentPCM (unsigned char *mem, int len, int base, int instrument)
 	uint32_t LoopEnd   = uint32_little (((uint32_t *)(mem + base + 0x18))[0]);
 	uint32_t C2Spd     = uint32_little (((uint32_t *)(mem + base + 0x20))[0]);
 	int i;
+	uint32_t memseg;
 
 	printf ("[%sINSTRUMENT %d  / PCM Sample%s]\n", FONT_BRIGHT_CYAN, instrument + 1, FONT_RESET);
 
@@ -136,7 +462,8 @@ int DumpInstrumentPCM (unsigned char *mem, int len, int base, int instrument)
 	printf("\"\n");
 
 	DumpPrefix (mem, len, base + 0x0d, 3);
-	printf ("MemSeg: 0x%08x\n", mem[base+0x0d]<<16 | (mem[base+0x0e]<<8) | mem[base+0x0f]);
+	memseg = mem[base+0x0d]<<16 | (mem[base+0x0e]<<8) | mem[base+0x0f];
+	printf ("MemSeg: 0x%08x\n", memseg);
 
 	DumpPrefix (mem, len, base + 0x10, 4);
 	printf ("Length:     %d %s%s%s\n", (int)Length, Length>64000 ? FONT_BRIGHT_RED : FONT_BRIGHT_GREEN, (Length>64000) ? " Sample too long, will be cropped at 64000" : "", FONT_RESET);
@@ -154,10 +481,12 @@ int DumpInstrumentPCM (unsigned char *mem, int len, int base, int instrument)
 	printf ("Reserved/unused\n");
 
 	DumpPrefix (mem, len, base + 0x1e, 1);
+	printf ("Sample format: ");
 	switch (mem[base + 0x1e])
 	{
-		case 0: printf ("unpacked)\n"); break;
+		case 0: printf ("PCM\n"); break;
 		case 1: printf ("DP30ADPCM packing (deprecated after Scream Tracker 3.00)\n"); break;
+		case 4: printf ("%sADPCM (modplug non-standard)%s\n", FONT_BRIGHT_YELLOW, FONT_RESET); break;
 		default: printf ("%sUnknown%s\n", FONT_BRIGHT_RED, FONT_RESET);
 	}
 
@@ -199,7 +528,33 @@ int DumpInstrumentPCM (unsigned char *mem, int len, int base, int instrument)
 		(memcmp(mem + base + 0x4c, "SCRS", 4)) ? FONT_BRIGHT_RED : FONT_BRIGHT_GREEN,
 		(memcmp(mem + base + 0x4c, "SCRS", 4)) ? "Failed" : "OK",
 		FONT_RESET);
+	if (savesamples)
+	{
+		int TotalLength = Length;
 
+		if (mem[base + 0x1f] & 2) TotalLength <<= 1; /* Stereo */
+		if (mem[base + 0x1f] & 4) TotalLength <<= 1; /* 16-Bit */
+
+		/* TODO, we do not handle ADPCM samples */
+
+		if (((memseg<<4) + TotalLength) >= len)
+		{
+			printf ("%sWARNING: Unable to store instrument %d, missing data\n%s", FONT_BRIGHT_YELLOW, i + 1, FONT_RESET);
+		} else {
+			char filename[128];
+			int fd;
+			snprintf (filename, sizeof (filename), "Instrument %02d.%s %dbit.sample", instrument+1, (hdr.ffv == 0x0001)?"signed":"unsigned", (mem[base + 0x1f] & 4) ? 16 : 8);
+			fd = open (filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+			if (fd < 0)
+			{
+				printf ("%sWARNING: Unable to open %s%s\n", FONT_BRIGHT_YELLOW, filename, FONT_RESET);
+			} else {
+				write (fd, mem + (memseg<<4), TotalLength);
+				close (fd);
+				printf ("Saved %s\n", filename);
+			}
+		}
+	}
 	return 0;
 }
 
@@ -498,273 +853,288 @@ int DumpInstrument (unsigned char *mem, int len, int base, int instrument)
 	}
 }
 
+void print_note (unsigned char note)
+{
+	char *text[16] = {"C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "A-", "A#", "B-", "?c", "?d", "?e", "?f"};
+
+	if (note == 0xfe)
+	{
+		printf ("-0-");
+		if (savepatterns)
+		{
+			fprintf (savepatterns, "-0-");
+		}
+		return;
+	}
+	if (note >= 0xff)
+	{
+		printf ("...");
+		if (savepatterns)
+		{
+			fprintf (savepatterns, "...");
+		}
+		return;
+	}
+
+	if ((note & 0x0f) >= 12) printf ("%s", FONT_BRIGHT_RED);
+	printf ("%s", text[note & 0x0f]);
+	if (savepatterns)
+	{
+		fprintf (savepatterns, "%s", text[note & 0x0f]);
+	}
+	if ((note & 0x0f) >= 12) printf ("%s", FONT_RESET);
+
+	printf ("%d", note >> 4);
+	if (savepatterns)
+	{
+		fprintf (savepatterns, "%d", note>>4);
+	}
+}
+
+void print_instrument (unsigned char ins)
+{
+	if (ins == 0)
+	{
+		printf ("..");
+		if (savepatterns)
+		{
+			fprintf (savepatterns, "..");
+		}
+		return;
+	}
+	if (ins > hdr.ins)
+	{
+		printf ("%s", FONT_BRIGHT_RED);
+	}
+	printf ("%02d", ins);
+	if (savepatterns)
+	{
+		fprintf (savepatterns, "%02d", ins);
+	}
+	printf ("%s", FONT_RESET);
+}
+
+void print_volume (unsigned char volume)
+{
+	if (volume == 255)
+	{
+		printf ("..");
+		if (savepatterns)
+		{
+			fprintf (savepatterns, "..");
+		}
+		return;
+	}
+	if (volume > 64)
+	{
+		printf ("%s", FONT_BRIGHT_RED);
+	}
+	printf ("%02d", volume);
+	if (savepatterns)
+	{
+		fprintf (savepatterns, "%02d", volume);
+	}
+	printf ("%s", FONT_RESET);
+}
+
+void print_command_info (unsigned char command, unsigned char info)
+{
+	command |= 0x40;
+	if (command > 0x5e)
+	{
+		printf (".%02X", info);
+		if (savepatterns)
+		{
+			fprintf (savepatterns, ".%02X", info);
+		}
+		return;
+	}
+	printf ("%c%02X", (char)command, info);
+	if (savepatterns)
+	{
+		fprintf (savepatterns, "%c%02X", (char)command, info);
+	}
+}
+
+int DumpPattern (unsigned char *mem, int len, int base, int pattern)
+{
+	uint16_t PatternLen;
+	int offset = 2;
+	int i;
+	int row = 0;
+	uint8_t note[32];
+	uint8_t instrument[32];
+	uint8_t volume[32];
+	uint8_t command[32];
+	uint8_t info[32];
+
+
+	printf ("[%sPATTERN %d%s]\n", FONT_BRIGHT_CYAN, pattern, FONT_RESET);
+	if (savepatterns)
+	{
+		fprintf (savepatterns, "PATTERN %d\n", pattern);
+	}
+
+	DumpPrefix (mem, len, base, 2);
+	printf ("Length: ");
+	if (base+2 > len)
+	{
+		fprintf (stderr, "\n%sERROR: Ran out of data (P #1)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+		return -1;
+	}
+	PatternLen = uint16_little (((uint16_t *)(mem + base))[0]);
+	printf ("%d\n", (int)PatternLen);
+	if (PatternLen < 2)
+	{
+		fprintf (stderr, "%sERROR: Length < 2%s\n", FONT_BRIGHT_RED, FONT_RESET);
+		return -1;
+	}
+
+	memset (note,       255, sizeof (note));
+	memset (instrument,   0, sizeof (instrument));
+	memset (volume,     255, sizeof (volume));
+	memset (command,    255, sizeof (command));
+	memset (info,       255, sizeof (info));
+	while (offset < PatternLen)
+	{
+		uint8_t what;
+		int first = 1;
+
+		do {
+			if ((base + offset) > len)
+			{
+				fprintf (stderr, "\n%sERROR: Ran out of data (P #2)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+				return -1;
+			}
+
+			if (first)
+			{
+				first = 0;
+			} else {
+				printf ("\n");
+			}
+
+			what = mem[base+offset];
+			DumpPrefix (mem, len, base + offset, 1 + ((what & 0x80)?2:0) + ((what & 0x40)?1:0) + ((what & 0x20)?2:0));
+
+			offset++;
+			if (what & 0x20)
+			{
+				if ((base + offset) > len)
+				{
+					fprintf (stderr, "\n%sERROR: Ran out of data (P #3)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+					return -1;
+				}
+				note[what & 0x1f] = mem[base+(offset++)];
+
+				if ((base + offset) > len)
+				{
+					fprintf (stderr, "\n%sERROR: Ran out of data (P #4)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+					return -1;
+				}
+				instrument[what & 0x1f] = mem[base+(offset++)];
+			}
+
+			if (what & 0x40)
+			{
+				if ((base + offset) > len)
+				{
+					fprintf (stderr, "\n%sERROR: Ran out of data (P #5)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+					return -1;
+				}
+				volume[what & 0x1f] = mem[base+(offset++)];
+			}
+
+			if (what & 0x80)
+			{
+				if ((base + offset) > len)
+				{
+					fprintf (stderr, "\n%sERROR: Ran out of data (P #6)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+					return -1;
+				}
+				command[what & 0x1f] = mem[base+(offset++)];
+
+				if ((base + offset) > len)
+				{
+					fprintf (stderr, "\n%sERROR: Ran out of data (P #6)%s\n", FONT_BRIGHT_RED, FONT_RESET);
+					return -1;
+				}
+				info[what & 0x1f] = mem[base+(offset++)];
+			}
+		} while (what && (offset < PatternLen));
+
+		printf ("%02x |", row++);
+		for (i=0; i < 32; i++)
+		{
+			printf (" ");
+			if (savepatterns) fprintf (savepatterns, " ");
+
+			print_note (note[i]);
+
+			printf (" ");
+			if (savepatterns) fprintf (savepatterns, " ");
+
+			print_instrument (instrument[i]);
+
+			printf (" ");
+			if (savepatterns) fprintf (savepatterns, " ");
+
+			print_volume (volume[i]);
+
+			printf (" ");
+			if (savepatterns) fprintf (savepatterns, " ");
+
+			print_command_info (command[i], info[i]);
+
+			printf (" |");
+			if (savepatterns) fprintf (savepatterns, " |");
+		}
+		printf ("\n");
+		if (savepatterns) fprintf (savepatterns, "\n");
+		memset (note,       255, sizeof (note));
+		memset (instrument,   0, sizeof (instrument));
+		memset (volume,     255, sizeof (volume));
+		memset (command,    255, sizeof (command));
+		memset (info,       255, sizeof (info));
+	}
+
+	return 0;
+}
+
 int ParseS3M (unsigned char *mem, int len)
 {
 	int i;
-	int offset = 0;
-	if (len < sizeof (FileHeader))
+
+	if (DumpHeader (mem, len))
 	{
-		fprintf (stderr, "*** len < sizeof(FileHeader) ***\n");
-		return 1;
-	}
-
-	printf ("[%sHEADER%s]\n", FONT_BRIGHT_CYAN, FONT_RESET);
-
-	memcpy (&hdr, mem, sizeof (FileHeader));
-	hdr.d1      = uint16_little (hdr.d1);
-	hdr.orders  = uint16_little (hdr.orders);
-	hdr.ins     = uint16_little (hdr.ins);
-	hdr.pats    = uint16_little (hdr.pats);
-	hdr.flags   = uint16_little (hdr.flags);
-	hdr.cwt     = uint16_little (hdr.cwt);
-	hdr.ffv     = uint16_little (hdr.ffv);
-	hdr.special = uint16_little (hdr.special);
-
-	offset += sizeof (FileHeader);
-
-	/* hdr.name */
-	DumpPrefix (mem, len, offsetof (FileHeader, name), sizeof (hdr.name));
-	printf ("Name: \"");
-	for (i=0; i < sizeof (hdr.name); i++)
-	{
-		if (!hdr.name[i])
-			break;
-		printf ("%c", hdr.name[i]);
-	}
-	printf ("\"\n");
-
-	DumpPrefix (mem, len, offsetof (FileHeader, sig), sizeof (hdr.sig));
-	printf ("Signature: %s%s%s\n",
-		(hdr.sig == 0x1A) ? FONT_BRIGHT_GREEN : FONT_BRIGHT_RED,
-		(hdr.sig == 0x1A) ? "OK" : "Failed!!!!",
-		FONT_RESET);
-
-	DumpPrefix (mem, len, offsetof (FileHeader, type), sizeof (hdr.type));
-	printf ("Type: ");
-	switch (hdr.type)
-	{
-		case  1: printf ("STM song w/o samples, FAILED !!!!!!\n"); return 1;
-		case  2: printf ("STM module, FAILED !!!!!!\n"); return 1;
-		case 16: printf ("S3M module\n"); break;
-		default: printf ("Unknown, FAILED !!!!!\n"); return 1;
-	}
-
-	DumpPrefix (mem, len, offsetof (FileHeader, d1), sizeof (hdr.d1));
-	printf ("Reserved (%s%s%s)\n",
-		(hdr.d1 == 0) ? FONT_BRIGHT_GREEN : FONT_BRIGHT_RED,
-		(hdr.d1 == 0) ? "OK" : "Failed!!!!",
-		FONT_RESET);
-
-	DumpPrefix (mem, len, offsetof (FileHeader, orders), sizeof (hdr.orders));
-	printf ("Orders: %d%s\n",
-		hdr.orders,
-		hdr.orders & 1 ? " Warning, not an even number":"");
-
-	DumpPrefix (mem, len, offsetof (FileHeader, ins), sizeof (hdr.ins));
-	printf ("Instruments: %d\n", hdr.ins);
-
-	DumpPrefix (mem, len, offsetof (FileHeader, pats), sizeof (hdr.pats));
-	printf ("Patterns: %d\n", hdr.pats);
-
-	DumpPrefix (mem, len, offsetof (FileHeader, flags), sizeof (hdr.flags));
-	printf ("Flags:\n");
-	// deprecated flag
-	printf ("%s                   1: [%c] st2vibrato%s\n",
-		(hdr.ffv == 1) ? FONT_RESET : FONT_BRIGHT_BLACK,
-		(hdr.flags & 1) ? 'x' : ' ',
-		FONT_RESET);
-	// deprecated flag
-	printf ("%s                   2: [%c] st2tempo%s\n",
-		(hdr.ffv == 1) ? FONT_RESET : FONT_BRIGHT_BLACK,
-		(hdr.flags & 2) ? 'x' : ' ',
-		FONT_RESET);
-	// deprecated flag
-	printf ("%s                   4: [%c] amigaslides%s\n",
-		(hdr.ffv == 1) ? FONT_RESET : FONT_BRIGHT_BLACK,
-		(hdr.flags & 4) ? 'x' : ' ',
-		FONT_RESET);
-	printf ("                   8: [%c] 0vol optimizations" /* " (Automatically turn off looping notes whose volume is zero for >2 note rows)" */ "\n", (hdr.flags & 8) ? 'x' : ' ');
-	printf ("                  16: [%c] amiga limits" /*" (Disallow any notes that go beond the amiga hardware limits (like amiga does). This means that sliding up stops at B#5 etc. Also affects some minor amiga compatibility issues)" */ "\n", (hdr.flags & 16) ? 'x' : ' ');
-	// deprecated flag
-	printf ("%s                  32: [%c] enable filter/sfx with SoundBlaster%s\n",
-		(hdr.ffv == 1) ? FONT_RESET : FONT_BRIGHT_BLACK,
-		(hdr.flags & 32) ? 'x' : ' ',
-		FONT_RESET);
-	printf ("                  64: [%s] ST3.00 volume slides\n", (hdr.cwt == 0x1300) ? "implicit" : ((hdr.flags & 64) ? "x" : " "));
-	printf ("                 128: [%c] special custom data in file\n", (hdr.flags & 128) ? 'x' : ' ');
-
-	DumpPrefix (mem, len, offsetof (FileHeader, cwt), sizeof (hdr.cwt));
-	printf ("Created With Tracker/Version: ");
-	if ((hdr.cwt & 0xff00) == 0x1300)
-	{
-		printf ("ScreamTracker 3.%02x\n", hdr.cwt&0x00ff);
-	} else if ((hdr.cwt & 0xf000) == 0x2000)
-	{
-		printf ("Imago Orpheus %d.%d\n", (hdr.cwt >> 8) & 0x000f, hdr.cwt&0x00ff);
-	} else if ((hdr.cwt & 0xf000) == 0x3000)
-	{
-		printf ("Impulse Tracker %d.%d\n", (hdr.cwt >> 8) & 0x000f, hdr.cwt&0x00ff);
-	} else if (hdr.cwt == 0x4100)
-	{
-		printf ("old BeRoTracker version from between 2004 and 2012\n");
-	} else if ((hdr.cwt & 0xf000) == 0x4000)
-	{
-		printf ("Schism Tracker %d.%d\n", (hdr.cwt >> 8) & 0x000f, hdr.cwt&0x00ff);
-	} else if ((hdr.cwt & 0xf000) == 0x5000)
-	{
-		printf ("OpenMPT %d.%d\n", (hdr.cwt >> 8) & 0x000f, hdr.cwt&0x00ff);
-	} else if ((hdr.cwt & 0xf000) == 0x6000)
-	{
-		printf ("BeRoTracker %d.%d\n", (hdr.cwt >> 8) & 0x000f, hdr.cwt&0x00ff);
-	} else if ((hdr.cwt & 0xf000) == 0x7000)
-	{
-		printf ("CreamTracker %d.%d\n", (hdr.cwt >> 8) & 0x000f, hdr.cwt&0x00ff);
-	} else if (hdr.cwt == 0xca00)
-	{
-		printf ("Camoto/libgamemusic\n");
-	} else {
-		printf ("Unknown\n");
-	}
-
-	DumpPrefix (mem, len, offsetof (FileHeader, ffv), sizeof (hdr.ffv));
-	printf ("FileFormatVersion: ");
-	if (hdr.ffv == 0x0001)
-	{
-		printf("old version used long ago (samples signed)\n");
-	} else if (hdr.ffv == 0x0002)
-	{
-		printf("standard (samples unsigned)\n");
-	} else {
-		printf("unknown!!!!!!!!\n");
-	}
-
-	DumpPrefix (mem, len, offsetof (FileHeader, magic), sizeof (hdr.magic));
-	printf ("Signature: \"%c%c%c%c\" %s%s%s\n",
-		hdr.magic[0],
-		hdr.magic[1],
-		hdr.magic[2],
-		hdr.magic[3],
-		memcmp (hdr.magic, "SCRM", 4) ? FONT_BRIGHT_RED : FONT_BRIGHT_GREEN,
-		memcmp (hdr.magic, "SCRM", 4) ? "Failed!!!!" : "OK",
-		FONT_RESET);
-
-	DumpPrefix (mem, len, offsetof (FileHeader, gv), sizeof (hdr.gv));
-	printf ("Global Volume: %d\n", hdr.gv);
-
-	DumpPrefix (mem, len, offsetof (FileHeader, is), sizeof (hdr.is));
-	printf ("Initial Speed: %d\n", hdr.is);
-
-	DumpPrefix (mem, len, offsetof (FileHeader, it), sizeof (hdr.it));
-	printf ("Initial Tempo: %d\n", hdr.it);
-
-	DumpPrefix (mem, len, offsetof (FileHeader, mv), sizeof (hdr.mv));
-	printf ("Master Volume: %d\n", hdr.mv);
-
-	DumpPrefix (mem, len, offsetof (FileHeader, uc), sizeof (hdr.uc));
-	printf ("GUS hardware, click removal for %d channels\n", hdr.uc);
-
-	DumpPrefix (mem, len, offsetof (FileHeader, dp), sizeof (hdr.dp));
-	printf ("Default Pan: %s\n", (hdr.dp == 252) ? "Use data from header" : "Ignore data in header, use system default");
-
-	DumpPrefix (mem, len, offsetof (FileHeader, d2), sizeof (hdr.d2));
-	printf ("(Reserved/not used)\n");
-
-	DumpPrefix (mem, len, offsetof (FileHeader, special), sizeof (hdr.special));
-	printf ("SpecialData: ");
-	if (hdr.flags & 128)
-	{
-		printf ("ParaPointer 0x%04x => ptr 0x%08x\n", hdr.special, 16*hdr.special);
-	} else {
-		printf ("not enabled in flags\n");
-	}
-
-	for (i=0; i < 32; i++)
-	{
-		DumpPrefix (mem, len, offsetof (FileHeader, channels) + i, 1);
-		printf ("ChannelSetting %2d: ", i + 1);
-		if (hdr.channels[i] < 8)
-		{
-			printf ("Left  PCM Channel %d\n", hdr.channels[i]);
-		} else if (hdr.channels[i] < 16)
-		{
-			printf ("Right PCM Channel %d\n", hdr.channels[i] - 8);
-		} else if (hdr.channels[i] < 25)
-		{
-			printf ("Adlib melody channel %d\n", hdr.channels[i] - 16);
-		} else if (hdr.channels[i] == 25)
-		{
-			printf ("Adlib percussion channel: bass drum\n");
-		} else if (hdr.channels[i] == 26)
-		{
-			printf ("Adlib percussion channel: snare drum\n");
-		} else if (hdr.channels[i] == 27)
-		{
-			printf ("Adlib percussion channel: tom tom\n");
-		} else if (hdr.channels[i] == 28)
-		{
-			printf ("Adlib percussion channel: top cymbal\n");
-		} else if (hdr.channels[i] == 29)
-		{
-			printf ("Adlib percussion channel: hi-hat\n");
-		} else if (hdr.channels[i] < 128)
-		{
-			printf ("Invalid!!!!!\n");
-		} else if (hdr.channels[i] < 255)
-		{
-			printf ("Disabled (invalid\?\?\?)\n");
-		} else {
-			printf ("Channel unused\n");
-		}
-	}
-
-	DumpPrefix(mem, len, sizeof(hdr), hdr.orders);
-	if ((sizeof (hdr) + hdr.orders) >= len)
-	{
-		printf ("Orders: Not enough data in the file\n");
 		return -1;
 	}
-	printf ("Orders: [");
-	for (i=0; i < hdr.orders; i++)
-	{
-		printf ("%s%d%s%s", i?", ":"", mem[sizeof(hdr)+i],
-		mem[sizeof(hdr)+i]==254?" marker/ignore this":"",
-		mem[sizeof(hdr)+i]==255?" end of song":""
-		);
-	}
-	printf ("]\n");
 
-	for (i=0; i < hdr.ins; i++)
+	if (DumpOrders (mem, len))
 	{
-		DumpPrefix (mem, len, sizeof(hdr) + hdr.orders + 2*i, 2);
-
-		if ((sizeof (hdr) + hdr.orders + (i+1)*2) >= len)
-		{
-			printf ("Instrument %2d: Not enough data in the file\n", i + 1);
-			return -1;
-		} else {
-			uint16_t temp = uint16_little (((uint16_t *)(mem + sizeof(hdr) + hdr.orders))[i]);
-			printf ("Instrument %2d: ParaPointer 0x%04x => ptr 0x%08x\n", i + 1, temp, 16*temp);
-		}
+		return -1;
 	}
 
-	for (i=0; i < hdr.pats; i++)
+	if (DumpInstrumentPtrMap (mem, len))
 	{
-		DumpPrefix (mem, len, sizeof(hdr) + hdr.orders + hdr.ins*2 + 2*i, 2);
+		return -1;
+	}
 
-		if ((sizeof (hdr) + hdr.orders + (i+1)*2) >= len)
-		{
-			printf ("Pattern %2d: Not enough data in the file\n", i + 1);
-			return -1;
-		} else {
-			uint16_t temp = uint16_little (((uint16_t *)(mem + sizeof(hdr) + hdr.orders + hdr.ins*2))[i]);
-			printf ("Pattern %2d: ParaPointer 0x%04x => ptr 0x%08x\n", i + 1, temp, 16*temp);
-		}
+	if (DumpPatternPtrMap (mem, len))
+	{
+		return -1;
 	}
 
 	for (i=0; i < hdr.ins; i++)
 	{
 		uint16_t temp = uint16_little (((uint16_t *)(mem + sizeof(hdr) + hdr.orders))[i]);
 		DumpInstrument (mem, len, 16*temp, i);
+	}
+
+	for (i=0; i < hdr.pats; i++)
+	{
+		uint16_t temp = uint16_little (((uint16_t *)(mem + sizeof(hdr) + hdr.ins*2 + hdr.orders))[i]);
+		DumpPattern (mem, len, 16*temp, i);
 	}
 
 	return 0;
@@ -786,12 +1156,14 @@ int main(int argc, char *argv[])
 		int option_index = 0;
 		static struct option long_options[] =
 		{
-			{"color", required_argument, 0, 0},
-			{"help",  no_argument,       0, 'h'},
-			{0,       0,                 0, 0}
+			{"color",        optional_argument, 0, 0},
+			{"help",         no_argument,       0, 'h'},
+			{"savepatterns", no_argument,       0, 'p'},
+			{"savesamples",  no_argument,       0, 's'},
+			{0,              0,                 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "h", long_options, &option_index);
+		c = getopt_long(argc, argv, "hsp", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -802,6 +1174,20 @@ int main(int argc, char *argv[])
 				{
 					color = optarg;
 				}
+				break;
+			case 'p':
+				if (!savepatterns)
+				{
+					savepatterns = fopen ("patterns.txt", "w");
+					if (!savepatterns)
+					{
+						fprintf (stderr, "Unable to open patterns.txt for writing: %s\n", strerror (errno));
+						return 1;
+					}
+				}
+				break;
+			case 's':
+				savesamples = 1;
 				break;
 			case 'h':
 				help = 1;
@@ -819,7 +1205,10 @@ int main(int argc, char *argv[])
 		help = 4;
 	}
 
-	if (!strcmp (color, "auto"))
+	if (!color)
+	{
+		usecolor = 1;
+	} else if (!strcmp (color, "auto"))
 	{
 		usecolor = isatty ( 1 );
 	} else if ((strcmp (color, "never")) && (strcmp (color, "no")))
@@ -831,7 +1220,7 @@ int main(int argc, char *argv[])
 
 	if (help)
 	{
-		fprintf (stderr, "Usage:\n%s [--color=auto/never/on] [--help] file.s3m  (%d)\n", argv[0], help);
+		fprintf (stderr, "Usage:\n%s [--color=auto/never/on] [--savesamples -s] [--savepatterns -p] [--help] file.s3m  (%d)\n", argv[0], help);
 		return 1;
 	}
 
@@ -871,6 +1260,7 @@ int main(int argc, char *argv[])
 		FONT_BRIGHT_BLACK  = "\033[30;1m";
 		FONT_BRIGHT_RED    = "\033[31;1m";
 		FONT_BRIGHT_GREEN  = "\033[32;1m";
+		FONT_BRIGHT_YELLOW = "\033[33;1m";
 		FONT_BRIGHT_BLUE   = "\033[34;1m";
 		FONT_BRIGHT_PURPLE = "\033[35;1m";
 		FONT_BRIGHT_CYAN   = "\033[36;1m";
@@ -882,6 +1272,11 @@ int main(int argc, char *argv[])
 	}
 
 failed:
+	if (savepatterns)
+	{
+		fclose (savepatterns);
+	}
+
 	munmap (data, data_mmaped_len);
 	close (fd);
 	return 0;
