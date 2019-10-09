@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2019 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Player device for WAV output
  *
@@ -54,7 +55,7 @@ static int file;
 static unsigned char *diskcache;
 static unsigned long cachelen;
 static unsigned long cachepos;
-static char busy;
+static volatile char busy;
 static unsigned short playrate;
 static unsigned char stereo;
 static unsigned char bit16;
@@ -90,12 +91,14 @@ rewrite:
 	busy=0;
 }
 
-static int getpos(void)
+static int getbufpos(void)
 {
-	if (busy||((cachepos+bufrate)>cachelen))
-		return bufpos;
+	return (buflen + bufpos - (1<<(stereo+bit16))) % buflen;
+}
 
-	return (bufpos+bufrate)%buflen;
+static int getplaypos(void)
+{
+	return bufpos;
 }
 
 static void advance(unsigned int pos)
@@ -108,8 +111,15 @@ static void advance(unsigned int pos)
 		memcpy(diskcache+cachepos+buflen-bufpos, playbuf, pos);
 		cachepos+=(buflen-bufpos)+pos;
 	} else {
-		memcpy(diskcache+cachepos, playbuf+bufpos, pos-bufpos);
-		cachepos+=pos-bufpos;
+		if (pos == bufpos)
+		{
+			memcpy(diskcache+cachepos, playbuf+bufpos, buflen-bufpos);
+			memcpy(diskcache+cachepos+buflen-bufpos, playbuf, pos);
+			cachepos += buflen;
+		} else {
+			memcpy(diskcache+cachepos, playbuf+bufpos, pos-bufpos);
+			cachepos+=pos-bufpos;
+		}
 	}
 
 	if (cachepos>cachelen)
@@ -212,8 +222,8 @@ static int dwPlay(void **buf, unsigned int *len)
 		bufrate=65520;
 	filepos=0;
 
-	plrGetBufPos=getpos;
-	plrGetPlayPos=getpos;
+	plrGetBufPos=getbufpos;
+	plrGetPlayPos=getplaypos;
 	plrAdvanceTo=advance;
 	plrIdle=Flush;
 	plrGetTimer=gettimer;
@@ -329,4 +339,4 @@ static int dwDetect(struct deviceinfo *card)
 struct sounddevice plrDiskWriter={SS_PLAYER, 0, "Disk Writer", dwDetect, dwInit, dwClose, 0};
 
 char *dllinfo = "driver plrDiskWriter;";
-struct linkinfostruct dllextinfo = {.name = "devpdisk", .desc = "OpenCP Player Device: Disk Writer (c) 1994-09 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "devpdisk", .desc = "OpenCP Player Device: Disk Writer (c) 1994-2019 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
