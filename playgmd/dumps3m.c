@@ -1266,7 +1266,7 @@ int main(int argc, char *argv[])
 		FONT_BRIGHT_CYAN   = "\033[36;1m";
 	}
 
-	if (ParseS3M (data, data_mmaped_len))
+	if (ParseS3M (data, st.st_size))
 	{
 		goto failed;
 	}

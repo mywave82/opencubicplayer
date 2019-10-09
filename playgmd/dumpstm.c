@@ -407,7 +407,7 @@ int DumpHeader (unsigned char *mem, int len)
 {
 	int i, j;
 
-	if (len < sizeof (0x30))
+	if (len < 0x30)
 	{
 		fprintf (stderr, "%sERROR: len < sizeof(FileHeader)%s\n", FONT_BRIGHT_RED, FONT_RESET);
 		return 1;
@@ -722,7 +722,7 @@ int main(int argc, char *argv[])
 		FONT_BRIGHT_CYAN   = "\033[36;1m";
 	}
 
-	if (ParseSTM (data, data_mmaped_len))
+	if (ParseSTM (data, st.st_size))
 	{
 		goto failed;
 	}
