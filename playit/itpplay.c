@@ -568,7 +568,7 @@ static int itpOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 		return errFileOpen;
 
 	strncpy(currentmodname, info->name, _MAX_FNAME);
-	strncpy(currentmodext, info->name+ + _MAX_FNAME, _MAX_EXT);
+	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
 	fseek(file, 0, SEEK_END);
 	i=ftell(file);

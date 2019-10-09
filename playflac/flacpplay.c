@@ -494,7 +494,7 @@ static int flacOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, 
 		return -1;
 
 	strncpy(currentmodname, info->name, _MAX_FNAME);
-	strncpy(currentmodext, info->name+ + _MAX_FNAME, _MAX_EXT);
+	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
 	modname=info->modname;
 	composer=info->composer;
