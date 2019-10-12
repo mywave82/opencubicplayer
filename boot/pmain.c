@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2019 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * PMain - main module (loads and inits all startup modules)
  *
@@ -416,10 +417,45 @@ static int init_modules(int argc, char *argv[])
 			free (new_temp);
 		}
 
-
-		if (epoch < 20190815)
+		if (epoch < 20190927)
 		{
-			cfSetProfileInt("version", "epoch", 20190815, 10);
+			fprintf(stderr, "ocp.ini update (0.2.0) adds [filetype 41]\n");
+			cfSetProfileInt("filetype 41", "color", 3, 10);
+			cfSetProfileString("filetype 41", "name", "HVL");
+			cfSetProfileString("filetype 41", "interface", "plOpenCP");
+			cfSetProfileString("filetype 41", "pllink", "playhvl");
+			cfSetProfileString("filetype 41", "player", "hvlPlayer");
+		}
+
+		if (epoch < 20190927)
+		{
+			const char *temp;
+			char *new_temp;
+
+			temp = cfGetProfileString("fileselector", "modextensions", "");
+			new_temp = malloc (strlen (temp) + 9);
+			strcpy (new_temp, temp);
+
+			if (!strstr(temp, " HVL"))
+			{
+				fprintf(stderr, "ocp.ini update (0.2.0) adds HVL to [fileselector] modextensions=....\n");
+				strcat (new_temp, " HVL");
+			}
+
+			if (!strstr(temp, " AHX"))
+			{
+				fprintf(stderr, "ocp.ini update (0.2.0) adds AHX to [fileselector] modextensions=....\n");
+				strcat (new_temp, " AHX");
+			}
+
+
+			cfSetProfileString("fileselector", "modextensions", new_temp);
+			free (new_temp);
+		}
+
+		if (epoch < 20190927)
+		{
+			cfSetProfileInt("version", "epoch", 20190927, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -430,13 +466,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10)!=20190815)
+	if (cfGetProfileInt("version", "epoch", 0, 10)!=20190927)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20190815\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20190927\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20190815\033[0m\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20190927\033[0m\n\n");
 		}
 		sleep(5);
 	}

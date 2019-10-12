@@ -23,7 +23,7 @@ libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o stuff/com
 all: dirs ocp ocp.hlp libocp$(LIB_SUFFIX)
 
 else
-fstypes_so=playgmd/gmdptype.o playgmi/gmiptype.o playit/itpptype.o playogg/oggtype.o $(FSTYPES_SO_MAD) playwav/wavptype.o playxm/xmpptype.o filesel/fstypes.o
+fstypes_so=playgmd/gmdptype.o playgmi/gmiptype.o playhvl/hvlptype.o playit/itpptype.o playogg/oggtype.o $(FSTYPES_SO_MAD) playwav/wavptype.o playxm/xmpptype.o filesel/fstypes.o
 libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o stuff/compat.o stuff/err.o boot/console.o boot/plinkman_end.o
 
 all: dirs ocp ocp.hlp fstypes$(LIB_SUFFIX) libocp$(LIB_SUFFIX)
@@ -91,6 +91,7 @@ endif
 	$(MAKE) -C playflac TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C playgmd TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C playgmi TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C playhvl TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C playit TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C playogg TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C playopl TOPDIR=../$(TOPDIR) install
@@ -121,6 +122,7 @@ uninstall:
 	$(MAKE) -C playflac TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C playgmd TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C playgmi TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C playhvl TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C playit TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C playogg TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C playopl TOPDIR=../$(TOPDIR) uninstall
@@ -153,6 +155,7 @@ dirs:
 	$(MAKE) -C playflac TOPDIR=../$(TOPDIR)
 	$(MAKE) -C playgmd TOPDIR=../$(TOPDIR)
 	$(MAKE) -C playgmi TOPDIR=../$(TOPDIR)
+	$(MAKE) -C playhvl TOPDIR=../$(TOPDIR)
 	$(MAKE) -C playit TOPDIR=../$(TOPDIR)
 	$(MAKE) -C playogg TOPDIR=../$(TOPDIR)
 	$(MAKE) -C playopl TOPDIR=../$(TOPDIR)
@@ -194,6 +197,7 @@ clean:
 	$(MAKE) -C playflac TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C playgmd TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C playgmi TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C playhvl TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C playit TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C playogg TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C playopl TOPDIR=../$(TOPDIR) clean

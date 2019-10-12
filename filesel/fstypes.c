@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2019 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Export _dllinfo for FSTYPES.DLL
  *
@@ -34,6 +35,7 @@ extern struct mdbreadinforegstruct
 	itpReadInfoReg,
 	oggReadInfoReg,
 	gmdReadInfoReg,
+	hvlReadInfoReg,
 	xmpReadInfoReg,
 	gmiReadInfoReg,
 	wavReadInfoReg;
@@ -46,6 +48,7 @@ static void __attribute__((constructor))init(void)
 	mdbRegisterReadInfo(&itpReadInfoReg);
 	mdbRegisterReadInfo(&oggReadInfoReg);
 	mdbRegisterReadInfo(&gmdReadInfoReg);
+	mdbRegisterReadInfo(&hvlReadInfoReg);
 	mdbRegisterReadInfo(&xmpReadInfoReg);
 	mdbRegisterReadInfo(&gmiReadInfoReg);
 	mdbRegisterReadInfo(&wavReadInfoReg);
@@ -59,6 +62,7 @@ static void __attribute__((destructor))done(void)
 	mdbUnregisterReadInfo(&itpReadInfoReg);
 	mdbUnregisterReadInfo(&oggReadInfoReg);
 	mdbUnregisterReadInfo(&gmdReadInfoReg);
+	mdbUnregisterReadInfo(&hvlReadInfoReg);
 	mdbUnregisterReadInfo(&xmpReadInfoReg);
 	mdbUnregisterReadInfo(&gmiReadInfoReg);
 	mdbUnregisterReadInfo(&wavReadInfoReg);
@@ -68,4 +72,4 @@ static void __attribute__((destructor))done(void)
 char *dllinfo = "";
 #endif
 
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "fstypes", .desc = "OpenCP Module Detection (c) 1994-09 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "fstypes", .desc = "OpenCP Module Detection (c) 1994-2019 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
