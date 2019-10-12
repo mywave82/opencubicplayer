@@ -11,7 +11,7 @@ doc/texi/faq.texi
 doc/texi/install.texi
 doc/texi/ocp.texi
 goodies/helpc/ocphhc
-Makefile
+/Makefile
 ocp
 ocp.hlp
 ocp.ini
