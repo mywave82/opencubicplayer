@@ -232,14 +232,21 @@ static void InstSetWin(int xpos, int wid, int ypos, int hgt)
 	plInstStartCol=xpos;
 
 	if (plInstType==1)
+	{
 		if (plInstWidth>=132)
-			plInstLength=(plInsDisplay.height+3)/(/* 4 */plInstWidth/33);
-		else
-			plInstLength=(plInsDisplay.height+1)/(/* 2 */plInstWidth/40);
-	else if (plInstType==2)
+		{
+			int cols = plScrWidth/33;
+			plInstLength = (plInsDisplay.height + cols - 1) / cols;
+		} else {
+			int cols = plScrWidth/40;
+			plInstLength = (plInsDisplay.height + cols - 1) / cols;
+		}
+	} else if (plInstType==2)
+	{
 		plInstLength=plInsDisplay.bigheight;
-	else
+	} else {
 		plInstLength=plInsDisplay.height;
+	}
 }
 
 static int InstGetWin(struct cpitextmodequerystruct *q)
@@ -254,12 +261,15 @@ static int InstGetWin(struct cpitextmodequerystruct *q)
 		case 1:
 			q->hgtmin=2;
 			if (plInstWidth>=132)
-				q->hgtmax=1+(plInsDisplay.height+3)/(/* 4 */plScrWidth/33);
-			else
-				q->hgtmax=1+(plInsDisplay.height+1)/(/* 2 */plScrWidth/40);
-/*
-			q->hgtmax=1+(plInsDisplay.height+1)/2;
-*/
+			{
+				int cols = plScrWidth/33;
+				int lines = (plInsDisplay.height + cols - 1) / cols;
+				q->hgtmax=1+lines;
+			} else {
+				int cols = plScrWidth/40;
+				int lines = (plInsDisplay.height + cols - 1) / cols;
+				q->hgtmax=1+lines;
+			}
 			q->xmode=1;
 			break;
 		case 2:
