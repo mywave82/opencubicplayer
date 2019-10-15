@@ -30,8 +30,6 @@
 #include "player.h"
 #include "stuff/poutput.h"
 
-static uint8_t plInstUsed[256];
-
 static void hvlDisplayIns40(unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
@@ -136,40 +134,11 @@ static void hvlDisplayIns(unsigned short *buf, int len, int n, int plInstMode)
 
 static void hvlMark(void)
 {
-	int i;
-
-	for (i=0; i<ht->ht_InstrumentNr; i++)
-	{
-		if (plInstUsed[i])
-		{
-			plInstUsed[i] = 1;
-		}
-	}
-
-	for (i=0; i < ht->ht_Channels; i++)
-	{
-		if (ht->ht_Voices[i].vc_Instrument)
-		{
-			int j = ht->ht_Voices[i].vc_Instrument - ht->ht_Instruments;
-			if ((j >= 0) && (j <= 255))
-			{
-				if (plSelCh == i)
-				{
-					plInstUsed[j] = 3;
-				} else {
-					if (plInstUsed[j] != 3)
-					{
-						plInstUsed[j] = 2;
-					}
-				}
-			}
-		}
-	}
+	/* moved into hvl_statbuffer_callback_from_hvlbuf */
 }
 
 static void hvlInstClear(void)
 {
-	bzero (plInstUsed, sizeof (plInstUsed));
 }
 
 static void hvlDone(void)

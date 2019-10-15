@@ -20,5 +20,6 @@ extern void            __attribute__ ((visibility ("internal")))  hvlPrevSubSong
 extern void            __attribute__ ((visibility ("internal")))  hvlNextSubSong ();
 extern void            __attribute__ ((visibility ("internal")))  hvlGetStats (int *row, int *rows, int *order, int *orders, int *subsong, int *subsongs, int *tempo, int *speedmult);
 
+__attribute__ ((visibility ("internal"))) uint8_t plInstUsed[256];
 
 #endif

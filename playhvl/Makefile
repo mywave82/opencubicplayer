@@ -31,6 +31,7 @@ hvlptype.o: \
 hvlplay.o: \
 	hvlplay.c \
 	../config.h \
+	../cpiface/cpiface.h \
 	../dev/deviplay.h \
 	../dev/player.h \
 	../types.h \

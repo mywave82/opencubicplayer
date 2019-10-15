@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include "types.h"
 #include "hvlplay.h"
+#include "cpiface/cpiface.h" /* merge in from hvlpinst.c, to compensate for buffer-delay */
 #include "dev/deviplay.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
@@ -42,6 +43,9 @@
 #define MAXIMUM_SLOW_DOWN 32
 #define ROW_BUFFERS 25 /* half a second */
 
+// We merged in the data-scraper for instview
+uint8_t plInstUsed[256];
+
 struct hvl_statbuffer_t
 {
 	uint16_t ht_SongNum;
@@ -50,6 +54,8 @@ struct hvl_statbuffer_t
 	int16_t  ht_Tempo;
 	uint8_t  ht_SpeedMultiplier;
 	/* TODO, we probably want more gut and stuff */
+
+	int16_t  ht_Voice_Instrument[MAX_CHANNELS];
 
 	uint8_t in_use;
 };
@@ -134,12 +140,40 @@ do { \
 static void hvl_statbuffer_callback_from_hvlbuf (void *arg, int samples_ago)
 {
 	struct hvl_statbuffer_t *state = arg;
+	int i;
 
 	last_ht_SongNum         = state->ht_SongNum;
 	last_ht_NoteNr          = state->ht_NoteNr;
 	last_ht_PosNr           = state->ht_PosNr;
 	last_ht_Tempo           = state->ht_Tempo;
 	last_ht_SpeedMultiplier = state->ht_SpeedMultiplier;
+
+	/* This logic would normally be inside hvlMark(), but it would not be time-correct */
+	/* START */
+	for (i=0; i<ht->ht_InstrumentNr; i++)
+	{
+		if (plInstUsed[i])
+		{
+			plInstUsed[i] = 1;
+		}
+	}
+
+	for (i=0; i < ht->ht_Channels; i++)
+	{
+		if ((state->ht_Voice_Instrument[i] >= 0) && (state->ht_Voice_Instrument[i] <= 255))
+		{
+			if (plSelCh == i)
+			{
+				plInstUsed[state->ht_Voice_Instrument[i]] = 3;
+			} else {
+				if (plInstUsed[state->ht_Voice_Instrument[i]] != 3)
+				{
+					plInstUsed[state->ht_Voice_Instrument[i]] = 2;
+				}
+			}
+		}
+	}
+	/* STOP */
 
 	state->in_use = 0;
 	hvl_statbuffers_available++;
@@ -171,6 +205,16 @@ extern void __attribute__ ((visibility ("internal"))) hvlIdler (void)
 		hvl_statbuffer[i].ht_PosNr           = ht->ht_PosNr;  // Order
 		hvl_statbuffer[i].ht_Tempo           = ht->ht_Tempo;
 		hvl_statbuffer[i].ht_SpeedMultiplier = ht->ht_SpeedMultiplier;
+
+		for (j=0; j < ht->ht_Channels; j++)
+		{
+			int ins = -1;
+			if (ht->ht_Voices[j].vc_Instrument)
+			{
+				ins = ht->ht_Voices[j].vc_Instrument - ht->ht_Instruments;
+			}
+			hvl_statbuffer[i].ht_Voice_Instrument[j] = ins;
+		}
 
 		ringbuffer_get_head_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);
 
@@ -216,7 +260,7 @@ extern void __attribute__ ((visibility ("internal"))) hvlIdler (void)
 		{
 			memmove (hvl_buf_16chan, hvl_buf_16chan + (pos1 + length1), MAX_CHANNELS * sizeof(int16_t) * 2 * (hvl_samples_per_row - length1));
 			memmove (hvl_buf_stereo, hvl_buf_stereo + (pos1 + length1),                sizeof(int16_t) * 2 * (hvl_samples_per_row - length1));
-		}	
+		}
 
 		hvl_statbuffer[i].in_use = 1;
 		ringbuffer_add_tail_callback_samples (hvl_buf_pos, 0, hvl_statbuffer_callback_from_hvlbuf, hvl_statbuffer + i);
@@ -736,6 +780,8 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 
 	bzero (hvl_statbuffer, sizeof (hvl_statbuffer));
 	hvl_statbuffers_available = ROW_BUFFERS;
+
+	bzero (plInstUsed, sizeof (plInstUsed));
 
 	if (!pollInit(hvlIdle))
 	{
