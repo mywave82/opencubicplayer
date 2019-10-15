@@ -36,6 +36,7 @@
 #include "stuff/err.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
+#include "hvlpinst.h"
 #include "hvlplay.h"
 #include "player.h"
 
@@ -63,7 +64,6 @@ static const char finepitch=8;
 
 static char currentmodname[_MAX_FNAME+1];
 static char currentmodext[_MAX_EXT+1];
-static struct hvl_tune *current_hvl_tune = 0;
 
 static void startpausefade (void)
 {
@@ -427,7 +427,6 @@ static int hvlIsLooped(void)
 static void hvlCloseFile(void)
 {
 	hvlClosePlayer();
-	current_hvl_tune = 0;
 }
 
 static int hvlOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
@@ -466,8 +465,7 @@ static int hvlOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 		return errGen;	
 	}
 
-	current_hvl_tune = hvlOpenPlayer (filebuf, filelen);
-//	current_hvl_tune = hvl_LoadTune_memory (filebuf, filelen, 1 TODO, 44100 TODO);
+	hvlOpenPlayer (filebuf, filelen);
 	free (filebuf);
 	if (!current_hvl_tune)
 	{
@@ -498,7 +496,9 @@ static int hvlOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 	plUseDots(gmdGetDots);
 	if (mod.message)
 		plUseMessage(mod.message);
-	gmdInstSetup(mod.instruments, mod.instnum, mod.modsamples, mod.modsampnum, mod.samples, mod.sampnum, ((info->modtype==mtS3M)||(info->modtype==mtPTM))?1:((info->modtype==mtDMF)||(info->modtype==mt669))?2:0, gmdMarkInsSamp);
+#endif
+	hvlInstSetup ();
+#if 0
 	gmdChanSetup(&mod);
 	gmdTrkSetup(&mod);
 

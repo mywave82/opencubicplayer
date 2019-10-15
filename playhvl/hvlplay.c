@@ -63,7 +63,7 @@ static uint8_t  last_ht_SpeedMultiplier; /* These are delayed, so should be corr
 static struct hvl_statbuffer_t hvl_statbuffer[ROW_BUFFERS] = {0}; // half a second */
 static int hvl_statbuffers_available = 0;
 
-static struct hvl_tune *ht = 0;
+struct hvl_tune *ht = 0;
 static int hvl_samples_per_row;
 
 static int16_t *hvl_buf_stereo;

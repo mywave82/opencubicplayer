@@ -3,6 +3,8 @@
 
 struct hvl_tune;
 
+#define current_hvl_tune ht
+       struct hvl_tune __attribute__ ((visibility ("internal"))) *current_hvl_tune;
 extern struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const uint8_t *mem, size_t memlen);
 extern void            __attribute__ ((visibility ("internal")))  hvlClosePlayer (void);
 extern void            __attribute__ ((visibility ("internal")))  hvlIdle (void);
