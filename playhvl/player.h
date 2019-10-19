@@ -91,7 +91,7 @@ struct hvl_step
 	uint8_t stp_FXbParam;
 };
 
- struct hvl_voice
+struct hvl_voice
 {
 	int16_t                vc_Track;
 	int16_t                vc_NextTrack;

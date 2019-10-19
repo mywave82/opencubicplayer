@@ -84,6 +84,8 @@ static void hvl_reset_some_stuff( struct hvl_tune *ht )
 
 	for ( i=0; i<MAX_CHANNELS; i++ )
 	{
+		ht->ht_Voices[i].vc_Instrument = 0;
+
 		ht->ht_Voices[i].vc_SamplePos = 0;
 		ht->ht_Voices[i].vc_Track = 0;
 		ht->ht_Voices[i].vc_Transpose = 0;
@@ -1072,7 +1074,7 @@ static void hvl_process_frame ( struct hvl_tune *ht, struct hvl_voice *voice )
 		}
 	}
 
-	if ( voice->vc_Waveform == 3-1 && voice->vc_SquareOn )
+	if ( voice->vc_Waveform == 3-1 && voice->vc_SquareOn ) /* SQUARE */
 	{
 		if ( --voice->vc_SquareWait <= 0 )
 		{
@@ -1173,7 +1175,7 @@ static void hvl_process_frame ( struct hvl_tune *ht, struct hvl_voice *voice )
 		}
 	}
 
-	if ( voice->vc_Waveform == 3-1 || voice->vc_PlantSquare )
+	if ( voice->vc_Waveform == 3-1 || voice->vc_PlantSquare ) /* SQUARE */
 	{
 		// CalcSquare
 		uint32_t  i;
@@ -1206,11 +1208,11 @@ static void hvl_process_frame ( struct hvl_tune *ht, struct hvl_voice *voice )
 		}
 
 		voice->vc_NewWaveform = 1;
-		voice->vc_Waveform    = 3-1;
+		voice->vc_Waveform    = 3-1; /* SQUARE */
 		voice->vc_PlantSquare = 0;
 	}
 
-	if ( voice->vc_Waveform == 4-1 )
+	if ( voice->vc_Waveform == 4-1 ) /* WHITENOISE */
 	{
 		voice->vc_NewWaveform = 1;
 	}
@@ -1224,7 +1226,7 @@ static void hvl_process_frame ( struct hvl_tune *ht, struct hvl_voice *voice )
 			voice->vc_RingWaveform = 1;
 		}
 
-		rasrc = ht->ht_WaveformTab[voice->vc_RingWaveform];
+		rasrc = ht->ht_WaveformTab[voice->vc_RingWaveform]; /* RingWaveform is either TRIANGLE or SAWTOOTH */
 		rasrc += Offsets[voice->vc_WaveLength];
 
 		voice->vc_RingAudioSource = rasrc;
@@ -1236,18 +1238,18 @@ static void hvl_process_frame ( struct hvl_tune *ht, struct hvl_voice *voice )
 
 		AudioSource = ht->ht_WaveformTab[voice->vc_Waveform];
 
-		if ( voice->vc_Waveform != 3-1 )
+		if ( voice->vc_Waveform != 3-1 ) /* SQUARE_WAVEFORM */
 		{
 			AudioSource += (voice->vc_FilterPos-0x20)*(0xfc+0xfc+0x80*0x1f+0x80+0x280*3);
 		}
 
-		if ( voice->vc_Waveform < 3-1)
+		if ( voice->vc_Waveform < 3-1) /* TRIANGLE or SAWTOOTH */
 		{
 			// GetWLWaveformlor2
 			AudioSource += Offsets[voice->vc_WaveLength];
 		}
 
-		if ( voice->vc_Waveform == 4-1 )
+		if ( voice->vc_Waveform == 4-1 ) /* WHITENOISE */
 		{
 			// AddRandomMoving
 			AudioSource += ( voice->vc_WNRandom & (2*0x280-1) ) & ~1;
@@ -1386,7 +1388,7 @@ static void hvl_set_audio ( struct hvl_voice *voice, double freqf )
 
 		src = voice->vc_AudioSource;
 
-		if ( voice->vc_Waveform == 4-1 )
+		if ( voice->vc_Waveform == 4-1 ) /* WHITENOISE */
 		{
 			memcpy ( &voice->vc_VoiceBuffer[0], src, 0x280 );
 		} else {
