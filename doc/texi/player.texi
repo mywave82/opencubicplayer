@@ -533,39 +533,13 @@ rather limited and midi files were no big deal back then.
 
 Things changed when so called wavetable cards became popular. Those card have
 sample data stored onboard in a ROM plus a hardware mixer capable of mixing
-several midi channels. The MPU-401 interface from Roland is the de facto
-standard for accessing those cards, but this feature is not supported by OCP
-yet.@footnote{however this might change in the near future} A disadvantage is
-that those wavetable cards only have a very limited memory for sample data
-typically 4MB. If you imagine 127 instruments and 64 drums fitting into just
-4MB you can guess what sound quality these cards have. Modern cards have normally
-much more onboard ROM/RAM, but in our opinion even 32MB are far too less for a
-good sound quality.
+several midi channels.
 
-OCP goes a different way. Instead of using the onboard ROM samples, the samples
-needed for a specific @file{.MID} file are loaded on demand from the harddisk
-into main memory and then processed by either the hardware mixer (if you have
-such a card and the samples fit into its memory) or by the software mixers.
-This has the advantage that you can easily change a single instrument, if you
-don't like the default sound.
-
-The instruments are stored in so called @emph{GUS-patches}, a file format
-introduced by Gravis with their UltraSound cards. At first you have to get a
-complete patch set. If you own a GUS classic or GUS max you will probably have
-those files already on your harddisk. All instruments are stored in files ending with
-@file{.PAT}.
-
-The original GUS patches are found on Advanced Gravis ftp server:
-@uref{ftp://ftp.gravis.com/Public/Sound/Patches}
-
-However I recommend looking at the following patch set:
-@uref{http://www.stardate.bc.ca/eawpatches/html/default.htm}
-
-If you unpack any of those archives to a folder on your harddrive, you have to adjust the path in the @file{ocp.ini} file. The configuratoin directive
-@example
-ultradir=/usr/share/ultradir  ; path to ULTRASND.INI
-@end example
-should be set to the folder where you extracted the patch files. Please check that a file called @file{ULTRASND.INI} is located in this folder, as OCP needs this file, to load the patch files.
+OCP uses a fork of Timidity that uses this approach, using what is called a
+sound font. So for MIDI to work, this needs to be installed. The most easy
+method is probably to make sure that Timidity installed in the operating
+system, since this usually includes installing atleast a sound font, and to
+configure the needed configuration files.
 
 @subsection Mixer
 If your computer is too slow to play with proper speed remember that the new

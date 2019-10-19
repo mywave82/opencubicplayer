@@ -631,7 +631,6 @@ HAVE_MAKEINFO
 DUMA_LIBS
 EFENCE_LIBS
 FREEPATS
-ULTRADIR
 DATAROOTDIR
 DATADIR
 SYSCONFDIR
@@ -811,7 +810,6 @@ with_sdl_prefix
 with_sdl_exec_prefix
 enable_sdltest
 enable_sdlframework
-with_ultradir
 with_freepats
 with_efence
 with_duma
@@ -1489,7 +1487,6 @@ Optional Packages:
   --without-ncursesw      do not use NcursesW (wide character support)
   --with-sdl-prefix=PFX   Prefix where SDL is installed (optional)
   --with-sdl-exec-prefix=PFX Exec prefix where SDL is installed (optional)
-  --with-ultradir=        default ultradir path to put into ocp.ini
   --with-freepats=        default path for freepats to put into ocp.ini
   --with-efence           Enable usage of efence
   --with-duma             Enable usage of duma
@@ -10099,32 +10096,6 @@ cat >>confdefs.h <<_ACEOF
 #define PREFIX "$PREFIX"
 _ACEOF
 
-
-
-
-# Check whether --with-ultradir was given.
-if test "${with_ultradir+set}" = set; then :
-  withval=$with_ultradir; true
-else
-  with_ultradir="\${datadir}/ocp${DIR_SUFFIX}/ultradir"
-fi
-
-
-  EXP_VAR=ULTRADIR
-  FROM_VAR=$with_ultradir
-  prefix_save=$prefix
-  exec_prefix_save=$exec_prefix
-  full_var="$FROM_VAR"
-  while true; do
-    new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"; then break; fi
-    full_var=$new_full_var
-  done
-  full_var=$new_full_var
-  ULTRADIR="$full_var"
-
-  prefix=$prefix_save
-  exec_prefix=$exec_prefix_save
 
 
 

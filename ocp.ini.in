@@ -105,9 +105,7 @@ link=medialib
 
 
 [midi]
-;  use=....  to force which option to use [ultradir fff freepats timidity]
   fff=c:\iw\gsfull4m.fff
-  ultradir=@ULTRADIR@
   freepats=@FREEPATS@
 
 ;device configuration:
