@@ -103,10 +103,6 @@ link=medialib
   loop=off
   path=.
 
-
-[midi]
-  freepats=@FREEPATS@
-
 ;device configuration:
 ;[handle]
 ;  link=...                                     (internal) link drivers

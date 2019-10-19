@@ -814,10 +814,6 @@ AS_AC_EXPAND(DATAROOTDIR, $datarootdir)
 AC_DEFINE_UNQUOTED(DATADIR, "$DATADIR")
 AC_DEFINE_UNQUOTED(PREFIX, "$PREFIX")
 
-
-AC_ARG_WITH(freepats, [  --with-freepats=        default path for freepats to put into ocp.ini], true, with_freepats="\${datadir}/freepats")
-AS_AC_EXPAND(FREEPATS, $with_freepats)
-
 AC_ARG_WITH(efence, [  --with-efence           Enable usage of efence],
 EFENCE_LIBS="-lefence"
 AC_DEFINE(HAVE_EFENCE, 1)

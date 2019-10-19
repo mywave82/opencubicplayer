@@ -630,7 +630,6 @@ HAVE_LZW
 HAVE_MAKEINFO
 DUMA_LIBS
 EFENCE_LIBS
-FREEPATS
 DATAROOTDIR
 DATADIR
 SYSCONFDIR
@@ -810,7 +809,6 @@ with_sdl_prefix
 with_sdl_exec_prefix
 enable_sdltest
 enable_sdlframework
-with_freepats
 with_efence
 with_duma
 with_libiconv
@@ -1487,7 +1485,6 @@ Optional Packages:
   --without-ncursesw      do not use NcursesW (wide character support)
   --with-sdl-prefix=PFX   Prefix where SDL is installed (optional)
   --with-sdl-exec-prefix=PFX Exec prefix where SDL is installed (optional)
-  --with-freepats=        default path for freepats to put into ocp.ini
   --with-efence           Enable usage of efence
   --with-duma             Enable usage of duma
   --with-libiconv=        [auto/no/gnu/native] what kind of libiconv library
@@ -10095,33 +10092,6 @@ _ACEOF
 cat >>confdefs.h <<_ACEOF
 #define PREFIX "$PREFIX"
 _ACEOF
-
-
-
-
-# Check whether --with-freepats was given.
-if test "${with_freepats+set}" = set; then :
-  withval=$with_freepats; true
-else
-  with_freepats="\${datadir}/freepats"
-fi
-
-
-  EXP_VAR=FREEPATS
-  FROM_VAR=$with_freepats
-  prefix_save=$prefix
-  exec_prefix_save=$exec_prefix
-  full_var="$FROM_VAR"
-  while true; do
-    new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"; then break; fi
-    full_var=$new_full_var
-  done
-  full_var=$new_full_var
-  FREEPATS="$full_var"
-
-  prefix=$prefix_save
-  exec_prefix=$exec_prefix_save
 
 
 
