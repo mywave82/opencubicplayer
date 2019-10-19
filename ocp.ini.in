@@ -105,7 +105,6 @@ link=medialib
 
 
 [midi]
-  fff=c:\iw\gsfull4m.fff
   freepats=@FREEPATS@
 
 ;device configuration:
