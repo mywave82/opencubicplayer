@@ -453,9 +453,38 @@ static int init_modules(int argc, char *argv[])
 			free (new_temp);
 		}
 
-		if (epoch < 20190927)
+		if (epoch < 20191019)
 		{
-			cfSetProfileInt("version", "epoch", 20190927, 10);
+			const char *temp;
+			char *new_temp, *temp2;
+
+			temp = cfGetProfileString("fileselector", "modextensions", "");
+			new_temp = strdup (temp);
+
+			temp2 = strstr (new_temp, " OGA");
+			if (temp2)
+			{
+				temp2 = strstr(temp2, " OGA");
+				printf("ocp.ini update (0.2.0) removed double OGA entry in [fileselector] modextensions=....\n");
+				memmove (temp2, temp2 + 4, strlen (temp2) - 3);
+			}
+
+			temp2 = strstr (new_temp, " OGG");
+			if (temp2)
+			{
+				temp2 = strstr(temp2, " OGG");
+				printf("ocp.ini update (0.2.0) removed double OGG entry in [fileselector] modextensions=....\n");
+				memmove (temp2, temp2 + 4, strlen (temp2) - 3);
+			}
+
+			cfSetProfileString("fileselector", "modextensions", new_temp);
+			free (new_temp);
+		}
+
+
+		if (epoch < 20191019)
+		{
+			cfSetProfileInt("version", "epoch", 20191019, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -466,13 +495,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10)!=20190927)
+	if (cfGetProfileInt("version", "epoch", 0, 10)!=20191019)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20190927\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20191019\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20190927\033[0m\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20191019\n\n");
 		}
 		sleep(5);
 	}
