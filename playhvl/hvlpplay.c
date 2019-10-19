@@ -36,6 +36,7 @@
 #include "stuff/err.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
+#include "hvlpchan.h"
 #include "hvlpinst.h"
 #include "hvlplay.h"
 #include "player.h"
@@ -296,6 +297,7 @@ static int hvlProcessKey(uint16_t key)
 			}
 			plPause=!plPause;
 			hvlPause(plPause);
+			plChanChanged=1; /* ? */
 			break;
 /*
 		case 0x7700: //ctrl-home TODO keys
@@ -485,12 +487,15 @@ static int hvlOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 #if 0
 	if (plCompoMode)
 		mpRemoveText(&mod);
-	plNLChan=mod.channum;
+#endif
+	plNLChan=ht->ht_Channels;
+#if 0
 	modname=mod.name;
 	composer=mod.composer;
 	plPanType=!!(mod.options&MOD_MODPAN);
-
-	plIdle=gmdIdle;
+#endif
+	plIdle=hvlIdle;
+#if 0
 	plSetMute=mpMute;
 	plGetLChanSample=mpGetChanSample;
 	plUseDots(gmdGetDots);
@@ -498,8 +503,8 @@ static int hvlOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 		plUseMessage(mod.message);
 #endif
 	hvlInstSetup ();
+	hvlChanSetup ();
 #if 0
-	gmdChanSetup(&mod);
 	gmdTrkSetup(&mod);
 
 	if (!plCompoMode)
@@ -513,7 +518,6 @@ static int hvlOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 
 	if (!mpPlayModule(&mod))
 		retval=errPlay;
-	plNPChan=mcpNChan;
 
 	plGetPChanSample=mcpGetChanSample;
 #endif

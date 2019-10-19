@@ -55,7 +55,7 @@ struct hvl_statbuffer_t
 	uint8_t  ht_SpeedMultiplier;
 	/* TODO, we probably want more gut and stuff */
 
-	int16_t  ht_Voice_Instrument[MAX_CHANNELS];
+	struct hvl_chaninfo ChanInfo[MAX_CHANNELS];
 
 	uint8_t in_use;
 };
@@ -68,6 +68,8 @@ static uint8_t  last_ht_SpeedMultiplier; /* These are delayed, so should be corr
 
 static struct hvl_statbuffer_t hvl_statbuffer[ROW_BUFFERS] = {0}; // half a second */
 static int hvl_statbuffers_available = 0;
+
+struct hvl_chaninfo ChanInfo[MAX_CHANNELS];
 
 struct hvl_tune *ht = 0;
 static int hvl_samples_per_row;
@@ -137,6 +139,44 @@ do { \
 	} \
 } while(0)
 
+void hvlGetChanInfo (int chan, struct hvl_chaninfo *ci)
+{
+	memcpy (ci, ChanInfo + chan, sizeof (*ci));
+}
+
+void hvlGetChanVolume (int chan, int *l, int *r)
+{
+	int16_t *src;
+	int pos1, pos2;
+	int length1, length2;
+	int samples;
+
+	*l = 0;
+	*r = 0;
+
+	ringbuffer_get_tail_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);
+
+	src = hvl_buf_16chan + MAX_CHANNELS * 2 * pos1;
+
+	for (samples = 0; samples < 256; samples++)
+	{
+		if (!length1)
+		{
+			length1 = length2;
+			length2 = 0;
+			src = hvl_buf_16chan + MAX_CHANNELS * 2 * pos2;
+		}
+		if (!length1)
+		{
+			return;
+		}
+		length1--;
+		*l += abs (src[chan*2+0]);
+		*r += abs (src[chan*2+1]);
+		src += 2 * MAX_CHANNELS;
+	}
+}
+
 static void hvl_statbuffer_callback_from_hvlbuf (void *arg, int samples_ago)
 {
 	struct hvl_statbuffer_t *state = arg;
@@ -160,20 +200,22 @@ static void hvl_statbuffer_callback_from_hvlbuf (void *arg, int samples_ago)
 
 	for (i=0; i < ht->ht_Channels; i++)
 	{
-		if ((state->ht_Voice_Instrument[i] >= 0) && (state->ht_Voice_Instrument[i] <= 255))
+		if ((state->ChanInfo[i].ins >= 0) && (state->ChanInfo[i].ins <= 255))
 		{
 			if (plSelCh == i)
 			{
-				plInstUsed[state->ht_Voice_Instrument[i]] = 3;
+				plInstUsed[state->ChanInfo[i].ins] = 3;
 			} else {
-				if (plInstUsed[state->ht_Voice_Instrument[i]] != 3)
+				if (plInstUsed[state->ChanInfo[i].ins] != 3)
 				{
-					plInstUsed[state->ht_Voice_Instrument[i]] = 2;
+					plInstUsed[state->ChanInfo[i].ins] = 2;
 				}
 			}
 		}
 	}
 	/* STOP */
+
+	memcpy (ChanInfo, state->ChanInfo, sizeof (ChanInfo));
 
 	state->in_use = 0;
 	hvl_statbuffers_available++;
@@ -208,12 +250,43 @@ extern void __attribute__ ((visibility ("internal"))) hvlIdler (void)
 
 		for (j=0; j < ht->ht_Channels; j++)
 		{
-			int ins = -1;
+			struct hvl_voice *voice = ht->ht_Voices + j;
+			struct hvl_step *Step = ht->ht_Tracks[ht->ht_Positions[ht->ht_PosNr].pos_Track[voice->vc_VoiceNum]] + ht->ht_NoteNr;
 			if (ht->ht_Voices[j].vc_Instrument)
 			{
-				ins = ht->ht_Voices[j].vc_Instrument - ht->ht_Instruments;
+				if (voice->vc_Instrument->ins_Name[0])
+				{
+					hvl_statbuffer[i].ChanInfo[j].name = voice->vc_Instrument->ins_Name;
+				} else {
+					hvl_statbuffer[i].ChanInfo[j].name = 0;
+				}
+				hvl_statbuffer[i].ChanInfo[j].ins       = voice->vc_Instrument - ht->ht_Instruments;
+				hvl_statbuffer[i].ChanInfo[j].pfx       = voice->vc_PerfList->pls_Entries[voice->vc_PerfCurrent].ple_FX[0];
+				hvl_statbuffer[i].ChanInfo[j].pfxparam  = voice->vc_PerfList->pls_Entries[voice->vc_PerfCurrent].ple_FXParam[0];
+				hvl_statbuffer[i].ChanInfo[j].pfxB      = voice->vc_PerfList->pls_Entries[voice->vc_PerfCurrent].ple_FX[1];
+				hvl_statbuffer[i].ChanInfo[j].pfxBparam = voice->vc_PerfList->pls_Entries[voice->vc_PerfCurrent].ple_FXParam[1];
+			} else {
+				hvl_statbuffer[i].ChanInfo[j].name      = 0;
+				hvl_statbuffer[i].ChanInfo[j].ins       = -1;
+				hvl_statbuffer[i].ChanInfo[j].pfx       = 0;
+				hvl_statbuffer[i].ChanInfo[j].pfxparam  = 0;
+				hvl_statbuffer[i].ChanInfo[j].pfxB      = 0;
+				hvl_statbuffer[i].ChanInfo[j].pfxBparam = 0;
 			}
-			hvl_statbuffer[i].ht_Voice_Instrument[j] = ins;
+
+			hvl_statbuffer[i].ChanInfo[j].vol        = voice->vc_NoteMaxVolume;
+			hvl_statbuffer[i].ChanInfo[j].notehit    = Step->stp_Note;
+			hvl_statbuffer[i].ChanInfo[j].note       = 24 + (voice->vc_TrackPeriod & 0x0f) + ((voice->vc_TrackPeriod & 0xf0) / 16) * 10;
+			hvl_statbuffer[i].ChanInfo[j].pan        = voice->vc_Pan;
+
+			hvl_statbuffer[i].ChanInfo[j].pitchslide = voice->vc_PeriodSlidePeriod?3:((voice->vc_PeriodSlideSpeed>0)?1:((voice->vc_PeriodSlideSpeed<0)?2:0));
+			hvl_statbuffer[i].ChanInfo[j].waveform   = voice->vc_Waveform;
+
+			hvl_statbuffer[i].ChanInfo[j].volslide   = (voice->vc_VolumeSlideUp?1:0) | (voice->vc_VolumeSlideDown?2:0);
+			hvl_statbuffer[i].ChanInfo[j].fx         = Step->stp_FX;
+			hvl_statbuffer[i].ChanInfo[j].fxparam    = Step->stp_FXParam;
+			hvl_statbuffer[i].ChanInfo[j].fxB        = Step->stp_FXb;
+			hvl_statbuffer[i].ChanInfo[j].fxBparam   = Step->stp_FXbParam;
 		}
 
 		ringbuffer_get_head_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);

@@ -20,6 +20,33 @@ extern void            __attribute__ ((visibility ("internal")))  hvlPrevSubSong
 extern void            __attribute__ ((visibility ("internal")))  hvlNextSubSong ();
 extern void            __attribute__ ((visibility ("internal")))  hvlGetStats (int *row, int *rows, int *order, int *orders, int *subsong, int *subsongs, int *tempo, int *speedmult);
 
+/* This is for hvlpinst.c */
 __attribute__ ((visibility ("internal"))) uint8_t plInstUsed[256];
+
+
+/* This is for hvlpchan.c */
+struct hvl_chaninfo
+{
+	const char *name; /* should only be set if name is non-zero-length */
+	uint8_t vol;
+	uint8_t notehit; /* none-zero if note is fresh */
+	uint8_t note; /* need to match syntax with plNoteStr[] */
+	uint8_t pan;
+	uint8_t pitchslide;
+	uint8_t volslide;
+	int16_t ins;
+	uint8_t fx,   fxparam; /* effect for given row */
+	uint8_t fxB,  fxBparam; /* effect B for given row (HVL files only) */
+	uint8_t pfx,  pfxparam; /* current effect for instrument internal playlist */
+	uint8_t pfxB, pfxBparam; /* current effect B for instrument internal playlist (HVL files only) */
+	uint8_t waveform; /* 0-3 */
+	uint8_t filter;   /* 0x00 - 0x3f */
+
+	int muted; /* force-muted - TODO */
+};
+void hvlGetChanInfo (int chan, struct hvl_chaninfo *ci);
+void hvlGetChanVolume (int chan, int *l, int *r);
+
+
 
 #endif
