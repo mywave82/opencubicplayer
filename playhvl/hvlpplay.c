@@ -485,40 +485,17 @@ static int hvlOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 	plPause=0;
 	normalize();
 	pausefadedirect=0;
-#if 0
-	if (plCompoMode)
-		mpRemoveText(&mod);
-#endif
 	plNLChan=ht->ht_Channels;
-#if 0
-	modname=mod.name;
-	composer=mod.composer;
-	plPanType=!!(mod.options&MOD_MODPAN);
-#endif
 	plIdle=hvlIdle;
 #if 0
 	plSetMute=mpMute;
 	plGetLChanSample=mpGetChanSample;
 	plUseDots(gmdGetDots);
-	if (mod.message)
-		plUseMessage(mod.message);
 #endif
 	hvlInstSetup ();
 	hvlChanSetup ();
 	hvlTrkSetup ();
 #if 0
-	if (!plCompoMode)
-	{
-		if (!*modname)
-			modname=info->modname;
-		if (!*composer)
-			composer=info->composer;
-	} else
-		modname=info->comment;
-
-	if (!mpPlayModule(&mod))
-		retval=errPlay;
-
 	plGetPChanSample=mcpGetChanSample;
 #endif
 	return errOk;
