@@ -486,19 +486,16 @@ static int hvlOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 	plPause=0;
 	normalize();
 	pausefadedirect=0;
+	plNPChan=ht->ht_Channels;
 	plNLChan=ht->ht_Channels;
 	plIdle=hvlIdle;
 	plSetMute=hvlMute;
-#if 0
-	plGetLChanSample=mpGetChanSample;
-#endif
+	plGetPChanSample=hvlGetChanSample;
 	plUseDots(hvlGetDots);
 	hvlInstSetup ();
 	hvlChanSetup ();
 	hvlTrkSetup ();
-#if 0
-	plGetPChanSample=mcpGetChanSample;
-#endif
+
 	return errOk;
 }
 

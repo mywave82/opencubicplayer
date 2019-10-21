@@ -1007,6 +1007,55 @@ void __attribute__ ((visibility ("internal")))  hvlMute (int ch, int m)
 	hvl_muted[ch] = m;
 }
 
+int __attribute__ ((visibility ("internal"))) hvlGetChanSample(unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt)
+{
+	int stereo = (opt&cpiGetSampleStereo)?1:0;
+	uint32_t step = imuldiv(0x00010000, plrRate, (signed)rate);
+	int16_t *src;
+	int pos1, pos2;
+	int length1, length2;
+	uint32_t posf = 0;
+
+	ringbuffer_get_tail_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);
+
+	src = hvl_buf_16chan + MAX_CHANNELS * 2 * pos1;
+
+	while (len)
+	{
+		if (stereo)
+		{
+			*(s++) = src[ch*2+0];
+			*(s++) = src[ch*2+1];
+		} else {
+			*(s++) = src[ch*2+0] + src[ch*2+1];
+		}
+		len--;
+
+		posf += step;
+
+		while (posf >= 0x00010000)
+		{
+			posf -= 0x00010000;
+
+			src += 2 * MAX_CHANNELS;
+			length1--;
+
+			if (!length1)
+			{
+				length1 = length2;
+				length2 = 0;
+				src = hvl_buf_16chan + MAX_CHANNELS * 2 * pos2;
+			}
+			if (!length1)
+			{
+				memsetd(s, 0, len<<stereo);
+				return !!hvl_muted[ch];
+			}
+		}
+	}
+	return !!hvl_muted[ch];
+}
+
 void __attribute__ ((visibility ("internal"))) hvlGetStats (int *row, int *rows, int *order, int *orders, int *subsong, int *subsongs, int *tempo, int *speedmult)
 {
 	*row       = last_ht_NoteNr;
@@ -1017,6 +1066,4 @@ void __attribute__ ((visibility ("internal"))) hvlGetStats (int *row, int *rows,
 	*subsongs  = ht->ht_SubsongNr;
 	*tempo     = last_ht_Tempo;
 	*speedmult = last_ht_SpeedMultiplier;
-
 }
-
