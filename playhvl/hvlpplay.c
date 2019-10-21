@@ -1,7 +1,7 @@
 /* OpenCP Module Player
  * copyright (c) 2019 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
- * HVLPlayer interface routines
+ * HVLPlay interface routines
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@
 #include "hvlpchan.h"
 #include "hvlpinst.h"
 #include "hvlplay.h"
+#include "hvlptrak.h"
 #include "player.h"
 
 #define _MAX_FNAME 8
@@ -504,9 +505,8 @@ static int hvlOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 #endif
 	hvlInstSetup ();
 	hvlChanSetup ();
+	hvlTrkSetup ();
 #if 0
-	gmdTrkSetup(&mod);
-
 	if (!plCompoMode)
 	{
 		if (!*modname)
