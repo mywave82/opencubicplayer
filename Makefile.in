@@ -63,7 +63,6 @@ endif
 ifeq ($(HAVE_X11),1)
 	$(CP) ocp-x11 "$(DESTDIR)$(BINDIR)/ocp-x11"
 endif
-	$(CP) ultrafix.sh "$(DESTDIR)$(BINDIR)/ultrafix.sh"
 	mkdir -p "$(DESTDIR)$(ULTRADIR)"
 	$(MAKE) -C doc DESTDIR="$(DESTDIR)" install TOPDIR="../$(TOPDIR)"
 

@@ -99,7 +99,6 @@ rm -rf %{buildroot}
 %{_prefix}/bin/ocp-sdl
 %{_prefix}/bin/ocp-vcsa
 %{_prefix}/bin/ocp-x11
-%{_prefix}/bin/ultrafix.sh
 %{_infodir}/ocp.info.gz
 %{_prefix}/share/icons/hicolor/16x16/apps/opencubicplayer.xpm
 %{_prefix}/share/icons/hicolor/48x48/apps/opencubicplayer.xpm
