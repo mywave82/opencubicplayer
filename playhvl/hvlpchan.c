@@ -1,7 +1,7 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2019 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
- * GMDPlay channel display routines
+ * HVLPlay channel display routines
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,10 +16,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * revision history: (please note changes here)
- *  -nb980510   Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- *    -first release
  */
 
 #include "config.h"
@@ -29,8 +25,6 @@
 #include "cpiface/cpiface.h"
 #include "dev/mix.h"
 #include "stuff/poutput.h"
-
-/* extern char plNoteStr[132][4];    now defined in cpiface.h as it should be*/
 
 static int logvolbar(int l, int r)
 {
@@ -148,10 +142,15 @@ static char *getfxstr6(unsigned char fx, unsigned char fxparam)
 		case 0xc:
 			if (fxparam < 0x40)
 			{
-				return "volcha";
-			} else {
+				return "volins";
+			} else if ((fxparam >= 0x50) && (fxparam < 0x90))
+			{
 				return "volall";
+			} else if ((fxparam >= 0xA0) && (fxparam < 0xE0))
+			{
+				return "volch ";
 			}
+			return 0;
 		case 0xe:
 		{
 			switch (fxparam & 0xf0)
@@ -443,8 +442,8 @@ static void drawchannel62(unsigned short *buf, int i)
 			{
 				writestring(buf,  1, tcol, ci.name, 21);
 			} else {
-				writestring(buf,  1, 0x08, "(   )", 5);
-				writenum(buf,  2, 0x08, ci.ins + 1, 16, 3, 0);
+				writestring(buf,  1, 0x08, "(  )", 4);
+				writenum(buf,  2, 0x08, ci.ins + 1, 16, 2, 0);
 			}
 		}
 		writestring(buf, 24, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
@@ -486,8 +485,8 @@ static void drawchannel76(unsigned short *buf, int i)
 			{
 				writestring(buf,  1, tcol, ci.name, 28);
 			} else {
-				writestring(buf,  1, 0x08, "(   )", 5);
-				writenum(buf,  2, 0x08, ci.ins + 1, 16, 3, 0);
+				writestring(buf,  1, 0x08, "(  )", 4);
+				writenum(buf,  2, 0x08, ci.ins + 1, 16, 2, 0);
 			}
 		}
 		writestring(buf, 30, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
@@ -532,8 +531,8 @@ static void drawchannel128(unsigned short *buf, int i)
 			{
 				writestring(buf,  1, tcol, ci.name, 37);
 			} else {
-				writestring(buf,  1, 0x08, "(   )", 5);
-				writenum(buf,  2, 0x08, ci.ins + 1, 16, 3, 0);
+				writestring(buf,  1, 0x08, "(  )", 4);
+				writenum(buf,  2, 0x08, ci.ins + 1, 16, 2, 0);
 			}
 		}
 		writestring(buf, 39, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
