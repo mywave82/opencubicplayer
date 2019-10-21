@@ -578,8 +578,8 @@ static int cpiChanProcessKey(uint16_t key)
 			cpiKeyHelp('8', "Select and toggle channel 8 on/off");
 			cpiKeyHelp('9', "Select and toggle channel 9 on/off");
 			cpiKeyHelp('0', "Select and toggle channel 10 on/off");
-			cpiKeyHelp('Q', "Toggle selected channel 10 on/off");
-			cpiKeyHelp('q', "Toggle selected channel 10 on/off");
+			cpiKeyHelp('Q', "Toggle selected channel on/off");
+			cpiKeyHelp('q', "Toggle selected channel on/off");
 			cpiKeyHelp('s', "Toggle solo on selected channel on/off");
 			cpiKeyHelp('S', "Toggle solo on selected channel on/off");
 			cpiKeyHelp(KEY_CTRL_S, "Enable all channels");
