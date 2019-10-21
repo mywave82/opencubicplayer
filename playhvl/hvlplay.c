@@ -110,6 +110,8 @@ static unsigned long voll,volr;
 static int pan;
 static int srnd;
 
+static uint8_t hvl_muted[MAX_CHANNELS];
+
 #define PANPROC \
 do { \
 	float _rs = rs, _ls = ls; \
@@ -142,6 +144,7 @@ do { \
 void hvlGetChanInfo (int chan, struct hvl_chaninfo *ci)
 {
 	memcpy (ci, ChanInfo + chan, sizeof (*ci));
+	ci->muted = hvl_muted[chan];
 }
 
 void hvlGetChanVolume (int chan, int *l, int *r)
@@ -319,8 +322,13 @@ extern void __attribute__ ((visibility ("internal"))) hvlIdler (void)
 			int32_t right = 0;
 			for (k = 0; k < MAX_CHANNELS; k++)
 			{
-				left  += *(src++);
-				right += *(src++);
+				if (!hvl_muted[k])
+				{
+					left  += *(src++);
+					right += *(src++);
+				} else {
+					src+=2;
+				}
 			}
 			if (left  > INT16_MAX) left  = INT16_MAX;
 			if (left  < INT16_MIN) left  = INT16_MIN;
@@ -851,6 +859,8 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 		goto error_out;
 	}
 
+	bzero (hvl_muted, sizeof (hvl_muted));
+
 	bzero (hvl_statbuffer, sizeof (hvl_statbuffer));
 	hvl_statbuffers_available = ROW_BUFFERS;
 
@@ -989,6 +999,11 @@ void __attribute__ ((visibility ("internal"))) hvlNextSubSong ()
 		ht->ht_SongNum++;
 	}
 	hvl_InitSubsong (ht, ht->ht_SongNum);
+}
+
+void __attribute__ ((visibility ("internal")))  hvlMute (int ch, int m)
+{
+	hvl_muted[ch] = m;
 }
 
 void __attribute__ ((visibility ("internal"))) hvlGetStats (int *row, int *rows, int *order, int *orders, int *subsong, int *subsongs, int *tempo, int *speedmult)

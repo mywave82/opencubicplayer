@@ -487,8 +487,8 @@ static int hvlOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 	pausefadedirect=0;
 	plNLChan=ht->ht_Channels;
 	plIdle=hvlIdle;
+	plSetMute=hvlMute;
 #if 0
-	plSetMute=mpMute;
 	plGetLChanSample=mpGetChanSample;
 	plUseDots(gmdGetDots);
 #endif

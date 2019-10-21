@@ -19,6 +19,7 @@ extern void            __attribute__ ((visibility ("internal")))  hvlSetVolume (
 extern void            __attribute__ ((visibility ("internal")))  hvlPrevSubSong ();
 extern void            __attribute__ ((visibility ("internal")))  hvlNextSubSong ();
 extern void            __attribute__ ((visibility ("internal")))  hvlGetStats (int *row, int *rows, int *order, int *orders, int *subsong, int *subsongs, int *tempo, int *speedmult);
+extern void            __attribute__ ((visibility ("internal")))  hvlMute (int ch, int m);
 
 /* This is for hvlpinst.c */
 __attribute__ ((visibility ("internal"))) uint8_t plInstUsed[256];
