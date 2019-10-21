@@ -2,7 +2,7 @@ TOPDIR=../
 include $(TOPDIR)Rules.make
 all: hvlptype.o playhvl$(LIB_SUFFIX)
 
-playhvl_so=loader.o player.o hvlpchan.o hvlpinst.o hvlpplay.o hvlplay.o hvlptrak.o
+playhvl_so=loader.o player.o hvlpchan.o hvlpdots.o hvlpinst.o hvlpplay.o hvlplay.o hvlptrak.o
 playhvl$(LIB_SUFFIX): $(playhvl_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
@@ -51,6 +51,17 @@ hvlpchan.o: \
 	hvlplay.h
 	$(CC) -c -o $@ $<
 
+hvlpdots.o: \
+	hvlpdots.c \
+	../config.h \
+	../cpiface/cpiface.h \
+	../stuff/poutput.h \
+	../types.h \
+	hvlpdots.h \
+	hvlplay.h \
+	player.h
+	$(CC) -c -o $@ $<
+
 hvlpinst.o: \
 	hvlpinst.c \
 	../config.h \
@@ -78,6 +89,7 @@ hvlpplay.o: \
 	../types.h \
 	hvlplay.h \
 	hvlpchan.h \
+	hvlpdots.h \
 	hvlpinst.h \
 	hvlptrak.h \
 	player.h

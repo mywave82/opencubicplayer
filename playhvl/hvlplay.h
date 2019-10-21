@@ -32,6 +32,7 @@ struct hvl_chaninfo
 	uint8_t vol;
 	uint8_t notehit; /* none-zero if note is fresh */
 	uint8_t note; /* need to match syntax with plNoteStr[] */
+	uint16_t noteperiod;
 	uint8_t pan;
 	uint8_t pitchslide;
 	uint8_t volslide;

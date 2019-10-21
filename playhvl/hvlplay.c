@@ -280,6 +280,7 @@ extern void __attribute__ ((visibility ("internal"))) hvlIdler (void)
 			hvl_statbuffer[i].ChanInfo[j].vol        = voice->vc_NoteMaxVolume;
 			hvl_statbuffer[i].ChanInfo[j].notehit    = Step->stp_Note;
 			hvl_statbuffer[i].ChanInfo[j].note       = 24 + voice->vc_TrackPeriod - 1;
+			hvl_statbuffer[i].ChanInfo[j].noteperiod = voice->vc_AudioPeriod;
 			hvl_statbuffer[i].ChanInfo[j].pan        = voice->vc_Pan;
 
 			hvl_statbuffer[i].ChanInfo[j].pitchslide = voice->vc_PeriodSlidePeriod?3:((voice->vc_PeriodSlideSpeed>0)?1:((voice->vc_PeriodSlideSpeed<0)?2:0));

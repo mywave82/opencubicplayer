@@ -37,6 +37,7 @@
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 #include "hvlpchan.h"
+#include "hvlpdots.h"
 #include "hvlpinst.h"
 #include "hvlplay.h"
 #include "hvlptrak.h"
@@ -490,8 +491,8 @@ static int hvlOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 	plSetMute=hvlMute;
 #if 0
 	plGetLChanSample=mpGetChanSample;
-	plUseDots(gmdGetDots);
 #endif
+	plUseDots(hvlGetDots);
 	hvlInstSetup ();
 	hvlChanSetup ();
 	hvlTrkSetup ();
