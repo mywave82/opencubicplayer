@@ -25,12 +25,12 @@ License: GPL-2, Creative Commons Attribution 3.0
 
 %if 0%{?suse_version}
 #suse doesn't have libXpm
-BuildRequires: ncurses-devel zlib-devel libadplug-devel libSDL-devel libogg-devel libvorbis-devel libsidplay1-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme unzip texinfo update-desktop-files
+BuildRequires: ncurses-devel zlib-devel libadplug-devel libSDL2-devel libogg-devel libvorbis-devel libsidplay1-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme unzip texinfo update-desktop-files
 %else
 %if 0%{?fedora} || 0%{?rhel_version} || 0%{?centos_version}
-BuildRequires: ncurses-devel zlib-devel adplug-devel SDL-devel libogg-devel libvorbis-devel libsidplay-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme libXpm-devel unzip texinfo
+BuildRequires: ncurses-devel zlib-devel adplug-devel SDL2-devel libogg-devel libvorbis-devel libsidplay-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme libXpm-devel unzip texinfo
 %else
-BuildRequires: ncurses-devel zlib-devel adplug-devel libSDL-devel libogg-devel libvorbis-devel libsidplay-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme libXpm-devel unzip texinfo
+BuildRequires: ncurses-devel zlib-devel adplug-devel libSDL2-devel libogg-devel libvorbis-devel libsidplay-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme libXpm-devel unzip texinfo
 %endif
 %endif
 
@@ -96,7 +96,7 @@ rm -rf %{buildroot}
 %{_prefix}/bin/ocp-%{version}
 %{_prefix}/bin/ocp
 %{_prefix}/bin/ocp-curses
-%{_prefix}/bin/ocp-sdl
+%{_prefix}/bin/ocp-sdl2
 %{_prefix}/bin/ocp-vcsa
 %{_prefix}/bin/ocp-x11
 %{_infodir}/ocp.info.gz
