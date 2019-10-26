@@ -933,3 +933,5 @@
 2019-08-26: *: Add support for STM (Scream Tracker 2.x) files via playgmd
 
 2019-10-12: *: Add support for HVL/AHX via the brand new playhvl
+
+2019-10-26: playay/dumpay*.c: Add a tool for dumping content of a .AY file (wrote a long time ago)
