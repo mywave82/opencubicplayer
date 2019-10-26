@@ -10,6 +10,8 @@ doc/texi/faq.texi
 doc/texi/install.texi
 doc/texi/ocp.texi
 goodies/helpc/ocphhc
+goodies/helpc/Makefile
+goodies/pack/Makefile
 /Makefile
 ocp
 ocp.hlp
