@@ -1,22 +1,33 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-TARGETS=aytype$(LIB_SUFFIX) playay$(LIB_SUFFIX)
+ifeq ($(BUILD_DUMPTOOLS),1)
+	DUMPAY=dumpay
+else
+	DUMPAY=
+endif
+
+TARGETS=aytype$(LIB_SUFFIX) playay$(LIB_SUFFIX) $(DUMPAY)
 
 CFLAGS+=-fPIC
 
 all: $(TARGETS)
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX)
+	rm -f *.o *$(LIB_SUFFIX) dumpay
 
 install:
 	$(CP) aytype$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-aytype$(LIB_SUFFIX)"
 	$(CP) playay$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+ifeq ($(BUILD_DUMPTOOLS),1)
+	$(CP) dumpay "$(DESTDIR)$(BINDIR)/dumpay"
+endif
+
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-aytype$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(LIBDIR)/playay$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(BINDIR)/dumpay"
 
 aytype_so=aytype.o
 aytype$(LIB_SUFFIX): $(aytype_so)
@@ -81,3 +92,11 @@ ayplay.o: ayplay.c ayplay.h main.h sound.h z80.h \
 	../stuff/imsrtns.h \
 	../dev/plrasm.h
 	$(CC) -o $@ ayplay.c -c
+
+dumpay: dumpay.o
+	$(CC) $(LDFLAGS) -o $@ $^
+
+dumpay.o: \
+	dumpay.c \
+	dumpay_z80_dis.c
+	$(CC) -o $@ $< -c

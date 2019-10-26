@@ -92,6 +92,8 @@ AC_ARG_WITH(sdl,  [  --with-sdl              force/disable SDL video support (au
 AC_ARG_WITH(sdl2, [  --with-sdl2             force/disable SDL2 video support (autodetect by default)],, with_sdl2=auto)
 AC_ARG_WITH(desktop_file_install, [  --without-desktop_file_install Do not install .desktop file (SDL and X11 normally does this)],, with_desktop_file_install=auto)
 
+AC_ARG_WITH(dumptools, [  --with-dumptools        enable building the different fileformat dump utilities],, with_dumptools=no)
+
 
 # normally, this is done automatically first when running AC_OUTPUT, but we need them expanded now
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -916,6 +918,11 @@ if ! test "x$with_desktop_file_install" = "xno"; then
 	fi
 fi
 
+if test "x$with_dumptools" = "xyes"; then
+	BUILD_DUMPTOOLS=1
+fi
+AC_SUBST(BUILD_DUMPTOOLS)
+
 AC_CONFIG_FILES(Rules.make)
 AC_CONFIG_FILES(Makefile)
 AC_CONFIG_FILES(goodies/helpc/Makefile)
@@ -1002,4 +1009,9 @@ if test "x$with_lzh" = "xno"; then
 	echo "include LZH:       OFF"
 else
 	echo "include LZH:       ON"
+fi
+if test "x$with_dumptools" = "xyes"; then
+	echo "include DumpTools: ON"
+else
+	echo "include DumpTools: OFF"
 fi

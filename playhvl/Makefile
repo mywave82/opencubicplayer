@@ -1,6 +1,13 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
-all: hvlptype.o playhvl$(LIB_SUFFIX)
+
+ifeq ($(BUILD_DUMPTOOLS),1)
+	DUMPAHX=dumpahx
+else
+	DUMPAHX=
+endif
+
+all: hvlptype.o playhvl$(LIB_SUFFIX) $(DUMPAHX)
 
 playhvl_so=loader.o player.o hvlpchan.o hvlpdots.o hvlpinst.o hvlpplay.o hvlplay.o hvlptrak.o
 playhvl$(LIB_SUFFIX): $(playhvl_so)
@@ -11,9 +18,20 @@ clean:
 
 install:
 	$(CP) playhvl$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+ifeq ($(BUILD_DUMPTOOLS),1)
+	$(CP) dumpahx "$(DESTDIR)$(BINDIR)/dumpahx"
+endif
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/playhvl$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(BINDIR)/dumpahx"
+
+dumpahx: dumpahx.o
+	$(CC) $(LDFLAGS) -o $@ $^
+
+dumpahx.o: \
+	dumpahx.c
+	$(CC) -o $@ $< -c
 
 hvlptype.o: \
 	hvlptype.c \

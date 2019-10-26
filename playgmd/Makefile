@@ -1,7 +1,13 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-all: gmdptype.o load669$(LIB_SUFFIX) loadams$(LIB_SUFFIX) loaddmf$(LIB_SUFFIX) loadmdl$(LIB_SUFFIX) loadmtm$(LIB_SUFFIX) loadokt$(LIB_SUFFIX) loadptm$(LIB_SUFFIX) loads3m$(LIB_SUFFIX) loadstm$(LIB_SUFFIX) loadult$(LIB_SUFFIX) playgmd$(LIB_SUFFIX)
+ifeq ($(BUILD_DUMPTOOLS),1)
+	DUMPERS=dumpstm dumps3m
+else
+	DUMPERS=
+endif
+
+all: gmdptype.o load669$(LIB_SUFFIX) loadams$(LIB_SUFFIX) loaddmf$(LIB_SUFFIX) loadmdl$(LIB_SUFFIX) loadmtm$(LIB_SUFFIX) loadokt$(LIB_SUFFIX) loadptm$(LIB_SUFFIX) loads3m$(LIB_SUFFIX) loadstm$(LIB_SUFFIX) loadult$(LIB_SUFFIX) playgmd$(LIB_SUFFIX) $(DUMPERS)
 
 playgmd_so=gmdpchan.o gmdpdots.o gmdpinst.o gmdplay.o gmdpplay.o gmdptrak.o gmdrtns.o gmdtime.o
 playgmd$(LIB_SUFFIX): $(playgmd_so)
@@ -52,10 +58,29 @@ clean:
 
 install:
 	$(CP) load669$(LIB_SUFFIX) loadams$(LIB_SUFFIX) loaddmf$(LIB_SUFFIX) loadmdl$(LIB_SUFFIX) loadmtm$(LIB_SUFFIX) loadokt$(LIB_SUFFIX) loadptm$(LIB_SUFFIX) loads3m$(LIB_SUFFIX) loadstm$(LIB_SUFFIX) loadult$(LIB_SUFFIX) playgmd$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+ifeq ($(BUILD_DUMPTOOLS),1)
+	$(CP) dumpstm "$(DESTDIR)$(BINDIR)/dumpstm"
+	$(CP) dumps3m "$(DESTDIR)$(BINDIR)/dumps3m"
+endif
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/load669$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadams$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loaddmf$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadmdl$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadmtm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadokt$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadptm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loads3m$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadstm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadult$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/playgmd$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(BINDIR)/dumpstm"
+	rm -f "$(DESTDIR)$(BINDIR)/dumps3m"
 
+dumpstm: dumpstm.o
+	$(CC) $(LDFLAGS) -o $@ $^
+
+dumpstm.o: \
+	dumpstm.c
+	$(CC) -o $@ $< -c
+
+dumps3m: dumps3m.o
+	$(CC) $(LDFLAGS) -o $@ $^
+
+dumps3m.o: \
+	dumps3m.c
+	$(CC) -o $@ $< -c
 
 gmdptype.o: gmdptype.c \
 	../config.h \

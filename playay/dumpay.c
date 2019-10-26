@@ -184,7 +184,7 @@ static void tryprint_songdata (const unsigned char *buffer, int length, uint16_t
 	uint16_t ptr;
 	int i;
 	int perm[4] = {0,0,0,0};
-	uint16_t init, interrupt;
+	uint16_t init = 0, interrupt = 0;
 
 	if (i_ptr+14 > length)
 	{

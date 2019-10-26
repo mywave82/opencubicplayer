@@ -1,16 +1,26 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-all: gmiptype.o playtimidity$(LIB_SUFFIX)
+ifeq ($(BUILD_DUMPTOOLS),1)
+	DUMPMIDI=dumpmidi
+else
+	DUMPMIDI=
+endif
+
+all: gmiptype.o playtimidity$(LIB_SUFFIX) $(DUMPMIDI)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX) dumpmidi timidity-git/timidity/newton_table.c timidity-git/interface/*.o timidity-git/libarc/*.o timidity-git/timidity/*.o timidity-git/utils/*.o
 
 install:
 	$(CP) playtimidity$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+ifeq ($(BUILD_DUMPTOOLS),1)
+	$(CP) dumpmidi "$(DESTDIR)$(BINDIR)/dumpmidi"
+endif
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/playtimidity$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(BINDIR)/dumpmidi"
 
 gmitimidity.o: gmitimidity.c gmipat.h gmiplay.h \
 	../config.h \
@@ -28,10 +38,10 @@ gmiptype.o: gmiptype.c \
 dumpmidi.o: dumpmidi.c \
 	../config.h \
 	../types.h
-	$(CC) dumpmidi.c -o $@ -c
+	$(CC) -o $@ $< -c
 
 dumpmidi: dumpmidi.o
-	$(CC) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^
 
 CFLAGS+= -Itimidity-git/interface -Itimidity-git/libarc -Itimidity-git/libunimod -Itimidity-git/timidity -Itimidity-git/utils -I. -DHAVE_CONFIG_H
 

@@ -623,6 +623,7 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+BUILD_DUMPTOOLS
 ICONV_LIBS
 CP
 HAVE_LZH
@@ -802,6 +803,7 @@ with_flac
 with_sdl
 with_sdl2
 with_desktop_file_install
+with_dumptools
 with_timidity_default_path
 with_ncurses
 with_ncursesw
@@ -1479,6 +1481,7 @@ Optional Packages:
   --with-sdl              force/disable SDL video support (autodetect by default)
   --with-sdl2             force/disable SDL2 video support (autodetect by default)
   --without-desktop_file_install Do not install .desktop file (SDL and X11 normally does this)
+  --with-dumptools        enable building the different fileformat dump utilities
   --with-timidity-default-path=DIR
                           Where timidity.cfg is (PREFIX/share/timidity)
   --with-ncurses          force the use of Ncurses or NcursesW
@@ -6143,6 +6146,15 @@ fi
 
 
 
+# Check whether --with-dumptools was given.
+if test "${with_dumptools+set}" = set; then :
+  withval=$with_dumptools;
+else
+  with_dumptools=no
+fi
+
+
+
 # normally, this is done automatically first when running AC_OUTPUT, but we need them expanded now
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
 # Let make expand exec_prefix.
@@ -10462,6 +10474,11 @@ fi
 	fi
 fi
 
+if test "x$with_dumptools" = "xyes"; then
+	BUILD_DUMPTOOLS=1
+fi
+
+
 ac_config_files="$ac_config_files Rules.make"
 
 ac_config_files="$ac_config_files Makefile"
@@ -11837,4 +11854,9 @@ if test "x$with_lzh" = "xno"; then
 	echo "include LZH:       OFF"
 else
 	echo "include LZH:       ON"
+fi
+if test "x$with_dumptools" = "xyes"; then
+	echo "include DumpTools: ON"
+else
+	echo "include DumpTools: OFF"
 fi
