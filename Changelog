@@ -846,4 +846,90 @@
 
 2014-12-26: boot/kickload.c: simplify logic somewhat
 
+2014-12-31: VERSION 0.1.22 (never officially released)
+
 2015-01-04: stuff/poutout-curses.c: workaround broken ncurses version (library did not take into acount that write() might not digest all data at first attempt. SIGALRM is a problem here)
+
+2015-02-09: configure.ac: Added GCC 5.x to the accepted list of compilers
+
+2015-02-24: playgmi/gmitimidity.c: support for absolute path was not in the patch code path, only instrument
+
+2015-02-25: configure.ac: Verify that adplug is compiled with C++ that has the same ABI as the current C++ compiler. (Distroes with old binaries of adplug had random crashes)
+
+2015-02-25: configure.ac: use $CC and not gcc when detecting compiler target/version.
+
+2015-02-25: playgmd/gmdlams.c: sizeof() was used a bit wrong, causing files with instrument names longer that 4/8 characters to fail.
+
+2015-02-25: filesel/pfilesel.c: dirdb reference counters was off
+
+2015-09-05: playxm/xmlmod.c: If a .mod file has zero orders, it should fail to load, instead of crashes. (If loading a M15 as M31 fileformat is good example)
+
+2015-09-05: playym/Makefile: missing depency when doing parallell build.
+
+2015-09-07: cpiface/cpitrack.c: Do a probe of what the default/ideal zoom level is, instead of using fixed defaults. This makes more sense when we have dynamic sized windows.
+
+2015-09-22: playym/stsoundlib/Ymload.cpp: All files where interprated as of type "Interleaved" do to a minor error.
+
+2016-03-21: playgmi/* ocp.ini.in boot/pmain.c: Use Timidity instead of the previous internal engine for loading soundfonts and rendering of MIDI files.
+
+2016-03-21: Rules.make.in config.h.in */*.c: Default to ncursesw instead of ncurses if available and added support for using UTF-8 on output, where internal OCP font can match unicode symbols
+
+2016-03-21: playit/itload.c playit/itplay.c playit/itplay.h: some of the names used conflicted with other symbols/macros (from ncurses)
+
+2016-03-21: playit/itload.c: an off by one when parsing envelopes, causing a minor write outside allocated heap-buffer
+
+2016-03-21: configure.ac: Added GCC 6.x to the accepted list of compilers
+
+2016-05-05: dev/ringbuffer.c dev/ringbuffer.h: Added a generic ringbuffer API
+
+2016-05-05: playogg/oggplay.c: Use ringbuffer API
+
+2016-05-10: devp/devpalsa.c: Minor memory leak fixes
+
+2016-05-10: stuff/poutput-x11: Minor memory leak fixes
+
+2016-05-10: playmp2/mppplay.c: Use ringbuffer API
+
+2016-05-12: stuff/imsrtns.h: memsetd and memsetw macro expandion did not use () for the parameters
+
+2016-05-12: playay/ayplay.c: Use ringbuffer API and add support pan and pitch control
+
+2016-06-06: stuff/timer.c do not let the timer be reentrant
+
+2016-09-29: playflac/flacplay.c: Use ringbuffer API
+
+2018-09-29: configure.ac: Added GCC 7.x to the accepted list of compilers
+
+2018-09-29: playflac/flacplay.c: Seeking should be done at the right time in the libflac API
+
+2018-09-29: playwav/*: Use ringbuffer API
+
+2018-11-02: playay/*: Provide 4 channels of audio (some very few files utilize the speaker) and improve silence detections
+
+2018-11-03: playit/itload.c: one malloc() call was assumed to give clear buffers, replaced with calloc()
+
+2018-11-30: *: Add support for SDL2 video and audio
+
+2019-02-18: playay*: Track internal registers for UI usage
+
+2019-02-21: devw/dwnone_asminc.c: GCC 7.3 on Haiku trigged an assembler usage error
+
+2019-03-06: configure.ac: Added GCC 8.x to the accepted list of compilers
+
+2019-03-06: desktop/opencubicplayer.desktop.in: merge in patch from the debian repo
+
+2019-03-09: devw/dwmixqa_x86.c devw/dwmixfa_8087.c devw/dwmixa_x86.c dev/mixasm.c devw/dwnone_asminc.c: add magic for making the assembler function appear as symbols in gdb, and generic assembler usage fixes
+
+2019-04-**: *: Face out usage of PATH_MAX and friends. In OS they are defined, they are artificial limits that might not even be enforced
+
+2019-05-06: devp/devpalsa.c: Query ALSA about possible output devices, and list them under under the setup: filesystem
+
+2019-07-24: playopl/oplplay.cpp: do not create temporary files on file loads, but use a memoryobject instead (requires recent libbinio version)
+
+2019-07-25: configure.ac: Added GCC 9.x and 10.x to the accepted list of compilers
+
+2019-07-26: playgmd/gmdptype.c: Try harder to detect OPL/Adlib enabled S3M files
+
+2019-08-26: *: Add support for STM (Scream Tracker 2.x) files via playgmd
+
+2019-10-12: *: Add support for HVL/AHX via the brand new playhvl
