@@ -1,0 +1,35 @@
+16K/48K:
+
+ ULA: all odd ports (even if specification said to use port 0x__fe), it is sensitive to (port & 0x0001) == 0
+    bit 4 and 3: ___00___: 0.39V (v2), 0.34V (v3)
+                 ___01___: 0.73V (v2), 0.66V (v3)
+                 ___10___: 3.66V (v2), 3.56V (v3)
+                 ___11___: 3.79V (v2), 3.70V (v3)
+
+128K:
+
+ ULA: all odd ports (even if specification said to use port 0x__fe), it is sensitive to (port & 0x0001) == 0
+
+ AY-3-8912 register: (official 0xfffd) (port & 0xC002)==0xC000
+           data:     (official 0xbffd) (port & 0xC002)==0x4000
+
+
+Timex TS2068:
+
+ ULA: 0x__fe (same chip as in 48K model)
+
+ AY-3-8912 register: (official 0xfff5) (port & 0x00ff)==0x00f5
+           data:     (official 0xbff6) (port & 0x00ff)==0x00f6
+
+
+CPC armstradt:
+
+ PSG -> AY-3-8912: register: (official 0xf4__) (port & 0x0b)==0x0200
+                   data:     (official 0xf5__) (port & 0x0b)==0x0000
+
+
+Fuller Audio Box:
+  
+ AY-3-8912 register: (port & 0x00ff)==0x003f
+           data:     (port & 0x00ff)==0x005f
+
