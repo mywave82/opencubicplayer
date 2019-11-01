@@ -1,5 +1,5 @@
 [version]
- epoch=20191019
+ epoch=20191101
 
 [general]
 ;link=
@@ -457,7 +457,7 @@ link=medialib
 
 [filetype 38]
   color=6
-  name=FLA
+  name=FLAC
   interface=plOpenCP
   pllink=playflac
   player=flacPlayer

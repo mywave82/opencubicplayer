@@ -481,10 +481,16 @@ static int init_modules(int argc, char *argv[])
 			free (new_temp);
 		}
 
-
-		if (epoch < 20191019)
+		if (epoch < 20191101)
 		{
-			cfSetProfileInt("version", "epoch", 20191019, 10);
+			printf("ocp.ini update (0.2.0) renamed filetype FLA to FLAC\n");
+			cfSetProfileString("filetype 38", "name", "FLAC");
+		}
+
+
+		if (epoch < 20191101)
+		{
+			cfSetProfileInt("version", "epoch", 20191101, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -495,7 +501,7 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10)!=20191019)
+	if (cfGetProfileInt("version", "epoch", 0, 10)!=20191101)
 	{
 		if (isatty(2))
 		{
