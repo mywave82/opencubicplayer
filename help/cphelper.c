@@ -397,7 +397,7 @@ void brRenderPage(helppage *pg)
 	link_list *lst, *endlst;
 	int        lcount;
 	uint16_t   linebuf[80];
-	char       *data;
+	char      *data;
 	char       attr;
 	int        x, y, i;
 
@@ -427,7 +427,7 @@ void brRenderPage(helppage *pg)
 
 	while (i>0)
 	{
-		if (*data<CMD_MAX)
+		if ((uint8_t)*data<CMD_MAX)
 		{
 			switch (*data)
 			{
@@ -533,7 +533,7 @@ void brRenderPage(helppage *pg)
 		} else {
 			if (x<80)
 			{
-				linebuf[x]=(*data)|(attr<<8);
+				linebuf[x]=((uint8_t)*data)|(attr<<8);
 				x++;
 			};
 
