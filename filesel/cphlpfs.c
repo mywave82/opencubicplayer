@@ -51,15 +51,9 @@ static int plHelpKey(unsigned short key)
 
 unsigned char fsHelp2(void)
 {
-	unsigned short sbuf[CONSOLE_MAX_X];
 	helppage *cont;
 
 	plSetTextMode(0);
-
-	fillstr(sbuf, 0, 0x30, 0, CONSOLE_MAX_X);
-	writestring(sbuf, 2, 0x30, "opencp help", 11);
-	writestring(sbuf, plScrWidth-29, 0x30, "(c) 1994-2016 Stian Skjelstad", 27);
-	displaystrattr(0, 0, sbuf, plScrWidth);
 
 	cont=brDecodeRef("Contents");
 
@@ -75,7 +69,14 @@ unsigned char fsHelp2(void)
 
 	while (fsmode)
 	{
+		unsigned short sbuf[CONSOLE_MAX_X];
 		unsigned short key;
+
+		fillstr(sbuf, 0, 0x30, 0, CONSOLE_MAX_X);
+		writestring(sbuf, 2, 0x30, "opencp help", 11);
+		writestring(sbuf, plScrWidth-31, 0x30, "(c) 1994-2019 Stian Skjelstad", 29);
+		displaystrattr(0, 0, sbuf, plScrWidth);
+
 		brDisplayHelp();
 
 		while (!ekbhit())
