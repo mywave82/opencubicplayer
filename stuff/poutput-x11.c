@@ -2585,8 +2585,10 @@ static void plDisplaySetupTextMode(void)
 		displaystr(1, 15, plCurrentFont == _4x4 ? 0x0f : 0x07 , "4x4", 3);
 		displaystr(1, 19, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
 		displaystr(1, 23, plCurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
+/*
 		displaystr(2, 0, 0x07, "2:  fullscreen: ", 16);
 		displaystr(3, 0, 0x07, "3:  resolution in fullscreen:", 29);
+*/
 
 		displaystr(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
 
