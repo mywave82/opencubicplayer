@@ -335,6 +335,7 @@ static int InstAProcessKey(uint16_t key)
 			cpiKeyHelp(KEY_HOME, "Scroll to to the first line in instrument viewer");
 			cpiKeyHelp(KEY_END, "Scroll to to the last line in instrument viewer");
 			cpiKeyHelp(KEY_TAB, "Toggle instrument viewer mode");
+			cpiKeyHelp(KEY_ALT_I, "Clear instrument used bits");
 			cpiKeyHelp(KEY_SHIFT_TAB, "Toggle instrument viewer mode");
 			cpiKeyHelp(KEY_CTRL_PGUP, "Scroll up a page in the instrument viewer");
 			cpiKeyHelp(KEY_CTRL_PGDN, "Scroll down a page in the instrument viewer");
@@ -366,6 +367,9 @@ static int InstAProcessKey(uint16_t key)
 		/*case 0x4F00: //end*/
 		case KEY_END:
 			plInstScroll=plInstLength;
+			break;
+		case KEY_ALT_I:
+			plInsDisplay.Clear();
 			break;
 		case KEY_TAB: /* tab */
 		case KEY_SHIFT_TAB: /* 0x0f00 */
