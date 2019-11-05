@@ -50,3 +50,10 @@ or
 `export TERM=xterm-color`
 
 before you run ocp
+
+# Youtube for tracked music?
+
+https://modarchive.org/
+http://www.chiptune.com/
+http://www.keygenmusic.net/
+https://ftp.hornet.org/pub/demos/music/contests/
