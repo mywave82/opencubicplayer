@@ -1,3 +1,28 @@
+# What is it?
+
+UNIX port of Open Cubic Player
+
+# What can it play?
+
+It plays modules, sids, wave files, audio CD, midi, ogg, flac, adlib, mp3, ahx, hvl, and ym.
+
+# Manual Page
+
+https://manpages.debian.org/testing/opencubicplayer/ocp.1.en.html
+
+# Usage
+
+TODO: keyboard shortcuts
+double-esc: exist the program
+
+## While playing
+
+## File browser
+
+# Original
+
+https://www.cubic.org/player/
+
 # Installing binaries on Linux
 
 https://repology.org/project/ocp-open-cubic-player/versions
