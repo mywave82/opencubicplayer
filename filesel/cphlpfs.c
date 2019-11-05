@@ -77,6 +77,8 @@ unsigned char fsHelp2(void)
 		writestring(sbuf, plScrWidth-31, 0x30, "(c) 1994-2019 Stian Skjelstad", 29);
 		displaystrattr(0, 0, sbuf, plScrWidth);
 
+		brSetWinHeight(plScrHeight-2);
+
 		brDisplayHelp();
 
 		while (!ekbhit())

@@ -44,6 +44,7 @@ static int plHelpInit(void)
 static void hlpDraw(void)
 {
 	cpiDrawGStrings();
+	brSetWinHeight(plScrHeight-6);
 	brDisplayHelp();
 	framelock();
 }
@@ -52,7 +53,7 @@ static void hlpSetMode(void)
 {
 	cpiSetTextMode(0);
 	brSetWinStart(6);
-	brSetWinHeight(/*19*/plScrHeight-6);
+	brSetWinHeight(plScrHeight-6);
 }
 
 static int hlpOpen(void)

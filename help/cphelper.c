@@ -418,8 +418,8 @@ void brRenderPage(helppage *pg)
 	x=y=0;
 	attr=0x07;
 
-	pg->rendered=calloc(80*MAX(pg->lines, plWinHeight), sizeof(uint16_t));;
-	memset(pg->rendered, 0, 160*MAX(pg->lines, plWinHeight));
+	pg->rendered=calloc(80*MAX(pg->lines, 1), sizeof(uint16_t));;
+	memset(pg->rendered, 0, 160*MAX(pg->lines, 1));
 	memset(linebuf, 0, 160);
 
 	data=pg->data;
@@ -660,6 +660,7 @@ void brDisplayHelp(void)
 		for (y=2; y<plWinHeight; y++)
 			displayvoid(y+plWinFirstLine, 0, CONSOLE_MAX_X);
 	} else {
+		int addx = (plScrWidth - 80) / 2;
 		for (y=0; y<plWinHeight; y++)
 		{
 			if ((y+plHelpScroll)>=plHelpHeight)
@@ -669,22 +670,24 @@ void brDisplayHelp(void)
 			}
 			if (y!=curlinky)
 			{
-				displaystrattr(y+plWinFirstLine, 0, &curpage->rendered[(y+plHelpScroll)*80], 80);
-				displayvoid(y+plWinFirstLine, 80, plScrWidth-80);
+				displayvoid(y+plWinFirstLine, 0, addx);
+				displaystrattr(y+plWinFirstLine, 0+addx, &curpage->rendered[(y+plHelpScroll)*80], 80);
+				displayvoid(y+plWinFirstLine, 80+addx, plScrWidth-80-addx);
 			} else {
 				int yp=(y+plHelpScroll)*80;
 				int xp;
 			        char dummystr[82];
 				int i, off;
 
+				displayvoid(y+plWinFirstLine, 0, addx);
 				if (curlink->posx!=0)
 			        {
-					displaystrattr(y+plWinFirstLine, 0, &curpage->rendered[yp], curlink->posx);
+					displaystrattr(y+plWinFirstLine, addx, &curpage->rendered[yp], curlink->posx);
 			        };
 
 			        xp=curlink->posx+curlink->len;
 
-			        displaystrattr(y+plWinFirstLine, xp,
+			        displaystrattr(y+plWinFirstLine, xp+addx,
 		                       &curpage->rendered[yp+xp],
 		                       79-xp);
 
@@ -694,9 +697,9 @@ void brDisplayHelp(void)
 
 				dummystr[i]=0;
 
-				displaystr(y+plWinFirstLine, curlink->posx, 4, dummystr, curlink->len);
+				displaystr(y+plWinFirstLine, curlink->posx+addx, 4, dummystr, curlink->len);
 
-				displayvoid(y+plWinFirstLine, 80, plScrWidth-80);
+				displayvoid(y+plWinFirstLine, 80+addx, plScrWidth-80-addx);
 
 			        /* and all this just to prevent flickering. ARG! */
 			}
