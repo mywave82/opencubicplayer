@@ -200,8 +200,20 @@ void process_text_line(char *line)
 
 	     while (*p) {
 		     backslashed=(*p=='\\')&&(!backslashed);     /* better? (fd) */
-
-		     if (((unsigned)*p)<32) {
+			if (*p=='\\')
+			{
+				if (backslashed)
+				{
+					//memmove (p-1, p, strlen(p));   This are unrolled at the end
+					backslashed = 0;
+					p++;
+					i++;
+				} else {
+					backslashed = 1;
+					p++;
+					i++;
+				}
+		     } else if (((unsigned)*p)<32) {
 			     strcpy(buffer2, &buffer[i+1]);
 			     strcpy(&buffer[i+2], buffer2);
 
@@ -214,8 +226,9 @@ void process_text_line(char *line)
 		     {
 			     if (backslashed)
 			     {
-				     strcpy(buffer2, p);
-				     strcpy(p-1, buffer2);
+				     memmove (p-1, p, strlen(p));
+				     //strcpy(buffer2, p);
+				     //strcpy(p-1, buffer2);
 				     backslashed=0;
 			     } else {
 				     brightst=1-brightst;
