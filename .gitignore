@@ -6,9 +6,12 @@ config.h
 config.log
 config.status
 desktop/opencubicplayer.desktop
+doc/opencp.dox
 doc/texi/faq.texi
 doc/texi/install.texi
 doc/texi/ocp.texi
+doc/texi/ocp.html
+doc/texi/ocp.info.gz
 goodies/helpc/ocphhc
 goodies/helpc/Makefile
 goodies/pack/Makefile
@@ -23,3 +26,4 @@ playgmd/dumps3m
 playgmd/dumpstm
 playgmi/dumpmidi
 playhvl/dumpahx
+
