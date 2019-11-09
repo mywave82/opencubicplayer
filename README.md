@@ -4,7 +4,52 @@ UNIX port of Open Cubic Player
 
 # What can it play?
 
-It plays modules, sids, wave files, audio CD, midi, ogg, flac, adlib, mp3, ahx, hvl, and ym.
+Amiga style [modules](https://en.wikipedia.org/wiki/Module_file) files with more:
+- \*.AMS
+- \*.DMF
+- \*.MXM
+- \*.IT
+- \*.MOD
+- \*.MTM
+- \*.OKT
+- \*.STM
+- \*.S3M
+- \*.ULT
+- \*.XM
+- \*.669
+
+[Atari ST](https://en.wikipedia.org/wiki/Atari_ST#Technical_specifications) \([Yamaha YM2149](https://en.wikipedia.org/wiki/General_Instrument_AY-3-8910)\) style music using code from [STYMulator](http://atariarea.krap.pl/stymulator/):
+- \*.YM
+
+[C64](https://en.wikipedia.org/wiki/Commodore_64) \([SID 6581/8580](https://en.wikipedia.org/wiki/MOS_Technology_6581)\) style music:
+- \*.SID
+
+[ZX Spectrum](https://en.wikipedia.org/wiki/ZX_Spectrum)/[Amstrad CPC](https://en.wikipedia.org/wiki/Amstrad_CPC) \([Yamaha YM2149](https://en.wikipedia.org/wiki/General_Instrument_AY-3-8910)\) style music:
+- \*.AY
+
+Audio Files (both compressed and PCM styled):
+- \*.WAV,
+- \*.OGG,
+- \*.FLAC,
+- \*.MP2,
+- \*.MP3
+
+Audio CDs: Linux support only, using digital read out API
+- \*.CDA
+
+[MIDI](https://en.wikipedia.org/wiki/MIDI#General_MIDI): Fork of [TiMidity++](http://timidity.sourceforge.net/) is used to play:
+- \*.MID
+
+[AdPlug](http://adplug.github.io/) can read a wide range of music formats designed for the [OPL2](https://en.wikipedia.org/wiki/Yamaha_YM3812)/[OPL3](https://en.wikipedia.org/wiki/Yamaha_YMF262) Adlib sound chip. Examples:
+- \*.HSC
+- \*.SNG
+- \*.D00
+- \*.ADL
+- \*.VGM
+
+[HivelyTracker](http://www.hivelytracker.co.uk/) tracked music, using code from the original tracker repository:
+- \*.HVL
+- \*.AHX
 
 # Manual Page
 
