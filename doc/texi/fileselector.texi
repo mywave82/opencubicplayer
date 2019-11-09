@@ -36,17 +36,17 @@ X:/PATH/
 
 The path window shows the current
 path and file mask. If you started OCP from the home directory you will get
-the following: @file{file:/OPENCP/*} means
-that the current directory is @file{OPENCP} on your @file{file:} driver
+the following: @file{file:/home/user/*} means
+that the current directory is @file{/home/user} on your @file{file:} drive
 and all files are shown (@file{*}). You can edit the path and the mask
 by pressing @key{ALT}+@key{Enter} or @key{CTRL}+@key{Enter} depending on the UI
-rendered in use. After editing the path press @key{Enter}
+renderer in use. After editing the path press @key{Enter}
 to change to the appropriate directory. You can edit the file mask to include
 only some files.
 @quotation
-@file{file:/*.mod} will change to the root directory of filesystem and
-show all files ending with @file{.mod}. The default setting should be the
-current directory with a file mask @file{*} to show all files.
+@file{file:/media/music/*.mod} will change to the @file{/media/music} directory
+of filesystem and show all files ending with @file{.mod}. The default setting
+should be the current directory with a file mask @file{*} to show all files.
 @end quotation
 
 The most important window is the directory list. Here you can see all files
@@ -54,7 +54,7 @@ in the current directory. If the extension is known to OCP the file information
 will be shown in different colors depending on the file type. Files not known
 to OCP will be shown in standard grey.
 
-Leftmost the file name provided by the operating system is shown.
+Leftmost side the file name provided by the operating system is shown.
 The extension @file{.???} will specify the file type. The next column shows the
 title of the file if the file type includes a title. In the third column the
 number of channels is displayed. Finally rightmost the filesize is shown in
@@ -76,11 +76,11 @@ find files in the current directory.
 
 @section Usage of the fileselector
 The directory list shows you all files in the current directory which fit to
-the file mask set in the path window and OCP can detect. Under the alphabetically sorted files
+the file mask set in the path window. Under the alphabetically sorted files
 the directories and drives are shown.@footnote{@file{setup:} is a special drive
-which lets you configure OCP without editing the @file{cp.ini} file, see page @xref{specialdrive}.}
-Use the
-@key{Up} and @key{Down} to browse through the files. If you
+which lets you configure OCP without editing the @file{ocp.ini} file, see page @xref{specialdrive}.}
+
+Use the @key{Up} and @key{Down} to browse through the files. If you
 press @key{Enter} the selected file will be loaded and played with the player.
 Pressing @key{Enter} while selecting a directory or drive will switch to the
 selected item and the directory will be read. @key{Pgup}, @key{Pgdown},
@@ -137,9 +137,9 @@ be annoying, because it takes a long time to browse through the list. If you
 know the filename you can start typing it on the keyboard. This enables the
 quickfind feature. Characters already typed are shown in the quickfind window.
 The current directory is searched for files matching the typed characters.
-Often you don't have to type the complete filename, as it can be already determined
-by the leading chars. The typed characters must not fit the file exactly as
-small errors are neglected.
+Often you don't have to type the complete filename, as it can be already
+determined by the leading chars. The typed characters do not have to match the
+filename exactly as small errors are neglected.
 
 At the bottom of the screen the fileinformation window is located. If the
 file includes any additional information it will be shown at the appropriate
@@ -149,11 +149,9 @@ All module information is read by
 the fileselector once if it runs along this module the first time. The data
 is stored in three files located in your home directory of OCP refered as the
 @emph{module information cache}. If the fileselector scans a directory and finds
-a module already stored in the module information cache it will use the
-information found in the cache. This way you can overwrite the information
-fields of the module. If you change to a directory which has not been processed
-by the fileselector it may take some time to read all file information out of
-the files and store them in the module information cache.
+a module which has not been processed by the fileselector it may take some
+minutes to read all file information out of the files and store them in the
+module information cache.
 @end smallformat
 
 To switch to the module information window press @key{SHIFT}+@key{Tab}. You
@@ -170,14 +168,13 @@ The appearance and behaviour of the fileselector can be edited in the
 @file{ocp.ini} are permanently, while configuration applied with  @key{ALT}+@key{c}
 is only valid while OCP is running.
 
-Afer pressing @key{ALT}+@key{c} you can toggle 13 options with keys
-@key{1}..@key{9} and @key{a}..@key{d}. The following list
+Afer pressing @key{ALT}+@key{c} you can toggle 14 options with keys
+@key{1}..@key{9}, @key{a}..@key{d}, @key{+} and @key{-}. If pressing @key{ALT-S}
+the settings can be flushed into @file{ocp.ini}. The following list
 will explain every option:
 @multitable @columnfractions .1 .9
-@item 1 @tab @emph{screen mode:} you can change the screen mode for the fileselector.
-80x25 and 80x50 are standard screen modes and should be available on every
-vga card. 80x30, 80x60, 132x25, 132x30, 132x50 and 132x60 are only available
-with a proper VESA bios installed.
+@item 1 @tab @emph{screen mode:} This is output-driver specific. Most common you
+can adjust the font-size here between sizes like 4x4, 8x8 or 16x16.
 @item 2 @tab @emph{scramble module list order:} if this options is enabled the
 files inside the playlist will be played in random order. Otherwise the
 order shown in the fileselector from top to bottom will be used.
@@ -191,10 +188,11 @@ option the playlist will play all modules without any user interaction.
 are processed to gather module information which can be shown. If you disable
 this option directories will be processed quicker.
 @item 6 @tab @emph{scan module information files:} the module information cache
-in the home directory of OCP will be read if this option is enabled.
+in the home directory of OCP will be read if this option is enabled. (currently
+not implemented)
 @item 7 @tab @emph{scan archive contents:} to save hard disk space you can store
-your files inside archives like @file{ARJ} or @file{ZIP}. If the fileselector finds an
-archive it will open it to scan for files.
+your files inside archives like @file{ARJ} or @file{ZIP}. If the fileselector
+finds an archive it will open it to scan for files.
 @item 8 @tab @emph{scan module information in archives:} if modules are found
 inside archives they will be decrunched to find any module information. This
 option can take several minutes if many modules are stored in archives
@@ -209,57 +207,28 @@ you might want to disable this option.
 @item C @tab @emph{module information display mode:} changes the contents of the
 directory window. You can also use @key{ALT}+@key{tab} or @key{ALT}+@key{i}
 inside the fileselector.
-@item D @tab @emph{put archives:} Show archives, so they can be accessed like directories.
-Normally this should be disabled if archives are scanned automatically.
+@item D @tab @emph{put archives:} Show archives, so they can be accessed like
+directories. Normally this should be disabled if archives are scanned automatically.
+@item +/- @tab @emph{framerate:} Adjust the target framerate.
 @end multitable
-
-The screen size can be changed by pressing @key{ALT}+@key{z}. In 132 columns
-mode some additional module information can be shown in the directory window.
-If the fileselector is busy scanning the current directory for files, you can
-interrupt the scanning with @key{ALT}+@key{s}.
-
-You can delete a file with
-@key{ALT}+@key{k}. You will be prompted if you really want to delete this
-file. When pressing @key{y} the file will be deleted. If the file is stored
-inside an archive the file will be deleted from the archive.@footnote{If
-only one file was stored inside a @file{.ZIP} archive pkzip will leave an
-empty archive of 22 bytes on your harddisk. See @pxref{configuration, ocp.ini} on how to
-avoid this.} The current file can be moved by @key{ALT}+@key{m}. You will
-have to type the new path in the path window into which the file will be
-moved. If the file is inside an archive it will be extracted. You can specify
-an existing @file{.ARJ} file and the file will be packed into the archive.@footnote{this
-works only with ARJ archives by now.}
-
-The module information shown in the module information window can be saved to
-a portable ascii file (see page @pxref{mdz}). You may want this feature if you are a composer of
-music and want to trade your music together with already processed module
-information files. Start the fileselector and edit the information for the
-file. Then switch back to the directory window and press @key{ALT}+@key{w}.
-The fileselector will save a file with the extension @file{.MDZ} and the
-filename of the selected file, which stores all module information seen in
-the module information window. If a directory is scanned and the fileselector
-finds such @file{.MDZ} files they will be read and processed. The module
-information for all files in the current directory can be saved with
-@key{ALT}+@key{a}. You have to type the filename manually in the path window
-without extension!
 
 You may want to change the entry @emph{type} in the module information window
 if you have old amiga modules or a non-standard midi file. Very old Noise- and
 SoundTracker modules only had 15 instruments and no file identification. So
 the fileselector is not able to detect those files as valid modules and refuses
-to play them. You have to insert @file{M15} in the @emph{type} entry. If
+to play them. You have to select @file{M15} in the @emph{type} entry. If
 the module does not differ between tempo and speed and is of the 15 instrument
-type insert @file{M15t}. Some ProTracker modules do not differ between tempo
+type select @file{M15t}. Some ProTracker modules do not differ between tempo
 and speed too. If you have one of those modules use @file{MODt}. A module
 player for PC called DMP introduced a feature called panning. To enable this
-(non-standard) feature insert @file{MODd}. If you want to play midi files
+(non-standard) feature select @file{MODd}. If you want to play midi files
 with a second drum track on channel 16 use the @file{MIDd} option. Any other
 file should be autodetected correctly.
 @smallformat
 If you have renamed a module
 to a different extension (say @file{hello.mod} to @file{hello.s3m}) OCP
 will refuse to play it, because the file type is wrong. You could correct this
-by inserting the right file type in the module information as shown above. But
+by selecting the right file type in the module information as shown above. But
 it is recommended to rename the file to the right extension instead of tweaking the
 autodetetion of the player.
 @end smallformat
@@ -281,14 +250,6 @@ devices which where detected at startup. Normally you might want to change
 this if you want to save the next file as a @file{.WAV} or @file{.MP2}
 file to the harddisk.@footnote{See @xref{player, Using the diskwriter}.}
 
-
-@section bigmodules
-The above behaviour can be avoided if a file is marked @emph{big} by pressing
-@key{ALT}+@key{b} in the fileselector. The filesize will turn red. Now a file
-will not be loaded into the soundcard memory, but played with the internal
-mixing routines. This limits the size of files only to the size of physical
-memory.@footnote{You have to apply a valid @emph{playback-} and @emph{mix-device}
-to use this feature. See @pxref{configuration, ocp.ini} for details.}
 
 @section Reference
 @multitable @columnfractions .35 .65
@@ -312,8 +273,6 @@ to use this feature. See @pxref{configuration, ocp.ini} for details.}
 @tab stop scanning module information
 @item @key{ALT}+@key{w}
 @tab write module information @file{.mdz} for selected file
-@item @key{ALT}+@key{z}
-@tab toggle screen mode
 @item @key{Up}, @key{Down}
 @tab move cursor one entry up/down
 @item @key{CTRL}+@{@key{Up}, @key{Down}@}
@@ -356,9 +315,12 @@ Supported filetypes -- valid options for the @emph{type} entry in the module inf
 @multitable @columnfractions .1 .9
 @item 669  @tab 669 Composer module
 @item AMS  @tab Velvet Studio module
+@item AY   @tab Ayley-library compatible
 @item BPA  @tab Death Ralley archive
 @item CDA  @tab compact disk CD audio track
 @item DMF  @tab X Tracker module
+@item HVL  @tab HivelyTracker / Abyss Highest Experience module
+@item FLAC @tab FLAC
 @item IT   @tab Impulse Tracker module
 @item MDL  @tab Digi Tracker module
 @item MID  @tab standard midi file
@@ -369,18 +331,23 @@ Supported filetypes -- valid options for the @emph{type} entry in the module inf
 @item MODf @tab pc Fast Tracker II .mod file
 @item M15  @tab amiga NoiseTracker module with 15 instruments (plays like ProTracker 1.1b)
 @item M15t @tab amiga NoiseTracker module with 15 instruments, effect Fxx is tempo (plays like ProTracker 1.1b)
-@item MP3  @tab MPEG audio format level 1-3
+@item M31  @tab miga NoiseTracker module with 31 instruments
+@item MPx  @tab MPEG audio format level 1-3
 @item MTM  @tab Multi Tracker module
 @item MXM  @tab Mxmplay module
 @item OGG  @tab Ogg Vorbis sound stream
 @item OKT  @tab Oktalyzer module
+@item OPL  @tab Adplug-library compatible
 @item PLS  @tab OCP playlist, works also with M3U and PLT playlist files
 @item PTM  @tab Poly Tracker module
-@item S3M  @tab Sream Tracker 3 module
+@item SID  @tab PSID SID file
+@item STM  @tab Scream Tracker 2 module
+@item S3M  @tab Scream Tracker 3 module
 @item SID  @tab PSID sid file
 @item UMX  @tab Unreal module file
 @item ULT  @tab Ultra Tracker module
 @item WAV  @tab Microsoft RIFF wave file
 @item WOW  @tab WOW Tracker module
 @item XM   @tab Fast Tracker 2 module
+@item YM   @tab ST-Sound (YM files player library)
 @end multitable

@@ -930,8 +930,8 @@ AC_CONFIG_FILES(goodies/pack/Makefile)
 AC_CONFIG_FILES(ocp.ini)
 AC_CONFIG_FILES(desktop/opencubicplayer.desktop)
 
+AC_CONFIG_FILES(doc/opencp.dox)
 AC_CONFIG_FILES(doc/texi/faq.texi)
-AC_CONFIG_FILES(doc/texi/install.texi)
 AC_CONFIG_FILES(doc/texi/ocp.texi)
 
 AC_OUTPUT

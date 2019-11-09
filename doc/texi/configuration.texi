@@ -135,7 +135,7 @@ this section.
 
 @example
 [sound]
-  playerdevices=devpALSA devpOSS devpCA devpSDL devpNone devpDisk
+  playerdevices=devpALSA devpOSS devpCA devpSDL2 devpSDL devpNone devpDisk
   samplerdevices=devsOSS devsNone
   wavetabledevices=devwMixF devwmixQ devwMix devwNone
   mixrate=44100
@@ -154,8 +154,6 @@ this section.
   itchan=64
   cdsamplelinein=off
   bigmodules=devwMixF
-  wavetostereo=1
-  waveratetolerance=50
   amplify=100
   panning=100
   volume=100
@@ -262,16 +260,6 @@ amount of onboard memory to store the sample data too. If files are
 marked as ``big'' in the fileselector this device listed in this
 option will be used for mixing this module.@footnote{See section
 @pxref{fileselector, bigmodules} for details about this feature}
-@item wavetostereo @tab
-When playing a mono wave the sound card can either be
-switched to mono mode or the wave can be played as a stereo
-file.@footnote{switching the soundcard may cause problems so enable
-this option.}
-@item waveratetolerance @tab
-if the sample rate of the wave file is not equal to
-a sample rate supported by your sound card, OCP will not resample
-unless this value is exceeded. Divide the value by 1000 to get the
-percentage.
 @item amplify @tab
 the default amplification to use within the player. The
 following options are described in section @pxref{player, General} in
@@ -332,7 +320,7 @@ background. OCP will load any TGA files with 640x384 dimensions and
 256 colors.  As the TGA format is poorly implemented in modern graphic
 programs this might change in the future. As some colors out of the
 256 are used by OCP you should leave either the first or the last 16
-colors in the palette black.  The pictures should be copied to the
+colors in the palette black. The pictures should be copied to the
 home directory of ocp, unless you specify a different location in the
 @emph{defaultconfig} section.
 @item compomode @tab
@@ -405,8 +393,8 @@ runtime by pressing @key{ALT}+@key{z} in the fileselector.
 @example
 [fileselector] ; default fileselector section
   modextensions=MOD S3M XM IT MDL DMF ULT AMS MTM 669 NST WOW \
-                OKT PTM MXM MID WAV RMI MP1 MP2 MP3 OGG SID DAT \
-		PLS M3U PLT OGG
+                OKT PTM MXM MID WAV RMI MP1 MP2 MP3 OGG OGA SID \
+		DAT AY  YM  HVL AHX PLS M3U PLT OGG
   movepath=  ; default path to move files
   screentype=2
   typecolors=on
@@ -526,9 +514,22 @@ sound cards and drivers support. The original order of the
 @file{ocp.ini} has been slightly modified for the purpose of
 documentation.
 
+@subsection ALSA
+
+@subsection CA
+CoreAudio is the sound arcitecture for MacOS / OSX. The current state of this
+driver might be non-working, as the main developer do not have access to the
+given hardware. Testing/patching are welcome.
+
+@example
+[devpCA]
+  link=devpcoreaudio
+@end example
+
 @subsection OSS
-Open Sound Sysstem is a generic portable UNIX sound interface for
-playing/recording pcm data, and adjusting mixer settings.
+Open Sound Sysstem is the common legacy sound API for most unix systems. This
+driver should work on most unix-like operating systems like different variants
+of BSD, old versions of Linux, etc.
 
 @example
 [devpOSS]
@@ -544,6 +545,46 @@ playing/recording pcm data, and adjusting mixer settings.
   mixer=/dev/mixer
   igain=1
 @end example
+
+@subsection SDL/SDL2
+SDL/SDL2 is a cross-platform library that gives a common simple API for
+playing audio, hiding the underlaying operating system. This library will work
+on almost all systems.
+
+@example
+[devpSDL]
+  link=devpsdl
+
+[devpSDL2]
+  link=devpsdl2
+@end example
+
+@subsection diskwriter
+OCP can write all sound output directly to hard disk. Data is written in
+standard @file{.wav} format. You can use this feature to burn audio
+cds from any sound format supported by OCP.
+
+Although you can write @file{.wav} files in every possible sample
+format you should not alter the default of 44100KHz, 16bit,
+stereo. You should disable module looping so each module is written
+once onto harddisk. You can disable looping in the @file{ocp.ini}
+with the directive @emph{loop=on} in the @pxref{fileselector}
+section. You can also change looping temporarily with the
+fileselector configuration while OCP is running. See the
+fileselector advance usage @pxref{fileselector, Advanced usage} for details.
+
+To enable the diskwriter device you can change the @file{ocp.ini} file
+and select the @emph{devpDisk} as default device by moving it to the
+start of the @pxref{configuration, playerdevices} directive in the @pxref{configuration, [sound]}
+section. You can also select the @emph{devpDisk} device temporarily
+by selecting the @file{setup:/DEVICES/DEVPDISK.DEV} device.
+
+Now simply start OCP and select a module to play. You will hear no output
+and notice that the module is played with maximum speed@footnote{depending
+on your cpu power}. In the directory where you have started OCP (not
+necessaryly the directory where the module is located) subsequent
+@file{.wav} files named @file{CPOUT000.WAV}, @file{CPOUT001.WAV}
+will be created.
 
 @multitable @columnfractions .3 .7
 @item path @tab
@@ -629,12 +670,6 @@ disable this feature.
 
 @section Filetypes
 The @file{ocp.ini} file contains descriptions for all supported file
-types.  These features will be included in the file loader devices in
+types. These features will be included in the file loader devices in
 the next version of OCP, so these options will soon be obsolete. There
 should be no need to modify any of the file types.
-
-@section MIDI
-For MIDI playback, OCP now uses an internal compiled version of Timidity+,
-but you will need to install a Timidity+ sound font in order to utilize this
-playback engine. Please refer to Timidity+ project web pages or your OS
-package manager for sourcing these.

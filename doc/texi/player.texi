@@ -5,7 +5,7 @@ interface is started. This is the main part of OCP and you have various ways
 to display all kinds of music information and data.
 
 @section General
-OCP displays general (status) information in the first 4 rows. Some of these
+OCP displays general (status) information in the top first 4 rows. Some of these
 entries can be changed by the user, others are static for each module. The
 following list will explain every entry.@footnote{Some special file types modify the
 appearance of the general field, but only static data is affected.}
@@ -100,7 +100,7 @@ are turned off again. By pressing @key{s} again all channels are enabled.
 
 You can directly @emph{solo} the first 10 channels by pressing keys @key{1}..@key{0}.
 This will act as if you had changed to the appropriate channel and pressed
-@key{s}. Channels 11-20 are accessed through @key{ALT}+@key{1}..@key{ALT}+@key{0}.
+@key{s}.
 
 To pause the file press @key{p}.
 
@@ -135,36 +135,10 @@ looping is disabled the next module in the playlist will be loaded once a
 module has ended. If no modules are left in the playlist the fileselector is
 started.
 
-A DOS-Shell will be started when typing @key{d}. Note that OCP uses about
-200KB so not all programs might start or execute properly. However it should
-be enough to make simple tasks like copying, deleting etc. When running under
-Windows95 the free amount of memory should be the usual size.
-
-The screen mode can be changed by pressing @key{z}. This will toggle
-between 25 and 50 rows textmode, while
-@key{CTRL}+@key{z} toggle between 30 and 60 row textmode.
-@key{ALT}+@key{z} will toggle between 80 and 132 column mode.@footnote{80x25
-and 80x50 textmode are available on every VGA card. All other modes require a
-proper VESA bios (at least version 1.2) and may not be available on all cards.}
-
-The current configuration can be ``saved'' with @key{ALT}+@key{F2}. It is
-not stored permanently on hard disk, but only valid until OCP is quit. Normally
-the default configuration is loaded every time a new file is loaded. This
-function makes the current configuration the new default configuration. A
-previously saved configuration can be loaded with @key{ALT}+@key{F3}. The
-@emph{real} default values are loaded with @key{ALT}+@key{F4}. To modify
-the default values permanently you have to change the @file{ocp.ini} file
-as explained on page @xref{configuration, ocp.ini}.
+A shell will be started when typing @key{d} if the current renderer supports it.
 
 An online help is shown by @key{h}, @key{?} or @key{F1}. Use
-@key{Pgup} and
-@key{Pgdown} to scroll through this screen.
-
-Users of SoundBlasterAWE, Terratex EWS and Gravis Ultrasound PnP can
-use @key{CTRL}+@key{F5} and @key{CTRL}+@key{F6} to adjust the
-onboard reverb effect. The SBAWE can also add a chorus effect which is
-controlled via @key{CTRL}+@key{F7} and
-@key{CTRL}+@key{F8}.
+@key{Pgup} and @key{Pgdown} to scroll through this screen.
 
 @section Text mode functions
 The player has two different operating modes. Text mode and graphics
@@ -186,7 +160,7 @@ visible - inactive
 visible - active
 @end itemize
 When pressing a key the according funtion is made active, but left
-invisible.  By pressing the same key a second time the function will
+invisible. By pressing the same key a second time the function will
 be made visible.  An active function can be recognized by their title
 string displayed in bright blue, while inactive functions have their
 title string displayed in dark blue. Keys affecting the funtions are
@@ -208,8 +182,7 @@ starts to play it is shown in cyan for a short while.  The third
 number shows the current volume at which the intrument / sample is
 played. Behind the volume the current effect is shown.@footnote{All
 these informations are only shown when a module or similar type of
-file is played.  The nature of file like @file{.WAV} or
-@file{.MP3} permits those displays.}  At the rightmost of each entry
+file is played.} At the rightmost of each entry
 the current (physical) volume splitted among left and right output
 channel is displayed in a bar graph.
 
@@ -251,7 +224,7 @@ short and long.
 In the short view only the intrument names are shown giving you space
 for two instruments per row in 80 column mode (4 instruments are shown
 in 132 column mode). An instrument / sample that is currently played
-is shown in bright cyan. If the sample is played ont the currently
+is shown in bright cyan. If the sample is played on the currently
 selected channel it is shown in bright green. All inactive intruments
 are drawn dark grey. If a sample has been played once a rectangular
 dot is placed left to the intrument number.
@@ -302,8 +275,7 @@ you can toggle between the color mode and pure grey.
 
 @subsection Pattern view
 Modules are arranged in patterns. You can view these patterns with the
-pattern view function envoked with @key{t}. When enabling this
-funtion
+pattern view function envoked with @key{t}. When enabling this funtion
 OCP tries to display all channels at once using the best display possible. For
 modules using few channels (<8) this default display is
 normally acceptable, but you might want to change it when playing
@@ -322,8 +294,7 @@ column can be changed by pressing @key{Tab}. As there are many
 combinations of screen mode, channels and formats I will not go into
 detail here.
 
-The number of channel rows displayed at once can be changed by
-pressing
+The number of channel rows displayed at once can be changed by pressing
 @key{Pgup}, @key{Pgdown}. Normally the pattern view will follow the music
 as it progresses. With @key{Space} the pattern view will stop. The
 current play position is now displayed with a white special char. You
@@ -336,15 +307,13 @@ different colors. Green is used for effects affecting the pitch of the
 sample, while blue command change the volume. Effects drawn in purple
 change the pan position. Red colors indicate the manipulition of the
 timeslice effected with this samples. Other effects are drawn
-white. Please have a look inside the online help @key{h}, @key{?} or
-@key{F1} for a complete reference on the effects shown.
+white.
 
 @subsection Spectrum Analyzer
-The spectrum analyzer uses the fast fourier transformation to gather
-information on the audio spectrum used in sample data. The analyzer is
-started with
-@key{a}. This function splits the sound data into many @emph{bands} of pure
-sine waves. This is called the spectrum of the sample.
+The spectrum analyzer uses the fast fourier transformation to gather information
+on the audio spectrum used in sample data. The analyzer is started with @key{a}.
+This function splits the sound data into many @emph{bands} of pure sine waves.
+This is called the spectrum of the sample.
 
 The status bar of this function shows you the range each bar covers
 and the highest frequency processed (the rightmost bar corresbonds to
@@ -354,21 +323,11 @@ highest possible frequency is half the output frequency (22KHz when
 playing at 44Khz).}
 
 With @key{ALT}+@key{a} the mode of the spectrum function can be
-toggled.  Stereo using two analyzers, mono using only one and a single
-mode are available.  In the single mode the currently selected channel
+toggled. Stereo using two analyzers, mono using only one and a single
+mode are available. In the single mode the currently selected channel
 is used as sound source for the analyzer.
 
 @key{Tab} changes the color used for the analyzer.
-
-@smallformat
-To get a smooth view the default charset of the graphics
-adapter is modified. This is working fine with every graphics card
-under MS-DOS. However Windows95 does not allow the manipulition of
-characters, so the spectrum analyzer function is not shown properly
-when running under Windows95 (window-mode only). If you see a
-distorted screen while using the spectrum analyzer function this is
-normal.
-@end smallformat
 
 @subsection peak power levels
 This function shows the current physical volume of the output channels
@@ -380,13 +339,12 @@ right side of the screen.
 You can browse through the different items with @key{Up} and @key{Down}.
 If you want to change a value, try @key{Left} and @key{Right}. You can
 also toggle between a short mode, a long mode (only in 132 column
-modes) and invisible mode with @key{m} (Volume control is disabled in
+modes) and invisible mode using @key{m} (Volume control is disabled in
 80 column modes and enabled in 132 column modes by default).
 
 @subsection Module message
-Some file types store messages which can be viewed with
-@key{ALT}+@key{F9} like in Multi Tracker. If the message is long use
-@key{Pgup}, @key{Pgdown} to scroll.
+Some file types store messages which can be viewed with @key{|} like in Multi
+Tracker. If the message is long use @key{Pgup}, @key{Pgdown} to scroll.
 
 @subsection eXtended mode
 All four text mode functions can be displayed simultaneously. This
@@ -419,16 +377,15 @@ scopes. If the output is triggered a wave on the screen always starts
 with the upper halvwave. If triggering is turned off the wave will be
 drawn from the current position.
 
-The scale of the scopes can be altered with @key{Pgup},
-@key{Pgdown}.
+The scale of the scopes can be altered with @key{Pgup}, @key{Pgdown}.
 
 @subsection Note dots
-@key{n} starts the note dots function. Each channel is displayed on a horizontal row. The current note is represented
-by a dot or bar. Low notes are placed on the left side. High notes
-appear on the right side of the screen. By pressing @key{Pgup},
-@key{Pgdown} the scale of the rows can be changed. However the
-default scale fits the usual note scale of modules exactly, so there
-should be no need to change.
+@key{n} starts the note dots function. Each channel is displayed on a horizontal
+row. The current note is represented by a dot or bar. Low notes are placed on
+the left side. High notes appear on the right side of the screen. By pressing
+@key{Pgup}, @key{Pgdown} the scale of the rows can be changed. However the
+default scale fits the usual note scale of modules exactly, so there should be
+no need to change.
 
 By pressing @key{n} you can alter the output appearance of the
 dots. In the modes @emph{stereo note cones} and @emph{stereo note
@@ -485,33 +442,6 @@ can be found on the OCP homepage (page @uref{http://www.cubic.org/player}).
 Animations can be generated with the wap program from bitmap
 files.@footnote{See appendix @xref{wap}.}
 @end smallformat
-
-@section Using the diskwriter
-OCP can write all sound output directly to hard disk. Data is written in
-standard @file{.wav} format. You can use this feature to burn audio
-cds from any sound format supported by OCP.
-
-Although you can write @file{.wav} files in every possible sample
-format you should not alter the default of 44100KHz, 16bit,
-stereo. You should disable module looping so each module is written
-once onto harddisk. You can disable looping in the @file{ocp.ini}
-with the directive @emph{loop=on} in the @pxref{fileselector}
-section. You can also change looping temporarily with the
-fileselector configuration while OCP is running. See the
-fileselector advance usage @pxref{fileselector, Advanced usage} for details.
-
-To enable the diskwriter device you can change the @file{ocp.ini} file
-and select the @emph{devpDisk} as default device by moving it to the
-start of the @pxref{configuration, playerdevices} directive in the @pxref{configuration, [sound]}
-section. You can also select the @emph{devpDisk} device temporarily
-by selecting the @file{setup:/DEVICES/DEVPDISK.DEV} device.
-
-Now simply start OCP and select a module to play. You will hear no output
-and notice that the module is played with maximum speed@footnote{depending
-on your cpu power}. In the directory where you have started OCP (not
-necessaryly the directory where the module is located) subsequent
-@file{.wav} files named @file{CPOUT000.WAV}, @file{CPOUT001.WAV}
-will be created.
 
 @section Using the Compo mode
 If you enable the @emph{Compo mode} in the @file{ocp.ini} file all
@@ -805,26 +735,6 @@ peak power level mode
 @key{w}
 @tab
 wurfel mode
-@item
-@key{x}
-@tab
-eXtended mode
-@item
-@key{ALT}+@key{x}
-@tab
-normal mode
-@item
-@key{z}
-@tab
-toggle between 25/50 or 30/60 rows
-@item
-@key{CTRL}+@key{z}
-@tab
-change between 25/50 and 30/60 rows
-@item
-@key{ALT}+@key{z}
-@tab
-change between 80 and 132 column mode
 @item
 @key{Enter}
 @tab

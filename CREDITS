@@ -30,3 +30,4 @@ Chuck Anderson <cra@WPI.EDU>                       - Patches
 François Revol <revol@free.fr>                     - SDL Audio, and Haiku support
 Jindřich Makovička <makovick@gmail.com>            - Minor fix in detection for glibc bug 4936, C version of FPU mixer
 Csaba Halász aka Jester01                          - Minor SDL keyboard updates
+Ossi Saukko                                        - Minor patch

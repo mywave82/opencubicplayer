@@ -5,7 +5,7 @@
 @copying
 This documentiation falls under the GPL license.
 
-Copyright @copyright{} 2005 Stian Skjelstad.
+Copyright @copyright{} 2019 Stian Skjelstad.
 
 Copying and distribution of this file, with or without modification,
 are permitted in any medium without royalty provided the copyright
@@ -28,12 +28,13 @@ notice and this notice are preserved.
 @node Top
 @top Index
 
-OCP is a music file player. It is derived from the @emph{Cubic Player 2.0appe}
-which was developed by Niklas Beisert. The latest version of UNIX port is @PACKAGE_VERSION@
-See @pxref{install} on how to get a copy of OCP.
 
-OCP is published under the GNU General Public License (GPL). That means you
-can use this software without charging for it. However OCP is not in the public domain!
+OpenCubicPlayer is a music file player. It is derived from the @emph{Cubic Player 2.0appe}
+for DOS which was developed by Niklas Beisert, which you can find at
+@url{https://www.cubic.org/player/}
+
+OpenCubicPlayer is published under the GNU General Public License (GPL). That means you
+can use this software without charging for it.
 
 The source code is available to the public and everybody is encouraged to make
 changes to it. Please send any modifications and bugfixes to the authors. The
@@ -41,12 +42,34 @@ authors do not take any warranty for any damages whatever kind produced by this
 software. For further details see the file
 @url{http://www.gnu.org/copyleft/gpl.html}
 
+For reporting bugs (issues), submitting patches, or looking for more recent
+versions, please check out @url{https://github.com/mywave82/opencubicplayer/} and
+@url{https://stian.cubic.org/project-ocp.php}
+
+If you encountered a bug in OpenCubicPlayer please report in the link above.
+Many people complain about music files not being played properly (especially
+with module formats). Please keep in mind that the original tracking/sequencing
+program is ~always~ the reference for correct playback. If a music file sounds
+different compiled to another player, please keep in mind that perhaps the other
+program does not play it correct. This is espicially true for Amiga 4channel
+modules. As those files can be produced using various trackers (Noise-, Sound-,
+Protracker and many, many more) and sadly all of those trackers are slighty
+different, a general player like OpenCubicPlayer can not play ~all~ modules
+correctly. We try to come as close to a reasonable mixture of them all, so that
+most modules are played correctly. However certain features of one tracker
+permit another feature of a different tracker.
+
+e-Mail contacts: Stian Skjelstad       @email{stian.skjelstad@@gmail.com}
+                 Niklas Beisert        @email{nbeisert@@physik.tu-muenchen.de}
+                 Tammo Hinrichs        @email{kb@@nwn.de}
+                 Dirk Jagdmann         @email{doj@@cubic.org}
+
+
 @insertcopying
 @end ifnottex
 
 @menu
 Users Manual
-* install::
 * starting::
 * fileselector::
 * player::
@@ -55,19 +78,16 @@ Users Manual
 * faq::
 
 Developers Manual
-* plugin::
 * mdz::
 * wap::
 @end menu
 
-@include install.texi
 @include starting.texi
 @include fileselector.texi
 @include player.texi
 @include configuration.texi
 @include support.texi
 @include faq.texi
-@include plugin.texi
 @include mdz.texi
 @include wap.texi
 

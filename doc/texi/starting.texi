@@ -1,18 +1,19 @@
 @node starting
 @chapter Starting Open Cubic Player
 When starting OCP, it first tries to setup a directory in your home-directory
-where cache and configuration will be stored, aswell at locating where OCP
-has installed its main files.
+where cache and configuration will be stored, aswell at locating where OCP has
+installed its main files.
 
-OCP then tries to detect the sound cards defined in the @file{ocp.ini} file.
-If the card is not found you cannot use it. If more than one sound card is
-installed and found by OCP the first one listed in the @file{ocp.ini} is
-used as the default device.@footnote{You can change this in the player by using
-the @file{setup:} device. See page @xref{specialdrive}, for detail.}
+OCP then tries to detect the sound card/driver defined in the @file{ocp.ini}
+file. If the card/driver is not found you cannot use it. If more than one sound
+card/driver is installed and found by OCP the first one listed in the
+@file{ocp.ini} is used as the default device. @footnote{You can change this in
+the player by using the @file{setup:} device. See page @xref{specialdrive}, for
+detail.}
 
 By entering a filename as parameter onto the command line you can load a module.
 If a filename is given the file will be loaded and OCP starts with the
-player.@footnote{This will work if the file is inside an archive located in the
+player. @footnote{This will work if the file is inside an archive located in the
 current directory. If no (unpacked) file is found all archives in the current
 directory are searched for an appropriate filename.} When the parameter is
 the name of a directory the fileselector starts with the given directory.
@@ -22,10 +23,6 @@ will be played (by adding them to the playlist).
 If more than one parameter is given a playlist will be set up, containing all
 found files. You can mix filenames of archives, files in archives and normal
 files on the hard disk.
-
-You normally don't have to supply the right file extensions, as they are
-guessed by the fileselector. If the filename is not complete the file will
-not be processed (unlike the quickfind function).
 
 OCP can be configured using the command line, although the configuration
 through the @file{ocp.ini} file is more comfortable. The options split up
@@ -83,7 +80,7 @@ Finally an example to illustrate the above features:
 ocp -fl0,r1 -va80,p50,f2 -spdevpdisk -sr44100 ftstar.xm
 @end example
 
-This will start OCP and load the file @file{ftstar.xm}@footnote{A marvelous piece of
+This will start OCP and load the file @file{ftstar.xm} @footnote{A marvelous piece of
 music composed by KB which won The Party 1997.}. The music will be played once
 and will not loop @emph{(-fl0, r1)}. Further the player is advised to amplify
 this file with 80%, set the panning to 50% and interpolate every sample

@@ -10492,9 +10492,9 @@ ac_config_files="$ac_config_files ocp.ini"
 ac_config_files="$ac_config_files desktop/opencubicplayer.desktop"
 
 
-ac_config_files="$ac_config_files doc/texi/faq.texi"
+ac_config_files="$ac_config_files doc/opencp.dox"
 
-ac_config_files="$ac_config_files doc/texi/install.texi"
+ac_config_files="$ac_config_files doc/texi/faq.texi"
 
 ac_config_files="$ac_config_files doc/texi/ocp.texi"
 
@@ -11196,8 +11196,8 @@ do
     "goodies/pack/Makefile") CONFIG_FILES="$CONFIG_FILES goodies/pack/Makefile" ;;
     "ocp.ini") CONFIG_FILES="$CONFIG_FILES ocp.ini" ;;
     "desktop/opencubicplayer.desktop") CONFIG_FILES="$CONFIG_FILES desktop/opencubicplayer.desktop" ;;
+    "doc/opencp.dox") CONFIG_FILES="$CONFIG_FILES doc/opencp.dox" ;;
     "doc/texi/faq.texi") CONFIG_FILES="$CONFIG_FILES doc/texi/faq.texi" ;;
-    "doc/texi/install.texi") CONFIG_FILES="$CONFIG_FILES doc/texi/install.texi" ;;
     "doc/texi/ocp.texi") CONFIG_FILES="$CONFIG_FILES doc/texi/ocp.texi" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
