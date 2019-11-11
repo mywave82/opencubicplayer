@@ -1,5 +1,5 @@
 [version]
- epoch=20191101
+ epoch=20191111
 
 [general]
 ;link=
@@ -71,8 +71,8 @@ link=medialib
   analyser=on
   mvoltype=1
   pattern=on
-  insttype=0
-  channeltype=1
+  insttype=2
+  channeltype=2
   uselfb=yes          ; disable use of VESA 2.0
   fps=20
 

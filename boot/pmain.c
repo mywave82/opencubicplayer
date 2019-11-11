@@ -487,10 +487,17 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileString("filetype 38", "name", "FLAC");
 		}
 
-
-		if (epoch < 20191101)
+		if (epoch < 20191111)
 		{
-			cfSetProfileInt("version", "epoch", 20191101, 10);
+			printf("ocp.ini update (0.2.0) changed default value of [screen] insttype=2\n");
+			cfSetProfileString("screen", "insttype", "2");
+			printf("ocp.ini update (0.2.0) changed default value of [screen] channeltype=2\n");
+			cfSetProfileString("screen", "channeltype", "2");
+		}
+
+		if (epoch < 20191111)
+		{
+			cfSetProfileInt("version", "epoch", 20191111, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -501,13 +508,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10)!=20191101)
+	if (cfGetProfileInt("version", "epoch", 0, 10)!=20191111)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20191019\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20191111\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20191019\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20191111\n\n");
 		}
 		sleep(5);
 	}
