@@ -57,12 +57,34 @@ https://manpages.debian.org/testing/opencubicplayer/ocp.1.en.html
 
 # Usage
 
-TODO: keyboard shortcuts
 double-esc: exist the program
+ALT + K: List the available keyshort-cuts in the current view
 
 ## While playing
 
+Enter: next file from the playlist, if playlist is empty it opens the file-browser
+
+F: File-browser
+
+A: Text FFT analyzer
+C: Text Channel viewer
+T: Text Track viewer
+
+G: Lo-Res FFT analyzer + history
+Shift-G: High-Res FFT analyzer + history
+
+B: Phase viewer
+
+O: Oscilloscope
+
 ## File browser
+
+ALT + E: Edit meta-information
+ALT + I: Toggle file-list columns (long filename, title, etc.)
+ALT + C: Opens a system options list
+Insert: Add to playlist
+Delete: Remove from playlist
+Tab: Move cursor between filelist and playlist
 
 # Original
 
