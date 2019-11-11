@@ -84,7 +84,6 @@ static void cpiTextVerifyDefModes(void)
 
 	while (cpiTextDefModes)
 	{
-
 		if (cpiTextDefModes->Event&&!cpiTextDefModes->Event(cpievInitAll))
 			cpiTextDefModes=cpiTextDefModes->nextdef;
 		else

@@ -398,6 +398,16 @@ static int InstEvent(int ev)
 
 static struct cpitextmoderegstruct cpiTModeInst = {"inst", InstGetWin, InstSetWin, InstDraw, InstIProcessKey, InstAProcessKey, InstEvent CPITEXTMODEREGSTRUCT_TAIL};
 
+static void __attribute__((constructor))init(void)
+{
+	cpiTextRegisterDefMode(&cpiTModeInst);
+}
+
+static void __attribute__((destructor))done(void)
+{
+	cpiTextUnregisterDefMode(&cpiTModeInst);
+}
+
 void plUseInstruments(struct insdisplaystruct *x)
 {
 	plInstScroll=0;

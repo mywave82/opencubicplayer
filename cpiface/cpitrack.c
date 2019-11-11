@@ -874,3 +874,13 @@ void cpiTrkSetup(const struct cpitrakdisplaystruct *c, int npat)
 	getgcmd=c->getgcmd;
 	cpiTextRegisterMode(&cpiTModeTrack);
 }
+
+static void __attribute__((constructor))init(void)
+{
+	cpiTextRegisterDefMode(&cpiTModeTrack);
+}
+
+static void __attribute__((destructor))done(void)
+{
+	cpiTextUnregisterDefMode(&cpiTModeTrack);
+}

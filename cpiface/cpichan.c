@@ -216,6 +216,16 @@ static int ChanEvent(int ev)
 
 static struct cpitextmoderegstruct cpiTModeChan = {"chan", ChanGetWin, ChanSetWin, ChanDraw, ChanIProcessKey, ChanAProcessKey, ChanEvent CPITEXTMODEREGSTRUCT_TAIL};
 
+static void __attribute__((constructor))init(void)
+{
+	cpiTextRegisterDefMode(&cpiTModeChan);
+}
+
+static void __attribute__((destructor))done(void)
+{
+	cpiTextUnregisterDefMode(&cpiTModeChan);
+}
+
 void plUseChannels(void (*Display)(uint16_t *buf, int len, int i))
 {
 	ChanDisplay=Display;
