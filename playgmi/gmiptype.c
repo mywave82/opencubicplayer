@@ -46,7 +46,7 @@ static void getext(char *ext, char *name)
 
 static int gmiGetModuleType(const char *buf, const char *ext)
 {
-	if (!strcmp(ext, ".MID"))
+	if (!strcasecmp(ext, ".MID"))
 		return mtMID;
 
 	if (*(uint32_t*)buf==uint32_little(0x6468544D))
