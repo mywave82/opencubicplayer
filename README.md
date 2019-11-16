@@ -1,6 +1,6 @@
 # What is it?
 
-UNIX port of Open Cubic Player
+UNIX port of Open Cubic Player, which is a text-based player with some few graphical views. Visual output can be done through nCurses, Linux console (VCSA + FrameBuffer), X11 or SDL/SDL2. It can compile on various different unix based operating systems.
 
 # What can it play?
 
@@ -110,17 +110,14 @@ and optionally add things like `--prefix` etc.
 
 To get curses up and running with colors, you need to run ocp like this
 
-`TERM=xterm-color ocp`
+`TERM=xterm-color ocp-curses`
 
-or
-
-`export TERM=xterm-color`
-
-before you run ocp
-
-# Youtube for tracked music?
+# Sample sources of where to find music
 
 https://modarchive.org/
+
 http://www.chiptune.com/
+
 http://www.keygenmusic.net/
+
 https://ftp.hornet.org/pub/demos/music/contests/
