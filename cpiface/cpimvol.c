@@ -191,22 +191,20 @@ static int MVolIProcessKey(unsigned short key)
 		case KEY_ALT_K:
 			cpiKeyHelp('v', "Enable volume viewer");
 			cpiKeyHelp('V', "Enable volume viewer");
-			return 0;
+			break;
 		case 'v': case 'V':
 			if (!plMVolType)
 				plMVolType=1;
 			cpiTextSetMode("mvol");
-			break;
+			return 1;
 		case 'x': case 'X':
 			plMVolType=plNLChan?2:1;
-			return 0;
+			break;
 		case KEY_ALT_X:
 			plMVolType=1;
-			return 0;
-		default:
-			return 0;
+			break;
 	}
-	return 1;
+	return 0;
 }
 
 static int MVolAProcessKey(unsigned short key)

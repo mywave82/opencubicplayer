@@ -671,25 +671,18 @@ static int cpiChanProcessKey(uint16_t key)
 	return 1;
 }
 
-/*
-int plmpProcessKey(uint16_t key)
+void cpiForwardIProcessKey(uint16_t key)
 {
 	struct cpimoderegstruct *mod;
 
-	if (curmode->AProcessKey(key))
-		return 1;
 	for (mod=cpiModes; mod; mod=mod->next)
-		if (mod->IProcessKey(key))
-			return 1;
-	if (plNLChan)
-		if (cpiChanProcessKey(key))
-			return 1;
-	if (plProcessKey)
-		if (plProcessKey(key))
-			return 1;
-	return 0;
+	{
+#ifdef KEYBOARD_DEBUG
+		fprintf (stderr, "cpiForwardIProcessKey: mod[%s]->IProcessKey()\n", mod->handle);
+#endif
+		mod->IProcessKey(key);
+	}
 }
-*/
 
 static interfaceReturnEnum plmpDrawScreen(void)
 {
@@ -735,6 +728,9 @@ static interfaceReturnEnum plmpDrawScreen(void)
 
 		if (curmode->AProcessKey(key))
 		{
+#ifdef KEYBOARD_DEBUG
+			fprintf (stderr, "plmpDrawScreen: curmode[%s]->AProcessKey() swallowed the key\n", curmode->handle);
+#endif
 			curmode->Draw();
 			continue;
 		}
@@ -771,12 +767,12 @@ static interfaceReturnEnum plmpDrawScreen(void)
 			TODO plLoopPatterns
 			case KEY_ALT_L:
 				plLoopPatterns=!plLoopPatterns;
-			#endif
 			#ifdef DEBUG
 				if(plLoopPatterns)
 					DEBUGSTR("pattern loop enabled");
 				else
 					DEBUGSTR("pattern loop disabled");
+			#endif
 			#endif
 			#ifdef DOS32 /* TODO*/
 			case 0xF8:
@@ -798,18 +794,47 @@ static interfaceReturnEnum plmpDrawScreen(void)
 				cpiKeyHelp(KEY_ALT_C, "Open setup dialog");
 				/* cpiKeyHelp(KEY_ALT_L, "Toggle plLoopPatterns"); */
 				/*return 0;*/
+#ifdef KEYBOARD_DEBUG
+			fprintf (stderr, "plmpDrawScreen: ALT-K, dropping to the default path\n");
+#endif
 			default:
 				for (mod=cpiModes; mod; mod=mod->next)
+				{
+#ifdef KEYBOARD_DEBUG
+					fprintf (stderr, "plmpDrawScreen: mod[%s]->IProcessKey()\n", mod->handle);
+#endif
 					if (mod->IProcessKey(key))
-						goto fertigmitkeys;
+					{
+#ifdef KEYBOARD_DEBUG
+						fprintf (stderr, "plmpDrawScreen:   key was swallowed\n");
+#endif
+						break;
+					}
+				}
 				if (plNLChan)
+				{
+#ifdef KEYBOARD_DEBUG
+					fprintf (stderr, "plmpDrawScreen: plNLChan!=0   =>   cpiChanProcessKey()\n");
+#endif
 					if (cpiChanProcessKey(key))
-						goto fertigmitkeys;
+					{
+#ifdef KEYBOARD_DEBUG
+						fprintf (stderr, "plmpDrawScreen:   key was swallowed\n");
+#endif
+						break;
+					}
+				}
 				if (plProcessKey)
+				{
+#ifdef KEYBOARD_DEBUG
+					fprintf (stderr, "plmpDrawScreen: plProcessKey()\n");
+#endif
 					plProcessKey(key);
+				}
 				cpiKeyHelpDisplay();
-			fertigmitkeys: ;
+				break;
 		}
+
 		curmode->Draw();
 	}
 

@@ -302,7 +302,7 @@ static int IProcessKey(uint16_t key)
 		case KEY_ALT_K:
 			cpiKeyHelp('m', "Toggle volume control interface mode");
 			cpiKeyHelp('M', "Toggle volume control interface mode");
-			return 0;
+			break;
 		case 'm': case 'M':
 			if((focus)||(mode==modeNone))
 			{
@@ -315,21 +315,19 @@ static int IProcessKey(uint16_t key)
 			} else {
 				cpiTextSetMode("volctrl");
 			}
-			break;
+			return 1;
 		case 'x': case 'X':
 			if(mode)
 			{
 				mode=mode52;
 				if(plScrWidth<132)
 					mode=mode80;
-				cpiTextRecalc();
 			}
 			break;
 		case KEY_ALT_X:
 			if(mode)
 			{
 				mode=mode80;
-				cpiTextRecalc();
 			}
 			break;
 	}

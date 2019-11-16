@@ -129,6 +129,8 @@ extern void cpiTextUnregisterDefMode(struct cpitextmoderegstruct *m);
 extern void cpiTextSetMode(const char *name);
 extern void cpiTextRecalc(void);
 
+void cpiForwardIProcessKey(uint16_t key);
+
 extern void plUseMessage(char **);
 
 struct insdisplaystruct

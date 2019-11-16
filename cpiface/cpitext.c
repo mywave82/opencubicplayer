@@ -178,7 +178,6 @@ void cpiTextRecalc(void)
 	LastWidth=plScrWidth;
 	LastHeight=plScrHeight;
 
-
 	for (mode=cpiTextActModes; mode; mode=mode->nextact)
 	{
 		mode->active=0;
@@ -560,22 +559,27 @@ static int txtAProcessKey(uint16_t key)
 			return 0;
 		case 'x': case 'X':
 			fsScrType=7;
+			cpiForwardIProcessKey (key);
 			cpiResetScreen();
 			return 1;
 		case KEY_ALT_X:
 			fsScrType=0;
+			cpiForwardIProcessKey (key);
 			cpiResetScreen();
 			return 1;
 		case 'z': case 'Z':
 			fsScrType^=2;
+			cpiForwardIProcessKey (key);
 			cpiResetScreen();
 			break;
 		case KEY_ALT_Z:
 			fsScrType^=4;
+			cpiForwardIProcessKey (key);
 			cpiResetScreen();
 			break;
 		case KEY_CTRL_Z:
 			fsScrType^=1;
+			cpiForwardIProcessKey (key);
 			cpiResetScreen();
 			break;
 		default:

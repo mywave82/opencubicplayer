@@ -797,27 +797,26 @@ static void TrakDraw(int focus)
 
 static int TrakIProcessKey(uint16_t key)
 {
+	fprintf (stderr, "TrakIProcessKey key=0x%04x  %d\n", key, key);
 	switch (key)
 	{
 		case KEY_ALT_K:
 			cpiKeyHelp('t', "Enable track viewer");
 			cpiKeyHelp('T', "Enable track viewer");
-			return 0;
+			break;
 		case 't': case 'T':
 			plTrackActive=1;
 			cpiTextSetMode("trak");
 			calcPatType();
-			break;
+			return 1;
 		case 'x': case 'X':
 			plTrackActive=1;
-			return 0;
+			break;
 		case KEY_ALT_X:
 			plTrackActive=0;
-			return 0;
-		default:
-			return 0;
+			break;
 	}
-	return 1;
+	return 0;
 }
 
 static int TrakAProcessKey(uint16_t key)

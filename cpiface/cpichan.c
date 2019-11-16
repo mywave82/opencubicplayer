@@ -168,7 +168,7 @@ static int ChanIProcessKey(uint16_t key)
 		case KEY_ALT_K:
 			cpiKeyHelp('c', "Enable channel viewer");
 			cpiKeyHelp('C', "Enable channel viewer");
-			return 0;
+			break;
 		case 'c': case 'C':
 			if (!plChannelType)
 				plChannelType=(plChannelType+1)%4;
@@ -176,13 +176,12 @@ static int ChanIProcessKey(uint16_t key)
 			return 1;
 		case 'x': case 'X':
 			plChannelType=3;
-			return 0;
+			break;
 		case KEY_ALT_X:
 			plChannelType=2;
-			return 0;
-		default:
-			return 0;
+			break;
 	}
+	return 0;
 }
 
 static int ChanAProcessKey(uint16_t key)

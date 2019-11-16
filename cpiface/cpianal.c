@@ -203,22 +203,19 @@ static int AnalIProcessKey(uint16_t key)
 		case KEY_ALT_K:
 			cpiKeyHelp('a', "Enable analalyzer mode");
 			cpiKeyHelp('A', "Enable analalyzer mode");
-			return 0;
+			break;
 		case 'a': case 'A':
 			analactive=1;
 			cpiTextSetMode("anal");
 			return 1; /* do swallow */
-			break;
 		case 'x': case 'X':
 			analactive=1;
-			return 0;
+			break;
 		case KEY_ALT_X:
 			analactive=0;
-			return 0;
-		default:
-			return 0;
+			break;
 	}
-	return 1;
+	return 0;
 }
 
 static int AnalAProcessKey(uint16_t key)

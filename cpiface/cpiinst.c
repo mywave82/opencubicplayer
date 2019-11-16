@@ -304,23 +304,20 @@ static int InstIProcessKey(uint16_t key)
 		case KEY_ALT_K:
 			cpiKeyHelp('i', "Enable instrument viewer");
 			cpiKeyHelp('I', "Enable instrument viewer");
-			return 0;
+			break;
 		case 'i': case 'I':
 			if (!plInstType)
 				plInstType=(plInstType+1)%4;
 			cpiTextSetMode("inst");
 			return 1;
-			break;
 		case 'x': case 'X':
 			plInstType=3;
-			return 0;
+			break;
 		case KEY_ALT_X:
 			plInstType=1;
-			return 0;
-		default:
-			return 0;
+			break;
 	}
-	return 1;
+	return 0;
 }
 
 static int InstAProcessKey(uint16_t key)
