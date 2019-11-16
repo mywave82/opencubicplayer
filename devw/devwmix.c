@@ -521,7 +521,7 @@ static void timerproc(void)
 	/* Referred by OpenPlayer
 	 */
 #ifndef NO_BACKGROUND_MIXER
-	mixer(/*mcpMixPoll*/);
+	mixer();
 #endif
 	if (plrIdle)
 		plrIdle();
@@ -817,7 +817,7 @@ static int GET(int ch, int opt)
 
 static void Idle(void)
 {
-	mixer(/*mcpMixMax*/);
+	mixer();
 	if (plrIdle)
 		plrIdle();
 }
@@ -1004,7 +1004,7 @@ static int OpenPlayer(int chan, void (*proc)())
 		calcvoltabsq();
 	}
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, mcpMixBufSize))
+	if (!plrOpenPlayer(&plrbuf, &buflen, mcpMixBufSize * plrRate / 1000))
 	{
 		mixClose();
 		return 0;

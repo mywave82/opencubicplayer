@@ -80,8 +80,6 @@ extern unsigned int mcpMixMaxRate;
 extern unsigned int mcpMixProcRate;
 extern int mcpMixOpt;
 extern unsigned int mcpMixBufSize;
-extern unsigned int mcpMixMax;
-extern int mcpMixPoll;
 
 extern void (*mcpIdle)(void);
 

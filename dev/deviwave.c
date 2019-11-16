@@ -196,9 +196,15 @@ static int wavedevinit(void)
 		mcpMixOpt|=PLR_STEREO;
 	mcpMixMaxRate=playrate;
 	mcpMixProcRate=cfGetProfileInt2(cfSoundSec, "sound", "mixprocrate", 1536000, 10);
-	mcpMixBufSize=cfGetProfileInt2(cfSoundSec, "sound", "mixbufsize", 100, 10)*65;
-	mcpMixPoll=mcpMixBufSize;
-	mcpMixMax=mcpMixBufSize;
+	mcpMixBufSize=cfGetProfileInt2(cfSoundSec, "sound", "mixbufsize", 100, 10);
+	if (mcpMixBufSize <= 0)
+	{
+		mcpMixBufSize = 1;
+	}
+	if (mcpMixBufSize >= 5000)
+	{
+		mcpMixBufSize = 5000;
+	}
 
 	if (!curwavedev)
 	{

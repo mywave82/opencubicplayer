@@ -506,7 +506,7 @@ static void mixmain(/*int min*/)
 static void timerproc()
 {
 #ifndef NO_BACKGROUND_MIXER
-	mixmain(/*mcpMixPoll*/);
+	mixmain();
 #endif
 	if (plrIdle)
 		plrIdle();
@@ -794,7 +794,7 @@ static int GET(int ch, int opt)
 
 static void Idle(void)
 {
-	mixmain(/*mcpMixMax*/);
+	mixmain();
 	if (plrIdle)
 		plrIdle();
 }
@@ -908,7 +908,7 @@ static int OpenPlayer(int chan, void (*proc)(void))
 	}
 
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, mcpMixBufSize))
+	if (!plrOpenPlayer(&plrbuf, &buflen, mcpMixBufSize * plrRate / 1000))
 	{
 		mixClose();
 		return 0;

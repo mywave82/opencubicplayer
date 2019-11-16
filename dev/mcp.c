@@ -45,5 +45,3 @@ unsigned int mcpMixMaxRate;
 unsigned int mcpMixProcRate;
 int mcpMixOpt;
 unsigned int mcpMixBufSize;
-unsigned int mcpMixMax;
-int mcpMixPoll;
