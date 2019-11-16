@@ -804,6 +804,8 @@ extern void __attribute__ ((visibility ("internal"))) hvlIdle (void)
 
 struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const uint8_t *mem, size_t memlen)
 {
+	int BufSize;
+
 	hvl_InitReplayer ();
 
 	plrSetOptions(44100, (PLR_SIGNEDOUT|PLR_16BIT)|PLR_STEREO);
@@ -830,7 +832,12 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
    	last_ht_Tempo = 1;
 	last_ht_SpeedMultiplier = 1;
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize))
+	BufSize=plrBufSize;
+	if (BufSize > 40)
+	{
+		BufSize = 40;
+	}
+	if (!plrOpenPlayer(&plrbuf, &buflen, BufSize * plrRate / 1000))
 	{
 		goto error_out;
 	}

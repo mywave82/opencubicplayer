@@ -179,7 +179,15 @@ static int playdevinit(void)
 
 	fprintf(stderr, "\n");
 
-	plrBufSize=cfGetProfileInt2(cfSoundSec, "sound", "plrbufsize", 100, 10)*65;
+	plrBufSize=cfGetProfileInt2(cfSoundSec, "sound", "plrbufsize", 100, 10);
+	if (plrBufSize <= 0)
+	{
+		plrBufSize = 1;
+	}
+	if (plrBufSize >= 5000)
+	{
+		plrBufSize = 5000;
+	}
 
 	if (!curplaydev)
 	{

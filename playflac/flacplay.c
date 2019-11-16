@@ -489,7 +489,7 @@ int __attribute__ ((visibility ("internal"))) flacOpenPlayer(FILE *file)
 	flacbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_STEREO, flacbuflen);
 	flacbuffpos=0;
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize))
+	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
 	{
 		fprintf(stderr, "playflac: plrOpenPlayer() failed\n");
 		goto error_out;

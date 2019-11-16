@@ -908,7 +908,7 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(FILE *mpe
 
 	GuardPtr=0;
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize))
+	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
 		goto error_out;
 
 	if (!(buf16=malloc(sizeof(uint16_t)*buflen*2)))

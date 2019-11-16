@@ -653,7 +653,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(FILE *oggf)
 	current_section=0;
 	oggneedseek=0;
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize))
+	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
 	{
 		ringbuffer_free (oggbufpos);
 		oggbufpos = 0;

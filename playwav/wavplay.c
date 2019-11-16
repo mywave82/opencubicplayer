@@ -867,7 +867,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(FILE *wav)
 
 	plrSetOptions(waverate, PLR_STEREO|PLR_16BIT);
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize))
+	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
 	{
 		goto undowavebuf;
 	}

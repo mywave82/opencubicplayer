@@ -238,7 +238,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	oplbufread=4; /* 1 << (stereo + bit16) */
 	opltowrite=0;
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize))
+	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
 		goto error_out;
 
 	if (!(buf16=(uint16_t *)malloc(sizeof(uint16_t)*buflen*2)))

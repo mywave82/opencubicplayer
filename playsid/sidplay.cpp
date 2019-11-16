@@ -286,7 +286,7 @@ unsigned char __attribute__ ((visibility ("internal"))) sidpOpenPlayer(FILE *f)
 	}
 
 	plrSetOptions(playrate, PLR_STEREO|PLR_16BIT);
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize))
+	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
 		return 0;
 
 	stereo=!!(plrOpt&PLR_STEREO);

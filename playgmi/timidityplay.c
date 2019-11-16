@@ -1894,7 +1894,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	speed=0x100;
 	loading = 0;
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize))
+	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
 	{
 		doTimidityClosePlayer (0);
 		return errGen;

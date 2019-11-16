@@ -1131,7 +1131,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(FILE *file)
 	signedout=!!(plrOpt&PLR_SIGNEDOUT);
 	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize))
+	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
 	{
 		free(aydata.tracks);
 		free(aydata.filedata);

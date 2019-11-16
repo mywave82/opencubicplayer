@@ -696,7 +696,7 @@ int __attribute__ ((visibility ("internal"))) cdPlay(int fd, unsigned long start
 		signedout=!!(plrOpt&PLR_SIGNEDOUT);
 		reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
 
-		if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize))
+		if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
 		{
 			free(cdbuf);
 			cdbuf=NULL;

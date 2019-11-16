@@ -280,7 +280,7 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(FILE *file)
 	ymbuffpos=0;
 	ymbufread=sizeof(ymsample); /* 1 << (stereo + bit16) */
 
-	if (!plrOpenPlayer(&devp_plrbuf, &devp_buflen, plrBufSize))
+	if (!plrOpenPlayer(&devp_plrbuf, &devp_buflen, plrBufSize * plrRate / 1000))
 	{
 		fprintf(stderr, "[ymplay.cpp]: plrOpenPlayer() failed\n");
 		goto error_out;
