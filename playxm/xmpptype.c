@@ -48,8 +48,10 @@ static void getext(char *ext, const char *name)
 static unsigned char xmpGetModuleType(const char *buf, const char *ext)
 {
 
-	if (!strcmp(ext, ".WOW")&&(*(uint32_t *)(buf+1080)==int32_little(0x2E4B2E4D)))
+	if (!strcasecmp(ext, ".WOW")&&(*(uint32_t *)(buf+1080)==int32_little(0x2E4B2E4D)))
+	{
 		return mtWOW;
+	}
 
 	switch (int32_little(*(uint32_t *)(buf+1080)))
 	{
@@ -62,37 +64,62 @@ static unsigned char xmpGetModuleType(const char *buf, const char *ext)
 		case 0x48433132: case 0x48433232: case 0x48433332: case 0x48433432:
 		case 0x48433532: case 0x48433632: case 0x48433732: case 0x48433832:
 		case 0x48433932: case 0x48433033: case 0x48433133: case 0x48433233:
+		{
 			return mtMOD;
+		}
 	}
 
 	if (!memcmp(buf, "Extended Module: ", 17)/* && buf[37]==0x1a*/) /* some malformed trackers doesn't save the magic 0x1a at offset 37 */
+	{
 		return mtXM;
+	}
 
-	if (!memcmp(buf, "MXM\0", 4))
+	if (!memcmp(buf, "MXM\n", 4))
+	{
 		return mtMXM;
+	}
 
-	if (!strcmp(ext, ".MOD"))
+	if (!strcasecmp(ext, ".MOD"))
 	{
 		int i,j;
-		int mod=3;
+
+		/* Check title for ASCII */
 		for (i=0; i<20; i++)
-			if (buf[i])
+		{
+			if (buf[i]) /* string is zero-terminated */
+			{
 				break;
-			else
-				if (buf[i]<0x20)
-					mod=0;
+			} else {
+				if (buf[i]<0x20) /* non-ASCII?, can not be mtM15/mtM31 */
+				{
+					goto notM15_M31;
+				}
+			}
+		}
+
+		/* Check instruments for ASCII*/
 		for (i=0; i<31; i++)
+		{
 			for (j=0; j<21; j++)
-				if (!buf[20+i*30+j])
+			{
+				if (!buf[20+i*30+j]) /* string is zero-terminated */
+				{
 					break;
-				else
-					if (buf[20+i*30+j]<0x20)
-						mod&=(i<15)?0:1;
-		if (mod==3)
-			return mtM31;
-		if (mod==1)
-			return mtM15;
+				} else {
+					if (buf[20+i*30+j]<0x20) /* non-ASCII? */
+					{
+						if (i<15)
+						{
+							goto notM15_M31;
+						}
+						return mtM15; /* we had atleast 15 instruments */
+					}
+				}
+			}
+		}
+		return mtM31;
 	}
+notM15_M31:
 	return mtUnRead;
 }
 
@@ -140,39 +167,39 @@ static int xmpReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 				case 0x2E4B2E4D: /* M.K. */
 				case 0x214B214D: /* M!K! */
 				case 0x2E542E4E: /* N.T. */
-				case 0x34544C46: m->channels=4; break; /* FLT4    */
-				case 0x4E484331: m->channels=1; break; /* 1CHN... */
-				case 0x4E484332: m->channels=2; break;
-				case 0x4E484333: m->channels=3; break;
-				case 0x4E484334: m->channels=4; break;
-				case 0x4E484335: m->channels=5; break;
-				case 0x4E484336: m->channels=6; break;
-				case 0x4E484337: m->channels=7; break;
-				case 0x4E484338: m->channels=8; break;
-				case 0x4E484339: m->channels=9; break;
-				case 0x48433031: m->channels=10; break; /* 10CH... */
-				case 0x48433131: m->channels=11; break;
-				case 0x48433231: m->channels=12; break;
-				case 0x48433331: m->channels=13; break;
-				case 0x48433431: m->channels=14; break;
-				case 0x48433531: m->channels=15; break;
-				case 0x48433631: m->channels=16; break;
-				case 0x48433731: m->channels=17; break;
-				case 0x48433831: m->channels=18; break;
-				case 0x48433931: m->channels=19; break;
-				case 0x48433032: m->channels=20; break;
-				case 0x48433132: m->channels=21; break;
-				case 0x48433232: m->channels=22; break;
-				case 0x48433332: m->channels=23; break;
-				case 0x48433432: m->channels=24; break;
-				case 0x48433532: m->channels=25; break;
-				case 0x48433632: m->channels=26; break;
-				case 0x48433732: m->channels=27; break;
-				case 0x48433832: m->channels=28; break;
-				case 0x48433932: m->channels=29; break;
-				case 0x48433033: m->channels=30; break;
-				case 0x48433133: m->channels=31; break;
-				case 0x48433233: m->channels=32; break;
+				case 0x34544C46: m->channels=4; break;  /* FLT4 */
+				case 0x4E484331: m->channels=1; break;  /* 1CHN */
+				case 0x4E484332: m->channels=2; break;  /* 2CHN */
+				case 0x4E484333: m->channels=3; break;  /* 3CHN */
+				case 0x4E484334: m->channels=4; break;  /* 4CHN */
+				case 0x4E484335: m->channels=5; break;  /* 5CHN */
+				case 0x4E484336: m->channels=6; break;  /* 6CHN */
+				case 0x4E484337: m->channels=7; break;  /* 7CHN */
+				case 0x4E484338: m->channels=8; break;  /* 8CHN */
+				case 0x4E484339: m->channels=9; break;  /* 9CHN */
+				case 0x48433031: m->channels=10; break; /* 10CH */
+				case 0x48433131: m->channels=11; break; /* 11CH */
+				case 0x48433231: m->channels=12; break; /* 12CH */
+				case 0x48433331: m->channels=13; break; /* 13CH */
+				case 0x48433431: m->channels=14; break; /* 14CH */
+				case 0x48433531: m->channels=15; break; /* 15CH */
+				case 0x48433631: m->channels=16; break; /* 16CH */
+				case 0x48433731: m->channels=17; break; /* 17CH */
+				case 0x48433831: m->channels=18; break; /* 18CH */
+				case 0x48433931: m->channels=19; break; /* 19CH */
+				case 0x48433032: m->channels=20; break; /* 20CH */
+				case 0x48433132: m->channels=21; break; /* 21CH */
+				case 0x48433232: m->channels=22; break; /* 22CH */
+				case 0x48433332: m->channels=23; break; /* 23CH */
+				case 0x48433432: m->channels=24; break; /* 24CH */
+				case 0x48433532: m->channels=25; break; /* 25CH */
+				case 0x48433632: m->channels=26; break; /* 26CH */
+				case 0x48433732: m->channels=27; break; /* 27CH */
+				case 0x48433832: m->channels=28; break; /* 28CH */
+				case 0x48433932: m->channels=29; break; /* 29CH */
+				case 0x48433033: m->channels=30; break; /* 30CH */
+				case 0x48433133: m->channels=31; break; /* 31CH */
+				case 0x48433233: m->channels=32; break; /* 32CH */
 			}
 
 			memcpy(m->modname, buf+0, 20);
