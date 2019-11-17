@@ -54,7 +54,7 @@ loadult$(LIB_SUFFIX): $(loadult_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX)
+	rm -f *.o *$(LIB_SUFFIX) dumpstm dumps3m
 
 install:
 	$(CP) load669$(LIB_SUFFIX) loadams$(LIB_SUFFIX) loaddmf$(LIB_SUFFIX) loadmdl$(LIB_SUFFIX) loadmtm$(LIB_SUFFIX) loadokt$(LIB_SUFFIX) loadptm$(LIB_SUFFIX) loads3m$(LIB_SUFFIX) loadstm$(LIB_SUFFIX) loadult$(LIB_SUFFIX) playgmd$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"

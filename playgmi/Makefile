@@ -10,7 +10,7 @@ endif
 all: gmiptype.o playtimidity$(LIB_SUFFIX) $(DUMPMIDI)
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) dumpmidi timidity-git/timidity/newton_table.c timidity-git/interface/*.o timidity-git/libarc/*.o timidity-git/timidity/*.o timidity-git/utils/*.o
+	rm -f *.o *$(LIB_SUFFIX) calcnewt dumpmidi timidity-git/timidity/newton_table.c timidity-git/interface/*.o timidity-git/libarc/*.o timidity-git/timidity/*.o timidity-git/utils/*.o
 
 install:
 	$(CP) playtimidity$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"

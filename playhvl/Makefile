@@ -14,7 +14,7 @@ playhvl$(LIB_SUFFIX): $(playhvl_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX)
+	rm -f *.o *$(LIB_SUFFIX) dumpahx
 
 install:
 	$(CP) playhvl$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
