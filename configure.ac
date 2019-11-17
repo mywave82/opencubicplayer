@@ -1,4 +1,4 @@
-AC_INIT(ocp, 0.2.0-rc1, stian@nixia.no)
+AC_INIT(ocp, 0.2.0-rc2, stian@nixia.no)
 AC_DEFINE(DLLVERSION, [0x00000200])
 
 AC_CANONICAL_HOST
