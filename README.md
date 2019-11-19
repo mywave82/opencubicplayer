@@ -62,29 +62,41 @@ ALT + K: List the available keyshort-cuts in the current view
 
 ## While playing
 
-Enter: next file from the playlist, if playlist is empty it opens the file-browser
+`Enter`: next file from the playlist, if playlist is empty it opens the file-browser
 
-F: File-browser
+`F`: File-browser
 
-A: Text FFT analyzer
-C: Text Channel viewer
-T: Text Track viewer
+`A`: Text FFT analyzer, `shift-A`: toggle FFT analyzer, `tab`, toggle colors
+`C`: Text Channel viewer
+`T`: Text Track viewer
 
-G: Lo-Res FFT analyzer + history
-Shift-G: High-Res FFT analyzer + history
+`G`: Lo-Res FFT analyzer + history
+`Shift-G`: High-Res FFT analyzer + history
 
-B: Phase viewer
+`B`: Phase viewer
 
-O: Oscilloscope
+`O`: Oscilloscope
+
+`Backspace`: Toggle filter
+`f1`: Online Help
+`f2`: Lower Volume
+`f3`: Increase Volume
+`f4`: Toggle Surround
+`f5`: Panning left
+`f6`: Panning right
+`f7`: Balance left
+`f8`: Balance right
+`f9`: Increase playback speed/pitch
+`f10`: Decrease playback speed/pitch
 
 ## File browser
 
-ALT + E: Edit meta-information
-ALT + I: Toggle file-list columns (long filename, title, etc.)
-ALT + C: Opens a system options list
-Insert: Add to playlist
-Delete: Remove from playlist
-Tab: Move cursor between filelist and playlist
+`ALT + E`: Edit meta-information
+`ALT + I`: Toggle file-list columns (long filename, title, etc.)
+`ALT + C`: Opens a system options list
+`Insert`: Add to playlist
+`Delete`: Remove from playlist
+`Tab`: Move cursor between filelist and playlist
 
 # Original
 
@@ -96,7 +108,7 @@ https://repology.org/project/ocp-open-cubic-player/versions
 
 # Installing on macOS
 
-brew install ocp
+`brew install ocp`
 
 ### more notes about Darwin
 
