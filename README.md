@@ -62,7 +62,7 @@ ALT + K: List the available keyshort-cuts in the current view
 
 ## While playing
 
-Enter: next file from the playlist, if playlist is empty it opens the file-browser
+`Enter`: next file from the playlist, if playlist is empty it opens the file-browser
 
 `F`: File-browser
 
@@ -77,7 +77,7 @@ Enter: next file from the playlist, if playlist is empty it opens the file-brows
 
 `O`: Oscilloscope
 
-`backspace`: Toggle filter
+`Backspace`: Toggle filter
 `f1`: Online Help
 `f2`: Lower Volume
 `f3`: Increase Volume
