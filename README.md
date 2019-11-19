@@ -108,7 +108,7 @@ https://repology.org/project/ocp-open-cubic-player/versions
 
 # Installing on macOS
 
-brew install ocp
+`brew install ocp`
 
 ### more notes about Darwin
 
