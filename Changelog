@@ -937,3 +937,11 @@
 2019-10-26: playay/dumpay*.c: Add a tool for dumping content of a .AY file (wrote a long time ago)
 
 2019-10-26: Make it possible to enable building and installing the dump-utilities with ./configure --with-dumptools
+
+2019-11-01: Update the help-browser and support tools
+
+2019-11-09: Sync/Update the help-documentation
+
+2019-11-16: M15 and M31 file-type detection depended on file ending in .MOD in upper-case. Also simplified the detection routing (logic is the same)
+
+2019-11-26: VERSION 0.2.0
