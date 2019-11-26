@@ -1,6 +1,6 @@
 # What is it?
 
-UNIX port of Open Cubic Player, which is a text-based player with some few graphical views. Visual output can be done through nCurses, Linux console (VCSA + FrameBuffer), X11 or SDL/SDL2. It can compile on various different unix based operating systems.
+UNIX port of Open Cubic Player, which is a text-based player with some few graphical views. Visual output can be done through nCurses, Linux console (VCSA + FrameBuffer), X11 or SDL/SDL2. It can be compiled on various different unix based operating systems.
 
 ![Screenshot](doc/screenshot-01.png)
 
@@ -39,7 +39,7 @@ Audio Files (both compressed and PCM styled):
 Audio CDs: Linux support only, using digital read out API
 - \*.CDA
 
-[MIDI](https://en.wikipedia.org/wiki/MIDI#General_MIDI): Fork of [TiMidity++](http://timidity.sourceforge.net/) is used to play:
+Fork of [TiMidity++](http://timidity.sourceforge.net/) is used to play [MIDI](https://en.wikipedia.org/wiki/MIDI#General_MIDI):
 - \*.MID
 
 [AdPlug](http://adplug.github.io/) can read a wide range of music formats designed for the [OPL2](https://en.wikipedia.org/wiki/Yamaha_YM3812)/[OPL3](https://en.wikipedia.org/wiki/Yamaha_YMF262) Adlib sound chip. Examples:
@@ -104,7 +104,7 @@ https://manpages.debian.org/testing/opencubicplayer/ocp.1.en.html
 
 `F10`: Increase playback speed
 
-`\\`: Toggle pitch/speed lock (if fileformat makes this possible)
+`\`: Toggle pitch/speed lock (if fileformat makes this possible)
 
 `F11`: Decrease playback pitch
 
