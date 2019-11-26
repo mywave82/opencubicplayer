@@ -2,6 +2,8 @@
 
 UNIX port of Open Cubic Player, which is a text-based player with some few graphical views. Visual output can be done through nCurses, Linux console (VCSA + FrameBuffer), X11 or SDL/SDL2. It can compile on various different unix based operating systems.
 
+![Screenshot](doc/screenshot-01.png)
+
 # What can it play?
 
 Amiga style [modules](https://en.wikipedia.org/wiki/Module_file) files with more:
@@ -28,10 +30,10 @@ Amiga style [modules](https://en.wikipedia.org/wiki/Module_file) files with more
 - \*.AY
 
 Audio Files (both compressed and PCM styled):
-- \*.WAV,
-- \*.OGG,
-- \*.FLAC,
-- \*.MP2,
+- \*.WAV
+- \*.OGG
+- \*.FLAC
+- \*.MP2
 - \*.MP3
 
 Audio CDs: Linux support only, using digital read out API
@@ -57,8 +59,9 @@ https://manpages.debian.org/testing/opencubicplayer/ocp.1.en.html
 
 # Usage
 
-double-esc: exist the program
-ALT + K: List the available keyshort-cuts in the current view
+`double-esc`: exist the program
+
+`ALT + K`: List the available keyshort-cuts in the current view
 
 ## While playing
 
@@ -67,7 +70,9 @@ ALT + K: List the available keyshort-cuts in the current view
 `F`: File-browser
 
 `A`: Text FFT analyzer, `shift-A`: toggle FFT analyzer, `tab`, toggle colors
+
 `C`: Text Channel viewer
+
 `T`: Text Track viewer
 
 `G`: Lo-Res FFT analyzer + history
@@ -78,24 +83,45 @@ ALT + K: List the available keyshort-cuts in the current view
 `O`: Oscilloscope
 
 `Backspace`: Toggle filter
-`f1`: Online Help
-`f2`: Lower Volume
-`f3`: Increase Volume
-`f4`: Toggle Surround
-`f5`: Panning left
-`f6`: Panning right
-`f7`: Balance left
-`f8`: Balance right
-`f9`: Increase playback speed/pitch
-`f10`: Decrease playback speed/pitch
+
+`F1`: Online Help
+
+`F2`: Lower Volume
+
+`F3`: Increase Volume
+
+`F4`: Toggle Surround
+
+`F5`: Panning left
+
+`F6`: Panning right
+
+`F7`: Balance left
+
+`F8`: Balance right
+
+`F9`: Decrease playback speed
+
+`F10`: Increase playback speed
+
+`\\`: Toggle pitch/speed lock (if fileformat makes this possible)
+
+`F11`: Decrease playback pitch
+
+`F12`: Increase playback pitch
 
 ## File browser
 
 `ALT + E`: Edit meta-information
+
 `ALT + I`: Toggle file-list columns (long filename, title, etc.)
+
 `ALT + C`: Opens a system options list
+
 `Insert`: Add to playlist
+
 `Delete`: Remove from playlist
+
 `Tab`: Move cursor between filelist and playlist
 
 # Original
