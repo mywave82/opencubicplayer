@@ -150,7 +150,7 @@ int DumpHeader (unsigned char *mem, int len)
 		(hdr.flags & 4) ? 'x' : ' ',
 		FONT_RESET);
 	printf ("                   8: [%c] 0vol optimizations" /* " (Automatically turn off looping notes whose volume is zero for >2 note rows)" */ "\n", (hdr.flags & 8) ? 'x' : ' ');
-	printf ("                  16: [%c] amiga limits" /*" (Disallow any notes that go beond the amiga hardware limits (like amiga does). This means that sliding up stops at B#5 etc. Also affects some minor amiga compatibility issues)" */ "\n", (hdr.flags & 16) ? 'x' : ' ');
+	printf ("                  16: [%c] amiga limits" /*" (Disallow any notes that go beyond the amiga hardware limits (like amiga does). This means that sliding up stops at B#5 etc. Also affects some minor amiga compatibility issues)" */ "\n", (hdr.flags & 16) ? 'x' : ' ');
 	// deprecated flag
 	printf ("%s                  32: [%c] enable filter/sfx with SoundBlaster%s\n",
 		(hdr.ffv == 1) ? FONT_RESET : FONT_BRIGHT_BLACK,
@@ -668,7 +668,7 @@ int DumpInstrumentAdlibMelody (unsigned char *mem, int len, int base, int instru
 	DumpPrefix (mem, len, base + 0x1c, 1);
 	printf ("Volume: %d %s%s%s\n", mem[base+0x1c], (mem[base+0x1c] > 64) ? FONT_BRIGHT_RED : FONT_BRIGHT_GREEN, (mem[base+0x1c] > 64) ? " This is greater than 64" : "", FONT_RESET);
 
-	DumpPrefix (mem, len, base + 0x1e, 2);
+	DumpPrefix (mem, len, base + 0x1d, 3);
 	printf ("Reserved/unused\n");
 
 	DumpPrefix (mem, len, base + 0x20, 4);
@@ -990,15 +990,16 @@ int DumpPattern (unsigned char *mem, int len, int base, int pattern)
 		return -1;
 	}
 
-	memset (note,       255, sizeof (note));
-	memset (instrument,   0, sizeof (instrument));
-	memset (volume,     255, sizeof (volume));
-	memset (command,    255, sizeof (command));
-	memset (info,       255, sizeof (info));
 	while (offset < PatternLen)
 	{
 		uint8_t what;
 		int first = 1;
+
+		memset (note,       255, sizeof (note));
+		memset (instrument,   0, sizeof (instrument));
+		memset (volume,     255, sizeof (volume));
+		memset (command,    255, sizeof (command));
+		memset (info,       255, sizeof (info));
 
 		do {
 			if ((base + offset) > len)
@@ -1091,11 +1092,6 @@ int DumpPattern (unsigned char *mem, int len, int base, int pattern)
 		}
 		printf ("\n");
 		if (savepatterns) fprintf (savepatterns, "\n");
-		memset (note,       255, sizeof (note));
-		memset (instrument,   0, sizeof (instrument));
-		memset (volume,     255, sizeof (volume));
-		memset (command,    255, sizeof (command));
-		memset (info,       255, sizeof (info));
 	}
 
 	return 0;
