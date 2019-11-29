@@ -62,4 +62,15 @@
 # endif
 #endif
 
+/* This might need patching for other OSes. */
+#if !defined(__PRI64_PREFIX)
+# if defined(_WIN64) || defined(__HAIKU_ARCH_64_BIT) || defined(__LP64__) || \
+	(defined(__WORDSIZE) && __WORDSIZE == 64)
+#  define __PRI64_PREFIX        "l"
+# else
+#  define __PRI64_PREFIX        "ll"
+# endif
+#endif
+
+
 #endif
