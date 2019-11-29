@@ -693,6 +693,7 @@ HAVE_SYS_TYPES_H
 HAVE_SYS_TIME_H
 HAVE_SYS_SYSCTL_H
 HAVE_SYS_STAT_H
+HAVE_SYS_CDEFS_H
 HAVE_ERRNO_H
 HAVE_STRINGS_H
 HAVE_STRING_H
@@ -6985,6 +6986,15 @@ ac_fn_c_check_header_mongrel "$LINENO" "errno.h" "ac_cv_header_errno_h" "$ac_inc
 if test "x$ac_cv_header_errno_h" = xyes; then :
   HAVE_ERRNO_H=1
                 $as_echo "#define HAVE_ERRNO_H 1" >>confdefs.h
+
+fi
+
+
+
+ac_fn_c_check_header_mongrel "$LINENO" "sys/cdefs.h" "ac_cv_header_sys_cdefs_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_cdefs_h" = xyes; then :
+  HAVE_SYS_CDEFS_H=1
+                $as_echo "#define HAVE_SYS_CDEFS_H 1" >>confdefs.h
 
 fi
 

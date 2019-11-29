@@ -305,6 +305,11 @@ AC_CHECK_HEADER(errno.h,
                 HAVE_ERRNO_H=1
                 AC_DEFINE(HAVE_ERRNO_H, 1),
                )
+AC_SUBST(HAVE_SYS_CDEFS_H)
+AC_CHECK_HEADER(sys/cdefs.h,
+                HAVE_SYS_CDEFS_H=1
+                AC_DEFINE(HAVE_SYS_CDEFS_H, 1),
+               )
 AC_SUBST(HAVE_SYS_STAT_H)
 AC_CHECK_HEADER(sys/stat.h,
                 HAVE_SYS_STAT_H=1
