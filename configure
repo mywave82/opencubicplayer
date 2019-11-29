@@ -687,28 +687,6 @@ PKG_CONFIG_PATH
 PKG_CONFIG
 CURSES_CPPFLAGS
 CURSES_LIB
-HAVE_MACHINE_ENDIAN_H
-HAVE_SYS_PARAM_H
-HAVE_SYS_TYPES_H
-HAVE_SYS_TIME_H
-HAVE_SYS_SYSCTL_H
-HAVE_SYS_STAT_H
-HAVE_SYS_CDEFS_H
-HAVE_ERRNO_H
-HAVE_STRINGS_H
-HAVE_STRING_H
-NO_STRING_H
-HAVE_LIMITS_H
-HAVE_UNISTD_H
-HAVE_BYTESWAP_H
-HAVE_INTTYPES_H
-HAVE_STDINT_H
-HAVE_SYS_DIR_H
-HAVE_SYS_NDIR_H
-HAVE_NDIR_H
-HAVE_GETOPT_H
-HAVE_FCNTL_H
-HAVE_DIRENT_H
 MATH_LIBS
 DIR_SUFFIX
 HAIKU
@@ -6857,14 +6835,12 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 fi
 
 
-
 ac_fn_c_check_header_mongrel "$LINENO" "dirent.h" "ac_cv_header_dirent_h" "$ac_includes_default"
 if test "x$ac_cv_header_dirent_h" = xyes; then :
   HAVE_DIRENT_H=1
                 $as_echo "#define HAVE_DIRENT_H 1" >>confdefs.h
 
 fi
-
 
 
 ac_fn_c_check_header_mongrel "$LINENO" "fcntl.h" "ac_cv_header_fcntl_h" "$ac_includes_default"
@@ -6875,14 +6851,12 @@ if test "x$ac_cv_header_fcntl_h" = xyes; then :
 fi
 
 
-
 ac_fn_c_check_header_mongrel "$LINENO" "getopt.h" "ac_cv_header_getopt_h" "$ac_includes_default"
 if test "x$ac_cv_header_getopt_h" = xyes; then :
   HAVE_GETOPT_H=1
                 $as_echo "#define HAVE_GETOPT_H 1" >>confdefs.h
 
 fi
-
 
 
 ac_fn_c_check_header_mongrel "$LINENO" "ndir.h" "ac_cv_header_ndir_h" "$ac_includes_default"
@@ -6893,14 +6867,12 @@ if test "x$ac_cv_header_ndir_h" = xyes; then :
 fi
 
 
-
 ac_fn_c_check_header_mongrel "$LINENO" "sys/ndir.h" "ac_cv_header_sys_ndir_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_ndir_h" = xyes; then :
   HAVE_SYS_NDIR_H=1
                 $as_echo "#define HAVE_SYS_NDIR_H 1" >>confdefs.h
 
 fi
-
 
 
 ac_fn_c_check_header_mongrel "$LINENO" "sys/dir.h" "ac_cv_header_sys_dir_h" "$ac_includes_default"
@@ -6911,14 +6883,12 @@ if test "x$ac_cv_header_sys_dir_h" = xyes; then :
 fi
 
 
-
 ac_fn_c_check_header_mongrel "$LINENO" "stdint.h" "ac_cv_header_stdint_h" "$ac_includes_default"
 if test "x$ac_cv_header_stdint_h" = xyes; then :
   HAVE_STDINT_H=1
                 $as_echo "#define HAVE_STDINT_H 1" >>confdefs.h
 
 fi
-
 
 
 ac_fn_c_check_header_mongrel "$LINENO" "inttypes.h" "ac_cv_header_inttypes_h" "$ac_includes_default"
@@ -6929,14 +6899,12 @@ if test "x$ac_cv_header_inttypes_h" = xyes; then :
 fi
 
 
-
 ac_fn_c_check_header_mongrel "$LINENO" "byteswap.h" "ac_cv_header_byteswap_h" "$ac_includes_default"
 if test "x$ac_cv_header_byteswap_h" = xyes; then :
   HAVE_BYTESWAP_H=1
                 $as_echo "#define HAVE_BYTESWAP_H 1" >>confdefs.h
 
 fi
-
 
 
 ac_fn_c_check_header_mongrel "$LINENO" "unistd.h" "ac_cv_header_unistd_h" "$ac_includes_default"
@@ -6947,15 +6915,12 @@ if test "x$ac_cv_header_unistd_h" = xyes; then :
 fi
 
 
-
 ac_fn_c_check_header_mongrel "$LINENO" "limits.h" "ac_cv_header_limits_h" "$ac_includes_default"
 if test "x$ac_cv_header_limits_h" = xyes; then :
   HAVE_LIMITS_H=1
                 $as_echo "#define HAVE_LIMITS_H 1" >>confdefs.h
 
 fi
-
-
 
 
 ac_fn_c_check_header_mongrel "$LINENO" "string.h" "ac_cv_header_string_h" "$ac_includes_default"
@@ -6971,14 +6936,12 @@ $as_echo "#define NO_STRING_H 1" >>confdefs.h
 fi
 
 
-
 ac_fn_c_check_header_mongrel "$LINENO" "strings.h" "ac_cv_header_strings_h" "$ac_includes_default"
 if test "x$ac_cv_header_strings_h" = xyes; then :
   HAVE_STRINGS_H=1
                 $as_echo "#define HAVE_STRINGS_H 1" >>confdefs.h
 
 fi
-
 
 
 
@@ -6990,14 +6953,12 @@ if test "x$ac_cv_header_errno_h" = xyes; then :
 fi
 
 
-
 ac_fn_c_check_header_mongrel "$LINENO" "sys/cdefs.h" "ac_cv_header_sys_cdefs_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_cdefs_h" = xyes; then :
   HAVE_SYS_CDEFS_H=1
                 $as_echo "#define HAVE_SYS_CDEFS_H 1" >>confdefs.h
 
 fi
-
 
 
 ac_fn_c_check_header_mongrel "$LINENO" "sys/stat.h" "ac_cv_header_sys_stat_h" "$ac_includes_default"
@@ -7008,14 +6969,12 @@ if test "x$ac_cv_header_sys_stat_h" = xyes; then :
 fi
 
 
-
 ac_fn_c_check_header_mongrel "$LINENO" "sys/sysctl.h" "ac_cv_header_sys_sysctl_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_sysctl_h" = xyes; then :
   HAVE_SYS_SYSCTL_H=1
                 $as_echo "#define HAVE_SYS_SYSCTL_H 1" >>confdefs.h
 
 fi
-
 
 
 ac_fn_c_check_header_mongrel "$LINENO" "sys/time.h" "ac_cv_header_sys_time_h" "$ac_includes_default"
@@ -7026,7 +6985,6 @@ if test "x$ac_cv_header_sys_time_h" = xyes; then :
 fi
 
 
-
 ac_fn_c_check_header_mongrel "$LINENO" "sys/types.h" "ac_cv_header_sys_types_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_types_h" = xyes; then :
   HAVE_SYS_TYPES_H=1
@@ -7035,14 +6993,12 @@ if test "x$ac_cv_header_sys_types_h" = xyes; then :
 fi
 
 
-
 ac_fn_c_check_header_mongrel "$LINENO" "sys/param.h" "ac_cv_header_sys_param_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_param_h" = xyes; then :
   HAVE_SYS_PARAM_H=1
                 $as_echo "#define HAVE_SYS_PARAM_H 1" >>confdefs.h
 
 fi
-
 
 
 ac_fn_c_check_header_mongrel "$LINENO" "machine/endian.h" "ac_cv_header_machine_endian_h" "$ac_includes_default"
