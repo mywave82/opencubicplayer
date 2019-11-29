@@ -17,6 +17,7 @@
  */
 
 #include <stddef.h>
+#include "types.h"
 
 #define FLAG_DISABLED (~MIXF_PLAYING)
 

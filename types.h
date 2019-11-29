@@ -10,6 +10,10 @@
 #include <stdint.h>
 #endif
 
+#ifdef HAVE_SYS_CDEFS_H
+#include <sys/cdefs.h>
+#endif
+
 #ifdef HAVE_BYTESWAP_H
 #include <byteswap.h>
 #else
@@ -49,5 +53,13 @@
 #   define uint32_big(x)     ((uint32_t)(__bswap_32 (x)))
 #   define uint16_big(x)     ((uint16_t)(__bswap_16 (x)))
 # endif
+
+/* oddly this is declared in a glibc header, so not all GCC have it. */
+#ifdef __GNUC__
+# ifndef __GNUC_PREREQ
+#  define	__GNUC_PREREQ(ma, mi)	\
+		(__GNUC__ > (ma) || __GNUC__ == (ma) && __GNUC_MINOR__ >= (mi))
+# endif
+#endif
 
 #endif
