@@ -289,8 +289,6 @@
 
 #undef HAVE_SYS_STAT_H
 
-#undef HAVE_SYS_SYSCTL_H
-
 #undef HAVE_SYS_TIME_H
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */

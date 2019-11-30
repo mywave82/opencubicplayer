@@ -281,9 +281,6 @@ AC_CHECK_HEADER(sys/cdefs.h,
 AC_CHECK_HEADER(sys/stat.h,
                 AC_DEFINE(HAVE_SYS_STAT_H, 1),
                )
-AC_CHECK_HEADER(sys/sysctl.h,
-                AC_DEFINE(HAVE_SYS_SYSCTL_H, 1),
-               )
 AC_CHECK_HEADER(sys/time.h,
                 AC_DEFINE(HAVE_SYS_TIME_H, 1),
                )

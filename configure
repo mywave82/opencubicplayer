@@ -6952,13 +6952,6 @@ if test "x$ac_cv_header_sys_stat_h" = xyes; then :
 fi
 
 
-ac_fn_c_check_header_mongrel "$LINENO" "sys/sysctl.h" "ac_cv_header_sys_sysctl_h" "$ac_includes_default"
-if test "x$ac_cv_header_sys_sysctl_h" = xyes; then :
-  $as_echo "#define HAVE_SYS_SYSCTL_H 1" >>confdefs.h
-
-fi
-
-
 ac_fn_c_check_header_mongrel "$LINENO" "sys/time.h" "ac_cv_header_sys_time_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_time_h" = xyes; then :
   $as_echo "#define HAVE_SYS_TIME_H 1" >>confdefs.h
@@ -10353,8 +10346,6 @@ fi
 		;;
 esac
 LIBS=$push_LIBS
-
-echo DEBUG ICONV x$found_iconv x$with_libiconv
 
 if test "x$found_iconv" = "xno" ; then
 	as_fn_error $? "*** No iconv() implementation found in C library or libiconv" "$LINENO" 5
