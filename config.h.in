@@ -263,8 +263,6 @@
 
 #undef HAVE_MKSTEMP
 
-#undef HAVE_OPEN
-
 #undef HAVE_STRLCPY
 
 #undef HAVE_STRLCAT

@@ -233,89 +233,67 @@ AC_CONFIG_HEADERS(config.h)
 AC_HEADER_STDC
 
 AC_CHECK_HEADER(dirent.h,
-                HAVE_DIRENT_H=1
                 AC_DEFINE(HAVE_DIRENT_H, 1),
                )
 AC_CHECK_HEADER(fcntl.h,
-                HAVE_FCNTL_H=1
                 AC_DEFINE(HAVE_FCNTL_H, 1),
                )
 AC_CHECK_HEADER(getopt.h,
-                HAVE_GETOPT_H=1
                 AC_DEFINE(HAVE_GETOPT_H, 1),
                )
 AC_CHECK_HEADER(ndir.h,
-                HAVE_NDIR_H=1
                 AC_DEFINE(HAVE_NDIR_H, 1),
                )
 AC_CHECK_HEADER(sys/ndir.h,
-                HAVE_SYS_NDIR_H=1
                 AC_DEFINE(HAVE_SYS_NDIR_H, 1),
                )
 AC_CHECK_HEADER(sys/dir.h,
-                HAVE_SYS_DIR_H=1
                 AC_DEFINE(HAVE_SYS_DIR_H, 1),
                )
 AC_CHECK_HEADER(stdint.h,
-                HAVE_STDINT_H=1
                 AC_DEFINE(HAVE_STDINT_H, 1),
                )
 AC_CHECK_HEADER(inttypes.h,
-                HAVE_INTTYPES_H=1
                 AC_DEFINE(HAVE_INTTYPES_H, 1),
                )
 AC_CHECK_HEADER(byteswap.h,
-                HAVE_BYTESWAP_H=1
                 AC_DEFINE(HAVE_BYTESWAP_H, 1),
                )
 AC_CHECK_HEADER(unistd.h,
-                HAVE_UNISTD_H=1
                 AC_DEFINE(HAVE_UNISTD_H, 1),
                )
 AC_CHECK_HEADER(limits.h,
-                HAVE_LIMITS_H=1
                 AC_DEFINE(HAVE_LIMITS_H, 1),
                )
 AC_CHECK_HEADER(string.h,
-                HAVE_STRING_H=1
                 AC_DEFINE(HAVE_STRING_H, 1),
                 [ AC_DEFINE(NO_STRING_H,1,Define to 1 if you do not have <string.h>.)]
                )
 AC_CHECK_HEADER(strings.h,
-                HAVE_STRINGS_H=1
                 AC_DEFINE(HAVE_STRINGS_H, 1),
                )
-
 AC_CHECK_HEADER(errno.h,
-                HAVE_ERRNO_H=1
                 AC_DEFINE(HAVE_ERRNO_H, 1),
                )
 AC_CHECK_HEADER(sys/cdefs.h,
-                HAVE_SYS_CDEFS_H=1
                 AC_DEFINE(HAVE_SYS_CDEFS_H, 1),
                )
 AC_CHECK_HEADER(sys/stat.h,
-                HAVE_SYS_STAT_H=1
                 AC_DEFINE(HAVE_SYS_STAT_H, 1),
                )
 AC_CHECK_HEADER(sys/sysctl.h,
-                HAVE_SYS_SYSCTL_H=1
                 AC_DEFINE(HAVE_SYS_SYSCTL_H, 1),
                )
 AC_CHECK_HEADER(sys/time.h,
-                HAVE_SYS_TIME_H=1
                 AC_DEFINE(HAVE_SYS_TIME_H, 1),
                )
 AC_CHECK_HEADER(sys/types.h,
-                HAVE_SYS_TYPES_H=1
                 AC_DEFINE(HAVE_SYS_TYPES_H, 1),
                )
 AC_CHECK_HEADER(sys/param.h,
-                HAVE_SYS_PARAM_H=1
                 AC_DEFINE(HAVE_SYS_PARAM_H, 1),
                )
 AC_CHECK_HEADER(machine/endian.h,
-                HAVE_MACHINE_ENDIAN_H=1
                 AC_DEFINE(HAVE_MACHINE_ENDIAN_H, 1),
                )
 
