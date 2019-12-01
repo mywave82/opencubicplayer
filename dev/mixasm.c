@@ -762,7 +762,6 @@ static void __attribute__ ((used)) dummy54 (void)
 		"playodd:\n"
 		".cfi_startproc\n"
 
-		"playodd:\n"
 		"  cmpl $0, interpolate\n"
 		"  jnz playoddi\n"
 
