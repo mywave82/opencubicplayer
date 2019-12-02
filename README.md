@@ -82,6 +82,12 @@ https://manpages.debian.org/testing/opencubicplayer/ocp.1.en.html
 
 `O`: Oscilloscope
 
+`V`: Peak power level
+
+`M`: Volume control
+
+`X / ALT + X`: Extended mode / normal mode toggle
+
 `Backspace`: Toggle filter
 
 `F1`: Online Help
