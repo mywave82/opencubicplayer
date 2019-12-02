@@ -64,7 +64,7 @@ typedef enum {
 	_FONT_MAX = 2
 } FontSizeEnum;
 
-static FontSizeEnum plUseFont = _8x8;
+static FontSizeEnum plCurrentFontWanted = _8x8;
 static FontSizeEnum plCurrentFont = _8x8;
 
 static unsigned short plScrRowBytes;
@@ -394,6 +394,8 @@ static void WindowResized_Textmode(unsigned int width, unsigned int height)
 	plScrLineBytes=width;
 	plScrLines=height;
 
+	plCurrentFont = plCurrentFontWanted;
+
 	if (plCurrentFont >= _8x16)
 	{
 		if ( ( plScrLineBytes < ( 8 * 80 ) ) || ( plScrLines < ( 16 * 25 ) ) )
@@ -452,8 +454,7 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen);
 
 static void set_state_textmode(int target)
 {
-	TextModeSetState (plCurrentFont, target);
-	plUseFont = plCurrentFont;
+	TextModeSetState (plCurrentFontWanted, target);
 }
 
 static void set_state_graphmode(int target)
@@ -684,7 +685,7 @@ static void x11_common_event_loop(void)
 					x=event.xresizerequest.width;
 					y=event.xresizerequest.height;
 
-					switch (plUseFont)
+					switch (plCurrentFontWanted)
 					{
 						case _4x4:
 							x &= ~3;
@@ -1197,7 +1198,6 @@ static void plSetTextMode(unsigned char x)
 	plScrLineBytes=modes[x].windowx;
 	plScrLines=modes[x].windowy;
 	___push_key(VIRT_KEY_RESIZE);
-	//plUseFont = modes[x].bigfont ? _8x16 : _8x8;
 
 	if (vgatextram)
 	{
@@ -1218,8 +1218,8 @@ static void plSetTextMode(unsigned char x)
 	if (!window)
 		create_window();
 	/*set_state(do_fullscreen);*/
-	TextModeSetState(plUseFont, do_fullscreen);
-	plUseFont=plCurrentFont;
+	TextModeSetState(plCurrentFontWanted /* modes[x].bigfont ? _8x16 : _8x8 */, do_fullscreen);
+	//plCurrentFontWanted=plCurrentFont;
 
 /*
 	XSetWMProtocols (mDisplay, window, &wm_delete_window, 1);
@@ -2544,33 +2544,10 @@ static const char *plGetDisplayTextModeName(void)
 {
 	static char mode[32];
 	snprintf(mode, sizeof(mode), "res(%dx%d), font(%s)%s", plScrWidth, plScrHeight,
-		plUseFont == _4x4 ? "4x4"
-		: plUseFont == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
+		plCurrentFontWanted == _4x4 ? "4x4"
+		: plCurrentFontWanted == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
 	return mode;
 }
-
-/*
-static void Recalc_Scene(void)
-{
-	switch (plUseFont)
-	{
-		case _4x4:
-			plScrWidth = plScrLineBytes / 4;
-			plScrHeight = plScrLines / 4;
-			break;
-		case _8x8:
-			plScrWidth = plScrLineBytes / 8;
-			plScrHeight = plScrLines / 8;
-			break;
-		case _8x16:
-			plScrWidth = plScrLineBytes / 8;
-			plScrHeight = plScrLines / 16;
-			break;
-	}
-	plScrRowBytes=plScrWidth*2;
-}
-*/
-
 
 static void plDisplaySetupTextMode(void)
 {
@@ -2599,8 +2576,10 @@ static void plDisplaySetupTextMode(void)
 		switch (c)
 		{
 			case '1':
-				TextModeSetState((plUseFont+1)%3, do_fullscreen);
-				plUseFont = plCurrentFont;
+				/* we can assume that we are in text-mode if we are here */
+				TextModeSetState((plCurrentFontWanted+1)%3, do_fullscreen);
+				plCurrentFontWanted = plCurrentFont;
+				cfSetProfileInt("x11", "font", plCurrentFont, 10);
 				break;
 			case 27: return;
 		}
@@ -2612,9 +2591,11 @@ int x11_init(int use_explicit)
 	if ( (!use_explicit) && (!cfGetProfileBool("x11", "autodetect", 1, 0)) )
 		return -1;
 
-	plUseFont = cfGetProfileInt("x11", "font", _8x8, 10);
-	if ( (plUseFont > _FONT_MAX) /*|| (plUseFont < 0 )*/)
-		plUseFont = _8x8;
+	plCurrentFontWanted = cfGetProfileInt("x11", "font", _8x8, 10);
+	if ( (plCurrentFontWanted > _FONT_MAX) /*|| (plCurrentFontWanted < 0 )*/)
+	{
+		plCurrentFontWanted = _8x16;
+	}
 
 	if (x11_connect())
 		return -1;
