@@ -84,6 +84,8 @@ https://manpages.debian.org/testing/opencubicplayer/ocp.1.en.html
 
 `V`: Peak power level
 
+`X / ALT + X`: Extended mode / normal mode toggle
+
 `Backspace`: Toggle filter
 
 `F1`: Online Help
