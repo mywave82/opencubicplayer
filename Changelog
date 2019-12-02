@@ -945,3 +945,9 @@
 2019-11-16: M15 and M31 file-type detection depended on file ending in .MOD in upper-case. Also simplified the detection routing (logic is the same)
 
 2019-11-26: VERSION 0.2.0
+
+2019-11-30: Compilation fixes
+
+2019-12-02: When using X11 driver, the font setting was not pushed back to ocp.ini if changed (in the ALT-C menu)
+
+2019-12-02: Version 0.2.1
