@@ -1,25 +1,33 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
+ifeq ($(BUILD_DUMPTOOLS),1)
+	DUMPSID=dumpsid
+else
+	DUMPSID=
+endif
+
 ifeq ($(HAVE_SIDPLAY),1)
 TARGETS=sidtype$(LIB_SUFFIX) playsid$(LIB_SUFFIX)
 endif
 
-all: $(TARGETS)
+all: $(TARGETS) $(DUMPSID)
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX)
+	rm -f *.o *$(LIB_SUFFIX) dumpsid
 
 install:
 ifeq ($(HAVE_SIDPLAY),1)
 	$(CP) playsid$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
 	$(CP) sidtype$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-playsid$(LIB_SUFFIX)"
 endif
+ifeq ($(BUILD_DUMPTOOLS),1)
+	$(CP) dumpsid "$(DESTDIR)$(BINDIR)/dumpsid"
+endif
 
 uninstall:
-ifeq ($(HAVE_SIDPLAY),1)
 	rm -f "$(DESTDIR)$(LIBDIR)/sidtype$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/30-playsid$(LIB_SUFFIX)"
-endif
+	rm -f "$(DESTDIR)$(BINDIR)/dumpsid"
 
 playsid_so=sidplay.o sidpplay.o
 playsid$(LIB_SUFFIX): $(playsid_so)
@@ -66,3 +74,13 @@ sidpplay.o: sidpplay.cpp \
 	../stuff/timer.h \
 	sid.h
 	$(CXX) sidpplay.cpp -o $@ -c
+
+dumpsid: dumpsid.o
+	$(CC) $(LDFLAGS) -o $@ $^
+
+dumpsid.o: \
+	dumpsid.c \
+	../config.h \
+	../types.h \
+	dumpsid_6502_dis.c
+	$(CC) -o $@ $< -c
