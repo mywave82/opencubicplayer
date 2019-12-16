@@ -987,6 +987,16 @@ struct keytranslate_t translate[] =
 struct keytranslate_t translate_shift[] =
 {
 	{SDLK_TAB,          KEY_SHIFT_TAB},
+	{SDLK_LESS,         '>'},
+	{SDLK_COMMA,        '<'},
+	{SDLK_MINUS,        '?'},
+	{SDLK_PERIOD,       '>'},
+	{SDLK_SEMICOLON,    ':'},
+	{SDLK_QUOTE,        '\"'},
+	{SDLK_LEFTBRACKET,  '{'},
+	{SDLK_RIGHTBRACKET, '}'},
+	{SDLK_MINUS,        '_'},
+	{SDLK_EQUALS,       '+'},
 	{SDLK_a,            'A'},
 	{SDLK_b,            'B'},
 	{SDLK_c,            'C'},
@@ -1507,6 +1517,7 @@ static int ekbhit(void)
 			{
 #ifdef SDL2_DEBUG
 				fprintf(stderr, "[SDL2-video] KEYUP\n");
+				fprintf(stderr, "              keysym.key.keysym.scancode=0x%08x\n", (int)event.key.keysym.scancode);
 				fprintf(stderr, "              keysym.mod: 0x%04x%s%s%s%s%s%s%s%s%s%s%s\n", (int)event.key.keysym.mod,
 						(event.key.keysym.mod & KMOD_LSHIFT) ? " KMOD_LSHIFT":"",
 						(event.key.keysym.mod & KMOD_RSHIFT) ? " KMOD_RSHIFT":"",
@@ -1519,7 +1530,7 @@ static int ekbhit(void)
 						(event.key.keysym.mod & KMOD_NUM) ? " KMOD_NUM":"",
 						(event.key.keysym.mod & KMOD_CAPS) ? " KMOD_CAPS":"",
 						(event.key.keysym.mod & KMOD_MODE) ? " KMOD_MODE":"");
-				fprintf (stderr, "             keysym.sym: 0x%08x\n", (int)event.key.keysym.sym);
+				fprintf(stderr, "              keysym.sym: 0x%08x ->%s<-\n", (int)event.key.keysym.sym, SDL_GetKeyName(event.key.keysym.sym));
 #endif
 				break;
 			}
@@ -1529,6 +1540,7 @@ static int ekbhit(void)
 
 #ifdef SDL2_DEBUG
 				fprintf(stderr, "[SDL2-video] KEYDOWN\n");
+				fprintf(stderr, "              keysym.key.keysym.scancode=0x%08x\n", (int)event.key.keysym.scancode);
 				fprintf(stderr, "              keysym.mod: 0x%04x%s%s%s%s%s%s%s%s%s%s%s\n", (int)event.key.keysym.mod,
 						(event.key.keysym.mod & KMOD_LSHIFT) ? " KMOD_LSHIFT":"",
 						(event.key.keysym.mod & KMOD_RSHIFT) ? " KMOD_RSHIFT":"",
@@ -1541,7 +1553,7 @@ static int ekbhit(void)
 						(event.key.keysym.mod & KMOD_NUM) ? " KMOD_NUM":"",
 						(event.key.keysym.mod & KMOD_CAPS) ? " KMOD_CAPS":"",
 						(event.key.keysym.mod & KMOD_MODE) ? " KMOD_MODE":"");
-				fprintf (stderr, "             keysym.sym: 0x%08x\n", (int)event.key.keysym.sym);
+				fprintf(stderr, "              keysym.sym: 0x%08x ->%s<-\n", (int)event.key.keysym.sym, SDL_GetKeyName(event.key.keysym.sym));
 #endif
 
 				if ((event.key.keysym.mod & KMOD_CTRL) && (!(event.key.keysym.mod & ~(KMOD_CTRL|KMOD_SHIFT|KMOD_ALT|KMOD_NUM))))
