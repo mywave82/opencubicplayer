@@ -9,11 +9,11 @@ stuff.
 
 
 
-List of betatesters and that stuff alike:
+List of betatesters and patch authors
 
 Stian Sebastian Skjelstad aka mw| <stian@nixia.no> - Gentoo compile-tests (x86)
                                                    - Maintainer of this fork of Cubic Player
-Lars AAge Kamfjord aka Laaknor <lak@globelan.net>  - Debian compile-tests (x86)
+Lars Åge Kamfjord aka Laaknor <lak@globelan.net>   - Debian compile-tests (x86)
                                                    - Skolelinux compile-tests (x86)
 Andreas Kristiansen aka Kafka                      - Comments
 Mathias Boeen                                      - Debian compile-tests (x86)
@@ -31,3 +31,6 @@ François Revol <revol@free.fr>                     - SDL Audio, and Haiku suppo
 Jindřich Makovička <makovick@gmail.com>            - Minor fix in detection for glibc bug 4936, C version of FPU mixer
 Csaba Halász aka Jester01                          - Minor SDL keyboard updates
 Ossi Saukko                                        - Minor patch
+
+
+Also, see AUTHORS file

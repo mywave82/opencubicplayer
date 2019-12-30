@@ -7,13 +7,35 @@ other people soon). The player itself is just rewritten to Linux, and assembler
 stuff in wrapped into C instead of using external assembler. With time
 C-replacers will be availble as a start for those who intend to port this
 beyond to other architechures. Filehandling is more-or-less redone from
-scratch, with the old one on my mind.
+scratch, with the old code-design in my mind.
 
-playay plugin is cut'n paste from the aylet project. Copyright holders here are
-Russell Marks, Ian Collier and the MAME project.
+
+playay plugin contains modified code from the aylet project v0.5a.
+    Copyright (C) 1994-2010 Russell Marks and Ian Collier
+    Copyright (C) MAME
+
 
 playopl plugin contains some code from the original AdPlug project (which is
 also links too). This code has been released under GPLv2 with the permission
 from the original copyright holder, Simon Peter.
+    Copyright (C) 1999 - 2002 Simon Peter <dn.tlp@gmx.net>, et al.
 
+
+playgmi plugin contains a fork of TiMidity++ GIT master with modifications.
+    Copyright (C) 1999-2004 Masanao Izumo <iz@onicos.co.jp>
+    Copyright (C) 1995 Tuukka Toivonen <tt@cgs.fi>
+
+
+playhvl plugin contains code from Hively Tracker. Please see original code
+at https://github.com/pete-gordon/hivelytracker/tree/master/hvl2wav .
+    Copyright (c) 2006-2018, Pete Gordon
+
+
+playym/ plugin contains code from ST-Sound v1.43.
+    Copyright (c) 1995-2005 by Arnaud Carre
+    Copyright (c) 1996 Kerwin F. Medina
+
+
+
+--
 Stian Skjelstad
