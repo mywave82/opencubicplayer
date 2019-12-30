@@ -515,14 +515,14 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 					case 0x04:
 						if (!data)
 							putcmd(&cp, cmdSpecial, cmdContMixVolSlide);
-						else if ((data&0x0F)==0x00)
-							putcmd(&cp, cmdVolSlideUp, (data>>4)<<2);
-						else if ((data&0xF0)==0x00)
-							putcmd(&cp, cmdVolSlideDown, (data&0xF)<<2);
-						else if ((data&0x0F)==0x0F)
-							putcmd(&cp, cmdRowVolSlideUp, (data>>4)<<2);
-						else if ((data&0xF0)==0xF0)
-							putcmd(&cp, cmdRowVolSlideDown, (data&0xF)<<2);
+						else if (((data & 0xF0) == 0xF0) && (data & 0x0F)) /* fine-slide */
+							putcmd(&cp, cmdRowVolSlideDown, (data & 0x0F)<<2);
+						else if (((data & 0x0F) == 0x0F) && (data & 0xF0))
+							putcmd(&cp, cmdRowVolSlideUp, (data & 0xF0)>>2);
+						else if (data&0x0F)
+							putcmd(&cp, cmdVolSlideDown, (data&0x0F)<<2);
+						else
+							putcmd(&cp, cmdVolSlideUp, (data & 0xF0)>>2);
 						break;
 					case 0x05:
 						if (!data)
@@ -597,12 +597,22 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 								putcmd(&cp, cmdSpecial, data?cmdGlissOn:cmdGlissOff);
 								break;
 							case 0x2:
-								break; /* SET FINETUNE not ok (see protracker)  */
+								break; /* TODO: SET FINETUNE not ok (see protracker)  */
 							case 0x3:
 								putcmd(&cp, cmdPitchVibratoSetWave, (data&3)+0x10);
+								/* TODO data & 0x04 == 0x00, reset waveform on note-hit, else it is sticky */
 								break;
 							case 0x4:
 								putcmd(&cp, cmdVolVibratoSetWave, (data&3)+0x10);
+								/* TODO data & 0x04 == 0x00, reset waveform on note-hit, else it is sticky */
+								break;
+							case 0x8:
+								putcmd(&cp, cmdRowPanSlide, (data&0x0f) | ((data&0x0f) << 4));
+							case 0x9:
+								if (data == 0x01)
+								{
+									putcmd (&cp, cmdPanSurround, 0);
+								}
 								break;
 							case 0xC:
 								putcmd(&cp, cmdNoteCut, data);
@@ -611,8 +621,6 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 						break;
 					case 0x15:
 						putcmd(&cp, cmdPitchVibratoFine, data);
-						break;
-					case 0x18: /* panning */
 						break;
 				}
 			}
