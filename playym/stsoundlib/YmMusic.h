@@ -2,30 +2,36 @@
 
 	ST-Sound ( YM files player library )
 
-	Copyright (C) 1995-1999 Arnaud Carre ( http://leonard.oxg.free.fr )
-
 	YM Music Driver
 
 -----------------------------------------------------------------------------*/
 
 /*-----------------------------------------------------------------------------
-
-	This file is part of ST-Sound
-
-	ST-Sound is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
-
-	ST-Sound is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with ST-Sound; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
+* ST-Sound, ATARI-ST Music Emulator
+* Copyright (c) 1995-1999 Arnaud Carre ( http://leonard.oxg.free.fr )
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions
+* are met:
+* 1. Redistributions of source code must retain the above copyright
+*    notice, this list of conditions and the following disclaimer.
+* 2. Redistributions in binary form must reproduce the above copyright
+*    notice, this list of conditions and the following disclaimer in the
+*    documentation and/or other materials provided with the distribution.
+*
+* THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+* ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+* FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+* OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+* OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+* SUCH DAMAGE.
+*
 -----------------------------------------------------------------------------*/
 
 
@@ -40,8 +46,6 @@
 
 #define	YMTPREC		16
 #define	MAX_VOICE	8
-#define	PC_DAC_FREQ	44100
-#define	YMTNBSRATE	(PC_DAC_FREQ/50)
 
 typedef enum
 {
@@ -132,10 +136,9 @@ public:
 	ymbool	isSeekable(void);
 	ymbool	update(ymsample *pBuffer,ymint nbSample);
 	ymu32	getPos(void);
-	ymu32	getPosFrame(void);
-	void	setPosFrame(ymu32);
 	ymu32	getMusicTime(void);
 	ymu32	setMusicTime(ymu32 time);
+	void	restart(void);
 	void	play(void);
 	void	pause(void);
 	void	stop(void);
@@ -144,7 +147,13 @@ public:
 	void	getMusicInfo(ymMusicInfo_t *pInfo);
 	void	setLoopMode(ymbool bLoop);
 	const char	*getLastError(void);
-	int		 readYmRegister(ymint reg)		{ return ymChip.readRegister(reg); }
+	int		readYmRegister(ymint reg)			{ return ymChip.readRegister(reg); }
+	void	setLowpassFilter(ymbool bActive)	{ ymChip.setFilter(bActive); }
+
+	ymbool		getMusicOver(void)	const	{ return (bMusicOver); }
+	ymint		GetNbFrame()		const	{ return nbFrame; }
+	ymint		GetStreamInc()		const	{ return streamInc; }
+	const ymu8*	GetDataStream()		const	{ return pDataStream; }
 	ymu32		 readYmClock()		{ return ymChip.getClock(); }
 
 
@@ -162,7 +171,7 @@ private:
 	void	setPlayerRate(int rate);
 	void	setAttrib(int _attrib);
 	void	setLastError(const char *pError);
-	ymu8 *depackFile(void);
+	ymu8 *depackFile(ymu32 size);
 	ymbool	deInterleave(void);
 	void	readYm6Effect(ymu8 *pReg,int code,int prediv,int count);
 	void	player(void);
@@ -201,7 +210,10 @@ private:
 // ATARI Digi Mix Music.
 //-------------------------------------------------------------
 	void	readNextBlockInfo(void);
-	void	stDigitMix(signed short *pWrite16,int nbs);
+	void	stDigitMix(ymsample *pWrite16,int nbs);
+	void	computeTimeInfo(void);
+	void	setMixTime(ymu32 time);
+
 	ymint	nbRepeat;
 	ymint	nbMixBlock;
 	mixBlock_t *pMixBlock;
@@ -212,19 +224,33 @@ private:
 	ymu32	currentPente;
 	ymu32	currentPos;
 
+
+	struct TimeKey
+	{
+		ymu32	time;
+		ymu16	nRepeat;
+		ymu16	nBlock;
+	};
+
+	ymint		m_nbTimeKey;
+	TimeKey	*	m_pTimeInfo;
+	ymu32		m_musicLenInMs;
+	ymu32		m_iMusicPosAccurateSample;
+	ymu32		m_iMusicPosInMs;
+
 //-------------------------------------------------------------
 // YM-Universal-Tracker
 //-------------------------------------------------------------
 	void	ymTrackerInit(int volMaxPercent);
-	void	ymTrackerUpdate(signed short *pBuffer,int nbSample);
+	void	ymTrackerUpdate(ymsample *pBuffer,int nbSample);
 	void	ymTrackerDesInterleave(void);
 	void	ymTrackerPlayer(ymTrackerVoice_t *pVoice);
-	void	ymTrackerVoiceAdd(ymTrackerVoice_t *pVoice,signed short *pBuffer,int nbs);
+	void	ymTrackerVoiceAdd(ymTrackerVoice_t *pVoice,ymsample *pBuffer,int nbs);
 
 	int			nbVoice;
 	ymTrackerVoice_t	ymTrackerVoice[MAX_VOICE];
 	int					ymTrackerNbSampleBefore;
-	signed short		ymTrackerVolumeTable[256*64];
+	ymsample			ymTrackerVolumeTable[256*64];
 	int					ymTrackerFreqShift;
 
 

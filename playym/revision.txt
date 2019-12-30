@@ -1,3 +1,31 @@
+v1.43
+---------------------------------------------------------------------------
+- Now ST-Sound is under BSD license ( more permissive than previous LGPL )
+- major bug fix in sync-buzzer use ( thanks to Thomas Jarosch )
+- minor initialization bug fix ( thanks to Thomas Jarosch )
+
+v1.42
+---------------------------------------------------------------------------
+- ymMusicGetPos is now supported for "DigiMix" type of music
+- Minor compilation fix on linux 64bits and some code cleanup (thanks to Clement Corde)
+
+v1.41
+---------------------------------------------------------------------------
+- ST-Sound license changed from GPL to LGPL
+
+v1.4
+---------------------------------------------------------------------------
+- added Visual Studio 2010 Express edition projet files
+
+v1.3
+---------------------------------------------------------------------------
+- Non-interlaced YM5&YM6 file bug fix (some amstrad musics are now working)
+- Improved depacking API to handle some corrupted LZH headers
+- Time seeking enabled for YM-Mix and YM-Trackedr musics
+- Set build-in low-pass filter ON/OFF function
+- added Visual Studio 2008 Express edition projet files
+
+
 v1.2
 ----------------------------------------------------
 - new low pass filter routine (faster and no more dynamic allocation)

@@ -226,12 +226,12 @@ static void ymDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		if (globinfo.pSongType)
 			writestring(buf[1], 74, 0x0F, globinfo.pSongType, 6);
 
-		writestring(buf[2],  0, 0x09, "  title: ......................................... pos: ...../..... time: ..:..", 80);
+		writestring(buf[2],  0, 0x09, "  title: ....................................... pos: ....../...... time: ..:..", 80);
 		if (globinfo.pSongName)
 			if (globinfo.pSongName[0])
-				writestring(buf[2], 9, 0x0F, globinfo.pSongName, 41);
-		_writenum(buf[2], 56, 0x0F, globinfo.currentFrame, 10, 5);
-		_writenum(buf[2], 62, 0x0F, globinfo.nbFrame, 10, 5);
+				writestring(buf[2], 9, 0x0F, globinfo.pSongName, 39);
+		_writenum(buf[2], 54, 0x0F, ymMusicGetPos(pMusic), 10, 6);
+		_writenum(buf[2], 61, 0x0F, globinfo.musicTimeInMs, 10, 6);
 
 		if (plPause)
 			writestring(buf[2], 73, 0x0C, "paused", 6);
@@ -272,13 +272,13 @@ static void ymDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		if (globinfo.pSongType)
 			writestring(buf[1], 123, 0x0F, globinfo.pSongType, 6);
 
-		writestring(buf[2],  0, 0x09, "  title: .......................................................................................... Pos: ...../..... time: ..:..", 128);
+		writestring(buf[2],  0, 0x09, "  title: ........................................................................................ Pos: ....../...... time: ..:..", 128);
 
 		if (globinfo.pSongName)
 			if (globinfo.pSongName[0])
-				writestring(buf[2], 9, 0x0F, globinfo.pSongName, 90);
-		_writenum(buf[2], 105, 0x0F, globinfo.currentFrame, 10, 5);
-		_writenum(buf[2], 111, 0x0F, globinfo.nbFrame, 10, 5);
+				writestring(buf[2], 9, 0x0F, globinfo.pSongName, 88);
+		_writenum(buf[2], 103, 0x0F, ymMusicGetPos(pMusic), 10, 6);
+		_writenum(buf[2], 110, 0x0F, globinfo.musicTimeInMs, 10, 6);
 		if (plPause)
 			writestring(buf[2], 122, 0x0C, "paused", 6);
 		else {

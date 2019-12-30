@@ -2,30 +2,36 @@
 
 	ST-Sound ( YM files player library )
 
-	Copyright (C) 1995-1999 Arnaud Carre ( http://leonard.oxg.free.fr )
-
 	ST-Sound library "C-like" interface wrapper
 
 -----------------------------------------------------------------------------*/
 
 /*-----------------------------------------------------------------------------
-
-	This file is part of ST-Sound
-
-	ST-Sound is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
-
-	ST-Sound is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with ST-Sound; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
+* ST-Sound, ATARI-ST Music Emulator
+* Copyright (c) 1995-1999 Arnaud Carre ( http://leonard.oxg.free.fr )
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions
+* are met:
+* 1. Redistributions of source code must retain the above copyright
+*    notice, this list of conditions and the following disclaimer.
+* 2. Redistributions in binary form must reproduce the above copyright
+*    notice, this list of conditions and the following disclaimer in the
+*    documentation and/or other materials provided with the distribution.
+*
+* THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+* ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+* FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+* OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+* OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+* SUCH DAMAGE.
+*
 -----------------------------------------------------------------------------*/
 
 #include "config.h"
@@ -35,96 +41,97 @@
 
 // Static assert to check various type len
 
-YMMUSIC	*	ymMusicCreate()
+YMMUSIC	* ymMusicCreate()
 {
 	return (YMMUSIC*)(new CYmMusic);
 }
 
 
-ymbool	ymMusicLoad(YMMUSIC *pMus,const char *fName)
+ymbool ymMusicLoad(YMMUSIC *pMus, const char *fName)
 {
 	CYmMusic *pMusic = (CYmMusic*)pMus;
 	return pMusic->load(fName);
 }
 
-ymbool	ymMusicLoadMemory(YMMUSIC *pMus,void *pBlock,ymu32 size)
+ymbool ymMusicLoadMemory(YMMUSIC *pMus, void *pBlock, ymu32 size)
 {
 	CYmMusic *pMusic = (CYmMusic*)pMus;
 	return pMusic->loadMemory(pBlock,size);
 }
 
-void	ymMusicDestroy(YMMUSIC *pMus)
+void ymMusicDestroy(YMMUSIC *pMus)
 {
 	CYmMusic *pMusic = (CYmMusic*)pMus;
 	delete pMusic;
 }
 
-ymbool	ymMusicCompute(YMMUSIC *_pMus,ymsample *pBuffer,int nbSample)
+ymbool ymMusicCompute(YMMUSIC *_pMus, ymsample *pBuffer, int nbSample)
 {
 	CYmMusic *pMusic = (CYmMusic*)_pMus;
 	return pMusic->update(pBuffer,nbSample);
 }
 
-void	ymMusicSetLoopMode(YMMUSIC *_pMus,ymbool bLoop)
+void ymMusicSetLoopMode(YMMUSIC *_pMus, ymbool bLoop)
 {
 	CYmMusic *pMusic = (CYmMusic*)_pMus;
 	pMusic->setLoopMode(bLoop);
 }
 
-const char	*ymMusicGetLastError(YMMUSIC *_pMus)
+const char * ymMusicGetLastError(YMMUSIC *_pMus)
 {
 	CYmMusic *pMusic = (CYmMusic*)_pMus;
 	return pMusic->getLastError();
 }
 
-int		ymMusicGetRegister(YMMUSIC *_pMus,ymint reg)
+int ymMusicGetRegister(YMMUSIC *_pMus, ymint reg)
 {
 	CYmMusic *pMusic = (CYmMusic*)_pMus;
 	return pMusic->readYmRegister(reg);
 }
 
-void	ymMusicGetInfo(YMMUSIC *_pMus,ymMusicInfo_t *pInfo)
+void ymMusicGetInfo(YMMUSIC *_pMus, ymMusicInfo_t *pInfo)
 {
 	CYmMusic *pMusic = (CYmMusic*)_pMus;
 	pMusic->getMusicInfo(pInfo);
 }
 
-void	ymMusicPlay(YMMUSIC *_pMus)
+void ymMusicPlay(YMMUSIC *_pMus)
 {
 	CYmMusic *pMusic = (CYmMusic*)_pMus;
 	pMusic->play();
 }
 
-void	ymMusicPause(YMMUSIC *_pMus)
+void ymMusicPause(YMMUSIC *_pMus)
 {
 	CYmMusic *pMusic = (CYmMusic*)_pMus;
 	pMusic->pause();
 }
 
-void	ymMusicStop(YMMUSIC *_pMus)
+void ymMusicStop(YMMUSIC *_pMus)
 {
 	CYmMusic *pMusic = (CYmMusic*)_pMus;
 	pMusic->stop();
 }
 
-ymbool		ymMusicIsSeekable(YMMUSIC *_pMus)
+ymbool ymMusicIsOver(YMMUSIC *_pMus)
+{
+	CYmMusic *pMusic = (CYmMusic*)_pMus;
+	return (pMusic->getMusicOver());
+}
+
+ymbool ymMusicIsSeekable(YMMUSIC *_pMus)
 {
 	CYmMusic *pMusic = (CYmMusic*)_pMus;
 	return pMusic->isSeekable() ? YMTRUE : YMFALSE;
 }
 
-//changed for 64bit compatibility by Grzegorz Stanczyk (2007.03.06)
-//unsigned long	ymMusicGetPos(YMMUSIC *_pMus)
-ymu32	ymMusicGetPos(YMMUSIC *_pMus)
+ymu32 ymMusicGetPos(YMMUSIC *_pMus)
 {
 	CYmMusic *pMusic = (CYmMusic*)_pMus;
-	if (!pMusic->isSeekable())
-		return 0;
-
 	return pMusic->getPos();
 }
 
-void		ymMusicSeek(YMMUSIC *_pMus,ymu32 timeInMs)
+void ymMusicSeek(YMMUSIC *_pMus, ymu32 timeInMs)
 {
 	CYmMusic *pMusic = (CYmMusic*)_pMus;
 	if (pMusic->isSeekable())
@@ -132,3 +139,16 @@ void		ymMusicSeek(YMMUSIC *_pMus,ymu32 timeInMs)
 		pMusic->setMusicTime(timeInMs);
 	}
 }
+
+void ymMusicRestart(YMMUSIC *_pMus)
+{
+	CYmMusic *pMusic = (CYmMusic*)_pMus;
+	pMusic->restart();
+}
+
+void ymMusicSetLowpassFiler(YMMUSIC *_pMus, ymbool bActive)
+{
+	CYmMusic *pMusic = (CYmMusic*)_pMus;
+	pMusic->setLowpassFilter(bActive);
+}
+

@@ -205,13 +205,13 @@ static int GET(int ch, int opt)
 
 uint32_t __attribute__ ((visibility ("internal"))) ymGetPos(void)
 {
-	return pMusic->getPosFrame();
+	return ymMusicGetPos(pMusic);
 }
 void __attribute__ ((visibility ("internal"))) ymSetPos(uint32_t pos)
 {
 	if (pos>=0x80000000)
 		pos=0;
-	pMusic->setPosFrame(pos);
+	ymMusicSeek(pMusic, pos);
 }
 
 int __attribute__ ((visibility ("internal"))) ymOpenPlayer(FILE *file)
