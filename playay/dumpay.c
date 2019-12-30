@@ -1,5 +1,7 @@
+#include "config.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -11,6 +13,19 @@
 /* file-format spec source: http://vgmrips.net/wiki/AY_File_Format */
 
 #include "dumpay_z80_dis.c"
+
+//#define DEBUG_TODO 1
+
+int usecolor = 0;
+
+static char *FONT_RESET = "";
+static char *FONT_BRIGHT_BLACK = "";
+static char *FONT_BRIGHT_RED = "";
+static char *FONT_BRIGHT_GREEN = "";
+static char *FONT_BRIGHT_YELLOW = "";
+static char *FONT_BRIGHT_BLUE = "";
+static char *FONT_BRIGHT_PURPLE = "";
+static char *FONT_BRIGHT_CYAN = "";
 
 static char safeprintchar (const char input)
 {
@@ -287,7 +302,9 @@ static void tryprint_songs (const unsigned char *buffer, int length, uint16_t i_
 
 				if (z80_flags[ptr] & FLAG_CODE_DIRECT)
 				{
+#ifdef DEBUG_TODO
 					fprintf (stderr, "pre-emptive remove, already scanned\n");
+#endif
 					memmove (todo_ptrs, todo_ptrs+1, sizeof (todo_ptrs[0]) * (todo_n - 1));
 					todo_n--;
 					continue;
@@ -329,7 +346,9 @@ static void tryprint_songs (const unsigned char *buffer, int length, uint16_t i_
 
 					if ((retval == -1)||(retval == 2)||((todo_n > 1) && (todo_ptrs[0] == todo_ptrs[1])))
 					{
+#ifdef DEBUG_TODO
 						fprintf (stderr, "removing todo[0], due to jump or duplication\n");
+#endif
 						memmove (todo_ptrs, todo_ptrs+1, sizeof (todo_ptrs[0]) * (todo_n - 1));
 						todo_n--;
 					}
@@ -342,13 +361,16 @@ static void tryprint_songs (const unsigned char *buffer, int length, uint16_t i_
 							uint16_t temp = todo_ptrs[0];
 							todo_ptrs[0] = todo_ptrs[1];
 							todo_ptrs[1] = temp;
-
+#ifdef DEBUG_TODO
 							fprintf (stderr, "swapping todo[0] and todo[1]\n");
+#endif
 						}
 					}
 				} else {
 					/* failed, remove from list */
+#ifdef DEBUG_TODO
 					fprintf (stderr, "removing todo[0], due to failure of decoding\n");
+#endif
 					memmove (todo_ptrs, todo_ptrs+1, sizeof (todo_ptrs[0]) * (todo_n - 1));
 					todo_n--;
 				}
@@ -356,7 +378,9 @@ static void tryprint_songs (const unsigned char *buffer, int length, uint16_t i_
 				{
 					if (z80_flags[alt_ptr] & FLAG_CODE_DIRECT)
 					{
+#ifdef DEBUG_TODO
 						fprintf (stderr, "Not adding %d, already decoded\n", alt_ptr);
+#endif
 					} else {
 						int i;
 						int skip = 0;
@@ -364,7 +388,9 @@ static void tryprint_songs (const unsigned char *buffer, int length, uint16_t i_
 						{
 							if (todo_ptrs[i] == alt_ptr)
 							{
+#ifdef DEBUG_TODO
 								fprintf (stderr, "Skipping injecting, already on list %04x\n", alt_ptr);
+#endif
 								skip = 1;
 								break;
 							}
@@ -383,11 +409,13 @@ static void tryprint_songs (const unsigned char *buffer, int length, uint16_t i_
 							memmove (todo_ptrs + i + 1, todo_ptrs + i, (todo_n - i) * sizeof (todo_ptrs[0]));
 							todo_ptrs[i] = alt_ptr;
 							todo_n++;
+#ifdef DEBUG_TODO
 							fprintf (stderr, "Injected todo[%d]=%04x\n", i, alt_ptr);
+#endif
 						}
 					}
 				}
-
+#ifdef DEBUG_TODO
 				{
 					int i;
 					for (i=0;i<todo_n;i++)
@@ -396,12 +424,14 @@ static void tryprint_songs (const unsigned char *buffer, int length, uint16_t i_
 					}
 					fprintf (stderr, "\n");
 				}
+#endif
 			}
 			free (todo_ptrs);
 		}
 
 		{
 			int prev = -1;
+			int prevprev = -1;
 			uint32_t ptr;
 
 			for (ptr=0; ptr < 0x10000;)
@@ -425,31 +455,65 @@ static void tryprint_songs (const unsigned char *buffer, int length, uint16_t i_
 					disassemble (z80_memory, ptr, opcode, param1, param2, comment, &length, &alt_ptr);
 					switch (length)
 					{
-						case 1: printf ("%04x %02x __ __ __ %s %s%s%s%s%s\n", ptr, z80_memory[ptr], opcode, param1, param2[0]?", ":"", param2, comment[0]?" # ":"", comment); break;
-						case 2: printf ("%04x %02x %02x __ __ %s %s%s%s%s%s\n", ptr, z80_memory[ptr], z80_memory[ptr+1], opcode, param1, param2[0]?", ":"", param2, comment[0]?" # ":"", comment); break;
-						case 3: printf ("%04x %02x %02x %02x __ %s %s%s%s%s%s\n", ptr, z80_memory[ptr], z80_memory[ptr+1], z80_memory[ptr+2], opcode, param1, param2[0]?", ":"", param2, comment[0]?" # ":"", comment); break;
-						case 4: printf ("%04x %02x %02x %02x %02x %s %s%s%s%s%s\n", ptr, z80_memory[ptr], z80_memory[ptr+1], z80_memory[ptr+2], z80_memory[ptr+3], opcode, param1, param2[0]?", ":"", param2, comment[0]?" # ":"", comment); break;
+						case 1: printf ("%s%04x %s%02x __ __ __%s %s %s%s%s%s%s\n",
+							        FONT_BRIGHT_BLUE,
+							        ptr,
+							        FONT_BRIGHT_PURPLE,
+							        z80_memory[ptr],
+							        FONT_RESET,
+							        opcode, param1, param2[0]?", ":"", param2, comment[0]?" # ":"", comment); break;
+						case 2: printf ("%s%04x %s%02x %02x __ __%s %s %s%s%s%s%s\n",
+							        FONT_BRIGHT_BLUE,
+							        ptr,
+							        FONT_BRIGHT_PURPLE,
+							        z80_memory[ptr], z80_memory[ptr+1],
+							        FONT_RESET,
+							        opcode, param1, param2[0]?", ":"", param2, comment[0]?" # ":"", comment); break;
+						case 3: printf ("%s%04x %s%02x %02x %02x __%s %s %s%s%s%s%s\n",
+							        FONT_BRIGHT_BLUE,
+						                ptr,
+							        FONT_BRIGHT_PURPLE,
+							        z80_memory[ptr], z80_memory[ptr+1], z80_memory[ptr+2],
+							        FONT_RESET,
+							        opcode, param1, param2[0]?", ":"", param2, comment[0]?" # ":"", comment); break;
+						case 4: printf ("%s%04x %s%02x %02x %02x %02x%s %s %s%s%s%s%s\n",
+							        FONT_BRIGHT_BLUE,
+							        ptr,
+							        FONT_BRIGHT_PURPLE,
+							        z80_memory[ptr], z80_memory[ptr+1], z80_memory[ptr+2], z80_memory[ptr+3],
+							        FONT_RESET,
+							        opcode, param1, param2[0]?", ":"", param2, comment[0]?" # ":"", comment); break;
 					}
 
 					for (j=1; j < length; j++)
 					{
 						if (z80_flags[ptr+j] & FLAG_CODE_DIRECT)
 						{
-							printf ("ANTI DISASSEMBLER DETECTED at PTR %04x\n", j + ptr);
+							printf ("%sANTI DISASSEMBLER DETECTED at PTR %s%04x%s\n", FONT_BRIGHT_RED, FONT_BRIGHT_BLUE, j + ptr, FONT_RESET);
 						}
 					}
 					ptr++;
 					prev = -1;
+					prevprev = -1;
 				} else if (z80_flags[ptr] & FLAG_CODE_INDIRECT)
 				{
 					ptr++;
 				} else {
-					if (!((z80_memory[ptr] == prev) && ((prev == 0x00) || (prev == 0xff))))
+					if (!((z80_memory[ptr] == prev) && ((prev == 0x00) || (prev == 0xff) || (prev == 0xc9))))
 					{
-						printf ("%04x %02x\n", ptr, z80_memory[ptr]);
+						printf ("%s%04x %s%02x%s\n",
+						        FONT_BRIGHT_BLUE,
+						        ptr,
+						        FONT_BRIGHT_PURPLE,
+						        z80_memory[ptr],
+						        FONT_RESET);
 						prev = z80_memory[ptr];
+						prevprev = -1;
+					} else if (prevprev < 0)
+					{
+						printf ("...\n");
+						prevprev = prev;
 					}
-
 					ptr++;
 				}
 			}
@@ -528,14 +592,68 @@ int main (int argc, char *argv[])
 	int fd;
 	unsigned char *buffer = malloc (1024*1024); // way to big buffer
 	int length;
+	int c;
+	char *color = "auto";
+	int help = 0;
 
-	if (argc != 2)
+	while (1)
 	{
-		fprintf (stderr, "Usage:\n %s file.ay\n", argv[0]);
-		return -1;
+		int option_index = 0;
+		static struct option long_options[] =
+		{
+			{"color",        optional_argument, 0, 0},
+			{"help",         no_argument,       0, 'h'},
+			{0,              0,                 0, 0}
+		};
+
+		c = getopt_long(argc, argv, "hsp", long_options, &option_index);
+		if (c == -1)
+			break;
+
+		switch (c)
+		{
+			case 0:
+				if (option_index == 0)
+				{
+					color = optarg;
+				}
+				break;
+			case 'h':
+				help = 1;
+				break;
+			case '?':
+				help = 3;
+				break;
+			default:
+				printf("?? getopt returned character code 0%o ??\n", c);
+		}
 	}
 
-	fd = open (argv[1], O_RDONLY);
+	if (optind != (argc-1))
+	{
+		help = 4;
+	}
+
+	if (!color)
+	{
+		usecolor = 1;
+	} else if (!strcmp (color, "auto"))
+	{
+		usecolor = isatty ( 1 );
+	} else if ((strcmp (color, "never")) && (strcmp (color, "no")))
+	{
+		usecolor = 1;
+	} else {
+		usecolor = 0;
+	}
+
+	if (help)
+	{
+		fprintf (stderr, "Usage:\n%s [--color=auto/never/on] [--help] file.ay  (%d)\n", argv[0], help);
+		return 1;
+	}
+
+	fd = open (argv[optind], O_RDONLY);
 	if (fd < 0)
 	{
 		fprintf (stderr, "open(%s) failed: %s\n", argv[1], strerror (errno));
@@ -552,6 +670,18 @@ int main (int argc, char *argv[])
 	}
 
 	close (fd);
+
+	if (usecolor)
+	{
+		FONT_RESET         = "\033[0m";
+		FONT_BRIGHT_BLACK  = "\033[30;1m";
+		FONT_BRIGHT_RED    = "\033[31;1m";
+		FONT_BRIGHT_GREEN  = "\033[32;1m";
+		FONT_BRIGHT_YELLOW = "\033[33;1m";
+		FONT_BRIGHT_BLUE   = "\033[34;1m";
+		FONT_BRIGHT_PURPLE = "\033[35;1m";
+		FONT_BRIGHT_CYAN   = "\033[36;1m";
+	}
 
 	parse_ayfile (buffer, length);
 
