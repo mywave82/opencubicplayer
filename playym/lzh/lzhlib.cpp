@@ -2,8 +2,6 @@
 
 	ST-Sound ( YM files player library )
 
-	Copyright (C) 1995-1999 Arnaud Carre ( http://leonard.oxg.free.fr )
-
 	LZH depacking routine
 	Original LZH code by Haruhiko Okumura (1991) and Kerwin F. Medina (1996)
 
@@ -12,27 +10,39 @@
 -----------------------------------------------------------------------------*/
 
 /*-----------------------------------------------------------------------------
-
-	This file is part of ST-Sound
-
-	ST-Sound is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
-
-	ST-Sound is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with ST-Sound; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
+* ST-Sound, ATARI-ST Music Emulator
+* Copyright (c) 1995-1999 Arnaud Carre ( http://leonard.oxg.free.fr )
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions
+* are met:
+* 1. Redistributions of source code must retain the above copyright
+*    notice, this list of conditions and the following disclaimer.
+* 2. Redistributions in binary form must reproduce the above copyright
+*    notice, this list of conditions and the following disclaimer in the
+*    documentation and/or other materials provided with the distribution.
+*
+* THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+* ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+* FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+* OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+* OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+* SUCH DAMAGE.
+*
 -----------------------------------------------------------------------------*/
 
 #include "config.h"
-#include <memory.h>
+#include <stdlib.h>
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+//#include "../YmTypes.h"
 #include "lzh.h"
 
 /*
@@ -41,7 +51,7 @@
 
 
 
-int		CLzhDepacker::DataIn(void *pBuffer,int nBytes)
+int CLzhDepacker::DataIn(void *pBuffer,int nBytes)
 {
 	const int np = (nBytes <= m_srcSize) ? nBytes : m_srcSize;
 	if (np > 0)
@@ -53,7 +63,7 @@ int		CLzhDepacker::DataIn(void *pBuffer,int nBytes)
 	return np;
 }
 
-int		CLzhDepacker::DataOut(void *pBuffer,int nBytes)
+int CLzhDepacker::DataOut(void *pBuffer,int nBytes)
 {
 	const int np = (nBytes <= m_dstSize) ? nBytes : m_dstSize;
 	if (np > 0)
@@ -93,9 +103,9 @@ void CLzhDepacker::fillbuf (int n)
     bitbuf |= subbitbuf >> (bitcount -= n);
 }
 
-lzh_ushort CLzhDepacker::getbits (int n)
+ushort CLzhDepacker::getbits (int n)
 {
-    lzh_ushort x;
+    ushort x;
     x = bitbuf >> (BITBUFSIZ - n);
     fillbuf (n);
     return x;
@@ -113,11 +123,11 @@ void CLzhDepacker::init_getbits (void)
  * maketbl.c
  */
 
-int CLzhDepacker::make_table (int nchar, lzh_uchar *bitlen,
-                       int tablebits, lzh_ushort *table)
+int CLzhDepacker::make_table (int nchar, uchar *bitlen,
+                       int tablebits, ushort *table)
 {
-    lzh_ushort count[17], weight[17], start[18], *p;
-    lzh_uint jutbits, avail, mask;
+    ushort count[17], weight[17], start[18], *p;
+    uint jutbits, avail, mask;
 	int i,ch,len,nextcode;
 
     for (i = 1; i <= 16; i++)
@@ -128,7 +138,7 @@ int CLzhDepacker::make_table (int nchar, lzh_uchar *bitlen,
     start[1] = 0;
     for (i = 1; i <= 16; i++)
         start[i + 1] = start[i] + (count[i] << (16 - i));
-    if (start[17] != (lzh_ushort) (1U << 16))
+    if (start[17] != (ushort) (1U << 16))
         return (1); /* error: bad table */
 
     jutbits = 16 - tablebits;
@@ -144,7 +154,7 @@ int CLzhDepacker::make_table (int nchar, lzh_uchar *bitlen,
     }
 
     i = start[tablebits + 1] >> jutbits;
-    if (i != (lzh_ushort) (1U << 16))
+    if (i != (ushort) (1U << 16))
     {
         int k = 1U << tablebits;
         while (i != k)
@@ -165,7 +175,7 @@ int CLzhDepacker::make_table (int nchar, lzh_uchar *bitlen,
         }
         else
         {
-            lzh_uint k = start[len];
+            uint k = start[len];
             p = &table[k >> jutbits];
             i = len - tablebits;
             while (i != 0)
@@ -198,7 +208,7 @@ void CLzhDepacker::read_pt_len (int nn, int nbit, int i_special)
 {
     int i, n;
     short c;
-    lzh_ushort mask;
+    ushort mask;
 
     n = getbits (nbit);
     if (n == 0)
@@ -225,7 +235,7 @@ void CLzhDepacker::read_pt_len (int nn, int nbit, int i_special)
                 }
             }
             fillbuf ((c < 7) ? 3 : c - 3);
-            pt_len[i++] = lzh_uchar(c);
+            pt_len[i++] = uchar(c);
             if (i == i_special)
             {
                 c = getbits (2);
@@ -242,7 +252,7 @@ void CLzhDepacker::read_pt_len (int nn, int nbit, int i_special)
 void CLzhDepacker::read_c_len (void)
 {
     short i, c, n;
-    lzh_ushort mask;
+    ushort mask;
 
     n = getbits (CBIT);
     if (n == 0)
@@ -292,9 +302,9 @@ void CLzhDepacker::read_c_len (void)
     }
 }
 
-lzh_ushort CLzhDepacker::decode_c (void)
+ushort CLzhDepacker::decode_c (void)
 {
-    lzh_ushort j, mask;
+    ushort j, mask;
 
     if (blocksize == 0)
     {
@@ -322,9 +332,9 @@ lzh_ushort CLzhDepacker::decode_c (void)
     return j;
 }
 
-lzh_ushort CLzhDepacker::decode_p (void)
+ushort CLzhDepacker::decode_p (void)
 {
-    lzh_ushort j, mask;
+    ushort j, mask;
 
     j = pt_table[bitbuf >> (BITBUFSIZ - 8)];
     if (j >= NP)
@@ -369,9 +379,9 @@ void CLzhDepacker::decode_start (void)
  * smaller, into the array 'buffer[]' of size 'DICSIZ' or more. Call
  * decode_start() once for each new file before calling this function.
  */
-void CLzhDepacker::decode (lzh_uint count, lzh_uchar buffer[])
+void CLzhDepacker::decode (uint count, uchar buffer[])
 {
-    lzh_uint r, c;
+    uint r, c;
 
     r = 0;
     while (--decode_j >= 0)
@@ -405,23 +415,22 @@ void CLzhDepacker::decode (lzh_uint count, lzh_uchar buffer[])
     }
 }
 
-#warning made pSrc const
-bool	CLzhDepacker::LzUnpack(const void *pSrc,int srcSize,void *pDst,int dstSize)
+bool CLzhDepacker::LzUnpack(const void *pSrc,int srcSize,void *pDst,int dstSize)
 {
 
     with_error = 0;
 
-	m_pSrc = (lzh_uchar*)pSrc;
+	m_pSrc = (uchar*)pSrc;
 	m_srcSize = srcSize;
-	m_pDst = (lzh_uchar*)pDst;
+	m_pDst = (uchar*)pDst;
 	m_dstSize = dstSize;
 
     decode_start ();
 
-	lzh_uint origsize = dstSize;
+	uint origsize = dstSize;
     while (origsize != 0)
     {
-        lzh_uint n = (lzh_uint) ((origsize > DICSIZ) ? DICSIZ : origsize);
+        uint n = (uint) ((origsize > DICSIZ) ? DICSIZ : origsize);
         decode (n, outbuf);
 		if (with_error)
 			break;

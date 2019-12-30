@@ -2,8 +2,6 @@
 
 	ST-Sound ( YM files player library )
 
-	Copyright (C) 1995-1999 Arnaud Carre ( http://leonard.oxg.free.fr )
-
 	LZH depacking routine
 	Original LZH code by Haruhiko Okumura (1991) and Kerwin F. Medina (1996)
 
@@ -12,23 +10,31 @@
 -----------------------------------------------------------------------------*/
 
 /*-----------------------------------------------------------------------------
-
-	This file is part of ST-Sound
-
-	ST-Sound is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
-
-	ST-Sound is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with ST-Sound; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
+* ST-Sound, ATARI-ST Music Emulator
+* Copyright (c) 1995-1999 Arnaud Carre ( http://leonard.oxg.free.fr )
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions
+* are met:
+* 1. Redistributions of source code must retain the above copyright
+*    notice, this list of conditions and the following disclaimer.
+* 2. Redistributions in binary form must reproduce the above copyright
+*    notice, this list of conditions and the following disclaimer in the
+*    documentation and/or other materials provided with the distribution.
+*
+* THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+* ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+* FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+* OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+* OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+* SUCH DAMAGE.
+*
 -----------------------------------------------------------------------------*/
 
 
@@ -38,29 +44,9 @@
 
 #define BUFSIZE (1024 * 4)
 
-#if defined(_WIN32) || defined(_WIN64)
-
-typedef unsigned char  lzh_uchar;   /*  8 bits or more */
-typedef unsigned int   lzh_uint;    /* 16 bits or more */
-typedef unsigned short lzh_ushort;  /* 16 bits or more */
-typedef unsigned long  lzh_ulong;   /* 32 bits or more */
-
-#else
-
-#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#endif
-
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-
-typedef uint8_t  lzh_uchar;
-typedef uint16_t lzh_ushort;
-typedef uint_fast32_t lzh_uint;
-typedef uint_fast32_t lzh_ulong;
-
-#endif
+typedef uint8_t		uchar;   /*  8 bits or more */
+typedef unsigned int   uint;    /* 16 bits or more */
+typedef uint16_t	ushort;  /* 16 bits or more */
 
 #ifndef CHAR_BIT
     #define CHAR_BIT            8
@@ -70,7 +56,7 @@ typedef uint_fast32_t lzh_ulong;
     #define UCHAR_MAX           255
 #endif
 
-typedef	lzh_ushort		BITBUFTYPE;
+typedef	ushort		BITBUFTYPE;
 
 #define BITBUFSIZ (CHAR_BIT * sizeof (BITBUFTYPE))
 #define DICBIT    13                              /* 12(-lh4-) or 13(-lh5-) */
@@ -105,9 +91,9 @@ private:
 	//----------------------------------------------
 	// New stuff to handle memory IO
 	//----------------------------------------------
-	lzh_uchar	*	m_pSrc;
+	uchar	*	m_pSrc;
 	int			m_srcSize;
-	lzh_uchar	*	m_pDst;
+	uchar	*	m_pDst;
 	int			m_dstSize;
 
 	int			DataIn(void *pBuffer,int nBytes);
@@ -119,39 +105,39 @@ private:
 	// Original Lzhxlib static func
 	//----------------------------------------------
 	void		fillbuf (int n);
-	lzh_ushort		getbits (int n);
+	ushort		getbits (int n);
 	void		init_getbits (void);
-	int			make_table (int nchar, lzh_uchar *bitlen,int tablebits, lzh_ushort *table);
+	int			make_table (int nchar, uchar *bitlen,int tablebits, ushort *table);
 	void		read_pt_len (int nn, int nbit, int i_special);
 	void		read_c_len (void);
-	lzh_ushort		decode_c(void);
-	lzh_ushort		decode_p(void);
+	ushort		decode_c(void);
+	ushort		decode_p(void);
 	void		huf_decode_start (void);
 	void		decode_start (void);
-	void		decode (lzh_uint count, lzh_uchar buffer[]);
+	void		decode (uint count, uchar buffer[]);
 
 
 	//----------------------------------------------
 	// Original Lzhxlib static vars
 	//----------------------------------------------
 	int			fillbufsize;
-	lzh_uchar		buf[BUFSIZE];
-	lzh_uchar		outbuf[DICSIZ];
-	lzh_ushort		left [2 * NC - 1];
-	lzh_ushort		right[2 * NC - 1];
+	uchar		buf[BUFSIZE];
+	uchar		outbuf[DICSIZ];
+	ushort		left [2 * NC - 1];
+	ushort		right[2 * NC - 1];
 	BITBUFTYPE	bitbuf;
-	lzh_uint		subbitbuf;
+	uint		subbitbuf;
 	int			bitcount;
 	int			decode_j;    /* remaining bytes to copy */
-	lzh_uchar		c_len[NC];
-	lzh_uchar		pt_len[NPT];
-	lzh_uint		blocksize;
-	lzh_ushort		c_table[4096];
-	lzh_ushort		pt_table[256];
+	uchar		c_len[NC];
+	uchar		pt_len[NPT];
+	uint		blocksize;
+	ushort		c_table[4096];
+	ushort		pt_table[256];
 	int			with_error;
 
-	lzh_uint		fillbuf_i;			// NOTE: these ones are not initialized at constructor time but inside the fillbuf and decode func.
-	lzh_uint		decode_i;
+	uint		fillbuf_i;			// NOTE: these ones are not initialized at constructor time but inside the fillbuf and decode func.
+	uint		decode_i;
 };
 
 
