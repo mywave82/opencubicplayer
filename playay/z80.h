@@ -15,6 +15,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#ifndef _Z80_H
+#define _Z80_H 1
+
 #define Z80_quit  1
 #define Z80_NMI   2
 #define Z80_reset 3
@@ -22,7 +25,7 @@
 #define Z80_save  5
 #define Z80_log   6
 
-extern void __attribute__ ((visibility ("internal"))) ay_z80_init(unsigned char *data,unsigned char *stacketc);
+extern void __attribute__ ((visibility ("internal"))) ay_z80_init(const unsigned char *data,const unsigned char *stacketc);
 extern void __attribute__ ((visibility ("internal"))) ay_z80loop(void);
 
 #define fetch(x) (ay_mem[x])
@@ -56,3 +59,5 @@ static inline void store2func(uint16_t ad,unsigned char b1,uint8_t b2){
 #define bc ((b<<8)|c)
 #define de ((d<<8)|e)
 #define hl ((h<<8)|l)
+
+#endif

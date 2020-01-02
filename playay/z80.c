@@ -17,6 +17,7 @@
  */
 
 #define NO_CURSES
+
 #include "config.h"
 #include <stdio.h>
 #include <signal.h>
@@ -56,7 +57,7 @@ static uint32_t intsample;
 static uint8_t op;
 static int interrupted;
 
-void __attribute__ ((visibility ("internal"))) ay_z80_init(unsigned char *data,unsigned char *stacketc)
+void __attribute__ ((visibility ("internal"))) ay_z80_init(const unsigned char *data,const unsigned char *stacketc)
 {
 a=f=b=c=d=e=h=l=a1=f1=b1=c1=d1=e1=h1=l1=i=r=iff1=iff2=im=0;
 ixoriy=new_ixoriy=0;
@@ -111,9 +112,14 @@ void __attribute__ ((visibility ("internal"))) ay_z80loop(void)
         pc=addr;
         }
       }
+    } else if (op == 0x76)
+    {/* we have no hardware that can generate interrupts except VSYNC */
+      ay_tstates = ay_tsmax;
     }
   }
   ay_do_interrupt();
   ay_tstates-=ay_tsmax;
+#ifndef Z80_DISABLE_INTERRUPT
   interrupted=1;
+#endif
 }
