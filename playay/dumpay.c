@@ -1,3 +1,5 @@
+#define NO_CURSES
+
 #include "config.h"
 #include <errno.h>
 #include <fcntl.h>
@@ -11,6 +13,124 @@
 #include <unistd.h>
 
 /* file-format spec source: http://vgmrips.net/wiki/AY_File_Format */
+
+struct z80_session_t
+{
+	unsigned char z80_memory[65536];
+	unsigned char z80_flags[65536];
+	uint32_t ptr; /* used for printing */
+	int prev;     /* used for printing */
+	int prevprev; /* used for printing */
+};
+
+struct z80_session_t *active_session;
+
+struct z80_session_t session_a; // vanilla
+struct z80_session_t session_b; // after init
+struct z80_session_t session_c; // after some iterations
+
+#define FLAG_CODE_DIRECT0    1
+#define FLAG_CODE_DIRECT1    2
+#define FLAG_CODE_DIRECT2    3
+#define FLAG_CODE_DIRECT     7
+
+#define FLAG_CODE_INDIRECT0   8
+#define FLAG_CODE_INDIRECT1  16
+#define FLAG_CODE_INDIRECT2  32
+#define FLAG_CODE_INDIRECT   56
+
+
+
+
+
+
+
+
+
+
+
+#define _Z80_H 1
+
+#define Z80_quit  1
+#define Z80_NMI   2
+#define Z80_reset 3
+#define Z80_load  4
+#define Z80_save  5
+#define Z80_log   6
+
+static inline uint8_t fetch(uint16_t x)
+{
+	return active_session->z80_memory[x];
+}
+
+static inline uint16_t fetch2(uint16_t x)
+{
+	uint16_t retval;
+	retval  = active_session->z80_memory[x];
+	x++;
+	retval |= (active_session->z80_memory[x]<<8);
+	return retval;
+}
+
+static void store (uint16_t ad, uint8_t b)
+{
+	active_session->z80_memory[ad] = b;
+}
+
+static uint16_t pc;
+
+void store2b (uint16_t ad, uint8_t hi, uint8_t lo)
+{
+	active_session->z80_memory[ad] = lo;
+	ad++;
+	active_session->z80_memory[ad] = hi;
+}
+
+void store2(uint16_t ad, uint16_t w)
+{
+	store2b(ad,(w)>>8,(w)&255);
+}
+
+#define bc ((b<<8)|c)
+#define de ((d<<8)|e)
+#define hl ((h<<8)|l)
+
+
+unsigned int ay_in(int h,int l)
+{
+	return 0;
+}
+
+unsigned int ay_out(int h,int l,int a)
+{
+	return 0;
+}
+int ay_do_interrupt(void)
+{
+	return 0;
+}
+
+unsigned long ay_tstates,ay_tsmax;
+
+#define Z80_DISABLE_INTERRUPT
+
+#include "z80.c"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "dumpay_z80_dis.c"
 
@@ -64,7 +184,7 @@ static void tryprint_string (const unsigned char *buffer, int length, uint16_t p
 	printf ("\"%s\"", buffer + ptr);
 }
 
-static void tryprint_points (const unsigned char *buffer, int length, uint16_t i_ptr, uint16_t *init, uint16_t *interrupt)
+static void tryprint_points (const unsigned char *buffer, int length, uint16_t i_ptr, uint16_t *init, uint16_t *interrupt, uint16_t *sp)
 {
 	if (i_ptr+6 > length)
 	{
@@ -72,23 +192,10 @@ static void tryprint_points (const unsigned char *buffer, int length, uint16_t i
 		return;
 	}
 
-	printf ("   Stack/SP:  0x%04x\n", (buffer[i_ptr+0] << 8) | buffer[i_ptr+1]);
+	printf ("   Stack/SP:  0x%04x\n", *sp = ((buffer[i_ptr+0] << 8) | buffer[i_ptr+1]));
 	printf ("   Init:      0x%04x\n", *init = ((buffer[i_ptr+2] << 8) | buffer[i_ptr+3]));
 	printf ("   Interrupt: 0x%04x\n", *interrupt = ((buffer[i_ptr+4] << 8) | buffer[i_ptr+5]));
 }
-
-static unsigned char z80_memory[65536];
-static unsigned char z80_flags[65536];
-#define FLAG_CODE_DIRECT0    1
-#define FLAG_CODE_DIRECT1    2
-#define FLAG_CODE_DIRECT2    3
-#define FLAG_CODE_DIRECT     7
-
-#define FLAG_CODE_INDIRECT0   8
-#define FLAG_CODE_INDIRECT1  16
-#define FLAG_CODE_INDIRECT2  32
-#define FLAG_CODE_INDIRECT   56
-
 
 static void tryprint_addresses (const unsigned char *buffer, int length, uint16_t i_ptr, uint16_t init, uint16_t interrupt)
 {
@@ -120,7 +227,7 @@ static void tryprint_addresses (const unsigned char *buffer, int length, uint16_
 
 		mem_ptr         = (buffer[i_ptr+0] << 8) | buffer[i_ptr+1];
 		mem_length      = (buffer[i_ptr+2] << 8) | buffer[i_ptr+3];
-		rel_ptr         = (buffer[i_ptr+4] << 8) | buffer[i_ptr+5]; ptr = rel_ptr + i_ptr + 2;
+		rel_ptr         = (buffer[i_ptr+4] << 8) | buffer[i_ptr+5]; ptr = rel_ptr + i_ptr + 4;
 		overflow_source = ((int)ptr+mem_length) > length;
 		overflow_target = ((int)mem_ptr+mem_length) > 0x10000;
 		printf ("   Target[0x%04x] Length %d: REL PTR 0x%04x => 0x%04x%s%s\n",
@@ -129,7 +236,6 @@ static void tryprint_addresses (const unsigned char *buffer, int length, uint16_
 			rel_ptr, ptr,
 			overflow_source?" (reads past end of file, will be truncated)":"",
 			overflow_target?" (writes past end of memorymap, will be truncated)":"");
-#warning dump_memory
 
 		if (!setup)
 		{
@@ -137,11 +243,11 @@ static void tryprint_addresses (const unsigned char *buffer, int length, uint16_
 			{
 				init = mem_ptr;
 			}
-			memset (z80_memory +      0, 0xc9, 0x0100);
-			memset (z80_memory + 0x0100, 0xff, 0x3f00);
-			memset (z80_memory + 0x4000, 0x00, 0xc000);
+			memset (&session_a.z80_memory[0x0000], 0xc9, 0x0100);
+			memset (&session_a.z80_memory[0x0100], 0xff, 0x3f00);
+			memset (&session_a.z80_memory[0x4000], 0x00, 0xc000);
 
-			z80_memory[0x38] = 0xfb;
+			session_a.z80_memory[0x0038] = 0xfb;
 
 			if (!interrupt)
 			{
@@ -154,7 +260,7 @@ static void tryprint_addresses (const unsigned char *buffer, int length, uint16_
 					0x76,         /* halt */
 					0x18,0xfa     /* jr loop */
 				};
-				memcpy (z80_memory, intz, sizeof (intz));
+				memcpy (session_a.z80_memory, intz, sizeof (intz));
 			} else {
 				static const unsigned char intnz[] =
 				{
@@ -166,12 +272,12 @@ static void tryprint_addresses (const unsigned char *buffer, int length, uint16_
 					0xcd,0,0,     /* call interrupt */
 					0x18,0xf7     /* jr loop */
 				};
-				memcpy (z80_memory, intnz, sizeof (intnz));
-				z80_memory[0x0009] = interrupt;
-				z80_memory[0x000a] = interrupt >> 8;
+				memcpy (session_a.z80_memory, intnz, sizeof (intnz));
+				session_a.z80_memory[0x0009] = interrupt;
+				session_a.z80_memory[0x000a] = interrupt >> 8;
 			}
-			z80_memory[0x0002] = init;
-			z80_memory[0x0003] = init >> 8;
+			session_a.z80_memory[0x0002] = init;
+			session_a.z80_memory[0x0003] = init >> 8;
 			setup = 1;
 		}
 
@@ -183,17 +289,17 @@ static void tryprint_addresses (const unsigned char *buffer, int length, uint16_
 		{
 			int from_source = length - mem_ptr;
 			int fill = mem_length - from_source;
-			memcpy (z80_memory + mem_ptr, buffer + ptr, length - mem_ptr);
-			bzero (z80_memory + mem_ptr + from_source, fill);
+			memcpy (session_a.z80_memory + mem_ptr, buffer + ptr, length - mem_ptr);
+			bzero (session_a.z80_memory + mem_ptr + from_source, fill);
 		} else {
-			memcpy (z80_memory + mem_ptr, buffer + ptr, mem_length);
+			memcpy (session_a.z80_memory + mem_ptr, buffer + ptr, mem_length);
 		}
 
 		i_ptr += 6;
 	}
 }
 
-static void tryprint_songdata (const unsigned char *buffer, int length, uint16_t i_ptr)
+static void tryprint_songdata (const unsigned char *buffer, int length, uint16_t i_ptr, uint16_t *sp)
 {
 	uint16_t rel_ptr;
 	uint16_t ptr;
@@ -236,26 +342,271 @@ static void tryprint_songdata (const unsigned char *buffer, int length, uint16_t
 
 	rel_ptr = (buffer[i_ptr+10]<<8) | buffer[i_ptr+11]; ptr = rel_ptr + i_ptr + 10;
 	printf ("  Points: REL PTR 0x%04x => 0x%04x\n", rel_ptr, ptr);
-	tryprint_points (buffer, length, ptr, &init, &interrupt);
+	tryprint_points (buffer, length, ptr, &init, &interrupt, sp);
 
 	rel_ptr = (buffer[i_ptr+12]<<8) | buffer[i_ptr+13]; ptr = rel_ptr + i_ptr + 12;
 	printf ("  Addresses: REL PTR 0x%04x => 0x%04x\n", rel_ptr, ptr);
 	tryprint_addresses (buffer, length, ptr, init, interrupt);
 }
 
-void breakme()
-{
+uint16_t *todo_ptrs = 0;
+int      todo_n = 0;
+int      todo_size = 0;
 
+static void predisassemble_session_start(struct z80_session_t *s)
+{
+	bzero (s->z80_flags, sizeof (s->z80_flags));
 }
+
+static void predisassemble_session_add(struct z80_session_t *s, uint16_t alt_ptr)
+{
+	int i;
+	int skip = 0;
+
+	for (i=0;i<todo_n;i++)
+	{
+		if (todo_ptrs[i] == alt_ptr)
+		{
+#ifdef DEBUG_TODO
+			fprintf (stderr, "Skipping injecting, already on list %04x\n", alt_ptr);
+#endif
+			skip = 1;
+			break;
+		}
+		if (todo_ptrs[i] > alt_ptr)
+		{
+			break;
+		}
+	}
+	if (!skip)
+	{
+		if (todo_n == todo_size)
+		{
+			todo_size += 16;
+			todo_ptrs = realloc (todo_ptrs, sizeof (todo_ptrs[0]) * todo_size);
+		}
+		memmove (todo_ptrs + i + 1, todo_ptrs + i, (todo_n - i) * sizeof (todo_ptrs[0]));
+		todo_ptrs[i] = alt_ptr;
+		todo_n++;
+#ifdef DEBUG_TODO
+		fprintf (stderr, "Injected todo[%d]=%04x\n", i, alt_ptr);
+#endif
+	}
+}
+
+static void predisassemble_session_stop(struct z80_session_t *s, int recursive)
+{
+	while (todo_n)
+	{
+		char opcode[16];
+		char param1[16];
+		char param2[16];
+		char comment[32];
+		int length;
+		uint16_t ptr = todo_ptrs[0];
+		uint16_t alt_ptr;
+		int retval;
+
+		opcode[0] = 0;
+		param1[0] = 0;
+		param2[0] = 0;
+		comment[0] = 0;
+
+		if (s->z80_flags[ptr] & FLAG_CODE_DIRECT)
+		{
+#ifdef DEBUG_TODO
+			fprintf (stderr, "pre-emptive remove, already scanned\n");
+#endif
+			memmove (todo_ptrs, todo_ptrs+1, sizeof (todo_ptrs[0]) * (todo_n - 1));
+			todo_n--;
+			continue;
+		}
+
+		retval = disassemble (s->z80_memory, ptr, opcode, param1, param2, comment, &length, &alt_ptr);
+		if (retval != -2)
+		{
+			s->z80_flags[ptr] |= length; /* matches up with FLAG_CODE_DIRECT */
+			if (length>1)
+			{
+				s->z80_flags[ptr+1] |= FLAG_CODE_INDIRECT0;
+			}
+			if (length>2)
+			{
+				s->z80_flags[ptr+2] |= FLAG_CODE_INDIRECT1;
+			}
+			if (length>3)
+			{
+				s->z80_flags[ptr+3] |= FLAG_CODE_INDIRECT2;
+			}
+			todo_ptrs[0] += length;
+
+			if ((!recursive)||(retval == -1)||(retval == 2)||((todo_n > 1) && (todo_ptrs[0] == todo_ptrs[1])))
+			{
+#ifdef DEBUG_TODO
+				fprintf (stderr, "removing todo[0], due to jump or duplication\n");
+#endif
+				memmove (todo_ptrs, todo_ptrs+1, sizeof (todo_ptrs[0]) * (todo_n - 1));
+				todo_n--;
+			}
+
+			if (todo_n > 1)
+			{
+				/* did we overtake the queue? */
+				if (todo_ptrs[0] > todo_ptrs[1])
+				{
+					uint16_t temp = todo_ptrs[0];
+					todo_ptrs[0] = todo_ptrs[1];
+					todo_ptrs[1] = temp;
+#ifdef DEBUG_TODO
+					fprintf (stderr, "swapping todo[0] and todo[1]\n");
+#endif
+				}
+			}
+		} else {
+			/* failed, remove from list */
+#ifdef DEBUG_TODO
+			fprintf (stderr, "removing todo[0], due to failure of decoding\n");
+#endif
+			memmove (todo_ptrs, todo_ptrs+1, sizeof (todo_ptrs[0]) * (todo_n - 1));
+			todo_n--;
+		}
+		if (recursive && ((retval == 1) || (retval == 2)))
+		{
+			if (s->z80_flags[alt_ptr] & FLAG_CODE_DIRECT)
+			{
+#ifdef DEBUG_TODO
+				fprintf (stderr, "Not adding %d, already decoded\n", alt_ptr);
+#endif
+			} else {
+				predisassemble_session_add (s, alt_ptr);
+			}
+		}
+#ifdef DEBUG_TODO
+		{
+			int i;
+			for (i=0;i<todo_n;i++)
+			{
+				fprintf (stderr, "%s%04x", i?", ":"", todo_ptrs[i]);
+			}
+			fprintf (stderr, "\n");
+		}
+#endif
+	}
+}
+
+static void predisassemble_session(struct z80_session_t *s)
+{
+	predisassemble_session_start (s);
+	predisassemble_session_add (s, 0x0000);
+	predisassemble_session_add (s, 0x0008);
+	predisassemble_session_add (s, 0x0038);
+	predisassemble_session_stop (s, 1);
+}
+
+static int disassemble_session(struct z80_session_t *s, char *b, int blen)
+{
+	char opcode[16];
+	char param1[16];
+	char param2[16];
+	char comment[32];
+	int length;
+	uint16_t alt_ptr;
+	int retval = 1;
+
+	if ((length=(s->z80_flags[s->ptr] & FLAG_CODE_DIRECT)))
+	{
+		char combined[21];
+		opcode[0] = 0;
+		param1[0] = 0;
+		param2[0] = 0;
+		comment[0] = 0;
+
+		disassemble (s->z80_memory, s->ptr, opcode, param1, param2, comment, &length, &alt_ptr);
+
+		snprintf (combined, sizeof (combined), "%s %s%s%s%s%s", opcode, param1, param2[0]?", ":"", param2, comment[0]?" # ":"", comment);
+
+		switch (length)
+		{
+			case 1: snprintf (b, blen, "%s%04x %s%02x __ __ __%s %-20s",
+					FONT_BRIGHT_BLUE,
+					s->ptr,
+					s->z80_flags[s->ptr] & FLAG_CODE_INDIRECT ? FONT_BRIGHT_RED : FONT_BRIGHT_PURPLE,
+					s->z80_memory[s->ptr],
+					FONT_RESET,
+					combined); break;
+			case 2: snprintf (b, blen, "%s%04x %s%02x %02x __ __%s %-20s",
+					FONT_BRIGHT_BLUE,
+					s->ptr,
+					s->z80_flags[s->ptr] & FLAG_CODE_INDIRECT ? FONT_BRIGHT_RED : FONT_BRIGHT_PURPLE,
+					s->z80_memory[s->ptr], s->z80_memory[s->ptr+1],
+					FONT_RESET,
+					combined); break;
+			case 3: snprintf (b, blen, "%s%04x %s%02x %02x %02x __%s %-20s",
+					FONT_BRIGHT_BLUE,
+					s->ptr,
+					s->z80_flags[s->ptr] & FLAG_CODE_INDIRECT ? FONT_BRIGHT_RED : FONT_BRIGHT_PURPLE,
+					s->z80_memory[s->ptr], s->z80_memory[s->ptr+1], s->z80_memory[s->ptr+2],
+					FONT_RESET,
+					combined); break;
+			case 4: snprintf (b, blen, "%s%04x %s%02x %02x %02x %02x%s %-20s",
+					FONT_BRIGHT_BLUE,
+					s->ptr,
+					s->z80_flags[s->ptr] & FLAG_CODE_INDIRECT ? FONT_BRIGHT_RED : FONT_BRIGHT_PURPLE,
+					s->z80_memory[s->ptr], s->z80_memory[s->ptr+1], s->z80_memory[s->ptr+2], s->z80_memory[s->ptr+3],
+					FONT_RESET,
+					combined); break;
+		}
+#if 0
+		for (j=1; j < length; j++)
+		{
+			if (s->z80_flags[s->ptr+j] & FLAG_CODE_DIRECT)
+			{
+				snprintf (b, blen, "%sANTI DISASSEMBLER DETECTED at PTR %s%04x%s\n", FONT_BRIGHT_RED, FONT_BRIGHT_BLUE, j + s->ptr, FONT_RESET);
+			}
+		}
+#endif
+		s->ptr++;
+		s->prev = -1;
+		s->prevprev = -1;
+	} else if (s->z80_flags[s->ptr] & FLAG_CODE_INDIRECT)
+	{
+		s->ptr++;
+		retval = 0;
+	} else {
+		if (!((s->z80_memory[s->ptr] == s->prev) && ((s->prev == 0x00) || (s->prev == 0xff) || (s->prev == 0xc9))))
+		{
+			snprintf (b, blen, "%s%04x %s%02x%s          " "                    ",
+				FONT_BRIGHT_BLUE,
+				s->ptr,
+				FONT_BRIGHT_PURPLE,
+				s->z80_memory[s->ptr],
+				FONT_RESET);
+			s->prev = s->z80_memory[s->ptr];
+			s->prevprev = -1;
+		} else if (s->prevprev < 0)
+		{
+			snprintf (b, blen, "...              " "                    ");
+			s->prevprev = s->prev;
+		} else {
+			retval = 0;
+		}
+		s->ptr++;
+	}
+
+	return retval;
+}
+
 
 static void tryprint_songs (const unsigned char *buffer, int length, uint16_t i_ptr, int songs)
 {
-	uint16_t rel_ptr;
-	uint16_t ptr;
-	int i;
+	int i, j, k;
 
 	for (i=0; i < songs; i++)
 	{
+		uint16_t sp = 0;
+		uint16_t ptr;
+		uint16_t rel_ptr;
+
 		printf ("SONG %d\n", i);
 		if (((int)i_ptr+4) > length)
 		{
@@ -269,254 +620,102 @@ static void tryprint_songs (const unsigned char *buffer, int length, uint16_t i_
 
 		rel_ptr = (buffer[i_ptr+2] << 8) | buffer[i_ptr+3]; ptr = rel_ptr + i_ptr + 2;
 		printf ("\n SongData: REL_PTR 0x%04x => 0x%04x\n", rel_ptr, ptr);
-		tryprint_songdata (buffer, length, ptr);
+		tryprint_songdata (buffer, length, ptr, &sp);
 		i_ptr += 4;
 
+		predisassemble_session (&session_a);
+
+		memcpy (session_b.z80_memory, session_a.z80_memory, sizeof (session_b.z80_memory));
+		active_session = &session_b;
+		predisassemble_session_start (&session_c);
 		{
-			uint16_t *todo_ptrs = malloc (sizeof (uint16_t *)*16);
-			int      todo_n = 0;
-			int      todo_size = 16;
-
-			bzero (z80_flags, sizeof (z80_flags));
-
-			todo_ptrs[0] = 0x0000;
-			todo_ptrs[1] = 0x0008;
-			todo_ptrs[2] = 0x0038;
-			todo_n = 3;
-
-			while (todo_n)
-			{
-				char opcode[16];
-				char param1[16];
-				char param2[16];
-				char comment[32];
-				int length;
-				uint16_t ptr = todo_ptrs[0];
-				uint16_t alt_ptr;
-				int retval;
-
-				opcode[0] = 0;
-				param1[0] = 0;
-				param2[0] = 0;
-				comment[0] = 0;
-
-				if (z80_flags[ptr] & FLAG_CODE_DIRECT)
-				{
-#ifdef DEBUG_TODO
-					fprintf (stderr, "pre-emptive remove, already scanned\n");
-#endif
-					memmove (todo_ptrs, todo_ptrs+1, sizeof (todo_ptrs[0]) * (todo_n - 1));
-					todo_n--;
-					continue;
-				}
-
-				retval = disassemble (z80_memory, ptr, opcode, param1, param2, comment, &length, &alt_ptr);
-				if (retval != -2)
-				{
-					z80_flags[ptr] |= length; /* matches up with FLAG_CODE_DIRECT */
-					if (z80_flags[ptr] & FLAG_CODE_INDIRECT)
-					{
-						breakme();
-					}
-					if (length>1)
-					{
-						if (z80_flags[ptr+1] & FLAG_CODE_DIRECT)
-						{
-							breakme();
-						}
-						z80_flags[ptr+1] |= FLAG_CODE_INDIRECT0;
-					}
-					if (length>2)
-					{
-						if (z80_flags[ptr+2] & FLAG_CODE_DIRECT)
-						{
-							breakme();
-						}
-						z80_flags[ptr+2] |= FLAG_CODE_INDIRECT1;
-					}
-					if (length>3)
-					{
-						if (z80_flags[ptr+3] & FLAG_CODE_DIRECT)
-						{
-							breakme();
-						}
-						z80_flags[ptr+3] |= FLAG_CODE_INDIRECT2;
-					}
-					todo_ptrs[0] += length;
-
-					if ((retval == -1)||(retval == 2)||((todo_n > 1) && (todo_ptrs[0] == todo_ptrs[1])))
-					{
-#ifdef DEBUG_TODO
-						fprintf (stderr, "removing todo[0], due to jump or duplication\n");
-#endif
-						memmove (todo_ptrs, todo_ptrs+1, sizeof (todo_ptrs[0]) * (todo_n - 1));
-						todo_n--;
-					}
-
-					if (todo_n > 1)
-					{
-						/* did we overtake the queue? */
-						if (todo_ptrs[0] > todo_ptrs[1])
-						{
-							uint16_t temp = todo_ptrs[0];
-							todo_ptrs[0] = todo_ptrs[1];
-							todo_ptrs[1] = temp;
-#ifdef DEBUG_TODO
-							fprintf (stderr, "swapping todo[0] and todo[1]\n");
-#endif
-						}
-					}
-				} else {
-					/* failed, remove from list */
-#ifdef DEBUG_TODO
-					fprintf (stderr, "removing todo[0], due to failure of decoding\n");
-#endif
-					memmove (todo_ptrs, todo_ptrs+1, sizeof (todo_ptrs[0]) * (todo_n - 1));
-					todo_n--;
-				}
-				if ((retval == 1) || (retval == 2))
-				{
-					if (z80_flags[alt_ptr] & FLAG_CODE_DIRECT)
-					{
-#ifdef DEBUG_TODO
-						fprintf (stderr, "Not adding %d, already decoded\n", alt_ptr);
-#endif
-					} else {
-						int i;
-						int skip = 0;
-						for (i=0;i<todo_n;i++)
-						{
-							if (todo_ptrs[i] == alt_ptr)
-							{
-#ifdef DEBUG_TODO
-								fprintf (stderr, "Skipping injecting, already on list %04x\n", alt_ptr);
-#endif
-								skip = 1;
-								break;
-							}
-							if (todo_ptrs[i] > alt_ptr)
-							{
-								break;
-							}
-						}
-						if (!skip)
-						{
-							if (todo_n == todo_size)
-							{
-								todo_size += 16;
-								todo_ptrs = realloc (todo_ptrs, sizeof (todo_ptrs[0]) * todo_size);
-							}
-							memmove (todo_ptrs + i + 1, todo_ptrs + i, (todo_n - i) * sizeof (todo_ptrs[0]));
-							todo_ptrs[i] = alt_ptr;
-							todo_n++;
-#ifdef DEBUG_TODO
-							fprintf (stderr, "Injected todo[%d]=%04x\n", i, alt_ptr);
-#endif
-						}
-					}
-				}
-#ifdef DEBUG_TODO
-				{
-					int i;
-					for (i=0;i<todo_n;i++)
-					{
-						fprintf (stderr, "%s%04x", i?", ":"", todo_ptrs[i]);
-					}
-					fprintf (stderr, "\n");
-				}
-#endif
-			}
-			free (todo_ptrs);
+			uint8_t stack[2];
+			stack[0] = sp << 8;
+			stack[1] = sp;
+			ay_z80_init (buffer + ptr, stack);
 		}
-
+		for (j=0; j < 100000; j++)
 		{
-			int prev = -1;
-			int prevprev = -1;
-			uint32_t ptr;
-
-			for (ptr=0; ptr < 0x10000;)
+			ay_tstates = 0;
+			ay_tsmax = 1;
+			ay_z80loop();
+			if (intsample || (op == 0xf3) || (op == 0xfb))
 			{
-				char opcode[16];
-				char param1[16];
-				char param2[16];
-				char comment[32];
-				int length;
-				uint16_t alt_ptr;
-
-				if ((length=(z80_flags[ptr] & FLAG_CODE_DIRECT)))
+				predisassemble_session_add (&session_c, pc);
+				if ((op==0x76) && j)
 				{
-					int j;
-
-					opcode[0] = 0;
-					param1[0] = 0;
-					param2[0] = 0;
-					comment[0] = 0;
-
-					disassemble (z80_memory, ptr, opcode, param1, param2, comment, &length, &alt_ptr);
-					switch (length)
-					{
-						case 1: printf ("%s%04x %s%02x __ __ __%s %s %s%s%s%s%s\n",
-							        FONT_BRIGHT_BLUE,
-							        ptr,
-							        FONT_BRIGHT_PURPLE,
-							        z80_memory[ptr],
-							        FONT_RESET,
-							        opcode, param1, param2[0]?", ":"", param2, comment[0]?" # ":"", comment); break;
-						case 2: printf ("%s%04x %s%02x %02x __ __%s %s %s%s%s%s%s\n",
-							        FONT_BRIGHT_BLUE,
-							        ptr,
-							        FONT_BRIGHT_PURPLE,
-							        z80_memory[ptr], z80_memory[ptr+1],
-							        FONT_RESET,
-							        opcode, param1, param2[0]?", ":"", param2, comment[0]?" # ":"", comment); break;
-						case 3: printf ("%s%04x %s%02x %02x %02x __%s %s %s%s%s%s%s\n",
-							        FONT_BRIGHT_BLUE,
-						                ptr,
-							        FONT_BRIGHT_PURPLE,
-							        z80_memory[ptr], z80_memory[ptr+1], z80_memory[ptr+2],
-							        FONT_RESET,
-							        opcode, param1, param2[0]?", ":"", param2, comment[0]?" # ":"", comment); break;
-						case 4: printf ("%s%04x %s%02x %02x %02x %02x%s %s %s%s%s%s%s\n",
-							        FONT_BRIGHT_BLUE,
-							        ptr,
-							        FONT_BRIGHT_PURPLE,
-							        z80_memory[ptr], z80_memory[ptr+1], z80_memory[ptr+2], z80_memory[ptr+3],
-							        FONT_RESET,
-							        opcode, param1, param2[0]?", ":"", param2, comment[0]?" # ":"", comment); break;
-					}
-
-					for (j=1; j < length; j++)
-					{
-						if (z80_flags[ptr+j] & FLAG_CODE_DIRECT)
-						{
-							printf ("%sANTI DISASSEMBLER DETECTED at PTR %s%04x%s\n", FONT_BRIGHT_RED, FONT_BRIGHT_BLUE, j + ptr, FONT_RESET);
-						}
-					}
-					ptr++;
-					prev = -1;
-					prevprev = -1;
-				} else if (z80_flags[ptr] & FLAG_CODE_INDIRECT)
-				{
-					ptr++;
-				} else {
-					if (!((z80_memory[ptr] == prev) && ((prev == 0x00) || (prev == 0xff) || (prev == 0xc9))))
-					{
-						printf ("%s%04x %s%02x%s\n",
-						        FONT_BRIGHT_BLUE,
-						        ptr,
-						        FONT_BRIGHT_PURPLE,
-						        z80_memory[ptr],
-						        FONT_RESET);
-						prev = z80_memory[ptr];
-						prevprev = -1;
-					} else if (prevprev < 0)
-					{
-						printf ("...\n");
-						prevprev = prev;
-					}
-					ptr++;
+					break;
 				}
 			}
+		}
+		predisassemble_session_stop (&session_b, 0);
+
+		memcpy (session_c.z80_memory, session_b.z80_memory, sizeof (session_c.z80_memory));
+		active_session = &session_c;
+		predisassemble_session_start (&session_c);
+		for (k=0; k < 120*50; k++) /* 120 seconds * 50 frames */
+		{
+			interrupted = 1;
+			for (j=0; j < 100000; j++)
+			{
+				ay_tstates = 0;
+				ay_tsmax = 1;
+				ay_z80loop();
+				if (intsample || (op == 0xf3) || (op == 0xfb))
+				{
+					predisassemble_session_add (&session_c, pc);
+					if ((op==0x76) && j)
+					{
+						break;
+					}
+				}
+			}
+		}
+		predisassemble_session_stop (&session_c, 0);
+
+		session_a.ptr = 0x0000;
+		session_a.prev = -1;
+		session_a.prevprev = -1;
+
+		session_b.ptr = 0x0000;
+		session_b.prev = -1;
+		session_b.prevprev = -1;
+
+		session_c.ptr = 0x0000;
+		session_c.prev = -1;
+		session_c.prevprev = -1;
+
+		printf ("         STATIC CODE ANALYZER         ||         RUNNING INIT                  ||         RUNNING MUSIC                \n");
+
+		while ((session_a.ptr < 0x10000) && (session_b.ptr < 0x10000) && (session_c.ptr < 0x10000))
+		{
+			char buffer_a[256];
+			char buffer_b[256];
+			char buffer_c[256];
+			int reta;
+			int retb;
+			int retc;
+			reta = disassemble_session (&session_a, buffer_a, sizeof (buffer_a));
+			retb = disassemble_session (&session_b, buffer_b, sizeof (buffer_b));
+			retc = disassemble_session (&session_c, buffer_c, sizeof (buffer_c));
+			if ((!reta) && (!retb) && (!retc))
+			{
+				continue;
+			}
+			if (!reta)
+			{
+				snprintf (buffer_a, sizeof (buffer_a), "                                     ");
+			}
+			if (!retb)
+			{
+				snprintf (buffer_b, sizeof (buffer_b), "                                     ");
+			}
+			if (!retc)
+			{
+				snprintf (buffer_c, sizeof (buffer_c), "                                     ");
+			}
+
+			printf ("%s || %s || %s\n", buffer_a, buffer_b, buffer_c);
 		}
 	}
 }

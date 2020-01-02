@@ -98,5 +98,7 @@ dumpay: dumpay.o
 
 dumpay.o: \
 	dumpay.c \
-	dumpay_z80_dis.c
+	dumpay_z80_dis.c \
+	z80.c \
+	z80ops.c
 	$(CC) -o $@ $< -c
