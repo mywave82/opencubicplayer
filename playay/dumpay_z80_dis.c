@@ -104,7 +104,7 @@ static int disassemble_1 (unsigned char *memory, uint16_t ptr, char opcode[5], c
 		case 0x34: strcpy (opcode, "INC" ); *length = 3; sprintf (param1, "(%s+&%02x)", R, memory[ptr+2]); return 0;
 		case 0x35: strcpy (opcode, "DEC" ); *length = 3; sprintf (param1, "(%s+&%02x)", R, memory[ptr+2]); return 0;
 		case 0x36: strcpy (opcode, "LD"  ); *length = 4; sprintf (param1, "(%s+&%02x)", R, memory[ptr+2]); sprintf (param2, "&%02x", memory[ptr+3]); return 0;
-		case 0x39: strcpy (opcode, "ADD" ); *length = 3; strcpy (param1, R); strcpy (param2, "SP"); return 0;
+		case 0x39: strcpy (opcode, "ADD" ); *length = 2; strcpy (param1, R); strcpy (param2, "SP"); return 0;
 
 		case 0x44: strcpy (opcode, "LD"  ); *length = 2; strcpy (param1, "B"); strcpy (param2, H); return 0; /* non-standard */
 		case 0x45: strcpy (opcode, "LD"  ); *length = 2; strcpy (param1, "B"); strcpy (param2, L); return 0; /* non-standard */
@@ -150,31 +150,31 @@ static int disassemble_1 (unsigned char *memory, uint16_t ptr, char opcode[5], c
 
 		case 0x84: strcpy (opcode, "ADD" ); *length = 2; strcpy (param1, "A"); strcpy (param2, H); return 0; /* non-standard */
 		case 0x85: strcpy (opcode, "ADD" ); *length = 2; strcpy (param1, "A"); strcpy (param2, L); return 0; /* non-standard */
-		case 0x86: strcpy (opcode, "ADD" ); *length = 2; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
+		case 0x86: strcpy (opcode, "ADD" ); *length = 3; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
 		case 0x8c: strcpy (opcode, "ADC" ); *length = 2; strcpy (param1, "A"); strcpy (param2, H); return 0; /* non-standard */
 		case 0x8d: strcpy (opcode, "ADC" ); *length = 2; strcpy (param1, "A"); strcpy (param2, L); return 0; /* non-standard */
-		case 0x8e: strcpy (opcode, "ADC" ); *length = 2; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
+		case 0x8e: strcpy (opcode, "ADC" ); *length = 3; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
 
 		case 0x94: strcpy (opcode, "SUB" ); *length = 2; strcpy (param1, "A"); strcpy (param2, H); return 0; /* non-standard */
 		case 0x95: strcpy (opcode, "SUB" ); *length = 2; strcpy (param1, "A"); strcpy (param2, L); return 0; /* non-standard */
-		case 0x96: strcpy (opcode, "SUB" ); *length = 2; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
+		case 0x96: strcpy (opcode, "SUB" ); *length = 3; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
 		case 0x9c: strcpy (opcode, "SBC" ); *length = 2; strcpy (param1, "A"); strcpy (param2, H); return 0; /* non-standard */
 		case 0x9d: strcpy (opcode, "SBC" ); *length = 2; strcpy (param1, "A"); strcpy (param2, L); return 0; /* non-standard */
-		case 0x9e: strcpy (opcode, "SBC" ); *length = 2; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
+		case 0x9e: strcpy (opcode, "SBC" ); *length = 3; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
 
 		case 0xa4: strcpy (opcode, "AND" ); *length = 2; strcpy (param1, "A"); strcpy (param2, H); return 0; /* non-standard */
 		case 0xa5: strcpy (opcode, "AND" ); *length = 2; strcpy (param1, "A"); strcpy (param2, L); return 0; /* non-standard */
-		case 0xa6: strcpy (opcode, "AND" ); *length = 2; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
+		case 0xa6: strcpy (opcode, "AND" ); *length = 3; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
 		case 0xac: strcpy (opcode, "XOR" ); *length = 2; strcpy (param1, "A"); strcpy (param2, H); return 0; /* non-standard */
 		case 0xad: strcpy (opcode, "XOR" ); *length = 2; strcpy (param1, "A"); strcpy (param2, L); return 0; /* non-standard */
-		case 0xae: strcpy (opcode, "XOR" ); *length = 2; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
+		case 0xae: strcpy (opcode, "XOR" ); *length = 3; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
 
 		case 0xb4: strcpy (opcode, "OR"  ); *length = 2; strcpy (param1, "A"); strcpy (param2, H); return 0; /* non-standard */
 		case 0xb5: strcpy (opcode, "OR"  ); *length = 2; strcpy (param1, "A"); strcpy (param2, L); return 0; /* non-standard */
-		case 0xb6: strcpy (opcode, "OR"  ); *length = 2; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
+		case 0xb6: strcpy (opcode, "OR"  ); *length = 3; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
 		case 0xbc: strcpy (opcode, "CP"  ); *length = 2; strcpy (param1, "A"); strcpy (param2, H); return 0; /* non-standard */
 		case 0xbd: strcpy (opcode, "CP"  ); *length = 2; strcpy (param1, "A"); strcpy (param2, L); return 0; /* non-standard */
-		case 0xbe: strcpy (opcode, "CP"  ); *length = 2; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
+		case 0xbe: strcpy (opcode, "CP"  ); *length = 3; strcpy (param1, "A"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
 
 		case 0xcb: return disassemble_2 (memory, ptr, opcode, param1, param2, comment, length, alt_ptr, reg);
 
@@ -443,7 +443,7 @@ static int disassemble (unsigned char *memory, uint16_t ptr, char opcode[5], cha
 		                                                 sprintf (param2, "&%02x", memory[ptr+1]);
 		                                                 return 0;
 		case 0x0f: strcpy (opcode, "RRCA"); *length = 1; return 0;
-		case 0x10: strcpy (opcode, "DJNZ"); *length = 2; sprintf (param1, "&%04x", *alt_ptr = (uint16_t)(ptr+(signed char)memory[ptr+1]));
+		case 0x10: strcpy (opcode, "DJNZ"); *length = 2; sprintf (param1, "&%04x", *alt_ptr = (uint16_t)(ptr+(signed char)memory[ptr+1])+*length);
 		                                                 sprintf (comment, "%02x", memory[ptr+1]);
 		                                                 return 1;
 		case 0x11: strcpy (opcode, "LD"  ); *length = 3; strcpy  (param1, "E");
