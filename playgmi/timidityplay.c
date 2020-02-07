@@ -102,7 +102,7 @@ MAIN_INTERFACE int read_config_file(char *name, int self, int allow_missing_file
 MAIN_INTERFACE int timidity_post_load_configuration(void);
 MAIN_INTERFACE void timidity_init_player(void);
 MAIN_INTERFACE int timidity_play_main(int nfiles, char **files);
-MAIN_INTERFACE int got_a_configuration;
+extern int got_a_configuration;
 MAIN_INTERFACE void tmdy_free_config(void);
 extern void init_effect(void);
 void timidity_init_aq_buff(void);
