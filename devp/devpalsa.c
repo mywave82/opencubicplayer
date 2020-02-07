@@ -1223,7 +1223,7 @@ static void SetOptions(unsigned int rate, int opt)
 
 	val = 500000;
 	err=snd_pcm_hw_params_set_buffer_time_near(alsa_pcm, hwparams, &val, 0);
-	fprintf(stderr, "ALSA snd_pcm_hw_params_set_buffer_time_near(alsa_pcm, hwparams, 500000 uS => %d, 0) = %s\n", val, snd_strerror(-err));
+	debug_printf("      snd_pcm_hw_params_set_buffer_time_near(alsa_pcm, hwparams, 500000 uS => %d, 0) = %s\n", val, snd_strerror(-err));
 	if (err)
 	{
 		fprintf(stderr, "ALSA: snd_pcm_hw_params_set_buffer_time_near() failed: %s\n", snd_strerror(-err));
@@ -1247,7 +1247,7 @@ static void SetOptions(unsigned int rate, int opt)
 	}
 
 	err=snd_pcm_sw_params(alsa_pcm, swparams);
-	fprintf(stderr, "ALSA snd_pcm_sw_params(alsa_pcm, swparams) = %s\n", snd_strerror(-err));
+	debug_printf("      snd_pcm_sw_params(alsa_pcm, swparams) = %s\n", snd_strerror(-err));
 	if (err<0)
 	{
 		fprintf(stderr, "ALSA: snd_pcm_sw_params() failed: %s\n", snd_strerror(-err));
