@@ -595,10 +595,10 @@ static void hvl_process_step ( struct hvl_tune *ht, struct hvl_voice *voice )
 		voice->vc_ADSR.aFrames     = Ins->ins_Envelope.aFrames;
 		voice->vc_ADSR.aVolume     = Ins->ins_Envelope.aVolume * 256 / voice->vc_ADSR.aFrames;
 		voice->vc_ADSR.dFrames     = Ins->ins_Envelope.dFrames;
-		voice->vc_ADSR.dVolume     = (Ins->ins_Envelope.dVolume-Ins->ins_Envelope.aVolume) * 256 / voice->vc_ADSR.dFrames;
+		voice->vc_ADSR.dVolume     = Ins->ins_Envelope.dFrames ? (Ins->ins_Envelope.dVolume-Ins->ins_Envelope.aVolume) * 256 / voice->vc_ADSR.dFrames : Ins->ins_Envelope.dVolume * 256; // XXX
 		voice->vc_ADSR.sFrames     = Ins->ins_Envelope.sFrames;
 		voice->vc_ADSR.rFrames     = Ins->ins_Envelope.rFrames;
-		voice->vc_ADSR.rVolume     = (Ins->ins_Envelope.rVolume-Ins->ins_Envelope.dVolume) * 256 / voice->vc_ADSR.rFrames;
+		voice->vc_ADSR.rVolume     = Ins->ins_Envelope.rFrames ? (Ins->ins_Envelope.rVolume-Ins->ins_Envelope.dVolume) * 256 / voice->vc_ADSR.rFrames : Ins->ins_Envelope.rVolume * 256; // XXX
 
 		voice->vc_WaveLength       = Ins->ins_WaveLength;
 		voice->vc_NoteMaxVolume    = Ins->ins_Volume;
