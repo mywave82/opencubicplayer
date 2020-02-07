@@ -1349,7 +1349,7 @@ static void alsaOpenDevice(void)
 	if (mixer)
 	{
 		err=snd_mixer_close(mixer);
-		fprintf(stderr, "      snd_mixer_close(mixer) = %s\n", snd_strerror(-err));
+		debug_printf("      snd_mixer_close(mixer) = %s\n", snd_strerror(-err));
 		mixer=NULL;
 	}
 
