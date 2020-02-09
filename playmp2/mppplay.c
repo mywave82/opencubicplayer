@@ -591,9 +591,12 @@ static int mpegOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, 
 				}
 				fseek(mpegfile, ofs, SEEK_SET);
 			}
+
+			fl -= ofs;
 		}
-	} else
+	} else {
 		fl=0xffffffff; /* stream */
+	}
 
 	plIsEnd=mpegLooped;
 	plProcessKey=mpegProcessKey;

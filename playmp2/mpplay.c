@@ -226,11 +226,13 @@ static int stream_for_frame(void)
 		GuardPtr=0;
 	}
 
-	if (GuardPtr&&(stream.this_frame==GuardPtr))
+	if (GuardPtr&&(stream.this_frame==GuardPtr)) /* last frame is incomplete */
 	{
-	/*
-		fprintf(stderr, "EOF-KNOCKING\n");*/
-		return 0;
+		debug_printf ("[LIBMAD] EOF-KNOCKED\n");
+		if (donotloop)
+		{
+			return 0;
+		}
 	}
 	while(1)
 	{
@@ -245,7 +247,9 @@ static int stream_for_frame(void)
 				debug_printf ("[LIBMAD] stream.next_frame!=NULL (%p, remove %ld of bytes from buffer and GuardPtr)\n", stream.next_frame, stream.next_frame - data);
 
 				if (GuardPtr)
-					GuardPtr-=((data + data_length) - stream.next_frame);
+				{
+					GuardPtr-=stream.next_frame - data;
+				}
 				memmove(data, stream.next_frame, data_length = ((data + data_length) - stream.next_frame));
 				stream.next_frame=0;
 				debug_printf ("[LIBMAD] #1   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
