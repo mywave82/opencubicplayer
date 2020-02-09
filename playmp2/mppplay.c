@@ -46,7 +46,13 @@
 #define _MAX_FNAME 8
 #define _MAX_EXT 4
 
-/* #define MPEG_DEBUG 1 */
+// #define MP_DEBUG 1
+
+#ifdef MP_DEBUG
+#define debug_printf(...) fprintf (stderr, __VA_ARGS__)
+#else
+#define debug_printf(format,args...) ((void)0)
+#endif
 
 static FILE *mpegfile;
 static uint32_t mpeglen;
@@ -525,9 +531,7 @@ static int mpegOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, 
 		fseek(mpegfile, 0, SEEK_SET);
 		if (!memcmp(sig, "RIFF", 4))
 		{
-#ifdef MPEG_DEBUG
-			fprintf(stderr, "[mppplay.c]: container RIFF\n");
-#endif
+			debug_printf ("[mppplay.c]: container RIFF (mpeg3, layer 2 probably)\n");
 
 			fseek(mpegfile, 12, SEEK_SET);
 			fl=0;
@@ -535,18 +539,14 @@ static int mpegOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, 
 			{
 				if (fread(sig, 1, 4, mpegfile)!=4)
 					break;
-#ifdef MPEG_DEBUG
-				fprintf(stderr, "[mppplay.c]: chunk: %c%c%c%c\n", sig[0], sig[1], sig[2], sig[3]);
-#endif
+				debug_printf ("[mppplay.c]: chunk: %c%c%c%c\n", sig[0], sig[1], sig[2], sig[3]);
 				if (fread(&fl, sizeof(uint32_t), 1, mpegfile)!=1)
 				{
 					fprintf(stderr, __FILE__ ": fread failed #3\n");
 					return errFileRead;
 				}
 				fl = uint32_little (fl);
-#ifdef MPEG_DEBUG
-				fprintf(stderr, "[mppplay.c]: length: %d\n", (int)fl);
-#endif
+				debug_printf ("[mppplay.c]: length: %d\n", (int)fl);
 				if (!memcmp(sig, "data", 4))
 				{
 					ofs=ftell(mpegfile);
@@ -563,12 +563,16 @@ static int mpegOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, 
 				char buffer[1024*10];
 				char needle[2]={'\377','\175'};
 				fseek(mpegfile, 0, SEEK_SET);
+				debug_printf ("[mppplay.c]: ID3 header\n");
 				if (fread(buffer, 1024*10, 1, mpegfile)!=1)
 				{
 					fprintf(stderr, __FILE__ ": fread failed #4\n");
 				} else {
 					if ((ofs2=(char *)memmem(buffer, 1024*10, needle, 2)))
+					{
 						ofs=ofs2-buffer;
+						debug_printf ("[mppplay.c]: MPEG header found at offset %d\n", ofs);
+					}
 				}
 			}
 
@@ -581,7 +585,10 @@ static int mpegOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, 
 				fprintf(stderr, __FILE__ ": fread failed #5\n");
 			} else {
 				if (!memcmp(tag, "TAG", 3))
+				{
+					debug_printf ("[mppplay.c]: TAG found at end of file, shrinking length by 128 bytes\n");
 					fl-=128;
+				}
 				fseek(mpegfile, ofs, SEEK_SET);
 			}
 		}

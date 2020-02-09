@@ -47,9 +47,9 @@
 // #define MP_DEBUG 1
 
 #ifdef MP_DEBUG
-#define debug_printf (...) fprintf (stderr, __VA_ARGS__)
+#define debug_printf(...) fprintf (stderr, __VA_ARGS__)
 #else
-#define debug_printf(format, args...) ((void)0)
+#define debug_printf(format,args...) ((void)0)
 #endif
 
 /* options */
@@ -237,12 +237,18 @@ static int stream_for_frame(void)
 		if(stream.buffer==NULL || stream.error==MAD_ERROR_BUFLEN)
 		{
 			uint32_t len, target;
+
+			debug_printf ("[LIBMAD] buffer==NULL || stream.error==MAD_ERROR_BUFLEN  (%p==NULL || %d==%d)\n", stream.buffer, stream.error, MAD_ERROR_BUFLEN);
+
 			if (stream.next_frame)
 			{
+				debug_printf ("[LIBMAD] stream.next_frame!=NULL (%p, remove %ld of bytes from buffer and GuardPtr)\n", stream.next_frame, stream.next_frame - data);
+
 				if (GuardPtr)
 					GuardPtr-=((data + data_length) - stream.next_frame);
 				memmove(data, stream.next_frame, data_length = ((data + data_length) - stream.next_frame));
 				stream.next_frame=0;
+				debug_printf ("[LIBMAD] #1   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
 			}
 			target = MPEG_BUFSZ - data_length;
 			if (target>4096)
@@ -264,13 +270,20 @@ static int stream_for_frame(void)
 						GuardPtr=data + data_length;
 						assert(MPEG_BUFSZ - data_length >= MAD_BUFFER_GUARD);
 						while (len < MAD_BUFFER_GUARD)
+						{
+							debug_printf ("adding NIL byte, len < MAD_BUFFER_GUARD\n");
 							data[data_length + len++] = 0;
+						}
+
+						debug_printf ("[LIBMAD] #2   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x (ofs=%d len=%d target=%ld)\n", data, data_length, data + data_length, GuardPtr, datapos, fl, ofs, len, (long int)target);
 /*
 						fprintf(stderr, "Guard set len to %d\n", len);*/
 					} else {
 						eof=0;
 						datapos = newpos = 0;
 						fseek(file, ofs, SEEK_SET);
+
+						debug_printf ("[LIBMAD] #3   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
 						return 0;
 					}
 				}
@@ -278,9 +291,14 @@ static int stream_for_frame(void)
 				GuardPtr=0;
 				datapos += len;
 				newpos += len;
+
+				debug_printf ("[LIBMAD] #4   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
 			}
 			if (len)
+			{
 				mad_stream_buffer(&stream, data, data_length += len);
+				debug_printf ("[LIBMAD] #5   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
+			}
 		}
 		stream.error=0;
 
