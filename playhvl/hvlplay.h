@@ -4,7 +4,7 @@
 struct hvl_tune;
 
 #define current_hvl_tune ht
-       struct hvl_tune __attribute__ ((visibility ("internal"))) *current_hvl_tune;
+extern struct hvl_tune __attribute__ ((visibility ("internal"))) *current_hvl_tune;
 extern struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const uint8_t *mem, size_t memlen);
 extern void            __attribute__ ((visibility ("internal")))  hvlClosePlayer (void);
 extern void            __attribute__ ((visibility ("internal")))  hvlIdle (void);
@@ -22,7 +22,7 @@ extern void            __attribute__ ((visibility ("internal")))  hvlGetStats (i
 extern void            __attribute__ ((visibility ("internal")))  hvlMute (int ch, int m);
 
 /* This is for hvlpinst.c */
-__attribute__ ((visibility ("internal"))) uint8_t plInstUsed[256];
+extern __attribute__ ((visibility ("internal"))) uint8_t plInstUsed[256];
 
 
 /* This is for hvlpchan.c */
