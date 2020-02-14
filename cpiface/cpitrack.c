@@ -797,7 +797,6 @@ static void TrakDraw(int focus)
 
 static int TrakIProcessKey(uint16_t key)
 {
-	fprintf (stderr, "TrakIProcessKey key=0x%04x  %d\n", key, key);
 	switch (key)
 	{
 		case KEY_ALT_K:
