@@ -9,8 +9,8 @@ endif
 framelock_so=framelock.o
 hardware_so=timer.o irq.o hardware.o freq.o
 sets_so=sets.o
-poutput_so=console.o poutput-curses.o $(LINUX_OBJ) poutput-keyboard.o pfonts.o poutput.o
-poutput_so_libs=
+poutput_so=console.o latin1.o poutput-curses.o $(LINUX_OBJ) poutput-keyboard.o pfonts.o poutput.o
+poutput_so_libs=$(ICONV_LIBS)
 ifeq ($(HAVE_X11),1)
 poutput_so+=poutput-x11.o x11-common.o
 poutput_so_libs+=$(X11_LIBS)
@@ -84,6 +84,11 @@ irq.o: irq.c irq.h \
 	../config.h \
 	../types.h
 	$(CC) irq.c -o $@ -c
+
+latin1.o: latin1.c latin1.h \
+	../config.h \
+	../types.h
+	$(CC) $< -o $@ -c
 
 poutput-curses.o: poutput-curses.c poutput-curses.h \
 	../config.h \
