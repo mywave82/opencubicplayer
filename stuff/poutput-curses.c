@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '11-'20 Stian Skjelstad <stian.skjelestad@gmail.com>
  *
  * Curses console driver
  *
@@ -71,7 +72,7 @@ static void adjust(int sig);
 
 static NCURSES_ATTR_T attr_table[256];
 static chtype chr_table[256];
-
+static chtype chr_table_iso8859latin1[256];
 
 static int Width, Height;
 
@@ -124,7 +125,7 @@ static void displaystr(unsigned short y, unsigned short x, unsigned char attr, c
 		while(len)
 		{
 			unsigned char ch=(*buf)&0xff;
-			*(ptr++) = chr_table[ch] ? chr_table[ch] : ' ';
+			*(ptr++) = chr_table[ch];
 
 			if (*buf)
 				buf++;
@@ -157,6 +158,49 @@ static void displaystr(unsigned short y, unsigned short x, unsigned char attr, c
 	}
 }
 
+static void displaystr_iso8859latin1(unsigned short y, unsigned short x, unsigned char attr, const char *buf, unsigned short len)
+{
+#ifdef HAVE_NCURSESW
+	if (useunicode)
+	{
+		wchar_t buffer[CONSOLE_MAX_X+1];
+		wchar_t *ptr = buffer;
+
+		while(len)
+		{
+			unsigned char ch=(*buf)&0xff;
+			*(ptr++) = chr_table_iso8859latin1[ch];
+
+			if (*buf)
+				buf++;
+			len--;
+		}
+		attrset (attr_table[plpalette[attr]]);
+		*ptr = 0;
+		mvaddwstr(y, x, buffer);
+	} else
+#endif
+	{
+		move(y, x);
+		while(len)
+		{
+			unsigned char ch=(*buf)&0xff;
+			chtype output;
+			if (((!ch)||(ch==' '))&&(!(attr&0x80))&&fixbadgraphic)
+			{
+				output=chr_table_iso8859latin1['X']|attr_table[plpalette[(attr&0xf0)+((attr>>4)&0xf)]];
+				addch(output);
+			} else {
+				output=chr_table_iso8859latin1[ch]|attr_table[plpalette[attr]];
+				addch(output);
+			}
+
+			if (*buf)
+				buf++;
+			len--;
+		}
+	}
+}
 
 static void displaystrattr(unsigned short y, unsigned short x, const uint16_t *buf, unsigned short len)
 {
@@ -182,7 +226,7 @@ static void displaystrattr(unsigned short y, unsigned short x, const uint16_t *b
 				lastattr = attr;
 			}
 
-			*(ptr++) = chr_table[ch] ? chr_table[ch] : ' ';
+			*(ptr++) = chr_table[ch];
 
 			buf++;
 			len--;
@@ -215,6 +259,71 @@ static void displaystrattr(unsigned short y, unsigned short x, const uint16_t *b
 			} else {
 				first=1;
 				output=chr_table[ch]|attr_table[plpalette[attr]];
+				addch(output);
+			}
+			buf++;
+			len--;
+		}
+	}
+}
+
+static void displaystrattr_iso8859latin1(unsigned short y, unsigned short x, const uint16_t *buf, unsigned short len)
+{
+#ifdef HAVE_NCURSESW
+	if (useunicode)
+	{
+		wchar_t buffer[CONSOLE_MAX_X+1];
+		wchar_t *ptr = buffer;
+		unsigned char lastattr = ((*buf)>>8);
+		move (y, x);
+
+		while(len)
+		{
+			unsigned char ch=(*buf)&0xff;
+			unsigned char attr=((*buf)>>8);
+
+			if (lastattr != attr)
+			{
+				attrset (attr_table[plpalette[lastattr]]);
+				*ptr = 0;
+				addwstr (buffer);
+				ptr = buffer;
+				lastattr = attr;
+			}
+
+			*(ptr++) = chr_table_iso8859latin1[ch];
+
+			buf++;
+			len--;
+		}
+		attrset (attr_table[plpalette[lastattr]]);
+		*ptr=0;
+		addwstr(buffer);
+	} else
+#endif
+	{
+		int first=1; /* we need this since we sometimes place the cursor at empty spots... dirty */
+
+		move(y, x);
+		while(len)
+		{
+			unsigned char ch=(*buf)&0xff;
+			unsigned char attr=((*buf)>>8);
+			chtype output;
+
+			if (((!ch)||(ch==' '))&&(!(attr&0x80))&&fixbadgraphic)
+			{
+				if (first)
+				{
+					output=chr_table_iso8859latin1[ch]|attr_table[plpalette[attr]];
+					first=0;
+				} else {
+					output=chr_table_iso8859latin1['X']|attr_table[plpalette[(attr&0xf0)+((attr>>4)&0xf)]];
+				}
+				addch(output);
+			} else {
+				first=1;
+				output=chr_table_iso8859latin1[ch]|attr_table[plpalette[attr]];
 				addch(output);
 			}
 			buf++;
@@ -837,6 +946,16 @@ int curses_init(void)
 				case 0xfe: chr_table[i]=L'\u25a0'; break; /* used by volume bars - Black Square */
 			}
 		}
+
+		for (i=0; i < 256; i++)
+		{
+			if ((i<=32) || ((i>=0x7f) && (i<=0xa0)))
+			{
+				chr_table_iso8859latin1[i] = ' ';
+			} else {
+				chr_table_iso8859latin1[i] = i;
+			}
+		}
 	}
 	else
 #endif
@@ -857,9 +976,9 @@ int curses_init(void)
 		cd = iconv_open(temp, OCP_FONT);
 		if (cd == (iconv_t)(-1))
 		{
-			fprintf (stderr, "curses: Failed to make iconv matrix for %s->%s\n", OCP_FONT, temp);
+			fprintf (stderr, "curses: Failed to make iconv matrix for %s->%s\n", temp, OCP_FONT);
 		} else {
-			fprintf (stderr, "curses: Converting between %s->%s\n", OCP_FONT, temp);
+			fprintf (stderr, "curses: Converting between %s -> %s\n", temp, OCP_FONT);
 		}
 
 		for (i=0; i < 256; i++)
@@ -1011,6 +1130,117 @@ int curses_init(void)
 		{
 			iconv_close(cd);
 		}
+
+		cd = iconv_open("ISO-8859-1", OCP_FONT);
+		if (cd == (iconv_t)(-1))
+		{
+			fprintf (stderr, "curses: Failed to make iconv matrix for ISO-8859-1 -> %s\n", OCP_FONT);
+		} else {
+			fprintf (stderr, "curses: Converting between ISO-8859-1 -> %s\n", OCP_FONT);
+		}
+
+		for (i=0; i < 256; i++)
+		{
+			if ((i<=32) || ((i>=0x7f) && (i<=0xa0)))
+			{
+				chr_table_iso8859latin1[i] = ' ';
+			} else if (i < 127)
+			{
+				chr_table_iso8859latin1[i] = i;
+			} else {
+				switch (i) /* worst case backups */
+				{
+					case 0xa1: chr_table_iso8859latin1[i] = '!'; break;
+					case 0xa2: case 0xe7:
+					           chr_table_iso8859latin1[i] = 'c'; break;
+					case 0xa3: chr_table_iso8859latin1[i] = 'L'; break;
+					case 0xa5: case 0xdd:
+					           chr_table_iso8859latin1[i] = 'Y'; break;
+					case 0xa6: chr_table_iso8859latin1[i] = '|'; break;
+					case 0xa7: chr_table_iso8859latin1[i] = 'S'; break;
+					case 0xa9: case 0xc7:
+					           chr_table_iso8859latin1[i] = 'C'; break;
+					case 0xaa: case 0xe0: case 0xe1: case 0xe2: case 0xe3: case 0xe4: case 0xe5: case 0xe6:
+					           chr_table_iso8859latin1[i] = 'a'; break;
+					case 0xab: chr_table_iso8859latin1[i] = '<'; break;
+					case 0xae: chr_table_iso8859latin1[i] = 'R'; break;
+					case 0xb0: chr_table_iso8859latin1[i] = '0'; break;
+					case 0xb2: chr_table_iso8859latin1[i] = '2'; break;
+					case 0xb3: chr_table_iso8859latin1[i] = '3'; break;
+					case 0xb5: case 0xf9: case 0xfa: case 0xfb: case 0xfc:
+					           chr_table_iso8859latin1[i] = 'u'; break;
+					case 0xb6: chr_table_iso8859latin1[i] = 'P'; break;
+					case 0xb7: chr_table_iso8859latin1[i] = '.'; break;
+					case 0xb8: chr_table_iso8859latin1[i] = ','; break;
+					case 0xb9: chr_table_iso8859latin1[i] = '1'; break;
+					case 0xba: case 0xf2: case 0xf3: case 0xf4: case 0xf5: case 0xf6: case 0xf8:
+					           chr_table_iso8859latin1[i] = 'o'; break;
+					case 0xbb: chr_table_iso8859latin1[i] = '>'; break;
+					case 0xbf: chr_table_iso8859latin1[i] = '?'; break;
+					case 0xc0: case 0xc1: case 0xc2: case 0xc3: case 0xc4: case 0xc5: case 0xc6:
+					           chr_table_iso8859latin1[i] = 'A'; break;
+					case 0xc8: case 0xc9: case 0xca: case 0xcb:
+					           chr_table_iso8859latin1[i] = 'E'; break;
+					case 0xcc: case 0xcd: case 0xce: case 0xcf:
+					           chr_table_iso8859latin1[i] = 'I'; break;
+					case 0xd0: chr_table_iso8859latin1[i] = 'D'; break;
+					case 0xd1: chr_table_iso8859latin1[i] = 'N'; break;
+					case 0xd2: case 0xd3: case 0xd4: case 0xd5: case 0xd6: case 0xd8:
+					           chr_table_iso8859latin1[i] = 'O'; break;
+					case 0xd7: chr_table_iso8859latin1[i] = 'x'; break;
+					case 0xd9: case 0xda: case 0xdb: case 0xdc:
+					           chr_table_iso8859latin1[i] = 'U'; break;
+					case 0xde: chr_table_iso8859latin1[i] = 'p'; break;
+					case 0xdf: chr_table_iso8859latin1[i] = 'B'; break;
+					           chr_table_iso8859latin1[i] = 'a'; break;
+					case 0xe8: case 0xe9: case 0xea: case 0xeb:
+					           chr_table_iso8859latin1[i] = 'e'; break;
+					case 0xec: case 0xed: case 0xee: case 0xef:
+					           chr_table_iso8859latin1[i] = 'i'; break;
+					case 0xf0: chr_table_iso8859latin1[i] = 'd'; break;
+					case 0xf1: chr_table_iso8859latin1[i] = 'n'; break;
+					case 0xfd: case 0xff:
+					           chr_table_iso8859latin1[i] = 'y'; break;
+					case 0xfe: chr_table_iso8859latin1[i] = 'P'; break;
+					default:   chr_table_iso8859latin1[i] = '_'; break;
+				}
+				if (cd != (iconv_t)(-1))
+				{
+					char src[1];
+					char dst[16];
+					char *to=dst, *from=src;
+					size_t _to=16, _from=1;
+					src[0]=(char)i;
+					if (iconv(cd, &from, &_from, &to, &_to) != (size_t)-1)
+					{
+						if ((_to==15)&&(_from==0)&&(dst[0]) &&
+						    (dst[0]!=0x04) && /* End Of Medium */
+						    (dst[0]!=0x07) && /* Bell */
+						    (dst[0]!=0x08) && /* Backspace */
+						    (dst[0]!=0x09) && /* Tab */
+						    (dst[0]!=0x0a) && /* New Line */
+						    (dst[0]!=0x0b) && /* Form Feed / Clear screen */
+						    (dst[0]!=0x0c) && /* Vertical Tab */
+						    (dst[0]!=0x0d) && /* Line Feed */
+						    (dst[0]!=0x10) && /* Data Link Escape */
+						    (dst[0]!=0x11) && /* Device Control One */
+						    (dst[0]!=0x12) && /* Device Control Two */
+						    (dst[0]!=0x13) && /* Device Control Three */
+						    (dst[0]!=0x14) && /* Device Control Four */
+					            (dst[0]!=0x19) && /* End Of Medium */
+						    (dst[0]!=0x1c))   /* Escape - starts escape sequence */
+						{
+							chr_table_iso8859latin1[i]=(unsigned char)dst[0];
+						}
+					}
+				}
+			}
+		}
+
+		if (cd != (iconv_t)-1)
+		{
+			iconv_close(cd);
+		}
 	}
 
 #if 0
@@ -1044,6 +1274,8 @@ int curses_init(void)
 	_displayvoid=displayvoid;
 	_displaystrattr=displaystrattr;
 	_displaystr=displaystr;
+	_displaystrattr_iso8859latin1=displaystrattr_iso8859latin1;
+	_displaystr_iso8859latin1=displaystr_iso8859latin1;
 	___setup_key(ekbhit, egetch); /* filters in more keys */
 	_plSetTextMode=plSetTextMode;
 	_drawbar=drawbar;

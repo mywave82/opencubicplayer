@@ -181,6 +181,7 @@ console.o: console.c \
 	../boot/console.h \
 	../config.h \
 	../boot/psetting.h \
+	../stuff/latin1.h \
 	poutput-curses.h \
 	poutput-fb.h \
 	poutput-sdl.h \

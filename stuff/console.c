@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '11-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Basic glue for the different console implementations for unix
  *
@@ -53,6 +54,7 @@
 #ifdef HAVE_FRAMEBUFFER
 #include "poutput-vcsa.h"
 #endif
+#include "stuff/latin1.h"
 
 static void reset_api(void);
 static void (*console_clean)(void)=NULL;
@@ -396,6 +398,50 @@ static void __displayvoid(unsigned short y, unsigned short x, unsigned short len
 	fprintf(stderr, "displayvoid not implemented in this console driver\n");
 #endif
 }
+static void __displaystr_iso8859latin1(unsigned short y, unsigned short x, unsigned char attr, const char *str, unsigned short len)
+{ /* fallback */
+	while (len)
+	{
+		char temp = latin1_table[*(unsigned char *)str];
+		_displaystr(y, x, attr, &temp, 1);
+		len--;
+		if (*str)
+		{
+			str++;
+		}
+		x++;
+	}
+}
+static void __displaystrattr_iso8859latin1(unsigned short y, unsigned short x, const unsigned short *buf, unsigned short len)
+{ /* fallback */
+	while (len)
+	{
+		unsigned short temp = latin1_table[(*buf) & 0xff] | (*buf & 0xff00);
+		_displaystrattr(y, x, &temp, 1);
+		len--;
+		if (*buf)
+		{
+			buf++;
+		}
+		x++;
+	}
+
+}
+static void __displaystrattrdi_iso8859latin1(unsigned short y, unsigned short x, const char *txt, const char *attr, unsigned short len)
+{ /* fallback */
+	while (len)
+	{
+		char temp = latin1_table[*(unsigned char *)txt];
+		_displaystrattrdi(y, x, &temp, attr, 1);
+		len--;
+		if (*txt)
+		{
+			txt++;
+		}
+		attr++;
+		x++;
+	}
+}
 
 static int __plSetGraphMode(int size)
 {
@@ -566,6 +612,10 @@ static void reset_api(void)
 	_displaystrattr=__displaystrattr;
 	_displaystrattrdi=__displaystrattrdi;
 	_displayvoid=__displayvoid;
+
+	_displaystr_iso8859latin1=__displaystr_iso8859latin1;
+	_displaystrattr_iso8859latin1=__displaystrattr_iso8859latin1;
+	_displaystrattrdi_iso8859latin1=__displaystrattrdi_iso8859latin1;
 
 	_plDisplaySetupTextMode=__plDisplaySetupTextMode;
 	_plGetDisplayTextModeName=__plGetDisplayTextModeName;
