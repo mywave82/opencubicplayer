@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '11-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * CPIface text track/pattern display
  *
@@ -810,6 +811,7 @@ static int TrakIProcessKey(uint16_t key)
 			return 1;
 		case 'x': case 'X':
 			plTrackActive=1;
+			calcPatType();
 			break;
 		case KEY_ALT_X:
 			plTrackActive=0;
@@ -846,6 +848,7 @@ static int trkEvent(int ev)
 			break;
 		case cpievDone:
 			free(plPatBuf);
+			plPatBuf=0;
 			break;
 	}
 	return 1;
