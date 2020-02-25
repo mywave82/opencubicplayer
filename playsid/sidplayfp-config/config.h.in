@@ -1,0 +1,25 @@
+/* define if the compiler supports basic C++11 syntax */
+#undef HAVE_CXX11
+
+/* Define to 1 if you have the <sidplayfp/builders/exsid.h> header file. */
+#undef HAVE_SIDPLAYFP_BUILDERS_EXSID_H
+
+/* Define to 1 if you have the <sidplayfp/builders/hardsid.h> header file. */
+#undef HAVE_SIDPLAYFP_BUILDERS_HARDSID_H
+
+/* Define to 1 if you have the <sidplayfp/builders/residfp.h> header file. */
+#undef HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H
+
+/* Define to 1 if you have the <sidplayfp/builders/resid.h> header file. */
+#undef HAVE_SIDPLAYFP_BUILDERS_RESID_H
+
+/* Define to 1 if you have the `strcasecmp' function. */
+#undef HAVE_STRCASECMP
+
+/* Define to 1 if you have the `strncasecmp' function. */
+#undef HAVE_STRNCASECMP
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+#undef WORDS_BIGENDIAN

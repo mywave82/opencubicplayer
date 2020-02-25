@@ -495,9 +495,28 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileString("screen", "channeltype", "2");
 		}
 
-		if (epoch < 20191111)
+		if (epoch < 20200225)
 		{
-			cfSetProfileInt("version", "epoch", 20191111, 10);
+			printf("ocp.ini update (0.3.0) added [libsidplayfp] section\n");
+			cfSetProfileString("libsidplayfp", "emulator", "residfp");
+			cfSetProfileString("libsidplayfp", "defaultC64", "PAL");
+			cfSetProfileBool("libsidplayfp", "forceC64", 0);
+			cfSetProfileString("libsidplayfp", "defaultSID", "MOS6581");
+			cfSetProfileBool("libsidplayfp", "forceSID", 0);
+			cfSetProfileString("libsidplayfp", "CIA", "MOS6526");
+			cfSetProfileBool("libsidplayfp", "filter", 1);
+			cfSetProfileString("libsidplayfp", "filterbias", "0.0");
+			cfSetProfileString("libsidplayfp", "filtercurve6581", "0.5");
+			cfSetProfileString("libsidplayfp", "filtercurve8580", "0.5");
+			cfSetProfileBool("libsidplayfp", "digiboost", 0);
+			cfSetProfileString("libsidplayfp", "kernal", "KERNAL.ROM");
+			cfSetProfileString("libsidplayfp", "basic", "BASIC.ROM");
+			cfSetProfileString("libsidplayfp", "chargen", "CHARGEN.ROM");
+		}
+
+		if (epoch < 20200225)
+		{
+			cfSetProfileInt("version", "epoch", 20200225, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -508,13 +527,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10)!=20191111)
+	if (cfGetProfileInt("version", "epoch", 0, 10)!=20200225)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20191111\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20200225\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20191111\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20200225\n\n");
 		}
 		sleep(5);
 	}

@@ -76,8 +76,6 @@ AC_ARG_WITH(adplug, [  --with-adplug           force/disable adplug support],, w
 
 AC_ARG_WITH(mad, [  --with-mad              force/disable mad mpeg audio support],, with_mad=auto)
 
-AC_ARG_WITH(sidplay, [  --with-sidplay          force/disable sidplay support],, with_sidplay=auto)
-
 AC_ARG_WITH(alsa, [  --with-alsa             force/disable alsa support],, with_alsa=auto)
 AC_ARG_WITH(oss,  [  --with-oss              force/disable oss support],, with_oss=auto)
 
@@ -228,7 +226,7 @@ AC_CHECK_FUNCS(sqrt,
 
 AC_STRUCT_DIRENT_D_TYPE
 
-AC_CONFIG_HEADERS(config.h)
+AC_CONFIG_HEADERS([config.h] [playsid/sidplayfp-config/config.h])
 
 AC_HEADER_STDC
 
@@ -649,13 +647,117 @@ AC_MSG_CHECKING([If libbinio used by AdPlug contains bugs https://github.com/adp
 	CPPFLAGS="$org_cppflags"
 fi
 
-if test "x$with_sidplay" != "xno"; then
-	AC_CHECK_LIB(sidplay, sidEmuFillFunc, , if test "x$with_sidplay" = "xyes"; then AC_MSG_ERROR("sidplay (1.x) libraries not found"); else with_sidplay="no"; fi)
-	LIBS=$push_LIBS
+dnl SIDPLAY specifics
+AC_MSG_CHECKING([GIT submodules are checked out])
+if ! test -f playsid/sidplayfp-git/libsidplayfp/src/sidemu.cpp; then
+  AC_MSG_ERROR([playsid/sidplayfp-git is missing - please execute 'git submodule update --init --recursive'])
+else
+  AC_MSG_RESULT([ok])
 fi
-if test "x$with_sidplay" != "xno"; then
-	AC_CHECK_HEADER(sidplay/version.h, , if test "x$with_sidplay" = "xyes"; then AC_MSG_ERROR("sidplay (1.x) header files was not found"); else with_sidplay="no"; fi)
+origCXX="$CXX"
+origCXXFLAGS="$CXXFLAGS"
+AC_LANG_PUSH([C++])
+HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H=1
+HAVE_SIDPLAYFP_BUILDERS_RESID_H=1
+RESID_INLINING=1
+RESID_INLINE=inline
+AX_CXX_COMPILE_STDCXX_11([noext], [optional])
+AC_CHECK_PROG([XA],[xa],yes)
+if ! test x"${XA}" == "xyes"; then
+	AC_MSG_ERROR([xa is needed for compiling 6502 assembler used by libsidplayfp])
 fi
+AC_CHECK_PROG([OD],[od],yes)
+if ! test x"${OD}" == "xyes"; then
+	AC_MSG_ERROR([od is needed for compiling libsidplayfp])
+fi
+dnl TODO HAVE_VISIBILITY
+AX_CHECK_COMPILE_FLAG([-fvisibility=hidden -fvisibility-inlines-hidden], [HAVE_VISIBILITY=1;has_visibility=yes], [has_visibility=no])
+AC_CHECK_SIZEOF([short])
+AC_CHECK_SIZEOF([int])
+AS_IF([test $ac_cv_sizeof_short -ne 2],
+  [AC_MSG_ERROR([LIBSIDPLAYFP: size of short must be 16 bit])]
+)
+AS_IF([test $ac_cv_sizeof_int -lt 4],
+  [AC_MSG_ERROR([LIBSIDPLAYFP: only 32 bit or better CPUs are supported])]
+)
+AS_IF([test "x${ac_cv_header_stdint_h}" != "xyes"],
+  [AC_MSG_ERROR([Required header stdint.h not found])]
+)
+AC_CHECK_DECL(
+    [strcasecmp],
+    [AC_CHECK_FUNCS([strcasecmp])],
+    [AC_CHECK_DECL(
+        [stricmp],
+        [AC_CHECK_FUNCS([stricmp])]
+    )]
+)
+AC_CHECK_DECL(
+    [strncasecmp],
+    [AC_CHECK_FUNCS([strncasecmp])],
+    [AC_CHECK_DECL(
+        [strnicmp],
+        [AC_CHECK_FUNCS([strnicmp])]
+    )]
+)
+if test "x$with_debug" = "xyes"; then
+  $CXXFLAGS="$CXXFLAGS -DDEBUG=1"
+fi
+AC_CACHE_CHECK([for working bool], ac_cv_cxx_bool,
+[AC_COMPILE_IFELSE(
+  [AC_LANG_PROGRAM([],
+    [[bool flag;]])],
+  [ac_cv_cxx_bool=yes],
+  [ac_cv_cxx_bool=no])]
+)
+AS_IF([test "x$ac_cv_cxx_bool" = "xno"],
+  [HAVE_BOOL=0],
+  [HAVE_BOOL=1]
+)
+dnl TODO RESID_BRANCH_HINTS
+dnl Enable branch prediction hints.
+AC_ARG_ENABLE([branch-hints],
+  [AS_HELP_STRING([--enable-branch-hints],
+    [enable static branch prediction hints [default=yes]])],
+  [],
+  [enable_branch_hints=yes]
+)
+AS_IF([test "$enable_branch_hints" != no],
+  [RESID_BRANCH_HINTS=1],
+  [RESID_BRANCH_HINTS=0]
+)
+AC_CACHE_CHECK([for log1p], [resid_cv_log1p],
+  [AC_TRY_COMPILE([#include <math.h>], [ log1p(1); ],
+    resid_cv_log1p=yes, resid_cv_log1p=no)])
+AS_IF([test "$resid_cv_log1p" = no],
+  [HAVE_LOG1P=0],
+  [HAVE_LOG1P=1]
+)
+AC_CACHE_CHECK([for __builtin_expect], [resid_cv_builtin_expect],
+  [AC_COMPILE_IFELSE([AC_LANG_SOURCE([int main() { __builtin_expect(0, 0); }])],
+    [resid_cv_builtin_expect=yes], [resid_cv_builtin_expect=no])]
+)
+AS_IF([test "$resid_cv_builtin_expect" = no],
+  [HAVE_BUILTIN_EXPECT=0],
+  [HAVE_BUILTIN_EXPECT=1]
+)
+LIBSIDPLAYCXX="$CXX -DHAVE_CONFIG_H=1 -DSIDTUNE_NO_STDIN_LOADER=1 -DPACKAGE_NAME=\\\"sidplayfp\\\" -DVERSION=\\\"2.0.1\\\" -DPACKAGE_VERSION=\\\"2.0.1-1\\\" -DPACKAGE_URL=\\\"\\\""
+LIBSIDPLAYCXXFLAGS="$CXXFLAGS"
+AC_SUBST(LIBSIDPLAYCXX)
+AC_SUBST(LIBSIDPLAYCXXFLAGS)
+AC_LANG_POP
+CXX=$origCXX
+CXXFLAGS=$origCXXFLAGS
+NEW_8580_FILTER=0
+
+AC_SUBST(HAVE_BOOL)
+AC_SUBST(HAVE_LOG1P)
+AC_SUBST(HAVE_BUILTIN_EXPECT)
+AC_SUBST(RESID_INLINING)
+AC_SUBST(RESID_INLINE)
+AC_SUBST(RESID_BRANCH_HINTS)
+AC_SUBST(NEW_8580_FILTER)
+AC_SUBST(HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H)
+AC_SUBST(HAVE_SIDPLAYFP_BUILDERS_RESID_H)
 AC_LANG_POP()
 
 AC_SUBST(ALSA_CFLAGS)
@@ -691,15 +793,6 @@ if test "x$with_adplug" = "xno"; then
 else
 	HAVE_ADPLUG=1
 	ADPLUG_INI=opltype
-fi
-AC_SUBST(HAVE_SIDPLAY)
-AC_SUBST(SIDPLAY_INI)
-if test "x$with_sidplay" = "xno"; then
-	HAVE_SIDPLAY=0
-	SIDPLAY_INI=
-else
-	HAVE_SIDPLAY=1
-	SIDPLAY_INI=sidtype
 fi
 
 AC_SUBST(LINUX)
@@ -891,6 +984,8 @@ AC_CONFIG_FILES(desktop/opencubicplayer.desktop)
 AC_CONFIG_FILES(doc/opencp.dox)
 AC_CONFIG_FILES(doc/texi/faq.texi)
 AC_CONFIG_FILES(doc/texi/ocp.texi)
+AC_CONFIG_FILES(playsid/sidplayfp-git/libsidplayfp/src/builders/resid-builder/resid/siddefs.h)
+AC_CONFIG_FILES(playsid/sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/siddefs-fp.h)
 
 AC_OUTPUT
 
@@ -911,11 +1006,7 @@ if test "x$with_mad" = "xno"; then
 else
 	echo "mad:               ON"
 fi
-if test "x$with_sidplay" = "xno"; then
-	echo "sidplay (1.x):     OFF"
-else
-	echo "sidplay (1.x):     ON"
-fi
+echo "sidplayfp:         GIT/builtin"
 if test "x$with_flac" = "xno"; then
 	echo "FLAC:              OFF"
 else

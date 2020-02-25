@@ -274,15 +274,10 @@ libsidplayfp-utils-MD5-MD5.o: \
 
 libsidplayfp-api.o: \
 	libsidplayfp-api.cpp \
-	libsidplayfp-api.h
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-
-linktest.o: \
-	linktest.cpp \
-	libsidplayfp-api.h
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-linktest: $(LIBSIDPLAYOBJECTS) linktest.o
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYLDFLAGS) -o $@ $^
+	libsidplayfp-api.h \
+	../boot/psetting.h \
+	../filesel/gendir.h
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I.. -o $@ $< -c
 
 cpiinfo.o: \
 	cpiinfo.cpp \

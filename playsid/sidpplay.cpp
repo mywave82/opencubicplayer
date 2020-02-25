@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '11-'20 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
  *
  * SIDPlay interface routines
  *
@@ -52,8 +53,9 @@ extern "C"
 #include "stuff/compat.h"
 #include "stuff/timer.h"
 }
-#include <sidplay/sidtune.h>
-#include "sid.h"
+#include <sidplayfp/SidTuneInfo.h>
+#include "cpiinfo.h"
+#include "sidplay.h"
 
 #define _MAX_FNAME 8
 #define _MAX_EXT 4
@@ -70,11 +72,7 @@ static short pan;
 static char srnd;
 static long amp;
 
-static sidTuneInfo globinfo;
-static sidChanInfo ci;
-static sidDigiInfo di;
-
-static void sidpDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
+static void sidDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 {
 	long tim;
 	if (plPause)
@@ -102,14 +100,13 @@ static void sidpDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 
 		writestring(buf[0], 57, 0x09, "amp: ...% filter: ...  ", 23);
 		_writenum(buf[0], 62, 0x0F, amp*100/64, 10, 3);
-		writestring(buf[0], 75, 0x0F, sidpGetFilter()?"on":"off", 3);
-
-		writestring(buf[1],  0, 0x09," song .. of ..    SID: MOS....    speed: ....    cpu: ...%",80);
-		writenum(buf[1],  6, 0x0F, globinfo.currentSong, 16, 2, 0);
-		writenum(buf[1], 12, 0x0F, globinfo.songs, 16, 2, 0);
-		writestring(buf[1], 23, 0x0F, "MOS", 3);
-		writestring(buf[1], 26, 0x0F, sidpGetSIDVersion()?"8580":"6581", 4);
-		writestring(buf[1], 41, 0x0F, sidpGetVideo()?"PAL":"NTSC", 4);
+#if 0
+		writestring(buf[0], 75, 0x0F, sidGetFilter()?"on":"off", 3);
+#endif
+		writestring(buf[1],  0, 0x09," song .. of ..    SID:            speed: ....    cpu: ...%",80);
+		writenum(buf[1],  6, 0x0F, sidGetSong(), 16, 2, 0);
+		writenum(buf[1], 12, 0x0F, sidGetSongs(), 16, 2, 0);
+		writestring(buf[1], 41, 0x0F, sidGetVideo()?"PAL":"NTSC", 4);
 
 		_writenum(buf[1], 54, 0x0F, tmGetCpuUsage(), 10, 3);
 		writestring(buf[1], 57, 0x0F, "%", 1);
@@ -144,14 +141,13 @@ static void sidpDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 
 		writestring(buf[0], 105, 0x09, "amp: ...%   filter: ...  ", 23);
 		_writenum(buf[0], 110, 0x0F, amp*100/64, 10, 3);
-		writestring(buf[0], 125, 0x0F, sidpGetFilter()?"on":"off", 3);
-
-		writestring(buf[1],  0, 0x09,"    song .. of ..    SID: MOS....    speed: ....    cpu: ...%",132);
-		writenum(buf[1],  9, 0x0F, globinfo.currentSong, 16, 2, 0);
-		writenum(buf[1], 15, 0x0F, globinfo.songs, 16, 2, 0);
-		writestring(buf[1], 26, 0x0F, "MOS", 3);
-		writestring(buf[1], 29, 0x0F, sidpGetSIDVersion()?"8580":"6581", 4);
-		writestring(buf[1], 44, 0x0F, sidpGetVideo()?"PAL":"NTSC", 4);
+#if 0
+		writestring(buf[0], 125, 0x0F, sidGetFilter()?"on":"off", 3);
+#endif
+		writestring(buf[1],  0, 0x09,"    song .. of ..                    speed: ....    cpu: ...%",132);
+		writenum(buf[1],  9, 0x0F, sidGetSong(), 16, 2, 0);
+		writenum(buf[1], 15, 0x0F, sidGetSongs(), 16, 2, 0);
+		writestring(buf[1], 44, 0x0F, sidGetVideo()?"PAL":"NTSC", 4);
 
 		_writenum(buf[1], 57, 0x0F, tmGetCpuUsage(), 10, 3);
 		writestring(buf[1], 60, 0x0F, "%", 1);
@@ -193,7 +189,7 @@ static void logvolbar(int &l, int &r)
 
 static char convnote(long freq)
 {
-
+#warning FIXME, frequency does not take VIC-II model / cpu-freqency into account
 	if (freq<256) return 0xff;
 
 	float frfac=(float)freq/(float)0x1167;
@@ -206,11 +202,8 @@ static char convnote(long freq)
 
 
 
-static void drawvolbar(uint16_t *buf, int, unsigned char st)
+static void drawvolbar(uint16_t *buf, int l, int r, const unsigned char st)
 {
-	int l,r;
-	l=ci.leftvol;
-	r=ci.rightvol;
 	logvolbar(l, r);
 
 	l=(l+4)>>3;
@@ -229,11 +222,8 @@ static void drawvolbar(uint16_t *buf, int, unsigned char st)
 	}
 }
 
-static void drawlongvolbar(uint16_t *buf, int, unsigned char st)
+static void drawlongvolbar(uint16_t *buf, int l, int r, const unsigned char st)
 {
-	int l,r;
-	l=ci.leftvol;
-	r=ci.rightvol;
 	logvolbar(l, r);
 	l=(l+2)>>2;
 	r=(r+2)>>2;
@@ -262,16 +252,47 @@ static const char *waves16[]={"                ","triangle        ","sawtooth   
                               "invalid         ","invalid         ","invalid         ",
                               "invalid         "};
 
-static const char *filters3[]={"   ","low","bnd","b+l","hgh","h+l","h+b","hbl"};
-static const char *filters12[]={"","low pass","band pass","low + band","high pass",
+static const char *filters3[]={"---","low","bnd","b+l","hgh","h+l","h+b","hbl"};
+static const char *filters12[]={"-----","low pass","band pass","low + band","high pass",
                                 "band notch","high + band","all pass"};
 
 static const char *fx2[]={"  ","sy","ri","rs"};
 static const char *fx7[]={"","sync","ringmod","snc+rng"};
 static const char *fx11[]={"","sync","ringmod","sync + ring"};
 
+/*
+#### = volume bars.. can be made mono in SID, gives more space
+                                                                                                   1         1         1
+         1         2         3         4         5         6         7         8         9         0         1         2
+12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678
+                                    $       $                 $             $                                                   $
+ ---- --- -- - -- ######## ######## $       $                 $             $                                                   $
+ WAVE     Pulsewidth                        $                 $             $                                                   $
+      NOTE   filter                         $                 $             $                                                   $
+               fx                           $                 $             $                                                   $
+                                            $                 $             $                                                   $
+ ---- ---- --- -- --- --  ######## ######## $                 $             $                                                   $
+ WAVE ADSR NOTE   filter                                      $             $                                                   $
+               PulseWidth                                     $             $                                                   $
+                      fx                                      $             $                                                   $
+                                                              $             $                                                   $
+ ---------------- ---- --- --- --- -------  ####### ########  $             $                                                   $
+ WAVE             ADSR NOTE    filter                                       $                                                   $
+                           PulseWidth                                       $                                                   $
+                                   fx                                       $                                                   $
+                                                                            $                                                   $
+ xxxxxxxxxxxxxxxx | xxxx | xxx | xxx | xxx | xxxxxxxxxxx | ####### ######## $                                                   $
+ WAVE               ADSR   NOTE        filter                                                                                   $
+                                 Pulsewidth  FX                                                                                 $
+                                                                                                                                $
+ xxxxxxxxxxxxxxxx  |  xxxx  |  xxx  |  xxx  |  xxxxxxxxxxxx  |  xxxxxxxxxxx  |   ################ ################              $
+ WAVE                 ADSR     NOTE    PulseWidth               FX
+                                               Filter
+*/
+
 static void drawchannel(uint16_t *buf, int len, int i)
 {
+	sidChanInfo ci;
 	unsigned char st=plMuteCh[i];
 
 	unsigned char tcol=st?0x08:0x0F;
@@ -280,146 +301,107 @@ static void drawchannel(uint16_t *buf, int len, int i)
 	unsigned char tcolr=st?0x08:0x0B;  unused
 */
 
-	if (i<3)
+	switch (len)
 	{
-		switch (len)
-		{
-			case 36:
-				writestring(buf, 0, tcold, " ---- --- -- - -- \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 36);
-				break;
-			case 62:
-				writestring(buf, 0, tcold, " ---------------- ---- --- --- --- -------  \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 62);
-				break;
-			case 128:
-				writestring(buf, 0, tcold, "                   \263        \263       \263       \263                \263               \263   \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372", 128);
-				break;
-			case 76:
-				writestring(buf, 0, tcold, "                  \263      \263     \263     \263     \263             \263 \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372", 76);
-				break;
-			case 44:
-				writestring(buf, 0, tcold, " ---- ---- --- -- --- --  \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 44);
-				break;
-		}
+		case 36:
+			writestring(buf, 0, tcold, " ---- --- -- - -- \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 36);
+			break;
+		case 62:
+			writestring(buf, 0, tcold, " ---------------- ---- --- --- --- -------  \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 62);
+			break;
+		case 128:
+			writestring(buf, 0, tcold, "                   \263        \263       \263       \263                \263               \263   \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372", 128);
+			break;
+		case 76:
+			writestring(buf, 0, tcold, "                  \263      \263     \263     \263     \263             \263 \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372", 76);
+			break;
+		case 44:
+			writestring(buf, 0, tcold, " ---- ---- --- -- --- --  \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 44);
+			break;
+	}
 
-		sidpGetChanInfo(i,ci);
-		if (!ci.leftvol && !ci.rightvol)
-			return;
-		uint8_t nte=convnote(ci.freq);
-		char nchar[4];
+	sidGetChanInfo(i, ci);
 
-		if (nte<0xFF)
-		{
-			nchar[0]="CCDDEFFGGAAB"[nte%12];
-			nchar[1]="-#-#--#-#-#-"[nte%12];
-			nchar[2]="0123456789ABCDEFGHIJKLMN"[nte/12];
-			nchar[3]=0;
-		} else
-			strcpy(nchar,"   ");
+	if (!ci.leftvol && !ci.rightvol)
+		return;
 
-		uint8_t ftype=(ci.filttype>>4)&7;
-		uint8_t efx=(ci.wave>>1)&3;
+	uint8_t nte=convnote(ci.freq);
+	char nchar[4];
 
-		switch(len)
-		{
-			case 36:
-				writestring(buf+1, 0, tcol, waves4[ci.wave>>4], 4);
-				writestring(buf+6, 0, tcol, nchar, 3);
-				writenum(buf+10, 0, tcol, ci.pulse>>4, 16, 2, 0);
-				if (ci.filtenabled && ftype)
-					writenum(buf+13, 0, tcol, ftype, 16, 1, 0);
-				if (efx)
-					writestring(buf+15, 0, tcol, fx2[efx], 2);
-				drawvolbar(buf+18, i, st);
-				break;
-			case 44:
-				writestring(buf+1, 0, tcol, waves4[ci.wave>>4], 4);
-				writenum(buf+6, 0, tcol, ci.ad, 16, 2, 0);
-				writenum(buf+8, 0, tcol, ci.sr, 16, 2, 0);
-				writestring(buf+11, 0, tcol, nchar, 3);
-				writenum(buf+15, 0, tcol, ci.pulse>>4, 16, 2, 0);
-				if (ci.filtenabled && ftype)
-					writestring(buf+18, 0, tcol, filters3[ftype], 3);
-				if (efx)
-					writestring(buf+22, 0, tcol, fx2[efx], 2);
-				drawvolbar(buf+26, i, st);
-				break;
-			case 62:
-				writestring(buf+1, 0, tcol, waves16[ci.wave>>4], 16);
-				writenum(buf+18, 0, tcol, ci.ad, 16, 2, 0);
-				writenum(buf+20, 0, tcol, ci.sr, 16, 2, 0);
-				writestring(buf+23, 0, tcol, nchar, 3);
-				writenum(buf+27, 0, tcol, ci.pulse, 16, 3, 0);
-				if (ci.filtenabled && ftype)
-					writestring(buf+31, 0, tcol, filters3[ftype], 3);
-				if (efx)
-					writestring(buf+35, 0, tcol, fx7[efx], 7);
-				drawvolbar(buf+44, i, st);
-				break;
-			case 76:
-				writestring(buf+1, 0, tcol, waves16[ci.wave>>4], 16);
-				writenum(buf+20, 0, tcol, ci.ad, 16, 2, 0);
-				writenum(buf+22, 0, tcol, ci.sr, 16, 2, 0);
-				writestring(buf+27, 0, tcol, nchar, 3);
-				writenum(buf+33, 0, tcol, ci.pulse, 16, 3, 0);
-				if (ci.filtenabled && ftype)
-					writestring(buf+39, 0, tcol, filters3[ftype], 3);
-				writestring(buf+45, 0, tcol, fx11[efx], 11);
-				drawvolbar(buf+59, i, st);
-				break;
-			case 128:
-				writestring(buf+1, 0, tcol, waves16[ci.wave>>4], 16);
-				writenum(buf+22, 0, tcol, ci.ad, 16, 2, 0);
-				writenum(buf+24, 0, tcol, ci.sr, 16, 2, 0);
-				writestring(buf+31, 0, tcol, nchar, 3);
-				writenum(buf+39, 0, tcol, ci.pulse, 16, 3, 0);
-				if (ci.filtenabled && ftype)
-					writestring(buf+47, 0, tcol, filters12[ftype], 12);
-				writestring(buf+64, 0, tcol, fx11[efx], 11);
-				drawlongvolbar(buf+81, i, st);
-				break;
-		}
-	} else {
-		switch (len)
-		{
-			case 36:
-				writestring(buf, 0, tcold, " samples/galway   \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 36);
-				break;
-			case 62:
-				writestring(buf, 0, tcold, " pcm samples / galway noises                \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 62);
-				break;
-			case 128:
-				writestring(buf, 0, tcold, " pcm samples or galway noises                                                \263   \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372", 128);
-				break;
-			case 76:
-				writestring(buf, 0, tcold, " pcm samples or galway noises                            \263 \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372", 76);
-				break;
-			case 44:
-				writestring(buf, 0, tcold, " samples or galway        \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 44);
-				break;
-		}
+	if (nte<0xFF)
+	{
+		nchar[0]="CCDDEFFGGAAB"[nte%12];
+		nchar[1]="-#-#--#-#-#-"[nte%12];
+		nchar[2]="0123456789ABCDEFGHIJKLMN"[nte/12];
+		nchar[3]=0;
+	} else
+		strcpy(nchar,"   ");
 
-		sidpGetDigiInfo(di);
+	uint8_t ftype=(ci.filttype>>4)&7;
+	uint8_t efx=(ci.wave>>1)&3;
 
-		ci.leftvol=di.l;
-		ci.rightvol=di.r;
-		switch(len)
-		{
-			case 36:
-				drawvolbar(buf+18, i, st);
-				break;
-			case 44:
-				drawvolbar(buf+26, i, st);
-				break;
-			case 62:
-				drawvolbar(buf+44, i, st);
-				break;
-			case 76:
-				drawvolbar(buf+59, i, st);
-				break;
-			case 128:
-				drawlongvolbar(buf+81, i, st);
-				break;
-		}
+	switch(len)
+	{
+		case 36:
+			writestring(buf+1, 0, tcol, waves4[ci.wave>>4], 4);
+			writestring(buf+6, 0, tcol, nchar, 3);
+			writenum(buf+10, 0, tcol, ci.pulse>>4, 16, 2, 0);
+			if (ci.filtenabled)
+				writenum(buf+13, 0, tcol, ftype, 16, 1, 0);
+			if (efx)
+				writestring(buf+15, 0, tcol, fx2[efx], 2);
+			drawvolbar(buf+18, ci.leftvol, ci.rightvol, st);
+			break;
+
+		case 44:
+			writestring(buf+1, 0, tcol, waves4[ci.wave>>4], 4);
+			writenum(buf+6, 0, tcol, ci.ad, 16, 2, 0);
+			writenum(buf+8, 0, tcol, ci.sr, 16, 2, 0);
+			writestring(buf+11, 0, tcol, nchar, 3);
+			writenum(buf+15, 0, tcol, ci.pulse>>4, 16, 2, 0);
+			if (ci.filtenabled)
+				writestring(buf+18, 0, tcol, filters3[ftype], 3);
+			if (efx)
+				writestring(buf+22, 0, tcol, fx2[efx], 2);
+			drawvolbar(buf+26, ci.leftvol, ci.rightvol, st);
+			break;
+
+		case 62:
+			writestring(buf+1, 0, tcol, waves16[ci.wave>>4], 16);
+			writenum(buf+18, 0, tcol, ci.ad, 16, 2, 0);
+			writenum(buf+20, 0, tcol, ci.sr, 16, 2, 0);
+			writestring(buf+23, 0, tcol, nchar, 3);
+			writenum(buf+27, 0, tcol, ci.pulse, 16, 3, 0);
+			if (ci.filtenabled)
+				writestring(buf+31, 0, tcol, filters3[ftype], 3);
+			if (efx)
+				writestring(buf+35, 0, tcol, fx7[efx], 7);
+			drawvolbar(buf+44, ci.leftvol, ci.rightvol, st);
+			break;
+
+		case 76:
+			writestring(buf+1, 0, tcol, waves16[ci.wave>>4], 16);
+			writenum(buf+20, 0, tcol, ci.ad, 16, 2, 0);
+			writenum(buf+22, 0, tcol, ci.sr, 16, 2, 0);
+			writestring(buf+27, 0, tcol, nchar, 3);
+			writenum(buf+33, 0, tcol, ci.pulse, 16, 3, 0);
+			if (ci.filtenabled)
+				writestring(buf+39, 0, tcol, filters3[ftype], 3);
+			writestring(buf+45, 0, tcol, fx11[efx], 11);
+			drawvolbar(buf+59, ci.leftvol, ci.rightvol, st);
+			break;
+
+		case 128:
+			writestring(buf+1, 0, tcol, waves16[ci.wave>>4], 16);
+			writenum(buf+22, 0, tcol, ci.ad, 16, 2, 0);
+			writenum(buf+24, 0, tcol, ci.sr, 16, 2, 0);
+			writestring(buf+31, 0, tcol, nchar, 3);
+			writenum(buf+39, 0, tcol, ci.pulse, 16, 3, 0);
+			if (ci.filtenabled)
+				writestring(buf+47, 0, tcol, filters12[ftype], 12);
+			writestring(buf+64, 0, tcol, fx11[efx], 11);
+			drawlongvolbar(buf+81, ci.leftvol, ci.rightvol, st);
+			break;
 	}
 }
 
@@ -432,18 +414,19 @@ static void normalize(void)
 	vol=set.vol;
 	amp=set.amp;
 	srnd=set.srnd;
-	sidpSetAmplify(1024*amp);
-	sidpSetVolume(vol, bal, pan, srnd);
+	//sidSetAmplify(1024*amp);
+	sidSetVolume(vol, bal, pan, srnd);
 }
 
-static void sidpCloseFile(void)
+static void sidCloseFile(void)
 {
-	sidpClosePlayer();
+	sidClosePlayer();
+	SidInfoDone();
 }
 
-static int sidpProcessKey(uint16_t key)
+static int sidProcessKey(uint16_t key)
 {
-	char csg;
+	uint8_t csg;
 	switch (key)
 	{
 		case KEY_ALT_K:
@@ -468,10 +451,10 @@ static int sidpProcessKey(uint16_t key)
 			cpiKeyHelp(KEY_F(6), "Move panning against reverse");
 			cpiKeyHelp(KEY_F(7), "Move balance left");
 			cpiKeyHelp(KEY_F(8), "Move balance right");
-			/*cpiKeyHelp(KEY_F(9), "Decrease pitch speed");
-			cpiKeyHelp(KEY_F(10), "Decrease pitch speed");*/
-			cpiKeyHelp(KEY_F(11), "Toggle chip version");
-			cpiKeyHelp(KEY_F(12), "Toggle video (PAL/NTCS)");
+			/*
+			cpiKeyHelp(KEY_F(9), "Decrease pitch speed");
+			cpiKeyHelp(KEY_F(10), "Decrease pitch speed");
+			*/
 			if (plrProcessKey)
 				plrProcessKey(key);
 			return 0;
@@ -482,131 +465,114 @@ static int sidpProcessKey(uint16_t key)
 			else
 				pausetime=dos_clock();
 			plPause=!plPause;
-			sidpPause(plPause);
+			sidPause(plPause);
 			break;
-#if 0
-		case KEY_CTRL_UP:
-		/* case 0x8D00: //ctrl-up */
-			break;
-		case KEY_CTRL_DOWN:
-		/* case 0x9100: //ctrl-down */
-			break;
-#endif
 		case '<':
 		case KEY_CTRL_LEFT:
 		/* case 0x7300: //ctrl-left */
-			csg=globinfo.currentSong-1;
+			csg=sidGetSong()-1;
 			if (csg)
 			{
-				sidpStartSong(csg);
+				sidStartSong(csg);
 				starttime=dos_clock();
 			}
-			sidpGetGlobInfo(globinfo);
 			break;
 		case '>':
 		case KEY_CTRL_RIGHT:
 		/* case 0x7400: //ctrl-right */
-			csg=globinfo.currentSong+1;
-			if (csg<=globinfo.songs)
+			csg=sidGetSong()+1;
+			if (csg<=sidGetSongs())
 			{
-				sidpStartSong(csg);
+				sidStartSong(csg);
 				starttime=dos_clock();
 			}
-			sidpGetGlobInfo(globinfo);
 			break;
 		/* case 0x7700: //ctrl-home TODO KEYS
-			sidpStartSong(globinfo.currentSong);
+			sidStartSong(csg=sidGetSong());
 			starttime=dos_clock();
-			sidpGetGlobInfo(globinfo);
 			break;*/
 		case KEY_BACKSPACE: //backspace
-			sidpToggleFilter();
+#if 0
+			sidToggleFilter();
+#endif
 			break;
 		case '-':
 			if (vol>=2)
 				vol-=2;
-			sidpSetVolume(vol, bal, pan, srnd);
+			sidSetVolume(vol, bal, pan, srnd);
 			break;
 		case '+':
 			if (vol<=62)
 				vol+=2;
-			sidpSetVolume(vol, bal, pan, srnd);
+			sidSetVolume(vol, bal, pan, srnd);
 			break;
 		case '/':
 			if ((bal-=4)<-64)
 				bal=-64;
-			sidpSetVolume(vol, bal, pan, srnd);
+			sidSetVolume(vol, bal, pan, srnd);
 			break;
 		case '*':
 			if ((bal+=4)>64)
 				bal=64;
-			sidpSetVolume(vol, bal, pan, srnd);
+			sidSetVolume(vol, bal, pan, srnd);
 			break;
 		case ',':
 			if ((pan-=4)<-64)
 				pan=-64;
-			sidpSetVolume(vol, bal, pan, srnd);
+			sidSetVolume(vol, bal, pan, srnd);
 			break;
 		case '.':
 			if ((pan+=4)>64)
 				pan=64;
-			sidpSetVolume(vol, bal, pan, srnd);
+			sidSetVolume(vol, bal, pan, srnd);
 			break;
 		case KEY_F(2):
 			if ((vol-=8)<0)
 				vol=0;
-			sidpSetVolume(vol, bal, pan, srnd);
+			sidSetVolume(vol, bal, pan, srnd);
 			break;
 		case KEY_F(3):
 			if ((vol+=8)>64)
 				vol=64;
-			sidpSetVolume(vol, bal, pan, srnd);
+			sidSetVolume(vol, bal, pan, srnd);
 			break;
 		case KEY_F(4):
-			sidpSetVolume(vol, bal, pan, srnd=srnd?0:2);
+			sidSetVolume(vol, bal, pan, srnd=srnd?0:2);
 			break;
 		case KEY_F(5):
 			if ((pan-=16)<-64)
 				pan=-64;
-			sidpSetVolume(vol, bal, pan, srnd);
+			sidSetVolume(vol, bal, pan, srnd);
 			break;
 		case KEY_F(6):
 			if ((pan+=16)>64)
 				pan=64;
-			sidpSetVolume(vol, bal, pan, srnd);
+			sidSetVolume(vol, bal, pan, srnd);
 			break;
 		case KEY_F(7):
 			if ((bal-=16)<-64)
 				bal=-64;
-			sidpSetVolume(vol, bal, pan, srnd);
+			sidSetVolume(vol, bal, pan, srnd);
 			break;
 		case KEY_F(8):
 			if ((bal+=16)>64)
 				bal=64;
-			sidpSetVolume(vol, bal, pan, srnd);
+			sidSetVolume(vol, bal, pan, srnd);
 			break;
 		case KEY_F(9):
 			break;
 		case KEY_F(10):
 			break;
-		case KEY_F(11):
-			sidpToggleSIDVersion();
-			sidpGetGlobInfo(globinfo);
-			break;
-		case KEY_F(12):
-			sidpToggleVideo();
-			sidpGetGlobInfo(globinfo);
-			break;
 			/*
 		case 0x5f00: // ctrl f2 TODO keys
 			if ((amp-=4)<4)
 				amp=4;
-			sidpSetAmplify(1024*amp);
+			sidSetAmplify(1024*amp);
 			break;
 		case 0x6000: // ctrl f3 TODO keys
 			if ((amp+=4)>508)
 				amp=508;
-			sidpSetAmplify(1024*amp);
+			sidSetAmplify(1024*amp);
 			break;
 		case 0x8900: // ctrl f11 TODO keys
 			break;
@@ -625,8 +591,8 @@ static int sidpProcessKey(uint16_t key)
 			bal=0;
 			vol=64;
 			amp=64;
-			sidpSetVolume(vol, bal, pan, srnd);
-			sidpSetAmplify(1024*amp);
+			sidSetVolume(vol, bal, pan, srnd);
+			sidSetAmplify(1024*amp);
 			break;
 			*/
 		default:
@@ -645,13 +611,13 @@ static int sidpProcessKey(uint16_t key)
 
 static int sidLooped()
 {
-	sidpIdle();
+	sidIdle();
 	if (plrIdle)
 		plrIdle();
 	return 0;
 }
 
-static int sidpOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *sidf)
+static int sidOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *sidf)
 {
 	if (!sidf)
 		return -1;
@@ -664,34 +630,39 @@ static int sidpOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, 
 
 	fprintf(stderr, "loading %s%s...\n", currentmodname, currentmodext);
 
-	if (!sidpOpenPlayer(sidf))
+	if (!sidOpenPlayer(sidf))
 		return -1;
 
-	plNLChan=4;
-	plNPChan=4;
+	plNLChan=sidNumberOfChips()*3;
+	plNPChan=sidNumberOfChips()*4;
+	plIdle=sidIdle;
 	plUseChannels(drawchannel);
-	plSetMute=sidpMute;
+	plSetMute=sidMute;
 
 	plIsEnd=sidLooped;
-	plProcessKey=sidpProcessKey;
-	plDrawGStrings=sidpDrawGStrings;
+	plProcessKey=sidProcessKey;
+	plDrawGStrings=sidDrawGStrings;
 	plGetMasterSample=plrGetMasterSample;
 	plGetRealMasterVolume=plrGetRealMasterVolume;
-	sidpGetGlobInfo(globinfo);
+
+	plGetPChanSample=sidGetPChanSample;
+	plGetLChanSample=sidGetLChanSample;
 
 	starttime=dos_clock();
 	normalize();
+
+	SidInfoInit();
 
 	return 0;
 }
 
 extern "C"
 {
-	cpifaceplayerstruct sidPlayer = {sidpOpenFile, sidpCloseFile};
+	cpifaceplayerstruct sidPlayer = {sidOpenFile, sidCloseFile};
 	struct linkinfostruct dllextinfo =
 	{
 		"playsid" /* name */,
-		"OpenCP SID Player (c) 1993-09 Michael Schwendt, Tammo Hinrichs" /* desc */,
+		"OpenCP SID Player (c) 1993-20 Michael Schwendt, Tammo Hinrichs, Stian Skjelstad" /* desc */,
 		DLLVERSION /* ver */
 	};
 }

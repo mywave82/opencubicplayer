@@ -288,6 +288,9 @@ AS_VAR_COPY([$1], [pkg_cv_][$1])
 AS_VAR_IF([$1], [""], [$5], [$4])dnl
 ])dnl PKG_CHECK_VAR
 
+m4_include([m4/ax_check_compile_flag.m4])
+m4_include([m4/ax_cxx_compile_stdcxx.m4])
+m4_include([m4/ax_cxx_compile_stdcxx_11.m4])
 m4_include([m4/ax_prog_cc_for_build.m4])
 m4_include([m4/ax_with_curses.m4])
 m4_include([m4/sdl2.m4])

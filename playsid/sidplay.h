@@ -1,44 +1,52 @@
 #ifndef __PLAYSID_H
 #define __PLAYSID_H
 
-struct sidChanInfo {
-  unsigned long freq;
-  char ad;
-  char sr;
-  unsigned short pulse;
-  unsigned short wave;
-  char filtenabled;
-  char filttype;
-  long leftvol;
-  long rightvol;
+struct sidChanInfo
+{
+	uint16_t freq;
+	uint16_t pulse;
+	uint8_t wave;
+	uint8_t ad;
+	uint8_t sr;
+	int filtenabled;
+	uint8_t filttype;
+	uint16_t leftvol, rightvol;
 };
 
+extern unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(FILE *);
+extern int __attribute__ ((visibility ("internal"))) sidNumberOfChips(void);
+extern int __attribute__ ((visibility ("internal"))) sidNumberOfComments(void);
+extern int __attribute__ ((visibility ("internal"))) sidNumberOfInfos(void);
+extern const char __attribute__ ((visibility ("internal"))) *sidInfoString(int i);
+extern const char __attribute__ ((visibility ("internal"))) *sidCommentString(int i);
+extern const char __attribute__ ((visibility ("internal"))) *sidFormatString(void);
+extern const char __attribute__ ((visibility ("internal"))) *sidROMDescKernal(void);
+extern const char __attribute__ ((visibility ("internal"))) *sidROMDescBasic(void);
+extern const char __attribute__ ((visibility ("internal"))) *sidROMDescChargen(void);
+extern const float __attribute__ ((visibility ("internal"))) sidGetCPUSpeed(void);
+extern const char __attribute__ ((visibility ("internal"))) *sidGetVICIIModelString(void);
+extern const char __attribute__ ((visibility ("internal"))) *sidGetCIAModelString(void);
+extern const char __attribute__ ((visibility ("internal"))) *sidChipModel(int i);
+extern const char __attribute__ ((visibility ("internal"))) *sidTuneStatusString(void);
+extern const char __attribute__ ((visibility ("internal"))) *sidTuneInfoClockSpeedString(void);
+extern uint16_t __attribute__ ((visibility ("internal"))) sidChipAddr(int i);
+extern void __attribute__ ((visibility ("internal"))) sidClosePlayer(void);
+extern void __attribute__ ((visibility ("internal"))) sidIdle(void);
+extern void __attribute__ ((visibility ("internal"))) sidPause(unsigned char p);
+extern void __attribute__ ((visibility ("internal"))) sidSetAmplify(unsigned long amp);
+extern void __attribute__ ((visibility ("internal"))) sidSetVolume(unsigned char vol, signed char bal, signed char pan, unsigned char opt);
+extern void __attribute__ ((visibility ("internal"))) sidStartSong(uint8_t sng);
+extern uint8_t __attribute__ ((visibility ("internal"))) sidGetSong(void);
+extern uint8_t __attribute__ ((visibility ("internal"))) sidGetSongs(void);
+extern char __attribute__ ((visibility ("internal"))) sidGetVideo(void);
+#if 0
+extern char __attribute__ ((visibility ("internal"))) sidGetFilter(void);
+extern void __attribute__ ((visibility ("internal"))) sidToggleFilter(void);
+#endif
+extern void __attribute__ ((visibility ("internal"))) sidMute(int i, int m);
+extern void __attribute__ ((visibility ("internal"))) sidGetChanInfo(int i, sidChanInfo &ci);
 
-struct sidDigiInfo {
-  char l;
-  char r;
-  sidDigiInfo() { l=r=0; };
-};
-
-
-struct sidTuneInfo;
-
-extern unsigned char __attribute__ ((visibility ("internal"))) sidpOpenPlayer(FILE *);
-extern void __attribute__ ((visibility ("internal"))) sidpClosePlayer(void);
-extern void __attribute__ ((visibility ("internal"))) sidpIdle(void);
-extern void __attribute__ ((visibility ("internal"))) sidpPause(unsigned char p);
-extern void __attribute__ ((visibility ("internal"))) sidpSetAmplify(unsigned long amp);
-extern void __attribute__ ((visibility ("internal"))) sidpSetVolume(unsigned char vol, signed char bal, signed char pan, unsigned char opt);
-extern void __attribute__ ((visibility ("internal"))) sidpGetGlobInfo(sidTuneInfo &si);
-extern void __attribute__ ((visibility ("internal"))) sidpStartSong(char sng);
-extern void __attribute__ ((visibility ("internal"))) sidpToggleVideo(void);
-extern char __attribute__ ((visibility ("internal"))) sidpGetVideo(void);
-extern char __attribute__ ((visibility ("internal"))) sidpGetFilter(void);
-extern void __attribute__ ((visibility ("internal"))) sidpToggleFilter(void);
-extern char __attribute__ ((visibility ("internal"))) sidpGetSIDVersion(void);
-extern void __attribute__ ((visibility ("internal"))) sidpToggleSIDVersion(void);
-extern void __attribute__ ((visibility ("internal"))) sidpMute(int i, int m);
-extern void __attribute__ ((visibility ("internal"))) sidpGetChanInfo(int i, sidChanInfo &ci);
-extern void __attribute__ ((visibility ("internal"))) sidpGetDigiInfo(sidDigiInfo &di);
+int __attribute__ ((visibility ("internal"))) sidGetLChanSample(unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
+int __attribute__ ((visibility ("internal"))) sidGetPChanSample(unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
 
 #endif
