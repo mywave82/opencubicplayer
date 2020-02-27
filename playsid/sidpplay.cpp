@@ -66,11 +66,79 @@ static char currentmodname[_MAX_FNAME+1];
 static char currentmodext[_MAX_EXT+1];
 static char *modname;
 static char *composer;
-static short vol;
-static short bal;
-static short pan;
+static int16_t vol;
+static int16_t bal;
+static int16_t pan;
 static char srnd;
-static long amp;
+static uint32_t amp;
+//static int16_t speed
+static int16_t pitch;
+//static const char finespeed=8;
+static const char finepitch=8;
+
+static time_t pausefadestart;
+static uint8_t pausefaderelspeed;
+static int8_t pausefadedirect;
+
+static void startpausefade (void)
+{
+	if (plPause)
+	{
+		starttime = starttime + dos_clock () - pausetime;
+		sidSetPitch (0x00010 * pitch * 1 / 4);
+	}
+
+	if (pausefadedirect)
+	{
+		if (pausefadedirect < 0)
+		{
+			plPause = 1;
+		}
+		pausefadestart = 2 * dos_clock () - DOS_CLK_TCK - pausefadestart;
+	} else {
+		pausefadestart = dos_clock ();
+	}
+
+	if (plPause)
+	{
+		plChanChanged = 1;
+		sidPause ( plPause = 0 );
+		pausefadedirect = 1;
+	} else
+		pausefadedirect = -1;
+}
+
+static void dopausefade (void)
+{
+	int16_t i;
+	if (pausefadedirect>0)
+	{
+		i=(dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
+		if (i<0)
+			i=1;
+		if (i>=64)
+		{
+			i=64;
+			pausefadedirect=0;
+		}
+	} else {
+		i=64-(dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
+		if (i>=64)
+			i=64;
+		if (i<=0)
+		{
+			i=0;
+			pausefadedirect=0;
+			pausetime=dos_clock();
+			sidPause(plPause=1);
+			plChanChanged=1;
+			//sidSetPitch(0x00010000);
+			return;
+		}
+	}
+	pausefaderelspeed=i;
+	sidSetPitch (0x00010 * pitch * i / 4);
+}
 
 static void sidDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 {
@@ -98,8 +166,8 @@ static void sidDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		}
 		writestring(buf[0], 46+((bal+70)>>4), 0x0F, "I", 1);
 
-		writestring(buf[0], 57, 0x09, "amp: ...% filter: ...  ", 23);
-		_writenum(buf[0], 62, 0x0F, amp*100/64, 10, 3);
+		writestring(buf[0], 57, 0x09, "filter: ... pitch: ...%", 23);
+		_writenum(buf[0], 76, 0x0F, pitch*100/256, 10, 3);
 #if 0
 		writestring(buf[0], 75, 0x0F, sidGetFilter()?"on":"off", 3);
 #endif
@@ -139,8 +207,8 @@ static void sidDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		}
 		writestring(buf[0], 83+((bal+68)>>3), 0x0F, "I", 1);
 
-		writestring(buf[0], 105, 0x09, "amp: ...%   filter: ...  ", 23);
-		_writenum(buf[0], 110, 0x0F, amp*100/64, 10, 3);
+		writestring(buf[0], 103, 0x09, "filter: ...  pitch: ...% ", 25);
+		_writenum(buf[0], 123, 0x0F, pitch*100/256, 10, 3);
 #if 0
 		writestring(buf[0], 125, 0x0F, sidGetFilter()?"on":"off", 3);
 #endif
@@ -409,13 +477,17 @@ static void drawchannel(uint16_t *buf, int len, int i)
 static void normalize(void)
 {
 	mcpNormalize(0);
-	pan=set.pan;
-	bal=set.bal;
-	vol=set.vol;
-	amp=set.amp;
-	srnd=set.srnd;
+	pan    = set.pan;
+	bal    = set.bal;
+	vol    = set.vol;
+	amp    = set.amp;
+	srnd   = set.srnd;
+	//speed  = set.speed;
+	pitch  = set.pitch;
 	//sidSetAmplify(1024*amp);
 	sidSetVolume(vol, bal, pan, srnd);
+	//sidSetSpeed (speed);
+	sidSetPitch (pitch * 256);
 }
 
 static void sidCloseFile(void)
@@ -430,8 +502,8 @@ static int sidProcessKey(uint16_t key)
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('p', "Start/stop pause");
-			cpiKeyHelp('P', "Start/stop pause");
+			cpiKeyHelp('p', "Start/stop pause with fade");
+			cpiKeyHelp('P', "Start/stop pause with fade");
 			cpiKeyHelp(KEY_CTRL_P, "Start/stop pause");
 			cpiKeyHelp('<', "Previous track");
 			cpiKeyHelp(KEY_CTRL_LEFT, "Previous track");
@@ -451,21 +523,26 @@ static int sidProcessKey(uint16_t key)
 			cpiKeyHelp(KEY_F(6), "Move panning against reverse");
 			cpiKeyHelp(KEY_F(7), "Move balance left");
 			cpiKeyHelp(KEY_F(8), "Move balance right");
-			/*
-			cpiKeyHelp(KEY_F(9), "Decrease pitch speed");
-			cpiKeyHelp(KEY_F(10), "Decrease pitch speed");
-			*/
+			cpiKeyHelp(KEY_F(11), "Decrease pitch speed");
+			cpiKeyHelp(KEY_F(12), "Increase pitch speed");
 			if (plrProcessKey)
 				plrProcessKey(key);
 			return 0;
-
-		case 'p': case 'P': case KEY_CTRL_P:
+		case 'p': case 'P':
+			startpausefade();
+			break;
+		case KEY_CTRL_P:
+			pausefadedirect=0;
 			if (plPause)
+			{
 				starttime=starttime+dos_clock()-pausetime;
-			else
+				sidSetPitch (pitch * 256);
+			} else {
 				pausetime=dos_clock();
+			}
 			plPause=!plPause;
 			sidPause(plPause);
+			plChanChanged=1; /* ? */
 			break;
 		case '<':
 		case KEY_CTRL_LEFT:
@@ -559,9 +636,37 @@ static int sidProcessKey(uint16_t key)
 				bal=64;
 			sidSetVolume(vol, bal, pan, srnd);
 			break;
-		case KEY_F(9):
+		case KEY_F(11):
+			if ((pitch-=finepitch)<16)
+			{
+				pitch=16;
+			}
+			if (!plPause)
+			{
+				sidSetPitch(pitch*256);
+			}
+/*
+			if (splock)
+			{
+				speed = pitch;
+				sidSetSpeed (speed);
+			}
+*/
 			break;
-		case KEY_F(10):
+		case KEY_F(12):
+			if ((pitch+=finepitch)>2048)
+				pitch=2048;
+			if (!plPause)
+			{
+				sidSetPitch(pitch*256);
+			}
+/*
+			if (splock)
+			{
+				speed = pitch;
+				sidSetSpeed (speed);
+			}
+*/
 			break;
 			/*
 		case 0x5f00: // ctrl f2 TODO keys
@@ -611,6 +716,10 @@ static int sidProcessKey(uint16_t key)
 
 static int sidLooped()
 {
+	if (pausefadedirect)
+	{
+		dopausefade();
+	}
 	sidIdle();
 	if (plrIdle)
 		plrIdle();
@@ -649,7 +758,9 @@ static int sidOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 	plGetLChanSample=sidGetLChanSample;
 
 	starttime=dos_clock();
+	plPause=0;
 	normalize();
+	pausefadedirect=0;
 
 	SidInfoInit();
 

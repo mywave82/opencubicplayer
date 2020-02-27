@@ -114,7 +114,7 @@ static int stereo; /* boolean */
 static int bit16; /* boolean */
 static int signedout; /* boolean */
 static int reversestereo; /* boolean */
-static volatile int PauseSamples;
+static volatile int PauseSamples; /* Pause, and pitch-bend can stretch the used sample data up and down */
 
 static uint32_t sidbuffpos;
 static uint32_t sidPauseRate;
@@ -167,7 +167,6 @@ static void SidStatBuffers_callback_from_sidbuf (void *arg, int samples_ago)
 	int i;
 
 	last = *state;
-
 
 	state->in_use = 0;
 	SidStatBuffers_available++;
@@ -247,7 +246,7 @@ static void sidUpdateKernPos (void)
 	newpos = plrGetPlayPos() >> (stereo+bit16);
 	delta = (buflen + newpos - kernpos) % buflen;
 
-	if (PauseSamples)
+	if (PauseSamples > 0) /* we have been slowing down */
 	{
 		if (delta >= PauseSamples)
 		{
@@ -257,6 +256,10 @@ static void sidUpdateKernPos (void)
 			PauseSamples -= delta;
 			delta = 0;
 		}
+	} else if ((PauseSamples < 0) && delta)
+	{ /* we have been speeding up... */
+		delta -= PauseSamples; /* double negative, makes delta grow */
+		PauseSamples = 0;
 	}
 
 	if (delta)
@@ -291,7 +294,6 @@ void __attribute__ ((visibility ("internal"))) sidIdle(void)
 
 		bufdelta = ( buflen + buf_read_pos - bufpos )%buflen;
 	}
-
 
 	if (!bufdelta)
 	{
@@ -445,7 +447,6 @@ void __attribute__ ((visibility ("internal"))) sidIdle(void)
 						break;
 				}
 
-
 				rvm1 = (uint16_t)sid_buf_stereo[(wpm1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
 				lvm1 = (uint16_t)sid_buf_stereo[(wpm1<<1)+1]^0x8000;
 				 rc0 = (uint16_t)sid_buf_stereo[(wp0<<1)+0]^0x8000;
@@ -513,7 +514,6 @@ void __attribute__ ((visibility ("internal"))) sidIdle(void)
 				}
 			}
 
-			/* We are slowing down, so accumulated_progress is ALWAYS bigger than buf16_filled */
 			PauseSamples += buf16_filled - accumulated_progress;
 			ringbuffer_processing_consume_samples (sid_buf_pos, accumulated_progress);
 		}
@@ -521,9 +521,11 @@ void __attribute__ ((visibility ("internal"))) sidIdle(void)
 		bufdelta=buf16_filled;
 
 		if ((bufpos+bufdelta)>buflen)
+		{
 			pass2=bufpos+bufdelta-buflen;
-		else
+		} else {
 			pass2=0;
+		}
 		bufdelta-=pass2;
 
 		if (bit16)
@@ -1041,6 +1043,13 @@ void __attribute__ ((visibility ("internal"))) sidPause(unsigned char p)
 	sid_inpause=p;
 }
 
+void __attribute__ ((visibility ("internal"))) sidSetPitch (uint32_t sp)
+{
+	if (sp > 0x00080000) sp = 0x00080000;
+	if (!sp) sp = 0x1;
+	sidPauseRate = sp;
+}
+
 void __attribute__ ((visibility ("internal"))) sidSetVolume(unsigned char vol, signed char bal, signed char _pan, unsigned char opt)
 {
 	pan=_pan;
@@ -1121,10 +1130,8 @@ void __attribute__ ((visibility ("internal"))) sidToggleFilter(void)
 
 void __attribute__ ((visibility ("internal"))) sidMute(int i, int m)
 {
-	fprintf (stderr, "sidMute(%d, %d)::", i, m);
 	sidMuted[i] = m;
 	mySidPlayer->mute(i, m);
-	fprintf (stderr, "done\n");
 }
 
 /*extern ubyte filterType;*/

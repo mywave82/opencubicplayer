@@ -42,7 +42,9 @@ extern char __attribute__ ((visibility ("internal"))) sidGetVideo(void);
 #if 0
 extern char __attribute__ ((visibility ("internal"))) sidGetFilter(void);
 extern void __attribute__ ((visibility ("internal"))) sidToggleFilter(void);
+extern void __attribute__ ((visibility ("internal"))) sidSetSpeed (uint16_t sp);
 #endif
+extern void __attribute__ ((visibility ("internal"))) sidSetPitch (uint32_t sp);
 extern void __attribute__ ((visibility ("internal"))) sidMute(int i, int m);
 extern void __attribute__ ((visibility ("internal"))) sidGetChanInfo(int i, sidChanInfo &ci);
 
