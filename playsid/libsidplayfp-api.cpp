@@ -2,11 +2,11 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <sidplayfp/sidbuilder.h>
-#include <sidplayfp/SidInfo.h>
-#include <sidplayfp/SidTuneInfo.h>
-#include <sidplayfp/builders/residfp.h>
-#include <sidplayfp/builders/resid.h>
+#include "sidplayfp/sidbuilder.h"
+#include "sidplayfp/SidInfo.h"
+#include "sidplayfp/SidTuneInfo.h"
+#include "builders/residfp-builder/residfp.h"
+#include "builders/resid-builder/resid.h"
 
 extern "C"
 {

@@ -53,7 +53,7 @@ extern "C"
 #include "stuff/compat.h"
 #include "stuff/timer.h"
 }
-#include <sidplayfp/SidTuneInfo.h>
+#include "sidplayfp/SidTuneInfo.h"
 #include "cpiinfo.h"
 #include "sidplay.h"
 

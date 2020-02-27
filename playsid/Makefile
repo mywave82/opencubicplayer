@@ -332,7 +332,7 @@ sidpplay.o: sidpplay.cpp \
 	../stuff/timer.h \
 	cpiinfo.h \
 	sidplay.h
-	$(CXX) $< -o $@ -c
+	$(CXX) $(LIBSIDPLAYCXXFLAGS) $< -o $@ -c
 
 dumpsid: dumpsid.o
 	$(CC) $(LDFLAGS) -o $@ $^
