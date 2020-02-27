@@ -280,8 +280,8 @@ static int hvlProcessKey(uint16_t key)
 			cpiKeyHelp(KEY_F(7), "Move balance left");
 			cpiKeyHelp(KEY_F(8), "Move balance right");
 			cpiKeyHelp(KEY_F(9), "Decrease song speed");
-			cpiKeyHelp(KEY_F(11), "Decrease song speed");
-			cpiKeyHelp(KEY_F(10), "Increase pitch speed");
+			cpiKeyHelp(KEY_F(10), "Increase song speed");
+			cpiKeyHelp(KEY_F(11), "Decrease pitch speed");
 			cpiKeyHelp(KEY_F(12), "Increase pitch speed");
 			cpiKeyHelp('\\', "Toggle lock between pitch/speed");
 			return 0;
