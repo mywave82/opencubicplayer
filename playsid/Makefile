@@ -71,7 +71,7 @@ LIBSIDPLAYOBJECTS=libsidplayfp-builders-resid-builder-resid-builder.o \
 all: $(TARGETS) $(DUMPSID)
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) dumpsid
+	rm -f *.o *$(LIB_SUFFIX) sidplayfp-git/libsidplayfp/src/sidtune/sidplayer1.bin sidplayfp-git/libsidplayfp/src/sidtune/sidplayer2.bin dumpsid
 
 install:
 	$(CP) playsid$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
@@ -247,16 +247,11 @@ libsidplayfp-sidtune-PSID.o: \
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 sidplayfp-git/libsidplayfp/src/sidtune/sidplayer1.bin: \
 	sidplayfp-git/libsidplayfp/src/sidtune/sidplayer1.a65
-	o65file=`echo $@ | sed 's/bin/o65/'`; \
-	xa -R -G $< -o $o65file && \
-	od -v -An -w8 -tx1 $o65file | sed -re 's/[[:alnum:]]+/0x&,/g' > $@ && \
-	rm -f $o65file
+	xa -R -G $< -o - | hexdump -v -e '1/1 "0x%02X,\n"' > $@
 sidplayfp-git/libsidplayfp/src/sidtune/sidplayer2.bin: \
 	sidplayfp-git/libsidplayfp/src/sidtune/sidplayer2.a65
 	o65file=`echo $@ | sed 's/bin/o65/'`; \
-	xa -R -G $< -o $o65file && \
-	od -v -An -w8 -tx1 $o65file | sed -re 's/[[:alnum:]]+/0x&,/g' > $@ && \
-	rm -f $o65file
+	xa -R -G $< -o - | hexdump -v -e '1/1 "0x%02X,\n"' > $@
 libsidplayfp-sidtune-MUS.o: \
 	sidplayfp-git/libsidplayfp/src/sidtune/MUS.cpp \
 	sidplayfp-git/libsidplayfp/src/sidtune/sidplayer1.bin \
