@@ -4,7 +4,17 @@
 // Woohoo!
 #define MAX_CHANNELS 16
 
-#define Period2Freq(period) ((3546897.f * 65536.f) / (period)) 
+// Some handy constants. Thanks eightbitbubsy.
+#define AMIGA_PAL_XTAL            28375160
+#define AMIGA_NTSC_XTAL           28636360
+#define AMIGA_CPU_PAL_CLK         ((AMIGA_PAL_XTAL / 4))
+#define AMIGA_CPU_NTSC_CLK        ((AMIGA_NTSC_XTAL / 4))
+#define AMIGA_CIA_PAL_CLK         ((AMIGA_CPU_PAL_CLK / 10))
+#define AMIGA_CIA_NTSC_CLK        ((AMIGA_CPU_NTSC_CLK / 10))
+#define AMIGA_PAULA_PAL_CLK       ((AMIGA_CPU_PAL_CLK / 2))
+#define AMIGA_PAULA_NTSC_CLK      ((AMIGA_CPU_NTSC_CLK / 2))
+
+#define Period2Freq(period) ((AMIGA_PAULA_PAL_CLK * 65536.f) / (period))
 
 extern int32_t __attribute__ ((visibility ("internal"))) stereopan_left[5];
 extern int32_t __attribute__ ((visibility ("internal"))) stereopan_right[5];
@@ -156,8 +166,8 @@ struct hvl_voice
 	int16_t                vc_PerfSpeed;
 	int16_t                vc_PerfWait;
 	struct hvl_plist      *vc_PerfList;
-	int8_t                *vc_AudioPointer;
-	int8_t                *vc_AudioSource;
+	const int8_t          *vc_AudioPointer;
+	const int8_t          *vc_AudioSource;
 	uint8_t                vc_NoteDelayOn;
 	uint8_t                vc_NoteCutOn;
 	int16_t                vc_NoteDelayWait;
@@ -165,7 +175,7 @@ struct hvl_voice
 	int16_t                vc_AudioPeriod;
 	int16_t                vc_AudioVolume;
 	int32_t                vc_WNRandom;
-	int8_t                *vc_MixSource;
+	const int8_t          *vc_MixSource;
 	int8_t                 vc_SquareTempBuffer[0x80];
 	int8_t                 vc_VoiceBuffer[0x282*4];
 	uint8_t                vc_VoiceNum;
@@ -178,12 +188,12 @@ struct hvl_voice
 	uint32_t               vc_PanMultRight;
 	uint32_t               vc_RingSamplePos;
 	uint32_t               vc_RingDelta;
-	int8_t                *vc_RingMixSource;
+	const int8_t          *vc_RingMixSource;
 	uint8_t                vc_RingPlantPeriod;
 	int16_t                vc_RingInstrPeriod;
 	int16_t                vc_RingBasePeriod;
 	int16_t                vc_RingAudioPeriod;
-	int8_t                *vc_RingAudioSource;
+	const int8_t          *vc_RingAudioSource;
 	uint8_t                vc_RingNewWaveform;
 	uint8_t                vc_RingWaveform;
 	uint8_t                vc_RingFixedPeriod;
@@ -196,7 +206,7 @@ struct hvl_tune
 	uint16_t               ht_SongNum;         /* Current SubSong */
 	uint32_t               ht_Frequency;
 	double                 ht_FreqF;
-	int8_t                *ht_WaveformTab[MAX_CHANNELS];
+	const int8_t          *ht_WaveformTab[MAX_CHANNELS];
 	uint16_t               ht_Restart;
 	uint16_t               ht_PositionNr;      /* Number of orders(positions) */
 	uint8_t                ht_SpeedMultiplier; /* 1 = 50 ticks per second, 2 = 100, 3 = 150 ... */

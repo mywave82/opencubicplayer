@@ -347,13 +347,12 @@ static void hvl_process_stepfx_2 ( struct hvl_tune *ht, struct hvl_voice *voice,
 			voice->vc_IgnoreSquare = 1;
 			break;
 
-		case 0x5: // Tone portamento + volume slide
 		case 0x3: // Tone portamento
 			if ( FXParam != 0 )
 			{
 				voice->vc_PeriodSlideSpeed = FXParam;
 			}
-
+		case 0x5: // Tone portamento + volume slide
 			if ( *Note )
 			{
 				int32_t new, diff;
