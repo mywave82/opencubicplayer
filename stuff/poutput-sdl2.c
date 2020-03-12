@@ -1,7 +1,7 @@
-/* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+/* opencp module Player
+ * copyright (c) '18-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
- * SDL graphic driver
+ * SDL2 graphic driver
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,17 +20,18 @@
 
 #define _CONSOLE_DRIVER
 #include "config.h"
+#include <assert.h>
 #include <stdio.h>
 #include <time.h>
 #include <SDL.h>
-#include "boot/psetting.h"
 #include "types.h"
-#include "cpiface/cpiface.h"
-#include "poutput-sdl2.h"
 #include "boot/console.h"
-#include "poutput.h"
+#include "boot/psetting.h"
+#include "cpiface/cpiface.h"
+#include "framelock.h"
 #include "pfonts.h"
-#include "stuff/framelock.h"
+#include "poutput.h"
+#include "poutput-sdl2.h"
 
 typedef enum
 {
@@ -112,7 +113,6 @@ static int last_text_width;
 
 static void (*set_state)(int fullscreen, int width, int height) = 0;
 static int do_fullscreen = 0;
-static uint8_t *vgatextram = 0;
 static int plScrRowBytes = 0;
 static int ekbhit(void);
 static int ___valid_key(uint16_t key);
@@ -126,12 +126,6 @@ static void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 static void setcur(uint8_t y, uint8_t x);
 static void setcurshape(uint16_t shape);
 
-#ifdef PFONT_IDRAWBAR
-static uint8_t bartops[18]="\xB5\xB6\xB6\xB7\xB7\xB8\xBD\xBD\xBE\xC6\xC6\xC7\xC7\xCF\xCF\xD7\xD7";
-static uint8_t ibartops[18]="\xB5\xD0\xD0\xD1\xD1\xD2\xD2\xD3\xD3\xD4\xD4\xD5\xD5\xD6\xD6\xD7\xD7";
-#else
-static uint8_t bartops[18]="\xB5\xB6\xB7\xB8\xBD\xBE\xC6\xC7\xCF\xD0\xD1\xD2\xD3\xD4\xD5\xD6\xD7";
-#endif
 static uint32_t sdl2_palette[256] = {
 	0xff000000,
 	0xff0000aa,
@@ -153,7 +147,7 @@ static uint32_t sdl2_palette[256] = {
 
 
 static unsigned int curshape=0, curposx=0, curposy=0;
-static char *virtual_framebuffer = 0;
+static uint8_t *virtual_framebuffer = 0;
 
 static void sdl2_close_window(void)
 {
@@ -207,7 +201,7 @@ static void sdl2_dump_renderer (void)
 			if (info.texture_formats[i] == SDL_PIXELFORMAT_ARGB4444) fprintf (stderr, " (SDL_PIXELFORMAT_ARGB4444)");
 			if (info.texture_formats[i] == SDL_PIXELFORMAT_RGBA4444) fprintf (stderr, " (SDL_PIXELFORMAT_RGBA4444)");
 			if (info.texture_formats[i] == SDL_PIXELFORMAT_ABGR4444) fprintf (stderr, " (SDL_PIXELFORMAT_ABGR4444)");
-			if (info.texture_formats[i] == SDL_PIXELFORMAT_BGRA4444) fprintf (stderr, " (SDL_PIXELFORMAT_BGRA4444)");				
+			if (info.texture_formats[i] == SDL_PIXELFORMAT_BGRA4444) fprintf (stderr, " (SDL_PIXELFORMAT_BGRA4444)");
 			if (info.texture_formats[i] == SDL_PIXELFORMAT_ARGB1555) fprintf (stderr, " (SDL_PIXELFORMAT_ARGB1555)");
 			if (info.texture_formats[i] == SDL_PIXELFORMAT_RGBA5551) fprintf (stderr, " (SDL_PIXELFORMAT_RGBA5551)");
 			if (info.texture_formats[i] == SDL_PIXELFORMAT_ABGR1555) fprintf (stderr, " (SDL_PIXELFORMAT_ABGR1555)");
@@ -321,11 +315,11 @@ static void set_state_textmode(int fullscreen, int width, int height)
 		current_texture = 0;
 	}
 
-	/* vgatextram WILL for sure resize, so just get tid of it! */
-	if (vgatextram)
+	if (virtual_framebuffer)
 	{
-		free(vgatextram);
-		vgatextram=0;
+		free (virtual_framebuffer);
+		virtual_framebuffer=0;
+		assert (!plVidMem); /* plVidMem should already be cleared, probably */
 	}
 
 	if (fullscreen != do_fullscreen)
@@ -345,7 +339,7 @@ static void set_state_textmode(int fullscreen, int width, int height)
 		sdl2_close_window();
 
 		do_fullscreen = fullscreen;
-	
+
 		if (fullscreen)
 		{
 			current_window = SDL_CreateWindow ("Open Cubic Player",
@@ -362,14 +356,14 @@ static void set_state_textmode(int fullscreen, int width, int height)
 			{
 #ifdef SDL2_DEBUG
 				fprintf (stderr, "[SDL2-video] set_state_textmode() width==0 ???\n");
-#endif				
+#endif
 				width = 640;
 			}
 			if (!height)
 			{
 #ifdef SDL2_DEBUG
 				fprintf (stderr, "[SDL2-video] set_state_textmode() height==0 ???\n");
-#endif				
+#endif
 				height = 480;
 			}
 			current_window = SDL_CreateWindow ("Open Cubic Player",
@@ -392,7 +386,7 @@ static void set_state_textmode(int fullscreen, int width, int height)
 		fprintf (stderr, "[SDL2-video] find a smaller font, since (%d/%d)=%d < 80   or   (%d/%d)=%d < 25\n",
 				width, FontSizeInfo[plCurrentFont].w, width/FontSizeInfo[plCurrentFont].w,
 				height, FontSizeInfo[plCurrentFont].h, width/FontSizeInfo[plCurrentFont].h);
-#endif		
+#endif
 		if (plCurrentFont)
 			plCurrentFont--;
 		else {
@@ -447,12 +441,7 @@ static void set_state_textmode(int fullscreen, int width, int height)
 		}
 	}
 
-	vgatextram = calloc (plScrHeight * 2, plScrWidth);
-	if (!vgatextram)
-	{
-		fprintf(stderr, "[SDL2-video] calloc() failed\n");
-		exit(-1);
-	}
+	virtual_framebuffer = calloc (plScrLineBytes, plScrLines);
 
 	sdl2_gflushpal();
 
@@ -468,7 +457,7 @@ static void plSetTextMode(unsigned char x)
 
 	if ((x==plScrMode) && (current_window))
 	{
-		memset(vgatextram, 0, plScrHeight * 2 * plScrWidth);
+		memset(virtual_framebuffer, 0, plScrLineBytes * plScrLines);
 		return;
 	}
 
@@ -512,13 +501,6 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 	{
 		SDL_DestroyTexture (current_texture);
 		current_texture = 0;
-	}
-
-	/* vgatextram WILL for sure resize, so just get tid of it! */
-	if (vgatextram)
-	{
-		free(vgatextram);
-		vgatextram=0;
 	}
 
 	switch (cachemode)
@@ -602,13 +584,6 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 
 	plScrRowBytes=plScrWidth*2;
 
-	vgatextram = calloc (plScrHeight * 2, plScrWidth);
-	if (!vgatextram)
-	{
-		fprintf(stderr, "[SDL2-video] calloc() failed\n");
-		exit(-1);
-	}
-
 	sdl2_gflushpal();
 
 	___push_key(VIRT_KEY_RESIZE);
@@ -627,7 +602,8 @@ static int __plSetGraphMode(int high)
 	if (virtual_framebuffer)
 	{
 		free (virtual_framebuffer);
-		plVidMem=virtual_framebuffer=0;
+		virtual_framebuffer=0;
+		plVidMem=0;
 	}
 	sdl2_close_window();
 
@@ -642,7 +618,7 @@ static int __plSetGraphMode(int high)
 	set_state_graphmode(do_fullscreen, 0, 0);
 
 	virtual_framebuffer=malloc(plScrLineBytes * plScrLines);
-	plVidMem=virtual_framebuffer;
+	plVidMem=(char *)virtual_framebuffer;
 
 quick:
 	if (virtual_framebuffer)
@@ -670,9 +646,7 @@ static void plDisplaySetupTextMode(void)
 	while (1)
 	{
 		uint16_t c;
-
-		memset(vgatextram, 0, plScrHeight * 2 * plScrWidth);
-
+		memset(virtual_framebuffer, 0, plScrLineBytes * plScrLines);
 		make_title("sdl2-driver setup");
 		displaystr(1, 0, 0x07, "1:  font-size:", 14);
 		displaystr(1, 15, plCurrentFont == _4x4 ? 0x0f : 0x07, "4x4", 3);
@@ -825,10 +799,11 @@ void sdl2_done(void)
 
 	SDL_Quit();
 
-	if (vgatextram)
+	if (virtual_framebuffer)
 	{
-		free(vgatextram);
-		vgatextram=0;
+		free (virtual_framebuffer);
+		virtual_framebuffer=0;
+		plVidMem=0;
 	}
 
 	need_quit = 0;
@@ -1175,202 +1150,153 @@ static int ___valid_key(uint16_t key)
 
 static void RefreshScreenText(void)
 {
-	unsigned int x, y;
-	uint8_t *mem=vgatextram;
-	int doshape=0;
-	uint8_t save=save;
-	int precalc_linelength;
-
 	void *pixels;
+	uint8_t charbackup[16*8];
 	int pitch;
+	static int shapetimer=0;
+	static int shapetoggler=0;
+	int doshape = 0;
 
 	if (!current_texture)
 		return;
 
-	if (curshape)
-	if (time(NULL)&1)
-		doshape=curshape;
+	if (!virtual_framebuffer)
+		return;
 
-	if (doshape==2)
+	/* if we have an active cursor, iterate the blink-timer */
+	if (curshape)
 	{
-		save=vgatextram[curposy*plScrRowBytes+curposx*2];
-		vgatextram[curposy*plScrRowBytes+curposx*2]=219;
+		shapetimer++;
+		if (shapetimer >= ((fsFPS<=3)?1:(fsFPS / 3)))
+		{
+			shapetoggler^=1;
+			shapetimer=0;
+		}
+		if (shapetoggler)
+		{
+			doshape=curshape;
+		}
+	}
+
+#warning we need a curshapeattr API, instead of guessing the colors (we no longer have vgamem)
+	if (doshape == 1)
+	{ /* save original buffer, and add a color 15 _ marker */
+		switch (plCurrentFont)
+		{
+			case _8x16:
+				memcpy (charbackup + 0, virtual_framebuffer + curposx * 8 + (curposy * 16 + 13) * plScrLineBytes, 8);
+				memcpy (charbackup + 8, virtual_framebuffer + curposx * 8 + (curposy * 16 + 14) * plScrLineBytes, 8);
+				memset (virtual_framebuffer + curposx * 8 + (curposy * 16 + 13) * plScrLineBytes, 15, 8);
+				memset (virtual_framebuffer + curposx * 8 + (curposy * 16 + 14) * plScrLineBytes, 14, 8);
+				break;
+			case _8x8:
+				memcpy (charbackup, virtual_framebuffer + curposx * 8 + (curposy * 8 + 7) * plScrLineBytes, 8);
+				memset (virtual_framebuffer + curposx * 8 + (curposy * 8 + 7) * plScrLineBytes, 15, 8);
+				break;
+			case _4x4:
+				memcpy (charbackup, virtual_framebuffer + curposx * 4 + (curposy * 4 + 3) * plScrLineBytes, 4);
+				memset (virtual_framebuffer + curposx * 4 + (curposy * 4 + 3) * plScrLineBytes, 15, 4);
+				break;
+		}
+	} else if (doshape == 2)
+	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
+		int i;
+		uint8_t c = 0x0f;
+		switch (plCurrentFont)
+		{
+			case _8x16:
+				c |= virtual_framebuffer[curposx * 8 + 7 + curposy * 16 * plScrLineBytes] << 4;
+				for (i=0;i<16;i++)
+				{
+					memcpy (charbackup + i * 8, virtual_framebuffer + curposx * 8 + (curposy * 16 + i) * plScrLineBytes, 8);
+				}
+				break;
+			case _8x8:
+				c |= virtual_framebuffer[curposx * 8 + 7 + curposy * 8 * plScrLineBytes] << 4;
+				for (i=0;i<8;i++)
+				{
+					memcpy (charbackup + i * 8, virtual_framebuffer + curposx * 8 + (curposy * 8 + i) * plScrLineBytes, 8);
+				}
+				break;
+			case _4x4:
+				c |= virtual_framebuffer[curposx * 4 + 3 + curposy * 4 * plScrLineBytes] << 4;
+				for (i=0;i<4;i++)
+				{
+					memcpy (charbackup + i * 4, virtual_framebuffer + curposx * 4 + (curposy * 4 + i) * plScrLineBytes, 4);
+				}
+				break;
+		}
+		displaystr (curposy, curposx, c, "\xdb", 1);
 	}
 
 	SDL_LockTexture (current_texture, NULL, &pixels, &pitch);
 
-#define BLOCK8x16(BASETYPE) \
-		precalc_linelength = /*current_surface->*/pitch/sizeof(BASETYPE); \
-		for (y=0;y<plScrHeight;y++) \
-		{ \
-			BASETYPE *scr_precalc = ((BASETYPE *)/*current_surface->*/pixels)+y*16*precalc_linelength; \
-			for (x=0;x<plScrWidth;x++) \
-			{ \
-				uint8_t a, *cp; \
-				BASETYPE f, b; \
-				BASETYPE *scr=scr_precalc; \
-				int i, j; \
-				scr_precalc += 8; \
-				cp=plFont816[*(mem++)]; \
-				a=*(mem++); \
-				f=sdl2_palette[a&15]; \
-				b=sdl2_palette[a>>4]; \
-				for (i=0; i<16; i++) \
-				{ \
-					uint8_t bitmap=*cp++; \
-					for (j=0; j<8; j++) \
-					{ \
-						*scr++=(bitmap&128)?f:b; \
-						bitmap<<=1; \
-					} \
-					scr+=precalc_linelength-8; \
-				} \
-				if ((doshape==1)&&(curposy==y)&&(curposx==x)) \
-				{ \
-					cp=plFont816['_']+15; \
-					scr+=8; \
-					for (i=0; i<16; i++) \
-					{ \
-						uint8_t bitmap=*cp--; \
-						scr-=precalc_linelength+8; \
-						for (j=0; j<8; j++) \
-						{ \
-							if (bitmap&1) \
-								*scr=f; \
-							bitmap>>=1; \
-							scr++; \
-						} \
-					} \
-				} \
-			} \
-		}
-
-#define BLOCK8x8(BASETYPE) \
-		precalc_linelength = /*current_surface->*/pitch/sizeof(BASETYPE); \
-		for (y=0;y<plScrHeight;y++) \
-		{ \
-			BASETYPE *scr_precalc = ((BASETYPE *)/*current_surface->*/pixels)+y*8*precalc_linelength; \
-			for (x=0;x<plScrWidth;x++) \
-			{ \
-				uint8_t a, *cp; \
-				BASETYPE f, b; \
-				BASETYPE *scr=scr_precalc; \
-				int i, j; \
-				scr_precalc += 8; \
-				cp=plFont88[*(mem++)]; \
-				a=*(mem++); \
-				f=sdl2_palette[a&15]; \
-				b=sdl2_palette[a>>4]; \
-				for (i=0; i<8; i++) \
-				{ \
-					uint8_t bitmap=*cp++; \
-					for (j=0; j<8; j++) \
-					{ \
-						*scr++=(bitmap&128)?f:b; \
-						bitmap<<=1; \
-					} \
-					scr+=precalc_linelength-8; \
-				} \
-				if ((doshape==1)&&(curposy==y)&&(curposx==x)) \
-				{ \
-				cp=plFont88['_']+7; \
-					scr+=8; \
-					for (i=0; i<8; i++) \
-					{ \
-						uint8_t bitmap=*cp--; \
-						scr-=precalc_linelength+8; \
-						for (j=0; j<8; j++) \
-						{ \
-							if (bitmap&1) \
-								*scr=f; \
-							bitmap>>=1; \
-							scr++; \
-						} \
-					} \
-				} \
-			}\
-		}
-
-#define BLOCK4x4(BASETYPE) \
-		precalc_linelength = /*current_surface->*/pitch/sizeof(BASETYPE); \
-		for (y=0;y<plScrHeight;y++) \
-		{ \
-			BASETYPE *scr_precalc = ((BASETYPE *)/*current_surface->*/pixels)+y*4*precalc_linelength; \
-			for (x=0;x<plScrWidth;x++) \
-			{ \
-				uint8_t a, *cp; \
-				BASETYPE f, b; \
-				BASETYPE *scr=scr_precalc; \
-				int i, j; \
-				scr_precalc += 4; \
-				cp=plFont44[*(mem++)]; \
-				a=*(mem++); \
-				f=sdl2_palette[a&15]; \
-				b=sdl2_palette[a>>4]; \
-				for (i=0; i<2; i++) \
-				{ \
-					uint8_t bitmap=*cp++; \
-					for (j=0; j<4; j++) \
-					{ \
-						*scr++=(bitmap&128)?f:b; \
-						bitmap<<=1; \
-					} \
-					scr+=precalc_linelength-4; \
-					for (j=0; j<4; j++) \
-					{ \
-						*scr++=(bitmap&128)?f:b; \
-						bitmap<<=1; \
-					} \
-					scr+=precalc_linelength-4; \
-				} \
-				if ((doshape==1)&&(curposy==y)&&(curposx==x)) \
-				{ \
-					cp=plFont44['_']+1; \
-					scr+=4; \
-					for (i=0; i<2; i++) \
-					{ \
-						uint8_t bitmap=*cp--; \
-						scr-=precalc_linelength+4; \
-						for (j=0; j<4; j++) \
-						{ \
-							if (bitmap&1) \
-								*scr=f; \
-							bitmap>>=1; \
-							scr++; \
-						} \
-						scr-=precalc_linelength+4; \
-						for (j=0; j<4; j++) \
-						{ \
-							if (bitmap&1) \
-								*scr=f; \
-							bitmap>>=1; \
-							scr++; \
-						} \
-					} \
-				} \
-			} \
-		}
-
-	switch (plCurrentFont)
 	{
-		case _8x16:
-			BLOCK8x16(uint32_t)
-			break;
-		case _8x8:
-			BLOCK8x8(uint32_t)
-			break;
-		case _4x4:
-			BLOCK4x4(uint32_t)
-			break;
+		uint8_t *src=virtual_framebuffer;
+		uint8_t *dst_line = (uint8_t *)/*current_surface->*/pixels;
+		int Y=0;
+
+		uint32_t *dst;
+
+		while (1)
+		{
+			int j;
+
+			dst = (uint32_t *)dst_line;
+			for (j=0;j<plScrLineBytes;j++)
+				*(dst++)=sdl2_palette[*(src++)];
+			if ((++Y)>=plScrLines)
+				break;
+			dst_line += /*current_surface->*/pitch;
+		}
 	}
 
-	if (doshape==2)
-		vgatextram[curposy*plScrRowBytes+curposx*2]=save;
-
-	SDL_UnlockTexture(current_texture);
+	SDL_UnlockTexture (current_texture);
 
 	SDL_RenderCopy (current_renderer, current_texture, NULL, NULL);
 	SDL_RenderPresent (current_renderer);
+
+	/* restore original buffer */
+	if (doshape == 1)
+	{
+		switch (plCurrentFont)
+		{
+			case _8x16:
+				memcpy (virtual_framebuffer + curposx * 8 + (curposy * 16 + 13) * plScrLineBytes, charbackup + 0, 8);
+				memcpy (virtual_framebuffer + curposx * 8 + (curposy * 16 + 14) * plScrLineBytes, charbackup + 8, 8);
+				break;
+			case _8x8:
+				memcpy (virtual_framebuffer + curposx * 8 + (curposy * 8 + 7) * plScrLineBytes, charbackup, 8);
+				break;
+			case _4x4:
+				memcpy (virtual_framebuffer + curposx * 4 + (curposy * 4 + 3) * plScrLineBytes, charbackup, 4);
+				break;
+		}
+	} else if (doshape == 2)
+	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
+		int i;
+		switch (plCurrentFont)
+		{
+			case _8x16:
+				for (i=0;i<16;i++)
+				{
+					memcpy (virtual_framebuffer + curposx * 8 + (curposy * 16 + i) * plScrLineBytes, charbackup + i * 8, 8);
+				}
+				break;
+			case _8x8:
+				for (i=0;i<8;i++)
+				{
+					memcpy (virtual_framebuffer + curposx * 8 + (curposy * 8 + i) * plScrLineBytes, charbackup + i * 8, 8);
+				}
+				break;
+			case _4x4:
+				for (i=0;i<4;i++)
+				{
+					memcpy ( virtual_framebuffer + curposx * 4 + (curposy * 4 + i) * plScrLineBytes, charbackup + i * 4, 4);
+				}
+				break;
+		}
+	}
 }
 
 static void RefreshScreenGraph(void)
@@ -1387,7 +1313,7 @@ static void RefreshScreenGraph(void)
 	SDL_LockTexture (current_texture, NULL, &pixels, &pitch);
 
 	{
-		uint8_t *src=(uint8_t *)virtual_framebuffer;
+		uint8_t *src=virtual_framebuffer;
 		uint8_t *dst_line = (uint8_t *)/*current_surface->*/pixels;
 		int Y=0;
 
@@ -1477,7 +1403,7 @@ static int ekbhit(void)
 						} else {
 #ifdef SDL2_DEBUG
 							fprintf (stderr, "[SDL2-video] we ignored that event, it does not belong to our window...\n");
-#endif							
+#endif
 						}
 						break;
 					}
@@ -1629,132 +1555,410 @@ static void sdl2_gupdatepal(unsigned char index, unsigned char _red, unsigned ch
 
 static void displayvoid(uint16_t y, uint16_t x, uint16_t len)
 {
-	uint8_t *addr=vgatextram+y*plScrRowBytes+x*2;
-	while (len--)
+	uint8_t *target;
+	unsigned int length;
+	unsigned int count;
+	int i;
+	switch (plCurrentFont)
 	{
-		*addr++=0;
-		*addr++=plpalette[0];
+		default:
+		case _8x16:
+			target = virtual_framebuffer + y * 16 * plScrLineBytes + x * 8;
+			length = len * 8;
+			count = 16;
+			break;
+		case _8x8:
+			target = virtual_framebuffer + y * 8 * plScrLineBytes + x * 8;
+			length = len * 8;
+			count = 8;
+			break;
+		case _4x4:
+			target = virtual_framebuffer + y * 4 * plScrLineBytes + x * 4;
+			length = len * 4;
+			count = 4;
+			break;
+	}
+	for (i=0; i < count; i++)
+	{
+		memset (target, 0, length);
+		target += plScrLineBytes;
 	}
 }
 
 static void displaystrattr(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len)
 {
-	uint8_t *p=vgatextram+(y*plScrRowBytes+x*2);
-	while (len)
+	uint8_t *target, *screen;
+	int i, j;
+	uint8_t *cp;
+	uint8_t attr, f, b;
+
+	switch (plCurrentFont)
 	{
-		*(p++)=(*buf)&0x0ff;
-		*(p++)=plpalette[((*buf)>>8)];
-		buf++;
-		len--;
+		case _8x16:
+			target = virtual_framebuffer + y * 16 * plScrLineBytes + x * 8;
+			while (len)
+			{
+				if (x >= plScrWidth) return;
+				x++;
+
+				screen = target;
+				cp = plFont816[(*buf)&0x0ff];
+				attr = plpalette[((*buf)>>8)];
+				f = attr & 0x0f;
+				b = attr >> 4;
+				buf++;
+				target += 8;
+				len--;
+
+				for (i=0; i < 16; i++)
+				{
+					uint8_t bitmap=*cp++;
+					for (j=0; j < 8; j++)
+					{
+						*screen++=(bitmap&128)?f:b;
+						bitmap<<=1;
+					}
+					screen -= 8;
+					screen += plScrLineBytes;
+				}
+			}
+			return;
+		case _8x8:
+			target = virtual_framebuffer + y * 8 * plScrLineBytes + x * 8;
+			while (len)
+			{
+				if (x >= plScrWidth) return;
+				x++;
+
+				screen = target;
+				cp = plFont88[(*buf)&0x0ff];
+				attr = plpalette[((*buf)>>8)];
+				f = attr & 0x0f;
+				b = attr >> 4;
+				buf++;
+				target += 8;
+				len--;
+
+				for (i=0; i < 8; i++)
+				{
+					uint8_t bitmap=*cp++;
+					for (j=0; j < 8; j++)
+					{
+						*screen++=(bitmap&128)?f:b;
+						bitmap<<=1;
+					}
+					screen -= 8;
+					screen += plScrLineBytes;
+				}
+			}
+			return;
+
+		case _4x4:
+			target = virtual_framebuffer + y * 4 * plScrLineBytes + x * 4;
+			while (len)
+			{
+				if (x >= plScrWidth) return;
+				x++;
+
+				screen = target;
+				cp = plFont44[(*buf)&0x0ff];
+				attr = plpalette[((*buf)>>8)];
+				f = attr & 0x0f;
+				b = attr >> 4;
+				buf++;
+				target += 4;
+				len--;
+
+				for (i=0; i < 2; i++)
+				{ /* we get two lines of data per byte in the font */
+					uint8_t bitmap=*cp++;
+					for (j=0; j < 4; j++)
+					{
+						*screen++=(bitmap&128)?f:b;
+						bitmap<<=1;
+					}
+					screen -= 4;
+					screen += plScrLineBytes;
+					for (j=0; j < 4; j++)
+					{
+						*screen++=(bitmap&128)?f:b;
+						bitmap<<=1;
+					}
+					screen -= 4;
+					screen += plScrLineBytes;
+				}
+			}
+			return;
 	}
 }
 
 static void displaystr(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
 {
-	uint8_t *p=vgatextram+(y*plScrRowBytes+x*2);
-	int i;
-	attr=plpalette[attr];
-	for (i=0; i<len; i++)
+	uint8_t *target, *screen;
+	int i, j;
+	uint8_t *cp;
+	uint8_t f = attr & 0x0f;
+	uint8_t b = attr >> 4;
+
+	switch (plCurrentFont)
 	{
-		*p++=*str;
-		if (*str)
-			str++;
-		*p++=attr;
+		case _8x16:
+			target = virtual_framebuffer + y * 16 * plScrLineBytes + x * 8;
+			while (len)
+			{
+				if (x >= plScrWidth) return;
+				x++;
+
+				screen = target;
+				cp = plFont816[(uint8_t )*str];
+				if (*str) str++;
+				target += 8;
+				len--;
+
+				for (i=0; i < 16; i++)
+				{
+					uint8_t bitmap=*cp++;
+					for (j=0; j < 8; j++)
+					{
+						*screen++=(bitmap&128)?f:b;
+						bitmap<<=1;
+					}
+					screen -= 8;
+					screen += plScrLineBytes;
+				}
+			}
+			return;
+		case _8x8:
+			target = virtual_framebuffer + y * 8 * plScrLineBytes + x * 8;
+			while (len)
+			{
+				if (x >= plScrWidth) return;
+				x++;
+
+				screen = target;
+				cp = plFont88[(uint8_t)*str];
+				if (*str) str++;
+				target += 8;
+				len--;
+
+				for (i=0; i < 8; i++)
+				{
+					uint8_t bitmap=*cp++;
+					for (j=0; j < 8; j++)
+					{
+						*screen++=(bitmap&128)?f:b;
+						bitmap<<=1;
+					}
+					screen -= 8;
+					screen += plScrLineBytes;
+				}
+			}
+			return;
+		case _4x4:
+			target = virtual_framebuffer + y * 4 * plScrLineBytes + x * 4;
+			while (len)
+			{
+				if (x >= plScrWidth) return;
+				x++;
+
+				screen = target;
+				cp = plFont44[(uint8_t)(*str)];
+				if (*str) str++;
+				target += 4;
+				len--;
+
+				for (i=0; i < 2; i++)
+				{ /* we get two lines of data per byte in the font */
+					uint8_t bitmap=*cp++;
+					for (j=0; j < 4; j++)
+					{
+						*screen++=(bitmap&128)?f:b;
+						bitmap<<=1;
+					}
+					screen -= 4;
+					screen += plScrLineBytes;
+					for (j=0; j < 4; j++)
+					{
+						*screen++=(bitmap&128)?f:b;
+						bitmap<<=1;
+					}
+					screen -= 4;
+					screen += plScrLineBytes;
+				}
+			}
+			return;
 	}
 }
 
 static void drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
 {
-	char buf[60];
-	unsigned int i;
-	uint8_t *scrptr;
-	unsigned int yh1, yh2;
+	int yh1, yh2, yh3;
+
+	uint8_t *target, f, b;
+	int i;
+	int font_width;
+	int font_height;
 
 	if (hgt>((yh*(unsigned)16)-4))
 		hgt=(yh*16)-4;
-	for (i=0; i<yh; i++)
-	{
-		if (hgt>=16)
-		{
-			buf[i]=bartops[16];
-			hgt-=16;
-		} else {
-			buf[i]=bartops[hgt];
-			hgt=0;
-		}
-	}
-	scrptr=vgatextram+(2*x+yb*plScrRowBytes);
+
 	yh1=(yh+2)/3;
-	yh2=(yh+yh1+1)/2;
-	for (i=0; i<yh1; i++, scrptr-=plScrRowBytes)
+	yh2=(yh+yh1+1)/2 - yh1;
+	yh3=yh-yh1-yh2;
+
+	switch (plCurrentFont)
 	{
-		scrptr[0]=buf[i];
-		scrptr[1]=plpalette[c&0xFF];
+		default:
+		case _8x16:
+			font_width = 8;
+			font_height = 16;
+			break;
+		case _8x8:
+			font_width = 8;
+			font_height = 8;
+			hgt >>= 1;
+			break;
+		case _4x4:
+			font_width = 4;
+			font_height = 4;
+			hgt >>= 2;
+			break;
+	}
+	target = virtual_framebuffer + ((yb + 1) * font_height - 1) * plScrLineBytes + x * font_width;
+	f = c & 0x0f;
+	b = (c >> 4) & 0x0f;
+	for (i = yh1 * font_height; i >= 0; i--)
+	{
+		if (hgt > 0)
+		{
+			memset (target, f, font_width-1);
+			target[font_width-1] = b;
+			hgt--;
+		} else {
+			memset (target, b, font_width);
+		}
+		target -= plScrLineBytes;
 	}
 	c>>=8;
-	for (i=yh1; i<yh2; i++, scrptr-=plScrRowBytes)
+	f = c & 0x0f;
+	b = (c >> 4) & 0x0f;
+	for (i = yh2 * font_height; i >= 0; i--)
 	{
-		scrptr[0]=buf[i];
-		scrptr[1]=plpalette[c&0xFF];
+		if (hgt > 0)
+		{
+			memset (target, f, font_width-1);
+			target[font_width-1] = b;
+			hgt--;
+		} else {
+			memset (target, b, font_width);
+		}
+		target -= plScrLineBytes;
 	}
 	c>>=8;
-	for (i=yh2; i<yh; i++, scrptr-=plScrRowBytes)
+	f = c & 0x0f;
+	b = (c >> 4) & 0x0f;
+	for (i = yh3 * font_height; i >= 0; i--)
 	{
-		scrptr[0]=buf[i];
-		scrptr[1]=plpalette[c&0xFF];
+		if (hgt > 0)
+		{
+			memset (target, f, font_width-1);
+			target[font_width-1] = b;
+			hgt--;
+		} else {
+			memset (target, b, font_width);
+		}
+		target -= plScrLineBytes;
 	}
 }
 #ifdef PFONT_IDRAWBAR
 static void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
 {
-	unsigned char buf[60];
-	unsigned int i;
-	uint8_t *scrptr;
-	unsigned int yh1=(yh+2)/3;
-	unsigned int yh2=(yh+yh1+1)/2;
+	int yh1, yh2, yh3;
+
+	uint8_t *target, f, b;
+	int i;
+	int font_width;
+	int font_height;
 
 	if (hgt>((yh*(unsigned)16)-4))
-	  hgt=(yh*16)-4;
+		hgt=(yh*16)-4;
 
-	scrptr=vgatextram+(2*x+(yb-yh+1)*plScrRowBytes);
-
-	for (i=0; i<yh; i++)
-	{
-		if (hgt>=16)
-		{
-			buf[i]=ibartops[16];
-			hgt-=16;
-		} else {
-			buf[i]=ibartops[hgt];
-			hgt=0;
-		}
-	}
 	yh1=(yh+2)/3;
-	yh2=(yh+yh1+1)/2;
-	for (i=0; i<yh1; i++, scrptr+=plScrRowBytes)
+	yh2=(yh+yh1+1)/2 - yh1;
+	yh3=yh-yh1-yh2;
+
+	switch (plCurrentFont)
 	{
-		scrptr[0]=buf[i];
-		scrptr[1]=plpalette[c&0xFF];
+		default:
+		case _8x16:
+			font_width = 8;
+			font_height = 16;
+			break;
+		case _8x8:
+			font_width = 8;
+			font_height = 8;
+			hgt >>= 1;
+			break;
+		case _4x4:
+			font_width = 4;
+			font_height = 4;
+			hgt >>= 2;
+			break;
+	}
+	target = virtual_framebuffer + (yb - yh + 1) * font_height * plScrLineBytes + x * font_width;
+	f = c & 0x0f;
+	b = (c >> 4) & 0x0f;
+	for (i = yh1 * font_height; i >= 0; i--)
+	{
+		if (hgt > 0)
+		{
+			memset (target, f, font_width-1);
+			target[font_width-1] = b;
+			hgt--;
+		} else {
+			memset (target, b, font_width);
+		}
+		target += plScrLineBytes;
 	}
 	c>>=8;
-	for (i=yh1; i<yh2; i++, scrptr+=plScrRowBytes)
+	f = c & 0x0f;
+	b = (c >> 4) & 0x0f;
+	for (i = yh2 * font_height; i >= 0; i--)
 	{
-		scrptr[0]=buf[i];
-		scrptr[1]=plpalette[c&0xFF];
+		if (hgt > 0)
+		{
+			memset (target, f, font_width-1);
+			target[font_width-1] = b;
+			hgt--;
+		} else {
+			memset (target, b, font_width);
+		}
+		target += plScrLineBytes;
 	}
 	c>>=8;
-	for (i=yh2; i<yh; i++, scrptr+=plScrRowBytes)
+	f = c & 0x0f;
+	b = (c >> 4) & 0x0f;
+	for (i = yh3 * font_height; i >= 0; i--)
 	{
-		scrptr[0]=buf[i];
-		scrptr[1]=plpalette[c&0xFF];
+		if (hgt > 0)
+		{
+			memset (target, f, font_width-1);
+			target[font_width-1] = b;
+			hgt--;
+		} else {
+			memset (target, b, font_width);
+		}
+		target += plScrLineBytes;
 	}
 }
 #endif
+
 static void setcur(uint8_t y, uint8_t x)
 {
 	curposx=x;
 	curposy=y;
 }
+
 static void setcurshape(uint16_t shape)
 {
 	curshape=shape;
