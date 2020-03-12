@@ -1558,7 +1558,7 @@ void fsSetup(void)
 		make_title("file selector setup");
 
 		displaystr(1, 0, 0x07, "1:  screen mode: ",17);
-		displaystr(1, 17, 0x0f, modename, 64);
+		displaystr(1, 17, 0x0f, modename, plScrWidth - 17);
 		/*displaystr(1, 0, 0x07, "1:  screen mode (if driver supports it TODO): ", 45);
 		displaystr(1, 45, 0x0F, (fsScrType&4)?"132x":" 80x", 4);
 		displaystr(1, 49, 0x0F, ((fsScrType&3)==0)?"25":((fsScrType&3)==1)?"30":((fsScrType&3)==2)?"50":"60", 69);*/
@@ -1592,7 +1592,7 @@ void fsSetup(void)
 		writenum(sbuf, 22, 0x0f, fsFPS, 10, 3, 1);
 		writestring(sbuf, 25, 0x07, ", actual framerate: ", 20);
 		writenum(sbuf, 45, 0x0f, LastCurrent=fsFPSCurrent, 10, 3, 1);
-		displaystrattr(14, 0, sbuf, 128);
+		displaystrattr(14, 0, sbuf, plScrWidth);
 
 		displaystr(16, 0, 0x07, "ALT-S (or CTRL-S if in X) to save current setup to ocp.ini", 58);
 		displaystr(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
