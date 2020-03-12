@@ -2,5 +2,6 @@
 #define _FRAMELOCK_H 1
 
 extern void framelock(void);
+extern int fsFPS;
 
 #endif
