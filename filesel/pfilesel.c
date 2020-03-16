@@ -1552,7 +1552,7 @@ void fsSetup(void)
 	while (1)
 	{
 		const char *fsInfoModes[]= {"name and size","composer","comment","style and playtime","long filenames"};
-		uint16_t sbuf[128];
+		uint16_t sbuf[CONSOLE_MAX_X];
 		const char *modename = plGetDisplayTextModeName();
 
 		make_title("file selector setup");
@@ -1587,12 +1587,12 @@ void fsSetup(void)
 		displaystr(13, 0, 0x07, "D:  put archives: ", 18);
 		displaystr(13, 18, 0x0F, fsPutArcs?"on":"off", 43);
 
-		fillstr(sbuf, 0, 0x00, 0, 128);
+		fillstr(sbuf, 0, 0x00, 0, plScrWidth-14);
 		writestring(sbuf, 0, 0x07, "+-: Target framerate: ", 22);
 		writenum(sbuf, 22, 0x0f, fsFPS, 10, 3, 1);
 		writestring(sbuf, 25, 0x07, ", actual framerate: ", 20);
 		writenum(sbuf, 45, 0x0f, LastCurrent=fsFPSCurrent, 10, 3, 1);
-		displaystrattr(14, 0, sbuf, plScrWidth);
+		displaystrattr(14, 0, sbuf, plScrWidth-14);
 
 		displaystr(16, 0, 0x07, "ALT-S (or CTRL-S if in X) to save current setup to ocp.ini", 58);
 		displaystr(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
