@@ -25,14 +25,14 @@
 #include <string.h>
 #include <time.h>
 #include <SDL.h>
-#include "boot/psetting.h"
 #include "types.h"
-#include "cpiface/cpiface.h"
-#include "poutput-sdl.h"
 #include "boot/console.h"
-#include "poutput.h"
+#include "boot/psetting.h"
+#include "cpiface/cpiface.h"
+#include "framelock.h"
+#include "poutput-sdl.h"
 #include "pfonts.h"
-#include "stuff/framelock.h"
+#include "poutput.h"
 
 typedef enum
 {
@@ -607,6 +607,8 @@ int sdl_init(void)
 	if (!fullscreen_info[MODE_BIGGEST].is_possible)
 		fprintf(stderr, "[SDL video] Unable to find a fullscreen mode\n");
 
+	plScrType = plScrMode = 8;
+
 	need_quit = 1;
 
 	_plSetTextMode=plSetTextMode;
@@ -1002,15 +1004,28 @@ static void RefreshScreenText(void)
 	unsigned int x, y;
 	uint8_t *mem=vgatextram;
 	int doshape=0;
+	static int shapetimer=0;
+	static int shapetoggler=0;
 	uint8_t save=save;
 	int precalc_linelength;
 
 	if (!current_surface)
 		return;
 
+	/* if we have an active cursor, iterate the blink-timer */
 	if (curshape)
-	if (time(NULL)&1)
-		doshape=curshape;
+	{
+		shapetimer++;
+		if (shapetimer >= ((fsFPS<=3)?1:(fsFPS / 3)))
+		{
+			shapetoggler^=1;
+			shapetimer=0;
+		}
+		if (shapetoggler)
+		{
+			doshape=curshape;
+		}
+	}
 
 	if (doshape==2)
 	{
