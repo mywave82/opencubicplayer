@@ -672,6 +672,7 @@ HAVE_CXX11
 ADPLUG_LIBS
 ADPLUG_CXXFLAGS
 HAVE_SDL
+UNIFONTDIR
 HAVE_SDL2
 SDL2_CONFIG
 SDL_LIBS
@@ -794,6 +795,7 @@ with_sdl
 with_sdl2
 with_desktop_file_install
 with_dumptools
+with_unifontdir
 with_timidity_default_path
 with_ncurses
 with_ncursesw
@@ -1473,6 +1475,7 @@ Optional Packages:
   --with-sdl2             force/disable SDL2 video support (autodetect by default)
   --without-desktop_file_install Do not install .desktop file (SDL and X11 normally does this)
   --with-dumptools        enable building the different fileformat dump utilities
+  --with-unifontdir=/path the path to where ttf-unifont in located (used by SDL2)
   --with-timidity-default-path=DIR
                           Where timidity.cfg is (PREFIX/share/timidity)
   --with-ncurses          force the use of Ncurses or NcursesW
@@ -3000,6 +3003,7 @@ shift; shift
 host_os=$*
 IFS=$ac_save_IFS
 case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
+
 
 
 
@@ -6433,6 +6437,14 @@ fi
 
 
 
+# Check whether --with-unifontdir was given.
+if test "${with_unifontdir+set}" = set; then :
+  withval=$with_unifontdir;
+else
+  with_unifontdir="${datarootdir}/fonts/truetype/unifont"
+fi
+
+
 # normally, this is done automatically first when running AC_OUTPUT, but we need them expanded now
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
 # Let make expand exec_prefix.
@@ -9009,7 +9021,7 @@ $as_echo "$ac_cv_lib_FLAC_FLAC__stream_decoder_process_until_end_of_metadata" >&
 if test "x$ac_cv_lib_FLAC_FLAC__stream_decoder_process_until_end_of_metadata" = xyes; then :
   FLAC_LIBS="-lFLAC"
 else
-  if test "x$with_flac" = "xyes"; then as_fn_error $? "\"(lib)flac not found\"" "$LINENO" 5; else with_flac="no"; fi
+  if test "x$with_flac" = "xyes"; then as_fn_error $? "\"libFLAC not found\"" "$LINENO" 5; else with_flac="no"; fi
 fi
 
 fi
@@ -9021,7 +9033,7 @@ if test "x$with_flac" != "xno"; then
 if test "x$ac_cv_header_FLAC_all_h" = xyes; then :
   FLAC_CFLAGS=""
 else
-  if test "x$with_flac" = "xyes"; then as_fn_error $? "\"(lib)flac header files were not found\"" "$LINENO" 5; else with_flac="no"; fi
+  if test "x$with_flac" = "xyes"; then as_fn_error $? "\"libFLAC header files were not found\"" "$LINENO" 5; else with_flac="no"; fi
 fi
 
 
@@ -9623,11 +9635,169 @@ SDL2_LIBS=$SDL_LIBS
 SDL_CFLAGS=
 SDL_LIBS=
 
+
 if test "x$with_sdl2" = "xno"; then
 	HAVE_SDL2=
 else
 	HAVE_SDL2=1
 	$as_echo "#define HAVE_SDL2 1" >>confdefs.h
+
+
+	org_cflags="$CFLAGS"
+	org_cppflags="$CPPFLAGS"
+	org_libs="$LIBS"
+	CFLAGS="$SDL2_CFLAGS"
+	CPPFLAGS="$SDL2_CFLAGS"
+	LIBS="$SDL2_LIBS"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for TTF_Init in -lSDL2_ttf" >&5
+$as_echo_n "checking for TTF_Init in -lSDL2_ttf... " >&6; }
+if ${ac_cv_lib_SDL2_ttf_TTF_Init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lSDL2_ttf "-lSDL2" $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char TTF_Init ();
+int
+main ()
+{
+return TTF_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_SDL2_ttf_TTF_Init=yes
+else
+  ac_cv_lib_SDL2_ttf_TTF_Init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_SDL2_ttf_TTF_Init" >&5
+$as_echo "$ac_cv_lib_SDL2_ttf_TTF_Init" >&6; }
+if test "x$ac_cv_lib_SDL2_ttf_TTF_Init" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSDL2_TTF 1
+_ACEOF
+
+  LIBS="-lSDL2_ttf $LIBS"
+
+else
+  as_fn_error $? "\"libSDL2-ttf needed too for SDL2 support\"" "$LINENO" 5
+fi
+
+	ac_fn_c_check_header_mongrel "$LINENO" "SDL_ttf.h" "ac_cv_header_SDL_ttf_h" "$ac_includes_default"
+if test "x$ac_cv_header_SDL_ttf_h" = xyes; then :
+
+else
+  as_fn_error $? "\"libSDL2-ttf development headers needed too for SDL2 support\"" "$LINENO" 5
+fi
+
+
+	SDL2_LIBS="$SDL2_LIBS -lSDL2_ttf"
+	CFLAGS="$org_cflags"
+	CPPFLAGS="$org_cppflags"
+	LIBS="$org_libs"
+
+  EXP_VAR=UNIFONTDIR
+  FROM_VAR=$with_unifontdir
+  prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+  full_var="$FROM_VAR"
+  while true; do
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var" = "x$full_var"; then break; fi
+    full_var=$new_full_var
+  done
+  full_var=$new_full_var
+  UNIFONTDIR="$full_var"
+
+  prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+
+	as_ac_File=`$as_echo "ac_cv_file_$UNIFONTDIR/unifont.ttf" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $UNIFONTDIR/unifont.ttf" >&5
+$as_echo_n "checking for $UNIFONTDIR/unifont.ttf... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$UNIFONTDIR/unifont.ttf"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+else
+  as_fn_error $? "$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)" "$LINENO" 5
+fi
+
+	as_ac_File=`$as_echo "ac_cv_file_$UNIFONTDIR/unifont_csur.ttf" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $UNIFONTDIR/unifont_csur.ttf" >&5
+$as_echo_n "checking for $UNIFONTDIR/unifont_csur.ttf... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$UNIFONTDIR/unifont_csur.ttf"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+else
+  as_fn_error $? "$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)" "$LINENO" 5
+fi
+
+	as_ac_File=`$as_echo "ac_cv_file_$UNIFONTDIR/unifont_upper.ttf" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $UNIFONTDIR/unifont_upper.ttf" >&5
+$as_echo_n "checking for $UNIFONTDIR/unifont_upper.ttf... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$UNIFONTDIR/unifont_upper.ttf"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+else
+  as_fn_error $? "$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)" "$LINENO" 5
+fi
+
+	cat >>confdefs.h <<_ACEOF
+#define UNIFONTDIR "$UNIFONTDIR"
+_ACEOF
+
 
 	with_sdl="no"
 fi

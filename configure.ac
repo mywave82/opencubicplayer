@@ -3,6 +3,7 @@ AC_DEFINE(DLLVERSION, [0x00000200])
 
 AC_CANONICAL_HOST
 
+
 AC_MSG_CHECKING([GIT submodules are checked out])
 if ! test -f playgmi/timidity-git/Makefile.am; then
   AC_MSG_ERROR([playgmi/timidity-git is missing - please execute 'git submodule update --init --recursive'])
@@ -92,6 +93,7 @@ AC_ARG_WITH(desktop_file_install, [  --without-desktop_file_install Do not insta
 
 AC_ARG_WITH(dumptools, [  --with-dumptools        enable building the different fileformat dump utilities],, with_dumptools=no)
 
+AC_ARG_WITH(unifontdir, [  --with-unifontdir=/path the path to where ttf-unifont in located (used by SDL2)],, with_unifontdir="${datarootdir}/fonts/truetype/unifont")
 
 # normally, this is done automatically first when running AC_OUTPUT, but we need them expanded now
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -419,13 +421,13 @@ AC_SUBST(FLAC_LIBS)
 if test "x$with_flac" != "xno"; then
 	AC_CHECK_LIB(FLAC, FLAC__seekable_stream_decoder_process_until_end_of_metadata, FLAC_LIBS="-lFLAC",
 		AC_CHECK_LIB(FLAC, FLAC__stream_decoder_process_until_end_of_metadata, FLAC_LIBS="-lFLAC",
-			if test "x$with_flac" = "xyes"; then AC_MSG_ERROR("(lib)flac not found"); else with_flac="no"; fi,
+			if test "x$with_flac" = "xyes"; then AC_MSG_ERROR("libFLAC not found"); else with_flac="no"; fi,
 		-lz),
 	-lz)
 	LIBS=$push_LIBS
 fi
 if test "x$with_flac" != "xno"; then
-	AC_CHECK_HEADER(FLAC/all.h, FLAC_CFLAGS="", if test "x$with_flac" = "xyes"; then AC_MSG_ERROR("(lib)flac header files were not found"); else with_flac="no"; fi)
+	AC_CHECK_HEADER(FLAC/all.h, FLAC_CFLAGS="", if test "x$with_flac" = "xyes"; then AC_MSG_ERROR("libFLAC header files were not found"); else with_flac="no"; fi)
 fi
 AC_SUBST(HAVE_FLAC)
 AC_SUBST(FLAC_INI)
@@ -455,15 +457,15 @@ if test "x$with_x11" != "xno"; then
 ])
 fi
 if test "x$with_x11" != "xno"; then
-	AC_CHECK_LIB(Xpm, XpmCreatePixmapFromData, X11_LIBS="-lXpm -lX11 -L/usr/X11R6/lib", if test "x$with_x11" = "xyes"; then AC_MSG_ERROR("Xpm/X11 not found (expected to be found in /usr/X11R6/lib)"); else with_x11="no"; fi, -lXpm -lX11 -L/usr/X11R6/lib)
+	AC_CHECK_LIB(Xpm, XpmCreatePixmapFromData, X11_LIBS="-lXpm -lX11 -L/usr/X11R6/lib", if test "x$with_x11" = "xyes"; then AC_MSG_ERROR(["Xpm/X11 not found (expected to be found in /usr/X11R6/lib)"]); else with_x11="no"; fi, -lXpm -lX11 -L/usr/X11R6/lib)
 	LIBS=$push_LIBS
 fi
 if test "x$with_x11" != "xno"; then
-	AC_CHECK_LIB(Xext, XShmQueryExtension, X11_LIBS="-lXext $X11_LIBS", if test "x$with_x11" = "xyes"; then AC_MSG_ERROR("SHM/X11 not found (expected to be found in /usr/X11R6/lib)"); else with_x11="no"; fi, -lX11 -lXext -L/usr/X11R6/lib)
+	AC_CHECK_LIB(Xext, XShmQueryExtension, X11_LIBS="-lXext $X11_LIBS", if test "x$with_x11" = "xyes"; then AC_MSG_ERROR(["SHM/X11 not found (expected to be found in /usr/X11R6/lib)"]); else with_x11="no"; fi, -lX11 -lXext -L/usr/X11R6/lib)
 	LIBS=$push_LIBS
 fi
 if test "x$with_x11" != "xno"; then
-	AC_CHECK_LIB(Xxf86vm, XF86VidModeQueryExtension, X11_LIBS="-lXxf86vm $X11_LIBS", if test "x$with_x11" = "xyes"; then AC_MSG_ERROR("xvidmode was not found (expected to be found in /usr/X11R6/lib)"); else with_x11="no"; fi, -lX11 -lXext -L/usr/X11R6/lib)
+	AC_CHECK_LIB(Xxf86vm, XF86VidModeQueryExtension, X11_LIBS="-lXxf86vm $X11_LIBS", if test "x$with_x11" = "xyes"; then AC_MSG_ERROR(["xvidmode was not found (expected to be found in /usr/X11R6/lib)"]); else with_x11="no"; fi, -lX11 -lXext -L/usr/X11R6/lib)
 	LIBS=$push_LIBS
 fi
 AC_SUBST(HAVE_X11)
@@ -497,11 +499,33 @@ SDL2_LIBS=$SDL_LIBS
 SDL_CFLAGS=
 SDL_LIBS=
 AC_SUBST(HAVE_SDL2)
+
 if test "x$with_sdl2" = "xno"; then
 	HAVE_SDL2=
 else
 	HAVE_SDL2=1
 	AC_DEFINE(HAVE_SDL2)
+
+dnl check that SDL2-ttf is present too
+	org_cflags="$CFLAGS"
+	org_cppflags="$CPPFLAGS"
+	org_libs="$LIBS"
+	CFLAGS="$SDL2_CFLAGS"
+	CPPFLAGS="$SDL2_CFLAGS"
+	LIBS="$SDL2_LIBS"
+	AC_CHECK_LIB(SDL2_ttf, TTF_Init, , AC_MSG_ERROR("libSDL2-ttf needed too for SDL2 support"), "-lSDL2")
+	AC_CHECK_HEADER(SDL_ttf.h, , AC_MSG_ERROR("libSDL2-ttf development headers needed too for SDL2 support"), )
+	SDL2_LIBS="$SDL2_LIBS -lSDL2_ttf"
+	CFLAGS="$org_cflags"
+	CPPFLAGS="$org_cppflags"
+	LIBS="$org_libs"
+dnl locate the ttf-unifont
+	AS_AC_EXPAND(UNIFONTDIR, $with_unifontdir)
+	AC_CHECK_FILE($UNIFONTDIR/unifont.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)]))
+	AC_CHECK_FILE($UNIFONTDIR/unifont_csur.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)]))
+	AC_CHECK_FILE($UNIFONTDIR/unifont_upper.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)]))
+	AC_DEFINE_UNQUOTED(UNIFONTDIR, "$UNIFONTDIR")
+
 	with_sdl="no"
 fi
 
@@ -964,7 +988,7 @@ if ! test "x$with_desktop_file_install" = "xno"; then
 	if test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"; then
 		AC_CHECK_PROG(DESKTOP_FILE_INSTALL,desktop-file-install,desktop-file-install,failed)
 		if test "x$DESKTOP_FILE_INSTALL" = "xfailed"; then
-			AC_MSG_ERROR(Cannot find desktop-file-install (required by x11 and SDL driver).)
+			AC_MSG_ERROR([Cannot find desktop-file-install (required by x11 and SDL driver).])
 		fi
 	fi
 fi

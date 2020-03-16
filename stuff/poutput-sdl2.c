@@ -27,11 +27,16 @@
 #include "types.h"
 #include "boot/console.h"
 #include "boot/psetting.h"
+#include "cp437.h"
 #include "cpiface/cpiface.h"
 #include "framelock.h"
+#include "latin1.h"
 #include "pfonts.h"
 #include "poutput.h"
 #include "poutput-sdl2.h"
+
+/* GNU unifont supports 8x16 (some glyphs are 16x16), in 16bit unicode and FULL UTF-8 only */
+/* OpenCubicPlayer built-in font supports (8x16) 8x8 and 4x4, in CP437 only */
 
 typedef enum
 {
@@ -119,8 +124,10 @@ static int ___valid_key(uint16_t key);
 static void sdl2_gflushpal(void);
 static void sdl2_gupdatepal(unsigned char color, unsigned char _red, unsigned char _green, unsigned char _blue);
 static void displayvoid(uint16_t y, uint16_t x, uint16_t len);
-static void displaystrattr(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len);
-static void displaystr(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
+static void displaystrattr_cp437(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len);
+static void displaystrattr_iso8859latin1(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len);
+static void displaystr_cp437(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
+static void displaystr_iso8859latin1(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
 static void drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c);
 static void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c);
 static void setcur(uint8_t y, uint8_t x);
@@ -148,6 +155,10 @@ static uint32_t sdl2_palette[256] = {
 
 static unsigned int curshape=0, curposx=0, curposy=0;
 static uint8_t *virtual_framebuffer = 0;
+
+#include "poutput-sdl2-fontengine.c"
+#include "poutput-sdl2-cpfont.c"
+#include "poutput-sdl2-unifont.c"
 
 static void sdl2_close_window(void)
 {
@@ -648,15 +659,15 @@ static void plDisplaySetupTextMode(void)
 		uint16_t c;
 		memset(virtual_framebuffer, 0, plScrLineBytes * plScrLines);
 		make_title("sdl2-driver setup");
-		displaystr(1, 0, 0x07, "1:  font-size:", 14);
-		displaystr(1, 15, plCurrentFont == _4x4 ? 0x0f : 0x07, "4x4", 3);
-		displaystr(1, 19, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
-		displaystr(1, 23, plCurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
+		displaystr_cp437(1, 0, 0x07, "1:  font-size:", 14);
+		displaystr_cp437(1, 15, plCurrentFont == _4x4 ? 0x0f : 0x07, "4x4", 3);
+		displaystr_cp437(1, 19, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
+		displaystr_cp437(1, 23, plCurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
 /*
-		displaystr(2, 0, 0x07, "2:  fullscreen: ", 16);
-		displaystr(3, 0, 0x07, "3:  resolution in fullscreen:", 29);*/
+		displaystr_cp437(2, 0, 0x07, "2:  fullscreen: ", 16);
+		displaystr_cp437(3, 0, 0x07, "3:  resolution in fullscreen:", 29);*/
 
-		displaystr(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
+		displaystr_cp437(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
 
 		while (!_ekbhit())
 				framelock();
@@ -695,8 +706,13 @@ int sdl2_init(void)
 		return 1;
 	}
 
-	/* we now test-spawn one window, and so we can fallback to other drivers */
+	if (fontengine_init())
+	{
+		SDL_Quit();
+		return 1;
+	}
 
+	/* we now test-spawn one window, and so we can fallback to other drivers */
 	current_window = SDL_CreateWindow ("Open Cubic Player detection",
 	                                   SDL_WINDOWPOS_UNDEFINED,
 	                                   SDL_WINDOWPOS_UNDEFINED,
@@ -706,19 +722,14 @@ int sdl2_init(void)
 	if (!current_window)
 	{
 		fprintf(stderr, "[SDL2 video] Unable to create window: %s\n", SDL_GetError());
-		SDL_ClearError ();
-		SDL_Quit();
-		return 1;
+		goto error_out;
 	}
 
 	current_renderer = SDL_CreateRenderer (current_window, -1, 0);
 	if (!current_renderer)
 	{
 		fprintf (stderr, "[SD2-video]: Unable to create renderer: %s\n", SDL_GetError());
-		SDL_ClearError ();
-		sdl2_close_window ();
-		SDL_Quit();
-		return -1;
+		goto error_out;
 	}
 
 	current_texture = SDL_CreateTexture (current_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 320, 200);
@@ -730,10 +741,7 @@ int sdl2_init(void)
 		if (!current_texture)
 		{
 			fprintf (stderr, "[SDL2-video]: Unable to create texture: %s\n", SDL_GetError());
-			SDL_ClearError();
-			sdl2_close_window ();
-			SDL_Quit();
-			return -1;
+			goto error_out;
 		}
 	}
 
@@ -769,8 +777,11 @@ int sdl2_init(void)
 	_vga13=__vga13;
 
 	_displayvoid=displayvoid;
-	_displaystrattr=displaystrattr;
-	_displaystr=displaystr;
+	_displaystrattr=displaystrattr_cp437;
+	_displaystr=displaystr_cp437;
+	_displaystrattr_iso8859latin1=displaystrattr_iso8859latin1;
+	_displaystr_iso8859latin1=displaystr_iso8859latin1;
+
 	_drawbar=drawbar;
 #ifdef PFONT_IDRAWBAR
 	_idrawbar=idrawbar;
@@ -788,6 +799,12 @@ int sdl2_init(void)
 	plVidType=vidModern;
 
 	return 0;
+error_out:
+	SDL_ClearError();
+	sdl2_close_window ();
+	fontengine_done ();
+	SDL_Quit();
+	return 1;
 }
 
 void sdl2_done(void)
@@ -796,6 +813,8 @@ void sdl2_done(void)
 
 	if (!need_quit)
 		return;
+
+	fontengine_done ();
 
 	SDL_Quit();
 
@@ -1148,7 +1167,7 @@ static int ___valid_key(uint16_t key)
 	return 0;
 }
 
-static void RefreshScreenText(void)
+void RefreshScreenText(void)
 {
 	void *pixels;
 	uint8_t charbackup[16*8];
@@ -1226,7 +1245,7 @@ static void RefreshScreenText(void)
 				}
 				break;
 		}
-		displaystr (curposy, curposx, c, "\xdb", 1);
+		displaystr_cp437 (curposy, curposx, c, "\xdb", 1);
 	}
 
 	SDL_LockTexture (current_texture, NULL, &pixels, &pitch);
@@ -1255,6 +1274,8 @@ static void RefreshScreenText(void)
 
 	SDL_RenderCopy (current_renderer, current_texture, NULL, NULL);
 	SDL_RenderPresent (current_renderer);
+
+	fontengine_iterate ();
 
 	/* restore original buffer */
 	if (doshape == 1)
@@ -1336,6 +1357,8 @@ static void RefreshScreenGraph(void)
 
 	SDL_RenderCopy (current_renderer, current_texture, NULL, NULL);
 	SDL_RenderPresent (current_renderer);
+
+	fontengine_iterate ();
 }
 
 static int ekbhit(void)
@@ -1585,208 +1608,68 @@ static void displayvoid(uint16_t y, uint16_t x, uint16_t len)
 	}
 }
 
-static void displaystrattr(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len)
+static void displaystrattr_cp437(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len)
 {
-	uint8_t *target, *screen;
-	int i, j;
-	uint8_t *cp;
-	uint8_t attr, f, b;
-
 	switch (plCurrentFont)
 	{
 		case _8x16:
-			target = virtual_framebuffer + y * 16 * plScrLineBytes + x * 8;
-			while (len)
-			{
-				if (x >= plScrWidth) return;
-				x++;
-
-				screen = target;
-				cp = plFont816[(*buf)&0x0ff];
-				attr = plpalette[((*buf)>>8)];
-				f = attr & 0x0f;
-				b = attr >> 4;
-				buf++;
-				target += 8;
-				len--;
-
-				for (i=0; i < 16; i++)
-				{
-					uint8_t bitmap=*cp++;
-					for (j=0; j < 8; j++)
-					{
-						*screen++=(bitmap&128)?f:b;
-						bitmap<<=1;
-					}
-					screen -= 8;
-					screen += plScrLineBytes;
-				}
-			}
-			return;
+			displaystrattr_unifont_8x16 (y, x, buf, len, cp437_to_unicode);
+			break;
 		case _8x8:
-			target = virtual_framebuffer + y * 8 * plScrLineBytes + x * 8;
-			while (len)
-			{
-				if (x >= plScrWidth) return;
-				x++;
-
-				screen = target;
-				cp = plFont88[(*buf)&0x0ff];
-				attr = plpalette[((*buf)>>8)];
-				f = attr & 0x0f;
-				b = attr >> 4;
-				buf++;
-				target += 8;
-				len--;
-
-				for (i=0; i < 8; i++)
-				{
-					uint8_t bitmap=*cp++;
-					for (j=0; j < 8; j++)
-					{
-						*screen++=(bitmap&128)?f:b;
-						bitmap<<=1;
-					}
-					screen -= 8;
-					screen += plScrLineBytes;
-				}
-			}
-			return;
-
+			displaystrattr_cpfont_8x8 (y, x, buf, len, 0);
+			break;
 		case _4x4:
-			target = virtual_framebuffer + y * 4 * plScrLineBytes + x * 4;
-			while (len)
-			{
-				if (x >= plScrWidth) return;
-				x++;
-
-				screen = target;
-				cp = plFont44[(*buf)&0x0ff];
-				attr = plpalette[((*buf)>>8)];
-				f = attr & 0x0f;
-				b = attr >> 4;
-				buf++;
-				target += 4;
-				len--;
-
-				for (i=0; i < 2; i++)
-				{ /* we get two lines of data per byte in the font */
-					uint8_t bitmap=*cp++;
-					for (j=0; j < 4; j++)
-					{
-						*screen++=(bitmap&128)?f:b;
-						bitmap<<=1;
-					}
-					screen -= 4;
-					screen += plScrLineBytes;
-					for (j=0; j < 4; j++)
-					{
-						*screen++=(bitmap&128)?f:b;
-						bitmap<<=1;
-					}
-					screen -= 4;
-					screen += plScrLineBytes;
-				}
-			}
-			return;
+			displaystrattr_cpfont_4x4 (y, x, buf, len, 0);
+			break;
 	}
 }
 
-static void displaystr(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
+static void displaystrattr_iso8859latin1(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len)
 {
-	uint8_t *target, *screen;
-	int i, j;
-	uint8_t *cp;
-	uint8_t f = attr & 0x0f;
-	uint8_t b = attr >> 4;
-
 	switch (plCurrentFont)
 	{
 		case _8x16:
-			target = virtual_framebuffer + y * 16 * plScrLineBytes + x * 8;
-			while (len)
-			{
-				if (x >= plScrWidth) return;
-				x++;
-
-				screen = target;
-				cp = plFont816[(uint8_t )*str];
-				if (*str) str++;
-				target += 8;
-				len--;
-
-				for (i=0; i < 16; i++)
-				{
-					uint8_t bitmap=*cp++;
-					for (j=0; j < 8; j++)
-					{
-						*screen++=(bitmap&128)?f:b;
-						bitmap<<=1;
-					}
-					screen -= 8;
-					screen += plScrLineBytes;
-				}
-			}
-			return;
+			displaystrattr_unifont_8x16 (y, x, buf, len, latin1_to_unicode);
+			break;
 		case _8x8:
-			target = virtual_framebuffer + y * 8 * plScrLineBytes + x * 8;
-			while (len)
-			{
-				if (x >= plScrWidth) return;
-				x++;
-
-				screen = target;
-				cp = plFont88[(uint8_t)*str];
-				if (*str) str++;
-				target += 8;
-				len--;
-
-				for (i=0; i < 8; i++)
-				{
-					uint8_t bitmap=*cp++;
-					for (j=0; j < 8; j++)
-					{
-						*screen++=(bitmap&128)?f:b;
-						bitmap<<=1;
-					}
-					screen -= 8;
-					screen += plScrLineBytes;
-				}
-			}
-			return;
+			displaystrattr_cpfont_8x8 (y, x, buf, len, latin1_table);
+			break;
 		case _4x4:
-			target = virtual_framebuffer + y * 4 * plScrLineBytes + x * 4;
-			while (len)
-			{
-				if (x >= plScrWidth) return;
-				x++;
+			displaystrattr_cpfont_4x4 (y, x, buf, len, latin1_table);
+			break;
+	}
+}
 
-				screen = target;
-				cp = plFont44[(uint8_t)(*str)];
-				if (*str) str++;
-				target += 4;
-				len--;
 
-				for (i=0; i < 2; i++)
-				{ /* we get two lines of data per byte in the font */
-					uint8_t bitmap=*cp++;
-					for (j=0; j < 4; j++)
-					{
-						*screen++=(bitmap&128)?f:b;
-						bitmap<<=1;
-					}
-					screen -= 4;
-					screen += plScrLineBytes;
-					for (j=0; j < 4; j++)
-					{
-						*screen++=(bitmap&128)?f:b;
-						bitmap<<=1;
-					}
-					screen -= 4;
-					screen += plScrLineBytes;
-				}
-			}
-			return;
+static void displaystr_cp437(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
+{
+	switch (plCurrentFont)
+	{
+		case _8x16:
+			displaystr_unifont_8x16 (y, x, attr, str, len, cp437_to_unicode);
+			break;
+		case _8x8:
+			displaystr_cpfont_8x8 (y, x, attr, str, len, 0);
+			break;
+		case _4x4:
+			displaystr_cpfont_4x4 (y, x, attr, str, len, 0);
+			break;
+	}
+}
+
+static void displaystr_iso8859latin1(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
+{
+	switch (plCurrentFont)
+	{
+		case _8x16:
+			displaystr_unifont_8x16 (y, x, attr, str, len, latin1_to_unicode);
+			break;
+		case _8x8:
+			displaystr_cpfont_8x8 (y, x, attr, str, len, latin1_table);
+			break;
+		case _4x4:
+			displaystr_cpfont_4x4 (y, x, attr, str, len, latin1_table);
+			break;
 	}
 }
 
@@ -1827,7 +1710,7 @@ static void drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t
 	target = virtual_framebuffer + ((yb + 1) * font_height - 1) * plScrLineBytes + x * font_width;
 	f = c & 0x0f;
 	b = (c >> 4) & 0x0f;
-	for (i = yh1 * font_height; i >= 0; i--)
+	for (i = yh1 * font_height; i > 0; i--)
 	{
 		if (hgt > 0)
 		{
@@ -1842,7 +1725,7 @@ static void drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t
 	c>>=8;
 	f = c & 0x0f;
 	b = (c >> 4) & 0x0f;
-	for (i = yh2 * font_height; i >= 0; i--)
+	for (i = yh2 * font_height; i > 0; i--)
 	{
 		if (hgt > 0)
 		{
@@ -1857,7 +1740,7 @@ static void drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t
 	c>>=8;
 	f = c & 0x0f;
 	b = (c >> 4) & 0x0f;
-	for (i = yh3 * font_height; i >= 0; i--)
+	for (i = yh3 * font_height; i > 0; i--)
 	{
 		if (hgt > 0)
 		{
@@ -1908,7 +1791,7 @@ static void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 	target = virtual_framebuffer + (yb - yh + 1) * font_height * plScrLineBytes + x * font_width;
 	f = c & 0x0f;
 	b = (c >> 4) & 0x0f;
-	for (i = yh1 * font_height; i >= 0; i--)
+	for (i = yh1 * font_height; i > 0; i--)
 	{
 		if (hgt > 0)
 		{
@@ -1923,7 +1806,7 @@ static void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 	c>>=8;
 	f = c & 0x0f;
 	b = (c >> 4) & 0x0f;
-	for (i = yh2 * font_height; i >= 0; i--)
+	for (i = yh2 * font_height; i > 0; i--)
 	{
 		if (hgt > 0)
 		{
@@ -1938,7 +1821,7 @@ static void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 	c>>=8;
 	f = c & 0x0f;
 	b = (c >> 4) & 0x0f;
-	for (i = yh3 * font_height; i >= 0; i--)
+	for (i = yh3 * font_height; i > 0; i--)
 	{
 		if (hgt > 0)
 		{

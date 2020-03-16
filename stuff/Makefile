@@ -9,7 +9,7 @@ endif
 framelock_so=framelock.o
 hardware_so=timer.o irq.o hardware.o freq.o
 sets_so=sets.o
-poutput_so=console.o latin1.o poutput-curses.o $(LINUX_OBJ) poutput-keyboard.o pfonts.o poutput.o
+poutput_so=console.o cp437.o latin1.o poutput-curses.o $(LINUX_OBJ) poutput-keyboard.o pfonts.o poutput.o utf-8.o
 poutput_so_libs=$(ICONV_LIBS)
 ifeq ($(HAVE_X11),1)
 poutput_so+=poutput-x11.o x11-common.o
@@ -58,6 +58,11 @@ install:
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/hardware$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/12-poutput$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/11-framelock$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/10-sets$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/10-hardware$(LIB_SUFFIX)"
 endif
+
+cp437.o: cp437.c cp437.h \
+	../config.h \
+	../types.h
+	$(CC) $< -o $@ -c
 
 poutput.o: poutput.h poutput.c \
 	../config.h \
@@ -126,11 +131,16 @@ poutput-sdl.o: poutput-sdl.c poutput-sdl.h \
 	$(CC) $(SDL_CFLAGS) poutput-sdl.c -o $@ -c
 
 poutput-sdl2.o: poutput-sdl2.c poutput-sdl2.h \
+	poutput-sdl2-fontengine.c \
+	poutput-sdl2-cpfont.c \
+	poutput-sdl2-unifont.c \
 	../config.h \
 	../types.h \
 	../boot/console.h \
 	../boot/psetting.h \
 	../stuff/framelock.h \
+	cp437.h \
+	latin1.h \
 	poutput.h \
 	pfonts.h
 	$(CC) $(SDL2_CFLAGS) poutput-sdl2.c -o $@ -c
@@ -212,3 +222,8 @@ framelock.o: framelock.c framelock.h \
 	err.h
 	$(CC) framelock.c -o $@ -c
 
+utf-8.o: utf-8.c \
+	../config.h \
+	../types.h \
+	utf-8.h
+	$(CC) $< -o $@ -c
