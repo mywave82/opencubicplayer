@@ -106,6 +106,7 @@ static int sidReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 			strcpy(snginfo,"raw SID file");
 
 		strcpy(m->modname, snginfo);
+		latin1(m->modname, m->modname, strlen(m->modname));
 		m->composer[0] = 0;
 		m->comment[0] = 0;
 		return 1;
