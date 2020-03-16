@@ -339,13 +339,13 @@ static int SidInfoAProcessKey(uint16_t key)
 			break;
 
 		case KEY_ALT_K:
-			cpiKeyHelp('t',       "Enable SID info viewer");
-			cpiKeyHelp('T',       "Enable SID info viewer");
+			cpiKeyHelp('t',       "Disable SID info viewer");
+			cpiKeyHelp('T',       "Disable SID info viewer");
 			cpiKeyHelp(KEY_PPAGE, "Scroll SID info viewer up");
 			cpiKeyHelp(KEY_NPAGE, "Scroll SID info viewer down");
 			cpiKeyHelp(KEY_HOME,  "Scroll SID info viewer to the top");
 			cpiKeyHelp(KEY_END,   "Scroll SID info viewer to the bottom");
-			break;
+			return 0;
 
 		case KEY_PPAGE:
 			if (SidInfoScroll)
