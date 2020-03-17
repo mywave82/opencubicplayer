@@ -93,7 +93,7 @@ AC_ARG_WITH(desktop_file_install, [  --without-desktop_file_install Do not insta
 
 AC_ARG_WITH(dumptools, [  --with-dumptools        enable building the different fileformat dump utilities],, with_dumptools=no)
 
-AC_ARG_WITH(unifontdir, [  --with-unifontdir=/path the path to where ttf-unifont in located (used by SDL2)],, with_unifontdir="${datarootdir}/fonts/truetype/unifont")
+AC_ARG_WITH(unifontdir, [  --with-unifontdir=/path the path to where ttf-unifont in located (used by SDL1.x and SDL2)],, with_unifontdir="${datarootdir}/fonts/truetype/unifont")
 
 # normally, this is done automatically first when running AC_OUTPUT, but we need them expanded now
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -557,6 +557,27 @@ if test "x$with_sdl" = "xno"; then
 else
 	HAVE_SDL=1
 	AC_DEFINE(HAVE_SDL)
+
+dnl check that SDL1.x-ttf is present too
+	org_cflags="$CFLAGS"
+	org_cppflags="$CPPFLAGS"
+	org_libs="$LIBS"
+	CFLAGS="$SDL_CFLAGS"
+	CPPFLAGS="$SDL_CFLAGS"
+	LIBS="$SDL_LIBS"
+	AC_CHECK_LIB(SDL_ttf, TTF_Init, , AC_MSG_ERROR("libSDL-ttf needed too for SDL1.x support"), "-lSDL")
+	AC_CHECK_HEADER(SDL_ttf.h, , AC_MSG_ERROR("libSDL-ttf development headers needed too for SDL1.x support"), )
+	SDL_LIBS="$SDL_LIBS -lSDL_ttf"
+	CFLAGS="$org_cflags"
+	CPPFLAGS="$org_cppflags"
+	LIBS="$org_libs"
+dnl locate the ttf-unifont
+	AS_AC_EXPAND(UNIFONTDIR, $with_unifontdir)
+	AC_CHECK_FILE($UNIFONTDIR/unifont.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by SDL1.x)]))
+	AC_CHECK_FILE($UNIFONTDIR/unifont_csur.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by SDL1.x)]))
+	AC_CHECK_FILE($UNIFONTDIR/unifont_upper.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by SDL1.x)]))
+	AC_DEFINE_UNQUOTED(UNIFONTDIR, "$UNIFONTDIR")
+
 fi
 CFLAGS="$org_cflags"
 CPPFLAGS="$org_cflags"
@@ -1044,12 +1065,12 @@ fi
 if test "x$with_sdl" = "xno"; then
 	echo "SDL:               OFF"
 else
-	echo "SDL:               ON"
+	echo "SDL:               ON  (UNIFONTDIR="$UNIFONTDIR")"
 fi
 if test "x$with_sdl2" = "xno"; then
 	echo "SDL2:              OFF"
 else
-	echo "SDL2:              ON"
+	echo "SDL2:              ON  (UNIFONTDIR="$UNIFONTDIR")"
 fi
 if test "x$with_alsa" = "xno"; then
 	echo "ALSA:              OFF"

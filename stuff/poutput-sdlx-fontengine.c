@@ -16,6 +16,10 @@ static int font_entries_fill;
 static int font_entries_allocated;
 
 static TTF_Font *unifont_bmp, *unifont_csur, *unifont_upper;
+#if SDL_MAJOR_VERSION==1
+static int bmp_maxascent;
+static int csur_maxascent;
+#endif
 
 /*
  BMP   = Basic Multilingual Plane            https://en.wikipedia.org/wiki/Plane_(Unicode)#Basic_Multilingual_Plane
@@ -115,8 +119,11 @@ uint8_t *fontengine_8x16(uint32_t codepoint, int *width)
 	int i;
 	const SDL_Color color1={  0,  0,  0};
 	const SDL_Color color2={255,255,255};
-	SDL_Surface *text_surface;
+	SDL_Surface *text_surface = 0;
 	struct font_entry_t *entry = 0;
+#if SDL_MAJOR_VERSION==1
+	int ymax = 0, xoffset = 0, yoffset = 0;
+#endif
 
 	if (codepoint == 0)
 	{
@@ -137,26 +144,100 @@ uint8_t *fontengine_8x16(uint32_t codepoint, int *width)
 	            ((codepoint >= 0x0f900) && (codepoint <= 0x0ffff)) )
 	{
 		text_surface = TTF_RenderGlyph_Shaded (unifont_bmp, codepoint, color1, color2);
+#if SDL_MAJOR_VERSION==1
+		TTF_GlyphMetrics (unifont_bmp, codepoint, &xoffset, 0, 0, &ymax, 0);
+		yoffset = bmp_maxascent - ymax;
+#endif
 	} else if ( ((codepoint >= 0x0e000) && (codepoint <= 0x0f8ff)) )
 	{
 		text_surface = TTF_RenderGlyph_Shaded (unifont_csur, codepoint, color1, color2);
+#if SDL_MAJOR_VERSION==1
+		TTF_GlyphMetrics (unifont_csur, codepoint, &xoffset, 0, 0, &ymax, 0);
+		yoffset = csur_maxascent - ymax;
+#endif
 	} else if ( ((codepoint >= 0x10000) && (codepoint <= 0x1ffff)) ||
 	            ((codepoint >= 0xe0000) && (codepoint <= 0xeffff)) )
 	{
 		char data[6+1];
 		utf8_encode (data, codepoint);
-		/* TTF_RenderGlyph_Shaded only supports 16bit codepoints */
+		/* TTF_RenderGlyph_Shaded only supports 16bit codepoints - no metric either */
 		text_surface = TTF_RenderUTF8_Shaded (unifont_upper, data, color1, color2);
 	} else if ( ((codepoint >= 0xf0000) && (codepoint >= 0xffffd)) )
 	{
 		char data[6+1];
 		utf8_encode (data, codepoint);
-		/* TTF_RenderGlyph_Shaded only supports 16bit codepoints */
+		/* TTF_RenderGlyph_Shaded only supports 16bit codepoints - no metric either*/
 		text_surface = TTF_RenderUTF8_Shaded (unifont_csur, data, color1, color2);
 	}
 
 	if (text_surface)
 	{
+#if SDL_MAJOR_VERSION==1
+	/* In SDL1 version TTF, the surface we receive are highly pixel-tight optimized */
+
+		if ((xoffset + text_surface->w) > 16)
+		{
+			fprintf (stderr, "SDL_TTF + unifont + U+%X: have invalid width: %d+%d\n", (int)codepoint, xoffset, (int)text_surface->w);
+		} else if ((yoffset + text_surface->h) > 16)
+		{
+			fprintf (stderr, "SDL_TTF + unifont + U+%X: have invalid height: %d+%d\n", (int)codepoint, yoffset, (int)text_surface->h);
+		} else if (xoffset < 0)
+		{
+			fprintf (stderr, "SDL_TTF + unifont + U+%X: have invalid x offset: %d\n", (int)codepoint, xoffset);
+			xoffset=0;
+		} else if (yoffset < 0)
+		{
+			fprintf (stderr, "SDL_TTF + unifont + U+%X: have invalid y offset: %d\n", (int)codepoint, yoffset);
+			yoffset=0;
+		} else {
+			int x, y, i;
+			entry = calloc (sizeof (*entry), 1);
+			entry->codepoint = codepoint;
+
+			if ((xoffset + text_surface->w) <= 8)
+			{
+				entry->width = 8;
+
+				i = 0;
+				for (y=0; y < text_surface->h; y++)
+				{
+					for (x=xoffset; ((x-xoffset) < text_surface->w) && (x < 8); x++)
+					{
+						if (((uint8_t *)text_surface->pixels)[i+x-xoffset])
+						{
+							entry->data[yoffset + y] |= 0x80>>x;
+						}
+					}
+					i += text_surface->pitch;
+				}
+			} else {
+				entry->width = 16;
+
+				i = 0;
+				for (y=0; y < text_surface->h; y++)
+				{
+					for (x=xoffset; ((x-xoffset) < text_surface->w) && (x < 8); x++)
+					{
+						if (((uint8_t *)text_surface->pixels)[i+x-xoffset])
+						{
+							entry->data[(yoffset + y) * 2 + 0] |= 0x80>>(x-xoffset);
+						}
+					}
+					for (; ((x-xoffset) < text_surface->w) && (x < 16); x++)
+					{
+						if (((uint8_t *)text_surface->pixels)[i+x-xoffset])
+						{
+							entry->data[(yoffset + y) * 2 + 1] |= 0x80>>(x-xoffset-8);
+						}
+					}
+					i += text_surface->pitch;
+				}
+			}
+			/* score is already zero due to calloc() */
+			fontengine_append(entry);
+		}
+#else
+	/* In SDL2 version TTF, the surface we receive are either 8x16 or 16x16 */
 		if ((text_surface->w != 8) && (text_surface->w != 16))
 		{
 			fprintf (stderr, "SDL_TTF + unifont + U+%X: gave invalid width: %d\n", (int)codepoint, (int)text_surface->w);
@@ -187,6 +268,7 @@ uint8_t *fontengine_8x16(uint32_t codepoint, int *width)
 			entry->score=0;
 			fontengine_append(entry);
 		}
+#endif
 		SDL_FreeSurface(text_surface);
 	}
 
@@ -217,12 +299,20 @@ static int fontengine_init (void)
 	{
 		fprintf (stderr, "TTF_OpenFont(\""UNIFONTDIR "\"/unifont.ttf\") failed: %s\n", TTF_GetError());
 		SDL_ClearError();
+	} else {
+#if SDL_MAJOR_VERSION==1
+		bmp_maxascent = TTF_FontAscent (unifont_bmp);
+#endif
 	}
 	unifont_csur = TTF_OpenFont(UNIFONTDIR "/unifont_csur.ttf", 16);
 	if (!unifont_csur)
 	{
 		fprintf (stderr, "TTF_OpenFont(\""UNIFONTDIR "\"/unifont_csur.ttf\") failed: %s\n", TTF_GetError());
 		SDL_ClearError();
+	} else {
+#if SDL_MAJOR_VERSION==1
+		csur_maxascent = TTF_FontAscent (unifont_csur);
+#endif
 	}
 	unifont_upper = TTF_OpenFont(UNIFONTDIR "/unifont_upper.ttf", 16);
 	if (!unifont_upper)
@@ -230,7 +320,6 @@ static int fontengine_init (void)
 		fprintf (stderr, "TTF_OpenFont(\""UNIFONTDIR "\"/unifont_upper.ttf\") failed: %s\n", TTF_GetError());
 		SDL_ClearError();
 	}
-
 	return 0;
 }
 

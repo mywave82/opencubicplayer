@@ -121,6 +121,9 @@ poutput-fb.o: poutput-fb.c poutput-fb.h \
 	$(CC) poutput-fb.c -o $@ -c
 
 poutput-sdl.o: poutput-sdl.c poutput-sdl.h \
+	poutput-sdlx-fontengine.c \
+	poutput-sdlx-cpfont.c \
+	poutput-sdlx-unifont.c \
 	../config.h \
 	../types.h \
 	../boot/console.h \
@@ -131,9 +134,9 @@ poutput-sdl.o: poutput-sdl.c poutput-sdl.h \
 	$(CC) $(SDL_CFLAGS) poutput-sdl.c -o $@ -c
 
 poutput-sdl2.o: poutput-sdl2.c poutput-sdl2.h \
-	poutput-sdl2-fontengine.c \
-	poutput-sdl2-cpfont.c \
-	poutput-sdl2-unifont.c \
+	poutput-sdlx-fontengine.c \
+	poutput-sdlx-cpfont.c \
+	poutput-sdlx-unifont.c \
 	../config.h \
 	../types.h \
 	../boot/console.h \
