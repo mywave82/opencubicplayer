@@ -1065,10 +1065,6 @@ static int __plSetGraphMode(int high)
 
 	set_state_graphmode (do_fullscreen);
 
-/*
-	create_image();
-*/
-
 	if ((plDepth!=8) || (plScrLineBytes!=image->bytes_per_line))
 	{
 		virtual_framebuffer=calloc(plScrLineBytes, plScrLines);
@@ -1157,9 +1153,7 @@ static void plSetTextMode(unsigned char x)
 	/* if invalid mode, set it to zero */
 	if (x>7)
 		x=0;
-#warning We have disabled textmode being able to change resolution of Screen
-#if 0
-
+#if 0 // We have disabled textmode being able to change resolution of Screen - Modern systems do not change resolution away from native from the monitor
 	if (do_fullscreen)
 	{
 		if (!modelines[modes[x].modeline])
@@ -1184,16 +1178,23 @@ static void plSetTextMode(unsigned char x)
 		}
 	}
 	modeline=modelines[modes[x].modeline];
-#endif
 
-
-	#warning TODO
 	plScrHeight=modes[x].chary;
 	plScrWidth=modes[x].charx;
 	plScrRowBytes=plScrWidth*2;
 	plScrLineBytes=modes[x].windowx;
 	plScrLines=modes[x].windowy;
 	___push_key(VIRT_KEY_RESIZE);
+
+#else
+	/* WindowResized_Textmode() will override these later when the final result is available */
+	plScrHeight=modes[x].chary;
+	plScrWidth=modes[x].charx;
+	plScrRowBytes=plScrWidth*2;
+	plScrLineBytes=modes[x].windowx;
+	plScrLines=modes[x].windowy;
+	___push_key(VIRT_KEY_RESIZE);
+#endif
 
 	if (vgatextram)
 	{
@@ -1208,18 +1209,16 @@ static void plSetTextMode(unsigned char x)
 	}
 
 	plScrType=plScrMode=x;
-	/*memset(vgatextram, 0, plScrHeight * 2 * plScrWidth); */
 
 	plDepth=XDefaultDepth(mDisplay, mScreen);
 	if (!window)
+	{
 		create_window();
-	/*set_state(do_fullscreen);*/
-	TextModeSetState(plCurrentFontWanted /* modes[x].bigfont ? _8x16 : _8x8 */, do_fullscreen);
-	//plCurrentFontWanted=plCurrentFont;
+	}
 
+	TextModeSetState(plCurrentFontWanted /* modes[x].bigfont ? _8x16 : _8x8 */, do_fullscreen);
 /*
 	XSetWMProtocols (mDisplay, window, &wm_delete_window, 1);
-	create_image();
 */
 
 	x11_gflushpal();
