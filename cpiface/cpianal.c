@@ -59,12 +59,13 @@ static unsigned int plAnalScale;
 static int plAnalChan;
 static int plAnalFlip=0;
 
-static int16_t plSampBuf[2048];
+static int16_t plSampBuf[4096];
 static uint16_t ana[1024];
 
 static void plDrawFFT(char sel)
 {
 	char str[80]; /* contains the title string */
+	char s2[20];
 	char *s; /* pointer to temp string */
 	unsigned int wid;
 	unsigned int ofs;
@@ -82,8 +83,8 @@ static void plDrawFFT(char sel)
 	/* make the *s point to the right string */
 	if (plAnalChan==2)
 	{
-		s="single channel:     ";
-		sprintf(s+16, "%3i", plSelCh+1);
+		s=s2;
+		snprintf(s2, sizeof(s2), "single channel: %3i", plSelCh+1);
 	} else {
 		if (plAnalChan)
 			s="master channel, mono";
@@ -109,10 +110,10 @@ static void plDrawFFT(char sel)
 		bits=11;
 
 	/* print the title string */
-	sprintf( str, "  spectrum analyser, step: %3iHz, max: %5iHz, %s",
-		(int)(plAnalRate>>bits),
-		(int)(plAnalRate>>1),
-		s
+	snprintf (str, sizeof (str), "  spectrum analyser, step: %3iHz, max: %5iHz, %s",
+		  (int)(plAnalRate>>bits),
+		  (int)(plAnalRate>>1),
+		  s
 	);
 
 	displaystr(plAnalFirstLine-1, 0, sel?COLTITLEH:COLTITLE, str, plAnalWidth);
