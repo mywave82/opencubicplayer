@@ -893,7 +893,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(FILE *wav)
 	}
 	bufpos=0;
 
-	if (!pollInit(wpIdler))
+	if (!pollInit(wpIdle))
 	{
 		goto undobuf16;
 	}
