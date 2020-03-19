@@ -13,7 +13,9 @@ uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/playmp2$(LIB_SUFFIX)"
 
 charset.o: charset.c \
-	../config.h
+	../config.h \
+	../stuff/latin1.h \
+	../stuff/utf-8.h
 	$(CC) charset.c -o $@ -c
 
 mpptype.o: mpptype.c \

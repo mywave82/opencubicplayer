@@ -67,7 +67,7 @@ static void handle_T__(const uint8_t *p, uint_fast32_t size, char *target, int t
 	int i, j=0;
 	for (i=1;i<size;i++)
 	{
-		if ((p[i]>=32)||(p[i]<=127))
+		if ((p[i]>=32)&&(p[i]<=127)&&(p[0]!=1)&&(p[0]!=2))
 			temp_p[j++]=p[i];
 		else {
 			temp_p[j++]='\\';
@@ -77,7 +77,7 @@ static void handle_T__(const uint8_t *p, uint_fast32_t size, char *target, int t
 		}
 	}
 	temp_p[j++]=0;
-	PRINT ("handle_T__(*p=(charset=%d;data=\"%s\"), size=%d, target=%p, targetsize=%d\n", p[0], temp_p, size, target, targetsize);
+	PRINT ("handle_T__(*p=(charset=%d;data=\"%s\"), size=%d, target=%p, targetsize=%d\n", p[0], temp_p, (int)size, target, targetsize);
 	free(temp_p);
 #endif
 	target[0]=0;
@@ -95,7 +95,7 @@ static void handle_T___(const uint8_t *p, uint_fast32_t size, char *target, int 
 	int i, j=0;
 	for (i=1;i<size;i++)
 	{
-		if ((p[i]>=32)||(p[i]<=127))
+		if ((p[i]>=32)&&(p[i]<=127))
 			temp_p[j++]=p[i];
 		else {
 			temp_p[j++]='\\';
@@ -105,7 +105,7 @@ static void handle_T___(const uint8_t *p, uint_fast32_t size, char *target, int 
 		}
 	}
 	temp_p[j++]=0;
-	PRINT("handle_T___(*p=(charset=%d;data=\"%s\"), size=%d, target=%p, targetsize=%d) ", p[0], temp_p, size, target, targetsize);
+	PRINT("handle_T___(*p=(charset=%d;data=\"%s\"), size=%d, target=%p, targetsize=%d) ", p[0], temp_p, (int)size, target, targetsize);
 	PRINT("forwarding to handle_T__\n");
 	free(temp_p);
 #endif
@@ -184,7 +184,7 @@ static inline uint_fast32_t unsync(uint8_t *src, uint_fast32_t orgsize)
 {
 	uint_fast32_t retval = 0;
 	uint8_t *dst, *end = src+orgsize-1;
-	PRINT("unsync(src=%p, orgsize=%d) = ", src, orgsize);
+	PRINT("unsync(src=%p, orgsize=%d) = ", src, (int)orgsize);
 	if (!orgsize)
 	{
 		PRINT("0\n");
@@ -204,17 +204,17 @@ static inline uint_fast32_t unsync(uint8_t *src, uint_fast32_t orgsize)
 	*(dst++)=*src;
 	retval++;
 
-	PRINT("%d\n", retval);
+	PRINT("%d\n", (int)retval);
 	return retval;
 }
 
 static int parseid3v20(struct moduleinfostruct *m, const uint8_t *id3v2header, uint8_t *id3v2data, uint_fast32_t len)
 {
-	PRINT("parseid3v20(m, id3v2header = %p (not used), id3v3data = %p, len = %d\n", id3v2header, id3v2data, len);
+	PRINT("parseid3v20(m, id3v2header = %p (not used), id3v3data = %p, len = %d\n", id3v2header, id3v2data, (int)len);
 	while (1)
 	{
 		uint_fast32_t size;
-		PRINT("// parseid3v20, iterate, len = %d\n", len);
+		PRINT("// parseid3v20, iterate, len = %d\n", (int)len);
 		if (len<1)
 		{
 			PRINT("// parseid3v20 len<1, return\n");
@@ -231,7 +231,7 @@ static int parseid3v20(struct moduleinfostruct *m, const uint8_t *id3v2header, u
 			return 1; /* out of data */
 		}
 		size = (id3v2data[3]<<16)|(id3v2data[4]<<8)|(id3v2data[5]);
-		PRINT("// parseid3v20 size=%06x (computed from id3v2data[3]=%02x id3v2data[4]=%02x id3v2data[5]=%02x)\n", size, id3v2data[3], id3v2data[4], id3v2data[5]);
+		PRINT("// parseid3v20 size=%06x (computed from id3v2data[3]=%02x id3v2data[4]=%02x id3v2data[5]=%02x)\n", (int)size, id3v2data[3], id3v2data[4], id3v2data[5]);
 		if (len<(size+6))
 		{
 			PRINT("// parseid3v20 len<(size+6), return\n");
@@ -240,11 +240,11 @@ static int parseid3v20(struct moduleinfostruct *m, const uint8_t *id3v2header, u
 		PRINT("// parseid3v20 tag=\"%c%c%c\"\n", id3v2data[0], id3v2data[1], id3v2data[2]);
 		if (!memcmp(id3v2data, "TP1", 3))
 		{
-			PRINT("// parseid3v20 store into m->composer (size=%d)\n", sizeof(m->composer));
+			PRINT("// parseid3v20 store into m->composer (size=%d)\n", (int)sizeof(m->composer));
 			handle_T__(id3v2data+6, size, m->composer, sizeof(m->composer));
 		} else if (!memcmp(id3v2data, "TT2", 3))
 		{
-			PRINT("// parseid3v20 store into m->modname (size=%d)\n", sizeof(m->modname));
+			PRINT("// parseid3v20 store into m->modname (size=%d)\n", (int)sizeof(m->modname));
 			handle_T__(id3v2data+6, size, m->modname, sizeof(m->modname));
 		}
 		PRINT("// parseid3v20 skipping 6+size into id3v2data/len\n");
@@ -255,12 +255,12 @@ static int parseid3v20(struct moduleinfostruct *m, const uint8_t *id3v2header, u
 
 static int parseid3v23(struct moduleinfostruct *m, const uint8_t *id3v2header, uint8_t *id3v2data, uint_fast32_t len)
 {
-	PRINT("parseid3v23(m, id3v2header = %p (not used), id3v3data = %p, len = %d\n", id3v2header, id3v2data, len);
+	PRINT("parseid3v23(m, id3v2header = %p (not used), id3v3data = %p, len = %d\n", id3v2header, id3v2data, (int)len);
 	while (1)
 	{
 		uint_fast32_t size;
 
-		PRINT("// parseid3v23, iterate, len = %d\n", len);
+		PRINT("// parseid3v23, iterate, len = %d\n", (int)len);
 		if (len<1)
 		{
 			PRINT("// parseid3v23 len<1, return\n");
@@ -278,7 +278,7 @@ static int parseid3v23(struct moduleinfostruct *m, const uint8_t *id3v2header, u
 		}
 
 		size = (id3v2data[4]<<24)|(id3v2data[5]<<16)|(id3v2data[6]<<8)|(id3v2data[7]);
-		PRINT("// parseid3v23 size=%08x (computed from id3v2data[4]=%02x id3v2data[5]=%02x id3v2data[6]=%02x id3v2data[7]=%02x)\n", size, id3v2data[4], id3v2data[5], id3v2data[6], id3v2data[7]);
+		PRINT("// parseid3v23 size=%08x (computed from id3v2data[4]=%02x id3v2data[5]=%02x id3v2data[6]=%02x id3v2data[7]=%02x)\n", (int)size, id3v2data[4], id3v2data[5], id3v2data[6], id3v2data[7]);
 		if (len<(size+10))
 		{
 			PRINT("// parseid3v23 len<(size+10), return\n");
@@ -295,7 +295,7 @@ static int parseid3v23(struct moduleinfostruct *m, const uint8_t *id3v2header, u
 			if (id3v2data[9]&0x02)
 			{
 				_size = unsync(id3v2data+offset, size);
-				PRINT("// parseid3v23 unsync bit set, size updated to %d\n", size);
+				PRINT("// parseid3v23 unsync bit set, size updated to %d\n", (int)size);
 			}
 			if (id3v2data[9]&0x01)
 			{
@@ -328,13 +328,13 @@ static int parseid3v23(struct moduleinfostruct *m, const uint8_t *id3v2header, u
 /* returns 1 on ok */
 static int parseid3v2(struct moduleinfostruct *m, const uint8_t *id3v2header, uint8_t *id3v2data, uint_fast32_t len)
 {
-	PRINT("parseid3v2(m, id3v2header = %p, id3v3data = %p, len = %d\n", id3v2header, id3v2data, len);
+	PRINT("parseid3v2(m, id3v2header = %p, id3v3data = %p, len = %d\n", id3v2header, id3v2data, (int)len);
 	PRINT("// parseid3v2 tag version 2.%d\n", id3v2header[3]);
 
 	if ((id3v2header[5]&0x80))
 	{
 		len = unsync(id3v2data, len);
-		PRINT("// parseid3v2 global unsync bit set, new len = %d\n", len);
+		PRINT("// parseid3v2 global unsync bit set, new len = %d\n", (int)len);
 	}
 	/*fprintf(stderr, "Version 2.%d\n", id3v2header[3]);*/
 	if (id3v2header[3]<4)
@@ -362,7 +362,7 @@ static int parseid3v2(struct moduleinfostruct *m, const uint8_t *id3v2header, ui
 				return 1; /* failed to parse */
 			}
 			esize = (id3v2data[0]<<21)|(id3v2data[1]<<14)|(id3v2data[2]<<7)|(id3v2data[3]);
-			PRINT("// parseid3v2 extended header size=%08x, calculated from id3v2data[0]=%02x, id3v2data[1]=%02x, id3v2data[2]=%02x, id3v2data=%02x\n", esize, id3v2data[0], id3v2data[1], id3v2data[2], id3v2data[3]);
+			PRINT("// parseid3v2 extended header size=%08x, calculated from id3v2data[0]=%02x, id3v2data[1]=%02x, id3v2data[2]=%02x, id3v2data=%02x\n", (int)esize, id3v2data[0], id3v2data[1], id3v2data[2], id3v2data[3]);
 			if (len<esize)
 			{
 				PRINT("// parseid3v2 skipping extended header failed, to little data available (len<size), return\n");
