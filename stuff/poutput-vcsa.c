@@ -254,7 +254,7 @@ static void make_chr_table(void)
 		src[i]=i;
 		chr_table[i]=i; /* in case we bail out */
 	}
-	cd = iconv_open(VCSA_FONT, OCP_FONT);
+	cd = iconv_open(VCSA_FONT "//TRANSLIT", OCP_FONT);
 	if ((iconv_t)(-1)==cd)
 	{
 #ifdef VCSA_VERBOSE

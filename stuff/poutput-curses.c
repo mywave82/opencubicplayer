@@ -962,6 +962,7 @@ int curses_init(void)
 #endif
 	{
 		iconv_t cd;
+		char temp2[64];
 
 		if (temp && strstr (temp, "UTF-8"))
 		{
@@ -972,6 +973,11 @@ int curses_init(void)
 		if (!temp)
 		{
 			temp = "ASCII";
+		}
+		if (!strstr(temp, "//TRANSLIT"))
+		{
+			snprintf (temp2, sizeof (temp2), "%s//TRANSLIT", temp);
+			temp = temp2;
 		}
 
 		cd = iconv_open(temp, OCP_FONT);
@@ -1132,7 +1138,7 @@ int curses_init(void)
 			iconv_close(cd);
 		}
 
-		cd = iconv_open("ISO-8859-1", OCP_FONT);
+		cd = iconv_open("ISO-8859-1//TRANSLIT", OCP_FONT);
 		if (cd == (iconv_t)(-1))
 		{
 			fprintf (stderr, "curses: Failed to make iconv matrix for ISO-8859-1 -> %s\n", OCP_FONT);
