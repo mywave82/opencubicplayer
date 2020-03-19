@@ -11,7 +11,7 @@ struct __attribute__((packed)) moduleinfostruct
 #define MDB_VIRTUAL 16
 #define MDB_BIGMODULE 32
 #define MDB_PLAYLIST 64 /* handle as dir */
-	uint8_t flags1;
+	uint8_t flags1;      /*  0 */
 #define MDB_GENERAL 0
 	/* sorry dudes, but I upgraded the references to 32 bit */
 	uint8_t modtype;     /*  1 */
@@ -24,20 +24,22 @@ struct __attribute__((packed)) moduleinfostruct
 	uint32_t date;       /* 65 */
 	uint16_t playtime;   /* 67 */
 	uint8_t channels;    /* 68 */
-	uint8_t moduleflags; /* 69 */
-	uint8_t flags2;      /* 70 */
+	uint8_t moduleflags; /* 69 => 70 */
+
+	uint8_t flags2;      /*  0 */
 #define MDB_COMPOSER 4
-	char composer[32];
-	char style[31];
-	uint8_t flags3;
-	char unusedfill1[6];
+	char composer[32];   /*  1 */
+	char style[31];      /* 33 => 65 */
+
+	uint8_t flags3;      /*  0 */
+	char unusedfill1[6]; /*  1 */
 #define MDB_COMMENT 8
-	char comment[63];
-	uint8_t flags4;
-	char unusedfill2[6];
+	char comment[63];    /*  7 => 70 */
+
+	uint8_t flags4;      /*  0 */
+	char unusedfill2[6]; /*  1 */
 #define MDB_FUTURE 12
-	char dum[63];
-	char unusedfill3[6];
+	char dum[63];        /*  7 => 70 */
 };
 
 enum

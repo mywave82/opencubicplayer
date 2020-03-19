@@ -63,13 +63,16 @@ struct __attribute__((packed)) modinfoentry
 			/* last uint8_t flags2 is up-padding for the top uint8_t and so on.. */
 		} gen;
 
-		char comment[63];
+		struct __attribute__((packed))
+		{
+			char unusedfill1[6]; /*  1 */
+			char comment[63];
+		} com;
 
 		struct __attribute__((packed))
 		{
 			char composer[32];
 			char style[31];
-
 		} comp;
 	} mie;
 };
@@ -243,16 +246,18 @@ int mdbWriteModuleInfo(uint32_t mdb_ref, struct moduleinfostruct *m)
 	if (*m->comment)
 		m->flags3|=MDB_USED;
 
-	if (m->compref!=0xFFFFFFFF)
-		mdbData[m->compref].flags=MDB_DIRTY;
+	/* free the old references */
 	if (m->comref!=0xFFFFFFFF)
 		mdbData[m->comref].flags=MDB_DIRTY;
+	if (m->compref!=0xFFFFFFFF)
+		mdbData[m->compref].flags=MDB_DIRTY;
 	if (m->futref!=0xFFFFFFFF)
 		mdbData[m->futref].flags=MDB_DIRTY;
-
 	m->compref=0xFFFFFFFF;
 	m->comref=0xFFFFFFFF;
 	m->futref=0xFFFFFFFF;
+
+	/* allocate new ones */
 	if (m->flags2&MDB_USED)
 	{
 		m->compref=mdbGetNew();
@@ -271,6 +276,7 @@ int mdbWriteModuleInfo(uint32_t mdb_ref, struct moduleinfostruct *m)
 		if (m->futref!=0xFFFFFFFF)
 			memcpy(mdbData+m->futref, &m->flags4, sizeof(*mdbData));
 	}
+
 	memcpy(mdbData+mdb_ref, m, sizeof(*mdbData));
 	mdbDirty=1;
 	return 1;
@@ -397,8 +403,10 @@ int mdbInit(void)
 	close(f);
 
 	for (i=0; i<mdbNum; i++)
+	{
 		if ((mdbData[i].flags&(MDB_BLOCKTYPE|MDB_USED))==(MDB_USED|MDB_GENERAL))
 			mdbGenMax++;
+	}
 
 	if (mdbGenMax)
 	{
@@ -593,10 +601,34 @@ invalid:
 	}
 	memcpy(m, mdbData+mdb_ref, sizeof(*mdbData));
 	if (m->compref!=0xFFFFFFFF)
-		memcpy(&m->flags2, mdbData+m->compref, sizeof(*mdbData));
+	{
+		if ((m->compref < mdbNum) && ((mdbData[m->compref].flags & MDB_BLOCKTYPE) == MDB_COMPOSER))
+		{
+			memcpy(&m->flags2, mdbData+m->compref, sizeof(*mdbData));
+		} else {
+			fprintf (stderr, "[mdb] warning - invalid compref\n");
+			m->compref=0xFFFFFFFF;
+		}
+	}
 	if (m->comref!=0xFFFFFFFF)
-		memcpy(&m->flags3, mdbData+m->comref, sizeof(*mdbData));
+	{
+		if ((m->comref < mdbNum) && ((mdbData[m->comref].flags & MDB_BLOCKTYPE) == MDB_COMMENT))
+		{
+			memcpy(&m->flags3, mdbData+m->comref, sizeof(*mdbData));
+		} else {
+			fprintf (stderr, "[mdb] warning - invalid comref\n");
+			m->comref=0xFFFFFFFF;
+		}
+	}
 	if (m->futref!=0xFFFFFFFF)
-		memcpy(&m->flags4, mdbData+m->futref, sizeof(*mdbData));
+	{
+		if ((m->futref < mdbNum) && ((mdbData[m->comref].flags & MDB_BLOCKTYPE) == MDB_FUTURE))
+		{
+			memcpy(&m->flags4, mdbData+m->futref, sizeof(*mdbData));
+		} else {
+			fprintf (stderr, "[mdb] warning - invalid futref\n");
+			m->futref=0xFFFFFFFF;
+		}
+	}
 	return 1;
 }
