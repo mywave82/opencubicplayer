@@ -1261,88 +1261,82 @@ static void displaystr(uint16_t y, uint16_t x, uint8_t attr, const char *str, ui
 	}
 }
 
-static void drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
+static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
 {
-	char buf[60];
 	unsigned int i;
 	uint8_t *scrptr;
-	unsigned int yh1, yh2;
+	uint16_t yh1=(height+2)/3;
+	uint16_t yh2=(height+yh1+1)/2;
 
-	if (hgt>((yh*(unsigned)16)-4))
-		hgt=(yh*16)-4;
-	for (i=0; i<yh; i++)
+	if (value>((unsigned int)(height*16)-4))
 	{
-		if (hgt>=16)
-		{
-			buf[i]=bartops[16];
-			hgt-=16;
-		} else {
-			buf[i]=bartops[hgt];
-			hgt=0;
-		}
+		value=(height*16)-4;
 	}
-	scrptr=vgatextram+(2*x+yb*plScrRowBytes);
-	yh1=(yh+2)/3;
-	yh2=(yh+yh1+1)/2;
+
+	scrptr=vgatextram+(2*x+y*plScrRowBytes);
+
 	for (i=0; i<yh1; i++, scrptr-=plScrRowBytes)
 	{
-		scrptr[0]=buf[i];
+		uint32_t v = ( value >= 16 ) ? 16 : value;
+		value -= v;
+		scrptr[0]=bartops[v];
 		scrptr[1]=plpalette[c&0xFF];
 	}
 	c>>=8;
 	for (i=yh1; i<yh2; i++, scrptr-=plScrRowBytes)
 	{
-		scrptr[0]=buf[i];
+		uint32_t v = ( value >= 16 ) ? 16 : value;
+		value -= v;
+		scrptr[0]=bartops[v];
 		scrptr[1]=plpalette[c&0xFF];
 	}
 	c>>=8;
-	for (i=yh2; i<yh; i++, scrptr-=plScrRowBytes)
+	for (i=yh2; i<height; i++, scrptr-=plScrRowBytes)
 	{
-		scrptr[0]=buf[i];
+		uint32_t v = ( value >= 16 ) ? 16 : value;
+		value -= v;
+		scrptr[0]=bartops[v];
 		scrptr[1]=plpalette[c&0xFF];
 	}
 }
 
-static void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
+static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
 {
 	unsigned int i;
 	uint8_t *scrptr;
-	unsigned int yh1=(yh+2)/3;
-	unsigned int yh2=(yh+yh1+1)/2;
+	uint16_t yh1=(height+2)/3;
+	uint16_t yh2=(height+yh1+1)/2;
 
-	if (hgt>((yh*(unsigned)16)-4))
-	  hgt=(yh*16)-4;
+	y-=height-1;
 
-	scrptr=vgatextram+(2*x+(yb-yh+1)*plScrRowBytes);
-
-	for (i=0; i<yh; i++)
+	if (value>((unsigned int)(height*16)-4))
 	{
-		if (hgt>=16)
-		{
-			buf[i]=ibartops[16];
-			hgt-=16;
-		} else {
-			buf[i]=ibartops[hgt];
-			hgt=0;
-		}
+		value=(height*16)-4;
 	}
-	yh1=(yh+2)/3;
-	yh2=(yh+yh1+1)/2;
+
+	scrptr=vgatextram+(2*x+y*plScrRowBytes);
+
 	for (i=0; i<yh1; i++, scrptr+=plScrRowBytes)
 	{
-		scrptr[0]=buf[i];
+		uint32_t v = ( value >= 16 ) ? 16 : value;
+		value -= v;
+		scrptr[0]=ibartops[v];
 		scrptr[1]=plpalette[c&0xFF];
 	}
 	c>>=8;
 	for (i=yh1; i<yh2; i++, scrptr+=plScrRowBytes)
 	{
-		scrptr[0]=buf[i];
+		uint32_t v = ( value >= 16 ) ? 16 : value;
+		value -= v;
+		scrptr[0]=ibartops[v];
 		scrptr[1]=plpalette[c&0xFF];
 	}
 	c>>=8;
-	for (i=yh2; i<yh; i++, scrptr+=plScrRowBytes)
+	for (i=yh2; i<height; i++, scrptr+=plScrRowBytes)
 	{
-		scrptr[0]=buf[i];
+		uint32_t v = ( value >= 16 ) ? 16 : value;
+		value -= v;
+		scrptr[0]=ibartops[v];
 		scrptr[1]=plpalette[c&0xFF];
 	}
 }

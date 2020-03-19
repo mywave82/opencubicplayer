@@ -345,8 +345,8 @@ L'\u2587', L'\u2587',
 L'\u2588', L'\u2588'};
 #endif
 
-static unsigned char bartops[18]="  ___...---===**#";
-static unsigned char ibartops[18]="  ```^^^~~~===**#";
+static char bartops[18]="  ___...---===**#";
+static char ibartops[18]="  ```^^^~~~===**#";
 
 static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c);
 
@@ -376,8 +376,9 @@ static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, ui
 
 		for (i=0; i < yh1; i++)
 		{
-			buffer[0] = bartops_unicode[16 - ((value>16)?16:value&15)];
-			value-=(value>16)?16:value;
+			uint32_t v = ( value >= 16 ) ? 16 : value;
+			value -= v;
+			buffer[0] = bartops_unicode[16 - v];
 			mvaddwstr (y++, x, buffer);
 		}
 
@@ -387,7 +388,9 @@ static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, ui
 
 		for (i=yh1; i < yh2; i++)
 		{
-			buffer[0] = bartops_unicode[16 - ((value>16)?16:value&15)];
+			uint32_t v = ( value >= 16 ) ? 16 : value;
+			value -= v;
+			buffer[0] = bartops_unicode[16 - v];
 			value-=(value>16)?16:value;
 			mvaddwstr (y++, x, buffer);
 		}
@@ -398,7 +401,9 @@ static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, ui
 
 		for (i=yh2; i < height; i++)
 		{
-			buffer[0] = bartops_unicode[16 - ((value>16)?16:value&15)];
+			uint32_t v = ( value >= 16 ) ? 16 : value;
+			value -= v;
+			buffer[0] = bartops_unicode[16 - v];
 			value-=(value>16)?16:value;
 			mvaddwstr (y++, x, buffer);
 		}
@@ -406,41 +411,38 @@ static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, ui
 	} else
 #endif
 	{
-		char buf[60];
 		unsigned int i;
 		uint16_t yh1=(height+2)/3;
 		uint16_t yh2=(height+yh1+1)/2;
 
-		if (value>((unsigned int)(height*16)-4))
-			value=(height*16)-4;
-
-		for (i=0; i<height; i++)
-		{
-			if (value>=16)
-			{
-				buf[i]=ibartops[16];
-				value-=16;
-			} else {
-				buf[i]=ibartops[value];
-				value=0;
-			}
-		}
 		y-=height-1;
+
+		if (value>((unsigned int)(height*16)-4))
+		{
+			value=(height*16)-4;
+		}
+
 		for (i=0; i<yh1; i++)
 		{
-			displaystr(y, x, c&0xff, buf+i, 1);
+			uint32_t v = ( value >= 16 ) ? 16 : value;
+			value -= v;
+			displaystr(y, x, c&0xff, ibartops + v, 1);
 			y++;
 		}
 		c>>=8;
 		for (i=yh1; i<yh2; i++)
 		{
-			displaystr(y, x, c&0xff, buf+i, 1);
+			uint32_t v = ( value >= 16 ) ? 16 : value;
+			value -= v;
+			displaystr(y, x, c&0xff, ibartops + v, 1);
 			y++;
 		}
 		c>>=8;
 		for (i=yh2; i<height; i++)
 		{
-			displaystr(y, x, c&0xff, buf+i, 1);
+			uint32_t v = ( value >= 16 ) ? 16 : value;
+			value -= v;
+			displaystr(y, x, c&0xff, ibartops + v, 1);
 			y++;
 		}
 	}
@@ -466,8 +468,9 @@ static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uin
 
 		for (i=0; i < yh1; i++)
 		{
-			buffer[0] = bartops_unicode[(value>16)?16:value&15];
-			value-=(value>16)?16:value;
+			uint32_t v = ( value >= 16 ) ? 16 : value;
+			value -= v;
+			buffer[0] = bartops_unicode[v];
 			mvaddwstr (y--, x, buffer);
 		}
 
@@ -476,8 +479,9 @@ static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uin
 
 		for (i=yh1; i < yh2; i++)
 		{
-			buffer[0] = bartops_unicode[(value>16)?16:value&15];
-			value-=(value>16)?16:value;
+			uint32_t v = ( value >= 16 ) ? 16 : value;
+			value -= v;
+			buffer[0] = bartops_unicode[v];
 			mvaddwstr (y--, x, buffer);
 		}
 
@@ -486,47 +490,44 @@ static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uin
 
 		for (i=yh2; i < height; i++)
 		{
-			buffer[0] = bartops_unicode[(value>16)?16:value&15];
-			value-=(value>16)?16:value;
+			uint32_t v = ( value >= 16 ) ? 16 : value;
+			value -= v;
+			buffer[0] = bartops_unicode[v];
 			mvaddwstr (y--, x, buffer);
 		}
 	} else
 #endif
 	{
-		char buf[60];
 		unsigned int i;
 		uint16_t yh1=(height+2)/3;
 		uint16_t yh2=(height+yh1+1)/2;
 
 		if (value>((unsigned int)(height*16)-4))
-			value=(height*16)-4;
-
-		for (i=0; i<height; i++)
 		{
-			if (value>=16)
-			{
-				buf[i]=bartops[16];
-				value-=16;
-			} else {
-				buf[i]=bartops[value];
-				value=0;
-			}
+			value=(height*16)-4;
 		}
+
 		for (i=0; i<yh1; i++)
 		{
-			displaystr(y, x, c&0xff, buf+i, 1);
+			uint32_t v = ( value >= 16 ) ? 16 : value;
+			value -= v;
+			displaystr(y, x, c&0xff, bartops + v, 1);
 			y--;
 		}
 		c>>=8;
 		for (i=yh1; i<yh2; i++)
 		{
-			displaystr(y, x, c&0xff, buf+i, 1);
+			uint32_t v = ( value >= 16 ) ? 16 : value;
+			value -= v;
+			displaystr(y, x, c&0xff, bartops + v, 1);
 			y--;
 		}
 		c>>=8;
 		for (i=yh2; i<height; i++)
 		{
-			displaystr(y, x, c&0xff, buf+i, 1);
+			uint32_t v = ( value >= 16 ) ? 16 : value;
+			value -= v;
+			displaystr(y, x, c&0xff, bartops + v, 1);
 			y--;
 		}
 	}

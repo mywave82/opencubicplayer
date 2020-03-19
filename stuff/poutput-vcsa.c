@@ -355,90 +355,82 @@ void displayvoid(unsigned short y, unsigned short x, unsigned short len)
 	}
 }
 
-void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
+void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
 {
-	unsigned char buf[60];
 	unsigned int i;
 	char *scrptr;
-	uint16_t yh1=(yh+2)/3;
-	uint16_t yh2=(yh+yh1+1)/2;
+	uint16_t yh1=(height+2)/3;
+	uint16_t yh2=(height+yh1+1)/2;
 
-	if (hgt>((unsigned int)(yh*16)-4))
-	  hgt=(yh*16)-4;
+	y-=height-1;
 
-	scrptr=vgatextram+(2*x+(yb-yh+1)*plScrRowBytes);
-
-	for (i=0; i<yh; i++)
+	if (value>((unsigned int)(height*16)-4))
 	{
-		if (hgt>=16)
-		{
-			buf[i]=ibartops[16];
-			hgt-=16;
-		} else {
-			buf[i]=ibartops[hgt];
-			hgt=0;
-		}
+		value=(height*16)-4;
 	}
-	yh1=(yh+2)/3;
-	yh2=(yh+yh1+1)/2;
+
+	scrptr=vgatextram+(2*x+y*plScrRowBytes);
+
 	for (i=0; i<yh1; i++, scrptr+=plScrRowBytes)
 	{
-		scrptr[0]=chr_table[buf[i]];
+		uint32_t v = ( value >= 16 ) ? 16 : value;
+		value -= v;
+		scrptr[0]=chr_table[ibartops[v]];
 		scrptr[1]=plpalette[c&0xFF];
 	}
 	c>>=8;
 	for (i=yh1; i<yh2; i++, scrptr+=plScrRowBytes)
 	{
-		scrptr[0]=chr_table[buf[i]];
+		uint32_t v = ( value >= 16 ) ? 16 : value;
+		value -= v;
+		scrptr[0]=chr_table[ibartops[v]];
 		scrptr[1]=plpalette[c&0xFF];
 	}
 	c>>=8;
-	for (i=yh2; i<yh; i++, scrptr+=plScrRowBytes)
+	for (i=yh2; i<height; i++, scrptr+=plScrRowBytes)
 	{
-		scrptr[0]=chr_table[buf[i]];
+		uint32_t v = ( value >= 16 ) ? 16 : value;
+		value -= v;
+		scrptr[0]=chr_table[ibartops[v]];
 		scrptr[1]=plpalette[c&0xFF];
 	}
 }
 
-void drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
+void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
 {
-	unsigned char buf[60];
 	unsigned int i;
-	char *scrptr=vgatextram+(2*x+yb*plScrRowBytes);
-	uint16_t yh1=(yh+2)/3;
-	uint16_t yh2=(yh+yh1+1)/2;
+	char *scrptr;
+	uint16_t yh1=(height+2)/3;
+	uint16_t yh2=(height+yh1+1)/2;
 
-	if (hgt>((unsigned int)(yh*16)-4))
-	  hgt=(yh*16)-4;
-	for (i=0; i<yh; i++)
+	if (value>((unsigned int)(height*16)-4))
 	{
-		if (hgt>=16)
-		{
-			buf[i]=bartops[16];
-			hgt-=16;
-		} else {
-			buf[i]=bartops[hgt];
-			hgt=0;
-		}
+		value=(height*16)-4;
 	}
-	/*scrptr=vgatextram+(2*x+yb*plScrRowBytes);*/
-	yh1=(yh+2)/3;
-	yh2=(yh+yh1+1)/2;
+
+	scrptr=vgatextram+(2*x+y*plScrRowBytes);
+
 	for (i=0; i<yh1; i++, scrptr-=plScrRowBytes)
 	{
-		scrptr[0]=chr_table[buf[i]];
+		uint32_t v = ( value >= 16 ) ? 16 : value;
+		value -= v;
+		scrptr[0]=chr_table[bartops[v]];
 		scrptr[1]=plpalette[c&0xFF];
 	}
 	c>>=8;
 	for (i=yh1; i<yh2; i++, scrptr-=plScrRowBytes)
 	{
-		scrptr[0]=chr_table[buf[i]];
+		uint32_t v = ( value >= 16 ) ? 16 : value;
+		value -= v;
+		scrptr[0]=chr_table[bartops[v]];
 		scrptr[1]=plpalette[c&0xFF];
 	}
 	c>>=8;
-	for (i=yh2; i<yh; i++, scrptr-=plScrRowBytes)
+	for (i=yh2; i<height; i++, scrptr-=plScrRowBytes)
 	{
-		scrptr[0]=chr_table[buf[i]];
+		uint32_t v = ( value >= 16 ) ? 16 : value;
+		value -= v;
+		scrptr[0]=chr_table[bartops[v]];
 		scrptr[1]=plpalette[c&0xFF];
 	}
 }
@@ -632,8 +624,8 @@ int vcsa_init(int minor)
 	if ((vgafd=open(path, O_RDWR))<0)
 #ifdef VCSA_VERBOSE
 	{
-		char tmp[16+128];
-		sprintf(tmp, "vcsa: open(%s, O_RDWR)", path);
+		char tmp[22+128];
+		snprintf(tmp, sizeof (tmp), "vcsa: open(%s, O_RDWR)", path);
 		perror(tmp);
 		return -1;
 	} else {
