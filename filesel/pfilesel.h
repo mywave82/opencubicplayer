@@ -29,7 +29,7 @@ extern int fsColorTypes;
 extern int fsInfoMode;
 extern int fsPutArcs;
 extern int fsWriteModInfo;
-extern const char *(fsTypeNames[256]); /* type description */
+extern const char *fsTypeNames[256]; /* type description */
 
 extern void fsRegisterExt(const char *ext);
 extern int fsIsModule(const char *ext);

@@ -497,7 +497,7 @@ static int dosReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
  */
 
 static char fsTypeCols[256]; /* colors */
-const char *(fsTypeNames[256]) = {0}; /* type description */
+const char *fsTypeNames[256] = {0}; /* type description */
 
 static char **moduleextensions=0;
 
