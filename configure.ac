@@ -852,7 +852,7 @@ if test "$LINUX+set" != "+set"; then
 	AC_CHECK_HEADER(linux/major.h, , AC_MSG_RESULT([linux kernel header files was not found]);LINUX=)
 fi
 if test "$LINUX+set" != "+set"; then
-	AC_CHECK_HEADER(linux/fb.h, , AC_MSG_RESULT([linux kernel header files was not found]);LINUX=;HAVE_FRAMEBUFFER=)
+	AC_CHECK_HEADER(linux/fb.h, AC_DEFINE(HAVE_FRAMEBUFFER), AC_MSG_RESULT([linux kernel header files was not found]);LINUX=;HAVE_FRAMEBUFFER=)
 fi
 if test "$LINUX+set" != "+set"; then
 	AC_CHECK_HEADER(linux/cdrom.h, CDROM_SUPPORT=1;CDROM_INI="cdrom", AC_MSG_RESULT([linux cdrom kernel header files was not found]))

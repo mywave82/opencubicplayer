@@ -11120,6 +11120,7 @@ fi
 if test "$LINUX+set" != "+set"; then
 	ac_fn_c_check_header_mongrel "$LINENO" "linux/fb.h" "ac_cv_header_linux_fb_h" "$ac_includes_default"
 if test "x$ac_cv_header_linux_fb_h" = xyes; then :
+  $as_echo "#define HAVE_FRAMEBUFFER 1" >>confdefs.h
 
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: linux kernel header files was not found" >&5
