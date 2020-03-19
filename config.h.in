@@ -204,8 +204,6 @@
 #define VCSA_VERBOSE 1
 /* #define CDROM_VERBOSE 1 */
 
-#define PFONT_IDRAWBAR 1
-
 /* #define NO_BACKGROUND_MIXER 1 */ /* needed if you intent to use efence with glibc */
 #define FIX_BACKSPACE 1 /* lot of linux distroes has a broken backspace key in consoles. See stuff-vsca.c */
 

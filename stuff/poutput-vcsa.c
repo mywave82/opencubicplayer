@@ -62,12 +62,8 @@ static char chr_table[256];
 
 static struct termios orgterm, ocpterm;
 
-#ifdef PFONT_IDRAWBAR
 static unsigned char bartops[18]="\xB5\xB6\xB6\xB7\xB7\xB8\xBD\xBD\xBE\xC6\xC6\xC7\xC7\xCF\xCF\xD7\xD7";
 static unsigned char ibartops[18]="\xB5\xD0\xD0\xD1\xD1\xD2\xD2\xD3\xD3\xD4\xD4\xD5\xD5\xD6\xD6\xD7\xD7";
-#else
-static unsigned char bartops[18]="\xB5\xB6\xB7\xB8\xBD\xBE\xC6\xC7\xCF\xD0\xD1\xD2\xD3\xD4\xD5\xD6\xD7";
-#endif
 static int font_replaced=0;
 
 /* Replace font stuff goes here */
@@ -359,7 +355,6 @@ void displayvoid(unsigned short y, unsigned short x, unsigned short len)
 	}
 }
 
-#ifdef PFONT_IDRAWBAR
 void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
 {
 	unsigned char buf[60];
@@ -404,7 +399,6 @@ void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
 		scrptr[1]=plpalette[c&0xFF];
 	}
 }
-#endif
 
 void drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
 {
@@ -680,11 +674,8 @@ int vcsa_init(int minor)
 	_displayvoid=displayvoid;
 
 	_drawbar=drawbar;
-#ifdef PFONT_IDRAWBAR
 	_idrawbar=idrawbar;
-#else
-	_idrawbar=drawbar;
-#endif
+
 	_conRestore=conRestore;
 	_conSave=conSave;
 

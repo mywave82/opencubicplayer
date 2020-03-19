@@ -175,7 +175,7 @@ static void drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t
 		target -= plScrLineBytes;
 	}
 }
-#ifdef PFONT_IDRAWBAR
+
 static void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
 {
 	int yh1, yh2, yh3;
@@ -256,5 +256,3 @@ static void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 		target += plScrLineBytes;
 	}
 }
-#endif
-

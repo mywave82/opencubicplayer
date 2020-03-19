@@ -784,11 +784,8 @@ int sdl2_init(void)
 	_displaystr_iso8859latin1=displaystr_iso8859latin1;
 
 	_drawbar=drawbar;
-#ifdef PFONT_IDRAWBAR
 	_idrawbar=idrawbar;
-#else
-	_idrawbar=drawbar;
-#endif
+
 	_setcur=setcur;
 	_setcurshape=setcurshape;
 	_conRestore=conRestore;

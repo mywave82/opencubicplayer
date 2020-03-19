@@ -1091,12 +1091,8 @@ static void __vga13(void)
 	_plSetGraphMode(13);
 }
 
-#ifdef PFONT_IDRAWBAR
 static uint8_t bartops[18]="\xB5\xB6\xB6\xB7\xB7\xB8\xBD\xBD\xBE\xC6\xC6\xC7\xC7\xCF\xCF\xD7\xD7";
 static uint8_t ibartops[18]="\xB5\xD0\xD0\xD1\xD1\xD2\xD2\xD3\xD3\xD4\xD4\xD5\xD5\xD6\xD6\xD7\xD7";
-#else
-static uint8_t bartops[18]="\xB5\xB6\xB7\xB8\xBD\xBE\xC6\xC7\xCF\xD0\xD1\xD2\xD3\xD4\xD5\xD6\xD7";
-#endif
 
 static unsigned int curshape=0, curposx=0, curposy=0;
 
@@ -1306,10 +1302,9 @@ static void drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t
 		scrptr[1]=plpalette[c&0xFF];
 	}
 }
-#ifdef PFONT_IDRAWBAR
+
 static void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
 {
-	unsigned char buf[60];
 	unsigned int i;
 	uint8_t *scrptr;
 	unsigned int yh1=(yh+2)/3;
@@ -1351,7 +1346,6 @@ static void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 		scrptr[1]=plpalette[c&0xFF];
 	}
 }
-#endif
 
 static void RefreshScreenGraph(void)
 {
@@ -2631,11 +2625,7 @@ int x11_init(int use_explicit)
 
 	_plSetTextMode=plSetTextMode;
 	_drawbar=drawbar;
-#ifdef PFONT_IDRAWBAR
 	_idrawbar=idrawbar;
-#else
-	_idrawbar=drawbar;
-#endif
 
 	_conRestore=conRestore;
 	_conSave=conSave;
