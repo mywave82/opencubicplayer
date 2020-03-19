@@ -148,10 +148,10 @@ static uint8_t *virtual_framebuffer = 0;
 
 static void set_state_textmode(int fullscreen, int width, int height)
 {
-#warning TODO, is this right?
 	if (current_surface)
 	{
-		// SDL_FreeSurface(current_surface);
+		/* This surface belongs to SDL internals */
+		/* SDL_FreeSurface(current_surface); */
 		current_surface = 0;
 	}
 
@@ -243,8 +243,8 @@ static void plSetTextMode(unsigned char x)
 	{
 		if (current_surface)
 		{
-#warning TODO, is this right?
-			// SDL_FreeSurface(current_surface);
+			/* This surface belongs to SDL internals */
+			/* SDL_FreeSurface(current_surface); */
 			current_surface = 0;
 		}
 		plScrMode=255;
@@ -300,8 +300,8 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 
 	if (current_surface)
 	{
-#warning TODO, is this right?
-		// SDL_FreeSurface(current_surface);
+		/* This surface belongs to SDL internals */
+		/* SDL_FreeSurface(current_surface); */
 		current_surface = 0;
 	}
 
@@ -1006,7 +1006,6 @@ static int ___valid_key(uint16_t key)
 
 static void RefreshScreenText(void)
 {
-	void *pixels;
 	uint8_t charbackup[16*8];
 	static int shapetimer=0;
 	static int shapetoggler=0;
@@ -1033,8 +1032,6 @@ static void RefreshScreenText(void)
 		}
 	}
 
-#warning SDL 1.x and SDL2 buffer layout are not 1 to 1
-#if 0
 #warning we need a curshapeattr API, instead of guessing the colors (we no longer have vgamem)
 	if (doshape == 1)
 	{ /* save original buffer, and add a color 15 _ marker */
@@ -1085,7 +1082,6 @@ static void RefreshScreenText(void)
 		}
 		displaystr_cp437 (curposy, curposx, c, "\xdb", 1);
 	}
-#endif
 
 	SDL_LockSurface(current_surface);
 
@@ -1153,8 +1149,6 @@ static void RefreshScreenText(void)
 
 	fontengine_iterate ();
 
-#warning SDL 1.x and SDL2 buffer layout are not 1 to 1
-#if 0
 	/* restore original buffer */
 	if (doshape == 1)
 	{
@@ -1196,7 +1190,6 @@ static void RefreshScreenText(void)
 				break;
 		}
 	}
-#endif
 }
 
 static void RefreshScreenGraph(void)
