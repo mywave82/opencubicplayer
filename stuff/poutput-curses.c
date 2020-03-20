@@ -977,15 +977,24 @@ int curses_init(void)
 		if (!strstr(temp, "//TRANSLIT"))
 		{
 			snprintf (temp2, sizeof (temp2), "%s//TRANSLIT", temp);
-			temp = temp2;
-		}
 
-		cd = iconv_open(temp, OCP_FONT);
-		if (cd == (iconv_t)(-1))
-		{
-			fprintf (stderr, "curses: Failed to make iconv matrix for %s->%s\n", temp, OCP_FONT);
+			cd = iconv_open(temp2, OCP_FONT);
+			if (cd == (iconv_t)(-1))
+			{
+				fprintf (stderr, "curses: Failed to make iconv matrix for %s->%s, retry with %s\n", temp2, OCP_FONT, temp);
+				goto no_translit;
+			} else {
+				fprintf (stderr, "curses: Converting between %s -> %s\n", temp2, OCP_FONT);
+			}
 		} else {
-			fprintf (stderr, "curses: Converting between %s -> %s\n", temp, OCP_FONT);
+no_translit:
+			cd = iconv_open(temp, OCP_FONT);
+			if (cd == (iconv_t)(-1))
+			{
+				fprintf (stderr, "curses: Failed to make iconv matrix for %s->%s\n", temp, OCP_FONT);
+			} else {
+				fprintf (stderr, "curses: Converting between %s -> %s\n", temp, OCP_FONT);
+			}
 		}
 
 		for (i=0; i < 256; i++)
@@ -1141,9 +1150,15 @@ int curses_init(void)
 		cd = iconv_open("ISO-8859-1//TRANSLIT", OCP_FONT);
 		if (cd == (iconv_t)(-1))
 		{
-			fprintf (stderr, "curses: Failed to make iconv matrix for ISO-8859-1 -> %s\n", OCP_FONT);
+			cd = iconv_open("ISO-8859-1", OCP_FONT);
+			if (cd == (iconv_t)(-1))
+			{
+				fprintf (stderr, "curses: Failed to make iconv matrix for ISO-8859-1 -> %s\n", OCP_FONT);
+			} else {
+				fprintf (stderr, "curses: Converting between ISO-8859-1 -> %s\n", OCP_FONT);
+			}
 		} else {
-			fprintf (stderr, "curses: Converting between ISO-8859-1 -> %s\n", OCP_FONT);
+			fprintf (stderr, "curses: Converting between ISO-8859-1//TRANSLIT -> %s\n", OCP_FONT);
 		}
 
 		for (i=0; i < 256; i++)

@@ -34,7 +34,9 @@
 #include "stuff/latin1.h"
 #include "stuff/utf-8.h"
 
-#define TOCODE OCP_FONT "//TRANSLIT"
+#define TOCODE          OCP_FONT
+#define TOCODE_TRANSLIT OCP_FONT "//TRANSLIT"
+
 
 static void glibc_bug_4936_workaround(void);
 
@@ -349,7 +351,8 @@ static void glibc_bug_4936_workaround(void)
 		return;
 	iconv_close(fromunicode);
 	iconv_close(passunicode);
-	fromunicode = iconv_open(TOCODE, /*"UTF-16"*/ "UNICODE" /*"ISO-10646/UCS4/"*/ /*"10646-1:1993"*/);
+	/* glibc bugs, only can happen with the gnu version */
+	fromunicode = iconv_open(TOCODE_TRANSLIT, /*"UTF-16"*/ "UNICODE" /*"ISO-10646/UCS4/"*/ /*"10646-1:1993"*/);
 	assert(fromunicode!=(iconv_t)(-1));
 	passunicode = iconv_open("UNICODE", "UNICODE");
 	assert(passunicode!=(iconv_t)(-1));
@@ -357,27 +360,59 @@ static void glibc_bug_4936_workaround(void)
 
 void  __attribute__((constructor)) id3v2_charset_init(void)
 {
-        fromunicode = iconv_open(TOCODE, "UTF-16" /*"UNICODE"*/ /*"ISO-10646/UCS4/"*/ /*"10646-1:1993"*/);
+	int translit = 1;
+        fromunicode = iconv_open(TOCODE_TRANSLIT, /* "UTF-16" */ "UNICODE" /*"ISO-10646/UCS4/"*/ /*"10646-1:1993"*/);
 	if (fromunicode==(iconv_t)(-1))
 	{
-		fprintf(stderr, "iconv_open(%s, \"UNICODE\") failed: %s\n", TOCODE, strerror(errno));
-		return;
+		translit=0;
+	        fromunicode = iconv_open(TOCODE, /* "UTF-16" */ "UNICODE" /*"ISO-10646/UCS4/"*/ /*"10646-1:1993"*/);
 	}
-	fromunicode_be = iconv_open(TOCODE, /*"UTF-16"*/ "UNICODEBIG" /*"ISO-10646/UCS4/"*/ /*"10646-1:1993"*/);
-	if (fromunicode_be==(iconv_t)(-1))
+	if (fromunicode==(iconv_t)(-1))
 	{
-		fprintf(stderr, "iconv_open(%s, \"UNICODEBIG\") failed: %s\n", TOCODE, strerror(errno));
-		iconv_close(fromunicode);
+		fprintf(stderr, "iconv_open(%s, \"UNICODE\") (tried %s first), ailed: %s\n", TOCODE, TOCODE_TRANSLIT, strerror(errno));
 		return;
 	}
-	fromutf8 = iconv_open(TOCODE, "UTF-8");
-	if (fromutf8==(iconv_t)(-1))
+
+	if (translit)
 	{
-		fprintf(stderr, "iconv_open(%s, \"UTF-8\") failed: %s\n", TOCODE, strerror(errno));
-		iconv_close(fromunicode);
-		iconv_close(fromunicode_be);
-		return;
+		fromunicode_be = iconv_open(TOCODE_TRANSLIT, /*"UTF-16"*/ "UNICODEBIG" /*"ISO-10646/UCS4/"*/ /*"10646-1:1993"*/);
+		if (fromunicode_be==(iconv_t)(-1))
+		{
+			fprintf(stderr, "iconv_open(%s, \"UNICODEBIG\") failed: %s\n", TOCODE_TRANSLIT, strerror(errno));
+			iconv_close(fromunicode);
+			return;
+		}
+	} else {
+		fromunicode_be = iconv_open(TOCODE, /*"UTF-16"*/ "UNICODEBIG" /*"ISO-10646/UCS4/"*/ /*"10646-1:1993"*/);
+		if (fromunicode_be==(iconv_t)(-1))
+		{
+			fprintf(stderr, "iconv_open(%s, \"UNICODEBIG\") failed: %s\n", TOCODE, strerror(errno));
+			iconv_close(fromunicode);
+			return;
+		}
 	}
+
+	if (translit)
+	{
+		fromutf8 = iconv_open(TOCODE_TRANSLIT, "UTF-8");
+		if (fromutf8==(iconv_t)(-1))
+		{
+			fprintf(stderr, "iconv_open(%s, \"UTF-8\") failed: %s\n", TOCODE_TRANSLIT, strerror(errno));
+			iconv_close(fromunicode);
+			iconv_close(fromunicode_be);
+			return;
+		}
+	} else {
+		fromutf8 = iconv_open(TOCODE, "UTF-8");
+		if (fromutf8==(iconv_t)(-1))
+		{
+			fprintf(stderr, "iconv_open(%s, \"UTF-8\") failed: %s\n", TOCODE, strerror(errno));
+			iconv_close(fromunicode);
+			iconv_close(fromunicode_be);
+			return;
+		}
+	}
+
 	passunicode = iconv_open("UNICODE", "UNICODE");
 	if (passunicode==(iconv_t)(-1))
 	{
@@ -390,7 +425,7 @@ void  __attribute__((constructor)) id3v2_charset_init(void)
 	passunicode_be = iconv_open("UNICODEBIG", "UNICODEBIG");
 	if (passunicode_be==(iconv_t)(-1))
 	{
-		fprintf(stderr, "iconv_open(\"UNICODE\", \"UNICODE\") failed: %s\n", strerror(errno));
+		fprintf(stderr, "iconv_open(\"UNICODEBIG\", \"UNICODEBIG\") failed: %s\n", strerror(errno));
 		iconv_close(fromunicode);
 		iconv_close(fromunicode_be);
 		iconv_close(fromutf8);
