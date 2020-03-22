@@ -292,7 +292,6 @@ static void read_utf8(const uint8_t *source, uint_fast32_t sourcelength, char *t
 				/* invalid input character, or we have a character that can't be translated, so skip it */
 				char dummy[7];
 				int length = 0;
-				uint32_t codepoint;
 				if (maxlength >= 6)
 				{
 					memcpy (dummy, src, 6);
@@ -301,7 +300,7 @@ static void read_utf8(const uint8_t *source, uint_fast32_t sourcelength, char *t
 					memcpy (dummy, src, maxlength);
 					dummy[maxlength] = 0;
 				}
-				utf8_decode (src, &codepoint, &length);
+				utf8_decode (src, maxlength, &length);
 				src += length;
 				maxlength -= length;
 				*tgt = '?';

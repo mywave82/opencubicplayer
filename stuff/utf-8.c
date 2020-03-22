@@ -3,158 +3,69 @@
 #include "types.h"
 #include "utf-8.h"
 
-int utf8_decode (const char *_src, uint32_t *codepoint, int *length)
+//#define UNKNOWN_UNICODE 0xFFFD
+int utf8_decode (const char *_src, size_t srclen, int *inc)
 {
 	const unsigned char *src = (const unsigned char *)_src;
+	int left;
+	uint32_t retval;
 
-	*length = 0;
-	if (src[0] == 0x00)
-	{ /* 00000000 */
-		*codepoint = 0;
-		return 0;
+	if (!srclen)
+	{
+		*inc = 0;
+		return 0; // UNKNOWN_UNICODE;
 	}
 
-	*length = 1;
+	*inc = 1;
 	if ((src[0] & 0x80) == 0x00)
-	{ /* 0xxxxxxx */
-		*codepoint = src[0];
-		return 0;	
-	}
-
-	if ((src[0] & 0xc0) == 0x80)
-	{ /* 10xxxxxx - should not appear alone */
-		/* this codepoint is strictly not legal */
-		*codepoint = src[0] & 0x3f;
-		return 1;
-	}
-
-	if ((src[0] & 0xe0) == 0xc0)
-	{ /* 110xxxxx - expect one more byte */
-		*codepoint = (src[0] & 0x1f) << 6;
-		if ((src[1] & 0xc0) == 0x80)
-		{ /* 110xxxxx 10xxxxxx */
-			*codepoint |= src[1] & 0x3f;
-			*length = 2;
-			return 0;
-		}
-		/* this codepoint is broken */
-		return 1;
-	}
-
-	if ((src[0] & 0xf0) == 0xe0)
-	{ /* 1110xxxx - expect two more bytes */
-		*codepoint = ((src[0] & 0x0f)<<12);
-		if ((src[1] & 0xc0) == 0x80)
-		{ /* 1110xxxx 10xxxxxx - expect one more bytes */
-			*codepoint |= (src[1] & 0x3f) << 6;
-			*length = 2;
-			if ((src[2] & 0xc0) == 0x80)
-			{ /* 1110xxxx 10xxxxxx 10xxxxxx */
-				*codepoint |= src[2] & 0x3f;
-				*length = 3;
-				return 0;
-			}
-			return 1;
-		}
-		/* this codepoint is broken */
-		return 1;
-	}
-
-	if ((src[0] & 0xf8) == 0xf0)
-	{ /* 11110xxx - expect three more bytes */
-		*codepoint = ((src[0] & 0x07)<<18);
-		if ((src[1] & 0xc0) == 0x80)
-		{ /* 11110xxx 10xxxxxx - expect two more bytes */
-			*codepoint |= (src[1] & 0x3f) << 12;
-			*length = 2;
-			if ((src[2] & 0xc0) == 0x80)
-			{ /* 11110xxx 10xxxxxx 10xxxxxx - expect one more byte */
-				*codepoint |= (src[2] & 0x3f) << 6;
-				*length = 3;
-				if ((src[3] & 0xc0) == 0x80)
-				{ /* 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx */
-					*codepoint |= src[3] & 0x3f;
-					*length = 4;
-					return 0;
-				}
-				return 1;
-			}
-			return 1;
-		}
-		/* this codepoint is broken */
-		return 1;
-	}
-
-	if ((src[0] & 0xfc) == 0xf8)
-	{ /* 111110xx - expect four more bytes .. - 5 byte sequency are not longer allowed in UTF-8 */
-		*codepoint = ((src[0] & 0x03)<<24);
-		if ((src[1] & 0xc0) == 0x80)
-		{ /* 111110xx 10xxxxxx - expect three more bytes */
-			*codepoint |= (src[1] & 0x3f) << 18;
-			*length = 2;
-			if ((src[2] & 0xc0) == 0x80)
-			{ /* 111110xx 10xxxxxx 10xxxxxx - expect two more byte */
-				*codepoint |= (src[2] & 0x3f) << 12;
-				*length = 3;
-				if ((src[3] & 0xc0) == 0x80)
-				{ /* 111110xx 10xxxxxx 10xxxxxx 10xxxxxx - expect one more byte */
-					*codepoint |= (src[3] & 0x3f) << 6;
-					*length = 4;
-					if ((src[3] & 0xc0) == 0x80)
-					{ /* 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-						*codepoint |= src[4] & 0x3f;
-						*length = 5;
-						return 0; // this lengt his not allowed....
-					}
-					return 1;
-				}
-				return 1;
-			}
-			return 1;
-		}
-		/* this codepoint is broken */
-		return 1;
+	{ /* 0xxxxxxx  - ASCII - quick exit */
+		return src[0];
 	}
 
 	if ((src[0] & 0xfe) == 0xfc)
-	{ /* 1111110x - expect five more bytes .. - 6 byte sequency are not longer allowed in UTF-8 */
-		*codepoint = ((src[0] & 0x03)<<30);
-		if ((src[1] & 0xc0) == 0x80)
-		{ /* 1111110x 10xxxxxx - expect four more bytes */
-			*codepoint |= (src[1] & 0x3f) << 24;
-			*length = 2;
-			if ((src[2] & 0xc0) == 0x80)
-			{ /* 1111110x 10xxxxxx 10xxxxxx - expect three more bytes */
-				*codepoint |= (src[2] & 0x3f) << 18;
-				*length = 3;
-				if ((src[3] & 0xc0) == 0x80)
-				{ /* 1111110x 10xxxxxx 10xxxxxx 10xxxxxx - expect two more bytes */
-					*codepoint |= (src[3] & 0x3f) << 12;
-					*length = 4;
-					if ((src[4] & 0xc0) == 0x80)
-					{ /* 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx - expect one more byte */
-						*codepoint |= (src[4] & 0x3f) << 6;
-						*length = 5;
-						if ((src[5] & 0xc0) == 0x80)
-						{ /* 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-							*codepoint |= (src[5] & 0x3f) << 6;
-							*length = 6;
-							return 0; // this lengt his not allowed....
-						}
-						return 1;
-					}
-					return 1;
-				}
-				return 1;
-			}
-			return 1;
-		}
-		/* this codepoint is broken */
-		return 1;
+	{ /* 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx - 6 byte sequence are not longer allowed in UTF-8 */
+		left = 5;
+		retval = src[0] & 0x01;
+	} else if ((src[0] & 0xfc) == 0xf8)
+	{ /* 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx - 5 byte sequence are not longer allowed in UTF-8 */
+		left = 4;
+		retval = src[0] & 0x03;
+	} else if ((src[0] & 0xf8) == 0xf0)
+	{ /* 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx - 4 byte sequence */
+		left = 3;
+		retval = src[0] & 0x07;
+	} else if ((src[0] & 0xf0) == 0xe0)
+	{ /* 1110xxxx 10xxxxxx 10xxxxxx - 3 byte sequence */
+		left = 2;
+		retval = src[0] & 0x0f;
+	} else if ((src[0] & 0xe0) == 0xc0)
+	{ /* 110xxxxx 10xxxxxx - 2 byte sequence */
+		left = 1;
+		retval = src[0] & 0x1f;
+	} else if ((src[0] & 0xc0) == 0x80)
+	{ /* 10xxxxxx - 1 byte sequnce is not allowed */
+		return src[0] & 0x3f;
+	} else {
+	 /* 11111111 11111110 - invalid UTF-8 code points */
+		return src[0];
 	}
 
-	*codepoint = 0;
-	return 1;
+	--srclen;
+	while (left && srclen)
+	{
+		src++;
+		if ((src[0] & 0xC0) != 0x80)
+		{
+			return retval; //UNKNOWN_UNICODE;
+		}
+		retval <<= 6;
+		retval |= (src[0] & 0x3F);
+		srclen--;
+		left--;
+		(*inc)++;
+	}
+
+	return retval;
 }
 
 int utf8_encode (char *dst, uint32_t codepoint)
@@ -230,6 +141,7 @@ int utf8_encode (char *dst, uint32_t codepoint)
 #if 0
 
 #include <stdio.h>
+#include <string.h>
 
 void decode (char *src)
 {
@@ -271,7 +183,7 @@ void decode (char *src)
 
 	printf ("|| ");
 
-	utf8_decode (src, &codepoint, &length);
+	codepoint = utf8_decode (src, strlen(src), &length);
 
 	j=0;
 	for (i = 31; i >= 0; i--)
