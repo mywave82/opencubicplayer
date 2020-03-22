@@ -671,8 +671,10 @@ XA
 HAVE_CXX11
 ADPLUG_LIBS
 ADPLUG_CXXFLAGS
-HAVE_SDL
 UNIFONTDIR
+FREETYPE2_CFLAGS
+FREETYPE2_LIBS
+HAVE_SDL
 HAVE_SDL2
 SDL2_CONFIG
 SDL_LIBS
@@ -9642,20 +9644,32 @@ else
 	HAVE_SDL2=1
 	$as_echo "#define HAVE_SDL2 1" >>confdefs.h
 
+	with_sdl="no"
+fi
 
-	org_cflags="$CFLAGS"
-	org_cppflags="$CPPFLAGS"
-	org_libs="$LIBS"
-	CFLAGS="$SDL2_CFLAGS"
-	CPPFLAGS="$SDL2_CFLAGS"
-	LIBS="$SDL2_LIBS"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for TTF_Init in -lSDL2_ttf" >&5
-$as_echo_n "checking for TTF_Init in -lSDL2_ttf... " >&6; }
-if ${ac_cv_lib_SDL2_ttf_TTF_Init+:} false; then :
+org_cflags="$CFLAGS"
+org_cppflags="$CPPFLAGS"
+
+
+if test "x$with_sdl" != "xno"; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking SDL support" >&5
+$as_echo_n "checking SDL support... " >&6; }
+	SDL_LIBS=`pkg-config --libs sdl 2> /dev/null`
+	SDL_CFLAGS=`pkg-config --cflags sdl 2> /dev/null`
+	if test "$?" = 0; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$SDL_CFLAGS $SDL_LIBS\"" >&5
+$as_echo "\"$SDL_CFLAGS $SDL_LIBS\"" >&6; }
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: pkg-config failed" >&5
+$as_echo "pkg-config failed" >&6; }
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SDL_Init in -lSDL" >&5
+$as_echo_n "checking for SDL_Init in -lSDL... " >&6; }
+if ${ac_cv_lib_SDL_SDL_Init+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lSDL2_ttf "-lSDL2" $LIBS"
+LIBS="-lSDL  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9665,49 +9679,128 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char TTF_Init ();
+char SDL_Init ();
 int
 main ()
 {
-return TTF_Init ();
+return SDL_Init ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_SDL2_ttf_TTF_Init=yes
+  ac_cv_lib_SDL_SDL_Init=yes
 else
-  ac_cv_lib_SDL2_ttf_TTF_Init=no
+  ac_cv_lib_SDL_SDL_Init=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_SDL2_ttf_TTF_Init" >&5
-$as_echo "$ac_cv_lib_SDL2_ttf_TTF_Init" >&6; }
-if test "x$ac_cv_lib_SDL2_ttf_TTF_Init" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_SDL_SDL_Init" >&5
+$as_echo "$ac_cv_lib_SDL_SDL_Init" >&6; }
+if test "x$ac_cv_lib_SDL_SDL_Init" = xyes; then :
+  SDL_LIBS="-lSDL"
+else
+  if test "x$with_sdl" = "xyes"; then as_fn_error $? "\"libSDL was not found\"" "$LINENO" 5; else with_sdl="no"; fi
+fi
+
+
+		if test "x$with_sdl" != "xno"; then
+			CFLAGS="$CFLAGS -I/usr/include/SDL"
+			CPPFLAGS="$CPPFLAGS -I/usr/include/SDL"
+			ac_fn_c_check_header_mongrel "$LINENO" "SDL.h" "ac_cv_header_SDL_h" "$ac_includes_default"
+if test "x$ac_cv_header_SDL_h" = xyes; then :
+  SDL_CFLAGS="-I/usr/include/SDL"
+else
+  if test "x$with_sdl" = "xyes"; then as_fn_error $? "\"SDL header files not found\"" "$LINENO" 5; else with_sdl="no"; fi
+fi
+
+
+		fi
+	fi
+fi
+
+if test "x$with_sdl" = "xno"; then
+	HAVE_SDL=
+else
+	HAVE_SDL=1
+	$as_echo "#define HAVE_SDL 1" >>confdefs.h
+
+fi
+CFLAGS="$org_cflags"
+CPPFLAGS="$org_cflags"
+
+
+
+if test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1"; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking freetype2 support" >&5
+$as_echo_n "checking freetype2 support... " >&6; }
+	FREETYPE2_LIBS=`pkg-config --libs freetype2 2> /dev/null`
+	FREETYPE2_CFLAGS=`pkg-config --cflags freetype2 2> /dev/null`
+	if test "$?" = 0; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$FREETYPE2_CFLAGS $FREETYPE2_LIBS\"" >&5
+$as_echo "\"$FREETYPE2_CFLAGS $FREETYPE2_LIBS\"" >&6; }
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: pkg-config failed" >&5
+$as_echo "pkg-config failed" >&6; };
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for FT_Init_FreeType in -lfreetype" >&5
+$as_echo_n "checking for FT_Init_FreeType in -lfreetype... " >&6; }
+if ${ac_cv_lib_freetype_FT_Init_FreeType+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lfreetype  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char FT_Init_FreeType ();
+int
+main ()
+{
+return FT_Init_FreeType ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_freetype_FT_Init_FreeType=yes
+else
+  ac_cv_lib_freetype_FT_Init_FreeType=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_freetype_FT_Init_FreeType" >&5
+$as_echo "$ac_cv_lib_freetype_FT_Init_FreeType" >&6; }
+if test "x$ac_cv_lib_freetype_FT_Init_FreeType" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBSDL2_TTF 1
+#define HAVE_LIBFREETYPE 1
 _ACEOF
 
-  LIBS="-lSDL2_ttf $LIBS"
+  LIBS="-lfreetype $LIBS"
 
 else
-  as_fn_error $? "\"libSDL2-ttf needed too for SDL2 support\"" "$LINENO" 5
+  as_fn_error $? "\"libfreetype not found\"" "$LINENO" 5
 fi
 
-	ac_fn_c_check_header_mongrel "$LINENO" "SDL_ttf.h" "ac_cv_header_SDL_ttf_h" "$ac_includes_default"
-if test "x$ac_cv_header_SDL_ttf_h" = xyes; then :
+		ac_fn_c_check_header_mongrel "$LINENO" "ft2built.h" "ac_cv_header_ft2built_h" "$ac_includes_default"
+if test "x$ac_cv_header_ft2built_h" = xyes; then :
 
 else
-  as_fn_error $? "\"libSDL2-ttf development headers needed too for SDL2 support\"" "$LINENO" 5
+  as_fn_error $? "\"libfreetype header files was not found\"" "$LINENO" 5
 fi
 
 
-	SDL2_LIBS="$SDL2_LIBS -lSDL2_ttf"
-	CFLAGS="$org_cflags"
-	CPPFLAGS="$org_cppflags"
-	LIBS="$org_libs"
+	fi
+
 
   EXP_VAR=UNIFONTDIR
   FROM_VAR=$with_unifontdir
@@ -9798,250 +9891,7 @@ fi
 #define UNIFONTDIR "$UNIFONTDIR"
 _ACEOF
 
-
-	with_sdl="no"
 fi
-
-org_cflags="$CFLAGS"
-org_cppflags="$CPPFLAGS"
-
-
-if test "x$with_sdl" != "xno"; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking SDL support" >&5
-$as_echo_n "checking SDL support... " >&6; }
-	SDL_LIBS=`pkg-config --libs sdl 2> /dev/null`
-	SDL_CFLAGS=`pkg-config --cflags sdl 2> /dev/null`
-	if test "$?" = 0; then
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$SDL_CFLAGS $SDL_LIBS\"" >&5
-$as_echo "\"$SDL_CFLAGS $SDL_LIBS\"" >&6; }
-	else
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: pkg-config failed" >&5
-$as_echo "pkg-config failed" >&6; }
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SDL_Init in -lSDL" >&5
-$as_echo_n "checking for SDL_Init in -lSDL... " >&6; }
-if ${ac_cv_lib_SDL_SDL_Init+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lSDL  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char SDL_Init ();
-int
-main ()
-{
-return SDL_Init ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_SDL_SDL_Init=yes
-else
-  ac_cv_lib_SDL_SDL_Init=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_SDL_SDL_Init" >&5
-$as_echo "$ac_cv_lib_SDL_SDL_Init" >&6; }
-if test "x$ac_cv_lib_SDL_SDL_Init" = xyes; then :
-  SDL_LIBS="-lSDL"
-else
-  if test "x$with_sdl" = "xyes"; then as_fn_error $? "\"libSDL was not found\"" "$LINENO" 5; else with_sdl="no"; fi
-fi
-
-
-		if test "x$with_sdl" != "xno"; then
-			CFLAGS="$CFLAGS -I/usr/include/SDL"
-			CPPFLAGS="$CPPFLAGS -I/usr/include/SDL"
-			ac_fn_c_check_header_mongrel "$LINENO" "SDL.h" "ac_cv_header_SDL_h" "$ac_includes_default"
-if test "x$ac_cv_header_SDL_h" = xyes; then :
-  SDL_CFLAGS="-I/usr/include/SDL"
-else
-  if test "x$with_sdl" = "xyes"; then as_fn_error $? "\"SDL header files not found\"" "$LINENO" 5; else with_sdl="no"; fi
-fi
-
-
-		fi
-	fi
-fi
-
-if test "x$with_sdl" = "xno"; then
-	HAVE_SDL=
-else
-	HAVE_SDL=1
-	$as_echo "#define HAVE_SDL 1" >>confdefs.h
-
-
-	org_cflags="$CFLAGS"
-	org_cppflags="$CPPFLAGS"
-	org_libs="$LIBS"
-	CFLAGS="$SDL_CFLAGS"
-	CPPFLAGS="$SDL_CFLAGS"
-	LIBS="$SDL_LIBS"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for TTF_Init in -lSDL_ttf" >&5
-$as_echo_n "checking for TTF_Init in -lSDL_ttf... " >&6; }
-if ${ac_cv_lib_SDL_ttf_TTF_Init+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lSDL_ttf "-lSDL" $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char TTF_Init ();
-int
-main ()
-{
-return TTF_Init ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_SDL_ttf_TTF_Init=yes
-else
-  ac_cv_lib_SDL_ttf_TTF_Init=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_SDL_ttf_TTF_Init" >&5
-$as_echo "$ac_cv_lib_SDL_ttf_TTF_Init" >&6; }
-if test "x$ac_cv_lib_SDL_ttf_TTF_Init" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBSDL_TTF 1
-_ACEOF
-
-  LIBS="-lSDL_ttf $LIBS"
-
-else
-  as_fn_error $? "\"libSDL-ttf needed too for SDL1.x support\"" "$LINENO" 5
-fi
-
-	ac_fn_c_check_header_mongrel "$LINENO" "SDL_ttf.h" "ac_cv_header_SDL_ttf_h" "$ac_includes_default"
-if test "x$ac_cv_header_SDL_ttf_h" = xyes; then :
-
-else
-  as_fn_error $? "\"libSDL-ttf development headers needed too for SDL1.x support\"" "$LINENO" 5
-fi
-
-
-	SDL_LIBS="$SDL_LIBS -lSDL_ttf"
-	CFLAGS="$org_cflags"
-	CPPFLAGS="$org_cppflags"
-	LIBS="$org_libs"
-
-  EXP_VAR=UNIFONTDIR
-  FROM_VAR=$with_unifontdir
-  prefix_save=$prefix
-  exec_prefix_save=$exec_prefix
-  full_var="$FROM_VAR"
-  while true; do
-    new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"; then break; fi
-    full_var=$new_full_var
-  done
-  full_var=$new_full_var
-  UNIFONTDIR="$full_var"
-
-  prefix=$prefix_save
-  exec_prefix=$exec_prefix_save
-
-	as_ac_File=`$as_echo "ac_cv_file_$UNIFONTDIR/unifont.ttf" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $UNIFONTDIR/unifont.ttf" >&5
-$as_echo_n "checking for $UNIFONTDIR/unifont.ttf... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$UNIFONTDIR/unifont.ttf"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-else
-  as_fn_error $? "$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by SDL1.x)" "$LINENO" 5
-fi
-
-	as_ac_File=`$as_echo "ac_cv_file_$UNIFONTDIR/unifont_csur.ttf" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $UNIFONTDIR/unifont_csur.ttf" >&5
-$as_echo_n "checking for $UNIFONTDIR/unifont_csur.ttf... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$UNIFONTDIR/unifont_csur.ttf"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-else
-  as_fn_error $? "$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by SDL1.x)" "$LINENO" 5
-fi
-
-	as_ac_File=`$as_echo "ac_cv_file_$UNIFONTDIR/unifont_upper.ttf" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $UNIFONTDIR/unifont_upper.ttf" >&5
-$as_echo_n "checking for $UNIFONTDIR/unifont_upper.ttf... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$UNIFONTDIR/unifont_upper.ttf"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-else
-  as_fn_error $? "$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by SDL1.x)" "$LINENO" 5
-fi
-
-	cat >>confdefs.h <<_ACEOF
-#define UNIFONTDIR "$UNIFONTDIR"
-_ACEOF
-
-
-fi
-CFLAGS="$org_cflags"
-CPPFLAGS="$org_cflags"
 
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'

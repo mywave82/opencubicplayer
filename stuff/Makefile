@@ -18,10 +18,16 @@ endif
 ifeq ($(HAVE_SDL),1)
 poutput_so+=poutput-sdl.o
 poutput_so_libs+=$(SDL_LIBS)
+NEED_TTF=1
 endif
 ifeq ($(HAVE_SDL2),1)
 poutput_so+=poutput-sdl2.o
 poutput_so_libs+=$(SDL2_LIBS)
+NEED_TTF=1
+endif
+
+ifeq ($(NEED_TTF),1)
+poutput_so+=ttf.o $(FREETYPE2_LIBS)
 endif
 
 ifeq ($(STATIC_BUILD),1)
@@ -124,6 +130,7 @@ poutput-sdl.o: poutput-sdl.c poutput-sdl.h \
 	poutput-sdlx-fontengine.c \
 	poutput-sdlx-cpfont.c \
 	poutput-sdlx-unifont.c \
+	ttf.h \
 	../config.h \
 	../types.h \
 	../boot/console.h \
@@ -137,6 +144,7 @@ poutput-sdl2.o: poutput-sdl2.c poutput-sdl2.h \
 	poutput-sdlx-fontengine.c \
 	poutput-sdlx-cpfont.c \
 	poutput-sdlx-unifont.c \
+	ttf.h \
 	../config.h \
 	../types.h \
 	../boot/console.h \
@@ -224,6 +232,10 @@ framelock.o: framelock.c framelock.h \
 	timer.h \
 	err.h
 	$(CC) framelock.c -o $@ -c
+
+ttf.o: ttf.c ttf.h \
+	utf-8.h
+	$(CC) $< -o $@ -c $(FREETYPE2_CFLAGS) $(FREETYPE2_CFLAGS)
 
 utf-8.o: utf-8.c \
 	../config.h \

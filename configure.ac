@@ -505,27 +505,6 @@ if test "x$with_sdl2" = "xno"; then
 else
 	HAVE_SDL2=1
 	AC_DEFINE(HAVE_SDL2)
-
-dnl check that SDL2-ttf is present too
-	org_cflags="$CFLAGS"
-	org_cppflags="$CPPFLAGS"
-	org_libs="$LIBS"
-	CFLAGS="$SDL2_CFLAGS"
-	CPPFLAGS="$SDL2_CFLAGS"
-	LIBS="$SDL2_LIBS"
-	AC_CHECK_LIB(SDL2_ttf, TTF_Init, , AC_MSG_ERROR("libSDL2-ttf needed too for SDL2 support"), "-lSDL2")
-	AC_CHECK_HEADER(SDL_ttf.h, , AC_MSG_ERROR("libSDL2-ttf development headers needed too for SDL2 support"), )
-	SDL2_LIBS="$SDL2_LIBS -lSDL2_ttf"
-	CFLAGS="$org_cflags"
-	CPPFLAGS="$org_cppflags"
-	LIBS="$org_libs"
-dnl locate the ttf-unifont
-	AS_AC_EXPAND(UNIFONTDIR, $with_unifontdir)
-	AC_CHECK_FILE($UNIFONTDIR/unifont.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)]))
-	AC_CHECK_FILE($UNIFONTDIR/unifont_csur.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)]))
-	AC_CHECK_FILE($UNIFONTDIR/unifont_upper.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)]))
-	AC_DEFINE_UNQUOTED(UNIFONTDIR, "$UNIFONTDIR")
-
 	with_sdl="no"
 fi
 
@@ -557,30 +536,32 @@ if test "x$with_sdl" = "xno"; then
 else
 	HAVE_SDL=1
 	AC_DEFINE(HAVE_SDL)
-
-dnl check that SDL1.x-ttf is present too
-	org_cflags="$CFLAGS"
-	org_cppflags="$CPPFLAGS"
-	org_libs="$LIBS"
-	CFLAGS="$SDL_CFLAGS"
-	CPPFLAGS="$SDL_CFLAGS"
-	LIBS="$SDL_LIBS"
-	AC_CHECK_LIB(SDL_ttf, TTF_Init, , AC_MSG_ERROR("libSDL-ttf needed too for SDL1.x support"), "-lSDL")
-	AC_CHECK_HEADER(SDL_ttf.h, , AC_MSG_ERROR("libSDL-ttf development headers needed too for SDL1.x support"), )
-	SDL_LIBS="$SDL_LIBS -lSDL_ttf"
-	CFLAGS="$org_cflags"
-	CPPFLAGS="$org_cppflags"
-	LIBS="$org_libs"
-dnl locate the ttf-unifont
-	AS_AC_EXPAND(UNIFONTDIR, $with_unifontdir)
-	AC_CHECK_FILE($UNIFONTDIR/unifont.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by SDL1.x)]))
-	AC_CHECK_FILE($UNIFONTDIR/unifont_csur.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by SDL1.x)]))
-	AC_CHECK_FILE($UNIFONTDIR/unifont_upper.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by SDL1.x)]))
-	AC_DEFINE_UNQUOTED(UNIFONTDIR, "$UNIFONTDIR")
-
 fi
 CFLAGS="$org_cflags"
 CPPFLAGS="$org_cflags"
+
+AC_SUBST(FREETYPE2_LIBS)
+AC_SUBST(FREETYPE2_CFLAGS)
+if test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1"; then
+	AC_MSG_CHECKING([freetype2 support])
+	FREETYPE2_LIBS=`pkg-config --libs freetype2 2> /dev/null`
+	FREETYPE2_CFLAGS=`pkg-config --cflags freetype2 2> /dev/null`
+	if test "$?" = 0; then
+		AC_MSG_RESULT("$FREETYPE2_CFLAGS $FREETYPE2_LIBS")
+	else
+		AC_MSG_RESULT([pkg-config failed]);
+	dnl Fall back to non-pkg-config method
+		AC_CHECK_LIB(freetype, FT_Init_FreeType, ,AC_MSG_ERROR("libfreetype not found"))
+		AC_CHECK_HEADER(ft2built.h, , AC_MSG_ERROR("libfreetype header files was not found"))
+	fi
+
+dnl locate the ttf-unifont
+	AS_AC_EXPAND(UNIFONTDIR, $with_unifontdir)
+	AC_CHECK_FILE($UNIFONTDIR/unifont.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)]))
+	AC_CHECK_FILE($UNIFONTDIR/unifont_csur.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)]))
+	AC_CHECK_FILE($UNIFONTDIR/unifont_upper.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)]))
+	AC_DEFINE_UNQUOTED(UNIFONTDIR, "$UNIFONTDIR")
+fi
 
 AC_LANG_PUSH(C++)
 org_cxxflags="$CXXFLAGS"
