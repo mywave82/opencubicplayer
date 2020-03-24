@@ -72,9 +72,9 @@ static void plPrepareScopes(void)
 		for (i=16; i<256; i++)
 			gupdatepal(i, plOpenCPPal[i*3], plOpenCPPal[i*3+1], plOpenCPPal[i*3+2]);
 		gflushpal();
-		memcpy((char*)plVidMem+96*640, plOpenCPPict, (480-96)*640);
+		memcpy(plVidMem+96*640, plOpenCPPict, (480-96)*640);
 	} else {
-		memset((char*)plVidMem+96*640, 0, (480-96)*640);
+		memset(plVidMem+96*640, 0, (480-96)*640);
 	}
 
 	replacebufpos=replacebuf;
@@ -347,7 +347,7 @@ static void drawframe(void)
 #endif
 	for (b2 = replacebuf; b2<replacebufpos; b2++)
 	{
-		*(unsigned char*)(plVidMem+((*b2)&0xffffff))=(*b2)>>24;
+		plVidMem[((*b2)&0xffffff)]=(*b2)>>24;
 	}
 
 	memcpy(replacebuf,dotbuf,(dotbufpos-dotbuf)*4);

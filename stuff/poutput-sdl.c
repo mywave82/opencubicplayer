@@ -158,8 +158,7 @@ static void set_state_textmode(int fullscreen, int width, int height)
 	if (virtual_framebuffer)
 	{
 		free(virtual_framebuffer);
-		virtual_framebuffer=0;
-		assert (!plVidMem); /* plVidMem should already be cleared, probably */
+		plVidMem = virtual_framebuffer = 0;
 	}
 
 	if (fullscreen != do_fullscreen)
@@ -212,7 +211,7 @@ again:
 
 	plScrRowBytes = plScrWidth*2;
 
-	virtual_framebuffer = calloc (plScrLineBytes, plScrLines);
+	plVidMem = virtual_framebuffer = calloc (plScrLineBytes, plScrLines);
 	if (!virtual_framebuffer)
 	{
 		fprintf(stderr, "[SDL-video] calloc() failed\n");
@@ -308,7 +307,7 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 	if (virtual_framebuffer)
 	{
 		free(virtual_framebuffer);
-		virtual_framebuffer=0;
+		plVidMem = virtual_framebuffer = 0;
 	}
 
 	if ((do_fullscreen = fullscreen))
@@ -333,13 +332,12 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 
 	plScrRowBytes=plScrWidth*2;
 
-	virtual_framebuffer=calloc(plScrLineBytes, plScrLines);
+	plVidMem = virtual_framebuffer = calloc(plScrLineBytes, plScrLines);
 	if (!virtual_framebuffer)
 	{
 		fprintf(stderr, "[SDL-video] calloc() failed\n");
 		exit(-1);
 	}
-	plVidMem=(char *)virtual_framebuffer;
 
 	sdl_gflushpal();
 
@@ -358,7 +356,7 @@ static int __plSetGraphMode(int high)
 	if (virtual_framebuffer)
 	{
 		free(virtual_framebuffer);
-		virtual_framebuffer=0;
+		plVidMem = virtual_framebuffer = 0;
 	}
 
 	if (high<0)
@@ -656,7 +654,7 @@ void sdl_done(void)
 	if (virtual_framebuffer)
 	{
 		free(virtual_framebuffer);
-		virtual_framebuffer=0;
+		plVidMem = virtual_framebuffer = 0;
 	}
 
 	need_quit = 0;

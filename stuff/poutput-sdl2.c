@@ -330,8 +330,7 @@ static void set_state_textmode(int fullscreen, int width, int height)
 	if (virtual_framebuffer)
 	{
 		free (virtual_framebuffer);
-		virtual_framebuffer=0;
-		assert (!plVidMem); /* plVidMem should already be cleared, probably */
+		plVidMem = virtual_framebuffer=0;
 	}
 
 	if (fullscreen != do_fullscreen)
@@ -453,7 +452,7 @@ static void set_state_textmode(int fullscreen, int width, int height)
 		}
 	}
 
-	virtual_framebuffer = calloc (plScrLineBytes, plScrLines);
+	plVidMem = virtual_framebuffer = calloc (plScrLineBytes, plScrLines);
 
 	sdl2_gflushpal();
 
@@ -614,8 +613,7 @@ static int __plSetGraphMode(int high)
 	if (virtual_framebuffer)
 	{
 		free (virtual_framebuffer);
-		virtual_framebuffer=0;
-		plVidMem=0;
+		plVidMem = virtual_framebuffer = 0;
 	}
 	sdl2_close_window();
 
@@ -629,8 +627,7 @@ static int __plSetGraphMode(int high)
 
 	set_state_graphmode(do_fullscreen, 0, 0);
 
-	virtual_framebuffer=malloc(plScrLineBytes * plScrLines);
-	plVidMem=(char *)virtual_framebuffer;
+	plVidMem = virtual_framebuffer=malloc(plScrLineBytes * plScrLines);
 
 quick:
 	if (virtual_framebuffer)
@@ -819,8 +816,7 @@ void sdl2_done(void)
 	if (virtual_framebuffer)
 	{
 		free (virtual_framebuffer);
-		virtual_framebuffer=0;
-		plVidMem=0;
+		plVidMem = virtual_framebuffer = 0;
 	}
 
 	need_quit = 0;

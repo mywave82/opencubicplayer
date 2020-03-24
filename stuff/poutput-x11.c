@@ -137,7 +137,7 @@ static Pixmap icon=0;
 static Pixmap icon_mask=0;
 
 static GC copyGC=0;
-static char *virtual_framebuffer;
+static uint8_t *virtual_framebuffer;
 
 static int cachemode=-1;
 
@@ -1071,7 +1071,7 @@ static int __plSetGraphMode(int high)
 		plVidMem=virtual_framebuffer;
 	} else {
 		virtual_framebuffer=0;
-		plVidMem=image->data;
+		plVidMem=(uint8_t *)image->data;
 	}
 quick:
 	memset(image->data, 0, image->bytes_per_line * plScrLines);
@@ -1344,7 +1344,7 @@ static void RefreshScreenGraph(void)
 {
 	if (virtual_framebuffer)
 	{
-		uint8_t *src=(uint8_t *)virtual_framebuffer;
+		uint8_t *src=virtual_framebuffer;
 		uint8_t *dst_line = (uint8_t *)image->data;
 		int Y=0, j;
 

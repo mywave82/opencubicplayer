@@ -79,4 +79,4 @@ unsigned int plScrWidth;
 char plVidType;
 unsigned char plScrType;
 int plScrMode;
-char *plVidMem;
+uint8_t *plVidMem;

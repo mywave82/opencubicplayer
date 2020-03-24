@@ -146,10 +146,10 @@ void generic_gdrawchar8(unsigned short x, unsigned short y, unsigned char c, uns
 {
 	unsigned char *cp=plFont88[c];
 	unsigned long p=y*plScrLineBytes+x;
-	unsigned char *scr;
+	uint8_t *scr;
 	short i,j;
 
-	scr=(unsigned char*)(plVidMem+p);
+	scr=plVidMem+p;
 
 	f=plpalette[f]&0x0f;
 	b=plpalette[b]&0x0f;
@@ -170,10 +170,10 @@ void generic_gdrawchar8t(unsigned short x, unsigned short y, unsigned char c, un
 {
 	unsigned char *cp=plFont88[c];
 	unsigned long p=y*plScrLineBytes+x;
-	char *scr;
+	uint8_t *scr;
 	short i,j;
 
-	scr=(char*)(plVidMem+p);
+	scr=plVidMem+p;
 
 	f=plpalette[f]&0x0f;
 
@@ -195,8 +195,8 @@ void generic_gdrawchar8p(unsigned short x, unsigned short y, unsigned char c, un
 {
 	unsigned char *cp=plFont88[c];
 	unsigned long p=y*plScrLineBytes+x;
-	char *scr;
-	char *pic;
+	uint8_t *scr;
+	uint8_t *pic;
 	short i,j;
 
 	if (!picp)
@@ -206,8 +206,8 @@ void generic_gdrawchar8p(unsigned short x, unsigned short y, unsigned char c, un
 	}
 
 	f=plpalette[f]&0x0f;
-	scr=(char*)(plVidMem+p);
-	pic=(char*)picp+p;
+	scr=plVidMem+p;
+	pic=(uint8_t *)picp+p;
 
 	for (i=0; i<8; i++)
 	{
@@ -230,10 +230,10 @@ void generic_gdrawchar8p(unsigned short x, unsigned short y, unsigned char c, un
 void generic_gdrawstr(unsigned short y, unsigned short x, const char *str, unsigned short len, unsigned char f, unsigned char b)
 {
 	unsigned long p=16*y*plScrLineBytes+x*8;
-	unsigned char *sp;
+	uint8_t *sp;
 	short i,j,k;
 
-	sp=(unsigned char*)plVidMem+p;
+	sp=plVidMem+p;
 
 	f=plpalette[f]&0x0f;
 	b=plpalette[b]&0x0f;
@@ -260,8 +260,8 @@ void generic_gdrawcharp(unsigned short x, unsigned short y, unsigned char c, uns
 
 	unsigned char *cp=plFont816[c];
 	unsigned long p=y*plScrLineBytes+x;
-	char *pic=(char*)picp+p;
-	char *scr;
+	uint8_t *pic=(uint8_t *)picp+p;
+	uint8_t *scr;
 	short i,j;
 
 	if (!picp)
@@ -270,7 +270,7 @@ void generic_gdrawcharp(unsigned short x, unsigned short y, unsigned char c, uns
 		return;
 	}
 
-	scr=(char*)(plVidMem+p);
+	scr=plVidMem+p;
 
 	f=plpalette[f]&0x0f;
 
@@ -296,12 +296,12 @@ void generic_gdrawchar(unsigned short x, unsigned short y, unsigned char c, unsi
 {
 	unsigned char *cp=plFont816[c];
 	unsigned long p=y*plScrLineBytes+x;
-	char *scr;
+	uint8_t *scr;
 	short i,j;
 
 	f=plpalette[f]&0x0f;
 	b=plpalette[b]&0x0f;
-	scr=(char*)(plVidMem+p);
+	scr=plVidMem+p;
 
 	for (i=0; i<16; i++)
 	{
@@ -318,10 +318,10 @@ void generic_gdrawchar(unsigned short x, unsigned short y, unsigned char c, unsi
 void generic_gupdatestr(unsigned short y, unsigned short x, const uint16_t *str, unsigned short len, uint16_t *old)
 {
 	unsigned long p=16*y*plScrLineBytes+x*8;
-	unsigned char *sp;
+	uint8_t *sp;
 	short i,j,k;
 
-	sp=(unsigned char*)plVidMem+p;
+	sp=plVidMem+p;
 
 	for (k=0; k<len; k++, str++, old++)
 		if (*str!=*old)

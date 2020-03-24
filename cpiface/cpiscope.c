@@ -105,9 +105,9 @@ static void plPrepareScopes(void)
 		for (i=16; i<256; i++)
 			gupdatepal(i, plOpenCPPal[i*3], plOpenCPPal[i*3+1], plOpenCPPal[i*3+2]);
 		gflushpal();
-		memcpy((char*)plVidMem+96*640, plOpenCPPict, (480-96)*640);
+		memcpy(plVidMem+96*640, plOpenCPPict, (480-96)*640);
 	} else {
-		memset((char*)plVidMem+96*640, 0, (480-96)*640);
+		memset(plVidMem+96*640, 0, (480-96)*640);
 	}
 
 	memset(scopes, 0, MAXDOTS*2);
@@ -201,7 +201,7 @@ static void plotbuf(uint32_t *buf, int len)
 	uint8_t *b=(uint8_t*)buf;
 
 	for (i=0; i<len; i++, b+=4)
-		*(uint8_t*)(plVidMem+(buf[i]&0x00ffffff))=(buf[i])>>24;
+		plVidMem[(buf[i]&0x00ffffff)]=(buf[i])>>24;
 }
 
 static void drawscope(int x, int y, const int16_t *in, int16_t *out, int num, uint8_t col, int step)

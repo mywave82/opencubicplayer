@@ -73,12 +73,12 @@ enum
 	vidModern, /* text and graphical systems.. try to not override video-mode */
 };
 
-extern unsigned int plScrHeight;               /* How many textlines can we currently fit. Undefined for wurfel-mode */
-extern unsigned int plScrWidth;                /* How many characters can we currently fir on a line */
+extern unsigned int plScrHeight;        /* How many textlines can we currently fit. Undefined for wurfel-mode */
+extern unsigned int plScrWidth;         /* How many characters can we currently fir on a line */
 extern char plVidType;                  /* vidNorm for textmode only, or vidVESA for graphical support also */
 extern unsigned char plScrType;         /* Last set textmode */
 extern int plScrMode;                   /* If we are in graphical mode, this value is set to either 13 (for wurfel), 100 for 640x480 or 101 for 1024x768 */
-extern char *plVidMem;                  /* This points to the current selected bank, and should atleast provide 64k of available bufferspace */
+extern uint8_t *plVidMem;               /* This points to the current selected bank, and should atleast provide 64k of available bufferspace */
 extern int plScrLineBytes;              /* How many bytes does one line from plVidMem use (can be padded) */
 extern int plScrLines;                  /* How many graphical lines do we have, should always be 480 or 768, but can be padded */
 extern void make_title(char *part);

@@ -66,7 +66,7 @@ static uint32_t cfUseAnis=0xFFFFFFFF;
 static uint32_t wuerfelFilesCount=0;
 static char **wuerfelFiles=0;
 
-static void memcpyintr(char *d, const char *s, unsigned long l)
+static void memcpyintr(uint8_t *d, const uint8_t *s, unsigned long l)
 {
 	do {
 		*d=*s;
@@ -463,12 +463,12 @@ static void wuerfelDraw(void)
 	{
 		if(!wuerfelversion)
 		{
-			memcpyintr(plVidMem+320*(100+i-wuerfelscroll)*2, (char *)wuerfelframebuf+i*160, 80);
-			memcpyintr(plVidMem+320*((100+i-wuerfelscroll)*2+1), (char *)wuerfelframebuf+i*160, 80);
-			memcpyintr(plVidMem+320*(100+i-wuerfelscroll)*2+2, (char *)wuerfelframebuf+i*160+1, 80);
-			memcpyintr(plVidMem+320*((100+i-wuerfelscroll)*2+1)+2, (char *)wuerfelframebuf+i*160+1, 80);
+			memcpyintr(plVidMem+320* (100+i-wuerfelscroll)*2,       wuerfelframebuf+i*160, 80);
+			memcpyintr(plVidMem+320*((100+i-wuerfelscroll)*2+1),    wuerfelframebuf+i*160, 80);
+			memcpyintr(plVidMem+320* (100+i-wuerfelscroll)*2+2,     wuerfelframebuf+i*160+1, 80);
+			memcpyintr(plVidMem+320*((100+i-wuerfelscroll)*2+1)+2,  wuerfelframebuf+i*160+1, 80);
 		} else {
-			memcpy(plVidMem+320*(wuerfelscanlines+i-wuerfelscroll),(char *)wuerfelframebuf+i*320, 320);
+			memcpy(plVidMem+320*(wuerfelscanlines+i-wuerfelscroll), wuerfelframebuf+i*320, 320);
 		}
 	}
 

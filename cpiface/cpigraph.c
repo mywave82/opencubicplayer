@@ -153,37 +153,37 @@ static void plPrepareStripes(void)
 	{
 		int i;
 
-		memset((char*)plVidMem+32*1024, 128, 32*1024);
-		memset((char*)plVidMem + 128 * 1024, 128, 512 * 1024 );
+		memset(plVidMem+32*1024, 128, 32*1024);
+		memset(plVidMem + 128 * 1024, 128, 512 * 1024 );
 		gdrawstr(42, 1, "scale: ", 7, 0x09, 0);
 		for (i=0; i<256; i++)
 		{
 			int j;
 			for (j=0; j<16; j++)
-				*(unsigned char*)(plVidMem+672*1024 +j*plScrLineBytes+64+i)=(i>>1)+128;
+				plVidMem[672*1024 +j*plScrLineBytes+64+i]=(i>>1)+128;
 		}
 		for (i=0; i<128; i++)
 		{
 			int j;
 			for (j=0; j<16; j++)
-				*(unsigned char*)(plVidMem+672*1024+j*plScrLineBytes+352+i)=(i>>1)+64;
+				plVidMem[672*1024+j*plScrLineBytes+352+i]=(i>>1)+64;
 
 		}
 	} else {
 		int i;
-		memset((char*)plVidMem+96*640, 128, 170 * 1024);
+		memset(plVidMem+96*640, 128, 170 * 1024);
 		gdrawstr(24, 1, "scale: ", 7, 0x09, 0);
 		for (i=0; i<128; i++)
 		{
 			int j;
 			for (j=0; j<16; j++)
-				*(unsigned char*)(plVidMem+384*640+64+i+j*640)=i+128;
+				plVidMem[384*640+64+i+j*640]=i+128;
 		}
 		for (i=0; i<64; i++)
 		{
 			int j;
 			for (j=0; j<16; j++)
-				*(unsigned char*)(plVidMem+384*640+232+i+j*640)=i+64;
+				plVidMem[384*640+232+i+j*640]=i+64;
 		}
 	}
 }
@@ -264,7 +264,7 @@ void drawgbar(unsigned long x, unsigned char h);
 
 void drawgbar(unsigned long x, unsigned char h)
 {
-	char *vmx, *pos;
+	uint8_t *vmx, *pos;
 	short value;
 
 	vmx=plVidMem+(479-0x40)*plScrLineBytes;
@@ -313,8 +313,8 @@ void drawgbarb(unsigned long x, unsigned char h);
 
 void drawgbarb(unsigned long x, unsigned char h)
 {
-	char *vmx, *pos;
-	char value=0x40;
+	uint8_t *vmx, *pos;
+	uint8_t value=0x40;
 
 	vmx=plVidMem+(768-0x40)*plScrLineBytes;
 	pos=plVidMem+x+767*plScrLineBytes;
@@ -411,7 +411,7 @@ static void plDrawStripes(void)
 			}
 		}
 
-		sp=(unsigned char *)(plVidMem+96*plScrLineBytes);
+		sp=plVidMem+96*plScrLineBytes;
 		for (i=0; i<544; i++, sp+=plScrLineBytes)
 		{
 			sp[plStripePos]=(linebuf[2*i]+linebuf[2*i+1])>>1;
@@ -503,7 +503,7 @@ static void plDrawStripes(void)
 			}
 		}
 
-		sp=(unsigned char *)(plVidMem+96*plScrLineBytes);
+		sp=plVidMem+96*plScrLineBytes;
 		for (i=0; i<272; i++, sp+=plScrLineBytes)
 		{
 			sp[plStripePos]=linebuf[i];

@@ -65,7 +65,7 @@ static unsigned char dotcirctab[17][16];
 
 static void drawbox(uint16_t y, int16_t x)
 {
-	char *scrpos=(char *)plVidMem+96*640+y*dothgt*640+x*32;
+	uint8_t *scrpos=plVidMem+96*640+y*dothgt*640+x*32;
 	int j;
 
 	for (j=0; j<dothgt; j++)
@@ -364,7 +364,7 @@ static void plPrepareDots()
 
 	if (plOpenCPPict)
 	{
-		memcpy((char*)plVidMem+96*640, plOpenCPPict, (480-96)*640 );
+		memcpy(plVidMem+96*640, plOpenCPPict, (480-96)*640 );
 	}
 
 	for (i=0; i<65; i++)

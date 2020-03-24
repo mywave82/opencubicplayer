@@ -57,7 +57,7 @@ static uint16_t green[256]={0x0000, 0x0000, 0xaaaa, 0xaaaa, 0x0000, 0x0000, 0x55
 static uint16_t blue[256]= {0x0000, 0xaaaa, 0x0000, 0xaaaa, 0x0000, 0xaaaa, 0x0000, 0xaaaa, 0x5555, 0xffff, 0x5555, 0xffff, 0x5555, 0xffff, 0x5555, 0xffff};
 
 static int fd;
-static char *fbmem;
+static uint8_t *fbmem;
 
 static int get_static_info(void)
 {
@@ -149,7 +149,7 @@ static int __plSetGraphMode(int high)
 #endif
 	if (high==-1)
 	{
-		plVidMem=0;
+		plVidMem = 0;
 		ioctl(fd, FBIOPUT_VSCREENINFO, &orgmode);
 		return 0;
 	}
@@ -173,7 +173,7 @@ static int __plSetGraphMode(int high)
 		plScrLineBytes=640; /* not good, but my framebuffer bugs to much */
 	}
 
-	plVidMem=fbmem;
+	plVidMem = fbmem;
 	memset(fbmem, 0, fix.smem_len);
 
 	colormap.start=0;
