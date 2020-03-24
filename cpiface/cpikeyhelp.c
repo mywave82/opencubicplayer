@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '08-'10 Stian Skjelstad <stian@nixia.no>
+ * copyright (c) '08-'20 Stian Skjelstad <stian@nixia.no>
  *
  * Keyboard shortcut help-browser.
  *'
@@ -19,6 +19,7 @@
  */
 
 #include "config.h"
+#include <string.h>
 #include "types.h"
 #include "boot/plinkman.h"
 #include "stuff/poutput.h"
@@ -248,6 +249,88 @@ static void DrawBox(void)
 	displaystr(top+height, left+width, 0x04, "\xd9", 1);
 }
 
+void SecretFontDisplay(void)
+{
+	int fontDisplay = 0;
+
+	while (1)
+	{
+		char buffer[80];
+		int i;
+		memset (buffer, 32, sizeof (buffer));
+		switch (fontDisplay)
+		{
+			default:
+			case 0:
+				fontDisplay=0;
+				displaystr (2, 1, 0x04, " =-=-=-= CP437+OCP =-=-=-=" , 78);
+				displaystr (3, 1, 0x04, "   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F", 78);
+				for (i=0; i < 16; i++)
+				{
+					buffer[1] = "0123456789ABCDEF"[i];
+					buffer[3] = i ? i * 16  :32;
+					buffer[6] = i * 16 + 1;
+					buffer[9] = i * 16 + 2;
+					buffer[12] = i * 16 + 3;
+					buffer[15] = i * 16 + 4;
+					buffer[18] = i * 16 + 5;
+					buffer[21] = i * 16 + 6;
+					buffer[24] = i * 16 + 7;
+					buffer[27] = i * 16 + 8;
+					buffer[30] = i * 16 + 9;
+					buffer[33] = i * 16 + 10;
+					buffer[36] = i * 16 + 11;
+					buffer[39] = i * 16 + 12;
+					buffer[42] = i * 16 + 13;
+					buffer[45] = i * 16 + 14;
+					buffer[48] = i * 16 + 15;
+					displaystr (4 + i, 1, 0x04, buffer, 78);
+				}
+				break;
+			case 1:
+				displaystr_iso8859latin1 (2, 1, 0x04, " =-=-=-= ISO8859-LATIN1 =-=-=-=" , 78);
+				displaystr_iso8859latin1 (3, 1, 0x04, "   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F", 78);
+				for (i=0; i < 16; i++)
+				{
+					buffer[1] = "0123456789ABCDEF"[i];
+					buffer[3] = i ? i * 16  :32;
+					buffer[6] = i * 16 + 1;
+					buffer[9] = i * 16 + 2;
+					buffer[12] = i * 16 + 3;
+					buffer[15] = i * 16 + 4;
+					buffer[18] = i * 16 + 5;
+					buffer[21] = i * 16 + 6;
+					buffer[24] = i * 16 + 7;
+					buffer[27] = i * 16 + 8;
+					buffer[30] = i * 16 + 9;
+					buffer[33] = i * 16 + 10;
+					buffer[36] = i * 16 + 11;
+					buffer[39] = i * 16 + 12;
+					buffer[42] = i * 16 + 13;
+					buffer[45] = i * 16 + 14;
+					buffer[48] = i * 16 + 15;
+					displaystr_iso8859latin1 (4 + i, 1, 0x04, buffer, 78);
+				}
+				break;
+		}
+		while (!ekbhit())
+		{
+			framelock();
+		}
+
+		switch (egetch())
+		{
+			case 'S':
+			case ' ':
+				fontDisplay++;
+				break;
+			case KEY_ESC:
+				return;
+		}
+	}
+
+}
+
 void cpiKeyHelpDisplay(void)
 {
 	unsigned int i, j, offset=0;
@@ -314,6 +397,9 @@ void cpiKeyHelpDisplay(void)
 				keymapping_n=0;
 				cpiKeyHelpReset();
 				return;
+			case 'S':
+				SecretFontDisplay();
+				break;
 		}
 	}
 }
