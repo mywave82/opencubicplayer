@@ -161,18 +161,21 @@ uint8_t *fontengine_8x16(uint32_t codepoint, int *width)
 		text_surface = TTF_RenderGlyph32_Shaded (unifont_csur, codepoint);
 	}
 
+	entry = malloc (sizeof (*entry));
 	if (text_surface)
 	{
 		if ((text_surface->w != 8) && (text_surface->w != 16))
 		{
+			memset (entry->data, 0xaa, sizeof (entry->data));
+			entry->width = 8;
 			fprintf (stderr, "TTF + unifont + U+%X: gave invalid width: %d\n", (int)codepoint, (int)text_surface->w);
 		} if (text_surface->h != 16)
 		{
+			memset (entry->data, 0x42, sizeof (entry->data));
+			entry->width = 8;
 			fprintf (stderr, "TTF + unifont + U+%X: gave invalid height: %d\n", (int)codepoint, (int)text_surface->h);
 		} else {
 			int x, y, o=0, i=0;
-			entry = malloc (sizeof (*entry));
-			entry->codepoint = codepoint;
 			entry->width = text_surface->w;
 			for (y=0; y < text_surface->h; y++)
 			{
@@ -192,21 +195,18 @@ uint8_t *fontengine_8x16(uint32_t codepoint, int *width)
 				i -= text_surface->w;
 				i += text_surface->pitch;
 			}
-			entry->score=0;
-			fontengine_append(entry);
 		}
+	} else {
+		memset (entry->data, 0x18, sizeof (entry->data));
+		entry->width = 8;
+		fprintf (stderr, "TTF + unifont + U+%X: did not find a glyph\n", (int)codepoint);
 	}
+	entry->codepoint = codepoint;
+	entry->score=0;
+	fontengine_append(entry);
 
-	if (entry)
-	{
-		*width = entry->width;
-		return entry->data;
-	}
-
-#warning FALLBACK to original font
-
-	*width = 0;
-	return 0;
+	*width = entry->width;
+	return entry->data;
 }
 
 static int fontengine_init (void)
@@ -269,7 +269,19 @@ do_not_add:
 
 static void fontengine_done (void)
 {
-#warning free memory here..... except the score 255 ones... + index
+	int i;
+	for (i=0; i < font_entries_fill; i++)
+	{
+		if (font_entries[i]->score != 255) // do not try to free static entries
+		{
+			free (font_entries[i]);
+		}
+	}
+	free (font_entries);
+	font_entries = 0;
+	font_entries_fill = 0;
+	font_entries_allocated = 0;
+
 	if (unifont_bmp)
 	{
 		TTF_CloseFont(unifont_bmp);
