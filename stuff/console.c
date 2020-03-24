@@ -54,7 +54,8 @@
 #ifdef HAVE_FRAMEBUFFER
 #include "poutput-vcsa.h"
 #endif
-#include "stuff/latin1.h"
+#include "latin1.h"
+#include "utf-8.h"
 
 static void reset_api(void);
 static void (*console_clean)(void)=NULL;
@@ -421,6 +422,26 @@ static void __displaystrattr_iso8859latin1(unsigned short y, unsigned short x, c
 	}
 
 }
+static void __displaystr_utf8(unsigned short y, unsigned short x, unsigned char attr, const char *str, unsigned short len)
+{ /* fallback */
+	while (len)
+	{
+		int codepoint;
+		int inc = 0;
+		uint8_t temp;
+		codepoint = utf8_decode (str, strlen (str), &inc);
+		str += inc;
+		if (codepoint > 255)
+		{
+			temp = '?';
+		} else {
+			temp = codepoint;
+		}
+		_displaystr_iso8859latin1(y, x, attr, (char *)&temp, 1);
+		len--;
+		x++;
+	}
+}
 
 static int __plSetGraphMode(int size)
 {
@@ -593,6 +614,7 @@ static void reset_api(void)
 
 	_displaystr_iso8859latin1=__displaystr_iso8859latin1;
 	_displaystrattr_iso8859latin1=__displaystrattr_iso8859latin1;
+	_displaystr_utf8=__displaystr_utf8;
 
 	_plDisplaySetupTextMode=__plDisplaySetupTextMode;
 	_plGetDisplayTextModeName=__plGetDisplayTextModeName;

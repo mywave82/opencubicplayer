@@ -106,7 +106,8 @@ poutput-curses.o: poutput-curses.c poutput-curses.h \
 	../types.h \
 	poutput.h \
 	../boot/console.h \
-	../boot/psetting.h
+	../boot/psetting.h \
+	utf-8.h
 	$(CC) poutput-curses.c -o $@ -c
 
 poutput-vcsa.o: poutput-vcsa.c poutput-vcsa.h \
@@ -208,7 +209,8 @@ console.o: console.c \
 	poutput-sdl.h \
 	poutput-sdl2.h \
 	poutput-x11.h \
-	poutput-vcsa.h
+	poutput-vcsa.h \
+	utf-8.h
 	$(CC) console.c -o $@ -c
 
 compat.o: compat.c \

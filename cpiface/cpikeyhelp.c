@@ -312,6 +312,14 @@ void SecretFontDisplay(void)
 					displaystr_iso8859latin1 (4 + i, 1, 0x04, buffer, 78);
 				}
 				break;
+			case 2:
+				displaystr_utf8 (2, 1, 0x04, " =-=-=-= UTF-8 =-=-=-=" , 78);
+				displaystr_utf8 (3, 1, 0x04, " Norway: U+00E6=>\xc3\xa6 U+00F8=>\xc3\xb8 U+00E5=>\xc3\xa5 U+00C6=>\xc3\x86 U+00D8=>\xc3\x98 U+00C5=>\xc3\x85" , 78);
+				displaystr_utf8 (4, 1, 0x04, " Cyrillic U+0411=>\xd0\x91 U+0414=>\xd0\x94 U+0418=>\xd0\x98", 78);
+				displaystr_utf8 (5, 1, 0x04, " Linear B Syllabary: U+10002=>\xf0\x90\x80\x82 U+1002A=>\xf0\x90\x80\xaa U+1000F=>\xf0\x90\x80\x8f", 78);
+				displaystr_utf8 (6, 1, 0x04, " Linear B Ideograms: U+100b1=>\xf0\x90\x82\xb1 U+100AF=>\xf0\x90\x82\xaf U+10083=>\xf0\x90\x82\x83", 78);
+				break;
+
 		}
 		while (!ekbhit())
 		{

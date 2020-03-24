@@ -57,8 +57,9 @@
 
 #include "poutput-curses.h"
 #include "boot/console.h"
-#include "stuff/poutput.h"
+#include "poutput.h"
 #include "boot/psetting.h"
+#include "utf-8.h"
 
 #if defined(SIGWINCH) && defined(TIOCGWINSZ) && HAVE_RESIZE_TERM
 #define CAN_RESIZE 1
@@ -81,6 +82,8 @@ static int fixbadgraphic;
 #ifdef HAVE_NCURSESW
 static int useunicode = 0;
 #endif
+
+static iconv_t utf8_to_native = (iconv_t)-1;
 
 static void displayvoid(unsigned short y, unsigned short x, unsigned short len)
 {
@@ -201,6 +204,81 @@ static void displaystr_iso8859latin1(unsigned short y, unsigned short x, unsigne
 		}
 	}
 }
+
+static void displaystr_utf8(unsigned short y, unsigned short x, unsigned char attr, const char *buf, unsigned short len)
+{
+#ifdef HAVE_NCURSESW
+	if (useunicode)
+	{
+		int srclen = strlen (buf);
+		wchar_t buffer[CONSOLE_MAX_X+1];
+		wchar_t *ptr = buffer;
+
+		while(len)
+		{
+			int inc = 0;
+
+			*(ptr++) = utf8_decode (buf, srclen, &inc);
+			buf += inc;
+			srclen -= inc;
+
+			len--;
+		}
+		attrset (attr_table[plpalette[attr]]);
+		*ptr = 0;
+		mvaddwstr(y, x, buffer);
+	} else
+#endif
+	{
+		size_t srclen = strlen (buf);
+
+		move(y, x);
+		while(len)
+		{
+			chtype output;
+
+			if (srclen)
+			{
+				if (utf8_to_native != (iconv_t)(-1))
+				{
+					char ch;
+					char *dst = &ch;
+					size_t dstlen=1;
+					if (iconv (utf8_to_native, (char **)&buf, &srclen, &dst, &dstlen)<0)
+					{
+						goto skipone;
+					}
+					if (dstlen!=0)
+					{
+						goto skipone;
+					}
+					output=(uint8_t)ch;
+				} else {
+					int inc = 0;
+					int codepoint;
+				skipone:
+					codepoint = utf8_decode (buf, srclen, &inc);
+					buf+=inc;
+					srclen-=inc;
+					if (codepoint > 255)
+					{
+						output='?';
+					} else {
+						output=chr_table_iso8859latin1[codepoint];
+					}
+				}
+			} else {
+				output = ' ';
+			}
+			output |= attr_table[plpalette[attr]];
+
+			addch(output);
+
+			len--;
+		}
+	}
+}
+
 
 static void displaystrattr(unsigned short y, unsigned short x, const uint16_t *buf, unsigned short len)
 {
@@ -765,6 +843,8 @@ int curses_init(void)
 {
 	int i;
 	char *temp;
+	iconv_t cd_cp437 = (iconv_t)-1;
+	iconv_t cd_latin1 = (iconv_t)-1;
 
 	fprintf(stderr, "Initing curses... (%s)\n",  curses_version());
 	if ((fixbadgraphic=cfGetProfileBool("curses", "fixbadgraphic", 0, 0)))
@@ -961,7 +1041,6 @@ int curses_init(void)
 	else
 #endif
 	{
-		iconv_t cd;
 		char temp2[64];
 
 		if (temp && strstr (temp, "UTF-8"))
@@ -978,22 +1057,48 @@ int curses_init(void)
 		{
 			snprintf (temp2, sizeof (temp2), "%s//TRANSLIT", temp);
 
-			cd = iconv_open(temp2, OCP_FONT);
-			if (cd == (iconv_t)(-1))
+			cd_cp437 = iconv_open(temp2, OCP_FONT);
+			if (cd_cp437 == (iconv_t)(-1))
 			{
-				fprintf (stderr, "curses: Failed to make iconv matrix for %s->%s, retry with %s\n", temp2, OCP_FONT, temp);
+				fprintf (stderr, "curses: Failed to make iconv matrix for %s->%s, retry with %s\n", OCP_FONT, temp2, temp);
 				goto no_translit;
 			} else {
-				fprintf (stderr, "curses: Converting between %s -> %s\n", temp2, OCP_FONT);
+				fprintf (stderr, "curses: Converting between %s -> %s\n", OCP_FONT, temp2);
+				if (!useunicode)
+				{
+					utf8_to_native = iconv_open (temp2, "UTF-8");
+					fprintf (stderr, "curses: Converting between UTF-8 -> %s\n", temp2);
+				}
+
+				cd_latin1 = iconv_open(temp2, "ISO-8859-1");
+				if (cd_latin1 == (iconv_t)(-1))
+				{
+					fprintf (stderr, "curses: Failed to make iconv matrix for ISO-8859-1 %s\n", temp2);
+				} else {
+					fprintf (stderr, "curses: Converting between ISO-8859-1 -> %s\n", temp2);
+				}
 			}
 		} else {
 no_translit:
-			cd = iconv_open(temp, OCP_FONT);
-			if (cd == (iconv_t)(-1))
+			cd_cp437 = iconv_open(temp, OCP_FONT);
+			if (cd_cp437 == (iconv_t)(-1))
 			{
-				fprintf (stderr, "curses: Failed to make iconv matrix for %s->%s\n", temp, OCP_FONT);
+				fprintf (stderr, "curses: Failed to make iconv matrix for %s->%s\n", OCP_FONT, temp);
 			} else {
-				fprintf (stderr, "curses: Converting between %s -> %s\n", temp, OCP_FONT);
+				if (!useunicode)
+				{
+					utf8_to_native = iconv_open (temp, "UTF-8");
+					fprintf (stderr, "curses: Converting between UTF-8 -> %s\n", temp);
+				}
+				fprintf (stderr, "curses: Converting between %s -> %s\n", OCP_FONT, temp);
+			}
+
+			cd_latin1 = iconv_open(temp, "ISO-8859-1");
+			if (cd_latin1 == (iconv_t)(-1))
+			{
+				fprintf (stderr, "curses: Failed to make iconv matrix for ISO-8859-1 %s\n", temp);
+			} else {
+				fprintf (stderr, "curses: Converting between ISO-8859-1 -> %s\n", temp);
 			}
 		}
 
@@ -1108,14 +1213,14 @@ no_translit:
 						default:
 							chr_table[i] = '_'; break;
 					}
-					if (cd != (iconv_t)(-1))
+					if (cd_cp437 != (iconv_t)(-1))
 					{
 						char src[1];
 						char dst[16];
 						char *to=dst, *from=src;
 						size_t _to=16, _from=1;
 						src[0]=(char)i;
-						if (iconv(cd, &from, &_from, &to, &_to) != (size_t)-1)
+						if (iconv(cd_cp437, &from, &_from, &to, &_to) != (size_t)-1)
 						{
 							if ((_to==15)&&(_from==0)&&(dst[0]) &&
 							    (dst[0]!=0x04) && /* End Of Medium */
@@ -1140,25 +1245,6 @@ no_translit:
 					}
 				}
 			}
-		}
-
-		if (cd != (iconv_t)-1)
-		{
-			iconv_close(cd);
-		}
-
-		cd = iconv_open("ISO-8859-1//TRANSLIT", OCP_FONT);
-		if (cd == (iconv_t)(-1))
-		{
-			cd = iconv_open("ISO-8859-1", OCP_FONT);
-			if (cd == (iconv_t)(-1))
-			{
-				fprintf (stderr, "curses: Failed to make iconv matrix for ISO-8859-1 -> %s\n", OCP_FONT);
-			} else {
-				fprintf (stderr, "curses: Converting between ISO-8859-1 -> %s\n", OCP_FONT);
-			}
-		} else {
-			fprintf (stderr, "curses: Converting between ISO-8859-1//TRANSLIT -> %s\n", OCP_FONT);
 		}
 
 		for (i=0; i < 256; i++)
@@ -1226,14 +1312,14 @@ no_translit:
 					case 0xfe: chr_table_iso8859latin1[i] = 'P'; break;
 					default:   chr_table_iso8859latin1[i] = '_'; break;
 				}
-				if (cd != (iconv_t)(-1))
+				if (cd_latin1 != (iconv_t)(-1))
 				{
 					char src[1];
 					char dst[16];
 					char *to=dst, *from=src;
 					size_t _to=16, _from=1;
 					src[0]=(char)i;
-					if (iconv(cd, &from, &_from, &to, &_to) != (size_t)-1)
+					if (iconv(cd_latin1, &from, &_from, &to, &_to) != (size_t)-1)
 					{
 						if ((_to==15)&&(_from==0)&&(dst[0]) &&
 						    (dst[0]!=0x04) && /* End Of Medium */
@@ -1259,11 +1345,18 @@ no_translit:
 			}
 		}
 
-		if (cd != (iconv_t)-1)
-		{
-			iconv_close(cd);
-		}
 	}
+
+	if (cd_cp437 != (iconv_t)-1)
+	{
+		iconv_close(cd_cp437);
+	}
+
+	if (cd_latin1 != (iconv_t)-1)
+	{
+		iconv_close(cd_latin1);
+	}
+
 
 #if 0
 	fprintf (stderr, "          0    1    2    3    4    5    6    7    8    9    a    b    c    d    e    f\n");
@@ -1298,6 +1391,7 @@ no_translit:
 	_displaystr=displaystr;
 	_displaystrattr_iso8859latin1=displaystrattr_iso8859latin1;
 	_displaystr_iso8859latin1=displaystr_iso8859latin1;
+	_displaystr_utf8=displaystr_utf8;
 	___setup_key(ekbhit, egetch); /* filters in more keys */
 	_plSetTextMode=plSetTextMode;
 	_drawbar=drawbar;
@@ -1363,5 +1457,10 @@ no_translit:
 
 void curses_done(void)
 {
+	if (utf8_to_native != (iconv_t)-1)
+	{
+		iconv_close (utf8_to_native);
+		utf8_to_native = (iconv_t)-1;
+	}
 	conRestore();
 }

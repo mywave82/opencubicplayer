@@ -12,6 +12,7 @@
 #define displaystrattr(y, x, buf, len) (_displaystrattr(y, x, buf, len))
 #define displaystr_iso8859latin1(y, x, attr, str, len) (_displaystr_iso8859latin1(y, x, attr, str, len))
 #define displaystrattr_iso8859latin1(y, x, buf, len) (_displaystrattr_iso8859latin1(y, x, buf, len))
+#define displaystr_utf8(y, x, attr, str, len) (_displaystr_utf8(y, x, attr, str, len))
 #define displayvoid(y, x, len) (_displayvoid(y, x, len))
 #define plSetGraphMode(size) (_plSetGraphMode(size))
 #define gdrawchar(x, y, c, f, b) (_gdrawchar(x, y, c, f, b))
