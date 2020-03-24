@@ -1,6 +1,13 @@
 #ifndef _STUFF_CP437_H
 
-/* table to convert codepage 437 into Unicode (UTF-8) */
+/* Tables to convert codepage 437 into Unicode (UTF-8).
+ *
+ * OpenCubicPlayer on real "hardware" - VSCA, and all 8x8 and 4x4 charsets
+ * at the moment uses a modified version, to fit volume-bars for the analyzer.
+ */
+
+extern const uint32_t ocp_cp437_to_unicode[256];
 extern const uint16_t cp437_to_unicode[256];
+
 
 #endif

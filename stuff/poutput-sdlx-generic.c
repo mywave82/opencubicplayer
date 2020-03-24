@@ -35,7 +35,7 @@ static void displaystrattr_cp437(uint16_t y, uint16_t x, const uint16_t *buf, ui
 	switch (plCurrentFont)
 	{
 		case _8x16:
-			displaystrattr_unifont_8x16 (y, x, buf, len, cp437_to_unicode);
+			displaystrattr_unifont_8x16 (y, x, buf, len, 0);
 			break;
 		case _8x8:
 			displaystrattr_cpfont_8x8 (y, x, buf, len, 0);
@@ -68,7 +68,7 @@ static void displaystr_cp437(uint16_t y, uint16_t x, uint8_t attr, const char *s
 	switch (plCurrentFont)
 	{
 		case _8x16:
-			displaystr_unifont_8x16 (y, x, attr, str, len, cp437_to_unicode);
+			displaystr_unifont_8x16 (y, x, attr, str, len, 0);
 			break;
 		case _8x8:
 			displaystr_cpfont_8x8 (y, x, attr, str, len, 0);

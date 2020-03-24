@@ -10,7 +10,7 @@
 struct font_entry_t
 {
 	uint32_t codepoint;
-	char code[6+1];
+	//char code[6+1];
 	unsigned char width; /* 8 or 16 */
 	/* for 16 lines font, we have have 1 bit per pixel */
 	unsigned char data[16*2]; /* we fit upto 16 by 16 pixels */
@@ -22,6 +22,10 @@ static int font_entries_fill;
 static int font_entries_allocated;
 
 static TTF_Font *unifont_bmp, *unifont_csur, *unifont_upper;
+
+static struct font_entry_t cp437_8x16[256];
+
+static struct font_entry_t latin1_8x16[sizeof(plFont_8x16_latin1_addons) / sizeof (plFont_8x16_latin1_addons[0])];
 
 /*
  BMP   = Basic Multilingual Plane            https://en.wikipedia.org/wiki/Plane_(Unicode)#Basic_Multilingual_Plane
@@ -47,7 +51,7 @@ U+0F0000 - U+0FFFFD  CSUR  (CSUR/UCSUR)
 /* returns the new index */
 static int fontengine_scoreup (int index)
 {
-	if (font_entries[index]->score == 255)
+	if (font_entries[index]->score >= 254)
 	{
 		return index;
 	}
@@ -102,6 +106,10 @@ static void fontengine_iterate (void)
 
 	for (i=font_entries_fill-1; i >= 0; i--)
 	{
+		if (font_entries[i]->score == 255)
+		{
+			continue;
+		}
 		font_entries[i]->score--;
 		if (font_entries[i]->score)
 		{
@@ -203,6 +211,7 @@ uint8_t *fontengine_8x16(uint32_t codepoint, int *width)
 
 static int fontengine_init (void)
 {
+	int i;
 	if ( TTF_Init() < 0)
 	{
 		fprintf (stderr, "[TTF] Unable to init truetype-font library: %s\n", TTF_GetError());
@@ -229,11 +238,38 @@ static int fontengine_init (void)
 		fprintf (stderr, "TTF_OpenFont(\"" UNIFONTDIR "/unifont_upper.ttf\") failed: %s\n", TTF_GetError());
 		TTF_ClearError();
 	}
+	for (i=0; i < 256; i++)
+	{
+		cp437_8x16[i].codepoint = ocp_cp437_to_unicode[i];
+		cp437_8x16[i].width=8;
+		memcpy (cp437_8x16[i].data, plFont816[i], 16);
+		fontengine_append (cp437_8x16 + i);
+		cp437_8x16[i].score = 255;
+	}
+	for (i=0; i < (sizeof(latin1_8x16)/sizeof(latin1_8x16[0])); i++)
+	{
+		int j;
+		latin1_8x16[i].codepoint = plFont_8x16_latin1_addons[i].codepoint;
+		latin1_8x16[i].width=8;
+		memcpy (latin1_8x16[i].data, plFont_8x16_latin1_addons[i].data, 16);
+		for (j=0; j < font_entries_fill; j++)
+		{
+			if (font_entries[j]->codepoint == latin1_8x16[i].codepoint)
+			{
+				fprintf (stderr, "[FontEngine] Codepoint from latin1 already added via cp437: codepoint=U+0%04X\n", latin1_8x16[i].codepoint);
+				goto do_not_add;
+			}
+		}
+		fontengine_append (latin1_8x16 + i);
+do_not_add:
+		latin1_8x16[i].score = 255;
+	}
 	return 0;
 }
 
 static void fontengine_done (void)
 {
+#warning free memory here..... except the score 255 ones... + index
 	if (unifont_bmp)
 	{
 		TTF_CloseFont(unifont_bmp);
