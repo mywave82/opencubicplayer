@@ -6,7 +6,7 @@ static void displaycharattr_double8x16(uint16_t y, uint16_t x, uint8_t *cp, uint
 	int i, j;
 	uint8_t f, b;
 
-	target = virtual_framebuffer + y * 16 * plScrLineBytes + x * 8;
+	target = plVidMem + y * 16 * plScrLineBytes + x * 8;
 
 	f = attr & 0x0f;
 	b = attr >> 4;
@@ -36,7 +36,7 @@ static void displaycharattr_doublefirsthalf8x16(uint16_t y, uint16_t x, uint8_t 
 	int i, j;
 	uint8_t f, b;
 
-	target = virtual_framebuffer + y * 16 * plScrLineBytes + x * 8;
+	target = plVidMem + y * 16 * plScrLineBytes + x * 8;
 
 	f = attr & 0x0f;
 	b = attr >> 4;
@@ -62,7 +62,7 @@ static void displaycharattr_single8x16(uint16_t y, uint16_t x, uint8_t *cp, uint
 	int i, j;
 	uint8_t f, b;
 
-	target = virtual_framebuffer + y * 16 * plScrLineBytes + x * 8;
+	target = plVidMem + y * 16 * plScrLineBytes + x * 8;
 
 	f = attr & 0x0f;
 	b = attr >> 4;

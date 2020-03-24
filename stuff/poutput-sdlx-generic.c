@@ -8,17 +8,17 @@ static void displayvoid(uint16_t y, uint16_t x, uint16_t len)
 	{
 		default:
 		case _8x16:
-			target = virtual_framebuffer + y * 16 * plScrLineBytes + x * 8;
+			target = plVidMem + y * 16 * plScrLineBytes + x * 8;
 			length = len * 8;
 			count = 16;
 			break;
 		case _8x8:
-			target = virtual_framebuffer + y * 8 * plScrLineBytes + x * 8;
+			target = plVidMem + y * 8 * plScrLineBytes + x * 8;
 			length = len * 8;
 			count = 8;
 			break;
 		case _4x4:
-			target = virtual_framebuffer + y * 4 * plScrLineBytes + x * 4;
+			target = plVidMem + y * 4 * plScrLineBytes + x * 4;
 			length = len * 4;
 			count = 4;
 			break;
@@ -129,7 +129,7 @@ static void drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t
 			hgt >>= 2;
 			break;
 	}
-	target = virtual_framebuffer + ((yb + 1) * font_height - 1) * plScrLineBytes + x * font_width;
+	target = plVidMem + ((yb + 1) * font_height - 1) * plScrLineBytes + x * font_width;
 	f = c & 0x0f;
 	b = (c >> 4) & 0x0f;
 	for (i = yh1 * font_height; i > 0; i--)
@@ -210,7 +210,7 @@ static void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 			hgt >>= 2;
 			break;
 	}
-	target = virtual_framebuffer + (yb - yh + 1) * font_height * plScrLineBytes + x * font_width;
+	target = plVidMem + (yb - yh + 1) * font_height * plScrLineBytes + x * font_width;
 	f = c & 0x0f;
 	b = (c >> 4) & 0x0f;
 	for (i = yh1 * font_height; i > 0; i--)

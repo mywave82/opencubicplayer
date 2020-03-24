@@ -5,7 +5,7 @@ static void displaycharattr_cpfont_8x8(uint16_t y, uint16_t x, const uint8_t ch,
 	uint8_t *cp;
 	uint8_t f, b;
 
-	target = virtual_framebuffer + y * 8 * plScrLineBytes + x * 8;
+	target = plVidMem + y * 8 * plScrLineBytes + x * 8;
 
 	cp = plFont88[ch];
 	f = attr & 0x0f;
@@ -74,7 +74,7 @@ static void displaycharattr_cpfont_4x4(uint16_t y, uint16_t x, const uint8_t ch,
 	uint8_t *cp;
 	uint8_t f, b;
 
-	target = virtual_framebuffer + y * 4 * plScrLineBytes + x * 4;
+	target = plVidMem + y * 4 * plScrLineBytes + x * 4;
 
 	cp = plFont44[ch];
 	f = attr & 0x0f;
