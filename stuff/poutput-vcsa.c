@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '11-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * /dev/vcsa* console driver
  *
@@ -332,18 +333,6 @@ void displaystrattr(unsigned short y, unsigned short x, const unsigned short *bu
 		p[i+1]=plpalette[b[i+1]];
 	}
 }
-
-
-/*void displaystrattrdi(unsigned short y, unsigned short x, const unsigned char *txt, const unsigned char *attr, unsigned short len)
-{
-  char *p=vgatextram+(y*plScrRowBytes+x*2);
-  unsigned short i;
-  for (i=0; i<len; i++)
-  {
-    *p++=chr_table[*txt++];
-    *p++=plpalette[*attr++];
-  }
-}*/
 
 void displayvoid(unsigned short y, unsigned short x, unsigned short len)
 {

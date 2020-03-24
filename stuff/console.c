@@ -386,12 +386,6 @@ static void __displaystrattr(unsigned short y, unsigned short x, const unsigned 
 	fprintf(stderr, "displaystrattr not implemented in this console driver\n");
 #endif
 }
-static void __displaystrattrdi(unsigned short y, unsigned short x, const char *txt, const char *attr, unsigned short len)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "displaystrattrdi not implemented in this console driver\n");
-#endif
-}
 static void __displayvoid(unsigned short y, unsigned short x, unsigned short len)
 {
 #ifdef CONSOLE_DEBUG
@@ -426,21 +420,6 @@ static void __displaystrattr_iso8859latin1(unsigned short y, unsigned short x, c
 		x++;
 	}
 
-}
-static void __displaystrattrdi_iso8859latin1(unsigned short y, unsigned short x, const char *txt, const char *attr, unsigned short len)
-{ /* fallback */
-	while (len)
-	{
-		char temp = latin1_table[*(unsigned char *)txt];
-		_displaystrattrdi(y, x, &temp, attr, 1);
-		len--;
-		if (*txt)
-		{
-			txt++;
-		}
-		attr++;
-		x++;
-	}
 }
 
 static int __plSetGraphMode(int size)
@@ -610,12 +589,10 @@ static void reset_api(void)
 	_plSetBarFont=__plSetBarFont;
 	_displaystr=__displaystr;
 	_displaystrattr=__displaystrattr;
-	_displaystrattrdi=__displaystrattrdi;
 	_displayvoid=__displayvoid;
 
 	_displaystr_iso8859latin1=__displaystr_iso8859latin1;
 	_displaystrattr_iso8859latin1=__displaystrattr_iso8859latin1;
-	_displaystrattrdi_iso8859latin1=__displaystrattrdi_iso8859latin1;
 
 	_plDisplaySetupTextMode=__plDisplaySetupTextMode;
 	_plGetDisplayTextModeName=__plGetDisplayTextModeName;
