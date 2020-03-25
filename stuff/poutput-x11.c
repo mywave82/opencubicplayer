@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '05-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * X11 graphic driver
  *
@@ -44,19 +45,19 @@
 #include <time.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include "boot/psetting.h"
 #include "types.h"
-#include "cpiface/cpiface.h"
-#include "poutput-x11.h"
 #include "boot/console.h"
+#include "boot/psetting.h"
+#include "cpiface/cpiface.h"
+#include "framelock.h"
 #include "poutput.h"
-#include "pfonts.h"
+#include "poutput-fontengine.h"
+#include "poutput-swtext.h"
+#include "poutput-x11.h"
 #include "x11-common.h"
-#include "stuff/framelock.h"
 #include "desktop/opencubicplayer.xpm"
 
 /* TEXT-MODE DRIVER */
-static uint8_t *vgatextram = 0;
 static FontSizeEnum plCurrentFontWanted = _8x8;
 
 static unsigned short plScrRowBytes;
@@ -417,20 +418,23 @@ static void WindowResized_Textmode(unsigned int width, unsigned int height)
 			break;
 	}
 	plScrRowBytes=plScrWidth*2;
-	if (vgatextram)
-	{
-		free(vgatextram);
-		vgatextram=0;
-	}
-	vgatextram = calloc (plScrHeight * 2, plScrWidth);
-	if (!vgatextram)
-	{
-		fprintf(stderr, "[x11] calloc() failed\n");
-		exit(-1);
-	}
 
 	destroy_image();
 	create_image();
+	if (virtual_framebuffer)
+	{
+		free(virtual_framebuffer);
+		virtual_framebuffer=0;
+	}
+	if ((plDepth!=8) || (plScrLineBytes!=image->bytes_per_line))
+	{
+		virtual_framebuffer=malloc(plScrLineBytes * plScrLines);
+		plVidMem=virtual_framebuffer;
+	} else {
+		virtual_framebuffer=0;
+		plVidMem=(uint8_t *)image->data;
+	}
+	memset(plVidMem, 0, plScrLineBytes * plScrLines);
 
 	if (!do_fullscreen)
 	{
@@ -485,7 +489,6 @@ static void set_state_graphmode(int target)
 	motif_decoration(window, !do_fullscreen);
 	ewmh_fullscreen(window, do_fullscreen);
 
-
 	if (xvidmode_event_base>=0)
 	{
 		if (do_fullscreen)
@@ -510,6 +513,21 @@ static void set_state_graphmode(int target)
 
 	destroy_image();
 	create_image();
+
+	if (virtual_framebuffer)
+	{
+		free(virtual_framebuffer);
+		virtual_framebuffer=0;
+	}
+	if ((plDepth!=8) || (plScrLineBytes!=image->bytes_per_line))
+	{
+		virtual_framebuffer=calloc(plScrLineBytes, plScrLines);
+		plVidMem=virtual_framebuffer;
+	} else {
+		virtual_framebuffer=0;
+		plVidMem=(uint8_t *)image->data;
+		memset(plVidMem, 0, plScrLineBytes * plScrLines);
+	}
 }
 
 static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
@@ -612,19 +630,24 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 			break;
 	}
 	plScrRowBytes=plScrWidth*2;
-	if (vgatextram)
-	{
-		free(vgatextram);
-		vgatextram=0;
-	}
-	vgatextram = calloc (plScrHeight * 2, plScrWidth);
-	if (!vgatextram)
-	{
-		fprintf(stderr, "[x11] calloc() failed\n");
-		exit(-1);
-	}
+
 	destroy_image();
 	create_image();
+
+	if (virtual_framebuffer)
+	{
+		free(virtual_framebuffer);
+		virtual_framebuffer=0;
+	}
+	if ((plDepth!=8) || (plScrLineBytes!=image->bytes_per_line))
+	{
+		virtual_framebuffer=malloc(plScrLineBytes * plScrLines);
+		plVidMem=virtual_framebuffer;
+	} else {
+		virtual_framebuffer=0;
+		plVidMem=(uint8_t *)image->data;
+	}
+	memset(plVidMem, 0, plScrLineBytes * plScrLines);
 }
 
 static void x11_common_event_loop(void)
@@ -667,6 +690,12 @@ static void x11_common_event_loop(void)
 				break;
 			case ConfigureNotify:
 				//fprintf(stderr, "configure notify\n");
+				if ((plScrLineBytes == event.xconfigure.width) && (plScrLines==event.xconfigure.height))
+				{
+					/* event was probably only a move */
+					break;
+				}
+
 				WindowResized(event.xconfigure.width, event.xconfigure.height);
 				break;
 			#if 0
@@ -1042,17 +1071,6 @@ static int __plSetGraphMode(int high)
 	___push_key(VIRT_KEY_RESIZE);
 
 	plScrRowBytes=plScrWidth*2;
-	if (vgatextram)
-	{
-		free(vgatextram);
-		vgatextram=0;
-	}
-	vgatextram = calloc (plScrHeight * 2, plScrWidth);
-	if (!vgatextram)
-	{
-		fprintf(stderr, "[x11] calloc() failed\n");
-		exit(-1);
-	}
 
 	if (!window)
 		create_window();
@@ -1061,7 +1079,7 @@ static int __plSetGraphMode(int high)
 
 	if ((plDepth!=8) || (plScrLineBytes!=image->bytes_per_line))
 	{
-		virtual_framebuffer=calloc(plScrLineBytes, plScrLines);
+		virtual_framebuffer=malloc(plScrLineBytes * plScrLines);
 		plVidMem=virtual_framebuffer;
 	} else {
 		virtual_framebuffer=0;
@@ -1080,9 +1098,6 @@ static void __vga13(void)
 {
 	_plSetGraphMode(13);
 }
-
-static uint8_t bartops[18]="\xB5\xB6\xB6\xB7\xB7\xB8\xBD\xBD\xBE\xC6\xC6\xC7\xC7\xCF\xCF\xD7\xD7";
-static uint8_t ibartops[18]="\xB5\xD0\xD0\xD1\xD1\xD2\xD2\xD3\xD3\xD4\xD4\xD5\xD5\xD6\xD6\xD7\xD7";
 
 static unsigned int curshape=0, curposx=0, curposy=0;
 
@@ -1112,7 +1127,7 @@ static void plSetTextMode(unsigned char x)
 
 	if (x==plScrMode)
 	{
-		memset(vgatextram, 0, plScrHeight * 2 * plScrWidth);
+		memset(plVidMem, 0, plScrLineBytes * plScrLines);
 		return;
 	}
 
@@ -1190,18 +1205,6 @@ static void plSetTextMode(unsigned char x)
 	___push_key(VIRT_KEY_RESIZE);
 #endif
 
-	if (vgatextram)
-	{
-		free(vgatextram);
-		vgatextram=0;
-	}
-	vgatextram = calloc (plScrHeight * 2, plScrWidth);
-	if (!vgatextram)
-	{
-		fprintf(stderr, "[x11] calloc() failed\n");
-		exit(-1);
-	}
-
 	plScrType=plScrMode=x;
 
 	plDepth=XDefaultDepth(mDisplay, mScreen);
@@ -1216,122 +1219,6 @@ static void plSetTextMode(unsigned char x)
 */
 
 	x11_gflushpal();
-}
-
-static void displayvoid(uint16_t y, uint16_t x, uint16_t len)
-{
-	uint8_t *addr=vgatextram+y*plScrRowBytes+x*2;
-	while (len--)
-	{
-		*addr++=0;
-		*addr++=plpalette[0];
-	}
-}
-
-static void displaystrattr(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len)
-{
-	uint8_t *p=vgatextram+(y*plScrRowBytes+x*2);
-	while (len)
-	{
-		*(p++)=(*buf)&0x0ff;
-		*(p++)=plpalette[((*buf)>>8)];
-		buf++;
-		len--;
-	}
-}
-
-static void displaystr(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
-{
-	uint8_t *p=vgatextram+(y*plScrRowBytes+x*2);
-	int i;
-	attr=plpalette[attr];
-	for (i=0; i<len; i++)
-	{
-		*p++=*str;
-		if (*str)
-			str++;
-		*p++=attr;
-	}
-}
-
-static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
-{
-	unsigned int i;
-	uint8_t *scrptr;
-	uint16_t yh1=(height+2)/3;
-	uint16_t yh2=(height+yh1+1)/2;
-
-	if (value>((unsigned int)(height*16)-4))
-	{
-		value=(height*16)-4;
-	}
-
-	scrptr=vgatextram+(2*x+y*plScrRowBytes);
-
-	for (i=0; i<yh1; i++, scrptr-=plScrRowBytes)
-	{
-		uint32_t v = ( value >= 16 ) ? 16 : value;
-		value -= v;
-		scrptr[0]=bartops[v];
-		scrptr[1]=plpalette[c&0xFF];
-	}
-	c>>=8;
-	for (i=yh1; i<yh2; i++, scrptr-=plScrRowBytes)
-	{
-		uint32_t v = ( value >= 16 ) ? 16 : value;
-		value -= v;
-		scrptr[0]=bartops[v];
-		scrptr[1]=plpalette[c&0xFF];
-	}
-	c>>=8;
-	for (i=yh2; i<height; i++, scrptr-=plScrRowBytes)
-	{
-		uint32_t v = ( value >= 16 ) ? 16 : value;
-		value -= v;
-		scrptr[0]=bartops[v];
-		scrptr[1]=plpalette[c&0xFF];
-	}
-}
-
-static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
-{
-	unsigned int i;
-	uint8_t *scrptr;
-	uint16_t yh1=(height+2)/3;
-	uint16_t yh2=(height+yh1+1)/2;
-
-	y-=height-1;
-
-	if (value>((unsigned int)(height*16)-4))
-	{
-		value=(height*16)-4;
-	}
-
-	scrptr=vgatextram+(2*x+y*plScrRowBytes);
-
-	for (i=0; i<yh1; i++, scrptr+=plScrRowBytes)
-	{
-		uint32_t v = ( value >= 16 ) ? 16 : value;
-		value -= v;
-		scrptr[0]=ibartops[v];
-		scrptr[1]=plpalette[c&0xFF];
-	}
-	c>>=8;
-	for (i=yh1; i<yh2; i++, scrptr+=plScrRowBytes)
-	{
-		uint32_t v = ( value >= 16 ) ? 16 : value;
-		value -= v;
-		scrptr[0]=ibartops[v];
-		scrptr[1]=plpalette[c&0xFF];
-	}
-	c>>=8;
-	for (i=yh2; i<height; i++, scrptr+=plScrRowBytes)
-	{
-		uint32_t v = ( value >= 16 ) ? 16 : value;
-		value -= v;
-		scrptr[0]=ibartops[v];
-		scrptr[1]=plpalette[c&0xFF];
-	}
 }
 
 static void RefreshScreenGraph(void)
@@ -1416,883 +1303,132 @@ static void RefreshScreenGraph(void)
 
 static void RefreshScreenText(void)
 {
-	unsigned int x, y;
-	uint8_t *mem=vgatextram;
-	int doshape=0;
-	uint8_t save=save;
-	int precalc_linelength;
+	uint8_t charbackup[16*8];
+	static int shapetimer=0;
+	static int shapetoggler=0;
+	int doshape = 0;
 
 	if (!window)
 		return;
 	if (!image)
 		return;
 
+	if (!plVidMem)
+		return;
+
+	/* if we have an active cursor, iterate the blink-timer */
 	if (curshape)
-	if (time(NULL)&1)
-		doshape=curshape;
-
-	if (doshape==2)
 	{
-		save=vgatextram[curposy*plScrRowBytes+curposx*2];
-		vgatextram[curposy*plScrRowBytes+curposx*2]=219;
+		shapetimer++;
+		if (shapetimer >= ((fsFPS<=3)?1:(fsFPS / 3)))
+		{
+			shapetoggler^=1;
+			shapetimer=0;
+		}
+		if (shapetoggler)
+		{
+			doshape=curshape;
+		}
 	}
 
-	switch (plDepth)
-	{
-		case 8:
-			switch (plCurrentFont)
-			{
+#warning we need a curshapeattr API, instead of guessing the colors (we no longer have vgamem)
+	if (doshape == 1)
+	{ /* save original buffer, and add a color 15 _ marker */
+		switch (plCurrentFont)
+		{
 			case _8x16:
-				for (y=0;y<plScrHeight;y++)
+				memcpy (charbackup + 0, plVidMem + curposx * 8 + (curposy * 16 + 13) * plScrLineBytes, 8);
+				memcpy (charbackup + 8, plVidMem + curposx * 8 + (curposy * 16 + 14) * plScrLineBytes, 8);
+				memset (plVidMem + curposx * 8 + (curposy * 16 + 13) * plScrLineBytes, 15, 8);
+				memset (plVidMem + curposx * 8 + (curposy * 16 + 14) * plScrLineBytes, 14, 8);
+				break;
+			case _8x8:
+				memcpy (charbackup, plVidMem + curposx * 8 + (curposy * 8 + 7) * plScrLineBytes, 8);
+				memset (plVidMem + curposx * 8 + (curposy * 8 + 7) * plScrLineBytes, 15, 8);
+				break;
+			case _4x4:
+				memcpy (charbackup, plVidMem + curposx * 4 + (curposy * 4 + 3) * plScrLineBytes, 4);
+				memset (plVidMem + curposx * 4 + (curposy * 4 + 3) * plScrLineBytes, 15, 4);
+				break;
+		}
+	} else if (doshape == 2)
+	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
+		int i;
+		uint8_t c = 0x0f;
+		switch (plCurrentFont)
+		{
+			case _8x16:
+				c |= plVidMem[curposx * 8 + 7 + curposy * 16 * plScrLineBytes] << 4;
+				for (i=0;i<16;i++)
 				{
-					uint8_t *scr_precalc = ((uint8_t *)image->data)+y*16*image->bytes_per_line;
-					for (x=0;x<plScrWidth;x++)
-					{
-						uint8_t f, b, a, *cp;
-						uint8_t *scr=scr_precalc;
-						int i, j;
-						scr_precalc += 8;
-						cp=plFont816[*(mem++)];
-						a=*(mem++);
-						f=a&15;
-						b=a>>4;
-						for (i=0; i<16; i++)
-						{
-							uint8_t bitmap=*cp++;
-							for (j=0; j<8; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr+=image->bytes_per_line-8;
-						}
-						if ((doshape==1)&&(curposy==y)&&(curposx==x))
-						{
-							cp=plFont816['_']+15;
-							scr+=8;
-							for (i=0; i<16; i++)
-							{
-								uint8_t bitmap=*cp--;
-								scr-=image->bytes_per_line+8;
-								for (j=0; j<8; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-							}
-						}
-					}
+					memcpy (charbackup + i * 8, plVidMem + curposx * 8 + (curposy * 16 + i) * plScrLineBytes, 8);
 				}
 				break;
 			case _8x8:
-				for (y=0;y<plScrHeight;y++)
+				c |= plVidMem[curposx * 8 + 7 + curposy * 8 * plScrLineBytes] << 4;
+				for (i=0;i<8;i++)
 				{
-					uint8_t *scr_precalc = ((uint8_t *)image->data)+y*8*image->bytes_per_line;
-					for (x=0;x<plScrWidth;x++)
-					{
-						uint8_t f, b, a, *cp;
-						uint8_t *scr=scr_precalc;
-						int i, j;
-						scr_precalc += 8;
-						cp=plFont88[*(mem++)];
-						a=*(mem++);
-						f=a&15;
-						b=a>>4;
-						for (i=0; i<8; i++)
-						{
-							uint8_t bitmap=*cp++;
-							for (j=0; j<8; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr+=image->bytes_per_line-8;
-						}
-						if ((doshape==1)&&(curposy==y)&&(curposx==x))
-						{
-							cp=plFont88['_']+7;
-							scr+=8;
-							for (i=0; i<8; i++)
-							{
-								uint8_t bitmap=*cp--;
-								scr-=image->bytes_per_line+8;
-								for (j=0; j<8; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-							}
-						}
-					}
+					memcpy (charbackup + i * 8, plVidMem + curposx * 8 + (curposy * 8 + i) * plScrLineBytes, 8);
 				}
 				break;
 			case _4x4:
-				for (y=0;y<plScrHeight;y++)
+				c |= plVidMem[curposx * 4 + 3 + curposy * 4 * plScrLineBytes] << 4;
+				for (i=0;i<4;i++)
 				{
-					uint8_t *scr_precalc = ((uint8_t *)image->data)+y*4*image->bytes_per_line;
-					for (x=0;x<plScrWidth;x++)
-					{
-						uint8_t f, b, a, *cp;
-						uint8_t *scr=scr_precalc;
-						int i, j;
-						scr_precalc += 4;
-						cp=plFont44[*(mem++)];
-						a=*(mem++);
-						f=a&15;
-						b=a>>4;
-						for (i=0; i<2; i++)
-						{
-							uint8_t bitmap=*cp++;
-							for (j=0; j<4; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr+=image->bytes_per_line-4;
-							for (j=0; j<4; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr+=image->bytes_per_line-4;
-						}
-						if ((doshape==1)&&(curposy==y)&&(curposx==x))
-						{
-							cp=plFont44['_']+1;
-							scr+=4;
-							for (i=0; i<2; i++)
-							{
-								uint8_t bitmap=*cp--;
-								scr-=image->bytes_per_line+4;
-								for (j=0; j<4; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-								scr-=image->bytes_per_line+4;
-								for (j=0; j<4; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-							}
-						}
-					}
+					memcpy (charbackup + i * 4, plVidMem + curposx * 4 + (curposy * 4 + i) * plScrLineBytes, 4);
 				}
 				break;
-			}
-			break;
-		case 15:
-			precalc_linelength = image->bytes_per_line/sizeof(uint16_t);
-			switch (plCurrentFont)
-			{
-			case _8x16:
-				for (y=0;y<plScrHeight;y++)
-					for (x=0;x<plScrWidth;x++)
-					{
-						uint8_t a, *cp;
-						uint16_t f, b;
-						uint16_t *scr=((uint16_t *)image->data)+y*8*image->bytes_per_line+x*8;
-						int i, j;
-						cp=plFont816[*(mem++)];
-						a=*(mem++);
-						f=x11_palette15[a&15];
-						b=x11_palette15[a>>4];
-						for (i=0; i<16; i++)
-						{
-							uint8_t bitmap=*cp++;
-							for (j=0; j<8; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr += precalc_linelength - 8;
-						}
-						if ((doshape==1)&&(curposy==y)&&(curposx==x))
-						{
-							cp=plFont816['_']+15;
-							scr+=8;
-							for (i=0; i<16; i++)
-							{
-								uint8_t bitmap=*cp--;
-								scr -= precalc_linelength + 8;
-								for (j=0; j<8; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-							}
-						}
-					}
-				break;
-			case _8x8:
-				for (y=0;y<plScrHeight;y++)
-					for (x=0;x<plScrWidth;x++)
-					{
-						uint8_t a, *cp;
-						uint16_t f, b;
-						uint16_t *scr=((uint16_t *)image->data)+y*4*image->bytes_per_line+x*8;
-						int i, j;
-						cp=plFont88[*(mem++)];
-						a=*(mem++);
-						f=x11_palette15[a&15];
-						b=x11_palette15[a>>4];
-						for (i=0; i<8; i++)
-						{
-							uint8_t bitmap=*cp++;
-							for (j=0; j<8; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr += precalc_linelength - 8;
-						}
-						if ((doshape==1)&&(curposy==y)&&(curposx==x))
-						{
-							cp=plFont88['_']+7;
-							scr+=8;
-							for (i=0; i<8; i++)
-							{
-								uint8_t bitmap=*cp--;
-								scr -= precalc_linelength + 8;
-								for (j=0; j<8; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-							}
-						}
-					}
-				break;
-			case _4x4:
-				for (y=0;y<plScrHeight;y++)
-					for (x=0;x<plScrWidth;x++)
-					{
-						uint8_t a, *cp;
-						uint16_t f, b;
-						uint16_t *scr=((uint16_t *)image->data)+y*2*image->bytes_per_line+x*4;
-						int i, j;
-						cp=plFont44[*(mem++)];
-						a=*(mem++);
-						f=x11_palette15[a&15];
-						b=x11_palette15[a>>4];
-						for (i=0; i<2; i++)
-						{
-							uint8_t bitmap=*cp++;
-							for (j=0; j<4; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr += precalc_linelength - 4;
-							for (j=0; j<4; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr += precalc_linelength - 4;
-						}
-						if ((doshape==1)&&(curposy==y)&&(curposx==x))
-						{
-							cp=plFont44['_']+1;
-							scr+=4;
-							for (i=0; i<2; i++)
-							{
-								uint8_t bitmap=*cp--;
-								scr -= precalc_linelength + 4;
-								for (j=0; j<4; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-								scr -= precalc_linelength + 4;
-								for (j=0; j<4; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-							}
-						}
-					}
-				break;
-			}
-			break;
-		case 16:
-			precalc_linelength = image->bytes_per_line/sizeof(uint16_t);
-			switch (plCurrentFont)
-			{
-			case _8x16:
-				for (y=0;y<plScrHeight;y++)
-				{
-					uint16_t *scr_precalc = ((uint16_t *)image->data)+y*16*image->bytes_per_line/sizeof(uint16_t);
-					for (x=0;x<plScrWidth;x++)
-					{
-						uint8_t a, *cp;
-						uint16_t f, b;
-						uint16_t *scr = scr_precalc;
-						int i, j;
-
-						scr_precalc += 8;
-
-						cp=plFont816[*(mem++)];
-						a=*(mem++);
-						f=x11_palette16[a&15];
-						b=x11_palette16[a>>4];
-						for (i=0; i<16; i++)
-						{
-							uint8_t bitmap=*cp++;
-							for (j=0; j<8; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr += precalc_linelength - 8;
-						}
-						if ((doshape==1)&&(curposy==y)&&(curposx==x))
-						{
-							cp=plFont816['_']+15;
-							scr+=8;
-							for (i=0; i<16; i++)
-							{
-								uint8_t bitmap=*cp--;
-								scr -= precalc_linelength + 8;
-								for (j=0; j<8; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-							}
-						}
-					}
-				}
-				break;
-			case _8x8:
-				for (y=0;y<plScrHeight;y++)
-				{
-					uint16_t *scr_precalc = ((uint16_t *)image->data)+y*8*image->bytes_per_line/sizeof(uint16_t);
-					for (x=0;x<plScrWidth;x++)
-					{
-						uint8_t a, *cp;
-						uint16_t f, b;
-						uint16_t *scr = scr_precalc;
-						int i, j;
-
-						scr_precalc +=8 ;
-
-						cp=plFont88[*(mem++)];
-						a=*(mem++);
-						f=x11_palette16[a&15];
-						b=x11_palette16[a>>4];
-						for (i=0; i<8; i++)
-						{
-							uint8_t bitmap=*cp++;
-							for (j=0; j<8; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr += precalc_linelength - 8;
-						}
-						if ((doshape==1)&&(curposy==y)&&(curposx==x))
-						{
-							cp=plFont88['_']+7;
-							scr+=8;
-							for (i=0; i<8; i++)
-							{
-								uint8_t bitmap=*cp--;
-								scr -= precalc_linelength + 8;
-								for (j=0; j<8; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-							}
-						}
-					}
-				}
-				break;
-			case _4x4:
-				for (y=0;y<plScrHeight;y++)
-				{
-					uint16_t *scr_precalc = ((uint16_t *)image->data)+y*2*image->bytes_per_line;
-					for (x=0;x<plScrWidth;x++)
-					{
-						uint8_t a, *cp;
-						uint16_t f, b;
-						uint16_t *scr = scr_precalc;
-						int i, j;
-
-						scr_precalc +=4 ;
-
-						cp=plFont44[*(mem++)];
-						a=*(mem++);
-						f=x11_palette16[a&15];
-						b=x11_palette16[a>>4];
-						for (i=0; i<2; i++)
-						{
-							uint8_t bitmap=*cp++;
-							for (j=0; j<4; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr += precalc_linelength - 4;
-							for (j=0; j<4; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr += precalc_linelength - 4;
-
-						}
-						if ((doshape==1)&&(curposy==y)&&(curposx==x))
-						{
-							cp=plFont44['_']+1;
-							scr+=8;
-							for (i=0; i<2; i++)
-							{
-								uint8_t bitmap=*cp--;
-								scr -= precalc_linelength + 4;
-								for (j=0; j<4; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-								scr -= precalc_linelength + 4;
-								for (j=0; j<4; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-							}
-						}
-					}
-				}
-				break;
-
-			}
-			break;
-		case 24:
-#if 0
-			switch (plCurrentFont)
-			{
-			case _8x16:
-				for (y=0;y<plScrHeight;y++)
-				{
-					uint8_t *scr_precalc = ((uint8_t *)image->data)+y*16*image->bytes_per_line;
-					for (x=0;x<plScrWidth;x++)
-					{
-						uint8_t f1, f2, f3, b1, b2, b3;
-						int i, j;
-						uint8_t a, *cp;
-						uint8_t *scr = scr_precalc;
-						scr_precalc += 24;
-
-						cp=plFont816[*(mem++)];
-						a=*(mem++);
-						f1=x11_palette32[a&15] & 255;
-						f2=(x11_palette32[a&15]>>8) & 255;
-						f3=(x11_palette32[a&15]>>16) & 255;
-						b1=x11_palette32[a>>4] & 255;
-						b2=(x11_palette32[a>>4]>>8) & 255;
-						b3=(x11_palette32[a>>4]>>16) & 255;
-
-						for (i=0; i<16; i++)
-						{
-							uint8_t bitmap=*cp++;
-							for (j=0; j<8; j++)
-							{
-								if (bitmap&128)
-								{
-									*scr++=f1;
-									*scr++=f2;
-									*scr++=f3;
-								} else {
-									*scr++=b1;
-									*scr++=b2;
-									*scr++=b3;
-								}
-								bitmap<<=1;
-							}
-							scr += image->bytes_per_line - 24;
-						}
-						if ((doshape==1)&&(curposy==y)&&(curposx==x))
-						{
-							cp=plFont816['_']+15;
-							scr+=24;
-							for (i=0; i<16; i++)
-							{
-								uint8_t bitmap=*cp--;
-								scr -= image->bytes_per_line + 24;
-								for (j=0; j<8; j++)
-								{
-									if (bitmap&1)
-									{
-										scr[0]=f1;
-										scr[1]=f2;
-										scr[2]=f3;
-									}
-									bitmap>>=1;
-									scr+=3;
-								}
-							}
-						}
-					}
-				}
-				break;
-			case _8x8:
-				for (y=0;y<plScrHeight;y++)
-				{
-					uint8_t *scr_precalc = ((uint8_t *)image->data)+y*8*image->bytes_per_line;
-					for (x=0;x<plScrWidth;x++)
-					{
-						uint8_t f1, f2, f3, b1, b2, b3;
-						int i, j;
-						uint8_t a, *cp;
-						uint8_t *scr=scr_precalc;
-						scr_precalc+=24;
-						cp=plFont88[*(mem++)];
-						a=*(mem++);
-						f1=x11_palette32[a&15] & 255;
-						f2=(x11_palette32[a&15]>>8) & 255;
-						f3=(x11_palette32[a&15]>>16) & 255;
-						b1=x11_palette32[a>>4] & 255;
-						b2=(x11_palette32[a>>4]>>8) & 255;
-						b3=(x11_palette32[a>>4]>>16) & 255;
-
-						for (i=0; i<8; i++)
-						{
-							uint8_t bitmap=*cp++;
-							for (j=0; j<8; j++)
-							{
-								if (bitmap&128)
-								{
-									*scr++=f1;
-									*scr++=f2;
-									*scr++=f3;
-								} else {
-									*scr++=b1;
-									*scr++=b2;
-									*scr++=b3;
-								}
-								bitmap<<=1;
-							}
-							scr += image->bytes_per_line - 24;
-						}
-						if ((doshape==1)&&(curposy==y)&&(curposx==x))
-						{
-							cp=plFont88['_']+7;
-							scr+=24;
-							for (i=0; i<8; i++)
-							{
-								uint8_t bitmap=*cp--;
-								scr -= image->bytes_per_line + 24;
-								for (j=0; j<8; j++)
-								{
-									if (bitmap&1)
-									{
-										scr[0]=f1;
-										scr[1]=f2;
-										scr[2]=f3;
-									}
-									bitmap>>=1;
-									scr+=3;
-								}
-							}
-						}
-					}
-				}
-				break;
-			case _4x4:
-				for (y=0;y<plScrHeight;y++)
-				{
-					uint8_t *scr_precalc = ((uint8_t *)image->data)+y*4*image->bytes_per_line;
-					for (x=0;x<plScrWidth;x++)
-					{
-						uint8_t f1, f2, f3, b1, b2, b3;
-						int i, j;
-						uint8_t a, *cp;
-						uint8_t *scr=scr_precalc;
-						scr_precalc+=12;
-						cp=plFont44[*(mem++)];
-						a=*(mem++);
-						f1=x11_palette32[a&15] & 255;
-						f2=(x11_palette32[a&15]>>8) & 255;
-						f3=(x11_palette32[a&15]>>16) & 255;
-						b1=x11_palette32[a>>4] & 255;
-						b2=(x11_palette32[a>>4]>>8) & 255;
-						b3=(x11_palette32[a>>4]>>16) & 255;
-
-						for (i=0; i<2; i++)
-						{
-							uint8_t bitmap = *cp++;
-
-							for (j=0; j<4; j++)
-							{
-								if (bitmap&128)
-								{
-									*scr++=f1;
-									*scr++=f2;
-									*scr++=f3;
-								} else {
-									*scr++=b1;
-									*scr++=b2;
-									*scr++=b3;
-								}
-								bitmap<<=1;
-							}
-							scr += image->bytes_per_line - 12;
-
-							for (j=0; j<4; j++)
-							{
-								if (bitmap&128)
-								{
-									*scr++=f1;
-									*scr++=f2;
-									*scr++=f3;
-								} else {
-									*scr++=b1;
-									*scr++=b2;
-									*scr++=b3;
-								}
-								bitmap<<=1;
-							}
-							scr += image->bytes_per_line - 12;
-
-						}
-						if ((doshape==1)&&(curposy==y)&&(curposx==x))
-						{
-							cp=plFont44['_']+1;
-							scr+=12;
-							for (i=0; i<2; i++)
-							{
-								uint8_t bitmap=*cp--;
-								scr -= image->bytes_per_line + 12;
-								for (j=0; j<4; j++)
-								{
-									if (bitmap&1)
-									{
-										scr[0]=f1;
-										scr[1]=f2;
-										scr[2]=f3;
-									}
-									bitmap>>=1;
-									scr+=3;
-								}
-								scr -= image->bytes_per_line + 12;
-								for (j=0; j<4; j++)
-								{
-									if (bitmap&1)
-									{
-										scr[0]=f1;
-										scr[1]=f2;
-										scr[2]=f3;
-									}
-									bitmap>>=1;
-									scr+=3;
-								}
-							}
-						}
-					}
-				}
-				break;
-			}
-			break;
-#endif
-		case 32:
-			precalc_linelength = image->bytes_per_line/sizeof(uint32_t);
-			switch (plCurrentFont)
-			{
-			case _8x16:
-				for (y=0;y<plScrHeight;y++)
-				{
-					uint32_t *scr_precalc = ((uint32_t *)image->data)+y*16*image->bytes_per_line/sizeof(uint32_t);
-					for (x=0;x<plScrWidth;x++)
-					{
-						uint32_t f, b;
-						int i, j;
-						uint8_t a, *cp;
-						uint32_t *scr = scr_precalc;
-						scr_precalc +=8 ;
-
-						cp=plFont816[*(mem++)];
-						a=*(mem++);
-						f=x11_palette32[a&15];
-						b=x11_palette32[a>>4];
-						for (i=0; i<16; i++)
-						{
-							uint8_t bitmap=*cp++;
-							for (j=0; j<8; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr += precalc_linelength - 8;
-						}
-						if ((doshape==1)&&(curposy==y)&&(curposx==x))
-						{
-							cp=plFont816['_']+15;
-							scr+=8;
-							for (i=0; i<16; i++)
-							{
-								uint8_t bitmap=*cp--;
-								scr -= precalc_linelength + 8;
-								for (j=0; j<8; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-							}
-						}
-					}
-				}
-				break;
-			case _8x8:
-				for (y=0;y<plScrHeight;y++)
-				{
-					uint32_t *scr_precalc = ((uint32_t *)image->data)+y*8*image->bytes_per_line/sizeof(uint32_t);
-					for (x=0;x<plScrWidth;x++)
-					{
-						uint32_t f, b;
-						int i, j;
-						uint8_t a, *cp;
-						uint32_t *scr=scr_precalc;
-						scr_precalc+=8;
-						cp=plFont88[*(mem++)];
-						a=*(mem++);
-						f=x11_palette32[a&15];
-						b=x11_palette32[a>>4];
-						for (i=0; i<8; i++)
-						{
-							uint8_t bitmap=*cp++;
-							for (j=0; j<8; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr += precalc_linelength - 8;
-						}
-						if ((doshape==1)&&(curposy==y)&&(curposx==x))
-						{
-							cp=plFont88['_']+7;
-							scr+=8;
-							for (i=0; i<8; i++)
-							{
-								uint8_t bitmap=*cp--;
-								scr -= precalc_linelength + 8;
-								for (j=0; j<8; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-							}
-						}
-					}
-				}
-				break;
-			case _4x4:
-				for (y=0;y<plScrHeight;y++)
-				{
-					uint32_t *scr_precalc = ((uint32_t *)image->data)+y*4*image->bytes_per_line/sizeof(uint32_t);
-					for (x=0;x<plScrWidth;x++)
-					{
-						uint32_t f, b;
-						int i, j;
-						uint8_t a, *cp;
-						uint32_t *scr=scr_precalc;
-						scr_precalc+=4;
-						cp=plFont44[*(mem++)];
-						a=*(mem++);
-						f=x11_palette32[a&15];
-						b=x11_palette32[a>>4];
-						for (i=0; i<2; i++)
-						{
-							uint8_t bitmap = *cp++;
-
-							for (j=0; j<4; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr += precalc_linelength - 4;
-
-							for (j=0; j<4; j++)
-							{
-								*scr++=(bitmap&128)?f:b;
-								bitmap<<=1;
-							}
-							scr += precalc_linelength - 4;
-
-						}
-						if ((doshape==1)&&(curposy==y)&&(curposx==x))
-						{
-							cp=plFont44['_']+1;
-							scr+=4;
-							for (i=0; i<2; i++)
-							{
-								uint8_t bitmap=*cp--;
-								scr -= precalc_linelength + 4;
-								for (j=0; j<4; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-								scr -= precalc_linelength + 4;
-								for (j=0; j<4; j++)
-								{
-									if (bitmap&1)
-										*scr=f;
-									bitmap>>=1;
-									scr++;
-								}
-
-							}
-						}
-					}
-				}
-				break;
-			}
-			break;
+		}
+		swtext_displaystr_cp437 (curposy, curposx, c, "\xdb", 1);
 	}
 
-	if (doshape==2)
-		vgatextram[curposy*plScrRowBytes+curposx*2]=save;
+	RefreshScreenGraph ();
 
-	if (shm_completiontype>=0)
-		XShmPutImage(mDisplay, window, copyGC, image, 0, 0, 0, 0, plScrLineBytes, plScrLines, True);
-	else
-		XPutImage(mDisplay, window, copyGC, image, 0, 0, 0, 0, plScrLineBytes, plScrLines);
+	fontengine_iterate ();
+
+	/* restore original buffer */
+	if (doshape == 1)
+	{
+		switch (plCurrentFont)
+		{
+			case _8x16:
+				memcpy (plVidMem + curposx * 8 + (curposy * 16 + 13) * plScrLineBytes, charbackup + 0, 8);
+				memcpy (plVidMem + curposx * 8 + (curposy * 16 + 14) * plScrLineBytes, charbackup + 8, 8);
+				break;
+			case _8x8:
+				memcpy (plVidMem + curposx * 8 + (curposy * 8 + 7) * plScrLineBytes, charbackup, 8);
+				break;
+			case _4x4:
+				memcpy (plVidMem + curposx * 4 + (curposy * 4 + 3) * plScrLineBytes, charbackup, 4);
+				break;
+		}
+	} else if (doshape == 2)
+	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
+		int i;
+		switch (plCurrentFont)
+		{
+			case _8x16:
+				for (i=0;i<16;i++)
+				{
+					memcpy (plVidMem + curposx * 8 + (curposy * 16 + i) * plScrLineBytes, charbackup + i * 8, 8);
+				}
+				break;
+			case _8x8:
+				for (i=0;i<8;i++)
+				{
+					memcpy (plVidMem + curposx * 8 + (curposy * 8 + i) * plScrLineBytes, charbackup + i * 8, 8);
+				}
+				break;
+			case _4x4:
+				for (i=0;i<4;i++)
+				{
+					memcpy (plVidMem + curposx * 4 + (curposy * 4 + i) * plScrLineBytes, charbackup + i * 4, 4);
+				}
+				break;
+		}
+	}
 }
+
 static int ekbhit(void)
 {
 	if (plScrMode<8)
@@ -2536,19 +1672,19 @@ static void plDisplaySetupTextMode(void)
 	{
 		uint16_t c;
 
-		memset(vgatextram, 0, plScrHeight * 2 * plScrWidth);
+		memset(plVidMem, 0, plScrLineBytes * plScrLines);
 
 		make_title("x11-driver setup");
-		displaystr(1, 0, 0x07, "1:  font-size:", 14);
-		displaystr(1, 15, plCurrentFont == _4x4 ? 0x0f : 0x07 , "4x4", 3);
-		displaystr(1, 19, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
-		displaystr(1, 23, plCurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
+		swtext_displaystr_cp437 (1, 0, 0x07, "1:  font-size:", 14);
+		swtext_displaystr_cp437 (1, 15, plCurrentFont == _4x4 ? 0x0f : 0x07 , "4x4", 3);
+		swtext_displaystr_cp437 (1, 19, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
+		swtext_displaystr_cp437 (1, 23, plCurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
 /*
-		displaystr(2, 0, 0x07, "2:  fullscreen: ", 16);
-		displaystr(3, 0, 0x07, "3:  resolution in fullscreen:", 29);
+		swtext_displaystr_cp437 (2, 0, 0x07, "2:  fullscreen: ", 16);
+		swtext_displaystr_cp437 (3, 0, 0x07, "3:  resolution in fullscreen:", 29);
 */
 
-		displaystr(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
+		swtext_displaystr_cp437 (plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
 
 		while (!_ekbhit())
 				framelock();
@@ -2581,6 +1717,12 @@ int x11_init(int use_explicit)
 	if (x11_connect())
 		return -1;
 
+	if (fontengine_init())
+	{
+		x11_disconnect();
+		return 1;
+	}
+
 	plScrMode=255;
 
 	xvidmode_init();
@@ -2604,15 +1746,19 @@ int x11_init(int use_explicit)
 
 	plVidType=vidVESA;
 
-	_displayvoid=displayvoid;
-	_displaystrattr=displaystrattr;
-	_displaystr=displaystr;
+	_displayvoid=swtext_displayvoid;
+	_displaystrattr=swtext_displaystrattr_cp437;
+	_displaystr=swtext_displaystr_cp437;
+	_displaystrattr_iso8859latin1=swtext_displaystrattr_iso8859latin1;
+	_displaystr_iso8859latin1=swtext_displaystr_iso8859latin1;
+
+	_drawbar=swtext_drawbar;
+	_idrawbar=swtext_idrawbar;
+
 	___setup_key(ekbhit, ekbhit); /* filters in more keys */
 	_validkey=___valid_key;
 
 	_plSetTextMode=plSetTextMode;
-	_drawbar=drawbar;
-	_idrawbar=idrawbar;
 
 	_conRestore=conRestore;
 	_conSave=conSave;
@@ -2629,14 +1775,17 @@ void x11_done(void)
 {
 	if (!mDisplay)
 		return;
+
+	fontengine_done();
+
 	destroy_image();
 	destroy_window();
 	xvidmode_done();
 	x11_disconnect();
 
-	if (vgatextram)
+	if (virtual_framebuffer)
 	{
-		free(vgatextram);
-		vgatextram=0;
+		free(virtual_framebuffer);
+		virtual_framebuffer=0;
 	}
 }

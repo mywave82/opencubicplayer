@@ -14,6 +14,7 @@ poutput_so_libs=$(ICONV_LIBS)
 ifeq ($(HAVE_X11),1)
 poutput_so+=poutput-x11.o x11-common.o
 poutput_so_libs+=$(X11_LIBS)
+NEED_TTF=1
 endif
 ifeq ($(HAVE_SDL),1)
 poutput_so+=poutput-sdl.o
@@ -177,6 +178,7 @@ poutput-x11.o: poutput-x11.c poutput-x11.h \
 	../desktop/opencubicplayer.xpm \
 	../stuff/framelock.h \
 	poutput.h \
+	poutput-swtext.h \
 	pfonts.h \
 	x11-common.h
 	$(CC) poutput-x11.c -o $@ -c

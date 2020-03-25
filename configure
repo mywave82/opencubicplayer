@@ -9733,7 +9733,7 @@ CPPFLAGS="$org_cflags"
 
 
 
-if test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1"; then
+if test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11" = "x1"; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking freetype2 support" >&5
 $as_echo_n "checking freetype2 support... " >&6; }
 	FREETYPE2_LIBS=`pkg-config --libs freetype2 2> /dev/null`
@@ -12926,7 +12926,7 @@ fi
 if test "x$with_x11" = "xno"; then
 	echo "x11:               OFF"
 else
-	echo "x11:               ON"
+	echo "x11:               ON  (UNIFONTDIR="$UNIFONTDIR")"
 fi
 if test "x$with_sdl" = "xno"; then
 	echo "SDL:               OFF"

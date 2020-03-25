@@ -542,7 +542,7 @@ CPPFLAGS="$org_cflags"
 
 AC_SUBST(FREETYPE2_LIBS)
 AC_SUBST(FREETYPE2_CFLAGS)
-if test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1"; then
+if test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11" = "x1"; then
 	AC_MSG_CHECKING([freetype2 support])
 	FREETYPE2_LIBS=`pkg-config --libs freetype2 2> /dev/null`
 	FREETYPE2_CFLAGS=`pkg-config --cflags freetype2 2> /dev/null`
@@ -1041,7 +1041,7 @@ fi
 if test "x$with_x11" = "xno"; then
 	echo "x11:               OFF"
 else
-	echo "x11:               ON"
+	echo "x11:               ON  (UNIFONTDIR="$UNIFONTDIR")"
 fi
 if test "x$with_sdl" = "xno"; then
 	echo "SDL:               OFF"
