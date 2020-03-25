@@ -83,6 +83,23 @@ extern int plScrLines;                  /* How many graphical lines do we have, 
 extern void make_title(char *part);
 
 #ifdef _CONSOLE_DRIVER
+
+typedef enum {
+	_4x4 = 0,
+	_8x8 = 1,
+	_8x16 = 2,
+	_FONT_MAX = 2
+} FontSizeEnum;
+
+struct FontSizeInfo_t
+{
+	uint8_t w, h;
+};
+extern const struct FontSizeInfo_t FontSizeInfo[_FONT_MAX+1];
+
+
+extern FontSizeEnum plCurrentFont; /* Only drivers can change this, and their helper functions can use it */
+
 extern unsigned char plpalette[256];
 
 extern void generic_gdrawstr(unsigned short y, unsigned short x, const char *str, unsigned short len, unsigned char f, unsigned char b);

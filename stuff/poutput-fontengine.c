@@ -1,3 +1,11 @@
+#include "config.h"
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include "types.h"
+#include "cp437.h"
+#include "pfonts.h"
+#include "poutput-fontengine.h"
 #include "ttf.h"
 #include "utf-8.h"
 
@@ -7,25 +15,15 @@
  * UNICODE_BOM_SWAPPED 0xFFFE
  */
 
-struct font_entry_t
-{
-	uint32_t codepoint;
-	//char code[6+1];
-	unsigned char width; /* 8 or 16 */
-	/* for 16 lines font, we have have 1 bit per pixel */
-	unsigned char data[16*2]; /* we fit upto 16 by 16 pixels */
-	uint8_t score;
-};
-
-static struct font_entry_t **font_entries;
-static int font_entries_fill;
-static int font_entries_allocated;
+static struct font_entry_8x16_t **font_entries_8x16;
+static int font_entries_8x16_fill;
+static int font_entries_8x16_allocated;
 
 static TTF_Font *unifont_bmp, *unifont_csur, *unifont_upper;
 
-static struct font_entry_t cp437_8x16[256];
+struct font_entry_8x16_t cp437_8x16[256];
 
-static struct font_entry_t latin1_8x16[sizeof(plFont_8x16_latin1_addons) / sizeof (plFont_8x16_latin1_addons[0])];
+static struct font_entry_8x16_t latin1_8x16[sizeof(plFont_8x16_latin1_addons) / sizeof (plFont_8x16_latin1_addons[0])];
 
 /*
  BMP   = Basic Multilingual Plane            https://en.wikipedia.org/wiki/Plane_(Unicode)#Basic_Multilingual_Plane
@@ -37,89 +35,90 @@ static struct font_entry_t latin1_8x16[sizeof(plFont_8x16_latin1_addons) / sizeo
  CSUR  = ConScript Unicode Registry          https://en.wikipedia.org/wiki/ConScript_Unicode_Registry
  UCSUR = Under-ConScript Unicode Registry    https://en.wikipedia.org/wiki/ConScript_Unicode_Registry
 
+RANGE                DATAFILE  NAME
 U+000000 - U+00D7FF  BMP
-U+00E000 - U+00F8FF  CSUR  (CSUR/UCSUR)
+U+00E000 - U+00F8FF  CSUR      (CSUR/UCSUR)
 U+00F900 - U+00FFFF  BMP
-U+010000 - U+01FFFF  UPPER (SMP)
-U+020000 - U+02FFFF  ----- (SIP)
-U+030000 - U+03FFFF  ----- (TIP)
+U+010000 - U+01FFFF  UPPER     (SMP)
+U+020000 - U+02FFFF  -----     (SIP)
+U+030000 - U+03FFFF  -----     (TIP)
 ..
-U+0E0000 - U+0EFFFF  UPPER (SPP)
-U+0F0000 - U+0FFFFD  CSUR  (CSUR/UCSUR)
+U+0E0000 - U+0EFFFF  UPPER     (SPP)
+U+0F0000 - U+0FFFFD  CSUR      (CSUR/UCSUR)
 */
 
 /* returns the new index */
 static int fontengine_scoreup (int index)
 {
-	if (font_entries[index]->score >= 254)
+	if (font_entries_8x16[index]->score >= 254)
 	{
 		return index;
 	}
-	font_entries[index]->score++;
+	font_entries_8x16[index]->score++;
 	while (1)
 	{
-		struct font_entry_t *temp;
+		struct font_entry_8x16_t *temp;
 		if (!index)
 		{
 			return index;
 		}
-		if (font_entries[index-1]->score >= font_entries[index]->score)
+		if (font_entries_8x16[index-1]->score >= font_entries_8x16[index]->score)
 		{
 			return index;
 		}
-		temp = font_entries[index-1];
-		font_entries[index-1] = font_entries[index];
-		font_entries[index] = temp;
+		temp = font_entries_8x16[index-1];
+		font_entries_8x16[index-1] = font_entries_8x16[index];
+		font_entries_8x16[index] = temp;
 		index--;
 	}
 	return index;
 }
 
-static void fontengine_append (struct font_entry_t *entry)
+static void fontengine_append (struct font_entry_8x16_t *entry)
 {
-	if (font_entries_fill >= font_entries_allocated)
+	if (font_entries_8x16_fill >= font_entries_8x16_allocated)
 	{
-		int newallocated = font_entries_allocated += 64;
-		struct font_entry_t **newentries = realloc (font_entries, font_entries_allocated * sizeof (font_entries[0]));
+		int newallocated = font_entries_8x16_allocated += 64;
+		struct font_entry_8x16_t **newentries = realloc (font_entries_8x16, font_entries_8x16_allocated * sizeof (font_entries_8x16[0]));
 
 		if (!newentries)
 		{
 			fprintf (stderr, "fontengine_append: malloc() failure....\n");
 			return;
 		}
-		font_entries = newentries;
-		font_entries_allocated = newallocated;
+		font_entries_8x16 = newentries;
+		font_entries_8x16_allocated = newallocated;
 	}
-	font_entries[font_entries_fill] = entry;
-	font_entries_fill++;
+	font_entries_8x16[font_entries_8x16_fill] = entry;
+	font_entries_8x16_fill++;
 	/* initial score is 5 */
-	fontengine_scoreup (font_entries_fill-1);
-	fontengine_scoreup (font_entries_fill-1);
-	fontengine_scoreup (font_entries_fill-1);
-	fontengine_scoreup (font_entries_fill-1);
-	fontengine_scoreup (font_entries_fill-1);
+	fontengine_scoreup (font_entries_8x16_fill-1);
+	fontengine_scoreup (font_entries_8x16_fill-1);
+	fontengine_scoreup (font_entries_8x16_fill-1);
+	fontengine_scoreup (font_entries_8x16_fill-1);
+	fontengine_scoreup (font_entries_8x16_fill-1);
 }
 
-static void fontengine_iterate (void)
+void fontengine_iterate (void)
 {
 	int i;
 
-	for (i=font_entries_fill-1; i >= 0; i--)
+	for (i=font_entries_8x16_fill-1; i >= 0; i--)
 	{
-		if (font_entries[i]->score == 255)
+		if (font_entries_8x16[i]->score == 255)
 		{
 			continue;
 		}
-		font_entries[i]->score--;
-		if (font_entries[i]->score)
+		font_entries_8x16[i]->score--;
+		if (font_entries_8x16[i]->score)
 		{
 			continue;
 		}
 		/* if a score reaches zero, we should be at the end of the list..... since we sort the list */
-		free (font_entries[i]);
-		font_entries[i] = 0;
-		font_entries_fill--;
-		assert (font_entries_fill == i);
+		free (font_entries_8x16[i]);
+		font_entries_8x16[i] = 0;
+		font_entries_8x16_fill--;
+		assert (font_entries_8x16_fill == i);
 	}
 }
 
@@ -128,37 +127,37 @@ uint8_t *fontengine_8x16(uint32_t codepoint, int *width)
 {
 	int i;
 	TTF_Surface *text_surface = 0;
-	struct font_entry_t *entry = 0;
+	struct font_entry_8x16_t *entry = 0;
 
 	if (codepoint == 0)
 	{
 		codepoint = ' ';
 	}
 
-	for (i=0; i < font_entries_fill; i++)
+	for (i=0; i < font_entries_8x16_fill; i++)
 	{
-		if (font_entries[i]->codepoint == codepoint)
+		if (font_entries_8x16[i]->codepoint == codepoint)
 		{
 			i = fontengine_scoreup (i);
-			*width = font_entries[i]->width;
-			return font_entries[i]->data;
+			*width = font_entries_8x16[i]->width;
+			return font_entries_8x16[i]->data;
 		}
 	}
 
 	       if (                            (codepoint <= 0x0d8ff)  ||
 	            ((codepoint >= 0x0f900) && (codepoint <= 0x0ffff)) )
 	{
-		text_surface = TTF_RenderGlyph32_Shaded (unifont_bmp, codepoint);
+		text_surface = unifont_bmp ? TTF_RenderGlyph32_Shaded (unifont_bmp, codepoint) : 0;
 	} else if ( ((codepoint >= 0x0e000) && (codepoint <= 0x0f8ff)) )
 	{
-		text_surface = TTF_RenderGlyph32_Shaded (unifont_csur, codepoint);
+		text_surface = unifont_csur ? TTF_RenderGlyph32_Shaded (unifont_csur, codepoint) : 0;
 	} else if ( ((codepoint >= 0x10000) && (codepoint <= 0x1ffff)) ||
 	            ((codepoint >= 0xe0000) && (codepoint <= 0xeffff)) )
 	{
-		text_surface = TTF_RenderGlyph32_Shaded (unifont_upper, codepoint);
+		text_surface = unifont_upper ? TTF_RenderGlyph32_Shaded (unifont_upper, codepoint) : 0;
 	} else if ( ((codepoint >= 0xf0000) && (codepoint >= 0xffffd)) )
 	{
-		text_surface = TTF_RenderGlyph32_Shaded (unifont_csur, codepoint);
+		text_surface = unifont_csur ? TTF_RenderGlyph32_Shaded (unifont_csur, codepoint) : 0;
 	}
 
 	entry = malloc (sizeof (*entry));
@@ -209,7 +208,7 @@ uint8_t *fontengine_8x16(uint32_t codepoint, int *width)
 	return entry->data;
 }
 
-static int fontengine_init (void)
+int fontengine_init (void)
 {
 	int i;
 	if ( TTF_Init() < 0)
@@ -252,9 +251,9 @@ static int fontengine_init (void)
 		latin1_8x16[i].codepoint = plFont_8x16_latin1_addons[i].codepoint;
 		latin1_8x16[i].width=8;
 		memcpy (latin1_8x16[i].data, plFont_8x16_latin1_addons[i].data, 16);
-		for (j=0; j < font_entries_fill; j++)
+		for (j=0; j < font_entries_8x16_fill; j++)
 		{
-			if (font_entries[j]->codepoint == latin1_8x16[i].codepoint)
+			if (font_entries_8x16[j]->codepoint == latin1_8x16[i].codepoint)
 			{
 				fprintf (stderr, "[FontEngine] Codepoint from latin1 already added via cp437: codepoint=U+0%04X\n", latin1_8x16[i].codepoint);
 				goto do_not_add;
@@ -267,20 +266,20 @@ do_not_add:
 	return 0;
 }
 
-static void fontengine_done (void)
+void fontengine_done (void)
 {
 	int i;
-	for (i=0; i < font_entries_fill; i++)
+	for (i=0; i < font_entries_8x16_fill; i++)
 	{
-		if (font_entries[i]->score != 255) // do not try to free static entries
+		if (font_entries_8x16[i]->score != 255) // do not try to free static entries
 		{
-			free (font_entries[i]);
+			free (font_entries_8x16[i]);
 		}
 	}
-	free (font_entries);
-	font_entries = 0;
-	font_entries_fill = 0;
-	font_entries_allocated = 0;
+	free (font_entries_8x16);
+	font_entries_8x16 = 0;
+	font_entries_8x16_fill = 0;
+	font_entries_8x16_allocated = 0;
 
 	if (unifont_bmp)
 	{

@@ -57,15 +57,7 @@
 
 /* TEXT-MODE DRIVER */
 static uint8_t *vgatextram = 0;
-typedef enum {
-	_4x4 = 0,
-	_8x8 = 1,
-	_8x16 = 2,
-	_FONT_MAX = 2
-} FontSizeEnum;
-
 static FontSizeEnum plCurrentFontWanted = _8x8;
-static FontSizeEnum plCurrentFont = _8x8;
 
 static unsigned short plScrRowBytes;
 
@@ -147,6 +139,8 @@ static void xvidmode_init(void)
 	int i;
 	XF86VidModeModeLine tmp;
 	XWindowAttributes xwa;
+
+	plCurrentFont = _8x8;
 
 	memset(modelines, 0, sizeof(modelines));
 	memset(&default_modeline, 0, sizeof(default_modeline));

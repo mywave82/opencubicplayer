@@ -27,17 +27,12 @@
 #include "types.h"
 #include "boot/console.h"
 #include "boot/psetting.h"
-#include "cp437.h"
 #include "cpiface/cpiface.h"
 #include "framelock.h"
-#include "latin1.h"
-#include "pfonts.h"
 #include "poutput.h"
 #include "poutput-sdl2.h"
+#include "poutput-fontengine.h"
 #include "poutput-swtext.h"
-
-/* GNU unifont supports 8x16 (some glyphs are 16x16), in 16bit unicode and FULL UTF-8 only */
-/* OpenCubicPlayer built-in font supports (8x16) 8x8 and 4x4, in CP437 only */
 
 typedef enum
 {
@@ -66,28 +61,7 @@ static const mode_gui_data_t mode_gui_data[] =
 	{-1, -1, -1}
 };
 
-struct FontSizeInfo_t
-{
-	int w, h;
-};
-
-typedef enum {
-	_4x4 = 0,
-	_8x8 = 1,
-	_8x16 = 2,
-	_FONT_MAX = 2
-} FontSizeEnum;
-
-const struct FontSizeInfo_t FontSizeInfo[] =
-{
-	{4, 4},
-	{8, 8},
-	{8, 16}
-};
-
-static FontSizeEnum plCurrentFont;
 static FontSizeEnum plCurrentFontWanted;
-
 
 typedef struct
 {
@@ -124,13 +98,6 @@ static int ekbhit(void);
 static int ___valid_key(uint16_t key);
 static void sdl2_gflushpal(void);
 static void sdl2_gupdatepal(unsigned char color, unsigned char _red, unsigned char _green, unsigned char _blue);
-static void displayvoid(uint16_t y, uint16_t x, uint16_t len);
-static void displaystrattr_cp437(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len);
-static void displaystrattr_iso8859latin1(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len);
-static void displaystr_cp437(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
-static void displaystr_iso8859latin1(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
-static void drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c);
-static void idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c);
 static void setcur(uint8_t y, uint8_t x);
 static void setcurshape(uint16_t shape);
 
@@ -153,13 +120,8 @@ static uint32_t sdl2_palette[256] = {
 	0xffffffff,
 };
 
-
 static unsigned int curshape=0, curposx=0, curposy=0;
 static uint8_t *virtual_framebuffer = 0;
-
-#include "poutput-sdlx-fontengine.c"
-#include "poutput-sdlx-unifont.c"
-#include "poutput-sdlx-generic.c"
 
 static void sdl2_close_window(void)
 {
@@ -657,15 +619,15 @@ static void plDisplaySetupTextMode(void)
 		uint16_t c;
 		memset(virtual_framebuffer, 0, plScrLineBytes * plScrLines);
 		make_title("sdl2-driver setup");
-		displaystr_cp437(1, 0, 0x07, "1:  font-size:", 14);
-		displaystr_cp437(1, 15, plCurrentFont == _4x4 ? 0x0f : 0x07, "4x4", 3);
-		displaystr_cp437(1, 19, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
-		displaystr_cp437(1, 23, plCurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
+		swtext_displaystr_cp437(1, 0, 0x07, "1:  font-size:", 14);
+		swtext_displaystr_cp437(1, 15, plCurrentFont == _4x4 ? 0x0f : 0x07, "4x4", 3);
+		swtext_displaystr_cp437(1, 19, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
+		swtext_displaystr_cp437(1, 23, plCurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
 /*
-		displaystr_cp437(2, 0, 0x07, "2:  fullscreen: ", 16);
-		displaystr_cp437(3, 0, 0x07, "3:  resolution in fullscreen:", 29);*/
+		swtext_displaystr_cp437(2, 0, 0x07, "2:  fullscreen: ", 16);
+		swtext_displaystr_cp437(3, 0, 0x07, "3:  resolution in fullscreen:", 29);*/
 
-		displaystr_cp437(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
+		swtext_displaystr_cp437(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
 
 		while (!_ekbhit())
 				framelock();
@@ -774,14 +736,14 @@ int sdl2_init(void)
 	_gflushpal=sdl2_gflushpal;
 	_vga13=__vga13;
 
-	_displayvoid=displayvoid;
-	_displaystrattr=displaystrattr_cp437;
-	_displaystr=displaystr_cp437;
-	_displaystrattr_iso8859latin1=displaystrattr_iso8859latin1;
-	_displaystr_iso8859latin1=displaystr_iso8859latin1;
+	_displayvoid=swtext_displayvoid;
+	_displaystrattr=swtext_displaystrattr_cp437;
+	_displaystr=swtext_displaystr_cp437;
+	_displaystrattr_iso8859latin1=swtext_displaystrattr_iso8859latin1;
+	_displaystr_iso8859latin1=swtext_displaystr_iso8859latin1;
 
-	_drawbar=drawbar;
-	_idrawbar=idrawbar;
+	_drawbar=swtext_drawbar;
+	_idrawbar=swtext_idrawbar;
 
 	_setcur=setcur;
 	_setcurshape=setcurshape;
@@ -1239,7 +1201,7 @@ void RefreshScreenText(void)
 				}
 				break;
 		}
-		displaystr_cp437 (curposy, curposx, c, "\xdb", 1);
+		swtext_displaystr_cp437 (curposy, curposx, c, "\xdb", 1);
 	}
 
 	SDL_LockTexture (current_texture, NULL, &pixels, &pitch);

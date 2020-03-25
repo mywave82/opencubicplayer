@@ -45,7 +45,6 @@
 #include "poutput-fb.h"
 #include "boot/console.h"
 #include "poutput.h"
-#include "pfonts.h"
 
 static struct fb_fix_screeninfo fix;
 static struct fb_var_screeninfo orgmode;

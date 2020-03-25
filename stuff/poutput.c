@@ -35,16 +35,26 @@
  *     the generic functions is still kept in this file.
  */
 
+#define _CONSOLE_DRIVER
 #include "config.h"
 #include <string.h>
 #include "types.h"
-#include "poutput.h"
 #include "pfonts.h"
 #include "imsrtns.h"
+#include "poutput.h"
 
 unsigned char plpalette[256];
 int plScrLineBytes;
 int plScrLines;
+
+FontSizeEnum plCurrentFont;
+const struct FontSizeInfo_t FontSizeInfo[] =
+{
+	{4, 4},
+	{8, 8},
+	{8, 16}
+};
+
 
 void make_title(char *part)
 {
@@ -58,7 +68,7 @@ void make_title(char *part)
 	else
 		writestring(sbuf, (plScrWidth-strlen(part))/2, 0x30, part, strlen(part));
 	writestring(sbuf, plScrWidth-30, 0x30, "(c) 1994-2018 Stian Skjelstad", 29);
-	displaystrattr(0, 0, sbuf, plScrWidth);
+	_displaystrattr(0, 0, sbuf, plScrWidth);
 }
 
 char *convnum(unsigned long num, char *buf, unsigned char radix, unsigned short len, char clip0)

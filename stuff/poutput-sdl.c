@@ -29,13 +29,11 @@
 #include "types.h"
 #include "boot/console.h"
 #include "boot/psetting.h"
-#include "cp437.h"
 #include "cpiface/cpiface.h"
 #include "framelock.h"
-#include "latin1.h"
-#include "pfonts.h"
 #include "poutput.h"
 #include "poutput-sdl.h"
+#include "poutput-fontengine.h"
 #include "poutput-swtext.h"
 
 typedef enum
@@ -65,26 +63,6 @@ static const mode_gui_data_t mode_gui_data[] =
 	{-1, -1, -1}
 };
 
-struct FontSizeInfo_t
-{
-	int w, h;
-};
-
-typedef enum {
-	_4x4 = 0,
-	_8x8 = 1,
-	_8x16 = 2,
-	_FONT_MAX = 2
-} FontSizeEnum;
-
-const struct FontSizeInfo_t FontSizeInfo[] =
-{
-	{4, 4},
-	{8, 8},
-	{8, 16}
-};
-
-static FontSizeEnum plCurrentFont;
 static FontSizeEnum plCurrentFontWanted;
 
 typedef struct
@@ -141,10 +119,6 @@ static uint32_t sdl_palette[256];
 
 static unsigned int curshape=0, curposx=0, curposy=0;
 static uint8_t *virtual_framebuffer = 0;
-
-#include "poutput-sdlx-fontengine.c"
-#include "poutput-sdlx-unifont.c"
-#include "poutput-sdlx-generic.c"
 
 static void set_state_textmode(int fullscreen, int width, int height)
 {
@@ -451,15 +425,15 @@ static void plDisplaySetupTextMode(void)
 		memset(virtual_framebuffer, 0, plScrLineBytes * plScrLines);
 
 		make_title("sdl-driver setup");
-		displaystr_cp437(1, 0, 0x07, "1:  font-size:", 14);
-		displaystr_cp437(1, 15, plCurrentFont == _4x4 ? 0x0f : 0x07, "4x4", 3);
-		displaystr_cp437(1, 19, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
-		displaystr_cp437(1, 23, plCurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
+		swtext_displaystr_cp437(1, 0, 0x07, "1:  font-size:", 14);
+		swtext_displaystr_cp437(1, 15, plCurrentFont == _4x4 ? 0x0f : 0x07, "4x4", 3);
+		swtext_displaystr_cp437(1, 19, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
+		swtext_displaystr_cp437(1, 23, plCurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
 /*
-		displaystr_cp437(2, 0, 0x07, "2:  fullscreen: ", 16);
-		displaystr_cp437(3, 0, 0x07, "3:  resolution in fullscreen:", 29);*/
+		swtext_displaystr_cp437(2, 0, 0x07, "2:  fullscreen: ", 16);
+		swtext_displaystr_cp437(3, 0, 0x07, "3:  resolution in fullscreen:", 29);*/
 
-		displaystr_cp437(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
+		swtext_displaystr_cp437(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
 
 		while (!_ekbhit())
 				framelock();
@@ -616,14 +590,14 @@ int sdl_init(void)
 	_gflushpal=sdl_gflushpal;
 	_vga13=__vga13;
 
-	_displayvoid=displayvoid;
-	_displaystrattr=displaystrattr_cp437;
-	_displaystr=displaystr_cp437;
-	_displaystrattr_iso8859latin1=displaystrattr_iso8859latin1;
-	_displaystr_iso8859latin1=displaystr_iso8859latin1;
+	_displayvoid=swtext_displayvoid;
+	_displaystrattr=swtext_displaystrattr_cp437;
+	_displaystr=swtext_displaystr_cp437;
+	_displaystrattr_iso8859latin1=swtext_displaystrattr_iso8859latin1;
+	_displaystr_iso8859latin1=swtext_displaystr_iso8859latin1;
 
-	_drawbar=drawbar;
-	_idrawbar=idrawbar;
+	_drawbar=swtext_drawbar;
+	_idrawbar=swtext_idrawbar;
 
 	_setcur=setcur;
 	_setcurshape=setcurshape;
@@ -1075,7 +1049,7 @@ static void RefreshScreenText(void)
 				}
 				break;
 		}
-		displaystr_cp437 (curposy, curposx, c, "\xdb", 1);
+		swtext_displaystr_cp437 (curposy, curposx, c, "\xdb", 1);
 	}
 
 	SDL_LockSurface(current_surface);
