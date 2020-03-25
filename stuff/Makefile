@@ -107,6 +107,7 @@ poutput-curses.o: poutput-curses.c poutput-curses.h \
 	poutput.h \
 	../boot/console.h \
 	../boot/psetting.h \
+	cp437.h \
 	utf-8.h
 	$(CC) poutput-curses.c -o $@ -c
 
