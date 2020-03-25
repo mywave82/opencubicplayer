@@ -1113,12 +1113,11 @@ no_translit:
 				{
 					case 0xff:
 					case 0x00: t = ' '; break;
-					case 0x01: t = 'S'; break; /* Surround */
 					case 0x04: t = ACS_DIAMOND; break; /* looks good on the header line */
 					case 0x1a:
-					case 0x10: t = ACS_RARROW;
+					case 0x10: t = ACS_RARROW; break;
 					case 0x1b:
-					case 0x11: t = ACS_LARROW;
+					case 0x11: t = ACS_LARROW; break;
 					case 0x12: t = ACS_PLMINUS; break; /* we want an up+down arrow */
 					case 0x18: t = ACS_UARROW;  break;
 					case 0x19: t = ACS_DARROW;  break;
@@ -1132,6 +1131,12 @@ no_translit:
 				} else {
 					switch (i) /* worst case backups */
 					{
+						case 0x01:
+							chr_table[i] = 'S'; break;
+
+						case 0x0d: case 0x0e:
+							chr_table[i] = 'n'; break;
+
 						case 0x11: case 0x1b: case 0xae:
 							chr_table[i] = '<'; break;
 
@@ -1213,15 +1218,20 @@ no_translit:
 						default:
 							chr_table[i] = '_'; break;
 					}
+
 					if (cd_cp437 != (iconv_t)(-1))
 					{
 						char src[1];
-						char dst[16];
-						char *to=dst, *from=src;
+						unsigned char dst[16];
+						char *to=(char *)dst, *from=src;
 						size_t _to=16, _from=1;
 						src[0]=(char)i;
 						if (iconv(cd_cp437, &from, &_from, &to, &_to) != (size_t)-1)
 						{
+							if ((dst[0] < 0x20) && strstr(temp, "8859"))
+							{ /* GNU iconv seems to very crude.. ISO-8859-X should not have have control codes */
+								continue;
+							}
 							if ((_to==15)&&(_from==0)&&(dst[0]) &&
 							    (dst[0]!=0x04) && /* End Of Medium */
 							    (dst[0]!=0x07) && /* Bell */
@@ -1239,7 +1249,7 @@ no_translit:
 						            (dst[0]!=0x19) && /* End Of Medium */
 							    (dst[0]!=0x1c))   /* Escape - starts escape sequence */
 							{
-								chr_table[i]=(unsigned char)dst[0];
+								chr_table[i]=dst[0];
 							}
 						}
 					}
