@@ -34,6 +34,7 @@
 #include "pfonts.h"
 #include "poutput.h"
 #include "poutput-sdl2.h"
+#include "poutput-swtext.h"
 
 /* GNU unifont supports 8x16 (some glyphs are 16x16), in 16bit unicode and FULL UTF-8 only */
 /* OpenCubicPlayer built-in font supports (8x16) 8x8 and 4x4, in CP437 only */
@@ -157,7 +158,6 @@ static unsigned int curshape=0, curposx=0, curposy=0;
 static uint8_t *virtual_framebuffer = 0;
 
 #include "poutput-sdlx-fontengine.c"
-#include "poutput-sdlx-cpfont.c"
 #include "poutput-sdlx-unifont.c"
 #include "poutput-sdlx-generic.c"
 

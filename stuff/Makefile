@@ -27,7 +27,7 @@ NEED_TTF=1
 endif
 
 ifeq ($(NEED_TTF),1)
-poutput_so+=ttf.o $(FREETYPE2_LIBS)
+poutput_so+=ttf.o poutput-swtext.o $(FREETYPE2_LIBS)
 endif
 
 ifeq ($(STATIC_BUILD),1)
@@ -130,7 +130,6 @@ poutput-fb.o: poutput-fb.c poutput-fb.h \
 
 poutput-sdl.o: poutput-sdl.c poutput-sdl.h \
 	poutput-sdlx-fontengine.c \
-	poutput-sdlx-cpfont.c \
 	poutput-sdlx-unifont.c \
 	ttf.h \
 	../config.h \
@@ -139,12 +138,12 @@ poutput-sdl.o: poutput-sdl.c poutput-sdl.h \
 	../boot/psetting.h \
 	../stuff/framelock.h \
 	poutput.h \
+	poutput-swtext.h \
 	pfonts.h
 	$(CC) $(SDL_CFLAGS) poutput-sdl.c -o $@ -c
 
 poutput-sdl2.o: poutput-sdl2.c poutput-sdl2.h \
 	poutput-sdlx-fontengine.c \
-	poutput-sdlx-cpfont.c \
 	poutput-sdlx-unifont.c \
 	ttf.h \
 	../config.h \
@@ -155,8 +154,16 @@ poutput-sdl2.o: poutput-sdl2.c poutput-sdl2.h \
 	cp437.h \
 	latin1.h \
 	poutput.h \
+	poutput-swtext.h \
 	pfonts.h
 	$(CC) $(SDL2_CFLAGS) poutput-sdl2.c -o $@ -c
+
+poutput-swtext.o: poutput-swtext.c poutput-swtext.h \
+	pfonts.h \
+	poutput.h \
+	../config.h \
+	../types.h
+	$(CC) $(CFLAGS) $< -o $@ -c
 
 poutput-x11.o: poutput-x11.c poutput-x11.h \
 	../config.h \

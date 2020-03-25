@@ -38,10 +38,10 @@ static void displaystrattr_cp437(uint16_t y, uint16_t x, const uint16_t *buf, ui
 			displaystrattr_unifont_8x16 (y, x, buf, len, 0);
 			break;
 		case _8x8:
-			displaystrattr_cpfont_8x8 (y, x, buf, len, 0);
+			swtext_displaystrattr_cpfont_8x8 (y, x, buf, len, 0);
 			break;
 		case _4x4:
-			displaystrattr_cpfont_4x4 (y, x, buf, len, 0);
+			swtext_displaystrattr_cpfont_4x4 (y, x, buf, len, 0);
 			break;
 	}
 }
@@ -54,10 +54,10 @@ static void displaystrattr_iso8859latin1(uint16_t y, uint16_t x, const uint16_t 
 			displaystrattr_unifont_8x16 (y, x, buf, len, latin1_to_unicode);
 			break;
 		case _8x8:
-			displaystrattr_cpfont_8x8 (y, x, buf, len, latin1_table);
+			swtext_displaystrattr_cpfont_8x8 (y, x, buf, len, latin1_table);
 			break;
 		case _4x4:
-			displaystrattr_cpfont_4x4 (y, x, buf, len, latin1_table);
+			swtext_displaystrattr_cpfont_4x4 (y, x, buf, len, latin1_table);
 			break;
 	}
 }
@@ -71,10 +71,10 @@ static void displaystr_cp437(uint16_t y, uint16_t x, uint8_t attr, const char *s
 			displaystr_unifont_8x16 (y, x, attr, str, len, 0);
 			break;
 		case _8x8:
-			displaystr_cpfont_8x8 (y, x, attr, str, len, 0);
+			swtext_displaystr_cpfont_8x8 (y, x, attr, str, len, 0);
 			break;
 		case _4x4:
-			displaystr_cpfont_4x4 (y, x, attr, str, len, 0);
+			swtext_displaystr_cpfont_4x4 (y, x, attr, str, len, 0);
 			break;
 	}
 }
@@ -87,10 +87,10 @@ static void displaystr_iso8859latin1(uint16_t y, uint16_t x, uint8_t attr, const
 			displaystr_unifont_8x16 (y, x, attr, str, len, latin1_to_unicode);
 			break;
 		case _8x8:
-			displaystr_cpfont_8x8 (y, x, attr, str, len, latin1_table);
+			swtext_displaystr_cpfont_8x8 (y, x, attr, str, len, latin1_table);
 			break;
 		case _4x4:
-			displaystr_cpfont_4x4 (y, x, attr, str, len, latin1_table);
+			swtext_displaystr_cpfont_4x4 (y, x, attr, str, len, latin1_table);
 			break;
 	}
 }

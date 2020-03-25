@@ -36,6 +36,7 @@
 #include "pfonts.h"
 #include "poutput.h"
 #include "poutput-sdl.h"
+#include "poutput-swtext.h"
 
 typedef enum
 {
@@ -142,7 +143,6 @@ static unsigned int curshape=0, curposx=0, curposy=0;
 static uint8_t *virtual_framebuffer = 0;
 
 #include "poutput-sdlx-fontengine.c"
-#include "poutput-sdlx-cpfont.c"
 #include "poutput-sdlx-unifont.c"
 #include "poutput-sdlx-generic.c"
 
