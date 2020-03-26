@@ -763,14 +763,14 @@ static int egetch(void)
 	return retval;
 }
 
-static void setcur(unsigned char y, unsigned char x)
+static void setcur(uint16_t y, uint16_t x)
 {
 	move(y, x);
 }
 
 static void setcurshape(unsigned short shape)
 {
-	curs_set(!!shape);
+	curs_set(shape);
 }
 
 static int conactive=0;

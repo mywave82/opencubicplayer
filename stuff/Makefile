@@ -143,7 +143,7 @@ poutput-sdl.o: poutput-sdl.c poutput-sdl.h \
 	../types.h \
 	../boot/console.h \
 	../boot/psetting.h \
-	../stuff/framelock.h \
+	framelock.h \
 	poutput.h \
 	poutput-fontengine.h \
 	poutput-swtext.h
@@ -155,13 +155,14 @@ poutput-sdl2.o: poutput-sdl2.c poutput-sdl2.h \
 	../types.h \
 	../boot/console.h \
 	../boot/psetting.h \
-	../stuff/framelock.h \
+	framelock.h \
 	poutput.h \
 	poutput-fontengine.h \
 	poutput-swtext.h
 	$(CC) $(SDL2_CFLAGS) poutput-sdl2.c -o $@ -c
 
 poutput-swtext.o: poutput-swtext.c poutput-swtext.h \
+	framelock.h \
 	latin1.h \
 	pfonts.h \
 	poutput.h \
@@ -176,7 +177,7 @@ poutput-x11.o: poutput-x11.c poutput-x11.h \
 	../boot/console.h \
 	../boot/psetting.h \
 	../desktop/opencubicplayer.xpm \
-	../stuff/framelock.h \
+	framelock.h \
 	poutput.h \
 	poutput-swtext.h \
 	pfonts.h \

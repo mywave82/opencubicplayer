@@ -66,7 +66,7 @@ void (*_idrawbar)(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c
 void (*_Screenshot)(void);
 void (*_TextScreenshot)(int scrType);
 
-void (*_setcur)(uint8_t y, uint8_t x) ;
+void (*_setcur)(uint16_t y, uint16_t x) ;
 void (*_setcurshape)(uint16_t shape);
 
 int (*_conRestore)(void);

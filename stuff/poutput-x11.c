@@ -1099,8 +1099,6 @@ static void __vga13(void)
 	_plSetGraphMode(13);
 }
 
-static unsigned int curshape=0, curposx=0, curposy=0;
-
 static void plSetTextMode(unsigned char x)
 {
 	struct modes_t
@@ -1223,6 +1221,11 @@ static void plSetTextMode(unsigned char x)
 
 static void RefreshScreenGraph(void)
 {
+	if (!window)
+		return;
+	if (!image)
+		return;
+
 	if (virtual_framebuffer)
 	{
 		uint8_t *src=virtual_framebuffer;
@@ -1303,11 +1306,6 @@ static void RefreshScreenGraph(void)
 
 static void RefreshScreenText(void)
 {
-	uint8_t charbackup[16*8];
-	static int shapetimer=0;
-	static int shapetoggler=0;
-	int doshape = 0;
-
 	if (!window)
 		return;
 	if (!image)
@@ -1316,117 +1314,13 @@ static void RefreshScreenText(void)
 	if (!plVidMem)
 		return;
 
-	/* if we have an active cursor, iterate the blink-timer */
-	if (curshape)
-	{
-		shapetimer++;
-		if (shapetimer >= ((fsFPS<=3)?1:(fsFPS / 3)))
-		{
-			shapetoggler^=1;
-			shapetimer=0;
-		}
-		if (shapetoggler)
-		{
-			doshape=curshape;
-		}
-	}
-
-#warning we need a curshapeattr API, instead of guessing the colors (we no longer have vgamem)
-	if (doshape == 1)
-	{ /* save original buffer, and add a color 15 _ marker */
-		switch (plCurrentFont)
-		{
-			case _8x16:
-				memcpy (charbackup + 0, plVidMem + curposx * 8 + (curposy * 16 + 13) * plScrLineBytes, 8);
-				memcpy (charbackup + 8, plVidMem + curposx * 8 + (curposy * 16 + 14) * plScrLineBytes, 8);
-				memset (plVidMem + curposx * 8 + (curposy * 16 + 13) * plScrLineBytes, 15, 8);
-				memset (plVidMem + curposx * 8 + (curposy * 16 + 14) * plScrLineBytes, 14, 8);
-				break;
-			case _8x8:
-				memcpy (charbackup, plVidMem + curposx * 8 + (curposy * 8 + 7) * plScrLineBytes, 8);
-				memset (plVidMem + curposx * 8 + (curposy * 8 + 7) * plScrLineBytes, 15, 8);
-				break;
-			case _4x4:
-				memcpy (charbackup, plVidMem + curposx * 4 + (curposy * 4 + 3) * plScrLineBytes, 4);
-				memset (plVidMem + curposx * 4 + (curposy * 4 + 3) * plScrLineBytes, 15, 4);
-				break;
-		}
-	} else if (doshape == 2)
-	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
-		int i;
-		uint8_t c = 0x0f;
-		switch (plCurrentFont)
-		{
-			case _8x16:
-				c |= plVidMem[curposx * 8 + 7 + curposy * 16 * plScrLineBytes] << 4;
-				for (i=0;i<16;i++)
-				{
-					memcpy (charbackup + i * 8, plVidMem + curposx * 8 + (curposy * 16 + i) * plScrLineBytes, 8);
-				}
-				break;
-			case _8x8:
-				c |= plVidMem[curposx * 8 + 7 + curposy * 8 * plScrLineBytes] << 4;
-				for (i=0;i<8;i++)
-				{
-					memcpy (charbackup + i * 8, plVidMem + curposx * 8 + (curposy * 8 + i) * plScrLineBytes, 8);
-				}
-				break;
-			case _4x4:
-				c |= plVidMem[curposx * 4 + 3 + curposy * 4 * plScrLineBytes] << 4;
-				for (i=0;i<4;i++)
-				{
-					memcpy (charbackup + i * 4, plVidMem + curposx * 4 + (curposy * 4 + i) * plScrLineBytes, 4);
-				}
-				break;
-		}
-		swtext_displaystr_cp437 (curposy, curposx, c, "\xdb", 1);
-	}
+	swtext_cursor_inject ();
 
 	RefreshScreenGraph ();
 
-	fontengine_iterate ();
+	swtext_cursor_eject ();
 
-	/* restore original buffer */
-	if (doshape == 1)
-	{
-		switch (plCurrentFont)
-		{
-			case _8x16:
-				memcpy (plVidMem + curposx * 8 + (curposy * 16 + 13) * plScrLineBytes, charbackup + 0, 8);
-				memcpy (plVidMem + curposx * 8 + (curposy * 16 + 14) * plScrLineBytes, charbackup + 8, 8);
-				break;
-			case _8x8:
-				memcpy (plVidMem + curposx * 8 + (curposy * 8 + 7) * plScrLineBytes, charbackup, 8);
-				break;
-			case _4x4:
-				memcpy (plVidMem + curposx * 4 + (curposy * 4 + 3) * plScrLineBytes, charbackup, 4);
-				break;
-		}
-	} else if (doshape == 2)
-	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
-		int i;
-		switch (plCurrentFont)
-		{
-			case _8x16:
-				for (i=0;i<16;i++)
-				{
-					memcpy (plVidMem + curposx * 8 + (curposy * 16 + i) * plScrLineBytes, charbackup + i * 8, 8);
-				}
-				break;
-			case _8x8:
-				for (i=0;i<8;i++)
-				{
-					memcpy (plVidMem + curposx * 8 + (curposy * 8 + i) * plScrLineBytes, charbackup + i * 8, 8);
-				}
-				break;
-			case _4x4:
-				for (i=0;i<4;i++)
-				{
-					memcpy (plVidMem + curposx * 4 + (curposy * 4 + i) * plScrLineBytes, charbackup + i * 4, 4);
-				}
-				break;
-		}
-	}
+	fontengine_iterate ();
 }
 
 static int ekbhit(void)
@@ -1498,15 +1392,6 @@ static void plDosShell(void)
 
 	XMapWindow(mDisplay, window);
 	set_state(do_fullscreen);
-}
-static void setcur(uint8_t y, uint8_t x)
-{
-	curposx=x;
-	curposy=y;
-}
-static void setcurshape(uint16_t shape)
-{
-	curshape=shape;
 }
 
 static int ___valid_key(uint16_t key)
@@ -1729,6 +1614,7 @@ int x11_init(int use_explicit)
 
 	ewmh_init();
 
+	/* GUI functions */
 	_plSetGraphMode=__plSetGraphMode;
 	_gdrawstr=generic_gdrawstr;
 	_gdrawchar8=generic_gdrawchar8;
@@ -1746,6 +1632,10 @@ int x11_init(int use_explicit)
 
 	plVidType=vidVESA;
 
+	/* TUI functions */
+
+	_plSetTextMode=plSetTextMode;
+
 	_displayvoid=swtext_displayvoid;
 	_displaystrattr=swtext_displaystrattr_cp437;
 	_displaystr=swtext_displaystr_cp437;
@@ -1754,18 +1644,16 @@ int x11_init(int use_explicit)
 
 	_drawbar=swtext_drawbar;
 	_idrawbar=swtext_idrawbar;
+	_setcur=swtext_setcur;
+	_setcurshape=swtext_setcurshape;
+
 
 	___setup_key(ekbhit, ekbhit); /* filters in more keys */
 	_validkey=___valid_key;
 
-	_plSetTextMode=plSetTextMode;
-
 	_conRestore=conRestore;
 	_conSave=conSave;
 	_plDosShell=plDosShell;
-
-	_setcur=setcur;
-	_setcurshape=setcurshape;
 
 	plSetTextMode(0);
 	return 0;

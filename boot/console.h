@@ -40,7 +40,7 @@ extern void (*_Screenshot)(void);
 extern void (*_TextScreenshot)(int scrType);
 extern void (*_RefreshScreen)(void);
 
-extern void (*_setcur)(uint8_t y, uint8_t x);
+extern void (*_setcur)(uint16_t y, uint16_t x);
 extern void (*_setcurshape)(uint16_t shape);
 
 extern int (*_conRestore)(void);

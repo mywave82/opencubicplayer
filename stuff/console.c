@@ -558,7 +558,7 @@ static void __TextScreenshot(int scrType)
 	fprintf(stderr, "TextScreenshot not implemented in this console driver\n");
 #endif
 }
-static void __setcur(unsigned char y, unsigned char x)
+static void __setcur(uint16_t y, uint16_t x)
 {
 #ifdef CONSOLE_DEBUG
 	fprintf(stderr, "setcur not implemented in this console driver\n");

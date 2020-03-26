@@ -98,8 +98,6 @@ static int ekbhit(void);
 static int ___valid_key(uint16_t key);
 static void sdl2_gflushpal(void);
 static void sdl2_gupdatepal(unsigned char color, unsigned char _red, unsigned char _green, unsigned char _blue);
-static void setcur(uint8_t y, uint8_t x);
-static void setcurshape(uint16_t shape);
 
 static uint32_t sdl2_palette[256] = {
 	0xff000000,
@@ -120,7 +118,6 @@ static uint32_t sdl2_palette[256] = {
 	0xffffffff,
 };
 
-static unsigned int curshape=0, curposx=0, curposy=0;
 static uint8_t *virtual_framebuffer = 0;
 
 static void sdl2_close_window(void)
@@ -745,8 +742,8 @@ int sdl2_init(void)
 	_drawbar=swtext_drawbar;
 	_idrawbar=swtext_idrawbar;
 
-	_setcur=setcur;
-	_setcurshape=setcurshape;
+	_setcur=swtext_setcur;
+	_setcurshape=swtext_setcurshape;
 	_conRestore=conRestore;
 	_conSave=conSave;
 
@@ -1123,159 +1120,6 @@ static int ___valid_key(uint16_t key)
 	return 0;
 }
 
-void RefreshScreenText(void)
-{
-	void *pixels;
-	uint8_t charbackup[16*8];
-	int pitch;
-	static int shapetimer=0;
-	static int shapetoggler=0;
-	int doshape = 0;
-
-	if (!current_texture)
-		return;
-
-	if (!virtual_framebuffer)
-		return;
-
-	/* if we have an active cursor, iterate the blink-timer */
-	if (curshape)
-	{
-		shapetimer++;
-		if (shapetimer >= ((fsFPS<=3)?1:(fsFPS / 3)))
-		{
-			shapetoggler^=1;
-			shapetimer=0;
-		}
-		if (shapetoggler)
-		{
-			doshape=curshape;
-		}
-	}
-
-#warning we need a curshapeattr API, instead of guessing the colors (we no longer have vgamem)
-	if (doshape == 1)
-	{ /* save original buffer, and add a color 15 _ marker */
-		switch (plCurrentFont)
-		{
-			case _8x16:
-				memcpy (charbackup + 0, virtual_framebuffer + curposx * 8 + (curposy * 16 + 13) * plScrLineBytes, 8);
-				memcpy (charbackup + 8, virtual_framebuffer + curposx * 8 + (curposy * 16 + 14) * plScrLineBytes, 8);
-				memset (virtual_framebuffer + curposx * 8 + (curposy * 16 + 13) * plScrLineBytes, 15, 8);
-				memset (virtual_framebuffer + curposx * 8 + (curposy * 16 + 14) * plScrLineBytes, 14, 8);
-				break;
-			case _8x8:
-				memcpy (charbackup, virtual_framebuffer + curposx * 8 + (curposy * 8 + 7) * plScrLineBytes, 8);
-				memset (virtual_framebuffer + curposx * 8 + (curposy * 8 + 7) * plScrLineBytes, 15, 8);
-				break;
-			case _4x4:
-				memcpy (charbackup, virtual_framebuffer + curposx * 4 + (curposy * 4 + 3) * plScrLineBytes, 4);
-				memset (virtual_framebuffer + curposx * 4 + (curposy * 4 + 3) * plScrLineBytes, 15, 4);
-				break;
-		}
-	} else if (doshape == 2)
-	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
-		int i;
-		uint8_t c = 0x0f;
-		switch (plCurrentFont)
-		{
-			case _8x16:
-				c |= virtual_framebuffer[curposx * 8 + 7 + curposy * 16 * plScrLineBytes] << 4;
-				for (i=0;i<16;i++)
-				{
-					memcpy (charbackup + i * 8, virtual_framebuffer + curposx * 8 + (curposy * 16 + i) * plScrLineBytes, 8);
-				}
-				break;
-			case _8x8:
-				c |= virtual_framebuffer[curposx * 8 + 7 + curposy * 8 * plScrLineBytes] << 4;
-				for (i=0;i<8;i++)
-				{
-					memcpy (charbackup + i * 8, virtual_framebuffer + curposx * 8 + (curposy * 8 + i) * plScrLineBytes, 8);
-				}
-				break;
-			case _4x4:
-				c |= virtual_framebuffer[curposx * 4 + 3 + curposy * 4 * plScrLineBytes] << 4;
-				for (i=0;i<4;i++)
-				{
-					memcpy (charbackup + i * 4, virtual_framebuffer + curposx * 4 + (curposy * 4 + i) * plScrLineBytes, 4);
-				}
-				break;
-		}
-		swtext_displaystr_cp437 (curposy, curposx, c, "\xdb", 1);
-	}
-
-	SDL_LockTexture (current_texture, NULL, &pixels, &pitch);
-
-	{
-		uint8_t *src=virtual_framebuffer;
-		uint8_t *dst_line = (uint8_t *)/*current_surface->*/pixels;
-		int Y=0;
-
-		uint32_t *dst;
-
-		while (1)
-		{
-			int j;
-
-			dst = (uint32_t *)dst_line;
-			for (j=0;j<plScrLineBytes;j++)
-				*(dst++)=sdl2_palette[*(src++)];
-			if ((++Y)>=plScrLines)
-				break;
-			dst_line += /*current_surface->*/pitch;
-		}
-	}
-
-	SDL_UnlockTexture (current_texture);
-
-	SDL_RenderCopy (current_renderer, current_texture, NULL, NULL);
-	SDL_RenderPresent (current_renderer);
-
-	fontengine_iterate ();
-
-	/* restore original buffer */
-	if (doshape == 1)
-	{
-		switch (plCurrentFont)
-		{
-			case _8x16:
-				memcpy (virtual_framebuffer + curposx * 8 + (curposy * 16 + 13) * plScrLineBytes, charbackup + 0, 8);
-				memcpy (virtual_framebuffer + curposx * 8 + (curposy * 16 + 14) * plScrLineBytes, charbackup + 8, 8);
-				break;
-			case _8x8:
-				memcpy (virtual_framebuffer + curposx * 8 + (curposy * 8 + 7) * plScrLineBytes, charbackup, 8);
-				break;
-			case _4x4:
-				memcpy (virtual_framebuffer + curposx * 4 + (curposy * 4 + 3) * plScrLineBytes, charbackup, 4);
-				break;
-		}
-	} else if (doshape == 2)
-	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
-		int i;
-		switch (plCurrentFont)
-		{
-			case _8x16:
-				for (i=0;i<16;i++)
-				{
-					memcpy (virtual_framebuffer + curposx * 8 + (curposy * 16 + i) * plScrLineBytes, charbackup + i * 8, 8);
-				}
-				break;
-			case _8x8:
-				for (i=0;i<8;i++)
-				{
-					memcpy (virtual_framebuffer + curposx * 8 + (curposy * 8 + i) * plScrLineBytes, charbackup + i * 8, 8);
-				}
-				break;
-			case _4x4:
-				for (i=0;i<4;i++)
-				{
-					memcpy ( virtual_framebuffer + curposx * 4 + (curposy * 4 + i) * plScrLineBytes, charbackup + i * 4, 4);
-				}
-				break;
-		}
-	}
-}
-
 static void RefreshScreenGraph(void)
 {
 	void *pixels;
@@ -1313,6 +1157,23 @@ static void RefreshScreenGraph(void)
 
 	SDL_RenderCopy (current_renderer, current_texture, NULL, NULL);
 	SDL_RenderPresent (current_renderer);
+
+	fontengine_iterate ();
+}
+
+void RefreshScreenText(void)
+{
+	if (!current_texture)
+		return;
+
+	if (!virtual_framebuffer)
+		return;
+
+	swtext_cursor_inject();
+
+	RefreshScreenGraph();
+
+	swtext_cursor_eject();
 
 	fontengine_iterate ();
 }
@@ -1530,15 +1391,4 @@ static void sdl2_gupdatepal(unsigned char index, unsigned char _red, unsigned ch
 	pal[(index<<2)+2] = _red<<2;
 	pal[(index<<2)+1] = _green<<2;
 	pal[(index<<2)+0] = _blue<<2;
-}
-
-static void setcur(uint8_t y, uint8_t x)
-{
-	curposx=x;
-	curposy=y;
-}
-
-static void setcurshape(uint16_t shape)
-{
-	curshape=shape;
 }

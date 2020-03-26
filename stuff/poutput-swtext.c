@@ -23,6 +23,7 @@
 #include "config.h"
 #include <string.h>
 #include "types.h"
+#include "framelock.h"
 #include "latin1.h"
 #include "pfonts.h"
 #include "poutput.h"
@@ -356,6 +357,7 @@ void swtext_displayvoid(uint16_t y, uint16_t x, uint16_t len)
 	unsigned int length;
 	unsigned int count;
 	int i;
+
 	switch (plCurrentFont)
 	{
 		default:
@@ -375,6 +377,7 @@ void swtext_displayvoid(uint16_t y, uint16_t x, uint16_t len)
 			count = 4;
 			break;
 	}
+
 	for (i=0; i < count; i++)
 	{
 		memset (target, 0, length);
@@ -607,4 +610,138 @@ void swtext_idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 		}
 		target += plScrLineBytes;
 	}
+}
+
+static unsigned int swtext_curshape=0, swtext_curposx=0, swtext_curposy=0;
+static uint8_t swtext_cursor_buffer[16*8];
+static int swtext_shapetimer=0;
+static int swtext_shapetoggler=0;
+static int swtext_shapestatus = 0;
+
+void swtext_setcur(uint16_t y, uint16_t x)
+{
+	swtext_curposx=x;
+	swtext_curposy=y;
+}
+
+void swtext_setcurshape(uint16_t shape)
+{
+	swtext_curshape=shape;
+}
+
+void swtext_cursor_inject (void)
+{
+	swtext_shapestatus = 0;
+
+	/* if we have an active cursor, iterate the blink-timer */
+	if (swtext_curshape)
+	{
+		swtext_shapetimer++;
+		if (swtext_shapetimer >= ((fsFPS<=3)?1:(fsFPS / 3)))
+		{
+			swtext_shapetoggler^=1;
+			swtext_shapetimer=0;
+		}
+		if (swtext_shapetoggler)
+		{
+			swtext_shapestatus=swtext_curshape;
+		}
+	}
+
+#warning we need a swtext_curshapeattr API, instead of guessing the colors (we no longer have vgamem)
+	if (swtext_shapestatus == 1)
+	{ /* save original buffer, and add a color 15 _ marker */
+		switch (plCurrentFont)
+		{
+			case _8x16:
+				memcpy (swtext_cursor_buffer + 0, plVidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 13) * plScrLineBytes, 8);
+				memcpy (swtext_cursor_buffer + 8, plVidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 14) * plScrLineBytes, 8);
+				memset (plVidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 13) * plScrLineBytes, 15, 8);
+				memset (plVidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 14) * plScrLineBytes, 14, 8);
+				break;
+			case _8x8:
+				memcpy (swtext_cursor_buffer, plVidMem + swtext_curposx * 8 + (swtext_curposy * 8 + 7) * plScrLineBytes, 8);
+				memset (plVidMem + swtext_curposx * 8 + (swtext_curposy * 8 + 7) * plScrLineBytes, 15, 8);
+				break;
+			case _4x4:
+				memcpy (swtext_cursor_buffer, plVidMem + swtext_curposx * 4 + (swtext_curposy * 4 + 3) * plScrLineBytes, 4);
+				memset (plVidMem + swtext_curposx * 4 + (swtext_curposy * 4 + 3) * plScrLineBytes, 15, 4);
+				break;
+		}
+	} else if (swtext_shapestatus == 2)
+	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
+		int i;
+		uint8_t c = 0x0f;
+		switch (plCurrentFont)
+		{
+			case _8x16:
+				c |= plVidMem[swtext_curposx * 8 + 7 + swtext_curposy * 16 * plScrLineBytes] << 4;
+				for (i=0;i<16;i++)
+				{
+					memcpy (swtext_cursor_buffer + i * 8, plVidMem + swtext_curposx * 8 + (swtext_curposy * 16 + i) * plScrLineBytes, 8);
+				}
+				break;
+			case _8x8:
+				c |= plVidMem[swtext_curposx * 8 + 7 + swtext_curposy * 8 * plScrLineBytes] << 4;
+				for (i=0;i<8;i++)
+				{
+					memcpy (swtext_cursor_buffer + i * 8, plVidMem + swtext_curposx * 8 + (swtext_curposy * 8 + i) * plScrLineBytes, 8);
+				}
+				break;
+			case _4x4:
+				c |= plVidMem[swtext_curposx * 4 + 3 + swtext_curposy * 4 * plScrLineBytes] << 4;
+				for (i=0;i<4;i++)
+				{
+					memcpy (swtext_cursor_buffer + i * 4, plVidMem + swtext_curposx * 4 + (swtext_curposy * 4 + i) * plScrLineBytes, 4);
+				}
+				break;
+		}
+		swtext_displaystr_cp437 (swtext_curposy, swtext_curposx, c, "\xdb", 1);
+	}
+}
+
+void swtext_cursor_eject (void)
+{
+	/* restore original buffer */
+	if (swtext_shapestatus == 1)
+	{
+		switch (plCurrentFont)
+		{
+			case _8x16:
+				memcpy (plVidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 13) * plScrLineBytes, swtext_cursor_buffer + 0, 8);
+				memcpy (plVidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 14) * plScrLineBytes, swtext_cursor_buffer + 8, 8);
+				break;
+			case _8x8:
+				memcpy (plVidMem + swtext_curposx * 8 + (swtext_curposy * 8 + 7) * plScrLineBytes, swtext_cursor_buffer, 8);
+				break;
+			case _4x4:
+				memcpy (plVidMem + swtext_curposx * 4 + (swtext_curposy * 4 + 3) * plScrLineBytes, swtext_cursor_buffer, 4);
+				break;
+		}
+	} else if (swtext_shapestatus == 2)
+	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
+		int i;
+		switch (plCurrentFont)
+		{
+			case _8x16:
+				for (i=0;i<16;i++)
+				{
+					memcpy (plVidMem + swtext_curposx * 8 + (swtext_curposy * 16 + i) * plScrLineBytes, swtext_cursor_buffer + i * 8, 8);
+				}
+				break;
+			case _8x8:
+				for (i=0;i<8;i++)
+				{
+					memcpy (plVidMem + swtext_curposx * 8 + (swtext_curposy * 8 + i) * plScrLineBytes, swtext_cursor_buffer + i * 8, 8);
+				}
+				break;
+			case _4x4:
+				for (i=0;i<4;i++)
+				{
+					memcpy (plVidMem + swtext_curposx * 4 + (swtext_curposy * 4 + i) * plScrLineBytes, swtext_cursor_buffer + i * 4, 4);
+				}
+				break;
+		}
+	}
+
 }

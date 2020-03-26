@@ -585,7 +585,7 @@ static void setcurshape(unsigned short shape)
 	}
 }
 
-static void setcur(unsigned char y, unsigned char x)
+static void setcur(uint16_t y, uint16_t x)
 {
 	scrn.x=x;
 	scrn.y=y;

@@ -110,15 +110,12 @@ static int ekbhit(void);
 static int ___valid_key(uint16_t key);
 static void sdl_gflushpal(void);
 static void sdl_gupdatepal(unsigned char color, unsigned char _red, unsigned char _green, unsigned char _blue);
-static void setcur(uint8_t y, uint8_t x);
-static void setcurshape(uint16_t shape);
 
 static uint8_t red[256]=  {0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa, 0xaa, 0xaa, 0x55, 0x55, 0x55, 0x55, 0xff, 0xff, 0xff, 0xff};
 static uint8_t green[256]={0x00, 0x00, 0xaa, 0xaa, 0x00, 0x00, 0x55, 0xaa, 0x55, 0x55, 0xff, 0xff, 0x55, 0x55, 0xff, 0xff};
 static uint8_t blue[256]= {0x00, 0xaa, 0x00, 0xaa, 0x00, 0xaa, 0x00, 0xaa, 0x55, 0xff, 0x55, 0xff, 0x55, 0xff, 0x55, 0xff};
 static uint32_t sdl_palette[256];
 
-static unsigned int curshape=0, curposx=0, curposy=0;
 static uint8_t *virtual_framebuffer = 0;
 
 static void set_state_textmode(int fullscreen, int width, int height)
@@ -600,8 +597,9 @@ int sdl_init(void)
 	_drawbar=swtext_drawbar;
 	_idrawbar=swtext_idrawbar;
 
-	_setcur=setcur;
-	_setcurshape=setcurshape;
+	_setcur=swtext_setcur;
+	_setcurshape=swtext_setcurshape;
+
 	_conRestore=conRestore;
 	_conSave=conSave;
 
@@ -974,84 +972,13 @@ static int ___valid_key(uint16_t key)
 	return 0;
 }
 
-static void RefreshScreenText(void)
+static void RefreshScreenGraph(void)
 {
-	uint8_t charbackup[16*8];
-	static int shapetimer=0;
-	static int shapetoggler=0;
-	int doshape = 0;
-
 	if (!current_surface)
 		return;
 
 	if (!virtual_framebuffer)
 		return;
-
-	/* if we have an active cursor, iterate the blink-timer */
-	if (curshape)
-	{
-		shapetimer++;
-		if (shapetimer >= ((fsFPS<=3)?1:(fsFPS / 3)))
-		{
-			shapetoggler^=1;
-			shapetimer=0;
-		}
-		if (shapetoggler)
-		{
-			doshape=curshape;
-		}
-	}
-
-#warning we need a curshapeattr API, instead of guessing the colors (we no longer have vgamem)
-	if (doshape == 1)
-	{ /* save original buffer, and add a color 15 _ marker */
-		switch (plCurrentFont)
-		{
-			case _8x16:
-				memcpy (charbackup + 0, virtual_framebuffer + curposx * 8 + (curposy * 16 + 13) * plScrLineBytes, 8);
-				memcpy (charbackup + 8, virtual_framebuffer + curposx * 8 + (curposy * 16 + 14) * plScrLineBytes, 8);
-				memset (virtual_framebuffer + curposx * 8 + (curposy * 16 + 13) * plScrLineBytes, 15, 8);
-				memset (virtual_framebuffer + curposx * 8 + (curposy * 16 + 14) * plScrLineBytes, 14, 8);
-				break;
-			case _8x8:
-				memcpy (charbackup, virtual_framebuffer + curposx * 8 + (curposy * 8 + 7) * plScrLineBytes, 8);
-				memset (virtual_framebuffer + curposx * 8 + (curposy * 8 + 7) * plScrLineBytes, 15, 8);
-				break;
-			case _4x4:
-				memcpy (charbackup, virtual_framebuffer + curposx * 4 + (curposy * 4 + 3) * plScrLineBytes, 4);
-				memset (virtual_framebuffer + curposx * 4 + (curposy * 4 + 3) * plScrLineBytes, 15, 4);
-				break;
-		}
-	} else if (doshape == 2)
-	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
-		int i;
-		uint8_t c = 0x0f;
-		switch (plCurrentFont)
-		{
-			case _8x16:
-				c |= virtual_framebuffer[curposx * 8 + 7 + curposy * 16 * plScrLineBytes] << 4;
-				for (i=0;i<16;i++)
-				{
-					memcpy (charbackup + i * 8, virtual_framebuffer + curposx * 8 + (curposy * 16 + i) * plScrLineBytes, 8);
-				}
-				break;
-			case _8x8:
-				c |= virtual_framebuffer[curposx * 8 + 7 + curposy * 8 * plScrLineBytes] << 4;
-				for (i=0;i<8;i++)
-				{
-					memcpy (charbackup + i * 8, virtual_framebuffer + curposx * 8 + (curposy * 8 + i) * plScrLineBytes, 8);
-				}
-				break;
-			case _4x4:
-				c |= virtual_framebuffer[curposx * 4 + 3 + curposy * 4 * plScrLineBytes] << 4;
-				for (i=0;i<4;i++)
-				{
-					memcpy (charbackup + i * 4, virtual_framebuffer + curposx * 4 + (curposy * 4 + i) * plScrLineBytes, 4);
-				}
-				break;
-		}
-		swtext_displaystr_cp437 (curposy, curposx, c, "\xdb", 1);
-	}
 
 	SDL_LockSurface(current_surface);
 
@@ -1118,122 +1045,21 @@ static void RefreshScreenText(void)
 	SDL_Flip(current_surface);
 
 	fontengine_iterate ();
-
-	/* restore original buffer */
-	if (doshape == 1)
-	{
-		switch (plCurrentFont)
-		{
-			case _8x16:
-				memcpy (virtual_framebuffer + curposx * 8 + (curposy * 16 + 13) * plScrLineBytes, charbackup + 0, 8);
-				memcpy (virtual_framebuffer + curposx * 8 + (curposy * 16 + 14) * plScrLineBytes, charbackup + 8, 8);
-				break;
-			case _8x8:
-				memcpy (virtual_framebuffer + curposx * 8 + (curposy * 8 + 7) * plScrLineBytes, charbackup, 8);
-				break;
-			case _4x4:
-				memcpy (virtual_framebuffer + curposx * 4 + (curposy * 4 + 3) * plScrLineBytes, charbackup, 4);
-				break;
-		}
-	} else if (doshape == 2)
-	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
-		int i;
-		switch (plCurrentFont)
-		{
-			case _8x16:
-				for (i=0;i<16;i++)
-				{
-					memcpy (virtual_framebuffer + curposx * 8 + (curposy * 16 + i) * plScrLineBytes, charbackup + i * 8, 8);
-				}
-				break;
-			case _8x8:
-				for (i=0;i<8;i++)
-				{
-					memcpy (virtual_framebuffer + curposx * 8 + (curposy * 8 + i) * plScrLineBytes, charbackup + i * 8, 8);
-				}
-				break;
-			case _4x4:
-				for (i=0;i<4;i++)
-				{
-					memcpy ( virtual_framebuffer + curposx * 4 + (curposy * 4 + i) * plScrLineBytes, charbackup + i * 4, 4);
-				}
-				break;
-		}
-	}
 }
 
-static void RefreshScreenGraph(void)
+static void RefreshScreenText(void)
 {
-
 	if (!current_surface)
 		return;
 
 	if (!virtual_framebuffer)
 		return;
 
-	SDL_LockSurface(current_surface);
+	swtext_cursor_inject();
 
-	{
-		uint8_t *src=(uint8_t *)virtual_framebuffer;
-		uint8_t *dst_line = (uint8_t *)current_surface->pixels;
-		int Y=0, j;
+	RefreshScreenGraph();
 
-		switch (current_surface->format->BytesPerPixel)
-		{
-			default:
-				fprintf(stderr, "[SDL-video]: bytes-per-pixel: %d (TODO)\n", current_surface->format->BytesPerPixel);
-				exit(-1);
-
-			case 4:
-			{
-				uint32_t *dst;
-				while (1)
-				{
-					dst = (uint32_t *)dst_line;
-					for (j=0;j<plScrLineBytes;j++)
-						*(dst++)=sdl_palette[*(src++)];
-					if ((++Y)>=plScrLines)
-						break;
-					dst_line += current_surface->pitch;
-				}
-				break;
-			}
-			case 2:
-			{
-				uint16_t *dst;
-				while (1)
-				{
-					dst = (uint16_t *)dst_line;
-					for (j=0;j<plScrLineBytes;j++)
-						*(dst++)=sdl_palette[*(src++)];
-					if ((++Y)>=plScrLines)
-						break;
-					dst_line += current_surface->pitch;
-				}
-			}
-			case 1:
-			{
-				uint8_t *dst;
-				while (1)
-				{
-					dst = dst_line;
-					for (j=0;j<plScrLineBytes;j++)
-						*(dst++)=sdl_palette[*(src++)];
-/*
-					memcpy(dst, src, plScrLineBytes);
-*/
-					src+=plScrLineBytes;
-					if ((++Y)>=plScrLines)
-						break;
-					dst_line += current_surface->pitch;
-				}
-			}
-		}
-	}
-
-	SDL_UnlockSurface(current_surface);
-
-	SDL_Flip(current_surface);
+	swtext_cursor_eject();
 
 	fontengine_iterate ();
 }
@@ -1382,14 +1208,4 @@ static void sdl_gupdatepal(unsigned char color, unsigned char _red, unsigned cha
 	red[color]=_red<<2;
 	green[color]=_green<<2;
 	blue[color]=_blue<<2;
-}
-
-static void setcur(uint8_t y, uint8_t x)
-{
-	curposx=x;
-	curposy=y;
-}
-static void setcurshape(uint16_t shape)
-{
-	curshape=shape;
 }
