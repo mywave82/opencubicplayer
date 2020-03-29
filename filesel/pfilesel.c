@@ -93,7 +93,7 @@ struct dmDrive *dmFILE;
 
 struct preprocregstruct *plPreprocess = 0;
 
-static void fsSavePlayList(const struct modlist *ml);
+static int fsSavePlayList(const struct modlist *ml);
 
 struct dmDrive *RegisterDrive(const char *dmDrive)
 {
@@ -637,6 +637,11 @@ int fsFilesLeft(void)
 	return (isnextplay!=NextPlayNone)||playlist->num;
 }
 
+/* returns zero if fsReadDir() fails */
+/* pos = 0, move cursor to the top
+ * pos = 1, maintain current cursor position
+ * pos = 2, move cursor one up
+ */
 static char fsScanDir(int pos)
 {
 	unsigned int op=0;
@@ -1547,6 +1552,7 @@ void fsSetup(void)
 	int stored = 0;
 	uint16_t c;
 	int LastCurrent;
+	int InKeyboardHelp = 0;
 
 	plSetTextMode(fsScrType);
 	while (1)
@@ -1554,55 +1560,73 @@ void fsSetup(void)
 		const char *fsInfoModes[]= {"name and size","composer","comment","style and playtime","long filenames"};
 		uint16_t sbuf[CONSOLE_MAX_X];
 		const char *modename = plGetDisplayTextModeName();
+		int i;
 
+superbreak:
 		make_title("file selector setup");
 
-		displaystr(1, 0, 0x07, "1:  screen mode: ",17);
-		displaystr(1, 17, 0x0f, modename, plScrWidth - 17);
-		/*displaystr(1, 0, 0x07, "1:  screen mode (if driver supports it TODO): ", 45);
-		displaystr(1, 45, 0x0F, (fsScrType&4)?"132x":" 80x", 4);
-		displaystr(1, 49, 0x0F, ((fsScrType&3)==0)?"25":((fsScrType&3)==1)?"30":((fsScrType&3)==2)?"50":"60", 69);*/
-		displaystr(2, 0, 0x07, "2:  scramble module list order: ", 32);
-		displaystr(2, 32, 0x0F, fsListScramble?"on":"off", 48);
-		displaystr(3, 0, 0x07, "3:  remove modules from playlist when played: ", 46);
-		displaystr(3, 46, 0x0F, fsListRemove?"on":"off", 34);
-		displaystr(4, 0, 0x07, "4:  loop modules: ", 18);
-		displaystr(4, 18, 0x0F, fsLoopMods?"on":"off", 62);
-		displaystr(5, 0, 0x07, "5:  scan module informatin: ", 28);
-		displaystr(5, 28, 0x0F, fsScanNames?"on":"off", 52);
-		displaystr(6, 0, 0x04, "6:  scan module information files: ", 35);
-		displaystr(6, 35, 0x0F, fsScanMIF?"on":"off", 45);
-		displaystr(7, 0, 0x07, "7:  scan archive contents: ", 27);
-		displaystr(7, 27, 0x0F, fsScanArcs?"on":"off", 53);
-		displaystr(8, 0, 0x07, "8:  scan module information in archives: ", 41);
-		displaystr(8, 41, 0x0F, fsScanInArc?"on":"off", 39);
-		displaystr(9, 0, 0x07, "9:  save module information to disk: ", 37);
-		displaystr(9, 37, 0x0F, fsWriteModInfo?"on":"off", 42);
-		displaystr(10, 0, 0x07, "A:  edit window: ", 17);
-		displaystr(10, 17, 0x0F, fsEditWin?"on":"off", 63);
-		displaystr(11, 0, 0x07, "B:  module type colors: ", 24);
-		displaystr(11, 24, 0x0F, fsColorTypes?"on":"off", 56);
-		displaystr(12, 0, 0x07, "C:  module information display mode: ", 37);
-		displaystr(12, 37, 0x0F, fsInfoModes[fsInfoMode], 43);
-		displaystr(13, 0, 0x07, "D:  put archives: ", 18);
-		displaystr(13, 18, 0x0F, fsPutArcs?"on":"off", 43);
+		displaystr( 1,  0, 0x07, "1:  screen mode: ", 17);
+		displaystr( 1, 17, 0x0f, modename, plScrWidth - 17);
+		/*
+		displaystr( 1,  0, 0x07, "1:  screen mode (if driver supports it TODO): ", 45);
+		displaystr( 1, 45, 0x0F, (fsScrType&4)?"132x":" 80x", 4);
+		displaystr( 1, 49, 0x0F, ((fsScrType&3)==0)?"25":((fsScrType&3)==1)?"30":((fsScrType&3)==2)?"50":"60", plScrWidth - 49);
+		*/
+		displaystr( 2,  0, 0x07, "2:  scramble module list order: ", 32);
+		displaystr( 2, 32, 0x0F, fsListScramble?"on":"off", plScrWidth - 32);
+		displaystr( 3,  0, 0x07, "3:  remove modules from playlist when played: ", 46);
+		displaystr( 3, 46, 0x0F, fsListRemove?"on":"off", plScrWidth - 46);
+		displaystr( 4,  0, 0x07, "4:  loop modules: ", 18);
+		displaystr( 4, 18, 0x0F, fsLoopMods?"on":"off", plScrWidth - 18);
+		displaystr( 5,  0, 0x07, "5:  scan module informatin: ", 28);
+		displaystr( 5, 28, 0x0F, fsScanNames?"on":"off", plScrWidth - 28);
+		displaystr( 6,  0, 0x04, "6:  scan module information files: ", 35);
+		displaystr( 6, 35, 0x0F, fsScanMIF?"on":"off", plScrWidth - 35);
+		displaystr( 7,  0, 0x07, "7:  scan archive contents: ", 27);
+		displaystr( 7, 27, 0x0F, fsScanArcs?"on":"off", plScrWidth - 27);
+		displaystr( 8,  0, 0x07, "8:  scan module information in archives: ", 41);
+		displaystr( 8, 41, 0x0F, fsScanInArc?"on":"off", plScrWidth - 41);
+		displaystr( 9,  0, 0x07, "9:  save module information to disk: ", 37);
+		displaystr( 9, 37, 0x0F, fsWriteModInfo?"on":"off", plScrWidth - 37);
+		displaystr(10,  0, 0x07, "A:  edit window: ", 17);
+		displaystr(10, 17, 0x0F, fsEditWin?"on":"off", plScrWidth - 17);
+		displaystr(11,  0, 0x07, "B:  module type colors: ", 24);
+		displaystr(11, 24, 0x0F, fsColorTypes?"on":"off", plScrWidth - 24);
+		displaystr(12,  0, 0x07, "C:  module information display mode: ", 37);
+		displaystr(12, 37, 0x0F, fsInfoModes[fsInfoMode], plScrWidth - 37);
+		displaystr(13,  0, 0x07, "D:  put archives: ", 18);
+		displaystr(13, 18, 0x0F, fsPutArcs?"on":"off", plScrWidth - 18);
 
 		fillstr(sbuf, 0, 0x00, 0, plScrWidth-14);
 		writestring(sbuf, 0, 0x07, "+-: Target framerate: ", 22);
 		writenum(sbuf, 22, 0x0f, fsFPS, 10, 3, 1);
 		writestring(sbuf, 25, 0x07, ", actual framerate: ", 20);
 		writenum(sbuf, 45, 0x0f, LastCurrent=fsFPSCurrent, 10, 3, 1);
-		displaystrattr(14, 0, sbuf, plScrWidth-14);
+		displaystrattr(14, 0, sbuf, plScrWidth);
 
-		displaystr(16, 0, 0x07, "ALT-S (or CTRL-S if in X) to save current setup to ocp.ini", 58);
+		displayvoid (15, 0, plScrWidth);
+
+		displaystr(16, 0, 0x07, "ALT-S (or CTRL-S if in X) to save current setup to ocp.ini", plScrWidth);
 		displaystr(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
 
-		displaystr(17, 0, 0x03, (stored?"ocp.ini saved":""), 13);
+		displaystr(17, 0, 0x03, (stored?"ocp.ini saved":""), plScrWidth);
 
-		while (!ekbhit()&&(LastCurrent==fsFPSCurrent))
+		for (i=18; i < plScrHeight; i++)
+		{
+			displayvoid (i, 0, plScrWidth);
+		}
+
+		if (InKeyboardHelp)
+		{
+			InKeyboardHelp = cpiKeyHelpDisplay();
 			framelock();
-		if (!ekbhit())
 			continue;
+		} else {
+			while (!ekbhit()&&(LastCurrent==fsFPSCurrent))
+				framelock();
+			if (!ekbhit())
+				continue;
+		}
 
 		c=egetch();
 
@@ -1647,9 +1671,10 @@ void fsSetup(void)
 				stored = 1;
 				break;
 			}
-			case 27:
+			case KEY_ESC:
 				    return;
 			case KEY_ALT_K:
+				cpiKeyHelpClear();
 				cpiKeyHelp('1', "Toggle option 1");
 				cpiKeyHelp('2', "Toggle option 2");
 				cpiKeyHelp('3', "Toggle option 3");
@@ -1671,23 +1696,30 @@ void fsSetup(void)
 				cpiKeyHelp('-', "Decrease FPS");
 				cpiKeyHelp(KEY_ALT_S, "Store settings to ocp.ini");
 				cpiKeyHelp(KEY_CTRL_S, "Store settings to ocp.ini (avoid this key if in curses)");
-				cpiKeyHelpDisplay();
-				break;
+				InKeyboardHelp = 1;
+				goto superbreak;
 		}
 	}
 }
 
 static struct moduleinfostruct mdbEditBuf;
 
-static unsigned char fsEditModType(unsigned char oldtype)
+/* recall until it returns zero */
+static int fsEditModType(unsigned char *oldtype)
 {
-	unsigned char index[256];
-	int length=0;
-	int curindex=0;
+	static int state = 0;
+	/* 0 - new / idle
+	 * 1 - in edit
+	 * 2 - in keyboard help
+	 */
+
+	static unsigned char index[256];
+	static int length=0;
+	static int curindex=0;
+	int offset=0;
 
 	int i;
 	const char *temp;
-	int done=0;
 
 	const int Height=20;
 	const int iHeight=Height-1;
@@ -1696,18 +1728,28 @@ static unsigned char fsEditModType(unsigned char oldtype)
 	int Left=(plScrWidth-Width)/2;
 	const int Mid = 7;
 
-	int editcol=0;
+	static int editcol=0;
 
-	for (i=0;i<256;i++)
+	//int InKeyboardHelp = 0;
+
+	if (state == 0) /* new edit / first time */
 	{
-		temp=mdbGetModTypeString(i);
-		if ((temp[0])||(i==mtUnRead))
+		length = 0;
+		curindex = 0;
+		for (i=0;i<256;i++)
 		{
-			index[length]=i;
-			if (i==oldtype)
-				curindex=length;
-			length++;
+			temp=mdbGetModTypeString(i);
+			if ((temp[0])||(i==mtUnRead))
+			{
+				index[length]=i;
+				if (i==*oldtype)
+				{
+					curindex=length;
+				}
+				length++;
+			}
 		}
+		state = 1;
 	}
 
 	for (i=0;i<Height;i++)
@@ -1731,494 +1773,789 @@ static unsigned char fsEditModType(unsigned char oldtype)
 	displaystr(Top+Height, Left+Mid, 0x04, "\xc1", 1);
 	displaystr(Top+Height, Left+Width, 0x04, "\xd9", 1);
 
-	while (ekbhit())
-		egetch();
-	while (!done)
+	if (length>iHeight)
 	{
-		int offset;
-		if (length>iHeight)
+		if (curindex<=(iHeight/2))
 		{
-			if (curindex<=(iHeight/2))
-				offset=0;
-			else if (curindex>=(length-iHeight/2))
-				offset=length-iHeight;
-			else
-				offset=curindex-iHeight/2;
-		} else {
 			offset=0;
-		}
-		for (i=1;i<16;i++)
+		} else if (curindex>=(length-iHeight/2))
 		{
-			unsigned char col;
-			char buffer[11];
-			col=i;
-			if (editcol==i)
-				col|=0x80;
-			snprintf(buffer, sizeof(buffer), " color %2d ", i);
-			displaystr(Top+i, Left+Mid+1, col, buffer, 10);
+			offset=length-iHeight;
+		} else {
+			offset=curindex-iHeight/2;
 		}
-		for (i=0;i<iHeight;i++)
+	} else {
+		offset=0;
+	}
+
+	for (i=1;i<16;i++)
+	{
+		unsigned char col;
+		char buffer[11];
+		col=i;
+		if (editcol==i)
+			col|=0x80;
+		snprintf(buffer, sizeof(buffer), " color %2d ", i);
+		displaystr(Top+i, Left+Mid+1, col, buffer, 10);
+	}
+	for (i=0;i<iHeight;i++)
+	{
+		unsigned char col;
+		if ((!editcol)&&((offset+i)==curindex))
+			col=0x80;
+		else
+			col=0;
+		displaystr(Top+i+1, Left+1, col, "      ", 6);
+		if ((offset+i)>=length)
+			break;
+		col|=fsTypeCols[index[offset+i]&0xFF];
+		displaystr(Top+i+1, Left+2, col, mdbGetModTypeString(index[offset+i]), 4);
+	}
+	if (state == 2)
+	{
+		if (cpiKeyHelpDisplay())
 		{
-			unsigned char col;
-			if ((!editcol)&&((offset+i)==curindex))
-				col=0x80;
-			else
-				col=0;
-			displaystr(Top+i+1, Left+1, col, "      ", 6);
-			if ((offset+i)>=length)
+			framelock();
+			return 1;
+		}
+		state = 1;
+	}
+	framelock();
+	while (ekbhit())
+	{
+		switch(egetch())
+		{
+			case KEY_RIGHT:
+				editcol = fsTypeCols[index[curindex]&0xFF];
 				break;
-			col|=fsTypeCols[index[offset+i]&0xFF];
-			displaystr(Top+i+1, Left+2, col, mdbGetModTypeString(index[offset+i]), 4);
-		}
-		framelock();
-		while (ekbhit())
-		{
-			switch(egetch())
-			{
-				case KEY_RIGHT:
-					editcol = fsTypeCols[index[curindex]&0xFF];
-					break;
-				case KEY_LEFT:
-					if (editcol)
-					{
-						char secname[20];
-						fsTypeCols[index[curindex]&0xff]=editcol;
-						snprintf(secname, sizeof(secname), "filetype %d", index[curindex]);
-						cfSetProfileInt(secname, "color", editcol, 10);
-						cfStoreConfig();
-						editcol=0;
-					}
-					break;
-				case KEY_UP:
-					if (editcol)
-					{
-						if (editcol>1)
-							editcol--;
-					} else {
-						if (curindex)
-							curindex--;
-					}
-					break;
-				case KEY_DOWN:
-					if (editcol)
-					{
-						if (editcol<15)
-							editcol++;
-					} else {
-						if ((curindex+1)<length)
-							curindex++;
-					}
-					break;
-				case KEY_ESC:
-					if (editcol)
-					{
-						editcol=0;
-					} else {
-						done=1;
-					}
-					break;
-				case _KEY_ENTER:
-					if (editcol)
-					{
-						char secname[20];
-						fsTypeCols[index[curindex]&0xff]=editcol;
-						sprintf(secname, "filetype %d", index[curindex]);
-						cfSetProfileInt(secname, "color", editcol, 10);
-						cfStoreConfig();
-						editcol=0;
-					} else
-						return index[curindex];
-					break;
-				case KEY_ALT_K:
-					cpiKeyHelp(KEY_RIGHT, "Edit color");
-					cpiKeyHelp(KEY_LEFT, "Edit color");
-					cpiKeyHelp(KEY_UP, "Select another filetype / change color");
-					cpiKeyHelp(KEY_DOWN, "Select another filetype / change color");
-					cpiKeyHelp(KEY_ESC, "Abort edit");
-					cpiKeyHelp(_KEY_ENTER, "Select the highlighted filetype");
-					cpiKeyHelpDisplay();
-					break;
-			}
+			case KEY_LEFT:
+				if (editcol)
+				{
+					char secname[20];
+					fsTypeCols[index[curindex]&0xff]=editcol;
+					snprintf(secname, sizeof(secname), "filetype %d", index[curindex]);
+					cfSetProfileInt(secname, "color", editcol, 10);
+					cfStoreConfig();
+					editcol=0;
+				}
+				break;
+			case KEY_UP:
+				if (editcol)
+				{
+					if (editcol>1)
+						editcol--;
+				} else {
+					if (curindex)
+						curindex--;
+				}
+				break;
+			case KEY_DOWN:
+				if (editcol)
+				{
+					if (editcol<15)
+						editcol++;
+				} else {
+					if ((curindex+1)<length)
+						curindex++;
+				}
+				break;
+			case KEY_ESC:
+				if (editcol)
+				{
+					editcol=0;
+				} else {
+					state = 0;
+					return 0;
+				}
+				break;
+			case _KEY_ENTER:
+				if (editcol)
+				{
+					char secname[20];
+					fsTypeCols[index[curindex]&0xff]=editcol;
+					sprintf(secname, "filetype %d", index[curindex]);
+					cfSetProfileInt(secname, "color", editcol, 10);
+					cfStoreConfig();
+					editcol=0;
+				} else {
+					*oldtype = index[curindex];
+					state = 0;
+					return 0;
+				}
+				break;
+			case KEY_ALT_K:
+				cpiKeyHelpClear();
+				cpiKeyHelp(KEY_RIGHT, "Edit color");
+				cpiKeyHelp(KEY_LEFT, "Edit color");
+				cpiKeyHelp(KEY_UP, "Select another filetype / change color");
+				cpiKeyHelp(KEY_DOWN, "Select another filetype / change color");
+				cpiKeyHelp(KEY_ESC, "Abort edit");
+				cpiKeyHelp(_KEY_ENTER, "Select the highlighted filetype");
+				state = 2;
+				return 1;
 		}
 	}
-	return oldtype;
+	return 1;
 }
 
 /* s might not be zero-terminated */
 static int fsEditString(unsigned int y, unsigned int x, unsigned int w, unsigned int l, char *s)
 {
-	char *str = malloc(l+1);
-	char *p=str;
+	static int state = 0;
+	/* 0 - new / idle
+	 * 1 - in edit
+	 * 2 - in keyboard help
+	 */
 
-	unsigned int curpos;
-	unsigned int cmdlen;
-	int insmode=1;
-	unsigned int scrolled=0;
+	static char *str = 0;
 
-	strncpy(str, s, l);
-	str[l] = 0;
+	static unsigned int curpos;
+	static unsigned int cmdlen;
+	static int insmode;
+	unsigned int scrolled = 0;
 
-	curpos=strlen(p);
-	cmdlen=strlen(p);
-
-	setcurshape(1);
-
-	while (1)
+	if (state == 0)
 	{
-		displaystr(y, x, 0x8F, p+scrolled, w);
-		setcur(y, x+curpos-scrolled);
-		while (!ekbhit())
-			framelock();
-		while (ekbhit())
+		str = malloc(l+1);
+		insmode=1;
+
+		strncpy(str, s, l);
+		str[l] = 0;
+
+		curpos=strlen(str);
+		cmdlen=strlen(str);
+
+		setcurshape(1);
+
+		state = 1;
+	}
+
+	while ((curpos-scrolled)>=w)
+	{
+		scrolled+=8;
+	}
+
+	while (scrolled && ((curpos - scrolled + 8) < w))
+	{
+		scrolled-=8;
+	}
+
+	displaystr(y, x, 0x8F, str+scrolled, w);
+	setcur(y, x+curpos-scrolled);
+
+	if (state == 2)
+	{
+		if (cpiKeyHelpDisplay())
 		{
-			uint16_t key=egetch();
-			if ((key>=0x20)&&(key<=0xFF))
+			framelock();
+			return 1;
+		}
+		state = 1;
+	}
+	framelock();
+
+	while (ekbhit())
+	{
+		uint16_t key=egetch();
+		if ((key>=0x20)&&(key<=0xFF))
+		{
+			if (insmode)
 			{
-				if (insmode)
+				if (cmdlen<l)
 				{
-					if (cmdlen<l)
-					{
-						memmove(p+curpos+1, p+curpos, cmdlen-curpos+1);
-						p[curpos]=key;
-						curpos++;
-						cmdlen++;
-					}
-				} else if (curpos==cmdlen)
+					memmove(str+curpos+1, str+curpos, cmdlen-curpos+1);
+					str[curpos]=key;
+					curpos++;
+					cmdlen++;
+				}
+			} else if (curpos==cmdlen)
+			{
+				if (cmdlen<l)
 				{
-					if (cmdlen<l)
-					{
-						p[curpos++]=key;
-						p[curpos]=0;
-						cmdlen++;
-					}
-				} else
-					p[curpos++]=key;
-			} else switch (key)
-			{
-				case KEY_LEFT:
-					if (curpos)
-						curpos--;
-					break;
-				case KEY_RIGHT:
-					if (curpos<cmdlen)
-						curpos++;
-					break;
-				case KEY_HOME:
-					curpos=0;
-					break;
-				case KEY_END:
-					curpos=cmdlen;
-					break;
-				case KEY_INSERT:
-					insmode=!insmode;
-					setcurshape(insmode?1:2);
-					break;
-				case KEY_DELETE:
-					if (curpos!=cmdlen)
-					{
-						memmove(p+curpos, p+curpos+1, cmdlen-curpos);
-						cmdlen--;
-					}
-					break;
-				case KEY_BACKSPACE:
-					if (curpos)
-					{
-						memmove(p+curpos-1, p+curpos, cmdlen-curpos+1);
-						curpos--;
-						cmdlen--;
-					}
-					break;
-				case KEY_ESC:
-					setcurshape(0);
-					free (str);
-					return 0;
-				case _KEY_ENTER:
-					setcurshape(0);
-					strncpy(s, str, l);
-					free (str);
-					return 1;
-				case KEY_ALT_K:
-					cpiKeyHelp(KEY_RIGHT, "Move cursor right");
-					cpiKeyHelp(KEY_LEFT, "Move cursor left");
-					cpiKeyHelp(KEY_HOME, "Move cursor home");
-					cpiKeyHelp(KEY_END, "Move cursor to the end");
-					cpiKeyHelp(KEY_INSERT, "Toggle insert mode");
-					cpiKeyHelp(KEY_DELETE, "Remove character at cursor");
-					cpiKeyHelp(KEY_BACKSPACE, "Remove character left of cursor");
-					cpiKeyHelp(KEY_ESC, "Cancel changes");
-					cpiKeyHelp(_KEY_ENTER, "Submit changes");
-					cpiKeyHelpDisplay();
-					break;
-
-			}
-			while ((curpos-scrolled)>=w)
-				scrolled+=8;
-			/*
-			while ((curpos-scrolled)<0)
-				scrolled-=8;
-			*/
+					str[curpos++]=key;
+					str[curpos]=0;
+					cmdlen++;
+				}
+			} else
+				str[curpos++]=key;
+		} else switch (key)
+		{
+			case KEY_LEFT:
+				if (curpos)
+					curpos--;
+				break;
+			case KEY_RIGHT:
+				if (curpos<cmdlen)
+					curpos++;
+				break;
+			case KEY_HOME:
+				curpos=0;
+				break;
+			case KEY_END:
+				curpos=cmdlen;
+				break;
+			case KEY_INSERT:
+				insmode=!insmode;
+				setcurshape(insmode?1:2);
+				break;
+			case KEY_DELETE:
+				if (curpos!=cmdlen)
+				{
+					memmove(str+curpos, str+curpos+1, cmdlen-curpos);
+					cmdlen--;
+				}
+				break;
+			case KEY_BACKSPACE:
+				if (curpos)
+				{
+					memmove(str+curpos-1, str+curpos, cmdlen-curpos+1);
+					curpos--;
+					cmdlen--;
+				}
+				break;
+			case KEY_ESC:
+				setcurshape(0);
+				free (str);
+				state = 0;
+				return 0;
+			case _KEY_ENTER:
+				setcurshape(0);
+				strncpy(s, str, l);
+				free (str);
+				state = 0;
+				return 0;
+			case KEY_ALT_K:
+				cpiKeyHelpClear();
+				cpiKeyHelp(KEY_RIGHT, "Move cursor right");
+				cpiKeyHelp(KEY_LEFT, "Move cursor left");
+				cpiKeyHelp(KEY_HOME, "Move cursor home");
+				cpiKeyHelp(KEY_END, "Move cursor to the end");
+				cpiKeyHelp(KEY_INSERT, "Toggle insert mode");
+				cpiKeyHelp(KEY_DELETE, "Remove character at cursor");
+				cpiKeyHelp(KEY_BACKSPACE, "Remove character left of cursor");
+				cpiKeyHelp(KEY_ESC, "Cancel changes");
+				cpiKeyHelp(_KEY_ENTER, "Submit changes");
+				state = 2;
+				return 1;
 		}
 	}
+
+	return 1;
 }
 
-static void fsEditChan(int y, int x, uint8_t *chan)
+static int fsEditString2(unsigned int y, unsigned int x, unsigned int w, char **s)
 {
-	int curpos=0;
-	char str[3];
-	convnum(*chan, str, 10, 2, 0);
+	static int state = 0;
+	/* 0 - new / idle
+	 * 1 - in edit
+	 * 2 - in keyboard help
+	 */
+	static char *str; /* p */
+	static unsigned int alloc;
+	static unsigned int cmdlen;
+	static int insmode;
+	static unsigned int curpos;
 
-	setcurshape(2);
+	unsigned int scrolled = 0;
 
-	while (1)
+	if (state == 0)
 	{
-		displaystr(y, x, 0x8F, str, 2);
-		setcur(y, x+curpos);
-		while (!ekbhit())
-			framelock();
-		while (ekbhit())
-		{
-			uint16_t key=egetch();
-			switch (key)
-			{
-				case ' ':
-				case '0': case '1': case '2': case '3': case '4':
-				case '5': case '6': case '7': case '8': case '9':
-					if (key==' ')
-						key='0';
-					if ((curpos==0)&&(key>='4'))
-						break;
-					if (curpos==0)
-						str[1]='0';
-					if ((curpos==1)&&(str[0]=='3')&&(key>'2'))
-						break;
-					if (curpos<2)
-						str[curpos]=key;
-				case KEY_RIGHT:
-					curpos="\x01\x02\x02"[curpos];
-					break;
-				case KEY_BACKSPACE:
-				case KEY_LEFT:
-					curpos="\x00\x00\x01"[curpos];
-					if (key==KEY_BACKSPACE)
-						str[curpos]='0';
-					break;
-				case KEY_ESC:
-					setcurshape(0);
-					return;
-				case _KEY_ENTER:
-					*chan=(str[0]-'0')*10+str[1]-'0';
-					setcurshape(0);
-					return;
-				case KEY_ALT_K:
-					cpiKeyHelp(KEY_RIGHT, "Move cursor right");
-					cpiKeyHelp(KEY_LEFT, "Move cursor left");
-					cpiKeyHelp(KEY_BACKSPACE, "Move cursor right");
-					cpiKeyHelp(KEY_ESC, "Cancel changes");
-					cpiKeyHelp(_KEY_ENTER, "Submit changes");
-					cpiKeyHelpDisplay();
-					break;
-			}
-		}
+		insmode=1;
+
+		curpos=strlen(str);
+		cmdlen=strlen(str);
+
+		cmdlen = strlen(*s);
+		alloc = cmdlen + 64;
+		str = malloc (alloc+1);
+		strcpy (str, *s);
+		curpos = cmdlen;
+
+		setcurshape(1);
+
+		state = 1;
 	}
-}
 
-static void fsEditPlayTime(int y, int x, uint16_t *playtime)
-{
-	char str[7];
-	int curpos;
-
-	convnum((*playtime)/60, str, 10, 3, 0);
-	str[3]=':';
-	convnum((*playtime)%60, str+4, 10, 2, 0);
-
-	curpos=(str[0]!='0')?0:(str[1]!='0')?1:2;
-
-	setcurshape(2);
-
-	while (1)
+	while ((curpos-scrolled)>=w)
 	{
-		displaystr(y, x, 0x8F, str, 6);
-		setcur(y, x+curpos);
-		while (!ekbhit())
-			framelock();
-		while (ekbhit())
-		{
-			uint16_t key=egetch();
-			switch (key)
-			{
-				case ' ':
-				case '0': case '1': case '2': case '3': case '4':
-				case '5': case '6': case '7': case '8': case '9':
-					if (key==' ')
-						key='0';
-					if ((curpos==4)&&(key>'5'))
-						break;
-					if (curpos<6)
-						str[curpos]=key;
-				case KEY_RIGHT:
-					curpos="\x01\x02\x04\x05\x05\x06\x06"[curpos];
-					break;
-				case KEY_BACKSPACE:
-				case KEY_LEFT: /*left*/
-					curpos="\x00\x00\x01\x02\x02\x04\x05"[curpos];
-					if (key==8)
-						str[curpos]='0';
-					break;
-				case KEY_ESC:
-					setcurshape(0);
-					return;
-				case _KEY_ENTER:
-					*playtime=((((str[0]-'0')*10+str[1]-'0')*10+str[2]-'0')*6+str[4]-'0')*10+str[5]-'0';
-					setcurshape(0);
-					return;
-				case KEY_ALT_K:
-					cpiKeyHelp(KEY_RIGHT, "Move cursor right");
-					cpiKeyHelp(KEY_LEFT, "Move cursor left");
-					cpiKeyHelp(KEY_BACKSPACE, "Move cursor right");
-					cpiKeyHelp(KEY_ESC, "Cancel changes");
-					cpiKeyHelp(_KEY_ENTER, "Submit changes");
-					cpiKeyHelpDisplay();
-					break;
-			}
-		}
+		scrolled+=8;
 	}
-}
 
-static void fsEditDate(int y, int x, uint32_t *date)
-{
-	char str[11];
-	int curpos=0;
-	convnum((*date)&0xFF, str, 10, 2, 0);
-	str[2]='.';
-	convnum(((*date)>>8)&0xFF, str+3, 10, 2, 0);
-	str[5]='.';
-	convnum((*date)>>16, str+6, 10, 4, 0);
-
-	setcurshape(2);
-
-	while (1)
+	while (scrolled && ((curpos - scrolled + 8) < w))
 	{
-		displaystr(y, x, 0x8F, str, 10);
-		setcur(y, x+curpos);
-		while (!ekbhit())
-			framelock();
-		while (ekbhit())
+		scrolled-=8;
+	}
+
+	displaystr(y, x, 0x8F, str+scrolled, w);
+	setcur(y, x+curpos-scrolled);
+
+	if (state == 2)
+	{
+		if (cpiKeyHelpDisplay())
 		{
-			uint16_t key=egetch();
-			switch (key)
+			framelock();
+			return 1;
+		}
+		state = 1;
+	}
+	framelock();
+
+	while (ekbhit())
+	{
+		uint16_t key=egetch();
+		if ((key>=0x20)&&(key<=0xFF))
+		{
+			if (insmode || (curpos==cmdlen))
 			{
-				case '\'':
-					if (curpos==6)
+				if (cmdlen+1 >= alloc)
+				{
+					void *buffer;
+					alloc += 32;
+					buffer = realloc (str, alloc);
+					if (!buffer)
 					{
-						str[6]=str[7]='0';
-						curpos=8;
+						free (str);
+						state = 0;
+						return 0;
 					}
-					break;
-				case ' ':
-				case '0': case '1': case '2': case '3': case '4':
-				case '5': case '6': case '7': case '8': case '9':
-					if (key==' ')
-						key='0';
-					if ((curpos==0)&&(key>='4'))
-						break;
-					if (curpos==0)
-						str[1]='0';
-					if ((curpos==1)&&(str[0]=='3')&&(key>'1'))
-						break;
-					if ((curpos==3)&&(key>'1'))
-						break;
-					if (curpos==3)
-						str[4]='0';
-					if ((curpos==4)&&(str[3]=='1')&&(key>'2'))
-						break;
-					if (curpos<10)
-						str[curpos]=key;
-				case KEY_RIGHT:
-					curpos="\x01\x03\x03\x04\x06\x06\x07\x08\x09\x0A\x0A"[curpos];
-					break;
-				case KEY_BACKSPACE:
-				case KEY_LEFT:
-					curpos="\x00\x00\x01\x01\x03\x04\x04\x06\x07\x08\x09"[curpos];
-					if (key==KEY_BACKSPACE)
-						str[curpos]='0';
-					break;
-				case KEY_ESC:
-					setcurshape(0);
-					return;
-				case _KEY_ENTER:
-					*date=((str[0]-'0')*10+str[1]-'0')|(((str[3]-'0')*10+str[4]-'0')<<8)|(((((str[6]-'0')*10+str[7]-'0')*10+str[8]-'0')*10+str[9]-'0')<<16);
-					setcurshape(0);
-					return;
-				case KEY_ALT_K:
-					cpiKeyHelp(KEY_RIGHT, "Move cursor right");
-					cpiKeyHelp(KEY_LEFT, "Move cursor left");
-					cpiKeyHelp(KEY_BACKSPACE, "Move cursor right");
-					cpiKeyHelp(KEY_ESC, "Cancel changes");
-					cpiKeyHelp(_KEY_ENTER, "Submit changes");
-					cpiKeyHelpDisplay();
-					break;
+					str = buffer;
+				}
 			}
+
+			if (insmode)
+			{
+				memmove(str+curpos+1, str+curpos, cmdlen-curpos+1);
+				str[curpos]=key;
+				curpos++;
+				cmdlen++;
+			} else if (curpos==cmdlen)
+			{
+				str[curpos++]=key;
+				str[curpos]=0;
+				cmdlen++;
+			} else {
+				str[curpos++]=key;
+			}
+		} else switch (key)
+		{
+			case KEY_LEFT:
+				if (curpos)
+					curpos--;
+				break;
+			case KEY_RIGHT:
+				if (curpos<cmdlen)
+					curpos++;
+				break;
+			case KEY_HOME:
+				curpos=0;
+				break;
+			case KEY_END:
+				curpos=cmdlen;
+				break;
+			case KEY_INSERT:
+				insmode=!insmode;
+				setcurshape(insmode?1:2);
+				break;
+			case KEY_DELETE:
+				if (curpos!=cmdlen)
+				{
+					memmove(str+curpos, str+curpos+1, cmdlen-curpos);
+					cmdlen--;
+				}
+				break;
+			case KEY_BACKSPACE:
+				if (curpos)
+				{
+					memmove(str+curpos-1, str+curpos, cmdlen-curpos+1);
+					curpos--;
+					cmdlen--;
+				}
+				break;
+			case KEY_ESC:
+				setcurshape(0);
+				free (str);
+				state = 0;
+				return -1;
+			case _KEY_ENTER:
+				setcurshape(0);
+				free (*s);
+				*s = str;
+				state = 0;
+				return 0;
+			case KEY_ALT_K:
+				cpiKeyHelpClear();
+				cpiKeyHelp(KEY_RIGHT, "Move cursor right");
+				cpiKeyHelp(KEY_LEFT, "Move cursor left");
+				cpiKeyHelp(KEY_HOME, "Move cursor home");
+				cpiKeyHelp(KEY_END, "Move cursor to the end");
+				cpiKeyHelp(KEY_INSERT, "Toggle insert mode");
+				cpiKeyHelp(KEY_DELETE, "Remove character at cursor");
+				cpiKeyHelp(KEY_BACKSPACE, "Remove character left of cursor");
+				cpiKeyHelp(KEY_ESC, "Cancel changes");
+				cpiKeyHelp(_KEY_ENTER, "Submit changes");
+				state = 2;
+				return 1;
 		}
 	}
+
+	return 1;
+}
+
+static int fsEditChan(int y, int x, uint8_t *chan)
+{
+	static int state = 0;
+	/* 0 - new / idle
+	 * 1 - in edit
+	 * 2 - in keyboard help
+	 */
+	static int curpos=0;
+	static char str[3];
+
+	if (state == 0)
+	{
+		curpos = 0;
+		convnum(*chan, str, 10, 2, 0);
+		setcurshape(2);
+		state = 1;
+	}
+
+	displaystr(y, x, 0x8F, str, 2);
+	setcur(y, x+curpos);
+
+	if (state == 2)
+	{
+		if (cpiKeyHelpDisplay())
+		{
+			framelock();
+			return 1;
+		}
+		state = 1;
+	}
+	framelock();
+
+	while (ekbhit())
+	{
+		uint16_t key=egetch();
+		switch (key)
+		{
+			case ' ':
+			case '0': case '1': case '2': case '3': case '4':
+			case '5': case '6': case '7': case '8': case '9':
+				if (key==' ')
+					key='0';
+				if ((curpos==0)&&(key>='4'))
+					break;
+				if (curpos==0)
+					str[1]='0';
+				if ((curpos==1)&&(str[0]=='3')&&(key>'2'))
+					break;
+				if (curpos<2)
+					str[curpos]=key;
+			case KEY_RIGHT:
+				curpos="\x01\x02\x02"[curpos];
+				break;
+			case KEY_BACKSPACE:
+			case KEY_LEFT:
+				curpos="\x00\x00\x01"[curpos];
+				if (key==KEY_BACKSPACE)
+					str[curpos]='0';
+				break;
+			case KEY_ESC:
+				setcurshape(0);
+				state = 0;
+				return 0;
+			case _KEY_ENTER:
+				*chan=(str[0]-'0')*10+str[1]-'0';
+				setcurshape(0);
+				state = 0;
+				return 0;
+			case KEY_ALT_K:
+				cpiKeyHelpClear();
+				cpiKeyHelp(KEY_RIGHT, "Move cursor right");
+				cpiKeyHelp(KEY_LEFT, "Move cursor left");
+				cpiKeyHelp(KEY_BACKSPACE, "Move cursor right");
+				cpiKeyHelp(KEY_ESC, "Cancel changes");
+				cpiKeyHelp(_KEY_ENTER, "Submit changes");
+				state = 2;
+				return 1;
+		}
+	}
+
+	return 1;
+}
+
+static int fsEditPlayTime(int y, int x, uint16_t *playtime)
+{
+	static int state = 0;
+	/* 0 - new / idle
+	 * 1 - in edit
+	 * 2 - in keyboard help
+	 */
+	static char str[7];
+	static int curpos;
+
+	if (state == 0)
+	{
+		convnum((*playtime)/60, str, 10, 3, 0);
+		str[3]=':';
+		convnum((*playtime)%60, str+4, 10, 2, 0);
+
+		curpos=(str[0]!='0')?0:(str[1]!='0')?1:2;
+
+		setcurshape(2);
+
+		state = 1;
+	}
+
+	displaystr(y, x, 0x8F, str, 6);
+	setcur(y, x+curpos);
+
+	if (state == 2)
+	{
+		if (cpiKeyHelpDisplay())
+		{
+			framelock();
+			return 1;
+		}
+		state = 1;
+	}
+	framelock();
+
+	while (ekbhit())
+	{
+		uint16_t key=egetch();
+		switch (key)
+		{
+			case ' ':
+			case '0': case '1': case '2': case '3': case '4':
+			case '5': case '6': case '7': case '8': case '9':
+				if (key==' ')
+					key='0';
+				if ((curpos==4)&&(key>'5'))
+					break;
+				if (curpos<6)
+					str[curpos]=key;
+				/* fall-through */
+			case KEY_RIGHT:
+				curpos="\x01\x02\x04\x05\x05\x06\x06"[curpos];
+				break;
+			case KEY_BACKSPACE:
+			case KEY_LEFT: /*left*/
+				curpos="\x00\x00\x01\x02\x02\x04\x05"[curpos];
+				if (key==8)
+					str[curpos]='0';
+				break;
+			case KEY_ESC:
+				setcurshape(0);
+				state = 0;
+				return 0;
+			case _KEY_ENTER:
+				*playtime=((((str[0]-'0')*10+str[1]-'0')*10+str[2]-'0')*6+str[4]-'0')*10+str[5]-'0';
+				setcurshape(0);
+				state = 0;
+				return 0;
+			case KEY_ALT_K:
+				cpiKeyHelpClear();
+				cpiKeyHelp(KEY_RIGHT, "Move cursor right");
+				cpiKeyHelp(KEY_LEFT, "Move cursor left");
+				cpiKeyHelp(KEY_BACKSPACE, "Move cursor right");
+				cpiKeyHelp(KEY_ESC, "Cancel changes");
+				cpiKeyHelp(_KEY_ENTER, "Submit changes");
+				state = 2;
+				return 1;
+		}
+	}
+
+	return 1;
+}
+
+static int fsEditDate(int y, int x, uint32_t *date)
+{
+	static int state = 0;
+	/* 0 - new / idle
+	 * 1 - in edit
+	 * 2 - in keyboard help
+	 */
+	static char str[11];
+	static int curpos;
+
+	if (state == 0)
+	{
+		curpos = 0;
+
+		convnum((*date)&0xFF, str, 10, 2, 0);
+		str[2]='.';
+		convnum(((*date)>>8)&0xFF, str+3, 10, 2, 0);
+		str[5]='.';
+		convnum((*date)>>16, str+6, 10, 4, 0);
+
+		setcurshape(2);
+		state = 1;
+	}
+
+	displaystr(y, x, 0x8F, str, 10);
+	setcur(y, x+curpos);
+
+	if (state == 2)
+	{
+		if (cpiKeyHelpDisplay())
+		{
+			framelock();
+			return 1;
+		}
+		state = 1;
+	}
+	framelock();
+
+	while (ekbhit())
+	{
+		uint16_t key=egetch();
+		switch (key)
+		{
+			case '\'':
+				if (curpos==6)
+				{
+					str[6]=str[7]='0';
+					curpos=8;
+				}
+				break;
+			case ' ':
+			case '0': case '1': case '2': case '3': case '4':
+			case '5': case '6': case '7': case '8': case '9':
+				if (key==' ')
+					key='0';
+				if ((curpos==0)&&(key>='4'))
+					break;
+				if (curpos==0)
+					str[1]='0';
+				if ((curpos==1)&&(str[0]=='3')&&(key>'1'))
+					break;
+				if ((curpos==3)&&(key>'1'))
+					break;
+				if (curpos==3)
+					str[4]='0';
+				if ((curpos==4)&&(str[3]=='1')&&(key>'2'))
+					break;
+				if (curpos<10)
+					str[curpos]=key;
+				/* fall-through */
+			case KEY_RIGHT:
+				curpos="\x01\x03\x03\x04\x06\x06\x07\x08\x09\x0A\x0A"[curpos];
+				break;
+			case KEY_BACKSPACE:
+			case KEY_LEFT:
+				curpos="\x00\x00\x01\x01\x03\x04\x04\x06\x07\x08\x09"[curpos];
+				if (key==KEY_BACKSPACE)
+					str[curpos]='0';
+				break;
+			case KEY_ESC:
+				setcurshape(0);
+				state = 0;
+				return 0;
+			case _KEY_ENTER:
+				*date=((str[0]-'0')*10+str[1]-'0')|(((str[3]-'0')*10+str[4]-'0')<<8)|(((((str[6]-'0')*10+str[7]-'0')*10+str[8]-'0')*10+str[9]-'0')<<16);
+				setcurshape(0);
+				state = 0;
+				return 0;
+			case KEY_ALT_K:
+				cpiKeyHelpClear();
+				cpiKeyHelp(KEY_RIGHT, "Move cursor right");
+				cpiKeyHelp(KEY_LEFT, "Move cursor left");
+				cpiKeyHelp(KEY_BACKSPACE, "Move cursor right");
+				cpiKeyHelp(KEY_ESC, "Cancel changes");
+				cpiKeyHelp(_KEY_ENTER, "Submit changes");
+				state = 2;
+				return 1;
+		}
+	}
+	return 1;
 }
 
 static int fsEditFileInfo(struct modlistentry *me)
 {
+	int retval;
+
 	if (!mdbGetModuleInfo(&mdbEditBuf, me->mdb_ref))
 		return 1;
 
 	if (plScrWidth>=132)
 		switch (editpos)
 		{
+			default:
 			case 0:
-				fsEditString(plScrHeight-5, 42, plScrWidth - 100, sizeof(mdbEditBuf.modname), mdbEditBuf.modname);
+				retval = fsEditString(plScrHeight-5, 42, plScrWidth - 100, sizeof(mdbEditBuf.modname), mdbEditBuf.modname);
 				break;
 			case 1:
-				mdbEditBuf.modtype = fsEditModType(mdbEditBuf.modtype);
+			{
+				uint8_t modtype = mdbEditBuf.modtype; /* avoid unaligned pointer access */
+				retval = fsEditModType(&modtype);
+				mdbEditBuf.modtype = modtype;
 				break;
+			}
 			case 2:
-				fsEditChan(plScrHeight-5, plScrWidth - 27, &mdbEditBuf.channels);
+				retval = fsEditChan(plScrHeight-5, plScrWidth - 27, &mdbEditBuf.channels);
 				break;
 			case 3:
-				fsEditPlayTime(plScrHeight-5, plScrWidth - 9, &mdbEditBuf.playtime);
+			{
+				uint16_t playtime = mdbEditBuf.playtime; /* avoid unaligned pointer access */
+				retval = fsEditPlayTime(plScrHeight-5, plScrWidth - 9, &playtime);
+				mdbEditBuf.playtime = playtime;
 				break;
+			}
 			case 4:
-				fsEditString(plScrHeight-4, 42, plScrWidth - 100, sizeof(mdbEditBuf.composer), mdbEditBuf.composer);
+				retval = fsEditString(plScrHeight-4, 42, plScrWidth - 100, sizeof(mdbEditBuf.composer), mdbEditBuf.composer);
 				break;
 			case 5:
-				fsEditString(plScrHeight-4, plScrWidth - 46, 31, sizeof(mdbEditBuf.style), mdbEditBuf.style);
+				retval = fsEditString(plScrHeight-4, plScrWidth - 46, 31, sizeof(mdbEditBuf.style), mdbEditBuf.style);
 				break;
 			case 6:
-				fsEditDate(plScrHeight-3, 42, &mdbEditBuf.date);
+			{
+				uint32_t date = mdbEditBuf.date; /* avoid unaligned pointer access */
+				retval = fsEditDate(plScrHeight-3, 42, &date);
+				mdbEditBuf.date = date;
 				break;
+			}
 			case 7:
-				fsEditString(plScrHeight-3, 66, plScrWidth - 69, sizeof(mdbEditBuf.comment), mdbEditBuf.comment);
+				retval = fsEditString(plScrHeight-3, 66, plScrWidth - 69, sizeof(mdbEditBuf.comment), mdbEditBuf.comment);
 				break;
 		} else switch (editpos)
 		{
+			default:
 			case 0:
-				fsEditString(plScrHeight-6, 35, plScrWidth - 48, sizeof(mdbEditBuf.modname), mdbEditBuf.modname);
+				retval = fsEditString(plScrHeight-6, 35, plScrWidth - 48, sizeof(mdbEditBuf.modname), mdbEditBuf.modname);
 				break;
 			case 1:
-				mdbEditBuf.modtype = fsEditModType(mdbEditBuf.modtype);
+				{
+				uint8_t modtype = mdbEditBuf.modtype; /* avoid unaligned pointer access */
+				retval = fsEditModType(&modtype);
+				mdbEditBuf.modtype = modtype;
 				break;
+			}
 			case 2:
-				fsEditChan(plScrHeight-4, plScrWidth - 3, &mdbEditBuf.channels);
+				retval = fsEditChan(plScrHeight-4, plScrWidth - 3, &mdbEditBuf.channels);
 				break;
 			case 3:
-				fsEditPlayTime(plScrHeight-4, plScrWidth - 22, &mdbEditBuf.playtime);
+			{
+				uint16_t playtime = mdbEditBuf.playtime; /* avoid unaligned pointer access */
+				retval = fsEditPlayTime(plScrHeight-4, plScrWidth - 22, &playtime);
+				mdbEditBuf.playtime = playtime;
 				break;
+			}
 			case 4:
-				fsEditString(plScrHeight-5, 13, plScrWidth - 48, sizeof(mdbEditBuf.composer), mdbEditBuf.composer);
+				retval = fsEditString(plScrHeight-5, 13, plScrWidth - 48, sizeof(mdbEditBuf.composer), mdbEditBuf.composer);
 				break;
 			case 5:
-				fsEditString(plScrHeight-4, 13, plScrWidth - 48, sizeof(mdbEditBuf.style), mdbEditBuf.style);
+				retval = fsEditString(plScrHeight-4, 13, plScrWidth - 48, sizeof(mdbEditBuf.style), mdbEditBuf.style);
 				break;
 			case 6:
-				fsEditDate(plScrHeight-5, plScrWidth - 22, &mdbEditBuf.date);
-				break;
+				{
+					uint32_t date = mdbEditBuf.date; /* avoid unaligned pointer access */
+					retval = fsEditDate(plScrHeight-5, plScrWidth - 22, &date);
+					mdbEditBuf.date = date;
+					break;
+				}
 			case 7:
-				fsEditString(plScrHeight-3, 13, plScrWidth - 17, sizeof(mdbEditBuf.comment), mdbEditBuf.comment);
+				retval = fsEditString(plScrHeight-3, 13, plScrWidth - 17, sizeof(mdbEditBuf.comment), mdbEditBuf.comment);
 				break;
 		}
 /*
@@ -2227,24 +2564,50 @@ static int fsEditFileInfo(struct modlistentry *me)
 		typeidx[4]=0;
 		mdbEditBuf.modtype=mdbReadModType(typeidx);
 	}*/
-	if (!mdbWriteModuleInfo(me->mdb_ref, &mdbEditBuf))
+	if (!retval)
+	{
+		if (!mdbWriteModuleInfo(me->mdb_ref, &mdbEditBuf))
+		{
+			return -1;
+		}
 		return 0;
+	}
 	return 1;
 }
 
-static char fsEditViewPath(void)
+static int fsEditViewPath(void)
 {
-#warning fsEditString API should have a dynamic version, FIXME
-	char pathbuffer[128*1024];
+	static int state = 0;
+	static char *temppath;
+	int retval;
 
+	if (state == 0)
 	{
-		char *temppath;
-		dirdbGetFullname_malloc (dirdbcurdirpath, &temppath, DIRDB_FULLNAME_ENDSLASH);
-		snprintf(pathbuffer, sizeof(pathbuffer), "%s%s", temppath, curmask);
-		free (temppath);
+		char *curdirpath;
+		dirdbGetFullname_malloc (dirdbcurdirpath, &curdirpath, DIRDB_FULLNAME_ENDSLASH);
+
+		temppath = malloc (strlen(curdirpath) + strlen(curmask) + 1);
+		strcpy (temppath, curdirpath);
+		strcat (temppath, curmask);
+		free (curdirpath);
+
+		state = 1;
 	}
 
-	if (fsEditString(1, 0, plScrWidth, sizeof(pathbuffer)-1, pathbuffer))
+	retval = fsEditString2(1, 0, plScrWidth, &temppath);
+
+	if (retval > 0)
+	{
+		return 1;
+	}
+
+	if (retval < 0)
+	{ /* abort */
+		free (temppath);
+		state = 0;
+		return 0;
+	}
+
 	{
 		struct dmDrive *drives;
 		char *drive;
@@ -2252,7 +2615,9 @@ static char fsEditViewPath(void)
 		char *filename;
 		uint32_t newcurrentpath;
 
-		splitpath_malloc(pathbuffer, &drive, &path, &filename);
+		state = 0;
+
+		splitpath_malloc(temppath, &drive, &path, &filename);
 		for (drives = dmDrives; drives; drives = drives->next)
 		{
 			if (strcasecmp(drive, drives->drivename))
@@ -2276,15 +2641,22 @@ static char fsEditViewPath(void)
 		free (drive);
 		free (path);
 		free (filename);
+		free (temppath);
 
-		if (!fsScanDir(0))
-			return 0;
+		fsScanDir(0);
 	}
-	return 1;
+	return 0;
 }
 
 signed int fsFileSelect(void)
 {
+	int state = 0;
+	/* state = 0 - Idle
+	 * state = 1 - fsEditFileInfo()
+	 * state = 2 - cpiKeyHelpDisplay()
+	 * state = 3 - fsEditViewPath()
+	 * state = 4 - fsSavePlayList()
+	 */
 	int win=0;
 	unsigned long i;
 	int curscanned=0;
@@ -2306,6 +2678,7 @@ signed int fsFileSelect(void)
 		uint16_t c;
 		struct modlist *curlist;
 
+superbreak:
 		dirwinheight=plScrHeight-4;
 		if (fsEditWin||editmode)
 			dirwinheight-=(plScrWidth>=132)?5:6;
@@ -2352,6 +2725,46 @@ signed int fsFileSelect(void)
 
 		fsShowDir(firstv, win?(unsigned)~0:currentdir->pos, firstp, win?playlist->pos:(unsigned)~0, editmode?editpos:~0, m, win);
 
+		if (state == 1)
+		{
+			int retval;
+			curlist=(win?playlist:currentdir);
+			m=modlist_getcur(curlist); /* this is not actually needed, m should be preserved from above logic */
+			retval = fsEditFileInfo(m);
+			if (retval > 0)
+			{
+				goto superbreak;
+			} else if (retval < 0)
+			{
+				return -1;
+			}
+			state = 0;
+		} else if (state == 2)
+		{
+			if (cpiKeyHelpDisplay())
+			{
+				framelock();
+				goto superbreak;
+			}
+			state = 0;
+		} else if (state == 3)
+		{
+			if (fsEditViewPath())
+			{
+				framelock();
+				goto superbreak;
+			}
+			state = 0;
+		} else if (state == 4)
+		{
+			if (fsSavePlayList(playlist))
+			{
+				framelock();
+				goto superbreak;
+			}
+			state = 0;
+		}
+
 		if (!ekbhit()&&fsScanNames)
 		{
 			if (curscanned||(mdbInfoRead(m->mdb_ref)))
@@ -2385,383 +2798,389 @@ signed int fsFileSelect(void)
 					mdbScan(m);
 			}
 			continue;
-		}
-		c=egetch();
-		curscanned=0;
-#ifdef DOS32
-		if(c==0xF8) /* : screen shot */
+		} else while (ekbhit())
 		{
-			TextScreenshot(fsScrType);
-			continue;
-		}
+			c=egetch();
+			curscanned=0;
+
+			if (!editmode)
+			{
+				if (((c>=32)&&(c<=255)&&(c!=KEY_CTRL_BS))||(c==KEY_BACKSPACE))
+				{
+					if (c==KEY_BACKSPACE)
+					{
+						if (quickfindpos)
+							quickfindpos--;
+						if ((quickfindpos==8)&&(quickfind[8]=='.'))
+							while (quickfindpos&&(quickfind[quickfindpos-1]==' '))
+								quickfindpos--;
+					} else
+						if (quickfindpos<12)
+						{
+							if ((c=='.')&&(quickfindpos&&(*quickfind!='.')))
+							{
+								while (quickfindpos<9)
+									quickfind[(int)quickfindpos++]=' ';
+								quickfind[8]='.';
+							} else
+								if (quickfindpos!=8)
+									quickfind[(int)quickfindpos++]=toupper(c);
+						}
+					memcpy(quickfind+quickfindpos, "        .   "+quickfindpos, 12-quickfindpos);
+					if (!quickfindpos)
+						continue;
+					if (!win)
+						currentdir->pos=modlist_fuzzyfind(currentdir, quickfind);
+					else
+						playlist->pos=modlist_fuzzyfind(playlist, quickfind);
+					continue;
+				}
+			}
+
+			quickfindpos=0;
+
+			curlist=(win?playlist:currentdir);
+			m=modlist_getcur(curlist); /* this is not actually needed, m should be preserved from above logic */
+
+			switch (c)
+			{
+#ifdef DOS32
+				case 0xF8: /* : screen shot */
+					TextScreenshot(fsScrType);
+					break;
 #endif
 
-		if (((c>=32)&&(c<=255)&&(c!=KEY_CTRL_BS))||(c==KEY_BACKSPACE))
-		{
-			if (c==KEY_BACKSPACE)
-			{
-				if (quickfindpos)
-					quickfindpos--;
-				if ((quickfindpos==8)&&(quickfind[8]=='.'))
-					while (quickfindpos&&(quickfind[quickfindpos-1]==' '))
-						quickfindpos--;
-			} else
-				if (quickfindpos<12)
-				{
-					if ((c=='.')&&(quickfindpos&&(*quickfind!='.')))
+				case KEY_ALT_K:
+					cpiKeyHelpClear();
+					cpiKeyHelp(KEY_ESC, "Exit");
+					cpiKeyHelp(KEY_CTRL_BS, "Stop filescanning");
+					cpiKeyHelp(KEY_ALT_S, "Stop filescanning");
+					cpiKeyHelp(KEY_TAB, "Toggle between filelist and playlist");
+					cpiKeyHelp(KEY_SHIFT_TAB, "Toggle between lists and editwindow");
+					cpiKeyHelp(KEY_ALT_E, "Toggle between lists and editwindow");
+					cpiKeyHelp(KEY_ALT_I, "Cycle file-list mode (fullname, title, time etc)");
+					cpiKeyHelp(KEY_ALT_C, "Show setup dialog");
+					cpiKeyHelp(KEY_F(1), "Show help");
+					cpiKeyHelp(KEY_ALT_R, "Rescan selected file");
+					cpiKeyHelp(KEY_ALT_Z, "Toggle resolution if possible (mode 0 and 7)");
+					cpiKeyHelp(KEY_ALT_ENTER, "Edit path");
+					cpiKeyHelp(KEY_CTRL_ENTER, "Edit path");
+					cpiKeyHelp(_KEY_ENTER, "Play selected file, or open selected directory/arc/playlist");
+					cpiKeyHelp(KEY_UP, "Move cursor up");
+					cpiKeyHelp(KEY_DOWN, "Move cursor down");
+					cpiKeyHelp(KEY_PPAGE, "Move cursor a page up");
+					cpiKeyHelp(KEY_NPAGE, "Move cursor a page down");
+					cpiKeyHelp(KEY_HOME, "Move cursor home");
+					cpiKeyHelp(KEY_END, "Move cursor end");
+					if (editmode)
 					{
-						while (quickfindpos<9)
-							quickfind[(int)quickfindpos++]=' ';
-						quickfind[8]='.';
-					} else
-						if (quickfindpos!=8)
-							quickfind[(int)quickfindpos++]=toupper(c);
-				}
-			memcpy(quickfind+quickfindpos, "        .   "+quickfindpos, 12-quickfindpos);
-			if (!quickfindpos)
-				continue;
-			if (!win)
-				currentdir->pos=modlist_fuzzyfind(currentdir, quickfind);
-			else
-				playlist->pos=modlist_fuzzyfind(playlist, quickfind);
-			continue;
-		}
-
-		quickfindpos=0;
-
-		curlist=(win?playlist:currentdir);
-		m=modlist_getcur(curlist); /* this is not actually needed, m should be preserved from above logic */
-
-		switch (c)
-		{
-			case KEY_ALT_K:
-				cpiKeyHelp(KEY_ESC, "Exit");
-				cpiKeyHelp(KEY_CTRL_BS, "Stop filescanning");
-				cpiKeyHelp(KEY_ALT_S, "Stop filescanning");
-				cpiKeyHelp(KEY_TAB, "Toggle between filelist and playlist");
-				cpiKeyHelp(KEY_SHIFT_TAB, "Toggle between lists and editwindow");
-				cpiKeyHelp(KEY_ALT_E, "Toggle between lists and editwindow");
-				cpiKeyHelp(KEY_ALT_I, "Cycle file-list mode (fullname, title, time etc)");
-				cpiKeyHelp(KEY_ALT_C, "Show setup dialog");
-				cpiKeyHelp(KEY_ALT_P, "Save playlist");
-				cpiKeyHelp(KEY_F(1), "Show help");
-				cpiKeyHelp(KEY_ALT_R, "Rescan selected file");
-				cpiKeyHelp(KEY_ALT_Z, "Toggle resolution if possible (mode 0 and 7)");
-				cpiKeyHelp(KEY_ALT_ENTER, "Edit path");
-				cpiKeyHelp(KEY_CTRL_ENTER, "Edit path");
-				cpiKeyHelp(_KEY_ENTER, "Play selected file, or open selected directory/arc/playlist");
-				cpiKeyHelp(KEY_UP, "Move cursor up");
-				cpiKeyHelp(KEY_DOWN, "Move cursor down");
-				cpiKeyHelp(KEY_PPAGE, "Move cursor a page up");
-				cpiKeyHelp(KEY_NPAGE, "Move cursor a page down");
-				cpiKeyHelp(KEY_HOME, "Move cursor home");
-				cpiKeyHelp(KEY_END, "Move cursor end");
-				if (editmode)
-				{
-					cpiKeyHelp(KEY_RIGHT, "Move cursor right");
-					cpiKeyHelp(KEY_LEFT, "Move cursor left");
-				} else {
-					cpiKeyHelp(KEY_INSERT, "Append file/directory into the playlist");
-					cpiKeyHelp(KEY_DELETE, "Remove file/directory from the playlist");
-					cpiKeyHelp(KEY_CTRL_RIGHT, "Append all files in current directory into the playlist");
-					cpiKeyHelp(KEY_CTRL_LEFT, "Remove all files in current directory from the playlist");
-					if (!win)
-					{
-						cpiKeyHelp(KEY_CTRL_UP, "Move the selected file up in playlist");
-						cpiKeyHelp(KEY_CTRL_DOWN, "Move the selected file down in the playlist");
-						cpiKeyHelp(KEY_CTRL_PGUP, "Move the selected file up one page in playlist");
-						cpiKeyHelp(KEY_CTRL_PGDN, "Move the selected file down one page in the playlist");
+						cpiKeyHelp(KEY_RIGHT, "Move cursor right");
+						cpiKeyHelp(KEY_LEFT, "Move cursor left");
+					} else {
+						cpiKeyHelp(KEY_ALT_P, "Save playlist");
+						cpiKeyHelp(KEY_INSERT, "Append file/directory into the playlist");
+						cpiKeyHelp(KEY_DELETE, "Remove file/directory from the playlist");
+						cpiKeyHelp(KEY_CTRL_RIGHT, "Append all files in current directory into the playlist");
+						cpiKeyHelp(KEY_CTRL_LEFT, "Remove all files in current directory from the playlist");
+						if (!win)
+						{
+							cpiKeyHelp(KEY_CTRL_UP, "Move the selected file up in playlist");
+							cpiKeyHelp(KEY_CTRL_DOWN, "Move the selected file down in the playlist");
+							cpiKeyHelp(KEY_CTRL_PGUP, "Move the selected file up one page in playlist");
+							cpiKeyHelp(KEY_CTRL_PGDN, "Move the selected file down one page in the playlist");
+						}
 					}
-				}
-				cpiKeyHelpDisplay();
-				break;
-			case KEY_ESC:
-				return 0;
-			case KEY_ALT_R:
-				if (m->flags&MODLIST_FLAG_FILE)
-				{
-					if (!mdbGetModuleInfo(&mdbEditBuf, m->mdb_ref))
-						return -1;
-					mdbEditBuf.modtype = mtUnRead;
-					if (!mdbWriteModuleInfo(m->mdb_ref, &mdbEditBuf))
-						return -1;
-				}
-			case KEY_CTRL_BS:
-			case KEY_ALT_S:
-				scanposp=~0;
-				scanposf=~0;
-				break;
-			case KEY_TAB:
-				win=!win;
-				break;
-			case KEY_SHIFT_TAB:
-			case KEY_ALT_E:
-				editmode=!editmode;
-				break;
-			case KEY_ALT_I:
-/* TODO-keys
-			case KEY_ALT_TAB:*/
-				fsInfoMode=(fsInfoMode+1)%5;
-				break;
-			case KEY_ALT_C:
-				fsSetup();
-				plSetTextMode(fsScrType);
-				fsScrType=plScrType;
-				break;
-			case KEY_ALT_P:
-				if (editmode)
-					break;
-				fsSavePlayList(playlist);
-				break;
-			case KEY_F(1):
-				if (!fsHelp2())
-					return -1;
-				plSetTextMode(fsScrType);
-				break;
-			case KEY_ALT_Z:
-				fsScrType=(fsScrType==0)?7:0;
-				plSetTextMode(fsScrType);
-				break;
-			case KEY_CTRL_ENTER:
-			case KEY_ALT_ENTER:
-				if (!fsEditViewPath())
-					return -1;
-				break;
-			case _KEY_ENTER:
-				if (editmode)
+					state = 2;
+					goto superbreak;
+				case KEY_ESC:
+					return 0;
+				case KEY_ALT_R:
 					if (m->flags&MODLIST_FLAG_FILE)
 					{
-						if (!fsEditFileInfo(m))
+						if (!mdbGetModuleInfo(&mdbEditBuf, m->mdb_ref))
 							return -1;
-						break;
+						mdbEditBuf.modtype = mtUnRead;
+						if (!mdbWriteModuleInfo(m->mdb_ref, &mdbEditBuf))
+							return -1;
 					}
-				if (win)
-				{
-					if (!playlist->num)
+				case KEY_CTRL_BS:
+				case KEY_ALT_S:
+					scanposp=~0;
+					scanposf=~0;
+					break;
+				case KEY_TAB:
+					win=!win;
+					break;
+				case KEY_SHIFT_TAB:
+				case KEY_ALT_E:
+					editmode=!editmode;
+				break;
+				case KEY_ALT_I:
+/* TODO-keys
+				case KEY_ALT_TAB:*/
+					fsInfoMode=(fsInfoMode+1)%5;
+					break;
+				case KEY_ALT_C:
+					fsSetup();
+					plSetTextMode(fsScrType);
+					fsScrType=plScrType;
+					break;
+				case KEY_ALT_P:
+					if (editmode)
 						break;
-					isnextplay=NextPlayPlaylist;
-					return 1;
-				} else {
-					if (m->flags&(MODLIST_FLAG_DIR|MODLIST_FLAG_DRV|MODLIST_FLAG_ARC))
-					{
-						uint32_t olddirpath;
-						unsigned int i;
-
-						olddirpath = dmCurDrive->currentpath;
-						dirdbRef(olddirpath);
-						dirdbUnref(dirdbcurdirpath);
-
-						dirdbcurdirpath=m->dirdbfullpath;
-						dirdbRef(dirdbcurdirpath);
-
-						dmCurDrive=(struct dmDrive *)m->drive;
-						dirdbUnref(dmCurDrive->currentpath);
-						dmCurDrive->currentpath = m->dirdbfullpath;
-						dirdbRef(dmCurDrive->currentpath);
-
-						fsScanDir(0);
-						for (i=0;i<currentdir->num;i++)
+					state = 4;
+					goto superbreak;
+				case KEY_F(1):
+					if (!fsHelp2())
+						return -1;
+					plSetTextMode(fsScrType);
+					break;
+				case KEY_ALT_Z:
+					fsScrType=(fsScrType==0)?7:0;
+					plSetTextMode(fsScrType);
+					break;
+				case KEY_CTRL_ENTER:
+				case KEY_ALT_ENTER:
+					state = 3;
+					goto superbreak;
+				case _KEY_ENTER:
+					if (editmode)
+						if (m->flags&MODLIST_FLAG_FILE)
 						{
-							if (currentdir->files[i]->dirdbfullpath==olddirpath)
-								break;
+							if (fsEditFileInfo(m))
+							{
+								state = 1;
+								goto superbreak;
+							}
+							break;
 						}
-						dirdbUnref(olddirpath);
-						if (i<currentdir->num)
-							currentdir->pos=i;
-					} else if (m->flags&(MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL))
+					if (win)
 					{
-						nextplay=m;
-						isnextplay=NextPlayBrowser;
+						if (!playlist->num)
+							break;
+						isnextplay=NextPlayPlaylist;
 						return 1;
-					}
-				}
-				break;
-			case KEY_UP:
-			/*case 0x4800: // up*/
-				if (editmode)
-					if (plScrWidth>=132)
-						editpos="\x00\x01\x02\x03\x00\x01\x04\x05"[editpos];
-					else
-						editpos="\x00\x01\x06\x06\x00\x04\x00\x05"[editpos];
-				else if (!win)
-				{
-					if (currentdir->pos)
-						currentdir->pos--;
-				} else {
-					if (playlist->pos)
-						playlist->pos--;
-				}
-				break;
-			case KEY_DOWN:
-			/*case 0x5000: // down*/
-				if (editmode)
-					if (plScrWidth>=132)
-						editpos="\x04\x05\x05\x05\x06\x07\x06\x07"[editpos];
-					else
-						editpos="\x04\x06\x07\x07\x05\x07\x03\x07"[editpos];
-				else if (!win)
-				{
-					if ((currentdir->pos+1) < currentdir->num)
-						currentdir->pos++;
-				} else {
-					if ((playlist->pos+1) < playlist->num)
-						playlist->pos++;
-				}
-				break;
-			case KEY_PPAGE:
-			/*case 0x4900: //pgup*/
-				{
-					int sub = editmode?1:dirwinheight;
-					if (!win)
-					{
-						if (currentdir->pos < sub)
-							currentdir->pos = 0;
-						else
-							currentdir->pos -= sub;
 					} else {
-						if (playlist->pos < sub)
-							playlist->pos = 0;
-						else
-							playlist->pos -= sub;
+						if (m->flags&(MODLIST_FLAG_DIR|MODLIST_FLAG_DRV|MODLIST_FLAG_ARC))
+						{
+							uint32_t olddirpath;
+							unsigned int i;
+
+							olddirpath = dmCurDrive->currentpath;
+							dirdbRef(olddirpath);
+							dirdbUnref(dirdbcurdirpath);
+
+							dirdbcurdirpath=m->dirdbfullpath;
+							dirdbRef(dirdbcurdirpath);
+
+							dmCurDrive=(struct dmDrive *)m->drive;
+							dirdbUnref(dmCurDrive->currentpath);
+							dmCurDrive->currentpath = m->dirdbfullpath;
+							dirdbRef(dmCurDrive->currentpath);
+
+							fsScanDir(0);
+							for (i=0;i<currentdir->num;i++)
+							{
+								if (currentdir->files[i]->dirdbfullpath==olddirpath)
+									break;
+							}
+							dirdbUnref(olddirpath);
+							if (i<currentdir->num)
+								currentdir->pos=i;
+						} else if (m->flags&(MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL))
+						{
+							nextplay=m;
+							isnextplay=NextPlayBrowser;
+							return 1;
+						}
 					}
-				}
-				break;
-			case KEY_NPAGE:
-				{
-					int add = editmode?1:dirwinheight;
-			/*case 0x5100: //pgdn*/
-					if (!win)
-					{
-						if (currentdir->num <= (currentdir->pos + add))
-							currentdir->pos = currentdir->num - 1;
+					break;
+				case KEY_UP:
+				/*case 0x4800: // up*/
+					if (editmode)
+						if (plScrWidth>=132)
+							editpos="\x00\x01\x02\x03\x00\x01\x04\x05"[editpos];
 						else
-							currentdir->pos += add;
+							editpos="\x00\x01\x06\x06\x00\x04\x00\x05"[editpos];
+					else if (!win)
+					{
+						if (currentdir->pos)
+							currentdir->pos--;
 					} else {
-						if (playlist->num <= (playlist->pos + add))
-							playlist->pos = playlist->num - 1;
-						else
-							playlist->pos += add;
+						if (playlist->pos)
+							playlist->pos--;
 					}
-				}
-				break;
-			case KEY_HOME:
-			/*case 0x4700: //home*/
-				if (editmode)
 					break;
-				if (!win)
-					currentdir->pos=0;
-				else
-					playlist->pos=0;
-				break;
-			case KEY_END:
-			/*case 0x4F00: //end*/
-				if (editmode)
-					break;
-				if (!win)
-					currentdir->pos=currentdir->num-1;
-				else
-					playlist->pos=playlist->num-1;
-				break;
-			case KEY_RIGHT:
-			/*case 0x4D00: // right*/
-				if (editmode)
-				{
-					if (plScrWidth>=132)
-						editpos="\x01\x02\x03\x03\x05\x05\x07\x07"[editpos];
-					else
-						editpos="\x01\x01\x02\x02\x06\x03\x06\x07"[editpos];
-				}
-				break;
-			case KEY_INSERT:
-			/*case 0x5200: // add*/
-				if (editmode)
-					break;
-				if (win)
-				{
-					/*if (!*/modlist_append(playlist, m)/*)
-						return -1*/;
-					/*playlist->pos=playlist->num-1; */
-					scanposp=fsScanNames?0:~0;
-				} else {
-					if (m->flags&MODLIST_FLAG_DIR)
+				case KEY_DOWN:
+				/*case 0x5000: // down*/
+					if (editmode)
+						if (plScrWidth>=132)
+							editpos="\x04\x05\x05\x05\x06\x07\x06\x07"[editpos];
+						else
+							editpos="\x04\x06\x07\x07\x05\x07\x03\x07"[editpos];
+					else if (!win)
 					{
-						if (!(fsReadDir(playlist, m->drive, m->dirdbfullpath, curmask, RD_PUTRSUBS)))
-							return -1;
-					} else if (m->flags&MODLIST_FLAG_FILE)
+						if ((currentdir->pos+1) < currentdir->num)
+							currentdir->pos++;
+					} else {
+						if ((playlist->pos+1) < playlist->num)
+							playlist->pos++;
+					}
+					break;
+				case KEY_PPAGE:
+				/*case 0x4900: //pgup*/
+					{
+						int sub = editmode?1:dirwinheight;
+						if (!win)
+						{
+							if (currentdir->pos < sub)
+								currentdir->pos = 0;
+							else
+								currentdir->pos -= sub;
+						} else {
+							if (playlist->pos < sub)
+								playlist->pos = 0;
+							else
+								playlist->pos -= sub;
+						}
+					}
+					break;
+				case KEY_NPAGE:
+				/*case 0x5100: //pgdn*/
+					{
+						int add = editmode?1:dirwinheight;
+						if (!win)
+						{
+							if (currentdir->num <= (currentdir->pos + add))
+								currentdir->pos = currentdir->num - 1;
+							else
+								currentdir->pos += add;
+						} else {
+							if (playlist->num <= (playlist->pos + add))
+								playlist->pos = playlist->num - 1;
+							else
+								playlist->pos += add;
+						}
+					}
+					break;
+				case KEY_HOME:
+				/*case 0x4700: //home*/
+					if (editmode)
+						break;
+					if (!win)
+						currentdir->pos=0;
+					else
+						playlist->pos=0;
+					break;
+				case KEY_END:
+				/*case 0x4F00: //end*/
+					if (editmode)
+						break;
+					if (!win)
+						currentdir->pos=currentdir->num-1;
+					else
+						playlist->pos=playlist->num-1;
+					break;
+				case KEY_RIGHT:
+				/*case 0x4D00: // right*/
+					if (editmode)
+					{
+						if (plScrWidth>=132)
+							editpos="\x01\x02\x03\x03\x05\x05\x07\x07"[editpos];
+						else
+							editpos="\x01\x01\x02\x02\x06\x03\x06\x07"[editpos];
+					}
+					break;
+				case KEY_INSERT:
+				/*case 0x5200: // add*/
+					if (editmode)
+						break;
+					if (win)
 					{
 						/*if (!*/modlist_append(playlist, m)/*)
 							return -1*/;
+						/*playlist->pos=playlist->num-1; */
 						scanposp=fsScanNames?0:~0;
-					}
-				}
-				break;
-			case KEY_LEFT:
-			/*case 0x4B00: // left*/
-				if (editmode)
-				{
-					if (plScrWidth>=132)
-						editpos="\x00\x00\x01\x02\x04\x04\x06\x06"[editpos];
-					else
-						editpos="\x00\x00\x03\x05\x04\x05\x04\x07"[editpos];
-				}
-				break;
-			case KEY_DELETE:
-			/*case 0x5300: // del*/
-				if (editmode)
-					break;
-				if (win)
-					modlist_remove(playlist, playlist->pos, 1);
-				else {
-					long f;
-
-					if (m->flags&MODLIST_FLAG_DIR)
-					{
-						struct modlist *tl = modlist_create();
-						struct modlistentry *me;
-						int f;
-						if (!(fsReadDir(tl, m->drive, m->dirdbfullpath, curmask, RD_PUTRSUBS)))
-							return -1;
-						for (i=0;i<tl->num;i++)
+					} else {
+						if (m->flags&MODLIST_FLAG_DIR)
 						{
-							me=modlist_get(tl, i);
-							if ((f=modlist_find(playlist, me->dirdbfullpath))>=0)
-								modlist_remove(playlist, f, 1);
-						}
-						modlist_free(tl);
-					} else if (m->flags&MODLIST_FLAG_FILE)
-					{
-						f=modlist_find(playlist, m->dirdbfullpath);
-						if (f!=-1)
-							modlist_remove(playlist, f, 1);
-					}
-				}
-				break;
-			case KEY_CTRL_RIGHT:
-			/* case 0x7400: //ctrl-right */
-			/* case 0x9200: //ctrl-insert TODO keys */
-				{
-					if (editmode)
-						break;
-					for (i=0; i<currentdir->num; i++)
-					{
-						struct modlistentry *me;
-						me=modlist_get(currentdir, i);
-						if (me->flags&MODLIST_FLAG_FILE)
+							if (!(fsReadDir(playlist, m->drive, m->dirdbfullpath, curmask, RD_PUTRSUBS)))
+								return -1;
+						} else if (m->flags&MODLIST_FLAG_FILE)
 						{
-							/*if (!*/modlist_append(playlist, me)/*)
+							/*if (!*/modlist_append(playlist, m)/*)
 								return -1*/;
 							scanposp=fsScanNames?0:~0;
 						}
 					}
 					break;
-				}
-			case KEY_CTRL_LEFT:
-			/* case 0x7300: //ctrl-left */
-			/* case 0x9300: //ctrl-delete TODO keys */
-				if (editmode)
+				case KEY_LEFT:
+				/*case 0x4B00: // left*/
+					if (editmode)
+					{
+						if (plScrWidth>=132)
+							editpos="\x00\x00\x01\x02\x04\x04\x06\x06"[editpos];
+						else
+							editpos="\x00\x00\x03\x05\x04\x05\x04\x07"[editpos];
+					}
 					break;
-				modlist_remove(playlist, 0, playlist->num);
-				break;
+				case KEY_DELETE:
+				/*case 0x5300: // del*/
+					if (editmode)
+						break;
+					if (win)
+						modlist_remove(playlist, playlist->pos, 1);
+					else {
+						long f;
+
+						if (m->flags&MODLIST_FLAG_DIR)
+						{
+							struct modlist *tl = modlist_create();
+							struct modlistentry *me;
+							int f;
+							if (!(fsReadDir(tl, m->drive, m->dirdbfullpath, curmask, RD_PUTRSUBS)))
+								return -1;
+							for (i=0;i<tl->num;i++)
+							{
+								me=modlist_get(tl, i);
+								if ((f=modlist_find(playlist, me->dirdbfullpath))>=0)
+									modlist_remove(playlist, f, 1);
+							}
+							modlist_free(tl);
+						} else if (m->flags&MODLIST_FLAG_FILE)
+						{
+							f=modlist_find(playlist, m->dirdbfullpath);
+							if (f!=-1)
+								modlist_remove(playlist, f, 1);
+						}
+					}
+					break;
+				case KEY_CTRL_RIGHT:
+				/* case 0x7400: //ctrl-right */
+				/* case 0x9200: //ctrl-insert TODO keys */
+					{
+						if (editmode)
+							break;
+						for (i=0; i<currentdir->num; i++)
+						{
+							struct modlistentry *me;
+							me=modlist_get(currentdir, i);
+							if (me->flags&MODLIST_FLAG_FILE)
+							{
+								/*if (!*/modlist_append(playlist, me)/*)
+									return -1*/;
+								scanposp=fsScanNames?0:~0;
+							}
+						}
+						break;
+					}
+				case KEY_CTRL_LEFT:
+				/* case 0x7300: //ctrl-left */
+				/* case 0x9300: //ctrl-delete TODO keys */
+					if (editmode)
+						break;
+					modlist_remove(playlist, 0, playlist->num);
+					break;
 /*
     case 0x2500:  // alt-k TODO keys.... alt-k is now in use by key-helper
       if (editmode||win)
@@ -2803,40 +3222,40 @@ signed int fsFileSelect(void)
       fsSaveModInfoML(curlist);
       break;
 */
-			case KEY_CTRL_UP:
-			/* case 0x8d00: //ctrl-up */
-				if (editmode||!win)
+				case KEY_CTRL_UP:
+				/* case 0x8d00: //ctrl-up */
+					if (editmode||!win)
+						break;
+					if (!playlist->pos)
+						break;
+					modlist_swap(playlist, playlist->pos-1, playlist->pos);
+					playlist->pos-=1;
 					break;
-				if (!playlist->pos)
+				case KEY_CTRL_DOWN:
+				/* case 0x9100: //ctrl-down  */
+					if (editmode||!win)
+						break;
+					if ((playlist->pos+1)>=playlist->num)
+						break;
+					modlist_swap(playlist, playlist->pos, playlist->pos+1);
+					playlist->pos++;
 					break;
-				modlist_swap(playlist, playlist->pos-1, playlist->pos);
-				playlist->pos-=1;
-				break;
-			case KEY_CTRL_DOWN:
-			/* case 0x9100: //ctrl-down  */
-				if (editmode||!win)
+				case KEY_CTRL_PGUP:
+				/* case 0x8400: //ctrl-pgup */
+					if (editmode||!win)
+						break;
+					i=(playlist->pos>dirwinheight)?dirwinheight:playlist->pos;
+					modlist_swap(playlist, playlist->pos, playlist->pos-i);
+					playlist->pos-=i;
 					break;
-				if ((playlist->pos+1)>=playlist->num)
+				case KEY_CTRL_PGDN:
+				/* case 0x7600: //ctrl-pgdown */
+					if (editmode||!win)
+						break;
+					i=((playlist->num-1-playlist->pos)>dirwinheight)?dirwinheight:(playlist->num-1-playlist->pos);
+					modlist_swap(playlist, playlist->pos, playlist->pos+i);
+					playlist->pos+=i;
 					break;
-				modlist_swap(playlist, playlist->pos, playlist->pos+1);
-				playlist->pos++;
-				break;
-			case KEY_CTRL_PGUP:
-			/* case 0x8400: //ctrl-pgup */
-				if (editmode||!win)
-					break;
-				i=(playlist->pos>dirwinheight)?dirwinheight:playlist->pos;
-				modlist_swap(playlist, playlist->pos, playlist->pos-i);
-				playlist->pos-=i;
-				break;
-			case KEY_CTRL_PGDN:
-			/* case 0x7600: //ctrl-pgdown */
-				if (editmode||!win)
-					break;
-				i=((playlist->num-1-playlist->pos)>dirwinheight)?dirwinheight:(playlist->num-1-playlist->pos);
-				modlist_swap(playlist, playlist->pos, playlist->pos+i);
-				playlist->pos+=i;
-				break;
 /*    case 0x7700: //ctrl-home TODO keys
       if (editmode||!win)
         break;
@@ -2851,6 +3270,7 @@ signed int fsFileSelect(void)
       playlist.insert(playlist.num, &m, 1);
       playlist.pos=playlist.num-1;
       break;*/
+			}
 		}
 	}
   /*return 0; the above while loop doesn't go to this point */
@@ -2893,7 +3313,12 @@ static int stdReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 			memset(&m, 0, sizeof(struct modlistentry));
 
 			m.drive=d;
-			strncpy(m.shortname, d->drivename, 12);
+#ifdef __GNUC__
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstringop-truncation"
+			strncpy(m.shortname, d->drivename, 12); /* m.shortname is not expected to be zero-terminated if it is 12 characters longs */
+# pragma GCC diagnostic pop
+#endif
 			m.flags=MODLIST_FLAG_DRV;
 			m.dirdbfullpath=d->currentpath;
 			dirdbRef(m.dirdbfullpath);
@@ -2904,18 +3329,25 @@ static int stdReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 	return 1;
 }
 
-static void fsSavePlayList(const struct modlist *ml)
+static int fsSavePlayList(const struct modlist *ml)
 {
-#warning fsEditString API should have a dynamic version, FIXME
-	char path[128*1024];
+	static int state = 0;
+	static char *temppath;
+	char *newpath;
 	int mlTop=plScrHeight/2-2;
 	unsigned int i;
 	char *dr;
 	char *di;
 	char *fn;
 	char *ext;
-	char *newpath;
 	FILE *f;
+	int retval;
+
+	if (state == 0)
+	{
+		dirdbGetFullname_malloc (dirdbcurdirpath, &temppath, DIRDB_FULLNAME_ENDSLASH);
+		state = 1;
+	}
 
 	displayvoid(mlTop+1, 5, plScrWidth-10);
 	displayvoid(mlTop+2, 5, plScrWidth-10);
@@ -2938,24 +3370,26 @@ static void fsSavePlayList(const struct modlist *ml)
 	displaystr(mlTop+1, 5, 0x0b, "Store playlist, please give filename (.pls format):", 50);
 	displaystr(mlTop+3, 5, 0x0b, "-- Abort with escape --", 23);
 
+	retval = fsEditString2(mlTop+2, 5, plScrWidth-10, &temppath);
+	if (retval > 0)
 	{
-		char *curdirpath;
-		dirdbGetFullname_malloc (dirdbcurdirpath, &curdirpath, DIRDB_FULLNAME_ENDSLASH);
-		snprintf (path, sizeof (path), "%s", curdirpath);
-		free (curdirpath);
+		return 1;
 	}
 
-	if (!fsEditString(mlTop+2, 5, plScrWidth-10, sizeof(path)-1, path))
-	{
-		return;
+	if (retval < 0)
+	{ /* abort */
+		free (temppath);
+		state = 0;
+		return 0;
 	}
 
-	splitpath4_malloc(path, &dr, &di, &fn, &ext);
+	splitpath4_malloc(temppath, &dr, &di, &fn, &ext);
 	if (!*ext)
 	{
 		free (ext);
 		ext = strdup (".pls");
 	}
+	free (temppath); temppath = 0;
 
 	if (strcmp(dr, "file:"))
 	{
@@ -2964,7 +3398,7 @@ static void fsSavePlayList(const struct modlist *ml)
 		free (di);
 		free (fn);
 		free (ext);
-		return;
+		return 0;
 	}
 
 	makepath_malloc (&newpath, NULL, di, fn, ext);
@@ -2977,7 +3411,7 @@ static void fsSavePlayList(const struct modlist *ml)
 		fprintf (stderr, "Failed to create file %s: %s\n", newpath, strerror (errno));
 		free (di);
 		free (newpath);
-		return;
+		return 0;
 	}
 	free (newpath);
 	fprintf(f, "[playlist]\n");
@@ -3008,6 +3442,8 @@ static void fsSavePlayList(const struct modlist *ml)
 	fclose(f);
 
 	fsScanDir(1);
+
+	return 0;
 }
 
 struct mdbreaddirregstruct fsReadDirReg = {stdReadDir MDBREADDIRREGSTRUCT_TAIL};

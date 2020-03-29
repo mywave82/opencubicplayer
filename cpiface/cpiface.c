@@ -411,8 +411,6 @@ static int plmpInit(void)
 
 	cpiInitAllModes();
 
-	cpiKeyHelpReset = cpiResetScreen;
-
 	plRegisterInterface (&plOpenCP);
 
 	plmpInited = 1;
@@ -686,17 +684,25 @@ void cpiForwardIProcessKey(uint16_t key)
 
 static interfaceReturnEnum plmpDrawScreen(void)
 {
-	int needdraw=1;
+	int needdraw = 1;
 	struct cpimoderegstruct *mod;
+	static int plInKeyboardHelp = 0;
 
 	plChanChanged=0;
 
 	if (plIsEnd)
+	{
 		if (plIsEnd())
+		{
+			plInKeyboardHelp = 0;
 			return interfaceReturnNextAuto;
+		}
+	}
 
 	if (plIdle)
+	{
 		plIdle();
+	}
 
 	for (mod=cpiModes; mod; mod=mod->next)
 		mod->Event(cpievKeepalive);
@@ -704,34 +710,47 @@ static interfaceReturnEnum plmpDrawScreen(void)
 	if (plEscTick&&(dos_clock()>(time_t)(plEscTick+2*DOS_CLK_TCK)))
 		plEscTick=0;
 
+	if (plInKeyboardHelp)
+	{
+		curmode->Draw();
+		plInKeyboardHelp = cpiKeyHelpDisplay();
+		if (!plInKeyboardHelp)
+		{
+			curmode->SetMode(); /* force complete redraw */
+		} else {
+			framelock();
+		}
+		return interfaceReturnContinue;
+	}
+
 	while (ekbhit())
 	{
 		uint16_t key=egetch();
-/*
-		if ((key&0xFF)==0xE0)
-			key&=0xFF00;
-		if (key&0xFF)
-			key&=0x00FF;
-*/
-		needdraw=0;
 
 		if (plEscTick)
 		{
 			plEscTick=0;
 			if (key==KEY_ESC)
+			{
 				return interfaceReturnQuit;
+			}
 		}
 
 #ifdef DEBUG
 		DEBUGINT(key);
 #endif
 
+		if (key == KEY_ALT_K)
+		{
+			cpiKeyHelpClear();
+		}
+
 		if (curmode->AProcessKey(key))
 		{
 #ifdef KEYBOARD_DEBUG
 			fprintf (stderr, "plmpDrawScreen: curmode[%s]->AProcessKey() swallowed the key\n", curmode->handle);
 #endif
-			curmode->Draw();
+			needdraw = 1;
 			continue;
 		}
 
@@ -776,6 +795,8 @@ static interfaceReturnEnum plmpDrawScreen(void)
 			#endif
 			#ifdef DOS32 /* TODO*/
 			case 0xF8:
+				curmode->Draw();
+				needdraw = 0;
 				Screenshot();
 				break;
 			#endif
@@ -811,6 +832,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 						break;
 					}
 				}
+				if (mod) break; /* forward the break */
 				if (plNLChan)
 				{
 #ifdef KEYBOARD_DEBUG
@@ -831,15 +853,27 @@ static interfaceReturnEnum plmpDrawScreen(void)
 #endif
 					plProcessKey(key);
 				}
-				cpiKeyHelpDisplay();
+				if (needdraw)
+				{
+					needdraw = 0;
+					curmode->Draw();
+				}
+				if (key == KEY_ALT_K)
+				{
+					plInKeyboardHelp = 1;
+					goto superbreak;
+				}
 				break;
 		}
 
-		curmode->Draw();
+		needdraw=1;
 	}
 
+superbreak:
 	if (needdraw)
+	{
 		curmode->Draw();
+	}
 	framelock();
 
 	return interfaceReturnContinue;

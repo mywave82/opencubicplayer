@@ -26,8 +26,6 @@
 #include "stuff/framelock.h"
 #include "cpiface.h"
 
-void (*cpiKeyHelpReset)(void);
-
 struct cpiKeyHelpKeyName
 {
 	uint16_t key;
@@ -36,6 +34,7 @@ struct cpiKeyHelpKeyName
 
 static struct cpiKeyHelpKeyName KeyNames[] =
 {
+	{' ', "spacebar"},
 	{KEY_ESC, "esc"},
 	{KEY_NPAGE, "page down"},
 	{KEY_PPAGE, "page up"},
@@ -180,6 +179,7 @@ static struct cpiKeyHelpKeyName KeyNames[] =
 static unsigned int keymapping_n = 0;
 static struct cpiKeyHelpKeyName keymapping[sizeof(KeyNames)/sizeof(struct cpiKeyHelpKeyName)];
 
+
 void cpiKeyHelp(uint16_t key, const char *shorthelp)
 {
 	unsigned int i;
@@ -200,132 +200,160 @@ static unsigned int top;
 static unsigned int height;
 static unsigned int left;
 static unsigned int width;
+static unsigned int offset;
+static unsigned int insecret;
+static unsigned int vpos;
+
+static void DrawBoxCommon(void)
+{
+	int i;
+	int widest = 0;
+	for (i=0; i < keymapping_n; i++)
+	{
+		int len = strlen (keymapping[i].name);
+		if (len > widest)
+		{
+			widest = len;
+		}
+	}
+
+	height = plScrHeight-4;
+	width = plScrWidth-4;
+
+	if (height > keymapping_n)
+	{
+		height = keymapping_n;
+	}
+
+	if (width > (widest + 15))
+	{
+		width = widest + 15;
+	}
+
+	top = (plScrHeight - height) / 2;
+	left = (plScrWidth - width) / 2;
+
+	if (height < keymapping_n)
+	{
+		vpos = offset * (height - 1) / (keymapping_n - height);
+	}
+}
 
 static void gDrawBox(void)
 {
 	unsigned int i;
 
-	top = 3;
-	height = plScrHeight-6;;
-	left = 2;
-	width = plScrWidth-4;
+	DrawBoxCommon ();
 
 	gdrawstr(top-1, left-1, "\xda", 1, 0x04, 0x00);
-	for (i=left;i<(left+width);i++)
+	for (i=left;i<(left+width+1);i++)
 		gdrawstr(top-1, i, "\xc4", 1, 0x04, 0x00);
-	gdrawstr(top-1, left+width, "\xbf", 1, 0x04, 0x00);
-	for (i=top;i<top+height;i++)
+	gdrawstr(top-1, left + width/2 - 10, " Keyboard short-cuts ", 21, 0x04, 0x00);
+	gdrawstr(top-1, left+width+1, "\xbf", 1, 0x04, 0x00);
+	for (i=0; i<height; i++)
 	{
-		gdrawstr(i, left-1, "\xb3", 1, 0x04, 0x00);
-		gdrawstr(i, left+width, "\xb3", 1, 0x04, 0x00);
+		gdrawstr(i + top, left         - 1,           "\xb3",        1, 0x04, 0x00);
+		gdrawstr(i + top, left + width + 1, (i!=vpos)?"\xb3":"\xdd", 1, 0x04, 0x00);
 	}
 	gdrawstr(top+height, left-1, "\xc0", 1, 0x04, 0x00);
-	for (i=left;i<(left+width);i++)
+	for (i=left;i<(left+width+1);i++)
 		gdrawstr(top+height, i, "\xc4", 1, 0x04, 0x00);
-	gdrawstr(top+height, left+width, "\xd9", 1, 0x04, 0x00);
+	gdrawstr(top+height, left+width+1, "\xd9", 1, 0x04, 0x00);
 }
 static void DrawBox(void)
 {
 	unsigned int i;
 
-	top = 3;
-	height = plScrHeight-6;
-	left = 2;
-	width = plScrWidth-4;
+	DrawBoxCommon ();
 
 	displaystr(top-1, left-1, 0x04, "\xda", 1);
-	for (i=left;i<(left+width);i++)
+	for (i=left;i<(left+width+1);i++)
 		displaystr(top-1, i, 0x04, "\xc4", 1);
-	displaystr(top-1, left+width, 0x04, "\xbf", 1);
-	for (i=top;i<top+height;i++)
+	displaystr(top-1, left + width/2 - 10, 0x04, " Keyboard short-cuts ", 21);
+	displaystr(top-1, left + width + 1, 0x04, "\xbf", 1);
+	for (i=0; i<height; i++)
 	{
-		displaystr(i, left-1, 0x04, "\xb3", 1);
-		displaystr(i, left+width, 0x04, "\xb3", 1);
-		displayvoid(i, left, width);
+		displaystr (i + top, left         - 1, 0x04,           "\xb3",        1);
+		displaystr (i + top, left + width + 1, 0x04, (i!=vpos)?"\xb3":"\xdd", 1);
 	}
 	displaystr(top+height, left-1, 0x04, "\xc0", 1);
-	for (i=left;i<(left+width);i++)
+	for (i=left;i<(left+width+1);i++)
 		displaystr(top+height, i, 0x04, "\xc4", 1);
-	displaystr(top+height, left+width, 0x04, "\xd9", 1);
+	displaystr(top+height, left+width+1, 0x04, "\xd9", 1);
 }
 
-void SecretFontDisplay(void)
+static int SecretFontDisplay(void)
 {
-	int fontDisplay = 0;
+	static int fontDisplay = 0;
 
-	while (1)
+	char buffer[80];
+	int i;
+	memset (buffer, 32, sizeof (buffer));
+	switch (fontDisplay)
 	{
-		char buffer[80];
-		int i;
-		memset (buffer, 32, sizeof (buffer));
-		switch (fontDisplay)
-		{
-			default:
-			case 0:
-				fontDisplay=0;
-				displaystr (2, 1, 0x04, " =-=-=-= CP437+OCP =-=-=-=" , 78);
-				displaystr (3, 1, 0x04, "   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F", 78);
-				for (i=0; i < 16; i++)
-				{
-					buffer[1] = "0123456789ABCDEF"[i];
-					buffer[3] = i ? i * 16  :32;
-					buffer[6] = i * 16 + 1;
-					buffer[9] = i * 16 + 2;
-					buffer[12] = i * 16 + 3;
-					buffer[15] = i * 16 + 4;
-					buffer[18] = i * 16 + 5;
-					buffer[21] = i * 16 + 6;
-					buffer[24] = i * 16 + 7;
-					buffer[27] = i * 16 + 8;
-					buffer[30] = i * 16 + 9;
-					buffer[33] = i * 16 + 10;
-					buffer[36] = i * 16 + 11;
-					buffer[39] = i * 16 + 12;
-					buffer[42] = i * 16 + 13;
-					buffer[45] = i * 16 + 14;
-					buffer[48] = i * 16 + 15;
-					displaystr (4 + i, 1, 0x04, buffer, 78);
-				}
-				break;
-			case 1:
-				displaystr_iso8859latin1 (2, 1, 0x04, " =-=-=-= ISO8859-LATIN1 =-=-=-=" , 78);
-				displaystr_iso8859latin1 (3, 1, 0x04, "   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F", 78);
-				for (i=0; i < 16; i++)
-				{
-					buffer[1] = "0123456789ABCDEF"[i];
-					buffer[3] = i ? i * 16  :32;
-					buffer[6] = i * 16 + 1;
-					buffer[9] = i * 16 + 2;
-					buffer[12] = i * 16 + 3;
-					buffer[15] = i * 16 + 4;
-					buffer[18] = i * 16 + 5;
-					buffer[21] = i * 16 + 6;
-					buffer[24] = i * 16 + 7;
-					buffer[27] = i * 16 + 8;
-					buffer[30] = i * 16 + 9;
-					buffer[33] = i * 16 + 10;
-					buffer[36] = i * 16 + 11;
-					buffer[39] = i * 16 + 12;
-					buffer[42] = i * 16 + 13;
-					buffer[45] = i * 16 + 14;
-					buffer[48] = i * 16 + 15;
-					displaystr_iso8859latin1 (4 + i, 1, 0x04, buffer, 78);
-				}
-				break;
-			case 2:
-				displaystr_utf8 (2, 1, 0x04, " =-=-=-= UTF-8 =-=-=-=" , 78);
-				displaystr_utf8 (3, 1, 0x04, " Norway: U+00E6=>\xc3\xa6 U+00F8=>\xc3\xb8 U+00E5=>\xc3\xa5 U+00C6=>\xc3\x86 U+00D8=>\xc3\x98 U+00C5=>\xc3\x85" , 78);
-				displaystr_utf8 (4, 1, 0x04, " Cyrillic U+0411=>\xd0\x91 U+0414=>\xd0\x94 U+0418=>\xd0\x98", 78);
-				displaystr_utf8 (5, 1, 0x04, " Linear B Syllabary: U+10002=>\xf0\x90\x80\x82 U+1002A=>\xf0\x90\x80\xaa U+1000F=>\xf0\x90\x80\x8f", 78);
-				displaystr_utf8 (6, 1, 0x04, " Linear B Ideograms: U+100b1=>\xf0\x90\x82\xb1 U+100AF=>\xf0\x90\x82\xaf U+10083=>\xf0\x90\x82\x83", 78);
-				break;
+		default:
+		case 0:
+			fontDisplay=0;
+			displaystr (2, 1, 0x04, " =-=-=-= CP437+OCP =-=-=-=" , 78);
+			displaystr (3, 1, 0x04, "   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F", 78);
+			for (i=0; i < 16; i++)
+			{
+				buffer[1] = "0123456789ABCDEF"[i];
+				buffer[3] = i ? i * 16  :32;
+				buffer[6] = i * 16 + 1;
+				buffer[9] = i * 16 + 2;
+				buffer[12] = i * 16 + 3;
+				buffer[15] = i * 16 + 4;
+				buffer[18] = i * 16 + 5;
+				buffer[21] = i * 16 + 6;
+				buffer[24] = i * 16 + 7;
+				buffer[27] = i * 16 + 8;
+				buffer[30] = i * 16 + 9;
+				buffer[33] = i * 16 + 10;
+				buffer[36] = i * 16 + 11;
+				buffer[39] = i * 16 + 12;
+				buffer[42] = i * 16 + 13;
+				buffer[45] = i * 16 + 14;
+				buffer[48] = i * 16 + 15;
+				displaystr (4 + i, 1, 0x04, buffer, 78);
+			}
+			break;
+		case 1:
+			displaystr_iso8859latin1 (2, 1, 0x04, " =-=-=-= ISO8859-LATIN1 =-=-=-=" , 78);
+			displaystr_iso8859latin1 (3, 1, 0x04, "   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F", 78);
+			for (i=0; i < 16; i++)
+			{
+				buffer[1] = "0123456789ABCDEF"[i];
+				buffer[3] = i ? i * 16  :32;
+				buffer[6] = i * 16 + 1;
+				buffer[9] = i * 16 + 2;
+				buffer[12] = i * 16 + 3;
+				buffer[15] = i * 16 + 4;
+				buffer[18] = i * 16 + 5;
+				buffer[21] = i * 16 + 6;
+				buffer[24] = i * 16 + 7;
+				buffer[27] = i * 16 + 8;
+				buffer[30] = i * 16 + 9;
+				buffer[33] = i * 16 + 10;
+				buffer[36] = i * 16 + 11;
+				buffer[39] = i * 16 + 12;
+				buffer[42] = i * 16 + 13;
+				buffer[45] = i * 16 + 14;
+				buffer[48] = i * 16 + 15;
+				displaystr_iso8859latin1 (4 + i, 1, 0x04, buffer, 78);
+			}
+			break;
+		case 2:
+			displaystr_utf8 (2, 1, 0x04, " =-=-=-= UTF-8 =-=-=-=" , 78);
+			displaystr_utf8 (3, 1, 0x04, " Norway: U+00E6=>\xc3\xa6 U+00F8=>\xc3\xb8 U+00E5=>\xc3\xa5 U+00C6=>\xc3\x86 U+00D8=>\xc3\x98 U+00C5=>\xc3\x85" , 78);
+			displaystr_utf8 (4, 1, 0x04, " Cyrillic U+0411=>\xd0\x91 U+0414=>\xd0\x94 U+0418=>\xd0\x98", 78);
+			displaystr_utf8 (5, 1, 0x04, " Linear B Syllabary: U+10002=>\xf0\x90\x80\x82 U+1002A=>\xf0\x90\x80\xaa U+1000F=>\xf0\x90\x80\x8f", 78);
+			displaystr_utf8 (6, 1, 0x04, " Linear B Ideograms: U+100b1=>\xf0\x90\x82\xb1 U+100AF=>\xf0\x90\x82\xaf U+10083=>\xf0\x90\x82\x83", 78);
+			break;
 
-		}
-		while (!ekbhit())
-		{
-			framelock();
-		}
-
+	}
+	while (ekbhit())
+	{
 		switch (egetch())
 		{
 			case 'S':
@@ -333,61 +361,92 @@ void SecretFontDisplay(void)
 				fontDisplay++;
 				break;
 			case KEY_ESC:
-				return;
+				return 0;
 		}
 	}
-
+	return 1;
 }
 
-void cpiKeyHelpDisplay(void)
+void cpiKeyHelpClear(void)
 {
-	unsigned int i, j, offset=0;
+	insecret=0;
+	offset = 0;
+	keymapping_n=0;
+}
+
+int cpiKeyHelpDisplay(void)
+{
+	unsigned int i, j;
 	unsigned char cola, colb;
-	if (!keymapping_n)
-		return;
-	while (1)
+
+	if (insecret)
 	{
-		if ((plScrMode==100)||(plScrMode==101)||(plScrMode==13))
-			gDrawBox();
-		else
-			DrawBox();
-		for (j=0;j<(keymapping_n-offset);j++)
+		insecret = SecretFontDisplay();
+		return 1;
+	}
+
+	if (!keymapping_n)
+		return 0;
+
+	if (keymapping_n <= height)
+	{
+		offset = 0;
+	} else if ((keymapping_n-offset)<height)
+	{
+		offset = keymapping_n - height;
+	}
+
+	if ((plScrMode==100)||(plScrMode==101)||(plScrMode==13))
+	{
+		gDrawBox();
+	} else {
+		DrawBox();
+	}
+
+	for (j=0;j<(keymapping_n-offset);j++)
+	{
+		const char *s="unknown key";
+		if (j>=height)
+			break;
+		for (i=0;i<(sizeof(KeyNames)/sizeof(struct cpiKeyHelpKeyName));i++)
 		{
-			const char *s="unknown key";
-			if (j>=height)
+			if (KeyNames[i].key==keymapping[j+offset].key)
+			{
+				s=KeyNames[i].name;
 				break;
-			for (i=0;i<(sizeof(KeyNames)/sizeof(struct cpiKeyHelpKeyName));i++)
-			{
-				if (KeyNames[i].key==keymapping[j+offset].key)
-				{
-					s=KeyNames[i].name;
-					break;
-				}
-			}
-			if (validkey(KeyNames[i].key))
-			{
-				cola=0x0f;
-				colb=0x0a;
-			} else {
-				cola=0x01;
-				colb=0x01;
-			}
-			if ((plScrMode==100)||(plScrMode==101)||(plScrMode==13))
-			{
-				gdrawstr(j+top, left, s, 16, colb, 0x00);
-				gdrawstr(j+top, left+16, keymapping[j+offset].name, width-16, cola, 0x00);
-			} else {
-				displaystr(j+top, left, colb, s, 16);
-				displaystr(j+top, left+16, cola, keymapping[j+offset].name, width-16);
 			}
 		}
+		if (validkey(KeyNames[i].key))
+		{
+			cola=0x0f;
+			colb=0x0a;
+		} else {
+			cola=0x01;
+			colb=0x01;
+		}
 		if ((plScrMode==100)||(plScrMode==101)||(plScrMode==13))
-			for (;j<height;j++)
-				gdrawstr(j+top, left, "", width, 0x00, 0x00);
+		{
+			gdrawstr(j+top, left, s, 16, colb, 0x00);
+			gdrawstr(j+top, left+16, keymapping[j+offset].name, width-15, cola, 0x00);
+		} else {
+			displaystr(j+top, left, colb, s, 16);
+			displaystr(j+top, left+16, cola, keymapping[j+offset].name, width-15);
+		}
+	}
+	if ((plScrMode==100)||(plScrMode==101)||(plScrMode==13))
+		for (;j<height;j++)
+			gdrawstr(j+top, left, "", width, 0x00, 0x00);
 
-		while (!ekbhit())
-			framelock();
-		switch (egetch())
+	while (ekbhit())
+	{
+		uint16_t c = egetch();
+		if ( ((c >= 'a') && (c <= 'z')) ||
+		     ((c >= 'A') && (c <= 'Z')) ||
+		     ((c >= '0') && (c <= '9')) )
+		{
+			return 0;
+		}
+		switch (c)
 		{
 			case KEY_PPAGE:
 			case KEY_UP:
@@ -400,16 +459,16 @@ void cpiKeyHelpDisplay(void)
 				if ((keymapping_n-offset)>height)
 					offset++;
 				break;
+			case _KEY_ENTER:
 			case KEY_ESC:
 			case KEY_ALT_K:
-				keymapping_n=0;
-				cpiKeyHelpReset();
-				return;
+				return 0;
 			case 'S':
-				SecretFontDisplay();
+				insecret = 1;
 				break;
 		}
 	}
+	return 1;
 }
 
 #ifndef SUPPORT_STATIC_PLUGINS

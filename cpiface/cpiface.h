@@ -47,8 +47,8 @@ extern int (*plGetLChanSample)(unsigned int ch, int16_t *, unsigned int len, uin
 extern int (*plGetPChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
 
 extern void cpiKeyHelp(uint16_t key, const char *shorthelp);
-extern void cpiKeyHelpDisplay(void);
-extern void (*cpiKeyHelpReset)(void); /* internal use only */
+extern void cpiKeyHelpClear(void);
+extern int cpiKeyHelpDisplay(void); /* recall until it returns zero. This function WILL call ekbhit and egetch, but not framelock */
 
 struct cpimoderegstruct
 {
