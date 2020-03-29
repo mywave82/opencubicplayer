@@ -1159,7 +1159,13 @@ static void RefreshScreenGraph(void)
 	SDL_RenderCopy (current_renderer, current_texture, NULL, NULL);
 	SDL_RenderPresent (current_renderer);
 
-	fontengine_iterate ();
+	if (plCurrentFont == _8x8)
+	{
+		fontengine_8x8_iterate ();
+	} else if (plCurrentFont == _8x16)
+	{
+		fontengine_8x16_iterate ();
+	}
 }
 
 void RefreshScreenText(void)
@@ -1175,8 +1181,6 @@ void RefreshScreenText(void)
 	RefreshScreenGraph();
 
 	swtext_cursor_eject();
-
-	fontengine_iterate ();
 }
 
 static int ekbhit(void)

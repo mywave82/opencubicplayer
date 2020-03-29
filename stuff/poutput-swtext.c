@@ -34,6 +34,36 @@
 /* GNU unifont "poutput-fontengine" supports 8x16 (some glyphs are 16x16) */
 /* OpenCubicPlayer built-in font supports (8x16) 8x8 and 4x4, in CP437 only */
 
+static void swtext_displaycharattr_double8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
+{
+	uint8_t *target;
+	int i, j;
+	uint8_t f, b;
+
+	target = plVidMem + y * 8 * plScrLineBytes + x * 8;
+
+	f = attr & 0x0f;
+	b = attr >> 4;
+
+	for (i=0; i < 8; i++)
+	{
+		uint8_t bitmap=*cp++;
+		for (j=0; j < 8; j++)
+		{
+			*target++=(bitmap&128)?f:b;
+			bitmap<<=1;
+		}
+		bitmap=*cp++;
+		for (j=0; j < 8; j++)
+		{
+			*target++=(bitmap&128)?f:b;
+			bitmap<<=1;
+		}
+		target -= 16;
+		target += plScrLineBytes;
+	}
+}
+
 static void swtext_displaycharattr_double8x16(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
 {
 	uint8_t *target;
@@ -64,6 +94,31 @@ static void swtext_displaycharattr_double8x16(uint16_t y, uint16_t x, uint8_t *c
 	}
 }
 
+static void swtext_displaycharattr_doublefirsthalf8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
+{
+	uint8_t *target;
+	int i, j;
+	uint8_t f, b;
+
+	target = plVidMem + y * 8 * plScrLineBytes + x * 8;
+
+	f = attr & 0x0f;
+	b = attr >> 4;
+
+	for (i=0; i < 8; i++)
+	{
+		uint8_t bitmap=*cp++;
+		cp++; /* skip one byte of the source font bitmap */
+		for (j=0; j < 8; j++)
+		{
+			*target++=(bitmap&128)?f:b;
+			bitmap<<=1;
+		}
+		target -= 8;
+		target += plScrLineBytes;
+	}
+}
+
 static void swtext_displaycharattr_doublefirsthalf8x16(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
 {
 	uint8_t *target;
@@ -79,6 +134,30 @@ static void swtext_displaycharattr_doublefirsthalf8x16(uint16_t y, uint16_t x, u
 	{
 		uint8_t bitmap=*cp++;
 		cp++; /* skip one byte of the source font bitmap */
+		for (j=0; j < 8; j++)
+		{
+			*target++=(bitmap&128)?f:b;
+			bitmap<<=1;
+		}
+		target -= 8;
+		target += plScrLineBytes;
+	}
+}
+
+static void swtext_displaycharattr_single8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
+{
+	uint8_t *target;
+	int i, j;
+	uint8_t f, b;
+
+	target = plVidMem + y * 8 * plScrLineBytes + x * 8;
+
+	f = attr & 0x0f;
+	b = attr >> 4;
+
+	for (i=0; i < 8; i++)
+	{
+		uint8_t bitmap=*cp++;
 		for (j=0; j < 8; j++)
 		{
 			*target++=(bitmap&128)?f:b;
@@ -113,6 +192,37 @@ static void swtext_displaycharattr_single8x16(uint16_t y, uint16_t x, uint8_t *c
 	}
 }
 
+static void swtext_displaystrattr_unifont_8x8(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len, const uint16_t *codepage)
+{
+	if (codepage)
+	{
+		while (len)
+		{
+			uint8_t *cp;
+			int fontwidth;
+
+			if (x >= plScrWidth) return;
+
+			cp = fontengine_8x8 (codepage[(*buf)&0x0ff], &fontwidth);
+			/* all these codepoints should always use only one CELL */
+			swtext_displaycharattr_single8x8 (y, x, cp, plpalette[((*buf)>>8)]);
+			x += 1;
+			len -= 1;
+			buf++;
+		}
+	} else { /* codepage == NULL => optimization, ocp-cp437 is in the start of the unifont cache */
+		while (len)
+		{
+			if (x >= plScrWidth) return;
+			/* all these codepoints should always use only one CELL */
+			swtext_displaycharattr_single8x8 (y, x, cp437_8x8[(*buf)&0x0ff].data, plpalette[((*buf)>>8)]);
+			x += 1;
+			len -= 1;
+			buf++;
+		}
+	}
+}
+
 static void swtext_displaystrattr_unifont_8x16(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len, const uint16_t *codepage)
 {
 	if (codepage)
@@ -140,6 +250,39 @@ static void swtext_displaystrattr_unifont_8x16(uint16_t y, uint16_t x, const uin
 			x += 1;
 			len -= 1;
 			buf++;
+		}
+	}
+}
+
+static void swtext_displaystr_unifont_8x8(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len, const uint16_t *codepage)
+{
+	if (codepage)
+	{
+		while (len)
+		{
+			uint8_t *cp;
+			int fontwidth;
+
+			if (x >= plScrWidth) return;
+
+			/* all these codepoints should always use only one CELL */
+			cp = fontengine_8x8 (codepage[*(uint8_t *)str], &fontwidth);
+			swtext_displaycharattr_single8x8 (y, x, cp, attr);
+			x += 1;
+			len -= 1;
+			if (*str) str++;
+		}
+	} else { /* codepage == NULL => optimization, ocp-cp437 is in the start of the unifont cache */
+		while (len)
+		{
+
+			if (x >= plScrWidth) return;
+
+			/* all these codepoints should always use only one CELL */
+			swtext_displaycharattr_single8x8 (y, x, cp437_8x8[*(uint8_t *)str].data, attr);
+			x += 1;
+			len -= 1;
+			if (*str) str++;
 		}
 	}
 }
@@ -173,6 +316,44 @@ static void swtext_displaystr_unifont_8x16(uint16_t y, uint16_t x, uint8_t attr,
 			x += 1;
 			len -= 1;
 			if (*str) str++;
+		}
+	}
+}
+
+static void swtext_displaystr_unifont_utf8_8x8(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
+{
+	int _strlen = strlen (str);
+	while (len)
+	{
+		int cp, inc;
+		uint8_t *data;
+		int fontwidth;
+
+		if (x >= plScrWidth) return;
+
+		cp = utf8_decode (str, _strlen, &inc);
+		str += inc;
+		_strlen -= inc;
+
+		/* all these codepoints should always use only one CELL */
+		data = fontengine_8x8 (cp, &fontwidth);
+
+		if (fontwidth == 16)
+		{
+			if (x >= 2)
+			{
+				swtext_displaycharattr_double8x8 (y, x, data, attr);
+				x += 2;
+				len -= 2;
+			} else {
+				swtext_displaycharattr_doublefirsthalf8x8 (y, x, data, attr);
+				x += 1;
+				len -= 1;
+			}
+		} else {
+			swtext_displaycharattr_single8x8 (y, x, data, attr);
+			x += 1;
+			len -= 1;
 		}
 	}
 }
@@ -401,7 +582,7 @@ void swtext_displaystrattr_cp437(uint16_t y, uint16_t x, const uint16_t *buf, ui
 			swtext_displaystrattr_unifont_8x16 (y, x, buf, len, 0);
 			break;
 		case _8x8:
-			swtext_displaystrattr_cpfont_8x8 (y, x, buf, len, 0);
+			swtext_displaystrattr_unifont_8x8  (y, x, buf, len, 0);
 			break;
 		case _4x4:
 			swtext_displaystrattr_cpfont_4x4 (y, x, buf, len, 0);
@@ -417,7 +598,7 @@ void swtext_displaystrattr_iso8859latin1(uint16_t y, uint16_t x, const uint16_t 
 			swtext_displaystrattr_unifont_8x16 (y, x, buf, len, latin1_to_unicode);
 			break;
 		case _8x8:
-			swtext_displaystrattr_cpfont_8x8 (y, x, buf, len, latin1_table);
+			swtext_displaystrattr_unifont_8x8  (y, x, buf, len, latin1_to_unicode);
 			break;
 		case _4x4:
 			swtext_displaystrattr_cpfont_4x4 (y, x, buf, len, latin1_table);
@@ -433,7 +614,7 @@ void swtext_displaystr_cp437(uint16_t y, uint16_t x, uint8_t attr, const char *s
 			swtext_displaystr_unifont_8x16 (y, x, attr, str, len, 0);
 			break;
 		case _8x8:
-			swtext_displaystr_cpfont_8x8 (y, x, attr, str, len, 0);
+			swtext_displaystr_unifont_8x8  (y, x, attr, str, len, 0);
 			break;
 		case _4x4:
 			swtext_displaystr_cpfont_4x4 (y, x, attr, str, len, 0);
@@ -449,7 +630,7 @@ void swtext_displaystr_iso8859latin1(uint16_t y, uint16_t x, uint8_t attr, const
 			swtext_displaystr_unifont_8x16 (y, x, attr, str, len, latin1_to_unicode);
 			break;
 		case _8x8:
-			swtext_displaystr_cpfont_8x8 (y, x, attr, str, len, latin1_table);
+			swtext_displaystr_unifont_8x8  (y, x, attr, str, len, latin1_to_unicode);
 			break;
 		case _4x4:
 			swtext_displaystr_cpfont_4x4 (y, x, attr, str, len, latin1_table);
@@ -459,11 +640,18 @@ void swtext_displaystr_iso8859latin1(uint16_t y, uint16_t x, uint8_t attr, const
 
 void swtext_displaystr_utf8(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
 {
-	if (plCurrentFont == _8x16)
+	switch (plCurrentFont)
 	{
-		swtext_displaystr_unifont_utf8_8x16 (y, x, attr, str, len);
-		return;
+		case _8x16:
+			swtext_displaystr_unifont_utf8_8x16 (y, x, attr, str, len);
+			return;
+		case _8x8:
+			swtext_displaystr_unifont_utf8_8x8  (y, x, attr, str, len);
+			return;
+		case _4x4:
+			break;
 	}
+/* 4x4... */
 
 #warning TODO - current fallback is copy-paste from console.c default fallback
 	while (len)
@@ -482,12 +670,7 @@ void swtext_displaystr_utf8(uint16_t y, uint16_t x, uint8_t attr, const char *st
 		} else {
 			temp = codepoint;
 		}
-		if (plCurrentFont == _8x8)
-		{
-			swtext_displaycharattr_cpfont_8x8 (y, x, latin1_table[temp], attr);
-		} else {
-			swtext_displaycharattr_cpfont_4x4 (y, x, latin1_table[temp], attr);
-		}
+		swtext_displaycharattr_cpfont_4x4 (y, x, latin1_table[temp], attr);
 		len--;
 		x++;
 	}

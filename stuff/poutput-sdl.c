@@ -1045,7 +1045,13 @@ static void RefreshScreenGraph(void)
 
 	SDL_Flip(current_surface);
 
-	fontengine_iterate ();
+	if (plCurrentFont == _8x8)
+	{
+		fontengine_8x8_iterate ();
+	} else if (plCurrentFont == _8x16)
+	{
+		fontengine_8x16_iterate ();
+	}
 }
 
 static void RefreshScreenText(void)
@@ -1061,8 +1067,6 @@ static void RefreshScreenText(void)
 	RefreshScreenGraph();
 
 	swtext_cursor_eject();
-
-	fontengine_iterate ();
 }
 
 static int ekbhit(void)
