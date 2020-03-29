@@ -1084,6 +1084,14 @@ static int ekbhit(void)
 	{
 		switch (event.type)
 		{
+			case SDL_QUIT:
+			{
+#ifdef SDL_DEBUG
+				fprintf(stderr, "[SDL-video] QUIT\n");
+#endif
+				___push_key(KEY_ESC);
+				break;
+			}
 			case SDL_VIDEORESIZE:
 			{
 #ifdef SDL_DEBUG

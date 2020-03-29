@@ -1207,6 +1207,7 @@ static int ekbhit(void)
 #ifdef SDL2_DEBUG
 						fprintf(stderr, "[SDL2-video] CLOSE:\n");
 #endif
+						___push_key(KEY_ESC);
 						break;
 					}
 					case SDL_WINDOWEVENT_SIZE_CHANGED:

@@ -117,6 +117,8 @@ static Atom XA_NET_WM_NAME;
 static Atom XA_STRING;
 static Atom XA_UTF8_STRING;
 static Atom XA_WM_NAME;
+static Atom WM_PROTOCOLS;
+static Atom WM_DELETE_WINDOW;
 
 static int we_have_fullscreen;
 static int do_fullscreen=0;
@@ -688,6 +690,14 @@ static void x11_common_event_loop(void)
 			case Expose:
 				/* silently ignore these */
 				break;
+			case ClientMessage:
+				if ((event.xclient.format == 32) &&
+				    (event.xclient.message_type == WM_PROTOCOLS) &&
+				    (event.xclient.data.l[0] == WM_DELETE_WINDOW))
+				{
+					___push_key(KEY_ESC);
+				}
+				break;
 			case ConfigureNotify:
 				//fprintf(stderr, "configure notify\n");
 				if ((plScrLineBytes == event.xconfigure.width) && (plScrLines==event.xconfigure.height))
@@ -882,6 +892,7 @@ static void create_window(void)
 		fprintf(stderr, "[x11] Failed to create window\n");
 		exit(-1);
 	}
+	XSetWMProtocols(mDisplay, window, &WM_DELETE_WINDOW, 1);
 	XMapWindow(mDisplay, window);
 	while (1)
 	{
@@ -1212,9 +1223,6 @@ static void plSetTextMode(unsigned char x)
 	}
 
 	TextModeSetState(plCurrentFontWanted /* modes[x].bigfont ? _8x16 : _8x8 */, do_fullscreen);
-/*
-	XSetWMProtocols (mDisplay, window, &wm_delete_window, 1);
-*/
 
 	x11_gflushpal();
 }
@@ -1607,6 +1615,9 @@ int x11_init(int use_explicit)
 
 	if (x11_connect())
 		return -1;
+
+	WM_PROTOCOLS = XInternAtom(mDisplay, "WM_PROTOCOLS", False);
+	WM_DELETE_WINDOW = XInternAtom(mDisplay, "WM_DELETE_WINDOW", False);
 
 	if (fontengine_init())
 	{
