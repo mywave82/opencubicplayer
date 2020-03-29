@@ -440,6 +440,13 @@ int cpiKeyHelpDisplay(void)
 	while (ekbhit())
 	{
 		uint16_t c = egetch();
+
+		if (c == 'S')
+		{
+			insecret = 1;
+			return 1;
+		}
+
 		if ( ((c >= 'a') && (c <= 'z')) ||
 		     ((c >= 'A') && (c <= 'Z')) ||
 		     ((c >= '0') && (c <= '9')) )
@@ -463,9 +470,6 @@ int cpiKeyHelpDisplay(void)
 			case KEY_ESC:
 			case KEY_ALT_K:
 				return 0;
-			case 'S':
-				insecret = 1;
-				break;
 		}
 	}
 	return 1;
