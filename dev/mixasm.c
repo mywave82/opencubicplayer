@@ -2110,14 +2110,18 @@ void mixPlayChannel(int32_t *dst, uint32_t len, struct mixchannel *ch, int stere
 			}
 		}
 /*mixPlayChannel_maxplaylen:*/
+		/* eax now contains numbers of samples left in input */
 		pos=((eax<<16)|fpos)+ch->step;
 		if ((pos>>32)<=ch->step)
 		{/* avoid overflow exception */
 			eax=pos/ch->step;
-			if ((eax<=mylen)&&inloop)
+			if (eax<=mylen)
 			{
-				ch->status&=(MIX_ALL-MIX_PLAYING);
-				len=mylen;
+				if (!inloop)
+				{
+					ch->status&=(MIX_ALL-MIX_PLAYING);
+				}
+				mylen=eax;
 			}
 		}
 
