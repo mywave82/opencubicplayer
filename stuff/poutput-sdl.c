@@ -593,6 +593,7 @@ int sdl_init(void)
 	_displaystr=swtext_displaystr_cp437;
 	_displaystrattr_iso8859latin1=swtext_displaystrattr_iso8859latin1;
 	_displaystr_iso8859latin1=swtext_displaystr_iso8859latin1;
+	_displaystr_utf8=swtext_displaystr_utf8;
 
 	_drawbar=swtext_drawbar;
 	_idrawbar=swtext_idrawbar;

@@ -29,12 +29,11 @@
 #include "poutput.h"
 #include "poutput-fontengine.h"
 #include "poutput-swtext.h"
+#include "utf-8.h"
 
 /* GNU unifont "poutput-fontengine" supports 8x16 (some glyphs are 16x16) */
 /* OpenCubicPlayer built-in font supports (8x16) 8x8 and 4x4, in CP437 only */
 
-#if 0
-//not needed until we add UTF-8 support
 static void swtext_displaycharattr_double8x16(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
 {
 	uint8_t *target;
@@ -89,7 +88,6 @@ static void swtext_displaycharattr_doublefirsthalf8x16(uint16_t y, uint16_t x, u
 		target += plScrLineBytes;
 	}
 }
-#endif
 
 static void swtext_displaycharattr_single8x16(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
 {
@@ -114,34 +112,6 @@ static void swtext_displaycharattr_single8x16(uint16_t y, uint16_t x, uint8_t *c
 		target += plScrLineBytes;
 	}
 }
-
-#if 0
-//not needed until we add UTF-8 support
-static int swtext_displaycharattr_unifont_8x16(uint16_t y, uint16_t x, const uint32_t codepoint, uint8_t attr, int width_left)
-{
-	uint8_t *cp;
-	int fontwidth;
-
-	cp = fontengine_8x16 (codepoint, &fontwidth);
-
-	if (fontwidth == 16)
-	{
-		if (width_left >= 2)
-		{
-			swtext_displaycharattr_double8x16 (y, x, cp, attr);
-			return 2;
-		} else { /* we can only fit the first half */
-			swtext_displaycharattr_doublefirsthalf8x16 (y, x, cp, attr);
-			return 1;
-		}
-	} else if (fontwidth == 8)
-	{
-		swtext_displaycharattr_single8x16 (y, x, cp, attr);
-		return 1;
-	}
-	return 0;
-}
-#endif
 
 static void swtext_displaystrattr_unifont_8x16(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len, const uint16_t *codepage)
 {
@@ -203,6 +173,44 @@ static void swtext_displaystr_unifont_8x16(uint16_t y, uint16_t x, uint8_t attr,
 			x += 1;
 			len -= 1;
 			if (*str) str++;
+		}
+	}
+}
+
+static void swtext_displaystr_unifont_utf8_8x16(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
+{
+	int _strlen = strlen (str);
+	while (len)
+	{
+		int cp, inc;
+		uint8_t *data;
+		int fontwidth;
+
+		if (x >= plScrWidth) return;
+
+		cp = utf8_decode (str, _strlen, &inc);
+		str += inc;
+		_strlen -= inc;
+
+		/* all these codepoints should always use only one CELL */
+		data = fontengine_8x16 (cp, &fontwidth);
+
+		if (fontwidth == 16)
+		{
+			if (x >= 2)
+			{
+				swtext_displaycharattr_double8x16 (y, x, data, attr);
+				x += 2;
+				len -= 2;
+			} else {
+				swtext_displaycharattr_doublefirsthalf8x16 (y, x, data, attr);
+				x += 1;
+				len -= 1;
+			}
+		} else {
+			swtext_displaycharattr_single8x16 (y, x, data, attr);
+			x += 1;
+			len -= 1;
 		}
 	}
 }
@@ -417,7 +425,6 @@ void swtext_displaystrattr_iso8859latin1(uint16_t y, uint16_t x, const uint16_t 
 	}
 }
 
-
 void swtext_displaystr_cp437(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
 {
 	switch (plCurrentFont)
@@ -449,6 +456,43 @@ void swtext_displaystr_iso8859latin1(uint16_t y, uint16_t x, uint8_t attr, const
 			break;
 	}
 }
+
+void swtext_displaystr_utf8(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
+{
+	if (plCurrentFont == _8x16)
+	{
+		swtext_displaystr_unifont_utf8_8x16 (y, x, attr, str, len);
+		return;
+	}
+
+#warning TODO - current fallback is copy-paste from console.c default fallback
+	while (len)
+	{
+		int codepoint;
+		int inc = 0;
+		uint8_t temp;
+
+		if (x >= plScrWidth) return;
+
+		codepoint = utf8_decode (str, strlen (str), &inc);
+		str += inc;
+		if (codepoint > 255)
+		{
+			temp = '?';
+		} else {
+			temp = codepoint;
+		}
+		if (plCurrentFont == _8x8)
+		{
+			swtext_displaycharattr_cpfont_8x8 (y, x, latin1_table[temp], attr);
+		} else {
+			swtext_displaycharattr_cpfont_4x4 (y, x, latin1_table[temp], attr);
+		}
+		len--;
+		x++;
+	}
+}
+
 
 void swtext_drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
 {

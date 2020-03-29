@@ -167,6 +167,7 @@ poutput-swtext.o: poutput-swtext.c poutput-swtext.h \
 	pfonts.h \
 	poutput.h \
 	poutput-fontengine.h \
+	utf-8.h \
 	../config.h \
 	../types.h
 	$(CC) $(CFLAGS) $< -o $@ -c
