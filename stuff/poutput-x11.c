@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
@@ -111,7 +112,6 @@ enum MODE_LINES
 };
 
 static Atom XA_NET_SUPPORTED;
-static Atom XA_NET_WM_STATE;
 static Atom XA_NET_WM_STATE_FULLSCREEN;
 static Atom XA_NET_WM_NAME;
 static Atom XA_STRING;
@@ -135,6 +135,8 @@ static GC copyGC=0;
 static uint8_t *virtual_framebuffer;
 
 static int cachemode=-1;
+
+static int WaitingForVisibility=0;
 
 static void xvidmode_init(void)
 {
@@ -270,7 +272,6 @@ static void ewmh_init(void)
 	unsigned char *tmp;
 
 	XA_NET_SUPPORTED = XInternAtom(mDisplay, "_NET_SUPPORTED", False);
-	XA_NET_WM_STATE = XInternAtom(mDisplay, "_NET_WM_STATE", False);
 	XA_NET_WM_STATE_FULLSCREEN = XInternAtom(mDisplay, "_NET_WM_STATE_FULLSCREEN", False);
 	XA_NET_WM_NAME = XInternAtom(mDisplay, "_NET_WM_NAME", False);
 	XA_STRING = XInternAtom(mDisplay, "STRING", False);
@@ -457,14 +458,14 @@ static void set_state_textmode(int target)
 	TextModeSetState (plCurrentFontWanted, target);
 }
 
-static void set_state_graphmode(int target)
+static void set_state_graphmode(int FullScreen)
 {
 	XSizeHints SizeHints;
 
 	if ( !we_have_fullscreen )
-		target=0;
+		FullScreen=0;
 
-	do_fullscreen = target;
+	do_fullscreen = FullScreen;
 
 	if (!window)
 		return;
@@ -473,23 +474,29 @@ static void set_state_graphmode(int target)
 
 	if (do_fullscreen)
 	{
-		SizeHints.min_width=SizeHints.max_width=Graphmode_modeline->hdisplay;
-		SizeHints.min_height=SizeHints.max_height=Graphmode_modeline->vdisplay;
-		XSetWMNormalHints(mDisplay, window, &SizeHints);
-		XResizeWindow(mDisplay, window, Graphmode_modeline->hdisplay, Graphmode_modeline->vdisplay);
-		XSync(mDisplay, FALSE);
-		XClearWindow(mDisplay, window);
+		SizeHints.min_width=plScrLineBytes;
+		SizeHints.max_width=Graphmode_modeline->hdisplay;
+		SizeHints.min_height=plScrLines;
+		SizeHints.max_height=Graphmode_modeline->vdisplay;
 	} else {
 		SizeHints.min_width=SizeHints.max_width=plScrLineBytes;
 		SizeHints.min_height=SizeHints.max_height=plScrLines;
-		XSetWMNormalHints(mDisplay, window, &SizeHints);
+	}
+
+	XSetWMNormalHints(mDisplay, window, &SizeHints);
+	motif_decoration(window, !do_fullscreen);
+	ewmh_fullscreen(window, do_fullscreen);
+
+	if (do_fullscreen)
+	{
+		XResizeWindow(mDisplay, window, Graphmode_modeline->hdisplay, Graphmode_modeline->vdisplay);
+		XSync(mDisplay, FALSE);
+		//XClearWindow(mDisplay, window);
+	} else {
 		XResizeWindow(mDisplay, window, plScrLineBytes, plScrLines);
 		XSync(mDisplay, FALSE);
 	}
 	___push_key(VIRT_KEY_RESIZE);
-
-	motif_decoration(window, !do_fullscreen);
-	ewmh_fullscreen(window, do_fullscreen);
 
 	if (xvidmode_event_base>=0)
 	{
@@ -502,6 +509,7 @@ static void set_state_graphmode(int target)
 		}
 	}
 
+#if 0
 	if (do_fullscreen)
 	{
 		XGrabKeyboard(mDisplay, DefaultRootWindow(mDisplay), True, GrabModeAsync, GrabModeAsync, CurrentTime);
@@ -512,6 +520,15 @@ static void set_state_graphmode(int target)
 		XUngrabKeyboard(mDisplay, CurrentTime);
 		XUngrabPointer(mDisplay, CurrentTime);
 	}
+#else
+	WaitingForVisibility = 1;
+	if (do_fullscreen)
+	{
+		vo_hidecursor(mDisplay, window);
+	} else {
+		vo_showcursor(mDisplay, window);
+	}
+#endif
 
 	destroy_image();
 	create_image();
@@ -604,6 +621,8 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 	{
 		XF86VidModeSwitchToMode(mDisplay, mScreen, &default_modeline);
 	}
+
+#if 0
 	if (do_fullscreen)
 	{
 		XGrabKeyboard(mDisplay, DefaultRootWindow(mDisplay), True, GrabModeAsync, GrabModeAsync, CurrentTime);
@@ -614,6 +633,15 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 		XUngrabKeyboard(mDisplay, CurrentTime);
 		XUngrabPointer(mDisplay, CurrentTime);
 	}
+#else
+	WaitingForVisibility = 1;
+	if (do_fullscreen)
+	{
+		vo_hidecursor(mDisplay, window);
+	} else {
+		vo_showcursor(mDisplay, window);
+	}
+#endif
 
 	plCurrentFont = FontSize;
 	switch (plCurrentFont)
@@ -654,6 +682,8 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 
 static void x11_common_event_loop(void)
 {
+	static int JustFocusIn=0;
+	static struct timeval LastFocusIn;
 	XEvent event;
 
 	if (xvidmode_event_base>=0)
@@ -687,8 +717,46 @@ static void x11_common_event_loop(void)
 			default:
 				fprintf(stderr, "Unknown event.type=%d\n", event.type);
 				break;
+			case FocusIn:
+				fprintf(stderr, "FocusIn\n");
+				gettimeofday(&LastFocusIn, NULL);
+				JustFocusIn=1;
+				break;
+			case FocusOut:
+				fprintf(stderr, "FocusOut\n");
+				break;
 			case Expose:
 				/* silently ignore these */
+				break;
+			case VisibilityNotify:
+#if 0
+				fprintf (stderr, "VisibilityNotify event\n");
+				fprintf (stderr, " serial=%ld\n", event.xvisibility.serial);
+				fprintf (stderr, " send_event=%d\n", event.xvisibility.send_event);
+				fprintf (stderr, " display=%p\n", event.xvisibility.display);
+				fprintf (stderr, " window=%ld\n", event.xvisibility.window);
+				fprintf (stderr, " state=%d\n", event.xvisibility.state);
+#endif
+				if (WaitingForVisibility)
+				{
+					WaitingForVisibility=0;
+					if (event.xvisibility.state == VisibilityUnobscured)
+					{
+						fprintf (stderr, "Sending XSetInputFocus\n");
+						XSetInputFocus(mDisplay, window, RevertToNone, CurrentTime);
+					}
+				}
+				break;
+			case MapNotify:
+#if 0
+				fprintf (stderr, "MapNotify event\n");
+				fprintf (stderr, " serial=%ld\n", event.xmap.serial);
+				fprintf (stderr, " send_event=%d\n", event.xmap.send_event);
+				fprintf (stderr, " display=%p\n", event.xmap.display);
+				fprintf (stderr, " event=%ld\n", event.xmap.event);
+				fprintf (stderr, " window=%ld\n", event.xmap.window);
+				fprintf (stderr, " override_redirect=%d\n", event.xmap.override_redirect);
+#endif
 				break;
 			case ClientMessage:
 				if ((event.xclient.format == 32) &&
@@ -747,6 +815,26 @@ static void x11_common_event_loop(void)
 			case ButtonRelease:
 				break; /* ignore for now */
 			case ButtonPress:
+#if 0
+				fprintf (stderr, "ButtonPress event\n");
+				fprintf (stderr, " send_event=%d\n", event.xbutton.send_event);
+				fprintf (stderr, " state=%d\n", event.xbutton.state);
+				fprintf (stderr, " button=%d\n", event.xbutton.button);
+				fprintf (stderr, " same_screen=%d\n", event.xbutton.same_screen);
+#endif
+				if (JustFocusIn)
+				{ /* Ignore left-press if we just received the focus */
+					JustFocusIn = 0;
+					if (event.xbutton.button == 1)
+					{
+						struct timeval Now;
+						gettimeofday(&Now, NULL);
+						if (((Now.tv_sec - LastFocusIn.tv_sec)*1000000 + (Now.tv_usec - LastFocusIn.tv_usec)) < 50000)
+						{
+							break;
+						}
+					}
+				}
 				switch (event.xbutton.button)
 				{
 					case 4:
@@ -885,7 +973,7 @@ static void create_window(void)
 
 	xswa.background_pixel=BlackPixel(mDisplay, mScreen);
 	xswa.border_pixel=WhitePixel(mDisplay, mScreen);
-	xswa.event_mask=ExposureMask|KeyPressMask|KeyReleaseMask|ButtonPressMask|ButtonReleaseMask/*|ResizeRedirectMask*/|StructureNotifyMask;
+	xswa.event_mask=VisibilityChangeMask|FocusChangeMask|ExposureMask|KeyPressMask|KeyReleaseMask|ButtonPressMask|ButtonReleaseMask/*|ResizeRedirectMask*/|StructureNotifyMask;
 	xswa.override_redirect = False;
 	if (!(window = XCreateWindow(mDisplay, DefaultRootWindow(mDisplay), 0, 0, plScrLineBytes, plScrLines, 0, plDepth, InputOutput, DefaultVisual(mDisplay, mScreen), CWEventMask|CWBackPixel|CWBorderPixel|CWOverrideRedirect, &xswa)))
 	{
