@@ -48,9 +48,10 @@ Fork of [TiMidity++](http://timidity.sourceforge.net/) is used to play [MIDI](ht
 - \*.D00
 - \*.ADL
 - \*.VGM
+- \*.RAD [Reality Adlib Tracker](https://www.3eality.com/productions/reality-adlib-tracker)
 
 [HivelyTracker](http://www.hivelytracker.co.uk/) tracked music, using code from the original tracker repository:
-- \*.HVL
+- \*.HVL [Hively Trakcer](https://github.com/pete-gordon/hivelytracker)
 - \*.AHX
 
 # Manual Page
