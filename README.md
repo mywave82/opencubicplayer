@@ -17,7 +17,7 @@ Amiga style [modules](https://en.wikipedia.org/wiki/Module_file) files with more
 - \*.STM
 - \*.S3M
 - \*.ULT
-- \*.XM, [Fasttracker ][ Clone](https://github.com/8bitbubsy/ft2-clone)
+- \*.XM, [Fasttracker 2 Clone](https://github.com/8bitbubsy/ft2-clone)
 - \*.669
 
 [Atari ST](https://en.wikipedia.org/wiki/Atari_ST#Technical_specifications) \([Yamaha YM2149](https://en.wikipedia.org/wiki/General_Instrument_AY-3-8910)\) style music using code from [STYMulator](http://atariarea.krap.pl/stymulator/):
