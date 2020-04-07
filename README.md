@@ -17,16 +17,16 @@ Amiga style [modules](https://en.wikipedia.org/wiki/Module_file) files with more
 - \*.STM
 - \*.S3M
 - \*.ULT
-- \*.XM, [Fasttracker 2 Clone](https://github.com/8bitbubsy/ft2-clone)
+- \*.XM, [FastTracker 2 Clone](https://github.com/8bitbubsy/ft2-clone)
 - \*.669
 
-[Atari ST](https://en.wikipedia.org/wiki/Atari_ST#Technical_specifications) \([Yamaha YM2149](https://en.wikipedia.org/wiki/General_Instrument_AY-3-8910)\) style music using code from [STYMulator](http://atariarea.krap.pl/stymulator/):
+Code from [STYMulator](http://atariarea.krap.pl/stymulator/) to play music from [Atari ST](https://en.wikipedia.org/wiki/Atari_ST#Technical_specifications) \([Yamaha YM2149](https://en.wikipedia.org/wiki/General_Instrument_AY-3-8910)\):
 - \*.YM
 
-[C64](https://en.wikipedia.org/wiki/Commodore_64) \([SID 6581/8580](https://en.wikipedia.org/wiki/MOS_Technology_6581)\) style music:
+Fork of [libsidplayfp](https://sourceforge.net/p/sidplay-residfp/wiki/Home/) to play music from [C64](https://en.wikipedia.org/wiki/Commodore_64) \([SID 6581/8580](https://en.wikipedia.org/wiki/MOS_Technology_6581)\):
 - \*.SID
 
-[ZX Spectrum](https://en.wikipedia.org/wiki/ZX_Spectrum)/[Amstrad CPC](https://en.wikipedia.org/wiki/Amstrad_CPC) \([Yamaha YM2149](https://en.wikipedia.org/wiki/General_Instrument_AY-3-8910)\) style music:
+Code from [aylet](http://www.svgalib.org/rus/aylet.html) to play music from [ZX Spectrum](https://en.wikipedia.org/wiki/ZX_Spectrum)/[Amstrad CPC](https://en.wikipedia.org/wiki/Amstrad_CPC) \([Yamaha YM2149](https://en.wikipedia.org/wiki/General_Instrument_AY-3-8910)\):
 - \*.AY
 
 Audio Files (both compressed and PCM styled):
@@ -51,7 +51,7 @@ Fork of [TiMidity++](http://timidity.sourceforge.net/) is used to play [MIDI](ht
 - \*.RAD [Reality Adlib Tracker](https://www.3eality.com/productions/reality-adlib-tracker)
 
 [HivelyTracker](http://www.hivelytracker.co.uk/) tracked music, using code from the original tracker repository:
-- \*.HVL [Hively Trakcer](https://github.com/pete-gordon/hivelytracker)
+- \*.HVL [Hively Tracker](https://github.com/pete-gordon/hivelytracker)
 - \*.AHX
 
 # Manual Page
