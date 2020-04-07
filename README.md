@@ -10,14 +10,14 @@ Amiga style [modules](https://en.wikipedia.org/wiki/Module_file) files with more
 - \*.AMS
 - \*.DMF
 - \*.MXM
-- \*.IT
-- \*.MOD
+- \*.IT, [Schism Tracker](http://schismtracker.org/)
+- \*.MOD, [ProTracker Clone](https://github.com/8bitbubsy/pt2-clone)
 - \*.MTM
 - \*.OKT
 - \*.STM
 - \*.S3M
 - \*.ULT
-- \*.XM
+- \*.XM, [Fasttracker 2 Clone](https://github.com/8bitbubsy/ft2-clone)
 - \*.669
 
 [Atari ST](https://en.wikipedia.org/wiki/Atari_ST#Technical_specifications) \([Yamaha YM2149](https://en.wikipedia.org/wiki/General_Instrument_AY-3-8910)\) style music using code from [STYMulator](http://atariarea.krap.pl/stymulator/):
@@ -48,9 +48,10 @@ Fork of [TiMidity++](http://timidity.sourceforge.net/) is used to play [MIDI](ht
 - \*.D00
 - \*.ADL
 - \*.VGM
+- \*.RAD [Reality Adlib Tracker](https://www.3eality.com/productions/reality-adlib-tracker)
 
 [HivelyTracker](http://www.hivelytracker.co.uk/) tracked music, using code from the original tracker repository:
-- \*.HVL
+- \*.HVL [Hively Trakcer](https://github.com/pete-gordon/hivelytracker)
 - \*.AHX
 
 # Manual Page
