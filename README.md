@@ -62,52 +62,54 @@ https://manpages.debian.org/testing/opencubicplayer/ocp.1.en.html
 
 <kbd>double-esc</kbd>: exist the program
 
-<kbd>ALT</kbd> + <kbd>k</kbd>: List the available keyshort-cuts in the current view
+<kbd>alt</kbd> + <kbd>k</kbd>: List the available keyshort-cuts in the current view
 
 ## While playing
+
+Note: if letters are capital, press them with <kbd>shift</kbd>
 
 <kbd>Enter</kbd>: next file from the playlist, if playlist is empty it opens the file-browser
 
 <kbd>f</kbd>: File-browser
 
-`A`: Text FFT analyzer, `shift-A`: toggle FFT analyzer, `tab`, toggle colors
+<kbd>a</kbd>: Text FFT analyzer, <kbd>A</kbd>: toggle FFT analyzer, <kbd>tab</kbd>, toggle colors
 
-`C`: Text Channel viewer
+<kbd>c</kbd>: Text Channel viewer
 
-`T`: Text Track viewer
+<kbd>t</kbd>: Text Track viewer
 
-`G`: Lo-Res FFT analyzer + history
-`Shift-G`: High-Res FFT analyzer + history
+<kbd>g</kbd>: Lo-Res FFT analyzer + history
+<kbd>G</kbd>: High-Res FFT analyzer + history
 
-`B`: Phase viewer
+<kbd>b</kbd>: Phase viewer
 
-`O`: Oscilloscope
+<kbd>o</kbd>: Oscilloscope
 
-`V`: Peak power level
+<kbd>v</kbd>: Peak power level
 
-`M`: Volume control
+<kbd>m</kbd>: Volume control
 
 `X / ALT + X`: Extended mode / normal mode toggle
 
-`Backspace`: Toggle filter
+<kbd>Backspace</kbd>: Toggle filter
 
-`F1`: Online Help
+<kbd>f1</kbd>: Online Help
 
-`F2`: Lower Volume
+<kbd>f2</kbd>: Lower Volume
 
-`F3`: Increase Volume
+<kbd>f3</kbd>: Increase Volume
 
-`F4`: Toggle Surround
+<kbd>f4</kbd>: Toggle Surround
 
-`F5`: Panning left
+<kbd>f5</kbd>: Panning left
 
-`F6`: Panning right
+<kbd>f6</kbd>: Panning right
 
-`F7`: Balance left
+<kbd>f7</kbd>: Balance left
 
-`F8`: Balance right
+<kbd>f8</kbd>: Balance right
 
-`F9`: Decrease playback speed
+<kbd>f9</kbd>: Decrease playback speed
 
 `F10`: Increase playback speed
 
