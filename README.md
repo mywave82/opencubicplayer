@@ -60,15 +60,15 @@ https://manpages.debian.org/testing/opencubicplayer/ocp.1.en.html
 
 # Usage
 
-`double-esc`: exist the program
+<kbd>double-esc</kbd>: exist the program
 
-`ALT + K`: List the available keyshort-cuts in the current view
+<kbd>ALT</kbd> + <kbd>k</kbd>: List the available keyshort-cuts in the current view
 
 ## While playing
 
-`Enter`: next file from the playlist, if playlist is empty it opens the file-browser
+<kbd>Enter</kbd>: next file from the playlist, if playlist is empty it opens the file-browser
 
-`F`: File-browser
+<kbd>f</kbd>: File-browser
 
 `A`: Text FFT analyzer, `shift-A`: toggle FFT analyzer, `tab`, toggle colors
 
