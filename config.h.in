@@ -186,7 +186,6 @@
 /* #define VCSA_DEBUG 1*/
 /* #define DEBUG_FRAMEBUFFER 1 */
 /* #define MP_DEBUG 1 */
-/* #define ID3_DEBUG 1 */
 /* #define PSETTING_DEBUG 1 */
 /* #define WAVE_DEBUG 1 */
 /* #define XM_LOAD_DEBUG 1 */

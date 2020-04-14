@@ -1,7 +1,13 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-all: mpptype.o charset.o playmp2$(LIB_SUFFIX)
+ifeq ($(BUILD_DUMPTOOLS),1)
+	DUMPID3=dumpid3
+else
+	DUMPID3=
+endif
+
+all: mpptype.o id3.o playmp2$(LIB_SUFFIX) $(DUMPID3)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
@@ -12,18 +18,25 @@ install:
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/playmp2$(LIB_SUFFIX)"
 
-charset.o: charset.c \
+dumpid3: dumpid3.o
+	$(CC) $(LDFLAGS) -o $@ $^
+
+dumpid3.o: dumpid3.c
+	$(CC) -o $@ $< -c
+
+id3.o: id3.c \
 	../config.h \
-	../stuff/latin1.h \
-	../stuff/utf-8.h
-	$(CC) charset.c -o $@ -c
+	../types.h \
+	id3.h
+	$(CC) $< -o $@ -c
 
 mpptype.o: mpptype.c \
 	../config.h \
 	../types.h \
+	id3.h \
 	../stuff/imsrtns.h \
-	../filesel/mdb.h \
-	charset.h
+	../stuff/utf-8.h \
+	../filesel/mdb.h
 	$(CC) mpptype.c -o $@ -c
 
 playmp2_so=mppplay.o mpplay.o
