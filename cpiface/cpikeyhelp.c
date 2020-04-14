@@ -344,6 +344,40 @@ static int SecretFontDisplay(void)
 			}
 			break;
 		case 2:
+			displaystr_iso8859latin1 (2, 1, 0x04, " =-=-=-= Code page 850 =-=-=-=" , 78);
+			displaystr_iso8859latin1 (3, 1, 0x04, "   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F", 78);
+			for (i=0; i < 8; i++)
+			{
+				buffer[1] = "0123456789ABCDEF"[i];
+				buffer[3] = i ? i * 16  :32;
+				buffer[6] = i * 16 + 1;
+				buffer[9] = i * 16 + 2;
+				buffer[12] = i * 16 + 3;
+				buffer[15] = i * 16 + 4;
+				buffer[18] = i * 16 + 5;
+				buffer[21] = i * 16 + 6;
+				buffer[24] = i * 16 + 7;
+				buffer[27] = i * 16 + 8;
+				buffer[30] = i * 16 + 9;
+				buffer[33] = i * 16 + 10;
+				buffer[36] = i * 16 + 11;
+				buffer[39] = i * 16 + 12;
+				buffer[42] = i * 16 + 13;
+				buffer[45] = i * 16 + 14;
+				buffer[48] = i * 16 + 15;
+				displaystr (4 + i, 1, 0x04, buffer, 78);
+			}
+			displaystr_utf8 (4 +  8, 1, 0x04, " 8 \xC3\x87"  "  \xC3\xBC"  "  \xC3\xA9"  "  \xC3\xA2"  "  \xC3\xA4"  "  \xC3\xA0"  "  \xC3\xA5  \xC3\xA7  \xC3\xAA"  "  \xC3\xAB"  "  \xC3\xA8"  "  \xC3\xAF"  "  \xC3\xAE"  "  \xC3\xAC"  "  \xC3\x84"  "  \xC3\x85",     78);
+			displaystr_utf8 (4 +  9, 1, 0x04, " 9 \xC3\x89"  "  \xC3\xA6"  "  \xC3\x86"  "  \xC3\xB4"  "  \xC3\xB6"  "  \xC3\xB2"  "  \xC3\xBB  \xC3\xB9  \xC3\xBF"  "  \xC3\x96"  "  \xC3\x9C"  "  \xC3\xB8"  "  \xC2\xA3"  "  \xC3\x98"  "  \xC3\x97"  "  \xC6\x92",     78);
+			displaystr_utf8 (4 + 10, 1, 0x04, " A \xC3\xA1"  "  \xC3\xAD"  "  \xC3\xB3"  "  \xC3\xBA"  "  \xC3\xB1"  "  \xC3\x91"  "  \xC2\xAA  \xC2\xBA  \xC2\xBF"  "  \xC2\xAE"  "  \xC2\xAC"  "  \xC2\xBD"  "  \xC2\xBC"  "  \xC2\xA1"  "  \xC2\xAB"  "  \xC2\xBB",     78);
+			displaystr_utf8 (4 + 11, 1, 0x04, " B \xE2\x96\x91  \xE2\x96\x92  \xE2\x96\x93  \xE2\x94\x82  \xE2\x94\xA4  \xC3\x81"  "  \xC3\x82  \xC3\x80  \xC2\xA9"  "  \xE2\x95\xA3  \xE2\x95\x91  \xE2\x95\x97  \xE2\x95\x9D  \xC2\xA2"  "  \xC2\xA5"  "  \xE2\x94\x90", 78);
+			displaystr_utf8 (4 + 12, 1, 0x04, " C \xE2\x94\x94  \xE2\x94\xB4  \xE2\x94\xAC  \xE2\x94\x9C  \xE2\x94\x80  \xE2\x94\xBC  \xC3\xA3  \xC3\x83  \xE2\x95\x9A  \xE2\x95\x94  \xE2\x95\xA9  \xE2\x95\xA6  \xE2\x95\xA0  \xE2\x95\x90  \xE2\x95\xAC  \xC2\xA4",     78);
+			displaystr_utf8 (4 + 13, 1, 0x04, " D \xC3\xB0"  "  \xC3\x90"  "  \xC3\x8A"  "  \xC3\x8B"  "  \xC3\x88"  "  \xC4\xB1"  "  \xC3\x8D  \xC3\x8E  \xC3\x8F"  "  \xE2\x94\x98  \xE2\x94\x8C  \xE2\x96\x88  \xE2\x96\x84  \xC2\xA6"  "  \xC3\x8C"  "  \xE2\x96\x80", 78);
+			displaystr_utf8 (4 + 14, 1, 0x04, " E \xC3\x93"  "  \xC3\x9F"  "  \xC3\x94"  "  \xC3\x92"  "  \xC3\xB5"  "  \xC3\x95"  "  \xC2\xB5  \xC3\xBE  \xC3\x9E"  "  \xC3\x9A"  "  \xC3\x9B"  "  \xC3\x99"  "  \xC3\xBD"  "  \xC3\x9D"  "  \xC2\xAF"  "  \xC2\xB4",     78);
+			displaystr_utf8 (4 + 15, 1, 0x04, " F  "         "  \xC2\xB1"  "  \xE2\x80\x97  \xC2\xBE"  "  \xC2\xB6"  "  \xC2\xA7"  "  \xC3\xB7  \xC2\xB8  \xC2\xB0"  "  \xC2\xA8"  "  \xC2\xB7"  "  \xC2\xB9"  "  \xC2\xB3"  "  \xC2\xB2"  "  \xE2\x96\xA0",               78);
+			break;
+
+		case 3:
 			displaystr_utf8 (2, 1, 0x04, " =-=-=-= UTF-8 =-=-=-=" , 78);
 			displaystr_utf8 (3, 1, 0x04, " Norway: U+00E6=>\xc3\xa6 U+00F8=>\xc3\xb8 U+00E5=>\xc3\xa5 U+00C6=>\xc3\x86 U+00D8=>\xc3\x98 U+00C5=>\xc3\x85" , 78);
 			displaystr_utf8 (4, 1, 0x04, " Cyrillic U+0411=>\xd0\x91 U+0414=>\xd0\x94 U+0418=>\xd0\x98", 78);
