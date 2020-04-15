@@ -3316,7 +3316,9 @@ static int stdReadDir(struct modlist *ml, const struct dmDrive *drive, const uin
 #ifdef __GNUC__
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
 			strncpy(m.shortname, d->drivename, 12); /* m.shortname is not expected to be zero-terminated if it is 12 characters longs */
+#ifdef __GNUC__
 # pragma GCC diagnostic pop
 #endif
 			m.flags=MODLIST_FLAG_DRV;
