@@ -60,7 +60,7 @@ https://manpages.debian.org/testing/opencubicplayer/ocp.1.en.html
 
 # Usage
 
-<kbd>double-esc</kbd>: exist the program
+<kbd>esc</kbd><kbd>esc</kbd>: exit the program
 
 <kbd>alt</kbd> + <kbd>k</kbd>: List the available keyshort-cuts in the current view
 
@@ -89,7 +89,7 @@ Note: if letters are capital, press them with <kbd>shift</kbd>
 
 <kbd>m</kbd>: Volume control
 
-`X / ALT + X`: Extended mode / normal mode toggle
+<kbd>x</kbd> / <kbd>alt<kbd> + <kbd>x</kbd>: Extended mode / normal mode toggle
 
 <kbd>Backspace</kbd>: Toggle filter
 
@@ -111,27 +111,27 @@ Note: if letters are capital, press them with <kbd>shift</kbd>
 
 <kbd>f9</kbd>: Decrease playback speed
 
-`F10`: Increase playback speed
+<kbd>f10</kbd>: Increase playback speed
 
-`\`: Toggle pitch/speed lock (if fileformat makes this possible)
+<kbd>\</kbd>: Toggle pitch/speed lock (if fileformat makes this possible)
 
-`F11`: Decrease playback pitch
+<kbd>f11</kbd>: Decrease playback pitch
 
-`F12`: Increase playback pitch
+<kbd>f12</kbd>: Increase playback pitch
 
 ## File browser
 
-`ALT + E`: Edit meta-information
+<kbd>alt</kbd> + <kbd>e</kbd>: Edit meta-information
 
-`ALT + I`: Toggle file-list columns (long filename, title, etc.)
+<kbd>alt</kbd> + <kbd>i</kbd>: Toggle file-list columns (long filename, title, etc.)
 
-`ALT + C`: Opens a system options list
+<kbd>alt</kbd> + <kbd>c</kbd>: Opens a system options list
 
-`Insert`: Add to playlist
+<kbd>Insert</kbd>: Add to playlist
 
-`Delete`: Remove from playlist
+<kbd>Delete</kbd>: Remove from playlist
 
-`Tab`: Move cursor between filelist and playlist
+<kbd>Tab</kbd>: Move cursor between filelist and playlist
 
 # Original
 
