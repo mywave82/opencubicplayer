@@ -89,7 +89,7 @@ Note: if letters are capital, press them with <kbd>shift</kbd>
 
 <kbd>m</kbd>: Volume control
 
-<kbd>x</kbd> / <kbd>alt<kbd> + <kbd>x</kbd>: Extended mode / normal mode toggle
+<kbd>x</kbd> / <kbd>alt</kbd> + <kbd>x</kbd>: Extended mode / normal mode toggle
 
 <kbd>Backspace</kbd>: Toggle filter
 
@@ -113,7 +113,7 @@ Note: if letters are capital, press them with <kbd>shift</kbd>
 
 <kbd>f10</kbd>: Increase playback speed
 
-<kbd>\</kbd>: Toggle pitch/speed lock (if fileformat makes this possible)
+<kbd>\\</kbd>: Toggle pitch/speed lock (if fileformat makes this possible)
 
 <kbd>f11</kbd>: Decrease playback pitch
 
