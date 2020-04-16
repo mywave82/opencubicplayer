@@ -60,76 +60,78 @@ https://manpages.debian.org/testing/opencubicplayer/ocp.1.en.html
 
 # Usage
 
-`double-esc`: exist the program
+<kbd>esc</kbd><kbd>esc</kbd>: exit the program
 
-`ALT + K`: List the available keyshort-cuts in the current view
+<kbd>alt</kbd> + <kbd>k</kbd>: List the available keyshort-cuts in the current view
 
 ## While playing
 
-`Enter`: next file from the playlist, if playlist is empty it opens the file-browser
+Note: if letters are capital, press them with <kbd>shift</kbd>
 
-`F`: File-browser
+<kbd>Enter</kbd>: next file from the playlist, if playlist is empty it opens the file-browser
 
-`A`: Text FFT analyzer, `shift-A`: toggle FFT analyzer, `tab`, toggle colors
+<kbd>f</kbd>: File-browser
 
-`C`: Text Channel viewer
+<kbd>a</kbd>: Text FFT analyzer, <kbd>A</kbd>: toggle FFT analyzer, <kbd>tab</kbd>, toggle colors
 
-`T`: Text Track viewer
+<kbd>c</kbd>: Text Channel viewer
 
-`G`: Lo-Res FFT analyzer + history
-`Shift-G`: High-Res FFT analyzer + history
+<kbd>t</kbd>: Text Track viewer
 
-`B`: Phase viewer
+<kbd>g</kbd>: Lo-Res FFT analyzer + history
+<kbd>G</kbd>: High-Res FFT analyzer + history
 
-`O`: Oscilloscope
+<kbd>b</kbd>: Phase viewer
 
-`V`: Peak power level
+<kbd>o</kbd>: Oscilloscope
 
-`M`: Volume control
+<kbd>v</kbd>: Peak power level
 
-`X / ALT + X`: Extended mode / normal mode toggle
+<kbd>m</kbd>: Volume control
 
-`Backspace`: Toggle filter
+<kbd>x</kbd> / <kbd>alt</kbd> + <kbd>x</kbd>: Extended mode / normal mode toggle
 
-`F1`: Online Help
+<kbd>Backspace</kbd>: Toggle filter
 
-`F2`: Lower Volume
+<kbd>f1</kbd>: Online Help
 
-`F3`: Increase Volume
+<kbd>f2</kbd>: Lower Volume
 
-`F4`: Toggle Surround
+<kbd>f3</kbd>: Increase Volume
 
-`F5`: Panning left
+<kbd>f4</kbd>: Toggle Surround
 
-`F6`: Panning right
+<kbd>f5</kbd>: Panning left
 
-`F7`: Balance left
+<kbd>f6</kbd>: Panning right
 
-`F8`: Balance right
+<kbd>f7</kbd>: Balance left
 
-`F9`: Decrease playback speed
+<kbd>f8</kbd>: Balance right
 
-`F10`: Increase playback speed
+<kbd>f9</kbd>: Decrease playback speed
 
-`\`: Toggle pitch/speed lock (if fileformat makes this possible)
+<kbd>f10</kbd>: Increase playback speed
 
-`F11`: Decrease playback pitch
+<kbd>\\</kbd>: Toggle pitch/speed lock (if fileformat makes this possible)
 
-`F12`: Increase playback pitch
+<kbd>f11</kbd>: Decrease playback pitch
+
+<kbd>f12</kbd>: Increase playback pitch
 
 ## File browser
 
-`ALT + E`: Edit meta-information
+<kbd>alt</kbd> + <kbd>e</kbd>: Edit meta-information
 
-`ALT + I`: Toggle file-list columns (long filename, title, etc.)
+<kbd>alt</kbd> + <kbd>i</kbd>: Toggle file-list columns (long filename, title, etc.)
 
-`ALT + C`: Opens a system options list
+<kbd>alt</kbd> + <kbd>c</kbd>: Opens a system options list
 
-`Insert`: Add to playlist
+<kbd>Insert</kbd>: Add to playlist
 
-`Delete`: Remove from playlist
+<kbd>Delete</kbd>: Remove from playlist
 
-`Tab`: Move cursor between filelist and playlist
+<kbd>Tab</kbd>: Move cursor between filelist and playlist
 
 # Original
 
