@@ -19,10 +19,19 @@ uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/playmp2$(LIB_SUFFIX)"
 
 dumpid3: dumpid3.o
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^ -lz
 
 dumpid3.o: dumpid3.c
 	$(CC) -o $@ $< -c
+
+cpiid3info.o: cpiid3info.c \
+	../config.h \
+	../types.h \
+	../cpiface/cpiface.h \
+	../stuff/poutput.h \
+	id3.h \
+	mpplay.h
+	$(CC) $< -o $@ -c
 
 id3.o: id3.c \
 	../config.h \
@@ -39,7 +48,7 @@ mpptype.o: mpptype.c \
 	../filesel/mdb.h
 	$(CC) mpptype.c -o $@ -c
 
-playmp2_so=mppplay.o mpplay.o
+playmp2_so=cpiid3info.o mppplay.o mpplay.o
 playmp2$(LIB_SUFFIX): $(playmp2_so)
 	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(MAD_LIBS) $(MATH_LIBS)
 
@@ -70,5 +79,6 @@ mpplay.o: mpplay.c \
 	../dev/ringbuffer.h \
 	../dev/plrasm.h \
 	../stuff/imsrtns.h \
+	id3.h \
 	mpplay.h
 	$(CC) mpplay.c -o $@ $(MAD_CFLAGS) -c

@@ -23,26 +23,27 @@ struct ID3_pic_t
 
 struct ID3_t
 {
-	uint8_t *TIT1;
-	uint8_t *TIT2;
-	uint8_t *TIT3;
-	uint8_t *TPE1;
-	uint8_t *TPE2;
-	uint8_t *TPE3;
-	uint8_t *TPE4;
-	uint8_t *TALB;
-	uint8_t *TCOM;
-	uint8_t *TEXT;
-	uint8_t *TRCK;
-	uint8_t *TCON;
+	uint8_t *TIT1; /* Content Group */
+	uint8_t *TIT2; /* Track Title   */
+	uint8_t *TIT3; /* Subtitle      */
+	uint8_t *TPE1; /* Lead Artist   */
+	uint8_t *TPE2; /* Band          */
+	uint8_t *TPE3; /* Conductor     */
+	uint8_t *TPE4; /* Interpretor   */
+	uint8_t *TALB; /* Album         */
+	uint8_t *TCOM; /* Composer      */
+	uint8_t *TEXT; /* Lyrics        */
+	uint8_t *TRCK; /* Track number  */
+	uint8_t *TCON; /* Content Type  */ /* Needs further rendering */
 	uint8_t *TDRC; // Recorded YYYY-MM-ddHH:mm:ss/next one or space (strip precision from the right   / is duration, space is list*/  
 	uint8_t *TDRL; // Released YYYY-MM-ddHH:mm:ss/next one or space (strip precision from the right   / is duration, space is list */
 	uint8_t *TYER; // YEAR YYYY (recording)
 	uint8_t *TDAT; // DATE DDMM (recording)
 	uint8_t *TIME; // TIME HHMM (recording)
-	uint8_t *COMM;
+	uint8_t *COMM; /* Comment       */
 	// TODO APIC
 	struct ID3_pic_t APIC[0x14];
+	// TODO tag_is_an_update
 	int tag_is_an_update;
 };
 

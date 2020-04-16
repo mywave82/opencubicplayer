@@ -63,8 +63,6 @@ static int iso8859_1_session_precheck (
 	{
 		if (src[i] == 0)
 		{
-			src++;
-			srclen--;
 			terminated = 1;
 			break;
 		} else if (((src[i] < 32) && (src[i] != '\r') && (src[i] != '\n')) || (src[i] == 0x7f))

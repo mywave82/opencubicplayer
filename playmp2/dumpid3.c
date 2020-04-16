@@ -692,7 +692,7 @@ static void decode_GEOB(uint8_t *data, uint32_t len, int version)
 	data++;
 	len--;
 
-	if (((text_encoding > 2) && (version < 4)) || (text_encoding > 4))
+	if (((text_encoding >= 2) && (version < 4)) || (text_encoding >= 4))
 	{
 		stack_message(STACK_ERROR, 0, "Text_encoding out of range");
 		newline();
@@ -1079,7 +1079,7 @@ static void decode_SYLT(uint8_t *data, uint32_t len, int version)
 	}
 
 	text_encoding = data[0];
-	if (((text_encoding > 2) && (version < 4)) || (text_encoding > 4))
+	if (((text_encoding >= 2) && (version < 4)) || (text_encoding >= 4))
 	{
 		stack_message(STACK_ERROR, 0, "Text_encoding out of range");
 		return;
@@ -1176,7 +1176,7 @@ static void decode_USLT(uint8_t *data, uint32_t len, int version)
 	}
 
 	text_encoding = data[0];
-	if (((text_encoding > 2) && (version < 4)) || (text_encoding > 4))
+	if (((text_encoding >= 2) && (version < 4)) || (text_encoding >= 4))
 	{
 		stack_message(STACK_ERROR, 0, "Text_encoding out of range");
 		return;
@@ -1683,7 +1683,7 @@ static void decode_COMM(uint8_t *data, uint32_t len, int version)
 	}
 
 	text_encoding = data[0];
-	if (((text_encoding > 2) && (version < 4)) || (text_encoding > 4))
+	if (((text_encoding >= 2) && (version < 4)) || (text_encoding >= 4))
 	{
 		stack_message(STACK_ERROR, 0, "Text_encoding out of range");
 		return;
@@ -1795,7 +1795,7 @@ static void decode_USER(uint8_t *data, uint32_t len, int version)
 	}
 
 	text_encoding = data[0];
-	if (((text_encoding > 2) && (version < 4)) || (text_encoding > 4))
+	if (((text_encoding >= 2) && (version < 4)) || (text_encoding >= 4))
 	{
 		stack_message(STACK_ERROR, 0, "Text_encoding out of range");
 		return;
@@ -1857,7 +1857,7 @@ static void decode_COMR(uint8_t *data, uint32_t len, int version)
 	}
 
 	text_encoding = data[0];
-	if (((text_encoding > 2) && (version < 4)) || (text_encoding > 4))
+	if (((text_encoding >= 2) && (version < 4)) || (text_encoding >= 4))
 	{
 		stack_message(STACK_ERROR, 0, "Text_encoding out of range");
 		return;
@@ -1999,7 +1999,7 @@ static void decode_OWNE(uint8_t *data, uint32_t len, int version)
 	}
 
 	text_encoding = data[0];
-	if (((text_encoding > 2) && (version < 4)) || (text_encoding > 4))
+	if (((text_encoding >= 2) && (version < 4)) || (text_encoding >= 4))
 	{
 		stack_message(STACK_ERROR, 0, "Text_encoding out of range");
 		return;
@@ -2191,7 +2191,7 @@ static void decode_APIC(uint8_t *data, uint32_t len, int version)
 	data++;
 	len--;
 
-	if ((text_encoding > 2 && version < 4) || (text_encoding > 4))
+	if ((text_encoding >= 2 && version < 4) || (text_encoding >= 4))
 	{
 		stack_message(STACK_ERROR, 0, "Text_encoding out of range");
 		return;
@@ -2303,7 +2303,7 @@ static void decode_T(const char *description, uint8_t *data, uint32_t len, int v
 	data++;
 	len--;
 
-	if ((text_encoding > 2 && version < 4) || (text_encoding > 4))
+	if ((text_encoding >= 2 && version < 4) || (text_encoding >= 4))
 	{
 		stack_message(STACK_ERROR, 0, "Text_encoding out of range");
 		newline();
@@ -2371,7 +2371,7 @@ static void decode_TXXX(uint8_t *data, uint32_t len, int version)
 	data++;
 	len--;
 
-	if ((text_encoding > 2 && version < 4) || (text_encoding > 4))
+	if ((text_encoding >= 2 && version < 4) || (text_encoding >= 4))
 	{
 		stack_message(STACK_ERROR, 0, "Text_encoding out of range");
 		return;
@@ -2462,7 +2462,7 @@ static void decode_WXXX(uint8_t *data, uint32_t len, int version)
 	data++;
 	len--;
 
-	if ((text_encoding > 2 && version < 4) || (text_encoding > 4))
+	if ((text_encoding >= 2 && version < 4) || (text_encoding >= 4))
 	{
 		stack_message(STACK_ERROR, 0, "Text_encoding out of range");
 		return;
@@ -2523,7 +2523,7 @@ static void decode_Tn(const char *description, uint8_t *data, uint32_t len, int 
 	data++;
 	len--;
 
-	if ((text_encoding > 2 && version < 4) || (text_encoding > 4))
+	if ((text_encoding >= 2 && version < 4) || (text_encoding >= 4))
 	{
 		stack_message(STACK_ERROR, 0, "Text_encoding out of range");
 		newline();
@@ -2605,7 +2605,7 @@ static int32_t decode_id3v240_frame(uint8_t *ptr, uint32_t len)
 	uint32_t inputsize;
 	uint8_t *frameptr, *zlibptr=0;
 	uint32_t framelen;
-	uint32_t zlib_new_framelen;
+	uint32_t zlib_new_framelen=0xffffff;
 	uint16_t flags;
 
 	if (len < 11)
@@ -3210,7 +3210,7 @@ static int32_t decode_id3v230_frame(uint8_t *ptr, uint32_t len)
 	uint32_t inputsize;
 	uint8_t *frameptr, *zlibptr=0;
 	uint32_t framelen;
-	uint32_t zlib_new_framelen;
+	uint32_t zlib_new_framelen = 0xffffff;
 	uint16_t flags;
 
 	if (len < 11)

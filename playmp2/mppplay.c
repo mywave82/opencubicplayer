@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * MPPlay interface routines
  *
@@ -16,12 +17,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * revision history: (please note changes here)
- *  -ss040910   Stian Skjelstad <stian@nixia.no>
- *    -first release
- *  -ss040918   Stian Skjelstad <stian@nixia.no>
- *    -added fade pause
  */
 
 #include "config.h"
@@ -46,15 +41,6 @@
 #define _MAX_FNAME 8
 #define _MAX_EXT 4
 
-// #define MP_DEBUG 1
-
-#ifdef MP_DEBUG
-#define debug_printf(...) fprintf (stderr, __VA_ARGS__)
-#else
-#define debug_printf(format,args...) ((void)0)
-#endif
-
-static FILE *mpegfile;
 static uint32_t mpeglen;
 static uint32_t mpegrate;
 static time_t starttime;
@@ -135,15 +121,12 @@ static void dopausefade(void)
 static void mpegDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 {
 	struct mpeginfo inf;
-	uint32_t tim, tim2;
+	uint32_t tim2;
 	int l;
 	int p;
 
 	mpegGetInfo(&inf);
 
-/*
-	tim=inf.len*8/(mpeg_Bitrate*1000);*/
-	tim=inf.timelen;
 	l=(inf.len>>(10/*-inf.stereo-inf.bit16*/)); /* these now refer to offset in file */
 	if (!l) l=1;
 	p=(inf.pos>>(10/*-inf.stereo-inf.bit16*/)); /* these now refer to offset in file */
@@ -178,11 +161,8 @@ static void mpegDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		_writenum(buf[1], 62, 0x0F, amp*100/64, 10, 3);
 		writestring(buf[1], 75, 0x0F, "off", 3);
 
-		writestring(buf[1], 0, 0x09, "  pos: ...% / ......k  size: ......k  len: ..:..", 57);
+		writestring(buf[1], 0, 0x09, "  pos: ...% / ......k  size: ......k            ", 57);
 		_writenum(buf[1], 7, 0x0F, p*100/l, 10, 3);
-		writenum(buf[1], 43, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[1], 45, 0x0F, ":", 1);
-		writenum(buf[1], 46, 0x0F, tim%60, 10, 2, 0);
 		writenum(buf[1], 29, 0x0F, l, 10, 6, 1);
 		writenum(buf[1], 14, 0x0F, p, 10, 6, 1);
 
@@ -219,11 +199,8 @@ static void mpegDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		_writenum(buf[0], 110, 0x0F, speed*100/256, 10, 3);
 		_writenum(buf[0], 124, 0x0F, speed*100/256, 10, 3);
 
-		writestring(buf[1], 0, 0x09, "    position: ...% / ......k  size: ......k  length: ..:..  opt: .....Hz, .. bit, ......", 92);
+		writestring(buf[1], 0, 0x09, "    position: ...% / ......k  size: ......k                 opt: .....Hz, .. bit, ......", 92);
 		_writenum(buf[1], 14, 0x0F, p*100/l, 10, 3);
-		writenum(buf[1], 53, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[1], 55, 0x0F, ":", 1);
-		writenum(buf[1], 56, 0x0F, tim%60, 10, 2, 0);
 		writenum(buf[1], 36, 0x0F, l, 10, 6, 1);
 		writenum(buf[1], 21, 0x0F, p, 10, 6, 1);
 		writenum(buf[1], 65, 0x0F, inf.rate, 10, 5, 1);
@@ -498,105 +475,30 @@ static int mpegLooped(void)
 
 static void mpegCloseFile(void)
 {
+	ID3InfoDone();
 	mpegClosePlayer();
 }
 
-static int mpegOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *mpegf)
+static int mpegOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *mpegfile)
 {
-	unsigned char sig[4];
-	uint32_t fl;
-	int ofs=0;
 	struct mpeginfo inf;
 
-	if (!mpegf)
+	if (!mpegfile)
 		return -1;
-
+#ifdef __GNUC__
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
+	/* currentmodname and currentmodext as not expected to be zero-terminated */
 	strncpy(currentmodname, info->name, _MAX_FNAME);
 	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
-
+#ifdef __GNUC__
+# pragma GCC diagnostic pop
+#endif
 	modname=info->modname;
 	composer=info->composer;
 
 	fprintf(stderr, "loading %s%s...\n", currentmodname, currentmodext);
-
-	mpegfile=mpegf;
-
-	if (!(fseek(mpegfile, 0, SEEK_SET))) /* seek will fail on streams */
-	{
-		if (fread(sig, 4, 1, mpegfile)!=1)
-		{
-			fprintf(stderr, __FILE__ ": fread failed #1\n");
-			return errFileRead;
-		}
-		fseek(mpegfile, 0, SEEK_SET);
-		if (!memcmp(sig, "RIFF", 4))
-		{
-			debug_printf ("[mppplay.c]: container RIFF (mpeg3, layer 2 probably)\n");
-
-			fseek(mpegfile, 12, SEEK_SET);
-			fl=0;
-			while (1)
-			{
-				if (fread(sig, 1, 4, mpegfile)!=4)
-					break;
-				debug_printf ("[mppplay.c]: chunk: %c%c%c%c\n", sig[0], sig[1], sig[2], sig[3]);
-				if (fread(&fl, sizeof(uint32_t), 1, mpegfile)!=1)
-				{
-					fprintf(stderr, __FILE__ ": fread failed #3\n");
-					return errFileRead;
-				}
-				fl = uint32_little (fl);
-				debug_printf ("[mppplay.c]: length: %d\n", (int)fl);
-				if (!memcmp(sig, "data", 4))
-				{
-					ofs=ftell(mpegfile);
-					break;
-				}
-				fseek(mpegfile, fl, SEEK_CUR);
-			}
-		} else {
-			char tag[3];
-
-			if (!memcmp(sig, "ID3", 3))
-			{
-				char *ofs2;
-				char buffer[1024*10];
-				char needle[2]={'\377','\175'};
-				fseek(mpegfile, 0, SEEK_SET);
-				debug_printf ("[mppplay.c]: ID3 header\n");
-				if (fread(buffer, 1024*10, 1, mpegfile)!=1)
-				{
-					fprintf(stderr, __FILE__ ": fread failed #4\n");
-				} else {
-					if ((ofs2=(char *)memmem(buffer, 1024*10, needle, 2)))
-					{
-						ofs=ofs2-buffer;
-						debug_printf ("[mppplay.c]: MPEG header found at offset %d\n", ofs);
-					}
-				}
-			}
-
-			fseek(mpegfile, 0, SEEK_END);
-			fl=ftell(mpegfile);
-
-			fseek(mpegfile, -128, SEEK_END);
-			if (fread(tag, 3, 1, mpegfile)!=1)
-			{
-				fprintf(stderr, __FILE__ ": fread failed #5\n");
-			} else {
-				if (!memcmp(tag, "TAG", 3))
-				{
-					debug_printf ("[mppplay.c]: TAG found at end of file, shrinking length by 128 bytes\n");
-					fl-=128;
-				}
-				fseek(mpegfile, ofs, SEEK_SET);
-			}
-
-			fl -= ofs;
-		}
-	} else {
-		fl=0xffffffff; /* stream */
-	}
 
 	plIsEnd=mpegLooped;
 	plProcessKey=mpegProcessKey;
@@ -604,8 +506,8 @@ static int mpegOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, 
 	plGetMasterSample=plrGetMasterSample;
 	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-	if (!mpegOpenPlayer(mpegfile, ofs, fl))
-		return -1;
+	if (!mpegOpenPlayer(mpegfile))
+		return errFileRead;
 
 	starttime=dos_clock();
 	plPause=0;
@@ -616,8 +518,10 @@ static int mpegOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, 
 	mpeglen=inf.len;
 	mpegrate=inf.rate;
 
+	ID3InfoInit();
+
 	return errOk;
 }
 
 struct cpifaceplayerstruct mpegPlayer = {mpegOpenFile, mpegCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playmp2", .desc = "OpenCP Audio MPEG Player (c) 1994-09 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playmp2", .desc = "OpenCP Audio MPEG Player (c) 1994-2020 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

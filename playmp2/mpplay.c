@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * MPPlay - Player for MPEG Audio Layer 1/2/3 files
  *
@@ -16,12 +17,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * revision history: (please note changes here)
- *  -ss040910   Stian Skjelstad <stian@nixia.no>
- *    -first release
- *  -ss041004   Stian Skjelstad <stian@nixia.no>
- *    -close file on exec
  */
 
 #include "config.h"
@@ -43,8 +38,7 @@
 #include "stuff/imsrtns.h"
 #include "dev/plrasm.h"
 #include "mpplay.h"
-
-// #define MP_DEBUG 1
+#include "id3.h"
 
 #ifdef MP_DEBUG
 #define debug_printf(...) fprintf (stderr, __VA_ARGS__)
@@ -83,10 +77,8 @@ static int eof;
 static FILE *file;
 static uint32_t ofs;
 static uint32_t fl;
-static uint32_t ft;
 static uint32_t datapos;
 static uint32_t newpos;
-/*static uint32_t mpeglen;*/     /* expected wave length */
 
 /* devp pre-buffer zone */
 static int16_t *buf16 = 0; /* here we dump out data before it goes live */
@@ -103,15 +95,22 @@ static int donotloop=1;
 /* mpegIdler dumping locations */
 static int16_t *mpegbuf = 0;     /* the buffer */
 static struct ringbuffer_t *mpegbufpos = 0;
-//static uint32_t mpegbuflen;  /* total buffer size */
-//static uint32_t mpegbufread; /* actually this is the write head */
-//static uint32_t mpegbufpos;  /* read pos */
 static uint32_t mpegbuffpos; /* read fine-pos.. when mpegbufrate has a fraction */
 static uint32_t mpegbufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
 
-
 /* clipper threadlock since we use a timer-signal */
-static volatile int clipbusy=0;
+static volatile int clipbusy;
+static volatile int mpeg_inSIGINT;
+ /* if (mpeg_inSIGINT), then data is updated into HoldingTag only
+  *
+  * When we try to fetch, we increase clipbusy, if mpeg_inSIGINT is not set, we transfer from HoldingTag into CurrentTag
+  *
+  * Then we use data from CurrentTag
+  */
+static struct ID3_t CurrentTag;
+static struct ID3_t HoldingTag;
+static int newHoldingTag;
+
 
 #define PANPROC \
 do { \
@@ -196,21 +195,201 @@ static void audio_pcm_s16(int16_t *data, unsigned int nsamples, mad_fixed_t cons
 		}
 }
 
+void __attribute__ ((visibility ("internal"))) mpegGetID3(struct ID3_t **ID3)
+{
+	clipbusy++;
+
+	if (!mpeg_inSIGINT) // This should never happen when clipbusy is increased
+	{
+		if (newHoldingTag)
+		{
+			ID3_clear(&CurrentTag);
+			CurrentTag = HoldingTag;
+			memset (&HoldingTag, 0, sizeof (HoldingTag));
+			newHoldingTag = 0;
+		}
+	}
+
+	*ID3 = &CurrentTag;
+
+	clipbusy--;
+}
+
+
 static inline uint_fast32_t id3_tag_query(const unsigned char *data, uint_fast32_t length)
 {
+	uint_fast32_t i;
+
 	if (length>=3)
-		if ((data[0]=='T')&&(data[1]=='A')&&(data[2]=='G'))
+	{
+		if ((data[0]=='T')&&
+		    (data[1]=='A')&&
+		    (data[2]=='G'))
+		{
+			debug_printf ("[MPx] we probably have a TAG\n");
 			return 128;
+		}
+		if ((data[0]=='E')&&
+		    (data[1]=='X')&&
+		    (data[2]=='T'))
+		{
+			debug_printf ("[MPx] we probably have a EXT\n");
+			return 128;
+		}
+	}
 	if (length>=10)
-		if ((data[0]=='I')&&(data[1]=='D')&&(data[2]=='3')&&(data[3]!=0xff)&&(data[4]!=0xff))
+	{
+		if ((data[0]=='I')&&
+		    (data[1]=='D')&&
+		    (data[2]=='3')&&
+		    (data[3]!=0xff)&&
+		    (data[4]!=0xff))
 		{
 			uint_fast32_t size = (data[6]<<21)|(data[7]<<14)|(data[8]<<7)|(data[9]);
-			if (data[5]&0x10) /* do we have a footer? */
-				size+=10; /* size of footer */
+			debug_printf ("[MPx] we probably have a ID3\n");
 			return size+10; /* size of header */
 		}
-	return 0; /* we can't tell */
+		if ((data[0]=='3')&&
+		    (data[1]=='D')&&
+		    (data[2]=='I')&&
+		    (data[3]!=0xff)&&
+		    (data[4]!=0xff))
+		{
+			debug_printf ("[MPx] we probably have a FOOTER\n");
+			return 10;
+		}
+	}
+
+	for (i=0; (data[i] == 0x00) && (i < length); i++); /* all zero bytes we can skip, they are probably padding */
+
+	debug_printf ("[MPx] We have %d bytes of zero (%02x len=%d)\n", (int)i, data[0], (int)length);
+
+	return i; /* if no zero bytes were found, we can not tell */
 }
+
+static uint8_t *id3_tag_buffer;
+static uint32_t id3_tag_target;
+static uint32_t id3_tag_position;
+
+static void id3_tag_init (uint32_t len)
+{
+	free (id3_tag_buffer); id3_tag_buffer = 0;
+	id3_tag_target = 0;
+	id3_tag_position = 0;
+	if (len < 32*1024*1024)
+	{
+		id3_tag_buffer = malloc (len);
+		if (id3_tag_buffer)
+		{
+			id3_tag_target = len;
+		}
+	}
+}
+
+static void apply_id3 (struct ID3_t *ID3)
+{
+	debug_printf ("[MPx] Got a tag to apply\n");
+	if (mpeg_inSIGINT)
+	{
+		ID3_clear (&HoldingTag);
+		HoldingTag = *ID3;
+		newHoldingTag = 0;
+	} else {
+		ID3_clear (&CurrentTag);
+		CurrentTag = *ID3;
+	}
+}
+
+static void got_id3v1x(uint8_t *buffer)
+{
+	struct ID3v1data_t data;
+	struct ID3_t ID3 = {0};
+
+	debug_printf ("[MPx] Trying to parse ID3v1.x\n");
+
+	if (parse_ID3v1x(&data, buffer, 128)) return;
+	if (finalize_ID3v1(&ID3, &data)) return;
+
+	debug_printf ("[MPx] Parsing sucessfull\n");
+
+	apply_id3 (&ID3);
+}
+
+static void got_id3v12(uint8_t *buffer)
+{
+	struct ID3v1data_t data;
+	struct ID3_t ID3 = {0};
+
+	debug_printf ("[MPx] Trying to parse ID3v1.x + ID3v1.2\n");
+
+	if (parse_ID3v1x(&data, buffer+128, 128)) return;
+	if (parse_ID3v12(&data, buffer, 128)) return;
+	if (finalize_ID3v1(&ID3, &data)) return;
+
+	debug_printf ("[MPx] Parsing sucessfull\n");
+
+	apply_id3 (&ID3);
+}
+
+static void got_id3v2(uint8_t *buffer, uint32_t length)
+{
+	struct ID3_t ID3 = {0};
+
+	debug_printf ("[MPx] Trying to parse ID3v2.x\n");
+
+	if (parse_ID3v2x (&ID3, buffer, length)) return;
+
+	debug_printf ("[MPx] Parsing sucessfull\n");
+
+	apply_id3 (&ID3);
+}
+
+static void id3_parse (void)
+{
+	if ((id3_tag_target == 128) &&
+	    (id3_tag_buffer[0] == 'T') &&
+	    (id3_tag_buffer[1] == 'A') &&
+	    (id3_tag_buffer[2] == 'G'))
+	{
+		got_id3v1x(id3_tag_buffer);
+	} else if ((id3_tag_buffer[0] == 'I') &&
+		   (id3_tag_buffer[1] == 'D') &&
+		   (id3_tag_buffer[2] == '3'))
+	{
+		got_id3v2(id3_tag_buffer, id3_tag_target);
+	}
+
+	free (id3_tag_buffer); id3_tag_buffer = 0;
+	id3_tag_target = 0;
+	id3_tag_position = 0;
+}
+
+static void id3_feed_null (void)
+{
+	if (id3_tag_target)
+	{
+		memset (id3_tag_buffer + id3_tag_position, 0, id3_tag_target - id3_tag_position);
+		id3_parse();
+	}
+}
+
+static void id3_feed (const uint8_t *data, uint32_t len)
+{
+	if (id3_tag_target)
+	{
+		if (len > (id3_tag_target - id3_tag_position))
+		{
+			len = id3_tag_target - id3_tag_position;
+		}
+		memcpy (id3_tag_buffer + id3_tag_position, data, len);
+		id3_tag_position += len;
+		if (id3_tag_position == id3_tag_target)
+		{
+			id3_parse();
+		}
+	}
+}
+
 
 static int stream_for_frame(void)
 {
@@ -228,7 +407,7 @@ static int stream_for_frame(void)
 
 	if (GuardPtr&&(stream.this_frame==GuardPtr)) /* last frame is incomplete */
 	{
-		debug_printf ("[LIBMAD] EOF-KNOCKED\n");
+		debug_printf ("[MPx] EOF-KNOCKED\n");
 		if (donotloop)
 		{
 			return 0;
@@ -240,11 +419,11 @@ static int stream_for_frame(void)
 		{
 			uint32_t len, target;
 
-			debug_printf ("[LIBMAD] buffer==NULL || stream.error==MAD_ERROR_BUFLEN  (%p==NULL || %d==%d)\n", stream.buffer, stream.error, MAD_ERROR_BUFLEN);
+			debug_printf ("[MPx] buffer==NULL || stream.error==MAD_ERROR_BUFLEN  (%p==NULL || %d==%d)\n", stream.buffer, stream.error, MAD_ERROR_BUFLEN);
 
 			if (stream.next_frame)
 			{
-				debug_printf ("[LIBMAD] stream.next_frame!=NULL (%p, remove %ld of bytes from buffer and GuardPtr)\n", stream.next_frame, stream.next_frame - data);
+				debug_printf ("[MPx] stream.next_frame!=NULL (%p, remove %ld of bytes from buffer and GuardPtr)\n", stream.next_frame, stream.next_frame - data);
 
 				if (GuardPtr)
 				{
@@ -252,42 +431,47 @@ static int stream_for_frame(void)
 				}
 				memmove(data, stream.next_frame, data_length = ((data + data_length) - stream.next_frame));
 				stream.next_frame=0;
-				debug_printf ("[LIBMAD] #1   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
+				debug_printf ("[MPx]   keeped some data   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
 			}
 			target = MPEG_BUFSZ - data_length;
-			if (target>4096)
-				target=4096;
+			if (target>65536)
+				target=65536;
 			if (target>(fl-datapos))
 				target=fl-datapos;
 			if (target)
 				len = fread(data + data_length, 1, target, file);
 			else
 				len = 0;
+			debug_printf ("[MPx] wanted to read %"PRIu32" bytes, and got %"PRIu32" bytes\n", target, len);
 			if (!len)
 			{
 				len=0;
-				if ((feof(file))||!target) /* !target and feof(file) should hit simultaneously */
+				if ((feof(file))||!target) /* !target is the estimated EOF, feof(file) in-case file has shrunk... */
 				{
 					if (donotloop||target) /* if target was set, we must have had an error */
 					{
+						debug_printf ("[MPx] eof found, and we are not looping\n");
 						eof=1;
 						GuardPtr=data + data_length;
 						assert(MPEG_BUFSZ - data_length >= MAD_BUFFER_GUARD);
 						while (len < MAD_BUFFER_GUARD)
 						{
-							debug_printf ("adding NIL byte, len < MAD_BUFFER_GUARD\n");
+							debug_printf ("[MPx]    adding NIL byte, len < MAD_BUFFER_GUARD\n");
 							data[data_length + len++] = 0;
 						}
 
-						debug_printf ("[LIBMAD] #2   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x (ofs=%d len=%d target=%ld)\n", data, data_length, data + data_length, GuardPtr, datapos, fl, ofs, len, (long int)target);
-/*
-						fprintf(stderr, "Guard set len to %d\n", len);*/
+						debug_printf ("[MPx]   this is the new data   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x (ofs=%d len=%d target=%ld)\n", data, data_length, data + data_length, GuardPtr, datapos, fl, ofs, len, (long int)target);
 					} else {
 						eof=0;
 						datapos = newpos = 0;
 						fseek(file, ofs, SEEK_SET);
+						if (stream.skiplen)
+						{
+							id3_feed_null();
+							stream.skiplen = 0;
+						}
 
-						debug_printf ("[LIBMAD] #3   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
+						debug_printf ("[MPx] eof found, and we are looping   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
 						return 0;
 					}
 				}
@@ -296,19 +480,32 @@ static int stream_for_frame(void)
 				datapos += len;
 				newpos += len;
 
-				debug_printf ("[LIBMAD] #4   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
+				debug_printf ("[MPx]   some data is prepared   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
 			}
 			if (len)
 			{
 				mad_stream_buffer(&stream, data, data_length += len);
-				debug_printf ("[LIBMAD] #5   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
+				//debug_printf ("[MPx]   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
 			}
 		}
 		stream.error=0;
 
+		if (stream.skiplen)
+		{
+			unsigned long skiplen = stream.skiplen;
+			if (skiplen > (stream.bufend - stream.buffer))
+			{
+				skiplen = stream.buffer - stream.bufend;
+			}
+			id3_feed (stream.buffer, skiplen);
+			stream.skiplen -= skiplen;
+		}
+
 		/* decode data */
 		if (mad_frame_decode(&frame, &stream) == -1)
 		{
+			debug_printf ("[MPx] mad_frame_decode() failed: %s\n", mad_stream_errorstr(&stream));
+
 			if ((stream.error==MAD_ERROR_BUFLEN))
 			{
 				if (eof)
@@ -318,32 +515,36 @@ static int stream_for_frame(void)
 			}
 			if (!MAD_RECOVERABLE(stream.error))
 			{
-/*
-				fprintf(stderr, "!MAD_RECOVERABLE\n");*/
 				return 0;
 			}
 			if (stream.error==MAD_ERROR_BADCRC)
 			{
-/*
-				fprintf(stderr, "Bad CRC\n");*/
 				mad_frame_mute(&frame);
 				continue;
 			} else if (stream.error==MAD_ERROR_LOSTSYNC)
 			{
 				int tagsize;
+				debug_printf ("[MPx] this_frame=%p buffer=%p bufend=%p, GuardPtr=%p\n", stream.this_frame, stream.buffer, stream.bufend, GuardPtr);
 				if (stream.this_frame==GuardPtr)
 					return 0;
 				tagsize = id3_tag_query(stream.this_frame, stream.bufend - stream.this_frame);
 				if (tagsize>0)
 				{
+					id3_tag_init (tagsize);
 					mad_stream_skip(&stream, tagsize);
 					continue;
+				} else if ((stream.bufend - stream.this_frame) > 10) /* close to the end of the file */
+				{
+					mad_stream_skip(&stream, tagsize);
+					continue;
+				} else if (eof)
+				{
+					return 0;
+				} else {
+					mad_stream_skip(&stream, 1); /* skip atleast one byte */
+					continue;
 				}
-/*
-				fprintf(stderr, "MAD_ERROR_LOSTSYNC\n");*/
 			}
-/*
-			fprintf(stderr, "error: %s\n", mad_stream_errorstr(&stream));*/
 
 			continue;
 		}
@@ -353,8 +554,6 @@ static int stream_for_frame(void)
 		mpegstereo=synth.pcm.channels==2;
 		return 1;
 	}
-
-
 }
 
 static void mpegIdler(void)
@@ -435,7 +634,9 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 	}
 
 	/* fill up our buffers */
+	mpeg_inSIGINT++;
 	mpegIdler();
+	mpeg_inSIGINT--;
 
 	if (inpause)
 	{ /* If we are in pause, we fill buffer with the correct type of zeroes */
@@ -804,24 +1005,156 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 	clipbusy--;
 }
 
-unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(FILE *mpeg, size_t offset, size_t fsize)
+unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(FILE *mpegfile)
 {
-#define _MPEG_BUFSZ    256000   /* 2.5 s at 128 kbps; 1 s at 320 kbps */
-#if 0
-	unsigned char data[_MPEG_BUFSZ];
-	mad_timer_t timer;
-#endif
-	if (!(file=mpeg))
-		return 0;
-/*
-	if (fcntl(fileno(file), F_SETFD, FD_CLOEXEC))
-		perror("WARNING: mpplay.c: fcntl(file, FSET_FD, FD_CLOEXEC)");*/
-	ofs=offset;
-	fl=fsize;
+	ofs=0;
+	if (!(fseek(mpegfile, 0, SEEK_SET))) /* seek will fail on streams */
+	{
+		unsigned char sig[4];
+		if (fread(sig, 4, 1, mpegfile) != 1) return -1;
+		fseek(mpegfile, 0, SEEK_SET);
+		if (!memcmp(sig, "RIFF", 4))
+		{
+			debug_printf ("[mppplay.c]: container RIFF (mpeg3, layer 2 probably AKA mp2)\n");
+
+			fseek(mpegfile, 12, SEEK_SET);
+			fl=0;
+			while (1)
+			{
+				if (fread(sig, 4, 1, mpegfile) != 1) return -1;
+				debug_printf ("[mppplay.c]: chunk: %c%c%c%c\n", sig[0], sig[1], sig[2], sig[3]);
+				if (fread(&fl, sizeof(uint32_t), 1, mpegfile) != 1) return -1;
+				fl = uint32_little (fl);
+				debug_printf ("[mppplay.c]: length: %d\n", (int)fl);
+				if (!memcmp(sig, "data", 4))
+				{
+					ofs=ftell(mpegfile);
+					break;
+				}
+				fseek(mpegfile, fl, SEEK_CUR);
+			}
+		} else {
+			fseek (mpegfile, 0, SEEK_END);
+			fl = ftell (mpegfile);
+		}
+
+		while (1)
+		{
+			if (fl >= 256)
+			{
+				uint8_t buffer[256];
+				fseek (mpegfile, ofs + fl - 256, SEEK_SET);
+				if (fread (buffer, 256, 1, mpegfile) != 1) return -1;
+				if ((buffer[128] == 'T') &&
+				    (buffer[129] == 'A') &&
+				    (buffer[130] == 'G'))
+				{
+					if ((buffer[0] == 'E') &&
+					    (buffer[1] == 'X') &&
+					    (buffer[2] == 'T'))
+					{
+						debug_printf ("[MPx]: got ID3v1.x and ID3v1.2 at the file-end\n");
+						got_id3v12(buffer);
+						fl -= 256;
+						continue;
+					} else {
+						debug_printf ("[MPx]: got ID3v1.x at the file-end\n");
+						got_id3v1x(buffer+128);
+						fl -= 128;
+						continue;
+					}
+				}
+			}
+			if (fl >= 25)
+			{
+				uint8_t sbuffer[10];
+				fseek (mpegfile, ofs + fl - 10, SEEK_SET);
+				if (fread (sbuffer, 10, 1, mpegfile) != 1) return -1;
+				if ((sbuffer[0] == '3') &&
+				    (sbuffer[1] == 'D') &&
+				    (sbuffer[2] == 'I') &&
+				    (sbuffer[3] == 4) &&
+				    (sbuffer[4] == 0) &&
+				  (!(sbuffer[6] & 0x80)) &&
+				  (!(sbuffer[7] & 0x80)) &&
+				  (!(sbuffer[8] & 0x80)) &&
+				  (!(sbuffer[9] & 0x80)))
+				{
+					uint32_t size = (sbuffer[6] << 21) |
+					                (sbuffer[7] << 14) |
+					                (sbuffer[8] <<  7) |
+					                 sbuffer[9];
+					debug_printf ("[MPx]: got ID3V2.4 footer (size=%"PRIu32")\n", size);
+					if ((size + 20) <= fl)
+					{
+						if (size < 32*1024*1024)
+						{
+							uint8_t *buffer = malloc (size + 10);
+							fseek (mpegfile, ofs + fl - 20 - size, SEEK_SET);
+							if (fread (buffer, size+10, 1, mpegfile) != 1) return -1;
+							if ((buffer[0] == 'I') &&
+							    (buffer[1] == 'D') &&
+							    (buffer[2] == '3'))
+							{
+								debug_printf ("[MPx]: got ID3v2.x by using footer\n");
+								got_id3v2(buffer, size + 10);
+							}
+							free (buffer);
+						}
+						fl -= size + 20;
+						continue;
+					}
+				}
+			}
+			if (fl >= 25)
+			{
+				int32_t s;
+				uint32_t fetch_size = (fl > 512 * 1024)?512*1024:fl;
+				uint8_t *bbuffer = malloc (fetch_size);
+				debug_printf("[MPx] seek to %d\n", (int)(ofs+fl - fetch_size));
+				fseek (mpegfile, ofs + fl - fetch_size, SEEK_SET);
+				debug_printf("[MPx] read %d bytes\n", fetch_size);
+				if (fread (bbuffer, fetch_size, 1, mpegfile) != 1) {free (bbuffer); return -1;}
+				debug_printf ("[MPx] search for ID3v.2x\n");
+				for (s = fetch_size - 15; s >= 0; s--)
+				{
+					if ((bbuffer[s+0] == 'I') &&
+					    (bbuffer[s+1] == 'D') &&
+					    (bbuffer[s+2] == '3') &&
+					   ((bbuffer[s+3] == 2) || (bbuffer[s+3] == 3) || (bbuffer[s+3] == 4)) &&
+					    (bbuffer[s+4] == 0) &&
+					    (bbuffer[s+5] != 255) &&
+					  (!(bbuffer[s+6] & 0x80)) &&
+					  (!(bbuffer[s+7] & 0x80)) &&
+					  (!(bbuffer[s+8] & 0x80)) &&
+					  (!(bbuffer[s+9] & 0x80)))
+					{
+						uint32_t size = (bbuffer[s+6] << 21) |
+						                (bbuffer[s+7] << 14) |
+						                (bbuffer[s+8] <<  7) |
+						                 bbuffer[s+9];
+						if (size >= (fetch_size - s))
+						{
+							debug_printf ("[MPx] got ID3v2.x by searching backwards: size=%d\n", (int)(fetch_size - s));
+							got_id3v2(bbuffer + s, (fetch_size - s));
+							fl -= (fetch_size - s);
+							continue;
+						}
+					}
+				}
+				free (bbuffer);
+			}
+			break;
+		}
+	} else {
+		fl=0xffffffff; /* stream */
+	}
+
+	file = mpegfile;
 	newpos=datapos=0;
 	data_length=0;
 	data_in_synth=0;
-
+	eof=0;
 	inpause=0;
 	looped=0;
 	mpegSetVolume(64, 0, 64, 0);
@@ -831,17 +1164,12 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(FILE *mpe
 	mad_frame_init(&frame);
 	mad_synth_init(&synth);
 	mad_stream_options(&stream, MAD_OPTION_IGNORECRC);
-	GuardPtr=NULL;
 
-	ft=0;
-	eof=0;
-	datapos = 0;
-	data_length=0;
 	GuardPtr=NULL;
 	stream.error=0;
 	stream.buffer=0;
 	stream.this_frame=0;
-	fseek(file, 0, SEEK_SET);
+	fseek(file, ofs, SEEK_SET);
 
 	if (!stream_for_frame())
 		goto error_out;
@@ -903,6 +1231,10 @@ error_out:
 
 void __attribute__ ((visibility ("internal"))) mpegClosePlayer(void)
 {
+	free (id3_tag_buffer); id3_tag_buffer = 0;
+	id3_tag_target = 0;
+	id3_tag_position = 0;
+
 	if (active)
 	{
 		pollClose();
@@ -921,6 +1253,12 @@ void __attribute__ ((visibility ("internal"))) mpegClosePlayer(void)
 		mpegbufpos = 0;
 	}
 	free(mpegbuf); mpegbuf=0;
+
+	ID3_clear(&CurrentTag);
+	ID3_clear(&HoldingTag);
+	newHoldingTag = 0;
+
+	file = 0;
 }
 
 void __attribute__ ((visibility ("internal"))) mpegSetLoop(uint8_t s)
@@ -963,7 +1301,6 @@ void __attribute__ ((visibility ("internal"))) mpegGetInfo(struct mpeginfo *info
 {
 	info->pos=datapos;
 	info->len=fl;
-	info->timelen=ft;
 	info->rate=mpegrate;
 	info->stereo=mpegstereo;
 	info->bit16=1;
