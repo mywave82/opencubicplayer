@@ -76,7 +76,7 @@ void (*_plDosShell)(void);
 
 unsigned int plScrHeight;
 unsigned int plScrWidth;
-char plVidType;
+enum vidType plVidType;
 unsigned char plScrType;
 int plScrMode;
 uint8_t *plVidMem;

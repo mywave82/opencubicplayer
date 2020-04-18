@@ -64,8 +64,7 @@ extern void writestringattr(uint16_t *buf, unsigned short ofs, const uint16_t *s
 extern void markstring(uint16_t *buf, unsigned short ofs, unsigned short len);
 extern void fillstr(uint16_t *buf, const unsigned short ofs, const unsigned char chr, const unsigned char attr, unsigned short len);
 
-
-enum
+enum vidType
 {
 	vidNorm, /* text-only systems - console, curses etc.. can support setting video-mode */
 	vidVESA, /* text and graphical systems.. can support setting video-mode */
@@ -74,7 +73,7 @@ enum
 
 extern unsigned int plScrHeight;        /* How many textlines can we currently fit. Undefined for wurfel-mode */
 extern unsigned int plScrWidth;         /* How many characters can we currently fir on a line */
-extern char plVidType;                  /* vidNorm for textmode only, or vidVESA for graphical support also */
+extern enum vidType plVidType;                  /* vidNorm for textmode only, or vidVESA for graphical support also */
 extern unsigned char plScrType;         /* Last set textmode */
 extern int plScrMode;                   /* If we are in graphical mode, this value is set to either 13 (for wurfel), 100 for 640x480 or 101 for 1024x768 */
 extern uint8_t *plVidMem;               /* This points to the current selected bank, and should atleast provide 64k of available bufferspace */
