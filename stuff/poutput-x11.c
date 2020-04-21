@@ -71,6 +71,10 @@ static XSizeHints Textmode_SizeHints;
 static unsigned long Textmode_Window_Width = 0;
 static unsigned long Textmode_Window_Height = 0;
 
+static void *X11ScrTextGUIOverlayAddBGRA(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra);
+static void X11ScrTextGUIOverlayRemove(void *handle);
+
+
 /* "stolen" from Mplayer START */
 static void vo_hidecursor(Display * disp, Window win)
 {
@@ -429,7 +433,7 @@ static void WindowResized_Textmode(unsigned int width, unsigned int height)
 		free(virtual_framebuffer);
 		virtual_framebuffer=0;
 	}
-	if ((plDepth!=8) || (plScrLineBytes!=image->bytes_per_line))
+	if ((x11_depth!=8) || (plScrLineBytes!=image->bytes_per_line))
 	{
 		virtual_framebuffer=malloc(plScrLineBytes * plScrLines);
 		plVidMem=virtual_framebuffer;
@@ -538,7 +542,7 @@ static void set_state_graphmode(int FullScreen)
 		free(virtual_framebuffer);
 		virtual_framebuffer=0;
 	}
-	if ((plDepth!=8) || (plScrLineBytes!=image->bytes_per_line))
+	if ((x11_depth!=8) || (plScrLineBytes!=image->bytes_per_line))
 	{
 		virtual_framebuffer=calloc(plScrLineBytes, plScrLines);
 		plVidMem=virtual_framebuffer;
@@ -669,7 +673,7 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 		free(virtual_framebuffer);
 		virtual_framebuffer=0;
 	}
-	if ((plDepth!=8) || (plScrLineBytes!=image->bytes_per_line))
+	if ((x11_depth!=8) || (plScrLineBytes!=image->bytes_per_line))
 	{
 		virtual_framebuffer=malloc(plScrLineBytes * plScrLines);
 		plVidMem=virtual_framebuffer;
@@ -969,13 +973,13 @@ static void create_window(void)
 	XSetWindowAttributes xswa;
 	XGCValues GCvalues;
 
-	plDepth=XDefaultDepth(mDisplay, mScreen);
+	x11_depth=XDefaultDepth(mDisplay, mScreen);
 
 	xswa.background_pixel=BlackPixel(mDisplay, mScreen);
 	xswa.border_pixel=WhitePixel(mDisplay, mScreen);
 	xswa.event_mask=VisibilityChangeMask|FocusChangeMask|ExposureMask|KeyPressMask|KeyReleaseMask|ButtonPressMask|ButtonReleaseMask/*|ResizeRedirectMask*/|StructureNotifyMask;
 	xswa.override_redirect = False;
-	if (!(window = XCreateWindow(mDisplay, DefaultRootWindow(mDisplay), 0, 0, plScrLineBytes, plScrLines, 0, plDepth, InputOutput, DefaultVisual(mDisplay, mScreen), CWEventMask|CWBackPixel|CWBorderPixel|CWOverrideRedirect, &xswa)))
+	if (!(window = XCreateWindow(mDisplay, DefaultRootWindow(mDisplay), 0, 0, plScrLineBytes, plScrLines, 0, x11_depth, InputOutput, DefaultVisual(mDisplay, mScreen), CWEventMask|CWBackPixel|CWBorderPixel|CWOverrideRedirect, &xswa)))
 	{
 		fprintf(stderr, "[x11] Failed to create window\n");
 		exit(-1);
@@ -1061,7 +1065,7 @@ static void create_image(void)
 			exit(-1);
 		}
 	}
-	plDepth = image->bits_per_pixel;
+	x11_depth = image->bits_per_pixel;
 }
 
 static void destroy_image(void)
@@ -1176,7 +1180,7 @@ static int __plSetGraphMode(int high)
 
 	set_state_graphmode (do_fullscreen);
 
-	if ((plDepth!=8) || (plScrLineBytes!=image->bytes_per_line))
+	if ((x11_depth!=8) || (plScrLineBytes!=image->bytes_per_line))
 	{
 		virtual_framebuffer=malloc(plScrLineBytes * plScrLines);
 		plVidMem=virtual_framebuffer;
@@ -1304,7 +1308,7 @@ static void plSetTextMode(unsigned char x)
 
 	plScrType=plScrMode=x;
 
-	plDepth=XDefaultDepth(mDisplay, mScreen);
+	x11_depth=XDefaultDepth(mDisplay, mScreen);
 	if (!window)
 	{
 		create_window();
@@ -1313,6 +1317,56 @@ static void plSetTextMode(unsigned char x)
 	TextModeSetState(plCurrentFontWanted /* modes[x].bigfont ? _8x16 : _8x8 */, do_fullscreen);
 
 	x11_gflushpal();
+}
+
+struct X11ScrTextGUIOverlay_t
+{
+	unsigned int x;
+	unsigned int y;
+	unsigned int width;
+	unsigned int height;
+	unsigned int pitch;
+	uint8_t     *data_bgra;
+
+};
+
+static struct X11ScrTextGUIOverlay_t **X11ScrTextGUIOverlays;
+static int                             X11ScrTextGUIOverlays_count;
+static int                             X11ScrTextGUIOverlays_size;
+
+static void *X11ScrTextGUIOverlayAddBGRA(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra)
+{
+	struct X11ScrTextGUIOverlay_t *e = malloc (sizeof (*e));
+	e->x = x;
+	e->y = y;
+	e->width = width;
+	e->height = height;
+	e->pitch = pitch;
+	e->data_bgra = data_bgra;
+
+	if (X11ScrTextGUIOverlays_count == X11ScrTextGUIOverlays_size)
+	{
+		X11ScrTextGUIOverlays_size += 10;
+		X11ScrTextGUIOverlays = realloc (X11ScrTextGUIOverlays, sizeof (X11ScrTextGUIOverlays[0]) * X11ScrTextGUIOverlays_size);
+	}
+	X11ScrTextGUIOverlays[X11ScrTextGUIOverlays_count++] = e;
+
+	return e;
+}
+
+static void X11ScrTextGUIOverlayRemove(void *handle)
+{
+	int i;
+	for (i=0; i < X11ScrTextGUIOverlays_count; i++)
+	{
+		if (X11ScrTextGUIOverlays[i] == handle)
+		{
+			memmove (X11ScrTextGUIOverlays + i, X11ScrTextGUIOverlays + i + 1, sizeof (X11ScrTextGUIOverlays[0]) * X11ScrTextGUIOverlays_count - i - 1);
+			X11ScrTextGUIOverlays_count--;
+			return;
+		}
+	}
+	fprintf (stderr, "[X11] Warning: X11ScrTextGUIOverlayRemove, handle %p not found\n", handle);
 }
 
 static void RefreshScreenGraph(void)
@@ -1328,7 +1382,7 @@ static void RefreshScreenGraph(void)
 		uint8_t *dst_line = (uint8_t *)image->data;
 		int Y=0, j;
 
-		if (plDepth==32)
+		if (x11_depth==32)
 		{
 			uint32_t *dst;
 			while (1)
@@ -1340,7 +1394,7 @@ static void RefreshScreenGraph(void)
 					break;
 				dst_line += image->bytes_per_line;
 			}
-		} else if (plDepth==24)
+		} else if (x11_depth==24)
 		{
 			uint8_t *dst;
 			while (1)
@@ -1356,7 +1410,7 @@ static void RefreshScreenGraph(void)
 					break;
 				dst_line += image->bytes_per_line;
 			}
-		} else if (plDepth==16)
+		} else if (x11_depth==16)
 		{
 			uint16_t *dst;
 			while (1)
@@ -1368,7 +1422,7 @@ static void RefreshScreenGraph(void)
 					break;
 				dst_line += image->bytes_per_line;
 			}
-		} else if (plDepth==15)
+		} else if (x11_depth==15)
 		{
 			uint16_t *dst;
 			while (1)
@@ -1380,7 +1434,7 @@ static void RefreshScreenGraph(void)
 					break;
 				dst_line += image->bytes_per_line;
 			}
-		} else if (plDepth==8)
+		} else if (x11_depth==8)
 		{
 			uint8_t *dst;
 			while (1)
@@ -1394,6 +1448,227 @@ static void RefreshScreenGraph(void)
 			}
 		}
 	}
+
+	if (X11ScrTextGUIOverlays_count)
+	{
+		int i;
+		if (x11_depth==32)
+		{
+			for (i=0; i < X11ScrTextGUIOverlays_count; i++)
+			{
+				int ty, y;
+				ty = X11ScrTextGUIOverlays[i]->y + X11ScrTextGUIOverlays[i]->height;
+				y = (X11ScrTextGUIOverlays[i]->y < 0) ? 0 : X11ScrTextGUIOverlays[i]->y;
+				for (; y < ty; y++)
+				{
+					int tx, x;
+					uint8_t *src, *dst;
+
+					if (y >= plScrLines) { break; }
+
+					tx = X11ScrTextGUIOverlays[i]->x + X11ScrTextGUIOverlays[i]->width;
+					x = (X11ScrTextGUIOverlays[i]->x < 0) ? 0 : X11ScrTextGUIOverlays[i]->x;
+
+					src = X11ScrTextGUIOverlays[i]->data_bgra + (((y - X11ScrTextGUIOverlays[i]->y) * X11ScrTextGUIOverlays[i]->pitch + (x - X11ScrTextGUIOverlays[i]->x)) << 2);
+					dst = (uint8_t *)image->data + (y * image->bytes_per_line) + (x<<2);
+
+					for (; x < tx; x++)
+					{
+						if (x >= plScrLineBytes) { break; }
+
+						if (src[3] == 0)
+						{
+							src+=4;
+							dst+=4;
+						} else if (src[3] == 255)
+						{
+							*(dst++) = *(src++);
+							*(dst++) = *(src++);
+							*(dst++) = *(src++);
+							src++;
+							dst++;
+						} else{
+							//uint8_t b = src[0];
+							//uint8_t g = src[1];
+							//uint8_t r = src[2];
+							uint8_t a = src[3];
+							uint8_t na = a ^ 0xff;
+							*dst = ((*dst * na) >> 8) + ((*src * a) >> 8); dst++; src++; // b
+							*dst = ((*dst * na) >> 8) + ((*src * a) >> 8); dst++; src++; // g
+							*dst = ((*dst * na) >> 8) + ((*src * a) >> 8); dst++; src++; // r
+							dst++;
+							src++;
+						}
+					}
+				}
+			}
+		} else if (x11_depth==24)
+		{
+			for (i=0; i < X11ScrTextGUIOverlays_count; i++)
+			{
+				int ty, y;
+				ty = X11ScrTextGUIOverlays[i]->y + X11ScrTextGUIOverlays[i]->height;
+				y = (X11ScrTextGUIOverlays[i]->y < 0) ? 0 : X11ScrTextGUIOverlays[i]->y;
+				for (; y < ty; y++)
+				{
+					int tx, x;
+					uint8_t *src, *dst;
+
+					if (y >= plScrLines) { break; }
+
+					tx = X11ScrTextGUIOverlays[i]->x + X11ScrTextGUIOverlays[i]->width;
+					x = (X11ScrTextGUIOverlays[i]->x < 0) ? 0 : X11ScrTextGUIOverlays[i]->x;
+
+					src = X11ScrTextGUIOverlays[i]->data_bgra + (((y - X11ScrTextGUIOverlays[i]->y) * X11ScrTextGUIOverlays[i]->pitch + (x - X11ScrTextGUIOverlays[i]->x)) << 2);
+					dst = (uint8_t *)image->data + (y * image->bytes_per_line) + x * 3;
+
+					for (; x < tx; x++)
+					{
+						if (x >= plScrLineBytes) { break; }
+
+						if (src[3] == 0)
+						{
+							src+=4;
+							dst+=3;
+						} else if (src[3] == 255)
+						{
+							*(dst++) = *(src++);
+							*(dst++) = *(src++);
+							*(dst++) = *(src++);
+							src++;
+						} else{
+							//uint8_t b = src[0];
+							//uint8_t g = src[1];
+							//uint8_t r = src[2];
+							uint8_t a = src[3];
+							uint8_t na = a ^ 0xff;
+							*dst = ((*dst * na) >> 8) + ((*src * a) >> 8); dst++; src++; // b
+							*dst = ((*dst * na) >> 8) + ((*src * a) >> 8); dst++; src++; // g
+							*dst = ((*dst * na) >> 8) + ((*src * a) >> 8); dst++; src++; // r
+							src++;
+						}
+					}
+				}
+			}
+		} else if (x11_depth==16)
+		{
+			for (i=0; i < X11ScrTextGUIOverlays_count; i++)
+			{
+				int ty, y;
+				ty = X11ScrTextGUIOverlays[i]->y + X11ScrTextGUIOverlays[i]->height;
+				y = (X11ScrTextGUIOverlays[i]->y < 0) ? 0 : X11ScrTextGUIOverlays[i]->y;
+				for (; y < ty; y++)
+				{
+					int tx, x;
+					uint8_t *src, *dst;
+
+					if (y >= plScrLines) { break; }
+
+					tx = X11ScrTextGUIOverlays[i]->x + X11ScrTextGUIOverlays[i]->width;
+					x = (X11ScrTextGUIOverlays[i]->x < 0) ? 0 : X11ScrTextGUIOverlays[i]->x;
+
+					src = X11ScrTextGUIOverlays[i]->data_bgra + (((y - X11ScrTextGUIOverlays[i]->y) * X11ScrTextGUIOverlays[i]->pitch + (x - X11ScrTextGUIOverlays[i]->x)) << 2);
+					dst = (uint8_t *)image->data + (y * image->bytes_per_line) + x * 2;
+
+					for (; x < tx; x++)
+					{
+						if (x >= plScrLineBytes) { break; }
+
+						if (src[3] == 0)
+						{
+							src+=4;
+							dst+=2;
+						} else if (src[3] == 255)
+						{
+							uint8_t b = *(src++);
+							uint8_t g = *(src++);
+							uint8_t r = *(src++);
+							src++;
+							b >>= 3;
+							g >>= 2;
+							r >>= 3;
+							*((uint16_t *)dst) = (r<<11)+(g<<5)+b;
+							dst += 2;
+						} else {
+							uint8_t b =  (*((uint16_t *)dst) >> 11)         << 3;
+							uint8_t g = ((*((uint16_t *)dst) >>  5) & 0x3f) << 2;
+							uint8_t r =  (*((uint16_t *)dst)        & 0x1f) << 3;
+							uint8_t a = src[3];
+							uint8_t na = a ^ 0xff;
+							b = (b * na >> 8) + ((*src * a) >> 8); src++;
+							g = (g * na >> 8) + ((*src * a) >> 8); src++;
+							r = (r * na >> 8) + ((*src * a) >> 8); src++;
+							b >>= 3;
+							g >>= 2;
+							r >>= 3;
+							*((uint16_t *)dst) = (r<<11)+(g<<5)+b;
+							dst += 2;
+							src++;
+						}
+					}
+				}
+			}
+		} else if (x11_depth==15)
+		{
+			for (i=0; i < X11ScrTextGUIOverlays_count; i++)
+			{
+				int ty, y;
+				ty = X11ScrTextGUIOverlays[i]->y + X11ScrTextGUIOverlays[i]->height;
+				y = (X11ScrTextGUIOverlays[i]->y < 0) ? 0 : X11ScrTextGUIOverlays[i]->y;
+				for (; y < ty; y++)
+				{
+					int tx, x;
+					uint8_t *src, *dst;
+
+					if (y >= plScrLines) { break; }
+
+					tx = X11ScrTextGUIOverlays[i]->x + X11ScrTextGUIOverlays[i]->width;
+					x = (X11ScrTextGUIOverlays[i]->x < 0) ? 0 : X11ScrTextGUIOverlays[i]->x;
+
+					src = X11ScrTextGUIOverlays[i]->data_bgra + (((y - X11ScrTextGUIOverlays[i]->y) * X11ScrTextGUIOverlays[i]->pitch + (x - X11ScrTextGUIOverlays[i]->x)) << 2);
+					dst = (uint8_t *)image->data + (y * image->bytes_per_line) + x * 2;
+
+					for (; x < tx; x++)
+					{
+						if (x >= plScrLineBytes) { break; }
+
+						if (src[3] == 0)
+						{
+							src+=4;
+							dst+=2;
+						} else if (src[3] == 255)
+						{
+							uint8_t b = *(src++);
+							uint8_t g = *(src++);
+							uint8_t r = *(src++);
+							src++;
+							b >>= 3;
+							g >>= 3;
+							r >>= 3;
+							*((uint16_t *)dst) = (r<<10)+(g<<5)+b;
+							dst += 2;
+						} else {
+							uint8_t b =  (*((uint16_t *)dst) >> 10) & 0x1f  << 3;
+							uint8_t g = ((*((uint16_t *)dst) >>  5) & 0x1f) << 2;
+							uint8_t r =  (*((uint16_t *)dst)        & 0x1f) << 3;
+							uint8_t a = src[3];
+							uint8_t na = a ^ 0xff;
+							b = (b * na >> 8) + ((*src * a) >> 8); src++;
+							g = (g * na >> 8) + ((*src * a) >> 8); src++;
+							r = (r * na >> 8) + ((*src * a) >> 8); src++;
+							b >>= 3;
+							g >>= 3;
+							r >>= 3;
+							*((uint16_t *)dst) = (r<<10)+(g<<5)+b;
+							dst += 2;
+							src++;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	if (shm_completiontype>=0)
 		XShmPutImage(mDisplay, window, copyGC, image, 0, 0, 0, (plScrLines==240?20:0), plScrLineBytes, plScrLines, True);
 	else
@@ -1753,7 +2028,6 @@ int x11_init(int use_explicit)
 	_setcur=swtext_setcur;
 	_setcurshape=swtext_setcurshape;
 
-
 	___setup_key(ekbhit, ekbhit); /* filters in more keys */
 	_validkey=___valid_key;
 
@@ -1762,6 +2036,11 @@ int x11_init(int use_explicit)
 	_plDosShell=plDosShell;
 
 	plSetTextMode(0);
+
+	plScrTextGUIOverlay = (x11_depth !=8);
+	plScrTextGUIOverlayAddBGRA = X11ScrTextGUIOverlayAddBGRA;
+	plScrTextGUIOverlayRemove  = X11ScrTextGUIOverlayRemove;
+
 	return 0;
 }
 
@@ -1782,4 +2061,9 @@ void x11_done(void)
 		free(virtual_framebuffer);
 		virtual_framebuffer=0;
 	}
+
+	free (X11ScrTextGUIOverlays);
+	X11ScrTextGUIOverlays = 0;
+	X11ScrTextGUIOverlays_size = 0;
+	X11ScrTextGUIOverlays_count = 0;
 }

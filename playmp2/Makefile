@@ -7,7 +7,7 @@ else
 	DUMPID3=
 endif
 
-all: mpptype.o id3.o playmp2$(LIB_SUFFIX) $(DUMPID3)
+all: mpptype.o id3.o id3jpeg.o id3png.o playmp2$(LIB_SUFFIX) $(DUMPID3)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
@@ -36,8 +36,30 @@ cpiid3info.o: cpiid3info.c \
 id3.o: id3.c \
 	../config.h \
 	../types.h \
-	id3.h
+	id3.h \
+	id3jpeg.h \
+	id3png.h
 	$(CC) $< -o $@ -c
+
+id3jpeg.o: id3jpeg.c \
+	../config.h \
+	../types.h \
+	../cpiface/cpiface.h \
+	../stuff/poutput.h \
+	id3.h \
+	id3jpeg.h \
+	mpplay.h
+	$(CC) $< -o $@ -c $(LIBJPEG_CFLAGS)
+
+id3png.o: id3png.c \
+	../config.h \
+	../types.h \
+	../cpiface/cpiface.h \
+	../stuff/poutput.h \
+	id3.h \
+	id3png.h \
+	mpplay.h
+	$(CC) $< -o $@ -c $(LIBPNG_CFLAGS)
 
 mpptype.o: mpptype.c \
 	../config.h \

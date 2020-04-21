@@ -81,6 +81,8 @@ extern int plScrLineBytes;              /* How many bytes does one line from plV
 extern int plScrLines;                  /* How many graphical lines do we have, should always be 480 or 768, but can be padded */
 extern void make_title(char *part);
 
+extern int plScrTextGUIOverlay;         /* Is text rendered virtually into a framebuffer, AND supports overlays? */
+
 #ifdef _CONSOLE_DRIVER
 
 typedef enum {

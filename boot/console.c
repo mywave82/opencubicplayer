@@ -80,3 +80,7 @@ enum vidType plVidType;
 unsigned char plScrType;
 int plScrMode;
 uint8_t *plVidMem;
+
+int plScrTextGUIOverlay;
+void *(*plScrTextGUIOverlayAddBGRA)(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra);
+void (*plScrTextGUIOverlayRemove)(void *handle);

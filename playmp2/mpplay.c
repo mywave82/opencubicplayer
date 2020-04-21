@@ -337,7 +337,7 @@ static void got_id3v2(uint8_t *buffer, uint32_t length)
 
 	debug_printf ("[MPx] Trying to parse ID3v2.x\n");
 
-	if (parse_ID3v2x (&ID3, buffer, length)) return;
+	if (parse_ID3v2x (&ID3, buffer, length, 1)) return;
 
 	debug_printf ("[MPx] Parsing sucessfull\n");
 

@@ -14,8 +14,7 @@ extern void x11_gflushpal(void);
 extern Display *mDisplay;
 extern int mLocalDisplay;
 extern int mScreen;
-extern int plDepth;
-
+extern int x11_depth;
 
 extern int x11_connect(void);
 extern void x11_disconnect(void);

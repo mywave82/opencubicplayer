@@ -48,4 +48,7 @@ extern void (*_conSave)(void);
 
 extern void (*_plDosShell)(void);
 
+extern void *(*plScrTextGUIOverlayAddBGRA)(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra);
+extern void (*plScrTextGUIOverlayRemove)(void *handle);
+
 #endif

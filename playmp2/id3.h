@@ -19,6 +19,8 @@ struct ID3_pic_t
 	int is_png;
 	int size;
 	uint8_t *data;
+	uint16_t width, height;
+	uint8_t *data_bgra;
 };
 
 struct ID3_t
@@ -74,7 +76,7 @@ int finalize_ID3v1(struct ID3_t *destination, struct ID3v1data_t *data);
  *
  * returns non-zero if invalid
  */
-int parse_ID3v2x(struct ID3_t *destination, unsigned char *source, uint32_t length);
+int parse_ID3v2x(struct ID3_t *destination, unsigned char *source, uint32_t length, int decompress_pictures);
 
 /* calls free() on all members, and sets them back to zero */
 void ID3_clear(struct ID3_t *destination);

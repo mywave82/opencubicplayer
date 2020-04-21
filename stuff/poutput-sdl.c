@@ -118,6 +118,9 @@ static uint32_t sdl_palette[256];
 
 static uint8_t *virtual_framebuffer = 0;
 
+static void *SDLScrTextGUIOverlayAddBGRA(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra);
+static void SDLScrTextGUIOverlayRemove(void *handle);
+
 static void set_state_textmode(int fullscreen, int width, int height)
 {
 	if (current_surface)
@@ -157,6 +160,7 @@ again:
 		if (!current_surface)
 			current_surface = SDL_SetVideoMode(width, height, 0, SDL_ANYFORMAT|SDL_RESIZABLE|SDL_SWSURFACE);
 	}
+	plScrTextGUIOverlay        = current_surface->format->BytesPerPixel != 1;
 
 	while ( ((width/FontSizeInfo[plCurrentFont].w) < 80) || ((height/FontSizeInfo[plCurrentFont].h) < 25))
 	{
@@ -296,6 +300,7 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 		if (!current_surface)
 			current_surface = SDL_SetVideoMode(width, height, 0, SDL_ANYFORMAT|SDL_SWSURFACE);
 	}
+	plScrTextGUIOverlay        = current_surface->format->BytesPerPixel != 1;
 
 	plScrWidth     = width/8;
 	plScrHeight    = height/16;
@@ -495,144 +500,6 @@ static void Dump_SDL_VideoInfo(const SDL_VideoInfo *info)
 }
 
 #endif
-
-static int need_quit = 0;
-
-int sdl_init(void)
-{
-	if ( SDL_Init(/*SDL_INIT_AUDIO|*/SDL_INIT_VIDEO) < 0 )
-	{
-		fprintf(stderr, "[SDL video] Unable to init SDL: %s\n", SDL_GetError());
-		return 1;
-	}
-
-	if (fontengine_init())
-	{
-		SDL_Quit();
-		return 1;
-	}
-
-	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
-
-#ifdef SDL_DEBUG
-	{
-		char buffer[256];
-		if (!SDL_VideoDriverName(buffer, sizeof(buffer)))
-			fprintf(stderr, "[SDL video] Unable to retrieve the SDL video driver name: %s\n", SDL_GetError());
-		else
-			fprintf(stderr, "[SDL-video] Video driver name: %s\n", buffer);
-	}
-#endif
-
-	info = SDL_GetVideoInfo();
-	if (!info)
-	{
-		fprintf(stderr, "[SDL video] Unable to retrieve video info: %s\n", SDL_GetError());
-		goto error_out;
-	}
-#ifdef SDL_DEBUG
-	fprintf(stderr, "[SDL video] Video-info:\n");
-	Dump_SDL_VideoInfo(info);
-#endif
-
-
-#ifdef SDL_DEBUG
-	fprintf(stderr, "[SDL video] check SDL_FULLSCREEN|SDL_HWSURFACE:\n");
-#endif
-	FindFullscreenModes_SDL(SDL_FULLSCREEN|SDL_HWSURFACE);
-#ifdef SDL_DEBUG
-	fprintf(stderr, "[SDL video] check SDL_FULLSCREEN:\n");
-#endif
-	FindFullscreenModes_SDL(SDL_FULLSCREEN);
-
-#ifdef SDL_DEBUG
-	{
-		int i;
-		for (i=0;i<MODE_BIGGEST;i++)
-		{
-			fprintf(stderr, "[SDL video] has_%d_%d_fullscreen: %d\n", mode_gui_data[i].width, mode_gui_data[i].height, fullscreen_info[i].is_possible);
-			if (fullscreen_info[i].is_possible)
-				fprintf(stderr, "[SDL video] %d_%d_fullscreen: %d x %d (0x%x)\n", mode_gui_data[i].width, mode_gui_data[i].height, fullscreen_info[i].resolution.w, fullscreen_info[i].resolution.h, (int)fullscreen_info[i].flags);
-		}
-	}
-	fprintf(stderr, "[SDL video] has_text_fullscreen: %d\n", fullscreen_info[MODE_BIGGEST].is_possible);
-	if (fullscreen_info[MODE_BIGGEST].is_possible)
-		fprintf(stderr, "[SDL video] text_fullscreen: %d x %d (0x%x)\n", fullscreen_info[MODE_BIGGEST].resolution.w, fullscreen_info[MODE_BIGGEST].resolution.h, (int)fullscreen_info[MODE_BIGGEST].flags);
-#endif
-
-	if (!fullscreen_info[MODE_BIGGEST].is_possible)
-		fprintf(stderr, "[SDL video] Unable to find a fullscreen mode\n");
-
-	plCurrentFontWanted = plCurrentFont = cfGetProfileInt("x11", "font", _8x16, 10);
-	if (plCurrentFont > _FONT_MAX)
-	{
-		plCurrentFont = _8x16;
-	}
-	last_text_width  = plScrLineBytes = 640;
-	last_text_height = plScrLines     = 480;
-
-	plScrType = plScrMode = 8;
-
-	need_quit = 1;
-
-	_plSetTextMode=plSetTextMode;
-	_plSetGraphMode=__plSetGraphMode;
-	_gdrawstr=generic_gdrawstr;
-	_gdrawchar8=generic_gdrawchar8;
-	_gdrawchar8p=generic_gdrawchar8p;
-	_gdrawchar8t=generic_gdrawchar8t;
-	_gdrawcharp=generic_gdrawcharp;
-	_gdrawchar=generic_gdrawchar;
-	_gupdatestr=generic_gupdatestr;
-	_gupdatepal=sdl_gupdatepal;
-	_gflushpal=sdl_gflushpal;
-	_vga13=__vga13;
-
-	_displayvoid=swtext_displayvoid;
-	_displaystrattr=swtext_displaystrattr_cp437;
-	_displaystr=swtext_displaystr_cp437;
-	_displaystrattr_iso8859latin1=swtext_displaystrattr_iso8859latin1;
-	_displaystr_iso8859latin1=swtext_displaystr_iso8859latin1;
-	_displaystr_utf8=swtext_displaystr_utf8;
-
-	_drawbar=swtext_drawbar;
-	_idrawbar=swtext_idrawbar;
-
-	_setcur=swtext_setcur;
-	_setcurshape=swtext_setcurshape;
-
-	_conRestore=conRestore;
-	_conSave=conSave;
-
-	_plGetDisplayTextModeName = plGetDisplayTextModeName;
-	_plDisplaySetupTextMode = plDisplaySetupTextMode;
-
-	return 0;
-
-error_out:
-	SDL_ClearError();
-	fontengine_done ();
-	SDL_Quit();
-	return 1;
-}
-
-void sdl_done(void)
-{
-	if (!need_quit)
-		return;
-
-	fontengine_done ();
-
-	SDL_Quit();
-
-	if (virtual_framebuffer)
-	{
-		free(virtual_framebuffer);
-		plVidMem = virtual_framebuffer = 0;
-	}
-
-	need_quit = 0;
-}
 
 struct keytranslate_t
 {
@@ -973,6 +840,57 @@ static int ___valid_key(uint16_t key)
 	return 0;
 }
 
+struct SDLScrTextGUIOverlay_t
+{
+	unsigned int x;
+	unsigned int y;
+	unsigned int width;
+	unsigned int height;
+	uint8_t     *data_bgra;
+	SDL_Surface *surface;
+
+};
+
+static struct SDLScrTextGUIOverlay_t **SDLScrTextGUIOverlays;
+static int                             SDLScrTextGUIOverlays_count;
+static int                             SDLScrTextGUIOverlays_size;
+
+static void *SDLScrTextGUIOverlayAddBGRA(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra)
+{
+	struct SDLScrTextGUIOverlay_t *e = malloc (sizeof (*e));
+	e->x = x;
+	e->y = y;
+	e->width = width;
+	e->height = height;
+	e->data_bgra = data_bgra;
+
+	if (SDLScrTextGUIOverlays_count == SDLScrTextGUIOverlays_size)
+	{
+		SDLScrTextGUIOverlays_size += 10;
+		SDLScrTextGUIOverlays = realloc (SDLScrTextGUIOverlays, sizeof (SDLScrTextGUIOverlays[0]) * SDLScrTextGUIOverlays_size);
+	}
+	e->surface = SDL_CreateRGBSurfaceFrom (data_bgra, width, height, 32, pitch * 4, uint32_little(0x00ff0000), uint32_little(0x0000ff00), uint32_little(0x000000ff), uint32_little(0xff000000));
+	SDLScrTextGUIOverlays[SDLScrTextGUIOverlays_count++] = e;
+
+	return e;
+}
+
+static void SDLScrTextGUIOverlayRemove(void *handle)
+{
+	int i;
+	for (i=0; i < SDLScrTextGUIOverlays_count; i++)
+	{
+		if (SDLScrTextGUIOverlays[i] == handle)
+		{
+			SDL_FreeSurface(SDLScrTextGUIOverlays[i]->surface);
+			memmove (SDLScrTextGUIOverlays + i, SDLScrTextGUIOverlays + i + 1, sizeof (SDLScrTextGUIOverlays[0]) * SDLScrTextGUIOverlays_count - i - 1);
+			SDLScrTextGUIOverlays_count--;
+			return;
+		}
+	}
+	fprintf (stderr, "[SDL] Warning: SDLScrTextGUIOverlayRemove, handle %p not found\n", handle);
+}
+
 static void RefreshScreenGraph(void)
 {
 	if (!current_surface)
@@ -1042,6 +960,28 @@ static void RefreshScreenGraph(void)
 	}
 
 	SDL_UnlockSurface(current_surface);
+
+	if ((current_surface->format->BytesPerPixel != 1) && SDLScrTextGUIOverlays_count)
+	{
+		int i;
+		for (i=0; i < SDLScrTextGUIOverlays_count; i++)
+		{
+			SDL_Rect src;
+			SDL_Rect dst;
+
+			src.x = 0;
+			src.y = 0;
+			src.w = SDLScrTextGUIOverlays[i]->width;
+			src.h = SDLScrTextGUIOverlays[i]->height;
+
+			dst.x = SDLScrTextGUIOverlays[i]->x;
+			dst.y = SDLScrTextGUIOverlays[i]->y;
+			dst.w = SDLScrTextGUIOverlays[i]->width;
+			dst.h = SDLScrTextGUIOverlays[i]->height;
+
+			SDL_BlitSurface (SDLScrTextGUIOverlays[i]->surface, &src, current_surface, &dst);
+		}
+	}
 
 	SDL_Flip(current_surface);
 
@@ -1221,4 +1161,151 @@ static void sdl_gupdatepal(unsigned char color, unsigned char _red, unsigned cha
 	red[color]=_red<<2;
 	green[color]=_green<<2;
 	blue[color]=_blue<<2;
+}
+
+static int need_quit = 0;
+
+int sdl_init(void)
+{
+	if ( SDL_Init(/*SDL_INIT_AUDIO|*/SDL_INIT_VIDEO) < 0 )
+	{
+		fprintf(stderr, "[SDL video] Unable to init SDL: %s\n", SDL_GetError());
+		return 1;
+	}
+
+	if (fontengine_init())
+	{
+		SDL_Quit();
+		return 1;
+	}
+
+	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
+
+#ifdef SDL_DEBUG
+	{
+		char buffer[256];
+		if (!SDL_VideoDriverName(buffer, sizeof(buffer)))
+			fprintf(stderr, "[SDL video] Unable to retrieve the SDL video driver name: %s\n", SDL_GetError());
+		else
+			fprintf(stderr, "[SDL-video] Video driver name: %s\n", buffer);
+	}
+#endif
+
+	info = SDL_GetVideoInfo();
+	if (!info)
+	{
+		fprintf(stderr, "[SDL video] Unable to retrieve video info: %s\n", SDL_GetError());
+		goto error_out;
+	}
+#ifdef SDL_DEBUG
+	fprintf(stderr, "[SDL video] Video-info:\n");
+	Dump_SDL_VideoInfo(info);
+#endif
+
+
+#ifdef SDL_DEBUG
+	fprintf(stderr, "[SDL video] check SDL_FULLSCREEN|SDL_HWSURFACE:\n");
+#endif
+	FindFullscreenModes_SDL(SDL_FULLSCREEN|SDL_HWSURFACE);
+#ifdef SDL_DEBUG
+	fprintf(stderr, "[SDL video] check SDL_FULLSCREEN:\n");
+#endif
+	FindFullscreenModes_SDL(SDL_FULLSCREEN);
+
+#ifdef SDL_DEBUG
+	{
+		int i;
+		for (i=0;i<MODE_BIGGEST;i++)
+		{
+			fprintf(stderr, "[SDL video] has_%d_%d_fullscreen: %d\n", mode_gui_data[i].width, mode_gui_data[i].height, fullscreen_info[i].is_possible);
+			if (fullscreen_info[i].is_possible)
+				fprintf(stderr, "[SDL video] %d_%d_fullscreen: %d x %d (0x%x)\n", mode_gui_data[i].width, mode_gui_data[i].height, fullscreen_info[i].resolution.w, fullscreen_info[i].resolution.h, (int)fullscreen_info[i].flags);
+		}
+	}
+	fprintf(stderr, "[SDL video] has_text_fullscreen: %d\n", fullscreen_info[MODE_BIGGEST].is_possible);
+	if (fullscreen_info[MODE_BIGGEST].is_possible)
+		fprintf(stderr, "[SDL video] text_fullscreen: %d x %d (0x%x)\n", fullscreen_info[MODE_BIGGEST].resolution.w, fullscreen_info[MODE_BIGGEST].resolution.h, (int)fullscreen_info[MODE_BIGGEST].flags);
+#endif
+
+	if (!fullscreen_info[MODE_BIGGEST].is_possible)
+		fprintf(stderr, "[SDL video] Unable to find a fullscreen mode\n");
+
+	plCurrentFontWanted = plCurrentFont = cfGetProfileInt("x11", "font", _8x16, 10);
+	if (plCurrentFont > _FONT_MAX)
+	{
+		plCurrentFont = _8x16;
+	}
+	last_text_width  = plScrLineBytes = 640;
+	last_text_height = plScrLines     = 480;
+
+	plScrType = plScrMode = 8;
+
+	need_quit = 1;
+
+	_plSetTextMode=plSetTextMode;
+	_plSetGraphMode=__plSetGraphMode;
+	_gdrawstr=generic_gdrawstr;
+	_gdrawchar8=generic_gdrawchar8;
+	_gdrawchar8p=generic_gdrawchar8p;
+	_gdrawchar8t=generic_gdrawchar8t;
+	_gdrawcharp=generic_gdrawcharp;
+	_gdrawchar=generic_gdrawchar;
+	_gupdatestr=generic_gupdatestr;
+	_gupdatepal=sdl_gupdatepal;
+	_gflushpal=sdl_gflushpal;
+	_vga13=__vga13;
+
+	_displayvoid=swtext_displayvoid;
+	_displaystrattr=swtext_displaystrattr_cp437;
+	_displaystr=swtext_displaystr_cp437;
+	_displaystrattr_iso8859latin1=swtext_displaystrattr_iso8859latin1;
+	_displaystr_iso8859latin1=swtext_displaystr_iso8859latin1;
+	_displaystr_utf8=swtext_displaystr_utf8;
+
+	_drawbar=swtext_drawbar;
+	_idrawbar=swtext_idrawbar;
+
+	_setcur=swtext_setcur;
+	_setcurshape=swtext_setcurshape;
+
+	_conRestore=conRestore;
+	_conSave=conSave;
+
+	_plGetDisplayTextModeName = plGetDisplayTextModeName;
+	_plDisplaySetupTextMode = plDisplaySetupTextMode;
+
+	plScrTextGUIOverlay        = 0;
+	plScrTextGUIOverlayAddBGRA = SDLScrTextGUIOverlayAddBGRA;
+	plScrTextGUIOverlayRemove  = SDLScrTextGUIOverlayRemove;
+
+	return 0;
+
+error_out:
+	SDL_ClearError();
+	fontengine_done ();
+	SDL_Quit();
+	return 1;
+}
+
+void sdl_done(void)
+{
+	if (!need_quit)
+		return;
+
+	fontengine_done ();
+
+	SDL_Quit();
+
+	if (virtual_framebuffer)
+	{
+		free(virtual_framebuffer);
+		plVidMem = virtual_framebuffer = 0;
+	}
+
+	need_quit = 0;
+
+	free (SDLScrTextGUIOverlays);
+	SDLScrTextGUIOverlays = 0;
+	SDLScrTextGUIOverlays_size = 0;
+	SDLScrTextGUIOverlays_count = 0;
 }

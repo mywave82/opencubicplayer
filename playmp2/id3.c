@@ -31,6 +31,8 @@
 #include <zlib.h>
 #include "types.h"
 #include "id3.h"
+#include "id3jpeg.h"
+#include "id3png.h"
 
 struct iso8859_1_session_precheck_t /* Buggy software and terminal combinations - many frames are marked as LATIN1, but are actually encoded in UTF-8.. */
 {
@@ -903,6 +905,7 @@ void ID3_clear(struct ID3_t *dest)
 	for (i=0; i < (sizeof(dest->APIC) / sizeof(dest->APIC[0])); i++)
 	{
 		free(dest->APIC[i].data);
+		free(dest->APIC[i].data_bgra);
 	}
 	memset (dest, 0, sizeof (*dest));
 }
@@ -1024,7 +1027,7 @@ static int parse_frame_COMM(uint8_t **dst, const uint8_t *src, uint32_t srclen)
 	return 0;
 }
 
-static int parse_frame_APIC(struct ID3_t *dest, const uint8_t *src, uint32_t srclen, int version)
+static int parse_frame_APIC(struct ID3_t *dest, const uint8_t *src, uint32_t srclen, int version, int decompress_pictures)
 {
 	uint8_t text_encoding, picture_type, *description=0;
 	int is_jpeg = 0;
@@ -1096,11 +1099,18 @@ static int parse_frame_APIC(struct ID3_t *dest, const uint8_t *src, uint32_t src
 	}
 
 	memcpy (dest->APIC[picture_type].data, src, srclen);
+	if (is_jpeg)
+	{
+		try_open_jpeg (dest->APIC + picture_type, dest->APIC[picture_type].data, dest->APIC[picture_type].size);
+	} else if (is_png)
+	{
+		try_open_png (dest->APIC + picture_type, dest->APIC[picture_type].data, dest->APIC[picture_type].size);
+	}
 
 	return 0;
 }
 
-static int parse_ID3v240_frame(struct ID3_t *dest, uint8_t *src, uint32_t srclen, int v230_compat_framesize)
+static int parse_ID3v240_frame(struct ID3_t *dest, uint8_t *src, uint32_t srclen, int v230_compat_framesize, int decompress_pictures)
 {
 	uint8_t *frameptr, *zptr = 0;
 	uint32_t _framelen, framelen;
@@ -1287,7 +1297,7 @@ static int parse_ID3v240_frame(struct ID3_t *dest, uint8_t *src, uint32_t srclen
 	else if (!memcmp (src, "TCON", 4)) { if (parse_frame_T(&dest->TCON, frameptr, framelen)) { free(zptr); return -1; } }
 	else if (!memcmp (src, "TDRC", 4)) { if (parse_frame_T(&dest->TDRC, frameptr, framelen)) { free(zptr); return -1; } }
 	else if (!memcmp (src, "TDRL", 4)) { if (parse_frame_T(&dest->TDRL, frameptr, framelen)) { free(zptr); return -1; } }
-	else if (!memcmp (src, "APIC", 4)) { if (parse_frame_APIC(dest, frameptr, framelen, 4))  { free(zptr); return -1; } }
+	else if (!memcmp (src, "APIC", 4)) { if (parse_frame_APIC(dest, frameptr, framelen, 4, decompress_pictures))  { free(zptr); return -1; } }
 	else if (!memcmp (src, "COMM", 4)) { if (parse_frame_COMM(&dest->COMM, frameptr, framelen)) { free(zptr); return -1; } }
 
 	free (zptr);
@@ -1295,7 +1305,7 @@ static int parse_ID3v240_frame(struct ID3_t *dest, uint8_t *src, uint32_t srclen
 	return _framelen + 10;
 }
 
-static int parse_ID3v230_frame(struct ID3_t *dest, uint8_t *src, uint32_t srclen)
+static int parse_ID3v230_frame(struct ID3_t *dest, uint8_t *src, uint32_t srclen, int decompress_pictures)
 {
 	uint8_t *frameptr, *zptr = 0;
 	uint32_t _framelen, framelen;
@@ -1420,7 +1430,7 @@ static int parse_ID3v230_frame(struct ID3_t *dest, uint8_t *src, uint32_t srclen
 	else if (!memcmp (src, "TCON", 4)) { if (parse_frame_T(&dest->TCON, frameptr, framelen)) { free(zptr); return -1; } }
 	else if (!memcmp (src, "TDRC", 4)) { if (parse_frame_T(&dest->TDRC, frameptr, framelen)) { free(zptr); return -1; } }
 	else if (!memcmp (src, "TDRL", 4)) { if (parse_frame_T(&dest->TDRL, frameptr, framelen)) { free(zptr); return -1; } }
-	else if (!memcmp (src, "APIC", 4)) { if (parse_frame_APIC(dest, frameptr, framelen, 3))  { free(zptr); return -1; } }
+	else if (!memcmp (src, "APIC", 4)) { if (parse_frame_APIC(dest, frameptr, framelen, 3, decompress_pictures))  { free(zptr); return -1; } }
 	else if (!memcmp (src, "COMM", 4)) { if (parse_frame_COMM(&dest->COMM, frameptr, framelen)) { free(zptr); return -1; } }
 
 
@@ -1429,7 +1439,7 @@ static int parse_ID3v230_frame(struct ID3_t *dest, uint8_t *src, uint32_t srclen
 	return _framelen + 10;
 }
 
-static int parse_ID3v220_frame(struct ID3_t *dest, uint8_t *src, uint32_t srclen)
+static int parse_ID3v220_frame(struct ID3_t *dest, uint8_t *src, uint32_t srclen, int decompress_pictures)
 {
 	uint32_t framelen;
 	if (srclen < 7)
@@ -1467,13 +1477,13 @@ static int parse_ID3v220_frame(struct ID3_t *dest, uint8_t *src, uint32_t srclen
 	else if (!memcmp (src, "TDA", 3)) { if (parse_frame_T(&dest->TDAT, src+6, framelen)) return -1; }
 	else if (!memcmp (src, "TIM", 3)) { if (parse_frame_T(&dest->TIME, src+6, framelen)) return -1; }
 	else if (!memcmp (src, "TCO", 3)) { if (parse_frame_T(&dest->TCON, src+6, framelen)) return -1; }
-	else if (!memcmp (src, "PIC", 3)) { if (parse_frame_APIC(dest, src+6, framelen, 2))  return -1; }
+	else if (!memcmp (src, "PIC", 3)) { if (parse_frame_APIC(dest, src+6, framelen, 2, decompress_pictures))  return -1; }
 	else if (!memcmp (src, "COM", 3)) { if (parse_frame_COMM(&dest->COMM, src+6, framelen)) return -1; }
 
 	return framelen + 6;
 }
 
-static int parse_ID3v240_tag(struct ID3_t *dest, uint8_t *src, uint32_t srclen)
+static int parse_ID3v240_tag(struct ID3_t *dest, uint8_t *src, uint32_t srclen, int decompress_pictures)
 {
 	uint8_t flags = src[5];
 	int v230_framing_well_known = 0;
@@ -1670,7 +1680,7 @@ skip_eheader_v240:
 			return 0;
 		}
 
-		framelen = parse_ID3v240_frame (dest, src, srclen, !!v240_framing_error);
+		framelen = parse_ID3v240_frame (dest, src, srclen, !!v240_framing_error, decompress_pictures);
 		if (framelen < 0)
 		{
 			return -1;
@@ -1683,7 +1693,7 @@ skip_eheader_v240:
 	return 0;
 }
 
-static int parse_ID3v230_tag(struct ID3_t *dest, uint8_t *src, uint32_t srclen)
+static int parse_ID3v230_tag(struct ID3_t *dest, uint8_t *src, uint32_t srclen, int decompress_pictures)
 {
 	uint8_t flags = src[5];
 
@@ -1731,7 +1741,7 @@ static int parse_ID3v230_tag(struct ID3_t *dest, uint8_t *src, uint32_t srclen)
 			return 0;
 		}
 
-		framelen = parse_ID3v230_frame (dest, src, srclen);
+		framelen = parse_ID3v230_frame (dest, src, srclen, decompress_pictures);
 		if (framelen < 0)
 		{
 			return -1;
@@ -1744,7 +1754,7 @@ static int parse_ID3v230_tag(struct ID3_t *dest, uint8_t *src, uint32_t srclen)
 	return 0;
 }
 
-static int parse_ID3v220_tag(struct ID3_t *dest, uint8_t *src, uint32_t srclen)
+static int parse_ID3v220_tag(struct ID3_t *dest, uint8_t *src, uint32_t srclen, int decompress_pictures)
 {
 	uint8_t flags = src[5];
 
@@ -1769,7 +1779,7 @@ static int parse_ID3v220_tag(struct ID3_t *dest, uint8_t *src, uint32_t srclen)
 			return 0;
 		}
 
-		framelen = parse_ID3v220_frame (dest, src, srclen);
+		framelen = parse_ID3v220_frame (dest, src, srclen, decompress_pictures);
 		if (framelen < 0)
 		{
 			return -1;
@@ -1782,7 +1792,7 @@ static int parse_ID3v220_tag(struct ID3_t *dest, uint8_t *src, uint32_t srclen)
 	return 0;
 }
 
-static int _parse_ID3v2x(struct ID3_t *dest, uint8_t *src, uint32_t srclen)
+static int _parse_ID3v2x(struct ID3_t *dest, uint8_t *src, uint32_t srclen, int decompress_pictures)
 {
 	if (src[5] & 0x0f)
 	{
@@ -1799,18 +1809,18 @@ static int _parse_ID3v2x(struct ID3_t *dest, uint8_t *src, uint32_t srclen)
 
 	switch (src[3])
 	{
-		case 2: return parse_ID3v220_tag(dest, src, srclen);
-		case 3: return parse_ID3v230_tag(dest, src, srclen);
-		case 4: return parse_ID3v240_tag(dest, src, srclen);
+		case 2: return parse_ID3v220_tag(dest, src, srclen, decompress_pictures);
+		case 3: return parse_ID3v230_tag(dest, src, srclen, decompress_pictures);
+		case 4: return parse_ID3v240_tag(dest, src, srclen, decompress_pictures);
 	}
 	return -1; // not reachable
 }
 
-int parse_ID3v2x(struct ID3_t *destination, uint8_t *src, uint32_t srclen)
+int parse_ID3v2x(struct ID3_t *destination, uint8_t *src, uint32_t srclen, int decompress_pictures)
 {
 	int retval;
 	memset (destination, 0, sizeof (*destination));
-	retval = _parse_ID3v2x(destination, src, srclen);
+	retval = _parse_ID3v2x(destination, src, srclen, decompress_pictures);
 	if (retval)
 	{
 		ID3_clear(destination);

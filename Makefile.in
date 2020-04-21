@@ -2,9 +2,11 @@ TOPDIR=./
 include $(TOPDIR)Rules.make
 
 ifeq ($(HAVE_MAD),1)
-	FSTYPES_SO_MAD=playmp2/mpptype.o playmp2/charset.o
+	FSTYPES_SO_MAD=playmp2/mpptype.o playmp2/id3.o playmp2/id3jpeg.o playmp2/id3png.o
+	FSTYPES_SO_LIBS=$(LIBJPEG_LIBS) $(LIBPNG_LIBS)
 else
 	FSTYPES_SO_MAD=
+	FSTYPES_SO_LIBS=
 endif
 
 
@@ -218,7 +220,7 @@ distclean: clean
 	rm -Rf config.h autom4te.cache Rules.make config.log config.status Makefile ocp.ini desktop/opencubicplayer.desktop doc/texi/faq.texi doc/texi/install.texi doc/texi/ocp.texi goodies/pack/Makefile goodies/helpc/Makefile Makefile
 
 fstypes$(LIB_SUFFIX): dirs $(fstypes_so)
-	$(CC) $(SHARED_FLAGS) $(LDFLAGS) $(ICONV_LIBS) -o $@ $(fstypes_so)
+	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $(fstypes_so) $(ICONV_LIBS) $(FSTYPES_SO_LIBS)
 
 libocp$(LIB_SUFFIX): $(libocp_so)
 	$(CC) $(SHARED_FLAGS) $(LDFLAGS) $(STATIC_LIBS) -o $@ $(libocp_so)

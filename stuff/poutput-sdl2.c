@@ -99,6 +99,9 @@ static int ___valid_key(uint16_t key);
 static void sdl2_gflushpal(void);
 static void sdl2_gupdatepal(unsigned char color, unsigned char _red, unsigned char _green, unsigned char _blue);
 
+static void *SDL2ScrTextGUIOverlayAddBGRA(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra);
+static void SDL2ScrTextGUIOverlayRemove(void *handle);
+
 static uint32_t sdl2_palette[256] = {
 	0xff000000,
 	0xff0000aa,
@@ -316,7 +319,7 @@ static void set_state_textmode(int fullscreen, int width, int height)
 			                                   SDL_WINDOWPOS_UNDEFINED,
 			                                   SDL_WINDOWPOS_UNDEFINED,
 			                                   0, 0,
-		        	                           SDL_WINDOW_FULLSCREEN_DESKTOP);
+		                                           SDL_WINDOW_FULLSCREEN_DESKTOP);
 			if (current_window)
 			{
 				SDL_GetWindowSize (current_window, &width, &height);
@@ -339,8 +342,8 @@ static void set_state_textmode(int fullscreen, int width, int height)
 			current_window = SDL_CreateWindow ("Open Cubic Player",
 			                                   SDL_WINDOWPOS_UNDEFINED,
 			                                   SDL_WINDOWPOS_UNDEFINED,
-		        	                           width, height,
-		                	                   SDL_WINDOW_RESIZABLE);
+		                                           width, height,
+		                                           SDL_WINDOW_RESIZABLE);
 		}
 
 		if (!current_window)
@@ -505,14 +508,14 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 			current_window = SDL_CreateWindow ("Open Cubic Player",
 			                                   SDL_WINDOWPOS_UNDEFINED,
 			                                   SDL_WINDOWPOS_UNDEFINED,
-		        	                           0, 0,
-		                	                   SDL_WINDOW_FULLSCREEN_DESKTOP);
+		                                           0, 0,
+		                                           SDL_WINDOW_FULLSCREEN_DESKTOP);
 		} else {
 			current_window = SDL_CreateWindow ("Open Cubic Player",
-		        	                           SDL_WINDOWPOS_UNDEFINED,
-		                	                   SDL_WINDOWPOS_UNDEFINED,
-		                        	           width, height,
-		                                	   0);
+		                                           SDL_WINDOWPOS_UNDEFINED,
+		                                           SDL_WINDOWPOS_UNDEFINED,
+		                                           width, height,
+		                                           0);
 		}
 	}
 
@@ -650,136 +653,6 @@ static const char *plGetDisplayTextModeName(void)
 		plCurrentFont == _4x4 ? "4x4"
 		: plCurrentFont == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
 	return mode;
-}
-
-static int need_quit = 0;
-
-int sdl2_init(void)
-{
-	if ( SDL_Init(/*SDL_INIT_AUDIO|*/SDL_INIT_VIDEO) < 0 )
-	{
-		fprintf(stderr, "[SDL2 video] Unable to init SDL: %s\n", SDL_GetError());
-		SDL_ClearError();
-		return 1;
-	}
-
-	if (fontengine_init())
-	{
-		SDL_Quit();
-		return 1;
-	}
-
-	/* we now test-spawn one window, and so we can fallback to other drivers */
-	current_window = SDL_CreateWindow ("Open Cubic Player detection",
-	                                   SDL_WINDOWPOS_UNDEFINED,
-	                                   SDL_WINDOWPOS_UNDEFINED,
-        	                           320, 200,
-                	                   0);
-
-	if (!current_window)
-	{
-		fprintf(stderr, "[SDL2 video] Unable to create window: %s\n", SDL_GetError());
-		goto error_out;
-	}
-
-	current_renderer = SDL_CreateRenderer (current_window, -1, 0);
-	if (!current_renderer)
-	{
-		fprintf (stderr, "[SD2-video]: Unable to create renderer: %s\n", SDL_GetError());
-		goto error_out;
-	}
-
-	current_texture = SDL_CreateTexture (current_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 320, 200);
-	if (!current_texture)
-	{
-		fprintf (stderr, "[SDL2-video]: Unable to create texture (will do one more attempt): %s\n", SDL_GetError());
-		SDL_ClearError();
-		current_texture = SDL_CreateTexture (current_renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, 320, 200);
-		if (!current_texture)
-		{
-			fprintf (stderr, "[SDL2-video]: Unable to create texture: %s\n", SDL_GetError());
-			goto error_out;
-		}
-	}
-
-	sdl2_close_window ();
-
-	SDL_EventState (SDL_WINDOWEVENT, SDL_ENABLE);
-	SDL_EventState (SDL_MOUSEBUTTONDOWN, SDL_ENABLE);
-	SDL_EventState (SDL_KEYDOWN, SDL_ENABLE);
-
-	/* Fill some default font and window sizes */
-	plCurrentFontWanted = plCurrentFont = cfGetProfileInt("x11", "font", _8x16, 10);
-	if (plCurrentFont > _FONT_MAX)
-	{
-		plCurrentFont = _8x16;
-	}
-	last_text_width  = plScrLineBytes = 640;
-	last_text_height = plScrLines     = 480;
-	plScrType = plScrMode = 8;
-
-	need_quit = 1;
-
-	_plSetTextMode=plSetTextMode;
-	_plSetGraphMode=__plSetGraphMode;
-	_gdrawstr=generic_gdrawstr;
-	_gdrawchar8=generic_gdrawchar8;
-	_gdrawchar8p=generic_gdrawchar8p;
-	_gdrawchar8t=generic_gdrawchar8t;
-	_gdrawcharp=generic_gdrawcharp;
-	_gdrawchar=generic_gdrawchar;
-	_gupdatestr=generic_gupdatestr;
-	_gupdatepal=sdl2_gupdatepal;
-	_gflushpal=sdl2_gflushpal;
-	_vga13=__vga13;
-
-	_displayvoid=swtext_displayvoid;
-	_displaystrattr=swtext_displaystrattr_cp437;
-	_displaystr=swtext_displaystr_cp437;
-	_displaystrattr_iso8859latin1=swtext_displaystrattr_iso8859latin1;
-	_displaystr_iso8859latin1=swtext_displaystr_iso8859latin1;
-	_displaystr_utf8=swtext_displaystr_utf8;
-
-	_drawbar=swtext_drawbar;
-	_idrawbar=swtext_idrawbar;
-
-	_setcur=swtext_setcur;
-	_setcurshape=swtext_setcurshape;
-	_conRestore=conRestore;
-	_conSave=conSave;
-
-	_plGetDisplayTextModeName = plGetDisplayTextModeName;
-	_plDisplaySetupTextMode = plDisplaySetupTextMode;
-
-	plVidType=vidModern;
-
-	return 0;
-error_out:
-	SDL_ClearError();
-	sdl2_close_window ();
-	fontengine_done ();
-	SDL_Quit();
-	return 1;
-}
-
-void sdl2_done(void)
-{
-	sdl2_close_window ();
-
-	if (!need_quit)
-		return;
-
-	fontengine_done ();
-
-	SDL_Quit();
-
-	if (virtual_framebuffer)
-	{
-		free (virtual_framebuffer);
-		plVidMem = virtual_framebuffer = 0;
-	}
-
-	need_quit = 0;
 }
 
 struct keytranslate_t
@@ -1121,6 +994,56 @@ static int ___valid_key(uint16_t key)
 	return 0;
 }
 
+struct SDL2ScrTextGUIOverlay_t
+{
+	unsigned int x;
+	unsigned int y;
+	unsigned int width;
+	unsigned int height;
+	unsigned int pitch;
+	uint8_t     *data_bgra;
+
+};
+
+static struct SDL2ScrTextGUIOverlay_t **SDL2ScrTextGUIOverlays;
+static int                              SDL2ScrTextGUIOverlays_count;
+static int                              SDL2ScrTextGUIOverlays_size;
+
+static void *SDL2ScrTextGUIOverlayAddBGRA(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra)
+{
+	struct SDL2ScrTextGUIOverlay_t *e = malloc (sizeof (*e));
+	e->x = x;
+	e->y = y;
+	e->width = width;
+	e->height = height;
+	e->pitch = pitch;
+	e->data_bgra = data_bgra;
+
+	if (SDL2ScrTextGUIOverlays_count == SDL2ScrTextGUIOverlays_size)
+	{
+		SDL2ScrTextGUIOverlays_size += 10;
+		SDL2ScrTextGUIOverlays = realloc (SDL2ScrTextGUIOverlays, sizeof (SDL2ScrTextGUIOverlays[0]) * SDL2ScrTextGUIOverlays_size);
+	}
+	SDL2ScrTextGUIOverlays[SDL2ScrTextGUIOverlays_count++] = e;
+
+	return e;
+}
+
+static void SDL2ScrTextGUIOverlayRemove(void *handle)
+{
+	int i;
+	for (i=0; i < SDL2ScrTextGUIOverlays_count; i++)
+	{
+		if (SDL2ScrTextGUIOverlays[i] == handle)
+		{
+			memmove (SDL2ScrTextGUIOverlays + i, SDL2ScrTextGUIOverlays + i + 1, sizeof (SDL2ScrTextGUIOverlays[0]) * SDL2ScrTextGUIOverlays_count - i - 1);
+			SDL2ScrTextGUIOverlays_count--;
+			return;
+		}
+	}
+	fprintf (stderr, "[SDL2] Warning: SDL2ScrTextGUIOverlayRemove, handle %p not found\n", handle);
+}
+
 static void RefreshScreenGraph(void)
 {
 	void *pixels;
@@ -1138,6 +1061,7 @@ static void RefreshScreenGraph(void)
 		uint8_t *src=virtual_framebuffer;
 		uint8_t *dst_line = (uint8_t *)/*current_surface->*/pixels;
 		int Y=0;
+		int i;
 
 		uint32_t *dst;
 
@@ -1151,6 +1075,55 @@ static void RefreshScreenGraph(void)
 			if ((++Y)>=plScrLines)
 				break;
 			dst_line += /*current_surface->*/pitch;
+		}
+
+		for (i=0; i < SDL2ScrTextGUIOverlays_count; i++)
+		{
+			int ty, y;
+			ty = SDL2ScrTextGUIOverlays[i]->y + SDL2ScrTextGUIOverlays[i]->height;
+			y = (SDL2ScrTextGUIOverlays[i]->y < 0) ? 0 : SDL2ScrTextGUIOverlays[i]->y;
+			for (; y < ty; y++)
+			{
+				int tx, x;
+				uint8_t *src, *dst;
+
+				if (y >= plScrLines) { break; }
+
+				tx = SDL2ScrTextGUIOverlays[i]->x + SDL2ScrTextGUIOverlays[i]->width;
+				x = (SDL2ScrTextGUIOverlays[i]->x < 0) ? 0 : SDL2ScrTextGUIOverlays[i]->x;
+
+				src = SDL2ScrTextGUIOverlays[i]->data_bgra + (((y - SDL2ScrTextGUIOverlays[i]->y) * SDL2ScrTextGUIOverlays[i]->pitch + (x - SDL2ScrTextGUIOverlays[i]->x)) << 2);
+				dst = (uint8_t *)pixels + (y * pitch) + (x<<2);
+
+				for (; x < tx; x++)
+				{
+					if (x >= plScrLineBytes) { break; }
+
+					if (src[3] == 0)
+					{
+						src+=4;
+						dst+=4;
+					} else if (src[3] == 255)
+					{
+						*(dst++) = *(src++);
+						*(dst++) = *(src++);
+						*(dst++) = *(src++);
+						src++;
+						dst++;
+					} else{
+						//uint8_t b = src[0];
+						//uint8_t g = src[1];
+						//uint8_t r = src[2];
+						uint8_t a = src[3];
+						uint8_t na = a ^ 0xff;
+						*dst = ((*dst * na) >> 8) + ((*src * a) >> 8); dst++; src++; // b
+						*dst = ((*dst * na) >> 8) + ((*src * a) >> 8); dst++; src++; // g
+						*dst = ((*dst * na) >> 8) + ((*src * a) >> 8); dst++; src++; // r
+						dst++;
+						src++;
+					}
+				}
+			}
 		}
 	}
 
@@ -1397,4 +1370,143 @@ static void sdl2_gupdatepal(unsigned char index, unsigned char _red, unsigned ch
 	pal[(index<<2)+2] = _red<<2;
 	pal[(index<<2)+1] = _green<<2;
 	pal[(index<<2)+0] = _blue<<2;
+}
+
+static int need_quit = 0;
+
+int sdl2_init(void)
+{
+	if ( SDL_Init(/*SDL_INIT_AUDIO|*/SDL_INIT_VIDEO) < 0 )
+	{
+		fprintf(stderr, "[SDL2 video] Unable to init SDL: %s\n", SDL_GetError());
+		SDL_ClearError();
+		return 1;
+	}
+
+	if (fontengine_init())
+	{
+		SDL_Quit();
+		return 1;
+	}
+
+	/* we now test-spawn one window, and so we can fallback to other drivers */
+	current_window = SDL_CreateWindow ("Open Cubic Player detection",
+	                                   SDL_WINDOWPOS_UNDEFINED,
+	                                   SDL_WINDOWPOS_UNDEFINED,
+                                           320, 200,
+                                           0);
+
+	if (!current_window)
+	{
+		fprintf(stderr, "[SDL2 video] Unable to create window: %s\n", SDL_GetError());
+		goto error_out;
+	}
+
+	current_renderer = SDL_CreateRenderer (current_window, -1, 0);
+	if (!current_renderer)
+	{
+		fprintf (stderr, "[SD2-video]: Unable to create renderer: %s\n", SDL_GetError());
+		goto error_out;
+	}
+
+	current_texture = SDL_CreateTexture (current_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 320, 200);
+	if (!current_texture)
+	{
+		fprintf (stderr, "[SDL2-video]: Unable to create texture (will do one more attempt): %s\n", SDL_GetError());
+		SDL_ClearError();
+		current_texture = SDL_CreateTexture (current_renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, 320, 200);
+		if (!current_texture)
+		{
+			fprintf (stderr, "[SDL2-video]: Unable to create texture: %s\n", SDL_GetError());
+			goto error_out;
+		}
+	}
+
+	sdl2_close_window ();
+
+	SDL_EventState (SDL_WINDOWEVENT, SDL_ENABLE);
+	SDL_EventState (SDL_MOUSEBUTTONDOWN, SDL_ENABLE);
+	SDL_EventState (SDL_KEYDOWN, SDL_ENABLE);
+
+	/* Fill some default font and window sizes */
+	plCurrentFontWanted = plCurrentFont = cfGetProfileInt("x11", "font", _8x16, 10);
+	if (plCurrentFont > _FONT_MAX)
+	{
+		plCurrentFont = _8x16;
+	}
+	last_text_width  = plScrLineBytes = 640;
+	last_text_height = plScrLines     = 480;
+	plScrType = plScrMode = 8;
+
+	need_quit = 1;
+
+	_plSetTextMode=plSetTextMode;
+	_plSetGraphMode=__plSetGraphMode;
+	_gdrawstr=generic_gdrawstr;
+	_gdrawchar8=generic_gdrawchar8;
+	_gdrawchar8p=generic_gdrawchar8p;
+	_gdrawchar8t=generic_gdrawchar8t;
+	_gdrawcharp=generic_gdrawcharp;
+	_gdrawchar=generic_gdrawchar;
+	_gupdatestr=generic_gupdatestr;
+	_gupdatepal=sdl2_gupdatepal;
+	_gflushpal=sdl2_gflushpal;
+	_vga13=__vga13;
+
+	_displayvoid=swtext_displayvoid;
+	_displaystrattr=swtext_displaystrattr_cp437;
+	_displaystr=swtext_displaystr_cp437;
+	_displaystrattr_iso8859latin1=swtext_displaystrattr_iso8859latin1;
+	_displaystr_iso8859latin1=swtext_displaystr_iso8859latin1;
+	_displaystr_utf8=swtext_displaystr_utf8;
+
+	_drawbar=swtext_drawbar;
+	_idrawbar=swtext_idrawbar;
+
+	_setcur=swtext_setcur;
+	_setcurshape=swtext_setcurshape;
+	_conRestore=conRestore;
+	_conSave=conSave;
+
+	_plGetDisplayTextModeName = plGetDisplayTextModeName;
+	_plDisplaySetupTextMode = plDisplaySetupTextMode;
+
+	plScrTextGUIOverlay        = 1;
+	plScrTextGUIOverlayAddBGRA = SDL2ScrTextGUIOverlayAddBGRA;
+	plScrTextGUIOverlayRemove  = SDL2ScrTextGUIOverlayRemove;
+
+	plVidType=vidModern;
+
+	return 0;
+error_out:
+	SDL_ClearError();
+	sdl2_close_window ();
+	fontengine_done ();
+	SDL_Quit();
+	return 1;
+}
+
+void sdl2_done(void)
+{
+	sdl2_close_window ();
+
+	if (!need_quit)
+		return;
+
+	fontengine_done ();
+
+	SDL_Quit();
+
+	if (virtual_framebuffer)
+	{
+		free (virtual_framebuffer);
+		plVidMem = virtual_framebuffer = 0;
+	}
+
+	need_quit = 0;
+
+	free (SDL2ScrTextGUIOverlays);
+	SDL2ScrTextGUIOverlays = 0;
+	SDL2ScrTextGUIOverlays_size = 0;
+	SDL2ScrTextGUIOverlays_count = 0;
 }

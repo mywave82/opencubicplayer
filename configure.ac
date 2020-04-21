@@ -335,6 +335,10 @@ AC_LANG_POP
 
 AC_SUBST(MAD_CFLAGS)
 AC_SUBST(MAD_LIBS)
+AC_SUBST(LIBJPEG_CFLAGS)
+AC_SUBST(LIBJPEG_LIBS)
+AC_SUBST(LIBPNG_CFLAGS)
+AC_SUBST(LIBPNG_LIBS)
 if test "x$with_mad" != "xno"; then
 	AC_MSG_CHECKING([mad support])
 	MAD_LIBS=`pkg-config --libs mad 2> /dev/null`
@@ -355,6 +359,29 @@ if test "x$with_mad" != "xno"; then
 		fi
 	fi
 fi
+if test "x$with_mad" != "xno"; then
+	AC_MSG_CHECKING([libjpeg / libjpeg-turbo support])
+	LIBJPEG_LIBS=`pkg-config --libs libjpeg 2> /dev/null`
+	LIBJPEG_CFLAGS=`pkg-config --cflags libjpeg 2> /dev/null`
+	if test "$?" = 0; then
+		AC_MSG_RESULT("$LIBJPEG_CFLAGS $LIBJPEG_LIBS")
+	else
+		AC_MSG_RESULT([pkg-config failed, mad support will be disabled]);
+		with_mad=no
+	fi
+fi
+if test "x$with_mad" != "xno"; then
+	AC_MSG_CHECKING([libpng support])
+	LIBPNG_LIBS=`pkg-config --libs libpng 2> /dev/null`
+	LIBPNG_CFLAGS=`pkg-config --cflags libpng 2> /dev/null`
+	if test "$?" = 0; then
+		AC_MSG_RESULT("$LIBPNG_CFLAGS $LIBPNG_LIBS")
+	else
+		AC_MSG_RESULT([pkg-config failed, mad support will be disabled]);
+		with_mad=no
+	fi
+fi
+
 AC_SUBST(HAVE_MAD)
 if test "x$with_mad" = "xno"; then
 	HAVE_MAD=0

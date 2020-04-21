@@ -44,7 +44,7 @@ uint16_t x11_palette15[256];
 Display *mDisplay = NULL;
 int mLocalDisplay=0;
 int mScreen;
-int plDepth=8;
+int x11_depth=8;
 
 void x11_gupdatepal(unsigned char color, unsigned char _red, unsigned char _green, unsigned char _blue)
 {
@@ -56,7 +56,7 @@ void x11_gupdatepal(unsigned char color, unsigned char _red, unsigned char _gree
 void x11_gflushpal(void)
 {
 	int i, r, g, b;
-	if (plDepth==8)
+	if (x11_depth==8)
 	{
 		Colormap cmap=0;
 
