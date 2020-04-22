@@ -377,10 +377,12 @@ static void id3_feed (const uint8_t *data, uint32_t len)
 {
 	if (id3_tag_target)
 	{
+		debug_printf ("[MPx] id3_tag_target=%d id3_tag_position=%d len=%d\n", id3_tag_target, id3_tag_position, len);
 		if (len > (id3_tag_target - id3_tag_position))
 		{
 			len = id3_tag_target - id3_tag_position;
 		}
+		debug_printf ("[MPx]   memcpy len=%d\n", len);
 		memcpy (id3_tag_buffer + id3_tag_position, data, len);
 		id3_tag_position += len;
 		if (id3_tag_position == id3_tag_target)
@@ -495,7 +497,7 @@ static int stream_for_frame(void)
 			unsigned long skiplen = stream.skiplen;
 			if (skiplen > (stream.bufend - stream.buffer))
 			{
-				skiplen = stream.buffer - stream.bufend;
+				skiplen = stream.bufend - stream.buffer;
 			}
 			id3_feed (stream.buffer, skiplen);
 			stream.skiplen -= skiplen;
