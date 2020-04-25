@@ -102,7 +102,7 @@ static void plDrawFFT(char sel)
 		bits=7;
 	else if (plAnalWidth<=136)
 		bits=8;
-	else if (plAnalWidth<=304)
+	else if (plAnalWidth<=264)
 		bits=9;
 	else if (plAnalWidth<=520)
 		bits=10;
