@@ -883,7 +883,7 @@ static void SDLScrTextGUIOverlayRemove(void *handle)
 		if (SDLScrTextGUIOverlays[i] == handle)
 		{
 			SDL_FreeSurface(SDLScrTextGUIOverlays[i]->surface);
-			memmove (SDLScrTextGUIOverlays + i, SDLScrTextGUIOverlays + i + 1, sizeof (SDLScrTextGUIOverlays[0]) * SDLScrTextGUIOverlays_count - i - 1);
+			memmove (SDLScrTextGUIOverlays + i, SDLScrTextGUIOverlays + i + 1, sizeof (SDLScrTextGUIOverlays[0]) * (SDLScrTextGUIOverlays_count - i - 1));
 			SDLScrTextGUIOverlays_count--;
 			return;
 		}

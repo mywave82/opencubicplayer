@@ -1036,7 +1036,7 @@ static void SDL2ScrTextGUIOverlayRemove(void *handle)
 	{
 		if (SDL2ScrTextGUIOverlays[i] == handle)
 		{
-			memmove (SDL2ScrTextGUIOverlays + i, SDL2ScrTextGUIOverlays + i + 1, sizeof (SDL2ScrTextGUIOverlays[0]) * SDL2ScrTextGUIOverlays_count - i - 1);
+			memmove (SDL2ScrTextGUIOverlays + i, SDL2ScrTextGUIOverlays + i + 1, sizeof (SDL2ScrTextGUIOverlays[0]) * (SDL2ScrTextGUIOverlays_count - i - 1));
 			SDL2ScrTextGUIOverlays_count--;
 			return;
 		}
