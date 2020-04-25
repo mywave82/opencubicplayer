@@ -19,12 +19,12 @@ struct ID3_pic_t
 	int is_png;
 	int size;
 	uint8_t *data;
-	uint16_t width, height;
-	uint8_t *data_bgra;
 };
 
 struct ID3_t
 {
+	int serial;
+
 	uint8_t *TIT1; /* Content Group */
 	uint8_t *TIT2; /* Track Title   */
 	uint8_t *TIT3; /* Subtitle      */
@@ -44,10 +44,12 @@ struct ID3_t
 	uint8_t *TIME; // TIME HHMM (recording)
 	uint8_t *COMM; /* Comment       */
 	// TODO APIC
-	struct ID3_pic_t APIC[0x14];
+	struct ID3_pic_t APIC[0x15];
 	// TODO tag_is_an_update
 	int tag_is_an_update;
 };
+
+extern const char *ID3_APIC_Titles[0x15]; 
 
 /* length should be 128 bytes
  * source can point to single ID3v1.0 or ID3v1.1 block
@@ -76,7 +78,7 @@ int finalize_ID3v1(struct ID3_t *destination, struct ID3v1data_t *data);
  *
  * returns non-zero if invalid
  */
-int parse_ID3v2x(struct ID3_t *destination, unsigned char *source, uint32_t length, int decompress_pictures);
+int parse_ID3v2x(struct ID3_t *destination, unsigned char *source, uint32_t length);
 
 /* calls free() on all members, and sets them back to zero */
 void ID3_clear(struct ID3_t *destination);

@@ -156,7 +156,7 @@ static int parseid3v2(struct moduleinfostruct *m, uint8_t *tag, uint32_t len)
 {
 	struct ID3_t dest = {0};
 
-	if (parse_ID3v2x (&dest, tag, len, 0) < 0) return -1;
+	if (parse_ID3v2x (&dest, tag, len) < 0) return -1;
 
 	apply_ID3(m, &dest);
 

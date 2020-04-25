@@ -35,13 +35,13 @@ static void jpegErrorExit (j_common_ptr cinfo)
 	longjmp(myerr->setjmp_buffer, 1);
 }
 
-int __attribute__ ((visibility ("internal"))) try_open_jpeg (struct ID3_pic_t *dst, const uint8_t *src, uint_fast32_t srclen)
+int __attribute__ ((visibility ("internal"))) try_open_jpeg (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const uint8_t *src, uint_fast32_t srclen)
 {
         struct jpeg_decompress_struct cinfo;
         struct jpeg_error_mgr_ocp jerr;
 
-	dst->data_bgra = 0;
-	dst->width = dst->height = 0;
+	*data_bgra = 0;
+	*width = *height = 0;
 
         cinfo.err = jpeg_std_error(&jerr.parent);
 	cinfo.err->error_exit = jpegErrorExit;
@@ -51,9 +51,9 @@ int __attribute__ ((visibility ("internal"))) try_open_jpeg (struct ID3_pic_t *d
 	{
 		fprintf (stderr, "[MPx] libjpeg fatal error: %s\n", jpegLastErrorMsg);
 		jpeg_destroy_decompress(&cinfo);
-		free (dst->data_bgra);
-		dst->data_bgra = 0;
-		dst->width = dst->height = 0;
+		free (*data_bgra);
+		*data_bgra = 0;
+		*width = *height = 0;
 		return -1;
 	}
 
@@ -75,20 +75,20 @@ int __attribute__ ((visibility ("internal"))) try_open_jpeg (struct ID3_pic_t *d
 
 	cinfo.out_color_space = JCS_EXT_BGRA;
 	cinfo.dct_method = JDCT_ISLOW;
-	dst->data_bgra = malloc (cinfo.image_width * cinfo.image_height * 4);
+	*data_bgra = malloc (cinfo.image_width * cinfo.image_height * 4);
 
-	if (jpeg_start_decompress (&cinfo))
+	if (!jpeg_start_decompress (&cinfo))
 	{
 		snprintf (jpegLastErrorMsg, sizeof (jpegLastErrorMsg), "jpeg_start_decompress() failed");
 		longjmp (jerr.setjmp_buffer, 1);
 	}
 
-	dst->width = cinfo.image_width;
-	dst->height = cinfo.image_height;
+	*width = cinfo.image_width;
+	*height = cinfo.image_height;
 
 	while (cinfo.output_scanline < cinfo.output_height)
 	{
-		JSAMPROW rows[1] = {dst->data_bgra + (cinfo.output_scanline << 2) * cinfo.image_width};
+		JSAMPROW rows[1] = {*data_bgra + (cinfo.output_scanline << 2) * cinfo.image_width};
 		jpeg_read_scanlines(&cinfo, rows, 1);
 	}
 

@@ -33,7 +33,7 @@ static void png_read_ocp(png_structp png_ptr, png_bytep data, png_size_t length)
 	io->pos += length;
 }
 
-int __attribute__ ((visibility ("internal"))) try_open_png (struct ID3_pic_t *dst, uint8_t *src, uint_fast32_t srclen)
+int __attribute__ ((visibility ("internal"))) try_open_png (uint16_t *width, uint16_t *height, uint8_t **data_bgra, uint8_t *src, uint_fast32_t srclen)
 {
 	png_structp png_ptr      = 0;
 	png_infop   info_ptr     = 0;
@@ -41,8 +41,8 @@ int __attribute__ ((visibility ("internal"))) try_open_png (struct ID3_pic_t *ds
 	struct png_virt_io io    = {src, srclen, 0};
 	png_bytep  *row_pointers = 0;
 
-	dst->data_bgra = 0;
-	dst->width = dst->height = 0;
+	*data_bgra = 0;
+	*width = *height = 0;
 
 	if (srclen < 8)
 	{
@@ -86,8 +86,8 @@ int __attribute__ ((visibility ("internal"))) try_open_png (struct ID3_pic_t *ds
 		debug_printf ("[MPx] loading PNG, fatal error\n");
 		png_destroy_read_struct (&png_ptr, &info_ptr, &end_info);
 		free (row_pointers);
-		free (dst->data_bgra); dst->data_bgra = 0;
-		dst->width = dst->height = 0;
+		free (*data_bgra); *data_bgra = 0;
+		*width = *height = 0;
 		return -1;
 	}
 
@@ -99,16 +99,16 @@ int __attribute__ ((visibility ("internal"))) try_open_png (struct ID3_pic_t *ds
 	png_read_info (png_ptr, info_ptr);
 
 	{
-		png_uint_32 width, height;
+		png_uint_32 w, h;
 		int bit_depth, color_type, interlace_type, compression_type, filter_method;
 		int i;
 		int number_of_passes = 1;
 
-		png_get_IHDR(png_ptr, info_ptr, &width, &height,
+		png_get_IHDR(png_ptr, info_ptr, &w, &h,
 		             &bit_depth, &color_type, &interlace_type,
 		             &compression_type, &filter_method);
 
-		debug_printf ("[MPx] png_get_IHDR: width=%"PRIu32" height=%"PRIu32" bit_depth=%d color_type=0x%x, interlace_type=0x%x, compression_type=0x%x filter_method=0x%x\n", width, height, bit_depth, color_type, interlace_type, compression_type, filter_method);
+		debug_printf ("[MPx] png_get_IHDR: width=%"PRIu32" height=%"PRIu32" bit_depth=%d color_type=0x%x, interlace_type=0x%x, compression_type=0x%x filter_method=0x%x\n", w, h, bit_depth, color_type, interlace_type, compression_type, filter_method);
 
 		switch (color_type)
 		{
@@ -163,15 +163,15 @@ int __attribute__ ((visibility ("internal"))) try_open_png (struct ID3_pic_t *ds
 
 		png_read_update_info(png_ptr, info_ptr);
 
-		dst->width = width;
-		dst->height = height;
+		*width = w;
+		*height = h;
 
-		dst->data_bgra = malloc (width * height * 4);
+		*data_bgra = malloc (w * h * 4);
 
-		row_pointers = malloc (height * sizeof (row_pointers[0]));
-		for (i = 0; i < height; i++)
+		row_pointers = malloc (h * sizeof (row_pointers[0]));
+		for (i = 0; i < h; i++)
 		{
-			row_pointers[i] = dst->data_bgra + width * i * 4;
+			row_pointers[i] = *data_bgra + w * i * 4;
 		}
 		for (i=0; i < number_of_passes; i++)
 		{

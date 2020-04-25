@@ -3,6 +3,6 @@
 
 struct ID3_pic_t;
 
-int __attribute__ ((visibility ("internal"))) try_open_jpeg (struct ID3_pic_t *dst, const uint8_t *src, uint_fast32_t srclen);
+int __attribute__ ((visibility ("internal"))) try_open_jpeg (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const uint8_t *src, uint_fast32_t srclen);
 
 #endif

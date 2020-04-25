@@ -2,7 +2,7 @@ TOPDIR=./
 include $(TOPDIR)Rules.make
 
 ifeq ($(HAVE_MAD),1)
-	FSTYPES_SO_MAD=playmp2/mpptype.o playmp2/id3.o playmp2/id3jpeg.o playmp2/id3png.o
+	FSTYPES_SO_MAD=playmp2/mpptype.o playmp2/id3.o
 	FSTYPES_SO_LIBS=$(LIBJPEG_LIBS) $(LIBPNG_LIBS)
 else
 	FSTYPES_SO_MAD=

@@ -83,8 +83,6 @@ extern void make_title(char *part);
 
 extern int plScrTextGUIOverlay;         /* Is text rendered virtually into a framebuffer, AND supports overlays? */
 
-#ifdef _CONSOLE_DRIVER
-
 typedef enum {
 	_4x4 = 0,
 	_8x8 = 1,
@@ -98,8 +96,9 @@ struct FontSizeInfo_t
 };
 extern const struct FontSizeInfo_t FontSizeInfo[_FONT_MAX+1];
 
-
 extern FontSizeEnum plCurrentFont; /* Only drivers can change this, and their helper functions can use it */
+
+#ifdef _CONSOLE_DRIVER
 
 extern unsigned char plpalette[256];
 

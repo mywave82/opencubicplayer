@@ -7,7 +7,7 @@ else
 	DUMPID3=
 endif
 
-all: mpptype.o id3.o id3jpeg.o id3png.o playmp2$(LIB_SUFFIX) $(DUMPID3)
+all: mpptype.o id3.o playmp2$(LIB_SUFFIX) $(DUMPID3)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
@@ -33,12 +33,21 @@ cpiid3info.o: cpiid3info.c \
 	mpplay.h
 	$(CC) $< -o $@ -c
 
+cpiid3pic.o: cpiid3pic.c \
+	../config.h \
+	../types.h \
+	../cpiface/cpiface.h \
+	../stuff/poutput.h \
+	id3.h \
+	id3jpeg.h \
+	id3png.h \
+	mpplay.h
+	$(CC) $< -o $@ -c
+
 id3.o: id3.c \
 	../config.h \
 	../types.h \
-	id3.h \
-	id3jpeg.h \
-	id3png.h
+	id3.h
 	$(CC) $< -o $@ -c
 
 id3jpeg.o: id3jpeg.c \
@@ -70,9 +79,9 @@ mpptype.o: mpptype.c \
 	../filesel/mdb.h
 	$(CC) mpptype.c -o $@ -c
 
-playmp2_so=cpiid3info.o mppplay.o mpplay.o
+playmp2_so=cpiid3info.o cpiid3pic.o id3jpeg.o id3png.o mppplay.o mpplay.o
 playmp2$(LIB_SUFFIX): $(playmp2_so)
-	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(MAD_LIBS) $(MATH_LIBS)
+	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(MAD_LIBS) $(MATH_LIBS) $(LIBJPEG_LIBS) $(LIBPNG_LIBS)
 
 mppplay.o: mppplay.c \
 	../config.h \

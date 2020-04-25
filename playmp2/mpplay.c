@@ -337,7 +337,7 @@ static void got_id3v2(uint8_t *buffer, uint32_t length)
 
 	debug_printf ("[MPx] Trying to parse ID3v2.x\n");
 
-	if (parse_ID3v2x (&ID3, buffer, length, 1)) return;
+	if (parse_ID3v2x (&ID3, buffer, length)) return;
 
 	debug_printf ("[MPx] Parsing sucessfull\n");
 
@@ -375,6 +375,7 @@ static void id3_feed_null (void)
 
 static void id3_feed (const uint8_t *data, uint32_t len)
 {
+	debug_printf ("[MPx] id3_feed id3_tag_target=%"PRId32" len=%"PRId32"\n", id3_tag_target, len);
 	if (id3_tag_target)
 	{
 		debug_printf ("[MPx] id3_tag_target=%d id3_tag_position=%d len=%d\n", id3_tag_target, id3_tag_position, len);
@@ -495,12 +496,17 @@ static int stream_for_frame(void)
 		if (stream.skiplen)
 		{
 			unsigned long skiplen = stream.skiplen;
-			if (skiplen > (stream.bufend - stream.buffer))
+			if (skiplen > (stream.bufend - stream.this_frame))
 			{
-				skiplen = stream.bufend - stream.buffer;
+				skiplen = stream.bufend - stream.this_frame;
 			}
 			id3_feed (stream.buffer, skiplen);
-			stream.skiplen -= skiplen;
+			stream.skiplen    -= skiplen;
+			stream.buffer     += skiplen;
+			stream.this_frame += skiplen;
+			stream.next_frame = stream.this_frame;
+			stream.error       = MAD_ERROR_BUFLEN;
+			continue;
 		}
 
 		/* decode data */
