@@ -36,7 +36,8 @@ flacptype.o: flacptype.c \
 	../types.h \
 	../boot/plinkman.h \
 	../filesel/mdb.h \
-	../filesel/pfilesel.h
+	../filesel/pfilesel.h \
+	../stuff/cp437.h
 	$(CC) flacptype.c -o $@ -c
 
 playflac_so=flacpplay.o flacplay.o
