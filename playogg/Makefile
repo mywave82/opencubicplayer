@@ -19,7 +19,8 @@ playogg$(LIB_SUFFIX): $(playogg_so)
 oggtype.o: oggtype.c \
 	../config.h \
 	../types.h \
-	../filesel/mdb.h
+	../filesel/mdb.h \
+	../stuff/cp437.h
 	$(CC) oggtype.c -o $@ -c
 
 oggplay.o: oggplay.c \

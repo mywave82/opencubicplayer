@@ -23,32 +23,33 @@
  */
 
 
-
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
 #include "filesel/mdb.h"
+#include "stuff/cp437.h"
 
-/* try to ignore utf8-characters... */
-static char *_strncpy(char *dest, const char *src, size_t n)
+void _utf8_to_cp437 (const char *src, size_t srclen, char *dst, size_t dstlen)
 {
-	while (n)
+	if (dst[0])
 	{
-		if (*src&0x80)
+		while ((*dst) && dstlen)
 		{
-			src++;
-			continue;
+			dst++;
+			dstlen--;
 		}
-		*dest=*src;
-		n--;
-		if (!*src)
-			break;
-		src++;
-		dest++;
+		if (dstlen > 3)
+		{
+			*(dst++) = ' '; dstlen--;
+			*(dst++) = '-'; dstlen--;
+			*(dst++) = ' '; dstlen--;
+		} else {
+			return;
+		}
 	}
-	return dest;
+	utf8_to_cp437 (src, srclen, dst, dstlen);
 }
 
 static int oggReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
@@ -59,6 +60,10 @@ static int oggReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 	const char *ptr;
 	unsigned int i;
 	char const *bufend=buf+len;
+	int gottitle = 0;
+	int gotartist = 0;
+	int gotcomment = 0;
+	int gotgenre = 0;
 
 	if (len<35)
 		return 0;
@@ -97,28 +102,40 @@ static int oggReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 		if ((ptr+4+length)>bufend)
 			return 1;
 		ptr+=sizeof(uint32_t);
-		if(!strncasecmp(ptr, "title=", 6))
+		if ((length >= 6) && (!strncasecmp(ptr, "title=", 6)))
 		{
-			unsigned int len=length-6;
-			if (len>(sizeof(m->modname)-1))
-				len=sizeof(m->modname)-1;
-			_strncpy(m->modname, ptr+6, len);
-			m->modname[len]=0;
-		} else if(!strncasecmp(ptr, "artist=", 7))
+			if (!gottitle)
+			{
+				m->modname[0] = 0;
+			}
+			_utf8_to_cp437 (ptr+6, length-6, m->modname, sizeof (m->modname));
+			gottitle = 1;
+		} else if ((length >= 7) && (!strncasecmp(ptr, "artist=", 7)))
 		{
-			unsigned int len=length-7;
-			if (len>(sizeof(m->composer)-1))
-				len=sizeof(m->composer)-1;
-			_strncpy(m->composer, ptr+7, len);
-			m->composer[len]=0;
-		} else if(!strncasecmp(ptr, "album=", 6))
+			if (!gotartist)
+			{
+				m->composer[0] = 0;
+			}
+			_utf8_to_cp437 (ptr+7, length-7, m->composer, sizeof (m->composer));
+			gotartist = 1;
+		} else if ((length >= 6) && (!strncasecmp(ptr, "album=", 6)))
 		{
-			unsigned int len=length-6;
-			if (len>(sizeof(m->comment)-1))
-				len=sizeof(m->comment)-1;
-			_strncpy(m->comment, ptr+6, len);
-			m->comment[len]=0;
+			if (!gotcomment)
+			{
+				m->comment[0] = 0;
+			}
+			_utf8_to_cp437 (ptr+6, length-6, m->comment, sizeof (m->comment));
+			gotcomment = 1;
+		} else if ((length >= 6) &&(!strncasecmp(ptr, "genre=", 6)))
+		{
+			if (!gotgenre)
+			{
+				m->style[0] = 0;
+			}
+			_utf8_to_cp437 (ptr+6, length-6, m->style, sizeof (m->style));
+			gotgenre=1;
 		}
+
 		ptr+=length;
 	}
 	return 1;
