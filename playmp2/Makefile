@@ -74,6 +74,7 @@ mpptype.o: mpptype.c \
 	../config.h \
 	../types.h \
 	id3.h \
+	../stuff/cp437.h \
 	../stuff/imsrtns.h \
 	../stuff/utf-8.h \
 	../filesel/mdb.h

@@ -29,65 +29,18 @@
 #include "config.h"
 #include <ctype.h>
 #include <errno.h>
-#include <iconv.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include "types.h"
 #include "stuff/imsrtns.h"
+#include "stuff/cp437.h"
 #include "stuff/utf-8.h"
 #include "filesel/mdb.h"
 #include "id3.h"
 
 #define VBRFRAMES      15
-
-static iconv_t mpptype_fromutf8 = (iconv_t)(-1);
-
-/* target is not zero-terminated if full */
-static void utf8_to_cp437(char *src, char *target, size_t targetlen)
-{
-	size_t srclen = strlen (src);
-
-	while ((*target) && targetlen)
-	{
-		target++;
-		targetlen--;
-	}
-
-	if (mpptype_fromutf8 != (iconv_t)(-1))
-	{
-		while (*src && targetlen)
-		{
-			size_t res;
-
-			res = iconv(mpptype_fromutf8, &src, &srclen, &target, &targetlen);
-
-			if (res==(size_t)(-1))
-			{
-				if (errno==E2BIG) /* targetbuffer is full */
-					break;
-				if (errno==EILSEQ)
-				{
-					/* invalid input character, or we have a character that can't be translated, so skip it */
-					int length = 0;
-					utf8_decode (src, srclen, &length);
-					src += length;
-					srclen -= length;
-					*target = '?';
-					targetlen--;
-					continue;
-				}
-				break;
-			}
-		}
-	}
-	if (targetlen)
-	{
-		*target = 0;
-	}
-	iconv (mpptype_fromutf8, 0, 0, 0, 0);
-}
 
 static void apply_ID3(struct moduleinfostruct *m, struct ID3_t *dest)
 {
@@ -96,9 +49,9 @@ static void apply_ID3(struct moduleinfostruct *m, struct ID3_t *dest)
 	m->comment[0] = 0;
 	m->date = 0;
 
-	if (dest->TIT2) utf8_to_cp437((char *)dest->TIT2, m->modname, sizeof (m->modname));
-	if (dest->TPE1) utf8_to_cp437((char *)dest->TPE1, m->composer, sizeof (m->composer));
-	if (dest->TALB) utf8_to_cp437((char *)dest->TALB, m->comment, sizeof (m->comment));
+	if (dest->TIT2) utf8_to_cp437((char *)dest->TIT2, strlen ((char *)dest->TIT2), m->modname, sizeof (m->modname));
+	if (dest->TPE1) utf8_to_cp437((char *)dest->TPE1, strlen ((char *)dest->TPE1), m->composer, sizeof (m->composer));
+	if (dest->TALB) utf8_to_cp437((char *)dest->TALB, strlen ((char *)dest->TALB), m->comment, sizeof (m->comment));
 	if (dest->COMM)
 	{
 		int len;
@@ -118,7 +71,7 @@ static void apply_ID3(struct moduleinfostruct *m, struct ID3_t *dest)
 				m->comment[len++] = ' ';
 				m->comment[len] = 0;
 			}
-			utf8_to_cp437((char *)dest->COMM, m->comment, sizeof (m->comment));
+			utf8_to_cp437((char *)dest->COMM, strlen ((char *)dest->COMM), m->comment, sizeof (m->comment));
 		}
 	}
 	if (dest->TYER) m->date=atoi((char *)dest->TYER) << 16;
@@ -939,27 +892,4 @@ outofframes:
 	return 0;
 }
 
-void  __attribute__((constructor)) id3_charset_init(void)
-{
-	mpptype_fromutf8 = iconv_open(OCP_FONT "//TRANSLIT", "UTF-8");
-	if (mpptype_fromutf8==(iconv_t)(-1))
-	{
-		fprintf(stderr, "iconv_open(%s, \"UTF-8\") failed: %s - retrying %s\n", OCP_FONT "//TRANSLIT", strerror(errno), OCP_FONT);
-
-		mpptype_fromutf8 = iconv_open(OCP_FONT, "UTF-8");
-		if (mpptype_fromutf8==(iconv_t)(-1))
-		{
-			fprintf(stderr, "iconv_open(%s, \"UTF-8\") failed: %s\n", OCP_FONT, strerror(errno));
-		}
-	}
-}
-
-void  __attribute__((destructor)) id3v2_charset_done(void)
-{
-	if (mpptype_fromutf8 != (iconv_t)(-1))
-	{
-		iconv_close(mpptype_fromutf8);
-		mpptype_fromutf8 = (iconv_t)(-1);
-	}
-}
 struct mdbreadinforegstruct ampegpReadInfoReg = {ampegpReadMemInfo, ampegpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

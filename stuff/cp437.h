@@ -9,5 +9,7 @@
 extern const uint32_t ocp_cp437_to_unicode[256];
 extern const uint16_t cp437_to_unicode[256];
 
+/* destination is not zero-terminated if full */
+void utf8_to_cp437(const char *src, size_t srclen, char *dst, size_t dstlen);
 
 #endif

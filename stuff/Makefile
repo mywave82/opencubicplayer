@@ -68,7 +68,8 @@ endif
 
 cp437.o: cp437.c cp437.h \
 	../config.h \
-	../types.h
+	../types.h \
+	utf-8.h
 	$(CC) $< -o $@ -c
 
 poutput.o: poutput.h poutput.c \

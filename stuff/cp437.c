@@ -1,6 +1,13 @@
 #include "config.h"
+#include <errno.h>
+#include <iconv.h>
+#include <stdio.h>
+#include <string.h>
 #include "types.h"
-#include "stuff/cp437.h"
+#include "cp437.h"
+#include "utf-8.h"
+
+static iconv_t to_cp437_from_utf8 = (iconv_t)(-1);
 
 /* table to convert codepage 437 into Unicode (UTF-8) */
 const uint32_t ocp_cp437_to_unicode[256] =
@@ -48,4 +55,64 @@ const uint16_t cp437_to_unicode[256] =
 	0x03b1, 0x00df, 0x0393, 0x03c0, 0x03a3, 0x03c3, 0x00b5, 0x03c4, 0x03a6, 0x0398, 0x03a9, 0x03b4, 0x221e, 0x03c6, 0x03b5, 0x2229, // ex
 	0x2261, 0x00b1, 0x2265, 0x2264, 0x2320, 0x2321, 0x00f7, 0x2248, 0x00b0, 0x2219, 0x00b7, 0x221a, 0x207f, 0x00b2, 0x25a0, 0x00a0  // fx
 };
+
+void utf8_to_cp437(const char *src, size_t srclen, char *dst, size_t dstlen)
+{
+	if (to_cp437_from_utf8 != (iconv_t)(-1))
+	{
+		while (*src && srclen && dstlen)
+		{
+			size_t res;
+
+			res = iconv(to_cp437_from_utf8, (char **)&src, &srclen, &dst, &dstlen);
+
+			if (res==(size_t)(-1))
+			{
+				if (errno==E2BIG) /* dstbuffer is full */
+					break;
+				if (errno==EILSEQ)
+				{
+					/* invalid input character, or we have a character that can't be translated, so skip it */
+					int length = 0;
+					utf8_decode (src, srclen, &length);
+					src += length;
+					srclen -= length;
+					*dst = '?';
+					dstlen--;
+					continue;
+				}
+				break;
+			}
+		}
+	}
+	if (dstlen)
+	{
+		*dst = 0;
+	}
+	iconv (to_cp437_from_utf8, 0, 0, 0, 0);
+}
+
+void  __attribute__((constructor)) cp437_charset_init(void)
+{
+	to_cp437_from_utf8 = iconv_open(OCP_FONT "//TRANSLIT", "UTF-8");
+	if (to_cp437_from_utf8==(iconv_t)(-1))
+	{
+		fprintf(stderr, "iconv_open(%s, \"UTF-8\") failed: %s - retrying %s\n", OCP_FONT "//TRANSLIT", strerror(errno), OCP_FONT);
+
+		to_cp437_from_utf8 = iconv_open(OCP_FONT, "UTF-8");
+		if (to_cp437_from_utf8==(iconv_t)(-1))
+		{
+			fprintf(stderr, "iconv_open(%s, \"UTF-8\") failed: %s\n", OCP_FONT, strerror(errno));
+		}
+	}
+}
+
+void  __attribute__((destructor)) cp437_charset_done(void)
+{
+	if (to_cp437_from_utf8 != (iconv_t)(-1))
+	{
+		iconv_close(to_cp437_from_utf8);
+		to_cp437_from_utf8 = (iconv_t)(-1);
+	}
+}
 
