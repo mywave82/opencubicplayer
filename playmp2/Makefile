@@ -37,10 +37,10 @@ cpiid3pic.o: cpiid3pic.c \
 	../config.h \
 	../types.h \
 	../cpiface/cpiface.h \
+	../cpiface/jpeg.h \
+	../cpiface/png.h \
 	../stuff/poutput.h \
 	id3.h \
-	id3jpeg.h \
-	id3png.h \
 	mpplay.h
 	$(CC) $< -o $@ -c
 
@@ -49,26 +49,6 @@ id3.o: id3.c \
 	../types.h \
 	id3.h
 	$(CC) $< -o $@ -c
-
-id3jpeg.o: id3jpeg.c \
-	../config.h \
-	../types.h \
-	../cpiface/cpiface.h \
-	../stuff/poutput.h \
-	id3.h \
-	id3jpeg.h \
-	mpplay.h
-	$(CC) $< -o $@ -c $(LIBJPEG_CFLAGS)
-
-id3png.o: id3png.c \
-	../config.h \
-	../types.h \
-	../cpiface/cpiface.h \
-	../stuff/poutput.h \
-	id3.h \
-	id3png.h \
-	mpplay.h
-	$(CC) $< -o $@ -c $(LIBPNG_CFLAGS)
 
 mpptype.o: mpptype.c \
 	../config.h \
@@ -80,10 +60,9 @@ mpptype.o: mpptype.c \
 	../filesel/mdb.h
 	$(CC) mpptype.c -o $@ -c
 
-playmp2_so=cpiid3info.o cpiid3pic.o id3jpeg.o id3png.o mppplay.o mpplay.o
+playmp2_so=cpiid3info.o cpiid3pic.o mppplay.o mpplay.o
 playmp2$(LIB_SUFFIX): $(playmp2_so)
-	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(MAD_LIBS) $(MATH_LIBS) $(LIBJPEG_LIBS) $(LIBPNG_LIBS)
-
+	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(MAD_LIBS) $(MATH_LIBS)
 mppplay.o: mppplay.c \
 	../config.h \
 	../types.h \

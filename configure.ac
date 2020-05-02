@@ -359,27 +359,23 @@ if test "x$with_mad" != "xno"; then
 		fi
 	fi
 fi
-if test "x$with_mad" != "xno"; then
-	AC_MSG_CHECKING([libjpeg / libjpeg-turbo support])
-	LIBJPEG_LIBS=`pkg-config --libs libjpeg 2> /dev/null`
-	LIBJPEG_CFLAGS=`pkg-config --cflags libjpeg 2> /dev/null`
-	if test "$?" = 0; then
-		AC_MSG_RESULT("$LIBJPEG_CFLAGS $LIBJPEG_LIBS")
-	else
-		AC_MSG_RESULT([pkg-config failed, mad support will be disabled]);
-		with_mad=no
-	fi
+
+AC_MSG_CHECKING([libjpeg / libjpeg-turbo support])
+LIBJPEG_LIBS=`pkg-config --libs libjpeg 2> /dev/null`
+LIBJPEG_CFLAGS=`pkg-config --cflags libjpeg 2> /dev/null`
+if test "$?" = 0; then
+	AC_MSG_RESULT("$LIBJPEG_CFLAGS $LIBJPEG_LIBS")
+else
+	AC_MSG_ERROR([pkg-config failed]);
 fi
-if test "x$with_mad" != "xno"; then
-	AC_MSG_CHECKING([libpng support])
-	LIBPNG_LIBS=`pkg-config --libs libpng 2> /dev/null`
-	LIBPNG_CFLAGS=`pkg-config --cflags libpng 2> /dev/null`
-	if test "$?" = 0; then
-		AC_MSG_RESULT("$LIBPNG_CFLAGS $LIBPNG_LIBS")
-	else
-		AC_MSG_RESULT([pkg-config failed, mad support will be disabled]);
-		with_mad=no
-	fi
+
+AC_MSG_CHECKING([libpng support])
+LIBPNG_LIBS=`pkg-config --libs libpng 2> /dev/null`
+LIBPNG_CFLAGS=`pkg-config --cflags libpng 2> /dev/null`
+if test "$?" = 0; then
+	AC_MSG_RESULT("$LIBPNG_CFLAGS $LIBPNG_LIBS")
+else
+	AC_MSG_ERROR([pkg-config failed]);
 fi
 
 AC_SUBST(HAVE_MAD)

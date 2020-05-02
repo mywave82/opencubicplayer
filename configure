@@ -8693,33 +8693,27 @@ fi
 		fi
 	fi
 fi
-if test "x$with_mad" != "xno"; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking libjpeg / libjpeg-turbo support" >&5
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking libjpeg / libjpeg-turbo support" >&5
 $as_echo_n "checking libjpeg / libjpeg-turbo support... " >&6; }
-	LIBJPEG_LIBS=`pkg-config --libs libjpeg 2> /dev/null`
-	LIBJPEG_CFLAGS=`pkg-config --cflags libjpeg 2> /dev/null`
-	if test "$?" = 0; then
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$LIBJPEG_CFLAGS $LIBJPEG_LIBS\"" >&5
+LIBJPEG_LIBS=`pkg-config --libs libjpeg 2> /dev/null`
+LIBJPEG_CFLAGS=`pkg-config --cflags libjpeg 2> /dev/null`
+if test "$?" = 0; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$LIBJPEG_CFLAGS $LIBJPEG_LIBS\"" >&5
 $as_echo "\"$LIBJPEG_CFLAGS $LIBJPEG_LIBS\"" >&6; }
-	else
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: pkg-config failed, mad support will be disabled" >&5
-$as_echo "pkg-config failed, mad support will be disabled" >&6; };
-		with_mad=no
-	fi
+else
+	as_fn_error $? "pkg-config failed" "$LINENO" 5;
 fi
-if test "x$with_mad" != "xno"; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking libpng support" >&5
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking libpng support" >&5
 $as_echo_n "checking libpng support... " >&6; }
-	LIBPNG_LIBS=`pkg-config --libs libpng 2> /dev/null`
-	LIBPNG_CFLAGS=`pkg-config --cflags libpng 2> /dev/null`
-	if test "$?" = 0; then
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$LIBPNG_CFLAGS $LIBPNG_LIBS\"" >&5
+LIBPNG_LIBS=`pkg-config --libs libpng 2> /dev/null`
+LIBPNG_CFLAGS=`pkg-config --cflags libpng 2> /dev/null`
+if test "$?" = 0; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$LIBPNG_CFLAGS $LIBPNG_LIBS\"" >&5
 $as_echo "\"$LIBPNG_CFLAGS $LIBPNG_LIBS\"" >&6; }
-	else
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: pkg-config failed, mad support will be disabled" >&5
-$as_echo "pkg-config failed, mad support will be disabled" >&6; };
-		with_mad=no
-	fi
+else
+	as_fn_error $? "pkg-config failed" "$LINENO" 5;
 fi
 
 

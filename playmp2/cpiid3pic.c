@@ -24,10 +24,10 @@
 #include "types.h"
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"
+#include "cpiface/jpeg.h"
+#include "cpiface/png.h"
 #include "stuff/poutput.h"
 #include "id3.h"
-#include "id3jpeg.h"
-#include "id3png.h"
 #include "mpplay.h"
 
 static int ID3PicActive;  /* requested mode from the user */

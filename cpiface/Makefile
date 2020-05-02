@@ -5,7 +5,7 @@ ifeq ($(HAVE_LZW),1)
 GIF_O=gif.o
 endif
 
-cpiface_so=fft.o cpianal.o cpichan.o cpidots.o cpiface.o cpigraph.o cpiinst.o cpikube.o cpilinks.o cpimsg.o cpimvol.o cpiphase.o cpipic.o cpiptype.o cpiscope.o cpitext.o cpitrack.o mcpedit.o $(GIF_O) tga.o volctrl.o
+cpiface_so=fft.o cpianal.o cpichan.o cpidots.o cpiface.o cpigraph.o cpiinst.o cpikube.o cpilinks.o cpimsg.o cpimvol.o cpiphase.o cpipic.o cpiptype.o cpiscope.o cpitext.o cpitrack.o jpeg.o mcpedit.o $(GIF_O) png.o tga.o volctrl.o
 
 keyhelp_so=cpikeyhelp.o
 
@@ -16,7 +16,7 @@ all: cpiface$(LIB_SUFFIX) keyhelp$(LIB_SUFFIX)
 endif
 
 cpiface$(LIB_SUFFIX): $(cpiface_so)
-	$(CC) $(SHARED_FLAGS) $(MATH_LIBS) -o $@ $^
+	$(CC) $(SHARED_FLAGS) -o $@ $^ $(LIBJPEG_LIBS) $(LIBPNG_LIBS) $(MATH_LIBS)
 
 keyhelp$(LIB_SUFFIX): $(keyhelp_so)
 	$(CC) $(SHARED_FLAGS) $(MATH_LIBS) -o $@ $^
@@ -190,6 +190,22 @@ gif.o: gif.c \
 	../config.h \
 	../types.h
 	$(CC) gif.c -o $@ -c
+
+jpeg.o: jpeg.c \
+	../config.h \
+	../types.h \
+	../stuff/poutput.h \
+	cpiface.h \
+	jpeg.h
+	$(CC) $< -o $@ -c $(LIBJPEG_CFLAGS)
+
+png.o: png.c \
+	../config.h \
+	../types.h \
+	../stuff/poutput.h \
+	cpiface.h \
+	png.h
+	$(CC) $< -o $@ -c $(LIBPNG_CFLAGS)
 
 tga.o: tga.c \
 	tga.h \

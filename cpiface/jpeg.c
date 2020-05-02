@@ -3,14 +3,13 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include "types.h"
-#include "id3.h"
-#include "id3jpeg.h"
+#include "jpeg.h"
 
 #if BITS_IN_JSAMPLE != 8
 # error BITS_IN_JSAMPLE != 8
 #endif
 
-#ifdef MP_DEBUG
+#ifdef JPEG_DEBUG
 #define debug_printf(...) fprintf (stderr, __VA_ARGS__)
 #else
 #define debug_printf(format,args...) ((void)0)
@@ -35,7 +34,7 @@ static void jpegErrorExit (j_common_ptr cinfo)
 	longjmp(myerr->setjmp_buffer, 1);
 }
 
-int __attribute__ ((visibility ("internal"))) try_open_jpeg (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const uint8_t *src, uint_fast32_t srclen)
+int try_open_jpeg (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const uint8_t *src, uint_fast32_t srclen)
 {
         struct jpeg_decompress_struct cinfo;
         struct jpeg_error_mgr_ocp jerr;
@@ -49,7 +48,7 @@ int __attribute__ ((visibility ("internal"))) try_open_jpeg (uint16_t *width, ui
 
 	if (setjmp(jerr.setjmp_buffer))
 	{
-		fprintf (stderr, "[MPx] libjpeg fatal error: %s\n", jpegLastErrorMsg);
+		fprintf (stderr, "[CPIFACE/JPEG] libjpeg fatal error: %s\n", jpegLastErrorMsg);
 		jpeg_destroy_decompress(&cinfo);
 		free (*data_bgra);
 		*data_bgra = 0;
@@ -64,7 +63,7 @@ int __attribute__ ((visibility ("internal"))) try_open_jpeg (uint16_t *width, ui
 		longjmp (jerr.setjmp_buffer, 1);
 	}
 
-	debug_printf ("[MPx] ID3 jpeg: width=%u height=%u components=%d\n", (unsigned int)cinfo.image_width, (unsigned int)cinfo.image_height, cinfo.num_components);
+	debug_printf ("[CPIFACE/JPEG] width=%u height=%u components=%d\n", (unsigned int)cinfo.image_width, (unsigned int)cinfo.image_height, cinfo.num_components);
 
 	if ((cinfo.image_width > 1920) || (cinfo.image_height > 1080))
 	{

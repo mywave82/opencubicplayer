@@ -4,10 +4,9 @@
 #include <string.h>
 #include <setjmp.h>
 #include "types.h"
-#include "id3.h"
-#include "id3png.h"
+#include "png.h"
 
-#ifdef MP_DEBUG
+#ifdef PNG_DEBUG
 #define debug_printf(...) fprintf (stderr, __VA_ARGS__)
 #else
 #define debug_printf(format,args...) ((void)0)
@@ -26,14 +25,14 @@ static void png_read_ocp(png_structp png_ptr, png_bytep data, png_size_t length)
 
 	if ((io->pos + length) > io->len)
 	{
-		debug_printf("[MPx] png_read_ocp(): ran out of data - EOF\n");
+		debug_printf("[CPIFACE/PNG] png_read_ocp(): ran out of data - EOF\n");
 		longjmp( png_jmpbuf( png_ptr), 1);
 	}
 	memcpy (data, io->src + io->pos, length);
 	io->pos += length;
 }
 
-int __attribute__ ((visibility ("internal"))) try_open_png (uint16_t *width, uint16_t *height, uint8_t **data_bgra, uint8_t *src, uint_fast32_t srclen)
+int try_open_png (uint16_t *width, uint16_t *height, uint8_t **data_bgra, uint8_t *src, uint_fast32_t srclen)
 {
 	png_structp png_ptr      = 0;
 	png_infop   info_ptr     = 0;
@@ -46,12 +45,12 @@ int __attribute__ ((visibility ("internal"))) try_open_png (uint16_t *width, uin
 
 	if (srclen < 8)
 	{
-		debug_printf("[MPx] try_open_png(): srclen < 8, unable to check header\n");
+		debug_printf("[CPIFACE/PNG] try_open_png(): srclen < 8, unable to check header\n");
 		return -1;
 	}
 	if (png_sig_cmp(src, 0, 8))
 	{
-		debug_printf("[MPx] try_open_png(): header is not a valid PNG file\n");
+		debug_printf("[CPIFACE/PNG] try_open_png(): header is not a valid PNG file\n");
 		return -1;
 	}
 
@@ -61,14 +60,14 @@ int __attribute__ ((visibility ("internal"))) try_open_png (uint16_t *width, uin
                                           NULL /*user_warning_fn*/);
 	if (!png_ptr)
 	{
-		debug_printf("[MPx] png_create_read_struct() failed\n");
+		debug_printf("[CPIFACE/PNG] png_create_read_struct() failed\n");
 		return -1;
 	}
 
 	info_ptr = png_create_info_struct (png_ptr);
 	if (!info_ptr)
 	{
-		debug_printf ("[MPx] png_create_info_struct() failed #1\n");
+		debug_printf ("[CPIFACE/PNG] png_create_info_struct() failed #1\n");
 		png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
 		return -1;
 	}
@@ -76,14 +75,14 @@ int __attribute__ ((visibility ("internal"))) try_open_png (uint16_t *width, uin
 	end_info = png_create_info_struct( png_ptr);
 	if (!end_info)
 	{
-		debug_printf ("[MPx] png_create_info_struct() failed #2\n");
+		debug_printf ("[CPIFACE/PNG] png_create_info_struct() failed #2\n");
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
 		return -1;
 	}
 
 	if (setjmp (png_jmpbuf( png_ptr)))
 	{
-		debug_printf ("[MPx] loading PNG, fatal error\n");
+		debug_printf ("[CPIFACE/PNG] loading PNG, fatal error\n");
 		png_destroy_read_struct (&png_ptr, &info_ptr, &end_info);
 		free (row_pointers);
 		free (*data_bgra); *data_bgra = 0;
@@ -108,7 +107,7 @@ int __attribute__ ((visibility ("internal"))) try_open_png (uint16_t *width, uin
 		             &bit_depth, &color_type, &interlace_type,
 		             &compression_type, &filter_method);
 
-		debug_printf ("[MPx] png_get_IHDR: width=%"PRIu32" height=%"PRIu32" bit_depth=%d color_type=0x%x, interlace_type=0x%x, compression_type=0x%x filter_method=0x%x\n", w, h, bit_depth, color_type, interlace_type, compression_type, filter_method);
+		debug_printf ("[CPIFACE/PNG] png_get_IHDR: width=%"PRIu32" height=%"PRIu32" bit_depth=%d color_type=0x%x, interlace_type=0x%x, compression_type=0x%x filter_method=0x%x\n", w, h, bit_depth, color_type, interlace_type, compression_type, filter_method);
 
 		switch (color_type)
 		{
@@ -152,7 +151,7 @@ int __attribute__ ((visibility ("internal"))) try_open_png (uint16_t *width, uin
 				png_set_bgr (png_ptr);
 				break;
 			default:
-				debug_printf ("[MPx] unknown color_type\n");
+				debug_printf ("[CPIFACE/PNG] unknown color_type\n");
 				longjmp( png_jmpbuf( png_ptr), 1);
 		}
 
