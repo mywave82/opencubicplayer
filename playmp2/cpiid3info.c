@@ -29,6 +29,7 @@
 
 static int ID3InfoActive;
 
+static int ID3InfoFirstColumn;
 static int ID3InfoFirstLine;
 static int ID3InfoHeight;
 static int ID3InfoWidth;
@@ -98,8 +99,9 @@ static void Update_ID3infoLastHeightNeed(struct ID3_t *ID3)
 	ID3InfoDesiredHeight = needed;
 }
 
-static void ID3InfoSetWin(int _ignore, int wid, int ypos, int hgt)
+static void ID3InfoSetWin(int xpos, int wid, int ypos, int hgt)
 {
+	ID3InfoFirstColumn=xpos;
 	ID3InfoFirstLine=ypos;
 	ID3InfoHeight=hgt;
 	ID3InfoWidth=wid;
@@ -112,16 +114,39 @@ static int ID3InfoGetWin(struct cpitextmodequerystruct *q)
 	if (!ID3InfoActive)
 		return 0;
 
+	if ((ID3InfoActive==3)&&(plScrWidth<132))
+	{
+		ID3InfoActive=0;
+	}
+
+	if (!ID3InfoActive)
+	{
+		return 0;
+	}
+
 	mpegGetID3(&ID3);
 	Update_ID3infoLastHeightNeed(ID3);
 
+	switch (ID3InfoActive)
+	{
+		case 1:
+			q->xmode=3;
+			break;
+		case 2:
+			q->xmode=1;
+			break;
+		case 3:
+			q->xmode=2;
+			break;
+	}
+
+	q->size=1;
+	q->top=1;
+
 	q->hgtmin=3;
 	q->hgtmax = ID3InfoBiggestHeight;
-	q->xmode=1;
-	q->size=2;
-	q->top=0;
 	q->killprio=64;
-	q->viewprio=160;
+	q->viewprio=110;
 
 	ID3InfoNeedRecalc = 0;
 	return 1;
@@ -141,7 +166,7 @@ static void ID3InfoDraw(int focus)
 		ID3InfoScroll--;
 	}
 
-	displaystr(ID3InfoFirstLine + (line++), 0, focus?COLTITLE1H:COLTITLE1, "MPx ID3 tag view - page up/dn to scroll", ID3InfoWidth);
+	displaystr(ID3InfoFirstLine + (line++), ID3InfoFirstColumn, focus?COLTITLE1H:COLTITLE1, "MPx ID3 tag view - page up/dn to scroll", ID3InfoWidth);
 
 	line -= ID3InfoScroll;
 
@@ -149,19 +174,19 @@ static void ID3InfoDraw(int focus)
 	{
 		if (ID3InfoHeight > 2)
 		{
-			displaystr (ID3InfoFirstLine + line, 0, 0x00, "", ID3InfoWidth);
+			displaystr (ID3InfoFirstLine + line, ID3InfoFirstColumn, 0x00, "", ID3InfoWidth);
 			line++;
 		}
 
-		displaystr (ID3InfoFirstLine + line, 0, 0x07, "     No ID3 information to display", ID3InfoWidth);
+		displaystr (ID3InfoFirstLine + line, ID3InfoFirstColumn, 0x07, "     No ID3 information to display", ID3InfoWidth);
 		line++;
 	} else {
 		if (ID3->TIT1)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line,  0, 0x07, "Content Group: ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, (char *)ID3->TIT1, ID3InfoWidth-15);
+				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Content Group: ", 15);
+				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TIT1, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -170,8 +195,8 @@ static void ID3InfoDraw(int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line,  0, 0x07, "Track Title:   ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, (char *)ID3->TIT2, ID3InfoWidth-15);
+				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Track Title:   ", 15);
+				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TIT2, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -180,8 +205,8 @@ static void ID3InfoDraw(int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line,  0, 0x07, "Subtitle:      ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, (char *)ID3->TIT3, ID3InfoWidth-15);
+				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Subtitle:      ", 15);
+				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TIT3, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -190,8 +215,8 @@ static void ID3InfoDraw(int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line,  0, 0x07, "Lead Artist:   ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, (char *)ID3->TPE1, ID3InfoWidth-15);
+				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Lead Artist:   ", 15);
+				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TPE1, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -200,8 +225,8 @@ static void ID3InfoDraw(int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line,  0, 0x07, "Group:         ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, (char *)ID3->TPE2, ID3InfoWidth-15);
+				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Group:         ", 15);
+				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TPE2, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -210,8 +235,8 @@ static void ID3InfoDraw(int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line,  0, 0x07, "Conductor:     ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, (char *)ID3->TPE3, ID3InfoWidth-15);
+				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Conductor:     ", 15);
+				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TPE3, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -220,8 +245,8 @@ static void ID3InfoDraw(int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line,  0, 0x07, "Interpreted by:", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, (char *)ID3->TPE4, ID3InfoWidth-15);
+				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Interpreted by:", 15);
+				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TPE4, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -230,8 +255,8 @@ static void ID3InfoDraw(int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line,  0, 0x07, "Album:         ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, (char *)ID3->TALB, ID3InfoWidth-15);
+				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Album:         ", 15);
+				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TALB, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -240,8 +265,8 @@ static void ID3InfoDraw(int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line,  0, 0x07, "Composer:      ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, (char *)ID3->TCOM, ID3InfoWidth-15);
+				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Composer:      ", 15);
+				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TCOM, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -250,8 +275,8 @@ static void ID3InfoDraw(int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line,  0, 0x07, "Track Number:  ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, (char *)ID3->TRCK, ID3InfoWidth-15);
+				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Track Number:  ", 15);
+				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TRCK, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -261,8 +286,8 @@ static void ID3InfoDraw(int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line,  0, 0x07, "Content Type:  ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, (char *)ID3->TCON, ID3InfoWidth-15);
+				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Content Type:  ", 15);
+				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TCON, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -271,10 +296,10 @@ static void ID3InfoDraw(int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line,  0, 0x07, "Recorded:      ", 15);
+				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn, 0x07, "Recorded:      ", 15);
 				if (ID3->TDRC)
 				{
-					displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, (char *)ID3->TDRC, ID3InfoWidth-15);
+					displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TDRC, ID3InfoWidth-15);
 				} else {
 					if (ID3->TDAT)
 					{
@@ -284,9 +309,9 @@ static void ID3InfoDraw(int focus)
 						} else {
 							snprintf (StringBuffer, sizeof (StringBuffer), "%s-%s", ID3->TYER, ID3->TDAT);
 						}
-						displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, StringBuffer, ID3InfoWidth-15);
+						displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, StringBuffer, ID3InfoWidth-15);
 					} else {
-						displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, (char *)ID3->TYER, ID3InfoWidth-15);
+						displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TYER, ID3InfoWidth-15);
 					}
 				}
 			}
@@ -297,8 +322,8 @@ static void ID3InfoDraw(int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line,  0, 0x07, "Released:      ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, (char *)ID3->TDRL, ID3InfoWidth-15);
+				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Released:      ", 15);
+				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TDRL, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -307,8 +332,8 @@ static void ID3InfoDraw(int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line,  0, 0x07, "Comment:       ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, 15, 0x09, (char *)ID3->COMM, ID3InfoWidth-15);
+				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Comment:       ", 15);
+				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->COMM, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -316,7 +341,7 @@ static void ID3InfoDraw(int focus)
 
 	while (line < ID3InfoHeight)
 	{
-		displaystr (ID3InfoFirstLine + line, 0, 0x00, "", ID3InfoWidth);
+		displaystr (ID3InfoFirstLine + line, ID3InfoFirstColumn, 0x00, "", ID3InfoWidth);
 		line++;
 	}
 }
@@ -326,11 +351,14 @@ static int ID3InfoIProcessKey(uint16_t key)
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('t', "Enable ID3 info viewer");
-			cpiKeyHelp('T', "Enable ID3 info viewer");
+			cpiKeyHelp('i', "Enable ID3 info viewer");
+			cpiKeyHelp('I', "Enable ID3 info viewer");
 			break;
-		case 't': case 'T':
-			ID3InfoActive=1;
+		case 'i': case 'I':
+			if (!ID3InfoActive)
+			{
+				ID3InfoActive=1;
+			}
 			cpiTextSetMode("id3info");
 			return 1;
 		case 'x': case 'X':
@@ -347,14 +375,18 @@ static int ID3InfoAProcessKey(uint16_t key)
 {
 	switch (key)
 	{
-		case 't': case 'T':
-			ID3InfoActive=!ID3InfoActive;
+		case 'i': case 'I':
+			ID3InfoActive=(ID3InfoActive+1)%4;
+			if ((ID3InfoActive==3)&&(plScrWidth<132))
+			{
+				ID3InfoActive=0;
+			}
 			cpiTextRecalc();
 			break;
 
 		case KEY_ALT_K:
-			cpiKeyHelp('t',       "Disable ID3 info viewer");
-			cpiKeyHelp('T',       "Disable ID3 info viewer");
+			cpiKeyHelp('i',       "Disable ID3 info viewer");
+			cpiKeyHelp('I',       "Disable ID3 info viewer");
 			cpiKeyHelp(KEY_PPAGE, "Scroll ID3 info viewer up");
 			cpiKeyHelp(KEY_NPAGE, "Scroll ID3 info viewer down");
 			cpiKeyHelp(KEY_HOME,  "Scroll ID3 info viewer to the top");
