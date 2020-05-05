@@ -722,12 +722,10 @@ static void x11_common_event_loop(void)
 				fprintf(stderr, "Unknown event.type=%d\n", event.type);
 				break;
 			case FocusIn:
-				fprintf(stderr, "FocusIn\n");
 				gettimeofday(&LastFocusIn, NULL);
 				JustFocusIn=1;
 				break;
 			case FocusOut:
-				fprintf(stderr, "FocusOut\n");
 				break;
 			case Expose:
 				/* silently ignore these */
@@ -746,7 +744,6 @@ static void x11_common_event_loop(void)
 					WaitingForVisibility=0;
 					if (event.xvisibility.state == VisibilityUnobscured)
 					{
-						fprintf (stderr, "Sending XSetInputFocus\n");
 						XSetInputFocus(mDisplay, window, RevertToNone, CurrentTime);
 					}
 				}
