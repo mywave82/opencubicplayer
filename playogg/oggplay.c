@@ -34,6 +34,9 @@
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
 #include "types.h"
+#include "cpiface/gif.h"
+#include "cpiface/jpeg.h"
+#include "cpiface/png.h"
 #include "stuff/imsrtns.h"
 #include "stuff/timer.h"
 #include "stuff/poll.h"
@@ -609,6 +612,320 @@ static int close_func(void *datasource)
 	return 0;
 }
 
+struct ogg_comment_t __attribute__ ((visibility ("internal"))) **ogg_comments;
+int                  __attribute__ ((visibility ("internal")))   ogg_comments_count;
+struct ogg_picture_t __attribute__ ((visibility ("internal")))  *ogg_pictures;
+int                  __attribute__ ((visibility ("internal")))   ogg_pictures_count;
+
+static void add_comment2(const char *title, const char *value)
+{
+	int n = 0;
+	for (n = 0; n < ogg_comments_count; n++)
+	{
+		int res = strcmp (ogg_comments[n]->title, title);
+		if (res == 0)
+		{
+			// append to at this point
+			ogg_comments[n] = realloc (ogg_comments[n], sizeof (ogg_comments[n]) + sizeof (ogg_comments[n]->value[0]) * (ogg_comments[n]->value_count + 1));
+			ogg_comments[n]->value[ogg_comments[n]->value_count++] = strdup(value);
+			return;
+		}
+		if (res < 0)
+		{
+			continue;
+		} else {
+			// insert it at this point
+			break;
+		}
+	}
+
+	ogg_comments = realloc (ogg_comments, sizeof (ogg_comments[0]) * (ogg_comments_count+1));
+	memmove (ogg_comments + n + 1, ogg_comments + n, (ogg_comments_count - n) * sizeof (ogg_comments[0]));
+	ogg_comments[n] = malloc (sizeof (*ogg_comments[n]) + sizeof (ogg_comments[n]->value[0]));
+	ogg_comments[n]->title = strdup (title);
+	ogg_comments[n]->value_count = 1;
+	ogg_comments[n]->value[0] = strdup (value);
+	ogg_comments_count++;
+}
+
+static void add_picture(const uint16_t actual_width,
+		        const uint16_t actual_height,
+			uint8_t *data_bgra,
+			const char *description,
+			const uint32_t description_length,
+			const uint32_t picture_type)
+{
+	ogg_pictures = realloc (ogg_pictures, sizeof (ogg_pictures[0]) * (ogg_pictures_count + 1));
+	ogg_pictures[ogg_pictures_count].picture_type = picture_type;
+	ogg_pictures[ogg_pictures_count].description = malloc (description_length + 1);
+	memcpy (ogg_pictures[ogg_pictures_count].description, description, description_length);
+	ogg_pictures[ogg_pictures_count].description[description_length] = 0;
+	ogg_pictures[ogg_pictures_count].width = actual_width;
+	ogg_pictures[ogg_pictures_count].height = actual_height;
+	ogg_pictures[ogg_pictures_count].data_bgra = data_bgra;
+	ogg_pictures[ogg_pictures_count].scaled_width = 0;
+	ogg_pictures[ogg_pictures_count].scaled_height = 0;
+	ogg_pictures[ogg_pictures_count].scaled_data_bgra = 0;
+
+	ogg_pictures_count++;
+}
+
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
+static void add_picture_binary(const uint8_t *src, unsigned int srclen)
+{
+	uint32_t picture_type;
+	uint32_t mime_length;
+	const uint8_t *mime;
+	uint32_t description_length;
+	const uint8_t *description;
+	uint32_t width;
+	uint32_t height;
+	uint32_t bpp;
+	uint32_t colors; // if GIF color palette
+	uint32_t data_length;
+	const uint8_t *data;
+
+	if (srclen < 4)
+	{
+		return;
+	}
+	picture_type = (src[0]<<24) | (src[1]<<16) | (src[2]<<8) | src[3];
+	src += 4; srclen -= 4;
+
+	if (srclen < 4)
+	{
+		return;
+	}
+	mime_length = (src[0]<<24) | (src[1]<<16) | (src[2]<<8) | src[3];
+	src += 4; srclen -= 4;
+
+	if (srclen < mime_length)
+	{
+		return;
+	}
+	mime = src;
+	src += mime_length; srclen -= mime_length;
+
+	if (srclen < 4)
+	{
+		return;
+	}
+	description_length = (src[0]<<24) | (src[1]<<16) | (src[2]<<8) | src[3];
+	src += 4; srclen -= 4;
+
+	if (srclen < description_length)
+	{
+		return;
+	}
+	description = src;
+	src += description_length; srclen -= description_length;
+
+	if (srclen < 4)
+	{
+		return;
+	}
+	width = (src[0]<<24) | (src[1]<<16) | (src[2]<<8) | src[3];
+	src += 4; srclen -= 4;
+
+	if (srclen < 4)
+	{
+		return;
+	}
+	height = (src[0]<<24) | (src[1]<<16) | (src[2]<<8) | src[3];
+	src += 4; srclen -= 4;
+
+	if (srclen < 4)
+	{
+		return;
+	}
+	bpp = (src[0]<<24) | (src[1]<<16) | (src[2]<<8) | src[3];
+	src += 4; srclen -= 4;
+
+	if (srclen < 4)
+	{
+		return;
+	}
+	colors = (src[0]<<24) | (src[1]<<16) | (src[2]<<8) | src[3];
+	src += 4; srclen -= 4;
+
+	if (srclen < 4)
+	{
+		return;
+	}
+	data_length = (src[0]<<24) | (src[1]<<16) | (src[2]<<8) | src[3];
+	src += 4; srclen -= 4;
+
+	if (srclen < data_length)
+	{
+		return;
+	}
+	data = src;
+	src += data_length; srclen -= data_length;
+
+#if 0
+	if ((mime_length == 3) && (!strncasecmp (mime, "-->", 3)))
+	{
+		// TODO - URL
+	}
+#endif
+#ifdef HAVE_LZW
+	if ((mime_length == 9) && (!strncasecmp ((const char *)mime, "image/gif", 9)))
+	{
+		uint16_t actual_height, actual_width;
+		uint8_t *data_bgra;
+		if (!GIF87_try_open_bgra (&actual_width, &actual_height, &data_bgra, data, data_length))
+		{
+			add_picture (actual_width, actual_height, data_bgra, (const char *)description, description_length, picture_type);
+		}
+		return;
+	}
+#endif
+
+	if ((mime_length == 9) && (!strncasecmp ((const char *)mime, "image/png", 9)))
+	{
+		uint16_t actual_height, actual_width;
+		uint8_t *data_bgra;
+		if (!try_open_png (&actual_width, &actual_height, &data_bgra, (uint8_t *)data, data_length))
+		{
+			add_picture (actual_width, actual_height, data_bgra, (const char *)description, description_length, picture_type);
+		}
+		return;
+	}
+
+	if (((mime_length == 9) && (!strncasecmp ((const char *)mime, "image/jpg", 9))) || ((mime_length == 10) && (!strncasecmp ((const char *)mime, "image/jpeg", 10))))
+	{
+		uint16_t actual_height, actual_width;
+		uint8_t *data_bgra;
+		if (!try_open_jpeg (&actual_width, &actual_height, &data_bgra, data, data_length))
+		{
+			add_picture (actual_width, actual_height, data_bgra, (const char *)description, description_length, picture_type);
+		}
+		return;
+	}
+}
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
+
+static uint8_t base64_index (const char src)
+{
+	if ((src >= 'A') && (src <= 'Z')) return src - 'A';
+	if ((src >= 'a') && (src <= 'z')) return src - 'a' + 26;
+	if ((src >= '0') && (src <= '9')) return src - '0' + 52;
+	if (src == '+') return 62;
+	if (src == '/') return 63;
+	if (src == '=') return 64;
+	return 65;
+}
+
+static void add_picture_base64(const char *src)
+{
+	int srclen = strlen (src);
+	uint8_t *dst;
+	int dstlen = 0;
+
+	if (srclen < 2)
+	{
+		return;
+	}
+
+	dst = malloc (srclen * 3 / 4); // this is a good estimate, but it might overshoot due to padding
+
+	while (srclen >= 2)
+	{
+		uint8_t tmp1, tmp2, tmp3, tmp4;
+
+		tmp1 = base64_index (*src);
+		src++; srclen--;
+		if (tmp1 >= 64)
+		{
+			break;
+		}
+
+		tmp2 = base64_index (*src);
+		src++; srclen--;
+		if (tmp2 >= 64)
+		{/* this is invalid encoding */
+			break;
+		}
+
+		*dst = (tmp1<<2) | (tmp2>>4); //6 + 2
+		dst++; dstlen++;
+
+		if (!srclen)
+		{
+			break;
+		}
+		tmp3 = base64_index (*src);
+		src++; srclen--;
+		if (tmp3 >= 64)
+		{
+			break;
+		}
+
+		*dst = (tmp2<<4) | (tmp3>>2); //4 + 4
+		dst++; dstlen++;
+
+		if (!srclen)
+		{
+			break;
+		}
+		tmp4 = base64_index (*src);
+		src++; srclen--;
+		if (tmp4 >= 64)
+		{
+			break;
+		}
+
+		*dst = (tmp3<<6) | tmp4; // 2 + 6
+		dst++; dstlen++;
+	}
+
+	dst -= dstlen;
+
+	add_picture_binary(dst, dstlen);
+
+	free (dst);
+}
+
+static void add_comment(const char *src)
+{
+	char *equal, *tmp, *tmp2;
+	if (!strncasecmp (src, "METADATA_BLOCK_PICTURE=", 23))
+	{
+		add_picture_base64(src + 23);
+		return;
+	}
+	equal = strchr (src, '=');
+
+	if (!equal)
+	{
+		return;
+	}
+	if (equal == src)
+	{
+		return;
+	}
+
+	tmp = malloc (equal - src + 1);
+	strncpy (tmp, src, equal - src);
+	tmp[equal-src] = 0;
+
+	if ((tmp[0] >= 'a') && (tmp[0] <= 'z')) tmp[0] -= 0x20;
+
+	for (tmp2 = tmp + 1; *tmp2; tmp2++)
+	{
+		if ((tmp2[0] >= 'A') && (tmp2[0] <= 'Z')) tmp2[0] += 0x20;
+	}
+
+	add_comment2(tmp, src + (equal - src) + 1);
+
+	free (tmp);
+}
+
 int __attribute__ ((visibility ("internal"))) oggOpenPlayer(FILE *oggf)
 {
 	struct vorbis_info *vi;
@@ -652,6 +969,20 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(FILE *oggf)
 	oggbuffpos=0;
 	current_section=0;
 	oggneedseek=0;
+
+	{
+		int i;
+
+		vorbis_comment *vf = 0;
+		vf = ov_comment (&ov, -1);
+		if (vf)
+		{
+			for (i=0; i < vf->comments; i++)
+			{
+				add_comment(vf->user_comments[i]);
+			}
+		}
+	}
 
 	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
 	{
@@ -705,6 +1036,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(FILE *oggf)
 
 void __attribute__ ((visibility ("internal"))) oggClosePlayer(void)
 {
+	int i, j;
 	active=0;
 
 	pollClose();
@@ -721,6 +1053,29 @@ void __attribute__ ((visibility ("internal"))) oggClosePlayer(void)
 	buf16=NULL;
 
 	ov_clear(&ov);
+
+	for (i=0; i < ogg_comments_count; i++)
+	{
+		for (j=0; j < ogg_comments[i]->value_count; j++)
+		{
+			free (ogg_comments[i]->value[j]);
+		}
+		free (ogg_comments[i]->title);
+		free (ogg_comments[i]);
+	}
+	free (ogg_comments);
+	ogg_comments = 0;
+	ogg_comments_count = 0;
+
+	for (i=0; i < ogg_pictures_count; i++)
+	{
+		free (ogg_pictures[i].data_bgra);
+		free (ogg_pictures[i].scaled_data_bgra);
+		free (ogg_pictures[i].description);
+	}
+	free (ogg_pictures);
+	ogg_pictures = 0;
+	ogg_pictures_count = 0;
 }
 
 char __attribute__ ((visibility ("internal"))) oggLooped(void)

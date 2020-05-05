@@ -14,7 +14,33 @@ struct ogginfo
 	int bitrate;
 };
 
-extern int __attribute__ ((visibility ("internal"))) oggOpenPlayer(FILE *);
+struct ogg_comment_t
+{
+	char *title;
+	int value_count;
+	char *value[];
+};
+
+struct ogg_picture_t
+{
+	uint32_t picture_type;
+	char *description;
+
+	uint16_t width;
+	uint16_t height;
+	uint8_t *data_bgra;
+
+	uint16_t  scaled_width;
+	uint16_t  scaled_height;
+	uint8_t  *scaled_data_bgra;
+};
+
+extern struct ogg_comment_t __attribute__ ((visibility ("internal"))) **ogg_comments;
+extern int                  __attribute__ ((visibility ("internal")))   ogg_comments_count;
+extern struct ogg_picture_t __attribute__ ((visibility ("internal")))  *ogg_pictures;
+extern int                  __attribute__ ((visibility ("internal")))   ogg_pictures_count;
+
+extern int  __attribute__ ((visibility ("internal"))) oggOpenPlayer(FILE *);
 extern void __attribute__ ((visibility ("internal"))) oggClosePlayer(void);
 extern void __attribute__ ((visibility ("internal"))) oggIdle(void);
 extern void __attribute__ ((visibility ("internal"))) oggSetLoop(uint8_t s);
@@ -26,5 +52,11 @@ extern void __attribute__ ((visibility ("internal"))) oggSetVolume(uint8_t vol, 
 extern void __attribute__ ((visibility ("internal"))) oggGetInfo(struct ogginfo *);
 extern ogg_int64_t __attribute__ ((visibility ("internal"))) oggGetPos(void);
 extern void __attribute__ ((visibility ("internal"))) oggSetPos(ogg_int64_t pos);
+
+extern void __attribute__ ((visibility ("internal"))) OggInfoInit (void);
+extern void __attribute__ ((visibility ("internal"))) OggInfoDone (void);
+
+extern void __attribute__ ((visibility ("internal"))) OggPicInit (void);
+extern void __attribute__ ((visibility ("internal"))) OggPicDone (void);
 
 #endif

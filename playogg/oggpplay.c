@@ -487,6 +487,9 @@ static int oggIsLooped(void)
 static void oggCloseFile(void)
 {
 	oggClosePlayer();
+
+	OggInfoDone ();
+	OggPicDone ();
 }
 
 static int oggOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *oggf)
@@ -523,6 +526,9 @@ static int oggOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 	oggGetInfo(&inf);
 	ogglen=inf.len;
 	oggrate=inf.rate;
+
+	OggInfoInit ();
+	OggPicInit ();
 
 	return errOk;
 }

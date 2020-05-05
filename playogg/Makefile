@@ -12,9 +12,26 @@ install:
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/playogg$(LIB_SUFFIX)"
 
-playogg_so=oggplay.o oggpplay.o
+playogg_so=cpiogginfo.o cpioggpic.o oggplay.o oggpplay.o
 playogg$(LIB_SUFFIX): $(playogg_so)
 	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(OGG_LIBS) $(MATH_LIBS) $(VORBIS_LIBS) $(VORBISFILE_LIBS)
+
+cpiogginfo.o: cpiogginfo.c \
+	../config.h \
+	../types.h \
+	../cpiface/cpiface.h \
+	../stuff/poutput.h \
+	oggplay.h
+	$(CC) $< -o $@ -c
+
+cpioggpic.o: cpioggpic.c \
+	../config.h \
+	../types.h \
+	../boot/psetting.h \
+	../cpiface/cpiface.h \
+	../stuff/poutput.h \
+	oggplay.h
+	$(CC) $< -o $@ -c
 
 oggtype.o: oggtype.c \
 	../config.h \
@@ -28,6 +45,9 @@ oggplay.o: oggplay.c \
 	../types.h \
 	../stuff/poll.h \
 	../stuff/timer.h \
+	../cpiface/gif.h \
+	../cpiface/jpeg.h \
+	../cpiface/png.h \
 	../dev/player.h \
 	../dev/deviplay.h \
 	../dev/ringbuffer.h \

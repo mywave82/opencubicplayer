@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 1987, by Steven A. Bennett
  *
  * GIF picture loader
  *
@@ -33,8 +34,8 @@
 #include "types.h"
 #include "gif.h"
 
-static uint8_t *filedata=0; /* because we are lazy */
-static uint8_t *filedataEnd=0;
+static const uint8_t *filedata=0; /* because we are lazy */
+static const uint8_t *filedataEnd=0;
 static uint8_t *image=0; /* because we are very lazy */
 static uint16_t GIFimageHeight=0;
 static int GIFimageInterlace=0; /* oh I am so lazy */
@@ -549,4 +550,237 @@ int GIF87read(unsigned char *fd, int filesize, unsigned char *pic, unsigned char
 	if(GIFimageInterlace)
 		free(interlaceTable);
 	return bad_code_count;
+}
+
+int GIF87_try_open_indexed(uint16_t *GIFimageWidth, uint16_t *GIFimageHeight, uint8_t **data_indexed, uint8_t *pal_768, const uint8_t *src, int srclen)
+{
+	int i;
+	uint8_t *GIFsignature;
+	uint16_t GIFscreenWidth;
+	uint16_t GIFscreenHeight;
+	uint8_t byte;
+	int GIFglobalColorMap;
+	/* int GIFcolorResolution; */
+	int GIFbitPerPixel;
+	/* uint8_t GIFbackground; */
+	uint16_t GIFimageLeft;
+	uint16_t GIFimageTop;
+	int GIFimageColorMap;
+	int GIFimageBitPerPixel;
+
+	interlaceTable=0;
+
+	if (srclen < 6)
+	{
+		return -1;
+	}
+
+	filedata=src;
+	filedataEnd=filedata+srclen;
+
+	/************************************************************************
+	 * process the header
+	 ***********************************************************************/
+
+	/* check if file format is GIF87 */
+	GIFsignature=(unsigned char *)"GIF87a";
+	for(i=0; i<6; i++)
+	{
+		srclen--;
+		if(GIFsignature[i]!=*filedata++)
+		{
+			if (i==4)
+				continue;
+			return -1;
+		}
+	}
+
+	if (srclen < 7)
+	{
+		return -1;
+	}
+	/* read the screen descriptor */
+	GIFscreenWidth=*filedata++;
+	GIFscreenWidth+=(*filedata++)<<8;
+
+	GIFscreenHeight=*filedata++;
+	GIFscreenHeight+=(*filedata++)<<8;
+
+	byte=*filedata++;
+	GIFglobalColorMap=byte&128;
+#if 0
+	GIFcolorResolution=((byte&(64+32+16))>>4)+1;
+#endif
+	GIFbitPerPixel=(byte&7)+1;
+
+#if 0
+	GIFbackground=*filedata++;
+#else
+	filedata++;
+#endif
+
+	if(*filedata++!=0)
+		return -1;
+
+	srclen -= 7;
+
+	if (srclen < ((1<<GIFbitPerPixel)*3))
+	{
+		return -1;
+	}
+
+	/* read the global color map */
+	if(GIFglobalColorMap)
+		for(i=0; i<(1<<GIFbitPerPixel)*3; i++)
+			pal_768[i]=*filedata++;
+
+	srclen -= (1<<GIFbitPerPixel)*3;
+
+	if (srclen < 10)
+	{
+		return -1;
+	}
+	/* read the image descriptor */
+	if(*filedata++!=',')
+		return -1;
+
+	GIFimageLeft=*filedata++;
+	GIFimageLeft+=(*filedata++)<<8;
+
+	GIFimageTop=*filedata++;
+	GIFimageTop+=(*filedata++)<<8;
+
+	*GIFimageWidth=*filedata++;
+	*GIFimageWidth+=(*filedata++)<<8;
+
+	if ((*GIFimageWidth) > 1920)
+	{
+		return -1;
+	}
+
+	*GIFimageHeight=*filedata++;
+	*GIFimageHeight+=(*filedata++)<<8;
+	if ((*GIFimageHeight) > 1080)
+	{
+		return -1;
+	}
+
+	byte=*filedata++;
+	GIFimageColorMap=byte&128;
+	GIFimageInterlace=byte&64;
+	GIFimageBitPerPixel=(byte&7)+1;
+
+	srclen -= 10;
+
+	if(GIFimageInterlace)
+	{
+		int z;
+		interlaceTable=calloc(sizeof(int), *GIFimageHeight);
+		if(interlaceTable==0)
+			return -1;
+
+		z=0;
+		for(i=0; i<*GIFimageHeight; i+=8)
+			interlaceTable[z++]=i*(*GIFimageWidth);
+		for(i=4; i<*GIFimageHeight; i+=8)
+			interlaceTable[z++]=i*(*GIFimageWidth);
+		for(i=2; i<*GIFimageHeight; i+=4)
+			interlaceTable[z++]=i*(*GIFimageWidth);
+		for(i=1; i<*GIFimageHeight; i+=2)
+			interlaceTable[z++]=i*(*GIFimageWidth);
+	}
+
+	if (srclen < 1)
+	{
+		free (interlaceTable);
+		interlaceTable=0;
+		return -1;
+	}
+	/* check for an GIF extension block */
+	if(*filedata=='!')
+	{/* skip this block */
+		srclen--;
+
+		while(1)
+		{
+			if (srclen < 1)
+			{
+				free (interlaceTable);
+				interlaceTable=0;
+				return -1;
+			}
+			if (*filedata++==0)
+			{
+				break;
+			}
+		}
+	}
+
+	/* read the local color map */
+	if(GIFimageColorMap)
+	{
+		if (srclen < (1<<GIFimageBitPerPixel)*3)
+		{
+			free (interlaceTable);
+			interlaceTable=0;
+			return -1;
+		}
+		for(i=0; i<(1<<GIFimageBitPerPixel)*3; i++)
+			pal_768[i]=*filedata++;
+	}
+
+	/* read the lzw compressed data */
+	currentLine=0;
+	image=*data_indexed=calloc(*GIFimageHeight, *GIFimageWidth);
+	if(decoder(*GIFimageWidth)<0)
+		bad_code_count=-1;
+
+	free(interlaceTable);
+	interlaceTable=0;
+
+	if (bad_code_count)
+	{
+		free(*data_indexed);
+		*data_indexed=0;
+		*GIFimageHeight=0;
+		*GIFimageWidth=0;
+	}
+	image=0;
+	GIFimageInterlace=0;
+	return bad_code_count;
+}
+
+int GIF87_try_open_bgra(uint16_t *GIFimageWidth,
+                        uint16_t *GIFimageHeight,
+                        uint8_t **data_bgra,
+                        const uint8_t *src,
+                        int srclen)
+{
+	uint8_t *data_indexed = 0;
+	uint8_t pal_768[768];
+	int i;
+	uint8_t *in, *out;
+
+	*data_bgra = 0;
+
+	if (GIF87_try_open_indexed(GIFimageWidth, GIFimageHeight, &data_indexed, pal_768, src, srclen))
+	{
+		return -1;
+	}
+
+	*data_bgra = malloc(4 * (*GIFimageWidth) * (*GIFimageHeight));
+
+	in = data_indexed;
+	out = *data_bgra;
+	for (i=0; i < (*GIFimageWidth) * (*GIFimageHeight); i++)
+	{
+		*(out++) = pal_768[(*in)*3 + 2];
+		*(out++) = pal_768[(*in)*3 + 2];
+		*(out++) = pal_768[(*in)*3 + 2];
+		*(out++) = 255;
+		in++;
+	}
+
+	free (data_indexed);
+	return 0;
 }

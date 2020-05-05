@@ -58,4 +58,18 @@ int GIF87read(unsigned char *filedata,
               const int picWidth,
               const int picHeight);
 
+int GIF87_try_open_indexed(uint16_t *GIFimageWidth,
+                           uint16_t *GIFimageHeight,
+                           uint8_t **data_indexed,
+                           uint8_t *pal_768,
+                           const uint8_t *src,
+                           int srclen);
+
+int GIF87_try_open_bgra(uint16_t *GIFimageWidth,
+                        uint16_t *GIFimageHeight,
+                        uint8_t **data_bgra,
+                        const uint8_t *src,
+                        int srclen);
+
+
 #endif
