@@ -1360,6 +1360,7 @@ static void X11ScrTextGUIOverlayRemove(void *handle)
 		{
 			memmove (X11ScrTextGUIOverlays + i, X11ScrTextGUIOverlays + i + 1, sizeof (X11ScrTextGUIOverlays[0]) * (X11ScrTextGUIOverlays_count - i - 1));
 			X11ScrTextGUIOverlays_count--;
+			free (handle);
 			return;
 		}
 	}
