@@ -27,6 +27,9 @@
 #include <string.h>
 #include <unistd.h>
 #include "types.h"
+#include "cpiface/gif.h"
+#include "cpiface/jpeg.h"
+#include "cpiface/png.h"
 #include "stuff/timer.h"
 #include "stuff/poll.h"
 #include "dev/deviplay.h"
@@ -84,6 +87,100 @@ static int donotloop=1;
 
 static int flacPendingSeek = 0;
 static uint64_t flacPendingSeekPos;
+
+struct flac_comment_t __attribute__ ((visibility ("internal"))) **flac_comments;
+int                   __attribute__ ((visibility ("internal")))   flac_comments_count;
+struct flac_picture_t __attribute__ ((visibility ("internal")))  *flac_pictures;
+int                   __attribute__ ((visibility ("internal")))   flac_pictures_count;
+
+static void add_comment2(const char *title, const char *value, const uint32_t valuelen)
+{
+	int n = 0;
+	for (n = 0; n < flac_comments_count; n++)
+	{
+		int res = strcmp (flac_comments[n]->title, title);
+		if (res == 0)
+		{
+			// append to at this point
+			flac_comments[n] = realloc (flac_comments[n], sizeof (flac_comments[n]) + sizeof (flac_comments[n]->value[0]) * (flac_comments[n]->value_count + 1));
+			flac_comments[n]->value[flac_comments[n]->value_count++] = malloc (valuelen + 1);
+			memcpy (flac_comments[n]->value[flac_comments[n]->value_count++], value, valuelen);
+			flac_comments[n]->value[flac_comments[n]->value_count++][valuelen] = 0;
+			return;
+		}
+		if (res < 0)
+		{
+			continue;
+		} else {
+			// insert it at this point
+			break;
+		}
+	}
+
+	flac_comments = realloc (flac_comments, sizeof (flac_comments[0]) * (flac_comments_count+1));
+	memmove (flac_comments + n + 1, flac_comments + n, (flac_comments_count - n) * sizeof (flac_comments[0]));
+	flac_comments[n] = malloc (sizeof (*flac_comments[n]) + sizeof (flac_comments[n]->value[0]));
+	flac_comments[n]->title = strdup (title);
+	flac_comments[n]->value_count = 1;
+	flac_comments[n]->value[0] = strdup (value);
+	flac_comments_count++;
+}
+
+static void add_comment(const char *src, const uint32_t srclen)
+{
+	char *equal, *tmp, *tmp2;
+#if 0
+	if (!strncasecmp (src, "METADATA_BLOCK_PICTURE=", 23))
+	{
+		add_picture_base64(src + 23);
+		return;
+	}
+#endif
+	equal = memchr (src, '=', srclen);
+
+	if (!equal)
+	{
+		return;
+	}
+	if (equal == src)
+	{
+		return;
+	}
+
+	tmp = malloc (equal - src + 1);
+	strncpy (tmp, src, equal - src);
+	tmp[equal-src] = 0;
+
+	if ((tmp[0] >= 'a') && (tmp[0] <= 'z')) tmp[0] -= 0x20;
+
+	for (tmp2 = tmp + 1; *tmp2; tmp2++)
+	{
+		if ((tmp2[0] >= 'A') && (tmp2[0] <= 'Z')) tmp2[0] += 0x20;
+	}
+
+	add_comment2(tmp, src + (equal - src) + 1, srclen - (equal + 1 - src));
+
+	free (tmp);
+}
+
+static void add_picture(const uint16_t actual_width,
+		        const uint16_t actual_height,
+			uint8_t *data_bgra,
+			const char *description,
+			const uint32_t picture_type)
+{
+	flac_pictures = realloc (flac_pictures, sizeof (flac_pictures[0]) * (flac_pictures_count + 1));
+	flac_pictures[flac_pictures_count].picture_type = picture_type;
+	flac_pictures[flac_pictures_count].description = strdup (description);
+	flac_pictures[flac_pictures_count].width = actual_width;
+	flac_pictures[flac_pictures_count].height = actual_height;
+	flac_pictures[flac_pictures_count].data_bgra = data_bgra;
+	flac_pictures[flac_pictures_count].scaled_width = 0;
+	flac_pictures[flac_pictures_count].scaled_height = 0;
+	flac_pictures[flac_pictures_count].scaled_data_bgra = 0;
+
+	flac_pictures_count++;
+}
 
 #define PANPROC \
 do { \
@@ -225,32 +322,150 @@ static void metadata_callback(
 	void *client_data)
 #endif
 {
-	if (metadata->type!=FLAC__METADATA_TYPE_STREAMINFO)
+	switch (metadata->type)
 	{
-		fprintf(stderr, "playflac: FLAC__METADATA_TYPE_STREAMINFO is not the first header\n");
-		return;
+		case FLAC__METADATA_TYPE_STREAMINFO:
+		{
+			flacrate           = metadata->data.stream_info.sample_rate;
+			flacstereo         = metadata->data.stream_info.channels > 1;
+			flacbits           = metadata->data.stream_info.bits_per_sample;
+			flac_max_blocksize = metadata->data.stream_info.max_blocksize;
+			samples            = metadata->data.stream_info.total_samples;
+#if 0
+			fprintf(stderr, "METADATA_TYPE_STREAMINFO\n");
+			fprintf(stderr, "streaminfo.min_blocksize: %d\n", metadata->data.stream_info.min_blocksize);
+			fprintf(stderr, "streaminfo.max_blocksize: %d\n", metadata->data.stream_info.max_blocksize);
+			fprintf(stderr, "streaminfo.min_framesize: %d\n", metadata->data.stream_info.min_framesize);
+			fprintf(stderr, "streaminfo.max_framesize: %d\n", metadata->data.stream_info.max_framesize);
+			fprintf(stderr, "streaminfo.sample_rate: %d\n", metadata->data.stream_info.sample_rate);
+			fprintf(stderr, "streaminfo.channels: %d\n", metadata->data.stream_info.channels);
+			fprintf(stderr, "streaminfo.bits_per_sample: %d\n", metadata->data.stream_info.bits_per_sample);
+			fprintf(stderr, "streaminfo.total_samples: %"PRIu64"\n", metadata->data.stream_info.total_samples);
+			fprintf(stderr, "\n");
+#endif
+			break;
+		}
+#if 0
+		case FLAC__METADATA_TYPE_PADDING:
+		{
+			fprintf (stderr, "METADATA_TYPE_PADDING\n\n");
+			break;
+		}
+		case FLAC__METADATA_TYPE_APPLICATION:
+		{
+			fprintf (stderr, "METADATA_TYPE_APPLICATION\n");
+			fprintf (stderr, "id: \"%c%c%c%c\"\n\n", metadata->data.application.id[0], metadata->data.application.id[1], metadata->data.application.id[2], metadata->data.application.id[3]);
+			break;
+		}
+		case FLAC__METADATA_TYPE_SEEKTABLE:
+		{
+			fprintf (stderr, "METADATA_TYPE_SEEKTABLE\n");
+			fprintf (stderr, "num_points: %"PRIu32"\n\n", metadata->data.seek_table.num_points);
+			break;
+		}
+#endif
+		case FLAC__METADATA_TYPE_VORBIS_COMMENT:
+		{
+			uint32_t i, j;
+
+			for (j=0; j < metadata->data.vorbis_comment.num_comments; j++)
+			{
+				add_comment ((char *)metadata->data.vorbis_comment.comments[j].entry, metadata->data.vorbis_comment.comments[j].length);
+			}
+#if 0
+			fprintf (stderr, "METADATA_TYPE_VORBIS_COMMENT\n");
+			fprintf (stderr, "vendorstring: \"");
+			for (i=0; i < metadata->data.vorbis_comment.vendor_string.length; i++)
+			{
+				fputc(metadata->data.vorbis_comment.vendor_string.entry[i], stderr);
+			}
+			fprintf (stderr, "\"\n");
+			fprintf (stderr, "num_comments: %"PRIu32"\n", metadata->data.vorbis_comment.num_comments);
+			for (j=0; j < metadata->data.vorbis_comment.num_comments; j++)
+			{
+				fprintf (stderr, "[%"PRIu32"]: \"", j);
+				for (i=0; i < metadata->data.vorbis_comment.comments[j].length; i++)
+				{
+					fputc(metadata->data.vorbis_comment.comments[j].entry[i], stderr);
+				}
+				fprintf (stderr, "\"\n");
+			}
+			fprintf (stderr, "\n");
+#endif
+			break;
+		}
+#if 0
+		case FLAC__METADATA_TYPE_CUESHEET:
+		{
+			uint32_t i;
+			fprintf (stderr, "METADATA_TYPE_CUESHEET\n");
+			fprintf (stderr, "media_catalog_number: \"%s\"\n", metadata->data.cue_sheet.media_catalog_number);
+			fprintf (stderr, "lead_in: %"PRIu64"\n", metadata->data.cue_sheet.lead_in);
+			fprintf (stderr, "is_cd: %d\n", !!metadata->data.cue_sheet.is_cd);
+			fprintf (stderr, "num_tracks: %"PRIu32"\n", metadata->data.cue_sheet.num_tracks);
+			for (i = 0; i < metadata->data.cue_sheet.num_tracks; i++)
+			{
+				//
+			}
+
+			break;
+		}
+#endif
+		case FLAC__METADATA_TYPE_PICTURE:
+		{
+#if 0
+			fprintf (stderr, "METADATA_TYPE_PICTURE\n");
+			fprintf (stderr, "type: %d\n", metadata->data.picture.type);
+			fprintf (stderr, "mime_type: \"%s\"\n", metadata->data.picture.mime_type);
+			fprintf (stderr, "description: \"%s\"\n", metadata->data.picture.description);
+			fprintf (stderr, "width: %"PRIu32"\n", metadata->data.picture.width);
+			fprintf (stderr, "height: %"PRIu32"\n", metadata->data.picture.height);
+			fprintf (stderr, "depth: %"PRIu32"\n", metadata->data.picture.depth);
+			fprintf (stderr, "colors: %"PRIu32"\n", metadata->data.picture.colors);
+			fprintf (stderr, "data_length: %"PRIu32"\n", metadata->data.picture.data_length);
+			// data
+			fprintf (stderr, "\n");
+#endif
+
+#ifdef HAVE_LZW
+			if (!strcasecmp (metadata->data.picture.mime_type, "image/gif"))
+			{
+				uint16_t actual_height, actual_width;
+				uint8_t *data_bgra;
+				if (!GIF87_try_open_bgra (&actual_width, &actual_height, &data_bgra, metadata->data.picture.data, metadata->data.picture.data_length))
+				{
+					add_picture (actual_width, actual_height, data_bgra, (const char *)metadata->data.picture.description, metadata->data.picture.type);
+				}
+				break;
+			}
+#endif
+
+			if (!strcasecmp (metadata->data.picture.mime_type, "image/png"))
+			{
+				uint16_t actual_height, actual_width;
+				uint8_t *data_bgra;
+				if (!try_open_png (&actual_width, &actual_height, &data_bgra, metadata->data.picture.data, metadata->data.picture.data_length))
+				{
+					add_picture (actual_width, actual_height, data_bgra, (const char *)metadata->data.picture.description, metadata->data.picture.type);
+				}
+				break;
+			}
+			if ((!strcasecmp (metadata->data.picture.mime_type, "image/jpg")) || (!strcasecmp (metadata->data.picture.mime_type, "image/jpeg")))
+			{
+				uint16_t actual_height, actual_width;
+				uint8_t *data_bgra;
+				if (!try_open_jpeg (&actual_width, &actual_height, &data_bgra, metadata->data.picture.data, metadata->data.picture.data_length))
+				{
+					add_picture (actual_width, actual_height, data_bgra, (const char *)metadata->data.picture.description, metadata->data.picture.type);
+				}
+				break;
+			}
+
+			break;
+		}
+		default:
+			break;
 	}
-
-	flacrate=metadata->data.stream_info.sample_rate;
-	flacstereo=metadata->data.stream_info.channels>1;
-	flacbits=metadata->data.stream_info.bits_per_sample;
-
-	flac_max_blocksize=metadata->data.stream_info.max_blocksize;
-
-	samples = metadata->data.stream_info.total_samples;
-
-	/*
-	fprintf(stderr, "metadata.min_blocksize: %d\n", metadata->data.stream_info.min_blocksize);
-	fprintf(stderr, "metadata.max_blocksize: %d\n", metadata->data.stream_info.max_blocksize);
-	fprintf(stderr, "metadata.min_framesize: %d\n", metadata->data.stream_info.min_framesize);
-	fprintf(stderr, "metadata.max_framesize: %d\n", metadata->data.stream_info.max_framesize);
-	fprintf(stderr, "metadata.sample_rate: %d\n", metadata->data.stream_info.sample_rate);
-	fprintf(stderr, "metadata.channels: %d\n", metadata->data.stream_info.channels);
-	fprintf(stderr, "metadata.bits_per_sample: %d\n", metadata->data.stream_info.bits_per_sample);
-	fprintf(stderr, "metadata.total_samples: %lld\n", metadata->data.stream_info.total_samples);
-
-	fprintf(stderr, "metadata_callback TODO\n");
-	*/
 	return;
 }
 
@@ -404,6 +619,8 @@ int __attribute__ ((visibility ("internal"))) flacOpenPlayer(FILE *file)
 		return 0;
 	}
 
+	FLAC__stream_decoder_set_metadata_respond_all (decoder);
+
 	flac_max_blocksize=0;
 	flacrate=0;
 	flacstereo=1;
@@ -517,6 +734,8 @@ error_out:
 
 void __attribute__ ((visibility ("internal"))) flacClosePlayer(void)
 {
+	int i, j;
+
 	pollClose();
 	plrClosePlayer();
 
@@ -545,6 +764,29 @@ void __attribute__ ((visibility ("internal"))) flacClosePlayer(void)
 	FLAC__stream_decoder_delete(decoder);
 #endif
 	decoder = NULL;
+
+	for (i=0; i < flac_comments_count; i++)
+	{
+		for (j=0; j < flac_comments[i]->value_count; j++)
+		{
+			free (flac_comments[i]->value[j]);
+		}
+		free (flac_comments[i]->title);
+		free (flac_comments[i]);
+	}
+	free (flac_comments);
+	flac_comments = 0;
+	flac_comments_count = 0;
+
+	for (i=0; i < flac_pictures_count; i++)
+	{
+		free (flac_pictures[i].data_bgra);
+		free (flac_pictures[i].scaled_data_bgra);
+		free (flac_pictures[i].description);
+	}
+	free (flac_pictures);
+	flac_pictures = 0;
+	flac_pictures_count = 0;
 }
 
 static void flacIdler(void)
@@ -589,6 +831,16 @@ static void flacIdler(void)
 			}
 		}
 	}
+}
+
+void __attribute__ ((visibility ("internal"))) flacMetaDataLock(void)
+{
+	clipbusy++;
+}
+
+void __attribute__ ((visibility ("internal"))) flacMetaDataUnlock(void)
+{
+	clipbusy--;
 }
 
 void __attribute__ ((visibility ("internal"))) flacIdle(void)

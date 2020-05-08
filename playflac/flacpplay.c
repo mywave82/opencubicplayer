@@ -484,6 +484,9 @@ static int flacLooped(void)
 static void flacCloseFile(void)
 {
 	flacClosePlayer();
+
+	FlacInfoDone ();
+	FlacPicDone ();
 }
 
 static int flacOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *flacf)
@@ -519,6 +522,9 @@ static int flacOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, 
 	flacGetInfo(&inf);
 	flaclen=inf.len;
 	flacrate=inf.rate;
+
+	FlacInfoInit ();
+	FlacPicInit ();
 
 	return errOk;
 }

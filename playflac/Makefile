@@ -31,6 +31,23 @@ flacptype_so=flacptype.o
 flacptype$(LIB_SUFFIX): $(flacptype_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
+cpiflacinfo.o: cpiflacinfo.c \
+	../config.h \
+	../types.h \
+	../cpiface/cpiface.h \
+	../stuff/poutput.h \
+	flacplay.h
+	$(CC) $< -o $@ -c
+
+cpiflacpic.o: cpiflacpic.c \
+	../config.h \
+	../types.h \
+	../boot/psetting.h \
+	../cpiface/cpiface.h \
+	../stuff/poutput.h \
+	flacplay.h
+	$(CC) $< -o $@ -c
+
 flacptype.o: flacptype.c \
 	../config.h \
 	../types.h \
@@ -40,7 +57,7 @@ flacptype.o: flacptype.c \
 	../stuff/cp437.h
 	$(CC) flacptype.c -o $@ -c
 
-playflac_so=flacpplay.o flacplay.o
+playflac_so=cpiflacinfo.o cpiflacpic.o flacpplay.o flacplay.o
 playflac$(LIB_SUFFIX): $(playflac_so)
 	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(FLAC_LIBS)
 
@@ -64,12 +81,15 @@ flacpplay.o: flacpplay.c \
 flacplay.o: flacplay.c \
 	../config.h \
 	../types.h \
-	../stuff/poll.h \
-	../stuff/timer.h \
+	../cpiface/gif.h \
+	../cpiface/jpeg.h \
+	../cpiface/png.h \
 	../dev/deviplay.h \
 	../dev/ringbuffer.h \
 	../dev/player.h \
 	../dev/plrasm.h \
 	../stuff/imsrtns.h \
+	../stuff/poll.h \
+	../stuff/timer.h \
 	flacplay.h
 	$(CC) flacplay.c -o $@ $(FLAC_CFLAGS) -c
