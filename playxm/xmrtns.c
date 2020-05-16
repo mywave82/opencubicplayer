@@ -55,67 +55,152 @@ void __attribute__ ((visibility ("internal"))) xmpFreeModule(struct xmodule *m)
 
 void __attribute__ ((visibility ("internal"))) xmpOptimizePatLens(struct xmodule *m)
 {
-	uint8_t *lastrows=malloc(sizeof(uint8_t)*m->npat);
-	unsigned int i,j,k;
+	unsigned int i;
+	uint8_t **detection=calloc(sizeof(uint8_t *), sizeof(uint8_t)*m->nord);
 
-	if (!lastrows)
+	if (!detection)
+	{
 		return;
-	memset(lastrows, 0, m->npat);
+	}
+
+	/* cycle throught the song, with each order as the start-point (to simulate the user jumping into the song) */
 	for (i=0; i<m->nord; i++)
 	{
-		int first;
+		unsigned int curord = i;
+		unsigned int currow = 0;
+		uint16_t curpat;    /* the pattern that the order points to */
+		unsigned int curpatlen; /* the original length */
+		int orderchanged = 1;
+		unsigned int k;
 
-		if (m->orders[i]==0xFFFF)
-			continue;
-		first=0;
-		for (j=0; j<m->patlens[m->orders[i]]; j++)
+		while (1)
 		{
-			unsigned int neword=(unsigned)-1;
-			unsigned int newrow=newrow; /* supress warning.. neword needs to be set first, and that will set newrow aswell */
+			int_fast32_t neword = -1;
+			unsigned int newrow = 0;
+
+			if (orderchanged)
+			{
+				do
+				{
+					if (curord >= m->nord)
+					{
+						goto eof;
+					}
+
+					curpat = m->orders[curord];
+					/* it this order a no-op ? */
+					if (curpat == 0xFFFF)
+					{
+						curord++;
+						continue;
+					}
+
+					curpatlen = m->patlens[curpat];
+					if (curpatlen && (!detection[curord]))
+					{
+						detection[curord] = calloc (1, curpatlen);
+						if (!detection[curord])
+						{
+							goto memoryabort;
+						}
+					}
+				} while (0);
+				orderchanged = 0;
+			}
+
+			if (currow >= curpatlen)
+			{
+				/* next order please */
+				curord++;
+				currow = 0;
+				orderchanged = 1;
+				continue;
+			}
+
+			if (detection[curord][currow])
+			{
+				break; /* we have been here before */
+			}
+			detection[curord][currow] = 1;
+
+			/* search for Jump and Break commands */
+
 			for (k=0; k<m->nchan; k++)
-				switch (m->patterns[m->orders[i]][m->nchan*j+k][3])
+			{
+				switch (m->patterns[curpat][m->nchan*currow+k][3])
 				{
 					case xmpCmdJump:
-						neword=m->patterns[m->orders[i]][m->nchan*j+k][4];
-						newrow=0;
+						neword = m->patterns[curpat][m->nchan*currow+k][4];
+						newrow = 0;
 						break;
 					case xmpCmdBreak:
-						if (neword==(unsigned)-1)
-							neword=i+1;
-						newrow=m->patterns[m->orders[i]][m->nchan*j+k][4];
+						if (neword == -1)
+						{
+							neword = curord + 1;
+						}
+						newrow =  (m->patterns[curpat][m->nchan*currow+k][4] & 0x0f) +
+						         ((m->patterns[curpat][m->nchan*currow+k][4] >> 4) * 10);
+
 						break;
 				}
-			if (neword!=(unsigned)-1)
+			}
+
+			if (neword!=-1)
 			{
-				while ((neword<m->nord)&&(m->orders[neword]==0xFFFF))
-					neword++;
-				if (neword>=m->nord)
-				{
-					neword=0;
-					newrow=0;
-				}
-				if ((newrow>=m->patlens[m->orders[neword]]))
+				/* Jump/Break found */
+				while ((neword < m->nord) && (m->orders[neword] == 0xFFFF))
 				{
 					neword++;
-					newrow=0;
 				}
-				if (neword>=m->nord)
-					neword=0;
-				if (newrow)
-					lastrows[m->orders[neword]]=m->patlens[m->orders[neword]]-1;
-				if (!first)
+
+				if (neword >= m->nord)
 				{
-					first=1;
-					if (!lastrows[m->orders[i]])
-						lastrows[m->orders[i]]=j;
+					/* jumps past EOF - stop the song */
+					goto eof;
+				}
+				curord = neword;
+				currow = newrow;
+				orderchanged = 1;
+			} else {
+				/* next row please */
+				currow++;
+			}
+		}
+eof:{}
+	}
+
+	/* cycle all the patterns */
+	for (i=0; i<m->npat; i++)
+	{
+		signed int j, k;
+		signed int l = 0;
+		for (k = 0; k < m->nord; k++)
+		{
+			/* find all orders that references this pattern */
+			if (m->orders[k] == i)
+			{
+
+				/* find the biggest row that are in use */
+				for (j=m->patlens[i] - 1; j >= 0; j--)
+				{
+					if (detection[k][j])
+					{
+						if ((j+1) > l)
+						{
+							l = j + 1;
+						}
+						break;
+					}
 				}
 			}
 		}
-		if (!first)
-			lastrows[m->orders[i]]=m->patlens[m->orders[i]]-1;
+		/* our new lenght should be */
+		m->patlens[i] = l;
 	}
-
+memoryabort:
 	for (i=0; i<m->npat; i++)
-		m->patlens[i]=lastrows[i]+1;
-	free(lastrows);
+	{
+		free (detection[i]);
+	}
+	free(detection);
 }
