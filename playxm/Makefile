@@ -1,20 +1,38 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-all: xmpptype.o playxm$(LIB_SUFFIX)
+ifeq ($(BUILD_DUMPTOOLS),1)
+	DUMPERS=dumpmod
+else
+	DUMPERS=
+endif
+
+all: xmpptype.o playxm$(LIB_SUFFIX) $(DUMPERS)
 
 playxm_so=xmlmod.o xmlmxm.o xmload.o xmload.o xmpinst.o xmplay.o xmpplay.o xmptrak.o xmrtns.o xmtime.o
 playxm$(LIB_SUFFIX): $(playxm_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX)
+	rm -f *.o *$(LIB_SUFFIX) dumpmod
 
 install:
 	$(CP) playxm$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+ifeq ($(BUILD_DUMPTOOLS),1)
+	$(CP) dumpmod "$(DESTDIR)$(BINDIR)/dumpmod"
+endif
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/playxm$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(BINDIR)/dumpmod"
+
+dumpmod: dumpmod.o
+	$(CC) $(LDFLAGS) -o $@ $^
+
+dumpmod.o: \
+	dumpmod.c
+	$(CC) -o $@ $< -c
+
 
 xmpptype.o: xmpptype.c \
 	../config.h \
