@@ -239,6 +239,7 @@ compat.o: compat.c \
 
 pfonts.o: pfonts.c \
 	../config.h \
+	../types.h \
 	pfonts.h
 	$(CC) pfonts.c -o $@ -c
 
