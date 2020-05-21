@@ -22,7 +22,7 @@ cpiogginfo.o: cpiogginfo.c \
 	../cpiface/cpiface.h \
 	../stuff/poutput.h \
 	oggplay.h
-	$(CC) $< -o $@ -c
+	$(CC) $< -o $@ $(VORBISFILE_CFLAGS) -c
 
 cpioggpic.o: cpioggpic.c \
 	../config.h \
@@ -31,7 +31,7 @@ cpioggpic.o: cpioggpic.c \
 	../cpiface/cpiface.h \
 	../stuff/poutput.h \
 	oggplay.h
-	$(CC) $< -o $@ -c
+	$(CC) $< -o $@ $(VORBISFILE_CFLAGS) -c
 
 oggtype.o: oggtype.c \
 	../config.h \
