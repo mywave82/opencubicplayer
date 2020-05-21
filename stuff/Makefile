@@ -28,7 +28,8 @@ NEED_TTF=1
 endif
 
 ifeq ($(NEED_TTF),1)
-poutput_so+=ttf.o poutput-swtext.o poutput-fontengine.o $(FREETYPE2_LIBS)
+poutput_so+=ttf.o poutput-swtext.o poutput-fontengine.o
+poutput_so_libs+=$(FREETYPE2_LIBS)
 endif
 
 ifeq ($(STATIC_BUILD),1)
