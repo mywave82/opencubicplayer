@@ -31,6 +31,9 @@
 #include "mixclip.h"
 #include "boot/plinkman.h"
 
+#if 0
+This was used when amplification was configured - non of the players in Linux/Unix used this
+
 #ifdef I386_ASM
 
 /* assembler versions uses the first 512 entries as 32bit pointers */
@@ -317,6 +320,8 @@ void mixClipAlt2(uint16_t *dst, const uint16_t *src, uint32_t len, const uint16_
 		len--;
 	}
 }
+
+#endif
 
 #endif
 

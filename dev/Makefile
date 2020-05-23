@@ -1,7 +1,7 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-mixclip_so=mixclip.o
+#mixclip_so=mixclip.o
 
 plrbase_so=deviplay.o plrasm.o player.o
 
@@ -14,13 +14,15 @@ mchasm_so=mchasm.o
 smpbase_so=devisamp.o sampler.o
 
 ifeq ($(STATIC_BUILD),1)
-all: $(mixclip_so) $(plrbase_so) $(devi_so) $(mcpbase_so) $(mchasm_so) $(smpbase_so)
+all: $(plrbase_so) $(devi_so) $(mcpbase_so) $(mchasm_so) $(smpbase_so)
+#$(mixclip_so)
 else
-all: devi$(LIB_SUFFIX) mcpbase$(LIB_SUFFIX) plrbase$(LIB_SUFFIX) smpbase$(LIB_SUFFIX) mchasm$(LIB_SUFFIX) mixclip$(LIB_SUFFIX)
+all: devi$(LIB_SUFFIX) mcpbase$(LIB_SUFFIX) plrbase$(LIB_SUFFIX) smpbase$(LIB_SUFFIX) mchasm$(LIB_SUFFIX)
+#mixclip$(LIB_SUFFIX)
 endif
 
-mixclip$(LIB_SUFFIX): $(mixclip_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
+#mixclip$(LIB_SUFFIX): $(mixclip_so)
+#	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 plrbase$(LIB_SUFFIX): $(plrbase_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
@@ -48,7 +50,7 @@ install:
 	$(CP) mcpbase$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-mcpbase$(LIB_SUFFIX)"
 	$(CP) plrbase$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-plrbase$(LIB_SUFFIX)"
 	$(CP) smpbase$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-smpbase$(LIB_SUFFIX)"
-	$(CP) mixclip$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-mixclip$(LIB_SUFFIX)"
+#	$(CP) mixclip$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-mixclip$(LIB_SUFFIX)"
 	$(CP) mchasm$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-mchasm$(LIB_SUFFIX)"
 	$(CP) devi$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-devi$(LIB_SUFFIX)"
 
@@ -57,7 +59,7 @@ uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-mcpbase$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-plrbase$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-smpbase$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-mixclip$(LIB_SUFFIX)"
+#	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-mixclip$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-mchasm$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-devi$(LIB_SUFFIX)"
 endif
@@ -200,8 +202,8 @@ smpman_asminctest.o: smpman_asminctest.c smpman_asminc.c ../config.h
 smpman_asminctest: smpman_asminctest.o
 	$(CC) -o $@ $^
 
-mixclip.o: mixclip.c mixclip.h \
-	../config.h \
-	../types.h \
-	../boot/plinkman.h
-	$(CC) mixclip.c -o $@ -c
+#mixclip.o: mixclip.c mixclip.h \
+#	../config.h \
+#	../types.h \
+#	../boot/plinkman.h
+#	$(CC) mixclip.c -o $@ -c
