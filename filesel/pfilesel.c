@@ -2659,8 +2659,6 @@ signed int fsFileSelect(void)
 	 */
 	int win=0;
 	unsigned long i;
-	int curscanned=0;
-	struct modlistentry *m;
 
 	plSetTextMode(fsScrType);
 	fsScrType=plScrType;
@@ -2677,6 +2675,8 @@ signed int fsFileSelect(void)
 		int firstv, firstp;
 		uint16_t c;
 		struct modlist *curlist;
+		int curscanned=0;
+		struct modlistentry *m;
 
 superbreak:
 		dirwinheight=plScrHeight-4;
@@ -2718,18 +2718,15 @@ superbreak:
 			firstp=playlist->num-dirwinheight;
 		if (firstp<0)
 			firstp=0;
-		if (!win)
-			m=modlist_getcur(currentdir);
-		else
-			m=modlist_getcur(playlist);
+
+		curlist=(win?playlist:currentdir);
+		m=modlist_getcur(curlist);
 
 		fsShowDir(firstv, win?(unsigned)~0:currentdir->pos, firstp, win?playlist->pos:(unsigned)~0, editmode?editpos:~0, m, win);
 
 		if (state == 1)
 		{
 			int retval;
-			curlist=(win?playlist:currentdir);
-			m=modlist_getcur(curlist); /* this is not actually needed, m should be preserved from above logic */
 			retval = fsEditFileInfo(m);
 			if (retval > 0)
 			{
@@ -2755,6 +2752,7 @@ superbreak:
 				goto superbreak;
 			}
 			state = 0;
+			goto superbreak;
 		} else if (state == 4)
 		{
 			if (fsSavePlayList(playlist))
@@ -2838,9 +2836,6 @@ superbreak:
 			}
 
 			quickfindpos=0;
-
-			curlist=(win?playlist:currentdir);
-			m=modlist_getcur(curlist); /* this is not actually needed, m should be preserved from above logic */
 
 			switch (c)
 			{
