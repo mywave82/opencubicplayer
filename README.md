@@ -6,19 +6,23 @@ UNIX port of Open Cubic Player, which is a text-based player with some few graph
 
 # What can it play?
 
-Amiga style [modules](https://en.wikipedia.org/wiki/Module_file) files with more:
-- \*.AMS
-- \*.DMF
-- \*.MXM
-- \*.IT, [Schism Tracker](http://schismtracker.org/)
-- \*.MOD, [ProTracker Clone](https://github.com/8bitbubsy/pt2-clone)
-- \*.MTM
-- \*.OKT
-- \*.STM
-- \*.S3M
-- \*.ULT
-- \*.XM, [FastTracker 2 Clone](https://github.com/8bitbubsy/ft2-clone)
-- \*.669
+Amiga style [modules](https://en.wikipedia.org/wiki/Module_file) files with more: <!-- http://fileformats.archiveteam.org/wiki/Amiga_Module -->
+- \*.AMS, [Velvet Studio](http://www.pouet.net/prod.php?which=64890)
+- \*.DMF, [X-Tracker](http://www.pouet.net/prod.php?which=55233)
+- \*.IT, [Impulse Tracker](https://en.wikipedia.org/wiki/Impulse_Tracker) or use the modern [Schism Tracker](http://schismtracker.org/)
+- \*.MDL, [DigiTrakker](http://www.pouet.net/prod.php?which=13371), now developed as [MilkyTracker](https://en.wikipedia.org/wiki/MilkyTracker)
+- \*.MOD, [ProTracker](https://en.wikipedia.org/wiki/ProTracker) or use the modern [ProTracker Clone](https://github.com/8bitbubsy/pt2-clone)
+- \*.MTM, [MultiTracker Module Editor](http://www.pouet.net/prod.php?which=13362)
+<!-- - \*.MXM, mxmplayer - mini GUS player, intermediate file format to support .XM and similiar files -->
+- \*.NST, [NoiseTracker](https://en.wikipedia.org/wiki/NoiseTracker)
+- \*.OKT, [Oktalyzer](http://www.robotplanet.dk/amiga/oktalyzer/)<!-- https://www.wikidata.org/wiki/Q21041560 -->
+- \*.PTM, [PolyTracker](http://justsolve.archiveteam.org/wiki/Poly_Tracker_module)
+- \*.STM, [Scream Tracker 2](https://en.wikipedia.org/wiki/Scream_Tracker)
+- \*.S3M, [Scream Tracker 3](https://en.wikipedia.org/wiki/Scream_Tracker)
+- \*.ULT, [Ultra Tracker](http://www.pouet.net/prod.php?which=63386)
+- \*.WOW, Grave Composer <!-- http://fileformats.archiveteam.org/wiki/Grave_Composer_module -->
+- \*.XM, [FastTracker 2](https://en.wikipedia.org/wiki/FastTracker_2) or use the modern [FastTracker 2 Clone](https://github.com/8bitbubsy/ft2-clone)
+- \*.669, [Composer 669](http://www.pouet.net/prod.php?which=63357) <!-- https://www.wikidata.org/wiki/Q9135198 -->
 
 Code from [STYMulator](http://atariarea.krap.pl/stymulator/) to play music from [Atari ST](https://en.wikipedia.org/wiki/Atari_ST#Technical_specifications) \([Yamaha YM2149](https://en.wikipedia.org/wiki/General_Instrument_AY-3-8910)\):
 - \*.YM
