@@ -2062,8 +2062,8 @@ static int fsEditString2(unsigned int y, unsigned int x, unsigned int w, char **
 	{
 		insmode=1;
 
-		curpos=strlen(str);
-		cmdlen=strlen(str);
+		curpos=strlen(*s);
+		cmdlen=strlen(*s);
 
 		cmdlen = strlen(*s);
 		alloc = cmdlen + 64;
