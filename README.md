@@ -12,8 +12,7 @@ Amiga style [modules](https://en.wikipedia.org/wiki/Module_file) files with more
 - \*.IT, [Impulse Tracker](https://en.wikipedia.org/wiki/Impulse_Tracker) or use the modern [Schism Tracker](http://schismtracker.org/)
 - \*.MDL, [DigiTrakker](http://www.pouet.net/prod.php?which=13371), now developed as [MilkyTracker](https://en.wikipedia.org/wiki/MilkyTracker)
 - \*.MOD, [ProTracker](https://en.wikipedia.org/wiki/ProTracker) or use the modern [ProTracker Clone](https://github.com/8bitbubsy/pt2-clone)
-- \*.MTM, [MultiTracker Module Editor](http://www.pouet.net/prod.php?which=13362)
-<!-- - \*.MXM, mxmplayer - mini GUS player, intermediate file format to support .XM and similiar files -->
+- \*.MTM, [MultiTracker Module Editor](http://www.pouet.net/prod.php?which=13362)<!-- - \*.MXM, mxmplayer - mini GUS player, intermediate file format to support .XM and similiar files -->
 - \*.NST, [NoiseTracker](https://en.wikipedia.org/wiki/NoiseTracker)
 - \*.OKT, [Oktalyzer](http://www.robotplanet.dk/amiga/oktalyzer/)<!-- https://www.wikidata.org/wiki/Q21041560 -->
 - \*.PTM, [PolyTracker](http://justsolve.archiveteam.org/wiki/Poly_Tracker_module)
