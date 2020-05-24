@@ -85,6 +85,7 @@ static int loadmod(struct xmodule *m, FILE *file, int chan, int sig, int opt)
 	m->nenv=0;
 	m->linearfreq=0;
 	m->ismod=!(opt&4);
+	m->ft2_e60bug=0;
 
 	fseek(file, 1080, SEEK_SET);
 	if (fread(&l, sizeof(uint32_t), 1, file)!=1)

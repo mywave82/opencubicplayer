@@ -69,9 +69,10 @@ void __attribute__ ((visibility ("internal"))) xmpOptimizePatLens(struct xmodule
 		unsigned int curord = i;
 		unsigned int currow = 0;
 		uint16_t curpat;    /* the pattern that the order points to */
-		unsigned int curpatlen; /* the original length */
+		unsigned int curpatlen = 0; /* the original length */
 		int orderchanged = 1;
 		unsigned int k;
+		unsigned int nextpatternrow = 0;
 
 		while (1)
 		{
@@ -112,7 +113,8 @@ void __attribute__ ((visibility ("internal"))) xmpOptimizePatLens(struct xmodule
 			{
 				/* next order please */
 				curord++;
-				currow = 0;
+				currow = nextpatternrow;
+				nextpatternrow = 0;
 				orderchanged = 1;
 				continue;
 			}
@@ -129,6 +131,12 @@ void __attribute__ ((visibility ("internal"))) xmpOptimizePatLens(struct xmodule
 			{
 				switch (m->patterns[curpat][m->nchan*currow+k][3])
 				{
+					case xmpCmdPatLoop:
+						if (m->ft2_e60bug && (m->patterns[curpat][m->nchan*currow+k][4] == 0x00))
+						{
+							nextpatternrow = currow;
+						}
+						break;
 					case xmpCmdJump:
 						neword = m->patterns[curpat][m->nchan*currow+k][4];
 						newrow = 0;
@@ -198,7 +206,7 @@ eof:{}
 		m->patlens[i] = l;
 	}
 memoryabort:
-	for (i=0; i<m->npat; i++)
+	for (i=0; i<m->nord; i++)
 	{
 		free (detection[i]);
 	}

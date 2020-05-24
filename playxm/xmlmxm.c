@@ -115,6 +115,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 	m->patterns=0;
 	m->orders=0;
 	m->ismod=0;
+	m->ft2_e60bug=1;
 
 	/* 1st: read headers */
 

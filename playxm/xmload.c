@@ -109,6 +109,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 	m->patterns=0;
 	m->orders=0;
 	m->ismod=0;
+	m->ft2_e60bug=1;
 
 	if (fread(&head1, sizeof(head1), 1, file)!=1)
 	{

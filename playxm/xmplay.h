@@ -51,7 +51,8 @@ struct xmpinstrument
 struct xmodule
 {
 	char name[21];
-	int ismod;
+	char ismod;
+	char ft2_e60bug;
 	int linearfreq;
 	unsigned int nchan;
 	unsigned int ninst;

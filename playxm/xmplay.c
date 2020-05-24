@@ -174,6 +174,7 @@ static int nchan;
 static int loopord;
 static int nenv;
 static char ismod;
+static char ft2_e60bug;
 static struct xmpinstrument *instruments;
 static struct xmpsample *samples;
 static struct sampleinfo *sampleinfos;
@@ -184,6 +185,7 @@ static uint16_t *patlens;
 
 static int jumptoord;
 static int jumptorow;
+static int nextpatternrow; /* which row to go do, when doing roll-over at the end of pattern - normally row 0, except for Fast Tracker II E60 bug */
 static int patdelay;
 
 static uint8_t procnot;
@@ -558,6 +560,7 @@ static void xmpPlayTick(void)
 			curord=jumptoord;
 			currow=jumptorow;
 			jumptoord=-1;
+			jumptorow=0;
 			patlen=patlens[orders[curord]];
 			patptr=patterns[orders[curord]];
 		}
@@ -565,35 +568,46 @@ static void xmpPlayTick(void)
 
 	if (!curtick && (!patdelay || ismod))
 	{
+		// no more ticks, we need to step
 		tick0=1;
 
 		if (!patdelay)
 		{
 			currow++;
+			// no jump configured? and at the end of row? jump to the next order, and start fresh
 			if ((jumptoord==-1)&&(currow>=patlen))
 			{
 				jumptoord=curord+1;
-				jumptorow=0;
+				jumptorow=nextpatternrow;
+				nextpatternrow=0;
 			}
+			// jump is configured
 			if (jumptoord!=-1)
 			{
+				// jump is not the same order.. (jump is not caused by a loop)
 				if (jumptoord!=curord)
 					for (i=0; i<nchan; i++)
-					{
+					{ // reset all loop counters
 						struct channel *ch=&channels[i];
 						ch->chPatLoopCount=0;
 						ch->chPatLoopStart=0;
 					}
 
+				// jumping into/beyond EOF, loop module
 				if (jumptoord>=nord)
+				{
 					jumptoord=loopord;
+				}
+				// if jump is backwards, song has globally looped, flag it for the UI
 				if ((jumptoord<curord)&&!usersetpos)
 					looped=1;
 				usersetpos=0;
 
+				// take the position, and clear jumptoord
 				curord=jumptoord;
 				currow=jumptorow;
 				jumptoord=-1;
+				jumptorow=0;
 				patlen=patlens[orders[curord]];
 				patptr=patterns[orders[curord]];
 			}
@@ -745,6 +759,7 @@ static void xmpPlayTick(void)
 					{
 						jumptoord=procdat;
 						jumptorow=0;
+						nextpatternrow=0;
 					}
 					break;
 				case xmpCmdVolume:
@@ -756,12 +771,13 @@ static void xmpPlayTick(void)
 						if (jumptoord==-1)
 							jumptoord=curord+1;
 						jumptorow=(procdat&0xF)+(procdat>>4)*10;
+						nextpatternrow=0;
 					}
 					break;
 				case xmpCmdSpeed:
 					if (!procdat)
 					{
-						jumptoord=procdat;
+						jumptoord=0;
 						jumptorow=0;
 						break;
 					}
@@ -889,8 +905,13 @@ static void xmpPlayTick(void)
 					/* if(plLoopPatterns)*/ /* TODO ?? */
 					{
 						if (!procdat)
+						{
 							ch->chPatLoopStart=currow;
-						else {
+							if (ft2_e60bug)
+							{
+								nextpatternrow=currow;
+							}
+						} else {
 							ch->chPatLoopCount++;
 							if (ch->chPatLoopCount<=procdat)
 							{
@@ -1491,6 +1512,7 @@ int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m)
 	loopord=m->loopord;
 	nenv=m->nenv;
 	ismod=m->ismod;
+	ft2_e60bug=m->ft2_e60bug;
 	looped=0;
 
 	curtempo=m->initempo;
