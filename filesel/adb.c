@@ -152,7 +152,7 @@ char adbInit(void)
 		close(f);
 		return 1;
 	}
-	adbData=malloc(sizeof(struct arcentry)*adbNum);
+	adbData=calloc(sizeof(struct arcentry), adbNum);
 	if (!adbData)
 		return 0;
 	if (old)
@@ -184,15 +184,16 @@ char adbInit(void)
 			adbData[i].size=uint32_little(oldentry.size);
 		}
 	} else {
-		if (read(f, adbData, adbNum*sizeof(*adbData))!=(ssize_t)(adbNum*sizeof(*adbData)))
+		ssize_t result = read(f, adbData, adbNum*sizeof(*adbData));
+		if (result!=(ssize_t)(adbNum*sizeof(*adbData)))
 		{
-			fprintf(stderr, "premature EOF\n");
-			/* File is broken / premature EOF */
-			free(adbData);
-			adbData=0;
-			adbNum=0;
-			close(f);
-			return 1;
+			/* File has a hole at the end / premature EOF - can happen actually */
+			//fprintf(stderr, "premature EOF adbNum=%"PRIu32" expected=%lu got=%lu\n", adbNum, (unsigned long)(adbNum*sizeof(*adbData)), (unsigned long)result);
+			//free(adbData);
+			//adbData=0;
+			//adbNum=0;
+			//close(f);
+			//return 1;
 		}
 		for (i=0;i<adbNum;i++)
 		{
@@ -202,6 +203,7 @@ char adbInit(void)
 	}
 	close(f);
 	fprintf(stderr, "Done\n");
+
 	return 1;
 }
 
@@ -209,7 +211,7 @@ void adbUpdate(void)
 {
 	char *path;
 	int f;
-	uint32_t i, j;
+	uint32_t i, j, k;
 	struct adbheader header;
 
 	if (!adbDirty)
@@ -225,7 +227,7 @@ void adbUpdate(void)
 	strcpy(path, cfConfigDir);
 	strcat(path, "CPARCS.DAT");
 
-	if ((f=open(path, O_WRONLY|O_CREAT|O_TRUNC, S_IREAD|S_IWRITE))<0)
+	if ((f=open(path, O_WRONLY|O_CREAT, S_IREAD|S_IWRITE))<0)
 	{
 		perror("adbUpdate: open(cfConfigDir/CPARCS.DAT)");
 		free (path);
@@ -274,9 +276,12 @@ void adbUpdate(void)
 				adbData[j].flags&=~ADB_DIRTY;
 			else
 				break;
-		lseek(f, 20+i*sizeof(*adbData), SEEK_SET);
-		adbData[i].parent=uint32_little(adbData[i].parent);
-		adbData[i].size=uint32_little(adbData[i].size);
+		lseek(f, sizeof(header)+i*sizeof(*adbData), SEEK_SET);
+		for (k=i; k < j; k++)
+		{
+			adbData[k].parent=uint32_little(adbData[k].parent);
+			adbData[k].size=uint32_little(adbData[k].size);
+		}
 		while (1)
 		{
 			ssize_t res;
@@ -289,17 +294,33 @@ void adbUpdate(void)
 					continue;
 				perror("adbUpdate: write() to cfConfigDir/CPARCS.DAT");
 				close (f);
+
+				for (k=i; k < j; k++)
+				{
+					adbData[k].parent=uint32_little(adbData[k].parent);
+					adbData[k].size=uint32_little(adbData[k].size);
+				}
 				return;
 			} else if (res != (ssize_t)((j-i)*sizeof(*adbData)))
 			{
 				fprintf(stderr, "adbUpdate: write() to cfConfigDir/CPARCS.DAT returned only partial data\n");
 				close (f);
+
+				for (k=i; k < j; k++)
+				{
+					adbData[k].parent=uint32_little(adbData[k].parent);
+					adbData[k].size=uint32_little(adbData[k].size);
+				}
 				return;
 			} else
 				break;
 		}
-		adbData[i].parent=uint32_little(adbData[i].parent);
-		adbData[i].size=uint32_little(adbData[i].size);
+		for (k=i; k < j; k++)
+		{
+			adbData[k].parent=uint32_little(adbData[k].parent);
+			adbData[k].size=uint32_little(adbData[k].size);
+		}
+
 		i=j;
 	}
 	lseek(f, 0, SEEK_END);
@@ -334,6 +355,7 @@ int adbAdd(const struct arcentry *a)
 		for (j=i; j<adbNum; j++)
 			adbData[j].flags|=ADB_DIRTY;
 	}
+
 	memcpy(&adbData[i], a, sizeof(struct arcentry));
 	adbData[i].flags|=ADB_USED|ADB_DIRTY;
 	if (a->flags&ADB_ARC)
@@ -615,7 +637,7 @@ static signed char adbFindFirst(const char *path, unsigned long arclen, char *fi
 	{ // file not found, or filesize missmatch
 		if (ar!=ADB_NONE)
 		{ // file found, but size is wrong
-		  // we remove the archieve from the cache, since it has been changed
+		  // we remove the archive from the cache, since it has been changed
 			for (i=0; i<adbNum; i++)
 			{
 				if (adbData[i].parent==ar)
@@ -625,7 +647,7 @@ static signed char adbFindFirst(const char *path, unsigned long arclen, char *fi
 			}
 		}
 		adbDirty=1;
-		{ // rescan the archeive
+		{ // rescan the archive
 			struct adbregstruct *packers;
 			for (packers=adbPackers; packers; packers=packers->next)
 			{
