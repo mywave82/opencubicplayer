@@ -1482,7 +1482,7 @@ Optional Packages:
   --with-sdl2             force/disable SDL2 video support (autodetect by default)
   --without-desktop_file_install Do not install .desktop file (SDL and X11 normally does this)
   --with-dumptools        enable building the different fileformat dump utilities
-  --with-unifontdir=/path the path to where ttf-unifont in located (used by SDL1.x and SDL2)
+  --with-unifontdir=/path the path to where ttf-unifont in located (used by X11, SDL1.x and SDL2)
   --with-timidity-default-path=DIR
                           Where timidity.cfg is (PREFIX/share/timidity)
   --with-ncurses          force the use of Ncurses or NcursesW
@@ -9871,7 +9871,7 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 else
-  as_fn_error $? "$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)" "$LINENO" 5
+  as_fn_error $? "$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)" "$LINENO" 5
 fi
 
 	as_ac_File=`$as_echo "ac_cv_file_$UNIFONTDIR/unifont_csur.ttf" | $as_tr_sh`
@@ -9894,7 +9894,7 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 else
-  as_fn_error $? "$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)" "$LINENO" 5
+  as_fn_error $? "$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)" "$LINENO" 5
 fi
 
 	as_ac_File=`$as_echo "ac_cv_file_$UNIFONTDIR/unifont_upper.ttf" | $as_tr_sh`
@@ -9917,7 +9917,7 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 else
-  as_fn_error $? "$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)" "$LINENO" 5
+  as_fn_error $? "$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)" "$LINENO" 5
 fi
 
 	cat >>confdefs.h <<_ACEOF

@@ -93,7 +93,7 @@ AC_ARG_WITH(desktop_file_install, [  --without-desktop_file_install Do not insta
 
 AC_ARG_WITH(dumptools, [  --with-dumptools        enable building the different fileformat dump utilities],, with_dumptools=no)
 
-AC_ARG_WITH(unifontdir, [  --with-unifontdir=/path the path to where ttf-unifont in located (used by SDL1.x and SDL2)],, with_unifontdir="${datarootdir}/fonts/truetype/unifont")
+AC_ARG_WITH(unifontdir, [  --with-unifontdir=/path the path to where ttf-unifont in located (used by X11, SDL1.x and SDL2)],, with_unifontdir="${datarootdir}/fonts/truetype/unifont")
 
 # normally, this is done automatically first when running AC_OUTPUT, but we need them expanded now
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -580,9 +580,9 @@ if test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11" = 
 
 dnl locate the ttf-unifont
 	AS_AC_EXPAND(UNIFONTDIR, $with_unifontdir)
-	AC_CHECK_FILE($UNIFONTDIR/unifont.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)]))
-	AC_CHECK_FILE($UNIFONTDIR/unifont_csur.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)]))
-	AC_CHECK_FILE($UNIFONTDIR/unifont_upper.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by SDL2)]))
+	AC_CHECK_FILE($UNIFONTDIR/unifont.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)]))
+	AC_CHECK_FILE($UNIFONTDIR/unifont_csur.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)]))
+	AC_CHECK_FILE($UNIFONTDIR/unifont_upper.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)]))
 	AC_DEFINE_UNQUOTED(UNIFONTDIR, "$UNIFONTDIR")
 fi
 
