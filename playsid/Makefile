@@ -247,11 +247,10 @@ libsidplayfp-sidtune-PSID.o: \
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 sidplayfp-git/libsidplayfp/src/sidtune/sidplayer1.bin: \
 	sidplayfp-git/libsidplayfp/src/sidtune/sidplayer1.a65
-	xa -R -G $< -o - | hexdump -v -e '1/1 "0x%02X,\n"' > $@
+	$(XA) -R -G $< -o - | $(HEXDUMP) -v -e '1/1 "0x%02X,\n"' > $@
 sidplayfp-git/libsidplayfp/src/sidtune/sidplayer2.bin: \
 	sidplayfp-git/libsidplayfp/src/sidtune/sidplayer2.a65
-	o65file=`echo $@ | sed 's/bin/o65/'`; \
-	xa -R -G $< -o - | hexdump -v -e '1/1 "0x%02X,\n"' > $@
+	$(XA) -R -G $< -o - | $(HEXDUMP) -v -e '1/1 "0x%02X,\n"' > $@
 libsidplayfp-sidtune-MUS.o: \
 	sidplayfp-git/libsidplayfp/src/sidtune/MUS.cpp \
 	sidplayfp-git/libsidplayfp/src/sidtune/sidplayer1.bin \
