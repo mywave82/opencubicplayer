@@ -64,8 +64,10 @@ uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-devi$(LIB_SUFFIX)"
 endif
 
-unit-test: ringbuffer-unit-test
+test: ringbuffer-unit-test mchasm_test smpman_asminctest
 	./ringbuffer-unit-test
+	./mchasm_test
+	./smpman_asminctest
 
 ringbuffer-unit-test: \
 	ringbuffer.c \

@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "\n");
 	}
 
-	fprintf(stderr, "smppos: %u.%u\n", dwmixfa_state.smpposw[0]-sample_1, dwmixfa_state.smpposf[0]);
+	fprintf(stderr, "smppos: %u.%u\n", (unsigned int)(dwmixfa_state.smpposw[0]-sample_1), dwmixfa_state.smpposf[0]);
 
 	ClosePlayer();
 

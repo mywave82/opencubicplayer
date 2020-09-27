@@ -1,6 +1,10 @@
 #ifndef _DIRDB_H
 #define _DIRDB_H
 
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
 #define DIRDB_NOPARENT 0xffffffff /* also is the magicial node of / */
 #define DIRDB_CLEAR     0xffffffff
 #define DIRDB_NO_MDBREF 0xffffffff

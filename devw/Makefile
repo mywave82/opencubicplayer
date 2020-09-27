@@ -3,6 +3,11 @@ include $(TOPDIR)Rules.make
 
 all: devwnone$(LIB_SUFFIX) devwmix$(LIB_SUFFIX) devwmixf$(LIB_SUFFIX)
 
+test: test-dwmixa test-dwmixqa test-dwmixfa
+	./test-dwmixa
+	./test-dwmixqa
+	./test-dwmixfa
+
 test-dwmixa.o: test-dwmixa.c ../config.h dwmix.h dwmixa.h ../stuff/pagesize.inc.c
 	$(CC) -c -o $@ test-dwmixa.c
 

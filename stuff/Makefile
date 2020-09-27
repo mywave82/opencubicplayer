@@ -38,6 +38,9 @@ else
 all: compat.o hardware$(LIB_SUFFIX) err.o sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX) framelock$(LIB_SUFFIX)
 endif
 
+test: compat-test
+	./compat-test.sh
+
 framelock$(LIB_SUFFIX): $(framelock_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
@@ -51,7 +54,7 @@ sets$(LIB_SUFFIX): $(sets_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX)
+	rm -f *.o *$(LIB_SUFFIX) compat-test
 
 ifeq ($(STATIC_BUILD),1)
 install:
@@ -72,6 +75,14 @@ cp437.o: cp437.c cp437.h \
 	../types.h \
 	utf-8.h
 	$(CC) $< -o $@ -c
+
+compat-test: compat-test.c \
+	compat.c \
+	compat.h \
+	../config.h \
+	../types.h \
+	../boot/plinkman.h
+	$(CC) $< -o $@
 
 poutput.o: poutput.h poutput.c \
 	../config.h \

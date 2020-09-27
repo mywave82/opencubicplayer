@@ -16,6 +16,10 @@ else
 all: arctar$(LIB_SUFFIX) arczip$(LIB_SUFFIX) $(CDROM_SO) fstypes.o pfilesel$(LIB_SUFFIX)
 endif
 
+test: dirdb-test gendir-test
+	./dirdb-test
+	./gendir-test
+
 arctar$(LIB_SUFFIX): $(arctar_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
@@ -29,7 +33,7 @@ pfilesel$(LIB_SUFFIX): $(pfilesel_so)
 	$(CC) $(SHARED_FLAGS) $(MATH_LIBS) -o $@ $^
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) modlist_test
+	rm -f *.o *$(LIB_SUFFIX) dirdb-test gendir-test
 
 ifeq ($(STATIC_BUILD),1)
 install:
@@ -70,6 +74,14 @@ dirdb.o: dirdb.c dirdb.h \
 	../boot/psetting.h
 	$(CC) dirdb.c -o $@ -c
 
+dirdb-test: dirdb-test.c \
+	dirdb.c \
+	dirdb.h \
+	../config.h \
+	../types.h \
+	../boot/psetting.h
+	$(CC) $< -o $@
+
 cdrom.o: cdrom.c \
 	../config.h \
 	../types.h \
@@ -80,6 +92,13 @@ cdrom.o: cdrom.c \
 	../stuff/err.h \
 	mdb.h
 	$(CC) cdrom.c -o $@ -c
+
+gendir-test: gendir-test.c \
+	gendir.c \
+	gendir.h \
+	../config.h \
+	../types.h
+	$(CC) $< -o $@
 
 mdb.o: mdb.c mdb.h \
 	../config.h \
@@ -113,14 +132,6 @@ modlist.o: modlist.c modlist.h \
 	../stuff/compat.h \
 	dirdb.h
 	$(CC) modlist.c -o $@ -c
-
-modlist_test.o: modlist_test.c \
-	../config.h
-	modlist.h
-	$(CC) modlist_test.c -o $@ -c
-
-modlist_test: modlist.o modlist_test.o
-	$(CC) -o $@ $^ -lefence
 
 pfilesel.o: pfilesel.c pfilesel.h \
 	../config.h \

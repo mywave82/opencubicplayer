@@ -38,44 +38,44 @@ void test1(void)
 	uint16_t samples_negative[10]={0x7fff, 0x7fff, 0x7fff, 0x7fff, 0x7fff, 0x7fff, 0x7fff, 0x7fff, 0x7fff, 0x7fff};
 	uint32_t result;
 
-	fprintf(stderr, "mixAddAbs16M(): ");
+	fputs("mixAddAbs16M(): ", stderr);
 
-	fprintf(stderr, "  (zero: ");
+	fputs("  (zero: ", stderr);
 	if ((result=mixAddAbs16M(samples_zero, 10))!=0)
 	{
 		fprintf(stderr, "failed, got 0x%08x)", (int)result);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (range: ");
+	fputs("  (range: ", stderr);
 	if ((result=mixAddAbs16M(samples_range+1, 1))!=0)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (positive: ");
+	fputs("  (positive: ", stderr);
 	if ((result=mixAddAbs16M(samples_positive, 10))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (negative: ");
+	fputs("  (negative: ", stderr);
 	if ((result=mixAddAbs16M(samples_negative, 10))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test2(void)
@@ -86,44 +86,44 @@ void test2(void)
 	int16_t samples_negative[10]={-0x0001, -0x0001, -0x0001, -0x0001, -0x0001, -0x0001, -0x0001, -0x0001, -0x0001, -0x0001};
 	uint32_t result;
 
-	fprintf(stderr, "mixAddAbs16MS():");
+	fputs("mixAddAbs16MS():", stderr);
 
-	fprintf(stderr, "  (zero: ");
+	fputs("  (zero: ", stderr);
 	if ((result=mixAddAbs16MS(samples_zero, 10))!=0)
 	{
 		fprintf(stderr, "failed, got 0x%08x)", (int)result);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (range: ");
+	fputs("  (range: ", stderr);
 	if ((result=mixAddAbs16MS(samples_range+1, 1))!=0)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (positive: ");
+	fputs("  (positive: ", stderr);
 	if ((result=mixAddAbs16MS(samples_positive, 10))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (negative: ");
+	fputs("  (negative: ", stderr);
 	if ((result=mixAddAbs16MS(samples_negative, 10))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test3(void)
@@ -134,44 +134,44 @@ void test3(void)
 	uint16_t samples_negative[10]={0x7ffe, 0x7000, 0x7ffe, 0x7000, 0x7ffe, 0x7000, 0x7ffe, 0xffff, 0x7ffe, 0x1000};
 	uint32_t result;
 
-	fprintf(stderr, "mixAddAbs16S(): ");
+	fputs("mixAddAbs16S(): ", stderr);
 
-	fprintf(stderr, "  (zero: ");
+	fputs("  (zero: ", stderr);
 	if ((result=mixAddAbs16S(samples_zero, 5))!=0)
 	{
 		fprintf(stderr, "failed, got 0x%08x)", (int)result);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (range: ");
+	fputs("  (range: ", stderr);
 	if ((result=mixAddAbs16S(samples_range+2, 1))!=0)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (positive: ");
+	fputs("  (positive: ", stderr);
 	if ((result=mixAddAbs16S(samples_positive, 5))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (negative: ");
+	fputs("  (negative: ", stderr);
 	if ((result=mixAddAbs16S(samples_negative, 5))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test4(void)
@@ -182,44 +182,44 @@ void test4(void)
 	int16_t samples_negative[10]={-0x0002, 0x0000, -0x0002, 0x0100, -0x0002, -0x1000, -0x0002, -0x0f01, -0x0002, 0x4321};
 	uint32_t result;
 
-	fprintf(stderr, "mixAddAbs16SS():");
+	fputs("mixAddAbs16SS():", stderr);
 
-	fprintf(stderr, "  (zero: ");
+	fputs("  (zero: ", stderr);
 	if ((result=mixAddAbs16SS(samples_zero, 5))!=0)
 	{
 		fprintf(stderr, "failed, got 0x%08x)", (int)result);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (range: ");
+	fputs("  (range: ", stderr);
 	if ((result=mixAddAbs16SS(samples_range+2, 1))!=0)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (positive: ");
+	fputs("  (positive: ", stderr);
 	if ((result=mixAddAbs16SS(samples_positive, 5))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (negative: ");
+	fputs("  (negative: ", stderr);
 	if ((result=mixAddAbs16SS(samples_negative, 5))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test5(void)
@@ -230,44 +230,44 @@ void test5(void)
 	uint8_t samples_negative[10]={0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f};
 	uint32_t result;
 
-	fprintf(stderr, "mixAddAbs8M():  ");
+	fputs("mixAddAbs8M():  ", stderr);
 
-	fprintf(stderr, "  (zero: ");
+	fputs("  (zero: ", stderr);
 	if ((result=mixAddAbs8M(samples_zero, 10))!=0)
 	{
 		fprintf(stderr, "failed, got 0x%08x)", (int)result);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (range: ");
+	fputs("  (range: ", stderr);
 	if ((result=mixAddAbs8M(samples_range+1, 1))!=0)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (positive: ");
+	fputs("  (positive: ", stderr);
 	if ((result=mixAddAbs8M(samples_positive, 10))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (negative: ");
+	fputs("  (negative: ", stderr);
 	if ((result=mixAddAbs8M(samples_negative, 10))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test6(void)
@@ -278,44 +278,44 @@ void test6(void)
 	int8_t samples_negative[10]={-0x01, -0x01, -0x01, -0x01, -0x01, -0x01, -0x01, -0x01, -0x01, -0x01};
 	uint32_t result;
 
-	fprintf(stderr, "mixAddAbs8MS(): ");
+	fputs("mixAddAbs8MS(): ", stderr);
 
-	fprintf(stderr, "  (zero: ");
+	fputs("  (zero: ", stderr);
 	if ((result=mixAddAbs8MS(samples_zero, 10))!=0)
 	{
 		fprintf(stderr, "failed, got 0x%08x)", (int)result);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (range: ");
+	fputs("  (range: ", stderr);
 	if ((result=mixAddAbs8MS(samples_range+1, 1))!=0)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (positive: ");
+	fputs("  (positive: ", stderr);
 	if ((result=mixAddAbs8MS(samples_positive, 10))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (negative: ");
+	fputs("  (negative: ", stderr);
 	if ((result=mixAddAbs8MS(samples_negative, 10))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test7(void)
@@ -326,44 +326,44 @@ void test7(void)
 	uint8_t samples_negative[10]={0x7e, 0x2f, 0x7e, 0x3f, 0x7e, 0xaf, 0x7e, 0x9f, 0x7e, 0x8f};
 	uint32_t result;
 
-	fprintf(stderr, "mixAddAbs8S():  ");
+	fputs("mixAddAbs8S():  ", stderr);
 
-	fprintf(stderr, "  (zero: ");
+	fputs("  (zero: ", stderr);
 	if ((result=mixAddAbs8S(samples_zero, 5))!=0)
 	{
 		fprintf(stderr, "failed, got 0x%08x)", (int)result);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (range: ");
+	fputs("  (range: ", stderr);
 	if ((result=mixAddAbs8S(samples_range+2, 1))!=0)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (positive: ");
+	fputs("  (positive: ", stderr);
 	if ((result=mixAddAbs8S(samples_positive, 5))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (negative: ");
+	fputs("  (negative: ", stderr);
 	if ((result=mixAddAbs8S(samples_negative, 5))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test8(void)
@@ -374,44 +374,44 @@ void test8(void)
 	int8_t samples_negative[10]={-0x02, 0x13, -0x02, -0x58, -0x02, 0x6a, -0x02, -0x20, -0x02, 99};
 	uint32_t result;
 
-	fprintf(stderr, "mixAddAbs8SS(): ");
+	fputs("mixAddAbs8SS(): ", stderr);
 
-	fprintf(stderr, "  (zero: ");
+	fputs("  (zero: ", stderr);
 	if ((result=mixAddAbs8SS(samples_zero, 5))!=0)
 	{
 		fprintf(stderr, "failed, got 0x%08x)", (int)result);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (range: ");
+	fputs("  (range: ", stderr);
 	if ((result=mixAddAbs8SS(samples_range+2, 1))!=0)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (positive: ");
+	fputs("  (positive: ", stderr);
 	if ((result=mixAddAbs8SS(samples_positive, 5))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
 
-	fprintf(stderr, "  (negative: ");
+	fputs("  (negative: ", stderr);
 	if ((result=mixAddAbs8SS(samples_negative, 5))!=10)
 	{
-		fprintf(stderr, "failed)");
+		fputs("failed)", stderr);
 		retval=1;
 	} else {
-		fprintf(stderr, "ok)");
+		fputs("ok)", stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 typedef char pad_t[128];
@@ -440,19 +440,19 @@ void test9(void)
 	int16_t wewant3[10]={-1*256, -1*256, -2*256,   -2*256, -3*256, -3*256,    1*256,   1*256,  2*256,  2*256};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleMS8M   (8bit, mono, signed => 16bit, mono, signed) :\n");
+	fputs("mixGetMasterSampleMS8M   (8bit, mono, signed => 16bit, mono, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleMS8M((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
@@ -468,40 +468,40 @@ void test9(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleMS8M((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleMS8M((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test10(void)
@@ -523,40 +523,40 @@ void test10(void)
 	int16_t wewant3[10]={0x7f00, 0x7f00,  0x7e00,  0x7e00,  0x7d00,  0x7d00, -0x7f00, -0x7f00, -0x7e00, -0x7e00};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleMU8M   (8bit, mono, unsigned => 16bit, mono, signed) :\n");
+	fputs("mixGetMasterSampleMU8M   (8bit, mono, unsigned => 16bit, mono, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleMU8M((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleMU8M((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
-			fprintf(stderr, "\n");
+			fputs("\n", stderr);
 			for (i=0;i<10;i++)
 				fprintf(stderr, "   %02x", (uint8_t)src[i]);
 			fprintf(stderr, "\n");
@@ -568,24 +568,24 @@ void test10(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleMU8M((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test11(void)
@@ -600,35 +600,35 @@ void test11(void)
 	int16_t wewant3[20]={-1*256,-1*256,  -1*256,-1*256,  -2*256,-2*256,    -2*256,  -2*256,  -3*256,-3*256,  -3*256,-3*256,     1*256,   1*256,    1*256,  1*256,   2*256, 2*256,  2*256, 2*256};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleMS8S   (8bit, mono, signed => 16bit, stereo, signed) :\n");
+	fputs("mixGetMasterSampleMS8S   (8bit, mono, signed => 16bit, stereo, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleMS8S((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleMS8S((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
@@ -644,24 +644,24 @@ void test11(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleMS8S((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test12(void)
@@ -683,19 +683,19 @@ void test12(void)
 	int16_t wewant3[20]={0x7f00,0x7f00, 0x7f00,0x7f00,  0x7e00, 0x7e00,  0x7e00, 0x7e00,  0x7d00, 0x7d00, 0x7d00,0x7d00, -0x7f00,-0x7f00, -0x7f00,-0x7f00, -0x7e00,-0x7e00, 0-0x7e00,-0x7e00};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleMU8S   (8bit, mono, unsigned => 16bit, stereo, signed) :\n");
+	fputs("mixGetMasterSampleMU8S   (8bit, mono, unsigned => 16bit, stereo, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleMU8S((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
@@ -711,25 +711,25 @@ void test12(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleMU8S((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
-			fprintf(stderr, "\n");
+			fputs("\n", stderr);
 			for (i=0;i<10;i++)
 				fprintf(stderr, "    %02x   ", (uint8_t)src[i]);
 			fprintf(stderr, "\n");
@@ -741,24 +741,24 @@ void test12(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleMU8S((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test13(void)
@@ -773,19 +773,19 @@ void test13(void)
 	int16_t wewant3[10]={-1*256, -1*256, -2*256,   -2*256, -3*256, -3*256,    1*256,   1*256,  2*256,  2*256};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleSS8M   (8bit, stereo, signed => 16bit, mono, signed) :\n");
+	fputs("mixGetMasterSampleSS8M   (8bit, stereo, signed => 16bit, mono, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleSS8M((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
@@ -801,40 +801,40 @@ void test13(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleSS8M((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleSS8M((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test14(void)
@@ -849,50 +849,50 @@ void test14(void)
 	uint16_t wewant3[10]={0x7f00, 0x7f00, 0x7e00,  0x7e00, 0x7d00, 0x7d00, 0x8100, 0x8100, 0x8200, 0x8200};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleSU8M   (8bit, stereo, unsigned => 16bit, mono, signed) :\n");
+	fputs("mixGetMasterSampleSU8M   (8bit, stereo, unsigned => 16bit, mono, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleSU8M((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleSU8M((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleSU8M((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
@@ -908,9 +908,9 @@ void test14(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test15(void)
@@ -925,19 +925,19 @@ void test15(void)
 	int16_t wewant3[10]={-1*256, -2*256, -1*256,-2*256, -3*256,  1*256,   -3*256,   1*256,  2*256,  3*256};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleSS8S   (8bit, stereo, signed => 16bit, stereo, signed) :\n");
+	fputs("mixGetMasterSampleSS8S   (8bit, stereo, signed => 16bit, stereo, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleSS8S((int16_t *)dst, src, 5, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
@@ -953,40 +953,40 @@ void test15(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleSS8S((int16_t *)dst, src, 2, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleSS8S((int16_t *)dst, src, 5, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test16(void)
@@ -1001,19 +1001,19 @@ void test16(void)
 	uint16_t wewant3[10]={0x7f00, 0x7e00, 0x7f00,0x7e00, 0x7d00, 0x8100, 0x7d00,  0x8100, 0x8200, 0x8300};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleSU8S   (8bit, stereo, unsigned => 16bit, stereo, signed) :\n");
+	fputs("mixGetMasterSampleSU8S   (8bit, stereo, unsigned => 16bit, stereo, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleSU8S((int16_t *)dst, src, 5, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 	retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
@@ -1029,40 +1029,40 @@ void test16(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleSU8S((int16_t *)dst, src, 2, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleSU8S((int16_t *)dst, src, 5, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test17(void)
@@ -1077,19 +1077,19 @@ void test17(void)
 	int16_t wewant3[10]={-1*256, -2*256, -1*256,-2*256, -3*256,  1*256,   -3*256,   1*256,  2*256,  3*256};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleSS8SR  (8bit, stereo, signed => 16bit, rev-stereo, signed) :\n");
+	fputs("mixGetMasterSampleSS8SR  (8bit, stereo, signed => 16bit, rev-stereo, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleSS8SR((int16_t *)dst, src, 5, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
@@ -1105,40 +1105,40 @@ void test17(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleSS8SR((int16_t *)dst, src, 2, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleSS8SR((int16_t *)dst, src, 5, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test18(void)
@@ -1153,19 +1153,19 @@ void test18(void)
 	uint16_t wewant3[10]={0x7f00, 0x7e00, 0x7f00,0x7e00, 0x7d00, 0x8100, 0x7d00,  0x8100, 0x8200, 0x8300};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleSU8SR  (8bit, stereo, unsigned => 16bit, rev-stereo, signed) :\n");
+	fputs("mixGetMasterSampleSU8SR  (8bit, stereo, unsigned => 16bit, rev-stereo, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleSU8SR((int16_t *)dst, src, 5, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
@@ -1181,40 +1181,40 @@ void test18(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleSU8SR((int16_t *)dst, src, 2, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleSU8SR((int16_t *)dst, src, 5, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test19(void)
@@ -1229,50 +1229,50 @@ void test19(void)
 	int16_t wewant3[10]={-233, -233, -234, -234, -345, -345, 123, 123, 234, 234};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleMS16M  (16bit, mono, signed => 16bit, mono, signed) :\n");
+	fputs("mixGetMasterSampleMS16M  (16bit, mono, signed => 16bit, mono, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleMS16M((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleMS16M((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleMS16M((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
@@ -1288,9 +1288,9 @@ void test19(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test20(void)
@@ -1305,35 +1305,35 @@ void test20(void)
 	uint16_t wewant3[10]={0x7fff, 0x7fff, 0x7ffe, 0x7ffe, 0x7ffd, 0x7ffd, 0x8001, 0x8001, 0x8002, 0x8002};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleMU16M  (16bit, mono, unsigned => 16bit, mono, signed) :\n");
+	fputs("mixGetMasterSampleMU16M  (16bit, mono, unsigned => 16bit, mono, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleMU16M((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleMU16M((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
@@ -1349,24 +1349,24 @@ void test20(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleMU16M((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test21(void)
@@ -1381,19 +1381,19 @@ void test21(void)
 	int16_t wewant3[20]={-1,-1,  -1,-1,  -2,-2,  -2,-2,  -3,-3,  -3,-3,  1,1,  1,1,  2,2,  2,2};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleMS16S  (16bit, mono, signed => 16bit, stereo, signed) :\n");
+	fputs("mixGetMasterSampleMS16S  (16bit, mono, signed => 16bit, stereo, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleMS16S((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 		{
 			int i;
 			fprintf(stderr, "\n");
@@ -1408,40 +1408,40 @@ void test21(void)
 			fprintf(stderr, "\n");
 		}
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleMS16S((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleMS16S((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test22(void)
@@ -1456,35 +1456,35 @@ void test22(void)
 	uint16_t wewant3[20]={0x7fff,0x7fff, 0x7fff,0x7fff, 0x7ffe,0x7ffe, 0x7ffe,0x7ffe, 0x7ffd,0x7ffd, 0x7ffd,0x7ffd, 0x8001,0x8001, 0x8001,0x8001, 0x8002,0x8002, 0x8002,0x8002};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleMU16S  (16bit, mono, unsigned => 16bit, stereo, signed) :\n");
+	fputs("mixGetMasterSampleMU16S  (16bit, mono, unsigned => 16bit, stereo, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleMU16S((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleMU16S((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
@@ -1500,24 +1500,24 @@ void test22(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleMU16S((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test23(void)
@@ -1532,19 +1532,19 @@ void test23(void)
 	int16_t wewant3[10]={-1, -1, -2,    -2,  -3, -3,     1,    1,   2, 2};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleSS16M  (16bit, stereo, signed => 16bit, mono, signed) :\n");
+	fputs("mixGetMasterSampleSS16M  (16bit, stereo, signed => 16bit, mono, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleSS16M((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 		{
 			int i;
 			fprintf(stderr, "\n");
@@ -1559,40 +1559,40 @@ void test23(void)
 			fprintf(stderr, "\n");
 		}
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleSS16M((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleSS16M((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test24(void)
@@ -1614,19 +1614,19 @@ void test24(void)
 	int16_t wewant3[10]={-1, -1, -2, -2, 0x7fff, 0x7fff, -0x7fff, -0x7fff, -0x7ffe, -0x7ffe};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleSU16M  (16bit, stereo, unsigned => 16bit, mono, signed) :\n");
+	fputs("mixGetMasterSampleSU16M  (16bit, stereo, unsigned => 16bit, mono, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleSU16M((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 		{
 			int i;
 			fprintf(stderr, "\n");
@@ -1642,40 +1642,40 @@ void test24(void)
 		}
 
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleSU16M((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleSU16M((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test25(void)
@@ -1690,19 +1690,19 @@ void test25(void)
 	int16_t wewant3[20]={-1,0, -1, 0,  0,-4,     0,   -4,  -3,-3, -3,-3,     1,    1,    1,   1,  2, 2,  2, 2};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleSS16S  (16bit, stereo, signed => 16bit, stereo, signed) :\n");
+	fputs("mixGetMasterSampleSS16S  (16bit, stereo, signed => 16bit, stereo, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleSS16S((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 		{
 			int i;
 			fprintf(stderr, "\n");
@@ -1717,40 +1717,40 @@ void test25(void)
 			fprintf(stderr, "\n");
 		}
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleSS16S((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleSS16S((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test26(void)
@@ -1765,35 +1765,35 @@ void test26(void)
 	uint16_t wewant3[20]={0x7fff,0x8000, 0x7fff,0x8000, 0x8000,0x7ffe, 0x8000,0x7ffe, 0x7ffd,0x7ffd, 0x7ffd,0x7ffd, 0x8001,0x8001, 0x8001,0x8001, 0x8002,0x8002, 0x8002,0x8002};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleSU16S  (16bit, stereo, unsigned => 16bit, stereo, signed) :\n");
+	fputs("mixGetMasterSampleSU16S  (16bit, stereo, unsigned => 16bit, stereo, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleSU16S((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleSU16S((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
@@ -1809,24 +1809,24 @@ void test26(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleSU16S((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test27(void)
@@ -1841,19 +1841,19 @@ void test27(void)
 	int16_t wewant3[20]={-1,0, -1, 0,  0,-4,     0,   -4,  -3,-3, -3,-3,     1,    1,    1,   1,  2, 2,  2, 2};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleSS16SR  (16bit, stereo, signed => 16bit, rev-stereo, signed) :\n");
+	fputs("mixGetMasterSampleSS16SR  (16bit, stereo, signed => 16bit, rev-stereo, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleSS16SR((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 		{
 			int i;
 			fprintf(stderr, "\n");
@@ -1868,40 +1868,40 @@ void test27(void)
 			fprintf(stderr, "\n");
 		}
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleSS16SR((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleSS16SR((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 void test28(void)
@@ -1916,35 +1916,35 @@ void test28(void)
 	uint16_t wewant3[20]={0x7fff,0x8000, 0x7fff,0x8000, 0x8000,0x7ffe, 0x8000,0x7ffe, 0x7ffd,0x7ffd, 0x7ffd,0x7ffd, 0x8001,0x8001, 0x8001,0x8001, 0x8002,0x8002, 0x8002,0x8002};
 
 	reset_pads(pad0, pad1, pad2);
-	fprintf(stderr, "mixGetMasterSampleSU16SR  (16bit, stereo, unsigned => 16bit, stereo-rev, signed) :\n");
+	fputs("mixGetMasterSampleSU16SR  (16bit, stereo, unsigned => 16bit, stereo-rev, signed) :\n", stderr);
 
-	fprintf(stderr, "  1x: ");
+	fputs("  1x: ", stderr);
 	mixGetMasterSampleSU16SR((int16_t *)dst, src, 10, 0x0010000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant1, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  2x: ");
+	fputs("  2x: ", stderr);
 	memset(dst, 0, sizeof(dst));
 	mixGetMasterSampleSU16SR((int16_t *)dst, src, 5, 0x0020000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant2, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 /*
 		{
 			int i;
@@ -1960,24 +1960,24 @@ void test28(void)
 			fprintf(stderr, "\n");
 		}*/
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
 
-	fprintf(stderr, "  0.5x: ");
+	fputs("  0.5x: ", stderr);
 	mixGetMasterSampleSU16SR((int16_t *)dst, src, 10, 0x0008000);
 	if (check_pads(pad0, pad1, pad2))
 	{
 		retval=1;
-		fprintf(stderr, "overflow/underflow");
+		fputs("overflow/underflow", stderr);
 		reset_pads(pad0, pad1, pad2);
 	} else if (memcmp(dst, wewant3, sizeof(dst)))
 	{
 		retval=1;
-		fprintf(stderr, FAILED10);
+		fputs(FAILED10, stderr);
 	} else {
-		fprintf(stderr, OK10);
+		fputs(OK10, stderr);
 	}
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 }
 
 int main(int argc, char *argv[])
