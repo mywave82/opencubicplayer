@@ -275,7 +275,7 @@ static int InstGetWin(struct cpitextmodequerystruct *q)
 		case 2:
 			q->hgtmin=3;
 			q->hgtmax=2+plInsDisplay.bigheight;
-			q->xmode=1;
+			q->xmode=3;
 			break;
 		case 3:
 			q->hgtmin=2;
