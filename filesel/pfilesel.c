@@ -509,7 +509,7 @@ static int initRootDir(const char *sec)
 
 		newcurrentpath = dirdbResolvePathWithBaseAndRef(dmFILE->cwd->dirdb_ref, currentpath2, DIRDB_RESOLVE_DRIVE, dirdb_use_pfilesel);
 
-		if (!filesystem_resolve_dirdb_dir (newcurrentpath, &dmNewDrive, &cwd) == 0)
+		if (!filesystem_resolve_dirdb_dir (newcurrentpath, &dmNewDrive, &cwd))
 		{
 			dmCurDrive = dmNewDrive;
 			assert (dmCurDrive->cwd);
