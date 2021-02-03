@@ -1,7 +1,7 @@
 #ifndef _MDB_H
 #define _MDB_H
 
-#include <stdio.h> /* FILE * */
+struct ocpfilehandle_t;
 
 struct __attribute__((packed)) moduleinfostruct
 {
@@ -10,7 +10,7 @@ struct __attribute__((packed)) moduleinfostruct
 #define MDB_BLOCKTYPE 12
 #define MDB_VIRTUAL 16
 #define MDB_BIGMODULE 32
-#define MDB_PLAYLIST 64 /* handle as dir */
+#define MDB_RESERVED 64 /* used to be MDB_PLAYLIST */
 	uint8_t flags1;      /*  0 */
 #define MDB_GENERAL 0
 	/* sorry dudes, but I upgraded the references to 32 bit */
@@ -47,11 +47,12 @@ enum
 	mtMOD=0, mtMODd=1, mtMODt=2, mtM31=3, mtM15=6, mtM15t=7, mtWOW=8,
 	mtS3M=9, mtXM=10, mtMTM=11, mt669=12, mtULT=13, mtDMF=14, mtOKT=15,
 	mtMID=16, mtCDA=17, mtMIDd=18, mtPTM=19, mtMED=20, mtMDL=21, mtAMS=22,
-	mtINP=23, mtDEVp=24, mtDEVs=25, mtDEVw=26, mtIT=27, mtWAV=28, mtVOC=29,
+	mtINP=23, /* These three now uses a common mtDEVv instead mtDEVp=24, mtDEVs=25, mtDEVw=26, */ mtIT=27, mtWAV=28, mtVOC=29,
 	mtMPx=30, mtSID=31, mtMXM=32, mtMODf=33, mtWMA=34, mtOGG=35, mtOPL=36,
 	mtAY=37, mtFLAC=38, mtYM=39, mtSTM=40, mtHVL=41,
-	mtPLS=128, mtM3U=129, mtANI=130,
-	mtUnRead=0xFF
+	/* These two no longer makes it into the mdb mtPLS=128, mtM3U=129, */ mtANI=130,
+
+	mtDEVv=0xfe, mtUnRead=0xFF
 };
 
 enum
@@ -62,49 +63,31 @@ enum
 struct mdbreadinforegstruct /* this is to test a file, and give it a tag..*/
 {
 	int (*ReadMemInfo)(struct moduleinfostruct *m, const char *buf, size_t len);
-	int (*ReadInfo)(struct moduleinfostruct *m, FILE *f, const char *buf, size_t len);
+	int (*ReadInfo)(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len);
 	void (*Event)(int mdbEv);
 	struct mdbreadinforegstruct *next;
 };
 
 #define MDBREADINFOREGSTRUCT_TAIL ,0
 
-struct modlist;
-struct modlistentry;
-struct dmDrive;
+struct ocpfile_t;
 
-struct mdbreaddirregstruct
-{
-	int (*ReadDir)(struct modlist *ml, const struct dmDrive *drive, const uint32_t path, const char *mask, unsigned long opt);
-	struct mdbreaddirregstruct *next;
-};
-#define MDBREADDIRREGSTRUCT_TAIL ,0
-
-extern int fsReadDir(struct modlist *ml, const struct dmDrive *drive, const uint32_t path, const char *mask, unsigned long opt);
 extern const char *mdbGetModTypeString(unsigned char type);
 extern int mdbGetModuleType(uint32_t fileref);
 extern uint8_t mdbReadModType(const char *str);
 extern int mdbInfoRead(uint32_t fileref);
 extern int mdbReadMemInfo(struct moduleinfostruct *m, const char *buf, int len);
-extern int mdbReadInfo(struct moduleinfostruct *m, FILE *f);
+extern int mdbReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f);
 extern int mdbWriteModuleInfo(uint32_t fileref, struct moduleinfostruct *m);
-extern void mdbScan(struct modlistentry *m);
+void mdbScan(struct ocpfile_t *file, uint32_t mdb_ref);
 extern int mdbInit(void);
 extern void mdbUpdate(void);
 extern void mdbClose(void);
-extern uint32_t mdbGetModuleReference(const char *name, uint32_t size);
+extern uint32_t mdbGetModuleReference2(const uint32_t dirdb_ref, uint32_t size);
 extern int mdbGetModuleInfo(struct moduleinfostruct *m, uint32_t fileref);
 
-extern void mdbRegisterReadDir(struct mdbreaddirregstruct *r);
-extern void mdbUnregisterReadDir(struct mdbreaddirregstruct *r);
 extern void mdbRegisterReadInfo(struct mdbreadinforegstruct *r);
 extern void mdbUnregisterReadInfo(struct mdbreadinforegstruct *r);
-
-#if 0
-/* these two are super-set by modlist itself */
-extern int mdbAppend(struct modlist *m, const struct modlistentry *f);
-extern int mdbAppendNew(struct modlist *m, const struct modlistentry *f);
-#endif
 
 extern const char mdbsigv1[60];
 

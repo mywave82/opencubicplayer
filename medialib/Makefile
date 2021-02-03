@@ -17,16 +17,29 @@ uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/medialib$(LIB_SUFFIX)"
 
 medialib.o: medialib.c \
+	medialib-add.c \
+	medialib-listall.c \
+	medialib-refresh.c \
+	medialib-remove.c \
+	medialib-scan.c \
+	medialib-search.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
 	../boot/psetting.h \
+	../filesel/adbmeta.h \
 	../filesel/dirdb.h \
+	../filesel/filesystem.h \
+	../filesel/filesystem-dir-mem.h \
+	../filesel/filesystem-drive.h \
+	../filesel/filesystem-file-mem.h \
+	../filesel/filesystem-unix.h \
 	../filesel/modlist.h \
-	../filesel/pfilesel.h \
-	../stuff/err.h \
-	../stuff/poutput.h \
-	../stuff/framelock.h \
 	../filesel/mdb.h \
-	../filesel/adb.h
+	../filesel/pfilesel.h \
+	../stuff/compat.h \
+	../stuff/err.h \
+	../stuff/framelock.h \
+	../stuff/poutput.h \
+	../stuff/utf-8.h
 	$(CC) medialib.c -o $@ -c

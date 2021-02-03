@@ -269,8 +269,14 @@ libsidplayfp-utils-MD5-MD5.o: \
 libsidplayfp-api.o: \
 	libsidplayfp-api.cpp \
 	libsidplayfp-api.h \
+	./sidplayfp-git/libsidplayfp/src/sidplayfp/sidbuilder.h \
+	./sidplayfp-git/libsidplayfp/src/sidplayfp/SidInfo.h \
+	sidplayfp-git/libsidplayfp/src/sidplayfp/SidTuneInfo.h \
+	./sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp.h \
+	./sidplayfp-git/libsidplayfp/src/builders/resid-builder/resid.h \
 	../boot/psetting.h \
-	../filesel/gendir.h
+	../filesel/dirdb.h \
+	../filesel/filesystem-unix.h
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I.. -o $@ $< -c
 
 cpiinfo.o: \
@@ -288,42 +294,45 @@ sidptype.o: \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../stuff/latin1.h
 	$(CC) $< -o $@ -c
 
 sidplay.o: \
 	sidplay.cpp \
+	sidplayfp-config/config.h \
 	../config.h \
+	../types.h \
 	../boot/psetting.h\
 	../cpiface/cpiface.h \
-	../dev/player.h \
-	../dev/plrasm.h \
 	../dev/deviplay.h \
 	../dev/mixclip.h \
+	../dev/player.h \
+	../dev/plrasm.h \
 	../dev/ringbuffer.h \
+	../filesel/filesystem.h \
 	../stuff/imsrtns.h \
 	../stuff/poll.h \
-	../types.h \
-	libsidplayfp-api.h \
 	sidplay.h \
-	sidplayfp-config/config.h	
+	libsidplayfp-api.h
 	$(LIBSIDPLAYCXX) -I.. $(LIBSIDPLAYCXXFLAGS) $< -o $@ -c
 
 sidpplay.o: sidpplay.cpp \
 	../config.h \
 	../types.h \
-	../filesel/mdb.h \
-	../stuff/poutput.h \
-	../dev/player.h \
-	../boot/psetting.h \
 	../boot/plinkman.h \
-	../stuff/compat.h \
-	../stuff/sets.h \
-	../dev/deviplay.h \
+	../boot/psetting.h \
 	../cpiface/cpiface.h \
+	../dev/deviplay.h \
+	../dev/player.h \
+	../filesel/filesystem.h \
+	../filesel/mdb.h \
 	../stuff/compat.h \
+	../stuff/poutput.h \
+	../stuff/sets.h \
 	../stuff/timer.h \
+	./sidplayfp-git/libsidplayfp/src/sidplayfp/SidTuneInfo.h \
 	cpiinfo.h \
 	sidplay.h
 	$(CXX) $(LIBSIDPLAYCXXFLAGS) $< -o $@ -c

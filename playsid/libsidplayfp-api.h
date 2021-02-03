@@ -88,7 +88,7 @@ namespace libsidplayfp
 
 		bool open (void);
 
-		uint8_t* loadRom(const std::string &romPath, const int size);
+		uint8_t* loadRom(uint32_t dirdb_ref, const int size);
 	};
 }
 

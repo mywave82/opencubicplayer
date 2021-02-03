@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2019 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2019-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * GMDPlay loader for ScreamTracker ][ modules
  *
@@ -26,6 +26,7 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "dev/mcp.h"
+#include "filesel/filesystem.h"
 #include "gmdplay.h"
 #include "stuff/err.h"
 
@@ -80,7 +81,7 @@ static inline void putcmd(uint8_t **p, uint8_t c, uint8_t d)
 	*(*p)++=d;
 }
 
-static int _mpLoadSTM(struct gmdmodule *m, FILE *file)
+static int _mpLoadSTM(struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	unsigned int t,t2,i;
 	uint8_t orders[128];
@@ -103,7 +104,7 @@ static int _mpLoadSTM(struct gmdmodule *m, FILE *file)
 	fprintf(stderr, "Reading header: %d bytes\n", (int)sizeof(hdr));
 #endif
 
-	if (fread(&hdr, sizeof(hdr), 1, file) != 1)
+	if (file->read (file, &hdr, sizeof (hdr)) != sizeof (hdr))
 	{
 		fprintf (stderr, "STM: reading header failed: %s\n", strerror (errno));
 		return errFormStruc;
@@ -184,12 +185,12 @@ static int _mpLoadSTM(struct gmdmodule *m, FILE *file)
 		} sins;
 
 #ifdef STM_LOAD_DEBUG
-		fprintf(stderr, "Reading %d bytes of instrument %02d header (@0x%08x)\n", (int)sizeof(sins), i + 1, (int)ftell(file));
+		fprintf(stderr, "Reading %d bytes of instrument %02d header (@0x%08x)\n", (int)sizeof(sins), i + 1, (int)file->getpos (file));
 #endif
-		if (fread(&sins, sizeof(sins), 1, file) != 1)
+		if (file->read (file, &sins, sizeof (sins)) != sizeof (sins))
 		{
 			fprintf (stderr, "STM: reading instrument %02d header failed: %s\n", i+1, strerror (errno));
-			return errFormStruc;
+			return errFileRead;
 		}
 
 		sins.sampptr   = uint16_little (sins.sampptr);
@@ -251,10 +252,10 @@ static int _mpLoadSTM(struct gmdmodule *m, FILE *file)
 #ifdef STM_LOAD_DEBUG
 	fprintf(stderr, "Reading pattern orders, %d bytes\n", (int)m->patnum);
 #endif
-	if (fread(orders, ordersn, 1, file) != 1)
+	if (file->read (file, orders, ordersn) != ordersn)
 	{
 		fprintf (stderr, "STM: reading orders failed: %s\n", strerror (errno));
-		return errFormStruc;
+		return errFileRead;
 	}
 
 #if 0
@@ -328,10 +329,10 @@ static int _mpLoadSTM(struct gmdmodule *m, FILE *file)
 		{
 			for (j=0; j<4; j++)
 			{
-				if (fread (&pat[row][j].note, 1, 1, file) != 1)
+				if (ocpfilehandle_read_uint8 (file, &pat[row][j].note))
 				{
 					fprintf (stderr, "STM: reading pattern data failed: %s\n", strerror (errno));
-					return errFormStruc;
+					return errFileRead;
 				}
 				switch (pat[row][j].note)
 				{
@@ -344,22 +345,22 @@ static int _mpLoadSTM(struct gmdmodule *m, FILE *file)
 					default:
 					{
 						uint8_t insvol, volcmd;
-						if (fread (&insvol, 1, 1, file) != 1)
+						if (ocpfilehandle_read_uint8 (file, &insvol))
 						{
 							fprintf (stderr, "STM: reading pattern data failed: %s\n", strerror (errno));
-							return errFormStruc;
+							return errFileRead;
 						}
 
-						if (fread (&volcmd, 1, 1, file) != 1)
+						if (ocpfilehandle_read_uint8 (file, &volcmd))
 						{
 							fprintf (stderr, "STM: reading pattern data failed: %s\n", strerror (errno));
-							return errFormStruc;
+							return errFileRead;
 						}
 
-						if (fread (&pat[row][j].parameters, 1, 1, file) != 1)
+						if (ocpfilehandle_read_uint8 (file, &pat[row][j].parameters))
 						{
 							fprintf (stderr, "STM: reading pattern data failed: %s\n", strerror (errno));
-							return errFormStruc;
+							return errFileRead;
 						}
 
 						pat[row][j].instrument = insvol >> 3;
@@ -471,7 +472,7 @@ static int _mpLoadSTM(struct gmdmodule *m, FILE *file)
 					case 13: /* M - */
 					case 14: /* N - */
 					case 15: /* O - Tone, VolumeSlide, not implemented in Scream Tracker 2*/
-						break;		
+						break;
 				}
 
 				if (cp!=(tp+2))
@@ -577,7 +578,7 @@ static int _mpLoadSTM(struct gmdmodule *m, FILE *file)
 						case 13: /* M - */
 						case 14: /* N - */
 						case 15: /* O - Tone, VolumeSlide, not implemented in Scream Tracker 2*/
-							break;	
+							break;
 					}
 				}
 
@@ -621,7 +622,7 @@ static int _mpLoadSTM(struct gmdmodule *m, FILE *file)
 #ifdef STM_LOAD_DEBUG
 		fprintf (stderr, "Instrument %d sample, seeking to 0x%08x\n", i+1, smppara[i]);
 #endif
-		fseek(file, smppara[i], SEEK_SET);
+		file->seek_set (file, smppara[i]);
 
 		sip->ptr=malloc(sizeof(int8_t)*(l+16));
 		if (!sip->ptr)
@@ -629,7 +630,7 @@ static int _mpLoadSTM(struct gmdmodule *m, FILE *file)
 			fprintf(stderr, "STM: Out of mem (7)?\n");
 			return errAllocMem;
 		}
-		if (fread(sip->ptr, l, 1, file) != 1)
+		if (file->read (file, sip->ptr, l) != l)
 		{
 			fprintf(stderr, __FILE__ ": warning, read failed #8\n");
 		}
@@ -640,4 +641,4 @@ static int _mpLoadSTM(struct gmdmodule *m, FILE *file)
 
 struct gmdloadstruct mpLoadSTM = { _mpLoadSTM };
 
-struct linkinfostruct dllextinfo = {.name = "gmdlstm", .desc = "OpenCP Module Loader: *.STM (c) 2019, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "gmdlstm", .desc = "OpenCP Module Loader: *.STM (c) 2019-'21, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

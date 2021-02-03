@@ -1,5 +1,5 @@
-AC_INIT(ocp, 0.2.2, stian.skjelstad@gmail.com)
-AC_DEFINE(DLLVERSION, [0x00000202])
+AC_INIT(ocp, 0.2.90, stian.skjelstad@gmail.com)
+AC_DEFINE(DLLVERSION, [0x0000025a])
 
 AC_CANONICAL_HOST
 
@@ -293,6 +293,11 @@ AC_CHECK_HEADER(sys/param.h,
 AC_CHECK_HEADER(machine/endian.h,
                 AC_DEFINE(HAVE_MACHINE_ENDIAN_H, 1),
                )
+AC_CHECK_HEADER(pwd.h,
+                AC_DEFINE(HAVE_PWD_H, 1),
+               )
+
+AC_CHECK_FUNC(getpwnam, HAVE_GETPWNAM=1; AC_DEFINE(HAVE_GETPWNAM) )
 
 dnl timidity patch dir
 AC_ARG_WITH(timidity-default-path,
@@ -323,6 +328,11 @@ AC_CHECK_FUNCS(resize_term)
 LIBS=$push_LIBS
 
 AC_CHECK_LIB(z, zlibVersion, , AC_MSG_ERROR("zlib not found"))
+AC_CHECK_HEADER(zlib.h, , AC_MSG_ERROR("zlib header files was not found"))
+
+AC_CHECK_LIB(bz2, BZ2_bzDecompress, , AC_MSG_ERROR([bzip2 library not found (libbz2-dev)]))
+AC_CHECK_HEADER(bzlib.h, , AC_MSG_ERROR([bzip2 header file not found (libbz2-dev)]))
+
 AC_SUBST(DL_LIBS)
 dnl -lc is dirty hack here
 push_LIBS=$LIBS
@@ -461,8 +471,6 @@ else
 	HAVE_FLAC=1
 	FLAC_INI=flacptype
 fi
-
-AC_CHECK_HEADER(zlib.h, , AC_MSG_ERROR("zlib header files was not found"))
 
 if test "x$with_x11" != "xno"; then
 	AC_CHECK_HEADER(X11/extensions/xf86vmode.h, , if test "x$with_x11" = "xyes"; then AC_MSG_ERROR("xvidmode header files was not found"); else with_x11="no"; fi,

@@ -497,7 +497,7 @@ int DumpSamples (unsigned char *mem, int *offset, int len)
 
 		if (DumpPrefix (mem, len, *offset+18, 1)) { fprintf (stderr, "\n%sERROR: ran out of data%s\n", FONT_BRIGHT_RED, FONT_RESET); return 1; }
 		printf ("Square modulation speed: %d\n", mem[*offset+18]);
-	
+
 		if (DumpPrefix (mem, len, *offset+19, 1)) { fprintf (stderr, "\n%sERROR: ran out of data%s\n", FONT_BRIGHT_RED, FONT_RESET); return 1; }
 		/* must be all zero for AHX0 */
 		if ((!(mem[*offset+19] & 0x7f)) || ((mem[*offset+19] & 0x7f) > 63))
@@ -521,7 +521,7 @@ int DumpSamples (unsigned char *mem, int *offset, int len)
 		} else {
 			printf ("Playlist default speed: %d\n", mem[*offset+20]);
 		}
-	
+
 		if (DumpPrefix (mem, len, *offset+21, 1)) { fprintf (stderr, "\n%sERROR: ran out of data%s\n", FONT_BRIGHT_RED, FONT_RESET); return 1; }
 		if (!mem[*offset+21])
 		{

@@ -32,6 +32,8 @@ struct flac_picture_t
 	uint8_t  *scaled_data_bgra;
 };
 
+struct ocpfilehandle_t;
+
 extern void __attribute__ ((visibility ("internal"))) flacMetaDataLock(void);
 extern struct flac_comment_t __attribute__ ((visibility ("internal"))) **flac_comments;
 extern int                   __attribute__ ((visibility ("internal")))   flac_comments_count;
@@ -39,7 +41,7 @@ extern struct flac_picture_t __attribute__ ((visibility ("internal")))  *flac_pi
 extern int                   __attribute__ ((visibility ("internal")))   flac_pictures_count;
 extern void __attribute__ ((visibility ("internal"))) flacMetaDataUnlock(void);
 
-extern int __attribute__ ((visibility ("internal"))) flacOpenPlayer(FILE *);
+extern int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandle_t *);
 extern void __attribute__ ((visibility ("internal"))) flacClosePlayer(void);
 extern void __attribute__ ((visibility ("internal"))) flacIdle(void);
 extern void __attribute__ ((visibility ("internal"))) flacSetLoop(uint8_t s);

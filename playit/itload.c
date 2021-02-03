@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2005-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * ITPlay .IT module loader
  *
@@ -39,12 +40,13 @@
 #include <string.h>
 #include <stdio.h>
 #include "types.h"
-#include "stuff/compat.h"
-#include "itplay.h"
 #include "dev/mcp.h"
+#include "filesel/filesystem.h"
+#include "itplay.h"
+#include "stuff/compat.h"
 #include "stuff/err.h"
 
-int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FILE *file)
+int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, struct ocpfilehandle_t *file)
 {
 	int i,j,k,n;
 
@@ -103,9 +105,9 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 	this->deltapacked=0;
 	this->message=0;
 
-	fseek(file, 0, SEEK_SET);
+	file->seek_set (file, 0);
 
-	if (fread(&hdr, sizeof(hdr), 1, file) != 1)
+	if (file->read (file, &hdr, sizeof (hdr)) != sizeof (hdr))
 	{
 		fprintf(stderr, "[IT]: fread() failed #1\n");
 		return errFileRead;
@@ -172,23 +174,25 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 	signedsamp=!(hdr.cwtv<0x202);
 	this->deltapacked=(hdr.cmwt>=0x215);
 
-	if (fread(ords, hdr.nords*sizeof(uint8_t), 1, file) != 1)
+	if (file->read (file, ords, hdr.nords * sizeof(uint8_t)) != (hdr.nords * sizeof(uint8_t)))
 	{
 		fprintf(stderr, "[IT]: fread() failed #2\n");
 		return errFileRead;
 	}
 	if (hdr.nins)
-		if (fread(insoff, hdr.nins*sizeof(uint32_t), 1, file) != 1)
+	{
+		if (file->read (file, insoff, hdr.nins * sizeof(uint32_t)) != (hdr.nins * sizeof(uint32_t)))
 		{
 			fprintf(stderr, "[IT]: fread() failed #3 (hdr.nins=%d)\n", hdr.nins);
 			return errFileRead;
 		}
-	if (fread(sampoff, hdr.nsmps*sizeof(uint32_t), 1, file) != 1)
+	}
+	if (file->read (file, sampoff, hdr.nsmps * sizeof(uint32_t)) != (hdr.nsmps * sizeof(uint32_t)))
 	{
 		fprintf(stderr, "[IT]: fread() failed #4\n");
 		return errFileRead;
 	}
-	if (fread(patoff, hdr.npats*sizeof(uint32_t), 1, file) != 1)
+	if (file->read (file, patoff, hdr.npats * sizeof(uint32_t)) != (hdr.npats * sizeof(uint32_t)))
 	{
 		fprintf(stderr, "[IT]: fread() failed #5\n");
 		return errFileRead;
@@ -225,18 +229,19 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 	{
 		uint16_t usage;
 		char dummy[8];
-		if (fread(&usage, sizeof(usage), 1, file) != 1)
+		if (ocpfilehandle_read_uint16_le (file, &usage))
 		{
 			fprintf(stderr, "[IT]: fread() failed #6\n");
 			return errFileRead;
 		}
-		usage = uint16_little (usage);
 		for (i=0; i<usage; i++)
-			if (fread(dummy, 8, 1, file) != 1)
+		{
+			if (file->read (file, dummy, 8) != 8)
 			{
 				fprintf(stderr, "[IT]: fread() failed #7\n");
 				return errFileRead;
 			}
+		}
 	}
 
 
@@ -254,7 +259,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 
 		for (i=0; i<(9+16+128); i++)
 		{
-			if (fread(cmd, 32, 1, file) != 1)
+			if (file->read (file, cmd, 32) != 32)
 			{
 				fprintf(stderr, "[IT]: fread() failed #8\n");
 				return errFileRead;
@@ -283,8 +288,8 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 			return errAllocMem;
 		}
 		linect=1;
-		fseek(file, hdr.msgoff, SEEK_SET);
-		if (fread(msg, hdr.msglen, 1, file) !=1)
+		file->seek_set (file, hdr.msgoff);
+		if (file->read (file, msg, hdr.msglen) != hdr.msglen)
 		{
 			fprintf(stderr, "[IT]: fread() failed #9\n");
 			free(msg);
@@ -399,21 +404,20 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 			memset(this->patterns[k], 0, this->patlens[k]);
 			continue;
 		}
-		fseek(file, patoff[k], SEEK_SET);
+		file->seek_set (file, patoff[k]);
 
-		if (fread(&patlen, sizeof(uint16_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint16_le (file, &patlen))
 		{
 			fprintf(stderr, "[IT]: fread() failed #10\n");
 			return errFileRead;
 		}
-		patlen = uint16_little (patlen);
-		if (fread(&patrows, sizeof(uint16_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint16_le (file, &patrows))
 		{
 			fprintf(stderr, "[IT]: fread() failed #11\n");
 			return errFileRead;
 		}
-		patrows = uint16_little (patrows);
-		fseek(file, 4, SEEK_CUR);
+
+		file->seek_cur (file, 4);
 
 		if (!(patbuf=malloc(sizeof(uint8_t)*patlen)))
 		{
@@ -421,7 +425,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 			return errAllocMem;
 		}
 
-		if (fread(patbuf, patlen, 1, file) != 1)
+		if (file->read (file, patbuf, patlen) != patlen)
 		{
 			fprintf(stderr, "[IT]: fread() failed #12\n");
 			free(patbuf);
@@ -547,8 +551,8 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 		struct it_sampleinfo *sip=&this->sampleinfos[i];
 		struct it_sample *sp=&this->samples[i];
 
-		fseek(file, sampoff[i], SEEK_SET);
-		if (fread(&shdr, sizeof(shdr), 1, file) != 1)
+		file->seek_set (file, sampoff[i]);
+		if (file->read (file, &shdr, sizeof(shdr)) != sizeof(shdr))
 		{
 			fprintf(stderr, "[IT]: fread() failed #13\n");
 			return errFileRead;
@@ -620,7 +624,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 
 		if (!sip->ptr)
 			continue;
-		fseek(file, sampoff[i], SEEK_SET);
+		file->seek_set (file, sampoff[i]);
 
 		if (sp->packed) {
 			if (sip->type & mcpSamp16Bit)
@@ -628,7 +632,8 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 			else
 				decompress8(file, sip->ptr, sip->length, sp->packed&2);
 		} else {
-			if (fread(sip->ptr, sip->length<<((sip->type&mcpSamp16Bit)?1:0), 1, file) != 1)
+			uint64_t len = sip->length<<((sip->type&mcpSamp16Bit)?1:0);
+			if (file->read (file, sip->ptr, len) != len)
 			{
 				fprintf(stderr, "[IT]: fread() failed #14 (sip-ptr=%p sip->length=%d 16bit=%d)\n", sip->ptr, (int)sip->length, !!(sip->type&mcpSamp16Bit));
 				return errFileRead;
@@ -695,8 +700,8 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, FI
 		if (hdr.flags&4)
 		{
 			int i, j;
-			fseek(file, insoff[k], SEEK_SET);
-			if (fread(&ihdr, sizeof(ihdr), 1, file) != 1)
+			file->seek_set (file, insoff[k]);
+			if (file->read (file, &ihdr, sizeof(ihdr)) != sizeof (ihdr))
 			{
 				fprintf(stderr, "[IT]: fread() failed #15\n");
 				return errFileRead;

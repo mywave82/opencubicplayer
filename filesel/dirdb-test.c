@@ -1,6 +1,9 @@
+/* unit test for dirdb.c */
+
 //#define DIRDB_DEBUG 1
 
 #include "dirdb.c"
+#include "../stuff/compat.c"
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -40,44 +43,44 @@ static int dirdb_basic_test1(void)
 	fprintf (stderr, ANSI_COLOR_CYAN "Corner cases with dirdbResolvePathAndRef()\n" ANSI_COLOR_RESET);
 
 	/* trying to resolve empty string, should fail */
-	node0 = dirdbResolvePathAndRef ("");
+	node0 = dirdbResolvePathAndRef ("", dirdb_use_filehandle);
 	if (node0 != DIRDB_NOPARENT)
 	{
 		fprintf (stderr, "dirdbResolvePathAndRef(" ANSI_COLOR_RED "\"\"" ANSI_COLOR_RESET ") gave a node, and not DIRDB_NOPARENT\n");
 		retval++;
-		dirdbUnref(node0);
+		dirdbUnref(node0, dirdb_use_filehandle);
 	} else {
 		fprintf (stderr, "dirdbResolvePathAndRef(" ANSI_COLOR_GREEN "\"\"" ANSI_COLOR_RESET ") did not give a node, but DIRDB_NOPARENT\n");
 	}
 
 	/* trying to resolve /, should fail */
-	node0 = dirdbResolvePathAndRef ("/");
+	node0 = dirdbResolvePathAndRef ("/", dirdb_use_filehandle);
 	if (node0 != DIRDB_NOPARENT)
 	{
 		fprintf (stderr, "dirdbResolvePathAndRef(" ANSI_COLOR_RED "\"/\"" ANSI_COLOR_RESET ") gave a node, and not DIRDB_NOPARENT\n");
 		retval++;
-		dirdbUnref(node0);
+		dirdbUnref(node0, dirdb_use_filehandle);
 	} else {
 		fprintf (stderr, "dirdbResolvePathAndRef(" ANSI_COLOR_GREEN "\"/\"" ANSI_COLOR_RESET ") did not give a node, but DIRDB_NOPARENT\n");
 	}
 
 	/* trying to resolve NULL, should fail */
-	node0 = dirdbResolvePathAndRef (NULL);
+	node0 = dirdbResolvePathAndRef (NULL, dirdb_use_filehandle);
 	if (node0 != DIRDB_NOPARENT)
 	{
 		fprintf (stderr, "dirdbResolvePathAndRef(" ANSI_COLOR_RED "NULL" ANSI_COLOR_RESET ") gave a node, and not DIRDB_NOPARENT\n");
 		retval++;
-		dirdbUnref(node0);
+		dirdbUnref(node0, dirdb_use_filehandle);
 	} else {
 		fprintf (stderr, "dirdbResolvePathAndRef(" ANSI_COLOR_GREEN "NULL" ANSI_COLOR_RESET ") did not give a node, but DIRDB_NOPARENT\n");
 	}
 
 	/* trying to resolve empty drive, should be OK */
-	node0 = dirdbResolvePathAndRef ("file:");
+	node0 = dirdbResolvePathAndRef ("file:", dirdb_use_filehandle);
 	if (node0 != DIRDB_NOPARENT)
 	{
 		fprintf (stderr, "dirdbResolvePathAndRef(" ANSI_COLOR_GREEN "file:" ANSI_COLOR_RESET ") gave a node, and not DIRDB_NOPARENT\n");
-		dirdbUnref(node0);
+		dirdbUnref(node0, dirdb_use_filehandle);
 	} else {
 		fprintf (stderr, "dirdbResolvePathAndRef(" ANSI_COLOR_RED "file:" ANSI_COLOR_RESET ") did not give a node, but DIRDB_NOPARENT\n");
 		retval++;
@@ -96,14 +99,14 @@ static int dirdb_basic_test1(void)
 		test[i+6] = 'a';
 	}
 	test[6+65535] = 0;
-	node0 = dirdbResolvePathAndRef (test);
+	node0 = dirdbResolvePathAndRef (test, dirdb_use_filehandle);
 	if (node0 == DIRDB_NOPARENT)
 	{
 		fprintf (stderr, "dirdbResolvePathAndRef(" ANSI_COLOR_RED "65535 character long name" ANSI_COLOR_RESET ") failed to resolve\n");
 		retval++;
 	} else {
 		fprintf (stderr, "dirdbResolvePathAndRef(" ANSI_COLOR_GREEN "65535 character long name" ANSI_COLOR_RESET ") gave a node\n");
-		dirdbUnref(node0);
+		dirdbUnref(node0, dirdb_use_filehandle);
 	}
 
 	/* trying to resolve /a*65536 should fail, we use uint16_t to store the length on disk */
@@ -119,23 +122,23 @@ static int dirdb_basic_test1(void)
 	}
 	test[6+65536] = 0;
 
-	node0 = dirdbResolvePathAndRef (test);
+	node0 = dirdbResolvePathAndRef (test, dirdb_use_filehandle);
 	if (node0 != DIRDB_NOPARENT)
 	{
 		fprintf (stderr, "dirdbResolvePathAndRef(" ANSI_COLOR_RED "65536 character long name" ANSI_COLOR_RESET ") gave a node, not DIRDB_NOPARENT\n");
 		retval++;
 	} else {
 		fprintf (stderr, "dirdbResolvePathAndRef(" ANSI_COLOR_GREEN "65536 character long name" ANSI_COLOR_RESET ") gave a node\n");
-		dirdbUnref(node0);
+		dirdbUnref(node0, dirdb_use_filehandle);
 	}
 
 	fprintf (stderr, ANSI_COLOR_CYAN "Creating nodes with dirdbResolvePathAndRef()\n" ANSI_COLOR_RESET);
 
-	node1 = dirdbResolvePathAndRef ("file:/tmp/foo/test.s3m");
-	/*node2 =*/ dirdbResolvePathAndRef ("file:/tmp/foo/moo.s3m");
-	node3 = dirdbResolvePathAndRef ("file:/tmp/foo/test.s3m");
-	/*node4 =*/ dirdbResolvePathAndRef ("file:/tmp/moo.s3m");
-	/*node5 =*/ dirdbResolvePathAndRef ("file:/tmp/foo/");
+	node1   =   dirdbResolvePathAndRef ("file:/tmp/foo/test.s3m", dirdb_use_filehandle);
+	/*node2 =*/ dirdbResolvePathAndRef ("file:/tmp/foo/moo.s3m",  dirdb_use_filehandle);
+	node3   =   dirdbResolvePathAndRef ("file:/tmp/foo/test.s3m", dirdb_use_filehandle);
+	/*node4 =*/ dirdbResolvePathAndRef ("file:/tmp/moo.s3m",      dirdb_use_filehandle);
+	/*node5 =*/ dirdbResolvePathAndRef ("file:/tmp/foo/",         dirdb_use_filehandle);
 
 	if (node1 != node3)
 	{
@@ -166,29 +169,29 @@ static int dirdb_basic_test2(void)
 
 	fprintf (stderr, ANSI_COLOR_CYAN "Creating nodes with dirdbFindAndRef() + one duplicate\n" ANSI_COLOR_RESET);
 
-	node1 = dirdbResolvePathAndRef ("file:/tmp/foo/test.s3m");
-	node2 = dirdbResolvePathAndRef ("file:/tmp/foo/moo.s3m");
-	node3 = dirdbResolvePathAndRef ("file:/tmp/foo/test.s3m");
-	node4 = dirdbResolvePathAndRef ("file:/tmp/moo.s3m");
-	node5 = dirdbResolvePathAndRef ("file:/tmp/foo/");
+	node1 = dirdbResolvePathAndRef ("file:/tmp/foo/test.s3m", dirdb_use_filehandle);
+	node2 = dirdbResolvePathAndRef ("file:/tmp/foo/moo.s3m",  dirdb_use_filehandle);
+	node3 = dirdbResolvePathAndRef ("file:/tmp/foo/test.s3m", dirdb_use_filehandle);
+	node4 = dirdbResolvePathAndRef ("file:/tmp/moo.s3m",      dirdb_use_filehandle);
+	node5 = dirdbResolvePathAndRef ("file:/tmp/foo/",         dirdb_use_filehandle);
 
-	node6 = dirdbFindAndRef (node5, "test.s3m");
-	node7[0] = dirdbFindAndRef (node5, "test.mp0");
-	node7[1] = dirdbFindAndRef (node5, "test.mp1");
-	node7[2] = dirdbFindAndRef (node5, "test.mp2");
-	node7[3] = dirdbFindAndRef (node5, "test.mp3");
-	node7[4] = dirdbFindAndRef (node5, "test.mp4");
-	node7[5] = dirdbFindAndRef (node5, "test.mp5");
-	node7[6] = dirdbFindAndRef (node5, "test.mp6");
-	node7[7] = dirdbFindAndRef (node5, "test.mp7");
-	node7[8] = dirdbFindAndRef (node5, "test.mp8");
-	node7[9] = dirdbFindAndRef (node5, "test.mp9");
-	node7[10] = dirdbFindAndRef (node5, "test.mp10");
-	node7[11] = dirdbFindAndRef (node5, "test.mp11");
-	node7[12] = dirdbFindAndRef (node5, "test.mp12");
-	node7[13] = dirdbFindAndRef (node5, "test.mp13");
-	node7[14] = dirdbFindAndRef (node5, "test.mp14");
-	node7[15] = dirdbFindAndRef (node5, "test.mp15");
+	node6 = dirdbFindAndRef (node5, "test.s3m",               dirdb_use_filehandle);
+	node7[0] = dirdbFindAndRef (node5, "test.mp0",            dirdb_use_filehandle);
+	node7[1] = dirdbFindAndRef (node5, "test.mp1",            dirdb_use_filehandle);
+	node7[2] = dirdbFindAndRef (node5, "test.mp2",            dirdb_use_filehandle);
+	node7[3] = dirdbFindAndRef (node5, "test.mp3",            dirdb_use_filehandle);
+	node7[4] = dirdbFindAndRef (node5, "test.mp4",            dirdb_use_filehandle);
+	node7[5] = dirdbFindAndRef (node5, "test.mp5",            dirdb_use_filehandle);
+	node7[6] = dirdbFindAndRef (node5, "test.mp6",            dirdb_use_filehandle);
+	node7[7] = dirdbFindAndRef (node5, "test.mp7",            dirdb_use_filehandle);
+	node7[8] = dirdbFindAndRef (node5, "test.mp8",            dirdb_use_filehandle);
+	node7[9] = dirdbFindAndRef (node5, "test.mp9",            dirdb_use_filehandle);
+	node7[10] = dirdbFindAndRef (node5, "test.mp10",          dirdb_use_filehandle);
+	node7[11] = dirdbFindAndRef (node5, "test.mp11",          dirdb_use_filehandle);
+	node7[12] = dirdbFindAndRef (node5, "test.mp12",          dirdb_use_filehandle);
+	node7[13] = dirdbFindAndRef (node5, "test.mp13",          dirdb_use_filehandle);
+	node7[14] = dirdbFindAndRef (node5, "test.mp14",          dirdb_use_filehandle);
+	node7[15] = dirdbFindAndRef (node5, "test.mp15",          dirdb_use_filehandle);
 
 	if (node1 != node6)
 	{
@@ -211,34 +214,32 @@ static int dirdb_basic_test2(void)
 
 	if (node7[15] != DIRDB_NOPARENT) /* skip test, if earlier tests failed */
 	{
-		dirdbRef(node7[15]);
+		dirdbRef(node7[15], dirdb_use_filehandle);
 		if (dirdbData[node7[15]].refcount != 2)
 		{
 			fprintf (stderr, "Refcount not 2 after dirdbRef() as expected, but " ANSI_COLOR_RED "%d" ANSI_COLOR_RESET "\n", dirdbData[node7[15]].refcount);
 			retval++;
 		}
-		dirdbUnref(node7[15]);
+		dirdbUnref(node7[15], dirdb_use_filehandle);
 	}
 
 	fprintf (stderr, "\n");
 
 	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbUnref()\n" ANSI_COLOR_RESET);
-	dirdbUnref(node1);
-	dirdbUnref(node2);
-	dirdbUnref(node3);
-	dirdbUnref(node4);
-	dirdbUnref(node5);
-	dirdbUnref(node6);
+	dirdbUnref(node1, dirdb_use_filehandle);
+	dirdbUnref(node2, dirdb_use_filehandle);
+	dirdbUnref(node3, dirdb_use_filehandle);
+	dirdbUnref(node4, dirdb_use_filehandle);
+	dirdbUnref(node5, dirdb_use_filehandle);
+	dirdbUnref(node6 ,dirdb_use_filehandle);
 	for (i=0; i < 16; i++)
 	{
-		dirdbUnref(node7[i]);
+		dirdbUnref(node7[i], dirdb_use_filehandle);
 	}
 
 	for (i=0; i < dirdbNum; i++)
 	{
-		if ((dirdbData[i].adb_ref != DIRDB_NO_ADBREF) ||
-		    (dirdbData[i].newadb_ref != DIRDB_NO_ADBREF) ||
-		    (dirdbData[i].mdb_ref != DIRDB_NO_MDBREF) ||
+		if ((dirdbData[i].mdb_ref != DIRDB_NO_MDBREF) ||
 		    (dirdbData[i].newmdb_ref != DIRDB_NO_MDBREF) ||
 		    (dirdbData[i].name) ||
 		    (dirdbData[i].parent != DIRDB_NOPARENT))
@@ -259,11 +260,11 @@ static int dirdb_basic_test3(void)
 {
 	int i;
 	int retval = 0;
-	uint32_t node1, node1_;
+	uint32_t node1, node1_, node1__;
 	uint32_t node2;
 	uint32_t node3;
 	uint32_t node4;
-	uint32_t node5;
+	uint32_t node5, node5b, node5c;
 	uint32_t node6;
 	uint32_t node7;
 	uint32_t node8;
@@ -271,15 +272,24 @@ static int dirdb_basic_test3(void)
 	uint32_t node10;
 	uint32_t node11;
 	uint32_t node12;
+	uint32_t node13, node13_, node13__, node13___, node13____;
+	uint32_t node14;
+	uint32_t node15;
+	uint32_t node16;
+	uint32_t node17;
 
 	fprintf (stderr, ANSI_COLOR_CYAN "Going to test dirdbResolvePathWithBaseAndRef()\n" ANSI_COLOR_RESET);
 
+#if 0
 	node1  = dirdbResolvePathAndRef ("file:");
 	node1_ = dirdbResolvePathAndRef ("file:/");
+	node1__ = dirdbResolvePathAndRef ("file://");
 	node2 = dirdbResolvePathAndRef ("file:/tmp");
 	node3 = dirdbResolvePathAndRef ("file:/tmp/foo");
 	node4 = dirdbResolvePathAndRef ("file:/tmp/foo/moo");
 	node5 = dirdbResolvePathAndRef ("file:/tmp/foo/moo/super-power.mp3");
+	node5b = dirdbResolvePathAndRef ("file:/foo/moo/super-power.mp3");
+	node5c = dirdbResolvePathAndRef ("super:/tmp/foo/moo/super-power.mp3");
 
 	node6 = dirdbResolvePathWithBaseAndRef (node2, "foo/moo/super-power.mp3");
 	node7 = dirdbResolvePathWithBaseAndRef (node2, "/foo/moo/super-power.mp3");
@@ -289,81 +299,238 @@ static int dirdb_basic_test3(void)
 	node11 = dirdbResolvePathWithBaseAndRef (node2, ".");
 	node12 = dirdbResolvePathWithBaseAndRef (node2, "./");
 
+	node13     = dirdbResolvePathWithBaseAndRef (node3, "..");
+	node13_    = dirdbResolvePathWithBaseAndRef (node3, "../");
+	node13__   = dirdbResolvePathWithBaseAndRef (node3, "..//");
+	node13___  = dirdbResolvePathWithBaseAndRef (node3, "..///");
+	node13____ = dirdbResolvePathWithBaseAndRef (node3, "..//./");
+	node14     = dirdbResolvePathWithBaseAndRef (node3, "../..");
+	node15     = dirdbResolvePathWithBaseAndRef (node3, "../../..");
+	node16     = dirdbResolvePathWithBaseAndRef (node3, "../../../../");
 
+	node17 = dirdbResolvePathWithBaseAndRef (node3, "super:/tmp/foo/moo/super-power.mp3");
+#endif
+
+	fprintf (stderr, ANSI_COLOR_BLUE "1 - " ANSI_COLOR_RESET);
+	node1  = dirdbResolvePathAndRef ("file:", dirdb_use_filehandle);
+	node1_ = dirdbResolvePathAndRef ("file:/", dirdb_use_filehandle);
 	if (node1 != node1_)
 	{
 		fprintf (stderr, ANSI_COLOR_RED "file:" ANSI_COLOR_RESET " and " ANSI_COLOR_RED "file:/" ANSI_COLOR_RESET " did not give us the same node\n");
 		retval++;
 	} else {
 		fprintf (stderr, ANSI_COLOR_GREEN "file:" ANSI_COLOR_RESET " and " ANSI_COLOR_GREEN "file:/" ANSI_COLOR_RESET " give us the same node\n");
-
 	}
 
-	if (node6 != node7)
+	fprintf (stderr, ANSI_COLOR_BLUE "2 - " ANSI_COLOR_RESET);
+	node1__ = dirdbResolvePathAndRef ("file://", dirdb_use_filehandle);
+	if (node1 != node1__)
 	{
-		fprintf (stderr, ANSI_COLOR_RED "foo/moo/super-power.mp3" ANSI_COLOR_RESET " and " ANSI_COLOR_RED "/foo/moo/super-power.mp3" ANSI_COLOR_RESET " gave different results\n");
+		fprintf (stderr, ANSI_COLOR_RED "file:" ANSI_COLOR_RESET " and " ANSI_COLOR_RED "file://" ANSI_COLOR_RESET " did not give us the same node\n");
 		retval++;
 	} else {
-		fprintf (stderr, ANSI_COLOR_GREEN "foo/moo/super-power.mp3" ANSI_COLOR_RESET " and " ANSI_COLOR_GREEN "foo///moo/super-power.mp3" ANSI_COLOR_RESET " gave same results\n");
+		fprintf (stderr, ANSI_COLOR_GREEN "file:" ANSI_COLOR_RESET " and " ANSI_COLOR_GREEN "file://" ANSI_COLOR_RESET " give us the same node\n");
 	}
 
-	if (node6 != node8)
+	/* fill in some references */
+	node2 = dirdbResolvePathAndRef ("file:/tmp",                           dirdb_use_filehandle);
+	node3 = dirdbResolvePathAndRef ("file:/tmp/foo",                       dirdb_use_filehandle);
+	node4 = dirdbResolvePathAndRef ("file:/tmp/foo/moo",                   dirdb_use_filehandle);
+	node5 = dirdbResolvePathAndRef ("file:/tmp/foo/moo/super-power.mp3",   dirdb_use_filehandle);
+	node5b = dirdbResolvePathAndRef ("file:/foo/moo/super-power.mp3",      dirdb_use_filehandle);
+	node5c = dirdbResolvePathAndRef ("super:/tmp/foo/moo/super-power.mp3", dirdb_use_filehandle);
+
+	fprintf (stderr, ANSI_COLOR_BLUE "3 - " ANSI_COLOR_RESET);
+	node6 = dirdbResolvePathWithBaseAndRef (node2, "foo/moo/super-power.mp3", DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle);
+	if (node6 != node5)
 	{
-		fprintf (stderr, ANSI_COLOR_RED "foo/moo/super-power.mp3" ANSI_COLOR_RESET " and " ANSI_COLOR_RED "/foo/moo/super-power.mp3" ANSI_COLOR_RESET " gave different results\n");
+		fprintf (stderr, ANSI_COLOR_RED "file:/tmp  foo/moo/super-power.mp3" ANSI_COLOR_RESET " did not give file:/tmp/foo/moo/super-power.mp3\n");
 		retval++;
 	} else {
-		fprintf (stderr, ANSI_COLOR_GREEN "foo/moo/super-power.mp3" ANSI_COLOR_RESET " and " ANSI_COLOR_GREEN "foo///moo/super-power.mp3" ANSI_COLOR_RESET " gave same results\n");
+		fprintf (stderr, ANSI_COLOR_GREEN "file:/tmp  foo/moo/super-power.mp3" ANSI_COLOR_RESET " did give file:/tmp/foo/moo/super-power.mp3\n");
 	}
 
+	fprintf (stderr, ANSI_COLOR_BLUE "4 - " ANSI_COLOR_RESET);
+	node7 = dirdbResolvePathWithBaseAndRef (node2, "/foo/moo/super-power.mp3", DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle);
+	if (node7 != node5b)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "file:/tmp  /foo/moo/super-power.mp3" ANSI_COLOR_RESET " did not give file:/foo/moo/super-power.mp3\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "file:/tmp  /foo/moo/super-power.mp3" ANSI_COLOR_RESET " did give file:/foo/moo/super-power.mp3\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_BLUE "5 - " ANSI_COLOR_RESET);
+	node8 = dirdbResolvePathWithBaseAndRef (node2, "foo///moo/super-power.mp3", DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle);
+	if (node8 != node5)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "file:/tmp  foo///moo/super-power.mp3" ANSI_COLOR_RESET " did not give file:/tmp/foo/moo/super-power.mp3\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "file:/tmp  foo///moo/super-power.mp3" ANSI_COLOR_RESET " did give file:/tmp/foo/moo/super-power.mp3\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_BLUE "6 - " ANSI_COLOR_RESET);
+	node9 = dirdbResolvePathWithBaseAndRef (node2, NULL, DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle); /* no good defined result for this... */
 	if (node9 != DIRDB_NOPARENT)
 	{
-		fprintf (stderr, ANSI_COLOR_RED "NULL" ANSI_COLOR_RESET " did not give us DIRDB_NOPARENT\n");
+		fprintf (stderr, ANSI_COLOR_RED "file:/tmp  NULL" ANSI_COLOR_RESET " did not give us DIRDB_NOPARENT\n");
 		retval++;
-		dirdbUnref(node9);
+		dirdbUnref(node9, dirdb_use_filehandle);
 	} else {
-		fprintf (stderr, ANSI_COLOR_GREEN "NULL" ANSI_COLOR_RESET " gave us DIRDB_NOPARENT\n");
-	}
-	if (node10 != node2)
-	{
-		fprintf (stderr, ANSI_COLOR_RED "\"\"" ANSI_COLOR_RESET " did not give us parent\n");
-		retval++;
-		dirdbUnref(node10);
-	} else {
-		fprintf (stderr, ANSI_COLOR_GREEN "\"\"" ANSI_COLOR_RESET " gave us parent\n");
-		dirdbUnref(node10);
-	}
-	if (node11 != DIRDB_NOPARENT)
-	{
-		fprintf (stderr, ANSI_COLOR_RED "." ANSI_COLOR_RESET " did not give us DIRDB_NOPARENT\n");
-		retval++;
-		dirdbUnref(node11);
-	} else {
-		fprintf (stderr, ANSI_COLOR_GREEN "." ANSI_COLOR_RESET " gave us DIRDB_NOPARENT\n");
-	}
-	if (node12 != DIRDB_NOPARENT)
-	{
-		fprintf (stderr, ANSI_COLOR_RED "./" ANSI_COLOR_RESET " did not give us DIRDB_NOPARENT\n");
-		retval++;
-		dirdbUnref(node12);
-	} else {
-		fprintf (stderr, ANSI_COLOR_GREEN "./" ANSI_COLOR_RESET " gave us DIRDB_NOPARENT\n");
+		fprintf (stderr, ANSI_COLOR_GREEN "file:/tmp  NULL" ANSI_COLOR_RESET " gave us DIRDB_NOPARENT\n");
 	}
 
-	dirdbUnref(node1);
-	dirdbUnref(node1_);
-	dirdbUnref(node2);
-	dirdbUnref(node3);
-	dirdbUnref(node4);
-	dirdbUnref(node5);
-	dirdbUnref(node6);
-	dirdbUnref(node7);
-	dirdbUnref(node8);
+	fprintf (stderr, ANSI_COLOR_BLUE "7 - " ANSI_COLOR_RESET);
+	node10 = dirdbResolvePathWithBaseAndRef (node2, "", DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle);
+	if (node10 != node2)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "\"file:/tmp  \"" ANSI_COLOR_RESET " did not give us parent\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "\"file:/tmp  \"" ANSI_COLOR_RESET " gave us parent\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_BLUE "8 - " ANSI_COLOR_RESET);
+	node11 = dirdbResolvePathWithBaseAndRef (node2, ".", DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle);
+	if (node11 != node2)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "file:/tmp  .." ANSI_COLOR_RESET " did not maintain directory\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "file:/tmp  ." ANSI_COLOR_RESET " did maintain directory\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_BLUE "9 - " ANSI_COLOR_RESET);
+	node12 = dirdbResolvePathWithBaseAndRef (node2, "./", DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle);
+	if (node12 != node2)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "file:/tmp  ./" ANSI_COLOR_RESET " did not maintain directory\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "file:/tmp  ./" ANSI_COLOR_RESET " did maintain directory\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_BLUE "10 - " ANSI_COLOR_RESET);
+	node13     = dirdbResolvePathWithBaseAndRef (node3, "..", DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle);
+	if (node13 != node2)
+	{
+		fprintf (stderr, ANSI_COLOR_RED ".." ANSI_COLOR_RESET " did not give us the parent\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN ".." ANSI_COLOR_RESET " gave us the parent\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_BLUE "11 - " ANSI_COLOR_RESET);
+	node13_    = dirdbResolvePathWithBaseAndRef (node3, "../", DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle);
+	if (node13_ != node2)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "../" ANSI_COLOR_RESET " did not give us the parent\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "../" ANSI_COLOR_RESET " gave us the parent\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_BLUE "12 - " ANSI_COLOR_RESET);
+	node13__   = dirdbResolvePathWithBaseAndRef (node3, "..//", DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle);
+	if (node13__ != node2)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "..//" ANSI_COLOR_RESET " did not give us the parent\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "..//" ANSI_COLOR_RESET " gave us the parent\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_BLUE "13 - " ANSI_COLOR_RESET);
+	node13___  = dirdbResolvePathWithBaseAndRef (node3, "..///", DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle);
+	if (node13___ != node2)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "..///" ANSI_COLOR_RESET " did not give us the parent\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "..///" ANSI_COLOR_RESET " gave us the parent\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_BLUE "14 - " ANSI_COLOR_RESET);
+	node13____ = dirdbResolvePathWithBaseAndRef (node3, "..//./", DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle);
+	if (node13____ != node2)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "..//./" ANSI_COLOR_RESET " did not give us the parent\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "..//./" ANSI_COLOR_RESET " gave us the parent\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_BLUE "15 - " ANSI_COLOR_RESET);
+	node14     = dirdbResolvePathWithBaseAndRef (node3, "../..", DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle);
+	if (node14 != node1)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "../.." ANSI_COLOR_RESET " did not give us the grand-parent (drive)\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "../../" ANSI_COLOR_RESET " gave us the grand-parent (drive)\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_BLUE "16 - " ANSI_COLOR_RESET);
+	node15     = dirdbResolvePathWithBaseAndRef (node3, "../../..", DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle);
+	if (node15 != node1)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "../../.." ANSI_COLOR_RESET " (too many) did not give us the grand-parent (drive)\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "../../.." ANSI_COLOR_RESET " (too many) gave us the grand-parent (drive)\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_BLUE "17 - " ANSI_COLOR_RESET);
+	node16     = dirdbResolvePathWithBaseAndRef (node3, "../../../../", DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle);
+	if (node16 != node1)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "../../../.." ANSI_COLOR_RESET " (too many) did not give us the grand-parent (drive)\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "../../../.." ANSI_COLOR_RESET " (too many) gave us the grand-parent (drive)\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_BLUE "18 - " ANSI_COLOR_RESET);
+	node17 = dirdbResolvePathWithBaseAndRef (node3, "super:/tmp/foo/moo/super-power.mp3", DIRDB_RESOLVE_DRIVE, dirdb_use_filehandle);
+	if (node17 != node5c)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "file:/tmp/foo  super:/tmp/foo/moo/super-power.mp3" ANSI_COLOR_RESET " did not change drive\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "file:/tmp/foo  super:/tmp/foo/moo/super-power.mp3" ANSI_COLOR_RESET " did change drive\n");
+	}
+
+	dirdbUnref(node1, dirdb_use_filehandle);
+	dirdbUnref(node1_, dirdb_use_filehandle);
+	dirdbUnref(node1__, dirdb_use_filehandle);
+	dirdbUnref(node2, dirdb_use_filehandle);
+	dirdbUnref(node3, dirdb_use_filehandle);
+	dirdbUnref(node4, dirdb_use_filehandle);
+	dirdbUnref(node5, dirdb_use_filehandle);
+	dirdbUnref(node5b, dirdb_use_filehandle);
+	dirdbUnref(node5c, dirdb_use_filehandle);
+	dirdbUnref(node6, dirdb_use_filehandle);
+	dirdbUnref(node7, dirdb_use_filehandle);
+	dirdbUnref(node8, dirdb_use_filehandle);
+
+	dirdbUnref(node10, dirdb_use_filehandle);
+	dirdbUnref(node11, dirdb_use_filehandle);
+	dirdbUnref(node12, dirdb_use_filehandle);
+
+	dirdbUnref(node13, dirdb_use_filehandle);
+	dirdbUnref(node13_, dirdb_use_filehandle);
+	dirdbUnref(node13__, dirdb_use_filehandle);
+	dirdbUnref(node13___, dirdb_use_filehandle);
+	dirdbUnref(node13____, dirdb_use_filehandle);
+	dirdbUnref(node14, dirdb_use_filehandle);
+	dirdbUnref(node15, dirdb_use_filehandle);
+	dirdbUnref(node16, dirdb_use_filehandle);
+	dirdbUnref(node17, dirdb_use_filehandle);
 
 	for (i=0; i < dirdbNum; i++)
 	{
-		if ((dirdbData[i].adb_ref != DIRDB_NO_ADBREF) ||
-		    (dirdbData[i].newadb_ref != DIRDB_NO_ADBREF) ||
-		    (dirdbData[i].mdb_ref != DIRDB_NO_MDBREF) ||
+		if ((dirdbData[i].mdb_ref != DIRDB_NO_MDBREF) ||
 		    (dirdbData[i].newmdb_ref != DIRDB_NO_MDBREF) ||
 		    (dirdbData[i].name) ||
 		    (dirdbData[i].parent != DIRDB_NOPARENT))
@@ -388,63 +555,63 @@ static int dirdb_basic_test4(void)
 
 	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbFindAndRef() corner-cases\n" ANSI_COLOR_RESET);
 
-	node5 = dirdbResolvePathAndRef ("file:/tmp/foo/moo/foo");
+	node5 = dirdbResolvePathAndRef ("file:/tmp/foo/moo/foo", dirdb_use_filehandle);
 
-	node0 = dirdbFindAndRef (node5, NULL);
+	node0 = dirdbFindAndRef (node5, NULL, dirdb_use_filehandle);
 	if (node0 != DIRDB_NOPARENT)
 	{
 		fprintf (stderr, "dirdbFindAndRef(validparent, " ANSI_COLOR_RED "NULL" ANSI_COLOR_RESET") did not fail as expected\n");
 		retval++;
-		dirdbUnref(node0);
+		dirdbUnref(node0, dirdb_use_filehandle);
 	} else {
 		fprintf (stderr, "dirdbFindAndRef(validparent, " ANSI_COLOR_GREEN "NULL" ANSI_COLOR_RESET") failed as expected\n");
 	}
 
-	node0 = dirdbFindAndRef (node5, "");
+	node0 = dirdbFindAndRef (node5, "", dirdb_use_filehandle);
 	if (node0 != DIRDB_NOPARENT)
 	{
 		fprintf (stderr, "dirdbFindAndRef(validparent, " ANSI_COLOR_RED "\"\"" ANSI_COLOR_RESET") did not fail as expected\n");
 		retval++;
-		dirdbUnref(node0);
+		dirdbUnref(node0, dirdb_use_filehandle);
 	} else {
 		fprintf (stderr, "dirdbFindAndRef(validparent, " ANSI_COLOR_GREEN "\"\"" ANSI_COLOR_RESET") failed as expected\n");
 	}
 
-	node0 = dirdbFindAndRef (node5, ".");
+	node0 = dirdbFindAndRef (node5, ".", dirdb_use_filehandle);
 	if (node0 != DIRDB_NOPARENT)
 	{
 		fprintf (stderr, "dirdbFindAndRef(validparent, \"" ANSI_COLOR_RED "." ANSI_COLOR_RESET"\") did not fail as expected\n");
 		retval++;
-		dirdbUnref(node0);
+		dirdbUnref(node0, dirdb_use_filehandle);
 	} else {
 		fprintf (stderr, "dirdbFindAndRef(validparent, \"" ANSI_COLOR_GREEN "." ANSI_COLOR_RESET"\") failed as expected\n");
 	}
-	node0 = dirdbFindAndRef (node5, "..");
+	node0 = dirdbFindAndRef (node5, "..", dirdb_use_filehandle);
 	if (node0 != DIRDB_NOPARENT)
 	{
 		fprintf (stderr, "dirdbFindAndRef(validparent, \"" ANSI_COLOR_RED ".." ANSI_COLOR_RESET"\") did not fail as expected\n");
 		retval++;
-		dirdbUnref(node0);
+		dirdbUnref(node0, dirdb_use_filehandle);
 	} else {
 		fprintf (stderr, "dirdbFindAndRef(validparent, \"" ANSI_COLOR_GREEN ".." ANSI_COLOR_RESET"\") failed as expected\n");
 	}
 
-	node0 = dirdbFindAndRef (node5, "tmp/");
+	node0 = dirdbFindAndRef (node5, "tmp/", dirdb_use_filehandle);
 	if (node0 != DIRDB_NOPARENT)
 	{
 		fprintf (stderr, "dirdbFindAndRef(validparent, \"" ANSI_COLOR_RED "tmp/" ANSI_COLOR_RESET"\") did not fail as expected\n");
 		retval++;
-		dirdbUnref(node0);
+		dirdbUnref(node0, dirdb_use_filehandle);
 	} else {
 		fprintf (stderr, "dirdbFindAndRef(validparent, \"" ANSI_COLOR_GREEN "tmp/" ANSI_COLOR_RESET"\") failed as expected\n");
 	}
 
-	node0 = dirdbFindAndRef (0xffff0000, "test");
+	node0 = dirdbFindAndRef (0xffff0000, "test", dirdb_use_filehandle);
 	if (node0 != DIRDB_NOPARENT)
 	{
 		fprintf (stderr, "dirdbFindAndRef(" ANSI_COLOR_RED "invalidparent" ANSI_COLOR_RESET ", \"test\") did not fail as expected\n");
 		retval++;
-		dirdbUnref(node0);
+		dirdbUnref(node0, dirdb_use_filehandle);
 	} else {
 		fprintf (stderr, "dirdbFindAndRef(" ANSI_COLOR_GREEN "invalidparent" ANSI_COLOR_RESET ", \"test\") failed as expected\n");
 	}
@@ -466,10 +633,10 @@ static int dirdb_basic_test5(void)
 
 	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbGetName_malloc()\n" ANSI_COLOR_RESET);
 
-	/*node2 =*/ dirdbResolvePathAndRef ("file:/tmp");
-	/*node3 =*/ dirdbResolvePathAndRef ("file:/tmp/foo");
-	node4 = dirdbResolvePathAndRef ("file:/tmp/foo/moo");
-	/*node5 =*/ dirdbResolvePathAndRef ("file:/tmp/foo/moo/super-power.mp3");
+	/*node2 =*/ dirdbResolvePathAndRef ("file:/tmp", dirdb_use_filehandle);
+	/*node3 =*/ dirdbResolvePathAndRef ("file:/tmp/foo", dirdb_use_filehandle);
+	  node4 =   dirdbResolvePathAndRef ("file:/tmp/foo/moo", dirdb_use_filehandle);
+	/*node5 =*/ dirdbResolvePathAndRef ("file:/tmp/foo/moo/super-power.mp3", dirdb_use_filehandle);
 
 	tmp = "TEST";
 	dirdbGetName_malloc (node4, &tmp);
@@ -547,20 +714,20 @@ static int dirdb_basic_test6(void)
 	int retval = 0;
 	uint32_t node1, node4;
 
-	node1 = dirdbResolvePathAndRef ("file:/");
-	/*node2 =*/ dirdbResolvePathAndRef ("file:/tmp");
-	/*node3 =*/ dirdbResolvePathAndRef ("file:/tmp/foo");
-	node4 = dirdbResolvePathAndRef ("file:/tmp/foo/moo");
-	/*node5 =*/ dirdbResolvePathAndRef ("file:/tmp/foo/moo/super-power.mp3");
+	  node1 =   dirdbResolvePathAndRef ("file:/", dirdb_use_filehandle);
+	/*node2 =*/ dirdbResolvePathAndRef ("file:/tmp", dirdb_use_filehandle);
+	/*node3 =*/ dirdbResolvePathAndRef ("file:/tmp/foo", dirdb_use_filehandle);
+	  node4 =   dirdbResolvePathAndRef ("file:/tmp/foo/moo", dirdb_use_filehandle);
+	/*node5 =*/ dirdbResolvePathAndRef ("file:/tmp/foo/moo/super-power.mp3", dirdb_use_filehandle);
 
 	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbGetFullname_malloc(no flags)\n" ANSI_COLOR_RESET);
 	retval |= dirdbGetFullname_malloc_subtest (node4, "file:/tmp/foo/moo", 0);
 
-	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbGetFullname_malloc(DIRDB_FULLNAME_NOBASE)\n" ANSI_COLOR_RESET);
-	retval |= dirdbGetFullname_malloc_subtest (node4, "/tmp/foo/moo", DIRDB_FULLNAME_NOBASE);
+	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbGetFullname_malloc(DIRDB_FULLNAME_NODRIVE)\n" ANSI_COLOR_RESET);
+	retval |= dirdbGetFullname_malloc_subtest (node4, "/tmp/foo/moo", DIRDB_FULLNAME_NODRIVE);
 
-	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbGetFullname_malloc(DIRDB_FULLNAME_NOBASE | DIRDB_FULLNAME_ENDSLASH)\n" ANSI_COLOR_RESET);
-	retval |= dirdbGetFullname_malloc_subtest (node4, "/tmp/foo/moo/", DIRDB_FULLNAME_NOBASE | DIRDB_FULLNAME_ENDSLASH);
+	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbGetFullname_malloc(DIRDB_FULLNAME_NODRIVE | DIRDB_FULLNAME_ENDSLASH)\n" ANSI_COLOR_RESET);
+	retval |= dirdbGetFullname_malloc_subtest (node4, "/tmp/foo/moo/", DIRDB_FULLNAME_NODRIVE | DIRDB_FULLNAME_ENDSLASH);
 
 	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbGetFullname_malloc(DIRDB_FULLNAME_ENDSLASH)\n" ANSI_COLOR_RESET);
 	retval |= dirdbGetFullname_malloc_subtest (node4, "file:/tmp/foo/moo/", DIRDB_FULLNAME_ENDSLASH);
@@ -568,11 +735,11 @@ static int dirdb_basic_test6(void)
 	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbGetFullname_malloc(no flags)\n" ANSI_COLOR_RESET);
 	retval |= dirdbGetFullname_malloc_subtest (node1, "file:", 0);
 
-	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbGetFullname_malloc(DIRDB_FULLNAME_NOBASE)\n" ANSI_COLOR_RESET);
-	retval |= dirdbGetFullname_malloc_subtest (node1, "", DIRDB_FULLNAME_NOBASE);
+	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbGetFullname_malloc(DIRDB_FULLNAME_NODRIVE)\n" ANSI_COLOR_RESET);
+	retval |= dirdbGetFullname_malloc_subtest (node1, "", DIRDB_FULLNAME_NODRIVE);
 
-	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbGetFullname_malloc(DIRDB_FULLNAME_NOBASE | DIRDB_FULLNAME_ENDSLASH)\n" ANSI_COLOR_RESET);
-	retval |= dirdbGetFullname_malloc_subtest (node1, "/", DIRDB_FULLNAME_NOBASE | DIRDB_FULLNAME_ENDSLASH);
+	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbGetFullname_malloc(DIRDB_FULLNAME_NODRIVE | DIRDB_FULLNAME_ENDSLASH)\n" ANSI_COLOR_RESET);
+	retval |= dirdbGetFullname_malloc_subtest (node1, "/", DIRDB_FULLNAME_NODRIVE | DIRDB_FULLNAME_ENDSLASH);
 
 	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbGetFullname_malloc(DIRDB_FULLNAME_ENDSLASH)\n" ANSI_COLOR_RESET);
 	retval |= dirdbGetFullname_malloc_subtest (node1, "file:/", DIRDB_FULLNAME_ENDSLASH);
@@ -587,138 +754,136 @@ static int dirdb_basic_test6(void)
 static int dirdb_basic_test7(void)
 {
 	int retval = 0;
- /* dirdbTagSetParent(), dirdbMakeMdbAdbRef(), dirdbTagRemoveUntaggedAndSubmit(), dirdbGetMdbAdb() */
+ /* dirdbTagSetParent(), dirdbMakeMdbRef(), dirdbTagRemoveUntaggedAndSubmit(), dirdbGetMdb() */
 
-	uint32_t node1 = dirdbResolvePathAndRef ("file:/tmp");
-	uint32_t node2 = dirdbResolvePathAndRef ("file:/tmp/foo");
-	uint32_t node3 = dirdbResolvePathAndRef ("file:/tmp/foo/test1.mp3");
-	uint32_t node4 = dirdbResolvePathAndRef ("file:/tmp/foo/test2.mp3");
-	uint32_t node5 = dirdbResolvePathAndRef ("file:/tmp/bar");
+	uint32_t node1 = dirdbResolvePathAndRef ("file:/tmp", dirdb_use_filehandle);
+	uint32_t node2 = dirdbResolvePathAndRef ("file:/tmp/foo", dirdb_use_filehandle);
+	uint32_t node3 = dirdbResolvePathAndRef ("file:/tmp/foo/test1.mp3", dirdb_use_filehandle);
+	uint32_t node4 = dirdbResolvePathAndRef ("file:/tmp/foo/test2.mp3", dirdb_use_filehandle);
+	uint32_t node5 = dirdbResolvePathAndRef ("file:/tmp/bar", dirdb_use_filehandle);
 	uint32_t node6, node7, node8;
 	int i;
 
 	int first;
-	uint32_t iter, mdb, adb;
+	uint32_t iter, mdb;
 	int found_node3, found_node4, found_node6, found_node7, found_node8;
 
-	fprintf (stderr, ANSI_COLOR_CYAN "Testing initial dirdbTagSetParent(), dirdbMakeMdbAdbRef(), dirdbTagRemoveUntaggedAndSubmit() and dirdbGetMdbAdb()\n" ANSI_COLOR_RESET);
+	fprintf (stderr, ANSI_COLOR_CYAN "Testing initial dirdbTagSetParent(), dirdbMakeMdbRef(), dirdbTagRemoveUntaggedAndSubmit() and dirdbGetMdb()\n" ANSI_COLOR_RESET);
 
 	dirdbTagSetParent (node1);
 
-	dirdbMakeMdbAdbRef (node3, 1, 0xffffffff);
-	dirdbMakeMdbAdbRef (node4, 2, 0xffffffff);
-	node6 = dirdbResolvePathAndRef ("file:/tmp/bar/test3.mp3");
-	node7 = dirdbResolvePathAndRef ("file:/tmp/bar/test4.mp3");
-	dirdbMakeMdbAdbRef (node6, 3, 0xffffffff);
-	dirdbMakeMdbAdbRef (node7, 4, 0xffffffff);
+	dirdbMakeMdbRef (node3, 1);
+	dirdbMakeMdbRef (node4, 2);
+	node6 = dirdbResolvePathAndRef ("file:/tmp/bar/test3.mp3", dirdb_use_filehandle);
+	node7 = dirdbResolvePathAndRef ("file:/tmp/bar/test4.mp3", dirdb_use_filehandle);
+	dirdbMakeMdbRef (node6, 3);
+	dirdbMakeMdbRef (node7, 4);
 
 	dirdbTagRemoveUntaggedAndSubmit ();
 
-	dirdbUnref (node1);
-	dirdbUnref (node2);
-	dirdbUnref (node3);
-	dirdbUnref (node4);
-	dirdbUnref (node5);
-	dirdbUnref (node6);
-	dirdbUnref (node7);
+	dirdbUnref (node1, dirdb_use_filehandle);
+	dirdbUnref (node2, dirdb_use_filehandle);
+	dirdbUnref (node3, dirdb_use_filehandle);
+	dirdbUnref (node4, dirdb_use_filehandle);
+	dirdbUnref (node5, dirdb_use_filehandle);
+	dirdbUnref (node6, dirdb_use_filehandle);
+	dirdbUnref (node7, dirdb_use_filehandle);
 
 	first=1;
 	iter = 0xa1234;
 	mdb = 0xa5678;
-	adb = 0xffeeff;
 	found_node3=0;
 	found_node4=0;
 	found_node6=0;
 	found_node7=0;
-	while (!dirdbGetMdbAdb(&iter, &mdb, &adb, &first))
+	while (!dirdbGetMdb(&iter, &mdb, &first))
 	{
 		     if ((iter==node3) && (mdb==1)) found_node3++;
 		else if ((iter==node4) && (mdb==2)) found_node4++;
 		else if ((iter==node6) && (mdb==3)) found_node6++;
 		else if ((iter==node7) && (mdb==4)) found_node7++;
 		else {
-			fprintf (stderr, "dirdbGetMdbAdb() gave an unknown node " ANSI_COLOR_RED "iter=%d mdb=%d adb=%d" ANSI_COLOR_RESET "\n", iter, mdb, adb);
+			fprintf (stderr, "dirdbGetMdb() gave an unknown node " ANSI_COLOR_RED "iter=%d mdb=%d" ANSI_COLOR_RESET "\n", iter, mdb);
 			retval++;
 		}
 	}
 	if (found_node3 != 1) {
-		fprintf (stderr, "dirdbGetMdbAdb() did not reveal " ANSI_COLOR_RED "iter=%d mdb=1" ANSI_COLOR_RESET "\n", node3);
+		fprintf (stderr, "dirdbGetMdb() did not reveal " ANSI_COLOR_RED "iter=%d mdb=1" ANSI_COLOR_RESET "\n", node3);
 		retval++;
 	} else {
-		fprintf (stderr, "dirdbGetMdbAdb() gave us " ANSI_COLOR_GREEN "iter=%d mdb=1" ANSI_COLOR_RESET "\n", node3);
+		fprintf (stderr, "dirdbGetMdb() gave us " ANSI_COLOR_GREEN "iter=%d mdb=1" ANSI_COLOR_RESET "\n", node3);
 	}
 	if (found_node4 != 1) {
-		fprintf (stderr, "dirdbGetMdbAdb() did not reveal " ANSI_COLOR_RED "iter=%d mdb=2" ANSI_COLOR_RESET "\n", node4);
+		fprintf (stderr, "dirdbGetMdb() did not reveal " ANSI_COLOR_RED "iter=%d mdb=2" ANSI_COLOR_RESET "\n", node4);
 		retval++;
 	} else {
-		fprintf (stderr, "dirdbGetMdbAdb() gave us " ANSI_COLOR_GREEN "iter=%d mdb=2" ANSI_COLOR_RESET "\n", node4);
+		fprintf (stderr, "dirdbGetMdb() gave us " ANSI_COLOR_GREEN "iter=%d mdb=2" ANSI_COLOR_RESET "\n", node4);
 	}
 	if (found_node6 != 1) {
-		fprintf (stderr, "dirdbGetMdbAdb() did not reveal " ANSI_COLOR_RED "iter=%d mdb=3" ANSI_COLOR_RESET "\n", node6);
+		fprintf (stderr, "dirdbGetMdb() did not reveal " ANSI_COLOR_RED "iter=%d mdb=3" ANSI_COLOR_RESET "\n", node6);
 		retval++;
 	} else {
-		fprintf (stderr, "dirdbGetMdbAdb() gave us " ANSI_COLOR_GREEN "iter=%d mdb=3" ANSI_COLOR_RESET "\n", node6);
+		fprintf (stderr, "dirdbGetMdb() gave us " ANSI_COLOR_GREEN "iter=%d mdb=3" ANSI_COLOR_RESET "\n", node6);
 	}
 	if (found_node7 != 1) {
-		fprintf (stderr, "dirdbGetMdbAdb() did not reveal " ANSI_COLOR_RED "iter=%d mdb=4" ANSI_COLOR_RESET "\n", node7);
+		fprintf (stderr, "dirdbGetMdb() did not reveal " ANSI_COLOR_RED "iter=%d mdb=4" ANSI_COLOR_RESET "\n", node7);
 		retval++;
 	} else {
-		fprintf (stderr, "dirdbGetMdbAdb() gave us " ANSI_COLOR_GREEN "iter=%d mdb=4" ANSI_COLOR_RESET "\n", node7);
+		fprintf (stderr, "dirdbGetMdb() gave us " ANSI_COLOR_GREEN "iter=%d mdb=4" ANSI_COLOR_RESET "\n", node7);
 	}
 
 
 
-	fprintf (stderr, ANSI_COLOR_CYAN "Testing patching with dirdbTagSetParent(), dirdbMakeMdbAdbRef(), dirdbTagRemoveUntaggedAndSubmit() and dirdbGetMdbAdb()\n" ANSI_COLOR_RESET);
+	fprintf (stderr, ANSI_COLOR_CYAN "Testing patching with dirdbTagSetParent(), dirdbMakeMdbRef(), dirdbTagRemoveUntaggedAndSubmit() and dirdbGetMdb()\n" ANSI_COLOR_RESET);
 
 	dirdbTagSetParent (node1);
 
-	dirdbMakeMdbAdbRef (node3, 1, 0xffffffff);
-	node8 = dirdbResolvePathAndRef ("file:/tmp/bar/test5.mp3");
-	dirdbMakeMdbAdbRef (node6, 3, 0xffffffff);
-	dirdbMakeMdbAdbRef (node8, 5, 0xffffffff);
-	dirdbUnref (node8);
+	dirdbMakeMdbRef (node3, 1);
+	node8 = dirdbResolvePathAndRef ("file:/tmp/bar/test5.mp3", dirdb_use_filehandle);
+	dirdbMakeMdbRef (node6, 3);
+	dirdbMakeMdbRef (node8, 5);
+	dirdbUnref (node8, dirdb_use_filehandle);
 
 	dirdbTagRemoveUntaggedAndSubmit ();
 
 	first=1;
 	iter = 0xa1234;
 	mdb = 0xa5678;
-	adb = 0xffeeff;
 	found_node3=0;
 	found_node6=0;
 	found_node8=0;
-	while (!dirdbGetMdbAdb(&iter, &mdb, &adb, &first))
+	while (!dirdbGetMdb(&iter, &mdb, &first))
 	{
-		fprintf (stderr, "%d %d %d\n", iter, mdb, adb);
+		fprintf (stderr, "%d %d\n", iter, mdb);
 		     if ((iter==node3) && (mdb==1)) found_node3++;
 		else if ((iter==node6) && (mdb==3)) found_node6++;
 		else if ((iter==node8) && (mdb==5)) found_node8++;
 		else {
-			fprintf (stderr, "dirdbGetMdbAdb() gave an unknown node " ANSI_COLOR_RED "iter=%d mdb=%d adb=%d" ANSI_COLOR_RESET "\n", iter, mdb, adb);
+			fprintf (stderr, "dirdbGetMdb() gave an unknown node " ANSI_COLOR_RED "iter=%d mdb=%d" ANSI_COLOR_RESET "\n", iter, mdb);
 			retval++;
 		}
 	}
 	if (found_node3 != 1) {
-		fprintf (stderr, "dirdbGetMdbAdb() did not reveal " ANSI_COLOR_RED "iter=%d mdb=1" ANSI_COLOR_RESET "\n", node3);
+		fprintf (stderr, "dirdbGetMdb() did not reveal " ANSI_COLOR_RED "iter=%d mdb=1" ANSI_COLOR_RESET "\n", node3);
 		retval++;
 	} else {
-		fprintf (stderr, "dirdbGetMdbAdb() gave us " ANSI_COLOR_GREEN "iter=%d mdb=1" ANSI_COLOR_RESET "\n", node3);
+		fprintf (stderr, "dirdbGetMdb() gave us " ANSI_COLOR_GREEN "iter=%d mdb=1" ANSI_COLOR_RESET "\n", node3);
 	}
 	if (found_node6 != 1) {
-		fprintf (stderr, "dirdbGetMdbAdb() did not reveal " ANSI_COLOR_RED "iter=%d mdb=3" ANSI_COLOR_RESET "\n", node6);
+		fprintf (stderr, "dirdbGetMdb() did not reveal " ANSI_COLOR_RED "iter=%d mdb=3" ANSI_COLOR_RESET "\n", node6);
 		retval++;
 	} else {
-		fprintf (stderr, "dirdbGetMdbAdb() gave us " ANSI_COLOR_GREEN "iter=%d mdb=3" ANSI_COLOR_RESET "\n", node6);
+		fprintf (stderr, "dirdbGetMdb() gave us " ANSI_COLOR_GREEN "iter=%d mdb=3" ANSI_COLOR_RESET "\n", node6);
 	}
 	if (found_node8 != 1) {
-		fprintf (stderr, "dirdbGetMdbAdb() did not reveal " ANSI_COLOR_RED "iter=%d mdb=5" ANSI_COLOR_RESET "\n", node8);
+		fprintf (stderr, "dirdbGetMdb() did not reveal " ANSI_COLOR_RED "iter=%d mdb=5" ANSI_COLOR_RESET "\n", node8);
 		retval++;
 	} else {
-		fprintf (stderr, "dirdbGetMdbAdb() gave us " ANSI_COLOR_GREEN "iter=%d mdb=5" ANSI_COLOR_RESET "\n", node8);
+		fprintf (stderr, "dirdbGetMdb() gave us " ANSI_COLOR_GREEN "iter=%d mdb=5" ANSI_COLOR_RESET "\n", node8);
 	}
 
 
-	fprintf (stderr, ANSI_COLOR_CYAN "Testing clearing with dirdbTagSetParent(), dirdbTagRemoveUntaggedAndSubmit() and dirdbGetMdbAdb()\n" ANSI_COLOR_RESET);
+	fprintf (stderr, ANSI_COLOR_CYAN "Testing clearing with dirdbTagSetParent(), dirdbTagRemoveUntaggedAndSubmit() and dirdbGetMdb()\n" ANSI_COLOR_RESET);
 
 	dirdbTagSetParent (DIRDB_NOPARENT);
 	dirdbTagRemoveUntaggedAndSubmit ();
@@ -726,18 +891,15 @@ static int dirdb_basic_test7(void)
 	first=1;
 	iter = 0xa1234;
 	mdb = 0xa5678;
-	adb = 0xffeeff;
-	while (!dirdbGetMdbAdb(&iter, &mdb, &adb, &first))
+	while (!dirdbGetMdb(&iter, &mdb, &first))
 	{
-		fprintf (stderr, "dirdbGetMdbAdb() gave a node " ANSI_COLOR_RED "iter=%d mdb=%d adb=%d" ANSI_COLOR_RESET "\n", iter, mdb, adb);
+		fprintf (stderr, "dirdbGetMdb() gave a node " ANSI_COLOR_RED "iter=%d mdb=%d" ANSI_COLOR_RESET "\n", iter, mdb);
 		retval++;
 	}
 
 	for (i=0; i < dirdbNum; i++)
 	{
-		if ((dirdbData[i].adb_ref != DIRDB_NO_ADBREF) ||
-		    (dirdbData[i].newadb_ref != DIRDB_NO_ADBREF) ||
-		    (dirdbData[i].mdb_ref != DIRDB_NO_MDBREF) ||
+		if ((dirdbData[i].mdb_ref != DIRDB_NO_MDBREF) ||
 		    (dirdbData[i].newmdb_ref != DIRDB_NO_MDBREF) ||
 		    (dirdbData[i].name) ||
 		    (dirdbData[i].parent != DIRDB_NOPARENT))
@@ -746,6 +908,153 @@ static int dirdb_basic_test7(void)
 			retval++;
 		}
 	}
+
+	clear_dirdb();
+
+	return retval;
+}
+
+static int dirdb_basic_test8_subtest (uint32_t base, uint32_t node, char *expected_dir, int windows)
+{
+	char *base_str;
+	char *node_str;
+	char *diff;
+	int retval = 0;
+
+	if (base != DIRDB_NOPARENT)
+	{
+		dirdbGetFullname_malloc (base, &base_str, 0);
+	} else {
+		base_str = strdup("NULL");
+	}
+
+	if (node != DIRDB_NOPARENT)
+	{
+		dirdbGetFullname_malloc (node, &node_str, 0);
+	} else {
+		node_str = strdup("NULL");
+	}
+
+	diff = dirdbDiffPath (base, node, windows?DIRDB_DIFF_WINDOWS_SLASH:0);
+
+	if ((!diff) != (!expected_dir))
+	{
+		retval |= 1;
+	} else if (diff && strcmp (diff, expected_dir))
+	{
+		retval |= 2;
+	}
+
+	if (retval)
+	{
+		fprintf (stderr, "dirdbDiffPath("
+		                  ANSI_COLOR_RED "%s"
+		                  ANSI_COLOR_RESET ", "
+		                  ANSI_COLOR_RED "%s"
+		                  ANSI_COLOR_RESET ", "
+		                  ANSI_COLOR_RED "%s"
+		                  ANSI_COLOR_RESET"%s) FAILED, expected %s\n",
+		                  base_str, node_str, diff?diff:"NULL", windows?" (windows)":"",expected_dir?expected_dir:"NULL");
+	} else {
+		fprintf (stderr, "dirdbDiffPath("
+		                  ANSI_COLOR_GREEN "%s"
+		                  ANSI_COLOR_RESET ", "
+		                  ANSI_COLOR_GREEN "%s"
+		                  ANSI_COLOR_RESET ", "
+		                  ANSI_COLOR_GREEN "%s"
+		                  ANSI_COLOR_RESET"%s) OK\n",
+		                  base_str, node_str, diff?diff:"NULL", windows?" (windows)":"");
+	}
+	free (base_str);
+	free (node_str);
+	free (diff);
+	return retval;
+}
+
+static int dirdb_basic_test8(void)
+{
+	int retval = 0;
+
+	uint32_t node0a = dirdbResolvePathAndRef ("file:/", dirdb_use_filehandle);
+	uint32_t node1a = dirdbResolvePathAndRef ("file:/tmp", dirdb_use_filehandle);
+	uint32_t node2a = dirdbResolvePathAndRef ("file:/tmp/foo", dirdb_use_filehandle);
+	uint32_t node3a = dirdbResolvePathAndRef ("file:/tmp/foo/test1.mp3", dirdb_use_filehandle);
+	uint32_t node4a = dirdbResolvePathAndRef ("file:/tmp/foo/test2.mp3", dirdb_use_filehandle);
+	uint32_t node5a = dirdbResolvePathAndRef ("file:/tmp/bar", dirdb_use_filehandle);
+	uint32_t node6a = dirdbResolvePathAndRef ("file:/tmp/bar/test3.mp3", dirdb_use_filehandle);
+	uint32_t node7a = dirdbResolvePathAndRef ("file:/nope", dirdb_use_filehandle);
+	uint32_t node8a = dirdbResolvePathAndRef ("file:/nope/blab/", dirdb_use_filehandle);
+	uint32_t node9a = dirdbResolvePathAndRef ("file:/nope/blab/test4.mp3", dirdb_use_filehandle);
+	uint32_t node10 = dirdbResolvePathAndRef ("file:/nope/\\foo\\/test5.mp3", dirdb_use_filehandle);
+
+	uint32_t node0b = dirdbResolvePathAndRef ("setup:/", dirdb_use_filehandle);
+	uint32_t node1b = dirdbResolvePathAndRef ("setup:/tmp", dirdb_use_filehandle);
+	uint32_t node2b = dirdbResolvePathAndRef ("setup:/tmp/foo", dirdb_use_filehandle);
+	uint32_t node3b = dirdbResolvePathAndRef ("setup:/tmp/foo/test1.mp3", dirdb_use_filehandle);
+	uint32_t node4b = dirdbResolvePathAndRef ("setup:/tmp/foo/test2.mp3", dirdb_use_filehandle);
+	uint32_t node5b = dirdbResolvePathAndRef ("setup:/tmp/bar", dirdb_use_filehandle);
+	uint32_t node6b = dirdbResolvePathAndRef ("setup:/tmp/bar/test3.mp3", dirdb_use_filehandle);
+	uint32_t node7b = dirdbResolvePathAndRef ("setup:/nope", dirdb_use_filehandle);
+	uint32_t node8b = dirdbResolvePathAndRef ("setup:/nope/blab/", dirdb_use_filehandle);
+	uint32_t node9b = dirdbResolvePathAndRef ("setup:/nope/blab/test4.mp3", dirdb_use_filehandle);
+
+	fprintf (stderr, ANSI_COLOR_CYAN "Testing initial dirdbDiffPath()\n" ANSI_COLOR_RESET);
+
+	retval |= dirdb_basic_test8_subtest (node0a, node0a, "./", 0);
+	retval |= dirdb_basic_test8_subtest (node1a, node1a, "./", 0);
+
+	retval |= dirdb_basic_test8_subtest (node0a, node1a, "tmp", 0);
+	retval |= dirdb_basic_test8_subtest (node0a, node2a, "tmp/foo", 0);
+	retval |= dirdb_basic_test8_subtest (node0a, node3a, "tmp/foo/test1.mp3", 0);
+
+	retval |= dirdb_basic_test8_subtest (node1a, node2a, "foo", 0);
+	retval |= dirdb_basic_test8_subtest (node1a, node3a, "foo/test1.mp3", 0);
+
+	retval |= dirdb_basic_test8_subtest (node2a, node3a, "test1.mp3", 0);
+
+	retval |= dirdb_basic_test8_subtest (node3a, node2a, "../", 0);
+	retval |= dirdb_basic_test8_subtest (node3a, node1a, "../../", 0);
+	retval |= dirdb_basic_test8_subtest (node3a, node6a, "../../bar/test3.mp3", 0); /* in the test, we are using the base, a mp3 file as it was a directory name we are inside */
+
+	retval |= dirdb_basic_test8_subtest (node3a, node0a, "/", 0);
+	retval |= dirdb_basic_test8_subtest (node3a, node9a, "/nope/blab/test4.mp3", 0);
+
+	retval |= dirdb_basic_test8_subtest (node0a, node0b, "setup:/", 0);
+	retval |= dirdb_basic_test8_subtest (node0a, node1b, "setup:/tmp", 0);
+	retval |= dirdb_basic_test8_subtest (node0a, node3b, "setup:/tmp/foo/test1.mp3", 0);
+	retval |= dirdb_basic_test8_subtest (node3a, node3b, "setup:/tmp/foo/test1.mp3", 0);
+
+	retval |= dirdb_basic_test8_subtest (node9a, node10, "../../\\foo\\/test5.mp3", 0); /* test that \\ works */
+	retval |= dirdb_basic_test8_subtest (node9a, node10, "..\\..\\/foo/\\test5.mp3", 1); /* test that slashes reverses fully on windows */
+
+	retval |= dirdb_basic_test8_subtest (node3a, DIRDB_NOPARENT, NULL, 0);
+
+	retval |= dirdb_basic_test8_subtest (DIRDB_NOPARENT, node3a, "file:/tmp/foo/test1.mp3", 0); /* does the same as dirdbGetFullname_malloc() */
+
+
+	fprintf (stderr, "\n");
+
+	dirdbUnref (node0a, dirdb_use_filehandle);
+	dirdbUnref (node1a, dirdb_use_filehandle);
+	dirdbUnref (node2a, dirdb_use_filehandle);
+	dirdbUnref (node3a, dirdb_use_filehandle);
+	dirdbUnref (node4a, dirdb_use_filehandle);
+	dirdbUnref (node5a, dirdb_use_filehandle);
+	dirdbUnref (node6a, dirdb_use_filehandle);
+	dirdbUnref (node7a, dirdb_use_filehandle);
+	dirdbUnref (node8a, dirdb_use_filehandle);
+	dirdbUnref (node9a, dirdb_use_filehandle);
+
+	dirdbUnref (node0b, dirdb_use_filehandle);
+	dirdbUnref (node1b, dirdb_use_filehandle);
+	dirdbUnref (node2b, dirdb_use_filehandle);
+	dirdbUnref (node3b, dirdb_use_filehandle);
+	dirdbUnref (node4b, dirdb_use_filehandle);
+	dirdbUnref (node5b, dirdb_use_filehandle);
+	dirdbUnref (node6b, dirdb_use_filehandle);
+	dirdbUnref (node7b, dirdb_use_filehandle);
+	dirdbUnref (node8b, dirdb_use_filehandle);
+	dirdbUnref (node9b, dirdb_use_filehandle);
 
 	clear_dirdb();
 
@@ -768,7 +1077,9 @@ int main(int argc, char *argv[])
 
 	retval |= dirdb_basic_test6(); /* dirdbGetFullname_malloc() */
 
-	retval |= dirdb_basic_test7(); /* dirdbTagSetParent(), dirdbMakeMdbAdbRef(), dirdbTagRemoveUntaggedAndSubmit(), dirdbGetMdbAdb() */
+	retval |= dirdb_basic_test8(); /* dirdbDiffPath() */
+
+	retval |= dirdb_basic_test7(); /* dirdbTagSetParent(), dirdbMakeMdbRef(), dirdbTagRemoveUntaggedAndSubmit(), dirdbGetMdb() */
 
 	return retval;
 }

@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '05-'10 Stian Skjelstad <stian@nixia.no>
+ * copyright (c) '05-'21 Stian Skjelstad <stian@nixia.no>
  *
  * OPLPlay interface routines
  *
@@ -30,19 +30,20 @@
 #include "types.h"
 extern "C"
 {
-#include "filesel/dirdb.h"
-#include "filesel/pfilesel.h"
-#include "filesel/mdb.h"
-#include "dev/player.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
+#include "cpiface/cpiface.h"
+#include "dev/deviplay.h"
+#include "dev/player.h"
+#include "filesel/dirdb.h"
+#include "filesel/filesystem.h"
+#include "filesel/pfilesel.h"
+#include "filesel/mdb.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 #include "stuff/timer.h"
-#include "dev/deviplay.h"
-#include "cpiface/cpiface.h"
 }
 #include "oplplay.h"
 
@@ -459,18 +460,18 @@ static void normalize(void)
 	mcpNormalize(0);
 }
 
-static int oplOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
+static int oplOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 	char *path;
 	size_t buffersize = 16*1024;
 	uint8_t *buffer = (uint8_t *)malloc (buffersize);
 	size_t bufferfill = 0;
 
-	dirdbGetName_internalstr (dirdbref, &path);
+	dirdbGetName_internalstr (file->dirdb_ref, &path);
 
 	{
 		int res;
-		while (!feof(file))
+		while (!file->eof(file))
 		{
 			if (buffersize == bufferfill)
 			{
@@ -483,7 +484,7 @@ static int oplOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 				buffersize += 16*1024;
 				buffer = (uint8_t *)realloc (buffer, buffersize);
 			}
-			res=fread(buffer + bufferfill, 1, buffersize - bufferfill, file);
+			res = file->read (file, buffer + bufferfill, buffersize - bufferfill);
 			if (res<=0)
 				break;
 			bufferfill += res;
@@ -525,7 +526,7 @@ extern "C"
 	struct linkinfostruct dllextinfo =
 	{
 		"playopl" /* name */,
-		"OpenCP AdPlug (OPL) Player (c) 2005-09 Stian Skjelstad" /* desc */,
+		"OpenCP AdPlug (OPL) Player (c) 2005-21 Stian Skjelstad" /* desc */,
 		DLLVERSION /* ver */
 	};
 }

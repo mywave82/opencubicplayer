@@ -64,18 +64,18 @@ playflac$(LIB_SUFFIX): $(playflac_so)
 flacpplay.o: flacpplay.c \
 	../config.h \
 	../types.h \
+	../boot/plinkman.h \
+	../boot/psetting.h \
+	../cpiface/cpiface.h \
+	../dev/deviplay.h \
+	../dev/player.h \
 	../filesel/pfilesel.h \
 	../filesel/mdb.h \
-	../stuff/poutput.h \
-	../dev/player.h \
-	../boot/psetting.h \
-	../boot/plinkman.h \
 	flacplay.h \
-	../stuff/sets.h \
 	../stuff/compat.h \
 	../stuff/err.h \
-	../dev/deviplay.h \
-	../cpiface/cpiface.h
+	../stuff/poutput.h \
+	../stuff/sets.h
 	$(CC) flacpplay.c -o $@ $(FLAC_CFLAGS) -c
 
 flacplay.o: flacplay.c \
@@ -85,11 +85,12 @@ flacplay.o: flacplay.c \
 	../cpiface/jpeg.h \
 	../cpiface/png.h \
 	../dev/deviplay.h \
-	../dev/ringbuffer.h \
 	../dev/player.h \
 	../dev/plrasm.h \
+	../dev/ringbuffer.h \
+	../filesel/filesystem.h \
+	flacplay.h \
 	../stuff/imsrtns.h \
 	../stuff/poll.h \
-	../stuff/timer.h \
-	flacplay.h
+	../stuff/timer.h
 	$(CC) flacplay.c -o $@ $(FLAC_CFLAGS) -c

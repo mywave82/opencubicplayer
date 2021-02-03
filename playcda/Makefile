@@ -29,15 +29,15 @@ cdaplay.o: cdaplay.c cdaudio.h \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	cdaudio.h \
 	../cpiface/cpiface.h \
-	../dev/devisamp.h \
 	../dev/deviplay.h \
+	../dev/devisamp.h \
 	../dev/player.h \
 	../dev/plrasm.h \
 	../dev/sampler.h \
 	../stuff/imsrtns.h \
-	../stuff/poll.h \
-	cdaudio.h
+	../stuff/poll.h
 	$(CC) cdaplay.c -o $@ -c
 
 cdapplay.o: cdapplay.c cdaudio.h \
@@ -48,10 +48,11 @@ cdapplay.o: cdapplay.c cdaudio.h \
 	../dev/deviplay.h \
 	../dev/devisamp.h \
 	../filesel/dirdb.h \
+	../filesel/filesystem.h \
 	../filesel/mdb.h \
+	../filesel/pfilesel.h \
 	../stuff/compat.h \
 	../stuff/err.h \
 	../stuff/poutput.h \
-	../stuff/sets.h \
-	../filesel/pfilesel.h
+	../stuff/sets.h
 	$(CC) cdapplay.c -o $@ -c

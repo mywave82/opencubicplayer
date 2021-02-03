@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Some functions not present in POSIX that is needed
  *
@@ -107,37 +108,13 @@ void getext_malloc(const char *src, char **ext)
 	}
 
 	len = strlen(src);
-	/* TODO: we need to make adb itself understand .tar.gz, or make a API to register these into */
-	if ((len >= 7) && (!strcasecmp (src + len - 7, ".tar.gz"))) /* I am a bad boy */
-	{
-		ref1 = src + len - 7;
-	} else if ((len >= 8) && (!strcasecmp (src + len - 8, ".tar.bz2"))) /* very bad */
-	{
-		ref1 = src + len - 8;
-	} else if ((len >= 6) && (!strcasecmp (src + len - 6, ".tar.Z"))) /* and this is creepy */
-	{
-		ref1 = src + len - 6;
-	} else {
-		ref1 = rindex (src, '.');
-	}
+
+	ref1 = rindex (src, '.');
 	if (!ref1)
 	{
 		ref1 = src + len;
 	}
-#if 0
-	if (file)
-	{
-		len = ref1 - src;
-		*file = malloc (len + 1);
-		if (!*file)
-		{
-			fprintf (stderr, "splitpath_malloc: *file = malloc(%d) failed\n", len + 1);
-			goto error_out;
-		}
-		memcpy (*file, src, len);
-		(*file)[len] = 0;
-	}
-#endif
+
 	src = ref1;
 
 	if (ext)
@@ -234,19 +211,8 @@ int splitpath4_malloc(const char *src, char **drive, char **path, char **file, c
 
 
 	len = strlen(src);
-	/* TODO: we need to make adb itself understand .tar.gz, or make a API to register these into */
-	if ((len >= 7) && (!strcasecmp (src + len - 7, ".tar.gz"))) /* I am a bad boy */
-	{
-		ref1 = src + len - 7;
-	} else if ((len >= 8) && (!strcasecmp (src + len - 8, ".tar.bz2"))) /* very bad */
-	{
-		ref1 = src + len - 8;
-	} else if ((len >= 6) && (!strcasecmp (src + len - 6, ".tar.Z"))) /* and this is creepy */
-	{
-		ref1 = src + len - 6;
-	} else {
-		ref1 = rindex (src, '.');
-	}
+
+	ref1 = rindex (src, '.');
 	if (!ref1)
 	{
 		ref1 = src + len;
@@ -1421,3 +1387,15 @@ int strcasecmp(const char *s1, const char *s2)
 	return 0; //equal
 }
 #endif
+
+void strreplace (char *dst, char old, char replacement)
+{
+	while (*dst)
+	{
+		if (dst[0] == old)
+		{
+			dst[0] = replacement;
+		}
+		dst++;
+	}
+}

@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2019 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * PMain - main module (loads and inits all startup modules)
  *
@@ -497,7 +497,7 @@ static int init_modules(int argc, char *argv[])
 
 		if (epoch < 20200225)
 		{
-			printf("ocp.ini update (0.3.0) added [libsidplayfp] section\n");
+			printf("ocp.ini update (0.2.90) added [libsidplayfp] section\n");
 			cfSetProfileString("libsidplayfp", "emulator", "residfp");
 			cfSetProfileString("libsidplayfp", "defaultC64", "PAL");
 			cfSetProfileBool("libsidplayfp", "forceC64", 0);
@@ -514,9 +514,61 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileString("libsidplayfp", "chargen", "CHARGEN.ROM");
 		}
 
-		if (epoch < 20200225)
+		if (epoch < 20210118)
 		{
-			cfSetProfileInt("version", "epoch", 20200225, 10);
+			char *temp;
+			printf("ocp.ini update (0.2.90) moved PLS and M3U from files to virtual directories\n");
+			cfRemoveProfile("filetype 128");
+			cfRemoveProfile("filetype 129");
+
+			temp = (char *)cfGetProfileString("fileselector", "modextensions", "");
+			if (temp)
+			{
+				char *ptr;
+				temp = strdup (temp);
+				while ((ptr = strstr (temp, "PLS")))
+				{
+					memmove (ptr, ptr + 3, strlen (ptr) - 3 + 1);
+				}
+				while ((ptr = strstr (temp, "M3U")))
+				{
+					memmove (ptr, ptr + 3, strlen (ptr) - 3 + 1);
+				}
+				while ((ptr = strstr (temp, "  ")))
+				{
+					memmove (ptr, ptr + 2, strlen (ptr) - 2 + 1);
+				}
+				cfSetProfileString("fileselector", "modextensions", temp);
+				free (temp); temp = 0;
+			}
+		}
+
+		if (epoch < 20210118)
+		{
+			printf("ocp.ini update (0.2.90) removed obsolete arcZIP and friends\n");
+			cfRemoveProfile("arcZIP");
+			cfRemoveProfile("arcARJ");
+			cfRemoveProfile("arcARJ");
+			cfRemoveProfile("arcRAR");
+			cfRemoveProfile("arcLHA");
+			cfRemoveProfile("arcACE");
+		}
+
+		if (epoch < 20210118)
+		{
+			printf("ocp.ini update (0.2.90) DEVv VirtualInterface replaced DEVs DEVp and DEVw\n");
+			cfRemoveProfile("filetype 24");
+			cfRemoveProfile("filetype 25");
+			cfRemoveProfile("filetype 26");
+
+			cfSetProfileInt ("filetype 254", "color", 6, 10);
+			cfSetProfileString ("filetype 254", "name", "DEVv");
+			cfSetProfileString ("filetype 254", "interface", "VirtualInterface");
+		}
+
+		if (epoch < 20210118)
+		{
+			cfSetProfileInt("version", "epoch", 20210118, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -527,13 +579,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10)!=20200225)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20210118)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20200225\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20210118\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20200225\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20210118\n\n");
 		}
 		sleep(5);
 	}

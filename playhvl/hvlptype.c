@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2019 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2019-20 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * HVL and AHX file type detection routines for the fileselector
  *
@@ -22,6 +22,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 
 static int hvlReadMemInfo_ahx(struct moduleinfostruct *m, const char *_buf, size_t buflen)
@@ -188,7 +189,7 @@ static int hvlReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 	return 0;
 }
 
-static int hvlReadInfo(struct moduleinfostruct *m, FILE *fp, const char *buf, size_t len)
+static int hvlReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
 {
 	size_t filelen;
 	char *buffer;
@@ -212,12 +213,14 @@ static int hvlReadInfo(struct moduleinfostruct *m, FILE *fp, const char *buf, si
 		return 0;
 	}
 
-	fseek (fp, 0, SEEK_END);
-	filelen = ftell (fp);
-	fseek (fp, 0, SEEK_SET);
+	filelen = fp->filesize(fp);
 
 	/* hvlReadMemInfo already had the full file at the first pass */
 	if (filelen == len)
+	{
+		return 0;
+	}
+	if (filelen > (1024*1024))
 	{
 		return 0;
 	}
@@ -229,11 +232,13 @@ static int hvlReadInfo(struct moduleinfostruct *m, FILE *fp, const char *buf, si
 
 	m->modtype = mtHVL;
 	buffer = malloc (filelen);
-	if (fread (buffer, filelen, 1, fp) >= 1)
+	fp->seek_set (fp, 0);
+	if (fp->read (fp, buffer, filelen) == filelen)
 	{
 		retval = hvlReadMemInfo (m, buffer, filelen);
 	}
 	free (buffer);
+	fp->seek_set (fp, 0);
 	return retval;
 }
 

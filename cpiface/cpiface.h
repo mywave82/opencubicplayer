@@ -18,9 +18,10 @@
 #include <stdio.h>
 
 struct moduleinfostruct;
+struct ocpfilehandle_t;
 struct cpifaceplayerstruct
 {
-	int (*OpenFile)(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *f);
+	int (*OpenFile)(struct moduleinfostruct *info, struct ocpfilehandle_t *f);
 	void (*CloseFile)();
 };
 

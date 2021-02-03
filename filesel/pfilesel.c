@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * the File selector ][
  *
@@ -51,6 +52,7 @@
  */
 
 #include "config.h"
+#include <assert.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
@@ -64,437 +66,285 @@
 #include <unistd.h>
 #include "types.h"
 
-#include "adb.h"
+#include "adbmeta.h"
 #include "boot/psetting.h"
+#include "charsets.h"
 #include "cphlpfs.h"
-#include "dirdb.h"
-#include "gendir.h"
-#include "mdb.h"
 #include "cpiface/cpiface.h"
+#include "dirdb.h"
+#include "filesystem.h"
+#include "filesystem-drive.h"
+#include "filesystem-bzip2.h"
+#include "filesystem-gzip.h"
+#include "filesystem-playlist.h"
+#include "filesystem-playlist-m3u.h"
+#include "filesystem-playlist-pls.h"
+#include "filesystem-setup.h"
+#include "filesystem-tar.h"
+#include "filesystem-unix.h"
+#include "filesystem-zip.h"
+#include "mdb.h"
+#include "modlist.h"
 #include "pfilesel.h"
-#include "playlist.h"
 #include "stuff/compat.h"
 #include "stuff/framelock.h"
 #include "stuff/poutput.h"
+#include "stuff/utf-8.h"
 
-#include "modlist.h"
+#include "pfilesel-charset.c"
 
 static char fsScanDir(int pos);
 static struct modlist *currentdir=NULL;
 static struct modlist *playlist=NULL;
 
-uint32_t dirdbcurdirpath=DIRDB_NOPARENT;
+#define dirdbcurdirpath (dmCurDrive->cwd->dirdb_ref)
 static char *curmask;
 
-struct dmDrive *dmDrives=0;
 struct dmDrive *dmCurDrive=0;
-
-struct dmDrive *dmFILE;
 
 struct preprocregstruct *plPreprocess = 0;
 
 static int fsSavePlayList(const struct modlist *ml);
 
-struct dmDrive *RegisterDrive(const char *dmDrive)
+static struct interfacestruct *plInterfaces;
+
+struct fsReadDir_token_t
 {
-	struct dmDrive *ref = dmDrives;
-
-	while (ref)
-	{
-		if (!strcmp(ref->drivename, dmDrive))
-			return ref;
-		ref = ref->next;
-	}
-
-	ref=calloc(1, sizeof(struct dmDrive));
-	strcpy(ref->drivename, dmDrive);
-	ref->basepath=dirdbFindAndRef(DIRDB_NOPARENT, ref->drivename);
-	ref->currentpath=ref->basepath;
-	dirdbRef(ref->currentpath);
-	ref->next=dmDrives;
-	dmDrives=ref;
-
-	return ref;
-}
-
-struct dmDrive *dmFindDrive(const char *drivename) /* to get the correct drive from a given string */
-{
-	struct dmDrive *cur=dmDrives;
-	while (cur)
-	{
-		if (!strncasecmp(cur->drivename, drivename, strlen(cur->drivename)))
-			return cur;
-		cur=cur->next;
-	}
-	return NULL;
-}
-
-int dosfile_Read(struct modlistentry *entry, char **mem, size_t *size)
-{
-	int fd;
-	ssize_t result;
-	char *path;
-
-	dirdbGetFullname_malloc (entry->dirdbfullpath, &path, DIRDB_FULLNAME_NOBASE);
-	if (!path)
-	{
-		perror ("pfilesel: dirdbGetFullname_malloc() failed #1");
-		return -1;
-	}
-
-	if (!(*size=_filelength(path)))
-	{
-		free (path);
-		return -1;
-	}
-	if ((fd=open(path, O_RDONLY))<0)
-	{
-		fprintf (stderr, "Failed to open %s: %s\n", path, strerror (errno));
-		free (path);
-		return -1;
-	}
-	*mem=malloc(*size);
-redo:
-	result=read(fd, *mem, *size);
-	if (result<0)
-	{
-		if (errno==EAGAIN)
-			goto redo;
-		if (errno==EINTR)
-			goto redo;
-		fprintf (stderr, "Failed to read %s: %s\n", path, strerror (errno));
-		free(*mem);
-		close(fd);
-		free (path);
-		return -1;
-	}
-	if (result!=(ssize_t)*size) /* short read ???? */
-	{
-		fprintf (stderr, "Failed to read entire file, only for %d of %d bytes\n", (int)result, (int)*size);
-		free(*mem);
-		close(fd);
-		free (path);
-		return -1;
-	}
-	close(fd);
-	free (path);
-	return 0;
-}
-
-int dosfile_ReadHeader(struct modlistentry *entry, char *mem, size_t *size) /* size is prefilled with max data, and mem is preset*/
-{
-	int fd, result;
-	char *path;
-
-	dirdbGetFullname_malloc (entry->dirdbfullpath, &path, DIRDB_FULLNAME_NOBASE);
-	if (!path)
-	{
-		perror ("pfilesel: dirdbGetFullname_malloc() failed #2");
-		return -1;
-	}
-
-	if (!(*size=_filelength(path)))
-	{
-		free (path);
-		return -1;
-	}
-	if ((fd=open(path, O_RDONLY))<0)
-	{
-		fprintf (stderr, "Failed to open %s: %s\n", path, strerror (errno));
-		free (path);
-		return -1;
-	}
-redo:
-	result=read(fd, mem, *size);
-	if (result<0)
-	{
-		if (errno==EAGAIN)
-			goto redo;
-		if (errno==EINTR)
-			goto redo;
-		fprintf (stderr, "Failed to read %s: %s\n", path, strerror (errno));
-		close(fd);
-		free (path);
-		return -1;
-	}
-	*size=result;
-	close(fd);
-	free (path);
-	return 0;
-}
-
-FILE *dosfile_ReadHandle(struct modlistentry *entry)
-{
-	FILE *retval;
-	char *path;
-	dirdbGetFullname_malloc (entry->dirdbfullpath, &path, DIRDB_FULLNAME_NOBASE);
-	if (!path)
-	{
-		perror ("pfilesel: dirdbGetFullname_malloc() failed #3");
-		return NULL;
-	}
-
-	if ((retval=fopen(path, "r")))
-	{
-		fcntl(fileno(retval), F_SETFD, 1<<FD_CLOEXEC);
-	}
-	free (path);
-	return retval;
-}
-
-static int dosReadDir(struct modlist *ml, const struct dmDrive *drive, const uint32_t path, const char *mask, unsigned long opt);
-
-static void dosReadDirChild(struct modlist *ml,
-                            struct modlist *dl,
-                            const struct dmDrive *drive,
-                            const char *parentpath,
-                            const char *childpath,
-                            int d_type,
-                            const char *mask,
-                            unsigned long opt)
-{
-	struct modlistentry retval;
-
-	char *path;
-
-	memset(&retval, 0, sizeof(struct modlistentry));
-	retval.drive=drive;
-
-	makepath_malloc (&path, 0, parentpath, childpath, 0);
-	retval.dirdbfullpath=dirdbResolvePathWithBaseAndRef(drive->basepath, path);
-
-	fs12name(retval.shortname, childpath);
-
-#ifdef HAVE_STRUCT_DIRENT_D_TYPE
-	if (d_type==DT_DIR)
-	{
-		if (!(opt&(RD_PUTRSUBS|RD_PUTSUBS)))
-		{
-			goto out;
-		}
-
-		retval.flags=MODLIST_FLAG_DIR;
-
-		if (opt&RD_PUTRSUBS)
-		{
-			fsReadDir(dl, drive, retval.dirdbfullpath, mask, opt);
-		}
-		if (!(opt&RD_PUTSUBS))
-		{
-			goto out;
-		}
-	} else if ((d_type==DT_REG)||(d_type==DT_LNK)||(d_type==DT_UNKNOWN))
+#if 0
+	struct dmDrive *drive;
 #endif
-	{
-		struct stat st;
-		struct stat lst;
+	struct modlist *ml;
+	const char     *mask;
 
-		if (lstat(path, &lst))
-		{
-			goto out;
-		}
+	unsigned long   opt;
 
-		if (S_ISLNK(lst.st_mode))
-		{
-			if (stat(path, &st))
-			{
-				goto out;
-			}
-		} else {
-			memcpy(&st, &lst, sizeof(st));
-		}
+	int             cancel_recursive;
+	char           *parent_displaydir;
+};
 
-		if (S_ISREG(st.st_mode))
-		{
-			char *curext;
-			getext_malloc (path, &curext);
-			if (!curext)
-			{
-				perror("pfilesel.c: getext_malloc() failed #2");
-				goto out;
-			}
-			if (isarchiveext(curext))
-			{
-				free (curext);
-				retval.flags=MODLIST_FLAG_ARC;
-			} else {
+static void fsReadDir_file (void *_token, struct ocpfile_t *file)
+{
+	struct fsReadDir_token_t *token = _token;
+	char *curext;
+	char *childpath = 0;
 #ifndef FNM_CASEFOLD
-				char *mask_upper;
-				char *childpath_upper;
-				char *iterate;
-
-				if ((mask_upper = strdup(mask)))
-				{
-					for (iterate = mask_upper; *iterate; iterate++)
-						*iterate = toupper(*iterate);
-				} else {
-					perror("pfilesel.c: strdup() failed");
-					free (curext);
-					goto out;
-				}
-
-				if ((childpath_upper = strdup(childpath)))
-				{
-					for (iterate = childpath_upper; *iterate; iterate++)
-						*iterate = toupper(*iterate);
-				} else {
-					perror("pfilesel.c: strdup() failed");
-					free (curext);
-					goto out;
-				}
-
-				if ((fnmatch(mask_upper, childpath_upper, 0))||(!fsIsModule(curext)))
-				{
-					free(childpath_upper);
-					free(mask_upper);
-					free (curext);
-					goto out;
-				}
-				free(childpath_upper);
-				free(mask_upper);
-#else
-				if ((fnmatch(mask, childpath, FNM_CASEFOLD))||(!fsIsModule(curext)))
-				{
-					free (curext);
-					goto out;
-				}
-#endif
-				retval.mdb_ref=mdbGetModuleReference(retval.shortname, st.st_size);
-				retval.adb_ref=0xffffffff;
-				retval.flags=MODLIST_FLAG_FILE;
-				free (curext);
-			}
-		} else if (S_ISDIR(st.st_mode))
-		{
-			if (!(opt&(RD_PUTRSUBS|RD_PUTSUBS)))
-			{
-				goto out;
-			}
-			if (S_ISLNK(lst.st_mode)&&(opt&RD_SUBNOSYMLINK))
-			{
-				goto out;
-			}
-			retval.flags=MODLIST_FLAG_DIR;
-			if (opt&RD_PUTRSUBS)
-			{
-				fsReadDir(dl, drive, retval.dirdbfullpath, mask, opt);
-			}
-			if (!(opt&RD_PUTSUBS))
-			{
-				goto out;
-			}
-		} else
-			goto out;
-#ifdef HAVE_STRUCT_DIRENT_D_TYPE
-	} else
-		goto out;
-#else
-	}
+	char *childpath_upper;
+	char *iterate;
 #endif
 
-	retval.Read=dosfile_Read;
-	retval.ReadHeader=dosfile_ReadHeader;
-	retval.ReadHandle=dosfile_ReadHandle;
-	modlist_append(ml, &retval); /* this call no longer can fail */
-out:
-	dirdbUnref(retval.dirdbfullpath);
-	free (path);
-	return;
-}
+	dirdbGetName_internalstr (file->dirdb_ref, &childpath);
 
-static int dosReadDir(struct modlist *ml, const struct dmDrive *drive, const uint32_t dirdbpath, const char *mask, unsigned long opt)
-{
-	DIR *dir;
-	char *path;
-	struct modlist *tl;
-
-	if (drive!=dmFILE)
-		return 1;
-
-	dirdbGetFullname_malloc (dirdbpath, &path, DIRDB_FULLNAME_NOBASE|DIRDB_FULLNAME_ENDSLASH);
-	if (!path)
+	getext_malloc (childpath, &curext);
+	if (!curext)
 	{
-		perror ("pfilesel: dirdbGetFullname_malloc() failed #4");
-		return -1;
+		return;
 	}
 
-	tl = modlist_create();
-
-	if ((dir=opendir(path)))
+	if ((token->opt & RD_ARCSCAN) && (!token->cancel_recursive))
 	{
-		struct dirent *de;
-		while ((de=readdir(dir)))
+		if (token->opt & (RD_PUTSUBS | RD_PUTRSUBS))
 		{
-			char *ext;
-			int res;
-
-			if (!(strcmp(de->d_name, ".") && strcmp(de->d_name, "..")))
+			struct ocpdir_t *dir = ocpdirdecompressor_check (file, curext);
+			if (dir)
 			{
-				continue;
-			}
-
-			getext_malloc (de->d_name, &ext);
-
-			if (!ext)
-			{
-				perror ("pfilesel.c: getext_malloc() failed #1");
-				closedir (dir);
-				free (path);
-				return 0;
-
-			}
-			res = isarchiveext(ext);
-			free (ext);
-
-			if (res)
-			{
-				if ((opt&RD_PUTSUBS)&&(fsPutArcs/*||!(opt&RD_ARCSCAN)*/))
+				if (token->opt & RD_PUTSUBS)
 				{
-#ifdef HAVE_STRUCT_DIRENT_D_TYPE
-					dosReadDirChild(ml, ml, drive, path, de->d_name, de->d_type, mask, opt);
-#else
-					dosReadDirChild(ml, ml, drive, path, de->d_name, 0, mask, opt);
-#endif
+					modlist_append_dir (token->ml, dir);
 				}
-				if (fsScanArcs)
+				if (token->opt & RD_PUTRSUBS)
 				{
-					uint32_t dirdbnewpath = dirdbFindAndRef(dirdbpath, de->d_name);
-					if (!(fsReadDir(tl, drive, dirdbnewpath, mask, opt&~(RD_PUTRSUBS|RD_PUTSUBS))))
+					fsReadDir (token->ml, dir, token->mask, token->opt);
+				}
+				if ((!dir->is_playlist) && fsPutArcs && dir->readflatdir_start)
+				{
+					unsigned int mlTop=plScrHeight/2-2;
+					unsigned int i;
+					char *oldparent_displaydir;
+
+					/* store the callers directory - we might be running recursive */
+					oldparent_displaydir = token->parent_displaydir;
+					token->parent_displaydir = 0;
+
+					/* draw a box and information to the display... resize of the display will not be gracefull during a directory scan */
+					displayvoid(mlTop+1, 5, plScrWidth-10);
+					displayvoid(mlTop+2, 5, plScrWidth-10);
+//					displayvoid(mlTop+3, 5, plScrWidth-10);
+					displaystr(mlTop, 4, 0x04, "\xda", 1);
+					for (i=5;i<(plScrWidth-5);i++)
 					{
-						dirdbUnref(dirdbnewpath);
-						closedir(dir);
-						modlist_sort(tl);
-						modlist_append_modlist(ml, tl);
-						modlist_free(tl);
-						free (path);
-						return 0;
+						displaystr(mlTop, i, 0x04, "\xc4", 1);
+						displaystr(mlTop, plScrWidth-5, 0x04, "\xbf", 1);
+						displaystr(mlTop+1, 4, 0x04, "\xb3", 1);
+						displaystr(mlTop+2, 4, 0x04, "\xb3", 1);
+						displaystr(mlTop+3, 4, 0x04, "\xb3", 1);
+						displaystr(mlTop+1, plScrWidth-5, 0x04, "\xb3", 1);
+						displaystr(mlTop+2, plScrWidth-5, 0x04, "\xb3", 1);
+						displaystr(mlTop+3, plScrWidth-5, 0x04, "\xb3", 1);
+						displaystr(mlTop+4, 4, 0x04, "\xc0", 1);
+						for (i=5;i<(plScrWidth-5);i++)
+						{
+							displaystr(mlTop,   i, 0x04, "\xc4", 1);
+							displaystr(mlTop+4, i, 0x04, "\xc4", 1);
+						}
+						displaystr(mlTop+4, plScrWidth-5, 0x04, "\xd9", 1);
 					}
-					dirdbUnref(dirdbnewpath);
+					displaystr (mlTop + 1, 5, 0x09, "Scanning content of the given file. Press space to cancel", plScrWidth - 10);
+					dirdbGetFullname_malloc (dir->dirdb_ref, &token->parent_displaydir, DIRDB_FULLNAME_ENDSLASH);
+					displaystr_utf8_overflowleft (mlTop + 3, 5, 0x0a, token->parent_displaydir, plScrWidth - 10);
+
+
+					{ /* do the actual scan */
+						ocpdirhandle_pt dh = dir->readflatdir_start (dir, fsReadDir_file, token); /* recycle the same token... */
+						while (dir->readdir_iterate (dh) && (!token->cancel_recursive))
+						{
+							if (poll_framelock())
+							{
+								while (ekbhit())
+								{
+									if (egetch() == ' ')
+									{
+										token->cancel_recursive = 1;
+									}
+								}
+							}
+						}
+						dir->readdir_cancel (dh);
+					}
+
+					/* undo the filename displayed */
+					free (token->parent_displaydir); token->parent_displaydir = oldparent_displaydir;
+					if (token->parent_displaydir)
+					{
+						displaystr_utf8_overflowleft (mlTop + 3, 5, 0x0a, token->parent_displaydir, plScrWidth - 10);
+					} else {
+						displayvoid(mlTop+3, 5, plScrWidth-10);
+					}
 				}
-			} else {
-#ifdef HAVE_STRUCT_DIRENT_D_TYPE
-				dosReadDirChild(tl, ml, drive, path, de->d_name, de->d_type, mask, opt);
-#else
-				dosReadDirChild(tl, ml, drive, path, de->d_name, 0, mask, opt);
-#endif
+				dir->unref (dir);
+				free (curext);
+				return;
 			}
 		}
-		closedir(dir);
 	}
-	modlist_sort(tl);
-	modlist_append_modlist(ml, tl);
-	modlist_free(tl);
-	free (path);
+
+#ifndef FNM_CASEFOLD
+	if ((childpath_upper = strdup(childpath)))
+	{
+		for (iterate = childpath_upper; *iterate; iterate++)
+			*iterate = toupper(*iterate);
+	} else {
+		perror("pfilesel.c: strdup() failed");
+		goto out;
+	}
+
+	if ((fnmatch(token->mask, childpath_upper, 0))||(!fsIsModule(curext)))
+	{
+		free (childpath_upper);
+		goto out;
+	}
+	free(childpath_upper);
+#else
+	if ((fnmatch(token->mask, childpath, FNM_CASEFOLD))||(!fsIsModule(curext)))
+	{
+		goto out;
+	}
+#endif
+
+	modlist_append_file (token->ml, file); /* modlist_append() will do refcount on the file */
+out:
+	free (curext);
+}
+
+static void fsReadDir_dir  (void *_token, struct ocpdir_t *dir)
+{
+	struct fsReadDir_token_t *token = _token;
+
+#warning What about RD_SUBNOSYMLINK ??.....
+
+	if (token->opt & RD_PUTRSUBS)
+	{
+		fsReadDir (token->ml, dir, token->mask, token->opt);
+	}
+	if (token->opt & RD_PUTSUBS)
+	{
+		modlist_append_dir (token->ml, dir);
+	}
+}
+
+int fsReadDir (struct modlist *ml, struct ocpdir_t *dir, const char *mask, unsigned long opt)
+{
+#ifndef FNM_CASEFOLD
+	char *mask_upper;
+	int i;
+#endif
+	struct fsReadDir_token_t token;
+	ocpdirhandle_pt dh;
+
+	if (opt & RD_PUTDRIVES)
+	{
+		struct dmDrive *d;
+		for (d=dmDrives; d; d=d->next)
+		{
+			modlist_append_drive (ml, d);
+		}
+
+		if (dir->parent) /* we only add dotdot, if we add drives */
+		{
+			modlist_append_dotdot (ml, dir->parent);
+		}
+
+		opt &= ~RD_PUTDRIVES;
+	}
+
+	token.ml = ml;
+	token.cancel_recursive = 0;
+	token.parent_displaydir = 0;
+#ifndef FNM_CASEFOLD
+	token.mask = strdup (mask);
+	for (i=0; token.mask[i]; i++)
+	{
+		token.mask[i] = toupper (token.mask[i]);
+	}
+#else
+	token.mask = mask;
+#endif
+	token.opt = opt;
+
+	if ((opt & RD_PUTRSUBS) && dir->readflatdir_start)
+	{
+		dh = dir->readflatdir_start (dir, fsReadDir_file, &token);
+	} else {
+		dh = dir->readdir_start (dir, fsReadDir_file, fsReadDir_dir, &token);
+	}
+
+	if (!dh)
+	{
+#ifndef FNM_CASEFOLD
+		free (token.mask);
+#endif
+		return 0;
+	}
+	while (dir->readdir_iterate (dh))
+	{
+#if 0
+		if (poll_framelock())
+		{
+			while (ekbhit())
+			{
+				if (egetch() == ' ')
+				{
+					token.cancel_recursive = 1;
+				}
+			}
+		}
+#endif
+	};
+	dir->readdir_cancel (dh);
+#ifndef FNM_CASEFOLD
+	free (token.mask);
+#endif
 	return 1;
 }
-
-/* TODO's
- *
- * ReadDir stuff
- * dmDrive stuff
- *
- * rename currentdir to viewlist again:
- */
 
 static char fsTypeCols[256]; /* colors */
 const char *fsTypeNames[256] = {0}; /* type description */
@@ -522,7 +372,7 @@ void fsRegisterExt(const char *ext)
 
 /* This function tells if a file ends with a valid extension or not
  */
-int fsIsModule(const char *ext)
+int fsIsModule (const char *ext)
 {
 	char **e;
 
@@ -534,76 +384,143 @@ int fsIsModule(const char *ext)
 	return 0;
 }
 
+static void addfiles_file (void *token, struct ocpfile_t *file)
+{
+	modlist_append_file (playlist, file); /* modlist_append calls file->ref (file); for us */
+}
+
+static void addfiles_dir (void *token, struct ocpdir_t *dir)
+{
+}
+
 static int initRootDir(const char *sec)
 {
 	int count;
+	const char *currentpath2 = 0;
 
-	char *currentpath, *currentpath2;
-	uint32_t newcurrentpath;
-
-	dmFILE = RegisterDrive("file:");
-
-	currentdir=modlist_create();
-	playlist=modlist_create();
-
-	currentpath = getcwd_malloc ();
-	newcurrentpath = dirdbResolvePathWithBaseAndRef(dmFILE->basepath, currentpath);
-
-	dirdbUnref(dmFILE->currentpath);
-	dmFILE->currentpath = newcurrentpath;
-	dmCurDrive=dmFILE;
-
-	for (count=0;;count++)
+	/* check for files from the command-line */
 	{
-		char buffer[32];
-		const char *filename;
-		sprintf(buffer, "file%d", count);
-		if (!(filename=cfGetProfileString2(sec, "CommandLine_Files", buffer, NULL)))
-			break;
-		fsAddPlaylist(playlist, currentpath, "*", 0, filename);
+		struct playlist_instance_t *playlist = 0;
+
+		for (count=0;;count++)
+		{
+			char buffer[32];
+			const char *filename;
+			sprintf(buffer, "file%d", count);
+			if (!(filename=cfGetProfileString2(sec, "CommandLine_Files", buffer, NULL)))
+			{
+				break;
+			}
+			if (!playlist)
+			{
+				uint32_t dirdb_ref = dirdbFindAndRef (dmCurDrive->cwd->dirdb_ref, "VirtualPlaylist.VirtualPLS", dirdb_use_pfilesel);
+				playlist=playlist_instance_allocate (dmCurDrive->cwd, dirdb_ref);
+				dirdbUnref (dirdb_ref, dirdb_use_pfilesel);
+				if (!playlist)
+				{
+					break;
+				}
+			}
+
+#ifdef __W32__
+			playlist_add_string (playlist, strdup (filename), DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH);
+#else
+			playlist_add_string (playlist, strdup (filename), DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_TILDE_USER);
+#endif
+		}
+		if (playlist)
+		{
+			ocpdirhandle_pt dirhandle;
+			dirhandle = playlist->head.readdir_start (&playlist->head, addfiles_file, addfiles_dir, 0);
+			while (playlist->head.readdir_iterate (dirhandle))
+			{
+				if (poll_framelock())
+				{
+					ekbhit();
+				}
+			}
+			playlist->head.readdir_cancel (dirhandle);
+			playlist->head.unref (&playlist->head);
+		}
 	}
+
+	/* check for playlists from the command-line */
 	for (count=0;;count++)
 	{
 		char buffer[32];
 		const char *filename;
-		uint32_t dirdbfullpath;
+		uint32_t dirdb_ref;
 
 		sprintf(buffer, "playlist%d", count);
 		if (!(filename=cfGetProfileString2(sec, "CommandLine_Files", buffer, NULL)))
+		{
 			break;
-		dirdbfullpath = dirdbFindAndRef(dmFILE->currentpath, filename);
-		fsReadDir(playlist, dmFILE, dirdbfullpath, "*", 0); /* ignore errors */
-		dirdbUnref(dirdbfullpath);
+		}
+
+#ifdef __W32__
+		dirdb_ref = dirdbResolvePathWithBaseAndRef (dmCurDrive->cwd->dirdb_ref, filename, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_pfilesel);
+#else
+		dirdb_ref = dirdbResolvePathWithBaseAndRef (dmCurDrive->cwd->dirdb_ref, filename, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_TILDE_USER, dirdb_use_pfilesel);
+#endif
+
+		if (dirdb_ref != DIRDB_NOPARENT)
+		{
+			struct ocpfile_t *file = 0;
+			filesystem_resolve_dirdb_file (dirdb_ref, 0, &file);
+			dirdbUnref(dirdb_ref, dirdb_use_pfilesel); dirdb_ref = DIRDB_NOPARENT;
+
+			if (file)
+			{
+				struct ocpdir_t *dir = 0;
+				char *childpath, *curext;
+
+				dirdbGetName_internalstr (file->dirdb_ref, &childpath);
+				getext_malloc (childpath, &curext);
+				if (curext)
+				{
+					dir = m3u_check (0, file, curext);
+					if (!dir)
+					{
+						dir = pls_check (0, file, curext);
+					}
+					free (curext); curext = 0;
+					if (dir)
+					{
+						if (!(fsReadDir (playlist, dir, curmask, RD_PUTRSUBS)))
+						{
+							// ignore errors
+						}
+						dir->unref (dir); dir = 0;
+					}
+					file->unref (file); file = 0;
+				}
+			}
+		}
 	}
 
-	/* change dir */
-	gendir_malloc (currentpath, cfGetProfileString2(sec, "fileselector", "path", "."), &currentpath2);
-	free (currentpath);
+	/* change dir, if a path= is given in [fileselector], we default to . */
+	currentpath2 = cfGetProfileString2(sec, "fileselector", "path", ".");
+	if (strlen (currentpath2) && strcmp (currentpath2, "."))
+	{
+		uint32_t newcurrentpath;
+		struct ocpdir_t *cwd = 0;
 
-	newcurrentpath = dirdbResolvePathWithBaseAndRef(dmFILE->basepath, currentpath2);
-	free (currentpath2);
+		struct dmDrive *dmNewDrive=0;
 
-	dirdbUnref(dmFILE->currentpath);
-	dmFILE->currentpath = newcurrentpath;
+		newcurrentpath = dirdbResolvePathWithBaseAndRef(dmFILE->cwd->dirdb_ref, currentpath2, DIRDB_RESOLVE_DRIVE, dirdb_use_pfilesel);
 
-	dirdbcurdirpath=dmFILE->currentpath;
-	dirdbRef(dmFILE->currentpath);
+		if (!filesystem_resolve_dirdb_dir (newcurrentpath, &dmNewDrive, &cwd) == 0)
+		{
+			dmCurDrive = dmNewDrive;
+			assert (dmCurDrive->cwd);
+			dmCurDrive->cwd->unref (dmCurDrive->cwd);
+			dmCurDrive->cwd = cwd;
+		}
+
+		dirdbUnref (newcurrentpath, dirdb_use_pfilesel);
+	}
 
 	return 1;
-}
-
-static void doneRootDir(void)
-{
-	if (currentdir)
-	{
-		modlist_free(currentdir);
-		currentdir=NULL;
-	}
-	if (playlist)
-	{
-		modlist_free(playlist);
-		playlist=NULL;
-	}
 }
 
 static struct modlistentry *nextplay=NULL;
@@ -613,9 +530,11 @@ static NextPlay isnextplay = NextPlayNone;
 static unsigned short dirwinheight;
 static char quickfind[12];
 static char quickfindpos;
-static short editpos=0;
+static short editfilepos=0;
+static short editdirpos=0;
 static short editmode=0;
 static unsigned int scanposf, scanposp;
+static int win = 0;
 
 int fsListScramble=1;
 int fsListRemove=1;
@@ -642,7 +561,7 @@ int fsFilesLeft(void)
  * pos = 1, maintain current cursor position
  * pos = 2, move cursor one up
  */
-static char fsScanDir(int pos)
+static char fsScanDir (int pos)
 {
 	unsigned int op=0;
 	switch (pos)
@@ -657,17 +576,20 @@ static char fsScanDir(int pos)
 			op=currentdir->pos?(currentdir->pos-1):0;
 			break;
 	}
-	modlist_remove(currentdir, 0, currentdir->num);
+	modlist_clear (currentdir);
 	nextplay=0;
 
-	if (!fsReadDir(currentdir, dmCurDrive, dirdbcurdirpath, curmask, RD_PUTSUBS|(fsScanArcs?RD_ARCSCAN:0)))
+	if (!fsReadDir (currentdir, dmCurDrive->cwd, curmask, RD_PUTDRIVES | RD_PUTSUBS | (fsScanArcs?RD_ARCSCAN:0)))
+	{
 		return 0;
+	}
+
 	modlist_sort(currentdir);
 	currentdir->pos=(op>=currentdir->num)?(currentdir->num-1):op;
 	quickfindpos=0;
 	scanposf=fsScanNames?0:~0;
 
-	adbUpdate();
+	adbMetaCommit ();
 
 	return 1;
 }
@@ -678,18 +600,18 @@ void fsRescanDir(void)
 	conSave();
 }
 
-int fsGetPrevFile(uint32_t *dirdbref, struct moduleinfostruct *info, FILE **file)
+int fsGetPrevFile (struct moduleinfostruct *info, struct ocpfilehandle_t **filehandle)
 {
 	struct modlistentry *m;
 	int retval=0;
 	int pick;
 
-	*dirdbref = DIRDB_CLEAR;
+	*filehandle = 0;
 
 	switch (isnextplay)
 	{
 		default:
-			return fsGetNextFile(dirdbref, info, file);
+			return fsGetNextFile (info, filehandle);
 		case NextPlayNone:
 			if (!playlist->num)
 			{
@@ -697,7 +619,7 @@ int fsGetPrevFile(uint32_t *dirdbref, struct moduleinfostruct *info, FILE **file
 				return retval;
 			}
 			if (fsListScramble)
-				return fsGetNextFile(dirdbref, info, file);
+				return fsGetNextFile (info, filehandle);
 			if (playlist->pos)
 				playlist->pos--;
 			else
@@ -706,50 +628,50 @@ int fsGetPrevFile(uint32_t *dirdbref, struct moduleinfostruct *info, FILE **file
 				pick = playlist->pos-1;
 			else
 				pick = playlist->num - 1;
-			m=modlist_get(playlist, pick);
+			m=modlist_get (playlist, pick);
 			break;
 	}
 
-	mdbGetModuleInfo(info, m->mdb_ref);
+	mdbGetModuleInfo (info, m->mdb_ref);
 
-	dirdbRef (m->dirdbfullpath);
-	*dirdbref = m->dirdbfullpath;
-
-	if (!(info->flags1&MDB_VIRTUAL)) /* this should equal to if (m->ReadHandle) */
+	if (!(info->flags1&MDB_VIRTUAL))
 	{
-		if (!(*file=m->ReadHandle(m)))
-			goto errorout;
-		/* strcpy(path, m->fullname); WTF WTF TODO */ /* arc's change the path */
-	} else
-		*file=NULL;
+		if (m->file)
+		{
+			*filehandle = m->file->open (m->file);
+		}
 
-	if (!mdbInfoRead(m->mdb_ref)&&*file)
-	{
-		mdbReadInfo(info, *file);
-		fseek(*file, 0, SEEK_SET);
-		mdbWriteModuleInfo(m->mdb_ref, info);
-		mdbGetModuleInfo(info, m->mdb_ref);
+		if (*filehandle)
+		{
+			if (!mdbInfoRead(m->mdb_ref)&&*filehandle)
+			{
+				mdbReadInfo(info, *filehandle); /* detect info... */
+				(*filehandle)->seek_set (*filehandle, 0);
+				mdbWriteModuleInfo(m->mdb_ref, info);
+				mdbGetModuleInfo(info, m->mdb_ref);
+			}
+
+			retval = 1;
+		}
+	} else {
+		retval = 1;
 	}
 
-	retval=1;
-errorout:
-	if (!retval)
-	{
-		dirdbUnref (m->dirdbfullpath);
-		*dirdbref = DIRDB_CLEAR;
-	}
+//errorout:
 	if (fsListRemove)
-		modlist_remove(playlist, pick, 1);
+	{
+		modlist_remove(playlist, pick);
+	}
 	return retval;
 }
 
-int fsGetNextFile(uint32_t *dirdbref, struct moduleinfostruct *info, FILE **file)
+int fsGetNextFile (struct moduleinfostruct *info, struct ocpfilehandle_t **filehandle)
 {
 	struct modlistentry *m;
 	unsigned int pick=0;
 	int retval=0;
 
-	*dirdbref = DIRDB_CLEAR;
+	*filehandle = 0;
 
 	switch (isnextplay)
 	{
@@ -763,7 +685,7 @@ int fsGetNextFile(uint32_t *dirdbref, struct moduleinfostruct *info, FILE **file
 				return retval;
 			}
 			pick = playlist->pos;
-			m=modlist_get(playlist, pick);
+			m = modlist_get (playlist, pick);
 			break;
 		case NextPlayNone:
 			if (!playlist->num)
@@ -772,10 +694,10 @@ int fsGetNextFile(uint32_t *dirdbref, struct moduleinfostruct *info, FILE **file
 				return retval;
 			}
 			if (fsListScramble)
-				pick=rand()%playlist->num;
+				pick = rand() % playlist->num;
 			else
 				pick = playlist->pos;
-			m=modlist_get(playlist, pick);
+			m=modlist_get (playlist, pick);
 			break;
 		default:
 			fprintf(stderr, "BUG in pfilesel.c: fsGetNextFile() Invalid isnextplay\n");
@@ -784,35 +706,30 @@ int fsGetNextFile(uint32_t *dirdbref, struct moduleinfostruct *info, FILE **file
 
 	mdbGetModuleInfo(info, m->mdb_ref);
 
-	dirdbRef (m->dirdbfullpath);
-	*dirdbref = m->dirdbfullpath;
-
-	if (!(info->flags1&MDB_VIRTUAL)) /* this should equal to if (m->ReadHandle) */
+	if (!(info->flags1&MDB_VIRTUAL))
 	{
-		if (!(*file=m->ReadHandle(m)))
+		if (m->file)
 		{
-			goto errorout;
+			*filehandle = m->file->open (m->file);
 		}
-		/* strcpy(path, m->fullname); WTF WTF TODO */ /* arc's change the path */
+
+		if (*filehandle)
+		{
+			if (!mdbInfoRead(m->mdb_ref)&&*filehandle)
+			{
+				mdbReadInfo(info, *filehandle); /* detect info... */
+				(*filehandle)->seek_set (*filehandle, 0);
+				mdbWriteModuleInfo(m->mdb_ref, info);
+				mdbGetModuleInfo(info, m->mdb_ref);
+			}
+
+			retval = 1;
+		}
 	} else {
-		*file=NULL;
+		retval = 1;
 	}
 
-	if (!mdbInfoRead(m->mdb_ref)&&*file)
-	{
-		mdbReadInfo(info, *file);
-		fseek(*file, 0, SEEK_SET);
-		mdbWriteModuleInfo(m->mdb_ref, info);
-		mdbGetModuleInfo(info, m->mdb_ref);
-	}
-
-	retval=1;
-errorout:
-	if (!retval)
-	{
-		dirdbUnref (m->dirdbfullpath);
-		*dirdbref = DIRDB_CLEAR;
-	}
+//errorout:
 	switch (isnextplay)
 	{
 		case NextPlayBrowser:
@@ -823,8 +740,9 @@ errorout:
 			/* and then run the same as bellow :-p */
 		case NextPlayNone:
 			if (fsListRemove)
-				modlist_remove(playlist, pick, 1);
-			else {
+			{
+				modlist_remove(playlist, pick);
+			} else {
 				if (!fsListScramble)
 					if ( (pick=playlist->pos+1)>=playlist->num)
 						pick=0;
@@ -850,8 +768,7 @@ int fsPreInit(void)
 
 	curmask = strdup ("*");
 
-	if (!adbInit()) /* archive database cache */
-		return 0;
+	adbMetaInit(); /* archive database cache - ignore failures */
 
 	if (!mdbInit())
 		return 0;
@@ -886,6 +803,7 @@ int fsPreInit(void)
 		strupr(t);
 		fsRegisterExt(t);
 	}
+	fsRegisterExt("DEV");
 
 	fsScrType=cfGetProfileInt2(cfScreenSec, "screen", "screentype", 7, 10)&7;
 	fsColorTypes=cfGetProfileBool2(sec, "fileselector", "typecolors", 1, 1);
@@ -903,10 +821,25 @@ int fsPreInit(void)
 	fsListScramble=!cfGetProfileBool("commandline_f", "o", !fsListScramble, 1);
 	fsLoopMods=cfGetProfileBool("commandline_f", "l", fsLoopMods, 0);
 	fsPlaylistOnly=!!cfGetProfileString("commandline", "p", 0);
+
+	filesystem_drive_init ();
+
+	filesystem_unix_init ();
+	dmCurDrive=dmFILE;
+
+	filesystem_bzip2_register ();
+	filesystem_gzip_register ();
+	filesystem_m3u_register ();
+	filesystem_pls_register ();
+	filesystem_setup_register ();
+	filesystem_tar_register ();
+	filesystem_zip_register ();
+
+	currentdir=modlist_create();
+	playlist=modlist_create();
+
 	if (!initRootDir(sec))
 		return 0;
-
-	RegisterDrive("setup:");
 
 	return 1;
 }
@@ -921,12 +854,65 @@ int fsLateInit(void)
 	return 1;
 }
 
+struct interfacestruct *CurrentVirtualInterface;
+static int VirtualInterfaceInit (struct moduleinfostruct *info, struct ocpfilehandle_t *fi)
+{
+	char name[128];
+	int res;
+
+	fi->seek_set (fi, 0);
+	res = fi->read (fi, name, sizeof (name) - 1);
+	if (res <= 0)
+	{
+		fi->seek_set (fi, 0);
+		return 0;
+	}
+	name[res] = 0;
+	fi->seek_set (fi, 0);
+
+	for (CurrentVirtualInterface = plInterfaces; CurrentVirtualInterface; CurrentVirtualInterface = CurrentVirtualInterface->next)
+	{
+		if (!strcmp (CurrentVirtualInterface->name, name))
+		{
+			int res = CurrentVirtualInterface->Init (info, fi);
+			if (!res)
+			{
+				CurrentVirtualInterface = 0;
+				return 0;
+			}
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static interfaceReturnEnum VirtualInterfaceRun (void)
+{
+	if (CurrentVirtualInterface && CurrentVirtualInterface->Run)
+	{
+		return CurrentVirtualInterface->Run ();
+	}
+	return interfaceReturnNextAuto; /* good choice? */
+}
+
+static void VirtualInterfaceClose (void)
+{
+	if (CurrentVirtualInterface && CurrentVirtualInterface->Close)
+	{
+		return CurrentVirtualInterface->Close ();
+	}
+}
+
+static struct interfacestruct VirtualInterface = {VirtualInterfaceInit, VirtualInterfaceRun, VirtualInterfaceClose, "VirtualInterface", NULL};
+
 int fsInit(void)
 {
 	/*
 	if (!mifInit())  .mdz tag cache/reader
 		return 0;
 	*/
+
+	plRegisterInterface (&VirtualInterface);
 
 	if (!fsScanDir(0))
 		return 0;
@@ -936,14 +922,25 @@ int fsInit(void)
 
 void fsClose(void)
 {
-	doneRootDir();
-	adbClose();
+	if (currentdir)
+	{
+		modlist_free(currentdir);
+		currentdir=NULL;
+	}
+	if (playlist)
+	{
+		modlist_free(playlist);
+		playlist=NULL;
+	}
+
+	filesystem_unix_done ();
+	filesystem_drive_done ();
+	dmCurDrive = 0;
+
+	adbMetaClose();
 	mdbClose();
 	/*
-
 	mifClose();
-	delete dmTree;
-	delete dmReloc;
 	*/
 	if (moduleextensions)
 	{
@@ -953,81 +950,70 @@ void fsClose(void)
 		free(moduleextensions);
 		moduleextensions=0;
 	}
-	/*
-	delete playlist.files;
-	playlist.files=0;
-	delete viewlist.files;
-	viewlist.files=0;
-	*/
 
-	if (dirdbcurdirpath != DIRDB_NOPARENT)
-	{
-		dirdbUnref(dirdbcurdirpath); /* due to curpath */
-		dirdbcurdirpath = DIRDB_NOPARENT;
-	}
-
-	{
-		struct dmDrive *drive = dmDrives, *next;
-		while (drive)
-		{
-			next=drive->next;
-			dirdbUnref(drive->basepath);
-			dirdbUnref(drive->currentpath);
-			free(drive);
-			drive=next;
-		}
-		dmDrives=0;
-	}
 	dirdbClose();
 
 	free (curmask); curmask = 0;
+
+	plUnregisterInterface (&VirtualInterface);
 }
 
-static void displayfile(const unsigned int y, const unsigned int x, const unsigned int width, /* TODO const*/ struct modlistentry *m, const unsigned char sel)
+static void displayfile(const unsigned int y, unsigned int x, unsigned int width, /* TODO const*/ struct modlistentry *m, const unsigned char sel)
 {
 	unsigned char col;
-	unsigned short sbuf[CONSOLE_MAX_X-15];
+	unsigned short sbuf[CONSOLE_MAX_X];
 	struct moduleinfostruct mi;
 
 	if (width == 14)
 	{
-		unsigned short _sbuf[14];
 		if (sel==2)
-			writestring(_sbuf, 0, 0x07, "\x1A            \x1B", 14);
-		else
-			writestring(_sbuf, 0, (sel==1)?0x8F:0x0F, "", 14);
-		writestring(_sbuf, 1, (sel==1)?0x8F:0x0F, m->shortname, 12);
-		displaystrattr(y, x, _sbuf, 14);
+		{
+			displaystr (y, x,    0x07, "\x1A", 1);
+			displaystr (y, x+13, 0x07, "\x1B", 1);
+		} else if (sel==1)
+		{
+			displaystr (y, x,    0x8f, " ", 1);
+			displaystr (y, x+13, 0x8f, " ", 1);
+		} else {
+			displaystr (y, x,    0x0f, " ", 1);
+			displaystr (y, x+13, 0x0f, " ", 1);
+		}
+		displaystr_utf8 (y, x + 1, (sel==1)?0x8f:0x0f, m->utf8_8_dot_3, 12);
 		return;
 	}
 
-	if (m->flags&MODLIST_FLAG_FILE)
+	if (m->file)
 	{
 		col=0x07;
 		mdbGetModuleInfo(&mi, m->mdb_ref);
+#if 0
 		if (mi.flags1&MDB_PLAYLIST)
 		{
 			col=0x0f;
-			m->flags|=MODLIST_FLAG_DIR;
-			/* TODO, register in dirdb as both DIR and FILE */
 		}
+#endif
 	} else {
 		memset(&mi, 0, sizeof(mi));
 		col=0x0f;
 	}
 	if (sel==1)
-		col|=0x80;
-	writestring(sbuf, 0, col, "", width);
-	if (sel==2)
 	{
-		writestring(sbuf, 0, 0x07, "->", 2);
-		writestring(sbuf, width-2, 0x07, "<-", 2);
+		col|=0x80;
 	}
-
 
 	if (fsInfoMode==4)
 	{
-		if (!(m->flags&(MODLIST_FLAG_DIR|MODLIST_FLAG_DRV|MODLIST_FLAG_ARC)))
+		//writestring(sbuf, 0, col, "", width);
+		if (sel==2)
+		{
+			displaystr (y, x + 0,         0x07, "->", 2);
+			displaystr (y, x + width - 2, 0x07, "<-", 2);
+		} else {
+			displaystr (y, x + 0,          col, "  ", 2);
+			displaystr (y, x + width - 2,  col, "  ", 2);
+		}
+
+		if (m->file)
 		{
 			if (mi.modtype==0xFF)
 				col&=~0x08;
@@ -1038,40 +1024,86 @@ static void displayfile(const unsigned int y, const unsigned int x, const unsign
 			}
 		}
 
-		if ((m->flags & MODLIST_FLAG_DIR) && !strcmp (m->shortname, ".."))
+		if (m->dir && !strcmp (m->utf8_8_dot_3, ".."))
 		{
-			writestring (sbuf, 2, col, m->shortname, width-13);
+			displaystr_utf8 (y, x + 2, col, m->utf8_8_dot_3, width - 13);
 		} else {
-			char *temp;
-			dirdbGetName_internalstr (m->dirdbfullpath, &temp);
-			writestring(sbuf, 2, col, temp, width-13);
+			char *temp = 0;
+
+			if (m->file)
+			{
+				dirdbGetName_internalstr (m->file->dirdb_ref, &temp);
+			} else if (m->dir)
+			{
+				dirdbGetName_internalstr (m->dir->dirdb_ref, &temp);
+			}
+			displaystr_utf8 (y, x + 2, col, temp ? temp : "???", width - 13);
 		}
-		if (mi.flags1&MDB_PLAYLIST)
-			writestring(sbuf, width-7, col, "<PLS>", 5);
-		else if (m->flags&MODLIST_FLAG_DIR)
-			writestring(sbuf, width-7, col, "<DIR>", 5);
-		else if (m->flags&MODLIST_FLAG_DRV)
-			writestring(sbuf, width-7, col, "<DRV>", 5);
-		else if (m->flags&MODLIST_FLAG_ARC)
-			writestring(sbuf, width-7, col, "<ARC>", 5);
-		else {
+		if (m->dir)
+		{
+			if (m->flags&MODLIST_FLAG_DRV)
+			{
+				displaystr (y, x + width - 7, col, "<DRV>", 5);
+			} else if (m->dir->is_playlist)
+			{
+				displaystr (y, x + width - 7, col, "<PLS>", 5);
+			} else if (m->dir->is_archive)
+			{
+				displaystr (y, x + width - 7, col, "<ARC>", 5);
+			} else {
+				displaystr (y, x + width - 7, col, "<DIR>", 5);
+			}
+		} else { /* m->file */
+			char buffer[20];
+
 			if (mi.size<1000000000)
-				writenum(sbuf, width-11, (mi.flags1&MDB_BIGMODULE)?((col&0xF0)|0x0C):col, mi.size, 10, 9, 1);
-			else
-				writenum(sbuf, width-10, col, mi.size, 16, 8, 0);
+			{
+				snprintf (buffer, sizeof (buffer), "%9"PRId32, mi.size);
+				displaystr (y, x + width - 11, (mi.flags1&MDB_BIGMODULE)?((col&0xF0)|0x0C):col, buffer, 9);
+			} else {
+				snprintf (buffer, sizeof (buffer), "%8"PRId32, mi.size);
+				displaystr (y, x + width - 10, col, buffer, 8);
+			}
 		}
 	} else {
-		writestring(sbuf, 2, col, m->shortname, 12);
+		if (sel==2)
+		{
+			displaystr (y, x + 0,         0x07, "->", 2);
+			displaystr (y, x + width - 2, 0x07, "<-", 2);
+		} else {
+			displaystr (y, x + 0,          col, "  ", 2);
+			displaystr (y, x + width - 2,  col, "  ", 2);
+		}
+		if (width > 88)
+		{
+			displaystr_utf8 (y, x + 2, col, m->utf8_16_dot_3, 20);
+			displaystr (y, x + 22, col, "  ", 2);
+			x += 24;
+			width -= 26;
+		} else {
+			displaystr_utf8 (y, x + 2, col, m->utf8_8_dot_3, 12);
+			displaystr (y, x + 14, col, "  ", 2);
+			x += 16;
+			width -= 18;
+		}
 
-		if (mi.flags1&MDB_PLAYLIST)
-			writestring(sbuf, 16, col, "<PLS>", 5);
-		else if (m->flags&MODLIST_FLAG_DIR)
-			writestring(sbuf, 16, col, "<DIR>", 5);
-		else if (m->flags&MODLIST_FLAG_DRV)
-			writestring(sbuf, 16, col, "<DRV>", 5);
-		else if (m->flags&MODLIST_FLAG_ARC)
-			writestring(sbuf, 16, col, "<ARC>", 5);
-		else {
+		if (m->dir)
+		{
+			if (m->flags&MODLIST_FLAG_DRV)
+			{
+				displaystr (y, x, col, "<DRV>", width);
+			} else if (m->dir->is_playlist)
+			{
+				displaystr (y, x, col, "<PLS>", width);
+			} else if (m->dir->is_archive)
+			{
+				displaystr (y, x, col, "<ARC>", width);
+			} else {
+				displaystr (y, x, col, "<DIR>", width);
+			}
+
+		} else { /* m->file */
+#warning TODO, replace writestring() with displaystr(), but remember the spaces
 			if (mi.modtype==0xFF)
 				col&=~0x08;
 			else if (fsColorTypes)
@@ -1080,108 +1112,433 @@ static void displayfile(const unsigned int y, const unsigned int x, const unsign
 				col|=fsTypeCols[mi.modtype&0xFF];
 			}
 
-			if (width>=117) /* 132 or bigger screen this will imply */
+			writestring(sbuf, 0, col, "", width);
+
+			if (width>=100) /* 132 or bigger screen this will imply */
 			{
 				if (fsInfoMode&1)
 				{
 					if (mi.comment[0])
-						writestring(sbuf, 16, col, mi.comment, 63);
+						writestring(sbuf, 0, col, mi.comment, 63);
 					if (mi.style[0])
-						writestring(sbuf, 84, col, mi.style, 31);
-				} else {
+						writestring(sbuf, 69, col, mi.style, 31);
+				} else { /* 32 + PAD2 + 2 + PAD1 + 6 + PAD2 + 32 + PAD1 + 11 + PAD2 + 9 => 100         + 16 prefix + 2 suffix  => 118 GRAND TOTAL WIDTH */
 					if (mi.modname[0])
-						writestring(sbuf, 16, col, mi.modname, 32);
+						writestring(sbuf, 0, col, mi.modname, 32);
 					if (mi.channels)
-						writenum(sbuf, 50, col, mi.channels, 10, 2, 1);
+						writenum(sbuf, 34, col, mi.channels, 10, 2, 1);
 				        if (mi.playtime)
 				        {
-						writenum(sbuf, 53, col, mi.playtime/60, 10, 3, 1);
-						writestring(sbuf, 56, col, ":", 1);
-						writenum(sbuf, 57, col, mi.playtime%60, 10, 2, 0);
+						writenum(sbuf, 37, col, mi.playtime/60, 10, 3, 1);
+						writestring(sbuf, 40, col, ":", 1);
+						writenum(sbuf, 41, col, mi.playtime%60, 10, 2, 0);
 					}
 					if (mi.composer[0])
-						writestring(sbuf, 61, col, mi.composer, 32);
+						writestring(sbuf, 45, col, mi.composer, 32);
 					if (mi.date)
 					{
 						if (mi.date&0xFF)
 						{
-							writestring(sbuf, 96, col, ".", 3);
-							writenum(sbuf, 94, col, mi.date&0xFF, 10, 2, 1);
+							writestring(sbuf, 80, col, ".", 3);
+							writenum(sbuf, 78, col, mi.date&0xFF, 10, 2, 1);
 						}
 						if (mi.date&0xFFFF)
 						{
-							writestring(sbuf, 99, col, ".", 3);
-							writenum(sbuf, 97, col, (mi.date>>8)&0xFF, 10, 2, 1);
+							writestring(sbuf, 83, col, ".", 3);
+							writenum(sbuf, 81, col, (mi.date>>8)&0xFF, 10, 2, 1);
 						}
 						if (mi.date>>16)
 						{
-							writenum(sbuf, 100, col, mi.date>>16, 10, 4, 1);
+							writenum(sbuf, 84, col, mi.date>>16, 10, 4, 1);
 							if (!((mi.date>>16)/100))
-								writestring(sbuf, 101, col, "'", 1);
+								writestring(sbuf, 85, col, "'", 1);
 						}
 					}
 					if (mi.size<1000000000)
-						writenum(sbuf, 106, (mi.flags1&MDB_BIGMODULE)?((col&0xF0)|0x0C):col, mi.size, 10, 9, 1);
+						writenum(sbuf, 90, (mi.flags1&MDB_BIGMODULE)?((col&0xF0)|0x0C):col, mi.size, 10, 9, 1);
 					else
-						writenum(sbuf, 107, col, mi.size, 16, 8, 0);
+						writenum(sbuf, 91, col, mi.size, 16, 8, 0);
 				}
-
 			} else switch (fsInfoMode)
 			{
 				case 0:
-					writestring(sbuf, 16, col, mi.modname, 32);
+					writestring(sbuf, 0, col, mi.modname, 32);
 					if (mi.channels)
-						writenum(sbuf, 50, col, mi.channels, 10, 2, 1);
+						writenum(sbuf, 34, col, mi.channels, 10, 2, 1);
 					if (mi.size<1000000000)
-						writenum(sbuf, 54, (mi.flags1&MDB_BIGMODULE)?((col&0xF0)|0x0C):col, mi.size, 10, 9, 1);
+						writenum(sbuf, 38, (mi.flags1&MDB_BIGMODULE)?((col&0xF0)|0x0C):col, mi.size, 10, 9, 1);
 					else
-						writenum(sbuf, 55, col, mi.size, 16, 8, 0);
+						writenum(sbuf, 39, col, mi.size, 16, 8, 0);
 					break;
 				case 1:
 					if (mi.composer[0])
-						writestring(sbuf, 16, col, mi.composer, 32);
+						writestring(sbuf, 0, col, mi.composer, 32);
 					if (mi.date)
 					{
 						if (mi.date&0xFF)
 						{
-							writestring(sbuf, 55, col, ".", 3);
-							writenum(sbuf, 53, col, mi.date&0xFF, 10, 2, 1);
+							writestring(sbuf, 39, col, ".", 3);
+							writenum(sbuf, 37, col, mi.date&0xFF, 10, 2, 1);
 						}
 						if (mi.date&0xFFFF)
 						{
-							writestring(sbuf, 58, col, ".", 3);
-							writenum(sbuf, 56, col, (mi.date>>8)&0xFF, 10, 2, 1);
+							writestring(sbuf, 42, col, ".", 3);
+							writenum(sbuf, 40, col, (mi.date>>8)&0xFF, 10, 2, 1);
 						}
 						if (mi.date>>16)
 						{
-							writenum(sbuf, 59, col, mi.date>>16, 10, 4, 1);
+							writenum(sbuf, 43, col, mi.date>>16, 10, 4, 1);
 							if (!((mi.date>>16)/100))
-								writestring(sbuf, 60, col, "'", 1);
+								writestring(sbuf, 44, col, "'", 1);
 						}
 					}
 
 					break;
 				case 2:
 					if (mi.comment[0])
-						writestring(sbuf, 16, col, mi.comment, 47);
+						writestring(sbuf, 0, col, mi.comment, width);
 					break;
 				case 3:
 					if (mi.style[0])
-						writestring(sbuf, 16, col, mi.style, 31);
+						writestring(sbuf, 0, col, mi.style, 31);
 					if (mi.playtime)
 					{
-						writenum(sbuf, 57, col, mi.playtime/60, 10, 3, 1);
-						writestring(sbuf, 60, col, ":", 1);
-						writenum(sbuf, 61, col, mi.playtime%60, 10, 2, 0);
+						writenum(sbuf, 41, col, mi.playtime/60, 10, 3, 1);
+						writestring(sbuf, 44, col, ":", 1);
+						writenum(sbuf, 45, col, mi.playtime%60, 10, 2, 0);
 					}
 					break;
 			}
+			displaystrattr(y, x, sbuf, width);
 		}
 	}
-	displaystrattr(y, x, sbuf, width);
 }
 
-static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int firstp, unsigned int selectp, int selecte, const struct modlistentry *mle, int playlistactive)
+static void fsShowDirBottom80File (int Y, int selecte, uint16_t *sbuf, const struct modlistentry *mle, struct moduleinfostruct *mi, const char *modtype, const char *npath)
+{
+	writestring (sbuf, 0, 0x07, "  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa   \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa   title: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", plScrWidth - 13 );
+	writestring (sbuf, plScrWidth - 13 , 0x07, "   type: \xfa\xfa\xfa\xfa ", 80);
+
+	if (mle->file)
+	{
+		writenum(sbuf, 15, 0x0F, mi->size, 10, 10, 1);
+
+		if (mi->flags1&MDB_BIGMODULE)
+			writestring(sbuf, 25, 0x0F, "!", 1);
+	}
+	if (mi->modname[0])
+	{
+		int w=plScrWidth - 48;
+		int l=sizeof(mi->modname);
+		if (l>w)
+			l=w;
+		writestring(sbuf, 35, /*(selecte==0)?0x8F:*/0x0F, mi->modname, l);
+		writestring(sbuf, 35+l, /*(selecte==0)?0x8F:*/0x0F, "", w-l);
+	}
+	if (selecte==0)
+		markstring(sbuf, 35, plScrWidth - 48);
+	if (*modtype)
+		writestring(sbuf, plScrWidth - 4, /*(selecte==1)?0x8F:*/0x0F, modtype, 4);
+	if (selecte==1)
+		markstring(sbuf, plScrWidth - 4, 4);
+
+	displaystrattr (Y + 0, 0, sbuf, plScrWidth);
+	displaystr_utf8 (Y + 2, 2, 0x0F, mle->utf8_8_dot_3, 12);
+
+	writestring(sbuf, 0, 0x07, "   composer: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", plScrWidth - 35);
+	writestring(sbuf, plScrWidth - 35, 0x07, "   date:     \xfa\xfa.\xfa\xfa.\xfa\xfa\xfa\xfa            ", 35);
+
+	if (mi->date)
+	{
+		if (mi->date&0xFF)
+		{
+			writestring(sbuf, plScrWidth - 20, 0x0F, ".", 3);
+			writenum(sbuf, plScrWidth - 22, 0x0F, mi->date&0xFF, 10, 2, 1);
+		}
+		if (mi->date&0xFFFF)
+		{
+			writestring(sbuf, plScrWidth - 17, 0x0F, ".", 3);
+			writenum(sbuf, plScrWidth - 19, 0x0F, (mi->date>>8)&0xFF, 10, 2, 1);
+		}
+		if (mi->date>>16)
+		{
+			writenum(sbuf, plScrWidth - 16, 0x0F, mi->date>>16, 10, 4, 1);
+			if (!((mi->date>>16)/100))
+				writestring(sbuf, plScrWidth - 15, 0x0F, "'", 1);
+		}
+
+	}
+	if (selecte==6)
+		markstring(sbuf, plScrWidth - 22, 10);
+	if (mi->composer[0])
+	{ /* we pad up here */
+		int w=plScrWidth - 47;
+		int l=sizeof(mi->composer);
+		if (l>w)
+			l=w;
+		writestring(sbuf, 13, 0x0F, mi->composer, l);
+		writestring(sbuf, 13+l, 0x0F, "", w-l);
+	}
+
+	if (selecte==4)
+		markstring(sbuf, 13, plScrWidth - 48);
+
+	displaystrattr (Y + 1, 0, sbuf, plScrWidth);
+
+	writestring(sbuf, 0, 0x07, "   style:    \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", plScrWidth - 35);
+	writestring(sbuf, plScrWidth - 35, 0x07, "   playtime: \xfa\xfa\xfa:\xfa\xfa   channels: \xfa\xfa ", 35);
+
+	if (mi->channels)
+		writenum(sbuf, plScrWidth - 3, 0x0F, mi->channels, 10, 2, 1);
+	if (selecte==2)
+		markstring(sbuf, plScrWidth - 3, 2);
+	if (mi->playtime)
+	{
+		writenum(sbuf, plScrWidth - 22, 0x0F, mi->playtime/60, 10, 3, 1);
+		writestring(sbuf, plScrWidth - 19, 0x0F, ":", 1);
+		writenum(sbuf, plScrWidth - 18, 0x0F, mi->playtime%60, 10, 2, 0);
+
+	}
+	if (selecte==3)
+		markstring(sbuf, plScrWidth - 22, 6);
+	if (mi->style[0])
+	{ /* we pad up here */
+		int w=plScrWidth - 48;
+		int l=sizeof(mi->style);
+		if (l>w)
+			l=w;
+		writestring(sbuf, 13, 0x0F, mi->style, l);
+		writestring(sbuf, 13+l, 0x0F, "", w-l);
+	}
+
+	if (selecte==5)
+		markstring(sbuf, 13, plScrWidth - 48);
+
+	displaystrattr (Y + 2, 0, sbuf, plScrWidth);
+
+	writestring(sbuf, 0, 0x07, "   comment:  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", plScrWidth - 4);
+	writestring(sbuf, plScrWidth - 4, 0x07, "    ", 4);
+
+	if (mi->comment[0])
+	{ /* we pad up here */
+		int w=plScrWidth - 17;
+		int l=sizeof(mi->comment);
+		if (l>w)
+			l=w;
+		writestring(sbuf, 13, 0x0F, mi->comment, l);
+		writestring(sbuf, 13+l, 0x0F, "", w-l);
+	}
+	if (selecte==7)
+		markstring(sbuf, 13, plScrWidth - 17);
+	displaystrattr (Y + 3, 0, sbuf, plScrWidth);
+
+	displaystr (Y + 4, 0, 0x07, "   long: ", 9);
+
+	displaystr_utf8_overflowleft (Y + 4, 10, 0x0F, npath ? npath : "", plScrWidth - 10);
+}
+
+static void fsShowDirBottom132File (int Y, int selecte, uint16_t *sbuf, const struct modlistentry *mle, struct moduleinfostruct *mi, const char *modtype, const char *npath)
+{
+	writestring(sbuf, 0, 0x07, "  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa    \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa      title:    ", 42);
+
+	fillstr(sbuf, 42, 0x07, 0xfa, plScrWidth - 100);
+	writestring(sbuf, plScrWidth - 59, 0x07, "       type: \xfa\xfa\xfa\xfa     channels: \xfa\xfa      playtime: \xfa\xfa\xfa:\xfa\xfa   ", 59);
+
+	if (mle->file)
+	{
+		writenum(sbuf, 16, 0x0F, mi->size, 10, 10, 1);
+
+		if (mi->flags1&MDB_BIGMODULE)
+			writestring(sbuf, 25, 0x0F, "!", 1);
+	}
+	if (mi->modname[0])
+	{ /* we pad up here */
+		int w=plScrWidth - 100;
+		int l=sizeof(mi->modname);
+		if (l>w)
+			l=w;
+		writestring(sbuf, 42, 0x0F, mi->modname, l);
+		writestring(sbuf, 42+l, 0x0F, "", w-l);
+	}
+	if (selecte==0)
+		markstring(sbuf, 42, plScrWidth - 100);
+	if (*modtype)
+		writestring(sbuf, plScrWidth - 46, 0x0F, modtype, 4);
+	if (selecte==1)
+		markstring(sbuf, plScrWidth - 46, 4);
+	if (mi->channels)
+		writenum(sbuf, plScrWidth - 27, 0x0F, mi->channels, 10, 2, 1);
+	if (selecte==2)
+		markstring(sbuf, plScrWidth - 27, 2);
+
+	if (mi->playtime)
+	{
+		writenum(sbuf, plScrWidth - 9, 0x0F, mi->playtime/60, 10, 3, 1);
+		writestring(sbuf, plScrWidth - 6, 0x0F, ":", 1);
+		writenum(sbuf, plScrWidth - 5, 0x0F, mi->playtime%60, 10, 2, 0);
+	}
+
+	if (selecte==3)
+		markstring(sbuf, plScrWidth - 9, 6);
+
+	displaystrattr (Y + 0, 0, sbuf, plScrWidth);
+	displaystr_utf8 (Y + 0, 2, 0x0F, mle->utf8_8_dot_3, 12);
+
+	writestring(sbuf, 0, 0x07, "                                composer: ", 42);
+	fillstr(sbuf, 42, 0x07, 0xfa, plScrWidth - 100);
+	writestring(sbuf, plScrWidth - 58, 0x07, "     style: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa               ", 58);
+
+	if (mi->composer[0])
+	{ /* we pad up here */
+		int w=plScrWidth - 100;
+		int l=sizeof(mi->composer);
+		if (l>w)
+			l=w;
+		writestring(sbuf, 42, 0x0F, mi->composer, l);
+		writestring(sbuf, 42+l, 0x0F, "", w-l);
+	}
+
+	if (selecte==4)
+		markstring(sbuf, 42, plScrWidth - 100);
+	if (mi->style[0])
+		writestring(sbuf, plScrWidth - 46, 0x0F, mi->style, 31);
+	if (selecte==5)
+		markstring(sbuf, plScrWidth - 46, 31);
+
+	displaystrattr (Y + 1, 0, sbuf, plScrWidth);
+
+	writestring(sbuf, 0, 0x07, "                                date:     \xfa\xfa.\xfa\xfa.\xfa\xfa\xfa\xfa     comment: ", 66);
+	fillstr(sbuf, 66, 0x07, 0xfa,  plScrWidth - 69);
+	writestring(sbuf, plScrWidth - 3, 0x07, "   ", 3);
+
+	if (mi->date)
+	{
+		if (mi->date&0xFF)
+		{
+			writestring(sbuf, 44, 0x0F, ".", 3);
+			writenum(sbuf, 42, 0x0F, mi->date&0xFF, 10, 2, 1);
+		}
+		if (mi->date&0xFFFF)
+		{
+			writestring(sbuf, 47, 0x0F, ".", 3);
+			writenum(sbuf, 45, 0x0F, (mi->date>>8)&0xFF, 10, 2, 1);
+		}
+		if (mi->date>>16)
+		{
+			writenum(sbuf, 48, 0x0F, mi->date>>16, 10, 4, 1);
+			if (!((mi->date>>16)/100))
+				writestring(sbuf, 49, 0x0F, "'", 1);
+		}
+	}
+
+	if (selecte==6)
+		markstring(sbuf, 42, 10);
+	if (mi->comment[0])
+	{ /* we pad up here */
+		int w=plScrWidth - 69;
+		int l=sizeof(mi->comment);
+		if (l>w)
+			l=w;
+		writestring(sbuf, 66, 0x0F, mi->comment, l);
+		writestring(sbuf, 66+l, 0x0F, "", w-l);
+	}
+	if (selecte==7)
+		markstring(sbuf, 66, plScrWidth - 69);
+	displaystrattr (Y + 2, 0, sbuf, plScrWidth);
+
+	displaystr (Y + 3, 0, 0x07, "    long: ", 10);
+
+	displaystr_utf8_overflowleft (Y + 3, 10, 0x0F, npath ? npath : "", plScrWidth - 10);
+}
+
+static void fsShowDirBottom80Dir (int Y, int selectd, uint16_t *sbuf, const struct modlistentry *mle, const char *npath)
+{
+	writestring(sbuf, 0, 0x07, "  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa", plScrWidth);
+	displaystrattr (Y + 0, 0, sbuf, plScrWidth);
+	displaystr_utf8 (Y + 0, 2, 0x0F, mle->utf8_16_dot_3, 20);
+
+	if (mle->dir->charset_override_API)
+	{
+		const char *userstring = 0;
+		const char *defaultlabel = 0;
+		const char *defaultcharset = 0;
+		uint8_t attr = 0x0f;
+
+		displaystr (Y + 1, 0, 0x07, "  charset: ", 11);
+		userstring = mle->dir->charset_override_API->get_byuser_string (mle->dir);
+		if (!userstring)
+		{
+			attr = 0x0a;
+			mle->dir->charset_override_API->get_default_string (mle->dir, &defaultlabel, &defaultcharset);
+		}
+		if (selectd == 0)
+		{
+			attr |= 0x80;
+		}
+		displaystr (Y + 1, 11, attr, userstring ? userstring : defaultlabel, plScrWidth - 13);
+		displaystr (Y + 1, plScrWidth - 2, 0x07, "  ", 2);
+	} else {
+		displaystr (Y + 1, 0, 0x07, "", plScrWidth);
+	}
+
+	displaystr (Y + 2, 0, 0x07, "", plScrWidth);
+
+	displaystr (Y + 3, 0, 0x07, "", plScrWidth);
+
+	displaystr (Y + 4, 0, 0x07, "   long: ", 9);
+
+	displaystr_utf8_overflowleft (Y + 4, 10, 0x0F, npath ? npath : "", plScrWidth - 10);
+}
+
+static void fsShowDirBottom132Dir (int Y, int selectd, uint16_t *sbuf, const struct modlistentry *mle, const char *npath)
+{
+	writestring(sbuf, 0, 0x07, "  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa", plScrWidth);
+//	fillstr(sbuf, 42, 0x07, 0xfa, plScrWidth - 100);
+	displaystrattr (Y + 0, 0, sbuf, plScrWidth);
+	displaystr_utf8 (Y + 0, 2, 0x0F, mle->utf8_16_dot_3, 20);
+
+	if (mle->dir->charset_override_API)
+	{
+		const char *userstring = 0;
+		const char *defaultlabel = 0;
+		const char *defaultcharset = 0;
+		uint8_t attr = 0x0f;
+
+		displaystr (Y + 1, 0, 0x07, "  charset: ", 11);
+		userstring = mle->dir->charset_override_API->get_byuser_string (mle->dir);
+		if (!userstring)
+		{
+			attr = 0x0a;
+			mle->dir->charset_override_API->get_default_string (mle->dir, &defaultlabel, &defaultcharset);
+		}
+		if (selectd == 0)
+		{
+			attr |= 0x80;
+		}
+		displaystr (Y + 1, 11, attr, userstring ? userstring : defaultlabel, plScrWidth - 13);
+		displaystr (Y + 1, plScrWidth - 2, 0x07, "  ", 2);
+	} else {
+		displaystr (Y + 1, 0, 0x07, "", plScrWidth);
+	}
+
+	displaystr (Y + 2, 0, 0x07, "", plScrWidth);
+
+	displaystr (Y + 3, 0, 0x07, "    long: ", 10);
+
+	displaystr_utf8_overflowleft (Y + 3, 10, 0x0F, npath ? npath : "", plScrWidth - 10);
+}
+
+/* selecte - which field in the file-meta-editor is active
+ *   0: title     mi.modname
+ *   1: type      mi.modtype
+ *   2: channels  mi.channels
+ *   3: playtime  mi.playtime
+ *   4: composer  mi.composer
+ *   5: style     mi.style
+ *   6: date      mi.date
+ *   7: comment   mi.comment
+ */
+static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int firstp, unsigned int selectp, int selectd, int selecte, const struct modlistentry *mle, int playlistactive)
 {
 	unsigned int i;
 
@@ -1210,12 +1567,8 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 		temppath = realloc (temppath, len + 1);
 		strcat(temppath, curmask);
 
-		if (len>plScrWidth)
-		{
-			displaystr(1, 0, 0x0F, temppath+len-plScrWidth, plScrWidth);
-		} else {
-			displaystr(1, 0, 0x0F, temppath, len);
-		}
+		displaystr_utf8_overflowleft (1, 0, 0x0f, temppath, plScrWidth);
+
 		free (temppath);
 	}
 	fillstr(sbuf, 0, 0x07, 0xc4, CONSOLE_MAX_X);
@@ -1223,289 +1576,44 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 		fillstr(sbuf, plScrWidth-15, 0x07, 0xc2, 1);
 	displaystrattr(2, 0, sbuf, plScrWidth);
 
-	if (fsEditWin||(selecte>=0))
+	if (fsEditWin||(selecte>=0)||(selectd>=0))
 	{
-		int first=dirwinheight+3;
-		const char *modtype="";
-		struct moduleinfostruct mi;
-
-		if (mle->flags&MODLIST_FLAG_FILE)
-		{
-			mdbGetModuleInfo(&mi, mle->mdb_ref);
-			modtype=mdbGetModTypeString(mi.modtype);
-		} else {
-			memset(&mi, 0, sizeof(mi));
-		}
+		int Y=dirwinheight+3;
+		char *npath = 0;
 
 		fillstr(sbuf, 0, 0x07, 0xc4, CONSOLE_MAX_X);
 		if (!playlistactive)
 			fillstr(sbuf, plScrWidth-15, 0x07, 0xc1, 1);
-		displaystrattr(first, 0, sbuf, plScrWidth);
+		displaystrattr (Y, 0, sbuf, plScrWidth);
 
-		if (plScrWidth>=132)
+		/* fill npath */
+		if (mle->file)
 		{
-			writestring(sbuf, 0, 0x07, "  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa    \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa      title:    ", 42);
+			const char *modtype="";
+			struct moduleinfostruct mi;
 
-			fillstr(sbuf, 42, 0x07, 0xfa, plScrWidth - 100);
-			writestring(sbuf, plScrWidth - 59, 0x07, "       type: \xfa\xfa\xfa\xfa     channels: \xfa\xfa      playtime: \xfa\xfa\xfa:\xfa\xfa   ", 59);
+			mdbGetModuleInfo(&mi, mle->mdb_ref);
+			modtype=mdbGetModTypeString(mi.modtype);
 
-			writestring(sbuf, 2, 0x0F, mle->shortname, 12);
-
-			if (mle->flags&MODLIST_FLAG_FILE)
+			dirdbGetFullname_malloc (mle->file->dirdb_ref, &npath, 0);
+			if (plScrWidth>=132)
 			{
-				writenum(sbuf, 15, 0x0F, mi.size, 10, 10, 1);
-
-				if (mi.flags1&MDB_BIGMODULE)
-					writestring(sbuf, 25, 0x0F, "!", 1);
+				fsShowDirBottom132File (Y + 1, selecte, sbuf, mle, &mi, modtype, npath);
+			} else {
+				fsShowDirBottom80File (Y + 1, selecte, sbuf, mle, &mi, modtype, npath);
 			}
-			if (mi.modname[0])
-			{ /* we pad up here */
-				int w=plScrWidth - 100;
-				int l=sizeof(mi.modname);
-				if (l>w)
-					l=w;
-				writestring(sbuf, 42, 0x0F, mi.modname, l);
-				writestring(sbuf, 42+l, 0x0F, "", w-l);
-			}
-			if (selecte==0)
-				markstring(sbuf, 42, plScrWidth - 100);
-			if (*modtype)
-				writestring(sbuf, plScrWidth - 46, 0x0F, modtype, 4);
-			if (selecte==1)
-				markstring(sbuf, plScrWidth - 46, 4);
-			if (mi.channels)
-				writenum(sbuf, plScrWidth - 27, 0x0F, mi.channels, 10, 2, 1);
-			if (selecte==2)
-				markstring(sbuf, plScrWidth - 27, 2);
-
-			if (mi.playtime)
+		} else if (mle->dir)
+		{
+			dirdbGetFullname_malloc (mle->dir->dirdb_ref, &npath, 0);
+			if (plScrWidth>=132)
 			{
-				writenum(sbuf, plScrWidth - 9, 0x0F, mi.playtime/60, 10, 3, 1);
-				writestring(sbuf, plScrWidth - 6, 0x0F, ":", 1);
-				writenum(sbuf, plScrWidth - 5, 0x0F, mi.playtime%60, 10, 2, 0);
+				fsShowDirBottom132Dir (Y + 1, selectd, sbuf, mle, npath);
+			} else {
+				fsShowDirBottom80Dir (Y + 1, selectd, sbuf, mle, npath);
 			}
-
-			if (selecte==3)
-				markstring(sbuf, plScrWidth - 9, 6);
-
-			displaystrattr(first+1, 0, sbuf, plScrWidth);
-
-			writestring(sbuf, 0, 0x07, "                                composer: ", 42);
-			fillstr(sbuf, 42, 0x07, 0xfa, plScrWidth - 100);
-			writestring(sbuf, plScrWidth - 58, 0x07, "     style: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa               ", 58);
-
-			if (mi.composer[0])
-			{ /* we pad up here */
-				int w=plScrWidth - 100;
-				int l=sizeof(mi.composer);
-				if (l>w)
-					l=w;
-				writestring(sbuf, 42, 0x0F, mi.composer, l);
-				writestring(sbuf, 42+l, 0x0F, "", w-l);
-			}
-
-			if (selecte==4)
-				markstring(sbuf, 42, plScrWidth - 100);
-			if (mi.style[0])
-				writestring(sbuf, plScrWidth - 46, 0x0F, mi.style, 31);
-			if (selecte==5)
-				markstring(sbuf, plScrWidth - 46, 31);
-
-			displaystrattr(first+2, 0, sbuf, plScrWidth);
-
-			writestring(sbuf, 0, 0x07, "                                date:     \xfa\xfa.\xfa\xfa.\xfa\xfa\xfa\xfa     comment: ", 66);
-			fillstr(sbuf, 66, 0x07, 0xfa,  plScrWidth - 69);
-			writestring(sbuf, plScrWidth - 3, 0x07, "   ", 3);
-
-			if (mi.date)
-			{
-				if (mi.date&0xFF)
-				{
-					writestring(sbuf, 44, 0x0F, ".", 3);
-					writenum(sbuf, 42, 0x0F, mi.date&0xFF, 10, 2, 1);
-				}
-				if (mi.date&0xFFFF)
-				{
-					writestring(sbuf, 47, 0x0F, ".", 3);
-					writenum(sbuf, 45, 0x0F, (mi.date>>8)&0xFF, 10, 2, 1);
-				}
-				if (mi.date>>16)
-				{
-					writenum(sbuf, 48, 0x0F, mi.date>>16, 10, 4, 1);
-					if (!((mi.date>>16)/100))
-						writestring(sbuf, 49, 0x0F, "'", 1);
-				}
-			}
-
-			if (selecte==6)
-				markstring(sbuf, 42, 10);
-			if (mi.comment[0])
-			{ /* we pad up here */
-				int w=plScrWidth - 69;
-				int l=sizeof(mi.comment);
-				if (l>w)
-					l=w;
-				writestring(sbuf, 66, 0x0F, mi.comment, l);
-				writestring(sbuf, 66+l, 0x0F, "", w-l);
-			}
-			if (selecte==7)
-				markstring(sbuf, 66, plScrWidth - 69);
-			displaystrattr(first+3, 0, sbuf, plScrWidth);
-
-			writestring(sbuf, 0, 0x07, "    long: ", plScrWidth);
-			{
-				const char *tmppos;
-				char *npath;
-
-				dirdbGetFullname_malloc (mle->dirdbfullpath, &npath, 0);
-				tmppos=npath;
-				if (strlen(tmppos)>=(plScrWidth - 10))
-				{
-					tmppos+=strlen(tmppos)-(plScrWidth - 10);
-				}
-				writestring(sbuf, 10, 0x0F, tmppos, plScrWidth - 10);
-
-				free (npath);
-			}
-
-			displaystrattr(first+4, 0, sbuf, plScrWidth);
-		} else {
-			writestring(sbuf, 0, 0x07, "  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa   \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa   title: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", plScrWidth - 13 );
-			writestring(sbuf, plScrWidth - 13 , 0x07, "   type: \xfa\xfa\xfa\xfa ", 80);
-
-			writestring(sbuf, 2, 0x0F, mle->shortname, 12);
-
-			if (mle->flags&MODLIST_FLAG_FILE)
-			{
-				writenum(sbuf, 15, 0x0F, mi.size, 10, 10, 1);
-
-				if (mi.flags1&MDB_BIGMODULE)
-					writestring(sbuf, 25, 0x0F, "!", 1);
-			}
-			if (mi.modname[0])
-			{
-				int w=plScrWidth - 48;
-				int l=sizeof(mi.modname);
-				if (l>w)
-					l=w;
-				writestring(sbuf, 35, /*(selecte==0)?0x8F:*/0x0F, mi.modname, l);
-				writestring(sbuf, 35+l, /*(selecte==0)?0x8F:*/0x0F, "", w-l);
-			}
-			if (selecte==0)
-				markstring(sbuf, 35, plScrWidth - 48);
-			if (*modtype)
-				writestring(sbuf, plScrWidth - 4, /*(selecte==1)?0x8F:*/0x0F, modtype, 4);
-			if (selecte==1)
-				markstring(sbuf, plScrWidth - 4, 4);
-
-			displaystrattr(first+1, 0, sbuf, plScrWidth);
-
-			writestring(sbuf, 0, 0x07, "   composer: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", plScrWidth - 35);
-			writestring(sbuf, plScrWidth - 35, 0x07, "   date:     \xfa\xfa.\xfa\xfa.\xfa\xfa\xfa\xfa            ", 35);
-
-			if (mi.date)
-			{
-				if (mi.date&0xFF)
-				{
-					writestring(sbuf, plScrWidth - 20, 0x0F, ".", 3);
-					writenum(sbuf, plScrWidth - 22, 0x0F, mi.date&0xFF, 10, 2, 1);
-				}
-				if (mi.date&0xFFFF)
-				{
-					writestring(sbuf, plScrWidth - 17, 0x0F, ".", 3);
-					writenum(sbuf, plScrWidth - 19, 0x0F, (mi.date>>8)&0xFF, 10, 2, 1);
-				}
-				if (mi.date>>16)
-				{
-					writenum(sbuf, plScrWidth - 16, 0x0F, mi.date>>16, 10, 4, 1);
-					if (!((mi.date>>16)/100))
-						writestring(sbuf, plScrWidth - 15, 0x0F, "'", 1);
-				}
-
-			}
-			if (selecte==6)
-				markstring(sbuf, plScrWidth - 22, 10);
-			if (mi.composer[0])
-			{ /* we pad up here */
-				int w=plScrWidth - 47;
-				int l=sizeof(mi.composer);
-				if (l>w)
-					l=w;
-				writestring(sbuf, 13, 0x0F, mi.composer, l);
-				writestring(sbuf, 13+l, 0x0F, "", w-l);
-			}
-
-			if (selecte==4)
-				markstring(sbuf, 13, plScrWidth - 48);
-
-			displaystrattr(first+2, 0, sbuf, plScrWidth);
-
-			writestring(sbuf, 0, 0x07, "   style:    \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", plScrWidth - 35);
-			writestring(sbuf, plScrWidth - 35, 0x07, "   playtime: \xfa\xfa\xfa:\xfa\xfa   channels: \xfa\xfa ", 35);
-
-			if (mi.channels)
-				writenum(sbuf, plScrWidth - 3, 0x0F, mi.channels, 10, 2, 1);
-			if (selecte==2)
-				markstring(sbuf, plScrWidth - 3, 2);
-			if (mi.playtime)
-			{
-				writenum(sbuf, plScrWidth - 22, 0x0F, mi.playtime/60, 10, 3, 1);
-				writestring(sbuf, plScrWidth - 19, 0x0F, ":", 1);
-				writenum(sbuf, plScrWidth - 18, 0x0F, mi.playtime%60, 10, 2, 0);
-
-			}
-			if (selecte==3)
-				markstring(sbuf, plScrWidth - 22, 6);
-			if (mi.style[0])
-			{ /* we pad up here */
-				int w=plScrWidth - 48;
-				int l=sizeof(mi.style);
-				if (l>w)
-					l=w;
-				writestring(sbuf, 13, 0x0F, mi.style, l);
-				writestring(sbuf, 13+l, 0x0F, "", w-l);
-			}
-
-			if (selecte==5)
-				markstring(sbuf, 13, plScrWidth - 48);
-
-			displaystrattr(first+3, 0, sbuf, plScrWidth);
-
-			writestring(sbuf, 0, 0x07, "   comment:  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", plScrWidth - 4);
-			writestring(sbuf, plScrWidth - 4, 0x07, "    ", 4);
-
-			if (mi.comment[0])
-			{ /* we pad up here */
-				int w=plScrWidth - 17;
-				int l=sizeof(mi.comment);
-				if (l>w)
-					l=w;
-				writestring(sbuf, 13, 0x0F, mi.comment, l);
-				writestring(sbuf, 13+l, 0x0F, "", w-l);
-			}
-			if (selecte==7)
-				markstring(sbuf, 13, plScrWidth - 17);
-			displaystrattr(first+4, 0, sbuf, plScrWidth);
-
-			writestring(sbuf, 0, 0x07, "   long: ", plScrWidth);
-			{
-				const char *tmppos;
-				char *npath;
-
-				dirdbGetFullname_malloc (mle->dirdbfullpath, &npath, 0);
-
-				tmppos=npath;
-				if (strlen(tmppos)>=(plScrWidth - 9))
-				{
-					tmppos+=strlen(tmppos)-(plScrWidth - 9);
-				}
-				writestring(sbuf, 9, 0x0F, tmppos, plScrWidth - 9);
-
-				free (npath);
-			}
-
-			displaystrattr(first+5, 0, sbuf, plScrWidth);
 		}
+
+		free (npath); npath = 0;
 	}
 
 	fillstr(sbuf, 0, 0x17, 0, CONSOLE_MAX_X);
@@ -1524,14 +1632,14 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 				displayvoid(i+3, 0, plScrWidth-15);
 			else {
 				m=modlist_get(currentdir, firstv+i);
-				displayfile(i+3, 0, plScrWidth-15, m, ((firstv+i)!=selectv)?0:(selecte<0)?1:2);
+				displayfile(i+3, 0, plScrWidth-15, m, ((firstv+i)!=selectv)?0:((selecte<0)&&(selectd<0))?1:2);
 			}
 
 			if (/*((firstp+i)<0)||*/((firstp+i)>=playlist->num))
 				displayvoid(i+3, plScrWidth-14, 14);
 			else {
 				m=modlist_get(playlist, firstp+i);
-				displayfile(i+3, plScrWidth-14, 14, m, ((firstp+i)!=selectp)?0:(selecte<0)?1:2);
+				displayfile(i+3, plScrWidth-14, 14, m, ((firstp+i)!=selectp)?0:((selecte<0)&&(selectd<0))?1:2);
 			}
 			displaystr(i+3, plScrWidth-15, 0x07, (i==vrelpos)?(i==prelpos)?"\xdb":"\xdd":(i==prelpos)?"\xde":"\xb3", 1);
 		} else
@@ -1597,7 +1705,7 @@ superbreak:
 		displaystr(13,  0, 0x07, "D:  put archives: ", 18);
 		displaystr(13, 18, 0x0F, fsPutArcs?"on":"off", plScrWidth - 18);
 
-		fillstr(sbuf, 0, 0x00, 0, plScrWidth-14);
+		fillstr(sbuf, 0, 0x00, 0, plScrWidth);
 		writestring(sbuf, 0, 0x07, "+-: Target framerate: ", 22);
 		writenum(sbuf, 22, 0x0f, fsFPS, 10, 3, 1);
 		writestring(sbuf, 25, 0x07, ", actual framerate: ", 20);
@@ -2043,164 +2151,6 @@ static int fsEditString(unsigned int y, unsigned int x, unsigned int w, unsigned
 	return 1;
 }
 
-static int fsEditString2(unsigned int y, unsigned int x, unsigned int w, char **s)
-{
-	static int state = 0;
-	/* 0 - new / idle
-	 * 1 - in edit
-	 * 2 - in keyboard help
-	 */
-	static char *str; /* p */
-	static unsigned int alloc;
-	static unsigned int cmdlen;
-	static int insmode;
-	static unsigned int curpos;
-
-	unsigned int scrolled = 0;
-
-	if (state == 0)
-	{
-		insmode=1;
-
-		curpos=strlen(*s);
-		cmdlen=strlen(*s);
-
-		cmdlen = strlen(*s);
-		alloc = cmdlen + 64;
-		str = malloc (alloc+1);
-		strcpy (str, *s);
-		curpos = cmdlen;
-
-		setcurshape(1);
-
-		state = 1;
-	}
-
-	while ((curpos-scrolled)>=w)
-	{
-		scrolled+=8;
-	}
-
-	while (scrolled && ((curpos - scrolled + 8) < w))
-	{
-		scrolled-=8;
-	}
-
-	displaystr(y, x, 0x8F, str+scrolled, w);
-	setcur(y, x+curpos-scrolled);
-
-	if (state == 2)
-	{
-		if (cpiKeyHelpDisplay())
-		{
-			framelock();
-			return 1;
-		}
-		state = 1;
-	}
-	framelock();
-
-	while (ekbhit())
-	{
-		uint16_t key=egetch();
-		if ((key>=0x20)&&(key<=0xFF))
-		{
-			if (insmode || (curpos==cmdlen))
-			{
-				if (cmdlen+1 >= alloc)
-				{
-					void *buffer;
-					alloc += 32;
-					buffer = realloc (str, alloc);
-					if (!buffer)
-					{
-						free (str);
-						state = 0;
-						return 0;
-					}
-					str = buffer;
-				}
-			}
-
-			if (insmode)
-			{
-				memmove(str+curpos+1, str+curpos, cmdlen-curpos+1);
-				str[curpos]=key;
-				curpos++;
-				cmdlen++;
-			} else if (curpos==cmdlen)
-			{
-				str[curpos++]=key;
-				str[curpos]=0;
-				cmdlen++;
-			} else {
-				str[curpos++]=key;
-			}
-		} else switch (key)
-		{
-			case KEY_LEFT:
-				if (curpos)
-					curpos--;
-				break;
-			case KEY_RIGHT:
-				if (curpos<cmdlen)
-					curpos++;
-				break;
-			case KEY_HOME:
-				curpos=0;
-				break;
-			case KEY_END:
-				curpos=cmdlen;
-				break;
-			case KEY_INSERT:
-				insmode=!insmode;
-				setcurshape(insmode?1:2);
-				break;
-			case KEY_DELETE:
-				if (curpos!=cmdlen)
-				{
-					memmove(str+curpos, str+curpos+1, cmdlen-curpos);
-					cmdlen--;
-				}
-				break;
-			case KEY_BACKSPACE:
-				if (curpos)
-				{
-					memmove(str+curpos-1, str+curpos, cmdlen-curpos+1);
-					curpos--;
-					cmdlen--;
-				}
-				break;
-			case KEY_ESC:
-				setcurshape(0);
-				free (str);
-				state = 0;
-				return -1;
-			case _KEY_ENTER:
-				setcurshape(0);
-				free (*s);
-				*s = str;
-				state = 0;
-				return 0;
-			case KEY_ALT_K:
-				cpiKeyHelpClear();
-				cpiKeyHelp(KEY_RIGHT, "Move cursor right");
-				cpiKeyHelp(KEY_LEFT, "Move cursor left");
-				cpiKeyHelp(KEY_HOME, "Move cursor home");
-				cpiKeyHelp(KEY_END, "Move cursor to the end");
-				cpiKeyHelp(KEY_INSERT, "Toggle insert mode");
-				cpiKeyHelp(KEY_DELETE, "Remove character at cursor");
-				cpiKeyHelp(KEY_BACKSPACE, "Remove character left of cursor");
-				cpiKeyHelp(KEY_ESC, "Cancel changes");
-				cpiKeyHelp(_KEY_ENTER, "Submit changes");
-				state = 2;
-				return 1;
-		}
-	}
-
-	return 1;
-}
-
 static int fsEditChan(int y, int x, uint8_t *chan)
 {
 	static int state = 0;
@@ -2479,7 +2429,8 @@ static int fsEditFileInfo(struct modlistentry *me)
 		return 1;
 
 	if (plScrWidth>=132)
-		switch (editpos)
+	{
+		switch (editfilepos)
 		{
 			default:
 			case 0:
@@ -2518,7 +2469,9 @@ static int fsEditFileInfo(struct modlistentry *me)
 			case 7:
 				retval = fsEditString(plScrHeight-3, 66, plScrWidth - 69, sizeof(mdbEditBuf.comment), mdbEditBuf.comment);
 				break;
-		} else switch (editpos)
+		}
+	} else {
+		switch (editfilepos)
 		{
 			default:
 			case 0:
@@ -2558,8 +2511,9 @@ static int fsEditFileInfo(struct modlistentry *me)
 				retval = fsEditString(plScrHeight-3, 13, plScrWidth - 17, sizeof(mdbEditBuf.comment), mdbEditBuf.comment);
 				break;
 		}
+	}
 /*
-	if (editpos==1)
+	if (editfilepos==1)
 	{
 		typeidx[4]=0;
 		mdbEditBuf.modtype=mdbReadModType(typeidx);
@@ -2575,11 +2529,41 @@ static int fsEditFileInfo(struct modlistentry *me)
 	return 1;
 }
 
+static int fsEditDirInfo(struct modlistentry *me)
+{
+	int retval;
+
+	/* our current only entry does not care
+	if (plScrWidth>=132)
+	{
+	} else {
+	}
+	*/
+	switch (editdirpos)
+	{
+		default:
+		case 0:
+			if (me->dir->charset_override_API)
+			{
+				retval = fsEditCharset(me->dir);
+			} else {
+				retval = 0;
+			}
+			break;
+	}
+
+	return retval;
+}
+
 static int fsEditViewPath(void)
 {
 	static int state = 0;
 	static char *temppath;
 	int retval;
+
+	uint32_t dirdb_newpath = DIRDB_NOPARENT;
+	struct dmDrive *newdrive = 0;
+	struct ocpdir_t *newdir = 0;
 
 	if (state == 0)
 	{
@@ -2594,58 +2578,115 @@ static int fsEditViewPath(void)
 		state = 1;
 	}
 
-	retval = fsEditString2(1, 0, plScrWidth, &temppath);
+	retval = EditStringUTF8(1, 0, plScrWidth, &temppath);
 
 	if (retval > 0)
 	{
 		return 1;
 	}
 
+	state = 0;
+
 	if (retval < 0)
 	{ /* abort */
 		free (temppath);
-		state = 0;
 		return 0;
 	}
 
+	/* split out curmask, and leave temppath to only contain the actual path */
 	{
-		struct dmDrive *drives;
 		char *drive;
 		char *path;
 		char *filename;
-		uint32_t newcurrentpath;
 
-		state = 0;
+		splitpath_malloc (temppath, &drive, &path, &filename);
 
-		splitpath_malloc(temppath, &drive, &path, &filename);
-		for (drives = dmDrives; drives; drives = drives->next)
+		if (!strlen(filename))
 		{
-			if (strcasecmp(drive, drives->drivename))
-			{
-				continue;
-			}
-			dmCurDrive=drives;
-			if (strlen(path))
-			{
-				newcurrentpath = dirdbResolvePathWithBaseAndRef(dmCurDrive->basepath, path);
-				dirdbUnref(dirdbcurdirpath);
-				dirdbUnref(dmCurDrive->currentpath);
-				dirdbcurdirpath = dmCurDrive->currentpath = newcurrentpath;
-				dirdbRef(dirdbcurdirpath);
-			}
-			free (curmask);
-			curmask = filename;
-			filename = 0;
-			break;
+			free (filename);
+			filename = strdup ("*");
 		}
+
+		free (curmask);
+		curmask = filename;
+
+		/* this should not be needed, since it should always shrink or be the same size */
+		free (temppath);
+		temppath = malloc (strlen (drive) + strlen (path) + 1);
+		if (!temppath)
+		{
+			return 0;
+		}
+
+		sprintf (temppath, "%s%s", drive, path);
 		free (drive);
 		free (path);
-		free (filename);
-		free (temppath);
-
-		fsScanDir(0);
 	}
+
+	dirdb_newpath = dirdbResolvePathAndRef (temppath, dirdb_use_pfilesel);
+	free (temppath);
+	temppath = 0;
+	filesystem_resolve_dirdb_dir (dirdb_newpath, &newdrive, &newdir);
+	dirdbUnref (dirdb_newpath, dirdb_use_pfilesel);
+
+	if (newdir)
+	{
+		dmCurDrive = newdrive;
+		assert (dmCurDrive->cwd);
+		dmCurDrive->cwd->unref (dmCurDrive->cwd);
+		dmCurDrive->cwd = newdir;
+	}
+
+	fsScanDir(0);
 	return 0;
+}
+
+void fsDraw(void)
+{ /* used by medialib to have backdrop for the dialogs they display on the screen */
+	signed int firstv, firstp;
+	struct modlistentry *m;
+
+	dirwinheight=plScrHeight-4;
+	if (fsEditWin||editmode)
+		dirwinheight-=(plScrWidth>=132)?5:6;
+
+	if (!playlist->num)
+	{
+		win=0;
+		playlist->pos=0;
+	} else {
+		if (playlist->pos>=playlist->num)
+		{
+			playlist->pos=playlist->num-1;
+		}
+	}
+	if (!currentdir->num)
+	{ /* this should never happen */
+		currentdir->pos=0;
+	} else {
+		if (currentdir->pos>=currentdir->num)
+		{
+			currentdir->pos=currentdir->num-1;
+		}
+	}
+	firstv=currentdir->pos-dirwinheight/2;
+
+	if ((unsigned)(firstv+dirwinheight)>currentdir->num)
+		firstv=currentdir->num-dirwinheight;
+	if (firstv<0)
+		firstv=0;
+	firstp=playlist->pos-dirwinheight/2;
+
+	if ((unsigned)(firstp+dirwinheight)>playlist->num)
+		firstp=playlist->num-dirwinheight;
+	if (firstp<0)
+		firstp=0;
+
+	m = modlist_getcur ( win ? playlist : currentdir );
+
+	fsShowDir(firstv, win?(unsigned)~0:currentdir->pos, firstp, win?playlist->pos:(unsigned)~0, (editmode && m && m->dir) ? editdirpos : -1 , (editmode && m && m->file) ? editfilepos : -1 , m, win);
+
+	/* we do not paint any of the edits from the fsFileSelect() state */
 }
 
 signed int fsFileSelect(void)
@@ -2656,8 +2697,8 @@ signed int fsFileSelect(void)
 	 * state = 2 - cpiKeyHelpDisplay()
 	 * state = 3 - fsEditViewPath()
 	 * state = 4 - fsSavePlayList()
+	 * state = 5 - fsEditDirInfo()
 	 */
-	int win=0;
 	unsigned long i;
 
 	plSetTextMode(fsScrType);
@@ -2672,9 +2713,8 @@ signed int fsFileSelect(void)
 
 	while (1)
 	{
-		int firstv, firstp;
+		signed int firstv, firstp;
 		uint16_t c;
-		struct modlist *curlist;
 		int curscanned=0;
 		struct modlistentry *m;
 
@@ -2689,22 +2729,18 @@ superbreak:
 			playlist->pos=0;
 		} else {
 			if (playlist->pos>=playlist->num)
+			{
 				playlist->pos=playlist->num-1;
-			/*
-			if (playlist->pos<0)
-				playlist->pos=0;
-			*/
+			}
 		}
 		if (!currentdir->num)
 		{ /* this should never happen */
 			currentdir->pos=0;
 		} else {
 			if (currentdir->pos>=currentdir->num)
+			{
 				currentdir->pos=currentdir->num-1;
-			/*
-			if (currentdir->pos<0)
-				currentdir->pos=0;
-			*/
+			}
 		}
 		firstv=currentdir->pos-dirwinheight/2;
 
@@ -2719,10 +2755,9 @@ superbreak:
 		if (firstp<0)
 			firstp=0;
 
-		curlist=(win?playlist:currentdir);
-		m=modlist_getcur(curlist);
+		m=modlist_getcur ( win ? playlist : currentdir );
 
-		fsShowDir(firstv, win?(unsigned)~0:currentdir->pos, firstp, win?playlist->pos:(unsigned)~0, editmode?editpos:~0, m, win);
+		fsShowDir(firstv, win?(unsigned)~0:currentdir->pos, firstp, win?playlist->pos:(unsigned)~0, (editmode && m && m->dir) ? editdirpos : -1 , (editmode && m && m->file) ? editfilepos : -1 , m, win);
 
 		if (state == 1)
 		{
@@ -2761,6 +2796,20 @@ superbreak:
 				goto superbreak;
 			}
 			state = 0;
+			goto superbreak; /* need to reload m */
+		} else if (state == 5)
+		{
+			int retval;
+			retval = fsEditDirInfo(m);
+			if (retval > 0)
+			{
+				framelock();
+				goto superbreak;
+			} else if (retval < 0)
+			{
+				return -1;
+			}
+			state = 0;
 		}
 
 		if (!ekbhit()&&fsScanNames)
@@ -2771,29 +2820,42 @@ superbreak:
 				{
 					struct modlistentry *scanm;
 					if ((scanm=modlist_get(currentdir, scanposf++)))
-						if ((scanm->flags&MODLIST_FLAG_FILE)&&(!(scanm->flags&MODLIST_FLAG_VIRTUAL)))
+					{
+						if (scanm->file)
+						{
 							if (!mdbInfoRead(scanm->mdb_ref))
 							{
-								mdbScan(scanm);
+								mdbScan(scanm->file, scanm->mdb_ref);
 								break;
 							}
+						}
+					}
 				}
 				while (((win)||(scanposf>=currentdir->num)) && (scanposp<playlist->num))
 				{
 					struct modlistentry *scanm;
 					if ((scanm=modlist_get(playlist, scanposp++)))
-						if ((scanm->flags&MODLIST_FLAG_FILE)&&(!(scanm->flags&MODLIST_FLAG_VIRTUAL)))
+					{
+						if (scanm->file)
+						{
 							if (!mdbInfoRead(scanm->mdb_ref))
 							{
-								mdbScan(scanm);
+								mdbScan(scanm->file, scanm->mdb_ref);
 								break;
 							}
+						}
+					}
 				}
 				framelock();
 			} else {
-				curscanned=1;
-				if ((m->flags&MODLIST_FLAG_FILE)&&((!(m->flags&MODLIST_FLAG_VIRTUAL))||fsScanInArc)) /* dirty hack to stop scanning in .tar.gz while scrolling */
-					mdbScan(m);
+				if (!curscanned)
+				{
+					if (m->file)
+					{
+						mdbScan(m->file, m->mdb_ref);
+					}
+					curscanned=1;
+				}
 			}
 			continue;
 		} else while (ekbhit())
@@ -2890,7 +2952,7 @@ superbreak:
 				case KEY_ESC:
 					return 0;
 				case KEY_ALT_R:
-					if (m->flags&MODLIST_FLAG_FILE)
+					if (m->file)
 					{
 						if (!mdbGetModuleInfo(&mdbEditBuf, m->mdb_ref))
 							return -1;
@@ -2940,7 +3002,8 @@ superbreak:
 					goto superbreak;
 				case _KEY_ENTER:
 					if (editmode)
-						if (m->flags&MODLIST_FLAG_FILE)
+					{
+						if (m->file)
 						{
 							if (fsEditFileInfo(m))
 							{
@@ -2948,7 +3011,16 @@ superbreak:
 								goto superbreak;
 							}
 							break;
+						} else if (m->dir)
+						{
+							if (fsEditDirInfo(m))
+							{
+								state = 5;
+								goto superbreak;
+							}
+							break;
 						}
+					}
 					if (win)
 					{
 						if (!playlist->num)
@@ -2956,33 +3028,30 @@ superbreak:
 						isnextplay=NextPlayPlaylist;
 						return 1;
 					} else {
-						if (m->flags&(MODLIST_FLAG_DIR|MODLIST_FLAG_DRV|MODLIST_FLAG_ARC))
+						if (m->dir)
 						{
-							uint32_t olddirpath;
+							uint32_t olddirpath = dmCurDrive->cwd->dirdb_ref;
 							unsigned int i;
 
-							olddirpath = dmCurDrive->currentpath;
-							dirdbRef(olddirpath);
-							dirdbUnref(dirdbcurdirpath);
+							dirdbRef (olddirpath, dirdb_use_pfilesel);
 
-							dirdbcurdirpath=m->dirdbfullpath;
-							dirdbRef(dirdbcurdirpath);
-
-							dmCurDrive=(struct dmDrive *)m->drive;
-							dirdbUnref(dmCurDrive->currentpath);
-							dmCurDrive->currentpath = m->dirdbfullpath;
-							dirdbRef(dmCurDrive->currentpath);
+#if 0
+							dmCurDrive = m->drive;
+#else
+							dmCurDrive = ocpdir_get_drive (m->dir);
+#endif
+							m->dir->ref (m->dir);
+							dmCurDrive->cwd->unref (dmCurDrive->cwd);
+							dmCurDrive->cwd = m->dir;
 
 							fsScanDir(0);
-							for (i=0;i<currentdir->num;i++)
+							i = modlist_find (currentdir, olddirpath);
+							if (i >= 0)
 							{
-								if (currentdir->files[i]->dirdbfullpath==olddirpath)
-									break;
+								currentdir->pos = i;
 							}
-							dirdbUnref(olddirpath);
-							if (i<currentdir->num)
-								currentdir->pos=i;
-						} else if (m->flags&(MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL))
+							dirdbUnref(olddirpath, dirdb_use_pfilesel);
+						} else if (m->file)
 						{
 							nextplay=m;
 							isnextplay=NextPlayBrowser;
@@ -2993,11 +3062,15 @@ superbreak:
 				case KEY_UP:
 				/*case 0x4800: // up*/
 					if (editmode)
-						if (plScrWidth>=132)
-							editpos="\x00\x01\x02\x03\x00\x01\x04\x05"[editpos];
-						else
-							editpos="\x00\x01\x06\x06\x00\x04\x00\x05"[editpos];
-					else if (!win)
+					{
+						if (m && m->file)
+						{
+							if (plScrWidth>=132)
+								editfilepos="\x00\x01\x02\x03\x00\x01\x04\x05"[editfilepos];
+							else
+								editfilepos="\x00\x01\x06\x06\x00\x04\x00\x05"[editfilepos];
+						}
+					} else if (!win)
 					{
 						if (currentdir->pos)
 							currentdir->pos--;
@@ -3009,11 +3082,15 @@ superbreak:
 				case KEY_DOWN:
 				/*case 0x5000: // down*/
 					if (editmode)
-						if (plScrWidth>=132)
-							editpos="\x04\x05\x05\x05\x06\x07\x06\x07"[editpos];
-						else
-							editpos="\x04\x06\x07\x07\x05\x07\x03\x07"[editpos];
-					else if (!win)
+					{
+						if (m && m->file)
+						{
+							if (plScrWidth>=132)
+								editfilepos="\x04\x05\x05\x05\x06\x07\x06\x07"[editfilepos];
+							else
+								editfilepos="\x04\x06\x07\x07\x05\x07\x03\x07"[editfilepos];
+						}
+					} else if (!win)
 					{
 						if ((currentdir->pos+1) < currentdir->num)
 							currentdir->pos++;
@@ -3080,10 +3157,13 @@ superbreak:
 				/*case 0x4D00: // right*/
 					if (editmode)
 					{
-						if (plScrWidth>=132)
-							editpos="\x01\x02\x03\x03\x05\x05\x07\x07"[editpos];
-						else
-							editpos="\x01\x01\x02\x02\x06\x03\x06\x07"[editpos];
+						if (m && m->file)
+						{
+							if (plScrWidth>=132)
+								editfilepos="\x01\x02\x03\x03\x05\x05\x07\x07"[editfilepos];
+							else
+								editfilepos="\x01\x01\x02\x02\x06\x03\x06\x07"[editfilepos];
+						}
 					}
 					break;
 				case KEY_INSERT:
@@ -3092,19 +3172,20 @@ superbreak:
 						break;
 					if (win)
 					{
-						/*if (!*/modlist_append(playlist, m)/*)
+						/*if (!*/modlist_append (playlist, m)/*)
 							return -1*/;
 						/*playlist->pos=playlist->num-1; */
 						scanposp=fsScanNames?0:~0;
 					} else {
-						if (m->flags&MODLIST_FLAG_DIR)
+						if (m->dir)
 						{
-							if (!(fsReadDir(playlist, m->drive, m->dirdbfullpath, curmask, RD_PUTRSUBS)))
+							if (!(fsReadDir (playlist, m->dir, curmask, RD_PUTRSUBS)))
+							{
 								return -1;
-						} else if (m->flags&MODLIST_FLAG_FILE)
+							}
+						} else if (m->file)
 						{
-							/*if (!*/modlist_append(playlist, m)/*)
-								return -1*/;
+							modlist_append (playlist, m);
 							scanposp=fsScanNames?0:~0;
 						}
 					}
@@ -3113,10 +3194,13 @@ superbreak:
 				/*case 0x4B00: // left*/
 					if (editmode)
 					{
-						if (plScrWidth>=132)
-							editpos="\x00\x00\x01\x02\x04\x04\x06\x06"[editpos];
-						else
-							editpos="\x00\x00\x03\x05\x04\x05\x04\x07"[editpos];
+						if (m && m->file)
+						{
+							if (plScrWidth>=132)
+								editfilepos="\x00\x00\x01\x02\x04\x04\x06\x06"[editfilepos];
+							else
+								editfilepos="\x00\x00\x03\x05\x04\x05\x04\x07"[editfilepos];
+						}
 					}
 					break;
 				case KEY_DELETE:
@@ -3124,29 +3208,36 @@ superbreak:
 					if (editmode)
 						break;
 					if (win)
-						modlist_remove(playlist, playlist->pos, 1);
-					else {
+					{
+						modlist_remove(playlist, playlist->pos);
+					} else {
 						long f;
 
-						if (m->flags&MODLIST_FLAG_DIR)
+						if (m->dir)
 						{
 							struct modlist *tl = modlist_create();
 							struct modlistentry *me;
 							int f;
-							if (!(fsReadDir(tl, m->drive, m->dirdbfullpath, curmask, RD_PUTRSUBS)))
+							if (!(fsReadDir (tl, m->dir, curmask, RD_PUTRSUBS)))
+							{
 								return -1;
+							}
 							for (i=0;i<tl->num;i++)
 							{
-								me=modlist_get(tl, i);
-								if ((f=modlist_find(playlist, me->dirdbfullpath))>=0)
-									modlist_remove(playlist, f, 1);
+								me=modlist_get (tl, i);
+								assert(me->file);
+								if ((f=modlist_find (playlist, me->file->dirdb_ref)) >= 0)
+								{
+									modlist_remove (playlist, f);
+								}
 							}
 							modlist_free(tl);
-						} else if (m->flags&MODLIST_FLAG_FILE)
+						} else if (m->file)
 						{
-							f=modlist_find(playlist, m->dirdbfullpath);
-							if (f!=-1)
-								modlist_remove(playlist, f, 1);
+							if ((f = modlist_find (playlist, m->file->dirdb_ref)) >= 0)
+							{
+								modlist_remove (playlist, f);
+							}
 						}
 					}
 					break;
@@ -3160,10 +3251,9 @@ superbreak:
 						{
 							struct modlistentry *me;
 							me=modlist_get(currentdir, i);
-							if (me->flags&MODLIST_FLAG_FILE)
+							if (m->file)
 							{
-								/*if (!*/modlist_append(playlist, me)/*)
-									return -1*/;
+								modlist_append (playlist, me);
 								scanposp=fsScanNames?0:~0;
 							}
 						}
@@ -3174,7 +3264,7 @@ superbreak:
 				/* case 0x9300: //ctrl-delete TODO keys */
 					if (editmode)
 						break;
-					modlist_remove(playlist, 0, playlist->num);
+					modlist_clear (playlist);
 					break;
 /*
     case 0x2500:  // alt-k TODO keys.... alt-k is now in use by key-helper
@@ -3271,61 +3361,7 @@ superbreak:
   /*return 0; the above while loop doesn't go to this point */
 }
 
-static int stdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint32_t path, const char *mask, unsigned long opt)
-{
-	struct modlistentry m;
-	struct dmDrive *d;
-
-	if (opt&RD_PUTSUBS)
-	{
-		uint32_t dirdbparent = dirdbGetParentAndRef(path);
-
-		if (path!=drive->basepath)
-		{
-			memset(&m, 0, sizeof(struct modlistentry));
-			m.drive=drive;
-			strcpy(m.shortname, "/");
-			m.flags=MODLIST_FLAG_DIR;
-			m.dirdbfullpath=drive->basepath;
-			modlist_append(ml, &m);
-
-			if (dirdbparent!=DIRDB_NOPARENT)
-			{
-				memset(&m, 0, sizeof(struct modlistentry));
-				m.drive=drive;
-				strcpy(m.shortname, "..");
-				m.flags=MODLIST_FLAG_DIR;
-				m.dirdbfullpath=dirdbparent;
-				modlist_append(ml, &m);
-			}
-		}
-
-		if (dirdbparent!=DIRDB_NOPARENT)
-			dirdbUnref(dirdbparent);
-
-		for (d=dmDrives;d;d=d->next)
-		{
-			memset(&m, 0, sizeof(struct modlistentry));
-
-			m.drive=d;
-#ifdef __GNUC__
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wstringop-truncation"
-#endif
-			strncpy(m.shortname, d->drivename, 12); /* m.shortname is not expected to be zero-terminated if it is 12 characters longs */
-#ifdef __GNUC__
-# pragma GCC diagnostic pop
-#endif
-			m.flags=MODLIST_FLAG_DRV;
-			m.dirdbfullpath=d->currentpath;
-			dirdbRef(m.dirdbfullpath);
-			modlist_append(ml, &m);
-			dirdbUnref(m.dirdbfullpath);
-		}
-	}
-	return 1;
-}
-
+#warning we can add a dir->SaveFile API.....
 static int fsSavePlayList(const struct modlist *ml)
 {
 	static int state = 0;
@@ -3367,7 +3403,7 @@ static int fsSavePlayList(const struct modlist *ml)
 	displaystr(mlTop+1, 5, 0x0b, "Store playlist, please give filename (.pls format):", 50);
 	displaystr(mlTop+3, 5, 0x0b, "-- Abort with escape --", 23);
 
-	retval = fsEditString2(mlTop+2, 5, plScrWidth-10, &temppath);
+	retval = EditStringUTF8(mlTop+2, 5, plScrWidth-10, &temppath);
 	if (retval > 0)
 	{
 		return 1;
@@ -3398,143 +3434,49 @@ static int fsSavePlayList(const struct modlist *ml)
 		return 0;
 	}
 
+	free (dr); dr = 0;
 	makepath_malloc (&newpath, NULL, di, fn, ext);
-	free (dr);
-	free (fn);
-	free (ext);
+	free (fn); fn = 0;
+	free (ext); ext = 0;
+	free (di); di = 0;
 
 	if (!(f=fopen(newpath, "w")))
 	{
 		fprintf (stderr, "Failed to create file %s: %s\n", newpath, strerror (errno));
-		free (di);
 		free (newpath);
 		return 0;
 	}
-	free (newpath);
+	free (newpath); newpath = 0;
 	fprintf(f, "[playlist]\n");
 	fprintf(f, "NumberOfEntries=%d\n", ml->num);
 
 	for (i=0; i<ml->num; i++)
 	{
-		char *npath, *nnpath;
+		char *npath;
 		struct modlistentry *m;
 		fprintf(f, "File%d=",i+1);
 		m=modlist_get(ml, i);
-		if (m->drive!=dmFILE)
+		if (m->file)
 		{
-			dirdbGetFullname_malloc (m->dirdbfullpath, &npath, 0);
-			fputs (npath, f);
-			free (npath);
-		} else {
-			dirdbGetFullname_malloc (m->dirdbfullpath, &npath, DIRDB_FULLNAME_NOBASE);
-			genreldir_malloc (di, npath, &nnpath);
-			fputs (nnpath, f);
-			free (npath);
-			free (nnpath);
+#ifdef __W32__
+			npath = dirdbDiffPath (dirdbcurdirpath, m->file->dirdb_ref, DIRDB_DIFF_WINDOWS_SLASH);
+#else
+			npath = dirdbDiffPath (dirdbcurdirpath, m->file->dirdb_ref, 0);
+#endif
+			if (npath)
+			{
+				fputs (npath, f);
+				free (npath);
+			}
 		}
 		fprintf(f, "\n");
 
 	}
-	free (di);
 	fclose(f);
-
 	fsScanDir(1);
 
 	return 0;
 }
-
-struct mdbreaddirregstruct fsReadDirReg = {stdReadDir MDBREADDIRREGSTRUCT_TAIL};
-struct mdbreaddirregstruct dosReadDirReg = {dosReadDir MDBREADDIRREGSTRUCT_TAIL};
-
-void fsConvFileName12(char *c, const char *f, const char *e)
-/*  f=up to 8 chars, might end premature with a null
- *  e=up to 4 chars, starting with a ., migh premature with a null
- *  char c[12], will not be null terminated premature, but not after the 12, and no \0 exists then
- * f="hei" e=".gz"    -> {HEI     .GZ\0}
- * f="hello" e=".txt" -> {HELLO   .TXT}
- */
-{
-	int i;
-	for (i=0; i<8; i++)
-		*c++=*f?*f++:' ';
-	for (i=0; i<4; i++)
-		*c++=*e?*e++:' ';
-	for (i=0; i<12; i++)
-		c[i-12]=toupper(c[i-12]);
-}
-
-void convfilename12wc(char *c, const char *f, const char *e)
-/* same as above, but * is expanded to ?
- * f="hei" e=".*" -> {HEI     .???}
- * f="*" e=".*"   -> {????????.???}
- */
-{
-	int i;
-	for (i=0; i<8; i++)
-		*c++=(*f=='*')?'?':*f?*f++:' ';
-	for (i=0; i<4; i++)
-		*c++=(*e=='*')?'?':*e?*e++:' ';
-	for (i=0; i<12; i++)
-		c[i-12]=toupper(c[i-12]);
-}
-
-/* broken due to the fact that we allow space
-void fsConv12FileName(char *f, const char *c)
-{
-	int i;
-	for (i=0; i<8; i++)
-		if (c[i]==' ')
-			break;
-		else
-			*f++=c[i];
-	for (i=8; i<12; i++)
-		if (c[i]==' ')
-			break;
-		else
-			*f++=c[i];
-	*f=0;
-}
-*/
-
-/* broken due to the fact that we allow space, question-mask etc
-static void conv12filenamewc(char *f, const char *c)
-{
-	char *f0=f;
-	short i;
-	for (i=0; i<8; i++)
-		if (c[i]==' ')
-			break;
-		else
-			*f++=c[i];
-	if (i==8)
-	{
-		for (i=7; i>=0; i--)
-			if (c[i]!='?')
-				break;
-		if (++i<7)
-		{
-			f-=8-i;
-			*f++='*';
-		}
-	}
-	for (i=8; i<12; i++)
-		if (c[i]==' ')
-			break;
-		else
-			*f++=c[i];
-	if (i==12)
-	{
-		for (i=11; i>=9; i--)
-			if (c[i]!='?')
-				break;
-		if (++i<10)
-		{
-			f-=12-i;
-			*f++='*';
-		}
-	}
-	*f=0;
-}*/
 
 int fsMatchFileName12(const char *a, const char *b)
 {

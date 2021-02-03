@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * XMPlay .MOD module loader
  *
@@ -39,8 +40,9 @@
 #include <string.h>
 #include "types.h"
 #include "dev/mcp.h"
-#include "xmplay.h"
+#include "filesel/filesystem.h"
 #include "stuff/err.h"
+#include "xmplay.h"
 
 static uint16_t modnotetab[85]=
 {
@@ -62,7 +64,7 @@ static inline uint32_t swapb2(uint16_t a)
 #endif
 }
 
-static int loadmod(struct xmodule *m, FILE *file, int chan, int sig, int opt)
+static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, int sig, int opt)
 {
 	uint32_t l;
 	unsigned int i;
@@ -87,13 +89,12 @@ static int loadmod(struct xmodule *m, FILE *file, int chan, int sig, int opt)
 	m->ismod=!(opt&4);
 	m->ft2_e60bug=0;
 
-	fseek(file, 1080, SEEK_SET);
-	if (fread(&l, sizeof(uint32_t), 1, file)!=1)
+	file->seek_set (file, 1080);
+	if (ocpfilehandle_read_uint32_le (file, &l))
 	{
 		fprintf(stderr, __FILE__ ": warning: fread() failed #1\n");
 		l=0;
-	} else
-		l = uint32_little (l);
+	}
 
 	m->ninst=31;
 	m->nchan=0;
@@ -191,10 +192,11 @@ static int loadmod(struct xmodule *m, FILE *file, int chan, int sig, int opt)
 	if (!m->instruments||!m->samples||!m->sampleinfos)
 		return errAllocMem;
 
-	fseek(file, 0, SEEK_SET);
-	if (fread(m->name, 20, 1, file)!=1)
-			fprintf(stderr, __FILE__ ": warning: fread() failed #2\n");
-
+	file->seek_set (file, 0);
+	if (file->read (file, m->name, 20) != 20)
+	{
+		fprintf(stderr, __FILE__ ": warning: fread() failed #2\n");
+	}
 	m->name[20]=0;
 
 	for (i=0; i<m->nchan; i++)
@@ -221,8 +223,10 @@ static int loadmod(struct xmodule *m, FILE *file, int chan, int sig, int opt)
 		struct sampleinfo *sip=&m->sampleinfos[i];
 		unsigned int j;
 
-		if (fread(&mi, sizeof(mi), 1, file)!=1)
+		if (file->read (file, &mi, sizeof (mi)) != sizeof (mi))
+		{
 			fprintf(stderr, __FILE__ ": warning: fread() failed #3\n");
+		}
 
 		length=swapb2(mi.length);
 		loopstart=swapb2(mi.loopstart);
@@ -277,18 +281,27 @@ static int loadmod(struct xmodule *m, FILE *file, int chan, int sig, int opt)
 		sip->type=looplength?mcpSampLoop:0;
 	}
 
-
-	if (fread(&ordn, 1, 1, file)!=1)
+	if (ocpfilehandle_read_uint8 (file, &ordn))
+	{
+		ordn = 0;
 		fprintf(stderr, "xmlmod.c: warning: fread() failed #4\n");
+		return errFileRead;
+	}
+
 	if (!ordn)
 	{
 		fprintf (stderr, "xmlmod.c: error, order count == 0\n");
 		return errFormSig;
 	}
-	if (fread(&loopp, 1, 1, file)!=1)
+	if (ocpfilehandle_read_uint8 (file, &loopp))
+	{
+		loopp = 0;
 		fprintf(stderr, "xmlmod.c: warning: fread() failed #5\n");
-	if (fread(orders, 128, 1, file)!=1)
+	}
+	if (file->read (file, orders, 128) != 128)
+	{
 		fprintf(stderr, "xmlmod.c: warning: fread() failed #6\n");
+	}
 
 #ifdef XM_LOAD_DEBUG
 	fprintf(stderr, __FILE__ ": \n");
@@ -337,11 +350,13 @@ static int loadmod(struct xmodule *m, FILE *file, int chan, int sig, int opt)
 	m->inibpm=125;
 
 #ifdef XM_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": current file offset: %d\n", (int)ftell(file));
+	fprintf(stderr, __FILE__ ": current file offset: %d\n", (int)file->getpos (file));
 	fprintf(stderr, __FILE__ ": skip signature? %d\n", sig);
 #endif
 	if (sig)
-		fseek(file, 4, SEEK_CUR);
+	{
+		file->seek_cur (file, 4);
+	}
 
 	m->orders=malloc(sizeof(uint16_t)*m->nord);
 	m->patlens=malloc(sizeof(uint16_t)*m->npat);
@@ -373,8 +388,10 @@ static int loadmod(struct xmodule *m, FILE *file, int chan, int sig, int opt)
 		uint8_t *sp=temppat;
 		unsigned int j;
 
-		if (fread(temppat, 256*m->nchan, 1, file)!=1)
+		if (file->read (file, temppat, 256 * m->nchan) != (256 * m->nchan))
+		{
 			fprintf(stderr, "xmlmod.c: warning: fread() failed #7\n");
+		}
 
 		for (j=0; j<(64*m->nchan); j++)
 		{
@@ -447,50 +464,52 @@ static int loadmod(struct xmodule *m, FILE *file, int chan, int sig, int opt)
 #endif
 		if (!sip->ptr)
 			return errAllocMem;
-		if ((result=fread(sip->ptr, 1, sip->length, file))!=sip->length)
+		if ((result = file->read (file, sip->ptr, sip->length)) != sip->length)
+		{
 			fprintf(stderr, "xmlmod.c: warning: fread() failed #8 (%d of %d)\n", (int)result, (unsigned int)sip->length);
+		}
 		sp->handle=i;
 	}
 
 	return errOk;
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadMOD(struct xmodule *m, FILE *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadMOD(struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod(m, file, 0, 1, 8);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadMODt(struct xmodule *m, FILE *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadMODt(struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod(m, file, 0, 1, 2);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadMODd(struct xmodule *m, FILE *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadMODd(struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod(m, file, 0, 1, 1);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadM31(struct xmodule *m, FILE *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadM31(struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod(m, file, 4, 2, 0);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadM15(struct xmodule *m, FILE *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadM15(struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod(m, file, 4, 0, 0);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadM15t(struct xmodule *m, FILE *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadM15t(struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod(m, file, 4, 0, 2);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadWOW(struct xmodule *m, FILE *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadWOW(struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod(m, file, 8, 1, 0);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadMODf(struct xmodule *m, FILE *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadMODf(struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod(m, file, 0, 1, 4);
 }

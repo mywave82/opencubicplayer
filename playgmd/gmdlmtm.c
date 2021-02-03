@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '94-'21 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
  *
  * GMDPlay loader for MultiTracker modules
  *
@@ -29,6 +29,7 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "dev/mcp.h"
+#include "filesel/filesystem.h"
 #include "gmdplay.h"
 #include "stuff/err.h"
 
@@ -64,7 +65,7 @@ static void FreeResources (struct LoadMTMResources *r)
 	}
 }
 
-static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
+static int _mpLoadMTM(struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	struct __attribute__((packed)) {
 		uint32_t sig;
@@ -93,8 +94,10 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 
 	mpReset(m);
 
-	if (fread(&header, 66, 1, file) != 1)
+	if (file->read (file, &header, 66) != 66)
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #1\n");
+	}
 
 	if ((header.sig&0xFFFFFF)!=0x4D544D)
 		return errFormSig;
@@ -136,8 +139,10 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 			uint8_t volume;
 			uint8_t attr; /* 1=16 bit */
 		} mi;
-		if (fread(&mi, sizeof(mi), 1, file) != 1)
+		if (file->read (file, &mi, sizeof (mi)) != sizeof (mi))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #2\n");
+		}
 
 		if (mi.length<4)
 			mi.length=0;
@@ -176,8 +181,10 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 		sip->type=((mi.loopend)?mcpSampLoop:0)|((mi.attr&1)?mcpSamp16Bit:0)|mcpSampUnsigned;
 	}
 
-	if (fread(orders, 128, 1, file) != 1)
+	if (file->read (file, orders, 128) != 128)
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #3\n");
+	}
 
 	for (pp=m->patterns, t=0; t<m->patnum; pp++, t++)
 	{
@@ -197,10 +204,14 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 	}
 
 	memset(r.tbuffer, 0, 192);
-	if (fread(r.tbuffer+192, 192*header.trknum, 1, file) != 1)
+	if (file->read (file, r.tbuffer+192, 192*header.trknum) != 192*header.trknum)
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #4\n");
-	if (fread(r.trackseq, 64*(header.patnum+1), 1, file) != 1)
+	}
+	if (file->read (file, r.trackseq, 64*(header.patnum+1)) != 64*(header.patnum+1))
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #5\n");
+	}
 
 	for (t=0; t<=header.patnum; t++)
 	{
@@ -509,16 +520,19 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 			int16_t xxx;
 
 			m->message[t]=m->message[0]+t*41;
-			if (fread(m->message[t], 40, 1, file) != 1)
+			if (file->read (file, m->message[t], 40))
+			{
 				fprintf(stderr, __FILE__ ": warning, read failed #6\n");
+			}
 			for (xxx=0; xxx<40; xxx++)
 				if (!m->message[t][xxx])
 					m->message[t][xxx]=' ';
 			m->message[t][40]=0;
 		}
 		m->message[header.comlen]=0;
-	} else
-		fseek(file, header.comlen, SEEK_CUR);
+	} else {
+		file->seek_cur (file, header.comlen);
+	}
 
 	for (i=0; i<m->instnum; i++)
 	{
@@ -534,8 +548,10 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 		sip->ptr=malloc(sizeof(char)*(l+16));
 		if (!sip->ptr)
 			return errAllocMem;
-		if (fread(sip->ptr, l, 1, file) != 1)
+		if (file->read (file, sip->ptr, l) != l)
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #7\n");
+		}
 	}
 
 	return errOk;
@@ -543,4 +559,4 @@ static int _mpLoadMTM(struct gmdmodule *m, FILE *file)
 
 struct gmdloadstruct mpLoadMTM = { _mpLoadMTM };
 
-struct linkinfostruct dllextinfo = {.name = "gmdlmtm", .desc = "OpenCP Module Loader: *.MTM (c) 1994-09 Niklas Beisert", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "gmdlmtm", .desc = "OpenCP Module Loader: *.MTM (c) 1994-21 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

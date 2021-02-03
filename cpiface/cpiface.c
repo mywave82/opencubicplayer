@@ -53,20 +53,20 @@
 #include <unistd.h>
 #include <time.h>
 #include "types.h"
+#include "boot/plinkman.h"
+#include "boot/psetting.h"
 #include "cpiface.h"
 #include "cpipic.h"
-#include "stuff/compat.h"
-#include "stuff/err.h"
-#include "filesel/mdb.h"
-#include "filesel/pfilesel.h"
-#include "boot/plinkman.h"
-#include "stuff/poutput.h"
-#include "boot/psetting.h"
-#include "stuff/framelock.h"
-#include "stuff/timer.h"
 #ifdef PLR_DEBUG
 #include "dev/player.h"
 #endif
+#include "filesel/mdb.h"
+#include "filesel/pfilesel.h"
+#include "stuff/compat.h"
+#include "stuff/err.h"
+#include "stuff/framelock.h"
+#include "stuff/poutput.h"
+#include "stuff/timer.h"
 #include <unistd.h>
 #include <time.h>
 
@@ -443,7 +443,7 @@ static void plmpClose(void)
 
 static int linkhandle;
 
-static int plmpOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE **fi)
+static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi)
 {
 	char secname[20];
 	const char *link;
@@ -496,7 +496,7 @@ static int plmpOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, 
 
 	curplayer=(struct cpifaceplayerstruct*)fp;
 
-	retval=curplayer->OpenFile(dirdbref, info, *fi);
+	retval=curplayer->OpenFile(info, fi);
 
 	if (retval)
 	{
@@ -907,6 +907,7 @@ char plNoteStr[132][4]=
 };
 
 static struct interfacestruct plOpenCP = {plmpOpenFile, plmpCallBack, plmpCloseFile, "plOpenCP", NULL};
+
 #ifndef SUPPORT_STATIC_PLUGINS
 char *dllinfo = "";
 #endif

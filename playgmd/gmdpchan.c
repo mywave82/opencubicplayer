@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '94-'21 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
  *
  * GMDPlay channel display routines
  *
@@ -23,7 +23,6 @@
  */
 
 #include "config.h"
-#include <stdio.h> /* FILE is defined here */
 #include "types.h"
 #include "gmdplay.h"
 #include "gmdpchan.h"

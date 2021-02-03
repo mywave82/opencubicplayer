@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * database for storing a tree of filenames
  *
@@ -19,6 +19,7 @@
  */
 
 #include "config.h"
+#include <assert.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,16 +30,25 @@
 #include "types.h"
 #include "dirdb.h"
 #include "boot/psetting.h"
+#include "stuff/compat.h"
 
 struct dirdbEntry
 {
 	uint32_t parent;
 	uint32_t mdb_ref;
-	uint32_t adb_ref;
 	char *name; /* we pollute malloc a lot with this */
 	int refcount;
+#ifdef DIRDB_DEBUG
+	int refcount_children;
+	int refcount_directories;
+	int refcount_files;
+	int refcount_filehandles;
+	int refcount_drive_resolve;
+	int refcount_pfilesel;
+	int refcount_medialib;
+	int refcount_mdb_medialib;
+#endif
 
-	uint32_t newadb_ref;
 	uint32_t newmdb_ref; /* used during scan to find new nodes */
 };
 static uint32_t tagparentnode = DIRDB_NOPARENT;
@@ -50,8 +60,6 @@ struct __attribute__((packed)) dirdbheader
 };
 const char dirdbsigv1[60] = "Cubic Player Directory Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 const char dirdbsigv2[60] = "Cubic Player Directory Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01";
-
-
 
 static struct dirdbEntry *dirdbData=0;
 static uint32_t dirdbNum=0;
@@ -68,8 +76,51 @@ static void dumpdb_parent(uint32_t parent, int ident)
 			int j;
 			fprintf(stderr, "0x%08x ", i);
 			for (j=0;j<ident;j++)
+			{
 				fprintf(stderr, " ");
-			fprintf(stderr, "%s (refcount=%d mdb 0x%08x adb 0x%08x)\n", dirdbData[i].name, dirdbData[i].refcount, dirdbData[i].mdb_ref, dirdbData[i].adb_ref);
+			}
+			fprintf(stderr, "%s (refcount=%d", dirdbData[i].name, dirdbData[i].refcount);
+			if (dirdbData[i].refcount_children)
+			{
+				fprintf(stderr, "  children=%d", dirdbData[i].refcount_children);
+			}
+			if (dirdbData[i].refcount_directories)
+			{
+				fprintf(stderr, "  directories=%d", dirdbData[i].refcount_directories);
+			}
+			if (dirdbData[i].refcount_files)
+			{
+				fprintf(stderr, "  files=%d", dirdbData[i].refcount_files);
+			}
+			if (dirdbData[i].refcount_filehandles)
+			{
+				fprintf(stderr, "  filehandles=%d", dirdbData[i].refcount_filehandles);
+			}
+			if (dirdbData[i].refcount_drive_resolve)
+			{
+				fprintf(stderr, "  drive_resolve=%d", dirdbData[i].refcount_drive_resolve);
+			}
+			if (dirdbData[i].refcount_pfilesel)
+			{
+				fprintf(stderr, "  pfilesel=%d", dirdbData[i].refcount_pfilesel);
+			}
+			if (dirdbData[i].refcount_medialib)
+			{
+				fprintf(stderr, "  medialib=%d", dirdbData[i].refcount_medialib);
+			}
+			if (dirdbData[i].refcount_mdb_medialib)
+			{
+				fprintf(stderr, "  mdbs=%d", dirdbData[i].refcount_mdb_medialib);
+			}
+			if (dirdbData[i].mdb_ref != DIRDB_NOPARENT)
+			{
+				fprintf (stderr, "  mdb=0x%08x", dirdbData[i].mdb_ref);
+			}
+			if (dirdbData[i].newmdb_ref != DIRDB_NOPARENT)
+			{
+				fprintf (stderr, "  newmdb=0x%08x", dirdbData[i].newmdb_ref);
+			}
+			fprintf (stderr, ")\n");
 			dumpdb_parent(i, ident+1);
 		}
 	}
@@ -158,14 +209,14 @@ int dirdbInit(void)
 			if (read(f, &dirdbData[i].mdb_ref, sizeof(uint32_t))!=sizeof(uint32_t))
 				goto endoffile;
 			dirdbData[i].mdb_ref = uint32_little(dirdbData[i].mdb_ref);
+			dirdbData[i].newmdb_ref = DIRDB_NO_MDBREF;
 
 			if (version == 2)
 			{
-				if (read(f, &dirdbData[i].adb_ref, sizeof(uint32_t))!=sizeof(uint32_t))
+				uint32_t discard_adb_ref;
+				if (read(f, &discard_adb_ref, sizeof(uint32_t))!=sizeof(uint32_t))
 					goto endoffile;
-				dirdbData[i].adb_ref = uint32_little(dirdbData[i].adb_ref);
-			} else
-				dirdbData[i].adb_ref = DIRDB_NO_ADBREF;
+			}
 
 			dirdbData[i].name=malloc(len+1);
 			if (!dirdbData[i].name)
@@ -177,13 +228,16 @@ int dirdbInit(void)
 			}
 			dirdbData[i].name[len]=0; /* terminate the string */
 			if (dirdbData[i].mdb_ref!=DIRDB_NO_MDBREF)
+			{
 				dirdbData[i].refcount++;
+#ifdef DIRDB_DEBUG
+				dirdbData[i].refcount_mdb_medialib++;
+#endif
+			}
 		} else {
 			dirdbData[i].parent = DIRDB_NOPARENT;
-			dirdbData[i].adb_ref = DIRDB_NO_ADBREF;
 			dirdbData[i].mdb_ref = DIRDB_NO_MDBREF;
-			dirdbData[i].newadb_ref=DIRDB_NO_ADBREF;
-			dirdbData[i].newmdb_ref=DIRDB_NO_MDBREF;
+			dirdbData[i].newmdb_ref = DIRDB_NO_MDBREF;
 			/* name is already NULL due to calloc() */
 		}
 	}
@@ -203,6 +257,9 @@ int dirdbInit(void)
 			}
 
 			dirdbData[dirdbData[i].parent].refcount++;
+#ifdef DIRDB_DEBUG
+			dirdbData[dirdbData[i].parent].refcount_children++;
+#endif
 		}
 	}
 	fprintf(stderr, "Done\n");
@@ -243,13 +300,13 @@ void dirdbClose(void)
 }
 
 
-uint32_t dirdbFindAndRef(uint32_t parent, char const *name)
+uint32_t dirdbFindAndRef(uint32_t parent, char const *name, enum dirdb_use use)
 {
 	uint32_t i;
 	struct dirdbEntry *new;
 
 #ifdef DIRDB_DEBUG
-	fprintf(stderr, "dirdbFindAndRef(0x%08x, %s%40s%s)\n", parent, name?"\"":"", name?name:"NULL", name?"\"":"");
+	fprintf(stderr, "dirdbFindAndRef(0x%08x, %s%40s%s, use=%d)\n", parent, name?"\"":"", name?name:"NULL", name?"\"":"", use);
 #endif
 
 	if (!name)
@@ -297,6 +354,19 @@ uint32_t dirdbFindAndRef(uint32_t parent, char const *name)
 			{
 				/*fprintf(stderr, " ++ %s (%d p=%d)\n", dirdbData[i].name, i, dirdbData[i].parent);*/
 				dirdbData[i].refcount++;
+#ifdef DIRDB_DEBUG
+				switch (use)
+				{
+					case dirdb_use_children:      dirdbData[i].refcount_children++;      break;
+					case dirdb_use_dir:           dirdbData[i].refcount_directories++;   break;
+					case dirdb_use_file:          dirdbData[i].refcount_files++;         break;
+					case dirdb_use_filehandle:    dirdbData[i].refcount_filehandles++;   break;
+					case dirdb_use_drive_resolve: dirdbData[i].refcount_drive_resolve++; break;
+					case dirdb_use_pfilesel:      dirdbData[i].refcount_pfilesel++;      break;
+					case dirdb_use_medialib:      dirdbData[i].refcount_medialib++;      break;
+					case dirdb_use_mdb_medialib:  dirdbData[i].refcount_mdb_medialib++;  break;
+				}
+#endif
 				return i;
 			}
 	dirdbDirty=1;
@@ -312,12 +382,24 @@ reentry:
 			}
 			dirdbData[i].parent=parent;
 			dirdbData[i].refcount++;
-			dirdbData[i].mdb_ref=DIRDB_NO_MDBREF;
-			dirdbData[i].adb_ref=DIRDB_NO_ADBREF;
+#ifdef DIRDB_DEBUG
+			switch (use)
+			{
+				case dirdb_use_children:      dirdbData[i].refcount_children++;      break;
+				case dirdb_use_dir:           dirdbData[i].refcount_directories++;   break;
+				case dirdb_use_file:          dirdbData[i].refcount_files++;         break;
+				case dirdb_use_filehandle:    dirdbData[i].refcount_filehandles++;   break;
+				case dirdb_use_drive_resolve: dirdbData[i].refcount_drive_resolve++; break;
+				case dirdb_use_pfilesel:      dirdbData[i].refcount_pfilesel++;      break;
+				case dirdb_use_medialib:      dirdbData[i].refcount_medialib++;      break;
+				case dirdb_use_mdb_medialib:  dirdbData[i].refcount_mdb_medialib++;  break;
+			}
+#endif
+			//dirdbData[i].mdb_ref=DIRDB_NO_MDBREF;
 			if (parent!=DIRDB_NOPARENT)
 			{
 				/*fprintf(stderr, "  + %s (%d p=%d)\n", dirdbData[i].name, i, dirdbData[i].parent);*/
-				dirdbData[parent].refcount++;
+				dirdbRef(parent, dirdb_use_children);
 			}
 #ifdef DIRDB_DEBUG
 			dumpdirdb();
@@ -339,39 +421,66 @@ reentry:
 		uint32_t j;
 		for (j=i;j<dirdbNum;j++)
 		{
-			dirdbData[j].adb_ref=DIRDB_NO_ADBREF;
-			dirdbData[j].newadb_ref=DIRDB_NO_ADBREF;
 			dirdbData[j].mdb_ref=DIRDB_NO_MDBREF;
 			dirdbData[j].newmdb_ref=DIRDB_NO_MDBREF;
 			dirdbData[j].parent=DIRDB_NOPARENT;
 			dirdbData[j].name=0;
 			dirdbData[j].refcount=0;
+#ifdef DIRDB_DEBUG
+			dirdbData[j].refcount_children = 0;
+			dirdbData[j].refcount_directories = 0;
+			dirdbData[j].refcount_files = 0;
+			dirdbData[j].refcount_filehandles = 0;
+			dirdbData[j].refcount_drive_resolve = 0;
+			dirdbData[j].refcount_pfilesel = 0;
+			dirdbData[j].refcount_medialib = 0;
+			dirdbData[j].refcount_mdb_medialib = 0;
+#endif
 		}
 	}
-	goto reentry;
+	goto reentry; /* i points to the first free entry */
 }
 
-void dirdbRef(uint32_t node)
+uint32_t dirdbRef(uint32_t node, enum dirdb_use use)
 {
+#ifdef DIRDB_DEBUG
+	fprintf(stderr, "dirdbRef(0x%08x)\n", node);
+#endif
 	if (node == DIRDB_NOPARENT)
 	{
-		return;
+		return DIRDB_NOPARENT;
 	}
 	if ((node>=dirdbNum) || (!dirdbData[node].name))
 	{
-		fprintf(stderr, "dirdbFindAndRef: invalid node\n");
-		return;
+		fprintf(stderr, "dirdbRef: invalid node\n");
+		return DIRDB_NOPARENT;
 	}
 	/*fprintf(stderr, "+++ %s (%d p=%d)\n", dirdbData[node].name, node, dirdbData[node].parent);*/
 	dirdbData[node].refcount++;
+#ifdef DIRDB_DEBUG
+	switch (use)
+	{
+		case dirdb_use_children:      dirdbData[node].refcount_children++;      break;
+		case dirdb_use_dir:           dirdbData[node].refcount_directories++;   break;
+		case dirdb_use_file:          dirdbData[node].refcount_files++;         break;
+		case dirdb_use_filehandle:    dirdbData[node].refcount_filehandles++;   break;
+		case dirdb_use_drive_resolve: dirdbData[node].refcount_drive_resolve++; break;
+		case dirdb_use_pfilesel:      dirdbData[node].refcount_pfilesel++;      break;
+		case dirdb_use_medialib:      dirdbData[node].refcount_medialib++;      break;
+		case dirdb_use_mdb_medialib:  dirdbData[node].refcount_mdb_medialib++;  break;
+	}
+#endif
+	return node;
 }
 
-uint32_t dirdbResolvePathWithBaseAndRef(uint32_t base, const char *name)
+#define TEMP_SPACE dirdb_use_children
+uint32_t dirdbResolvePathWithBaseAndRef(uint32_t base, const char *name, int flags, enum dirdb_use use)
 {
 	char *segment;
 	const char *next;
-	char *split;
+	const char *split;
 	uint32_t retval=base, newretval;
+	const char dirsplit = (flags & DIRDB_RESOLVE_WINDOWS_SLASH) ? '\\': '/';
 
 #ifdef DIRDB_DEBUG
 	fprintf(stderr, "dirdbResolvePathWithBaseAndRef(0x%08x, %s%40s%s)\n", base, name?"\"":"", name?name:"NULL", name?"\"":"");
@@ -393,20 +502,168 @@ uint32_t dirdbResolvePathWithBaseAndRef(uint32_t base, const char *name)
 	if (retval!=DIRDB_NOPARENT)
 	{
 		/* we unref each-time we change retval, so we need the initial reference */
-		dirdbRef(retval);
+		dirdbRef(retval, TEMP_SPACE);
 	}
-	while (next)
+
+	/* test for all special start of the target string */
+	do /* so we can use break instead of nasty goto */
+	{ /* Test for all special start of the target string */
+
+		/* test for drive */
+		if ((flags & DIRDB_RESOLVE_DRIVE) && (*next != dirsplit))
+		{
+			const char *ptr;
+			split = strchr (next, dirsplit);
+			if (!split) /* emulate strchrnul */
+			{
+				split = next + strlen (next);
+			}
+			if (split == next)
+			{
+				goto nodrive;
+			}
+			if (split[-1] != ':') /* last character must be : */
+			{
+				goto nodrive;
+			}
+			for (ptr = next; ptr < split - 1;ptr++) /* check that there is only one : in the drive name */
+			{
+				if (*ptr == ':')
+				{
+					goto nodrive;
+				}
+			}
+
+			strncpy (segment, next, split - next);
+			segment[split - next] = 0;
+			if (flags & DIRDB_RESOLVE_WINDOWS_SLASH)
+			{
+				strreplace (segment, '/', '\\');
+			}
+
+			if (*split)
+			{
+				next = split + 1;
+			} else {
+				next = split;
+			}
+
+			newretval = dirdbFindAndRef (DIRDB_NOPARENT, segment, TEMP_SPACE);
+			dirdbUnref (retval, TEMP_SPACE);
+			retval = newretval;
+			break;
+		}
+nodrive:
+
+		/* test for ~/ */
+		if ((flags & DIRDB_RESOLVE_TILDE_HOME) && (next[0] == '~') && (next[1] == dirsplit))
+		{
+#ifndef __W32__
+			char *home;
+
+			newretval = dirdbFindAndRef (DIRDB_NOPARENT, "file:", TEMP_SPACE);
+			dirdbUnref (retval, TEMP_SPACE);
+			retval = newretval;
+
+			home = getenv("HOME");
+			if (!home)
+			{
+				dirdbUnref (retval, TEMP_SPACE);
+				free (segment);
+				return DIRDB_NOPARENT;
+			}
+			newretval = dirdbResolvePathWithBaseAndRef (retval, home, 0, TEMP_SPACE); /* we are already at the root */
+			dirdbUnref (retval, TEMP_SPACE);
+			retval = newretval;
+#else
+			#warning This is untested code
+			char *home;
+
+			home = getenv("HOMEPATH"); /* home is expected to contain DRIVE: */
+			if (home = NULL)
+			{
+				dirdbUnref (retval, TEMP_SPACE);
+				free (segment);
+				return DIRDB_NOPARENT;
+			}
+			newretval = dirdbResolvePathWithBaseAndRef (DIRDB_NOPARENT, home, DIRDB_RESOLVE_DRIVE, TEMP_SPACE);
+			dirdbUnref (retval, TEMP_SPACE);
+			retval = newretval;
+#endif
+			next += 2;
+			break;
+		}
+
+		/* test for ~username */
+		if ((flags & DIRDB_RESOLVE_TILDE_USER) && (next[0] == '~'))
+		{
+#if defined(HAVE_GETPWNAM) && (!defined (__W32__))
+			struct passwd *e;
+
+			split = strchr (next, dirsplit);
+			if (!split) /* emulate strchrnul */
+			{
+				split = next + strlen (next);
+			}
+
+			strncpy (segment, next, split - next);
+			segment[split - next] = 0;
+
+			if (*split)
+			{
+				next = split + 1;
+			} else {
+				next = split;
+			}
+
+			newretval = dirdbFindAndRef (DIRDB_NOPARENT, "file:", TEMP_SPACE);
+			dirdbUnref (retval, TEMP_SPACE);
+			retval = newretval;
+
+			e = getpwnam (segment+1);
+			if (!e)
+			{
+				dirdbUnref (retval, TEMP_SPACE);
+				free (segment);
+				return DIRDB_NOPARENT;
+			}
+			newretval = dirdbResolvePathWithBaseAndRef (retval, e->pw_dir, 0, TEMP_SPACE);
+			dirdbUnref (retval, TEMP_SPACE);
+			retval = newretval;
+
+			break;
+#else /* not support on Windows */
+			dirdbUnref (retval, TEMP_SPACE);
+			free (segment);
+			return DIRDB_NOPARENT;
+#endif
+		}
+
+		/* If the very first character is /, we go to root on the current drive*/
+		if (*next == dirsplit)
+		{
+			while ((retval != DIRDB_NOPARENT) && (dirdbData[retval].parent != DIRDB_NOPARENT))
+			{
+				newretval = dirdbData[retval].parent;
+				dirdbRef (newretval, TEMP_SPACE);
+				dirdbUnref (retval, TEMP_SPACE);
+				retval = newretval;
+			}
+			next++;
+			break;
+		}
+	} while (0);
+
+	while (*next)
 	{
-		if ((split=strchr(next, '/')))
+		if ((split=strchr(next, dirsplit)))
 		{
 			strncpy(segment, next, split-next);
 			segment[split-next]=0;
-			next=split+1;
-			if (!next)
-				next=0;
+			next = split + 1;
 		} else {
 			strcpy(segment, next);
-			next=0;
+			next = next + strlen (next);
 		}
 
 		if (!strlen(segment))
@@ -414,11 +671,32 @@ uint32_t dirdbResolvePathWithBaseAndRef(uint32_t base, const char *name)
 			continue;
 		}
 
-		newretval=dirdbFindAndRef(retval, segment);
+		if (!strcmp (segment, "."))
+		{
+			continue;
+		}
+
+		if (!strcmp (segment, ".."))
+		{ /* .. works as long as you are not a drive */
+			if ((retval != DIRDB_NOPARENT) && (dirdbData[retval].parent != DIRDB_NOPARENT))
+			{
+				newretval = dirdbData[retval].parent;
+				dirdbRef (newretval, TEMP_SPACE);
+				dirdbUnref (retval, TEMP_SPACE);
+				retval = newretval;
+			}
+			continue;
+		}
+
+		if (flags & DIRDB_RESOLVE_WINDOWS_SLASH)
+		{
+			strreplace (segment, '/', '\\');
+		}
+		newretval=dirdbFindAndRef(retval, segment, TEMP_SPACE);
 
 		if (retval!=DIRDB_NOPARENT)
 		{
-			dirdbUnref(retval);
+			dirdbUnref(retval, TEMP_SPACE);
 		}
 
 		if (newretval == DIRDB_NOPARENT)
@@ -431,71 +709,188 @@ uint32_t dirdbResolvePathWithBaseAndRef(uint32_t base, const char *name)
 		retval=newretval;
 	}
 	free (segment);
+
+/* transfer the refcount to the correct one */
+	dirdbRef (retval, use);
+	dirdbUnref (retval, TEMP_SPACE);
+
 #ifdef DIRDB_DEBUG
 	dumpdirdb();
 #endif
 	return retval;
 }
+#undef TEMP_SPACE
 
-extern uint32_t dirdbResolvePathAndRef(const char *name)
+static int dirdbGetStack (uint32_t node, uint32_t **stack, int *stacklen)
 {
-	char *segment;
-	const char *next;
-	char *split;
-	uint32_t retval=DIRDB_NOPARENT, newretval;
+	uint32_t iter;
+	int size = 0;
 
-#ifdef DIRDB_DEBUG
-	fprintf(stderr, "dirdbResolvePathAndRef(%s%40s%s)\n", name?"\"":"", name?name:"NULL", name?"\"":"");
-#endif
-	if (!name)
+	for (iter = node; iter != DIRDB_NOPARENT; iter = dirdbData[iter].parent)
 	{
-		fprintf (stderr, "dirdbResolvePathAndRef(): name is NULL\n");
-		return DIRDB_NOPARENT;
+		size++;
 	}
 
-	segment = malloc (strlen(name)+1); /* We never will need more than this */
-	if (!segment)
+	*stack = malloc ((size + 1) * sizeof (uint32_t));
+	if (!*stack)
 	{
-		fprintf (stderr, "dirdbResolvePathAndRef(): malloc() failed\n");
-		return DIRDB_NOPARENT;
+		return -1;
+	}
+	*stacklen = size;
+
+	(*stack)[size] = DIRDB_NOPARENT;
+
+	for (iter = node; iter != DIRDB_NOPARENT; iter = dirdbData[iter].parent)
+	{
+		size--;
+		(*stack)[size] = iter;
 	}
 
-	next=name;
-	while (next)
+	return 0;
+}
+
+char *dirdbDiffPath(uint32_t base, uint32_t node, const int flags)
+{
+	int retval_size;
+	int retval_fill;
+	char *retval;
+	const char dirsplit = (flags & DIRDB_RESOLVE_WINDOWS_SLASH) ? '\\': '/';
+
+	int       stack_base_fill = 0;
+	uint32_t *stack_base_data = 0;
+
+	int       stack_node_fill = 0;
+	uint32_t *stack_node_data = 0;
+
+	int i, j;
+
+	if (node == DIRDB_NOPARENT)
 	{
-#if 0 /* caught by the common if(!strlen(segment)) test further down */
-		if (*next=='/')
+		return 0;
+	}
+
+	if (base == node)
+	{
+		return strdup ("./");
+	}
+
+	retval_size = 1024; /* keep in mind the \0 terminator */
+	retval_fill = 0;
+	retval = calloc (1024, 1);
+
+	if (!retval)
+	{
+		fprintf (stderr, "dirdbDiffPath: out of memory!\n");
+		return 0;
+	}
+
+	if (dirdbGetStack (base, &stack_base_data, &stack_base_fill))
+	{
+		free (retval);
+		return 0;
+	}
+
+	if (dirdbGetStack (node, &stack_node_data, &stack_node_fill))
+	{
+		free (stack_base_data);
+		free (retval);
+		return 0;
+	}
+
+	/* fast forward ALL common nodes */
+	for (i=0; (i < stack_base_fill) && (i < stack_node_fill) && (stack_base_data[i] == stack_node_data[i]); i++)
+	{
+	};
+
+	if ((i == 1) && (stack_base_fill != 1)) /* same drive, but mode it back all the way to root */
+	{
+		if ((retval_fill + 2) >= retval_size)
 		{
-			next++;
-			continue;
+			char *temp;
+			retval_size += 1024;
+			temp = realloc (retval, retval_size);
+			if (!temp)
+			{
+				fprintf (stderr, "dirdbDiffPath: out of memory!\n");
+				free (stack_base_data);
+				free (stack_node_data);
+				free (retval);
+				return 0;
+			}
+			retval = temp;
 		}
-#endif
-		if ((split=strchr(next, '/')))
+		retval[retval_fill++] = dirsplit;
+		retval[retval_fill] = 0;
+	} else if (i != 0) /* same drive.... i==0 will cause string to contain drive */
+	{
+		for (j=i; j < stack_base_fill; j++)
 		{
-			strncpy(segment, next, split-next);
-			segment[split-next]=0;
-			next=split+1;
-			if (!next)
-				next=0;
-		} else {
-			strcpy(segment, next);
-			next=0;
+			if ((retval_fill + 4) >= retval_size)
+			{
+				char *temp;
+				retval_size += 1024;
+				temp = realloc (retval, retval_size);
+				if (!temp)
+				{
+					fprintf (stderr, "dirdbDiffPath: out of memory!\n");
+					free (stack_base_data);
+					free (stack_node_data);
+					free (retval);
+					return 0;
+				}
+				retval = temp;
+			}
+			retval[retval_fill++] = '.';
+			retval[retval_fill++] = '.';
+			retval[retval_fill++] = dirsplit;
+			retval[retval_fill] = 0;
 		}
-		if (!strlen(segment))
-			continue;
-		newretval=dirdbFindAndRef(retval, segment);
-		if (retval!=DIRDB_NOPARENT)
-			dirdbUnref(retval);
-		retval=newretval;
 	}
-	free (segment);
-#ifdef DIRDB_DEBUG
-	dumpdirdb();
-#endif
+	for (j=i; j < stack_node_fill; j++)
+	{
+		char *tmp = 0;
+		int len;
+
+		dirdbGetName_internalstr (stack_node_data[j], &tmp);
+		len = strlen (tmp);
+
+		if ((retval_fill + len + 2) >= retval_size)
+		{
+			char *temp;
+			retval_size += len + 2 + 1024;
+			temp = realloc (retval, retval_size);
+			if (!temp)
+			{
+				fprintf (stderr, "dirdbDiffPath: out of memory!\n");
+				free (stack_base_data);
+				free (stack_node_data);
+				free (retval);
+				return 0;
+			}
+			retval = temp;
+		}
+		strcpy (retval + retval_fill, tmp);
+		if (flags & DIRDB_DIFF_WINDOWS_SLASH)
+		{
+			strreplace (retval + retval_fill, '\\', '/');
+		}
+		retval_fill += len;
+		if ( ((j + 1) != stack_node_fill) ||                    /* add / after each node except the last one, */
+		     ((i == 0) && (j == 0) && (stack_node_fill == 1)) ) /* unless it is only a drive path.            */
+
+		{
+			retval[retval_fill++] = dirsplit;
+		}
+		retval[retval_fill] = 0;
+	}
+
+	free (stack_base_data);
+	free (stack_node_data);
+
 	return retval;
 }
 
-void dirdbUnref(uint32_t node)
+void dirdbUnref(uint32_t node, enum dirdb_use use)
 {
 	uint32_t parent;
 #ifdef DIRDB_DEBUG
@@ -509,19 +904,60 @@ void dirdbUnref(uint32_t node)
 	if (node>=dirdbNum)
 	{
 		fprintf(stderr, "dirdbUnref: invalid node (node %d >= dirdbNum %d)\n", node, dirdbNum);
-err:
 		abort();
 		return;
 	}
 	if (!dirdbData[node].refcount)
 	{
 		fprintf (stderr, "dirdbUnref: refcount == 0\n");
-		goto err;
+		abort();
+		return;
 	}
 	/* fprintf(stderr, "--- %s (%d p=%d)\n", dirdbData[node].name, node, dirdbData[node].parent);*/
+
 	dirdbData[node].refcount--;
+#ifdef DIRDB_DEBUG
+	switch (use)
+	{
+		case dirdb_use_children:
+			assert (dirdbData[node].refcount_children);
+			dirdbData[node].refcount_children--;
+			break;
+		case dirdb_use_dir:
+			assert (dirdbData[node].refcount_directories);
+			dirdbData[node].refcount_directories--;
+			break;
+		case dirdb_use_file:
+			assert (dirdbData[node].refcount_files);
+			dirdbData[node].refcount_files--;
+			break;
+		case dirdb_use_filehandle:
+			assert (dirdbData[node].refcount_filehandles);
+			dirdbData[node].refcount_filehandles--;
+			break;
+		case dirdb_use_drive_resolve:
+			assert (dirdbData[node].refcount_drive_resolve);
+			dirdbData[node].refcount_drive_resolve--;
+			break;
+		case dirdb_use_pfilesel:
+			assert (dirdbData[node].refcount_pfilesel);
+			dirdbData[node].refcount_pfilesel--;
+			break;
+		case dirdb_use_medialib:
+			assert (dirdbData[node].refcount_medialib);
+			dirdbData[node].refcount_medialib--;
+			break;
+		case dirdb_use_mdb_medialib:
+			assert (dirdbData[node].refcount_mdb_medialib);
+			dirdbData[node].refcount_mdb_medialib--;
+			break;
+	}
+#endif
+
 	if (dirdbData[node].refcount)
+	{
 		return;
+	}
 	/* fprintf(stderr, "DELETE\n");*/
 	dirdbDirty=1;
 	parent = dirdbData[node].parent;
@@ -531,14 +967,14 @@ err:
 
 	dirdbData[node].mdb_ref=DIRDB_NO_MDBREF; /* this should not be needed */
 	dirdbData[node].newmdb_ref=DIRDB_NO_MDBREF; /* this should not be needed */
-	dirdbData[node].adb_ref=DIRDB_NO_ADBREF; /* this should not be needed */
-	dirdbData[node].newadb_ref=DIRDB_NO_ADBREF; /* this should not be needed */
 
 #ifdef DIRDB_DEBUG
 	dumpdirdb();
 #endif
 	if (parent!=DIRDB_NOPARENT)
-		dirdbUnref(parent);
+	{
+		dirdbUnref (parent, dirdb_use_children);
+	}
 }
 
 void dirdbGetName_internalstr(uint32_t node, char **name)
@@ -546,12 +982,12 @@ void dirdbGetName_internalstr(uint32_t node, char **name)
 	*name = 0;
 	if (node>=dirdbNum)
 	{
-		fprintf(stderr, "dirdbGetName_malloc: invalid node #1\n");
+		fprintf(stderr, "dirdbGetName_internalstr: invalid node #1\n");
 		return;
 	}
 	if (!dirdbData[node].name)
 	{
-		fprintf(stderr, "dirdbGetName_malloc: invalid node #2\n");
+		fprintf(stderr, "dirdbGetName_internalstr: invalid node #2\n");
 		return;
 	}
 	*name = dirdbData[node].name;
@@ -613,7 +1049,7 @@ void dirdbGetFullname_malloc(uint32_t node, char **name, int flags)
 	{
 		if (dirdbData[iter].parent == DIRDB_NOPARENT)
 		{
-			if (flags & DIRDB_FULLNAME_NOBASE)
+			if (flags & DIRDB_FULLNAME_NODRIVE)
 			{
 				continue;
 			}
@@ -635,7 +1071,7 @@ void dirdbGetFullname_malloc(uint32_t node, char **name, int flags)
 	}
 	(*name)[0] = 0;
 
-	dirdbGetFullname_malloc_R (node, *name, flags&DIRDB_FULLNAME_NOBASE);
+	dirdbGetFullname_malloc_R (node, *name, flags&DIRDB_FULLNAME_NODRIVE);
 
 	if (flags&DIRDB_FULLNAME_ENDSLASH)
 	{
@@ -670,7 +1106,10 @@ void dirdbFlush(void)
 			{
 				fprintf (stderr, "dirdbFlush: node had name, but no refcount...\n");
 				dirdbData[i].refcount++;
-				dirdbUnref(i);
+#ifdef DIRDB_DEBUG
+				dirdbData[i].refcount_children++;
+#endif
+				dirdbUnref(i, dirdb_use_children);
 			}
 		}
 	}
@@ -718,7 +1157,8 @@ void dirdbFlush(void)
 			buf32=uint32_little(dirdbData[i].mdb_ref);
 			if (write(f, &buf32, sizeof(uint32_t))!=sizeof(uint32_t))
 				goto writeerror;
-			buf32=uint32_little(dirdbData[i].adb_ref);
+#warning remove-me this used to be ADB_REF
+			buf32=0xffffffff; //ADB_REF
 			if (write(f, &buf32, sizeof(uint32_t))!=sizeof(uint32_t))
 				goto writeerror;
 			if (write(f, dirdbData[i].name, len)!=len)
@@ -733,7 +1173,7 @@ writeerror:
 	close(f);
 }
 
-uint32_t dirdbGetParentAndRef (uint32_t node)
+uint32_t dirdbGetParentAndRef (uint32_t node, enum dirdb_use use)
 {
 	uint32_t retval;
 	if ((node>=dirdbNum) || (!dirdbData[node].name))
@@ -743,41 +1183,11 @@ uint32_t dirdbGetParentAndRef (uint32_t node)
 	}
 	retval=dirdbData[node].parent;
 	if (retval!=DIRDB_NOPARENT)
-		dirdbData[dirdbData[node].parent].refcount++;
+	{
+		dirdbRef (retval, use);
+	}
 	return retval;
 }
-
-#if 0
-void dirdbMakeMdbRef(uint32_t node, uint32_t mdb_ref)
-{
-#ifdef DIRDB_DEBUG
-	fprintf(stderr, "dirdbMakeMdbRef(node 0x%08x, mdb_ref 0x%08x)\n", node, mdb_ref);
-#endif
-	if (node>=dirdbNum)
-	{
-		fprintf(stderr, "dirdbMakeMdbRef: invalid node\n");
-		return;
-	}
-	if (mdb_ref==DIRDB_NO_MDBREF)
-	{
-		if (dirdbData[node].mdb_ref!=DIRDB_NO_MDBREF)
-		{
-			dirdbData[node].mdb_ref=DIRDB_NO_MDBREF;
-			dirdbDirty=1;
-			dirdbUnref(node);
-		}
-	} else {
-		int doref = (dirdbData[node].mdb_ref==DIRDB_NO_MDBREF);
-		dirdbData[node].mdb_ref=mdb_ref;
-		dirdbDirty=1;
-		if (doref)
-			dirdbRef(node);
-	}
-#ifdef DIRDB_DEBUG
-	dumpdirdb();
-#endif
-}
-#endif
 
 void dirdbTagSetParent(uint32_t node)
 {
@@ -785,14 +1195,17 @@ void dirdbTagSetParent(uint32_t node)
 	if (tagparentnode!=DIRDB_NOPARENT)
 	{
 		fprintf(stderr, "dirdbTagSetParent: warning, a node was already set as parent\n");
-		dirdbUnref(tagparentnode);
+		dirdbUnref(tagparentnode, dirdb_use_mdb_medialib);
 		tagparentnode=DIRDB_NOPARENT;
 	}
 
 	for (i=0;i<dirdbNum;i++)
 	{
-		dirdbData[i].newmdb_ref=DIRDB_NO_MDBREF;
-		dirdbData[i].newadb_ref=DIRDB_NO_ADBREF; /* is this actually needed? */
+		if (dirdbData[i].newmdb_ref != DIRDB_NO_MDBREF)
+		{
+			dirdbData[i].newmdb_ref = DIRDB_NO_MDBREF;
+			dirdbUnref (i, dirdb_use_mdb_medialib);
+		}
 	}
 
 	if ((node != DIRDB_NOPARENT) && ((node>=dirdbNum) || (!dirdbData[node].name)))
@@ -803,38 +1216,43 @@ void dirdbTagSetParent(uint32_t node)
 	tagparentnode = node;
 	if (node != DIRDB_NOPARENT)
 	{
-		dirdbRef(node);
+		dirdbRef (node, dirdb_use_mdb_medialib);
 	}
 }
 
-void dirdbMakeMdbAdbRef(uint32_t node, uint32_t mdb_ref, uint32_t adb_ref)
+void dirdbMakeMdbRef(uint32_t node, uint32_t mdb_ref)
 {
+#ifdef DIRDB_DEBUG
+	fprintf(stderr, "dirdbMakeMdbRef(node 0x%08x, mdb_ref 0x%08x)\n", node, mdb_ref);
+#endif
+
 	if ((node>=dirdbNum) || (!dirdbData[node].name))
 	{
 		fprintf(stderr, "dirdbMakeMdbRef: invalid node\n");
 		return;
 	}
-	/* the madness below is in order to keep track of references the correct way */
-	if (mdb_ref==DIRDB_NO_MDBREF)
+	if (mdb_ref == DIRDB_NO_MDBREF)
 	{
-		if (dirdbData[node].newmdb_ref!=DIRDB_NO_MDBREF)
+		if (dirdbData[node].newmdb_ref != DIRDB_NO_MDBREF)
 		{
-			dirdbData[node].newmdb_ref=DIRDB_NO_MDBREF;
-			dirdbUnref(node);
-		} /* else, no change */
+			dirdbData[node].newmdb_ref = DIRDB_NO_MDBREF;
+			dirdbUnref (node, dirdb_use_mdb_medialib);
+		}
 	} else {
-		if (dirdbData[node].newmdb_ref==DIRDB_NO_MDBREF)
+		if (dirdbData[node].newmdb_ref == DIRDB_NO_MDBREF)
 		{
-			dirdbData[node].newmdb_ref=mdb_ref;
-			dirdbRef(node);
+			dirdbData[node].newmdb_ref = mdb_ref;
+			dirdbRef (node, dirdb_use_mdb_medialib);
 		} else {
-			/*dirdbUnref(node);*/
-			dirdbData[node].newmdb_ref=mdb_ref;
-			/*dirdbRef(node);  overkill to unref and re-ref just for the name's sake*/
+			/*dirdbUnref(node, dirdb_use_mdb_medialib);*/
+			dirdbData[node].newmdb_ref = mdb_ref;
+			/*dirdbRef(node, dirdb_use_mdb_medialib);  overkill to unref and re-ref just for the name's sake*/
 		}
 	}
 
-	dirdbData[node].newadb_ref = adb_ref;
+#ifdef DIRDB_DEBUG
+	dumpdirdb();
+#endif
 }
 
 void dirdbTagCancel(void)
@@ -842,19 +1260,17 @@ void dirdbTagCancel(void)
 	uint32_t i;
 	for (i=0;i<dirdbNum;i++)
 	{
-		if (dirdbData[i].newmdb_ref!=DIRDB_NO_MDBREF)
+		if (dirdbData[i].newmdb_ref != DIRDB_NO_MDBREF)
 		{
-			dirdbData[i].newmdb_ref=DIRDB_NO_MDBREF;
-			dirdbUnref(i);
+			dirdbData[i].newmdb_ref = DIRDB_NO_MDBREF;
+			dirdbUnref (i, dirdb_use_mdb_medialib);
 		}
-		dirdbData[i].newadb_ref = DIRDB_NO_ADBREF;
 	}
-	if (tagparentnode==DIRDB_NOPARENT)
+	if (tagparentnode == DIRDB_NOPARENT)
 	{
-		//fprintf(stderr, "dirdbTagCancel: parent is not set\n");
 		return;
 	}
-	dirdbUnref(tagparentnode);
+	dirdbUnref (tagparentnode, dirdb_use_mdb_medialib);
 	tagparentnode=DIRDB_NOPARENT;
 }
 
@@ -866,24 +1282,21 @@ static void _dirdbTagRemoveUntaggedAndSubmit(uint32_t node)
 	{
 		if ((dirdbData[i].parent==node) && dirdbData[i].name)
 		{
-			dirdbData[i].adb_ref=dirdbData[i].newadb_ref;
-			if (dirdbData[i].newmdb_ref==dirdbData[i].mdb_ref)
+			if (dirdbData[i].newmdb_ref == dirdbData[i].mdb_ref)
 			{
-				if (dirdbData[i].mdb_ref==DIRDB_NO_MDBREF)
+				if (dirdbData[i].mdb_ref == DIRDB_NO_MDBREF)
 				{
 					/* probably a dir */
 					_dirdbTagRemoveUntaggedAndSubmit(i);
 				} else {
-					/* mdb_ref is the same */
-					dirdbData[i].mdb_ref=dirdbData[i].newmdb_ref;
-					dirdbData[i].newmdb_ref=DIRDB_NO_MDBREF;
-					dirdbUnref(i);
+					dirdbData[i].newmdb_ref = DIRDB_NO_MDBREF;
+					dirdbUnref(i, dirdb_use_mdb_medialib);
 				}
 			} else {
-				if (dirdbData[i].mdb_ref==DIRDB_NO_MDBREF)
+				if (dirdbData[i].mdb_ref == DIRDB_NO_MDBREF)
 				{
-					dirdbData[i].mdb_ref=dirdbData[i].newmdb_ref;
-					dirdbData[i].newmdb_ref=DIRDB_NO_MDBREF;
+					dirdbData[i].mdb_ref = dirdbData[i].newmdb_ref;
+					dirdbData[i].newmdb_ref = DIRDB_NO_MDBREF;
 					/* no need to unref/ref, since we are
 					 * balanced. Since somebody can have
 					 * named a file, the same name
@@ -892,49 +1305,82 @@ static void _dirdbTagRemoveUntaggedAndSubmit(uint32_t node)
 					 */
 					_dirdbTagRemoveUntaggedAndSubmit(i);
 					/* this can probably be done more elegant later */
-				} else if (dirdbData[i].newmdb_ref==DIRDB_NO_MDBREF)
+				} else if (dirdbData[i].newmdb_ref == DIRDB_NO_MDBREF)
 				{
-					dirdbData[i].mdb_ref=DIRDB_NO_MDBREF;
-					dirdbUnref(i);
+					dirdbData[i].mdb_ref = DIRDB_NO_MDBREF;
+					dirdbUnref (i, dirdb_use_mdb_medialib);
 					/* same as above regarding renaming */
 					_dirdbTagRemoveUntaggedAndSubmit(i);
 					/* this can probably be done more elegant later */
 				} else {
-					dirdbData[i].mdb_ref=dirdbData[i].newmdb_ref;
-					dirdbData[i].newmdb_ref=DIRDB_NO_MDBREF;
-					dirdbUnref(i);
+					dirdbData[i].mdb_ref = dirdbData[i].newmdb_ref;
+					dirdbData[i].newmdb_ref = DIRDB_NO_MDBREF;
+					dirdbUnref(i, dirdb_use_mdb_medialib);
 				}
 			}
 		}
 	}
 }
 
+static void _dirdbTagPreserveTree(uint32_t node)
+{
+	uint32_t i;
+
+	for (i=0;i<dirdbNum;i++)
+	{
+		if ((dirdbData[i].parent==node) && dirdbData[i].name)
+		{
+			if ((dirdbData[i].newmdb_ref != dirdbData[i].mdb_ref) && (dirdbData[i].newmdb_ref == DIRDB_NOPARENT))
+			{
+				dirdbData[i].newmdb_ref = dirdbData[i].mdb_ref;
+				dirdbRef(i, dirdb_use_mdb_medialib);
+				_dirdbTagPreserveTree (i);
+			}
+		}
+	}
+}
+
+void dirdbTagPreserveTree(uint32_t node)
+{
+	uint32_t iter;
+
+	/* if what we want to preserve is the parent of the marked tree, preserve the entire marked tree */
+	for (iter = tagparentnode; iter != DIRDB_NOPARENT; iter = dirdbData[iter].parent)
+	{
+		if (iter == node)
+		{
+			_dirdbTagPreserveTree (tagparentnode);
+			return;
+		}
+	}
+
+	/* if what we want to preserve is a subnode of the marked tree, preserve the subnode */
+	for (iter = node; iter != DIRDB_NOPARENT; iter = dirdbData[iter].parent)
+	{
+		if (iter == tagparentnode)
+		{
+			_dirdbTagPreserveTree (node);
+			return;
+		}
+	}
+}
+
 void dirdbTagRemoveUntaggedAndSubmit(void)
 {
-#if 0
-	/* removing from node / */
-	if (tagparentnode==DIRDB_NOPARENT)
-	{
-		fprintf(stderr, "dirdbTagRemoveUntaggedAndSubmit: parent is not set\n");
-		return;
-	}
-#endif
-	/* if parent has changed mdb_ref, we can't detect this.. NB NB NB */
 	_dirdbTagRemoveUntaggedAndSubmit(tagparentnode);
 	if (tagparentnode!=DIRDB_NOPARENT)
 	{
-		dirdbUnref(tagparentnode);
+		dirdbUnref (tagparentnode, dirdb_use_mdb_medialib);
 	}
 	tagparentnode=DIRDB_NOPARENT;
 	dirdbDirty=1;
 }
 
-int dirdbGetMdbAdb(uint32_t *dirdbnode, uint32_t *mdb_ref, uint32_t *adb_ref, int *first)
+int dirdbGetMdb(uint32_t *dirdbnode, uint32_t *mdb_ref, int *first)
 {
 	if (*first)
 	{
 		*dirdbnode=0;
-		*adb_ref=DIRDB_NO_ADBREF;
 		*first=0;
 	} else
 		(*dirdbnode)++;
@@ -942,7 +1388,6 @@ int dirdbGetMdbAdb(uint32_t *dirdbnode, uint32_t *mdb_ref, uint32_t *adb_ref, in
 		if ((dirdbData[*dirdbnode].name)&&(dirdbData[*dirdbnode].mdb_ref!=DIRDB_NO_MDBREF))
 		{
 			*mdb_ref=dirdbData[*dirdbnode].mdb_ref;
-			*adb_ref=dirdbData[*dirdbnode].adb_ref;
 			return 0;
 		}
 	return -1;

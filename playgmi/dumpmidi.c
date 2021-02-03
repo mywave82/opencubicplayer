@@ -16,7 +16,7 @@ struct MIDI_Session
 	unsigned char *data;
 	size_t data_len;
 	size_t data_mmaped_len;
-	
+
 	int level;
 };
 
@@ -50,7 +50,7 @@ static void MthdHEADER_endian (struct MthdHEADER *a)
 
 
 static int riff_dechunk(struct MIDI_Session *s, unsigned char *buffer, uint32_t len, int (*callback)(struct MIDI_Session *s, unsigned char *signature, unsigned char *buffer, uint32_t len))
-{	
+{
 	while (len)
 	{
 		struct RIFFHEADER *head;
@@ -496,7 +496,7 @@ static int parse_RIFF(struct MIDI_Session *s, unsigned char *head, unsigned char
 
 				if (ptr + len >= endptr) eof = 1;
 				if (eof) 	{ fprintf (stderr, "premature eof encountered (8)\n"); return -1; }
-		
+
 				fprintf_level (stderr, s); fprintf (stderr, "time %d, event 0x%02x, F0 Sysex Event", time, event);
 				for (i=0; i < len; i++)
 				{
@@ -509,7 +509,7 @@ static int parse_RIFF(struct MIDI_Session *s, unsigned char *head, unsigned char
 
 				if (ptr + len >= endptr) eof = 1;
 				if (eof) 	{ fprintf (stderr, "premature eof encountered (9)\n"); return -1; }
-		
+
 				fprintf_level (stderr, s); fprintf (stderr, "time %d, event 0x%02x, F7 Sysex Event (escape)", time, event);
 				for (i=0; i < len; i++)
 				{
@@ -523,7 +523,7 @@ static int parse_RIFF(struct MIDI_Session *s, unsigned char *head, unsigned char
 
 				if ((ptr + len) > endptr) eof = 1;
 				if (eof) 	{ fprintf (stderr, "premature eof encountered (10) (ptr=%p endptr=%p len=%d)\n", ptr, endptr, len); return -1; }
-		
+
 				fprintf_level (stderr, s); fprintf (stderr, "time %d, event 0x%02x, FF META Event 0x%02x ", time, event, type);
 
 				if (type == 0x00)
@@ -563,7 +563,7 @@ static int parse_RIFF(struct MIDI_Session *s, unsigned char *head, unsigned char
 						else
 							fprintf (stderr, "\\x%02x", (unsigned char)c);
 					}
-					fprintf (stderr, "\"\n");	
+					fprintf (stderr, "\"\n");
 				} else if (type == 0x03)
 				{
 					int i;

@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '94-'21 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
  *
  * GMDPlay loader for PolyTracker modules
  *
@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "filesel/filesystem.h"
 #include "dev/mcp.h"
 #include "gmdplay.h"
 #include "stuff/err.h"
@@ -58,7 +59,7 @@ static void FreeResources (struct LoadPTMResources *r)
 	}
 }
 
-static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
+static int _mpLoadPTM(struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 
 	uint16_t t;
@@ -88,8 +89,11 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 
 	mpReset(m);
 
-	if (fread(&hdr, sizeof(hdr), 1, file) != 1)
-		fprintf(stderr, __FILE__ ": warning, read failed #1\n");
+	if (file->read (file, &hdr, sizeof(hdr)) != sizeof (hdr))
+	{
+		fprintf(stderr, __FILE__ ": error, read failed #1\n");
+		return errFileRead;
+	}
 	if (memcmp(hdr.magic, "PTMF", 4))
 		return errFormSig;
 	hdr.type = uint16_little(hdr.type);
@@ -112,14 +116,20 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 	m->options=MOD_S3M;
 	m->loopord=0;
 
-	if (fread(orders, 256, 1, file) != 1)
-		fprintf(stderr, __FILE__ ": warning, read failed #2\n");
+	if (file->read (file, orders, 256) != 256)
+	{
+		fprintf(stderr, __FILE__ ": error, read failed #2\n");
+		return errFileRead;
+	}
 
 	if (!m->patnum)
 		return errFormMiss;
 
-	if (fread(patpara, 256, 1, file) != 1)
-		fprintf(stderr, __FILE__ ": warning, read failed #3\n");
+	if (file->read (file, patpara, 256) != 256)
+	{
+		fprintf(stderr, __FILE__ ": error, read failed #3\n");
+		return errFileRead;
+	}
 	for (i=0;i<128;i++)
 		patpara[i] = uint16_little(patpara[i]);
 
@@ -171,8 +181,11 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 			int32_t magic;
 		} sins;
 
-		if (fread(&sins, sizeof(sins), 1, file) != 1)
-			fprintf(stderr, __FILE__ ": warning, read failed #4\n");
+		if (file->read (file, &sins, sizeof (sins)) != sizeof (sins))
+		{
+			fprintf(stderr, __FILE__ ": error, read failed #4\n");
+			return errFileRead;
+		}
 		sins.samprate  = uint16_little (sins.samprate);
 		sins.d1        = uint16_little (sins.d1);
 		sins.offset    = uint32_little (sins.offset);
@@ -244,7 +257,7 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 		struct gmdtrack *trk;
 		uint16_t len;
 
-		fseek(file, patpara[t]*16, SEEK_SET);
+		file->seek_set (file, patpara[t]*16);
 		patSize=(patpara[t+1]-patpara[t])*16;
 		if (patSize>bufSize)
 		{
@@ -257,8 +270,11 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 				return errAllocMem;
 			}
 		}
-		if (fread(r.buffer, patSize, 1, file) != 1)
-			fprintf(stderr, __FILE__ ": warning, read failed #5\n");
+		if (file->read (file, r.buffer, patSize) != patSize)
+		{
+			fprintf(stderr, __FILE__ ": error, read failed #5\n");
+			return errFileRead;
+		}
 
 		for (j=0; j<m->channum; j++)
 		{
@@ -659,12 +675,14 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 		bit16=!!(sip->type&mcpSamp16Bit);
 
 		slen=sip->length<<bit16;
-		fseek(file, inspos[i], SEEK_SET);
+		file->seek_set (file, inspos[i]);
 		sip->ptr=malloc(sizeof(uint8_t)*(slen+16));
 		if (!sip->ptr)
 			return errAllocMem;
-		if (fread(sip->ptr, slen, 1, file) != 1)
+		if (file->read (file, sip->ptr, slen) != slen)
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #6\n");
+		}
 		x=0;
 		for (j=0; j<slen; j++)
 			((unsigned char *)sip->ptr)[j]=x+=((unsigned char*)sip->ptr)[j];
@@ -675,4 +693,4 @@ static int _mpLoadPTM(struct gmdmodule *m, FILE *file)
 
 struct gmdloadstruct mpLoadPTM = { _mpLoadPTM };
 
-struct linkinfostruct dllextinfo = {.name = "gmdlptm", .desc = "OpenCP Module Loader: *.PTM (c) 1994-10 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "gmdlptm", .desc = "OpenCP Module Loader: *.PTM (c) 1994-21 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

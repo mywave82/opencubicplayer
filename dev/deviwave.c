@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Wavetable devices system
  *
@@ -26,29 +27,31 @@
 
 #include "config.h"
 #include <stdlib.h>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 #include "types.h"
+#include "boot/plinkman.h"
+#include "boot/psetting.h"
+#include "devigen.h"
 #include "deviwave.h"
 #include "filesel/dirdb.h"
+#include "filesel/filesystem.h"
+#include "filesel/filesystem-drive.h"
+#include "filesel/filesystem-file-mem.h"
+#include "filesel/filesystem-setup.h"
 #include "filesel/mdb.h"
-#include "filesel/modlist.h"
 #include "filesel/pfilesel.h"
 #include "imsdev.h"
-#include "player.h"
-#include "boot/psetting.h"
-#include "boot/plinkman.h"
-#include "stuff/err.h"
-#include "devigen.h"
 #include "mcp.h"
+#include "player.h"
 #include "stuff/compat.h"
+#include "stuff/err.h"
 
 int (*mcpProcessKey)(uint16_t);
 
 static struct devinfonode *plWaveTableDevices;
 static struct devinfonode *curwavedev;
 static struct devinfonode *defwavedev;
-static struct mdbreaddirregstruct mcpReadDirReg;
 static struct interfacestruct mcpIntr;
 static struct preprocregstruct mcpPreprocess;
 
@@ -80,7 +83,7 @@ static void setdevice(struct devinfonode **curdev, struct devinfonode *dev)
 			(*curdev)->linkhand=-1;
 		}
 	}
-	*curdev=0;
+	(*curdev)=0;
 	if (!dev)
 		return;
 
@@ -113,7 +116,7 @@ static void setdevice(struct devinfonode **curdev, struct devinfonode *dev)
 		if (dev->devinfo.devtype->addprocs)
 			if (dev->devinfo.devtype->addprocs->ProcessKey)
 				mcpProcessKey=dev->devinfo.devtype->addprocs->ProcessKey;
-		*curdev=dev;
+		(*curdev)=dev;
 		return;
 	}
 	if (*curdev)
@@ -124,7 +127,6 @@ static void setdevice(struct devinfonode **curdev, struct devinfonode *dev)
 		}
 	fprintf(stderr, "device init error\n");
 }
-
 
 static void mcpSetDevice(const char *name, int def)
 {
@@ -138,7 +140,221 @@ static void mcpResetDevice(void)
 	setdevice(&curwavedev, defwavedev);
 }
 
-static struct dmDrive *dmSETUP;
+struct file_devw_t
+{
+	struct ocpfile_t head;
+//	uint32_t filesize;
+	struct devinfonode *dev;
+};
+
+static void file_devw_ref (struct ocpfile_t *_self)
+{
+	struct file_devw_t *self = (struct file_devw_t *)_self;
+	self->head.refcount++;
+}
+static void file_devw_unref (struct ocpfile_t *_self)
+{
+	struct file_devw_t *self = (struct file_devw_t *)_self;
+	self->head.refcount--;
+	if (!self->head.refcount)
+	{
+		dirdbUnref (self->head.dirdb_ref, dirdb_use_file);
+		free (self);
+	}
+}
+
+static struct ocpfilehandle_t *file_devw_open (struct ocpfile_t *_self)
+{
+	struct file_devw_t *self = (struct file_devw_t *)_self;
+	char *buffer = strdup (mcpIntr.name);
+	struct ocpfilehandle_t *retval = mem_filehandle_open (/*self->head.parent,*/ self->head.dirdb_ref, buffer, strlen (mcpIntr.name));
+	if (!retval)
+	{
+		free (buffer);
+	}
+	return retval;
+}
+
+static uint64_t file_devw_filesize (struct ocpfile_t *_self)
+{
+	return strlen (mcpIntr.name);
+}
+
+static int file_devw_filesize_ready (struct ocpfile_t *_self)
+{
+	return 1;
+}
+
+static struct ocpdir_t dir_devw;
+
+static void dir_devw_ref (struct ocpdir_t *self)
+{
+}
+static void dir_devw_unref (struct ocpdir_t *self)
+{
+}
+
+struct dir_devw_handle_t
+{
+	void (*callback_file)(void *token, struct ocpfile_t *);
+	void *token;
+	struct ocpdir_t *owner;
+	struct devinfonode *next;
+};
+static ocpdirhandle_pt dir_devw_readdir_start (struct ocpdir_t *self, void (*callback_file)(void *token, struct ocpfile_t *),
+	                                                              void (*callback_dir )(void *token, struct ocpdir_t  *), void *token)
+{
+	struct dir_devw_handle_t *retval = malloc (sizeof (*retval));
+	if (!retval)
+	{
+		return 0;
+	}
+	retval->callback_file = callback_file;
+	retval->token = token;
+	retval->owner = self;
+	retval->next = plWaveTableDevices;
+	self->ref(self);
+	return retval;
+};
+
+static void dir_devw_readdir_cancel (ocpdirhandle_pt _handle)
+{
+	struct dir_devw_handle_t *handle = (struct dir_devw_handle_t *)_handle;
+	handle->owner->unref (handle->owner);
+	free (handle);
+}
+
+static int dir_devw_readdir_iterate (ocpdirhandle_pt _handle)
+{
+	struct devinfonode *iter;
+	struct dir_devw_handle_t *handle = (struct dir_devw_handle_t *)_handle;
+
+	for (iter = plWaveTableDevices; iter; iter = iter->next)
+	{
+		if (handle->next == iter)
+		{
+			struct file_devw_t *file = malloc (sizeof (*file));
+			if (file)
+			{
+				char npath[64];
+				uint32_t mdb_ref;
+
+				snprintf (npath, sizeof(npath), "%s.DEV", iter->handle);
+
+				ocpfile_t_fill (&file->head,
+				                 file_devw_ref,
+				                 file_devw_unref,
+				                 handle->owner,
+				                 file_devw_open,
+				                 file_devw_filesize,
+				                 file_devw_filesize_ready,
+				                 dirdbFindAndRef (handle->owner->dirdb_ref, npath, dirdb_use_file),
+				                 1, /* refcount */
+				                 1  /* is_nodetect */);
+				/* file->filesize = iter->devinfo.mem; */
+				file->dev = iter;
+
+				mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, strlen (mcpIntr.name));
+				if (mdb_ref!=0xffffffff)
+				{
+					struct moduleinfostruct mi;
+					mdbGetModuleInfo(&mi, mdb_ref);
+					mi.flags1 &= ~MDB_VIRTUAL;
+					mi.channels = iter->devinfo.chan;
+					snprintf (mi.modname, sizeof(mi.modname), "%s", iter->name);
+					mi.modtype = mtDEVv;
+					mdbWriteModuleInfo (mdb_ref, &mi);
+				}
+				handle->callback_file (handle->token, &file->head);
+				file->head.unref (&file->head);
+			}
+			handle->next = iter->next;
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static struct ocpdir_t *dir_devw_readdir_dir (struct ocpdir_t *_self, uint32_t dirdb_ref)
+{
+	/* this can not succeed */
+	return 0;
+}
+
+static struct ocpfile_t *dir_devw_readdir_file (struct ocpdir_t *_self, uint32_t dirdb_ref)
+{
+	struct devinfonode *iter;
+	char *searchpath = 0;
+
+	uint32_t parent_dirdb_ref;
+
+/* assertion begin */
+	parent_dirdb_ref = dirdbGetParentAndRef (dirdb_ref, dirdb_use_file);
+	dirdbUnref (parent_dirdb_ref, dirdb_use_file);
+	if (parent_dirdb_ref != _self->dirdb_ref)
+	{
+		fprintf (stderr, "dir_devw_readdir_file: dirdb_ref->parent is not the expected value\n");
+		return 0;
+	}
+/* assertion end */
+
+	dirdbGetName_internalstr (dirdb_ref, &searchpath);
+	if (!searchpath)
+	{
+		return 0;
+	}
+
+	for (iter = plWaveTableDevices; iter; iter = iter->next)
+	{
+		char npath[64];
+		struct file_devw_t *file;
+		uint32_t mdb_ref;
+
+		snprintf (npath, sizeof(npath), "%s.DEV", iter->handle);
+
+		if (strcmp (npath, searchpath))
+		{
+			continue;
+		}
+
+		file = malloc (sizeof (*file));
+		if (!file)
+		{
+			fprintf (stderr, "dir_devw_readdir_file: out of memory\n");
+			return 0;
+		}
+
+		ocpfile_t_fill (&file->head,
+		                 file_devw_ref,
+		                 file_devw_unref,
+		                 _self,
+		                 file_devw_open,
+		                 file_devw_filesize,
+		                 file_devw_filesize_ready,
+		                 dirdbRef (dirdb_ref, dirdb_use_file),
+		                 1, /* refcount */
+		                 1  /* is_nodetect */);
+
+		/* file->filesize = iter->devinfo.mem; */
+		file->dev = iter;
+
+		mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, strlen (mcpIntr.name));
+		if (mdb_ref!=0xffffffff)
+		{
+			struct moduleinfostruct mi;
+			mdbGetModuleInfo(&mi, mdb_ref);
+			mi.flags1 &= ~MDB_VIRTUAL;
+			mi.channels = iter->devinfo.chan;
+			snprintf (mi.modname, sizeof(mi.modname), "%s", iter->name);
+			mi.modtype = mtDEVv;
+			mdbWriteModuleInfo (mdb_ref, &mi);
+		}
+
+		return &file->head;
+	}
+	return 0;
+}
+
 
 static int wavedevinited = 0;
 static int wavedevinit(void)
@@ -152,12 +368,25 @@ static int wavedevinit(void)
 
 	wavedevinited = 1;
 
-	mdbRegisterReadDir(&mcpReadDirReg);
-
 	plRegisterInterface (&mcpIntr);
 	plRegisterPreprocess (&mcpPreprocess);
 
-	dmSETUP=RegisterDrive("setup:");
+	ocpdir_t_fill (&dir_devw,
+	                dir_devw_ref,
+	                dir_devw_unref,
+	                dmSetup->basedir,
+	                dir_devw_readdir_start,
+	                0,
+	                dir_devw_readdir_cancel,
+	                dir_devw_readdir_iterate,
+	                dir_devw_readdir_dir,
+	                dir_devw_readdir_file,
+	                0,
+	                dirdbFindAndRef (dmSetup->basedir->dirdb_ref, "devw", dirdb_use_dir),
+	                0, /* refcount, not used */
+	                0, /* is_archive */
+	                0  /* is_playlist */);
+	filesystem_setup_register_dir (&dir_devw);
 
 	if (!strlen(cfGetProfileString2(cfSoundSec, "sound", "wavetabledevices", "")))
 		return errOk;
@@ -223,7 +452,8 @@ static void wavedevclose(void)
 
 	if (wavedevinited)
 	{
-		mdbUnregisterReadDir(&mcpReadDirReg);
+		filesystem_setup_unregister_dir (&dir_devw);
+		dirdbUnref (dir_devw.dirdb_ref, dirdb_use_dir);
 
 		plUnregisterInterface (&mcpIntr);
 		plUnregisterPreprocess (&mcpPreprocess);
@@ -232,6 +462,7 @@ static void wavedevclose(void)
 	}
 
 	setdevice(&curwavedev, 0);
+
 	while (plWaveTableDevices)
 	{
 		struct devinfonode *o=plWaveTableDevices;
@@ -240,80 +471,16 @@ static void wavedevclose(void)
 	}
 }
 
-static int mcpReadDir(struct modlist *ml, const struct dmDrive *drive, const uint32_t path, const char *mask, unsigned long opt)
-{
-	struct modlistentry m;
-	uint32_t node;
-
-	if (drive!=dmSETUP)
-		return 1;
-
-	node = dirdbFindAndRef(dmSETUP->basepath, "DEVICES");
-
-	if (opt&RD_PUTSUBS)
-	{
-		if (path==dmSETUP->basepath)
-		{
-			if (modlist_find(ml, node)<0)
-			{
-				memset(&m, 0, sizeof(m));
-				m.drive=drive;
-				strcpy(m.shortname, "DEVICES");
-				m.dirdbfullpath=node;
-				m.flags=MODLIST_FLAG_DIR;
-				modlist_append(ml, &m);
-			}
-		}
-	}
-
-	if (path==node)
-	{
-		struct devinfonode *dev;
-		for (dev=plWaveTableDevices; dev; dev=dev->next)
-		{
-			char npath[64];
-			snprintf (npath, sizeof(npath), "%s.DEV", dev->handle);
-			memset(&m, 0, sizeof(m));
-
-			fsConvFileName12 (m.shortname, dev->handle, ".DEV");
-//			if (fsMatchFileName12(m.shortname, mask))
-			{
-				m.mdb_ref=mdbGetModuleReference(m.shortname, dev->devinfo.mem);
-				if (m.mdb_ref==0xffffffff)
-					goto out;
-				m.drive=drive;
-				m.dirdbfullpath=dirdbFindAndRef(path, npath);
-				m.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-				if (mdbGetModuleType(m.mdb_ref)!=mtDEVw)
-				{
-					struct moduleinfostruct mi;
-					mdbGetModuleInfo(&mi, m.mdb_ref);
-					mi.flags1|=MDB_VIRTUAL;
-					mi.channels=dev->devinfo.chan;
-					strcpy(mi.modname, dev->name);
-					mi.modtype=mtDEVw;
-					mdbWriteModuleInfo(m.mdb_ref, &mi);
-				}
-				modlist_append(ml, &m);
-				dirdbUnref(m.dirdbfullpath);
-			}
-		}
-	}
-out:
-	dirdbUnref(node);
-	return 1;
-}
-
-static int mcpSetDev(const uint32_t dirdbref, struct moduleinfostruct *mi, FILE **fp)
+static int mcpSetDev(struct moduleinfostruct *mi, struct ocpfilehandle_t *fp)
 {
 	char *path, *name;
 
-	if (mi->modtype != mtDEVw)
+	if (mi->modtype != mtDEVv)
 	{
 		return 0;
 	}
 
-	dirdbGetName_internalstr (dirdbref, &path);
+	dirdbGetName_internalstr (fp->dirdb_ref, &path);
 	splitpath4_malloc (path, 0, 0, &name, 0);
 
 	mcpSetDevice(name, 1);
@@ -323,7 +490,7 @@ static int mcpSetDev(const uint32_t dirdbref, struct moduleinfostruct *mi, FILE 
 	return 0;
 }
 
-static void mcpPrep(const uint32_t dirdbref, struct moduleinfostruct *info, FILE **bp)
+static void mcpPrep(struct moduleinfostruct *info, struct ocpfilehandle_t **bp)
 {
 	mcpResetDevice();
 /*
@@ -333,10 +500,9 @@ static void mcpPrep(const uint32_t dirdbref, struct moduleinfostruct *info, FILE
 }
 
 
-static struct mdbreaddirregstruct mcpReadDirReg = {mcpReadDir MDBREADDIRREGSTRUCT_TAIL};
 static struct interfacestruct mcpIntr = {mcpSetDev, 0, 0, "mcpIntr" INTERFACESTRUCT_TAIL};
 static struct preprocregstruct mcpPreprocess = {mcpPrep PREPROCREGSTRUCT_TAIL};
 #ifndef SUPPORT_STATIC_PLUGINS
 char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "mcpbase", .desc = "OpenCP Wavetable Devices System (c) 1994-10 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0, .Init = wavedevinit, .Close = wavedevclose};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "mcpbase", .desc = "OpenCP Wavetable Devices System (c) 1994-21 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = wavedevinit, .Close = wavedevclose};

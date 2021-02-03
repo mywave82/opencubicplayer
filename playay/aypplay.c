@@ -33,6 +33,7 @@
 #include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/player.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
@@ -412,7 +413,7 @@ static int ayProcessKey(uint16_t key)
 
 }
 
-static int ayOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
+static int ayOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 /*
 	struct ayinfo ay;

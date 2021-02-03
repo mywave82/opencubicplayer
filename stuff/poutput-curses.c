@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) '11-'20 Stian Skjelstad <stian.skjelestad@gmail.com>
+ * copyright (c) '11-'21 Stian Skjelstad <stian.skjelestad@gmail.com>
  *
  * Curses console driver
  *
@@ -40,6 +40,7 @@
 #define _CONSOLE_DRIVER
 
 #include "config.h"
+/* we assume that ncursesw includes wchar.h if needed */
 #include <errno.h>
 #include <locale.h>
 #include <langinfo.h>
@@ -218,12 +219,30 @@ static void displaystr_utf8(unsigned short y, unsigned short x, unsigned char at
 		while(len)
 		{
 			int inc = 0;
+			wchar_t t;
+			int width;
 
-			*(ptr++) = utf8_decode (buf, srclen, &inc);
+			if (buf[0])
+			{
+				t = utf8_decode (buf, srclen, &inc);
+				width = wcwidth (t);
+			} else {
+				t = ' ';
+				width = 1;
+			}
+
+			if (width > len) /* if we can not fit double char at the end, we remove it */
+			{
+				t = ' ';
+				width = 1;
+			}
+			if (width > 0)
+			{
+				*(ptr++) = t;
+				len -= width;
+			}
 			buf += inc;
 			srclen -= inc;
-
-			len--;
 		}
 		attrset (attr_table[plpalette[attr]]);
 		*ptr = 0;
@@ -280,6 +299,41 @@ static void displaystr_utf8(unsigned short y, unsigned short x, unsigned char at
 	}
 }
 
+static int measurestr_utf8 (const char *buf, int buflen)
+{
+	int retval = 0;
+#ifdef HAVE_NCURSESW
+	if (useunicode)
+	{
+		while (buflen > 0)
+		{
+			int inc = 0;
+			wchar_t t;
+			int width;
+
+			t = utf8_decode (buf, buflen, &inc);
+			width = wcwidth (t);
+
+			if (width > 0)
+			{
+				retval += width;
+			}
+			buf += inc;
+			buflen -= inc;
+		}
+	} else
+#endif
+	{
+		int inc = 0;
+
+		utf8_decode (buf, buflen, &inc);
+		buf += inc;
+		buflen -= inc;
+		retval += 1;
+	}
+
+	return retval;
+}
 
 static void displaystrattr(unsigned short y, unsigned short x, const uint16_t *buf, unsigned short len)
 {
@@ -1239,6 +1293,7 @@ no_translit:
 	_displaystrattr_iso8859latin1=displaystrattr_iso8859latin1;
 	_displaystr_iso8859latin1=displaystr_iso8859latin1;
 	_displaystr_utf8=displaystr_utf8;
+	_measurestr_utf8=measurestr_utf8;
 	___setup_key(ekbhit, egetch); /* filters in more keys */
 	_plSetTextMode=plSetTextMode;
 	_drawbar=drawbar;

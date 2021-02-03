@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Frames per second lock
  *
@@ -36,21 +37,23 @@
 #endif
 
 static int Current = 0;
+static int PendingPoll = 0;
 int fsFPS=25;
 int fsFPSCurrent=0;
 
-static int fpsInit(void)
+static struct timeval target = {0, 0};
+static struct timeval curr;
+
+static void __attribute__((constructor))fpsInit(void)
 {
 	fsFPS=cfGetProfileInt("screen", "fps", 20, 0);
 	if (fsFPS<=0)
 		fsFPS=20;
-	return errOk;
 }
 
 void framelock(void)
 {
-	static struct timeval target = {0, 0};
-	static struct timeval curr;
+	PendingPoll = 0;
 rerun:
 	gettimeofday(&curr, 0);
 	if (curr.tv_sec!=target.tv_sec)
@@ -73,7 +76,56 @@ rerun:
 	Current++;
 }
 
-#ifndef SUPPORT_STATIC_PLUGINS
-char *dllinfo = "";
+void preemptive_framelock (void)
+{
+	gettimeofday(&curr, 0);
+	if (curr.tv_sec!=target.tv_sec)
+	{
+		fsFPSCurrent=Current;
+		Current=1;
+		target.tv_sec=curr.tv_sec;
+		target.tv_usec=1000000/fsFPS;
+		PendingPoll = 1;
+		return;
+	} else if (curr.tv_usec<target.tv_usec)
+	{
+		return; /* we were suppose to sleep */
+	}
+	target.tv_usec+=1000000/fsFPS;
+
+#ifdef DISABLE_SIGALRM
+	tmTimerHandler();
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "fps", .desc = "OpenCP Frames Per Second lock (c) 2005-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = fpsInit};
+	Current++;
+	PendingPoll = 1;
+}
+
+int poll_framelock(void)
+{
+	gettimeofday(&curr, 0);
+	if (curr.tv_sec!=target.tv_sec)
+	{
+		fsFPSCurrent=Current;
+		Current=1;
+		target.tv_sec=curr.tv_sec;
+		target.tv_usec=1000000/fsFPS;
+		PendingPoll = 0;
+		return 1;
+	} else if (curr.tv_usec<target.tv_usec)
+	{
+		if (PendingPoll)
+		{
+			PendingPoll = 0;
+			return 1;
+		}
+		return 0; /* we were suppose to sleep */
+	}
+	target.tv_usec+=1000000/fsFPS;
+
+#ifdef DISABLE_SIGALRM
+	tmTimerHandler();
+#endif
+	Current++;
+	PendingPoll = 0;
+	return 1;
+}

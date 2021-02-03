@@ -100,3 +100,5 @@ extern size_t strlcpy(char *dst, const char *src, size_t size);
 #include <stddef.h>
 extern size_t strlcat(char *dst, const char *src, size_t size);
 #endif
+
+extern void strreplace (char *dst, char old, char replacement);

@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Main routine, calls fileselector and interface code
  *
@@ -40,16 +41,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include "types.h"
-#include "stuff/err.h"
-#include "dirdb.h"
-#include "mdb.h"
-#include "pfilesel.h"
+
 #include "boot/plinkman.h"
 #include "boot/pmain.h"
-#include "stuff/poutput.h"
 #include "boot/psetting.h"
+#include "dirdb.h"
+#include "filesystem.h"
+#include "mdb.h"
+#include "pfilesel.h"
+#include "stuff/err.h"
+#include "stuff/poutput.h"
 
-extern struct mdbreaddirregstruct adbReadDirReg, dosReadDirReg, fsReadDirReg, plsReadDirReg, m3uReadDirReg;
 extern struct mdbreadinforegstruct fsReadInfoReg;
 
 static struct moduleinfostruct nextinfo;
@@ -96,26 +98,25 @@ static interfaceReturnEnum stop;
  * -1 - error occured
  */
 
-static int callselector (uint32_t *dirdbref, struct moduleinfostruct *info, FILE **fi,
-                  enumAutoCallFS callfs, enumForceCallFS forcecall, enumForceNext forcenext,
-                  struct interfacestruct **iface)
+static int callselector (struct moduleinfostruct *info,
+                         struct ocpfilehandle_t **fi,
+                         enumAutoCallFS callfs,
+                         enumForceCallFS forcecall,
+                         enumForceNext forcenext,
+                         struct interfacestruct **iface)
 {
 	int ret;
 	int result;
 	struct interfacestruct *intr;
-	struct filehandlerstruct *hdlr;
 	struct moduleinfostruct tmodinfo;
 	char secname[20];
-	FILE *tf=NULL;
 
-	*iface=0;
-	*fi=0;
-
-	if (*dirdbref != DIRDB_CLEAR)
+	if (*fi)
 	{
-		dirdbUnref (*dirdbref);
-		*dirdbref = DIRDB_CLEAR;
+		(*fi)->unref (*fi);
+		*fi = 0;
 	}
+	*iface=0;
 
 	do
 	{
@@ -137,16 +138,16 @@ static int callselector (uint32_t *dirdbref, struct moduleinfostruct *info, FILE
 			}
 			if (forcenext==2)
 			{
-				if (!fsGetPrevFile(dirdbref, &tmodinfo, &tf))
+				if (!fsGetPrevFile(&tmodinfo, fi))
 				{
-					assert (tf==NULL);
+					assert ((*fi)==NULL);
 					conSave();
 					continue;
 				}
 			} else {
-				if (!fsGetNextFile(dirdbref, &tmodinfo, &tf))
+				if (!fsGetNextFile(&tmodinfo, fi))
 				{
-					assert (tf==NULL);
+					assert ((*fi)==NULL);
 					conSave();
 					continue;
 				}
@@ -154,12 +155,13 @@ static int callselector (uint32_t *dirdbref, struct moduleinfostruct *info, FILE
 
 			sprintf(secname, "filetype %d", tmodinfo.modtype&0xFF);
 			intr=plFindInterface(cfGetProfileString(secname, "interface", ""));
+#if 0
 			hdlr=(struct filehandlerstruct *)_lnkGetSymbol(cfGetProfileString(secname, "handler", ""));
-
 			if (hdlr)
 			{
 				hdlr->Process(*dirdbref, &tmodinfo, &tf);
 			}
+#endif
 
 			conSave();
 			{
@@ -173,20 +175,16 @@ static int callselector (uint32_t *dirdbref, struct moduleinfostruct *info, FILE
 				ret=0;
 				*iface = intr;
 				*info = tmodinfo;
-				*fi = tf;
 
 				return result?-1:1;
 			} else {
 				/* we failed to get an interface for this file */
-				if(tf)
+				if (*fi)
 				{
-					fclose(tf);
-					tf=NULL;
+					fsForceRemove ((*fi)->dirdb_ref);
+					(*fi)->unref (*fi);
+					*fi = 0;
 				}
-				fsForceRemove (*dirdbref);
-
-				dirdbUnref (*dirdbref);
-				*dirdbref = DIRDB_CLEAR;
 			}
 		}
 		if (ret)
@@ -198,12 +196,10 @@ static int callselector (uint32_t *dirdbref, struct moduleinfostruct *info, FILE
 
 static int _fsMain(int argc, char *argv[])
 {
-	uint32_t nextpath = DIRDB_CLEAR;
-	uint32_t thispath = DIRDB_CLEAR;
 	struct interfacestruct *plintr = 0;
 	struct interfacestruct *nextintr = 0;
-	FILE *thisf=NULL;
-	FILE *nextf=NULL;
+	struct ocpfilehandle_t *thisf=NULL;
+	struct ocpfilehandle_t *nextf=NULL;
 
 	conSave();
 
@@ -236,7 +232,7 @@ static int _fsMain(int argc, char *argv[])
 		{
 			int fsr;
 			conSave();
-			fsr=callselector (&nextpath, &nextinfo, &nextf, (callfs||firstfile), (stop==interfaceReturnCallFs)?DoForceCallFS:DoNotForceCallFS, DoForceNext, &nextintr);
+			fsr=callselector (&nextinfo, &nextf, (callfs||firstfile), (stop==interfaceReturnCallFs)?DoForceCallFS:DoNotForceCallFS, DoForceNext, &nextintr);
 			if (!fsr)
 			{
 				break;
@@ -264,19 +260,12 @@ static int _fsMain(int argc, char *argv[])
 
 			if (thisf)
 			{
-				fclose(thisf);
+				thisf->unref (thisf);
 				thisf=NULL;
 			}
 
-			if (thispath != DIRDB_CLEAR)
-			{
-				dirdbUnref (thispath);
-			}
-			thispath = nextpath;
-			nextpath = DIRDB_CLEAR;
-
-			thisf=nextf;
-			nextf=NULL;
+			thisf = nextf;
+			nextf = 0;
 			plModuleInfo=nextinfo;
 			plintr=nextintr;
 			nextintr=0;
@@ -284,9 +273,11 @@ static int _fsMain(int argc, char *argv[])
 			stop=interfaceReturnContinue;
 
 			for (prep=plPreprocess; prep; prep=prep->next)
-				prep->Preprocess(thispath, &plModuleInfo, &thisf);
+			{
+				prep->Preprocess(&plModuleInfo, &thisf);
+			}
 
-			if (!plintr->Init(thispath, &plModuleInfo, &thisf))
+			if (!plintr->Init(&plModuleInfo, thisf))
 			{
 				stop = interfaceReturnCallFs; /* file failed, exit to filebrowser, if we don't do this, we can end up with a freeze if we only have this invalid file in the playlist, optional we could remove the file... */
 				plintr=0;
@@ -318,11 +309,11 @@ static int _fsMain(int argc, char *argv[])
 					case interfaceReturnQuit:
 						break;
 					case interfaceReturnNextAuto: /* next playlist file (auto) */
-						if (callselector (&nextpath, &nextinfo, &nextf, DoAutoCallFS, DoNotForceCallFS, DoNotForceNext, &nextintr)==0)
+						if (callselector (&nextinfo, &nextf, DoAutoCallFS, DoNotForceCallFS, DoNotForceNext, &nextintr)==0)
 						{
 							if (fsFilesLeft())
 							{
-								callselector (&nextpath, &nextinfo,&nextf, DoNotAutoCallFS, DoNotForceCallFS, DoForceNext, &nextintr);
+								callselector (&nextinfo, &nextf, DoNotAutoCallFS, DoNotForceCallFS, DoForceNext, &nextintr);
 								stop = interfaceReturnNextAuto;
 							} else
 								stop = interfaceReturnQuit;
@@ -331,18 +322,18 @@ static int _fsMain(int argc, char *argv[])
 						break;
 					case interfaceReturnPrevManuel: /* prev playlist file (man) */
 						if (fsFilesLeft())
-							stop=callselector (&nextpath, &nextinfo, &nextf, DoNotAutoCallFS, DoNotForceCallFS, DoForcePrev, &nextintr)?interfaceReturnNextAuto:interfaceReturnContinue;
+							stop=callselector (&nextinfo, &nextf, DoNotAutoCallFS, DoNotForceCallFS, DoForcePrev, &nextintr)?interfaceReturnNextAuto:interfaceReturnContinue;
 						else
-							stop=callselector (&nextpath, &nextinfo, &nextf, DoAutoCallFS, DoNotForceCallFS, DoNotForceNext, &nextintr)?interfaceReturnNextAuto:interfaceReturnContinue;
+							stop=callselector (&nextinfo, &nextf, DoAutoCallFS, DoNotForceCallFS, DoNotForceNext, &nextintr)?interfaceReturnNextAuto:interfaceReturnContinue;
 						break;
 					case interfaceReturnNextManuel: /* next playlist file (man) */
 						if (fsFilesLeft())
-							stop=callselector (&nextpath, &nextinfo, &nextf, DoNotAutoCallFS, DoNotForceCallFS, DoForceNext, &nextintr)?interfaceReturnNextAuto:interfaceReturnContinue;
+							stop=callselector (&nextinfo, &nextf, DoNotAutoCallFS, DoNotForceCallFS, DoForceNext, &nextintr)?interfaceReturnNextAuto:interfaceReturnContinue;
 						else
-							stop=callselector (&nextpath, &nextinfo, &nextf, DoAutoCallFS, DoNotForceCallFS, DoNotForceNext, &nextintr)?interfaceReturnNextAuto:interfaceReturnContinue;
+							stop=callselector (&nextinfo, &nextf, DoAutoCallFS, DoNotForceCallFS, DoNotForceNext, &nextintr)?interfaceReturnNextAuto:interfaceReturnContinue;
 						break;
 					case interfaceReturnCallFs: /* call fs */
-						stop=callselector (&nextpath, &nextinfo, &nextf, DoAutoCallFS, DoForceCallFS, DoNotForceNext, &nextintr)?interfaceReturnNextAuto:interfaceReturnContinue;
+						stop=callselector (&nextinfo, &nextf, DoAutoCallFS, DoForceCallFS, DoNotForceNext, &nextintr)?interfaceReturnNextAuto:interfaceReturnContinue;
 						break;
 					case interfaceReturnDosShell: /* dos shell */
 						plSetTextMode(fsScrType);
@@ -361,36 +352,21 @@ static int _fsMain(int argc, char *argv[])
 		}
 	}
 
-	if (thispath != DIRDB_CLEAR)
-	{
-		dirdbUnref (thispath);
-		thispath = DIRDB_CLEAR;
-	}
-	if (nextpath != DIRDB_CLEAR)
-	{
-		dirdbUnref (nextpath);
-		nextpath = DIRDB_CLEAR;
-	}
-
 	plSetTextMode(fsScrType);
 	conRestore();
 	if (plintr)
 		plintr->Close();
 	if (thisf)
 	{
-		fclose(thisf);
-		thisf=NULL;
+		thisf->unref (thisf);
+		thisf = NULL;
 	}
+
 	return errOk;
 }
 
 static int fspreint(void)
 {
-	mdbRegisterReadDir(&adbReadDirReg);
-	mdbRegisterReadDir(&dosReadDirReg);
-	mdbRegisterReadDir(&fsReadDirReg);
-	mdbRegisterReadDir(&plsReadDirReg);
-	mdbRegisterReadDir(&m3uReadDirReg);
 	mdbRegisterReadInfo(&fsReadInfoReg);
 
 	fprintf(stderr, "initializing fileselector...\n");
@@ -427,11 +403,6 @@ static int fslateint(void)
 
 static void fsclose()
 {
-	mdbUnregisterReadDir(&adbReadDirReg);
-	mdbUnregisterReadDir(&dosReadDirReg);
-	mdbUnregisterReadDir(&fsReadDirReg);
-	mdbUnregisterReadDir(&plsReadDirReg);
-	mdbUnregisterReadDir(&m3uReadDirReg);
 	mdbUnregisterReadInfo(&fsReadInfoReg);
 
 	fsClose();
@@ -457,4 +428,4 @@ static void __attribute__((destructor))done(void)
 char *dllinfo = "";
 #endif
 
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "pfilesel", .desc = "OpenCP Fileselector (c) 1994-10 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .PreInit = fspreint, .Init = fsint, .LateInit = fslateint, .LateClose = fsclose};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "pfilesel", .desc = "OpenCP Fileselector (c) 1994-'21 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .PreInit = fspreint, .Init = fsint, .LateInit = fslateint, .LateClose = fsclose};

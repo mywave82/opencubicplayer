@@ -62,6 +62,7 @@ extern "C"
 #include "dev/player.h"
 #include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
+#include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poll.h"
 }
@@ -780,7 +781,7 @@ const char __attribute__ ((visibility ("internal"))) *sidTuneInfoClockSpeedStrin
 	return libsidplayfp::tuneInfo_clockSpeed_toString(mySidPlayer->getTuneInfoClockSpeed());
 }
 
-unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(FILE *f)
+unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle_t *f)
 {
 	if (!plrPlay)
 	{
@@ -799,13 +800,18 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(FILE *f)
 	}
 	plrSetOptions(playrate, PLR_STEREO|PLR_16BIT);
 
-	fseek(f, 0, SEEK_END);
-	const int length=ftell(f);
-	fseek(f, 0, SEEK_SET);
+	const int length = f->filesize (f);
+	if (length > 1024*1024)
+	{
+		fprintf (stderr, "[playsid]: FILE is way too big\n");
+		return 0;
+	}
 	unsigned char *buf=new unsigned char[length];
-	if (fread(buf, length, 1, f)!=1)
+
+	if (f->read (f, buf, length) != length)
 	{
 		fprintf(stderr, __FILE__": fread failed #1\n");
+		delete [] buf;
 		return 0;
 	}
 

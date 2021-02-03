@@ -32,6 +32,7 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "dev/mcp.h"
+#include "filesel/filesystem.h"
 #include "gmdplay.h"
 #include "stuff/err.h"
 
@@ -66,7 +67,7 @@ static const unsigned char envsin[513]=
 };
 
 
-static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
+static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	int retval;
 
@@ -105,20 +106,25 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 
 	mpReset(m);
 
-	if (fread(&sig, 8, 1, file) != 1)
+	if (file->read (file, &sig, 8) != 8)
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #1\n");
+	}
 	if (!memcmp(sig, "Extreme", 7))
 		return errFormOldVer;
 	if (memcmp(sig, "AMShdr\x1A", 7))
 		return errFormSig;
 
-	if (fread(m->name, sig[7], 1, file) != 1)
+	if (file->read (file, m->name, sig[7]) != sig[7])
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #2\n");
+	}
 	m->name[sig[7]]=0;
 
-	if (fread(&filever, sizeof(filever), 1, file) != 1)
+	if (ocpfilehandle_read_uint16_le (file, &filever))
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #3\n");
-	filever = uint16_little (filever);
+	}
 	if ((filever!=0x201)&&(filever!=0x202))
 		return errFormOldVer;
 
@@ -140,8 +146,10 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 			 *  \\------- MIDI channels are used in tune. */
 		} oldhdr;
 
-		if (fread(&oldhdr, sizeof(oldhdr), 1, file) != 1)
+		if (file->read (file, &oldhdr, sizeof (oldhdr)) != sizeof (oldhdr))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #4\n");
+		}
 		hdr.ins = oldhdr.ins;
 		hdr.pat = uint16_little (oldhdr.pat);
 		hdr.pos = uint16_little (oldhdr.pos);
@@ -149,8 +157,10 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 		hdr.speed = oldhdr.speed;
 		hdr.flags = (oldhdr.flags&0xC0)|0x20;
 	} else {
-		if (fread(&hdr, sizeof(hdr), 1, file) != 1)
+		if (file->read (file, &hdr, sizeof (hdr)) != sizeof (hdr))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #5\n");
+		}
 
 		hdr.pat = uint16_little (hdr.pat);
 		hdr.pos = uint16_little (hdr.pos);
@@ -226,20 +236,28 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 		msmps[i]=0;
 		shadowedby[i]=0;
 
-		if (fread(&namelen, sizeof(namelen), 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &namelen))
+		{
+			namelen = 0;
 			fprintf(stderr, __FILE__ ": warning, read failed #6\n");
+		}
 		if (namelen>=(sizeof(ip->name)-1))
 		{
 			fprintf(stderr, "AMS: Instrument name too long\n");
 			retval=errFormStruc;
 			goto safeout;
 		}
-		if (fread(ip->name, namelen, 1, file) != 1)
+		if (file->read (file, ip->name, namelen) != namelen)
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #7\n");
+		}
 		ip->name[namelen]=0;
 
-		if (fread(&smpnum, sizeof(smpnum), 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &smpnum))
+		{
+			smpnum = 0;
 			fprintf(stderr, __FILE__ ": warning, read failed #8\n");
+		}
 		instsampnum[i]=smpnum;
 
 		if (!smpnum)
@@ -256,26 +274,34 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 		memset(msmps[i], 0, sizeof(**msmps)*smpnum);
 		memset(smps[i], 0, sizeof(**smps)*smpnum);
 
-		if (fread(samptab, sizeof(samptab), 1, file) != 1)
+		if (file->read (file, samptab, sizeof (samptab)) != sizeof (samptab))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #9\n");
+		}
 		for (j=0; j<3; j++)
 		{
-			if (fread(&envs[j], 5, 1, file) != 1)
+			if (file->read (file, &envs[j], 5) != 5)
+			{
 				fprintf(stderr, __FILE__ ": warning, read failed #10\n");
+			}
 			if (envs[j].points>64)
 			{
 				fprintf(stderr, "AMS: Too many points in envelope\n");
 				retval=errFormStruc;
 				goto safeout;
 			}
-			if (fread(envs[j].data, envs[j].points*3, 1, file) != 1)
+			if (file->read (file, envs[j].data, envs[j].points*3) != envs[j].points*3)
+			{
 				fprintf(stderr, __FILE__ ": warning, read failed #11\n");
+			}
 		}
 
 		/* vibsweep=0; */
 
-		if (fread(&shadowinst, sizeof(shadowinst), 1, file) != 1)
+		if (file->read (file, &shadowinst, sizeof(shadowinst)) != sizeof(shadowinst))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #12\n");
+		}
 		if (filever==0x201)
 		{
 			/* TODO? vibsweep=shadowinst; */
@@ -283,12 +309,14 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 		}
 		shadowedby[i]=shadowinst;
 
-		if (fread(&volfade, sizeof(volfade), 1, file) != 1)
+		if (ocpfilehandle_read_uint16_le (file, &volfade))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #13\n");
-		volfade = uint16_little (volfade);
-		if (fread(&envflags, sizeof(envflags), 1, file) != 1)
+		}
+		if (ocpfilehandle_read_uint16_le (file, &envflags))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #14\n");
-		envflags = uint16_little (envflags);
+		}
 
 		pchint=(volfade>>12)&3;
 		volfade&=0xFFF;
@@ -420,27 +448,36 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 			sp->pchenv=0xFFFF;
 			sp->volfade=0xFFFF;
 
-			if (fread(&namelen, sizeof(namelen), 1, file) != 1)
+			if (ocpfilehandle_read_uint8 (file, &namelen))
+			{
+				namelen = 0;
 				fprintf(stderr, __FILE__ ": warning, read failed #15\n");
+			}
 			if (namelen>=(sizeof(sp->name)-1))
 			{
 				fprintf(stderr, "AMS: Sample name too long\n");
 				retval=errFormStruc;
 				goto safeout;
 			}
-			if (fread(sp->name, namelen, 1, file) != 1)
+			if (ocpfilehandle_read_uint8 (file, &namelen))
+			{
+				namelen = 0;
 				fprintf(stderr, __FILE__ ": warning, read failed #16\n");
+			}
 			sp->name[namelen]=0;
-			if (fread(&sip->length, sizeof(sip->length), 1, file) != 1)
+			if (ocpfilehandle_read_uint32_le (file, &sip->length))
+			{
+				sip->length = 0;
 				fprintf(stderr, __FILE__ ": warning, read failed #17\n");
-
-			sip->length = uint32_little (sip->length);
+			}
 
 			if (!sip->length)
 				continue;
 
-			if (fread(&amssmp, sizeof(amssmp), 1, file) != 1)
+			if (file->read (file, &amssmp, sizeof(amssmp)) != sizeof(amssmp))
+			{
 				fprintf(stderr, __FILE__ ": warning, read failed #18\n");
+			}
 			amssmp.loopstart = uint32_little (amssmp.loopstart);
 			amssmp.loopend   = uint32_little (amssmp.loopend);
 			amssmp.samprate  = uint16_little (amssmp.samprate);
@@ -464,34 +501,49 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 		}
 	}
 
-	if (fread(&namelen, sizeof(unsigned char), 1, file) != 1)
+	if (ocpfilehandle_read_uint8 (file, &namelen))
+	{
+		namelen = 0;
 		fprintf(stderr, __FILE__ ": warning, read failed #19\n");
+	}
 	if (namelen>=((sizeof(m->composer)-1)))
 	{
 		fprintf(stderr, "AMS: Composer name too long\n");
 		retval=errFormStruc;
 		goto safeout;
 	}
-	if (fread(m->composer, namelen, 1, file) != 1)
+	if (file->read (file, m->composer, namelen) != namelen)
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #20\n");
+	}
 	m->composer[namelen]=0;
 	for (i=0; i<32; i++)
 	{
-		if (fread(&namelen, sizeof(unsigned char), 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &namelen))
+		{
+			namelen = 0;
 			fprintf(stderr, __FILE__ ": warning, read failed #21\n");
-		fseek(file, namelen, SEEK_CUR);
+		}
+		file->seek_cur (file, namelen);
 	}
 
-	if (fread(&packlen, sizeof(uint32_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint32_le (file, &packlen))
+	{
+		packlen = 0;
 		fprintf(stderr, __FILE__ ": warning, read failed #22\n");
-	packlen = uint32_little (packlen);
-	fseek(file, packlen-4, SEEK_CUR);
+	}
+	file->seek_cur (file, packlen - 4);
 
-	if (fread(ordlist, 2*hdr.pos, 1, file) != 1)
+	if (file->read (file, ordlist, 2 * hdr.pos) != 2 * hdr.pos)
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #23\n");
+	}
 
 	for (i=0; i<m->ordnum; i++)
-		m->orders[i]=(ordlist[i]<hdr.pat)?ordlist[i]:hdr.pat;
+	{
+		ordlist[i] = uint16_little (ordlist[i]);
+		m->orders[i]=(ordlist[i] < hdr.pat) ? ordlist[i] : hdr.pat;
+	}
 
 	for (i=0; i<32; i++)
 		m->patterns[hdr.pat].tracks[i]=m->tracknum-1;
@@ -527,16 +579,26 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 		struct gmdtrack *trk;
 		uint16_t len;
 
-
-		if (fread(&patlen, sizeof(uint32_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint32_le (file, &patlen))
+		{
+			patlen = 0;
 			fprintf(stderr, __FILE__ ": warning, read failed #24\n");
-		patlen = uint32_little(patlen);
-		if (fread(&maxrow, sizeof(uint8_t), 1, file) != 1)
+		}
+		if (ocpfilehandle_read_uint8 (file, &maxrow))
+		{
+			maxrow = 0;
 			fprintf(stderr, __FILE__ ": warning, read failed #25\n");
-		if (fread(&chan, sizeof(uint8_t), 1, file) != 1)
+		}
+		if (ocpfilehandle_read_uint8 (file, &chan))
+		{
+			chan = 0;
 			fprintf(stderr, __FILE__ ": warning, read failed #26\n");
-		if (fread(&namelen, sizeof(uint8_t), 1, file) != 1)
+		}
+		if (ocpfilehandle_read_uint8 (file, &namelen))
+		{
+			namelen = 0;
 			fprintf(stderr, __FILE__ ": warning, read failed #27\n");
+		}
 
 		if (namelen>=(sizeof(patname)-1))
 		{
@@ -547,8 +609,10 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 
 		patlen-=3+namelen;
 
-		if (fread(patname, namelen, 1, file) != 1)
+		if (file->read (file, patname, namelen) != namelen)
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #28\n");
+		}
 		patname[namelen]=0;
 		/* maxcmd=chan>>5; */
 		chan&=0x1F;
@@ -574,8 +638,10 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 				goto safeout;
 			}
 		}
-		if (fread(buffer, patlen, 1, file) != 1)
+		if (file->read (file, buffer, patlen))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #29\n");
+		}
 
 		for (i=0; i<chan; i++)
 		{
@@ -1092,14 +1158,21 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 			if (!sip->length)
 				continue;
 
-			if (fread(&packlena, sizeof(uint32_t), 1, file) != 1)
+			if (ocpfilehandle_read_uint32_le (file, &packlena))
+			{
+				packlena = 0;
 				fprintf(stderr, __FILE__ ": warning, read failed #30\n");
-			packlena = uint32_little (packlena);
-			if (fread(&packlenb, sizeof(uint32_t), 1, file) != 1)
+			}
+			if (ocpfilehandle_read_uint32_le (file, &packlenb))
+			{
+				packlenb = 0;
 				fprintf(stderr, __FILE__ ": warning, read failed #31\n");
-			packlenb = uint32_little (packlenb);
-			if (fread(&packbyte, sizeof(uint8_t), 1, file) != 1)
+			}
+			if (ocpfilehandle_read_uint8 (file, &packbyte))
+			{
+				packbyte = 0;
 				fprintf(stderr, __FILE__ ": warning, read failed #32\n");
+			}
 
 			packb=malloc(sizeof(unsigned char)*(((packlenb>packlena)?packlenb:packlena)+16));
 			smpp=malloc(sizeof(unsigned char)*(packlena+16));
@@ -1108,8 +1181,10 @@ static int _mpLoadAMS(struct gmdmodule *m, FILE *file)
 				retval=errAllocMem;
 				goto safeout;
 			}
-			if (fread(packb, packlenb, 1, file) != 1)
+			if (file->read (file, packb, packlenb) != packlenb)
+			{
 				fprintf(stderr, __FILE__ ": warning, read failed #33\n");
+			}
 
 			p1=p2=0;
 
@@ -1207,4 +1282,4 @@ safeout:
 
 struct gmdloadstruct mpLoadAMS = { _mpLoadAMS };
 
-struct linkinfostruct dllextinfo = {.name = "gmdlams", .desc = "OpenCP Module Loader: *.669 (c) 1994-09 Niklas Beisert", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "gmdlams", .desc = "OpenCP Module Loader: *.669 (c) 1994-21 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

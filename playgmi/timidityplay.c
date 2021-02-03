@@ -408,6 +408,8 @@ static int read_user_config_file(void)
 #ifdef __W32__
 /* HOME or home */
     if(home == NULL)
+	home = getenv("HOMEPATH");
+    if(home == NULL)
 	home = getenv("home");
 #endif
     if(home == NULL)

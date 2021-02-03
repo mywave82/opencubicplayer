@@ -29,6 +29,7 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "dev/mcp.h"
+#include "filesel/filesystem.h"
 #include "gmdplay.h"
 #include "stuff/err.h"
 
@@ -38,7 +39,7 @@ static inline void putcmd(uint8_t **p, uint8_t c, uint8_t d)
 	*(*p)++=d;
 }
 
-static int _mpLoad669(struct gmdmodule *m, FILE *file)
+static int _mpLoad669(struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	unsigned int t;
 
@@ -68,11 +69,15 @@ static int _mpLoad669(struct gmdmodule *m, FILE *file)
 
 	mpReset(m);
 
-	if (fread(&hdr, sizeof(hdr), 1, file)!=1)
+	if (file->read (file, &hdr, sizeof(hdr)) != sizeof(hdr))
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #1\n");
+	}
 
 	if ((hdr.sig!=*(uint16_t *)"if")&&(hdr.sig!=*(uint16_t *)"JN"))
+	{
 		return errFormSig;
+	}
 
 	memcpy(m->name, hdr.msg, 31);
 	m->name[31]=0;
@@ -141,8 +146,10 @@ static int _mpLoad669(struct gmdmodule *m, FILE *file)
 		struct gmdsample *sp;
 		struct sampleinfo *sip;
 
-		if (fread(&sins, sizeof(sins), 1, file)!=1)
+		if (file->read (file, &sins, sizeof(sins)) != sizeof(sins))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #2\n");
+		}
 
 		sins.length = uint32_little (sins.length);
 		sins.loopstart = uint32_little (sins.length);
@@ -186,8 +193,10 @@ static int _mpLoad669(struct gmdmodule *m, FILE *file)
 
 	memset(chanused, 0, 8);
 
-	if (fread(buffer, 0x600*hdr.patnum, 1, file)!=1)
+	if (file->read (file, buffer, 0x600 * hdr.patnum) != ( 0x600 * hdr.patnum) )
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #3\n");
+	}
 
 	for (t=0; t<8; t++)
 		commands[t]=0xFF;
@@ -384,8 +393,10 @@ static int _mpLoad669(struct gmdmodule *m, FILE *file)
 		sip->ptr=malloc(sizeof(char)*sip->length);
 		if (!sip->ptr)
 			return errAllocMem;
-		if (fread(sip->ptr, sip->length, 1, file)!=1)
+		if (file->read (file, sip->ptr, sip->length) != sip->length)
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #5\n");
+		}
 	}
 
 /*  for (i=m.channum-1; i>=0; i--)
@@ -403,4 +414,4 @@ static int _mpLoad669(struct gmdmodule *m, FILE *file)
 
 struct gmdloadstruct mpLoad669 = { _mpLoad669 };
 
-struct linkinfostruct dllextinfo = {.name = "gmdl669", .desc = "OpenCP Module Loader: *.669 (c) 1994-09 Niklas Beisert", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "gmdl669", .desc = "OpenCP Module Loader: *.669 (c) 1994-21 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

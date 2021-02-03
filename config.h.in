@@ -169,7 +169,15 @@
 
 /* #define TIMIDITY_DEBUG */
 /* #define ZIP_DEBUG */
+/* #define ZIP_VERBOSE */
 /* #define DIRDB_DEBUG */
+/* #define BZIP2_DEBUG */
+/* #define BZIP2_VERBOSE */
+/* #define GZIP_DEBUG */
+/* #define GZIP_VERBOSE */
+/* #define TAR_DEBUG */
+/* #define TAR_VERBOSE */
+/* #define FILEHANDLE_CACHE_DEBUG */
 /* #define PLR_DEBUG */ /* for now makes devposs/devpalsa offer some buffer info */
 /* #define SMP_DEBUG */ /* for now makes devsoss offer some buffer info - not complete */
 /* #define INITCLOSE_DEBUG 1*/
@@ -186,6 +194,7 @@
 /* #define KEYBOARDTEXT_DEBUG 1 */
 /* #define VCSA_DEBUG 1*/
 /* #define DEBUG_FRAMEBUFFER 1 */
+/* #define MDB_DEBUG 1 */
 /* #define MP_DEBUG 1 */
 /* #define PSETTING_DEBUG 1 */
 /* #define WAVE_DEBUG 1 */
@@ -324,11 +333,15 @@
 
 #undef HAVE_MACHINE_ENDIAN_H
 
+#undef HAVE_PWD_H
+
 #undef HAVE_SYS_SOUNDCARD_H
 
 #undef HAVE_STRING_H
 
 #undef NO_STRING_H
+
+#undef HAVE_GETPWNAM
 
 #undef HAVE_FRAMEBUFFER
 

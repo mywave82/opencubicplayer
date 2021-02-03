@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * OCP.INI file and environment reading functions
  *
@@ -540,6 +541,34 @@ void cfRemoveEntry(const char *app, const char *key)
 						}
 					}
 		}
+}
+
+void cfRemoveProfile(const char *app)
+{
+	int i, j;
+	for (i=0; i<cfINInApps; i++)
+	{
+		if (!strcasecmp(cfINIApps[i].app, app))
+		{
+			for (j=0; j<cfINIApps[i].nkeys; j++)
+			{
+				if (cfINIApps[i].keys[j].str)
+					free(cfINIApps[i].keys[j].str);
+				if (cfINIApps[i].keys[j].key)
+					free(cfINIApps[i].keys[j].key);
+				if (cfINIApps[i].keys[j].comment)
+					free(cfINIApps[i].keys[j].comment);
+			}
+			if (cfINIApps[i].nkeys)
+			{
+				free (cfINIApps[i].keys);
+			}
+
+			memmove (cfINIApps + i, cfINIApps + i + 1, sizeof (cfINIApps[0]) * (cfINInApps - i - 1));
+			cfINInApps--;
+			i--;
+		}
+	}
 }
 
 int cfCountSpaceList(const char *str, int maxlen)

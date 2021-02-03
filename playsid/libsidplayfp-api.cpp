@@ -11,7 +11,8 @@
 extern "C"
 {
 #include "boot/psetting.h"
-#include "filesel/gendir.h"
+#include "filesel/dirdb.h"
+#include "filesel/filesystem-unix.h"
 #include <stdio.h>
 }
 
@@ -222,24 +223,33 @@ namespace libsidplayfp
 		// TODO, add check of this return value
 		createSidEmu();
 
-		const char *kernal_file=cfGetProfileString("libsidplayfp", "kernal", "KERNAL.ROM");
-		const char *basic_file=cfGetProfileString("libsidplayfp", "basic", "BASIC.ROM");
-		const char *chargen_file=cfGetProfileString("libsidplayfp", "chargen", "CHARGEN.ROM");
+		const char *kernal_string  = cfGetProfileString("libsidplayfp", "kernal",  "KERNAL.ROM");
+		const char *basic_string   = cfGetProfileString("libsidplayfp", "basic",   "BASIC.ROM");
+		const char *chargen_string = cfGetProfileString("libsidplayfp", "chargen", "CHARGEN.ROM");
 
-		char *temp = 0;
-		gendir_malloc (cfConfigDir, kernal_file, &temp);
-		uint8_t *kernalRom = loadRom(temp ? temp : "KERNAL.ROM", 8192);
-		free (temp);
+		uint32_t dirdb_base = cfConfigDir_dirdbref; /* should be the parent_dir of the file you want to load */
+		uint32_t kernal_ref;
+		uint32_t basic_ref;
+		uint32_t chargen_ref;
 
-		temp = 0;
-		gendir_malloc (cfConfigDir, basic_file, &temp);
-		uint8_t *basicRom = loadRom(temp ? temp : "BASIC.ROM", 8192);
-		free (temp);
+#ifdef __W32__
+		kernal_ref  = dirdbResolvePathWithBaseAndRef (dirdb_base, kernal_string,  DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH);
+		basic_ref   = dirdbResolvePathWithBaseAndRef (dirdb_base, basic_string,   DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH);
+		chargen_ref = dirdbResolvePathWithBaseAndRef (dirdb_base, chargen_string, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH);
 
-		temp = 0;
-		gendir_malloc (cfConfigDir, chargen_file, &temp);
-		uint8_t *chargenRom = loadRom(temp ? temp : "CHARGEN.ROM", 4096);
-		free (temp);
+#else
+		kernal_ref  = dirdbResolvePathWithBaseAndRef (dirdb_base, kernal_string,  DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_file);
+		basic_ref   = dirdbResolvePathWithBaseAndRef (dirdb_base, basic_string,   DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_file);
+		chargen_ref = dirdbResolvePathWithBaseAndRef (dirdb_base, chargen_string, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_file);
+
+#endif
+		uint8_t *kernalRom = loadRom(kernal_ref, 8192);
+		uint8_t *basicRom = loadRom(basic_ref, 8192);
+		uint8_t *chargenRom = loadRom(chargen_ref, 4096);
+
+		dirdbUnref (kernal_ref, dirdb_use_file);
+		dirdbUnref (basic_ref, dirdb_use_file);
+		dirdbUnref (chargen_ref, dirdb_use_file);
 
 		sidplayer.setRoms(kernalRom, basicRom, chargenRom);
 		delete [] kernalRom;
@@ -253,8 +263,15 @@ namespace libsidplayfp
 		delete &sidplayer;
 	}
 
-	uint8_t* ConsolePlayer::loadRom(const std::string &romPath, const int size)
+	uint8_t* ConsolePlayer::loadRom(uint32_t dirdb_ref, const int size)
 	{
+		char *romPath = 0;
+#ifdef __W32__
+		#error we need to make flags, so we can reverse the slashes
+		dirdbGetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_DRIVE); 
+#else
+		dirdbGetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_NODRIVE);
+#endif
 		std::ifstream is(romPath, std::ios::binary);
 
 		if (is.is_open())
@@ -273,6 +290,8 @@ namespace libsidplayfp
 			}
 			catch (std::bad_alloc const &ba) {}
 		}
+
+		free (romPath);
 
 		return nullptr;
 	}

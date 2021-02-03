@@ -63,7 +63,6 @@ nations. They are:
   ³   ³   ÃÄÄ {DevCSDL,SDL/SDL2}
   ³   ³   ÃÄÄ {DevCDWR,Diskwriter}
   ³   ³   ÀÄÄ {DevCMix,software mixers}
-  ³   ÃÄÄ {CArcs,archivers}
   ³   ÀÄÄ {CFTypes,filetypes}
   ÃÄÄ {WritePlug,Writing plugins}
   ÃÄÄ {Thanks,Thanks}
@@ -77,7 +76,6 @@ nations. They are:
     ~A~
 
   {AboutDoc,About this document}
-  {CArcs,archivers (Configuration)}
 
     ~B~
 
@@ -90,7 +88,6 @@ nations. They are:
     {ConfigScreen,Configuration: screen}
     {CFilesel,Configuration: fileselector}
     {ConfigDev,Configuration: device configuration}
-    {CArcs,Configuration: archivers}
     {CFTypes,Configuration: filetypes}
   {Contents,Contents}
   {UsingCM,Compo Mode, using the}
@@ -1436,7 +1433,6 @@ file from scratch is difficult.
   - {ConfigScreen,screen}
   - {CFilesel,fileselector}
   - {ConfigDev,device configuration}
-  - {CArcs,archivers}
   - {CFTypes,filetypes}
 
   Goto previous page: "{Player,Player}"
@@ -1957,51 +1953,6 @@ should be no need for change.
   {ConfigDevC,Back to "Configuration: device configuration"}
   {Config,Back to "Configuration"}
   {Contents,Back to Contents}
-.CArcs Configuration: archivers
-[Configuration: archivers]
-
-  When processing files inside archives OCP has to know how to call the
-programs. The following sections define the usage of different archivers
-supported by the OCP fileselector.
-
-  ~%%~     evaluates to "%"
-  ~%a~     evaluates to the archive name preceeded by the path to process.
-  ~%n~     evaluates to the filename of the file to process inside the archive.
-  ~%d~     evaluates to the destination directory used to extract files out of
-         archive.
-
-  Three default commands are defined for the archive modules:
-
-  ~get~    this command is used when a file should be extracted out of an archive.
-  ~put~    if a file should be added to the archive this command line is used.
-  ~delete~ with ~<Alt>~+~<K>~ you can delete files out of archives.
-
-  \[arcZIP\]
-    get=pkunzip %a %d %n
-    put=pkzip %a %n
-    delete=pkzip -d %a %n
-    deleteempty=on
-
-  ~deleteempty~      the program PKZIP/PKUNZIP used by OCP to process ~.ZIP~
-                   files have a bug when deleting the last file inside an
-                   archive. An empty archive of 22 bytes is left on the hard
-                   disk. With this option enabled the fileselector will delete
-                   those "zip zombies".
-
-  \[arcACE\]
-    get=ace32 e %a %n %d
-    scaninsolid=false
-
-  ~scaninsolid~      ?
-
-                   (Remark: I think this option disables scanning in solid ACE
-                   archives, because it takes much time)
-
-  Goto previous page: "{ConfigDevC,Device configuration}"
-  Goto next page: "{CFTypes,file types}"
-
-  {Config,Back to "Configuration"}
-  {Contents,Back to Contents}
 .CFTypes Configuration: file types
 [Configuration: file types]
 
@@ -2010,7 +1961,7 @@ features will be included in the file loader devices in the next version of
 OCP, so these options will soon be obsolete. There should be no need to
 modify any of the file types.
 
-  Goto previous page: "{CArcs,Configuration: archivers}"
+  Goto previous page: "{DevCMix,software mixers}"
   Goto next page: "{WritePlug,Writing plugins}"
 
   {Config,Back to "Configuration"}

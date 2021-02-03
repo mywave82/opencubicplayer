@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '05-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * WAVPlay - wave file player
  *
@@ -32,13 +33,14 @@
 #include <string.h>
 #include <unistd.h>
 #include "types.h"
+#include "dev/deviplay.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
-#include "wave.h"
-#include "dev/deviplay.h"
+#include "dev/ringbuffer.h"
+#include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poll.h"
-#include "dev/ringbuffer.h"
+#include "wave.h"
 
 #ifdef WAVE_DEBUG
 # define PRINT(fmt, args...) fprintf(stderr, "%s %s: " fmt, __FILE__, __func__, ##args)
@@ -62,11 +64,7 @@ static uint32_t voll,volr;
 static int pan;
 static int srnd;
 
-/*
-static binfile *wavefile;
-static abinfile rawwave;
-*/
-static FILE *wavefile;
+static struct ocpfilehandle_t *wavefile;
 #define rawwave wavefile
 
 
@@ -204,9 +202,9 @@ static void wpIdler(void)
 			if (waveneedseek)
 			{
 				waveneedseek = 0;
-				fseek(rawwave, (wavepos<<(wave16bit+wavestereo))+waveoffs, SEEK_SET);
+				wavefile->seek_set (wavefile, (wavepos<<(wave16bit+wavestereo))+waveoffs);
 			}
-			result=fread(wavebuf+(pos1<<1), 1, read<<(wave16bit + wavestereo), rawwave);
+			result = wavefile->read (wavefile, wavebuf+(pos1<<1), read<<(wave16bit + wavestereo));
 			if (result<=0)
 			{
 				fprintf (stderr, "[playwav] fread() failed: %s\n", strerror (errno));
@@ -437,7 +435,7 @@ void  __attribute__ ((visibility ("internal"))) wpIdle(void)
 				}
 
 				lvm1 = (uint16_t)wavebuf[wpm1*2+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
-				rvm1 = (uint16_t)wavebuf[wpm1*2+1]^0x8000; 
+				rvm1 = (uint16_t)wavebuf[wpm1*2+1]^0x8000;
 				 lc0 = (uint16_t)wavebuf[wp0*2+0]^0x8000;
 				 rc0 = (uint16_t)wavebuf[wp0*2+1]^0x8000;
 				 lv1 = (uint16_t)wavebuf[wp1*2+0]^0x8000;
@@ -674,7 +672,7 @@ void  __attribute__ ((visibility ("internal"))) wpIdle(void)
 	clipbusy--;
 }
 
-uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(FILE *wav)
+uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehandle_t *wavf)
 {
 	uint32_t temp;
 	uint32_t fmtlen;
@@ -683,10 +681,17 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(FILE *wav)
 	if (!plrPlay)
 		return 0;
 
-	wavefile=wav;
-	fseek(wavefile, 0, SEEK_SET);
+	if (wavefile)
+	{
+		wavefile->unref (wavefile);
+		wavefile = 0;
+	}
+	wavefile = wavf;
+	wavefile->ref (wavefile);
 
-	if (fread(&temp, sizeof(temp), 1, wavefile) != 1)
+	wavefile->seek_set (wavefile, 0);
+
+	if (wavefile->read (wavefile, &temp, sizeof (temp)) != sizeof (temp))
 	{
 		fprintf(stderr, __FILE__ ": fread failed #1\n");
 		return 0;
@@ -695,14 +700,14 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(FILE *wav)
 	if (temp!=uint32_little(0x46464952))
 		return 0;
 
-	if (fread(&temp, sizeof(temp), 1, wavefile) != 1)
+	if (wavefile->read (wavefile, &temp, sizeof (temp)) != sizeof (temp))
 	{
 		fprintf(stderr, __FILE__ ": fread failed #2\n");
 		return 0;
 	}
 	PRINT("ignoring next 32bit: 0x%08x\n", temp);
 
-	if (fread(&temp, sizeof(temp), 1, wavefile) != 1)
+	if (wavefile->read (wavefile, &temp, sizeof (temp)) != sizeof (temp))
 	{
 		fprintf(stderr, __FILE__ ": fread failed #3\n");
 		return 0;
@@ -715,7 +720,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(FILE *wav)
 	PRINT("going to locate \"fmt \" header\n");
 	while (1)
 	{
-		if (fread(&temp, sizeof(temp), 1, wavefile) != 1)
+		if (wavefile->read (wavefile, &temp, sizeof (temp)) != sizeof (temp))
 		{
 			fprintf(stderr, __FILE__ ": fread failed #4\n");
 			return 0;
@@ -723,30 +728,28 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(FILE *wav)
 		PRINT("checking 0x%08x 0x%08x\n", temp, uint32_little(0x20746d66));
 		if (temp==uint32_little(0x20746D66))
 			break;
-		if (fread(&temp, sizeof(temp), 1, wavefile) != 1)
+		if (ocpfilehandle_read_uint32_le (wavefile, &temp))
 		{
 			fprintf(stderr, __FILE__ ": fread failed #5\n");
 			return 0;
 		}
-		temp = uint32_little(temp);
 		PRINT("failed, skiping next %d bytes\n", temp);
-		fseek(wavefile, temp, SEEK_CUR);
+		wavefile->seek_cur (wavefile, temp);
 	}
-	if (fread(&fmtlen, sizeof(fmtlen), 1, wavefile) != 1)
+	if (ocpfilehandle_read_uint32_le (wavefile, &fmtlen))
 	{
 		fprintf(stderr, __FILE__ ": fread failed #6\n");
 		return 0;
 	}
-	fmtlen = uint32_little(fmtlen);
+
 	PRINT("fmtlen=%d (must be bigger or equal to 16)\n", fmtlen);
 	if (fmtlen<16)
 		return 0;
-	if (fread(&sh, sizeof(uint16_t), 1, wavefile) != 1)
+	if (ocpfilehandle_read_uint16_le (wavefile, &sh))
 	{
 		fprintf(stderr, __FILE__ ": fread failed #7\n");
 		return 0;
 	}
-	sh = uint16_little (sh);
 	PRINT("compression code (only 1/pcm is supported): %d %s\n", sh, compression_code_str(sh));
 	if ((sh!=1))
 	{
@@ -754,12 +757,11 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(FILE *wav)
 		return 0;
 	}
 
-	if (fread(&sh, sizeof(uint16_t), 1, wavefile) != 1)
+	if (ocpfilehandle_read_uint16_le (wavefile, &sh))
 	{
 		fprintf(stderr, __FILE__ ": fread failed #8\n");
 		return 0;
 	}
-	sh = uint16_little (sh);
 	PRINT("number of channels: %d\n", (int)sh);
 	if ((sh==0)||(sh>2))
 	{
@@ -768,49 +770,46 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(FILE *wav)
 	}
 	wavestereo=(sh==2);
 
-	if (fread(&waverate, sizeof(uint32_t), 1, wavefile) != 1)
+	if (ocpfilehandle_read_uint32_le (wavefile, &waverate))
 	{
 		fprintf(stderr, __FILE__ ": fread failed #9\n");
 		return 0;
 	}
-	waverate = uint32_little (waverate);
 	PRINT("waverate %d\n", (int)waverate);
 
-	if (fread(&temp, sizeof(uint32_t), 1, wavefile) != 1)
+	if (ocpfilehandle_read_uint32_le (wavefile, &temp))
 	{
 		fprintf(stderr, __FILE__ ": fread failed #10\n");
 		return 0;
 	}
-#ifdef WAVE_DEBUG
-	fprintf(stderr, __FILE__ ": average number of bytes per second: %d\n", (int)(uint32_little(temp)));
-#endif
+	PRINT(stderr, __FILE__ ": average number of bytes per second: %d\n", (int)temp);
 
-	if (fread(&sh, sizeof(uint16_t), 1, wavefile) != 1)
+	if (wavefile->read (wavefile, &sh, sizeof (sh)) != sizeof (sh))
 	{
 		fprintf(stderr, __FILE__ ": fread failed #11\n");
 		return 0;
 	}
-	PRINT("block align: %d\n", (int)(uint16_little(sh)));
+	PRINT("block align: %d\n", (int)sh);
 
-	if (fread(&sh, sizeof(uint16_t), 1, wavefile) != 1)
+	if (ocpfilehandle_read_uint16_le (wavefile, &sh))
 	{
 		fprintf(stderr, __FILE__ ": fread failed #12\n");
 		return 0;
 	}
-	sh = uint16_little (sh);
 	PRINT("bits per sample: %d\n", (int)sh);
+
 	if ((sh!=8)&&(sh!=16))
 	{
 		fprintf(stderr, __FILE__ ": unsupported bits per sample: %d\n", (int)sh);
 		return 0;
 	}
 	wave16bit=(sh==16);
-	fseek(wavefile, fmtlen-16, SEEK_CUR);
+	wavefile->seek_cur (wavefile, fmtlen - 16);
 
 	PRINT("going to locate \"data\" header\n");
 	while (1)
 	{
-		if (fread(&temp, sizeof(uint32_t), 1, wavefile) != 1)
+		if (wavefile->read (wavefile, &temp, sizeof (temp)) != sizeof (temp))
 		{
 			fprintf(stderr, __FILE__ ": fread failed #13\n");
 			return 0;
@@ -818,25 +817,23 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(FILE *wav)
 		PRINT("checking 0x%08x 0x%08x\n", temp, uint32_little(0x61746164));
 		if (temp==uint32_little(0x61746164))
 			break;
-		if (fread(&temp, sizeof(uint32_t), 1, wavefile) != 1)
+		if (ocpfilehandle_read_uint32_le (wavefile, &temp))
 		{
 			fprintf(stderr, __FILE__ ": fread failed #14\n");
 			return 0;
 		}
-		temp = uint32_little (temp);
 		PRINT("failed, skiping next %d bytes\n", temp);
-		fseek(wavefile, temp, SEEK_CUR);
+		wavefile->seek_cur (wavefile, temp);
 	}
 
-	if (fread(&wavelen, sizeof(uint32_t), 1, wavefile) != 1)
+	if (ocpfilehandle_read_uint32_le (wavefile, &wavelen))
 	{
 		fprintf(stderr, __FILE__ ": fread failed #15\n");
 		return 0;
 	}
-	wavelen = uint32_little (wavelen);
 	PRINT("datalength: %d\n", (int)wavelen);
 
-	waveoffs=ftell(wavefile);
+	waveoffs = wavefile->getpos (wavefile);
 	PRINT("waveoffs: %d\n", waveoffs);
 
 	if (!wavelen)
@@ -854,16 +851,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(FILE *wav)
 	wavelen >>= (wave16bit + wavestereo);
 	wavebufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 4*1024);
 
-#if 0
-	if (fread(wavebuf, wavebuflen, 1, rawwave) != 1)
-	{
-		fprintf(stderr, __FILE__ ": fread failed #16\n");
-		return 0;
-	}
-	wavepos=wavebuflen;
-#else
 	wavepos = 0;
-#endif
 
 	plrSetOptions(waverate, PLR_STEREO|PLR_16BIT);
 
@@ -940,8 +928,12 @@ void __attribute__ ((visibility ("internal"))) wpClosePlayer(void)
 		free(buf16);
 		buf16 = 0;
 	}
-/*
-	fclose(rawwave);*/
+
+	if (wavefile)
+	{
+		wavefile->unref (wavefile);
+		wavefile = 0;
+	}
 }
 
 char __attribute__ ((visibility ("internal"))) wpLooped(void)

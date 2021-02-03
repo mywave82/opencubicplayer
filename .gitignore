@@ -19,8 +19,12 @@ doc/texi/install.texi
 doc/texi/ocp.texi
 doc/texi/ocp.html
 doc/texi/ocp.info.gz
+filesel/adbmeta-test
 filesel/dirdb-test
-filesel/gendir-test
+filesel/filesystem-bzip2-test
+filesel/filesystem-filehandle-cache-test
+filesel/filesystem-gzip-test
+filesel/filesystem-tar-test
 goodies/helpc/ocphhc
 goodies/helpc/Makefile
 goodies/pack/Makefile

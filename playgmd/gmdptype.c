@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '94-'21 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
  *
  * GMDPlay file type detection routines for the fileselector
  *
@@ -26,22 +26,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
-
-/*
-
-#define _MAX_EXT 5
-static void getext(char *ext, const char *name)
-{
-	int i;
-	name+=8;
-	for (i=0; i<(_MAX_EXT-1); i++)
-		if (*name==' ')
-			break;
-		else
-			*ext++=*name++;
-	*ext=0;
-}*/
 
 static unsigned char gmdGetModuleType(const char *buf, const size_t len)
 {
@@ -316,7 +302,7 @@ static int gmdReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 	return 0;
 }
 
-static int gmdReadInfo(struct moduleinfostruct *m, FILE *fp, const char *buf, size_t len)
+static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
 {
 	/* char ext[_MAX_EXT];*/
 	int type;
@@ -331,40 +317,58 @@ static int gmdReadInfo(struct moduleinfostruct *m, FILE *fp, const char *buf, si
 		case mtULT:
 			if (len>=(48))
 			{
-				fseek(fp, 48+buf[47]*32, SEEK_SET);
-				fseek(fp, 256+fgetc(fp)*((buf[14]>='4')?66:64), SEEK_CUR);
-				m->channels=fgetc(fp)+1;
-				return 1;
+				uint8_t t1, t2;
+				if ((fp->seek_set (fp, 48 + buf[47] * 32) == 0) &&
+				    (fp->read (fp, &t1, 1) == 1) &&
+				    (fp->seek_set (fp, 256 + t1 * ( (buf[14]>='4') ? 66:64)) == 0) &&
+				    (fp->read (fp, &t2, 1) == 1))
+				{
+					m->channels = t2 + 1;
+					fp->seek_set (fp, 0);
+					return 1;
+				}
 			}
 			break;
+
 		case mtDMF:
-			fseek(fp, 66, SEEK_SET);
-			m->channels=32;
-			while (1)
+			if (fp->seek_set (fp, 66) == 0)
 			{
-				uint32_t sig=0;
-				uint32_t len=0;
-				if (!fread(&sig, 4, 1, fp))
-					break;
-				if (!fread(&len, 4, 1, fp))
-					break;
-				len = uint32_little (len);
-				if (sig==uint32_little(0x54544150))
+				m->channels=32;
+				while (1)
 				{
-					char buffer[1024];
-					m->channels = 0;
-					if (fgets(buffer, 1024, fp))
+					uint32_t sig=0;
+					uint32_t len=0;
+					if (ocpfilehandle_read_uint32_le (fp, &sig))
 					{
-						int res=fgetc(fp);
-						if (res!=EOF)
-							m->channels=res;
+						break;
 					}
-					break;
+					if (ocpfilehandle_read_uint32_le (fp, &len))
+					{
+						break;
+					}
+					if (sig == 0x54544150)
+					{
+						m->channels = 0;
+						if (fp->seek_cur (fp, 1024) == 0)
+						{
+							uint8_t t;
+							if (fp->read (fp, &t, 1) == 1)
+							{
+								m->channels = t;
+							}
+						}
+						break;
+					}
+					if (fp->seek_cur (fp, len) < 0)
+					{
+						break;
+					}
 				}
-				fseek(fp, len, SEEK_CUR);
+				fp->seek_set (fp, 0);
+				return 1;
 			}
-			return 1;
 	}
+	fp->seek_set (fp, 0);
 	return 0;
 }
 

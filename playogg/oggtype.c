@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * OGGPlay file type detection routines for fileselector
  *
@@ -28,6 +29,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "stuff/cp437.h"
 
@@ -141,7 +143,7 @@ static int oggReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 	return 1;
 }
 
-static int oggReadInfo(struct moduleinfostruct *m, FILE *f, const char *buf, size_t len)
+static int oggReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
 {
 	return oggReadMemInfo(m, buf, len);
 }

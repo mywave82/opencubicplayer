@@ -36,6 +36,7 @@ cpioggpic.o: cpioggpic.c \
 oggtype.o: oggtype.c \
 	../config.h \
 	../types.h \
+	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../stuff/cp437.h
 	$(CC) oggtype.c -o $@ -c
@@ -43,32 +44,33 @@ oggtype.o: oggtype.c \
 oggplay.o: oggplay.c \
 	../config.h \
 	../types.h \
-	../stuff/poll.h \
-	../stuff/timer.h \
 	../cpiface/gif.h \
 	../cpiface/jpeg.h \
 	../cpiface/png.h \
-	../dev/player.h \
 	../dev/deviplay.h \
-	../dev/ringbuffer.h \
+	../dev/player.h \
 	../dev/plrasm.h \
+	../dev/ringbuffer.h \
+	../filesel/filesystem.h \
+	oggplay.h \
 	../stuff/imsrtns.h \
-	oggplay.h
+	../stuff/timer.h \
+	../stuff/poll.h
 	$(CC) oggplay.c -o $@ $(OGG_CFLAGS) $(VORBIS_CFLAGS) $(VORBISFILE_CFLAGS) -c
 
 oggpplay.o: oggpplay.c \
 	../config.h \
 	../types.h \
-	../filesel/pfilesel.h \
-	../filesel/mdb.h \
-	../stuff/poutput.h \
-	../dev/player.h \
 	../boot/psetting.h \
 	../boot/plinkman.h \
-	oggplay.h \
-	../stuff/sets.h \
-	../stuff/compat.h \
-	../stuff/err.h \
+	../cpiface/cpiface.h \
 	../dev/deviplay.h \
-	../cpiface/cpiface.h
+	../dev/player.h \
+	../filesel/mdb.h \
+	../filesel/pfilesel.h \
+	oggplay.h \
+	../stuff/compat.h  \
+	../stuff/err.h \
+	../stuff/poutput.h \
+	../stuff/sets.h
 	$(CC) oggpplay.c -o $@ $(OGG_CFLAGS) $(VORBIS_CFLAGS) $(VORBISFILE_CFLAGS) -c

@@ -37,15 +37,15 @@
 #include "cpiface/gif.h"
 #include "cpiface/jpeg.h"
 #include "cpiface/png.h"
+#include "dev/deviplay.h"
+#include "dev/player.h"
+#include "dev/plrasm.h"
+#include "dev/ringbuffer.h"
+#include "filesel/filesystem.h"
+#include "oggplay.h"
 #include "stuff/imsrtns.h"
 #include "stuff/timer.h"
 #include "stuff/poll.h"
-#include "dev/player.h"
-#include "dev/deviplay.h"
-#include "dev/plrasm.h"
-#include "dev/ringbuffer.h"
-
-#include "oggplay.h"
 
 static int current_section;
 
@@ -85,6 +85,8 @@ static int donotloop;
 static int inpause;
 
 static volatile int clipbusy=0;
+
+static struct ocpfilehandle_t *oggfile;
 
 #define PANPROC \
 do { \
@@ -607,10 +609,52 @@ void __attribute__ ((visibility ("internal"))) oggSetAmplify(uint32_t amp)
 	*/
 }
 
-static int close_func(void *datasource)
+
+static size_t read_func (void *ptr, size_t size, size_t nmemb, void *token)
+{
+	uint64_t retval;
+	retval = oggfile->read (oggfile, ptr, size * nmemb);
+	return retval / size;
+}
+
+static int seek_func (void *token, ogg_int64_t offset, int whence)
+{
+	switch (whence)
+	{
+		case SEEK_SET:
+			if (oggfile->seek_set (oggfile, offset) < 0)
+			{
+				return -1;
+			}
+			break;
+		case SEEK_END:
+			if (oggfile->seek_end (oggfile, offset) < 0)
+			{
+				return -1;
+			}
+			break;
+		case SEEK_CUR:
+			if (oggfile->seek_cur (oggfile, offset) < 0)
+			{
+				return -1;
+			}
+			break;
+		default:
+			return -1;
+	}
+	return oggfile->getpos (oggfile);
+}
+
+static int close_func(void *token)
 {
 	return 0;
 }
+
+static long tell_func (void *token)
+{
+	return oggfile->getpos (oggfile);
+}
+
 
 struct ogg_comment_t __attribute__ ((visibility ("internal"))) **ogg_comments;
 int                  __attribute__ ((visibility ("internal")))   ogg_comments_count;
@@ -926,18 +970,32 @@ static void add_comment(const char *src)
 	free (tmp);
 }
 
-int __attribute__ ((visibility ("internal"))) oggOpenPlayer(FILE *oggf)
+static ov_callbacks callbacks =
+{
+	read_func,
+	seek_func,
+	close_func,
+	tell_func
+};
+int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle_t *oggf)
 {
 	struct vorbis_info *vi;
 
 	if (!plrPlay)
 		return 0;
 
-	fseek(oggf, 0, SEEK_SET);
-	if(ov_open(oggf, &ov, NULL, -1) < 0)
+	oggf->seek_set (oggf, 0);
+	if (oggfile)
+	{
+		oggfile->unref (oggfile);
+		oggfile = 0;
+	}
+	oggfile = oggf;
+	oggfile->ref (oggfile);
+	if (ov_open_callbacks(0 /* token*/, &ov, NULL, 0, callbacks))
+	{
 		return -1; /* we don't bother to do more exact */
-	ov.callbacks.close_func=close_func;
-
+	}
 
 	vi=ov_info(&ov,-1);
 	oggstereo=(vi->channels>=2);
@@ -1076,6 +1134,12 @@ void __attribute__ ((visibility ("internal"))) oggClosePlayer(void)
 	free (ogg_pictures);
 	ogg_pictures = 0;
 	ogg_pictures_count = 0;
+
+	if (oggfile)
+	{
+		oggfile->unref (oggfile);
+		oggfile = 0;
+	}
 }
 
 char __attribute__ ((visibility ("internal"))) oggLooped(void)

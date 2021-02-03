@@ -29,20 +29,24 @@
 #include <string.h>
 #include <unistd.h>
 #include "types.h"
+#include "dev/deviplay.h"
+#include "dev/player.h"
+#include "dev/plrasm.h"
+#include "dev/ringbuffer.h"
+#include "filesel/filesystem.h"
+#include "id3.h"
+#include "mpplay.h"
+#include "stuff/imsrtns.h"
 #include "stuff/timer.h"
 #include "stuff/poll.h"
 
-#include "dev/player.h"
-#include "dev/deviplay.h"
-#include "dev/ringbuffer.h"
-#include "stuff/imsrtns.h"
-#include "dev/plrasm.h"
-#include "mpplay.h"
-#include "id3.h"
+#undef MP_DEBUG
+#define MP_DEBUG 1
 
 #ifdef MP_DEBUG
 #define debug_printf(...) fprintf (stderr, __VA_ARGS__)
 #else
+#error 1
 #define debug_printf(format,args...) ((void)0)
 #endif
 
@@ -74,11 +78,11 @@ static int data_length;
 static int eof;
 
 /* stats about the file-buffer */
-static FILE *file;
-static uint32_t ofs;
-static uint32_t fl;
-static uint32_t datapos;
-static uint32_t newpos;
+static struct ocpfilehandle_t *file;
+static uint64_t ofs;
+static uint64_t fl;
+static uint64_t datapos;
+static uint64_t newpos;
 
 /* devp pre-buffer zone */
 static int16_t *buf16 = 0; /* here we dump out data before it goes live */
@@ -401,7 +405,7 @@ static int stream_for_frame(void)
 	if (datapos!=newpos) /* force buffer flush */
 	{
 		datapos=newpos;
-		fseek(file, datapos+ofs, SEEK_SET);
+		file->seek_set (file, datapos + ofs);
 		data_length=0;
 		stream.next_frame=0;
 		stream.error=MAD_ERROR_BUFLEN;
@@ -434,7 +438,7 @@ static int stream_for_frame(void)
 				}
 				memmove(data, stream.next_frame, data_length = ((data + data_length) - stream.next_frame));
 				stream.next_frame=0;
-				debug_printf ("[MPx]   keeped some data   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
+				debug_printf ("[MPx]   keeped some data   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64"\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
 			}
 			target = MPEG_BUFSZ - data_length;
 			if (target>65536)
@@ -442,14 +446,15 @@ static int stream_for_frame(void)
 			if (target>(fl-datapos))
 				target=fl-datapos;
 			if (target)
-				len = fread(data + data_length, 1, target, file);
-			else
+			{
+				len = file->read (file, data + data_length, target);
+			} else
 				len = 0;
 			debug_printf ("[MPx] wanted to read %"PRIu32" bytes, and got %"PRIu32" bytes\n", target, len);
 			if (!len)
 			{
 				len=0;
-				if ((feof(file))||!target) /* !target is the estimated EOF, feof(file) in-case file has shrunk... */
+				if ( file->eof(file) ||!target) /* !target is the estimated EOF, feof(file) in-case file has shrunk... */
 				{
 					if (donotloop||target) /* if target was set, we must have had an error */
 					{
@@ -463,18 +468,18 @@ static int stream_for_frame(void)
 							data[data_length + len++] = 0;
 						}
 
-						debug_printf ("[MPx]   this is the new data   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x (ofs=%d len=%d target=%ld)\n", data, data_length, data + data_length, GuardPtr, datapos, fl, ofs, len, (long int)target);
+						debug_printf ("[MPx]   this is the new data   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64" (ofs=%"PRIu64" len=%d target=%ld)\n", data, data_length, data + data_length, GuardPtr, datapos, fl, ofs, len, (long int)target);
 					} else {
 						eof=0;
 						datapos = newpos = 0;
-						fseek(file, ofs, SEEK_SET);
+						file->seek_set (file, ofs);
 						if (stream.skiplen)
 						{
 							id3_feed_null();
 							stream.skiplen = 0;
 						}
 
-						debug_printf ("[MPx] eof found, and we are looping   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
+						debug_printf ("[MPx] eof found, and we are looping   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64"\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
 						return 0;
 					}
 				}
@@ -483,7 +488,7 @@ static int stream_for_frame(void)
 				datapos += len;
 				newpos += len;
 
-				debug_printf ("[MPx]   some data is prepared   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
+				debug_printf ("[MPx]   some data is prepared   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64"\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
 			}
 			if (len)
 			{
@@ -1013,37 +1018,49 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 	clipbusy--;
 }
 
-unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(FILE *mpegfile)
+unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandle_t *mpegfile)
 {
 	ofs=0;
-	if (!(fseek(mpegfile, 0, SEEK_SET))) /* seek will fail on streams */
+
+	debug_printf ("mpegOpenPlayer (%p)\n", mpegfile);
+
+	if (mpegfile->seek_set (mpegfile, 0) >= 0)
 	{
 		unsigned char sig[4];
-		if (fread(sig, 4, 1, mpegfile) != 1) return -1;
-		fseek(mpegfile, 0, SEEK_SET);
+		if (mpegfile->read (mpegfile, sig, 4) != 4)
+		{
+			return -1;
+		}
+		mpegfile->seek_set (mpegfile, 0);
 		if (!memcmp(sig, "RIFF", 4))
 		{
 			debug_printf ("[mppplay.c]: container RIFF (mpeg3, layer 2 probably AKA mp2)\n");
 
-			fseek(mpegfile, 12, SEEK_SET);
+			mpegfile->seek_set (mpegfile, 12);
 			fl=0;
 			while (1)
 			{
-				if (fread(sig, 4, 1, mpegfile) != 1) return -1;
+				uint32_t t;
+				if (mpegfile->read (mpegfile, sig, 4) != 4)
+				{
+					return -1;
+				}
 				debug_printf ("[mppplay.c]: chunk: %c%c%c%c\n", sig[0], sig[1], sig[2], sig[3]);
-				if (fread(&fl, sizeof(uint32_t), 1, mpegfile) != 1) return -1;
-				fl = uint32_little (fl);
+				if (ocpfilehandle_read_uint32_le (mpegfile, &t))
+				{
+					return -1;
+				}
+				fl = t;
 				debug_printf ("[mppplay.c]: length: %d\n", (int)fl);
 				if (!memcmp(sig, "data", 4))
 				{
-					ofs=ftell(mpegfile);
+					ofs = mpegfile->getpos (mpegfile);
 					break;
 				}
-				fseek(mpegfile, fl, SEEK_CUR);
+				mpegfile->seek_cur (mpegfile, fl);
 			}
 		} else {
-			fseek (mpegfile, 0, SEEK_END);
-			fl = ftell (mpegfile);
+			fl = mpegfile->filesize (mpegfile);
 		}
 
 		while (1)
@@ -1051,8 +1068,12 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(FILE *mpe
 			if (fl >= 256)
 			{
 				uint8_t buffer[256];
-				fseek (mpegfile, ofs + fl - 256, SEEK_SET);
-				if (fread (buffer, 256, 1, mpegfile) != 1) return -1;
+
+				mpegfile->seek_set (mpegfile, ofs + fl - 256);
+				if (mpegfile->read (mpegfile, buffer, 256) != 256)
+				{
+					return -1;
+				}
 				if ((buffer[128] == 'T') &&
 				    (buffer[129] == 'A') &&
 				    (buffer[130] == 'G'))
@@ -1076,8 +1097,11 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(FILE *mpe
 			if (fl >= 25)
 			{
 				uint8_t sbuffer[10];
-				fseek (mpegfile, ofs + fl - 10, SEEK_SET);
-				if (fread (sbuffer, 10, 1, mpegfile) != 1) return -1;
+				mpegfile->seek_set (mpegfile, ofs + fl - 10);
+				if (mpegfile->read (mpegfile, sbuffer, 10) != 10)
+				{
+					return -1;
+				}
 				if ((sbuffer[0] == '3') &&
 				    (sbuffer[1] == 'D') &&
 				    (sbuffer[2] == 'I') &&
@@ -1098,8 +1122,11 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(FILE *mpe
 						if (size < 32*1024*1024)
 						{
 							uint8_t *buffer = malloc (size + 10);
-							fseek (mpegfile, ofs + fl - 20 - size, SEEK_SET);
-							if (fread (buffer, size+10, 1, mpegfile) != 1) return -1;
+							mpegfile->seek_set (mpegfile, ofs + fl - 20 - size);
+							if (mpegfile->read (mpegfile, buffer, size + 10) != (size + 10))
+							{
+								return -1;
+							}
 							if ((buffer[0] == 'I') &&
 							    (buffer[1] == 'D') &&
 							    (buffer[2] == '3'))
@@ -1120,9 +1147,13 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(FILE *mpe
 				uint32_t fetch_size = (fl > 512 * 1024)?512*1024:fl;
 				uint8_t *bbuffer = malloc (fetch_size);
 				debug_printf("[MPx] seek to %d\n", (int)(ofs+fl - fetch_size));
-				fseek (mpegfile, ofs + fl - fetch_size, SEEK_SET);
+				mpegfile->seek_set (mpegfile, ofs + fl - fetch_size);
 				debug_printf("[MPx] read %d bytes\n", fetch_size);
-				if (fread (bbuffer, fetch_size, 1, mpegfile) != 1) {free (bbuffer); return -1;}
+				if (mpegfile->read (mpegfile, bbuffer, fetch_size) != fetch_size)
+				{
+					free (bbuffer);
+					return -1;
+				}
 				debug_printf ("[MPx] search for ID3v.2x\n");
 				for (s = fetch_size - 15; s >= 0; s--)
 				{
@@ -1158,7 +1189,19 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(FILE *mpe
 		fl=0xffffffff; /* stream */
 	}
 
+	debug_printf ("  mpegOpenPlayer file=%p\n", file);
+
+	if (file)
+	{
+		file->unref (file);
+		file = 0;
+	}
 	file = mpegfile;
+	file->ref (file);
+
+	debug_printf ("  mpegOpenPlayer file=%p\n", file);
+	debug_printf ("  mpegOpenPlayer ofs=0x%08"PRIx64"llx fl=0x%08"PRIx64"\n", ofs, fl);
+
 	newpos=datapos=0;
 	data_length=0;
 	data_in_synth=0;
@@ -1177,7 +1220,7 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(FILE *mpe
 	stream.error=0;
 	stream.buffer=0;
 	stream.this_frame=0;
-	fseek(file, ofs, SEEK_SET);
+	file->seek_set (file, ofs);
 
 	if (!stream_for_frame())
 		goto error_out;
@@ -1204,7 +1247,11 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(FILE *mpe
 	GuardPtr=0;
 
 	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
+	{
+		debug_printf ("  mpegOpenPlayer plrOpenPlayer failed\n");
 		goto error_out;
+	}
+	debug_printf ("  mpegOpenPlayer plrOpenPlayer OK\n");
 
 	if (!(buf16=malloc(sizeof(uint16_t)*buflen*2)))
 	{
@@ -1218,9 +1265,10 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(FILE *mpe
 		plrClosePlayer();
 		goto error_out;
 	}
+	debug_printf ("  mpegOpenPlayer poll is enabled\n");
 
 	active=1;
-	return 1;
+	return 0;
 
 error_out:
 	free (buf16); buf16 = 0;
@@ -1234,7 +1282,7 @@ error_out:
 	mad_synth_finish(&synth);
 	mad_frame_finish(&frame);
 	mad_stream_finish(&stream);
-	return 0;
+	return 1;
 }
 
 void __attribute__ ((visibility ("internal"))) mpegClosePlayer(void)
@@ -1266,7 +1314,11 @@ void __attribute__ ((visibility ("internal"))) mpegClosePlayer(void)
 	ID3_clear(&HoldingTag);
 	newHoldingTag = 0;
 
-	file = 0;
+	if (file)
+	{
+		file->unref (file);
+		file = 0;
+	}
 }
 
 void __attribute__ ((visibility ("internal"))) mpegSetLoop(uint8_t s)

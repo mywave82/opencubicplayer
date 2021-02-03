@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) '11-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) '11-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Basic glue for the different console implementations for unix
  *
@@ -442,6 +442,20 @@ static void __displaystr_utf8(unsigned short y, unsigned short x, unsigned char 
 		x++;
 	}
 }
+static int __measurestr_utf8 (const char *src, int srclen)
+{ /* fallback */
+	int retval = 0;
+	while (strlen > 0)
+	{
+		int inc = 0;
+		utf8_decode (src, srclen, &inc);
+		src += inc;
+		srclen -= inc;
+		retval++;
+	}
+	return retval;
+}
+
 
 static int __plSetGraphMode(int size)
 {
@@ -615,6 +629,7 @@ static void reset_api(void)
 	_displaystr_iso8859latin1=__displaystr_iso8859latin1;
 	_displaystrattr_iso8859latin1=__displaystrattr_iso8859latin1;
 	_displaystr_utf8=__displaystr_utf8;
+	_measurestr_utf8 = __measurestr_utf8;
 
 	_plDisplaySetupTextMode=__plDisplaySetupTextMode;
 	_plGetDisplayTextModeName=__plGetDisplayTextModeName;

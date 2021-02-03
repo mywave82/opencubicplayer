@@ -87,50 +87,62 @@ devigen.o: devigen.c devigen.h \
 deviplay.o: deviplay.c deviplay.h \
 	../config.h \
 	../types.h \
+	../boot/plinkman.h \
+	../boot/psetting.h \
+	devigen.h \
+	deviplay.h \
 	../filesel/dirdb.h \
+	../filesel/filesystem.h \
+	../filesel/filesystem-drive.h \
+	../filesel/filesystem-file-mem.h \
+	../filesel/filesystem-setup.h \
 	../filesel/mdb.h \
-	../filesel/modlist.h \
 	../filesel/pfilesel.h \
 	imsdev.h \
-	../boot/psetting.h \
-	../boot/plinkman.h \
-	../stuff/err.h \
-	devigen.h \
 	player.h \
-	../stuff/compat.h
+	../stuff/compat.h \
+	../stuff/err.h
 	$(CC) deviplay.c -o $@ -c
 
 devisamp.o: devisamp.c devisamp.h \
 	../config.h \
 	../types.h \
+	../boot/plinkman.h \
+	../boot/psetting.h \
+	devigen.h \
+	devisamp.h \
 	../filesel/dirdb.h \
+	../filesel/filesystem.h \
+	../filesel/filesystem-drive.h \
+	../filesel/filesystem-file-mem.h \
+	../filesel/filesystem-setup.h \
 	../filesel/mdb.h \
-	../filesel/modlist.h \
 	../filesel/pfilesel.h \
 	imsdev.h \
-	../boot/psetting.h \
-	../boot/plinkman.h \
-	../stuff/err.h \
-	devigen.h \
 	sampler.h \
-	../stuff/compat.h
+	../stuff/compat.h \
+	../stuff/err.h
 	$(CC) devisamp.c -o $@ -c
 
 deviwave.o: deviwave.c deviwave.h \
 	../config.h \
 	../types.h \
+	../boot/plinkman.h \
+	../boot/psetting.h \
+	devigen.h \
+	deviwave.h \
 	../filesel/dirdb.h \
+	../filesel/filesystem.h \
+	../filesel/filesystem-drive.h \
+	../filesel/filesystem-file-mem.h \
+	../filesel/filesystem-setup.h \
 	../filesel/mdb.h \
-	../filesel/modlist.h \
 	../filesel/pfilesel.h \
 	imsdev.h \
-	player.h \
-	../boot/psetting.h \
-	../boot/plinkman.h \
-	../stuff/err.h \
-	devigen.h \
 	mcp.h \
-	../stuff/compat.h
+	player.h \
+	../stuff/compat.h \
+	../stuff/err.h
 	$(CC) deviwave.c -c -o $@ -c
 
 mchasm.o: mchasm.c mchasm.h \

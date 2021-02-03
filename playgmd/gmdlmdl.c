@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '94-'21 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "dev/mcp.h"
+#include "filesel/filesystem.h"
 #include "gmdplay.h"
 #include "stuff/err.h"
 
@@ -137,11 +138,11 @@ static void FreeResources (struct LoadMDLResources *r)
 	}
 }
 
-static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
+static int _mpLoadMDL(struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
-	uint32_t waste1;
-	uint16_t waste2;
-	uint8_t waste3;
+	uint32_t waste32;
+	uint16_t waste16;
+	uint8_t waste8;
 
 	uint32_t blklen;
 	uint16_t blktype;
@@ -183,43 +184,40 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 
 	mpReset(m);
 
-	if (fread(&waste1, sizeof(uint32_t), 1, file)!=1)
+	if (ocpfilehandle_read_uint32_le (file, &waste32))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #1\n");
 		return errFormStruc;
 	}
-	waste1 = uint32_little (waste1);
-	if (waste1!=0x4C444D44)
+	if (waste32!=0x4C444D44)
 		return errFormSig;
 
-	if (fread(&waste3, sizeof(uint8_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint8 (file, &waste8))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #2\n");
 		return errFormStruc;
 	}
-	if ((waste3&0x10)!=0x10)
+	if ((waste8&0x10)!=0x10)
 	{
 		fprintf(stderr, "Sorry, the file version is too old (load and resave it in DigiTrakker please)\n");
 		return errFormSig;
 	}
 
-	if (fread(&waste2, sizeof(uint16_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint16_le (file, &waste16))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #3\n");
 		return errFormStruc;
 	}
-	waste2 = uint16_little (waste2);
-	if (waste2!=0x4E49)
+	if (waste16!=0x4E49)
 		return errFormStruc;
 
-	if (fread(&blklen, sizeof(uint32_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint32_le (file, &blklen))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #4\n");
 		return errFormStruc;
 	}
-	blklen = uint32_little(blklen);
 
-	if (fread(&mdlhead, sizeof(mdlhead), 1, file) != 1)
+	if (file->read (file, &mdlhead, sizeof(mdlhead)) != sizeof(mdlhead))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #5\n");
 		return errFormStruc;
@@ -243,21 +241,20 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 	if (mdlhead.ordnum>256)
 		return errFormSupp;
 
-	if (fread(ordtab, mdlhead.ordnum, 1, file) != 1)
+	if (file->read (file, ordtab, mdlhead.ordnum) != mdlhead.ordnum)
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #6\n");
 		return errFormStruc;
 	}
-	fseek(file, 8*m->channum, SEEK_CUR); /* channames */
-	fseek(file, blklen-8*m->channum-91-mdlhead.ordnum, SEEK_CUR);
+	file->seek_cur (file, 8*m->channum);
+	file->seek_cur (file, blklen - 8 * m->channum - 91 - mdlhead.ordnum);
 
-	if (fread(&blktype, sizeof(uint16_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint16_le (file, &blktype))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #7\n");
 		return errFormStruc;
 	}
-	blktype = uint16_little (blktype);
-	if (fread(&blklen, sizeof(uint32_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint32_le (file, &blklen))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #8\n");
 		return errFormStruc;
@@ -266,19 +263,17 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 
 	if (blktype==0x454D)
 	{
-		fseek(file, blklen, SEEK_CUR);
-		if (fread(&blktype, sizeof(uint16_t), 1, file) != 1)
+		file->seek_cur (file, blklen);
+		if (ocpfilehandle_read_uint16_le (file, &blktype))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #9\n");
 			return errFormStruc;
 		}
-		blktype = uint16_little (blktype);
-		if (fread(&blklen, sizeof(uint32_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint32_le (file, &blklen))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #10\n");
 			return errFormStruc;
 		}
-		blklen = uint32_little (blklen);
 /* songmessage; every line is closed with the CR-char (13). A
  * 0-byte stands at the end of the whole text.
  */
@@ -286,7 +281,7 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 
 	if (blktype!=0x4150)
 		return errFormStruc;
-	if (fread(&patnum, sizeof(uint8_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint8 (file, &patnum))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #11\n");
 		return errFormStruc;
@@ -301,27 +296,27 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 	{
 		uint8_t chnn;
 		int i;
-		if (fread(&chnn, sizeof(uint8_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &chnn))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #12\n");
 			return errFormStruc;
 		}
 
-		if (fread(&m->patterns[j].patlen, sizeof(uint8_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &waste8))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #13\n");
 			return errFormStruc;
 		}
-		m->patterns[j].patlen++;
+		m->patterns[j].patlen = waste8 + 1;
 
-		if (fread(m->patterns[j].name, 16, 1, file) != 1)
+		if (file->read (file, m->patterns[j].name, 16) != 16)
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #14\n");
 			return errFormStruc;
 		}
 		m->patterns[j].name[16]=0;
 		memset(m->patterns[j].tracks, 0, 32*2);
-		if (fread(m->patterns[j].tracks, 2*chnn, 1, file) != 1)
+		if (file->read (file, m->patterns[j].tracks, 2 * chnn) != (2 * chnn))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #15\n");
 			return errFormStruc;
@@ -330,27 +325,24 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 			m->patterns[j].tracks[i] = uint16_little (m->patterns[j].tracks[i]);
 	}
 
-	if (fread(&waste2, sizeof(uint16_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint16_le (file, &waste16))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #16\n");
 		return errFormStruc;
 	}
-	waste2 = uint16_little (waste2);
-	if (waste2!=0x5254)
+	if (waste16!=0x5254)
 		return errFormStruc;
-	if (fread(&blklen, sizeof(uint32_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint32_le (file, &blklen))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #17\n");
 		return errFormStruc;
 	}
-	blklen = uint32_little (blklen);
 
-	if (fread(&ntracks, sizeof(uint16_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint16_le (file, &ntracks))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #18\n");
 		return errFormStruc;
 	}
-	ntracks = uint16_little (ntracks);
 
 	trackends=malloc(sizeof(uint8_t *)*ntracks+1);
 	trackptrs=malloc(sizeof(uint8_t *)*ntracks+1);
@@ -367,15 +359,14 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 	tpos=0;
 	for (i=0; i<ntracks; i++)
 	{
-		uint16_t l=0;
-		if (fread(&l, sizeof(uint16_t), 1, file) != 1)
+		uint16_t l;
+		if (ocpfilehandle_read_uint16_le (file, &l))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #19\n");
 			return errFormStruc;
 		}
-		l = uint16_little (l);
 		trackptrs[1+i]=trackbuf+tpos;
-		if (fread(trackbuf+tpos, l, 1, file) != 1)
+		if (file->read (file, trackbuf+tpos, l) != l)
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #20\n");
 			return errFormStruc;
@@ -798,23 +789,21 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 	free(trackbuf);
 	free(patdata);
 
-	if (fread(&waste2, sizeof(uint16_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint16_le (file, &waste16))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #21\n");
 		return errFormStruc;
 	}
-	waste2 = uint16_little (waste2);
-	if (waste2!=0x4949)
+	if (waste16!=0x4949)
 		return errFormStruc;
-	if (fread(&blklen, sizeof(uint32_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint32_le (file, &blklen))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #22\n");
 		return errFormStruc;
 	}
-	blklen = uint32_little (blklen);
 
 	inssav=0;
-	if (fread(&inssav, sizeof(uint8_t), 1, file) != 1) /* works on x86 atleast */
+	if (ocpfilehandle_read_uint8 (file, &inssav))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #23\n");
 		return errFormStruc;
@@ -843,7 +832,7 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 		struct gmdinstrument *ip;
 		int note;
 
-		if (fread(&insnum, sizeof(uint8_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &insnum))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #24\n");
 			FreeResources(&r);
@@ -853,13 +842,14 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 
 		ip=&m->instruments[insnum];
 
-		if (fread(&r.inssampnum[j], sizeof(uint8_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &waste8))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #25\n");
 			FreeResources(&r);
 			return errFormStruc;
 		}
-		if (fread(ip->name, 32, 1, file) != 1)
+		r.inssampnum[j] = waste8;
+		if (file->read (file, ip->name, 32) != 32)
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #26\n");
 			FreeResources(&r);
@@ -897,7 +887,7 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 			} mdlmsmp;
 			struct gmdsample *sp;
 
-			if (fread(&mdlmsmp, sizeof(mdlmsmp), 1, file) != 1)
+			if (file->read (file, &mdlmsmp, sizeof(mdlmsmp)) != sizeof(mdlmsmp))
 			{
 				fprintf(stderr, __FILE__ ": fread() failed #27\n");
 				FreeResources(&r);
@@ -986,24 +976,22 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 /*  delete envs;*/
 /*  delete insenvnum;*/
 
-	if (fread(&blktype, sizeof(uint16_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint16_le (file, &blktype))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #28\n");
 		return errFormStruc;
 	}
-	blktype = uint16_little (blktype);
-	if (fread(&blklen, sizeof(uint32_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint32_le (file, &blklen))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #29\n");
 		return errFormStruc;
 	}
-	blklen = uint32_little (blklen);
 
 	if (blktype==0x4556)
 	{
 		uint8_t envnum;
 
-		if (fread(&envnum, sizeof(uint8_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &envnum))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #30\n");
 			return errFormStruc;
@@ -1020,7 +1008,7 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 			struct gmdenvelope *e;
 			int k,l;
 
-			if (fread(&env, sizeof(env), 1, file) != 1)
+			if (file->read (file, &env, sizeof (env)) != sizeof (env))
 			{
 				fprintf(stderr, __FILE__ ": fread() failed #31\n");
 				return errFormStruc;
@@ -1067,24 +1055,22 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 			}
 		}
 
-		if (fread(&blktype, sizeof(uint16_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint16_le (file, &blktype))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #32\n");
 			return errFormStruc;
 		}
-		blktype = uint16_little (blktype);
-		if (fread(&blklen, sizeof(uint32_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint32_le (file, &blklen))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #33\n");
 			return errFormStruc;
 		}
-		blklen = uint32_little (blklen);
 	}
 
 	if (blktype==0x4550)
 	{
 		uint8_t envnum;
-		if (fread(&envnum, sizeof(uint8_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &envnum))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #34\n");
 			return errFormStruc;
@@ -1101,7 +1087,7 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 			struct gmdenvelope *e;
 			int k,l;
 
-			if (fread(&env, sizeof(env),1, file) != 1)
+			if (file->read (file, &env, sizeof (env)) != sizeof (env))
 			{
 				fprintf(stderr, __FILE__ ": fread() failed #35\n");
 				return errFormStruc;
@@ -1148,24 +1134,22 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 			}
 		}
 
-		if (fread(&blktype, sizeof(uint16_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint16_le (file, &blktype))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #36\n");
 			return errFormStruc;
 		}
-		blktype = uint16_little (blktype);
-		if (fread(&blklen, sizeof(uint32_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint32_le (file, &blklen))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #37\n");
 			return errFormStruc;
 		}
-		blklen = uint32_little (blklen);
 	}
 
 	if (blktype==0x4546)
 	{
 		uint8_t envnum;
-		if (fread(&envnum, sizeof(uint8_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &envnum))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #38\n");
 			return errFormStruc;
@@ -1184,7 +1168,7 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 			struct gmdenvelope *e;
 			int k,l;
 
-			if (fread(&env, sizeof(env), 1, file) != 1)
+			if (file->read (file, &env, sizeof (env)) != sizeof (env))
 			{
 				fprintf(stderr, __FILE__ ": fread() failed #39\n");
 				return errFormStruc;
@@ -1232,25 +1216,22 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 			}
 		}
 
-		if (fread(&blktype, sizeof(uint16_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint16_le (file, &blktype))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #40\n");
 			return errFormStruc;
 		}
-		blktype = uint16_little (blktype);
-		if (fread(&blklen, sizeof(uint32_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint32_le (file, &blklen))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #41\n");
 			return errFormStruc;
 		}
-		blklen = uint32_little (blklen);
 	}
 
 	if (blktype!=0x5349)
 		return errFormStruc;
 
-	smpsav=0;
-	if (fread(&smpsav, sizeof(uint8_t), 1, file) != 1) /* works on x86 */
+	if (ocpfilehandle_read_uint8 (file, &smpsav))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #42\n");
 		return errFormStruc;
@@ -1274,7 +1255,7 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 
 		struct sampleinfo *sip;
 
-		if (fread(&mdlsmp, sizeof(mdlsmp), 1, file) != 1)
+		if (file->read (file, &mdlsmp, sizeof (mdlsmp)) != sizeof (mdlsmp))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #43\n");
 			return errFormStruc;
@@ -1308,20 +1289,18 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 		packtype[mdlsmp.num-1]=(mdlsmp.opt>>2)&3;
 	}
 
-	if (fread(&waste2, sizeof(uint16_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint16_le (file, &waste16))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #44\n");
 		return errFormStruc;
 	}
-	waste2 = uint16_little (waste2);
-	if (waste2!=0x4153)
+	if (waste16!=0x4153)
 		return errFormStruc;
-	if (fread(&blklen, sizeof(uint32_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint32_le (file, &blklen))
 	{
 		fprintf(stderr, __FILE__ ": fread() failed #45\n");
 		return errFormStruc;
 	}
-	blklen = uint32_little (blklen);
 
 	for (i=0; i<255; i++)
 	{
@@ -1343,7 +1322,7 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 
 		if (packtype[i]==0)
 		{
-			if (fread(sip->ptr, sip->length<<bit16, 1, file) != 1)
+			if (file->read (file, sip->ptr, sip->length<<bit16) != (sip->length<<bit16))
 			{
 				fprintf(stderr, __FILE__ ": fread() failed #46\n");
 				return errFormStruc;
@@ -1351,17 +1330,16 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 			continue;
 		}
 
-		if (fread(&packlen, sizeof(uint32_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint32_le (file, &packlen))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #47\n");
 			return errFormStruc;
 		}
-		packlen = uint32_little (packlen);
 		packbuf=malloc(sizeof(uint8_t)*(packlen+4));
 
 		if (!packbuf)
 			return errAllocMem;
-		if (fread(packbuf, packlen, 1, file) != 1)
+		if (file->read (file, packbuf, packlen) != packlen)
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #48\n");
 			free(packbuf);
@@ -1406,4 +1384,4 @@ static int _mpLoadMDL(struct gmdmodule *m, FILE *file)
 
 struct gmdloadstruct mpLoadMDL = { _mpLoadMDL };
 
-struct linkinfostruct dllextinfo = {.name = "gmdlmdl", .desc = "OpenCP Module Loader: *.MDL (c) 1994-09 Niklas Beisert", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "gmdlmdl", .desc = "OpenCP Module Loader: *.MDL (c) 1994-21 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

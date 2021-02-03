@@ -30,14 +30,15 @@
 #include "cpiface/gif.h"
 #include "cpiface/jpeg.h"
 #include "cpiface/png.h"
-#include "stuff/timer.h"
-#include "stuff/poll.h"
 #include "dev/deviplay.h"
-#include "dev/ringbuffer.h"
 #include "dev/player.h"
-#include "stuff/imsrtns.h"
 #include "dev/plrasm.h"
+#include "dev/ringbuffer.h"
+#include "filesel/filesystem.h"
 #include "flacplay.h"
+#include "stuff/imsrtns.h"
+#include "stuff/poll.h"
+#include "stuff/timer.h"
 
 static volatile int clipbusy=0;
 
@@ -49,7 +50,7 @@ static unsigned long voll,volr;
 static int pan;
 static int srnd;
 
-static FILE *flacfile = NULL;
+static struct ocpfilehandle_t *flacfile = NULL;
 #if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
 static FLAC__SeekableStreamDecoder *decoder = 0;
 #else
@@ -224,11 +225,11 @@ static FLAC__StreamDecoderReadStatus read_callback (
 {
 	int retval;
 
-	retval = fread(buffer, 1, *bytes, flacfile);
+	retval = flacfile->read (flacfile, buffer, *bytes);
 	if (retval<=0)
 	{
 		*bytes=0;
-		if ((feof(flacfile)))
+		if (flacfile->eof (flacfile))
 			return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
 		return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
 	}
@@ -366,7 +367,10 @@ static void metadata_callback(
 #endif
 		case FLAC__METADATA_TYPE_VORBIS_COMMENT:
 		{
-			uint32_t i, j;
+#if 0
+			uint32_t i;
+#endif
+			uint32_t j;
 
 			for (j=0; j < metadata->data.vorbis_comment.num_comments; j++)
 			{
@@ -474,127 +478,130 @@ static FLAC__SeekableStreamDecoderSeekStatus seek_callback(
 	const FLAC__SeekableStreamDecoder *decoder,
 	FLAC__uint64 absolute_byte_offset,
 	void *client_data)
-{
-	if (!fseek(flacfile, absolute_byte_offset, SEEK_SET))
-		return FLAC__SEEKABLE_STREAM_DECODER_SEEK_STATUS_OK;
-	else
-		return FLAC__SEEKABLE_STREAM_DECODER_SEEK_STATUS_ERROR;
-}
 #else
 static FLAC__StreamDecoderSeekStatus seek_callback(
 	const FLAC__StreamDecoder *decoder,
 	FLAC__uint64 absolute_byte_offset,
 	void *client_data)
-{
-	if (!fseek(flacfile, absolute_byte_offset, SEEK_SET))
-		return FLAC__STREAM_DECODER_SEEK_STATUS_OK;
-	else
-		return FLAC__STREAM_DECODER_SEEK_STATUS_ERROR;
-}
 #endif
+{
+	if (flacfile->seek_set (flacfile, absolute_byte_offset) < 0)
+	{
+#if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
+		return FLAC__SEEKABLE_STREAM_DECODER_SEEK_STATUS_OK;
+#else
+		return FLAC__STREAM_DECODER_SEEK_STATUS_OK;
+#endif
+	} else {
+#if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
+		return FLAC__SEEKABLE_STREAM_DECODER_SEEK_STATUS_ERROR;
+#else
+		return FLAC__STREAM_DECODER_SEEK_STATUS_ERROR;
+#endif
+	}
+}
 
 #if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
 static FLAC__SeekableStreamDecoderTellStatus tell_callback(
 	const FLAC__SeekableStreamDecoder *decoder,
 	FLAC__uint64 *absolute_byte_offset,
 	void *client_data)
-{
-	if ((*absolute_byte_offset=ftell(flacfile))<0)
-		return FLAC__SEEKABLE_STREAM_DECODER_TELL_STATUS_ERROR;
-	else
-		return FLAC__SEEKABLE_STREAM_DECODER_TELL_STATUS_OK;
-}
 #else
 static FLAC__StreamDecoderTellStatus tell_callback(
 	const FLAC__StreamDecoder *decoder,
 	FLAC__uint64 *absolute_byte_offset,
 	void *client_data)
-{
-	long temp = ftell(flacfile);
-	if (temp<0)
-		return FLAC__STREAM_DECODER_TELL_STATUS_ERROR;
-	else
-	{
-		*absolute_byte_offset = temp;
-		return FLAC__STREAM_DECODER_TELL_STATUS_OK;
-	}
-}
 #endif
+{
+	*absolute_byte_offset = flacfile->getpos (flacfile);
+#if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
+	return FLAC__SEEKABLE_STREAM_DECODER_TELL_STATUS_OK;
+#else
+	return FLAC__STREAM_DECODER_TELL_STATUS_OK;
+#endif
+}
 
 #if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
 static FLAC__SeekableStreamDecoderLengthStatus length_callback(
 	const FLAC__SeekableStreamDecoder *decoder,
 	FLAC__uint64 *stream_length,
 	void *client_data)
-{
-	long temp = ftell(flacfile);
-
-	if (temp<0)
-		return FLAC__SEEKABLE_STREAM_DECODER_LENGTH_STATUS_ERROR;
-	if (fseek(flacfile, 0, SEEK_END))
-		return FLAC__SEEKABLE_STREAM_DECODER_LENGTH_STATUS_ERROR;
-	*stream_length = ftell(flacfile);
-	fseek(flacfile, temp, SEEK_SET);
-	return FLAC__SEEKABLE_STREAM_DECODER_LENGTH_STATUS_OK;
-}
 #else
 static FLAC__StreamDecoderLengthStatus length_callback(
 	const FLAC__StreamDecoder *decoder,
 	FLAC__uint64 *stream_length,
 	void *client_data)
+#endif
 {
-	long temp = ftell(flacfile);
+	uint64_t temp;
 
-	if (temp<0)
+	temp = flacfile->filesize (flacfile);
+	if (temp == FILESIZE_STREAM)
+	{
+#if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
+		return FLAC__SEEKABLE_STREAM_DECODER_LENGTH_STATUS_ERROR;
+#else
 		return FLAC__STREAM_DECODER_LENGTH_STATUS_ERROR;
-	if (fseek(flacfile, 0, SEEK_END))
+#endif
+
+	}
+	if (temp == FILESIZE_ERROR)
+	{
+#if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
+		return FLAC__SEEKABLE_STREAM_DECODER_LENGTH_STATUS_ERROR;
+#else
 		return FLAC__STREAM_DECODER_LENGTH_STATUS_ERROR;
-	*stream_length = ftell(flacfile);
-	fseek(flacfile, temp, SEEK_SET);
+#endif
+	}
+
+	*stream_length = temp;
+#if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
+	return FLAC__SEEKABLE_STREAM_DECODER_LENGTH_STATUS_OK;
+#else
 	return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
-}
 #endif
+}
 
 #if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
 static FLAC__bool eof_callback(
 	const FLAC__SeekableStreamDecoder *decoder,
 	void *client_data)
-{
-	return feof(flacfile);
-}
 #else
 static FLAC__bool eof_callback(
 	const FLAC__StreamDecoder *decoder,
 	void *client_data)
-{
-	return feof(flacfile);
-}
 #endif
+{
+	return flacfile->eof (flacfile);
+}
 
 #if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
 static void error_callback(
 	const FLAC__SeekableStreamDecoder *decoder,
 	FLAC__StreamDecoderErrorStatus status,
 	void *client_data)
-{
-	fprintf(stderr, "playflac: ERROR libflac: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
-}
 #else
 static void error_callback(
 	const FLAC__StreamDecoder *decoder,
 	FLAC__StreamDecoderErrorStatus status,
 	void *client_data)
+#endif
 {
 	fprintf(stderr, "playflac: ERROR libflac: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
 }
-#endif
 
-int __attribute__ ((visibility ("internal"))) flacOpenPlayer(FILE *file)
+int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandle_t *file)
 {
 	int temp;
 	uint32_t flacbuflen;
 
+	if (flacfile)
+	{
+		flacfile->unref (flacfile);
+		flacfile = 0;
+	}
 	flacfile = file;
+	flacfile->ref (flacfile);
 
 	inpause=0;
 	voll=256;
@@ -753,6 +760,12 @@ void __attribute__ ((visibility ("internal"))) flacClosePlayer(void)
 	{
 		free(buf16);
 		buf16=0;
+	}
+
+	if (flacfile)
+	{
+		flacfile->unref (flacfile);
+		flacfile = 0;
 	}
 	if (!decoder)
 		return;

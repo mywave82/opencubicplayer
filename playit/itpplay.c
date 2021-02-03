@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * ITPlayer interface routines
  *
@@ -33,18 +34,18 @@
 #include <string.h>
 #include <stdio.h>
 #include "types.h"
-#include "stuff/compat.h"
+#include "boot/plinkman.h"
+#include "boot/psetting.h"
+#include "cpiface/cpiface.h"
+#include "dev/deviwave.h"
+#include "dev/mcp.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
-#include "dev/mcp.h"
-#include "boot/psetting.h"
-#include "boot/plinkman.h"
-#include "stuff/compat.h"
-#include "stuff/poutput.h"
-#include "stuff/err.h"
-#include "dev/deviwave.h"
-#include "cpiface/cpiface.h"
 #include "itplay.h"
+#include "stuff/compat.h"
+#include "stuff/err.h"
+#include "stuff/poutput.h"
 
 #define _MAX_FNAME 8
 #define _MAX_EXT 4
@@ -554,9 +555,8 @@ static int itpGetLChanSample(unsigned int ch, int16_t *buf, unsigned int len, ui
 	return getchansample(&itplayer, ch, buf, len, rate, opt);
 }
 
-static int itpOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
+static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
-	int i;
 	int retval;
 
 	int nch;
@@ -570,11 +570,7 @@ static int itpOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 	strncpy(currentmodname, info->name, _MAX_FNAME);
 	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
-	fseek(file, 0, SEEK_END);
-	i=ftell(file);
-	fseek(file, 0, SEEK_SET);
-
-	fprintf(stderr, "loading %s%s (%ik)...\n", currentmodname, currentmodext, i>>10);
+	fprintf(stderr, "loading %s%s (%uk)...\n", currentmodname, currentmodext, (unsigned int)(file->filesize(file)>>10));
 
 	if (!(retval=it_load(&mod, file)))
 		if (!loadsamples(&mod))
@@ -639,4 +635,4 @@ static int itpOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 }
 
 struct cpifaceplayerstruct itpPlayer = {itpOpenFile, itpCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playit", .desc = "OpenCP IT Player (c) 1997-09 Tammo Hinrichs, Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playit", .desc = "OpenCP IT Player (c) 1997-10 Tammo Hinrichs, Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

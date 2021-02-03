@@ -1,5 +1,5 @@
 [version]
- epoch=20200225
+  epoch=20210118
 
 [general]
 ;link=
@@ -87,7 +87,7 @@ link=medialib
 [fileselector] ; default fileselector section
 ; files with these extensions will be scanned by the fileselector
 ; you might add 001 002 003 004 if you are a fan of imphobia :)
-  modextensions=MOD STM S3M XM IT MDL DMF ULT AMS MTM 669 NST WOW OKT PTM MXM MID WAV RMI MP1 MP2 MP3 OGG OGA SID DAT PLS M3U PLT AY YM HVL AHX
+  modextensions=MOD STM S3M XM IT MDL DMF ULT AMS MTM 669 NST WOW OKT PTM MXM MID WAV RMI MP1 MP2 MP3 OGG OGA SID DAT PLT AY YM HVL AHX
   movepath=  ; default path to move files
   typecolors=on
   editwin=on
@@ -221,38 +221,6 @@ link=medialib
   declick=on
   postprocs=_fReverb
   postprocadds=
-
-
-; archiver configuration
-; %% -> %
-; %a -> archive path
-; %n -> filename
-; %d -> destination path
-
-[arcZIP]
-  get=pkunzip %a %d %n
-  put=pkzip %a %n
-  delete=pkzip -d %a %n
-  deleteempty=on ; pkzip will not remove empty archives, this will delete
-                 ; all 22 byte archives.
-
-[arcARJ]
-  get=arj e %a %d %n
-  put=arj a %a %n
-  delete=arj d %a %n
-  moveto=arj m %a %n
-
-[arcRAR]
-  get=rar e -std %a %d %n
-  put=rar a -std %a %n
-
-[arcLHA]
-  get=lha e -a %a %d %n
-
-[arcACE]
-  get=ace32 e %a %n %d
-  scaninsolid=false    ; scan in solid archives? (better no ;)
-
 
 [filetype 0]
   color=1
@@ -419,21 +387,6 @@ link=medialib
   pllink=playinp
   player=inpPlayer
 
-[filetype 24]
-  color=6
-  name=DEVp
-  interface=plrIntr
-
-[filetype 25]
-  color=5
-  name=DEVs
-  interface=smpIntr
-
-[filetype 26]
-  color=3
-  name=DEVw
-  interface=mcpIntr
-
 [filetype 27]
   color=5
   name=IT
@@ -528,12 +481,7 @@ link=medialib
   pllink=playhvl
   player=hvlPlayer
 
-[filetype 128]
-  color=7
-  name=PLS
-  handler=fsAddPLS
-
-[filetype 129]
-  color=7
-  name=M3U
-  handler=fsAddM3U
+[filetype 254]
+  color=6
+  name=DEVv
+  interface=VirtualInterface

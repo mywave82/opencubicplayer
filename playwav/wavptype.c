@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '05-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * WAVPlay file type detection routines for the fileselector
  *
@@ -26,6 +27,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 
 static unsigned char wavGetModuleType(const char *buf)
@@ -75,9 +77,9 @@ static int wavReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 	return 0;
 }
 
-static int wavReadInfo(struct moduleinfostruct *m, FILE *fp, const char *mem, size_t len)
+static int wavReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *mem, size_t len)
 {
-	return 0;
+	return wavReadMemInfo (m, mem, len);
 }
 
 struct mdbreadinforegstruct wavReadInfoReg = {wavReadMemInfo, wavReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

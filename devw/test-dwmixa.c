@@ -89,6 +89,12 @@ static uint8_t test_mixrClip_dst8[34];
 static uint16_t test_mixrClip_dst16[34];
 static int32_t test_mixrClip_src[32];
 
+/*
+0x00001e50 = 7760 / 2147483647 = 0.00000361353 (less than one in 15bit)
+                1 / 32767      = 0.0000305185
+*/
+
+
 static const int32_t test_mixrClip_fill_src[32] =
 {
 	0xfffaf970, 0xffffce5d, 0xffffd792, 0xfffff8cb,
@@ -218,32 +224,35 @@ static int test_mixrClip(void)
 {
 	int retval = 0;
 
+#define BIT16 1
+#define BIT8 0
+
 	fprintf(stderr, "mixrClip, unsigned, gain = 1.0, 16 bit\n");
 	signedout=0;
 	calcamptab(65535); /* gain = 1.0 */
 	test_mixrClip_fill();
-	mixrClip(test_mixrClip_dst16+1, test_mixrClip_src, 32, amptab, clipmax, 1);
+	mixrClip(test_mixrClip_dst16+1, test_mixrClip_src, 32, amptab, clipmax, BIT16);
 	retval |= test_mixrClip_dump(test_mixrClip_fill_dst8, test_mixrClip_dst16_test1);
 
 	fprintf(stderr, "mixrClip, unsigned, gain = 1.0, 8 bit\n");
 	//signedout=0;
 	//calcamptab(65535); /* gain = 1.0 */
 	test_mixrClip_fill();
-	mixrClip(test_mixrClip_dst8+1, test_mixrClip_src, 32, amptab, clipmax, 0);
+	mixrClip(test_mixrClip_dst8+1, test_mixrClip_src, 32, amptab, clipmax, BIT8);
 	retval |= test_mixrClip_dump(test_mixrClip_dst8_test2, test_mixrClip_fill_dst16);
 
 	fprintf(stderr, "mixrClip, signed, gain = 1.0, 16 bit\n");
 	signedout=1;
 	calcamptab(65535); /* gain = 1.0 */
 	test_mixrClip_fill();
-	mixrClip(test_mixrClip_dst16+1, test_mixrClip_src, 32, amptab, clipmax, 1);
+	mixrClip(test_mixrClip_dst16+1, test_mixrClip_src, 32, amptab, clipmax, BIT16);
 	retval |= test_mixrClip_dump(test_mixrClip_fill_dst8, test_mixrClip_dst16_test3);
 
 	fprintf(stderr, "mixrClip, signed, gain = 1.0, 8 bit\n");
 	//signedout=1;
 	//calcamptab(65535); /* gain = 1.0 */
 	test_mixrClip_fill();
-	mixrClip(test_mixrClip_dst8+1, test_mixrClip_src, 32, amptab, clipmax, 0);
+	mixrClip(test_mixrClip_dst8+1, test_mixrClip_src, 32, amptab, clipmax, BIT8);
 	retval |= test_mixrClip_dump(test_mixrClip_dst8_test4, test_mixrClip_fill_dst16);
 
 	return retval;
@@ -972,7 +981,6 @@ int main(int argc, char *argv[])
 
 	if (initAsm())
 		return 1;
-
 
 	amptab=malloc(sizeof(int16_t)*3*256+sizeof(int32_t)); /* PADDING since assembler indexes some bytes beyond tab and ignores upper bits */ /*new short [3][256];*/
 

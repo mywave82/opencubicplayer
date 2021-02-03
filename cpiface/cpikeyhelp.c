@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '08-'20 Stian Skjelstad <stian@nixia.no>
+ * copyright (c) '08-'21 Stian Skjelstad <stian@nixia.no>
  *
  * Keyboard shortcut help-browser.
  *'
@@ -508,8 +508,3 @@ int cpiKeyHelpDisplay(void)
 	}
 	return 1;
 }
-
-#ifndef SUPPORT_STATIC_PLUGINS
-char *dllinfo="";
-#endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "keyhelp", .desc = "OpenCP Key Helper (c) 2007-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

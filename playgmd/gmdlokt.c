@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '94-'21 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
  *
  * GMDPlay loader for Oktalyzer modules
  *
@@ -30,6 +30,7 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "dev/mcp.h"
+#include "filesel/filesystem.h"
 #include "gmdplay.h"
 #include "stuff/err.h"
 
@@ -59,7 +60,7 @@ static void FreeResources(struct LoadOKTResources *r)
 	}
 }
 
-static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
+static int _mpLoadOKT(struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 
 	uint8_t hsig[8];
@@ -83,7 +84,7 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 
 	mpReset(m);
 
-	if (fread(hsig, 8, 1, file) != 1)
+	if (file->read (file, hsig, 8) != 8)
 	{
 		fprintf(stderr, __FILE__ ": read failed #1\n");
 		return errFormSig;
@@ -102,7 +103,7 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 
 	m->options=MOD_TICK0;
 
-	if (fread(&chunk, sizeof(chunk), 1, file) != 1)
+	if (file->read (file, &chunk, sizeof(chunk)) != sizeof(chunk))
 	{
 		fprintf(stderr, __FILE__ ": read failed #3\n");
 		return errFormStruc;
@@ -121,7 +122,7 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 		fprintf(stderr, __FILE__ ": invalid blen %d, should had been 8\n", (int)chunk.blen);
 		return errFormStruc;
 	}
-	if (fread(cflags, 8, 1, file) != 1)
+	if (file->read (file, cflags, 8) != 8)
 	{
 		fprintf(stderr, __FILE__ ": read failed #4\n");
 		return errFormStruc;
@@ -142,7 +143,7 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 	fprintf(stderr, __FILE__ ": %d %d %d %d %d %d %d %d\n", (int)cflag2[0], (int)cflag2[1], (int)cflag2[2], (int)cflag2[3], (int)cflag2[4], (int)cflag2[5], (int)cflag2[6], (int)cflag2[7]);
 #endif
 
-	if (fread(&chunk, sizeof(chunk), 1, file) != 1)
+	if (file->read (file, &chunk, sizeof(chunk)) != sizeof (chunk))
 	{
 		fprintf(stderr, __FILE__ ": read failed #5\n");
 		return errFormStruc;
@@ -185,7 +186,7 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 			uint8_t vol;
 			uint16_t pad2;
 		} mi;
-		if (fread(&mi, sizeof(mi), 1, file) != 1)
+		if (file->read(file, &mi, sizeof (mi)) != sizeof (mi))
 		{
 			fprintf(stderr, __FILE__ ": read failed #7\n");
 			return errFormStruc;
@@ -238,7 +239,7 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 		sip->type=mi.replen?mcpSampLoop:0;
 	}
 
-	if (fread(&chunk, sizeof(chunk), 1, file) != 1)
+	if (file->read (file, &chunk, sizeof(chunk)) != sizeof(chunk))
 	{
 		fprintf(stderr, __FILE__ ": read failed #8\n");
 		return errFormStruc;
@@ -261,17 +262,16 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 		return errFormStruc;
 	}
 
-	if (fread(&orgticks, sizeof(uint16_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint16_be (file, &orgticks))
 	{
 		fprintf(stderr, __FILE__ ": read failed #10\n");
 		return errFormStruc;
 	}
-	orgticks=uint16_big(orgticks);
 #ifdef OKT_LOAD_DEBUG
 	fprintf(stderr, __FILE__ ": orgticks: %d\n", (int)orgticks);
 #endif
 
-	if (fread(&chunk, sizeof(chunk), 1, file) != 1)
+	if (file->read (file, &chunk, sizeof(chunk)) != sizeof (chunk))
 	{
 		fprintf(stderr, __FILE__ ": read failed #11\n");
 		return errFormStruc;
@@ -293,17 +293,16 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 		fprintf(stderr, __FILE__ ": invalid length of sub chunk \"SPEE\": %d\n", (int)chunk.blen);
 		return errFormStruc;
 	}
-	if (fread(&pn, sizeof(uint16_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint16_be (file, &pn))
 	{
 		fprintf(stderr, __FILE__ ": read failed #13\n");
 		return errFormStruc;
 	}
-	pn=uint16_big(pn);
 #ifdef OKT_LOAD_DEBUG
 	fprintf(stderr, __FILE__ ":  song length (patterns): %d\n", (int)pn);
 #endif
 
-	if (fread(&chunk, sizeof(chunk), 1, file) != 1)
+	if (file->read (file, &chunk, sizeof(chunk)) != sizeof (chunk))
 	{
 		fprintf(stderr, __FILE__ ": read failed #14\n");
 		return errFormStruc;
@@ -325,14 +324,15 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 		fprintf(stderr, __FILE__ ": invalid length of sub chunk \"PLEN\": %d\n", (int)chunk.blen);
 		return errFormStruc;
 	}
-	if (fread(&ordn, sizeof(uint16_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint16_be (file, &ordn))
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #16\n");
-	ordn=uint16_big(ordn);
+	}
 #ifdef OKT_LOAD_DEBUG
 	fprintf(stderr, __FILE__ ": orders: %d\n", (int)ordn);
 #endif
 
-	if (fread(&chunk, sizeof(chunk), 1, file) != 1)
+	if (file->read (file, &chunk, sizeof(chunk)) != sizeof (chunk))
 	{
 		fprintf(stderr, __FILE__ ": read failed #17\n");
 		return errFormStruc;
@@ -355,7 +355,7 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 		return errFormStruc;
 	}
 
-	if (fread(orders, chunk.blen, 1, file) != 1)
+	if (file->read (file, orders, chunk.blen) != chunk.blen)
 	{
 		fprintf(stderr, __FILE__ ": read failed #19\n");
 		return errFormStruc;
@@ -400,7 +400,7 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 		struct gmdtrack *trk;
 		uint16_t len;
 
-		if (fread(&chunk, sizeof(chunk), 1, file) != 1)
+		if (file->read (file, &chunk, sizeof(chunk)) != sizeof (chunk))
 		{
 			fprintf(stderr, __FILE__ ": read failed #20\n");
 			FreeResources (&r);
@@ -416,9 +416,10 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 			return errFormStruc;
 		}
 		chunk.blen=uint32_big(chunk.blen);
-		if (fread(&patlen, sizeof(uint16_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint16_be (file, &patlen))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #22\n");
-		patlen=uint16_big(patlen);
+		}
 #ifdef OKT_LOAD_DEBUG
 		fprintf(stderr, __FILE__ ": patlen red is %d. It should not be bigger than 256, and this should match:\n (blen!=(2+4*m->channum*patlen)\n %d!=2+4*%d*%d\n %d!=%d\n", (int)patlen, (int)chunk.blen, (int)m->channum, (int)patlen, (int)chunk.blen, (int)(2+4*m->channum*patlen));
 #endif
@@ -433,7 +434,7 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 			if (t==orders[q])
 				m->patterns[q].patlen=patlen;
 
-		if (fread(r.buffer, 4*m->channum*patlen, 1, file) != 1)
+		if (file->read (file, r.buffer, 4 * m->channum * patlen) != (4 * m->channum * patlen))
 		{
 			fprintf(stderr, __FILE__ ": read failed #23\n");
 			FreeResources (&r);
@@ -612,7 +613,7 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 		if (sp->handle==0xFFFF)
 			continue;
 
-		if (fread(&chunk, sizeof(chunk), 1, file) != 1)
+		if (file->read (file, &chunk, sizeof(chunk)) != sizeof (chunk))
 		{
 			fprintf(stderr, __FILE__ ": read failed #24\n");
 			return errFormStruc;
@@ -628,8 +629,10 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 		if (!sip->ptr)
 			return errAllocMem;
 
-		if (fread(sip->ptr, chunk.blen, 1, file) != 1)
+		if (file->read (file, sip->ptr, chunk.blen) != chunk.blen)
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #26\n");
+		}
 		if (sip->length>chunk.blen)
 			sip->length=chunk.blen;
 		if (sip->loopend>chunk.blen)
@@ -643,4 +646,4 @@ static int _mpLoadOKT(struct gmdmodule *m, FILE *file)
 
 struct gmdloadstruct mpLoadOKT = { _mpLoadOKT };
 
-struct linkinfostruct dllextinfo = {.name = "gmdlokt", .desc = "OpenCP Module Loader: *.OKT (c) 1994-09 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "gmdlokt", .desc = "OpenCP Module Loader: *.OKT (c) 1994-21 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

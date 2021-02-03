@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * XMPlay file type detection routines for the fileselector
  *
@@ -29,6 +30,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 
 #define _EXT_MAX 5
@@ -232,9 +234,9 @@ static int xmpReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 	return 0;
 }
 
-static int xmpReadInfo(struct moduleinfostruct *m, FILE *fp, const char *mem, size_t len)
+static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *mem, size_t len)
 {
-	return 0;
+	return xmpReadMemInfo (m, mem, len);
 }
 
 struct mdbreadinforegstruct xmpReadInfoReg = {xmpReadMemInfo, xmpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

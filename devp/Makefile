@@ -132,11 +132,15 @@ devpalsa.o: devpalsa.c \
 	../dev/imsdev.h \
 	../dev/player.h \
 	../filesel/dirdb.h \
+	../filesel/filesystem.h \
+	../filesel/filesystem-drive.h \
+	../filesel/filesystem-file-mem.h \
+	../filesel/filesystem-setup.h \
 	../filesel/mdb.h \
 	../filesel/modlist.h \
 	../filesel/pfilesel.h \
-	../stuff/imsrtns.h \
 	../stuff/framelock.h \
+	../stuff/imsrtns.h \
 	../stuff/poutput.h
 	$(CC) devpalsa.c -o $@ -c $(ALSA_CFLAGS)
 

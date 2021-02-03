@@ -16,6 +16,7 @@ extern int cfGetProfileInt(const char *app, const char *key, int def, int radix)
 extern int cfGetProfileInt2(const char *app, const char *app2, const char *key, int def, int radix);
 extern void cfSetProfileInt(const char *app, const char *key, int str, int radix);
 extern void cfRemoveEntry(const char *app, const char *key);
+extern void cfRemoveProfile(const char *app);
 
 extern char *cfConfigDir;
 extern char *cfDataDir;

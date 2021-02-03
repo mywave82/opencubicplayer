@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
  *
  * CP hypertext help viewer (Fileselector wrapper)
  *
@@ -24,10 +25,10 @@
 
 #include "config.h"
 #include "types.h"
-#include "stuff/poutput.h"
-#include "help/cphelper.h"
-#include "stuff/framelock.h"
 #include "cphlpfs.h"
+#include "help/cphelper.h"
+#include "stuff/poutput.h"
+#include "stuff/framelock.h"
 
 int fsmode;
 

@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) '11-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) '11-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Variables that are needed globally, and even by the very basic libs.
  *
@@ -42,6 +42,8 @@ void (*_displaystr_iso8859latin1)(uint16_t y, uint16_t x, uint8_t attr, const ch
 void (*_displaystrattr_iso8859latin1)(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len);
 
 void (*_displaystr_utf8)(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
+int  (*_measurestr_utf8)(const char *src, int srclen);
+
 
 int (*_plSetGraphMode)(int); /* -1 reset, 0 640x480 1 1024x768 */
 void (*_gdrawchar)(uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b);

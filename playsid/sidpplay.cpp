@@ -38,19 +38,18 @@ extern "C"
 #include <time.h>
 #include <math.h>
 #include "types.h"
-
 extern "C"
 {
-#include "filesel/mdb.h"
-#include "stuff/poutput.h"
-#include "dev/player.h"
-#include "boot/psetting.h"
 #include "boot/plinkman.h"
-#include "stuff/compat.h"
-#include "stuff/sets.h"
-#include "dev/deviplay.h"
+#include "boot/psetting.h"
 #include "cpiface/cpiface.h"
+#include "dev/deviplay.h"
+#include "dev/player.h"
+#include "filesel/filesystem.h"
+#include "filesel/mdb.h"
 #include "stuff/compat.h"
+#include "stuff/poutput.h"
+#include "stuff/sets.h"
 #include "stuff/timer.h"
 }
 #include "sidplayfp/SidTuneInfo.h"
@@ -726,7 +725,7 @@ static int sidLooped()
 	return 0;
 }
 
-static int sidOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *sidf)
+static int sidOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *sidf)
 {
 	if (!sidf)
 		return -1;
@@ -773,7 +772,7 @@ extern "C"
 	struct linkinfostruct dllextinfo =
 	{
 		"playsid" /* name */,
-		"OpenCP SID Player (c) 1993-20 Michael Schwendt, Tammo Hinrichs, Stian Skjelstad" /* desc */,
+		"OpenCP SID Player (c) 1993-'20 Michael Schwendt, Tammo Hinrichs, Stian Skjelstad" /* desc */,
 		DLLVERSION /* ver */
 	};
 }

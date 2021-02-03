@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Module information DataBase (and some other related stuff=
  *
@@ -34,13 +35,18 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
+#include "dirdb.h"
+#include "filesystem.h"
 #include "mdb.h"
-#include "modlist.h"
 #include "pfilesel.h"
 #include "stuff/compat.h"
 #include "stuff/imsrtns.h"
 
-struct mdbreaddirregstruct *mdbReadDirs = 0;
+#ifdef MDB_DEBUG
+#define DEBUG_PRINT(...) do { fprintf(stderr, __VA_ARGS__); } while (0)
+#else
+#define DEBUG_PRINT(...) {}
+#endif
 
 struct __attribute__((packed)) modinfoentry
 {
@@ -93,18 +99,9 @@ static uint32_t *mdbReloc;
 static uint32_t mdbGenNum;
 static uint32_t mdbGenMax;
 
-int fsReadDir(struct modlist *ml, const struct dmDrive *drive, const uint32_t path, const char *mask, unsigned long opt)
-{
-	struct mdbreaddirregstruct *readdirs;
-	for (readdirs=mdbReadDirs; readdirs; readdirs=readdirs->next)
-		if (!readdirs->ReadDir(ml, drive, path, mask, opt))
-			return 0;
-	return 1;
-}
-
 const char *mdbGetModTypeString(unsigned char type)
 {
-	return fsTypeNames[type&0xFF];
+	return fsTypeNames[type&UINT8_MAX];
 }
 
 int mdbGetModuleType(uint32_t mdb_ref)
@@ -180,16 +177,24 @@ int mdbReadMemInfo(struct moduleinfostruct *m, const char *buf, int len)
 	return 0;
 }
 
-
-int mdbReadInfo(struct moduleinfostruct *m, FILE *f)
+int mdbReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 {
 	char mdbScanBuf[1084];
 	struct mdbreadinforegstruct *rinfos;
 	int maxl;
 
-	memset(mdbScanBuf, 0, 1084);
-	maxl=1084;
-	maxl=fread(mdbScanBuf, 1, maxl, f);
+	if (f->seek_set (f, 0) < 0)
+	{
+		return 1;
+	}
+	memset (mdbScanBuf, 0, sizeof (mdbScanBuf));
+	maxl = f->read (f, mdbScanBuf, sizeof (mdbScanBuf));
+
+	{
+		char *path;
+		dirdbGetName_internalstr (f->dirdb_ref, &path);
+		DEBUG_PRINT ("mdbReadMemInfo(%s %p %d)\n", path, mdbScanBuf, maxl);
+	}
 
 	if (mdbReadMemInfo(m, mdbScanBuf, maxl))
 		return 1;
@@ -198,6 +203,7 @@ int mdbReadInfo(struct moduleinfostruct *m, FILE *f)
 		if (rinfos->ReadInfo)
 			if (rinfos->ReadInfo(m, f, mdbScanBuf, maxl))
 				return 1;
+
 	return m->modtype==mtUnRead;
 }
 
@@ -213,7 +219,7 @@ static uint32_t mdbGetNew(void)
 		uint32_t j;
 		mdbNum+=64;
 		if (!(t=realloc(mdbData, mdbNum*sizeof(*mdbData))))
-			return 0xFFFFFFFF;
+			return UINT32_MAX;
 		mdbData=(struct modinfoentry *)t;
 		memset(mdbData+i, 0, (mdbNum-i)*sizeof(*mdbData));
 		for (j=i; j<mdbNum; j++)
@@ -227,16 +233,16 @@ int mdbWriteModuleInfo(uint32_t mdb_ref, struct moduleinfostruct *m)
 {
 	if (mdb_ref>=mdbNum)
 	{
-		fprintf(stderr, "mdbWriteModuleInfo, mdb_ref(%d)<mdbNum(%d)\n", mdb_ref, mdbNum);
+		DEBUG_PRINT ("mdbWriteModuleInfo, mdb_ref(%d)<mdbNum(%d)\n", mdb_ref, mdbNum);
 		return 0;
 	}
 	if ((mdbData[mdb_ref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL))
 	{
-		 fprintf(stderr, "mdbWriteModuleInfo (mdbData[mdb_ref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL) Failed\n");
+		DEBUG_PRINT ("mdbWriteModuleInfo (mdbData[mdb_ref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL) Failed\n");
 		return 0;
 	}
 
-	m->flags1=MDB_USED|MDB_DIRTY|MDB_GENERAL|(m->flags1&(MDB_VIRTUAL|MDB_BIGMODULE|MDB_PLAYLIST));
+	m->flags1=MDB_USED|MDB_DIRTY|MDB_GENERAL|(m->flags1&(MDB_VIRTUAL|MDB_BIGMODULE|MDB_RESERVED));
 	m->flags2=MDB_DIRTY|MDB_COMPOSER;
 	m->flags3=MDB_DIRTY|MDB_COMMENT;
 	m->flags4=MDB_DIRTY|MDB_FUTURE;
@@ -247,33 +253,33 @@ int mdbWriteModuleInfo(uint32_t mdb_ref, struct moduleinfostruct *m)
 		m->flags3|=MDB_USED;
 
 	/* free the old references */
-	if (m->comref!=0xFFFFFFFF)
+	if (m->comref!=UINT32_MAX)
 		mdbData[m->comref].flags=MDB_DIRTY;
-	if (m->compref!=0xFFFFFFFF)
+	if (m->compref!=UINT32_MAX)
 		mdbData[m->compref].flags=MDB_DIRTY;
-	if (m->futref!=0xFFFFFFFF)
+	if (m->futref!=UINT32_MAX)
 		mdbData[m->futref].flags=MDB_DIRTY;
-	m->compref=0xFFFFFFFF;
-	m->comref=0xFFFFFFFF;
-	m->futref=0xFFFFFFFF;
+	m->compref=UINT32_MAX;
+	m->comref=UINT32_MAX;
+	m->futref=UINT32_MAX;
 
 	/* allocate new ones */
 	if (m->flags2&MDB_USED)
 	{
 		m->compref=mdbGetNew();
-		if (m->compref!=0xFFFFFFFF)
+		if (m->compref!=UINT32_MAX)
 			memcpy(mdbData+m->compref, &m->flags2, sizeof(*mdbData));
 	}
 	if (m->flags3&MDB_USED)
 	{
 		m->comref=mdbGetNew();
-		if (m->comref!=0xFFFFFFFF)
+		if (m->comref!=UINT32_MAX)
 			memcpy(mdbData+m->comref, &m->flags3, sizeof(*mdbData));
 	}
 	if (m->flags4&MDB_USED)
 	{
 		m->futref=mdbGetNew();
-		if (m->futref!=0xFFFFFFFF)
+		if (m->futref!=UINT32_MAX)
 			memcpy(mdbData+m->futref, &m->flags4, sizeof(*mdbData));
 	}
 
@@ -282,50 +288,30 @@ int mdbWriteModuleInfo(uint32_t mdb_ref, struct moduleinfostruct *m)
 	return 1;
 }
 
-void mdbScan(struct modlistentry *m)
+void mdbScan(struct ocpfile_t *file, uint32_t mdb_ref)
 {
-	if (!(m->flags&MODLIST_FLAG_FILE))
+	if (!file)
+	{
 		return;
+	}
 
-	if (!mdbInfoRead(m->mdb_ref)) /* use mdbReadInfo again here ? */
+	if (file->is_nodetect)
+	{
+		return;
+	}
+
+	if (!mdbInfoRead(mdb_ref)) /* use mdbReadInfo again here ? */
 	{
 		struct moduleinfostruct mdbEditBuf;
-		FILE *f;
-		if (m->flags&MODLIST_FLAG_VIRTUAL) /* don't scan virtual files */
-			return;
-		if (!(f=m->ReadHandle(m)))
-			return;
-		mdbGetModuleInfo(&mdbEditBuf, m->mdb_ref);
-		mdbReadInfo(&mdbEditBuf, f);
-		fclose(f);
-		mdbWriteModuleInfo(m->mdb_ref, &mdbEditBuf);
-	}
-}
-
-void mdbRegisterReadDir(struct mdbreaddirregstruct *r)
-{
-	r->next=mdbReadDirs;
-	mdbReadDirs=r;
-}
-
-void mdbUnregisterReadDir(struct mdbreaddirregstruct *r)
-{
-	struct mdbreaddirregstruct *root=mdbReadDirs;
-	if (root==r)
-	{
-		mdbReadDirs=r->next;
-		return;
-	}
-	while (root)
-	{
-		if (root->next==r)
+		struct ocpfilehandle_t *f;
+		if (!(f=file->open(file)))
 		{
-			root->next=root->next->next;
 			return;
 		}
-		if (!root->next)
-			return;
-		root=root->next;
+		mdbGetModuleInfo(&mdbEditBuf, mdb_ref);
+		mdbReadInfo(&mdbEditBuf, f);
+		f->unref (f);
+		mdbWriteModuleInfo(mdb_ref, &mdbEditBuf);
 	}
 }
 
@@ -514,7 +500,7 @@ void mdbClose(void)
 	free(mdbReloc);
 }
 
-uint32_t mdbGetModuleReference(const char *name, uint32_t size)
+static uint32_t mdbGetModuleReference(const char *name, uint32_t size)
 {
 	uint32_t i;
 
@@ -553,14 +539,14 @@ uint32_t mdbGetModuleReference(const char *name, uint32_t size)
 	mn=min-mdbReloc;
 
 	i=mdbGetNew();
-	if (i==0xFFFFFFFF)
-		return 0xFFFFFFFF;
+	if (i==UINT32_MAX)
+		return UINT32_MAX;
 	if (mdbGenNum==mdbGenMax)
 	{
 		void *n;
 		mdbGenMax+=512;
 		if (!(n=realloc(mdbReloc, sizeof (*mdbReloc)*mdbGenMax)))
-			return 0xFFFFFFFF;
+			return UINT32_MAX;
 		mdbReloc=(uint32_t *)n;
 	}
 
@@ -572,10 +558,10 @@ uint32_t mdbGetModuleReference(const char *name, uint32_t size)
 	m->flags=MDB_DIRTY|MDB_USED|MDB_GENERAL;
 	memcpy(m->gen.name, name, 12);
 	m->gen.size=size;
-	m->gen.modtype=0xFF;
-	m->gen.comref=0xFFFFFFFF;
-	m->gen.compref=0xFFFFFFFF;
-	m->gen.futref=0xFFFFFFFF;
+	m->gen.modtype=UINT8_MAX;
+	m->gen.comref=UINT32_MAX;
+	m->gen.compref=UINT32_MAX;
+	m->gen.futref=UINT32_MAX;
 	memset(m->gen.modname, 0, 32);
 	m->gen.date=0;
 	m->gen.playtime=0;
@@ -583,6 +569,56 @@ uint32_t mdbGetModuleReference(const char *name, uint32_t size)
 	m->gen.moduleflags=0;
 	mdbDirty=1;
 	return (uint32_t)i;
+}
+
+#warning Remake the hash to acculate overflow characters into the character 6 and 7... it will break old databases
+uint32_t mdbGetModuleReference2 (uint32_t dirdb_ref, uint32_t size)
+{
+	char shortname[13];
+	char *temppath;
+	char *lastdot;
+	int length;
+
+	dirdbGetName_internalstr (dirdb_ref, &temppath);
+	if (!temppath)
+	{
+		return DIRDB_NOPARENT;
+	}
+
+	/* the "hash" is created using the former fs12name() function */
+	length = strlen (temppath);
+
+	shortname[12] = 0;
+	if ((lastdot=rindex(temppath + 1, '.'))) /* we allow files to start with, hence temppath + 1 */
+	{
+		/* delta is the length until the dot */
+		int delta = lastdot - temppath;
+
+		if ((delta) < 8)
+		{ /* if the text before the dot is shorter than 8, pad it with spaces */
+			strncpy (shortname,         temppath,   delta);
+			strncpy (shortname + delta, "        ", 8 - delta);
+		} else { /* or we take only the first 8 characters */
+			strncpy (shortname, temppath, 8);
+		}
+
+		/* grab the dot, and upto 3 characters following it */
+		if (strlen (lastdot) < 4)
+		{ /* if the text including the dot is shorter than 4, pad it with spaces */
+			strcpy  (shortname + 8,                    lastdot);
+			strncpy (shortname + 8 + strlen (lastdot), "   ", 4 - strlen(lastdot));
+		} else { /* or we take only the first 4 characters,   eg .foo  instead of .foobar, and also accept things like .mod as is */
+			strncpy (shortname + 8, lastdot, 4);
+		}
+	} else { /* we would normally never HASH such a filename */
+		strncpy(shortname, temppath, 12);
+		if ((length=strlen(temppath))<12)
+		{
+			strncpy(shortname+length, "            ", 12-length);
+		}
+	}
+
+	return mdbGetModuleReference (shortname, size);
 }
 
 int mdbGetModuleInfo(struct moduleinfostruct *m, uint32_t mdb_ref)
@@ -593,41 +629,41 @@ int mdbGetModuleInfo(struct moduleinfostruct *m, uint32_t mdb_ref)
 	if ((mdbData[mdb_ref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL))
 	{
 invalid:
-		m->modtype=0xFF;
-		m->comref=0xFFFFFFFF;
-		m->compref=0xFFFFFFFF;
-		m->futref=0xFFFFFFFF;
+		m->modtype=UINT8_MAX;
+		m->comref=UINT32_MAX;
+		m->compref=UINT32_MAX;
+		m->futref=UINT32_MAX;
 		return 0;
 	}
 	memcpy(m, mdbData+mdb_ref, sizeof(*mdbData));
-	if (m->compref!=0xFFFFFFFF)
+	if (m->compref!=UINT32_MAX)
 	{
 		if ((m->compref < mdbNum) && ((mdbData[m->compref].flags & MDB_BLOCKTYPE) == MDB_COMPOSER))
 		{
 			memcpy(&m->flags2, mdbData+m->compref, sizeof(*mdbData));
 		} else {
 			fprintf (stderr, "[mdb] warning - invalid compref\n");
-			m->compref=0xFFFFFFFF;
+			m->compref=UINT32_MAX;
 		}
 	}
-	if (m->comref!=0xFFFFFFFF)
+	if (m->comref!=UINT32_MAX)
 	{
 		if ((m->comref < mdbNum) && ((mdbData[m->comref].flags & MDB_BLOCKTYPE) == MDB_COMMENT))
 		{
 			memcpy(&m->flags3, mdbData+m->comref, sizeof(*mdbData));
 		} else {
 			fprintf (stderr, "[mdb] warning - invalid comref\n");
-			m->comref=0xFFFFFFFF;
+			m->comref=UINT32_MAX;
 		}
 	}
-	if (m->futref!=0xFFFFFFFF)
+	if (m->futref!=UINT32_MAX)
 	{
 		if ((m->futref < mdbNum) && ((mdbData[m->comref].flags & MDB_BLOCKTYPE) == MDB_FUTURE))
 		{
 			memcpy(&m->flags4, mdbData+m->futref, sizeof(*mdbData));
 		} else {
 			fprintf (stderr, "[mdb] warning - invalid futref\n");
-			m->futref=0xFFFFFFFF;
+			m->futref=UINT32_MAX;
 		}
 	}
 	return 1;

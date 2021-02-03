@@ -43,7 +43,7 @@ static int cpiReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t _i
 	return 0;
 }
 
-static int cpiReadInfo(struct moduleinfostruct *m, FILE *file, const char *c, size_t _ignore)
+static int cpiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *file, const char *c, size_t _ignore)
 {
 	return cpiReadMemInfo(m, c, _ignore);
 }

@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '94-'21 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
  *
  * GMDPlay loader for X-Tracker modules
  *
@@ -29,6 +29,7 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "dev/mcp.h"
+#include "filesel/filesystem.h"
 #include "gmdplay.h"
 #include "stuff/err.h"
 
@@ -131,7 +132,7 @@ static void calctempo(uint16_t rpm, uint8_t *tempo, uint8_t *bpm)
 	(*bpm)=rpm*(*tempo)/24;
 }
 
-static int _mpLoadDMF(struct gmdmodule *m, FILE *file)
+static int _mpLoadDMF(struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	struct __attribute__((packed)) {
 		uint8_t sig[4];
@@ -176,8 +177,10 @@ static int _mpLoadDMF(struct gmdmodule *m, FILE *file)
 
 	mpReset(m);
 
-	if (fread(&hdr, sizeof(hdr), 1, file) != 1)
+	if (file->read (file, &hdr, sizeof (hdr)) != sizeof (hdr))
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #1\n");
+	}
 	if (memcmp(hdr.sig, "DDMF", 4))
 		return errFormSig;
 
@@ -192,30 +195,40 @@ static int _mpLoadDMF(struct gmdmodule *m, FILE *file)
 	memcpy(m->composer, hdr.composer, 20);
 	m->composer[20]=0;
 
-	if (fread(sig, sizeof(sig), 1, file) != 1)
+	if (file->read (file, sig, sizeof (sig)) != sizeof (sig))
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #2\n");
-	if (fread(&next, sizeof(uint32_t), 1, file) != 1)
+	}
+	if (ocpfilehandle_read_uint32_le (file, &next))
+	{
+		next = 0;
 		fprintf(stderr, __FILE__ ": warning, read failed #3\n");
-	next = uint32_little (next);
+	}
 
 	if (!memcmp(sig, "INFO", 4))
 	{
-		fseek(file, next, SEEK_CUR);
-		if (fread(sig, sizeof(sig), 1, file) != 1)
+		file->seek_cur (file, next);
+		if (file->read (file, sig, sizeof (sig)) != sizeof (sig))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #4\n");
-		if (fread(&next, sizeof(uint32_t), 1, file) != 1)
+		}
+		if (ocpfilehandle_read_uint32_le (file, &next))
+		{
+			next = 0;
 			fprintf(stderr, __FILE__ ": warning, read failed #5\n");
-		next = uint32_little (next);
+		}
 	}
 
 	if (!memcmp(sig, "CMSG", 4))
 	{
-		char waste;
+		uint8_t waste;
 		uint16_t msglen;
 		int16_t t;
 		int16_t i;
-		if (fread(&waste, 1, 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &waste))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #6\n");
+		}
 		msglen=(next-1)/40;
 
 		if (msglen)
@@ -230,8 +243,10 @@ static int _mpLoadDMF(struct gmdmodule *m, FILE *file)
 			for (t=0; t<msglen; t++)
 			{
 				m->message[t]=*m->message+t*41;
-				if (fread(m->message[t], 40, 1, file) != 1)
+				if (file->read (file, m->message[t], 40) != 40)
+				{
 					fprintf(stderr, __FILE__ ": warning, read failed #7\n");
+				}
 
 				for (i=0; i<40; i++)
 					if (!m->message[t][i])
@@ -241,11 +256,15 @@ static int _mpLoadDMF(struct gmdmodule *m, FILE *file)
 			m->message[msglen]=0;
 		}
 
-		if (fread(sig, sizeof(sig), 1, file) != 1)
+		if (file->read (file, sig, sizeof (sig)) != sizeof (sig))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #8\n");
-		if (fread(&next, sizeof(uint32_t), 1, file) != 1)
+		}
+		if (ocpfilehandle_read_uint32_le (file, &next))
+		{
+			next = 0;
 			fprintf(stderr, __FILE__ ": warning, read failed #9\n");
-		next = uint32_little (next);
+		}
 	}
 
 	if ((memcmp(sig, "SEQU", 4))||(next&1))
@@ -254,14 +273,20 @@ static int _mpLoadDMF(struct gmdmodule *m, FILE *file)
 	orders=malloc(next-4);
 	if (!orders)
 		return errAllocMem;
-	if (fread(&ordloop, sizeof(uint16_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint16_le (file, &ordloop))
+	{
+		ordloop = 0;
 		fprintf(stderr, __FILE__ ": warning, read failed #10\n");
-	ordloop = uint16_little (ordloop);
-	if (fread(&ordnum, sizeof(uint16_t), 1, file) != 1)
+	}
+	if (ocpfilehandle_read_uint16_le (file, &ordnum))
+	{
+		ordnum = 0;
 		fprintf(stderr, __FILE__ ": warning, read failed #11\n");
-	ordnum = uint16_little (ordnum);
-	if (fread(orders, next-4, 1, file) != 1)
+	}
+	if (file->read (file, orders, next-4) != (next - 4))
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #12\n");
+	}
 
 	{
 		unsigned int i;
@@ -274,11 +299,15 @@ static int _mpLoadDMF(struct gmdmodule *m, FILE *file)
 		ordnum=(next-4)/2; /* 2 = sizeof(uint16_t) */
 	if (ordloop>=ordnum)ordloop=0;
 
-	if (fread(sig, sizeof(sig), 1, file) != 1)
+	if (file->read (file, sig, sizeof (sig)) != sizeof (sig))
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #13\n");
-	if (fread(&next, sizeof(uint32_t), 1, file) != 1)
+	}
+	if (ocpfilehandle_read_uint32_le (file, &next))
+	{
+		next = 0;
 		fprintf(stderr, __FILE__ ": warning, read failed #14\n");
-	next = uint32_little (next);
+	}
 
 	if (memcmp(sig, "PATT", 4))
 	{
@@ -286,11 +315,16 @@ static int _mpLoadDMF(struct gmdmodule *m, FILE *file)
 		goto safeout;
 	}
 
-	if (fread(&patnum, sizeof(uint16_t), 1, file) != 1)
+	if (ocpfilehandle_read_uint16_le (file, &patnum))
+	{
+		patnum = 0;
 		fprintf(stderr, __FILE__ ": warning, read failed #15\n");
-	patnum = uint16_little (patnum);
-	if (fread(&chnnum, sizeof(uint8_t), 1, file) != 1)
+	}
+	if (ocpfilehandle_read_uint8 (file, &chnnum))
+	{
+		chnnum = 0;
 		fprintf(stderr, __FILE__ ": warning, read failed #16\n");
+	}
 	m->channum=chnnum;
 
 	patbuf=malloc(sizeof(uint8_t)*(next-3));
@@ -301,8 +335,10 @@ static int _mpLoadDMF(struct gmdmodule *m, FILE *file)
 		retval = errAllocMem;
 		goto safeout;
 	}
-	if (fread(patbuf, next-3, 1, file) != 1)
+	if (file->read (file, patbuf, next-3) != (next - 3))
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #17\n");
+	}
 
 /* get the pattern start adresses */
 	curadr=patbuf; /* this part can easy crash if values are fucked in buffer we just red, TODO */
@@ -665,19 +701,31 @@ static int _mpLoadDMF(struct gmdmodule *m, FILE *file)
 	patadr=0;
 	orders=0;
 
-	if (fread(sig, sizeof(sig), 1, file) != 1)
+	if (file->read (file, sig, sizeof (sig)) != sizeof (sig))
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #17\n");
-	if (fread(&next, sizeof(uint32_t), 1, file) != 1)
+	}
+	if (ocpfilehandle_read_uint32_le (file, &next))
+	{
+		next = 0;
 		fprintf(stderr, __FILE__ ": warning, read failed #18\n");
-	next = uint32_little (next);
+	}
 /* inst!! */
 
 	if (memcmp(sig, "SMPI", 4))
 		return errFormStruc;
 
-	if (fread(&m->instnum, sizeof(uint8_t), 1, file) != 1)
-		fprintf(stderr, __FILE__ ": warning, read failed #19\n");
-	m->modsampnum=m->sampnum=m->instnum;
+	{
+		uint8_t instnum;
+
+		if (ocpfilehandle_read_uint8 (file, &instnum))
+		{
+			instnum = 0;
+			fprintf(stderr, __FILE__ ": warning, read failed #19\n");
+		}
+		m->instnum = instnum;
+		m->modsampnum=m->sampnum=m->instnum = instnum;
+	}
 
 	if (!mpAllocInstruments(m, m->instnum)||!mpAllocSamples(m, m->sampnum)||!mpAllocModSamples(m, m->modsampnum))
 		return errAllocMem;
@@ -704,21 +752,31 @@ static int _mpLoadDMF(struct gmdmodule *m, FILE *file)
 
 		int j;
 
-		if (fread(&namelen, sizeof(uint8_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &namelen))
+		{
+			namelen = 0;
 			fprintf(stderr, __FILE__ ": warning, read failed #20\n");
+		}
 		if (namelen>31)
 		{
-			if (fread(ip->name, 31, 1, file) != 1)
+			if (file->read (file, ip->name, 31) != 31)
+			{
 				fprintf(stderr, __FILE__ ": warning, read failed #21\n");
-			fseek(file, namelen-31, SEEK_CUR);
-			namelen=31;
-		} else
-			if (fread(ip->name, namelen, 1, file) != 1)
+				file->seek_cur (file, namelen - 31);
+				namelen=31;
+			}
+		} else {
+			if (file->read (file, ip->name, namelen) != namelen)
+			{
 				fprintf(stderr, __FILE__ ": warning, read failed #22\n");
+			}
+		}
 		ip->name[namelen]=0;
 
-		if (fread(&smp, sizeof(smp)-((hdr.ver<8)?8:0), 1, file) != 1)
+		if (file->read (file, &smp, sizeof (smp)) != sizeof (smp))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #23\n");
+		}
 		smp.length = uint32_little (smp.length);
 		smp.loopstart = uint32_little (smp.loopstart);
 		smp.loopend = uint32_little (smp.loopend);
@@ -750,11 +808,15 @@ static int _mpLoadDMF(struct gmdmodule *m, FILE *file)
 		sp->opt=bit16?MP_OFFSETDIV2:0;
 	}
 
-	if (fread(sig, sizeof(sig), 1, file) != 1)
+	if (file->read (file, sig, sizeof (sig)) != sizeof (sig))
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #24\n");
-	if (fread(&next, sizeof(uint32_t), 1, file) != 1)
+	}
+	if (ocpfilehandle_read_uint32_le (file, &next))
+	{
+		next = 0;
 		fprintf(stderr, __FILE__ ": warning, read failed #25\n");
-	next = uint32_little (next);
+	}
 
 	if (memcmp(sig, "SMPD", 4))
 		return errFormStruc;
@@ -769,21 +831,25 @@ static int _mpLoadDMF(struct gmdmodule *m, FILE *file)
 		uint32_t len;
 		uint8_t *smpp;
 
-		if (fread(&len, sizeof(uint32_t), 1, file) != 1)
+		if (ocpfilehandle_read_uint32_le (file, &len))
+		{
+			len = 0;
 			fprintf(stderr, __FILE__ ": warning, read failed #26\n");
-		len = uint32_little (len);
+		}
 
 		if (sp->handle==0xFFFF)
 		{
-			fseek(file, len, SEEK_CUR);
+			file->seek_cur (file, len);
 			continue;
 		}
 
 		smpp=malloc(sizeof(unsigned char)*len+4/* worst case padding */);
 		if (!smpp)
 			return errAllocMem;
-		if (fread(smpp, len, 1, file) != 1)
+		if (file->read (file, smpp, len) != len)
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #27\n");
+		}
 		if (smppack[i])
 		{
 			uint8_t *dbuf=malloc(sizeof(unsigned char)*(sip->length+16));
@@ -816,4 +882,4 @@ safeout:
 
 struct gmdloadstruct mpLoadDMF = { _mpLoadDMF };
 
-struct linkinfostruct dllextinfo = {.name = "gmdldmf", .desc = "OpenCP Module Loader: *.DMF (c) 1994-09 Beisert", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "gmdldmf", .desc = "OpenCP Module Loader: *.DMF (c) 1994-21 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

@@ -26,8 +26,9 @@
 #include <string.h>
 #include "types.h"
 #include "boot/plinkman.h"
-#include "stuff/latin1.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
+#include "stuff/latin1.h"
 
 struct __attribute__((packed)) psidHeader
 {
@@ -106,7 +107,7 @@ static int sidReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 			strcpy(snginfo,"raw SID file");
 
 		strcpy(m->modname, snginfo);
-		latin1(m->modname, m->modname, strlen(m->modname));
+		latin1(m->modname, strlen(m->modname), m->modname);
 		m->composer[0] = 0;
 		m->comment[0] = 0;
 		return 1;
@@ -123,9 +124,9 @@ static int sidReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 }
 
 
-static int sidReadInfo(struct moduleinfostruct *m, FILE *fp, const char *mem, size_t len)
+static int sidReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *mem, size_t len)
 {
-	return 0;
+	return sidReadMemInfo (m, mem, len);
 }
 
 static struct mdbreadinforegstruct sidReadInfoReg = {sidReadMemInfo, sidReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

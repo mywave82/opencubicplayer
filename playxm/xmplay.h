@@ -105,17 +105,18 @@ enum
 	xmpFXData=4
 };
 
+struct ocpfilehandle_t;
 extern int __attribute__ ((visibility ("internal"))) xmpLoadSamples(struct xmodule *m);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, FILE *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMOD(struct xmodule *m, FILE *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMODt(struct xmodule *m, FILE *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMODd(struct xmodule *m, FILE *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMODf(struct xmodule *m, FILE *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadM31(struct xmodule *m, FILE *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadM15(struct xmodule *m, FILE *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadM15t(struct xmodule *m, FILE *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadWOW(struct xmodule *m, FILE *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadMOD(struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadMODt(struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadMODd(struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadMODf(struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadM31(struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadM15(struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadM15t(struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadWOW(struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, struct ocpfilehandle_t *f);
 extern void __attribute__ ((visibility ("internal"))) xmpFreeModule(struct xmodule *m);
 
 extern int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m);

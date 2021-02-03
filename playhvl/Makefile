@@ -36,14 +36,9 @@ dumpahx.o: \
 hvlptype.o: \
 	hvlptype.c \
 	../config.h \
-	../dev/deviplay.h \
-	../dev/player.h \
-	../dev/plrasm.h \
-	../dev/ringbuffer.h \
-	../filesel/mdb.h \
-	../stuff/imsrtns.h \
-	../stuff/poll.h \
-	../types.h
+	../types.h \
+	../filesel/filesystem.h \
+	../filesel/mdb.h
 	$(CC) -c -o $@ $<
 
 hvlplay.o: \
@@ -94,23 +89,24 @@ hvlpinst.o: \
 hvlpplay.o: \
 	hvlpplay.c \
 	../config.h \
+	../types.h \
 	../boot/plinkman.h \
 	../cpiface/cpiface.h \
-	../dev/player.h \
 	../dev/deviplay.h \
+	../dev/player.h \
+	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
-	../stuff/compat.h \
-	../stuff/err.h \
-	../stuff/poutput.h \
-	../stuff/sets.h \
-	../types.h \
 	hvlplay.h \
 	hvlpchan.h \
 	hvlpdots.h \
 	hvlpinst.h \
 	hvlptrak.h \
-	player.h
+	player.h \
+	../stuff/compat.h \
+	../stuff/err.h \
+	../stuff/poutput.h \
+	../stuff/sets.h
 	$(CC) -c -o $@ $<
 
 hvlptrak.o: \

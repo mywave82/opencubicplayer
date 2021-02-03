@@ -32,6 +32,7 @@
 #include <linux/cdrom.h>
 #include "types.h"
 #include "boot/psetting.h"
+#include "cdaudio.h"
 #include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/devisamp.h"
@@ -40,7 +41,6 @@
 #include "dev/sampler.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poll.h"
-#include "cdaudio.h"
 
 static int device;
 /* 0 = sampler (with no avaible device)

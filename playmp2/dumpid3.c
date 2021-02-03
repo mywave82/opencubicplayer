@@ -139,7 +139,7 @@ static void newline()
 	if (stacked_count)
 	{
 		flush();
-	} else {	
+	} else {
 		fputc('\n', stdout);
 		_newline=1;
 	}
@@ -1084,7 +1084,7 @@ static void decode_SYLT(uint8_t *data, uint32_t len, int version)
 		stack_message(STACK_ERROR, 0, "Text_encoding out of range");
 		return;
 	}
-	
+
 	if ((data[1]<0x20)||(data[1]>=0x80)||
 	    (data[2]<0x20)||(data[2]>=0x80)||
 	    (data[3]<0x20)||(data[3]>=0x80))

@@ -85,97 +85,118 @@ dumps3m.o: \
 gmdptype.o: gmdptype.c \
 	../config.h \
 	../types.h \
+	../filesel/filesystem.h \
 	../filesel/mdb.h
 	$(CC) gmdptype.c -o $@ -c
 
 gmdl669.o: gmdl669.c \
 	../config.h \
-	gmdplay.h \
-	gmdinst.h \
+	../types.h \
 	../boot/plinkman.h \
 	../dev/mcp.h \
-	../stuff/err.h \
-	../types.h
+	../filesel/filesystem.h \
+	gmdplay.h \
+	gmdinst.h \
+	../stuff/err.h
 	$(CC) gmdl669.c -o $@ -c
 
 gmdlams.o: gmdlams.c \
 	../config.h \
-	gmdplay.h \
-	gmdinst.h \
+	../types.h \
 	../boot/plinkman.h \
 	../dev/mcp.h \
-	../stuff/err.h \
-	../types.h
+	../filesel/filesystem.h \
+	gmdplay.h \
+	gmdinst.h \
+	../stuff/err.h
 	$(CC) gmdlams.c -o $@ -c
 
 gmdldmf.o: gmdldmf.c \
 	../config.h \
-	gmdplay.h \
-	gmdinst.h \
+	../types.h \
 	../boot/plinkman.h \
 	../dev/mcp.h \
-	../stuff/err.h \
-	../types.h
+	../filesel/filesystem.h \
+	gmdplay.h \
+	gmdinst.h \
+	../stuff/err.h
 	$(CC) gmdldmf.c -o $@ -c
 
 gmdlmdl.o: gmdlmdl.c \
 	../config.h \
-	gmdplay.h \
-	gmdinst.h \
+	../types.h \
 	../boot/plinkman.h \
 	../dev/mcp.h \
-	../stuff/err.h \
-	../types.h
+	../filesel/filesystem.h \
+	gmdplay.h \
+	gmdinst.h \
+	../stuff/err.h
 	$(CC) gmdlmdl.c -o $@ -c
 
 gmdlmtm.o: gmdlmtm.c \
 	../config.h \
-	gmdplay.h \
-	gmdinst.h \
+	../types.h \
 	../boot/plinkman.h \
 	../dev/mcp.h \
-	../stuff/err.h \
-	../types.h
+	../filesel/filesystem.h \
+	gmdplay.h \
+	gmdinst.h \
+	../stuff/err.h
 	$(CC) gmdlmtm.c -o $@ -c
 
 gmdlokt.o: gmdlokt.c \
 	../config.h \
-	gmdplay.h \
-	gmdinst.h \
+	../types.h \
 	../boot/plinkman.h \
 	../dev/mcp.h \
-	../stuff/err.h \
-	../types.h
+	../filesel/filesystem.h \
+	gmdplay.h \
+	gmdinst.h \
+	../stuff/err.h
 	$(CC) gmdlokt.c -o $@ -c
 
 gmdlptm.o: gmdlptm.c \
 	../config.h \
-	gmdplay.h \
-	gmdinst.h \
+	../types.h \
 	../boot/plinkman.h \
 	../dev/mcp.h \
-	../stuff/err.h \
-	../types.h
+	../filesel/filesystem.h \
+	gmdplay.h \
+	gmdinst.h \
+	../stuff/err.h
 	$(CC) gmdlptm.c -o $@ -c
 
 gmdls3m.o: gmdls3m.c \
 	../config.h \
-	gmdplay.h \
-	gmdinst.h \
+	../types.h \
 	../boot/plinkman.h \
 	../dev/mcp.h \
-	../stuff/err.h \
-	../types.h
+	../filesel/filesystem.h \
+	gmdplay.h \
+	gmdinst.h \
+	../stuff/err.h
 	$(CC) gmdls3m.c -o $@ -c
+
+gmdlstm.o: gmdlstm.c \
+	../config.h \
+	../types.h \
+	../boot/plinkman.h \
+	../dev/mcp.h \
+	../filesel/filesystem.h \
+	gmdplay.h \
+	gmdinst.h \
+	../stuff/err.h
+	$(CC) gmdlstm.c -o $@ -c
 
 gmdlult.o: gmdlult.c \
 	../config.h \
-	gmdplay.h \
-	gmdinst.h \
+	../types.h \
 	../boot/plinkman.h \
 	../dev/mcp.h \
-	../stuff/err.h \
-	../types.h
+	../filesel/filesystem.h \
+	gmdplay.h \
+	gmdinst.h \
+	../stuff/err.h
 	$(CC) gmdlult.c -o $@ -c
 
 gmdpchan.o: gmdpchan.c \
@@ -190,10 +211,10 @@ gmdpchan.o: gmdpchan.c \
 gmdpdots.o: gmdpdots.c \
 	../config.h \
 	../types.h \
+	../cpiface/cpiface.h \
 	../dev/mcp.h \
 	gmdplay.h \
-	gmdpdots.h \
-	../cpiface/cpiface.h
+	gmdpdots.h
 	$(CC) gmdpdots.c -o $@ -c
 
 gmdpinst.o: gmdpinst.c \
@@ -217,21 +238,20 @@ gmdpplay.o: gmdpplay.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
-	../filesel/mdb.h \
-	../dev/mcp.h \
 	../boot/psetting.h \
-	gmdplay.h \
+	../cpiface/cpiface.h \
+	../dev/deviwave.h \
+	../dev/mcp.h \
+	../filesel/filesystem.h \
+	../filesel/mdb.h \
+	../filesel/pfilesel.h \
 	gmdpchan.h \
 	gmdpdots.h \
+	gmdplay.h \
 	gmdptrak.h \
 	../stuff/compat.h \
-	../stuff/poutput.h \
 	../stuff/err.h \
-	../boot/plinkman.h \
-	../dev/deviwave.h \
-	../cpiface/cpiface.h \
-	../stuff/compat.h \
-	../filesel/pfilesel.h
+	../stuff/poutput.h
 	$(CC) gmdpplay.c -o $@ -c
 
 gmdptrak.o: gmdptrak.c \

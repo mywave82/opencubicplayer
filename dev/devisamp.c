@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Sampler devices system
  *
@@ -29,13 +30,16 @@
 #include <stdio.h>
 #include <string.h>
 #include "types.h"
-#include "devisamp.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "devigen.h"
+#include "devisamp.h"
 #include "filesel/dirdb.h"
+#include "filesel/filesystem.h"
+#include "filesel/filesystem-drive.h"
+#include "filesel/filesystem-file-mem.h"
+#include "filesel/filesystem-setup.h"
 #include "filesel/mdb.h"
-#include "filesel/modlist.h"
 #include "filesel/pfilesel.h"
 #include "imsdev.h"
 #include "sampler.h"
@@ -44,15 +48,15 @@
 
 int (*smpProcessKey)(uint16_t);
 
-unsigned char plsmpOpt;
-unsigned short plsmpRate;
-
 static struct devinfonode *plSamplerDevices;
 static struct devinfonode *cursampdev;
 static struct devinfonode *defsampdev;
-static struct mdbreaddirregstruct smpReadDirReg;
 static struct interfacestruct smpIntr;
 static struct preprocregstruct smpPreprocess;
+
+unsigned char plsmpOpt;
+unsigned short plsmpRate;
+
 
 static struct devinfonode *getdevstr(struct devinfonode *n, const char *hnd)
 {
@@ -65,34 +69,6 @@ static struct devinfonode *getdevstr(struct devinfonode *n, const char *hnd)
 	return 0;
 }
 
-/*
-static void setdevice(devinfonode *&curdev, devinfonode *dev)
-{
-  if (curdev==dev)
-    return;
-  if (curdev)
-  {
-    if (curdev->addprocs&&curdev->addprocs->Close)
-      curdev->addprocs->Close();
-    smpProcessKey=0;
-    curdev->dev.dev->Close();
-  }
-  curdev=0;
-  if (!dev)
-    return;
-  printf("%s selected...\n", dev->dev.dev->name);
-  if (dev->dev.dev->Init(dev->dev))
-  {
-    if (dev->addprocs&&dev->addprocs->Init)
-      dev->addprocs->Init(dev->handle);
-    if (dev->addprocs&&dev->addprocs->ProcessKey)
-      smpProcessKey=dev->addprocs->ProcessKey;
-    curdev=dev;
-    return;
-  }
-  printf("device init error\n");
-}
-*/
 static void setdevice(struct devinfonode **curdev, struct devinfonode *dev)
 {
 	if (*curdev==dev)
@@ -113,6 +89,7 @@ static void setdevice(struct devinfonode **curdev, struct devinfonode *dev)
 	(*curdev)=0;
 	if (!dev)
 		return;
+
 	if (dev->linkhand<0)
 	{
 		char lname[22];
@@ -142,7 +119,7 @@ static void setdevice(struct devinfonode **curdev, struct devinfonode *dev)
 		if (dev->devinfo.devtype->addprocs)
 			if (dev->devinfo.devtype->addprocs->ProcessKey)
 				smpProcessKey=dev->devinfo.devtype->addprocs->ProcessKey;
-		*curdev=dev;
+		(*curdev)=dev;
 		return;
 	}
 	if (*curdev)
@@ -153,7 +130,6 @@ static void setdevice(struct devinfonode **curdev, struct devinfonode *dev)
 		}
 	fprintf(stderr, "device init error\n");
 }
-
 
 static void smpSetDevice(const char *name, int def)
 {
@@ -167,7 +143,221 @@ static void smpResetDevice(void)
 	setdevice(&cursampdev, defsampdev);
 }
 
-static struct dmDrive *dmSETUP;
+struct file_devs_t
+{
+	struct ocpfile_t head;
+//	uint32_t filesize;
+	struct devinfonode *dev;
+};
+
+static void file_devs_ref (struct ocpfile_t *_self)
+{
+	struct file_devs_t *self = (struct file_devs_t *)_self;
+	self->head.refcount++;
+}
+static void file_devs_unref (struct ocpfile_t *_self)
+{
+	struct file_devs_t *self = (struct file_devs_t *)_self;
+	self->head.refcount--;
+	if (!self->head.refcount)
+	{
+		dirdbUnref (self->head.dirdb_ref, dirdb_use_file);
+		free (self);
+	}
+}
+
+static struct ocpfilehandle_t *file_devs_open (struct ocpfile_t *_self)
+{
+	struct file_devs_t *self = (struct file_devs_t *)_self;
+	char *buffer = strdup (smpIntr.name);
+	struct ocpfilehandle_t *retval = mem_filehandle_open (/*self->head.parent,*/ self->head.dirdb_ref, buffer, strlen (smpIntr.name));
+	if (!retval)
+	{
+		free (buffer);
+	}
+	return retval;
+}
+
+static uint64_t file_devs_filesize (struct ocpfile_t *_self)
+{
+	return strlen (smpIntr.name);
+}
+
+static int file_devs_filesize_ready (struct ocpfile_t *_self)
+{
+	return 1;
+}
+
+static struct ocpdir_t dir_devs;
+
+static void dir_devs_ref (struct ocpdir_t *self)
+{
+}
+static void dir_devs_unref (struct ocpdir_t *self)
+{
+}
+
+struct dir_devs_handle_t
+{
+	void (*callback_file)(void *token, struct ocpfile_t *);
+	void *token;
+	struct ocpdir_t *owner;
+	struct devinfonode *next;
+};
+static ocpdirhandle_pt dir_devs_readdir_start (struct ocpdir_t *self, void (*callback_file)(void *token, struct ocpfile_t *),
+	                                                              void (*callback_dir )(void *token, struct ocpdir_t  *), void *token)
+{
+	struct dir_devs_handle_t *retval = malloc (sizeof (*retval));
+	if (!retval)
+	{
+		return 0;
+	}
+	retval->callback_file = callback_file;
+	retval->token = token;
+	retval->owner = self;
+	retval->next = plSamplerDevices;
+	self->ref(self);
+	return retval;
+};
+
+static void dir_devs_readdir_cancel (ocpdirhandle_pt _handle)
+{
+	struct dir_devs_handle_t *handle = (struct dir_devs_handle_t *)_handle;
+	handle->owner->unref (handle->owner);
+	free (handle);
+}
+
+static int dir_devs_readdir_iterate (ocpdirhandle_pt _handle)
+{
+	struct devinfonode *iter;
+	struct dir_devs_handle_t *handle = (struct dir_devs_handle_t *)_handle;
+
+	for (iter = plSamplerDevices; iter; iter = iter->next)
+	{
+		if (handle->next == iter)
+		{
+			struct file_devs_t *file = malloc (sizeof (*file));
+			if (file)
+			{
+				char npath[64];
+				uint32_t mdb_ref;
+
+				snprintf (npath, sizeof(npath), "%s.DEV", iter->handle);
+
+				ocpfile_t_fill (&file->head,
+				                 file_devs_ref,
+				                 file_devs_unref,
+				                 handle->owner,
+				                 file_devs_open,
+				                 file_devs_filesize,
+				                 file_devs_filesize_ready,
+				                 dirdbFindAndRef (handle->owner->dirdb_ref, npath, dirdb_use_file),
+				                 1, /* refcount */
+				                 1  /* is_nodetect */);
+				/* file->filesize = iter->devinfo.mem; */
+				file->dev = iter;
+
+				mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, strlen (smpIntr.name));
+				if (mdb_ref!=0xffffffff)
+				{
+					struct moduleinfostruct mi;
+					mdbGetModuleInfo(&mi, mdb_ref);
+					mi.flags1 &= ~MDB_VIRTUAL;
+					mi.channels = iter->devinfo.chan;
+					snprintf (mi.modname, sizeof(mi.modname), "%s", iter->name);
+					mi.modtype = mtDEVv;
+					mdbWriteModuleInfo (mdb_ref, &mi);
+				}
+				handle->callback_file (handle->token, &file->head);
+				file->head.unref (&file->head);
+			}
+			handle->next = iter->next;
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static struct ocpdir_t *dir_devs_readdir_dir (struct ocpdir_t *_self, uint32_t dirdb_ref)
+{
+	/* this can not succeed */
+	return 0;
+}
+
+static struct ocpfile_t *dir_devs_readdir_file (struct ocpdir_t *_self, uint32_t dirdb_ref)
+{
+	struct devinfonode *iter;
+	char *searchpath = 0;
+
+	uint32_t parent_dirdb_ref;
+
+/* assertion begin */
+	parent_dirdb_ref = dirdbGetParentAndRef (dirdb_ref, dirdb_use_file);
+	dirdbUnref (parent_dirdb_ref, dirdb_use_file);
+	if (parent_dirdb_ref != _self->dirdb_ref)
+	{
+		fprintf (stderr, "dir_devs_readdir_file: dirdb_ref->parent is not the expected value\n");
+		return 0;
+	}
+/* assertion end */
+
+	dirdbGetName_internalstr (dirdb_ref, &searchpath);
+	if (!searchpath)
+	{
+		return 0;
+	}
+
+	for (iter = plSamplerDevices; iter; iter = iter->next)
+	{
+		char npath[64];
+		struct file_devs_t *file;
+		uint32_t mdb_ref;
+
+		snprintf (npath, sizeof(npath), "%s.DEV", iter->handle);
+
+		if (strcmp (npath, searchpath))
+		{
+			continue;
+		}
+
+		file = malloc (sizeof (*file));
+		if (!file)
+		{
+			fprintf (stderr, "dir_devs_readdir_file: out of memory\n");
+			return 0;
+		}
+
+		ocpfile_t_fill (&file->head,
+		                 file_devs_ref,
+		                 file_devs_unref,
+		                 _self,
+		                 file_devs_open,
+		                 file_devs_filesize,
+		                 file_devs_filesize_ready,
+		                 dirdbRef (dirdb_ref, dirdb_use_file),
+
+		                 1, /* refcount */
+		                 1  /* is_nodetect */);
+
+		/* file->filesize = iter->devinfo.mem; */
+		file->dev = iter;
+
+		mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, strlen (smpIntr.name));
+		if (mdb_ref!=0xffffffff)
+		{
+			struct moduleinfostruct mi;
+			mdbGetModuleInfo(&mi, mdb_ref);
+			mi.flags1 &= ~MDB_VIRTUAL;
+			mi.channels = iter->devinfo.chan;
+			snprintf (mi.modname, sizeof(mi.modname), "%s", iter->name);
+			mi.modtype = mtDEVv;
+			mdbWriteModuleInfo (mdb_ref, &mi);
+		}
+
+		return &file->head;
+	}
+	return 0;
+}
 
 static int smpdevinited = 0;
 static int sampdevinit(void)
@@ -182,12 +372,25 @@ static int sampdevinit(void)
 	fprintf(stderr, "sampdevinit.... trying to find all samplers   [sound]->samplerdevices\n");
 #endif
 
-	mdbRegisterReadDir(&smpReadDirReg);
-
 	plRegisterInterface (&smpIntr);
 	plRegisterPreprocess (&smpPreprocess);
 
-	dmSETUP=RegisterDrive("setup:");
+	ocpdir_t_fill (&dir_devs,
+	                dir_devs_ref,
+	                dir_devs_unref,
+	                dmSetup->basedir,
+	                dir_devs_readdir_start,
+	                0,
+	                dir_devs_readdir_cancel,
+	                dir_devs_readdir_iterate,
+	                dir_devs_readdir_dir,
+	                dir_devs_readdir_file,
+	                0,
+	                dirdbFindAndRef (dmSetup->basedir->dirdb_ref, "devs", dirdb_use_dir),
+	                0, /* refcount, not used */
+	                0, /* is_archive */
+	                0  /* is_playlist */);
+	filesystem_setup_register_dir (&dir_devs);
 
 	if (!strlen(cfGetProfileString2(cfSoundSec, "sound", "samplerdevices", "")))
 		return errOk;
@@ -244,9 +447,11 @@ static void sampdevclose(void)
 #ifdef INITCLOSE_DEBUG
 	fprintf(stderr, "sampdevclose...\n");
 #endif
+
 	if (smpdevinited)
 	{
-		mdbUnregisterReadDir(&smpReadDirReg);
+		filesystem_setup_unregister_dir (&dir_devs);
+		dirdbUnref (dir_devs.dirdb_ref, dirdb_use_dir);
 
 		plUnregisterInterface (&smpIntr);
 		plUnregisterPreprocess (&smpPreprocess);
@@ -264,80 +469,16 @@ static void sampdevclose(void)
 	}
 }
 
-static int smpReadDir(struct modlist *ml, const struct dmDrive *drive, const uint32_t path, const char *mask, unsigned long opt)
-{
-	struct modlistentry m;
-	uint32_t node;
-
-	if (drive!=dmSETUP)
-		return 1;
-
-	node = dirdbFindAndRef(dmSETUP->basepath, "DEVICES");
-
-	if (opt&RD_PUTSUBS)
-	{
-		if (path==dmSETUP->basepath)
-		{
-			if (modlist_find(ml, node)<0)
-			{
-				memset(&m, 0, sizeof(m));
-				m.drive=drive;
-				strcpy(m.shortname, "DEVICES");
-				m.dirdbfullpath=node;
-				m.flags=MODLIST_FLAG_DIR;
-				modlist_append(ml, &m);
-			}
-		}
-	}
-
-	if (path==node)
-	{
-		struct devinfonode *dev;
-		for (dev=plSamplerDevices; dev; dev=dev->next)
-		{
-			char npath[64];
-			snprintf (npath, sizeof(npath), "%s.DEV", dev->handle);
-			memset(&m, 0, sizeof(m));
-
-			fsConvFileName12 (m.shortname, dev->handle, ".DEV");
-//			if (fsMatchFileName12(m.shortname, mask))
-			{
-				m.mdb_ref=mdbGetModuleReference(m.shortname, dev->devinfo.mem);
-				if (m.mdb_ref==0xffffffff)
-					goto out;
-				m.drive=drive;
-				m.dirdbfullpath=dirdbFindAndRef(path, npath);
-				m.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-				if (mdbGetModuleType(m.mdb_ref)!=mtDEVs)
-				{
-					struct moduleinfostruct mi;
-					mdbGetModuleInfo(&mi, m.mdb_ref);
-					mi.flags1|=MDB_VIRTUAL;
-					mi.channels=dev->devinfo.chan;
-					strcpy(mi.modname, dev->name);
-					mi.modtype=mtDEVs;
-					mdbWriteModuleInfo(m.mdb_ref, &mi);
-				}
-				modlist_append(ml, &m);
-				dirdbUnref(m.dirdbfullpath);
-			}
-		}
-	}
-out:
-	dirdbUnref(node);
-	return 1;
-}
-
-static int smpSet(const uint32_t dirdbref, struct moduleinfostruct *mi, FILE **fp)
+static int smpSetDev(struct moduleinfostruct *mi, struct ocpfilehandle_t *fp)
 {
 	char *path, *name;
 
-	if (mi->modtype != mtDEVs)
+	if (mi->modtype != mtDEVv)
 	{
 		return 0;
 	}
 
-	dirdbGetName_internalstr (dirdbref, &path);
+	dirdbGetName_internalstr (fp->dirdb_ref, &path);
 	splitpath4_malloc (path, 0, 0, &name, 0);
 
 	smpSetDevice(name, 1);
@@ -347,15 +488,14 @@ static int smpSet(const uint32_t dirdbref, struct moduleinfostruct *mi, FILE **f
 	return 0;
 }
 
-static void smpPrep(const uint32_t dirdbref, struct moduleinfostruct *m, FILE **fp)
+static void smpPrep(struct moduleinfostruct *m, struct ocpfilehandle_t **fp)
 {
 	smpResetDevice();
 }
 
-static struct mdbreaddirregstruct smpReadDirReg = {smpReadDir MDBREADDIRREGSTRUCT_TAIL};
-static struct interfacestruct smpIntr = {smpSet, 0, 0, "smpIntr" INTERFACESTRUCT_TAIL};
+static struct interfacestruct smpIntr = {smpSetDev, 0, 0, "smpIntr" INTERFACESTRUCT_TAIL};
 static struct preprocregstruct smpPreprocess = {smpPrep PREPROCREGSTRUCT_TAIL};
 #ifndef SUPPORT_STATIC_PLUGINS
 char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "smpbase", .desc = "OpenCP Sampler Devices System (c) 1994-10 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0, .Init = sampdevinit, .Close = sampdevclose};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "smpbase", .desc = "OpenCP Sampler Devices System (c) 1994-21 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = sampdevinit, .Close = sampdevclose};

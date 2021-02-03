@@ -615,48 +615,6 @@ document if you want to change to mixer settings. However these
 devices never have caused any trouble/bugs and there should be no need
 for change.
 
-@section archivers
-When processing files inside archives OCP has to know how to call the
-programs. The following sections define the usage of different
-archivers supported by the OCP fileselector.
-
-When substituting the command line 4 special variables are processed
-by the fileselector for accessing the archives:
-@multitable @columnfractions .1 .9
-@item %% @tab evaluates to ``%''
-@item %a @tab evaluates to the archiv name preceeded by the path to process.
-@item %n @tab evaluates to the filename of the file to process inside the archive.
-@item %d @tab evaluates to the destination directory used to extract files out
-of archive.
-@end multitable
-
-Three default command are defined for the arc modules:
-@multitable @columnfractions .3 .7
-@item get @tab
-this command is used when a file should be extracted out of an
-archive.
-@item put @tab
-if a file should be added to the archive this command line is used.
-@item delete @tab
-with @key{ALT}+@key{k} you can delete files out of archives.
-@end multitable
-
-The following two archivers contain special options described below:
-@example
-[arcZIP]
-  get=pkunzip %a %d %n
-  put=pkzip %a %n
-  delete=pkzip -d %a %n
-  deleteempty=on
-@end example
-@multitable @columnfractions .3 .7
-@item deleteempty @tab
-the program pkzip/pkunzip used by OCP to process
-@file{.zip} files have a bug when deleting the last file inside an archive.
-An empty archive of 22 bytes is left on the hard disk. With this
-option enabled the fileselector will delete those ``zip zombies''.
-@end multitable
-
 @example
 [arcACE]
   get=ace32 e %a %n %d

@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * XMPlay .XM module loader
  *
@@ -31,8 +32,9 @@
 #include <string.h>
 #include "types.h"
 #include "dev/mcp.h"
-#include "xmplay.h"
+#include "filesel/filesystem.h"
 #include "stuff/err.h"
+#include "xmplay.h"
 
 struct LoadModuleResources
 {
@@ -68,7 +70,7 @@ static void FreeResources(struct LoadModuleResources *r, uint_fast16_t ninst)
 }
 
 
-int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, FILE *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	struct __attribute__((packed))
 	{
@@ -111,11 +113,11 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 	m->ismod=0;
 	m->ft2_e60bug=1;
 
-	if (fread(&head1, sizeof(head1), 1, file)!=1)
+	if (file->read (file, &head1, sizeof(head1)) != sizeof (head1))
 	{
 		fprintf(stderr, __FILE__ ": fread failed #1\n");
 		FreeResources (&r, head2.ninst);
-		return errFormStruc;
+		return errFileRead;
 	}
 	head1.ver     = uint16_little (head1.ver);
 	head1.hdrsize = uint32_little (head1.hdrsize);
@@ -140,11 +142,11 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 		return errFormOldVer;
 	}
 
-	if (fread(&head2, sizeof(head2), 1, file)!=1)
+	if (file->read (file, &head2, sizeof(head2)) != sizeof (head2))
 	{
 		fprintf(stderr, __FILE__ ": fread failed #2\n");
 		FreeResources (&r, head2.ninst);
-		return errFormStruc;
+		return errFileRead;
 	}
 	head2.nord    = uint16_little (head2.nord);
 	head2.loopord = uint16_little (head2.loopord);
@@ -154,7 +156,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 	head2.freqtab = uint16_little (head2.freqtab);
 	head2.tempo   = uint16_little (head2.tempo);
 	head2.bpm     = uint16_little (head2.bpm);
-	if (fseek(file, head1.hdrsize-4-sizeof(head2), SEEK_CUR)<0)
+	if (file->seek_cur (file, head1.hdrsize - 4 - sizeof(head2)) < 0)
 	{
 		fprintf(stderr, __FILE__ ": fseek failed #1\n");
 		FreeResources (&r, head2.ninst);
@@ -223,16 +225,16 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 		} pathead;
 		uint8_t *pbuf, *pbp, *cur;
 
-		if (fread(&pathead, sizeof(pathead), 1, file)!=1)
+		if (file->read (file, &pathead, sizeof (pathead)) != sizeof (pathead))
 		{
 			fprintf(stderr, __FILE__ ": fread failed #3\n");
 			FreeResources (&r, head2.ninst);
-			return errFormStruc;
+			return errFileRead;
 		}
 		pathead.len     = uint32_little (pathead.len);
 		pathead.rows    = uint16_little (pathead.rows);
 		pathead.patdata = uint16_little (pathead.patdata);
-		if (fseek(file, pathead.len-sizeof(pathead), SEEK_CUR)<0)
+		if (file->seek_cur (file, pathead.len - sizeof(pathead)))
 		{
 			fprintf(stderr, __FILE__ ": fseek failed #2\n");
 			FreeResources (&r, head2.ninst);
@@ -255,11 +257,11 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 			FreeResources (&r, head2.ninst);
 			return errAllocMem;
 		}
-		if (fread(pbuf, pathead.patdata, 1, file)!=1)
+		if (file->read (file, pbuf, pathead.patdata) != pathead.patdata)
 		{
 			fprintf(stderr, __FILE__ ": fread failed #4\n");
 			FreeResources (&r, head2.ninst);
-			return errFormStruc;
+			return errFileRead;
 		}
 		cur=(uint8_t *)(m->patterns[i]);
 		for (j=0; j<((unsigned int)pathead.rows*head2.nchan); j++)
@@ -308,7 +310,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 		uint16_t volfade;
 		int k, j;
 
-		if (fread(&ins1, sizeof(ins1.size), 1, file)!=1)
+		if (file->read (file, &ins1, sizeof (ins1.size)) != sizeof (ins1.size))
 		{
 			/*
 			fprintf(stderr, __FILE__ ": fread failed #5.1 (%d/%d)\n", i, m->ninst);
@@ -324,18 +326,18 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 		{
 			fprintf(stderr, __FILE__ ": Warning, ins1.size<4\n");
 			memset(&ins1, 0, sizeof(ins1));
-		} else if (ins1.size<sizeof(ins1))
+		} else if (ins1.size < sizeof(ins1))
 		{
 			fprintf(stderr, __FILE__ ": Warning, ins1.size<=sizeof(ins1), reading %d more bytes and zeroing last %d bytes\n", (int)(ins1.size-(int)sizeof(ins1.size)), (int)(sizeof(ins1)-(ins1.size-sizeof(ins1.size))));
-			if (fread(/*no need to take pointer of array */ins1.name, ins1.size-sizeof(ins1.size), 1, file)!=1)
+			if (file->read (file, ins1.name, ins1.size - sizeof (ins1.size)) != (ins1.size - sizeof (ins1.size)))
 			{
 				fprintf(stderr, __FILE__ ": fread failed #5.2\n");
 				FreeResources (&r, head2.ninst);
-				return errFormStruc;
+				return errFileRead;
 			}
-			memset(/*no need to take pointer of array */ins1.name+ins1.size-sizeof(ins1.size), 0, sizeof(ins1)-(ins1.size-sizeof(ins1.size)));
+			memset(ins1.name + ins1.size-sizeof(ins1.size), 0, sizeof(ins1)-(ins1.size-sizeof(ins1.size)));
 		} else {
-			if (fread(ins1.name, sizeof(ins1)-sizeof(ins1.size), 1, file)!=1)
+			if (file->read (file, ins1.name, sizeof (ins1) - sizeof (ins1.size)) != (sizeof (ins1) - sizeof (ins1.size)))
 			{
 				fprintf(stderr, __FILE__ ": fread failed #5.2\n");
 				FreeResources (&r, head2.ninst);
@@ -352,13 +354,15 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 		r.instsmpnum[i]=ins1.samp;
 		if (!ins1.samp)
 		{
-			if (ins1.size>sizeof(ins1))
-				if (fseek(file, ins1.size-sizeof(ins1), SEEK_CUR)<0)
+			if (ins1.size > sizeof(ins1))
+			{
+				if (file->seek_cur (file, ins1.size - sizeof(ins1)) < 0)
 				{
 					fprintf(stderr, __FILE__ ": fseek failed #3\n");
 					FreeResources (&r, head2.ninst);
 					return errFormStruc;
 				}
+			}
 			continue;
 		}
 
@@ -370,7 +374,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 		} else if (ins1.size<=(sizeof(ins1)+sizeof(ins2)))
 		{
 			fprintf(stderr, __FILE__ ": Warning, ins2.size<=(sizeof(ins1)+sizeof(ins2)), reading %d bytes and zeroing last %d bytes\n", (int)(ins1.size-(int)sizeof(ins1)), (int)(sizeof(ins2)-(ins1.size-sizeof(ins1))));
-			if (fread(&ins2, ins1.size-sizeof(ins1), 1, file)!=1)
+			if (file->read (file, &ins2, ins1.size - sizeof (ins1)) != (ins1.size - sizeof (ins1)))
 			{
 				fprintf(stderr, __FILE__ ": fread failed #6.1\n");
 				FreeResources (&r, head2.ninst);
@@ -378,13 +382,13 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, F
 			}
 			memset((char *)(&ins2)+ins1.size-sizeof(ins1), 0, sizeof(ins2)-(ins1.size-sizeof(ins1)));
 		} else {
-			if (fread(&ins2, sizeof(ins2), 1, file)!=1)
+			if (file->read (file, &ins2, sizeof (ins2)) != sizeof (ins2))
 			{
 				fprintf(stderr, __FILE__ ": fread failed #6.2\n");
 				FreeResources (&r, head2.ninst);
 				return errFormStruc;
 			}
-			if (fseek(file, ins1.size-sizeof(ins1)-sizeof(ins2), SEEK_CUR)<0)
+			if (file->seek_cur (file, ins1.size - sizeof(ins1) - sizeof(ins2)) < 0)
 			{
 				fprintf(stderr, __FILE__ ": fseek failed #4\n");
 				FreeResources (&r, head2.ninst);
@@ -581,7 +585,7 @@ bail2:
 			struct xmpsample *sp=&r.msmps[i][j];
 			struct sampleinfo *sip=&r.smps[i][j];
 
-			if (fread(&samp, sizeof (samp), 1, file)!=1)
+			if (file->read (file, &samp, sizeof (samp)) != sizeof (samp))
 			{
 				fprintf(stderr, __FILE__ ": fread() failed #7\n");
 				FreeResources (&r, head2.ninst);
@@ -591,7 +595,7 @@ bail2:
 			samp.loopstart = uint32_little (samp.loopstart);
 			samp.looplen   = uint32_little (samp.looplen);
 
-			if (fseek(file, ins2.shsize-sizeof(samp), SEEK_CUR)<0)
+			if (file->seek_cur (file, ins2.shsize - sizeof (samp)) < 0)
 			{
 				fprintf(stderr, __FILE__ ": fseek failed #5\n");
 				FreeResources (&r, head2.ninst);
@@ -643,11 +647,11 @@ bail2:
 				FreeResources (&r, head2.ninst);
 				return errAllocMem;
 			}
-			if (fread(sip->ptr, l, 1, file)!=1)
+			if (file->read (file, sip->ptr, l) != l)
 			{
 				fprintf(stderr, __FILE__ ": fread failed #8\n");
 				FreeResources (&r, head2.ninst);
-				return errFormStruc;
+				return errFileRead;
 			}
 			sp->handle=m->nsampi++;
 		}

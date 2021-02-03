@@ -31,9 +31,10 @@ opltype.o: opltype.cpp \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
-	../stuff/compat.h \
+	../filesel/filesystem.h \
 	../filesel/mdb.h \
-	../filesel/pfilesel.h
+	../filesel/pfilesel.h \
+	../stuff/compat.h
 	$(CXX) $(ADPLUG_CXXFLAGS) opltype.cpp -o $@ -c
 
 playopl_so=oplpplay.o oplplay.o ocpemu.o
@@ -43,20 +44,21 @@ playopl$(LIB_SUFFIX): $(playopl_so)
 oplpplay.o: oplpplay.cpp \
 	../config.h \
 	../types.h \
+	../boot/plinkman.h \
+	../boot/psetting.h \
+	../cpiface/cpiface.h \
+	../dev/deviplay.h \
+	../dev/player.h \
 	../filesel/dirdb.h \
+	../filesel/filesystem.h \
 	../filesel/pfilesel.h \
 	../filesel/mdb.h \
-	../dev/player.h \
-	../boot/psetting.h \
-	../boot/plinkman.h \
-	oplplay.h \
 	../stuff/compat.h \
 	../stuff/err.h \
-	../stuff/sets.h \
 	../stuff/poutput.h \
+	../stuff/sets.h \
 	../stuff/timer.h \
-	../dev/deviplay.h \
-	../cpiface/cpiface.h
+	oplplay.h
 	$(CXX) $(ADPLUG_CXXFLAGS) oplpplay.cpp -o $@ -c
 
 oplplay.o: oplplay.cpp \

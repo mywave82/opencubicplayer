@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * XMPlay interface routines
  *
@@ -39,15 +40,15 @@
 #include <time.h>
 #include "types.h"
 #include "boot/plinkman.h"
-#include "stuff/compat.h"
 #include "cpiface/cpiface.h"
-#include "filesel/pfilesel.h"
-#include "filesel/mdb.h"
-#include "dev/mcp.h"
-#include "stuff/poutput.h"
-#include "stuff/err.h"
 #include "dev/deviwave.h"
-#include "cpiface/cpiface.h"
+#include "dev/mcp.h"
+#include "filesel/filesystem.h"
+#include "filesel/mdb.h"
+#include "filesel/pfilesel.h"
+#include "stuff/compat.h"
+#include "stuff/err.h"
+#include "stuff/poutput.h"
 #include "xmplay.h"
 
 #define _MAX_FNAME 8
@@ -608,11 +609,10 @@ static int xmpGetDots(struct notedotsdata *d, int max)
 	return pos;
 }
 
-static int xmpOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
+static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
-	int (*loader)(struct xmodule *, FILE *)=0;
+	int (*loader)(struct xmodule *, struct ocpfilehandle_t *)=0;
 	int retval;
-	int i;
 
 	if (!mcpOpenPlayer)
 		return errGen;
@@ -623,11 +623,7 @@ static int xmpOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 	strncpy(currentmodname, info->name, _MAX_FNAME);
 	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
-	fseek(file, 0, SEEK_END);
-	i=ftell(file);
-	fseek(file, 0, SEEK_SET);
-
-	fprintf(stderr, "loading %s%s (%ik)...\n", currentmodname, currentmodext, i>>10);
+	fprintf(stderr, "loading %s%s (%uk)...\n", currentmodname, currentmodext, (unsigned int)(file->filesize (file) >> 10));
 
 	switch (info->modtype)
 	{
@@ -713,4 +709,4 @@ static int xmpOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 }
 
 struct cpifaceplayerstruct xmpPlayer = {xmpOpenFile, xmpCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playxm", .desc = "OpenCP XM/MOD Player (c) 1995-09 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playxm", .desc = "OpenCP XM/MOD Player (c) 1995-21 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

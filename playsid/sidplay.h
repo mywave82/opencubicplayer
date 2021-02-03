@@ -13,7 +13,8 @@ struct sidChanInfo
 	uint16_t leftvol, rightvol;
 };
 
-extern unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(FILE *);
+struct ocpfilehandle_t;
+extern unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle_t *);
 extern int __attribute__ ((visibility ("internal"))) sidNumberOfChips(void);
 extern int __attribute__ ((visibility ("internal"))) sidNumberOfComments(void);
 extern int __attribute__ ((visibility ("internal"))) sidNumberOfInfos(void);

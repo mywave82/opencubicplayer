@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '05-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * GMIPlay file type detection routines for the fileselector
  *
@@ -27,6 +28,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "stuff/compat.h"
 
@@ -57,8 +59,9 @@ static int gmiGetModuleType(const char *buf, const char *ext)
 	return mtUnRead;
 }
 
-static int gmiReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
+static int gmiReadMemInfo(struct moduleinfostruct *m, const char *_buf, size_t len)
 {
+	const uint8_t *buf = (const uint8_t *)_buf;
 	char ext[_EXT_MAX];
 	int type;
 	unsigned int i;
@@ -68,26 +71,26 @@ static int gmiReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 
 	getext(ext, m->name);
 
-	if ((type=gmiGetModuleType(buf, ext))==mtUnRead)
+	if ((type=gmiGetModuleType(_buf, ext))==mtUnRead)
 		return 0;
 	m->modtype=type;
 
 	switch (type)
 	{
-		unsigned long len;
+		uint32_t len;
 
 		case mtMID:
 			len=0;
 			m->channels=16;
 
 			i=0;
-			if (*(uint32_t*)buf==uint32_little(0x46464952))
+			if (*(uint32_t*)buf==uint32_little(0x46464952)) /* RIFF */
 			{
 				i=12;
 				while (i<800)
 				{
 					i+=8;
-					if (*(uint32_t*)(buf+i-8)==uint32_little(0x61746164))
+					if (*(uint32_t*)(buf+i-8)==uint32_little(0x61746164)) /* data */
 						break;
 					i+=uint32_little(*(uint32_t*)(buf+i-4));
 				}
@@ -126,7 +129,7 @@ static int gmiReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 	return 0;
 }
 
-static int gmiReadInfo(struct moduleinfostruct *m, FILE *fp, const char *mem, size_t len)
+static int gmiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *mem, size_t len)
 {
 	return 0;
 }

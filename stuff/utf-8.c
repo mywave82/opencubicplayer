@@ -1,10 +1,31 @@
+/* OpenCP Module Player
+ * copyright (c) 2020-'21 Stian Skjelstad <stian.skjelestad@gmail.com>
+ *
+ * UTF-8 encode/decode functions
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
 #include "config.h"
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 #include "types.h"
+#include "cpiface/cpiface.h"
+#include "framelock.h"
+#include "poutput.h"
 #include "utf-8.h"
 
 //#define UNKNOWN_UNICODE 0xFFFD
-int utf8_decode (const char *_src, size_t srclen, int *inc)
+uint32_t utf8_decode (const char *_src, size_t srclen, int *inc)
 {
 	const unsigned char *src = (const unsigned char *)_src;
 	int left;
@@ -137,6 +158,254 @@ int utf8_encode (char *dst, uint32_t codepoint)
 	dst[0] = 0;
 	return 0;
 }
+
+void displaystr_utf8_overflowleft (uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
+{
+	const char *tmppos = str;
+	int tmpposlen = strlen (str);
+	int visuallen = measurestr_utf8 (tmppos, tmpposlen);
+
+	while (visuallen > len)
+	{
+		int inc = 0;
+		utf8_decode (tmppos, tmpposlen, &inc);
+		tmppos += inc;
+		tmpposlen -= inc;
+		visuallen = measurestr_utf8 (tmppos, tmpposlen);
+	}
+	displaystr_utf8(y, x, 0x0F, tmppos, len);
+}
+
+struct VisualCharacter_t
+{
+	uint32_t codepoint;
+	uint8_t visualwidth;
+};
+
+int EditStringUTF8(unsigned int y, unsigned int x, unsigned int w, char **s)
+{
+/* problems:
+   each UTF-8 noun might be 1-4 bytes per character   <- use utf8_decode in a loop to cycle positions
+   each noun can take 0,1 or 2 cells on the screen    <- use measurestr_utf8
+ */
+	static struct VisualCharacter_t *workstring_data = 0;
+	static int                       workstring_length = 0;
+	static int                       workstring_size = 0;
+
+	static char *visualstring_buffer, *ptr;
+	static int   state = 0;
+	/* 0 - new / idle
+	 * 1 - in edit
+	 * 2 - in keyboard help
+	 */
+	static int insmode;
+	static int curpos;
+	static unsigned int scrolled = 0;
+
+	unsigned int visual_length_before_scrolled = 0;
+	unsigned int visual_length_before_curpos = 0;
+	unsigned int visual_length_at_curpos = 1;
+	unsigned int visual_length_after_curpos = 0;
+	int i;
+
+
+	if (state == 0)
+	{
+		unsigned int left = strlen (*s);
+		int incr = 0;
+
+		workstring_size = (left + 128) % ~63; /* use a worse case scenario string length add some headroom and round it off to 64 byte chunks */
+		visualstring_buffer = malloc (workstring_size * 4 + 1);
+		workstring_data = malloc (workstring_size * sizeof (workstring_data[0]));
+
+		for (i = 0, ptr = s[0]; *ptr; i++, ptr += incr)
+		{
+			workstring_data[i].codepoint = utf8_decode (ptr, left, &incr);
+			workstring_data[i].visualwidth = measurestr_utf8 (ptr, incr);
+		}
+		curpos = workstring_length = i;
+
+		setcurshape (1);
+		insmode = 1;
+		state = 1;
+		scrolled = 0;
+	}
+
+	if (scrolled > curpos)
+	{
+		scrolled = curpos;
+	}
+
+	for (i=0; i < workstring_length; i++)
+	{
+		if (i < scrolled)
+		{
+			visual_length_before_scrolled += workstring_data[i].visualwidth;
+		} else if (i < curpos)
+		{
+			visual_length_before_curpos   += workstring_data[i].visualwidth;
+		} else if (i == curpos)
+		{
+			visual_length_at_curpos        = workstring_data[i].visualwidth;
+		} else {
+			visual_length_after_curpos    += workstring_data[i].visualwidth;
+		}
+	}
+
+	while (   (visual_length_before_curpos + visual_length_at_curpos     > w) ||                                /* if cursor is outside the screen */
+	        ( (visual_length_before_curpos + visual_length_at_curpos + 4 > w) && visual_length_after_curpos ) ) /* or cursor is pressed to the very last 4 visible cells on the display */
+	{ /* hide more text */
+		visual_length_before_scrolled += workstring_data[scrolled].visualwidth;
+		visual_length_before_curpos -= workstring_data[scrolled].visualwidth;
+		scrolled++;
+	}
+
+	while (scrolled && ( (visual_length_before_curpos < 4) ||                                                                                                      /* if cursor is pressed to the very first 4 visible cells on the display */
+	                     ((visual_length_before_curpos + visual_length_at_curpos + visual_length_after_curpos + workstring_data[scrolled-1].visualwidth) <= w) ) ) /* or more text can fit on the display */
+	{ /* reveal more text */
+		scrolled--;
+		visual_length_before_scrolled -= workstring_data[scrolled].visualwidth;
+		visual_length_before_curpos += workstring_data[scrolled].visualwidth;
+	}
+
+	for (i=scrolled, ptr=visualstring_buffer; i < workstring_length; i++)
+	{
+		ptr += utf8_encode (ptr, workstring_data[i].codepoint);
+	}
+	*ptr = 0;
+
+	displaystr_utf8 (y, x, 0x8F, visualstring_buffer, w);
+	setcur(y, x + visual_length_before_curpos);
+
+	if (state == 2)
+	{
+		if (cpiKeyHelpDisplay())
+		{
+			framelock();
+			return 1;
+		}
+		state = 1;
+	}
+	framelock();
+
+	while (ekbhit())
+	{
+		uint16_t key=egetch();
+		if ((key>=0x20)&&(key<=0xFF))
+		{
+			char buffer[2];
+			int incr = 0;
+			buffer[0] = key;
+			buffer[1] = 0;
+
+			if ( insmode || ( curpos == workstring_length ) ) /* insert / append */
+			{
+				/* alloc more space if we need to */
+				if (workstring_size >= workstring_length)
+				{
+					unsigned int newsize = workstring_size + 64;
+					void *temp;
+					temp = realloc (workstring_data, newsize * sizeof (workstring_data[0]));
+					if (!temp)
+					{
+						return 1;
+					}
+					workstring_data = temp;
+					temp = realloc (visualstring_buffer, newsize * 4 + 1);
+					if (!temp)
+					{
+						return 1;
+					}
+					visualstring_buffer = temp;
+					workstring_size = newsize;
+				}
+
+				memmove (workstring_data + curpos + 1, workstring_data + curpos, sizeof (workstring_data[0]) * (workstring_length - curpos));
+				workstring_data[curpos].codepoint = utf8_decode (buffer, 1, &incr);
+				workstring_data[curpos].visualwidth = measurestr_utf8 (buffer, 1);
+				curpos++;
+				workstring_length++;
+			} else { /* overwrite */
+				workstring_data[curpos].codepoint = utf8_decode (buffer, 1, &incr);
+				workstring_data[curpos].visualwidth = measurestr_utf8 (buffer, 1);
+				curpos++;
+			}
+		} else switch (key)
+		{
+			case KEY_LEFT:
+				if (curpos)
+					curpos--;
+				break;
+			case KEY_RIGHT:
+				if (curpos < workstring_length)
+					curpos++;
+				break;
+			case KEY_HOME:
+				curpos = 0;
+				break;
+			case KEY_END:
+				curpos = workstring_length;
+				break;
+			case KEY_INSERT:
+				insmode = !insmode;
+				setcurshape (insmode ? 1:2);
+				break;
+			case KEY_DELETE:
+				if (curpos != workstring_length)
+				{
+					memmove (workstring_data + curpos, workstring_data + curpos + 1, sizeof (workstring_data[0]) * (workstring_length - curpos - 1 /* 0 */));
+					workstring_length--;
+				}
+				break;
+			case KEY_BACKSPACE:
+				if (curpos)
+				{
+					memmove (workstring_data + curpos - 1, workstring_data + curpos, sizeof (workstring_data[0]) * (workstring_length - curpos /* + 1 */));
+					curpos--;
+					workstring_length--;
+				}
+				break;
+			case KEY_ESC:
+				setcurshape(0);
+				free (workstring_data);     workstring_data = 0;
+				free (visualstring_buffer); visualstring_buffer = 0;
+				state = 0;
+				return -1;
+			case _KEY_ENTER:
+				setcurshape(0);
+				free (*s);
+				*s = malloc (workstring_length * 4 + 1);
+				if (*s)
+				{	/* visualstring_buffer might be out of sync if we have processed more keys in the same run */
+					for (i=0, ptr=*s; i < workstring_length; i++)
+					{
+						ptr += utf8_encode (ptr, workstring_data[i].codepoint);
+					}
+					*ptr = 0;
+				}
+				free (workstring_data);     workstring_data = 0;
+				free (visualstring_buffer); visualstring_buffer = 0;
+				state = 0;
+				return 0;
+			case KEY_ALT_K:
+				cpiKeyHelpClear();
+				cpiKeyHelp(KEY_RIGHT, "Move cursor right");
+				cpiKeyHelp(KEY_LEFT, "Move cursor left");
+				cpiKeyHelp(KEY_HOME, "Move cursor home");
+				cpiKeyHelp(KEY_END, "Move cursor to the end");
+				cpiKeyHelp(KEY_INSERT, "Toggle insert mode");
+				cpiKeyHelp(KEY_DELETE, "Remove character at cursor");
+				cpiKeyHelp(KEY_BACKSPACE, "Remove character left of cursor");
+				cpiKeyHelp(KEY_ESC, "Cancel changes");
+				cpiKeyHelp(_KEY_ENTER, "Submit changes");
+				state = 2;
+				return 1;
+		}
+	}
+
+	return 1;
+}
+
 
 #if 0
 

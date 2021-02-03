@@ -29,23 +29,27 @@
 #include <string.h>
 #include <time.h>
 #include "types.h"
-#include "filesel/pfilesel.h"
-#include "filesel/mdb.h"
-#include "stuff/poutput.h"
-#include "dev/player.h"
+
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
-#include "stuff/sets.h"
+
+#include "cpiface/cpiface.h"
+#include "dev/deviplay.h"
+#include "dev/player.h"
+
+#include "filesel/mdb.h"
+#include "filesel/pfilesel.h"
+
+#include "oggplay.h"
+
 #include "stuff/compat.h"
 #include "stuff/err.h"
-#include "dev/deviplay.h"
-#include "cpiface/cpiface.h"
-#include "oggplay.h"
+#include "stuff/poutput.h"
+#include "stuff/sets.h"
 
 #define _MAX_FNAME 8
 #define _MAX_EXT 4
 
-static FILE *oggfile;
 static ogg_int64_t ogglen;
 static uint32_t oggrate;
 
@@ -492,7 +496,7 @@ static void oggCloseFile(void)
 	OggPicDone ();
 }
 
-static int oggOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *oggf)
+static int oggOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *oggf)
 {
 	struct ogginfo inf;
 
@@ -507,15 +511,13 @@ static int oggOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 
 	fprintf(stderr, "loading %s%s...\n", currentmodname, currentmodext);
 
-	oggfile=oggf;
-
 	plIsEnd=oggIsLooped;
 	plProcessKey=oggProcessKey;
 	plDrawGStrings=oggDrawGStrings;
 	plGetMasterSample=plrGetMasterSample;
 	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-	if (!oggOpenPlayer(oggfile))
+	if (!oggOpenPlayer(oggf))
 		return -1;
 
 	starttime=dos_clock();
@@ -535,4 +537,4 @@ static int oggOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 
 
 struct cpifaceplayerstruct oggPlayer = {oggOpenFile, oggCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playogg", .desc = "OpenCP Ogg Vorbis Player (c) 1994-09 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playogg", .desc = "OpenCP Ogg Vorbis Player (c) 1994-'20 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

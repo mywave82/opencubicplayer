@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '05-'10 Stian Skjelstad <stian@nixia.no>
+ * copyright (c) '05-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * OPL-compatible file type detection routines for the file selector
  *
@@ -28,6 +28,7 @@
 #include "types.h"
 extern "C" {
 #include "boot/plinkman.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
@@ -54,7 +55,7 @@ static int oplReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 		}
 	return 0;
 }
-static int oplReadInfo(struct moduleinfostruct *m, FILE *f, const char *buf, size_t len)
+static int oplReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
 {
 	return oplReadMemInfo(m, buf, len);
 }
@@ -98,7 +99,7 @@ extern "C" {
 	struct linkinfostruct dllextinfo =
 	{
 		"opltype" /* name */,
-		"OpenCP OPL Detection (c) 2005-09 Stian Skjelstad" /* desc */,
+		"OpenCP OPL Detection (c) 2005-'21 Stian Skjelstad" /* desc */,
 		DLLVERSION /* ver */
 	};
 }

@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2020 Stian Skjelstad <stian.skjelestad@gmail.com>
+ * copyright (c) 2020-'21 Stian Skjelstad <stian.skjelestad@gmail.com>
  *
  * Text render functions that can be used if the text-rendering is done
  * virtually using plVidMem API
@@ -340,7 +340,7 @@ static void swtext_displaystr_unifont_utf8_8x8(uint16_t y, uint16_t x, uint8_t a
 
 		if (fontwidth == 16)
 		{
-			if (x >= 2)
+			if (len > 1)
 			{
 				swtext_displaycharattr_double8x8 (y, x, data, attr);
 				x += 2;
@@ -378,7 +378,7 @@ static void swtext_displaystr_unifont_utf8_8x16(uint16_t y, uint16_t x, uint8_t 
 
 		if (fontwidth == 16)
 		{
-			if (x >= 2)
+			if (len > 1)
 			{
 				swtext_displaycharattr_double8x16 (y, x, data, attr);
 				x += 2;
@@ -676,6 +676,31 @@ void swtext_displaystr_utf8(uint16_t y, uint16_t x, uint8_t attr, const char *st
 	}
 }
 
+int swtext_measurestr_utf8 (const char *src, int srclen)
+{
+	int retval = 0;
+	while (srclen > 0)
+	{
+		int cp, inc;
+		int fontwidth;
+
+		cp = utf8_decode (src, srclen, &inc);
+		src += inc;
+		srclen -= inc;
+
+		fontengine_8x16 (cp, &fontwidth);
+
+		if (fontwidth == 16)
+		{
+			retval += 2;
+		} else if (fontwidth == 8)
+		{
+			retval++;
+		}
+	}
+	return retval;
+}
+
 
 void swtext_drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
 {
@@ -970,5 +995,4 @@ void swtext_cursor_eject (void)
 				break;
 		}
 	}
-
 }

@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * XMPlay .MXM module loader
  *
@@ -29,8 +30,9 @@
 #include <string.h>
 #include "types.h"
 #include "dev/mcp.h"
-#include "xmplay.h"
+#include "filesel/filesystem.h"
 #include "stuff/err.h"
+#include "xmplay.h"
 
 struct LoadMXMResources
 {
@@ -71,7 +73,7 @@ static void FreeResources(struct LoadMXMResources *r, struct xmodule *m)
 	}
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	uint8_t deltasamps/*, modpanning*/;
 
@@ -119,10 +121,10 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 
 	/* 1st: read headers */
 
-	if (fread(&mxmhead, sizeof(mxmhead), 1, file)!=1)
+	if (file->read (file, &mxmhead, sizeof(mxmhead)) != sizeof(mxmhead))
 	{
 		fprintf(stderr, "xmlxmx.c: fread() header failed\n");
-		return errFormStruc;
+		return errFileRead;
 	}
 	if (memcmp(&mxmhead.sig, "MXM\0", 4))
 		return errFormStruc;
@@ -224,15 +226,17 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 		long el=0;
 		int16_t k, p=0, h;
 
-		fseek(file, mxmhead.insofs[i], SEEK_SET);
+		file->seek_set (file, mxmhead.insofs[i]);
 
 		/*
 		r.smps[i]=0;
 		r.msmps[i]=0;
 		*/
 
-		if (fread(&mxmins, sizeof(mxmins), 1, file)!=1)
+		if (file->read (file, &mxmins, sizeof(mxmins)) != sizeof(mxmins))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #1\n");
+		}
 		mxmins.sampnum = uint32_little (mxmins.sampnum);
 		mxmins.volfade = uint16_little (mxmins.volfade);
 		for (k=0;k<12;k++)
@@ -372,8 +376,10 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 			uint32_t sampstart, loopstart, loopend;
 			uint32_t l;
 
-			if (fread(&mxmsamp, sizeof(mxmsamp), 1, file) != 1)
+			if (file->read (file, &mxmsamp, sizeof(mxmsamp)) != sizeof(mxmsamp))
+			{
 				fprintf(stderr, __FILE__ ": warning, read failed #2\n");
+			}
 			mxmsamp.gusstartl   = uint16_little (mxmsamp.gusstartl);
 			mxmsamp.gusloopstl  = uint16_little (mxmsamp.gusloopstl);
 			mxmsamp.gusloopendl = uint16_little (mxmsamp.gusloopendl);
@@ -476,11 +482,12 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 		uint8_t  pack;
 		uint8_t pd[2];
 
-		fseek(file, mxmhead.patofs[i], SEEK_SET);
+		file->seek_set (file, mxmhead.patofs[i]);
 
-		if (fread(&patrows, sizeof(uint32_t), 1, file)!=1)
+		if (ocpfilehandle_read_uint32_le (file, &patrows))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #3\n");
-		patrows = uint32_little (patrows);
+		}
 
 		m->patlens[i]=patrows;
 		m->patterns[i]=malloc(sizeof(uint8_t)*patrows*mxmhead.channum*5);
@@ -492,33 +499,41 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 		for (j=0; j<patrows; j++)
 		{
 			uint8_t *currow=(uint8_t *)(m->patterns[i])+j*mxmhead.channum*5;
-			if (fread(&pack, 1, 1, file)!=1)
+			if (ocpfilehandle_read_uint8 (file, &pack))
+			{
 				fprintf(stderr, __FILE__ ": warning, read failed #4\n");
+			}
 			while (pack)
 			{
 				uint8_t *cur=currow+5*(pack&0x1f);
 				if (pack&0x20)
 				{
-					if (fread(pd, sizeof(pd), 1, file)!=1)
+					if (file->read (file, pd, sizeof(pd)) != sizeof (pd))
+					{
 						fprintf(stderr, __FILE__ ": warning, read failed #5\n");
+					}
 					cur[0]=pd[0];
 					cur[1]=pd[1];
 				}
 				if (pack&0x40)
 				{
-					if (fread(pd, 1, 1, file)!=1)
+					if (file->read (file, pd, 1) != 1)
+					{
 						fprintf(stderr, __FILE__ ": warning, read failed #6\n");
+					}
 					cur[2]=pd[0];
 				}
 				if (pack&0x80)
 				{
-					if (fread(pd, 2, 1, file)!=1)
+					if (file->read (file, pd, 2) != 2)
 						fprintf(stderr, __FILE__ ": warning, read failed #7\n");
 					cur[3]=pd[0];
 					cur[4]=pd[1];
 				}
-				if (fread(&pack, 1, 1, file)!=1)
+				if (ocpfilehandle_read_uint8 (file, &pack))
+				{
 					fprintf(stderr, __FILE__ ": warning, read failed #8\n");
+				}
 			}
 		}
 	}
@@ -527,9 +542,11 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, FILE
 		uint32_t gsize=mxmhead.samples8+2*mxmhead.samples16;
 		int8_t *gusmem = malloc(sizeof(int8_t)*gsize);
 		int16_t *gus16 = (int16_t *)(gusmem+mxmhead.samples8);
-		fseek(file, mxmhead.sampstart, SEEK_SET);
-		if (fread(gusmem, gsize, 1, file)!=1)
+		file->seek_set (file, mxmhead.sampstart);
+		if (file->read (file, gusmem, gsize) != gsize)
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #9\n");
+		}
 
 		if (deltasamps)
 		{

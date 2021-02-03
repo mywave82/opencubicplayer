@@ -34,11 +34,12 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include "types.h"
-#include "stuff/imsrtns.h"
-#include "stuff/cp437.h"
-#include "stuff/utf-8.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "id3.h"
+#include "stuff/cp437.h"
+#include "stuff/imsrtns.h"
+#include "stuff/utf-8.h"
 
 #define VBRFRAMES      15
 
@@ -439,9 +440,9 @@ outofframes:
 	return 0;
 }
 
-static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *_buf, size_t len)
+static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *_buf, size_t len)
 {
-	off_t relstart = 0; /* offset */
+	int64_t relstart = 0; /* offset */
 	const uint8_t *buf = (const uint8_t *)_buf;
 	const uint8_t *bufend=buf+len;
 	uint32_t hdr;
@@ -494,10 +495,14 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *_buf,
 			m->modtype=mtMPx;
 			if ((buf+10)>=bufend)
 			{
-				if (fseeko(f, relstart, SEEK_SET)==-1)
+				if (f->seek_set (f, relstart) < 0)
+				{
 					break;
-				if (fread(tagv2header, 10, 1, f)!=1)
+				}
+				if (f->read (f, tagv2header, 10) != 10)
+				{
 					break;
+				}
 			} else {
 				memcpy(tagv2header, buf, 10);
 			}
@@ -511,6 +516,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *_buf,
 			realsize = (tagv2header[6]<<21)|(tagv2header[7]<<14)|(tagv2header[8]<<7)|(tagv2header[9]);
 			if (realsize > 32*1024*1024)
 			{
+				f->seek_set (f, 0);
 				return 1;
 			}
 			if ((buf+10+realsize)>bufend)
@@ -518,10 +524,14 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *_buf,
 				tagv2data = buffer = malloc(realsize+10);
 				if (!buffer)
 					break;
-				if (fseeko(f, relstart, SEEK_SET)==-1)
+				if (f->seek_set (f, relstart) < 0)
+				{
 					break;
-				if (fread(buffer, realsize+10, 1, f)!=1)
+				}
+				if (f->read (f, buffer, realsize + 10) != (realsize + 10))
+				{
 					break;
+				}
 			} else {
 					tagv2data = (uint8_t *)buf;
 			}
@@ -533,6 +543,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *_buf,
 			relstart+=10+realsize;
 			continue;
 			*/
+			f->seek_set (f, 0);
 			return 1;
 		/* ID3v1 tag at the start of the file is bit uncommon */
 		} else if ((buf[0]=='T')&&(buf[1]=='A')&&(buf[2]=='G'))
@@ -542,10 +553,14 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *_buf,
 
 			if ((buf+128)>bufend)
 			{
-				if (fseeko(f, relstart, SEEK_SET)==-1)
+				if (f->seek_set (f, relstart) < 0)
+				{
 					break;
-				if (fread(id3v1, 128, 1, f)!=1)
+				}
+				if (f->read (f, id3v1, 128) != 128)
+				{
 					break;
+				}
 			} else {
 				memcpy(id3v1, buf, 128);
 			}
@@ -555,22 +570,23 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *_buf,
 			relstart+=128;
 			continue;
 			*/
+			f->seek_set (f, 0);
 			return 1;
 		} else
 			break;
 	}
 
-	fseeko(f, 0, SEEK_END);
+	f->seek_end (f, 0);
 	m->modname[0] = 0;
 	while (1)
 	{
 		/* test for ID3v1.0/ID3v1.1 and ID3v1.2 */
 		{
 			uint8_t id3v1[256];
-			fseeko(f, -256, SEEK_CUR);
-			if (fread(id3v1, 256, 1, f)!=1)
+			f->seek_cur (f, -256);
+			if (f->read (f, id3v1, 256) != 256)
 			{
-				fseeko(f, 0, SEEK_SET);
+				f->seek_set (f, 0);
 				return 0;
 			}
 			if ((id3v1[128]=='T')&&(id3v1[129]=='A')&&(id3v1[130]=='G'))
@@ -578,10 +594,10 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *_buf,
 				m->modtype=mtMPx;
 				if ((id3v1[0]=='E')&&(id3v1[1]=='X')&&(id3v1[2]=='T'))
 				{
-					fseeko(f, -256, SEEK_CUR);
+					f->seek_cur (f, -256);
 					parseid3v12(m, id3v1);
 				} else {
-					fseeko(f, -128, SEEK_CUR);
+					f->seek_cur (f, -128);
 					parseid3v1(m, id3v1+128);
 				}
 				/*gottag++;*/
@@ -591,10 +607,10 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *_buf,
 		/* test for ID3v2.x */
 		{
 			uint8_t id3v2header[10];
-			fseeko(f, -10, SEEK_CUR);
-			if (fread(id3v2header, 10, 1, f)!=1)
+			f->seek_cur (f, -10);
+			if (f->read (f, id3v2header, 10) != 10)
 			{
-				fseeko(f, 0, SEEK_SET);
+				f->seek_set (f, 0);
 				return 0;
 			}
 			/* test for ID3v2.4 footer first */
@@ -605,23 +621,26 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *_buf,
 
 				m->modtype=mtMPx;
 
-				fseeko(f, -(size+20), SEEK_CUR);
+				f->seek_cur (f, -(size+20));
 
 				id3v2data = malloc(size+10);
-				if (fread(id3v2data, size+10, 1, f)==1)
+				if (f->read (f, id3v2data, size+10) == (size + 10))
+				{
 					parseid3v2(m, id3v2data, size+10);
+				}
 				free(id3v2data);
 
 				/*fseeko(f, -(size+20), SEEK_CUR);*/
 				/*continue;*/
 
+				f->seek_set (f, 0);
 				return 1;
 			}
 			/* search for ID3v2.x */
 			{
 				uint8_t *buffer = calloc(65536+4096, 1); /* 4k for for miss-designed tag paddings */
-				fseeko (f, -65536, SEEK_CUR);
-				if (fread (buffer, 65536, 1, f) == 1)
+				f->seek_cur (f, -65536);
+				if (f->read (f, buffer, 65536) == 65536)
 				{
 					uint8_t *curr = buffer;
 					uint8_t *next;
@@ -645,6 +664,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *_buf,
 								if (!parseid3v2(m, next, size + 10))
 								{
 									free (buffer);
+									f->seek_set (f, 0);
 									return 1;
 								}
 							}
@@ -658,6 +678,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *_buf,
 	}
 	if (m->modname[0])
 	{
+		f->seek_set (f, 0);
 		return 0;
 	}
 	/*fseeko(f, relstart, SEEK_SET);*/
@@ -665,34 +686,52 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *_buf,
 	/* no meta-data, so make up some */
 
 	if ((buf+sizeof(uint32_t))>=bufend)
+	{
+		f->seek_set (f, 0);
 		return 0;
+	}
 	while ((fetch16(buf)&0xE0FF)!=0xE0FF)
 	{
 		buf+=1;
 		if ((buf+sizeof(uint32_t))>=bufend)
+		{
+			f->seek_set (f, 0);
 			return 0;
+		}
 	}
 
 	hdr=fetch32(buf);
 	layer=4-((hdr>>9)&3);
 	if (layer>=4)
+	{
+		f->seek_set (f, 0);
 		return 0;
+	}
 	ver=((hdr>>11)&1)?0:1;
 	if (!((hdr>>12)&1))
 	{
 		if (ver)
+		{
 			ver=2;
-		else
+		} else {
+			f->seek_set (f, 0);
 			return 0;
+		}
 	}
 	if ((ver==2)&&(layer!=3))
+	{
+		f->seek_set (f, 0);
 		return 0;
+	}
 	rateidx=(hdr>>20)&15;
 	frqidx=(hdr>>18)&3;
 	padding=(hdr>>17)&1;
 	stereo="\x01\x01\x02\x00"[(hdr>>30)&3];
 	if (frqidx==3)
+	{
+		f->seek_set (f, 0);
 		return 0;
+	}
 	if (!ver)
 	{
 		switch (layer)
@@ -707,6 +746,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *_buf,
 				rate="\x00\x04\x05\x06\x07\x08\x0A\x0C\x0E\x10\x14\x18\x1C\x20\x28\x00"[rateidx]*8;
 				break;
 			default:
+				f->seek_set (f, 0);
 				return 0;
 		}
 	} else {
@@ -722,12 +762,16 @@ static int ampegpReadInfo(struct moduleinfostruct *m, FILE *f, const char *_buf,
 				rate="\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0A\x0C\x0E\x10\x12\x14\x00"[rateidx]*8;
 				break;
 			default:
+				f->seek_set (f, 0);
 				return 0;
 		}
 	}
 
 	if (!rate)
+	{
+		f->seek_set (f, 0);
 		return 0;
+	}
 
 	m->modname[0]=0;
 	switch (layer)
@@ -889,6 +933,7 @@ outofframes:
 
 	m->channels=stereo?2:1;
 	m->modtype=mtMPx;
+	f->seek_set (f, 0);
 	return 0;
 }
 

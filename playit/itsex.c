@@ -153,8 +153,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "types.h"
-#include "stuff/imsrtns.h"
+#include "filesel/filesystem.h"
 #include "itplay.h"
+#include "stuff/imsrtns.h"
 
 
 /* ----------------------------------------------------------------------
@@ -207,17 +208,18 @@ static inline uint32_t readbits(uint8_t n)
 	}
 	return retval;
 }
-static int readblock(FILE *f)  /* gets block of compressed data from file */
+static int readblock(struct ocpfilehandle_t *f)  /* gets block of compressed data from file */
 {
 	uint16_t size;
-	if (fread(&size, sizeof(uint16_t), 1, f) != 1)  /* block layout : word size, <size> bytes data */
+	if (ocpfilehandle_read_uint16_le (f, &size)) /* block layout : word size, <size> bytes data */
+	{
 		return 0;
-	size = uint16_little (size);
+	}
 	if ( ! size )
 		return 0;
 	if (!(sourcebuffer = malloc(size)))
 		return 0;
-	if (fread(sourcebuffer, size, 1, f) != 1)
+	if (f->read (f, sourcebuffer, size ) != size)
 	{
 		free(sourcebuffer);
 		sourcebuffer=NULL; /* Just looks better to have it present */
@@ -249,7 +251,7 @@ static int freeblock(void)          /* frees that block again */
  *                            returns: status                     )
  */
 
-int __attribute__ ((visibility ("internal"))) decompress8 (FILE *module, void *dst, int len, char it215)
+int __attribute__ ((visibility ("internal"))) decompress8 (struct ocpfilehandle_t *module, void *dst, int len, char it215)
 {
 	sbyte *destbuf;   /* the destination buffer which will be returned */
 
@@ -353,7 +355,7 @@ int __attribute__ ((visibility ("internal"))) decompress8 (FILE *module, void *d
  *                                      compression flag
  *                             returns: status                     )
  */
-int __attribute__ ((visibility ("internal"))) decompress16(FILE *module, void *dst, int len, char it215)
+int __attribute__ ((visibility ("internal"))) decompress16(struct ocpfilehandle_t *module, void *dst, int len, char it215)
 {
 	sword *destbuf;   /* the destination buffer which will be returned */
 

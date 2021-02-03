@@ -28,6 +28,7 @@
 #include "config.h"
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <linux/cdrom.h>
 #include "types.h"
@@ -37,11 +38,12 @@
 #include "dev/deviplay.h"
 #include "dev/devisamp.h"
 #include "filesel/dirdb.h"
-#include "filesel/pfilesel.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
+#include "filesel/pfilesel.h"
 #include "stuff/compat.h"
-#include "stuff/poutput.h"
 #include "stuff/err.h"
+#include "stuff/poutput.h"
 #include "stuff/sets.h"
 
 static unsigned long cdpTrackStarts[CDROM_LEADOUT+1];
@@ -49,7 +51,6 @@ static unsigned char cdpFirstTrack;
 static unsigned char cdpPlayMode; /* 1 = disk, 0 = track */
 static unsigned char cdpTrackNum; /* current track, calculated in GStrings */
 static int cdpViewSectors; /* ??? view-option */
-static FILE *cdpDrive; /* nasty */
 static unsigned long basesec; /* current start... usually a cdpTrack[n] value */
 static unsigned long length; /* and the length of it */
 static signed long newpos; /* skip to */
@@ -61,6 +62,7 @@ static char finespeed=8;
 static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
+static int cdrom_fd;
 
 static void startpausefade(void)
 {
@@ -76,7 +78,7 @@ static void startpausefade(void)
 	{
 		plChanChanged=1;
 		plPause=0;
-		cdRestart(fileno(cdpDrive));
+		cdRestart(cdrom_fd);
 		pausefadedirect=1;
 	} else
 		pausefadedirect=-1;
@@ -111,7 +113,7 @@ static void dopausefade(void)
 			i=0;
 			pausefadedirect=0;
 			plPause=1;
-			cdPause(fileno(cdpDrive));
+			cdPause(cdrom_fd);
 			plChanChanged=1;
 			cdSetSpeed(speed);
 			return;
@@ -145,7 +147,7 @@ static void cdaDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 
 	struct cdStat stat;
 
-	cdGetStatus(fileno(cdpDrive), &stat);
+	cdGetStatus(cdrom_fd, &stat);
 
 
 	memset(buf[0]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
@@ -228,9 +230,9 @@ static int cdaProcessKey(uint16_t key)
 			pausefadedirect=0;
 			plPause=!plPause;
 			if (plPause)
-				cdPause(fileno(cdpDrive));
+				cdPause(cdrom_fd);
 			else
-				cdRestart(fileno(cdpDrive));
+				cdRestart(cdrom_fd);
 
 			break;
 		case 't':
@@ -354,7 +356,7 @@ static int cdaLooped(void)
 
 	cdIdle();
 
-	cdGetStatus(fileno(cdpDrive), &stat);
+	cdGetStatus(cdrom_fd, &stat);
 
 	/*
 	if (status->error&STATUS_ERROR)
@@ -375,10 +377,10 @@ static int cdaLooped(void)
 			else
 				return 1;
 		}
-		cdPause(fileno(cdpDrive));
-		cdRestartAt(fileno(cdpDrive), basesec+newpos /*, length-newpos*/);
+		cdPause(cdrom_fd);
+		cdRestartAt(cdrom_fd, basesec+newpos /*, length-newpos*/);
 		if (plPause)
-			cdPause(fileno(cdpDrive));
+			cdPause(cdrom_fd);
 		setnewpos=0;
 	} else
 		newpos=stat.position-basesec;
@@ -388,17 +390,26 @@ static int cdaLooped(void)
 
 static void cdaCloseFile(void)
 {
-	cdStop(fileno(cdpDrive));
+	cdStop(cdrom_fd);
 }
 
-static int cdaOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
+static int cdaOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 	char *name;
 	unsigned char tnum;
+	char buffer[64];
 
-	cdpDrive=file;
+	buffer[0] = 0;
 
-	dirdbGetName_internalstr (dirdbref, &name);
+	file->seek_set (file, 0);
+	file->read (file, buffer, sizeof (buffer));
+	if (memcmp (buffer, "fd=", 3))
+	{
+		return -1;
+	}
+	cdrom_fd = atoi (buffer + 3);
+
+	dirdbGetName_internalstr (file->dirdb_ref, &name);
 
 	if (!strcmp(name, "DISK.CDA"))
 		tnum=0xFF;
@@ -408,10 +419,10 @@ static int cdaOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 		else
 			return -1;
 
-	if (!cdIsCDDrive(fileno(cdpDrive)))
+	if (!cdIsCDDrive(cdrom_fd))
 		return -1;
 
-	cdpTrackNum=cdGetTracks(fileno(cdpDrive), cdpTrackStarts, &cdpFirstTrack, CDROM_LEADOUT);
+	cdpTrackNum=cdGetTracks(cdrom_fd, cdpTrackStarts, &cdpFirstTrack, CDROM_LEADOUT);
 
 	if (tnum!=0xFF)
 	{
@@ -441,7 +452,7 @@ static int cdaOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 	strncpy(vdev, info->comment, 8);
 	vdev[7]=0;
 
-	if (cdPlay(fileno(cdpDrive), basesec, length))
+	if (cdPlay(cdrom_fd, basesec, length))
 		return -1;
 
 	normalize();

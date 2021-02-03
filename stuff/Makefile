@@ -6,8 +6,7 @@ LINUX_OBJ=poutput-vcsa.o poutput-fb.o
 LINUX_LIBS=$(ICONV_LIBS)
 endif
 
-framelock_so=framelock.o
-hardware_so=timer.o irq.o hardware.o freq.o
+hardware_so=irq.o hardware.o freq.o
 sets_so=sets.o
 poutput_so=console.o cp437.o latin1.o poutput-curses.o $(LINUX_OBJ) poutput-keyboard.o pfonts.o poutput.o utf-8.o
 poutput_so_libs=$(ICONV_LIBS)
@@ -33,16 +32,13 @@ poutput_so_libs+=$(FREETYPE2_LIBS)
 endif
 
 ifeq ($(STATIC_BUILD),1)
-all: compat.o err.o $(framelock_so) $(hardware_so) $(sets_so) $(poutput_so)
+all: compat.o err.o framelock.o timer.o $(hardware_so) $(sets_so) $(poutput_so)
 else
-all: compat.o hardware$(LIB_SUFFIX) err.o sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX) framelock$(LIB_SUFFIX)
+all: compat.o err.o framelock.o timer.o hardware$(LIB_SUFFIX) sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX)
 endif
 
 test: compat-test
 	./compat-test.sh
-
-framelock$(LIB_SUFFIX): $(framelock_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 poutput$(LIB_SUFFIX): $(poutput_so)
 	$(CC) $(SHARED_FLAGS) $(LINUX_LIBS) -o $@ $^ $(NCURSES_LIBS) $(poutput_so_libs)
@@ -62,12 +58,11 @@ uninstall:
 else
 install:
 	$(CP) poutput$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/12-poutput$(LIB_SUFFIX)"
-	$(CP) framelock$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/11-framelock$(LIB_SUFFIX)"
 	$(CP) sets$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-sets$(LIB_SUFFIX)"
 	$(CP) hardware$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-hardware$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/hardware$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/12-poutput$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/11-framelock$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/10-sets$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/10-hardware$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/hardware$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/12-poutput$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/10-sets$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/10-hardware$(LIB_SUFFIX)"
 endif
 
 cp437.o: cp437.c cp437.h \
@@ -272,5 +267,8 @@ ttf.o: ttf.c ttf.h \
 utf-8.o: utf-8.c \
 	../config.h \
 	../types.h \
+	../cpiface/cpiface.h \
+	poutput.h \
+	framelock.h \
 	utf-8.h
 	$(CC) $< -o $@ -c

@@ -96,7 +96,6 @@ static void doscale(int16_t *buf, int len)
 	}
 }
 
-
 static void plPrepareScopes(void)
 {
 	if (plOpenCPPict)

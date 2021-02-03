@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) '09-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) '09-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * SDL graphic driver
  *
@@ -1262,6 +1262,7 @@ int sdl_init(void)
 	_displaystrattr_iso8859latin1=swtext_displaystrattr_iso8859latin1;
 	_displaystr_iso8859latin1=swtext_displaystr_iso8859latin1;
 	_displaystr_utf8=swtext_displaystr_utf8;
+	_measurestr_utf8=swtext_measurestr_utf8;
 
 	_drawbar=swtext_drawbar;
 	_idrawbar=swtext_idrawbar;

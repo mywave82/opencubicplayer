@@ -3,9 +3,10 @@
 
 #include <stdio.h> /* FILE * */
 
+struct ocpfilehandle_t;
 struct moduleinfostruct;
-extern int fsGetNextFile(uint32_t *dirdbref, struct moduleinfostruct *info, FILE **); /* info comes from external buffer */
-extern int fsGetPrevFile(uint32_t *dirdbref, struct moduleinfostruct *info, FILE **); /* info comes from external buffer */
+extern int fsGetNextFile (struct moduleinfostruct *info, struct ocpfilehandle_t **filehandle); /* info comes from external buffer */
+extern int fsGetPrevFile (struct moduleinfostruct *info, struct ocpfilehandle_t **filehandle); /* info comes from external buffer */
 extern int fsFilesLeft(void);
 extern signed int fsFileSelect(void);
 /* extern char fsAddFiles(const char *);      use the playlist instead..*/
@@ -36,16 +37,11 @@ extern int fsIsModule(const char *ext);
 
 struct preprocregstruct
 {
-	void (*Preprocess)(const uint32_t dirdbref, struct moduleinfostruct *info, FILE **f);
+	void (*Preprocess)(struct moduleinfostruct *info, struct ocpfilehandle_t **f);
 	struct preprocregstruct *next;
 };
 
 #define PREPROCREGSTRUCT_TAIL ,0
-
-struct filehandlerstruct
-{
-	int (*Process)(const uint32_t dirdbref, struct moduleinfostruct *m, FILE **f);
-};
 
 typedef enum {
 	interfaceReturnContinue=0,
@@ -59,7 +55,7 @@ typedef enum {
 
 struct interfacestruct
 {
-	int (*Init)(const uint32_t dirdbref, struct moduleinfostruct *info, FILE **f);
+	int (*Init)(struct moduleinfostruct *info, struct ocpfilehandle_t *f);
 	interfaceReturnEnum (*Run)(void);
 	void (*Close)(void);
 	const char *name;
@@ -78,42 +74,22 @@ extern void plUnregisterPreprocess(struct preprocregstruct *r);
 #define RD_PUTSUBS 1
 #define RD_ARCSCAN 2
 #define RD_SUBNOSYMLINK 4
+#define RD_PUTDRIVES 8
 #define RD_PUTRSUBS 16
-
-#if 0
-struct modlist;
-
-extern char *dmGetPath(char *path, unsigned short ref);
-extern unsigned short dmGetPathReference(const char *p);
-extern unsigned short dmGetDriveDir(int drv);
-#endif
 
 #if 0
 extern char mifMemRead(const char *name, unsigned short size, char *ptr);
 #endif
-struct dmDrive
-{
-	char drivename[13];
-	uint32_t basepath;
-	uint32_t currentpath;
-	struct dmDrive *next;
-};
-extern struct dmDrive *dmDrives;
-extern struct dmDrive *RegisterDrive(const char *dmDrive);
-extern struct dmDrive *dmFindDrive(const char *dmDrive); /* to get the correct drive from a given string */
-extern struct dmDrive *dmFILE;
 
-void fsConvFileName12(char *c, const char *f, const char *e);
-void convfilename12wc(char *c, const char *f, const char *e);
 int fsMatchFileName12(const char *a, const char *b);
 
+extern void fsDraw(void); /* used by medialib to have backdrop for the dialogs they display on the screen */
 extern void fsSetup(void);
 extern void fsRescanDir(void);
-extern void fsForceRemove(const uint32_t dirdbref);
 
-struct modlistentry;
-extern int dosfile_Read(struct modlistentry *entry, char **mem, size_t *size); /* used by medialib */
-extern int dosfile_ReadHeader(struct modlistentry *entry, char *mem, size_t *size); /* used by medialib */
-extern FILE *dosfile_ReadHandle(struct modlistentry *entry);
+struct modlist;
+struct ocpdir_t;
+extern int fsReadDir(struct modlist *ml, struct ocpdir_t *dir, const char *mask, unsigned long opt);
+extern void fsForceRemove(const uint32_t dirdbref);
 
 #endif

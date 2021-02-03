@@ -10,6 +10,7 @@
 #include "dev/deviplay.h"
 #include "dev/player.h"
 #include "filesel/dirdb.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
@@ -407,7 +408,7 @@ static int timidityProcessKey(uint16_t key)
 
 }
 
-static int timidityOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
+static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 	int err;
 
@@ -439,7 +440,10 @@ static int timidityOpenFile(const uint32_t dirdbref, struct moduleinfostruct *in
 		size_t bufferfill = 0;
 
 		int res;
-		while (!feof(file))
+
+		dirdbGetName_internalstr (file->dirdb_ref, &path);
+
+		while (!file->eof (file))
 		{
 			if (buffersize == bufferfill)
 			{
@@ -452,13 +456,12 @@ static int timidityOpenFile(const uint32_t dirdbref, struct moduleinfostruct *in
 				buffersize += 64*1024;
 				buffer = (uint8_t *)realloc (buffer, buffersize);
 			}
-			res=fread(buffer + bufferfill, 1, buffersize - bufferfill, file);
+			res = file->read (file, buffer + bufferfill, buffersize - bufferfill);
 			if (res<=0)
 				break;
 			bufferfill += res;
 		}
 
-		dirdbGetName_internalstr (dirdbref, &path);
 		err = timidityOpenPlayer(path, buffer, bufferfill); /* buffer will be owned by the player */
 		if (err)
 		{

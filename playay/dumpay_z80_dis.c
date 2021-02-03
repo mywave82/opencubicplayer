@@ -112,7 +112,7 @@ static int disassemble_1 (unsigned char *memory, uint16_t ptr, char opcode[5], c
 		case 0x4c: strcpy (opcode, "LD"  ); *length = 2; strcpy (param1, "C"); strcpy (param2, H); return 0; /* non-standard */
 		case 0x4d: strcpy (opcode, "LD"  ); *length = 2; strcpy (param1, "C"); strcpy (param2, L); return 0; /* non-standard */
 		case 0x4e: strcpy (opcode, "LD"  ); *length = 3; strcpy (param1, "C"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;
-		
+
 		case 0x54: strcpy (opcode, "LD"  ); *length = 2; strcpy (param1, "D"); strcpy (param2, H); return 0; /* non-standard */
 		case 0x55: strcpy (opcode, "LD"  ); *length = 2; strcpy (param1, "D"); strcpy (param2, L); return 0; /* non-standard */
 		case 0x56: strcpy (opcode, "LD"  ); *length = 3; strcpy (param1, "D"); sprintf (param2, "(%s+&%02x)", R, memory[ptr+2]); return 0;

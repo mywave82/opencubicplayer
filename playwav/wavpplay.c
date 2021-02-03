@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * WAVPlay interface routines
  *
@@ -31,25 +32,25 @@
 #include <time.h>
 #include <unistd.h>
 #include "types.h"
+#include "boot/plinkman.h"
+#include "boot/psetting.h"
+#include "cpiface/cpiface.h"
+#include "dev/deviplay.h"
+#include "dev/player.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
-#include "stuff/poutput.h"
-#include "boot/plinkman.h"
-#include "dev/player.h"
-#include "boot/psetting.h"
-#include "wave.h"
-#include "stuff/sets.h"
-#include "dev/deviplay.h"
-#include "cpiface/cpiface.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
+#include "stuff/poutput.h"
+#include "stuff/sets.h"
+#include "wave.h"
 
 #define _MAX_FNAME 8
 #define _MAX_EXT 4
 
 extern char plPause;
 
-static FILE *wavefile;
 static unsigned long wavelen;
 static unsigned long waverate;
 
@@ -261,9 +262,6 @@ static void normalize(void)
 static void wavCloseFile()
 {
 	wpClosePlayer();
-/*
-	fclose(wavefile);
-*/
 }
 
 static int wavProcessKey(unsigned short key)
@@ -490,7 +488,7 @@ static int wavLooped(void)
 }
 
 
-static int wavOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *wavf)
+static int wavOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *wavf)
 {
 	struct waveinfo inf;
 
@@ -505,15 +503,13 @@ static int wavOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 
 	fprintf(stderr, "preloading %s%s...\n", currentmodname, currentmodext);
 
-	wavefile=wavf;
-
 	plIsEnd=wavLooped;
 	plProcessKey=wavProcessKey;
 	plDrawGStrings=wavDrawGStrings;
 	plGetMasterSample=plrGetMasterSample;
 	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-	if (!wpOpenPlayer(wavefile))
+	if (!wpOpenPlayer(wavf))
 	{
 #ifdef INITCLOSE_DEBUG
 		fprintf(stderr, "wpOpenPlayer FAILED\n");
@@ -534,4 +530,4 @@ static int wavOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 }
 
 struct cpifaceplayerstruct wavPlayer = {wavOpenFile, wavCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playwav", .desc = "OpenCP Wave Player (c) 1994-09 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playwav", .desc = "OpenCP Wave Player (c) 1994-'21 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

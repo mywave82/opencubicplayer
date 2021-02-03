@@ -107,13 +107,14 @@ struct it_module
 	int geffect;
 };
 
-extern int __attribute__ ((visibility ("internal"))) it_load(struct it_module *, FILE *); /* done */
+struct ocpfilehandle_t;
+extern int __attribute__ ((visibility ("internal"))) it_load(struct it_module *, struct ocpfilehandle_t *); /* done */
 extern void __attribute__ ((visibility ("internal"))) it_free(struct it_module *); /* done */
 extern void __attribute__ ((visibility ("internal"))) it_optimizepatlens(struct it_module *); /* done */
 extern int __attribute__ ((visibility ("internal"))) it_precalctime(struct it_module *, int startpos, int (*calctimer)[2], int calcn, int ite); /* done */
 
-extern int __attribute__ ((visibility ("internal"))) decompress8 (FILE *, void *dst, int len, char it215); /* done */
-extern int __attribute__ ((visibility ("internal"))) decompress16(FILE *, void *dst, int len, char it215); /* done */
+extern int __attribute__ ((visibility ("internal"))) decompress8 (struct ocpfilehandle_t *, void *dst, int len, char it215); /* done */
+extern int __attribute__ ((visibility ("internal"))) decompress16(struct ocpfilehandle_t *, void *dst, int len, char it215); /* done */
 
 enum
 {

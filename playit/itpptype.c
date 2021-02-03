@@ -25,6 +25,7 @@
 #include "config.h"
 #include <string.h>
 #include "types.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 
 
@@ -68,9 +69,9 @@ static int itpReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 	return 0;
 }
 
-static int itpReadInfo(struct moduleinfostruct *m, FILE *fp, const char *bf, size_t len)
+static int itpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *bf, size_t len)
 {
-	return 0;
+	return itpReadMemInfo (m, bf, len);
 }
 
 struct mdbreadinforegstruct itpReadInfoReg = {itpReadMemInfo, itpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

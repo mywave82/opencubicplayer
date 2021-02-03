@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '94-'21 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
  *
  * GMDPlay interface routines
  *
@@ -31,21 +31,21 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "types.h"
-#include "filesel/mdb.h"
-#include "dev/mcp.h"
+#include "boot/plinkman.h"
 #include "boot/psetting.h"
-#include "gmdplay.h"
 #include "cpiface/cpiface.h"
+#include "dev/deviwave.h"
+#include "dev/mcp.h"
+#include "filesel/filesystem.h"
+#include "filesel/mdb.h"
+#include "filesel/pfilesel.h"
 #include "gmdpchan.h"
 #include "gmdpdots.h"
+#include "gmdplay.h"
 #include "gmdptrak.h"
-#include "filesel/pfilesel.h"
 #include "stuff/compat.h"
-#include "stuff/poutput.h"
 #include "stuff/err.h"
-#include "boot/plinkman.h"
-#include "dev/deviwave.h"
-#include "stuff/compat.h"
+#include "stuff/poutput.h"
 
 #define _MAX_FNAME 8
 #define _MAX_EXT 4
@@ -80,7 +80,7 @@ static void gmdMarkInsSamp(uint8_t *ins, uint8_t *samp)
 	}
 }
 
-static int mpLoadGen(struct gmdmodule *m, FILE *file, int type)
+static int mpLoadGen(struct gmdmodule *m, struct ocpfilehandle_t *file, int type)
 {
 	char secname[20];
 	const char *link;
@@ -374,9 +374,9 @@ static int gmdLooped(void)
 	return (!fsLoopMods&&mpLooped());
 }
 
-static int gmdOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
+static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
-	unsigned int i;
+	uint64_t i;
 	int retval;
 
 	if (!mcpOpenPlayer)
@@ -390,10 +390,8 @@ static int gmdOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 	strncpy(currentmodname, info->name, _MAX_FNAME);
 	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
-	fseek(file, 0, SEEK_END);
-	i=ftell(file);
-	fseek(file, 0, SEEK_SET);
-	fprintf(stderr, "loading %s%s (%ik)...\n", currentmodname, currentmodext, i>>10);
+	i = file->filesize (file);
+	fprintf(stderr, "loading %s%s (%uk)...\n", currentmodname, currentmodext, (unsigned int)(i>>10));
 
 	retval=mpLoadGen(&mod, file, info->modtype);
 
@@ -483,4 +481,4 @@ static int gmdOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 struct cpifaceplayerstruct gmdPlayer = {gmdOpenFile, gmdCloseFile};
 
 char *dllinfo = "";
-struct linkinfostruct dllextinfo = {.name = "playgmd", .desc = "OpenCP General Module Player (c) 1994-09 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playgmd", .desc = "OpenCP General Module Player (c) 1994-21 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

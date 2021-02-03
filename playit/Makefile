@@ -19,14 +19,16 @@ uninstall:
 itpptype.o: itpptype.c \
 	../config.h \
 	../types.h \
+	../filesel/filesystem.h \
 	../filesel/mdb.h
 	$(CC) itpptype.c -o $@ -c
 
 itload.o: itload.c \
 	../config.h \
 	../types.h \
-	itplay.h \
 	../dev/mcp.h \
+	../filesel/filesystem.h \
+	itplay.h \
 	../stuff/compat.h \
 	../stuff/err.h
 	$(CC) itload.c -o $@ -c
@@ -52,16 +54,18 @@ itplay.o: itplay.c \
 itpplay.o: itpplay.c \
 	../config.h \
 	../types.h \
-	itplay.h \
+	../boot/plinkman.h \
+	../boot/psetting.h \
+	../cpiface/cpiface.h \
+	../dev/deviwave.h \
+	../dev/mcp.h \
+	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
-	../boot/psetting.h \
-	../boot/plinkman.h \
+	itplay.h \
 	../stuff/compat.h \
-	../stuff/poutput.h \
 	../stuff/err.h \
-	../dev/deviwave.h \
-	../cpiface/cpiface.h
+	../stuff/poutput.h
 	$(CC) itpplay.c -o $@ -c
 
 itptrack.o: itptrack.c \
@@ -83,6 +87,7 @@ itrtns.o: itrtns.c \
 itsex.o: itsex.c \
 	../config.h \
 	../types.h \
+	../filesel/filesystem.h \
 	itplay.h \
 	../stuff/imsrtns.h
 	$(CC) itsex.c -o $@ -c

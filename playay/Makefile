@@ -72,6 +72,7 @@ aypplay.o: aypplay.c ayplay.h \
 	../cpiface/cpiface.h \
 	../dev/deviplay.h \
 	../dev/player.h \
+	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
@@ -84,13 +85,14 @@ aypplay.o: aypplay.c ayplay.h \
 ayplay.o: ayplay.c ayplay.h main.h sound.h z80.h \
 	../config.h \
 	../types.h \
-	../stuff/timer.h \
-	../stuff/poll.h \
-	../dev/player.h \
 	../dev/deviplay.h \
+	../dev/player.h \
+	../dev/plrasm.h \
 	../dev/ringbuffer.h \
+	../filesel/filesystem.h \
 	../stuff/imsrtns.h \
-	../dev/plrasm.h
+	../stuff/poll.h \
+	../stuff/timer.h
 	$(CC) -o $@ ayplay.c -c
 
 dumpay: dumpay.o

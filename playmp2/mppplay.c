@@ -25,18 +25,19 @@
 #include <string.h>
 #include <time.h>
 #include "types.h"
-#include "filesel/pfilesel.h"
-#include "filesel/mdb.h"
-#include "stuff/err.h"
-#include "stuff/poutput.h"
-#include "dev/player.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
-#include "stuff/sets.h"
-#include "stuff/compat.h"
-#include "dev/deviplay.h"
 #include "cpiface/cpiface.h"
+#include "dev/deviplay.h"
+#include "dev/player.h"
+#include "filesel/filesystem.h"
+#include "filesel/mdb.h"
+#include "filesel/pfilesel.h"
 #include "mpplay.h"
+#include "stuff/compat.h"
+#include "stuff/err.h"
+#include "stuff/poutput.h"
+#include "stuff/sets.h"
 
 #define _MAX_FNAME 8
 #define _MAX_EXT 4
@@ -479,7 +480,7 @@ static void mpegCloseFile(void)
 	mpegClosePlayer();
 }
 
-static int mpegOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *mpegfile)
+static int mpegOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *mpegfile)
 {
 	struct mpeginfo inf;
 
@@ -506,7 +507,7 @@ static int mpegOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, 
 	plGetMasterSample=plrGetMasterSample;
 	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-	if (!mpegOpenPlayer(mpegfile))
+	if (mpegOpenPlayer(mpegfile))
 		return errFileRead;
 
 	starttime=dos_clock();

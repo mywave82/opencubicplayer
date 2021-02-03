@@ -26,22 +26,22 @@
 #include <time.h>
 #include "types.h"
 #include "boot/plinkman.h"
-//#include "boot/psetting.h"
 #include "cpiface/cpiface.h"
-#include "dev/player.h"
 #include "dev/deviplay.h"
+#include "dev/player.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
-#include "stuff/compat.h"
-#include "stuff/err.h"
-#include "stuff/poutput.h"
-#include "stuff/sets.h"
 #include "hvlpchan.h"
 #include "hvlpdots.h"
 #include "hvlpinst.h"
 #include "hvlplay.h"
 #include "hvlptrak.h"
 #include "player.h"
+#include "stuff/compat.h"
+#include "stuff/err.h"
+#include "stuff/poutput.h"
+#include "stuff/sets.h"
 
 #define _MAX_FNAME 8
 #define _MAX_EXT 4
@@ -312,7 +312,7 @@ static int hvlProcessKey(uint16_t key)
 			break;
 */
 		case '<':
-			hvlPrevSubSong();	
+			hvlPrevSubSong();
 			break;
 		case '>':
 			hvlNextSubSong();
@@ -433,10 +433,10 @@ static void hvlCloseFile(void)
 	hvlClosePlayer();
 }
 
-static int hvlOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
+static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 	uint8_t *filebuf;
-	size_t   filelen;
+	uint64_t filelen;
 
 	if (!file)
 	{
@@ -446,13 +446,16 @@ static int hvlOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 	strncpy(currentmodname, info->name, _MAX_FNAME);
 	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
-	fseek (file, 0, SEEK_END);
-	filelen = ftell (file);
-	fseek (file, 0, SEEK_SET);
+	filelen = file->filesize (file);
 
 	if (filelen < 14)
 	{
 		fprintf (stderr, "hvlOpenFile: file too small\n");
+		return errGen;
+	}
+	if (filelen > (1024*1024))
+	{
+		fprintf (stderr, "hvlOpenFile: file too big\n");
 		return errGen;
 	}
 
@@ -462,11 +465,11 @@ static int hvlOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 		fprintf (stderr, "hvlOpenFile: malloc(%ld) failed\n", (long)filelen);
 		return errAllocMem;
 	}
-	if (fread (filebuf, filelen, 1, file) != 1)
+	if (file->read (file, filebuf, filelen) != filelen)
 	{
 		fprintf (stderr, "hvlOpenFile: error reading file: %s\n", strerror(errno));
 		free (filebuf);
-		return errGen;	
+		return errFileRead;
 	}
 
 	hvlOpenPlayer (filebuf, filelen);
@@ -500,4 +503,4 @@ static int hvlOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, F
 }
 
 struct cpifaceplayerstruct hvlPlayer = {hvlOpenFile, hvlCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playhvl", .desc = "OpenCP HVL Player (c) 2019 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playhvl", .desc = "OpenCP HVL Player (c) 2019-'20 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '05-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * MEDIALIBRARY filebrowser
  *
@@ -23,6 +23,7 @@
  */
 
 #include "config.h"
+#include <assert.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -33,556 +34,297 @@
 #include <unistd.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "boot/psetting.h"
+#include "filesel/adbmeta.h"
 #include "filesel/dirdb.h"
+#include "filesel/filesystem.h"
+#include "filesel/filesystem-dir-mem.h"
+#include "filesel/filesystem-drive.h"
+#include "filesel/filesystem-file-mem.h"
+#include "filesel/filesystem-unix.h"
 #include "filesel/modlist.h"
 #include "filesel/mdb.h"
-#include "filesel/adb.h"
 #include "filesel/pfilesel.h"
-#include "boot/psetting.h"
+#include "stuff/compat.h"
 #include "stuff/err.h"
-#include "stuff/poutput.h"
 #include "stuff/framelock.h"
+#include "stuff/poutput.h"
+#include "stuff/utf-8.h"
 
 #define MAX(a,b) ((a)>(b)?(a):(b))
 
-static struct mdbreaddirregstruct mlReadDirReg;
-
 static struct dmDrive *dmMEDIALIB;
+static struct ocpdir_mem_t *medialib_root;
 
-static int mlDrawBox(void)
+struct medialib_source_t
 {
-	unsigned int mlTop=plScrHeight/2-2;
-	unsigned int i;
+	char *path;
+	uint32_t dirdb_ref;
+};
+static struct medialib_source_t *medialib_sources;
+static int                       medialib_sources_count;
 
-	displayvoid(mlTop+1, 5, plScrWidth-10);
-	displayvoid(mlTop+2, 5, plScrWidth-10);
-	displayvoid(mlTop+3, 5, plScrWidth-10);
-	displaystr(mlTop, 4, 0x04, "\xda", 1);
-	for (i=5;i<(plScrWidth-5);i++)
-		displaystr(mlTop, i, 0x04, "\xc4", 1);
-	displaystr(mlTop, plScrWidth-5, 0x04, "\xbf", 1);
-	displaystr(mlTop+1, 4, 0x04, "\xb3", 1);
-	displaystr(mlTop+2, 4, 0x04, "\xb3", 1);
-	displaystr(mlTop+3, 4, 0x04, "\xb3", 1);
-	displaystr(mlTop+1, plScrWidth-5, 0x04, "\xb3", 1);
-	displaystr(mlTop+2, plScrWidth-5, 0x04, "\xb3", 1);
-	displaystr(mlTop+3, plScrWidth-5, 0x04, "\xb3", 1);
-	displaystr(mlTop+4, 4, 0x04, "\xc0", 1);
-	for (i=5;i<(plScrWidth-5);i++)
-		displaystr(mlTop+4, i, 0x04, "\xc4", 1);
-	displaystr(mlTop+4, plScrWidth-5, 0x04, "\xd9", 1);
+static struct ocpfile_t    *addfiles; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv ?
+static struct ocpfile_t    *refreshfiles; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv ?
+static struct ocpfile_t    *removefiles;  // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv ?
+static struct ocpdir_t      listall;  // complete query
+static struct ocpdir_t      search;   // needs to throttle a dialog, before it can complete!! upon listing
 
-	return mlTop;
-}
+static int                    medialibAddInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f);
+static interfaceReturnEnum    medialibAddRun  (void);
+static struct interfacestruct medialibAddIntr = {medialibAddInit, medialibAddRun, 0, "medialibAdd" INTERFACESTRUCT_TAIL};
 
-static int mlSubScan(const uint32_t dirdbnode, int mlTop)
+static int                    medialibRefreshInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f);
+static interfaceReturnEnum    medialibRefreshRun  (void);
+static struct interfacestruct medialibRefreshIntr = {medialibRefreshInit, medialibRefreshRun, 0, "medialibRefresh" INTERFACESTRUCT_TAIL};
+
+static int                    medialibRemoveInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f);
+static interfaceReturnEnum    medialibRemoveRun  (void);
+static struct interfacestruct medialibRemoveIntr = {medialibRemoveInit, medialibRemoveRun, 0, "medialibRemove" INTERFACESTRUCT_TAIL};
+
+static void              ocpdir_listall_ref (struct ocpdir_t *self);
+static void              ocpdir_listall_unref (struct ocpdir_t *self);
+static ocpdirhandle_pt   ocpdir_listall_readdir_start (struct ocpdir_t *self, void(*callback_file)(void *token, struct ocpfile_t *), void(*callback_dir )(void *token, struct ocpdir_t *), void *token);
+static void              ocpdir_listall_readdir_cancel (ocpdirhandle_pt);
+static int               ocpdir_listall_readdir_iterate (ocpdirhandle_pt);
+static struct ocpdir_t  *ocpdir_listall_readdir_dir  (struct ocpdir_t *self, uint32_t dirdb_ref);
+static struct ocpfile_t *ocpdir_listall_readdir_file (struct ocpdir_t *self, uint32_t dirdb_ref);
+
+static void              ocpdir_search_ref (struct ocpdir_t *self);
+static void              ocpdir_search_unref (struct ocpdir_t *self);
+static ocpdirhandle_pt   ocpdir_search_readdir_start (struct ocpdir_t *self, void(*callback_file)(void *token, struct ocpfile_t *), void(*callback_dir )(void *token, struct ocpdir_t *), void *token);
+static void              ocpdir_search_readdir_cancel (ocpdirhandle_pt);
+static int               ocpdir_search_readdir_iterate (ocpdirhandle_pt);
+static struct ocpdir_t  *ocpdir_search_readdir_dir  (struct ocpdir_t *self, uint32_t dirdb_ref);
+static struct ocpfile_t *ocpdir_search_readdir_file (struct ocpdir_t *self, uint32_t dirdb_ref);
+
+static void medialib_decode_blob (uint8_t *blob, size_t blobsize)
 {
-	struct modlist *ml = modlist_create();
-	struct modlistentry *mle;
-	unsigned int i;
-	char *npath;
+	uint8_t *eos;
 
-	dirdbGetFullname_malloc (dirdbnode, &npath, DIRDB_FULLNAME_NOBASE|DIRDB_FULLNAME_ENDSLASH);
-	displaystr(mlTop+2, 5, 0x0f, npath, plScrWidth-10);
-	free (npath);
-	fsReadDir(ml, dmFILE, dirdbnode, "*", RD_SUBNOSYMLINK|RD_PUTSUBS/*|(fsScanArcs?RD_ARCSCAN:0)*/);
-
-	if (ekbhit())
+	while (blobsize && (eos = memchr (blob, 0, blobsize)))
 	{
-		uint16_t key=egetch();
-		if (key==27)
-			return -1;
-	}
-
-	for (i=0;i<ml->num;i++)
-	{
-		mle=modlist_get(ml, i);
-		if (mle->flags&MODLIST_FLAG_DIR)
-		{
-			char *name;
-			dirdbGetName_internalstr (mle->dirdbfullpath, &name);
-			if (strcmp (name, ".."))
-			if (strcmp (name, "."))
-			if (strcmp (name, "/"))
-			{
-				if (mlSubScan(mle->dirdbfullpath, mlTop))
-					return -1;
-			}
-		} else if (mle->flags&MODLIST_FLAG_FILE)
-		{
-			if (!mdbInfoRead(mle->mdb_ref))
-				mdbScan(mle);
-			dirdbMakeMdbAdbRef(mle->dirdbfullpath, mle->mdb_ref, mle->adb_ref);
+		struct medialib_source_t *newlist = realloc (medialib_sources, (medialib_sources_count + 1) * sizeof (medialib_sources[0]));
+		if (!newlist)
+		{ /* out of memory */
+			return;
 		}
-	}
-	modlist_free(ml);
-	return 0;
-}
-
-static int mlScan(const uint32_t dirdbnode)
-{
-	int mlTop=mlDrawBox();
-
-	dirdbTagSetParent(dirdbnode);
-
-	displaystr(mlTop+1, 5, 0x0b, "Scanning filesystem, current directory:", 39);
-	displaystr(mlTop+3, 5, 0x0b, "-- Abort with escape --", 23);
-
-	if (mlSubScan(dirdbnode, mlTop))
-	{
-		dirdbTagCancel();
-		return -1;
-	}
-
-	dirdbTagRemoveUntaggedAndSubmit();
-	dirdbFlush();
-
-	return 0;
-}
-
-/* can never return a FILE handle */
-static FILE *mlSourcesAdd(struct modlistentry *entry)
-{
-	unsigned int mlTop=mlDrawBox();
-	int editpath=0;
-
-	/* these are for editing the path */
-	int str_size=512;
-	char *str=malloc(str_size);
-	unsigned int curpos;
-	unsigned int cmdlen;
-	int insmode=1;
-	unsigned int scrolled=0;
-
-	if (!str)
-	{
-		fprintf (stderr, "mlSourcesAdd(): str=malloc() failed\n");
-		return NULL;
-	}
-
-	strcpy(str, "file:/");
-	curpos=strlen(str);
-	cmdlen=strlen(str);
-
-	displaystr(mlTop+3, 5, 0x0b, "Abort with escape, or finish selection by pressing enter", 56);
-
-	while (1)
-	{
-		uint16_t key;
-		displaystr(mlTop+1, 5, (editpath?0x8f:0x0f), str+scrolled, plScrWidth-10);
-		if (editpath)
-			setcur(mlTop+1, 5+curpos-scrolled);
-
-		displaystr(mlTop+2, 5, (editpath?0x0f:0x8f), "current file: directory", plScrWidth-10);
-
-		while (!ekbhit())
-			framelock();
-		key=egetch();
-
-		if ((key>=0x20)&&(key<=0xFF))
-		{
-			if (editpath)
-			{
-				/* grow the buffer if needed */
-				if ((cmdlen+2) > str_size)
-				{
-					char *temp;
-					str_size += 512;
-					temp = realloc(str, str_size+=512);
-					if (!temp)
-					{
-						fprintf (stderr, "mlSourcesAdd(): str=realloc() failed\n");
-						free (str);
-						return NULL;
-					}
-					str = temp;
-				}
-
-				if (insmode)
-				{
-					memmove(str+curpos+1, str+curpos, cmdlen-curpos+1);
-					str[curpos]=key;
-					curpos++;
-					cmdlen++;
-				} else if (curpos==cmdlen)
-				{
-
-					str[curpos++]=key;
-					str[curpos]=0;
-					cmdlen++;
-				} else {
-					str[curpos++]=key;
-				}
-			}
-		} else switch (key)
-		{
-			case 27:
-				setcurshape(0);
-				free (str);
-				return NULL;
-			case KEY_LEFT:
-				if (editpath)
-					if (curpos)
-						curpos--;
-				break;
-			case KEY_RIGHT:
-				if (editpath)
-					if (curpos<cmdlen)
-						curpos++;
-				break;
-			case KEY_HOME:
-				if (editpath)
-					curpos=0;
-				break;
-			case KEY_END:
-				if (editpath)
-					curpos=cmdlen;
-				break;
-			case KEY_INSERT:
-				if (editpath)
-				{
-					insmode=!insmode;
-					setcurshape(insmode?1:2);
-				}
-				break;
-			case KEY_DELETE:
-				if (editpath)
-					if (curpos!=cmdlen)
-					{
-						memmove(str+curpos, str+curpos+1, cmdlen-curpos);
-						cmdlen--;
-					}
-				break;
-			case KEY_BACKSPACE:
-				if (editpath)
-					if (curpos)
-					{
-						memmove(str+curpos-1, str+curpos, cmdlen-curpos+1);
-						curpos--;
-						cmdlen--;
-					}
-				break;
-			case _KEY_ENTER:
-				if (!editpath)
-				{
-					struct dmDrive *_dmDrives=dmDrives;
-					while (_dmDrives)
-					{
-						if (!strcmp(_dmDrives->drivename, "file:"))
-						{
-							mlScan(_dmDrives->currentpath);
-							break;
-						}
-						_dmDrives=_dmDrives->next;
-					}
-				} else {
-					uint32_t node;
-					if (str[0]==0)
-					{
-						free (str);
-						return NULL;
-					}
-					node=dirdbResolvePathAndRef(str);
-					mlScan(node);
-					dirdbUnref(node);
-				}
-				setcurshape(0);
-				free (str);
-				return NULL;
-			case KEY_UP:
-			case KEY_DOWN:
-				if ((editpath^=1))
-					setcurshape((insmode?1:2));
-				else
-					setcurshape(0);
-				break;
+		medialib_sources = newlist;
+		medialib_sources[medialib_sources_count].path = strdup ((char *)blob);
+		if (!medialib_sources[medialib_sources_count].path)
+		{ /* out of memory */
+			return;
 		}
-		while ((curpos-scrolled)>=(plScrWidth-10))
-			scrolled+=8;
-		while (((signed)curpos-(signed)scrolled)<0)
-			scrolled-=8;
+
+		medialib_sources[medialib_sources_count].dirdb_ref = dirdbResolvePathWithBaseAndRef(DIRDB_NOPARENT, medialib_sources[medialib_sources_count].path, DIRDB_RESOLVE_DRIVE, dirdb_use_medialib);
+		if (medialib_sources[medialib_sources_count].dirdb_ref == DIRDB_NOPARENT)
+		{ /* resolve failed */
+			free (medialib_sources[medialib_sources_count].path);
+			medialib_sources[medialib_sources_count].path = 0;
+			continue;
+		}
+		medialib_sources_count++;
+		eos++;
+		blobsize -= (eos - blob);
+		blob = eos;
 	}
 }
 
-static int mlReadDir(struct modlist *ml, const struct dmDrive *drive, const uint32_t path, const char *mask, unsigned long opt)
+static void medialib_encode_blob (uint8_t **blob, size_t *blobsize)
 {
-	struct modlistentry entry;
-	uint32_t dmadd, dmall, dmsearch, dmparent;
+	int i;
+	char *ptr;
 
-	if (drive!=dmMEDIALIB)
-		return 1;
+	*blob = 0;
+	*blobsize = 0;
 
-	dmadd=dirdbFindAndRef(drive->basepath, "addfiles");
-	dmall=dirdbFindAndRef(drive->basepath, "listall");
-	dmsearch=dirdbFindAndRef(drive->basepath, "search");
-	dmparent=dirdbGetParentAndRef(path);
-
-	if (path==drive->basepath)
+	for (i=0; i < medialib_sources_count; i++)
 	{
-		if (!(opt&RD_PUTSUBS))
-			return 1;
-
-		entry.drive=drive;
-		entry.flags=MODLIST_FLAG_DIR;
-		entry.mdb_ref=0xffffffff;
-		entry.adb_ref=0xffffffff;
-		entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=0;
-
-		strcpy(entry.shortname, "all");
-		fs12name(entry.shortname, "all");
-		entry.dirdbfullpath=dmall;
-		modlist_append(ml, &entry);
-
-		strcpy(entry.shortname, "search");
-		fs12name(entry.shortname, "search");
-		entry.dirdbfullpath=dmsearch;
-		modlist_append(ml, &entry);
-
-		strcpy(entry.shortname, "addfiles");
-		fs12name(entry.shortname, "addfiles");
-		entry.dirdbfullpath=dmadd;
-		entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-		entry.ReadHandle=mlSourcesAdd;
-		modlist_append(ml, &entry);
-
-		goto out;
+		*blobsize += strlen (medialib_sources[i].path) + 1;
 	}
-	if (path==dmall)
+
+	if (*blobsize)
 	{
-		int first=1;
-		uint32_t dirdbnode;
-		uint32_t mdb_ref;
-		uint32_t adb_ref;
-		while (!dirdbGetMdbAdb(&dirdbnode, &mdb_ref, &adb_ref, &first))
-		{
-			char *cachefile;
-			dirdbGetName_internalstr (dirdbnode, &cachefile);
-			fs12name(entry.shortname, cachefile);
-
-			entry.drive=dmFILE;
-			entry.dirdbfullpath=dirdbnode;
-			entry.flags=MODLIST_FLAG_FILE;
-			entry.mdb_ref=mdb_ref;
-			entry.adb_ref=adb_ref;
-			if (adb_ref==DIRDB_NO_ADBREF)
-			{
-				entry.Read=dosfile_Read;
-				entry.ReadHeader=dosfile_ReadHeader;
-				entry.ReadHandle=dosfile_ReadHandle;
-			} else {
-				entry.Read=adb_Read;
-				entry.ReadHeader=adb_ReadHeader;
-				entry.ReadHandle=adb_ReadHandle;
-			}
-			modlist_append(ml, &entry);
-/*
-			dirdbUnref(entry.dirdbfullpath);*/
-		}
-		goto out;
+		*blob = malloc (*blobsize);
 	}
-	if (path==dmsearch)
+	if (!*blob)
+	{ /* catches both empty data, and out-of-memory */
+		*blobsize = 0;
+		return;
+	}
+
+	for (ptr = (char *)*blob, i=0; i < medialib_sources_count; i++)
 	{
-		unsigned int mlTop=mlDrawBox();
-		char str[1024];
-		unsigned int curpos;
-		unsigned int cmdlen;
-		int insmode=1;
-		unsigned int scrolled=0;
-
-		displaystr(mlTop+1, 5, 0x0b, "Give me something to crunch!!", 29);
-		displaystr(mlTop+3, 5, 0x0b, "-- Finish with enter --", 23);
-
-		str[0]=0;
-		curpos=0;
-		cmdlen=0;
-		setcurshape(1);
-
-		while (1)
-		{
-			uint16_t key;
-			displaystr(mlTop+2, 5, 0x8f, str+scrolled, plScrWidth-10);
-			setcur(mlTop+2, 5+curpos-scrolled);
-
-			while (!ekbhit())
-				framelock();
-			key=egetch();
-
-			if ((key>=0x20)&&(key<=0xFF))
-			{
-				if (insmode)
-				{
-					if ((cmdlen+1)<sizeof(str))
-					{
-						memmove(str+curpos+1, str+curpos, cmdlen-curpos+1);
-						str[curpos++]=key;
-						cmdlen++;
-					}
-				} else if (curpos==cmdlen)
-				{
-					if ((cmdlen+1)<sizeof(str))
-					{
-						str[curpos++]=key;
-						str[curpos]=0;
-						cmdlen++;
-					}
-				} else
-				str[curpos++]=key;
-			} else switch (key)
-			{
-				case KEY_LEFT:
-					if (curpos)
-						curpos--;
-					break;
-				case KEY_RIGHT:
-					if (curpos<cmdlen)
-						curpos++;
-					break;
-				case KEY_HOME:
-					curpos=0;
-					break;
-				case KEY_END:
-					curpos=cmdlen;
-					break;
-				case KEY_INSERT:
-					{
-						insmode=!insmode;
-						setcurshape(insmode?1:2);
-					}
-					break;
-				case KEY_DELETE:
-					if (curpos!=cmdlen)
-					{
-						memmove(str+curpos, str+curpos+1, cmdlen-curpos);
-						cmdlen--;
-					}
-					break;
-				case KEY_BACKSPACE:
-					if (curpos)
-					{
-						memmove(str+curpos-1, str+curpos, cmdlen-curpos+1);
-						curpos--;
-						cmdlen--;
-					}
-					break;
-				case KEY_ESC:
-					setcurshape(insmode?1:2);
-					goto out;
-				case _KEY_ENTER:
-					{
-						unsigned int i, j;
-						int first=1;
-						uint32_t dirdbnode;
-						uint32_t mdb_ref;
-						uint32_t adb_ref;
-
-						setcurshape(0);
-
-						for (i=0;i<cmdlen;i++)
-							str[i]=toupper(str[i]);
-
-						while (!dirdbGetMdbAdb(&dirdbnode, &mdb_ref, &adb_ref, &first))
-						{
-							char *cachefile, *cachefileUpper;
-
-							struct moduleinfostruct info;
-							char buffer[
-								MAX(sizeof(info.modname)+1,
-								    MAX(sizeof(info.composer)+1,
-								        sizeof(info.comment)+1))
-							];
-
-
-							dirdbGetName_internalstr (dirdbnode, &cachefile);
-
-							cachefileUpper = malloc (strlen (cachefile) + 1);
-							for (i=0; cachefile[i]; i++)
-							{
-								cachefileUpper[i] = toupper(cachefile[i]);
-							}
-							cachefileUpper[i]=0;
-
-							if (strstr(cachefileUpper, str))
-							{
-								free (cachefileUpper);
-								goto add;
-							}
-							free (cachefileUpper);
-
-							mdbGetModuleInfo(&info, mdb_ref);
-
-							for (j=0;j<sizeof(info.modname);j++)
-								buffer[j]=toupper(info.modname[j]);
-							buffer[j]=0;
-							if (strstr(buffer, str))
-								goto add;
-
-							for (j=0;j<sizeof(info.composer);j++)
-								buffer[j]=toupper(info.composer[j]);
-							buffer[j]=0;
-							if (strstr(buffer, str))
-								goto add;
-
-							for (j=0;j<sizeof(info.comment);j++)
-								buffer[j]=toupper(info.comment[j]);
-							buffer[j]=0;
-							if (strstr(buffer, str))
-								goto add;
-
-							continue;
-							{
-							add:
-								fs12name(entry.shortname, cachefile);
-
-								entry.drive=dmFILE;
-								entry.dirdbfullpath=dirdbnode; /*dirdbResolvePathAndRef(files[i].name);*/
-								entry.flags=MODLIST_FLAG_FILE;
-								entry.mdb_ref=mdb_ref;
-								entry.adb_ref=adb_ref;
-								if (adb_ref==DIRDB_NO_ADBREF)
-								{
-									entry.Read=dosfile_Read;
-									entry.ReadHeader=dosfile_ReadHeader;
-									entry.ReadHandle=dosfile_ReadHandle;
-								} else {
-									entry.Read=adb_Read;
-									entry.ReadHeader=adb_ReadHeader;
-									entry.ReadHandle=adb_ReadHandle;
-								}
-								modlist_append(ml, &entry);
-								/* dirdbUnref(entry.dirdbfullpath);*/
-							}
-						}
-						goto out;
-					}
-			}
-			while ((curpos-scrolled)>=(plScrWidth-10))
-				scrolled+=8;
-			while (((signed)curpos-(signed)scrolled)<0)
-				scrolled-=8;
-		}
+		strcpy (ptr, medialib_sources[i].path);
+		ptr += strlen (medialib_sources[i].path) + 1;
 	}
-out:
-	dirdbUnref(dmsearch);
-	dirdbUnref(dmall);
-	if (dmparent!=DIRDB_NOPARENT)
-		dirdbUnref(dmparent);
-	return 1;
 }
 
+static void mlFlushBlob (void)
+{
+	uint8_t *data = 0;
+	size_t datasize = 0;
+	medialib_encode_blob (&data, &datasize);
+	if (datasize)
+	{
+		adbMetaAdd ("medialib", 1, "ML", data, datasize);
+	} else {
+		adbMetaRemove ("medialib", 1, "ML");
+	}
+	free (data);
+}
+
+#include "medialib-scan.c"
+
+#include "medialib-add.c"
+
+#include "medialib-refresh.c"
+
+#include "medialib-remove.c"
+
+#include "medialib-listall.c"
+
+#include "medialib-search.c"
 
 static int mlint(void)
 {
-	mdbRegisterReadDir(&mlReadDirReg);
-	dmMEDIALIB=RegisterDrive("medialib:");
+	struct ocpdir_t *r;
+	unsigned char *data = 0;
+	size_t datasize = 0;
+	uint32_t mdbref;
+	struct moduleinfostruct m;
+
+	medialib_root = ocpdir_mem_alloc (0, "medialib:");
+	r = ocpdir_mem_getdir_t (medialib_root);
+
+	dmMEDIALIB=RegisterDrive("medialib:", r, r);
+
+	if (!adbMetaGet ("medialib", 1, "ML", &data, &datasize))
+	{
+		medialib_decode_blob (data, datasize);
+		free (data);
+	}
+
+	addfiles = mem_file_open (r, dirdbFindAndRef (r->dirdb_ref, "add.dev", dirdb_use_medialib), strdup (medialibAddIntr.name), strlen (medialibAddIntr.name));
+	dirdbUnref (addfiles->dirdb_ref, dirdb_use_medialib);
+	mdbref = mdbGetModuleReference2 (addfiles->dirdb_ref, strlen (medialibAddIntr.name));
+	mdbGetModuleInfo (&m, mdbref);
+	m.modtype = mtDEVv;
+	strcpy (m.modname, "medialib add source");
+	mdbWriteModuleInfo (mdbref, &m);
+	ocpdir_mem_add_file (medialib_root, addfiles);
+	plRegisterInterface (&medialibAddIntr);
+
+	refreshfiles = mem_file_open (r, dirdbFindAndRef (r->dirdb_ref, "refresh.dev", dirdb_use_medialib), strdup (medialibRefreshIntr.name), strlen (medialibRefreshIntr.name));
+	dirdbUnref (refreshfiles->dirdb_ref, dirdb_use_medialib);
+	mdbref = mdbGetModuleReference2 (refreshfiles->dirdb_ref, strlen (medialibRefreshIntr.name));
+	mdbGetModuleInfo (&m, mdbref);
+	m.modtype = mtDEVv;
+	strcpy (m.modname, "medialib refresh source");
+	mdbWriteModuleInfo (mdbref, &m);
+	ocpdir_mem_add_file (medialib_root, refreshfiles);
+	plRegisterInterface (&medialibRefreshIntr);
+
+	removefiles = mem_file_open (r, dirdbFindAndRef (r->dirdb_ref, "remove.dev", dirdb_use_medialib), strdup (medialibRemoveIntr.name), strlen (medialibRemoveIntr.name));
+	dirdbUnref (removefiles->dirdb_ref, dirdb_use_medialib);
+	mdbref = mdbGetModuleReference2 (removefiles->dirdb_ref, strlen (medialibRemoveIntr.name));
+	mdbGetModuleInfo (&m, mdbref);
+	m.modtype = mtDEVv;
+	strcpy (m.modname, "medialib remove source");
+	mdbWriteModuleInfo (mdbref, &m);
+	ocpdir_mem_add_file (medialib_root, removefiles);
+	plRegisterInterface (&medialibRemoveIntr);
+
+	ocpdir_t_fill (&listall,
+	                ocpdir_listall_ref,
+	                ocpdir_listall_unref,
+	                r,
+	                ocpdir_listall_readdir_start,
+	                0,
+	                ocpdir_listall_readdir_cancel,
+	                ocpdir_listall_readdir_iterate,
+	                ocpdir_listall_readdir_dir,
+	                ocpdir_listall_readdir_file,
+	                0,
+	                dirdbFindAndRef (r->dirdb_ref, "listall", dirdb_use_dir),
+	                0,
+	                0,
+	                0);
+	ocpdir_mem_add_dir (medialib_root, &listall);
+
+	ocpdir_t_fill (&search,
+	                ocpdir_search_ref,
+	                ocpdir_search_unref,
+	                r,
+	                ocpdir_search_readdir_start,
+	                0,
+	                ocpdir_search_readdir_cancel,
+	                ocpdir_search_readdir_iterate,
+	                ocpdir_search_readdir_dir,
+	                ocpdir_search_readdir_file,
+	                0,
+	                dirdbFindAndRef (r->dirdb_ref, "search", dirdb_use_dir),
+	                0,
+	                0,
+	                0);
+	ocpdir_mem_add_dir (medialib_root, &search);
+
 	return errOk;
 }
 
 static void mlclose(void)
 {
-	mdbUnregisterReadDir(&mlReadDirReg);
+	int i;
+
+	mlSearchClear();
+
+	plUnregisterInterface (&medialibRemoveIntr);
+	if (removefiles)
+	{
+		ocpdir_mem_remove_file (medialib_root, removefiles);
+		removefiles->unref (removefiles);
+		removefiles = 0;
+	}
+
+	plUnregisterInterface (&medialibRefreshIntr);
+	if (refreshfiles)
+	{
+		ocpdir_mem_remove_file (medialib_root, refreshfiles);
+		refreshfiles->unref (refreshfiles);
+		refreshfiles = 0;
+	}
+
+	plUnregisterInterface (&medialibAddIntr);
+	if (addfiles)
+	{
+		ocpdir_mem_remove_file (medialib_root, addfiles);
+		addfiles->unref (addfiles);
+		addfiles = 0;
+	}
+
+	ocpdir_mem_remove_dir (medialib_root, &listall);
+	dirdbUnref (listall.dirdb_ref, dirdb_use_dir);
+	listall.dirdb_ref = DIRDB_NOPARENT;
+
+	ocpdir_mem_remove_dir (medialib_root, &search);
+	dirdbUnref (search.dirdb_ref, dirdb_use_dir);
+	search.dirdb_ref = DIRDB_NOPARENT;
+
+	for (i=0; i < medialib_sources_count; i++)
+	{
+		free (medialib_sources[i].path);
+		dirdbUnref (medialib_sources[i].dirdb_ref, dirdb_use_medialib);
+	}
+	free (medialib_sources); medialib_sources = 0;
+	medialib_sources_count = 0;
+
+	if (medialib_root)
+	{
+		struct ocpdir_t *r = ocpdir_mem_getdir_t (medialib_root);
+		r->unref (r);
+		medialib_root = 0;
+	}
 }
 
-static struct mdbreaddirregstruct mlReadDirReg = {mlReadDir MDBREADDIRREGSTRUCT_TAIL};
-
 char *dllinfo = "";
-struct linkinfostruct dllextinfo = {.name = "medialib", .desc = "OpenCP medialib (c) 2005-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = mlint, .Close = mlclose};
+struct linkinfostruct dllextinfo = {.name = "medialib", .desc = "OpenCP medialib (c) 2005-21 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = mlint, .Close = mlclose};

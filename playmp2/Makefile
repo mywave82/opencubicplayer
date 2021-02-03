@@ -53,11 +53,12 @@ id3.o: id3.c \
 mpptype.o: mpptype.c \
 	../config.h \
 	../types.h \
+	../filesel/filesystem.h \
+	../filesel/mdb.h \
 	id3.h \
 	../stuff/cp437.h \
 	../stuff/imsrtns.h \
-	../stuff/utf-8.h \
-	../filesel/mdb.h
+	../stuff/utf-8.h
 	$(CC) mpptype.c -o $@ -c
 
 playmp2_so=cpiid3info.o cpiid3pic.o mppplay.o mpplay.o
@@ -66,30 +67,32 @@ playmp2$(LIB_SUFFIX): $(playmp2_so)
 mppplay.o: mppplay.c \
 	../config.h \
 	../types.h \
-	../filesel/pfilesel.h \
-	../filesel/mdb.h \
-	../stuff/poutput.h \
-	../dev/player.h \
-	../boot/psetting.h \
 	../boot/plinkman.h \
-	mpplay.h \
-	../stuff/err.h \
-	../stuff/sets.h \
-	../stuff/compat.h \
+	../boot/psetting.h \
+	../cpiface/cpiface.h \
 	../dev/deviplay.h \
-	../cpiface/cpiface.h
+	../dev/player.h \
+	../filesel/filesystem.h \
+	../filesel/mdb.h \
+	../filesel/pfilesel.h \
+	mpplay.h \
+	../stuff/compat.h \
+	../stuff/err.h \
+	../stuff/poutput.h \
+	../stuff/sets.h
 	$(CC) mppplay.c -o $@ $(MAD_CFLAGS) -c
 
 mpplay.o: mpplay.c \
 	../config.h \
 	../types.h \
-	../stuff/poll.h \
-	../stuff/timer.h \
-	../dev/player.h \
 	../dev/deviplay.h \
-	../dev/ringbuffer.h \
+	../dev/player.h \
 	../dev/plrasm.h \
-	../stuff/imsrtns.h \
+	../dev/ringbuffer.h \
+	../filesel/filesystem.h \
 	id3.h \
-	mpplay.h
+	mpplay.h \
+	../stuff/imsrtns.h \
+	../stuff/poll.h \
+	../stuff/timer.h
 	$(CC) mpplay.c -o $@ $(MAD_CFLAGS) -c

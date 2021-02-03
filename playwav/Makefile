@@ -16,15 +16,17 @@ playwav_so=wavplay.o wavpplay.o
 playwav$(LIB_SUFFIX): $(playwav_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
-wavplay.o: wavplay.c wave.h \
+wavplay.o: wavplay.c \
 	../config.h \
 	../types.h \
 	../dev/deviplay.h \
-	../stuff/imsrtns.h \
-	../stuff/poll.h \
 	../dev/player.h \
 	../dev/plrasm.h \
-	../dev/ringbuffer.h
+	../dev/ringbuffer.h \
+	../filesel/filesystem.h \
+	../stuff/imsrtns.h \
+	../stuff/poll.h \
+	wave.h
 	$(CC) wavplay.c -o $@ -c
 
 wavptype.o: wavptype.c \
@@ -33,16 +35,19 @@ wavptype.o: wavptype.c \
 	../filesel/mdb.h
 	$(CC) wavptype.c -o $@ -c
 
-wavpplay.o: wavpplay.c wave.h\
+wavpplay.o: wavpplay.c \
 	../config.h \
 	../types.h \
-	../filesel/mdb.h \
-	../filesel/pfilesel.h \
 	../boot/plinkman.h \
 	../boot/psetting.h \
-	../stuff/sets.h \
+	../cpiface/cpiface.h \
+	../filesel/filesystem.h \
+	../filesel/mdb.h \
+	../filesel/pfilesel.h \
 	../stuff/compat.h \
 	../stuff/err.h \
+	../stuff/poutput.h \
+	../stuff/sets.h \
 	../dev/devigen.h \
-	../cpiface/cpiface.h
+	wave.h
 	$(CC) wavpplay.c -o $@ -c

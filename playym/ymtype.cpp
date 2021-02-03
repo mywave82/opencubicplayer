@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '10-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * SIDPlay file type detection routines for the fileselector
  *
@@ -26,9 +26,10 @@
 #include <string.h>
 #include "types.h"
 extern "C" {
-#include "filesel/pfilesel.h"
 #include "boot/plinkman.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
+#include "filesel/pfilesel.h"
 }
 #include "lzh/lzh.h"
 
@@ -311,14 +312,6 @@ static int ymReadMemInfo2(struct moduleinfostruct *m, const char *buf, size_t le
 	return 0;
 }
 
-
-static int ymReadInfo(struct moduleinfostruct *m, FILE *fp, const char *mem, size_t len)
-{
-	return 0;
-}
-
-
-
 static int ymReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
 {
 #ifdef HAVE_LZH
@@ -353,6 +346,11 @@ static int ymReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len
 #endif
 }
 
+static int ymReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *mem, size_t len)
+{
+	return ymReadMemInfo (m, mem, len);
+}
+
 static void ymEvent(int event)
 {
 	switch (event)
@@ -380,7 +378,7 @@ extern "C" {
 	struct linkinfostruct dllextinfo =
 	{
 		"ymtype" /* name */,
-		"OpenCP YM Detection (c) 2010-2011 Stian Skjelstad" /* desc */,
+		"OpenCP YM Detection (c) 2010-2021 Stian Skjelstad" /* desc */,
 		DLLVERSION /* ver */
 	};
 }

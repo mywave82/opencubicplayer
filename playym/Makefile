@@ -42,6 +42,7 @@ ymtype.o: ymtype.cpp \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	lzh/lzh.h
@@ -50,31 +51,34 @@ ymtype.o: ymtype.cpp \
 ympplay.o: ympplay.cpp \
 	../config.h \
 	../types.h \
-	../filesel/pfilesel.h \
-	../filesel/mdb.h \
-	../dev/player.h \
-	../boot/psetting.h \
 	../boot/plinkman.h \
-	ymplay.h \
-	../stuff/compat.h \
-	../stuff/sets.h \
-	../stuff/poutput.h \
-	../stuff/timer.h \
-	../dev/deviplay.h \
+	../boot/psetting.h \
 	../cpiface/cpiface.h \
-	stsoundlib/StSoundLibrary.h
+	../dev/deviplay.h \
+	../dev/player.h \
+	../filesel/mdb.h \
+	../filesel/filesystem.h \
+	../filesel/pfilesel.h \
+	../stuff/compat.h \
+	../stuff/poutput.h \
+	../stuff/sets.h \
+	../stuff/timer.h \
+	stsoundlib/StSoundLibrary.h \
+	ymplay.h
 	$(CXX) ympplay.cpp -o $@ -c
 
 ymplay.o: ymplay.cpp \
 	../config.h \
 	../types.h \
 	../cpiface/cpiface.h \
+	../dev/deviplay.h \
+	../dev/mcp.h \
+	../dev/player.h \
+	../dev/plrasm.h \
+	../filesel/filesystem.h \
+	../stuff/imsrtns.h \
 	../stuff/poll.h \
 	../stuff/timer.h \
-	../dev/player.h \
-	../dev/mcp.h \
-	../dev/deviplay.h \
-	../dev/plrasm.h \
-	../stuff/imsrtns.h \
-	ymplay.h
+	ymplay.h \
+	stsoundlib/YmMusic.h
 	$(CXX) ymplay.cpp -o $@ -c

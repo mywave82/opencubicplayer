@@ -1,5 +1,5 @@
 /* opencp module Player
- * copyright (c) '18-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) '18-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * SDL2 graphic driver
  *
@@ -1460,6 +1460,7 @@ int sdl2_init(void)
 	_displaystrattr_iso8859latin1=swtext_displaystrattr_iso8859latin1;
 	_displaystr_iso8859latin1=swtext_displaystr_iso8859latin1;
 	_displaystr_utf8=swtext_displaystr_utf8;
+	_measurestr_utf8=swtext_measurestr_utf8;
 
 	_drawbar=swtext_drawbar;
 	_idrawbar=swtext_idrawbar;

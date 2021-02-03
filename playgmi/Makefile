@@ -31,6 +31,7 @@ gmitimidity.o: gmitimidity.c gmipat.h gmiplay.h \
 gmiptype.o: gmiptype.c \
 	../config.h \
 	../types.h \
+	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../stuff/compat.h
 	$(CC) gmiptype.c -o $@ -c
@@ -147,10 +148,27 @@ timidity-git/timidity/wrdt.o: \
 	../types.h
 	$(CC) $< -o $@ -c -Dtty_wrdt_mode=dumb_wrdt_mode
 
-timidityplay.o: timidityplay.c \
+timidityplay.o: timidityplay.c timidity-git/timidity/playmidi.c\
 	../config.h \
-	../boot/plinkman.h \
-	../cpiface/cpiface.h \
+	../types.h \
+	timidity-git/libarc/arc.h \
+	timidity-git/timidity/aq.h \
+	timidity-git/timidity/controls.h \
+	timidity-git/timidity/instrum.h \
+	timidity-git/timidity/output.h \
+	timidity-git/timidity/playmidi.h \
+	timidity-git/timidity/readmidi.h \
+	timidity-git/timidity/recache.h \
+	timidity-git/timidity/resample.h \
+	timidity-git/timidity/timidity.h \
+	timidity-git/timidity/wrd.h \
+	../dev/deviplay.h \
+	../dev/player.h \
+	../dev/plrasm.h \
+	../filesel/mdb.h \
+	../stuff/err.h \
+	../stuff/imsrtns.h \
+	../stuff/poll.h \
 	timidityplay.h
 	$(CC) $< -o $@ -c -DANOTHER_MAIN -Dmain=timidity_main -DDEFAULT_PATH=TIMIDITY_DEFAULT_PATH -DPKGDATADIR=TIMIDITYPKGDATADIR
 
@@ -158,7 +176,17 @@ timiditypplay.o: timiditypplay.c \
 	../config.h \
 	../boot/plinkman.h \
 	../cpiface/cpiface.h \
+	../dev/deviplay.h \
+	../dev/player.h \
 	../filesel/dirdb.h \
+	../filesel/filesystem.h \
+	../filesel/mdb.h \
+	../filesel/pfilesel.h \
+	../stuff/compat.h \
+	../stuff/err.h \
+	../stuff/poutput.h \
+	../stuff/sets.h \
+	../stuff/timer.h \
 	timidityplay.h
 	$(CC) $< -o $@ -c
 

@@ -37,6 +37,7 @@ dumpmod.o: \
 xmpptype.o: xmpptype.c \
 	../config.h \
 	../types.h \
+	../filesel/filesystem.h \
 	../filesel/mdb.h
 	$(CC) xmpptype.c -o $@ -c
 
@@ -45,6 +46,7 @@ xmlmod.o: xmlmod.c \
 	xmplay.h \
 	../types.h \
 	../dev/mcp.h \
+	../filesel/filesystem.h \
 	../stuff/err.h
 	$(CC) xmlmod.c -o $@ -c
 
@@ -53,6 +55,7 @@ xmlmxm.o: xmlmxm.c \
 	xmplay.h \
 	../types.h \
 	../dev/mcp.h \
+	../filesel/filesystem.h \
 	../stuff/err.h
 	$(CC) xmlmxm.c -o $@ -c
 
@@ -61,6 +64,7 @@ xmload.o: xmload.c \
 	xmplay.h \
 	../types.h \
 	../dev/mcp.h \
+	../filesel/filesystem.h \
 	../stuff/err.h
 	$(CC) xmload.c -o $@ -c
 
@@ -86,15 +90,15 @@ xmpplay.o: xmpplay.c \
 	xmplay.h \
 	../types.h \
 	../boot/plinkman.h \
-	../dev/mcp.h \
+	../cpiface/cpiface.h \
 	../dev/deviwave.h \
-	../stuff/compat.h \
-	../stuff/poutput.h \
-	../filesel/pfilesel.h \
+	../dev/mcp.h \
+	../filesel/filesystem.h \
 	../filesel/mdb.h \
+	../filesel/pfilesel.h \
 	../stuff/compat.h \
 	../stuff/err.h \
-	../cpiface/cpiface.h
+	../stuff/poutput.h
 	$(CC) xmpplay.c -o $@ -c
 
 xmptrak.o: xmptrak.c \

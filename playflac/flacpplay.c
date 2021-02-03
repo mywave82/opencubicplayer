@@ -21,18 +21,18 @@
 #include "config.h"
 #include <string.h>
 #include "types.h"
-#include "filesel/pfilesel.h"
-#include "filesel/mdb.h"
-#include "stuff/poutput.h"
-#include "dev/player.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
-#include "stuff/sets.h"
+#include "cpiface/cpiface.h"
+#include "dev/deviplay.h"
+#include "dev/player.h"
+#include "filesel/pfilesel.h"
+#include "filesel/mdb.h"
+#include "flacplay.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
-#include "dev/deviplay.h"
-#include "cpiface/cpiface.h"
-#include "flacplay.h"
+#include "stuff/poutput.h"
+#include "stuff/sets.h"
 
 #define _MAX_FNAME 8
 #define _MAX_EXT 4
@@ -489,7 +489,7 @@ static void flacCloseFile(void)
 	FlacPicDone ();
 }
 
-static int flacOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *flacf)
+static int flacOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *flacf)
 {
 	struct flacinfo inf;
 

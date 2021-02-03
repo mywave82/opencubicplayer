@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '05-'10 Stian Skjelstad <stian@nixia.no>
+ * copyright (c) '05-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * OPLPlay interface routines
  *
@@ -30,17 +30,18 @@
 #include "types.h"
 extern "C"
 {
-#include "filesel/pfilesel.h"
-#include "filesel/mdb.h"
-#include "dev/player.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
+#include "cpiface/cpiface.h"
+#include "dev/deviplay.h"
+#include "dev/player.h"
+#include "filesel/mdb.h"
+#include "filesel/filesystem.h"
+#include "filesel/pfilesel.h"
 #include "stuff/compat.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 #include "stuff/timer.h"
-#include "dev/deviplay.h"
-#include "cpiface/cpiface.h"
 }
 #include "stsoundlib/StSoundLibrary.h"
 #include "ymplay.h"
@@ -596,7 +597,7 @@ static void normalize(void)
 {
 	mcpNormalize(0);
 }
-static int ymOpenFile(const uint32_t dirdbref, struct moduleinfostruct *info, FILE *file)
+static int ymOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 	plIsEnd=ymLooped;
 	plProcessKey=ymProcessKey;
@@ -625,7 +626,7 @@ extern "C"
 	struct linkinfostruct dllextinfo =
 	{
 		"playym" /* name */,
-		"OpenCP STYMulator Player (c) 2010-2011 Stian Skjelstad" /* desc */,
+		"OpenCP STYMulator Player (c) 2010-'21 Stian Skjelstad" /* desc */,
 		DLLVERSION /* ver */
 	};
 }

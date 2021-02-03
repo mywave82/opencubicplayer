@@ -107,7 +107,7 @@ static int ayReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len
 	return 1;
 }
 
-static int ayReadInfo(struct moduleinfostruct *m, FILE *f, const char *buf, size_t len)
+static int ayReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
 {
 	return ayReadMemInfo(m, buf, len);
 }

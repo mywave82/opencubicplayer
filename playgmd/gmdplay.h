@@ -198,8 +198,9 @@ enum
 	fxPanVibrato
 };
 
+struct ocpfilehandle_t;
 struct gmdloadstruct {
-	int (*load)(struct gmdmodule *m, FILE *file);
+	int (*load)(struct gmdmodule *m, struct ocpfilehandle_t *file);
 };
 
 #endif

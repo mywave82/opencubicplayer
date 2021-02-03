@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '94-'21 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
  *
  * GMDPlay loader for ScreamTracker ]I[ modules
  *
@@ -33,6 +33,7 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "dev/mcp.h"
+#include "filesel/filesystem.h"
 #include "gmdplay.h"
 #include "stuff/err.h"
 
@@ -42,7 +43,7 @@ static inline void putcmd(uint8_t **p, uint8_t c, uint8_t d)
 	*(*p)++=d;
 }
 
-static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
+static int _mpLoadS3M(struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	unsigned int t,i;
 	uint8_t orders[256];
@@ -78,8 +79,10 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 	fprintf(stderr, "Reading header: %d bytes\n", (int)sizeof(hdr));
 #endif
 
-	if (fread(&hdr, sizeof(hdr), 1, file) != 1)
+	if (file->read (file, &hdr, sizeof(hdr)) != sizeof (hdr))
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #1\n");
+	}
 	hdr.d1      = uint16_little (hdr.d1);
 	hdr.orders  = uint16_little (hdr.orders);
 	hdr.ins     = uint16_little (hdr.ins);
@@ -125,8 +128,10 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 #ifdef S3M_LOAD_DEBUG
 	fprintf(stderr, "Reading pattern orders, %d bytes\n", (int)m->patnum);
 #endif
-	if (fread(orders, m->patnum, 1, file) != 1)
+	if (file->read (file, orders, m->patnum) != m->patnum)
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #2\n");
+	}
 	for (t=m->patnum-1; (signed)t>=0; t--)
 	{
 		if (orders[t]<254)
@@ -160,15 +165,19 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 #ifdef S3M_LOAD_DEBUG
 	fprintf(stderr, "Reading instruments-parameters, %d bytes\n", (int)m->instnum*2);
 #endif
-	if (fread(inspara, m->instnum*2, 1, file) != 1)
+	if (file->read (file, inspara, m->instnum*2) != (m->instnum * 2))
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #2\n");
+	}
 	for (i=0;i<(m->instnum*2);i++)
 		inspara[i] = uint16_little (inspara[i]);
 #ifdef S3M_LOAD_DEBUG
 	fprintf(stderr, "Reading pattern-parameters, %d bytes\n", (int)hdr.pats*2);
 #endif
-	if (fread(patpara, hdr.pats*2, 1, file) != 1)
+	if (file->read (file, patpara, hdr.pats*2) != (hdr.pats * 2))
+	{
 		fprintf(stderr, __FILE__ ": warning, read failed #3\n");
+	}
 	for (i=0;i<(hdr.pats*(unsigned)2);i++)
 		patpara[i] = uint16_little (patpara[i]);
 
@@ -180,8 +189,10 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 #ifdef S3M_LOAD_DEBUG
 		fprintf(stderr, "Reading default panning, 32 bytes\n");
 #endif
-		if (fread(defpan, 32, 1, file) != 1)
+		if (file->read (file, defpan, 32) != 32)
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #4\n");
+		}
 	}
 	for (i=0; i<32; i++)
 		defpan[i]=(defpan[i]&0x20)?((defpan[i]&0xF)*0x11):((hdr.mv&0x80)?((hdr.channels[i]&8)?0xCC:0x33):0x80);
@@ -243,12 +254,14 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 #ifdef S3M_LOAD_DEBUG
 		fprintf(stderr, "Seeking to (%d/%d)  %d\n", i, (int)m->instnum, (int)((int32_t)inspara[i])*16);
 #endif
-		fseek(file, ((int32_t)inspara[i])*16, SEEK_SET);
+		file->seek_set (file, ((int32_t)inspara[i])*16);
 #ifdef S3M_LOAD_DEBUG
 		fprintf(stderr, "Reading %d bytes of instrument header\n", (int)sizeof(sins));
 #endif
-		if (fread(&sins, sizeof(sins), 1, file) != 1)
+		if (file->read (file, &sins, sizeof (sins)) != sizeof (sins))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #5\n");
+		}
 		sins.sampptr   = uint16_little (sins.sampptr);
 		sins.length    = uint32_little (sins.length);
 		sins.loopstart = uint32_little (sins.loopstart);
@@ -344,10 +357,11 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 		struct gmdtrack *trk;
 		uint16_t len;
 
-		fseek(file, patpara[t]*16, SEEK_SET);
-		if (fread(&patsize, sizeof(uint16_t), 1, file) != 1)
+		file->seek_set (file, patpara[t]*16);
+		if (ocpfilehandle_read_uint16_le (file, &patsize))
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #6\n");
-		patsize = uint16_little (patsize);
+		}
 		if (patsize>bufsize)
 		{
 			void *new;
@@ -363,8 +377,10 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 			}
 			buffer=new;
 		}
-		if (fread(buffer, patsize, 1, file) != 1)
+		if (file->read (file, buffer, patsize) != patsize)
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #7\n");
+		}
 
 		for (j=0; j<m->channum; j++)
 		{
@@ -772,7 +788,7 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 			continue;
 
 		l=((sip->type&mcpSamp16Bit)?2:1)*sip->length;
-		fseek(file, smppara[i]*16, SEEK_SET);
+		file->seek_set (file, smppara[i]*16);
 		sip->ptr=malloc(sizeof(int8_t)*(l+16));
 		if (!sip->ptr)
 		{
@@ -781,8 +797,10 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 #endif
 			return errAllocMem;
 		}
-		if (fread(sip->ptr, l, 1, file) != 1)
+		if (file->read (file, sip->ptr, l) != l)
+		{
 			fprintf(stderr, __FILE__ ": warning, read failed #8\n");
+		}
 	}
 
 	for (i=m->channum-1; (signed)i>=0; i--)
@@ -805,4 +823,4 @@ static int _mpLoadS3M(struct gmdmodule *m, FILE *file)
 
 struct gmdloadstruct mpLoadS3M = { _mpLoadS3M };
 
-struct linkinfostruct dllextinfo = {.name = "gmdls3m", .desc = "OpenCP Module Loader: *.S3M (c) 1994-09 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "gmdls3m", .desc = "OpenCP Module Loader: *.S3M (c) 1994-21 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

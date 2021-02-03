@@ -61,14 +61,15 @@
 #include <string.h>
 #include <unistd.h>
 #include "types.h"
-#include "stuff/timer.h"
-#include "stuff/poll.h"
 
-#include "dev/player.h"
 #include "dev/deviplay.h"
-#include "stuff/imsrtns.h"
-#include "dev/ringbuffer.h"
+#include "dev/player.h"
 #include "dev/plrasm.h"
+#include "dev/ringbuffer.h"
+#include "filesel/filesystem.h"
+#include "stuff/imsrtns.h"
+#include "stuff/poll.h"
+#include "stuff/timer.h"
 
 #include "ayplay.h"
 #include "main.h"
@@ -359,55 +360,27 @@ static void mem_init(int track)
 }
 
 /* from main.c */
-static int read_ay_file(FILE *in)
+static int read_ay_file (struct ocpfilehandle_t *in)
 {
-	unsigned char *data,*buf,*ptr,*ptr2;
-	int data_alloc=16384,buf_alloc=16384,data_ofs=0;
-	int data_len;
-	int ret,tmp,f;
+	unsigned char *data,*ptr,*ptr2;
+	int tmp,f;
+	uint64_t data_len;
 
-	/* given the loopy format, it's much easier to deal with in memory.
-	 * But I'm avoiding mmap() in case I want to tweak this to run from
-	 * a pipe at some point.
-	 */
-	if((buf=malloc(buf_alloc))==NULL) /* can't happen under glibc */
-		return 0;
-
-	if((data=malloc(data_alloc))==NULL) /* can't happen under glibc */
+	data_len = in->filesize(in);
+	if (data_len > 1024*1024)
 	{
-		free(buf);
 		return 0;
 	}
-
-	while((ret=fread(buf,1,buf_alloc,in))>0)
+	data = malloc (data_len);
+	if (!data)
 	{
-		if(data_ofs+ret>=data_alloc)
-		{
-			unsigned char *oldptr=data;
-
-			data_alloc+=buf_alloc;
-			if((data=realloc(data,data_alloc))==NULL) /* can't happen under glibc */
-			{
-				fclose(in);
-				free(oldptr);
-				free(buf);
-				return 0;
-			}
-		}
-
-		memcpy(data+data_ofs,buf,ret);
-		data_ofs+=ret;
-	}
-
-	free(buf);
-
-	if(ferror(in))
-	{
-		free(data);
 		return 0;
 	}
-
-	data_len=data_ofs;
+	in->seek_set (in, 0);
+	if (in->read (in, data, data_len) != data_len)
+	{
+		return 0;
+	}
 
 	if(memcmp(data,"ZXAYEMUL",8)!=0)
 	{
@@ -1105,7 +1078,7 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 	clipbusy--;
 }
 
-int __attribute__ ((visibility ("internal"))) ayOpenPlayer(FILE *file)
+int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_t *file)
 {
 	int i;
 

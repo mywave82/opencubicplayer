@@ -778,7 +778,7 @@ static void parse_ayfile (const unsigned char *buffer, int length)
 	tryprint_string (buffer, length, ptr);
 
 	printf ("\nNumSongs: %d\n", buffer[8]+1); /* both numbers are stored -1 in the file */
-	printf ("FirstSong: %d\n", buffer[9]+1); 
+	printf ("FirstSong: %d\n", buffer[9]+1);
 
 	rel_ptr = (buffer[10] << 8) | buffer[11]; ptr = rel_ptr + 10;
 	printf ("SongStructure: REL PTR 0x%04x => 0x%04x\n", rel_ptr, ptr);

@@ -146,7 +146,7 @@ static void OggInfoDraw(int focus)
 						displaystr  (OggInfoFirstLine + line, OggInfoFirstColumn,                                   0x07, ogg_comments[i]->title,                      strlen (ogg_comments[i]->title));
 						displaystr  (OggInfoFirstLine + line, OggInfoFirstColumn + strlen (ogg_comments[i]->title), 0x07,                    ":", OggInfoWidestTitle - strlen (ogg_comments[i]->title) + 2);
 					} else {
-						displayvoid (OggInfoFirstLine + line, OggInfoFirstColumn, OggInfoWidestTitle + 2); 
+						displayvoid (OggInfoFirstLine + line, OggInfoFirstColumn, OggInfoWidestTitle + 2);
 					}
 					displaystr_utf8 (OggInfoFirstLine + line, OggInfoFirstColumn + OggInfoWidestTitle + 2, 0x09, ogg_comments[i]->value[j], OggInfoWidth - OggInfoWidestTitle - 2);
 				}

@@ -217,7 +217,7 @@ static int flacReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t l
 }
 
 
-static int flacReadInfo(struct moduleinfostruct *m, FILE *fp, const char *mem, size_t len)
+static int flacReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *mem, size_t len)
 {
 	flacReadMemInfo(m, mem, len);
 	return 0;

@@ -369,7 +369,7 @@ static void OggPicDraw(int focus)
 		displaystr      (OggPicFirstLine, OggPicFirstColumn,                                 focus?0x09:0x01, "Ogg PIC: ", MIN(9, left));
 		left -= 9;
 	}
-	
+
 	if (left)
 	{
 		displaystr      (OggPicFirstLine, OggPicFirstColumn + 9,                             focus?0x0a:0x02, picture_type, MIN(strlen (picture_type), left));

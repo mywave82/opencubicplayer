@@ -34,24 +34,27 @@
 #endif
 
 #ifdef WORDS_BIGENDIAN
-#   define int32_little(x)   ((int32_t)(__bswap_32 (x)))
 #   define int16_little(x)   ((int16_t)(__bswap_16 (x)))
-#   define uint32_little(x)  ((uint32_t)(__bswap_32 (x)))
+#   define int32_little(x)   ((int32_t)(__bswap_32 (x)))
 #   define uint16_little(x)  ((uint16_t)(__bswap_16 (x)))
-#   define int32_big(x)      (x)
+#   define uint32_little(x)  ((uint32_t)(__bswap_32 (x)))
+#   define uint64_little(x)  ((uint16_t)(__bswap_64 (x)))
 #   define int16_big(x)      (x)
-#   define uint32_big(x)     (x)
+#   define int32_big(x)      (x)
 #   define uint16_big(x)     (x)
-
+#   define uint32_big(x)     (x)
+#   define uint64_big(x)     (x)
 # else
-#   define int32_little(x)   (x)
 #   define int16_little(x)   (x)
-#   define uint32_little(x)  (x)
+#   define int32_little(x)   (x)
 #   define uint16_little(x)  (x)
-#   define int32_big(x)      ((int32_t)(__bswap_32 (x)))
+#   define uint32_little(x)  (x)
+#   define uint64_little(x)  (x)
 #   define int16_big(x)      ((int16_t)(__bswap_16 (x)))
-#   define uint32_big(x)     ((uint32_t)(__bswap_32 (x)))
+#   define int32_big(x)      ((int32_t)(__bswap_32 (x)))
 #   define uint16_big(x)     ((uint16_t)(__bswap_16 (x)))
+#   define uint32_big(x)     ((uint32_t)(__bswap_32 (x)))
+#   define uint64_big(x)     ((uint64_t)(__bswap_64 (x)))
 # endif
 
 /* oddly this is declared in a glibc header, so not all GCC have it. */

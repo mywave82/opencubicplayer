@@ -1,5 +1,6 @@
-/*
+/* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
  *
  * UNIX cdrom filebrowser
  *
@@ -37,9 +38,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "types.h"
-#include "dirdb.h"
 #include "boot/plinkman.h"
-#include "modlist.h"
+#include "dirdb.h"
+#include "filesystem.h"
+#include "filesystem-drive.h"
+#include "filesystem-file-mem.h"
 #include "mdb.h"
 #include "pfilesel.h"
 #include "stuff/err.h"
@@ -51,12 +54,49 @@ static struct cdrom_t
 	char vdev[12];
 	int caps;
 	int fd;
-	uint32_t dirdbnode;
+	//uint32_t dirdbnode;
 } *cdroms = 0;
 static int cdromn = 0;
 
 static struct dmDrive *dmCDROM=0;
-static struct mdbreaddirregstruct cdReadDirReg;
+static struct ocpdir_t cdrom_root;
+
+struct cdrom_drive_ocpdir_t
+{
+	struct ocpdir_t head;
+	struct cdrom_t *cdrom;
+};
+
+struct cdrom_track_ocpfile_t
+{
+	struct ocpfile_t head;
+	struct cdrom_t *cdrom;
+	char buffer[128];
+};
+
+static void cdrom_root_ref (struct ocpdir_t *);
+static void cdrom_root_unref (struct ocpdir_t *);
+static ocpdirhandle_pt cdrom_root_readdir_start (struct ocpdir_t *, void(*callback_file)(void *token, struct ocpfile_t *),
+                                                                    void(*callback_dir )(void *token, struct ocpdir_t *), void *token);
+static void cdrom_root_readdir_cancel (ocpdirhandle_pt);
+static int cdrom_root_readdir_iterate (ocpdirhandle_pt);
+static struct ocpdir_t *cdrom_root_readdir_dir (struct ocpdir_t *_self, uint32_t dirdb_ref);
+static struct ocpfile_t *cdrom_root_readdir_file (struct ocpdir_t *_self, uint32_t dirdb_ref);
+
+static void cdrom_drive_ref (struct ocpdir_t *);
+static void cdrom_drive_unref (struct ocpdir_t *);
+static ocpdirhandle_pt cdrom_drive_readdir_start (struct ocpdir_t *, void(*callback_file)(void *token, struct ocpfile_t *),
+                                                                     void(*callback_dir )(void *token, struct ocpdir_t *), void *token);
+static void cdrom_drive_readdir_cancel (ocpdirhandle_pt);
+static int cdrom_drive_readdir_iterate (ocpdirhandle_pt);
+static struct ocpdir_t *cdrom_drive_readdir_dir (struct ocpdir_t *_self, uint32_t dirdb_ref);
+static struct ocpfile_t *cdrom_drive_readdir_file (struct ocpdir_t *_self, uint32_t dirdb_ref);
+
+static void cdrom_track_ref (struct ocpfile_t *);
+static void cdrom_track_unref (struct ocpfile_t *);
+static struct ocpfilehandle_t *cdrom_track_open (struct ocpfile_t *);
+static uint64_t cdrom_track_filesize (struct ocpfile_t *);
+static int cdrom_track_filesize_ready (struct ocpfile_t *);
 
 static void try(const char *dev, const char *vdev)
 {
@@ -82,7 +122,7 @@ static void try(const char *dev, const char *vdev)
 
 			strcpy(cdroms[cdromn].dev, dev);
 			strcpy(cdroms[cdromn].vdev, vdev);
-			cdroms[cdromn].dirdbnode=dirdbFindAndRef(dmCDROM->basepath, vdev);
+			//cdroms[cdromn].dirdbnode=dirdbFindAndRef(dmCDROM->basepath, vdev);
 			cdroms[cdromn].caps=caps;
 			cdroms[cdromn].fd=fd;
 			fcntl(fd, F_SETFD, 1);
@@ -209,8 +249,9 @@ static void try(const char *dev, const char *vdev)
 				}
 			}
 #endif
-		} else
+		} else {
 			close(fd);
+		}
 	}
 }
 
@@ -219,9 +260,27 @@ static int cdint(void)
 	char dev[32], vdev[12];
 	char a;
 
-	mdbRegisterReadDir(&cdReadDirReg);
+	fsRegisterExt("CDA");
 
-	dmCDROM=RegisterDrive("cdrom:");
+	ocpdir_t_fill (
+		&cdrom_root,
+		cdrom_root_ref,
+		cdrom_root_unref,
+		0,
+		cdrom_root_readdir_start,
+		0,
+		cdrom_root_readdir_cancel,
+		cdrom_root_readdir_iterate,
+		cdrom_root_readdir_dir,
+		cdrom_root_readdir_file,
+		0,
+		dirdbFindAndRef (DIRDB_NOPARENT, "cdrom:", dirdb_use_dir),
+		0, /* we ignore refcounting */
+		0, /* not an archive */
+		0  /* not a playlist */);
+
+	dmCDROM=RegisterDrive("cdrom:", &cdrom_root, &cdrom_root);
+
 	fprintf(stderr, "Locating cdroms [     ]\010\010\010\010\010\010");
 
 	sprintf(dev, "/dev/cdrom");
@@ -275,162 +334,449 @@ static void cdclose(void)
 
 	for (i=0; i < cdromn; i++)
 	{
-		dirdbUnref(cdroms[i].dirdbnode);
+		close (cdroms[i].fd);
+		cdroms[i].fd = -1;
+		//dirdbUnref(cdroms[i].dirdbnode);
 	}
 	free (cdroms);
 	cdroms = 0;
 	cdromn = 0;
-	mdbUnregisterReadDir(&cdReadDirReg);
 }
 
-static FILE *cdrom_ReadHandle(struct modlistentry *entry)
+static void cdrom_root_ref (struct ocpdir_t *self)
 {
-	int fd=dup(cdroms[entry->adb_ref].fd);
-	if (fd>=0)
-		return fdopen(fd, "r");
-	return NULL;
+	return;
 }
 
-static int cdReadDir(struct modlist *ml, const struct dmDrive *drive, const uint32_t path, const char *mask, unsigned long opt)
+static void cdrom_root_unref (struct ocpdir_t *self)
 {
-	struct modlistentry entry;
+	return;
+}
 
-	if (strcmp(drive->drivename, "cdrom:"))
-		return 1;
-	if (path==drive->basepath) /* / */
+struct cdrom_root_dirhandle_t
+{
+	void (*callback_dir )(void *token, struct ocpdir_t *);
+	void *token;
+	struct ocpdir_t *owner;
+	int  n;
+};
+
+static ocpdirhandle_pt cdrom_root_readdir_start (struct ocpdir_t *self, void(*callback_file)(void *token, struct ocpfile_t *),
+                                                                        void(*callback_dir )(void *token, struct ocpdir_t *), void *token)
+{
+	struct cdrom_root_dirhandle_t *dh = calloc (1, sizeof (*dh));
+	dh->callback_dir = callback_dir;
+	dh->token = token;
+	dh->owner = self;
+
+	return dh;
+}
+
+static void cdrom_root_readdir_cancel (ocpdirhandle_pt dh)
+{
+	free (dh);
+}
+
+static int cdrom_root_readdir_iterate (ocpdirhandle_pt _dh)
+{
+	struct cdrom_root_dirhandle_t *dh = _dh;
+	struct cdrom_drive_ocpdir_t *dir;
+
+	if (dh->n >= cdromn)
 	{
-		int i;
-		for (i=0; i<cdromn;i++)
-		{
-			strcpy(entry.shortname, cdroms[i].vdev);
-			entry.drive=drive;
-			entry.dirdbfullpath=cdroms[i].dirdbnode;
-			dirdbRef(entry.dirdbfullpath); /* overkill */
-			entry.flags=MODLIST_FLAG_DIR;
-			entry.mdb_ref=0xffffffff;
-			entry.adb_ref=0xffffffff;
-			entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=0;
-			modlist_append(ml, &entry);
-			dirdbUnref(entry.dirdbfullpath); /* overkill */
-		}
-	} else {
-		int j;
-		for (j=0; j<cdromn;j++)
-		{
-			if (cdroms[j].dirdbnode==path)
-			{
-				struct cdrom_tochdr tochdr;
-				struct cdrom_tocentry tocentry;
-				struct cdrom_tocentry tocentryN;
-				int initlba=-1;
-				int lastlba=lastlba; /* remove a warning */
-
-				if (!ioctl(cdroms[j].fd, CDROMREADTOCHDR, &tochdr))
-				{
-					unsigned int i;
-					for (i=tochdr.cdth_trk0;i<=(tochdr.cdth_trk1);i++)
-					{
-/*
-						if (i>tochdr.cdth_trk1)
-							i=CDROM_LEADOUT;
-*/
-						tocentry.cdte_track=i;
-						tocentry.cdte_format=CDROM_LBA; /* CDROM_MSF */
-						if (!ioctl(cdroms[j].fd, CDROMREADTOCENTRY, &tocentry))
-						{
-							tocentryN.cdte_track=(i==tochdr.cdth_trk1)?CDROM_LEADOUT:i+1;
-							tocentryN.cdte_format=CDROM_LBA;
-							ioctl(cdroms[j].fd, CDROMREADTOCENTRY, &tocentryN);
-/*
-							fprintf(stderr, "cdte_track:    %d%s\n", tocentry.cdte_track, (i==CDROM_LEADOUT)?" LEADOUT":"");
-							fprintf(stderr, "cdte_adr:      %d\n", tocentry.cdte_adr);
-							fprintf(stderr, "cdte_ctrl:     %d %s\n", tocentry.cdte_ctrl, (tocentry.cdte_ctrl&CDROM_DATA_TRACK)?"(DATA)":"AUDIO");
-							fprintf(stderr, "cdte_format:   %d\n", tocentry.cdte_format);
-							if (tocentry.cdte_format==CDROM_MSF){
-								fprintf(stderr, "cdte_addr.msf.minute: %d\n", tocentry.cdte_addr.msf.minute);
-								fprintf(stderr, "cdte_addr.msf.second: %d\n", tocentry.cdte_addr.msf.second);
-								fprintf(stderr, "cdte_addr.msf.frame:  %d\n", tocentry.cdte_addr.msf.frame);
-							} else {
-								fprintf(stderr, "cdte_addr.lba:        %d\n", tocentry.cdte_addr.lba);
-							}
-							fprintf(stderr, "cdte_datamode: %d\n", tocentry.cdte_datamode);
-*/
-							if (!(tocentry.cdte_ctrl&CDROM_DATA_TRACK))
-							{
-								char buffer[12];
-								struct moduleinfostruct mi;
-
-								snprintf(buffer, 12, "TRACK%02u.CDA", i);
-
-								if (initlba<0)
-									initlba=tocentry.cdte_addr.lba;
-								lastlba=tocentryN.cdte_addr.lba;
-								fs12name(entry.shortname,buffer);
-								entry.drive=drive;
-								entry.dirdbfullpath=dirdbFindAndRef(path, buffer);
-								entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-								if ((entry.mdb_ref=mdbGetModuleReference(entry.shortname, 0))==0xffffffff)
-								{
-									dirdbUnref(entry.dirdbfullpath);
-									return 0;
-								}
-								if (mdbGetModuleInfo(&mi, entry.mdb_ref))
-								{
-									mi.modtype=mtCDA;
-									mi.channels=2;
-									mi.playtime=(tocentryN.cdte_addr.lba - tocentry.cdte_addr.lba)/CD_FRAMES;
-									strcpy(mi.comment, cdroms[j].vdev);
-									strcpy(mi.modname, "CDROM audio track");
-									mdbWriteModuleInfo(entry.mdb_ref, &mi);
-								}
-								entry.adb_ref=j; /* nasty hack, but hey.. it is free of use */
-#warning ADB_REF hack used here
-								entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=cdrom_ReadHandle;
-								modlist_append(ml, &entry);
-								dirdbUnref(entry.dirdbfullpath);
-							}
-						}
-					}
-					if (initlba>=0)
-					{
-						const char *buffer="DISK.CDA";
-						struct moduleinfostruct mi;
-
-						fs12name(entry.shortname,buffer);
-						entry.drive=drive;
-						entry.dirdbfullpath=dirdbFindAndRef(path, buffer);
-						entry.flags=MODLIST_FLAG_FILE|MODLIST_FLAG_VIRTUAL;
-						if ((entry.mdb_ref=mdbGetModuleReference(entry.shortname, 0))==0xffffffff)
-						{
-							dirdbUnref(entry.dirdbfullpath);
-							return 0;
-						}
-						if (mdbGetModuleInfo(&mi, entry.mdb_ref))
-						{
-							mi.modtype=mtCDA;
-							mi.channels=2;
-							mi.playtime=(lastlba - initlba)/CD_FRAMES;
-							strcpy(mi.comment, cdroms[j].vdev);
-							strcpy(mi.modname, "CDROM audio disc");
-							mdbWriteModuleInfo(entry.mdb_ref, &mi);
-						}
-						entry.adb_ref=j; /* nasty hack, but hey.. it is free of use */
-#warning ADB_REF hack used here
-						entry.Read=0; entry.ReadHeader=0; entry.ReadHandle=cdrom_ReadHandle;
-						modlist_append(ml, &entry);
-						dirdbUnref(entry.dirdbfullpath);
-					}
-				}
-				break;
-			}
-		}
+		return 0;
 	}
+
+	dir = calloc (1, sizeof (*dir));
+	if (!dir)
+	{
+		return 0;
+	}
+
+	ocpdir_t_fill (
+		&dir->head,
+		cdrom_drive_ref,
+		cdrom_drive_unref,
+		dh->owner,
+		cdrom_drive_readdir_start,
+		0,
+		cdrom_drive_readdir_cancel,
+		cdrom_drive_readdir_iterate,
+		cdrom_drive_readdir_dir,
+		cdrom_drive_readdir_file,
+		0,
+		dirdbFindAndRef (dh->owner->dirdb_ref, cdroms[dh->n].vdev, dirdb_use_dir),
+		1,
+		0, /* not an archive */
+		0  /* not a playlist */);
+
+	dir->cdrom = cdroms + dh->n;
+	dh->owner->ref (dh->owner);
+
+	dh->callback_dir (dh->token, &dir->head);
+
+	dir->head.unref (&dir->head);
+	dh->n++;
+
 	return 1;
 }
 
-static struct mdbreaddirregstruct cdReadDirReg = {cdReadDir MDBREADDIRREGSTRUCT_TAIL};
+static struct ocpdir_t *cdrom_root_readdir_dir (struct ocpdir_t *_self, uint32_t dirdb_ref)
+{
+	char *searchpath = 0;
+	uint32_t parent_dirdb_ref;
+	int n;
+
+/* assertion begin */
+	parent_dirdb_ref = dirdbGetParentAndRef (dirdb_ref, dirdb_use_dir);
+	dirdbUnref (parent_dirdb_ref, dirdb_use_dir);
+	if (parent_dirdb_ref != _self->dirdb_ref)
+	{
+		fprintf (stderr, "cdrom_root_readdir_dir: dirdb_ref->parent is not the expected value\n");
+		return 0;
+	}
+/* assertion end */
+
+	dirdbGetName_internalstr (dirdb_ref, &searchpath);
+	if (!searchpath)
+	{
+		return 0;
+	}
+
+	for (n=0; n < cdromn; n++)
+	{
+		struct cdrom_drive_ocpdir_t *dir;
+
+		if (strcmp (cdroms[n].vdev, searchpath))
+		{
+			continue;
+		}
+
+		dir = calloc (1, sizeof (*dir));
+		if (!dir)
+		{
+			return 0;
+		}
+
+		ocpdir_t_fill (
+			&dir->head,
+			cdrom_drive_ref,
+			cdrom_drive_unref,
+			_self,
+			cdrom_drive_readdir_start,
+			0,
+			cdrom_drive_readdir_cancel,
+			cdrom_drive_readdir_iterate,
+			cdrom_drive_readdir_dir,
+			cdrom_drive_readdir_file,
+		        0,
+			dirdbRef (dirdb_ref, dirdb_use_dir),
+			1,
+			0, /* not an archive */
+			0  /* not a playlist */);
+
+		return &dir->head;
+	}
+	return 0;
+}
+
+static struct ocpfile_t *cdrom_root_readdir_file (struct ocpdir_t *_self, uint32_t dirdb_ref)
+{
+	/* this can not succeed */
+	return 0;
+}
+
+static void cdrom_drive_ref (struct ocpdir_t *_self)
+{
+	struct cdrom_drive_ocpdir_t *self = (struct cdrom_drive_ocpdir_t *)_self;
+	self->head.refcount++;
+}
+
+static void cdrom_drive_unref (struct ocpdir_t *_self)
+{
+	struct cdrom_drive_ocpdir_t *self = (struct cdrom_drive_ocpdir_t *)_self;
+	self->head.refcount--;
+	if (!self->head.refcount)
+	{
+		if (self->head.parent)
+		{
+			self->head.parent->unref (self->head.parent);
+			self->head.parent = 0;
+		}
+		dirdbUnref(self->head.dirdb_ref, dirdb_use_dir);
+		free (self);
+	}
+}
+
+struct cdrom_drive_dirhandle_t
+{
+	void (*callback_file)(void *token, struct ocpfile_t *);
+	void *token;
+	struct cdrom_drive_ocpdir_t *owner;
+
+	struct cdrom_tochdr tochdr;
+	int i;
+	int initlba;
+	int lastlba;
+};
+
+static ocpdirhandle_pt cdrom_drive_readdir_start (struct ocpdir_t *_self, void(*callback_file)(void *token, struct ocpfile_t *),
+                                                                          void(*callback_dir )(void *token, struct ocpdir_t *), void *token)
+{
+	struct cdrom_drive_ocpdir_t *self = (struct cdrom_drive_ocpdir_t *)_self;
+	struct cdrom_drive_dirhandle_t *dh = calloc (1, sizeof (*dh));
+	dh->callback_file = callback_file;
+	dh->token = token;
+	dh->owner = self;
+	dh->initlba = -1;
+
+	if (ioctl(self->cdrom->fd, CDROMREADTOCHDR, &dh->tochdr))
+	{
+		dh->i = -1;
+	} else {
+		dh->i = dh->tochdr.cdth_trk0;
+	}
+
+	return dh;
+}
+
+static void cdrom_drive_readdir_cancel (ocpdirhandle_pt dh)
+{
+	free (dh);
+}
+
+static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
+{
+	struct cdrom_drive_dirhandle_t *dh = _dh;
+	struct cdrom_track_ocpfile_t *file;
+
+	struct cdrom_tocentry tocentry;
+	struct cdrom_tocentry tocentryN;
+
+	uint32_t mdb_ref;
+	struct moduleinfostruct mi;
+
+	if ((dh->i > dh->tochdr.cdth_trk1) || (dh->i >= 100)) /* last check is not actually needed */
+	{
+		if (dh->initlba >= 0)
+		{
+			file = calloc (1, sizeof (*file));
+			if (!file)
+			{
+				return 0;
+			}
+
+			ocpfile_t_fill (&file->head,
+			                 cdrom_track_ref,
+			                 cdrom_track_unref,
+			                &dh->owner->head,
+			                 cdrom_track_open,
+			                 cdrom_track_filesize,
+			                 cdrom_track_filesize_ready,
+			                 dirdbFindAndRef (dh->owner->head.dirdb_ref, "DISK.CDA", dirdb_use_file),
+			                 1, /* refcount */
+			                 1  /* is_nodetect */);
+
+			dh->owner->head.ref (&dh->owner->head);
+			file->cdrom = dh->owner->cdrom;
+			snprintf (file->buffer, sizeof (file->buffer), "fd=%d,disk=%d:%d", dh->owner->cdrom->fd, dh->initlba, dh->lastlba);
+
+			mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, strlen (file->buffer));
+			if (mdb_ref != UINT32_MAX)
+			{
+				if (mdbGetModuleInfo(&mi, mdb_ref))
+				{
+					mi.modtype=mtCDA;
+					mi.channels=2;
+					mi.playtime=(dh->lastlba - dh->initlba) / CD_FRAMES;
+					strcpy(mi.comment, dh->owner->cdrom->vdev);
+					strcpy(mi.modname, "CDROM audio disc");
+					mdbWriteModuleInfo (mdb_ref, &mi);
+				}
+			}
+			dh->callback_file (dh->token, &file->head);
+			file->head.unref (&file->head);
+		}
+		return 0;
+	}
+
+	tocentry.cdte_track=dh->i;
+	tocentry.cdte_format=CDROM_LBA; /* CDROM_MSF */
+
+	if (!ioctl (dh->owner->cdrom->fd, CDROMREADTOCENTRY, &tocentry))
+	{
+		tocentryN.cdte_track = ( dh->i == dh->tochdr.cdth_trk1 ) ? CDROM_LEADOUT : dh->i+1;
+		tocentryN.cdte_format = CDROM_LBA;
+		ioctl (dh->owner->cdrom->fd, CDROMREADTOCENTRY, &tocentryN);
+/*
+		fprintf(stderr, "[cdte_track:   %d%s]\n", tocentry.cdte_track, (i==CDROM_LEADOUT)?" LEADOUT":"");
+		fprintf(stderr, "cdte_adr:      %d\n", tocentry.cdte_adr);
+		fprintf(stderr, "cdte_ctrl:     %d %s\n", tocentry.cdte_ctrl, (tocentry.cdte_ctrl&CDROM_DATA_TRACK)?"(DATA)":"AUDIO");
+		fprintf(stderr, "cdte_format:   %d\n", tocentry.cdte_format);
+		if (tocentry.cdte_format==CDROM_MSF)
+		{
+			fprintf(stderr, "cdte_addr.msf.minute: %d\n", tocentry.cdte_addr.msf.minute);
+			fprintf(stderr, "cdte_addr.msf.second: %d\n", tocentry.cdte_addr.msf.second);
+			fprintf(stderr, "cdte_addr.msf.frame:  %d\n", tocentry.cdte_addr.msf.frame);
+		} else {
+			fprintf(stderr, "cdte_addr.lba:        %d\n", tocentry.cdte_addr.lba);
+		}
+		fprintf(stderr, "cdte_datamode: %d\n", tocentry.cdte_datamode);
+*/
+		if (!(tocentry.cdte_ctrl&CDROM_DATA_TRACK))
+		{
+			char filename[12];
+			snprintf(filename, sizeof (filename), "TRACK%02u.CDA", dh->i);
+
+			if (dh->initlba < 0)
+			{
+				dh->initlba = tocentry.cdte_addr.lba;
+			}
+			dh->lastlba = tocentryN.cdte_addr.lba;
+
+			file = calloc (1, sizeof (*file));
+			if (!file)
+			{
+				goto next;
+			}
+
+			ocpfile_t_fill (&file->head,
+			                 cdrom_track_ref,
+			                 cdrom_track_unref,
+			                &dh->owner->head,
+			                 cdrom_track_open,
+			                 cdrom_track_filesize,
+			                 cdrom_track_filesize_ready,
+			                 dirdbFindAndRef (dh->owner->head.dirdb_ref, filename, dirdb_use_file),
+			                 1, /* refcount */
+			                 1  /* is_nodetect */);
+
+			dh->owner->head.ref (&dh->owner->head);
+			file->cdrom = dh->owner->cdrom;
+			snprintf (file->buffer, sizeof (file->buffer), "fd=%d,track=%d", dh->owner->cdrom->fd, dh->i);
+			mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, strlen (file->buffer));
+			if (mdb_ref != UINT32_MAX)
+			{
+				if (mdbGetModuleInfo(&mi, mdb_ref))
+				{
+					mi.modtype=mtCDA;
+					mi.channels=2;
+					mi.playtime=(tocentryN.cdte_addr.lba - tocentry.cdte_addr.lba)/CD_FRAMES;
+					strcpy(mi.comment, dh->owner->cdrom->vdev);
+					strcpy(mi.modname, "CDROM audio track");
+					mdbWriteModuleInfo (mdb_ref, &mi);
+				}
+			}
+			dh->callback_file (dh->token, &file->head);
+			file->head.unref (&file->head);
+		}
+	}
+
+next:
+	dh->i++;
+
+	return 1;
+}
+
+
+static struct ocpdir_t *cdrom_drive_readdir_dir (struct ocpdir_t *_self, uint32_t dirdb_ref)
+{
+	/* this can not succeed */
+	return 0;
+}
+
+
+struct cdrom_drive_readdir_file_t // helper struct for cdrom_drive_readdir_file
+{
+	uint32_t dirdb_ref;
+	struct ocpfile_t *retval;
+};
+
+static void cdrom_drive_readdir_file_file (void *_token, struct ocpfile_t *file) // helper function for cdrom_drive_readdir_file
+{
+	struct cdrom_drive_readdir_file_t *token = _token;
+	if (token->dirdb_ref == file->dirdb_ref)
+	{
+		if (token->retval)
+		{
+			token->retval->unref (token->retval);
+		}
+		file->ref (file);
+		token->retval = file;
+	}
+}
+
+static void cdrom_drive_readdir_file_dir (void *_token, struct ocpdir_t *dir) // helper function for cdrom_drive_readdir_file
+{
+}
+
+static struct ocpfile_t *cdrom_drive_readdir_file (struct ocpdir_t *_self, uint32_t dirdb_ref)
+{
+	/* we use cdrom_drive_readdir_start() and friends, since we perform a lot of IOCTL calls....*/
+	ocpdirhandle_pt handle;
+	struct cdrom_drive_readdir_file_t token;
+
+	token.dirdb_ref = dirdb_ref;
+	token.retval = 0;
+
+	handle = _self->readdir_start (_self, cdrom_drive_readdir_file_file, cdrom_drive_readdir_file_dir, &token);
+	if (!handle)
+	{
+		return 0;
+	}
+
+	while (_self->readdir_iterate (handle))
+	{
+	};
+	_self->readdir_cancel (handle);
+
+	return token.retval;
+}
+
+static void cdrom_track_ref (struct ocpfile_t *_self)
+{
+	struct cdrom_track_ocpfile_t *self = (struct cdrom_track_ocpfile_t *)_self;
+	self->head.refcount++;
+}
+
+static void cdrom_track_unref (struct ocpfile_t *_self)
+{
+	struct cdrom_track_ocpfile_t *self = (struct cdrom_track_ocpfile_t *)_self;
+	self->head.refcount--;
+	if (!self->head.refcount)
+	{
+		dirdbUnref (self->head.dirdb_ref, dirdb_use_file);
+
+		self->head.parent->unref (self->head.parent);
+		self->head.parent = 0;
+
+		free (self);
+	}
+}
+
+static struct ocpfilehandle_t *cdrom_track_open (struct ocpfile_t *_self)
+{
+	struct cdrom_track_ocpfile_t *self = (struct cdrom_track_ocpfile_t *)_self;
+	char *temp = strdup (self->buffer);
+	if (!temp)
+	{
+		return 0;
+	}
+	return mem_filehandle_open (self->head.dirdb_ref, temp, strlen (temp));
+}
+
+static uint64_t cdrom_track_filesize (struct ocpfile_t *_self)
+{
+	struct cdrom_track_ocpfile_t *self = (struct cdrom_track_ocpfile_t *)_self;
+	return strlen (self->buffer);
+}
+static int cdrom_track_filesize_ready (struct ocpfile_t *_self)
+{
+	return 1;
+}
+
 #ifndef SUPPORT_STATIC_PLUGINS
 char *dllinfo = "";
 #endif
 
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cdrom", .desc = "OpenCP UNIX audio-cdrom filebrowser (c) 2004-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = cdint, .Close = cdclose};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cdrom", .desc = "OpenCP UNIX audio-cdrom filebrowser (c) 2004-21 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = cdint, .Close = cdclose};

@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '05-'10 Stian Skjelstad <stian@nixia.no>
+ * copyright (c) '05-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * OPLPlay - Player for AdPlug - Replayer for many OPL2/OPL3 audio file formats.
  *
@@ -25,12 +25,13 @@
 extern "C"
 {
 #include "cpiface/cpiface.h"
-#include "dev/player.h"
-#include "dev/mcp.h"
 #include "dev/deviplay.h"
+#include "dev/mcp.h"
+#include "dev/player.h"
+#include "dev/plrasm.h"
+#include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poll.h"
-#include "dev/plrasm.h"
 }
 #include "ymplay.h"
 #include "stsoundlib/YmMusic.h"
@@ -214,17 +215,19 @@ void __attribute__ ((visibility ("internal"))) ymSetPos(uint32_t pos)
 	ymMusicSeek(pMusic, pos);
 }
 
-int __attribute__ ((visibility ("internal"))) ymOpenPlayer(FILE *file)
+int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_t *file)
 {
 	void *buffer;
-	long length;
-	fseek(file, 0, SEEK_END);
-	length = ftell(file);
-	fseek(file, 0, SEEK_SET);
+	uint64_t length = file->filesize (file);
 
-	if (length < 0)
+	if (length <= 0)
 	{
 		fprintf(stderr, "[ymplay.cpp]: Unable to determine file length\n");
+		return 0;
+	}
+	if (length > (1024*1024))
+	{
+		fprintf(stderr, "[ymplay.cpp]: File too big\n");
 		return 0;
 	}
 	buffer = malloc(length);
@@ -233,7 +236,7 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(FILE *file)
 		fprintf(stderr, "[ymplay.cpp]: Unable to malloc()\n");
 		return 0;
 	}
-	if (fread(buffer, length, 1, file) != 1)
+	if (file->read (file, buffer, length) != (int)length)
 	{
 		fprintf(stderr, "[ymplay.cpp]: Unable to read file\n");
 		free(buffer);

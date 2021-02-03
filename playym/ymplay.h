@@ -1,9 +1,10 @@
 #ifndef YMPLAY_H
 #define YMPLAY_H 1
 
+struct ocpfilehandle_t;
 extern void __attribute__ ((visibility ("internal"))) ymClosePlayer(void);
 extern void __attribute__ ((visibility ("internal"))) ymMute(int i, int m);
-extern int __attribute__ ((visibility ("internal"))) ymOpenPlayer(FILE *file);
+extern int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_t *file);
 extern void __attribute__ ((visibility ("internal"))) ymSetLoop(int loop);
 extern int __attribute__ ((visibility ("internal"))) ymIsLooped(void);
 
