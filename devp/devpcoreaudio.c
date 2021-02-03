@@ -1,5 +1,5 @@
 /** OpenCP Module Player
- * copyright (c) '06-'10 Stian Skjelstad <stian@nixia.no>
+ * copyright (c) '06-'21 Stian Skjelstad <stian@nixia.no>
  *
  * CoreAudio (Darwin/Mac OS/OSX) Player device
  *
@@ -347,8 +347,8 @@ static int CoreAudioDetect(struct deviceinfo *card)
 	const int channels=2;
 	OSStatus status;
 
-	ComponentDescription desc;
-	Component comp;
+	AudioComponentDescription desc;
+	AudioComponent comp;
 
 	UInt32 /*maxFrames,*/ size;
 
@@ -362,9 +362,9 @@ static int CoreAudioDetect(struct deviceinfo *card)
 	desc.componentFlags = 0;
 	desc.componentFlagsMask = 0;
 
-	comp = FindNextComponent (comp, &desc);
+	comp = AudioComponentFindNext (0, &desc);
 #ifdef COREAUDIO_DEBUG
-	fprintf(stderr, "[CoreAudio] FindNextComponent (Component aComponent = 0, ComponentDescription *looking = {componentType=kAudioUnitType_Output, componentSubType=kAudioUnitSubType_DefaultOutput, componentManufacturer = kAudioUnitManufacturer_Apple, componentFlags = 0, componentFlagsMask = 0}) = %d\n", (int)comp);
+	fprintf(stderr, "[CoreAudio] AudioComponentFindNext (Component aComponent = 0, ComponentDescription *looking = {componentType=kAudioUnitType_Output, componentSubType=kAudioUnitSubType_DefaultOutput, componentManufacturer = kAudioUnitManufacturer_Apple, componentFlags = 0, componentFlagsMask = 0}) = %d\n", (int)comp);
 #endif
 	if ( !comp )
 	{
@@ -372,9 +372,9 @@ static int CoreAudioDetect(struct deviceinfo *card)
 		goto errorout;
 	}
 
-	status = OpenAComponent (comp, &theOutputUnit);
+	status = AudioComponentInstanceNew (comp, &theOutputUnit);
 #ifdef COREAUDIO_DEBUG
-	fprintf(stderr, "[CoreAudio] OpenAComponent(Component aComponent = %d, ComponentInstance *ci = &theOutputUnit) = %d %s\n", (int)comp, (int)status, OSStatus_to_string(status));
+	fprintf(stderr, "[CoreAudio] AudioComponentInstanceNew(Component aComponent = %d, ComponentInstance *ci = &theOutputUnit) = %d %s\n", (int)comp, (int)status, OSStatus_to_string(status));
 #endif
 	if (status)
 	{
@@ -523,7 +523,7 @@ static int CoreAudioDetect(struct deviceinfo *card)
 errorout_uninit:
 	AudioUnitUninitialize (theOutputUnit);
 errorout_component:
-	CloseComponent (theOutputUnit);
+	AudioComponentInstanceDispose (theOutputUnit);
 errorout:
 	return 0;
 }
@@ -534,10 +534,10 @@ static void __attribute__((destructor))fini(void)
 	{
 #ifdef COREAUDIO_DEBUG
 		fprintf(stderr, "[CoreAudio] AudioUnitUninitialize (theOutputUnit)\n");
-		fprintf(stderr, "[CoreAudio] CloseComponent (theOutputUnit)\n");
+		fprintf(stderr, "[CoreAudio] AudioComponentInstanceDispose (theOutputUnit)\n");
 #endif
 		AudioUnitUninitialize (theOutputUnit);
-		CloseComponent (theOutputUnit);
+		AudioComponentInstanceDispose (theOutputUnit);
 	}
 }
 
