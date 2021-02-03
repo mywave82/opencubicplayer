@@ -16,7 +16,7 @@ digidrum.o: digidrum.cpp YmTypes.h $(TOPDIR)/config.h
 Ym2149Ex.o: Ym2149Ex.cpp Ym2149Ex.h YmTypes.h $(TOPDIR)/config.h
 	$(CXX) $(CXXFLAGS) -c Ym2149Ex.cpp
 
-Ymload.o: Ymload.cpp YmMusic.h ../lzh/lzh.h $(TOPDIR)/config.h
+Ymload.o: Ymload.cpp YmMusic.h ../lzh/lzh.h $(TOPDIR)/config.h YmTypes.h
 	$(CXX) $(CXXFLAGS) -c Ymload.cpp -I..
 
 YmMusic.o: YmMusic.cpp YmMusic.h $(TOPDIR)/config.h

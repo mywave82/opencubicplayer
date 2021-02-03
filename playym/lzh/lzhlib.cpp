@@ -42,7 +42,7 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
-//#include "../YmTypes.h"
+#include "../stsoundlib/YmTypes.h"
 #include "lzh.h"
 
 /*

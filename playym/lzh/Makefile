@@ -8,7 +8,7 @@ install:
 liblzh.a: lzhlib.o
 	$(AR) cr liblzh.a lzhlib.o
 
-lzhlib.o: lzhlib.cpp lzh.h $(TOPDIR)/config.h
+lzhlib.o: lzhlib.cpp lzh.h $(TOPDIR)/config.h ../stsoundlib/YmTypes.h
 	$(CXX) $(CXXFLAGS) -c lzhlib.cpp
 
 clean:

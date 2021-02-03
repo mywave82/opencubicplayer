@@ -40,6 +40,7 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#include "YmTypes.h"
 #include "YmMusic.h"
 #ifdef HAVE_LZH
 #include "lzh/lzh.h"
