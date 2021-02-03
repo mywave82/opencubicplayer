@@ -156,7 +156,7 @@ struct ocpfilehandle_t *cache_filehandle_open (struct ocpfilehandle_t *parent)
 		retval->filesize = parent->filesize (parent);
 	} else {
 		retval->filesize_pending = 1;
-		retval->filesize = 0;//__UINT64_C(0xffffffffffffffff);
+		retval->filesize = 0;//UINT64_C(0xffffffffffffffff);
 	}
 
 	retval->head.refcount = 1;

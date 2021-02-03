@@ -9,8 +9,8 @@ struct ocpdirdecompressor_t;
 
 typedef void *ocpdirhandle_pt;
 
-#define FILESIZE_STREAM  __UINT64_C(0xffffffffffffffff) /* STREAM - so we recommend to open and analyze the file asap */
-#define FILESIZE_ERROR   __UINT64_C(0xfffffffffffffffe)
+#define FILESIZE_STREAM  UINT64_C(0xffffffffffffffff) /* STREAM - so we recommend to open and analyze the file asap */
+#define FILESIZE_ERROR   UINT64_C(0xfffffffffffffffe)
 
 struct ocpdir_charset_override_API_t
 {
