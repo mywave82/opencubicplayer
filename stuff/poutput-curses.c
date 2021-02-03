@@ -955,7 +955,11 @@ int curses_init(void)
 				goto no_translit;
 			} else {
 				fprintf (stderr, "curses: Converting between %s -> %s\n", OCP_FONT, temp2);
+#ifdef HAVE_NCURSESW
 				if (!useunicode)
+#else
+// when not using NCURSESW, we never use unicode
+#endif
 				{
 					utf8_to_native = iconv_open (temp2, "UTF-8");
 					fprintf (stderr, "curses: Converting between UTF-8 -> %s\n", temp2);
@@ -976,7 +980,11 @@ no_translit:
 			{
 				fprintf (stderr, "curses: Failed to make iconv matrix for %s->%s\n", OCP_FONT, temp);
 			} else {
+#ifdef HAVE_NCURSESW
 				if (!useunicode)
+#else
+// when not using NCURSESW, we never use unicode
+#endif
 				{
 					utf8_to_native = iconv_open (temp, "UTF-8");
 					fprintf (stderr, "curses: Converting between UTF-8 -> %s\n", temp);
