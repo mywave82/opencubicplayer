@@ -38,6 +38,9 @@ int try_open_jpeg (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const
 {
         struct jpeg_decompress_struct cinfo;
         struct jpeg_error_mgr_ocp jerr;
+#ifndef JCS_EXT_BGRA
+	uint8_t *data_rgb = 0;
+#endif
 
 	*data_bgra = 0;
 	*width = *height = 0;
@@ -51,6 +54,10 @@ int try_open_jpeg (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const
 		fprintf (stderr, "[CPIFACE/JPEG] libjpeg fatal error: %s\n", jpegLastErrorMsg);
 		jpeg_destroy_decompress(&cinfo);
 		free (*data_bgra);
+#ifndef JCS_EXT_BGRA
+		free (data_rgb);
+		data_rgb = 0;
+#endif
 		*data_bgra = 0;
 		*width = *height = 0;
 		return -1;
@@ -72,7 +79,12 @@ int try_open_jpeg (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const
 		longjmp (jerr.setjmp_buffer, 1);
 	}
 
+#ifndef JCS_EXT_BGRA
+	cinfo.out_color_space = JCS_RGB;
+	data_rgb = malloc (cinfo.image_width * cinfo.image_height * 3);
+#else
 	cinfo.out_color_space = JCS_EXT_BGRA;
+#endif
 	cinfo.dct_method = JDCT_ISLOW;
 	*data_bgra = malloc (cinfo.image_width * cinfo.image_height * 4);
 
@@ -93,6 +105,23 @@ int try_open_jpeg (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const
 
 	jpeg_finish_decompress(&cinfo);
 	jpeg_destroy_decompress(&cinfo);
+
+#ifndef JCS_EXT_BGRA
+	{
+		uint8_t *src = data_rgb;
+		uint8_t *dst = *data_bgra;
+		int i;
+		for (i=0; i < cinfo.image_width * cinfo.image_height; i++)
+		{
+			dst[0] = src[2];
+			dst[1] = src[1];
+			dst[2] = src[0];
+			dst[3] = 255;
+			dst+=4;
+			src+=3;
+		}
+	}
+#endif
 
 	return 0;
 }
