@@ -132,18 +132,12 @@ else
 		'')
 			AC_MSG_ERROR([not found]);
 			;;
-		2.95.[[2-9]]|2.95.[[2-9]][[-]].*|3.[[0-9]]|3.[[0-9]].[[0-9]]|3.[[0-9]]|3.[[0-9]].[[0-9]]-*|4.*|5.*|6.*|7*|8*|9*|10*)
-			_cc_major=`echo $cc_version | cut -d '.' -f 1`
-			_cc_minor=`echo $cc_version | cut -d '.' -f 2`
-			_cc_mini=`echo $cc_version | cut -d '.' -f 3`
-			if test $_cc_major -gt 2; then
-				AC_MSG_RESULT([$cc_version, ok])
-			else
-				AC_MSG_ERROR([$cc_version, bad])
-			fi
+# old GCC versions in the 2.95.xx family are known to produce bad crashing binaries (it is still out there on some old systems. In general the all versions before 3.0 is risky
+		2.95.[[2-9]]|2.95.[[2-9]][[-]].*)
+			AC_MSG_ERROR([$cc_version, bad])
 			;;
 		*)
-			AC_MSG_ERROR([$cc_version, bad])
+			AC_MSG_RESULT([$cc_version, ok])
 			;;
        esac
 fi
