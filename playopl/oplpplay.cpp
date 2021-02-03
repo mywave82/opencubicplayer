@@ -499,7 +499,7 @@ static int oplOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	plGetMasterSample=plrGetMasterSample;
 	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-	if (!oplOpenPlayer(path, buffer, bufferfill))
+	if (!oplOpenPlayer(path, buffer, bufferfill, file))
 	{
 		free (buffer);
 		return -1;

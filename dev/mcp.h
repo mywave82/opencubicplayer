@@ -1,6 +1,8 @@
 #ifndef __MCP_H
 #define __MCP_H
 
+struct ocpfilehandle_t;
+
 struct sampleinfo
 {
 	int type;
@@ -66,7 +68,7 @@ enum
 extern int mcpNChan;
 
 extern int (*mcpLoadSamples)(struct sampleinfo* si, int n);
-extern int (*mcpOpenPlayer)(int, void (*p)(void));
+extern int (*mcpOpenPlayer)(int, void (*p)(void), struct ocpfilehandle_t *source_file);
 extern void (*mcpClosePlayer)(void);
 extern void (*mcpSet)(int ch, int opt, int val);
 extern int (*mcpGet)(int ch, int opt);

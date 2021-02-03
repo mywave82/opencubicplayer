@@ -587,7 +587,7 @@ static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	mcpNormalize(1);
 	nch=cfGetProfileInt2(cfSoundSec, "sound", "itchan", 64, 10);
 	mcpSet(-1, mcpGRestrict, 0);  /* oops... */
-	if (!play(&itplayer, &mod,nch))
+	if (!play(&itplayer, &mod, nch, file))
 		retval=errPlay;
 
 	if (retval)

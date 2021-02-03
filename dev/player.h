@@ -7,6 +7,8 @@
 #define PLR_REVERSESTEREO 8
 #define PLR_RESTRICTED 16
 
+struct ocpfilehandle_t;
+
 enum
 {
 	plrGetSampleStereo=1
@@ -14,7 +16,7 @@ enum
 
 extern unsigned int plrRate;
 extern int plrOpt;
-extern int (*plrPlay)(void **buf, unsigned int *len);
+extern int (*plrPlay)(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file);
 extern void (*plrStop)(void);
 extern void (*plrSetOptions)(uint32_t rate, int opt);
 extern int (*plrGetBufPos)(void);
@@ -26,7 +28,7 @@ extern void (*plrIdle)(void);
 extern char *(*plrDebug)(void);
 #endif
 
-extern int plrOpenPlayer(void **buf, uint32_t *len, uint32_t blen);
+extern int plrOpenPlayer(void **buf, uint32_t *len, uint32_t blen, struct ocpfilehandle_t *source_file);
 extern void plrClosePlayer(void);
 extern void plrGetRealMasterVolume(int *l, int *r);
 extern void plrGetMasterSample(int16_t *s, uint32_t len, uint32_t rate, int opt);

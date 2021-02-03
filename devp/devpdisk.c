@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2019 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2019-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Player device for WAV output
  *
@@ -42,6 +42,8 @@
 #include "boot/plinkman.h"
 #include "dev/imsdev.h"
 #include "dev/player.h"
+#include "filesel/dirdb.h"
+#include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
 
 extern struct sounddevice plrDiskWriter;
@@ -165,10 +167,8 @@ static void dwSetOptions(uint32_t rate, int opt)
 	plrOpt=opt;
 }
 
-static int dwPlay(void **buf, unsigned int *len)
+static int dwPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file)
 {
-	char fn[15];
-	int i;
 	unsigned char hdr[0x2C];
 
 	memset(&hdr, 0, sizeof(hdr));
@@ -190,14 +190,31 @@ static int dwPlay(void **buf, unsigned int *len)
 	if (!diskcache)
 		return 0;
 
-	for (i=0; i<1000; i++)
 	{
-		memcpy(fn, "CPOUT000.WAV", 13);
-		fn[5]+=(i/100)%10;
-		fn[6]+=(i/10)%10;
-		fn[7]+=(i/1)%10;
-		if ((file=open(fn, O_WRONLY|O_CREAT|O_EXCL, S_IREAD|S_IWRITE))>=0)
-			break;
+		char *orig;
+		char *fn;
+		int i;
+		if (source_file)
+		{
+			dirdbGetName_internalstr (source_file->dirdb_ref, &orig);
+			i = 0;
+		} else {
+			orig = "CPOUT";
+			i = 1;
+		}
+		fn = malloc (strlen (orig) + 10);
+		for (; i<1000; i++)
+		{
+			if (i)
+			{
+				sprintf (fn, "%s-%03d.wav", orig, i);
+			} else {
+				sprintf (fn, "%s.wav", orig);
+			}
+			if ((file=open(fn, O_WRONLY|O_CREAT|O_EXCL, S_IREAD|S_IWRITE))>=0)
+				break;
+		}
+		free (fn);
 	}
 
 	if (file<0)

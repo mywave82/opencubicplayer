@@ -454,7 +454,7 @@ static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 		modname=info->comment;
 
 	mcpNormalize(1);
-	if (!mpPlayModule(&mod))
+	if (!mpPlayModule(&mod, file))
 		retval=errPlay;
 	plNPChan=mcpNChan;
 

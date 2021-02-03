@@ -32,10 +32,11 @@
 #include "player.h"
 #include "stuff/imsrtns.h"
 
+struct ocpfilehandle_t;
 
 unsigned int plrRate;
 int plrOpt;
-int (*plrPlay)(void **buf, unsigned int *len);
+int (*plrPlay)(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file);
 void (*plrStop)(void);
 void (*plrSetOptions)(uint32_t rate, int opt);
 int (*plrGetBufPos)(void);
@@ -168,7 +169,7 @@ void plrGetMasterSample(int16_t *buf, uint32_t len, uint32_t rate, int opt)
 }
 
 
-int plrOpenPlayer(void **buf, uint32_t *len, uint32_t bufl)
+int plrOpenPlayer(void **buf, uint32_t *len, uint32_t bufl, struct ocpfilehandle_t *source_file)
 {
 	unsigned int dmalen;
 
@@ -178,7 +179,7 @@ int plrOpenPlayer(void **buf, uint32_t *len, uint32_t bufl)
 	dmalen=umuldiv(plrRate<<(!!(plrOpt&PLR_STEREO)+!!(plrOpt&PLR_16BIT)), bufl, 32500)&~15;
 
 	plrbuf=0;
-	if (!plrPlay((void **)((void *)&plrbuf), &dmalen)) /* to remove warning :-) */
+	if (!plrPlay((void **)((void *)&plrbuf), &dmalen, source_file)) /* to remove warning :-) */
 		return 0;
 
 	stereo=!!(plrOpt&PLR_STEREO);

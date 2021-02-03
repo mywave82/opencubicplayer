@@ -118,6 +118,8 @@ devpdisk.o: devpdisk.c \
 	../boot/plinkman.h \
 	../dev/imsdev.h \
 	../dev/player.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
 	../stuff/imsrtns.h \
 	../dev/devigen.h \
 	../boot/psetting.h

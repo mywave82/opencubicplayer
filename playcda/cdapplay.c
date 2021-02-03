@@ -452,7 +452,7 @@ static int cdaOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	strncpy(vdev, info->comment, 8);
 	vdev[7]=0;
 
-	if (cdPlay(cdrom_fd, basesec, length))
+	if (cdPlay(cdrom_fd, basesec, length, file))
 		return -1;
 
 	normalize();

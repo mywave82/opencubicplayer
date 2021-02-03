@@ -1,6 +1,7 @@
 #ifndef _TIMIDITYPLAY_H
 #define _TIMIDITYPLAY_H
 
+struct ocpfilehandle_t;
 struct notedotsdata;
 
 struct mglobinfo
@@ -28,7 +29,7 @@ struct mchaninfo
 	uint8_t opt[32];
 };
 
-extern int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen);
+extern int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen, struct ocpfilehandle_t *file);
 extern void __attribute__ ((visibility ("internal"))) timidityClosePlayer(void);
 extern void __attribute__ ((visibility ("internal"))) timidityIdle(void);
 extern void __attribute__ ((visibility ("internal"))) timiditySetLoop(uint8_t s);

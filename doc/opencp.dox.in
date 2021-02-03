@@ -1923,7 +1923,7 @@ filebrowser.
   Now simply select a module to play. You will hear no output and notice that
 the module is played with maximum depending on your cpu power. In the directory
 where you have started OCP (not necessaryly the directory where the module is
-located) subsequent ~.WAV~ files named "CPOUT000.WAV", "CPOUT001.WAV" will be
+located) subsequent ~.WAV~ files named after the original filename will be
 created.
 
   Goto previous device: "{DevCSDL,SDL/SDL2}"

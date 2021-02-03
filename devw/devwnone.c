@@ -392,7 +392,7 @@ static int LoadSamples(struct sampleinfo *sil, int n)
 }
 
 
-static int OpenPlayer(int chan, void (*proc)(void))
+static int OpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *source_file)
 {
 	if (chan>MAXCHAN)
 		chan=MAXCHAN;

@@ -211,7 +211,7 @@ static void sdl2Stop(void)
 	SDL_CloseAudio();
 }
 
-static int sdl2Play(void **buf, unsigned int *len)
+static int sdl2Play(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file)
 {
 	SDL_AudioSpec desired, obtained;
 	int status;

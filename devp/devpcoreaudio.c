@@ -274,7 +274,7 @@ static void CoreAudioStop(void)
 		fprintf(stderr, "[CoreAudio] AudioOutputUnitStop returned %d (%s)\nn", (int)status, OSStatus_to_string(status));
 }
 
-static int CoreAudioPlay(void **buf, unsigned int *len)
+static int CoreAudioPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file)
 {
 	OSErr status;
 

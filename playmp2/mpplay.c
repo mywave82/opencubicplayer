@@ -1246,7 +1246,7 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct oc
 
 	GuardPtr=0;
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
+	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, file))
 	{
 		debug_printf ("  mpegOpenPlayer plrOpenPlayer failed\n");
 		goto error_out;

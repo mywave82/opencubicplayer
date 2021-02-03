@@ -5,6 +5,8 @@
 
 #define MP_MAXCHANNELS 32
 
+struct ocpfilehandle_t;
+
 struct sampleinfo;
 
 struct gmdtrack
@@ -101,7 +103,7 @@ extern int __attribute__ ((visibility ("internal"))) mpReduceSamples(struct gmdm
 extern int __attribute__ ((visibility ("internal"))) mpLoadSamples(struct gmdmodule *m);
 extern void __attribute__ ((visibility ("internal"))) mpRemoveText(struct gmdmodule *m);
 
-extern char __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodule *);
+extern char __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodule *, struct ocpfilehandle_t *file);
 extern void __attribute__ ((visibility ("internal"))) mpStopModule(void);
 extern void __attribute__ ((visibility ("internal"))) mpSetPosition(int16_t pat, int16_t row);
 extern void __attribute__ ((visibility ("internal"))) mpGetPosition(uint16_t *pat, uint8_t *row);

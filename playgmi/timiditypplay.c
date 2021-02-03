@@ -462,7 +462,7 @@ static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_
 			bufferfill += res;
 		}
 
-		err = timidityOpenPlayer(path, buffer, bufferfill); /* buffer will be owned by the player */
+		err = timidityOpenPlayer(path, buffer, bufferfill, file); /* buffer will be owned by the player */
 		if (err)
 		{
 			free (buffer);

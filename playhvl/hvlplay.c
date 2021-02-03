@@ -802,7 +802,7 @@ extern void __attribute__ ((visibility ("internal"))) hvlIdle (void)
 	clipbusy--;
 }
 
-struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const uint8_t *mem, size_t memlen)
+struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file)
 {
 	int BufSize;
 
@@ -837,7 +837,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 	{
 		BufSize = 40;
 	}
-	if (!plrOpenPlayer(&plrbuf, &buflen, BufSize * plrRate / 1000))
+	if (!plrOpenPlayer(&plrbuf, &buflen, BufSize * plrRate / 1000, file))
 	{
 		goto error_out;
 	}

@@ -1042,7 +1042,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 		}
 	}
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
+	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, oggf))
 	{
 		ringbuffer_free (oggbufpos);
 		oggbufpos = 0;

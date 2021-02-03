@@ -1104,7 +1104,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 	signedout=!!(plrOpt&PLR_SIGNEDOUT);
 	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
+	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, file))
 	{
 		free(aydata.tracks);
 		free(aydata.filedata);

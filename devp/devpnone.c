@@ -91,7 +91,7 @@ static void qpSetOptions(uint32_t rate, int opt)
 
 static void *thebuf;
 
-static int qpPlay(void **buf, unsigned int *len)
+static int qpPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file)
 {
 	if (!(thebuf=*buf=malloc(sizeof(unsigned char)*(*len))))
 		return 0;

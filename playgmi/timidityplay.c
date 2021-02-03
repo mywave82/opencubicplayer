@@ -1851,7 +1851,7 @@ static void doTimidityClosePlayer(int CloseDriver)
 }
 
 #warning timidity internal API has support for memory-buffers, instead of file-objects
-int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen)
+int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen, struct ocpfilehandle_t *file)
 {
 	if (!plrPlay)
 		return errGen;
@@ -1896,7 +1896,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	speed=0x100;
 	loading = 0;
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
+	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, file))
 	{
 		doTimidityClosePlayer (0);
 		return errGen;

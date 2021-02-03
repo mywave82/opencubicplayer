@@ -283,7 +283,7 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	ymbuffpos=0;
 	ymbufread=sizeof(ymsample); /* 1 << (stereo + bit16) */
 
-	if (!plrOpenPlayer(&devp_plrbuf, &devp_buflen, plrBufSize * plrRate / 1000))
+	if (!plrOpenPlayer(&devp_plrbuf, &devp_buflen, plrBufSize * plrRate / 1000, file))
 	{
 		fprintf(stderr, "[ymplay.cpp]: plrOpenPlayer() failed\n");
 		goto error_out;

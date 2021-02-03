@@ -1,11 +1,12 @@
 #ifndef __HLVPLAY_H
 #define __HLVPLAY_H 1
 
+struct ocpfilehandle_t;
 struct hvl_tune;
 
 #define current_hvl_tune ht
 extern struct hvl_tune __attribute__ ((visibility ("internal"))) *current_hvl_tune;
-extern struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const uint8_t *mem, size_t memlen);
+extern struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file);
 extern void            __attribute__ ((visibility ("internal")))  hvlClosePlayer (void);
 extern void            __attribute__ ((visibility ("internal")))  hvlIdle (void);
 extern void            __attribute__ ((visibility ("internal")))  hvlSetLoop (uint8_t s);

@@ -855,7 +855,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	plrSetOptions(waverate, PLR_STEREO|PLR_16BIT);
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
+	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, wavf))
 	{
 		goto undowavebuf;
 	}

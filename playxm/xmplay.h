@@ -119,7 +119,7 @@ extern int __attribute__ ((visibility ("internal"))) xmpLoadWOW(struct xmodule *
 extern int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, struct ocpfilehandle_t *f);
 extern void __attribute__ ((visibility ("internal"))) xmpFreeModule(struct xmodule *m);
 
-extern int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m);
+extern int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, struct ocpfilehandle_t *file);
 extern void __attribute__ ((visibility ("internal"))) xmpStopModule(void);
 extern void __attribute__ ((visibility ("internal"))) xmpSetPos(int ord, int row);
 

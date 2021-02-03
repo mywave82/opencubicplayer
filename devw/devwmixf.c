@@ -865,7 +865,7 @@ static int LoadSamples(struct sampleinfo *sil, int n)
 	return 1;
 }
 
-static int OpenPlayer(int chan, void (*proc)(void))
+static int OpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *source_file)
 {
 	uint32_t currentrate;
 	uint16_t mixfate;
@@ -908,7 +908,7 @@ static int OpenPlayer(int chan, void (*proc)(void))
 	}
 
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, mcpMixBufSize * plrRate / 1000))
+	if (!plrOpenPlayer(&plrbuf, &buflen, mcpMixBufSize * plrRate / 1000, source_file))
 	{
 		mixClose();
 		return 0;

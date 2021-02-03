@@ -205,7 +205,7 @@ void CProvider_Mem::close(binistream *f) const
 	delete f;
 }
 
-int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filename /* needed for detection */, const uint8_t *content, const size_t len)
+int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filename /* needed for detection */, const uint8_t *content, const size_t len, struct ocpfilehandle_t *file)
 {
 	plrSetOptions(44100, (PLR_SIGNEDOUT|PLR_16BIT)|PLR_STEREO);
 
@@ -238,7 +238,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	oplbufread=4; /* 1 << (stereo + bit16) */
 	opltowrite=0;
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
+	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, file))
 		goto error_out;
 
 	if (!(buf16=(uint16_t *)malloc(sizeof(uint16_t)*buflen*2)))

@@ -31,7 +31,7 @@ int mcpNChan;
 void (*mcpIdle)(void);
 
 int (*mcpLoadSamples)(struct sampleinfo* si, int n);
-int (*mcpOpenPlayer)(int, void (*p)(void));
+int (*mcpOpenPlayer)(int, void (*p)(void), struct ocpfilehandle_t *source_file);
 void (*mcpClosePlayer)(void);
 void (*mcpSet)(int ch, int opt, int val);
 int (*mcpGet)(int ch, int opt);

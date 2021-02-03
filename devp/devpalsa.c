@@ -933,7 +933,7 @@ static char *alsaDebug(void)
 }
 #endif
 
-static int alsaPlay(void **buf, unsigned int *len)
+static int alsaPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file)
 {
 	if (!alsa_pcm)
 		return 0;

@@ -583,8 +583,7 @@ Now simply start OCP and select a module to play. You will hear no output
 and notice that the module is played with maximum speed@footnote{depending
 on your cpu power}. In the directory where you have started OCP (not
 necessaryly the directory where the module is located) subsequent
-@file{.wav} files named @file{CPOUT000.WAV}, @file{CPOUT001.WAV}
-will be created.
+@file{.wav} files named after the original filename will be created.
 
 @multitable @columnfractions .3 .7
 @item path @tab

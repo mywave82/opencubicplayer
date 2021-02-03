@@ -1,8 +1,12 @@
 #ifndef _PLAYOPL_H
 #define _PLAYOPL_H 1
 
+extern "C"
+{
+	struct ocpfilehandle_t;
+}
 extern void oplClosePlayer(void);
-extern int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filename /* needed for detection */, const uint8_t *content, const size_t len);
+extern int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filename /* needed for detection */, const uint8_t *content, const size_t len, struct ocpfilehandle_t *file);
 extern void oplSetLoop(int);
 extern int oplIsLooped(void);
 extern void oplPause(uint8_t p);

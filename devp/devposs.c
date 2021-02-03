@@ -422,7 +422,7 @@ static char *ossDebug(void)
 }
 #endif
 
-static int ossPlay(void **buf, unsigned int *len)
+static int ossPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file)
 {
 #ifdef OSS_DEBUG
 	int tmp;

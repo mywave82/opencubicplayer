@@ -657,7 +657,7 @@ static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	xmpOptimizePatLens(&mod);
 
 	mcpNormalize(1);
-	if (!xmpPlayModule(&mod))
+	if (!xmpPlayModule(&mod, file))
 		retval=errPlay;
 
 	if (retval)

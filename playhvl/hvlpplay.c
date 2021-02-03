@@ -472,7 +472,7 @@ static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 		return errFileRead;
 	}
 
-	hvlOpenPlayer (filebuf, filelen);
+	hvlOpenPlayer (filebuf, filelen, file);
 	free (filebuf);
 	if (!current_hvl_tune)
 	{

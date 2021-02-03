@@ -1483,7 +1483,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadSamples(struct xmodule *m)
 	return mcpLoadSamples(m->sampleinfos, m->nsampi);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m)
+int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	int i;
 
@@ -1535,7 +1535,7 @@ int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m)
 	realtempo=m->inibpm;
 	realspeed=m->initempo;
 	firstspeed=256*2*curbpm/5;
-	if (!mcpOpenPlayer(nchan, xmpPlayTick))
+	if (!mcpOpenPlayer(nchan, xmpPlayTick, file))
 		return 0;
 
 	if (nchan!=mcpNChan)

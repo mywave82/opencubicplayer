@@ -664,7 +664,7 @@ void __attribute__ ((visibility ("internal"))) cdRestartAt(int fd, unsigned long
 }
 
 
-int __attribute__ ((visibility ("internal"))) cdPlay(int fd, unsigned long start, unsigned long len)
+int __attribute__ ((visibility ("internal"))) cdPlay(int fd, unsigned long start, unsigned long len, struct ocpfilehandle_t *file)
 {
 	cfCDAtLineIn=cfGetProfileBool2(cfSoundSec, "sound", "cdsamplelinein", 0, 0); /* moved from global initclose */
 	cfCDAdigital=cfGetProfileBool2(cfSoundSec, "sound", "digitalcd", 1, 1);
@@ -696,7 +696,7 @@ int __attribute__ ((visibility ("internal"))) cdPlay(int fd, unsigned long start
 		signedout=!!(plrOpt&PLR_SIGNEDOUT);
 		reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
 
-		if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000))
+		if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, file))
 		{
 			free(cdbuf);
 			cdbuf=NULL;

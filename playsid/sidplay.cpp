@@ -840,7 +840,7 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 	{
 		BufSize = 40;
 	}
-	if (!plrOpenPlayer(&plrbuf, &buflen, BufSize * plrRate / 1000))
+	if (!plrOpenPlayer(&plrbuf, &buflen, BufSize * plrRate / 1000, f))
 	{
 		delete mySidPlayer; mySidPlayer = NULL;
 		                    mySidTuneInfo = NULL;

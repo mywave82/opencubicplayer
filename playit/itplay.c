@@ -1807,7 +1807,7 @@ int __attribute__ ((visibility ("internal"))) loadsamples(struct it_module *m)
 	return mcpLoadSamples(m->sampleinfos, m->nsampi);
 }
 
-int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const struct it_module *m, int ch)
+int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file)
 {
 	int i;
 	staticthis=this;
@@ -1899,7 +1899,7 @@ int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const 
 		c->tremoroffcounter=0;
 	}
 
-	if (!mcpOpenPlayer(ch, playtickstatic))
+	if (!mcpOpenPlayer(ch, playtickstatic, file))
 		return 0;
 
 	this->npchan=mcpNChan;

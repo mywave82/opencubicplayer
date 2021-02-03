@@ -364,7 +364,7 @@ struct itplayer
 };
 
 extern int __attribute__ ((visibility ("internal"))) loadsamples(struct it_module *m);/* - done */
-extern int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const struct it_module *m, int ch); /* - done */
+extern int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file); /* - done */
 extern void __attribute__ ((visibility ("internal"))) stop(struct itplayer *this); /* - done */
 
 extern int __attribute__ ((visibility ("internal"))) getsync(struct itplayer *this, int ch, int *time); /* - done */
