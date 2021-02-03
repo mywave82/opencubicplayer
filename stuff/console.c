@@ -84,8 +84,8 @@ static void vgaMakePal(void)
 }
 static int console_init(void)
 {
-	struct stat st;
 #ifdef __linux
+	struct stat st;
 	char _stdout[128];
 	char _stdin[128];
 # ifdef HAVE_FRAMEBUFFER
