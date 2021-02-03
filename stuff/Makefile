@@ -6,7 +6,7 @@ LINUX_OBJ=poutput-vcsa.o poutput-fb.o
 LINUX_LIBS=$(ICONV_LIBS)
 endif
 
-hardware_so=irq.o hardware.o freq.o
+hardware_so=hardware.o freq.o
 sets_so=sets.o
 poutput_so=console.o cp437.o latin1.o poutput-curses.o $(LINUX_OBJ) poutput-keyboard.o pfonts.o poutput.o utf-8.o
 poutput_so_libs=$(ICONV_LIBS)
@@ -32,9 +32,9 @@ poutput_so_libs+=$(FREETYPE2_LIBS)
 endif
 
 ifeq ($(STATIC_BUILD),1)
-all: compat.o err.o framelock.o timer.o $(hardware_so) $(sets_so) $(poutput_so)
+all: compat.o err.o framelock.o irq.o timer.o $(hardware_so) $(sets_so) $(poutput_so)
 else
-all: compat.o err.o framelock.o timer.o hardware$(LIB_SUFFIX) sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX)
+all: compat.o err.o framelock.o irq.o timer.o hardware$(LIB_SUFFIX) sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX)
 endif
 
 test: compat-test
