@@ -1,5 +1,6 @@
 *.o
 *.so
+*.dylib
 *.a
 asm_emu/test-x86
 autom4te.cache/
