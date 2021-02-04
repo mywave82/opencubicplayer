@@ -713,9 +713,15 @@ HAVE_SIDPLAYFP_BUILDERS_RESID_H=1
 RESID_INLINING=1
 RESID_INLINE=inline
 AX_CXX_COMPILE_STDCXX_11([noext], [optional])
-AC_ARG_VAR([XA], [6502 assembler - must be full path])dnl
-AC_PATH_PROG([XA],[xa],AC_MSG_ERROR([xa is needed for compiling 6502 assembler used by libsidplayfp]))
-AC_PATH_PROG([HEXDUMP],[hexdump],AC_MSG_ERROR([hexdump is needed for compiling libsidplayfp]))
+AC_ARG_VAR([XA], [6502 assembler - must be full path])
+AC_PATH_PROG([XA],[xa])
+if test -z "$XA"; then
+  AC_MSG_ERROR([xa is needed for compiling 6502 assembler used by libsidplayfp])
+fi
+AC_PATH_PROG([HEXDUMP],[hexdump])
+if test -z "$HEXDUMP"; then
+  AC_MSG_ERROR([hexdump is needed for compiling libsidplayfp])
+fi
 dnl TODO HAVE_VISIBILITY
 AX_CHECK_COMPILE_FLAG([-fvisibility=hidden -fvisibility-inlines-hidden], [HAVE_VISIBILITY=1;has_visibility=yes], [has_visibility=no])
 AC_CHECK_SIZEOF([short])
