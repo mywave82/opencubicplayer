@@ -268,7 +268,7 @@ static int _mpLoadS3M(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		sins.loopend   = uint32_little (sins.loopend);
 		sins.c2spd     = uint32_little (sins.c2spd);
 		sins.magic     = uint32_little (sins.magic);
-		if ((sins.magic==0x49524353))
+		if (sins.magic==0x49524353)
 		{
 			fprintf (stderr, "S3M: adlib sample detected, use OPL driver instead of GMD\n");
 			return errFormStruc;

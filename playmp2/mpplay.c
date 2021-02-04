@@ -519,7 +519,7 @@ static int stream_for_frame(void)
 		{
 			debug_printf ("[MPx] mad_frame_decode() failed: %s\n", mad_stream_errorstr(&stream));
 
-			if ((stream.error==MAD_ERROR_BUFLEN))
+			if (stream.error==MAD_ERROR_BUFLEN)
 			{
 				if (eof)
 					return 0;

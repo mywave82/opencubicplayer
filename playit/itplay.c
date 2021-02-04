@@ -1076,7 +1076,7 @@ static void doportanote(struct itplayer *this, struct it_logchan *c, int v) /* i
 
 static void dodelay(struct itplayer *this, struct it_logchan *c)
 {
-	if ((this->curtick==c->specialdata))
+	if (this->curtick==c->specialdata)
 	{
 		if (c->delayed[0]||c->delayed[1])
 			playnote(this, c, c->delayed);
@@ -1991,7 +1991,7 @@ void __attribute__ ((visibility ("internal"))) setpos(struct itplayer *this, int
 int __attribute__ ((visibility ("internal"))) getdotsdata(struct itplayer *this, int ch, int pch, int *smp, int *note, int *voll, int *volr, int *sus)
 {
 	struct it_physchan *p;
-	for (pch=pch; pch<this->npchan; pch++)
+	for (; pch<this->npchan; pch++)
 		if ((this->pchannels[pch].lch==ch)&&!this->pchannels[pch].dead)
 			break;
 	if (pch>=this->npchan)

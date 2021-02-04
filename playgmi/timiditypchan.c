@@ -33,8 +33,8 @@ static void drawchannel36(uint16_t *buf, int i)
 		return;
 	writenum(buf,  1, tcol, ci.program, 16, 2, 0);
 	writenum(buf, 4, tcol, ci.gvol, 16, 2, 0);
-	writestring(buf,  7, tcol, "L123456MM9ABCDER"+(ci.pan>>3), 1);
-	writestring(buf,  8, tcol, " P"+(ci.pedal), 1);
+	writestring(buf,  7, tcol, &"L123456MM9ABCDER"[ci.pan>>3], 1);
+	writestring(buf,  8, tcol, &" P"[ci.pedal], 1);
 	if (ci.notenum>6)
 		ci.notenum=6;
 	for (j=0; j<ci.notenum; j++)
@@ -61,8 +61,8 @@ static void drawchannel62(uint16_t *buf, int i)
 		return;
 	writestring(buf,  1, tcol, ci.instrument, 16);
 	writenum(buf, 18, tcol, ci.gvol, 16, 2, 0);
-	writestring(buf,  21, tcol, "L123456MM9ABCDER"+(ci.pan>>3), 1);
-	writestring(buf,  22, tcol, " P"+(ci.pedal), 1);
+	writestring(buf,  21, tcol, &"L123456MM9ABCDER"[ci.pan>>3], 1);
+	writestring(buf,  22, tcol, &" P"[ci.pedal], 1);
 	if (ci.notenum>9)
 		ci.notenum=9;
 	for (j=0; j<ci.notenum; j++)
@@ -89,7 +89,7 @@ static void drawchannel76(uint16_t *buf, int i)
 		return;
 	writestring(buf,  1, tcol, ci.instrument, 14);
 	writenum(buf, 16, tcol, ci.gvol, 16, 2, 0);
-	writestring(buf, 19, tcol, "L123456MM9ABCDER"+(ci.pan>>3), 1);
+	writestring(buf, 19, tcol, &"L123456MM9ABCDER"[ci.pan>>3], 1);
 	if (ci.notenum>7)
 		ci.notenum=7;
 	for (j=0; j<ci.notenum; j++)
@@ -123,7 +123,7 @@ static void drawchannel128(uint16_t *buf, int i)
 
 	writestring(buf,  1, tcol, ci.instrument, 16);
 	writenum(buf, 19, tcol, ci.gvol, 16, 2, 0);
-	writestring(buf, 22, tcol, "L123456MM9ABCDER"+(ci.pan>>3), 1);
+	writestring(buf, 22, tcol, &"L123456MM9ABCDER"[ci.pan>>3], 1);
 	writestring(buf, 24, tcol, (ci.pitch<0)?"-":(ci.pitch>0)?"+":" ", 1);
 	writenum(buf, 25, tcol, abs(ci.pitch), 16, 4, 0);
 	writenum(buf, 30, tcol, ci.reverb, 16, 2, 0);
@@ -159,8 +159,8 @@ static void drawchannel44(uint16_t *buf, int i)
 
 	writenum(buf,  1, tcol, ci.program, 16, 2, 0);
 	writenum(buf, 4, tcol, ci.gvol, 16, 2, 0);
-	writestring(buf,  7, tcol, "L123456MM9ABCDER"+(ci.pan>>3), 1);
-	writestring(buf,  8, tcol, " P"+(ci.pedal), 1);
+	writestring(buf,  7, tcol, &"L123456MM9ABCDER"[ci.pan>>3], 1);
+	writestring(buf,  8, tcol, &" P"[ci.pedal], 1);
 
 	if (ci.notenum>8)
 		ci.notenum=8;

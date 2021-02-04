@@ -103,9 +103,9 @@ static int xmgetnote(uint16_t *bp, int small)
 				writestring(bp, 0, COLINS, (note==cmdNNoteOff)?"---":(note==cmdNNoteCut)?"^^^":"'''", 3);
 			else {
 				note-=cmdNNote;
-				writestring(bp, 0, porta?COLPTNOTE:COLNOTE, "CCDDEFFGGAAB"+(note%12), 1);
-				writestring(bp, 1, porta?COLPTNOTE:COLNOTE, "-#-#--#-#-#-"+(note%12), 1);
-				writestring(bp, 2, porta?COLPTNOTE:COLNOTE, "0123456789"+(note/12), 1);
+				writestring(bp, 0, porta?COLPTNOTE:COLNOTE, &"CCDDEFFGGAAB"[note%12], 1);
+				writestring(bp, 1, porta?COLPTNOTE:COLNOTE, &"-#-#--#-#-#-"[note%12], 1);
+				writestring(bp, 2, porta?COLPTNOTE:COLNOTE, &"0123456789"  [note/12], 1);
 			}
 			break;
 		case 1:
@@ -113,8 +113,8 @@ static int xmgetnote(uint16_t *bp, int small)
 				writestring(bp, 0, COLINS, (note==cmdNNoteOff)?"--":(note==cmdNNoteCut)?"^^":"''", 2);
 			else {
 				note-=cmdNNote;
-				writestring(bp, 0, porta?COLPTNOTE:COLNOTE, "cCdDefFgGaAb"+(note%12), 1);
-				writestring(bp, 1, porta?COLPTNOTE:COLNOTE, "0123456789"+(note/12), 1);
+				writestring(bp, 0, porta?COLPTNOTE:COLNOTE, &"cCdDefFgGaAb"[note%12], 1);
+				writestring(bp, 1, porta?COLPTNOTE:COLNOTE, &"0123456789"  [note/12], 1);
 			}
 			break;
 		case 2:
@@ -122,7 +122,7 @@ static int xmgetnote(uint16_t *bp, int small)
 				writestring(bp, 0, COLINS, (note==cmdNNoteOff)?"-":(note==cmdNNoteCut)?"^":"'", 1);
 			else {
 				note-=cmdNNote;
-				writestring(bp, 0, porta?COLPTNOTE:COLNOTE, "cCdDefFgGaAb"+(note%12), 1);
+				writestring(bp, 0, porta?COLPTNOTE:COLNOTE, &"cCdDefFgGaAb"[note%12], 1);
 			}
 			break;
 	}
@@ -389,19 +389,19 @@ static void xmgetfx(uint16_t *bp, int n)
 					if (data>=4)
 						break;
 					writestring(bp, 0, COLPITCH, "~=", 2);
-					writestring(bp, 2, COLPITCH, "~\\\xA9?"+data, 1);
+					writestring(bp, 2, COLPITCH, &"~\\\xA9?"[data], 1);
 					break;
 				case cmdSTremType:
 					if (data>=4)
 						break;
 					writestring(bp, 0, COLVOL, "~=", 2);
-					writestring(bp, 2, COLVOL, "~\\\xA9?"+data, 1);
+					writestring(bp, 2, COLVOL, &"~\\\xA9?"[data], 1);
 					break;
 				case cmdSPanbrType:
 					if (data>=4)
 						break;
 					writestring(bp, 0, COLPAN, "~=", 2);
-					writestring(bp, 2, COLPAN, "~\\\xA9?"+data, 1);
+					writestring(bp, 2, COLPAN, &"~\\\xA9?"[data], 1);
 					break;
 				case cmdSNoteCut:
 					writestring(bp, 0, COLACT, "^", 1);
@@ -447,7 +447,7 @@ static void xmgetgcmd(uint16_t *bp, int n)
 				if ((data>=0x20)||!data||(data==0x10))
 					writenum(bp, 1, COLSPEED, data, 16, 2, 0);
 				else {
-					writestring(bp, 1, COLSPEED, "-+"+(data>>4), 1);
+					writestring(bp, 1, COLSPEED, &"-+"[data>>4], 1);
 					writenum(bp, 2, COLSPEED, data&0xF, 16, 1, 0);
 				}
 				break;

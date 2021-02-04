@@ -433,11 +433,11 @@ static void drawchannel(uint16_t *buf, int len, int i)
 				}
 			}
 			writestring(buf, 25, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
-			writestring(buf, 28, tcol, ci.pitchslide?" \x18\x19\x0D\x18\x19\x0D"+ci.pitchslide:" ~\xf0"+ci.pitchfx, 1);
+			writestring(buf, 28, tcol, ci.pitchslide ? &" \x18\x19\x0D\x18\x19\x0D"[ci.pitchslide] : &" ~\xf0"[ci.pitchfx], 1);
 			writenum(buf, 30, tcol, ci.vol, 16, 2, 0);
-			writestring(buf, 32, tcol, ci.volslide?" \x18\x19\x18\x19"+ci.volslide:" ~"+ci.volfx, 1);
-			writestring(buf, 34, tcol, "L123456MM9ABCDERS"+(ci.pan), 1);
-			writestring(buf, 35, tcol, " \x1A\x1B"+ci.panslide, 1);
+			writestring(buf, 32, tcol, ci.volslide ? &" \x18\x19\x18\x19"[ci.volslide] : &" ~"[ci.volfx], 1);
+			writestring(buf, 34, tcol, &"L123456MM9ABCDERS"[ci.pan], 1);
+			writestring(buf, 35, tcol, &" \x1A\x1B"[ci.panslide], 1);
 			fxstr=fxstr6[ci.fx];
 			if (fxstr)
 				writestring(buf, 37, tcol, fxstr, 6);
@@ -455,11 +455,11 @@ static void drawchannel(uint16_t *buf, int len, int i)
 				}
 			}
 			writestring(buf, 33, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
-			writestring(buf, 36, tcol, ci.pitchslide?" \x18\x19\x0D\x18\x19\x0D"+ci.pitchslide:" ~\xf0"+ci.pitchfx, 1);
+			writestring(buf, 36, tcol, ci.pitchslide ? &" \x18\x19\x0D\x18\x19\x0D"[ci.pitchslide] : &" ~\xf0"[ci.pitchfx], 1);
 			writenum(buf, 38, tcol, ci.vol, 16, 2, 0);
-			writestring(buf, 40, tcol, ci.volslide?" \x18\x19\x18\x19"+ci.volslide:" ~"+ci.volfx, 1);
-			writestring(buf, 42, tcol, "L123456MM9ABCDERS"+(ci.pan), 1);
-			writestring(buf, 43, tcol, " \x1A\x1B"+ci.panslide, 1);
+			writestring(buf, 40, tcol, ci.volslide ? &" \x18\x19\x18\x19"[ci.volslide] : &" ~"[ci.volfx], 1);
+			writestring(buf, 42, tcol, &"L123456MM9ABCDERS"[ci.pan], 1);
+			writestring(buf, 43, tcol, &" \x1A\x1B"[ci.panslide], 1);
 
 			fxstr=fxstr12[ci.fx];
 			if (fxstr)
@@ -489,11 +489,11 @@ static void drawchannel(uint16_t *buf, int len, int i)
 				}
 			}
 			writestring(buf, 53, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
-			writestring(buf, 56, tcol, ci.pitchslide?" \x18\x19\x0D\x18\x19\x0D"+ci.pitchslide:" ~\xf0"+ci.pitchfx, 1);
+			writestring(buf, 56, tcol, ci.pitchslide ? &" \x18\x19\x0D\x18\x19\x0D"[ci.pitchslide] : &" ~\xf0"[ci.pitchfx], 1);
 			writenum(buf, 58, tcol, ci.vol, 16, 2, 0);
-			writestring(buf, 60, tcol, ci.volslide?" \x18\x19\x18\x19"+ci.volslide:" ~"+ci.volfx, 1);
-			writestring(buf, 62, tcol, "L123456MM9ABCDERS"+(ci.pan), 1);
-			writestring(buf, 63, tcol, " \x1A\x1B"+ci.panslide, 1);
+			writestring(buf, 60, tcol, ci.volslide ? &" \x18\x19\x18\x19"[ci.volslide] : &" ~"[ci.volfx], 1);
+			writestring(buf, 62, tcol, &"L123456MM9ABCDERS"[ci.pan], 1);
+			writestring(buf, 63, tcol, &" \x1A\x1B"[ci.panslide], 1);
 
 			fxstr=fxstr12[ci.fx];
 			if (fxstr)
@@ -503,11 +503,11 @@ static void drawchannel(uint16_t *buf, int len, int i)
 		case 44:
 			writenum(buf,  4, tcol, ci.ins, 16, 2, 0);
 			writestring(buf,  7, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
-			writestring(buf, 10, tcol, ci.pitchslide?" \x18\x19\x0D\x18\x19\x0D"+ci.pitchslide:" ~\xf0"+ci.pitchfx, 1);
+			writestring(buf, 10, tcol, ci.pitchslide ? &" \x18\x19\x0D\x18\x19\x0D"[ci.pitchslide] : &" ~\xf0"[ci.pitchfx], 1);
 			writenum(buf, 12, tcol, ci.vol, 16, 2, 0);
-			writestring(buf, 14, tcol, ci.volslide?" \x18\x19\x18\x19"+ci.volslide:" ~"+ci.volfx, 1);
-			writestring(buf, 16, tcol, "L123456MM9ABCDERS"+(ci.pan), 1);
-			writestring(buf, 17, tcol, " \x1A\x1B"+ci.panslide, 1);
+			writestring(buf, 14, tcol, ci.volslide ? &" \x18\x19\x18\x19"[ci.volslide] : &" ~"[ci.volfx], 1);
+			writestring(buf, 16, tcol, &"L123456MM9ABCDERS"[ci.pan], 1);
+			writestring(buf, 17, tcol, &" \x1A\x1B"[ci.panslide], 1);
 
 			fxstr=fxstr6[ci.fx];
 			if (fxstr)

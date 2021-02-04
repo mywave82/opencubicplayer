@@ -1078,7 +1078,7 @@ static int emulate_play_midi_file_start(const char *fn, uint8_t *data, size_t da
 
 	/* Set current file information */
 	current_file_info = get_midi_file_info((char *)fn, 1);
-	current_file_info->midi_data = data;
+	current_file_info->midi_data = (char *)data;
 	current_file_info->midi_data_size = datalen;
 
 	rc = check_apply_control();

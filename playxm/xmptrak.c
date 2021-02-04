@@ -93,24 +93,24 @@ static int xmgetnote(unsigned short *bp, int small)
 			if (note==96)
 				writestring(bp, 0, COLINS, "---", 3);
 			else {
-				writestring(bp, 0, porta?COLPTNOTE:COLNOTE, "CCDDEFFGGAAB"+(note%12), 1);
-				writestring(bp, 1, porta?COLPTNOTE:COLNOTE, "-#-#--#-#-#-"+(note%12), 1);
-				writestring(bp, 2, porta?COLPTNOTE:COLNOTE, "01234567"+(note/12), 1);
+				writestring(bp, 0, porta?COLPTNOTE:COLNOTE, &"CCDDEFFGGAAB"[note%12], 1);
+				writestring(bp, 1, porta?COLPTNOTE:COLNOTE, &"-#-#--#-#-#-"[note%12], 1);
+				writestring(bp, 2, porta?COLPTNOTE:COLNOTE, &"01234567"[note/12], 1);
 			}
 			break;
 		case 1:
 			if (note==96)
 				writestring(bp, 0, COLINS, "--", 2);
 			else {
-				writestring(bp, 0, porta?COLPTNOTE:COLNOTE, "cCdDefFgGaAb"+(note%12), 1);
-				writestring(bp, 1, porta?COLPTNOTE:COLNOTE, "01234567"+(note/12), 1);
+				writestring(bp, 0, porta?COLPTNOTE:COLNOTE, &"cCdDefFgGaAb"[note%12], 1);
+				writestring(bp, 1, porta?COLPTNOTE:COLNOTE, &"01234567"[note/12], 1);
 			}
 			break;
 		case 2:
 			if (note==96)
 				writestring(bp, 0, COLINS, "-", 1);
 			else
-				writestring(bp, 0, porta?COLPTNOTE:COLNOTE, "cCdDefFgGaAb"+(note%12), 1);
+				writestring(bp, 0, porta?COLPTNOTE:COLNOTE, &"cCdDefFgGaAb"[note%12], 1);
 			break;
 	}
 	return 1;
@@ -360,11 +360,11 @@ static void xmgetfx(unsigned short *bp, int n)
 			break;
 		case xmpCmdVibType:
 			writestring(bp, 0, COLPITCH, "~=", 2);
-			writestring(bp, 2, COLPITCH, "~\\\xA9?"+(data&3), 1);
+			writestring(bp, 2, COLPITCH, &"~\\\xA9?"[data&3], 1);
 			break;
 		case xmpCmdTremType:
 			writestring(bp, 0, COLVOL, "~=", 2);
-			writestring(bp, 2, COLVOL, "~\\\xA9?"+(data&3), 1);
+			writestring(bp, 2, COLVOL, &"~\\\xA9?"[data&3], 1);
 			break;
 		case xmpCmdSFinetune:
 			writestring(bp, 0, COLINS, "ft", 2);

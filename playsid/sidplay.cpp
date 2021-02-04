@@ -1167,7 +1167,8 @@ int __attribute__ ((visibility ("internal"))) sidGetLChanSample(unsigned int i, 
 	{
 		if (stereo)
 		{
-			*(s++) = *(s++) = *src;
+			*(s++) = *src;
+			*(s++) = *src;
 		} else {
 			*(s++) = *src;
 		}
@@ -1218,7 +1219,8 @@ int __attribute__ ((visibility ("internal"))) sidGetPChanSample(unsigned int i, 
 	{
 		if (stereo)
 		{
-			*(s++) = *(s++) = *src;
+			*(s++) = *src;
+			*(s++) = *src;
 		} else {
 			*(s++) = *src;
 		}

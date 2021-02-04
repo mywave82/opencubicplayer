@@ -529,7 +529,7 @@ static NextPlay isnextplay = NextPlayNone;
 /* These guys has with rendering todo and stuff like that */
 static unsigned short dirwinheight;
 static char quickfind[12];
-static char quickfindpos;
+static unsigned char quickfindpos;
 static short editfilepos=0;
 static short editdirpos=0;
 static short editmode=0;
@@ -2886,7 +2886,7 @@ superbreak:
 								if (quickfindpos!=8)
 									quickfind[(int)quickfindpos++]=toupper(c);
 						}
-					memcpy(quickfind+quickfindpos, "        .   "+quickfindpos, 12-quickfindpos);
+					memcpy(quickfind+quickfindpos, &"        .   "[quickfindpos], 12-quickfindpos);
 					if (!quickfindpos)
 						continue;
 					if (!win)

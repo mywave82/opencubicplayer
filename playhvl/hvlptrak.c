@@ -114,16 +114,16 @@ static int getnote(uint16_t *bp, int small)
 	switch (small)
 	{
 		case 0:
-			writestring(bp, 0, color, "CCDDEFFGGAAB" + ((Note & 0x7f)%12), 1);
-			writestring(bp, 1, color, "-#-#--#-#-#-" + ((Note & 0x7f)%12), 1);
-			writestring(bp, 2, color, "-0123456789" +  ((Note & 0x7f)/12), 1);
+			writestring(bp, 0, color, &"CCDDEFFGGAAB"[(Note & 0x7f)%12], 1);
+			writestring(bp, 1, color, &"-#-#--#-#-#-"[(Note & 0x7f)%12], 1);
+			writestring(bp, 2, color, &"-0123456789" [(Note & 0x7f)/12], 1);
 			break;
 		case 1:
-			writestring(bp, 0, color, "cCdDefFgGaAb" + ((Note & 0x7f)%12), 1);
-			writestring(bp, 1, color, "-0123456789" +  ((Note & 0x7f)/12), 1);
+			writestring(bp, 0, color, &"cCdDefFgGaAb"[(Note & 0x7f)%12], 1);
+			writestring(bp, 1, color, &"-0123456789" [(Note & 0x7f)/12], 1);
 			break;
 		case 2:
-			writestring(bp, 0, color, "cCdDefFgGaAb" + ((Note & 0x7f)%12), 1);
+			writestring(bp, 0, color, &"cCdDefFgGaAb"[(Note & 0x7f)%12], 1);
 			break;
 	}
 	return 1;

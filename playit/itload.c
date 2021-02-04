@@ -342,7 +342,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, st
 	for (i=0; i<this->nord; i++)
 		if (ords[i]==255)
 			break;
-	for (i=i; i>0; i--)
+	for (; i>0; i--)
 		if (ords[i-1]!=254)
 			break;
 	this->endord=i;

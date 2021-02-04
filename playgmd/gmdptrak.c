@@ -100,16 +100,16 @@ static int getnote(uint16_t *bp, int small)
 				switch (small)
 				{
 					case 0:
-						writestring(bp, 0, (*ptr&0x80)?COLPTNOTE:COLNOTE, "CCDDEFFGGAAB"+((*ptr&~0x80)%12), 1);
-						writestring(bp, 1, (*ptr&0x80)?COLPTNOTE:COLNOTE, "-#-#--#-#-#-"+((*ptr&~0x80)%12), 1);
-						writestring(bp, 2, (*ptr&0x80)?COLPTNOTE:COLNOTE, "-0123456789"+((*ptr&~0x80)/12), 1);
+						writestring(bp, 0, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"CCDDEFFGGAAB"[(*ptr&~0x80)%12], 1);
+						writestring(bp, 1, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"-#-#--#-#-#-"[(*ptr&~0x80)%12], 1);
+						writestring(bp, 2, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"-0123456789"[(*ptr&~0x80)/12], 1);
 						break;
 					case 1:
-						writestring(bp, 0, (*ptr&0x80)?COLPTNOTE:COLNOTE, "cCdDefFgGaAb"+((*ptr&0x7F)%12), 1);
-						writestring(bp, 1, (*ptr&0x80)?COLPTNOTE:COLNOTE, "-0123456789"+((*ptr&0x7F)/12), 1);
+						writestring(bp, 0, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"cCdDefFgGaAb"[(*ptr&0x7F)%12], 1);
+						writestring(bp, 1, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"-0123456789"[(*ptr&0x7F)/12], 1);
 						break;
 					case 2:
-						writestring(bp, 0, (*ptr&0x80)?COLPTNOTE:COLNOTE, "cCdDefFgGaAb"+((*ptr&0x7F)%12), 1);
+						writestring(bp, 0, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"cCdDefFgGaAb"[(*ptr&0x7F)%12], 1);
 						break;
 				}
 				return 1;
@@ -360,7 +360,7 @@ static void getfx(uint16_t *buf, int n)
 					break;
 				case cmdPitchVibratoSetWave:
 					writestring(buf, 0, COLPITCH, "~=", 2);
-					writestring(buf, 2, COLPITCH, "~\\*\x1C?           ~\\\x1C?"+*ptr, 1);
+					writestring(buf, 2, COLPITCH, &"~\\*\x1C?           ~\\\x1C?"[*ptr], 1);
 					break;
 				case cmdArpeggio:
 					writestring(buf, 0, COLPITCH, "\xf0", 1);
@@ -393,7 +393,7 @@ static void getfx(uint16_t *buf, int n)
 					break;
 				case cmdVolVibratoSetWave:
 					writestring(buf, 0, COLVOL, "~=", 2);
-					writestring(buf, 2, COLVOL, "~\\*\x1C?           ~/\x1C?"+*ptr, 1);
+					writestring(buf, 2, COLVOL, &"~\\*\x1C?           ~/\x1C?"[*ptr], 1);
 					break;
 				case cmdTremor:
 					writestring(buf, 0, COLVOL, "\xA9", 1);
