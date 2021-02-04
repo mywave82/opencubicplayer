@@ -46,8 +46,7 @@ volatile static int kernpos, cachepos, bufpos; /* in bytes */
  * bufpos = the write header given out of this driver */
 
 /*  playbuf     kernpos  cachepos   bufpos      buflen
- *    |           | kernlen |          |          |
- *    |           |   cachelen         |          |
+ *    |           | kernlen | cachelen |          |
  *
  *  on flush, we update all variables> *  on getbufpos we return kernpos-(1 sample) as safe point to buffer up to
  *  on getplaypos we use last known kernpos if locked, else update kernpos
@@ -56,7 +55,7 @@ volatile static int kernpos, cachepos, bufpos; /* in bytes */
 
 volatile static int cachelen, kernlen; /* to make life easier */
 
-volatile static uint32_t playpos; /* how many samples have we done totally */
+volatile static uint64_t playpos; /* how many samples have we done totally */
 
 static const char *OSStatus_to_string(OSStatus status)
 {
@@ -158,10 +157,15 @@ static OSStatus theRenderProc(void *inRefCon, AudioUnitRenderActionFlags *inActi
 	int i, i2;
 
 #ifdef COREAUDIO_DEBUG
-	fprintf(stderr, "renderproc\n");
+	fprintf(stderr, "renderproc ENTER\n");
 #endif
-
 	pthread_mutex_lock(&mutex);
+
+#ifdef COREAUDIO_DEBUG
+	fprintf(stderr, "renderproc BEGIN\n");
+	fprintf (stderr, "  INPUT  cachelen=%d\n", (int)cachelen);
+	fprintf (stderr, "         ioData->mBuffers[0].mDataByteSize=%d\n", (int)ioData->mBuffers[0].mDataByteSize);
+#endif
 
 	i = cachelen;/* >>2  *stereo + 16it */
 	if (i > ioData->mBuffers[0].mDataByteSize)
@@ -170,8 +174,15 @@ static OSStatus theRenderProc(void *inRefCon, AudioUnitRenderActionFlags *inActi
 	kernlen = ioData->mBuffers[0].mDataByteSize = i;
 	cachelen -= i;
 	cachepos = kernpos;
-
 	playpos += i<<(2/*stereo+bit16*/);
+
+#ifdef COREAUDIO_DEBUG
+	fprintf (stderr, "  OUTPUT kernlen=%d\n", i);
+	fprintf (stderr, "         ioData->mBuffers[0].mDataByteSize=%d\n", i);
+	fprintf (stderr, "         cachepos=%d\n", (int)cachepos);
+	fprintf (stderr, "         cachelen=%d\n", (int)cachelen);
+	fprintf (stderr, "         playpos=%d\n", (int)playpos);
+#endif
 
 	if ((i+kernpos)>buflen)
 	{
@@ -181,11 +192,35 @@ static OSStatus theRenderProc(void *inRefCon, AudioUnitRenderActionFlags *inActi
 		i2 = 0;
 	}
 
+#ifdef COREAUDIO_DEBUG
+	fprintf (stderr, "  PROC   i=%d i2=%d\n", i, i2);
+#endif
+
 	memcpy(ioData->mBuffers[0].mData, playbuf+kernpos, i);
 	if (i2)
 		memcpy(ioData->mBuffers[0].mData+i, playbuf, i2);
 
 	kernpos = (kernpos+i+i2)%buflen;
+
+#ifdef COREAUDIO_DEBUG
+	fprintf (stderr, "         kernpos=%d\n", (int)kernpos);
+
+
+
+
+/*
+playbuf      kernpos      cachepos     bufpos       buflen
+|            12345678     12345678     12345678     12345678
+|            |  kernlen   |  cachelen  |            |
+|            |  12345678  |  12345678  |            |
+*/
+	fprintf (stderr, "playbuf      kernpos      cachepos     bufpos       buflen\n");
+	fprintf (stderr, "|            %-8d     %-8d     %-8d     %-8d\n", (int)kernpos, (int)cachepos, (int)bufpos, (int)buflen);
+	fprintf (stderr, "|            |  %-8d  |  %-8d  |            |\n", (int)kernlen, (int)cachelen);
+
+
+	fprintf(stderr, "renderproc END\n");
+#endif
 
 	pthread_mutex_unlock(&mutex);
 
@@ -219,7 +254,7 @@ static int CoreAudioGetPlayPos(void)
 	int retval;
 
 	pthread_mutex_lock(&mutex);
-	retval=cachepos;
+	retval=kernpos;
 	pthread_mutex_unlock(&mutex);
         return retval;
 }
@@ -244,7 +279,7 @@ static uint32_t CoreAudioGetTimer(void)
 
 	pthread_mutex_lock(&mutex);
 
-	retval=playpos-kernlen;
+	retval=playpos-(kernlen + cachelen);
 
 	pthread_mutex_unlock(&mutex);
 
