@@ -511,24 +511,6 @@ char *strupr(char *src)
 
 #endif
 
-size_t filelength(int fd)
-{
-	off_t cur=lseek(fd, 0, SEEK_CUR);
-	size_t retval;
-	lseek(fd, 0, SEEK_END);
-	retval=lseek(fd, 0, SEEK_CUR);
-	lseek(fd, cur, SEEK_SET);
-	return retval;
-}
-
-size_t _filelength(const char *path)
-{
-	struct stat st;
-	if (stat(path, &st))
-		return 0;
-	return st.st_size;
-}
-
 #ifndef HAVE_MEMMEM
 void *memmem(const void *haystack, size_t haystacklen,
              const void *needle, size_t needlelen)

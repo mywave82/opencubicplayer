@@ -18,9 +18,6 @@ extern char *strupr(char *src);
 #include <string.h>
 #endif
 
-extern size_t filelength(int fd);
-extern size_t _filelength(const char *path);
-
 #ifndef HAVE_VSNPRINTF
 #include <stdarg.h> /* for va_list */
 extern int vsnprintf(char *buff, size_t bufsiz, const char *fmt, va_list ap);
