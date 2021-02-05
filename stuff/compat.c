@@ -501,10 +501,13 @@ int makepath_malloc(char **dst, const char *drive, const char *path, const char 
 char *strupr(char *src)
 {
 	char *retval = src;
-	while (*src)
+	if (src)
 	{
-		*src=toupper(*src);
-		src++;
+		while (*src)
+		{
+			*src=toupper(*src);
+			src++;
+		}
 	}
 	return retval;
 }

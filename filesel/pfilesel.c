@@ -228,11 +228,9 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 	}
 
 #ifndef FNM_CASEFOLD
-	if ((childpath_upper = strdup(childpath)))
+	childpath_upper = strupr(strdup(childpath));
+	if (!childpath_upper)
 	{
-		for (iterate = childpath_upper; *iterate; iterate++)
-			*iterate = toupper(*iterate);
-	} else {
 		perror("pfilesel.c: strdup() failed");
 		goto out;
 	}
@@ -300,11 +298,7 @@ int fsReadDir (struct modlist *ml, struct ocpdir_t *dir, const char *mask, unsig
 	token.cancel_recursive = 0;
 	token.parent_displaydir = 0;
 #ifndef FNM_CASEFOLD
-	token.mask = strdup (mask);
-	for (i=0; token.mask[i]; i++)
-	{
-		token.mask[i] = toupper (token.mask[i]);
-	}
+	token.mask = strupr(strdup (mask));
 #else
 	token.mask = mask;
 #endif

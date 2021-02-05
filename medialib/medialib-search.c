@@ -60,10 +60,7 @@ static int mlSearchPerformQuery (void)
 			return 1;
 		}
 
-		for (ptr=filename; *ptr; ptr++)
-		{
-			*ptr = toupper (*ptr);
-		}
+		strupr(filename);
 
 		if (strstr (filename, mlSearchQuery))
 		{
@@ -255,11 +252,7 @@ static int ocpdir_search_readdir_iterate (ocpdirhandle_pt _handle)
 				return 0;
 			} else if (res == 0)
 			{/* make query upper-case */
-				char *ptr;
-				for (ptr = mlSearchQuery; *ptr; ptr++)
-				{
-					*ptr = toupper (*ptr);
-				}
+				strupr(mlSearchQuery);
 				mlSearchPerformed = 1;
 				return 1;
 			}
