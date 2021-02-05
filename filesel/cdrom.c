@@ -345,11 +345,20 @@ static void cdclose(void)
 
 static void cdrom_root_ref (struct ocpdir_t *self)
 {
-	return;
+	self->refcount++;
 }
 
 static void cdrom_root_unref (struct ocpdir_t *self)
 {
+	self->refcount--;
+	if (!self->refcount)
+	{
+		if (self->dirdb_ref != DIRDB_NOPARENT)
+		{
+			dirdbUnref (self->dirdb_ref, dirdb_use_dir);
+			self->dirdb_ref = DIRDB_NOPARENT;
+		}
+	}
 	return;
 }
 
