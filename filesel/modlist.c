@@ -318,7 +318,7 @@ void modlist_swap(struct modlist *modlist, unsigned int index1, unsigned int ind
 	modlist->sortindex[index2] = entry;
 }
 
-static const char *fuzzycmp12(const char *dst, const char *src)
+static const char *fuzzycmp(const char *dst, const char *src)
 {
 	char DST, SRC;
 	while ((*dst)&&(*src))
@@ -353,7 +353,7 @@ int modlist_fuzzyfind(struct modlist *modlist, const char *filename)
 		struct modlistentry *m = &modlist->files[index];
 
 		dirdbGetName_internalstr (m->file ? m->file->dirdb_ref : m->dir->dirdb_ref, &temp);
-		diff = fuzzycmp12(temp, filename);
+		diff = fuzzycmp(temp, filename);
 		score = diff - temp;
 
 		if ((unsigned)score==len)
@@ -365,7 +365,7 @@ int modlist_fuzzyfind(struct modlist *modlist, const char *filename)
 			hitscore=score;
 		}
 
-		diff = fuzzycmp12(m->utf8_16_dot_3, filename);
+		diff = fuzzycmp(m->utf8_16_dot_3, filename);
 		score = diff - m->utf8_16_dot_3;
 		if ((unsigned)score==len)
 		{
