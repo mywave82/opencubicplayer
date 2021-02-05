@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) '04-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Some functions not present in POSIX that is needed
  *
@@ -71,21 +71,6 @@
 #ifdef __MACOS__
 #include <Threads.h>
 #endif
-
-int memicmp(const void *_s1, const void *_s2, size_t n)
-{
-	const uint8_t *s1=_s1;
-	const uint8_t *s2=_s2;
-	size_t i;
-	for (i=0;i<n;i++,s1++,s2++)
-	{
-		unsigned char u1=toupper(*s1);
-		unsigned char u2=toupper(*s2);
-		if (u1<u2) return -1;
-		if (u2<u1) return 1;
-	}
-	return 0;
-}
 
 time_t dos_clock(void)
 {

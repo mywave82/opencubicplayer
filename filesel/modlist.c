@@ -430,7 +430,7 @@ static int mlecmp (const void *a, const void *b)
 	dirdbGetName_internalstr (e1->file ? e1->file->dirdb_ref : e1->dir->dirdb_ref, &n1);
 	dirdbGetName_internalstr (e2->file ? e2->file->dirdb_ref : e2->dir->dirdb_ref, &n2);
 
-	return memicmp(n1, n2, 12);
+	return strcasecmp(n1, n2);
 }
 
 void modlist_sort (struct modlist *modlist)

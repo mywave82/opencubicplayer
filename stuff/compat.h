@@ -20,7 +20,6 @@ extern char *strupr(char *src);
 
 extern size_t filelength(int fd);
 extern size_t _filelength(const char *path);
-extern int memicmp(const void *s1, const void *s2, size_t n);
 
 #ifndef HAVE_VSNPRINTF
 #include <stdarg.h> /* for va_list */
