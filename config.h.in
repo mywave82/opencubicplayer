@@ -167,6 +167,7 @@
 
 /* #define I386_ASM_EMU 1 */
 
+/* #define ADBMETA_DEBUG */
 /* #define TIMIDITY_DEBUG */
 /* #define ZIP_DEBUG */
 /* #define ZIP_VERBOSE */
