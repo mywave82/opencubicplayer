@@ -2709,7 +2709,6 @@ signed int fsFileSelect(void)
 	{
 		signed int firstv, firstp;
 		uint16_t c;
-		int curscanned=0;
 		struct modlistentry *m;
 
 superbreak:
@@ -2808,54 +2807,58 @@ superbreak:
 
 		if (!ekbhit()&&fsScanNames)
 		{
-			if (curscanned||(mdbInfoRead(m->mdb_ref)))
+			int poll = 1;
+			if (m->file && (!mdbInfoRead(m->mdb_ref)))
 			{
-				while (((!win)||(scanposp>=playlist->num)) && (scanposf<currentdir->num))
+				mdbScan(m->file, m->mdb_ref);
+			}
+
+			while (((!win)||(scanposp>=playlist->num)) && (scanposf<currentdir->num))
+			{
+				struct modlistentry *scanm;
+				if ((scanm=modlist_get(currentdir, scanposf++)))
 				{
-					struct modlistentry *scanm;
-					if ((scanm=modlist_get(currentdir, scanposf++)))
+					if (scanm->file)
 					{
-						if (scanm->file)
+						if (!mdbInfoRead(scanm->mdb_ref))
 						{
-							if (!mdbInfoRead(scanm->mdb_ref))
+							mdbScan(scanm->file, scanm->mdb_ref);
+							if (!poll_framelock())
 							{
-								mdbScan(scanm->file, scanm->mdb_ref);
+								poll = 0;
 								break;
 							}
 						}
 					}
 				}
-				while (((win)||(scanposf>=currentdir->num)) && (scanposp<playlist->num))
+			}
+			while (((win)||(scanposf>=currentdir->num)) && (scanposp<playlist->num))
+			{
+				struct modlistentry *scanm;
+				if ((scanm=modlist_get(playlist, scanposp++)))
 				{
-					struct modlistentry *scanm;
-					if ((scanm=modlist_get(playlist, scanposp++)))
+					if (scanm->file)
 					{
-						if (scanm->file)
+						if (!mdbInfoRead(scanm->mdb_ref))
 						{
-							if (!mdbInfoRead(scanm->mdb_ref))
+							mdbScan(scanm->file, scanm->mdb_ref);
+							if (!poll_framelock())
 							{
-								mdbScan(scanm->file, scanm->mdb_ref);
+								poll = 0;
 								break;
 							}
 						}
 					}
 				}
+			}
+			if (poll)
+			{
 				framelock();
-			} else {
-				if (!curscanned)
-				{
-					if (m->file)
-					{
-						mdbScan(m->file, m->mdb_ref);
-					}
-					curscanned=1;
-				}
 			}
 			continue;
 		} else while (ekbhit())
 		{
 			c=egetch();
-			curscanned=0;
 
 			if (!editmode)
 			{
