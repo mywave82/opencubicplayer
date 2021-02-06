@@ -127,9 +127,23 @@ uint8_t mdbReadModType(const char *str)
 int mdbInfoRead(uint32_t mdb_ref)
 {
 	if (mdb_ref>=mdbNum)
+	{
+		DEBUG_PRINT ("mdbInfoRead(0x%08"PRIx32") => -1 due to out of range\n", mdb_ref);
 		return -1;
+	}
 	if ((mdbData[mdb_ref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL))
+	{
+		DEBUG_PRINT ("mdbInfoRead(0x%08"PRIx32") => -1 due to entry not being USED + GENERAL\n", mdb_ref);
 		return -1;
+	}
+#ifdef MDB_DEBUG
+	if (mdbData[mdb_ref].gen.modtype==mtUnRead)
+	{
+		DEBUG_PRINT ("mdbInfoRead(0x%08"PRIx32") => 0 due to mtUnRead\n", mdb_ref);
+	} else {
+		DEBUG_PRINT ("mdbInfoRead(0x%08"PRIx32") => 1 due to modtype != mtUnRead\n", mdb_ref);
+	}
+#endif
 	return mdbData[mdb_ref].gen.modtype!=mtUnRead;
 }
 
@@ -170,6 +184,8 @@ int mdbReadMemInfo(struct moduleinfostruct *m, const char *buf, int len)
 {
 	struct mdbreadinforegstruct *rinfos;
 
+	DEBUG_PRINT ("mdbReaadMemInfo(buf=%p len=%d)\n", buf, len);
+
 	for (rinfos=mdbReadInfos; rinfos; rinfos=rinfos->next)
 		if (rinfos->ReadMemInfo)
 			if (rinfos->ReadMemInfo(m, buf, len))
@@ -183,6 +199,8 @@ int mdbReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 	struct mdbreadinforegstruct *rinfos;
 	int maxl;
 
+	DEBUG_PRINT ("mdbReadInfo(f=%p)\n", f);
+
 	if (f->seek_set (f, 0) < 0)
 	{
 		return 1;
@@ -193,7 +211,7 @@ int mdbReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 	{
 		char *path;
 		dirdbGetName_internalstr (f->dirdb_ref, &path);
-		DEBUG_PRINT ("mdbReadMemInfo(%s %p %d)\n", path, mdbScanBuf, maxl);
+		DEBUG_PRINT ("   mdbReadMemInfo(%s %p %d)\n", path, mdbScanBuf, maxl);
 	}
 
 	if (mdbReadMemInfo(m, mdbScanBuf, maxl))
@@ -210,6 +228,7 @@ int mdbReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 static uint32_t mdbGetNew(void)
 {
 	uint32_t i;
+
 	for (i=0; i<mdbNum; i++)
 		if (!(mdbData[i].flags&MDB_USED))
 			break;
@@ -226,11 +245,16 @@ static uint32_t mdbGetNew(void)
 			mdbData[j].flags|=MDB_DIRTY;
 	}
 	mdbDirty=1;
+
+	DEBUG_PRINT("mdbGetNew() => 0x%08"PRIx32"\n", i);
+
 	return i;
 }
 
 int mdbWriteModuleInfo(uint32_t mdb_ref, struct moduleinfostruct *m)
 {
+	DEBUG_PRINT("mdbWriteModuleInfo(0x%"PRIx32", %p)\n", mdb_ref, m);
+
 	if (mdb_ref>=mdbNum)
 	{
 		DEBUG_PRINT ("mdbWriteModuleInfo, mdb_ref(%d)<mdbNum(%d)\n", mdb_ref, mdbNum);
@@ -290,6 +314,7 @@ int mdbWriteModuleInfo(uint32_t mdb_ref, struct moduleinfostruct *m)
 
 void mdbScan(struct ocpfile_t *file, uint32_t mdb_ref)
 {
+	DEBUG_PRINT ("mdbScan(file=%p, mdb_ref=0x%08"PRIx32")\n", file, mdb_ref);
 	if (!file)
 	{
 		return;
@@ -384,6 +409,7 @@ int mdbInit(void)
 		free(mdbData);
 		mdbData=0;
 		close(f);
+		fprintf(stderr, "EOF\n");
 		return 1;
 	}
 	close(f);
@@ -391,7 +417,10 @@ int mdbInit(void)
 	for (i=0; i<mdbNum; i++)
 	{
 		if ((mdbData[i].flags&(MDB_BLOCKTYPE|MDB_USED))==(MDB_USED|MDB_GENERAL))
+		{
+			DEBUG_PRINT("0x%08"PRIx32" is USED GENERAL\n", i);
 			mdbGenMax++;
+		}
 	}
 
 	if (mdbGenMax)
@@ -404,6 +433,12 @@ int mdbInit(void)
 				mdbReloc[mdbGenNum++]=i;
 
 		qsort(mdbReloc, mdbGenNum, sizeof(*mdbReloc), miecmp);
+#ifdef MDB_DEBUG
+		for (i=0; i<mdbGenMax; i++)
+		{
+			DEBUG_PRINT("%5"PRId32" => 0x%08"PRIx32" %"PRId32" %c%c%c%c%c%c%c%c%c%c%c%c\n", i, mdbReloc[i], mdbData[mdbReloc[i]].gen.size, mdbData[mdbReloc[i]].gen.name[0], mdbData[mdbReloc[i]].gen.name[1], mdbData[mdbReloc[i]].gen.name[2], mdbData[mdbReloc[i]].gen.name[3], mdbData[mdbReloc[i]].gen.name[4], mdbData[mdbReloc[i]].gen.name[5], mdbData[mdbReloc[i]].gen.name[6], mdbData[mdbReloc[i]].gen.name[7], mdbData[mdbReloc[i]].gen.name[8], mdbData[mdbReloc[i]].gen.name[9], mdbData[mdbReloc[i]].gen.name[10], mdbData[mdbReloc[i]].gen.name[11]);
+		}
+#endif
 	}
 
 	fprintf(stderr, "Done\n");
@@ -418,10 +453,11 @@ void mdbUpdate(void)
 	uint32_t i, j;
 	struct mdbheader header;
 
+	DEBUG_PRINT("mdbUpdate: mdbDirty=%d fsWriteModInfo=%d\n", mdbDirty, fsWriteModInfo);
+
 	if (!mdbDirty||!fsWriteModInfo)
 		return;
 	mdbDirty=0;
-
 
 	makepath_malloc (&path, 0, cfConfigDir, "CPMODNFO.DAT", 0);
 	if ((f=open(path, O_WRONLY|O_CREAT, S_IREAD|S_IWRITE))<0)
@@ -466,10 +502,12 @@ void mdbUpdate(void)
 				mdbData[j].flags&=~MDB_DIRTY;
 			else
 				break;
-		lseek(f, 64+i*sizeof(*mdbData), SEEK_SET);
+		lseek(f, (uint64_t)64+(uint64_t)i*sizeof(*mdbData), SEEK_SET);
 		while (1)
 		{
 			ssize_t res;
+
+			DEBUG_PRINT("  [0x%08"PRIx32" -> 0x%08"PRIx32"] DIRTY\n", i, j);
 			res = write(f, mdbData+i, (j-i)*sizeof(*mdbData));
 			if (res < 0)
 			{
@@ -505,7 +543,7 @@ static uint32_t mdbGetModuleReference(const char *name, uint32_t size)
 	uint32_t i;
 
 	uint32_t *min=mdbReloc;
-	uint32_t num=(unsigned short)mdbGenNum;
+	uint32_t num=mdbGenNum;
 	uint32_t mn;
 	struct modinfoentry *m;
 
@@ -516,10 +554,36 @@ static uint32_t mdbGetModuleReference(const char *name, uint32_t size)
 	 * work guys
 	 *   - Stian
 	 */
+
+	DEBUG_PRINT("mdbGetModuleReference(%s %"PRId32")\n", name, size);
 	while (num)
 	{
 		struct modinfoentry *m=&mdbData[min[num>>1]];
 		int ret;
+#ifdef MDB_DEBUG
+		{
+			uint32_t x;
+			for (x = 0; x < num; x++)
+			{
+				DEBUG_PRINT("  %08x %"PRId32" %c%c%c%c%c%c%c%c%c%c%c%c\n",
+					min[x],
+					mdbData[min[x]].gen.size,
+					mdbData[min[x]].gen.name[0],
+					mdbData[min[x]].gen.name[1],
+					mdbData[min[x]].gen.name[2],
+					mdbData[min[x]].gen.name[3],
+					mdbData[min[x]].gen.name[4],
+					mdbData[min[x]].gen.name[5],
+					mdbData[min[x]].gen.name[6],
+					mdbData[min[x]].gen.name[7],
+					mdbData[min[x]].gen.name[8],
+					mdbData[min[x]].gen.name[9],
+					mdbData[min[x]].gen.name[10],
+					mdbData[min[x]].gen.name[11]);
+			}
+			DEBUG_PRINT("----------\n");
+		}
+#endif
 		if (size==m->gen.size)
 			ret=memcmp(name, m->gen.name, 12);
 		else
@@ -528,7 +592,10 @@ static uint32_t mdbGetModuleReference(const char *name, uint32_t size)
 			else
 				ret=1;
 		if (!ret)
+		{
+			DEBUG_PRINT("mdbGetModuleReference(%s %"PRId32") => mdbReloc => 0x%08"PRIx32"\n", name, size, min[num>>1]);
 			return min[num>>1];
+		}
 		if (ret<0)
 			num>>=1;
 		else {
@@ -568,6 +635,7 @@ static uint32_t mdbGetModuleReference(const char *name, uint32_t size)
 	m->gen.channels=0;
 	m->gen.moduleflags=0;
 	mdbDirty=1;
+	DEBUG_PRINT("mdbGetModuleReference(%s %"PRId32") => new => 0x%08"PRIx32"\n", name, size, i);
 	return (uint32_t)i;
 }
 
