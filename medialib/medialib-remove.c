@@ -34,7 +34,7 @@ static void mlRemoveDraw(const char *title)
 	{ /* we are in the top part */
 		skip = 0;
 		dot = 0;
-	} else if (medialibRefreshSelected > (medialib_sources_count - half))
+	} else if (medialibRefreshSelected >= (medialib_sources_count - half))
 	{ /* we are at the bottom part */
 		skip = medialib_sources_count - (mlHeight - 4);
 		dot = mlHeight - 4;

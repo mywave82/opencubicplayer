@@ -48,8 +48,6 @@ static void mlAddDraw(const char *title, const char *utf8_path, int dsel)
 		mlWidth += 2;
 	}
 
-
-
 	half = (mlHeight - 5) / 2;
 	if (medialibAddDirEntries <= mlHeight - 5)
 	{ /* all entries can fit */
@@ -59,7 +57,7 @@ static void mlAddDraw(const char *title, const char *utf8_path, int dsel)
 	{ /* we are in the top part */
 		skip = 0;
 		dot = 0;
-	} else if (dsel > (medialibAddDirEntries - half))
+	} else if (dsel >= (medialibAddDirEntries - half))
 	{ /* we are at the bottom part */
 		skip = medialibAddDirEntries - (mlHeight - 5);
 		dot = mlHeight - 5;
