@@ -24,6 +24,8 @@ static void clear_dirdb()
 	dirdbData=0;
 	dirdbNum=0;
 	dirdbDirty=0;
+	dirdbRootChild = DIRDB_NOPARENT;
+	dirdbFreeChild = DIRDB_NOPARENT;
 }
 
 char *cfConfigDir = "/foo/home/ocp/.ocp/";
@@ -803,7 +805,7 @@ static int dirdb_basic_test7(void)
 		else if ((iter==node6) && (mdb==3)) found_node6++;
 		else if ((iter==node7) && (mdb==4)) found_node7++;
 		else {
-			fprintf (stderr, "dirdbGetMdb() gave an unknown node " ANSI_COLOR_RED "iter=%d mdb=%d" ANSI_COLOR_RESET "\n", iter, mdb);
+			fprintf (stderr, "dirdbGetMdb() gave an unknown node " ANSI_COLOR_RED "iter=0x%08"PRIx32" mdb=%d" ANSI_COLOR_RESET "\n", iter, mdb);
 			retval++;
 		}
 	}
