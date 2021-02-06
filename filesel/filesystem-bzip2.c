@@ -882,7 +882,7 @@ static struct ocpdir_t *bzip2_check_steal (struct ocpfile_t *s, const uint32_t d
 				                                      ((uint64_t)(metadata[1]) << 8) |
 				                                      ((uint64_t)(metadata[0]));
 
-				DEBUG_PRINT ("[BZIP2 bzip2_check_steal]: got metadatasize=0x%08lx %02x %02x %02x %02x %02x %02x %02x %02x => %"PRIu64"\n", metadatasize, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5], metadata[6], metadata[7], retval->uncompressed_filesize);
+				DEBUG_PRINT ("[BZIP2 bzip2_check_steal]: got metadatasize=0x%08lx %02x %02x %02x %02x %02x %02x %02x %02x => %"PRIu64"\n", metadatasize, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5], metadata[6], metadata[7], retval->child.uncompressed_filesize);
 
 			}
 			free (metadata);
