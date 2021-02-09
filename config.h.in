@@ -1,4 +1,5 @@
 #define _GNU_SOURCE 1
+#define _XOPEN_SOURCE_EXTENDED 1 // needed for ncurses wide
 #define _FILE_OFFSET_BITS 64
 
 #undef WORDS_BIGENDIAN
