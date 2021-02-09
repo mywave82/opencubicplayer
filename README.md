@@ -171,3 +171,7 @@ http://www.chiptune.com/
 http://www.keygenmusic.net/
 
 https://ftp.hornet.org/pub/demos/music/contests/
+
+# Packaging status
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/ocp-open-cubic-player.svg)](https://repology.org/project/ocp-open-cubic-player/versions)
