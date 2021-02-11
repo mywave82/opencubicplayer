@@ -82,6 +82,7 @@
 #include "filesystem-setup.h"
 #include "filesystem-tar.h"
 #include "filesystem-unix.h"
+#include "filesystem-z.h"
 #include "filesystem-zip.h"
 #include "mdb.h"
 #include "modlist.h"
@@ -827,6 +828,7 @@ int fsPreInit(void)
 	filesystem_pls_register ();
 	filesystem_setup_register ();
 	filesystem_tar_register ();
+	filesystem_Z_register ();
 	filesystem_zip_register ();
 
 	currentdir=modlist_create();

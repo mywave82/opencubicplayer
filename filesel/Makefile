@@ -24,6 +24,7 @@ filesystem-playlist-pls.o     \
 filesystem-setup.o            \
 filesystem-tar.o              \
 filesystem-unix.o             \
+filesystem-z.o                \
 filesystem-zip.o              \
 fsptype.o                     \
 modlist.o                     \
@@ -317,6 +318,17 @@ filesystem-zip.o: filesystem-zip.c \
 	filesystem-zip.h
 	$(CC) $< -o $@ -c
 
+filesystem-z.o: filesystem-z.c \
+	z-unlzw.c \
+	../config.h \
+	../types.h \
+	adbmeta.h \
+	dirdb.h \
+	filesystem.h \
+	filesystem-z.h \
+	../stuff/framelock.h
+	$(CC) $< -o $@ -c
+
 mdb.o: mdb.c \
 	../config.h \
 	../types.h \
@@ -380,6 +392,7 @@ pfilesel.o: pfilesel.c \
 	filesystem-setup.h \
 	filesystem-tar.h \
 	filesystem-unix.h \
+	filesystem-z.h \
 	filesystem-zip.h \
 	mdb.h \
 	modlist.h \
