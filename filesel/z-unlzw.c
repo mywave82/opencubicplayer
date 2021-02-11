@@ -107,7 +107,7 @@ static signed int unlzw_feed (struct lzw_handle_t *h, uint8_t input)
 			h->block_mode = !!(input & BLOCK_MODE);
 			h->max_bits = input & BIT_MASK;
 			h->maxmaxcode = MAXCODE ( h->max_bits );
-			if (h->max_bits > MAX_BITS)
+			if ((h->max_bits > MAX_BITS) || (h->max_bits < 9))
 			{ /* too many bits */
 				return -1;
 			}
@@ -247,12 +247,14 @@ again:
 		h->readcodes = 8; /* discard remaing codes in the buffer, if any */
 
 		(h->n_bits)++;
-		if (h->n_bits == h->max_bits)
+		if (h->n_bits >= h->max_bits)
 		{
+			h->n_bits = h->max_bits;
 			h->maxcode = h->maxmaxcode;
 		} else {
 			h->maxcode = MAXCODE(h->n_bits)-1;
 		}
+
 		h->bitmask = (1 << h->n_bits)-1;
 	}
 
