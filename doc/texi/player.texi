@@ -760,7 +760,7 @@ change option of the activated mode
 @tab
 link view
 @c @item
-@c @key{°}
+@c @key{Print Screen}
 @c @tab
 @c make screenshot
 @item
