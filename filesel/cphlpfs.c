@@ -75,7 +75,7 @@ unsigned char fsHelp2(void)
 
 		fillstr(sbuf, 0, 0x30, 0, CONSOLE_MAX_X);
 		writestring(sbuf, 2, 0x30, "opencp help", 11);
-		writestring(sbuf, plScrWidth-31, 0x30, "(c) 1994-2019 Stian Skjelstad", 29);
+		writestring(sbuf, plScrWidth-31, 0x30, "(c) 1994-2021 Stian Skjelstad", 29);
 		displaystrattr(0, 0, sbuf, plScrWidth);
 
 		brSetWinHeight(plScrHeight-2);

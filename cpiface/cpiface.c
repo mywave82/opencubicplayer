@@ -131,7 +131,7 @@ void cpiSetTextMode(int size)
 void cpiDrawGStrings()
 {
 	char *verstr="  opencp v" VERSION;
-	char *author="(c) 1994-2019 Stian Skjelstad ";
+	char *author="(c) 1994-2021 Stian Skjelstad ";
 	char tstr[CONSOLE_MAX_X+1];
 
 #ifdef DEBUG
@@ -911,5 +911,5 @@ static struct interfacestruct plOpenCP = {plmpOpenFile, plmpCallBack, plmpCloseF
 #ifndef SUPPORT_STATIC_PLUGINS
 char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cpiface", .desc = "OpenCP Interface (c) 1994-09 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .LateInit = plmpInit, .PreClose = plmpClose};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cpiface", .desc = "OpenCP Interface (c) 1994-21 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .LateInit = plmpInit, .PreClose = plmpClose};
 /* OpenCP Module Player */

@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Routines for screen output
  *
@@ -67,7 +68,7 @@ void make_title(char *part)
 		writestring(sbuf, plScrWidth-58, 0x30, part, strlen(part));
 	else
 		writestring(sbuf, (plScrWidth-strlen(part))/2, 0x30, part, strlen(part));
-	writestring(sbuf, plScrWidth-30, 0x30, "(c) 1994-2020 Stian Skjelstad", 29);
+	writestring(sbuf, plScrWidth-30, 0x30, "(c) 1994-2021 Stian Skjelstad", 29);
 	_displaystrattr(0, 0, sbuf, plScrWidth);
 }
 
