@@ -10228,9 +10228,15 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking GIT submodules are checked out" >&5
 $as_echo_n "checking GIT submodules are checked out... " >&6; }
-if ! test -f playsid/sidplayfp-git/libsidplayfp/src/sidemu.cpp; then
-  as_fn_error $? "playsid/sidplayfp-git is missing - please execute 'git submodule update --init --recursive'" "$LINENO" 5
+if ! test -f playsid/libsidplayfp-git/src/sidemu.cpp; then
+  as_fn_error $? "playsid/libsidplayfp-git is missing - please execute 'git submodule update --init --recursive'" "$LINENO" 5
+else if ! test -f playsid/libsidplayfp-git/src/builders/resid-builder/resid/sid.h; then
+  as_fn_error $? "playsid/libsidplayfp-git/src/builders/resid-builder/resid is missing - please execute 'git submodule update --init --recursive'" "$LINENO" 5
 else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+fi
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
 fi

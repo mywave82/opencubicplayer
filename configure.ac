@@ -700,9 +700,14 @@ fi
 
 dnl SIDPLAY specifics
 AC_MSG_CHECKING([GIT submodules are checked out])
-if ! test -f playsid/sidplayfp-git/libsidplayfp/src/sidemu.cpp; then
-  AC_MSG_ERROR([playsid/sidplayfp-git is missing - please execute 'git submodule update --init --recursive'])
+if ! test -f playsid/libsidplayfp-git/src/sidemu.cpp; then
+  AC_MSG_ERROR([playsid/libsidplayfp-git is missing - please execute 'git submodule update --init --recursive'])
+else if ! test -f playsid/libsidplayfp-git/src/builders/resid-builder/resid/sid.h; then
+  AC_MSG_ERROR([playsid/libsidplayfp-git/src/builders/resid-builder/resid is missing - please execute 'git submodule update --init --recursive'])
 else
+  AC_MSG_RESULT([ok])
+fi
+
   AC_MSG_RESULT([ok])
 fi
 origCXX="$CXX"
