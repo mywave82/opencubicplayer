@@ -722,6 +722,10 @@ AC_PATH_PROG([HEXDUMP],[hexdump])
 if test -z "$HEXDUMP"; then
   AC_MSG_ERROR([hexdump is needed for compiling libsidplayfp])
 fi
+AC_PATH_PROG([PERL], [perl])
+if test -z "$PERL"; then
+  AC_MSG_ERROR([perl is needed for compiling libsidplayfp])
+fi
 dnl TODO HAVE_VISIBILITY
 AX_CHECK_COMPILE_FLAG([-fvisibility=hidden -fvisibility-inlines-hidden], [HAVE_VISIBILITY=1;has_visibility=yes], [has_visibility=no])
 AC_CHECK_SIZEOF([short])
@@ -1036,8 +1040,8 @@ AC_CONFIG_FILES(desktop/opencubicplayer.desktop)
 AC_CONFIG_FILES(doc/opencp.dox)
 AC_CONFIG_FILES(doc/texi/faq.texi)
 AC_CONFIG_FILES(doc/texi/ocp.texi)
-AC_CONFIG_FILES(playsid/sidplayfp-git/libsidplayfp/src/builders/resid-builder/resid/siddefs.h)
-AC_CONFIG_FILES(playsid/sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/siddefs-fp.h)
+AC_CONFIG_FILES(playsid/libsidplayfp-git/src/builders/resid-builder/resid/siddefs.h)
+AC_CONFIG_FILES(playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h)
 
 AC_OUTPUT
 

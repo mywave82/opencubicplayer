@@ -9,7 +9,7 @@ endif
 
 TARGETS=sidtype$(LIB_SUFFIX) playsid$(LIB_SUFFIX)
 
-LIBSIDPLAYCXXFLAGS+= -I./sidplayfp-config -I./sidplayfp-git/libsidplayfp/src
+LIBSIDPLAYCXXFLAGS+= -I./sidplayfp-config -I./libsidplayfp-git/src
 
 LIBSIDPLAYOBJECTS=libsidplayfp-builders-resid-builder-resid-builder.o \
 	libsidplayfp-builders-resid-builder-resid-dac.o \
@@ -40,6 +40,7 @@ LIBSIDPLAYOBJECTS=libsidplayfp-builders-resid-builder-resid-builder.o \
 	libsidplayfp-builders-residfp-builder-residfp-WaveformCalculator.o \
 	libsidplayfp-builders-residfp-builder-residfp-WaveformGenerator.o \
 	libsidplayfp-c64-c64.o \
+	libsidplayfp-c64-CIA-interrupt.o \
 	libsidplayfp-c64-CIA-mos6526.o \
 	libsidplayfp-c64-CIA-SerialPort.o \
 	libsidplayfp-c64-CIA-timer.o \
@@ -71,7 +72,15 @@ LIBSIDPLAYOBJECTS=libsidplayfp-builders-resid-builder-resid-builder.o \
 all: $(TARGETS) $(DUMPSID)
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) sidplayfp-git/libsidplayfp/src/sidtune/sidplayer1.bin sidplayfp-git/libsidplayfp/src/sidtune/sidplayer2.bin dumpsid
+	rm -f *.o *$(LIB_SUFFIX) libsidplayfp-git/src/sidtune/sidplayer1.bin sidplayfp-git/libsidplayfp/src/sidtune/sidplayer2.bin dumpsid \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave6581__ST.h \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave6581_P_T.h \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave6581_PS_.h \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave6581_PST.h \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave8580__ST.h \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave8580_P_T.h \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave8580_PS_.h \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave8580_PST.h
 
 install:
 	$(CP) playsid$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
@@ -92,188 +101,231 @@ sidtype_so=sidptype.o
 sidtype$(LIB_SUFFIX): $(sidtype_so)
 	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^
 
+libsidplayfp-git/src/builders/resid-builder/resid/wave6581__ST.h: \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave6581__ST.dat
+	$(PERL) libsidplayfp-git/src/builders/resid-builder/resid/samp2src.pl $* $< $@
+
+libsidplayfp-git/src/builders/resid-builder/resid/wave6581_P_T.h: \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave6581_P_T.dat
+	$(PERL) libsidplayfp-git/src/builders/resid-builder/resid/samp2src.pl $* $< $@
+
+libsidplayfp-git/src/builders/resid-builder/resid/wave6581_PS_.h: \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave6581_PS_.dat
+	$(PERL) libsidplayfp-git/src/builders/resid-builder/resid/samp2src.pl $* $< $@
+
+libsidplayfp-git/src/builders/resid-builder/resid/wave6581_PST.h: \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave6581_PST.dat
+	$(PERL) libsidplayfp-git/src/builders/resid-builder/resid/samp2src.pl $* $< $@
+
+libsidplayfp-git/src/builders/resid-builder/resid/wave8580__ST.h: \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave8580__ST.dat
+	$(PERL) libsidplayfp-git/src/builders/resid-builder/resid/samp2src.pl $* $< $@
+
+libsidplayfp-git/src/builders/resid-builder/resid/wave8580_P_T.h: \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave8580_P_T.dat
+	$(PERL) libsidplayfp-git/src/builders/resid-builder/resid/samp2src.pl $* $< $@
+
+libsidplayfp-git/src/builders/resid-builder/resid/wave8580_PS_.h: \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave8580_PS_.dat
+	$(PERL) libsidplayfp-git/src/builders/resid-builder/resid/samp2src.pl $* $< $@
+
+libsidplayfp-git/src/builders/resid-builder/resid/wave8580_PST.h: \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave8580_PST.dat
+	$(PERL) libsidplayfp-git/src/builders/resid-builder/resid/samp2src.pl $* $< $@
+
 libsidplayfp-builders-resid-builder-resid-builder.o: \
-	sidplayfp-git/libsidplayfp/src/builders/resid-builder/resid-builder.cpp
+	libsidplayfp-git/src/builders/resid-builder/resid-builder.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-resid-builder-resid-dac.o: \
-	sidplayfp-git/libsidplayfp/src/builders/resid-builder/resid/dac.cc
+	libsidplayfp-git/src/builders/resid-builder/resid/dac.cc
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-resid-builder-resid-emu.o: \
-	sidplayfp-git/libsidplayfp/src/builders/resid-builder/resid-emu.cpp
+	libsidplayfp-git/src/builders/resid-builder/resid-emu.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-resid-builder-resid-envelope.o: \
-	sidplayfp-git/libsidplayfp/src/builders/resid-builder/resid/envelope.cc
+	libsidplayfp-git/src/builders/resid-builder/resid/envelope.cc
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-resid-builder-resid-extfilt.o: \
-	sidplayfp-git/libsidplayfp/src/builders/resid-builder/resid/extfilt.cc
+	libsidplayfp-git/src/builders/resid-builder/resid/extfilt.cc
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-resid-builder-resid-filter.o: \
-	sidplayfp-git/libsidplayfp/src/builders/resid-builder/resid/filter.cc
+	libsidplayfp-git/src/builders/resid-builder/resid/filter.cc
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-resid-builder-resid-pot.o: \
-	sidplayfp-git/libsidplayfp/src/builders/resid-builder/resid/pot.cc
+	libsidplayfp-git/src/builders/resid-builder/resid/pot.cc
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-resid-builder-resid-sid.o: \
-	sidplayfp-git/libsidplayfp/src/builders/resid-builder/resid/sid.cc
+	libsidplayfp-git/src/builders/resid-builder/resid/sid.cc
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-resid-builder-resid-version.o: \
-	sidplayfp-git/libsidplayfp/src/builders/resid-builder/resid/version.cc
+	libsidplayfp-git/src/builders/resid-builder/resid/version.cc
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-resid-builder-resid-voice.o: \
-	sidplayfp-git/libsidplayfp/src/builders/resid-builder/resid/voice.cc
+	libsidplayfp-git/src/builders/resid-builder/resid/voice.cc
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-resid-builder-resid-wave.o: \
-	sidplayfp-git/libsidplayfp/src/builders/resid-builder/resid/wave.cc
+	libsidplayfp-git/src/builders/resid-builder/resid/wave.cc \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave6581__ST.h \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave6581_P_T.h \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave6581_PS_.h \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave6581_PST.h \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave8580__ST.h \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave8580_P_T.h \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave8580_PS_.h \
+	libsidplayfp-git/src/builders/resid-builder/resid/wave8580_PST.h
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-builder.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp-builder.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
+	libsidplayfp-git/src/builders/residfp-builder/residfp-builder.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libsidplayfp-git/src/builders/residfp-builder/residfp -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-Dac.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/Dac.cpp
+	libsidplayfp-git/src/builders/residfp-builder/residfp/Dac.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-emu.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp-emu.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
+	libsidplayfp-git/src/builders/residfp-builder/residfp-emu.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libsidplayfp-git/src/builders/residfp-builder/residfp -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-EnvelopeGenerator.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/EnvelopeGenerator.cpp
+	libsidplayfp-git/src/builders/residfp-builder/residfp/EnvelopeGenerator.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-ExternalFilter.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/ExternalFilter.cpp
+	libsidplayfp-git/src/builders/residfp-builder/residfp/ExternalFilter.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-Filter.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/Filter.cpp
+	libsidplayfp-git/src/builders/residfp-builder/residfp/Filter.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-Filter6581.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/Filter6581.cpp
+	libsidplayfp-git/src/builders/residfp-builder/residfp/Filter6581.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-Filter8580.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/Filter8580.cpp
+	libsidplayfp-git/src/builders/residfp-builder/residfp/Filter8580.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/FilterModelConfig.cpp
+	libsidplayfp-git/src/builders/residfp-builder/residfp/FilterModelConfig.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig8580.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/FilterModelConfig8580.cpp
+	libsidplayfp-git/src/builders/residfp-builder/residfp/FilterModelConfig8580.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-OpAmp.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/OpAmp.cpp
+	libsidplayfp-git/src/builders/residfp-builder/residfp/OpAmp.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-SID.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/SID.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
+	libsidplayfp-git/src/builders/residfp-builder/residfp/SID.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libsidplayfp-git/src/builders/residfp-builder/residfp -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-SincResampler.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/resample/SincResampler.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp -o $@ $< -c
+	libsidplayfp-git/src/builders/residfp-builder/residfp/resample/SincResampler.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libsidplayfp-git/src/builders/residfp-builder/residfp -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-Spline.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/Spline.cpp
+	libsidplayfp-git/src/builders/residfp-builder/residfp/Spline.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-version.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/version.cc
+	libsidplayfp-git/src/builders/residfp-builder/residfp/version.cc
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-WaveformCalculator.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/WaveformCalculator.cpp
+	libsidplayfp-git/src/builders/residfp-builder/residfp/WaveformCalculator.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-WaveformGenerator.o: \
-	sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp/WaveformGenerator.cpp
+	libsidplayfp-git/src/builders/residfp-builder/residfp/WaveformGenerator.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-c64-c64.o: \
-	sidplayfp-git/libsidplayfp/src/c64/c64.cpp
+	libsidplayfp-git/src/c64/c64.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
+libsidplayfp-c64-CIA-interrupt.o: \
+	libsidplayfp-git/src/c64/CIA/interrupt.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-c64-CIA-mos6526.o: \
-	sidplayfp-git/libsidplayfp/src/c64/CIA/mos6526.cpp
+	libsidplayfp-git/src/c64/CIA/mos6526.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-c64-CIA-SerialPort.o: \
-	sidplayfp-git/libsidplayfp/src/c64/CIA/SerialPort.cpp
+	libsidplayfp-git/src/c64/CIA/SerialPort.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-c64-CIA-timer.o: \
-	sidplayfp-git/libsidplayfp/src/c64/CIA/timer.cpp
+	libsidplayfp-git/src/c64/CIA/timer.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-c64-CIA-tod.o: \
-	sidplayfp-git/libsidplayfp/src/c64/CIA/tod.cpp
+	libsidplayfp-git/src/c64/CIA/tod.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-c64-CPU-mos6510.o: \
-	sidplayfp-git/libsidplayfp/src/c64/CPU/mos6510.cpp
+	libsidplayfp-git/src/c64/CPU/mos6510.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-c64-mmu.o: \
-	sidplayfp-git/libsidplayfp/src/c64/mmu.cpp
+	libsidplayfp-git/src/c64/mmu.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-c64-VIC_II-mos656x.o: \
-	sidplayfp-git/libsidplayfp/src/c64/VIC_II/mos656x.cpp
+	libsidplayfp-git/src/c64/VIC_II/mos656x.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-EventScheduler.o: \
-	sidplayfp-git/libsidplayfp/src/EventScheduler.cpp
+	libsidplayfp-git/src/EventScheduler.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-mixer.o: \
-	sidplayfp-git/libsidplayfp/src/mixer.cpp
+	libsidplayfp-git/src/mixer.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-player.o: \
-	sidplayfp-git/libsidplayfp/src/player.cpp
+	libsidplayfp-git/src/player.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-psiddrv.o: \
-	sidplayfp-git/libsidplayfp/src/psiddrv.cpp
+	libsidplayfp-git/src/psiddrv.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-reloc65.o: \
-	sidplayfp-git/libsidplayfp/src/reloc65.cpp
+	libsidplayfp-git/src/reloc65.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-sidemu.o: \
-	sidplayfp-git/libsidplayfp/src/sidemu.cpp
+	libsidplayfp-git/src/sidemu.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-sidplayfp-sidbuilder.o: \
-	sidplayfp-git/libsidplayfp/src/sidplayfp/sidbuilder.cpp
+	libsidplayfp-git/src/sidplayfp/sidbuilder.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-sidplayfp-SidConfig.o: \
-	sidplayfp-git/libsidplayfp/src/sidplayfp/SidConfig.cpp
+	libsidplayfp-git/src/sidplayfp/SidConfig.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-sidplayfp-SidInfo.o: \
-	sidplayfp-git/libsidplayfp/src/sidplayfp/SidInfo.cpp
+	libsidplayfp-git/src/sidplayfp/SidInfo.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-sidplayfp-SidTune.o: \
-	sidplayfp-git/libsidplayfp/src/sidplayfp/SidTune.cpp
+	libsidplayfp-git/src/sidplayfp/SidTune.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-sidplayfp-SidTuneInfo.o: \
-	sidplayfp-git/libsidplayfp/src/sidplayfp/SidTuneInfo.cpp
+	libsidplayfp-git/src/sidplayfp/SidTuneInfo.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-sidtune-SidTuneTools.o: \
-	sidplayfp-git/libsidplayfp/src/sidtune/SidTuneTools.cpp
+	libsidplayfp-git/src/sidtune/SidTuneTools.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-sidtune-p00.o: \
-	sidplayfp-git/libsidplayfp/src/sidtune/p00.cpp
+	libsidplayfp-git/src/sidtune/p00.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-sidtune-prg.o: \
-	sidplayfp-git/libsidplayfp/src/sidtune/prg.cpp
+	libsidplayfp-git/src/sidtune/prg.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-sidtune-PSID.o: \
-	sidplayfp-git/libsidplayfp/src/sidtune/PSID.cpp
+	libsidplayfp-git/src/sidtune/PSID.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-sidplayfp-git/libsidplayfp/src/sidtune/sidplayer1.bin: \
-	sidplayfp-git/libsidplayfp/src/sidtune/sidplayer1.a65
+libsidplayfp-git/src/sidtune/sidplayer1.bin: \
+	libsidplayfp-git/src/sidtune/sidplayer1.a65
 	$(XA) -R -G $< -o - | $(HEXDUMP) -v -e '1/1 "0x%02X,\n"' > $@
-sidplayfp-git/libsidplayfp/src/sidtune/sidplayer2.bin: \
-	sidplayfp-git/libsidplayfp/src/sidtune/sidplayer2.a65
+libsidplayfp-git/src/sidtune/sidplayer2.bin: \
+	libsidplayfp-git/src/sidtune/sidplayer2.a65
 	$(XA) -R -G $< -o - | $(HEXDUMP) -v -e '1/1 "0x%02X,\n"' > $@
 libsidplayfp-sidtune-MUS.o: \
-	sidplayfp-git/libsidplayfp/src/sidtune/MUS.cpp \
-	sidplayfp-git/libsidplayfp/src/sidtune/sidplayer1.bin \
-	sidplayfp-git/libsidplayfp/src/sidtune/sidplayer2.bin
+	libsidplayfp-git/src/sidtune/MUS.cpp \
+	libsidplayfp-git/src/sidtune/sidplayer1.bin \
+	libsidplayfp-git/src/sidtune/sidplayer2.bin
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-sidtune-SidTuneBase.o: \
-	sidplayfp-git/libsidplayfp/src/sidtune/SidTuneBase.cpp
+	libsidplayfp-git/src/sidtune/SidTuneBase.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-utils-md5Factory.o: \
-	sidplayfp-git/libsidplayfp/src/utils/md5Factory.cpp
+	libsidplayfp-git/src/utils/md5Factory.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-utils-MD5-MD5.o: \
-	sidplayfp-git/libsidplayfp/src/utils/MD5/MD5.cpp
+	libsidplayfp-git/src/utils/MD5/MD5.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 
 libsidplayfp-api.o: \
 	libsidplayfp-api.cpp \
 	libsidplayfp-api.h \
-	./sidplayfp-git/libsidplayfp/src/sidplayfp/sidbuilder.h \
-	./sidplayfp-git/libsidplayfp/src/sidplayfp/SidInfo.h \
-	sidplayfp-git/libsidplayfp/src/sidplayfp/SidTuneInfo.h \
-	./sidplayfp-git/libsidplayfp/src/builders/residfp-builder/residfp.h \
-	./sidplayfp-git/libsidplayfp/src/builders/resid-builder/resid.h \
+	./libsidplayfp-git/src/sidplayfp/sidbuilder.h \
+	./libsidplayfp-git/src/sidplayfp/SidInfo.h \
+	libsidplayfp-git/src/sidplayfp/SidTuneInfo.h \
+	./libsidplayfp-git/src/builders/residfp-builder/residfp.h \
+	./libsidplayfp-git/src/builders/resid-builder/resid.h \
 	../boot/psetting.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem-unix.h
@@ -332,7 +384,7 @@ sidpplay.o: sidpplay.cpp \
 	../stuff/poutput.h \
 	../stuff/sets.h \
 	../stuff/timer.h \
-	./sidplayfp-git/libsidplayfp/src/sidplayfp/SidTuneInfo.h \
+	./libsidplayfp-git/src/sidplayfp/SidTuneInfo.h \
 	cpiinfo.h \
 	sidplay.h
 	$(CXX) $(LIBSIDPLAYCXXFLAGS) $< -o $@ -c
