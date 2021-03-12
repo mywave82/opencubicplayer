@@ -834,18 +834,20 @@ int fsPreInit(void)
 	currentdir=modlist_create();
 	playlist=modlist_create();
 
-	if (!initRootDir(sec))
-		return 0;
-
 	return 1;
 }
 
 int fsLateInit(void)
 {
+	const char *sec=cfGetProfileString(cfConfigSec, "fileselsec", "fileselector");
+
 	if (plVidType == vidModern)
 	{
 		fsScrType=8;
 	}
+
+	if (!initRootDir(sec))
+		return 0;
 
 	return 1;
 }
