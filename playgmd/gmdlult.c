@@ -95,12 +95,12 @@ static int _mpLoadULT(struct gmdmodule *m, struct ocpfilehandle_t *file)
 	if (memcmp(id, "MAS_UTrack_V00", 14))
 		return errFormMiss;
 
-	ver=id[14]-'1';
+	ver=id[14]-'0';
 
-	if (ver>3)
+	if (ver>4)
 		return errFormOldVer;
 
-	m->options=(ver<1)?MOD_GUSVOL:0;
+	m->options=(ver<2)?MOD_GUSVOL:0;
 
 	if (file->read (file, m->name, 32) != 32)
 	{
@@ -170,21 +170,28 @@ static int _mpLoadULT(struct gmdmodule *m, struct ocpfilehandle_t *file)
 			uint16_t finetune;
 		} mi;
 
-		if (file->read (file, &mi, sizeof (mi)) != sizeof (mi))
+		if (ver<4) /* files prior to version 1.4, did not have c2spd field */
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #3\n");
+			if (file->read (file, &mi, sizeof (mi) - sizeof (uint16_t)) != (sizeof (mi) - sizeof (uint16_t)))
+			{
+				fprintf(stderr, __FILE__ ": warning, read failed #3\n");
+			}
+			mi.finetune=mi.c2spd;
+			mi.c2spd=8363;
+		} else {
+			if (file->read (file, &mi, sizeof (mi)) != sizeof (mi))
+			{
+				fprintf(stderr, __FILE__ ": warning, read failed #3\n");
+			}
 		}
+
 		mi.loopstart = uint32_little (mi.loopstart);
 		mi.loopend   = uint32_little (mi.loopend);
 		mi.sizestart = uint32_little (mi.sizestart);
 		mi.sizeend   = uint32_little (mi.sizeend);
 		mi.c2spd     = uint16_little (mi.c2spd);
 		mi.finetune  = uint16_little (mi.finetune);
-		if (ver<3)
-		{
-			mi.finetune=mi.c2spd;
-			mi.c2spd=8363;
-		}
+
 		length=mi.sizeend-mi.sizestart;
 		if (mi.opt&4)
 		{
@@ -252,7 +259,7 @@ static int _mpLoadULT(struct gmdmodule *m, struct ocpfilehandle_t *file)
 
 	m->channum=chnn+1;
 
-	if (ver>=2)
+	if (ver>=3)
 	{
 		if (file->read (file, panpos, m->channum) != m->channum)
 		{
