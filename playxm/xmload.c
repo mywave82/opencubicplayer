@@ -626,18 +626,18 @@ bail2:
 			sp->panenv=env[1].env?(2*i+1):0xFFFF;
 			sp->pchenv=0xFFFF;
 
-			sip->length=samp.samplen;
 			sip->loopstart=samp.loopstart;
 			sip->loopend=samp.loopstart+samp.looplen;
 			sip->samprate=8363;
 			sip->type=mcpSampDelta| ((samp.type&32)?mcpSampStereo:0) | ((samp.type&16)?mcpSamp16Bit:0) | ((samp.type&3)?(((samp.type&3)>=2)?(mcpSampLoop|mcpSampBiDi):mcpSampLoop):0);
+			sip->length=samp.samplen >> (!!(sip->type & mcpSampStereo));
 		}
 
 		for (j=0; j<ins1.samp; j++)
 		{
 			struct xmpsample *sp=&r.msmps[i][j];
 			struct sampleinfo *sip=&r.smps[i][j];
-			uint32_t l=sip->length<<(!!(sip->type&mcpSamp16Bit));
+			uint32_t l=sip->length<<((!!(sip->type&mcpSamp16Bit)) + (!!(sip->type & mcpSampStereo)));
 			if (!l)
 				continue;
 			sip->ptr=malloc(sizeof(uint8_t)*(l+528));
