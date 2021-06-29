@@ -979,6 +979,7 @@ static ov_callbacks callbacks =
 };
 int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle_t *oggf)
 {
+	int result;
 	struct vorbis_info *vi;
 
 	if (!plrPlay)
@@ -992,9 +993,18 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 	}
 	oggfile = oggf;
 	oggfile->ref (oggfile);
-	if (ov_open_callbacks(0 /* token*/, &ov, NULL, 0, callbacks))
+	if ((result = ov_open_callbacks(oggfile, &ov, NULL, 0, callbacks)))
 	{
-		return -1; /* we don't bother to do more exact */
+		switch (result)
+		{
+			case OV_EREAD:      fprintf (stderr, "ov_open_callbacks(): A read from media returned an error.\n"); break;
+			case OV_ENOTVORBIS: fprintf (stderr, "ov_open_callbacks(): Bitstream does not contain any Vorbis data.\n"); break;
+			case OV_EVERSION:   fprintf (stderr, "ov_open_callbacks(): Vorbis version mismatch.\n"); break;
+			case OV_EBADHEADER: fprintf (stderr, "ov_open_callbacks(): Invalid Vorbis bitstream header.\n"); break;
+			case OV_EFAULT:     fprintf (stderr, "ov_open_callbacks(): Internal logic fault; indicates a bug or heap/stack corruption.\n"); break;
+			default:            fprintf (stderr, "ov_open_callbacks(): Unknown error %d\n", result); break;
+		}
+		return 0; /* we don't bother to do more exact */
 	}
 
 	vi=ov_info(&ov,-1);
