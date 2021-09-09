@@ -10185,8 +10185,6 @@ else
 #include <binstr.h>
 #include <cstdlib>
 #include <string.h>
-#include <adplug/adplug.h>
-#include <adplug/fprovide.h>
 #include <string.h>
 
 int

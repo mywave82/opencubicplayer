@@ -673,8 +673,6 @@ AC_MSG_CHECKING([If libbinio used by AdPlug contains bugs https://github.com/adp
 #include <binstr.h>
 #include <cstdlib>
 #include <string.h>
-#include <adplug/adplug.h>
-#include <adplug/fprovide.h>
 #include <string.h>
                                  ]],[[
 	binisstream *f = new binisstream((void *)"foobar", 6);
