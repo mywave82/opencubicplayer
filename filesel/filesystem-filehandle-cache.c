@@ -93,6 +93,8 @@ static uint64_t cache_filehandle_filesize (struct ocpfilehandle_t *);
 
 static int cache_filehandle_filesize_ready (struct ocpfilehandle_t *);
 
+static int cache_filehandle_ioctl (struct ocpfilehandle_t *, const char *cmd, void *ptr);
+
 struct ocpfilehandle_t *cache_filehandle_open_pre (struct ocpfile_t *owner, char *headptr, uint32_t headlen, char *tailptr, uint32_t taillen)
 {
 	struct cache_ocpfilehandle_t *retval = calloc (1, sizeof (*retval));
@@ -108,6 +110,7 @@ struct ocpfilehandle_t *cache_filehandle_open_pre (struct ocpfile_t *owner, char
 		cache_filehandle_eof,
 		cache_filehandle_error,
 		cache_filehandle_read,
+		cache_filehandle_ioctl,
 		cache_filehandle_filesize,
 		cache_filehandle_filesize_ready,
 		owner->dirdb_ref // we do not dirdb_ref()/dirdb_unref(), since we ref the owner instead
@@ -143,6 +146,7 @@ struct ocpfilehandle_t *cache_filehandle_open (struct ocpfilehandle_t *parent)
 		cache_filehandle_eof,
 		cache_filehandle_error,
 		cache_filehandle_read,
+		cache_filehandle_ioctl,
 		cache_filehandle_filesize,
 		cache_filehandle_filesize_ready,
 		parent->dirdb_ref // we do not dirdb_ref()/dirdb_unref(), since we ref the owner instead
@@ -995,6 +999,13 @@ redo_topup:
 	}
 
 	return returnvalue;
+}
+
+static int cache_filehandle_ioctl (struct ocpfilehandle_t *_s, const char *cmd, void *ptr)
+{
+	struct cache_ocpfilehandle_t *s = (struct cache_ocpfilehandle_t *)_s;
+
+	return s->parent->ioctl (s->parent, cmd, ptr);
 }
 
 static uint64_t cache_filehandle_filesize (struct ocpfilehandle_t * _s)

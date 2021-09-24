@@ -1103,6 +1103,7 @@ static struct ocpfilehandle_t *tar_file_open (struct ocpfile_t *_self)
 	                       tar_filehandle_eof,
 	                       tar_filehandle_error,
 	                       tar_filehandle_read,
+	                       0, /* ioctl */
 	                       tar_filehandle_filesize,
 	                       tar_filehandle_filesize_ready,
 	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle));

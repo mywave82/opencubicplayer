@@ -453,6 +453,7 @@ static struct ocpfilehandle_t *Z_ocpfile_open (struct ocpfile_t *_s)
 	                       Z_ocpfilehandle_eof,
 	                       Z_ocpfilehandle_error,
 	                       Z_ocpfilehandle_read,
+	                       0, /* ioctl */
 	                       Z_ocpfilehandle_filesize,
 	                       Z_ocpfilehandle_filesize_ready,
 	                       dirdbRef (s->head.dirdb_ref, dirdb_use_filehandle));

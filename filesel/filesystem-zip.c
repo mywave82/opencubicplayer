@@ -2161,6 +2161,7 @@ static struct ocpfilehandle_t *zip_file_open (struct ocpfile_t *_self)
 	                       zip_filehandle_eof,
 	                       zip_filehandle_error,
 	                       zip_filehandle_read,
+	                       0, /* ioctl */
 	                       zip_filehandle_filesize,
 	                       zip_filehandle_filesize_ready,
 	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle));

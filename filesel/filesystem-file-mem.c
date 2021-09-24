@@ -194,6 +194,7 @@ static struct ocpfilehandle_t *mem_filehandle_open_real (struct mem_ocpfile_t *o
 		mem_filehandle_eof,
 		mem_filehandle_error,
 		mem_filehandle_read,
+	        0, /* ioctl */
 		mem_filehandle_filesize,
 		mem_filehandle_filesize_ready,
 		dirdbRef (dirdb_ref, dirdb_use_filehandle)

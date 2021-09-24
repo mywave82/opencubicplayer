@@ -442,6 +442,7 @@ static struct ocpfilehandle_t *unix_file_open (struct ocpfile_t *_s)
 		unix_filehandle_eof,
 		unix_filehandle_error,
 		unix_filehandle_read,
+	        0, /* ioctl */
 		unix_filehandle_filesize,
 		unix_filehandle_filesize_ready,
 		dirdbRef (s->head.dirdb_ref, dirdb_use_filehandle)

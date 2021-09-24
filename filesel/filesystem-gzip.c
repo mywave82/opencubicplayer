@@ -526,6 +526,7 @@ static struct ocpfilehandle_t *gzip_ocpfile_open (struct ocpfile_t *_s)
 	                       gzip_ocpfilehandle_eof,
 	                       gzip_ocpfilehandle_error,
 	                       gzip_ocpfilehandle_read,
+	                       0, /* ioctl */
 	                       gzip_ocpfilehandle_filesize,
 	                       gzip_ocpfilehandle_filesize_ready,
 	                       dirdbRef (s->head.dirdb_ref, dirdb_use_filehandle));

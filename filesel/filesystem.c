@@ -135,3 +135,8 @@ int ocpfilehandle_read_uint24_le (struct ocpfilehandle_t *s, uint32_t *dst)
 	*dst = (t[2] << 16) | (t[1]<<8) | t[0];
 	return 0;
 }
+
+int ocpfilehandle_t_fill_default_ioctl (struct ocpfilehandle_t *s, const char *cmd, void *ptr)
+{
+	return -1;
+}

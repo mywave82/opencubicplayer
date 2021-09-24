@@ -133,12 +133,16 @@ struct ocpfilehandle_t
 
 	int (*read)(struct ocpfilehandle_t *, void *dst, int len); /* returns 0 or the number of bytes read - short reads only happens if EOF or error is hit! */
 
+	int (*ioctl)(struct ocpfilehandle_t *, const char *cmd, void *ptr);
+
 // can be FILESIZE_STREAM
 	uint64_t (*filesize)(struct ocpfilehandle_t *); // can be FILESIZE_STREAM
 	int (*filesize_ready)(struct ocpfilehandle_t *); // if this is false, asking for filesize might be very slow
 	int dirdb_ref;
 	int refcount; /* internal use by all object variants */
 };
+
+int ocpfilehandle_t_fill_default_ioctl (struct ocpfilehandle_t *, const char *cmd, void *ptr);
 
 static inline void ocpfilehandle_t_fill (
 	struct ocpfilehandle_t *s,
@@ -151,6 +155,7 @@ static inline void ocpfilehandle_t_fill (
 	int (*eof)(struct ocpfilehandle_t *),
 	int (*error)(struct ocpfilehandle_t *),
 	int (*read)(struct ocpfilehandle_t *, void *dst, int len),
+	int (*_ioctl)(struct ocpfilehandle_t *, const char *cmd, void *ptr),
 	uint64_t (*filesize)(struct ocpfilehandle_t *),
 	int (*filesize_ready)(struct ocpfilehandle_t *),
 	int dirdb_ref)
@@ -164,6 +169,7 @@ static inline void ocpfilehandle_t_fill (
 	s->eof            = eof;
 	s->error          = error;
 	s->read           = read;
+	s->ioctl          = _ioctl ? _ioctl : ocpfilehandle_t_fill_default_ioctl;
 	s->filesize       = filesize;
 	s->filesize_ready = filesize_ready;
 	s->dirdb_ref      = dirdb_ref;
