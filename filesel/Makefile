@@ -113,6 +113,7 @@ cdrom.o: cdrom.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	cdrom.h \
 	dirdb.h \
 	filesystem.h \
 	filesystem-drive.h \

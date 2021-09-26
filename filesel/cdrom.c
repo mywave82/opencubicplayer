@@ -39,6 +39,7 @@
 #include <unistd.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "cdrom.h"
 #include "dirdb.h"
 #include "filesystem.h"
 #include "filesystem-drive.h"
@@ -54,7 +55,8 @@ static struct cdrom_t
 	char vdev[12];
 	int caps;
 	int fd;
-	//uint32_t dirdbnode;
+
+	struct ioctl_cdrom_readtoc_request_t lasttoc;
 } *cdroms = 0;
 static int cdromn = 0;
 
@@ -211,42 +213,6 @@ static void try(const char *dev, const char *vdev)
 				struct cdrom_mcn mcn;
 				if (!ioctl(fd, CDROM_GET_MCN, &mcn))
 					fprintf(stderr, "MCN: %13s\n", mcn.medium_catalog_number);
-			}
-			{
-				struct cdrom_tochdr tochdr;
-				if (!ioctl(fd, CDROMREADTOCHDR, &tochdr))
-				{
-#if 0
-					int i;
-					struct cdrom_tocentry tocentry;
-#endif
-					fprintf(stderr, "Start track: %d\nStop track: %d\n", tochdr.cdth_trk0, tochdr.cdth_trk1);
-#if 0
-					for (i=tochdr.cdth_trk0;i<=(tochdr.cdth_trk1+1);i++)
-					{
-						if (i>tochdr.cdth_trk1)
-							i=CDROM_LEADOUT;
-						tocentry.cdte_track=i;
-						tocentry.cdte_format=CDROM_MSF; /* CDROM_LBA */
-						if (!ioctl(fd, CDROMREADTOCENTRY, &tocentry))
-						{
-							fprintf(stderr, "cdte_track:    %d%s\n", tocentry.cdte_track, (i==CDROM_LEADOUT)?" LEADOUT":"");
-							fprintf(stderr, "cdte_adr:      %d\n", tocentry.cdte_adr);
-							fprintf(stderr, "cdte_ctrl:     %d %s\n", tocentry.cdte_ctrl, (tocentry.cdte_ctrl&CDROM_DATA_TRACK)?"(DATA)":"AUDIO");
-							fprintf(stderr, "cdte_format:   %d\n", tocentry.cdte_format);
-							if (tocentry.cdte_format==CDROM_MSF){
-								fprintf(stderr, "cdte_addr.msf.minute: %d\n", tocentry.cdte_addr.msf.minute);
-								fprintf(stderr, "cdte_addr.msf.second: %d\n", tocentry.cdte_addr.msf.second);
-								fprintf(stderr, "cdte_addr.msf.frame:  %d\n", tocentry.cdte_addr.msf.frame);
-							} else {
-								fprintf(stderr, "cdte_addr.lba:        %d\n", tocentry.cdte_addr.lba);
-							}
-							fprintf(stderr, "cdte_datamode: %d\n", tocentry.cdte_datamode);
-							fprintf(stderr, "\n");
-						}
-					}
-#endif
-				}
 			}
 #endif
 		} else {
@@ -534,16 +500,89 @@ static ocpdirhandle_pt cdrom_drive_readdir_start (struct ocpdir_t *_self, void(*
 {
 	struct cdrom_drive_ocpdir_t *self = (struct cdrom_drive_ocpdir_t *)_self;
 	struct cdrom_drive_dirhandle_t *dh = calloc (1, sizeof (*dh));
+
+	int ti;
+
 	dh->callback_file = callback_file;
 	dh->token = token;
 	dh->owner = self;
 	dh->initlba = -1;
 
+	bzero (&self->cdrom->lasttoc, sizeof (self->cdrom->lasttoc));
+
 	if (ioctl(self->cdrom->fd, CDROMREADTOCHDR, &dh->tochdr))
-	{
-		dh->i = -1;
+	{ /* should not happen, but sometime it does for unknown reasons? */
+		struct cdrom_tocentry cdte;
+		dh->i = 1;
+		self->cdrom->lasttoc.starttrack = 1;
+		self->cdrom->lasttoc.lasttrack  = 99;
+
+		for (ti = self->cdrom->lasttoc.starttrack; ti <= 99; ti++)
+		{
+			cdte.cdte_track = ti;
+			cdte.cdte_format = CDROM_LBA; /* CDROM_MSF */
+			if (!ioctl (dh->owner->cdrom->fd, CDROMREADTOCENTRY, &cdte))
+			{
+				if (cdte.cdte_format==CDROM_MSF)
+				{
+					dh->owner->cdrom->lasttoc.track[ti].lba_addr = 150 - cdte.cdte_addr.msf.minute * 75 * 60 +
+					                                                     cdte.cdte_addr.msf.second * 75 +
+					                                                     cdte.cdte_addr.msf.frame;
+				} else {
+					dh->owner->cdrom->lasttoc.track[ti].lba_addr = cdte.cdte_addr.lba;
+				}
+				dh->owner->cdrom->lasttoc.track[ti].is_data = cdte.cdte_datamode;
+				if ((dh->initlba < 0) && (!cdte.cdte_datamode))
+				{
+					dh->initlba = dh->owner->cdrom->lasttoc.track[ti].lba_addr;
+				}
+			} else {
+				self->cdrom->lasttoc.lasttrack = ti - 1;
+				goto leadout;
+			}
+		}
+leadout:
+		cdte.cdte_track = CDROM_LEADOUT;
+		cdte.cdte_format = CDROM_LBA; /* CDROM_MSF */
+		if (!ioctl (dh->owner->cdrom->fd, CDROMREADTOCENTRY, &cdte))
+		{
+			if (cdte.cdte_format==CDROM_MSF)
+			{
+				dh->owner->cdrom->lasttoc.track[ti].lba_addr = 150 - cdte.cdte_addr.msf.minute * 75 * 60 +
+				                                                     cdte.cdte_addr.msf.second * 75 +
+				                                                     cdte.cdte_addr.msf.frame;
+			} else {
+				dh->owner->cdrom->lasttoc.track[ti].lba_addr = cdte.cdte_addr.lba;
+			}
+			dh->owner->cdrom->lasttoc.track[ti].is_data = cdte.cdte_datamode;
+		}
 	} else {
 		dh->i = dh->tochdr.cdth_trk0;
+		self->cdrom->lasttoc.starttrack = dh->tochdr.cdth_trk0;
+		self->cdrom->lasttoc.lasttrack  = (dh->tochdr.cdth_trk1 < 100) ? dh->tochdr.cdth_trk1 : 99;
+
+		for (ti = self->cdrom->lasttoc.starttrack; ti <= (self->cdrom->lasttoc.lasttrack + 1); ti++)
+		{
+			struct cdrom_tocentry cdte;
+			cdte.cdte_track= (ti != (self->cdrom->lasttoc.lasttrack + 1)) ? ti : CDROM_LEADOUT;
+			cdte.cdte_format=CDROM_LBA; /* CDROM_MSF */
+			if (!ioctl (dh->owner->cdrom->fd, CDROMREADTOCENTRY, &cdte))
+			{
+				if (cdte.cdte_format==CDROM_MSF)
+				{
+					dh->owner->cdrom->lasttoc.track[ti].lba_addr = 150 - cdte.cdte_addr.msf.minute * 75 * 60 +
+					                                                     cdte.cdte_addr.msf.second * 75 +
+					                                                     cdte.cdte_addr.msf.frame;
+				} else {
+					dh->owner->cdrom->lasttoc.track[ti].lba_addr = cdte.cdte_addr.lba;
+				}
+				dh->owner->cdrom->lasttoc.track[ti].is_data = cdte.cdte_datamode;
+				if ((dh->initlba < 0) && (!cdte.cdte_datamode))
+				{
+					dh->initlba = dh->owner->cdrom->lasttoc.track[ti].lba_addr;
+				}
+			}
+		}
 	}
 
 	return dh;
@@ -559,15 +598,12 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 	struct cdrom_drive_dirhandle_t *dh = _dh;
 	struct cdrom_track_ocpfile_t *file;
 
-	struct cdrom_tocentry tocentry;
-	struct cdrom_tocentry tocentryN;
-
 	uint32_t mdb_ref;
 	struct moduleinfostruct mi;
 
 	if ((dh->i > dh->tochdr.cdth_trk1) || (dh->i >= 100)) /* last check is not actually needed */
 	{
-		if (dh->initlba >= 0)
+		if (dh->initlba >= 0) /* did we initialize? Create the DISK.CDA that covers the entire disc */
 		{
 			file = calloc (1, sizeof (*file));
 			if (!file)
@@ -609,76 +645,52 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 		return 0;
 	}
 
-	tocentry.cdte_track=dh->i;
-	tocentry.cdte_format=CDROM_LBA; /* CDROM_MSF */
-
-	if (!ioctl (dh->owner->cdrom->fd, CDROMREADTOCENTRY, &tocentry))
+	if (!dh->owner->cdrom->lasttoc.track[dh->i].is_data)
 	{
-		tocentryN.cdte_track = ( dh->i == dh->tochdr.cdth_trk1 ) ? CDROM_LEADOUT : dh->i+1;
-		tocentryN.cdte_format = CDROM_LBA;
-		ioctl (dh->owner->cdrom->fd, CDROMREADTOCENTRY, &tocentryN);
-/*
-		fprintf(stderr, "[cdte_track:   %d%s]\n", tocentry.cdte_track, (i==CDROM_LEADOUT)?" LEADOUT":"");
-		fprintf(stderr, "cdte_adr:      %d\n", tocentry.cdte_adr);
-		fprintf(stderr, "cdte_ctrl:     %d %s\n", tocentry.cdte_ctrl, (tocentry.cdte_ctrl&CDROM_DATA_TRACK)?"(DATA)":"AUDIO");
-		fprintf(stderr, "cdte_format:   %d\n", tocentry.cdte_format);
-		if (tocentry.cdte_format==CDROM_MSF)
+		char filename[12];
+		snprintf(filename, sizeof (filename), "TRACK%02u.CDA", dh->i);
+
+		if (dh->initlba < 0)
 		{
-			fprintf(stderr, "cdte_addr.msf.minute: %d\n", tocentry.cdte_addr.msf.minute);
-			fprintf(stderr, "cdte_addr.msf.second: %d\n", tocentry.cdte_addr.msf.second);
-			fprintf(stderr, "cdte_addr.msf.frame:  %d\n", tocentry.cdte_addr.msf.frame);
-		} else {
-			fprintf(stderr, "cdte_addr.lba:        %d\n", tocentry.cdte_addr.lba);
+			dh->initlba = dh->owner->cdrom->lasttoc.track[dh->i + 1].lba_addr;
 		}
-		fprintf(stderr, "cdte_datamode: %d\n", tocentry.cdte_datamode);
-*/
-		if (!(tocentry.cdte_ctrl&CDROM_DATA_TRACK))
+		dh->lastlba = dh->owner->cdrom->lasttoc.track[dh->i].lba_addr;
+
+		file = calloc (1, sizeof (*file));
+		if (!file)
 		{
-			char filename[12];
-			snprintf(filename, sizeof (filename), "TRACK%02u.CDA", dh->i);
-
-			if (dh->initlba < 0)
-			{
-				dh->initlba = tocentry.cdte_addr.lba;
-			}
-			dh->lastlba = tocentryN.cdte_addr.lba;
-
-			file = calloc (1, sizeof (*file));
-			if (!file)
-			{
-				goto next;
-			}
-
-			ocpfile_t_fill (&file->head,
-			                 cdrom_track_ref,
-			                 cdrom_track_unref,
-			                &dh->owner->head,
-			                 cdrom_track_open,
-			                 cdrom_track_filesize,
-			                 cdrom_track_filesize_ready,
-			                 dirdbFindAndRef (dh->owner->head.dirdb_ref, filename, dirdb_use_file),
-			                 1, /* refcount */
-			                 1  /* is_nodetect */);
-
-			dh->owner->head.ref (&dh->owner->head);
-			file->cdrom = dh->owner->cdrom;
-			snprintf (file->buffer, sizeof (file->buffer), "fd=%d,track=%d", dh->owner->cdrom->fd, dh->i);
-			mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, strlen (file->buffer));
-			if (mdb_ref != UINT32_MAX)
-			{
-				if (mdbGetModuleInfo(&mi, mdb_ref))
-				{
-					mi.modtype=mtCDA;
-					mi.channels=2;
-					mi.playtime=(tocentryN.cdte_addr.lba - tocentry.cdte_addr.lba)/CD_FRAMES;
-					strcpy(mi.comment, dh->owner->cdrom->vdev);
-					strcpy(mi.modname, "CDROM audio track");
-					mdbWriteModuleInfo (mdb_ref, &mi);
-				}
-			}
-			dh->callback_file (dh->token, &file->head);
-			file->head.unref (&file->head);
+			goto next;
 		}
+
+		ocpfile_t_fill (&file->head,
+		                 cdrom_track_ref,
+		                 cdrom_track_unref,
+		                &dh->owner->head,
+		                 cdrom_track_open,
+		                 cdrom_track_filesize,
+		                 cdrom_track_filesize_ready,
+		                 dirdbFindAndRef (dh->owner->head.dirdb_ref, filename, dirdb_use_file),
+		                 1, /* refcount */
+		                 1  /* is_nodetect */);
+
+		dh->owner->head.ref (&dh->owner->head);
+		file->cdrom = dh->owner->cdrom;
+		snprintf (file->buffer, sizeof (file->buffer), "fd=%d,track=%d", dh->owner->cdrom->fd, dh->i);
+		mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, strlen (file->buffer));
+		if (mdb_ref != UINT32_MAX)
+		{
+			if (mdbGetModuleInfo(&mi, mdb_ref))
+			{
+				mi.modtype=mtCDA;
+				mi.channels=2;
+				mi.playtime=(dh->owner->cdrom->lasttoc.track[dh->i + 1].lba_addr - dh->owner->cdrom->lasttoc.track[dh->i].lba_addr) / CD_FRAMES;
+				strcpy(mi.comment, dh->owner->cdrom->vdev);
+				strcpy(mi.modname, "CDROM audio track");
+				mdbWriteModuleInfo (mdb_ref, &mi);
+			}
+		}
+		dh->callback_file (dh->token, &file->head);
+		file->head.unref (&file->head);
 	}
 
 next:
