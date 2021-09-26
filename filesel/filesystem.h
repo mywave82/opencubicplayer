@@ -46,6 +46,9 @@ struct ocpdir_t /* can be an archive */
 	uint8_t is_playlist;
 };
 
+struct ocpdir_t  *ocpdir_t_fill_default_readdir_dir  (struct ocpdir_t *, uint32_t dirdb_ref);
+struct ocpfile_t *ocpdir_t_fill_default_readdir_file (struct ocpdir_t *, uint32_t dirdb_ref);
+
 static inline void ocpdir_t_fill (
 	struct ocpdir_t *s,
 	void (*ref)(struct ocpdir_t *),
@@ -71,8 +74,8 @@ static inline void ocpdir_t_fill (
 	s->readflatdir_start    = readflatdir_start;
 	s->readdir_cancel       = readdir_cancel;
 	s->readdir_iterate      = readdir_iterate;
-	s->readdir_dir          = readdir_dir;
-	s->readdir_file         = readdir_file;
+	s->readdir_dir          = readdir_dir  ? readdir_dir  : ocpdir_t_fill_default_readdir_dir;
+	s->readdir_file         = readdir_file ? readdir_file : ocpdir_t_fill_default_readdir_file;
 	s->charset_override_API = charset_override_API;
 	s->dirdb_ref            = dirdb_ref;
 	s->refcount             = refcount;

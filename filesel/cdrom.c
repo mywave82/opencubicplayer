@@ -91,8 +91,6 @@ static ocpdirhandle_pt cdrom_drive_readdir_start (struct ocpdir_t *, void(*callb
                                                                      void(*callback_dir )(void *token, struct ocpdir_t *), void *token);
 static void cdrom_drive_readdir_cancel (ocpdirhandle_pt);
 static int cdrom_drive_readdir_iterate (ocpdirhandle_pt);
-static struct ocpdir_t *cdrom_drive_readdir_dir (struct ocpdir_t *_self, uint32_t dirdb_ref);
-static struct ocpfile_t *cdrom_drive_readdir_file (struct ocpdir_t *_self, uint32_t dirdb_ref);
 
 static void cdrom_track_ref (struct ocpfile_t *);
 static void cdrom_track_unref (struct ocpfile_t *);
@@ -377,8 +375,8 @@ static int cdrom_root_readdir_iterate (ocpdirhandle_pt _dh)
 		0,
 		cdrom_drive_readdir_cancel,
 		cdrom_drive_readdir_iterate,
-		cdrom_drive_readdir_dir,
-		cdrom_drive_readdir_file,
+		0, // readdir_dir
+		0, // readdir_file
 		0,
 		dirdbFindAndRef (dh->owner->dirdb_ref, cdroms[dh->n].vdev, dirdb_use_dir),
 		1,
@@ -442,8 +440,8 @@ static struct ocpdir_t *cdrom_root_readdir_dir (struct ocpdir_t *_self, uint32_t
 			0,
 			cdrom_drive_readdir_cancel,
 			cdrom_drive_readdir_iterate,
-			cdrom_drive_readdir_dir,
-			cdrom_drive_readdir_file,
+			0, // readdir_dir
+			0, // readdir_file
 		        0,
 			dirdbRef (dirdb_ref, dirdb_use_dir),
 			1,
@@ -697,61 +695,6 @@ next:
 	dh->i++;
 
 	return 1;
-}
-
-
-static struct ocpdir_t *cdrom_drive_readdir_dir (struct ocpdir_t *_self, uint32_t dirdb_ref)
-{
-	/* this can not succeed */
-	return 0;
-}
-
-
-struct cdrom_drive_readdir_file_t // helper struct for cdrom_drive_readdir_file
-{
-	uint32_t dirdb_ref;
-	struct ocpfile_t *retval;
-};
-
-static void cdrom_drive_readdir_file_file (void *_token, struct ocpfile_t *file) // helper function for cdrom_drive_readdir_file
-{
-	struct cdrom_drive_readdir_file_t *token = _token;
-	if (token->dirdb_ref == file->dirdb_ref)
-	{
-		if (token->retval)
-		{
-			token->retval->unref (token->retval);
-		}
-		file->ref (file);
-		token->retval = file;
-	}
-}
-
-static void cdrom_drive_readdir_file_dir (void *_token, struct ocpdir_t *dir) // helper function for cdrom_drive_readdir_file
-{
-}
-
-static struct ocpfile_t *cdrom_drive_readdir_file (struct ocpdir_t *_self, uint32_t dirdb_ref)
-{
-	/* we use cdrom_drive_readdir_start() and friends, since we perform a lot of IOCTL calls....*/
-	ocpdirhandle_pt handle;
-	struct cdrom_drive_readdir_file_t token;
-
-	token.dirdb_ref = dirdb_ref;
-	token.retval = 0;
-
-	handle = _self->readdir_start (_self, cdrom_drive_readdir_file_file, cdrom_drive_readdir_file_dir, &token);
-	if (!handle)
-	{
-		return 0;
-	}
-
-	while (_self->readdir_iterate (handle))
-	{
-	};
-	_self->readdir_cancel (handle);
-
-	return token.retval;
 }
 
 static void cdrom_track_ref (struct ocpfile_t *_self)

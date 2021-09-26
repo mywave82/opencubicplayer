@@ -136,6 +136,98 @@ int ocpfilehandle_read_uint24_le (struct ocpfilehandle_t *s, uint32_t *dst)
 	return 0;
 }
 
+struct ocpdir_t_fill_default_readdir_dir_t // help struct for ocpdir_t_fill_default_readdir_dir
+{
+	uint32_t dirdb_ref;
+	struct ocpdir_t *retval;
+};
+
+static void ocpdir_t_fill_default_readdir_dir_file (void *_token, struct ocpfile_t *file) // helper function for ocpdir_t_fill_default_readdir_dir
+{
+}
+
+static void ocpdir_t_fill_default_readdir_dir_dir (void *_token, struct ocpdir_t *dir) // helper function for ocpdir_t_fill_default_readdir_dir
+{
+	struct ocpdir_t_fill_default_readdir_dir_t *token = _token;
+	if (token->dirdb_ref == dir->dirdb_ref)
+	{
+		if (token->retval)
+		{
+			token->retval->unref (token->retval);
+		}
+		dir->ref (dir);
+		token->retval = dir;
+	}
+}
+
+struct ocpdir_t *ocpdir_t_fill_default_readdir_dir  (struct ocpdir_t *_self, uint32_t dirdb_ref)
+{
+	ocpdirhandle_pt handle;
+	struct ocpdir_t_fill_default_readdir_dir_t token;
+
+	token.dirdb_ref = dirdb_ref;
+	token.retval = 0;
+
+	handle = _self->readdir_start (_self, ocpdir_t_fill_default_readdir_dir_file, ocpdir_t_fill_default_readdir_dir_dir, &token);
+	if (!handle)
+	{
+		return 0;
+	}
+
+	while (_self->readdir_iterate (handle))
+	{
+	};
+	_self->readdir_cancel (handle);
+
+	return token.retval;
+}
+
+struct ocpdir_t_fill_default_readdir_file_t // helper struct for ocpdir_t_fill_default_readdir_file
+{
+	uint32_t dirdb_ref;
+	struct ocpfile_t *retval;
+};
+
+static void ocpdir_t_fill_default_readdir_file_file (void *_token, struct ocpfile_t *file) // helper function for ocpdir_t_fill_default_readdir_file
+{
+	struct ocpdir_t_fill_default_readdir_file_t *token = _token;
+	if (token->dirdb_ref == file->dirdb_ref)
+	{
+		if (token->retval)
+		{
+			token->retval->unref (token->retval);
+		}
+		file->ref (file);
+		token->retval = file;
+	}
+}
+
+static void ocpdir_t_fill_default_readdir_file_dir (void *_token, struct ocpdir_t *dir) // helper function for ocpdir_t_fill_default_readdir_file
+{
+}
+
+struct ocpfile_t *ocpdir_t_fill_default_readdir_file (struct ocpdir_t *_self, uint32_t dirdb_ref)
+{
+	ocpdirhandle_pt handle;
+	struct ocpdir_t_fill_default_readdir_file_t token;
+
+	token.dirdb_ref = dirdb_ref;
+	token.retval = 0;
+
+	handle = _self->readdir_start (_self, ocpdir_t_fill_default_readdir_file_file, ocpdir_t_fill_default_readdir_file_dir, &token);
+	if (!handle)
+	{
+		return 0;
+	}
+
+	while (_self->readdir_iterate (handle))
+	{
+	};
+	_self->readdir_cancel (handle);
+
+	return token.retval;
+}
+
 int ocpfilehandle_t_fill_default_ioctl (struct ocpfilehandle_t *s, const char *cmd, void *ptr)
 {
 	return -1;

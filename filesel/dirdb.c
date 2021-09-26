@@ -18,6 +18,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#warning ADB_REF is outdated, should no longer be included
+
+
 #include "config.h"
 #include <assert.h>
 #include <fcntl.h>
