@@ -1,5 +1,5 @@
 [version]
-  epoch=20210118
+  epoch=20210926
 
 [general]
 ;link=
@@ -40,9 +40,6 @@ link=medialib
   defwavetable=           ; -sw
   midichan=64             ; number of channels used for midi playback
   itchan=64               ; number of channels used for .it playback
-  cdsamplelinein=off      ; if you turn this one on, cp will sample line in
-                          ; instead of cd in when playing cdaudio
-  digitalcd=on            ; use digital playback instead of analog
   bigmodules=devwMixF     ; this wavetable device will be used if a module
                           ; was tagged "big" with alt-b in the fileselector.
                           ; (use if wavetable ram is not enough by far)

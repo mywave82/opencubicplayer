@@ -73,6 +73,8 @@ struct cdrom_track_ocpfile_t
 {
 	struct ocpfile_t head;
 	struct cdrom_t *cdrom;
+
+#warning REMOVE buffer!!!!
 	char buffer[128];
 };
 
@@ -718,15 +720,131 @@ static void cdrom_track_unref (struct ocpfile_t *_self)
 	}
 }
 
+struct ocpfilehandle_cdrom_track_t
+{
+	struct ocpfilehandle_t head;
+	struct cdrom_track_ocpfile_t *owner;
+	int refcount;
+};
+
+static void ocpfilehandle_cdrom_track_ref (struct ocpfilehandle_t *_handle)
+{
+	struct ocpfilehandle_cdrom_track_t *handle = (struct ocpfilehandle_cdrom_track_t *)_handle;
+	handle->refcount++;
+}
+
+static void ocpfilehandle_cdrom_track_unref (struct ocpfilehandle_t *_handle)
+{
+	struct ocpfilehandle_cdrom_track_t *handle = (struct ocpfilehandle_cdrom_track_t *)_handle;
+	handle->refcount--;
+	if (!handle->refcount)
+	{
+		handle->owner->head.unref (&handle->owner->head);
+		dirdbUnref (handle->head.dirdb_ref, dirdb_use_filehandle);
+		free (handle);
+	}
+}
+
+static int ocpfilehandle_cdrom_track_seek (struct ocpfilehandle_t *_handle, int64_t pos)
+{
+	return pos ? -1 : 0;
+}
+
+static uint64_t ocpfilehandle_cdrom_track_getpos (struct ocpfilehandle_t *_handle)
+{
+	return 0;
+}
+
+static int ocpfilehandle_cdrom_track_eof (struct ocpfilehandle_t *_handle)
+{
+	return 1;
+}
+
+static int ocpfilehandle_cdrom_track_error (struct ocpfilehandle_t *_handle)
+{
+	return 0;
+}
+
+static int ocpfilehandle_cdrom_track_read (struct ocpfilehandle_t *_handle, void *dst, int len)
+{
+	return len ? -1 : 0;
+}
+
+static int ocpfilehandle_cdrom_track_ioctl (struct ocpfilehandle_t *_handle, const char *cmd, void *ptr)
+{
+	struct ocpfilehandle_cdrom_track_t *handle = (struct ocpfilehandle_cdrom_track_t *)_handle;
+
+	if (!strcmp (cmd, IOCTL_CDROM_READTOC))
+	{
+		memcpy (ptr, &handle->owner->cdrom->lasttoc, sizeof (handle->owner->cdrom->lasttoc));
+		return 0;
+	}
+	if (!strcmp (cmd, IOCTL_CDROM_READAUDIO))
+	{
+		struct cdrom_read_audio rip_ioctl;
+		struct ioctl_cdrom_readaudio_request_t *request = ptr;
+		int retval;
+
+		fprintf (stderr, "IOCTL_CDROM_READAUDIO lba=%d nframes=%d", request->lba_addr, request->lba_count);
+
+		rip_ioctl.addr.lba = request->lba_addr;
+		rip_ioctl.addr_format = CDROM_LBA;
+		rip_ioctl.nframes = request->lba_count;
+		rip_ioctl.buf = request->ptr;
+		retval = ioctl (handle->owner->cdrom->fd, CDROMREADAUDIO, &rip_ioctl);
+		request->lba_count = retval ? 0 : rip_ioctl.nframes;
+
+		fprintf (stderr, " => %d\n", request->lba_count);
+
+		return retval;
+	}
+	return -1;
+}
+
+
+static uint64_t ocpfilehandle_cdrom_track_filesize (struct ocpfilehandle_t *_handle)
+{
+	return 0;
+}
+
+static int ocpfilehandle_cdrom_track_filesize_ready (struct ocpfilehandle_t *_handle)
+{
+	return 1;
+}
+
 static struct ocpfilehandle_t *cdrom_track_open (struct ocpfile_t *_self)
 {
 	struct cdrom_track_ocpfile_t *self = (struct cdrom_track_ocpfile_t *)_self;
-	char *temp = strdup (self->buffer);
-	if (!temp)
+	struct ocpfilehandle_cdrom_track_t *retval;
+
+	retval = calloc (sizeof (struct ocpfilehandle_cdrom_track_t), 1);
+	if (!retval)
 	{
 		return 0;
 	}
-	return mem_filehandle_open (self->head.dirdb_ref, temp, strlen (temp));
+
+	ocpfilehandle_t_fill (&retval->head,
+	                      ocpfilehandle_cdrom_track_ref,
+	                      ocpfilehandle_cdrom_track_unref,
+	                      ocpfilehandle_cdrom_track_seek,
+	                      ocpfilehandle_cdrom_track_seek,
+	                      ocpfilehandle_cdrom_track_seek,
+	                      ocpfilehandle_cdrom_track_getpos,
+	                      ocpfilehandle_cdrom_track_eof,
+	                      ocpfilehandle_cdrom_track_error,
+	                      ocpfilehandle_cdrom_track_read,
+	                      ocpfilehandle_cdrom_track_ioctl,
+	                      ocpfilehandle_cdrom_track_filesize,
+	                      ocpfilehandle_cdrom_track_filesize_ready,
+	                      _self->dirdb_ref);
+	dirdbRef (_self->dirdb_ref, dirdb_use_filehandle);
+
+	retval->owner = self;
+	retval->owner->head.ref (&retval->owner->head);
+
+	retval->refcount = 1;
+
+	return &retval->head;
 }
 
 static uint64_t cdrom_track_filesize (struct ocpfile_t *_self)

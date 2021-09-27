@@ -1,9 +1,7 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-ifeq ($(CDROM_SUPPORT),1)
 PLAYCDA_SO=playcda$(LIB_SUFFIX)
-endif
 
 all: $(PLAYCDA_SO)
 
@@ -15,14 +13,10 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-ifeq ($(CDROM_SUPPORT),1)
 	$(CP) $(PLAYCDA_SO) "$(DESTDIR)$(LIBDIR)"
-endif
 
 uninstall:
-ifeq ($(CDROM_SUPPORT),1)
 	rm -f "$(DESTDIR)$(LIBDIR)/$(PLAYCDA_SO)"
-endif
 
 
 cdaplay.o: cdaplay.c cdaudio.h \
@@ -35,7 +29,10 @@ cdaplay.o: cdaplay.c cdaudio.h \
 	../dev/devisamp.h \
 	../dev/player.h \
 	../dev/plrasm.h \
+	../dev/ringbuffer.h \
 	../dev/sampler.h \
+	../filesel/cdrom.h \
+	../filesel/filesystem.h \
 	../stuff/imsrtns.h \
 	../stuff/poll.h
 	$(CC) cdaplay.c -o $@ -c
@@ -47,6 +44,7 @@ cdapplay.o: cdapplay.c cdaudio.h \
 	../cpiface/cpiface.h \
 	../dev/deviplay.h \
 	../dev/devisamp.h \
+	../filesel/cdrom.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \

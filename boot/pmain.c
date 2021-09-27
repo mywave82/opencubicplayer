@@ -566,9 +566,16 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileString ("filetype 254", "interface", "VirtualInterface");
 		}
 
-		if (epoch < 20210118)
+		if (epoch < 20210926)
 		{
-			cfSetProfileInt("version", "epoch", 20210118, 10);
+			printf("ocp.ini update (0.2.91) Removed options for analog cdrom audio\n");
+			cfRemoveEntry ("sound", "cdsamplelinein");
+			cfRemoveEntry ("sound", "digitalcd");
+		}
+
+		if (epoch < 20210926)
+		{
+			cfSetProfileInt("version", "epoch", 20210926, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -579,13 +586,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20210118)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20210926)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20210118\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20210926\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20210118\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20210926\n\n");
 		}
 		sleep(5);
 	}

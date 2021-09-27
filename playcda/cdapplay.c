@@ -30,13 +30,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <linux/cdrom.h>
 #include "types.h"
 #include "cdaudio.h"
 #include "boot/plinkman.h"
 #include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/devisamp.h"
+#include "filesel/cdrom.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
@@ -46,23 +46,19 @@
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 
-static unsigned long cdpTrackStarts[CDROM_LEADOUT+1];
-static unsigned char cdpFirstTrack;
+static struct ioctl_cdrom_readtoc_request_t TOC;
 static unsigned char cdpPlayMode; /* 1 = disk, 0 = track */
-static unsigned char cdpTrackNum; /* current track, calculated in GStrings */
-static int cdpViewSectors; /* ??? view-option */
-static unsigned long basesec; /* current start... usually a cdpTrack[n] value */
-static unsigned long length; /* and the length of it */
+static uint8_t cdpTrackNum; /* used in track-mode */
+
+static int cdpViewSectors; /* view-option */
 static signed long newpos; /* skip to */
 static unsigned char setnewpos; /* and the fact we should skip */
-static char vdev[8];
 
 static int16_t speed;
 static char finespeed=8;
 static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
-static int cdrom_fd;
 
 static void startpausefade(void)
 {
@@ -78,7 +74,7 @@ static void startpausefade(void)
 	{
 		plChanChanged=1;
 		plPause=0;
-		cdRestart(cdrom_fd);
+		cdUnpause ();
 		pausefadedirect=1;
 	} else
 		pausefadedirect=-1;
@@ -113,7 +109,7 @@ static void dopausefade(void)
 			i=0;
 			pausefadedirect=0;
 			plPause=1;
-			cdPause(cdrom_fd);
+			cdPause();
 			plChanChanged=1;
 			cdSetSpeed(speed);
 			return;
@@ -147,7 +143,7 @@ static void cdaDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 
 	struct cdStat stat;
 
-	cdGetStatus(cdrom_fd, &stat);
+	cdGetStatus(&stat);
 
 
 	memset(buf[0]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
@@ -156,9 +152,14 @@ static void cdaDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 
 	writestring(buf[0], 0, 0x09, "  mode: ..........  ", 20);
 	writestring(buf[0], 8, 0x0F, "cd-audio", 10);
-	for (i=1; i<=cdpTrackNum; i++)
-		if (stat.position<cdpTrackStarts[i])
+	for (i=1; i<=TOC.lasttrack; i++)
+	{
+		if (stat.position<TOC.track[i].lba_addr)
+		{
 			break;
+		}
+	}
+	i--;
 
 	writestring(buf[0], 20, 0x09, "playmode: .....  status: .......", plScrWidth-20);
 	writestring(buf[0], 30, 0x0F, cdpPlayMode?"disk ":"track", 5);
@@ -167,32 +168,32 @@ static void cdaDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 	_writenum(buf[0], 76, 0x0F, stat.speed*100/256, 10, 3);
 
 	writestring(buf[1], 0, 0x09, "drive: ....... start:   :..:..  pos:   :..:..  length:   :..:..  size: ...... kb", plScrWidth);
-	writestring(buf[1], 7, 0x0F, vdev, 7); /* VERY TODO.. can we fit more data on this line??? */
+	writestring(buf[1], 7, 0x0F, "TODO", 7); /* VERY TODO.. get the drive.... */
 	if (cdpViewSectors)
 	{
-		writenum(buf[1], 22, 0x0F, cdpTrackStarts[0], 10, 8, 0);
-		writenum(buf[1], 37, 0x0F, stat.position-cdpTrackStarts[0], 10, 8, 0);
-		writenum(buf[1], 55, 0x0F, cdpTrackStarts[cdpTrackNum+1]-cdpTrackStarts[0], 10, 8, 0);
+		writenum(buf[1], 22, 0x0F, TOC.track[TOC.starttrack].lba_addr, 10, 8, 0);
+		writenum(buf[1], 37, 0x0F, stat.position - TOC.track[TOC.starttrack].lba_addr, 10, 8, 0);
+		writenum(buf[1], 55, 0x0F, TOC.track[TOC.lasttrack + 1].lba_addr - TOC.track[TOC.starttrack].lba_addr, 10, 8, 0);
 	} else {
-		writestring(buf[1], 22, 0x0F, gettimestr(cdpTrackStarts[0]+150, timestr), 8);
-		writestring(buf[1], 37, 0x0F, gettimestr(stat.position-cdpTrackStarts[0], timestr), 8);
-		writestring(buf[1], 55, 0x0F, gettimestr(cdpTrackStarts[cdpTrackNum+1]-cdpTrackStarts[0], timestr), 8);
+		writestring(buf[1], 22, 0x0F, gettimestr(TOC.track[TOC.starttrack].lba_addr, timestr), 8);
+		writestring(buf[1], 37, 0x0F, gettimestr(stat.position - TOC.track[TOC.starttrack].lba_addr, timestr), 8);
+		writestring(buf[1], 55, 0x0F, gettimestr(TOC.track[TOC.lasttrack + 1].lba_addr - TOC.track[TOC.starttrack].lba_addr, timestr), 8);
 	}
-	_writenum(buf[1], 71, 0x0F, (cdpTrackStarts[cdpTrackNum+1]-cdpTrackStarts[0])*147/64, 10, 6);
+	_writenum(buf[1], 71, 0x0F, (TOC.track[TOC.lasttrack+1].lba_addr-TOC.track[TOC.starttrack].lba_addr)*147/64, 10, 6);
 
 	writestring(buf[2], 0, 0x09, "track: ..      start:   :..:..  pos:   :..:..  length:   :..:..  size: ...... kb", plScrWidth);
-	_writenum(buf[2], 7, 0x0F, i-1+cdpFirstTrack, 10, 2);
+	_writenum(buf[2], 7, 0x0F, i, 10, 2);
 	if (cdpViewSectors)
 	{
-		writenum(buf[2], 22, 0x0F, cdpTrackStarts[i-1]+150, 10, 8, 0);
-		writenum(buf[2], 37, 0x0F, stat.position-cdpTrackStarts[i-1], 10, 8, 0);
-		writenum(buf[2], 55, 0x0F, cdpTrackStarts[i]-cdpTrackStarts[i-1], 10, 8, 0);
+		writenum(buf[2], 22, 0x0F, TOC.track[i].lba_addr, 10, 8, 0);
+		writenum(buf[2], 37, 0x0F, stat.position - TOC.track[i].lba_addr, 10, 8, 0);
+		writenum(buf[2], 55, 0x0F, TOC.track[i+1].lba_addr - TOC.track[i].lba_addr, 10, 8, 0);
 	} else {
-		writestring(buf[2], 22, 0x0F, gettimestr(cdpTrackStarts[i-1]+150, timestr), 8);
-		writestring(buf[2], 37, 0x0F, gettimestr(stat.position-cdpTrackStarts[i-1], timestr), 8);
-		writestring(buf[2], 55, 0x0F, gettimestr(cdpTrackStarts[i]-cdpTrackStarts[i-1], timestr), 8);
+		writestring(buf[2], 22, 0x0F, gettimestr(TOC.track[i].lba_addr, timestr), 8);
+		writestring(buf[2], 37, 0x0F, gettimestr(stat.position - TOC.track[i].lba_addr, timestr), 8);
+		writestring(buf[2], 55, 0x0F, gettimestr(TOC.track[i+1].lba_addr - TOC.track[i].lba_addr, timestr), 8);
 	}
-	_writenum(buf[2], 71, 0x0F, (cdpTrackStarts[i]-cdpTrackStarts[i-1])*147/64, 10, 6);
+	_writenum(buf[2], 71, 0x0F, (TOC.track[i+1].lba_addr - TOC.track[i].lba_addr)*147/64, 10, 6);
 }
 
 static int cdaProcessKey(uint16_t key)
@@ -230,9 +231,9 @@ static int cdaProcessKey(uint16_t key)
 			pausefadedirect=0;
 			plPause=!plPause;
 			if (plPause)
-				cdPause(cdrom_fd);
+				cdPause();
 			else
-				cdRestart(cdrom_fd);
+				cdUnpause();
 
 			break;
 		case 't':
@@ -266,15 +267,23 @@ static int cdaProcessKey(uint16_t key)
 		case KEY_HOME:
 			if (!cdpPlayMode)
 			{
-				newpos=0;
+				newpos = TOC.track[cdpTrackNum].lba_addr;
 				setnewpos=1;
-				break;
+			} else {
+				for (i=TOC.lasttrack; i>=TOC.starttrack; i--)
+				{
+					if (newpos < TOC.track[i].lba_addr)
+					{
+						break;
+					}
+				}
+				if (!i)
+				{
+					i = 1;
+				}
+				newpos = TOC.track[i].lba_addr;
+				setnewpos=1;
 			}
-			for (i=1; i<=cdpTrackNum; i++)
-				if (newpos<(signed)(cdpTrackStarts[i]-basesec))
-					break;
-			newpos=cdpTrackStarts[i-1]-basesec;
-			setnewpos=1;
 			break;
 		case KEY_CTRL_UP:
 		/* case 0x8D00: //ctrl-up */
@@ -288,23 +297,47 @@ static int cdaProcessKey(uint16_t key)
 			break;
 		case KEY_CTRL_LEFT:
 		case '<':
-			if (!cdpPlayMode)
-				break;
-			for (i=2; i<=cdpTrackNum; i++)
-				if (newpos<(signed)(cdpTrackStarts[i]-basesec))
-					break;
-			newpos=cdpTrackStarts[i-2]-basesec;
-			setnewpos=1;
+			if (cdpPlayMode)
+			{
+				newpos = TOC.track[cdpTrackNum].lba_addr;
+				setnewpos=1;
+			} else {
+				for (i=TOC.lasttrack; i>=TOC.starttrack; i--)
+				{
+					if (newpos < TOC.track[i].lba_addr)
+					{
+						break;
+					}
+				}
+				if (i <= 2)
+				{
+					i = 1;
+				} else {
+					i--;
+				}
+				newpos = TOC.track[i].lba_addr;
+				setnewpos=1;
+			}
 			break;
 		case KEY_CTRL_RIGHT:
 		case '>':
-			if (!cdpPlayMode)
-				break;
-			for (i=1; i<=cdpTrackNum; i++)
-				if (newpos<(signed)(cdpTrackStarts[i]-basesec))
+			if (cdpPlayMode)
+			{
+				for (i=TOC.lasttrack; i>=TOC.starttrack; i--)
+				{
+					if (newpos < TOC.track[i].lba_addr)
+					{
+						break;
+					}
+				}
+				if (i <= TOC.lasttrack)
+				{
 					break;
-			newpos=cdpTrackStarts[i]-basesec;
-			setnewpos=1;
+				}
+				i++;
+				newpos = TOC.track[i].lba_addr;
+				setnewpos=1;
+			}
 			break;
 /* TODO-keys
 		case 0x7700: //ctrl-home
@@ -356,7 +389,7 @@ static int cdaLooped(void)
 
 	cdIdle();
 
-	cdGetStatus(cdrom_fd, &stat);
+	cdGetStatus(&stat);
 
 	/*
 	if (status->error&STATUS_ERROR)
@@ -370,6 +403,7 @@ static int cdaLooped(void)
 	{
 		if (newpos<0)
 			newpos=0;
+#if 0
 		if (newpos>=(signed)length)
 		{
 			if (fsLoopMods)
@@ -377,82 +411,74 @@ static int cdaLooped(void)
 			else
 				return 1;
 		}
-		cdPause(cdrom_fd);
-		cdRestartAt(cdrom_fd, basesec+newpos /*, length-newpos*/);
-		if (plPause)
-			cdPause(cdrom_fd);
+#endif
+		cdJump(newpos /*, length-newpos*/);
 		setnewpos=0;
 	} else
-		newpos=stat.position-basesec;
+		newpos=stat.position;
 
 	return 0;
 }
 
 static void cdaCloseFile(void)
 {
-	cdStop(cdrom_fd);
+	cdClose();
 }
 
 static int cdaOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
-	char *name;
-	unsigned char tnum;
-	char buffer[64];
+	char *name = 0;
+	int32_t start = -1;
+	int32_t stop = -1;
 
-	buffer[0] = 0;
-
-	file->seek_set (file, 0);
-	file->read (file, buffer, sizeof (buffer));
-	if (memcmp (buffer, "fd=", 3))
+	if (file->ioctl (file, IOCTL_CDROM_READTOC, &TOC))
 	{
 		return -1;
 	}
-	cdrom_fd = atoi (buffer + 3);
-
 	dirdbGetName_internalstr (file->dirdb_ref, &name);
 
-	if (!strcmp(name, "DISK.CDA"))
-		tnum=0xFF;
-	else
-		if (!memcmp(name, "TRACK", 5)&&isdigit(name[5])&&isdigit(name[6])&&(name[7]=='.'))
-			tnum=(name[5]-'0')*10+(name[6]-'0');
-		else
-			return -1;
-
-	if (!cdIsCDDrive(cdrom_fd))
-		return -1;
-
-	cdpTrackNum=cdGetTracks(cdrom_fd, cdpTrackStarts, &cdpFirstTrack, CDROM_LEADOUT);
-
-	if (tnum!=0xFF)
+	if (!strcmp (name, "DISK.CDA"))
 	{
-		if ((tnum<cdpFirstTrack)||(tnum>(cdpFirstTrack+cdpTrackNum)))
-			return -1;
-		cdpPlayMode=0;
-		basesec=cdpTrackStarts[tnum-cdpFirstTrack];
-		length=cdpTrackStarts[tnum-cdpFirstTrack+1]-basesec;
-	} else {
-		if (!cdpTrackNum)
-			return -1;
+		int i;
+		for (i=TOC.starttrack; i <= TOC.lasttrack; i++)
+		{
+			if (!TOC.track[i].is_data)
+			{
+				if (start >= 0)
+				{
+					cdpTrackNum = i;
+					start = TOC.track[i].lba_addr;
+				}
+				stop = TOC.track[i+1].lba_addr;
+			}
+		}
 		cdpPlayMode=1;
-		basesec=cdpTrackStarts[0];
-		length=cdpTrackStarts[cdpTrackNum+1]-basesec;
+	} else if ((!strncmp (name, "TRACK", 5)) && (strlen(name) >=7))
+	{
+		cdpTrackNum = (name[5] - '0') * 10 + (name[6] - '0');
+		if ((cdpTrackNum < 1) || (cdpTrackNum > 99))
+		{
+
+			return -1;
+		}
+		if (TOC.track[cdpTrackNum].is_data)
+		{
+			return -1;
+		}
+		start = TOC.track[cdpTrackNum].lba_addr;
+		stop = TOC.track[cdpTrackNum+1].lba_addr;
+		cdpPlayMode=0;
 	}
 
-	newpos=0;
-	setnewpos=1;
+	newpos=start;
+	setnewpos=0;
 	plPause=0;
 
 	plIsEnd=cdaLooped;
 	plProcessKey=cdaProcessKey;
 	plDrawGStrings=cdaDrawGStrings;
 
-	/*  cdLockTray(cdpDrive, 1); */
-
-	strncpy(vdev, info->comment, 8);
-	vdev[7]=0;
-
-	if (cdPlay(cdrom_fd, basesec, length, file))
+	if (cdOpen(start, stop - start, file))
 		return -1;
 
 	normalize();
