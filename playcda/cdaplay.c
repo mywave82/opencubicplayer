@@ -45,18 +45,7 @@
 #include "stuff/imsrtns.h"
 #include "stuff/poll.h"
 
-static int inpause; /* digital playback */
-/* INPUT buffer (ioctl buffer-ring)       OUTPUT buffer (includes pitch adjustment)     BUFFER in the devp device
-      64 frames (853 ms)                      0.5 seconds                                    ...
-   rip_ioctl_buf                           cdbuf : cdbuflen (bytes)                     plrbuf : buflen (samples)
-      ^rip_pcm_write (bytes; write-head)                                                    ^ bufpos (samples; write-head)
-   ^rip_pcm_read (bytes; read-head)
-                                                 : cdbufrate (made from speed)                 : stereo
-                                                                                               : bit16
-                                                                                               : signedout
-                                                                                               : reversestereo
-*/
-
+static int inpause;
 
 /* devp buffer zone */
 static uint32_t bufpos; /* devp write head location */
@@ -66,17 +55,6 @@ static int stereo; /* boolean */
 static int bit16; /* boolean */
 static int signedout; /* boolean */
 static int reversestereo; /* boolean */
-
-/* cdIdler dumping locations */
-static int16_t *cdbuf=NULL; /* the buffer */
-static uint32_t cdbuflen;  /* total buffer size */
-static struct ringbuffer_t *cdbufpos = 0;
-static uint32_t cdbuffpos; /* read fine-pos.. when cdbufrate has a fraction */
-static uint32_t cdbufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
-static volatile int clipbusy;
-static int speed;
-static int looped;
-static int donotloop;
 
 /* cdIdle dumping location */
 static int16_t *buf16=NULL;
@@ -89,13 +67,18 @@ struct ocpfilehandle_t *fh;
 #endif
 #define CD_FRAMESIZE_RAW 2352
 
-#define BUFFER_SLOTS 64
+#define BUFFER_SLOTS 128
 #define REQUEST_SLOTS 16
-/* TODO, add circular rip buffer */
-static unsigned char rip_ioctl_buf[CD_FRAMESIZE_RAW*BUFFER_SLOTS];
-static uint32_t rip_sectors[BUFFER_SLOTS];
-static unsigned int rip_pcm_read;
-static unsigned int rip_pcm_write;
+/* cdIdler dumping locations */
+static unsigned char        cdbufdata[CD_FRAMESIZE_RAW*BUFFER_SLOTS];
+static struct ringbuffer_t *cdbufpos;
+static uint32_t             cdbuffpos; /* fractional part */
+static uint32_t             cdbufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
+static uint32_t rip_sectors[BUFFER_SLOTS]; /* replace me */
+static volatile int clipbusy;
+static int speed;
+static int looped;
+static int donotloop;
 
 #warning TODO pan, voll, volr, srnd
 static uint8_t pan = 64, srnd = 0;
@@ -132,116 +115,58 @@ do { \
 
 static void cdIdler(void)
 {
-	while (1)
+	int pos1, pos2;
+	int length1, length2;
+	int emptyframes;
+	int temp;
+	struct ioctl_cdrom_readaudio_request_t req;
+
+	/* first check for EOF */
+	if (lba_next == lba_stop)
 	{
-		size_t read;
-		int pos1, pos2;
-		int length1, length2;
-		int emptyframes;
-		int temp;
-		int rip_pcm_left;
-
-	/* First we keep the rip_ioctl_buf full with data from the CD */
-		if (lba_next == lba_stop)
+		if (!donotloop)
 		{
-			if (!donotloop)
-			{
-				looped |= 1;
-				return;
-			} else {
-				looped &= ~1;
-				lba_next = lba_start;
-			}
-		}
-
-		if (rip_pcm_read == rip_pcm_write)
-		{
-			emptyframes = REQUEST_SLOTS + 1;
-		} else {
-			emptyframes = (CD_FRAMESIZE_RAW*BUFFER_SLOTS + rip_pcm_read - rip_pcm_write) / CD_FRAMESIZE_RAW % BUFFER_SLOTS;
-		}
-
-		if (emptyframes > REQUEST_SLOTS)
-		{
-			struct ioctl_cdrom_readaudio_request_t req;
-
-			emptyframes = REQUEST_SLOTS;
-
-			/* check against track end */
-			temp = lba_stop - lba_next;
-			if (emptyframes > temp)
-			{
-				emptyframes = temp;
-			}
-
-			/* check against buffer-end */
-			if (emptyframes * CD_FRAMESIZE_RAW + rip_pcm_write > (CD_FRAMESIZE_RAW * BUFFER_SLOTS))
-			{
-				emptyframes = (CD_FRAMESIZE_RAW * BUFFER_SLOTS - rip_pcm_write) / CD_FRAMESIZE_RAW;
-			}
-
-			req.lba_addr = lba_next;
-			req.lba_count = emptyframes;
-			req.ptr = rip_ioctl_buf + rip_pcm_write;
-			assert ((rip_pcm_write + emptyframes * CD_FRAMESIZE_RAW) <= sizeof (rip_ioctl_buf));
-			if (fh->ioctl (fh, IOCTL_CDROM_READAUDIO, &req))
-			{
-				return;
-			}
-			for (temp = 0; temp < req.lba_count; temp++)
-			{
-				rip_sectors[(rip_pcm_write%CD_FRAMESIZE_RAW)+temp] = lba_next + temp;
-			}
-			rip_pcm_write += req.lba_count * CD_FRAMESIZE_RAW;
-			lba_next += req.lba_count;
-			if (rip_pcm_write >= CD_FRAMESIZE_RAW*BUFFER_SLOTS)
-			{
-				rip_pcm_write = 0;
-			}
-		}
-		if (rip_pcm_write > rip_pcm_read)
-		{
-			rip_pcm_left = rip_pcm_write - rip_pcm_read;
-			assert ((rip_pcm_read + rip_pcm_left) <= sizeof (rip_ioctl_buf));
-
-		} else {
-			rip_pcm_left = CD_FRAMESIZE_RAW*BUFFER_SLOTS - rip_pcm_read;
-			assert ((rip_pcm_read + rip_pcm_left) <= sizeof (rip_ioctl_buf));
-		}
-
-	/* Secondly we top up the cdbufpos, temporary inbetween buffer, can probably be removed
-	 *
-	 * transfer value from previous buffer is rip_pcm_read, is either ends at the head buffer or the buffer-wrap
-	 */
-#warning remove cdbufpos, and take advantage of rip_sectors[] for time to UI
-#warning we need to update IOCTL to be async (and threaded for real hardware)
-
-		ringbuffer_get_head_samples (cdbufpos, &pos1, &length1, &pos2, &length2);
-
-		if (!length1)
-		{
+			looped |= 1;
 			return;
+		} else {
+			looped &= ~1;
+			lba_next = lba_start;
 		}
-		read = length1<<2;
-
-		if (read > rip_pcm_left)
-			read = rip_pcm_left;
-
-		if (!read)
-		{
-			break;
-		}
-
-		assert ((rip_pcm_read + read) <= sizeof (rip_ioctl_buf));
-		memcpy (cdbuf + (pos1<<1), rip_ioctl_buf + rip_pcm_read, read);
-		rip_pcm_read += read;
-		if (rip_pcm_read >= CD_FRAMESIZE_RAW * BUFFER_SLOTS)
-		{
-			rip_pcm_read = 0;
-		}
-
-		ringbuffer_head_add_bytes (cdbufpos, read);
 	}
+
+	ringbuffer_get_head_bytes (cdbufpos, &pos1, &length1, &pos2, &length2);
+
+	emptyframes = length1 / CD_FRAMESIZE_RAW;
+	if (emptyframes < REQUEST_SLOTS)
+	{
+		return;
+	}
+
+
+	emptyframes = REQUEST_SLOTS;
+
+	/* check against track end */
+	temp = lba_stop - lba_next;
+	if (emptyframes > temp)
+	{
+		emptyframes = temp;
+	}
+
+	req.lba_addr = lba_next;
+	req.lba_count = emptyframes;
+	req.ptr = cdbufdata + pos1;
+	assert ((pos1 + emptyframes * CD_FRAMESIZE_RAW) <= sizeof (cdbufdata));
+	if (fh->ioctl (fh, IOCTL_CDROM_READAUDIO, &req))
+	{
+		return;
+	}
+	for (temp = 0; temp < req.lba_count; temp++)
+	{
+		rip_sectors[(pos1/CD_FRAMESIZE_RAW)+temp] = lba_next + temp;
+	}
+#warning BIG-ENDIAN needs swapping here!!!
+	ringbuffer_head_add_bytes (cdbufpos, req.lba_count * CD_FRAMESIZE_RAW);
+	lba_next += req.lba_count;
 }
 
 void __attribute__ ((visibility ("internal"))) cdIdle(void)
@@ -326,8 +251,8 @@ void __attribute__ ((visibility ("internal"))) cdIdle(void)
 				}
 				assert (length1);
 
-				rs = cdbuf[pos1<<1];
-				ls = cdbuf[(pos1<<1) + 1];
+				rs = ((int16_t *)cdbufdata)[pos1<<1];
+				ls = ((int16_t *)cdbufdata)[(pos1<<1) + 1];
 
 				PANPROC;
 
@@ -395,14 +320,14 @@ void __attribute__ ((visibility ("internal"))) cdIdle(void)
 				}
 
 
-				rvm1 = (uint16_t)cdbuf[(wpm1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
-				lvm1 = (uint16_t)cdbuf[(wpm1<<1)+1]^0x8000;
-				 rc0 = (uint16_t)cdbuf[(wp0<<1)+0]^0x8000;
-				 lc0 = (uint16_t)cdbuf[(wp0<<1)+1]^0x8000;
-				 rv1 = (uint16_t)cdbuf[(wp1<<1)+0]^0x8000;
-				 lv1 = (uint16_t)cdbuf[(wp1<<1)+1]^0x8000;
-				 rv2 = (uint16_t)cdbuf[(wp2<<1)+0]^0x8000;
-				 lv2 = (uint16_t)cdbuf[(wp2<<1)+1]^0x8000;
+				rvm1 = ((uint16_t *)cdbufdata)[(wpm1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
+				lvm1 = ((uint16_t *)cdbufdata)[(wpm1<<1)+1]^0x8000;
+				 rc0 = ((uint16_t *)cdbufdata)[(wp0<<1)+0]^0x8000;
+				 lc0 = ((uint16_t *)cdbufdata)[(wp0<<1)+1]^0x8000;
+				 rv1 = ((uint16_t *)cdbufdata)[(wp1<<1)+0]^0x8000;
+				 lv1 = ((uint16_t *)cdbufdata)[(wp1<<1)+1]^0x8000;
+				 rv2 = ((uint16_t *)cdbufdata)[(wp2<<1)+0]^0x8000;
+				 lv2 = ((uint16_t *)cdbufdata)[(wp2<<1)+1]^0x8000;
 
 				rc1 = rv1-rvm1;
 				rc2 = 2*rvm1-2*rc0+rv1-rv2;
@@ -659,12 +584,6 @@ void __attribute__ ((visibility ("internal"))) cdClose (void)
 		free(buf16);
 		buf16=NULL;
 	}
-
-	if (cdbuf)
-	{
-		free(cdbuf);
-		cdbuf=NULL;
-	}
 	if (cdbufpos)
 	{
 		ringbuffer_free (cdbufpos);
@@ -727,13 +646,15 @@ unsigned short __attribute__ ((visibility ("internal"))) cdGetTracks (unsigned l
 
 void __attribute__ ((visibility ("internal"))) cdJump (unsigned long start)
 {
+	int pos1, length1, pos2, length2;
 	if (start < lba_start) start = lba_start;
 	if (start > lba_stop) start = lba_stop - 1;
 
 	lba_next = start;
 
-	rip_pcm_read = 0;
-	rip_pcm_write = 0;
+	ringbuffer_get_tail_bytes (cdbufpos, &pos1, &length1, &pos2, &length2);
+	ringbuffer_tail_consume_bytes (cdbufpos, length1 + length2);
+	cdbuffpos = 0;
 }
 
 int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsigned long len, struct ocpfilehandle_t *file)
@@ -751,9 +672,7 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 	fh->ref (fh);
 
 	clipbusy = 0;
-	rip_pcm_read = 0;
-	rip_pcm_write = 0;
-
+	cdbuffpos = 0;
 
 	plGetMasterSample=plrGetMasterSample;
 	plGetRealMasterVolume=plrGetRealMasterVolume;
@@ -772,30 +691,19 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 	if (!(buf16=malloc(sizeof(uint16_t) * buflen * 2 /* stereo */)))
 	{
 		plrClosePlayer ();
-		cdbuf = NULL;
 		return -1;
 	}
 	bufpos=0;
 
-	cdbuflen= plrRate * 4 / 2; /* stereo + 16bit, 0.5 seconds */
-	if (!(cdbuf = malloc(cdbuflen)))
-	{
-		plrClosePlayer ();
-		free (buf16);
-		buf16 = 0;
-		return -1;
-	}
-
-	cdbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, cdbuflen / 4);
+	cdbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, sizeof (cdbufdata) / 4);
 	if (!cdbufpos)
 	{
-		free(cdbuf);
-		cdbuf = 0;
 		plrClosePlayer ();
 		free (buf16);
 		buf16 = 0;
 		return 0;
 	}
+	cdbuffpos = 0;
 
 	cdSetSpeed(256);
 	looped = 0;
@@ -808,8 +716,6 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 		free(buf16);
 		buf16=NULL;
 		plrClosePlayer();
-		free(cdbuf);
-		cdbuf=NULL;
 		return -1;
 	}
 
@@ -822,7 +728,7 @@ void __attribute__ ((visibility ("internal"))) cdGetStatus (struct cdStat *stat)
 	stat->paused=inpause;
 	stat->position=lba_next; /* TODO, needs buffer feedback */
 	stat->speed=(inpause?0:speed);
-	stat->looped=(lba_next==lba_stop)&&(looped==3)/*&&(rip_pcm_read == rip_pcm_write)*/;
+	stat->looped=(lba_next==lba_stop)&&(looped==3);
 }
 
 void __attribute__ ((visibility ("internal"))) cdSetLoop (int loop)
