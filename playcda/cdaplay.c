@@ -124,7 +124,7 @@ static void cdIdler(void)
 	/* first check for EOF */
 	if (lba_next == lba_stop)
 	{
-		if (!donotloop)
+		if (donotloop)
 		{
 			looped |= 1;
 			return;
@@ -151,6 +151,8 @@ static void cdIdler(void)
 	{
 		emptyframes = temp;
 	}
+
+	assert (emptyframes);
 
 	req.lba_addr = lba_next;
 	req.lba_count = emptyframes;

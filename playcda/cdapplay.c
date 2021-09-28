@@ -444,7 +444,7 @@ static int cdaOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 		{
 			if (!TOC.track[i].is_data)
 			{
-				if (start >= 0)
+				if (start < 0)
 				{
 					cdpTrackNum = i;
 					start = TOC.track[i].lba_addr;
@@ -468,6 +468,8 @@ static int cdaOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 		start = TOC.track[cdpTrackNum].lba_addr;
 		stop = TOC.track[cdpTrackNum+1].lba_addr;
 		cdpPlayMode=0;
+	} else {
+		return -1;
 	}
 
 	newpos=start;
