@@ -164,7 +164,13 @@ static void cdIdler(void)
 	{
 		rip_sectors[(pos1/CD_FRAMESIZE_RAW)+temp] = lba_next + temp;
 	}
-#warning BIG-ENDIAN needs swapping here!!!
+
+#ifdef WORDS_BIGENDIAN
+	for (temp = 0; temp < req.lba_count * CD_FRAMESIZE_RAW / 2; temp++)
+	{
+		((uint16_t *)req.ptr)[temp] = uint16_little(((uint16_t *)req.ptr)[temp]);
+	}
+#endif
 	ringbuffer_head_add_bytes (cdbufpos, req.lba_count * CD_FRAMESIZE_RAW);
 	lba_next += req.lba_count;
 }
