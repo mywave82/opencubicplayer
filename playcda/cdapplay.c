@@ -54,7 +54,14 @@ static int cdpViewSectors; /* view-option */
 static signed long newpos; /* skip to */
 static unsigned char setnewpos; /* and the fact we should skip */
 
+static int16_t vol;
+static int16_t bal;
+static int16_t pan;
+static char srnd;
+static uint32_t amp;
 static int16_t speed;
+static int16_t reverb;
+static int16_t chorus;
 static char finespeed=8;
 static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
@@ -84,6 +91,15 @@ static void normalize(void)
 {
 	mcpNormalize(0);
 	speed=set.speed;
+	pan=set.pan;
+	bal=set.bal;
+	vol=set.vol;
+	amp=set.amp;
+	srnd=set.srnd;
+	reverb=set.reverb;
+	chorus=set.chorus;
+	//cdSetAmplify(1024*amp);
+	cdSetVolume(vol, bal, pan, srnd);
 	cdSetSpeed(speed);
 }
 
@@ -138,62 +154,118 @@ static char *gettimestr(unsigned long s, char *time)
 
 static void cdaDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 {
-	int i;
+	int trackno;
 	char timestr[9];
 
 	struct cdStat stat;
 
 	cdGetStatus(&stat);
 
-
-	memset(buf[0]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-	memset(buf[1]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-	memset(buf[2]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-
-	writestring(buf[0], 0, 0x09, "  mode: ..........  ", 20);
-	writestring(buf[0], 8, 0x0F, "cd-audio", 10);
-	for (i=1; i<=TOC.lasttrack; i++)
+	for (trackno=1; trackno<=TOC.lasttrack; trackno++)
 	{
-		if (stat.position<TOC.track[i].lba_addr)
+		if (stat.position<TOC.track[trackno].lba_addr)
 		{
 			break;
 		}
 	}
-	i--;
+	trackno--;
 
-	writestring(buf[0], 20, 0x09, "playmode: .....  status: .......", plScrWidth-20);
-	writestring(buf[0], 30, 0x0F, cdpPlayMode?"disk ":"track", 5);
-	writestring(buf[0], 45, 0x0F, (stat.error)?"  error":(stat.paused)?" paused":"playing", 7);
-	writestring(buf[0], 52, 0x0F, "                 speed: ...%", 28);
-	_writenum(buf[0], 76, 0x0F, stat.speed*100/256, 10, 3);
-
-	writestring(buf[1], 0, 0x09, "drive: ....... start:   :..:..  pos:   :..:..  length:   :..:..  size: ...... kb", plScrWidth);
-	writestring(buf[1], 7, 0x0F, "TODO", 7); /* VERY TODO.. get the drive.... */
-	if (cdpViewSectors)
+	if (plScrWidth<128)
 	{
-		writenum(buf[1], 22, 0x0F, TOC.track[TOC.starttrack].lba_addr, 10, 8, 0);
-		writenum(buf[1], 37, 0x0F, stat.position - TOC.track[TOC.starttrack].lba_addr, 10, 8, 0);
-		writenum(buf[1], 55, 0x0F, TOC.track[TOC.lasttrack + 1].lba_addr - TOC.track[TOC.starttrack].lba_addr, 10, 8, 0);
-	} else {
-		writestring(buf[1], 22, 0x0F, gettimestr(TOC.track[TOC.starttrack].lba_addr, timestr), 8);
-		writestring(buf[1], 37, 0x0F, gettimestr(stat.position - TOC.track[TOC.starttrack].lba_addr, timestr), 8);
-		writestring(buf[1], 55, 0x0F, gettimestr(TOC.track[TOC.lasttrack + 1].lba_addr - TOC.track[TOC.starttrack].lba_addr, timestr), 8);
-	}
-	_writenum(buf[1], 71, 0x0F, (TOC.track[TOC.lasttrack+1].lba_addr-TOC.track[TOC.starttrack].lba_addr)*147/64, 10, 6);
+		memset(buf[0]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
+		memset(buf[1]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
+		memset(buf[2]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
 
-	writestring(buf[2], 0, 0x09, "track: ..      start:   :..:..  pos:   :..:..  length:   :..:..  size: ...... kb", plScrWidth);
-	_writenum(buf[2], 7, 0x0F, i, 10, 2);
-	if (cdpViewSectors)
-	{
-		writenum(buf[2], 22, 0x0F, TOC.track[i].lba_addr, 10, 8, 0);
-		writenum(buf[2], 37, 0x0F, stat.position - TOC.track[i].lba_addr, 10, 8, 0);
-		writenum(buf[2], 55, 0x0F, TOC.track[i+1].lba_addr - TOC.track[i].lba_addr, 10, 8, 0);
+		writestring(buf[0], 0, 0x09, " vol: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 15);
+		writestring(buf[0], 15, 0x09, " srnd: \xfa  pan: l\xfa\xfa\xfam\xfa\xfa\xfar  bal: l\xfa\xfa\xfam\xfa\xfa\xfar ", 41);
+		writestring(buf[0], 56, 0x09, " spd: ---% \x1D ptch: ---% ", 24);
+		writestring(buf[0], 6, 0x0F, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", (vol+4)>>3);
+		writestring(buf[0], 22, 0x0F, srnd?"x":"o", 1);
+		if (((pan+70)>>4)==4)
+			writestring(buf[0], 34, 0x0F, "m", 1);
+		else {
+			writestring(buf[0], 30+((pan+70)>>4), 0x0F, "r", 1);
+			writestring(buf[0], 38-((pan+70)>>4), 0x0F, "l", 1);
+		}
+		writestring(buf[0], 46+((bal+70)>>4), 0x0F, "I", 1);
+		_writenum(buf[0], 62, 0x0F, speed*100/256, 10, 3);
+		_writenum(buf[0], 75, 0x0F, speed*100/256, 10, 3);
+
+		writestring(buf[1], 0, 0x09, " mode: ....... start:   :..:..  pos:   :..:..  length:   :..:..  size: ...... kb", plScrWidth);
+		writestring(buf[1], 7, 0x0F, cdpPlayMode?"disk   ":"track  ", 7);
+		if (cdpViewSectors)
+		{
+			writenum(buf[1], 22, 0x0F, TOC.track[TOC.starttrack].lba_addr, 10, 8, 0);
+			writenum(buf[1], 37, 0x0F, stat.position - TOC.track[TOC.starttrack].lba_addr, 10, 8, 0);
+			writenum(buf[1], 55, 0x0F, TOC.track[TOC.lasttrack + 1].lba_addr - TOC.track[TOC.starttrack].lba_addr, 10, 8, 0);
+		} else {
+			writestring(buf[1], 22, 0x0F, gettimestr(TOC.track[TOC.starttrack].lba_addr, timestr), 8);
+			writestring(buf[1], 37, 0x0F, gettimestr(stat.position - TOC.track[TOC.starttrack].lba_addr, timestr), 8);
+			writestring(buf[1], 55, 0x0F, gettimestr(TOC.track[TOC.lasttrack + 1].lba_addr - TOC.track[TOC.starttrack].lba_addr, timestr), 8);
+		}
+		_writenum(buf[1], 71, 0x0F, (TOC.track[TOC.lasttrack+1].lba_addr-TOC.track[TOC.starttrack].lba_addr)*147/64, 10, 6);
+
+		writestring(buf[2], 0, 0x09, "track: ..      start:   :..:..  pos:   :..:..  length:   :..:..  size: ...... kb", plScrWidth);
+		_writenum(buf[2], 7, 0x0F, trackno, 10, 2);
+		if (cdpViewSectors)
+		{
+			writenum(buf[2], 22, 0x0F, TOC.track[trackno].lba_addr, 10, 8, 0);
+			writenum(buf[2], 37, 0x0F, stat.position - TOC.track[trackno].lba_addr, 10, 8, 0);
+			writenum(buf[2], 55, 0x0F, TOC.track[trackno+1].lba_addr - TOC.track[trackno].lba_addr, 10, 8, 0);
+		} else {
+			writestring(buf[2], 22, 0x0F, gettimestr(TOC.track[trackno].lba_addr, timestr), 8);
+			writestring(buf[2], 37, 0x0F, gettimestr(stat.position - TOC.track[trackno].lba_addr, timestr), 8);
+			writestring(buf[2], 55, 0x0F, gettimestr(TOC.track[trackno+1].lba_addr - TOC.track[trackno].lba_addr, timestr), 8);
+		}
+		_writenum(buf[2], 71, 0x0F, (TOC.track[trackno+1].lba_addr - TOC.track[trackno].lba_addr)*147/64, 10, 6);
 	} else {
-		writestring(buf[2], 22, 0x0F, gettimestr(TOC.track[i].lba_addr, timestr), 8);
-		writestring(buf[2], 37, 0x0F, gettimestr(stat.position - TOC.track[i].lba_addr, timestr), 8);
-		writestring(buf[2], 55, 0x0F, gettimestr(TOC.track[i+1].lba_addr - TOC.track[i].lba_addr, timestr), 8);
+		memset(buf[0]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
+		memset(buf[1]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
+		memset(buf[2]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
+
+		writestring(buf[0], 0, 0x09, "    volume: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa  ", 30);
+		writestring(buf[0], 30, 0x09, " surround: \xfa   panning: l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar   balance: l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar  ", 72);
+		writestring(buf[0], 102, 0x09,  " speed: ---% \x1D pitch: ---%    ", 30);
+		writestring(buf[0], 12, 0x0F, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", (vol+2)>>2);
+		writestring(buf[0], 41, 0x0F, srnd?"x":"o", 1);
+		if (((pan+68)>>3)==8)
+			writestring(buf[0], 62, 0x0F, "m", 1);
+		else {
+			writestring(buf[0], 54+((pan+68)>>3), 0x0F, "r", 1);
+			writestring(buf[0], 70-((pan+68)>>3), 0x0F, "l", 1);
+		}
+		writestring(buf[0], 83+((bal+68)>>3), 0x0F, "I", 1);
+		_writenum(buf[0], 110, 0x0F, speed*100/256, 10, 3);
+		_writenum(buf[0], 124, 0x0F, speed*100/256, 10, 3);
+
+		writestring(buf[1],  0, 0x09, "      mode: .......    start:   :..:..     pos:   :..:..     length:   :..:..     size: ...... kb", plScrWidth);
+		writestring(buf[1], 12, 0x0F, cdpPlayMode?"disk   ":"track  ", 7);
+		if (cdpViewSectors)
+		{
+			writenum(buf[1], 30, 0x0F, TOC.track[TOC.starttrack].lba_addr, 10, 8, 0);
+			writenum(buf[1], 48, 0x0F, stat.position - TOC.track[TOC.starttrack].lba_addr, 10, 8, 0);
+			writenum(buf[1], 69, 0x0F, TOC.track[TOC.lasttrack + 1].lba_addr - TOC.track[TOC.starttrack].lba_addr, 10, 8, 0);
+		} else {
+			writestring(buf[1], 30, 0x0F, gettimestr(TOC.track[TOC.starttrack].lba_addr, timestr), 8);
+			writestring(buf[1], 48, 0x0F, gettimestr(stat.position - TOC.track[TOC.starttrack].lba_addr, timestr), 8);
+			writestring(buf[1], 69, 0x0F, gettimestr(TOC.track[TOC.lasttrack + 1].lba_addr - TOC.track[TOC.starttrack].lba_addr, timestr), 8);
+		}
+		_writenum(buf[1], 88, 0x0F, (TOC.track[TOC.lasttrack+1].lba_addr-TOC.track[TOC.starttrack].lba_addr)*147/64, 10, 6);
+
+		writestring(buf[2],  0, 0x09, "     track: ..         start:   :..:..     pos:   :..:..     length:   :..:..     size: ...... kb", plScrWidth);
+		_writenum(buf[2], 12, 0x0F, trackno, 10, 2);
+		if (cdpViewSectors)
+		{
+			writenum(buf[2], 30, 0x0F, TOC.track[trackno].lba_addr, 10, 8, 0);
+			writenum(buf[2], 48, 0x0F, stat.position - TOC.track[trackno].lba_addr, 10, 8, 0);
+			writenum(buf[2], 69, 0x0F, TOC.track[trackno+1].lba_addr - TOC.track[trackno].lba_addr, 10, 8, 0);
+		} else {
+			writestring(buf[2], 30, 0x0F, gettimestr(TOC.track[trackno].lba_addr, timestr), 8);
+			writestring(buf[2], 48, 0x0F, gettimestr(stat.position - TOC.track[trackno].lba_addr, timestr), 8);
+			writestring(buf[2], 69, 0x0F, gettimestr(TOC.track[trackno+1].lba_addr - TOC.track[trackno].lba_addr, timestr), 8);
+		}
+		_writenum(buf[2], 88, 0x0F, (TOC.track[trackno+1].lba_addr - TOC.track[trackno].lba_addr)*147/64, 10, 6);
 	}
-	_writenum(buf[2], 71, 0x0F, (TOC.track[i+1].lba_addr - TOC.track[i].lba_addr)*147/64, 10, 6);
 }
 
 static int cdaProcessKey(uint16_t key)
@@ -217,10 +289,23 @@ static int cdaProcessKey(uint16_t key)
 			cpiKeyHelp('>', "Jump track forward");
 			cpiKeyHelp(KEY_CTRL_LEFT, "Jump track back");
 			cpiKeyHelp(KEY_CTRL_RIGHT, "Jump track forward");
-			cpiKeyHelp(KEY_F(9), "Pitch speed down");
-			cpiKeyHelp(KEY_F(11), "Pitch speed down");
-			cpiKeyHelp(KEY_F(10), "Pitch speed up");
-			cpiKeyHelp(KEY_F(12), "Pitch speed up");
+			cpiKeyHelp('-', "Decrease volume (small)");
+			cpiKeyHelp('+', "Increase volume (small)");
+			cpiKeyHelp('/', "Move balance left (small)");
+			cpiKeyHelp('*', "Move balance right (small)");
+			cpiKeyHelp(',', "Move panning against normal (small)");
+			cpiKeyHelp('.', "Move panning against reverse (small)");
+			cpiKeyHelp(KEY_F(2), "Decrease volume");
+			cpiKeyHelp(KEY_F(3), "Increase volume");
+			cpiKeyHelp(KEY_F(4), "Toggle surround on/off");
+			cpiKeyHelp(KEY_F(5), "Move panning against normal");
+			cpiKeyHelp(KEY_F(6), "Move panning against reverse");
+			cpiKeyHelp(KEY_F(7), "Move balance left");
+			cpiKeyHelp(KEY_F(8), "Move balance right");
+			cpiKeyHelp(KEY_F(9), "Decrease pitch speed");
+			cpiKeyHelp(KEY_F(11), "Decrease pitch speed");
+			cpiKeyHelp(KEY_F(10), "Increase pitch speed");
+			cpiKeyHelp(KEY_F(12), "Increase pitch speed");
 			if (plrProcessKey)
 				plrProcessKey(key);
 			return 0;
@@ -344,6 +429,70 @@ static int cdaProcessKey(uint16_t key)
 			newpos=0;
 			setnewpos=1;
 			break;*/
+
+		case '-':
+			if (vol>=2)
+				vol-=2;
+			cdSetVolume(vol, bal, pan, srnd);
+			break;
+		case '+':
+			if (vol<=62)
+				vol+=2;
+			cdSetVolume(vol, bal, pan, srnd);
+			break;
+		case '/':
+			if ((bal-=4)<-64)
+				bal=-64;
+			cdSetVolume(vol, bal, pan, srnd);
+			break;
+		case '*':
+			if ((bal+=4)>64)
+				bal=64;
+			cdSetVolume(vol, bal, pan, srnd);
+			break;
+		case ',':
+			if ((pan-=4)<-64)
+				pan=-64;
+			cdSetVolume(vol, bal, pan, srnd);
+			break;
+		case '.':
+			if ((pan+=4)>64)
+				pan=64;
+			cdSetVolume(vol, bal, pan, srnd);
+			break;
+		case KEY_F(2):
+			if ((vol-=8)<0)
+				vol=0;
+			cdSetVolume(vol, bal, pan, srnd);
+			break;
+		case KEY_F(3):
+			if ((vol+=8)>64)
+				vol=64;
+			cdSetVolume(vol, bal, pan, srnd);
+			break;
+		case KEY_F(4):
+			cdSetVolume(vol, bal, pan, srnd=srnd?0:2);
+			break;
+		case KEY_F(5):
+			if ((pan-=16)<-64)
+				pan=-64;
+			cdSetVolume(vol, bal, pan, srnd);
+			break;
+		case KEY_F(6):
+			if ((pan+=16)>64)
+				pan=64;
+			cdSetVolume(vol, bal, pan, srnd);
+			break;
+		case KEY_F(7):
+			if ((bal-=16)<-64)
+				bal=-64;
+			cdSetVolume(vol, bal, pan, srnd);
+			break;
+		case KEY_F(8):
+			if ((bal+=16)>64)
+				bal=64;
+			cdSetVolume(vol, bal, pan, srnd);
+			break;
 		case KEY_F(9):
 		case KEY_F(11):
 			if ((speed-=finespeed)<16)
@@ -356,6 +505,7 @@ static int cdaProcessKey(uint16_t key)
 				speed=2048;
 			cdSetSpeed(speed);
 			break;
+
 		default:
 			if (smpProcessKey)
 			{

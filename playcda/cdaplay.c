@@ -80,7 +80,6 @@ static int speed;
 static int looped;
 static int donotloop;
 
-#warning TODO pan, voll, volr, srnd
 static uint8_t pan = 64, srnd = 0;
 static unsigned long voll = 256, volr = 256;
 
@@ -137,13 +136,11 @@ static void cdIdler(void)
 	ringbuffer_get_head_bytes (cdbufpos, &pos1, &length1, &pos2, &length2);
 
 	emptyframes = length1 / CD_FRAMESIZE_RAW;
-	if (emptyframes < REQUEST_SLOTS)
+	if ((!emptyframes) || ((emptyframes < REQUEST_SLOTS) && (!length2)))
 	{
 		return;
 	}
-
-
-	emptyframes = REQUEST_SLOTS;
+	emptyframes = (emptyframes > REQUEST_SLOTS) ? REQUEST_SLOTS : emptyframes;
 
 	/* check against track end */
 	temp = lba_stop - lba_next;
@@ -577,6 +574,21 @@ void __attribute__ ((visibility ("internal"))) cdSetSpeed (unsigned short sp)
 	cdbufrate=imuldiv(256*sp, 44100, plrRate);
 }
 
+void __attribute__ ((visibility ("internal"))) cdSetVolume(uint8_t vol_, int8_t bal_, int8_t pan_, uint8_t opt)
+{
+	pan=pan_;
+	if (reversestereo)
+	{
+		pan = -pan;
+	}
+	volr=voll=vol_*4;
+	if (bal_<0)
+		voll=(voll*(64+bal_))>>6;
+	else
+		volr=(volr*(64-bal_))>>6;
+	srnd=opt;
+}
+
 void __attribute__ ((visibility ("internal"))) cdPause (void)
 {
 	inpause=1;
@@ -695,6 +707,13 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 	{
 		return -1;
 	}
+
+	inpause=0;
+	looped=0;
+	cdSetVolume(64, 0, 64, 0);
+/*
+	cdSetAmplify(amplify);   TODO */
+
 
 	if (!(buf16=malloc(sizeof(uint16_t) * buflen * 2 /* stereo */)))
 	{

@@ -21,7 +21,9 @@ extern unsigned short __attribute__ ((visibility ("internal"))) cdGetTracks (uns
 #endif
 extern int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsigned long len, struct ocpfilehandle_t *file);
 extern void __attribute__ ((visibility ("internal"))) cdGetStatus (struct cdStat *stat);
+//extern void __attribute__ ((visibility ("internal"))) cdSetAmplify(uint32_t amp);
 extern void __attribute__ ((visibility ("internal"))) cdSetSpeed (unsigned short sp);
+extern void __attribute__ ((visibility ("internal"))) cdSetVolume(uint8_t vol, int8_t bal, int8_t pan, uint8_t opt);
 extern void __attribute__ ((visibility ("internal"))) cdSetLoop (int loop);
 extern void __attribute__ ((visibility ("internal"))) cdIdle (void);
 
