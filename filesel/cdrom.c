@@ -30,6 +30,7 @@
 #include "config.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,13 +49,20 @@
 #include "pfilesel.h"
 #include "stuff/err.h"
 
-struct cdrom_t;
 static struct cdrom_t
 {
 	char dev[32];
 	char vdev[12];
 	int caps;
 	int fd;
+
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+	pthread_t thread;
+	struct ioctl_cdrom_readaudio_request_t *request;
+	int request_complete;
+	int request_returnvalue;
+	int shutdown;
 
 	struct ioctl_cdrom_readtoc_request_t lasttoc;
 } *cdroms = 0;
@@ -127,6 +135,11 @@ static void try(const char *dev, const char *vdev)
 			//cdroms[cdromn].dirdbnode=dirdbFindAndRef(dmCDROM->basepath, vdev);
 			cdroms[cdromn].caps=caps;
 			cdroms[cdromn].fd=fd;
+			cdroms[cdromn].request=0;
+			cdroms[cdromn].request_complete=0;
+			cdroms[cdromn].request_returnvalue=0;
+			cdroms[cdromn].shutdown=0;
+
 			fcntl(fd, F_SETFD, 1);
 			cdromn++;
 #ifdef CDROM_VERBOSE
@@ -221,10 +234,43 @@ static void try(const char *dev, const char *vdev)
 	}
 }
 
+static void *cdrom_thread (void *_self)
+{
+	struct cdrom_t *self = _self;
+	pthread_mutex_lock (&self->mutex);
+	while (1)
+	{
+		if (self->shutdown)
+		{
+			pthread_mutex_unlock (&self->mutex);
+			return 0;
+		}
+		if (self->request)
+		{
+			struct cdrom_read_audio rip_ioctl;
+
+			pthread_mutex_unlock (&self->mutex);
+
+			rip_ioctl.addr.lba = self->request->lba_addr;
+			rip_ioctl.addr_format = CDROM_LBA;
+			rip_ioctl.nframes = self->request->lba_count;
+			rip_ioctl.buf = self->request->ptr;
+			self->request->retval = ioctl (self->fd, CDROMREADAUDIO, &rip_ioctl);
+			self->request->lba_count = self->request->retval ? 0 : rip_ioctl.nframes;
+
+			pthread_mutex_lock (&self->mutex);
+			self->request_complete = 1;
+		}
+		pthread_cond_wait (&self->cond, &self->mutex);
+	}
+}
+
 static int cdint(void)
 {
 	char dev[32], vdev[12];
 	char a;
+
+	int i;
 
 	fsRegisterExt("CDA");
 
@@ -247,7 +293,7 @@ static int cdint(void)
 
 	dmCDROM=RegisterDrive("cdrom:", &cdrom_root, &cdrom_root);
 
-	fprintf(stderr, "Locating cdroms [     ]\010\010\010\010\010\010");
+	fprintf(stderr, "Locating cdroms [    ]\010\010\010\010\010");
 
 	sprintf(dev, "/dev/cdrom");
 	sprintf(vdev, "cdrom");
@@ -255,14 +301,6 @@ static int cdint(void)
 	for (a=0;a<=32;a++)
 	{
 		sprintf(dev, "/dev/cdrom%d", a);
-		sprintf(vdev, "cdrom%d", a);
-		try(dev, vdev);
-	}
-	fprintf(stderr, ".");
-
-	for (a=0;a<=32;a++)
-	{
-		sprintf(dev, "/dev/cdroms/cdrom%d", a);
 		sprintf(vdev, "cdrom%d", a);
 		try(dev, vdev);
 	}
@@ -291,6 +329,15 @@ static int cdint(void)
 		try(dev, vdev);
 	}
 	fprintf(stderr, ".]\n");
+
+	/* We wait with thread initialization until here, since realloc might move all the cdroms structures */
+	for (i=0; i < cdromn; i++)
+	{
+		pthread_mutex_init (&cdroms[i].mutex, NULL);
+		pthread_cond_init (&cdroms[i].cond, NULL);
+		pthread_create (&cdroms[i].thread, NULL, cdrom_thread, &cdroms[i]);
+	}
+
 	return errOk;
 }
 
@@ -300,6 +347,14 @@ static void cdclose(void)
 
 	for (i=0; i < cdromn; i++)
 	{
+		void *retval;
+
+		pthread_mutex_lock (&cdroms[i].mutex);
+		cdroms[i].shutdown = 1;
+		pthread_mutex_unlock (&cdroms[i].mutex);
+		pthread_cond_signal (&cdroms[i].cond);
+		pthread_join (cdroms[i].thread, &retval);
+
 		close (cdroms[i].fd);
 		cdroms[i].fd = -1;
 		//dirdbUnref(cdroms[i].dirdbnode);
@@ -444,7 +499,7 @@ static struct ocpdir_t *cdrom_root_readdir_dir (struct ocpdir_t *_self, uint32_t
 			cdrom_drive_readdir_iterate,
 			0, // readdir_dir
 			0, // readdir_file
-		        0,
+			0,
 			dirdbRef (dirdb_ref, dirdb_use_dir),
 			1,
 			0, /* not an archive */
@@ -773,30 +828,53 @@ static int ocpfilehandle_cdrom_track_read (struct ocpfilehandle_t *_handle, void
 static int ocpfilehandle_cdrom_track_ioctl (struct ocpfilehandle_t *_handle, const char *cmd, void *ptr)
 {
 	struct ocpfilehandle_cdrom_track_t *handle = (struct ocpfilehandle_cdrom_track_t *)_handle;
+	struct cdrom_t *self = handle->owner->cdrom;
 
 	if (!strcmp (cmd, IOCTL_CDROM_READTOC))
 	{
 		memcpy (ptr, &handle->owner->cdrom->lasttoc, sizeof (handle->owner->cdrom->lasttoc));
 		return 0;
 	}
-	if (!strcmp (cmd, IOCTL_CDROM_READAUDIO))
+	if (!strcmp (cmd, IOCTL_CDROM_READAUDIO_ASYNC_REQUEST))
 	{
-		struct cdrom_read_audio rip_ioctl;
-		struct ioctl_cdrom_readaudio_request_t *request = ptr;
-		int retval;
+		pthread_mutex_lock (&self->mutex);
 
-		fprintf (stderr, "IOCTL_CDROM_READAUDIO lba=%d nframes=%d", request->lba_addr, request->lba_count);
+		if (self->request)
+		{
+			pthread_mutex_unlock (&self->mutex);
+			return -1;
+		}
 
-		rip_ioctl.addr.lba = request->lba_addr;
-		rip_ioctl.addr_format = CDROM_LBA;
-		rip_ioctl.nframes = request->lba_count;
-		rip_ioctl.buf = request->ptr;
-		retval = ioctl (handle->owner->cdrom->fd, CDROMREADAUDIO, &rip_ioctl);
-		request->lba_count = retval ? 0 : rip_ioctl.nframes;
+		self->request = ptr;
+		self->request_returnvalue = 0;
+		self->request_complete = 0;
 
-		fprintf (stderr, " => %d\n", request->lba_count);
-
-		return retval;
+		pthread_mutex_unlock (&self->mutex);
+		pthread_cond_signal (&self->cond);
+		return 1; /* not ready */
+	}
+	if (!strcmp (cmd, IOCTL_CDROM_READAUDIO_ASYNC_PULL))
+	{
+		pthread_mutex_lock (&self->mutex);
+		if (!self->request)
+		{
+			pthread_mutex_unlock (&self->mutex);
+			return -1;
+		}
+		if (self->request != ptr)
+		{
+			pthread_mutex_unlock (&self->mutex);
+			return -1;
+		}
+		if (!self->request_complete)
+		{
+			pthread_mutex_unlock (&self->mutex);
+			return 1; /* not ready */
+		}
+		self->request = 0;
+		self->request_complete = 0;
+		pthread_mutex_unlock (&self->mutex);
+		return 0;
 	}
 	return -1;
 }

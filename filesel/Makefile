@@ -47,7 +47,7 @@ test: adbmeta-test dirdb-test filesystem-bzip2-test filesystem-filehandle-cache-
 	@echo "" && echo "filesystem-tar-test:"                && ./filesystem-tar-test
 
 cdrom$(LIB_SUFFIX): $(cdrom_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
+	$(CC) $(SHARED_FLAGS) -o $@ $^ $(PTHREAD_LIBS)
 
 pfilesel$(LIB_SUFFIX): $(pfilesel_so)
 	$(CC) $(SHARED_FLAGS) $(MATH_LIBS) $(ICONV_LIBS) -o $@ $^ -lbz2 -lz

@@ -70,7 +70,7 @@ struct ocpfilehandle_t *fh;
 #endif
 #define CD_FRAMESIZE_RAW 2352
 
-#define BUFFER_SLOTS 128
+#define BUFFER_SLOTS 75*4
 #define REQUEST_SLOTS 16
 /* cdIdler dumping locations */
 static unsigned char        cdbufdata[CD_FRAMESIZE_RAW*BUFFER_SLOTS];
@@ -85,6 +85,10 @@ static int donotloop;
 
 static uint8_t pan = 64, srnd = 0;
 static unsigned long voll = 256, volr = 256;
+
+static struct ioctl_cdrom_readaudio_request_t req;
+static int req_active = 0;
+static int req_pos1;
 
 #define PANPROC \
 do { \
@@ -115,13 +119,41 @@ do { \
 	} \
 } while(0)
 
+static void cdIdlerAddBuffer(void)
+{
+	int temp;
+
+	for (temp = 0; temp < req.lba_count; temp++)
+	{
+		rip_sectors[(req_pos1/CD_FRAMESIZE_RAW)+temp] = lba_next + temp;
+	}
+
+#ifdef WORDS_BIGENDIAN
+	for (temp = 0; temp < req.lba_count * CD_FRAMESIZE_RAW / 2; temp++)
+	{
+		((uint16_t *)req.ptr)[temp] = uint16_little(((uint16_t *)req.ptr)[temp]);
+	}
+#endif
+	ringbuffer_head_add_bytes (cdbufpos, req.lba_count * CD_FRAMESIZE_RAW);
+	lba_next += req.lba_count;
+}
+
 static void cdIdler(void)
 {
-	int pos1, pos2;
+	int pos2;
 	int length1, length2;
 	int emptyframes;
 	int temp;
-	struct ioctl_cdrom_readaudio_request_t req;
+
+	if (req_active)
+	{
+		if (fh->ioctl (fh, IOCTL_CDROM_READAUDIO_ASYNC_PULL, &req))
+		{
+			return;
+		}
+		cdIdlerAddBuffer();
+		req_active = 0;
+	}
 
 	/* first check for EOF */
 	if (lba_next == lba_stop)
@@ -136,7 +168,7 @@ static void cdIdler(void)
 		}
 	}
 
-	ringbuffer_get_head_bytes (cdbufpos, &pos1, &length1, &pos2, &length2);
+	ringbuffer_get_head_bytes (cdbufpos, &req_pos1, &length1, &pos2, &length2);
 
 	emptyframes = length1 / CD_FRAMESIZE_RAW;
 	if ((!emptyframes) || ((emptyframes < REQUEST_SLOTS) && (!length2)))
@@ -156,25 +188,19 @@ static void cdIdler(void)
 
 	req.lba_addr = lba_next;
 	req.lba_count = emptyframes;
-	req.ptr = cdbufdata + pos1;
-	assert ((pos1 + emptyframes * CD_FRAMESIZE_RAW) <= sizeof (cdbufdata));
-	if (fh->ioctl (fh, IOCTL_CDROM_READAUDIO, &req))
+	req.ptr = cdbufdata + req_pos1;
+	assert ((req_pos1 + emptyframes * CD_FRAMESIZE_RAW) <= sizeof (cdbufdata));
+	switch (fh->ioctl (fh, IOCTL_CDROM_READAUDIO_ASYNC_REQUEST, &req))
 	{
-		return;
+		case -1:
+			return;
+		case 0:
+			cdIdlerAddBuffer();
+			return;
+		case 1:
+			req_active = 1;
+			return;
 	}
-	for (temp = 0; temp < req.lba_count; temp++)
-	{
-		rip_sectors[(pos1/CD_FRAMESIZE_RAW)+temp] = lba_next + temp;
-	}
-
-#ifdef WORDS_BIGENDIAN
-	for (temp = 0; temp < req.lba_count * CD_FRAMESIZE_RAW / 2; temp++)
-	{
-		((uint16_t *)req.ptr)[temp] = uint16_little(((uint16_t *)req.ptr)[temp]);
-	}
-#endif
-	ringbuffer_head_add_bytes (cdbufpos, req.lba_count * CD_FRAMESIZE_RAW);
-	lba_next += req.lba_count;
 }
 
 void __attribute__ ((visibility ("internal"))) cdIdle(void)
@@ -614,6 +640,15 @@ void __attribute__ ((visibility ("internal"))) cdClose (void)
 		ringbuffer_free (cdbufpos);
 		cdbufpos = 0;
 	}
+
+	if (req_active)
+	{
+		while (fh->ioctl (fh, IOCTL_CDROM_READAUDIO_ASYNC_PULL, &req) > 1)
+		{
+			usleep (1000);
+		}
+	}
+
 	if (fh)
 	{
 		fh->unref (fh);

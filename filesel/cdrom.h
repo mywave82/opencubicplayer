@@ -19,13 +19,16 @@ struct ioctl_cdrom_readtoc_request_t
 	struct _ioctl_cdrom_tocentry track[101];
 };
 
-#define IOCTL_CDROM_READAUDIO "CDROM_READAUDIO"
+#define IOCTL_CDROM_READAUDIO_ASYNC_REQUEST "CDROM_READAUDIO_ASYNC_REQUEST"
+#define IOCTL_CDROM_READAUDIO_ASYNC_PULL "CDROM_READAUDIO_ASYNC_PULL"
 
 struct ioctl_cdrom_readaudio_request_t
 {
 	uint32_t  lba_addr;
 	uint32_t  lba_count;
 	uint8_t  *ptr;
+	int       retval;
 };
+
 
 #endif
