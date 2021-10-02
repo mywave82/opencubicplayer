@@ -59,7 +59,10 @@ static int reversestereo; /* boolean */
 /* cdIdle dumping location */
 static int16_t *buf16=NULL;
 
-static int lba_start, lba_stop, lba_next;
+static int lba_start;   // start of track
+static int lba_stop;    // end of track
+static int lba_next;    // next sector to fetch
+static int lba_current; // last sector sent to devp
 struct ocpfilehandle_t *fh;
 
 #ifdef CD_FRAMESIZE_RAW
@@ -268,6 +271,7 @@ void __attribute__ ((visibility ("internal"))) cdIdle(void)
 				length1--;
 			}
 
+			lba_current = rip_sectors[((pos1<<2)-1) / CD_FRAMESIZE_RAW];
 			ringbuffer_tail_consume_samples (cdbufpos, buf16_filled); /* add this rate buf16_filled == tail_used */
 		} else {
 			/* We are going to perform cubic interpolation of rate conversion... this bit is tricky */
@@ -391,6 +395,7 @@ void __attribute__ ((visibility ("internal"))) cdIdle(void)
 					length1 -= progress;
 				}
 			}
+			lba_current = rip_sectors[((pos1<<2)-1) / CD_FRAMESIZE_RAW];
 			ringbuffer_tail_consume_samples (cdbufpos, accumulated_progress);
 		}
 
@@ -681,7 +686,7 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 {
 	inpause = 0;
 
-	lba_next = lba_start = start;
+	lba_next = lba_start = lba_current = start;
 	lba_stop = start + len;
 
 	if (fh)
@@ -753,7 +758,7 @@ void __attribute__ ((visibility ("internal"))) cdGetStatus (struct cdStat *stat)
 {
 	stat->error=0;
 	stat->paused=inpause;
-	stat->position=lba_next; /* TODO, needs buffer feedback */
+	stat->position=lba_current;
 	stat->speed=(inpause?0:speed);
 	stat->looped=(lba_next==lba_stop)&&(looped==3);
 }
