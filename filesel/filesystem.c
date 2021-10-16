@@ -136,6 +136,11 @@ int ocpfilehandle_read_uint24_le (struct ocpfilehandle_t *s, uint32_t *dst)
 	return 0;
 }
 
+const char *ocpfile_t_fill_default_filename_override (struct ocpfile_t *file)
+{
+	return 0;
+}
+
 struct ocpdir_t_fill_default_readdir_dir_t // help struct for ocpdir_t_fill_default_readdir_dir
 {
 	uint32_t dirdb_ref;

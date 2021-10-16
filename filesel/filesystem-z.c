@@ -788,6 +788,7 @@ static struct ocpdir_t *Z_check_steal (struct ocpfile_t *s, const uint32_t dirdb
 	                 Z_ocpfile_open,
 	                 Z_ocpfile_filesize,
 	                 Z_ocpfile_filesize_ready,
+	                 0, /* filename_override */
 	                 dirdb_ref,
 	                 0, /* refcount */
 	                 0  /* is_nodetect */);

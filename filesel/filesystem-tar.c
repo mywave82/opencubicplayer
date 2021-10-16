@@ -440,6 +440,7 @@ static uint32_t tar_instance_add_file (struct tar_instance_t *self,
 	                 tar_file_open,
 	                 tar_file_filesize,
 	                 tar_file_filesize_ready,
+	                 0, /* filename_override */
 	                 dirdb_ref,
 	                 0, /* refcount */
 	                 0  /* is_nodetect */);

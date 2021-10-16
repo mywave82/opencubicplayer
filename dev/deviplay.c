@@ -249,6 +249,7 @@ static int dir_devp_readdir_iterate (ocpdirhandle_pt _handle)
 				                 file_devp_open,
 				                 file_devp_filesize,
 				                 file_devp_filesize_ready,
+				                 0, /* filename_override */
 				                 dirdbFindAndRef (handle->owner->dirdb_ref, npath, dirdb_use_file),
 				                 1, /* refcount */
 				                 1  /* is_nodetect */);
@@ -332,6 +333,7 @@ static struct ocpfile_t *dir_devp_readdir_file (struct ocpdir_t *_self, uint32_t
 		                 file_devp_open,
 		                 file_devp_filesize,
 		                 file_devp_filesize_ready,
+		                 0, /* filename_override */
 		                 dirdbRef (dirdb_ref, dirdb_use_file),
 		                 1, /* refcount */
 		                 1  /* is_nodetect */);

@@ -678,10 +678,11 @@ static struct ocpfile_t *unix_file_steal (struct ocpdir_t *parent, const uint32_
 		&r->head,
 		unix_file_ref,
 		unix_file_unref,
-	        parent,
+		parent,
 		unix_file_open,
 		unix_file_filesize,
 		unix_file_filesize_ready,
+		0, /* filename_override */
 		dirdb_node,
 		1, /* refcount */
 	        0  /* is_nodetect */

@@ -28,6 +28,7 @@
 
 #include <linux/cdrom.h>
 #include "config.h"
+#include <discid/discid.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
@@ -65,6 +66,7 @@ static struct cdrom_t
 	int shutdown;
 
 	struct ioctl_cdrom_readtoc_request_t lasttoc;
+	char *lastdiscid;
 } *cdroms = 0;
 static int cdromn = 0;
 
@@ -81,9 +83,8 @@ struct cdrom_track_ocpfile_t
 {
 	struct ocpfile_t head;
 	struct cdrom_t *cdrom;
-
-#warning REMOVE buffer!!!!
-	char buffer[128];
+	int trackno;
+	char trackfilename[13];
 };
 
 static void cdrom_root_ref (struct ocpdir_t *);
@@ -139,6 +140,7 @@ static void try(const char *dev, const char *vdev)
 			cdroms[cdromn].request_complete=0;
 			cdroms[cdromn].request_returnvalue=0;
 			cdroms[cdromn].shutdown=0;
+			cdroms[cdromn].lastdiscid=0;
 
 			fcntl(fd, F_SETFD, 1);
 			cdromn++;
@@ -357,6 +359,7 @@ static void cdclose(void)
 
 		close (cdroms[i].fd);
 		cdroms[i].fd = -1;
+		free (cdroms[i].lastdiscid);
 		//dirdbUnref(cdroms[i].dirdbnode);
 	}
 	free (cdroms);
@@ -564,6 +567,8 @@ static ocpdirhandle_pt cdrom_drive_readdir_start (struct ocpdir_t *_self, void(*
 	dh->initlba = -1;
 
 	bzero (&self->cdrom->lasttoc, sizeof (self->cdrom->lasttoc));
+	free (dh->owner->cdrom->lastdiscid);
+	dh->owner->cdrom->lastdiscid = 0;
 
 	if (ioctl(self->cdrom->fd, CDROMREADTOCHDR, &dh->tochdr))
 	{ /* should not happen, but sometime it does for unknown reasons? */
@@ -640,12 +645,69 @@ leadout:
 		}
 	}
 
+	{
+		DiscId *did = discid_new();
+		int offsets[100];
+		int first = self->cdrom->lasttoc.starttrack;
+		int last = self->cdrom->lasttoc.lasttrack;
+		int i;
+		char *t;
+
+		if (!did)
+		{
+			goto failout;
+		}
+
+		offsets[0] = 0;
+		for (i=first; i <= last; i++)
+		{
+			offsets[i] = dh->owner->cdrom->lasttoc.track[i].lba_addr + 150;
+			offsets[0] = dh->owner->cdrom->lasttoc.track[i+1].lba_addr + 150;
+			if (self->cdrom->lasttoc.track[i].is_data)
+			{
+				first = i + 1;
+			}
+		}
+
+		if (first > last)
+		{
+			goto failout;
+		}
+
+		if (!discid_put (did, first, last, offsets))
+		{
+			goto failout;
+		}
+
+		t = discid_get_id(did);
+		if (t)
+		{
+			dh->owner->cdrom->lastdiscid = strdup(t);
+		}
+failout:
+			if (did)
+			{
+				discid_free (did);
+			}
+	}
+
 	return dh;
 }
 
 static void cdrom_drive_readdir_cancel (ocpdirhandle_pt dh)
 {
 	free (dh);
+}
+
+static const char *cdrom_track_filename_override_disc (struct ocpfile_t *file)
+{
+	return "DISC.CDA";
+}
+
+static const char *cdrom_track_filename_override_track (struct ocpfile_t *_file)
+{
+	struct cdrom_track_ocpfile_t *file = (struct cdrom_track_ocpfile_t *)_file;
+	return file->trackfilename;
 }
 
 static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
@@ -655,6 +717,7 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 
 	uint32_t mdb_ref;
 	struct moduleinfostruct mi;
+	char filename[64];
 
 	if ((dh->i > dh->tochdr.cdth_trk1) || (dh->i >= 100)) /* last check is not actually needed */
 	{
@@ -666,6 +729,8 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 				return 0;
 			}
 
+			snprintf(filename, sizeof (filename), "%sDISC.CDA", dh->owner->cdrom->lastdiscid ? dh->owner->cdrom->lastdiscid : "");
+
 			ocpfile_t_fill (&file->head,
 			                 cdrom_track_ref,
 			                 cdrom_track_unref,
@@ -673,15 +738,15 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 			                 cdrom_track_open,
 			                 cdrom_track_filesize,
 			                 cdrom_track_filesize_ready,
-			                 dirdbFindAndRef (dh->owner->head.dirdb_ref, "DISK.CDA", dirdb_use_file),
+			                 cdrom_track_filename_override_disc,
+			                 dirdbFindAndRef (dh->owner->head.dirdb_ref, filename, dirdb_use_file),
 			                 1, /* refcount */
 			                 1  /* is_nodetect */);
 
 			dh->owner->head.ref (&dh->owner->head);
 			file->cdrom = dh->owner->cdrom;
-			snprintf (file->buffer, sizeof (file->buffer), "fd=%d,disk=%d:%d", dh->owner->cdrom->fd, dh->initlba, dh->lastlba);
 
-			mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, strlen (file->buffer));
+			mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, (dh->owner->cdrom->lasttoc.track[dh->owner->cdrom->lasttoc.lasttrack + 1].lba_addr - dh->owner->cdrom->lasttoc.track[dh->owner->cdrom->lasttoc.starttrack].lba_addr) * 2352);
 			if (mdb_ref != UINT32_MAX)
 			{
 				if (mdbGetModuleInfo(&mi, mdb_ref))
@@ -694,6 +759,7 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 					mdbWriteModuleInfo (mdb_ref, &mi);
 				}
 			}
+			file->trackno = 0;
 			dh->callback_file (dh->token, &file->head);
 			file->head.unref (&file->head);
 		}
@@ -702,8 +768,8 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 
 	if (!dh->owner->cdrom->lasttoc.track[dh->i].is_data)
 	{
-		char filename[12];
-		snprintf(filename, sizeof (filename), "TRACK%02u.CDA", dh->i);
+		snprintf(filename, sizeof (filename), "%sTRACK%02u.CDA", dh->owner->cdrom->lastdiscid ? dh->owner->cdrom->lastdiscid : "", dh->i);
+		int len = (dh->owner->cdrom->lasttoc.track[dh->i + 1].lba_addr - dh->owner->cdrom->lasttoc.track[dh->i].lba_addr) * 2352;
 
 		if (dh->initlba < 0)
 		{
@@ -717,6 +783,8 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 			goto next;
 		}
 
+		snprintf(file->trackfilename, sizeof (file->trackfilename), "TRACK%02u.CDA", dh->i);
+
 		ocpfile_t_fill (&file->head,
 		                 cdrom_track_ref,
 		                 cdrom_track_unref,
@@ -724,26 +792,27 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 		                 cdrom_track_open,
 		                 cdrom_track_filesize,
 		                 cdrom_track_filesize_ready,
+		                 cdrom_track_filename_override_track,
 		                 dirdbFindAndRef (dh->owner->head.dirdb_ref, filename, dirdb_use_file),
 		                 1, /* refcount */
 		                 1  /* is_nodetect */);
 
 		dh->owner->head.ref (&dh->owner->head);
 		file->cdrom = dh->owner->cdrom;
-		snprintf (file->buffer, sizeof (file->buffer), "fd=%d,track=%d", dh->owner->cdrom->fd, dh->i);
-		mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, strlen (file->buffer));
+		mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, len);
 		if (mdb_ref != UINT32_MAX)
 		{
 			if (mdbGetModuleInfo(&mi, mdb_ref))
 			{
 				mi.modtype=mtCDA;
 				mi.channels=2;
-				mi.playtime=(dh->owner->cdrom->lasttoc.track[dh->i + 1].lba_addr - dh->owner->cdrom->lasttoc.track[dh->i].lba_addr) / CD_FRAMES;
+				mi.playtime=len / CD_FRAMES;
 				strcpy(mi.comment, dh->owner->cdrom->vdev);
 				strcpy(mi.modname, "CDROM audio track");
 				mdbWriteModuleInfo (mdb_ref, &mi);
 			}
 		}
+		file->trackno = dh->i;
 		dh->callback_file (dh->token, &file->head);
 		file->head.unref (&file->head);
 	}
@@ -928,8 +997,14 @@ static struct ocpfilehandle_t *cdrom_track_open (struct ocpfile_t *_self)
 static uint64_t cdrom_track_filesize (struct ocpfile_t *_self)
 {
 	struct cdrom_track_ocpfile_t *self = (struct cdrom_track_ocpfile_t *)_self;
-	return strlen (self->buffer);
+	if (self->trackno)
+	{
+		return (self->cdrom->lasttoc.track[self->trackno                  + 1].lba_addr - self->cdrom->lasttoc.track[self->trackno                  ].lba_addr) * 2352;
+	} else {
+		return (self->cdrom->lasttoc.track[self->cdrom->lasttoc.lasttrack + 1].lba_addr - self->cdrom->lasttoc.track[self->cdrom->lasttoc.starttrack].lba_addr) * 2352;
+	}
 }
+
 static int cdrom_track_filesize_ready (struct ocpfile_t *_self)
 {
 	return 1;

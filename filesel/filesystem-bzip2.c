@@ -851,6 +851,7 @@ static struct ocpdir_t *bzip2_check_steal (struct ocpfile_t *s, const uint32_t d
 	                 bzip2_ocpfile_open,
 	                 bzip2_ocpfile_filesize,
 	                 bzip2_ocpfile_filesize_ready,
+	                 0, /* filename_override */
 	                 dirdb_ref,
 	                 0, /* refcount */
 	                 0  /* is_nodetect */);

@@ -819,6 +819,17 @@ AC_SUBST(HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H)
 AC_SUBST(HAVE_SIDPLAYFP_BUILDERS_RESID_H)
 AC_LANG_POP()
 
+AC_SUBST(LIBDISCID_LIBS)
+AC_SUBST(LIBDISCID_CFLAGS)
+AC_MSG_CHECKING([libdiscid support])
+LIBDISCID_LIBS=`pkg-config --libs libdiscid 2> /dev/null`
+LIBDISCID_CFLAGS=`pkg-config --cflags libdiscid 2> /dev/null`
+if test "$?" = 0; then
+	AC_MSG_RESULT("$LIBDISCID_CFLAGS $LIBDISCID_LIBS")
+else
+	AC_MSG_ERROR([pkg-config failed]);
+fi
+
 AC_SUBST(ALSA_CFLAGS)
 AC_SUBST(ALSA_LIBS)
 if test "x$with_alsa" != "xno"; then

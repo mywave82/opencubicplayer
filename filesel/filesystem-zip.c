@@ -672,6 +672,7 @@ static uint32_t zip_instance_add_file (struct zip_instance_t *self,
 	                 zip_file_open,
 	                 zip_file_filesize,
 	                 zip_file_filesize_ready,
+	                 0, /* filename_override */
 	                 dirdb_ref,
 	                 0, /* refcount */
 	                 0  /* is_nodetect */);

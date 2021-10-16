@@ -655,6 +655,8 @@ HAVE_ADPLUG
 HAVE_ALSA
 ALSA_LIBS
 ALSA_CFLAGS
+LIBDISCID_CFLAGS
+LIBDISCID_LIBS
 HAVE_SIDPLAYFP_BUILDERS_RESID_H
 HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H
 NEW_8580_FILTER
@@ -11053,6 +11055,19 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking libdiscid support" >&5
+$as_echo_n "checking libdiscid support... " >&6; }
+LIBDISCID_LIBS=`pkg-config --libs libdiscid 2> /dev/null`
+LIBDISCID_CFLAGS=`pkg-config --cflags libdiscid 2> /dev/null`
+if test "$?" = 0; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$LIBDISCID_CFLAGS $LIBDISCID_LIBS\"" >&5
+$as_echo "\"$LIBDISCID_CFLAGS $LIBDISCID_LIBS\"" >&6; }
+else
+	as_fn_error $? "pkg-config failed" "$LINENO" 5;
+fi
 
 
 

@@ -907,6 +907,7 @@ static struct ocpdir_t *gzip_check_steal (struct ocpfile_t *s, const uint32_t di
 	                 gzip_ocpfile_open,
 	                 gzip_ocpfile_filesize,
 	                 gzip_ocpfile_filesize_ready,
+	                 0, /* filename_override */
 	                 dirdb_ref,
 	                 1, /* refcount */
 	                 0  /* is_nodetect */);

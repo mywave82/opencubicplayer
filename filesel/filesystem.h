@@ -61,6 +61,7 @@ static inline void ocpdir_t_fill (
 	int (*readdir_iterate)(ocpdirhandle_pt),
 	struct ocpdir_t  *(*readdir_dir)  (struct ocpdir_t *, uint32_t dirdb_ref),
 	struct ocpfile_t *(*readdir_file) (struct ocpdir_t *, uint32_t dirdb_ref),
+
 	const struct ocpdir_charset_override_API_t *charset_override_API,
 	int dirdb_ref,
 	int refcount,
@@ -92,11 +93,14 @@ struct ocpfile_t /* can be virtual */
 
 	uint64_t (*filesize)(struct ocpfile_t *); // can return FILESIZE_STREAM FILESIZE_ERROR
 	int (*filesize_ready)(struct ocpfile_t *); // if this is false, asking for filesize might be very slow
+	const char *(*filename_override) (struct ocpfile_t *); // returns NULL if we do not override the dirdb name
 
 	int dirdb_ref;
 	int refcount; /* internal use by all object variants */
 	uint8_t is_nodetect; /* do not use mdbReadInfo on this file please */
 };
+
+const char *ocpfile_t_fill_default_filename_override (struct ocpfile_t *);
 
 static inline void ocpfile_t_fill (
 	struct ocpfile_t *s,
@@ -106,6 +110,7 @@ static inline void ocpfile_t_fill (
 	struct ocpfilehandle_t *(*open)(struct ocpfile_t *),
 	uint64_t (*filesize)(struct ocpfile_t *),
 	int (*filesize_ready)(struct ocpfile_t *),
+	const char *(*filename_override) (struct ocpfile_t *),
 	int dirdb_ref,
 	int refcount,
 	uint8_t is_nodetect)
@@ -116,6 +121,7 @@ static inline void ocpfile_t_fill (
 	s->open           = open;
 	s->filesize       = filesize;
 	s->filesize_ready = filesize_ready;
+	s->filename_override = filename_override ? filename_override : ocpfile_t_fill_default_filename_override;
 	s->dirdb_ref      = dirdb_ref;
 	s->refcount       = refcount;
 	s->is_nodetect    = is_nodetect;
