@@ -84,6 +84,28 @@ void dirdbUnref (uint32_t ref, enum dirdb_use use)
 {
 }
 
+struct ocpdir_t *ocpdir_t_fill_default_readdir_dir  (struct ocpdir_t *_self, uint32_t dirdb_ref)
+{
+	fprintf (stderr, "Dummy symbol ocpdir_t_fill_default_readdir_dir called?\n");
+	_exit(1);
+}
+
+struct ocpfile_t *ocpdir_t_fill_default_readdir_file (struct ocpdir_t *_self, uint32_t dirdb_ref)
+{
+	fprintf (stderr, "Dummy symbol ocpdir_t_fill_default_readdir_file called?\n");
+	_exit(1);
+}
+
+const char *ocpfile_t_fill_default_filename_override (struct ocpfile_t *file)
+{
+	return 0;
+}
+
+int ocpfilehandle_t_fill_default_ioctl (struct ocpfilehandle_t *s, const char *cmd, void *ptr)
+{
+	return -1;
+}
+
 struct task_t
 {
 	      int   seek_set;
