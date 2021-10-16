@@ -42,7 +42,11 @@ static int fsReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len
 	if (!memcmp(buf, "OCPArchiveMeta\x1b\x00", 16))
 		strcpy(m->modname, "openCP archive data base");
 	if (!memcmp(buf, "Cubic Player Module Information Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 60))
-		strcpy(m->modname, "openCP module info data base");
+		strcpy(m->modname, "openCP module info data base (old)");
+	if (!memcmp(buf, "Cubic Player Module Information Data Base II\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 60))
+		strcpy(m->modname, "openCP module info data base (big-endian)");
+	if (!memcmp(buf, "Cubic Player Module Information Data Base II\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01", 60))
+		strcpy(m->modname, "openCP module info data base (little-endian)");
 	if (!memcmp(buf, dirdbsigv1, sizeof(dirdbsigv1)))
 		strcpy(m->modname, "openCP dirdb/medialib: db v1");
 	if (!memcmp(buf, dirdbsigv2, sizeof(dirdbsigv2)))

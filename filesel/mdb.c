@@ -24,11 +24,13 @@
  */
 
 #include "config.h"
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -48,42 +50,41 @@
 #define DEBUG_PRINT(...) {}
 #endif
 
-struct __attribute__((packed)) modinfoentry
+#define MDB_USED 1
+#define MDB_STRING_MORE 6        /* STRING, and more data follows in the next node */
+#define MDB_STRING_TERMINATION 2 /* STRING, last (or only) node */
+/* 64 and 128 is used by MDB_VIRTUAL and MDB_BIGMODULE */
+
+struct modinfoentry
 {
-	uint8_t flags;
 	union
 	{
+		struct  __attribute__((__aligned__(4)))
+		        __attribute__((packed))
+		{
+			uint8_t record_flags;
+			uint8_t filename_hash[7];  /*  1 */
+			uint64_t size;             /*  8 */
+			struct moduletype modtype; /* 16 */
+			uint8_t module_flags;      /* 20 */
+			uint8_t channels;          /* 21 */
+			uint16_t playtime;         /* 22 */
+			uint32_t date;             /* 24 */
+			uint32_t title_ref;        /* 28 */
+			uint32_t composer_ref;     /* 32 */
+			uint32_t artist_ref;       /* 36 */
+			uint32_t style_ref;        /* 40 */
+			uint32_t comment_ref;      /* 44 */
+			uint32_t album_ref;        /* 48 */
+			uint8_t reserved[12];      /* 52-63*/
+		} general;
 		struct __attribute__((packed))
 		{
-			uint8_t modtype;    /*  1 */
-			uint32_t comref;    /*  5 */
-			uint32_t compref;   /*  9 */
-			uint32_t futref;    /* 13 */
-			char name[12];      /* 25 */
-			uint32_t size;      /* 29 */
-			char modname[32];   /* 61 */
-			uint32_t date;      /* 65 */
-			uint16_t playtime;  /* 67 */
-			uint8_t channels;   /* 68 */
-			uint8_t moduleflags;/* 69 */
-			/* last uint8_t flags2 is up-padding for the top uint8_t and so on.. */
-		} gen;
-
-		struct __attribute__((packed))
-		{
-			char unusedfill1[6]; /*  1 */
-			char comment[63];
-		} com;
-
-		struct __attribute__((packed))
-		{
-			char composer[32];
-			char style[31];
-		} comp;
+			uint8_t flags;
+			uint8_t data[63]; /* if not terminated, is uses the node following */
+		} string;
 	} mie;
 };
-#define gen mie.gen
-#define comp mie.comp
 
 struct __attribute__((packed)) mdbheader
 {
@@ -91,109 +92,95 @@ struct __attribute__((packed)) mdbheader
 	uint32_t entries;
 };
 const char mdbsigv1[60] = "Cubic Player Module Information Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+#ifdef WORDS_BIGENDIAN
+const char mdbsigv2[60] = "Cubic Player Module Information Data Base II\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+#else
+const char mdbsigv2[60] = "Cubic Player Module Information Data Base II\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01";
+#endif
+/* future mmap
+static void  *mdbRawData;
+static size_t mdbRawMapSize;
+*/
+
+static int mdbFd = -1;
 
 static struct modinfoentry *mdbData;
-static uint32_t mdbNum;
-static int mdbDirty;
-static uint32_t *mdbReloc;
-static uint32_t mdbGenNum;
-static uint32_t mdbGenMax;
+static uint32_t             mdbDataSize;
+static uint32_t             mdbDataNextFree;
 
-const char *mdbGetModTypeString(unsigned char type)
+static uint8_t              mdbDirty;
+static uint8_t             *mdbDirtyMap;
+static unsigned int         mdbDirtyMapSize;  /* should be >= mdbDataSize */
+
+       uint8_t              mdbCleanSlate; /* media-db needs to know that we used to be previous version database before we hashed filenames */
+
+static uint32_t            *mdbSearchIndexData;  /* lookup sorted index */
+static uint32_t             mdbSearchIndexCount; /* Number of entries in sorted index */
+static uint32_t             mdbSearchIndexSize;  /* Allocated size in sorted index */
+
+int mdbGetModuleType (uint32_t mdb_ref, struct moduletype *dst)
 {
-	return fsTypeNames[type&UINT8_MAX];
+	if (mdb_ref>=mdbDataSize)
+		return -1;
+	if (mdbData[mdb_ref].mie.general.record_flags != MDB_USED)
+		return -1;
+	*dst = mdbData[mdb_ref].mie.general.modtype;
+	return 0;
 }
 
-int mdbGetModuleType(uint32_t mdb_ref)
+/* Is the mdb reference scanned yet? */
+int mdbInfoIsAvailable (uint32_t mdb_ref)
 {
-	if (mdb_ref>=mdbNum)
-		return -1;
-	if ((mdbData[mdb_ref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL))
-		return -1;
-	return mdbData[mdb_ref].gen.modtype;
-}
+	assert (mdb_ref < mdbDataSize);
+	assert (mdbData[mdb_ref].mie.general.record_flags & MDB_USED);
+	assert (!(mdbData[mdb_ref].mie.general.record_flags & MDB_STRING_MORE));
 
-uint8_t mdbReadModType(const char *str)
-{
-	int v=255;
-	int i;
-	for (i=0; i<256; i++)
-		if (!strcasecmp(str, fsTypeNames[i]))
-			v=i;
-	return v;
-}
-
-
-int mdbInfoRead(uint32_t mdb_ref)
-{
-	if (mdb_ref>=mdbNum)
+	if (mdbData[mdb_ref].mie.general.modtype.integer.i == 0)
 	{
-		DEBUG_PRINT ("mdbInfoRead(0x%08"PRIx32") => -1 due to out of range\n", mdb_ref);
-		return -1;
-	}
-	if ((mdbData[mdb_ref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL))
-	{
-		DEBUG_PRINT ("mdbInfoRead(0x%08"PRIx32") => -1 due to entry not being USED + GENERAL\n", mdb_ref);
-		return -1;
-	}
-#ifdef MDB_DEBUG
-	if (mdbData[mdb_ref].gen.modtype==mtUnRead)
-	{
-		DEBUG_PRINT ("mdbInfoRead(0x%08"PRIx32") => 0 due to mtUnRead\n", mdb_ref);
+		DEBUG_PRINT ("mdbInfoIsAvailable(0x%08"PRIx32") => 0 due to mtUnRead\n", mdb_ref);
 	} else {
-		DEBUG_PRINT ("mdbInfoRead(0x%08"PRIx32") => 1 due to modtype != mtUnRead\n", mdb_ref);
+		DEBUG_PRINT ("mdbInfoIsAvailable(0x%08"PRIx32") => 1 due to modtype != mtUnRead\n", mdb_ref);
 	}
-#endif
-	return mdbData[mdb_ref].gen.modtype!=mtUnRead;
+
+	return mdbData[mdb_ref].mie.general.modtype.integer.i != 0;
 }
 
 /* This thing will end up with a register of all valid pre-interprators for modules and friends
  */
 static struct mdbreadinforegstruct *mdbReadInfos=NULL;
-
-void mdbRegisterReadInfo(struct mdbreadinforegstruct *r)
+void mdbRegisterReadInfo (struct mdbreadinforegstruct *r)
 {
+	DEBUG_PRINT ("mdbRegisterReadInfo(%s)\n", r->name);
+
 	r->next=mdbReadInfos;
 	mdbReadInfos=r;
 	if (r->Event)
+	{
 		r->Event(mdbEvInit);
+	}
 }
 
-void mdbUnregisterReadInfo(struct mdbreadinforegstruct *r)
+void mdbUnregisterReadInfo (struct mdbreadinforegstruct *r)
 {
-	struct mdbreadinforegstruct *root=mdbReadInfos;
-	if (root==r)
+	struct mdbreadinforegstruct **prev = &mdbReadInfos;
+
+	while (*prev)
 	{
-		mdbReadInfos=r->next;
-		return;
-	}
-	while (root)
-	{
-		if (root->next==r)
+		if (*prev == r)
 		{
-			root->next=root->next->next;
+			DEBUG_PRINT ("mdbUnregisterReadInfo(%s)\n", r->name);
+
+			*prev = (*prev)->next;
 			return;
 		}
-		if (!root->next)
-			return;
-		root=root->next;
+		prev = &(*prev)->next;
 	}
+
+	DEBUG_PRINT ("mdbUnregisterReadInfo(%s) # WARNING, unable to find entry\n", r->name);
 }
 
-int mdbReadMemInfo(struct moduleinfostruct *m, const char *buf, int len)
-{
-	struct mdbreadinforegstruct *rinfos;
-
-	DEBUG_PRINT ("mdbReaadMemInfo(buf=%p len=%d)\n", buf, len);
-
-	for (rinfos=mdbReadInfos; rinfos; rinfos=rinfos->next)
-		if (rinfos->ReadMemInfo)
-			if (rinfos->ReadMemInfo(m, buf, len))
-				return 1;
-	return 0;
-}
-
-int mdbReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f)
+/* detect file infomation using 'plugins' */
+int mdbReadInfo (struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 {
 	char mdbScanBuf[1084];
 	struct mdbreadinforegstruct *rinfos;
@@ -214,107 +201,234 @@ int mdbReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 		DEBUG_PRINT ("   mdbReadMemInfo(%s %p %d)\n", path, mdbScanBuf, maxl);
 	}
 
-	if (mdbReadMemInfo(m, mdbScanBuf, maxl))
-		return 1;
+	/* quick version first that only uses memory buffer */
+	for (rinfos=mdbReadInfos; rinfos; rinfos=rinfos->next)
+		if (rinfos->ReadMemInfo)
+			if (rinfos->ReadMemInfo(m, mdbScanBuf, maxl))
+				return 1;
 
+	/* slow version that also allows more I/O */
 	for (rinfos=mdbReadInfos; rinfos; rinfos=rinfos->next)
 		if (rinfos->ReadInfo)
 			if (rinfos->ReadInfo(m, f, mdbScanBuf, maxl))
 				return 1;
 
-	return m->modtype==mtUnRead;
+	return m->modtype.integer.i != 0;
 }
 
-static uint32_t mdbGetNew(void)
+/* Unit test available */
+static uint32_t mdbNew (int size)
 {
-	uint32_t i;
+	uint32_t i, j;
 
-	for (i=0; i<mdbNum; i++)
-		if (!(mdbData[i].flags&MDB_USED))
-			break;
-	if (i==mdbNum)
+	for (i=mdbDataNextFree; i+size <= mdbDataSize; i++)
+	{
+		for (j=0; j < size; j++)
+		{
+			if (mdbData[i+j].mie.general.record_flags & MDB_USED)
+			{
+				break;
+			}
+		}
+		if (j == size)
+		{
+			goto ready;
+		}
+	}
+
 	{
 		void *t;
-		uint32_t j;
-		mdbNum+=64;
-		if (!(t=realloc(mdbData, mdbNum*sizeof(*mdbData))))
-			return UINT32_MAX;
-		mdbData=(struct modinfoentry *)t;
-		memset(mdbData+i, 0, (mdbNum-i)*sizeof(*mdbData));
-		for (j=i; j<mdbNum; j++)
-			mdbData[j].flags|=MDB_DIRTY;
-	}
-	mdbDirty=1;
+		uint32_t N;
+		uint32_t M;
 
-	DEBUG_PRINT("mdbGetNew() => 0x%08"PRIx32"\n", i);
+#define GROW 64       /* must be same size or bigger than the biggest possible size */
+#define GROWDIRTY 256 /* must be same as GROW or bigger, AND 8 or bigger */
+
+		/* new target mdbDataSize */
+		N = (mdbDataSize + GROW + GROW - 1) & ~(GROW-1);
+
+		/* Grow DirtyMapSize if needed, in chunks of GROWDIRTY */
+		if (mdbDirtyMapSize < N)
+		{
+			M = ((mdbDataSize + GROWDIRTY + GROWDIRTY - 1) & ~(GROWDIRTY - 1));
+			t = realloc (mdbDirtyMap, M / 8);
+			if (!t)
+			{
+				DEBUG_PRINT ("mdbNew() realloc(mdbDirtyMap) failed\n");
+				return UINT32_MAX;
+			}
+			mdbDirtyMap = (uint8_t *)t;
+			bzero (mdbDirtyMap + mdbDirtyMapSize / 8, (M - mdbDirtyMapSize) / 8);
+			mdbDirtyMapSize = M;
+		}
+
+		/* grow mdbData, in GROW chunks */
+		t=realloc(mdbData, N * sizeof(mdbData[0]));
+		if (!t)
+		{
+			DEBUG_PRINT ("mdbNew() realloc(mdbData) failed\n");
+			return UINT32_MAX;
+		}
+		mdbData=(struct modinfoentry *)t;
+		bzero(mdbData + mdbDataSize, (N - mdbDataSize) * sizeof(mdbData[0]));
+		mdbDataSize = N;
+		for (j=i; j<mdbDataSize; j++) /* all appended entries are dirty */
+		{
+			mdbDirtyMap[j>>3] |= 1 << (j & 0x07);
+		}
+	}
+ready:
+	for (j = 0; j < size; j++)
+	{
+		mdbData[i+j].mie.general.record_flags = MDB_USED;
+		mdbDirty=1;
+		mdbDirtyMap[(i+j)>>3] |= 1 << ((i+j) & 0x07);
+	}
+
+	DEBUG_PRINT("mdbNew(size=%d) => 0x%08" PRIx32 "\n", size, i);
+
+	if ((size == 1)||(mdbDataNextFree == i))
+	{
+		mdbDataNextFree = i + size; /* it might not be free, but it is atleast not before this */
+	}
 
 	return i;
 }
 
-int mdbWriteModuleInfo(uint32_t mdb_ref, struct moduleinfostruct *m)
+/* Unit test available */
+static void mdbFree (uint32_t ref, int size)
 {
-	DEBUG_PRINT("mdbWriteModuleInfo(0x%"PRIx32", %p)\n", mdb_ref, m);
+	int j;
 
-	if (mdb_ref>=mdbNum)
-	{
-		DEBUG_PRINT ("mdbWriteModuleInfo, mdb_ref(%d)<mdbNum(%d)\n", mdb_ref, mdbNum);
-		return 0;
-	}
-	if ((mdbData[mdb_ref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL))
-	{
-		DEBUG_PRINT ("mdbWriteModuleInfo (mdbData[mdb_ref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL) Failed\n");
-		return 0;
-	}
+	DEBUG_PRINT("  mdbFree(ref=0x%08" PRIx32 " size=%d)\n", ref, size);
+	assert (ref > 0);
+	assert (ref < mdbDataSize);
 
-	m->flags1=MDB_USED|MDB_DIRTY|MDB_GENERAL|(m->flags1&(MDB_VIRTUAL|MDB_BIGMODULE|MDB_RESERVED));
-	m->flags2=MDB_DIRTY|MDB_COMPOSER;
-	m->flags3=MDB_DIRTY|MDB_COMMENT;
-	m->flags4=MDB_DIRTY|MDB_FUTURE;
-
-	if (*m->composer||*m->style)
-		m->flags2|=MDB_USED;
-	if (*m->comment)
-		m->flags3|=MDB_USED;
-
-	/* free the old references */
-	if (m->comref!=UINT32_MAX)
-		mdbData[m->comref].flags=MDB_DIRTY;
-	if (m->compref!=UINT32_MAX)
-		mdbData[m->compref].flags=MDB_DIRTY;
-	if (m->futref!=UINT32_MAX)
-		mdbData[m->futref].flags=MDB_DIRTY;
-	m->compref=UINT32_MAX;
-	m->comref=UINT32_MAX;
-	m->futref=UINT32_MAX;
-
-	/* allocate new ones */
-	if (m->flags2&MDB_USED)
+	for (j = 0; j < size; j++)
 	{
-		m->compref=mdbGetNew();
-		if (m->compref!=UINT32_MAX)
-			memcpy(mdbData+m->compref, &m->flags2, sizeof(*mdbData));
-	}
-	if (m->flags3&MDB_USED)
-	{
-		m->comref=mdbGetNew();
-		if (m->comref!=UINT32_MAX)
-			memcpy(mdbData+m->comref, &m->flags3, sizeof(*mdbData));
-	}
-	if (m->flags4&MDB_USED)
-	{
-		m->futref=mdbGetNew();
-		if (m->futref!=UINT32_MAX)
-			memcpy(mdbData+m->futref, &m->flags4, sizeof(*mdbData));
+		bzero (mdbData + ref + j, sizeof (mdbData[0]));
+		mdbDirty=1;
+		mdbDirtyMap[(ref + j)>>3] |= 1 << ((ref + j) & 0x07);
 	}
 
-	memcpy(mdbData+mdb_ref, m, sizeof(*mdbData));
-	mdbDirty=1;
-	return 1;
+	if (ref < mdbDataNextFree)
+	{
+		mdbDataNextFree = ref;
+	}
 }
 
-void mdbScan(struct ocpfile_t *file, uint32_t mdb_ref)
+/* Unit test available */
+static int mdbWriteString (char *string, uint32_t *ref)
+{
+	int oldlen = 0;
+	int newlen = (strlen (string) + 62) / 63; /* no need to zero-terminate if we end at a boundary */
+	if (((*ref) < mdbDataSize) && ((*ref) != 0))
+	{
+		while (1)
+		{
+			if (((*ref) + oldlen) > mdbDataSize)
+				goto b; /* this is an assertion */
+			if (!(mdbData[(*ref) + oldlen].mie.general.record_flags & MDB_USED))
+				goto b; /* this is an assertion */
+			switch (mdbData[(*ref) + oldlen].mie.general.record_flags & MDB_STRING_MORE)
+			{
+				default:
+					goto b; /* this is an assertion */
+				case MDB_STRING_MORE:
+					oldlen++;
+					break;
+				case MDB_STRING_TERMINATION:
+					oldlen++;
+					goto b;
+			}
+		}
+	}
+
+	DEBUG_PRINT("mdbWriteString(strlen=%d, old_ref=0x%08" PRIx32 ") oldlen=%d newlen=%d\n", strlen (string), *ref, oldlen, newlen);
+b:
+	if (newlen == 0)
+	{
+		if (oldlen)
+		{
+			mdbFree (*ref, oldlen);
+		}
+		*ref = UINT32_MAX;
+		return 0; /* no error */
+	}
+	if (oldlen != newlen)
+	{
+		if (oldlen)
+		{
+			mdbFree (*ref, oldlen);
+		}
+		*ref = mdbNew (newlen);
+		if (*ref == UINT32_MAX)
+		{
+			return 1; /* error */
+		}
+	}
+
+	{
+		uint32_t iter = *ref;
+		int len = strlen (string);
+		char *s = string;
+		while (len)
+		{
+			mdbData[iter].mie.string.flags |= len > 63 ? MDB_STRING_MORE : MDB_STRING_TERMINATION;
+			memcpy (mdbData[iter].mie.string.data, s, (len >= 63) ? 63 : len + 1);
+			s += 63;
+			len -= (len >= 63) ? 63 : len;
+
+			mdbDirty=1;
+			mdbDirtyMap[iter>>3] |= 1 << (iter & 0x07);
+
+			iter++;
+		}
+	}
+	return 0;
+}
+
+int mdbWriteModuleInfo (uint32_t mdb_ref, struct moduleinfostruct *m)
+{
+	int retval = 0;
+
+	DEBUG_PRINT("mdbWriteModuleInfo(0x%"PRIx32", %p)\n", mdb_ref, m);
+
+	assert (mdb_ref > 0);
+	assert (mdb_ref < mdbDataSize);
+	assert (mdbData[mdb_ref].mie.general.record_flags == MDB_USED);
+
+	/* ensure that there is only zeroes after a possible zero-termination */
+	if (!m->modtype.string.c[0]) m->modtype.string.c[1] = 0;
+	if (!m->modtype.string.c[1]) m->modtype.string.c[2] = 0;
+	if (!m->modtype.string.c[2]) m->modtype.string.c[3] = 0;
+
+	/* first transfer all the direct entries */
+	mdbData[mdb_ref].mie.general.modtype = m->modtype;
+	mdbData[mdb_ref].mie.general.module_flags = m->flags;
+	mdbData[mdb_ref].mie.general.channels = m->channels;
+	mdbData[mdb_ref].mie.general.playtime = m->playtime;
+	mdbData[mdb_ref].mie.general.date = m->date;
+
+	retval |= mdbWriteString (m->title,    &mdbData[mdb_ref].mie.general.title_ref);
+	retval |= mdbWriteString (m->composer, &mdbData[mdb_ref].mie.general.composer_ref);
+	retval |= mdbWriteString (m->artist,   &mdbData[mdb_ref].mie.general.artist_ref);
+	retval |= mdbWriteString (m->style,    &mdbData[mdb_ref].mie.general.style_ref);
+	retval |= mdbWriteString (m->comment,  &mdbData[mdb_ref].mie.general.comment_ref);
+	retval |= mdbWriteString (m->album,    &mdbData[mdb_ref].mie.general.album_ref);
+
+	mdbDirty=1;
+	mdbDirtyMap[mdb_ref>>3] |= 1 << (mdb_ref & 0x07);
+
+	return !retval;
+}
+
+void mdbScan (struct ocpfile_t *file, uint32_t mdb_ref)
 {
 	DEBUG_PRINT ("mdbScan(file=%p, mdb_ref=0x%08"PRIx32")\n", file, mdb_ref);
+	assert (mdb_ref > 0);
+	assert (mdb_ref < mdbDataSize);
+
 	if (!file)
 	{
 		return;
@@ -325,7 +439,7 @@ void mdbScan(struct ocpfile_t *file, uint32_t mdb_ref)
 		return;
 	}
 
-	if (!mdbInfoRead(mdb_ref)) /* use mdbReadInfo again here ? */
+	if (!mdbInfoIsAvailable(mdb_ref))
 	{
 		struct moduleinfostruct mdbEditBuf;
 		struct ocpfilehandle_t *f;
@@ -340,212 +454,299 @@ void mdbScan(struct ocpfile_t *file, uint32_t mdb_ref)
 	}
 }
 
-static int miecmp(const void *a, const void *b)
+static int miecmp (const void *a, const void *b)
 {
 	struct modinfoentry *c=&mdbData[*(uint32_t *)a];
 	struct modinfoentry *d=&mdbData[*(uint32_t *)b];
-	if (c->gen.size==d->gen.size)
-		return memcmp(c->gen.name, d->gen.name, 12);
-	if (c->gen.size<d->gen.size)
+	if (c->mie.general.size==d->mie.general.size)
+	{
+		return memcmp(c->mie.general.filename_hash, d->mie.general.filename_hash, sizeof (c->mie.general.filename_hash));
+	}
+	if (c->mie.general.size < d->mie.general.size)
+	{
 		return -1;
-	else
+	} else {
 		return 1;
+	}
 }
 
-int mdbInit(void)
+/* Unit test is available */
+int mdbInit (void)
 {
 	char *path;
-	int f;
 	struct mdbheader header;
 	uint32_t i;
+	int retval = 1;
 
-	mdbDirty=0;
-	mdbData=0;
-	mdbNum=0;
-	mdbReloc=0;
-	mdbGenNum=0;
-	mdbGenMax=0;
+	mdbData = 0;
+	mdbDataSize = 0;
+	mdbDataNextFree = 0;
+
+	mdbDirty = 0;
+	mdbDirtyMap = 0;
+	mdbDirtyMapSize = 0;
+
+	mdbCleanSlate = 1;
+
+	mdbSearchIndexData = 0;
+	mdbSearchIndexCount = 0;
+	mdbSearchIndexSize = 0;
 
 	makepath_malloc (&path, 0, cfConfigDir, "CPMODNFO.DAT", 0);
+	fprintf(stderr, "Loading %s .. ", path);
 
-	if ((f=open(path, O_RDONLY))<0)
+	if (mdbFd >= 0)
+	{
+		fprintf (stderr, "Already loaded\n");
+		goto errorout;
+	}
+
+	if ((mdbFd=open(path, O_RDWR | O_CREAT, S_IREAD|S_IWRITE)) < 0 )
 	{
 		fprintf (stderr, "open(%s): %s\n", path, strerror (errno));
-		free (path);
-		return 1;
+		retval = 0; /* fatal error */
+		goto errorout;
 	}
-
-	fprintf(stderr, "Loading %s .. ", path);
 	free (path); path = 0;
 
-	if (read(f, &header, sizeof(header))!=sizeof(header))
+	if (flock (mdbFd, LOCK_EX | LOCK_NB))
+	{
+		fprintf (stderr, "Failed to lock the file (more than one instance?)\n");
+		retval = 0; /* fatal error */
+		goto errorout;
+	}
+
+	if (read(mdbFd, &header, sizeof(header))!=sizeof(header))
 	{
 		fprintf(stderr, "No header\n");
-		close(f);
-		return 1;
+		goto errorout;
 	}
 
-	if (memcmp(header.sig, mdbsigv1, sizeof(mdbsigv1)))
+	if (!memcmp(header.sig, mdbsigv1, sizeof(mdbsigv1)))
+	{
+		fprintf(stderr, "Old header - discard data\n");
+		goto errorout;
+	}
+
+	if (memcmp(header.sig, mdbsigv2, sizeof(mdbsigv2)))
 	{
 		fprintf(stderr, "Invalid header\n");
-		close(f);
-		return 1;
+		goto errorout;
 	}
 
-	mdbNum=uint32_little(header.entries);
-	if (!mdbNum)
+	mdbDataSize = header.entries;
+	if (!mdbDataSize)
 	{
-		close(f);
-		fprintf(stderr, "EOF\n");
-		return 1;
+		fprintf(stderr, "No records\n");
+		goto errorout;
 	}
 
-	mdbData=malloc(sizeof(struct modinfoentry)*mdbNum);
+	mdbData = malloc(sizeof(struct modinfoentry) * mdbDataSize);
 	if (!mdbData)
-		return 0;
-	if (read(f, mdbData, mdbNum*sizeof(*mdbData))!=(signed)(mdbNum*sizeof(*mdbData)))
 	{
-		mdbNum=0;
-		free(mdbData);
-		mdbData=0;
-		close(f);
-		fprintf(stderr, "EOF\n");
-		return 1;
+		fprintf (stderr, "malloc() failed\n");
+		goto errorout;
 	}
-	close(f);
+	memcpy (mdbData, &header, 64);
 
-	for (i=0; i<mdbNum; i++)
+	if (read(mdbFd, &mdbData[1], (mdbDataSize-1)*sizeof(*mdbData))!=(signed)((mdbDataSize-1)*sizeof(*mdbData)))
 	{
-		if ((mdbData[i].flags&(MDB_BLOCKTYPE|MDB_USED))==(MDB_USED|MDB_GENERAL))
+		fprintf(stderr, "Failed to read records\n");
+		goto errorout;
+	}
+
+	mdbDirtyMapSize = (mdbDataSize + 255) & ~255;
+	mdbDirtyMap = calloc (mdbDirtyMapSize / 8, 1);
+	if (!mdbDirtyMap)
+	{
+		fprintf (stderr, "Failed to allocated dirtyMap\n");
+		goto errorout;
+	}
+
+	mdbDataNextFree = mdbDataSize;
+	for (i=0; i<mdbDataSize; i++)
+	{
+		if (!mdbData[i].mie.general.record_flags)
+		{
+			mdbDataNextFree = i;
+			break;
+		}
+	}
+
+
+	for (i=0; i<mdbDataSize; i++)
+	{
+		if (mdbData[i].mie.general.record_flags==MDB_USED)
 		{
 			DEBUG_PRINT("0x%08"PRIx32" is USED GENERAL\n", i);
-			mdbGenMax++;
+			mdbSearchIndexCount++;
 		}
 	}
-
-	if (mdbGenMax)
+	if (mdbSearchIndexCount)
 	{
-		mdbReloc=malloc(sizeof(uint32_t)*mdbGenMax);
-		if (!mdbReloc)
-			return 0;
-		for (i=0; i<mdbNum; i++)
-			if ((mdbData[i].flags&(MDB_BLOCKTYPE|MDB_USED))==(MDB_USED|MDB_GENERAL))
-				mdbReloc[mdbGenNum++]=i;
-
-		qsort(mdbReloc, mdbGenNum, sizeof(*mdbReloc), miecmp);
-#ifdef MDB_DEBUG
-		for (i=0; i<mdbGenMax; i++)
+		mdbSearchIndexSize = (mdbSearchIndexCount + 31) & ~31;
+		mdbSearchIndexCount = 0;
+		mdbSearchIndexData = malloc(sizeof(uint32_t)*mdbSearchIndexSize);
+		if (!mdbSearchIndexData)
 		{
-			DEBUG_PRINT("%5"PRId32" => 0x%08"PRIx32" %"PRId32" %c%c%c%c%c%c%c%c%c%c%c%c\n", i, mdbReloc[i], mdbData[mdbReloc[i]].gen.size, mdbData[mdbReloc[i]].gen.name[0], mdbData[mdbReloc[i]].gen.name[1], mdbData[mdbReloc[i]].gen.name[2], mdbData[mdbReloc[i]].gen.name[3], mdbData[mdbReloc[i]].gen.name[4], mdbData[mdbReloc[i]].gen.name[5], mdbData[mdbReloc[i]].gen.name[6], mdbData[mdbReloc[i]].gen.name[7], mdbData[mdbReloc[i]].gen.name[8], mdbData[mdbReloc[i]].gen.name[9], mdbData[mdbReloc[i]].gen.name[10], mdbData[mdbReloc[i]].gen.name[11]);
+			fprintf (stderr, "Failed to allocated mdbSearchIndex\n");
+			goto errorout;
 		}
-#endif
+		for (i=0; i<mdbDataSize; i++)
+		{
+			if (mdbData[i].mie.general.record_flags==MDB_USED)
+			{
+				mdbSearchIndexData[mdbSearchIndexCount++] = i;
+			}
+		}
+
+		qsort(mdbSearchIndexData, mdbSearchIndexCount, sizeof(*mdbSearchIndexData), miecmp);
+
+		for (i=0; i<mdbSearchIndexSize; i++)
+		{
+			DEBUG_PRINT("%5"PRId32" => 0x%08"PRIx32" %"PRId32" 0x%02x%02x%02x%02x%02x%02x%02x%02x\n",
+				i, mdbSearchIndexData[i], mdbData[mdbSearchIndexData[i]].mie.general.size,
+				mdbData[mdbSearchIndexData[i]].mie.general.hash[0],
+				mdbData[mdbSearchIndexData[i]].mie.general.hash[1],
+				mdbData[mdbSearchIndexData[i]].mie.general.hash[2],
+				mdbData[mdbSearchIndexData[i]].mie.general.hash[3],
+				mdbData[mdbSearchIndexData[i]].mie.general.hash[4],
+				mdbData[mdbSearchIndexData[i]].mie.general.hash[5],
+				mdbData[mdbSearchIndexData[i]].mie.general.hash[6],
+				mdbData[mdbSearchIndexData[i]].mie.general.hash[7]);
+		}
 	}
+
+	mdbCleanSlate = 0;
 
 	fprintf(stderr, "Done\n");
-
 	return 1;
+errorout:
+	if (!retval)
+	{
+		if (mdbFd >= 0)
+		{
+			close (mdbFd);
+		}
+		mdbFd = -1;
+	}
+
+	free (path);
+	free (mdbData);
+	free (mdbDirtyMap);
+	free (mdbSearchIndexData);
+	mdbData = 0;
+	mdbDataSize = 0;
+	mdbDataNextFree = 1; /* hack to ignore entry #0, which is header */
+	mdbDirtyMap = 0;
+	mdbDirtyMapSize = 0;
+	mdbSearchIndexData = 0;
+	mdbSearchIndexCount = 0;
+	mdbSearchIndexSize = 0;
+	return retval;
 }
 
-void mdbUpdate(void)
+/* Unit test available */
+void mdbUpdate (void)
 {
-	char *path;
-	int f;
-	uint32_t i, j;
-	struct mdbheader header;
+	uint32_t i;
+	struct mdbheader *header = (struct mdbheader *)mdbData;
 
 	DEBUG_PRINT("mdbUpdate: mdbDirty=%d fsWriteModInfo=%d\n", mdbDirty, fsWriteModInfo);
 
-	if (!mdbDirty||!fsWriteModInfo)
+	if ((!mdbDirty)||(!fsWriteModInfo)||(mdbFd<0))
+	{
 		return;
+	}
 	mdbDirty=0;
 
-	makepath_malloc (&path, 0, cfConfigDir, "CPMODNFO.DAT", 0);
-	if ((f=open(path, O_WRONLY|O_CREAT, S_IREAD|S_IWRITE))<0)
-	{
-		fprintf (stderr, "open(%s): %s\n", path, strerror (errno));
-		free (path);
+	if (!mdbDataSize)
+	{ /* should not happen */
 		return;
 	}
 
-	lseek(f, 0, SEEK_SET);
-	memcpy(header.sig, mdbsigv1, sizeof(mdbsigv1));
-	header.entries = uint32_little(mdbNum);
-	while (1)
+	lseek(mdbFd, 0, SEEK_SET);
+	memcpy(header->sig, mdbsigv2, sizeof(mdbsigv2));
+	header->entries = mdbDataSize;
+	mdbDirtyMap[0] |= 1;
+
+	for (i = 0; i < mdbDataSize; i += 8)
 	{
-		ssize_t res;
-		res = write(f, &header, sizeof(header));
-		if (res < 0)
+		/* we write in 512 byte chunks - fits old hard-drives sector size */
+		if (!mdbDirtyMap[i / 8])
 		{
-			if (errno==EAGAIN)
-				continue;
-			if (errno==EINTR)
-				continue;
-			fprintf(stderr, __FILE__ " write() to %s failed: %s\n", path, strerror(errno));
-			exit(1);
-		} else if (res != sizeof(header))
-		{
-			fprintf(stderr, __FILE__ " write() to %s returned only partial data\n", path);
-			exit(1);
-		} else
-			break;
-	}
-	i=0;
-	while (i<mdbNum)
-	{
-		if (!(mdbData[i].flags&MDB_DIRTY))
-		{
-			i++;
 			continue;
 		}
-		for (j=i; j<mdbNum; j++)
-			if (mdbData[j].flags&MDB_DIRTY)
-				mdbData[j].flags&=~MDB_DIRTY;
-			else
-				break;
-		lseek(f, (uint64_t)64+(uint64_t)i*sizeof(*mdbData), SEEK_SET);
+
+		lseek(mdbFd, (uint64_t)i*sizeof(*mdbData), SEEK_SET);
 		while (1)
 		{
 			ssize_t res;
 
-			DEBUG_PRINT("  [0x%08"PRIx32" -> 0x%08"PRIx32"] DIRTY\n", i, j);
-			res = write(f, mdbData+i, (j-i)*sizeof(*mdbData));
+			DEBUG_PRINT("  [0x%08"PRIx32" -> 0x%08"PRIx32"] DIRTY\n", i, i+7);
+			res = write(mdbFd, mdbData + i, 8 * sizeof(*mdbData));
 			if (res < 0)
 			{
 				if (errno==EAGAIN)
 					continue;
 				if (errno==EINTR)
 					continue;
-				fprintf(stderr, __FILE__ " write() to %s failed: %s\n", path, strerror(errno));
+				fprintf(stderr, __FILE__ " write() to \"CPMODNFO.DAT\" failed: %s\n", strerror(errno));
 				exit(1);
-			} else if (res != (signed)((j-i)*sizeof(*mdbData)))
+			} else if (res != (signed)((8)*sizeof(*mdbData)))
 			{
-				fprintf(stderr, __FILE__ " write() to %s returned only partial data\n", path);
+				fprintf(stderr, __FILE__ " write() to \"CPMODNFO.DAT\" returned only partial data\n");
 				exit(1);
 			} else
 				break;
 		}
-		i=j;
+		mdbDirtyMap[i / 8] = 0;
 	}
-	free (path);
-	lseek(f, 0, SEEK_END);
-	close(f);
 }
 
-void mdbClose(void)
+void mdbClose (void)
 {
 	mdbUpdate();
+	if (mdbFd >= 0)
+	{
+		close(mdbFd);
+		mdbFd = -1;
+	}
 	free(mdbData);
-	free(mdbReloc);
+	free(mdbDirtyMap);
+	free(mdbSearchIndexData);
+
+	mdbData = 0;
+	mdbDataSize = 0;
+	mdbDataNextFree = 1;
+	mdbDirty = 0;
+	mdbDirtyMap = 0;
+	mdbDirtyMapSize = 0;
+	mdbSearchIndexData = 0;
+	mdbSearchIndexCount = 0;
+	mdbSearchIndexSize = 0;
 }
 
-static uint32_t mdbGetModuleReference(const char *name, uint32_t size)
+/* Unit test available */
+static uint32_t mdbGetModuleReference (const char *name, uint32_t size)
 {
 	uint32_t i;
 
-	uint32_t *min=mdbReloc;
-	uint32_t num=mdbGenNum;
+	uint32_t *min=mdbSearchIndexData;
+	uint32_t num=mdbSearchIndexCount;
 	uint32_t mn;
 	struct modinfoentry *m;
+	uint8_t hash[8]; /* to byte align with header, byte 0 is ignored */
+
+	for (i=0; i < 8; i++)
+	{
+		hash[i] = 0;
+	}
+	for (i=0; name[i]; i++)
+	{
+		hash[1+i%7]       += name[i];
+		hash[1+((i+1)%7)] ^= name[i];
+	}
 
 	/* Iterate fast.. If size to to big, set current to be the minimum, and
 	 * set the current to point in the new center, else half the current.
@@ -555,7 +756,7 @@ static uint32_t mdbGetModuleReference(const char *name, uint32_t size)
 	 *   - Stian
 	 */
 
-	DEBUG_PRINT("mdbGetModuleReference(%s %"PRId32")\n", name, size);
+	DEBUG_PRINT("mdbGetModuleReference(%s=>0x%02x%02x%0x%02x%02x%02x%02x %"PRId32")\n", name, hash[1], hash[2], hash[3], hash[4], hash[5], hash[6] hash[7], size);
 	while (num)
 	{
 		struct modinfoentry *m=&mdbData[min[num>>1]];
@@ -565,174 +766,154 @@ static uint32_t mdbGetModuleReference(const char *name, uint32_t size)
 			uint32_t x;
 			for (x = 0; x < num; x++)
 			{
-				DEBUG_PRINT("  %08x %"PRId32" %c%c%c%c%c%c%c%c%c%c%c%c\n",
+				DEBUG_PRINT("  %08x %"PRId32" 0x%02x%02x%02x%02x%02x%02x%02x\n",
 					min[x],
-					mdbData[min[x]].gen.size,
-					mdbData[min[x]].gen.name[0],
-					mdbData[min[x]].gen.name[1],
-					mdbData[min[x]].gen.name[2],
-					mdbData[min[x]].gen.name[3],
-					mdbData[min[x]].gen.name[4],
-					mdbData[min[x]].gen.name[5],
-					mdbData[min[x]].gen.name[6],
-					mdbData[min[x]].gen.name[7],
-					mdbData[min[x]].gen.name[8],
-					mdbData[min[x]].gen.name[9],
-					mdbData[min[x]].gen.name[10],
-					mdbData[min[x]].gen.name[11]);
+					mdbData[min[x]].mie.general.size,
+					mdbData[min[x]].mie.general.hash[0],
+					mdbData[min[x]].mie.general.hash[1],
+					mdbData[min[x]].mie.general.hash[2],
+					mdbData[min[x]].mie.general.hash[3],
+					mdbData[min[x]].mie.general.hash[4],
+					mdbData[min[x]].mie.general.hash[5],
+					mdbData[min[x]].mie.general.hash[6])
 			}
-			DEBUG_PRINT("----------\n");
+			DEBUG_PRINT("  ----------\n");
 		}
 #endif
-		if (size==m->gen.size)
-			ret=memcmp(name, m->gen.name, 12);
-		else
-			if (size<m->gen.size)
-				ret=-1;
-			else
-				ret=1;
+		if (size==m->mie.general.size)
+		{
+			ret = memcmp(hash+1, m->mie.general.filename_hash, 7);
+		} else {
+			if (size < m->mie.general.size)
+			{
+				ret = -1;
+			} else {
+				ret = 1;
+			}
+		}
 		if (!ret)
 		{
-			DEBUG_PRINT("mdbGetModuleReference(%s %"PRId32") => mdbReloc => 0x%08"PRIx32"\n", name, size, min[num>>1]);
+			DEBUG_PRINT("mdbGetModuleReference(%s %"PRId32") => mdbSearchIndexData => 0x%08"PRIx32"\n", name, size, min[num>>1]);
 			return min[num>>1];
 		}
 		if (ret<0)
-			num>>=1;
-		else {
-			min+=(num>>1)+1;
-			num=(num-1)>>1;
+		{
+			num >>= 1;
+		} else {
+			min += (num >> 1)  + 1;
+			num  = (num  - 1) >> 1;
 		}
 	}
-	mn=min-mdbReloc;
+	mn = min - mdbSearchIndexData;
 
-	i=mdbGetNew();
+	i=mdbNew(1);
 	if (i==UINT32_MAX)
+	{
 		return UINT32_MAX;
-	if (mdbGenNum==mdbGenMax)
+	}
+	if (mdbSearchIndexCount == mdbSearchIndexSize)
 	{
 		void *n;
-		mdbGenMax+=512;
-		if (!(n=realloc(mdbReloc, sizeof (*mdbReloc)*mdbGenMax)))
+		mdbSearchIndexSize += 512;
+		if (!(n = realloc(mdbSearchIndexData, sizeof (*mdbSearchIndexData) * mdbSearchIndexSize)))
+		{
+			mdbFree (i, 1);
 			return UINT32_MAX;
-		mdbReloc=(uint32_t *)n;
+		}
+		mdbSearchIndexData = (uint32_t *)n;
 	}
 
-	memmovel(mdbReloc+mn+1, mdbReloc+mn, mdbGenNum-mn);
-	mdbReloc[mn]=(uint32_t)i;
-	mdbGenNum++;
+	memmove( mdbSearchIndexData + mn + 1,
+	         mdbSearchIndexData + mn,
+		(mdbSearchIndexCount - mn ) * sizeof (*mdbSearchIndexData));
+	mdbSearchIndexData[mn]=i;
+	mdbSearchIndexCount++;
 
-	m=&mdbData[i];
-	m->flags=MDB_DIRTY|MDB_USED|MDB_GENERAL;
-	memcpy(m->gen.name, name, 12);
-	m->gen.size=size;
-	m->gen.modtype=UINT8_MAX;
-	m->gen.comref=UINT32_MAX;
-	m->gen.compref=UINT32_MAX;
-	m->gen.futref=UINT32_MAX;
-	memset(m->gen.modname, 0, 32);
-	m->gen.date=0;
-	m->gen.playtime=0;
-	m->gen.channels=0;
-	m->gen.moduleflags=0;
-	mdbDirty=1;
+	m = &mdbData[i];
+	memcpy (m->mie.general.filename_hash, hash + 1, 7);
+	m->mie.general.size = size;
+	m->mie.general.modtype.integer.i = 0;
+	m->mie.general.module_flags = 0;
+	m->mie.general.channels = 0;
+	m->mie.general.playtime = 0;
+	m->mie.general.date = 0;
+	m->mie.general.title_ref = UINT32_MAX;
+	m->mie.general.composer_ref = UINT32_MAX;
+	m->mie.general.artist_ref = UINT32_MAX;
+	m->mie.general.style_ref = UINT32_MAX;
+	m->mie.general.comment_ref = UINT32_MAX;
+	m->mie.general.album_ref = UINT32_MAX;
+	bzero (m->mie.general.reserved, sizeof (m->mie.general.reserved));
 	DEBUG_PRINT("mdbGetModuleReference(%s %"PRId32") => new => 0x%08"PRIx32"\n", name, size, i);
-	return (uint32_t)i;
+	return i;
 }
 
-#warning Remake the hash to acculate overflow characters into the character 6 and 7... it will break old databases
 uint32_t mdbGetModuleReference2 (uint32_t dirdb_ref, uint32_t size)
 {
-	char shortname[13];
 	char *temppath;
-	char *lastdot;
-	int length;
 
 	dirdbGetName_internalstr (dirdb_ref, &temppath);
 	if (!temppath)
 	{
-		return DIRDB_NOPARENT;
+		return UINT32_MAX;
 	}
 
-	/* the "hash" is created using the former fs12name() function */
-	length = strlen (temppath);
-
-	shortname[12] = 0;
-	if ((lastdot=rindex(temppath + 1, '.'))) /* we allow files to start with, hence temppath + 1 */
-	{
-		/* delta is the length until the dot */
-		int delta = lastdot - temppath;
-
-		if ((delta) < 8)
-		{ /* if the text before the dot is shorter than 8, pad it with spaces */
-			strncpy (shortname,         temppath,   delta);
-			strncpy (shortname + delta, "        ", 8 - delta);
-		} else { /* or we take only the first 8 characters */
-			strncpy (shortname, temppath, 8);
-		}
-
-		/* grab the dot, and upto 3 characters following it */
-		if (strlen (lastdot) < 4)
-		{ /* if the text including the dot is shorter than 4, pad it with spaces */
-			strcpy  (shortname + 8,                    lastdot);
-			strncpy (shortname + 8 + strlen (lastdot), "   ", 4 - strlen(lastdot));
-		} else { /* or we take only the first 4 characters,   eg .foo  instead of .foobar, and also accept things like .mod as is */
-			strncpy (shortname + 8, lastdot, 4);
-		}
-	} else { /* we would normally never HASH such a filename */
-		strncpy(shortname, temppath, 12);
-		if ((length=strlen(temppath))<12)
-		{
-			strncpy(shortname+length, "            ", 12-length);
-		}
-	}
-
-	return mdbGetModuleReference (shortname, size);
+	return mdbGetModuleReference (temppath, size);
 }
 
-int mdbGetModuleInfo(struct moduleinfostruct *m, uint32_t mdb_ref)
+/* Unit test available */
+static void mdbGetString (char *dst, int dstlen, uint32_t mdb_ref)
 {
-	memset(m, 0, sizeof(struct moduleinfostruct));
-	if (mdb_ref>=mdbNum) /* needed, since we else might index mdbData wrong */
-		goto invalid;
-	if ((mdbData[mdb_ref].flags&(MDB_USED|MDB_BLOCKTYPE))!=(MDB_USED|MDB_GENERAL))
+	dstlen--; /* reserve last byte for zero-termination */
+	while (1)
 	{
-invalid:
-		m->modtype=UINT8_MAX;
-		m->comref=UINT32_MAX;
-		m->compref=UINT32_MAX;
-		m->futref=UINT32_MAX;
+		int l;
+		*dst = 0; /* parent is bzero() already, but does not hurt to ensure */
+		if ((mdb_ref == 0) || (mdb_ref >= mdbDataSize) || (!dstlen))
+		{
+			return;
+		}
+		switch (mdbData[mdb_ref].mie.general.record_flags & MDB_STRING_MORE)
+		{
+			default:
+				return;
+			case MDB_STRING_TERMINATION:
+			case MDB_STRING_MORE:
+				l = (dstlen > 63) ? 63 : dstlen;
+				memcpy (dst, mdbData[mdb_ref].mie.string.data, l);
+				dstlen -= l;
+				dst += l;
+				break;
+		}
+		if ((mdbData[mdb_ref].mie.general.record_flags & MDB_STRING_MORE) == MDB_STRING_TERMINATION)
+		{
+			mdb_ref = 0;
+		} else {
+			mdb_ref++;
+		}
+	}
+}
+
+/* Partially unit test in mdbInit */
+int mdbGetModuleInfo (struct moduleinfostruct *m, uint32_t mdb_ref)
+{
+	bzero(m, sizeof(struct moduleinfostruct));
+	assert (mdb_ref > 0);
+	if ((mdb_ref >= mdbDataSize) || (mdb_ref == 0) || (mdbData[mdb_ref].mie.general.record_flags != MDB_USED))
+	{ /* invalid reference */
 		return 0;
 	}
-	memcpy(m, mdbData+mdb_ref, sizeof(*mdbData));
-	if (m->compref!=UINT32_MAX)
-	{
-		if ((m->compref < mdbNum) && ((mdbData[m->compref].flags & MDB_BLOCKTYPE) == MDB_COMPOSER))
-		{
-			memcpy(&m->flags2, mdbData+m->compref, sizeof(*mdbData));
-		} else {
-			fprintf (stderr, "[mdb] warning - invalid compref\n");
-			m->compref=UINT32_MAX;
-		}
-	}
-	if (m->comref!=UINT32_MAX)
-	{
-		if ((m->comref < mdbNum) && ((mdbData[m->comref].flags & MDB_BLOCKTYPE) == MDB_COMMENT))
-		{
-			memcpy(&m->flags3, mdbData+m->comref, sizeof(*mdbData));
-		} else {
-			fprintf (stderr, "[mdb] warning - invalid comref\n");
-			m->comref=UINT32_MAX;
-		}
-	}
-	if (m->futref!=UINT32_MAX)
-	{
-		if ((m->futref < mdbNum) && ((mdbData[m->comref].flags & MDB_BLOCKTYPE) == MDB_FUTURE))
-		{
-			memcpy(&m->flags4, mdbData+m->futref, sizeof(*mdbData));
-		} else {
-			fprintf (stderr, "[mdb] warning - invalid futref\n");
-			m->futref=UINT32_MAX;
-		}
-	}
+	m->size = mdbData[mdb_ref].mie.general.size;
+	m->modtype = mdbData[mdb_ref].mie.general.modtype;
+	m->flags = mdbData[mdb_ref].mie.general.module_flags;
+	m->channels = mdbData[mdb_ref].mie.general.channels;
+	m->playtime = mdbData[mdb_ref].mie.general.playtime;
+	m->date = mdbData[mdb_ref].mie.general.date;
+	mdbGetString (m->title,    sizeof (m->title),    mdbData[mdb_ref].mie.general.title_ref);
+	mdbGetString (m->composer, sizeof (m->composer), mdbData[mdb_ref].mie.general.composer_ref);
+	mdbGetString (m->artist,   sizeof (m->artist),   mdbData[mdb_ref].mie.general.artist_ref);
+	mdbGetString (m->style,    sizeof (m->style),    mdbData[mdb_ref].mie.general.style_ref);
+	mdbGetString (m->comment,  sizeof (m->comment),  mdbData[mdb_ref].mie.general.comment_ref);
+	mdbGetString (m->album,    sizeof (m->album),    mdbData[mdb_ref].mie.general.album_ref);
 	return 1;
 }

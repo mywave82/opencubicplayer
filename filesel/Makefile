@@ -38,13 +38,14 @@ else
 all: $(CDROM_SO) fstypes.o pfilesel$(LIB_SUFFIX)
 endif
 
-test: adbmeta-test dirdb-test filesystem-bzip2-test filesystem-filehandle-cache-test filesystem-gzip-test filesystem-tar-test
+test: adbmeta-test dirdb-test filesystem-bzip2-test filesystem-filehandle-cache-test filesystem-gzip-test filesystem-tar-test mdb-test
 	@echo "" && echo "adbmeta-test:"                       && ./adbmeta-test
 	@echo "" && echo "dirdb-test:"                         && ./dirdb-test
 	@echo "" && echo "filesystem-bzip2-test:"              && ./filesystem-bzip2-test
 	@echo "" && echo "filesystem-filehandle-cache-test:"   && ./filesystem-filehandle-cache-test
 	@echo "" && echo "filesystem-gzip-test:"               && ./filesystem-gzip-test
 	@echo "" && echo "filesystem-tar-test:"                && ./filesystem-tar-test
+	@echo "" && echo "mdb-test:"                           && ./mdb-test
 
 cdrom$(LIB_SUFFIX): $(cdrom_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ $(PTHREAD_LIBS) $(LIBDISCID_LIBS)
@@ -53,7 +54,7 @@ pfilesel$(LIB_SUFFIX): $(pfilesel_so)
 	$(CC) $(SHARED_FLAGS) $(MATH_LIBS) $(ICONV_LIBS) -o $@ $^ -lbz2 -lz
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) adbmeta-test dirdb-test filesystem-bzip2-test filesystem-filehandle-cache-test filesystem-gzip-test filesystem-tar-test
+	rm -f *.o *$(LIB_SUFFIX) adbmeta-test dirdb-test filesystem-bzip2-test filesystem-filehandle-cache-test filesystem-gzip-test filesystem-tar-test mdb-test
 
 ifeq ($(STATIC_BUILD),1)
 install:
@@ -342,6 +343,20 @@ mdb.o: mdb.c \
 	../stuff/compat.h \
 	../stuff/imsrtns.h
 	$(CC) $< -o $@ -c
+
+mdb-test: mdb-test.c \
+	mdb.c \
+	../config.h \
+	../types.h \
+	../boot/plinkman.h \
+	../boot/psetting.h \
+	dirdb.h \
+	filesystem.h \
+	mdb.h \
+	pfilesel.h \
+	../stuff/compat.h \
+	../stuff/imsrtns.h
+	$(CC) $< -o $@
 
 cphlpfs.o: cphlpfs.c \
 	../config.h \

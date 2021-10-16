@@ -26,6 +26,7 @@ filesel/filesystem-bzip2-test
 filesel/filesystem-filehandle-cache-test
 filesel/filesystem-gzip-test
 filesel/filesystem-tar-test
+filesel/mdb-test
 goodies/helpc/ocphhc
 goodies/helpc/Makefile
 goodies/pack/Makefile

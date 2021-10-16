@@ -24,7 +24,6 @@
 #define memsetb(dst, what, len) memset(dst, what, len*1) /* let the compiler handle this */
 #define memcpyb(dst, src, len) memcpy(dst, src, len) /* let the compiler handle this */
 #define memcpyf(dst, src, len) memcpy(dst, src, len*sizeof(float)) /* let the compiler handle this.. even this one... not even used yet */
-#define memmovel(dst, src, n) memmove(dst, src, (n)*4)
 
 #ifdef I386_ASM
 
