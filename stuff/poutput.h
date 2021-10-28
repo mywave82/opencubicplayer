@@ -63,7 +63,6 @@ extern void writenum(uint16_t *buf, unsigned short ofs, unsigned char attr, unsi
 #define _writenum(buf, ofs, attr, num, radix, len) writenum(buf, ofs, attr, num, radix, len, 1)
 extern void writestring(uint16_t *buf, unsigned short ofs, unsigned char attr, const char *str, unsigned short len);
 extern void writestringattr(uint16_t *buf, unsigned short ofs, const uint16_t *str, unsigned short len);
-extern void markstring(uint16_t *buf, unsigned short ofs, unsigned short len);
 extern void fillstr(uint16_t *buf, const unsigned short ofs, const unsigned char chr, const unsigned char attr, unsigned short len);
 
 enum vidType

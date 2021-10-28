@@ -132,15 +132,6 @@ void writestringattr(uint16_t *buf, unsigned short ofs, const uint16_t *str, uns
 	memcpyb(buf+ofs, (void *)str, len*2);
 }
 
-
-void markstring(uint16_t *buf, unsigned short ofs, unsigned short len)
-{
-	int i;
-	buf+=ofs;
-	for (i=0; i<len; i++)
-		*buf++^=0x8000;
-}
-
 void fillstr(uint16_t *buf, const unsigned short ofs, const unsigned char chr, const unsigned char attr, unsigned short len)
 {
 	buf+=ofs;
