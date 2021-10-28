@@ -431,22 +431,6 @@ void cpiTextRecalc(void)
 		winsize-=win[best].size;
 		winmax-=win[best].hgtmax;
 
-/*
-	Old code for filling the void. It does not work well with dynamic resolutions
-		if (wid>=132)
-		{
-			if (win[best].top)
-			{
-				for (i=sidefirst; i<winfirst; i++)
-					displayvoid(i, plScrWidth-52, 52);
-				sideheight=sidefirst+sideheight-winfirst;
-				sidefirst=winfirst;
-			} else {
-				for (i=winfirst+hgt; i<(sidefirst+sideheight); i++)
-					displayvoid(i, plScrWidth-52, 52);
-				sideheight=winfirst+winheight-sidefirst;
-			}
-		}*/
 	}
 #if 0
 	for (i=0; i<winheight; i++)

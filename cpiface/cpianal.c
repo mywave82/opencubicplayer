@@ -125,8 +125,8 @@ static void plDrawFFT(char sel)
 
 	for (i=0; i<plAnalHeight; i++)
 	{
-		displaystr(i+plAnalFirstLine, 0, COLBACK, "", ofs);
-		displaystr(i+plAnalFirstLine, plAnalWidth-ofs, COLBACK, "", ofs);
+		displayvoid (i+plAnalFirstLine, 0, ofs);
+		displayvoid (i+plAnalFirstLine, plAnalWidth-ofs, ofs);
 	}
 
 	if (!plAnalChan)
@@ -136,7 +136,7 @@ static void plDrawFFT(char sel)
 
 		plGetMasterSample(plSampBuf, 1<<bits, plAnalRate, cpiGetSampleStereo);
 		if (plAnalHeight&1)
-			displaystr(plAnalFirstLine+plAnalHeight-1, ofs, COLBACK, "", plAnalWidth-2*ofs);
+			displayvoid (plAnalFirstLine+plAnalHeight-1, ofs, plAnalWidth-2*ofs);
 		wh2=plAnalHeight>>1;
 		fl=plAnalFirstLine+wh2-1;
 

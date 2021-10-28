@@ -126,7 +126,7 @@ static void OggInfoDraw(int focus)
 	{
 		if (OggInfoHeight > 2)
 		{
-			displaystr (OggInfoFirstLine + line, OggInfoFirstColumn, 0x00, "", OggInfoWidth);
+			displayvoid (OggInfoFirstLine + line, OggInfoFirstColumn, OggInfoWidth);
 			line++;
 		}
 
@@ -157,7 +157,7 @@ static void OggInfoDraw(int focus)
 
 	while (line < OggInfoHeight)
 	{
-		displaystr (OggInfoFirstLine + line, OggInfoFirstColumn, 0x00, "", OggInfoWidth);
+		displayvoid (OggInfoFirstLine + line, OggInfoFirstColumn, OggInfoWidth);
 		line++;
 	}
 }

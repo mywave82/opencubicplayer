@@ -1276,14 +1276,14 @@ static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry
    style:    xxxxxxxxxxxxxxxxxxxxxxxxx  playtime: XXX:XX  channels: XX
 
 */
-	displaystr (Y + 0, 0, 0x07, "", 2);
+	displayvoid (Y + 0, 0, 2);
 	if (mle && mle->utf8_8_dot_3[0])
 	{
 		displaystr_utf8 (Y + 0, 2, 0x0F, mle->utf8_8_dot_3, 12);
 	} else {
 		displaystr (Y + 0, 2, 0x07, "\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa", 12);
 	}
-	displaystr (Y + 0, 14, 0x07, "", 1);
+	displayvoid (Y + 0, 14, 1);
 	if (mle && mle->file)
 	{
 		char temp[13];
@@ -1306,7 +1306,7 @@ static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry
 	} else {
 		displaystr (Y + 0, plScrWidth - 5, (selecte==1)?0x87:0x07, "\xfa\xfa\xfa\xfa", 4);
 	}
-	displaystr (Y + 0, plScrWidth - 1, 0x07, "", 1);
+	displayvoid (Y + 0, plScrWidth - 1, 1);
 
 
 	displaystr (Y + 1, 0, 0x07, "   composer: ", 13);
@@ -1355,7 +1355,7 @@ static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry
 	} else {
 		displaystr (Y + 1, plScrWidth - 11, (selecte==6)?0x87:0x07, "\xfa\xfa.\xfa\xfa.\xfa\xfa\xfa\xfa", 10);
 	}
-	displaystr (Y + 1, plScrWidth - 1, 0x07, "", 1);
+	displayvoid (Y + 1, plScrWidth - 1, 1);
 
 
 	displaystr (Y + 2, 0, 0x07, "   style:    ", 13);
@@ -1381,9 +1381,9 @@ static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry
 		snprintf (temp, sizeof (temp), "%2d", mi->channels);
 		displaystr (Y + 2, plScrWidth - 3, (selecte==2)?0x8f:0x0f, temp, 2);
 	} else {
-		displaystr (Y + 2, plScrWidth - 3, (selecte==2)?0x07:0x07, "", 2);
+		displaystr (Y + 2, plScrWidth - 3, (selecte==2)?0x87:0x07, "\xfa\xfa", 2);
 	}
-	displaystr (Y + 2, plScrWidth - 1, 0x07, "", 1);
+	displayvoid (Y + 2, plScrWidth - 1, 1);
 
 
 	displaystr (Y + 3, 0, 0x07, "   comment:  ", 13);
@@ -1404,14 +1404,14 @@ static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentr
 #warning TODO, we are missing album and artist....
 	int i;
 
-	displaystr (Y + 0, 0, 0x07, "", 2);
+	displayvoid (Y + 0, 0, 2);
 	if (mle && mle->utf8_8_dot_3[0])
 	{
 		displaystr_utf8 (Y + 0, 2, 0x0F, mle->utf8_8_dot_3, 12);
 	} else {
 		displaystr (Y + 0, 2, 0x07, "\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa", 12);
 	}
-	displaystr (Y + 0, 14, 0x07, "", 2);
+	displayvoid (Y + 0, 14, 2);
 	if (mle && mle->file)
 	{
 		char temp[13];
@@ -1462,7 +1462,7 @@ static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentr
 	} else {
 		displaystr (Y + 0, plScrWidth - 9, (selecte==3)?0x87:0x07, "\xfa\xfa\xfa:\xfa\xfa", 6);
 	}
-	displaystr (Y + 0, plScrWidth - 3, 0x07, "", 3);
+	displayvoid (Y + 0, plScrWidth - 3, 3);
 
 
 	displaystr (Y + 1, 0, 0x07, "                                composer: ", 42);
@@ -1479,7 +1479,7 @@ static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentr
 	} else {
 		displaychr (Y + 1, plScrWidth - 46, (selecte==5)?0x8f:0x0f, '\xfa', 43);
 	}
-	displaystr (Y + 1, plScrWidth - 3, 0x07, "", 3);
+	displayvoid (Y + 1, plScrWidth - 3, 3);
 
 	displaystr(Y + 2, 0, 0x07, "                                date:     ", 42);
 	if (mi->date)
@@ -1528,7 +1528,7 @@ static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentr
 		displaychr (Y + 2, 66, (selecte==7)?0x8f:0x0f, '\xfa', plScrWidth - 69);
 
 	}
-	displaystr (Y + 2, plScrWidth - 3, 0x07, "", 3);
+	displayvoid (Y + 2, plScrWidth - 3, 3);
 
 	displaystr (Y + 3, 0, 0x07, "    long: ", 10);
 
@@ -1537,7 +1537,7 @@ static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentr
 
 static void fsShowDirBottom80Dir (int Y, int selectd, const struct modlistentry *mle, const char *npath)
 {
-	displaystr (Y + 0, 0, 0x07, "", 2);
+	displayvoid (Y + 0, 0, 2);
 	if (mle && mle->utf8_16_dot_3[0])
 	{
 		displaystr_utf8 (Y + 0, 2, 0x0f, mle->utf8_16_dot_3, plScrWidth - 2);
@@ -1566,12 +1566,12 @@ static void fsShowDirBottom80Dir (int Y, int selectd, const struct modlistentry 
 		displaystr (Y + 1, 11, attr, userstring ? userstring : defaultlabel, plScrWidth - 13);
 		displaystr (Y + 1, plScrWidth - 2, 0x07, "  ", 2);
 	} else {
-		displaystr (Y + 1, 0, 0x07, "", plScrWidth);
+		displayvoid (Y + 1, 0, plScrWidth);
 	}
 
-	displaystr (Y + 2, 0, 0x07, "", plScrWidth);
+	displayvoid (Y + 2, 0, plScrWidth);
 
-	displaystr (Y + 3, 0, 0x07, "", plScrWidth);
+	displayvoid (Y + 3, 0, plScrWidth);
 
 	displaystr (Y + 4, 0, 0x07, "   long: ", 9);
 
@@ -1580,7 +1580,7 @@ static void fsShowDirBottom80Dir (int Y, int selectd, const struct modlistentry 
 
 static void fsShowDirBottom132Dir (int Y, int selectd, const struct modlistentry *mle, const char *npath)
 {
-	displaystr (Y + 0, 0, 0x07, "", 2);
+	displayvoid (Y + 0, 0, 2);
 	if (mle && mle->utf8_16_dot_3[0])
 	{
 		displaystr_utf8 (Y + 0, 2, 0x0f, mle->utf8_16_dot_3, plScrWidth - 2);
@@ -1609,10 +1609,10 @@ static void fsShowDirBottom132Dir (int Y, int selectd, const struct modlistentry
 		displaystr (Y + 1, 11, attr, userstring ? userstring : defaultlabel, plScrWidth - 13);
 		displaystr (Y + 1, plScrWidth - 2, 0x07, "  ", 2);
 	} else {
-		displaystr (Y + 1, 0, 0x07, "", plScrWidth);
+		displayvoid (Y + 1, 0, plScrWidth);
 	}
 
-	displaystr (Y + 2, 0, 0x07, "", plScrWidth);
+	displayvoid (Y + 2, 0, plScrWidth);
 
 	displaystr (Y + 3, 0, 0x07, "    long: ", 10);
 

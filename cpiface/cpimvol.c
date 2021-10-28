@@ -124,22 +124,22 @@ static void MVolDraw(int sel)
 {
 	if (plMVolType==2)
 	{
-		displaystr(plMVolFirstLine, plMVolFirstCol /* 80 */, COLTEXT, "", 8);
-		displaystr(plMVolFirstLine, plMVolFirstCol + 48 /* 128 */, COLTEXT, "", 4);
+		displayvoid (plMVolFirstLine, plMVolFirstCol /* 80 */, 8);
+		displayvoid (plMVolFirstLine, plMVolFirstCol + 48 /* 128 */, 4);
 		if (plMVolHeight==2)
 		{
-			displaystr(plMVolFirstLine+1, plMVolFirstCol /* 80 */, COLTEXT, "", 8);
-			displaystr(plMVolFirstLine+1, plMVolFirstCol + 48 /* 128 */, COLTEXT, "", 4);
+			displayvoid (plMVolFirstLine+1, plMVolFirstCol /* 80 */, 8);
+			displayvoid (plMVolFirstLine+1, plMVolFirstCol + 48 /* 128 */, 4);
 		}
 		drawpeakpower(plMVolFirstLine, plMVolFirstCol + 8 /* 88 */);
 	} else {
 		int l=(plMVolWidth>=132)?(plMVolWidth/2)-40 :20;
 		displaystr(plMVolFirstLine, plMVolFirstCol /* 0 */, plPause?COLMUTE:(sel?COLTITLEH:COLTEXT), "  peak power level:", l);
-		displaystr(plMVolFirstLine, plMVolWidth-l + plMVolFirstCol /* 0 */ , COLTEXT, "", l);
+		displayvoid (plMVolFirstLine, plMVolWidth-l + plMVolFirstCol /* 0 */ , l);
 		if (plMVolHeight==2)
 		{
-			displaystr(plMVolFirstLine+1, plMVolFirstCol /* 0 */, COLTEXT, "", l);
-			displaystr(plMVolFirstLine+1, plMVolWidth-l + plMVolFirstCol /* 0 */, COLTEXT, "", l);
+			displayvoid (plMVolFirstLine+1, plMVolFirstCol /* 0 */, l);
+			displayvoid (plMVolFirstLine+1, plMVolWidth-l + plMVolFirstCol /* 0 */, l);
 		}
 		if (plMVolWidth>=132)
 			drawbigpeakpower(plMVolFirstLine, l);

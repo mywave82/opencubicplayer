@@ -174,7 +174,7 @@ static void ID3InfoDraw(int focus)
 	{
 		if (ID3InfoHeight > 2)
 		{
-			displaystr (ID3InfoFirstLine + line, ID3InfoFirstColumn, 0x00, "", ID3InfoWidth);
+			displayvoid (ID3InfoFirstLine + line, ID3InfoFirstColumn, ID3InfoWidth);
 			line++;
 		}
 
@@ -341,7 +341,7 @@ static void ID3InfoDraw(int focus)
 
 	while (line < ID3InfoHeight)
 	{
-		displaystr (ID3InfoFirstLine + line, ID3InfoFirstColumn, 0x00, "", ID3InfoWidth);
+		displayvoid (ID3InfoFirstLine + line, ID3InfoFirstColumn, ID3InfoWidth);
 		line++;
 	}
 }

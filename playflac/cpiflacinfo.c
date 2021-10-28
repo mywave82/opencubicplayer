@@ -132,7 +132,7 @@ static void FlacInfoDraw(int focus)
 	{
 		if (FlacInfoHeight > 2)
 		{
-			displaystr (FlacInfoFirstLine + line, FlacInfoFirstColumn, 0x00, "", FlacInfoWidth);
+			displayvoid (FlacInfoFirstLine + line, FlacInfoFirstColumn, FlacInfoWidth);
 			line++;
 		}
 
@@ -163,7 +163,7 @@ static void FlacInfoDraw(int focus)
 
 	while (line < FlacInfoHeight)
 	{
-		displaystr (FlacInfoFirstLine + line, FlacInfoFirstColumn, 0x00, "", FlacInfoWidth);
+		displayvoid (FlacInfoFirstLine + line, FlacInfoFirstColumn, FlacInfoWidth);
 		line++;
 	}
 
