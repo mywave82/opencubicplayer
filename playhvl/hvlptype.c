@@ -261,4 +261,4 @@ struct interfaceparameters HVL_p =
 	0, 0
 };
 
-struct mdbreadinforegstruct hvlReadInfoReg = {"HVL/AHX", hvlReadMemInfo, hvlReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+struct mdbreadinforegstruct hvlReadInfoReg = {"HVL/AHX", hvlReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

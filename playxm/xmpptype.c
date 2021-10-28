@@ -121,11 +121,6 @@ static uint32_t xmpGetModuleType(const char *buf, int len, const char *filename)
 	return 0;
 }
 
-static int xmpReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
-{
-	return 0;
-}
-
 static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
 {
 	char *filename = 0;
@@ -343,4 +338,4 @@ const char *XM_description[] =
 	NULL
 };
 
-struct mdbreadinforegstruct xmpReadInfoReg = {"MOD/XM", xmpReadMemInfo, xmpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+struct mdbreadinforegstruct xmpReadInfoReg = {"MOD/XM", xmpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

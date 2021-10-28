@@ -27,7 +27,7 @@
 
 static struct mdbreadinforegstruct flacReadInfoReg;
 
-static int flacReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
+static int flacReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
 {
 	const uint8_t *mybuf;
 	size_t mylen;
@@ -202,13 +202,6 @@ static int flacReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t l
 	return 1;
 }
 
-
-static int flacReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *mem, size_t len)
-{
-	flacReadMemInfo(m, mem, len);
-	return 0;
-}
-
 static const char *FLAC_description[] =
 {
 	//                                                                          |
@@ -251,7 +244,6 @@ static void __attribute__((destructor))done(void)
 	mdbUnregisterReadInfo(&flacReadInfoReg);
 }
 
-
-static struct mdbreadinforegstruct flacReadInfoReg = {"FLAC", flacReadMemInfo, flacReadInfo, flacEvent MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct flacReadInfoReg = {"FLAC", flacReadInfo, flacEvent MDBREADINFOREGSTRUCT_TAIL};
 char *dllinfo = "";
 struct linkinfostruct dllextinfo = {.name = "flacptype", .desc = "OpenCP FLAC Detection (c) 2007-20 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

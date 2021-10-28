@@ -33,7 +33,8 @@
 #include "filesystem.h"
 #include "mdb.h"
 
-static int fsReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
+
+static int fsReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
 {
 	if (!memcmp(buf, "CPArchiveCache\x1B\x00", 16))
 		strcpy(m->title, "openCP archive data base (old!)");
@@ -58,9 +59,4 @@ static int fsReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len
 	return 0;
 }
 
-static int fsReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
-{
-	return 0;
-}
-
-struct mdbreadinforegstruct fsReadInfoReg = {"DataBases", fsReadMemInfo, fsReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+struct mdbreadinforegstruct fsReadInfoReg = {"DataBases", fsReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

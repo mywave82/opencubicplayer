@@ -38,7 +38,7 @@ static uint32_t itpGetModuleType(const char *buf)
 	return 0;
 }
 
-static int itpReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
+static int itpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
 {
 	uint32_t type;
 	int i;
@@ -104,11 +104,6 @@ static int itpReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 	return 1;
 }
 
-static int itpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *bf, size_t len)
-{
-	return itpReadMemInfo (m, bf, len);
-}
-
 const char *IT_description[] =
 {
 	//                                                                          |
@@ -125,4 +120,4 @@ struct interfaceparameters IT_p =
 };
 
 
-struct mdbreadinforegstruct itpReadInfoReg = {"IT", itpReadMemInfo, itpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+struct mdbreadinforegstruct itpReadInfoReg = {"IT", itpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

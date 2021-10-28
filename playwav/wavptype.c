@@ -42,12 +42,6 @@ static unsigned char wavGetModuleType(const char *buf)
 	return 0;
 }
 
-
-static int wavReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
-{
-	return 0;
-}
-
 static int RIFF_INFO (struct ocpfilehandle_t *fp, uint32_t len, char *dst, int dstlen)
 {
 	uint32_t toread;
@@ -206,4 +200,4 @@ struct interfaceparameters WAV_p =
 	0, 0
 };
 
-struct mdbreadinforegstruct wavReadInfoReg = {"WAVE", wavReadMemInfo, wavReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+struct mdbreadinforegstruct wavReadInfoReg = {"WAVE", wavReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

@@ -30,7 +30,8 @@
 #include "types.h"
 #include "filesel/mdb.h"
 
-static int cpiReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t _ignore)
+
+static int cpiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *file, const char *buf, size_t len)
 {
 	if (!memcmp(buf, "CPANI\x1A\x00\x00", 8))
 	{
@@ -45,9 +46,4 @@ static int cpiReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t _i
 	return 0;
 }
 
-static int cpiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *file, const char *c, size_t _ignore)
-{
-	return cpiReadMemInfo(m, c, _ignore);
-}
-
-struct mdbreadinforegstruct cpiReadInfoReg = {"ANI", cpiReadMemInfo, cpiReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+struct mdbreadinforegstruct cpiReadInfoReg = {"ANI", cpiReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

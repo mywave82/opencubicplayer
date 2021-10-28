@@ -198,14 +198,8 @@ int mdbReadInfo (struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 	{
 		char *path;
 		dirdbGetName_internalstr (f->dirdb_ref, &path);
-		DEBUG_PRINT ("   mdbReadMemInfo(%s %p %d)\n", path, mdbScanBuf, maxl);
+		DEBUG_PRINT ("   mdbReadInfo(%s %p %d)\n", path, mdbScanBuf, maxl);
 	}
-
-	/* quick version first that only uses memory buffer */
-	for (rinfos=mdbReadInfos; rinfos; rinfos=rinfos->next)
-		if (rinfos->ReadMemInfo)
-			if (rinfos->ReadMemInfo(m, mdbScanBuf, maxl))
-				return 1;
 
 	/* slow version that also allows more I/O */
 	for (rinfos=mdbReadInfos; rinfos; rinfos=rinfos->next)

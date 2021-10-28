@@ -31,7 +31,7 @@
 
 static struct mdbreadinforegstruct ayReadInfoReg;
 
-static int ayReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
+static int ayReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
 {
 	int authorptr;
 	const char *authorstr;
@@ -102,11 +102,6 @@ static int ayReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len
 	return 1;
 }
 
-static int ayReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
-{
-	return ayReadMemInfo(m, buf, len);
-}
-
 static const char *AY_description[] =
 {
 	//                                                                          |
@@ -147,6 +142,6 @@ static void __attribute__((destructor))done(void)
 	mdbUnregisterReadInfo(&ayReadInfoReg);
 }
 
-static struct mdbreadinforegstruct ayReadInfoReg = {"AY", ayReadMemInfo, ayReadInfo, ayEvent MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct ayReadInfoReg = {"AY", ayReadInfo, ayEvent MDBREADINFOREGSTRUCT_TAIL};
 char *dllinfo = "";
 struct linkinfostruct dllextinfo = {.name = "aytype", .desc = "OpenCP AY Detection (c) 2005-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

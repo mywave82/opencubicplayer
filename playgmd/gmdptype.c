@@ -145,7 +145,7 @@ nostm:
 }
 
 
-static int gmdReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
+static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
 {
 	uint32_t type;
 	int i;
@@ -335,6 +335,22 @@ static int gmdReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 				case '4': strcpy (m->comment, "UltraTracker v1.6"); break;
 				default: snprintf (m->comment, sizeof (m->comment), "UltraTracker (file version %d)", buf[14]); break;
 			}
+
+			if (len>=(48))
+			{
+				uint8_t t1, t2;
+				if ((fp->seek_set (fp, 48 + buf[47] * 32) == 0) &&
+				    (fp->read (fp, &t1, 1) == 1) &&
+				    (fp->seek_set (fp, 256 + t1 * ( (buf[14]>='4') ? 66:64)) == 0) &&
+				    (fp->read (fp, &t2, 1) == 1))
+				{
+					m->channels = t2 + 1;
+					fp->seek_set (fp, 0);
+					return 1;
+				}
+				fp->seek_set (fp, 0);
+			}
+
 			return 0;
 		}
 	} else if (type==MODULETYPE("DMF"))
@@ -350,76 +366,48 @@ static int gmdReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 				case 4: snprintf (m->comment, sizeof (m->comment), "XTracker 0.30beta"); break;
 				default: snprintf (m->comment, sizeof (m->comment), "XTracker (file version %d)", buf[4]); break;
 			}
+
+			if (fp->seek_set (fp, 66) == 0)
+			{
+				m->channels=32;
+				while (1)
+				{
+					uint32_t sig=0;
+					uint32_t len=0;
+					if (ocpfilehandle_read_uint32_le (fp, &sig))
+					{
+						break;
+					}
+					if (ocpfilehandle_read_uint32_le (fp, &len))
+					{
+						break;
+					}
+					if (sig == 0x54544150)
+					{
+						m->channels = 0;
+						if (fp->seek_cur (fp, 1024) == 0)
+						{
+							uint8_t t;
+							if (fp->read (fp, &t, 1) == 1)
+							{
+								m->channels = t;
+							}
+						}
+						break;
+					}
+					if (fp->seek_cur (fp, len) < 0)
+					{
+						break;
+					}
+				}
+				fp->seek_set (fp, 0);
+				return 1;
+			}
+
 			return 0;
 		}
 	}
 	/* if we reach this point, the file is broken in length... */
-	return 0;
-}
-
-static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
-{
-	uint32_t type;
-
-	if (!(type=gmdGetModuleType(buf, len)))
-		return 0;
-
-	m->modtype.integer.i=type;
-	if (type==MODULETYPE("ULT"))
-	{
-		if (len>=(48))
-		{
-			uint8_t t1, t2;
-			if ((fp->seek_set (fp, 48 + buf[47] * 32) == 0) &&
-			    (fp->read (fp, &t1, 1) == 1) &&
-			    (fp->seek_set (fp, 256 + t1 * ( (buf[14]>='4') ? 66:64)) == 0) &&
-			    (fp->read (fp, &t2, 1) == 1))
-			{
-				m->channels = t2 + 1;
-				fp->seek_set (fp, 0);
-				return 1;
-			}
-		}
-	} else if (type==MODULETYPE("DMF"))
-	{
-		if (fp->seek_set (fp, 66) == 0)
-		{
-			m->channels=32;
-			while (1)
-			{
-				uint32_t sig=0;
-				uint32_t len=0;
-				if (ocpfilehandle_read_uint32_le (fp, &sig))
-				{
-					break;
-				}
-				if (ocpfilehandle_read_uint32_le (fp, &len))
-				{
-					break;
-				}
-				if (sig == 0x54544150)
-				{
-					m->channels = 0;
-					if (fp->seek_cur (fp, 1024) == 0)
-					{
-						uint8_t t;
-						if (fp->read (fp, &t, 1) == 1)
-						{
-							m->channels = t;
-						}
-					}
-					break;
-				}
-				if (fp->seek_cur (fp, len) < 0)
-				{
-					break;
-				}
-			}
-			fp->seek_set (fp, 0);
-			return 1;
-		}
-	}
-	fp->seek_set (fp, 0);
 	return 0;
 }
 
@@ -596,4 +584,4 @@ const struct interfaceparameters ULT_p =
 	"loadult", "mpLoadULT"
 };
 
-struct mdbreadinforegstruct gmdReadInfoReg = {"MOD", gmdReadMemInfo, gmdReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+struct mdbreadinforegstruct gmdReadInfoReg = {"MOD", gmdReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

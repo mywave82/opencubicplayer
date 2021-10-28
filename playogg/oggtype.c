@@ -33,7 +33,7 @@
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 
-static int oggReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
+static int oggReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
 {
 	uint8_t offset;
 	uint32_t length;
@@ -131,11 +131,6 @@ static int oggReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 	return 1;
 }
 
-static int oggReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
-{
-	return oggReadMemInfo(m, buf, len);
-}
-
 const char *OGG_description[] =
 {
 	//                                                                          |
@@ -151,4 +146,4 @@ const struct interfaceparameters OGG_p =
 };
 
 
-struct mdbreadinforegstruct oggReadInfoReg = {"OGG", oggReadMemInfo, oggReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+struct mdbreadinforegstruct oggReadInfoReg = {"OGG", oggReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

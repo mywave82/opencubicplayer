@@ -35,10 +35,6 @@ extern "C" {
 #include "stuff/compat.h"
 }
 
-static int oplReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
-{
-	return 0;
-}
 static int oplReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
 {
 	char *filename = 0;
@@ -109,7 +105,7 @@ static void oplEvent(int event)
 	}
 }
 
-static struct mdbreadinforegstruct oplReadInfoReg = {"adplug", oplReadMemInfo, oplReadInfo, oplEvent MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct oplReadInfoReg = {"adplug", oplReadInfo, oplEvent MDBREADINFOREGSTRUCT_TAIL};
 
 static void __attribute__((constructor))init(void)
 {

@@ -312,7 +312,8 @@ static int ymReadMemInfo2(struct moduleinfostruct *m, const char *buf, size_t le
 	return 0;
 }
 
-static int ymReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
+
+static int ymReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
 {
 #ifdef HAVE_LZH
 	uint32_t fileSize;
@@ -346,11 +347,6 @@ static int ymReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len
 #endif
 }
 
-static int ymReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *mem, size_t len)
-{
-	return ymReadMemInfo (m, mem, len);
-}
-
 const char *YM_description[] =
 {
 	//                                                                          |
@@ -382,7 +378,7 @@ static void ymEvent(int event)
 		}
 	}
 }
-static struct mdbreadinforegstruct ymReadInfoReg = {"YM", ymReadMemInfo, ymReadInfo, ymEvent MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct ymReadInfoReg = {"YM", ymReadInfo, ymEvent MDBREADINFOREGSTRUCT_TAIL};
 
 static void __attribute__((constructor))init(void)
 {

@@ -51,7 +51,8 @@ struct __attribute__((packed)) psidHeader
 	char reserved[4];    /* only version 0x0002                            */
 };
 
-static int sidReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
+
+static int sidReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
 {
 	int i;
 	struct psidHeader *ph;
@@ -114,13 +115,7 @@ static int sidReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 	return 0;
 }
 
-
-static int sidReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *mem, size_t len)
-{
-	return sidReadMemInfo (m, mem, len);
-}
-
-static struct mdbreadinforegstruct sidReadInfoReg = {"SID", sidReadMemInfo, sidReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct sidReadInfoReg = {"SID", sidReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
 
 static const char *SID_description[] =
 {

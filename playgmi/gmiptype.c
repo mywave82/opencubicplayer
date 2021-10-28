@@ -44,7 +44,7 @@ static uint32_t gmiGetModuleType (const uint8_t *buf)
 	return 0;
 }
 
-static int gmiReadMemInfo(struct moduleinfostruct *m, const char *_buf, size_t flen)
+static int gmiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *_buf, size_t flen)
 {
 	const uint8_t *buf = (const uint8_t *)_buf;
 	int type;
@@ -105,11 +105,6 @@ static int gmiReadMemInfo(struct moduleinfostruct *m, const char *_buf, size_t f
 	return 1;
 }
 
-static int gmiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *mem, size_t len)
-{
-	return 0;
-}
-
 const char *MIDI_description[] =
 {
 	//                                                                          |
@@ -129,4 +124,4 @@ struct interfaceparameters MIDI_p =
 };
 
 
-struct mdbreadinforegstruct gmiReadInfoReg = {"MIDI", gmiReadMemInfo, gmiReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+struct mdbreadinforegstruct gmiReadInfoReg = {"MIDI", gmiReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
