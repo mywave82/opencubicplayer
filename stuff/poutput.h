@@ -8,6 +8,7 @@
 #define vga13() (_vga13())
 #define plSetTextMode(x) (_plSetTextMode(x))
 #define plSetBarFont(x) (_plSetBarFont(x))
+void displaychr (const uint16_t y, const uint16_t x, const uint8_t attr, const char chr, const uint16_t len);
 #define displaystr(y, x, attr, str, len) (_displaystr(y, x, attr, str, len))
 #define displaystrattr(y, x, buf, len) (_displaystrattr(y, x, buf, len))
 #define displaystr_iso8859latin1(y, x, attr, str, len) (_displaystr_iso8859latin1(y, x, attr, str, len))

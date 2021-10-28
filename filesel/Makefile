@@ -97,7 +97,8 @@ dirdb.o: dirdb.c \
 	../types.h \
 	../boot/psetting.h \
 	../stuff/compat.c \
-	dirdb.h
+	dirdb.h \
+	mdb.h
 	$(CC) $< -o $@ -c
 
 dirdb-test: dirdb-test.c \
@@ -422,7 +423,8 @@ pfilesel.o: pfilesel.c \
 fstypes.o: fstypes.c \
 	../config.h \
 	../boot/plinkman.h \
-	mdb.h
+	mdb.h \
+	pfilesel.h
 	$(CC) $< -o $@ -c
 
 pfsmain.o: pfsmain.c \

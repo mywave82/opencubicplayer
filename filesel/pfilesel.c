@@ -341,8 +341,69 @@ int fsReadDir (struct modlist *ml, struct ocpdir_t *dir, const char *mask, unsig
 	return 1;
 }
 
-static char fsTypeCols[256]; /* colors */
-const char *fsTypeNames[256] = {0}; /* type description */
+struct fsType
+{
+	struct moduletype modtype;
+	uint8_t color; /* for the file-selector */
+	const char **description;
+	const char *interface;
+	const struct interfaceparameters *ip;
+};
+struct fsType *fsTypes;
+int fsTypesCount;
+
+void fsTypeRegister (struct moduletype modtype, const char **description, const char *interface, const struct interfaceparameters *ip)
+{
+	int i;
+	char m[5];
+	m[0] = modtype.string.c[0];
+	m[1] = modtype.string.c[1];
+	m[2] = modtype.string.c[2];
+	m[3] = modtype.string.c[3];
+	m[4] = 0;
+
+	for (i=0; i < fsTypesCount; i++)
+	{
+		if (fsTypes[i].modtype.integer.i == modtype.integer.i)
+		{
+			fprintf (stderr, "fsTypeRegister() modtype %s already registered\n", m);
+			return;
+		}
+	}
+	if (!(fsTypesCount & 0x3f))
+	{
+		void *t = realloc (fsTypes, sizeof (fsTypes[0]) * (fsTypesCount + 0x40));
+		if (!t)
+		{
+			fprintf (stderr, "fsTypeRegister() realloc failed\n");
+			return;
+		}
+		fsTypes = t;
+	}
+
+	fsTypes[fsTypesCount].modtype = modtype;
+	fsTypes[fsTypesCount].color = cfGetProfileInt ("fscolors", m, 7, 10);
+	fsTypes[fsTypesCount].description = description;
+	fsTypes[fsTypesCount].interface = interface;
+	fsTypes[fsTypesCount].ip = ip;
+	fsTypesCount++;
+}
+
+uint8_t fsModTypeColor(struct moduletype modtype)
+{
+	int i;
+
+	if (modtype.integer.i == 0) return 7;
+
+	for (i=0; i < fsTypesCount; i++)
+	{
+		if (fsTypes[i].modtype.integer.i == modtype.integer.i)
+		{
+			return fsTypes[i].color;
+		}
+	}
+	return 7;
+}
 
 static char **moduleextensions=0;
 
@@ -629,7 +690,7 @@ int fsGetPrevFile (struct moduleinfostruct *info, struct ocpfilehandle_t **fileh
 
 	mdbGetModuleInfo (info, m->mdb_ref);
 
-	if (!(info->flags1&MDB_VIRTUAL))
+	if (!(info->flags&MDB_VIRTUAL))
 	{
 		if (m->file)
 		{
@@ -638,7 +699,7 @@ int fsGetPrevFile (struct moduleinfostruct *info, struct ocpfilehandle_t **fileh
 
 		if (*filehandle)
 		{
-			if (!mdbInfoRead(m->mdb_ref)&&*filehandle)
+			if (!mdbInfoIsAvailable(m->mdb_ref)&&*filehandle)
 			{
 				mdbReadInfo(info, *filehandle); /* detect info... */
 				(*filehandle)->seek_set (*filehandle, 0);
@@ -701,7 +762,7 @@ int fsGetNextFile (struct moduleinfostruct *info, struct ocpfilehandle_t **fileh
 
 	mdbGetModuleInfo(info, m->mdb_ref);
 
-	if (!(info->flags1&MDB_VIRTUAL))
+	if (!(info->flags&MDB_VIRTUAL))
 	{
 		if (m->file)
 		{
@@ -710,7 +771,7 @@ int fsGetNextFile (struct moduleinfostruct *info, struct ocpfilehandle_t **fileh
 
 		if (*filehandle)
 		{
-			if (!mdbInfoRead(m->mdb_ref)&&*filehandle)
+			if (!mdbInfoIsAvailable(m->mdb_ref)&&*filehandle)
 			{
 				mdbReadInfo(info, *filehandle); /* detect info... */
 				(*filehandle)->seek_set (*filehandle, 0);
@@ -752,14 +813,23 @@ void fsForceRemove(const uint32_t dirdbref)
 	modlist_remove_all_by_path(playlist, dirdbref);
 }
 
+#warning Make this interface more intelligent + IOCTL....
+static struct interfaceparameters DEVv_p =
+{
+	0, 0,
+	0, 0
+};
+static const char *DEVv_description[] =
+{
+	"Virtual files used for Open Cubic Player to change audio device",
+	NULL
+};
+
 int fsPreInit(void)
 {
-	int i;
-
 	const char *sec=cfGetProfileString(cfConfigSec, "fileselsec", "fileselector");
 
-	const char *modexts;
-	int extnum;
+	struct moduletype mt;
 
 	curmask = strdup ("*");
 
@@ -771,34 +841,9 @@ int fsPreInit(void)
 	if (!dirdbInit())
 		return 0;
 
-	/* this on the other hand is VERY nice */
-
-	for (i=0; i<256; i++)
-	{
-		char secname[20];
-		sprintf(secname, "filetype %d", i);
-
-		fsTypeCols[i]=cfGetProfileInt(secname, "color", 7, 10);
-		fsTypeNames[i]=cfGetProfileString(secname, "name", "");
-	}
-
-	/* what are these?????
-	dmTree=0;
-	dmReloc=0;
-	dmMaxNodes=0;
-	dmNumNodes=0;
-	*/
-
-	modexts=cfGetProfileString2(sec, "fileselector", "modextensions", "MOD XM S3M MID MTM DMF ULT 669 NST WOW OKT PTM AMS MDL");
-	extnum=cfCountSpaceList(modexts, 3);
-	for (i=0; i<extnum; i++)
-	{
-		char t[4];
-		cfGetSpaceListEntry(t, &modexts, 3);
-		strupr(t);
-		fsRegisterExt(t);
-	}
 	fsRegisterExt("DEV");
+	mt.integer.i = MODULETYPE("DEVv");
+	fsTypeRegister (mt, DEVv_description, "VirtualInterface", &DEVv_p);
 
 	fsScrType=cfGetProfileInt2(cfScreenSec, "screen", "screentype", 7, 10)&7;
 	fsColorTypes=cfGetProfileBool2(sec, "fileselector", "typecolors", 1, 1);
@@ -853,8 +898,9 @@ int fsLateInit(void)
 }
 
 struct interfacestruct *CurrentVirtualInterface;
-static int VirtualInterfaceInit (struct moduleinfostruct *info, struct ocpfilehandle_t *fi)
+static int VirtualInterfaceInit (struct moduleinfostruct *info, struct ocpfilehandle_t *fi, const struct interfaceparameters *ip)
 {
+#warning "VirtualInterface" should change into using ioctl for the action....
 	char name[128];
 	int res;
 
@@ -872,7 +918,7 @@ static int VirtualInterfaceInit (struct moduleinfostruct *info, struct ocpfileha
 	{
 		if (!strcmp (CurrentVirtualInterface->name, name))
 		{
-			int res = CurrentVirtualInterface->Init (info, fi);
+			int res = CurrentVirtualInterface->Init (info, fi, ip);
 			if (!res)
 			{
 				CurrentVirtualInterface = 0;
@@ -956,10 +1002,9 @@ void fsClose(void)
 	plUnregisterInterface (&VirtualInterface);
 }
 
-static void displayfile(const unsigned int y, unsigned int x, unsigned int width, /* TODO const*/ struct modlistentry *m, const unsigned char sel)
+static void displayfile(const unsigned int y, unsigned int x, unsigned int width, struct modlistentry *m, const unsigned char sel)
 {
 	unsigned char col;
-	unsigned short sbuf[CONSOLE_MAX_X];
 	struct moduleinfostruct mi;
 
 	if (width == 14)
@@ -984,12 +1029,6 @@ static void displayfile(const unsigned int y, unsigned int x, unsigned int width
 	{
 		col=0x07;
 		mdbGetModuleInfo(&mi, m->mdb_ref);
-#if 0
-		if (mi.flags1&MDB_PLAYLIST)
-		{
-			col=0x0f;
-		}
-#endif
 	} else {
 		memset(&mi, 0, sizeof(mi));
 		col=0x0f;
@@ -999,32 +1038,34 @@ static void displayfile(const unsigned int y, unsigned int x, unsigned int width
 		col|=0x80;
 	}
 
+	if (sel==2)
+	{
+		displaystr (y, x + 0,         0x07, "->", 2);
+		displaystr (y, x + width - 2, 0x07, "<-", 2);
+	} else {
+		displaystr (y, x + 0,          col, "  ", 2);
+		displaystr (y, x + width - 2,  col, "  ", 2);
+	}
+	x += 2;
+	width -= 4;
+
+	/* Mode 4 does not care about width it uses all space for filename/dirname + size/dir-type */
 	if (fsInfoMode==4)
 	{
-		//writestring(sbuf, 0, col, "", width);
-		if (sel==2)
-		{
-			displaystr (y, x + 0,         0x07, "->", 2);
-			displaystr (y, x + width - 2, 0x07, "<-", 2);
-		} else {
-			displaystr (y, x + 0,          col, "  ", 2);
-			displaystr (y, x + width - 2,  col, "  ", 2);
-		}
-
 		if (m->file)
 		{
-			if (mi.modtype==0xFF)
+			if (mi.modtype.integer.i==0)
 				col&=~0x08;
 			else if (fsColorTypes)
 			{
 				col&=0xF8;
-				col|=fsTypeCols[mi.modtype&0xFF];
+				col|=fsModTypeColor(mi.modtype);
 			}
 		}
 
 		if (m->dir && !strcmp (m->utf8_8_dot_3, ".."))
 		{
-			displaystr_utf8 (y, x + 2, col, m->utf8_8_dot_3, width - 13);
+			displaystr_utf8 (y, x, col, m->utf8_8_dot_3, width - 5);
 		} else {
 			char *temp = 0;
 
@@ -1035,54 +1076,39 @@ static void displayfile(const unsigned int y, unsigned int x, unsigned int width
 			{
 				dirdbGetName_internalstr (m->dir->dirdb_ref, &temp);
 			}
-			displaystr_utf8 (y, x + 2, col, temp ? temp : "???", width - 13);
+			displaystr_utf8 (y, x, col, temp ? temp : "???", width - 2);
 		}
 		if (m->dir)
 		{
 			if (m->flags&MODLIST_FLAG_DRV)
 			{
-				displaystr (y, x + width - 7, col, "<DRV>", 5);
+				displaystr (y, x + width - 5, col, "<DRV>", 5);
 			} else if (m->dir->is_playlist)
 			{
-				displaystr (y, x + width - 7, col, "<PLS>", 5);
+				displaystr (y, x + width - 5, col, "<PLS>", 5);
 			} else if (m->dir->is_archive)
 			{
-				displaystr (y, x + width - 7, col, "<ARC>", 5);
+				displaystr (y, x + width - 5, col, "<ARC>", 5);
 			} else {
-				displaystr (y, x + width - 7, col, "<DIR>", 5);
+				displaystr (y, x + width - 5, col, "<DIR>", 5);
 			}
 		} else { /* m->file */
-			char buffer[20];
+			char buffer[22];
 
-			if (mi.size<1000000000)
-			{
-				snprintf (buffer, sizeof (buffer), "%9"PRId32, mi.size);
-				displaystr (y, x + width - 11, (mi.flags1&MDB_BIGMODULE)?((col&0xF0)|0x0C):col, buffer, 9);
-			} else {
-				snprintf (buffer, sizeof (buffer), "%8"PRId32, mi.size);
-				displaystr (y, x + width - 10, col, buffer, 8);
-			}
+			snprintf (buffer, sizeof (buffer), " %"PRIu64, mi.size);
+			displaystr (y, x + width - strlen(buffer), (mi.flags&MDB_BIGMODULE)?((col&0xF0)|0x0C):col, buffer, strlen (buffer));
 		}
+		return;
 	} else {
-		if (sel==2)
+		if (width > 84)
 		{
-			displaystr (y, x + 0,         0x07, "->", 2);
-			displaystr (y, x + width - 2, 0x07, "<-", 2);
+			displaystr_utf8 (y, x, col, m->utf8_16_dot_3, 22); /* two extra spaces at the end */
+			x += 22;
+			width -= 22;
 		} else {
-			displaystr (y, x + 0,          col, "  ", 2);
-			displaystr (y, x + width - 2,  col, "  ", 2);
-		}
-		if (width > 88)
-		{
-			displaystr_utf8 (y, x + 2, col, m->utf8_16_dot_3, 20);
-			displaystr (y, x + 22, col, "  ", 2);
-			x += 24;
-			width -= 26;
-		} else {
-			displaystr_utf8 (y, x + 2, col, m->utf8_8_dot_3, 12);
-			displaystr (y, x + 14, col, "  ", 2);
-			x += 16;
-			width -= 18;
+			displaystr_utf8 (y, x, col, m->utf8_8_dot_3, 14); /* two extra spaces at the end */
+			x += 14;
+			width -= 14;
 		}
 
 		if (m->dir)
@@ -1099,361 +1125,425 @@ static void displayfile(const unsigned int y, unsigned int x, unsigned int width
 			} else {
 				displaystr (y, x, col, "<DIR>", width);
 			}
-
 		} else { /* m->file */
-#warning TODO, replace writestring() with displaystr(), but remember the spaces
-			if (mi.modtype==0xFF)
+			char temp[16];
+			if (mi.modtype.integer.i==0)
+			{
 				col&=~0x08;
-			else if (fsColorTypes)
+			} else if (fsColorTypes)
 			{
 				col&=0xF8;
-				col|=fsTypeCols[mi.modtype&0xFF];
+				col|=fsModTypeColor(mi.modtype);
 			}
 
-			writestring(sbuf, 0, col, "", width);
-
-			if (width>=100) /* 132 or bigger screen this will imply */
+			if (width>=79) /* implies 120 or bigger screens */
 			{
 				if (fsInfoMode&1)
 				{
-					if (mi.comment[0])
-						writestring(sbuf, 0, col, mi.comment, 63);
-					if (mi.style[0])
-						writestring(sbuf, 69, col, mi.style, 31);
+					int w1 = (width - 1) / 2;
+					displaystr_utf8 (y, x +  0, col, mi.comment, w1);
+					displaystr      (y, x + w1, col, "", 1);
+					displaystr_utf8 (y, x + w1 + 1, col, mi.style, width - w1 - 1);
 				} else { /* 32 + PAD2 + 2 + PAD1 + 6 + PAD2 + 32 + PAD1 + 11 + PAD2 + 9 => 100         + 16 prefix + 2 suffix  => 118 GRAND TOTAL WIDTH */
-					if (mi.modname[0])
-						writestring(sbuf, 0, col, mi.modname, 32);
+					int w1 = (width - 4 - 8 - 11 - 11) / 2;
+					displaystr_utf8 (y, x +  0, col, mi.title, w1);
 					if (mi.channels)
-						writenum(sbuf, 34, col, mi.channels, 10, 2, 1);
+					{
+						snprintf (temp, sizeof (temp), " %2d ", mi.channels);
+						displaystr (y, x + w1, col, temp, 4); // include padding before and after
+					} else {
+						displaystr (y, x + w1, col, "", 4);
+					}
 				        if (mi.playtime)
 				        {
-						writenum(sbuf, 37, col, mi.playtime/60, 10, 3, 1);
-						writestring(sbuf, 40, col, ":", 1);
-						writenum(sbuf, 41, col, mi.playtime%60, 10, 2, 0);
+						snprintf (temp, sizeof (temp), "%3d:%02d", mi.playtime / 60, mi.playtime % 60);
+						displaystr (y, x + w1 + 4, col, temp, 8); // include two padding
+					} else {
+						displaystr (y, x + w1 + 4, col, "", 8);
 					}
-					if (mi.composer[0])
-						writestring(sbuf, 45, col, mi.composer, 32);
+					displaystr_utf8 (y, x + w1 + 4 + 8, col, mi.composer, width - w1 - 4 - 8 - 11 - 11);
 					if (mi.date)
 					{
 						if (mi.date&0xFF)
 						{
-							writestring(sbuf, 80, col, ".", 3);
-							writenum(sbuf, 78, col, mi.date&0xFF, 10, 2, 1);
+							snprintf (temp, sizeof (temp), " %02d.", mi.date & 0xff);
+						} else {
+							snprintf (temp, sizeof (temp), "    ");
 						}
 						if (mi.date&0xFFFF)
 						{
-							writestring(sbuf, 83, col, ".", 3);
-							writenum(sbuf, 81, col, (mi.date>>8)&0xFF, 10, 2, 1);
+							snprintf (temp + 4, sizeof (temp) - 4, "%02d.", (mi.date >> 8)&0xff);
+						} else {
+							snprintf (temp + 4, sizeof (temp) - 4, "   ");
 						}
 						if (mi.date>>16)
 						{
-							writenum(sbuf, 84, col, mi.date>>16, 10, 4, 1);
+							snprintf (temp + 7, sizeof (temp) - 7, "%4d", (mi.date >> 16));
 							if (!((mi.date>>16)/100))
-								writestring(sbuf, 85, col, "'", 1);
+							{
+								temp[7] = '\'';
+							}
 						}
+						displaystr (y, x + width - 11 - 11, col, temp, 11); // include one padding
+					} else {
+						displaystr (y, x + width - 11 - 11, col, "", 11); // include one padding
 					}
-					if (mi.size<1000000000)
-						writenum(sbuf, 90, (mi.flags1&MDB_BIGMODULE)?((col&0xF0)|0x0C):col, mi.size, 10, 9, 1);
-					else
-						writenum(sbuf, 91, col, mi.size, 16, 8, 0);
+					if (mi.size<10000000000ll)
+					{
+						snprintf (temp, sizeof (temp), "%11"PRIu64, mi.size);
+					} else {
+						snprintf (temp, sizeof (temp), "x%10"PRIx64, mi.size);
+					}
+					displaystr (y, x + width - 11, (mi.flags&MDB_BIGMODULE)?((col&0xF0)|0x0C):col, temp, 11);
 				}
 			} else switch (fsInfoMode)
 			{
 				case 0:
-					writestring(sbuf, 0, col, mi.modname, 32);
+					displaystr_utf8 (y, x +  0, col, mi.title, width - 4 - 11);
 					if (mi.channels)
-						writenum(sbuf, 34, col, mi.channels, 10, 2, 1);
-					if (mi.size<1000000000)
-						writenum(sbuf, 38, (mi.flags1&MDB_BIGMODULE)?((col&0xF0)|0x0C):col, mi.size, 10, 9, 1);
-					else
-						writenum(sbuf, 39, col, mi.size, 16, 8, 0);
+					{
+						snprintf (temp, sizeof (temp), " %2d ", mi.channels);
+						displaystr (y, x + width - 4 - 11, col, temp, 4); // include padding before and after
+					} else {
+						displaystr (y, x + width - 4 - 11, col, "", 4); // include one padding
+					}
+
+					if (mi.size<100000000000ll)
+					{
+						snprintf (temp, sizeof (temp), "%11"PRIu64, mi.size);
+					} else {
+						snprintf (temp, sizeof (temp), "x%10"PRIx64, mi.size);
+					}
+					displaystr (y, x + width - 11, (mi.flags&MDB_BIGMODULE)?((col&0xF0)|0x0C):col, temp, 11);
 					break;
 				case 1:
-					if (mi.composer[0])
-						writestring(sbuf, 0, col, mi.composer, 32);
+					displaystr_utf8 (y, x +  0, col, mi.composer, width - 11);
+
 					if (mi.date)
 					{
 						if (mi.date&0xFF)
 						{
-							writestring(sbuf, 39, col, ".", 3);
-							writenum(sbuf, 37, col, mi.date&0xFF, 10, 2, 1);
+							snprintf (temp, sizeof (temp), " %02d.", mi.date & 0xff);
+						} else {
+							snprintf (temp, sizeof (temp), "    ");
 						}
 						if (mi.date&0xFFFF)
 						{
-							writestring(sbuf, 42, col, ".", 3);
-							writenum(sbuf, 40, col, (mi.date>>8)&0xFF, 10, 2, 1);
+							snprintf (temp + 4, sizeof (temp) - 4, "%02d.", (mi.date >> 8)&0xff);
+						} else {
+							snprintf (temp + 4, sizeof (temp) - 4, "   ");
 						}
 						if (mi.date>>16)
 						{
-							writenum(sbuf, 43, col, mi.date>>16, 10, 4, 1);
+							snprintf (temp + 7, sizeof (temp) - 7, "%4d", (mi.date >> 16));
 							if (!((mi.date>>16)/100))
-								writestring(sbuf, 44, col, "'", 1);
+							{
+								temp[7] = '\'';
+							}
 						}
+						displaystr (y, x + width - 11, col, temp, 11);
+					} else {
+						displaystr (y, x + width - 11, col, "", 11);
 					}
 
 					break;
 				case 2:
-					if (mi.comment[0])
-						writestring(sbuf, 0, col, mi.comment, width);
+					displaystr_utf8 (y, x + 0, col, mi.comment, width);
 					break;
 				case 3:
-					if (mi.style[0])
-						writestring(sbuf, 0, col, mi.style, 31);
+					displaystr_utf8 (y, x + 0, col, mi.style, width - 7);
 					if (mi.playtime)
 					{
-						writenum(sbuf, 41, col, mi.playtime/60, 10, 3, 1);
-						writestring(sbuf, 44, col, ":", 1);
-						writenum(sbuf, 45, col, mi.playtime%60, 10, 2, 0);
+						snprintf (temp, sizeof (temp), " %3d:%02d", mi.playtime / 60, mi.playtime % 60);
+						displaystr (y, x + width - 7, col, temp, 7);
+					} else {
+						displaystr (y, x + width - 7, col, "", 7);
 					}
 					break;
 			}
-			displaystrattr(y, x, sbuf, width);
 		}
 	}
 }
 
-static void fsShowDirBottom80File (int Y, int selecte, uint16_t *sbuf, const struct modlistentry *mle, struct moduleinfostruct *mi, const char *modtype, const char *npath)
+static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry *mle, struct moduleinfostruct *mi, const char *npath)
 {
-	writestring (sbuf, 0, 0x07, "  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa   \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa   title: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", plScrWidth - 13 );
-	writestring (sbuf, plScrWidth - 13 , 0x07, "   type: \xfa\xfa\xfa\xfa ", 80);
+#warning TODO, we are missing album and artist....
+/*
+          1         2         3          3         2         1
+0123456789012345678901234567890123456.321098765432109876543210987654321
+  XXXXXXXX.XXX _XXXXXXXXXX! title: xxxxxxxxxxxxxxxxxxxxx    type: XXXX
+   composer: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  date: DD.MM.YYYY
+   style:    xxxxxxxxxxxxxxxxxxxxxxxxx  playtime: XXX:XX  channels: XX
 
-	if (mle->file)
+*/
+	displaystr (Y + 0, 0, 0x07, "", 2);
+	if (mle && mle->utf8_8_dot_3[0])
 	{
-		writenum(sbuf, 15, 0x0F, mi->size, 10, 10, 1);
-
-		if (mi->flags1&MDB_BIGMODULE)
-			writestring(sbuf, 25, 0x0F, "!", 1);
+		displaystr_utf8 (Y + 0, 2, 0x0F, mle->utf8_8_dot_3, 12);
+	} else {
+		displaystr (Y + 0, 2, 0x07, "\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa", 12);
 	}
-	if (mi->modname[0])
+	displaystr (Y + 0, 14, 0x07, "", 1);
+	if (mle && mle->file)
 	{
-		int w=plScrWidth - 48;
-		int l=sizeof(mi->modname);
-		if (l>w)
-			l=w;
-		writestring(sbuf, 35, /*(selecte==0)?0x8F:*/0x0F, mi->modname, l);
-		writestring(sbuf, 35+l, /*(selecte==0)?0x8F:*/0x0F, "", w-l);
+		char temp[13];
+		snprintf (temp, sizeof (temp), "11%" PRIu64 "%c", mi->size, (mi->flags&MDB_BIGMODULE) ? '!' : ' ');
+		displaystr (Y + 0, 15, 0x0f, temp, 12);
+	} else {
+		displaystr (Y + 0, 15, 0x07, " \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 12);
 	}
-	if (selecte==0)
-		markstring(sbuf, 35, plScrWidth - 48);
-	if (*modtype)
-		writestring(sbuf, plScrWidth - 4, /*(selecte==1)?0x8F:*/0x0F, modtype, 4);
-	if (selecte==1)
-		markstring(sbuf, plScrWidth - 4, 4);
+	displaystr (Y + 0, 27, 0x07, " title: ", 8);
+	if (mi->title[0])
+	{
+		displaystr_utf8 (Y + 0, 35, (selecte==0)?0x8f:0x0f, mi->title, plScrWidth - 35 - 13);
+	} else {
+		displaychr (Y + 0, 35, (selecte==0)?0x87:0x07, '\xfa', plScrWidth - 35 - 13);
+	}
+	displaystr (Y + 0, plScrWidth - 13, 0x07, "  type: ", 8);
+	if (mi->modtype.string.c[0])
+	{
+		displaystr (Y + 0, plScrWidth - 5, (selecte==1)?0x8f:0x0f, mi->modtype.string.c, 4);
+	} else {
+		displaystr (Y + 0, plScrWidth - 5, (selecte==1)?0x87:0x07, "\xfa\xfa\xfa\xfa", 4);
+	}
+	displaystr (Y + 0, plScrWidth - 1, 0x07, "", 1);
 
-	displaystrattr (Y + 0, 0, sbuf, plScrWidth);
-	displaystr_utf8 (Y + 2, 2, 0x0F, mle->utf8_8_dot_3, 12);
 
-	writestring(sbuf, 0, 0x07, "   composer: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", plScrWidth - 35);
-	writestring(sbuf, plScrWidth - 35, 0x07, "   date:     \xfa\xfa.\xfa\xfa.\xfa\xfa\xfa\xfa            ", 35);
-
+	displaystr (Y + 1, 0, 0x07, "   composer: ", 13);
+	if (mi->composer[0])
+	{
+		displaystr_utf8 (Y + 1, 13, (selecte==4)?0x8f:0x0f, mi->composer, plScrWidth - 13 - 19);
+	} else {
+		displaychr (Y + 1, 13, (selecte==4)?0x87:0x07, '\xfa', plScrWidth - 13 - 19);
+	}
+	displaystr (Y + 1, plScrWidth - 19, 0x07, "  date: ", 8);
 	if (mi->date)
 	{
-		if (mi->date&0xFF)
+		char temp[11];
+
+		if (mi->date & 0xff)
 		{
-			writestring(sbuf, plScrWidth - 20, 0x0F, ".", 3);
-			writenum(sbuf, plScrWidth - 22, 0x0F, mi->date&0xFF, 10, 2, 1);
+			snprintf (temp, 3, "%02d", mi->date & 0xff);
+		} else {
+			temp[0] = '.';
+			temp[1] = '.';
 		}
-		if (mi->date&0xFFFF)
+		temp[2] = '.';
+		if (mi->date & 0xffff)
 		{
-			writestring(sbuf, plScrWidth - 17, 0x0F, ".", 3);
-			writenum(sbuf, plScrWidth - 19, 0x0F, (mi->date>>8)&0xFF, 10, 2, 1);
+			snprintf (temp+3, 3, "%02d", (mi->date >> 8) & 0xff);
+		} else {
+			temp[3] = '.';
+			temp[4] = '.';
 		}
-		if (mi->date>>16)
+		temp[5] = '.';
+		if (mi->date >> 16)
 		{
-			writenum(sbuf, plScrWidth - 16, 0x0F, mi->date>>16, 10, 4, 1);
+			snprintf (temp+6, 5, "%4d", mi->date >> 16);
 			if (!((mi->date>>16)/100))
-				writestring(sbuf, plScrWidth - 15, 0x0F, "'", 1);
+			{
+				temp[7] = '\'';
+			}
+		} else {
+			temp[6] = '.';
+			temp[7] = '.';
+			temp[8] = '.';
+			temp[9] = '.';
+			temp[10] = 0;
 		}
-
+		displaystr (Y + 1, plScrWidth - 11, (selecte==6)?0x8f:0x0f, temp, 10);
+	} else {
+		displaystr (Y + 1, plScrWidth - 11, (selecte==6)?0x87:0x07, "\xfa\xfa.\xfa\xfa.\xfa\xfa\xfa\xfa", 10);
 	}
-	if (selecte==6)
-		markstring(sbuf, plScrWidth - 22, 10);
-	if (mi->composer[0])
-	{ /* we pad up here */
-		int w=plScrWidth - 47;
-		int l=sizeof(mi->composer);
-		if (l>w)
-			l=w;
-		writestring(sbuf, 13, 0x0F, mi->composer, l);
-		writestring(sbuf, 13+l, 0x0F, "", w-l);
+	displaystr (Y + 1, plScrWidth - 1, 0x07, "", 1);
+
+
+	displaystr (Y + 2, 0, 0x07, "   style:    ", 13);
+	if (mi->style[0])
+	{
+		displaystr_utf8 (Y + 2, 13, (selecte==5)?0x8f:0x0f, mi->style, plScrWidth - 13 - 33);
+	} else {
+		displaychr (Y + 2, 13, (selecte==5)?0x87:0x07, '\xfa', plScrWidth - 13 - 33);
 	}
-
-	if (selecte==4)
-		markstring(sbuf, 13, plScrWidth - 48);
-
-	displaystrattr (Y + 1, 0, sbuf, plScrWidth);
-
-	writestring(sbuf, 0, 0x07, "   style:    \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", plScrWidth - 35);
-	writestring(sbuf, plScrWidth - 35, 0x07, "   playtime: \xfa\xfa\xfa:\xfa\xfa   channels: \xfa\xfa ", 35);
-
-	if (mi->channels)
-		writenum(sbuf, plScrWidth - 3, 0x0F, mi->channels, 10, 2, 1);
-	if (selecte==2)
-		markstring(sbuf, plScrWidth - 3, 2);
+	displaystr (Y + 2, plScrWidth - 33, 0x07, "  playtime: ", 12);
 	if (mi->playtime)
 	{
-		writenum(sbuf, plScrWidth - 22, 0x0F, mi->playtime/60, 10, 3, 1);
-		writestring(sbuf, plScrWidth - 19, 0x0F, ":", 1);
-		writenum(sbuf, plScrWidth - 18, 0x0F, mi->playtime%60, 10, 2, 0);
-
+		char temp[7];
+		snprintf (temp, sizeof (temp), "%3d:%02d", mi->playtime / 60, mi->playtime % 60);
+		displaystr (Y + 2, plScrWidth - 21, (selecte==3)?0x8f:0x0f, temp, 6);
+	} else {
+		displaystr (Y + 2, plScrWidth - 21, (selecte==3)?0x87:0x07, "\xfa\xfa\xfa:\xfa\xfa", 6);
 	}
-	if (selecte==3)
-		markstring(sbuf, plScrWidth - 22, 6);
-	if (mi->style[0])
-	{ /* we pad up here */
-		int w=plScrWidth - 48;
-		int l=sizeof(mi->style);
-		if (l>w)
-			l=w;
-		writestring(sbuf, 13, 0x0F, mi->style, l);
-		writestring(sbuf, 13+l, 0x0F, "", w-l);
+	displaystr (Y + 2, plScrWidth - 15, 0x07, "  channels: ", 12);
+	if (mi->channels)
+	{
+		char temp[3];
+		snprintf (temp, sizeof (temp), "%2d", mi->channels);
+		displaystr (Y + 2, plScrWidth - 3, (selecte==2)?0x8f:0x0f, temp, 2);
+	} else {
+		displaystr (Y + 2, plScrWidth - 3, (selecte==2)?0x07:0x07, "", 2);
 	}
+	displaystr (Y + 2, plScrWidth - 1, 0x07, "", 1);
 
-	if (selecte==5)
-		markstring(sbuf, 13, plScrWidth - 48);
 
-	displaystrattr (Y + 2, 0, sbuf, plScrWidth);
-
-	writestring(sbuf, 0, 0x07, "   comment:  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", plScrWidth - 4);
-	writestring(sbuf, plScrWidth - 4, 0x07, "    ", 4);
-
+	displaystr (Y + 3, 0, 0x07, "   comment:  ", 13);
 	if (mi->comment[0])
-	{ /* we pad up here */
-		int w=plScrWidth - 17;
-		int l=sizeof(mi->comment);
-		if (l>w)
-			l=w;
-		writestring(sbuf, 13, 0x0F, mi->comment, l);
-		writestring(sbuf, 13+l, 0x0F, "", w-l);
+	{
+		displaystr_utf8 (Y + 3, 13, (selecte==7)?0x8f:0x0f, mi->comment, plScrWidth - 13);
+	} else {
+		displaychr (Y + 3, 13, (selecte==7)?0x87:0x07, '\xfa', plScrWidth - 13);
 	}
-	if (selecte==7)
-		markstring(sbuf, 13, plScrWidth - 17);
-	displaystrattr (Y + 3, 0, sbuf, plScrWidth);
 
-	displaystr (Y + 4, 0, 0x07, "   long: ", 9);
 
+	displaystr (Y + 4, 0, 0x07, "   long: ", 10);
 	displaystr_utf8_overflowleft (Y + 4, 10, 0x0F, npath ? npath : "", plScrWidth - 10);
 }
 
-static void fsShowDirBottom132File (int Y, int selecte, uint16_t *sbuf, const struct modlistentry *mle, struct moduleinfostruct *mi, const char *modtype, const char *npath)
+static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentry *mle, struct moduleinfostruct *mi, const char *npath)
 {
-	writestring(sbuf, 0, 0x07, "  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa    \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa      title:    ", 42);
+#warning TODO, we are missing album and artist....
+	int i;
 
-	fillstr(sbuf, 42, 0x07, 0xfa, plScrWidth - 100);
-	writestring(sbuf, plScrWidth - 59, 0x07, "       type: \xfa\xfa\xfa\xfa     channels: \xfa\xfa      playtime: \xfa\xfa\xfa:\xfa\xfa   ", 59);
-
-	if (mle->file)
+	displaystr (Y + 0, 0, 0x07, "", 2);
+	if (mle && mle->utf8_8_dot_3[0])
 	{
-		writenum(sbuf, 16, 0x0F, mi->size, 10, 10, 1);
+		displaystr_utf8 (Y + 0, 2, 0x0F, mle->utf8_8_dot_3, 12);
+	} else {
+		displaystr (Y + 0, 2, 0x07, "\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa", 12);
+	}
+	displaystr (Y + 0, 14, 0x07, "", 2);
+	if (mle && mle->file)
+	{
+		char temp[13];
+		snprintf (temp, sizeof (temp), "11%" PRIu64 "%c", mi->size, (mi->flags&MDB_BIGMODULE) ? '!' : ' ');
+		displaystr (Y + 0, 16, 0x0f, temp, 12);
+	} else {
+		displaystr (Y + 0, 16, 0x07, " \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 12);
+	}
 
-		if (mi->flags1&MDB_BIGMODULE)
-			writestring(sbuf, 25, 0x0F, "!", 1);
+	displaystr (Y + 0, 28, 0x07, "    title:    ", 14);
+
+	if (mi->title[0])
+	{
+		displaystr_utf8 (Y + 0, 42, (selecte==0)?0x8f:0x0f, mi->title, plScrWidth - 98);
+	} else {
+		for (i=42; i < plScrWidth - 98; i+=10)
+		{
+			int j = plScrWidth - 98 - i;
+			if (j > 10)
+			{
+				j = 10;
+			}
+			displaystr (Y + 0, i, (selecte==0)?0x87:0x07, "\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", j);
+		}
 	}
-	if (mi->modname[0])
-	{ /* we pad up here */
-		int w=plScrWidth - 100;
-		int l=sizeof(mi->modname);
-		if (l>w)
-			l=w;
-		writestring(sbuf, 42, 0x0F, mi->modname, l);
-		writestring(sbuf, 42+l, 0x0F, "", w-l);
+	displaystr (Y + 0, plScrWidth - 56, 0x07, "    type: ", 10);
+	if (mi->modtype.string.c[0])
+	{
+		displaystr (Y + 0, plScrWidth - 46, (selecte==1)?0x8f:0x0f, mi->modtype.string.c, 4);
+	} else {
+		displaystr (Y + 0, plScrWidth - 46, (selecte==1)?0x87:0x07, "\xfa\xfa\xfa\xfa", 4);
 	}
-	if (selecte==0)
-		markstring(sbuf, 42, plScrWidth - 100);
-	if (*modtype)
-		writestring(sbuf, plScrWidth - 46, 0x0F, modtype, 4);
-	if (selecte==1)
-		markstring(sbuf, plScrWidth - 46, 4);
+	displaystr (Y + 0, plScrWidth - 42, 0x07, "     channels: ", 15);
 	if (mi->channels)
-		writenum(sbuf, plScrWidth - 27, 0x0F, mi->channels, 10, 2, 1);
-	if (selecte==2)
-		markstring(sbuf, plScrWidth - 27, 2);
-
+	{
+		char temp[3];
+		snprintf (temp, sizeof (temp), "%2d", mi->channels);
+		displaystr (Y + 0, plScrWidth - 27, (selecte==2)?0x8f:0x0f, temp, 2);
+	} else {
+		displaystr (Y + 0, plScrWidth - 27, (selecte==2)?0x87:0x07, "\xfa\xfa", 2);
+	}
+	displaystr (Y + 0, plScrWidth - 25, 0x07, "      playtime: ", 16);
 	if (mi->playtime)
 	{
-		writenum(sbuf, plScrWidth - 9, 0x0F, mi->playtime/60, 10, 3, 1);
-		writestring(sbuf, plScrWidth - 6, 0x0F, ":", 1);
-		writenum(sbuf, plScrWidth - 5, 0x0F, mi->playtime%60, 10, 2, 0);
+		char temp[7];
+		snprintf (temp, sizeof (temp), "%3d:%02d", mi->playtime / 60, mi->playtime % 60);
+		displaystr (Y + 0, plScrWidth - 9, (selecte==3)?0x8f:0x0f, temp, 6);
+	} else {
+		displaystr (Y + 0, plScrWidth - 9, (selecte==3)?0x87:0x07, "\xfa\xfa\xfa:\xfa\xfa", 6);
 	}
+	displaystr (Y + 0, plScrWidth - 3, 0x07, "", 3);
 
-	if (selecte==3)
-		markstring(sbuf, plScrWidth - 9, 6);
 
-	displaystrattr (Y + 0, 0, sbuf, plScrWidth);
-	displaystr_utf8 (Y + 0, 2, 0x0F, mle->utf8_8_dot_3, 12);
-
-	writestring(sbuf, 0, 0x07, "                                composer: ", 42);
-	fillstr(sbuf, 42, 0x07, 0xfa, plScrWidth - 100);
-	writestring(sbuf, plScrWidth - 58, 0x07, "     style: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa               ", 58);
-
+	displaystr (Y + 1, 0, 0x07, "                                composer: ", 42);
 	if (mi->composer[0])
-	{ /* we pad up here */
-		int w=plScrWidth - 100;
-		int l=sizeof(mi->composer);
-		if (l>w)
-			l=w;
-		writestring(sbuf, 42, 0x0F, mi->composer, l);
-		writestring(sbuf, 42+l, 0x0F, "", w-l);
+	{
+		displaystr_utf8 (Y + 1, 42, (selecte==4)?0x8f:0x0f, mi->composer, plScrWidth - 98);
+	} else {
+		displaychr (Y + 1, 42, (selecte==4)?0x8f:0x0f, '\xfa', plScrWidth - 98);
 	}
-
-	if (selecte==4)
-		markstring(sbuf, 42, plScrWidth - 100);
+	displaystr (Y + 1, plScrWidth - 56, 0x07, "   style: ", 10);
 	if (mi->style[0])
-		writestring(sbuf, plScrWidth - 46, 0x0F, mi->style, 31);
-	if (selecte==5)
-		markstring(sbuf, plScrWidth - 46, 31);
+	{
+		displaystr_utf8 (Y + 1, plScrWidth - 46, (selecte==5)?0x8f:0x0f, mi->style, 43);
+	} else {
+		displaychr (Y + 1, plScrWidth - 46, (selecte==5)?0x8f:0x0f, '\xfa', 43);
+	}
+	displaystr (Y + 1, plScrWidth - 3, 0x07, "", 3);
 
-	displaystrattr (Y + 1, 0, sbuf, plScrWidth);
-
-	writestring(sbuf, 0, 0x07, "                                date:     \xfa\xfa.\xfa\xfa.\xfa\xfa\xfa\xfa     comment: ", 66);
-	fillstr(sbuf, 66, 0x07, 0xfa,  plScrWidth - 69);
-	writestring(sbuf, plScrWidth - 3, 0x07, "   ", 3);
-
+	displaystr(Y + 2, 0, 0x07, "                                date:     ", 42);
 	if (mi->date)
 	{
-		if (mi->date&0xFF)
-		{
-			writestring(sbuf, 44, 0x0F, ".", 3);
-			writenum(sbuf, 42, 0x0F, mi->date&0xFF, 10, 2, 1);
-		}
-		if (mi->date&0xFFFF)
-		{
-			writestring(sbuf, 47, 0x0F, ".", 3);
-			writenum(sbuf, 45, 0x0F, (mi->date>>8)&0xFF, 10, 2, 1);
-		}
-		if (mi->date>>16)
-		{
-			writenum(sbuf, 48, 0x0F, mi->date>>16, 10, 4, 1);
-			if (!((mi->date>>16)/100))
-				writestring(sbuf, 49, 0x0F, "'", 1);
-		}
-	}
+		char temp[11];
 
-	if (selecte==6)
-		markstring(sbuf, 42, 10);
-	if (mi->comment[0])
-	{ /* we pad up here */
-		int w=plScrWidth - 69;
-		int l=sizeof(mi->comment);
-		if (l>w)
-			l=w;
-		writestring(sbuf, 66, 0x0F, mi->comment, l);
-		writestring(sbuf, 66+l, 0x0F, "", w-l);
+		if (mi->date & 0xff)
+		{
+			snprintf (temp, 3, "%02d", mi->date & 0xff);
+		} else {
+			temp[0] = '.';
+			temp[1] = '.';
+		}
+		temp[2] = '.';
+		if (mi->date & 0xffff)
+		{
+			snprintf (temp+3, 3, "%02d", (mi->date >> 8) & 0xff);
+		} else {
+			temp[3] = '.';
+			temp[4] = '.';
+		}
+		temp[5] = '.';
+		if (mi->date >> 16)
+		{
+			snprintf (temp+6, 5, "%4d", mi->date >> 16);
+			if (!((mi->date>>16)/100))
+			{
+				temp[7] = '\'';
+			}
+		} else {
+			temp[6] = '.';
+			temp[7] = '.';
+			temp[8] = '.';
+			temp[9] = '.';
+			temp[10] = 0;
+		}
+		displaystr (Y + 2, 42, (selecte==6)?0x8f:0x0f, temp, 10);
+	} else {
+		displaystr (Y + 2, 42, (selecte==6)?0x87:0x07, "\xfa\xfa.\xfa\xfa.\xfa\xfa\xfa\xfa", 10);
 	}
-	if (selecte==7)
-		markstring(sbuf, 66, plScrWidth - 69);
-	displaystrattr (Y + 2, 0, sbuf, plScrWidth);
+	displaystr (Y + 2, 52, 0x07, "     comment: ", 14);
+	if (mi->comment[0])
+	{
+		displaystr_utf8 (Y + 2, 66, (selecte==7)?0x8f:0x0f, mi->comment, plScrWidth - 69);
+	} else {
+		displaychr (Y + 2, 66, (selecte==7)?0x8f:0x0f, '\xfa', plScrWidth - 69);
+
+	}
+	displaystr (Y + 2, plScrWidth - 3, 0x07, "", 3);
 
 	displaystr (Y + 3, 0, 0x07, "    long: ", 10);
 
 	displaystr_utf8_overflowleft (Y + 3, 10, 0x0F, npath ? npath : "", plScrWidth - 10);
 }
 
-static void fsShowDirBottom80Dir (int Y, int selectd, uint16_t *sbuf, const struct modlistentry *mle, const char *npath)
+static void fsShowDirBottom80Dir (int Y, int selectd, const struct modlistentry *mle, const char *npath)
 {
-	writestring(sbuf, 0, 0x07, "  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa", plScrWidth);
-	displaystrattr (Y + 0, 0, sbuf, plScrWidth);
-	displaystr_utf8 (Y + 0, 2, 0x0F, mle->utf8_16_dot_3, 20);
+	displaystr (Y + 0, 0, 0x07, "", 2);
+	if (mle && mle->utf8_16_dot_3[0])
+	{
+		displaystr_utf8 (Y + 0, 2, 0x0f, mle->utf8_16_dot_3, plScrWidth - 2);
+	} else {
+		displaystr_utf8 (Y + 0, 2, 0x07, "\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa", plScrWidth - 2);
+	}
 
 	if (mle->dir->charset_override_API)
 	{
@@ -1488,12 +1578,15 @@ static void fsShowDirBottom80Dir (int Y, int selectd, uint16_t *sbuf, const stru
 	displaystr_utf8_overflowleft (Y + 4, 10, 0x0F, npath ? npath : "", plScrWidth - 10);
 }
 
-static void fsShowDirBottom132Dir (int Y, int selectd, uint16_t *sbuf, const struct modlistentry *mle, const char *npath)
+static void fsShowDirBottom132Dir (int Y, int selectd, const struct modlistentry *mle, const char *npath)
 {
-	writestring(sbuf, 0, 0x07, "  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa", plScrWidth);
-//	fillstr(sbuf, 42, 0x07, 0xfa, plScrWidth - 100);
-	displaystrattr (Y + 0, 0, sbuf, plScrWidth);
-	displaystr_utf8 (Y + 0, 2, 0x0F, mle->utf8_16_dot_3, 20);
+	displaystr (Y + 0, 0, 0x07, "", 2);
+	if (mle && mle->utf8_16_dot_3[0])
+	{
+		displaystr_utf8 (Y + 0, 2, 0x0f, mle->utf8_16_dot_3, plScrWidth - 2);
+	} else {
+		displaystr_utf8 (Y + 0, 2, 0x07, "\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa", plScrWidth - 2);
+	}
 
 	if (mle->dir->charset_override_API)
 	{
@@ -1587,27 +1680,25 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 		/* fill npath */
 		if (mle->file)
 		{
-			const char *modtype="";
 			struct moduleinfostruct mi;
 
 			mdbGetModuleInfo(&mi, mle->mdb_ref);
-			modtype=mdbGetModTypeString(mi.modtype);
 
 			dirdbGetFullname_malloc (mle->file->dirdb_ref, &npath, 0);
 			if (plScrWidth>=132)
 			{
-				fsShowDirBottom132File (Y + 1, selecte, sbuf, mle, &mi, modtype, npath);
+				fsShowDirBottom132File (Y + 1, selecte, mle, &mi, npath);
 			} else {
-				fsShowDirBottom80File (Y + 1, selecte, sbuf, mle, &mi, modtype, npath);
+				fsShowDirBottom80File (Y + 1, selecte, mle, &mi, npath);
 			}
 		} else if (mle->dir)
 		{
 			dirdbGetFullname_malloc (mle->dir->dirdb_ref, &npath, 0);
 			if (plScrWidth>=132)
 			{
-				fsShowDirBottom132Dir (Y + 1, selectd, sbuf, mle, npath);
+				fsShowDirBottom132Dir (Y + 1, selectd, mle, npath);
 			} else {
-				fsShowDirBottom80Dir (Y + 1, selectd, sbuf, mle, npath);
+				fsShowDirBottom80Dir (Y + 1, selectd, mle, npath);
 			}
 		}
 
@@ -1811,7 +1902,7 @@ superbreak:
 static struct moduleinfostruct mdbEditBuf;
 
 /* recall until it returns zero */
-static int fsEditModType(unsigned char *oldtype)
+static int fsEditModType (struct moduletype *oldtype)
 {
 	static int state = 0;
 	/* 0 - new / idle
@@ -1819,13 +1910,10 @@ static int fsEditModType(unsigned char *oldtype)
 	 * 2 - in keyboard help
 	 */
 
-	static unsigned char index[256];
-	static int length=0;
-	static int curindex=0;
+	static int curindex=0; /* points into fsTypes[] or onto the entry past it for "unscanned" */
 	int offset=0;
 
 	int i;
-	const char *temp;
 
 	const int Height=20;
 	const int iHeight=Height-1;
@@ -1840,19 +1928,13 @@ static int fsEditModType(unsigned char *oldtype)
 
 	if (state == 0) /* new edit / first time */
 	{
-		length = 0;
-		curindex = 0;
-		for (i=0;i<256;i++)
+		curindex = fsTypesCount;
+		for (i=0;i<fsTypesCount;i++)
 		{
-			temp=mdbGetModTypeString(i);
-			if ((temp[0])||(i==mtUnRead))
+			if (fsTypes[i].modtype.integer.i == oldtype->integer.i)
 			{
-				index[length]=i;
-				if (i==*oldtype)
-				{
-					curindex=length;
-				}
-				length++;
+				curindex=i;
+				break;
 			}
 		}
 		state = 1;
@@ -1869,6 +1951,8 @@ static int fsEditModType(unsigned char *oldtype)
 	displaystr(Top, Left+Mid, 0x04, "\xc2", 1);
 	displaystr(Top, Left+Width, 0x04, "\xbf", 1);
 
+#warning TODO render description
+
 	for (i=1;i<Height;i++)
 	{
 		displaystr(Top+i, Left, 0x04, "\xb3", 1);
@@ -1879,14 +1963,14 @@ static int fsEditModType(unsigned char *oldtype)
 	displaystr(Top+Height, Left+Mid, 0x04, "\xc1", 1);
 	displaystr(Top+Height, Left+Width, 0x04, "\xd9", 1);
 
-	if (length>iHeight)
+	if (fsTypesCount>=iHeight)
 	{
 		if (curindex<=(iHeight/2))
 		{
 			offset=0;
-		} else if (curindex>=(length-iHeight/2))
+		} else if (curindex>=((fsTypesCount+1)-iHeight/2))
 		{
-			offset=length-iHeight;
+			offset=fsTypesCount + 1 - iHeight;
 		} else {
 			offset=curindex-iHeight/2;
 		}
@@ -1906,16 +1990,23 @@ static int fsEditModType(unsigned char *oldtype)
 	}
 	for (i=0;i<iHeight;i++)
 	{
+		char m[5];
 		unsigned char col;
+
 		if ((!editcol)&&((offset+i)==curindex))
 			col=0x80;
 		else
 			col=0;
 		displaystr(Top+i+1, Left+1, col, "      ", 6);
-		if ((offset+i)>=length)
+		if ((offset+i)>=fsTypesCount)
 			break;
-		col|=fsTypeCols[index[offset+i]&0xFF];
-		displaystr(Top+i+1, Left+2, col, mdbGetModTypeString(index[offset+i]), 4);
+		col|=fsTypes[offset+i].color;
+		m[0] = fsTypes[offset+i].modtype.string.c[0];
+		m[1] = fsTypes[offset+i].modtype.string.c[1];
+		m[2] = fsTypes[offset+i].modtype.string.c[2];
+		m[3] = fsTypes[offset+i].modtype.string.c[3];
+		m[4] = 0;
+		displaystr(Top+i+1, Left+2, col, m, 4);
 	}
 	if (state == 2)
 	{
@@ -1932,15 +2023,22 @@ static int fsEditModType(unsigned char *oldtype)
 		switch(egetch())
 		{
 			case KEY_RIGHT:
-				editcol = fsTypeCols[index[curindex]&0xFF];
+				if (curindex != fsTypesCount)
+				{
+					editcol = fsTypes[curindex].color;
+				}
 				break;
 			case KEY_LEFT:
 				if (editcol)
 				{
-					char secname[20];
-					fsTypeCols[index[curindex]&0xff]=editcol;
-					snprintf(secname, sizeof(secname), "filetype %d", index[curindex]);
-					cfSetProfileInt(secname, "color", editcol, 10);
+					char m[5];
+					m[0] = fsTypes[curindex].modtype.string.c[0];
+					m[1] = fsTypes[curindex].modtype.string.c[1];
+					m[2] = fsTypes[curindex].modtype.string.c[2];
+					m[3] = fsTypes[curindex].modtype.string.c[3];
+					m[4] = 0;
+					fsTypes[curindex].color = editcol;
+					cfSetProfileInt("fscolors", m, editcol, 10);
 					cfStoreConfig();
 					editcol=0;
 				}
@@ -1961,7 +2059,7 @@ static int fsEditModType(unsigned char *oldtype)
 					if (editcol<15)
 						editcol++;
 				} else {
-					if ((curindex+1)<length)
+					if ((curindex+1)<=fsTypesCount)
 						curindex++;
 				}
 				break;
@@ -1977,14 +2075,18 @@ static int fsEditModType(unsigned char *oldtype)
 			case _KEY_ENTER:
 				if (editcol)
 				{
-					char secname[20];
-					fsTypeCols[index[curindex]&0xff]=editcol;
-					sprintf(secname, "filetype %d", index[curindex]);
-					cfSetProfileInt(secname, "color", editcol, 10);
+					char m[5];
+					m[0] = fsTypes[curindex].modtype.string.c[0];
+					m[1] = fsTypes[curindex].modtype.string.c[1];
+					m[2] = fsTypes[curindex].modtype.string.c[2];
+					m[3] = fsTypes[curindex].modtype.string.c[3];
+					m[4] = 0;
+					fsTypes[curindex].color = editcol;
+					cfSetProfileInt("fscolors", m, editcol, 10);
 					cfStoreConfig();
 					editcol=0;
 				} else {
-					*oldtype = index[curindex];
+					*oldtype = fsTypes[curindex].modtype;
 					state = 0;
 					return 0;
 				}
@@ -2004,151 +2106,6 @@ static int fsEditModType(unsigned char *oldtype)
 	return 1;
 }
 
-/* s might not be zero-terminated */
-static int fsEditString(unsigned int y, unsigned int x, unsigned int w, unsigned int l, char *s)
-{
-	static int state = 0;
-	/* 0 - new / idle
-	 * 1 - in edit
-	 * 2 - in keyboard help
-	 */
-
-	static char *str = 0;
-
-	static unsigned int curpos;
-	static unsigned int cmdlen;
-	static int insmode;
-	unsigned int scrolled = 0;
-
-	if (state == 0)
-	{
-		str = malloc(l+1);
-		insmode=1;
-
-		strncpy(str, s, l);
-		str[l] = 0;
-
-		curpos=strlen(str);
-		cmdlen=strlen(str);
-
-		setcurshape(1);
-
-		state = 1;
-	}
-
-	while ((curpos-scrolled)>=w)
-	{
-		scrolled+=8;
-	}
-
-	while (scrolled && ((curpos - scrolled + 8) < w))
-	{
-		scrolled-=8;
-	}
-
-	displaystr(y, x, 0x8F, str+scrolled, w);
-	setcur(y, x+curpos-scrolled);
-
-	if (state == 2)
-	{
-		if (cpiKeyHelpDisplay())
-		{
-			framelock();
-			return 1;
-		}
-		state = 1;
-	}
-	framelock();
-
-	while (ekbhit())
-	{
-		uint16_t key=egetch();
-		if ((key>=0x20)&&(key<=0xFF))
-		{
-			if (insmode)
-			{
-				if (cmdlen<l)
-				{
-					memmove(str+curpos+1, str+curpos, cmdlen-curpos+1);
-					str[curpos]=key;
-					curpos++;
-					cmdlen++;
-				}
-			} else if (curpos==cmdlen)
-			{
-				if (cmdlen<l)
-				{
-					str[curpos++]=key;
-					str[curpos]=0;
-					cmdlen++;
-				}
-			} else
-				str[curpos++]=key;
-		} else switch (key)
-		{
-			case KEY_LEFT:
-				if (curpos)
-					curpos--;
-				break;
-			case KEY_RIGHT:
-				if (curpos<cmdlen)
-					curpos++;
-				break;
-			case KEY_HOME:
-				curpos=0;
-				break;
-			case KEY_END:
-				curpos=cmdlen;
-				break;
-			case KEY_INSERT:
-				insmode=!insmode;
-				setcurshape(insmode?1:2);
-				break;
-			case KEY_DELETE:
-				if (curpos!=cmdlen)
-				{
-					memmove(str+curpos, str+curpos+1, cmdlen-curpos);
-					cmdlen--;
-				}
-				break;
-			case KEY_BACKSPACE:
-				if (curpos)
-				{
-					memmove(str+curpos-1, str+curpos, cmdlen-curpos+1);
-					curpos--;
-					cmdlen--;
-				}
-				break;
-			case KEY_ESC:
-				setcurshape(0);
-				free (str);
-				state = 0;
-				return 0;
-			case _KEY_ENTER:
-				setcurshape(0);
-				strncpy(s, str, l);
-				free (str);
-				state = 0;
-				return 0;
-			case KEY_ALT_K:
-				cpiKeyHelpClear();
-				cpiKeyHelp(KEY_RIGHT, "Move cursor right");
-				cpiKeyHelp(KEY_LEFT, "Move cursor left");
-				cpiKeyHelp(KEY_HOME, "Move cursor home");
-				cpiKeyHelp(KEY_END, "Move cursor to the end");
-				cpiKeyHelp(KEY_INSERT, "Toggle insert mode");
-				cpiKeyHelp(KEY_DELETE, "Remove character at cursor");
-				cpiKeyHelp(KEY_BACKSPACE, "Remove character left of cursor");
-				cpiKeyHelp(KEY_ESC, "Cancel changes");
-				cpiKeyHelp(_KEY_ENTER, "Submit changes");
-				state = 2;
-				return 1;
-		}
-	}
-
-	return 1;
-}
-
 static int fsEditChan(int y, int x, uint8_t *chan)
 {
 	static int state = 0;
@@ -2163,7 +2120,7 @@ static int fsEditChan(int y, int x, uint8_t *chan)
 	{
 		curpos = 0;
 		convnum(*chan, str, 10, 2, 0);
-		setcurshape(2);
+		setcurshape(1);
 		state = 1;
 	}
 
@@ -2244,19 +2201,17 @@ static int fsEditPlayTime(int y, int x, uint16_t *playtime)
 
 	if (state == 0)
 	{
-		convnum((*playtime)/60, str, 10, 3, 0);
-		str[3]=':';
-		convnum((*playtime)%60, str+4, 10, 2, 0);
+		snprintf (str, sizeof (str), "%03d:%02d", (*playtime)/60, (*playtime)%60);
 
 		curpos=(str[0]!='0')?0:(str[1]!='0')?1:2;
 
-		setcurshape(2);
+		setcurshape(1);
 
 		state = 1;
 	}
 
-	displaystr(y, x, 0x8F, str, 6);
-	setcur(y, x+curpos);
+	displaystr(y, x, 0x8f, str, 6);
+	setcur(y, x + curpos);
 
 	if (state == 2)
 	{
@@ -2274,6 +2229,9 @@ static int fsEditPlayTime(int y, int x, uint16_t *playtime)
 		uint16_t key=egetch();
 		switch (key)
 		{
+			case ':':
+				curpos = 4;
+				break;
 			case ' ':
 			case '0': case '1': case '2': case '3': case '4':
 			case '5': case '6': case '7': case '8': case '9':
@@ -2285,12 +2243,12 @@ static int fsEditPlayTime(int y, int x, uint16_t *playtime)
 					str[curpos]=key;
 				/* fall-through */
 			case KEY_RIGHT:
-				curpos="\x01\x02\x04\x05\x05\x06\x06"[curpos];
+				curpos="\x01\x02\x04\xff\x05\x05"[curpos];
 				break;
 			case KEY_BACKSPACE:
 			case KEY_LEFT: /*left*/
-				curpos="\x00\x00\x01\x02\x02\x04\x05"[curpos];
-				if (key==8)
+				curpos="\x00\x00\x01\xff\x02\x04"[curpos];
+				if (key==KEY_BACKSPACE)
 					str[curpos]='0';
 				break;
 			case KEY_ESC:
@@ -2298,7 +2256,11 @@ static int fsEditPlayTime(int y, int x, uint16_t *playtime)
 				state = 0;
 				return 0;
 			case _KEY_ENTER:
-				*playtime=((((str[0]-'0')*10+str[1]-'0')*10+str[2]-'0')*6+str[4]-'0')*10+str[5]-'0';
+				*playtime=(str[0]-'0')*6000+
+				          (str[1]-'0')* 600+
+				          (str[2]-'0')*  60+
+				          (str[4]-'0')*  10+
+				          (str[5]-'0');
 				setcurshape(0);
 				state = 0;
 				return 0;
@@ -2331,13 +2293,9 @@ static int fsEditDate(int y, int x, uint32_t *date)
 	{
 		curpos = 0;
 
-		convnum((*date)&0xFF, str, 10, 2, 0);
-		str[2]='.';
-		convnum(((*date)>>8)&0xFF, str+3, 10, 2, 0);
-		str[5]='.';
-		convnum((*date)>>16, str+6, 10, 4, 0);
+		snprintf (str, sizeof (str), "%02d.%02d.%02d", (*date)&0xFF, ((*date)>>8)&0xFF, (*date)>>16);
 
-		setcurshape(2);
+		setcurshape(1);
 		state = 1;
 	}
 
@@ -2360,6 +2318,15 @@ static int fsEditDate(int y, int x, uint32_t *date)
 		uint16_t key=egetch();
 		switch (key)
 		{
+			case '.':
+				if (curpos <= 3)
+				{
+					curpos=3;
+				} else if (curpos <= 6)
+				{
+					curpos = 6;
+				}
+				break;
 			case '\'':
 				if (curpos==6)
 				{
@@ -2388,11 +2355,11 @@ static int fsEditDate(int y, int x, uint32_t *date)
 					str[curpos]=key;
 				/* fall-through */
 			case KEY_RIGHT:
-				curpos="\x01\x03\x03\x04\x06\x06\x07\x08\x09\x0A\x0A"[curpos];
+				curpos="\x01\x03\xff\x04\x06\xff\x07\x08\x09\x09"[curpos];
 				break;
 			case KEY_BACKSPACE:
 			case KEY_LEFT:
-				curpos="\x00\x00\x01\x01\x03\x04\x04\x06\x07\x08\x09"[curpos];
+				curpos="\x00\x00\xff\x01\x03\xff\x04\x06\x07\x08"[curpos];
 				if (key==KEY_BACKSPACE)
 					str[curpos]='0';
 				break;
@@ -2432,15 +2399,11 @@ static int fsEditFileInfo(struct modlistentry *me)
 		{
 			default:
 			case 0:
-				retval = fsEditString(plScrHeight-5, 42, plScrWidth - 100, sizeof(mdbEditBuf.modname), mdbEditBuf.modname);
+				retval = EditStringUTF8z(plScrHeight-5, 42, plScrWidth - 98, sizeof(mdbEditBuf.title), mdbEditBuf.title);
 				break;
 			case 1:
-			{
-				uint8_t modtype = mdbEditBuf.modtype; /* avoid unaligned pointer access */
-				retval = fsEditModType(&modtype);
-				mdbEditBuf.modtype = modtype;
+				retval = fsEditModType(&mdbEditBuf.modtype);
 				break;
-			}
 			case 2:
 				retval = fsEditChan(plScrHeight-5, plScrWidth - 27, &mdbEditBuf.channels);
 				break;
@@ -2452,10 +2415,10 @@ static int fsEditFileInfo(struct modlistentry *me)
 				break;
 			}
 			case 4:
-				retval = fsEditString(plScrHeight-4, 42, plScrWidth - 100, sizeof(mdbEditBuf.composer), mdbEditBuf.composer);
+				retval = EditStringUTF8z(plScrHeight-4, 42, plScrWidth - 98, sizeof(mdbEditBuf.composer), mdbEditBuf.composer);
 				break;
 			case 5:
-				retval = fsEditString(plScrHeight-4, plScrWidth - 46, 31, sizeof(mdbEditBuf.style), mdbEditBuf.style);
+				retval = EditStringUTF8z(plScrHeight-4, plScrWidth - 46, 43, sizeof(mdbEditBuf.style), mdbEditBuf.style);
 				break;
 			case 6:
 			{
@@ -2465,7 +2428,7 @@ static int fsEditFileInfo(struct modlistentry *me)
 				break;
 			}
 			case 7:
-				retval = fsEditString(plScrHeight-3, 66, plScrWidth - 69, sizeof(mdbEditBuf.comment), mdbEditBuf.comment);
+				retval = EditStringUTF8z(plScrHeight-3, 66, plScrWidth - 69, sizeof(mdbEditBuf.comment), mdbEditBuf.comment);
 				break;
 		}
 	} else {
@@ -2473,40 +2436,36 @@ static int fsEditFileInfo(struct modlistentry *me)
 		{
 			default:
 			case 0:
-				retval = fsEditString(plScrHeight-6, 35, plScrWidth - 48, sizeof(mdbEditBuf.modname), mdbEditBuf.modname);
+				retval = EditStringUTF8z(plScrHeight-6, 35, plScrWidth - 35 - 13, sizeof(mdbEditBuf.title), mdbEditBuf.title);
 				break;
 			case 1:
-				{
-				uint8_t modtype = mdbEditBuf.modtype; /* avoid unaligned pointer access */
-				retval = fsEditModType(&modtype);
-				mdbEditBuf.modtype = modtype;
+				retval = fsEditModType(&mdbEditBuf.modtype);
 				break;
-			}
 			case 2:
 				retval = fsEditChan(plScrHeight-4, plScrWidth - 3, &mdbEditBuf.channels);
 				break;
 			case 3:
 			{
 				uint16_t playtime = mdbEditBuf.playtime; /* avoid unaligned pointer access */
-				retval = fsEditPlayTime(plScrHeight-4, plScrWidth - 22, &playtime);
+				retval = fsEditPlayTime(plScrHeight-4, plScrWidth - 21, &playtime);
 				mdbEditBuf.playtime = playtime;
 				break;
 			}
 			case 4:
-				retval = fsEditString(plScrHeight-5, 13, plScrWidth - 48, sizeof(mdbEditBuf.composer), mdbEditBuf.composer);
+				retval = EditStringUTF8z(plScrHeight-5, 13, plScrWidth - 13 - 19, sizeof(mdbEditBuf.composer), mdbEditBuf.composer);
 				break;
 			case 5:
-				retval = fsEditString(plScrHeight-4, 13, plScrWidth - 48, sizeof(mdbEditBuf.style), mdbEditBuf.style);
+				retval = EditStringUTF8z(plScrHeight-4, 13, plScrWidth - 13 - 33, sizeof(mdbEditBuf.style), mdbEditBuf.style);
 				break;
 			case 6:
 				{
 					uint32_t date = mdbEditBuf.date; /* avoid unaligned pointer access */
-					retval = fsEditDate(plScrHeight-5, plScrWidth - 22, &date);
+					retval = fsEditDate(plScrHeight-5, plScrWidth - 11, &date);
 					mdbEditBuf.date = date;
 					break;
 				}
 			case 7:
-				retval = fsEditString(plScrHeight-3, 13, plScrWidth - 17, sizeof(mdbEditBuf.comment), mdbEditBuf.comment);
+				retval = EditStringUTF8z(plScrHeight-3, 13, plScrWidth - 13, sizeof(mdbEditBuf.comment), mdbEditBuf.comment);
 				break;
 		}
 	}
@@ -2812,7 +2771,7 @@ superbreak:
 		if (!ekbhit()&&fsScanNames)
 		{
 			int poll = 1;
-			if (m->file && (!mdbInfoRead(m->mdb_ref)))
+			if (m->file && (!mdbInfoIsAvailable(m->mdb_ref)))
 			{
 				mdbScan(m->file, m->mdb_ref);
 			}
@@ -2824,7 +2783,7 @@ superbreak:
 				{
 					if (scanm->file)
 					{
-						if (!mdbInfoRead(scanm->mdb_ref))
+						if (!mdbInfoIsAvailable(scanm->mdb_ref))
 						{
 							mdbScan(scanm->file, scanm->mdb_ref);
 							if (!poll_framelock())
@@ -2843,7 +2802,7 @@ superbreak:
 				{
 					if (scanm->file)
 					{
-						if (!mdbInfoRead(scanm->mdb_ref))
+						if (!mdbInfoIsAvailable(scanm->mdb_ref))
 						{
 							mdbScan(scanm->file, scanm->mdb_ref);
 							if (!poll_framelock())
@@ -2957,7 +2916,7 @@ superbreak:
 					{
 						if (!mdbGetModuleInfo(&mdbEditBuf, m->mdb_ref))
 							return -1;
-						mdbEditBuf.modtype = mtUnRead;
+						mdbEditBuf.modtype.integer.i = 0;
 						if (!mdbWriteModuleInfo(m->mdb_ref, &mdbEditBuf))
 							return -1;
 					}
@@ -3293,7 +3252,7 @@ superbreak:
       if (m.mdb_ref<=0xFFFC)
       {
         mdbGetModuleInfo(mdbEditBuf, m.mdb_ref);
-        mdbEditBuf.flags1^=MDB_BIGMODULE;
+        mdbEditBuf.flags^=MDB_BIGMODULE;
         mdbWriteModuleInfo(m.mdb_ref, mdbEditBuf);
       }
       break;
@@ -3518,18 +3477,35 @@ void plUnregisterInterface(struct interfacestruct *interface)
 	fprintf(stderr, __FILE__ ": Failed to unregister interface %s\n", interface->name);
 }
 
-struct interfacestruct *plFindInterface(const char *name)
+void plFindInterface(struct moduletype modtype, const struct interfacestruct **in, const struct interfaceparameters **ip)
 {
-	struct interfacestruct *curr = plInterfaces;
-
-	while (curr)
+	int i;
+	for (i=0; i < fsTypesCount; i++)
 	{
-		if (!strcmp(curr->name, name))
-			return curr;
-		curr = curr->next;
+		if (fsTypes[i].modtype.integer.i == modtype.integer.i)
+		{
+			struct interfacestruct *curr = plInterfaces;
+
+			while (curr)
+			{
+				if (!strcmp(curr->name, fsTypes[i].interface))
+				{
+					*in = curr;
+					*ip = fsTypes[i].ip;
+					return;
+				}
+				curr = curr->next;
+			}
+			fprintf(stderr, __FILE__ ": Unable to find interface for filetype %s\n", modtype.string.c);
+			*in = 0;
+			*ip = 0;
+			return;
+		}
 	}
-	fprintf(stderr, __FILE__ ": Unable to find interface: %s\n", name);
-	return NULL;
+	fprintf(stderr, __FILE__ ": Unable to find moduletype: %4s\n", modtype.string.c);
+	*in = 0;
+	*ip = 0;
+	return;
 }
 
 void plRegisterPreprocess(struct preprocregstruct *r)

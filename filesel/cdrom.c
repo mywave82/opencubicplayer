@@ -267,14 +267,33 @@ static void *cdrom_thread (void *_self)
 	}
 }
 
+static const char *CDA_description[] =
+{
+	//                                                                          |
+	"CDA - CDROM Digitial Audio, is a virtual file that links a cdrom audio",
+	"track or complete disc to an actual device. The device can be both physical",
+	"or virtual CDROM drive. Marking a random file in the filesystem with this",
+	"filetype will not make it playable.",
+	NULL
+};
+
+static const struct interfaceparameters CDA_p =
+{
+	"playcda", "cdaPlayer",
+	0, 0
+};
+
 static int cdint(void)
 {
+	struct moduletype mt;
 	char dev[32], vdev[12];
 	char a;
 
 	int i;
 
-	fsRegisterExt("CDA");
+	fsRegisterExt ("CDA");
+	mt.integer.i = MODULETYPE("CDA");
+	fsTypeRegister (mt, CDA_description, "plOpenCP", &CDA_p);
 
 	ocpdir_t_fill (
 		&cdrom_root,
@@ -751,11 +770,11 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 			{
 				if (mdbGetModuleInfo(&mi, mdb_ref))
 				{
-					mi.modtype=mtCDA;
+					mi.modtype.integer.i=MODULETYPE("CDA");
 					mi.channels=2;
 					mi.playtime=(dh->lastlba - dh->initlba) / CD_FRAMES;
 					strcpy(mi.comment, dh->owner->cdrom->vdev);
-					strcpy(mi.modname, "CDROM audio disc");
+					strcpy(mi.title, "CDROM audio disc");
 					mdbWriteModuleInfo (mdb_ref, &mi);
 				}
 			}
@@ -804,11 +823,11 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 		{
 			if (mdbGetModuleInfo(&mi, mdb_ref))
 			{
-				mi.modtype=mtCDA;
+				mi.modtype.integer.i=MODULETYPE("CDA");
 				mi.channels=2;
 				mi.playtime=len / CD_FRAMES;
 				strcpy(mi.comment, dh->owner->cdrom->vdev);
-				strcpy(mi.modname, "CDROM audio track");
+				strcpy(mi.title, "CDROM audio track");
 				mdbWriteModuleInfo (mdb_ref, &mi);
 			}
 		}

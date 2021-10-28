@@ -28,6 +28,7 @@
 #include "types.h"
 extern "C" {
 #include "boot/plinkman.h"
+#include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -36,29 +37,47 @@ extern "C" {
 
 static int oplReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
 {
-	CPlayers::const_iterator i;
-	int j;
-
-	char name[13];
-	strncpy(name, m->name, 12);
-	name[12]=0;
-
-	for(i = CAdPlug::players.begin(); i != CAdPlug::players.end(); i++)
-		for(j = 0; (*i)->get_extension(j); j++)
-		{
-			if(CFileProvider::extension(name, (*i)->get_extension(j)))
-			{
-				snprintf(m->comment, sizeof(m->comment), "%s", (*i)->filetype.c_str());
-				m->modtype=mtOPL;
-				return 0; /* we are not a dominant plugin */
-			}
-		}
 	return 0;
 }
 static int oplReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
 {
-	return oplReadMemInfo(m, buf, len);
+	char *filename = 0;
+	CPlayers::const_iterator i;
+	int j;
+
+	dirdbGetName_internalstr (f->dirdb_ref, &filename);
+
+	for(i = CAdPlug::players.begin(); i != CAdPlug::players.end(); i++)
+	{
+		for(j = 0; (*i)->get_extension(j); j++)
+		{
+			if(CFileProvider::extension(filename, (*i)->get_extension(j)))
+			{
+				snprintf(m->comment, sizeof(m->comment), "%s", (*i)->filetype.c_str());
+				m->modtype.integer.i=MODULETYPE("OPL");
+				return 0; /* we are not a dominant plugin */
+			}
+		}
+	}
+	return 0;
+
 }
+
+const char *OPL_description[] =
+{
+	//                                                                          |
+	"OPL style music is collection of fileformats that all have in common that",
+	"they are to be played back on a OPL2/OPL3 chip. This chip (and clones) was",
+	"standard on PC Adlib, Sound Blaster and many other cards. Open Cubic Player",
+	"relies on libadplug for loading and rendering of these files.",
+	NULL
+};
+
+struct interfaceparameters OPL_p =
+{
+	"playopl", "oplPlayer",
+	0, 0
+};
 
 static void oplEvent(int event)
 {
@@ -70,7 +89,10 @@ static void oplEvent(int event)
 			int j;
 			const char *s;
 			char _s[6];
+			struct moduletype mt;
+
 			for(i = CAdPlug::players.begin(); i != CAdPlug::players.end(); i++)
+			{
 				for(j = 0; (s=(*i)->get_extension(j)); j++)
 				{
 					strncpy(_s, s+1, 5);
@@ -78,11 +100,16 @@ static void oplEvent(int event)
 					strupr(_s);
 					fsRegisterExt(_s);
 				}
+			}
+
+			mt.integer.i = MODULETYPE("OPL");
+			fsTypeRegister (mt, OPL_description, "OpenCP", &OPL_p);
+
 		}
 	}
 }
 
-static struct mdbreadinforegstruct oplReadInfoReg = {oplReadMemInfo, oplReadInfo, oplEvent MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct oplReadInfoReg = {"adplug", oplReadMemInfo, oplReadInfo, oplEvent MDBREADINFOREGSTRUCT_TAIL};
 
 static void __attribute__((constructor))init(void)
 {

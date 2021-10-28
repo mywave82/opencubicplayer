@@ -53,8 +53,7 @@ flacptype.o: flacptype.c \
 	../types.h \
 	../boot/plinkman.h \
 	../filesel/mdb.h \
-	../filesel/pfilesel.h \
-	../stuff/cp437.h
+	../filesel/pfilesel.h
 	$(CC) flacptype.c -o $@ -c
 
 playflac_so=cpiflacinfo.o cpiflacpic.o flacpplay.o flacplay.o

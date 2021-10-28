@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include "types.h"
 #include "dirdb.h"
+#include "mdb.h"
 #include "boot/psetting.h"
 #include "stuff/compat.h"
 
@@ -225,7 +226,8 @@ int dirdbInit(void)
 
 			if (read(f, &dirdbData[i].mdb_ref, sizeof(uint32_t))!=sizeof(uint32_t))
 				goto endoffile;
-			dirdbData[i].mdb_ref = uint32_little(dirdbData[i].mdb_ref);
+			/* If mdb has been reset, we need to clear all references */
+			dirdbData[i].mdb_ref = mdbCleanSlate ? DIRDB_NO_MDBREF : uint32_little(dirdbData[i].mdb_ref);
 			dirdbData[i].newmdb_ref = DIRDB_NO_MDBREF;
 
 			if (version == 2)

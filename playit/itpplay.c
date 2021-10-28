@@ -195,6 +195,7 @@ static void itpDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2],  0, 0x09, " module \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................               time: ..:.. ", 80);
 		writestring(buf[2],  8, 0x0F, currentmodname, _MAX_FNAME);
 		writestring(buf[2], 16, 0x0F, currentmodext, _MAX_EXT);
+#warning modname is now utf-8....
 		writestring(buf[2], 22, 0x0F, modname, 31);
 		if (plPause)
 			writestring(buf[2], 58, 0x0C, "paused", 6);
@@ -226,6 +227,7 @@ static void itpDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2],  0, 0x09, "    module \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................  composer: ...............................                  time: ..:..    ", 132);
 		writestring(buf[2], 11, 0x0F, currentmodname, _MAX_FNAME);
 		writestring(buf[2], 19, 0x0F, currentmodext, 4);
+#warning modname and composer is not utf-8....
 		writestring(buf[2], 25, 0x0F, modname, 31);
 		writestring(buf[2], 68, 0x0F, composer, 31);
 		if (plPause)
@@ -555,7 +557,7 @@ static int itpGetLChanSample(unsigned int ch, int16_t *buf, unsigned int len, ui
 	return getchansample(&itplayer, ch, buf, len, rate, opt);
 }
 
-static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	int retval;
 
@@ -567,8 +569,9 @@ static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	if (!file)
 		return errFileOpen;
 
-	strncpy(currentmodname, info->name, _MAX_FNAME);
-	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
+#warning currentmodname currentmodext
+	//strncpy(currentmodname, info->name, _MAX_FNAME);
+	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
 	fprintf(stderr, "loading %s%s (%uk)...\n", currentmodname, currentmodext, (unsigned int)(file->filesize(file)>>10));
 
@@ -618,7 +621,7 @@ static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	if (!plCompoMode)
 	{
 		if (!*modname)
-			modname=info->modname;
+			modname=info->title;
 		composer=info->composer;
 	} else
 		modname=info->comment;

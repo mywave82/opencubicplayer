@@ -26,6 +26,7 @@
 #include "boot/plinkman.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
+#include "stuff/cp437.h"
 #include "stuff/compat.h"
 
 static struct mdbreadinforegstruct ayReadInfoReg;
@@ -38,7 +39,7 @@ static int ayReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len
 	int miscptr;
 	const char *miscstr;
 
-	unsigned int left;
+	signed int left;
 
 /*
 	uint8_t tracks, default_track;*/
@@ -59,7 +60,7 @@ static int ayReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len
 		return 0;
 	}
 
-	m->modtype=mtAY;
+	m->modtype.integer.i = MODULETYPE("AY");
 
 	/* filever at offset 8 */
 	/* playerver at offset 9 */
@@ -78,30 +79,24 @@ static int ayReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len
 	/* default track is at offset 16 */
 	m->channels=(uint8_t)buf[17];
 
-	if ((left=len-(authorstr-buf))<=0) /* outside buffer-space */
+	if ((left=(signed int)len-(authorstr-buf))>0) /* outside buffer-space */
 	{
-		m->composer[0]=0;
-	} else if (left>sizeof(m->composer)) /* we have all the space we need anyway */
-	{
-		strncpy(m->composer, authorstr, sizeof(m->composer));
-	} else if (memchr(authorstr, 0, left)) /* we have \0 before end of buffer */
-	{
-		strncpy(m->composer, authorstr, sizeof(m->composer));
-	} else {
-		m->composer[0]=0;
+		if (memchr(authorstr, 0, left)) /* we have \0 before end of buffer */
+		{
+			cp437_f_to_utf8_z (authorstr, strlen (authorstr), m->composer, sizeof (m->composer));
+		} else {
+			cp437_f_to_utf8_z (authorstr, left, m->composer, sizeof (m->composer));
+		}
 	}
 
-	if ((left=len-(miscstr-buf))<=0) /* outside buffer-space */
+	if ((left=(signed int)len-(miscstr-buf))>0) /* outside buffer-space */
 	{
-		m->comment[0]=0;
-	} else if (left>sizeof(m->comment)) /* we have all the space we need anyway */
-	{
-		strncpy(m->comment, miscstr, sizeof(m->comment));
-	} else if (memchr(miscstr, 0, left)) /* we have \0 before end of buffer */
-	{
-		strncpy(m->comment, miscstr, sizeof(m->comment));
-	} else {
-		m->comment[0]=0;
+		if (memchr(miscstr, 0, left)) /* we have \0 before end of buffer */
+		{
+			cp437_f_to_utf8_z (miscstr, strlen (miscstr), m->comment, sizeof (m->comment));
+		} else {
+			cp437_f_to_utf8_z (miscstr, left, m->comment, sizeof (m->comment));
+		}
 	}
 
 	return 1;
@@ -112,13 +107,32 @@ static int ayReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, con
 	return ayReadMemInfo(m, buf, len);
 }
 
+static const char *AY_description[] =
+{
+	//                                                                          |
+	"AY files are executable code that runs a virtual Z80 machine with a virtual",
+	"AY-3-8910 sound IC. This IC a 3 channel programmable sound generator (PSG)",
+	"that can generate sawtooth and pulse-wave (square) sounds.",
+	NULL
+};
+
+static const struct interfaceparameters AY_p =
+{
+	"playay", "ayPlayer",
+	0, 0
+};
+
+
 static void ayEvent(int event)
 {
 	switch (event)
 	{
 		case mdbEvInit:
 		{
+			struct moduletype mt;
 			fsRegisterExt("ay");
+			mt.integer.i = MODULETYPE("AY");
+			fsTypeRegister (mt, AY_description, "plOpenCP", &AY_p);
 		}
 	}
 }
@@ -133,7 +147,6 @@ static void __attribute__((destructor))done(void)
 	mdbUnregisterReadInfo(&ayReadInfoReg);
 }
 
-
-static struct mdbreadinforegstruct ayReadInfoReg = {ayReadMemInfo, ayReadInfo, ayEvent MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct ayReadInfoReg = {"AY", ayReadMemInfo, ayReadInfo, ayEvent MDBREADINFOREGSTRUCT_TAIL};
 char *dllinfo = "";
 struct linkinfostruct dllextinfo = {.name = "aytype", .desc = "OpenCP AY Detection (c) 2005-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

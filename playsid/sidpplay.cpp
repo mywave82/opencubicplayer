@@ -182,6 +182,7 @@ static void sidDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2],  0, 0x09, " file \372\372\372\372\372\372\372\372.\372\372\372: ...............................                time: ..:.. ", 80);
 		writestring(buf[2],  6, 0x0F, currentmodname, _MAX_FNAME);
 		writestring(buf[2], 14, 0x0F, currentmodext, _MAX_EXT);
+#warning modname is now UTF-8
 		writestring(buf[2], 20, 0x0F, modname, 31);
 		if (plPause)
 			writestring(buf[2], 58, 0x0C, "paused", 6);
@@ -222,6 +223,7 @@ static void sidDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2],  0, 0x09, "    file \372\372\372\372\372\372\372\372.\372\372\372: ...............................  composer: ...............................                    time: ..:..   ", 132);
 		writestring(buf[2],  9, 0x0F, currentmodname, _MAX_FNAME);
 		writestring(buf[2], 17, 0x0F, currentmodext, _MAX_EXT);
+#warning modname and composer is now UTF-8
 		writestring(buf[2], 23, 0x0F, modname, 31);
 		writestring(buf[2], 66, 0x0F, composer, 31);
 		if (plPause)
@@ -725,15 +727,16 @@ static int sidLooped()
 	return 0;
 }
 
-static int sidOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *sidf)
+static int sidOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *sidf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	if (!sidf)
 		return -1;
 
-	strncpy(currentmodname, info->name, _MAX_FNAME);
-	strncpy(currentmodext, info->name+ + _MAX_FNAME, _MAX_EXT);
+	#warning currentmodname currentmodext
+	//strncpy(currentmodname, info->name, _MAX_FNAME);
+	//strncpy(currentmodext, info->name+ + _MAX_FNAME, _MAX_EXT);
 
-	modname=info->modname;
+	modname=info->title;
 	composer=info->composer;
 
 	fprintf(stderr, "loading %s%s...\n", currentmodname, currentmodext);

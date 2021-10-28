@@ -260,6 +260,7 @@ static void xmpDrawGStrings(unsigned short (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2],  0, 0x09, " module \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................               time: ..:.. ", 80);
 		writestring(buf[2],  8, 0x0F, currentmodname, _MAX_FNAME);
 		writestring(buf[2], 16, 0x0F, currentmodext, _MAX_EXT);
+#warning modname is is now UTF-8
 		writestring(buf[2], 22, 0x0F, modname, 31);
 		if (plPause)
 			writestring(buf[2], 58, 0x0C, "paused", 6);
@@ -283,6 +284,7 @@ static void xmpDrawGStrings(unsigned short (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2],  0, 0x09, "    module \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................  composer: ...............................                  time: ..:..    ", 132);
 		writestring(buf[2], 11, 0x0F, currentmodname, _MAX_FNAME);
 		writestring(buf[2], 19, 0x0F, currentmodext, _MAX_EXT);
+#warning modname and composer is now UTF-8
 		writestring(buf[2], 25, 0x0F, modname, 31);
 		writestring(buf[2], 68, 0x0F, composer, 31);
 		if (plPause)
@@ -609,7 +611,7 @@ static int xmpGetDots(struct notedotsdata *d, int max)
 	return pos;
 }
 
-static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *_loader) /* no loader needed/used by this plugin */
 {
 	int (*loader)(struct xmodule *, struct ocpfilehandle_t *)=0;
 	int retval;
@@ -620,24 +622,23 @@ static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	if (!file)
 		return errFileOpen;
 
-	strncpy(currentmodname, info->name, _MAX_FNAME);
-	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
+#warning currentmodname currentmodext
+	//strncpy(currentmodname, info->name, _MAX_FNAME);
+	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
 	fprintf(stderr, "loading %s%s (%uk)...\n", currentmodname, currentmodext, (unsigned int)(file->filesize (file) >> 10));
 
-	switch (info->modtype)
-	{
-		case mtXM  : loader=xmpLoadModule; break;
-		case mtMOD : loader=xmpLoadMOD;    break;
-		case mtMODt: loader=xmpLoadMODt;   break;
-		case mtMODd: loader=xmpLoadMODd;   break;
-		case mtM31 : loader=xmpLoadM31;    break;
-		case mtM15 : loader=xmpLoadM15;    break;
-		case mtM15t: loader=xmpLoadM15t;   break;
-		case mtWOW : loader=xmpLoadWOW;    break;
-		case mtMXM : loader=xmpLoadMXM;    break;
-		case mtMODf: loader=xmpLoadMODf;   break;
-	}
+	     if (info->modtype.integer.i == MODULETYPE("XM"))   loader=xmpLoadModule;
+	else if (info->modtype.integer.i == MODULETYPE("MOD"))  loader=xmpLoadMOD;
+	else if (info->modtype.integer.i == MODULETYPE("MODt")) loader=xmpLoadMODt;
+	else if (info->modtype.integer.i == MODULETYPE("MODd")) loader=xmpLoadMODd;
+	else if (info->modtype.integer.i == MODULETYPE("M31"))  loader=xmpLoadM31;
+	else if (info->modtype.integer.i == MODULETYPE("M15"))  loader=xmpLoadM15;
+	else if (info->modtype.integer.i == MODULETYPE("M15t")) loader=xmpLoadM15t;
+	else if (info->modtype.integer.i == MODULETYPE("WOW"))  loader=xmpLoadWOW;
+	else if (info->modtype.integer.i == MODULETYPE("MXM"))  loader=xmpLoadMXM;
+	else if (info->modtype.integer.i == MODULETYPE("MODf")) loader=xmpLoadMODf;
+
 	if (!loader)
 		return errFormStruc;
 
@@ -685,12 +686,13 @@ static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	xmTrkSetup(&mod);
 
 	plNPChan=mcpNChan;
+#warning TODO, this is not UTF-8 at the moment.....
 	modname=mod.name;
 	composer="";
 	if (!plCompoMode)
 	{
 		if (!*modname)
-			modname=info->modname;
+			modname=info->title;
 		composer=info->composer;
 	} else
 		modname=info->comment;

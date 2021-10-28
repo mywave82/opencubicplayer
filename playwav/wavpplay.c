@@ -488,17 +488,18 @@ static int wavLooped(void)
 }
 
 
-static int wavOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *wavf)
+static int wavOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *wavf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	struct waveinfo inf;
 
 	if (!wavf)
 		return -1;
 
-	strncpy(currentmodname, info->name, _MAX_FNAME);
-	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
+#warning TODO replace currentmodname and currentmodext
+	//strncpy(currentmodname, info->name, _MAX_FNAME);
+	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
-	modname=info->modname;
+	modname=info->title;
 	composer=info->composer;
 
 	fprintf(stderr, "preloading %s%s...\n", currentmodname, currentmodext);

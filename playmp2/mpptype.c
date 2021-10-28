@@ -36,47 +36,31 @@
 #include "types.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
+#include "filesel/pfilesel.h"
 #include "id3.h"
-#include "stuff/cp437.h"
 #include "stuff/imsrtns.h"
 #include "stuff/utf-8.h"
 
 #define VBRFRAMES      15
 
-static void apply_ID3(struct moduleinfostruct *m, struct ID3_t *dest)
+static void apply_ID3(struct moduleinfostruct *m, struct ID3_t *tag)
 {
-	m->modname[0] = 0;
-	m->composer[0] = 0;
-	m->comment[0] = 0;
-	m->date = 0;
-
-	if (dest->TIT2) utf8_to_cp437((char *)dest->TIT2, strlen ((char *)dest->TIT2), m->modname, sizeof (m->modname));
-	if (dest->TPE1) utf8_to_cp437((char *)dest->TPE1, strlen ((char *)dest->TPE1), m->composer, sizeof (m->composer));
-	if (dest->TALB) utf8_to_cp437((char *)dest->TALB, strlen ((char *)dest->TALB), m->comment, sizeof (m->comment));
-	if (dest->COMM)
+	if (tag->TIT2) snprintf (m->title, sizeof (m->title), "%s", (char *)tag->TIT2);
+	if (tag->TPE2)
 	{
-		int len;
-		for (len = 0; len < sizeof (m->comment); len++)
-		{
-			if (!m->comment[len])
-			{
-				break;
-			}
-		}
-		if ((len + 4) <= sizeof (m->comment))
-		{
-			if (len)
-			{
-				m->comment[len++] = ' ';
-				m->comment[len++] = '/';
-				m->comment[len++] = ' ';
-				m->comment[len] = 0;
-			}
-			utf8_to_cp437((char *)dest->COMM, strlen ((char *)dest->COMM), m->comment, sizeof (m->comment));
-		}
+		snprintf (m->artist, sizeof (m->artist), "%s", (char *)tag->TPE2);
+	} else if (tag->TPE1)
+	{
+		 snprintf (m->artist, sizeof (m->artist), "%s", (char *)tag->TPE1);
 	}
-	if (dest->TYER) m->date=atoi((char *)dest->TYER) << 16;
-	if (dest->TDAT) m->date=atoi((char *)dest->TDAT);
+	if (tag->TALB) snprintf (m->album, sizeof (m->album), "%s", (char *)tag->TALB);
+	if (tag->TCOM) snprintf (m->composer, sizeof (m->composer), "%s", (char *)tag->TCOM);
+
+	if (tag->COMM) snprintf (m->comment, sizeof (m->comment), "%s", (char *)tag->COMM);
+
+	m->date = 0;
+	if (tag->TYER) m->date =atoi((char *)tag->TYER) << 16;
+	if (tag->TDAT) m->date|=atoi((char *)tag->TDAT);
 }
 
 static void parseid3v1(struct moduleinfostruct *m, const uint8_t *tag)
@@ -149,9 +133,6 @@ static int ampegpReadMemInfo(struct moduleinfostruct *m, const char *_buf, size_
 	int br, lastbr;
 	int temp;
 
-	if ((toupper(m->name[9])!='M')||(toupper(m->name[10])!='P'))
-		return 0;
-
 	/* first, try to detect if we have an mpeg stream embedded into a riff/wave container. Often used on layer II files */
 	                   /* RIFF */                    /* WAVE */                     /* fmt  */
 	if ((fetch32(buf)==0x46464952)&&(fetch32(buf+8)==0x45564157)&&(fetch32(buf+12)==0x20746D66)&&(fetch16(buf+20)==0x0055))
@@ -178,7 +159,7 @@ static int ampegpReadMemInfo(struct moduleinfostruct *m, const char *_buf, size_
 		if ((buf[0]=='I')&&(buf[1]=='D')&&(buf[2]=='3'))
 		{
 			uint_fast32_t size;
-			m->modtype=mtMPx; /* force this to be a mp3.. even though id3 tag can be bigger than our buffer */
+			m->modtype.integer.i=MODULETYPE("MPx"); /* force this to be a mp3.. even though id3 tag can be bigger than our buffer */
 			if ((buf+10)>=bufend)
 				return 0;
 			if ((buf[6] & 0x80) ||
@@ -203,7 +184,7 @@ static int ampegpReadMemInfo(struct moduleinfostruct *m, const char *_buf, size_
 
 		if ((buf[0]=='T')&&(buf[1]=='A')&&(buf[2]=='G'))
 		{
-			m->modtype=mtMPx; /* force this to be a mp3.. even though id3 tag can be bigger than our buffer */
+			m->modtype.integer.i=MODULETYPE("MPx"); /* force this to be a mp3.. even though id3 tag can be bigger than our buffer */
 			if ((buf+128)>bufend)
 			{
 				parseid3v1(m, buf);
@@ -277,17 +258,17 @@ static int ampegpReadMemInfo(struct moduleinfostruct *m, const char *_buf, size_
 	if (!rate)
 		return 0;
 
-	m->modname[0]=0;
+	m->title[0]=0;
 	switch (layer)
 	{
 		case 1:
-			strcat(m->modname, "Layer   I, ");
+			strcat(m->title, "Layer   I, ");
 			break;
 		case 2:
-			strcat(m->modname, "Layer  II, ");
+			strcat(m->title, "Layer  II, ");
 			break;
 		case 3:
-			strcat(m->modname, "Layer III, ");
+			strcat(m->title, "Layer III, ");
 			break;
 	}
 	switch (ver)
@@ -296,13 +277,13 @@ static int ampegpReadMemInfo(struct moduleinfostruct *m, const char *_buf, size_
 			switch (frqidx)
 			{
 				case 0:
-					strcat(m->modname, "44100 Hz, ");
+					strcat(m->title, "44100 Hz, ");
 					break;
 				case 1:
-					strcat(m->modname, "48000 Hz, ");
+					strcat(m->title, "48000 Hz, ");
 					break;
 				case 2:
-					strcat(m->modname, "32000 Hz, ");
+					strcat(m->title, "32000 Hz, ");
 					break;
 			}
 			break;
@@ -310,13 +291,13 @@ static int ampegpReadMemInfo(struct moduleinfostruct *m, const char *_buf, size_
 			switch (frqidx)
 			{
 				case 0:
-					strcat(m->modname, "22050 Hz, ");
+					strcat(m->title, "22050 Hz, ");
 					break;
 				case 1:
-					strcat(m->modname, "24000 Hz, ");
+					strcat(m->title, "24000 Hz, ");
 					break;
 				case 2:
-					strcat(m->modname, "16000 Hz, ");
+					strcat(m->title, "16000 Hz, ");
 					break;
 			}
 			break;
@@ -324,13 +305,13 @@ static int ampegpReadMemInfo(struct moduleinfostruct *m, const char *_buf, size_
 			switch (frqidx)
 			{
 				case 0:
-					strcat(m->modname, "11025 Hz, ");
+					strcat(m->title, "11025 Hz, ");
 					break;
 				case 1:
-					strcat(m->modname, "12000 Hz, ");
+					strcat(m->title, "12000 Hz, ");
 					break;
 				case 2:
-					strcat(m->modname, " 8000 Hz, ");
+					strcat(m->title, " 8000 Hz, ");
 					break;
 			}
 			break;
@@ -422,21 +403,21 @@ outofframes:
 	if (lastbr==br)
 	{
 		if (rate<100)
-			strcat(m->modname, " ");
+			strcat(m->title, " ");
 		if (rate<10)
-			strcat(m->modname, " ");
+			strcat(m->title, " ");
 
-		sprintf(m->modname+strlen(m->modname), "%d", rate);
+		sprintf(m->title+strlen(m->title), "%d", rate);
 
-		strcat(m->modname, " kbps");
+		strcat(m->title, " kbps");
 		m->playtime=m->size/(rate*125);
 	} else {
-		strcat(m->modname, "VBR");
+		strcat(m->title, "VBR");
 		m->playtime=0; /* unknown */
 	}
 
 	m->channels=stereo?2:1;
-	m->modtype=mtMPx;
+	m->modtype.integer.i=MODULETYPE("MPx");
 	return 0;
 }
 
@@ -455,9 +436,6 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 	int rate;
 	int br, lastbr;
 	int temp;
-
-	if ((toupper(m->name[9])!='M')||(toupper(m->name[10])!='P'))
-		return 0;
 
 	/* First, try to detect if we have an mpeg stream embedded into a riff/wave container. Often used on layer II files.
 	 * This should fit inside the provided buf/len data
@@ -492,7 +470,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 			uint8_t tagv2header[10];
 			uint8_t *buffer = 0;
 			uint8_t *tagv2data;
-			m->modtype=mtMPx;
+			m->modtype.integer.i=MODULETYPE("MPx");
 			if ((buf+10)>=bufend)
 			{
 				if (f->seek_set (f, relstart) < 0)
@@ -549,7 +527,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 		} else if ((buf[0]=='T')&&(buf[1]=='A')&&(buf[2]=='G'))
 		{
 			uint8_t id3v1[128];
-			m->modtype=mtMPx;
+			m->modtype.integer.i=MODULETYPE("MPx");
 
 			if ((buf+128)>bufend)
 			{
@@ -577,7 +555,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 	}
 
 	f->seek_end (f, 0);
-	m->modname[0] = 0;
+	m->title[0] = 0;
 	while (1)
 	{
 		/* test for ID3v1.0/ID3v1.1 and ID3v1.2 */
@@ -591,7 +569,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 			}
 			if ((id3v1[128]=='T')&&(id3v1[129]=='A')&&(id3v1[130]=='G'))
 			{
-				m->modtype=mtMPx;
+				m->modtype.integer.i=MODULETYPE("MPx");
 				if ((id3v1[0]=='E')&&(id3v1[1]=='X')&&(id3v1[2]=='T'))
 				{
 					f->seek_cur (f, -256);
@@ -619,7 +597,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 				uint8_t *id3v2data;
 				uint_fast32_t size = (id3v2header[6]<<21)|(id3v2header[7]<<14)|(id3v2header[8]<<7)|(id3v2header[9]);
 
-				m->modtype=mtMPx;
+				m->modtype.integer.i=MODULETYPE("MPx");
 
 				f->seek_cur (f, -(size+20));
 
@@ -676,7 +654,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 		}
 		break;
 	}
-	if (m->modname[0])
+	if (m->title[0])
 	{
 		f->seek_set (f, 0);
 		return 0;
@@ -773,17 +751,17 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 		return 0;
 	}
 
-	m->modname[0]=0;
+	m->title[0]=0;
 	switch (layer)
 	{
 		case 1:
-			strcat(m->modname, "Layer   I, ");
+			strcat(m->title, "Layer   I, ");
 			break;
 		case 2:
-			strcat(m->modname, "Layer  II, ");
+			strcat(m->title, "Layer  II, ");
 			break;
 		case 3:
-			strcat(m->modname, "Layer III, ");
+			strcat(m->title, "Layer III, ");
 			break;
 	}
 	switch (ver)
@@ -792,13 +770,13 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 			switch (frqidx)
 			{
 				case 0:
-					strcat(m->modname, "44100 Hz, ");
+					strcat(m->title, "44100 Hz, ");
 					break;
 				case 1:
-					strcat(m->modname, "48000 Hz, ");
+					strcat(m->title, "48000 Hz, ");
 					break;
 				case 2:
-					strcat(m->modname, "32000 Hz, ");
+					strcat(m->title, "32000 Hz, ");
 					break;
 			}
 			break;
@@ -806,13 +784,13 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 			switch (frqidx)
 			{
 				case 0:
-					strcat(m->modname, "22050 Hz, ");
+					strcat(m->title, "22050 Hz, ");
 					break;
 				case 1:
-					strcat(m->modname, "24000 Hz, ");
+					strcat(m->title, "24000 Hz, ");
 					break;
 				case 2:
-					strcat(m->modname, "16000 Hz, ");
+					strcat(m->title, "16000 Hz, ");
 					break;
 			}
 			break;
@@ -820,13 +798,13 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 			switch (frqidx)
 			{
 				case 0:
-					strcat(m->modname, "11025 Hz, ");
+					strcat(m->title, "11025 Hz, ");
 					break;
 				case 1:
-					strcat(m->modname, "12000 Hz, ");
+					strcat(m->title, "12000 Hz, ");
 					break;
 				case 2:
-					strcat(m->modname, " 8000 Hz, ");
+					strcat(m->title, " 8000 Hz, ");
 					break;
 			}
 			break;
@@ -918,23 +896,37 @@ outofframes:
 	if (lastbr==br)
 	{
 		if (rate<100)
-			strcat(m->modname, " ");
+			strcat(m->title, " ");
 		if (rate<10)
-			strcat(m->modname, " ");
+			strcat(m->title, " ");
 
-		sprintf(m->modname+strlen(m->modname), "%d", rate);
+		sprintf(m->title+strlen(m->title), "%d", rate);
 
-		strcat(m->modname, " kbps");
+		strcat(m->title, " kbps");
 		m->playtime=m->size/(rate*125);
 	} else {
-		strcat(m->modname, "VBR");
+		strcat(m->title, "VBR");
 		m->playtime=0; /* unknown */
 	}
 
 	m->channels=stereo?2:1;
-	m->modtype=mtMPx;
+	m->modtype.integer.i=MODULETYPE("MPx");
 	f->seek_set (f, 0);
 	return 0;
 }
 
-struct mdbreadinforegstruct ampegpReadInfoReg = {ampegpReadMemInfo, ampegpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+const char *MPx_description[] =
+{
+	//                                                                          |
+	"MP2/MP3 files are mpeg II Layer 2/3 audio files. This is a lossy, audio",
+	"compressed file. Open Cubic Player uses libmad for decoding of these.",
+	NULL
+};
+
+const struct interfaceparameters MPx_p =
+{
+	"playmp2", "mpegPlayer",
+	0, 0
+};
+
+struct mdbreadinforegstruct ampegpReadInfoReg = {"MPx", ampegpReadMemInfo, ampegpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

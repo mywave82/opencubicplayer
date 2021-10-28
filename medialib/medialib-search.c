@@ -37,9 +37,9 @@ static int mlSearchPerformQuery (void)
 	struct moduleinfostruct info;
 	char buffer
 	[
-		MAX(sizeof(info.modname)+1,
-		MAX(sizeof(info.composer)+1,
-		    sizeof(info.comment)+1))
+		MAX(sizeof(info.title),
+		MAX(sizeof(info.composer),
+		    sizeof(info.comment)))
 	];
 
 	if (!mlSearchQuery)
@@ -75,7 +75,7 @@ static int mlSearchPerformQuery (void)
 
 		/* make each field upper case before trying to match */
 
-		for (ptr=buffer, ptr2=info.modname; *ptr2; ptr++, ptr2++)
+		for (ptr=buffer, ptr2=info.title; *ptr2; ptr++, ptr2++)
 		{
 			*ptr = toupper (*ptr2);
 		}

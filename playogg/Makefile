@@ -38,7 +38,7 @@ oggtype.o: oggtype.c \
 	../types.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
-	../stuff/cp437.h
+	../filesel/pfilesel.h
 	$(CC) oggtype.c -o $@ -c
 
 oggplay.o: oggplay.c \

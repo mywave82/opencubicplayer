@@ -575,7 +575,7 @@ static void cdaCloseFile(void)
 	cdClose();
 }
 
-static int cdaOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+static int cdaOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	char *name = 0;
 	int32_t start = -1;

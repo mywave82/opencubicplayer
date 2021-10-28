@@ -260,10 +260,10 @@ static int dir_devw_readdir_iterate (ocpdirhandle_pt _handle)
 				{
 					struct moduleinfostruct mi;
 					mdbGetModuleInfo(&mi, mdb_ref);
-					mi.flags1 &= ~MDB_VIRTUAL;
+					mi.flags = MDB_VIRTUAL;
 					mi.channels = iter->devinfo.chan;
-					snprintf (mi.modname, sizeof(mi.modname), "%s", iter->name);
-					mi.modtype = mtDEVv;
+					snprintf (mi.title, sizeof(mi.title), "%s", iter->name);
+					mi.modtype.integer.i = MODULETYPE("DEVv");
 					mdbWriteModuleInfo (mdb_ref, &mi);
 				}
 				handle->callback_file (handle->token, &file->head);
@@ -345,10 +345,10 @@ static struct ocpfile_t *dir_devw_readdir_file (struct ocpdir_t *_self, uint32_t
 		{
 			struct moduleinfostruct mi;
 			mdbGetModuleInfo(&mi, mdb_ref);
-			mi.flags1 &= ~MDB_VIRTUAL;
+			mi.flags = MDB_VIRTUAL;
 			mi.channels = iter->devinfo.chan;
-			snprintf (mi.modname, sizeof(mi.modname), "%s", iter->name);
-			mi.modtype = mtDEVv;
+			snprintf (mi.title, sizeof(mi.title), "%s", iter->name);
+			mi.modtype.integer.i = MODULETYPE("DEVv");
 			mdbWriteModuleInfo (mdb_ref, &mi);
 		}
 
@@ -473,11 +473,11 @@ static void wavedevclose(void)
 	}
 }
 
-static int mcpSetDev(struct moduleinfostruct *mi, struct ocpfilehandle_t *fp)
+static int mcpSetDev(struct moduleinfostruct *mi, struct ocpfilehandle_t *fp, const struct interfaceparameters *ip)
 {
 	char *path, *name;
 
-	if (mi->modtype != mtDEVv)
+	if (mi->modtype.integer.i != MODULETYPE("DEVv"))
 	{
 		return 0;
 	}

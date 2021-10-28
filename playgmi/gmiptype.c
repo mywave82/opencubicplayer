@@ -30,103 +30,79 @@
 #include "types.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
+#include "filesel/pfilesel.h"
+#include "stuff/cp437.h"
 #include "stuff/compat.h"
 
-#define _EXT_MAX 5
-
-static void getext(char *ext, char *name)
+static uint32_t gmiGetModuleType (const uint8_t *buf)
 {
-	int i;
-	name+=8;
-	for (i=0; i<(_EXT_MAX-1); i++)
-		if (*name==' ')
-			break;
-		else
-			*ext++=*name++;
-	*ext=0;
+	if (*(uint32_t*)buf==uint32_little(0x6468544D)) /* "MThd"  - midi without a RIFF container */
+		return MODULETYPE("MIDI");
+	if ((*(uint32_t*)buf==uint32_little(0x46464952))&&(*(uint32_t*)(buf+8)==uint32_little(0x44494D52))) /* "RIFF" "RMID" - RIFF container for MIDI */
+		return MODULETYPE("MIDI");
+
+	return 0;
 }
 
-static int gmiGetModuleType(const char *buf, const char *ext)
-{
-	if (!strcasecmp(ext, ".MID"))
-		return mtMID;
-
-	if (*(uint32_t*)buf==uint32_little(0x6468544D))
-		return mtMID;
-	if ((*(uint32_t*)buf==uint32_little(0x46464952))&&(*(uint32_t*)(buf+8)==uint32_little(0x44494D52)))
-		return mtMID;
-
-	return mtUnRead;
-}
-
-static int gmiReadMemInfo(struct moduleinfostruct *m, const char *_buf, size_t len)
+static int gmiReadMemInfo(struct moduleinfostruct *m, const char *_buf, size_t flen)
 {
 	const uint8_t *buf = (const uint8_t *)_buf;
-	char ext[_EXT_MAX];
 	int type;
 	unsigned int i;
+	uint32_t len;
 
-	if (len<12)
-		return 0;
-
-	getext(ext, m->name);
-
-	if ((type=gmiGetModuleType(_buf, ext))==mtUnRead)
-		return 0;
-	m->modtype=type;
-
-	switch (type)
+	if (flen<12)
 	{
-		uint32_t len;
-
-		case mtMID:
-			len=0;
-			m->channels=16;
-
-			i=0;
-			if (*(uint32_t*)buf==uint32_little(0x46464952)) /* RIFF */
-			{
-				i=12;
-				while (i<800)
-				{
-					i+=8;
-					if (*(uint32_t*)(buf+i-8)==uint32_little(0x61746164)) /* data */
-						break;
-					i+=uint32_little(*(uint32_t*)(buf+i-4));
-				}
-			}
-			while (i<800)
-			{
-				i+=8;
-				len=(buf[i-4]<<24)|(buf[i-3]<<16)|(buf[i-2]<<8)|(buf[i-1]);
-				if (!memcmp(buf+i-8, "MTrk", 4))
-					break;
-				i+=len;
-			}
-			len+=i;
-			if (len>800)
-				len=800;
-			while (i<len)
-			{
-				if (*(uint16_t*)(buf+i)!=uint16_little(0xFF00))
-					break;
-				if (buf[i+2]!=0x03)
-				{
-					i+=4+buf[i+3];
-					continue;
-				}
-				len=buf[i+3];
-				if (len>31)
-					len=31;
-
-				memcpy(m->modname, buf+i+4, len);
-				m->modname[len]=0;
-				break;
-			}
-			memset(&m->composer, 0, sizeof(m->composer));
-			return 1;
+		return 0;
 	}
-	return 0;
+
+	if (!(type=gmiGetModuleType(buf)))
+	{
+		return 0;
+	}
+	m->modtype.integer.i=type;
+
+	len=0;
+	m->channels=16;
+
+	i=0;
+	/* if RIFF container is present, locate the MIDI data */
+	if (*(uint32_t*)buf==uint32_little(0x46464952)) /* RIFF */
+	{
+		i=12;
+		while ((i+8) < flen)
+		{
+			i+=8;
+			if (*(uint32_t*)(buf+i-8)==uint32_little(0x61746164)) /* data */
+				break;
+			i+=uint32_little(*(uint32_t*)(buf+i-4));
+		}
+	}
+	while ((i+8) < flen)
+	{
+		i+=8;
+		len=(buf[i-4]<<24)|(buf[i-3]<<16)|(buf[i-2]<<8)|(buf[i-1]);
+		if (!memcmp(buf+i-8, "MTrk", 4))
+			break;
+		i+=len;
+	}
+	len+=i;
+#warning this needs verification.... something seems wrong here...
+	while (i<len)
+	{
+		if (*(uint16_t*)(buf+i)!=uint16_little(0xFF00))
+			break;
+		if (buf[i+2]!=0x03)
+		{
+			i+=4+buf[i+3];
+			continue;
+		}
+		len=buf[i+3];
+
+		cp437_f_to_utf8_z (_buf+i+4, len, m->title, sizeof (m->title));
+		break;
+	}
+	return 1;
 }
 
 static int gmiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *mem, size_t len)
@@ -134,4 +110,23 @@ static int gmiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	return 0;
 }
 
-struct mdbreadinforegstruct gmiReadInfoReg = {gmiReadMemInfo, gmiReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+const char *MIDI_description[] =
+{
+	//                                                                          |
+	"MIDI files are music files that only contains note and meta data. MIDI in",
+	"itself is also a standard for transfering control signal between",
+	"synthesizers and other audio equipment. A MIDI file is record of such a",
+	"signal together with timestamps. Open Cubic Player relies on TiMidity++",
+	"code to playback and requires that the host has configured a instrument",
+	"sound font in order to function (install TiMidity++ usually does the trick).",
+	NULL
+};
+
+struct interfaceparameters MIDI_p =
+{
+	"playtimidity", "gmiPlayer",
+	0, 0
+};
+
+
+struct mdbreadinforegstruct gmiReadInfoReg = {"MIDI", gmiReadMemInfo, gmiReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

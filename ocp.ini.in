@@ -1,5 +1,5 @@
 [version]
-  epoch=20210926
+  epoch=20211020
 
 [general]
 ;link=
@@ -10,7 +10,7 @@
 
 
 [defaultconfig] ; default configuration
-link=medialib
+  link=medialib
 ;  prelink= ; preloaded dlls
 
 [sound] ; default sound section
@@ -84,7 +84,7 @@ link=medialib
 [fileselector] ; default fileselector section
 ; files with these extensions will be scanned by the fileselector
 ; you might add 001 002 003 004 if you are a fan of imphobia :)
-  modextensions=MOD STM S3M XM IT MDL DMF ULT AMS MTM 669 NST WOW OKT PTM MXM MID WAV RMI MP1 MP2 MP3 OGG OGA SID DAT PLT AY YM HVL AHX
+  modextensions=
   movepath=  ; default path to move files
   typecolors=on
   editwin=on
@@ -219,266 +219,36 @@ link=medialib
   postprocs=_fReverb
   postprocadds=
 
-[filetype 0]
-  color=1
-  name=MOD
-  interface=plOpenCP
-  pllink=playxm
-  player=xmpPlayer
-
-[filetype 1]
-  color=4
-  name=MODd
-  interface=plOpenCP
-  pllink=playxm
-  player=xmpPlayer
-
-[filetype 2]
-  color=4
-  name=MODt
-  interface=plOpenCP
-  pllink=playxm
-  player=xmpPlayer
-
-[filetype 3]
-  color=4
-  name=M31
-  interface=plOpenCP
-  pllink=playxm
-  player=xmpPlayer
-
-[filetype 6]
-  color=4
-  name=M15
-  interface=plOpenCP
-  pllink=playxm
-  player=xmpPlayer
-
-[filetype 7]
-  color=4
-  name=M15t
-  interface=plOpenCP
-  pllink=playxm
-  player=xmpPlayer
-
-[filetype 8]
-  color=4
-  name=WOW
-  interface=plOpenCP
-  pllink=playxm
-  player=xmpPlayer
-
-[filetype 9]
-  color=2
-  name=S3M
-  interface=plOpenCP
-  pllink=playgmd
-  player=gmdPlayer
-  ldlink=loads3m
-  loader=mpLoadS3M
-
-[filetype 10]
-  color=3
-  name=XM
-  interface=plOpenCP
-  pllink=playxm
-  player=xmpPlayer
-
-[filetype 11]
-  color=1
-  name=MTM
-  interface=plOpenCP
-  pllink=playgmd
-  player=gmdPlayer
-  ldlink=loadmtm
-  loader=mpLoadMTM
-
-[filetype 12]
-  color=2
-  name=669
-  interface=plOpenCP
-  pllink=playgmd
-  player=gmdPlayer
-  ldlink=load669
-  loader=mpLoad669
-
-[filetype 13]
-  color=5
-  name=ULT
-  interface=plOpenCP
-  pllink=playgmd
-  player=gmdPlayer
-  ldlink=loadult
-  loader=mpLoadULT
-
-[filetype 14]
-  color=6
-  name=DMF
-  interface=plOpenCP
-  pllink=playgmd
-  player=gmdPlayer
-  ldlink=loaddmf
-  loader=mpLoadDMF
-
-[filetype 15]
-  color=5
-  name=OKT
-  interface=plOpenCP
-  pllink=playgmd
-  player=gmdPlayer
-  ldlink=loadokt
-  loader=mpLoadOKT
-
-[filetype 16]
-  color=3
-  name=MID
-  interface=plOpenCP
-  pllink=playtimidity
-  player=timidityPlayer
-
-[filetype 17]
-  color=3
-  name=CDA
-  interface=plOpenCP
-  pllink=playcda
-  player=cdaPlayer
-
-[filetype 18]
-  color=4
-  name=MIDd
-  interface=plOpenCP
-  pllink=playtimidity
-  player=gmiPlayer
-
-[filetype 19]
-  color=2
-  name=PTM
-  interface=plOpenCP
-  pllink=playgmd
-  player=gmdPlayer
-  ldlink=loadptm
-  loader=mpLoadPTM
-
-[filetype 21]
-  color=6
-  name=MDL
-  interface=plOpenCP
-  pllink=playgmd
-  player=gmdPlayer
-  ldlink=loadmdl
-  loader=mpLoadMDL
-
-[filetype 22]
-  color=3
-  name=AMS
-  interface=plOpenCP
-  pllink=playgmd
-  player=gmdPlayer
-  ldlink=loadams
-  loader=mpLoadAMS
-
-[filetype 23]
-  color=2
-  name=INP
-  interface=plOpenCP
-  pllink=playinp
-  player=inpPlayer
-
-[filetype 27]
-  color=5
-  name=IT
-  interface=plOpenCP
-  pllink=playit
-  player=itpPlayer
-
-[filetype 28]
-  color=14
-  name=WAV
-  interface=plOpenCP
-  pllink=playwav
-  player=wavPlayer
-
-[filetype 30]
-  color=6
-  name=MPx
-  interface=plOpenCP
-  pllink=playmp2
-  player=mpegPlayer
-
-[filetype 31]
-  color=6
-  name=SID
-  interface=plOpenCP
-  pllink=playsid
-  player=sidPlayer
-
-; I have disabled this filetype, because the new mxmplay0.9 files crash ocp
-;[filetype 32]
-;  color=3
-;  name=MXM
-;  interface=plOpenCP
-;  pllink=playxm
-;  player=xmpPlayer
-
-[filetype 33]
-  color=3
-  name=MODf
-  interface=plOpenCP
-  pllink=playxm
-  player=xmpPlayer
-
-[filetype 35]
-  color=6
-  name=OGG
-  interface=plOpenCP
-  pllink=playogg
-  player=oggPlayer
-
-[filetype 36]
-  color=6
-  name=OPL
-  interface=plOpenCP
-  pllink=playopl
-  player=oplPlayer
-
-[filetype 37]
-  color=6
-  name=AY
-  interface=plOpenCP
-  pllink=playay
-  player=ayPlayer
-
-[filetype 38]
-  color=6
-  name=FLAC
-  interface=plOpenCP
-  pllink=playflac
-  player=flacPlayer
-
-[filetype 39]
-  color=6
-  name=YM
-  interface=plOpenCP
-  pllink=playym
-  player=ymPlayer
-
-[filetype 40]
-  color=2
-  name=STM
-  interface=plOpenCP
-  pllink=playgmd
-  player=gmdPlayer
-  ldlink=loadstm
-  loader=mpLoadSTM
-
-[filetype 41]
-  color=3
-  name=HVL
-  interface=plOpenCP
-  pllink=playhvl
-  player=hvlPlayer
-
-[filetype 254]
-  color=6
-  name=DEVv
-  interface=VirtualInterface
+[fscolors]
+  669=2
+  AMS=3
+  AY=6
+  DMF=6
+  CDA=3
+  DEVv=6
+  FLAC=6
+  HVL=3
+  IT=5
+  M15=4
+  M15t=4
+  M31=4
+  MDL=6
+  MIDI=3
+  MOD=1
+  MODd=4
+  MODf=3
+  MODt=4
+  MPx=6
+  MXM=3
+  MTM=1
+  OGG=6
+  OKT=5
+  OPL=6
+  PTM=2
+  S3M=2
+  SID=6
+  STM=2
+  ULT=5
+  WAV=14
+  WOW=4
+  YM=6

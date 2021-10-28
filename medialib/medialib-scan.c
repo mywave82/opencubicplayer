@@ -166,7 +166,7 @@ static void mlScan_file (void *_token, struct ocpfile_t *file)
 	curext = 0;
 
 	mdbref = mdbGetModuleReference2 (file->dirdb_ref, file->filesize(file));
-	if (!mdbInfoRead(mdbref))
+	if (!mdbInfoIsAvailable (mdbref))
 	{
 		mdbScan(file, mdbref);
 	}

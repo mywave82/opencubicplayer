@@ -94,7 +94,7 @@ static interfaceReturnEnum stop;
 
 /* return values:
  * 0  - no files available (and user hit esc)
- * 1  - we have a new song availble
+ * 1  - we have a new song available
  * -1 - error occured
  */
 
@@ -103,13 +103,14 @@ static int callselector (struct moduleinfostruct *info,
                          enumAutoCallFS callfs,
                          enumForceCallFS forcecall,
                          enumForceNext forcenext,
-                         struct interfacestruct **iface)
+                         const struct interfacestruct     **iface,
+                         const struct interfaceparameters **ifacep)
 {
 	int ret;
 	int result;
-	struct interfacestruct *intr;
+	const struct interfacestruct     *intr = 0;
+	const struct interfaceparameters *ip   = 0;
 	struct moduleinfostruct tmodinfo;
-	char secname[20];
 
 	if (*fi)
 	{
@@ -117,6 +118,7 @@ static int callselector (struct moduleinfostruct *info,
 		*fi = 0;
 	}
 	*iface=0;
+	*ifacep=0;
 
 	do
 	{
@@ -153,15 +155,7 @@ static int callselector (struct moduleinfostruct *info,
 				}
 			}
 
-			sprintf(secname, "filetype %d", tmodinfo.modtype&0xFF);
-			intr=plFindInterface(cfGetProfileString(secname, "interface", ""));
-#if 0
-			hdlr=(struct filehandlerstruct *)_lnkGetSymbol(cfGetProfileString(secname, "handler", ""));
-			if (hdlr)
-			{
-				hdlr->Process(*dirdbref, &tmodinfo, &tf);
-			}
-#endif
+			plFindInterface(tmodinfo.modtype, &intr, &ip);
 
 			conSave();
 			{
@@ -174,6 +168,7 @@ static int callselector (struct moduleinfostruct *info,
 			{
 				ret=0;
 				*iface = intr;
+				*ifacep = ip;
 				*info = tmodinfo;
 
 				return result?-1:1;
@@ -196,8 +191,10 @@ static int callselector (struct moduleinfostruct *info,
 
 static int _fsMain(int argc, char *argv[])
 {
-	struct interfacestruct *plintr = 0;
-	struct interfacestruct *nextintr = 0;
+	const struct interfacestruct     *plintr        = 0;
+	const struct interfaceparameters *plintrparam   = 0;
+	const struct interfacestruct     *nextintr      = 0;
+	const struct interfaceparameters *nextintrparam = 0;
 	struct ocpfilehandle_t *thisf=NULL;
 	struct ocpfilehandle_t *nextf=NULL;
 
@@ -232,7 +229,7 @@ static int _fsMain(int argc, char *argv[])
 		{
 			int fsr;
 			conSave();
-			fsr=callselector (&nextinfo, &nextf, (callfs||firstfile), (stop==interfaceReturnCallFs)?DoForceCallFS:DoNotForceCallFS, DoForceNext, &nextintr);
+			fsr=callselector (&nextinfo, &nextf, (callfs||firstfile), (stop==interfaceReturnCallFs)?DoForceCallFS:DoNotForceCallFS, DoForceNext, &nextintr, &nextintrparam);
 			if (!fsr)
 			{
 				break;
@@ -264,11 +261,13 @@ static int _fsMain(int argc, char *argv[])
 				thisf=NULL;
 			}
 
-			thisf = nextf;
-			nextf = 0;
-			plModuleInfo=nextinfo;
-			plintr=nextintr;
-			nextintr=0;
+			thisf         = nextf;
+			plModuleInfo  = nextinfo;
+			plintr        = nextintr;
+			plintrparam   = nextintrparam;
+			nextf         = 0;
+			nextintr      = 0;
+			nextintrparam = 0;
 
 			stop=interfaceReturnContinue;
 
@@ -277,7 +276,7 @@ static int _fsMain(int argc, char *argv[])
 				prep->Preprocess(&plModuleInfo, &thisf);
 			}
 
-			if (!plintr->Init(&plModuleInfo, thisf))
+			if (!plintr->Init(&plModuleInfo, thisf, plintrparam))
 			{
 				stop = interfaceReturnCallFs; /* file failed, exit to filebrowser, if we don't do this, we can end up with a freeze if we only have this invalid file in the playlist, optional we could remove the file... */
 				plintr=0;
@@ -309,11 +308,11 @@ static int _fsMain(int argc, char *argv[])
 					case interfaceReturnQuit:
 						break;
 					case interfaceReturnNextAuto: /* next playlist file (auto) */
-						if (callselector (&nextinfo, &nextf, DoAutoCallFS, DoNotForceCallFS, DoNotForceNext, &nextintr)==0)
+						if (callselector (&nextinfo, &nextf, DoAutoCallFS, DoNotForceCallFS, DoNotForceNext, &nextintr, &nextintrparam)==0)
 						{
 							if (fsFilesLeft())
 							{
-								callselector (&nextinfo, &nextf, DoNotAutoCallFS, DoNotForceCallFS, DoForceNext, &nextintr);
+								callselector (&nextinfo, &nextf, DoNotAutoCallFS, DoNotForceCallFS, DoForceNext, &nextintr, &nextintrparam);
 								stop = interfaceReturnNextAuto;
 							} else
 								stop = interfaceReturnQuit;
@@ -322,18 +321,18 @@ static int _fsMain(int argc, char *argv[])
 						break;
 					case interfaceReturnPrevManuel: /* prev playlist file (man) */
 						if (fsFilesLeft())
-							stop=callselector (&nextinfo, &nextf, DoNotAutoCallFS, DoNotForceCallFS, DoForcePrev, &nextintr)?interfaceReturnNextAuto:interfaceReturnContinue;
+							stop=callselector (&nextinfo, &nextf, DoNotAutoCallFS, DoNotForceCallFS, DoForcePrev, &nextintr, &nextintrparam)?interfaceReturnNextAuto:interfaceReturnContinue;
 						else
-							stop=callselector (&nextinfo, &nextf, DoAutoCallFS, DoNotForceCallFS, DoNotForceNext, &nextintr)?interfaceReturnNextAuto:interfaceReturnContinue;
+							stop=callselector (&nextinfo, &nextf, DoAutoCallFS, DoNotForceCallFS, DoNotForceNext, &nextintr, &nextintrparam)?interfaceReturnNextAuto:interfaceReturnContinue;
 						break;
 					case interfaceReturnNextManuel: /* next playlist file (man) */
 						if (fsFilesLeft())
-							stop=callselector (&nextinfo, &nextf, DoNotAutoCallFS, DoNotForceCallFS, DoForceNext, &nextintr)?interfaceReturnNextAuto:interfaceReturnContinue;
+							stop=callselector (&nextinfo, &nextf, DoNotAutoCallFS, DoNotForceCallFS, DoForceNext, &nextintr, &nextintrparam)?interfaceReturnNextAuto:interfaceReturnContinue;
 						else
-							stop=callselector (&nextinfo, &nextf, DoAutoCallFS, DoNotForceCallFS, DoNotForceNext, &nextintr)?interfaceReturnNextAuto:interfaceReturnContinue;
+							stop=callselector (&nextinfo, &nextf, DoAutoCallFS, DoNotForceCallFS, DoNotForceNext, &nextintr, &nextintrparam)?interfaceReturnNextAuto:interfaceReturnContinue;
 						break;
 					case interfaceReturnCallFs: /* call fs */
-						stop=callselector (&nextinfo, &nextf, DoAutoCallFS, DoForceCallFS, DoNotForceNext, &nextintr)?interfaceReturnNextAuto:interfaceReturnContinue;
+						stop=callselector (&nextinfo, &nextf, DoAutoCallFS, DoForceCallFS, DoNotForceNext, &nextintr, &nextintrparam)?interfaceReturnNextAuto:interfaceReturnContinue;
 						break;
 					case interfaceReturnDosShell: /* dos shell */
 						plSetTextMode(fsScrType);

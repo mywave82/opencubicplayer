@@ -237,7 +237,15 @@ static struct ocpdirdecompressor_t plsdecompressor =
 	pls_check
 };
 
+static struct ocpdirdecompressor_t pltdecompressor =
+{
+	"plt", /* uncommon */
+	"PLS playlist",
+	pls_check
+};
+
 void filesystem_pls_register (void)
 {
 	register_dirdecompressor (&plsdecompressor);
+	register_dirdecompressor (&pltdecompressor);
 }

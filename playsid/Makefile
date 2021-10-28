@@ -348,6 +348,7 @@ sidptype.o: \
 	../boot/plinkman.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
+	../filesel/pfilesel.h \
 	../stuff/latin1.h
 	$(CC) $< -o $@ -c
 

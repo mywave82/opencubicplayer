@@ -24,49 +24,84 @@
 
 #include "config.h"
 #include <string.h>
+#include <time.h>
 #include "types.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
+#include "filesel/pfilesel.h"
+#include "stuff/cp437.h"
 
-
-static int itpGetModuleType(const char *buf)
+static uint32_t itpGetModuleType(const char *buf)
 {
 	if (*(uint32_t*)buf==uint32_little(0x4D504D49))
-		return mtIT;
-	return mtUnRead;
+		return MODULETYPE("IT");
+	return 0;
 }
-
 
 static int itpReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
 {
-	int type;
+	uint32_t type;
 	int i;
+	uint16_t ver;
 
 	if (!memcmp(buf, "ziRCONia", 8))
 	{
-		strcpy(m->modname, "MMCMPed module");
+		strcpy(m->title, "MMCMPed module");
 		return 0;
 	}
 
-	if ((type=itpGetModuleType(buf))==mtUnRead)
+	if (!(type=itpGetModuleType(buf)))
 		return 0;
-	m->modtype=type;
-	switch (type)
+	m->modtype.integer.i=type;
+
+	if (buf[0x2C]&4)
+		if (buf[0x2B]<2)
+			return 0;
+
+	cp437_f_to_utf8_z (buf + 4, 26, m->title, sizeof (m->title));
+	m->channels=0;
+	for (i=0; i<64; i++)
+		if (!(buf[64+i]&0x80))
+			m->channels++;
+
+	ver = uint16_little(*(uint16_t *)(buf + 0x28));
+	if ( ((ver >= 0x0100) && (ver <= 0x0106)) ||
+	     ((ver >= 0x0200) && (ver >= 0x020f)) )
 	{
-		case mtIT:
-			if (buf[0x2C]&4)
-				if (buf[0x2B]<2)
-					return 0;
-			memcpy(m->modname, buf+4, 26);
-			m->modname[26]=0;
-			m->channels=0;
-			for (i=0; i<64; i++)
-				if (!(buf[64+i]&0x80))
-					m->channels++;
-			memset(&m->composer, 0, sizeof(m->composer));
-			return 1;
+		snprintf (m->comment, sizeof (m->comment), "Impulse Tracker v%d.%02d", ver >> 8, ver & 0x00ff);
+	} else if (ver == 0x0020)
+	{
+		snprintf (m->comment, sizeof (m->comment), "Schism Tracker v0.2a");
+	} else if (ver == 0x0050)
+	{
+		snprintf (m->comment, sizeof (m->comment), "Schism Tracker v2007-04-17<=>v2009-10-31");
+	} else if ((ver >= 0x0050) && (ver < 0x0fff))
+	{
+		struct tm version,     epoch = { .tm_year = 109, .tm_mon = 9, .tm_mday = 31 }; /* 2009-10-31 */
+		time_t    version_sec, epoch_sec;
+
+		epoch_sec = mktime(&epoch);
+		version_sec = (ver - 0x050) * 86400 + epoch_sec;
+
+		if (localtime_r(&version_sec, &version))
+		{
+			snprintf(m->comment, sizeof (m->comment), "Schism Tracker v%04d-%02d-%02d",
+				version.tm_year + 1900, version.tm_mon + 1, version.tm_mday);
+		}
+	} else {
+		struct tm version,     epoch = { .tm_year = 109, .tm_mon = 9, .tm_mday = 31 }; /* 2009-10-31 */
+		time_t    version_sec, epoch_sec;
+
+		epoch_sec = mktime(&epoch);
+		version_sec = (*(uint32_t *)(buf + 0x3c)) * 86400 + epoch_sec;
+
+		if (localtime_r(&version_sec, &version))
+		{
+			snprintf(m->comment, sizeof (m->comment), "Schism Tracker v%04d-%02d-%02d",
+				version.tm_year + 1900, version.tm_mon + 1, version.tm_mday);
+		}
 	}
-	return 0;
+	return 1;
 }
 
 static int itpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *bf, size_t len)
@@ -74,4 +109,20 @@ static int itpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	return itpReadMemInfo (m, bf, len);
 }
 
-struct mdbreadinforegstruct itpReadInfoReg = {itpReadMemInfo, itpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+const char *IT_description[] =
+{
+	//                                                                          |
+	"IT files are created by Impulse Tracker or the modern remake Schism Tracker.",
+	"Impulse Tracker was only for MSDOS while Schism Tracker made using SDL works",
+	"on most operating sytems. IT files features 16bit samples and 64 channels.",
+	NULL
+};
+
+struct interfaceparameters IT_p =
+{
+	"playit", "itpPlayer",
+	0, 0
+};
+
+
+struct mdbreadinforegstruct itpReadInfoReg = {"IT", itpReadMemInfo, itpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

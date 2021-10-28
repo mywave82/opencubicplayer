@@ -92,7 +92,7 @@ static void mlRemoveDraw(const char *title)
 	}
 }
 
-static int medialibRemoveInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f)
+static int medialibRemoveInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip)
 {
 	if (medialib_sources_count)
 	{

@@ -36,24 +36,25 @@
 static int fsReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
 {
 	if (!memcmp(buf, "CPArchiveCache\x1B\x00", 16))
-		strcpy(m->modname, "openCP archive data base (old!)");
+		strcpy(m->title, "openCP archive data base (old!)");
 	if (!memcmp(buf, "CPArchiveCache\x1B\x01", 16))
-		strcpy(m->modname, "openCP archive data base (old)");
+		strcpy(m->title, "openCP archive data base (old)");
 	if (!memcmp(buf, "OCPArchiveMeta\x1b\x00", 16))
-		strcpy(m->modname, "openCP archive data base");
+		strcpy(m->title, "openCP archive data base");
 	if (!memcmp(buf, "Cubic Player Module Information Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 60))
-		strcpy(m->modname, "openCP module info data base (old)");
+		strcpy(m->title, "openCP module info data base (old)");
 	if (!memcmp(buf, "Cubic Player Module Information Data Base II\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 60))
-		strcpy(m->modname, "openCP module info data base (big-endian)");
+		strcpy(m->title, "openCP module info data base (big-endian)");
 	if (!memcmp(buf, "Cubic Player Module Information Data Base II\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01", 60))
-		strcpy(m->modname, "openCP module info data base (little-endian)");
+		strcpy(m->title, "openCP module info data base (little-endian)");
 	if (!memcmp(buf, dirdbsigv1, sizeof(dirdbsigv1)))
-		strcpy(m->modname, "openCP dirdb/medialib: db v1");
+		strcpy(m->title, "openCP dirdb/medialib: db v1");
 	if (!memcmp(buf, dirdbsigv2, sizeof(dirdbsigv2)))
-		strcpy(m->modname, "openCP dirdb/medialib: db v2");
+		strcpy(m->title, "openCP dirdb/medialib: db v2");
+#if 0
 	if (!memcmp(buf, "MDZTagList\x1A\x00", 12))
 		strcpy(m->modname, "openCP MDZ file cache");
-
+#endif
 	return 0;
 }
 
@@ -62,4 +63,4 @@ static int fsReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, co
 	return 0;
 }
 
-struct mdbreadinforegstruct fsReadInfoReg = {fsReadMemInfo, fsReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+struct mdbreadinforegstruct fsReadInfoReg = {"DataBases", fsReadMemInfo, fsReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

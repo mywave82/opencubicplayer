@@ -31,6 +31,7 @@ opltype.o: opltype.cpp \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \

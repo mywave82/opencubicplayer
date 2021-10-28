@@ -1,6 +1,7 @@
 #include "config.h"
 #include "types.h"
 #include "stuff/latin1.h"
+#include "stuff/utf-8.h"
 
 /* table to convert latin1 into OCP style cp437 */
 const uint8_t latin1_table[256] =
@@ -49,3 +50,24 @@ const uint16_t latin1_to_unicode[256] =
 	0x00e0, 0x00e1, 0x00e2, 0x00e3, 0x00e4, 0x00e5, 0x00e6, 0x00e7, 0x00e8, 0x00e9, 0x00ea, 0x00eb, 0x00ec, 0x00ed, 0x00ee, 0x00ef, // ex
 	0x00f0, 0x00f1, 0x00f2, 0x00f3, 0x00f4, 0x00f5, 0x00f6, 0x00f7, 0x00f8, 0x00f9, 0x00fa, 0x00fb, 0x00fc, 0x00fd, 0x00fe, 0x00ff  // fx
 };
+
+void latin1_f_to_utf8_z (const char *src, size_t srclen, char *dst, size_t dstlen)
+{
+	if (!dstlen)
+	{
+		return;
+	}
+	*dst = 0;
+	dstlen--;
+	while (*src && srclen && dstlen)
+	{
+		int len = utf8_encoded_length (latin1_to_unicode[*(unsigned char *)src]);
+		if (len > dstlen)
+		{
+			return;
+		}
+		utf8_encode (dst, latin1_to_unicode[*(unsigned char *)src]); /* this call always zero-terminates the dst */
+		dst += len;
+		src++;
+	}
+}

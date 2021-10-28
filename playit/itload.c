@@ -140,7 +140,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, st
 	fprintf(stderr, __FILE__ ": hdr.msgoff %d\n", (int)hdr.msgoff);
 	fprintf(stderr, __FILE__ ": hdr._d3 %d\n", (int)hdr._d3);
 #endif
-	if (hdr.sig!=0x4D504D49)
+	if (hdr.sig!=0x4D504D49) // "IMPM
 	{
 		fprintf(stderr, "IT: Invalid header\n");
 		return errFormSig;

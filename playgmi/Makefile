@@ -33,6 +33,8 @@ gmiptype.o: gmiptype.c \
 	../types.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
+	../filesel/pfilesel.h \
+	../stuff/cp437.h \
 	../stuff/compat.h
 	$(CC) gmiptype.c -o $@ -c
 

@@ -485,9 +485,9 @@ static void dir_alsa_update_mdb (uint32_t dirdb_ref, const char *name, const cha
 	}
 
 	mdbGetModuleInfo (&mi, mdb_ref);
-	mi.flags1 &= ~MDB_VIRTUAL;
+	mi.flags = MDB_VIRTUAL;
 	mi.channels=2;
-	snprintf(mi.modname, sizeof (mi.modname), "%s", name);
+	snprintf(mi.title, sizeof (mi.title), "%s", name);
 	mi.composer[0] = 0;
 	mi.comment[0] = 0;
 
@@ -528,7 +528,7 @@ static void dir_alsa_update_mdb (uint32_t dirdb_ref, const char *name, const cha
 			}
 		}
 	}
-	mi.modtype=mtDEVv;
+	mi.modtype.integer.i = MODULETYPE("DEVv");
 	mdbWriteModuleInfo(mdb_ref, &mi);
 }
 
@@ -1123,7 +1123,10 @@ static int volalsaGetVolume(struct ocpvolstruct *v, int n)
 
 static int volalsaSetVolume(struct ocpvolstruct *v, int n)
 {
-	int count=0, err;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+	int count=0, err; /* err is only used if debug_printf() is not a dummy call */
+#pragma GCC diagnostic pop
 	snd_mixer_elem_t *current;
 
 	debug_printf ("volalsaSetVolume(v->val=%d n=%d)\n", v->val, n);
@@ -1217,7 +1220,7 @@ static void alsaClose(void)
 	dirdbUnref (dir_alsa.dirdb_ref, dirdb_use_dir);
 }
 
-static int alsaMixerIntrSetDev (struct moduleinfostruct *info, struct ocpfilehandle_t *f)
+static int alsaMixerIntrSetDev (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip)
 {
 	char *name;
 
@@ -1326,8 +1329,11 @@ static int alsaMixerIntrSetDev (struct moduleinfostruct *info, struct ocpfilehan
 /* 1.0.14rc1 added support for snd_device_name_hint */
 	else if (!strncmp(name, "alsa-", 4))
 	{
-		snprintf (alsaCardName, sizeof (alsaCardName), "%s", info->modname);
-		snprintf (alsaMixerName, sizeof (alsaCardName), "%s", info->modname);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation="
+		snprintf (alsaCardName, sizeof (alsaCardName), "%s", info->title);
+		snprintf (alsaMixerName, sizeof (alsaCardName), "%s", info->title);
+#pragma GCC diagnostic pop
 	}
 out:
 	fprintf(stderr, "ALSA: Selected PCM %s\n", alsaCardName);
@@ -1337,14 +1343,14 @@ out:
 	{
 		struct moduleinfostruct mi;
 		mdbGetModuleInfo(&mi, custom_dsp_mdb_ref);
-		snprintf(mi.modname, sizeof(mi.modname), "%s", alsaCardName);
+		snprintf(mi.title, sizeof(mi.title), "%s", alsaCardName);
 		mdbWriteModuleInfo(custom_dsp_mdb_ref, &mi);
 	}
 	if (custom_mixer_mdb_ref!=0xffffffff)
 	{
 		struct moduleinfostruct mi;
 		mdbGetModuleInfo(&mi, custom_mixer_mdb_ref);
-		snprintf(mi.modname, sizeof(mi.modname), "%s", alsaMixerName);
+		snprintf(mi.title, sizeof(mi.title), "%s", alsaMixerName);
 		mdbWriteModuleInfo(custom_mixer_mdb_ref, &mi);
 	}
 
@@ -1373,7 +1379,10 @@ static void __attribute__((constructor))init(void)
 
 static void __attribute__((destructor))fini(void)
 {
-	int err;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+	int err; /* err is only used if debug_printf() is not a dummy call */
+#pragma GCC diagnostic pop
 
 	debug_printf("ALSA_fini()\n");
 

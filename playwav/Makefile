@@ -32,7 +32,9 @@ wavplay.o: wavplay.c \
 wavptype.o: wavptype.c \
 	../config.h \
 	../types.h \
-	../filesel/mdb.h
+	../filesel/filesystem.h \
+	../filesel/mdb.h \
+	../filesel/pfilesel.h
 	$(CC) wavptype.c -o $@ -c
 
 wavpplay.o: wavpplay.c \

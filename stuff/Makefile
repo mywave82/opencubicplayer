@@ -107,7 +107,8 @@ irq.o: irq.c irq.h \
 
 latin1.o: latin1.c latin1.h \
 	../config.h \
-	../types.h
+	../types.h \
+	utf-8.h
 	$(CC) $< -o $@ -c
 
 poutput-curses.o: poutput-curses.c poutput-curses.h \

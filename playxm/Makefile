@@ -38,7 +38,10 @@ xmpptype.o: xmpptype.c \
 	../config.h \
 	../types.h \
 	../filesel/filesystem.h \
-	../filesel/mdb.h
+	../filesel/dirdb.h \
+	../filesel/pfilesel.h \
+	../filesel/mdb.h \
+	../stuff/cp437.h
 	$(CC) xmpptype.c -o $@ -c
 
 xmlmod.o: xmlmod.c \

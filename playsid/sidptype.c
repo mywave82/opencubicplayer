@@ -28,6 +28,7 @@
 #include "boot/plinkman.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
+#include "filesel/pfilesel.h"
 #include "stuff/latin1.h"
 
 struct __attribute__((packed)) psidHeader
@@ -50,18 +51,6 @@ struct __attribute__((packed)) psidHeader
 	char reserved[4];    /* only version 0x0002                            */
 };
 
-static void latin1(char *dst, int dstlen, char *src)
-{
-	while ((dstlen-1) && (*src))
-	{
-		*dst = latin1_table[*(unsigned char *)src];
-		dstlen--;
-		dst++;
-		src++;
-	}
-	*dst = 0;
-}
-
 static int sidReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
 {
 	int i;
@@ -74,14 +63,17 @@ static int sidReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 
 	if ((!memcmp(ph->id,"PSID",4))||(!memcmp(ph->id,"RSID",4)))
 	{
-		m->modtype=mtSID;
+		m->modtype.integer.i=MODULETYPE("SID");
 		m->channels=ph->songs[1];
-		latin1 (m->modname,  sizeof (m->modname),  ph->name);
-		latin1 (m->composer, sizeof (m->composer), ph->author);
+
+		latin1_f_to_utf8_z (ph->name, sizeof (ph->name), m->title, sizeof (m->title));
+
+		latin1_f_to_utf8_z (ph->author, sizeof (ph->author), m->composer, sizeof (m->composer));
+
 		if (ph->copyright[0])
 		{
 			strcpy (m->comment, "(C)");
-			latin1 (m->comment + 3, sizeof (m->comment) - 3, ph->copyright);
+			latin1_f_to_utf8_z (ph->copyright, sizeof (ph->copyright), m->comment + 3, sizeof (m->comment) - 3);
 		}
 		return 1;
 	}
@@ -91,7 +83,7 @@ static int sidReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 	{
 		char snginfo[33];
 
-		m->modtype=mtSID;
+		m->modtype.integer.i=MODULETYPE("SID");
 		m->channels=1;
 
 		snginfo[32]=0;
@@ -106,8 +98,7 @@ static int sidReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 		if (strlen(snginfo)<6)
 			strcpy(snginfo,"raw SID file");
 
-		strcpy(m->modname, snginfo);
-		latin1(m->modname, strlen(m->modname), m->modname);
+		latin1_f_to_utf8_z (snginfo, strlen (snginfo), m->title, sizeof (m->title));
 		m->composer[0] = 0;
 		m->comment[0] = 0;
 		return 1;
@@ -115,8 +106,8 @@ static int sidReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 
 	if (!memcmp(buf,"SIDPLAY INFOFILE",16) && (((char *)buf)[16]==0x0a || ((char *)buf)[16]==0x0d))
 	{
-		strcpy(m->modname, "SIDPlay info file");
-		m->modtype=mtUnRead;
+		strcpy(m->title, "SIDPlay info file");
+		m->modtype.integer.i = 0;
 		return 1;
 	}
 
@@ -129,10 +120,32 @@ static int sidReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	return sidReadMemInfo (m, mem, len);
 }
 
-static struct mdbreadinforegstruct sidReadInfoReg = {sidReadMemInfo, sidReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct sidReadInfoReg = {"SID", sidReadMemInfo, sidReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+
+static const char *SID_description[] =
+{
+	//                                                                          |
+	"SID files are memory dumps of executable code for Commodore 64. This code",
+	"controls the SID audio chip. Open Cubic Player uses libsidplayfp that",
+	"emulates all the needed hardware from the C64.",
+	NULL
+};
+
+static const struct interfaceparameters SID_p =
+{
+	"playsid", "sidPlayer",
+	0, 0
+};
+
 
 static void __attribute__((constructor))init(void)
 {
+	struct moduletype mt;
+
+	fsRegisterExt("SID");
+	mt.integer.i = MODULETYPE("SID");
+	fsTypeRegister (mt, SID_description, "plOpenCP", &SID_p);
+
 	mdbRegisterReadInfo(&sidReadInfoReg);
 }
 

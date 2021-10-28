@@ -86,7 +86,9 @@ gmdptype.o: gmdptype.c \
 	../config.h \
 	../types.h \
 	../filesel/filesystem.h \
-	../filesel/mdb.h
+	../filesel/mdb.h \
+	../filesel/pfilesel.h \
+	../stuff/cp437.h
 	$(CC) gmdptype.c -o $@ -c
 
 gmdl669.o: gmdl669.c \

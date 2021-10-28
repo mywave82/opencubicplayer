@@ -55,8 +55,8 @@ mpptype.o: mpptype.c \
 	../types.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
+	../filesel/pfilesel.h \
 	id3.h \
-	../stuff/cp437.h \
 	../stuff/imsrtns.h \
 	../stuff/utf-8.h
 	$(CC) mpptype.c -o $@ -c

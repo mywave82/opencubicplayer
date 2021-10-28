@@ -185,6 +185,7 @@ static void timidityDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2],  0, 0x09, "   midi \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................               time: ..:.. ", 80);
 		writestring(buf[2],  8, 0x0F, currentmodname, 8);
 		writestring(buf[2], 16, 0x0F, currentmodext, 4);
+#warning modname is not UTF-8....
 		writestring(buf[2], 22, 0x0F, modname, 31);
 		if (plPause)
 			writestring(buf[2], 58, 0x0C, "paused", 6);
@@ -231,6 +232,7 @@ static void timidityDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2],  0, 0x09, "    module \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................  composer: ...............................                  time: ..:..    ", 132);
 		writestring(buf[2], 11, 0x0F, currentmodname, 8);
 		writestring(buf[2], 19, 0x0F, currentmodext, 4);
+#warning modname and composer is not UTF-8....
 		writestring(buf[2], 25, 0x0F, modname, 31);
 		writestring(buf[2], 68, 0x0F, composer, 31);
 		if (plPause)
@@ -408,17 +410,18 @@ static int timidityProcessKey(uint16_t key)
 
 }
 
-static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	int err;
 
 	if (!file)
 		return errGen;
 
-	strncpy(currentmodname, info->name, _MAX_FNAME);
-	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
+#warning replace currentmodname and currentmodext
+	//strncpy(currentmodname, info->name, _MAX_FNAME);
+	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
-	modname=info->modname;
+	modname=info->title;
 	composer=info->composer;
 
 	fprintf(stderr, "Loading %s%s...\n", currentmodname, currentmodext);

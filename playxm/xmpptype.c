@@ -30,58 +30,56 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
+#include "filesel/pfilesel.h"
 #include "filesel/mdb.h"
+#include "stuff/cp437.h"
 
-#define _EXT_MAX 5
-
-static void getext(char *ext, const char *name)
+static uint32_t xmpGetModuleType(const char *buf, int len, const char *filename)
 {
-	int i;
-	name+=8;
-	for (i=0; i<(_EXT_MAX-1); i++)
-		if (*name==' ')
-			break;
-		else
-			*ext++=*name++;
-	*ext=0;
-}
-
-static unsigned char xmpGetModuleType(const char *buf, const char *ext)
-{
-
-	if (!strcasecmp(ext, ".WOW")&&(*(uint32_t *)(buf+1080)==int32_little(0x2E4B2E4D)))
+	if ((strlen(filename)>4) &&
+	    (!strcasecmp(filename + strlen (filename) - 4,".WOW")) &&
+	    (*(uint32_t *)(buf+1080)==int32_little(0x2E4B2E4D))) /* "M.K." */
 	{
-		return mtWOW;
+		return MODULETYPE("WOW");
 	}
 
-	switch (int32_little(*(uint32_t *)(buf+1080)))
+	if (len >= 1084)
 	{
-		case 0x2E4B2E4D: case 0x214B214D: case 0x2E542E4E: case 0x34544C46:
-		case 0x4E484331: case 0x4E484332: case 0x4E484333: case 0x4E484334:
-		case 0x4E484335: case 0x4E484336: case 0x4E484337: case 0x4E484338:
-		case 0x4E484339: case 0x48433031: case 0x48433131: case 0x48433231:
-		case 0x48433331: case 0x48433431: case 0x48433531: case 0x48433631:
-		case 0x48433731: case 0x48433831: case 0x48433931: case 0x48433032:
-		case 0x48433132: case 0x48433232: case 0x48433332: case 0x48433432:
-		case 0x48433532: case 0x48433632: case 0x48433732: case 0x48433832:
-		case 0x48433932: case 0x48433033: case 0x48433133: case 0x48433233:
+		switch (int32_little(*(uint32_t *)(buf+1080)))
 		{
-			return mtMOD;
+			case 0x2E542E4E: /* N.T. */
+				return MODULETYPE("MODt");
+
+			case 0x2E4B2E4D: case 0x214B214D: case 0x34544C46:                  /* "M.K." "M!K!" "FLT4" */
+			case 0x4E484331: case 0x4E484332: case 0x4E484333: case 0x4E484334: /* "1CHN" "2CHN" "3CHN" "4CHN" */
+			case 0x4E484335: case 0x4E484336: case 0x4E484337: case 0x4E484338: /* "5CHN" "6CHN" "7CHN" "8CHN" */
+			case 0x4E484339: case 0x48433031: case 0x48433131: case 0x48433231: /* "9CHN" "10CH" "11CH" "12CH" */
+			case 0x48433331: case 0x48433431: case 0x48433531: case 0x48433631: /* "13CH" "14CH" "15CH" "16CH" */
+			case 0x48433731: case 0x48433831: case 0x48433931: case 0x48433032: /* "17CH" "18CH" "19CH" "20CH" */
+			case 0x48433132: case 0x48433232: case 0x48433332: case 0x48433432: /* "21CH" "22CH" "23CH" "24CH" */
+			case 0x48433532: case 0x48433632: case 0x48433732: case 0x48433832: /* "25CH" "26CH" "27CH" "28CH" */
+			case 0x48433932: case 0x48433033: case 0x48433133: case 0x48433233: /* "29CH" "30CH" "31CH" "32CH" */
+			{
+				return MODULETYPE("MOD");
+			}
 		}
 	}
 
 	if (!memcmp(buf, "Extended Module: ", 17)/* && buf[37]==0x1a*/) /* some malformed trackers doesn't save the magic 0x1a at offset 37 */
 	{
-		return mtXM;
+		return MODULETYPE("XM");
 	}
 
 	if (!memcmp(buf, "MXM\n", 4))
 	{
-		return mtMXM;
+#warning Does MXM crash? It was disabled in ocp.ini
+		return MODULETYPE("MXM");
 	}
 
-	if (!strcasecmp(ext, ".MOD"))
+	if ((strlen(filename)>4) &&
+	    (!strcasecmp(filename + strlen (filename) - 4,".MOD")))
 	{
 		int i,j;
 
@@ -94,42 +92,44 @@ static unsigned char xmpGetModuleType(const char *buf, const char *ext)
 			} else {
 				if (buf[i]<0x20) /* non-ASCII?, can not be mtM15/mtM31 */
 				{
-					goto notM15_M31;
+					return 0;
 				}
 			}
 		}
-
 		/* Check instruments for ASCII*/
 		for (i=0; i<31; i++)
 		{
 			for (j=0; j<21; j++)
 			{
+				if ((20+i*30+j) >= len)
+				{
+					break;
+				}
 				if (!buf[20+i*30+j]) /* string is zero-terminated */
 				{
 					break;
-				} else {
-					if (buf[20+i*30+j]<0x20) /* non-ASCII? */
-					{
-						if (i<15)
-						{
-							goto notM15_M31;
-						}
-						return mtM15; /* we had atleast 15 instruments */
-					}
+				}
+				if (buf[20+i*30+j]<0x20) /* non-ASCII? */
+				{
+					break;
 				}
 			}
 		}
-		return mtM31;
+		if (i >= 31) return MODULETYPE("M31");
+		if (i >= 15) return MODULETYPE("M15");
 	}
-notM15_M31:
-	return mtUnRead;
+	return 0;
 }
-
 
 static int xmpReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
 {
-	char ext[_EXT_MAX];
-	int type;
+	return 0;
+}
+
+static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
+{
+	char *filename = 0;
+	uint32_t type;
 	typedef struct __attribute__((packed))
 	{
 		char sig[17];
@@ -143,27 +143,36 @@ static int xmpReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 
 	if (!memcmp(buf, "ziRCONia", 8))
 	{
-		strcpy(m->modname, "MMCMPed module");
+		strcpy(m->title, "MMCMPed module");
 		return 0;
 	}
 
-	getext(ext, m->name);
-
-	if ((type=xmpGetModuleType(buf, ext))==mtUnRead)
-		return 0;
-
-	m->modtype=type;
-
-	switch (type)
+	dirdbGetName_internalstr (fp->dirdb_ref, &filename);
+	type=xmpGetModuleType(buf, len, filename);
+	if (!type)
 	{
-		case mtM15: case mtM31:
-			m->channels=4;
-			memcpy(m->modname, buf+0, 20);
-			m->modname[20]=0;
-			memset(&m->composer, 0, sizeof(m->composer));
-			return 1;
+		return 0;
+	}
+	m->modtype.integer.i=type;
 
-		case mtMOD:
+	if ((type == MODULETYPE("M15")) ||
+	    (type == MODULETYPE("M15t")) ||
+	    (type == MODULETYPE("M31")) ||
+	    (type == MODULETYPE("MODt")) )
+	{
+		m->channels=4;
+		cp437_f_to_utf8_z (buf + 0, 20, m->title, sizeof (m->title));
+		return 1;
+	} else if (type == MODULETYPE("WOW"))
+	{
+		m->channels=8;
+		cp437_f_to_utf8_z (buf + 0, 20, m->title, sizeof (m->title));
+		snprintf (m->comment, sizeof (m->comment), "%s", "Converted from .669 with Mod's Grave");
+		return 1;
+	} else if (type == MODULETYPE("MOD"))
+	{
+		if (len >= 1084)
+		{
 			switch (int32_little(*(uint32_t *)(buf+1080)))
 			{
 				case 0x2E4B2E4D: /* M.K. */
@@ -203,40 +212,135 @@ static int xmpReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 				case 0x48433133: m->channels=31; break; /* 31CH */
 				case 0x48433233: m->channels=32; break; /* 32CH */
 			}
+		}
 
-			memcpy(m->modname, buf+0, 20);
-			m->modname[20]=0;
-			memset(&m->composer, 0, sizeof(m->composer));
-			return 1;
-
-		case mtXM:
-			xmhdr =  (head1 *)buf;
-			if (xmhdr->ver<int16_little(0x104))
-			{
-				m->modtype=0xFF;
-				strcpy(m->modname,"too old version");
-				memset(&m->composer, 0, sizeof(m->composer));
-				return 0;
-			} else {
-				memcpy(m->modname, xmhdr->name, 20);
-				m->modname[20]=0;
-				m->channels=buf[68];
-			}
-			memset(&m->composer, 0, sizeof(m->composer));
-			return 1;
-
-		case mtMXM:
-			strcpy(m->modname,"MXMPlay module");
-			m->channels=buf[12];
-			memset(&m->composer, 0, sizeof(m->composer));
-			return 1;
+		cp437_f_to_utf8_z (buf + 0, 20, m->title, sizeof (m->title));
+		return 1;
+	} else if (type == MODULETYPE("XM"))
+	{
+		xmhdr =  (head1 *)buf;
+		if (xmhdr->ver<int16_little(0x104))
+		{
+			m->modtype.integer.i = 0;
+			strcpy(m->title,"too old version");
+			return 0;
+		} else {
+			cp437_f_to_utf8_z (xmhdr->name, 20, m->title, sizeof (m->title));
+			m->channels=buf[68];
+		}
+		snprintf (m->comment, sizeof (m->comment), "Fast Tracker II v%d.%02d", uint16_little(xmhdr->ver) >> 8, uint16_little(xmhdr->ver) & 0xff);
+		return 1;
+	} else if (type == MODULETYPE("MXM"))
+	{
+		strcpy(m->title,"MXMPlay module");
+		m->channels=buf[12];
+		return 1;
 	}
 	return 0;
 }
 
-static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *mem, size_t len)
+struct interfaceparameters MOD_p =
 {
-	return xmpReadMemInfo (m, mem, len);
-}
+	"playxm", "xmpPlayer",
+	0, 0
+};
 
-struct mdbreadinforegstruct xmpReadInfoReg = {xmpReadMemInfo, xmpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+const char *M15_description[] =
+{
+	//                                                                          |
+	"M15 files are loaded as amiga NoiseTracker 15 instruments modules with no",
+	"signature (but plays like ProTracker 1.1b). Open Cubic Player loads this an",
+	"amiga module and played back using the XM/FastTracker support.",
+	NULL
+};
+
+const char *M15t_description[] =
+{
+	//                                                                          |
+	"M15t files are loaded as amiga NoiseTracker 15 instruments modules with no",
+	"signature (but plays like ProTracker 1.1b). Quirk enabled for old ProTracker",
+	"compatible mode that only had tempo (no speed) command. Open Cubic Player",
+	"loads this an amiga module and played back using the XM/FastTracker support.",
+	NULL
+};
+
+const char *M31_description[] =
+{
+	//                                                                          |
+	"M31 files are loaded as amiga NoiseTracker 31 instruments modules with no",
+	"signature (but plays like ProTracker 1.1b). Open Cubic Player loads this an",
+	"amiga module and played back using the XM/FastTracker support.",
+	NULL
+};
+
+const char *MOD_description[] =
+{
+	//                                                                          |
+	"MOD files are loaded as amiga ProTracker 1.1b modules with valid signature.",
+	"F00 commands (end of tune) commands are ignored due to compatibility with",
+	"some trackers this being a no-operation. Open Cubic Player loads this an",
+	"amiga module and played back using the XM/FastTracker support.",
+	NULL
+};
+
+const char *MODd_description[] =
+{
+	//                                                                          |
+	"MODd files are loaded as amiga ProTracker 1.1b modules with valid signature,",
+	"but quirk enabled for DMP (Dual Module Player) style interpretation of the",
+	"panning command. Open Cubic Player loads this an amiga module and played",
+	"back using the XM/FastTracker support.",
+	NULL
+};
+
+const char *MODf_description[] =
+{
+	//                                                                          |
+	"MODf files are loaded as Fast Tracker II modules with valid signature, with",
+	"quirk enabled for Fast Tracker II compatible mode (when saved as .MOD). Open",
+	"Cubic Player loads this an amiga module and played back using the",
+	"XM/FastTracker support.",
+	NULL
+};
+
+const char *MODt_description[] =
+{
+	//                                                                          |
+	"MODt files are loaded as amiga ProTracker 1.1b modules with valid signature,",
+	"but quirk enabled for old ProTracker compatible mode that only had tempo (no",
+	"speed) command. Open Cubic Player loads this an amiga module and played back",
+	"using the XM/FastTracker support.",
+	NULL
+};
+
+const char *MXM_description[] =
+{
+	//                                                                          |
+	"MXM files are created by XM2XMX by Niklas Beisert / pascal, and used by",
+	"MXMPlay a tiny XM player for GUS soundcards used by various PC intro's",
+	"(demos upto 64K). Open Cubic Player has a special loader for this file",
+	"format and playback is done using the XM/FastTracker support.",
+	NULL
+};
+
+const char *WOW_description[] =
+{
+	//                                                                          |
+	"WOW files are converted from Composer 669 files using Mod's Grave utility",
+	"by JAS (Jan Ole Suhr). WOW files has a \"M.K.\" header which normally should",
+	"be a 4 channel file. Open Cubic Player loads this an amiga module, forced to",
+	"8 channels and played back using the XM/FastTracker support.",
+	NULL
+};
+
+const char *XM_description[] =
+{
+	//                                                                          |
+	"XM - eXtended Module - files are created by Fast Tracker II by Fredrik",
+	"\"Mr. H\" Huss and Magnus \"Vogue\" Högdahl from Triton. XM supports up to 32",
+	"channels. Open Cubic Player has a special loader for this file format and",
+	"playback is done using the XM/FastTracker support.",
+	NULL
+};
+
+struct mdbreadinforegstruct xmpReadInfoReg = {"MOD/XM", xmpReadMemInfo, xmpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

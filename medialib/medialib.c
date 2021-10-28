@@ -70,15 +70,15 @@ static struct ocpfile_t    *removefiles;  // needs to overlay an dialog above fi
 static struct ocpdir_t      listall;  // complete query
 static struct ocpdir_t      search;   // needs to throttle a dialog, before it can complete!! upon listing
 
-static int                    medialibAddInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f);
+static int                    medialibAddInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip);
 static interfaceReturnEnum    medialibAddRun  (void);
 static struct interfacestruct medialibAddIntr = {medialibAddInit, medialibAddRun, 0, "medialibAdd" INTERFACESTRUCT_TAIL};
 
-static int                    medialibRefreshInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f);
+static int                    medialibRefreshInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip);
 static interfaceReturnEnum    medialibRefreshRun  (void);
 static struct interfacestruct medialibRefreshIntr = {medialibRefreshInit, medialibRefreshRun, 0, "medialibRefresh" INTERFACESTRUCT_TAIL};
 
-static int                    medialibRemoveInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f);
+static int                    medialibRemoveInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip);
 static interfaceReturnEnum    medialibRemoveRun  (void);
 static struct interfacestruct medialibRemoveIntr = {medialibRemoveInit, medialibRemoveRun, 0, "medialibRemove" INTERFACESTRUCT_TAIL};
 
@@ -209,8 +209,8 @@ static int mlint(void)
 	dirdbUnref (addfiles->dirdb_ref, dirdb_use_medialib);
 	mdbref = mdbGetModuleReference2 (addfiles->dirdb_ref, strlen (medialibAddIntr.name));
 	mdbGetModuleInfo (&m, mdbref);
-	m.modtype = mtDEVv;
-	strcpy (m.modname, "medialib add source");
+	m.modtype.integer.i = MODULETYPE("DEVv");
+	strcpy (m.title, "medialib add source");
 	mdbWriteModuleInfo (mdbref, &m);
 	ocpdir_mem_add_file (medialib_root, addfiles);
 	plRegisterInterface (&medialibAddIntr);
@@ -219,8 +219,8 @@ static int mlint(void)
 	dirdbUnref (refreshfiles->dirdb_ref, dirdb_use_medialib);
 	mdbref = mdbGetModuleReference2 (refreshfiles->dirdb_ref, strlen (medialibRefreshIntr.name));
 	mdbGetModuleInfo (&m, mdbref);
-	m.modtype = mtDEVv;
-	strcpy (m.modname, "medialib refresh source");
+	m.modtype.integer.i = MODULETYPE("DEVv");
+	strcpy (m.title, "medialib refresh source");
 	mdbWriteModuleInfo (mdbref, &m);
 	ocpdir_mem_add_file (medialib_root, refreshfiles);
 	plRegisterInterface (&medialibRefreshIntr);
@@ -229,8 +229,8 @@ static int mlint(void)
 	dirdbUnref (removefiles->dirdb_ref, dirdb_use_medialib);
 	mdbref = mdbGetModuleReference2 (removefiles->dirdb_ref, strlen (medialibRemoveIntr.name));
 	mdbGetModuleInfo (&m, mdbref);
-	m.modtype = mtDEVv;
-	strcpy (m.modname, "medialib remove source");
+	m.modtype.integer.i = MODULETYPE("DEVv");
+	strcpy (m.title, "medialib remove source");
 	mdbWriteModuleInfo (mdbref, &m);
 	ocpdir_mem_add_file (medialib_root, removefiles);
 	plRegisterInterface (&medialibRemoveIntr);

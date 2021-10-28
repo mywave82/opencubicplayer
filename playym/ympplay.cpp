@@ -597,7 +597,7 @@ static void normalize(void)
 {
 	mcpNormalize(0);
 }
-static int ymOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+static int ymOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	plIsEnd=ymLooped;
 	plProcessKey=ymProcessKey;

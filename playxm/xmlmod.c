@@ -64,6 +64,19 @@ static inline uint32_t swapb2(uint16_t a)
 #endif
 }
 
+/* chan: if non-zero, this will override the signature channel-detection (WOW files are a good example, M.K. header, but 8 channels
+ *
+ * sig: 0 - There should not be a signature in the first 4 bytes (if we find one, loading will fail). Number of instruments is 15
+ *      2 - There should not be a signature in the first 4 bytes (if we find one, loading will fail). Number of instruments is 31
+ *      1 - Expect a signature and use it to detect the number of channels.
+ *
+ * opt: (bitmask)
+ *      1 - "DMP" style panning
+ *      2 - NoiseTracker style tempo
+ *      4 - Fast Tracker II .MOD file
+ *      8 - Ignore "END OF TUNE" command (F00) "barbrian.MOD" - unsure which tracker it is made with
+ */
+
 static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, int sig, int opt)
 {
 	uint32_t l;
@@ -115,7 +128,6 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 		case 0x2E542E4E: /* N.T. */
 			m->nchan=4;
 			m->ninst=15;
-			opt|=2;
 			break;
 		case 0x31384443: m->nchan=8; break; /* CD81 */
 
@@ -169,7 +181,8 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 				 if (sig==1)
 					 return errFormSig;
 				 m->ninst=(sig==2)?31:15;
-				 opt|=2;
+#warning this needs to be manually by MODt M15t etc
+//				 opt|=2;
 				 break;
 	}
 
@@ -506,7 +519,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadM15t(struct xmodule *m, str
 
 int __attribute__ ((visibility ("internal"))) xmpLoadWOW(struct xmodule *m, struct ocpfilehandle_t *file)
 {
-	return loadmod(m, file, 8, 1, 0);
+	return loadmod(m, file, 8, 1, 2);
 }
 
 int __attribute__ ((visibility ("internal"))) xmpLoadMODf(struct xmodule *m, struct ocpfilehandle_t *file)

@@ -148,45 +148,45 @@ static int ymReadMemInfo2(struct moduleinfostruct *m, const char *buf, size_t le
 
 	if (!strncmp(YM->id, "YM2!", 4))
 	{
-		m->modtype=mtYM;
+		m->modtype.integer.i=MODULETYPE("YM");
 		m->channels=3;
-		strcpy(m->modname, "Unknown");
+		strcpy(m->title, "Unknown");
 		strcpy(m->composer, "Unknown");
 		strcpy(m->comment, "Converted by Leonard.");
-		strcpy(m->style, "YM 2");
+		strcpy(m->style, "YM 2 (MADMAX specific)");
 		m->playtime=0;
 //#warning Need file size to calculate playtime
 		return 1;
 	}
 	if (!strncmp(YM->id, "YM3!", 4))
 	{
-		m->modtype=mtYM;
+		m->modtype.integer.i=MODULETYPE("YM");
 		m->channels=3;
-		strcpy(m->modname, "Unknown");
+		strcpy(m->title, "Unknown");
 		strcpy(m->composer, "Unknown");
 		strcpy(m->comment, "");
-		strcpy(m->style, "YM 3");
+		strcpy(m->style, "YM 3 (Standard YM-Atari format)");
 		m->playtime=0;
 //#warning Need file size to calculate playtime
 		return 1;
 	}
 	if (!strncmp(YM->id, "YM3b", 4))
 	{
-		m->modtype=mtYM;
+		m->modtype.integer.i=MODULETYPE("YM");
 		m->channels=3;
-		strcpy(m->modname, "Unknown");
+		strcpy(m->title, "Unknown");
 		strcpy(m->composer, "Unknown");
 		strcpy(m->comment, "");
-		strcpy(m->style, "YM 3b (loop)");
+		strcpy(m->style, "YM 3b (Standard YM-Atari format + loop information)");
 		m->playtime=0;
 //#warning Need file size to calculate playtime
 		return 1;
 	}
 	if (!strncmp(YM->id, "YM4!", 4))
 	{
-		m->modtype=mtYM;
+		m->modtype.integer.i=MODULETYPE("YM");
 		m->channels=3;
-		strcpy(m->style, "YM 4 not supported");
+		strcpy(m->style, "YM 4 not supported (Extended Atari format)");
 		return 0;
 	}
 
@@ -197,17 +197,17 @@ static int ymReadMemInfo2(struct moduleinfostruct *m, const char *buf, size_t le
 
 	if ((!strncmp(YM->id, "YM5!", 4))||(!strncmp(YM->id, "YM6!", 4)))
 	{
-		m->modtype=mtYM;
+		m->modtype.integer.i=MODULETYPE("YM");
 		m->channels=3;
 
-		strcpy(m->modname, "Unknown");
+		strcpy(m->title, "Unknown");
 		strcpy(m->composer, "Unknown");
 		strcpy(m->comment, "");
 		m->playtime=0;
 		if (!strncmp(YM->id, "YM5!", 4))
-			strcpy(m->style, "YM 5");
+			strcpy(m->style, "YM 5 (Extended YM2149 format, all machines)");
 		else
-			strcpy(m->style, "YM 6");
+			strcpy(m->style, "YM 6 (Extended YM2149 format, all machines)");
 
 		if (len >= sizeof(*YM))
 		{
@@ -237,7 +237,7 @@ static int ymReadMemInfo2(struct moduleinfostruct *m, const char *buf, size_t le
 			const char *ptr = buf+skip+drumskip+sizeof(*YM);
 			int lenleft = len-skip-drumskip-sizeof(*YM);
 
-			ym_strcpy(m->modname, sizeof(m->modname), &ptr, &lenleft);
+			ym_strcpy(m->title, sizeof(m->title), &ptr, &lenleft);
 			ym_strcpy(m->composer, sizeof(m->composer), &ptr, &lenleft);
 			ym_strcpy(m->comment, sizeof(m->comment), &ptr, &lenleft);
 
@@ -249,14 +249,14 @@ static int ymReadMemInfo2(struct moduleinfostruct *m, const char *buf, size_t le
 
 	if (!strncmp(MIX->id, "MIX1", 4))
 	{
-		m->modtype=mtYM;
+		m->modtype.integer.i=MODULETYPE("YM");
 		m->channels=3;
 
-		strcpy(m->modname, "Unknown");
+		strcpy(m->title, "Unknown");
 		strcpy(m->composer, "Unknown");
 		strcpy(m->comment, "");
 		m->playtime=0;
-		strcpy(m->style, "MIX1");
+		strcpy(m->style, "MIX1 (Atari Remix digit format)");
 
 		if (len >= sizeof(*MIX))
 		{
@@ -267,7 +267,7 @@ static int ymReadMemInfo2(struct moduleinfostruct *m, const char *buf, size_t le
 			const char *ptr = buf+skip+sizeof(*MIX);
 			int lenleft = len-skip-sizeof(*MIX);
 
-			ym_strcpy(m->modname, sizeof(m->modname), &ptr, &lenleft);
+			ym_strcpy(m->title, sizeof(m->title), &ptr, &lenleft);
 			ym_strcpy(m->composer, sizeof(m->composer), &ptr, &lenleft);
 			ym_strcpy(m->comment, sizeof(m->comment), &ptr, &lenleft);
 
@@ -279,17 +279,17 @@ static int ymReadMemInfo2(struct moduleinfostruct *m, const char *buf, size_t le
 
 	if ((!strncmp(YMT->id, "YMT1", 4))||(!strncmp(YMT->id, "YMT2", 4)))
 	{
-		m->modtype=mtYM;
+		m->modtype.integer.i=MODULETYPE("YM");
 		m->channels=3;
 
-		strcpy(m->modname, "Unknown");
+		strcpy(m->title, "Unknown");
 		strcpy(m->composer, "Unknown");
 		strcpy(m->comment, "");
 		m->playtime=0;
 		if (!strncmp(YMT->id, "YMT1", 4))
-			strcpy(m->style, "YM-T1");
+			strcpy(m->style, "YM-T1 (YM-Tracker)");
 		else
-			strcpy(m->style, "YM-T2");
+			strcpy(m->style, "YM-T2 (YM-Tracker)");
 
 		if (len >= sizeof(*YMT))
 		{
@@ -299,7 +299,7 @@ static int ymReadMemInfo2(struct moduleinfostruct *m, const char *buf, size_t le
 			const char *ptr = buf+sizeof(*YMT);
 			int lenleft = len-sizeof(*YMT);
 
-			ym_strcpy(m->modname, sizeof(m->modname), &ptr, &lenleft);
+			ym_strcpy(m->title, sizeof(m->title), &ptr, &lenleft);
 			ym_strcpy(m->composer, sizeof(m->composer), &ptr, &lenleft);
 			ym_strcpy(m->comment, sizeof(m->comment), &ptr, &lenleft);
 
@@ -351,17 +351,38 @@ static int ymReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, co
 	return ymReadMemInfo (m, mem, len);
 }
 
+const char *YM_description[] =
+{
+	//                                                                          |
+	"YM files as music, primary from Atari systems. Atari machines features a",
+	"three channel synthesizer IC YM2149 (and very similiar to the wider used",
+	"AY-3-8912). YM files contains register value recorded at the screen refresh",
+	"rate, so only the IC needs to be simulated. Open Cubic Player uses",
+	"stsoundlib for playback.",
+	NULL
+};
+
+struct interfaceparameters YM_p =
+{
+	"playym", "ymPlayer",
+	0, 0
+};
+
 static void ymEvent(int event)
 {
 	switch (event)
 	{
 		case mdbEvInit:
 		{
-			fsRegisterExt("ym");
+			struct moduletype mt;
+
+			fsRegisterExt("YM");
+			mt.integer.i = MODULETYPE("YM");
+			fsTypeRegister (mt, YM_description, "OpenCP", &YM_p);
 		}
 	}
 }
-static struct mdbreadinforegstruct ymReadInfoReg = {ymReadMemInfo, ymReadInfo, ymEvent MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct ymReadInfoReg = {"YM", ymReadMemInfo, ymReadInfo, ymEvent MDBREADINFOREGSTRUCT_TAIL};
 
 static void __attribute__((constructor))init(void)
 {

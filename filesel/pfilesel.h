@@ -2,6 +2,7 @@
 #define __PFILESEL_H
 
 #include <stdio.h> /* FILE * */
+#include "mdb.h" /* struct moduletype */
 
 struct ocpfilehandle_t;
 struct moduleinfostruct;
@@ -30,7 +31,23 @@ extern int fsColorTypes;
 extern int fsInfoMode;
 extern int fsPutArcs;
 extern int fsWriteModInfo;
+#if 0
 extern const char *fsTypeNames[256]; /* type description */
+#endif
+
+struct interfaceparameters
+{
+	const char *pllink; // "plOpenCP" uses this "plugin"
+	const char *player; // "plOpenCP" uses this symbol name from "plugin" as the player object
+	const char *ldlink; // some player "plugins" uses loaders. This is the name of that "loader plugin"
+	const char *loader; // And this is the loader symbol used
+};
+/* description: is NULL terminating string array of upto upto 6 lines of 76 characters
+ *
+ * interface: Usually "plOpenCP" or "VirtualInterface" - last is not user-editable
+ */
+void fsTypeRegister (struct moduletype modtype, const char **description, const char *interface, const struct interfaceparameters *ip);
+uint8_t fsModTypeColor(struct moduletype modtype); /* replaces fsTypeCols[] */
 
 extern void fsRegisterExt(const char *ext);
 extern int fsIsModule(const char *ext);
@@ -55,7 +72,7 @@ typedef enum {
 
 struct interfacestruct
 {
-	int (*Init)(struct moduleinfostruct *info, struct ocpfilehandle_t *f);
+	int (*Init)(struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip);
 	interfaceReturnEnum (*Run)(void);
 	void (*Close)(void);
 	const char *name;
@@ -63,10 +80,10 @@ struct interfacestruct
 };
 #define INTERFACESTRUCT_TAIL ,0
 
+void plRegisterInterface(struct interfacestruct *interface);
+void plUnregisterInterface(struct interfacestruct *interface);
+void plFindInterface(struct moduletype modtype, const struct interfacestruct **i, const struct interfaceparameters **ip);
 
-extern void plRegisterInterface(struct interfacestruct *interface);
-extern void plUnregisterInterface(struct interfacestruct *interface);
-extern struct interfacestruct *plFindInterface(const char *name);
 extern struct preprocregstruct *plPreprocess;
 extern void plRegisterPreprocess(struct preprocregstruct *r);
 extern void plUnregisterPreprocess(struct preprocregstruct *r);

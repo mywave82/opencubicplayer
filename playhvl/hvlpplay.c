@@ -433,7 +433,7 @@ static void hvlCloseFile(void)
 	hvlClosePlayer();
 }
 
-static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	uint8_t *filebuf;
 	uint64_t filelen;
@@ -443,8 +443,9 @@ static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 		return errFileOpen;
 	}
 
-	strncpy(currentmodname, info->name, _MAX_FNAME);
-	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
+#warning we need the utf8_8_dot_3 from modlist...
+//	strncpy(currentmodname, info->name, _MAX_FNAME);
+//	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
 	filelen = file->filesize (file);
 

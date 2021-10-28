@@ -213,7 +213,7 @@ static void medialibAddClear (void)
 	      medialibAddPath = 0;
 }
 
-static int medialibAddInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f)
+static int medialibAddInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip)
 {
 #ifndef __W32__
 	if (dmFILE->cwd)

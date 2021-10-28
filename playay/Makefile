@@ -37,9 +37,10 @@ aytype.o: aytype.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
-	../stuff/compat.h \
 	../filesel/mdb.h \
-	../filesel/pfilesel.h
+	../filesel/pfilesel.h \
+	../stuff/compat.h \
+	../stuff/cp437.h
 	$(CC) aytype.c -o $@ -c
 
 playay_so=z80.o sound.o aychan.o aypplay.o ayplay.o

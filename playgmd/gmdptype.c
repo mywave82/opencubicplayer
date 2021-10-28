@@ -28,8 +28,10 @@
 #include "types.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
+#include "filesel/pfilesel.h"
+#include "stuff/cp437.h"
 
-static unsigned char gmdGetModuleType(const char *buf, const size_t len)
+static uint32_t gmdGetModuleType(const char *buf, const size_t len)
 {
 	if (len>=0x30)
 	{ /* STM check */
@@ -56,7 +58,7 @@ static unsigned char gmdGetModuleType(const char *buf, const size_t len)
 
 		if (memcmp (buf+0x14, "!Scream!", 4) && memcmp (buf+0x14, "BMOD2STM", 4) && memcmp (buf+0x14, "WUZAMOD!", 4)) goto nostm;
 
-		return mtSTM;
+		return MODULETYPE("STM");
 	}
 nostm:
 	if (len>=0x60)
@@ -98,205 +100,258 @@ nostm:
 			}
 
 			if (chan_opl && ins_opl)
-				return mtOPL; /* adlib sample, adplug handles these */
+				return MODULETYPE("OPL"); /* adlib sample, adplug handles these */
 			if (chan_nopl && ins_nopl)
-				return mtS3M;
+				return MODULETYPE("S3M");
 			if (chan_nopl)
-				return mtS3M;
+				return MODULETYPE("S3M");
 			if (chan_opl)
-				return mtOPL;
+				return MODULETYPE("OPL");
 		}
 	}
 	if (len>=48)
 		if (!memcmp(buf+44, "PTMF", 4))
-			return mtPTM;
+			return MODULETYPE("PTM");
 
 	if (len>=7)
 		if (!memcmp(buf, "AMShdr\x1A", 7))
-			return mtAMS;
+			return MODULETYPE("AMS");
 
 	if (len>=14)
 		if (!memcmp(buf, "MAS_UTrack_V00", 14))
-			return mtULT;
+			return MODULETYPE("ULT");
 
 	if (len>=8)
 		if (!memcmp(buf, "OKTASONG", 8))
-			return mtOKT;
+			return MODULETYPE("OKT");
 
 	if (len>=4)
 	{
 		if (!memcmp(buf, "DMDL", 4))
-			return mtMDL;
+			return MODULETYPE("MDL");
 
-		if (!memcmp(buf, "MTM\x10", 4))
-			return mtMTM;
+		if (!memcmp(buf, "MTM", 3))
+#warning Files newer than 1.0......?
+			return MODULETYPE("MTM");
 
 		if (!memcmp(buf, "DDMF", 4))
-			return mtDMF;
+			return MODULETYPE("DMF");
 	}
 	if (len>=2)
 		if ((!memcmp(buf, "if" /* 0x6669 */, 2))||(!memcmp(buf, "JN", 2)))
-			return mt669;
+			return MODULETYPE("669");
 
-	return mtUnRead;
+	return 0;
 }
 
 
 static int gmdReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
 {
-	/* char ext[_MAX_EXT];*/
-	int type;
+	uint32_t type;
 	int i;
 
 	if (!memcmp(buf, "ziRCONia", 8))
 	{
-		strcpy(m->modname, "MMCMPed module");
+		strcpy(m->title, "MMCMPed module");
 		return 0;
 	}
 
-	/* getext(ext, m.name);*/
-
-	if ((type=gmdGetModuleType(buf, len))==mtUnRead)
+	if (!(type=gmdGetModuleType(buf, len)))
 		return 0;
 
-	m->modtype=type;
-	switch (type)
+	m->modtype.integer.i=type;
+	if (type==MODULETYPE("STM"))
 	{
-		case mtSTM:
-			if (len > 0x1f)
+		if (len > 0x1f)
+		{
+			cp437_f_to_utf8_z (buf, 20, m->title, sizeof (m->title));
+			m->channels = 4;
+			if (!memcmp (buf+0x14, "!Scream!", 4))
 			{
-				memcpy (m->modname, buf, 20);
-				m->modname[20] = 0;
-				m->channels = 4;
-				if (!memcmp (buf+0x14, "!Scream!", 4))
+				if (buf[0x1f] == 21)
 				{
-					if (buf[0x1f] == 21)
-					{
-						snprintf (m->comment, sizeof (m->comment), "ScreamTracker 2.21 or later");
-					} else {
-						snprintf (m->comment, sizeof (m->comment), "ScreamTracker 2.%d", (unsigned char)buf[0x1f]);
-					}
-				} else if (!memcmp (buf+0x14, "BMOD2STM", 4))
-				{
-					snprintf (m->comment, sizeof (m->comment), "BMOD2STM (STM 2.%d)", (unsigned char)buf[0x1f]);
-				} else if (!memcmp (buf+0x14, "WUZAMOD!", 4))
-				{
-					snprintf (m->comment, sizeof (m->comment), "Wuzamod (STM 2.%d)", (unsigned char)buf[0x1f]);
+					snprintf (m->comment, sizeof (m->comment), "ScreamTracker 2.21 or later");
+				} else {
+					snprintf (m->comment, sizeof (m->comment), "ScreamTracker 2.%d", (unsigned char)buf[0x1f]);
 				}
-				return 1;
-			}
-			break;
-		case mtS3M:
-			if (len>=(64+32))
+			} else if (!memcmp (buf+0x14, "BMOD2STM", 4))
 			{
-				memcpy(m->modname, buf, 28);
-				m->modname[28]=0;
-				m->channels=0;
-				for (i=0; i<32; i++)
-					if (buf[64+i]!=(char)0xFF)
-						m->channels++;
-				memset(&m->composer, 0, sizeof(m->composer));
-				return 1;
-			}
-			break;
-		case mtMDL:
-			if (len>=(70+32))
+				snprintf (m->comment, sizeof (m->comment), "BMOD2STM (STM 2.%d)", (unsigned char)buf[0x1f]);
+			} else if (!memcmp (buf+0x14, "WUZAMOD!", 4))
 			{
-				if (buf[4]<0x10)
-				{
-					m->modtype=0xFF;
-					strcpy(m->modname,"MDL: too old version");
-					return 0;
-				}
-				memcpy(m->modname, buf+11, 32);
-				for (i=32; i>0; i--)
-					if (m->modname[i-1]!=' ')
-						break;
-				if (i!=32)
-					m->modname[i]=0;
-				memcpy(m->composer, buf+43, 20);
-				for (i=20; i>0; i--)
-					if (m->composer[i-1]!=' ')
-						break;
-				if (i!=20)
-					m->composer[i]=0;
-				m->channels=0;
-				for (i=0; i<32; i++)
-					if (!(buf[i+70]&0x80))
-						m->channels++;
-				return 1;
+				snprintf (m->comment, sizeof (m->comment), "Wuzamod (STM 2.%d)", (unsigned char)buf[0x1f]);
 			}
-			break;
-		case mtPTM:
-			if (len>=39)
+			return 1;
+		}
+	} else if ((type==MODULETYPE("OPL")) || (type==MODULETYPE("S3M")))
+	{
+		if (len>=(64+32))
+		{
+			uint16_t cwt;
+
+			cp437_f_to_utf8_z (buf, 28, m->title, sizeof (m->title));
+			m->channels=0;
+			for (i=0; i<32; i++)
+				if (buf[64+i]!=(char)0xFF)
+					m->channels++;
+
+			cwt = uint16_little(*(uint16_t *)(buf + 0x28));
+			if ((cwt & 0xff00) == 0x1300)
 			{
-				memcpy(m->modname, buf, 28);
-				m->modname[28]=0;
-				m->channels=buf[38];
-				memset(&m->composer, 0, sizeof(m->composer));
-				return 1;
+				snprintf (m->comment, sizeof (m->comment), "ScreamTracker 3.%02x\n", cwt&0x00ff);
+			} else if ((cwt & 0xf000) == 0x2000)
+			{
+				snprintf (m->comment, sizeof (m->comment), "Imago Orpheus %d.%d\n", (cwt >> 8) & 0x000f, cwt&0x00ff);
+			} else if ((cwt & 0xf000) == 0x3000)
+			{
+				snprintf (m->comment, sizeof (m->comment), "Impulse Tracker %d.%d\n", (cwt >> 8) & 0x000f, cwt&0x00ff);
+			} else if (cwt == 0x4100)
+			{
+				snprintf (m->comment, sizeof (m->comment), "old BeRoTracker version from between 2004 and 2012\n");
+			} else if ((cwt & 0xf000) == 0x4000)
+			{
+				snprintf (m->comment, sizeof (m->comment), "Schism Tracker %d.%d\n", (cwt >> 8) & 0x000f, cwt&0x00ff);
+			} else if ((cwt & 0xf000) == 0x5000)
+			{
+				snprintf (m->comment, sizeof (m->comment), "OpenMPT %d.%d\n", (cwt >> 8) & 0x000f, cwt&0x00ff);
+			} else if ((cwt & 0xf000) == 0x6000)
+			{
+				snprintf (m->comment, sizeof (m->comment), "BeRoTracker %d.%d\n", (cwt >> 8) & 0x000f, cwt&0x00ff);
+			} else if ((cwt & 0xf000) == 0x7000)
+			{
+				snprintf (m->comment, sizeof (m->comment), "CreamTracker %d.%d\n", (cwt >> 8) & 0x000f, cwt&0x00ff);
+			} else if (cwt == 0xca00)
+			{
+				snprintf (m->comment, sizeof (m->comment), "Camoto/libgamemusic\n");
 			}
-			break;
-		case mtAMS:
-			if (len>=9)
-				if (len>=((unsigned char)buf[7])+(unsigned)8)
-				{
-					memcpy(m->modname, buf+8, (unsigned char)buf[7]);
-					m->modname[(unsigned char)buf[7]]=0;
-					memset(&m->composer, 0, sizeof(m->composer));
-					return 1;
-				}
-			break;
-		case mtMTM:
-			if (len>=24)
+
+
+			return 1;
+		}
+	} else if (type==MODULETYPE("MDL"))
+	{
+		if (len>=(70+32))
+		{
+			if (buf[4]<0x10)
 			{
-				memcpy(m->modname, buf+4, 20);
-				m->modname[20]=0;
-				m->channels=buf[33];
-				memset(&m->composer, 0, sizeof(m->composer));
-				return 1;
-			}
-			break;
-		case mt669:
-			if (len>=(2+32))
-			{
-				memcpy(m->modname, buf+2, 32);
-				m->channels=8;
-				memset(&m->composer, 0, sizeof(m->composer));
-				return 1;
-			}
-			break;
-		case mtOKT:
-			if (len>=24)
-			{
-				m->channels=4+(buf[17]&1)+(buf[19]&1)+(buf[21]&1)+(buf[23]&1);
-				memset(&m->modname, 0, sizeof(m->modname));
-				memset(&m->composer, 0, sizeof(m->composer));
-				return 1;
-			}
-			break;
-		case mtULT:
-			/* these seems like.. very  broken */
-			if (len>=(15+32))
-			{
-				m->modtype=0xFF;
-				memcpy(m->modname, buf+15, 32);
-				memset(&m->composer, 0, sizeof(m->composer));
+				m->modtype.integer.i = 0;
+				strcpy(m->title, "MDL: too old version");
 				return 0;
 			}
-			break;
-		case mtDMF:
-			if (len>=(43+20))
+
+			snprintf (m->comment, sizeof (m->comment), "DigiTrakker %d.%d", buf[4]>>4, buf[4]&0x0f);
+
+			cp437_f_to_utf8_z (buf+11, 32, m->title, sizeof (m->title));
+			for (i=strlen(m->title); i>0; i--)
 			{
-				m->modtype=0xFF;
-				memcpy(m->modname, buf+13, 30);
-				m->modname[30]=0;
-				memcpy(m->composer, buf+43, 20);
-				m->composer[20]=0;
-				m->date=uint32_little(*(uint32_t *)(buf+63))&0xFFFFFF;
-				return 0;
+				if (m->title[i-1]==' ')
+				{
+					m->title[i-1]=0;
+				} else {
+					break;
+				}
 			}
-			break;
+
+			cp437_f_to_utf8_z (buf+43, 20, m->composer, sizeof (m->composer));
+			for (i=strlen(m->composer); i>0; i--)
+			{
+				if (m->composer[i-1]==' ')
+				{
+					m->composer[i-1]=0;
+				} else {
+					break;
+				}
+			}
+
+
+			m->channels=0;
+			for (i=0; i<32; i++)
+			{
+				if (!(buf[i+70]&0x80))
+				{
+					m->channels++;
+				}
+			}
+			return 1;
+		}
+	} else if (type==MODULETYPE("PTM"))
+	{
+		if (len>=39)
+		{
+			cp437_f_to_utf8_z (buf, 28, m->title, sizeof (m->title));
+			m->channels=buf[38];
+			snprintf (m->comment, sizeof (m->comment), "PolyTracker v%d.%02d", buf[29], buf[30]);
+			return 1;
+		}
+	} else if (type==MODULETYPE("AMS"))
+	{
+		if (len>=9)
+		{
+			if (len>=((unsigned char)buf[7])+(unsigned)8)
+			{
+				cp437_f_to_utf8_z (buf + 8, (unsigned char)buf[7], m->title, sizeof (m->title));
+				snprintf (m->comment, sizeof (m->comment), "Advanced Module System %d.%02d", buf[7 + 1 + (unsigned char)buf[7]], buf[7 + (unsigned char)buf[7]]);
+				return 1;
+			}
+		}
+	} else if (type==MODULETYPE("MTM"))
+	{
+		if (len>=24)
+		{
+			cp437_f_to_utf8_z (buf + 4, 20, m->title, sizeof (m->title));
+			snprintf (m->comment, sizeof (m->comment), "MultiTracker v%d.%d", buf[4]>>4, buf[4]&0x0f);
+			m->channels=buf[33];
+			return 1;
+		}
+	} else if (type==MODULETYPE("669"))
+	{
+		if (len>=(2+32))
+		{
+			cp437_f_to_utf8_z (buf + 2, 32, m->title, sizeof (m->title));
+			m->channels=8;
+			return 1;
+		}
+	} else if (type==MODULETYPE("OKT"))
+	{
+		if (len>=24)
+		{
+			m->channels=4+(buf[17]&1)+(buf[19]&1)+(buf[21]&1)+(buf[23]&1);
+			snprintf (m->comment, sizeof (m->comment), "Oktalyzer tracker");
+			return 1;
+		}
+	} else if (type==MODULETYPE("ULT"))
+	{
+		if (len>=(15+32))
+		{
+#warning TODO, loader/player is broken!!! Needs fixing
+			m->modtype.integer.i = 0;
+			cp437_f_to_utf8_z (buf + 15, 32, m->title, sizeof (m->title));
+
+			switch (buf[14])
+			{
+				case '1': strcpy (m->comment, "UltraTracker v1.0"); break;
+				case '2': strcpy (m->comment, "UltraTracker v1.4"); break;
+				case '3': strcpy (m->comment, "UltraTracker v1.5"); break;
+				case '4': strcpy (m->comment, "UltraTracker v1.6"); break;
+				default: snprintf (m->comment, sizeof (m->comment), "UltraTracker (file version %d)", buf[14]); break;
+			}
+			return 0;
+		}
+	} else if (type==MODULETYPE("DMF"))
+	{
+		if (len>=(43+20))
+		{
+			m->modtype.integer.i = 0; // trigger read-more path with FILE I/O
+			cp437_f_to_utf8_z (buf + 13, 30, m->title, sizeof (m->title));
+			cp437_f_to_utf8_z (buf + 43, 20, m->composer, sizeof (m->composer));
+			m->date=uint32_little(*(uint32_t *)(buf+63))&0xFFFFFF;
+			switch (buf[4])
+			{
+				case 4: snprintf (m->comment, sizeof (m->comment), "XTracker 0.30beta"); break;
+				default: snprintf (m->comment, sizeof (m->comment), "XTracker (file version %d)", buf[4]); break;
+			}
+			return 0;
+		}
 	}
 	/* if we reach this point, the file is broken in length... */
 	return 0;
@@ -304,72 +359,241 @@ static int gmdReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 
 static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
 {
-	/* char ext[_MAX_EXT];*/
-	int type;
-	/* getext(ext, m->gen.name);*/
+	uint32_t type;
 
-	if ((type=gmdGetModuleType(buf, len))==mtUnRead)
+	if (!(type=gmdGetModuleType(buf, len)))
 		return 0;
 
-	m->modtype=type;
-	switch (type)
+	m->modtype.integer.i=type;
+	if (type==MODULETYPE("ULT"))
 	{
-		case mtULT:
-			if (len>=(48))
+		if (len>=(48))
+		{
+			uint8_t t1, t2;
+			if ((fp->seek_set (fp, 48 + buf[47] * 32) == 0) &&
+			    (fp->read (fp, &t1, 1) == 1) &&
+			    (fp->seek_set (fp, 256 + t1 * ( (buf[14]>='4') ? 66:64)) == 0) &&
+			    (fp->read (fp, &t2, 1) == 1))
 			{
-				uint8_t t1, t2;
-				if ((fp->seek_set (fp, 48 + buf[47] * 32) == 0) &&
-				    (fp->read (fp, &t1, 1) == 1) &&
-				    (fp->seek_set (fp, 256 + t1 * ( (buf[14]>='4') ? 66:64)) == 0) &&
-				    (fp->read (fp, &t2, 1) == 1))
-				{
-					m->channels = t2 + 1;
-					fp->seek_set (fp, 0);
-					return 1;
-				}
-			}
-			break;
-
-		case mtDMF:
-			if (fp->seek_set (fp, 66) == 0)
-			{
-				m->channels=32;
-				while (1)
-				{
-					uint32_t sig=0;
-					uint32_t len=0;
-					if (ocpfilehandle_read_uint32_le (fp, &sig))
-					{
-						break;
-					}
-					if (ocpfilehandle_read_uint32_le (fp, &len))
-					{
-						break;
-					}
-					if (sig == 0x54544150)
-					{
-						m->channels = 0;
-						if (fp->seek_cur (fp, 1024) == 0)
-						{
-							uint8_t t;
-							if (fp->read (fp, &t, 1) == 1)
-							{
-								m->channels = t;
-							}
-						}
-						break;
-					}
-					if (fp->seek_cur (fp, len) < 0)
-					{
-						break;
-					}
-				}
+				m->channels = t2 + 1;
 				fp->seek_set (fp, 0);
 				return 1;
 			}
+		}
+	} else if (type==MODULETYPE("DMF"))
+	{
+		if (fp->seek_set (fp, 66) == 0)
+		{
+			m->channels=32;
+			while (1)
+			{
+				uint32_t sig=0;
+				uint32_t len=0;
+				if (ocpfilehandle_read_uint32_le (fp, &sig))
+				{
+					break;
+				}
+				if (ocpfilehandle_read_uint32_le (fp, &len))
+				{
+					break;
+				}
+				if (sig == 0x54544150)
+				{
+					m->channels = 0;
+					if (fp->seek_cur (fp, 1024) == 0)
+					{
+						uint8_t t;
+						if (fp->read (fp, &t, 1) == 1)
+						{
+							m->channels = t;
+						}
+					}
+					break;
+				}
+				if (fp->seek_cur (fp, len) < 0)
+				{
+					break;
+				}
+			}
+			fp->seek_set (fp, 0);
+			return 1;
+		}
 	}
 	fp->seek_set (fp, 0);
 	return 0;
 }
 
-struct mdbreadinforegstruct gmdReadInfoReg = {gmdReadMemInfo, gmdReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+const char *_669_description[] =
+{
+	//                                                                          |
+	"669 files are created by Composer 669 by Renaissance (and UNIS669 Composer).",
+	"This is tracker made for MS-DOS, and has a fixed 8 channel design. Open",
+	"Cubic Player convers these internally into a generic module.",
+	NULL
+};
+
+const struct interfaceparameters _669_p =
+{
+	"playgmd", "gmdPlayer",
+	"load669", "mpLoad669"
+};
+
+const char *AMS_description[] =
+{
+	//                                                                          |
+	"AMS - Advanced Module System - files are created by Velvet Studio by Velvet",
+	"Development. Open Cubic Player convers these internally into a generic",
+	"module with some quirks in the playback.", // quirk: MOD_EXPOFREQ MOD_EXPOPITCHENV
+	NULL
+};
+
+const struct interfaceparameters AMS_p =
+{
+	"playgmd", "gmdPlayer",
+	"loadams", "mpLoadAMS"
+};
+
+const char *DMF_description[] =
+{
+	//                                                                          |
+	"DMF - Delusion/XTracker Digital Music File - files are created by X-Tracker",
+	"by D-Lusion. Files can be upto 32 channels. Open Cubic Player convers these",
+	"internally into a generic module with some quirks in the playback.", // quirk: MOD_TICK0 MOD_EXPOFREQ
+	NULL
+};
+
+const struct interfaceparameters DMF_p =
+{
+	"playgmd", "gmdPlayer",
+	"loaddmf", "mpLoadDMF"
+};
+
+
+const char *MDL_description[] =
+{
+	//                                                                          |
+	"MDL files are created by DigiTrakker by Prodatron. It is a MSDOS based",
+	"tracker with support of upto 32 channels. Open Cubic Player convers these",
+	"internally into a generic module with some quirks in the playback.", // quirk: MOD_EXPOFREQ MP_OFFSETDIV2
+	NULL
+};
+
+const struct interfaceparameters MDL_p =
+{
+	"playgmd", "gmdPlayer",
+	"loadmdl", "mpLoadMDL"
+};
+
+const char *MTM_description[] =
+{
+	//                                                                          |
+	"MTM files are created by Multi Tracker by DigiTrakker by Prodatron. It is a",
+	"MSDOS based tracker, and was the first(?) to support 32 channels. Open Cubic", 
+	"Player convers these internally into a generic module.",
+	NULL
+};
+
+const struct interfaceparameters MTM_p =
+{
+	"playgmd", "gmdPlayer",
+	"loadmtm", "mpLoadMTM"
+};
+
+const char *OKT_description[] =
+{
+	//                                                                          |
+	"OKT files are created by Oktalyzer by Armin Sander. This is an 8 channel",
+	"tracker for Amiga, which is rare. It uses combination of software rendering",
+	"and hardware rendering to achieve more than the usual 4 channels. Open Cubic",
+	"Player converts these internally into a generic module with some quirks in",
+	"the playback.", // quirk: MOD_TICK0
+	NULL
+};
+
+const struct interfaceparameters OKT_p =
+{
+	"playgmd", "gmdPlayer",
+	"loadokt", "mpLoadOKT"
+};
+
+
+/* http://fileformats.archiveteam.org/wiki/Poly_Tracker_module
+ * .ptm files are modules produced by Poly Tracker. As Poly Tracker was intended
+ * by the creator (Lone Ranger of AcmE) to be a better version of ScreamTracker,
+ * the PTM format shares many similarities with the S3M format used by
+ * ScreamTracker.
+ *
+ * There have been around a dozen versions of the PTM format, including
+ * customized test versions.
+ */
+const char *PTM_description[] =
+{
+	//                                                                          |
+	"PTM files are created by PolyTracker by Lone Ranger of AcmE. This tracker",
+	"was never released to the public, so only some few composers have used it",
+	"so there are not much music released in this format. Open Cubic Player",
+	"converts these internally into a generic module with some quirks in the",
+	"playback.", // quirk: MOD_S3M
+	NULL
+};
+
+const struct interfaceparameters PTM_p =
+{
+	"playgmd", "gmdPlayer",
+	"loadptm", "mpLoadPTM"
+};
+
+const char *STM_description[] =
+{
+	//                                                                          |
+	"STM files are created by Scream Tracker II by Future Crew (or by BMOD2STM",
+	"or WUZAMOD file converter). Scream Tracker II and 3 were among the earliest",
+	"implementation of amiga style module editing and playback implementations",
+	"on MSDOS/PC. Open Cubic Player converts these internally into a generic",
+	"module with some quirks in the playback. The Speed and Tempo commands are",
+	"estimated using speed/tempo and fine-speed/tempo commands.", // quirk: MOD_S3M
+	NULL
+};
+
+const struct interfaceparameters STM_p =
+{
+	"playgmd", "gmdPlayer",
+	"loadstm", "mpLoadSTM"
+};
+
+const char *S3M_description[] =
+{
+	//                                                                          |
+	"S3M files are created by Scream Tracker 3 by Future Crew. Files support",
+	"more channels and samples than a typical amiga module that was limited to",
+	"4 channels and 31 samples. S3M files can also contain OPL2 samples; if so",
+	"use the OPL file format instead (playback using adplug). Open Cubic Player",
+	"converts these internally into a generic module with some quirks in the",
+	"playback.", // quirk: MOD_S3M
+	NULL
+};
+
+const struct interfaceparameters S3M_p =
+{
+	"playgmd", "gmdPlayer",
+	"loads3m", "mpLoadS3M"
+};
+
+const char *ULT_description[] =
+{
+	//                                                                          |
+	"ULT files are created by UltraTracker by MAS. MS-DOS tracker made for use",
+	"together with the Gravis Ultrasound Soundcard. It features upto 32 channels",
+	"and 256K of sample data - these restrictions matches the Soundcard the",
+	"software was designed for. Open Cubic Player converts these internally into",
+	"a generic module with some quirks in the playback.", // quirk: MOD_GUSVOL
+	NULL
+};
+
+const struct interfaceparameters ULT_p =
+{
+	"playgmd", "gmdPlayer",
+	"loadult", "mpLoadULT"
+};
+
+struct mdbreadinforegstruct gmdReadInfoReg = {"MOD", gmdReadMemInfo, gmdReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

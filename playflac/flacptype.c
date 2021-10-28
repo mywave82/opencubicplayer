@@ -24,30 +24,8 @@
 #include "boot/plinkman.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
-#include "stuff/cp437.h"
 
 static struct mdbreadinforegstruct flacReadInfoReg;
-
-void _utf8_to_cp437 (const char *src, size_t srclen, char *dst, size_t dstlen)
-{
-	if (dst[0])
-	{
-		while ((*dst) && dstlen)
-		{
-			dst++;
-			dstlen--;
-		}
-		if (dstlen > 3)
-		{
-			*(dst++) = ' '; dstlen--;
-			*(dst++) = '-'; dstlen--;
-			*(dst++) = ' '; dstlen--;
-		} else {
-			return;
-		}
-	}
-	utf8_to_cp437 (src, srclen, dst, dstlen);
-}
 
 static int flacReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
 {
@@ -59,7 +37,7 @@ static int flacReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t l
 
 	if (memcmp(buf, "fLaC", 4))
 		return 0;
-	m->modtype=mtFLAC;
+	m->modtype.integer.i=MODULETYPE("FLAC");
 
 	mybuf = (const uint8_t *)buf + 4;
 	mylen = len - 4;
@@ -117,11 +95,6 @@ static int flacReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t l
 					uint32_t num, n;
 					/*int i;*/
 
-					int gottitle = 0;
-					int gotartist = 0;
-					int gotcomment = 0;
-					int gotgenre = 0;
-
 					if (mymylen<4)
 						break;
 					l = (mymybuf[0]) | (mymybuf[1]<<8) | (mymybuf[2]<<16) | (mymybuf[3]<<24);
@@ -158,36 +131,49 @@ static int flacReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t l
 
 						if ((l >= 7) && (!strncasecmp((char *)mymybuf, "artist=", 7)))
 						{
-							if (!gotartist)
+							int copy = l - 7;
+							if (copy >= sizeof (m->artist))
 							{
-								m->composer[0] = 0;
+								copy = sizeof (m->artist)-1;
 							}
-							_utf8_to_cp437 ((char *)mymybuf+7, l-7, m->composer, sizeof (m->composer));
-							gotartist = 1;
+							bzero (m->artist, sizeof (m->artist));
+							memcpy (m->artist, mymybuf + 7, copy);
 						} else if ((l >= 6) && (!strncasecmp((char *)mymybuf, "title=", 6)))
 						{
-							if (!gottitle)
+							int copy = l - 6;
+							if (copy >= sizeof (m->title))
 							{
-								m->modname[0] = 0;
+								copy = sizeof (m->title)-1;
 							}
-							_utf8_to_cp437 ((char *)mymybuf+6, l-6, m->modname, sizeof (m->modname));
-							gottitle=1;
+							bzero (m->title, sizeof (m->title));
+							memcpy (m->title, mymybuf + 6, copy);
 						} else if ((l>= 6) && (!strncasecmp((char *)mymybuf, "album=", 6)))
 						{
-							if (!gotcomment)
+							int copy = l - 6;
+							if (copy >= sizeof (m->album))
 							{
-								m->comment[0] = 0;
+								copy = sizeof (m->album)-1;
 							}
-							_utf8_to_cp437 ((char *)mymybuf+6, l-6, m->comment, sizeof (m->comment));
-							gotcomment = 1;
+							bzero (m->album, sizeof (m->album));
+							memcpy (m->album, mymybuf + 6, copy);
 						} else if ((l >= 6) &&(!strncasecmp((char *)mymybuf, "genre=", 6)))
 						{
-							if (!gotgenre)
+							int copy = l - 6;
+							if (copy >= sizeof (m->style))
 							{
-								m->style[0] = 0;
+								copy = sizeof (m->style)-1;
 							}
-							_utf8_to_cp437 ((char *)mymybuf+6, l-6, m->style, sizeof (m->style));
-							gotgenre=1;
+							bzero (m->style, sizeof (m->style));
+							memcpy (m->style, mymybuf + 6, copy);
+						} else if ((l >= 9) &&(!strncasecmp((char *)mymybuf, "composer=", 9)))
+						{
+							int copy = l - 9;
+							if (copy >= sizeof (m->composer))
+							{
+								copy = sizeof (m->composer)-1;
+							}
+							bzero (m->composer, sizeof (m->composer));
+							memcpy (m->composer, mymybuf + 9, copy);
 						}
 /*
 						fprintf(stderr, "COMMENT(%d/%d)=", n+1, num);
@@ -223,15 +209,34 @@ static int flacReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, 
 	return 0;
 }
 
+static const char *FLAC_description[] =
+{
+	//                                                                          |
+	"FLAC is an open format, royalty free, lossless, audio compressed file",
+	"format. Ideal for storing perfect backup of music collections.",
+	NULL
+};
+
+static const struct interfaceparameters FLAC_p =
+{
+	"playflac", "flacPlayer",
+	0, 0
+};
+
 static void flacEvent(int event)
 {
 	switch (event)
 	{
 		case mdbEvInit:
 		{
+			struct moduletype mt;
+
 			fsRegisterExt("FLA");
 			fsRegisterExt("FLAC");
 			fsRegisterExt("FLC");
+
+			mt.integer.i = MODULETYPE("FLAC");
+			fsTypeRegister (mt, FLAC_description, "plOpenCP", &FLAC_p);
 		}
 	}
 }
@@ -247,6 +252,6 @@ static void __attribute__((destructor))done(void)
 }
 
 
-static struct mdbreadinforegstruct flacReadInfoReg = {flacReadMemInfo, flacReadInfo, flacEvent MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct flacReadInfoReg = {"FLAC", flacReadMemInfo, flacReadInfo, flacEvent MDBREADINFOREGSTRUCT_TAIL};
 char *dllinfo = "";
 struct linkinfostruct dllextinfo = {.name = "flacptype", .desc = "OpenCP FLAC Detection (c) 2007-20 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

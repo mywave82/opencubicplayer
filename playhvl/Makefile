@@ -38,7 +38,9 @@ hvlptype.o: \
 	../config.h \
 	../types.h \
 	../filesel/filesystem.h \
-	../filesel/mdb.h
+	../filesel/mdb.h \
+	../filesel/pfilesel.h \
+	../stuff/cp437.h
 	$(CC) -c -o $@ $<
 
 hvlplay.o: \

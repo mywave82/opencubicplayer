@@ -20,7 +20,9 @@ itpptype.o: itpptype.c \
 	../config.h \
 	../types.h \
 	../filesel/filesystem.h \
-	../filesel/mdb.h
+	../filesel/mdb.h \
+	../filesel/pfilesel.h \
+	../stuff/cp437.h
 	$(CC) itpptype.c -o $@ -c
 
 itload.o: itload.c \

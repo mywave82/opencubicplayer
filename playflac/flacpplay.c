@@ -171,6 +171,7 @@ static void flacDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2],  0, 0x09, "   FLAC \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................               time: ..:.. ", 80);
 		writestring(buf[2],  8, 0x0F, currentmodname, _MAX_FNAME);
 		writestring(buf[2], 16, 0x0F, currentmodext, _MAX_EXT);
+#warning TODO, UTF-8
 		writestring(buf[2], 22, 0x0F, modname, 31);
 		if (plPause)
 			writestring(buf[2], 57, 0x0C, " paused ", 8);
@@ -227,6 +228,7 @@ static void flacDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2],  0, 0x09, "      FLAC \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................  composer: ...............................                  time: ..:..    ", 132);
 		writestring(buf[2], 11, 0x0F, currentmodname, _MAX_FNAME);
 		writestring(buf[2], 19, 0x0F, currentmodext, _MAX_EXT);
+#warning TODO UTF-8
 		writestring(buf[2], 25, 0x0F, modname, 31);
 		writestring(buf[2], 68, 0x0F, composer, 31);
 		if (plPause)
@@ -489,17 +491,18 @@ static void flacCloseFile(void)
 	FlacPicDone ();
 }
 
-static int flacOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *flacf)
+static int flacOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *flacf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	struct flacinfo inf;
 
 	if (!flacf)
 		return -1;
 
-	strncpy(currentmodname, info->name, _MAX_FNAME);
-	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
+	#warning replace currentmodname currentmodext
+	//strncpy(currentmodname, info->name, _MAX_FNAME);
+	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
-	modname=info->modname;
+	modname=info->title;
 	composer=info->composer;
 
 	fprintf(stderr, "loading %s%s...\n", currentmodname, currentmodext);

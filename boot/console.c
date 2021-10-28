@@ -24,6 +24,7 @@
  */
 
 #include "config.h"
+#include <string.h>
 #include "types.h"
 #include "console.h"
 #include "stuff/poutput.h"
@@ -33,6 +34,20 @@ void (*_plSetTextMode)(uint8_t size) = 0;
 void (*_plSetBarFont)(void);
 void (*_plDisplaySetupTextMode)(void);
 const char *(*_plGetDisplayTextModeName)(void);
+
+void displaychr (const uint16_t y, const uint16_t x, const uint8_t attr, const char chr, const uint16_t len)
+{
+	int i;
+	char buffer[10];
+	if (!len) return;
+	memset (buffer, chr, 10);
+	for (i=0; i < len; i++)
+	{
+		int l = len - i;
+		if (l > 10) l = 10;
+		_displaystr (y, x + i *10, attr, buffer, l);
+	}
+}
 
 void (*_displaystr)(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
 void (*_displaystrattr)(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len);

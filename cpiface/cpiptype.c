@@ -34,10 +34,12 @@ static int cpiReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t _i
 {
 	if (!memcmp(buf, "CPANI\x1A\x00\x00", 8))
 	{
-		strncpy(m->modname,(char *)buf+8,31);
-		if (!m->modname[0])
-			strcpy(m->modname,"wuerfel mode animation");
-		m->modtype=mtANI;
+		strncpy(m->title,(char *)buf+8,31);
+		if (!m->title[0])
+		{
+			strcpy(m->title, "wuerfel mode animation");
+		}
+		m->modtype.integer.i=MODULETYPE("ANI");
 		return 1;
 	}
 	return 0;
@@ -48,4 +50,4 @@ static int cpiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *file,
 	return cpiReadMemInfo(m, c, _ignore);
 }
 
-struct mdbreadinforegstruct cpiReadInfoReg = {cpiReadMemInfo, cpiReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+struct mdbreadinforegstruct cpiReadInfoReg = {"ANI", cpiReadMemInfo, cpiReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

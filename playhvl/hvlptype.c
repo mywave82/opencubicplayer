@@ -24,6 +24,8 @@
 #include "types.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
+#include "filesel/pfilesel.h"
+#include "stuff/cp437.h"
 
 static int hvlReadMemInfo_ahx(struct moduleinfostruct *m, const char *_buf, size_t buflen)
 {
@@ -79,7 +81,7 @@ static int hvlReadMemInfo_ahx(struct moduleinfostruct *m, const char *_buf, size
 		}
 		if (!*(tptr++))
 		{
-			snprintf (m->modname, sizeof (m->modname), "%s", bptr);
+			cp437_f_to_utf8_z ((char *)bptr, strlen ((char *)bptr), m->title, sizeof (m->title));
 			return 1;
 		}
 	}
@@ -156,7 +158,7 @@ static int hvlReadMemInfo_hvl(struct moduleinfostruct *m, const char *_buf, size
 		}
 		if (!*(tptr++))
 		{
-			snprintf (m->modname, sizeof (m->modname), "%s", bptr);
+			cp437_f_to_utf8_z ((char *)bptr, strlen ((char *)bptr), m->title, sizeof (m->title));
 			return 1;
 		}
 	}
@@ -172,7 +174,7 @@ static int hvlReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 		    ( buf[2] == 'X' ) &&
 		    ( buf[3] < 3 ) )
 		{
-			m->modtype = mtHVL;
+			m->modtype.integer.i = MODULETYPE("HVL");
 			return hvlReadMemInfo_ahx (m, buf, len);;
 		}
 
@@ -181,7 +183,7 @@ static int hvlReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 		    ( buf[2] == 'L' ) &&
 		    ( buf[3] < 2 ) )
 		{
-			m->modtype = mtHVL;
+			m->modtype.integer.i = MODULETYPE("HVL");
 			return hvlReadMemInfo_hvl (m, buf, len);;
 		}
 	}
@@ -230,7 +232,7 @@ static int hvlReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		return 0;
 	}
 
-	m->modtype = mtHVL;
+	m->modtype.integer.i = MODULETYPE("HVL");
 	buffer = malloc (filelen);
 	fp->seek_set (fp, 0);
 	if (fp->read (fp, buffer, filelen) == filelen)
@@ -242,4 +244,21 @@ static int hvlReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	return retval;
 }
 
-struct mdbreadinforegstruct hvlReadInfoReg = {hvlReadMemInfo, hvlReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+const char *HVL_description[] =
+{
+	//                                                                          |
+	"HVL/AHX file format originates in file format created in the mid '90s by",
+	"Dexter and Pink of Abyss. The fileformat does not store any samples, but",
+	"uses parameterized synthesizers. Files are 4-16 channels and also features",
+	"stereo. A modern editor also exists - Hively Tracker.",
+	NULL
+
+};
+
+struct interfaceparameters HVL_p =
+{
+	"playhvl", "hvlPlayer",
+	0, 0
+};
+
+struct mdbreadinforegstruct hvlReadInfoReg = {"HVL/AHX", hvlReadMemInfo, hvlReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

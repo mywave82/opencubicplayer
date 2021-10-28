@@ -443,11 +443,8 @@ static void plmpClose(void)
 
 static int linkhandle;
 
-static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi)
+static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi, const struct interfaceparameters *ip)
 {
-	char secname[20];
-	const char *link;
-	const char *name;
 	struct cpimoderegstruct *mod;
 	void *fp;
 	int retval;
@@ -467,28 +464,18 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	plGetLChanSample=0;
 	plGetPChanSample=0;
 
-	strcpy(secname, "filetype ");
-
-	sprintf(secname+strlen(secname), "%d", info->modtype&0xff);
-/*
-	ultoa(info.modtype&0xFF, secname+strlen(secname), 10);
-*/
-
-	link=cfGetProfileString(secname, "pllink", "");
-	name=cfGetProfileString(secname, "player", "");
-
-	linkhandle=lnkLink(link);
+	linkhandle=lnkLink(ip->pllink);
 	if (linkhandle<0)
 	{
-		fprintf(stderr, "Error finding symbol (pllink in ocp.ini) %s\n", link);
+		fprintf(stderr, "Error finding plugin (pllink) %s\n", ip->pllink);
 		return 0;
 	}
 
-	fp=lnkGetSymbol(linkhandle, name);
+	fp=lnkGetSymbol(linkhandle, ip->player);
 	if (!fp)
 	{
 		lnkFree(linkhandle);
-		fprintf(stderr, "Error finding symbol (player in ocp.ini) %s\n", name);
+		fprintf(stderr, "Error finding symbol (player) %s from plugin %s\n", ip->player, ip->pllink);
 		fprintf(stderr, "link error\n");
 		sleep(1);
 		return 0;
@@ -496,7 +483,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 
 	curplayer=(struct cpifaceplayerstruct*)fp;
 
-	retval=curplayer->OpenFile(info, fi);
+	retval=curplayer->OpenFile(info, fi, ip->ldlink, ip->loader);
 
 	if (retval)
 	{

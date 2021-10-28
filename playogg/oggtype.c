@@ -31,28 +31,7 @@
 #include "types.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
-#include "stuff/cp437.h"
-
-void _utf8_to_cp437 (const char *src, size_t srclen, char *dst, size_t dstlen)
-{
-	if (dst[0])
-	{
-		while ((*dst) && dstlen)
-		{
-			dst++;
-			dstlen--;
-		}
-		if (dstlen > 3)
-		{
-			*(dst++) = ' '; dstlen--;
-			*(dst++) = '-'; dstlen--;
-			*(dst++) = ' '; dstlen--;
-		} else {
-			return;
-		}
-	}
-	utf8_to_cp437 (src, srclen, dst, dstlen);
-}
+#include "filesel/pfilesel.h"
 
 static int oggReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
 {
@@ -62,10 +41,6 @@ static int oggReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 	const char *ptr;
 	unsigned int i;
 	char const *bufend=buf+len;
-	int gottitle = 0;
-	int gotartist = 0;
-	int gotcomment = 0;
-	int gotgenre = 0;
 
 	if (len<35)
 		return 0;
@@ -75,7 +50,7 @@ static int oggReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 	/* Vorbis audio ? */
 	if ( (*(uint32_t*)(buf+28)!=int32_little(0x726f7601)) || (*(uint16_t *)(buf+32)!=int16_little(0x6962)) || (*(uint8_t *)(buf+34)!=0x73))
 		return 0;
-	m->modtype=mtOGG;
+	m->modtype.integer.i=MODULETYPE("OGG");
 	if (len<85)
 		return 1;
 	offset=((uint8_t *)buf)[84];
@@ -104,38 +79,51 @@ static int oggReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 		if ((ptr+4+length)>bufend)
 			return 1;
 		ptr+=sizeof(uint32_t);
-		if ((length >= 6) && (!strncasecmp(ptr, "title=", 6)))
+		if ((length >= 7) && (!strncasecmp(ptr, "artist=", 7)))
 		{
-			if (!gottitle)
+			int copy = length - 7;
+			if (copy >= sizeof (m->artist))
 			{
-				m->modname[0] = 0;
+				copy = sizeof (m->artist)-1;
 			}
-			_utf8_to_cp437 (ptr+6, length-6, m->modname, sizeof (m->modname));
-			gottitle = 1;
-		} else if ((length >= 7) && (!strncasecmp(ptr, "artist=", 7)))
+			bzero (m->artist, sizeof (m->artist));
+			memcpy (m->artist, ptr + 7, copy);
+		} else if ((length >= 6) && (!strncasecmp(ptr, "title=", 6)))
 		{
-			if (!gotartist)
+			int copy = length - 7;
+			if (copy >= sizeof (m->title))
 			{
-				m->composer[0] = 0;
+				copy = sizeof (m->title)-1;
 			}
-			_utf8_to_cp437 (ptr+7, length-7, m->composer, sizeof (m->composer));
-			gotartist = 1;
+			bzero (m->title, sizeof (m->title));
+			memcpy (m->title, ptr + 7, copy);
 		} else if ((length >= 6) && (!strncasecmp(ptr, "album=", 6)))
 		{
-			if (!gotcomment)
+			int copy = length - 6;
+			if (copy >= sizeof (m->album))
 			{
-				m->comment[0] = 0;
+				copy = sizeof (m->album)-1;
 			}
-			_utf8_to_cp437 (ptr+6, length-6, m->comment, sizeof (m->comment));
-			gotcomment = 1;
+			bzero (m->album, sizeof (m->album));
+			memcpy (m->album, ptr + 6, copy);
 		} else if ((length >= 6) &&(!strncasecmp(ptr, "genre=", 6)))
 		{
-			if (!gotgenre)
+			int copy = length - 6;
+			if (copy >= sizeof (m->style))
 			{
-				m->style[0] = 0;
+				copy = sizeof (m->style)-1;
 			}
-			_utf8_to_cp437 (ptr+6, length-6, m->style, sizeof (m->style));
-			gotgenre=1;
+			bzero (m->style, sizeof (m->style));
+			memcpy (m->style, ptr + 6, copy);
+		} else if ((length >= 9) &&(!strncasecmp(ptr, "composer=", 9)))
+		{
+			int copy = length - 9;
+			if (copy >= sizeof (m->composer))
+			{
+				copy = sizeof (m->composer)-1;
+			}
+			bzero (m->composer, sizeof (m->composer));
+			memcpy (m->composer, ptr + 9, copy);
 		}
 
 		ptr+=length;
@@ -148,4 +136,19 @@ static int oggReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, co
 	return oggReadMemInfo(m, buf, len);
 }
 
-struct mdbreadinforegstruct oggReadInfoReg = {oggReadMemInfo, oggReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+const char *OGG_description[] =
+{
+	//                                                                          |
+	"OGG Vorbis is an open format, royalty free, lossy, audio compressed file",
+	"format.",
+	NULL
+};
+
+const struct interfaceparameters OGG_p =
+{
+	"playogg", "oggPlayer",
+	0, 0
+};
+
+
+struct mdbreadinforegstruct oggReadInfoReg = {"OGG", oggReadMemInfo, oggReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

@@ -80,19 +80,19 @@ static void gmdMarkInsSamp(uint8_t *ins, uint8_t *samp)
 	}
 }
 
-static int mpLoadGen(struct gmdmodule *m, struct ocpfilehandle_t *file, int type)
+static int mpLoadGen(struct gmdmodule *m, struct ocpfilehandle_t *file, struct moduletype type, const char *link, const char *name)
 {
-	char secname[20];
-	const char *link;
-	const char *name;
 	int hnd;
 	struct gmdloadstruct *loadfn;
 	volatile uint8_t retval;
 
-	sprintf(secname, "filetype %d", type&0xff);
-
-	link=cfGetProfileString(secname, "ldlink", "");
-	name=cfGetProfileString(secname, "loader", "");
+	if ((!link)||(!name))
+	{
+#ifdef LD_DEBUG
+		fprintf (stderr, "ldlink or loader information is missing\n");
+#endif
+		return errSymMod;
+	}
 
 #ifdef LD_DEBUG
 	fprintf(stderr, " (%s) Trying to locate \"%s\", func \"%s\"\n", secname, link, name);
@@ -218,6 +218,7 @@ static void gmdDrawGStrings(unsigned short (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2],  0, 0x09, " module \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................               time: ..:.. ", 80);
 		writestring(buf[2],  8, 0x0F, currentmodname, _MAX_FNAME);
 		writestring(buf[2], 16, 0x0F, currentmodext, _MAX_EXT);
+#warning modname is not UTF-8...
 		writestring(buf[2], 22, 0x0F, modname, 31);
 		if (plPause)
 			writestring(buf[2], 58, 0x0C, "paused", 6);
@@ -240,6 +241,7 @@ static void gmdDrawGStrings(unsigned short (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2],  0, 0x09, "    module \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................  composer: ...............................                  time: ..:..    ", 132);
 		writestring(buf[2], 11, 0x0F, currentmodname, _MAX_FNAME);
 		writestring(buf[2], 19, 0x0F, currentmodext, _MAX_EXT);
+#warning modname and title are now UTF-8
 		writestring(buf[2], 25, 0x0F, modname, 31);
 		writestring(buf[2], 68, 0x0F, composer, 31);
 		if (plPause)
@@ -374,7 +376,7 @@ static int gmdLooped(void)
 	return (!fsLoopMods&&mpLooped());
 }
 
-static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader)
 {
 	uint64_t i;
 	int retval;
@@ -387,13 +389,14 @@ static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 
 	patlock=0;
 
-	strncpy(currentmodname, info->name, _MAX_FNAME);
-	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
+#warning replace currentmodname currentmodext
+	//strncpy(currentmodname, info->name, _MAX_FNAME);
+	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
 	i = file->filesize (file);
 	fprintf(stderr, "loading %s%s (%uk)...\n", currentmodname, currentmodext, (unsigned int)(i>>10));
 
-	retval=mpLoadGen(&mod, file, info->modtype);
+	retval=mpLoadGen(&mod, file, info->modtype, ldlink, loader);
 
 	if (!retval)
 	{
@@ -440,14 +443,23 @@ static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	plUseDots(gmdGetDots);
 	if (mod.message)
 		plUseMessage(mod.message);
-	gmdInstSetup(mod.instruments, mod.instnum, mod.modsamples, mod.modsampnum, mod.samples, mod.sampnum, ((info->modtype==mtS3M)||(info->modtype==mtPTM))?1:((info->modtype==mtDMF)||(info->modtype==mt669))?2:0, gmdMarkInsSamp);
+	gmdInstSetup(mod.instruments, mod.instnum, mod.modsamples, mod.modsampnum, mod.samples, mod.sampnum,
+			( (info->modtype.integer.i==MODULETYPE("S3M")) || (info->modtype.integer.i==MODULETYPE("PTM")) )
+				?
+				1
+				:
+				( (info->modtype.integer.i==MODULETYPE("DMF")) || (info->modtype.integer.i==MODULETYPE("669")) )
+					?
+					2
+					:
+					0, gmdMarkInsSamp);
 	gmdChanSetup(&mod);
 	gmdTrkSetup(&mod);
 
 	if (!plCompoMode)
 	{
 		if (!*modname)
-			modname=info->modname;
+			modname=info->title;
 		if (!*composer)
 			composer=info->composer;
 	} else

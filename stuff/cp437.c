@@ -8,6 +8,7 @@
 #include "utf-8.h"
 
 static iconv_t to_cp437_from_utf8 = (iconv_t)(-1);
+static iconv_t from_cp437_to_utf8 = (iconv_t)(-1);
 
 /* table to convert codepage 437 into Unicode (UTF-8) */
 const uint32_t ocp_cp437_to_unicode[256] =
@@ -92,6 +93,48 @@ void utf8_to_cp437(const char *src, size_t srclen, char *dst, size_t dstlen)
 	iconv (to_cp437_from_utf8, 0, 0, 0, 0);
 }
 
+void cp437_f_to_utf8_z(const char *src, size_t srclen, char *dst, size_t dstlen)
+{
+	char *eob = memchr (src, 0, srclen);
+	if (eob)
+	{
+		srclen = eob - src;
+	}
+	if (!dstlen)
+	{
+		return;
+	}
+	dstlen--;
+	if (from_cp437_to_utf8 != (iconv_t)(-1))
+	{
+		while (*src && srclen && dstlen)
+		{
+			size_t res;
+
+			res = iconv(from_cp437_to_utf8, (char **)&src, &srclen, &dst, &dstlen);
+
+			if (res==(size_t)(-1))
+			{
+				if (errno==E2BIG) /* dstbuffer is full */
+					break;
+				if (errno==EILSEQ)
+				{
+					src += 1;
+					srclen -= 1;
+					*dst = '?';
+					dstlen--;
+					continue;
+				}
+				break;
+			}
+		}
+	}
+	dstlen++;
+	*dst = 0;
+	iconv (from_cp437_to_utf8, 0, 0, 0, 0);
+}
+
+
 void  __attribute__((constructor)) cp437_charset_init(void)
 {
 	to_cp437_from_utf8 = iconv_open(OCP_FONT "//TRANSLIT", "UTF-8");
@@ -105,6 +148,19 @@ void  __attribute__((constructor)) cp437_charset_init(void)
 			fprintf(stderr, "iconv_open(%s, \"UTF-8\") failed: %s\n", OCP_FONT, strerror(errno));
 		}
 	}
+
+	from_cp437_to_utf8 = iconv_open(OCP_FONT "//TRANSLIT", "UTF-8");
+	if (from_cp437_to_utf8==(iconv_t)(-1))
+	{
+		fprintf(stderr, "iconv_open(\"UTF-8\", %s) failed: %s - retrying %s\n", OCP_FONT "//TRANSLIT", strerror(errno), OCP_FONT);
+
+		from_cp437_to_utf8 = iconv_open(OCP_FONT, "UTF-8");
+		if (from_cp437_to_utf8==(iconv_t)(-1))
+		{
+			fprintf(stderr, "iconv_open(\"UTF-8\", %s) failed: %s\n", OCP_FONT, strerror(errno));
+		}
+	}
+
 }
 
 void  __attribute__((destructor)) cp437_charset_done(void)
@@ -114,5 +170,12 @@ void  __attribute__((destructor)) cp437_charset_done(void)
 		iconv_close(to_cp437_from_utf8);
 		to_cp437_from_utf8 = (iconv_t)(-1);
 	}
+
+	if (from_cp437_to_utf8 != (iconv_t)(-1))
+	{
+		iconv_close(from_cp437_to_utf8);
+		from_cp437_to_utf8 = (iconv_t)(-1);
+	}
+
 }
 

@@ -26,6 +26,7 @@
 #include "config.h"
 #include "types.h"
 #include "boot/plinkman.h"
+#include "pfilesel.h"
 #include "mdb.h"
 
 extern struct mdbreadinforegstruct
@@ -40,8 +41,55 @@ extern struct mdbreadinforegstruct
 	gmiReadInfoReg,
 	wavReadInfoReg;
 
+extern struct interfaceparameters AMS_p,
+                                  DMF_p,
+                                  HVL_p,
+                                  IT_p,
+                                  MDL_p,
+                                  MIDI_p,
+                                  MOD_p,
+                                  MPx_p,
+                                  MTM_p,
+                                  OGG_p,
+                                  OKT_p,
+                                  PTM_p,
+                                  S3M_p,
+                                  STM_p,
+                                  ULT_p,
+                                  WAV_p,
+                                 _669_p;
+
+extern const char **AMS_description,
+                  **DMF_description,
+                  **HVL_description,
+                  **IT_description,
+                  **M15_description,
+                  **M15t_description,
+                  **M31_description,
+                  **MDL_description,
+                  **MIDI_description,
+                  **MOD_description,
+                  **MODd_description,
+                  **MODf_description,
+                  **MODt_description,
+                  **MPx_description,
+                  **MTM_description,
+                  **MXM_description,
+                  **OGG_description,
+                  **OKT_description,
+                  **PTM_description,
+                  **S3M_description,
+                  **STM_description,
+                  **ULT_description,
+                  **WAV_description,
+                  **WOW_description,
+                  **XM_description,
+                 **_669_description;
+
 static void __attribute__((constructor))init(void)
 {
+	struct moduletype mt;
+
 #ifdef HAVE_MAD
 	mdbRegisterReadInfo(&ampegpReadInfoReg);
 #endif
@@ -52,6 +100,106 @@ static void __attribute__((constructor))init(void)
 	mdbRegisterReadInfo(&xmpReadInfoReg);
 	mdbRegisterReadInfo(&gmiReadInfoReg);
 	mdbRegisterReadInfo(&wavReadInfoReg);
+
+	fsRegisterExt ("DAT");
+
+	fsRegisterExt ("AMS");
+	mt.integer.i = MODULETYPE("AMS");
+	fsTypeRegister (mt, AMS_description, "plOpenCP", &AMS_p);
+
+	fsRegisterExt ("DMF");
+	mt.integer.i = MODULETYPE("DMF");
+	fsTypeRegister (mt, DMF_description, "plOpenCP", &DMF_p);
+
+	fsRegisterExt ("HVL");
+	fsRegisterExt ("AHX");
+	mt.integer.i = MODULETYPE("HVL");
+	fsTypeRegister (mt, HVL_description, "plOpenCP", &HVL_p);
+
+	fsRegisterExt ("IT");
+	mt.integer.i = MODULETYPE("IT");
+	fsTypeRegister (mt, IT_description, "plOpenCP", &IT_p);
+
+	fsRegisterExt ("MDL");
+	mt.integer.i = MODULETYPE("MDL");
+	fsTypeRegister (mt, MDL_description, "plOpenCP", &MDL_p);
+
+	fsRegisterExt ("MID");
+	fsRegisterExt ("MIDI");
+	fsRegisterExt ("RMI");
+	mt.integer.i = MODULETYPE("MIDI");
+	fsTypeRegister (mt, MIDI_description, "plOpenCP", &MIDI_p);
+
+	fsRegisterExt ("NST");
+	fsRegisterExt ("MOD");
+	fsRegisterExt ("MXM");
+	fsRegisterExt ("XM");
+	mt.integer.i = MODULETYPE("M15");
+	fsTypeRegister (mt, M15_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("M15t");
+	fsTypeRegister (mt, M15t_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("M31");
+	fsTypeRegister (mt, M31_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("MOD");
+	fsTypeRegister (mt, MOD_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("MODd");
+	fsTypeRegister (mt, MODd_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("MODf");
+	fsTypeRegister (mt, MODf_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("MODt");
+	fsTypeRegister (mt, MODt_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("MXM");
+	fsTypeRegister (mt, MXM_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("XM");
+	fsTypeRegister (mt, XM_description, "plOpenCP", &MOD_p);
+
+	fsRegisterExt ("MP1");
+	fsRegisterExt ("MP2");
+	fsRegisterExt ("MP3");
+	mt.integer.i = MODULETYPE("MPx");
+	fsTypeRegister (mt, MPx_description, "plOpenCP", &MPx_p);
+
+	fsRegisterExt ("MTM");
+	mt.integer.i = MODULETYPE("MTM");
+	fsTypeRegister (mt, MTM_description, "plOpenCP", &MTM_p);
+
+	fsRegisterExt ("OGA");
+	fsRegisterExt ("OGG");
+	mt.integer.i = MODULETYPE("OGG");
+	fsTypeRegister (mt, OGG_description, "plOpenCP", &OGG_p);
+
+	fsRegisterExt ("OKT");
+	mt.integer.i = MODULETYPE("OKT");
+	fsTypeRegister (mt, OKT_description, "plOpenCP", &OKT_p);
+
+	fsRegisterExt ("PTM");
+	mt.integer.i = MODULETYPE("PTM");
+	fsTypeRegister (mt, PTM_description, "plOpenCP", &PTM_p);
+
+	fsRegisterExt ("S3M");
+	mt.integer.i = MODULETYPE("S3M");
+	fsTypeRegister (mt, S3M_description, "plOpenCP", &S3M_p);
+
+	fsRegisterExt ("STM");
+	mt.integer.i = MODULETYPE("STM");
+	fsTypeRegister (mt, STM_description, "plOpenCP", &STM_p);
+
+	fsRegisterExt ("ULT");
+	mt.integer.i = MODULETYPE("ULT");
+	fsTypeRegister (mt, ULT_description, "plOpenCP", &ULT_p);
+
+	fsRegisterExt ("WAV");
+	fsRegisterExt ("WAVE");
+	mt.integer.i = MODULETYPE("WAV");
+	fsTypeRegister (mt, WAV_description, "plOpenCP", &WAV_p);
+
+	fsRegisterExt ("WOW");
+	mt.integer.i = MODULETYPE("WOW");
+	fsTypeRegister (mt, WOW_description, "plOpenCP", &MOD_p);
+
+	fsRegisterExt ("669");
+	mt.integer.i = MODULETYPE("669");
+	fsTypeRegister (mt, _669_description, "plOpenCP", &_669_p);
 }
 
 static void __attribute__((destructor))done(void)

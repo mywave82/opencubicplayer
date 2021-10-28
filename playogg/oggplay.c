@@ -212,7 +212,6 @@ void __attribute__ ((visibility ("internal"))) oggIdle(void)
 		return;
 	}
 
-
 	{
 		uint32_t bufplayed;
 

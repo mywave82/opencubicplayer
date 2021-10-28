@@ -14,7 +14,7 @@ struct ocpfilehandle_t;
 #define MDB_VIRTUAL    64  /* used by external API, to be removed? This entry shall not be stored to disk... */
 #define MDB_BIGMODULE 128  /* used by external API, to be removed? */
 
-#define MODULETYPE(str) (((uint8_t)str[0]) | ((uint8_t)(str[0]?str[1]:0)) | ((uint8_t)((str[0]&&str[1])?str[2]:0)) | ((uint8_t)((str[0]&&str[1]&&str[2])?str[3]:0)))
+#define MODULETYPE(str) ((uint32_t)(((uint8_t)str[0]) | (((uint8_t)(str[0]?str[1]:0))<<8) | (((uint8_t)((str[0]&&str[1])?str[2]:0))<<16) | (((uint8_t)((str[0]&&str[1]&&str[2])?str[3]:0))<<24)) )
 
 struct __attribute__((packed)) moduletype
 {
@@ -99,5 +99,8 @@ void mdbUnregisterReadInfo(struct mdbreadinforegstruct *r);
 
 extern const char mdbsigv1[60];
 extern const char mdbsigv2[60];
+
+extern uint8_t mdbCleanSlate; /* media-db needs to know that we used to be previous version database before we hashed filenames */
+
 
 #endif

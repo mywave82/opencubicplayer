@@ -573,9 +573,188 @@ static int init_modules(int argc, char *argv[])
 			cfRemoveEntry ("sound", "digitalcd");
 		}
 
-		if (epoch < 20210926)
+		if (epoch < 20211020)
 		{
-			cfSetProfileInt("version", "epoch", 20210926, 10);
+			int color;
+
+			printf("ocp.ini update (0.2.91) Removed filetype 0 (MOD)\n");
+			color = cfGetProfileInt ("filetype 0", "color", 1, 10); // default color was 1
+			cfSetProfileInt ("fscolors", "MOD", color, 10);
+			cfRemoveProfile("filetype 0");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 1 (MODd)\n");
+			color = cfGetProfileInt ("filetype 1", "color", 4, 10); // default color was 4
+			cfSetProfileInt ("fscolors", "MODd", color, 10);
+			cfRemoveProfile("filetype 1");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 2 (MODt)\n");
+			color = cfGetProfileInt ("filetype 2", "color", 4, 10); // default color was 4
+			cfSetProfileInt ("fscolors", "MODt", color, 10);
+			cfRemoveProfile("filetype 2");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 3 (M31)\n");
+			color = cfGetProfileInt ("filetype 3", "color", 4, 10); // default color was 4
+			cfSetProfileInt ("fscolors", "M31", color, 10);
+			cfRemoveProfile("filetype 3");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 6 (M15)\n");
+			color = cfGetProfileInt ("filetype 6", "color", 4, 10); // default color was 4
+			cfSetProfileInt ("fscolors", "M15", color, 10);
+			cfRemoveProfile("filetype 6");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 7 (M15t)\n");
+			color = cfGetProfileInt ("filetype 7", "color", 4, 10); // default color was 4
+			cfSetProfileInt ("fscolors", "M15t", color, 10);
+			cfRemoveProfile("filetype 7");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 8 (WOW)\n");
+			color = cfGetProfileInt ("filetype 8", "color", 4, 10); // default color was 4
+			cfSetProfileInt ("fscolors", "WOW", color, 10);
+			cfRemoveProfile("filetype 8");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 9 (S3M)\n");
+			color = cfGetProfileInt ("filetype 9", "color", 2, 10); // default color was 2
+			cfSetProfileInt ("fscolors", "S3M", color, 10);
+			cfRemoveProfile("filetype 9");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 10 (XM)\n");
+			color = cfGetProfileInt ("filetype 10", "color", 3, 10); // default color was 3
+			cfSetProfileInt ("fscolors", "XM", color, 10);
+			cfRemoveProfile("filetype 10");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 11 (MTM)\n");
+			color = cfGetProfileInt ("filetype 11", "color", 1, 10); // default color was 1
+			cfSetProfileInt ("fscolors", "MTM", color, 10);
+			cfRemoveProfile("filetype 11");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 12 (669)\n");
+			color = cfGetProfileInt ("filetype 12", "color", 2, 10); // default color was 2
+			cfSetProfileInt ("fscolors", "669", color, 10);
+			cfRemoveProfile("filetype 12");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 13 (ULT)\n");
+			color = cfGetProfileInt ("filetype 13", "color", 5, 10); // default color was 5
+			cfSetProfileInt ("fscolors", "ULT", color, 10);
+			cfRemoveProfile("filetype 13");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 14 (DMF)\n");
+			color = cfGetProfileInt ("filetype 14", "color", 6, 10); // default color was 6
+			cfSetProfileInt ("fscolors", "DMF", color, 10);
+			cfRemoveProfile("filetype 14");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 15 (OKT)\n");
+			color = cfGetProfileInt ("filetype 15", "color", 5, 10); // default color was 5
+			cfSetProfileInt ("fscolors", "OKT", color, 10);
+			cfRemoveProfile("filetype 15");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 16 (MID)\n");
+			color = cfGetProfileInt ("filetype 16", "color", 3, 10); // default color was 3
+			cfSetProfileInt ("fscolors", "MIDI", color, 10);
+			cfRemoveProfile("filetype 16");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 17 (CDA)\n");
+			color = cfGetProfileInt ("filetype 17", "color", 3, 10); // default color was 3
+			cfSetProfileInt ("fscolors", "CDA", color, 10);
+			cfRemoveProfile("filetype 17");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 18 (MIDd)\n");
+			cfRemoveProfile("filetype 18"); // After moving to TiMidity++, the MIDd override was no longer used
+
+			printf("ocp.ini update (0.2.91) Removed filetype 19 (PTM)\n");
+			color = cfGetProfileInt ("filetype 19", "color", 2, 10); // default color was 2
+			cfSetProfileInt ("fscolors", "PTM", color, 10);
+			cfRemoveProfile("filetype 19");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 21 (MDL)\n");
+			color = cfGetProfileInt ("filetype 21", "color", 6, 10); // default color was 6
+			cfSetProfileInt ("fscolors", "MDL", color, 10);
+			cfRemoveProfile("filetype 21");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 22 (AMS)\n");
+			color = cfGetProfileInt ("filetype 22", "color", 3, 10); // default color was 3
+			cfSetProfileInt ("fscolors", "AMS", color, 10);
+			cfRemoveProfile("filetype 22");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 23 (INP)\n");
+			cfRemoveProfile("filetype 23"); // visual feedback of analog inputs was never ported from the DOS version
+
+			printf("ocp.ini update (0.2.91) Removed filetype 27 (IT)\n");
+			color = cfGetProfileInt ("filetype 27", "color", 5, 10); // default color was 5
+			cfSetProfileInt ("fscolors", "IT", color, 10);
+			cfRemoveProfile("filetype 27");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 28 (WAV)\n");
+			color = cfGetProfileInt ("filetype 28", "color", 14, 10); // default color was 14
+			cfSetProfileInt ("fscolors", "WAV", color, 10);
+			cfRemoveProfile("filetype 28");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 30 (MPx)\n");
+			color = cfGetProfileInt ("filetype 30", "color", 6, 10); // default color was 6
+			cfSetProfileInt ("fscolors", "MPx", color, 10);
+			cfRemoveProfile("filetype 30");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 31 (SID)\n");
+			color = cfGetProfileInt ("filetype 31", "color", 6, 10); // default color was 6
+			cfSetProfileInt ("fscolors", "SID", color, 10);
+			cfRemoveProfile("filetype 31");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 32 (MXM)\n");
+			color = cfGetProfileInt ("filetype 32", "color", 3, 10); // default color was 3
+			cfSetProfileInt ("fscolors", "MXM", color, 10);
+			cfRemoveProfile("filetype 32");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 33 (MODf)\n");
+			color = cfGetProfileInt ("filetype 33", "color", 3, 10); // default color was 4
+			cfSetProfileInt ("fscolors", "MODf", color, 10);
+			cfRemoveProfile("filetype 33");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 35 (OGG)\n");
+			color = cfGetProfileInt ("filetype 35", "color", 6, 10); // default color was 6
+			cfSetProfileInt ("fscolors", "OGG", color, 10);
+			cfRemoveProfile("filetype 35");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 36 (OPL)\n");
+			color = cfGetProfileInt ("filetype 36", "color", 6, 10); // default color was 6
+			cfSetProfileInt ("fscolors", "OPL", color, 10);
+			cfRemoveProfile("filetype 36");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 37 (AY)\n");
+			color = cfGetProfileInt ("filetype 37", "color", 6, 10); // default color was 6
+			cfSetProfileInt ("fscolors", "AY", color, 10);
+			cfRemoveProfile("filetype 37");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 38 (FLAC)\n");
+			color = cfGetProfileInt ("filetype 38", "color", 6, 10); // default color was 6
+			cfSetProfileInt ("fscolors", "FLAC", color, 10);
+			cfRemoveProfile("filetype 38");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 39 (YM)\n");
+			color = cfGetProfileInt ("filetype 39", "color", 6, 10); // default color was 6
+			cfSetProfileInt ("fscolors", "YM", color, 10);
+			cfRemoveProfile("filetype 39");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 40 (STM)\n");
+			color = cfGetProfileInt ("filetype 40", "color", 2, 10); // default color was 2
+			cfSetProfileInt ("fscolors", "STM", color, 10);
+			cfRemoveProfile("filetype 40");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 41 (HVL)\n");
+			color = cfGetProfileInt ("filetype 41", "color", 3, 10); // default color was 3
+			cfSetProfileInt ("fscolors", "HVL", color, 10);
+			cfRemoveProfile("filetype 41");
+
+			printf("ocp.ini update (0.2.91) Removed filetype 254 (DEVv)\n");
+			color = cfGetProfileInt ("filetype 254", "color", 6, 10); // default color was 6
+			cfSetProfileInt ("fscolors", "DEVv", color, 10);
+			cfRemoveProfile("filetype 254");
+
+			printf("ocp.ini update (0.2.91) Removed modextensions\n"); /* each plugin registers this */
+			cfRemoveEntry("screen", "modextensions");
+		}
+
+		if (epoch < 20211020)
+		{
+			cfSetProfileInt("version", "epoch", 20211020, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -586,13 +765,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20210926)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20211020)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20210926\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20211020\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20210926\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20211020\n\n");
 		}
 		sleep(5);
 	}

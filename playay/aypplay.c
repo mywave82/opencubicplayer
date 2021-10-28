@@ -49,7 +49,7 @@ static time_t starttime;
 static time_t pausetime;
 static char currentmodname[_MAX_FNAME+1];
 static char currentmodext[_MAX_EXT+1];
-static char *modname;
+//static char *modname;
 static char *composer;
 static int16_t vol;
 static int16_t bal;
@@ -413,7 +413,7 @@ static int ayProcessKey(uint16_t key)
 
 }
 
-static int ayOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+static int ayOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 /*
 	struct ayinfo ay;
@@ -421,10 +421,11 @@ static int ayOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fil
 	if (!file)
 		return -1;
 
-	strncpy(currentmodname, info->name, _MAX_FNAME);
-	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
+#warning TODO replace currentmodname currentmodext
+	//strncpy(currentmodname, info->name, _MAX_FNAME);
+	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
-	modname=info->modname;
+	//modname=info->modname;
 	composer=info->composer;
 
 	fprintf(stderr, "Loading %s%s...\n", currentmodname, currentmodext);
