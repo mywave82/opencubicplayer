@@ -191,7 +191,7 @@ static void plPrepareScopeScr(void)
 		if (plOszTrigger)
 			strcat(str, ", triggered");
 	}
-	gdrawstr(4, 0, str, 48, 0x09, 0);
+	gdrawstr(4, 0, 0x09, str, 48);
 }
 
 static void plotbuf(uint32_t *buf, int len)

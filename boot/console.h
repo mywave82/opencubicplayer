@@ -3,7 +3,6 @@
 
 extern void (*_vga13)(void);
 extern void (*_plSetTextMode)(uint8_t x);
-extern void (*_plSetBarFont)(void);
 extern void (*_plDisplaySetupTextMode)(void);
 extern const char *(*_plGetDisplayTextModeName)(void);
 
@@ -17,12 +16,10 @@ extern int  (*_measurestr_utf8)(const char *src, int srclen);
 
 extern int (*_plSetGraphMode)(int size);
 extern void (*_gdrawchar)(uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b);
-extern void (*_gdrawchart)(uint16_t x, uint16_t y, uint8_t c, uint8_t f);
 extern void (*_gdrawcharp)(uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *picp);
 extern void (*_gdrawchar8)(uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b);
-extern void (*_gdrawchar8t)(uint16_t x, uint16_t y, uint8_t c, uint8_t f);
 extern void (*_gdrawchar8p)(uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *picp);
-extern void (*_gdrawstr)(uint16_t y, uint16_t x, const char *s, uint16_t len, uint8_t f, uint8_t b);
+extern void (*_gdrawstr)(uint16_t y, uint16_t x, uint8_t attr, const char *s, uint16_t len);
 extern void (*_gupdatestr)(uint16_t y, uint16_t x, const uint16_t *str, uint16_t len, uint16_t *old);
 extern void (*_gupdatepal)(uint8_t color, uint8_t red, uint8_t green, uint8_t blue);
 extern void (*_gflushpal)(void);

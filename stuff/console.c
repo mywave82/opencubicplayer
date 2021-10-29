@@ -369,12 +369,6 @@ static void __plSetTextMode(unsigned char x)
 	fprintf(stderr, "plSetTextMode not implemented in this console driver\n");
 #endif
 }
-static void __plSetBarFont(void)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "plSetBarFont not implemented in this console driver\n");
-#endif
-}
 static void __displaystr(unsigned short y, unsigned short x, unsigned char attr, const char *str, unsigned short len)
 {
 #ifdef CONSOLE_DEBUG
@@ -419,12 +413,6 @@ static void __gdrawchar(unsigned short x, unsigned short y, unsigned char c, uns
 	fprintf(stderr, "gdrawchar not implemented in this console driver\n");
 #endif
 }
-static void __gdrawchart(unsigned short x, unsigned short y, unsigned char c, unsigned char f)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "gdrawchart not implemented in this console driver\n");
-#endif
-}
 static void __gdrawcharp(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp)
 {
 #ifdef CONSOLE_DEBUG
@@ -437,19 +425,13 @@ static void __gdrawchar8(unsigned short x, unsigned short y, unsigned char c, un
 	fprintf(stderr, "gdrawchar8 not implemented in this console driver\n");
 #endif
 }
-static void __gdrawchar8t(unsigned short x, unsigned short y, unsigned char c, unsigned char f)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "gdrawchar8t not implemented in this console driver\n");
-#endif
-}
 static void __gdrawchar8p(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp)
 {
 #ifdef CONSOLE_DEBUG
 	fprintf(stderr, "gdrawchar8p not implemented in this console driver\n");
 #endif
 }
-static void __gdrawstr(unsigned short y, unsigned short x, const char *s, unsigned short len, unsigned char f, unsigned char b)
+static void __gdrawstr(uint16_t y, uint16_t x, uint8_t attr, const char *s, uint16_t len)
 {
 #ifdef CONSOLE_DEBUG
 	fprintf(stderr, "gdrawstr not implemented in this console driver\n");
@@ -558,7 +540,6 @@ static const char *__plGetDisplayTextModeName(void)
 static void reset_api(void)
 {
 	_plSetTextMode=__plSetTextMode;
-	_plSetBarFont=__plSetBarFont;
 	_displaystr=__displaystr;
 	_displaystrattr=__displaystrattr;
 	_displayvoid=__displayvoid;
@@ -571,10 +552,8 @@ static void reset_api(void)
 
 	_plSetGraphMode=__plSetGraphMode;
 	_gdrawchar=__gdrawchar;
-	_gdrawchart=__gdrawchart;
 	_gdrawcharp=__gdrawcharp;
 	_gdrawchar8=__gdrawchar8;
-	_gdrawchar8t=__gdrawchar8t;
 	_gdrawchar8p=__gdrawchar8p;
 	_gdrawstr=__gdrawstr;
 	_gupdatestr=__gupdatestr;

@@ -152,7 +152,7 @@ static void plPrepareScopeScr(void)
 			else
 				strcat(str, "solo");
 	}
-	gdrawstr(4, 0, str, 48, 0x09, 0);
+	gdrawstr(4, 0, 0x09, str, 48);
 }
 
 static int plScopesKey(uint16_t key)

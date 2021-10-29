@@ -155,7 +155,7 @@ static void plPrepareStripes(void)
 
 		memset(plVidMem+32*1024, 128, 32*1024);
 		memset(plVidMem + 128 * 1024, 128, 512 * 1024 );
-		gdrawstr(42, 1, "scale: ", 7, 0x09, 0);
+		gdrawstr(42, 1, 0x09, "scale: ", 7);
 		for (i=0; i<256; i++)
 		{
 			int j;
@@ -172,7 +172,7 @@ static void plPrepareStripes(void)
 	} else {
 		int i;
 		memset(plVidMem+96*640, 128, 170 * 1024);
-		gdrawstr(24, 1, "scale: ", 7, 0x09, 0);
+		gdrawstr(24, 1, 0x09, "scale: ", 7);
 		for (i=0; i<128; i++)
 		{
 			int j;
@@ -203,7 +203,7 @@ static void plPrepareStripeScr(void)
 	if (plStripeBig)
 		strcat(str, "big ");
 	strcat(str, "graphic spectrum analyser");
-	gdrawstr(4, 0, str, 48, 0x09, 0);
+	gdrawstr(4, 0, 0x09, str, 48);
 
 	strcpy(str, "max: ");
 	convnum(plAnalRate>>1, str+strlen(str), 10, 5, 1);
@@ -213,9 +213,9 @@ static void plPrepareStripeScr(void)
 	strcat(str, ")");
 
 	if (plStripeBig)
-		gdrawstr(42, 96, str, 32, 0x09, 0);
+		gdrawstr(42, 96, 0x09, str, 32);
 	else
-		gdrawstr(24, 48, str, 32, 0x09, 0);
+		gdrawstr(24, 48, 0x09, str, 32);
 }
 
 static void reduceana(unsigned short *a, short len)

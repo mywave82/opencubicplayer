@@ -1248,7 +1248,6 @@ int sdl_init(void)
 	_gdrawstr=generic_gdrawstr;
 	_gdrawchar8=generic_gdrawchar8;
 	_gdrawchar8p=generic_gdrawchar8p;
-	_gdrawchar8t=generic_gdrawchar8t;
 	_gdrawcharp=generic_gdrawcharp;
 	_gdrawchar=generic_gdrawchar;
 	_gupdatestr=generic_gupdatestr;

@@ -287,7 +287,7 @@ static void plPrepareDotsScr()
 		case 2: strcpy(str, "   stereo note cones"); break;
 		case 3: strcpy(str, "   stereo note dots"); break;
 	}
-	gdrawstr(4, 0, str, 48, 0x09, 0);
+	gdrawstr(4, 0, 0x09, str, 48);
 }
 
 static void plPrepareDots()

@@ -168,31 +168,6 @@ void generic_gdrawchar8(unsigned short x, unsigned short y, unsigned char c, uns
 	}
 }
 
-void generic_gdrawchar8t(unsigned short x, unsigned short y, unsigned char c, unsigned char f)
-{
-	unsigned char *cp=plFont88[c];
-	unsigned long p=y*plScrLineBytes+x;
-	uint8_t *scr;
-	short i,j;
-
-	scr=plVidMem+p;
-
-	f=plpalette[f]&0x0f;
-
-	for (i=0; i<8; i++)
-	{
-		unsigned char bitmap=*cp++;
-		for (j=0; j<8; j++)
-		{
-			if (bitmap&128)
-				*scr=f;
-			scr++;
-			bitmap<<=1;
-		}
-		scr+=plScrLineBytes-8;
-	}
-}
-
 void generic_gdrawchar8p(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp)
 {
 	unsigned char *cp=plFont88[c];
@@ -229,16 +204,17 @@ void generic_gdrawchar8p(unsigned short x, unsigned short y, unsigned char c, un
 	}
 }
 
-void generic_gdrawstr(unsigned short y, unsigned short x, const char *str, unsigned short len, unsigned char f, unsigned char b)
+void generic_gdrawstr(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
 {
 	unsigned long p=16*y*plScrLineBytes+x*8;
 	uint8_t *sp;
-	short i,j,k;
+	uint16_t i,j,k;
+	uint8_t f, b;
 
 	sp=plVidMem+p;
 
-	f=plpalette[f]&0x0f;
-	b=plpalette[b]&0x0f;
+	f=plpalette[attr >> 4  ]&0x0f;
+	b=plpalette[attr & 0x0f]&0x0f;
 	for (i=0; i<16; i++)
 	{
 		const unsigned char *s=(unsigned char *)str;

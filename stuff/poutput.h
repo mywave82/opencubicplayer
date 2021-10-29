@@ -7,21 +7,25 @@
 
 #define vga13() (_vga13())
 #define plSetTextMode(x) (_plSetTextMode(x))
-#define plSetBarFont(x) (_plSetBarFont(x))
 void displaychr (const uint16_t y, const uint16_t x, const uint8_t attr, const char chr, const uint16_t len);
+#define displayvoid(y, x, len) (_displayvoid(y, x, len))
 #define displaystr(y, x, attr, str, len) (_displaystr(y, x, attr, str, len))
 #define displaystrattr(y, x, buf, len) (_displaystrattr(y, x, buf, len))
 #define displaystr_utf8(y, x, attr, str, len) (_displaystr_utf8(y, x, attr, str, len))
 #define measurestr_utf8(str, strlen) (_measurestr_utf8(str, strlen))
-#define displayvoid(y, x, len) (_displayvoid(y, x, len))
 #define plSetGraphMode(size) (_plSetGraphMode(size))
+
+/* 8x16 OCP font, front and back color */
 #define gdrawchar(x, y, c, f, b) (_gdrawchar(x, y, c, f, b))
-#define gdrawchart(x, y, c, f) (_gdrawchart(x, y, c, f))
+/* 8x16 OCP font, front color, picp for background (or zero if no picture present) -  picp needs to be same format/size as plScrLineBytes */
 #define gdrawcharp(x, y, c, f, picp) (_gdrawcharp(x, y, c, f, picp))
+
+/* 8x8 OCP font, front and back color */
 #define gdrawchar8(x, y, c, f, b) (_gdrawchar8(x, y, c, f, b))
-#define gdrawchar8t(x, y, c, f) (_gdrawchar8t(x, y, c, f))
+/* 8x8 OCP font, front color, picp for background (or zero if no picture present) -  picp needs to be same format/size as plScrLineBytes */
 #define gdrawchar8p(x, y, c, f, picp) (_gdrawchar8p(x, y, c, f, picp))
-#define gdrawstr(y, x, s, len, f, b) (_gdrawstr(y, x, s, len, f, b))
+
+#define gdrawstr(y, x, attr, s, len) (_gdrawstr(y, x, attr, s, len))
 #define gupdatestr(y, x, str, len, old) (_gupdatestr(y, x, str, len, old))
 #define drawbar(x, yb, yh, hgt, c) (_drawbar(x, yb, yh, hgt, c))
 #define idrawbar(x, yb, yh, hgt, c) (_idrawbar(x, yb, yh, hgt, c))
@@ -72,10 +76,10 @@ extern unsigned int plScrHeight;        /* How many textlines can we currently f
 extern unsigned int plScrWidth;         /* How many characters can we currently fir on a line */
 extern enum vidType plVidType;                  /* vidNorm for textmode only, or vidVESA for graphical support also */
 extern unsigned char plScrType;         /* Last set textmode */
-extern int plScrMode;                   /* If we are in graphical mode, this value is set to either 13 (for wurfel), 100 for 640x480 or 101 for 1024x768 */
+extern int plScrMode;                   /* If we are in graphical mode, this value is set to either 13 (for wurfel), 100 for 640x480, 101 for 1024x768, 255 for custom */
 extern uint8_t *plVidMem;               /* This points to the current selected bank, and should atleast provide 64k of available bufferspace */
 extern int plScrLineBytes;              /* How many bytes does one line from plVidMem use (can be padded) */
-extern int plScrLines;                  /* How many graphical lines do we have, should always be 480 or 768, but can be padded */
+extern int plScrLines;                  /* How many graphical lines do we have */
 extern void make_title(char *part);
 
 extern int plScrTextGUIOverlay;         /* Is text rendered virtually into a framebuffer, AND supports overlays? */
@@ -99,13 +103,11 @@ extern FontSizeEnum plCurrentFont; /* Only drivers can change this, and their he
 
 extern unsigned char plpalette[256];
 
-extern void generic_gdrawstr(unsigned short y, unsigned short x, const char *str, unsigned short len, unsigned char f, unsigned char b);
+extern void generic_gdrawstr(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
 extern void generic_gdrawchar8(unsigned short x, unsigned short y, unsigned char c, unsigned char f, unsigned char b);
-extern void generic_gdrawchar8t(unsigned short x, unsigned short y, unsigned char c, unsigned char f);
 extern void generic_gdrawchar8p(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp);
-extern void generic_gdrawstr(unsigned short y, unsigned short x, const char *str, unsigned short len, unsigned char f, unsigned char b);
-extern void generic_gdrawcharp(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp);
 extern void generic_gdrawchar(unsigned short x, unsigned short y, unsigned char c, unsigned char f, unsigned char b);
+extern void generic_gdrawcharp(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp);
 extern void generic_gupdatestr(unsigned short y, unsigned short x, const uint16_t *str, unsigned short len, uint16_t *old);
 #endif
 

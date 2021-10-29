@@ -244,20 +244,20 @@ static void gDrawBox(void)
 
 	DrawBoxCommon ();
 
-	gdrawstr(top-1, left-1, "\xda", 1, 0x04, 0x00);
+	gdrawstr(top-1, left-1, 0x04, "\xda", 1);
 	for (i=left;i<(left+width+1);i++)
-		gdrawstr(top-1, i, "\xc4", 1, 0x04, 0x00);
-	gdrawstr(top-1, left + width/2 - 10, " Keyboard short-cuts ", 21, 0x04, 0x00);
-	gdrawstr(top-1, left+width+1, "\xbf", 1, 0x04, 0x00);
+		gdrawstr(top-1, i, 0x04, "\xc4", 1);
+	gdrawstr(top-1, left + width/2 - 10, 0x04, " Keyboard short-cuts ", 21);
+	gdrawstr(top-1, left+width+1, 0x04, "\xbf", 1);
 	for (i=0; i<height; i++)
 	{
-		gdrawstr(i + top, left         - 1,           "\xb3",        1, 0x04, 0x00);
-		gdrawstr(i + top, left + width + 1, (i!=vpos)?"\xb3":"\xdd", 1, 0x04, 0x00);
+		gdrawstr(i + top, left         - 1, 0x04,           "\xb3",        1);
+		gdrawstr(i + top, left + width + 1, 0x04, (i!=vpos)?"\xb3":"\xdd", 1);
 	}
-	gdrawstr(top+height, left-1, "\xc0", 1, 0x04, 0x00);
+	gdrawstr(top+height, left-1, 0x04, "\xc0", 1);
 	for (i=left;i<(left+width+1);i++)
-		gdrawstr(top+height, i, "\xc4", 1, 0x04, 0x00);
-	gdrawstr(top+height, left+width+1, "\xd9", 1, 0x04, 0x00);
+		gdrawstr(top+height, i, 0x04, "\xc4", 1);
+	gdrawstr(top+height, left+width+1, 0x04, "\xd9", 1);
 }
 static void DrawBox(void)
 {
@@ -333,8 +333,8 @@ int cpiKeyHelpDisplay(void)
 		}
 		if ((plScrMode==100)||(plScrMode==101)||(plScrMode==13))
 		{
-			gdrawstr(j+top, left, s, 16, colb, 0x00);
-			gdrawstr(j+top, left+16, keymapping[j+offset].name, width-15, cola, 0x00);
+			gdrawstr(j+top, left, colb, s, 16);
+			gdrawstr(j+top, left+16, cola, keymapping[j+offset].name, width-15);
 		} else {
 			displaystr(j+top, left, colb, s, 16);
 			displaystr(j+top, left+16, cola, keymapping[j+offset].name, width-15);
@@ -342,7 +342,7 @@ int cpiKeyHelpDisplay(void)
 	}
 	if ((plScrMode==100)||(plScrMode==101)||(plScrMode==13))
 		for (;j<height;j++)
-			gdrawstr(j+top, left, "", width, 0x00, 0x00);
+			gdrawstr(j+top, left, 0x00, "", width);
 
 	while (ekbhit())
 	{

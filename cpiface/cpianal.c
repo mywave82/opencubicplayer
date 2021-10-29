@@ -308,7 +308,6 @@ static int AnalCan(void)
 
 static void AnalSetMode(void)
 {
-	plSetBarFont();
 }
 
 static int AnalEvent(int ev)
