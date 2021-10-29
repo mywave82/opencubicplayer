@@ -1,6 +1,7 @@
 /* unit test for filesystem-tar.c */
 
 #include "filesystem-tar.c"
+#include <unistd.h>
 #include "filesystem-dir-mem.h"
 #include "filesystem-file-mem.h"
 

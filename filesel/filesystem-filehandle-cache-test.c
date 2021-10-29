@@ -7,6 +7,7 @@ static void dump_self (struct cache_ocpfilehandle_t *self);
 
 #include "filesystem-filehandle-cache.c"
 
+#include <unistd.h>
 
 #include "dirdb.h"
 #include "filesystem-dir-mem.h"
