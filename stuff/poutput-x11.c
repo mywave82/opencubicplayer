@@ -2017,8 +2017,6 @@ int x11_init(int use_explicit)
 	_displayvoid=swtext_displayvoid;
 	_displaystrattr=swtext_displaystrattr_cp437;
 	_displaystr=swtext_displaystr_cp437;
-	_displaystrattr_iso8859latin1=swtext_displaystrattr_iso8859latin1;
-	_displaystr_iso8859latin1=swtext_displaystr_iso8859latin1;
 	_displaystr_utf8=swtext_displaystr_utf8;
 	_measurestr_utf8=swtext_measurestr_utf8;
 

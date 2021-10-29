@@ -12,9 +12,6 @@ extern void (*_displaystr)(uint16_t y, uint16_t x, uint8_t attr, const char *str
 extern void (*_displaystrattr)(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len);
 extern void (*_displayvoid)(uint16_t y, uint16_t x, uint16_t len);
 
-extern void (*_displaystr_iso8859latin1)(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
-extern void (*_displaystrattr_iso8859latin1)(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len);
-
 extern void (*_displaystr_utf8)(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
 extern int  (*_measurestr_utf8)(const char *src, int srclen);
 
@@ -37,8 +34,6 @@ extern int (*_validkey)(uint16_t);
 extern void (*_drawbar)(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c);
 extern void (*_idrawbar)(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c);
 
-extern void (*_Screenshot)(void);
-extern void (*_TextScreenshot)(int scrType);
 extern void (*_RefreshScreen)(void);
 
 extern void (*_setcur)(uint16_t y, uint16_t x);

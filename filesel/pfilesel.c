@@ -2861,12 +2861,6 @@ superbreak:
 
 			switch (c)
 			{
-#ifdef DOS32
-				case 0xF8: /* : screen shot */
-					TextScreenshot(fsScrType);
-					break;
-#endif
-
 				case KEY_ALT_K:
 					cpiKeyHelpClear();
 					cpiKeyHelp(KEY_ESC, "Exit");

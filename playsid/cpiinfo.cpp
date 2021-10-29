@@ -4,6 +4,7 @@ extern "C"
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "stuff/latin1.h"
 #include "stuff/poutput.h"
 #include "cpiface/cpiface.h"
 }
@@ -16,6 +17,8 @@ static int SidInfoHeight;
 static int SidInfoWidth;
 static int SidInfoDesiredHeight;
 static int SidInfoScroll;
+
+static char SidUTF8Buffer[CONSOLE_MAX_X*2+1];
 
 #define COLTITLE1 0x01
 #define COLTITLE1H 0x09
@@ -81,6 +84,7 @@ static void SidInfoDraw(int focus)
 	int line = 0;
 	const char *temp;
 	char StringBuffer[64];
+	const char *tmp;
 
 	while (SidInfoScroll && ((SidInfoScroll + SidInfoHeight) > SidInfoDesiredHeight))
 	{
@@ -148,7 +152,9 @@ static void SidInfoDraw(int focus)
 				case 2:  displaystr(SidInfoFirstLine + line, 3, 0x0b, "Released     : ", 15); break;
 				default: displaystr(SidInfoFirstLine + line, 3, 0x0b, "(info)       : ", 15); break;
 			}
-			displaystr_iso8859latin1(SidInfoFirstLine + line, 18, 0x05, sidInfoString(i), SidInfoWidth - 18 - 2);
+			tmp = sidInfoString(i);
+			latin1_f_to_utf8_z (tmp, strlen (tmp), SidUTF8Buffer, sizeof (SidUTF8Buffer));
+			displaystr_utf8(SidInfoFirstLine + line, 18, 0x05, sidInfoString(i), SidInfoWidth - 18 - 2);
 			displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
 		}
 		line++;
@@ -160,7 +166,9 @@ static void SidInfoDraw(int focus)
 		{
 			displaystr              (SidInfoFirstLine + line,  0, 0x07, " \xb3 ", 3);
 			displaystr              (SidInfoFirstLine + line,  3, 0x0b, "Comment      : ", 15);
-			displaystr_iso8859latin1(SidInfoFirstLine + line, 18, 0x05, sidCommentString(i), SidInfoWidth - 18 - 2);
+			tmp = sidCommentString(i);
+			latin1_f_to_utf8_z (tmp, strlen (tmp), SidUTF8Buffer, sizeof (SidUTF8Buffer));
+			displaystr_utf8(SidInfoFirstLine + line, 18, 0x05, SidUTF8Buffer, SidInfoWidth - 18 - 2);
 			displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
 		}
 		line++;

@@ -780,13 +780,6 @@ static interfaceReturnEnum plmpDrawScreen(void)
 					DEBUGSTR("pattern loop disabled");
 			#endif
 			#endif
-			#ifdef DOS32 /* TODO*/
-			case 0xF8:
-				curmode->Draw();
-				needdraw = 0;
-				Screenshot();
-				break;
-			#endif
 			case KEY_ALT_K:
 				cpiKeyHelp(KEY_ESC, "Exit");
 				cpiKeyHelp(_KEY_ENTER, "Next song");

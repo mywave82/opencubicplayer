@@ -53,12 +53,8 @@ void (*_displaystr)(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint1
 void (*_displaystrattr)(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len);
 void (*_displayvoid)(uint16_t y, uint16_t x, uint16_t len);
 
-void (*_displaystr_iso8859latin1)(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
-void (*_displaystrattr_iso8859latin1)(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len);
-
 void (*_displaystr_utf8)(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
 int  (*_measurestr_utf8)(const char *src, int srclen);
-
 
 int (*_plSetGraphMode)(int); /* -1 reset, 0 640x480 1 1024x768 */
 void (*_gdrawchar)(uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b);
@@ -78,10 +74,6 @@ int (*_validkey)(uint16_t);
 
 void (*_drawbar)(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c);
 void (*_idrawbar)(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c);
-
-
-void (*_Screenshot)(void);
-void (*_TextScreenshot)(int scrType);
 
 void (*_setcur)(uint16_t y, uint16_t x) ;
 void (*_setcurshape)(uint16_t shape);

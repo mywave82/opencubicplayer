@@ -393,70 +393,19 @@ static void __displayvoid(unsigned short y, unsigned short x, unsigned short len
 	fprintf(stderr, "displayvoid not implemented in this console driver\n");
 #endif
 }
-static void __displaystr_iso8859latin1(unsigned short y, unsigned short x, unsigned char attr, const char *str, unsigned short len)
-{ /* fallback */
-	while (len)
-	{
-		char temp = latin1_table[*(unsigned char *)str];
-		_displaystr(y, x, attr, &temp, 1);
-		len--;
-		if (*str)
-		{
-			str++;
-		}
-		x++;
-	}
-}
-static void __displaystrattr_iso8859latin1(unsigned short y, unsigned short x, const unsigned short *buf, unsigned short len)
-{ /* fallback */
-	while (len)
-	{
-		unsigned short temp = latin1_table[(*buf) & 0xff] | (*buf & 0xff00);
-		_displaystrattr(y, x, &temp, 1);
-		len--;
-		if (*buf)
-		{
-			buf++;
-		}
-		x++;
-	}
-
-}
 static void __displaystr_utf8(unsigned short y, unsigned short x, unsigned char attr, const char *str, unsigned short len)
-{ /* fallback */
-	while (len)
-	{
-		int codepoint;
-		int inc = 0;
-		uint8_t temp;
-		codepoint = utf8_decode (str, strlen (str), &inc);
-		str += inc;
-		if (codepoint > 255)
-		{
-			temp = '?';
-		} else {
-			temp = codepoint;
-		}
-		_displaystr_iso8859latin1(y, x, attr, (char *)&temp, 1);
-		len--;
-		x++;
-	}
+{
+#ifdef CONSOLE_DEBUG
+	fprintf(stderr, "displaystr_utf8 not implemented in this console driver\n");
+#endif
 }
 static int __measurestr_utf8 (const char *src, int srclen)
-{ /* fallback */
-	int retval = 0;
-	while (strlen > 0)
-	{
-		int inc = 0;
-		utf8_decode (src, srclen, &inc);
-		src += inc;
-		srclen -= inc;
-		retval++;
-	}
-	return retval;
+{
+#ifdef CONSOLE_DEBUG
+	fprintf(stderr, "displaystr_utf8 not implemented in this console driver\n");
+#endif
+	return 0;
 }
-
-
 static int __plSetGraphMode(int size)
 {
 #ifdef CONSOLE_DEBUG
@@ -560,18 +509,6 @@ static void __idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint3
 #endif
 }
 
-static void __Screenshot(void)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "Screenshot not implemented in this console driver\n");
-#endif
-}
-static void __TextScreenshot(int scrType)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "TextScreenshot not implemented in this console driver\n");
-#endif
-}
 static void __setcur(uint16_t y, uint16_t x)
 {
 #ifdef CONSOLE_DEBUG
@@ -626,8 +563,6 @@ static void reset_api(void)
 	_displaystrattr=__displaystrattr;
 	_displayvoid=__displayvoid;
 
-	_displaystr_iso8859latin1=__displaystr_iso8859latin1;
-	_displaystrattr_iso8859latin1=__displaystrattr_iso8859latin1;
 	_displaystr_utf8=__displaystr_utf8;
 	_measurestr_utf8 = __measurestr_utf8;
 
@@ -653,8 +588,6 @@ static void reset_api(void)
 	_drawbar=__drawbar;
 	_idrawbar=__idrawbar;
 
-	_Screenshot=__Screenshot;
-	_TextScreenshot=__TextScreenshot;
 	_setcur=__setcur;
 	_setcurshape=__setcurshape;
 

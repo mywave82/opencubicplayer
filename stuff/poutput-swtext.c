@@ -590,22 +590,6 @@ void swtext_displaystrattr_cp437(uint16_t y, uint16_t x, const uint16_t *buf, ui
 	}
 }
 
-void swtext_displaystrattr_iso8859latin1(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len)
-{
-	switch (plCurrentFont)
-	{
-		case _8x16:
-			swtext_displaystrattr_unifont_8x16 (y, x, buf, len, latin1_to_unicode);
-			break;
-		case _8x8:
-			swtext_displaystrattr_unifont_8x8  (y, x, buf, len, latin1_to_unicode);
-			break;
-		case _4x4:
-			swtext_displaystrattr_cpfont_4x4 (y, x, buf, len, latin1_table);
-			break;
-	}
-}
-
 void swtext_displaystr_cp437(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
 {
 	switch (plCurrentFont)
@@ -618,22 +602,6 @@ void swtext_displaystr_cp437(uint16_t y, uint16_t x, uint8_t attr, const char *s
 			break;
 		case _4x4:
 			swtext_displaystr_cpfont_4x4 (y, x, attr, str, len, 0);
-			break;
-	}
-}
-
-void swtext_displaystr_iso8859latin1(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
-{
-	switch (plCurrentFont)
-	{
-		case _8x16:
-			swtext_displaystr_unifont_8x16 (y, x, attr, str, len, latin1_to_unicode);
-			break;
-		case _8x8:
-			swtext_displaystr_unifont_8x8  (y, x, attr, str, len, latin1_to_unicode);
-			break;
-		case _4x4:
-			swtext_displaystr_cpfont_4x4 (y, x, attr, str, len, latin1_table);
 			break;
 	}
 }

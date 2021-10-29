@@ -17,11 +17,7 @@ void swtext_displayvoid(uint16_t y, uint16_t x, uint16_t len);
 
 void swtext_displaystrattr_cp437(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len);
 
-void swtext_displaystrattr_iso8859latin1(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len);
-
 void swtext_displaystr_cp437(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
-
-void swtext_displaystr_iso8859latin1(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
 
 void swtext_displaystr_utf8(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
 

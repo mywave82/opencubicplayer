@@ -11,8 +11,6 @@
 void displaychr (const uint16_t y, const uint16_t x, const uint8_t attr, const char chr, const uint16_t len);
 #define displaystr(y, x, attr, str, len) (_displaystr(y, x, attr, str, len))
 #define displaystrattr(y, x, buf, len) (_displaystrattr(y, x, buf, len))
-#define displaystr_iso8859latin1(y, x, attr, str, len) (_displaystr_iso8859latin1(y, x, attr, str, len))
-#define displaystrattr_iso8859latin1(y, x, buf, len) (_displaystrattr_iso8859latin1(y, x, buf, len))
 #define displaystr_utf8(y, x, attr, str, len) (_displaystr_utf8(y, x, attr, str, len))
 #define measurestr_utf8(str, strlen) (_measurestr_utf8(str, strlen))
 #define displayvoid(y, x, len) (_displayvoid(y, x, len))
@@ -31,8 +29,6 @@ void displaychr (const uint16_t y, const uint16_t x, const uint8_t attr, const c
 #define gflushpal() (_gflushpal())
 #define plDisplaySetupTextmode() (_plDisplaySetupText())
 #define plGetDisplayTextModeName() (_plGetDisplayTextModeName())
-#define Screenshot() (_Screenshot())
-#define TextScreenshot(scrType) (_TextScreenshot(scrType))
 #define RefreshScreen() (_RefreshScreen())
 
 #define ekbhit() (_ekbhit())

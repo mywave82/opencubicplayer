@@ -163,50 +163,6 @@ static void displaystr(unsigned short y, unsigned short x, unsigned char attr, c
 	}
 }
 
-static void displaystr_iso8859latin1(unsigned short y, unsigned short x, unsigned char attr, const char *buf, unsigned short len)
-{
-#ifdef HAVE_NCURSESW
-	if (useunicode)
-	{
-		wchar_t buffer[CONSOLE_MAX_X+1];
-		wchar_t *ptr = buffer;
-
-		while(len)
-		{
-			unsigned char ch=(*buf)&0xff;
-			*(ptr++) = chr_table_iso8859latin1[ch];
-
-			if (*buf)
-				buf++;
-			len--;
-		}
-		attrset (attr_table[plpalette[attr]]);
-		*ptr = 0;
-		mvaddwstr(y, x, buffer);
-	} else
-#endif
-	{
-		move(y, x);
-		while(len)
-		{
-			unsigned char ch=(*buf)&0xff;
-			chtype output;
-			if (((!ch)||(ch==' '))&&(!(attr&0x80))&&fixbadgraphic)
-			{
-				output=chr_table_iso8859latin1['X']|attr_table[plpalette[(attr&0xf0)+((attr>>4)&0xf)]];
-				addch(output);
-			} else {
-				output=chr_table_iso8859latin1[ch]|attr_table[plpalette[attr]];
-				addch(output);
-			}
-
-			if (*buf)
-				buf++;
-			len--;
-		}
-	}
-}
-
 static void displaystr_utf8(unsigned short y, unsigned short x, unsigned char attr, const char *buf, unsigned short len)
 {
 #ifdef HAVE_NCURSESW
@@ -392,71 +348,6 @@ static void displaystrattr(unsigned short y, unsigned short x, const uint16_t *b
 			} else {
 				first=1;
 				output=chr_table[ch]|attr_table[plpalette[attr]];
-				addch(output);
-			}
-			buf++;
-			len--;
-		}
-	}
-}
-
-static void displaystrattr_iso8859latin1(unsigned short y, unsigned short x, const uint16_t *buf, unsigned short len)
-{
-#ifdef HAVE_NCURSESW
-	if (useunicode)
-	{
-		wchar_t buffer[CONSOLE_MAX_X+1];
-		wchar_t *ptr = buffer;
-		unsigned char lastattr = ((*buf)>>8);
-		move (y, x);
-
-		while(len)
-		{
-			unsigned char ch=(*buf)&0xff;
-			unsigned char attr=((*buf)>>8);
-
-			if (lastattr != attr)
-			{
-				attrset (attr_table[plpalette[lastattr]]);
-				*ptr = 0;
-				addwstr (buffer);
-				ptr = buffer;
-				lastattr = attr;
-			}
-
-			*(ptr++) = chr_table_iso8859latin1[ch];
-
-			buf++;
-			len--;
-		}
-		attrset (attr_table[plpalette[lastattr]]);
-		*ptr=0;
-		addwstr(buffer);
-	} else
-#endif
-	{
-		int first=1; /* we need this since we sometimes place the cursor at empty spots... dirty */
-
-		move(y, x);
-		while(len)
-		{
-			unsigned char ch=(*buf)&0xff;
-			unsigned char attr=((*buf)>>8);
-			chtype output;
-
-			if (((!ch)||(ch==' '))&&(!(attr&0x80))&&fixbadgraphic)
-			{
-				if (first)
-				{
-					output=chr_table_iso8859latin1[ch]|attr_table[plpalette[attr]];
-					first=0;
-				} else {
-					output=chr_table_iso8859latin1['X']|attr_table[plpalette[(attr&0xf0)+((attr>>4)&0xf)]];
-				}
-				addch(output);
-			} else {
-				first=1;
-				output=chr_table_iso8859latin1[ch]|attr_table[plpalette[attr]];
 				addch(output);
 			}
 			buf++;
@@ -1298,8 +1189,6 @@ no_translit:
 	_displayvoid=displayvoid;
 	_displaystrattr=displaystrattr;
 	_displaystr=displaystr;
-	_displaystrattr_iso8859latin1=displaystrattr_iso8859latin1;
-	_displaystr_iso8859latin1=displaystr_iso8859latin1;
 	_displaystr_utf8=displaystr_utf8;
 	_measurestr_utf8=measurestr_utf8;
 	___setup_key(ekbhit, egetch); /* filters in more keys */
