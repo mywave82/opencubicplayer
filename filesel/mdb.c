@@ -338,7 +338,7 @@ static int mdbWriteString (char *string, uint32_t *ref)
 		}
 	}
 
-	DEBUG_PRINT("mdbWriteString(strlen=%d, old_ref=0x%08" PRIx32 ") oldlen=%d newlen=%d\n", strlen (string), *ref, oldlen, newlen);
+	DEBUG_PRINT("mdbWriteString(strlen=%d, old_ref=0x%08" PRIx32 ") oldlen=%d newlen=%d\n", (int)strlen (string), *ref, oldlen, newlen);
 b:
 	if (newlen == 0)
 	{
@@ -385,6 +385,7 @@ b:
 int mdbWriteModuleInfo (uint32_t mdb_ref, struct moduleinfostruct *m)
 {
 	int retval = 0;
+	uint32_t temp;
 
 	DEBUG_PRINT("mdbWriteModuleInfo(0x%"PRIx32", %p)\n", mdb_ref, m);
 
@@ -404,12 +405,13 @@ int mdbWriteModuleInfo (uint32_t mdb_ref, struct moduleinfostruct *m)
 	mdbData[mdb_ref].mie.general.playtime = m->playtime;
 	mdbData[mdb_ref].mie.general.date = m->date;
 
-	retval |= mdbWriteString (m->title,    &mdbData[mdb_ref].mie.general.title_ref);
-	retval |= mdbWriteString (m->composer, &mdbData[mdb_ref].mie.general.composer_ref);
-	retval |= mdbWriteString (m->artist,   &mdbData[mdb_ref].mie.general.artist_ref);
-	retval |= mdbWriteString (m->style,    &mdbData[mdb_ref].mie.general.style_ref);
-	retval |= mdbWriteString (m->comment,  &mdbData[mdb_ref].mie.general.comment_ref);
-	retval |= mdbWriteString (m->album,    &mdbData[mdb_ref].mie.general.album_ref);
+	/* mdbData might move while inside mdbWriteString due to mdbNew() */
+	temp = mdbData[mdb_ref].mie.general.title_ref;    retval |= mdbWriteString (m->title,    &temp); mdbData[mdb_ref].mie.general.title_ref    = temp;
+	temp = mdbData[mdb_ref].mie.general.composer_ref; retval |= mdbWriteString (m->composer, &temp); mdbData[mdb_ref].mie.general.composer_ref = temp;
+	temp = mdbData[mdb_ref].mie.general.artist_ref;   retval |= mdbWriteString (m->artist,   &temp); mdbData[mdb_ref].mie.general.artist_ref   = temp;
+	temp = mdbData[mdb_ref].mie.general.style_ref;    retval |= mdbWriteString (m->style,    &temp); mdbData[mdb_ref].mie.general.style_ref    = temp;
+	temp = mdbData[mdb_ref].mie.general.comment_ref;  retval |= mdbWriteString (m->comment,  &temp); mdbData[mdb_ref].mie.general.comment_ref  = temp;
+	temp = mdbData[mdb_ref].mie.general.album_ref;    retval |= mdbWriteString (m->album,    &temp); mdbData[mdb_ref].mie.general.album_ref    = temp;
 
 	mdbDirty=1;
 	mdbDirtyMap[mdb_ref>>3] |= 1 << (mdb_ref & 0x07);
@@ -422,7 +424,7 @@ void mdbScan (struct ocpfile_t *file, uint32_t mdb_ref)
 	DEBUG_PRINT ("mdbScan(file=%p, mdb_ref=0x%08"PRIx32")\n", file, mdb_ref);
 	assert (mdb_ref > 0);
 	assert (mdb_ref < mdbDataSize);
-
+	assert (mdbData[mdb_ref].mie.general.record_flags == MDB_USED);
 	if (!file)
 	{
 		return;
@@ -598,16 +600,16 @@ int mdbInit (void)
 
 		for (i=0; i<mdbSearchIndexSize; i++)
 		{
-			DEBUG_PRINT("%5"PRId32" => 0x%08"PRIx32" %"PRId32" 0x%02x%02x%02x%02x%02x%02x%02x%02x\n",
+			DEBUG_PRINT("%5d => 0x%08"PRIx32" %"PRIu64" 0x%02x%02x%02x%02x%02x%02x%02x%02x\n",
 				i, mdbSearchIndexData[i], mdbData[mdbSearchIndexData[i]].mie.general.size,
-				mdbData[mdbSearchIndexData[i]].mie.general.hash[0],
-				mdbData[mdbSearchIndexData[i]].mie.general.hash[1],
-				mdbData[mdbSearchIndexData[i]].mie.general.hash[2],
-				mdbData[mdbSearchIndexData[i]].mie.general.hash[3],
-				mdbData[mdbSearchIndexData[i]].mie.general.hash[4],
-				mdbData[mdbSearchIndexData[i]].mie.general.hash[5],
-				mdbData[mdbSearchIndexData[i]].mie.general.hash[6],
-				mdbData[mdbSearchIndexData[i]].mie.general.hash[7]);
+				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[0],
+				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[1],
+				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[2],
+				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[3],
+				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[4],
+				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[5],
+				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[6],
+				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[7]);
 		}
 	}
 
@@ -722,7 +724,7 @@ void mdbClose (void)
 }
 
 /* Unit test available */
-static uint32_t mdbGetModuleReference (const char *name, uint32_t size)
+static uint32_t mdbGetModuleReference (const char *name, uint64_t size)
 {
 	uint32_t i;
 
@@ -750,7 +752,7 @@ static uint32_t mdbGetModuleReference (const char *name, uint32_t size)
 	 *   - Stian
 	 */
 
-	DEBUG_PRINT("mdbGetModuleReference(%s=>0x%02x%02x%0x%02x%02x%02x%02x %"PRId32")\n", name, hash[1], hash[2], hash[3], hash[4], hash[5], hash[6] hash[7], size);
+	DEBUG_PRINT("mdbGetModuleReference(%s=>0x%02x%02x%0x%02x%02x%02x%02x %"PRIu64")\n", name, hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7], size);
 	while (num)
 	{
 		struct modinfoentry *m=&mdbData[min[num>>1]];
@@ -760,16 +762,16 @@ static uint32_t mdbGetModuleReference (const char *name, uint32_t size)
 			uint32_t x;
 			for (x = 0; x < num; x++)
 			{
-				DEBUG_PRINT("  %08x %"PRId32" 0x%02x%02x%02x%02x%02x%02x%02x\n",
+				DEBUG_PRINT("  %08x %"PRIu64" 0x%02x%02x%02x%02x%02x%02x%02x\n",
 					min[x],
 					mdbData[min[x]].mie.general.size,
-					mdbData[min[x]].mie.general.hash[0],
-					mdbData[min[x]].mie.general.hash[1],
-					mdbData[min[x]].mie.general.hash[2],
-					mdbData[min[x]].mie.general.hash[3],
-					mdbData[min[x]].mie.general.hash[4],
-					mdbData[min[x]].mie.general.hash[5],
-					mdbData[min[x]].mie.general.hash[6])
+					mdbData[min[x]].mie.general.filename_hash[0],
+					mdbData[min[x]].mie.general.filename_hash[1],
+					mdbData[min[x]].mie.general.filename_hash[2],
+					mdbData[min[x]].mie.general.filename_hash[3],
+					mdbData[min[x]].mie.general.filename_hash[4],
+					mdbData[min[x]].mie.general.filename_hash[5],
+					mdbData[min[x]].mie.general.filename_hash[6]);
 			}
 			DEBUG_PRINT("  ----------\n");
 		}
@@ -787,7 +789,7 @@ static uint32_t mdbGetModuleReference (const char *name, uint32_t size)
 		}
 		if (!ret)
 		{
-			DEBUG_PRINT("mdbGetModuleReference(%s %"PRId32") => mdbSearchIndexData => 0x%08"PRIx32"\n", name, size, min[num>>1]);
+			DEBUG_PRINT("mdbGetModuleReference(\"%s\" %"PRIu64") => mdbSearchIndexData => 0x%08"PRIx32"\n", name, size, min[num>>1]);
 			return min[num>>1];
 		}
 		if (ret<0)
@@ -838,11 +840,11 @@ static uint32_t mdbGetModuleReference (const char *name, uint32_t size)
 	m->mie.general.comment_ref = UINT32_MAX;
 	m->mie.general.album_ref = UINT32_MAX;
 	bzero (m->mie.general.reserved, sizeof (m->mie.general.reserved));
-	DEBUG_PRINT("mdbGetModuleReference(%s %"PRId32") => new => 0x%08"PRIx32"\n", name, size, i);
+	DEBUG_PRINT("mdbGetModuleReference(\"%s\" %"PRIu64") => new => 0x%08"PRIx32"\n", name, size, i);
 	return i;
 }
 
-uint32_t mdbGetModuleReference2 (uint32_t dirdb_ref, uint32_t size)
+uint32_t mdbGetModuleReference2 (uint32_t dirdb_ref, uint64_t size)
 {
 	char *temppath;
 
@@ -893,6 +895,9 @@ int mdbGetModuleInfo (struct moduleinfostruct *m, uint32_t mdb_ref)
 {
 	bzero(m, sizeof(struct moduleinfostruct));
 	assert (mdb_ref > 0);
+	assert (mdb_ref < mdbDataSize);
+	assert (mdbData[mdb_ref].mie.general.record_flags == MDB_USED);
+
 	if ((mdb_ref >= mdbDataSize) || (mdb_ref == 0) || (mdbData[mdb_ref].mie.general.record_flags != MDB_USED))
 	{ /* invalid reference */
 		return 0;

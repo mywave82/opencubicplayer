@@ -90,7 +90,7 @@ void mdbScan(struct ocpfile_t *file, uint32_t mdb_ref);
 int mdbInit(void); // returns zero on error
 void mdbUpdate(void);
 void mdbClose(void);
-uint32_t mdbGetModuleReference2(const uint32_t dirdb_ref, uint32_t size);
+uint32_t mdbGetModuleReference2(const uint32_t dirdb_ref, uint64_t size);
 int mdbGetModuleInfo(struct moduleinfostruct *m, uint32_t fileref); // returns zero on error
 
 void mdbRegisterReadInfo(struct mdbreadinforegstruct *r);
