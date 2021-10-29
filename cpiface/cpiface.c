@@ -130,20 +130,8 @@ void cpiSetTextMode(int size)
 
 void cpiDrawGStrings()
 {
-	char *verstr="  opencp v" VERSION;
-	char *author="(c) 1994-2021 Stian Skjelstad ";
-	char tstr[CONSOLE_MAX_X+1];
+	make_title ("", plEscTick);
 
-#ifdef DEBUG
-	sprintf(tstr, "%02i%% %08X %s", tmGetCpuUsage(),/* debugint, debugstr*/ 0, "");
-#else
-	strcpy(tstr, verstr);
-	while (strlen(tstr)+strlen(author)<plScrWidth)
-		strcat(tstr, " ");
-	strcat(tstr, author);
-#endif
-
-	writestring(plTitleBuf[0], 0, plEscTick?0xC0:0x30, tstr, plScrWidth);
 	if (plDrawGStrings)
 		plDrawGStrings(plTitleBuf+1);
 	else {
@@ -229,13 +217,11 @@ void cpiDrawGStrings()
 			plTitleBuf[4][offset+1+chann]=((chan0+chann)!=plNLChan)?0x081A:0x0804;
 		}
 
-		displaystrattr(0, 0, plTitleBuf[0], plScrWidth);
 		displaystrattr(1, 0, plTitleBuf[1], plScrWidth);
 		displaystrattr(2, 0, plTitleBuf[2], plScrWidth);
 		displaystrattr(3, 0, plTitleBuf[3], plScrWidth);
 		displaystrattr(4, 0, plTitleBuf[4], plScrWidth);
 	} else {
-		gupdatestr(0, 0, plTitleBuf[0], plScrWidth, plTitleBufOld[0]);
 		gupdatestr(1, 0, plTitleBuf[1], plScrWidth, plTitleBufOld[1]);
 		gupdatestr(2, 0, plTitleBuf[2], plScrWidth, plTitleBufOld[2]);
 		gupdatestr(3, 0, plTitleBuf[3], plScrWidth, plTitleBufOld[3]);

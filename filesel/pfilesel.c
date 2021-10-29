@@ -1643,7 +1643,7 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 	if (playlist->num>dirwinheight)
 		prelpos=dirwinheight*playlist->pos/playlist->num;
 
-	make_title("file selector ][");
+	make_title("file selector ][", 0);
 	displayvoid(1, 0, plScrWidth);
 
 	if (selectv==(unsigned)~0)
@@ -1760,7 +1760,7 @@ void fsSetup(void)
 		int i;
 
 superbreak:
-		make_title("file selector setup");
+		make_title("file selector setup", 0);
 
 		displaystr( 1,  0, 0x07, "1:  screen mode: ", 17);
 		displaystr( 1, 17, 0x0f, modename, plScrWidth - 17);

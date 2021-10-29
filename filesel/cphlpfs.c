@@ -70,13 +70,9 @@ unsigned char fsHelp2(void)
 
 	while (fsmode)
 	{
-		unsigned short sbuf[CONSOLE_MAX_X];
 		unsigned short key;
 
-		fillstr(sbuf, 0, 0x30, 0, CONSOLE_MAX_X);
-		writestring(sbuf, 2, 0x30, "opencp help", 11);
-		writestring(sbuf, plScrWidth-31, 0x30, "(c) 1994-2021 Stian Skjelstad", 29);
-		displaystrattr(0, 0, sbuf, plScrWidth);
+		make_title ("opencp help", 0);
 
 		brSetWinHeight(plScrHeight-2);
 

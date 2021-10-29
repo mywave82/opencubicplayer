@@ -618,7 +618,7 @@ static void plDisplaySetupTextMode(void)
 	{
 		uint16_t c;
 		memset(virtual_framebuffer, 0, plScrLineBytes * plScrLines);
-		make_title("sdl2-driver setup");
+		make_title("sdl2-driver setup", 0);
 		swtext_displaystr_cp437(1, 0, 0x07, "1:  font-size:", 14);
 		swtext_displaystr_cp437(1, 15, plCurrentFont == _4x4 ? 0x0f : 0x07, "4x4", 3);
 		swtext_displaystr_cp437(1, 19, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);

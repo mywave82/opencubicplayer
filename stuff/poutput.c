@@ -57,19 +57,27 @@ const struct FontSizeInfo_t FontSizeInfo[] =
 };
 
 
-void make_title(char *part)
+void make_title(char *part, int escapewarning)
 {
-	uint16_t sbuf[CONSOLE_MAX_X];
-	char *verstr="opencp v" VERSION;
+// DEBUG TODO sprintf(tstr, "%02i%% %08X %s", tmGetCpuUsage(),/* debugint, debugstr*/ 0, "");
+	char prebuf[32];
+	char buf[CONSOLE_MAX_X];
+	const char *title = "Open Cubic Player v" VERSION;
+	const char *copyright = "(c) 1994-2021 Stian Skjelstad";
 
-	fillstr(sbuf, 0, 0x30, 0, CONSOLE_MAX_X);
-	writestring(sbuf, 2, 0x30, verstr, strlen(verstr));
-	if (plScrWidth<100)
-		writestring(sbuf, plScrWidth-58, 0x30, part, strlen(part));
-	else
-		writestring(sbuf, (plScrWidth-strlen(part))/2, 0x30, part, strlen(part));
-	writestring(sbuf, plScrWidth-30, 0x30, "(c) 1994-2021 Stian Skjelstad", 29);
-	_displaystrattr(0, 0, sbuf, plScrWidth);
+	int spacem = plScrWidth - 2 - strlen (title) - strlen (copyright) - 2 - strlen (part);
+	int space1 = spacem / 2;
+	int space2 = spacem - space1;
+
+	snprintf (prebuf, sizeof (prebuf), "  %%s%%%ds%%s%%%ds%%s  ", space1, space2);
+	snprintf (buf, sizeof (buf), prebuf, title, "", part, "", copyright);
+
+	if (plScrMode<100)
+	{
+		_displaystr (0, 0, escapewarning?0xc0:0x30, buf, plScrWidth);
+	} else {
+		_gdrawstr (0, 0, escapewarning?0xc0:0x30, buf, plScrWidth);
+	}
 }
 
 char *convnum(unsigned long num, char *buf, unsigned char radix, unsigned short len, char clip0)
