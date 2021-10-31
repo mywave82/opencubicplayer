@@ -173,14 +173,14 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		return errFormSig;
 	}
 
-	if ((filever!=0x201)&&(filever!=0x202))
+	if ((filever!=0x200)&&(filever!=0x201)&&(filever!=0x202))
 	{
 		return errFormOldVer;
 	}
 
 	DEBUG_PRINTF (stderr, "filever=0x%04x\n", filever);
 
-	if (filever==0x201)
+	if (filever<=0x201)
 	{
 		struct __attribute__((packed))
 		{
@@ -327,11 +327,22 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 			goto safeout;
 		}
 
-		if (file->read (file, samptab, sizeof (samptab)) != sizeof (samptab))
+		if (filever==0x200)
 		{
-			fprintf (stderr, "AMS loader: read failed #9 (sample tab)\n");
-			retval=errFormStruc;
-			goto safeout;
+			bzero (samptab, sizeof (samptab));
+			if (file->read (file, samptab+12, 96) != 96)
+			{
+				fprintf (stderr, "AMS loader: read failed #9.1 (sample tab)\n");
+				retval=errFormStruc;
+				goto safeout;
+			}
+		} else {
+			if (file->read (file, samptab, sizeof (samptab)) != sizeof (samptab))
+			{
+				fprintf (stderr, "AMS loader: read failed #9.2 (sample tab)\n");
+				retval=errFormStruc;
+				goto safeout;
+			}
 		}
 		for (j=0; j<3; j++)
 		{
@@ -794,6 +805,12 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 					anothercmd=*buf&0x80;
 					nte=*buf++&0x7F;
 					ins=*buf++;
+
+					/* taken from Velvet Studio source code, "AMS_Load.asm", Construct20: */
+					if ((nte >= 1) && (filever == 0x200))
+					{
+						nte += 14;
+					}
 				}
 				while (anothercmd)
 				{
