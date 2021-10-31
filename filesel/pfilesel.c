@@ -701,6 +701,8 @@ int fsGetPrevFile (struct moduleinfostruct *info, struct ocpfilehandle_t **fileh
 		{
 			if (!mdbInfoIsAvailable(m->mdb_ref)&&*filehandle)
 			{
+				m->flags |= MODLIST_FLAG_SCANNED;
+
 				mdbReadInfo(info, *filehandle); /* detect info... */
 				(*filehandle)->seek_set (*filehandle, 0);
 				mdbWriteModuleInfo(m->mdb_ref, info);
@@ -2771,9 +2773,10 @@ superbreak:
 		if (!ekbhit()&&fsScanNames)
 		{
 			int poll = 1;
-			if (m->file && (!mdbInfoIsAvailable(m->mdb_ref)))
+			if (m->file && (!mdbInfoIsAvailable(m->mdb_ref)) && (!m->flags&MODLIST_FLAG_SCANNED))
 			{
 				mdbScan(m->file, m->mdb_ref);
+				m->flags |= MODLIST_FLAG_SCANNED;
 			}
 
 			while (((!win)||(scanposp>=playlist->num)) && (scanposf<currentdir->num))
@@ -2786,7 +2789,9 @@ superbreak:
 						if (!mdbInfoIsAvailable(scanm->mdb_ref))
 						{
 							mdbScan(scanm->file, scanm->mdb_ref);
-							if (!poll_framelock())
+							scanm->flags |= MODLIST_FLAG_SCANNED;
+
+							if (poll_framelock())
 							{
 								poll = 0;
 								break;
@@ -2805,7 +2810,9 @@ superbreak:
 						if (!mdbInfoIsAvailable(scanm->mdb_ref))
 						{
 							mdbScan(scanm->file, scanm->mdb_ref);
-							if (!poll_framelock())
+							scanm->flags |= MODLIST_FLAG_SCANNED;
+
+							if (poll_framelock())
 							{
 								poll = 0;
 								break;
@@ -3223,41 +3230,41 @@ superbreak:
 /*
     case 0x2500:  // alt-k TODO keys.... alt-k is now in use by key-helper
       if (editmode||win)
-        break;
+	break;
       if (m.mdb_ref<=0xFFFC)
-        if (fsQueryKill(m))
-          if (!fsScanDir(2))
-            return -1;
+	if (fsQueryKill(m))
+	  if (!fsScanDir(2))
+	    return -1;
       break;
 
 
 #ifndef WIN32
     case 0x3200:  // alt-m TODO keys !!!!!!!! STRANGE THINGS HAPPENS IF YOU ENABLE HIS UNDER W32!!
       if (editmode||win)
-        break;
+	break;
       if (m.mdb_ref<=0xFFFC)
-        if (fsQueryMove(m))
-          if (!fsScanDir(1))
-            return -1;
+	if (fsQueryMove(m))
+	  if (!fsScanDir(1))
+	    return -1;
       break;
 #endif
 
     case 0x3000: // alt-b TODO keys
       if (m.mdb_ref<=0xFFFC)
       {
-        mdbGetModuleInfo(mdbEditBuf, m.mdb_ref);
-        mdbEditBuf.flags^=MDB_BIGMODULE;
-        mdbWriteModuleInfo(m.mdb_ref, mdbEditBuf);
+	mdbGetModuleInfo(mdbEditBuf, m.mdb_ref);
+	mdbEditBuf.flags^=MDB_BIGMODULE;
+	mdbWriteModuleInfo(m.mdb_ref, mdbEditBuf);
       }
       break;
 
     case 0x1100: // alt-w TODO keys
       if (m.mdb_ref<0xFFFC)
-        fsSaveModInfo(m);
+	fsSaveModInfo(m);
       break;
     case 0x1e00: // alt-a TODO keys
       if (editmode)
-        break;
+	break;
       fsSaveModInfoML(curlist);
       break;
 */
@@ -3297,14 +3304,14 @@ superbreak:
 					break;
 /*    case 0x7700: //ctrl-home TODO keys
       if (editmode||!win)
-        break;
+	break;
       playlist.remove(playlist.pos, 1);
       playlist.insert(0, &m, 1);
       playlist.pos=0;
       break;
     case 0x7500: //ctrl-end TODO keys
       if (editmode||!win)
-        break;
+	break;
       playlist.remove(playlist.pos, 1);
       playlist.insert(playlist.num, &m, 1);
       playlist.pos=playlist.num-1;

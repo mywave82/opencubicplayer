@@ -101,8 +101,6 @@ static void __attribute__((constructor))init(void)
 	mdbRegisterReadInfo(&gmiReadInfoReg);
 	mdbRegisterReadInfo(&wavReadInfoReg);
 
-	fsRegisterExt ("DAT");
-
 	fsRegisterExt ("AMS");
 	mt.integer.i = MODULETYPE("AMS");
 	fsTypeRegister (mt, AMS_description, "plOpenCP", &AMS_p);

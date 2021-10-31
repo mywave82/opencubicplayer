@@ -11,6 +11,7 @@ struct modlistentry
 
 #define MODLIST_FLAG_DRV     1
 #define MODLIST_FLAG_DOTDOT  2
+#define MODLIST_FLAG_SCANNED 4
 	int flags;
 
 	uint32_t mdb_ref;
