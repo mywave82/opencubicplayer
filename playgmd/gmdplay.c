@@ -772,7 +772,12 @@ static void PlayCommand(struct trackdata *t, const uint8_t *cmd, uint8_t len)
 						t->ofshigh=0;
 					}
 					t->insofs=t->ofs;
-					t->newpos=(t->samp->opt&MP_OFFSETDIV2)?(t->ofs>>1):t->ofs;
+					if (t->samp) /* avoid crash on corrupt songs */
+					{
+						t->newpos=(t->samp->opt&MP_OFFSETDIV2)?(t->ofs>>1):t->ofs;
+					} else {
+						t->newpos = t->ofs;
+					}
 				}
 				break;
 			case cmdOffsetEnd:
