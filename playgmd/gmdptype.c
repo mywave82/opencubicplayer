@@ -357,7 +357,6 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	{
 		if (len>=(43+20))
 		{
-			m->modtype.integer.i = 0; // trigger read-more path with FILE I/O
 			cp437_f_to_utf8_z (buf + 13, 30, m->title, sizeof (m->title));
 			cp437_f_to_utf8_z (buf + 43, 20, m->composer, sizeof (m->composer));
 			m->date=uint32_little(*(uint32_t *)(buf+63))&0xFFFFFF;
