@@ -533,6 +533,7 @@ int ___valid_key(uint16_t key)
 		case KEY_F(12):
 		case KEY_DELETE:
 		case KEY_INSERT:
+		case ' ':
 		case 'a':
 		case 'b':
 		case 'c':
