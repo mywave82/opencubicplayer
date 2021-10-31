@@ -549,10 +549,10 @@ static void __attribute__((constructor))init(void)
 
 	//cpiTextRegisterDefMode(&cpiID3Pic);
 	cpiTextRegisterMode(&cpiID3Pic);
-
 }
 
 static void __attribute__((destructor))done(void)
 {
 	//cpiTextUnregisterDefMode(&cpiID3Pic);
+	cpiTextUnregisterMode(&cpiID3Pic);
 }

@@ -539,4 +539,5 @@ void __attribute__ ((visibility ("internal"))) OggPicInit (void)
 void __attribute__ ((visibility ("internal"))) OggPicDone (void)
 {
 	//cpiTextUnregisterDefMode(&cpiOggPic);
+	cpiTextUnregisterMode(&cpiOggPic);
 }

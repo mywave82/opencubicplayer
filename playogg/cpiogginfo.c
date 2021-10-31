@@ -259,4 +259,5 @@ void __attribute__ ((visibility ("internal"))) OggInfoInit (void)
 void __attribute__ ((visibility ("internal"))) OggInfoDone (void)
 {
 	//cpiTextUnregisterDefMode(&cpiOggInfo);
+	cpiTextUnregisterMode(&cpiOggInfo);
 }

@@ -453,4 +453,5 @@ void __attribute__ ((visibility ("internal"))) ID3InfoInit (void)
 void __attribute__ ((visibility ("internal"))) ID3InfoDone (void)
 {
 	//cpiTextUnregisterDefMode(&cpiID3Info);
+	cpiTextUnregisterMode(&cpiID3Info);
 }

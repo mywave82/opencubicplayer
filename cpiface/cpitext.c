@@ -54,20 +54,13 @@ void cpiTextRegisterMode(struct cpitextmoderegstruct *mode)
 
 void cpiTextUnregisterMode(struct cpitextmoderegstruct *m)
 {
-	if (cpiTextModes==m)
+	struct cpitextmoderegstruct **prev;
+	for (prev = &cpiTextModes; *prev; *prev = (*prev)->next)
 	{
-		cpiTextModes=m->next;
-		return;
-	} else {
-		struct cpitextmoderegstruct *p = cpiTextModes;
-		while (p)
+		if (*prev == m)
 		{
-			if (p->next==m)
-			{
-				p->next=m->next;
-				return;
-			}
-			p=p->next;
+			*prev = m->next;
+			return;
 		}
 	}
 }
@@ -105,20 +98,13 @@ static void cpiTextVerifyDefModes(void)
 
 void cpiTextUnregisterDefMode(struct cpitextmoderegstruct *m)
 {
-	if (cpiTextDefModes==m)
+	struct cpitextmoderegstruct **prev;
+	for (prev = &cpiTextDefModes; *prev; *prev = (*prev)->nextdef)
 	{
-		cpiTextDefModes=m->next;
-		return;
-	} else {
-		struct cpitextmoderegstruct *p = cpiTextDefModes;
-		while (p)
+		if (*prev == m)
 		{
-			if (p->nextdef==m)
-			{
-				p->nextdef=m->nextdef;
-				return;
-			}
-			p=p->nextdef;
+			*prev = m->nextdef;
+			return;
 		}
 	}
 }
