@@ -290,7 +290,7 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 			if (len>=((unsigned char)buf[7])+(unsigned)8)
 			{
 				cp437_f_to_utf8_z (buf + 8, (unsigned char)buf[7], m->title, sizeof (m->title));
-				snprintf (m->comment, sizeof (m->comment), "Advanced Module System %d.%02d", buf[7 + 1 + (unsigned char)buf[7]], buf[7 + (unsigned char)buf[7]]);
+				snprintf (m->comment, sizeof (m->comment), "Advanced Module System %d.%02d", buf[7 + 1 + 1 + (unsigned char)buf[7]], buf[7 + 1 + (unsigned char)buf[7]]);
 				return 1;
 			}
 		}

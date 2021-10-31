@@ -36,6 +36,14 @@
 #include "gmdplay.h"
 #include "stuff/err.h"
 
+#ifndef AMS_DEBUG
+static void DEBUG_PRINTF (FILE *f, ...)
+{
+}
+#else
+#define DEBUG_PRINTF fprintf
+#endif
+
 static inline void putcmd(unsigned char **p, unsigned char c, unsigned char d)
 {
 	*(*p)++=c;
@@ -66,12 +74,49 @@ static const unsigned char envsin[513]=
 	254,254,254,254,254,254,254,254,254,254,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255
 };
 
+static int readPascalString (struct ocpfilehandle_t *file, char *target, int targetsize, const char *name)
+{
+	uint8_t stringlen;
+	char buffer[256];
+
+	target[0] = 0;
+	if (ocpfilehandle_read_uint8 (file, &stringlen))
+	{
+		fprintf(stderr, "AMS loader: reading length of %s failed\n", target);
+		return -1;
+	}
+	if (!stringlen)
+	{
+		return 0;
+	}
+	if (stringlen >= targetsize)
+	{
+		fprintf(stderr, "AMS loader: (warning, string length of %s is too long: %d >= %d)\n", name, stringlen, targetsize);
+		if (file->read (file, buffer, stringlen) != stringlen)
+		{
+			fprintf(stderr, "AMS loader: reading data of %s failed\n", name);
+			return -1;
+		}
+		memcpy (target, buffer, targetsize - 1);
+		target[targetsize-1] = 0;
+		return 0;
+	} else {
+		if (file->read (file, target, stringlen) != stringlen)
+		{
+			fprintf(stderr, "AMS loader: reading data of %s failed\n", name);
+			target[0] = 0;
+			return -1;
+		}
+		target[stringlen] = 0;
+		return 0;
+	}
+}
 
 static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	int retval;
 
-	unsigned char sig[8];
+	unsigned char sig[7];
 	uint16_t filever;
 
 	struct __attribute__((packed))
@@ -94,7 +139,6 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 
 	unsigned int i,j,t;
 
-	uint8_t namelen;
 	unsigned char shadowedby[256];
 	uint32_t packlen;
 
@@ -103,31 +147,38 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 	unsigned char *buffer=0;
 
 	int sampnum;
-
 	mpReset(m);
 
-	if (file->read (file, &sig, 8) != 8)
+	if (file->read (file, &sig, 7) != 7)
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #1\n");
+		fprintf (stderr, "AMS loader: read failed #1 (signature)\n");
 	}
 	if (!memcmp(sig, "Extreme", 7))
-		return errFormOldVer;
-	if (memcmp(sig, "AMShdr\x1A", 7))
-		return errFormSig;
-
-	if (file->read (file, m->name, sig[7]) != sig[7])
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #2\n");
+		return errFormOldVer;
 	}
-	m->name[sig[7]]=0;
+	if (memcmp(sig, "AMShdr\x1A", 7))
+	{
+		return errFormSig;
+	}
+
+	if (readPascalString (file, m->name, sizeof (m->name), "module.name"))
+	{
+		return errFormSig;
+	}
 
 	if (ocpfilehandle_read_uint16_le (file, &filever))
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #3\n");
+		fprintf (stderr, "AMS loader: read failed #3 (module.version)\n");
+		return errFormSig;
 	}
-	if ((filever!=0x201)&&(filever!=0x202))
-		return errFormOldVer;
 
+	if ((filever!=0x201)&&(filever!=0x202))
+	{
+		return errFormOldVer;
+	}
+
+	DEBUG_PRINTF (stderr, "filever=0x%04x\n", filever);
 
 	if (filever==0x201)
 	{
@@ -148,7 +199,8 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 
 		if (file->read (file, &oldhdr, sizeof (oldhdr)) != sizeof (oldhdr))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #4\n");
+			fprintf (stderr, "AMS loader: read failed #4 (old header)\n");
+			return errFormSig;
 		}
 		hdr.ins = oldhdr.ins;
 		hdr.pat = uint16_little (oldhdr.pat);
@@ -156,16 +208,31 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		hdr.bpm = oldhdr.bpm<<8;
 		hdr.speed = oldhdr.speed;
 		hdr.flags = (oldhdr.flags&0xC0)|0x20;
+
+		DEBUG_PRINTF (stderr, "header.ins=0x%02x\n", oldhdr.ins);
+		DEBUG_PRINTF (stderr, "header.pat=0x%04x\n", hdr.pat);
+		DEBUG_PRINTF (stderr, "header.pos=0x%04x\n", hdr.pos);
+		DEBUG_PRINTF (stderr, "header.bpm=0x%02x\n", oldhdr.bpm);
+		DEBUG_PRINTF (stderr, "header.speed=0x%02x\n", hdr.speed);
+		DEBUG_PRINTF (stderr, "header.flags=0x%02x\n", oldhdr.flags);
 	} else {
 		if (file->read (file, &hdr, sizeof (hdr)) != sizeof (hdr))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #5\n");
+			fprintf(stderr, "AMS loader: read failed #5 (new header)\n");
+			return errFormSig;
 		}
 
 		hdr.pat = uint16_little (hdr.pat);
 		hdr.pos = uint16_little (hdr.pos);
 		hdr.bpm = uint16_little (hdr.bpm);
 		hdr.flags = uint16_little (hdr.flags);
+
+		DEBUG_PRINTF (stderr, "header.ins=0x%02x\n", hdr.ins);
+		DEBUG_PRINTF (stderr, "header.pat=0x%04x\n", hdr.pat);
+		DEBUG_PRINTF (stderr, "header.pos=0x%04x\n", hdr.pos);
+		DEBUG_PRINTF (stderr, "header.bpm=0x%04x\n", hdr.bpm);
+		DEBUG_PRINTF (stderr, "header.speed=0x%02x\n", hdr.speed);
+		DEBUG_PRINTF (stderr, "header.flags=0x%04x\n", hdr.flags);
 	}
 
 	m->options=((hdr.flags&0x40)?MOD_EXPOFREQ:0)|MOD_EXPOPITCHENV;
@@ -184,18 +251,16 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		retval=errAllocMem;
 		goto safeout;
 	}
-	if (!(smps=malloc(sizeof(struct sampleinfo *)*m->instnum)))
+	if (!(smps=calloc(1, sizeof(struct sampleinfo *)*m->instnum)))
 	{
 		retval=errAllocMem;
 		goto safeout;
 	}
-	memset(smps, 0, (sizeof(struct sampleinfo *)*m->instnum));
-	if (!(msmps=malloc(sizeof(struct gmdsample *)*m->instnum)))
+	if (!(msmps=calloc(1, sizeof(struct gmdsample *)*m->instnum)))
 	{
 		retval=errAllocMem;
 		goto safeout;
 	}
-	memset(msmps, 0, sizeof(struct gmdsample *)*m->instnum);
 	if (!(instsampnum=malloc(sizeof(int)*m->instnum)))
 	{
 		retval=errAllocMem;
@@ -236,95 +301,117 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		msmps[i]=0;
 		shadowedby[i]=0;
 
-		if (ocpfilehandle_read_uint8 (file, &namelen))
+		if (readPascalString (file, ip->name, sizeof (ip->name), "instrument.name"))
 		{
-			namelen = 0;
-			fprintf(stderr, __FILE__ ": warning, read failed #6\n");
-		}
-		if (namelen>=(sizeof(ip->name)-1))
-		{
-			fprintf(stderr, "AMS: Instrument name too long\n");
 			retval=errFormStruc;
 			goto safeout;
 		}
-		if (file->read (file, ip->name, namelen) != namelen)
-		{
-			fprintf(stderr, __FILE__ ": warning, read failed #7\n");
-		}
-		ip->name[namelen]=0;
+		DEBUG_PRINTF (stderr, "instrument[%d].name=\"%s\"\n", i, ip->name);
 
 		if (ocpfilehandle_read_uint8 (file, &smpnum))
 		{
-			smpnum = 0;
-			fprintf(stderr, __FILE__ ": warning, read failed #8\n");
+			retval=errFormStruc;
+			goto safeout;
 		}
 		instsampnum[i]=smpnum;
+		DEBUG_PRINTF (stderr, "instrument[%d].samples=0x%02"PRIx8"\n", i, smpnum);
 
 		if (!smpnum)
 			continue;
 
-		msmps[i]=malloc(sizeof(struct gmdsample)*smpnum);
-		smps[i]=malloc(sizeof(struct sampleinfo)*smpnum);
+		msmps[i]=calloc(1, sizeof(struct gmdsample)*smpnum);
+		smps[i]=calloc(1, sizeof(struct sampleinfo)*smpnum);
 		if (!smps[i]||!msmps[i])
 		{
 			retval=errAllocMem;
 			goto safeout;
 		}
 
-		memset(msmps[i], 0, sizeof(**msmps)*smpnum);
-		memset(smps[i], 0, sizeof(**smps)*smpnum);
-
 		if (file->read (file, samptab, sizeof (samptab)) != sizeof (samptab))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #9\n");
+			fprintf (stderr, "AMS loader: read failed #9 (sample tab)\n");
+			retval=errFormStruc;
+			goto safeout;
 		}
 		for (j=0; j<3; j++)
 		{
+			/* first iteration is volume
+			 * second iteration is panning
+			 * third iteration is vibrato
+			 */
 			if (file->read (file, &envs[j], 5) != 5)
 			{
-				fprintf(stderr, __FILE__ ": warning, read failed #10\n");
+				fprintf (stderr, __FILE__ ": read failed #10 (instrument envelopes)\n");
+				retval=errFormStruc;
+				goto safeout;
 			}
+			DEBUG_PRINTF (stderr, "instrument[%d].env[%d].speed=0x%02x\n", i, j, envs[j].speed);
+			DEBUG_PRINTF (stderr, "instrument[%d].env[%d].sustain=0x%02x\n", i, j, envs[j].sustain);
+			DEBUG_PRINTF (stderr, "instrument[%d].env[%d].loopstart=0x%02x\n", i, j, envs[j].loopstart);
+			DEBUG_PRINTF (stderr, "instrument[%d].env[%d].loopend=0x%02x\n", i, j, envs[j].loopend);
+			DEBUG_PRINTF (stderr, "instrument[%d].env[%d].points=0x%02x\n", i, j, envs[j].points);
+
 			if (envs[j].points>64)
 			{
-				fprintf(stderr, "AMS: Too many points in envelope\n");
+				fprintf(stderr, "AMS loader: Too many points in envelope\n");
 				retval=errFormStruc;
 				goto safeout;
 			}
 			if (file->read (file, envs[j].data, envs[j].points*3) != envs[j].points*3)
 			{
-				fprintf(stderr, __FILE__ ": warning, read failed #11\n");
+				fprintf(stderr, "AMS loader: read failed #11 (sample envelope points)\n");
+				retval=errFormStruc;
+				goto safeout;
 			}
 		}
 
 		/* vibsweep=0; */
 
-		if (file->read (file, &shadowinst, sizeof(shadowinst)) != sizeof(shadowinst))
+		if (ocpfilehandle_read_uint8 (file, &shadowinst))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #12\n");
+			fprintf(stderr, "AMS loader: read failed #12 (shadow instrument)\n");
+			retval=errFormStruc;
+			goto safeout;
 		}
+		DEBUG_PRINTF (stderr, "instrument[%d].shadowinst=0x%02"PRIx8"\n", i, shadowinst);
+
 		if (filever==0x201)
 		{
 			/* TODO? vibsweep=shadowinst; */
 			shadowinst=0;
+		} else {
+			shadowedby[i]=shadowinst;
 		}
-		shadowedby[i]=shadowinst;
 
 		if (ocpfilehandle_read_uint16_le (file, &volfade))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #13\n");
+			fprintf(stderr, "AMS loader: read failed #13 (instrument volume fade)\n");
+			retval=errFormStruc;
+			goto safeout;
 		}
+		DEBUG_PRINTF (stderr, "instrument[%d].volfade=0x%04"PRIx16"\n", i, volfade);
+
 		if (ocpfilehandle_read_uint16_le (file, &envflags))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #14\n");
+			fprintf(stderr, "AMS loader: read failed #14 (instrument envelope flags)\n");
+			retval=errFormStruc;
+			goto safeout;
 		}
+		DEBUG_PRINTF (stderr, "instrument[%d].envflags=0x%04"PRIx16"\n", i, envflags);
 
 		pchint=(volfade>>12)&3;
 		volfade&=0xFFF;
 
 		for (t=0; t<envs[0].points; t++)
+		{
 			envs[0].data[t][2]<<=1;
+		}
 
 		for (j=0; j<3; j++)
+		{ /* Volume :Envelope on   <- first iteration
+		   * Panning:Envelope on   <- second iteration
+		   * Vibrato:Envelope on   <- third iteration
+		   */
 			if (envflags&(4<<(3*j)))
 			{
 				uint32_t envlen=0;
@@ -333,6 +420,8 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 				int32_t sus;
 				int32_t lst;
 				int32_t lend;
+
+				DEBUG_PRINTF (stderr, "instrument[%d].envflags %d => engage\n", i, j);
 
 				for (t=1; t<envs[j].points; t++)
 					envlen+=((envs[j].data[t][1]&1)<<8)|envs[j].data[t][0];
@@ -417,6 +506,7 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 					}
 				}
 			}
+		}
 		memset(ip->samples, -1, 128*2);
 
 		for (j=0; j<smpnum; j++, m->sampnum++, m->modsampnum++)
@@ -448,40 +538,47 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 			sp->pchenv=0xFFFF;
 			sp->volfade=0xFFFF;
 
-			if (ocpfilehandle_read_uint8 (file, &namelen))
+			if (readPascalString (file, sp->name, sizeof (sp->name), "sample.name"))
 			{
-				namelen = 0;
-				fprintf(stderr, __FILE__ ": warning, read failed #15\n");
-			}
-			if (namelen>=(sizeof(sp->name)-1))
-			{
-				fprintf(stderr, "AMS: Sample name too long\n");
+				fprintf(stderr, "AMS loader: read failed #16 (sample name)\n");
 				retval=errFormStruc;
 				goto safeout;
+
 			}
-			if (ocpfilehandle_read_uint8 (file, &namelen))
-			{
-				namelen = 0;
-				fprintf(stderr, __FILE__ ": warning, read failed #16\n");
-			}
-			sp->name[namelen]=0;
+			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].name=\"%s\"\n", i, j, sp->name);
+
 			if (ocpfilehandle_read_uint32_le (file, &sip->length))
 			{
 				sip->length = 0;
-				fprintf(stderr, __FILE__ ": warning, read failed #17\n");
+				fprintf(stderr, "AMS loader: read failed #17 (sample length)\n");
+				retval=errFormStruc;
+				goto safeout;
+
 			}
+			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].length=0x%08"PRIx32"\n", i, j, sip->length);
 
 			if (!sip->length)
 				continue;
 
 			if (file->read (file, &amssmp, sizeof(amssmp)) != sizeof(amssmp))
 			{
-				fprintf(stderr, __FILE__ ": warning, read failed #18\n");
+				fprintf(stderr, "AMS loader: read failed #18 (sample header)\n");
+				retval=errFormStruc;
+				goto safeout;
 			}
 			amssmp.loopstart = uint32_little (amssmp.loopstart);
 			amssmp.loopend   = uint32_little (amssmp.loopend);
 			amssmp.samprate  = uint16_little (amssmp.samprate);
 			amssmp.rate      = uint16_little (amssmp.rate);
+
+			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].loopstart=0x%08"PRIx32"\n", i, j, amssmp.loopstart);
+			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].loopend=0x%08"PRIx32"\n", i, j, amssmp.loopend);
+			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].samprate=0x%04"PRIx16"\n", i, j, amssmp.samprate);
+			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].panfine=0x%02"PRIx8"\n", i, j, amssmp.panfine);
+			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].rate=0x%04"PRIx16"\n", i, j, amssmp.rate);
+			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].relnote=0x%02"PRIx8"\n", i, j, (uint8_t)amssmp.relnote);
+			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].vol=0x%02"PRIx8"\n", i, j, amssmp.vol);
+			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].flags=0x%02"PRIx8"\n", i, j, amssmp.flags);
 
 			sp->stdpan=(amssmp.panfine&0xF0)?((amssmp.panfine>>4)*0x11):-1;
 			sp->stdvol=amssmp.vol*2;
@@ -498,45 +595,50 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 			sip->loopend=amssmp.loopend;
 			sip->samprate=amssmp.rate;
 			sip->type=((amssmp.flags&0x04)?mcpSamp16Bit:0)|((amssmp.flags&0x08)?mcpSampLoop:0)|((amssmp.flags&0x10)?mcpSampBiDi:0);
+			if ((amssmp.flags & 0x03) == 1)
+			{
+				sip->type |= mcpSampRedStereo; /* we borrow this flag, in order to remember to decompress.... */
+			}
 		}
 	}
 
-	if (ocpfilehandle_read_uint8 (file, &namelen))
+	if (readPascalString (file, m->composer, sizeof (m->composer), "composer"))
 	{
-		namelen = 0;
-		fprintf(stderr, __FILE__ ": warning, read failed #19\n");
-	}
-	if (namelen>=((sizeof(m->composer)-1)))
-	{
-		fprintf(stderr, "AMS: Composer name too long\n");
 		retval=errFormStruc;
 		goto safeout;
 	}
-	if (file->read (file, m->composer, namelen) != namelen)
-	{
-		fprintf(stderr, __FILE__ ": warning, read failed #20\n");
-	}
-	m->composer[namelen]=0;
+	DEBUG_PRINTF (stderr, "composer=\"%s\"\n", m->composer);
+
 	for (i=0; i<32; i++)
 	{
-		if (ocpfilehandle_read_uint8 (file, &namelen))
+		char channelname[12];
+		if (readPascalString (file, channelname, sizeof (channelname), "channelname"))
 		{
-			namelen = 0;
-			fprintf(stderr, __FILE__ ": warning, read failed #21\n");
+			retval=errFormStruc;
+			goto safeout;
 		}
-		file->seek_cur (file, namelen);
+		DEBUG_PRINTF (stderr, "channel[%d].name=\"%s\"\n", i, channelname);
 	}
 
 	if (ocpfilehandle_read_uint32_le (file, &packlen))
 	{
 		packlen = 0;
-		fprintf(stderr, __FILE__ ": warning, read failed #22\n");
+		fprintf(stderr, "AMS loader: read failed #22 (description.packlen)\n");
+		retval=errFormStruc;
+		goto safeout;
 	}
-	file->seek_cur (file, packlen - 4);
+	DEBUG_PRINTF (stderr, "description.length(packed)=0x%04"PRIx32"\n", packlen);
+
+#ifdef AMS_DEBUG
+#warning TODO, debug description
+#endif
+	file->seek_cur (file, packlen - 4); /* we currently ignore description */
 
 	if (file->read (file, ordlist, 2 * hdr.pos) != 2 * hdr.pos)
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #23\n");
+		fprintf(stderr, "AMS loader: read failed #23 (order list)\n");
+		retval=errFormStruc;
+		goto safeout;
 	}
 
 	for (i=0; i<m->ordnum; i++)
@@ -579,41 +681,36 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		struct gmdtrack *trk;
 		uint16_t len;
 
+		DEBUG_PRINTF (stderr, "Pattern=%d/%d\n", t + 1, hdr.pat);
+
 		if (ocpfilehandle_read_uint32_le (file, &patlen))
 		{
 			patlen = 0;
-			fprintf(stderr, __FILE__ ": warning, read failed #24\n");
+			fprintf(stderr, "AMS loader: read failed #24 (pattern[%d/%d].length)\n", t + 1, hdr.pat);
+			retval=errFormStruc;
+			goto safeout;
 		}
 		if (ocpfilehandle_read_uint8 (file, &maxrow))
 		{
 			maxrow = 0;
-			fprintf(stderr, __FILE__ ": warning, read failed #25\n");
+			fprintf(stderr, "AMS loader: read failed #25 (pattern[%d/%d].rows)\n", t + 1, hdr.pat);
+			retval=errFormStruc;
+			goto safeout;
 		}
 		if (ocpfilehandle_read_uint8 (file, &chan))
 		{
 			chan = 0;
-			fprintf(stderr, __FILE__ ": warning, read failed #26\n");
-		}
-		if (ocpfilehandle_read_uint8 (file, &namelen))
-		{
-			namelen = 0;
-			fprintf(stderr, __FILE__ ": warning, read failed #27\n");
-		}
-
-		if (namelen>=(sizeof(patname)-1))
-		{
-			fprintf(stderr, "AMS: Pattern name too long\n");
+			fprintf(stderr, "AMS loader: read failed #26 (pattern[%d/%d].channels)\n", t + 1, hdr.pat);
 			retval=errFormStruc;
 			goto safeout;
 		}
-
-		patlen-=3+namelen;
-
-		if (file->read (file, patname, namelen) != namelen)
+		if (readPascalString (file, patname, sizeof (patname), "pattern"))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #28\n");
+			retval=errFormStruc;
+			goto safeout;
 		}
-		patname[namelen]=0;
+		patlen-=3+strlen (patname);
+		DEBUG_PRINTF (stderr, "Pattern[%d].name=\"%s\"\n", t, patname);
 		/* maxcmd=chan>>5; */
 		chan&=0x1F;
 		chan++;
@@ -638,9 +735,11 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 				goto safeout;
 			}
 		}
-		if (file->read (file, buffer, patlen))
+		if (file->read (file, buffer, patlen) != patlen)
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #29\n");
+			fprintf(stderr, "AMS loader: read failed #29 (pattern[%d/%d].data)\n", t + 1, hdr.pat);
+			retval=errFormStruc;
+			goto safeout;
 		}
 
 		for (i=0; i<chan; i++)
@@ -1133,6 +1232,7 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 
 	for (i=0; i<m->instnum; i++)
 	{
+		DEBUG_PRINTF (stderr, "Instrument=%d/%d (shadowdby=%d)\n", i + 1, m->instnum, shadowedby[i]);
 /*
 		struct gmdinstrument *ip=&m->instruments[i];  NOT USED */
 		if (shadowedby[i])
@@ -1143,109 +1243,186 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		for (j=0; j<instsampnum[i]; j++)
 		{
 			struct sampleinfo *sip=&m->samples[sampnum++];
-			uint32_t packlena,
-			         packlenb;
-			uint8_t packbyte;
-
-			uint8_t *packb;
 			uint8_t *smpp;
 
-			unsigned int p1,p2;
-
-			uint8_t bitsel;
-			int8_t cursmp;
+			DEBUG_PRINTF (stderr, "Instrument[%d].Sample[%d].Length=0x%08"PRIx32"\n", i, j, sip->length);
 
 			if (!sip->length)
 				continue;
 
-			if (ocpfilehandle_read_uint32_le (file, &packlena))
-			{
-				packlena = 0;
-				fprintf(stderr, __FILE__ ": warning, read failed #30\n");
-			}
-			if (ocpfilehandle_read_uint32_le (file, &packlenb))
-			{
-				packlenb = 0;
-				fprintf(stderr, __FILE__ ": warning, read failed #31\n");
-			}
-			if (ocpfilehandle_read_uint8 (file, &packbyte))
-			{
-				packbyte = 0;
-				fprintf(stderr, __FILE__ ": warning, read failed #32\n");
-			}
-
-			packb=malloc(sizeof(unsigned char)*(((packlenb>packlena)?packlenb:packlena)+16));
-			smpp=malloc(sizeof(unsigned char)*(packlena+16));
-			if (!smpp||!packb)
-			{
-				retval=errAllocMem;
-				goto safeout;
-			}
-			if (file->read (file, packb, packlenb) != packlenb)
-			{
-				fprintf(stderr, __FILE__ ": warning, read failed #33\n");
-			}
-
-			p1=p2=0;
-
-			while (p2<packlena)
-				if (packb[p1]!=packbyte)
-					smpp[p2++]=packb[p1++];
-				else if (!packb[++p1])
-					smpp[p2++]=packb[p1++-1];
-				else {
-					memset(smpp+p2, packb[p1+1], packb[p1]);
-					p2+=packb[p1];
-					p1+=2;
-				}
-			memset(packb, 0, packlena);
-
-			p1=0;
-			bitsel=0x80;
-
-			for (p2=0; p2<packlena; p2++)
-			{
-				uint8_t cur=smpp[p2];
-
-				for (t=0; t<8; t++)
+			if (!(sip->type & mcpSampRedStereo))
+			{ /* not compressed */
+				uint32_t length = sip->length << (!!(sip->type & mcpSamp16Bit));
+				smpp=malloc(sizeof(unsigned char)*(length+16));
+				if (!smpp)
 				{
-					packb[p1++]|=cur&bitsel;
-					cur=(cur<<1)|((cur&0x80)>>7);
-					if (p1==packlena)
+					retval=errAllocMem;
+					goto safeout;
+				}
+				if (file->read (file, smpp, length) != length)
+				{
+					fprintf(stderr, "AMS loader: warning, read failed #34 (instrument[%d].sample[%d].rawdata)\n", i, j);
+					break;
+				}
+
+				sip->ptr=smpp;
+				m->modsamples[sampnum-1].handle=sampnum-1;
+			} else {
+				uint32_t packlena,
+				         packlenb;
+				uint8_t packbyte;
+				uint8_t *packb;
+
+				int8_t cursmp;
+
+				unsigned int p1,p2;
+
+				uint8_t bitsel;
+
+				sip->type &= ~mcpSampRedStereo;
+
+				if (ocpfilehandle_read_uint32_le (file, &packlena))
+				{
+					packlena = 0;
+					fprintf(stderr, "AMS loader: warning, read failed #30 (instrument[%d].sample[%d].compressed.compressedsize)\n", i, j);
+					break;
+				}
+				if (ocpfilehandle_read_uint32_le (file, &packlenb))
+				{
+					packlenb = 0;
+					fprintf(stderr, "AMS loader: warning, read failed #31 (instrument[%d].sample[%d].compressed.decompressedsize)\n", i, j);
+					break;
+				}
+				if (ocpfilehandle_read_uint8 (file, &packbyte))
+				{
+					packbyte = 0;
+					fprintf(stderr, "AMS loader: warning, read failed #32 (instrument[%d].sample[%d].compressed.packbyte)\n", i, j);
+					break;
+				}
+
+				DEBUG_PRINTF (stderr, "Instrument[%d].Sample[%d].LengthA=0x%08"PRIx32"\n", i, j, packlena);
+				DEBUG_PRINTF (stderr, "Instrument[%d].Sample[%d].LengthB=0x%08"PRIx32"\n", i, j, packlenb);
+				DEBUG_PRINTF (stderr, "Instrument[%d].Sample[%d].PackByt=0x%02"PRIx8"\n", i, j, packbyte);
+
+				if (packlena != sip->length)
+				{
+					fprintf (stderr, "AMS loader: warning sample[%d] has unexpected length of 0x%04"PRIx32" vs 0x%04"PRIx32"\n", j, packlena, sip->length);
+					packlena = sip->length;
+				}
+				if ((uint64_t)packlenb > (file->filesize(file) - file->getpos(file)))
+				{
+					fprintf (stderr, "AMS loader: warning sample[%d] has compressed length bigger data available, shrinking\n", j);
+					packlenb = file->filesize(file) - file->getpos(file);
+				}
+
+				if (((uint64_t)packlenb * 85) < packlena)
+				{
+					fprintf (stderr, "AMS loader: warning sample[%d] has compressed length smaller than maximum compression-rate, shrinking\n", j);
+					packlenb = (packlena / 85) + 1;
+				}
+
+				packb=malloc(sizeof(unsigned char)*(((packlenb>packlena)?packlenb:packlena)+16));
+				smpp=malloc(sizeof(unsigned char)*(packlena+16));
+				if (!smpp||!packb)
+				{
+					retval=errAllocMem;
+					goto safeout;
+				}
+				if (file->read (file, packb, packlenb) != packlenb)
+				{
+					fprintf(stderr, "AMS loader: warning, read failed #33 (instrument[%d].sample[%d].compressed.data)\n", i, j);
+					break;
+				}
+
+				p1=p2=0;
+
+				while (p2<packlena)
+				{
+					if (p1 >= packlenb)
 					{
-						p1=0;
-						cur=(cur>>1)|((cur&1)<<7);
-						bitsel>>=1;
+overflowa:
+						fprintf (stderr, "AMS loader: warning, ran out of compressed data\n");
+						bzero (smpp + p2, packlena - p2);
+						break;
+					}
+					if (packb[p1]!=packbyte)
+						smpp[p2++]=packb[p1++];
+					else {
+						if ((p1 + 1) >= packlenb)
+						{
+							goto overflowa;
+						}
+						if (!packb[++p1])
+							smpp[p2++]=packb[p1++-1];
+						else {
+							if (((uint32_t)p2 + packb[p1] > packlena))
+							{
+								fprintf (stderr, "AMS loader: warning, ran out of target data\n");
+								memset(smpp+p2, packb[p1+1], packlena - p2);
+								p2 = packlena;
+								p1+=2;
+							} else {
+								memset(smpp+p2, packb[p1+1], packb[p1]);
+								p2+=packb[p1];
+								p1+=2;
+							}
+						}
 					}
 				}
-			}
+				if (p1 < packlenb)
+				{
+					fprintf (stderr, "AMS loader: warning, compressed data left, rewinding buffer (%"PRId32" vs %"PRId32")\n", p1, packlenb);
+					file->seek_cur (file, (int64_t)p1 - (int64_t) packlenb);
+				}
+				bzero (packb, packlena);
 
-			cursmp=0;
-			p1=0;
-			for (p2=0; p2<packlena; p2++)
-			{
-				uint8_t cur=packb[p2];
-				cursmp+=-((cur&0x80)?((-cur)|0x80):cur);
-				smpp[p1++]=cursmp;
-			}
+				p1=0;
+				bitsel=0x80;
 
-			free(packb);
+				for (p2=0; p2<packlena; p2++)
+				{
+					uint8_t cur=smpp[p2];
+
+					for (t=0; t<8; t++)
+					{
+						packb[p1++]|=cur&bitsel;
+						cur=(cur<<1)|((cur&0x80)>>7);
+						if (p1==packlena)
+						{
+							p1=0;
+							cur=(cur>>1)|((cur&1)<<7);
+							bitsel>>=1;
+						}
+					}
+				}
+
+				cursmp=0;
+				p1=0;
+				for (p2=0; p2<packlena; p2++)
+				{
+					uint8_t cur=packb[p2];
+					cursmp+=-((cur&0x80)?((-cur)|0x80):cur);
+					smpp[p1++]=cursmp;
+				}
+
+				free(packb);
+			}
 
 			sip->ptr=smpp;
 			m->modsamples[sampnum-1].handle=sampnum-1;
 		}
 	}
 
-/*
-    for (i=0; i<m.instnum; i++)
-      if (shadowedby[i])
-      {
-        for (j=0; j<m.instruments[i].sampnum; j++)
-        {
-          m.modsamples[m.instruments[i].samples[j]].handle=m.modsamples[m.instruments[shadowedby[i]-1].samples[j]].handle;
-        }
-      }
-*/
+	for (i=0; i<m->instnum; i++)
+	{
+		if (shadowedby[i])
+		{
+			for (j=0; j<instsampnum[i]; j++)
+			{
+				memcpy(m->instruments[i].samples, m->instruments[shadowedby[i]-1].samples, sizeof (m->instruments[i].samples));
+			}
+		}
+	}
 
 	free(instsampnum);
 	instsampnum=0;
