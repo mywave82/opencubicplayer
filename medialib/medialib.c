@@ -195,6 +195,10 @@ static int mlint(void)
 	struct moduleinfostruct m;
 
 	medialib_root = ocpdir_mem_alloc (0, "medialib:");
+	if (!medialib_root)
+	{
+		return errAllocMem;
+	}
 	r = ocpdir_mem_getdir_t (medialib_root);
 
 	dmMEDIALIB=RegisterDrive("medialib:", r, r);
@@ -275,6 +279,11 @@ static int mlint(void)
 static void mlclose(void)
 {
 	int i;
+
+	if (!medialib_root)
+	{
+		return;
+	}
 
 	mlSearchClear();
 
