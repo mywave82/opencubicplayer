@@ -85,10 +85,9 @@ extern void make_title(char *part, int escapewarning);
 extern int plScrTextGUIOverlay;         /* Is text rendered virtually into a framebuffer, AND supports overlays? */
 
 typedef enum {
-	_4x4 = 0,
-	_8x8 = 1,
-	_8x16 = 2,
-	_FONT_MAX = 2
+	_8x8 = 0,
+	_8x16 = 1,
+	_FONT_MAX = 1
 } FontSizeEnum;
 
 struct FontSizeInfo_t

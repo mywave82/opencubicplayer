@@ -281,10 +281,6 @@ static int OggPicGetWin(struct cpitextmodequerystruct *q)
 
 	switch (plCurrentFont)
 	{
-		case _4x4:
-			q->hgtmax = 1 + (OggPicMaxHeight +  3) /  4;
-			OggPicFontSizeX = OggPicFontSizeY = 4;
-			break;
 		case _8x8:
 			q->hgtmax = 1 + (OggPicMaxHeight +  7) /  8;
 			OggPicFontSizeX = OggPicFontSizeY = 8;

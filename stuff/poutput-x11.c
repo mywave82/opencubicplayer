@@ -403,18 +403,10 @@ static void WindowResized_Textmode(unsigned int width, unsigned int height)
 		if ( ( plScrLineBytes < ( 8 * 80 ) ) || ( plScrLines < ( 16 * 25 ) ) )
 			plCurrentFont = _8x8;
 	}
-	if (plCurrentFont >= _8x8)
-	{
-		if ( ( plScrLineBytes < ( 8 * 80 ) ) || ( plScrLines < ( 8 * 25 ) ) )
-			plCurrentFont = _4x4;
-	}
 
 	switch (plCurrentFont)
 	{
-		case _4x4:
-			plScrWidth = plScrLineBytes / 4;
-			plScrHeight = plScrLines / 4;
-			break;
+		default:
 		case _8x8:
 			plScrWidth = plScrLineBytes / 8;
 			plScrHeight = plScrLines / 8;
@@ -582,12 +574,6 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 			Textmode_SizeHints.min_height = 8 * 25;
 			if ( (Textmode_SizeHints.min_width <= Textmode_SizeHints.max_width) && (Textmode_SizeHints.min_height <= Textmode_SizeHints.max_height) )
 				break;
-			FontSize = _4x4; /* drop through */
-		case _4x4:
-			Textmode_SizeHints.min_width = 4 * 80;
-			Textmode_SizeHints.min_height = 4 * 25;
-			if ( (Textmode_SizeHints.min_width <= Textmode_SizeHints.max_width) && (Textmode_SizeHints.min_height <= Textmode_SizeHints.max_height) )
-				break;
 			/* unless font has became this small, force bigger window */
 			Textmode_SizeHints.max_width = Textmode_SizeHints.min_width;
 			Textmode_SizeHints.max_height = Textmode_SizeHints.min_height;
@@ -650,10 +636,7 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 	plCurrentFont = FontSize;
 	switch (plCurrentFont)
 	{
-		case _4x4:
-			plScrWidth = plScrLineBytes / 4;
-			plScrHeight = plScrLines / 4;
-			break;
+		default:
 		case _8x8:
 			plScrWidth = plScrLineBytes / 8;
 			plScrHeight = plScrLines / 8;
@@ -789,10 +772,6 @@ static void x11_common_event_loop(void)
 
 					switch (plCurrentFontWanted)
 					{
-						case _4x4:
-							x &= ~3;
-							y &= ~3;
-							break;
 						case _8x8:
 							x &= ~7;
 							y &= ~7;
@@ -1922,8 +1901,7 @@ static const char *plGetDisplayTextModeName(void)
 {
 	static char mode[32];
 	snprintf(mode, sizeof(mode), "res(%dx%d), font(%s)%s", plScrWidth, plScrHeight,
-		plCurrentFontWanted == _4x4 ? "4x4"
-		: plCurrentFontWanted == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
+		plCurrentFontWanted == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
 	return mode;
 }
 
@@ -1937,9 +1915,8 @@ static void plDisplaySetupTextMode(void)
 
 		make_title("x11-driver setup", 0);
 		swtext_displaystr_cp437 (1, 0, 0x07, "1:  font-size:", 14);
-		swtext_displaystr_cp437 (1, 15, plCurrentFont == _4x4 ? 0x0f : 0x07 , "4x4", 3);
-		swtext_displaystr_cp437 (1, 19, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
-		swtext_displaystr_cp437 (1, 23, plCurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
+		swtext_displaystr_cp437 (1, 15, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
+		swtext_displaystr_cp437 (1, 19, plCurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
 /*
 		swtext_displaystr_cp437 (2, 0, 0x07, "2:  fullscreen: ", 16);
 		swtext_displaystr_cp437 (3, 0, 0x07, "3:  resolution in fullscreen:", 29);
@@ -1955,7 +1932,8 @@ static void plDisplaySetupTextMode(void)
 		{
 			case '1':
 				/* we can assume that we are in text-mode if we are here */
-				TextModeSetState((plCurrentFontWanted+1)%3, do_fullscreen);
+				plCurrentFontWanted = (plCurrentFontWanted == _8x8)?_8x16 : _8x8;
+				TextModeSetState(plCurrentFontWanted, do_fullscreen);
 				plCurrentFontWanted = plCurrentFont;
 				cfSetProfileInt("x11", "font", plCurrentFont, 10);
 				break;
@@ -1970,9 +1948,11 @@ int x11_init(int use_explicit)
 		return -1;
 
 	plCurrentFontWanted = cfGetProfileInt("x11", "font", _8x8, 10);
-	if ( (plCurrentFontWanted > _FONT_MAX) /*|| (plCurrentFontWanted < 0 )*/)
+	switch (plCurrentFontWanted)
 	{
-		plCurrentFontWanted = _8x16;
+		default:
+		case _8x8: plCurrentFontWanted = _8x8; break;
+		case _8x16: plCurrentFontWanted = _8x16; break;
 	}
 
 	if (x11_connect())

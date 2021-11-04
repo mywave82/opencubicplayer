@@ -1,5 +1,5 @@
 [version]
-  epoch=20211020
+  epoch=20211102
 
 [general]
 ;link=
@@ -75,7 +75,7 @@
 
 [x11]
   autodetect=on   ; Use X instead of curses when possible
-  font=1	  ; 0 => 4x4, 1 => 8x8, 2 => 16x8
+  font=1	  ; 0 => 8x8, 1 => 16x8
   xvidmode=on     ; Change resolution on fullscreen
 
 [curses]

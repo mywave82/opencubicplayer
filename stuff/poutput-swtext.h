@@ -9,10 +9,6 @@ void swtext_displaystrattr_cpfont_8x8(uint16_t y, uint16_t x, const uint16_t *bu
 
 void swtext_displaystr_cpfont_8x8(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len, const uint8_t *codepage);
 
-void swtext_displaystrattr_cpfont_4x4(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len, const uint8_t *codepage);
-
-void swtext_displaystr_cpfont_4x4(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len, const uint8_t *codepage);
-
 void swtext_displayvoid(uint16_t y, uint16_t x, uint16_t len);
 
 void swtext_displaystrattr_cp437(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len);

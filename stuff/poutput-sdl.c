@@ -164,18 +164,23 @@ again:
 
 	while ( ((width/FontSizeInfo[plCurrentFont].w) < 80) || ((height/FontSizeInfo[plCurrentFont].h) < 25))
 	{
-		if (plCurrentFont)
-			plCurrentFont--;
-		else {
-			if (!fullscreen)
-			{
-				fprintf(stderr, "[SDL-video] unable to find a small enough font for %d x %d, increasing window size\n", width, height);
-				width = FontSizeInfo[plCurrentFont].w * 80;
-				height = FontSizeInfo[plCurrentFont].h * 25;
-				goto again;
-			} else {
-				fprintf(stderr, "[SDL-video] unable to find a small enough font for %d x %d\n", width, height);
-				exit(-1);
+		switch (plCurrentFont)
+		{
+			case _16x8:
+				plCurrentFont = _8x8;
+				break;
+			default:
+			case _8x8:
+				if (!fullscreen)
+				{
+					fprintf(stderr, "[SDL-video] unable to find a small enough font for %d x %d, increasing window size\n", width, height);
+					width = FontSizeInfo[plCurrentFont].w * 80;
+					height = FontSizeInfo[plCurrentFont].h * 25;
+					goto again;
+				} else {
+					fprintf(stderr, "[SDL-video] unable to find a small enough font for %d x %d\n", width, height);
+					exit(-1);
+				}
 			}
 		}
 	}
@@ -429,9 +434,8 @@ static void plDisplaySetupTextMode(void)
 
 		make_title("sdl-driver setup", 0);
 		swtext_displaystr_cp437(1, 0, 0x07, "1:  font-size:", 14);
-		swtext_displaystr_cp437(1, 15, plCurrentFont == _4x4 ? 0x0f : 0x07, "4x4", 3);
-		swtext_displaystr_cp437(1, 19, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
-		swtext_displaystr_cp437(1, 23, plCurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
+		swtext_displaystr_cp437(1, 15, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
+		swtext_displaystr_cp437(1, 19, plCurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
 /*
 		swtext_displaystr_cp437(2, 0, 0x07, "2:  fullscreen: ", 16);
 		swtext_displaystr_cp437(3, 0, 0x07, "3:  resolution in fullscreen:", 29);*/
@@ -446,7 +450,7 @@ static void plDisplaySetupTextMode(void)
 		{
 			case '1':
 				/* we can assume that we are in text-mode if we are here */
-				plCurrentFontWanted = plCurrentFont = (plCurrentFont+1)%3;
+				plCurrentFontWanted = plCurrentFont = ((plCurrentFont == _8x8)?_8x16:_8x8;
 				set_state_textmode(do_fullscreen, plScrLineBytes, plScrLines);
 				cfSetProfileInt("x11", "font", plCurrentFont, 10);
 				break;
@@ -459,8 +463,7 @@ static const char *plGetDisplayTextModeName(void)
 {
 	static char mode[32];
 	snprintf(mode, sizeof(mode), "res(%dx%d), font(%s)%s", plScrWidth, plScrHeight,
-		plCurrentFont == _4x4 ? "4x4"
-		: plCurrentFont == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
+		plCurrentFont == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
 	return mode;
 }
 

@@ -531,7 +531,7 @@ is only valid while OCP is running.
 flushed into ~ocp.ini~. The following list will explain every option:
 
   1   - ~screen mode:~ This is output-driver specific. Most common you can adjust
-        the font-size here between sizes like 4x4, 8x8 or 16x16.
+        the font-size here between sizes like 8x8 or 8x16.
   2   - ~scramble module list order:~ if this option is enabled the files inside
         the playlist will be played in random order. Otherwise the order shown in
         the fileselector from top to bottom will be used.

@@ -334,10 +334,6 @@ static int ID3PicGetWin(struct cpitextmodequerystruct *q)
 
 	switch (plCurrentFont)
 	{
-		case _4x4:
-			q->hgtmax = 1 + (ID3PicMaxHeight +  3) /  4;
-			ID3PicFontSizeX = ID3PicFontSizeY = 4;
-			break;
 		case _8x8:
 			q->hgtmax = 1 + (ID3PicMaxHeight +  7) /  8;
 			ID3PicFontSizeX = ID3PicFontSizeY = 8;

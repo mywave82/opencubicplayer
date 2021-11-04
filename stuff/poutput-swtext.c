@@ -32,7 +32,7 @@
 #include "utf-8.h"
 
 /* GNU unifont "poutput-fontengine" supports 8x16 (some glyphs are 16x16) */
-/* OpenCubicPlayer built-in font supports (8x16) 8x8 and 4x4, in CP437 only */
+/* OpenCubicPlayer built-in font supports (8x16) 8x8 in CP437 only */
 
 static void swtext_displaycharattr_double8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
 {
@@ -465,81 +465,6 @@ void swtext_displaystr_cpfont_8x8(uint16_t y, uint16_t x, uint8_t attr, const ch
 	}
 }
 
-static void swtext_displaycharattr_cpfont_4x4(uint16_t y, uint16_t x, const uint8_t ch, uint8_t attr)
-{
-	uint8_t *target;
-	int i, j;
-	uint8_t *cp;
-	uint8_t f, b;
-
-	target = plVidMem + y * 4 * plScrLineBytes + x * 4;
-
-	cp = plFont44[ch];
-	f = attr & 0x0f;
-	b = attr >> 4;
-
-	for (i=0; i < 2; i++)
-	{ /* we get two lines of data per byte in the font */
-		uint8_t bitmap=*cp++;
-		for (j=0; j < 4; j++)
-		{
-			*target++=(bitmap&128)?f:b;
-			bitmap<<=1;
-		}
-		target -= 4;
-		target += plScrLineBytes;
-		for (j=0; j < 4; j++)
-		{
-			*target++=(bitmap&128)?f:b;
-			bitmap<<=1;
-		}
-		target -= 4;
-		target += plScrLineBytes;
-	}
-}
-
-void swtext_displaystrattr_cpfont_4x4(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len, const uint8_t *codepage)
-{
-	while (len)
-	{
-		uint8_t ch;
-
-		if (x >= plScrWidth) return;
-
-		ch = (*buf)&0x0ff;
-		if (codepage)
-		{
-			ch = codepage[ch];
-		}
-		swtext_displaycharattr_cpfont_4x4 (y, x, ch, plpalette[((*buf)>>8)]);
-		buf++;
-		len--;
-		x++;
-	}
-}
-
-void swtext_displaystr_cpfont_4x4(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len, const uint8_t *codepage)
-{
-	while (len)
-	{
-		uint8_t ch;
-
-		if (x >= plScrWidth) return;
-
-		ch = *str;
-		if (codepage)
-		{
-			ch = codepage[ch];
-		}
-
-		swtext_displaycharattr_cpfont_4x4 (y, x, ch, attr);
-
-		if (*str) str++;
-		len--;
-		x++;
-	}
-}
-
 void swtext_displayvoid(uint16_t y, uint16_t x, uint16_t len)
 {
 	uint8_t *target;
@@ -560,11 +485,6 @@ void swtext_displayvoid(uint16_t y, uint16_t x, uint16_t len)
 			length = len * 8;
 			count = 8;
 			break;
-		case _4x4:
-			target = plVidMem + y * 4 * plScrLineBytes + x * 4;
-			length = len * 4;
-			count = 4;
-			break;
 	}
 
 	for (i=0; i < count; i++)
@@ -584,9 +504,6 @@ void swtext_displaystrattr_cp437(uint16_t y, uint16_t x, const uint16_t *buf, ui
 		case _8x8:
 			swtext_displaystrattr_unifont_8x8  (y, x, buf, len, 0);
 			break;
-		case _4x4:
-			swtext_displaystrattr_cpfont_4x4 (y, x, buf, len, 0);
-			break;
 	}
 }
 
@@ -599,9 +516,6 @@ void swtext_displaystr_cp437(uint16_t y, uint16_t x, uint8_t attr, const char *s
 			break;
 		case _8x8:
 			swtext_displaystr_unifont_8x8  (y, x, attr, str, len, 0);
-			break;
-		case _4x4:
-			swtext_displaystr_cpfont_4x4 (y, x, attr, str, len, 0);
 			break;
 	}
 }
@@ -616,31 +530,6 @@ void swtext_displaystr_utf8(uint16_t y, uint16_t x, uint8_t attr, const char *st
 		case _8x8:
 			swtext_displaystr_unifont_utf8_8x8  (y, x, attr, str, len);
 			return;
-		case _4x4:
-			break;
-	}
-/* 4x4... */
-
-#warning TODO - current fallback is copy-paste from console.c default fallback
-	while (len)
-	{
-		int codepoint;
-		int inc = 0;
-		uint8_t temp;
-
-		if (x >= plScrWidth) return;
-
-		codepoint = utf8_decode (str, strlen (str), &inc);
-		str += inc;
-		if (codepoint > 255)
-		{
-			temp = '?';
-		} else {
-			temp = codepoint;
-		}
-		swtext_displaycharattr_cpfont_4x4 (y, x, latin1_table[temp], attr);
-		len--;
-		x++;
 	}
 }
 
@@ -697,11 +586,6 @@ void swtext_drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t
 			font_width = 8;
 			font_height = 8;
 			hgt >>= 1;
-			break;
-		case _4x4:
-			font_width = 4;
-			font_height = 4;
-			hgt >>= 2;
 			break;
 	}
 	target = plVidMem + ((yb + 1) * font_height - 1) * plScrLineBytes + x * font_width;
@@ -778,11 +662,6 @@ void swtext_idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 			font_width = 8;
 			font_height = 8;
 			hgt >>= 1;
-			break;
-		case _4x4:
-			font_width = 4;
-			font_height = 4;
-			hgt >>= 2;
 			break;
 	}
 	target = plVidMem + (yb - yh + 1) * font_height * plScrLineBytes + x * font_width;
@@ -883,10 +762,6 @@ void swtext_cursor_inject (void)
 				memcpy (swtext_cursor_buffer, plVidMem + swtext_curposx * 8 + (swtext_curposy * 8 + 7) * plScrLineBytes, 8);
 				memset (plVidMem + swtext_curposx * 8 + (swtext_curposy * 8 + 7) * plScrLineBytes, 15, 8);
 				break;
-			case _4x4:
-				memcpy (swtext_cursor_buffer, plVidMem + swtext_curposx * 4 + (swtext_curposy * 4 + 3) * plScrLineBytes, 4);
-				memset (plVidMem + swtext_curposx * 4 + (swtext_curposy * 4 + 3) * plScrLineBytes, 15, 4);
-				break;
 		}
 	} else if (swtext_shapestatus == 2)
 	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
@@ -908,13 +783,6 @@ void swtext_cursor_inject (void)
 					memcpy (swtext_cursor_buffer + i * 8, plVidMem + swtext_curposx * 8 + (swtext_curposy * 8 + i) * plScrLineBytes, 8);
 				}
 				break;
-			case _4x4:
-				c |= plVidMem[swtext_curposx * 4 + 3 + swtext_curposy * 4 * plScrLineBytes] << 4;
-				for (i=0;i<4;i++)
-				{
-					memcpy (swtext_cursor_buffer + i * 4, plVidMem + swtext_curposx * 4 + (swtext_curposy * 4 + i) * plScrLineBytes, 4);
-				}
-				break;
 		}
 		swtext_displaystr_cp437 (swtext_curposy, swtext_curposx, c, "\xdb", 1);
 	}
@@ -934,9 +802,6 @@ void swtext_cursor_eject (void)
 			case _8x8:
 				memcpy (plVidMem + swtext_curposx * 8 + (swtext_curposy * 8 + 7) * plScrLineBytes, swtext_cursor_buffer, 8);
 				break;
-			case _4x4:
-				memcpy (plVidMem + swtext_curposx * 4 + (swtext_curposy * 4 + 3) * plScrLineBytes, swtext_cursor_buffer, 4);
-				break;
 		}
 	} else if (swtext_shapestatus == 2)
 	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
@@ -953,12 +818,6 @@ void swtext_cursor_eject (void)
 				for (i=0;i<8;i++)
 				{
 					memcpy (plVidMem + swtext_curposx * 8 + (swtext_curposy * 8 + i) * plScrLineBytes, swtext_cursor_buffer + i * 8, 8);
-				}
-				break;
-			case _4x4:
-				for (i=0;i<4;i++)
-				{
-					memcpy (plVidMem + swtext_curposx * 4 + (swtext_curposy * 4 + i) * plScrLineBytes, swtext_cursor_buffer + i * 4, 4);
 				}
 				break;
 		}

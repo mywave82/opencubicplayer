@@ -285,10 +285,6 @@ static int FlacPicGetWin(struct cpitextmodequerystruct *q)
 
 	switch (plCurrentFont)
 	{
-		case _4x4:
-			q->hgtmax = 1 + (FlacPicMaxHeight +  3) /  4;
-			FlacPicFontSizeX = FlacPicFontSizeY = 4;
-			break;
 		case _8x8:
 			q->hgtmax = 1 + (FlacPicMaxHeight +  7) /  8;
 			FlacPicFontSizeX = FlacPicFontSizeY = 8;

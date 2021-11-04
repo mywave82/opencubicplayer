@@ -51,7 +51,6 @@ int plScrLines;
 FontSizeEnum plCurrentFont;
 const struct FontSizeInfo_t FontSizeInfo[] =
 {
-	{4, 4},
 	{8, 8},
 	{8, 16}
 };

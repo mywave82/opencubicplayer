@@ -2,7 +2,6 @@
 #define _PFONTS_H
 
 /* cp437_to_unicode gives lookup for these - with some few exceptions TODO*/
-extern unsigned char plFont44[256][2];
 extern unsigned char plFont88[256][8];
 extern unsigned char plFont816[256][16];
 
