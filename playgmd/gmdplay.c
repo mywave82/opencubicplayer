@@ -1312,7 +1312,12 @@ static void PlayTick(void)
 		if (fs->volenv<envnum)
 		{
 			const struct gmdenvelope *env=&envelopes[fs->volenv];
-			vol=(env->env[td->venvpos]*vol)>>8;
+			if (env->env)
+			{
+				vol = (env->env[td->venvpos]*vol)>>8;
+			} else {
+				vol = 0;
+			}
 
 			if (!env->speed||(env->speed==speed))
 				td->venvfrac+=65536;
@@ -1338,7 +1343,10 @@ static void PlayTick(void)
 		if (fs->panenv<envnum)
 		{
 			const struct gmdenvelope *env=&envelopes[fs->panenv];
-			pan+=((env->env[td->penvpos]-128)*(128-abs(pan)))>>7;
+			if (env->env)
+			{
+				pan+=((env->env[td->penvpos]-128)*(128-abs(pan)))>>7;
+			}
 
 			if (!env->speed||(env->speed==speed))
 				td->penvfrac+=65536;
@@ -1365,32 +1373,36 @@ static void PlayTick(void)
 		if (fs->pchenv<envnum)
 		{
 			const struct gmdenvelope *env=&envelopes[fs->pchenv];
-			int16_t dep=((env->env[td->pchenvpos]-128)<<fs->pchint)>>1;
 
-			if (expopitchenv&&!exponential)
-				td->finalpitch=checkpitch(umuldiv(td->finalpitch, mcpGetFreq8363(dep), 8363));
-			else
-				td->finalpitch=checkpitch(td->finalpitch-dep);
-
-			if (!env->speed||(env->speed==speed))
-				td->pchenvfrac+=65536;
-			else
-				td->pchenvfrac+=env->speed*65536/speed;
-
-			while (td->pchenvfrac>=65536)
+			if (env->env)
 			{
-				if (td->pchenvpos<env->len)
-					td->pchenvpos++;
-				if (td->sustain&&(env->type&mpEnvSLoop))
+				int16_t dep=((env->env[td->pchenvpos]-128)<<fs->pchint)>>1;
+
+				if (expopitchenv&&!exponential)
+					td->finalpitch=checkpitch(umuldiv(td->finalpitch, mcpGetFreq8363(dep), 8363));
+				else
+					td->finalpitch=checkpitch(td->finalpitch-dep);
+
+				if (!env->speed||(env->speed==speed))
+					td->pchenvfrac+=65536;
+				else
+					td->pchenvfrac+=env->speed*65536/speed;
+
+				while (td->pchenvfrac>=65536)
 				{
-					if (td->pchenvpos==env->sloope)
-						td->pchenvpos=env->sloops;
-				} else if (env->type&mpEnvLoop)
-				{
-					if (td->pchenvpos==env->loope)
-						td->pchenvpos=env->loops;
+					if (td->pchenvpos<env->len)
+						td->pchenvpos++;
+					if (td->sustain&&(env->type&mpEnvSLoop))
+					{
+						if (td->pchenvpos==env->sloope)
+							td->pchenvpos=env->sloops;
+					} else if (env->type&mpEnvLoop)
+					{
+						if (td->pchenvpos==env->loope)
+							td->pchenvpos=env->loops;
+					}
+					td->pchenvfrac-=65536;
 				}
-				td->pchenvfrac-=65536;
 			}
 		}
 		if (fs->vibrate&&fs->vibdepth)
