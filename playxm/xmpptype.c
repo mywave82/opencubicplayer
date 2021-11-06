@@ -103,18 +103,21 @@ static uint32_t xmpGetModuleType(const char *buf, int len, const char *filename)
 			{
 				if ((20+i*30+j) >= len)
 				{
-					break;
+					fprintf (stderr, "buffer too small");
+					return 0;
 				}
-				if (!buf[20+i*30+j]) /* string is zero-terminated */
+				if (!(buf[20+i*30+j]))
 				{
 					break;
 				}
-				if (buf[20+i*30+j]<0x20) /* non-ASCII? */
+				if (((signed char *)buf)[20+i*30+j]<0x20) /* non-ASCII? */
 				{
-					break;
+					fprintf (stderr, "instrument %d has problem at character %d\n", i, j);
+					goto out;
 				}
 			}
 		}
+out:
 		if (i >= 31) return MODULETYPE("M31");
 		if (i >= 15) return MODULETYPE("M15");
 	}
