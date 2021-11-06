@@ -198,31 +198,31 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 			cwt = uint16_little(*(uint16_t *)(buf + 0x28));
 			if ((cwt & 0xff00) == 0x1300)
 			{
-				snprintf (m->comment, sizeof (m->comment), "ScreamTracker 3.%02x\n", cwt&0x00ff);
+				snprintf (m->comment, sizeof (m->comment), "ScreamTracker 3.%02x", cwt&0x00ff);
 			} else if ((cwt & 0xf000) == 0x2000)
 			{
-				snprintf (m->comment, sizeof (m->comment), "Imago Orpheus %d.%d\n", (cwt >> 8) & 0x000f, cwt&0x00ff);
+				snprintf (m->comment, sizeof (m->comment), "Imago Orpheus %d.%d", (cwt >> 8) & 0x000f, cwt&0x00ff);
 			} else if ((cwt & 0xf000) == 0x3000)
 			{
-				snprintf (m->comment, sizeof (m->comment), "Impulse Tracker %d.%d\n", (cwt >> 8) & 0x000f, cwt&0x00ff);
+				snprintf (m->comment, sizeof (m->comment), "Impulse Tracker %d.%d", (cwt >> 8) & 0x000f, cwt&0x00ff);
 			} else if (cwt == 0x4100)
 			{
-				snprintf (m->comment, sizeof (m->comment), "old BeRoTracker version from between 2004 and 2012\n");
+				snprintf (m->comment, sizeof (m->comment), "old BeRoTracker version from between 2004 and 2012");
 			} else if ((cwt & 0xf000) == 0x4000)
 			{
-				snprintf (m->comment, sizeof (m->comment), "Schism Tracker %d.%d\n", (cwt >> 8) & 0x000f, cwt&0x00ff);
+				snprintf (m->comment, sizeof (m->comment), "Schism Tracker %d.%d", (cwt >> 8) & 0x000f, cwt&0x00ff);
 			} else if ((cwt & 0xf000) == 0x5000)
 			{
-				snprintf (m->comment, sizeof (m->comment), "OpenMPT %d.%d\n", (cwt >> 8) & 0x000f, cwt&0x00ff);
+				snprintf (m->comment, sizeof (m->comment), "OpenMPT %d.%d", (cwt >> 8) & 0x000f, cwt&0x00ff);
 			} else if ((cwt & 0xf000) == 0x6000)
 			{
-				snprintf (m->comment, sizeof (m->comment), "BeRoTracker %d.%d\n", (cwt >> 8) & 0x000f, cwt&0x00ff);
+				snprintf (m->comment, sizeof (m->comment), "BeRoTracker %d.%d", (cwt >> 8) & 0x000f, cwt&0x00ff);
 			} else if ((cwt & 0xf000) == 0x7000)
 			{
-				snprintf (m->comment, sizeof (m->comment), "CreamTracker %d.%d\n", (cwt >> 8) & 0x000f, cwt&0x00ff);
+				snprintf (m->comment, sizeof (m->comment), "CreamTracker %d.%d", (cwt >> 8) & 0x000f, cwt&0x00ff);
 			} else if (cwt == 0xca00)
 			{
-				snprintf (m->comment, sizeof (m->comment), "Camoto/libgamemusic\n");
+				snprintf (m->comment, sizeof (m->comment), "Camoto/libgamemusic");
 			}
 
 
