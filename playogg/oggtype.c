@@ -90,7 +90,7 @@ static int oggReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, co
 			memcpy (m->artist, ptr + 7, copy);
 		} else if ((length >= 6) && (!strncasecmp(ptr, "title=", 6)))
 		{
-			int copy = length - 7;
+			int copy = length - 6;
 			if (copy >= sizeof (m->title))
 			{
 				copy = sizeof (m->title)-1;
