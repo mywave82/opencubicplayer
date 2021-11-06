@@ -127,7 +127,8 @@ poutput-vcsa.o: poutput-vcsa.c poutput-vcsa.h \
 	poutput.h \
 	../boot/console.h \
 	../boot/psetting.h \
-	pfonts.h
+	pfonts.h \
+	utf-8.h
 	$(CC) poutput-vcsa.c -o $@ -c
 
 poutput-fb.o: poutput-fb.c poutput-fb.h \
