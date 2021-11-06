@@ -29,6 +29,7 @@ static void clear_dirdb()
 }
 
 char *cfConfigDir = "/foo/home/ocp/.ocp/";
+uint8_t mdbCleanSlate = 0;
 
 static int dirdb_basic_test1(void)
 {

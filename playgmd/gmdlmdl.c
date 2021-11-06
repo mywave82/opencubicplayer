@@ -200,6 +200,7 @@ static int _mpLoadMDL(struct gmdmodule *m, struct ocpfilehandle_t *file)
 	if ((waste8&0x10)!=0x10)
 	{
 		fprintf(stderr, "Sorry, the file version is too old (load and resave it in DigiTrakker please)\n");
+#warning TODO, version 0x11 / 1.1
 		return errFormSig;
 	}
 

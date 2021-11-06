@@ -152,8 +152,12 @@ static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 
 	if ((type == MODULETYPE("M15")) ||
 	    (type == MODULETYPE("M15t")) ||
-	    (type == MODULETYPE("M31")) ||
-	    (type == MODULETYPE("MODt")) )
+	    (type == MODULETYPE("M31")) )
+	{
+		m->channels=4;
+		cp437_f_to_utf8_z (buf + 0, 20, m->title, sizeof (m->title));
+		return 0; /* not a hard hit.... */
+	} else if (type == MODULETYPE("MODt"))
 	{
 		m->channels=4;
 		cp437_f_to_utf8_z (buf + 0, 20, m->title, sizeof (m->title));
