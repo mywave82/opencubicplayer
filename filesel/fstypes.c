@@ -167,6 +167,7 @@ static void __attribute__((constructor))init(void)
 	fsTypeRegister (mt, OGG_description, "plOpenCP", &OGG_p);
 
 	fsRegisterExt ("OKT");
+	fsRegisterExt ("OKTA");
 	mt.integer.i = MODULETYPE("OKT");
 	fsTypeRegister (mt, OKT_description, "plOpenCP", &OKT_p);
 
