@@ -40,13 +40,9 @@
 #include "stuff/timer.h"
 #include "stuff/poll.h"
 
-#undef MP_DEBUG
-#define MP_DEBUG 1
-
 #ifdef MP_DEBUG
 #define debug_printf(...) fprintf (stderr, __VA_ARGS__)
 #else
-#error 1
 #define debug_printf(format,args...) ((void)0)
 #endif
 
