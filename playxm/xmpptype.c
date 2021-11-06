@@ -72,9 +72,8 @@ static uint32_t xmpGetModuleType(const char *buf, int len, const char *filename)
 		return MODULETYPE("XM");
 	}
 
-	if (!memcmp(buf, "MXM\n", 4))
+	if (!memcmp(buf, "MXM", 4))
 	{
-#warning Does MXM crash? It was disabled in ocp.ini
 		return MODULETYPE("MXM");
 	}
 

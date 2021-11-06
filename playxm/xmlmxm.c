@@ -102,7 +102,9 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 
 	unsigned int i,j;
 
-	uint32_t guspos[128*16];
+	uint32_t guspos8 = 0;
+	uint32_t guspos16;
+	uint32_t guspos[128*16+1];
 	struct LoadMXMResources r;
 
 	r.smps = 0;
@@ -138,6 +140,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 	mxmhead.sampstart = uint32_little (mxmhead.sampstart);
 	mxmhead.samples8  = uint32_little (mxmhead.samples8);
 	mxmhead.samples16 = uint32_little (mxmhead.samples16);
+	guspos16 = mxmhead.samples8;
 	mxmhead.lowpitch  = int32_little (mxmhead.lowpitch);
 	mxmhead.highpitch = int32_little (mxmhead.highpitch);
 
@@ -146,8 +149,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 	for (i=0;i<256;i++)
 		mxmhead.patofs[i] = uint32_little (mxmhead.patofs[i]);
 
-	memcpy(m->name, "MXMPlay module      ", 20);
-	m->name[20]=0;
+	snprintf (m->name, sizeof (m->name), "MXMPlay module");
 
 	/* TODO? modpanning = !!(mxmhead.opt&2);*/
 	deltasamps = !!(mxmhead.opt&4);
@@ -200,7 +202,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 
 	/* 2nd: read instruments */
 
-	memset(guspos,0xff,4*128*16);
+	memset(guspos,0xff,sizeof (guspos));
 
 	m->nsampi=0;
 	m->nsamp=0;
@@ -245,9 +247,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 				mxmins.venv[k][h] = uint16_little (mxmins.venv[k][h]);
 				mxmins.penv[k][h] = uint16_little (mxmins.penv[k][h]);
 			}
-
-		memcpy(ip->name,"                      ",22);
-		ip->name[22]=0;
+		snprintf (ip->name, sizeof (ip->name), "instrument %02d", i + 1);
 
 		memset(ip->samples, 0xff, 2*128);
 		r.instsmpnum[i]=mxmins.sampnum;
@@ -356,46 +356,40 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 		{
 			struct __attribute__((packed))
 			{
-				uint16_t gusstartl;
-				uint8_t gusstarth;
-				uint16_t gusloopstl;
-				uint8_t gusloopsth;
-				uint16_t gusloopendl;
-				uint8_t gusloopendh;
+				uint32_t gusloopstart;
+				uint32_t gusloopend;
 				uint8_t gusmode;
 				uint8_t vol;
 				uint8_t pan;
 				uint16_t relpitch;
-				uint8_t res[2];
+				uint16_t offsindex;
+				uint8_t res[1];
 			} mxmsamp;
 			uint8_t bit16, sloop, sbidi;
 			struct xmpsample *sp=&r.msmps[i][j];
 			struct sampleinfo *sip=&r.smps[i][j];
 
-			int8_t rpf;
-			uint32_t sampstart, loopstart, loopend;
 			uint32_t l;
 
 			if (file->read (file, &mxmsamp, sizeof(mxmsamp)) != sizeof(mxmsamp))
 			{
 				fprintf(stderr, __FILE__ ": warning, read failed #2\n");
 			}
-			mxmsamp.gusstartl   = uint16_little (mxmsamp.gusstartl);
-			mxmsamp.gusloopstl  = uint16_little (mxmsamp.gusloopstl);
-			mxmsamp.gusloopendl = uint16_little (mxmsamp.gusloopendl);
-			mxmsamp.relpitch    = uint16_little (mxmsamp.relpitch);
 
-			bit16=mxmsamp.gusmode&0x04;
-			sloop=mxmsamp.gusmode&0x08;
-			sbidi=mxmsamp.gusmode&0x18;
+			mxmsamp.gusloopstart = uint32_little (mxmsamp.gusloopstart);
+			mxmsamp.gusloopend = uint32_little (mxmsamp.gusloopend);
+			mxmsamp.relpitch = uint16_little (mxmsamp.relpitch);
+			mxmsamp.offsindex = uint16_little (mxmsamp.offsindex);
 
-			memcpy(sp->name, "                      ", 22);
+			bit16=!!(mxmsamp.gusmode&0x04);
+			sloop=!!(mxmsamp.gusmode&0x08);
+			sbidi=!!(mxmsamp.gusmode&0x18);
+
+			snprintf (sp->name, sizeof (sp->name), "sample %02d", m->nsampi+1);
 			sp->name[22]=0;
 			sp->handle=0xFFFF;
-
 			sp->normnote=-mxmsamp.relpitch;
-			rpf=mxmsamp.relpitch&0xff;
-			sp->normtrans=rpf-mxmsamp.relpitch;
+			sp->normtrans=-((mxmsamp.relpitch & 0xff00) + ((mxmsamp.relpitch&0xff)?0x100:0));
 			sp->stdvol=(mxmsamp.vol>0x3F)?0xFF:(mxmsamp.vol<<2);
 			sp->stdpan=mxmsamp.pan;
 			sp->opt=0;
@@ -409,28 +403,31 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 			sp->panenv=env[1].env?(2*i+1):0xFFFF;
 			sp->pchenv=0xFFFF;
 
-			sampstart=mxmsamp.gusstartl+(mxmsamp.gusstarth<<16);
-			loopstart=mxmsamp.gusloopstl+(mxmsamp.gusloopsth<<16);
-			loopend=mxmsamp.gusloopendl+(mxmsamp.gusloopendh<<16);
-			guspos[m->nsampi]=sampstart;
-			if (loopstart<sampstart)
-				loopstart=sampstart;
-			if (loopend<sampstart)
-				loopend=sampstart;
-			loopstart-=sampstart;
-			loopend-=sampstart;
+			if (mxmsamp.gusloopstart>mxmsamp.gusloopend)
+				mxmsamp.gusloopstart=mxmsamp.gusloopend;
+
+/*
+			if (bit16)
+			{
+				mxmsamp.gusloopstart>>=1;
+				mxmsamp.gusloopend>>=1;
+			}
+*/
 
 			if (bit16)
 			{
-				loopstart>>=1;
-				loopend>>=1;
+				guspos[m->nsampi]=guspos16;
+				guspos16 += mxmsamp.gusloopend << 1;
+			} else {
+				guspos[m->nsampi]=guspos8;
+				guspos8 += mxmsamp.gusloopend;
 			}
 
-			sip->length=loopend;
-			sip->loopstart=loopstart;
-			sip->loopend=loopend+1;
+			sip->length=mxmsamp.gusloopend;
+			sip->loopstart=mxmsamp.gusloopstart;
+			sip->loopend=mxmsamp.gusloopend+1;
 			sip->samprate=8363;
-			sip->type=(bit16?mcpSamp16Bit:0)|(sloop?mcpSampLoop:0)|(sbidi?mcpSampBiDi:0);
+			sip->type=(bit16?mcpSamp16Bit:0)|(sloop?mcpSampLoop:0)|(sbidi?mcpSampBiDi:0)|(deltasamps?mcpSampDelta:0);
 
 			l=sip->length<<(!!(sip->type&mcpSamp16Bit));
 			if (!l)
@@ -508,7 +505,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 				uint8_t *cur=currow+5*(pack&0x1f);
 				if (pack&0x20)
 				{
-					if (file->read (file, pd, sizeof(pd)) != sizeof (pd))
+					if (file->read (file, pd, 2) != 2)
 					{
 						fprintf(stderr, __FILE__ ": warning, read failed #5\n");
 					}
@@ -541,45 +538,34 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 	{
 		uint32_t gsize=mxmhead.samples8+2*mxmhead.samples16;
 		int8_t *gusmem = malloc(sizeof(int8_t)*gsize);
-		int16_t *gus16 = (int16_t *)(gusmem+mxmhead.samples8);
+		//int16_t *gus16 = (int16_t *)(gusmem+mxmhead.samples8);
 		file->seek_set (file, mxmhead.sampstart);
 		if (file->read (file, gusmem, gsize) != gsize)
 		{
 			fprintf(stderr, __FILE__ ": warning, read failed #9\n");
 		}
-
-		if (deltasamps)
-		{
-			int8_t db=0;
-			int16_t dw=0;
-			for (i=0; i<mxmhead.samples8; i++)
-				gusmem[i]=db+=gusmem[i];
-			for (i=0; i<mxmhead.samples16; i++)
-				gus16[i]=dw+=gus16[i];
-		}
-
 		for (i=0; i<m->nsampi; i++)
 		{
-			uint32_t poslo, poshi;
-
 			uint32_t actpos=guspos[i];
 			uint32_t len=m->sampleinfos[i].length;
 			if (m->sampleinfos[i].type&mcpSamp16Bit)
 			{
-				actpos<<=1;
 				len<<=1;
-				poslo=actpos&0x03FFFE;
-				poshi=actpos&0x180000;
-				actpos=poslo|(poshi>>1);
+			} else {
 			}
-			if ((len+actpos)>gsize)
+			if (actpos > gsize)
 			{
-				fprintf(stderr, "sample #%d has sample that goes outside GUS memorywindow, chopping\n", i);
-				fprintf(stderr, "debug: sample #%d guspos hi:0x%02x lo:0x%04x len=0x%08x actpos=0x%08x gsize=0x%08x\n", i, guspos[i]>>8, guspos[8]&0xffff, len, actpos, gsize);
-				len = gsize-actpos;
+				fprintf(stderr, "sample #%d has sample that starts outside GUS memorywindow, chopping\n", i);
+				bzero (m->sampleinfos[i].ptr, len);
+			} else {
+				if ((len+actpos)>gsize)
+				{
+					bzero (m->sampleinfos[i].ptr, len);
+					fprintf(stderr, "sample #%d has sample that goes outside GUS memorywindow, chopping\n", i);
+					len = gsize-actpos;
+				}
+				memcpy(m->sampleinfos[i].ptr, gusmem+actpos, len);
 			}
-
-			memcpy(m->sampleinfos[i].ptr, gusmem+actpos, len);
 		}
 
 		free(gusmem);
