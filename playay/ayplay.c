@@ -643,45 +643,50 @@ static void ayIdler(void)
 	int pos1, pos2;
 	int length1, length2;
 
-	while (!_buf8_n)
-	{
-		if (donotloop && (ay_looped&1))
-		{
-			return;
-		}
-
-		if (new_ay_track!=ay_track)
-		{
-			ay_track=new_ay_track;
-			ay_current_reg=0;
-			sound_ay_reset();
-			mem_init(ay_track);
-			tunetime_reset();
-			ay_tsmax=FRAME_STATES_128;
-			do_cpc=0;
-			ay_z80_init(aydata.tracks[ay_track].data,
-			            aydata.tracks[ay_track].data_stacketc);
-		}
-
-		ay_z80loop();
-	}
-
-	if (buf8_delayed_state)
-	{
-		ringbuffer_add_tail_callback_samples (aybufpos, 0, buf8_delay_callback_from_aybuf_to_plrbuf, buf8_delayed_state);
-		buf8_delayed_state->inaybuf = 1;
-		buf8_delayed_state = 0;
-	}
 	ringbuffer_get_head_samples (aybufpos, &pos1, &length1, &pos2, &length2);
 
-	if (length1>_buf8_n)
+	while (length1)
 	{
-		length1=_buf8_n;
+		while (!_buf8_n)
+		{
+			if (donotloop && (ay_looped&1))
+			{
+				return;
+			}
+
+			if (new_ay_track!=ay_track)
+			{
+				ay_track=new_ay_track;
+				ay_current_reg=0;
+				sound_ay_reset();
+				mem_init(ay_track);
+				tunetime_reset();
+				ay_tsmax=FRAME_STATES_128;
+				do_cpc=0;
+				ay_z80_init(aydata.tracks[ay_track].data,
+				            aydata.tracks[ay_track].data_stacketc);
+			}
+
+			ay_z80loop();
+		}
+
+		if (buf8_delayed_state)
+		{
+			ringbuffer_add_tail_callback_samples (aybufpos, 0, buf8_delay_callback_from_aybuf_to_plrbuf, buf8_delayed_state);
+			buf8_delayed_state->inaybuf = 1;
+			buf8_delayed_state = 0;
+		}
+
+		if (length1>_buf8_n)
+		{
+			length1=_buf8_n;
+		}
+		memcpy (aybuf + (pos1<<1), _buf8, length1<<2);
+		_buf8 += length1<<1;
+		_buf8_n -= length1;
+		ringbuffer_head_add_samples (aybufpos, length1);
+		ringbuffer_get_head_samples (aybufpos, &pos1, &length1, &pos2, &length2);
 	}
-	memcpy (aybuf + (pos1<<1), _buf8, length1<<2);
-	_buf8 += length1<<1;
-	_buf8_n -= length1;
-	ringbuffer_head_add_samples (aybufpos, length1);
 }
 
 void __attribute__ ((visibility ("internal"))) ayIdle(void)
