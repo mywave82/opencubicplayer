@@ -51,6 +51,7 @@
 #include "stuff/poutput.h"
 #include "boot/psetting.h"
 #include "pfonts.h"
+#include "utf-8.h"
 
 /* TODO ioctl KDMAPDISP, GIO_SCRNMAP */
 static unsigned short plScrRowBytes;
@@ -66,6 +67,10 @@ static struct termios orgterm, ocpterm;
 static unsigned char bartops[18]="\xB5\xB6\xB6\xB7\xB7\xB8\xBD\xBD\xBE\xC6\xC6\xC7\xC7\xCF\xCF\xD7\xD7";
 static unsigned char ibartops[18]="\xB5\xD0\xD0\xD1\xD1\xD2\xD2\xD3\xD3\xD4\xD4\xD5\xD5\xD6\xD6\xD7\xD7";
 static int font_replaced=0;
+
+static const char *activecharset;
+static iconv_t activecharset_cd = (iconv_t)(-1);
+
 
 /* Replace font stuff goes here */
 
@@ -217,6 +222,13 @@ static int init_fonts(void)
 #ifdef VCSA_VERBOSE
 	fprintf(stderr, "Ok\n");
 #endif
+
+	activecharset = OCP_FONT;
+	activecharset_cd = iconv_open (OCP_FONT "//TRANSLIT", "UTF-8");
+	if ((iconv_t)(-1)==activecharset_cd)
+	{
+		activecharset_cd = iconv_open (OCP_FONT, "UTF-8");
+	}
 	return 0;
 }
 
@@ -234,7 +246,6 @@ void restore_fonts(void)
 		return;
 	}
 }
-
 
 /* this stuff is if we fail to replace fonts */
 static void make_chr_table(void)
@@ -281,6 +292,13 @@ static void make_chr_table(void)
 	chr_table[0]=32; /* quick dirty hack */
 
 	strcpy((char *)bartops, "  ___...---===**X");
+
+	activecharset = VCSA_FONT;
+	activecharset_cd = iconv_open (VCSA_FONT "//TRANSLIT", "UTF-8");
+	if ((iconv_t)(-1)==activecharset_cd)
+	{
+		activecharset_cd = iconv_open (VCSA_FONT, "UTF-8");
+	}
 }
 
 /* font stuff done */
@@ -307,7 +325,7 @@ static void vgaMakePal(void)
 			plpalette[16*bg+fg]=16*pal[bg]+pal[fg];
 }
 
-void displaystr(unsigned short y, unsigned short x, unsigned char attr, const char *str, unsigned short len)
+static void displaystr(unsigned short y, unsigned short x, unsigned char attr, const char *str, unsigned short len)
 {
 	char *p=vgatextram+(y*plScrRowBytes+x*2);
 	unsigned short i;
@@ -322,7 +340,7 @@ void displaystr(unsigned short y, unsigned short x, unsigned char attr, const ch
 	}
 }
 
-void displaystrattr(unsigned short y, unsigned short x, const unsigned short *buf, unsigned short len)
+static void displaystrattr(unsigned short y, unsigned short x, const unsigned short *buf, unsigned short len)
 {
 	char *p=vgatextram+(y*plScrRowBytes+x*2);
 	unsigned char *b=(unsigned char *)buf;
@@ -334,7 +352,55 @@ void displaystrattr(unsigned short y, unsigned short x, const unsigned short *bu
 	}
 }
 
-void displayvoid(unsigned short y, unsigned short x, unsigned short len)
+static void displaystr_utf8(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
+{
+	if ((iconv_t)(-1)==activecharset_cd)
+	{
+		displaystr (y, x, attr, str, len);
+		return;
+	} else {
+		char   tobuffer[CONSOLE_MAX_X+1];
+		char  *to = tobuffer;
+		size_t tolen = len;
+		char  *from = (char *)str;
+		size_t fromlen = strlen (str);
+		while (fromlen)
+		{
+			iconv (activecharset_cd, &from, &fromlen, &to, &tolen);
+			if (tolen&&fromlen)
+			{
+				int inc = 0;
+
+				utf8_decode (from, fromlen, &inc);
+
+				*to='?';
+				tolen--;
+
+				fromlen -= inc;
+				from += inc;
+			} else {
+				break;
+			}
+		}
+		if (tolen)
+		{
+			*to = 0;
+		}
+		displaystr (y, x, attr, tobuffer, len);
+	}
+}
+
+static int measurestr_utf8 (const char *str, int srclen)
+{
+	int retval;
+	for (retval = 0; str[retval] && retval < srclen; retval++)
+	{
+	}
+	return retval;
+}
+
+
+static void displayvoid(unsigned short y, unsigned short x, unsigned short len)
 {
 	char *addr=vgatextram+y*plScrRowBytes+x*2;
 	while (len--)
@@ -344,7 +410,7 @@ void displayvoid(unsigned short y, unsigned short x, unsigned short len)
 	}
 }
 
-void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
+static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
 {
 	unsigned int i;
 	char *scrptr;
@@ -385,7 +451,7 @@ void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t 
 	}
 }
 
-void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
+static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
 {
 	unsigned int i;
 	char *scrptr;
@@ -653,6 +719,8 @@ int vcsa_init(int minor)
 	_setcurshape=setcurshape;
 	_displaystrattr=displaystrattr;
 	_displayvoid=displayvoid;
+	_displaystr_utf8=displaystr_utf8;
+	_measurestr_utf8=measurestr_utf8;
 
 	_drawbar=drawbar;
 	_idrawbar=idrawbar;
@@ -717,6 +785,7 @@ int vcsa_init(int minor)
 	fprintf(stderr, "vcsa: driver is online\n");
 #endif
 	plVidType=vidNorm;
+
 	return 0;
 }
 
@@ -732,4 +801,10 @@ void vcsa_done(void)
 	free(consoleram);
 	close(vgafd);
 	vgafd=-1;
+
+	if ((iconv_t)(-1)==activecharset_cd)
+	{
+		iconv_close (activecharset_cd);
+		activecharset_cd = (iconv_t)(-1);
+	}
 }
