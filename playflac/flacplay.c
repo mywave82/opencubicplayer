@@ -485,7 +485,7 @@ static FLAC__StreamDecoderSeekStatus seek_callback(
 	void *client_data)
 #endif
 {
-	if (flacfile->seek_set (flacfile, absolute_byte_offset) < 0)
+	if (flacfile->seek_set (flacfile, absolute_byte_offset) == 0)
 	{
 #if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
 		return FLAC__SEEKABLE_STREAM_DECODER_SEEK_STATUS_OK;
@@ -1331,7 +1331,7 @@ void __attribute__ ((visibility ("internal"))) flacPause(int p)
 }
 void __attribute__ ((visibility ("internal"))) flacSetAmplify(uint32_t amp)
 {
-	fprintf(stderr, "flacSetAmplify TODO\n");
+	//fprintf(stderr, "flacSetAmplify TODO\n");
 	amplify=amp;
 }
 void __attribute__ ((visibility ("internal"))) flacSetSpeed(uint16_t sp)
