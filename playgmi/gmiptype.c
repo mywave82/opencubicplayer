@@ -119,7 +119,7 @@ const char *MIDI_description[] =
 
 struct interfaceparameters MIDI_p =
 {
-	"playtimidity", "gmiPlayer",
+	"playtimidity", "timidityPlayer",
 	0, 0
 };
 
