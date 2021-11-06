@@ -520,7 +520,7 @@ static int _mpLoadMTM(struct gmdmodule *m, struct ocpfilehandle_t *file)
 			int16_t xxx;
 
 			m->message[t]=m->message[0]+t*41;
-			if (file->read (file, m->message[t], 40))
+			if (file->read (file, m->message[t], 40) != 40)
 			{
 				fprintf(stderr, __FILE__ ": warning, read failed #6\n");
 			}
