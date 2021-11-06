@@ -2483,6 +2483,11 @@ static int fsEditFileInfo(struct modlistentry *me)
 		{
 			return -1;
 		}
+		if (mdbEditBuf.modtype.integer.i == 0)
+		{
+			me->flags &= ~MODLIST_FLAG_SCANNED;
+		}
+
 		return 0;
 	}
 	return 1;
@@ -2773,7 +2778,7 @@ superbreak:
 		if (!ekbhit()&&fsScanNames)
 		{
 			int poll = 1;
-			if (m->file && (!mdbInfoIsAvailable(m->mdb_ref)) && (!m->flags&MODLIST_FLAG_SCANNED))
+			if (m->file && (!mdbInfoIsAvailable(m->mdb_ref)) && (!(m->flags&MODLIST_FLAG_SCANNED)))
 			{
 				mdbScan(m->file, m->mdb_ref);
 				m->flags |= MODLIST_FLAG_SCANNED;
