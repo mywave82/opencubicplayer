@@ -256,7 +256,7 @@ int main (int argc, char *argv[])
 
 	test_dir = ocpdir_mem_getdir_t(ocpdir_mem_alloc (0, "test:"));
 
- 	mem = malloc (src_len);
+	mem = malloc (src_len);
 	memcpy (mem, src_data, src_len);
 	f = mem_file_open (test_dir, 0, mem, src_len);
 
@@ -411,7 +411,7 @@ int main (int argc, char *argv[])
 	fh->unref (fh);
 
 
- 	mem = malloc (src_len);
+	mem = malloc (src_len);
 	memcpy (mem, src_data, src_len);
 	f = mem_file_open (test_dir, 0, mem, src_len);
 	fh = f->open (f);
@@ -435,7 +435,7 @@ int main (int argc, char *argv[])
 			{
 				int j;
 				fprintf (stderr, "expected:\n");
-	                   	fprintf (stderr, "HEAD:   \"");
+				fprintf (stderr, "HEAD:   \"");
 				for (j=0; j < chain_of_reads[i].PRE_should_contain_bytes; j++)
 				{
 					fputc (chain_of_reads[i].PRE_should_contain_data[j], stderr);

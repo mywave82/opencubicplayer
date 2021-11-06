@@ -129,7 +129,7 @@ static int gzip_ocpfilehandle_inflateInit (struct gzip_ocpfilehandle_t *s)
 	}
 	s->strm.avail_in = retval;
 
-  	if (inflateInit2(&s->strm, (16+MAX_WBITS)) != Z_OK)
+	if (inflateInit2(&s->strm, (16+MAX_WBITS)) != Z_OK)
 	{
 		s->error = 1;
 		return -1;
@@ -560,7 +560,7 @@ static uint64_t gzip_ocpfile_filesize (struct ocpfile_t *_s)
 	struct gzip_ocpfile_t *s = (struct gzip_ocpfile_t *)_s;
 	struct ocpfilehandle_t *h = 0;
 	uint64_t compressedfile_size = 0;
-  	z_stream strm = {0};
+	z_stream strm = {0};
 	uint8_t *inputbuffer;
 	uint8_t *outputbuffer;
 	uint64_t filesize = 0;
@@ -696,7 +696,7 @@ UseZlib:
 	strm.next_in = inputbuffer;
 	strm.avail_in = h->read (h, inputbuffer, INPUTBUFFERSIZE);
 
-  	if (inflateInit2(&strm, (16+MAX_WBITS)) != Z_OK)
+	if (inflateInit2(&strm, (16+MAX_WBITS)) != Z_OK)
 	{
 		free (outputbuffer);
 		h->unref (h);
@@ -747,7 +747,7 @@ UseZlib:
 				case Z_STREAM_END:
 				case Z_OK:
 					break;
-           			}
+			}
 			filesize += OUTPUTBUFFERSIZE - strm.avail_out;
 		 } while ((strm.avail_in != 0) && (ret != Z_STREAM_END));
 	} while (ret != Z_STREAM_END);

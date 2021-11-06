@@ -1392,7 +1392,7 @@ int mdb_basic_mdbInit (void)
 
 	fprintf (stderr, "mdbDirty: %s\n" ANSI_COLOR_RESET, mdbDirty ? ANSI_COLOR_RED "Failed" : ANSI_COLOR_GREEN "OK");
 
- 	fprintf (stderr, "mdbDirtyMapSize: ");
+	fprintf (stderr, "mdbDirtyMapSize: ");
 	if (mdbDirtyMapSize < 25)
 	{
 		fprintf (stderr, ANSI_COLOR_RED " => %"PRIu32" < 25)\n" ANSI_COLOR_RESET, mdbDirtyMapSize);

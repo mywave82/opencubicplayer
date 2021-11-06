@@ -111,7 +111,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_ahx (const u
 
 	ht->ht_Positions       = (struct hvl_position *)(&ht[1]);
 	ht->ht_Instruments     = (struct hvl_instrument *)(&ht->ht_Positions[posn]);
-  	ht->ht_Subsongs        = (uint16_t *)(&ht->ht_Instruments[(insn+1)]);
+	ht->ht_Subsongs        = (uint16_t *)(&ht->ht_Instruments[(insn+1)]);
 	ple                    = (struct hvl_plsentry *)(&ht->ht_Subsongs[ssn]);
 
 	ht->ht_WaveformTab[0]  = &waves[WO_TRIANGLE_04];
@@ -310,10 +310,10 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_ahx (const u
 				break;
 			}
 		}
-    	}
+	}
 
 	hvl_InitSubsong ( ht, 0 );
- 	return ht;
+	return ht;
 }
 
 struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (const uint8_t *buf, uint32_t buflen, uint32_t defstereo, uint32_t freq )
@@ -606,7 +606,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (const u
 				break;
 			}
 		}
-    	}
+	}
 
 	hvl_InitSubsong( ht, 0 );
 	return ht;
@@ -619,7 +619,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_LoadTune_memory (
 	    ( buf[2] == 'X' ) &&
 	    ( buf[3] < 3 ) )
 	{
-    		return hvl_load_ahx ( buf, buflen, defstereo, freq );
+		return hvl_load_ahx ( buf, buflen, defstereo, freq );
 	}
 
 	if( ( buf[0] == 'H' ) &&

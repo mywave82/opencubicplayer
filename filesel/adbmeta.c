@@ -145,7 +145,7 @@ static int adbMetaInit_ParseFd (const int f)
 #endif
 		if (fill < 16)
 		{
- 	 		int result;
+			int result;
 fillmore:
 			if (fill == size)
 			{

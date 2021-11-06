@@ -471,7 +471,7 @@ static unsigned long RWread (FT_Stream stream,
 	fseek(src, offset, SEEK_SET);
 	if (count == 0)
 	{
-        	return 0;
+		return 0;
 	}
 	return fread(buffer, count, 1, src) ? count : 0;
 }
@@ -544,7 +544,7 @@ TTF_Font* TTF_OpenFontFILE(FILE *src, int ptsize, long index, unsigned int hdpi,
 
 	/* Set charmap for loaded font */
 	found = 0;
-       	for (i = 0; i < face->num_charmaps; i++)
+	for (i = 0; i < face->num_charmaps; i++)
 	{
 		FT_CharMap charmap = face->charmaps[i];
 		if (charmap->platform_id == 3 && charmap->encoding_id == 10)
@@ -856,7 +856,7 @@ static FT_Error Load_Glyph(TTF_Font *font, FT_ULong char_code, c_glyph *cached)
 				 * and we have to translate it back to a 256 gray shaded surface. */
 				while (quotient--)
 				{
-				 	NORMAL_MONO(8);
+					NORMAL_MONO(8);
 				}
 				NORMAL_MONO(remainder);
 			} else if (src->pixel_mode == FT_PIXEL_MODE_GRAY2)

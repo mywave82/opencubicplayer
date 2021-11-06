@@ -560,7 +560,7 @@ static uint64_t bzip2_ocpfile_filesize (struct ocpfile_t *_s)
 	struct bzip2_ocpfile_t *s = (struct bzip2_ocpfile_t *)_s;
 	struct ocpfilehandle_t *h = 0;
 	uint64_t compressedfile_size = 0;
-  	bz_stream strm = {0};
+	bz_stream strm = {0};
 	uint8_t *inputbuffer;
 	uint8_t *outputbuffer;
 	uint64_t filesize = 0;
@@ -691,7 +691,7 @@ static uint64_t bzip2_ocpfile_filesize (struct ocpfile_t *_s)
 				case BZ_STREAM_END:
 				case BZ_OK:
 					break;
-           			}
+			}
 			filesize += OUTPUTBUFFERSIZE - strm.avail_out;
 		 } while ((strm.avail_in != 0) && (ret != BZ_STREAM_END));
 	} while (ret != BZ_STREAM_END);

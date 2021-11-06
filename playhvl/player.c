@@ -1307,7 +1307,7 @@ static void hvl_process_frame ( struct hvl_tune *ht, struct hvl_voice *voice )
 	// Normal period calculation
 	voice->vc_AudioPeriod = voice->vc_InstrPeriod;
 
-  	if ( !(voice->vc_FixedNote) )
+	if ( !(voice->vc_FixedNote) )
 	{
 		if ( voice->vc_OverrideTranspose != 1000 ) // 1.5
 		{
@@ -1727,7 +1727,7 @@ int32_t __attribute__ ((visibility ("internal"))) hvl_mix_findloudest ( struct h
 				{
 					/* Ring Modulation */
 					j = ((src[i][pos[i]>>16]*rsrc[i][rpos[i]>>16])>>7)*vol[i];
-          				rpos[i] += rdelta[i];
+					rpos[i] += rdelta[i];
 				} else {
 					j = src[i][pos[i]>>16]*vol[i];
 				}

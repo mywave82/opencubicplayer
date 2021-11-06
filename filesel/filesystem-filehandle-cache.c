@@ -676,7 +676,7 @@ static int cache_filehandle_read (struct ocpfilehandle_t *_s, void *dst, int len
 				}
 
 				/* we want to read past EOF...
-		 		 *
+				 *
 				 * |----FILE-DATA-ON-DISK------------------------------------|
 				 * |                                                         |
 				 * |-HEAD-CACHE-]   [-MOVING-WINDOW-CACHE-]     [-TAIL-CACHE-]

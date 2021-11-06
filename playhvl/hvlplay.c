@@ -829,7 +829,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 	last_ht_SongNum = 0;
 	last_ht_NoteNr = 0;
 	last_ht_PosNr = 0;
-   	last_ht_Tempo = 1;
+	last_ht_Tempo = 1;
 	last_ht_SpeedMultiplier = 1;
 
 	BufSize=plrBufSize;

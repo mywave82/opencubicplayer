@@ -246,7 +246,7 @@ static int parse_RIFF(struct MIDI_Session *s, unsigned char *head, unsigned char
 				uint8_t control = readu8 (&ptr, endptr, &eof);
 				uint8_t value = readu8 (&ptr, endptr, &eof);
 
-				if (eof) 	{ fprintf (stderr, "premature eof encountered (5)\n"); return -1; }
+				if (eof) { fprintf (stderr, "premature eof encountered (5)\n"); return -1; }
 				fprintf_level (stderr, s); fprintf (stderr, "time %d, event 0x%02x, channel %d, CONTROL, control %d, value %d", time, event, ch, control, value);
 				if (control == 0x00)
 				{
@@ -472,14 +472,14 @@ static int parse_RIFF(struct MIDI_Session *s, unsigned char *head, unsigned char
 				uint8_t ch = event & 0x0f;
 				uint8_t program = readu8 (&ptr, endptr, &eof);
 
-				if (eof) 	{ fprintf (stderr, "premature eof encountered (6)\n"); return -1; }
+				if (eof) { fprintf (stderr, "premature eof encountered (6)\n"); return -1; }
 				fprintf_level (stderr, s); fprintf (stderr, "time %d, event 0x%02x, channel %d, PROGRAM, program/preset %d\n", time, event, ch, program);
 			} else if ((event & 0xf0) == 0xd0)
 			{
 				uint8_t ch = event & 0x0f;
 				uint8_t p1 = readu8 (&ptr, endptr, &eof);
 
-				if (eof) 	{ fprintf (stderr, "premature eof encountered (7)\n"); return -1; }
+				if (eof) { fprintf (stderr, "premature eof encountered (7)\n"); return -1; }
 				fprintf_level (stderr, s); fprintf (stderr, "time %d, event 0x%02x, channel %d, AFTERTOUCH, value %d\n", time, event, ch, p1 & 0x7f);
 			} else if ((event & 0xf0) == 0xe0)
 			{
@@ -487,7 +487,7 @@ static int parse_RIFF(struct MIDI_Session *s, unsigned char *head, unsigned char
 				uint8_t p1 = readu8 (&ptr, endptr, &eof);
 				uint8_t p2 = readu8 (&ptr, endptr, &eof);
 
-				if (eof) 	{ fprintf (stderr, "premature eof encountered (7)\n"); return -1; }
+				if (eof) { fprintf (stderr, "premature eof encountered (7)\n"); return -1; }
 				fprintf_level (stderr, s); fprintf (stderr, "time %d, event 0x%02x, channel %d, PITCH WHEEL, value %d (0x%04x)\n", time, event, ch, (int)((p1 & 0x7f) | ((p2 & 0x7f)<<7)) - 0x2000, (p1 & 0x7f) | ((p2 & 0x7f)<<7));
 			} else if (event == 0xf0)
 			{
@@ -495,7 +495,7 @@ static int parse_RIFF(struct MIDI_Session *s, unsigned char *head, unsigned char
 				int i;
 
 				if (ptr + len >= endptr) eof = 1;
-				if (eof) 	{ fprintf (stderr, "premature eof encountered (8)\n"); return -1; }
+				if (eof) { fprintf (stderr, "premature eof encountered (8)\n"); return -1; }
 
 				fprintf_level (stderr, s); fprintf (stderr, "time %d, event 0x%02x, F0 Sysex Event", time, event);
 				for (i=0; i < len; i++)
@@ -508,7 +508,7 @@ static int parse_RIFF(struct MIDI_Session *s, unsigned char *head, unsigned char
 				int i;
 
 				if (ptr + len >= endptr) eof = 1;
-				if (eof) 	{ fprintf (stderr, "premature eof encountered (9)\n"); return -1; }
+				if (eof) { fprintf (stderr, "premature eof encountered (9)\n"); return -1; }
 
 				fprintf_level (stderr, s); fprintf (stderr, "time %d, event 0x%02x, F7 Sysex Event (escape)", time, event);
 				for (i=0; i < len; i++)
@@ -522,7 +522,7 @@ static int parse_RIFF(struct MIDI_Session *s, unsigned char *head, unsigned char
 				int i;
 
 				if ((ptr + len) > endptr) eof = 1;
-				if (eof) 	{ fprintf (stderr, "premature eof encountered (10) (ptr=%p endptr=%p len=%d)\n", ptr, endptr, len); return -1; }
+				if (eof) { fprintf (stderr, "premature eof encountered (10) (ptr=%p endptr=%p len=%d)\n", ptr, endptr, len); return -1; }
 
 				fprintf_level (stderr, s); fprintf (stderr, "time %d, event 0x%02x, FF META Event 0x%02x ", time, event, type);
 

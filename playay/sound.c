@@ -175,7 +175,7 @@ void __attribute__ ((visibility ("internal"))) sound_end(void)
         (var)=-(level),is_low=1;					\
       }									\
     }									\
-  									\
+									\
   ay_tone_tick[chan]+=tone_count;					\
   count=0;								\
   while(ay_tone_tick[chan]>=ay_tone_period[chan])			\
@@ -183,7 +183,7 @@ void __attribute__ ((visibility ("internal"))) sound_end(void)
     count++;								\
     ay_tone_tick[chan]-=ay_tone_period[chan];				\
     ay_tone_high[chan]=!ay_tone_high[chan];				\
-    									\
+									\
     /* has to be here, unfortunately... */				\
     if(is_on && count==1 && level && ay_tone_tick[chan]<tone_count)	\
       {									\
@@ -193,7 +193,7 @@ void __attribute__ ((visibility ("internal"))) sound_end(void)
         (var)-=AY_GET_SUBVAL(chan);					\
       }									\
     }									\
-  									\
+									\
   /* if it's changed more than once during the sample, we can't */	\
   /* represent it faithfully. So, just hope it's a sample.      */	\
   /* (That said, this should also help avoid aliasing noise.)   */	\
