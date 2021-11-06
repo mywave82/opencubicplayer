@@ -1153,8 +1153,11 @@ static int volalsaSetVolume(struct ocpvolstruct *v, int n)
 	return 0;
 }
 
+static int alsasetupregistered = 0;
+static void alsaClose(void);
 static int alsaInit(const struct deviceinfo *c)
 {
+	alsasetupregistered = 1;
 	ocpdir_t_fill (&dir_alsa,
 	                dir_alsa_ref,
 	                dir_alsa_unref,
@@ -1180,7 +1183,10 @@ static int alsaInit(const struct deviceinfo *c)
 
 	alsaOpenDevice();
 	if (!alsa_pcm)
+	{
+		alsaClose();
 		return 0;
+	}
 
 	SetOptions(44100, PLR_16BIT|PLR_STEREO);
 	return 1;
@@ -1214,10 +1220,14 @@ static void alsaClose(void)
 {
 	plrPlay=0;
 
-	plUnregisterInterface (&alsaPCMoutIntr);
+	if (alsasetupregistered)
+	{
+		plUnregisterInterface (&alsaPCMoutIntr);
 
-	filesystem_setup_unregister_dir (&dir_alsa);
-	dirdbUnref (dir_alsa.dirdb_ref, dirdb_use_dir);
+		filesystem_setup_unregister_dir (&dir_alsa);
+		dirdbUnref (dir_alsa.dirdb_ref, dirdb_use_dir);
+		alsasetupregistered = 0;
+	}
 }
 
 static int alsaMixerIntrSetDev (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip)
