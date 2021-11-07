@@ -37,7 +37,7 @@ extern "C" {
 
 static int oplReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
 {
-	char *filename = 0;
+	const char *filename = 0;
 	CPlayers::const_iterator i;
 	int j;
 

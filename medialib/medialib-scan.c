@@ -75,7 +75,7 @@ static void mlScanDraw(const char *title, struct scanlist_t *token)
 
 	for (i=0; i < token->entries; i++)
 	{
-		char *filename = 0;
+		const char *filename = 0;
 		dirdbGetName_internalstr (token->files[i]->dirdb_ref, &filename);
 		displaystr_utf8 (mlTop + 4 + (lineno % (mlHeight - 5)), mlLeft + 1, 0x07, filename, mlWidth - 2);
 		lineno++;
@@ -116,7 +116,7 @@ static void mlScan_file (void *_token, struct ocpfile_t *file)
 {
 	struct scanlist_t *token = _token;
 	char *curext = 0;
-	char *filename = 0;
+	const char *filename = 0;
 	uint32_t mdbref = UINT32_MAX;
 
 	if (poll_framelock())

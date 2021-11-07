@@ -147,11 +147,13 @@ struct ocpfilehandle_t
 // can be FILESIZE_STREAM
 	uint64_t (*filesize)(struct ocpfilehandle_t *); // can be FILESIZE_STREAM
 	int (*filesize_ready)(struct ocpfilehandle_t *); // if this is false, asking for filesize might be very slow
+	const char *(*filename_override) (struct ocpfilehandle_t *);
 	int dirdb_ref;
 	int refcount; /* internal use by all object variants */
 };
 
 int ocpfilehandle_t_fill_default_ioctl (struct ocpfilehandle_t *, const char *cmd, void *ptr);
+const char *ocpfilehandle_t_fill_default_filename_override (struct ocpfilehandle_t *);
 
 static inline void ocpfilehandle_t_fill (
 	struct ocpfilehandle_t *s,
@@ -167,21 +169,23 @@ static inline void ocpfilehandle_t_fill (
 	int (*_ioctl)(struct ocpfilehandle_t *, const char *cmd, void *ptr),
 	uint64_t (*filesize)(struct ocpfilehandle_t *),
 	int (*filesize_ready)(struct ocpfilehandle_t *),
+	const char *(*filename_override) (struct ocpfilehandle_t *),
 	int dirdb_ref)
 {
-	s->ref            = ref;
-	s->unref          = unref;
-	s->seek_set       = seek_set;
-	s->seek_cur       = seek_cur;
-	s->seek_end       = seek_end;
-	s->getpos         = getpos;
-	s->eof            = eof;
-	s->error          = error;
-	s->read           = read;
-	s->ioctl          = _ioctl ? _ioctl : ocpfilehandle_t_fill_default_ioctl;
-	s->filesize       = filesize;
-	s->filesize_ready = filesize_ready;
-	s->dirdb_ref      = dirdb_ref;
+	s->ref               = ref;
+	s->unref             = unref;
+	s->seek_set          = seek_set;
+	s->seek_cur          = seek_cur;
+	s->seek_end          = seek_end;
+	s->getpos            = getpos;
+	s->eof               = eof;
+	s->error             = error;
+	s->read              = read;
+	s->ioctl             = _ioctl ? _ioctl : ocpfilehandle_t_fill_default_ioctl;
+	s->filesize          = filesize;
+	s->filesize_ready    = filesize_ready;
+	s->filename_override = filename_override ? filename_override : ocpfilehandle_t_fill_default_filename_override;
+	s->dirdb_ref         = dirdb_ref;
 }
 
 int ocpfilehandle_read_uint8     (struct ocpfilehandle_t *, uint8_t *dst); /* returns 0 for OK, and -1 on error */

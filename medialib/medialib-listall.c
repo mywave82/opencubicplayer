@@ -66,11 +66,11 @@ static struct ocpfile_t *ocpdir_listall_readdir_file (struct ocpdir_t *self, uin
 	int first = 0;
 	uint32_t dirdbnode = DIRDB_NOPARENT;
 	uint32_t mdb_ref = UINT32_MAX;
-	char *temp1 = 0;
+	const char *temp1 = 0;
 	dirdbGetName_internalstr (dirdb_ref, &temp1);
 	while (!dirdbGetMdb(&dirdbnode, &mdb_ref, &first))
 	{
-		char *temp2 = 0;
+		const char *temp2 = 0;
 		dirdbGetName_internalstr (dirdbnode, &temp2);
 		if (!strcmp (temp1, temp2))
 		{

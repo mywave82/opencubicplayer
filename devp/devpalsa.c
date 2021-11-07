@@ -599,7 +599,7 @@ static struct ocpdir_t *dir_alsa_readdir_dir (struct ocpdir_t *_self, uint32_t d
 static struct ocpfile_t *dir_alsa_readdir_file (struct ocpdir_t *_self, uint32_t dirdb_ref)
 {
 	int result, i;
-	char *searchpath = 0;
+	const char *searchpath = 0;
 	uint32_t parent_dirdb_ref;
 	void **hints;
 	int count = 1;
@@ -1232,7 +1232,7 @@ static void alsaClose(void)
 
 static int alsaMixerIntrSetDev (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip)
 {
-	char *name;
+	const char *name;
 
 	dirdbGetName_internalstr (f->dirdb_ref, &name);
 

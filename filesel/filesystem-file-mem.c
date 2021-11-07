@@ -197,6 +197,7 @@ static struct ocpfilehandle_t *mem_filehandle_open_real (struct mem_ocpfile_t *o
 	        0, /* ioctl */
 		mem_filehandle_filesize,
 		mem_filehandle_filesize_ready,
+	        0, /* filename_override */
 		dirdbRef (dirdb_ref, dirdb_use_filehandle)
 	);
 

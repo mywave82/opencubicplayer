@@ -99,11 +99,11 @@ static int _filesystem_resolve_dirdb_dir (uint32_t ref, struct dmDrive **drive, 
 	if (parent == DIRDB_CLEAR)
 	{
 		struct dmDrive *iter;
-		char *str1 = 0;
+		const char *str1 = 0;
 		dirdbGetName_internalstr (ref, &str1);
 		for (iter = dmDrives; iter; iter = iter->next)
 		{
-			char *str2 = 0;
+			const char *str2 = 0;
 			dirdbGetName_internalstr (iter->basedir->dirdb_ref, &str2);
 			if (!strcasecmp (str1, str2))
 			{
@@ -140,7 +140,7 @@ static int _filesystem_resolve_dirdb_dir (uint32_t ref, struct dmDrive **drive, 
 			if (file)
 			{
 				char *filetype = 0;
-				char *orig = 0;
+				const char *orig = 0;
 
 				dirdbGetName_internalstr (ref, &orig);
 				getext_malloc (orig, &filetype);

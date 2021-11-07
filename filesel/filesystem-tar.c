@@ -588,7 +588,7 @@ struct ocpdir_t *tar_check (const struct ocpdirdecompressor_t *self, struct ocpf
 
 	if (iter->archive_file->filesize_ready (iter->archive_file))
 	{
-		char *filename = 0;
+		const char *filename = 0;
 		uint8_t *metadata = 0;
 		size_t metadatasize = 0;
 
@@ -878,7 +878,7 @@ static int tar_dir_readdir_iterate (ocpdirhandle_pt _self)
 		self->dir->owner->archive_filehandle->seek_set (self->dir->owner->archive_filehandle, self->nextheader_offset);
 		if (self->dir->owner->archive_filehandle->read (self->dir->owner->archive_filehandle, header, 512) != 512)
 		{
-			char *filename;
+			const char *filename;
 			uint8_t *metadata = 0;
 			size_t metadatasize = 0;
 
@@ -1107,6 +1107,7 @@ static struct ocpfilehandle_t *tar_file_open (struct ocpfile_t *_self)
 	                       0, /* ioctl */
 	                       tar_filehandle_filesize,
 	                       tar_filehandle_filesize_ready,
+	                       0, /* filename_override */
 	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle));
 
 	retval->file = self;
@@ -1401,7 +1402,7 @@ static void tar_set_byuser_string (struct ocpdir_t *_self, const char *byuser)
 	{
 		uint8_t *metadata = 0;
 		size_t metadatasize = 0;
-		char *filename = 0;
+		const char *filename = 0;
 
 		tar_instance_encode_blob (self->owner, &metadata, &metadatasize);
 		dirdbGetName_internalstr (self->owner->archive_file->dirdb_ref, &filename);

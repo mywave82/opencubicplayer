@@ -462,7 +462,7 @@ static void normalize(void)
 
 static int oplOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
-	char *path;
+	const char *path;
 	size_t buffersize = 16*1024;
 	uint8_t *buffer = (uint8_t *)malloc (buffersize);
 	size_t bufferfill = 0;

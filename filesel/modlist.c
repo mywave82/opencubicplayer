@@ -133,7 +133,7 @@ void modlist_append (struct modlist *modlist, struct modlistentry *entry)
 void modlist_append_dir (struct modlist *modlist, struct ocpdir_t *dir)
 {
 	struct modlistentry entry = {0};
-	char *childpath = 0;
+	const char *childpath = 0;
 
 	if (!dir)
 	{
@@ -172,7 +172,7 @@ void modlist_append_dotdot (struct modlist *modlist, struct ocpdir_t *dir)
 void modlist_append_drive (struct modlist *modlist, struct dmDrive *drive)
 {
 	struct modlistentry entry = {0};
-	char *childpath = 0;
+	const char *childpath = 0;
 
 	if (!drive)
 	{
@@ -193,7 +193,7 @@ void modlist_append_drive (struct modlist *modlist, struct dmDrive *drive)
 void modlist_append_file (struct modlist *modlist, struct ocpfile_t *file)
 {
 	struct modlistentry entry = {0};
-	char *childpath = 0;
+	const char *childpath = 0;
 
 	if (!file)
 	{
@@ -201,7 +201,11 @@ void modlist_append_file (struct modlist *modlist, struct ocpfile_t *file)
 	}
 
 	entry.file = file; /* modlist_append will do a ref */
-	dirdbGetName_internalstr (file->dirdb_ref, &childpath);
+	childpath = file->filename_override (file);
+	if (!childpath)
+	{
+		dirdbGetName_internalstr (file->dirdb_ref, &childpath);
+	}
 	utf8_XdotY_name (8, 3, entry.utf8_8_dot_3, childpath);
 	utf8_XdotY_name (16, 3, entry.utf8_16_dot_3, childpath);
 
@@ -346,7 +350,7 @@ int modlist_fuzzyfind(struct modlist *modlist, const char *filename)
 		return 0;
 	for (i=0;i<modlist->num;i++)
 	{
-		char *temp = 0;
+		const char *temp = 0;
 		const char *diff;
 		int score;
 		int index = modlist->sortindex[i];
@@ -420,7 +424,7 @@ static int mlecmp (const void *a, const void *b)
 	int i1 = mlecmp_score (e1);
 	int i2 = mlecmp_score (e2);
 
-	char *n1, *n2;
+	const char *n1, *n2;
 
 	if (i1 != i2)
 	{

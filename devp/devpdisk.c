@@ -191,7 +191,7 @@ static int dwPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_
 		return 0;
 
 	{
-		char *orig;
+		const char *orig;
 		char *fn;
 		int i;
 		if (source_file)

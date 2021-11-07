@@ -113,6 +113,7 @@ struct ocpfilehandle_t *cache_filehandle_open_pre (struct ocpfile_t *owner, char
 		cache_filehandle_ioctl,
 		cache_filehandle_filesize,
 		cache_filehandle_filesize_ready,
+	        0, /* filename_override */
 		owner->dirdb_ref // we do not dirdb_ref()/dirdb_unref(), since we ref the owner instead
 	);
 	retval->owner = owner;
@@ -149,6 +150,7 @@ struct ocpfilehandle_t *cache_filehandle_open (struct ocpfilehandle_t *parent)
 		cache_filehandle_ioctl,
 		cache_filehandle_filesize,
 		cache_filehandle_filesize_ready,
+	        0, /* filename_override */
 		parent->dirdb_ref // we do not dirdb_ref()/dirdb_unref(), since we ref the owner instead
 	);
 

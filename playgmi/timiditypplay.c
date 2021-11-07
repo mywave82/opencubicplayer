@@ -437,7 +437,7 @@ static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_
 	timidityChanSetup(/*&mid*/);
 
 	{
-		char *path;
+		const char *path;
 		size_t buffersize = 64*1024;
 		uint8_t *buffer = (uint8_t *)malloc (buffersize);
 		size_t bufferfill = 0;

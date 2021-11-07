@@ -125,7 +125,7 @@ out:
 
 static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
 {
-	char *filename = 0;
+	const char *filename = 0;
 	uint32_t type;
 	typedef struct __attribute__((packed))
 	{

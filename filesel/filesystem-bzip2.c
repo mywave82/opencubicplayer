@@ -451,7 +451,7 @@ static int bzip2_ocpfilehandle_read (struct ocpfilehandle_t *_s, void *dst, int 
 			if ((s->owner->filesize_pending) || (s->owner->uncompressed_filesize != filesize))
 			{
 				uint8_t buffer[8];
-				char *filename = 0;
+				const char *filename = 0;
 				uint64_t compressedfile_size = s->compressedfilehandle->filesize (s->compressedfilehandle);
 
 
@@ -529,6 +529,7 @@ static struct ocpfilehandle_t *bzip2_ocpfile_open (struct ocpfile_t *_s)
 	                       0, /* ioctl */
 	                       bzip2_ocpfilehandle_filesize,
 	                       bzip2_ocpfilehandle_filesize_ready,
+	                       0, /* filename_override */
 	                       dirdbRef (s->head.dirdb_ref, dirdb_use_filehandle));
 
 	retval->owner = s;
@@ -566,7 +567,7 @@ static uint64_t bzip2_ocpfile_filesize (struct ocpfile_t *_s)
 	uint64_t filesize = 0;
 	uint8_t buffer[8];
 	int ret; // for zlib
-	char *filename = 0;
+	const char *filename = 0;
 
 	if (!s->filesize_pending)
 	{
@@ -866,7 +867,7 @@ static struct ocpdir_t *bzip2_check_steal (struct ocpfile_t *s, const uint32_t d
 	{
 		unsigned char *metadata = 0;
 		size_t metadatasize = 0;
-		char *filename = 0;
+		const char *filename = 0;
 
 		dirdbGetName_internalstr (retval->child.compressedfile->dirdb_ref, &filename);
 

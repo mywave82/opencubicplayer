@@ -18,6 +18,11 @@ uint32_t dirdbFindAndRef (uint32_t parent, const char *name, enum dirdb_use use)
 	return 0;
 }
 
+const char *ocpfilehandle_t_fill_default_filename_override (struct ocpfilehandle_t *fh)
+{
+	return 0;
+}
+
 static const char src_data[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 static const int src_len = 26;
 

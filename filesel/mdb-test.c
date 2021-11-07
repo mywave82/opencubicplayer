@@ -112,7 +112,7 @@ static int mdb_test_flock (int fd, int operation)
 	_exit(1);
 }
 
-void dirdbGetName_internalstr(uint32_t ref, char **name)
+void dirdbGetName_internalstr(uint32_t ref, const char **name)
 {
 	switch (ref)
 	{

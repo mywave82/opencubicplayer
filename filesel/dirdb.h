@@ -35,7 +35,7 @@ extern void dirdbFlush(void); /* removes all nodes that hasn't been ref'ed yet a
 #define DIRDB_FULLNAME_ENDSLASH 2
 extern void dirdbGetFullname_malloc(uint32_t node, char **name, int flags);
 
-extern void dirdbGetName_internalstr(uint32_t node, char **name); /* gives a pointer that is valid as long as you do not call dirdbUnref(). The buffer MUST NOT be sent to free() */
+extern void dirdbGetName_internalstr(uint32_t node, const char **name); /* gives a pointer that is valid as long as you do not call dirdbUnref(). The buffer MUST NOT be sent to free() */
 extern void dirdbGetName_malloc(uint32_t node, char **name); /* does not allow / in name, but \\ */
 
 extern uint32_t dirdbRef(uint32_t node, enum dirdb_use use);

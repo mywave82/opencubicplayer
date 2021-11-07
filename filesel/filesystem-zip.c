@@ -395,7 +395,7 @@ static void zip_instance_encode_blob (struct zip_instance_t *self, uint8_t **blo
 static void zip_ensure_disk__callback_file (void *token, struct ocpfile_t *file)
 {
 	unsigned long long N;
-	char *name = 0;
+	const char *name = 0;
 	struct zip_instance_t *self = (struct zip_instance_t *)token;
 
 	dirdbGetName_internalstr (file->dirdb_ref, &name);
@@ -1032,7 +1032,7 @@ start_central_directory_record:
 	{
 		uint8_t *metadata = 0;
 		size_t metadatasize = 0;
-		char *filename = 0;
+		const char *filename = 0;
 
 		zip_instance_encode_blob (self, &metadata, &metadatasize);
 		dirdbGetName_internalstr (self->archive_file->dirdb_ref, &filename);
@@ -1117,7 +1117,7 @@ static struct ocpdir_t *zip_check (const struct ocpdirdecompressor_t *self, stru
 
 	/* filesize_ready() logic we ignore, since we must seek to the end of the file */
 	{
-		char *filename = 0;
+		const char *filename = 0;
 		uint8_t *metadata = 0;
 		size_t metadatasize = 0;
 
@@ -2165,6 +2165,7 @@ static struct ocpfilehandle_t *zip_file_open (struct ocpfile_t *_self)
 	                       0, /* ioctl */
 	                       zip_filehandle_filesize,
 	                       zip_filehandle_filesize_ready,
+	                       0, /* filename_override */
 	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle));
 
 	retval->file = self;
@@ -2493,7 +2494,7 @@ static void zip_set_byuser_string (struct ocpdir_t *_self, const char *byuser)
 	{
 		uint8_t *metadata = 0;
 		size_t metadatasize = 0;
-		char *filename = 0;
+		const char *filename = 0;
 
 		zip_instance_encode_blob (self->owner, &metadata, &metadatasize);
 		dirdbGetName_internalstr (self->owner->archive_file->dirdb_ref, &filename);

@@ -141,6 +141,11 @@ const char *ocpfile_t_fill_default_filename_override (struct ocpfile_t *file)
 	return 0;
 }
 
+const char *ocpfilehandle_t_fill_default_filename_override (struct ocpfilehandle_t *fh)
+{
+	return 0;
+}
+
 struct ocpdir_t_fill_default_readdir_dir_t // help struct for ocpdir_t_fill_default_readdir_dir
 {
 	uint32_t dirdb_ref;

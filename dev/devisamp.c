@@ -288,7 +288,7 @@ static struct ocpdir_t *dir_devs_readdir_dir (struct ocpdir_t *_self, uint32_t d
 static struct ocpfile_t *dir_devs_readdir_file (struct ocpdir_t *_self, uint32_t dirdb_ref)
 {
 	struct devinfonode *iter;
-	char *searchpath = 0;
+	const char *searchpath = 0;
 
 	uint32_t parent_dirdb_ref;
 
@@ -472,7 +472,8 @@ static void sampdevclose(void)
 
 static int smpSetDev(struct moduleinfostruct *mi, struct ocpfilehandle_t *fp, const struct interfaceparameters *ip)
 {
-	char *path, *name;
+	const char *path;
+	char *name;
 
 	if (mi->modtype.integer.i != MODULETYPE("DEVv"))
 	{

@@ -29,7 +29,7 @@ void dirdbUnref (uint32_t ref, enum dirdb_use use)
 {
 }
 
-void dirdbGetName_internalstr (uint32_t ref, char **retval)
+void dirdbGetName_internalstr (uint32_t ref, const char **retval)
 {
 	*retval = 0;
 	if (ref == 1) *retval = "test1.txt.bz2";
@@ -48,7 +48,7 @@ void dirdbGetName_internalstr (uint32_t ref, char **retval)
 
 void dirdbGetName_malloc (uint32_t ref, char **retval)
 {
-	char *temp = 0;
+	const char *temp = 0;
 	dirdbGetName_internalstr (ref, &temp);
 	if (!temp)
 	{
@@ -84,6 +84,11 @@ const char *ocpfile_t_fill_default_filename_override (struct ocpfile_t *file)
 int ocpfilehandle_t_fill_default_ioctl (struct ocpfilehandle_t *s, const char *cmd, void *ptr)
 {
 	return -1;
+}
+
+const char *ocpfilehandle_t_fill_default_filename_override (struct ocpfilehandle_t *fh)
+{
+	return 0;
 }
 
 void register_dirdecompressor (const struct ocpdirdecompressor_t *ofd)

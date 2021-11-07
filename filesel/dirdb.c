@@ -904,7 +904,7 @@ char *dirdbDiffPath(uint32_t base, uint32_t node, const int flags)
 	}
 	for (j=i; j < stack_node_fill; j++)
 	{
-		char *tmp = 0;
+		const char *tmp = 0;
 		int len;
 
 		dirdbGetName_internalstr (stack_node_data[j], &tmp);
@@ -1052,7 +1052,7 @@ void dirdbUnref(uint32_t node, enum dirdb_use use)
 	}
 }
 
-void dirdbGetName_internalstr(uint32_t node, char **name)
+void dirdbGetName_internalstr(uint32_t node, const char **name)
 {
 	*name = 0;
 	if (node>=dirdbNum)

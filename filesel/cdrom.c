@@ -475,7 +475,7 @@ static int cdrom_root_readdir_iterate (ocpdirhandle_pt _dh)
 
 static struct ocpdir_t *cdrom_root_readdir_dir (struct ocpdir_t *_self, uint32_t dirdb_ref)
 {
-	char *searchpath = 0;
+	const char *searchpath = 0;
 	uint32_t parent_dirdb_ref;
 	int n;
 
@@ -978,6 +978,13 @@ static int ocpfilehandle_cdrom_track_filesize_ready (struct ocpfilehandle_t *_ha
 	return 1;
 }
 
+static const char *ocpfilehandle_cdrom_track_filename_override_disc (struct ocpfilehandle_t *_handle)
+{
+	struct ocpfilehandle_cdrom_track_t *handle = (struct ocpfilehandle_cdrom_track_t *)_handle;
+
+	return handle->owner->head.filename_override (&handle->owner->head);
+}
+
 static struct ocpfilehandle_t *cdrom_track_open (struct ocpfile_t *_self)
 {
 	struct cdrom_track_ocpfile_t *self = (struct cdrom_track_ocpfile_t *)_self;
@@ -1002,6 +1009,7 @@ static struct ocpfilehandle_t *cdrom_track_open (struct ocpfile_t *_self)
 	                      ocpfilehandle_cdrom_track_ioctl,
 	                      ocpfilehandle_cdrom_track_filesize,
 	                      ocpfilehandle_cdrom_track_filesize_ready,
+	                      ocpfilehandle_cdrom_track_filename_override_disc,
 	                      _self->dirdb_ref);
 	dirdbRef (_self->dirdb_ref, dirdb_use_filehandle);
 

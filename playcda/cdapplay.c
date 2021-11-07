@@ -577,7 +577,7 @@ static void cdaCloseFile(void)
 
 static int cdaOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
-	char *name = 0;
+	const char *name = 0;
 	int32_t start = -1;
 	int32_t stop = -1;
 
@@ -585,7 +585,12 @@ static int cdaOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	{
 		return -1;
 	}
-	dirdbGetName_internalstr (file->dirdb_ref, &name);
+
+	name = file->filename_override (file);
+	if (!name)
+	{
+		dirdbGetName_internalstr (file->dirdb_ref, &name);
+	}
 
 	if (!strcmp (name, "DISK.CDA"))
 	{

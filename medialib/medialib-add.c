@@ -14,8 +14,8 @@ static int adecmp (const void *_a, const void *_b)
 	const struct medialibAddDirEntry *a = _a;
 	const struct medialibAddDirEntry *b = _b;
 
-	char *s1;
-	char *s2;
+	const char *s1;
+	const char *s2;
 
 	dirdbGetName_internalstr (a->dir->dirdb_ref, &s1);
 	dirdbGetName_internalstr (b->dir->dirdb_ref, &s2);
@@ -120,7 +120,7 @@ static void mlAddDraw(const char *title, const char *utf8_path, int dsel)
 	{
 		if (i < medialibAddDirEntries)
 		{
-			char *path = (char *)medialibAddDirEntry[i + skip].override_string;
+			const char *path = (const char *)medialibAddDirEntry[i + skip].override_string;
 			assert ((i + skip) < medialibAddDirEntries);
 			if (!path)
 			{

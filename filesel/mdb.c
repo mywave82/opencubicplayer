@@ -196,7 +196,7 @@ int mdbReadInfo (struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 	maxl = f->read (f, mdbScanBuf, sizeof (mdbScanBuf));
 
 	{
-		char *path;
+		const char *path;
 		dirdbGetName_internalstr (f->dirdb_ref, &path);
 		DEBUG_PRINT ("   mdbReadInfo(%s %p %d)\n", path, mdbScanBuf, maxl);
 	}
@@ -846,7 +846,7 @@ static uint32_t mdbGetModuleReference (const char *name, uint64_t size)
 
 uint32_t mdbGetModuleReference2 (uint32_t dirdb_ref, uint64_t size)
 {
-	char *temppath;
+	const char *temppath;
 
 	dirdbGetName_internalstr (dirdb_ref, &temppath);
 	if (!temppath)

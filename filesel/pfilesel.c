@@ -127,7 +127,7 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 {
 	struct fsReadDir_token_t *token = _token;
 	char *curext;
-	char *childpath = 0;
+	const char *childpath = 0;
 #ifndef FNM_CASEFOLD
 	char *childpath_upper;
 	char *iterate;
@@ -528,7 +528,8 @@ static int initRootDir(const char *sec)
 			if (file)
 			{
 				struct ocpdir_t *dir = 0;
-				char *childpath, *curext;
+				const char *childpath;
+				char *curext;
 
 				dirdbGetName_internalstr (file->dirdb_ref, &childpath);
 				getext_malloc (childpath, &curext);
@@ -1069,7 +1070,7 @@ static void displayfile(const unsigned int y, unsigned int x, unsigned int width
 		{
 			displaystr_utf8 (y, x, col, m->utf8_8_dot_3, width - 5);
 		} else {
-			char *temp = 0;
+			const char *temp = 0;
 
 			if (m->file)
 			{
