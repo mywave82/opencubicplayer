@@ -26,6 +26,8 @@
 #include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/player.h"
+#include "filesel/dirdb.h"
+#include "filesel/filesystem.h"
 #include "filesel/pfilesel.h"
 #include "filesel/mdb.h"
 #include "flacplay.h"
@@ -493,6 +495,7 @@ static void flacCloseFile(void)
 
 static int flacOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *flacf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
+	const char *filename;
 	struct flacinfo inf;
 
 	if (!flacf)
@@ -505,7 +508,8 @@ static int flacOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *
 	modname=info->title;
 	composer=info->composer;
 
-	fprintf(stderr, "loading %s%s...\n", currentmodname, currentmodext);
+	dirdbGetName_internalstr (flacf->dirdb_ref, &filename);
+	fprintf(stderr, "preloading %s...\n", filename);
 
 	plIsEnd=flacLooped;
 	plProcessKey=flacProcessKey;

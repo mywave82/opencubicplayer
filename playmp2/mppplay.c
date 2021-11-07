@@ -30,6 +30,7 @@
 #include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/player.h"
+#include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -484,6 +485,7 @@ static void mpegCloseFile(void)
 
 static int mpegOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *mpegfile, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
+	const char *filename;
 	struct mpeginfo inf;
 
 	if (!mpegfile)
@@ -502,7 +504,8 @@ static int mpegOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *m
 	modname=info->title;
 	composer=info->composer;
 
-	fprintf(stderr, "loading %s%s...\n", currentmodname, currentmodext);
+	dirdbGetName_internalstr (mpegfile->dirdb_ref, &filename);
+	fprintf(stderr, "preloading %s...\n", filename);
 
 	plIsEnd=mpegLooped;
 	plProcessKey=mpegProcessKey;

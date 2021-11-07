@@ -37,6 +37,7 @@
 #include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/player.h"
+#include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -490,6 +491,7 @@ static int wavLooped(void)
 
 static int wavOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *wavf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
+	const char *filename;
 	struct waveinfo inf;
 
 	if (!wavf)
@@ -502,7 +504,8 @@ static int wavOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *wa
 	modname=info->title;
 	composer=info->composer;
 
-	fprintf(stderr, "preloading %s%s...\n", currentmodname, currentmodext);
+	dirdbGetName_internalstr (wavf->dirdb_ref, &filename);
+	fprintf(stderr, "preloading %s...\n", filename);
 
 	plIsEnd=wavLooped;
 	plProcessKey=wavProcessKey;

@@ -43,6 +43,7 @@ wavpplay.o: wavpplay.c \
 	../boot/plinkman.h \
 	../boot/psetting.h \
 	../cpiface/cpiface.h \
+	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \

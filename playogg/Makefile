@@ -66,6 +66,8 @@ oggpplay.o: oggpplay.c \
 	../cpiface/cpiface.h \
 	../dev/deviplay.h \
 	../dev/player.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	oggplay.h \

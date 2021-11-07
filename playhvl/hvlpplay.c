@@ -29,6 +29,7 @@
 #include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/player.h"
+#include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -435,6 +436,7 @@ static void hvlCloseFile(void)
 
 static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
+	const char *filename;
 	uint8_t *filebuf;
 	uint64_t filelen;
 
@@ -447,7 +449,11 @@ static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 //	strncpy(currentmodname, info->name, _MAX_FNAME);
 //	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
+
 	filelen = file->filesize (file);
+
+	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	fprintf(stderr, "loading %s (%"PRIu64" bytes)...\n", filename, filelen);
 
 	if (filelen < 14)
 	{

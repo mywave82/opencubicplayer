@@ -379,6 +379,7 @@ sidpplay.o: sidpplay.cpp \
 	../cpiface/cpiface.h \
 	../dev/deviplay.h \
 	../dev/player.h \
+	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../stuff/compat.h \

@@ -37,6 +37,8 @@
 #include "dev/deviplay.h"
 #include "dev/player.h"
 
+#include "filesel/dirdb.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 
@@ -500,6 +502,7 @@ static void oggCloseFile(void)
 
 static int oggOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *oggf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
+	const char *filename;
 	struct ogginfo inf;
 
 	if (!oggf)
@@ -512,7 +515,8 @@ static int oggOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *o
 	modname=info->title;
 	composer=info->composer;
 
-	fprintf(stderr, "loading %s%s...\n", currentmodname, currentmodext);
+	dirdbGetName_internalstr (oggf->dirdb_ref, &filename);
+	fprintf(stderr, "preloading %s...\n", filename);
 
 	plIsEnd=oggIsLooped;
 	plProcessKey=oggProcessKey;

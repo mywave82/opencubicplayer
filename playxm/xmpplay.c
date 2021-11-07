@@ -43,6 +43,7 @@
 #include "cpiface/cpiface.h"
 #include "dev/deviwave.h"
 #include "dev/mcp.h"
+#include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -613,6 +614,7 @@ static int xmpGetDots(struct notedotsdata *d, int max)
 
 static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *_loader) /* no loader needed/used by this plugin */
 {
+	const char *filename;
 	int (*loader)(struct xmodule *, struct ocpfilehandle_t *)=0;
 	int retval;
 
@@ -626,7 +628,8 @@ static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	//strncpy(currentmodname, info->name, _MAX_FNAME);
 	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
-	fprintf(stderr, "loading %s%s (%uk)...\n", currentmodname, currentmodext, (unsigned int)(file->filesize (file) >> 10));
+	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	fprintf(stderr, "loading %s (%uk)...\n", filename, (unsigned int)(file->filesize (file) >> 10));
 
 	     if (info->modtype.integer.i == MODULETYPE("XM"))   loader=xmpLoadModule;
 	else if (info->modtype.integer.i == MODULETYPE("MOD"))  loader=xmpLoadMOD;

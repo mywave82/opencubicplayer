@@ -68,6 +68,8 @@ flacpplay.o: flacpplay.c \
 	../cpiface/cpiface.h \
 	../dev/deviplay.h \
 	../dev/player.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
 	../filesel/pfilesel.h \
 	../filesel/mdb.h \
 	flacplay.h \

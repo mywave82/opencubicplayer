@@ -61,6 +61,7 @@ itpplay.o: itpplay.c \
 	../cpiface/cpiface.h \
 	../dev/deviwave.h \
 	../dev/mcp.h \
+	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \

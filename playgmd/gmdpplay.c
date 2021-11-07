@@ -36,6 +36,7 @@
 #include "cpiface/cpiface.h"
 #include "dev/deviwave.h"
 #include "dev/mcp.h"
+#include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -117,7 +118,7 @@ static int mpLoadGen(struct gmdmodule *m, struct ocpfilehandle_t *file, struct m
 		return errSymSym;
 	}
 #ifdef LD_DEBUG
-	fprintf(stderr, "Loading using %s-%s\n", link, name);
+	fprintf(stderr, "loading using %s-%s\n", link, name);
 #endif
 	memset(m->composer, 0, sizeof(m->composer));
 	retval=loadfn->load(m, file);
@@ -378,6 +379,7 @@ static int gmdLooped(void)
 
 static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader)
 {
+	const char *filename;
 	uint64_t i;
 	int retval;
 
@@ -394,7 +396,8 @@ static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
 	i = file->filesize (file);
-	fprintf(stderr, "loading %s%s (%uk)...\n", currentmodname, currentmodext, (unsigned int)(i>>10));
+	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	fprintf(stderr, "loading %s... (%uk)\n", filename, (unsigned int)(i>>10));
 
 	retval=mpLoadGen(&mod, file, info->modtype, ldlink, loader);
 

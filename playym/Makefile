@@ -56,8 +56,9 @@ ympplay.o: ympplay.cpp \
 	../cpiface/cpiface.h \
 	../dev/deviplay.h \
 	../dev/player.h \
-	../filesel/mdb.h \
+	../filesel/dirdb.h \
 	../filesel/filesystem.h \
+	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
 	../stuff/poutput.h \

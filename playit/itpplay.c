@@ -39,6 +39,7 @@
 #include "cpiface/cpiface.h"
 #include "dev/deviwave.h"
 #include "dev/mcp.h"
+#include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -559,8 +560,8 @@ static int itpGetLChanSample(unsigned int ch, int16_t *buf, unsigned int len, ui
 
 static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
+	const char *filename;
 	int retval;
-
 	int nch;
 
 	if (!mcpOpenPlayer)
@@ -573,7 +574,8 @@ static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	//strncpy(currentmodname, info->name, _MAX_FNAME);
 	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
-	fprintf(stderr, "loading %s%s (%uk)...\n", currentmodname, currentmodext, (unsigned int)(file->filesize(file)>>10));
+	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	fprintf(stderr, "loading %s (%uk)...\n", filename, (unsigned int)(file->filesize(file)>>10));
 
 	if (!(retval=it_load(&mod, file)))
 		if (!loadsamples(&mod))

@@ -35,8 +35,9 @@ extern "C"
 #include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/player.h"
-#include "filesel/mdb.h"
+#include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
+#include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
 #include "stuff/poutput.h"
@@ -599,6 +600,11 @@ static void normalize(void)
 }
 static int ymOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
+	const char *filename;
+
+	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	fprintf(stderr, "loading %s...\n", filename);
+
 	plIsEnd=ymLooped;
 	plProcessKey=ymProcessKey;
 	plDrawGStrings=ymDrawGStrings;

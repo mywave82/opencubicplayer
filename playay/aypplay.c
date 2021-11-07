@@ -33,6 +33,7 @@
 #include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/player.h"
+#include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -415,20 +416,20 @@ static int ayProcessKey(uint16_t key)
 
 static int ayOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
-/*
-	struct ayinfo ay;
-*/
+	const char *filename;
+
 	if (!file)
 		return -1;
 
-#warning TODO replace currentmodname currentmodext
 	//strncpy(currentmodname, info->name, _MAX_FNAME);
 	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
 
+#warning TODO replace currentmodname currentmodext
 	//modname=info->modname;
 	composer=info->composer;
 
-	fprintf(stderr, "Loading %s%s...\n", currentmodname, currentmodext);
+	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	fprintf(stderr, "loading %s...\n", filename);
 
 	plIsEnd=ayLooped;
 	plProcessKey=ayProcessKey;
@@ -452,13 +453,6 @@ static int ayOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fil
 	plPause=0;
 	normalize();
 	pausefadedirect=0;
-
-
-/*
-	ayGetInfo(&ay);
-	aylen=inf.len;
-	ayrate=inf.rate;
-*/
 
 	return errOk;
 }

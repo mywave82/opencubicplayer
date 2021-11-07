@@ -45,6 +45,7 @@ extern "C"
 #include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/player.h"
+#include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "stuff/compat.h"
@@ -729,6 +730,8 @@ static int sidLooped()
 
 static int sidOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *sidf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
+	const char *filename;
+
 	if (!sidf)
 		return -1;
 
@@ -739,7 +742,8 @@ static int sidOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *si
 	modname=info->title;
 	composer=info->composer;
 
-	fprintf(stderr, "loading %s%s...\n", currentmodname, currentmodext);
+	dirdbGetName_internalstr (sidf->dirdb_ref, &filename);
+	fprintf(stderr, "loading %s...\n", filename);
 
 	if (!sidOpenPlayer(sidf))
 		return -1;

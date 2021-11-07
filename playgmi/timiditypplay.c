@@ -412,6 +412,7 @@ static int timidityProcessKey(uint16_t key)
 
 static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
+	const char *filename;
 	int err;
 
 	if (!file)
@@ -424,7 +425,8 @@ static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_
 	modname=info->title;
 	composer=info->composer;
 
-	fprintf(stderr, "Loading %s%s...\n", currentmodname, currentmodext);
+	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	fprintf(stderr, "loading %s...\n", filename);
 
 	plIsEnd=timidityLooped;
 	plProcessKey=timidityProcessKey;
