@@ -93,12 +93,18 @@ static int _mpLoadULT(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		return errFileRead;
 	}
 	if (memcmp(id, "MAS_UTrack_V00", 14))
+	{
+		fprintf (stderr, __FILE__": file too old\n");
 		return errFormMiss;
+	}
 
 	ver=id[14]-'0';
 
 	if (ver>4)
+	{
+		fprintf (stderr, __FILE__": file too new\n");
 		return errFormOldVer;
+	}
 
 	m->options=(ver<2)?MOD_GUSVOL:0;
 
@@ -118,10 +124,13 @@ static int _mpLoadULT(struct gmdmodule *m, struct ocpfilehandle_t *file)
 	if (msglen)
 	{
 		int16_t t;
+
 		m->message=malloc(sizeof(char *)*(msglen+1));
 		if (!m->message)
 			return errAllocMem;
+
 		*m->message=malloc(sizeof(char)*msglen*33);
+		if (!*m->message)
 			return errAllocMem;
 		for (t=0; t<msglen; t++)
 		{
@@ -514,7 +523,6 @@ static int _mpLoadULT(struct gmdmodule *m, struct ocpfilehandle_t *file)
 			}
 		}
 	}
-
 
 	for (t=0; t<=patn; t++)
 	{

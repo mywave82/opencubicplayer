@@ -323,8 +323,6 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	{
 		if (len>=(15+32))
 		{
-#warning TODO, loader/player is broken!!! Needs fixing
-			m->modtype.integer.i = 0;
 			cp437_f_to_utf8_z (buf + 15, 32, m->title, sizeof (m->title));
 
 			switch (buf[14])
