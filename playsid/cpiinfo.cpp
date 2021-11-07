@@ -154,7 +154,7 @@ static void SidInfoDraw(int focus)
 			}
 			tmp = sidInfoString(i);
 			latin1_f_to_utf8_z (tmp, strlen (tmp), SidUTF8Buffer, sizeof (SidUTF8Buffer));
-			displaystr_utf8(SidInfoFirstLine + line, 18, 0x05, sidInfoString(i), SidInfoWidth - 18 - 2);
+			displaystr_utf8(SidInfoFirstLine + line, 18, 0x05, SidUTF8Buffer, SidInfoWidth - 18 - 2);
 			displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
 		}
 		line++;
