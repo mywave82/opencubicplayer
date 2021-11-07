@@ -52,10 +52,6 @@ static int fsReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, co
 		strcpy(m->title, "openCP dirdb/medialib: db v1");
 	if (!memcmp(buf, dirdbsigv2, sizeof(dirdbsigv2)))
 		strcpy(m->title, "openCP dirdb/medialib: db v2");
-#if 0
-	if (!memcmp(buf, "MDZTagList\x1A\x00", 12))
-		strcpy(m->modname, "openCP MDZ file cache");
-#endif
 	return 0;
 }
 

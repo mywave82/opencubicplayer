@@ -24,7 +24,6 @@ extern int fsLoopMods;
 extern int fsScanNames;
 extern int fsScanArcs;
 extern int fsScanInArc;
-extern int fsScanMIF;
 extern int fsScrType;
 extern int fsEditWin;
 extern int fsColorTypes;
@@ -93,10 +92,6 @@ extern void plUnregisterPreprocess(struct preprocregstruct *r);
 #define RD_SUBNOSYMLINK 4
 #define RD_PUTDRIVES 8
 #define RD_PUTRSUBS 16
-
-#if 0
-extern char mifMemRead(const char *name, unsigned short size, char *ptr);
-#endif
 
 int fsMatchFileName12(const char *a, const char *b);
 

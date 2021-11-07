@@ -599,7 +599,6 @@ int fsLoopMods=1;
 int fsScanNames=1;
 int fsScanArcs=0;
 int fsScanInArc=1;
-int fsScanMIF=1;
 int fsScrType=0;
 int fsEditWin=1;
 int fsColorTypes=1;
@@ -847,7 +846,6 @@ int fsPreInit(void)
 	fsColorTypes=cfGetProfileBool2(sec, "fileselector", "typecolors", 1, 1);
 	fsEditWin=cfGetProfileBool2(sec, "fileselector", "editwin", 1, 1);
 	fsWriteModInfo=cfGetProfileBool2(sec, "fileselector", "writeinfo", 1, 1);
-	fsScanMIF=cfGetProfileBool2(sec, "fileselector", "scanmdz", 1, 1);
 	fsScanInArc=cfGetProfileBool2(sec, "fileselector", "scaninarcs", 1, 1);
 	fsScanNames=cfGetProfileBool2(sec, "fileselector", "scanmodinfo", 1, 1);
 	fsScanArcs=cfGetProfileBool2(sec, "fileselector", "scanarchives", 1, 1);
@@ -949,11 +947,6 @@ static struct interfacestruct VirtualInterface = {VirtualInterfaceInit, VirtualI
 
 int fsInit(void)
 {
-	/*
-	if (!mifInit())  .mdz tag cache/reader
-		return 0;
-	*/
-
 	plRegisterInterface (&VirtualInterface);
 
 	if (!fsScanDir(0))
@@ -981,9 +974,6 @@ void fsClose(void)
 
 	adbMetaClose();
 	mdbClose();
-	/*
-	mifClose();
-	*/
 	if (moduleextensions)
 	{
 		int i;
@@ -1775,38 +1765,36 @@ superbreak:
 		displaystr( 4, 18, 0x0F, fsLoopMods?"on":"off", plScrWidth - 18);
 		displaystr( 5,  0, 0x07, "5:  scan module informatin: ", 28);
 		displaystr( 5, 28, 0x0F, fsScanNames?"on":"off", plScrWidth - 28);
-		displaystr( 6,  0, 0x04, "6:  scan module information files: ", 35);
-		displaystr( 6, 35, 0x0F, fsScanMIF?"on":"off", plScrWidth - 35);
-		displaystr( 7,  0, 0x07, "7:  scan archive contents: ", 27);
-		displaystr( 7, 27, 0x0F, fsScanArcs?"on":"off", plScrWidth - 27);
-		displaystr( 8,  0, 0x07, "8:  scan module information in archives: ", 41);
-		displaystr( 8, 41, 0x0F, fsScanInArc?"on":"off", plScrWidth - 41);
-		displaystr( 9,  0, 0x07, "9:  save module information to disk: ", 37);
-		displaystr( 9, 37, 0x0F, fsWriteModInfo?"on":"off", plScrWidth - 37);
-		displaystr(10,  0, 0x07, "A:  edit window: ", 17);
-		displaystr(10, 17, 0x0F, fsEditWin?"on":"off", plScrWidth - 17);
-		displaystr(11,  0, 0x07, "B:  module type colors: ", 24);
-		displaystr(11, 24, 0x0F, fsColorTypes?"on":"off", plScrWidth - 24);
-		displaystr(12,  0, 0x07, "C:  module information display mode: ", 37);
-		displaystr(12, 37, 0x0F, fsInfoModes[fsInfoMode], plScrWidth - 37);
-		displaystr(13,  0, 0x07, "D:  put archives: ", 18);
-		displaystr(13, 18, 0x0F, fsPutArcs?"on":"off", plScrWidth - 18);
+		displaystr( 6,  0, 0x07, "6:  scan archive contents: ", 27);
+		displaystr( 6, 27, 0x0F, fsScanArcs?"on":"off", plScrWidth - 27);
+		displaystr( 7,  0, 0x07, "7:  scan module information in archives: ", 41);
+		displaystr( 7, 41, 0x0F, fsScanInArc?"on":"off", plScrWidth - 41);
+		displaystr( 8,  0, 0x07, "8:  save module information to disk: ", 37);
+		displaystr( 8, 37, 0x0F, fsWriteModInfo?"on":"off", plScrWidth - 37);
+		displaystr( 9,  0, 0x07, "9:  edit window: ", 17);
+		displaystr( 9, 17, 0x0F, fsEditWin?"on":"off", plScrWidth - 17);
+		displaystr(10,  0, 0x07, "A:  module type colors: ", 24);
+		displaystr(10, 24, 0x0F, fsColorTypes?"on":"off", plScrWidth - 24);
+		displaystr(11,  0, 0x07, "B:  module information display mode: ", 37);
+		displaystr(11, 37, 0x0F, fsInfoModes[fsInfoMode], plScrWidth - 37);
+		displaystr(12,  0, 0x07, "C:  put archives: ", 18);
+		displaystr(12, 18, 0x0F, fsPutArcs?"on":"off", plScrWidth - 18);
 
 		fillstr(sbuf, 0, 0x00, 0, plScrWidth);
 		writestring(sbuf, 0, 0x07, "+-: Target framerate: ", 22);
 		writenum(sbuf, 22, 0x0f, fsFPS, 10, 3, 1);
 		writestring(sbuf, 25, 0x07, ", actual framerate: ", 20);
 		writenum(sbuf, 45, 0x0f, LastCurrent=fsFPSCurrent, 10, 3, 1);
-		displaystrattr(14, 0, sbuf, plScrWidth);
+		displaystrattr(13, 0, sbuf, plScrWidth);
 
-		displayvoid (15, 0, plScrWidth);
+		displayvoid (14, 0, plScrWidth);
 
-		displaystr(16, 0, 0x07, "ALT-S (or CTRL-S if in X) to save current setup to ocp.ini", plScrWidth);
+		displaystr(15, 0, 0x07, "ALT-S (or CTRL-S if in X) to save current setup to ocp.ini", plScrWidth);
 		displaystr(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
 
-		displaystr(17, 0, 0x03, (stored?"ocp.ini saved":""), plScrWidth);
+		displaystr(16, 0, 0x03, (stored?"ocp.ini saved":""), plScrWidth);
 
-		for (i=18; i < plScrHeight; i++)
+		for (i=17; i < plScrHeight; i++)
 		{
 			displayvoid (i, 0, plScrWidth);
 		}
@@ -1833,14 +1821,13 @@ superbreak:
 			case '3': stored = 0; fsListRemove=!fsListRemove; break;
 			case '4': stored = 0; fsLoopMods=!fsLoopMods; break;
 			case '5': stored = 0; fsScanNames=!fsScanNames; break;
-			case '6': stored = 0; fsScanMIF=!fsScanMIF; break;
-			case '7': stored = 0; fsScanArcs=!fsScanArcs; break;
-			case '8': stored = 0; fsScanInArc=!fsScanInArc; break;
-			case '9': stored = 0; fsWriteModInfo=!fsWriteModInfo; break;
-			case 'a': case 'A': stored = 0; fsEditWin=!fsEditWin; break;
-			case 'b': case 'B': stored = 0; fsColorTypes=!fsColorTypes; break;
-			case 'c': case 'C': stored = 0; fsInfoMode=(fsInfoMode+1)%5; break;
-			case 'd': case 'D': stored = 0; fsPutArcs=!fsPutArcs; break;
+			case '6': stored = 0; fsScanArcs=!fsScanArcs; break;
+			case '7': stored = 0; fsScanInArc=!fsScanInArc; break;
+			case '8': stored = 0; fsWriteModInfo=!fsWriteModInfo; break;
+			case '9': stored = 0; fsEditWin=!fsEditWin; break;
+			case 'a': case 'A': stored = 0; fsColorTypes=!fsColorTypes; break;
+			case 'b': case 'B': stored = 0; fsInfoMode=(fsInfoMode+1)%5; break;
+			case 'c': case 'C': stored = 0; fsPutArcs=!fsPutArcs; break;
 			case '+': if (fsFPS<1000) fsFPS++; break;
 			case '-': if (fsFPS>1) fsFPS--; break;
 			case KEY_CTRL_S:
@@ -1853,7 +1840,6 @@ superbreak:
 				cfSetProfileBool(sec, "playonce", fsListRemove);
 				cfSetProfileBool(sec, "loop", fsLoopMods);
 				cfSetProfileBool(sec, "scanmodinfo", fsScanNames);
-				cfSetProfileBool(sec, "scanmdz", fsScanMIF);
 				cfSetProfileBool(sec, "scanarchives", fsScanArcs);
 				cfSetProfileBool(sec, "scaninarcs", fsScanInArc);
 				cfSetProfileBool(sec, "writeinfo", fsWriteModInfo);
@@ -1886,7 +1872,6 @@ superbreak:
 				cpiKeyHelp('A', "Toggle option A");
 				cpiKeyHelp('B', "Toggle option B");
 				cpiKeyHelp('C', "Toggle option C");
-				cpiKeyHelp('D', "Toggle option D");
 				cpiKeyHelp('+', "Increase FPS");
 				cpiKeyHelp('-', "Decrease FPS");
 				cpiKeyHelp(KEY_ALT_S, "Store settings to ocp.ini");
@@ -2922,6 +2907,7 @@ superbreak:
 						if (!mdbWriteModuleInfo(m->mdb_ref, &mdbEditBuf))
 							return -1;
 					}
+					break;
 				case KEY_CTRL_BS:
 				case KEY_ALT_S:
 					scanposp=~0;

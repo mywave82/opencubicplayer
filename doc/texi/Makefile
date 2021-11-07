@@ -4,7 +4,7 @@ ifeq ($(HAVE_MAKEINFO),yes)
 endif
 
 ifeq ($(HAVE_MAKEINFO),yes)
-SOURCES=configuration.texi fileselector.texi mdz.texi player.texi starting.texi wap.texi faq.texi ocp.texi support.texi
+SOURCES=configuration.texi fileselector.texi player.texi starting.texi wap.texi faq.texi ocp.texi support.texi
 all: ocp.info.gz
 
 ocp.info.gz: $(SOURCES)

@@ -762,9 +762,17 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileInt ("x11", "font", size, 10);
 		}
 
-		if (epoch < 20211102)
+		if (epoch < 20211107)
 		{
-			cfSetProfileInt("version", "epoch", 20211102, 10);
+			int size;
+
+			printf("ocp.ini update (0.2.91) Removed remaing traces of MDZ - features was never ported from DOS version\n");
+			cfRemoveEntry("fileselector", "scanmdz");
+		}
+
+		if (epoch < 20211107)
+		{
+			cfSetProfileInt("version", "epoch", 20211107, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -775,13 +783,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20211102)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20211107)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20211102\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20211107\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20211102\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20211107\n\n");
 		}
 		sleep(5);
 	}

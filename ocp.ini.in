@@ -1,5 +1,5 @@
 [version]
-  epoch=20211102
+  epoch=20211107
 
 [general]
 ;link=
@@ -89,7 +89,6 @@
   typecolors=on
   editwin=on
   writeinfo=on
-  scanmdz=on
   scaninarcs=on
   scanmodinfo=on
   scanarchives=off

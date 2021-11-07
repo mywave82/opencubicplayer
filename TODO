@@ -14,8 +14,6 @@
 * Update help files with all keyboard stuff that needs to be changed due to
   compat with vt100 consoles
 
-* mif.c / MDZ files
-
 * make adb.c and mdb.c use mmap instead of malloc+fread.. makes swapping better
   for the host if the files grows like.. BIG
 

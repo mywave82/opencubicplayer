@@ -400,7 +400,6 @@ runtime by pressing @key{ALT}+@key{z} in the fileselector.
   typecolors=on
   editwin=on
   writeinfo=on
-  scanmdz=on
   scaninarcs=on
   scanmnodinfo=on
   scanarchives=on
@@ -434,9 +433,6 @@ show the edit window at the bottom of the screen
 write the info to the information database located in the
 home directory of OCP. This speeds up the processing of directories,
 as files have to be scanned only once.
-@item scanmdz @tab
-if @file{.mdz} files are found in the current directory, they
-will be scanned and the included information used.
 @item scanmodinfo @tab
 scan inside the music files for module information.
 @item scanarchives @tab

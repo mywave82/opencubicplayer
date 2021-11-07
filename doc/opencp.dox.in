@@ -619,8 +619,6 @@ file as a ~.WAV~ or ~.MP3~ file to the harddisk.
   ~<Ctrl>~+\{~<Home>~,~<End>~\}     move module to top/bottom of playlist
   ~<Alt>~+~<C>~                 configure fileselector
   ~<Alt>~+~<S>~                 stop scanning module information
-  ~<Alt>~+~<W>~                 write module information ~.MDZ~ for selected file
-  ~<Alt>~+~<K>~                 delete file
   ~<Alt>~+\{~<I>~,~<Tab>~\}         change display mode for directory window
   ~<Enter>~                   play selected file
                             change to directory/archive driver
@@ -1719,7 +1717,6 @@ you have to modify the ~fileselector~ section.
     typecolors=on
     editwin=on
     writeinfo=on
-    scanmdz=on
     scaninarcs=on
     putarchives=on
     playonce=on
@@ -1740,8 +1737,6 @@ you have to modify the ~fileselector~ section.
   ~writeinfo~        write the info to the information database located in the
                    home directory of OCP. This speeds up the processing of
                    directories, as files have to be scanned only once.
-  ~scanmdz~          if ~.MDZ~ files are found in the current directory, they will
-                   be scanned and the included information used.
   ~scanmodinfo~      scan inside the music files for module information.
   ~scanarchives~     if archives (like ~.ZIP~ or ~.RAR~) are found in the current
                    directory they are scanned for modules.

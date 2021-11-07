@@ -78,7 +78,6 @@ Users Manual
 * faq::
 
 Developers Manual
-* mdz::
 * wap::
 @end menu
 
@@ -88,7 +87,6 @@ Developers Manual
 @include configuration.texi
 @include support.texi
 @include faq.texi
-@include mdz.texi
 @include wap.texi
 
 @bye

@@ -255,8 +255,6 @@ file to the harddisk.@footnote{See @xref{player, Using the diskwriter}.}
 @multitable @columnfractions .35 .65
 @item @key{a}..@key{z}
 @tab quickfind
-@item @key{ALT}+@key{a}
-@tab write module information @file{.mdz} for directory
 @item @key{ALT}+@key{b}
 @tab mark module ``big''
 @item @key{ALT}+@key{c}
@@ -271,8 +269,6 @@ file to the harddisk.@footnote{See @xref{player, Using the diskwriter}.}
 @tab move file
 @item @key{ALT}+@key{s}
 @tab stop scanning module information
-@item @key{ALT}+@key{w}
-@tab write module information @file{.mdz} for selected file
 @item @key{Up}, @key{Down}
 @tab move cursor one entry up/down
 @item @key{CTRL}+@{@key{Up}, @key{Down}@}
