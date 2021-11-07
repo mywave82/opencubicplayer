@@ -374,7 +374,7 @@ static void ymEvent(int event)
 
 			fsRegisterExt("YM");
 			mt.integer.i = MODULETYPE("YM");
-			fsTypeRegister (mt, YM_description, "OpenCP", &YM_p);
+			fsTypeRegister (mt, YM_description, "plOpenCP", &YM_p);
 		}
 	}
 }
