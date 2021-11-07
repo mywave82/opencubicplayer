@@ -342,7 +342,7 @@ static struct ocpfile_t *unix_dir_readdir_file (struct ocpdir_t *_s, uint32_t di
 	struct stat lst;
 
 	dirdbGetFullname_malloc (dirdb_ref, &path, DIRDB_FULLNAME_NODRIVE);
-	fprintf (stderr, "   unix_dir_readdir_file \"%s\"\n", path);
+	//fprintf (stderr, "   unix_dir_readdir_file \"%s\"\n", path);
 	if (!path)
 	{
 		fprintf (stderr, "[filesystem unix readdir_file]: dirdbGetFullname_malloc () failed\n");
@@ -351,7 +351,7 @@ static struct ocpfile_t *unix_dir_readdir_file (struct ocpdir_t *_s, uint32_t di
 
 	if (lstat (path, &lst))
 	{
-		fprintf (stderr, "   lstat() failed\n");
+		//fprintf (stderr, "   lstat() failed\n");
 		free (path);
 		return 0;
 	}
@@ -360,7 +360,7 @@ static struct ocpfile_t *unix_dir_readdir_file (struct ocpdir_t *_s, uint32_t di
 	{
 		if (stat (path, &st))
 		{
-			fprintf (stderr, "   stat() failed\n");
+			//fprintf (stderr, "   stat() failed\n");
 			free (path);
 			return 0;
 		}
@@ -373,11 +373,9 @@ static struct ocpfile_t *unix_dir_readdir_file (struct ocpdir_t *_s, uint32_t di
 	if (S_ISREG(st.st_mode))
 	{
 		struct ocpfile_t *n = unix_file_steal (&s->head, dirdbRef (dirdb_ref, dirdb_use_file), st.st_size);
-		fprintf (stderr, "   unix_file_steal => %p\n", n);
 		return n;
 	}
 
-	fprintf (stderr, "   not a REF file\n");
 	return 0;
 }
 
