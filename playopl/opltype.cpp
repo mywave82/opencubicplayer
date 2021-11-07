@@ -99,8 +99,7 @@ static void oplEvent(int event)
 			}
 
 			mt.integer.i = MODULETYPE("OPL");
-			fsTypeRegister (mt, OPL_description, "OpenCP", &OPL_p);
-
+			fsTypeRegister (mt, OPL_description, "plOpenCP", &OPL_p);
 		}
 	}
 }
