@@ -765,26 +765,21 @@ int fsGetNextFile (struct moduleinfostruct *info, struct ocpfilehandle_t **fileh
 
 	mdbGetModuleInfo(info, m->mdb_ref);
 
-	if (!(info->flags&MDB_VIRTUAL))
+	if (m->file)
 	{
-		if (m->file)
+		*filehandle = m->file->open (m->file);
+	}
+
+	if (*filehandle)
+	{
+		if (!mdbInfoIsAvailable(m->mdb_ref)&&*filehandle)
 		{
-			*filehandle = m->file->open (m->file);
+			mdbReadInfo(info, *filehandle); /* detect info... */
+			(*filehandle)->seek_set (*filehandle, 0);
+			mdbWriteModuleInfo(m->mdb_ref, info);
+			mdbGetModuleInfo(info, m->mdb_ref);
 		}
 
-		if (*filehandle)
-		{
-			if (!mdbInfoIsAvailable(m->mdb_ref)&&*filehandle)
-			{
-				mdbReadInfo(info, *filehandle); /* detect info... */
-				(*filehandle)->seek_set (*filehandle, 0);
-				mdbWriteModuleInfo(m->mdb_ref, info);
-				mdbGetModuleInfo(info, m->mdb_ref);
-			}
-
-			retval = 1;
-		}
-	} else {
 		retval = 1;
 	}
 

@@ -570,7 +570,7 @@ static int dir_alsa_readdir_iterate (ocpdirhandle_pt _handle)
 
 		dirdb_ref = dirdbFindAndRef (handle->owner->dirdb_ref,  namebuffer, dirdb_use_file);
 
-		dir_alsa_update_mdb (handle->owner->dirdb_ref, name, descr);
+		dir_alsa_update_mdb (dirdb_ref, name, descr);
 
 		child = mem_file_open (handle->owner, dirdb_ref, strdup (alsaPCMoutIntr.name), strlen (alsaPCMoutIntr.name));
 		child->is_nodetect = 1;
