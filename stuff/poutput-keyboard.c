@@ -244,6 +244,25 @@ int ___peek_key(void)
 	{
 		switch (upcode)
 		{
+			case 1:
+				retval=KEY_HOME;
+				break;
+			case 2:
+				retval=KEY_INSERT;
+				break;
+			case 3:
+				retval=KEY_DELETE;
+				break;
+			case 4:
+				retval=KEY_END;
+				break;
+			case 5:
+				retval=KEY_PPAGE;
+				break;
+			case 6:
+				retval=KEY_NPAGE;
+				break;
+
 			case 17:
 				retval=KEY_F(6);
 				break;
@@ -265,7 +284,33 @@ int ___peek_key(void)
 			case 24:
 				retval=KEY_F(12);
 				break;
-
+			case 25:
+				retval=KEY_SHIFT_F(1);
+				break;
+			case 26:
+				retval=KEY_SHIFT_F(2);
+				break;
+			case 27:
+				retval=KEY_SHIFT_F(3);
+				break;
+			case 28:
+				retval=KEY_SHIFT_F(4);
+				break;
+			case 29:
+				retval=KEY_SHIFT_F(5);
+				break;
+			case 31:
+				retval=KEY_SHIFT_F(5);
+				break;
+			case 32:
+				retval=KEY_SHIFT_F(6);
+				break;
+			case 33:
+				retval=KEY_SHIFT_F(7);
+				break;
+			case 34:
+				retval=KEY_SHIFT_F(8);
+				break;
 			case 'A'+256:
 				retval=KEY_UP;
 				break;
@@ -281,50 +326,6 @@ int ___peek_key(void)
 	/*
 			case 'P'+256:
 				retval=KEY_BREAK;
-				break;*/
-			case 1:
-				retval=KEY_HOME;
-				break;
-			case 2:
-				retval=KEY_INSERT;
-				break;
-			case 3:
-				retval=KEY_DELETE;
-				break;
-			case 4:
-				retval=KEY_END;
-				break;
-			case 5:
-				retval=KEY_PPAGE;
-				break;
-			case 6:
-				retval=KEY_NPAGE;
-				break;
-
-/*
-			case 25:
-				retval=KEY_SHIFT_F1;
-				break;
-			case 26:
-				retval=KEY_SHIFT_F2;
-				break;
-			case 28:
-				retval=KEY_SHIFT_F3;
-				break;
-			case 29:
-				retval=KEY_SHIFT_F4;
-				break;
-			case 31:
-				retval=KEY_SHIFT_F5;
-				break;
-			case 32:
-				retval=KEY_SHIFT_F6;
-				break;
-			case 33:
-				retval=KEY_SHIFT_F7;
-				break;
-			case 34:
-				retval=KEY_SHIFT_F8;
 				break;*/
 
 			default:
@@ -531,6 +532,14 @@ int ___valid_key(uint16_t key)
 		case KEY_F(10):
 		case KEY_F(11):
 		case KEY_F(12):
+		case KEY_SHIFT_F(1):
+		case KEY_SHIFT_F(2):
+		case KEY_SHIFT_F(3):
+		case KEY_SHIFT_F(4):
+		case KEY_SHIFT_F(5):
+		case KEY_SHIFT_F(6):
+		case KEY_SHIFT_F(7):
+		case KEY_SHIFT_F(8):
 		case KEY_DELETE:
 		case KEY_INSERT:
 		case ' ':

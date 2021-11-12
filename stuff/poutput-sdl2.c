@@ -94,7 +94,7 @@ static int last_text_width;
 static void (*set_state)(int fullscreen, int width, int height) = 0;
 static int do_fullscreen = 0;
 static int plScrRowBytes = 0;
-static int ekbhit(void);
+static int ekbhit_sdl2dummy(void);
 static int ___valid_key(uint16_t key);
 static void sdl2_gflushpal(void);
 static void sdl2_gupdatepal(unsigned char color, unsigned char _red, unsigned char _green, unsigned char _blue);
@@ -430,7 +430,7 @@ static void plSetTextMode(unsigned char x)
 {
 	set_state = set_state_textmode;
 
-	___setup_key(ekbhit, ekbhit);
+	___setup_key(ekbhit_sdl2dummy, ekbhit_sdl2dummy);
 	_validkey=___valid_key;
 
 	if ((x==plScrMode) && (current_window))
@@ -589,7 +589,7 @@ static int __plSetGraphMode(int high)
 		return 0;
 	}
 
-	___setup_key(ekbhit, ekbhit);
+	___setup_key(ekbhit_sdl2dummy, ekbhit_sdl2dummy);
 	_validkey=___valid_key;
 
 	set_state_graphmode(do_fullscreen, 0, 0);
@@ -633,7 +633,7 @@ static void plDisplaySetupTextMode(void)
 
 		swtext_displaystr_cp437(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
 
-		while (!_ekbhit())
+		while (!ekbhit_sdl2dummy())
 				framelock();
 		c=_egetch();
 
@@ -847,6 +847,18 @@ struct keytranslate_t translate_shift[] =
 	{SDLK_x,            'X'},
 	{SDLK_y,            'Y'},
 	{SDLK_z,            'Z'},
+	{SDLK_F1,           KEY_SHIFT_F(1)},
+	{SDLK_F2,           KEY_SHIFT_F(2)},
+	{SDLK_F3,           KEY_SHIFT_F(3)},
+	{SDLK_F4,           KEY_SHIFT_F(4)},
+	{SDLK_F5,           KEY_SHIFT_F(5)},
+	{SDLK_F6,           KEY_SHIFT_F(6)},
+	{SDLK_F7,           KEY_SHIFT_F(7)},
+	{SDLK_F8,           KEY_SHIFT_F(8)},
+	{SDLK_F9,           KEY_SHIFT_F(9)},
+	{SDLK_F10,          KEY_SHIFT_F(10)},
+	{SDLK_F11,          KEY_SHIFT_F(11)},
+	{SDLK_F12,          KEY_SHIFT_F(12)},
 	{-1,                0xffff},
 };
 
@@ -1160,7 +1172,7 @@ void RefreshScreenText(void)
 	swtext_cursor_eject();
 }
 
-static int ekbhit(void)
+static int ekbhit_sdl2dummy(void)
 {
 	SDL_Event event;
 

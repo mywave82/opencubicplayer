@@ -110,15 +110,15 @@
 #define KEY_HOME  262  /* 0x4700 curses.h */
 #endif
 
-#define KEY_CTRL_UP     0x8d00 /* 0x8d00 */
-#define KEY_CTRL_DOWN   0x9100 /* 0x9100 */
-#define KEY_CTRL_LEFT   0x7300 /* 0x7300 */
-#define KEY_CTRL_RIGHT  0x7400 /* 0x7400 */
+#define KEY_CTRL_UP     0x0237 /* 0x8d00 */
+#define KEY_CTRL_DOWN   0x020e /* 0x9100 */
+#define KEY_CTRL_LEFT   0x0222 /* 0x7300 */
+#define KEY_CTRL_RIGHT  0x0231 /* 0x7400 */
 #define KEY_CTRL_PGUP   0x8400 /* 0x8400 x11 only */
 #define KEY_CTRL_PGDN   0x7600 /* 0x7600 x11 only */
-#define KEY_CTRL_HOME   0x7700 /* 0x7700 x11 only */
-#define KEY_CTRL_END    0x7500 /* 0x7500 x11 only */
-#define KEY_CTRL_DELETE 0x9300 /* 0x9300 x11 only */
+#define KEY_CTRL_HOME   0x0218 /* 0x7700 x11 only */
+#define KEY_CTRL_END    0x0213 /* 0x7500 x11 only */
+#define KEY_CTRL_DELETE 0x0208 /* 0x9300 x11 only */
 #define KEY_CTRL_INSERT 0x9200 /* 0x9200 x11 only */
 
 
@@ -133,6 +133,10 @@
 #define KEY_CTRL_ENTER 0xff00 /* x11 only */
 #define KEY_ALT_ENTER  0xff01 /* used to be 10, collides with ctrl+j */
 #define VIRT_KEY_RESIZE     0xff02 /* dummy key */
+
+#define KEY_SHIFT_F(n)      KEY_F(n+12) /* ncurses-hack */
+#define KEY_CTRL_F(n)       KEY_F(n+24) /* ncurses-hack */
+#define KEY_CTRL_SHIFT_F(n) KEY_F(n+36) /* ncurses-hack */
 
 /* keys we can't do
  KEY_CTRL_F2     0x5f00

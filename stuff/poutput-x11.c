@@ -898,6 +898,18 @@ static void x11_common_event_loop(void)
 				{
 					switch (ks)
 					{
+						case XK_F1:        key=KEY_SHIFT_F(1);     break;
+						case XK_F2:        key=KEY_SHIFT_F(2);     break;
+						case XK_F3:        key=KEY_SHIFT_F(3);     break;
+						case XK_F4:        key=KEY_SHIFT_F(4);     break;
+						case XK_F5:        key=KEY_SHIFT_F(5);     break;
+						case XK_F6:        key=KEY_SHIFT_F(6);     break;
+						case XK_F7:        key=KEY_SHIFT_F(7);     break;
+						case XK_F8:        key=KEY_SHIFT_F(8);     break;
+						case XK_F9:        key=KEY_SHIFT_F(9);     break;
+						case XK_F10:       key=KEY_SHIFT_F(10);    break;
+						case XK_F11:       key=KEY_SHIFT_F(11);    break;
+						case XK_F12:       key=KEY_SHIFT_F(12);    break;
 						case XK_ISO_Left_Tab:
 						case XK_Tab: ___push_key(KEY_SHIFT_TAB); return;
 						default:
@@ -1079,7 +1091,7 @@ static void destroy_window(void)
 
 static void RefreshScreenGraph(void);
 
-static int ekbhit(void);
+static int ekbhit_x11dummy(void);
 
 static int __plSetGraphMode(int high)
 {
@@ -1112,7 +1124,7 @@ static int __plSetGraphMode(int high)
 		return 0;
 	}
 
-	___setup_key(ekbhit, ekbhit);
+	___setup_key(ekbhit_x11dummy, ekbhit_x11dummy);
 	_validkey=___valid_key;
 
 	if (high==13)
@@ -1199,7 +1211,7 @@ static void plSetTextMode(unsigned char x)
 	set_state = set_state_textmode;
 	WindowResized = WindowResized_Textmode;
 
-	___setup_key(ekbhit, ekbhit);
+	___setup_key(ekbhit_x11dummy, ekbhit_x11dummy);
 	_validkey=___valid_key;
 
 	if (x==plScrMode)
@@ -1677,7 +1689,7 @@ static void RefreshScreenText(void)
 	swtext_cursor_eject ();
 }
 
-static int ekbhit(void)
+static int ekbhit_x11dummy(void)
 {
 	if (plScrMode<8)
 	{
@@ -1791,6 +1803,18 @@ static int ___valid_key(uint16_t key)
 		case KEY_F(10):
 		case KEY_F(11):
 		case KEY_F(12):
+		case KEY_SHIFT_F(1):
+		case KEY_SHIFT_F(2):
+		case KEY_SHIFT_F(3):
+		case KEY_SHIFT_F(4):
+		case KEY_SHIFT_F(5):
+		case KEY_SHIFT_F(6):
+		case KEY_SHIFT_F(7):
+		case KEY_SHIFT_F(8):
+		case KEY_SHIFT_F(9):
+		case KEY_SHIFT_F(10):
+		case KEY_SHIFT_F(11):
+		case KEY_SHIFT_F(12):
 		case KEY_DELETE:
 		case KEY_INSERT:
 		case ' ':
@@ -1924,7 +1948,7 @@ static void plDisplaySetupTextMode(void)
 
 		swtext_displaystr_cp437 (plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
 
-		while (!_ekbhit())
+		while (!ekbhit_x11dummy())
 				framelock();
 		c=_egetch();
 
@@ -2005,7 +2029,7 @@ int x11_init(int use_explicit)
 	_setcur=swtext_setcur;
 	_setcurshape=swtext_setcurshape;
 
-	___setup_key(ekbhit, ekbhit); /* filters in more keys */
+	___setup_key(ekbhit_x11dummy, ekbhit_x11dummy); /* filters in more keys */
 	_validkey=___valid_key;
 
 	_conRestore=conRestore;

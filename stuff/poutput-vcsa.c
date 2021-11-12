@@ -583,7 +583,7 @@ static void conSave(void)
 	conactive=1;
 }
 
-static int ekbhit(void)
+static int ekbhit_linux(void)
 {
 	struct pollfd set;
 
@@ -607,13 +607,13 @@ static int ekbhit(void)
 	return !!set.revents;
 }
 
-static int egetch(void)
+static int egetch_linux(void)
 {
 	unsigned char key_buffer[128];
 	unsigned char key_len, i=0;
 	int result;
 
-	if (!ekbhit())
+	if (!ekbhit_linux())
 		return 0;
 	result=read(0, key_buffer, 128);
 	if (result>0)
@@ -776,7 +776,7 @@ int vcsa_init(int minor)
 		}
 #endif
 	}
-	___setup_key(ekbhit, egetch);
+	___setup_key(ekbhit_linux, egetch_linux);
 	if (init_fonts())
 		make_chr_table();
 	vgaMakePal();
