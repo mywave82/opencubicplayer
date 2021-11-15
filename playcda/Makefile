@@ -24,9 +24,8 @@ cdaplay.o: cdaplay.c cdaudio.h \
 	../types.h \
 	../boot/plinkman.h \
 	cdaudio.h \
-	../cpiface/cpiface.h \
 	../dev/deviplay.h \
-	../dev/devisamp.h \
+	../dev/mcp.h \
 	../dev/player.h \
 	../dev/plrasm.h \
 	../dev/ringbuffer.h \
@@ -42,8 +41,7 @@ cdapplay.o: cdapplay.c cdaudio.h \
 	../types.h \
 	../boot/psetting.h \
 	../cpiface/cpiface.h \
-	../dev/deviplay.h \
-	../dev/devisamp.h \
+	../dev/player.h \
 	../filesel/cdrom.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \

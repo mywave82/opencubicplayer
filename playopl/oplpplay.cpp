@@ -33,7 +33,6 @@ extern "C"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"
-#include "dev/deviplay.h"
 #include "dev/player.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
@@ -101,12 +100,12 @@ static void dopausefade(void)
 			pausetime=dos_clock();
 			oplPause(plPause=1);
 			plChanChanged=1;
-			oplSetSpeed(globalmcpspeed);
+			mcpSetFadePars(64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	oplSetSpeed(globalmcpspeed*i/64);
+	mcpSetFadePars(i);
 }
 
 static char convnote(long freq)
@@ -367,17 +366,13 @@ static void drawchannel(uint16_t *buf, int len, int i) /* TODO */
 
 static int oplProcessKey(uint16_t key)
 {
-        if (mcpSetProcessKey(key))
-                return 1;
-
 	switch (key)
 	{
 		case KEY_ALT_K:
 			cpiKeyHelp('p', "Start/stop pause with fade");
 			cpiKeyHelp('P', "Start/stop pause with fade");
 			cpiKeyHelp(KEY_CTRL_P, "Start/stop pause");
-			if (plrProcessKey)
-				plrProcessKey(key);
+			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade();
@@ -394,46 +389,38 @@ static int oplProcessKey(uint16_t key)
 #if 0
 		case KEY_CTRL_UP:
 		/* case 0x8D00: //ctrl-up */
-			mpegSetPos(mpegGetPos()-mpegrate);
+			oplSetPos(oplGetPos()-oplrate);
 			break;
 		case KEY_CTRL_DOWN:
 		/* case 0x9100: //ctrl-down */
-			mpegSetPos(mpegGetPos()+mpegrate);
+			oplSetPos(oplGetPos()+oplrate);
 			break;*/
 		case '<':
 		case KEY_CTRL_LEFT:
 		/* case 0x7300: //ctrl-left */
 			{
-				int skip=mpeglen>>5;
+				int skip=opllen>>5;
 				if (skip<128*1024)
 					skip=128*1024;
-				mpegSetPos(mpegGetPos()-skip);
+				oplSetPos(oplGetPos()-skip);
 			}
 			break;
 		case '>':
 		case KEY_CTRL_RIGHT:
 		/* case 0x7400: //ctrl-right */
 			{
-				int skip=mpeglen>>5;
+				int skip=opllen>>5;
 				if (skip<128*1024)
 					skip=128*1024;
-				mpegSetPos(mpegGetPos()+skip);
+				oplSetPos(oplGetPos()+skip);
 			}
 			break;
 		case 0x7700: //ctrl-home TODO keys
-			mpegSetPos(0);
+			oplSetPos(0);
 			break;
 	#endif
 		default:
-			if (plrProcessKey)
-			{
-				int ret=plrProcessKey(key);
-				if (ret==2)
-					cpiResetScreen();
-				if (ret)
-					return 1;
-			}
-			return 0;
+			return mcpSetProcessKey (key);
 	}
 	return 1;
 }
@@ -453,11 +440,6 @@ static int oplLooped(void)
 static void oplCloseFile(void)
 {
 	oplClosePlayer();
-}
-
-static void normalize(void)
-{
-	mcpNormalize(0);
 }
 
 static int oplOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
@@ -508,7 +490,6 @@ static int oplOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 
 	starttime=dos_clock();
 	plPause=0;
-	normalize();
 	pausefadedirect=0;
 
 	plNLChan=plNPChan=18;

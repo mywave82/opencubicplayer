@@ -139,15 +139,6 @@
 #define KEY_CTRL_SHIFT_F(n) KEY_F(n+36) /* ncurses-hack */
 
 /* keys we can't do
- KEY_CTRL_F2     0x5f00
- KEY_CTRL_F3     0x6000
- KEY_CTRL_F4     0x6100
- KEY_CTRL_F5     0x6200
- KEY_CTRL_F6     0x6300
- KEY_CTRL_F7     0x6400
- KEY_CTRL_F8     0x6500
- KEY_CTRL_F11    0x8900
- KEY_CTRL_F12    0x8a00
  KEY_CTRL_ENTER  10
  KEY_ALT_F1      0x6800
  KEY_ALT_F2      0x6900

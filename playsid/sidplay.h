@@ -34,18 +34,10 @@ extern uint16_t __attribute__ ((visibility ("internal"))) sidChipAddr(int i);
 extern void __attribute__ ((visibility ("internal"))) sidClosePlayer(void);
 extern void __attribute__ ((visibility ("internal"))) sidIdle(void);
 extern void __attribute__ ((visibility ("internal"))) sidPause(unsigned char p);
-extern void __attribute__ ((visibility ("internal"))) sidSetAmplify(unsigned long amp);
-extern void __attribute__ ((visibility ("internal"))) sidSetVolume(unsigned char vol, signed char bal, signed char pan, unsigned char opt);
 extern void __attribute__ ((visibility ("internal"))) sidStartSong(uint8_t sng);
 extern uint8_t __attribute__ ((visibility ("internal"))) sidGetSong(void);
 extern uint8_t __attribute__ ((visibility ("internal"))) sidGetSongs(void);
 extern char __attribute__ ((visibility ("internal"))) sidGetVideo(void);
-#if 0
-extern char __attribute__ ((visibility ("internal"))) sidGetFilter(void);
-extern void __attribute__ ((visibility ("internal"))) sidToggleFilter(void);
-extern void __attribute__ ((visibility ("internal"))) sidSetSpeed (uint16_t sp);
-#endif
-extern void __attribute__ ((visibility ("internal"))) sidSetPitch (uint32_t sp);
 extern void __attribute__ ((visibility ("internal"))) sidMute(int i, int m);
 extern void __attribute__ ((visibility ("internal"))) sidGetChanInfo(int i, sidChanInfo &ci);
 

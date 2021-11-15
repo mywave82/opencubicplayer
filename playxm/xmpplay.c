@@ -144,9 +144,8 @@ static int xmpProcessKey(uint16_t key)
 			cpiKeyHelp(KEY_CTRL_RIGHT, "Jump forward (big)");
 			cpiKeyHelp(KEY_CTRL_UP, "Jump back (small)");
 			cpiKeyHelp(KEY_CTRL_DOWN, "Jump forward (small)");
-			mcpSetProcessKey(key);
-			if (mcpProcessKey)
-				mcpProcessKey(key);
+			cpiKeyHelp(KEY_CTRL_HOME, "Jump to start of track");
+			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade();
@@ -160,8 +159,7 @@ static int xmpProcessKey(uint16_t key)
 			mcpSet(-1, mcpMasterPause, plPause^=1);
 			plChanChanged=1;
 			break;
-#if 0
-		case 0x7700: //ctrl-home TODO keys
+		case KEY_CTRL_HOME:
 			xmpInstClear();
 			xmpSetPos(0, 0);
 			if (plPause)
@@ -169,46 +167,33 @@ static int xmpProcessKey(uint16_t key)
 			else
 				starttime=dos_clock();
 			break;
-#endif
 		case '<':
 		case KEY_CTRL_LEFT:
-		/* case 0x7300: //ctrl-left */
 			p=xmpGetPos();
 			pat=p>>8;
 			xmpSetPos(pat-1, 0);
 			break;
 		case '>':
 		case KEY_CTRL_RIGHT:
-		/* case 0x7400: //ctrl-right */
 			p=xmpGetPos();
 			pat=p>>8;
 			xmpSetPos(pat+1, 0);
 			break;
 		case KEY_CTRL_UP:
-		/* case 0x8D00: //ctrl-up */
 			p=xmpGetPos();
 			pat=p>>8;
 			row=p&0xFF;
 			xmpSetPos(pat, row-8);
 			break;
 		case KEY_CTRL_DOWN:
-		/* case 0x9100: //ctrl-down */
 			p=xmpGetPos();
 			pat=p>>8;
 			row=p&0xFF;
 			xmpSetPos(pat, row+8);
 			break;
 		default:
-			if (mcpSetProcessKey(key))
+			return mcpSetProcessKey (key);
 				return 1;
-			if (mcpProcessKey)
-			{
-				int ret=mcpProcessKey(key);
-				if (ret==2)
-					cpiResetScreen();
-				if (ret)
-					return 1;
-			}
 	}
 	return 1;
 }
@@ -245,7 +230,9 @@ static void xmpDrawGStrings(unsigned short (*buf)[CONSOLE_MAX_X])
 
 	if (plScrWidth<128)
 	{
+#if 0
 		memset(buf[0]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
+#endif
 		memset(buf[1]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
 		memset(buf[2]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
 
@@ -269,7 +256,9 @@ static void xmpDrawGStrings(unsigned short (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2], 76, 0x0F, ":", 1);
 		writenum(buf[2], 77, 0x0F, tim%60, 10, 2, 0);
 	} else {
+#if 0
 		memset(buf[0]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
+#endif
 		memset(buf[1]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
 		memset(buf[2]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
 
@@ -660,7 +649,6 @@ static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 
 	xmpOptimizePatLens(&mod);
 
-	mcpNormalize(1);
 	if (!xmpPlayModule(&mod, file))
 		retval=errPlay;
 

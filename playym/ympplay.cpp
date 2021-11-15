@@ -33,7 +33,6 @@ extern "C"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"
-#include "dev/deviplay.h"
 #include "dev/player.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
@@ -98,12 +97,12 @@ static void dopausefade(void)
 			pausetime=dos_clock();
 			ymPause(plPause=1);
 			plChanChanged=1;
-			ymSetSpeed(globalmcpspeed);
+			mcpSetFadePars(64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	ymSetSpeed(globalmcpspeed*i/64);
+	mcpSetFadePars(i);
 }
 
 static char convnote(long freq)
@@ -185,10 +184,9 @@ static void ymDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 	long tim;
 	ymMusicInfo_t globinfo;
 
-	ymMusicGetInfo(pMusic, &globinfo);
+	mcpDrawGStrings(buf);
 
-/*
-	mcpDrawGStrings(buf);*/
+	ymMusicGetInfo(pMusic, &globinfo);
 
 	if (plPause)
 		tim=(pausetime-starttime)/DOS_CLK_TCK;
@@ -197,10 +195,13 @@ static void ymDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 
 	if (plScrWidth<128)
 	{
+#if 0
 		memset(buf[0]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
+#endif
 		memset(buf[1]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
 		memset(buf[2]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
 
+#if 0
 		writestring(buf[0], 0, 0x09, " vol: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 15);
 		writestring(buf[0], 15, 0x09, " srnd: \xfa  pan: l\xfa\xfa\xfam\xfa\xfa\xfar  bal: l\xfa\xfa\xfam\xfa\xfa\xfar ", 41);
 		writestring(buf[0], 56, 0x09, "            pitch: ---% ", 24);
@@ -216,6 +217,7 @@ static void ymDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 /*
 		_writenum(buf[0], 62, 0x0F, speed*100/256, 10, 3);*/
 		_writenum(buf[0], 75, 0x0F, ymbufrate*100/65536, 10, 3);
+#endif
 
 		writestring(buf[1],  0, 0x09, " author: .......................... comment: ...................... type: .....",80);
 
@@ -243,10 +245,13 @@ static void ymDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 			writenum(buf[2], 77, 0x0F, tim%60, 10, 2, 0);
 		}
 	} else {
+#if 0
 		memset(buf[0]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
+#endif
 		memset(buf[1]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
 		memset(buf[2]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
 
+#if 0
 		writestring(buf[0], 0, 0x09, "    volume: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa  ", 30);
 		writestring(buf[0], 30, 0x09, " surround: \xfa   panning: l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar   balance: l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar  ", 72);
 		writestring(buf[0], 102, 0x09,  "               pitch: ---%    ", 30);
@@ -262,6 +267,7 @@ static void ymDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 	/*
 		_writenum(buf[0], 110, 0x0F, speed*100/256, 10, 3);*/
 		_writenum(buf[0], 124, 0x0F, ymbufrate*100/65536, 10, 3);
+#endif
 
 		writestring(buf[1],  0, 0x09, " author: ......................................................... comment: ........................................ type: .....",128);
 
@@ -372,7 +378,7 @@ static void drawchannel(uint16_t *buf, int len, int i)
 				env = 1;
 			channel_mode = ((info->mixer_control>>2) & 1) | ((info->mixer_control >> 4)&2);
 			if (channel_mode==3)
-				vol = volr = 0;
+				voll = volr = 0;
 			break;
 		case 3:
 			freq = info->frequency_noise;
@@ -407,7 +413,7 @@ static void drawchannel(uint16_t *buf, int len, int i)
 	}
 
 /*
-	oplpGetChanInfo(i,ci);*/
+	ympGetChanInfo(i,ci);*/
 
 /*
 	if (!ci.vol)
@@ -509,9 +515,6 @@ static void drawchannel(uint16_t *buf, int len, int i)
 
 static int ymProcessKey(uint16_t key)
 {
-        if (mcpSetProcessKey(key))
-                return 1;
-
 	switch (key)
 	{
 		case KEY_ALT_K:
@@ -525,10 +528,7 @@ static int ymProcessKey(uint16_t key)
 			cpiKeyHelp(KEY_CTRL_RIGHT, "Forward 10 second");
 			cpiKeyHelp('>', "Forward 10 second");
 			cpiKeyHelp(KEY_CTRL_HOME, "Rewind to start");
-
-
-			if (plrProcessKey)
-				plrProcessKey(key);
+			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade();
@@ -543,36 +543,24 @@ static int ymProcessKey(uint16_t key)
 			ymPause(plPause);
 			break;
 		case KEY_CTRL_UP:
-		/* case 0x8D00: //ctrl-up */
 			ymSetPos(ymGetPos()-50);
 			break;
 		case KEY_CTRL_DOWN:
-		/* case 0x9100: //ctrl-down */
 			ymSetPos(ymGetPos()+50);
 			break;
 		case '<':
 		case KEY_CTRL_LEFT:
-		/* case 0x7300: //ctrl-left */
 			ymSetPos(ymGetPos()-500);
 			break;
 		case '>':
 		case KEY_CTRL_RIGHT:
-		/* case 0x7400: //ctrl-right */
 			ymSetPos(ymGetPos()+500);
 			break;
-		case 0x7700: //ctrl-home TODO keys
+		case KEY_CTRL_HOME:
 			ymSetPos(0);
 			break;
 		default:
-			if (plrProcessKey)
-			{
-				int ret=plrProcessKey(key);
-				if (ret==2)
-					cpiResetScreen();
-				if (ret)
-					return 1;
-			}
-			return 0;
+			return mcpSetProcessKey (key);
 	}
 	return 1;
 }
@@ -594,10 +582,6 @@ static void ymCloseFile(void)
 	ymClosePlayer();
 }
 
-static void normalize(void)
-{
-	mcpNormalize(0);
-}
 static int ymOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	const char *filename;
@@ -616,7 +600,6 @@ static int ymOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fil
 
 	starttime=dos_clock();
 	plPause=0;
-	normalize();
 	pausefadedirect=0;
 
 	plNLChan=plNPChan=5;

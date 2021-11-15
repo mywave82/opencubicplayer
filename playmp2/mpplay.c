@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include "types.h"
 #include "dev/deviplay.h"
+#include "dev/mcp.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
@@ -50,8 +51,9 @@
 static int inpause;
 static int looped;
 
-static unsigned long amplify; /* TODO */
 static unsigned long voll,volr;
+static int vol;
+static int bal;
 static int pan;
 static int srnd;
 
@@ -111,6 +113,8 @@ static struct ID3_t CurrentTag;
 static struct ID3_t HoldingTag;
 static int newHoldingTag;
 
+static int (*_GET)(int ch, int opt);
+static void (*_SET)(int ch, int opt, int val);
 
 #define PANPROC \
 do { \
@@ -1014,6 +1018,88 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 	clipbusy--;
 }
 
+void __attribute__ ((visibility ("internal"))) mpegSetLoop(uint8_t s)
+{
+	donotloop=!s;
+}
+char __attribute__ ((visibility ("internal"))) mpegIsLooped(void)
+{
+	return looped == 3;
+}
+void __attribute__ ((visibility ("internal"))) mpegPause(uint8_t p)
+{
+	inpause=p;
+}
+static void mpegSetSpeed (uint16_t sp)
+{
+	if (sp<32)
+		sp=32;
+	mpegbufrate=imuldiv(256*sp, mpegrate, plrRate);
+}
+static void mpegSetVolume (void)
+{
+	volr=voll=vol*4;
+	if (bal<0)
+		voll=(voll*(64+bal))>>6;
+	else
+		volr=(volr*(64-bal))>>6;
+}
+static void SET(int ch, int opt, int val)
+{
+	switch (opt)
+	{
+		case mcpMasterSpeed:
+			mpegSetSpeed(val);
+			break;
+		case mcpMasterPitch:
+			break;
+		case mcpMasterSurround:
+			srnd=val;
+			break;
+		case mcpMasterPanning:
+			pan=val;
+			if (reversestereo)
+			{
+				pan = -pan;
+			}
+			mpegSetVolume();
+			break;
+		case mcpMasterVolume:
+			vol=val;
+			mpegSetVolume();
+			break;
+		case mcpMasterBalance:
+			bal=val;
+			mpegSetVolume();
+			break;
+	}
+}
+static int GET(int ch, int opt)
+{
+	return 0;
+}
+
+void __attribute__ ((visibility ("internal"))) mpegGetInfo(struct mpeginfo *info)
+{
+	info->pos=datapos;
+	info->len=fl;
+	info->rate=mpegrate;
+	info->stereo=mpegstereo;
+	info->bit16=1;
+}
+uint32_t __attribute__ ((visibility ("internal"))) mpegGetPos(void)
+{
+	return datapos;
+}
+void __attribute__ ((visibility ("internal"))) mpegSetPos(uint32_t pos)
+{
+	/*if (pos<0)
+		pos=0;*/
+	if (pos>fl)
+		pos=fl;
+	newpos=pos;
+}
+
 unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandle_t *mpegfile)
 {
 	ofs=0;
@@ -1204,8 +1290,6 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct oc
 	eof=0;
 	inpause=0;
 	looped=0;
-	mpegSetVolume(64, 0, 64, 0);
-	mpegSetAmplify(65536);
 
 	mad_stream_init(&stream);
 	mad_frame_init(&frame);
@@ -1263,6 +1347,12 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct oc
 	}
 	debug_printf ("  mpegOpenPlayer poll is enabled\n");
 
+	_SET=mcpSet;
+	_GET=mcpGet;
+	mcpSet=SET;
+	mcpGet=GET;
+	mcpNormalize (mcpNormalizeDefaultPlayP);
+
 	active=1;
 	return 0;
 
@@ -1315,61 +1405,16 @@ void __attribute__ ((visibility ("internal"))) mpegClosePlayer(void)
 		file->unref (file);
 		file = 0;
 	}
-}
 
-void __attribute__ ((visibility ("internal"))) mpegSetLoop(uint8_t s)
-{
-	donotloop=!s;
-}
-char __attribute__ ((visibility ("internal"))) mpegIsLooped(void)
-{
-	return looped == 3;
-}
-void __attribute__ ((visibility ("internal"))) mpegPause(uint8_t p)
-{
-	inpause=p;
-}
-void __attribute__ ((visibility ("internal"))) mpegSetAmplify(uint32_t amp)
-{
-	amplify=amp;
-}
-void __attribute__ ((visibility ("internal"))) mpegSetSpeed(uint16_t sp)
-{
-	if (sp<32)
-		sp=32;
-	mpegbufrate=imuldiv(256*sp, mpegrate, plrRate);
-}
-void __attribute__ ((visibility ("internal"))) mpegSetVolume(uint8_t vol_, int8_t bal_, int8_t pan_, uint8_t opt)
-{
-	pan=pan_;
-	if (reversestereo)
+	if (_SET)
 	{
-		pan = -pan;
+		mcpSet = _SET;
+		_SET = 0;
 	}
-	volr=voll=vol_*4;
-	if (bal_<0)
-		voll=(voll*(64+bal_))>>6;
-	else
-		volr=(volr*(64-bal_))>>6;
-	srnd=opt;
-}
-void __attribute__ ((visibility ("internal"))) mpegGetInfo(struct mpeginfo *info)
-{
-	info->pos=datapos;
-	info->len=fl;
-	info->rate=mpegrate;
-	info->stereo=mpegstereo;
-	info->bit16=1;
-}
-uint32_t __attribute__ ((visibility ("internal"))) mpegGetPos(void)
-{
-	return datapos;
-}
-void __attribute__ ((visibility ("internal"))) mpegSetPos(uint32_t pos)
-{
-	/*if (pos<0)
-		pos=0;*/
-	if (pos>fl)
-		pos=fl;
-	newpos=pos;
+	if (_GET)
+	{
+		mcpGet = _GET;
+		_GET = 0;
+	}
+
 }

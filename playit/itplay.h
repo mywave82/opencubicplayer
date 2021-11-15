@@ -432,6 +432,8 @@ static int random(struct itplayer *this); - done
 static int processenvelope(const struct it_envelope *env, int *pos, int noteoff, int active); - done
 */
 
+extern void __attribute__ ((visibility ("internal"))) itpInstClear(void);
+
 extern void __attribute__ ((visibility ("internal"))) itpInstSetup(const struct it_instrument *ins, int nins, const struct it_sample *smp, int nsmp, const struct it_sampleinfo *smpi,/* int unused,*/ int type, void (*MarkyBoy)(uint8_t *, uint8_t *)); /* private, done */
 
 extern void __attribute__ ((visibility ("internal"))) itTrkSetup(const struct it_module *mod); /* private, done */

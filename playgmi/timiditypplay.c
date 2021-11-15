@@ -7,7 +7,6 @@
 #include "timidityplay.h"
 #include "boot/plinkman.h"
 #include "cpiface/cpiface.h"
-#include "dev/deviplay.h"
 #include "dev/player.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
@@ -31,15 +30,6 @@ static char currentmodname[_MAX_FNAME+1];
 static char currentmodext[_MAX_EXT+1];
 static char *modname;
 static char *composer;
-static int16_t vol;
-static int16_t bal;
-static int16_t pan;
-static int srnd;
-static int16_t amp;
-static int16_t speed;
-static int16_t pitch;
-static int16_t reverb;
-static int16_t chorus;
 
 static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
@@ -91,34 +81,12 @@ static void dopausefade(void)
 			pausetime=dos_clock();
 			timidityPause(plPause=1);
 			plChanChanged=1;
-			timiditySetSpeed(speed);
+			mcpSetFadePars(64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	timiditySetSpeed(speed*i/64);
-}
-
-static void normalize(void)
-{
-	mcpNormalize(0);
-	speed=set.speed;
-	pitch=0;
-	pan=set.pan;
-	bal=set.bal;
-	vol=set.vol;
-	amp=set.amp;
-	srnd=set.srnd;
-	reverb=set.reverb;
-	chorus=set.chorus;
-/*
-	timiditySetAmplify(1024*amp);
-*/
-	timiditySetVolume(vol, bal, pan, srnd);
-	timiditySetSpeed(speed);
-/*
-	wpSetMasterReverbChorus(reverb, chorus);
-*/
+	mcpSetFadePars(i);
 }
 
 static int timidityLooped(void)
@@ -137,6 +105,8 @@ static void timidityDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 	struct mglobinfo gi;
 	long tim;
 
+	mcpDrawGStrings(buf);
+
 	timidityGetGlobInfo(&gi);
 
 	if (plPause)
@@ -147,10 +117,13 @@ static void timidityDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 	mcpDrawGStrings(buf);
 	if (plScrWidth<128)
 	{
+#if 0
 		memset(buf[0]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
+#endif
 		memset(buf[1]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
 		memset(buf[2]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
 
+#if 0
 		writestring(buf[0], 0, 0x09, " vol: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 15);
 		writestring(buf[0], 15, 0x09, " srnd: \xfa  pan: l\xfa\xfa\xfam\xfa\xfa\xfar  bal: l\xfa\xfa\xfam\xfa\xfa\xfar ", 41);
 		writestring(buf[0], 56, 0x09, " spd: ---%   ptch: ---  ", 24);
@@ -172,15 +145,13 @@ static void timidityDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		} else {
 			_writenum(buf[0], 75, 0x0F, pitch, 10, 3);
 		}
+#endif
 
-		writestring(buf[1], 57, 0x09, "amp: ...% filter: ...  ", 23);
-		_writenum(buf[1], 62, 0x0F, amp*100/64, 10, 3);
-		writestring(buf[1], 75, 0x0F, "off", 3);
+		writestring(buf[1], 57, 0x09, "                       ", 23);
 
-		writestring(buf[1],  0, 0x09, " pos: ......../........  spd: ...%", 57);
+		writestring(buf[1],  0, 0x09, " pos: ......../........           ", 57);
 		writenum(buf[1], 6, 0x0F, gi.curtick, 16, 8, 0);
 		writenum(buf[1], 15, 0x0F, gi.ticknum-1, 16, 8, 0);
-		writenum(buf[1], 30, 0x0F, speed*100/256, 16, 4, 1);
 
 		writestring(buf[2],  0, 0x09, "   midi \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................               time: ..:.. ", 80);
 		writestring(buf[2],  8, 0x0F, currentmodname, 8);
@@ -193,10 +164,13 @@ static void timidityDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2], 76, 0x0F, ":", 1);
 		writenum(buf[2], 77, 0x0F, tim%60, 10, 2, 0);
 	} else {
+#if 0
 		memset(buf[0]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
+#endif
 		memset(buf[1]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
 		memset(buf[2]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
 
+#if 0
 		writestring(buf[0], 0, 0x09, "    volume: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa  ", 30);
 		writestring(buf[0], 30, 0x09, " surround: \xfa   panning: l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar   balance: l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar  ", 72);
 		writestring(buf[0], 102, 0x09,  " speed: ---%   pitch: ---     ", 30);
@@ -218,16 +192,12 @@ static void timidityDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		} else {
 			_writenum(buf[0], 124, 0x0F, pitch, 10, 3);
 		}
+#endif
 
-
-		writestring(buf[1],  0, 0x09, "   position: ......../........  speed: ...%", 80);
+		writestring(buf[1],  0, 0x09, "   position: ......../........             ", 80);
 		writenum(buf[1], 13, 0x0F, gi.curtick, 16, 8, 0);
 		writenum(buf[1], 22, 0x0F, gi.ticknum-1, 16, 8, 0);
-		writenum(buf[1], 39, 0x0F, speed*100/256, 16, 4, 1);
-
-		writestring(buf[1], 92, 0x09, "   amplification: ...%  filter: ...     ", 40);
-		_writenum(buf[1], 110, 0x0F, amp*100/64, 10, 3);
-		writestring(buf[1], 124, 0x0F, "off", 3);
+		writestring(buf[1], 92, 0x09, "                                        ", 40);
 
 		writestring(buf[2],  0, 0x09, "    module \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................  composer: ...............................                  time: ..:..    ", 132);
 		writestring(buf[2], 11, 0x0F, currentmodname, 8);
@@ -256,28 +226,9 @@ static int timidityProcessKey(uint16_t key)
 			cpiKeyHelp('>', "Jump forward (big)");
 			cpiKeyHelp(KEY_CTRL_RIGHT, "Jump forward (big)");
 			cpiKeyHelp(KEY_CTRL_UP, "Jump back (small)");
-			cpiKeyHelp(KEY_CTRL_DOWN, "Jump forward (small(");
-#if 0
-			cpiKeyHelp('-', "Decrease volume (small)");
-			cpiKeyHelp('+', "Increase volume (small)");
-			cpiKeyHelp('/', "Move balance left (small)");
-			cpiKeyHelp('*', "Move balance right (small)");
-			cpiKeyHelp(',', "Move panning against normal (small)");
-			cpiKeyHelp('.', "Move panning against reverse (small)");
-			cpiKeyHelp(KEY_F(2), "Decrease volume");
-			cpiKeyHelp(KEY_F(3), "Increase volume");
-			cpiKeyHelp(KEY_F(4), "Toggle surround on/off");
-			cpiKeyHelp(KEY_F(5), "Move panning against normal");
-			cpiKeyHelp(KEY_F(6), "Move panning against reverse");
-			cpiKeyHelp(KEY_F(7), "Move balance left");
-			cpiKeyHelp(KEY_F(8), "Move balance right");
-#endif
-			cpiKeyHelp(KEY_F(9), "Decrease song speed");
-			cpiKeyHelp(KEY_F(11), "Decrease song speed");
-			cpiKeyHelp(KEY_F(10), "Increase pitch speed");
-			cpiKeyHelp(KEY_F(12), "Increase pitch speed");
-			if (plrProcessKey)
-				plrProcessKey(key);
+			cpiKeyHelp(KEY_CTRL_DOWN, "Jump forward (small)");
+			cpiKeyHelp(KEY_CTRL_HOME, "Jump to start of track");
+			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade();
@@ -305,106 +256,11 @@ static int timidityProcessKey(uint16_t key)
 		case KEY_CTRL_RIGHT:
 			timiditySetRelPos(10);
 			break;
-/*
-		case 0x7700: //ctrl-home TODO keys
-			mpegSetPos(0);
-			break;
-*/
-#if 0
-		case '-':
-			if (vol>=2)
-				vol-=2;
-			timiditySetVolume(vol, bal, pan, srnd);
-			break;
-		case '+':
-			if (vol<=62)
-				vol+=2;
-			timiditySetVolume(vol, bal, pan, srnd);
-			break;
-		case '/':
-			if ((bal-=4)<-64)
-				bal=-64;
-			timiditySetVolume(vol, bal, pan, srnd);
-			break;
-		case '*':
-			if ((bal+=4)>64)
-				bal=64;
-			timiditySetVolume(vol, bal, pan, srnd);
-			break;
-		case ',':
-			if ((pan-=4)<-64)
-				pan=-64;
-			timiditySetVolume(vol, bal, pan, srnd);
-			break;
-		case '.':
-			if ((pan+=4)>64)
-				pan=64;
-			timiditySetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(2):
-			if ((vol-=8)<0)
-				vol=0;
-			timiditySetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(3):
-			if ((vol+=8)>64)
-				vol=64;
-			timiditySetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(4):
-			timiditySetVolume(vol, bal, pan, srnd=srnd?0:2);
-			break;
-		case KEY_F(5):
-			if ((pan-=16)<-64)
-				pan=-64;
-			timiditySetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(6):
-			if ((pan+=16)>64)
-				pan=64;
-			timiditySetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(7):
-			if ((bal-=16)<-64)
-				bal=-64;
-			timiditySetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(8):
-			if ((bal+=16)>64)
-				bal=64;
-			timiditySetVolume(vol, bal, pan, srnd);
-			break;
-#endif
-		case KEY_F(9):
-			if ((speed-=8)<16)
-				speed=16;
-			timiditySetSpeed(speed);
-			break;
-		case KEY_F(10):
-			if ((speed+=8)>2048)
-				speed=2048;
-			timiditySetSpeed(speed);
-			break;
-		case KEY_F(11):
-			if ((pitch-=1)<-127)
-				pitch=-127;
-			timiditySetPitch(pitch);
-			break;
-		case KEY_F(12):
-			if ((pitch+=1)>127)
-				pitch=127;
-			timiditySetPitch(pitch);
+		case KEY_CTRL_HOME:
+			timidityRestart ();
 			break;
 		default:
-			if (plrProcessKey)
-			{
-				int ret=plrProcessKey(key);
-				if (ret==2)
-					cpiResetScreen();
-				if (ret)
-					return 1;
-			}
-			return 0;
+			return mcpSetProcessKey (key);
 	}
 	return 1;
 
@@ -477,7 +333,6 @@ static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_
 
 	starttime=dos_clock();
 	plPause=0;
-	normalize();
 	pausefadedirect=0;
 
 

@@ -238,7 +238,7 @@ static void itMark(void)
 	Mark(plInstUsed, plSampUsed);
 }
 
-static void itpInstClear(void)
+void __attribute__ ((visibility ("internal"))) itpInstClear(void)
 {
 	memset(plInstUsed, 0, instnum);
 	memset(plSampUsed, 0, sampnum);

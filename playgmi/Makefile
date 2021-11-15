@@ -165,6 +165,7 @@ timidityplay.o: timidityplay.c timidity-git/timidity/playmidi.c\
 	timidity-git/timidity/timidity.h \
 	timidity-git/timidity/wrd.h \
 	../dev/deviplay.h \
+	../dev/mcp.h \
 	../dev/player.h \
 	../dev/plrasm.h \
 	../filesel/mdb.h \
@@ -178,7 +179,6 @@ timiditypplay.o: timiditypplay.c \
 	../config.h \
 	../boot/plinkman.h \
 	../cpiface/cpiface.h \
-	../dev/deviplay.h \
 	../dev/player.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \

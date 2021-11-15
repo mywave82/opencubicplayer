@@ -48,6 +48,7 @@ oggplay.o: oggplay.c \
 	../cpiface/jpeg.h \
 	../cpiface/png.h \
 	../dev/deviplay.h \
+	../dev/mcp.h \
 	../dev/player.h \
 	../dev/plrasm.h \
 	../dev/ringbuffer.h \
@@ -64,7 +65,6 @@ oggpplay.o: oggpplay.c \
 	../boot/psetting.h \
 	../boot/plinkman.h \
 	../cpiface/cpiface.h \
-	../dev/deviplay.h \
 	../dev/player.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \

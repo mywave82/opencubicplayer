@@ -48,6 +48,7 @@ hvlplay.o: \
 	../config.h \
 	../cpiface/cpiface.h \
 	../dev/deviplay.h \
+	../dev/mcp.h \
 	../dev/player.h \
 	../types.h \
 	hvlplay.h \
@@ -94,7 +95,6 @@ hvlpplay.o: \
 	../types.h \
 	../boot/plinkman.h \
 	../cpiface/cpiface.h \
-	../dev/deviplay.h \
 	../dev/player.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \

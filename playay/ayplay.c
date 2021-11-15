@@ -63,6 +63,7 @@
 #include "types.h"
 
 #include "dev/deviplay.h"
+#include "dev/mcp.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
@@ -107,8 +108,9 @@ static int do_cpc=0;
 /* options */
 static int inpause;
 
-/*static unsigned long amplify;  TODO */
 static unsigned long voll,volr;
+static int bal;
+static int vol;
 static int pan;
 static int srnd;
 
@@ -153,6 +155,9 @@ static uint32_t aybufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
 
 /* clipper threadlock since we use a timer-signal */
 static volatile int clipbusy=0;
+
+static int (*_GET)(int ch, int opt);
+static void (*_SET)(int ch, int opt, int val);
 
 static struct buf8_delayed_states_t *buf8_delayed_states_get(void)
 {
@@ -1083,6 +1088,57 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 	clipbusy--;
 }
 
+static void aySetSpeed(uint16_t sp)
+{
+	if (sp<32)
+		sp=32;
+	aybufrate=256*sp;
+}
+
+static void aySetVolume(void)
+{
+	volr=voll=vol*4;
+	if (bal<0)
+		voll=(voll*(64+bal))>>6;
+	else
+		volr=(volr*(64-bal))>>6;
+}
+
+static void SET(int ch, int opt, int val)
+{
+	switch (opt)
+	{
+		case mcpMasterSpeed:
+			aySetSpeed(val);
+			break;
+		case mcpMasterPitch:
+			break;
+		case mcpMasterSurround:
+			srnd=val;
+			break;
+		case mcpMasterPanning:
+			pan=val;
+			if (reversestereo)
+			{
+				pan = -pan;
+			}
+			aySetVolume();
+			break;
+		case mcpMasterVolume:
+			vol=val;
+			aySetVolume();
+			break;
+		case mcpMasterBalance:
+			bal=val;
+			aySetVolume();
+			break;
+	}
+}
+static int GET(int ch, int opt)
+{
+	return 0;
+}
+
 int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_t *file)
 {
 	int i;
@@ -1122,9 +1178,6 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 
 	inpause=0;
 	ay_looped=0;
-	aySetVolume(64, 0, 64, 0);
-/*
-	aySetAmplify(amplify);   TODO */
 	buf16=malloc(sizeof(uint16_t)*buflen*2);
 	if (!buf16)
 	{
@@ -1249,6 +1302,12 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 	debug_output = open ("test.raw", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
 #endif
 
+	_SET=mcpSet;
+	_GET=mcpGet;
+	mcpSet=SET;
+	mcpGet=GET;
+	mcpNormalize (mcpNormalizeDefaultPlayP);
+
 	return 1;
 }
 
@@ -1277,6 +1336,16 @@ void __attribute__ ((visibility ("internal"))) ayClosePlayer(void)
 	close (debug_output);
 	debug_output = -1;
 #endif
+	if (_SET)
+	{
+		mcpSet = _SET;
+		_SET = 0;
+	}
+	if (_GET)
+	{
+		mcpGet = _GET;
+		_GET = 0;
+	}
 }
 
 int __attribute__ ((visibility ("internal"))) ayIsLooped(void)
@@ -1292,28 +1361,6 @@ void __attribute__ ((visibility ("internal"))) aySetLoop(unsigned char s)
 void __attribute__ ((visibility ("internal"))) ayPause(unsigned char p)
 {
 	inpause=p;
-}
-
-void __attribute__ ((visibility ("internal"))) aySetSpeed(uint16_t sp)
-{
-	if (sp<32)
-		sp=32;
-	aybufrate=256*sp;
-}
-
-void __attribute__ ((visibility ("internal"))) aySetVolume(unsigned char vol_, signed char bal_, signed char pan_, unsigned char opt)
-{
-	pan=pan_;
-	if (reversestereo)
-	{
-		pan = -pan;
-	}
-	volr=voll=vol_*4;
-	if (bal_<0)
-		voll=(voll*(64+bal_))>>6;
-	else
-		volr=(volr*(64-bal_))>>6;
-	srnd=opt;
 }
 
 void __attribute__ ((visibility ("internal"))) ayGetInfo(struct ayinfo *info)

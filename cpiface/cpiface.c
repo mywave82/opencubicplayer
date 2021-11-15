@@ -66,6 +66,7 @@
 #include "stuff/err.h"
 #include "stuff/framelock.h"
 #include "stuff/poutput.h"
+#include "stuff/sets.h"
 #include "stuff/timer.h"
 #include <unistd.h>
 #include <time.h>
@@ -105,6 +106,7 @@ char plPanType;
 static struct cpimoderegstruct *cpiModes;
 static struct cpimoderegstruct *cpiDefModes;
 
+#warning TODO remove plTitleBuf
 uint16_t plTitleBuf[5][CONSOLE_MAX_X];
 static uint16_t plTitleBufOld[4][CONSOLE_MAX_X];
 
@@ -126,6 +128,389 @@ void cpiSetTextMode(int size)
 {
 	plSetTextMode(size);
 	plChanChanged=1;
+}
+
+/*
+         1         2         3         4         5         6         7         8         0         0         1         2         3
+123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012
+ vol: 12345678  echo: 1  rev: -234n678+  chr: -234n678+  spd: 123% = ptch: 123% |
+ vol: 12345678  srnd: 1  pan: l234m678r  bal: l234m678r  spd: 123% = ptch: 123% |
+     volume: 1234567890123456   echoactive: 1   reverb: -2345678m0123456+   chorus: -2345678m0123456+   speed: ---% = pitch: ---%   |
+     volume: 1234567890123456   surround: 1   panning: l2345678m0123456r   balance: l2345678m0123456r   speed: ---% = pitch: ---%   |
+
+volume:    5+ 8=13 "vol: 12345678"
+           8+ 8=16 "volume: 12345678"
+	   5+16=21 "vol: 1234567890123456"
+	   8+16=24 "volume: 1234567890123456"
+	   5+32=37 "vol: 12345678901234567890123456789012"
+	   8+32=40 "volume: 12345678901234567890123456789012"
+           5+64=69 "vol: 1234567890123456789012345678901234567890123456789012345678901234"
+           8+64=72 "volume: 1234567890123456789012345678901234567890123456789012345678901234"
+
+echo:      6+ 1= 7 "echo: 1"
+	  12+ 1=13 "echoactive: 1"
+
+reverb:    5+ 9=14 "rev: -234m678+"
+           8+ 9=17 "reverb: -234m678+"
+           5+17=22 "rev: -2345678m0123456+"
+           8+17=25 "reverb: -2345678m0123456+"
+           5+33=38 "rev: -234567890123456m890123456789012+"
+           8+33=41 "reverb: -234567890123456m890123456789012+"
+           5+65=70 "rev: -2345678901234567890123456789012m4567890123456789012345678901234+"
+           8+65=73 "reverb: -2345678901234567890123456789012m4567890123456789012345678901234+"
+
+chorus:    5+ 9=14 "chr: -234m678+"
+           8+ 9=17 "chorus: -234m678+"
+           5+17=22 "chr: -2345678m0123456+"
+           8+17=25 "chorus: -2345678m0123456+"
+           5+33=38 "chr: -234567890123456m890123456789012+"
+           8+33=41 "chorus: -234567890123456m890123456789012+"
+           5+65=70 "chr: -2345678901234567890123456789012m4567890123456789012345678901234+"
+           8+65=73 "chorus: -2345678901234567890123456789012m4567890123456789012345678901234+"
+
+surround:  6+ 1= 7 "srnd: 1"
+          10+ 1=11 "surround: 1"
+
+panning:   5+ 9=14 "pan: l234m678r"
+           9+ 9=18 "panning: l234m678r"
+           5+17=22 "pan: l2345678m0123456r"
+           9+17=26 "panning: l2345678m0123456r"
+           5+33=38 "pan: l234567890123456m890123456789012r"
+           9+33=42 "panning: l234567890123456m890123456789012r"
+           5+65=70 "pan: l2345678901234567890123456789012m4567890123456789012345678901234r"
+           9+65=74 "panning: l2345678901234567890123456789012m4567890123456789012345678901234r"
+
+balance:   5+ 9=14 "bal: l234m678r"
+           9+ 9=18 "balance: l234m678r"
+           5+17=22 "bal: l2345678m0123456r"
+           9+17=26 "balance: l2345678m0123456r"
+           5+33=38 "bal: l234567890123456m890123456789012r"
+           9+33=42 "balance: l234567890123456m890123456789012r"
+           5+65=70 "bal: l2345678901234567890123456789012m4567890123456789012345678901234r"
+           9+65=74 "balance: l2345678901234567890123456789012m4567890123456789012345678901234r"
+
+spd/ptch       =22 "spd: 123% = ptch: 123%"
+               =25 "speed: 123% = pitch: 123%"
+*/
+
+void cpiDrawG1String (struct settings *g1)
+{
+	int volumemode = 0;
+	int echomode = 0;
+	int reverbchorusmode = 0;
+	int surroundmode = 0;
+	int panningbalancemode = 0;
+	int speedpitchmode = 0;
+	const uint8_t volumesizes[8] = {13, 16, 21, 24, 37, 40, 69, 72};
+	const uint8_t echosizes[2] = {7, 13};
+	const uint8_t reverbsizes[8] = {14, 17, 22, 25, 38, 41, 70, 73};
+	const uint8_t chorussizes[8] = {14, 17, 22, 25, 38, 41, 70, 73};
+	const uint8_t surroundsizes[2] = {7, 11};
+	const uint8_t panningsizes[8] = {14, 18, 22, 26, 38, 42, 70, 74};
+	const uint8_t balancesizes[8] = {14, 18, 22, 26, 38, 42, 70, 74};
+	const uint8_t speedpitchsizes[2] = {22, 25};
+
+	int interspace;
+	int headspace;
+	int endspace;
+	int changed = 1;
+	int width;
+	int x;
+
+	/* increase the view-mode of each component until we can't grow them anymore */
+#warning TODO, we can cache this as long a g1->viewfx and screenwidth has not changed!
+	if (g1->viewfx)
+	{
+		width = (int)volumesizes[volumemode] + echosizes[echomode] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[speedpitchmode];
+
+		if (!echomode)
+		{
+			int n = volumesizes[volumemode] + echosizes[1] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[speedpitchmode];
+			if ((n+2+4) < plScrWidth)
+			{
+				echomode = 1;
+				width = n;
+			}
+		}
+		if (!speedpitchmode)
+		{
+			int n = (int)volumesizes[volumemode] + echosizes[echomode] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[1];
+			if ((n+2+4) < plScrWidth)
+			{
+				speedpitchmode = 1;
+				width = n;
+			}
+		}
+		while (changed)
+		{
+			changed = 0;
+			if (volumemode < 7)
+			{
+				int n = (int)volumesizes[volumemode+1] + echosizes[echomode] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[speedpitchmode];
+				if ((n+2+4) < plScrWidth)
+				{
+					volumemode++;
+					width = n;
+					changed = 1;
+				}
+			}
+			if (reverbchorusmode < 7)
+			{
+				int n = (int)volumesizes[volumemode] + echosizes[echomode] + reverbsizes[reverbchorusmode+1] + chorussizes[reverbchorusmode+1] + speedpitchsizes[speedpitchmode];
+				if ((n+2+4) < plScrWidth)
+				{
+					reverbchorusmode++;
+					width = n;
+					changed = 1;
+				}
+			}
+		}
+	} else {
+		width = (int)volumesizes[volumemode] + surroundsizes[surroundmode] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[speedpitchmode];
+
+		if (!surroundmode)
+		{
+			int n = (int)volumesizes[volumemode] + surroundsizes[1] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[speedpitchmode];
+			if ((n+2+4) < plScrWidth)
+			{
+				surroundmode = 1;
+				width = n;
+			}
+		}
+		if (!speedpitchmode)
+		{
+			int n = (int)volumesizes[volumemode] + surroundsizes[surroundmode] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[1];
+			if ((n+2+4) < plScrWidth)
+			{
+				speedpitchmode = 1;
+				width = n;
+			}
+		}
+		while (changed)
+		{
+			changed = 0;
+			if (volumemode < 7)
+			{
+				int n = (int)volumesizes[volumemode+1] + surroundsizes[surroundmode] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[speedpitchmode];
+				if ((n+2+4) < plScrWidth)
+				{
+					volumemode++;
+					width = n;
+					changed = 1;
+				}
+			}
+			if (panningbalancemode < 7)
+			{
+				int n = (int)volumesizes[volumemode] + surroundsizes[surroundmode] + panningsizes[panningbalancemode+1] + balancesizes[panningbalancemode+1] + speedpitchsizes[speedpitchmode];
+				if ((n+2+4) < plScrWidth)
+				{
+					panningbalancemode++;
+					width = n;
+					changed = 1;
+				}
+			}
+		}
+	}
+
+	interspace = (plScrWidth - width) / 6;
+	headspace = (plScrWidth - width - interspace * 4) / 2;
+	endspace = plScrWidth - width - interspace * 4 - headspace;
+
+	displayvoid (1, 0, headspace);
+	x=headspace;
+
+	{
+		int va, vi; /* volume active / inactive */
+
+		if (volumemode & 1)
+		{
+			displaystr (1, x, 0x09, "volume: ", 8); x += 8;
+		} else {
+			displaystr (1, x, 0x09, "vol: ",    5); x += 5;
+		}
+		switch (volumemode>>1)
+		{
+			default:
+			case 0: va=(g1->vol+4)>>3; vi= 8-va; break;
+			case 1: va=(g1->vol+2)>>2; vi=16-va; break;
+			case 2: va=(g1->vol+1)>>1; vi=32-va; break;
+			case 3: va= g1->vol      ; vi=64-va; break;
+		}
+		displaychr (1, x, 0x0f, '\xfe', va); x += va;
+		displaychr (1, x, 0x09, '\xfa', vi); x += vi;
+	}
+
+	displayvoid (1, x, interspace); x += interspace;
+
+	if (g1->viewfx)
+	{
+		if (echomode)
+		{
+			displaystr (1, x, 0x09, "echoactive: ", 12); x += 12;
+		} else {
+			displaystr (1, x, 0x09, "echo: ",       5);  x +=  5;
+		}
+		displaystr (1, x, 0x0f, g1->useecho?"x":"o", 1); x += 1;
+
+		displayvoid (1, x, interspace); x += interspace;
+
+		{
+			int l, w;
+			const char *temp;
+
+			if (reverbchorusmode & 1)
+			{
+				displaystr (1, x, 0x09, "reverb: ", 8); x += 8;
+			} else {
+				displaystr (1, x, 0x09, "rev: ",    5); x += 5;
+			}
+
+			switch (reverbchorusmode >> 1)
+			{
+				default:
+				case 0: l = ((g1->reverb+70)>>4); w =  8; temp = "-\xfa\xfa\xfam\xfa\xfa\xfa+"; break;
+				case 1: l = ((g1->reverb+68)>>3); w = 16; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+				case 2: l = ((g1->reverb+66)>>2); w = 32; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+				case 3: l = ((g1->reverb+64)>>1); w = 64; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+			}
+			displaystr (1, x, 0x07, temp, l); x += l;
+			displaychr (1, x, 0x0f, 'I', 1); x += 1;
+			displaystr (1, x, 0x07, temp + l + 1, w - l); x += w - l;
+		}
+
+		displayvoid (1, x, interspace); x += interspace;
+
+		{
+			int l, w;
+			const char *temp;
+
+			if (reverbchorusmode & 1)
+			{
+				displaystr (1, x, 0x09, "chorus: ", 8); x += 8;
+			} else {
+				displaystr (1, x, 0x09, "chr: ",    5); x += 5;
+			}
+
+			switch (reverbchorusmode >> 1)
+			{
+				default:
+				case 0: l = ((g1->chorus+70)>>4); w =  8; temp = "-\xfa\xfa\xfam\xfa\xfa\xfa+"; break;
+				case 1: l = ((g1->chorus+68)>>3); w = 16; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+				case 2: l = ((g1->chorus+66)>>2); w = 32; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+				case 3: l = ((g1->chorus+64)>>1); w = 64; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+			}
+			displaystr (1, x, 0x07, temp, l); x += l;
+			displaychr (1, x, 0x0f, 'I', 1); x += 1;
+			displaystr (1, x, 0x07, temp + l + 1, w - l); x += w - l;
+		}
+	} else {
+		if (surroundmode)
+		{
+			displaystr (1, x, 0x09, "surround: ", 10); x += 10;
+		} else {
+			displaystr (1, x, 0x09, "srnd: ",      5); x +=  5;
+		}
+		displaystr (1, x, 0x0f, g1->srnd?"x":"o", 1); x += 1;
+
+		displayvoid (1, x, interspace); x += interspace;
+
+		{
+			int l, r, w;
+			char _l, _r;
+			const char *temp;
+
+			if (panningbalancemode & 1)
+			{
+				displaystr (1, x, 0x09, "panning: ", 9); x += 9;
+			} else {
+				displaystr (1, x, 0x09, "pan: ",     5); x += 5;
+			}
+
+			switch (panningbalancemode >> 1)
+			{
+				default:
+				case 0: r = ((g1->pan+70)>>4); w =  8; temp = "l\xfa\xfa\xfam\xfa\xfa\xfar"; break;
+				case 1: r = ((g1->pan+68)>>3); w = 16; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
+				case 2: r = ((g1->pan+66)>>2); w = 32; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
+				case 3: r = ((g1->pan+64)>>1); w = 64; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
+			}
+			l = w - r;
+			if (r < l)
+			{ /* swap the positions and text, so they are in ascending left right order */
+				_l = 'r';
+				_r = 'l';
+				l = r;
+				r = w - l;
+			} else {
+				_l = 'l';
+				_r = 'r';
+			}
+			displaystr (1, x, 0x07, temp, l); x += l;
+			if (l==r)
+			{
+				displaychr (1, x, 0x0f, 'm', 1); x += 1;
+				displaystr (1, x, 0x07, temp + l + 1, w - l); x += w - l;
+			} else {
+				displaychr (1, x, 0x0f, _l, 1); x += 1;
+				displaystr (1, x, 0x07, temp + l + 1, r - l - 1); x += r - l -1;
+				displaychr (1, x, 0x0f, _r, 1); x += 1;
+				displaystr (1, x, 0x07, temp + r + 1, w - r); x += w - r;
+			}
+		}
+
+		displayvoid (1, x, interspace); x += interspace;
+
+		{
+			int l, w;
+			const char *temp;
+
+			if (panningbalancemode & 1)
+			{
+				displaystr (1, x, 0x09, "balance: ", 9); x += 9;
+			} else {
+				displaystr (1, x, 0x09, "bal: ",     5); x += 5;
+			}
+
+			switch (panningbalancemode >> 1)
+			{
+				default:
+				case 0: l = ((g1->bal+70)>>4); w =  8; temp = "l\xfa\xfa\xfam\xfa\xfa\xfar"; break;
+				case 1: l = ((g1->bal+68)>>3); w = 16; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
+				case 2: l = ((g1->bal+66)>>2); w = 32; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
+				case 3: l = ((g1->bal+64)>>1); w = 64; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
+			}
+			displaystr (1, x, 0x07, temp, l); x += l;
+			displaychr (1, x, 0x0f, 'I', 1); x += 1;
+			displaystr (1, x, 0x07, temp + l + 1, w - l); x += w-l;
+		}
+	}
+
+	displayvoid (1, x, interspace); x += interspace;
+
+	{
+		char temp[4];
+		if (speedpitchmode)
+		{
+			displaystr (1, x, 0x07, "speed: ", 7); x += 7;
+		} else {
+			displaystr (1, x, 0x07, "spd: ", 5); x += 5;
+		}
+		snprintf (temp, sizeof (temp), "%3d", g1->speed * 100 / 256);
+		displaystr (1, x, 0x0f, temp, 3); x += 3;
+		displaystr (1, x, 0x07, "% ", 2); x += 2;
+		displaystr (1, x, 0x09, g1->splock?"\x1d ":"  ", 2); x+= 2;
+		if (speedpitchmode)
+		{
+			displaystr (1, x, 0x07, "pitch: ", 7); x += 7;
+		} else {
+			displaystr (1, x, 0x07, "ptch: ", 6); x += 6;
+		}
+		snprintf (temp, sizeof (temp), "%3d", g1->pitch * 100 / 256);
+		displaystr (1, x, 0x0f, temp, 3); x += 3;
+		displaychr (1, x, 0x07, '%', 1); x += 1;
+	}
+
+	displayvoid (1, x, endspace); x += endspace;
 }
 
 void cpiDrawGStrings()
@@ -217,12 +602,16 @@ void cpiDrawGStrings()
 			plTitleBuf[4][offset+1+chann]=((chan0+chann)!=plNLChan)?0x081A:0x0804;
 		}
 
+#if 0
 		displaystrattr(1, 0, plTitleBuf[1], plScrWidth);
+#endif
 		displaystrattr(2, 0, plTitleBuf[2], plScrWidth);
 		displaystrattr(3, 0, plTitleBuf[3], plScrWidth);
 		displaystrattr(4, 0, plTitleBuf[4], plScrWidth);
 	} else {
+#if 0
 		gupdatestr(1, 0, plTitleBuf[1], plScrWidth, plTitleBufOld[1]);
+#endif
 		gupdatestr(2, 0, plTitleBuf[2], plScrWidth, plTitleBufOld[2]);
 		gupdatestr(3, 0, plTitleBuf[3], plScrWidth, plTitleBufOld[3]);
 

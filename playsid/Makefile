@@ -360,6 +360,7 @@ sidplay.o: \
 	../boot/psetting.h\
 	../cpiface/cpiface.h \
 	../dev/deviplay.h \
+	../dev/mcp.h \
 	../dev/mixclip.h \
 	../dev/player.h \
 	../dev/plrasm.h \
@@ -377,7 +378,6 @@ sidpplay.o: sidpplay.cpp \
 	../boot/plinkman.h \
 	../boot/psetting.h \
 	../cpiface/cpiface.h \
-	../dev/deviplay.h \
 	../dev/player.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \

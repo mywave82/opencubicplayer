@@ -33,9 +33,8 @@
 #include "types.h"
 #include "boot/psetting.h"
 #include "cdaudio.h"
-#include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
-#include "dev/devisamp.h"
+#include "dev/mcp.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
@@ -63,7 +62,7 @@ static int lba_start;   // start of track
 static int lba_stop;    // end of track
 static int lba_next;    // next sector to fetch
 static int lba_current; // last sector sent to devp
-struct ocpfilehandle_t *fh;
+static struct ocpfilehandle_t *fh;
 
 #ifdef CD_FRAMESIZE_RAW
 #undef CD_FRAMESIZE_RAW
@@ -85,6 +84,11 @@ static int donotloop;
 
 static uint8_t pan = 64, srnd = 0;
 static unsigned long voll = 256, volr = 256;
+static int8_t bal = 0;
+static int vol;
+
+static int (*_GET)(int ch, int opt);
+static void (*_SET)(int ch, int opt, int val);
 
 static struct ioctl_cdrom_readaudio_request_t req;
 static int req_active = 0;
@@ -594,7 +598,7 @@ void __attribute__ ((visibility ("internal"))) cdIdle(void)
 	clipbusy--;
 }
 
-void __attribute__ ((visibility ("internal"))) cdSetSpeed (unsigned short sp)
+static void cdSetSpeed (unsigned short sp)
 {
 
 	if (sp<32)
@@ -605,19 +609,48 @@ void __attribute__ ((visibility ("internal"))) cdSetSpeed (unsigned short sp)
 	cdbufrate=imuldiv(256*sp, 44100, plrRate);
 }
 
-void __attribute__ ((visibility ("internal"))) cdSetVolume(uint8_t vol_, int8_t bal_, int8_t pan_, uint8_t opt)
+static void cdSetVolume()
 {
-	pan=pan_;
-	if (reversestereo)
-	{
-		pan = -pan;
-	}
-	volr=voll=vol_*4;
-	if (bal_<0)
-		voll=(voll*(64+bal_))>>6;
+	volr=voll=vol*4;
+	if (bal<0)
+		voll=(voll*(64+bal))>>6;
 	else
-		volr=(volr*(64-bal_))>>6;
-	srnd=opt;
+		volr=(volr*(64-bal))>>6;
+}
+
+static void SET(int ch, int opt, int val)
+{
+	switch (opt)
+	{
+		case mcpMasterSpeed:
+			cdSetSpeed(val);
+			break;
+		case mcpMasterPitch:
+			break;
+		case mcpMasterSurround:
+			srnd=val;
+			break;
+		case mcpMasterPanning:
+			pan=val;
+			if (reversestereo)
+			{
+				pan = -pan;
+			}
+			cdSetVolume();
+			break;
+		case mcpMasterVolume:
+			vol=val;
+			cdSetVolume();
+			break;
+		case mcpMasterBalance:
+			bal=val;
+			cdSetVolume();
+			break;
+	}
+}
+static int GET(int ch, int opt)
+{
+	return 0;
 }
 
 void __attribute__ ((visibility ("internal"))) cdPause (void)
@@ -654,55 +687,23 @@ void __attribute__ ((visibility ("internal"))) cdClose (void)
 		fh->unref (fh);
 		fh = 0;
 	}
+
+	if (_SET)
+	{
+		mcpSet = _SET;
+		_SET = 0;
+	}
+	if (_GET)
+	{
+		mcpGet = _GET;
+		_GET = 0;
+	}
 }
 
 void __attribute__ ((visibility ("internal"))) cdUnpause (void)
 {
 	inpause=0;
 }
-
-#if 0
-unsigned short __attribute__ ((visibility ("internal"))) cdGetTracks (unsigned long *starts, unsigned char *first, unsigned short maxtracks)
-{
-	int min=0, max=0, i;
-	struct cdrom_tochdr tochdr;
-	struct cdrom_tocentry tocentry;
-
-	*first=0;
-	if (!ioctl(fd, CDROMREADTOCHDR, &tochdr))
-	{
-		if ((min=tochdr.cdth_trk0)<0)
-			min=0;
-		max=tochdr.cdth_trk1;
-		if (max>maxtracks)
-			max=maxtracks;
-		for (i=min;i<=max;i++)
-		{
-			tocentry.cdte_track=i;
-			tocentry.cdte_format= CDROM_LBA;
-			if (!ioctl(fd, CDROMREADTOCENTRY, &tocentry))
-				starts[i-min]=tocentry.cdte_addr.lba;
-			else {
-				perror("cdaplay: ioctl(fd, CDROMREADTOCENTRY, &tocentry)");
-				max=i-1;
-			}
-		}
-		tocentry.cdte_track=CDROM_LEADOUT;
-		tocentry.cdte_format= CDROM_LBA;
-		if (!ioctl(fd, CDROMREADTOCENTRY, &tocentry))
-			starts[max+1-min]=tocentry.cdte_addr.lba;
-		else {
-			perror("cdaplay: ioctl(fd, CDROMREADTOCENTRY, &tocentry)");
-			max-=1;
-		}
-	} else
-		perror("cdaplay: ioctl(fd, CDROMREADTOCHDR, &tochdr)");
-	if (max<0)
-		min=max=0;
-	*first=min;
-	return max-min;
-}
-#endif
 
 void __attribute__ ((visibility ("internal"))) cdJump (unsigned long start)
 {
@@ -733,9 +734,6 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 
 	clipbusy = 0;
 	cdbuffpos = 0;
-
-	plGetMasterSample=plrGetMasterSample;
-	plGetRealMasterVolume=plrGetRealMasterVolume;
 
 	plrSetOptions(44100, (PLR_SIGNEDOUT|PLR_16BIT)|PLR_STEREO);
 	stereo=!!(plrOpt&PLR_STEREO);
@@ -785,6 +783,13 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 		plrClosePlayer();
 		return -1;
 	}
+
+	_SET=mcpSet;
+	_GET=mcpGet;
+	mcpSet=SET;
+	mcpGet=GET;
+
+	mcpNormalize (mcpNormalizeDefaultPlayP);
 
 	return 0;
 }

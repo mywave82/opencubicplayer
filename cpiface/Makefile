@@ -173,6 +173,9 @@ mcpedit.o: mcpedit.c \
 	../config.h \
 	../types.h \
 	cpiface.h \
+	../dev/deviplay.h \
+	../dev/devisamp.h \
+	../dev/deviwave.h \
 	../dev/mcp.h \
 	../boot/psetting.h \
 	../stuff/poutput.h \
@@ -220,6 +223,7 @@ cpiface.o: cpiface.c \
 	../stuff/err.h \
 	../stuff/framelock.h \
 	../stuff/poutput.h \
+	../stuff/sets.h \
 	../stuff/timer.h
 	$(CC) cpiface.c -o $@ -c
 

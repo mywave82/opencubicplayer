@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include "types.h"
 #include "dev/deviplay.h"
+#include "dev/mcp.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
@@ -59,14 +60,13 @@ static uint32_t bufpos;
 static uint32_t buflen;
 static void *plrbuf;
 
-/* static uint32_t amplify; TODO */
+static int vol, bal;
 static uint32_t voll,volr;
 static int pan;
 static int srnd;
 
 static struct ocpfilehandle_t *wavefile;
 #define rawwave wavefile
-
 
 static int wavestereo;
 static int wave16bit;
@@ -88,6 +88,9 @@ static int donotloop;
 static int inpause;
 
 static volatile int clipbusy=0;
+
+static int (*_GET)(int ch, int opt);
+static void (*_SET)(int ch, int opt, int val);
 
 #ifdef WAVE_DEBUG
 static const char *compression_code_str(uint_fast16_t code)
@@ -672,6 +675,98 @@ void  __attribute__ ((visibility ("internal"))) wpIdle(void)
 	clipbusy--;
 }
 
+char __attribute__ ((visibility ("internal"))) wpLooped(void)
+{
+	return looped == 3;
+}
+
+void __attribute__ ((visibility ("internal"))) wpSetLoop(uint8_t s)
+{
+	donotloop=!s;
+}
+
+void __attribute__ ((visibility ("internal"))) wpPause(uint8_t p)
+{
+	inpause=p;
+}
+
+static void wpSetSpeed(uint16_t sp)
+{
+	if (sp<32)
+		sp=32;
+	wavebufrate=imuldiv(256*sp, waverate, samprate);
+}
+
+static void wpSetVolume (void)
+{
+	volr=voll=vol*4;
+	if (bal<0)
+		volr=(volr*(64+bal))>>6;
+	else
+		voll=(voll*(64-bal))>>6;
+}
+
+static void SET(int ch, int opt, int val)
+{
+	switch (opt)
+	{
+		case mcpMasterSpeed:
+			wpSetSpeed(val);
+			break;
+		case mcpMasterPitch:
+			break;
+		case mcpMasterSurround:
+			srnd=val;
+			break;
+		case mcpMasterPanning:
+			pan=val;
+			if (reversestereo)
+			{
+				pan = -pan;
+			}
+			wpSetVolume();
+			break;
+		case mcpMasterVolume:
+			vol=val;
+			wpSetVolume();
+			break;
+		case mcpMasterBalance:
+			bal=val;
+			wpSetVolume();
+			break;
+	}
+}
+static int GET(int ch, int opt)
+{
+	return 0;
+}
+
+
+uint32_t __attribute__ ((visibility ("internal"))) wpGetPos(void)
+{
+	return (wavepos + wavelen - ringbuffer_get_tail_available_samples (wavebufpos))%wavelen;
+}
+
+void __attribute__ ((visibility ("internal"))) wpGetInfo(struct waveinfo *i)
+{
+	i->pos=wpGetPos();
+	i->len=wavelen;
+	i->rate=waverate;
+	i->stereo=wavestereo;
+	i->bit16=wave16bit;
+}
+
+void __attribute__ ((visibility ("internal"))) wpSetPos(uint32_t pos)
+{
+	PRINT("wpSetPos called for pos %lu", (unsigned long)pos);
+
+	pos=(pos+wavelen)%wavelen;
+
+	waveneedseek=1;
+	wavepos=pos;
+	ringbuffer_reset(wavebufpos);
+}
+
 uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehandle_t *wavf)
 {
 	uint32_t temp;
@@ -872,7 +967,6 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	inpause=0;
 	looped=0;
-	wpSetVolume (64, 0, 64, 0);
 
 	buf16=malloc(sizeof(uint16_t)*(buflen*2));
 	if (!buf16)
@@ -887,6 +981,12 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 	}
 
 	active=1;
+
+	_SET=mcpSet;
+	_GET=mcpGet;
+	mcpSet=SET;
+	mcpGet=GET;
+	mcpNormalize (mcpNormalizeDefaultPlayP);
 
 	return 1;
 
@@ -934,77 +1034,15 @@ void __attribute__ ((visibility ("internal"))) wpClosePlayer(void)
 		wavefile->unref (wavefile);
 		wavefile = 0;
 	}
-}
 
-char __attribute__ ((visibility ("internal"))) wpLooped(void)
-{
-	return looped == 3;
-}
-
-void __attribute__ ((visibility ("internal"))) wpSetLoop(uint8_t s)
-{
-	donotloop=!s;
-}
-
-void __attribute__ ((visibility ("internal"))) wpPause(uint8_t p)
-{
-	inpause=p;
-}
-
-void __attribute__ ((visibility ("internal"))) wpSetAmplify(uint32_t amp)
-{
-#if 0
-	amplify=amp;
-	calccliptab((amplify*voll)>>8, (amplify*volr)>>8);
-#endif
-}
-
-void __attribute__ ((visibility ("internal"))) wpSetSpeed(uint16_t sp)
-{
-	if (sp<32)
-		sp=32;
-	wavebufrate=imuldiv(256*sp, waverate, samprate);
-}
-
-void __attribute__ ((visibility ("internal"))) wpSetVolume(uint8_t vol_, signed char bal_, signed char pan_, uint8_t opt_)
-{
-	pan=pan_;
-	if (reversestereo)
+	if (_SET)
 	{
-		pan = -pan;
+		mcpSet = _SET;
+		_SET = 0;
 	}
-	volr=voll=vol_*4;
-	if (bal_<0)
-		volr=(volr*(64+bal_))>>6;
-	else
-		voll=(voll*(64-bal_))>>6;
-	srnd=opt_;
-#if 0
-	wpSetAmplify(amplify);
-#endif
-}
-
-uint32_t __attribute__ ((visibility ("internal"))) wpGetPos(void)
-{
-	return (wavepos + wavelen - ringbuffer_get_tail_available_samples (wavebufpos))%wavelen;
-}
-
-void __attribute__ ((visibility ("internal"))) wpGetInfo(struct waveinfo *i)
-{
-	i->pos=wpGetPos();
-	i->len=wavelen;
-	i->rate=waverate;
-	i->stereo=wavestereo;
-	i->bit16=wave16bit;
-}
-
-void __attribute__ ((visibility ("internal"))) wpSetPos(uint32_t pos)
-{
-	PRINT("wpSetPos called for pos %lu", (unsigned long)pos);
-
-	pos=(pos+wavelen)%wavelen;
-
-	waveneedseek=1;
-	wavepos=pos;
-	ringbuffer_reset(wavebufpos);
+	if (_GET)
+	{
+		mcpGet = _GET;
+		_GET = 0;
+	}
 }

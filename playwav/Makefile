@@ -20,6 +20,7 @@ wavplay.o: wavplay.c \
 	../config.h \
 	../types.h \
 	../dev/deviplay.h \
+	../dev/mcp.h \
 	../dev/player.h \
 	../dev/plrasm.h \
 	../dev/ringbuffer.h \

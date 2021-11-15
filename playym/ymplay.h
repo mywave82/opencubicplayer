@@ -9,15 +9,8 @@ extern void __attribute__ ((visibility ("internal"))) ymSetLoop(int loop);
 extern int __attribute__ ((visibility ("internal"))) ymIsLooped(void);
 
 extern void __attribute__ ((visibility ("internal"))) ymPause(uint8_t p);
-extern void __attribute__ ((visibility ("internal"))) ymSetAmplify(uint32_t amp);
-extern void __attribute__ ((visibility ("internal"))) ymSetSpeed(uint16_t sp);
 
 extern void __attribute__ ((visibility ("internal"))) ymIdle(void);
-extern __attribute__ ((visibility ("internal"))) uint16_t vol;
-extern __attribute__ ((visibility ("internal"))) int16_t bal;
-extern __attribute__ ((visibility ("internal"))) int pan;
-extern __attribute__ ((visibility ("internal"))) int srnd;
-extern __attribute__ ((visibility ("internal"))) uint32_t ymbufrate;
 
 class CYmMusic;
 extern __attribute__ ((visibility ("internal"))) CYmMusic *pMusic;

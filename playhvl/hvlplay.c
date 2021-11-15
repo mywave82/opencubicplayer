@@ -32,6 +32,7 @@
 #include "hvlplay.h"
 #include "cpiface/cpiface.h" /* merge in from hvlpinst.c, to compensate for buffer-delay */
 #include "dev/deviplay.h"
+#include "dev/mcp.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
@@ -69,7 +70,7 @@ static uint8_t  last_ht_SpeedMultiplier; /* These are delayed, so should be corr
 static struct hvl_statbuffer_t hvl_statbuffer[ROW_BUFFERS] = {0}; // half a second */
 static int hvl_statbuffers_available = 0;
 
-struct hvl_chaninfo ChanInfo[MAX_CHANNELS];
+struct hvl_chaninfo __attribute__ ((visibility ("internal"))) ChanInfo[MAX_CHANNELS];
 
 struct hvl_tune *ht = 0;
 static int hvl_samples_per_row;
@@ -100,15 +101,17 @@ static int active=0;
 static volatile int PauseSamples;
 
 static uint32_t hvlbuffpos;
-static uint32_t hvlPauseRate;
 static int hvl_doloop;
 static int hvl_looped;
 static int hvl_inpause;
 
-/*static unsigned long amplify;  TODO */
+static int bal, vol;
 static unsigned long voll,volr;
 static int pan;
 static int srnd;
+
+static int (*_GET)(int ch, int opt);
+static void (*_SET)(int ch, int opt, int val);
 
 static uint8_t hvl_muted[MAX_CHANNELS];
 
@@ -141,13 +144,13 @@ do { \
 	} \
 } while(0)
 
-void hvlGetChanInfo (int chan, struct hvl_chaninfo *ci)
+void __attribute__ ((visibility ("internal"))) hvlGetChanInfo (int chan, struct hvl_chaninfo *ci)
 {
 	memcpy (ci, ChanInfo + chan, sizeof (*ci));
 	ci->muted = hvl_muted[chan];
 }
 
-void hvlGetChanVolume (int chan, int *l, int *r)
+void __attribute__ ((visibility ("internal"))) hvlGetChanVolume (int chan, int *l, int *r)
 {
 	int16_t *src;
 	int pos1, pos2;
@@ -224,7 +227,7 @@ static void hvl_statbuffer_callback_from_hvlbuf (void *arg, int samples_ago)
 	hvl_statbuffers_available++;
 }
 
-extern void __attribute__ ((visibility ("internal"))) hvlIdler (void)
+void __attribute__ ((visibility ("internal"))) hvlIdler (void)
 {
 	while (hvl_statbuffers_available) /* we only prepare more data if hvl_statbuffers_available is non-zero. This gives about 0.5 seconds worth of sample-data */
 	{
@@ -382,7 +385,7 @@ static void hvlUpdateKernPos (void)
 	kernpos = newpos;
 }
 
-extern void __attribute__ ((visibility ("internal"))) hvlIdle (void)
+void __attribute__ ((visibility ("internal"))) hvlIdle (void)
 {
 	uint32_t bufdelta;
 	uint32_t pass2;
@@ -460,177 +463,48 @@ extern void __attribute__ ((visibility ("internal"))) hvlIdle (void)
 		int pos1, length1, pos2, length2;
 		int i;
 		int buf16_filled = 0;
+		int16_t *t = buf16;
+
 
 		/* how much data is available to transfer into devp.. we are using a ringbuffer, so we might receive two fragments */
 		ringbuffer_get_processing_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);
 
-		if (hvlPauseRate == 0x00010000)
+		if (bufdelta > (length1+length2))
 		{
-			int16_t *t = buf16;
+			bufdelta=(length1+length2);
+			hvl_looped |= 2;
 
-			if (bufdelta > (length1+length2))
-			{
-				bufdelta=(length1+length2);
-				hvl_looped |= 2;
-
-			} else {
-				hvl_looped &= ~2;
-			}
-
-			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
-			{
-				int16_t rs, ls;
-
-				if (!length1)
-				{
-					pos1 = pos2;
-					length1 = length2;
-					pos2 = 0;
-					length2 = 0;
-				}
-
-				assert (length1);
-
-				rs = hvl_buf_stereo[(pos1<<1)    ];
-				ls = hvl_buf_stereo[(pos1<<1) + 1];
-
-				PANPROC;
-
-				*(t++) = rs;
-				*(t++) = ls;
-
-				pos1++;
-				length1--;
-			}
-
-			ringbuffer_processing_consume_samples (hvl_buf_pos, buf16_filled); /* add this rate buf16_filled == tail_used */
 		} else {
-			/* We are going to perform cubic interpolation of rate conversion, used for cool pause-slow-down... this bit is tricky */
-			unsigned int accumulated_progress = 0;
-
 			hvl_looped &= ~2;
+		}
 
-			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
+		for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
+		{
+			int16_t rs, ls;
+
+			if (!length1)
 			{
-				uint32_t wpm1, wp0, wp1, wp2;
-				int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
-				int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
-				unsigned int progress;
-				int16_t rs, ls;
-
-				/* will the interpolation overflow? */
-				if ((length1+length2) <= 3)
-				{
-					hvl_looped |= 2;
-					break;
-				}
-				/* will we overflow the wavebuf if we advance? */
-				if ((length1+length2) < ((hvlPauseRate+hvlbuffpos)>>16))
-				{
-					hvl_looped |= 2;
-					break;
-				}
-
-				switch (length1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
-				{
-					case 1:
-						wpm1 = pos1;
-						wp0  = pos2;
-						wp1  = pos2+1;
-						wp2  = pos2+2;
-						break;
-					case 2:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos2;
-						wp2  = pos2+1;
-						break;
-					case 3:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos1+2;
-						wp2  = pos2;
-						break;
-					default:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos1+2;
-						wp2  = pos1+3;
-						break;
-				}
-
-
-				rvm1 = (uint16_t)hvl_buf_stereo[(wpm1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
-				lvm1 = (uint16_t)hvl_buf_stereo[(wpm1<<1)+1]^0x8000;
-				 rc0 = (uint16_t)hvl_buf_stereo[(wp0<<1)+0]^0x8000;
-				 lc0 = (uint16_t)hvl_buf_stereo[(wp0<<1)+1]^0x8000;
-				 rv1 = (uint16_t)hvl_buf_stereo[(wp1<<1)+0]^0x8000;
-				 lv1 = (uint16_t)hvl_buf_stereo[(wp1<<1)+1]^0x8000;
-				 rv2 = (uint16_t)hvl_buf_stereo[(wp2<<1)+0]^0x8000;
-				 lv2 = (uint16_t)hvl_buf_stereo[(wp2<<1)+1]^0x8000;
-
-				rc1 = rv1-rvm1;
-				rc2 = 2*rvm1-2*rc0+rv1-rv2;
-				rc3 = rc0-rvm1-rv1+rv2;
-				rc3 =  imulshr16(rc3,hvlbuffpos);
-				rc3 += rc2;
-				rc3 =  imulshr16(rc3,hvlbuffpos);
-				rc3 += rc1;
-				rc3 =  imulshr16(rc3,hvlbuffpos);
-				rc3 += rc0;
-				if (rc3<0)
-					rc3=0;
-				if (rc3>65535)
-					rc3=65535;
-
-				lc1 = lv1-lvm1;
-				lc2 = 2*lvm1-2*lc0+lv1-lv2;
-				lc3 = lc0-lvm1-lv1+lv2;
-				lc3 =  imulshr16(lc3,hvlbuffpos);
-				lc3 += lc2;
-				lc3 =  imulshr16(lc3,hvlbuffpos);
-				lc3 += lc1;
-				lc3 =  imulshr16(lc3,hvlbuffpos);
-				lc3 += lc0;
-				if (lc3<0)
-					lc3=0;
-				if (lc3>65535)
-					lc3=65535;
-
-				rs = rc3 ^ 0x8000;
-				ls = lc3 ^ 0x8000;
-
-				PANPROC;
-
-				buf16[(buf16_filled<<1)+0] = rs;
-				buf16[(buf16_filled<<1)+1] = ls;
-
-				hvlbuffpos+=hvlPauseRate;
-				progress = hvlbuffpos>>16;
-				hvlbuffpos &= 0xffff;
-
-				accumulated_progress += progress;
-
-				/* did we wrap? if so, progress up to the wrapping point */
-				if (progress >= length1)
-				{
-					progress -= length1;
-					pos1 = pos2;
-					length1 = length2;
-					pos2 = 0;
-					length2 = 0;
-				}
-				if (progress)
-				{
-					pos1 += progress;
-					length1 -= progress;
-				}
+				pos1 = pos2;
+				length1 = length2;
+				pos2 = 0;
+				length2 = 0;
 			}
 
-			/* We are slowing down, so accumulated_progress is ALWAYS bigger than buf16_filled */
-			PauseSamples += buf16_filled - accumulated_progress;
-			ringbuffer_processing_consume_samples (hvl_buf_pos, accumulated_progress);
+			assert (length1);
+
+			rs = hvl_buf_stereo[(pos1<<1)    ];
+			ls = hvl_buf_stereo[(pos1<<1) + 1];
+
+			PANPROC;
+
+			*(t++) = rs;
+			*(t++) = ls;
+
+			pos1++;
+			length1--;
 		}
+
+		ringbuffer_processing_consume_samples (hvl_buf_pos, buf16_filled); /* add this rate buf16_filled == tail_used */
 
 		bufdelta=buf16_filled;
 
@@ -802,136 +676,6 @@ extern void __attribute__ ((visibility ("internal"))) hvlIdle (void)
 	clipbusy--;
 }
 
-struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file)
-{
-	int BufSize;
-
-	hvl_InitReplayer ();
-
-	plrSetOptions(44100, (PLR_SIGNEDOUT|PLR_16BIT)|PLR_STEREO);
-
-	stereo=!!(plrOpt&PLR_STEREO);
-	bit16=!!(plrOpt&PLR_16BIT);
-	signedout=!!(plrOpt&PLR_SIGNEDOUT);
-	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
-
-	ht = hvl_LoadTune_memory (mem, memlen, 4, plrRate);
-	if (!ht)
-	{
-		goto error_out;
-	}
-
-	if( !hvl_InitSubsong( ht, 0 ) )
-	{
-		goto error_out;
-	}
-
-	last_ht_SongNum = 0;
-	last_ht_NoteNr = 0;
-	last_ht_PosNr = 0;
-	last_ht_Tempo = 1;
-	last_ht_SpeedMultiplier = 1;
-
-	BufSize=plrBufSize;
-	if (BufSize > 40)
-	{
-		BufSize = 40;
-	}
-	if (!plrOpenPlayer(&plrbuf, &buflen, BufSize * plrRate / 1000, file))
-	{
-		goto error_out;
-	}
-	bufpos=0;
-	kernpos=0;
-	hvlbuffpos = 0x00000000;
-	PauseSamples = 0;
-	hvl_inpause = 0;
-	active = 1;
-	hvl_doloop = 0;
-	hvlPauseRate = 0x00010000;
-
-	hvl_samples_per_row = plrRate / 50;
-
-	buf16 = malloc (sizeof (int16_t) * buflen * 2);
-	hvl_buf_stereo = malloc (sizeof (int16_t) * (ROW_BUFFERS + 2) * MAXIMUM_SLOW_DOWN * 2 * hvl_samples_per_row); /* The + 2 is on purpose, so we do not have to wrap when calling hvl_DecodeFrame(), and another to have enough space when buffer utilization is close to maximum */
-	hvl_buf_16chan = malloc (sizeof (int16_t) * (ROW_BUFFERS + 2) * MAXIMUM_SLOW_DOWN * 2 * MAX_CHANNELS * hvl_samples_per_row);
-
-	if ((!buf16) && (!hvl_buf_stereo) && (!hvl_buf_16chan))
-	{
-		goto error_out;
-	}
-
-	hvl_buf_pos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, (ROW_BUFFERS + 1) * MAXIMUM_SLOW_DOWN * hvl_samples_per_row);
-	if (!hvl_buf_pos)
-	{
-		goto error_out;
-	}
-
-	bzero (hvl_muted, sizeof (hvl_muted));
-
-	bzero (hvl_statbuffer, sizeof (hvl_statbuffer));
-	hvl_statbuffers_available = ROW_BUFFERS;
-
-	bzero (plInstUsed, sizeof (plInstUsed));
-
-	if (!pollInit(hvlIdle))
-	{
-		goto error_out;
-	}
-	active = 3;
-
-	return ht;
-
-error_out:
-	hvlClosePlayer();
-
-	return 0;
-}
-
-void __attribute__ ((visibility ("internal"))) hvlClosePlayer (void)
-{
-	if (active & 2)
-	{
-		pollClose();
-	}
-	if (active & 1)
-	{
-		plrClosePlayer();
-		plrbuf = 0;
-	}
-	active = 0;
-
-	if (hvl_buf_pos)
-	{
-		ringbuffer_free (hvl_buf_pos);
-		hvl_buf_pos = 0;
-	}
-
-	if (buf16)
-	{
-		free (buf16);
-		buf16 = 0;
-	}
-
-	if (hvl_buf_stereo)
-	{
-		free (hvl_buf_stereo);
-		hvl_buf_stereo = 0;
-	}
-
-	if (hvl_buf_16chan)
-	{
-		free (hvl_buf_16chan);
-		hvl_buf_16chan = 0;
-	}
-
-	if (ht)
-	{
-		hvl_FreeTune (ht);
-		ht = 0;
-	}
-}
-
 void __attribute__ ((visibility ("internal"))) hvlSetLoop (uint8_t s)
 {
 	hvl_doloop = s;
@@ -947,12 +691,7 @@ void __attribute__ ((visibility ("internal"))) hvlPause (uint8_t p)
 	hvl_inpause = p;
 }
 
-void __attribute__ ((visibility ("internal"))) hvlSetAmplify (uint32_t amp)
-{
-	//fprintf (stderr, "TODO hvlSetAmplify(0x%08x)\n", (int)amp);
-}
-
-void __attribute__ ((visibility ("internal"))) hvlSetSpeed (uint16_t sp)
+static void hvlSetSpeed (uint16_t sp)
 {
 	hvl_samples_per_row = plrRate * 256 / (50 * sp);
 
@@ -963,32 +702,60 @@ void __attribute__ ((visibility ("internal"))) hvlSetSpeed (uint16_t sp)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) hvlSetPitch (uint16_t sp)
+static void hvlSetPitch (uint16_t sp)
 {
 	ht->ht_Frequency = plrRate * 256 / sp;
 	ht->ht_FreqF = (double)plrRate * 256 / sp;
 }
 
-void __attribute__ ((visibility ("internal"))) hvlSetPausePitch (uint32_t sp)
+static void hvlSetVolume (void)
 {
-	assert (sp);
-	assert (sp <= 0x00010000);
-	hvlPauseRate = sp;
+	volr=voll=vol*4;
+	if (bal<0)
+		voll=(voll*(64+bal))>>6;
+	else
+		volr=(volr*(64-bal))>>6;
 }
 
-void __attribute__ ((visibility ("internal"))) hvlSetVolume (uint8_t vol_, int8_t bal_, int8_t pan_, uint8_t opt)
+static void SET(int ch, int opt, int val)
 {
-	pan=pan_;
-	if (reversestereo)
+	switch (opt)
 	{
-		pan = -pan;
+		case mcpMasterSpeed:
+			hvlSetSpeed(val);
+			break;
+		case mcpMasterPitch:
+			hvlSetPitch(val);
+			break;
+		case mcpMasterSurround:
+			srnd=val;
+			break;
+		case mcpMasterPanning:
+			pan=val;
+			if (reversestereo)
+			{
+				pan = -pan;
+			}
+			hvlSetVolume();
+			break;
+		case mcpMasterVolume:
+			vol=val;
+			hvlSetVolume();
+			break;
+		case mcpMasterBalance:
+			bal=val;
+			hvlSetVolume();
+			break;
 	}
-	volr=voll=vol_*4;
-	if (bal_<0)
-		voll=(voll*(64+bal_))>>6;
-	else
-		volr=(volr*(64-bal_))>>6;
-	srnd=opt;
+}
+static int GET(int ch, int opt)
+{
+	return 0;
+}
+
+void __attribute__ ((visibility ("internal"))) hvlRestartSong ()
+{
+	hvl_InitSubsong (ht, ht->ht_SongNum);
 }
 
 void __attribute__ ((visibility ("internal"))) hvlPrevSubSong ()
@@ -1074,3 +841,152 @@ void __attribute__ ((visibility ("internal"))) hvlGetStats (int *row, int *rows,
 	*tempo     = last_ht_Tempo;
 	*speedmult = last_ht_SpeedMultiplier;
 }
+
+struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file)
+{
+	int BufSize;
+
+	hvl_InitReplayer ();
+
+	plrSetOptions(44100, (PLR_SIGNEDOUT|PLR_16BIT)|PLR_STEREO);
+
+	stereo=!!(plrOpt&PLR_STEREO);
+	bit16=!!(plrOpt&PLR_16BIT);
+	signedout=!!(plrOpt&PLR_SIGNEDOUT);
+	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
+
+	ht = hvl_LoadTune_memory (mem, memlen, 4, plrRate);
+	if (!ht)
+	{
+		goto error_out;
+	}
+
+	if( !hvl_InitSubsong( ht, 0 ) )
+	{
+		goto error_out;
+	}
+
+	last_ht_SongNum = 0;
+	last_ht_NoteNr = 0;
+	last_ht_PosNr = 0;
+	last_ht_Tempo = 1;
+	last_ht_SpeedMultiplier = 1;
+
+	BufSize=plrBufSize;
+	if (BufSize > 40)
+	{
+		BufSize = 40;
+	}
+	if (!plrOpenPlayer(&plrbuf, &buflen, BufSize * plrRate / 1000, file))
+	{
+		goto error_out;
+	}
+	bufpos=0;
+	kernpos=0;
+	hvlbuffpos = 0x00000000;
+	PauseSamples = 0;
+	hvl_inpause = 0;
+	active = 1;
+	hvl_doloop = 0;
+
+	hvl_samples_per_row = plrRate / 50;
+
+	buf16 = malloc (sizeof (int16_t) * buflen * 2);
+	hvl_buf_stereo = malloc (sizeof (int16_t) * (ROW_BUFFERS + 2) * MAXIMUM_SLOW_DOWN * 2 * hvl_samples_per_row); /* The + 2 is on purpose, so we do not have to wrap when calling hvl_DecodeFrame(), and another to have enough space when buffer utilization is close to maximum */
+	hvl_buf_16chan = malloc (sizeof (int16_t) * (ROW_BUFFERS + 2) * MAXIMUM_SLOW_DOWN * 2 * MAX_CHANNELS * hvl_samples_per_row);
+
+	if ((!buf16) && (!hvl_buf_stereo) && (!hvl_buf_16chan))
+	{
+		goto error_out;
+	}
+
+	hvl_buf_pos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, (ROW_BUFFERS + 1) * MAXIMUM_SLOW_DOWN * hvl_samples_per_row);
+	if (!hvl_buf_pos)
+	{
+		goto error_out;
+	}
+
+	bzero (hvl_muted, sizeof (hvl_muted));
+
+	bzero (hvl_statbuffer, sizeof (hvl_statbuffer));
+	hvl_statbuffers_available = ROW_BUFFERS;
+
+	bzero (plInstUsed, sizeof (plInstUsed));
+
+	if (!pollInit(hvlIdle))
+	{
+		goto error_out;
+	}
+	active = 3;
+
+	_SET=mcpSet;
+	_GET=mcpGet;
+	mcpSet=SET;
+	mcpGet=GET;
+
+	mcpNormalize (mcpNormalizeDefaultPlayP);
+
+	return ht;
+
+error_out:
+	hvlClosePlayer();
+
+	return 0;
+}
+
+void __attribute__ ((visibility ("internal"))) hvlClosePlayer (void)
+{
+	if (active & 2)
+	{
+		pollClose();
+	}
+	if (active & 1)
+	{
+		plrClosePlayer();
+		plrbuf = 0;
+	}
+	active = 0;
+
+	if (hvl_buf_pos)
+	{
+		ringbuffer_free (hvl_buf_pos);
+		hvl_buf_pos = 0;
+	}
+
+	if (buf16)
+	{
+		free (buf16);
+		buf16 = 0;
+	}
+
+	if (hvl_buf_stereo)
+	{
+		free (hvl_buf_stereo);
+		hvl_buf_stereo = 0;
+	}
+
+	if (hvl_buf_16chan)
+	{
+		free (hvl_buf_16chan);
+		hvl_buf_16chan = 0;
+	}
+
+	if (ht)
+	{
+		hvl_FreeTune (ht);
+		ht = 0;
+	}
+
+	if (_SET)
+	{
+		mcpSet = _SET;
+		_SET = 0;
+	}
+	if (_GET)
+	{
+		mcpGet = _GET;
+		_GET = 0;
+	}
+}
+
+

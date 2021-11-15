@@ -21,8 +21,8 @@
 #include "recache.h"
 #include "resample.h"
 #include "arc.h"
-
 #include "dev/deviplay.h"
+#include "dev/mcp.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
 #include "filesel/mdb.h"
@@ -46,7 +46,8 @@
 
 static int inpause;
 
-/*static unsigned long amplify;  TODO */
+static int bal;
+static int vol;
 static unsigned long voll,volr;
 static int pan;
 static int srnd;
@@ -75,6 +76,9 @@ static uint32_t gmibufhead; /* actually this is the write head */
 static uint32_t gmibuftail;  /* read pos */
 static uint32_t gmibuffpos; /* read fine-pos.. when rate has a fraction */
 static uint32_t gmibufrate = 0x10000; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
+
+static int (*_GET)(int ch, int opt);
+static void (*_SET)(int ch, int opt, int val);
 
 /* clipper threadlock since we use a timer-signal */
 static volatile int clipbusy=0;
@@ -450,32 +454,29 @@ static int read_user_config_file(void)
 
 /* Killing Module 2 MIDI support with dummy calls */
 
-int
-get_module_type (char *fn)
+int __attribute__ ((visibility ("internal"))) get_module_type (char *fn)
 {
 	return IS_OTHER_FILE; /* Open Cubic Player will provide module support */
 }
 
-int convert_mod_to_midi_file(MidiEvent * ev)
+int __attribute__ ((visibility ("internal"))) convert_mod_to_midi_file(MidiEvent * ev)
 {
 	ctl->cmsg(CMSG_INFO, VERB_NORMAL,
 	          "Aborting!  timidity attempted to convert module to midi file\n");
 	return 1;
 }
 
-char *
-get_module_title (struct timidity_file *tf, int mod_type)
+char __attribute__ ((visibility ("internal"))) *get_module_title (struct timidity_file *tf, int mod_type)
 {
 	return NULL;
 }
 
-int
-load_module_file (struct timidity_file *tf, int mod_type)
+int __attribute__ ((visibility ("internal"))) load_module_file (struct timidity_file *tf, int mod_type)
 {
 	return 1; /* Fail to load */
 }
 
-void ML_RegisterAllLoaders ()
+void __attribute__ ((visibility ("internal"))) ML_RegisterAllLoaders ()
 {
 }
 
@@ -494,6 +495,12 @@ static void ocp_ctl_close (void)
 static int ocp_ctl_pass_playing_list (int number_of_files, char *list_of_files[])
 {
 	return 0;
+}
+
+void __attribute__ ((visibility ("internal"))) timidityRestart (void)
+{
+	ctl_next_value = 0;
+	ctl_next_result = RC_RESTART;
 }
 
 void __attribute__ ((visibility ("internal"))) timiditySetRelPos(int pos)
@@ -1385,6 +1392,92 @@ static void timidityIdler(void)
 	}
 }
 
+int __attribute__ ((visibility ("internal"))) timidityIsLooped(void)
+{
+	return gmi_looped;
+}
+
+void __attribute__ ((visibility ("internal"))) timiditySetLoop(unsigned char s)
+{
+	donotloop=!s;
+}
+
+void __attribute__ ((visibility ("internal"))) timidityPause(unsigned char p)
+{
+	inpause=p;
+}
+
+static void timiditySetPitch(int16_t sp)
+{
+#if 0
+	if (sp<32)
+		sp=32;
+	gmibufrate=256*sp;
+#endif
+	ctl_next_value = sp - note_key_offset;
+	ctl_next_result = RC_KEYUP;
+}
+
+static void timiditySetVolume(void)
+{
+#warning fixme, these are not used yet.....
+	volr=voll=vol*4;
+	if (bal<0)
+		volr=(volr*(64+bal))>>6;
+	else
+		voll=(voll*(64-bal))>>6;
+}
+
+static void SET(int ch, int opt, int val)
+{
+	switch (opt)
+	{
+		case mcpMasterSpeed:
+#warning fixme, might be broken
+			speed = val;
+			break;
+		case mcpMasterPitch:
+#warning fixme, might be broken
+			timiditySetPitch (val);
+			break;
+		case mcpMasterSurround:
+			srnd=val;
+			break;
+		case mcpMasterPanning:
+			pan=val;
+			if (reversestereo)
+			{
+				pan = -pan;
+			}
+			timiditySetVolume();
+			break;
+		case mcpMasterVolume:
+			vol=val;
+			timiditySetVolume();
+			break;
+		case mcpMasterBalance:
+			bal=val;
+			timiditySetVolume();
+			break;
+	}
+}
+static int GET(int ch, int opt)
+{
+	return 0;
+}
+
+
+void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct mglobinfo *gi)
+{
+	int pos = plrGetPlayPos () >> (stereo+bit16);
+
+	gi->curtick = current_sample
+- aq_soft_filled()
+- ( (gmibufhead+gmibuflen-gmibuftail)%gmibuflen ) /* gmibuf length */
+- ( (bufpos-pos+buflen)%buflen); /* PlrBuf length */
+	gi->ticknum = timidity_main_session.nsamples;
+}
+
 void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 {
 	uint32_t bufplayed;
@@ -1806,6 +1899,37 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 	clipbusy--;
 }
 
+
+
+
+#if 0
+
+#undef main
+int main(int argc, char *argv[])
+{
+	add_to_pathlist ("/etc/timidity");
+	emulate_main_start();
+
+	if (!emulate_timidity_play_main_start ())
+	{
+		//retval=ctl->pass_playing_list(nfiles, files);  /* Here we give control to CTL */
+		emulate_play_midi_file_start("/home/oem/Downloads/elise.mid", &timidity_main_session);
+
+		while (emulate_play_midi_file_iterate("/home/oem/Downloads/elise.mid", &timidity_main_session) == RC_ASYNC_HACK)
+		{
+			fprintf (stderr, "We are async....\n");
+		}
+
+		emulate_timidity_play_main_end ();
+	}
+
+	emulate_main_end ();
+
+	return 0;
+}
+
+#endif
+
 static void doTimidityClosePlayer(int CloseDriver)
 {
 	pollClose();
@@ -1938,93 +2062,18 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 		return errGen;
 	}
 
+	_SET=mcpSet;
+	_GET=mcpGet;
+	mcpSet=SET;
+	mcpGet=GET;
+
+	mcpNormalize (mcpNormalizeNoFilter | mcpNormalizeCanSpeedPitchUnlock | mcpNormalizeCannotEcho | mcpNormalizeCannotAmplify);
+
 	return errOk;
 }
 
 void __attribute__ ((visibility ("internal"))) timidityClosePlayer(void)
 {
 #warning we need to break idle loop with EVENT set to quit, in order to make a clean exit..
-
 	doTimidityClosePlayer (1);
 }
-
-int __attribute__ ((visibility ("internal"))) timidityIsLooped(void)
-{
-	return gmi_looped;
-}
-
-void __attribute__ ((visibility ("internal"))) timiditySetLoop(unsigned char s)
-{
-	donotloop=!s;
-}
-
-void __attribute__ ((visibility ("internal"))) timidityPause(unsigned char p)
-{
-	inpause=p;
-}
-
-void __attribute__ ((visibility ("internal"))) timiditySetSpeed(uint16_t sp)
-{
-	speed = sp;
-}
-void __attribute__ ((visibility ("internal"))) timiditySetPitch(int16_t sp)
-{
-#if 0
-	if (sp<32)
-		sp=32;
-	gmibufrate=256*sp;
-#endif
-	ctl_next_value = sp - note_key_offset;
-	ctl_next_result = RC_KEYUP;
-}
-
-void __attribute__ ((visibility ("internal"))) timiditySetVolume(unsigned char vol_, signed char bal_, signed char pan_, unsigned char opt)
-{
-	pan=pan_;
-	volr=voll=vol_*4;
-	if (bal_<0)
-		volr=(volr*(64+bal_))>>6;
-	else
-		voll=(voll*(64-bal_))>>6;
-	srnd=opt;
-}
-
-void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct mglobinfo *gi)
-{
-	int pos = plrGetPlayPos () >> (stereo+bit16);
-
-	gi->curtick = current_sample
-- aq_soft_filled()
-- ( (gmibufhead+gmibuflen-gmibuftail)%gmibuflen ) /* gmibuf length */
-- ( (bufpos-pos+buflen)%buflen); /* PlrBuf length */
-	gi->ticknum = timidity_main_session.nsamples;
-}
-
-
-#if 0
-
-#undef main
-int main(int argc, char *argv[])
-{
-	add_to_pathlist ("/etc/timidity");
-	emulate_main_start();
-
-	if (!emulate_timidity_play_main_start ())
-	{
-		//retval=ctl->pass_playing_list(nfiles, files);  /* Here we give control to CTL */
-		emulate_play_midi_file_start("/home/oem/Downloads/elise.mid", &timidity_main_session);
-
-		while (emulate_play_midi_file_iterate("/home/oem/Downloads/elise.mid", &timidity_main_session) == RC_ASYNC_HACK)
-		{
-			fprintf (stderr, "We are async....\n");
-		}
-
-		emulate_timidity_play_main_end ();
-	}
-
-	emulate_main_end ();
-
-	return 0;
-}
-
-#endif

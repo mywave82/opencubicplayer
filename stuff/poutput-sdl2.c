@@ -925,6 +925,7 @@ struct keytranslate_t translate_ctrl[] =
 	{SDLK_LEFT,         KEY_CTRL_LEFT},
 	{SDLK_PAGEUP,       KEY_CTRL_PGUP},
 	{SDLK_PAGEDOWN,     KEY_CTRL_PGDN},
+	{SDLK_HOME,         KEY_CTRL_HOME},
 	{-1,                0xffff},
 };
 

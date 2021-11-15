@@ -6,12 +6,10 @@ extern "C"
 	struct ocpfilehandle_t;
 }
 extern void oplClosePlayer(void);
-extern int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filename /* needed for detection */, const uint8_t *content, const size_t len, struct ocpfilehandle_t *file);
+extern int oplOpenPlayer (const char *filename /* needed for detection */, const uint8_t *content, const size_t len, struct ocpfilehandle_t *file);
 extern void oplSetLoop(int);
 extern int oplIsLooped(void);
 extern void oplPause(uint8_t p);
-extern void oplSetAmplify(uint32_t amp);
-extern void oplSetVolume(uint8_t vol_, int8_t bal_, int8_t pan_, uint8_t opt);
 extern void oplIdle(void);
 
 struct oplChanInfo {
@@ -30,6 +28,5 @@ struct oplTuneInfo {
 extern void oplpGetChanInfo(int i, oplChanInfo &ci);
 extern void oplpGetGlobInfo(oplTuneInfo &si);
 extern void oplMute(int i, int m);
-extern void oplSetSpeed(uint16_t sp);
 
 #endif

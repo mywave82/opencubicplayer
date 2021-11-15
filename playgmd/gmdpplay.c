@@ -34,7 +34,6 @@
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"
-#include "dev/deviwave.h"
 #include "dev/mcp.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
@@ -127,8 +126,6 @@ static int mpLoadGen(struct gmdmodule *m, struct ocpfilehandle_t *file, struct m
 
 	return retval;
 }
-
-void mcpSetFadePars(int i);
 
 static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
@@ -274,23 +271,9 @@ static int gmdProcessKey(unsigned short key)
 			cpiKeyHelp(KEY_CTRL_LEFT, "Jump back (big)");
 			cpiKeyHelp('>', "Jump forward (big)");
 			cpiKeyHelp(KEY_CTRL_RIGHT, "Jump forward (big)");
-			mcpSetProcessKey(key);
-			if (mcpProcessKey)
-				mcpProcessKey(key);
+			cpiKeyHelp(KEY_CTRL_HOME, "Jump start of track");
+			mcpSetProcessKey (key);
 			return 0;
-#if 0
-		case KEY_ALT_P:
-		/* case 0x1900: alt-p */
-			while (!dkbhit())
-			{
-				if (mcpIdle)
-					mcpIdle();
-				releaseslice();
-			}
-			while (dkbhit())
-				dgetch();
-			break;
-#endif
 		case 'p': case 'P':
 			startpausefade();
 			break;
@@ -303,55 +286,38 @@ static int gmdProcessKey(unsigned short key)
 			mcpSet(-1, mcpMasterPause, plPause^=1);
 			plChanChanged=1;
 			break;
-/*
-		case 0x7700: //ctrl-home TODO keys
+		case KEY_CTRL_HOME:
 			gmdInstClear();
-
 			mpSetPosition(0, 0);
-
 			if (plPause)
 				starttime=pausetime;
 			else
 				starttime=dos_clock();
-			break;*/
+			break;
 		case '<':
 		case KEY_CTRL_LEFT:
-		/* case 0x7300: //ctrl-left */
 			mpGetPosition(&pat, &row);
 			mpSetPosition(pat-1, 0);
 			break;
 		case '>':
 		case KEY_CTRL_RIGHT:
-		/* case 0x7400: //ctrl-right */
 			mpGetPosition(&pat, &row);
 			mpSetPosition(pat+1, 0);
 			break;
 		case KEY_CTRL_UP:
-		/*case 0x8D00: // ctrl-up */
 			mpGetPosition(&pat, &row);
 			mpSetPosition(pat, row-8);
 			break;
 		case KEY_CTRL_DOWN:
-		/*case 0x9100: //ctrl-down */
 			mpGetPosition(&pat, &row);
 			mpSetPosition(pat, row+8);
 			break;
 		case KEY_ALT_L:
-		/* case 0x2600: alt-l */
 			patlock=!patlock;
 			mpLockPat(patlock);
 			break;
 		default:
-			if (mcpSetProcessKey(key))
-				return 1;
-			if (mcpProcessKey)
-			{
-				int ret=mcpProcessKey(key);
-				if (ret==2)
-				cpiResetScreen();
-				if (ret)
-					return 1;
-			}
+			return mcpSetProcessKey (key);
 	}
 	return 1;
 }
@@ -468,7 +434,6 @@ static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	} else
 		modname=info->comment;
 
-	mcpNormalize(1);
 	if (!mpPlayModule(&mod, file))
 		retval=errPlay;
 	plNPChan=mcpNChan;

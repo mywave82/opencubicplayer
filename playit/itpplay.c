@@ -67,7 +67,64 @@ static time_t starttime;
 static time_t pausetime;
 
 
-void itpInstClear();
+static time_t pausefadestart;
+static uint8_t pausefaderelspeed;
+static int8_t pausefadedirect;
+
+static void startpausefade(void)
+{
+	if (plPause)
+		starttime=starttime+dos_clock()-pausetime;
+
+	if (pausefadedirect)
+	{
+		if (pausefadedirect<0)
+			plPause=1;
+		pausefadestart=2*dos_clock()-DOS_CLK_TCK-pausefadestart;
+	} else
+		pausefadestart=dos_clock();
+
+	if (plPause)
+	{
+		plChanChanged=1;
+		mcpSet(-1, mcpMasterPause, plPause=0);
+		pausefadedirect=1;
+	} else
+		pausefadedirect=-1;
+}
+
+static void dopausefade(void)
+{
+	int16_t i;
+	if (pausefadedirect>0)
+	{
+		i=((int32_t)dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
+		if (i<0)
+			i=0;
+		if (i>=64)
+		{
+			i=64;
+			pausefadedirect=0;
+		}
+	} else {
+		i=64-((int32_t)dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
+		if (i>=64)
+			i=64;
+		if (i<=0)
+		{
+			i=0;
+			pausefadedirect=0;
+			pausetime=dos_clock();
+			mcpSet(-1, mcpMasterPause, plPause=1);
+			plChanChanged=1;
+			mcpSetFadePars(64);
+			return;
+		}
+	}
+	pausefaderelspeed=i;
+	mcpSetFadePars(i);
+}
+
 
 static int itpProcessKey(uint16_t key)
 {
@@ -86,11 +143,14 @@ static int itpProcessKey(uint16_t key)
 			cpiKeyHelp(KEY_CTRL_RIGHT, "Jump forward (big)");
 			cpiKeyHelp(KEY_CTRL_UP, "Jump back (small)");
 			cpiKeyHelp(KEY_CTRL_DOWN, "Jump forward (small)");
-			mcpSetProcessKey(key);
-			if (mcpProcessKey)
-				mcpProcessKey(key);
+			cpiKeyHelp(KEY_CTRL_HOME, "Jump to start of track");
+			mcpSetProcessKey (key);
 			return 0;
-		case 'p': case 'P': case KEY_CTRL_P:
+		case 'p': case 'P':
+			startpausefade();
+			break;
+		case KEY_CTRL_P:
+			pausefadedirect=0;
 			if (plPause)
 				starttime=starttime+dos_clock()-pausetime;
 			else
@@ -98,55 +158,40 @@ static int itpProcessKey(uint16_t key)
 			mcpSet(-1, mcpMasterPause, plPause^=1);
 			plChanChanged=1;
 			break;
-/*
-		case 0x7700: //ctrl-home TODO keys
+		case KEY_CTRL_HOME:
 			itpInstClear();
-			itplayer.setpos(0, 0);
+			setpos (&itplayer, 0, 0);
 			if (plPause)
 				starttime=pausetime;
 			else
 				starttime=dos_clock();
 			break;
-*/
 		case '<':
 		case KEY_CTRL_LEFT:
-		/* case 0x7300: //ctrl-left */
 			p=getpos(&itplayer);
 			pat=p>>16;
 			setpos(&itplayer, pat-1, 0);
 			break;
 		case '>':
 		case KEY_CTRL_RIGHT:
-		/* case 0x7400: //ctrl-right */
 			p=getpos(&itplayer);
 			pat=p>>16;
 			setpos(&itplayer, pat+1, 0);
 			break;
 		case KEY_CTRL_UP:
-		/* case 0x8D00: //ctrl-up */
 			p=getpos(&itplayer);
 			pat=p>>16;
 			row=(p>>8)&0xFF;
 			setpos(&itplayer, pat, row-8);
 			break;
 		case KEY_CTRL_DOWN:
-		/* case 0x9100: //ctrl-down */
 			p=getpos(&itplayer);
 			pat=p>>16;
 			row=(p>>8)&0xFF;
 			setpos(&itplayer, pat, row+8);
 			break;
 		default:
-			if (mcpSetProcessKey(key))
-				return 1;
-			if (mcpProcessKey)
-			{
-				int ret=mcpProcessKey(key);
-				if (ret==2)
-					cpiResetScreen();
-				if (ret)
-					return 1;
-			}
+			return mcpSetProcessKey (key);
 	}
 	return 1;
 }
@@ -161,6 +206,8 @@ static void itpIdle(void)
 	setloop(&itplayer, fsLoopMods);
 	if (mcpIdle)
 		mcpIdle();
+	if (pausefadedirect)
+		dopausefade();
 }
 
 static void itpDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
@@ -180,7 +227,9 @@ static void itpDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 
 	if (plScrWidth<128)
 	{
+#if 0
 		memset(buf[0]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
+#endif
 		memset(buf[1]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
 		memset(buf[2]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
 
@@ -206,8 +255,9 @@ static void itpDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 	} else {
 		int i;
 		int nch=0;
-
+#if 0
 		memset(buf[0]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
+#endif
 		memset(buf[1]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
 		memset(buf[2]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
 
@@ -589,7 +639,6 @@ static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 
 	it_optimizepatlens(&mod);
 
-	mcpNormalize(1);
 	nch=cfGetProfileInt2(cfSoundSec, "sound", "itchan", 64, 10);
 	mcpSet(-1, mcpGRestrict, 0);  /* oops... */
 	if (!play(&itplayer, &mod, nch, file))
@@ -635,6 +684,7 @@ static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	starttime=dos_clock();
 	plPause=0;
 	mcpSet(-1, mcpMasterPause, 0);
+	pausefadedirect=0;
 
 	return errOk;
 }

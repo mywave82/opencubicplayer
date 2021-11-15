@@ -35,12 +35,8 @@ extern void __attribute__ ((visibility ("internal"))) timidityIdle(void);
 extern void __attribute__ ((visibility ("internal"))) timiditySetLoop(uint8_t s);
 extern int __attribute__ ((visibility ("internal"))) timidityIsLooped(void);
 extern void __attribute__ ((visibility ("internal"))) timidityPause(uint8_t p);
-/* extern void __attribute__ ((visibility ("internal"))) timiditySetAmplify(uint32_t amp); */
 extern void __attribute__ ((visibility ("internal"))) timiditySetRelPos(int pos);
-
-extern void __attribute__ ((visibility ("internal"))) timiditySetSpeed(uint16_t sp);
-extern void __attribute__ ((visibility ("internal"))) timiditySetPitch(int16_t sp);
-extern void __attribute__ ((visibility ("internal"))) timiditySetVolume(uint8_t vol, int8_t bal, int8_t pan, uint8_t opt);
+extern void __attribute__ ((visibility ("internal"))) timidityRestart (void);
 extern void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct mglobinfo *);
 
 extern void __attribute__ ((visibility ("internal"))) timidityGetChanInfo(uint8_t ch, struct mchaninfo *ci);

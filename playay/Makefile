@@ -71,7 +71,6 @@ aypplay.o: aypplay.c ayplay.h \
 	../types.h \
 	../boot/plinkman.h \
 	../cpiface/cpiface.h \
-	../dev/deviplay.h \
 	../dev/player.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
@@ -88,6 +87,7 @@ ayplay.o: ayplay.c ayplay.h main.h sound.h z80.h \
 	../config.h \
 	../types.h \
 	../dev/deviplay.h \
+	../dev/mcp.h \
 	../dev/player.h \
 	../dev/plrasm.h \
 	../dev/ringbuffer.h \

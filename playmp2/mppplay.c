@@ -28,7 +28,6 @@
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"
-#include "dev/deviplay.h"
 #include "dev/player.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
@@ -51,16 +50,6 @@ static char currentmodname[_MAX_FNAME+1];
 static char currentmodext[_MAX_EXT+1];
 static char *modname;
 static char *composer;
-static int16_t vol;
-static int16_t bal;
-static int16_t pan;
-static char srnd;
-
-static uint32_t amp;
-static int16_t speed;
-static int16_t reverb;
-static int16_t chorus;
-static char finespeed=8;
 
 static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
@@ -112,12 +101,12 @@ static void dopausefade(void)
 			pausetime=dos_clock();
 			mpegPause(plPause=1);
 			plChanChanged=1;
-			mpegSetSpeed(speed);
+			mcpSetFadePars(64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mpegSetSpeed(speed*i/64);
+	mcpSetFadePars(i);
 }
 
 static void mpegDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
@@ -126,6 +115,8 @@ static void mpegDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 	uint32_t tim2;
 	int l;
 	int p;
+
+	mcpDrawGStrings(buf);
 
 	mpegGetInfo(&inf);
 
@@ -140,10 +131,13 @@ static void mpegDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 
 	if (plScrWidth<128)
 	{
+#if 0
 		memset(buf[0]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
+#endif
 		memset(buf[1]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
 		memset(buf[2]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
 
+#if 0
 		writestring(buf[0], 0, 0x09, " vol: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 15);
 		writestring(buf[0], 15, 0x09, " srnd: \xfa  pan: l\xfa\xfa\xfam\xfa\xfa\xfar  bal: l\xfa\xfa\xfam\xfa\xfa\xfar ", 41);
 		writestring(buf[0], 56, 0x09, " spd: ---% \x1D ptch: ---% ", 24);
@@ -158,11 +152,9 @@ static void mpegDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[0], 46+((bal+70)>>4), 0x0F, "I", 1);
 		_writenum(buf[0], 62, 0x0F, speed*100/256, 10, 3);
 		_writenum(buf[0], 75, 0x0F, speed*100/256, 10, 3);
+#endif
 
-		writestring(buf[1], 57, 0x09, "amp: ...% filter: ...  ", 23);
-		_writenum(buf[1], 62, 0x0F, amp*100/64, 10, 3);
-		writestring(buf[1], 75, 0x0F, "off", 3);
-
+		writestring(buf[1], 57, 0x09, "                       ", 23);
 		writestring(buf[1], 0, 0x09, "  pos: ...% / ......k  size: ......k            ", 57);
 		_writenum(buf[1], 7, 0x0F, p*100/l, 10, 3);
 		writenum(buf[1], 29, 0x0F, l, 10, 6, 1);
@@ -183,10 +175,13 @@ static void mpegDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2], 76, 0x0F, ":", 1);
 		writenum(buf[2], 77, 0x0F, tim2%60, 10, 2, 0);
 	} else {
+#if 0
 		memset(buf[0]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
+#endif
 		memset(buf[1]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
 		memset(buf[2]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
 
+#if 0
 		writestring(buf[0], 0, 0x09, "    volume: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa  ", 30);
 		writestring(buf[0], 30, 0x09, " surround: \xfa   panning: l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar   balance: l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar  ", 72);
 		writestring(buf[0], 102, 0x09,  " speed: ---% \x1D pitch: ---%    ", 30);
@@ -201,6 +196,7 @@ static void mpegDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[0], 83+((bal+68)>>3), 0x0F, "I", 1);
 		_writenum(buf[0], 110, 0x0F, speed*100/256, 10, 3);
 		_writenum(buf[0], 124, 0x0F, speed*100/256, 10, 3);
+#endif
 
 		writestring(buf[1], 0, 0x09, "    position: ...% / ......k  size: ......k                 opt: .....Hz, .. bit, ......", 92);
 		_writenum(buf[1], 14, 0x0F, p*100/l, 10, 3);
@@ -210,10 +206,7 @@ static void mpegDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writenum(buf[1], 74, 0x0F, 8<<inf.bit16, 10, 2, 1);
 		writestring(buf[1], 82, 0x0F, inf.stereo?"stereo":"mono", 6);
 
-		writestring(buf[1], 92, 0x09, "   amplification: ...%  filter: ...     ", 40);
-		_writenum(buf[1], 110, 0x0F, amp*100/64, 10, 3);
-		writestring(buf[1], 124, 0x0F, "off", 3);
-
+		writestring(buf[1], 92, 0x09, "                                        ", 40);
 
 		if (plPause)
 			tim2=(pausetime-starttime)/DOS_CLK_TCK;
@@ -238,23 +231,6 @@ static void mpegDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 	}
 }
 
-static void normalize(void)
-{
-	mcpNormalize(0);
-	speed=set.speed;
-	pan=set.pan;
-	bal=set.bal;
-	vol=set.vol;
-	amp=set.amp;
-	srnd=set.srnd;
-	reverb=set.reverb;
-	chorus=set.chorus;
-	mpegSetAmplify(1024*amp);
-	mpegSetVolume(vol, bal, pan, srnd);
-	mpegSetSpeed(speed);
-	/*  mpegSetMasterReverbChorus(reverb, chorus); */
-}
-
 static int mpegProcessKey(uint16_t key)
 {
 	switch (key)
@@ -268,26 +244,9 @@ static int mpegProcessKey(uint16_t key)
 			cpiKeyHelp('>', "Jump forward (big)");
 			cpiKeyHelp(KEY_CTRL_RIGHT, "Jump forward (big)");
 			cpiKeyHelp(KEY_CTRL_UP, "Jump back (small)");
-			cpiKeyHelp(KEY_CTRL_DOWN, "Jump forward (small(");
-			cpiKeyHelp('-', "Decrease volume (small)");
-			cpiKeyHelp('+', "Increase volume (small)");
-			cpiKeyHelp('/', "Move balance left (small)");
-			cpiKeyHelp('*', "Move balance right (small)");
-			cpiKeyHelp(',', "Move panning against normal (small)");
-			cpiKeyHelp('.', "Move panning against reverse (small)");
-			cpiKeyHelp(KEY_F(2), "Decrease volume");
-			cpiKeyHelp(KEY_F(3), "Increase volume");
-			cpiKeyHelp(KEY_F(4), "Toggle surround on/off");
-			cpiKeyHelp(KEY_F(5), "Move panning against normal");
-			cpiKeyHelp(KEY_F(6), "Move panning against reverse");
-			cpiKeyHelp(KEY_F(7), "Move balance left");
-			cpiKeyHelp(KEY_F(8), "Move balance right");
-			cpiKeyHelp(KEY_F(9), "Decrease pitch speed");
-			cpiKeyHelp(KEY_F(11), "Decrease pitch speed");
-			cpiKeyHelp(KEY_F(10), "Increase pitch speed");
-			cpiKeyHelp(KEY_F(12), "Increase pitch speed");
-			if (plrProcessKey)
-				plrProcessKey(key);
+			cpiKeyHelp(KEY_CTRL_DOWN, "Jump forward (small)");
+			cpiKeyHelp(KEY_CTRL_HOME, "Jump to start of track");
+			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade();
@@ -302,16 +261,13 @@ static int mpegProcessKey(uint16_t key)
 			mpegPause(plPause);
 			break;
 		case KEY_CTRL_UP:
-		/* case 0x8D00: //ctrl-up */
 			mpegSetPos(mpegGetPos()-mpegrate);
 			break;
 		case KEY_CTRL_DOWN:
-		/* case 0x9100: //ctrl-down */
 			mpegSetPos(mpegGetPos()+mpegrate);
 			break;
 		case '<':
 		case KEY_CTRL_LEFT:
-		/* case 0x7300: //ctrl-left  */
 			{
 				uint32_t pos = mpegGetPos();
 				uint32_t newpos = pos - (mpeglen>>5);
@@ -324,7 +280,6 @@ static int mpegProcessKey(uint16_t key)
 			break;
 		case '>':
 		case KEY_CTRL_RIGHT:
-		/* case 0x7400: //ctrl-right */
 			{
 				uint32_t pos = mpegGetPos();
 				uint32_t newpos = pos + (mpeglen>>5);
@@ -335,131 +290,11 @@ static int mpegProcessKey(uint16_t key)
 				mpegSetPos(newpos);
 			}
 			break;
-/*
-		case 0x7700: //ctrl-home TODO keys
+		case KEY_CTRL_HOME:
 			mpegSetPos(0);
 			break;
-*/
-		case '-':
-			if (vol>=2)
-				vol-=2;
-			mpegSetVolume(vol, bal, pan, srnd);
-			break;
-		case '+':
-			if (vol<=62)
-				vol+=2;
-			mpegSetVolume(vol, bal, pan, srnd);
-			break;
-		case '/':
-			if ((bal-=4)<-64)
-				bal=-64;
-			mpegSetVolume(vol, bal, pan, srnd);
-			break;
-		case '*':
-			if ((bal+=4)>64)
-				bal=64;
-			mpegSetVolume(vol, bal, pan, srnd);
-			break;
-		case ',':
-			if ((pan-=4)<-64)
-				pan=-64;
-			mpegSetVolume(vol, bal, pan, srnd);
-			break;
-		case '.':
-			if ((pan+=4)>64)
-				pan=64;
-			mpegSetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(2):
-			if ((vol-=8)<0)
-				vol=0;
-			mpegSetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(3):
-			if ((vol+=8)>64)
-				vol=64;
-			mpegSetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(4):
-			mpegSetVolume(vol, bal, pan, srnd=srnd?0:2);
-			break;
-		case KEY_F(5):
-			if ((pan-=16)<-64)
-				pan=-64;
-			mpegSetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(6):
-			if ((pan+=16)>64)
-				pan=64;
-			mpegSetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(7):
-			if ((bal-=16)<-64)
-				bal=-64;
-			mpegSetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(8):
-			if ((bal+=16)>64)
-				bal=64;
-			mpegSetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(9):
-		case KEY_F(11):
-			if ((speed-=finespeed)<16)
-				speed=16;
-			mpegSetSpeed(speed);
-			break;
-		case KEY_F(10):
-		case KEY_F(12):
-			if ((speed+=finespeed)>2048)
-				speed=2048;
-			mpegSetSpeed(speed);
-			break;
-			/* TODO keys
-	case 0x5f00: // ctrl f2
-    if ((amp-=4)<4)
-      amp=4;
-    mpegSetAmplify(1024*amp);
-    break;
-  case 0x6000: // ctrl f3
-    if ((amp+=4)>508)
-      amp=508;
-    mpegSetAmplify(1024*amp);
-    break;
-  case 0x8900: // ctrl f11
-    finespeed=(finespeed==8)?1:8;
-    break;
-  case 0x6a00:
-    normalize();
-    break;
-  case 0x6900:
-    set.pan=pan;
-    set.bal=bal;
-    set.vol=vol;
-    set.speed=speed;
-    set.amp=amp;
-    set.srnd=srnd;
-    break;
-  case 0x6b00:
-    pan=64;
-    bal=0;
-    vol=64;
-    speed=256;
-    amp=64;
-    mpegSetVolume(vol, bal, pan, srnd);
-    mpegSetSpeed(speed);
-    mpegSetAmplify(1024*amp);
-    break;*/
 		default:
-			if (plrProcessKey)
-			{
-				int ret=plrProcessKey(key);
-				if (ret==2)
-					cpiResetScreen();
-				if (ret)
-					return 1;
-			}
-			return 0;
+			return mcpSetProcessKey (key);
 	}
 	return 1;
 }
@@ -518,7 +353,6 @@ static int mpegOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *m
 
 	starttime=dos_clock();
 	plPause=0;
-	normalize();
 	pausefadedirect=0;
 
 	mpegGetInfo(&inf);

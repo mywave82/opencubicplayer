@@ -40,16 +40,12 @@ extern "C"
 static int inpause;
 static int looped;
 
-static unsigned long amplify; /* TODO */
+static int vol, bal;
 static unsigned long voll,volr;
-__attribute__ ((visibility ("internal"))) int pan;
-__attribute__ ((visibility ("internal"))) int srnd;
+static int pan;
+static int srnd;
 /* Are resourses in-use (needs to be freed at Close) ?*/
 static int active=0;
-
-/* mcp stuff */
-__attribute__ ((visibility ("internal"))) uint16_t vol;
-__attribute__ ((visibility ("internal"))) int16_t bal;
 
 /* devp pre-buffer zone */
 static uint16_t *buf16; /* here we dump out data before it goes live */
@@ -146,8 +142,6 @@ do { \
 	ls = (ymsample)(_ls * voll / 256.0); \
 } while(0)
 
-static void ymSetVolume(void);
-
 void __attribute__ ((visibility ("internal"))) ymClosePlayer(void)
 {
 	if (active)
@@ -171,6 +165,23 @@ void __attribute__ ((visibility ("internal"))) ymMute(int i, int m)
 {
 	fprintf(stderr, "TODO, ymMute(i, m)\n");
 }
+
+static void ymSetSpeed(uint16_t sp)
+{
+	if (sp<32)
+		sp=32;
+	ymbufrate=256*sp;
+}
+
+static void ymSetVolume(void)
+{
+	volr=voll=vol*4;
+	if (bal<0)
+		volr=(volr*(64+bal))>>6;
+	else
+		voll=(voll*(64-bal))>>6;
+}
+
 static void SET(int ch, int opt, int val)
 {
 	switch (opt)
@@ -179,9 +190,6 @@ static void SET(int ch, int opt, int val)
 			ymSetSpeed(val);
 			break;
 		case mcpMasterPitch:
-			break;
-		case mcpMasterAmplify:
-			amplify=val;
 			break;
 		case mcpMasterSurround:
 			srnd=val;
@@ -249,7 +257,7 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	_GET=mcpGet;
 	mcpSet=SET;
 	mcpGet=GET;
-	mcpNormalize(0);
+	mcpNormalize (mcpNormalizeDefaultPlayP);
 
 	devp_stereo=!!(plrOpt&PLR_STEREO);
 	devp_bit16=!!(plrOpt&PLR_16BIT);
@@ -330,27 +338,6 @@ int __attribute__ ((visibility ("internal"))) ymIsLooped(void)
 void __attribute__ ((visibility ("internal"))) ymPause(uint8_t p)
 {
 	inpause=p;
-}
-
-void __attribute__ ((visibility ("internal"))) ymSetAmplify(uint32_t amp)
-{
-	amplify=amp;
-}
-
-void __attribute__ ((visibility ("internal"))) ymSetSpeed(uint16_t sp)
-{
-	if (sp<32)
-		sp=32;
-	ymbufrate=256*sp;
-}
-
-static void ymSetVolume(void)
-{
-	volr=voll=vol*4;
-	if (bal<0)
-		volr=(volr*(64+bal))>>6;
-	else
-		voll=(voll*(64-bal))>>6;
 }
 
 static void ymIdler(void)

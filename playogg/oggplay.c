@@ -38,6 +38,7 @@
 #include "cpiface/jpeg.h"
 #include "cpiface/png.h"
 #include "dev/deviplay.h"
+#include "dev/mcp.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
@@ -55,7 +56,8 @@ static int signedout;
 static uint32_t samprate;
 static uint8_t reversestereo;
 
-/* static unsigned long amplify; TODO */
+static int vol;
+static int bal;
 static unsigned long voll,volr;
 static int pan;
 static int srnd;
@@ -64,8 +66,6 @@ static int16_t *buf16=NULL;
 static uint32_t bufpos;
 static uint32_t buflen;
 static void *plrbuf;
-
-/*static uint32_t amplify;*/
 
 static OggVorbis_File ov;
 static int oggstereo;
@@ -87,6 +87,9 @@ static int inpause;
 static volatile int clipbusy=0;
 
 static struct ocpfilehandle_t *oggfile;
+
+static int (*_GET)(int ch, int opt);
+static void (*_SET)(int ch, int opt, int val);
 
 #define PANPROC \
 do { \
@@ -595,20 +598,6 @@ void __attribute__ ((visibility ("internal"))) oggIdle(void)
 	clipbusy--;
 }
 
-void __attribute__ ((visibility ("internal"))) oggSetAmplify(uint32_t amp)
-{
-/*
-	amplify=amp;
-	float v[9];
-	float ampf=(float)vols[9]*(amplify/65536.0)/65536.0;
-	int i;
-	for (i=0; i<9; i++)
-		v[i]=ampf*vols[i];
-	rawogg.ioctl(ampegdecoder::ioctlsetstereo, v, 4*9);
-	*/
-}
-
-
 static size_t read_func (void *ptr, size_t size, size_t nmemb, void *token)
 {
 	uint64_t retval;
@@ -969,6 +958,102 @@ static void add_comment(const char *src)
 	free (tmp);
 }
 
+char __attribute__ ((visibility ("internal"))) oggLooped(void)
+{
+	return looped == 3;
+}
+
+void __attribute__ ((visibility ("internal"))) oggSetLoop(uint8_t s)
+{
+	donotloop=!s;
+}
+
+void __attribute__ ((visibility ("internal"))) oggPause(uint8_t p)
+{
+	inpause=p;
+}
+
+static void oggSetSpeed (uint16_t sp)
+{
+	if (sp<32)
+		sp=32;
+	oggbufrate=imuldiv(256*sp, oggrate, samprate);
+}
+
+static void oggSetVolume (void)
+{
+	volr=voll=vol*4;
+	if (bal<0)
+		voll=(voll*(64+bal))>>6;
+	else
+		volr=(volr*(64-bal))>>6;
+}
+
+static void SET(int ch, int opt, int val)
+{
+	switch (opt)
+	{
+		case mcpMasterSpeed:
+			oggSetSpeed(val);
+			break;
+		case mcpMasterPitch:
+			break;
+		case mcpMasterSurround:
+			srnd=val;
+			break;
+		case mcpMasterPanning:
+			pan=val;
+			if (reversestereo)
+			{
+				pan = -pan;
+			}
+			oggSetVolume();
+			break;
+		case mcpMasterVolume:
+			vol=val;
+			oggSetVolume();
+			break;
+		case mcpMasterBalance:
+			bal=val;
+			oggSetVolume();
+			break;
+	}
+}
+static int GET(int ch, int opt)
+{
+	return 0;
+}
+
+ogg_int64_t __attribute__ ((visibility ("internal"))) oggGetPos(void)
+{
+#warning TODO, deduct devp buffer!
+	return (oggpos+ogglen-ringbuffer_get_tail_available_samples(oggbufpos))%ogglen;
+}
+
+void __attribute__ ((visibility ("internal"))) oggGetInfo(struct ogginfo *i)
+{
+	static int lastsafe=0;
+	i->pos=oggGetPos();
+	i->len=ogglen;
+	i->rate=oggrate;
+	i->stereo=oggstereo;
+	i->bit16=1;
+	if ((i->bitrate=ov_bitrate_instant(&ov))<0)
+		i->bitrate=lastsafe;
+	else
+		lastsafe=i->bitrate;
+	i->bitrate/=1000;
+}
+
+void __attribute__ ((visibility ("internal"))) oggSetPos(ogg_int64_t pos)
+{
+	pos=(pos+ogglen)%ogglen;
+
+	oggneedseek=1;
+	oggpos=pos;
+	ringbuffer_reset(oggbufpos);
+}
+
 static ov_callbacks callbacks =
 {
 	read_func,
@@ -1063,9 +1148,6 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 
 	inpause=0;
 	looped=0;
-	oggSetVolume(64, 0, 64, 0);
-/*
-	oggSetAmplify(amplify);   TODO */
 
 	buf16=malloc(sizeof(uint16_t)*buflen*2);
 	if (!buf16)
@@ -1096,6 +1178,13 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 
 		return 0;
 	}
+
+	_SET=mcpSet;
+	_GET=mcpGet;
+	mcpSet=SET;
+	mcpGet=GET;
+	mcpNormalize (mcpNormalizeDefaultPlayP);
+
 	active=1;
 
 	return 1;
@@ -1149,72 +1238,16 @@ void __attribute__ ((visibility ("internal"))) oggClosePlayer(void)
 		oggfile->unref (oggfile);
 		oggfile = 0;
 	}
-}
 
-char __attribute__ ((visibility ("internal"))) oggLooped(void)
-{
-	return looped == 3;
-}
-
-void __attribute__ ((visibility ("internal"))) oggSetLoop(uint8_t s)
-{
-	donotloop=!s;
-}
-
-void __attribute__ ((visibility ("internal"))) oggPause(uint8_t p)
-{
-	inpause=p;
-}
-
-void __attribute__ ((visibility ("internal"))) oggSetSpeed(uint16_t sp)
-{
-	if (sp<32)
-		sp=32;
-	oggbufrate=imuldiv(256*sp, oggrate, samprate);
-}
-
-void __attribute__ ((visibility ("internal"))) oggSetVolume(uint8_t vol_, int8_t bal_, int8_t pan_, uint8_t opt)
-{
-	pan=pan_;
-	if (reversestereo)
+	if (_SET)
 	{
-		pan = -pan;
+		mcpSet = _SET;
+		_SET = 0;
 	}
-	volr=voll=vol_*4;
-	if (bal_<0)
-		voll=(voll*(64+bal_))>>6;
-	else
-		volr=(volr*(64-bal_))>>6;
-	srnd=opt;
-}
-
-ogg_int64_t __attribute__ ((visibility ("internal"))) oggGetPos(void)
-{
-#warning TODO, deduct devp buffer!
-	return (oggpos+ogglen-ringbuffer_get_tail_available_samples(oggbufpos))%ogglen;
-}
-
-void __attribute__ ((visibility ("internal"))) oggGetInfo(struct ogginfo *i)
-{
-	static int lastsafe=0;
-	i->pos=oggGetPos();
-	i->len=ogglen;
-	i->rate=oggrate;
-	i->stereo=oggstereo;
-	i->bit16=1;
-	if ((i->bitrate=ov_bitrate_instant(&ov))<0)
-		i->bitrate=lastsafe;
-	else
-		lastsafe=i->bitrate;
-	i->bitrate/=1000;
-}
-
-void __attribute__ ((visibility ("internal"))) oggSetPos(ogg_int64_t pos)
-{
-	pos=(pos+ogglen)%ogglen;
-
-	oggneedseek=1;
-	oggpos=pos;
-	ringbuffer_reset(oggbufpos);
+	if (_GET)
+	{
+		mcpGet = _GET;
+		_GET = 0;
+	}
 }
 

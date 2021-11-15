@@ -27,7 +27,6 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "cpiface/cpiface.h"
-#include "dev/deviplay.h"
 #include "dev/player.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
@@ -54,18 +53,6 @@ static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
 
-static int16_t vol;
-static int16_t bal;
-static int16_t pan;
-static char srnd;
-static uint32_t amp;
-static int16_t speed, pitch;
-static int     splock=1;
-static int16_t reverb;
-static int16_t chorus;
-static const char finespeed=8;
-static const char finepitch=8;
-
 static char currentmodname[_MAX_FNAME+1];
 static char currentmodext[_MAX_EXT+1];
 
@@ -74,7 +61,6 @@ static void startpausefade (void)
 	if (plPause)
 	{
 		starttime = starttime + dos_clock () - pausetime;
-		hvlSetPausePitch (0x00010000 * 1 / 64);
 	}
 
 	if (pausefadedirect)
@@ -121,12 +107,12 @@ static void dopausefade (void)
 			pausetime=dos_clock();
 			hvlPause(plPause=1);
 			plChanChanged=1;
-			//hvlSetPausePitch(0x00010000);
+			mcpSetFadePars(64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	hvlSetPausePitch (0x00010000 * i / 64);
+	mcpSetFadePars(i);
 }
 
 static void hvlDrawGStrings (uint16_t (*buf)[CONSOLE_MAX_X])
@@ -139,6 +125,8 @@ static void hvlDrawGStrings (uint16_t (*buf)[CONSOLE_MAX_X])
 
 	int32_t tim;
 
+	mcpDrawGStrings(buf);
+
 	hvlGetStats (&row, &rows, &order, &orders, &subsong, &subsongs, &tempo, &speedmult);
 
 	if (plPause)
@@ -148,11 +136,14 @@ static void hvlDrawGStrings (uint16_t (*buf)[CONSOLE_MAX_X])
 
 	if (plScrWidth<128)
 	{
+#if 0
 		memset(buf[0]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
+#endif
 		memset(buf[1]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
 		memset(buf[2]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
 
 		/* basically cloning mcpDrawGStrings */
+#if 0
 		writestring(buf[0], 0, 0x09, " vol: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 15);
 		writestring(buf[0], 15, 0x09, " srnd: \xfa  pan: l\xfa\xfa\xfam\xfa\xfa\xfar  bal: l\xfa\xfa\xfam\xfa\xfa\xfar ", 41);
 		writestring(buf[0], 56, 0x09, " spd: ---%   ptch: ---% ", 24);
@@ -171,8 +162,9 @@ static void hvlDrawGStrings (uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[0], 46+((bal+70)>>4), 0x0F, "I", 1);
 		_writenum(buf[0], 62, 0x0F, speed*100/256, 10, 3);
 		_writenum(buf[0], 75, 0x0F, pitch*100/256, 10, 3);
+#endif
 
-		writestring(buf[1],  0, 0x09, " row: ../..  ord: ..../....  speed: ..  bpm: ...  subsong: ../..    amp: ...%   ", 80);
+		writestring(buf[1],  0, 0x09, " row: ../..  ord: ..../....  speed: ..  bpm: ...  subsong: ../..                ", 80);
                 writenum(buf[1],  6, 0x0F, row, 16, 2, 0);
 		writenum(buf[1],  9, 0x0F, rows-1, 16, 2, 0);
 		writenum(buf[1], 18, 0x0F, order, 16, 4, 0);
@@ -181,7 +173,6 @@ static void hvlDrawGStrings (uint16_t (*buf)[CONSOLE_MAX_X])
 		writenum(buf[1], 45, 0x0F, 125*speedmult*4/tempo, 10, 3, 1); // 125, is assumed tempo is 4
 		writenum(buf[1], 59, 0x0F, subsong, 10, 2, 0);
 		writenum(buf[1], 62, 0x0F, subsongs, 10, 2, 0);
-		_writenum(buf[1], 73, 0x0F, amp*100/64, 10, 3);
 
 		writestring(buf[2],  0, 0x09, "    HVL \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ............................................  time: ..:.. ", 80);
 		writestring(buf[2],  8, 0x0F, currentmodname, _MAX_FNAME);
@@ -195,10 +186,13 @@ static void hvlDrawGStrings (uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2], 76, 0x0F, ":", 1);
 		writenum(buf[2], 77, 0x0F, tim%60, 10, 2, 0);
 	} else {
+#if 0
 		memset(buf[0]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
+#endif
 		memset(buf[1]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
 		memset(buf[2]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
 
+#if 0
 		/* basically cloning mcpDrawGStrings */
 		writestring(buf[0], 0, 0x09, "    volume: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa  ", 30);
 		writestring(buf[0], 30, 0x09, " surround: \xfa   panning: l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar   balance: l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar  ", 72);
@@ -218,8 +212,9 @@ static void hvlDrawGStrings (uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[0], 83+((bal+68)>>3), 0x0F, "I", 1);
 		_writenum(buf[0], 110, 0x0F, speed*100/256, 10, 3);
 		_writenum(buf[0], 124, 0x0F, pitch*100/256, 10, 3);
+#endif
 
-		writestring(buf[1],  0, 0x09, "     row: ../..  ord: ..../....  speed: ..  tempo: ...  subsong: ../..                                   amp: ...%  filter: ... ", 128);
+		writestring(buf[1],  0, 0x09, "     row: ../..  ord: ..../....  speed: ..  tempo: ...  subsong: ../..                                                          ", 128);
                 writenum(buf[1], 10, 0x0F, row, 16, 2, 0);
 		writenum(buf[1], 13, 0x0F, rows-1, 16, 2, 0);
 		writenum(buf[1], 22, 0x0F, order, 16, 4, 0);
@@ -228,8 +223,6 @@ static void hvlDrawGStrings (uint16_t (*buf)[CONSOLE_MAX_X])
 		writenum(buf[1], 51, 0x0F, 125*speedmult*4/tempo, 10, 3, 1); // 125 is assumed that tempo is 4
 		writenum(buf[1], 65, 0x0F, subsong, 10, 2, 0);
 		writenum(buf[1], 68, 0x0F, subsongs, 10, 2, 0);
-		_writenum(buf[1], 110, 0x0F, amp*100/64, 10, 3);
-		writestring(buf[1], 124, 0x0F, "off", 3);
 
 		writestring(buf[2],  0, 0x09, "       HVL \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ......................................................................................... time: ..:.. ", 128);
 		writestring(buf[2], 11, 0x0F, currentmodname, _MAX_FNAME);
@@ -245,24 +238,6 @@ static void hvlDrawGStrings (uint16_t (*buf)[CONSOLE_MAX_X])
 	}
 }
 
-
-static void normalize(void)
-{
-	speed  = set.speed;
-	pitch  = set.pitch;
-	pan    = set.pan;
-	bal    = set.bal;
-	vol    = set.vol;
-	amp    = set.amp;
-	srnd   = set.srnd;
-	reverb = set.reverb;
-	chorus = set.chorus;
-	hvlSetAmplify (1024*amp);
-	hvlSetVolume (vol, bal, pan, srnd);
-	hvlSetSpeed (speed);
-	hvlSetPitch (pitch);
-}
-
 static int hvlProcessKey(uint16_t key)
 {
 	switch (key)
@@ -273,18 +248,8 @@ static int hvlProcessKey(uint16_t key)
 			cpiKeyHelp(KEY_CTRL_P, "Start/stop pause");
 			cpiKeyHelp('<', "Previous sub-song");
 			cpiKeyHelp('>', "Next sub-song");
-			cpiKeyHelp(KEY_F(2), "Decrease volume");
-			cpiKeyHelp(KEY_F(3), "Increase volume");
-			cpiKeyHelp(KEY_F(4), "Toggle surround on/off");
-			cpiKeyHelp(KEY_F(5), "Move panning against normal");
-			cpiKeyHelp(KEY_F(6), "Move panning against reverse");
-			cpiKeyHelp(KEY_F(7), "Move balance left");
-			cpiKeyHelp(KEY_F(8), "Move balance right");
-			cpiKeyHelp(KEY_F(9), "Decrease song speed");
-			cpiKeyHelp(KEY_F(10), "Increase song speed");
-			cpiKeyHelp(KEY_F(11), "Decrease pitch speed");
-			cpiKeyHelp(KEY_F(12), "Increase pitch speed");
-			cpiKeyHelp('\\', "Toggle lock between pitch/speed");
+			cpiKeyHelp(KEY_CTRL_HOME, "Restart song");
+			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade();
@@ -294,7 +259,6 @@ static int hvlProcessKey(uint16_t key)
 			if (plPause)
 			{
 				starttime=starttime+dos_clock()-pausetime;
-				hvlSetPausePitch (0x00010000);
 			} else {
 				pausetime=dos_clock();
 			}
@@ -302,114 +266,17 @@ static int hvlProcessKey(uint16_t key)
 			hvlPause(plPause);
 			plChanChanged=1; /* ? */
 			break;
-/*
-		case 0x7700: //ctrl-home TODO keys
-			itpInstClear();
-			itplayer.setpos(0, 0);
-			if (plPause)
-				starttime=pausetime;
-			else
-				starttime=dos_clock();
+		case KEY_CTRL_HOME:
+			hvlRestartSong();
 			break;
-*/
 		case '<':
 			hvlPrevSubSong();
 			break;
 		case '>':
 			hvlNextSubSong();
 			break;
-		case KEY_F(2):
-			if ((vol-=8)<0)
-				vol=0;
-			hvlSetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(3):
-			if ((vol+=8)>64)
-				vol=64;
-			hvlSetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(4):
-			hvlSetVolume(vol, bal, pan, srnd=srnd?0:2);
-			break;
-		case KEY_F(5):
-			if ((pan-=16)<-64)
-				pan=-64;
-			hvlSetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(6):
-			if ((pan+=16)>64)
-				pan=64;
-			hvlSetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(7):
-			if ((bal-=16)<-64)
-				bal=-64;
-			hvlSetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(8):
-			if ((bal+=16)>64)
-				bal=64;
-			hvlSetVolume(vol, bal, pan, srnd);
-			break;
-		case KEY_F(9):
-			if ((speed-=finespeed)<16)
-			{
-				speed=16;
-			}
-			hvlSetSpeed(speed);
-			if (splock)
-			{
-				pitch = speed;
-				hvlSetPitch (pitch);
-			}
-			break;
-		case KEY_F(10):
-			if ((speed+=finespeed)>2048)
-			{
-				speed=2048;
-			}
-			hvlSetSpeed (speed);
-			if (splock)
-			{
-				pitch = speed;
-				hvlSetPitch (pitch);
-			}
-			break;
-		case KEY_F(11):
-			if ((pitch-=finepitch)<16)
-			{
-				pitch=16;
-			}
-			hvlSetPitch(pitch);
-			if (splock)
-			{
-				speed = pitch;
-				hvlSetSpeed (speed);
-			}
-			break;
-		case KEY_F(12):
-			if ((pitch+=finepitch)>2048)
-				pitch=2048;
-			hvlSetPitch(pitch);
-			if (splock)
-			{
-				speed = pitch;
-				hvlSetSpeed (speed);
-			}
-			break;
-		case '\\':
-			splock^=1;
-			break;
 		default:
-			if (plrProcessKey)
-			{
-				int ret=plrProcessKey(key);
-				if (ret==2)
-					cpiResetScreen();
-				if (ret)
-					return 1;
-			}
-			return 0;
+			return mcpSetProcessKey (key);
 	}
 	return 1;
 }
@@ -494,7 +361,6 @@ static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 
 	starttime=dos_clock();
 	plPause=0;
-	normalize();
 	pausefadedirect=0;
 	plNPChan=ht->ht_Channels;
 	plNLChan=ht->ht_Channels;

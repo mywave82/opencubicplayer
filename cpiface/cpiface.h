@@ -184,11 +184,8 @@ extern unsigned char plChanChanged;
 extern char plCompoMode;
 
 /* mcpedit.c */
-extern void mcpNormalize(int hasfilter);
 extern void mcpDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X]);
 extern int mcpSetProcessKey(uint16_t key);
 extern void mcpSetFadePars(int i);
-extern uint16_t globalmcpspeed;
-extern uint16_t globalmcppitch;
 
 #endif

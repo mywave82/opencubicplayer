@@ -43,7 +43,6 @@ extern "C"
 static int inpause;
 static int looped;
 
-static unsigned long amplify; /* TODO */
 static unsigned long voll,volr;
 static int pan;
 static int srnd;
@@ -111,8 +110,9 @@ do { \
 } while(0)
 
 static void oplSetVolume(void);
+static void oplSetSpeed(uint16_t sp);
 
-void oplClosePlayer(void)
+void __attribute__ ((visibility ("internal"))) oplClosePlayer(void)
 {
 	if (active)
 	{
@@ -131,7 +131,7 @@ void oplClosePlayer(void)
 	}
 }
 
-void oplMute(int i, int m)
+void __attribute__ ((visibility ("internal"))) oplMute(int i, int m)
 {
 	opl->setmute(i, m);
 }
@@ -140,13 +140,9 @@ static void SET(int ch, int opt, int val)
 	switch (opt)
 	{
 		case mcpMasterSpeed:
-			_speed=val;
-			break;
-		case mcpMasterPitch:
 			oplSetSpeed(val);
 			break;
-		case mcpMasterAmplify:
-			amplify=val;
+		case mcpMasterPitch:
 			break;
 		case mcpMasterSurround:
 			srnd=val;
@@ -209,12 +205,6 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 {
 	plrSetOptions(44100, (PLR_SIGNEDOUT|PLR_16BIT)|PLR_STEREO);
 
-	_SET=mcpSet;
-	_GET=mcpGet;
-	mcpSet=SET;
-	mcpGet=GET;
-	mcpNormalize(0);
-
 	stereo=!!(plrOpt&PLR_STEREO);
 	bit16=!!(plrOpt&PLR_16BIT);
 	signedout=!!(plrOpt&PLR_SIGNEDOUT);
@@ -226,8 +216,6 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	CProvider_Mem prMem (content, len);
 	if (!(p = CAdPlug::factory(filename, opl, CAdPlug::players, prMem)))
 	{
-		mcpSet=_SET;
-		mcpGet=_GET;
 		delete (opl);
 		return 0;
 	}
@@ -255,43 +243,43 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 		goto error_out;
 	}
 
+	_SET=mcpSet;
+	_GET=mcpGet;
+	mcpSet=SET;
+	mcpGet=GET;
+	mcpNormalize (mcpNormalizeDefaultPlayP);
+
 	active=1;
 	return 1;
 
 error_out:
-	mcpSet=_SET;
-	mcpGet=_GET;
 
 	delete(p);
 	delete(opl);
 	return 0;
 }
 
-void oplSetLoop(int loop)
+void __attribute__ ((visibility ("internal"))) oplSetLoop(int loop)
 {
 	donotloop=!loop;
 }
 
-int oplIsLooped(void)
+int __attribute__ ((visibility ("internal"))) oplIsLooped(void)
 {
 	return looped;
 }
 
-void oplPause(uint8_t p)
+void __attribute__ ((visibility ("internal"))) oplPause(uint8_t p)
 {
 	inpause=p;
 }
 
-void oplSetAmplify(uint32_t amp)
-{
-	amplify=amp;
-}
-
-void oplSetSpeed(uint16_t sp)
+static void oplSetSpeed(uint16_t sp)
 {
 	if (sp<32)
 		sp=32;
 	oplbufrate=256*sp;
+	_speed=sp;
 }
 
 static void oplSetVolume(void)
@@ -368,7 +356,7 @@ static void oplIdler(void)
 	}
 }
 
-void oplIdle(void)
+void __attribute__ ((visibility ("internal"))) oplIdle(void)
 {
 	uint32_t bufplayed;
 	uint32_t bufdelta;
@@ -768,7 +756,7 @@ void oplIdle(void)
 	clipbusy--;
 }
 
-void oplpGetChanInfo(int i, oplChanInfo &ci)
+void __attribute__ ((visibility ("internal"))) oplpGetChanInfo(int i, oplChanInfo &ci)
 {
 	OPL_CH *ch = &opl->opl->P_CH[i/2];
 	OPL_SLOT *slot = &ch->SLOT[i&1];
@@ -785,7 +773,7 @@ void oplpGetChanInfo(int i, oplChanInfo &ci)
 			ci.vol=63;
 }
 
-void oplpGetGlobInfo(oplTuneInfo &si)
+void __attribute__ ((visibility ("internal"))) oplpGetGlobInfo(oplTuneInfo &si)
 {
 	std::string author = p->getauthor(); /* we need to keep a reference, else c_str() data will die before we get to use it */
 	std::string title = p->gettitle();  /* same here */

@@ -80,7 +80,11 @@ extern int plScrMode;                   /* If we are in graphical mode, this val
 extern uint8_t *plVidMem;               /* This points to the current selected bank, and should atleast provide 64k of available bufferspace */
 extern int plScrLineBytes;              /* How many bytes does one line from plVidMem use (can be padded) */
 extern int plScrLines;                  /* How many graphical lines do we have */
-extern void make_title(char *part, int escapewarning);
+
+void make_title(char *part, int escapewarning);
+struct settings;
+void cpiDrawG1String (struct settings *g1);
+
 
 extern int plScrTextGUIOverlay;         /* Is text rendered virtually into a framebuffer, AND supports overlays? */
 

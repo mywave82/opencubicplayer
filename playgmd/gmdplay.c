@@ -1618,6 +1618,8 @@ char __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodu
 	if (!mcpOpenPlayer(channels, PlayTick, file))
 		return 0;
 
+	mcpNormalize (mcpNormalizeDefaultPlayW);
+
 	physchan=mcpNChan;
 
 	return 1;

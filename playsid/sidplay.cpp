@@ -58,6 +58,7 @@ extern "C"
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
+#include "dev/mcp.h"
 #include "dev/mixclip.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
@@ -120,10 +121,12 @@ static volatile int PauseSamples; /* Pause, and pitch-bend can stretch the used 
 static uint32_t sidbuffpos;
 static uint32_t sidPauseRate;
 
-/*static unsigned long amplify;  TODO */
 static unsigned long voll,volr;
+static int vol, bal;
 static int pan;
 static int srnd;
+static int (*_GET)(int ch, int opt);
+static void (*_SET)(int ch, int opt, int val);
 
 static char sid_inpause;
 
@@ -781,206 +784,64 @@ const char __attribute__ ((visibility ("internal"))) *sidTuneInfoClockSpeedStrin
 	return libsidplayfp::tuneInfo_clockSpeed_toString(mySidPlayer->getTuneInfoClockSpeed());
 }
 
-unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle_t *f)
-{
-	if (!plrPlay)
-	{
-		return 0;
-	}
-
-	int playrate=cfGetProfileInt("commandline_s", "r", cfGetProfileInt2(cfSoundSec, "sound", "mixrate", 44100, 10), 10);
-	if (playrate<66)
-	{
-		if (playrate%11)
-		{
-			playrate*=1000;
-		} else {
-			playrate=playrate*11025/11;
-		}
-	}
-	plrSetOptions(playrate, PLR_STEREO|PLR_16BIT);
-
-	const int length = f->filesize (f);
-	if (length > 1024*1024)
-	{
-		fprintf (stderr, "[playsid]: FILE is way too big\n");
-		return 0;
-	}
-	unsigned char *buf=new unsigned char[length];
-
-	if (f->read (f, buf, length) != length)
-	{
-		fprintf(stderr, __FILE__": fread failed #1\n");
-		delete [] buf;
-		return 0;
-	}
-
-	mySidPlayer = new libsidplayfp::ConsolePlayer(plrRate);
-	if (!mySidPlayer->load (buf, length))
-	{
-		fprintf (stderr, "[playsid]: loading file failed\n");
-		delete mySidPlayer; mySidPlayer = NULL;
-		delete [] buf;
-		return 0;
-	}
-	delete [] buf;
-	mySidTuneInfo = mySidPlayer->getInfo();
-
-	SidCount = mySidPlayer->getSidCount();
-
-	if (!mySidTuneInfo)
-	{
-		fprintf (stderr, "[playsid]: retrieve info from file failed\n");
-		delete mySidPlayer; mySidPlayer = NULL;
-		return 0;
-	}
-
-	int BufSize = plrBufSize;
-	if (BufSize > 40)
-	{
-		BufSize = 40;
-	}
-	if (!plrOpenPlayer(&plrbuf, &buflen, BufSize * plrRate / 1000, f))
-	{
-		delete mySidPlayer; mySidPlayer = NULL;
-		                    mySidTuneInfo = NULL;
-		return 0;
-	}
-
-	sid_samples_per_row = plrRate / 50;
-
-	stereo=!!(plrOpt&PLR_STEREO);
-	bit16=!!(plrOpt&PLR_16BIT);
-	signedout=!!(plrOpt&PLR_SIGNEDOUT);
-	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
-	srnd=0;
-
-#if 0
-	myEmuEngine->getConfig(*myEmuConfig);
-
-	myEmuConfig->bitsPerSample=SIDEMU_16BIT;
-	myEmuConfig->sampleFormat=SIDEMU_UNSIGNED_PCM;
-	myEmuConfig->channels=stereo?SIDEMU_STEREO:SIDEMU_MONO;
-	myEmuConfig->sidChips=1;
-
-	myEmuConfig->volumeControl=SIDEMU_FULLPANNING;
-	myEmuConfig->autoPanning=SIDEMU_CENTEREDAUTOPANNING;
-
-	myEmuConfig->mos8580=0;
-	myEmuConfig->measuredVolume=0;
-	myEmuConfig->emulateFilter=1;
-	myEmuConfig->filterFs=SIDEMU_DEFAULTFILTERFS;
-	myEmuConfig->filterFm=SIDEMU_DEFAULTFILTERFM;
-	myEmuConfig->filterFt=SIDEMU_DEFAULTFILTERFT;
-	myEmuConfig->memoryMode=MPU_BANK_SWITCHING;
-	myEmuConfig->clockSpeed=SIDTUNE_CLOCK_PAL;
-	myEmuConfig->forceSongSpeed=0;
-	myEmuConfig->digiPlayerScans=10;
-
-	myEmuEngine->setConfig(*myEmuConfig);
-#endif
-
-	memset(sidMuted, 0, sizeof (sidMuted));
-	sid_inpause=0;
-
-	buf16=new int16_t [buflen*2];
-	sid_buf_stereo = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 2 * sid_samples_per_row];
-	sid_buf_4x3[0] = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 4 * sid_samples_per_row];
-	sid_buf_4x3[1] = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 4 * sid_samples_per_row];
-	sid_buf_4x3[2] = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 4 * sid_samples_per_row];
-	if ((!buf16) || (!sid_buf_4x3[0]) || (!sid_buf_4x3[1]) || (!sid_buf_4x3[2]))
-	{
-		plrClosePlayer();
-		return 0;
-	}
-
-	sid_buf_pos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, ROW_BUFFERS * MAXIMUM_SLOW_DOWN * sid_samples_per_row);
-	if (!sid_buf_pos)
-	{
-		plrClosePlayer();
-		return 0;
-	}
-
-	bzero (SidStatBuffers, sizeof (SidStatBuffers));
-	SidStatBuffers_available = ROW_BUFFERS;
-
-	bufpos=0;
-	kernpos=0;
-	sidbuffpos = 0x00000000;
-	PauseSamples = 0;
-	sid_inpause = 0;
-	sidPauseRate = 0x00010000;
-
-	// construct song message
-	{
-		int i,j;
-		const int msgLen=50;
-		static const char* msg[msgLen];
-		for(i=0; i<msgLen; i++)
-			msg[i]=0;
-		i=0;
-		for(j=0; j<mySidTuneInfo->numberOfInfoStrings() && i<msgLen; j++)
-			msg[i++]=mySidTuneInfo->infoString(j);
-		for(j=0; j<mySidTuneInfo->numberOfCommentStrings() && i<msgLen; j++)
-			msg[i++]=mySidTuneInfo->commentString(j);
-		if(i<msgLen)
-			msg[i++]=mySidTuneInfo->formatString();
-		plUseMessage((char **)msg);
-	}
-
-	if (!pollInit(sidIdle))
-	{
-		plrClosePlayer();
-		return 0;
-	}
-
-	return 1;
-}
-
-void __attribute__ ((visibility ("internal"))) sidClosePlayer(void)
-{
-	pollClose();
-
-	plrClosePlayer();
-
-	if (sid_buf_pos)
-	{
-		ringbuffer_free (sid_buf_pos);
-		sid_buf_pos = 0;
-	}
-
-	delete[] buf16;          buf16 = NULL;
-	delete mySidPlayer;      mySidPlayer = NULL;
-	                         mySidTuneInfo = NULL;
-	delete[] sid_buf_stereo; sid_buf_stereo = NULL;
-	delete[] sid_buf_4x3[0]; sid_buf_4x3[0] = NULL;
-	delete[] sid_buf_4x3[1]; sid_buf_4x3[1] = NULL;
-	delete[] sid_buf_4x3[2]; sid_buf_4x3[2] = NULL;
-}
-
-
 void __attribute__ ((visibility ("internal"))) sidPause(unsigned char p)
 {
 	sid_inpause=p;
 }
 
-void __attribute__ ((visibility ("internal"))) sidSetPitch (uint32_t sp)
+static void sidSetPitch (uint32_t sp)
 {
 	if (sp > 0x00080000) sp = 0x00080000;
 	if (!sp) sp = 0x1;
 	sidPauseRate = sp;
 }
 
-void __attribute__ ((visibility ("internal"))) sidSetVolume(unsigned char vol, signed char bal, signed char _pan, unsigned char opt)
+static void sidSetVolume (void)
 {
-	pan=_pan;
 	voll=vol*4;
 	volr=vol*4;
 	if (bal<0)
 		volr=(volr*(64+bal))>>6;
 	else
 		voll=(voll*(64-bal))>>6;
-	srnd=opt;
+}
+
+static void SET(int ch, int opt, int val)
+{
+	switch (opt)
+	{
+		case mcpMasterSpeed:
+#warning TODO SetSpeed...
+			//sidSetSpeed(val);
+			break;
+		case mcpMasterPitch:
+			sidSetPitch(val);
+			break;
+		case mcpMasterSurround:
+			srnd=val;
+			break;
+		case mcpMasterPanning:
+			pan=val;
+			if (reversestereo)
+			{
+				pan = -pan;
+			}
+			sidSetVolume();
+			break;
+		case mcpMasterVolume:
+			vol=val;
+			sidSetVolume();
+			break;
+		case mcpMasterBalance:
+			bal=val;
+			sidSetVolume();
+			break;
+#warning FILTER TODO
+	}
+}
+static int GET(int ch, int opt)
+{
+	return 0;
 }
 
 void __attribute__ ((visibility ("internal"))) sidStartSong(uint8_t sng)
@@ -1249,5 +1110,198 @@ int __attribute__ ((visibility ("internal"))) sidGetPChanSample(unsigned int i, 
 		}
 	}
 	return !!sidMuted[ch];
+}
 
+unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle_t *f)
+{
+	if (!plrPlay)
+	{
+		return 0;
+	}
+
+	int playrate=cfGetProfileInt("commandline_s", "r", cfGetProfileInt2(cfSoundSec, "sound", "mixrate", 44100, 10), 10);
+	if (playrate<66)
+	{
+		if (playrate%11)
+		{
+			playrate*=1000;
+		} else {
+			playrate=playrate*11025/11;
+		}
+	}
+	plrSetOptions(playrate, PLR_STEREO|PLR_16BIT);
+
+	const int length = f->filesize (f);
+	if (length > 1024*1024)
+	{
+		fprintf (stderr, "[playsid]: FILE is way too big\n");
+		return 0;
+	}
+	unsigned char *buf=new unsigned char[length];
+
+	if (f->read (f, buf, length) != length)
+	{
+		fprintf(stderr, __FILE__": fread failed #1\n");
+		delete [] buf;
+		return 0;
+	}
+
+	mySidPlayer = new libsidplayfp::ConsolePlayer(plrRate);
+	if (!mySidPlayer->load (buf, length))
+	{
+		fprintf (stderr, "[playsid]: loading file failed\n");
+		delete mySidPlayer; mySidPlayer = NULL;
+		delete [] buf;
+		return 0;
+	}
+	delete [] buf;
+	mySidTuneInfo = mySidPlayer->getInfo();
+
+	SidCount = mySidPlayer->getSidCount();
+
+	if (!mySidTuneInfo)
+	{
+		fprintf (stderr, "[playsid]: retrieve info from file failed\n");
+		delete mySidPlayer; mySidPlayer = NULL;
+		return 0;
+	}
+
+	int BufSize = plrBufSize;
+	if (BufSize > 40)
+	{
+		BufSize = 40;
+	}
+	if (!plrOpenPlayer(&plrbuf, &buflen, BufSize * plrRate / 1000, f))
+	{
+		delete mySidPlayer; mySidPlayer = NULL;
+		                    mySidTuneInfo = NULL;
+		return 0;
+	}
+
+	sid_samples_per_row = plrRate / 50;
+
+	stereo=!!(plrOpt&PLR_STEREO);
+	bit16=!!(plrOpt&PLR_16BIT);
+	signedout=!!(plrOpt&PLR_SIGNEDOUT);
+	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
+	srnd=0;
+
+#if 0
+	myEmuEngine->getConfig(*myEmuConfig);
+
+	myEmuConfig->bitsPerSample=SIDEMU_16BIT;
+	myEmuConfig->sampleFormat=SIDEMU_UNSIGNED_PCM;
+	myEmuConfig->channels=stereo?SIDEMU_STEREO:SIDEMU_MONO;
+	myEmuConfig->sidChips=1;
+
+	myEmuConfig->volumeControl=SIDEMU_FULLPANNING;
+	myEmuConfig->autoPanning=SIDEMU_CENTEREDAUTOPANNING;
+
+	myEmuConfig->mos8580=0;
+	myEmuConfig->measuredVolume=0;
+	myEmuConfig->emulateFilter=1;
+	myEmuConfig->filterFs=SIDEMU_DEFAULTFILTERFS;
+	myEmuConfig->filterFm=SIDEMU_DEFAULTFILTERFM;
+	myEmuConfig->filterFt=SIDEMU_DEFAULTFILTERFT;
+	myEmuConfig->memoryMode=MPU_BANK_SWITCHING;
+	myEmuConfig->clockSpeed=SIDTUNE_CLOCK_PAL;
+	myEmuConfig->forceSongSpeed=0;
+	myEmuConfig->digiPlayerScans=10;
+
+	myEmuEngine->setConfig(*myEmuConfig);
+#endif
+
+	memset(sidMuted, 0, sizeof (sidMuted));
+	sid_inpause=0;
+
+	buf16=new int16_t [buflen*2];
+	sid_buf_stereo = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 2 * sid_samples_per_row];
+	sid_buf_4x3[0] = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 4 * sid_samples_per_row];
+	sid_buf_4x3[1] = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 4 * sid_samples_per_row];
+	sid_buf_4x3[2] = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 4 * sid_samples_per_row];
+	if ((!buf16) || (!sid_buf_4x3[0]) || (!sid_buf_4x3[1]) || (!sid_buf_4x3[2]))
+	{
+		plrClosePlayer();
+		return 0;
+	}
+
+	sid_buf_pos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, ROW_BUFFERS * MAXIMUM_SLOW_DOWN * sid_samples_per_row);
+	if (!sid_buf_pos)
+	{
+		plrClosePlayer();
+		return 0;
+	}
+
+	bzero (SidStatBuffers, sizeof (SidStatBuffers));
+	SidStatBuffers_available = ROW_BUFFERS;
+
+	bufpos=0;
+	kernpos=0;
+	sidbuffpos = 0x00000000;
+	PauseSamples = 0;
+	sid_inpause = 0;
+	sidPauseRate = 0x00010000;
+
+	// construct song message
+	{
+		int i,j;
+		const int msgLen=50;
+		static const char* msg[msgLen];
+		for(i=0; i<msgLen; i++)
+			msg[i]=0;
+		i=0;
+		for(j=0; j<mySidTuneInfo->numberOfInfoStrings() && i<msgLen; j++)
+			msg[i++]=mySidTuneInfo->infoString(j);
+		for(j=0; j<mySidTuneInfo->numberOfCommentStrings() && i<msgLen; j++)
+			msg[i++]=mySidTuneInfo->commentString(j);
+		if(i<msgLen)
+			msg[i++]=mySidTuneInfo->formatString();
+		plUseMessage((char **)msg);
+	}
+
+	if (!pollInit(sidIdle))
+	{
+		plrClosePlayer();
+		return 0;
+	}
+
+	_SET=mcpSet;
+	_GET=mcpGet;
+	mcpSet=SET;
+	mcpGet=GET;
+	mcpNormalize (mcpNormalizeDefaultPlayP);
+
+	return 1;
+}
+
+void __attribute__ ((visibility ("internal"))) sidClosePlayer(void)
+{
+	pollClose();
+
+	plrClosePlayer();
+
+	if (sid_buf_pos)
+	{
+		ringbuffer_free (sid_buf_pos);
+		sid_buf_pos = 0;
+	}
+
+	delete[] buf16;          buf16 = NULL;
+	delete mySidPlayer;      mySidPlayer = NULL;
+	                         mySidTuneInfo = NULL;
+	delete[] sid_buf_stereo; sid_buf_stereo = NULL;
+	delete[] sid_buf_4x3[0]; sid_buf_4x3[0] = NULL;
+	delete[] sid_buf_4x3[1]; sid_buf_4x3[1] = NULL;
+	delete[] sid_buf_4x3[2]; sid_buf_4x3[2] = NULL;
+
+	if (_SET)
+	{
+		mcpSet = _SET;
+		_SET = 0;
+	}
+	if (_GET)
+	{
+		mcpGet = _GET;
+		_GET = 0;
+	}
 }

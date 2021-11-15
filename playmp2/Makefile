@@ -70,7 +70,6 @@ mppplay.o: mppplay.c \
 	../boot/plinkman.h \
 	../boot/psetting.h \
 	../cpiface/cpiface.h \
-	../dev/deviplay.h \
 	../dev/player.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
@@ -87,6 +86,7 @@ mpplay.o: mpplay.c \
 	../config.h \
 	../types.h \
 	../dev/deviplay.h \
+	../dev/mcp.h \
 	../dev/player.h \
 	../dev/plrasm.h \
 	../dev/ringbuffer.h \
