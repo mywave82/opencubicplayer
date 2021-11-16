@@ -1977,6 +1977,8 @@ static void doTimidityClosePlayer(int CloseDriver)
 	{
 		mcpSet = _SET;
 		_SET = 0;
+	}
+
 	if (_GET)
 	{
 		mcpGet = _GET;
