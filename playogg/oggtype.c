@@ -96,7 +96,7 @@ static int oggReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, co
 				copy = sizeof (m->title)-1;
 			}
 			bzero (m->title, sizeof (m->title));
-			memcpy (m->title, ptr + 7, copy);
+			memcpy (m->title, ptr + 6, copy);
 		} else if ((length >= 6) && (!strncasecmp(ptr, "album=", 6)))
 		{
 			int copy = length - 6;
