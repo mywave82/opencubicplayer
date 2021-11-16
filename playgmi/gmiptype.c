@@ -112,7 +112,7 @@ const char *MIDI_description[] =
 	"itself is also a standard for transfering control signal between",
 	"synthesizers and other audio equipment. A MIDI file is record of such a",
 	"signal together with timestamps. Open Cubic Player relies on TiMidity++",
-	"code to playback and requires that the host has configured a instrument",
+	"code to playback and requires that the host has configured an instrument",
 	"sound font in order to function (install TiMidity++ usually does the trick).",
 	NULL
 };

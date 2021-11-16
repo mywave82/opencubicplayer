@@ -369,6 +369,7 @@ void fsTypeRegister (struct moduletype modtype, const char **description, const 
 			fprintf (stderr, "fsTypeRegister() modtype %s already registered\n", m);
 			return;
 		}
+		if (strncmp (fsTypes[i].modtype.string.c, modtype.string.c, 4) > 0) break;
 	}
 	if (!(fsTypesCount & 0x3f))
 	{
@@ -380,12 +381,12 @@ void fsTypeRegister (struct moduletype modtype, const char **description, const 
 		}
 		fsTypes = t;
 	}
-
-	fsTypes[fsTypesCount].modtype = modtype;
-	fsTypes[fsTypesCount].color = cfGetProfileInt ("fscolors", m, 7, 10);
-	fsTypes[fsTypesCount].description = description;
-	fsTypes[fsTypesCount].interface = interface;
-	fsTypes[fsTypesCount].ip = ip;
+	memmove (fsTypes + i + 1, fsTypes + i, (fsTypesCount - i) * sizeof (fsTypes[0]));
+	fsTypes[i].modtype = modtype;
+	fsTypes[i].color = cfGetProfileInt ("fscolors", m, 7, 10);
+	fsTypes[i].description = description;
+	fsTypes[i].interface = interface;
+	fsTypes[i].ip = ip;
 	fsTypesCount++;
 }
 
@@ -1885,7 +1886,7 @@ superbreak:
 static struct moduleinfostruct mdbEditBuf;
 
 /* recall until it returns zero */
-static int fsEditModType (struct moduletype *oldtype)
+static int fsEditModType (struct moduletype *oldtype, int _Bottom, int _Right)
 {
 	static int state = 0;
 	/* 0 - new / idle
@@ -1898,16 +1899,26 @@ static int fsEditModType (struct moduletype *oldtype)
 
 	int i;
 
-	const int Height=20;
-	const int iHeight=Height-1;
-	const int Width=18;
-	int Top=(plScrHeight-Height)/2;
-	int Left=(plScrWidth-Width)/2;
-	const int Mid = 7;
-
+	const int Height=23;
+	const int iHeight=15;
+	const int TopWidth=20;
+	int Top;
+	int Left;
+	const int Mid = 9;
+	int d;
 	static int editcol=0;
 
-	//int InKeyboardHelp = 0;
+	Top = _Bottom - Height;
+	Left = _Right - 78;
+
+	if (Top < 1)
+	{
+		Top = 1;
+	}
+	if (Left < 1)
+	{
+		Left = 1;
+	}
 
 	if (state == 0) /* new edit / first time */
 	{
@@ -1923,28 +1934,33 @@ static int fsEditModType (struct moduletype *oldtype)
 		state = 1;
 	}
 
-	for (i=0;i<Height;i++)
-		displayvoid(Top+i, Left, Width);
-	displaystr(Top, Left, 0x04, "\xda", 1);
-	for (i=1;i<Width;i++)
-	{
-		displaystr(Top, Left+i, 0x04, "\xc4", 1);
-		displaystr(Top+Height, Left+i, 0x04, "\xc4", 1);
-	}
-	displaystr(Top, Left+Mid, 0x04, "\xc2", 1);
-	displaystr(Top, Left+Width, 0x04, "\xbf", 1);
+	displaystr(Top, Left, 0x04, "\xda\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc2\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xcbf", 21);
 
-#warning TODO render description
-
-	for (i=1;i<Height;i++)
+	for (i=1;i<Height-7;i++)
 	{
 		displaystr(Top+i, Left, 0x04, "\xb3", 1);
 		displaystr(Top+i, Left+Mid, 0x04, "\xb3", 1);
-		displaystr(Top+i, Left+Width, 0x04, "\xb3", 1);
+		displaystr(Top+i, Left+TopWidth, 0x04, "\xb3", 1);
 	}
-	displaystr(Top+Height, Left, 0x04, "\xc0", 1);
-	displaystr(Top+Height, Left+Mid, 0x04, "\xc1", 1);
-	displaystr(Top+Height, Left+Width, 0x04, "\xd9", 1);
+
+	displaystr(Top+i, Left, 0x04, "\xc3\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc1\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc1\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xbf", 78);
+
+	d = curindex < fsTypesCount;
+	for (i=0; i < 6; i++)
+	{
+		displaystr(Top + Height - 6 + i, Left, 0x04, "\xb3", 1);
+
+		if (d && (!fsTypes[curindex].description[i])) d = 0;
+		if (d)
+		{
+			displaystr (Top + Height - 6 + i, Left + 1, 0x07, fsTypes[curindex].description[i], 76);
+		} else {
+			displayvoid (Top + Height - 6 + i, Left + 1, 76);
+		}
+
+		displaystr(Top + Height - 6 + i, Left + 77, 0x04, "\xb3", 1);
+	}
+	displaystr(Top+Height, Left, 0x04, "\xc0\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xd9", 78);
 
 	if (fsTypesCount>=iHeight)
 	{
@@ -1976,11 +1992,20 @@ static int fsEditModType (struct moduletype *oldtype)
 		char m[5];
 		unsigned char col;
 
+		if ((offset+i)==curindex)
+		{
+			displaystr (Top + i + 1, Left + 1, 0x07, "->    <-", 8);
+		} else {
+			displayvoid (Top + i + 1, Left + 1, 8);
+		}
+
 		if ((!editcol)&&((offset+i)==curindex))
+		{
 			col=0x80;
-		else
+		} else {
 			col=0;
-		displaystr(Top+i+1, Left+1, col, "      ", 6);
+		}
+
 		if ((offset+i)>=fsTypesCount)
 			break;
 		col|=fsTypes[offset+i].color;
@@ -1989,7 +2014,7 @@ static int fsEditModType (struct moduletype *oldtype)
 		m[2] = fsTypes[offset+i].modtype.string.c[2];
 		m[3] = fsTypes[offset+i].modtype.string.c[3];
 		m[4] = 0;
-		displaystr(Top+i+1, Left+2, col, m, 4);
+		displaystr(Top+i+1, Left+3, col, m, 4);
 	}
 	if (state == 2)
 	{
@@ -2385,7 +2410,7 @@ static int fsEditFileInfo(struct modlistentry *me)
 				retval = EditStringUTF8z(plScrHeight-5, 42, plScrWidth - 98, sizeof(mdbEditBuf.title), mdbEditBuf.title);
 				break;
 			case 1:
-				retval = fsEditModType(&mdbEditBuf.modtype);
+				retval = fsEditModType(&mdbEditBuf.modtype, plScrHeight - 5, plScrWidth - 42);
 				break;
 			case 2:
 				retval = fsEditChan(plScrHeight-5, plScrWidth - 27, &mdbEditBuf.channels);
@@ -2422,7 +2447,7 @@ static int fsEditFileInfo(struct modlistentry *me)
 				retval = EditStringUTF8z(plScrHeight-6, 35, plScrWidth - 35 - 13, sizeof(mdbEditBuf.title), mdbEditBuf.title);
 				break;
 			case 1:
-				retval = fsEditModType(&mdbEditBuf.modtype);
+				retval = fsEditModType(&mdbEditBuf.modtype, plScrHeight - 6, plScrWidth - 1);
 				break;
 			case 2:
 				retval = fsEditChan(plScrHeight-4, plScrWidth - 3, &mdbEditBuf.channels);
@@ -2452,12 +2477,7 @@ static int fsEditFileInfo(struct modlistentry *me)
 				break;
 		}
 	}
-/*
-	if (editfilepos==1)
-	{
-		typeidx[4]=0;
-		mdbEditBuf.modtype=mdbReadModType(typeidx);
-	}*/
+
 	if (!retval)
 	{
 		if (!mdbWriteModuleInfo(me->mdb_ref, &mdbEditBuf))
