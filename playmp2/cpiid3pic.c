@@ -383,6 +383,11 @@ static void ID3PicDraw(int focus)
 
 static int ID3PicIProcessKey(uint16_t key)
 {
+	if (!plScrTextGUIOverlay)
+	{
+		return 0;
+	}
+
 	switch (key)
 	{
 		case KEY_ALT_K:
@@ -413,6 +418,11 @@ static int ID3PicIProcessKey(uint16_t key)
 static int ID3PicAProcessKey(uint16_t key)
 {
 	int i;
+	if (!plScrTextGUIOverlay)
+	{
+		return 0;
+	}
+
 	switch (key)
 	{
 		case KEY_ALT_K:
@@ -481,16 +491,22 @@ static int ID3PicEvent(int ev)
 	switch (ev)
 	{
 		case cpievKeepalive:
-			mpegGetID3(&ID3);
-			if (Refresh_ID3Pictures(ID3))
+			if (plScrTextGUIOverlay)
 			{
-				cpiTextRecalc();
+				mpegGetID3(&ID3);
+				if (Refresh_ID3Pictures(ID3))
+				{
+					cpiTextRecalc();
+				}
 			}
 			break;
 		case cpievInit:
-			mpegGetID3(&ID3);
-			Refresh_ID3Pictures(ID3);
-			ID3PicActive=3;
+			if (plScrTextGUIOverlay)
+			{
+				mpegGetID3(&ID3);
+				Refresh_ID3Pictures(ID3);
+				ID3PicActive=3;
+			}
 			break;
 		case cpievClose:
 			if (ID3PicHandle)
@@ -500,7 +516,7 @@ static int ID3PicEvent(int ev)
 			}
 			break;
 		case cpievOpen:
-			if (ID3PicVisible && (!ID3PicHandle))
+			if (ID3PicVisible && (!ID3PicHandle) && plScrTextGUIOverlay)
 			{
 				if (ID3Pictures[ID3PicCurrentIndex].scaled_data_bgra)
 				{
@@ -542,13 +558,10 @@ static struct cpitextmoderegstruct cpiID3Pic = {"id3pic", ID3PicGetWin, ID3PicSe
 
 static void __attribute__((constructor))init(void)
 {
-
-	//cpiTextRegisterDefMode(&cpiID3Pic);
 	cpiTextRegisterMode(&cpiID3Pic);
 }
 
 static void __attribute__((destructor))done(void)
 {
-	//cpiTextUnregisterDefMode(&cpiID3Pic);
 	cpiTextUnregisterMode(&cpiID3Pic);
 }

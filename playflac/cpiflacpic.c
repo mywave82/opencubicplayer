@@ -396,6 +396,11 @@ static void FlacPicDraw(int focus)
 
 static int FlacPicIProcessKey(uint16_t key)
 {
+	if (!plScrTextGUIOverlay)
+	{
+		return 0;
+	}
+
 	switch (key)
 	{
 		case KEY_ALT_K:
@@ -421,6 +426,11 @@ static int FlacPicIProcessKey(uint16_t key)
 
 static int FlacPicAProcessKey(uint16_t key)
 {
+	if (!plScrTextGUIOverlay)
+	{
+		return 0;
+	}
+
 	switch (key)
 	{
 		case KEY_ALT_K:
@@ -486,10 +496,13 @@ static int FlacPicEvent(int ev)
 	switch (ev)
 	{
 		case cpievInit:
-			flacMetaDataLock();
-			Refresh_FlacPictures();
-			FlacPicActive=3;
-			flacMetaDataUnlock();
+			if (plScrTextGUIOverlay)
+			{
+				flacMetaDataLock();
+				Refresh_FlacPictures();
+				FlacPicActive=3;
+				flacMetaDataUnlock();
+			}
 			break;
 		case cpievClose:
 			if (FlacPicHandle)
@@ -499,7 +512,7 @@ static int FlacPicEvent(int ev)
 			}
 			break;
 		case cpievOpen:
-			if (FlacPicVisible && (!FlacPicHandle))
+			if (FlacPicVisible && (!FlacPicHandle) && plScrTextGUIOverlay)
 			{
 				flacMetaDataLock();
 				if (flac_pictures[FlacPicCurrentIndex].scaled_data_bgra)

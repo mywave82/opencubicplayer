@@ -385,7 +385,12 @@ static void OggPicDraw(int focus)
 }
 
 static int OggPicIProcessKey(uint16_t key)
-{
+
+{	if (!plScrTextGUIOverlay)
+	{
+		return 0;
+	}
+
 	switch (key)
 	{
 		case KEY_ALT_K:
@@ -411,6 +416,11 @@ static int OggPicIProcessKey(uint16_t key)
 
 static int OggPicAProcessKey(uint16_t key)
 {
+	if (!plScrTextGUIOverlay)
+	{
+		return 0;
+	}
+
 	switch (key)
 	{
 		case KEY_ALT_K:
@@ -474,8 +484,11 @@ static int OggPicEvent(int ev)
 	switch (ev)
 	{
 		case cpievInit:
-			Refresh_OggPictures();
-			OggPicActive=3;
+			if (plScrTextGUIOverlay)
+			{
+				Refresh_OggPictures();
+				OggPicActive=3;
+			}
 			break;
 		case cpievClose:
 			if (OggPicHandle)
@@ -485,7 +498,7 @@ static int OggPicEvent(int ev)
 			}
 			break;
 		case cpievOpen:
-			if (OggPicVisible && (!OggPicHandle))
+			if (OggPicVisible && (!OggPicHandle) && plScrTextGUIOverlay)
 			{
 				if (ogg_pictures[OggPicCurrentIndex].scaled_data_bgra)
 				{
