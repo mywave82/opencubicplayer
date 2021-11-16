@@ -1972,6 +1972,16 @@ static void doTimidityClosePlayer(int CloseDriver)
 	EventDelayed_gmibuf_tail = 0;
 
 	free_all_midi_file_info ();
+
+	if (_SET)
+	{
+		mcpSet = _SET;
+		_SET = 0;
+	if (_GET)
+	{
+		mcpGet = _GET;
+		_GET = 0;
+	}
 }
 
 #warning timidity internal API has support for memory-buffers, instead of file-objects
