@@ -81,7 +81,7 @@ extern uint8_t *plVidMem;               /* This points to the current selected b
 extern int plScrLineBytes;              /* How many bytes does one line from plVidMem use (can be padded) */
 extern int plScrLines;                  /* How many graphical lines do we have */
 
-void make_title(char *part, int escapewarning);
+void make_title (const char *part, int escapewarning);
 struct settings;
 void cpiDrawG1String (struct settings *g1);
 

@@ -701,5 +701,5 @@ static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	return errOk;
 }
 
-struct cpifaceplayerstruct xmpPlayer = {xmpOpenFile, xmpCloseFile};
+struct cpifaceplayerstruct xmpPlayer = {"[FastTracker II plugin]", xmpOpenFile, xmpCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playxm", .desc = "OpenCP XM/MOD Player (c) 1995-21 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

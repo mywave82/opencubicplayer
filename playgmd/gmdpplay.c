@@ -458,7 +458,7 @@ static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	return errOk;
 }
 
-struct cpifaceplayerstruct gmdPlayer = {gmdOpenFile, gmdCloseFile};
+struct cpifaceplayerstruct gmdPlayer = {"[General module plugin]", gmdOpenFile, gmdCloseFile};
 
 char *dllinfo = "";
 struct linkinfostruct dllextinfo = {.name = "playgmd", .desc = "OpenCP General Module Player (c) 1994-21 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

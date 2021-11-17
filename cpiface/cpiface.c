@@ -515,7 +515,7 @@ void cpiDrawG1String (struct settings *g1)
 
 void cpiDrawGStrings()
 {
-	make_title ("", plEscTick);
+	make_title (curplayer ? curplayer->playername : "", plEscTick);
 
 	if (plDrawGStrings)
 		plDrawGStrings(plTitleBuf+1);

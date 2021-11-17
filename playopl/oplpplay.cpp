@@ -503,7 +503,7 @@ static int oplOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 
 extern "C"
 {
-	cpifaceplayerstruct oplPlayer = {oplOpenFile, oplCloseFile};
+	cpifaceplayerstruct oplPlayer = {"[AdPlug OPL plugin]", oplOpenFile, oplCloseFile};
 	struct linkinfostruct dllextinfo =
 	{
 		"playopl" /* name */,

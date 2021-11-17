@@ -21,6 +21,7 @@ struct moduleinfostruct;
 struct ocpfilehandle_t;
 struct cpifaceplayerstruct
 {
+	const char *playername;
 	int (*OpenFile) (struct moduleinfostruct *info,
 	                 struct ocpfilehandle_t *f,
 	                 const char *ldlink, // some player "plugins" uses loaders. This is the name of that "loader plugin"

@@ -56,7 +56,7 @@ const struct FontSizeInfo_t FontSizeInfo[] =
 };
 
 
-void make_title(char *part, int escapewarning)
+void make_title (const char *part, int escapewarning)
 {
 // DEBUG TODO sprintf(tstr, "%02i%% %08X %s", tmGetCpuUsage(),/* debugint, debugstr*/ 0, "");
 	char prebuf[32];

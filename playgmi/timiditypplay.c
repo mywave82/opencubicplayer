@@ -344,7 +344,7 @@ static void timidityCloseFile(void)
 	timidityClosePlayer();
 }
 
-struct cpifaceplayerstruct timidityPlayer = {timidityOpenFile, timidityCloseFile};
+struct cpifaceplayerstruct timidityPlayer = {"[TiMidity++ MIDI plugin]", timidityOpenFile, timidityCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playtimidity", .desc = "OpenCP TiMidity++ Player (c) 2016 TiMidity++ team & Stian Skjelstad", .ver = DLLVERSION, .size = 0};
 
 

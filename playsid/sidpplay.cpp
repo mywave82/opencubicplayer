@@ -601,7 +601,7 @@ static int sidOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *si
 
 extern "C"
 {
-	cpifaceplayerstruct sidPlayer = {sidOpenFile, sidCloseFile};
+	cpifaceplayerstruct sidPlayer = {"[libsidplayfp plugin]", sidOpenFile, sidCloseFile};
 	struct linkinfostruct dllextinfo =
 	{
 		"playsid" /* name */,

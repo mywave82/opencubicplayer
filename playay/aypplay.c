@@ -327,5 +327,5 @@ static int ayOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fil
 	return errOk;
 }
 
-struct cpifaceplayerstruct ayPlayer = {ayOpenFile, ayCloseFile};
+struct cpifaceplayerstruct ayPlayer = {"[Aylet plugin]", ayOpenFile, ayCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playay", .desc = "OpenCP aylet Player (c) 2005-09 Russell Marks, Ian Collier & Stian Skjelstad", .ver = DLLVERSION, .size = 0};

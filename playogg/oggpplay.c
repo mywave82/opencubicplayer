@@ -378,5 +378,5 @@ static int oggOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *o
 }
 
 
-struct cpifaceplayerstruct oggPlayer = {oggOpenFile, oggCloseFile};
+struct cpifaceplayerstruct oggPlayer = {"[OGG Vorbis plugin]", oggOpenFile, oggCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playogg", .desc = "OpenCP Ogg Vorbis Player (c) 1994-'20 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

@@ -689,5 +689,5 @@ static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	return errOk;
 }
 
-struct cpifaceplayerstruct itpPlayer = {itpOpenFile, itpCloseFile};
+struct cpifaceplayerstruct itpPlayer = {"[ImpulseTracker plugin]", itpOpenFile, itpCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playit", .desc = "OpenCP IT Player (c) 1997-10 Tammo Hinrichs, Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

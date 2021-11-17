@@ -367,5 +367,5 @@ static int flacOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *
 	return errOk;
 }
 
-struct cpifaceplayerstruct flacPlayer = {flacOpenFile, flacCloseFile};
+struct cpifaceplayerstruct flacPlayer = {"[FLAC plugin]", flacOpenFile, flacCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playflac", .desc = "OpenCP FLAC Player (c) 2007-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

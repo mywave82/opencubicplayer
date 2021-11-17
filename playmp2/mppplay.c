@@ -364,5 +364,5 @@ static int mpegOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *m
 	return errOk;
 }
 
-struct cpifaceplayerstruct mpegPlayer = {mpegOpenFile, mpegCloseFile};
+struct cpifaceplayerstruct mpegPlayer = {"[MPEG, libmad plugin]", mpegOpenFile, mpegCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playmp2", .desc = "OpenCP Audio MPEG Player (c) 1994-2020 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

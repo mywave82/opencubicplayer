@@ -375,5 +375,5 @@ static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	return errOk;
 }
 
-struct cpifaceplayerstruct hvlPlayer = {hvlOpenFile, hvlCloseFile};
+struct cpifaceplayerstruct hvlPlayer = {"[HivelyTracker plugin]", hvlOpenFile, hvlCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playhvl", .desc = "OpenCP HVL Player (c) 2019-'20 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

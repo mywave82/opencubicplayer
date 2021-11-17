@@ -518,6 +518,6 @@ static int cdaOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	return errOk;
 }
 
-struct cpifaceplayerstruct cdaPlayer = {cdaOpenFile, cdaCloseFile};
+struct cpifaceplayerstruct cdaPlayer = {"[CDROM Audio plugin]", cdaOpenFile, cdaCloseFile};
 char *dllinfo = "";
 struct linkinfostruct dllextinfo = {.name = "playcda", .desc = "OpenCP CDA Player (c) 1995-09 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

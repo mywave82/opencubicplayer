@@ -611,7 +611,7 @@ static int ymOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fil
 
 extern "C"
 {
-	cpifaceplayerstruct ymPlayer = {ymOpenFile, ymCloseFile};
+	cpifaceplayerstruct ymPlayer = {"[STYMulator plugin]", ymOpenFile, ymCloseFile};
 	struct linkinfostruct dllextinfo =
 	{
 		"playym" /* name */,
