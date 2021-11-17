@@ -55,7 +55,7 @@ Fork of [TiMidity++](http://timidity.sourceforge.net/) is used to play [MIDI](ht
 
 [HivelyTracker](http://www.hivelytracker.co.uk/) tracked music, using code from the original tracker repository:
 - \*.HVL [Hively Tracker](https://github.com/pete-gordon/hivelytracker)
-- \*.AHX
+- \*.AHX [AHX] http://amigascne.org/abyss/ahx/ or use the not yet existant modern [AHX Clone](https://github.com/8bitbubsy/ahx-clone)
 
 # Manual Page
 
