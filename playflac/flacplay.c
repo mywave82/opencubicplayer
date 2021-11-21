@@ -1350,6 +1350,8 @@ int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandl
 	mcpSet=SET;
 	mcpGet=GET;
 
+	mcpNormalize (mcpNormalizeDefaultPlayP);
+
 	return 1;
 
 error_out:
@@ -1429,6 +1431,4 @@ void __attribute__ ((visibility ("internal"))) flacClosePlayer(void)
 		mcpGet = _GET;
 		_GET = 0;
 	}
-
-	mcpNormalize (mcpNormalizeDefaultPlayP);
 }
