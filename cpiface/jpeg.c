@@ -99,7 +99,11 @@ int try_open_jpeg (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const
 
 	while (cinfo.output_scanline < cinfo.output_height)
 	{
+#ifndef JCS_EXT_BGRA
+		JSAMPROW rows[1] = {data_rgb + (cinfo.output_scanline * 3) * cinfo.image_width};
+#else
 		JSAMPROW rows[1] = {*data_bgra + (cinfo.output_scanline << 2) * cinfo.image_width};
+#endif
 		jpeg_read_scanlines(&cinfo, rows, 1);
 	}
 
