@@ -1183,7 +1183,7 @@ static int tar_filehandle_seek_cur (struct ocpfilehandle_t *_self, int64_t pos)
 	if (pos <= 0)
 	{
 		if (pos == INT64_MIN) return -1; /* we never have files this size */
-		if ((-pos) >= self->filepos) return -1;
+		if ((-pos) > self->filepos) return -1;
 		self->filepos += pos;
 	} else {
 		/* check for overflow */
@@ -1206,7 +1206,7 @@ static int tar_filehandle_seek_end (struct ocpfilehandle_t *_self, int64_t pos)
 
 	if (pos == INT64_MIN) return -1; /* we never have files this size */
 
-	if (pos < -self->file->filesize) return -1;
+	if (pos < -(int64_t)(self->file->filesize)) return -1;
 
 	self->filepos = self->file->filesize + pos;
 

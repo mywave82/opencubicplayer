@@ -210,7 +210,7 @@ static int bzip2_ocpfilehandle_seek_cur (struct ocpfilehandle_t *_s, int64_t pos
 	if (pos <= 0)
 	{
 		if (pos == INT64_MIN) return -1; /* we never have files this size */
-		if ((-pos) >= s->pos) return -1;
+		if ((-pos) > s->pos) return -1;
 		s->pos += pos;
 	} else {
 		/* check for overflow */
@@ -251,7 +251,7 @@ static int bzip2_ocpfilehandle_seek_end (struct ocpfilehandle_t *_s, int64_t pos
 		}
 	}
 
-	if (pos < -s->owner->uncompressed_filesize) return -1;
+	if (pos < -(int64_t)(s->owner->uncompressed_filesize)) return -1;
 
 	s->pos = s->owner->uncompressed_filesize + pos;
 
