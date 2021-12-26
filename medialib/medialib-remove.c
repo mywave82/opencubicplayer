@@ -77,9 +77,11 @@ static void mlRemoveDraw(const char *title)
 	/* Line 1: "Select an item and press <enter>, or <esc> to abort" */
 	displaystr (mlTop + 1, mlLeft + 1,  0x07, "Select an item and press ", 25);
 	displaystr (mlTop + 1, mlLeft + 26, 0x0f, "<delete>", 8);
-	displaystr (mlTop + 1, mlLeft + 34, 0x07, ", or ", 5);
-	displaystr (mlTop + 1, mlLeft + 39, 0x0f, "<esc>", 5);
-	displaystr (mlTop + 1, mlLeft + 44, 0x07, " to abort", mlWidth - 45);
+	displaystr (mlTop + 1, mlLeft + 34, 0x07, " or ", 4);
+	displaystr (mlTop + 1, mlLeft + 38, 0x0f, "<left>", 5);
+	displaystr (mlTop + 1, mlLeft + 43, 0x07, ", or ", 5);
+	displaystr (mlTop + 1, mlLeft + 48, 0x0f, "<esc>", 5);
+	displaystr (mlTop + 1, mlLeft + 53, 0x07, " to abort", mlWidth - 54);
 
 	for (i=0; i < (mlHeight - 4); i++)
 	{
@@ -132,6 +134,7 @@ static interfaceReturnEnum medialibRemoveRun (void)
 						medialibRemoveSelected++;
 					}
 					break;
+				case KEY_LEFT:
 				case KEY_DELETE:
 					{
 						int i;

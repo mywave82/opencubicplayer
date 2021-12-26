@@ -100,17 +100,22 @@ static void mlAddDraw(const char *title, const char *utf8_path, int dsel)
 		displaystr  (mlTop + i, mlLeft + mlWidth - 1, 0x04, ((i-4) == dot) ? "\xdd":"\xb3", 1);
 	}
 
-	/* Line 1: "Browse the directory that you want to add. Press <insert> when located, or <esc> to abort"   of too long, chop off the last bit */
+	/* Line 1: "Browse the directory that you want to add. Press <insert> or <right> when located, or <esc> to abort"   of too long, chop off the last bit */
 	displaystr (mlTop + 1, mlLeft + 1,  0x07, "Browse the directory that you want to add. Press ", 49);
 	displaystr (mlTop + 1, mlLeft + 50, 0x0f, "<insert>", 8);
-	displaystr (mlTop + 1, mlLeft + 58, 0x07, " when located", 13);
-	if (mlWidth > 90)
+	displaystr (mlTop + 1, mlLeft + 58, 0x07, " or ", 4);
+	displaystr (mlTop + 1, mlLeft + 62, 0x0f, "<right>", 7);
+	if (mlWidth > 101)
 	{
-		displaystr (mlTop + 1, mlLeft + 71, 0x07, ", or ", 5);
-		displaystr (mlTop + 1, mlLeft + 76, 0x0f, "<esc>", 5);
-		displaystr (mlTop + 1, mlLeft + 81, 0x07, " to abort", mlWidth - 82);
+		displaystr (mlTop + 1, mlLeft + 69, 0x07, " when located", 13);
+		displaystr (mlTop + 1, mlLeft + 82, 0x07, ", or ", 5);
+		displaystr (mlTop + 1, mlLeft + 87, 0x0f, "<esc>", 5);
+		displaystr (mlTop + 1, mlLeft + 92, 0x07, " to abort", mlWidth - 93);
+	} else if (mlWidth > 82)
+	{
+		displaystr (mlTop + 1, mlLeft + 69, 0x07, " when located", mlWidth - 70);
 	} else {
-		displayvoid (mlTop + 1, mlLeft + 71, mlWidth - 72);
+		displayvoid (mlTop + 1, mlLeft + 69, mlWidth - 70);
 	}
 
 	/* Line 2: the current selected path */
@@ -298,6 +303,7 @@ static interfaceReturnEnum medialibAddRun (void)
 						dirdbUnref (old_dir, dirdb_use_medialib);
 					}
 					break;
+				case KEY_RIGHT:
 				case KEY_INSERT:
 					dirdbTagSetParent (medialibAddCurDir->dirdb_ref);
 
