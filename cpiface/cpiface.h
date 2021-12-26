@@ -42,7 +42,7 @@ extern char plPause;
 extern char plMuteCh[];
 extern char plPanType;
 extern int (*plProcessKey)(uint16_t key);
-extern void (*plDrawGStrings)(uint16_t (*plTitleBuf)[CONSOLE_MAX_X]);
+extern void (*plDrawGStrings)(void);
 extern void (*plGetRealMasterVolume)(int *l, int *r);
 extern void (*plGetMasterSample)(int16_t *, unsigned int len, uint32_t rate, int mode);
 extern int (*plIsEnd)(void);
@@ -185,7 +185,21 @@ extern unsigned char plChanChanged;
 extern char plCompoMode;
 
 /* mcpedit.c */
-extern void mcpDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X]);
+extern void mcpDrawGStrings(void);
+
+struct moduleinfostruct;
+void mcpDrawGStringsFixedLengthStream (const char              *filename8_3,
+                                       const char              *filename16_3,
+                                       uint64_t                 pos,
+                                       uint64_t                 size, /* can be smaller than the file-size due to meta-data */
+                                       const char               sizesuffix, /* 0 = "" (MIDI), 1 = KB */
+                                       const char              *opt25,
+                                       const char              *opt50,
+                                       uint_fast16_t            kbs,  /* kilo-bit-per-second */
+                                       uint_fast8_t             inpause,
+                                       uint_fast16_t            seconds,
+                                       struct moduleinfostruct *mdbdata);
+
 extern int mcpSetProcessKey(uint16_t key);
 extern void mcpSetFadePars(int i);
 

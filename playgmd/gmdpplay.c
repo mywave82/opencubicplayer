@@ -185,20 +185,22 @@ static void dopausefade(void)
 	mcpSetFadePars(i);
 }
 
-static void gmdDrawGStrings(unsigned short (*buf)[CONSOLE_MAX_X])
+static void gmdDrawGStrings (void)
 {
 	struct globinfo gi;
 	uint32_t tim;
 
-	mcpDrawGStrings(buf);
+	mcpDrawGStrings ();
 
-	mpGetGlobInfo(&gi);
+	mpGetGlobInfo (&gi);
 
 	if (plPause)
 		tim=(pausetime-starttime)/DOS_CLK_TCK;
 	else
 		tim=(dos_clock()-starttime)/DOS_CLK_TCK;
 
+#warning TODO GStrings
+#if 0
 	if (plScrWidth<128)
 	{
 		memset(buf[2]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
@@ -248,6 +250,7 @@ static void gmdDrawGStrings(unsigned short (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2], 125, 0x0F, ":", 1);
 		writenum(buf[2], 126, 0x0F, tim%60, 10, 2, 0);
 	}
+#endif
 }
 
 #define dgetch() egetch()

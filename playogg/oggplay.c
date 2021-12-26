@@ -56,11 +56,15 @@ static int signedout;
 static uint32_t samprate;
 static uint8_t reversestereo;
 
+static uint32_t voll,volr;
 static int vol;
 static int bal;
-static unsigned long voll,volr;
 static int pan;
 static int srnd;
+
+static int opt25_50;
+static char opt25[26];
+static char opt50[51];
 
 static int16_t *buf16=NULL;
 static uint32_t bufpos;
@@ -658,7 +662,7 @@ static void add_comment2(const char *title, const char *value)
 		if (res == 0)
 		{
 			// append to at this point
-			ogg_comments[n] = realloc (ogg_comments[n], sizeof (ogg_comments[n]) + sizeof (ogg_comments[n]->value[0]) * (ogg_comments[n]->value_count + 1));
+			ogg_comments[n] = realloc (ogg_comments[n], sizeof (*ogg_comments[n]) + sizeof (ogg_comments[n]->value[0]) * (ogg_comments[n]->value_count + 1));
 			ogg_comments[n]->value[ogg_comments[n]->value_count++] = strdup(value);
 			return;
 		}
@@ -667,10 +671,11 @@ static void add_comment2(const char *title, const char *value)
 			continue;
 		} else {
 			// insert it at this point
-			break;
+			goto insert;
 		}
 	}
 
+insert:
 	ogg_comments = realloc (ogg_comments, sizeof (ogg_comments[0]) * (ogg_comments_count+1));
 	memmove (ogg_comments + n + 1, ogg_comments + n, (ogg_comments_count - n) * sizeof (ogg_comments[0]));
 	ogg_comments[n] = malloc (sizeof (*ogg_comments[n]) + sizeof (ogg_comments[n]->value[0]));
@@ -1030,19 +1035,30 @@ ogg_int64_t __attribute__ ((visibility ("internal"))) oggGetPos(void)
 	return (oggpos+ogglen-ringbuffer_get_tail_available_samples(oggbufpos))%ogglen;
 }
 
-void __attribute__ ((visibility ("internal"))) oggGetInfo(struct ogginfo *i)
+void __attribute__ ((visibility ("internal"))) oggGetInfo(struct ogginfo *info)
 {
 	static int lastsafe=0;
-	i->pos=oggGetPos();
-	i->len=ogglen;
-	i->rate=oggrate;
-	i->stereo=oggstereo;
-	i->bit16=1;
-	if ((i->bitrate=ov_bitrate_instant(&ov))<0)
-		i->bitrate=lastsafe;
+	info->pos=oggGetPos();
+	info->len=ogglen;
+	info->rate=oggrate;
+	info->stereo=oggstereo;
+	info->bit16=1;
+	if ((info->bitrate=ov_bitrate_instant (&ov))<0)
+		info->bitrate=lastsafe;
 	else
-		lastsafe=i->bitrate;
-	i->bitrate/=1000;
+		lastsafe=info->bitrate;
+	if (!opt25_50)
+	{
+		vorbis_info *vi = ov_info (&ov, -1);
+		if (vi)
+		{
+			snprintf (opt25, sizeof (opt25), "Ogg Vorbis version %d", vi->version);
+			snprintf (opt50, sizeof (opt50), "Ogg Vorbis version %d, %d channels", vi->version, vi->channels);
+			opt25_50 = 1;
+		}
+	}
+	info->opt25=opt25;
+	info->opt50=opt50;
 }
 
 void __attribute__ ((visibility ("internal"))) oggSetPos(ogg_int64_t pos)
@@ -1183,9 +1199,13 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 	_GET=mcpGet;
 	mcpSet=SET;
 	mcpGet=GET;
+
 	mcpNormalize (mcpNormalizeDefaultPlayP);
 
 	active=1;
+	opt25_50 = 0;
+	opt25[0] = 0;
+	opt50[0] = 0;
 
 	return 1;
 }

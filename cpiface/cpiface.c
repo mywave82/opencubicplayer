@@ -81,7 +81,7 @@ extern struct cpimoderegstruct cpiModeText;
 
 static struct cpifaceplayerstruct *curplayer;
 void (*plSetMute)(int i, int m);
-void (*plDrawGStrings)(uint16_t (*)[CONSOLE_MAX_X]);
+void (*plDrawGStrings)(void);
 int (*plProcessKey)(uint16_t key);
 int (*plIsEnd)(void);
 void (*plIdle)(void);
@@ -106,10 +106,6 @@ char plPanType;
 static struct cpimoderegstruct *cpiModes;
 static struct cpimoderegstruct *cpiDefModes;
 
-#warning TODO remove plTitleBuf
-uint16_t plTitleBuf[5][CONSOLE_MAX_X];
-static uint16_t plTitleBufOld[4][CONSOLE_MAX_X];
-
 time_t plEscTick;
 
 static struct cpimoderegstruct *curmode;
@@ -120,7 +116,6 @@ static struct interfacestruct plOpenCP;
 void cpiSetGraphMode(int big)
 {
 	plSetGraphMode(big);
-	memset(plTitleBufOld, 0xFF, sizeof(plTitleBufOld));
 	plChanChanged=1;
 }
 
@@ -211,22 +206,30 @@ void cpiDrawG1String (struct settings *g1)
 	const uint8_t speedpitchsizes[2] = {22, 25};
 
 	int interspace;
+	int interspace2;
 	int headspace;
 	int endspace;
 	int changed = 1;
 	int width;
 	int x;
 
+	if (plScrWidth >= 90)
+	{
+		endspace = headspace = (plScrWidth - 60) / 30;
+	} else {
+		endspace = headspace = 0;
+	}
+
 	/* increase the view-mode of each component until we can't grow them anymore */
 #warning TODO, we can cache this as long a g1->viewfx and screenwidth has not changed!
 	if (g1->viewfx)
 	{
-		width = (int)volumesizes[volumemode] + echosizes[echomode] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[speedpitchmode];
+		width = (int)volumesizes[volumemode] + echosizes[echomode] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[speedpitchmode] + headspace + endspace;
 
 		if (!echomode)
 		{
-			int n = volumesizes[volumemode] + echosizes[1] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[speedpitchmode];
-			if ((n+2+4) < plScrWidth)
+			int n = volumesizes[volumemode] + echosizes[1] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[speedpitchmode] + headspace + endspace;
+			if ((n + 4) <= plScrWidth)
 			{
 				echomode = 1;
 				width = n;
@@ -234,8 +237,8 @@ void cpiDrawG1String (struct settings *g1)
 		}
 		if (!speedpitchmode)
 		{
-			int n = (int)volumesizes[volumemode] + echosizes[echomode] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[1];
-			if ((n+2+4) < plScrWidth)
+			int n = (int)volumesizes[volumemode] + echosizes[echomode] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[1] + headspace + endspace;
+			if ((n + 4) <= plScrWidth)
 			{
 				speedpitchmode = 1;
 				width = n;
@@ -246,8 +249,8 @@ void cpiDrawG1String (struct settings *g1)
 			changed = 0;
 			if (volumemode < 7)
 			{
-				int n = (int)volumesizes[volumemode+1] + echosizes[echomode] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[speedpitchmode];
-				if ((n+2+4) < plScrWidth)
+				int n = (int)volumesizes[volumemode+1] + echosizes[echomode] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[speedpitchmode] + headspace + endspace;
+				if ((n + 4) <= plScrWidth)
 				{
 					volumemode++;
 					width = n;
@@ -256,8 +259,8 @@ void cpiDrawG1String (struct settings *g1)
 			}
 			if (reverbchorusmode < 7)
 			{
-				int n = (int)volumesizes[volumemode] + echosizes[echomode] + reverbsizes[reverbchorusmode+1] + chorussizes[reverbchorusmode+1] + speedpitchsizes[speedpitchmode];
-				if ((n+2+4) < plScrWidth)
+				int n = (int)volumesizes[volumemode] + echosizes[echomode] + reverbsizes[reverbchorusmode+1] + chorussizes[reverbchorusmode+1] + speedpitchsizes[speedpitchmode] + headspace + endspace;
+				if ((n + 4) <= plScrWidth)
 				{
 					reverbchorusmode++;
 					width = n;
@@ -266,12 +269,12 @@ void cpiDrawG1String (struct settings *g1)
 			}
 		}
 	} else {
-		width = (int)volumesizes[volumemode] + surroundsizes[surroundmode] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[speedpitchmode];
+		width = (int)volumesizes[volumemode] + surroundsizes[surroundmode] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[speedpitchmode] + headspace + endspace;
 
 		if (!surroundmode)
 		{
-			int n = (int)volumesizes[volumemode] + surroundsizes[1] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[speedpitchmode];
-			if ((n+2+4) < plScrWidth)
+			int n = (int)volumesizes[volumemode] + surroundsizes[1] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[speedpitchmode] + headspace + endspace;
+			if ((n + 4) <= plScrWidth)
 			{
 				surroundmode = 1;
 				width = n;
@@ -279,8 +282,8 @@ void cpiDrawG1String (struct settings *g1)
 		}
 		if (!speedpitchmode)
 		{
-			int n = (int)volumesizes[volumemode] + surroundsizes[surroundmode] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[1];
-			if ((n+2+4) < plScrWidth)
+			int n = (int)volumesizes[volumemode] + surroundsizes[surroundmode] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[1] + headspace + endspace;
+			if ((n + 4) <= plScrWidth)
 			{
 				speedpitchmode = 1;
 				width = n;
@@ -291,8 +294,8 @@ void cpiDrawG1String (struct settings *g1)
 			changed = 0;
 			if (volumemode < 7)
 			{
-				int n = (int)volumesizes[volumemode+1] + surroundsizes[surroundmode] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[speedpitchmode];
-				if ((n+2+4) < plScrWidth)
+				int n = (int)volumesizes[volumemode+1] + surroundsizes[surroundmode] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[speedpitchmode] + headspace + endspace;
+				if ((n + 4) <= plScrWidth)
 				{
 					volumemode++;
 					width = n;
@@ -301,8 +304,8 @@ void cpiDrawG1String (struct settings *g1)
 			}
 			if (panningbalancemode < 7)
 			{
-				int n = (int)volumesizes[volumemode] + surroundsizes[surroundmode] + panningsizes[panningbalancemode+1] + balancesizes[panningbalancemode+1] + speedpitchsizes[speedpitchmode];
-				if ((n+2+4) < plScrWidth)
+				int n = (int)volumesizes[volumemode] + surroundsizes[surroundmode] + panningsizes[panningbalancemode+1] + balancesizes[panningbalancemode+1] + speedpitchsizes[speedpitchmode] + headspace + endspace;
+				if ((n + 4) <= plScrWidth)
 				{
 					panningbalancemode++;
 					width = n;
@@ -312,9 +315,8 @@ void cpiDrawG1String (struct settings *g1)
 		}
 	}
 
-	interspace = (plScrWidth - width) / 6;
-	headspace = (plScrWidth - width - interspace * 4) / 2;
-	endspace = plScrWidth - width - interspace * 4 - headspace;
+	interspace  = (plScrWidth - width) / 4;
+	interspace2 = (plScrWidth - width) % 4;
 
 	displayvoid (1, 0, headspace);
 	x=headspace;
@@ -340,7 +342,8 @@ void cpiDrawG1String (struct settings *g1)
 		displaychr (1, x, 0x09, '\xfa', vi); x += vi;
 	}
 
-	displayvoid (1, x, interspace); x += interspace;
+	displayvoid (1, x, interspace + (!!interspace2)); x += interspace + (!!interspace2);
+	if (interspace2) interspace2--;
 
 	if (g1->viewfx)
 	{
@@ -352,7 +355,8 @@ void cpiDrawG1String (struct settings *g1)
 		}
 		displaystr (1, x, 0x0f, g1->useecho?"x":"o", 1); x += 1;
 
-		displayvoid (1, x, interspace); x += interspace;
+		displayvoid (1, x, interspace + (!!interspace2)); x += interspace + (!!interspace2);
+		if (interspace2) interspace2--;
 
 		{
 			int l, w;
@@ -378,7 +382,8 @@ void cpiDrawG1String (struct settings *g1)
 			displaystr (1, x, 0x07, temp + l + 1, w - l); x += w - l;
 		}
 
-		displayvoid (1, x, interspace); x += interspace;
+		displayvoid (1, x, interspace + (!!interspace2)); x += interspace + (!!interspace2);
+		if (interspace2) interspace2--;
 
 		{
 			int l, w;
@@ -412,7 +417,8 @@ void cpiDrawG1String (struct settings *g1)
 		}
 		displaystr (1, x, 0x0f, g1->srnd?"x":"o", 1); x += 1;
 
-		displayvoid (1, x, interspace); x += interspace;
+		displayvoid (1, x, interspace + (!!interspace2)); x += interspace + (!!interspace2);
+		if (interspace2) interspace2--;
 
 		{
 			int l, r, w;
@@ -458,7 +464,8 @@ void cpiDrawG1String (struct settings *g1)
 			}
 		}
 
-		displayvoid (1, x, interspace); x += interspace;
+		displayvoid (1, x, interspace + (!!interspace2)); x += interspace + (!!interspace2);
+		if (interspace2) interspace2--;
 
 		{
 			int l, w;
@@ -485,15 +492,16 @@ void cpiDrawG1String (struct settings *g1)
 		}
 	}
 
-	displayvoid (1, x, interspace); x += interspace;
+	displayvoid (1, x, interspace + (!!interspace2)); x += interspace + (!!interspace2);
+	if (interspace2) interspace2--;
 
 	{
 		char temp[4];
 		if (speedpitchmode)
 		{
-			displaystr (1, x, 0x07, "speed: ", 7); x += 7;
+			displaystr (1, x, 0x09, "speed: ", 7); x += 7;
 		} else {
-			displaystr (1, x, 0x07, "spd: ", 5); x += 5;
+			displaystr (1, x, 0x09, "spd: ", 5); x += 5;
 		}
 		snprintf (temp, sizeof (temp), "%3d", g1->speed * 100 / 256);
 		displaystr (1, x, 0x0f, temp, 3); x += 3;
@@ -501,9 +509,9 @@ void cpiDrawG1String (struct settings *g1)
 		displaystr (1, x, 0x09, g1->splock?"\x1d ":"  ", 2); x+= 2;
 		if (speedpitchmode)
 		{
-			displaystr (1, x, 0x07, "pitch: ", 7); x += 7;
+			displaystr (1, x, 0x09, "pitch: ", 7); x += 7;
 		} else {
-			displaystr (1, x, 0x07, "ptch: ", 6); x += 6;
+			displaystr (1, x, 0x09, "ptch: ", 6); x += 6;
 		}
 		snprintf (temp, sizeof (temp), "%3d", g1->pitch * 100 / 256);
 		displaystr (1, x, 0x0f, temp, 3); x += 3;
@@ -513,16 +521,549 @@ void cpiDrawG1String (struct settings *g1)
 	displayvoid (1, x, endspace); x += endspace;
 }
 
-void cpiDrawGStrings()
+/*
+pos:123%
+position:123%
+pos:123% 12345678/12345678 KB
+position:123% 12345678/12345678 KB
+
+opt: 1234567890123456789012345
+option: 1234567890123456789012345
+opt: 1234567890123456789123456789012345678901234567890
+option: 1234567890123456789123456789012345678901234567890
+
+rate: 1234kbs
+bitrate: 1234kbs
+
+paused time:123:12
+playback paused time:123:12
+
+file: 12345678.123
+filename: 12345678.123
+file: 1234567890123456.123
+filename: 1234567890123456.123
+
+len:123.12      (MDB playtime)
+length:123.12   (MDB playtime)
+
+date: 12.12.1234      (MDB date)
+
+title: 1234567890123456                                                   16 (MDB title)
+title: 123456789012345678901234                                           24
+title: 12345678901234567890123456789012                                   32
+title: 1234567890123456789012345678901234567890                           40
+title: 123456789012345678901234567890123456789012345678                   48
+title: 12345678901234567890123456789012345678901234567890123456           56
+title: 1234567890123456789012345678901234567890123456789012345678901234   64
+
+composer: 1234567890123456                                                   16 (MDB composer)
+composer: 123456789012345678901234                                           24
+composer: 12345678901234567890123456789012                                   32
+composer: 1234567890123456789012345678901234567890                           40
+composer: 123456789012345678901234567890123456789012345678                   48
+composer: 12345678901234567890123456789012345678901234567890123456           56
+composer: 1234567890123456789012345678901234567890123456789012345678901234   64
+
+artist: 1234567890123456                                                   16 (MDB artist)
+artist: 123456789012345678901234                                           24
+artist: 12345678901234567890123456789012                                   32
+artist: 1234567890123456789012345678901234567890                           40
+artist: 123456789012345678901234567890123456789012345678                   48
+artist: 12345678901234567890123456789012345678901234567890123456           56
+artist: 1234567890123456789012345678901234567890123456789012345678901234   64
+
+style: 1234567890123456                                                   16 (MDB style)
+style: 123456789012345678901234                                           24
+style: 12345678901234567890123456789012                                   32
+style: 1234567890123456789012345678901234567890                           40
+style: 123456789012345678901234567890123456789012345678                   48
+style: 12345678901234567890123456789012345678901234567890123456           56
+style: 1234567890123456789012345678901234567890123456789012345678901234   64
+
+comment: 1234567890123456                                                   16 (MDB commment)
+comment: 123456789012345678901234                                           24
+comment: 12345678901234567890123456789012                                   32
+comment: 1234567890123456789012345678901234567890                           40
+comment: 123456789012345678901234567890123456789012345678                   48
+comment: 12345678901234567890123456789012345678901234567890123456           56
+comment: 1234567890123456789012345678901234567890123456789012345678901234   64
+
+album: 1234567890123456                                                   16 (MDB album)
+album: 123456789012345678901234                                           24
+album: 12345678901234567890123456789012                                   32
+album: 1234567890123456789012345678901234567890                           40
+album: 123456789012345678901234567890123456789012345678                   48
+album: 12345678901234567890123456789012345678901234567890123456           56
+album: 1234567890123456789012345678901234567890123456789012345678901234   64
+
+pos:123%  12345678/12345678 KB  rate: 12345kbs title: 1234567890123456  comment: 1234567890123456  album: 1234567890123456  date: 12.12.1234  length: 123:12
+filename: 12345678.123  composer: 1234567890123456  artist: 12345678990123456  style: 1234567890123456 opt: 1234567890123456789012345  paused time:123:12
+*/
+
+void mcpDrawGStringsFixedLengthStream (const char              *filename8_3,
+                                       const char              *filename16_3,
+                                       uint64_t                 pos,
+                                       uint64_t                 size, /* can be smaller than the file-size due to meta-data */
+                                       const char               sizesuffix, /* 0 = "" (MIDI), 1 = KB */
+                                       const char              *opt25,
+                                       const char              *opt50,
+                                       uint_fast16_t            kbs,  /* kilo-bit-per-second */
+                                       uint_fast8_t             inpause,
+                                       uint_fast16_t            seconds,
+                                       struct moduleinfostruct *mdbdata
+)
+{
+	int width1 = 0;
+	int fields1 = 0;
+	int posmode = 0;
+	const uint8_t possizes0[5] = {0, 8, 13, 26, 31};
+	const uint8_t possizes1[5] = {0, 8, 13, 29, 34};
+	int bitratemode = 0;
+	const uint8_t bitratesizes[3] = {0, 13, 16};
+	int titlemode = 0;
+	const uint8_t titlesizes[8] = {0, 23, 31, 39, 47, 55, 63, 71};
+	int commentmode = 0;
+	const uint8_t commentsizes[8] = {0, 25, 33, 41, 49, 57, 65, 73};
+	int albummode = 0;
+	const uint8_t albumsizes[8] = {0, 23, 31, 39, 47, 55, 63, 71};
+	int datemode = 0;
+	const uint8_t datesizes[2] = {0, 16};
+	int lengthmode = 0;
+	const uint8_t lengthsizes[3] = {0, 10, 13};
+
+	int width2 = 0;
+	int fields2 = 0;
+	int filenamemode = 0;
+	const uint8_t filenamesizes[5] = {0, 18, 22, 26, 30};
+	int composermode = 0;
+	const uint8_t composersizes[8] = {0, 26, 34, 42, 50, 58, 66, 74};
+	int artistmode = 0;
+	const uint8_t artistsizes[8] = {0, 24, 32, 40, 48, 56, 64, 72};
+	int stylemode = 0;
+	const uint8_t stylesizes[8] = {0, 23, 31, 39, 47, 55, 63, 71};
+	int optionmode = 0;
+	const uint8_t optionsizes[5] = {0, 30, 33, 55, 58};
+	int pausetimemode = 0;
+	const uint8_t pausetimesizes[3] = {0, 18, 27};
+
+	int changed;
+
+	int x;
+	int first;
+	int interspace;
+	int interspace2;
+	int headspace;
+	int endspace;
+
+	if (plScrWidth >= 90)
+	{
+		endspace = headspace = (plScrWidth - 60) / 30;
+	} else {
+		endspace = headspace = 0;
+	}
+
+	width1 = width2 = headspace * 2;
+
+	/* line 1 */
+	do
+	{
+		changed = 0;
+
+		if (!sizesuffix)
+		{
+			if ((posmode < 4) && ((width1 + fields1 - 1 + possizes0[posmode+1] - possizes0[posmode] + (posmode?0:2)) <= plScrWidth))
+			{
+				width1 += possizes0[posmode+1] - possizes0[posmode];
+				fields1 += posmode?0:1;
+				posmode++;
+				changed = 1;
+			}
+		} else {
+			if ((posmode < 4) && ((width1 + fields1 - 1 + possizes1[posmode+1] - possizes1[posmode] + (posmode?0:2)) <= plScrWidth))
+			{
+				width1 += possizes1[posmode+1] - possizes1[posmode];
+				fields1 += posmode?0:1;
+				posmode++;
+				changed = 1;
+			}
+		}
+
+		if (mdbdata->title[0] && (titlemode < 7) && ((width1 + fields1 - 1 + titlesizes[titlemode+1] - titlesizes[titlemode] + (titlemode?0:2)) <= plScrWidth))
+		{
+			width1 += titlesizes[titlemode+1] - titlesizes[titlemode];
+			fields1 += titlemode?0:1;
+			titlemode++;
+			changed = 1;
+		}
+
+		if (mdbdata->date && (datemode < 1) && ((width1 + fields1 - 1 + datesizes[datemode+1] - datesizes[datemode] + (datemode?0:2)) <= plScrWidth))
+		{
+			width1 += datesizes[datemode+1] - datesizes[datemode];
+			fields1 += datemode?0:1;
+			datemode++;
+			changed = 1;
+		}
+
+		if (mdbdata->playtime && (lengthmode < 2) && ((width1 + fields1 - 1 + lengthsizes[lengthmode+1] - lengthsizes[lengthmode] + (lengthmode?0:2)) <= plScrWidth))
+		{
+			width1 += lengthsizes[lengthmode+1] - lengthsizes[lengthmode];
+			fields1 += lengthmode?0:1;
+			lengthmode++;
+			changed = 1;
+		}
+
+		if (mdbdata->comment[0] && (commentmode < 7) && ((width1 + fields1 - 1 + commentsizes[commentmode+1] - commentsizes[commentmode] + (commentmode?0:2)) <= plScrWidth))
+		{
+			width1 += commentsizes[commentmode+1] - commentsizes[commentmode];
+			fields1 += commentmode?0:1;
+			commentmode++;
+			changed = 1;
+		}
+
+		if (mdbdata->album[0] && (albummode < 7) && ((width1 + fields1 - 1 + albumsizes[albummode+1] - albumsizes[albummode] + (albummode?0:2)) <= plScrWidth))
+		{
+			width1 += albumsizes[albummode+1] - albumsizes[albummode];
+			fields1 += albummode?0:1;
+			albummode++;
+			changed = 1;
+		}
+
+		if ((bitratemode < 2) && ((width1 + fields1 - 1 + bitratesizes[bitratemode+1] - bitratesizes[bitratemode] + (bitratemode?0:2)) <= plScrWidth))
+		{
+			width1 += bitratesizes[bitratemode+1] - bitratesizes[bitratemode];
+			fields1 += bitratemode?0:1;
+			bitratemode++;
+			changed = 1;
+		}
+	} while (changed);
+
+	/* line 2 */
+	do
+	{
+		changed = 0;
+
+		if ((filenamemode < 4) && ((width2 + fields2 - 1 + filenamesizes[filenamemode+1] - filenamesizes[filenamemode] + (filenamemode?0:2)) <= plScrWidth))
+		{
+			width2 += filenamesizes[filenamemode+1] - filenamesizes[filenamemode];
+			fields2 += filenamemode?0:1;
+			filenamemode++;
+			changed = 1;
+		}
+
+		if ((pausetimemode < 2) && ((width2 + fields2 - 1 + pausetimesizes[pausetimemode+1] - pausetimesizes[pausetimemode] + (pausetimemode?0:2)) <= plScrWidth))
+		{
+			width2 += pausetimesizes[pausetimemode+1] - pausetimesizes[pausetimemode];
+			fields2 += pausetimemode?0:1;
+			pausetimemode++;
+			changed = 1;
+		}
+
+		if (mdbdata->composer[0] && (composermode < 7) && ((width2 + fields2 - 1 + composersizes[composermode+1] - composersizes[composermode] + (composermode?0:2)) <= plScrWidth))
+		{
+			width2 += composersizes[composermode+1] - composersizes[composermode];
+			fields2 += composermode?0:1;
+			composermode++;
+			changed = 1;
+		}
+
+		if (mdbdata->artist[0] && (artistmode < 7) && ((width2 + fields2 - 1 + artistsizes[artistmode+1] - artistsizes[artistmode] + (artistmode?0:2)) <= plScrWidth))
+		{
+			width2 += artistsizes[artistmode+1] - artistsizes[artistmode];
+			fields2 += artistmode?0:1;
+			artistmode++;
+			changed = 1;
+		}
+
+		if (mdbdata->style[0] && (stylemode < 7) && ((width2 + fields2 - 1 + stylesizes[stylemode+1] - stylesizes[stylemode] + (stylemode?0:2)) <= plScrWidth))
+		{
+			width2 += stylesizes[stylemode+1] - stylesizes[stylemode];
+			fields2 += stylemode?0:1;
+			stylemode++;
+			changed = 1;
+		}
+
+		if ((optionmode < 4) && ((width2 + fields2 - 1 + optionsizes[optionmode+1] - optionsizes[optionmode] + (optionmode?0:2)) <= plScrWidth))
+		{
+			width2 += optionsizes[optionmode+1] - optionsizes[optionmode];
+			fields2 += optionmode?0:1;
+			optionmode++;
+			changed = 1;
+		}
+	} while (changed);
+
+	width1 -= headspace * 2;
+	if (fields1 >= 2)
+	{
+		interspace  = (plScrWidth - width1 - headspace - endspace) / (fields1 - 1);
+		interspace2 = (plScrWidth - width1 - headspace - endspace) % (fields1 - 1);
+	} else {
+		endspace = plScrWidth - width1 - headspace;
+	}
+
+	x = 0;
+	first = 1;
+	displayvoid (2, x, headspace); x += headspace;
+	if (posmode)
+	{
+		char b[10];
+		snprintf (b, 4, "%3d", (int)(pos * 100 / size));
+		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		switch (posmode)
+		{
+			case 1:
+			case 3: displaystr (2, x, 0x09, "pos:",      4); displaystr (2, x + 4, 0x0f, b, 3); displaychr (2, x +  7, 0x07, '%', 1); x +=  8; break;
+			case 2:
+			case 4: displaystr (2, x, 0x09, "position:", 9); displaystr (2, x + 9, 0x0f, b, 3); displaychr (2, x + 12, 0x07, '%', 1); x += 13; break;
+		}
+		if (posmode > 2)
+		{
+			if (!sizesuffix)
+			{
+				snprintf (b, 10, " %8" PRIu64, pos);
+				displaystr (2, x, 0x0f, b, 9); x += 9;
+				displaychr (2, x, 0x07, '/', 1); x += 1;
+				snprintf (b, 9, "%8" PRIu64, size);
+				displaystr (2, x, 0x0f, b, 8); x += 8;
+			} else {
+				snprintf (b, 10, " %8" PRIu64, pos>>10);
+				displaystr (2, x, 0x0f, b, 9); x += 9;
+				displaychr (2, x, 0x07, '/', 1); x += 1;
+				snprintf (b, 9, "%8" PRIu64, size>>10);
+				displaystr (2, x, 0x0f, b, 8); x += 8;
+				displaystr (2, x, 0x07, " KB", 3); x += 3;
+			}
+		}
+	}
+
+	if (bitratemode)
+	{
+		char b[6];
+		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		if (bitratemode==1) { displaystr (2, x, 0x09, "rate:", 5); x+= 5; } else { displaystr (2, x, 0x09, "bitrate:", 8); x+= 8; }
+		snprintf (b, 6, "%5d", (int)kbs);
+		displaystr (2, x, 0x0f, b, 5); x+=5;
+		displaystr (2, x, 0x07, "kbs", 3); x+=3;
+	}
+
+	if (titlemode)
+	{
+		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		displaystr (2, x, 0x09, "title: ", 7); x+=7;
+		switch (titlemode)
+		{
+			case 1: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 16); x+=16; break;
+			case 2: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 24); x+=24; break;
+			case 3: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 32); x+=32; break;
+			case 4: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 40); x+=40; break;
+			case 5: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 48); x+=48; break;
+			case 6: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 56); x+=56; break;
+			case 7: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 64); x+=64; break;
+		}
+	}
+
+	if (commentmode)
+	{
+		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		displaystr (2, x, 0x09, "comment: ", 9); x+=9;
+		switch (commentmode)
+		{
+			case 1: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 16); x+=16; break;
+			case 2: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 24); x+=24; break;
+			case 3: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 32); x+=32; break;
+			case 4: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 40); x+=40; break;
+			case 5: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 48); x+=48; break;
+			case 6: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 56); x+=56; break;
+			case 7: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 64); x+=64; break;
+		}
+	}
+
+	if (albummode)
+	{
+		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		displaystr (2, x, 0x09, "album: ", 7); x+=7;
+		switch (albummode)
+		{
+			case 1: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 16); x+=16; break;
+			case 2: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 24); x+=24; break;
+			case 3: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 32); x+=32; break;
+			case 4: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 40); x+=40; break;
+			case 5: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 48); x+=48; break;
+			case 6: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 56); x+=56; break;
+			case 7: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 64); x+=64; break;
+		}
+	}
+
+	if (datemode)
+	{
+		char temp[11];
+		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		displaystr (2, x, 0x09, "date: ", 6); x+=6;
+
+		if (mdbdata->date&0xFF)
+		{
+			snprintf (temp, sizeof (temp), "%02d.", mdbdata->date & 0xff);
+		} else {
+			snprintf (temp, sizeof (temp), "   ");
+		}
+		if (mdbdata->date&0xFFFF)
+		{
+			snprintf (temp + 3, sizeof (temp) - 3, "%02d.", (mdbdata->date >> 8)&0xff);
+		} else {
+			snprintf (temp + 3, sizeof (temp) - 3, "   ");
+		}
+		if (mdbdata->date>>16)
+		{
+			snprintf (temp + 6, sizeof (temp) - 6, "%4d", (mdbdata->date >> 16));
+			if (!((mdbdata->date>>16)/100))
+			{
+				temp[6] = '\'';
+			}
+		}
+		displaystr (2, x, 0x0f, temp, 10); x+=10;
+	}
+
+	if (lengthmode)
+	{
+		char temp[7];
+		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+
+		displaystr (2, x, 0x09, "length:", 7); x+=7;
+
+		snprintf(temp, 7, "%3d.%02d", mdbdata->playtime / 60, mdbdata->playtime % 60);
+		displaystr (2, x, 0x0f, temp, 6); x+=6;
+	}
+
+	displayvoid (2, x, endspace);
+
+	width2 -= headspace * 2;
+	if (fields2 >= 2)
+	{
+		interspace  = (plScrWidth - width2 - headspace - endspace) / (fields2 - 1);
+		interspace2 = (plScrWidth - width2 - headspace - endspace) % (fields2 - 1);
+	} else {
+		endspace = plScrWidth - width2 - headspace;
+	}
+
+	x = 0;
+	first = 1;
+	displayvoid (3, x, headspace); x += headspace;
+
+	if (filenamemode)
+	{
+		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		switch (filenamemode)
+		{
+			case 1:
+			case 3: displaystr (3, x, 0x09, "file: ", 6); x+=6; break;
+			case 2:
+			case 4: displaystr (3, x, 0x09, "filename: ", 10); x+=10; break;
+		}
+		switch (filenamemode)
+		{
+			case 1:
+			case 2: displaystr_utf8 (3, x, 0x0f, filename8_3, 12); x+=12; break;
+			case 3:
+			case 4: displaystr_utf8 (3, x, 0x0f, filename16_3, 20); x+=20; break;
+		}
+	}
+
+	if (composermode)
+	{
+		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		displaystr (3, x, 0x09, "composer: ", 10); x+=10;
+		switch (composermode)
+		{
+			case 1: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 16); x+=16; break;
+			case 2: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 24); x+=24; break;
+			case 3: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 32); x+=32; break;
+			case 4: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 40); x+=40; break;
+			case 5: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 48); x+=48; break;
+			case 6: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 56); x+=56; break;
+			case 7: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 64); x+=64; break;
+		}
+	}
+
+	if (artistmode)
+	{
+		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		displaystr (3, x, 0x09, "artist: ", 8); x+=8;
+		switch (artistmode)
+		{
+			case 1: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 16); x+=16; break;
+			case 2: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 24); x+=24; break;
+			case 3: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 32); x+=32; break;
+			case 4: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 40); x+=40; break;
+			case 5: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 48); x+=48; break;
+			case 6: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 56); x+=56; break;
+			case 7: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 64); x+=64; break;
+		}
+	}
+
+	if (stylemode)
+	{
+		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		displaystr (3, x, 0x09, "style: ", 7); x+=7;
+		switch (stylemode)
+		{
+			case 1: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 16); x+=16; break;
+			case 2: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 24); x+=24; break;
+			case 3: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 32); x+=32; break;
+			case 4: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 40); x+=40; break;
+			case 5: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 48); x+=48; break;
+			case 6: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 56); x+=56; break;
+			case 7: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 64); x+=64; break;
+		}
+	}
+
+	if (optionmode)
+	{
+		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		switch (optionmode)
+		{
+			case 1:
+			case 3: displaystr (3, x, 0x09, "opt: ", 5); x+=5; break;
+			case 2:
+			case 4: displaystr (3, x, 0x09, "option: ", 8); x+=8; break;
+		}
+		switch (optionmode)
+		{
+			case 1:
+			case 2: displaystr_utf8 (3, x, 0x0f, opt25, 25); x+=25; break;
+			case 3:
+			case 4: displaystr_utf8 (3, x, 0x0f, opt50, 50); x+=50; break;
+		}
+	}
+
+	if (pausetimemode)
+	{
+		char temp[7];
+
+		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		switch (pausetimemode)
+		{
+			case 1: displaystr (3, x, inpause?0x0c:0x00, "paused ", 7); x+=7; break;
+			case 2: displaystr (3, x, inpause?0x0c:0x00, "playback paused ", 16); x+=16; break;
+		}
+		displaystr (3, x, 0x09, "time:", 5); x+=5;
+
+		snprintf(temp, 7, "%3d.%02d", (int)(seconds / 60), (int)(seconds % 60));
+		displaystr (3, x, 0x0f, temp, 6); x+=6;
+	}
+
+	displayvoid (3, x, endspace);
+}
+
+
+void cpiDrawGStrings (void)
 {
 	make_title (curplayer ? curplayer->playername : "", plEscTick);
 
 	if (plDrawGStrings)
-		plDrawGStrings(plTitleBuf+1);
+		plDrawGStrings();
 	else {
-		writestring(plTitleBuf[1], 0, 0x07, "", 80);
-		writestring(plTitleBuf[2], 0, 0x07, "", 80);
-		writestring(plTitleBuf[3], 0, 0x07, "", 80);
+		displayvoid (1, 0, plScrWidth);
+		displayvoid (2, 0, plScrWidth);
+		displayvoid (3, 0, plScrWidth);
 	}
 
 #ifdef PLR_DEBUG
@@ -532,7 +1073,7 @@ void cpiDrawGStrings()
 			temp=plrDebug();
 		else
 			temp="";
-		writestring(plTitleBuf[1], 132, 0x07, temp, 100);
+		displaystr (1, 132, 0x07, temp, strlen (temp));
 	}
 #endif
 
@@ -541,28 +1082,19 @@ void cpiDrawGStrings()
 		int chann;
 		int chan0;
 		int i;
-		int offset;
 		int limit=plScrWidth-(80-32);
-		char lstr[CONSOLE_MAX_X+1];
+		int offset;
+		char temp[16];
 
+		displaystr (4, 0, 0x08, " \xc4 \xc4\xc4 \xc4\xc4\xc4 \xc4\xc4\xc4\xc4\xc4\xc4\xc4  x  ", 22);
+		displaychr (4, 22, 0x08, '\xc4', plScrWidth - 22 - 10);
+		displaystr (4, plScrWidth - 10, 0x08, " \xc4\xc4\xc4 \xc4\xc4 \xc4 ", 10);
 
-		strcpy(lstr, " \xc4 \xc4\xc4 \xc4\xc4\xc4 \xc4\xc4\xc4\xc4\xc4\xc4\xc4  x  ");
-		while (strlen(lstr)+10<plScrWidth)
-			strcat(lstr, "\xc4");
-		strcat(lstr, " \xc4\xc4\xc4 \xc4\xc4 \xc4 ");
+		snprintf (temp, sizeof (temp), " %d", plScrWidth);
+		displaystr (4, 19 - strlen (temp), 0x08, temp, strlen (temp));
 
-		writestring(plTitleBuf[4], 0, 0x08, lstr, plScrWidth);
-
-		if (plScrWidth>=1000)
-				writenum(plTitleBuf[4], 15, 0x08, plScrWidth, 10, 4, 0);
-			else if (plScrWidth>=100)
-				writenum(plTitleBuf[4], 16, 0x08, plScrWidth, 10, 3, 0);
-			else
-				writenum(plTitleBuf[4], 17, 0x08, plScrWidth, 10, 2, 0);
-		if (plScrHeight>=100)
-			writenum(plTitleBuf[4], 20, 0x08, plScrHeight, 10, 3, 0);
-		else
-			writenum(plTitleBuf[4], 20, 0x08, plScrHeight, 10, 2, 0);
+		snprintf (temp, sizeof (temp), "%d ", plScrHeight);
+		displaystr (4, 20, 0x08, temp, strlen (temp));
 
 		if (limit<2)
 			limit=2;
@@ -580,44 +1112,42 @@ void cpiDrawGStrings()
 
 		for (i=0; i<chann; i++)
 		{
-			unsigned short x;
-			x='0'+(i+chan0+1)%10;
+			unsigned char chr;
+			unsigned char col = 0;
+
 			if (plMuteCh[i+chan0]&&((i+chan0)!=plSelCh))
-				x='\xc4'|0x0800;
-			else
+			{
+				chr = 0xc4;
+				col = 0x08;
+			} else {
+				chr = '0'+(i+chan0+1)%10;
 				if (plMuteCh[i+chan0])
-					x|=0x8000;
-				else
+				{
+					col |= 0x80;
+				} else {
 					if ((i+chan0)!=plSelCh)
-						x|=0x0800;
-					else
-						x|=0x0700;
-			plTitleBuf[4][offset+i+((i+chan0)>=plSelCh)]=x;
+					{
+						col |= 0x08;
+					} else {
+						col |= 0x07;
+					}
+				}
+			}
+			displaychr (4, offset + i + ((i + chan0) >= plSelCh), col, chr, 1);
 			if ((i+chan0)==plSelCh)
-				plTitleBuf[4][offset+i]=(x&~0xFF)|('0'+(i+chan0+1)/10);
+			{
+				displaychr (4, offset + i, col, '0' + (i + chan0 + 1)/10, 1);
+			}
 		}
 		if (chann)
 		{
-			plTitleBuf[4][offset-1]=chan0?0x081B:0x0804;
-			plTitleBuf[4][offset+1+chann]=((chan0+chann)!=plNLChan)?0x081A:0x0804;
+			displaychr (4, offset - 1, 0x08, chan0 ? 0x1b : 0x04, 1);
+			displaychr (4, offset + 1 + chann, 0x08, ((chan0+chann)!=plNLChan) ? 0x1a : 0x04, 1);
 		}
-
-#if 0
-		displaystrattr(1, 0, plTitleBuf[1], plScrWidth);
-#endif
-		displaystrattr(2, 0, plTitleBuf[2], plScrWidth);
-		displaystrattr(3, 0, plTitleBuf[3], plScrWidth);
-		displaystrattr(4, 0, plTitleBuf[4], plScrWidth);
 	} else {
-#if 0
-		gupdatestr(1, 0, plTitleBuf[1], plScrWidth, plTitleBufOld[1]);
-#endif
-		gupdatestr(2, 0, plTitleBuf[2], plScrWidth, plTitleBufOld[2]);
-		gupdatestr(3, 0, plTitleBuf[3], plScrWidth, plTitleBufOld[3]);
-
 		if (plChanChanged)
 		{
-			int chann=plNLChan;
+			int chann;
 			int chan0;
 			int i;
 			int limit=plScrWidth-(80-32);
@@ -626,6 +1156,7 @@ void cpiDrawGStrings()
 			if (limit<2)
 				limit=2;
 
+			chann=plNLChan;
 			if (chann>limit)
 				chann=limit;
 			chan0=plSelCh-(chann/2);
@@ -645,8 +1176,6 @@ void cpiDrawGStrings()
 		}
 	}
 }
-
-
 
 void cpiResetScreen(void)
 {

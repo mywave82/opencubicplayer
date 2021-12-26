@@ -51,7 +51,7 @@
 static int inpause;
 static int looped;
 
-static unsigned long voll,volr;
+static uint32_t voll,volr;
 static int vol;
 static int bal;
 static int pan;
@@ -74,6 +74,9 @@ static int active=0;
 static unsigned char data[MPEG_BUFSZ];
 static int data_length;
 static int eof;
+static int opt25_50;
+static char opt25[26];
+static char opt50[51];
 
 /* stats about the file-buffer */
 static struct ocpfilehandle_t *file;
@@ -561,9 +564,21 @@ static int stream_for_frame(void)
 
 			continue;
 		}
+		if (!opt25_50)
+		{
+			opt25_50=1;
+			snprintf (opt25, sizeof (opt25), "MPEG 2 layer %s, %s",
+				(frame.header.layer==MAD_LAYER_I)?"I":(frame.header.layer==MAD_LAYER_I)?"II":"III",
+				(frame.header.mode==MAD_MODE_SINGLE_CHANNEL)?"mono":"stereo");
+
+			snprintf (opt50, sizeof (opt50), "MPEG 2 layer %s, %s%s",
+				(frame.header.layer==MAD_LAYER_I)?"I":(frame.header.layer==MAD_LAYER_I)?"II":"III",
+				(frame.header.mode==MAD_MODE_SINGLE_CHANNEL)?"mono":(frame.header.mode==MAD_MODE_DUAL_CHANNEL)?"Dual Channel":(frame.header.mode==MAD_MODE_JOINT_STEREO)?"Joint Stereo":"Stereo",
+				(frame.header.emphasis==MAD_EMPHASIS_NONE)?"":(frame.header.emphasis==MAD_EMPHASIS_50_15_US)?", 50/15us emphasis":(frame.header.emphasis==MAD_EMPHASIS_CCITT_J_17)?", CCITT J.17 emph":", unknown emphasis");
+		}
 		mad_synth_frame(&synth, &frame);
 		data_in_synth=synth.pcm.length;
-		mpeg_Bitrate=frame.header.bitrate/1000;
+		mpeg_Bitrate=frame.header.bitrate;
 		mpegstereo=synth.pcm.channels==2;
 		return 1;
 	}
@@ -1083,9 +1098,11 @@ void __attribute__ ((visibility ("internal"))) mpegGetInfo(struct mpeginfo *info
 {
 	info->pos=datapos;
 	info->len=fl;
-	info->rate=mpegrate;
+	info->rate=mpeg_Bitrate;
 	info->stereo=mpegstereo;
 	info->bit16=1;
+	info->opt25=opt25;
+	info->opt50=opt50;
 }
 uint32_t __attribute__ ((visibility ("internal"))) mpegGetPos(void)
 {
@@ -1351,9 +1368,13 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct oc
 	_GET=mcpGet;
 	mcpSet=SET;
 	mcpGet=GET;
+
 	mcpNormalize (mcpNormalizeDefaultPlayP);
 
-	active=1;
+	active = 1;
+	opt25_50 = 0;
+	opt25[0] = 0;
+	opt50[0] = 0;
 	return 0;
 
 error_out:

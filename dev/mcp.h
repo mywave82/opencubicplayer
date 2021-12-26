@@ -108,6 +108,8 @@ enum mcpNormalizeType
 	mcpNormalizeDefaultPlayP = 0,
 };
 
+extern struct settings mcpset;
+
 extern void mcpNormalize (enum mcpNormalizeType Type);
 
 #endif

@@ -12,6 +12,8 @@ struct ogginfo
 	uint8_t stereo;
 	uint8_t bit16;
 	int bitrate;
+	const char *opt25;
+	const char *opt50;
 };
 
 struct ogg_comment_t

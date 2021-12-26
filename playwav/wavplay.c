@@ -49,43 +49,47 @@
 # define PRINT(a, ...) do {} while(0)
 #endif
 
+/* options */
+static int inpause;
+static int looped;
+
+static uint32_t voll,volr;
+static int vol;
+static int bal;
+static int pan;
+static int srnd;
+
+static volatile int active;
+
+static char opt25[26];
+static char opt50[51];
+
 static uint8_t stereo;
 static uint8_t bit16;
 static uint8_t signedout;
 static uint32_t samprate;
 static uint8_t reversestereo;
 
+static struct ocpfilehandle_t *wavefile;
+static uint32_t waverate;
+static uint32_t wavepos;
+static uint32_t wavelen;
+static int waveneedseek;
+static int wavestereo;
+static int wave16bit;
+
 static int16_t  *buf16=0;
 static uint32_t bufpos;
 static uint32_t buflen;
 static void *plrbuf;
 
-static int vol, bal;
-static uint32_t voll,volr;
-static int pan;
-static int srnd;
-
-static struct ocpfilehandle_t *wavefile;
-#define rawwave wavefile
-
-static int wavestereo;
-static int wave16bit;
-static uint32_t waverate;
-static uint32_t wavepos;
-static uint32_t wavelen;
-static int waveneedseek;
+static int donotloop;
 
 static uint32_t waveoffs;
 static  int16_t *wavebuf=0;
 static struct ringbuffer_t *wavebufpos = 0;
 static uint32_t wavebuffpos;
 static uint32_t wavebufrate;
-
-static volatile int active;
-static int looped;
-static int donotloop;
-
-static int inpause;
 
 static volatile int clipbusy=0;
 
@@ -747,13 +751,15 @@ uint32_t __attribute__ ((visibility ("internal"))) wpGetPos(void)
 	return (wavepos + wavelen - ringbuffer_get_tail_available_samples (wavebufpos))%wavelen;
 }
 
-void __attribute__ ((visibility ("internal"))) wpGetInfo(struct waveinfo *i)
+void __attribute__ ((visibility ("internal"))) wpGetInfo(struct waveinfo *info)
 {
-	i->pos=wpGetPos();
-	i->len=wavelen;
-	i->rate=waverate;
-	i->stereo=wavestereo;
-	i->bit16=wave16bit;
+	info->pos=wpGetPos();
+	info->len=wavelen;
+	info->rate=waverate;
+	info->stereo=wavestereo;
+	info->bit16=wave16bit;
+	info->opt25=opt25;
+	info->opt50=opt50;
 }
 
 void __attribute__ ((visibility ("internal"))) wpSetPos(uint32_t pos)
@@ -931,6 +937,9 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 	waveoffs = wavefile->getpos (wavefile);
 	PRINT("waveoffs: %d\n", waveoffs);
 
+	snprintf (opt25, sizeof (opt25), "PCM %dbit, %s", wave16bit?16:8, wavestereo?"stereo":"mono");
+	snprintf (opt50, sizeof (opt50), "RIFF WAVE PCM %dbit integer, %s, %dHz", wave16bit?16:8, wavestereo?"stereo":"mono", waverate);
+
 	if (!wavelen)
 	{
 		fprintf(stderr, __FILE__ ": no data\n");
@@ -986,6 +995,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 	_GET=mcpGet;
 	mcpSet=SET;
 	mcpGet=GET;
+
 	mcpNormalize (mcpNormalizeDefaultPlayP);
 
 	return 1;

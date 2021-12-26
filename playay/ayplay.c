@@ -1306,6 +1306,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 	_GET=mcpGet;
 	mcpSet=SET;
 	mcpGet=GET;
+
 	mcpNormalize (mcpNormalizeDefaultPlayP);
 
 	return 1;

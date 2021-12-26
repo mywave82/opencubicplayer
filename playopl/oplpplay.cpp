@@ -186,17 +186,19 @@ static void drawlongvolbar(uint16_t *buf, int, unsigned char st)
 }
 
 
-static void oplDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
+static void oplDrawGStrings ()
 {
 	long tim;
 
-	mcpDrawGStrings(buf);
+	mcpDrawGStrings ();
 
 	if (plPause)
 		tim=(pausetime-starttime)/DOS_CLK_TCK;
 	else
 		tim=(dos_clock()-starttime)/DOS_CLK_TCK;
 
+#warning TODO GStrings
+#if 0
 	if (plScrWidth<128)
 	{
 		writestring(buf[1],  0, 0x09, " song .. of .. title: .......................... cpu:...% ",58);
@@ -243,7 +245,7 @@ static void oplDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2], 125, 0x0F, ":", 1);
 		writenum(buf[2], 126, 0x0F, tim%60, 10, 2, 0);
 	}
-
+#endif
 }
 
 static void drawchannel(uint16_t *buf, int len, int i) /* TODO */

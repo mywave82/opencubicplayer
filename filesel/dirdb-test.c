@@ -13,6 +13,13 @@
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
+int (*_measurestr_utf8)(const char *src, int srclen) = 0;
+uint32_t utf8_decode (const char *_src, size_t srclen, int *inc)
+{
+	*inc=1;
+	return 1;
+}
+
 static void clear_dirdb()
 {
 	int i;

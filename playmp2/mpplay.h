@@ -9,6 +9,8 @@ struct mpeginfo
 	uint32_t rate;
 	int	 stereo;
 	int      bit16;
+	const char *opt25;
+	const char *opt50;
 };
 
 struct ID3_t;

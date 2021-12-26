@@ -48,8 +48,6 @@
 #include "stuff/poutput.h"
 #include "stuff/utf-8.h"
 
-static void utf8_XdotY_name (const int X, const int Y, char *shortname, const char *source);
-
 void modlist_free (struct modlist *modlist)
 {
 	unsigned int i;
@@ -460,97 +458,4 @@ void modlist_append_modlist (struct modlist *target, struct modlist *source)
 	unsigned int i;
 	for (i=0;i<source->num;i++)
 		modlist_append(target, modlist_get(source, i));
-}
-
-static size_t strlen_width (const char *source)
-{
-	return measurestr_utf8 (source, strlen (source));
-}
-
-static void strlcat_width (char *dst, char *src, int length)
-{
-	while (*dst)
-	{
-		dst++;
-	}
-	while (length && *src)
-	{
-		int inc = 0;
-		int visuallen;
-		utf8_decode (src, strlen (src), &inc);
-		visuallen = measurestr_utf8 (src, inc);
-		if (visuallen > length)
-		{
-			break;
-		}
-		length -= visuallen;
-		memcpy (dst, src, inc);
-		dst += inc;
-		src += inc;
-	}
-	*dst = 0;
-}
-
-static void strlcpy_width (char *dst, char *src, int length)
-{
-	while (length && *src)
-	{
-		int inc = 0;
-		int visuallen;
-		utf8_decode (src, strlen (src), &inc);
-		visuallen = measurestr_utf8 (src, inc);
-		if (visuallen > length)
-		{
-			break;
-		}
-		length -= visuallen;
-		memcpy (dst, src, inc);
-		dst += inc;
-		src += inc;
-	}
-	*dst = 0;
-}
-
-static void utf8_XdotY_name (const int X, const int Y, char *shortname, const char *source)
-{
-	char *temppath;
-	char *lastdot;
-	int length=strlen(source);
-
-	temppath = strdup (source);
-
-	if ((lastdot = rindex(temppath + 1, '.'))) /* we allow files to start with . */
-	{
-		*lastdot = 0; /* modify the source - most easy way around the problem */
-
-		strlcpy_width (shortname, temppath, X);
-		length = strlen_width (shortname);
-		if (length < X)
-		{
-			char *target = shortname + strlen (shortname);
-			memset (target, ' ', X - length);
-			target [X - length] = 0;
-		}
-
-		strcat (shortname, ".");
-
-		strlcat_width (shortname, lastdot + 1, Y);
-		length = strlen_width (lastdot + 1);
-		if (length < Y)
-		{
-			char *target = shortname + strlen (shortname);
-			memset (target, ' ', Y - length);
-			target [Y - length] = 0;
-		}
-	} else {
-		strlcpy_width(shortname, temppath, X + Y + 1);
-		length = strlen_width (temppath);
-		if (length < (X + Y + 1))
-		{
-			char *target = shortname + strlen (shortname);
-			memset (target, ' ', (X + Y + 1) - length);
-			target [(X + Y + 1) - length] = 0;
-		}
-	}
-	free (temppath);
 }

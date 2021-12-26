@@ -46,24 +46,16 @@
 #include "stuff/sets.h"
 #include "wave.h"
 
-#define _MAX_FNAME 8
-#define _MAX_EXT 4
-
-extern char plPause;
-
 static unsigned long wavelen;
 static unsigned long waverate;
-
 static time_t starttime;
 static time_t pausetime;
-static char currentmodname[_MAX_FNAME+1];
-static char currentmodext[_MAX_EXT+1];
-static char *modname;
-static char *composer;
-
 static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
+static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
+static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
+static struct moduleinfostruct mdbdata;
 
 static void startpausefade(void)
 {
@@ -119,125 +111,28 @@ static void dopausefade(void)
 	mcpSetFadePars(i);
 }
 
-static void wavDrawGStrings(unsigned short (*buf)[CONSOLE_MAX_X])
+static void wavDrawGStrings (void)
 {
 	struct waveinfo inf;
-	long tim;
-	int l;
-	int p;
 
-	mcpDrawGStrings(buf);
+	mcpDrawGStrings ();
 
-	wpGetInfo(&inf);
-	tim=inf.len/inf.rate;
+	wpGetInfo (&inf);
 
-	if (plScrWidth<128)
-	{
-#if 0
-		memset(buf[0]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-		memset(buf[1]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-		memset(buf[2]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-
-		writestring(buf[0], 0, 0x09, " vol: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 15);
-		writestring(buf[0], 15, 0x09, " srnd: \xfa  pan: l\xfa\xfa\xfam\xfa\xfa\xfar  bal: l\xfa\xfa\xfam\xfa\xfa\xfar ", 41);
-		writestring(buf[0], 56, 0x09, " spd: ---% \x1D ptch: ---% ", 24);
-		writestring(buf[0], 6, 0x0F, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", (vol+4)>>3);
-		writestring(buf[0], 22, 0x0F, srnd?"x":"o", 1);
-		if (((pan+70)>>4)==4)
-			writestring(buf[0], 34, 0x0F, "m", 1);
-		else {
-			writestring(buf[0], 30+((pan+70)>>4), 0x0F, "r", 1);
-			writestring(buf[0], 38-((pan+70)>>4), 0x0F, "l", 1);
-		}
-		writestring(buf[0], 46+((bal+70)>>4), 0x0F, "I", 1);
-		_writenum(buf[0], 62, 0x0F, speed*100/256, 10, 3);
-		_writenum(buf[0], 75, 0x0F, speed*100/256, 10, 3);
-#endif
-
-		writestring(buf[1], 57, 0x09, "                       ", 23);
-		l=(inf.len>>(10-inf.stereo-inf.bit16));
-		p=(inf.pos>>(10-inf.stereo-inf.bit16));
-		writestring(buf[1], 0, 0x09, "  pos: ...% / ......k  size: ......k  len: ..:..", 57);
-		_writenum(buf[1], 7, 0x0F, p*100/l, 10, 3);
-		writenum(buf[1], 43, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[1], 45, 0x0F, ":", 1);
-		writenum(buf[1], 46, 0x0F, tim%60, 10, 2, 0);
-		writenum(buf[1], 29, 0x0F, l, 10, 6, 1);
-		writenum(buf[1], 14, 0x0F, p, 10, 6, 1);
-
-		if (plPause)
-			tim=(pausetime-starttime);
-		else
-			 tim=(time(NULL)-starttime);
-
-		writestring(buf[2],  0, 0x09, "   wave \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................               time: ..:.. ", 80);
-		writestring(buf[2],  8, 0x0F, currentmodname, _MAX_FNAME);
-		writestring(buf[2], 16, 0x0F, currentmodext, _MAX_EXT);
-		writestring(buf[2], 22, 0x0F, modname, 31);
-		if (plPause)
-			writestring(buf[2], 58, 0x0C, "paused", 6);
-		writenum(buf[2], 74, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[2], 76, 0x0F, ":", 1);
-		writenum(buf[2], 77, 0x0F, tim%60, 10, 2, 0);
-	} else {
-#if 0
-		memset(buf[0]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
-#endif
-		memset(buf[1]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
-		memset(buf[2]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
-
-#if 0
-		writestring(buf[0], 0, 0x09, "    volume: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa  ", 30);
-		writestring(buf[0], 30, 0x09, " surround: \xfa   panning: l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar   balance: l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar  ", 72);
-		writestring(buf[0], 102, 0x09,  " speed: ---% \x1D pitch: ---%    ", 30);
-		writestring(buf[0], 12, 0x0F, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", (vol+2)>>2);
-		writestring(buf[0], 41, 0x0F, srnd?"x":"o", 1);
-		if (((pan+68)>>3)==8)
-			writestring(buf[0], 62, 0x0F, "m", 1);
-		else {
-			writestring(buf[0], 54+((pan+68)>>3), 0x0F, "r", 1);
-			writestring(buf[0], 70-((pan+68)>>3), 0x0F, "l", 1);
-		}
-		writestring(buf[0], 83+((bal+68)>>3), 0x0F, "I", 1);
-		_writenum(buf[0], 110, 0x0F, speed*100/256, 10, 3);
-		_writenum(buf[0], 124, 0x0F, speed*100/256, 10, 3);
-#endif
-
-		l=(inf.len>>(10-inf.stereo-inf.bit16));
-		p=(inf.pos>>(10-inf.stereo-inf.bit16));
-		writestring(buf[1], 0, 0x09, "    position: ...% / ......k  size: ......k  length: ..:..  opt: .....Hz, .. bit, ......", 92);
-		_writenum(buf[1], 14, 0x0F, p*100/l, 10, 3);
-		writenum(buf[1], 53, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[1], 55, 0x0F, ":", 1);
-		writenum(buf[1], 56, 0x0F, tim%60, 10, 2, 0);
-		writenum(buf[1], 36, 0x0F, l, 10, 6, 1);
-		writenum(buf[1], 21, 0x0F, p, 10, 6, 1);
-		writenum(buf[1], 65, 0x0F, inf.rate, 10, 5, 1);
-		writenum(buf[1], 74, 0x0F, 8<<inf.bit16, 10, 2, 1);
-		writestring(buf[1], 82, 0x0F, inf.stereo?"stereo":"mono", 6);
-		writestring(buf[1], 92, 0x09, "                                        ", 40);
-
-		if (plPause)
-			tim=(pausetime-starttime);
-		else
-			tim=(time(NULL)-starttime);
-
-		writestring(buf[2],  0, 0x09, "      wave \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................  composer: ...............................                  time: ..:..    ", 132);
-		writestring(buf[2], 11, 0x0F, currentmodname, _MAX_FNAME);
-		writestring(buf[2], 19, 0x0F, currentmodext, _MAX_EXT);
-		writestring(buf[2], 25, 0x0F, modname, 31);
-		writestring(buf[2], 68, 0x0F, composer, 31);
-		if (plPause)
-			writestring(buf[2], 100, 0x0C, "playback paused", 15);
-		writenum(buf[2], 123, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[2], 125, 0x0F, ":", 1);
-		writenum(buf[2], 126, 0x0F, tim%60, 10, 2, 0);
-	}
-}
-
-static void wavCloseFile()
-{
-	wpClosePlayer();
+	mcpDrawGStringsFixedLengthStream
+	(
+		utf8_8_dot_3,
+		utf8_16_dot_3,
+		inf.pos,
+		inf.len,
+		1, /* KB */
+		inf.opt25,
+		inf.opt50,
+		(inf.rate << (3 + (!!inf.stereo) + (!!inf.bit16))) / 1000,
+		plPause,
+		plPause?((pausetime-starttime)/DOS_CLK_TCK):((dos_clock()-starttime)/DOS_CLK_TCK),
+		&mdbdata
+	);
 }
 
 static int wavProcessKey(unsigned short key)
@@ -264,9 +159,9 @@ static int wavProcessKey(unsigned short key)
 		case KEY_CTRL_P:
 			pausefadedirect=0;
 			if (plPause)
-				starttime=starttime+time(NULL)-pausetime;
+				starttime=starttime+dos_clock()-pausetime;
 			else
-				pausetime=time(NULL);
+				pausetime=dos_clock();
 			plPause=!plPause;
 			wpPause(plPause);
 			break;
@@ -321,6 +216,10 @@ static int wavLooped(void)
 	return !fsLoopMods&&wpLooped();
 }
 
+static void wavCloseFile()
+{
+	wpClosePlayer();
+}
 
 static int wavOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *wavf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
@@ -330,15 +229,11 @@ static int wavOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *wa
 	if (!wavf)
 		return -1;
 
-#warning TODO replace currentmodname and currentmodext
-	//strncpy(currentmodname, info->name, _MAX_FNAME);
-	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
-
-	modname=info->title;
-	composer=info->composer;
-
+	mdbdata = *info;
 	dirdbGetName_internalstr (wavf->dirdb_ref, &filename);
 	fprintf(stderr, "preloading %s...\n", filename);
+	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
+	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	plIsEnd=wavLooped;
 	plProcessKey=wavProcessKey;
@@ -354,7 +249,7 @@ static int wavOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *wa
 		return -1;
 	}
 
-	starttime=time(NULL);
+	starttime=dos_clock();
 	plPause=0;
 	pausefadedirect=0;
 

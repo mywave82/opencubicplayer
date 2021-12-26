@@ -115,7 +115,7 @@ static void dopausefade (void)
 	mcpSetFadePars(i);
 }
 
-static void hvlDrawGStrings (uint16_t (*buf)[CONSOLE_MAX_X])
+static void hvlDrawGStrings (void)
 {
 	int     row,     rows;
 	int   order,   orders;
@@ -125,7 +125,7 @@ static void hvlDrawGStrings (uint16_t (*buf)[CONSOLE_MAX_X])
 
 	int32_t tim;
 
-	mcpDrawGStrings(buf);
+	mcpDrawGStrings ();
 
 	hvlGetStats (&row, &rows, &order, &orders, &subsong, &subsongs, &tempo, &speedmult);
 
@@ -134,36 +134,10 @@ static void hvlDrawGStrings (uint16_t (*buf)[CONSOLE_MAX_X])
 	else
 		tim=(dos_clock()-starttime)/DOS_CLK_TCK;
 
+#warning TODO GStrings
+#if 0
 	if (plScrWidth<128)
 	{
-#if 0
-		memset(buf[0]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-#endif
-		memset(buf[1]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-		memset(buf[2]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-
-		/* basically cloning mcpDrawGStrings */
-#if 0
-		writestring(buf[0], 0, 0x09, " vol: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 15);
-		writestring(buf[0], 15, 0x09, " srnd: \xfa  pan: l\xfa\xfa\xfam\xfa\xfa\xfar  bal: l\xfa\xfa\xfam\xfa\xfa\xfar ", 41);
-		writestring(buf[0], 56, 0x09, " spd: ---%   ptch: ---% ", 24);
-		if (splock)
-		{
-			writestring (buf[0], 67, 0x09, "\x1D", 1);
-		}
-		writestring(buf[0], 6, 0x0F, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", (vol+4)>>3);
-		writestring(buf[0], 22, 0x0F, srnd?"x":"o", 1);
-		if (((pan+70)>>4)==4)
-			writestring(buf[0], 34, 0x0F, "m", 1);
-		else {
-			writestring(buf[0], 30+((pan+70)>>4), 0x0F, "r", 1);
-			writestring(buf[0], 38-((pan+70)>>4), 0x0F, "l", 1);
-		}
-		writestring(buf[0], 46+((bal+70)>>4), 0x0F, "I", 1);
-		_writenum(buf[0], 62, 0x0F, speed*100/256, 10, 3);
-		_writenum(buf[0], 75, 0x0F, pitch*100/256, 10, 3);
-#endif
-
 		writestring(buf[1],  0, 0x09, " row: ../..  ord: ..../....  speed: ..  bpm: ...  subsong: ../..                ", 80);
                 writenum(buf[1],  6, 0x0F, row, 16, 2, 0);
 		writenum(buf[1],  9, 0x0F, rows-1, 16, 2, 0);
@@ -186,34 +160,6 @@ static void hvlDrawGStrings (uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2], 76, 0x0F, ":", 1);
 		writenum(buf[2], 77, 0x0F, tim%60, 10, 2, 0);
 	} else {
-#if 0
-		memset(buf[0]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
-#endif
-		memset(buf[1]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
-		memset(buf[2]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
-
-#if 0
-		/* basically cloning mcpDrawGStrings */
-		writestring(buf[0], 0, 0x09, "    volume: \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa  ", 30);
-		writestring(buf[0], 30, 0x09, " surround: \xfa   panning: l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar   balance: l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar  ", 72);
-		writestring(buf[0], 102, 0x09,  " speed: ---%   pitch: ---%    ", 30);
-		if (splock)
-		{
-			writestring (buf[0], 115, 0x09, "\x1D", 1);
-		}
-		writestring(buf[0], 12, 0x0F, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", (vol+2)>>2);
-		writestring(buf[0], 41, 0x0F, srnd?"x":"o", 1);
-		if (((pan+68)>>3)==8)
-			writestring(buf[0], 62, 0x0F, "m", 1);
-		else {
-			writestring(buf[0], 54+((pan+68)>>3), 0x0F, "r", 1);
-			writestring(buf[0], 70-((pan+68)>>3), 0x0F, "l", 1);
-		}
-		writestring(buf[0], 83+((bal+68)>>3), 0x0F, "I", 1);
-		_writenum(buf[0], 110, 0x0F, speed*100/256, 10, 3);
-		_writenum(buf[0], 124, 0x0F, pitch*100/256, 10, 3);
-#endif
-
 		writestring(buf[1],  0, 0x09, "     row: ../..  ord: ..../....  speed: ..  tempo: ...  subsong: ../..                                                          ", 128);
                 writenum(buf[1], 10, 0x0F, row, 16, 2, 0);
 		writenum(buf[1], 13, 0x0F, rows-1, 16, 2, 0);
@@ -236,6 +182,7 @@ static void hvlDrawGStrings (uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2], 123, 0x0F, ":", 1);
 		writenum(buf[2], 124, 0x0F, tim%60, 10, 2, 0);
 	}
+#endif
 }
 
 static int hvlProcessKey(uint16_t key)

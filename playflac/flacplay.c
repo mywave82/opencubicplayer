@@ -46,9 +46,9 @@ static volatile int clipbusy=0;
 /* options */
 static int inpause;
 
+static uint32_t voll,volr;
 static int vol;
 static int bal;
-static unsigned long voll,volr;
 static int pan;
 static int srnd;
 
@@ -61,6 +61,10 @@ static FLAC__StreamDecoder *decoder = 0;
 static int eof_flacfile = 0;
 static int eof_buffer = 0;
 static uint64_t samples;
+
+static int samples_for_bitrate;
+static int samplerate_for_bitrate;
+static int bitrate;
 
 /* flacIdler dumping locations */
 static uint16_t *flacbuf;    /* in 16bit samples */
@@ -312,6 +316,9 @@ static FLAC__StreamDecoderWriteStatus write_callback (
 	}
 
 	ringbuffer_head_add_samples (flacbufpos, frame->header.blocksize);
+
+	samples_for_bitrate += frame->header.blocksize;
+	samplerate_for_bitrate = frame->header.sample_rate;
 
 	return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
@@ -599,6 +606,9 @@ static void flacIdler(void)
 {
 	while (ringbuffer_get_head_available_samples (flacbufpos) >= flac_max_blocksize)
 	{
+		uint64_t prePOS;
+		uint64_t postPOS;
+
 		/* Seek, causes a decoding to happen */
 		if (flacPendingSeek)
 		{
@@ -621,6 +631,8 @@ static void flacIdler(void)
 			/* fprintf(stderr, "eof reached\n"); */
 			break;
 		}
+		samples_for_bitrate = 0;
+		prePOS = flacfile->getpos (flacfile);
 #if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
 		if ((FLAC__seekable_stream_decoder_get_state(decoder)==FLAC__SEEKABLE_STREAM_DECODER_END_OF_STREAM)||(!FLAC__seekable_stream_decoder_process_single(decoder)))
 #else
@@ -636,6 +648,8 @@ static void flacIdler(void)
 				flacPendingSeekPos = 0;
 			}
 		}
+		postPOS = flacfile->getpos (flacfile);
+		bitrate = (postPOS - prePOS) * 8 * samplerate_for_bitrate / samples_for_bitrate;
 	}
 }
 
@@ -1128,9 +1142,6 @@ static void flacSetSpeed(uint16_t sp)
 	if (sp<32)
 		sp=32;
 	flacbufrate=imuldiv(256*sp, flacrate, plrRate);
-	/*
-	fprintf(stderr, "flacbufrate=0x%08x\n", flacbufrate);
-	*/
 }
 
 static void flacSetVolume(void)
@@ -1185,6 +1196,9 @@ void __attribute__ ((visibility ("internal"))) flacGetInfo(struct flacinfo *info
 	info->timelen=samples/flacrate;
 	info->stereo=flacstereo;
 	info->bits=flacbits;
+	snprintf (info->opt25, sizeof (info->opt25), "%s - %s", FLAC__VERSION_STRING, FLAC__VENDOR_STRING);
+	snprintf (info->opt50, sizeof (info->opt50), "%s - %s", FLAC__VERSION_STRING, FLAC__VENDOR_STRING);
+	info->bitrate=bitrate;
 }
 uint64_t __attribute__ ((visibility ("internal"))) flacGetPos(void)
 {

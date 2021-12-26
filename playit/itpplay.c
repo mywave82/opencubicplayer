@@ -210,13 +210,13 @@ static void itpIdle(void)
 		dopausefade();
 }
 
-static void itpDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
+static void itpDrawGStrings (void)
 {
 	int pos=getrealpos(&itplayer)>>8;
 	int gvol, bpm, tmp, gs;
 	long tim;
 
-	mcpDrawGStrings(buf);
+	mcpDrawGStrings ();
 
 	getglobinfo(&itplayer, &tmp, &bpm, &gvol, &gs);
 
@@ -225,14 +225,10 @@ static void itpDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 	else
 		tim=(dos_clock()-starttime)/DOS_CLK_TCK;
 
+#warning TODO GStrings
+#if 0
 	if (plScrWidth<128)
 	{
-#if 0
-		memset(buf[0]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-#endif
-		memset(buf[1]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-		memset(buf[2]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-
 		writestring(buf[1],  0, 0x09, " row: ../..  ord: .../...  speed: ..  bpm: ...  gvol: ..\xfa ", 58);
 		writenum(buf[1],  6, 0x0F, pos&0xFF, 16, 2, 0);
 		writenum(buf[1],  9, 0x0F, mod.patlens[mod.orders[pos>>8]]-1, 16, 2, 0);
@@ -255,12 +251,6 @@ static void itpDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 	} else {
 		int i;
 		int nch=0;
-#if 0
-		memset(buf[0]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
-#endif
-		memset(buf[1]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
-		memset(buf[2]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
-
 		writestring(buf[1],  0, 0x09, "    row: ../..  order: .../...   speed: ..  tempo: ...   gvol: ..\xfa  chan: ../..", 81);
 		writenum(buf[1],  9, 0x0F, pos&0xFF, 16, 2, 0);
 		writenum(buf[1], 12, 0x0F, mod.patlens[mod.orders[pos>>8]]-1, 16, 2, 0);
@@ -287,6 +277,7 @@ static void itpDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2], 125, 0x0F, ":", 1);
 		writenum(buf[2], 126, 0x0F, tim%60, 10, 2, 0);
 	}
+#endif
 }
 
 static void itpCloseFile(void)

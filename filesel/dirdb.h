@@ -89,4 +89,6 @@ extern void dirdbTagRemoveUntaggedAndSubmit(void);
 /* iterate the internal database of all known songs - medialib: */
 extern int dirdbGetMdb(uint32_t *dirdbnode, uint32_t *mdbnode, int *first);
 
+void utf8_XdotY_name (const int X, const int Y, char *shortname, const char *source);
+
 #endif

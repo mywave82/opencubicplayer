@@ -95,8 +95,11 @@ charsets.o: charsets.c \
 dirdb.o: dirdb.c \
 	../config.h \
 	../types.h \
+	../boot/console.h \
 	../boot/psetting.h \
-	../stuff/compat.c \
+	../stuff/compat.h \
+	../stuff/poutput.h \
+	../stuff/utf-8.h \
 	dirdb.h \
 	mdb.h
 	$(CC) $< -o $@ -c

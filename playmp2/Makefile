@@ -70,6 +70,7 @@ mppplay.o: mppplay.c \
 	../boot/plinkman.h \
 	../boot/psetting.h \
 	../cpiface/cpiface.h \
+	../dev/mcp.h \
 	../dev/player.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \

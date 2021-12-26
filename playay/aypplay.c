@@ -126,45 +126,24 @@ static int ayLooped(void)
 	return !fsLoopMods&&ayIsLooped();
 }
 
-static void ayDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
+static void ayDrawGStrings (void)
 {
 	long tim;
 	struct ayinfo globinfo;
 
-	mcpDrawGStrings(buf);
+	mcpDrawGStrings ();
 
-	ayGetInfo(&globinfo);
+	ayGetInfo (&globinfo);
 
 	if (plPause)
 		tim=(pausetime-starttime)/DOS_CLK_TCK;
 	else
 		tim=(dos_clock()-starttime)/DOS_CLK_TCK;
 
+#warning TODO GStrings
+#if 0
 	if (plScrWidth<128)
 	{
-#if 0
-		memset(buf[0]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-#endif
-		memset(buf[1]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-		memset(buf[2]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-
-#if 0
-		writestring(buf[0], 0, 0x09, " vol: \372\372\372\372\372\372\372\372 ", 15);
-		writestring(buf[0], 15, 0x09, " srnd: \372  pan: l\372\372\372m\372\372\372r  bal: l\372\372\372m\372\372\372r ", 41);
-		writestring(buf[0], 56, 0x09, " spd: ---% \x1D ptch: ---% ", 24);
-		writestring(buf[0], 6, 0x0F, "\376\376\376\376\376\376\376\376", (vol+4)>>3);
-		writestring(buf[0], 22, 0x0F, srnd?"x":"o", 1);
-		if (((pan+70)>>4)==4)
-			writestring(buf[0], 34, 0x0F, "m", 1);
-		else {
-			writestring(buf[0], 30+((pan+70)>>4), 0x0F, "r", 1);
-			writestring(buf[0], 38-((pan+70)>>4), 0x0F, "l", 1);
-		}
-		writestring(buf[0], 46+((bal+70)>>4), 0x0F, "I", 1);
-		_writenum(buf[0], 62, 0x0F, speed*100/256, 10, 3);
-		_writenum(buf[0], 75, 0x0F, speed*100/256, 10, 3);
-#endif
-
 		writestring(buf[1],  0, 0x09," song .. of ..                                 cpu: ...%                        ",80);
 		writenum(buf[1],  6, 0x0F, globinfo.track, 16, 2, 0);
 		writenum(buf[1], 12, 0x0F, globinfo.numtracks, 16, 2, 0);
@@ -179,31 +158,7 @@ static void ayDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writenum(buf[2], 73, 0x0F, (tim/60)%60, 10, 2, 1);
 		writestring(buf[2], 75, 0x0F, ":", 1);
 		writenum(buf[2], 76, 0x0F, tim%60, 10, 2, 0);
-
 	} else {
-#if 0
-		memset(buf[0]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
-#endif
-		memset(buf[1]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
-		memset(buf[2]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
-
-#if 0
-		writestring(buf[0], 0, 0x09, "    volume: \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372  ", 30);
-		writestring(buf[0], 30, 0x09, " surround: \372   panning: l\372\372\372\372\372\372\372m\372\372\372\372\372\372\372r   balance: l\372\372\372\372\372\372\372m\372\372\372\372\372\372\372r  ", 72);
-		writestring(buf[0], 102, 0x09,  " speed: ---% \x1D pitch: ---%    ", 30);
-		writestring(buf[0], 12, 0x0F, "\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376", (vol+2)>>2);
-		writestring(buf[0], 41, 0x0F, srnd?"x":"o", 1);
-		if (((pan+68)>>3)==8)
-			writestring(buf[0], 62, 0x0F, "m", 1);
-		else {
-			writestring(buf[0], 54+((pan+68)>>3), 0x0F, "r", 1);
-			writestring(buf[0], 70-((pan+68)>>3), 0x0F, "l", 1);
-		}
-		writestring(buf[0], 83+((bal+68)>>3), 0x0F, "I", 1);
-		_writenum(buf[0], 110, 0x0F, speed*100/256, 10, 3);
-		_writenum(buf[0], 124, 0x0F, speed*100/256, 10, 3);
-#endif
-
 		writestring(buf[1],  0, 0x09,"    song .. of ..                                   cpu: ...%",132);
 		writenum(buf[1],  9, 0x0F, globinfo.track, 16, 2, 0);
 		writenum(buf[1], 15, 0x0F, globinfo.numtracks, 16, 2, 0);
@@ -225,7 +180,7 @@ static void ayDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2], 125, 0x0F, ":", 1);
 		writenum(buf[2], 126, 0x0F, tim%60, 10, 2, 0);
 	}
-
+#endif
 }
 
 static int ayProcessKey(uint16_t key)

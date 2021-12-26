@@ -129,46 +129,21 @@ static void dopausefade (void)
 	mcpSetFadePars(i);
 }
 
-static void sidDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
+static void sidDrawGStrings (void)
 {
 	long tim;
 
-	mcpDrawGStrings(buf);
+	mcpDrawGStrings ();
 
 	if (plPause)
 		tim=(pausetime-starttime)/DOS_CLK_TCK;
 	else
 		tim=(dos_clock()-starttime)/DOS_CLK_TCK;
 
+#warning TODO GStrings
+#if 0
 	if (plScrWidth<128)
 	{
-#if 0
-		memset(buf[0]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-#endif
-		memset(buf[1]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-		memset(buf[2]+80, 0, (plScrWidth-80)*sizeof(uint16_t));
-
-#if 0
-		writestring(buf[0], 0, 0x09, " vol: \372\372\372\372\372\372\372\372 ", 15);
-		writestring(buf[0], 15, 0x09, " srnd: \372  pan: l\372\372\372m\372\372\372r  bal: l\372\372\372m\372\372\372r ", 41);
-		writestring(buf[0], 6, 0x0F, "\376\376\376\376\376\376\376\376", (vol+4)>>3);
-		writestring(buf[0], 22, 0x0F, srnd?"x":"o", 1);
-		if (((pan+70)>>4)==4)
-			writestring(buf[0], 34, 0x0F, "m", 1);
-		else {
-			writestring(buf[0], 30+((pan+70)>>4), 0x0F, "r", 1);
-			writestring(buf[0], 38-((pan+70)>>4), 0x0F, "l", 1);
-		}
-		writestring(buf[0], 46+((bal+70)>>4), 0x0F, "I", 1);
-
-		writestring(buf[0], 57, 0x09, "filter: ... pitch: ...%", 23);
-		_writenum(buf[0], 76, 0x0F, pitch*100/256, 10, 3);
-#if 0
-		writestring(buf[0], 75, 0x0F, sidGetFilter()?"on":"off", 3);
-#endif
-#endif
-#warning TODO FILTER!!!
-
 		writestring(buf[1],  0, 0x09," song .. of ..    SID:            speed: ....    cpu: ...%",80);
 		writenum(buf[1],  6, 0x0F, sidGetSong(), 16, 2, 0);
 		writenum(buf[1], 12, 0x0F, sidGetSongs(), 16, 2, 0);
@@ -190,31 +165,6 @@ static void sidDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writenum(buf[2], 76, 0x0F, tim%60, 10, 2, 0);
 
 	} else {
-#if 0
-		memset(buf[0]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
-#endif
-		memset(buf[1]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
-		memset(buf[2]+128, 0, (plScrWidth-128)*sizeof(uint16_t));
-
-#if 0
-		writestring(buf[0], 0, 0x09, "    volume: \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372  ", 30);
-		writestring(buf[0], 30, 0x09, " surround: \372   panning: l\372\372\372\372\372\372\372m\372\372\372\372\372\372\372r   balance: l\372\372\372\372\372\372\372m\372\372\372\372\372\372\372r  ", 72);
-		writestring(buf[0], 12, 0x0F, "\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376", (vol+2)>>2);
-		writestring(buf[0], 41, 0x0F, srnd?"x":"o", 1);
-		if (((pan+68)>>3)==8)
-			writestring(buf[0], 62, 0x0F, "m", 1);
-		else {
-			writestring(buf[0], 54+((pan+68)>>3), 0x0F, "r", 1);
-			writestring(buf[0], 70-((pan+68)>>3), 0x0F, "l", 1);
-		}
-		writestring(buf[0], 83+((bal+68)>>3), 0x0F, "I", 1);
-
-		writestring(buf[0], 103, 0x09, "filter: ...  pitch: ...% ", 25);
-		_writenum(buf[0], 123, 0x0F, pitch*100/256, 10, 3);
-#if 0
-		writestring(buf[0], 125, 0x0F, sidGetFilter()?"on":"off", 3);
-#endif
-#endif
 		writestring(buf[1],  0, 0x09,"    song .. of ..                    speed: ....    cpu: ...%",132);
 		writenum(buf[1],  9, 0x0F, sidGetSong(), 16, 2, 0);
 		writenum(buf[1], 15, 0x0F, sidGetSongs(), 16, 2, 0);
@@ -235,6 +185,7 @@ static void sidDrawGStrings(uint16_t (*buf)[CONSOLE_MAX_X])
 		writestring(buf[2], 125, 0x0F, ":", 1);
 		writenum(buf[2], 126, 0x0F, tim%60, 10, 2, 0);
 	}
+#endif
 }
 
 
