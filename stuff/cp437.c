@@ -140,7 +140,7 @@ void  __attribute__((constructor)) cp437_charset_init(void)
 	to_cp437_from_utf8 = iconv_open(OCP_FONT "//TRANSLIT", "UTF-8");
 	if (to_cp437_from_utf8==(iconv_t)(-1))
 	{
-		fprintf(stderr, "iconv_open(%s, \"UTF-8\") failed: %s - retrying %s\n", OCP_FONT "//TRANSLIT", strerror(errno), OCP_FONT);
+		fprintf(stderr, "iconv_open(%s, \"UTF-8\") failed: %s - retrying \"%s\"\n", OCP_FONT "//TRANSLIT", strerror(errno), OCP_FONT);
 
 		to_cp437_from_utf8 = iconv_open(OCP_FONT, "UTF-8");
 		if (to_cp437_from_utf8==(iconv_t)(-1))
@@ -149,12 +149,12 @@ void  __attribute__((constructor)) cp437_charset_init(void)
 		}
 	}
 
-	from_cp437_to_utf8 = iconv_open(OCP_FONT "//TRANSLIT", "UTF-8");
+	from_cp437_to_utf8 = iconv_open("UTF-8//TRANSLIT", OCP_FONT);
 	if (from_cp437_to_utf8==(iconv_t)(-1))
 	{
-		fprintf(stderr, "iconv_open(\"UTF-8\", %s) failed: %s - retrying %s\n", OCP_FONT "//TRANSLIT", strerror(errno), OCP_FONT);
+		fprintf(stderr, "iconv_open(\"UTF-8//TRANSLIT\", %s) failed: %s - retrying \"UTF-8\"\n", OCP_FONT, strerror(errno));
 
-		from_cp437_to_utf8 = iconv_open(OCP_FONT, "UTF-8");
+		from_cp437_to_utf8 = iconv_open("UTF-8", OCP_FONT);
 		if (from_cp437_to_utf8==(iconv_t)(-1))
 		{
 			fprintf(stderr, "iconv_open(\"UTF-8\", %s) failed: %s\n", OCP_FONT, strerror(errno));
