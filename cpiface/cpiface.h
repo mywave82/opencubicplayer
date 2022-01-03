@@ -195,7 +195,7 @@ void mcpDrawGStringsFixedLengthStream (const char              *filename8_3,
                                        const char               sizesuffix, /* 0 = "" (MIDI), 1 = KB */
                                        const char              *opt25,
                                        const char              *opt50,
-                                       uint_fast16_t            kbs,  /* kilo-bit-per-second */
+                                       int_fast16_t             kbs,  /* kilo-bit-per-second */
                                        uint_fast8_t             inpause,
                                        uint_fast16_t            seconds,
                                        struct moduleinfostruct *mdbdata);

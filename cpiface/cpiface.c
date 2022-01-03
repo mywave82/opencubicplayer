@@ -607,7 +607,7 @@ void mcpDrawGStringsFixedLengthStream (const char              *filename8_3,
                                        const char               sizesuffix, /* 0 = "" (MIDI), 1 = KB */
                                        const char              *opt25,
                                        const char              *opt50,
-                                       uint_fast16_t            kbs,  /* kilo-bit-per-second */
+                                       int_fast16_t             kbs,  /* kilo-bit-per-second */
                                        uint_fast8_t             inpause,
                                        uint_fast16_t            seconds,
                                        struct moduleinfostruct *mdbdata
@@ -728,7 +728,7 @@ void mcpDrawGStringsFixedLengthStream (const char              *filename8_3,
 			changed = 1;
 		}
 
-		if ((bitratemode < 2) && ((width1 + fields1 - 1 + bitratesizes[bitratemode+1] - bitratesizes[bitratemode] + (bitratemode?0:2)) <= plScrWidth))
+		if ((bitratemode < 2) && (kbs >= 0) && ((width1 + fields1 - 1 + bitratesizes[bitratemode+1] - bitratesizes[bitratemode] + (bitratemode?0:2)) <= plScrWidth))
 		{
 			width1 += bitratesizes[bitratemode+1] - bitratesizes[bitratemode];
 			fields1 += bitratemode?0:1;
@@ -782,7 +782,7 @@ void mcpDrawGStringsFixedLengthStream (const char              *filename8_3,
 			changed = 1;
 		}
 
-		if ((optionmode < 4) && ((width2 + fields2 - 1 + optionsizes[optionmode+1] - optionsizes[optionmode] + (optionmode?0:2)) <= plScrWidth))
+		if ((opt25[0]||opt50[0]) && (optionmode < 4) && ((width2 + fields2 - 1 + optionsizes[optionmode+1] - optionsizes[optionmode] + (optionmode?0:2)) <= plScrWidth))
 		{
 			width2 += optionsizes[optionmode+1] - optionsizes[optionmode];
 			fields2 += optionmode?0:1;
