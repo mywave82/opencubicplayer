@@ -37,14 +37,14 @@ const char *(*_plGetDisplayTextModeName)(void);
 void displaychr (const uint16_t y, const uint16_t x, const uint8_t attr, const char chr, const uint16_t len)
 {
 	int i;
-	char buffer[10];
+	char buffer[16];
 	if (!len) return;
-	memset (buffer, chr, 10);
-	for (i=0; i < len; i++)
+	memset (buffer, chr, 16);
+	for (i=0; i * 16 < len; i++)
 	{
-		int l = len - i;
-		if (l > 10) l = 10;
-		_displaystr (y, x + i *10, attr, buffer, l);
+		int l = len - i * 16;
+		if (l > 16) l = 16;
+		_displaystr (y, x + i * 16, attr, buffer, l);
 	}
 }
 
