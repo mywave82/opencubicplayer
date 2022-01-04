@@ -38,7 +38,7 @@ extern struct mdbreadinforegstruct
 	gmdReadInfoReg,
 	hvlReadInfoReg,
 	xmpReadInfoReg,
-	gmiReadInfoReg,
+	timidityReadInfoReg,
 	wavReadInfoReg;
 
 extern struct interfaceparameters AMS_p,
@@ -98,7 +98,7 @@ static void __attribute__((constructor))init(void)
 	mdbRegisterReadInfo(&gmdReadInfoReg);
 	mdbRegisterReadInfo(&hvlReadInfoReg);
 	mdbRegisterReadInfo(&xmpReadInfoReg);
-	mdbRegisterReadInfo(&gmiReadInfoReg);
+	mdbRegisterReadInfo(&timidityReadInfoReg);
 	mdbRegisterReadInfo(&wavReadInfoReg);
 
 	fsRegisterExt ("AMS");
@@ -211,7 +211,7 @@ static void __attribute__((destructor))done(void)
 	mdbUnregisterReadInfo(&gmdReadInfoReg);
 	mdbUnregisterReadInfo(&hvlReadInfoReg);
 	mdbUnregisterReadInfo(&xmpReadInfoReg);
-	mdbUnregisterReadInfo(&gmiReadInfoReg);
+	mdbUnregisterReadInfo(&timidityReadInfoReg);
 	mdbUnregisterReadInfo(&wavReadInfoReg);
 }
 
