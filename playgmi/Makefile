@@ -22,6 +22,20 @@ uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/playtimidity$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpmidi"
 
+cpitimiditysetup.o: \
+	cpitimiditysetup.c \
+	cpitimiditysetup.h \
+	../config.h \
+	../types.h \
+	../cpiface/cpiface.h \
+	../stuff/compat.h \
+	../stuff/poutput.h \
+	timidity-git/timidity/instrum.h \
+	timidity-git/timidity/playmidi.h \
+	timidity-git/timidity/reverb.h \
+	timidity-git/timidity/timidity.h
+	$(CC) cpitimiditysetup.c -o $@ -c
+
 gmitimidity.o: gmitimidity.c gmipat.h gmiplay.h \
 	../config.h \
 	../types.h \
@@ -177,6 +191,7 @@ timidityplay.o: timidityplay.c timidity-git/timidity/playmidi.c\
 
 timiditypplay.o: timiditypplay.c \
 	../config.h \
+	../types.h \
 	../boot/plinkman.h \
 	../cpiface/cpiface.h \
 	../dev/player.h \
@@ -189,6 +204,7 @@ timiditypplay.o: timiditypplay.c \
 	../stuff/poutput.h \
 	../stuff/sets.h \
 	../stuff/timer.h \
+	cpitimiditysetup.h \
 	timidityplay.h
 	$(CC) $< -o $@ -c
 
@@ -210,6 +226,6 @@ timiditypdots.o: \
 	../cpiface/cpiface.h
 	$(CC) $< -o $@ -c
 
-playtimidity_so=timiditypchan.o timidityplay.o timiditypplay.o timiditypdots.o ocp-output.o $(interface_obj) $(libarc_obj) $(timidity_obj) $(utils_obj)
+playtimidity_so=cpitimiditysetup.o timiditypchan.o timidityplay.o timiditypplay.o timiditypdots.o ocp-output.o $(interface_obj) $(libarc_obj) $(timidity_obj) $(utils_obj)
 playtimidity$(LIB_SUFFIX): $(playtimidity_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ -lm

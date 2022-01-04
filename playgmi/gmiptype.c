@@ -87,19 +87,25 @@ static int gmiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		i+=len;
 	}
 	len+=i;
-#warning this needs verification.... something seems wrong here...
-	while (i<len)
+
+	while ((i+4)<len)
 	{
+		int datalen;
+
+		/* Is the next even a META event, if not give up */
 		if (*(uint16_t*)(buf+i)!=uint16_little(0xFF00))
 			break;
+		/* the the META event 0x03 Sequence/Track Name, else skip it */
 		if (buf[i+2]!=0x03)
 		{
 			i+=4+buf[i+3];
 			continue;
 		}
-		len=buf[i+3];
-
-		cp437_f_to_utf8_z (_buf+i+4, len, m->title, sizeof (m->title));
+		datalen=buf[i+3];
+		if (i + datalen + 4 <= len)
+		{
+			cp437_f_to_utf8_z ((char *)buf+i+4, datalen, m->title, sizeof (m->title));
+		}
 		break;
 	}
 	return 1;

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <time.h>
 #include "types.h"
+#include "cpitimiditysetup.h"
 #include "timidityplay.h"
 #include "boot/plinkman.h"
 #include "cpiface/cpiface.h"
@@ -18,18 +19,12 @@
 #include "stuff/sets.h"
 #include "stuff/timer.h"
 
-#define _MAX_FNAME 8
-#define _MAX_EXT 4
-
-#warning timiditySetVol does not work yet, hence a bunch of keys are disabled
-
 /* options */
 static time_t starttime;
 static time_t pausetime;
-static char currentmodname[_MAX_FNAME+1];
-static char currentmodext[_MAX_EXT+1];
-static char *modname;
-static char *composer;
+static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
+static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
+static struct moduleinfostruct mdbdata;
 
 static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
@@ -103,56 +98,25 @@ static int timidityLooped(void)
 static void timidityDrawGStrings (void)
 {
 	struct mglobinfo gi;
-	long tim;
 
 	mcpDrawGStrings ();
 
 	timidityGetGlobInfo(&gi);
 
-	if (plPause)
-		tim=(pausetime-starttime)/DOS_CLK_TCK;
-	else
-		tim=(dos_clock()-starttime)/DOS_CLK_TCK;
-
-#warning TODO GStrings
-#if 0
-	if (plScrWidth<128)
-	{
-		writestring(buf[1], 57, 0x09, "                       ", 23);
-
-		writestring(buf[1],  0, 0x09, " pos: ......../........           ", 57);
-		writenum(buf[1], 6, 0x0F, gi.curtick, 16, 8, 0);
-		writenum(buf[1], 15, 0x0F, gi.ticknum-1, 16, 8, 0);
-
-		writestring(buf[2],  0, 0x09, "   midi \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................               time: ..:.. ", 80);
-		writestring(buf[2],  8, 0x0F, currentmodname, 8);
-		writestring(buf[2], 16, 0x0F, currentmodext, 4);
-#warning modname is not UTF-8....
-		writestring(buf[2], 22, 0x0F, modname, 31);
-		if (plPause)
-			writestring(buf[2], 58, 0x0C, "paused", 6);
-		writenum(buf[2], 74, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[2], 76, 0x0F, ":", 1);
-		writenum(buf[2], 77, 0x0F, tim%60, 10, 2, 0);
-	} else {
-		writestring(buf[1],  0, 0x09, "   position: ......../........             ", 80);
-		writenum(buf[1], 13, 0x0F, gi.curtick, 16, 8, 0);
-		writenum(buf[1], 22, 0x0F, gi.ticknum-1, 16, 8, 0);
-		writestring(buf[1], 92, 0x09, "                                        ", 40);
-
-		writestring(buf[2],  0, 0x09, "    module \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................  composer: ...............................                  time: ..:..    ", 132);
-		writestring(buf[2], 11, 0x0F, currentmodname, 8);
-		writestring(buf[2], 19, 0x0F, currentmodext, 4);
-#warning modname and composer is not UTF-8....
-		writestring(buf[2], 25, 0x0F, modname, 31);
-		writestring(buf[2], 68, 0x0F, composer, 31);
-		if (plPause)
-			writestring(buf[2], 100, 0x0C, "playback paused", 15);
-		writenum(buf[2], 123, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[2], 125, 0x0F, ":", 1);
-		writenum(buf[2], 126, 0x0F, tim%60, 10, 2, 0);
-	}
-#endif
+	mcpDrawGStringsFixedLengthStream
+	(
+		utf8_8_dot_3,
+		utf8_16_dot_3,
+		gi.curtick,
+		gi.ticknum,
+		0, /* events */
+		"",//gi.opt25,
+		"",//gi.opt50,
+		-1,
+		plPause,
+		plPause?((pausetime-starttime)/DOS_CLK_TCK):((dos_clock()-starttime)/DOS_CLK_TCK),
+		&mdbdata
+	);
 }
 
 static int timidityProcessKey(uint16_t key)
@@ -216,15 +180,11 @@ static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_
 	if (!file)
 		return errGen;
 
-#warning replace currentmodname and currentmodext
-	//strncpy(currentmodname, info->name, _MAX_FNAME);
-	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
-
-	modname=info->title;
-	composer=info->composer;
-
+	mdbdata = *info;
 	dirdbGetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s...\n", filename);
+	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
+	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	plIsEnd=timidityLooped;
 	plProcessKey=timidityProcessKey;
@@ -277,6 +237,7 @@ static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_
 	plPause=0;
 	pausefadedirect=0;
 
+	cpiTimiditySetupInit ();
 
 	return errOk;
 }
@@ -284,9 +245,8 @@ static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_
 static void timidityCloseFile(void)
 {
 	timidityClosePlayer();
+	cpiTimiditySetupDone ();
 }
 
 struct cpifaceplayerstruct timidityPlayer = {"[TiMidity++ MIDI plugin]", timidityOpenFile, timidityCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playtimidity", .desc = "OpenCP TiMidity++ Player (c) 2016 TiMidity++ team & Stian Skjelstad", .ver = DLLVERSION, .size = 0};
-
-
+struct linkinfostruct dllextinfo = {.name = "playtimidity", .desc = "OpenCP TiMidity++ Player (c) 2016-'21 TiMidity++ team & Stian Skjelstad", .ver = DLLVERSION, .size = 0};

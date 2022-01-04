@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include <inttypes.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -42,8 +42,6 @@
 # define PRINT(a, ...) do {} while(0)
 #endif
 
-
-
 static int inpause;
 
 static int bal;
@@ -66,15 +64,16 @@ static int bit16; /* boolean */
 static int signedout; /* boolean */
 static int reversestereo; /* boolean */
 static int donotloop=1;
-static int report_no_fill = 0; /* hack, when system wants to purge buffers, due to parametric changes */
 
-/* ayIdler dumping locations */
+/* timidityIdler dumping locations */
 static uint8_t *gmibuf = 0;     /* the buffer */
 static uint32_t gmibuflen;  /* total buffer size */
 /*static uint32_t aylen;*/     /* expected wave length */
 static uint32_t gmibufhead; /* actually this is the write head */
 static uint32_t gmibuftail;  /* read pos */
 static uint32_t gmibuffpos; /* read fine-pos.. when rate has a fraction */
+static uint32_t gmibuffill = 0;
+static int32_t gmibuffree;
 static uint32_t gmibufrate = 0x10000; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
 
 static int (*_GET)(int ch, int opt);
@@ -285,12 +284,7 @@ static void timidity_apply_EventDelayed (CtlEvent *event)
 			}
 			channelstat[event->v1].pedal = event->v2;
 			return;
-
-
-
-
 	}
-#warning TODO, apply event in real-time...
 }
 
 static void timidity_append_EventDelayed_PlrBuf (CtlEventDelayed *self)
@@ -349,7 +343,7 @@ static void timidity_append_EventDelayed_gmibuf (CtlEvent *event)
 	}
 
 	self->event = *event;
-	self->delay_samples = (gmibufhead+gmibuflen-gmibuftail)%gmibuflen;
+	self->delay_samples = gmibuffill;
 
 	if (self->event.type == CTLE_PROGRAM)
 	{
@@ -358,6 +352,7 @@ static void timidity_append_EventDelayed_gmibuf (CtlEvent *event)
 
 	if (EventDelayed_gmibuf_head)
 	{
+		assert (EventDelayed_gmibuf_tail->delay_samples <= self->delay_samples);
 		EventDelayed_gmibuf_tail->next = self;
 		EventDelayed_gmibuf_tail = self;
 	} else {
@@ -394,14 +389,6 @@ static void timidity_play_EventDelayed_gmibuf (uint32_t samples)
 	}
 }
 
-
-
-
-
-
-
-
-#warning Or we can include timitidy.c
 static int read_user_config_file(void)
 {
     char *home;
@@ -443,14 +430,6 @@ static int read_user_config_file(void)
 
     return 0;
 }
-
-
-
-
-
-
-
-
 
 /* Killing Module 2 MIDI support with dummy calls */
 
@@ -605,7 +584,6 @@ static void ocp_ctl_event(CtlEvent *event)
 			break;
 		case CTLE_KEY_OFFSET:
 			PRINT ("[timidity] ctl->event (event=CTLE_KEY_OFFSET, v1=%ld key offset)\n", event->v1);
-			report_no_fill = 1;
 			break;
 		case CTLE_TEMPO:
 			PRINT ("[timidity] ctl->event (event=CTLE_TEMPO, v1=%ld tempo)\n", event->v1);
@@ -752,14 +730,14 @@ static void ocp_playmode_close_output(void)
 
 static int ocp_playmode_output_data(char *buf, int32 bytes)
 {
-	PRINT ("[timidity] playmode->output_data (bytes=%d)\n", bytes);
+	PRINT ("[timidity] playmode->output_data (bytes=%d gmibufhead=%d gmibuftail=%d gmibuflen=%d)\n", bytes, gmibufhead, gmibuftail, gmibuflen);
 
-	/* return: -1=error, otherwise success */
-	/* TODO ... timidity normally makes this a blocking call */
+	gmibuffill += (bytes>>2);
+	gmibuffree -= (bytes>>2);
 
 	if (gmibufhead+(bytes>>2) >= gmibuflen)
 	{
-		assert (gmibufhead > gmibuftail); /* we are not going to overrun the buffer */
+		assert (gmibufhead >= gmibuftail); /* we are not going to overrun the buffer */
 
 		memcpy (gmibuf+(gmibufhead<<2), buf, (gmibuflen-gmibufhead)<<2);
 		buf   += (gmibuflen-gmibufhead)<<2;
@@ -795,7 +773,6 @@ static int ocp_playmode_acntl(int request, void *arg)
 
 		case PM_REQ_FLUSH: /* what-ever... we are the actual master of this */
 			PRINT ("[timidity] playmode->acntl(request=FLUSH)\n");
-			report_no_fill = 0;
 			output_counter = 0;
 			return 0;
 
@@ -815,7 +792,6 @@ static int ocp_playmode_acntl(int request, void *arg)
 
 		case PM_REQ_GETSAMPLES:
 			PRINT ("[timidity] playmode->acntl(request=GETSAMPLES) => 0 (fixed)\n");
-#warning TODO, Timidity ALSA drivers subtracts the audio-delay ( gmibuflen   in our case)
 			*((int *)arg) = output_counter; /* samples */
 			return 0;
 
@@ -829,36 +805,19 @@ static int ocp_playmode_acntl(int request, void *arg)
 
 		case PM_REQ_GETFILLABLE:
 			{
-				ssize_t clean;
-
-				if (gmibuftail != gmibufhead)
-				{
-					clean=(gmibuftail+gmibuflen-gmibufhead)%gmibuflen;
-				} else {
-					clean = gmibuflen-1;
-				}
-
+				ssize_t clean = gmibuffree;
 				/* Timidity always tries to overfill the buffer, since it normally waits for completion... */
-				clean -= gmibuflen * 3 / 4;
 				if (clean < 0)
+				{
 					clean = 0;
-//				if (clean > (gmibuflen >> 2))
-//					clean = gmibuflen >> 2;
-
+				}
 				PRINT ("[timidity] playmode->acntl(request=GETFILLABLE) => %d\n", (int)clean);
-
 				*((int *)arg) = clean; /* samples */;
 				return 0;
 			}
 
 		case PM_REQ_GETFILLED:
-#warning TODO, do we actually need this?
-			if (report_no_fill)
-			{
-				*((int *)arg) = 0; /* samples */
-			} else {
-				*((int *)arg) = gmibuflen; /* samples */
-			}
+			*((int *)arg) = gmibuffill;
 			PRINT ("[timidity] playmode->acntl(request=GETFILLED) => %d\n", *((int *)arg));
 			return 0;
 
@@ -1239,15 +1198,16 @@ static int emulate_play_event (MidiEvent *ev)
 	/* Open Cubic Player always stream, so we skip some checks */
 
 	cet = MIDI_EVENT_TIME(ev);
+
 	if(cet > current_sample)
 	{
 		int32 needed = cet - current_sample;
 		int32 canfit = aq_fillable();
 
-		PRINT ("emulate_play_event, needed=%d canfit=%d (%d) -- ", needed, canfit, gmibuflen >> 2);
+		PRINT ("emulate_play_event, needed=%d canfit=%d clean=%d (%d) -- ", needed, canfit, (int)gmibuffree, gmibuflen);
 
 //		if (canfit <= (gmibuflen >>2)) /* we only use the first quarter of the buffer... the last is reserved for flush at that happens at the end of the track */
-		if (canfit <= 0)
+		if ((canfit <= 0) || (gmibuffree <= (audio_buffer_size*2)))
 		{
 			PRINT ("short exit.. we want more buffer to be free\n");
 			return RC_ASYNC_HACK;
@@ -1284,21 +1244,53 @@ static int emulate_play_midi_iterate(void)
 
 	for(;;)
 	{
-		midi_restart_time = 1;
-		rc = emulate_play_event(current_event);
-		PRINT ("emulate_play_midi_iterate called emulate_play_event => "); dump_rc (rc);
-		if(rc != RC_NONE)
-			break;
-		if (midi_restart_time)  /* don't skip the first event if == 0 */
+		if (gmibuffree > (audio_buffer_size*2))
 		{
-			if (speed != 0x100)
-			{
-				int32_t diff = (current_event[1].time - current_sample);
-				int32_t newdiff = diff * 0x100 / speed;
-				current_sample += (diff - newdiff);
+			int32_t cet = MIDI_EVENT_TIME (current_event);
+
+			midi_restart_time = 1;
+
+			/* detect if the next event is more that buffer-size away */
+			if ((cet > current_sample) && (cet - current_sample) > audio_buffer_size)
+			{ /* inject a dummy event to just push audio samples... */
+				MidiEvent *pushed_event = current_event;
+				MidiEvent dummy;
+				dummy.time = (float)(current_sample + (audio_buffer_size/2))/midi_time_ratio;
+				dummy.type = ME_NONE;
+				dummy.channel = 0;
+				dummy.a = 0;
+				dummy.b = 0;
+				PRINT ("emulate_play_midi_iterate calling FAKED emulate_play_event (estimate samples  %d)\n", MIDI_EVENT_TIME (&dummy) - current_sample);
+				rc = emulate_play_event (&dummy);
+				dump_rc (rc);
+				current_event = pushed_event;
+				if (rc == RC_NONE)
+				{
+					rc = RC_ASYNC_HACK;
+				}
+				break;
+			} else {
+				PRINT ("emulate_play_midi_iterate calling emulate_play_event\n");
+				rc = emulate_play_event(current_event);
+				dump_rc (rc);
+				if(rc != RC_NONE)
+					break;
+				if (midi_restart_time)  /* don't skip the first event if == 0 */
+				{
+					if (speed != 0x100)
+					{
+						int32_t diff = (current_event[1].time - current_sample);
+						int32_t newdiff = diff * 0x100 / speed;
+					current_sample += (diff - newdiff);
+					}
+					current_event++;
+				}
 			}
-			current_event++;
+		} else {
+			rc = RC_ASYNC_HACK;
+			break;
 		}
+
 	}
 
 	return rc;
@@ -1310,9 +1302,12 @@ static int emulate_play_midi_file_iterate(const char *fn, struct emulate_play_mi
 
 	if (s->first)
 	{
-		s->first = 0;
 play_reload: /* Come here to reload MIDI file */
+		PRINT ("RELOAD RELOAD RELOAD RC_TUNE_END perhaps?\n");
+		s->first = 0;
 		rc = play_midi_load_file((char *)fn, &s->event, &s->nsamples);
+
+		dump_rc (rc);
 		if (RC_IS_SKIP_FILE(rc))
 			goto play_end; /* skip playing */
 
@@ -1386,9 +1381,14 @@ static void timidityIdler(void)
 		if (gmi_eof)
 			break;
 
-		rc = emulate_play_midi_file_iterate(current_path, &timidity_main_session);
-		if (rc == RC_ASYNC_HACK)
+		if (gmibuffree > (audio_buffer_size*2))
+		{
+			rc = emulate_play_midi_file_iterate(current_path, &timidity_main_session);
+			if (rc == RC_ASYNC_HACK)
+				break;
+		} else {
 			break;
+		}
 	}
 }
 
@@ -1420,7 +1420,7 @@ static void timiditySetPitch(int16_t sp)
 
 static void timiditySetVolume(void)
 {
-#warning fixme, these are not used yet.....
+#warning fixme, these are not used yet.... PANPROC
 	volr=voll=vol*4;
 	if (bal<0)
 		volr=(volr*(64+bal))>>6;
@@ -1466,15 +1466,18 @@ static int GET(int ch, int opt)
 	return 0;
 }
 
-
 void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct mglobinfo *gi)
 {
 	int pos = plrGetPlayPos () >> (stereo+bit16);
-
-	gi->curtick = current_sample
-- aq_soft_filled()
-- ( (gmibufhead+gmibuflen-gmibuftail)%gmibuflen ) /* gmibuf length */
-- ( (bufpos-pos+buflen)%buflen); /* PlrBuf length */
+	int32_t curtick = current_sample
+			- aq_soft_filled()
+			- ( gmibuffill ) /* gmibuf length */
+			- ( (bufpos-pos+buflen)%buflen); /* PlrBuf length */
+	if (curtick < 0)
+	{
+		curtick = 0;
+	}
+	gi->curtick = curtick;
 	gi->ticknum = timidity_main_session.nsamples;
 }
 
@@ -1487,12 +1490,14 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 /*
 	uint32_t toloop;*/
 
+
 	if (clipbusy++)
 	{
 		clipbusy--;
 		return;
 	}
 
+again:
 	bufplayed=plrGetBufPos()>>(stereo+bit16);
 	bufdelta=(buflen+bufplayed-bufpos)%buflen;
 
@@ -1505,10 +1510,12 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 			plrIdle();
 		return;
 	}
+
 	timidityIdler();
-	/* if (gmibuflen!=aylen)  this has with looping TODO */
+
 	{
-		uint32_t towrap=imuldiv((((gmibuflen+gmibufhead-gmibuftail)%gmibuflen)), 65536, gmibufrate);
+		uint32_t towrap=imuldiv(gmibuffill, 65536, gmibufrate);
+
 		if (towrap == 0)
 		{
 			if (gmi_eof)
@@ -1517,8 +1524,10 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 			}
 
 			clipbusy--;
+
 			return;
 		}
+
 		if (bufdelta>towrap)
 		{
 			/*quietlen=bufdelta-towrap;*/
@@ -1565,6 +1574,8 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 				gmibuftail+=w;
 				if (gmibuftail>=gmibuflen)
 					gmibuftail-=gmibuflen;
+				gmibuffill-=w;
+				gmibuffree+=w;
 			}
 		} else {
 			int32_t aym1, c0, c1, c2, c3, ls, rs, vm1,v1,v2;
@@ -1617,9 +1628,11 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 				gmibuffpos+=gmibufrate;
 				timidity_play_EventDelayed_gmibuf (gmibuffpos>>16);
 				gmibuftail+=(gmibuffpos>>16);
-				gmibuffpos&=0xFFFF;
 				if (gmibuftail>=gmibuflen)
 					gmibuftail-=gmibuflen;
+				gmibuffill-=(gmibuffpos>>16);
+				gmibuffree+=(gmibuffpos>>16);
+				gmibuffpos&=0xFFFF;
 			}
 		}
 
@@ -1892,6 +1905,8 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 		eventDelayed_PlrBuf_lastpos = pos;
 	}
 
+	goto again;
+
 
 	if (plrIdle)
 		plrIdle();
@@ -1986,7 +2001,6 @@ static void doTimidityClosePlayer(int CloseDriver)
 	}
 }
 
-#warning timidity internal API has support for memory-buffers, instead of file-objects
 int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen, struct ocpfilehandle_t *file)
 {
 	if (!plrPlay)
@@ -2020,10 +2034,6 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	ocp_playmode.rate = plrRate;
 
 	emulate_main_start();
-
-	if (emulate_timidity_play_main_start ())
-		return errGen;
-
 	inpause=0;
 	voll=256;
 	volr=256;
@@ -2034,32 +2044,41 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 
 	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, file))
 	{
-		doTimidityClosePlayer (0);
 		return errGen;
 	}
+	PRINT ("(plr)buflen=%d\n", buflen);
 
 	buf16=malloc(sizeof(uint16_t)*buflen*2);
 	if (!buf16)
 	{
-		doTimidityClosePlayer (1);
 		return errAllocMem;
 	}
 	bufpos=0;
-#warning rescale this to match play-rate, since that is the common factor here...
-	gmibuflen=audio_buffer_size<<(2+6);
+
+	gmibuffree=1;
+	while ((gmibuffree < (plrRate/8+1)) && (gmibuffree < (audio_buffer_size*3)))
+	{
+		gmibuffree<<=1;
+	}
+	gmibuflen=gmibuffree + ((plrRate*4/audio_buffer_size)+1)*audio_buffer_size; /* timidity force-flushes multiple seconds at the EOF */
 	gmibuftail=0;
 	gmibufhead=0;
+	gmibuffill=0;
 	gmibuf=malloc(gmibuflen<<2/*stereo+16bit*/);
 
 	if (!gmibuf)
 	{
-		doTimidityClosePlayer (1);
 		return errAllocMem;
 	}
 	gmibuffpos=0;
 
 	gmi_looped=0;
 	gmi_eof=0;
+
+	if (emulate_timidity_play_main_start ())
+	{
+		return errGen;
+	}
 
 	eventDelayed_PlrBuf_lastpos = plrGetPlayPos() >> (stereo+bit16);
 
