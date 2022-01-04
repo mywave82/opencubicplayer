@@ -220,8 +220,8 @@ void generic_gdrawstr(uint16_t y, uint16_t x, uint8_t attr, const char *str, uin
 
 	sp=plVidMem+p;
 
-	f=plpalette[attr >> 4  ]&0x0f;
-	b=plpalette[attr & 0x0f]&0x0f;
+	b=plpalette[attr >> 4  ]&0x0f;
+	f=plpalette[attr & 0x0f]&0x0f;
 	for (i=0; i<16; i++)
 	{
 		const unsigned char *s=(unsigned char *)str;
