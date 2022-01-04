@@ -34,7 +34,7 @@
 #include "stuff/cp437.h"
 #include "stuff/compat.h"
 
-static uint32_t gmiGetModuleType (const uint8_t *buf)
+static uint32_t timidityGetModuleType (const uint8_t *buf)
 {
 	if (*(uint32_t*)buf==uint32_little(0x6468544D)) /* "MThd"  - midi without a RIFF container */
 		return MODULETYPE("MIDI");
@@ -44,7 +44,7 @@ static uint32_t gmiGetModuleType (const uint8_t *buf)
 	return 0;
 }
 
-static int gmiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *_buf, size_t flen)
+static int timidityReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *_buf, size_t flen)
 {
 	const uint8_t *buf = (const uint8_t *)_buf;
 	int type;
@@ -56,7 +56,7 @@ static int gmiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		return 0;
 	}
 
-	if (!(type=gmiGetModuleType(buf)))
+	if (!(type=timidityGetModuleType(buf)))
 	{
 		return 0;
 	}
@@ -130,4 +130,4 @@ struct interfaceparameters MIDI_p =
 };
 
 
-struct mdbreadinforegstruct gmiReadInfoReg = {"MIDI", gmiReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+struct mdbreadinforegstruct timidityReadInfoReg = {"MIDI", timidityReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};

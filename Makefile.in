@@ -19,13 +19,13 @@ include filesel/Makefile-static
 include stuff/Makefile-static
 include dev/Makefile-static
 include help/Makefile-static
-fstypes_so=playgmd/gmdptype.o playgmi/gmiptype.o playit/itpptype.o playogg/oggtype.o $(FSTYPES_SO_MAD) playwav/wavptype.o playxm/xmpptype.o filesel/fstypes.o
+fstypes_so=playgmd/gmdptype.o playtimidity/timidityptype.o playit/itpptype.o playogg/oggtype.o $(FSTYPES_SO_MAD) playwav/wavptype.o playxm/xmpptype.o filesel/fstypes.o
 libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o cpiface/cpikeyhelp.o stuff/compat.o stuff/err.o stuff/framelock.o stuff/timer.o stuff/irq.o boot/console.o $(fstypes_so) $(STATIC_OBJECTS) boot/plinkman_end.o
 
 all: dirs ocp ocp.hlp libocp$(LIB_SUFFIX)
 
 else
-fstypes_so=playgmd/gmdptype.o playgmi/gmiptype.o playhvl/hvlptype.o playit/itpptype.o playogg/oggtype.o $(FSTYPES_SO_MAD) playwav/wavptype.o playxm/xmpptype.o filesel/fstypes.o
+fstypes_so=playgmd/gmdptype.o playtimidity/timidityptype.o playhvl/hvlptype.o playit/itpptype.o playogg/oggtype.o $(FSTYPES_SO_MAD) playwav/wavptype.o playxm/xmpptype.o filesel/fstypes.o
 libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o cpiface/cpikeyhelp.o stuff/compat.o stuff/err.o stuff/framelock.o stuff/timer.o stuff/irq.o boot/console.o boot/plinkman_end.o
 
 all: dirs ocp ocp.hlp fstypes$(LIB_SUFFIX) libocp$(LIB_SUFFIX)
@@ -90,7 +90,7 @@ endif
 	$(MAKE) -C playcda TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C playflac TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C playgmd TOPDIR=../$(TOPDIR) install
-	$(MAKE) -C playgmi TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C playtimidity TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C playhvl TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C playit TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C playogg TOPDIR=../$(TOPDIR) install
@@ -121,7 +121,7 @@ uninstall:
 	$(MAKE) -C playcda TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C playflac TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C playgmd TOPDIR=../$(TOPDIR) uninstall
-	$(MAKE) -C playgmi TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C playtimidity TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C playhvl TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C playit TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C playogg TOPDIR=../$(TOPDIR) uninstall
@@ -154,7 +154,7 @@ dirs:
 	$(MAKE) -C playcda TOPDIR=../$(TOPDIR)
 	$(MAKE) -C playflac TOPDIR=../$(TOPDIR)
 	$(MAKE) -C playgmd TOPDIR=../$(TOPDIR)
-	$(MAKE) -C playgmi TOPDIR=../$(TOPDIR)
+	$(MAKE) -C playtimidity TOPDIR=../$(TOPDIR)
 	$(MAKE) -C playhvl TOPDIR=../$(TOPDIR)
 	$(MAKE) -C playit TOPDIR=../$(TOPDIR)
 	$(MAKE) -C playogg TOPDIR=../$(TOPDIR)
@@ -196,7 +196,7 @@ clean:
 	$(MAKE) -C playcda TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C playflac TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C playgmd TOPDIR=../$(TOPDIR) clean
-	$(MAKE) -C playgmi TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C playtimidity TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C playhvl TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C playit TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C playogg TOPDIR=../$(TOPDIR) clean
@@ -248,8 +248,8 @@ boot/console.o:
 playgmd/gmdptype.o:
 	$(MAKE) -C playgmd TOPDIR=../$(TOPDIR)
 
-playgmi/gmiptype.o:
-	$(MAKE) -C playgmi TOPDIR=../$(TOPDIR)
+playtimidity/timidityptype.o:
+	$(MAKE) -C playtimidity TOPDIR=../$(TOPDIR)
 
 playit/itpptype.o:
 	$(MAKE) -C playit TOPDIR=../$(TOPDIR)

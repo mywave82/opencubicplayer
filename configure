@@ -3020,8 +3020,8 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking GIT submodules are checked out" >&5
 $as_echo_n "checking GIT submodules are checked out... " >&6; }
-if ! test -f playgmi/timidity-git/Makefile.am; then
-  as_fn_error $? "playgmi/timidity-git is missing - please execute 'git submodule update --init --recursive'" "$LINENO" 5
+if ! test -f playtimidity/timidity-git/Makefile.am; then
+  as_fn_error $? "playtimidity/timidity-git is missing - please execute 'git submodule update --init --recursive'" "$LINENO" 5
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }

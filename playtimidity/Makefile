@@ -7,7 +7,7 @@ else
 	DUMPMIDI=
 endif
 
-all: gmiptype.o playtimidity$(LIB_SUFFIX) $(DUMPMIDI)
+all: timidityptype.o playtimidity$(LIB_SUFFIX) $(DUMPMIDI)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX) calcnewt dumpmidi timidity-git/timidity/newton_table.c timidity-git/interface/*.o timidity-git/libarc/*.o timidity-git/timidity/*.o timidity-git/utils/*.o
@@ -36,13 +36,7 @@ cpitimiditysetup.o: \
 	timidity-git/timidity/timidity.h
 	$(CC) cpitimiditysetup.c -o $@ -c
 
-gmitimidity.o: gmitimidity.c gmipat.h gmiplay.h \
-	../config.h \
-	../types.h \
-	../stuff/err.h
-	$(CC) gmitimidity.c -o $@ -c
-
-gmiptype.o: gmiptype.c \
+timidityptype.o: timidityptype.c \
 	../config.h \
 	../types.h \
 	../filesel/filesystem.h \
@@ -50,7 +44,7 @@ gmiptype.o: gmiptype.c \
 	../filesel/pfilesel.h \
 	../stuff/cp437.h \
 	../stuff/compat.h
-	$(CC) gmiptype.c -o $@ -c
+	$(CC) timidityptype.c -o $@ -c
 
 dumpmidi.o: dumpmidi.c \
 	../config.h \

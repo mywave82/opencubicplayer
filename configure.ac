@@ -5,8 +5,8 @@ AC_CANONICAL_HOST
 
 
 AC_MSG_CHECKING([GIT submodules are checked out])
-if ! test -f playgmi/timidity-git/Makefile.am; then
-  AC_MSG_ERROR([playgmi/timidity-git is missing - please execute 'git submodule update --init --recursive'])
+if ! test -f playtimidity/timidity-git/Makefile.am; then
+  AC_MSG_ERROR([playtimidity/timidity-git is missing - please execute 'git submodule update --init --recursive'])
 else
   AC_MSG_RESULT([ok])
 fi

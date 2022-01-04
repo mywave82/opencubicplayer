@@ -144,7 +144,7 @@ SDL/X11:
 
 2016-03-21: Rules.make.in config.h.in */*.c: Default to ncursesw instead of ncurses if available and added support for using UTF-8 on output, where internal OCP font can match unicode symbols
 
-2016-03-21: playgmi/* ocp.ini.in boot/pmain.c: Use Timidity instead of the previous internal engine for loading soundfonts and rendering of MIDI files.
+2016-03-21: playtimidity/* ocp.ini.in boot/pmain.c: Use Timidity instead of the previous internal engine for loading soundfonts and rendering of MIDI files.
 
 2015-09-22: playym/stsoundlib/Ymload.cpp: All files where interprated as of type "Interleaved" do to a minor error.
 
@@ -162,7 +162,7 @@ SDL/X11:
 
 2015-02-25: configure.ac: Verify that adplug is compiled with C++ that has the same ABI as the current C++ compiler. (Distroes with old binaries of adplug had random crashes)
 
-2015-02-24: playgmi/gmitimidity.c: support for absolute path was not in the patch code path, only instrument
+2015-02-24: playtimidity/timiditytimidity.c: support for absolute path was not in the patch code path, only instrument
 
 2015-02-09: configure.ac: Added GCC 5.x to the accepted list of compilers
 
@@ -180,7 +180,7 @@ SDL/X11:
 
 2014-12-26: configure.ac: ultradir was set to non-versions ocp directory
 
-2014-12-26: playgmi/gmitimitidy.c: Charles R. Anderson pointed out that absolute filenames did not work in timitidy instrument patches
+2014-12-26: playtimidity/timiditytimitidy.c: Charles R. Anderson pointed out that absolute filenames did not work in timitidy instrument patches
 
 2014-12-26: texi/Makefile: makeinfo did not run correctly if locales are set. Force LC_ALL=POSIX (Thanks to Francois Revol)
 
@@ -190,7 +190,7 @@ SDL/X11:
 
 2014-12-26: Rules.make.in configure.ac: Set __HAIKU__ on Haiku systems (Thanks to Francois Revol)
 
-2014-12-11: playgmi/gmitimidity.c: add string overflow protection in dir statement
+2014-12-11: playtimidity/timiditytimidity.c: add string overflow protection in dir statement
 
 2014-12-11: filesel/fsptype.c: check length before access memory
 
@@ -204,7 +204,7 @@ SDL/X11:
 
 2011-11-03: dev/mixclip.c: wav and sid files would crash on non-x86 platforms (optimization for assembler mixer in lookup-tables were fixed for 32bit pointers)
 
-2011-11-03: playgmi/gmitimitidy.c: Updated against ubuntu 11.10 configfile structure, closing ticket #3
+2011-11-03: playtimidity/timiditytimitidy.c: Updated against ubuntu 11.10 configfile structure, closing ticket #3
 
 2011-10-21: playgmd/gmdl*.c: Removed a nested function (GCC on OS-X dislikes them)
 
@@ -328,7 +328,7 @@ SDL/X11:
 
 2009-07-30: playit/itload.c: use Impulse Tracker 2.15 sample decompression, only when needed
 
-2009-07-29: playgmi/*: Added buffer overrun protection to the MIDI file parser
+2009-07-29: playtimidity/*: Added buffer overrun protection to the MIDI file parser
 
 2009-07-28: playit/itplay.c: http://eval.sovietrussia.org/wiki/Player_abuse_tests#Portamento_and_pitch_slide
 
@@ -380,7 +380,7 @@ SDL/X11:
 
 2009-06-04: doc/texi/Makefile: Don't fail if install-info isn't available
 
-2009-05-12: playgmi/gmiload.c: Fixed a small possible buffer overflow (readonly while parsing) that could lead to SEGFAULT on broken midi files. Also removed a optimization that were broken (only some gcc setups hit it in a wrong maner)
+2009-05-12: playtimidity/timidityload.c: Fixed a small possible buffer overflow (readonly while parsing) that could lead to SEGFAULT on broken midi files. Also removed a optimization that were broken (only some gcc setups hit it in a wrong maner)
 
 2009-04-24: boot/plinkman* cpiface/cpilink.c: Added backend support for static plugins, however it is not used yet
 
@@ -508,7 +508,7 @@ SDL/X11:
 
 2007-11-11: playcda/*.c: Disk size is now correct (displayed on track to little), and removed a crash when you were done playing cd
 
-2007-10-27: playgmi/gmitimidity.c: Now it should work with configs that has several search-dirs
+2007-10-27: playtimidity/timiditytimidity.c: Now it should work with configs that has several search-dirs
 
 2007-10-27: cpiface/cpiscope.c: Draw the entire background picture if present
 
@@ -808,7 +808,7 @@ SDL/X11:
 
 2005-05-04: VERSION 0.1.7
 
-2005-05-04: playgmi/*: freepats and timidity should somewhat work (note= and other parameters aren't interprated yet)
+2005-05-04: playtimidity/*: freepats and timidity should somewhat work (note= and other parameters aren't interprated yet)
 
 2005-05-04: Make private variables static in help/cphelper.c medialib/medialib.c
 
@@ -866,7 +866,7 @@ SDL/X11:
 
 2005-04-23: Fixed keyboard handling in stuff/poutput-dga.c to support ALT keys.
 
-2005-04-23: Made support for various PAT config layouts for playgmi/* and cleaned up the code, so midi works for unix users
+2005-04-23: Made support for various PAT config layouts for playtimidity/* and cleaned up the code, so midi works for unix users
 
 2005-04-23: Updated all copyrights to 2005
 

@@ -1,5 +1,5 @@
 [submodule "playgmi/timidity-git"]
-	path = playgmi/timidity-git
+	path = playtimidity/timidity-git
 	url = https://github.com/mywave82/timidity.git
 [submodule "playsid/libsidplayfp-git"]
 	path = playsid/libsidplayfp-git
