@@ -106,7 +106,7 @@ static void SidInfoDraw(int focus)
 
 	line -= SidInfoScroll;
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		displaystr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
 	}
@@ -115,34 +115,34 @@ static void SidInfoDraw(int focus)
 	LineBuffer[1] = '\xc3';
 	LineBuffer[SidInfoWidth-2] = '\xb4';
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		displaystr(SidInfoFirstLine + line,  0, 0x07, " \xb3  ", 4);
-		displaystr(SidInfoFirstLine + line,  4, 0x03, "OpenCubicPlayer", 15);
-		displaystr(SidInfoFirstLine + line, 20, 0x07,                 "+", 1);
+		displaystr(SidInfoFirstLine + line,  4, 0x03, "OpenCubicPlayer ", 16);
+		displaystr(SidInfoFirstLine + line, 20, 0x07,                 "+ ", 2);
 		displaystr(SidInfoFirstLine + line, 22, 0x0a,                   "LIB", 3);
 		displaystr(SidInfoFirstLine + line, 25, 0x0c,                      "SID", 3);
-		displaystr(SidInfoFirstLine + line, 28, 0x09,                         "PLAY", 4);
-		displaystr(SidInfoFirstLine + line, 33, 0x07,                              "- Music Player and C64 SID Chip Emulator", 40);
+		displaystr(SidInfoFirstLine + line, 28, 0x09,                         "PLAY ", 5);
+		displaystr(SidInfoFirstLine + line, 33, 0x07,                              "- Music Player and C64 SID Chip Emulator", SidInfoWidth - 33 - 2);
 		displaystr(SidInfoFirstLine + line, SidInfoWidth-2, 0x07, "\xb3", 1);
 	}
 	line++;
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line,  0, 0x07, " \xb3        Libsidplayfp V2.1.0 + OCP patches", 43);
+		displaystr(SidInfoFirstLine + line,  0, 0x07, " \xb3        Libsidplayfp V2.1.0 + OCP patches", SidInfoWidth-2);
 		displaystr(SidInfoFirstLine + line, SidInfoWidth-2, 0x07, "\xb3", 1);
 	}
 	line++;
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		displaystr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
 	}
 
 	for (i=0; i < sidNumberOfInfos(); i++)
 	{
-		if ((line >= 0) && (line < SidInfoHeight))
+		if ((line >= 1) && (line < SidInfoHeight))
 		{
 			displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
 			switch (i)
@@ -162,7 +162,7 @@ static void SidInfoDraw(int focus)
 
 	for (i=0; i < sidNumberOfComments(); i++)
 	{
-		if ((line >= 0) && (line < SidInfoHeight))
+		if ((line >= 1) && (line < SidInfoHeight))
 		{
 			displaystr              (SidInfoFirstLine + line,  0, 0x07, " \xb3 ", 3);
 			displaystr              (SidInfoFirstLine + line,  3, 0x0b, "Comment      : ", 15);
@@ -174,13 +174,13 @@ static void SidInfoDraw(int focus)
 		line++;
 	}
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		displaystr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
 	}
 	line++;
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		displaystr(SidInfoFirstLine + line,  0, 0x07, " \xb3 ", 3);
 		displaystr(SidInfoFirstLine + line,  3, 0x0a, "File format  : ", 15);
@@ -189,7 +189,7 @@ static void SidInfoDraw(int focus)
 	}
 	line++;
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		displaystr(SidInfoFirstLine + line,  0, 0x07, " \xb3 ", 3);
 		displaystr(SidInfoFirstLine + line,  3, 0x0a, "Condition    : ", 15);
@@ -198,7 +198,7 @@ static void SidInfoDraw(int focus)
 	}
 	line++;
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		displaystr(SidInfoFirstLine + line,  0, 0x07, " \xb3 ", 3);
 		displaystr(SidInfoFirstLine + line,  3, 0x0a, "Song Speed   : ", 15);
@@ -207,13 +207,13 @@ static void SidInfoDraw(int focus)
 	}
 	line++;
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		displaystr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
 	}
 	line++;
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
 		displaystr(SidInfoFirstLine + line, 3, 0x05, "Kernal ROM   : ", 15);
@@ -228,7 +228,7 @@ static void SidInfoDraw(int focus)
 	}
 	line++;
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
 		displaystr(SidInfoFirstLine + line, 3, 0x05, "BASIC ROM    : ", 15);
@@ -243,7 +243,7 @@ static void SidInfoDraw(int focus)
 	}
 	line++;
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
 		displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
@@ -258,13 +258,13 @@ static void SidInfoDraw(int focus)
 	}
 	line++;
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		displaystr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
 	}
 	line++;
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
 		displaystr(SidInfoFirstLine + line, 3, 0x03, "CPU speed    : ", 15);
@@ -274,7 +274,7 @@ static void SidInfoDraw(int focus)
 	}
 	line++;
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
 		displaystr(SidInfoFirstLine + line, 3, 0x03, "VIC-II Model : ", 15);
@@ -283,7 +283,7 @@ static void SidInfoDraw(int focus)
 	}
 	line++;
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
 		displaystr(SidInfoFirstLine + line, 3, 0x03, "CIA x2 Model : ", 15);
@@ -294,7 +294,7 @@ static void SidInfoDraw(int focus)
 
 	for (i=0; i<sidNumberOfChips(); i++)
 	{
-		if ((line >= 0) && (line < SidInfoHeight))
+		if ((line >= 1) && (line < SidInfoHeight))
 		{
 			displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
 			snprintf (StringBuffer, sizeof (StringBuffer), "SID[%d] Model : ", i+1);
@@ -306,7 +306,7 @@ static void SidInfoDraw(int focus)
 		line++;
 	}
 
-	if ((line >= 0) && (line < SidInfoHeight))
+	if ((line >= 1) && (line < SidInfoHeight))
 	{
 		LineBuffer[1] = '\xc0';
 		LineBuffer[SidInfoWidth-2] = '\xd9';
