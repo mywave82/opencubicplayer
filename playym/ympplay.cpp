@@ -50,6 +50,9 @@ static time_t starttime, pausetime;
 static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
+static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
+static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
+static struct moduleinfostruct mdbdata;
 
 static void startpausefade(void)
 {
@@ -181,75 +184,29 @@ static void drawlongvolbar(uint16_t *buf, int l, int r, unsigned char st)
 
 static void ymDrawGStrings (void)
 {
-	long tim;
 	ymMusicInfo_t globinfo;
 
 	mcpDrawGStrings ();
 
 	ymMusicGetInfo(pMusic, &globinfo);
 
-	if (plPause)
-		tim=(pausetime-starttime)/DOS_CLK_TCK;
-	else
-		tim=(dos_clock()-starttime)/DOS_CLK_TCK;
-
-#warning TODO GStrings
-#if 0
-	if (plScrWidth<128)
-	{
-		writestring(buf[1],  0, 0x09, " author: .......................... comment: ...................... type: .....",80);
-
-		if (globinfo.pSongAuthor)
-			if (globinfo.pSongAuthor[0])
-				writestring(buf[1], 9, 0x0F, globinfo.pSongAuthor, 26);
-		if (globinfo.pSongComment)
-			if (globinfo.pSongComment[0])
-				writestring(buf[1], 45, 0x0F, globinfo.pSongComment, 22);
-		if (globinfo.pSongType)
-			writestring(buf[1], 74, 0x0F, globinfo.pSongType, 6);
-
-		writestring(buf[2],  0, 0x09, "  title: ....................................... pos: ....../...... time: ..:..", 80);
-		if (globinfo.pSongName)
-			if (globinfo.pSongName[0])
-				writestring(buf[2], 9, 0x0F, globinfo.pSongName, 39);
-		_writenum(buf[2], 54, 0x0F, ymMusicGetPos(pMusic), 10, 6);
-		_writenum(buf[2], 61, 0x0F, globinfo.musicTimeInMs, 10, 6);
-
-		if (plPause)
-			writestring(buf[2], 73, 0x0C, "paused", 6);
-		else {
-			writenum(buf[2], 74, 0x0F, (tim/60)%60, 10, 2, 1);
-			writestring(buf[2], 76, 0x0F, ":", 1);
-			writenum(buf[2], 77, 0x0F, tim%60, 10, 2, 0);
-		}
-	} else {
-		writestring(buf[1],  0, 0x09, " author: ......................................................... comment: ........................................ type: .....",128);
-
-		if (globinfo.pSongAuthor)
-			if (globinfo.pSongAuthor[0])
-				writestring(buf[1], 9, 0x0F, globinfo.pSongAuthor, 57);
-		if (globinfo.pSongComment)
-			if (globinfo.pSongComment[0])
-				writestring(buf[1], 76, 0x0F, globinfo.pSongComment, 40);
-		if (globinfo.pSongType)
-			writestring(buf[1], 123, 0x0F, globinfo.pSongType, 6);
-
-		writestring(buf[2],  0, 0x09, "  title: ........................................................................................ Pos: ....../...... time: ..:..", 128);
-
-		if (globinfo.pSongName)
-			if (globinfo.pSongName[0])
-				writestring(buf[2], 9, 0x0F, globinfo.pSongName, 88);
-		_writenum(buf[2], 103, 0x0F, ymMusicGetPos(pMusic), 10, 6);
-		_writenum(buf[2], 110, 0x0F, globinfo.musicTimeInMs, 10, 6);
-		if (plPause)
-			writestring(buf[2], 122, 0x0C, "paused", 6);
-		else {
-			writenum(buf[2], 123, 0x0F, (tim/60)%60, 10, 2, 1);
-			writestring(buf[2], 125, 0x0F, ":", 1);
-			writenum(buf[2], 126, 0x0F, tim%60, 10, 2, 0);
-		}
-	}
-#endif
+	mcpDrawGStringsFixedLengthStream
+	(
+		utf8_8_dot_3,
+		utf8_16_dot_3,
+		ymMusicGetPos(pMusic),
+		globinfo.musicTimeInMs,
+		0, /* miliseconds... */
+		globinfo.pSongType?globinfo.pSongType:"", /* opt25 */
+		globinfo.pSongType?globinfo.pSongType:"", /* opt50 */
+		-1,
+		plPause,
+		plPause?((pausetime-starttime)/DOS_CLK_TCK):((dos_clock()-starttime)/DOS_CLK_TCK),
+		&mdbdata
+	);
+	/* globinfo.pSongAuthor should be in mdbdata
+	 * globinfo.pSongComment should be in mdbdata
+	 */
 }
 
 static void drawchannel(uint16_t *buf, int len, int i)
@@ -541,8 +498,11 @@ static int ymOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fil
 {
 	const char *filename;
 
+	mdbdata = *info;
 	dirdbGetName_internalstr (file->dirdb_ref, &filename);
-	fprintf(stderr, "loading %s...\n", filename);
+	fprintf(stderr, "preloading %s...\n", filename);
+	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
+	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	plIsEnd=ymLooped;
 	plProcessKey=ymProcessKey;
