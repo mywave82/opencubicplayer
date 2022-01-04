@@ -815,7 +815,7 @@ static void SET(int ch, int opt, int val)
 			//sidSetSpeed(val);
 			break;
 		case mcpMasterPitch:
-			sidSetPitch(val);
+			sidSetPitch(val<<8);
 			break;
 		case mcpMasterSurround:
 			srnd=val;
