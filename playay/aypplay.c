@@ -42,19 +42,14 @@
 #include "stuff/sets.h"
 #include "stuff/timer.h"
 
-#define _MAX_FNAME 8
-#define _MAX_EXT 4
-
 static time_t starttime;
 static time_t pausetime;
-static char currentmodname[_MAX_FNAME+1];
-static char currentmodext[_MAX_EXT+1];
-//static char *modname;
-static char *composer;
-
 static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
+static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
+static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
+static struct moduleinfostruct mdbdata;
 
 static void startpausefade(void)
 {
@@ -128,59 +123,23 @@ static int ayLooped(void)
 
 static void ayDrawGStrings (void)
 {
-	long tim;
 	struct ayinfo globinfo;
 
 	mcpDrawGStrings ();
 
 	ayGetInfo (&globinfo);
 
-	if (plPause)
-		tim=(pausetime-starttime)/DOS_CLK_TCK;
-	else
-		tim=(dos_clock()-starttime)/DOS_CLK_TCK;
-
-#warning TODO GStrings
-#if 0
-	if (plScrWidth<128)
-	{
-		writestring(buf[1],  0, 0x09," song .. of ..                                 cpu: ...%                        ",80);
-		writenum(buf[1],  6, 0x0F, globinfo.track, 16, 2, 0);
-		writenum(buf[1], 12, 0x0F, globinfo.numtracks, 16, 2, 0);
-		_writenum(buf[1], 52, 0x0F, tmGetCpuUsage(), 10, 3);
-
-		writestring(buf[2],  0, 0x09, " file \372\372\372\372\372\372\372\372.\372\372\372: .............................................  time: ..:.. ", 80);
-		writestring(buf[2],  6, 0x0F, currentmodname, _MAX_FNAME);
-		writestring(buf[2], 14, 0x0F, currentmodext, _MAX_EXT);
-		writestring(buf[2], 20, 0x0F, globinfo.trackname, 45);
-		if (plPause)
-			writestring(buf[2], 58, 0x0C, "paused", 6);
-		writenum(buf[2], 73, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[2], 75, 0x0F, ":", 1);
-		writenum(buf[2], 76, 0x0F, tim%60, 10, 2, 0);
-	} else {
-		writestring(buf[1],  0, 0x09,"    song .. of ..                                   cpu: ...%",132);
-		writenum(buf[1],  9, 0x0F, globinfo.track, 16, 2, 0);
-		writenum(buf[1], 15, 0x0F, globinfo.numtracks, 16, 2, 0);
-
-		_writenum(buf[1], 57, 0x0F, tmGetCpuUsage(), 10, 3);
-		writestring(buf[1], 60, 0x0F, "%", 1);
-
-		writestring(buf[1], 61, 0x00, "", 128-61);
-		writestring(buf[1], 92, 0x09, "                                        ", 40);
-
-		writestring(buf[2],  0, 0x09, "    file \372\372\372\372\372\372\372\372.\372\372\372: ........................................  composer: ........................................  time: ..:..   ", 132);
-		writestring(buf[2],  9, 0x0F, currentmodname, _MAX_FNAME);
-		writestring(buf[2], 17, 0x0F, currentmodext, _MAX_EXT);
-		writestring(buf[2], 23, 0x0F, globinfo.trackname, 40);
-		writestring(buf[2], 75, 0x0F, composer, 40);
-		if (plPause)
-			writestring(buf[2], 100, 0x0C, "playback paused", 15);
-		writenum(buf[2], 123, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[2], 125, 0x0F, ":", 1);
-		writenum(buf[2], 126, 0x0F, tim%60, 10, 2, 0);
-	}
-#endif
+	mcpDrawGStringsSongXofY
+	(
+		utf8_8_dot_3,
+		utf8_16_dot_3,
+		globinfo.track,
+		globinfo.numtracks,
+		plPause,
+		plPause?((pausetime-starttime)/DOS_CLK_TCK):((dos_clock()-starttime)/DOS_CLK_TCK),
+		&mdbdata
+	);
+#warning TODO: globinfo.trackname, each track can have uniqe names.....
 }
 
 static int ayProcessKey(uint16_t key)
@@ -246,15 +205,11 @@ static int ayOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fil
 	if (!file)
 		return -1;
 
-	//strncpy(currentmodname, info->name, _MAX_FNAME);
-	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
-
-#warning TODO replace currentmodname currentmodext
-	//modname=info->modname;
-	composer=info->composer;
-
+	mdbdata = *info;
 	dirdbGetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s...\n", filename);
+	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
+	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	plIsEnd=ayLooped;
 	plProcessKey=ayProcessKey;

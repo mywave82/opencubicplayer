@@ -1053,6 +1053,379 @@ void mcpDrawGStringsFixedLengthStream (const char              *filename8_3,
 	displayvoid (3, x, endspace);
 }
 
+/*
+  song: XX of YY
+  12345678901234
+ */
+
+void mcpDrawGStringsSongXofY (const char              *filename8_3,
+                              const char              *filename16_3,
+                              const int                songX,
+                              const int                songY,
+                              uint_fast8_t             inpause,
+                              uint_fast16_t            seconds,
+                              struct moduleinfostruct *mdbdata)
+{
+	int width1 = 0;
+	int fields1 = 0;
+	int songmode = 0;
+	const uint8_t songsizes[2] = {0, 14};
+	int titlemode = 0;
+	const uint8_t titlesizes[8] = {0, 23, 31, 39, 47, 55, 63, 71};
+	int commentmode = 0;
+	const uint8_t commentsizes[8] = {0, 25, 33, 41, 49, 57, 65, 73};
+	int albummode = 0;
+	const uint8_t albumsizes[8] = {0, 23, 31, 39, 47, 55, 63, 71};
+	int datemode = 0;
+	const uint8_t datesizes[2] = {0, 16};
+	int lengthmode = 0;
+	const uint8_t lengthsizes[3] = {0, 10, 13};
+
+	int width2 = 0;
+	int fields2 = 0;
+	int filenamemode = 0;
+	const uint8_t filenamesizes[5] = {0, 18, 22, 26, 30};
+	int composermode = 0;
+	const uint8_t composersizes[8] = {0, 26, 34, 42, 50, 58, 66, 74};
+	int artistmode = 0;
+	const uint8_t artistsizes[8] = {0, 24, 32, 40, 48, 56, 64, 72};
+	int stylemode = 0;
+	const uint8_t stylesizes[8] = {0, 23, 31, 39, 47, 55, 63, 71};
+	int pausetimemode = 0;
+	const uint8_t pausetimesizes[3] = {0, 18, 27};
+
+	int changed;
+
+	int x;
+	int first;
+	int interspace;
+	int interspace2;
+	int headspace;
+	int endspace;
+
+	if (plScrWidth >= 90)
+	{
+		endspace = headspace = (plScrWidth - 60) / 30;
+	} else {
+		endspace = headspace = 0;
+	}
+
+	width1 = width2 = headspace * 2;
+
+	/* line 1 */
+	do
+	{
+		changed = 0;
+
+		if (((width1 + fields1 - 1 + songsizes[songmode+1] - songsizes[songmode] + (songmode?0:2)) <= plScrWidth))
+		{
+			width1 += songsizes[songmode+1] - songsizes[songmode];
+			fields1 += songmode?0:1;
+			songmode++;
+			changed = 1;
+		}
+
+		if (mdbdata->title[0] && (titlemode < 7) && ((width1 + fields1 - 1 + titlesizes[titlemode+1] - titlesizes[titlemode] + (titlemode?0:2)) <= plScrWidth))
+		{
+			width1 += titlesizes[titlemode+1] - titlesizes[titlemode];
+			fields1 += titlemode?0:1;
+			titlemode++;
+			changed = 1;
+		}
+
+		if (mdbdata->date && (datemode < 1) && ((width1 + fields1 - 1 + datesizes[datemode+1] - datesizes[datemode] + (datemode?0:2)) <= plScrWidth))
+		{
+			width1 += datesizes[datemode+1] - datesizes[datemode];
+			fields1 += datemode?0:1;
+			datemode++;
+			changed = 1;
+		}
+
+		if (mdbdata->playtime && (lengthmode < 2) && ((width1 + fields1 - 1 + lengthsizes[lengthmode+1] - lengthsizes[lengthmode] + (lengthmode?0:2)) <= plScrWidth))
+		{
+			width1 += lengthsizes[lengthmode+1] - lengthsizes[lengthmode];
+			fields1 += lengthmode?0:1;
+			lengthmode++;
+			changed = 1;
+		}
+
+		if (mdbdata->comment[0] && (commentmode < 7) && ((width1 + fields1 - 1 + commentsizes[commentmode+1] - commentsizes[commentmode] + (commentmode?0:2)) <= plScrWidth))
+		{
+			width1 += commentsizes[commentmode+1] - commentsizes[commentmode];
+			fields1 += commentmode?0:1;
+			commentmode++;
+			changed = 1;
+		}
+
+		if (mdbdata->album[0] && (albummode < 7) && ((width1 + fields1 - 1 + albumsizes[albummode+1] - albumsizes[albummode] + (albummode?0:2)) <= plScrWidth))
+		{
+			width1 += albumsizes[albummode+1] - albumsizes[albummode];
+			fields1 += albummode?0:1;
+			albummode++;
+			changed = 1;
+		}
+	} while (changed);
+
+	/* line 2 */
+	do
+	{
+		changed = 0;
+
+		if ((filenamemode < 4) && ((width2 + fields2 - 1 + filenamesizes[filenamemode+1] - filenamesizes[filenamemode] + (filenamemode?0:2)) <= plScrWidth))
+		{
+			width2 += filenamesizes[filenamemode+1] - filenamesizes[filenamemode];
+			fields2 += filenamemode?0:1;
+			filenamemode++;
+			changed = 1;
+		}
+
+		if ((pausetimemode < 2) && ((width2 + fields2 - 1 + pausetimesizes[pausetimemode+1] - pausetimesizes[pausetimemode] + (pausetimemode?0:2)) <= plScrWidth))
+		{
+			width2 += pausetimesizes[pausetimemode+1] - pausetimesizes[pausetimemode];
+			fields2 += pausetimemode?0:1;
+			pausetimemode++;
+			changed = 1;
+		}
+
+		if (mdbdata->composer[0] && (composermode < 7) && ((width2 + fields2 - 1 + composersizes[composermode+1] - composersizes[composermode] + (composermode?0:2)) <= plScrWidth))
+		{
+			width2 += composersizes[composermode+1] - composersizes[composermode];
+			fields2 += composermode?0:1;
+			composermode++;
+			changed = 1;
+		}
+
+		if (mdbdata->artist[0] && (artistmode < 7) && ((width2 + fields2 - 1 + artistsizes[artistmode+1] - artistsizes[artistmode] + (artistmode?0:2)) <= plScrWidth))
+		{
+			width2 += artistsizes[artistmode+1] - artistsizes[artistmode];
+			fields2 += artistmode?0:1;
+			artistmode++;
+			changed = 1;
+		}
+
+		if (mdbdata->style[0] && (stylemode < 7) && ((width2 + fields2 - 1 + stylesizes[stylemode+1] - stylesizes[stylemode] + (stylemode?0:2)) <= plScrWidth))
+		{
+			width2 += stylesizes[stylemode+1] - stylesizes[stylemode];
+			fields2 += stylemode?0:1;
+			stylemode++;
+			changed = 1;
+		}
+	} while (changed);
+
+	width1 -= headspace * 2;
+	if (fields1 >= 2)
+	{
+		interspace  = (plScrWidth - width1 - headspace - endspace) / (fields1 - 1);
+		interspace2 = (plScrWidth - width1 - headspace - endspace) % (fields1 - 1);
+	} else {
+		endspace = plScrWidth - width1 - headspace;
+	}
+
+	x = 0;
+	first = 1;
+	displayvoid (2, x, headspace); x += headspace;
+
+	if (songmode)
+	{
+		char temp[3];
+		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		displaystr (2, x, 0x09, "song:", 5); x+=6;
+		snprintf (temp, sizeof (temp), "%02d", songX);
+		displaystr (2, x, 0x0f, temp, 2); x+=2;
+		displaystr (2, x, 0x07, " of ", 4); x+=4;
+		snprintf (temp, sizeof (temp), "%02d", songY);
+		displaystr (2, x, 0x0f, temp, 2); x+=2;
+	}
+
+	if (titlemode)
+	{
+		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		displaystr (2, x, 0x09, "title: ", 7); x+=7;
+		switch (titlemode)
+		{
+			case 1: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 16); x+=16; break;
+			case 2: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 24); x+=24; break;
+			case 3: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 32); x+=32; break;
+			case 4: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 40); x+=40; break;
+			case 5: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 48); x+=48; break;
+			case 6: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 56); x+=56; break;
+			case 7: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 64); x+=64; break;
+		}
+	}
+
+	if (commentmode)
+	{
+		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		displaystr (2, x, 0x09, "comment: ", 9); x+=9;
+		switch (commentmode)
+		{
+			case 1: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 16); x+=16; break;
+			case 2: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 24); x+=24; break;
+			case 3: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 32); x+=32; break;
+			case 4: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 40); x+=40; break;
+			case 5: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 48); x+=48; break;
+			case 6: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 56); x+=56; break;
+			case 7: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 64); x+=64; break;
+		}
+	}
+
+	if (albummode)
+	{
+		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		displaystr (2, x, 0x09, "album: ", 7); x+=7;
+		switch (albummode)
+		{
+			case 1: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 16); x+=16; break;
+			case 2: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 24); x+=24; break;
+			case 3: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 32); x+=32; break;
+			case 4: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 40); x+=40; break;
+			case 5: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 48); x+=48; break;
+			case 6: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 56); x+=56; break;
+			case 7: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 64); x+=64; break;
+		}
+	}
+
+	if (datemode)
+	{
+		char temp[11];
+		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		displaystr (2, x, 0x09, "date: ", 6); x+=6;
+
+		if (mdbdata->date&0xFF)
+		{
+			snprintf (temp, sizeof (temp), "%02d.", mdbdata->date & 0xff);
+		} else {
+			snprintf (temp, sizeof (temp), "   ");
+		}
+		if (mdbdata->date&0xFFFF)
+		{
+			snprintf (temp + 3, sizeof (temp) - 3, "%02d.", (mdbdata->date >> 8)&0xff);
+		} else {
+			snprintf (temp + 3, sizeof (temp) - 3, "   ");
+		}
+		if (mdbdata->date>>16)
+		{
+			snprintf (temp + 6, sizeof (temp) - 6, "%4d", (mdbdata->date >> 16));
+			if (!((mdbdata->date>>16)/100))
+			{
+				temp[6] = '\'';
+			}
+		}
+		displaystr (2, x, 0x0f, temp, 10); x+=10;
+	}
+
+	if (lengthmode)
+	{
+		char temp[7];
+		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+
+		displaystr (2, x, 0x09, "length:", 7); x+=7;
+
+		snprintf(temp, 7, "%3d.%02d", mdbdata->playtime / 60, mdbdata->playtime % 60);
+		displaystr (2, x, 0x0f, temp, 6); x+=6;
+	}
+
+	displayvoid (2, x, endspace);
+
+	width2 -= headspace * 2;
+	if (fields2 >= 2)
+	{
+		interspace  = (plScrWidth - width2 - headspace - endspace) / (fields2 - 1);
+		interspace2 = (plScrWidth - width2 - headspace - endspace) % (fields2 - 1);
+	} else {
+		endspace = plScrWidth - width2 - headspace;
+	}
+
+	x = 0;
+	first = 1;
+	displayvoid (3, x, headspace); x += headspace;
+
+	if (filenamemode)
+	{
+		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		switch (filenamemode)
+		{
+			case 1:
+			case 3: displaystr (3, x, 0x09, "file: ", 6); x+=6; break;
+			case 2:
+			case 4: displaystr (3, x, 0x09, "filename: ", 10); x+=10; break;
+		}
+		switch (filenamemode)
+		{
+			case 1:
+			case 2: displaystr_utf8 (3, x, 0x0f, filename8_3, 12); x+=12; break;
+			case 3:
+			case 4: displaystr_utf8 (3, x, 0x0f, filename16_3, 20); x+=20; break;
+		}
+	}
+
+	if (composermode)
+	{
+		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		displaystr (3, x, 0x09, "composer: ", 10); x+=10;
+		switch (composermode)
+		{
+			case 1: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 16); x+=16; break;
+			case 2: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 24); x+=24; break;
+			case 3: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 32); x+=32; break;
+			case 4: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 40); x+=40; break;
+			case 5: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 48); x+=48; break;
+			case 6: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 56); x+=56; break;
+			case 7: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 64); x+=64; break;
+		}
+	}
+
+	if (artistmode)
+	{
+		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		displaystr (3, x, 0x09, "artist: ", 8); x+=8;
+		switch (artistmode)
+		{
+			case 1: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 16); x+=16; break;
+			case 2: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 24); x+=24; break;
+			case 3: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 32); x+=32; break;
+			case 4: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 40); x+=40; break;
+			case 5: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 48); x+=48; break;
+			case 6: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 56); x+=56; break;
+			case 7: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 64); x+=64; break;
+		}
+	}
+
+	if (stylemode)
+	{
+		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		displaystr (3, x, 0x09, "style: ", 7); x+=7;
+		switch (stylemode)
+		{
+			case 1: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 16); x+=16; break;
+			case 2: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 24); x+=24; break;
+			case 3: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 32); x+=32; break;
+			case 4: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 40); x+=40; break;
+			case 5: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 48); x+=48; break;
+			case 6: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 56); x+=56; break;
+			case 7: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 64); x+=64; break;
+		}
+	}
+
+	if (pausetimemode)
+	{
+		char temp[7];
+
+		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
+		switch (pausetimemode)
+		{
+			case 1: displaystr (3, x, inpause?0x0c:0x00, "paused ", 7); x+=7; break;
+			case 2: displaystr (3, x, inpause?0x0c:0x00, "playback paused ", 16); x+=16; break;
+		}
+		displaystr (3, x, 0x09, "time:", 5); x+=5;
+
+		snprintf(temp, 7, "%3d.%02d", (int)(seconds / 60), (int)(seconds % 60));
+		displaystr (3, x, 0x0f, temp, 6); x+=6;
+	}
+
+	displayvoid (3, x, endspace);
+}
+
 
 void cpiDrawGStrings (void)
 {

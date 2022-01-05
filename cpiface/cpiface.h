@@ -200,6 +200,14 @@ void mcpDrawGStringsFixedLengthStream (const char              *filename8_3,
                                        uint_fast16_t            seconds,
                                        struct moduleinfostruct *mdbdata);
 
+void mcpDrawGStringsSongXofY (const char              *filename8_3,
+                              const char              *filename16_3,
+                              const int                songX,
+                              const int                songY,
+                              uint_fast8_t             inpause,
+                              uint_fast16_t            seconds,
+                              struct moduleinfostruct *mdbdata);
+
 extern int mcpSetProcessKey(uint16_t key);
 extern void mcpSetFadePars(int i);
 
