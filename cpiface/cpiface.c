@@ -205,7 +205,7 @@ void cpiDrawG1String (struct settings *g1)
 	const uint8_t balancesizes[8] = {14, 18, 22, 26, 38, 42, 70, 74};
 	const uint8_t speedpitchsizes[2] = {22, 25};
 
-	int interspace;
+	int interspace1;
 	int interspace2;
 	int headspace;
 	int endspace;
@@ -315,7 +315,7 @@ void cpiDrawG1String (struct settings *g1)
 		}
 	}
 
-	interspace  = (plScrWidth - width) / 4;
+	interspace1 = (plScrWidth - width) / 4;
 	interspace2 = (plScrWidth - width) % 4;
 
 	displayvoid (1, 0, headspace);
@@ -342,7 +342,7 @@ void cpiDrawG1String (struct settings *g1)
 		displaychr (1, x, 0x09, '\xfa', vi); x += vi;
 	}
 
-	displayvoid (1, x, interspace + (!!interspace2)); x += interspace + (!!interspace2);
+	displayvoid (1, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2);
 	if (interspace2) interspace2--;
 
 	if (g1->viewfx)
@@ -355,7 +355,7 @@ void cpiDrawG1String (struct settings *g1)
 		}
 		displaystr (1, x, 0x0f, g1->useecho?"x":"o", 1); x += 1;
 
-		displayvoid (1, x, interspace + (!!interspace2)); x += interspace + (!!interspace2);
+		displayvoid (1, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2);
 		if (interspace2) interspace2--;
 
 		{
@@ -382,7 +382,7 @@ void cpiDrawG1String (struct settings *g1)
 			displaystr (1, x, 0x07, temp + l + 1, w - l); x += w - l;
 		}
 
-		displayvoid (1, x, interspace + (!!interspace2)); x += interspace + (!!interspace2);
+		displayvoid (1, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2);
 		if (interspace2) interspace2--;
 
 		{
@@ -417,7 +417,7 @@ void cpiDrawG1String (struct settings *g1)
 		}
 		displaystr (1, x, 0x0f, g1->srnd?"x":"o", 1); x += 1;
 
-		displayvoid (1, x, interspace + (!!interspace2)); x += interspace + (!!interspace2);
+		displayvoid (1, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2);
 		if (interspace2) interspace2--;
 
 		{
@@ -464,7 +464,7 @@ void cpiDrawG1String (struct settings *g1)
 			}
 		}
 
-		displayvoid (1, x, interspace + (!!interspace2)); x += interspace + (!!interspace2);
+		displayvoid (1, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2);
 		if (interspace2) interspace2--;
 
 		{
@@ -492,7 +492,7 @@ void cpiDrawG1String (struct settings *g1)
 		}
 	}
 
-	displayvoid (1, x, interspace + (!!interspace2)); x += interspace + (!!interspace2);
+	displayvoid (1, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2);
 	if (interspace2) interspace2--;
 
 	{
@@ -600,830 +600,769 @@ pos:123%  12345678/12345678 KB  rate: 12345kbs title: 1234567890123456  comment:
 filename: 12345678.123  composer: 1234567890123456  artist: 12345678990123456  style: 1234567890123456 opt: 1234567890123456789012345  paused time:123:12
 */
 
-void mcpDrawGStringsFixedLengthStream (const char              *filename8_3,
-                                       const char              *filename16_3,
-                                       uint64_t                 pos,
-                                       uint64_t                 size, /* can be smaller than the file-size due to meta-data */
-                                       const char               sizesuffix, /* 0 = "" (MIDI), 1 = KB */
-                                       const char              *opt25,
-                                       const char              *opt50,
-                                       int_fast16_t             kbs,  /* kilo-bit-per-second */
-                                       uint_fast8_t             inpause,
-                                       uint_fast16_t            seconds,
-                                       struct moduleinfostruct *mdbdata
-)
+struct GStringElement;
+struct GStringElement
 {
-	int width1 = 0;
-	int fields1 = 0;
-	int posmode = 0;
-	const uint8_t possizes0[5] = {0, 8, 13, 26, 31};
-	const uint8_t possizes1[5] = {0, 8, 13, 29, 34};
-	int bitratemode = 0;
-	const uint8_t bitratesizes[3] = {0, 13, 16};
-	int titlemode = 0;
-	const uint8_t titlesizes[8] = {0, 23, 31, 39, 47, 55, 63, 71};
-	int commentmode = 0;
-	const uint8_t commentsizes[8] = {0, 25, 33, 41, 49, 57, 65, 73};
-	int albummode = 0;
-	const uint8_t albumsizes[8] = {0, 23, 31, 39, 47, 55, 63, 71};
-	int datemode = 0;
-	const uint8_t datesizes[2] = {0, 16};
-	int lengthmode = 0;
-	const uint8_t lengthsizes[3] = {0, 10, 13};
+	int (*allowgrow)(const void *inputa, const void *inputb, const void *inputc, int nextsize); /* returns the grow size, if it wants to grow */
+	void (*render)(const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno);
+	int priority;
+	int sizescount;
+};
 
-	int width2 = 0;
-	int fields2 = 0;
-	int filenamemode = 0;
-	const uint8_t filenamesizes[5] = {0, 18, 22, 26, 30};
-	int composermode = 0;
-	const uint8_t composersizes[8] = {0, 26, 34, 42, 50, 58, 66, 74};
-	int artistmode = 0;
-	const uint8_t artistsizes[8] = {0, 24, 32, 40, 48, 56, 64, 72};
-	int stylemode = 0;
-	const uint8_t stylesizes[8] = {0, 23, 31, 39, 47, 55, 63, 71};
-	int optionmode = 0;
-	const uint8_t optionsizes[5] = {0, 30, 33, 55, 58};
-	int pausetimemode = 0;
-	const uint8_t pausetimesizes[3] = {0, 18, 27};
+static int GString_pos_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	const char *sizesuffix = inputc;
 
-	int changed;
-
-	int x;
-	int first;
-	int interspace;
-	int interspace2;
-	int headspace;
-	int endspace;
-
-	if (plScrWidth >= 90)
+	if (!(*sizesuffix))
 	{
-		endspace = headspace = (plScrWidth - 60) / 30;
+		switch (nextsize)
+		{
+			case 1: return 8;
+			case 2: return 13-8;
+			case 3: return 26-13;
+			case 4: return 31-26;
+			default: return 0;
+		}
 	} else {
-		endspace = headspace = 0;
-	}
-
-	width1 = width2 = headspace * 2;
-
-	/* line 1 */
-	do
-	{
-		changed = 0;
-
-		if (!sizesuffix)
+		switch (nextsize)
 		{
-			if ((posmode < 4) && ((width1 + fields1 - 1 + possizes0[posmode+1] - possizes0[posmode] + (posmode?0:2)) <= plScrWidth))
-			{
-				width1 += possizes0[posmode+1] - possizes0[posmode];
-				fields1 += posmode?0:1;
-				posmode++;
-				changed = 1;
-			}
-		} else {
-			if ((posmode < 4) && ((width1 + fields1 - 1 + possizes1[posmode+1] - possizes1[posmode] + (posmode?0:2)) <= plScrWidth))
-			{
-				width1 += possizes1[posmode+1] - possizes1[posmode];
-				fields1 += posmode?0:1;
-				posmode++;
-				changed = 1;
-			}
-		}
-
-		if (mdbdata->title[0] && (titlemode < 7) && ((width1 + fields1 - 1 + titlesizes[titlemode+1] - titlesizes[titlemode] + (titlemode?0:2)) <= plScrWidth))
-		{
-			width1 += titlesizes[titlemode+1] - titlesizes[titlemode];
-			fields1 += titlemode?0:1;
-			titlemode++;
-			changed = 1;
-		}
-
-		if (mdbdata->date && (datemode < 1) && ((width1 + fields1 - 1 + datesizes[datemode+1] - datesizes[datemode] + (datemode?0:2)) <= plScrWidth))
-		{
-			width1 += datesizes[datemode+1] - datesizes[datemode];
-			fields1 += datemode?0:1;
-			datemode++;
-			changed = 1;
-		}
-
-		if (mdbdata->playtime && (lengthmode < 2) && ((width1 + fields1 - 1 + lengthsizes[lengthmode+1] - lengthsizes[lengthmode] + (lengthmode?0:2)) <= plScrWidth))
-		{
-			width1 += lengthsizes[lengthmode+1] - lengthsizes[lengthmode];
-			fields1 += lengthmode?0:1;
-			lengthmode++;
-			changed = 1;
-		}
-
-		if (mdbdata->comment[0] && (commentmode < 7) && ((width1 + fields1 - 1 + commentsizes[commentmode+1] - commentsizes[commentmode] + (commentmode?0:2)) <= plScrWidth))
-		{
-			width1 += commentsizes[commentmode+1] - commentsizes[commentmode];
-			fields1 += commentmode?0:1;
-			commentmode++;
-			changed = 1;
-		}
-
-		if (mdbdata->album[0] && (albummode < 7) && ((width1 + fields1 - 1 + albumsizes[albummode+1] - albumsizes[albummode] + (albummode?0:2)) <= plScrWidth))
-		{
-			width1 += albumsizes[albummode+1] - albumsizes[albummode];
-			fields1 += albummode?0:1;
-			albummode++;
-			changed = 1;
-		}
-
-		if ((bitratemode < 2) && (kbs >= 0) && ((width1 + fields1 - 1 + bitratesizes[bitratemode+1] - bitratesizes[bitratemode] + (bitratemode?0:2)) <= plScrWidth))
-		{
-			width1 += bitratesizes[bitratemode+1] - bitratesizes[bitratemode];
-			fields1 += bitratemode?0:1;
-			bitratemode++;
-			changed = 1;
-		}
-	} while (changed);
-
-	/* line 2 */
-	do
-	{
-		changed = 0;
-
-		if ((filenamemode < 4) && ((width2 + fields2 - 1 + filenamesizes[filenamemode+1] - filenamesizes[filenamemode] + (filenamemode?0:2)) <= plScrWidth))
-		{
-			width2 += filenamesizes[filenamemode+1] - filenamesizes[filenamemode];
-			fields2 += filenamemode?0:1;
-			filenamemode++;
-			changed = 1;
-		}
-
-		if ((pausetimemode < 2) && ((width2 + fields2 - 1 + pausetimesizes[pausetimemode+1] - pausetimesizes[pausetimemode] + (pausetimemode?0:2)) <= plScrWidth))
-		{
-			width2 += pausetimesizes[pausetimemode+1] - pausetimesizes[pausetimemode];
-			fields2 += pausetimemode?0:1;
-			pausetimemode++;
-			changed = 1;
-		}
-
-		if (mdbdata->composer[0] && (composermode < 7) && ((width2 + fields2 - 1 + composersizes[composermode+1] - composersizes[composermode] + (composermode?0:2)) <= plScrWidth))
-		{
-			width2 += composersizes[composermode+1] - composersizes[composermode];
-			fields2 += composermode?0:1;
-			composermode++;
-			changed = 1;
-		}
-
-		if (mdbdata->artist[0] && (artistmode < 7) && ((width2 + fields2 - 1 + artistsizes[artistmode+1] - artistsizes[artistmode] + (artistmode?0:2)) <= plScrWidth))
-		{
-			width2 += artistsizes[artistmode+1] - artistsizes[artistmode];
-			fields2 += artistmode?0:1;
-			artistmode++;
-			changed = 1;
-		}
-
-		if (mdbdata->style[0] && (stylemode < 7) && ((width2 + fields2 - 1 + stylesizes[stylemode+1] - stylesizes[stylemode] + (stylemode?0:2)) <= plScrWidth))
-		{
-			width2 += stylesizes[stylemode+1] - stylesizes[stylemode];
-			fields2 += stylemode?0:1;
-			stylemode++;
-			changed = 1;
-		}
-
-		if ((opt25[0]||opt50[0]) && (optionmode < 4) && ((width2 + fields2 - 1 + optionsizes[optionmode+1] - optionsizes[optionmode] + (optionmode?0:2)) <= plScrWidth))
-		{
-			width2 += optionsizes[optionmode+1] - optionsizes[optionmode];
-			fields2 += optionmode?0:1;
-			optionmode++;
-			changed = 1;
-		}
-	} while (changed);
-
-	width1 -= headspace * 2;
-	if (fields1 >= 2)
-	{
-		interspace  = (plScrWidth - width1 - headspace - endspace) / (fields1 - 1);
-		interspace2 = (plScrWidth - width1 - headspace - endspace) % (fields1 - 1);
-	} else {
-		endspace = plScrWidth - width1 - headspace;
-	}
-
-	x = 0;
-	first = 1;
-	displayvoid (2, x, headspace); x += headspace;
-	if (posmode)
-	{
-		char b[10];
-		snprintf (b, 4, "%3d", (int)(pos * 100 / size));
-		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		switch (posmode)
-		{
-			case 1:
-			case 3: displaystr (2, x, 0x09, "pos:",      4); displaystr (2, x + 4, 0x0f, b, 3); displaychr (2, x +  7, 0x07, '%', 1); x +=  8; break;
-			case 2:
-			case 4: displaystr (2, x, 0x09, "position:", 9); displaystr (2, x + 9, 0x0f, b, 3); displaychr (2, x + 12, 0x07, '%', 1); x += 13; break;
-		}
-		if (posmode > 2)
-		{
-			if (!sizesuffix)
-			{
-				snprintf (b, 10, " %8" PRIu64, pos);
-				displaystr (2, x, 0x0f, b, 9); x += 9;
-				displaychr (2, x, 0x07, '/', 1); x += 1;
-				snprintf (b, 9, "%8" PRIu64, size);
-				displaystr (2, x, 0x0f, b, 8); x += 8;
-			} else {
-				snprintf (b, 10, " %8" PRIu64, pos>>10);
-				displaystr (2, x, 0x0f, b, 9); x += 9;
-				displaychr (2, x, 0x07, '/', 1); x += 1;
-				snprintf (b, 9, "%8" PRIu64, size>>10);
-				displaystr (2, x, 0x0f, b, 8); x += 8;
-				displaystr (2, x, 0x07, " KB", 3); x += 3;
-			}
+			case 1: return 8;
+			case 2: return 13-8;
+			case 3: return 29-13;
+			case 4: return 34-29;
+			default: return 0;
 		}
 	}
-
-	if (bitratemode)
-	{
-		char b[6];
-		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		if (bitratemode==1) { displaystr (2, x, 0x09, "rate:", 5); x+= 5; } else { displaystr (2, x, 0x09, "bitrate:", 8); x+= 8; }
-		snprintf (b, 6, "%5d", (int)kbs);
-		displaystr (2, x, 0x0f, b, 5); x+=5;
-		displaystr (2, x, 0x07, "kbs", 3); x+=3;
-	}
-
-	if (titlemode)
-	{
-		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		displaystr (2, x, 0x09, "title: ", 7); x+=7;
-		switch (titlemode)
-		{
-			case 1: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 16); x+=16; break;
-			case 2: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 24); x+=24; break;
-			case 3: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 32); x+=32; break;
-			case 4: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 40); x+=40; break;
-			case 5: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 48); x+=48; break;
-			case 6: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 56); x+=56; break;
-			case 7: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 64); x+=64; break;
-		}
-	}
-
-	if (commentmode)
-	{
-		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		displaystr (2, x, 0x09, "comment: ", 9); x+=9;
-		switch (commentmode)
-		{
-			case 1: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 16); x+=16; break;
-			case 2: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 24); x+=24; break;
-			case 3: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 32); x+=32; break;
-			case 4: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 40); x+=40; break;
-			case 5: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 48); x+=48; break;
-			case 6: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 56); x+=56; break;
-			case 7: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 64); x+=64; break;
-		}
-	}
-
-	if (albummode)
-	{
-		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		displaystr (2, x, 0x09, "album: ", 7); x+=7;
-		switch (albummode)
-		{
-			case 1: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 16); x+=16; break;
-			case 2: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 24); x+=24; break;
-			case 3: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 32); x+=32; break;
-			case 4: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 40); x+=40; break;
-			case 5: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 48); x+=48; break;
-			case 6: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 56); x+=56; break;
-			case 7: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 64); x+=64; break;
-		}
-	}
-
-	if (datemode)
-	{
-		char temp[11];
-		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		displaystr (2, x, 0x09, "date: ", 6); x+=6;
-
-		if (mdbdata->date&0xFF)
-		{
-			snprintf (temp, sizeof (temp), "%02d.", mdbdata->date & 0xff);
-		} else {
-			snprintf (temp, sizeof (temp), "   ");
-		}
-		if (mdbdata->date&0xFFFF)
-		{
-			snprintf (temp + 3, sizeof (temp) - 3, "%02d.", (mdbdata->date >> 8)&0xff);
-		} else {
-			snprintf (temp + 3, sizeof (temp) - 3, "   ");
-		}
-		if (mdbdata->date>>16)
-		{
-			snprintf (temp + 6, sizeof (temp) - 6, "%4d", (mdbdata->date >> 16));
-			if (!((mdbdata->date>>16)/100))
-			{
-				temp[6] = '\'';
-			}
-		}
-		displaystr (2, x, 0x0f, temp, 10); x+=10;
-	}
-
-	if (lengthmode)
-	{
-		char temp[7];
-		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-
-		displaystr (2, x, 0x09, "length:", 7); x+=7;
-
-		snprintf(temp, 7, "%3d.%02d", mdbdata->playtime / 60, mdbdata->playtime % 60);
-		displaystr (2, x, 0x0f, temp, 6); x+=6;
-	}
-
-	displayvoid (2, x, endspace);
-
-	width2 -= headspace * 2;
-	if (fields2 >= 2)
-	{
-		interspace  = (plScrWidth - width2 - headspace - endspace) / (fields2 - 1);
-		interspace2 = (plScrWidth - width2 - headspace - endspace) % (fields2 - 1);
-	} else {
-		endspace = plScrWidth - width2 - headspace;
-	}
-
-	x = 0;
-	first = 1;
-	displayvoid (3, x, headspace); x += headspace;
-
-	if (filenamemode)
-	{
-		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		switch (filenamemode)
-		{
-			case 1:
-			case 3: displaystr (3, x, 0x09, "file: ", 6); x+=6; break;
-			case 2:
-			case 4: displaystr (3, x, 0x09, "filename: ", 10); x+=10; break;
-		}
-		switch (filenamemode)
-		{
-			case 1:
-			case 2: displaystr_utf8 (3, x, 0x0f, filename8_3, 12); x+=12; break;
-			case 3:
-			case 4: displaystr_utf8 (3, x, 0x0f, filename16_3, 20); x+=20; break;
-		}
-	}
-
-	if (composermode)
-	{
-		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		displaystr (3, x, 0x09, "composer: ", 10); x+=10;
-		switch (composermode)
-		{
-			case 1: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 16); x+=16; break;
-			case 2: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 24); x+=24; break;
-			case 3: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 32); x+=32; break;
-			case 4: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 40); x+=40; break;
-			case 5: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 48); x+=48; break;
-			case 6: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 56); x+=56; break;
-			case 7: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 64); x+=64; break;
-		}
-	}
-
-	if (artistmode)
-	{
-		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		displaystr (3, x, 0x09, "artist: ", 8); x+=8;
-		switch (artistmode)
-		{
-			case 1: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 16); x+=16; break;
-			case 2: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 24); x+=24; break;
-			case 3: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 32); x+=32; break;
-			case 4: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 40); x+=40; break;
-			case 5: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 48); x+=48; break;
-			case 6: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 56); x+=56; break;
-			case 7: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 64); x+=64; break;
-		}
-	}
-
-	if (stylemode)
-	{
-		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		displaystr (3, x, 0x09, "style: ", 7); x+=7;
-		switch (stylemode)
-		{
-			case 1: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 16); x+=16; break;
-			case 2: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 24); x+=24; break;
-			case 3: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 32); x+=32; break;
-			case 4: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 40); x+=40; break;
-			case 5: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 48); x+=48; break;
-			case 6: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 56); x+=56; break;
-			case 7: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 64); x+=64; break;
-		}
-	}
-
-	if (optionmode)
-	{
-		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		switch (optionmode)
-		{
-			case 1:
-			case 3: displaystr (3, x, 0x09, "opt: ", 5); x+=5; break;
-			case 2:
-			case 4: displaystr (3, x, 0x09, "option: ", 8); x+=8; break;
-		}
-		switch (optionmode)
-		{
-			case 1:
-			case 2: displaystr_utf8 (3, x, 0x0f, opt25, 25); x+=25; break;
-			case 3:
-			case 4: displaystr_utf8 (3, x, 0x0f, opt50, 50); x+=50; break;
-		}
-	}
-
-	if (pausetimemode)
-	{
-		char temp[7];
-
-		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		switch (pausetimemode)
-		{
-			case 1: displaystr (3, x, inpause?0x0c:0x00, "paused ", 7); x+=7; break;
-			case 2: displaystr (3, x, inpause?0x0c:0x00, "playback paused ", 16); x+=16; break;
-		}
-		displaystr (3, x, 0x09, "time:", 5); x+=5;
-
-		snprintf(temp, 7, "%3d.%02d", (int)(seconds / 60), (int)(seconds % 60));
-		displaystr (3, x, 0x0f, temp, 6); x+=6;
-	}
-
-	displayvoid (3, x, endspace);
 }
 
-/*
-  song: XX of YY
-  12345678901234
- */
-
-void mcpDrawGStringsSongXofY (const char              *filename8_3,
-                              const char              *filename16_3,
-                              const int                songX,
-                              const int                songY,
-                              uint_fast8_t             inpause,
-                              uint_fast16_t            seconds,
-                              struct moduleinfostruct *mdbdata)
+static void GString_pos_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
 {
-	int width1 = 0;
-	int fields1 = 0;
-	int songmode = 0;
-	const uint8_t songsizes[2] = {0, 14};
-	int titlemode = 0;
-	const uint8_t titlesizes[8] = {0, 23, 31, 39, 47, 55, 63, 71};
-	int commentmode = 0;
-	const uint8_t commentsizes[8] = {0, 25, 33, 41, 49, 57, 65, 73};
-	int albummode = 0;
-	const uint8_t albumsizes[8] = {0, 23, 31, 39, 47, 55, 63, 71};
-	int datemode = 0;
-	const uint8_t datesizes[2] = {0, 16};
-	int lengthmode = 0;
-	const uint8_t lengthsizes[3] = {0, 10, 13};
+	const uint64_t *pos = inputa;
+	const uint64_t *filesize = inputb;
+	const char *sizesuffix = inputc;
+	char b[10];
 
-	int width2 = 0;
-	int fields2 = 0;
-	int filenamemode = 0;
-	const uint8_t filenamesizes[5] = {0, 18, 22, 26, 30};
-	int composermode = 0;
-	const uint8_t composersizes[8] = {0, 26, 34, 42, 50, 58, 66, 74};
-	int artistmode = 0;
-	const uint8_t artistsizes[8] = {0, 24, 32, 40, 48, 56, 64, 72};
-	int stylemode = 0;
-	const uint8_t stylesizes[8] = {0, 23, 31, 39, 47, 55, 63, 71};
-	int pausetimemode = 0;
-	const uint8_t pausetimesizes[3] = {0, 18, 27};
+	switch (size)
+	{
+		case 1:
+		case 3: displaystr (lineno, *x, 0x09, "pos:",      4); (*x) += 4; break;
+		case 2:
+		case 4: displaystr (lineno, *x, 0x09, "position:", 9); (*x) += 9; break;
+	}
 
+	snprintf (b, 4, "%3d", (int)((*pos) * 100 / (*filesize)));
+	displaystr (lineno, *x, 0x0f,   b, 3); (*x)+=3;
+	displaychr (lineno, *x, 0x07, '%', 1); (*x)+=1;
+
+	if (size > 2)
+	{
+		if (!(*sizesuffix))
+		{
+			snprintf (b, 10, " %8" PRIu64, (*pos));
+			displaystr (lineno, *x, 0x0f,     b, 9); (*x) += 9;
+			displaychr (lineno, *x, 0x07,   '/', 1); (*x) += 1;
+			snprintf (b, 9, "%8" PRIu64, (*filesize));
+			displaystr (lineno, *x, 0x0f,     b, 8); (*x) += 8;
+		} else {
+			snprintf (b, 10, " %8" PRIu64, (*pos)>>10);
+			displaystr (lineno, *x, 0x0f,     b, 9); (*x) += 9;
+			displaychr (lineno, *x, 0x07,   '/', 1); (*x) += 1;
+			snprintf (b, 9, "%8" PRIu64, (*filesize)>>10);
+			displaystr (lineno, *x, 0x0f,     b, 8); (*x) += 8;
+			displaystr (lineno, *x, 0x07, " KB", 3); (*x) += 3;
+		}
+	}
+}
+
+static struct GStringElement GString_pos =
+{
+	GString_pos_allowgrow,
+	GString_pos_render,
+	1,
+	4
+};
+
+static int GString_bitrate_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	const int_fast16_t *kbs = inputa;
+
+	if (*kbs < 0)
+		return 0;
+
+	switch (nextsize)
+	{
+		case 1: return 13;
+		case 2: return 16-13;
+		default: return 0;
+	}
+}
+
+static void GString_bitrate_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const int_fast16_t *kbs = inputa;
+	char b[6];
+
+	if (size == 1)
+	{
+		displaystr (lineno, *x, 0x09, "rate:", 5); (*x) += 5;
+	} else {
+		displaystr (lineno, *x, 0x09, "bitrate:", 8); (*x) += 8;
+	}
+	snprintf (b, 6, "%5d", (int)*kbs);
+	displaystr (lineno, *x, 0x0f,     b, 5); (*x) += 5;
+	displaystr (lineno, *x, 0x07, "kbs", 3); (*x) += 3;
+}
+
+static struct GStringElement GString_bitrate =
+{
+	GString_bitrate_allowgrow,
+	GString_bitrate_render,
+	0,
+	2
+};
+
+static int GString_head5_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	const long len = (const long)inputb;
+
+	if (!len) return 0;
+
+	switch (nextsize)
+	{
+		case 1: return 23;
+		case 2: if (len <= 16) return 0; return 8;
+		case 3: if (len <= 24) return 0; return 8;
+		case 4: if (len <= 32) return 0; return 8;
+		case 5: if (len <= 40) return 0; return 8;
+		case 6: if (len <= 48) return 0; return 8;
+		case 7: if (len <= 56) return 0; return 8;
+		default: return 0;
+	}
+}
+
+static int GString_head6_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	const long len = (const long)inputb;
+
+	if (!len) return 0;
+
+	switch (nextsize)
+	{
+		case 1: return 24;
+		case 2: if (len <= 16) return 0; return 8;
+		case 3: if (len <= 24) return 0; return 8;
+		case 4: if (len <= 32) return 0; return 8;
+		case 5: if (len <= 40) return 0; return 8;
+		case 6: if (len <= 48) return 0; return 8;
+		case 7: if (len <= 56) return 0; return 8;
+		default: return 0;
+	}
+}
+
+static int GString_head7_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	const long len = (const long)inputb;
+
+	if (!len) return 0;
+
+	switch (nextsize)
+	{
+		case 1: return 25;
+		case 2: if (len <= 16) return 0; return 8;
+		case 3: if (len <= 24) return 0; return 8;
+		case 4: if (len <= 32) return 0; return 8;
+		case 5: if (len <= 40) return 0; return 8;
+		case 6: if (len <= 48) return 0; return 8;
+		case 7: if (len <= 56) return 0; return 8;
+		default: return 0;
+	}
+}
+
+static int GString_head8_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	const long len = (const long)inputb;
+
+	if (!len) return 0;
+
+	switch (nextsize)
+	{
+		case 1: return 26;
+		case 2: if (len <= 16) return 0; return 8;
+		case 3: if (len <= 24) return 0; return 8;
+		case 4: if (len <= 32) return 0; return 8;
+		case 5: if (len <= 40) return 0; return 8;
+		case 6: if (len <= 48) return 0; return 8;
+		case 7: if (len <= 56) return 0; return 8;
+		default: return 0;
+	}
+}
+
+static void GString_title_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const char *title = inputa;
+	displaystr (lineno, *x, 0x09, "title: ", 7); (*x) += 7;
+	displaystr_utf8 (lineno, *x, 0x0f, title, 8 + size * 8); (*x) += 8 + size * 8;
+}
+
+static void GString_album_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const char *album = inputa;
+	displaystr (lineno, *x, 0x09, "album: ", 7); (*x) += 7;
+	displaystr_utf8 (lineno, *x, 0x0f, album, 8 + size * 8); (*x) += 8 + size * 8;
+}
+
+static void GString_style_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const char *style = inputa;
+	displaystr (lineno, *x, 0x09, "style: ", 7); (*x) += 7;
+	displaystr_utf8 (lineno, *x, 0x0f, style, 8 + size * 8); (*x) += 8 + size * 8;
+}
+
+static void GString_artist_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const char *artist = inputa;
+	displaystr (lineno, *x, 0x09, "artist: ", 8); (*x) += 8;
+	displaystr_utf8 (lineno, *x, 0x0f, artist, 8 + size * 8); (*x) += 8 + size * 8;
+}
+
+static void GString_comment_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const char *comment = inputa;
+	displaystr (lineno, *x, 0x09, "comment: ", 9); (*x) += 9;
+	displaystr_utf8 (lineno, *x, 0x0f, comment, 8 + size * 8); (*x) += 8 + size * 8;
+}
+
+static void GString_composer_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const char *comment = inputa;
+	displaystr (lineno, *x, 0x09, "composer: ", 10); (*x) += 10;
+	displaystr_utf8 (lineno, *x, 0x0f, comment, 8 + size * 8); (*x) += 8 + size * 8;
+}
+
+static struct GStringElement GString_title =
+{
+	GString_head5_allowgrow,
+	GString_title_render,
+	0,
+	7
+};
+
+static struct GStringElement GString_album =
+{
+	GString_head5_allowgrow,
+	GString_album_render,
+	0,
+	7
+};
+
+static struct GStringElement GString_style =
+{
+	GString_head5_allowgrow,
+	GString_style_render,
+	0,
+	7
+};
+
+static struct GStringElement GString_artist =
+{
+	GString_head6_allowgrow,
+	GString_artist_render,
+	0,
+	7
+};
+
+static struct GStringElement GString_comment =
+{
+	GString_head7_allowgrow,
+	GString_comment_render,
+	0,
+	7
+};
+
+static struct GStringElement GString_composer =
+{
+	GString_head8_allowgrow,
+	GString_composer_render,
+	0,
+	7
+};
+
+static int GString_date_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	const uint32_t *date = inputa;
+
+	if (!*date)
+	{
+		return 0;
+	}
+
+	switch (nextsize)
+	{
+		case 1: return 16;
+		default: return 0;
+	}
+}
+
+static void GString_date_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const uint32_t *date = inputa;
+	char temp[11];
+
+	displaystr (lineno, *x, 0x09, "date: ", 6); (*x) += 6;
+
+	if ((*date)&0xFF)
+	{
+		snprintf (temp, sizeof (temp), "%02d.", (*date) & 0xff);
+	} else {
+		snprintf (temp, sizeof (temp), "   ");
+	}
+	if ((*date)&0xFFFF)
+	{
+		snprintf (temp + 3, sizeof (temp) - 3, "%02d.", ((*date) >> 8)&0xff);
+	} else {
+		snprintf (temp + 3, sizeof (temp) - 3, "   ");
+	}
+	if ((*date)>>16)
+	{
+		snprintf (temp + 6, sizeof (temp) - 6, "%4d", ((*date) >> 16));
+		if (!(((*date)>>16)/100))
+		{
+			temp[6] = '\'';
+		}
+	}
+	displaystr (lineno, *x, 0x0f, temp, 10); (*x) += 10;
+}
+
+static struct GStringElement GString_date =
+{
+	GString_date_allowgrow,
+	GString_date_render,
+	0,
+	1
+};
+
+static int GString_playtime_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	const uint16_t *playtime = inputa;
+
+	if (!*playtime)
+	{
+		return 0;
+	}
+	switch (nextsize)
+	{
+		case 1: return 10;
+		case 2: return 13-10;
+		default: return 0;
+	}
+}
+
+static void GString_playtime_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const uint16_t *playtime = inputa;
+	char temp[7];
+
+	if (size == 1)
+	{
+		displaystr (lineno, *x, 0x09, "len:", 4); (*x) += 4;
+	} else {
+		displaystr (lineno, *x, 0x09, "length:", 7); (*x) += 7;
+	}
+	snprintf(temp, 7, "%3d.%02d", (*playtime) / 60, (*playtime) % 60);
+	displaystr (lineno, *x, 0x0f, temp, 6); (*x) += 6;
+}
+
+static struct GStringElement GString_playtime =
+{
+	GString_playtime_allowgrow,
+	GString_playtime_render,
+	0,
+	2
+};
+
+static int GString_filename_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	switch (nextsize)
+	{
+		case 1: return 18;
+		case 2: return 22-18;
+		case 3: return 26-22;
+		case 4: return 30-26;
+		default: return 0;
+	}
+}
+
+static void GString_filename_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const char *filename8_3 = inputa;
+	const char *filename16_3 = inputb;
+
+	switch (size)
+	{
+		case 1:
+		case 3: displaystr (lineno, *x, 0x09, "file: ",      6); (*x) +=  6; break;
+		case 2:
+		case 4: displaystr (lineno, *x, 0x09, "filename: ", 10); (*x) += 10; break;
+	}
+	switch (size)
+	{
+		case 1:
+		case 2: displaystr_utf8 (lineno, *x, 0x0f, filename8_3,  12); (*x) += 12; break;
+		case 3:
+		case 4: displaystr_utf8 (lineno, *x, 0x0f, filename16_3, 20); (*x) += 20; break;
+	}
+}
+
+static struct GStringElement GString_filename =
+{
+	GString_filename_allowgrow,
+	GString_filename_render,
+	0,
+	4
+};
+
+static int GString_option_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	const char *opt25 = inputa;
+	const char *opt50 = inputb;
+
+	if (!opt25) return 0;
+	if (!opt25[0]) return 0;
+
+	switch (nextsize)
+	{
+		case 1: return 30;
+		case 2: return 33-30;
+		case 3: if (!strcmp(opt25, opt50)) return 0; return 55-33;
+		case 4: return 58 - 55;
+		default: return 0;
+	}
+}
+
+static void GString_option_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const char *opt25 = inputa;
+	const char *opt50 = inputb;
+
+	switch (size)
+	{
+		case 1:
+		case 3: displaystr (lineno, *x, 0x09, "opt: ",    5); (*x) += 5; break;
+		case 2:
+		case 4: displaystr (lineno, *x, 0x09, "option: ", 8); (*x) += 8; break;
+	}
+	switch (size)
+	{
+		case 1:
+		case 2: displaystr_utf8 (lineno, *x, 0x0f, opt25, 25); (*x) += 25; break;
+		case 3:
+		case 4: displaystr_utf8 (lineno, *x, 0x0f, opt50, 50); (*x) += 50; break;
+	}
+}
+
+static struct GStringElement GString_option =
+{
+	GString_option_allowgrow,
+	GString_option_render,
+	0,
+	4
+};
+
+static int GString_pausetime_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	switch (nextsize)
+	{
+		case 1: return 18;
+		case 2: return 27-18;
+		default: return 0;
+	}
+}
+
+static void GString_pausetime_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const uint_fast8_t  *inpause = inputa;
+	const uint_fast16_t *seconds = inputb;
+	char temp[7];
+
+	switch (size)
+	{
+		case 1: displaystr (lineno, *x, (*inpause) ? 0x0c : 0x00, "paused ",           7); (*x) +=  7; break;
+		case 2: displaystr (lineno, *x, (*inpause) ? 0x0c : 0x00, "playback paused ", 16); (*x) += 16; break;
+	}
+	displaystr (lineno, *x, 0x09, "time:", 5); (*x) += 5;
+
+	snprintf(temp, 7, "%3d.%02d", (int)((*seconds) / 60), (int)((*seconds) % 60));
+	displaystr (lineno, *x, 0x0f, temp, 6); (*x) += 6;
+}
+
+static struct GStringElement GString_pausetime =
+{
+	GString_pausetime_allowgrow,
+	GString_pausetime_render,
+	1,
+	2
+};
+
+static int GString_song_x_y_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	const int *songx = inputa;
+	const int *songy = inputb;
+
+	if ((!*songx) && (!*songy))
+	{
+		return 0;
+	}
+	switch (nextsize)
+	{
+		case 1: return 14;
+		default: return 0;
+	}
+}
+
+static void GString_song_x_y_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const int *songx = inputa;
+	const int *songy = inputb;
+	char temp[3];
+
+	displaystr (lineno, *x, 0x09, "song:", 5); (*x) += 6;
+	snprintf (temp, sizeof (temp), "%02d", *songx);
+	displaystr (lineno, *x, 0x0f, temp,    2); (*x) += 2;
+	displaystr (lineno, *x, 0x07, " of ",  4); (*x) += 4;
+	snprintf (temp, sizeof (temp), "%02d", *songy);
+	displaystr (lineno, *x, 0x0f, temp,    2); (*x) += 2;
+}
+
+static struct GStringElement GString_song_x_y =
+{
+	GString_song_x_y_allowgrow,
+	GString_song_x_y_render,
+	1,
+	1
+};
+
+void GStrings_render (int lineno, int count, const struct GStringElement **Elements, int *sizes, const void **inputa, const void **inputb, const void **inputc)
+{
+	int headspace, endspace, interspace1, interspace2;
+	int first = 1;
+	int width = 0;
+	int fields = 0;
 	int changed;
-
 	int x;
-	int first;
-	int interspace;
-	int interspace2;
-	int headspace;
-	int endspace;
+	int i;
 
 	if (plScrWidth >= 90)
 	{
-		endspace = headspace = (plScrWidth - 60) / 30;
+		headspace = (plScrWidth - 60) / 30;
 	} else {
-		endspace = headspace = 0;
+		headspace = 0;
 	}
 
-	width1 = width2 = headspace * 2;
+	bzero (sizes, sizeof (int) * count);
 
-	/* line 1 */
+	width = headspace * 2;
+
 	do
 	{
 		changed = 0;
 
-		if (((width1 + fields1 - 1 + songsizes[songmode+1] - songsizes[songmode] + (songmode?0:2)) <= plScrWidth))
+		for (i=0; i < count; i++)
 		{
-			width1 += songsizes[songmode+1] - songsizes[songmode];
-			fields1 += songmode?0:1;
-			songmode++;
-			changed = 1;
-		}
-
-		if (mdbdata->title[0] && (titlemode < 7) && ((width1 + fields1 - 1 + titlesizes[titlemode+1] - titlesizes[titlemode] + (titlemode?0:2)) <= plScrWidth))
-		{
-			width1 += titlesizes[titlemode+1] - titlesizes[titlemode];
-			fields1 += titlemode?0:1;
-			titlemode++;
-			changed = 1;
-		}
-
-		if (mdbdata->date && (datemode < 1) && ((width1 + fields1 - 1 + datesizes[datemode+1] - datesizes[datemode] + (datemode?0:2)) <= plScrWidth))
-		{
-			width1 += datesizes[datemode+1] - datesizes[datemode];
-			fields1 += datemode?0:1;
-			datemode++;
-			changed = 1;
-		}
-
-		if (mdbdata->playtime && (lengthmode < 2) && ((width1 + fields1 - 1 + lengthsizes[lengthmode+1] - lengthsizes[lengthmode] + (lengthmode?0:2)) <= plScrWidth))
-		{
-			width1 += lengthsizes[lengthmode+1] - lengthsizes[lengthmode];
-			fields1 += lengthmode?0:1;
-			lengthmode++;
-			changed = 1;
-		}
-
-		if (mdbdata->comment[0] && (commentmode < 7) && ((width1 + fields1 - 1 + commentsizes[commentmode+1] - commentsizes[commentmode] + (commentmode?0:2)) <= plScrWidth))
-		{
-			width1 += commentsizes[commentmode+1] - commentsizes[commentmode];
-			fields1 += commentmode?0:1;
-			commentmode++;
-			changed = 1;
-		}
-
-		if (mdbdata->album[0] && (albummode < 7) && ((width1 + fields1 - 1 + albumsizes[albummode+1] - albumsizes[albummode] + (albummode?0:2)) <= plScrWidth))
-		{
-			width1 += albumsizes[albummode+1] - albumsizes[albummode];
-			fields1 += albummode?0:1;
-			albummode++;
-			changed = 1;
-		}
-	} while (changed);
-
-	/* line 2 */
-	do
-	{
-		changed = 0;
-
-		if ((filenamemode < 4) && ((width2 + fields2 - 1 + filenamesizes[filenamemode+1] - filenamesizes[filenamemode] + (filenamemode?0:2)) <= plScrWidth))
-		{
-			width2 += filenamesizes[filenamemode+1] - filenamesizes[filenamemode];
-			fields2 += filenamemode?0:1;
-			filenamemode++;
-			changed = 1;
-		}
-
-		if ((pausetimemode < 2) && ((width2 + fields2 - 1 + pausetimesizes[pausetimemode+1] - pausetimesizes[pausetimemode] + (pausetimemode?0:2)) <= plScrWidth))
-		{
-			width2 += pausetimesizes[pausetimemode+1] - pausetimesizes[pausetimemode];
-			fields2 += pausetimemode?0:1;
-			pausetimemode++;
-			changed = 1;
-		}
-
-		if (mdbdata->composer[0] && (composermode < 7) && ((width2 + fields2 - 1 + composersizes[composermode+1] - composersizes[composermode] + (composermode?0:2)) <= plScrWidth))
-		{
-			width2 += composersizes[composermode+1] - composersizes[composermode];
-			fields2 += composermode?0:1;
-			composermode++;
-			changed = 1;
-		}
-
-		if (mdbdata->artist[0] && (artistmode < 7) && ((width2 + fields2 - 1 + artistsizes[artistmode+1] - artistsizes[artistmode] + (artistmode?0:2)) <= plScrWidth))
-		{
-			width2 += artistsizes[artistmode+1] - artistsizes[artistmode];
-			fields2 += artistmode?0:1;
-			artistmode++;
-			changed = 1;
-		}
-
-		if (mdbdata->style[0] && (stylemode < 7) && ((width2 + fields2 - 1 + stylesizes[stylemode+1] - stylesizes[stylemode] + (stylemode?0:2)) <= plScrWidth))
-		{
-			width2 += stylesizes[stylemode+1] - stylesizes[stylemode];
-			fields2 += stylemode?0:1;
-			stylemode++;
-			changed = 1;
-		}
-	} while (changed);
-
-	width1 -= headspace * 2;
-	if (fields1 >= 2)
-	{
-		interspace  = (plScrWidth - width1 - headspace - endspace) / (fields1 - 1);
-		interspace2 = (plScrWidth - width1 - headspace - endspace) % (fields1 - 1);
-	} else {
-		endspace = plScrWidth - width1 - headspace;
-	}
-
-	x = 0;
-	first = 1;
-	displayvoid (2, x, headspace); x += headspace;
-
-	if (songmode)
-	{
-		char temp[3];
-		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		displaystr (2, x, 0x09, "song:", 5); x+=6;
-		snprintf (temp, sizeof (temp), "%02d", songX);
-		displaystr (2, x, 0x0f, temp, 2); x+=2;
-		displaystr (2, x, 0x07, " of ", 4); x+=4;
-		snprintf (temp, sizeof (temp), "%02d", songY);
-		displaystr (2, x, 0x0f, temp, 2); x+=2;
-	}
-
-	if (titlemode)
-	{
-		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		displaystr (2, x, 0x09, "title: ", 7); x+=7;
-		switch (titlemode)
-		{
-			case 1: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 16); x+=16; break;
-			case 2: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 24); x+=24; break;
-			case 3: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 32); x+=32; break;
-			case 4: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 40); x+=40; break;
-			case 5: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 48); x+=48; break;
-			case 6: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 56); x+=56; break;
-			case 7: displaystr_utf8 (2, x, 0x0f, mdbdata->title, 64); x+=64; break;
-		}
-	}
-
-	if (commentmode)
-	{
-		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		displaystr (2, x, 0x09, "comment: ", 9); x+=9;
-		switch (commentmode)
-		{
-			case 1: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 16); x+=16; break;
-			case 2: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 24); x+=24; break;
-			case 3: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 32); x+=32; break;
-			case 4: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 40); x+=40; break;
-			case 5: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 48); x+=48; break;
-			case 6: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 56); x+=56; break;
-			case 7: displaystr_utf8 (2, x, 0x0f, mdbdata->comment, 64); x+=64; break;
-		}
-	}
-
-	if (albummode)
-	{
-		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		displaystr (2, x, 0x09, "album: ", 7); x+=7;
-		switch (albummode)
-		{
-			case 1: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 16); x+=16; break;
-			case 2: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 24); x+=24; break;
-			case 3: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 32); x+=32; break;
-			case 4: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 40); x+=40; break;
-			case 5: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 48); x+=48; break;
-			case 6: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 56); x+=56; break;
-			case 7: displaystr_utf8 (2, x, 0x0f, mdbdata->album, 64); x+=64; break;
-		}
-	}
-
-	if (datemode)
-	{
-		char temp[11];
-		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		displaystr (2, x, 0x09, "date: ", 6); x+=6;
-
-		if (mdbdata->date&0xFF)
-		{
-			snprintf (temp, sizeof (temp), "%02d.", mdbdata->date & 0xff);
-		} else {
-			snprintf (temp, sizeof (temp), "   ");
-		}
-		if (mdbdata->date&0xFFFF)
-		{
-			snprintf (temp + 3, sizeof (temp) - 3, "%02d.", (mdbdata->date >> 8)&0xff);
-		} else {
-			snprintf (temp + 3, sizeof (temp) - 3, "   ");
-		}
-		if (mdbdata->date>>16)
-		{
-			snprintf (temp + 6, sizeof (temp) - 6, "%4d", (mdbdata->date >> 16));
-			if (!((mdbdata->date>>16)/100))
+			if (((!first) || Elements[i]->priority) && sizes[i] < Elements[i]->sizescount)
 			{
-				temp[6] = '\'';
+				int grow = Elements[i]->allowgrow (inputa[i], inputb[i], inputc[i], sizes[i] + 1);
+				if (grow && (grow + !sizes[i] + width <= plScrWidth))
+				{
+					width += grow + ( fields ? (!sizes[i]) : 0 );
+					fields += !sizes[i];
+					sizes[i] += 1;
+					changed = 1;
+				}
 			}
 		}
-		displaystr (2, x, 0x0f, temp, 10); x+=10;
-	}
 
-	if (lengthmode)
-	{
-		char temp[7];
-		if (first) { first = 0; } else { displayvoid (2, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-
-		displaystr (2, x, 0x09, "length:", 7); x+=7;
-
-		snprintf(temp, 7, "%3d.%02d", mdbdata->playtime / 60, mdbdata->playtime % 60);
-		displaystr (2, x, 0x0f, temp, 6); x+=6;
-	}
-
-	displayvoid (2, x, endspace);
-
-	width2 -= headspace * 2;
-	if (fields2 >= 2)
-	{
-		interspace  = (plScrWidth - width2 - headspace - endspace) / (fields2 - 1);
-		interspace2 = (plScrWidth - width2 - headspace - endspace) % (fields2 - 1);
-	} else {
-		endspace = plScrWidth - width2 - headspace;
-	}
+		if (first)
+		{
+			first = 0;
+			changed = 1;
+		}
+	} while (changed);
 
 	x = 0;
 	first = 1;
-	displayvoid (3, x, headspace); x += headspace;
-
-	if (filenamemode)
+	width -= headspace * 2;
+	width -= (fields > 1) ? fields - 1 : 0;
+	if (fields >= 2)
 	{
-		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		switch (filenamemode)
+		endspace = headspace;
+		interspace1  = (plScrWidth - width - headspace - endspace) / (fields - 1);
+		interspace2 = (plScrWidth - width - headspace - endspace) % (fields - 1);
+	} else {
+		endspace = plScrWidth - width - headspace;
+	}
+
+	displayvoid (lineno, x, headspace); x += headspace;
+	for (i=0; i < count; i++)
+	{
+		if (sizes[i])
 		{
-			case 1:
-			case 3: displaystr (3, x, 0x09, "file: ", 6); x+=6; break;
-			case 2:
-			case 4: displaystr (3, x, 0x09, "filename: ", 10); x+=10; break;
-		}
-		switch (filenamemode)
-		{
-			case 1:
-			case 2: displaystr_utf8 (3, x, 0x0f, filename8_3, 12); x+=12; break;
-			case 3:
-			case 4: displaystr_utf8 (3, x, 0x0f, filename16_3, 20); x+=20; break;
+			if (first) { first = 0; } else { displayvoid (3, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2); if (interspace2) interspace2--; }
+			Elements[i]->render (inputa[i], inputb[i], inputc[i], sizes[i], &x, lineno);
 		}
 	}
 
-	if (composermode)
-	{
-		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		displaystr (3, x, 0x09, "composer: ", 10); x+=10;
-		switch (composermode)
-		{
-			case 1: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 16); x+=16; break;
-			case 2: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 24); x+=24; break;
-			case 3: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 32); x+=32; break;
-			case 4: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 40); x+=40; break;
-			case 5: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 48); x+=48; break;
-			case 6: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 56); x+=56; break;
-			case 7: displaystr_utf8 (3, x, 0x0f, mdbdata->composer, 64); x+=64; break;
-		}
-	}
+	displayvoid (lineno, x, endspace);
+}
 
-	if (artistmode)
-	{
-		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		displaystr (3, x, 0x09, "artist: ", 8); x+=8;
-		switch (artistmode)
-		{
-			case 1: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 16); x+=16; break;
-			case 2: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 24); x+=24; break;
-			case 3: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 32); x+=32; break;
-			case 4: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 40); x+=40; break;
-			case 5: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 48); x+=48; break;
-			case 6: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 56); x+=56; break;
-			case 7: displaystr_utf8 (3, x, 0x0f, mdbdata->artist, 64); x+=64; break;
-		}
-	}
+void mcpDrawGStringsFixedLengthStream (const char                    *filename8_3,
+                                       const char                    *filename16_3,
+                                       const uint64_t                 pos,
+                                       const uint64_t                 size, /* can be smaller than the file-size due to meta-data */
+                                       const char                     sizesuffix, /* 0 = "" (MIDI), 1 = KB */
+                                       const char                    *opt25,
+                                       const char                    *opt50,
+                                       const int_fast16_t             kbs,  /* kilo-bit-per-second */
+                                       const uint_fast8_t             inpause,
+                                       const uint_fast16_t            seconds,
+                                       const struct moduleinfostruct *mdbdata
+)
+{
+	const struct GStringElement *Elements1[7] = {&GString_pos, &GString_bitrate, &GString_title, &GString_comment, &GString_album, &GString_date, &GString_playtime};
+	const struct GStringElement *Elements2[6] = {&GString_filename, &GString_composer, &GString_artist, &GString_style, &GString_option, &GString_pausetime};
 
-	if (stylemode)
-	{
-		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		displaystr (3, x, 0x09, "style: ", 7); x+=7;
-		switch (stylemode)
-		{
-			case 1: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 16); x+=16; break;
-			case 2: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 24); x+=24; break;
-			case 3: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 32); x+=32; break;
-			case 4: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 40); x+=40; break;
-			case 5: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 48); x+=48; break;
-			case 6: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 56); x+=56; break;
-			case 7: displaystr_utf8 (3, x, 0x0f, mdbdata->style, 64); x+=64; break;
-		}
-	}
+	int sizes1[7];
+	int sizes2[6];
 
-	if (pausetimemode)
-	{
-		char temp[7];
+	const void *sizeinputa1[7];
+	const void *sizeinputb1[7];
+	const void *sizeinputc1[7];
+	const void *sizeinputa2[6];
+	const void *sizeinputb2[6];
+	const void *sizeinputc2[6];
 
-		if (first) { first = 0; } else { displayvoid (3, x, interspace + (!!interspace2)); x += interspace + (!!interspace2); if (interspace2) interspace2--; }
-		switch (pausetimemode)
-		{
-			case 1: displaystr (3, x, inpause?0x0c:0x00, "paused ", 7); x+=7; break;
-			case 2: displaystr (3, x, inpause?0x0c:0x00, "playback paused ", 16); x+=16; break;
-		}
-		displaystr (3, x, 0x09, "time:", 5); x+=5;
+	sizeinputa1[0] = &pos;
+	sizeinputb1[0] = &size;
+	sizeinputc1[0] = &sizesuffix;
 
-		snprintf(temp, 7, "%3d.%02d", (int)(seconds / 60), (int)(seconds % 60));
-		displaystr (3, x, 0x0f, temp, 6); x+=6;
-	}
+	sizeinputa1[1] = &kbs;
+	sizeinputb1[1] = 0;
+	sizeinputc1[1] = 0;
 
-	displayvoid (3, x, endspace);
+	sizeinputa1[2] = mdbdata->title;
+	sizeinputb1[2] = (void *)(long)measurestr_utf8 (mdbdata->title, strlen (mdbdata->title));
+	sizeinputc1[2] = 0;
+
+	sizeinputa1[3] = mdbdata->comment;
+	sizeinputb1[3] = (void *)(long)measurestr_utf8 (mdbdata->comment, strlen (mdbdata->comment));
+	sizeinputc1[3] = 0;
+
+	sizeinputa1[4] = mdbdata->album;
+	sizeinputb1[4] = (void *)(long)measurestr_utf8 (mdbdata->album, strlen (mdbdata->album));
+	sizeinputc1[4] = 0;
+
+	sizeinputa1[5] = &mdbdata->date;
+	sizeinputb1[5] = 0;
+	sizeinputc1[5] = 0;
+
+	sizeinputa1[6] = &mdbdata->playtime;
+	sizeinputb1[6] = 0;
+	sizeinputc1[6] = 0;
+
+	sizeinputa2[0] = filename8_3;
+	sizeinputb2[0] = filename16_3;
+	sizeinputc2[0] = 0;
+
+	sizeinputa2[1] = mdbdata->composer;
+	sizeinputb2[1] = (void *)(long)measurestr_utf8 (mdbdata->composer, strlen (mdbdata->composer));
+	sizeinputc2[1] = 0;
+
+	sizeinputa2[2] = mdbdata->artist;
+	sizeinputb2[2] = (void *)(long)measurestr_utf8 (mdbdata->artist, strlen (mdbdata->artist));
+	sizeinputc2[2] = 0;
+
+	sizeinputa2[3] = mdbdata->style;
+	sizeinputb2[3] = (void *)(long)measurestr_utf8 (mdbdata->style, strlen (mdbdata->style));
+	sizeinputc2[3] = 0;
+
+	sizeinputa2[4] = opt25;
+	sizeinputb2[4] = opt50;
+	sizeinputc2[4] = 0;
+
+	sizeinputa2[5] = &inpause;
+	sizeinputb2[5] = &seconds;
+	sizeinputc2[5] = 0;
+
+	GStrings_render (2, 7, Elements1, sizes1, sizeinputa1, sizeinputb1, sizeinputc1);
+	GStrings_render (3, 6, Elements2, sizes2, sizeinputa2, sizeinputb2, sizeinputc2);
+}
+
+void mcpDrawGStringsSongXofY (const char                    *filename8_3,
+                              const char                    *filename16_3,
+                              const int                      songX,
+                              const int                      songY,
+                              const uint_fast8_t             inpause,
+                              const uint_fast16_t            seconds,
+                              const struct moduleinfostruct *mdbdata)
+{
+	const struct GStringElement *Elements1[7] = {&GString_song_x_y, &GString_title, &GString_comment, &GString_album, &GString_date, &GString_playtime};
+	const struct GStringElement *Elements2[6] = {&GString_filename, &GString_composer, &GString_artist, &GString_style, &GString_pausetime};
+
+	int sizes1[6];
+	int sizes2[6];
+
+	const void *sizeinputa1[7];
+	const void *sizeinputb1[7];
+	const void *sizeinputc1[7];
+	const void *sizeinputa2[6];
+	const void *sizeinputb2[6];
+	const void *sizeinputc2[6];
+
+	sizeinputa1[0] = &songX;
+	sizeinputb1[0] = &songY;
+	sizeinputc1[0] = 0;
+
+	sizeinputa1[1] = mdbdata->title;
+	sizeinputb1[1] = (void *)(long)measurestr_utf8 (mdbdata->title, strlen (mdbdata->title));
+	sizeinputc1[1] = 0;
+
+	sizeinputa1[2] = mdbdata->comment;
+	sizeinputb1[2] = (void *)(long)measurestr_utf8 (mdbdata->comment, strlen (mdbdata->comment));
+	sizeinputc1[2] = 0;
+
+	sizeinputa1[3] = mdbdata->album;
+	sizeinputb1[3] = (void *)(long)measurestr_utf8 (mdbdata->album, strlen (mdbdata->album));
+	sizeinputc1[3] = 0;
+
+	sizeinputa1[4] = &mdbdata->date;
+	sizeinputb1[4] = 0;
+	sizeinputc1[4] = 0;
+
+	sizeinputa1[5] = &mdbdata->playtime;
+	sizeinputb1[5] = 0;
+	sizeinputc1[5] = 0;
+
+	sizeinputa2[0] = filename8_3;
+	sizeinputb2[0] = filename16_3;
+	sizeinputc2[0] = 0;
+
+	sizeinputa2[1] = mdbdata->composer;
+	sizeinputb2[1] = (void *)(long)measurestr_utf8 (mdbdata->composer, strlen (mdbdata->composer));
+	sizeinputc2[1] = 0;
+
+	sizeinputa2[2] = mdbdata->artist;
+	sizeinputb2[2] = (void *)(long)measurestr_utf8 (mdbdata->artist, strlen (mdbdata->artist));
+	sizeinputc2[2] = 0;
+
+	sizeinputa2[3] = mdbdata->style;
+	sizeinputb2[3] = (void *)(long)measurestr_utf8 (mdbdata->style, strlen (mdbdata->style));
+	sizeinputc2[3] = 0;
+
+	sizeinputa2[4] = &inpause;
+	sizeinputb2[4] = &seconds;
+	sizeinputc2[4] = 0;
+
+	GStrings_render (2, 6, Elements1, sizes1, sizeinputa1, sizeinputb1, sizeinputc1);
+	GStrings_render (3, 5, Elements2, sizes2, sizeinputa2, sizeinputb2, sizeinputc2);
 }
 
 

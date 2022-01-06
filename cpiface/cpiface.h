@@ -188,25 +188,25 @@ extern char plCompoMode;
 extern void mcpDrawGStrings(void);
 
 struct moduleinfostruct;
-void mcpDrawGStringsFixedLengthStream (const char              *filename8_3,
-                                       const char              *filename16_3,
-                                       uint64_t                 pos,
-                                       uint64_t                 size, /* can be smaller than the file-size due to meta-data */
-                                       const char               sizesuffix, /* 0 = "" (MIDI), 1 = KB */
-                                       const char              *opt25,
-                                       const char              *opt50,
-                                       int_fast16_t             kbs,  /* kilo-bit-per-second */
-                                       uint_fast8_t             inpause,
-                                       uint_fast16_t            seconds,
-                                       struct moduleinfostruct *mdbdata);
+void mcpDrawGStringsFixedLengthStream (const char                    *filename8_3,
+                                       const char                    *filename16_3,
+                                       const uint64_t                 pos,
+                                       const uint64_t                 size, /* can be smaller than the file-size due to meta-data */
+                                       const char                     sizesuffix, /* 0 = "" (MIDI), 1 = KB */
+                                       const char                    *opt25,
+                                       const char                    *opt50,
+                                       const int_fast16_t             kbs,  /* kilo-bit-per-second */
+                                       const uint_fast8_t             inpause,
+                                       const uint_fast16_t            seconds,
+                                       const struct moduleinfostruct *mdbdata);
 
-void mcpDrawGStringsSongXofY (const char              *filename8_3,
-                              const char              *filename16_3,
-                              const int                songX,
-                              const int                songY,
-                              uint_fast8_t             inpause,
-                              uint_fast16_t            seconds,
-                              struct moduleinfostruct *mdbdata);
+void mcpDrawGStringsSongXofY (const char                    *filename8_3,
+                              const char                    *filename16_3,
+                              const int                      songX,
+                              const int                      songY,
+                              const uint_fast8_t             inpause,
+                              const uint_fast16_t            seconds,
+                              const struct moduleinfostruct *mdbdata);
 
 extern int mcpSetProcessKey(uint16_t key);
 extern void mcpSetFadePars(int i);
