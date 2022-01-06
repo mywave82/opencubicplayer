@@ -1391,8 +1391,6 @@ static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry
 static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentry *mle, struct moduleinfostruct *mi, const char *npath)
 {
 #warning TODO, we are missing album and artist....
-	int i;
-
 	displayvoid (Y + 0, 0, 2);
 	if (mle && mle->utf8_8_dot_3[0])
 	{
@@ -1416,15 +1414,7 @@ static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentr
 	{
 		displaystr_utf8 (Y + 0, 42, (selecte==0)?0x8f:0x0f, mi->title, plScrWidth - 98);
 	} else {
-		for (i=42; i < plScrWidth - 98; i+=10)
-		{
-			int j = plScrWidth - 98 - i;
-			if (j > 10)
-			{
-				j = 10;
-			}
-			displaystr (Y + 0, i, (selecte==0)?0x87:0x07, "\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", j);
-		}
+		displaychr (Y + 0, 42, (selecte==0)?0x87:0x07, '\xfa', plScrWidth - 98);
 	}
 	displaystr (Y + 0, plScrWidth - 56, 0x07, "    type: ", 10);
 	if (mi->modtype.string.c[0])
@@ -1934,7 +1924,7 @@ static int fsEditModType (struct moduletype *oldtype, int _Bottom, int _Right)
 		state = 1;
 	}
 
-	displaystr(Top, Left, 0x04, "\xda\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc2\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xcbf", 21);
+	displaystr(Top, Left, 0x04, "\xda\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc2\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xcb", 21);
 
 	for (i=1;i<Height-7;i++)
 	{
@@ -2376,7 +2366,10 @@ static int fsEditDate(int y, int x, uint32_t *date)
 				state = 0;
 				return 0;
 			case _KEY_ENTER:
-				*date=((str[0]-'0')*10+str[1]-'0')|(((str[3]-'0')*10+str[4]-'0')<<8)|(((((str[6]-'0')*10+str[7]-'0')*10+str[8]-'0')*10+str[9]-'0')<<16);
+				*date=((str[0]-'0')*10+
+				        str[1]-'0')|
+				     (((str[3]-'0')*10+
+				        str[4]-'0')<<8) | (atoi (str + 6) << 16);
 				setcurshape(0);
 				state = 0;
 				return 0;
