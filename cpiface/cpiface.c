@@ -726,6 +726,7 @@ static int GString_head5_allowgrow (const void *inputa, const void *inputb, cons
 	const long len = (const long)inputb;
 
 	if (!len) return 0;
+	if (plCompoMode) return 0;
 
 	switch (nextsize)
 	{
@@ -745,6 +746,7 @@ static int GString_head6_allowgrow (const void *inputa, const void *inputb, cons
 	const long len = (const long)inputb;
 
 	if (!len) return 0;
+	if (plCompoMode) return 0;
 
 	switch (nextsize)
 	{
@@ -764,6 +766,7 @@ static int GString_head7_allowgrow (const void *inputa, const void *inputb, cons
 	const long len = (const long)inputb;
 
 	if (!len) return 0;
+	if (plCompoMode) return 0;
 
 	switch (nextsize)
 	{
@@ -783,6 +786,7 @@ static int GString_head8_allowgrow (const void *inputa, const void *inputb, cons
 	const long len = (const long)inputb;
 
 	if (!len) return 0;
+	if (plCompoMode) return 0;
 
 	switch (nextsize)
 	{
@@ -1108,13 +1112,14 @@ static int GString_song_x_y_allowgrow (const void *inputa, const void *inputb, c
 	const int *songx = inputa;
 	const int *songy = inputb;
 
-	if ((!*songx) && (!*songy))
+	if (((*songx) <= 0) && ((*songy) <= 0))
 	{
 		return 0;
 	}
 	switch (nextsize)
 	{
-		case 1: return 14;
+		case 1: return 11;
+		case 2: return 14-11;
 		default: return 0;
 	}
 }
@@ -1128,7 +1133,12 @@ static void GString_song_x_y_render (const void *inputa, const void *inputb, con
 	displaystr (lineno, *x, 0x09, "song:", 5); (*x) += 6;
 	snprintf (temp, sizeof (temp), "%02d", *songx);
 	displaystr (lineno, *x, 0x0f, temp,    2); (*x) += 2;
-	displaystr (lineno, *x, 0x07, " of ",  4); (*x) += 4;
+	if (size==1)
+	{
+		displaystr (lineno, *x, 0x07, "/",  1); (*x) += 1;
+	} else {
+		displaystr (lineno, *x, 0x07, " of ",  4); (*x) += 4;
+	}
 	snprintf (temp, sizeof (temp), "%02d", *songy);
 	displaystr (lineno, *x, 0x0f, temp,    2); (*x) += 2;
 }
@@ -1137,6 +1147,325 @@ static struct GStringElement GString_song_x_y =
 {
 	GString_song_x_y_allowgrow,
 	GString_song_x_y_render,
+	1,
+	2
+};
+
+static int GString_row_x_y_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	switch (nextsize)
+	{
+		case 1: return 10;
+		default: return 0;
+	}
+}
+
+static void GString_row_x_y_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const uint8_t *rowx = inputa;
+	const uint8_t *rowy = inputb;
+	char temp[3];
+
+	displaystr (lineno, *x, 0x09, "row: ", 5); (*x) += 5;
+	snprintf (temp, sizeof (temp), "%02X", *rowx);
+	displaystr (lineno, *x, 0x0f, temp,    2); (*x) += 2;
+	displaystr (lineno, *x, 0x07, "/",     1); (*x) += 1;
+	snprintf (temp, sizeof (temp), "%02X", *rowy);
+	displaystr (lineno, *x, 0x0f, temp,    2); (*x) += 2;
+}
+
+static struct GStringElement GString_row_x_y =
+{
+	GString_row_x_y_allowgrow,
+	GString_row_x_y_render,
+	1,
+	1
+};
+
+static int GString_channels_x_y_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	const uint8_t *chany = inputb;
+
+	if ((*chany) <= 0)
+	{
+		return 0;
+	}
+
+	switch (nextsize)
+	{
+		case 1: return 11;
+		case 2: return 15-11;
+		default: return 0;
+	}
+}
+
+static void GString_channels_x_y_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const uint8_t *chanx = inputa;
+	const uint8_t *chany = inputb;
+	char temp[3];
+
+	if (size == 1)
+	{
+		displaystr (lineno, *x, 0x09, "chan: ", 6); (*x) += 6;
+	} else {
+		displaystr (lineno, *x, 0x09, "channels: ", 10); (*x) += 10;
+	}
+	snprintf (temp, sizeof (temp), "%02d", *chanx);
+	displaystr (lineno, *x, 0x0f, temp,    2); (*x) += 2;
+	displaystr (lineno, *x, 0x07, "/",     1); (*x) += 1;
+	snprintf (temp, sizeof (temp), "%02d", *chany);
+	displaystr (lineno, *x, 0x0f, temp,    2); (*x) += 2;
+}
+
+static struct GStringElement GString_channels_x_y =
+{
+	GString_channels_x_y_allowgrow,
+	GString_channels_x_y_render,
+	1,
+	2
+};
+
+static int GString_order_x_y_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	const uint8_t *ordery = inputb;
+
+	switch (nextsize)
+	{
+		case 1:
+		{
+			if ((*ordery) < 0x10  ) return 8;
+			if ((*ordery) < 0x100 ) return 10;
+			if ((*ordery) < 0x1000) return 12;
+			return 14;
+		}
+		case 2: return 2;
+		default: return 0;
+	}
+}
+
+static void GString_order_x_y_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const uint8_t *orderx = inputa;
+	const uint8_t *ordery = inputb;
+	char temp[5];
+
+	if (size == 1)
+	{
+		displaystr (lineno, *x, 0x09, "ord: ",   5); (*x) += 5;
+	} else {
+		displaystr (lineno, *x, 0x09, "order: ", 7); (*x) += 7;
+	}
+
+	       if ((*ordery) < 0x10  )
+	{
+		snprintf (temp, sizeof (temp), "%01X", *orderx);
+		displaystr (lineno, *x, 0x0f, temp,    1); (*x) += 1;
+		displaystr (lineno, *x, 0x07, "/",     1); (*x) += 1;
+		snprintf (temp, sizeof (temp), "%01X", *ordery);
+		displaystr (lineno, *x, 0x0f, temp,    1); (*x) += 1;
+	} else if ((*ordery) < 0x100 )
+	{
+		snprintf (temp, sizeof (temp), "%02X", *orderx);
+		displaystr (lineno, *x, 0x0f, temp,    2); (*x) += 2;
+		displaystr (lineno, *x, 0x07, "/",     1); (*x) += 1;
+		snprintf (temp, sizeof (temp), "%02X", *ordery);
+		displaystr (lineno, *x, 0x0f, temp,    2); (*x) += 2;
+	} else if ((*ordery) < 0x1000)
+	{
+		snprintf (temp, sizeof (temp), "%03X", *orderx);
+		displaystr (lineno, *x, 0x0f, temp,    3); (*x) += 3;
+		displaystr (lineno, *x, 0x07, "/",     1); (*x) += 1;
+		snprintf (temp, sizeof (temp), "%03X", *ordery);
+		displaystr (lineno, *x, 0x0f, temp,    3); (*x) += 3;
+	} else {
+		snprintf (temp, sizeof (temp), "%04X", *orderx);
+		displaystr (lineno, *x, 0x0f, temp,    4); (*x) += 4;
+		displaystr (lineno, *x, 0x07, "/",     1); (*x) += 1;
+		snprintf (temp, sizeof (temp), "%04X", *ordery);
+		displaystr (lineno, *x, 0x0f, temp,    4); (*x) += 4;
+	}
+}
+
+static struct GStringElement GString_order_x_y =
+{
+	GString_order_x_y_allowgrow,
+	GString_order_x_y_render,
+	1,
+	2
+};
+
+static int GString_speed_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	switch (nextsize)
+	{
+		case 1: return 7;
+		case 2: return 9-7;
+		default: return 0;
+	}
+}
+
+static void GString_speed_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const uint8_t *speed = inputa;
+	char temp[4];
+
+	if (size == 1)
+	{
+		displaystr (lineno, *x, 0x09, "spd:", 4); (*x) += 4;
+	} else {
+		displaystr (lineno, *x, 0x09, "speed:", 6); (*x) += 6;
+	}
+
+	snprintf (temp, sizeof (temp), "%3d", *speed);
+	displaystr (lineno, *x, 0x0f, temp, 3); (*x) += 3;
+}
+
+static struct GStringElement GString_speed =
+{
+	GString_speed_allowgrow,
+	GString_speed_render,
+	1,
+	2
+};
+
+static int GString_tempo_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	switch (nextsize)
+	{
+		case 1: return 8;
+		case 2: return 10-8;
+		case 3: return 14-10;
+		default: return 0;
+	}
+}
+
+static void GString_tempo_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const uint8_t *tempo = inputa;
+	char temp[4];
+
+	switch (size)
+	{
+		case 1: displaystr (lineno, *x, 0x09, "bpm: ",        5); (*x) +=  5; break;
+		case 2: displaystr (lineno, *x, 0x09, "tempo: ",      7); (*x) +=  7; break;
+		case 3: displaystr (lineno, *x, 0x09, "tempo/bpm: ", 11); (*x) += 11; break;
+	}
+
+	snprintf (temp, sizeof (temp), "%3d", *tempo);
+	displaystr (lineno, *x, 0x0f, temp, 3); (*x) += 3;
+}
+
+static struct GStringElement GString_tempo =
+{
+	GString_tempo_allowgrow,
+	GString_tempo_render,
+	1,
+	3
+};
+
+static int GString_gvol_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	const int16_t *gvol = inputa;
+
+	if ((*gvol) < 0) return 0;
+
+	switch (nextsize)
+	{
+		case 1: return 9;
+		case 2: return 17-9;
+		default: return 0;
+	}
+}
+
+static void GString_gvol_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const int16_t *gvol = inputa;
+	const int      *direction = inputb;
+	char temp[3];
+
+	switch (size)
+	{
+		case 1: displaystr (lineno, *x, 0x09, "gvol: ",           6); (*x) +=   6; break;
+		case 2: displaystr (lineno, *x, 0x09, "global volume: ", 15); (*x) +=  15; break;
+	}
+
+	snprintf (temp, sizeof (temp), "%02X", *gvol);
+	displaystr (lineno, *x, 0x0f, temp, 2); (*x) += 2;
+	displaystr (lineno, *x, 0x0f, (*direction)>0?"\x18":(*direction)<0?"\x19":" ", 1); (*x) += 1;
+}
+
+static struct GStringElement GString_gvol =
+{
+	GString_gvol_allowgrow,
+	GString_gvol_render,
+	1,
+	2
+};
+
+static int GString_amplification_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	const int *amp = inputa;
+
+	if ((*amp) < 0) return 0;
+
+	switch (nextsize)
+	{
+		case 1: return 9;
+		case 2: return 17-9;
+		default: return 0;
+	}
+}
+
+static void GString_amplification_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const int *amp = inputa;
+	char temp[4];
+
+	switch (size)
+	{
+		case 1: displaystr (lineno, *x, 0x09, "amp: ",          5); (*x) +=   5; break;
+		case 2: displaystr (lineno, *x, 0x09, "amplication: ", 13); (*x) +=  13; break;
+	}
+
+	snprintf (temp, sizeof (temp), "%3d", *amp);
+	displaystr (lineno, *x, 0x0f, temp, 3); (*x) += 3;
+	displaystr (lineno, *x, 0x07, "%", 5); (*x) += 1;
+}
+
+static struct GStringElement GString_amplification =
+{
+	GString_amplification_allowgrow,
+	GString_amplification_render,
+	0,
+	2
+};
+
+static int GString_filter_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
+{
+	const char *filter = inputa;
+
+	if (!filter) return 0;
+
+	switch (nextsize)
+	{
+		case 1: return 11;
+		default: return 0;
+	}
+}
+
+static void GString_filter_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
+{
+	const char *filter= inputa;
+
+	displaystr (lineno, *x, 0x09, "filter: ", 8); (*x) += 8;
+	displaystr (lineno, *x, 0x0f, filter, 3); (*x) += 3;
+}
+
+static struct GStringElement GString_filter =
+{
+	GString_filter_allowgrow,
+	GString_filter_render,
 	1,
 	1
 };
@@ -1304,18 +1633,18 @@ void mcpDrawGStringsSongXofY (const char                    *filename8_3,
                               const uint_fast16_t            seconds,
                               const struct moduleinfostruct *mdbdata)
 {
-	const struct GStringElement *Elements1[7] = {&GString_song_x_y, &GString_title, &GString_comment, &GString_album, &GString_date, &GString_playtime};
-	const struct GStringElement *Elements2[6] = {&GString_filename, &GString_composer, &GString_artist, &GString_style, &GString_pausetime};
+	const struct GStringElement *Elements1[6] = {&GString_song_x_y, &GString_title, &GString_comment, &GString_album, &GString_date, &GString_playtime};
+	const struct GStringElement *Elements2[5] = {&GString_filename, &GString_composer, &GString_artist, &GString_style, &GString_pausetime};
 
 	int sizes1[6];
-	int sizes2[6];
+	int sizes2[5];
 
-	const void *sizeinputa1[7];
-	const void *sizeinputb1[7];
-	const void *sizeinputc1[7];
-	const void *sizeinputa2[6];
-	const void *sizeinputb2[6];
-	const void *sizeinputc2[6];
+	const void *sizeinputa1[6];
+	const void *sizeinputb1[6];
+	const void *sizeinputc1[6];
+	const void *sizeinputa2[5];
+	const void *sizeinputb2[5];
+	const void *sizeinputc2[5];
 
 	sizeinputa1[0] = &songX;
 	sizeinputb1[0] = &songY;
@@ -1365,6 +1694,106 @@ void mcpDrawGStringsSongXofY (const char                    *filename8_3,
 	GStrings_render (3, 5, Elements2, sizes2, sizeinputa2, sizeinputb2, sizeinputc2);
 }
 
+void mcpDrawGStringsTracked (const char                    *filename8_3,
+                             const char                    *filename16_3,
+                             const int                      songX,
+                             const int                      songY, /* 0 or smaller, disables this, else 2 digits.. */
+                             const uint8_t                  rowX,
+                             const uint8_t                  rowY, /* displayed as 2 hex digits */
+                             const uint16_t                 orderX,
+                             const uint16_t                 orderY, /* displayed as 1,2,3 or 4 hex digits, depending on this size */
+                             const uint8_t                  speed, /* displayed as %3 (with no space prefix) decimal digits */
+                             const uint8_t                  tempo, /* displayed as %3 decimal digits */
+                             const int16_t                  gvol, /* -1 for disable, else 0x00..0xff */
+                             const int                      gvol_slide_direction,
+                             const uint8_t                  chanX,
+                             const uint8_t                  chanY, /* set to zero to disable */
+                             const int                      amplification, /* -1 for disable */
+                             const char                    *filter, /* 3 character string if non-null */
+                             const uint_fast8_t             inpause,
+                             const uint_fast16_t            seconds,
+                             const struct moduleinfostruct *mdbdata)
+{
+	const struct GStringElement *Elements1[10] = {&GString_song_x_y, &GString_row_x_y, &GString_order_x_y, &GString_speed, &GString_tempo, &GString_gvol, &GString_channels_x_y, &GString_comment, &GString_amplification, &GString_filter};
+	const struct GStringElement *Elements2[6] = {&GString_filename, &GString_title, &GString_composer, &GString_artist, &GString_style, &GString_pausetime};
+
+	int sizes1[10];
+	int sizes2[6];
+
+	const void *sizeinputa1[10];
+	const void *sizeinputb1[10];
+	const void *sizeinputc1[10];
+	const void *sizeinputa2[6];
+	const void *sizeinputb2[6];
+	const void *sizeinputc2[6];
+
+	sizeinputa1[0] = &songX;
+	sizeinputb1[0] = &songY;
+	sizeinputc1[0] = 0;
+
+	sizeinputa1[1] = &rowX;
+	sizeinputb1[1] = &rowY;
+	sizeinputc1[1] = 0;
+
+	sizeinputa1[2] = &orderX;
+	sizeinputb1[2] = &orderY;
+	sizeinputc1[2] = 0;
+
+	sizeinputa1[3] = &speed;
+	sizeinputb1[3] = 0;
+	sizeinputc1[3] = 0;
+
+	sizeinputa1[4] = &tempo;
+	sizeinputb1[4] = 0;
+	sizeinputc1[4] = 0;
+
+	sizeinputa1[5] = &gvol;
+	sizeinputb1[5] = &gvol_slide_direction;
+	sizeinputc1[5] = 0;
+
+	sizeinputa1[6] = &chanX;
+	sizeinputb1[6] = &chanY;
+	sizeinputc1[6] = 0;
+
+	sizeinputa1[7] = mdbdata->comment;
+	sizeinputb1[7] = (void *)(long)measurestr_utf8 (mdbdata->comment, strlen (mdbdata->comment));
+	sizeinputc1[7] = 0;
+
+	sizeinputa1[8] = &amplification;
+	sizeinputb1[8] = 0;
+	sizeinputc1[8] = 0;
+
+	sizeinputa1[9] = filter;
+	sizeinputb1[9] = 0;
+	sizeinputc1[9] = 0;
+
+	sizeinputa2[0] = filename8_3;
+	sizeinputb2[0] = filename16_3;
+	sizeinputc2[0] = 0;
+
+	sizeinputa2[1] = mdbdata->title;
+	sizeinputb2[1] = (void *)(long)measurestr_utf8 (mdbdata->title, strlen (mdbdata->title));
+	sizeinputc2[1] = 0;
+
+	sizeinputa2[2] = mdbdata->composer;
+	sizeinputb2[2] = (void *)(long)measurestr_utf8 (mdbdata->composer, strlen (mdbdata->composer));
+	sizeinputc2[2] = 0;
+
+	sizeinputa2[3] = mdbdata->artist;
+	sizeinputb2[3] = (void *)(long)measurestr_utf8 (mdbdata->artist, strlen (mdbdata->artist));
+	sizeinputc2[3] = 0;
+
+	sizeinputa2[4] = mdbdata->style;
+	sizeinputb2[4] = (void *)(long)measurestr_utf8 (mdbdata->style, strlen (mdbdata->style));
+	sizeinputc2[4] = 0;
+
+	sizeinputa2[5] = &inpause;
+	sizeinputb2[5] = &seconds;
+	sizeinputc2[5] = 0;
+
+	GStrings_render (2, 10, Elements1, sizes1, sizeinputa1, sizeinputb1, sizeinputc1);
+	GStrings_render (3,  6, Elements2, sizes2, sizeinputa2, sizeinputb2, sizeinputc2);
+}
 
 void cpiDrawGStrings (void)
 {

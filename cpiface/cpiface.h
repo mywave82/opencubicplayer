@@ -208,6 +208,26 @@ void mcpDrawGStringsSongXofY (const char                    *filename8_3,
                               const uint_fast16_t            seconds,
                               const struct moduleinfostruct *mdbdata);
 
+void mcpDrawGStringsTracked (const char                    *filename8_3,
+                             const char                    *filename16_3,
+                             const int                      songX,
+                             const int                      songY, /* 0 or smaller, disables this, else 2 digits.. */
+                             const uint8_t                  rowX,
+                             const uint8_t                  rowY, /* displayed as 2 hex digits */
+                             const uint16_t                 orderX,
+                             const uint16_t                 orderY, /* displayed as 1,2,3 or 4 hex digits, depending on this size */
+                             const uint8_t                  speed, /* displayed as %3 (with no space prefix) decimal digits */
+                             const uint8_t                  tempo, /* displayed as %3 decimal digits */
+                             const int16_t                  gvol, /* -1 for disable, else 0x00..0xff */
+                             const int                      gvol_slide_direction,
+                             const uint8_t                  chanX,
+                             const uint8_t                  chanY, /* set to zero to disable */
+                             const int                      amplification, /* -1 for disable */
+                             const char                    *filter, /* 3 character string if non-null */
+                             const uint_fast8_t             inpause,
+                             const uint_fast16_t            seconds,
+                             const struct moduleinfostruct *mdbdata);
+
 extern int mcpSetProcessKey(uint16_t key);
 extern void mcpSetFadePars(int i);
 

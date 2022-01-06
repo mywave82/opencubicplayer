@@ -50,20 +50,15 @@
 #include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/poutput.h"
+#include "stuff/sets.h"
 #include "xmplay.h"
 
-#define _MAX_FNAME 8
-#define _MAX_EXT 4
-
 static struct xmodule mod;
-
-static const char *modname;
-static const char *composer;
-
-static char currentmodname[_MAX_FNAME+1];
-static char currentmodext[_MAX_EXT+1];
 static time_t starttime;
 static time_t pausetime;
+static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
+static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
+static struct moduleinfostruct mdbdata;
 
 static struct xmpinstrument *insts;
 static struct xmpsample *samps;
@@ -216,64 +211,35 @@ static void xmpDrawGStrings (void)
 {
 	int pos=xmpGetRealPos();
 	int gvol,bpm,tmp;
-	unsigned long tim;
 	struct xmpglobinfo gi;
 
 	mcpDrawGStrings ();
 
 	xmpGetGlobInfo(&tmp, &bpm, &gvol);
 	xmpGetGlobInfo2(&gi);
-	if (plPause)
-		tim=(pausetime-starttime)/DOS_CLK_TCK;
-	else
-		tim=(dos_clock()-starttime)/DOS_CLK_TCK;
 
-#warning TODO GStrings
-#if 0
-	if (plScrWidth<128)
-	{
-		writestring(buf[1],  0, 0x09, " row: ../..  ord: .../...  tempo: ..  bpm: ...  gvol: ..\xfa ", 58);
-		writenum(buf[1],  6, 0x0F, (pos>>8)&0xFF, 16, 2, 0);
-		writenum(buf[1],  9, 0x0F, mod.patlens[mod.orders[(pos>>16)&0xFF]]-1, 16, 2, 0);
-		writenum(buf[1], 18, 0x0F, (pos>>16)&0xFF, 16, 3, 0);
-		writenum(buf[1], 22, 0x0F, mod.nord-1, 16, 3, 0);
-		writenum(buf[1], 34, 0x0F, tmp, 16, 2, 1);
-		writenum(buf[1], 43, 0x0F, bpm, 10, 3, 1);
-		writenum(buf[1], 54, 0x0F, gvol, 16, 2, 0);
-		writestring(buf[1], 56, 0x0F, (gi.globvolslide==xfxGVSUp)?"\x18":(gi.globvolslide==xfxGVSDown)?"\x19":" ", 1);
-		writestring(buf[2],  0, 0x09, " module \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................               time: ..:.. ", 80);
-		writestring(buf[2],  8, 0x0F, currentmodname, _MAX_FNAME);
-		writestring(buf[2], 16, 0x0F, currentmodext, _MAX_EXT);
-#warning modname is is now UTF-8
-		writestring(buf[2], 22, 0x0F, modname, 31);
-		if (plPause)
-			writestring(buf[2], 58, 0x0C, "paused", 6);
-		writenum(buf[2], 74, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[2], 76, 0x0F, ":", 1);
-		writenum(buf[2], 77, 0x0F, tim%60, 10, 2, 0);
-	} else {
-		writestring(buf[1],  0, 0x09, "    row: ../..  order: .../...   tempo: ..  speed/bpm: ...   global volume: ..\xfa  ", 81);
-		writenum(buf[1],  9, 0x0F, (pos>>8)&0xFF, 16, 2, 0);
-		writenum(buf[1], 12, 0x0F, mod.patlens[mod.orders[(pos>>16)&0xFF]]-1, 16, 2, 0);
-		writenum(buf[1], 23, 0x0F, (pos>>16)&0xFF, 16, 3, 0);
-		writenum(buf[1], 27, 0x0F, mod.nord-1, 16, 3, 0);
-		writenum(buf[1], 40, 0x0F, tmp, 16, 2, 1);
-		writenum(buf[1], 55, 0x0F, bpm, 10, 3, 1);
-		writenum(buf[1], 76, 0x0F, gvol, 16, 2, 0);
-		writestring(buf[1], 78, 0x0F, (gi.globvolslide==xfxGVSUp)?"\x18":(gi.globvolslide==xfxGVSDown)?"\x19":" ", 1);
-		writestring(buf[2],  0, 0x09, "    module \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................  composer: ...............................                  time: ..:..    ", 132);
-		writestring(buf[2], 11, 0x0F, currentmodname, _MAX_FNAME);
-		writestring(buf[2], 19, 0x0F, currentmodext, _MAX_EXT);
-#warning modname and composer is now UTF-8
-		writestring(buf[2], 25, 0x0F, modname, 31);
-		writestring(buf[2], 68, 0x0F, composer, 31);
-		if (plPause)
-			writestring(buf[2], 100, 0x0C, "playback paused", 15);
-		writenum(buf[2], 123, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[2], 125, 0x0F, ":", 1);
-		writenum(buf[2], 126, 0x0F, tim%60, 10, 2, 0);
-	}
-#endif
+	mcpDrawGStringsTracked
+	(
+		utf8_8_dot_3,
+		utf8_16_dot_3,
+		0,          /* song X */
+		0,          /* song Y */
+		(pos>>8)&0xFF,/* row X */
+		mod.patlens[mod.orders[(pos>>16)&0xFF]]-1,/* row Y */
+		(pos>>16)&0xFF,/* order X */
+		mod.nord-1, /* order Y */
+		tmp,        /* speed */
+		bpm,        /* tempo */
+		gvol,
+		(gi.globvolslide==xfxGVSUp)?1:(gi.globvolslide==xfxGVSDown)?-1:0,
+		0,          /* chan X */
+		0,          /* chan Y */
+		mcpset.amp,
+		(set.filter==1)?"AOI":(set.filter==2)?"FOI":"off",
+		plPause,
+		plPause?((pausetime-starttime)/DOS_CLK_TCK):((dos_clock()-starttime)/DOS_CLK_TCK),
+		&mdbdata
+	);
 }
 
 static void xmpCloseFile(void)
@@ -604,12 +570,12 @@ static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	if (!file)
 		return errFileOpen;
 
-#warning currentmodname currentmodext
-	//strncpy(currentmodname, info->name, _MAX_FNAME);
-	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
+	mdbdata = *info;
 
 	dirdbGetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s (%uk)...\n", filename, (unsigned int)(file->filesize (file) >> 10));
+	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
+	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	     if (info->modtype.integer.i == MODULETYPE("XM"))   loader=xmpLoadModule;
 	else if (info->modtype.integer.i == MODULETYPE("MOD"))  loader=xmpLoadMOD;
@@ -668,21 +634,9 @@ static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	xmTrkSetup(&mod);
 
 	plNPChan=mcpNChan;
-#warning TODO, this is not UTF-8 at the moment.....
-	modname=mod.name;
-	composer="";
-	if (!plCompoMode)
-	{
-		if (!*modname)
-			modname=info->title;
-		composer=info->composer;
-	} else
-		modname=info->comment;
-
 	plGetRealMasterVolume=mcpGetRealMasterVolume;
 	plGetMasterSample=mcpGetMasterSample;
 	plGetPChanSample=mcpGetChanSample;
-
 
 	starttime=dos_clock();
 	plPause=0;

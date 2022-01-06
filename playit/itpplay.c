@@ -47,9 +47,7 @@
 #include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/poutput.h"
-
-#define _MAX_FNAME 8
-#define _MAX_EXT 4
+#include "stuff/sets.h"
 
 __attribute__ ((visibility ("internal"))) struct itplayer itplayer = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 static struct it_module mod = {{0},0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,{0},{0},0,0,0,0,0};
@@ -57,19 +55,14 @@ static struct it_module mod = {{0},0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,{0},{
 static struct it_instrument *insts;
 static struct it_sample *samps;
 
-
-static const char *modname;
-static const char *composer;
-
-static char currentmodname[_MAX_FNAME+1];
-static char currentmodext[_MAX_EXT+1];
 static time_t starttime;
 static time_t pausetime;
-
-
 static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
+static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
+static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
+static struct moduleinfostruct mdbdata;
 
 static void startpausefade(void)
 {
@@ -214,70 +207,42 @@ static void itpDrawGStrings (void)
 {
 	int pos=getrealpos(&itplayer)>>8;
 	int gvol, bpm, tmp, gs;
-	long tim;
+	int i, nch = 0;
 
 	mcpDrawGStrings ();
 
 	getglobinfo(&itplayer, &tmp, &bpm, &gvol, &gs);
 
-	if (plPause)
-		tim=(pausetime-starttime)/DOS_CLK_TCK;
-	else
-		tim=(dos_clock()-starttime)/DOS_CLK_TCK;
-
-#warning TODO GStrings
-#if 0
-	if (plScrWidth<128)
+	for (i=0; i<plNPChan; i++)
 	{
-		writestring(buf[1],  0, 0x09, " row: ../..  ord: .../...  speed: ..  bpm: ...  gvol: ..\xfa ", 58);
-		writenum(buf[1],  6, 0x0F, pos&0xFF, 16, 2, 0);
-		writenum(buf[1],  9, 0x0F, mod.patlens[mod.orders[pos>>8]]-1, 16, 2, 0);
-		writenum(buf[1], 18, 0x0F, pos>>8, 16, 3, 0);
-		writenum(buf[1], 22, 0x0F, mod.nord-1, 16, 3, 0);
-		writenum(buf[1], 34, 0x0F, tmp, 16, 2, 1);
-		writenum(buf[1], 43, 0x0F, bpm, 10, 3, 1);
-		writenum(buf[1], 54, 0x0F, gvol, 16, 2, 0);
-		writestring(buf[1], 56, 0x0F, (gs==ifxGVSUp)?"\x18":(gs==ifxGVSDown)?"\x19":" ", 1);
-		writestring(buf[2],  0, 0x09, " module \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................               time: ..:.. ", 80);
-		writestring(buf[2],  8, 0x0F, currentmodname, _MAX_FNAME);
-		writestring(buf[2], 16, 0x0F, currentmodext, _MAX_EXT);
-#warning modname is now utf-8....
-		writestring(buf[2], 22, 0x0F, modname, 31);
-		if (plPause)
-			writestring(buf[2], 58, 0x0C, "paused", 6);
-		writenum(buf[2], 74, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[2], 76, 0x0F, ":", 1);
-		writenum(buf[2], 77, 0x0F, tim%60, 10, 2, 0);
-	} else {
-		int i;
-		int nch=0;
-		writestring(buf[1],  0, 0x09, "    row: ../..  order: .../...   speed: ..  tempo: ...   gvol: ..\xfa  chan: ../..", 81);
-		writenum(buf[1],  9, 0x0F, pos&0xFF, 16, 2, 0);
-		writenum(buf[1], 12, 0x0F, mod.patlens[mod.orders[pos>>8]]-1, 16, 2, 0);
-		writenum(buf[1], 23, 0x0F, pos>>8, 16, 3, 0);
-		writenum(buf[1], 27, 0x0F, mod.nord-1, 16, 3, 0);
-		writenum(buf[1], 40, 0x0F, tmp, 16, 2, 1);
-		writenum(buf[1], 51, 0x0F, bpm, 10, 3, 1);
-		writenum(buf[1], 63, 0x0F, gvol, 16, 2, 0);
-		writestring(buf[1], 65, 0x0F, (gs==ifxGVSUp)?"\x18":(gs==ifxGVSDown)?"\x19":" ", 1);
-		for (i=0; i<plNPChan; i++)
-			if (mcpGet(i, mcpCStatus))
-				nch++;
-		writenum(buf[1], 74, 0x0F, nch, 16, 2, 0);
-		writenum(buf[1], 77, 0x0F, plNPChan, 16, 2, 0);
-		writestring(buf[2],  0, 0x09, "    module \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ...............................  composer: ...............................                  time: ..:..    ", 132);
-		writestring(buf[2], 11, 0x0F, currentmodname, _MAX_FNAME);
-		writestring(buf[2], 19, 0x0F, currentmodext, 4);
-#warning modname and composer is not utf-8....
-		writestring(buf[2], 25, 0x0F, modname, 31);
-		writestring(buf[2], 68, 0x0F, composer, 31);
-		if (plPause)
-			writestring(buf[2], 100, 0x0C, "playback paused", 15);
-		writenum(buf[2], 123, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[2], 125, 0x0F, ":", 1);
-		writenum(buf[2], 126, 0x0F, tim%60, 10, 2, 0);
+		if (mcpGet(i, mcpCStatus))
+		{
+			nch++;
+		}
 	}
-#endif
+
+	mcpDrawGStringsTracked
+	(
+		utf8_8_dot_3,
+		utf8_16_dot_3,
+		0,          /* song X */
+		0,          /* song Y */
+		pos&0xFF,   /* row X */
+		mod.patlens[mod.orders[pos>>8]]-1, /* row Y */
+		pos>>8,     /* order X */
+		mod.nord-1, /* order Y */
+		tmp,        /* speed */
+		bpm,        /* tempo */
+		gvol,
+		(gs==ifxGVSUp)?1:(gs==ifxGVSDown)?-1:0,
+		nch,
+		plNPChan,
+		mcpset.amp,
+		(set.filter==1)?"AOI":(set.filter==2)?"FOI":"off",
+		plPause,
+		plPause?((pausetime-starttime)/DOS_CLK_TCK):((dos_clock()-starttime)/DOS_CLK_TCK),
+		&mdbdata
+	);
 }
 
 static void itpCloseFile(void)
@@ -611,12 +576,12 @@ static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	if (!file)
 		return errFileOpen;
 
-#warning currentmodname currentmodext
-	//strncpy(currentmodname, info->name, _MAX_FNAME);
-	//strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
+	mdbdata = *info;
 
 	dirdbGetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s (%uk)...\n", filename, (unsigned int)(file->filesize(file)>>10));
+	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
+	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	if (!(retval=it_load(&mod, file)))
 		if (!loadsamples(&mod))
@@ -657,16 +622,6 @@ static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	if (mod.message)
 		plUseMessage(mod.message);
 	plNPChan=mcpNChan;
-
-	modname=mod.name;
-	composer="";
-	if (!plCompoMode)
-	{
-		if (!*modname)
-			modname=info->title;
-		composer=info->composer;
-	} else
-		modname=info->comment;
 
 	plGetRealMasterVolume=mcpGetRealMasterVolume;
 	plGetMasterSample=mcpGetMasterSample;

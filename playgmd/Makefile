@@ -253,7 +253,8 @@ gmdpplay.o: gmdpplay.c \
 	gmdptrak.h \
 	../stuff/compat.h \
 	../stuff/err.h \
-	../stuff/poutput.h
+	../stuff/poutput.h \
+	../stuff/sets.h
 	$(CC) gmdpplay.c -o $@ -c
 
 gmdptrak.o: gmdptrak.c \

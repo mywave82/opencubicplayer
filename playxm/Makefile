@@ -102,7 +102,8 @@ xmpplay.o: xmpplay.c \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
 	../stuff/err.h \
-	../stuff/poutput.h
+	../stuff/poutput.h \
+	../stuff/sets.h
 	$(CC) xmpplay.c -o $@ -c
 
 xmptrak.o: xmptrak.c \

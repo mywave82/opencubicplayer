@@ -68,7 +68,8 @@ itpplay.o: itpplay.c \
 	itplay.h \
 	../stuff/compat.h \
 	../stuff/err.h \
-	../stuff/poutput.h
+	../stuff/poutput.h \
+	../stuff/sets.h
 	$(CC) itpplay.c -o $@ -c
 
 itptrack.o: itptrack.c \

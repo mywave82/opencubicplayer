@@ -43,18 +43,14 @@
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 
-#define _MAX_FNAME 8
-#define _MAX_EXT 4
-
 static time_t starttime;
 static time_t pausetime;
-
 static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
-
-static char currentmodname[_MAX_FNAME+1];
-static char currentmodext[_MAX_EXT+1];
+static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
+static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
+static struct moduleinfostruct mdbdata;
 
 static void startpausefade (void)
 {
@@ -123,66 +119,34 @@ static void hvlDrawGStrings (void)
 	int tempo;
 	int speedmult;
 
-	int32_t tim;
-
 	mcpDrawGStrings ();
 
 	hvlGetStats (&row, &rows, &order, &orders, &subsong, &subsongs, &tempo, &speedmult);
 
-	if (plPause)
-		tim=(pausetime-starttime)/DOS_CLK_TCK;
-	else
-		tim=(dos_clock()-starttime)/DOS_CLK_TCK;
-
-#warning TODO GStrings
-#if 0
-	if (plScrWidth<128)
-	{
-		writestring(buf[1],  0, 0x09, " row: ../..  ord: ..../....  speed: ..  bpm: ...  subsong: ../..                ", 80);
-                writenum(buf[1],  6, 0x0F, row, 16, 2, 0);
-		writenum(buf[1],  9, 0x0F, rows-1, 16, 2, 0);
-		writenum(buf[1], 18, 0x0F, order, 16, 4, 0);
-		writenum(buf[1], 23, 0x0F, orders-1, 16, 4, 0);
-		writenum(buf[1], 36, 0x0F, tempo, 16, 2, 1);
-		writenum(buf[1], 45, 0x0F, 125*speedmult*4/tempo, 10, 3, 1); // 125, is assumed tempo is 4
-		writenum(buf[1], 59, 0x0F, subsong, 10, 2, 0);
-		writenum(buf[1], 62, 0x0F, subsongs, 10, 2, 0);
-
-		writestring(buf[2],  0, 0x09, "    HVL \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ............................................  time: ..:.. ", 80);
-		writestring(buf[2],  8, 0x0F, currentmodname, _MAX_FNAME);
-		writestring(buf[2], 16, 0x0F, currentmodext, _MAX_EXT);
-		writestring(buf[2], 22, 0x0F, current_hvl_tune?current_hvl_tune->ht_Name:"", 44);
-		if (plPause)
-		{
-			writestring(buf[2], 57, 0x0C, " paused ", 8);
-		}
-		writenum(buf[2], 74, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[2], 76, 0x0F, ":", 1);
-		writenum(buf[2], 77, 0x0F, tim%60, 10, 2, 0);
-	} else {
-		writestring(buf[1],  0, 0x09, "     row: ../..  ord: ..../....  speed: ..  tempo: ...  subsong: ../..                                                          ", 128);
-                writenum(buf[1], 10, 0x0F, row, 16, 2, 0);
-		writenum(buf[1], 13, 0x0F, rows-1, 16, 2, 0);
-		writenum(buf[1], 22, 0x0F, order, 16, 4, 0);
-		writenum(buf[1], 27, 0x0F, orders-1, 16, 4, 0);
-		writenum(buf[1], 40, 0x0F, tempo, 16, 2, 1);
-		writenum(buf[1], 51, 0x0F, 125*speedmult*4/tempo, 10, 3, 1); // 125 is assumed that tempo is 4
-		writenum(buf[1], 65, 0x0F, subsong, 10, 2, 0);
-		writenum(buf[1], 68, 0x0F, subsongs, 10, 2, 0);
-
-		writestring(buf[2],  0, 0x09, "       HVL \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa: ......................................................................................... time: ..:.. ", 128);
-		writestring(buf[2], 11, 0x0F, currentmodname, _MAX_FNAME);
-		writestring(buf[2], 19, 0x0F, currentmodext, _MAX_EXT);
-		writestring(buf[2], 25, 0x0F, current_hvl_tune?current_hvl_tune->ht_Name:"", 89);
-		if (plPause)
-		{
-			writestring(buf[2], 100, 0x0C, "playback paused", 15);
-		}
-		writenum(buf[2], 121, 0x0F, (tim/60)%60, 10, 2, 1);
-		writestring(buf[2], 123, 0x0F, ":", 1);
-		writenum(buf[2], 124, 0x0F, tim%60, 10, 2, 0);
-	}
-#endif
+	mcpDrawGStringsTracked
+	(
+		utf8_8_dot_3,
+		utf8_16_dot_3,
+		subsong,    /* song X */
+		subsongs,   /* song Y */
+		row,        /* row X */
+		rows-1,     /* row Y */
+		order,      /* order X */
+		orders-1,   /* order Y */
+		tempo,      /* speed - do not ask */
+		125*speedmult*4/tempo,/* tempo - do not ask*/
+		-1,         /* gvol */
+		0,          /* gvol slide direction */
+		0,          /* chan X */
+		0,          /* chan Y */
+		-1,         /* amplification */
+		0,          /* filter */
+		plPause,
+		plPause?((pausetime-starttime)/DOS_CLK_TCK):((dos_clock()-starttime)/DOS_CLK_TCK),
+		&mdbdata
+	);
+#warning we are missing the current tune title
+//writestring(buf[2], 22, 0x0F, current_hvl_tune?current_hvl_tune->ht_Name:"", 44);
 }
 
 static int hvlProcessKey(uint16_t key)
@@ -259,15 +223,15 @@ static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 		return errFileOpen;
 	}
 
-#warning we need the utf8_8_dot_3 from modlist...
-//	strncpy(currentmodname, info->name, _MAX_FNAME);
-//	strncpy(currentmodext, info->name + _MAX_FNAME, _MAX_EXT);
-
 
 	filelen = file->filesize (file);
 
+	mdbdata = *info;
+
 	dirdbGetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s (%"PRIu64" bytes)...\n", filename, filelen);
+	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
+	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	if (filelen < 14)
 	{
