@@ -68,7 +68,8 @@ static int vol;
 static unsigned long voll,volr;
 static int pan;
 static int srnd;
-static uint16_t speed;
+static uint32_t speed;
+static uint32_t dspeed;
 static int loading;
 
 /* devp pre-buffer zone */
@@ -97,6 +98,35 @@ static uint32_t gmibufrate = 0x10000; /* re-sampling rate.. fixed point 0x10000 
 
 static int (*_GET)(int ch, int opt);
 static void (*_SET)(int ch, int opt, int val);
+
+#define PANPROC \
+do { \
+	float _rs = rs, _ls = ls; \
+	if(pan==-64) \
+	{ \
+		float t=_ls; \
+		_ls = _rs; \
+		_rs = t; \
+	} else if(pan==64) \
+	{ \
+	} else if(pan==0) \
+		_rs=_ls=(_rs+_ls) / 2.0; \
+	else if(pan<0) \
+	{ \
+		_ls = _ls / (-pan/-64.0+2.0) + _rs*(64.0+pan)/128.0; \
+		_rs = _rs / (-pan/-64.0+2.0) + _ls*(64.0+pan)/128.0; \
+	} else if(pan<64) \
+	{ \
+		_ls = _ls / (pan/-64.0+2.0) + _rs*(64.0-pan)/128.0; \
+		_rs = _rs / (pan/-64.0+2.0) + _ls*(64.0-pan)/128.0; \
+	} \
+	rs = _rs * volr / 256.0; \
+	ls = _ls * voll / 256.0; \
+	if (srnd) \
+	{ \
+		ls ^= 0xffff; \
+	} \
+} while(0)
 
 /* clipper threadlock since we use a timer-signal */
 static volatile int clipbusy=0;
@@ -1296,11 +1326,12 @@ static int emulate_play_midi_iterate(void)
 					break;
 				if (midi_restart_time)  /* don't skip the first event if == 0 */
 				{
-					if (speed != 0x100)
+					if (speed != 0x10000)
 					{
 						int32_t diff = (current_event[1].time - current_sample);
-						int32_t newdiff = diff * 0x100 / speed;
-					current_sample += (diff - newdiff);
+						int32_t newdiff = diff * 0x10000 / speed;
+						current_sample += (diff - newdiff);
+						PRINT ("current_sample override %d - %d => %d\n", diff, newdiff, diff - newdiff);
 					}
 					current_event++;
 				}
@@ -1426,25 +1457,13 @@ void __attribute__ ((visibility ("internal"))) timidityPause(unsigned char p)
 	inpause=p;
 }
 
-static void timiditySetPitch(int16_t sp)
-{
-#if 0
-	if (sp<32)
-		sp=32;
-	gmibufrate=256*sp;
-#endif
-	ctl_next_value = sp - note_key_offset;
-	ctl_next_result = RC_KEYUP;
-}
-
 static void timiditySetVolume(void)
 {
-#warning fixme, these are not used yet.... PANPROC
 	volr=voll=vol*4;
 	if (bal<0)
-		volr=(volr*(64+bal))>>6;
+		voll=(voll*(64+bal))>>6;
 	else
-		voll=(voll*(64-bal))>>6;
+		volr=(volr*(64-bal))>>6;
 }
 
 static void SET(int ch, int opt, int val)
@@ -1452,12 +1471,14 @@ static void SET(int ch, int opt, int val)
 	switch (opt)
 	{
 		case mcpMasterSpeed:
-#warning fixme, might be broken
-			speed = val;
+			dspeed = val * 0x100;
+			speed = (float)dspeed * ((float)0x10000 / gmibufrate);
+			PRINT ("#1  dspeed=0x%08x gmibufrate=0x%08x speed=0x%08x\n", dspeed, gmibufrate, speed);
 			break;
 		case mcpMasterPitch:
-#warning fixme, might be broken
-			timiditySetPitch (val);
+			gmibufrate = val * 0x100;
+			speed = (float)dspeed * ((float)0x10000 / gmibufrate);
+			PRINT ("#2  dspeed=0x%08x gmibufrate=0x%08x speed=0x%08x\n", dspeed, gmibufrate, speed);
 			break;
 		case mcpMasterSurround:
 			srnd=val;
@@ -1502,13 +1523,10 @@ void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct mglobi
 
 void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 {
-	uint32_t bufplayed;
 	uint32_t bufdelta;
 	uint32_t pass2;
-	int quietlen=0;
 /*
 	uint32_t toloop;*/
-
 
 	if (clipbusy++)
 	{
@@ -1517,11 +1535,15 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 	}
 
 again:
-	bufplayed=plrGetBufPos()>>(stereo+bit16);
-	bufdelta=(buflen+bufplayed-bufpos)%buflen;
+	{
+		uint32_t bufplayed;
 
+		bufplayed=plrGetBufPos()>>(stereo+bit16);
+		bufdelta=(buflen+bufplayed-bufpos)%buflen;
+	}
 	/* bufdelta is now in samples */
 
+	/* No delta on the devp? */
 	if (!bufdelta)
 	{
 		clipbusy--;
@@ -1555,100 +1577,120 @@ again:
 	}
 
 	if (inpause)
-		quietlen=bufdelta;
-
-/* TODO, this has with lopping todo
-	toloop=imuldiv(((bufloopat-gmibuftail)>>(1+aystereo)), 65536, gmibufrate);
-	if (looped)
-		toloop=0;*/
-
-	bufdelta-=quietlen;
-
-/* TODO, this has with looping todo
-	if (bufdelta>=toloop)
-	{
-		looped=1;
-		if (donotloop)
+	{ /* If we are in pause, we fill buffer with the correct type of zeroes */
+		if ((bufpos+bufdelta)>buflen)
+			pass2=bufpos+bufdelta-buflen;
+		else
+			pass2=0;
+		if (bit16)
 		{
-			quietlen+=bufdelta-toloop;
-			bufdelta=toloop;
+			plrClearBuf((uint16_t *)plrbuf+(bufpos<<stereo), (bufdelta-pass2)<<stereo, signedout);
+			if (pass2)
+				plrClearBuf((uint16_t *)plrbuf, pass2<<stereo, signedout);
+		} else {
+			plrClearBuf(buf16, bufdelta<<stereo, signedout);
+			plr16to8((uint8_t *)plrbuf+(bufpos<<stereo), (uint16_t *)buf16, (bufdelta-pass2)<<stereo);
+			if (pass2)
+				plr16to8((uint8_t *)plrbuf, (uint16_t *)buf16+((bufdelta-pass2)<<stereo), pass2<<stereo);
 		}
-	}*/
-
-	if (bufdelta)
-	{
+		bufpos+=bufdelta;
+		if (bufpos>=buflen)
+			bufpos-=buflen;
+	} else {
+		int buf16_filled = 0;
 		uint32_t i;
 
 		if (gmibufrate==0x10000)
 		{
-			uint32_t o=0;
-			while (o<bufdelta)
+			while (buf16_filled<bufdelta) /* due to buffer-wrap */
 			{
-				uint32_t w=(bufdelta-o);
-				if ((gmibuflen-gmibuftail)<w)
+				int w=(bufdelta-buf16_filled);
+				if ((gmibuflen-gmibuftail) < w) /* crop at buffer-wrap if needed */
+				{
 					w=gmibuflen-gmibuftail;
-				memcpy(buf16+(o<<1), gmibuf+(gmibuftail<<2), w<<2);
-				o+=w;
+				}
+				for (i=0; i < w; i++)
+				{
+					int16_t rs = ((int16_t *)gmibuf)[(gmibuftail<<1) + 0];
+					int16_t ls = ((int16_t *)gmibuf)[(gmibuftail<<1) + 1];
+					PANPROC;
+					buf16[(buf16_filled<<1)+0] = rs;
+					buf16[(buf16_filled<<1)+1] = ls;
+					gmibuftail++;
+					buf16_filled++;
+				}
+				if (gmibuftail >= gmibuflen)
+				{
+					gmibuftail = 0;
+				}
 				timidity_play_EventDelayed_gmibuf (w);
-				gmibuftail+=w;
-				if (gmibuftail>=gmibuflen)
-					gmibuftail-=gmibuflen;
 				gmibuffill-=w;
 				gmibuffree+=w;
 			}
 		} else {
-			int32_t aym1, c0, c1, c2, c3, ls, rs, vm1,v1,v2;
+			int32_t aym1;
 			uint32_t ay1, ay2;
-			for (i=0; i<bufdelta; i++)
+
+			int32_t rc0, rc1, rc2, rc3, rvm1, rv1, rv2;
+			int32_t lc0, lc1, lc2, lc3, lvm1, lv1, lv2;
+
+			int16_t ls, rs;
+			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
 			{
 				aym1=gmibuftail-4; if (aym1<0) aym1+=gmibuflen;
 				ay1=gmibuftail+4; if (ay1>=gmibuflen) ay1-=gmibuflen;
 				ay2=gmibuftail+8; if (ay2>=gmibuflen) ay2-=gmibuflen;
 
-				c0 = *(uint16_t *)(gmibuf+(gmibuftail<<2))^0x8000;
-				vm1= *(uint16_t *)(gmibuf+(aym1<<2))^0x8000;
-				v1 = *(uint16_t *)(gmibuf+(ay1<<2))^0x8000;
-				v2 = *(uint16_t *)(gmibuf+(ay2<<2))^0x8000;
-				c1 = v1-vm1;
-				c2 = 2*vm1-2*c0+v1-v2;
-				c3 = c0-vm1-v1+v2;
-				c3 =  imulshr16(c3,gmibuffpos);
-				c3 += c2;
-				c3 =  imulshr16(c3,gmibuffpos);
-				c3 += c1;
-				c3 =  imulshr16(c3,gmibuffpos);
-				ls = c3+c0;
-				if (ls<0)
-					ls=0;
-				if (ls>65535)
-					ls=65535;
 
-				c0 = *(uint16_t *)(gmibuf+(gmibuftail<<2)+2)^0x8000;
-				vm1= *(uint16_t *)(gmibuf+(aym1<<2)+2)^0x8000;
-				v1 = *(uint16_t *)(gmibuf+(ay1<<2)+2)^0x8000;
-				v2 = *(uint16_t *)(gmibuf+(ay2<<2)+2)^0x8000;
-				c1 = v1-vm1;
-				c2 = 2*vm1-2*c0+v1-v2;
-				c3 = c0-vm1-v1+v2;
-				c3 =  imulshr16(c3,gmibuffpos);
-				c3 += c2;
-				c3 =  imulshr16(c3,gmibuffpos);
-				c3 += c1;
-				c3 =  imulshr16(c3,gmibuffpos);
-				rs = c3+c0;
-				if (rs<0)
-					rs=0;
-				if (rs>65535)
-					rs=65535;
+				rc0 = *(uint16_t *)(gmibuf+(gmibuftail<<2))^0x8000;
+				rvm1= *(uint16_t *)(gmibuf+(aym1<<2))^0x8000;
+				rv1 = *(uint16_t *)(gmibuf+(ay1<<2))^0x8000;
+				rv2 = *(uint16_t *)(gmibuf+(ay2<<2))^0x8000;
+				rc1 = rv1-rvm1;
+				rc2 = 2*rvm1-2*rc0+rv1-rv2;
+				rc3 = rc0-rvm1-rv1+rv2;
+				rc3 =  imulshr16(rc3,gmibuffpos);
+				rc3 += rc2;
+				rc3 =  imulshr16(rc3,gmibuffpos);
+				rc3 += rc1;
+				rc3 =  imulshr16(rc3,gmibuffpos);
+				rc3 += rc0;
+				if (rc3<0)
+					rc3=0;
+				if (rc3>65535)
+					rc3=65535;
 
-				buf16[2*i]=(uint16_t)ls^0x8000;
-				buf16[2*i+1]=(uint16_t)rs^0x8000;
+				lc0 = *(uint16_t *)(gmibuf+(gmibuftail<<2)+2)^0x8000;
+				lvm1= *(uint16_t *)(gmibuf+(aym1<<2)+2)^0x8000;
+				lv1 = *(uint16_t *)(gmibuf+(ay1<<2)+2)^0x8000;
+				lv2 = *(uint16_t *)(gmibuf+(ay2<<2)+2)^0x8000;
+				lc1 = lv1-lvm1;
+				lc2 = 2*lvm1-2*lc0+lv1-lv2;
+				lc3 = lc0-lvm1-lv1+lv2;
+				lc3 =  imulshr16(lc3,gmibuffpos);
+				lc3 += lc2;
+				lc3 =  imulshr16(lc3,gmibuffpos);
+				lc3 += lc1;
+				lc3 =  imulshr16(lc3,gmibuffpos);
+				lc3 += lc0;
+				if (lc3<0)
+					lc3=0;
+				if (lc3>65535)
+					lc3=65535;
+
+				rs = rc3 ^ 0x8000;
+				ls = lc3 ^ 0x8000;
+
+				PANPROC;
+
+				buf16[2*buf16_filled+0] = rs;
+				buf16[2*buf16_filled+1] = ls;
 
 				gmibuffpos+=gmibufrate;
-				timidity_play_EventDelayed_gmibuf (gmibuffpos>>16);
 				gmibuftail+=(gmibuffpos>>16);
 				if (gmibuftail>=gmibuflen)
 					gmibuftail-=gmibuflen;
+				timidity_play_EventDelayed_gmibuf (gmibuffpos>>16);
 				gmibuffill-=(gmibuffpos>>16);
 				gmibuffree+=(gmibuffpos>>16);
 				gmibuffpos&=0xFFFF;
@@ -1664,80 +1706,40 @@ again:
 		{
 			if (stereo)
 			{
-				if (reversestereo)
+				int16_t *p=(int16_t *)plrbuf+2*bufpos;
+				int16_t *b=(int16_t *)buf16;
+				if (signedout)
 				{
-					int16_t *p=(int16_t *)plrbuf+2*bufpos;
-					int16_t *b=(int16_t *)buf16;
-					if (signedout)
+					for (i=0; i<bufdelta; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[0];
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[0];
-							p+=2;
-							b+=2;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1]^0x8000;
-							p[1]=b[0]^0x8000;
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1]^0x8000;
-							p[1]=b[0]^0x8000;
-							p+=2;
-							b+=2;
-						}
+						p[0]=b[0];
+						p[1]=b[1];
+						p+=2;
+						b+=2;
+					}
+					p=(int16_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[0];
+						p[1]=b[1];
+						p+=2;
+						b+=2;
 					}
 				} else {
-					int16_t *p=(int16_t *)plrbuf+2*bufpos;
-					int16_t *b=(int16_t *)buf16;
-					if (signedout)
+					for (i=0; i<bufdelta; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[0];
-							p[1]=b[1];
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[0];
-							p[1]=b[1];
-							p+=2;
-							b+=2;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[0]^0x8000;
-							p[1]=b[1]^0x8000;
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[0]^0x8000;
-							p[1]=b[1]^0x8000;
-							p+=2;
-							b+=2;
-						}
+						p[0]=b[0]^0x8000;
+						p[1]=b[1]^0x8000;
+						p+=2;
+						b+=2;
+					}
+					p=(int16_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[0]^0x8000;
+						p[1]=b[1]^0x8000;
+						p+=2;
+						b+=2;
 					}
 				}
 			} else {
@@ -1777,80 +1779,40 @@ again:
 		} else {
 			if (stereo)
 			{
-				if (reversestereo)
+				uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
+				uint8_t *b=(uint8_t *)buf16;
+				if (signedout)
 				{
-					uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
-					uint8_t *b=(uint8_t *)buf16;
-					if (signedout)
+					for (i=0; i<bufdelta; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[3];
-							p[1]=b[1];
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[3];
-							p[1]=b[1];
-							p+=2;
-							b+=4;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[3]^0x80;
-							p[1]=b[1]^0x80;
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[3]^0x80;
-							p[1]=b[1]^0x80;
-							p+=2;
-							b+=4;
-						}
+						p[0]=b[1];
+						p[1]=b[3];
+						p+=2;
+						b+=4;
+					}
+					p=(uint8_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[1];
+						p[1]=b[3];
+						p+=2;
+						b+=4;
 					}
 				} else {
-					uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
-					uint8_t *b=(uint8_t *)buf16;
-					if (signedout)
+					for (i=0; i<bufdelta; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[3];
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[3];
-							p+=2;
-							b+=4;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1]^0x80;
-							p[1]=b[3]^0x80;
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1]^0x80;
-							p[1]=b[3]^0x80;
-							p+=2;
-							b+=4;
-						}
+						p[0]=b[1]^0x80;
+						p[1]=b[3]^0x80;
+						p+=2;
+						b+=4;
+					}
+					p=(uint8_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[1]^0x80;
+						p[1]=b[3]^0x80;
+						p+=2;
+						b+=4;
 					}
 				}
 			} else {
@@ -1893,29 +1855,6 @@ again:
 			bufpos-=buflen;
 	}
 
-	bufdelta=quietlen;
-	if (bufdelta)
-	{
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		if (bit16)
-		{
-			plrClearBuf((uint16_t *)plrbuf+(bufpos<<stereo), (bufdelta-pass2)<<stereo, !signedout);
-			if (pass2)
-				plrClearBuf((uint16_t *)plrbuf, pass2<<stereo, !signedout);
-		} else {
-			plrClearBuf(buf16, bufdelta<<stereo, !signedout);
-			plr16to8((uint8_t *)plrbuf+(bufpos<<stereo), buf16, (bufdelta-pass2)<<stereo);
-			if (pass2)
-				plr16to8((uint8_t *)plrbuf, buf16+((bufdelta-pass2)<<stereo), pass2<<stereo);
-		}
-		bufpos+=bufdelta;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
-	}
-
 	plrAdvanceTo(bufpos<<(stereo+bit16));
 
 	{
@@ -1932,37 +1871,6 @@ again:
 
 	clipbusy--;
 }
-
-
-
-
-#if 0
-
-#undef main
-int main(int argc, char *argv[])
-{
-	add_to_pathlist ("/etc/timidity");
-	emulate_main_start();
-
-	if (!emulate_timidity_play_main_start ())
-	{
-		//retval=ctl->pass_playing_list(nfiles, files);  /* Here we give control to CTL */
-		emulate_play_midi_file_start("/home/oem/Downloads/elise.mid", &timidity_main_session);
-
-		while (emulate_play_midi_file_iterate("/home/oem/Downloads/elise.mid", &timidity_main_session) == RC_ASYNC_HACK)
-		{
-			fprintf (stderr, "We are async....\n");
-		}
-
-		emulate_timidity_play_main_end ();
-	}
-
-	emulate_main_end ();
-
-	return 0;
-}
-
-#endif
 
 static void doTimidityClosePlayer(int CloseDriver)
 {
@@ -2028,22 +1936,6 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	loading = 1;
 
 	plrSetOptions(44100, (PLR_SIGNEDOUT|PLR_16BIT)|PLR_STEREO);
-
-	if (!(plrOpt&PLR_STEREO))
-	{
-		fprintf (stderr, "[timidity] plugin only supports STEREO output\n");
-		return errGen;
-	}
-	if (!(plrOpt&PLR_16BIT))
-	{
-		fprintf (stderr, "[timidity] plugin only supports 16-bit output\n");
-		return errGen;
-	}
-	if (!(plrOpt&PLR_SIGNEDOUT))
-	{
-		fprintf (stderr, "[timidity] plugin only supports (signed) output\n");
-		return errGen;
-	}
 
 	stereo=!!(plrOpt&PLR_STEREO);
 	bit16=!!(plrOpt&PLR_16BIT);
