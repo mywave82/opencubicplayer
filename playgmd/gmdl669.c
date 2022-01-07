@@ -1,5 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * GMDPlay loader for Composer 669 modules
  *
@@ -414,4 +415,4 @@ static int _mpLoad669(struct gmdmodule *m, struct ocpfilehandle_t *file)
 
 struct gmdloadstruct mpLoad669 = { _mpLoad669 };
 
-struct linkinfostruct dllextinfo = {.name = "gmdl669", .desc = "OpenCP Module Loader: *.669 (c) 1994-21 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "gmdl669", .desc = "OpenCP Module Loader: *.669 (c) 1994-'22 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

@@ -1,5 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'21 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * GMDPlay channel display routines
  *

@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '05-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) '05-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * OPL-compatible file type detection routines for the file selector
  *
@@ -121,7 +121,7 @@ extern "C" {
 	struct linkinfostruct dllextinfo =
 	{
 		"opltype" /* name */,
-		"OpenCP OPL Detection (c) 2005-'21 Stian Skjelstad" /* desc */,
+		"OpenCP OPL Detection (c) 2005-'22 Stian Skjelstad" /* desc */,
 		DLLVERSION /* ver */
 	};
 }

@@ -1,5 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Wavetable Device: No Sound
  * This program is free software; you can redistribute it and/or modify
@@ -487,4 +488,4 @@ static int Detect(struct deviceinfo *c)
 struct sounddevice mcpNone={SS_WAVETABLE, 0, "None", Detect, Init, Close, 0};
 char *dllinfo = "driver mcpNone";
 
-struct linkinfostruct dllextinfo = {.name = "devwnone", .desc = "OpenCP Wavetable Device: None (c) 1994-09 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "devwnone", .desc = "OpenCP Wavetable Device: None (c) 1994-'22 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};

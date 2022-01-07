@@ -1,6 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) '04-'21 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'22 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
  *
  * UNIX cdrom filebrowser
  *
@@ -1041,4 +1041,4 @@ static int cdrom_track_filesize_ready (struct ocpfile_t *_self)
 char *dllinfo = "";
 #endif
 
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cdrom", .desc = "OpenCP UNIX audio-cdrom filebrowser (c) 2004-21 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = cdint, .Close = cdclose};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cdrom", .desc = "OpenCP UNIX audio-cdrom filebrowser (c) 2004-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = cdint, .Close = cdclose};

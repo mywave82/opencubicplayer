@@ -1,5 +1,5 @@
 /* opencp module Player
- * copyright (c) '18-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2018-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * SDL2 graphic driver
  *

@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2020 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2020-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * ID3 TAG Picture viewer
  *

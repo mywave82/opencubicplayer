@@ -1,5 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'21 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * GMDPlay loader for ScreamTracker ]I[ modules
  *
@@ -823,4 +824,4 @@ static int _mpLoadS3M(struct gmdmodule *m, struct ocpfilehandle_t *file)
 
 struct gmdloadstruct mpLoadS3M = { _mpLoadS3M };
 
-struct linkinfostruct dllextinfo = {.name = "gmdls3m", .desc = "OpenCP Module Loader: *.S3M (c) 1994-21 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "gmdls3m", .desc = "OpenCP Module Loader: *.S3M (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

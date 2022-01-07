@@ -11,26 +11,25 @@ stuff.
 
 List of betatesters and patch authors
 
-Stian Sebastian Skjelstad aka mw| <stian@nixia.no> - Gentoo compile-tests (x86)
-                                                   - Maintainer of this fork of Cubic Player
-Lars Åge Kamfjord aka Laaknor <lak@globelan.net>   - Debian compile-tests (x86)
-                                                   - Skolelinux compile-tests (x86)
-Andreas Kristiansen aka Kafka                      - Comments
-Mathias Boeen                                      - Debian compile-tests (x86)
-Mathias Nilsen aka beta <matni@frisurf.no>         - Fedora Core 2 compile-tests
-Helge aka alge                                     - Debian SID compile-tests (x86)
-                                                   - Fedore Core 1 compile-tests (x86)
-Roman Y. Bogdanov <sam@brj.pp.ru>                  - BSD testing
-Emanuel Haupt <ehaupt@critical.ch>                 - FreeBSD packaging / testing
-Gürkan Sengün <gurkan@aiei.ch>                     - Debian packaging
-Reinaert Albrecht <reinaert.albrecht@easynet.be>   - Patch
-Luigi Auriemma                                     - Locating some buffer overflows in module-loaders
-Adam Sampson <ats@offog.org>                       - Minor patch
-Chuck Anderson <cra@WPI.EDU>                       - Patches
-François Revol <revol@free.fr>                     - SDL Audio, and Haiku support
-Jindřich Makovička <makovick@gmail.com>            - Minor fix in detection for glibc bug 4936, C version of FPU mixer
-Csaba Halász aka Jester01                          - Minor SDL keyboard updates
-Ossi Saukko                                        - Minor patch
+Stian Sebastian Skjelstad aka mw| <stian.skjelstad@gmail.com> - Maintainer of this fork of Cubic Player
+Lars Åge Kamfjord aka Laaknor <lak@globelan.net>              - Debian compile-tests (x86)
+                                                              - Skolelinux compile-tests (x86)
+Andreas Kristiansen aka Kafka                                 - Comments
+Mathias Boeen                                                 - Debian compile-tests (x86)
+Mathias Nilsen aka beta <matni@frisurf.no>                    - Fedora Core 2 compile-tests
+Helge aka alge                                                - Debian SID compile-tests (x86)
+                                                              - Fedore Core 1 compile-tests (x86)
+Roman Y. Bogdanov <sam@brj.pp.ru>                             - BSD testing
+Emanuel Haupt <ehaupt@critical.ch>                            - FreeBSD packaging / testing
+Gürkan Sengün <gurkan@aiei.ch>                                - Debian packaging
+Reinaert Albrecht <reinaert.albrecht@easynet.be>              - Patch
+Luigi Auriemma                                                - Locating some buffer overflows in module-loaders
+Adam Sampson <ats@offog.org>                                  - Minor patch
+Chuck Anderson <cra@WPI.EDU>                                  - Patches
+François Revol <revol@free.fr>                                - SDL Audio, and Haiku support
+Jindřich Makovička <makovick@gmail.com>                       - Minor fix in detection for glibc bug 4936, C version of FPU mixer
+Csaba Halász aka Jester01                                     - Minor SDL keyboard updates
+Ossi Saukko                                                   - Minor patch
 
 
 Also, see AUTHORS file

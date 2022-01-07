@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2010 Stian Skjelstad <stian@nixia.no>
+ * copyright (c) 2010-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * ASM emulated routines for FPU mixer
  *

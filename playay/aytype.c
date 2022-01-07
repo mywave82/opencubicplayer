@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '05-'10 Stian Skjelstad <stian@nixia.no>
+ * copyright (c) 2005-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * .ay file type detection routines for the file selector
  *
@@ -144,4 +144,4 @@ static void __attribute__((destructor))done(void)
 
 static struct mdbreadinforegstruct ayReadInfoReg = {"AY", ayReadInfo, ayEvent MDBREADINFOREGSTRUCT_TAIL};
 char *dllinfo = "";
-struct linkinfostruct dllextinfo = {.name = "aytype", .desc = "OpenCP AY Detection (c) 2005-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "aytype", .desc = "OpenCP AY Detection (c) 2005-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

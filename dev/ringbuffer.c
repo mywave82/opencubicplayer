@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2016 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2016-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Generic ringbuffer pointer handler
  *

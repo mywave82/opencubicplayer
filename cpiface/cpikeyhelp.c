@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '08-'21 Stian Skjelstad <stian@nixia.no>
+ * copyright (c) 2008-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Keyboard shortcut help-browser.
  *'

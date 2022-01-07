@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2021 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2021-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Code to decompress ZIP bz2ip method using libbz2
  *

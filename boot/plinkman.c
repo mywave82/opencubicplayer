@@ -1,5 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Link manager - contains high-level routines to load and handle
  *                external DLLs
@@ -58,7 +59,7 @@ struct dll_handle loadlist[MAXDLLLIST];
 int loadlist_n;
 
 #ifdef SUPPORT_STATIC_PLUGINS
-DLLEXTINFO_PREFIX struct linkinfostruct staticdlls = {.name = "static", .desc = "Compiled in plugins (c) 2009 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+DLLEXTINFO_PREFIX struct linkinfostruct staticdlls = {.name = "static", .desc = "Compiled in plugins (c) 2009-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
 #endif
 
 static char reglist[1024];

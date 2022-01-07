@@ -1,5 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * CP hypertext help viewer (CPIFACE wrapper)
  *
@@ -133,4 +134,4 @@ static void __attribute__((destructor))done(void)
 #ifndef SUPPORT_STATIC_PLUGINS
 char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cphlpif", .desc = "OpenCP help browser CPIFACE wrapper (c) 1998-09 Fabian Giesen", .ver = DLLVERSION, .size = 0};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cphlpif", .desc = "OpenCP help browser CPIFACE wrapper (c) 1998-'22 Fabian Giesen", .ver = DLLVERSION, .size = 0};

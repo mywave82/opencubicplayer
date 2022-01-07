@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '05-'10 Stian Skjelstad <stian@nixia.no>
+ * copyright (c) 2005-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * This file is based on AdPlug project, released under GPLv2
  * with permission from Simon Peter.

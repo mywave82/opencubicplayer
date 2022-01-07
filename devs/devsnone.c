@@ -1,5 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * NoSound sampler device (samples perfect noise-free 16bit silence)
  *
@@ -121,4 +122,4 @@ static int ndDetect(struct deviceinfo *c)
 
 struct sounddevice smpNone={SS_SAMPLER, 0, "Eternal Silence Recorder", ndDetect, ndInit, ndClose, 0};
 char *dllinfo="driver smpNone";
-struct linkinfostruct dllextinfo = {.name = "devsnone", .desc = "OpenCP Sampler Device: None (c) 1994-09 Niklas Beisert", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "devsnone", .desc = "OpenCP Sampler Device: None (c) 1994-'22 Niklas Beisert", .ver = DLLVERSION, .size = 0};

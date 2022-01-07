@@ -1,3 +1,23 @@
+/* OpenCP Module Player
+ * copyright (c) 2019-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ *
+ * Disassembler used by dumpay utility
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
+
 /*
 CB => Bit instructions
 DD => IX instructions
@@ -1090,6 +1110,5 @@ static int disassemble (unsigned char *memory, uint16_t ptr, char opcode[5], cha
 		                                                 return 0;
 		case 0xFF: strcpy (opcode, "RST" ); *length = 1; strcpy  (param1, "&38"); *alt_ptr = 0x0038;
 		                                                 return 2; /* depending on the RST vector, this might be a call... argh */
-
 	}
 }

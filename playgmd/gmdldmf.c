@@ -1,5 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'21 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 1994-'21 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * GMDPlay loader for X-Tracker modules
  *
@@ -882,4 +883,4 @@ safeout:
 
 struct gmdloadstruct mpLoadDMF = { _mpLoadDMF };
 
-struct linkinfostruct dllextinfo = {.name = "gmdldmf", .desc = "OpenCP Module Loader: *.DMF (c) 1994-21 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "gmdldmf", .desc = "OpenCP Module Loader: *.DMF (c) 1994-'22 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

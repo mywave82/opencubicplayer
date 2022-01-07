@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2011 François Revol <revol@free.fr>
+ * copyright (c) 2011-'22 François Revol <revol@free.fr>
  *
  * SDL Player device
  *
@@ -320,4 +320,4 @@ static int sdlDetect(struct deviceinfo *card)
 struct sounddevice plrSDL={SS_PLAYER, 0, "SDL Player", sdlDetect, sdlInit, sdlClose, 0};
 
 char *dllinfo="driver plrSDL";
-struct linkinfostruct dllextinfo = {.name = "devpsdl", .desc = "OpenCP Player Device: SDL (c) 2011 Fran\x87ois Revol", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "devpsdl", .desc = "OpenCP Player Device: SDL (c) 2011-'22 François Revol", .ver = DLLVERSION, .size = 0};

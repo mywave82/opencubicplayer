@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2020 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2020-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Utility: Dumping the ID3 tags from MP3 files
  *
@@ -17,7 +17,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-
 
 #define _GNU_SOURCE
 #include <fcntl.h>

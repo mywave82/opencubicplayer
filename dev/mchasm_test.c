@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '04-'10 Stian Skjelstad <stian@nixia.no>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * unit-test of "mchasm.c"
  *

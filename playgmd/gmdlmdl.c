@@ -1,5 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'21 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1385,4 +1386,4 @@ static int _mpLoadMDL(struct gmdmodule *m, struct ocpfilehandle_t *file)
 
 struct gmdloadstruct mpLoadMDL = { _mpLoadMDL };
 
-struct linkinfostruct dllextinfo = {.name = "gmdlmdl", .desc = "OpenCP Module Loader: *.MDL (c) 1994-21 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "gmdlmdl", .desc = "OpenCP Module Loader: *.MDL (c) 1994-'22 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

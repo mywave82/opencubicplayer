@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2019-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2019-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * GMDPlay loader for ScreamTracker ][ modules
  *
@@ -641,4 +641,4 @@ static int _mpLoadSTM(struct gmdmodule *m, struct ocpfilehandle_t *file)
 
 struct gmdloadstruct mpLoadSTM = { _mpLoadSTM };
 
-struct linkinfostruct dllextinfo = {.name = "gmdlstm", .desc = "OpenCP Module Loader: *.STM (c) 2019-'21, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "gmdlstm", .desc = "OpenCP Module Loader: *.STM (c) 2019-'22, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

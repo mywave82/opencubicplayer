@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '05-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * OPLPlay interface routines
  *
@@ -530,7 +530,7 @@ extern "C"
 	struct linkinfostruct dllextinfo =
 	{
 		"playym" /* name */,
-		"OpenCP STYMulator Player (c) 2010-'21 Stian Skjelstad" /* desc */,
+		"OpenCP STYMulator Player (c) 2010-'22 Stian Skjelstad" /* desc */,
 		DLLVERSION /* ver */
 	};
 }

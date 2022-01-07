@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '04-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * database for storing a tree of filenames
  *

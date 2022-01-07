@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '07-'10 Stian Skjelstad <stian@nixia.no>
+ * copyright (c) 2007-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * FLACPlay file type detection routines for the fileselector
  *
@@ -246,4 +246,4 @@ static void __attribute__((destructor))done(void)
 
 static struct mdbreadinforegstruct flacReadInfoReg = {"FLAC", flacReadInfo, flacEvent MDBREADINFOREGSTRUCT_TAIL};
 char *dllinfo = "";
-struct linkinfostruct dllextinfo = {.name = "flacptype", .desc = "OpenCP FLAC Detection (c) 2007-20 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "flacptype", .desc = "OpenCP FLAC Detection (c) 2007-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2020-'21 Stian Skjelstad <stian.skjelestad@gmail.com>
+ * copyright (c) 2020-'22 Stian Skjelstad <stian.skjelestad@gmail.com>
  *
  * Text render functions that can be used if the text-rendering is done
  * virtually using plVidMem API

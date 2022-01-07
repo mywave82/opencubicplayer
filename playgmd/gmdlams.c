@@ -1,5 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * GMDPlay loader for Velvet Studio modules
  *
@@ -1476,4 +1477,4 @@ safeout:
 
 struct gmdloadstruct mpLoadAMS = { _mpLoadAMS };
 
-struct linkinfostruct dllextinfo = {.name = "gmdlams", .desc = "OpenCP Module Loader: *.669 (c) 1994-21 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "gmdlams", .desc = "OpenCP Module Loader: *.669 (c) 1994-'22 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

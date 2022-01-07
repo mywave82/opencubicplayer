@@ -1,6 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) '11-'20 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2011-'22 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
  *
  * SIDPlay interface routines
  *
@@ -504,7 +504,7 @@ extern "C"
 	struct linkinfostruct dllextinfo =
 	{
 		"playsid" /* name */,
-		"OpenCP SID Player (c) 1993-'20 Michael Schwendt, Tammo Hinrichs, Stian Skjelstad" /* desc */,
+		"OpenCP SID Player (c) 1993-'22 Michael Schwendt, Tammo Hinrichs, Stian Skjelstad" /* desc */,
 		DLLVERSION /* ver */
 	};
 }

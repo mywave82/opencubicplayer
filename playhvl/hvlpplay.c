@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2019 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2019-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * HVLPlay interface routines
  *
@@ -287,4 +287,4 @@ static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 }
 
 struct cpifaceplayerstruct hvlPlayer = {"[HivelyTracker plugin]", hvlOpenFile, hvlCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playhvl", .desc = "OpenCP HVL Player (c) 2019-'20 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playhvl", .desc = "OpenCP HVL Player (c) 2019-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

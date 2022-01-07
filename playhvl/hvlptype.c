@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2019-20 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2019-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * HVL and AHX file type detection routines for the fileselector
  *

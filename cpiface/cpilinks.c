@@ -1,5 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * CPIface link info screen
  *
@@ -53,8 +54,6 @@ static void plDisplayHelp(void)
 
 	for (y=0; y<plWinHeight; y++)
 	{
-		uint16_t buf[/*80*/132];
-		writestring(buf, 0, 0, "", /*80*/132);
 		if (lnkGetLinkInfo(&l, (y+plHelpScroll)/(mode?2:1)))
 		{
 			int dl=strlen(l.desc);
@@ -69,6 +68,9 @@ static void plDisplayHelp(void)
 				i=/*58*/110;
 			if (!((y+plHelpScroll)&1)||!mode)
 			{
+				uint16_t buf[/*80*/132];
+				writestring(buf, 0, 0, "", /*80*/132);
+
 				writestring(buf, 2, 0x0A, l.name, 8);
 				if (l.size)
 				{
@@ -77,25 +79,23 @@ static void plDisplayHelp(void)
 				} else
 					writestring(buf, 12, 0x07, "builtin", 7);
 				writestring(buf, 22, 0x0F, l.desc, i);
+
+				displaystrattr(y+plWinFirstLine+1, 0, buf, 132 /* 80 */);
 			} else {
-				char vbuf[30];
-				strcpy(vbuf, "version ");
-				convnum(l.ver>>16, vbuf+strlen(vbuf), 10, 3, 1);
-				strcat(vbuf, ".");
-				if ((signed char)(l.ver>>8)>=0)
-					convnum((signed char)(l.ver>>8), vbuf+strlen(vbuf), 10, 2, 0);
-				else
-				{
-					strcat(vbuf, "-");
-					convnum(-(signed char)(l.ver>>8)/10, vbuf+strlen(vbuf), 10, 1, 0);
-				}
-				strcat(vbuf, ".");
-				convnum((unsigned char)l.ver, vbuf+strlen(vbuf), 10, 2, 0);
-				writestring(buf, 2, 0x08, vbuf, 17);
-				writestring(buf, 24, 0x08, d2, 108 /* 56 */);
+				char vbuf[32];
+
+				snprintf (vbuf, sizeof (vbuf), "  version %d.%s%d.%d",
+					l.ver>>16,
+					((signed char)(l.ver>>8)>=0) ? "" : "-",
+					((signed char)(l.ver>>8)>=0) ? ((signed char)(l.ver>>8)) : ((signed char)(l.ver>>8)/10),
+					(unsigned char)l.ver);
+
+				displaystr (y+plWinFirstLine+1, 0, 0x08, vbuf, 24);
+				displaystr_utf8 (y+plWinFirstLine+1, 24, 0x08, d2, plScrWidth - 24);
 			}
+		} else {
+			displayvoid (y+plWinFirstLine+1, 0, plScrWidth);
 		}
-		displaystrattr(y+plWinFirstLine+1, 0, buf, 132 /* 80 */);
 	}
 }
 
@@ -104,6 +104,8 @@ static int plHelpKey(uint16_t key)
 	switch (key)
 	{
 		case KEY_ALT_K:
+			cpiKeyHelp(KEY_UP, "Scroll up");
+			cpiKeyHelp(KEY_DOWN, "Scroll down");
 			cpiKeyHelp(KEY_PPAGE, "Scroll up");
 			cpiKeyHelp(KEY_NPAGE, "Scroll down");
 			cpiKeyHelp(KEY_HOME, "Scroll to to the first line");
@@ -119,11 +121,11 @@ static int plHelpKey(uint16_t key)
 				plHelpScroll*=2;
 			mode=!mode;
 			break;
-		/*case 0x4900: //pgup*/
+		case KEY_UP:
 		case KEY_PPAGE:
 			plHelpScroll--;
 			break;
-		/*case 0x5100: //pgdn*/
+		case KEY_DOWN:
 		case KEY_NPAGE:
 			plHelpScroll++;
 			break;

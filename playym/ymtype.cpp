@@ -1,7 +1,7 @@
 /* OpenCP Module Player
- * copyright (c) '10-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2010-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
- * SIDPlay file type detection routines for the fileselector
+ * YM file type detection routines for the fileselector
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -395,7 +395,7 @@ extern "C" {
 	struct linkinfostruct dllextinfo =
 	{
 		"ymtype" /* name */,
-		"OpenCP YM Detection (c) 2010-2021 Stian Skjelstad" /* desc */,
+		"OpenCP YM Detection (c) 2010-'22 Stian Skjelstad" /* desc */,
 		DLLVERSION /* ver */
 	};
 }

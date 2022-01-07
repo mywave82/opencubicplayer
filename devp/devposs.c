@@ -1,5 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Player device for OSS output
  *
@@ -759,4 +760,4 @@ struct sounddevice plrOSS={SS_PLAYER, 0, "OSS player", ossDetect,  ossInit,  oss
 struct ocpvolregstruct voloss={volossGetNumVolume, volossGetVolume, volossSetVolume};
 
 char *dllinfo = "driver plrOSS; volregs voloss";
-struct linkinfostruct dllextinfo = {.name = "devposs", .desc = "OpenCP Player Device: OSS (c) 2004-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "devposs", .desc = "OpenCP Player Device: OSS (c) 2004-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

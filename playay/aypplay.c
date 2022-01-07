@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Stian Skjelstad <stian@nixia.no>
+ * copyright (c) 2005-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * AYPlay interface routines
  *
@@ -21,7 +21,6 @@
  *  -sss051202   Stian Skjelstad <stian@nixia.no>
  *    -first release
  */
-
 
 #include "config.h"
 #include <stdio.h>
@@ -238,4 +237,4 @@ static int ayOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fil
 }
 
 struct cpifaceplayerstruct ayPlayer = {"[Aylet plugin]", ayOpenFile, ayCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playay", .desc = "OpenCP aylet Player (c) 2005-09 Russell Marks, Ian Collier & Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playay", .desc = "OpenCP aylet Player (c) 2005-'22 Russell Marks, Ian Collier & Stian Skjelstad", .ver = DLLVERSION, .size = 0};

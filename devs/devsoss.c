@@ -1,5 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Samples device for OSS input
  *
@@ -385,4 +386,4 @@ struct devaddstruct smpOSSAdd = {ossGetOpt, 0, 0, 0};
 struct sounddevice smpOSS={SS_SAMPLER, 0, "OSS Recorder", ossDetect, ossInit, ossClose, &smpOSSAdd};
 
 char *dllinfo="driver smpOSS";
-struct linkinfostruct dllextinfo = {.name = "devsoss", .desc = "OpenCP Sampler Device: OSS (c) 2004-09 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "devsoss", .desc = "OpenCP Sampler Device: OSS (c) 2004-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

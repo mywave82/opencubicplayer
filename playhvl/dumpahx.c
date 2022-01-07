@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2019 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2019-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Utility: Dumping the raw contents of a AHX file
  *
@@ -17,7 +17,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-
 
 #include "config.h"
 #include <errno.h>

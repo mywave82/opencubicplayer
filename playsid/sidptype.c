@@ -1,5 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * SIDPlay file type detection routines for the fileselector
  *
@@ -150,4 +151,4 @@ static void __attribute__((destructor))done(void)
 }
 
 char *dllinfo = "";
-struct linkinfostruct dllextinfo = {.name = "sidtype", .desc = "OpenCP SID Detection (c) 2005-09 Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "sidtype", .desc = "OpenCP SID Detection (c) 2005-'22 Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

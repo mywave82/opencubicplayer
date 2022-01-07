@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '05-'21 Stian Skjelstad <stian@nixia.no>
+ * copyright (c) 2005-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * OPLPlay interface routines
  *
@@ -467,7 +467,7 @@ extern "C"
 	struct linkinfostruct dllextinfo =
 	{
 		"playopl" /* name */,
-		"OpenCP AdPlug (OPL) Player (c) 2005-21 Stian Skjelstad" /* desc */,
+		"OpenCP AdPlug (OPL) Player (c) 2005-'22 Stian Skjelstad" /* desc */,
 		DLLVERSION /* ver */
 	};
 }

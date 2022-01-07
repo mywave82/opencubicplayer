@@ -1,5 +1,5 @@
 /** OpenCP Module Player
- * copyright (c) '94-'21 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * ALSA (Advanced Linux Sound Architecture) Player device
  *
@@ -1442,4 +1442,4 @@ static struct interfacestruct alsaPCMoutIntr = {alsaMixerIntrSetDev, 0, 0, "alsa
 struct ocpvolregstruct volalsa={volalsaGetNumVolume, volalsaGetVolume, volalsaSetVolume};
 
 char *dllinfo="driver plrAlsa; volregs volalsa";
-struct linkinfostruct dllextinfo = {.name = "devpalsa", .desc = "OpenCP Player Device: ALSA (c) 2005-21 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "devpalsa", .desc = "OpenCP Player Device: ALSA (c) 2005-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
