@@ -740,7 +740,7 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 
 	if ((dh->i > dh->tochdr.cdth_trk1) || (dh->i >= 100)) /* last check is not actually needed */
 	{
-		if (dh->initlba >= 0) /* did we initialize? Create the DISK.CDA that covers the entire disc */
+		if (dh->initlba >= 0) /* did we initialize? Create the DISC.CDA that covers the entire disc */
 		{
 			file = calloc (1, sizeof (*file));
 			if (!file)
