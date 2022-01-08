@@ -30,7 +30,7 @@ LIBSIDPLAYOBJECTS=libsidplayfp-builders-resid-builder-resid-builder.o \
 	libsidplayfp-builders-residfp-builder-residfp-Filter.o \
 	libsidplayfp-builders-residfp-builder-residfp-Filter6581.o \
 	libsidplayfp-builders-residfp-builder-residfp-Filter8580.o \
-	libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig.o \
+	libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig6581.o \
 	libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig8580.o \
 	libsidplayfp-builders-residfp-builder-residfp-OpAmp.o \
 	libsidplayfp-builders-residfp-builder-residfp-SID.o \
@@ -41,7 +41,7 @@ LIBSIDPLAYOBJECTS=libsidplayfp-builders-resid-builder-resid-builder.o \
 	libsidplayfp-builders-residfp-builder-residfp-WaveformGenerator.o \
 	libsidplayfp-c64-c64.o \
 	libsidplayfp-c64-CIA-interrupt.o \
-	libsidplayfp-c64-CIA-mos6526.o \
+	libsidplayfp-c64-CIA-mos652x.o \
 	libsidplayfp-c64-CIA-SerialPort.o \
 	libsidplayfp-c64-CIA-timer.o \
 	libsidplayfp-c64-CPU-mos6510.o \
@@ -198,8 +198,8 @@ libsidplayfp-builders-residfp-builder-residfp-Filter6581.o: \
 libsidplayfp-builders-residfp-builder-residfp-Filter8580.o: \
 	libsidplayfp-git/src/builders/residfp-builder/residfp/Filter8580.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/FilterModelConfig.cpp
+libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig6581.o: \
+	libsidplayfp-git/src/builders/residfp-builder/residfp/FilterModelConfig6581.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig8580.o: \
 	libsidplayfp-git/src/builders/residfp-builder/residfp/FilterModelConfig8580.cpp
@@ -231,8 +231,8 @@ libsidplayfp-c64-c64.o: \
 libsidplayfp-c64-CIA-interrupt.o: \
 	libsidplayfp-git/src/c64/CIA/interrupt.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-c64-CIA-mos6526.o: \
-	libsidplayfp-git/src/c64/CIA/mos6526.cpp
+libsidplayfp-c64-CIA-mos652x.o: \
+	libsidplayfp-git/src/c64/CIA/mos652x.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-c64-CIA-SerialPort.o: \
 	libsidplayfp-git/src/c64/CIA/SerialPort.cpp

@@ -80,9 +80,6 @@ static int sid_samples_per_row;
 
 typedef struct
 {
-	uint8_t gatestoggle[3]; /* bit 0, 1 and 2 describes the toggles performed, 3 SID chips */
-	uint8_t syncstoggle[3]; /* bit 0, 1 and 2 describes the toggles performed, 3 SID chips */
-	uint8_t teststoggle[3];	/* bit 0, 1 and 2 describes the toggles performed, 3 SID chips */
 	uint8_t registers[3][0x20]; /* current register values, 3 SID chips */
 	uint8_t volumes[3][3];
 
@@ -91,7 +88,7 @@ typedef struct
 
 static SidStatBuffer_t last; /* current register values, 3 SID chips */
 
-static SidStatBuffer_t SidStatBuffers[ROW_BUFFERS] = {0}; // half a second */
+static SidStatBuffer_t SidStatBuffers[ROW_BUFFERS] = {0}; // half a second
 static int SidStatBuffers_available = 0;
 
 static int16_t *sid_buf_stereo; /* stereo interleaved */
@@ -221,12 +218,9 @@ extern void __attribute__ ((visibility ("internal"))) sidIdler (void)
 		}
 		for (j=0; j < SidCount; j++)
 		{
-			uint8_t *registers = NULL;
+			uint8_t registers[32];
 			mySidPlayer->getSidStatus (j,
-			                           SidStatBuffers[i].gatestoggle[j],
-			                           SidStatBuffers[i].syncstoggle[j],
-			                           SidStatBuffers[i].teststoggle[j],
-			                           &registers,
+			                           registers,
 			                           SidStatBuffers[i].volumes[j][0],
 			                           SidStatBuffers[i].volumes[j][1],
 			                           SidStatBuffers[i].volumes[j][2]);

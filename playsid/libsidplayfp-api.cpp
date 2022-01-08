@@ -193,6 +193,10 @@ namespace libsidplayfp
 		{
 			//fprintf (stderr, "CIA=MOS6526\n");
 			m_engCfg.ciaModel = SidConfig::MOS6526;
+		} else if (!strcasecmp(CIAmodel, "MOS6526W4485"))
+		{
+			//fprintf (stderr, "CIA=MOS6526W4485\n");
+			m_engCfg.ciaModel = SidConfig::MOS6526W4485;
 		} else if (!strcasecmp(CIAmodel, "MOS8521"))
 		{
 			//fprintf (stderr, "CIA=MOS8521\n");
@@ -273,7 +277,10 @@ namespace libsidplayfp
 		dirdbUnref (basic_ref, dirdb_use_file);
 		dirdbUnref (chargen_ref, dirdb_use_file);
 
-		sidplayer.setRoms(kernalRom, basicRom, chargenRom);
+		sidplayer.setKernal(kernalRom);
+		sidplayer.setBasic(basicRom);
+		sidplayer.setChargen(chargenRom);
+
 		delete [] kernalRom;
 		delete [] basicRom;
 		delete [] chargenRom;

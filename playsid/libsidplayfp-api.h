@@ -46,7 +46,7 @@ namespace libsidplayfp
 			index 2: SID chip 3, master, chan1, chan2, chan3 (interleaved, if chip 3 present)
 		*/
 		bool iterateaudio (int16_t *targetBuffer, uint_least32_t count, std::vector<int16_t *> *rawSamples);
-		bool getSidStatus(unsigned int sidNum, uint8_t& gatestoggle, uint8_t& syncstoggle, uint8_t& teststoggle, uint8_t **registers, uint8_t &volume_a, uint8_t &volume_b, uint8_t &volume_c) { return sidplayer.getSidStatus (sidNum, gatestoggle, syncstoggle, teststoggle, registers, volume_a, volume_b, volume_c); }
+		bool getSidStatus(unsigned int sidNum, uint8_t registers[32], uint8_t &volume_a, uint8_t &volume_b, uint8_t &volume_c) { return sidplayer.getSidStatus (sidNum, registers, volume_a, volume_b, volume_c); }
 
 		int getSidCount (void) { return sidplayer.getSidCount(); }
 

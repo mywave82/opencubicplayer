@@ -127,8 +127,9 @@
   defaultSID=MOS6581
 ; override .SID file information and force-use the defaultSID option
   forceSID=off
-; CIA=MOS6526  Use the classic CIA chip (recommended)
-; CIA=MOS8521  Use the modern  CIA chip
+; CIA=MOS6526      Use the classic CIA chip (recommended)
+; CIA=MOS6526W4485 A batch of old CIA model with unique serial port behavior
+; CIA=MOS8521      Use the modern  CIA chip
   CIA=MOS6526
 ; filter=on/off  Sets the default state of the filter. Parameters will follow
   filter=on

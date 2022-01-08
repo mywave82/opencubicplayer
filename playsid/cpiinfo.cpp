@@ -150,7 +150,7 @@ static void SidInfoDraw(int focus)
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line,  0, 0x07, " \xb3        Libsidplayfp V2.1.0 + OCP patches", SidInfoWidth-2);
+		displaystr(SidInfoFirstLine + line,  0, 0x07, " \xb3        Libsidplayfp V2.3.1 + OCP patches", SidInfoWidth-2);
 		displaystr(SidInfoFirstLine + line, SidInfoWidth-2, 0x07, "\xb3", 1);
 	}
 	line++;
