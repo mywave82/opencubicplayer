@@ -1429,7 +1429,7 @@ static void GString_amplification_render (const void *inputa, const void *inputb
 		case 2: displaystr (lineno, *x, 0x09, "amplication: ", 13); (*x) +=  13; break;
 	}
 
-	snprintf (temp, sizeof (temp), "%3d", *amp);
+	snprintf (temp, sizeof (temp), "%3d", (*amp) * 100 / 64);
 	displaystr (lineno, *x, 0x0f, temp, 3); (*x) += 3;
 	displaystr (lineno, *x, 0x07, "%", 5); (*x) += 1;
 }
@@ -1529,6 +1529,7 @@ void GStrings_render (int lineno, int count, const struct GStringElement **Eleme
 		interspace2 = (plScrWidth - width - headspace - endspace) % (fields - 1);
 	} else {
 		endspace = plScrWidth - width - headspace;
+		interspace1 = interspace2 = 0;
 	}
 
 	displayvoid (lineno, x, headspace); x += headspace;
