@@ -98,6 +98,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <zlib.h>
+#include "types.h"
 #include "boot/psetting.h"
 #include "boot/plinkman.h"
 #include "cpiface/cpiface.h"
@@ -105,7 +106,6 @@
 #include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/poutput.h"
-#include "types.h"
 
 static unsigned int plWinFirstLine, plWinHeight, plHelpHeight, plHelpScroll;
 
