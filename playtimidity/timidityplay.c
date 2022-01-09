@@ -929,13 +929,20 @@ static void emulate_main_start()
 	{
 		fprintf (stderr, "[timidity] pre-load config failed\n");
 	}*/
-	if (!read_config_file(CONFIG_FILE, 0, 0))
+	/* test CONFIG_FILE first if it is defined to be something else than one of our standard paths */
+	if (strcmp(CONFIG_FILE, "/etc/timidity/timidity.cfg") &&
+	    strcmp(CONFIG_FILE, "/etc/timidity.cfg") &&
+	    strcmp(CONFIG_FILE, "/usr/local/share/timidity/timidity.cfg") &&
+	    strcmp(CONFIG_FILE, "/usr/share/timidity/timidity.cfg") && !read_config_file(CONFIG_FILE, 0, 0))
 	{
 		got_a_configuration = 1;
 	} else if (!read_config_file("/etc/timidity/timidity.cfg", 0, 0))
 	{
 		got_a_configuration = 1;
 	} else if (!read_config_file("/etc/timidity.cfg", 0, 0))
+	{
+		got_a_configuration = 1;
+	} else if (!read_config_file("/usr/local/share/timidity/timidity.cfg", 0, 0))
 	{
 		got_a_configuration = 1;
 	} else if (!read_config_file("/usr/share/timidity/timidity.cfg", 0, 0))
