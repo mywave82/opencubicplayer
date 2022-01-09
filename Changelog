@@ -1,3 +1,36 @@
+Version 0.2.91
+==============
+
+ * Removed the 4x4 font, it was in most cases unreadably
+ * Editing filetype for a file in the filebrowser, not displays some information per filetype
+ * The current active playback plugin is now visible in the title bar
+ * Mac does not have a <INSERT> key, medialib was not usable without this key. Added alternative key <RIGHT>
+ * Better support for dynamic widths of the screen (playback header, filebrowser)
+
+mdb (meta-database):
+ * Now uses UTF-8 instead of codepage 437, allowing all characters
+
+playcda (CDROM):
+ * Code refactored / improved
+
+playxm:
+ * stereo samples caused buffer-overflow
+
+playogg:
+ * Was broken
+
+playgmd:
+ * Updated the *.AMS loader
+ * Updated the *.MDL playback
+ * Updated the *.MTM loader
+ * Updated the *.ULT loader
+
+playtimidity (MIDI):
+ * Minor improvements
+
+playsid:
+ * Update to the latest version of libsidplayfp
+
 Version 0.2.90
 ==============
 
