@@ -190,35 +190,35 @@ AC_LINK_IFELSE(
 	])
 )
 
-AC_CHECK_FUNCS(memmem)
-AC_CHECK_FUNCS(getopt)
-AC_CHECK_FUNCS(popen)
-AC_CHECK_FUNCS(qsort)
-AC_CHECK_FUNCS(gettimeofday)
-AC_CHECK_FUNCS(sleep)
-AC_CHECK_FUNCS(sysconf)
-AC_CHECK_FUNCS(strerror)
-AC_CHECK_FUNCS(strdup)
-AC_CHECK_FUNCS(strstr)
-AC_CHECK_FUNCS(strupr)
-AC_CHECK_FUNCS(getcwd)
-AC_CHECK_FUNCS(snprintf)
-AC_CHECK_FUNCS(usleep)
-AC_CHECK_FUNCS(vsnprintf)
-AC_CHECK_FUNCS(strncasecmp)
-AC_CHECK_FUNCS(mkstemp)
-AC_CHECK_FUNCS(strlcpy)
-AC_CHECK_FUNCS(strlcat)
+AC_CHECK_FUNCS([memmem])
+AC_CHECK_FUNCS([getopt])
+AC_CHECK_FUNCS([popen])
+AC_CHECK_FUNCS([qsort])
+AC_CHECK_FUNCS([gettimeofday])
+AC_CHECK_FUNCS([sleep])
+AC_CHECK_FUNCS([sysconf])
+AC_CHECK_FUNCS([strerror])
+AC_CHECK_FUNCS([strdup])
+AC_CHECK_FUNCS([strstr])
+AC_CHECK_FUNCS([strupr])
+AC_CHECK_FUNCS([getcwd])
+AC_CHECK_FUNCS([snprintf])
+AC_CHECK_FUNCS([usleep])
+AC_CHECK_FUNCS([vsnprintf])
+AC_CHECK_FUNCS([strncasecmp])
+AC_CHECK_FUNCS([mkstemp])
+AC_CHECK_FUNCS([strlcpy])
+AC_CHECK_FUNCS([strlcat])
 
 AC_SUBST(MATH_LIBS)
-AC_CHECK_FUNCS(sqrt,
-               MATH_LIBS=,
-               AC_CHECK_LIB(m,
+AC_CHECK_FUNCS([sqrt],
+               [MATH_LIBS=],
+               [AC_CHECK_LIB(m,
                             sqrt,
                             MATH_LIBS=-lm,
                             AC_MSG_ERROR("libm not found")
                            )
-              )
+               ])
 
 AC_STRUCT_DIRENT_D_TYPE
 
@@ -275,7 +275,7 @@ if test "x$ax_cv_curses_color" != xyes; then
 fi
 push_LIBS=$LIBS
 LIBS=$CURSES_LIB
-AC_CHECK_FUNCS(resize_term)
+AC_CHECK_FUNCS([resize_term])
 LIBS=$push_LIBS
 
 AC_CHECK_LIB(z, zlibVersion, , AC_MSG_ERROR("zlib not found"))

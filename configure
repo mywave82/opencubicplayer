@@ -7295,7 +7295,6 @@ else
 
 $as_echo "#define NO_STRING_H 1" >>confdefs.h
 
-
 fi
 
 
@@ -8679,7 +8678,7 @@ ac_fn_c_check_header_mongrel "$LINENO" "bzlib.h" "ac_cv_header_bzlib_h" "$ac_inc
 if test "x$ac_cv_header_bzlib_h" = xyes; then :
 
 else
-  as_fn_error $? "bzip2 header file not found (libbz2-dev)" "$LINENO" 5
+  as_fn_error $? "\"bzip2 header file not found (libbz2-dev)\"" "$LINENO" 5
 fi
 
 
@@ -8953,7 +8952,7 @@ fi
 fi
 
 if test "x$with_mad" = "xno"; then
-	HAVE_MAD=0
+	HAVE_MAD=
 else
 	HAVE_MAD=1
 	$as_echo "#define HAVE_MAD 1" >>confdefs.h
@@ -12572,7 +12571,7 @@ fi
 
 
 if test "x$with_alsa" = "xno"; then
-	HAVE_ALSA=0
+	HAVE_ALSA=
 else
 	HAVE_ALSA=1
 fi
@@ -12704,11 +12703,11 @@ fi
 
 		ac_fn_c_check_header_mongrel "$LINENO" "sys/soundcard.h" "ac_cv_header_sys_soundcard_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_soundcard_h" = xyes; then :
-  HAVE_OSS=1
-			$as_echo "#define HAVE_SYS_SOUNDCARD_H 1" >>confdefs.h
+  HAVE_OSS=1;$as_echo "#define HAVE_SYS_SOUNDCARD_H 1" >>confdefs.h
 
 else
-  if test "x$with_oss" = "xyes"; then as_fn_error 1 "kernel OSS header file was not found" "$LINENO" 5; else with_oss="no"; HAVE_OSS=0;fi
+  if test "x$with_oss" = "xyes"; then as_fn_error 1 "kernel OSS header file was not found" "$LINENO" 5; else with_oss="no";HAVE_OSS=;fi
+
 fi
 
 
@@ -12719,11 +12718,11 @@ $as_echo "no" >&6; }
 
 		ac_fn_c_check_header_mongrel "$LINENO" "sys/soundcard.h" "ac_cv_header_sys_soundcard_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_soundcard_h" = xyes; then :
-  HAVE_OSS=1
-			$as_echo "#define HAVE_SYS_SOUNDCARD_H 1" >>confdefs.h
+  HAVE_OSS=1;$as_echo "#define HAVE_SYS_SOUNDCARD_H 1" >>confdefs.h
 
 else
-  if test "x$with_oss" = "xyes"; then as_fn_error 1 "kernel OSS header file was not found" "$LINENO" 5; else with_oss="no"; HAVE_OSS=0;fi
+  if test "x$with_oss" = "xyes"; then as_fn_error 1 "kernel OSS header file was not found" "$LINENO" 5; else with_oss="no";HAVE_OSS=;fi
+
 fi
 
 
@@ -12745,7 +12744,7 @@ if test "x$with_coreaudio" != "xno"; then
 if test "x$ac_cv_header_CoreServices_CoreServices_h" = xyes; then :
   HAVE_COREAUDIO=1
 else
-  if test "x$with_coreaudio" = "xyes"; then as_fn_error 1 "CoreAudio not found" "$LINENO" 5; else with_coreaudio="no"; HAVE_COREAUDIO=0; fi
+  if test "x$with_coreaudio" = "xyes"; then as_fn_error 1 "CoreAudio not found" "$LINENO" 5; else with_coreaudio="no"; HAVE_COREAUDIO=; fi
 fi
 
 
@@ -12755,7 +12754,7 @@ if test "x$with_coreaudio" != "xno"; then
 if test "x$ac_cv_header_AudioUnit_AudioUnit_h" = xyes; then :
   HAVE_COREAUDIO=1
 else
-  if test "x$with_coreaudio" = "xyes"; then as_fn_error 1 "CoreAudio not found" "$LINENO" 5; else with_coreaudio="no"; HAVE_COREAUDIO=0; fi
+  if test "x$with_coreaudio" = "xyes"; then as_fn_error 1 "CoreAudio not found" "$LINENO" 5; else with_coreaudio="no"; HAVE_COREAUDIO=; fi
 fi
 
 
@@ -12765,7 +12764,7 @@ if test "x$with_coreaudio" != "xno"; then
 if test "x$ac_cv_header_AudioToolbox_AudioToolbox_h" = xyes; then :
   HAVE_COREAUDIO=1
 else
-  if test "x$with_coreaudio" = "xyes"; then as_fn_error 1 "CoreAudio not found" "$LINENO" 5; else with_coreaudio="no"; HAVE_COREAUDIO=0; fi
+  if test "x$with_coreaudio" = "xyes"; then as_fn_error 1 "CoreAudio not found" "$LINENO" 5; else with_coreaudio="no"; HAVE_COREAUDIO=; fi
 fi
 
 
@@ -12775,7 +12774,7 @@ if test "x$with_coreaudio" != "xno"; then
 if test "x$ac_cv_header_CoreAudio_CoreAudio_h" = xyes; then :
   HAVE_COREAUDIO=1
 else
-  if test "x$with_coreaudio" = "xyes"; then as_fn_error 1 "CoreAudio not found" "$LINENO" 5; else with_coreaudio="no"; HAVE_COREAUDIO=0; fi
+  if test "x$with_coreaudio" = "xyes"; then as_fn_error 1 "CoreAudio not found" "$LINENO" 5; else with_coreaudio="no"; HAVE_COREAUDIO=; fi
 fi
 
 
