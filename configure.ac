@@ -457,13 +457,10 @@ if test "x$with_flac" != "xno"; then
 	AC_CHECK_HEADER(FLAC/all.h, FLAC_CFLAGS="", if test "x$with_flac" = "xyes"; then AC_MSG_ERROR("libFLAC header files were not found"); else with_flac="no"; fi)
 fi
 AC_SUBST(HAVE_FLAC)
-AC_SUBST(FLAC_INI)
 if test "x$with_flac" = "xno"; then
 	HAVE_FLAC=
-	FLAC_INI=
 else
 	HAVE_FLAC=1
-	FLAC_INI=flacptype
 fi
 
 if test "x$with_x11" != "xno"; then
