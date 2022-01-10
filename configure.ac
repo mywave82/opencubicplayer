@@ -9,7 +9,7 @@ AS_IF([test -f playtimidity/timidity-git/Makefile.am], [AC_MSG_RESULT([ok])],
       [AC_MSG_ERROR([playtimidity/timidity-git is missing - please execute 'git submodule update --init --recursive'])]
 )
 
-AC_ARG_WITH(debug, [  --with-debug            compile with debug-flags and without SIGALRM])
+AC_ARG_WITH([debug], [AS_HELP_STRING([--with-debug],[compile with debug-flags and without SIGALRM])])
 AS_IF([test "x$with_debug" = "xyes"], [
   for i in $CFLAGS; do
     new_CFLAGS="$new_CFLAGS `echo $i|grep -- -L`";
@@ -65,32 +65,23 @@ AS_CASE([$target],
 AC_DEFINE_UNQUOTED(LIB_SUFFIX, "$LIB_SUFFIX")
 
 AC_SUBST(DIR_SUFFIX)
-AC_ARG_WITH(dir_suffix, [  --with-dir-suffix=      append this on all paths. Defaults to -$PACKAGE_VERSION], DIR_SUFFIX=$with_dir_suffix, DIR_SUFFIX=-$PACKAGE_VERSION)
+AC_ARG_WITH([dir_suffix], [AS_HELP_STRING([--with-dir-suffix=],[append this on all paths. Defaults to -$PACKAGE_VERSION])], [DIR_SUFFIX=$with_dir_suffix], [DIR_SUFFIX=-$PACKAGE_VERSION])
 AC_DEFINE_UNQUOTED(DIR_SUFFIX, "$DIR_SUFFIX")
 
-AC_ARG_WITH(x11, [  --with-x11              force/disable x11 support],, with_x11=auto)
-
-AC_ARG_WITH(adplug, [  --with-adplug           force/disable adplug support],, with_adplug=auto)
-
-AC_ARG_WITH(mad, [  --with-mad              force/disable mad mpeg audio support],, with_mad=auto)
-
-AC_ARG_WITH(alsa, [  --with-alsa             force/disable alsa support],, with_alsa=auto)
-AC_ARG_WITH(oss,  [  --with-oss              force/disable oss support],, with_oss=auto)
-
-AC_ARG_WITH(lzw, [  --with-lzw              force/disable lzw support (enabled by default)],, with_lzw=yes)
-
-AC_ARG_WITH(lzh, [  --with-lzh              force/disable lzh support in .ym files(enabled by default)],, with_lzh=yes)
-
-AC_ARG_WITH(coreaudio, [  --with-coreaudio        force/disable osx coreaudio support (autodetect by default)],, with_coreaudio=auto)
-AC_ARG_WITH(flac, [  --with-flac             force/disable FLAC support (autodetect by default)],, with_flac=auto)
-
-AC_ARG_WITH(sdl,  [  --with-sdl              force/disable SDL video support (autodetect by default)],, with_sdl=auto)
-AC_ARG_WITH(sdl2, [  --with-sdl2             force/disable SDL2 video support (autodetect by default)],, with_sdl2=auto)
-AC_ARG_WITH(desktop_file_install, [  --without-desktop_file_install Do not install .desktop file (SDL and X11 normally does this)],, with_desktop_file_install=auto)
-
-AC_ARG_WITH(dumptools, [  --with-dumptools        enable building the different fileformat dump utilities],, with_dumptools=no)
-
-AC_ARG_WITH(unifontdir, [  --with-unifontdir=/path the path to where ttf-unifont in located (used by X11, SDL1.x and SDL2)],, with_unifontdir="${datarootdir}/fonts/truetype/unifont")
+AC_ARG_WITH([x11],                  [AS_HELP_STRING([--with-x11],                    [force/disable x11 support])],                                               [], [with_x11=auto])
+AC_ARG_WITH([adplug],               [AS_HELP_STRING([--with-adplug],                 [force/disable adplug support])],                                            [], [with_adplug=auto])
+AC_ARG_WITH([mad],                  [AS_HELP_STRING([--with-mad],                    [force/disable mad mpeg audio support])],                                    [], [with_mad=auto])
+AC_ARG_WITH([alsa],                 [AS_HELP_STRING([--with-alsa],                   [force/disable alsa support])],                                              [], [with_alsa=auto])
+AC_ARG_WITH([oss],                  [AS_HELP_STRING([--with-oss],                    [force/disable oss support])],                                               [], [with_oss=auto])
+AC_ARG_WITH([lzw],                  [AS_HELP_STRING([--with-lzw],                    [force/disable lzw support (enabled by default)])],                          [], [with_lzw=yes])
+AC_ARG_WITH([lzh],                  [AS_HELP_STRING([--with-lzh],                    [force/disable lzh support in .ym files(enabled by default)])],              [], [with_lzh=yes])
+AC_ARG_WITH([coreaudio],            [AS_HELP_STRING([--with-coreaudio],              [force/disable osx coreaudio support (autodetect by default)])],             [], [with_coreaudio=auto])
+AC_ARG_WITH([flac],                 [AS_HELP_STRING([--with-flac],                   [force/disable FLAC support (autodetect by default)])],                      [], [with_flac=auto])
+AC_ARG_WITH([sdl],                  [AS_HELP_STRING([--with-sdl],                    [force/disable SDL video support (autodetect by default)])],                 [], [with_sdl=auto])
+AC_ARG_WITH([sdl2],                 [AS_HELP_STRING([--with-sdl2],                   [force/disable SDL2 video support (autodetect by default)])],                [], [with_sdl2=auto])
+AC_ARG_WITH([desktop_file_install], [AS_HELP_STRING([--without-desktop_file_install],[Do not install .desktop file (SDL and X11 normally does this)])],           [], [with_desktop_file_install=auto])
+AC_ARG_WITH([dumptools],            [AS_HELP_STRING([--with-dumptools],              [enable building the different fileformat dump utilities])],                 [], [with_dumptools=no])
+AC_ARG_WITH([unifontdir],           [AS_HELP_STRING([--with-unifontdir=/path],       [the path to where ttf-unifont in located (used by X11, SDL1.x and SDL2)])], [], [with_unifontdir="${datarootdir}/fonts/truetype/unifont"])
 
 # normally, this is done automatically first when running AC_OUTPUT, but we need them expanded now
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -235,7 +226,7 @@ AC_CHECK_HEADER([pwd.h],           [AC_DEFINE(HAVE_PWD_H,             1)], [])
 AC_CHECK_FUNC([getpwnam], [HAVE_GETPWNAM=1; AC_DEFINE(HAVE_GETPWNAM)])
 
 dnl timidity patch dir
-AC_ARG_WITH(timidity-default-path, [AS_HELP_STRING([--with-timidity-default-path=DIR], [Where timidity.cfg is  (PREFIX/share/timidity)])],
+AC_ARG_WITH([timidity-default-path], [AS_HELP_STRING([--with-timidity-default-path=DIR], [Where timidity.cfg is  (PREFIX/share/timidity)])],
   [timiditypkgdatadir=$withval],
   [
     AS_IF([test "x$prefix" != "xNONE"], [timiditypkgdatadir='${prefix}/share/timidity'],
@@ -739,16 +730,10 @@ AS_AC_EXPAND(DATAROOTDIR, $datarootdir)
 AC_DEFINE_UNQUOTED(DATADIR, "$DATADIR")
 AC_DEFINE_UNQUOTED(PREFIX, "$PREFIX")
 
-AC_ARG_WITH(efence, [  --with-efence           Enable usage of efence],
-EFENCE_LIBS="-lefence"
-AC_DEFINE(HAVE_EFENCE, 1)
-)
+AC_ARG_WITH([efence], [AS_HELP_STRING([--with-efence],[Enable usage of efence])], [EFENCE_LIBS="-lefence"; AC_DEFINE(HAVE_EFENCE, 1)])
 AC_SUBST(EFENCE_LIBS)
 
-AC_ARG_WITH(duma, [  --with-duma             Enable usage of duma],
-DUMA_LIBS="-lduma"
-AC_DEFINE(HAVE_DUMA, 1)
-)
+AC_ARG_WITH([duma], [AS_HELP_STRING([--with-duma],[Enable usage of duma])], [DUMA_LIBS="-lduma"; AC_DEFINE(HAVE_DUMA, 1)])
 AC_SUBST(DUMA_LIBS)
 
 
@@ -787,7 +772,7 @@ AS_IF([test "$?" -ne 0],[
 rm -f Rules.make.in.tmp
 AC_SUBST(CP)
 
-AC_ARG_WITH(libiconv,
+AC_ARG_WITH([libiconv],
 	[AS_HELP_STRING([--with-libiconv=], [@<:@auto/no/gnu/native@:>@ what kind of libiconv library to use])],
 	[with_libiconv=$withval],
 	[with_libiconv=auto])

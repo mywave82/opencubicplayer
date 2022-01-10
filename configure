@@ -1495,21 +1495,30 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-debug            compile with debug-flags and without SIGALRM
-  --with-dir-suffix=      append this on all paths. Defaults to -$PACKAGE_VERSION
+  --with-dir-suffix=      append this on all paths. Defaults to
+                          -$PACKAGE_VERSION
   --with-x11              force/disable x11 support
   --with-adplug           force/disable adplug support
   --with-mad              force/disable mad mpeg audio support
   --with-alsa             force/disable alsa support
   --with-oss              force/disable oss support
   --with-lzw              force/disable lzw support (enabled by default)
-  --with-lzh              force/disable lzh support in .ym files(enabled by default)
-  --with-coreaudio        force/disable osx coreaudio support (autodetect by default)
+  --with-lzh              force/disable lzh support in .ym files(enabled by
+                          default)
+  --with-coreaudio        force/disable osx coreaudio support (autodetect by
+                          default)
   --with-flac             force/disable FLAC support (autodetect by default)
-  --with-sdl              force/disable SDL video support (autodetect by default)
-  --with-sdl2             force/disable SDL2 video support (autodetect by default)
-  --without-desktop_file_install Do not install .desktop file (SDL and X11 normally does this)
-  --with-dumptools        enable building the different fileformat dump utilities
-  --with-unifontdir=/path the path to where ttf-unifont in located (used by X11, SDL1.x and SDL2)
+  --with-sdl              force/disable SDL video support (autodetect by
+                          default)
+  --with-sdl2             force/disable SDL2 video support (autodetect by
+                          default)
+  --without-desktop_file_install
+                          Do not install .desktop file (SDL and X11 normally
+                          does this)
+  --with-dumptools        enable building the different fileformat dump
+                          utilities
+  --with-unifontdir=/path the path to where ttf-unifont in located (used by
+                          X11, SDL1.x and SDL2)
   --with-timidity-default-path=DIR
                           Where timidity.cfg is (PREFIX/share/timidity)
   --with-ncurses          force the use of Ncurses or NcursesW
@@ -6410,7 +6419,6 @@ else
 fi
 
 
-
 # Check whether --with-adplug was given.
 if test "${with_adplug+set}" = set; then :
   withval=$with_adplug;
@@ -6419,14 +6427,12 @@ else
 fi
 
 
-
 # Check whether --with-mad was given.
 if test "${with_mad+set}" = set; then :
   withval=$with_mad;
 else
   with_mad=auto
 fi
-
 
 
 # Check whether --with-alsa was given.
@@ -6445,7 +6451,6 @@ else
 fi
 
 
-
 # Check whether --with-lzw was given.
 if test "${with_lzw+set}" = set; then :
   withval=$with_lzw;
@@ -6454,14 +6459,12 @@ else
 fi
 
 
-
 # Check whether --with-lzh was given.
 if test "${with_lzh+set}" = set; then :
   withval=$with_lzh;
 else
   with_lzh=yes
 fi
-
 
 
 # Check whether --with-coreaudio was given.
@@ -6478,7 +6481,6 @@ if test "${with_flac+set}" = set; then :
 else
   with_flac=auto
 fi
-
 
 
 # Check whether --with-sdl was given.
@@ -6505,14 +6507,12 @@ else
 fi
 
 
-
 # Check whether --with-dumptools was given.
 if test "${with_dumptools+set}" = set; then :
   withval=$with_dumptools;
 else
   with_dumptools=no
 fi
-
 
 
 # Check whether --with-unifontdir was given.
@@ -13165,9 +13165,7 @@ _ACEOF
 
 # Check whether --with-efence was given.
 if test "${with_efence+set}" = set; then :
-  withval=$with_efence; EFENCE_LIBS="-lefence"
-$as_echo "#define HAVE_EFENCE 1" >>confdefs.h
-
+  withval=$with_efence; EFENCE_LIBS="-lefence"; $as_echo "#define HAVE_EFENCE 1" >>confdefs.h
 
 fi
 
@@ -13176,9 +13174,7 @@ fi
 
 # Check whether --with-duma was given.
 if test "${with_duma+set}" = set; then :
-  withval=$with_duma; DUMA_LIBS="-lduma"
-$as_echo "#define HAVE_DUMA 1" >>confdefs.h
-
+  withval=$with_duma; DUMA_LIBS="-lduma"; $as_echo "#define HAVE_DUMA 1" >>confdefs.h
 
 fi
 
