@@ -12278,7 +12278,7 @@ fi
 fi
 
 if test "x$with_debug" = "xyes"; then
-  $CXXFLAGS="$CXXFLAGS -DDEBUG=1"
+  CXXFLAGS="$CXXFLAGS -DDEBUG=1"
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working bool" >&5
 $as_echo_n "checking for working bool... " >&6; }

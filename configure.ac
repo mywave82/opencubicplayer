@@ -695,7 +695,7 @@ AC_CHECK_DECL(
     )]
 )
 if test "x$with_debug" = "xyes"; then
-  $CXXFLAGS="$CXXFLAGS -DDEBUG=1"
+  CXXFLAGS="$CXXFLAGS -DDEBUG=1"
 fi
 AC_CACHE_CHECK([for working bool], ac_cv_cxx_bool,
 [AC_COMPILE_IFELSE(
