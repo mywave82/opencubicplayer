@@ -687,6 +687,7 @@ SDL2_FRAMEWORK
 SDL2_LIBS
 SDL2_CFLAGS
 HAVE_X11
+HAVE_FLAC
 FLAC_LIBS
 FLAC_CFLAGS
 VORBISFILE_LIBS
@@ -699,7 +700,6 @@ LIBPNG_LIBS
 LIBPNG_CFLAGS
 LIBJPEG_LIBS
 LIBJPEG_CFLAGS
-HAVE_FLAC
 HAVE_MAD
 MAD_LIBS
 MAD_CFLAGS
@@ -3079,34 +3079,38 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking GIT submodules are checked out" >&5
 $as_echo_n "checking GIT submodules are checked out... " >&6; }
-if ! test -f playtimidity/timidity-git/Makefile.am; then
-  as_fn_error $? "playtimidity/timidity-git is missing - please execute 'git submodule update --init --recursive'" "$LINENO" 5
-else
+if test -f playtimidity/timidity-git/Makefile.am; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
+else
+  as_fn_error $? "playtimidity/timidity-git is missing - please execute 'git submodule update --init --recursive'" "$LINENO" 5
+
 fi
 
 
 # Check whether --with-debug was given.
 if test "${with_debug+set}" = set; then :
-  withval=$with_debug; if test "x$with_debug" = "xyes"; then
-for i in $CFLAGS; do
-  new_CFLAGS="$new_CFLAGS `echo $i|grep -- -L`";
-  new_CFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
-done;
-CFLAGS="$new_CFLAGS -g"
-for i in $CXXFLAGS; do
-  new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -L`";
-  new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
-done;
-CXXFLAGS="$new_CXXFLAGS -g"
-$as_echo "#define KICKSTART_GDB 1" >>confdefs.h
- $as_echo "#define DISABLE_SIGALRM 1" >>confdefs.h
-
+  withval=$with_debug;
 fi
 
-fi
+if test "x$with_debug" = "xyes"; then :
 
+  for i in $CFLAGS; do
+    new_CFLAGS="$new_CFLAGS `echo $i|grep -- -L`";
+    new_CFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
+  done;
+  CFLAGS="$new_CFLAGS -g"
+  for i in $CXXFLAGS; do
+    new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -L`";
+    new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
+  done;
+  CXXFLAGS="$new_CXXFLAGS -g -DDEBUG=1"
+  $as_echo "#define KICKSTART_GDB 1" >>confdefs.h
+
+  $as_echo "#define DISABLE_SIGALRM 1" >>confdefs.h
+
+
+fi
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -6525,9 +6529,10 @@ test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking gcc version" >&5
 $as_echo_n "checking gcc version... " >&6; }
 cc_version=`( $CC -dumpversion ) 2>&1`
-if test "$?" -gt 0 || test x$cc_version = x; then
-	as_fn_error $? "not found" "$LINENO" 5
+if test "$?" -gt 0 || test x$cc_version = x; then :
+  as_fn_error $? "not found" "$LINENO" 5
 else
+
 	case $cc_version in
 		'')
 			as_fn_error $? "not found" "$LINENO" 5;
@@ -6541,6 +6546,7 @@ else
 $as_echo "$cc_version, ok" >&6; }
 			;;
        esac
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for broken signed char to signed int in loops (gcc version 4.1.1)" >&5
@@ -7375,11 +7381,12 @@ if test "${with_timidity_default_path+set}" = set; then :
   withval=$with_timidity_default_path; timiditypkgdatadir=$withval
 else
 
-   if test "x$prefix" != "xNONE"; then
-      timiditypkgdatadir='${prefix}/share/timidity'
-   else
-      timiditypkgdatadir='/usr/local/share/timidity'
-   fi
+    if test "x$prefix" != "xNONE"; then :
+  timiditypkgdatadir='${prefix}/share/timidity'
+else
+  timiditypkgdatadir='/usr/local/share/timidity'
+fi
+
 
 fi
 
@@ -8550,11 +8557,11 @@ fi
     unset ax_saved_LIBS
     unset ax_saved_CPPFLAGS
 
-if test "x$ax_cv_ncursesw" != xyes && test "x$ax_cv_ncurses" != xyes; then
-	as_fn_error $? "requires either NcursesW or Ncurses library" "$LINENO" 5
+if test "x$ax_cv_ncursesw" != xyes && test "x$ax_cv_ncurses" != xyes; then :
+  as_fn_error $? "requires either NcursesW or Ncurses library" "$LINENO" 5
 fi
-if test "x$ax_cv_curses_color" != xyes; then
-	as_fn_error $? "requires an X/Open-compatible Curses library with color" "$LINENO" 5
+if test "x$ax_cv_curses_color" != xyes; then :
+  as_fn_error $? "requires an X/Open-compatible Curses library with color" "$LINENO" 5
 fi
 push_LIBS=$LIBS
 LIBS=$CURSES_LIB
@@ -8751,7 +8758,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-if test "x$with_mad" != "xno"; then
+if test "x$with_mad" != "xno"; then :
+
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mad" >&5
@@ -8856,24 +8864,40 @@ _ACEOF
   LIBS="-lmad $LIBS"
 
 else
-  if test "x$with_mad" = "xyes"; then as_fn_error $? "\"libmad not found\"" "$LINENO" 5; else with_mad="no"; fi
+
+			if test "x$with_mad" = "xyes"; then :
+  as_fn_error $? "\"libmad not found\"" "$LINENO" 5
+else
+  with_mad="no"
 fi
 
-		if test "x$with_mad" != "xno"; then
+fi
+
+		if test "x$with_mad" != "xno"; then :
+
 			ac_fn_c_check_header_mongrel "$LINENO" "mad.h" "ac_cv_header_mad_h" "$ac_includes_default"
 if test "x$ac_cv_header_mad_h" = xyes; then :
 
 else
-  if test "x$with_mad" = "xyes"; then as_fn_error $? "\"libmad header files was not found\"" "$LINENO" 5; else with_mad="no"; fi
+
+				if test "x$with_mad" = "xyes"; then :
+  as_fn_error $? "\"libmad header files was not found\"" "$LINENO" 5
+else
+  with_mad="no"
+fi
+
 fi
 
 
-		fi
-		if test "x$with_mad" != "xno"; then
+
+fi
+		if test "x$with_mad" != "xno"; then :
+
 			MAD_LIBS="-lmad"
 			MAD_CFLAGS=""
 			LIBS=$push_LIBS
-		fi
+
+fi
 
 elif test $pkg_failed = untried; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -8923,24 +8947,40 @@ _ACEOF
   LIBS="-lmad $LIBS"
 
 else
-  if test "x$with_mad" = "xyes"; then as_fn_error $? "\"libmad not found\"" "$LINENO" 5; else with_mad="no"; fi
+
+			if test "x$with_mad" = "xyes"; then :
+  as_fn_error $? "\"libmad not found\"" "$LINENO" 5
+else
+  with_mad="no"
 fi
 
-		if test "x$with_mad" != "xno"; then
+fi
+
+		if test "x$with_mad" != "xno"; then :
+
 			ac_fn_c_check_header_mongrel "$LINENO" "mad.h" "ac_cv_header_mad_h" "$ac_includes_default"
 if test "x$ac_cv_header_mad_h" = xyes; then :
 
 else
-  if test "x$with_mad" = "xyes"; then as_fn_error $? "\"libmad header files was not found\"" "$LINENO" 5; else with_mad="no"; fi
+
+				if test "x$with_mad" = "xyes"; then :
+  as_fn_error $? "\"libmad header files was not found\"" "$LINENO" 5
+else
+  with_mad="no"
+fi
+
 fi
 
 
-		fi
-		if test "x$with_mad" != "xno"; then
+
+fi
+		if test "x$with_mad" != "xno"; then :
+
 			MAD_LIBS="-lmad"
 			MAD_CFLAGS=""
 			LIBS=$push_LIBS
-		fi
+
+fi
 
 else
 	MAD_CFLAGS=$pkg_cv_MAD_CFLAGS
@@ -8949,13 +8989,17 @@ else
 $as_echo "yes" >&6; }
 
 fi
-fi
 
-if test "x$with_mad" = "xno"; then
+fi
+if test "x$with_mad" = "xno"; then :
+
 	HAVE_MAD=
+
 else
+
 	HAVE_MAD=1
 	$as_echo "#define HAVE_MAD 1" >>confdefs.h
+
 
 fi
 
@@ -9888,7 +9932,9 @@ fi
 
 
 
-if test "x$with_flac" != "xno"; then
+
+if test "x$with_flac" != "xno"; then :
+
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for flac" >&5
@@ -10027,7 +10073,11 @@ $as_echo "$ac_cv_lib_FLAC_FLAC__stream_decoder_process_until_end_of_metadata" >&
 if test "x$ac_cv_lib_FLAC_FLAC__stream_decoder_process_until_end_of_metadata" = xyes; then :
   FLAC_LIBS="-lFLAC"
 else
-  if test "x$with_flac" = "xyes"; then as_fn_error $? "\"libFLAC not found\"" "$LINENO" 5; else with_flac="no"; fi
+  if test "x$with_flac" = "xyes"; then :
+  as_fn_error $? "\"libFLAC not found\"" "$LINENO" 5
+else
+  with_flac="no"
+fi
 fi
 
 fi
@@ -10036,7 +10086,11 @@ fi
 if test "x$ac_cv_header_FLAC_all_h" = xyes; then :
   FLAC_CFLAGS=""
 else
-  if test "x$with_flac" = "xyes"; then as_fn_error $? "\"libFLAC header files were not found\"" "$LINENO" 5; else with_flac="no"; fi
+    if test "x$with_flac" = "xyes"; then :
+  as_fn_error $? "\"libFLAC header files were not found\"" "$LINENO" 5
+else
+  with_flac="no"
+fi
 fi
 
 
@@ -10124,7 +10178,11 @@ $as_echo "$ac_cv_lib_FLAC_FLAC__stream_decoder_process_until_end_of_metadata" >&
 if test "x$ac_cv_lib_FLAC_FLAC__stream_decoder_process_until_end_of_metadata" = xyes; then :
   FLAC_LIBS="-lFLAC"
 else
-  if test "x$with_flac" = "xyes"; then as_fn_error $? "\"libFLAC not found\"" "$LINENO" 5; else with_flac="no"; fi
+  if test "x$with_flac" = "xyes"; then :
+  as_fn_error $? "\"libFLAC not found\"" "$LINENO" 5
+else
+  with_flac="no"
+fi
 fi
 
 fi
@@ -10133,7 +10191,11 @@ fi
 if test "x$ac_cv_header_FLAC_all_h" = xyes; then :
   FLAC_CFLAGS=""
 else
-  if test "x$with_flac" = "xyes"; then as_fn_error $? "\"libFLAC header files were not found\"" "$LINENO" 5; else with_flac="no"; fi
+    if test "x$with_flac" = "xyes"; then :
+  as_fn_error $? "\"libFLAC header files were not found\"" "$LINENO" 5
+else
+  with_flac="no"
+fi
 fi
 
 
@@ -10146,51 +10208,74 @@ else
 $as_echo "yes" >&6; }
 
 fi
+
 fi
 
-if test "x$with_flac" = "xno"; then
-	HAVE_FLAC=
+if test "x$with_flac" = "xno"; then :
+  HAVE_FLAC=
 else
-	HAVE_FLAC=1
+  HAVE_FLAC=1
 fi
 
-if test "x$with_x11" != "xno"; then
+if test "x$with_x11" != "xno"; then :
+
 	ac_fn_c_check_header_compile "$LINENO" "X11/extensions/xf86vmode.h" "ac_cv_header_X11_extensions_xf86vmode_h" "#include <X11/Xlib.h>
 
 "
 if test "x$ac_cv_header_X11_extensions_xf86vmode_h" = xyes; then :
 
 else
-  if test "x$with_x11" = "xyes"; then as_fn_error $? "\"xvidmode header files was not found\"" "$LINENO" 5; else with_x11="no"; fi
+   if test "x$with_x11" = "xyes"; then :
+  as_fn_error $? "\"xvidmode header files was not found\"" "$LINENO" 5
+else
+  with_x11="no"
+fi
 fi
 
 
+
 fi
-if test "x$with_x11" != "xno"; then
+
+if test "x$with_x11" != "xno"; then :
+
 	ac_fn_c_check_header_compile "$LINENO" "X11/extensions/XShm.h" "ac_cv_header_X11_extensions_XShm_h" "#include <X11/Xlib.h>
 
 "
 if test "x$ac_cv_header_X11_extensions_XShm_h" = xyes; then :
 
 else
-  if test "x$with_x11" = "xyes"; then as_fn_error $? "\"XShm header files was not found\"" "$LINENO" 5; else with_x11="no"; fi
+   if test "x$with_x11" = "xyes"; then :
+  as_fn_error $? "\"XShm header files was not found\"" "$LINENO" 5
+else
+  with_x11="no"
+fi
 fi
 
 
+
 fi
-if test "x$with_x11" != "xno"; then
+
+if test "x$with_x11" != "xno"; then :
+
 	ac_fn_c_check_header_compile "$LINENO" "X11/xpm.h" "ac_cv_header_X11_xpm_h" "#include <X11/Xlib.h>
 
 "
 if test "x$ac_cv_header_X11_xpm_h" = xyes; then :
 
 else
-  if test "x$with_x11" = "xyes"; then as_fn_error $? "\"xpm header files was not found\"" "$LINENO" 5; else with_x11="no"; fi
+   if test "x$with_x11" = "xyes"; then :
+  as_fn_error $? "\"xpm header files was not found\"" "$LINENO" 5
+else
+  with_x11="no"
+fi
 fi
 
 
+
 fi
-if test "x$with_x11" != "xno"; then
+
+if test "x$with_x11" != "xno"; then :
+
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for XpmCreatePixmapFromData in -lXpm" >&5
 $as_echo_n "checking for XpmCreatePixmapFromData in -lXpm... " >&6; }
 if ${ac_cv_lib_Xpm_XpmCreatePixmapFromData+:} false; then :
@@ -10230,12 +10315,19 @@ $as_echo "$ac_cv_lib_Xpm_XpmCreatePixmapFromData" >&6; }
 if test "x$ac_cv_lib_Xpm_XpmCreatePixmapFromData" = xyes; then :
   X11_LIBS="-lXpm -lX11 -L/usr/X11R6/lib"
 else
-  if test "x$with_x11" = "xyes"; then as_fn_error $? "\"Xpm/X11 not found (expected to be found in /usr/X11R6/lib)\"" "$LINENO" 5; else with_x11="no"; fi
+   if test "x$with_x11" = "xyes"; then :
+  as_fn_error $? "\"Xpm/X11 not found (expected to be found in /usr/X11R6/lib)\"" "$LINENO" 5
+else
+  with_x11="no"
+fi
 fi
 
 	LIBS=$push_LIBS
+
 fi
-if test "x$with_x11" != "xno"; then
+
+if test "x$with_x11" != "xno"; then :
+
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for XShmQueryExtension in -lXext" >&5
 $as_echo_n "checking for XShmQueryExtension in -lXext... " >&6; }
 if ${ac_cv_lib_Xext_XShmQueryExtension+:} false; then :
@@ -10275,12 +10367,19 @@ $as_echo "$ac_cv_lib_Xext_XShmQueryExtension" >&6; }
 if test "x$ac_cv_lib_Xext_XShmQueryExtension" = xyes; then :
   X11_LIBS="-lXext $X11_LIBS"
 else
-  if test "x$with_x11" = "xyes"; then as_fn_error $? "\"SHM/X11 not found (expected to be found in /usr/X11R6/lib)\"" "$LINENO" 5; else with_x11="no"; fi
+   if test "x$with_x11" = "xyes"; then :
+  as_fn_error $? "\"SHM/X11 not found (expected to be found in /usr/X11R6/lib)\"" "$LINENO" 5
+else
+  with_x11="no"
+fi
 fi
 
 	LIBS=$push_LIBS
+
 fi
-if test "x$with_x11" != "xno"; then
+
+if test "x$with_x11" != "xno"; then :
+
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for XF86VidModeQueryExtension in -lXxf86vm" >&5
 $as_echo_n "checking for XF86VidModeQueryExtension in -lXxf86vm... " >&6; }
 if ${ac_cv_lib_Xxf86vm_XF86VidModeQueryExtension+:} false; then :
@@ -10320,36 +10419,44 @@ $as_echo "$ac_cv_lib_Xxf86vm_XF86VidModeQueryExtension" >&6; }
 if test "x$ac_cv_lib_Xxf86vm_XF86VidModeQueryExtension" = xyes; then :
   X11_LIBS="-lXxf86vm $X11_LIBS"
 else
-  if test "x$with_x11" = "xyes"; then as_fn_error $? "\"xvidmode was not found (expected to be found in /usr/X11R6/lib)\"" "$LINENO" 5; else with_x11="no"; fi
+   if test "x$with_x11" = "xyes"; then :
+  as_fn_error $? "\"xvidmode was not found (expected to be found in /usr/X11R6/lib)\"" "$LINENO" 5
+else
+  with_x11="no"
+fi
 fi
 
 	LIBS=$push_LIBS
+
 fi
 
-if test "x$with_x11" = "xno"; then
+if test "x$with_x11" != "xno"; then :
+
 	X11_LIBS=
 	HAVE_X11=
+
 else
+
 	HAVE_X11=1
 	$as_echo "#define HAVE_X11 1" >>confdefs.h
 
+
 fi
 
-if test "x$with_sdl" = "xyes" && test "x$with_sdl2" = "xyes"; then
-	as_fn_error $? "\"Can not use both --with-sdl and --with-sdl2\"" "$LINENO" 5
+if test "x$with_sdl" = "xyes" && test "x$with_sdl2" = "xyes"; then :
+  as_fn_error $? "\"Can not use both --with-sdl and --with-sdl2\"" "$LINENO" 5
+fi
+if test "x$with_sdl" = "xyes"; then :
+  with_sdl2="no"
+fi
+if test "x$with_sdl2" = "xyes"; then :
+  with_sdl="no"
 fi
 
-if test "x$with_sdl" = "xyes"; then
-	with_sdl2="no"
-fi
-
-if test "x$with_sdl2" = "xyes"; then
-	with_sdl="no"
-fi
 
 
+if test "x$with_sdl2" != "xno"; then :
 
-if test "x$with_sdl2" != "xno"; then
 
 # Check whether --with-sdl-prefix was given.
 if test "${with_sdl_prefix+set}" = set; then :
@@ -10661,7 +10768,7 @@ $as_echo "yes" >&6; }
     fi
   fi
   if test "x$no_sdl" = x ; then
-     with_sdl2=yes;
+     with_sdl2=yes
   else
      if test "$SDL2_CONFIG" = "no" ; then
        echo "*** The sdl2-config script installed by SDL could not be found"
@@ -10720,11 +10827,16 @@ rm -f core conftest.err conftest.$ac_objext \
      fi
      SDL_CFLAGS=""
      SDL_LIBS=""
-     if test "x$with_sdl2" = "xyes"; then as_fn_error $? "\"libSDL2 was not found\"" "$LINENO" 5; else with_sdl2="no"; fi
+     if test "x$with_sdl2" = "xyes"; then :
+  as_fn_error $? "\"libSDL2 was not found\"" "$LINENO" 5
+else
+  with_sdl2="no"
+fi
   fi
 
 
   rm -f conf.sdltest
+
 
 fi
 SDL2_CFLAGS=$SDL_CFLAGS
@@ -10733,20 +10845,24 @@ SDL_CFLAGS=
 SDL_LIBS=
 
 
-if test "x$with_sdl2" = "xno"; then
-	HAVE_SDL2=
+if test "x$with_sdl2" = "xno"; then :
+  HAVE_SDL2=
+]
 else
+
 	HAVE_SDL2=1
 	$as_echo "#define HAVE_SDL2 1" >>confdefs.h
 
 	with_sdl="no"
+
 fi
 
 org_cflags="$CFLAGS"
 org_cppflags="$CPPFLAGS"
 
 
-if test "x$with_sdl" != "xno"; then
+if test "x$with_sdl" != "xno"; then :
+
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sdl" >&5
@@ -10846,22 +10962,31 @@ $as_echo "$ac_cv_lib_SDL_SDL_Init" >&6; }
 if test "x$ac_cv_lib_SDL_SDL_Init" = xyes; then :
   SDL_LIBS="-lSDL"
 else
-  if test "x$with_sdl" = "xyes"; then as_fn_error $? "\"libSDL was not found\"" "$LINENO" 5; else with_sdl="no"; fi
+   if test "x$with_sdl" = "xyes"; then :
+  as_fn_error $? "\"libSDL was not found\"" "$LINENO" 5
+else
+  with_sdl="no"
+fi
 fi
 
+		if test "x$with_sdl" != "xno"; then :
 
-		if test "x$with_sdl" != "xno"; then
 			CFLAGS="$CFLAGS -I/usr/include/SDL"
 			CPPFLAGS="$CPPFLAGS -I/usr/include/SDL"
 			ac_fn_c_check_header_mongrel "$LINENO" "SDL.h" "ac_cv_header_SDL_h" "$ac_includes_default"
 if test "x$ac_cv_header_SDL_h" = xyes; then :
   SDL_CFLAGS="-I/usr/include/SDL"
 else
-  if test "x$with_sdl" = "xyes"; then as_fn_error $? "\"SDL header files not found\"" "$LINENO" 5; else with_sdl="no"; fi
+   if test "x$with_sdl" = "xyes"; then :
+  as_fn_error $? "\"SDL header files not found\"" "$LINENO" 5
+else
+  with_sdl="no"
+fi
 fi
 
 
-		fi
+
+fi
 
 elif test $pkg_failed = untried; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -10906,22 +11031,31 @@ $as_echo "$ac_cv_lib_SDL_SDL_Init" >&6; }
 if test "x$ac_cv_lib_SDL_SDL_Init" = xyes; then :
   SDL_LIBS="-lSDL"
 else
-  if test "x$with_sdl" = "xyes"; then as_fn_error $? "\"libSDL was not found\"" "$LINENO" 5; else with_sdl="no"; fi
+   if test "x$with_sdl" = "xyes"; then :
+  as_fn_error $? "\"libSDL was not found\"" "$LINENO" 5
+else
+  with_sdl="no"
+fi
 fi
 
+		if test "x$with_sdl" != "xno"; then :
 
-		if test "x$with_sdl" != "xno"; then
 			CFLAGS="$CFLAGS -I/usr/include/SDL"
 			CPPFLAGS="$CPPFLAGS -I/usr/include/SDL"
 			ac_fn_c_check_header_mongrel "$LINENO" "SDL.h" "ac_cv_header_SDL_h" "$ac_includes_default"
 if test "x$ac_cv_header_SDL_h" = xyes; then :
   SDL_CFLAGS="-I/usr/include/SDL"
 else
-  if test "x$with_sdl" = "xyes"; then as_fn_error $? "\"SDL header files not found\"" "$LINENO" 5; else with_sdl="no"; fi
+   if test "x$with_sdl" = "xyes"; then :
+  as_fn_error $? "\"SDL header files not found\"" "$LINENO" 5
+else
+  with_sdl="no"
+fi
 fi
 
 
-		fi
+
+fi
 
 else
 	SDL_CFLAGS=$pkg_cv_SDL_CFLAGS
@@ -10930,13 +11064,18 @@ else
 $as_echo "yes" >&6; }
 
 fi
+
 fi
 
-if test "x$with_sdl" = "xno"; then
+if test "x$with_sdl" = "xno"; then :
+
 	HAVE_SDL=
+
 else
+
 	HAVE_SDL=1
 	$as_echo "#define HAVE_SDL 1" >>confdefs.h
+
 
 fi
 CFLAGS="$org_cflags"
@@ -10944,7 +11083,8 @@ CPPFLAGS="$org_cflags"
 
 
 
-if test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11" = "x1"; then
+if test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11" = "x1"; then :
+
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype2" >&5
@@ -11129,7 +11269,6 @@ $as_echo "yes" >&6; }
 
 fi
 
-
   EXP_VAR=UNIFONTDIR
   FROM_VAR=$with_unifontdir
   prefix_save=$prefix
@@ -11137,7 +11276,9 @@ fi
   full_var="$FROM_VAR"
   while true; do
     new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"; then break; fi
+    if test "x$new_full_var" = "x$full_var"; then :
+  break
+fi
     full_var=$new_full_var
   done
   full_var=$new_full_var
@@ -11219,6 +11360,7 @@ fi
 #define UNIFONTDIR "$UNIFONTDIR"
 _ACEOF
 
+
 fi
 
 ac_ext=cpp
@@ -11231,8 +11373,9 @@ org_cxxflags="$CXXFLAGS"
 org_cppflags="$CPPFLAGS"
 
 
-if test "x$with_adplug" != "xno"; then
 
+
+if test "x$with_adplug" != "xno"; then :
 
 
 pkg_failed=no
@@ -11302,7 +11445,8 @@ else
 fi
 
 
-		if test "x$with_adplug_failed" = "xyes"; then
+		if test "x$with_adplug_failed" = "xyes"; then :
+
 			CXXFLAGS="$CXXFLAGS -I/usr/include/libbinio"
 			CPPFLAGS="$CPPFLAGS -I/usr/include/libbinio"
 			unset ac_cv_header_adplug_adplug_h
@@ -11312,13 +11456,19 @@ $as_echo "$as_me: \"Trying again with -I/usr/include/libbinio\"" >&6;}
 if test "x$ac_cv_header_adplug_adplug_h" = xyes; then :
   ADPLUG_CXXFLAGS="-I/usr/include/libbinio"
 else
-  if test "x$with_adplug" = "xyes"; then as_fn_error $? "\"Adplug header files was not found\"" "$LINENO" 5; else with_adplug="no"; fi
+   if test "x$with_adplug" = "xyes"; then :
+  as_fn_error $? "\"Adplug header files was not found\"" "$LINENO" 5
+else
+  with_adplug="no"
+fi
 
 fi
 
 
-		fi
-		if test "x$with_adplug" != "xno"; then
+
+fi
+		if test "x$with_adplug" != "xno"; then :
+
 			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for docell0 in -ladplug" >&5
 $as_echo_n "checking for docell0 in -ladplug... " >&6; }
 if ${ac_cv_lib_adplug_docell0+:} false; then :
@@ -11358,11 +11508,16 @@ $as_echo "$ac_cv_lib_adplug_docell0" >&6; }
 if test "x$ac_cv_lib_adplug_docell0" = xyes; then :
   ADPLUG_LIBS="-ladplug"
 else
-  if test "x$with_adplug" = "xyes"; then as_fn_error $? "\"Adplug was not found\"" "$LINENO" 5; else with_adplug="no"; fi
+   if test "x$with_adplug" = "xyes"; then :
+  as_fn_error $? "\"Adplug was not found\"" "$LINENO" 5
+else
+  with_adplug="no"
+fi
 fi
 
 			LIBS=$push_LIBS
-		fi
+
+fi
 
 elif test $pkg_failed = untried; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -11376,7 +11531,8 @@ else
 fi
 
 
-		if test "x$with_adplug_failed" = "xyes"; then
+		if test "x$with_adplug_failed" = "xyes"; then :
+
 			CXXFLAGS="$CXXFLAGS -I/usr/include/libbinio"
 			CPPFLAGS="$CPPFLAGS -I/usr/include/libbinio"
 			unset ac_cv_header_adplug_adplug_h
@@ -11386,13 +11542,19 @@ $as_echo "$as_me: \"Trying again with -I/usr/include/libbinio\"" >&6;}
 if test "x$ac_cv_header_adplug_adplug_h" = xyes; then :
   ADPLUG_CXXFLAGS="-I/usr/include/libbinio"
 else
-  if test "x$with_adplug" = "xyes"; then as_fn_error $? "\"Adplug header files was not found\"" "$LINENO" 5; else with_adplug="no"; fi
+   if test "x$with_adplug" = "xyes"; then :
+  as_fn_error $? "\"Adplug header files was not found\"" "$LINENO" 5
+else
+  with_adplug="no"
+fi
 
 fi
 
 
-		fi
-		if test "x$with_adplug" != "xno"; then
+
+fi
+		if test "x$with_adplug" != "xno"; then :
+
 			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for docell0 in -ladplug" >&5
 $as_echo_n "checking for docell0 in -ladplug... " >&6; }
 if ${ac_cv_lib_adplug_docell0+:} false; then :
@@ -11432,11 +11594,16 @@ $as_echo "$ac_cv_lib_adplug_docell0" >&6; }
 if test "x$ac_cv_lib_adplug_docell0" = xyes; then :
   ADPLUG_LIBS="-ladplug"
 else
-  if test "x$with_adplug" = "xyes"; then as_fn_error $? "\"Adplug was not found\"" "$LINENO" 5; else with_adplug="no"; fi
+   if test "x$with_adplug" = "xyes"; then :
+  as_fn_error $? "\"Adplug was not found\"" "$LINENO" 5
+else
+  with_adplug="no"
+fi
 fi
 
 			LIBS=$push_LIBS
-		fi
+
+fi
 
 else
 	ADPLUG_CFLAGS=$pkg_cv_ADPLUG_CFLAGS
@@ -11445,12 +11612,14 @@ else
 $as_echo "yes" >&6; }
 	ADPLUG_CXXFLAGS=$ADPLUG_CFLAGS
 fi
+
 fi
 CXXFLAGS="$org_cxxflags"
 CPPFLAGS="$org_cppflags"
 
-if test "x$with_adplug" != "xno"; then
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking If AdPlug was compiled with another C++ ABI" >&5
+if test "x$with_adplug" != "xno"; then :
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking If AdPlug was compiled with another C++ ABI" >&5
 $as_echo_n "checking If AdPlug was compiled with another C++ ABI... " >&6; }
 	CXXFLAGS="$CXXFLAGS $ADPLUG_CXXFLAGS"
 	LIBS="$LIBS $ADPLUG_LIBS"
@@ -11507,6 +11676,7 @@ main ()
 	}
 	return 0;
 
+
   ;
   return 0;
 }
@@ -11525,9 +11695,11 @@ fi
 	LIBS=$push_LIBS
 	CXXFLAGS="$org_cxxflags"
 	CPPFLAGS="$org_cppflags"
+
 fi
 
-if test "x$with_adplug" != "xno"; then
+if test "x$with_adplug" != "xno"; then :
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking If libbinio used by AdPlug contains bugs https://github.com/adplug/libbinio/issues/2" >&5
 $as_echo_n "checking If libbinio used by AdPlug contains bugs https://github.com/adplug/libbinio/issues/2... " >&6; }
 	CXXFLAGS="$CXXFLAGS $ADPLUG_CXXFLAGS"
@@ -11583,15 +11755,20 @@ fi
 	LIBS=$push_LIBS
 	CXXFLAGS="$org_cxxflags"
 	CPPFLAGS="$org_cppflags"
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking GIT submodules are checked out" >&5
 $as_echo_n "checking GIT submodules are checked out... " >&6; }
-if ! test -f playsid/libsidplayfp-git/src/sidemu.cpp; then
-  as_fn_error $? "playsid/libsidplayfp-git is missing - please execute 'git submodule update --init --recursive'" "$LINENO" 5
-else if ! test -f playsid/libsidplayfp-git/src/builders/resid-builder/resid/sid.h; then
+if test -f playsid/libsidplayfp-git/src/sidemu.cpp; then :
+   if test -f playsid/libsidplayfp-git/src/builders/resid-builder/resid/sid.h; then :
+
+else
   as_fn_error $? "playsid/libsidplayfp-git/src/builders/resid-builder/resid is missing - please execute 'git submodule update --init --recursive'" "$LINENO" 5
 fi
+else
+  as_fn_error $? "playsid/libsidplayfp-git is missing - please execute 'git submodule update --init --recursive'" "$LINENO" 5
+
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
@@ -12008,7 +12185,7 @@ $as_echo "no" >&6; }
 fi
 
 
-if test -z "$XA"; then
+if test -z "$XA"; then :
   as_fn_error $? "xa is needed for compiling 6502 assembler used by libsidplayfp" "$LINENO" 5
 fi
 # Extract the first word of "hexdump", so it can be a program name with args.
@@ -12051,7 +12228,7 @@ $as_echo "no" >&6; }
 fi
 
 
-if test -z "$HEXDUMP"; then
+if test -z "$HEXDUMP"; then :
   as_fn_error $? "hexdump is needed for compiling libsidplayfp" "$LINENO" 5
 fi
 # Extract the first word of "perl", so it can be a program name with args.
@@ -12094,7 +12271,7 @@ $as_echo "no" >&6; }
 fi
 
 
-if test -z "$PERL"; then
+if test -z "$PERL"; then :
   as_fn_error $? "perl is needed for compiling libsidplayfp" "$LINENO" 5
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts -fvisibility=hidden -fvisibility-inlines-hidden" >&5
@@ -12200,15 +12377,12 @@ _ACEOF
 
 if test $ac_cv_sizeof_short -ne 2; then :
   as_fn_error $? "LIBSIDPLAYFP: size of short must be 16 bit" "$LINENO" 5
-
 fi
 if test $ac_cv_sizeof_int -lt 4; then :
   as_fn_error $? "LIBSIDPLAYFP: only 32 bit or better CPUs are supported" "$LINENO" 5
-
 fi
 if test "x${ac_cv_header_stdint_h}" != "xyes"; then :
   as_fn_error $? "Required header stdint.h not found" "$LINENO" 5
-
 fi
 ac_fn_cxx_check_decl "$LINENO" "strcasecmp" "ac_cv_have_decl_strcasecmp" "$ac_includes_default"
 if test "x$ac_cv_have_decl_strcasecmp" = xyes; then :
@@ -12276,9 +12450,6 @@ fi
 
 fi
 
-if test "x$with_debug" = "xyes"; then
-  CXXFLAGS="$CXXFLAGS -DDEBUG=1"
-fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working bool" >&5
 $as_echo_n "checking for working bool... " >&6; }
 if ${ac_cv_cxx_bool+:} false; then :
@@ -12309,7 +12480,6 @@ if test "x$ac_cv_cxx_bool" = "xno"; then :
   HAVE_BOOL=0
 else
   HAVE_BOOL=1
-
 fi
 # Check whether --enable-branch-hints was given.
 if test "${enable_branch_hints+set}" = set; then :
@@ -12323,7 +12493,6 @@ if test "$enable_branch_hints" != no; then :
   RESID_BRANCH_HINTS=1
 else
   RESID_BRANCH_HINTS=0
-
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for log1p" >&5
 $as_echo_n "checking for log1p... " >&6; }
@@ -12354,7 +12523,6 @@ if test "$resid_cv_log1p" = no; then :
   HAVE_LOG1P=0
 else
   HAVE_LOG1P=1
-
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __builtin_expect" >&5
 $as_echo_n "checking for __builtin_expect... " >&6; }
@@ -12379,7 +12547,6 @@ if test "$resid_cv_builtin_expect" = no; then :
   HAVE_BUILTIN_EXPECT=0
 else
   HAVE_BUILTIN_EXPECT=1
-
 fi
 LIBSIDPLAYCXX="$CXX -DHAVE_CONFIG_H=1 -DSIDTUNE_NO_STDIN_LOADER=1 -DPACKAGE_NAME=\\\"sidplayfp\\\" -DVERSION=\\\"2.3.1\\\" -DPACKAGE_VERSION=\\\"2.2.3-1\\\" -DPACKAGE_URL=\\\"\\\""
 LIBSIDPLAYCXXFLAGS="$CXXFLAGS"
@@ -12483,7 +12650,8 @@ $as_echo "yes" >&6; }
 
 fi
 
-if test "x$with_alsa" != "xno"; then
+if test "x$with_alsa" != "xno"; then :
+
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for alsa" >&5
@@ -12544,21 +12712,21 @@ fi
 	echo "$ALSA_PKG_ERRORS" >&5
 
 
-		if test "x$with_alsa" = "xyes"; then
-			as_fn_error $? "pkg-config failed" "$LINENO" 5;
-		else
-			with_alsa="no"
-		fi
+		if test "x$with_alsa" = "xyes"; then :
+  as_fn_error $? "pkg-config failed" "$LINENO" 5
+else
+  with_alsa="no"
+fi
 
 elif test $pkg_failed = untried; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-		if test "x$with_alsa" = "xyes"; then
-			as_fn_error $? "pkg-config failed" "$LINENO" 5;
-		else
-			with_alsa="no"
-		fi
+		if test "x$with_alsa" = "xyes"; then :
+  as_fn_error $? "pkg-config failed" "$LINENO" 5
+else
+  with_alsa="no"
+fi
 
 else
 	ALSA_CFLAGS=$pkg_cv_ALSA_CFLAGS
@@ -12567,23 +12735,28 @@ else
 $as_echo "yes" >&6; }
 
 fi
+
 fi
 
 
-if test "x$with_alsa" = "xno"; then
-	HAVE_ALSA=
+if test "x$with_alsa" = "xno"; then :
+  HAVE_ALSA=
 else
-	HAVE_ALSA=1
+  HAVE_ALSA=1
 fi
 
 
 
-if test "x$with_adplug" = "xno"; then
+if test "x$with_adplug" = "xno"; then :
+
 	HAVE_ADPLUG=
 	ADPLUG_INI=
+
 else
+
 	HAVE_ADPLUG=1
 	ADPLUG_INI=opltype
+
 fi
 
 
@@ -12602,8 +12775,8 @@ $as_echo "linux kernel header files was not found" >&6; };LINUX=
 fi
 
 
-if test "$LINUX+set" != "+set"; then
-	ac_fn_c_check_header_mongrel "$LINENO" "linux/major.h" "ac_cv_header_linux_major_h" "$ac_includes_default"
+if test "$LINUX+set" != "+set"; then :
+   ac_fn_c_check_header_mongrel "$LINENO" "linux/major.h" "ac_cv_header_linux_major_h" "$ac_includes_default"
 if test "x$ac_cv_header_linux_major_h" = xyes; then :
 
 else
@@ -12613,8 +12786,8 @@ fi
 
 
 fi
-if test "$LINUX+set" != "+set"; then
-	ac_fn_c_check_header_mongrel "$LINENO" "linux/fb.h" "ac_cv_header_linux_fb_h" "$ac_includes_default"
+if test "$LINUX+set" != "+set"; then :
+   ac_fn_c_check_header_mongrel "$LINENO" "linux/fb.h" "ac_cv_header_linux_fb_h" "$ac_includes_default"
 if test "x$ac_cv_header_linux_fb_h" = xyes; then :
   $as_echo "#define HAVE_FRAMEBUFFER 1" >>confdefs.h
 
@@ -12625,8 +12798,8 @@ fi
 
 
 fi
-if test "$LINUX+set" != "+set"; then
-	ac_fn_c_check_header_mongrel "$LINENO" "linux/cdrom.h" "ac_cv_header_linux_cdrom_h" "$ac_includes_default"
+if test "$LINUX+set" != "+set"; then :
+   ac_fn_c_check_header_mongrel "$LINENO" "linux/cdrom.h" "ac_cv_header_linux_cdrom_h" "$ac_includes_default"
 if test "x$ac_cv_header_linux_cdrom_h" = xyes; then :
   CDROM_SUPPORT=1;CDROM_INI="cdrom"
 else
@@ -12640,7 +12813,8 @@ fi
 
 
 
-if test "x$with_oss" != "xno"; then
+if test "x$with_oss" != "xno"; then :
+
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for oss" >&5
@@ -12706,7 +12880,11 @@ if test "x$ac_cv_header_sys_soundcard_h" = xyes; then :
   HAVE_OSS=1;$as_echo "#define HAVE_SYS_SOUNDCARD_H 1" >>confdefs.h
 
 else
-  if test "x$with_oss" = "xyes"; then as_fn_error 1 "kernel OSS header file was not found" "$LINENO" 5; else with_oss="no";HAVE_OSS=;fi
+   if test "x$with_oss" = "xyes"; then :
+  as_fn_error 1 "kernel OSS header file was not found" "$LINENO" 5
+else
+  with_oss="no";HAVE_OSS=
+fi
 
 fi
 
@@ -12721,7 +12899,11 @@ if test "x$ac_cv_header_sys_soundcard_h" = xyes; then :
   HAVE_OSS=1;$as_echo "#define HAVE_SYS_SOUNDCARD_H 1" >>confdefs.h
 
 else
-  if test "x$with_oss" = "xyes"; then as_fn_error 1 "kernel OSS header file was not found" "$LINENO" 5; else with_oss="no";HAVE_OSS=;fi
+   if test "x$with_oss" = "xyes"; then :
+  as_fn_error 1 "kernel OSS header file was not found" "$LINENO" 5
+else
+  with_oss="no";HAVE_OSS=
+fi
 
 fi
 
@@ -12734,54 +12916,81 @@ else
 $as_echo "yes" >&6; }
 	HAVE_OSS=1
 fi
+
 fi
 
 
 
 
-if test "x$with_coreaudio" != "xno"; then
+if test "x$with_coreaudio" != "xno"; then :
+
 	ac_fn_c_check_header_mongrel "$LINENO" "CoreServices/CoreServices.h" "ac_cv_header_CoreServices_CoreServices_h" "$ac_includes_default"
 if test "x$ac_cv_header_CoreServices_CoreServices_h" = xyes; then :
   HAVE_COREAUDIO=1
 else
-  if test "x$with_coreaudio" = "xyes"; then as_fn_error 1 "CoreAudio not found" "$LINENO" 5; else with_coreaudio="no"; HAVE_COREAUDIO=; fi
+   if test "x$with_coreaudio" = "xyes"; then :
+  as_fn_error 1 "CoreAudio not found" "$LINENO" 5
+else
+  with_coreaudio="no"; HAVE_COREAUDIO=
+fi
 fi
 
 
+
 fi
-if test "x$with_coreaudio" != "xno"; then
+if test "x$with_coreaudio" != "xno"; then :
+
 	ac_fn_c_check_header_mongrel "$LINENO" "AudioUnit/AudioUnit.h" "ac_cv_header_AudioUnit_AudioUnit_h" "$ac_includes_default"
 if test "x$ac_cv_header_AudioUnit_AudioUnit_h" = xyes; then :
   HAVE_COREAUDIO=1
 else
-  if test "x$with_coreaudio" = "xyes"; then as_fn_error 1 "CoreAudio not found" "$LINENO" 5; else with_coreaudio="no"; HAVE_COREAUDIO=; fi
+   if test "x$with_coreaudio" = "xyes"; then :
+  as_fn_error 1 "CoreAudio not found" "$LINENO" 5
+else
+  with_coreaudio="no"; HAVE_COREAUDIO=
+fi
 fi
 
 
+
 fi
-if test "x$with_coreaudio" != "xno"; then
+if test "x$with_coreaudio" != "xno"; then :
+
 	ac_fn_c_check_header_mongrel "$LINENO" "AudioToolbox/AudioToolbox.h" "ac_cv_header_AudioToolbox_AudioToolbox_h" "$ac_includes_default"
 if test "x$ac_cv_header_AudioToolbox_AudioToolbox_h" = xyes; then :
   HAVE_COREAUDIO=1
 else
-  if test "x$with_coreaudio" = "xyes"; then as_fn_error 1 "CoreAudio not found" "$LINENO" 5; else with_coreaudio="no"; HAVE_COREAUDIO=; fi
+   if test "x$with_coreaudio" = "xyes"; then :
+  as_fn_error 1 "CoreAudio not found" "$LINENO" 5
+else
+  with_coreaudio="no"; HAVE_COREAUDIO=
+fi
 fi
 
 
+
 fi
-if test "x$with_coreaudio" != "xno"; then
+if test "x$with_coreaudio" != "xno"; then :
+
 	ac_fn_c_check_header_mongrel "$LINENO" "CoreAudio/CoreAudio.h" "ac_cv_header_CoreAudio_CoreAudio_h" "$ac_includes_default"
 if test "x$ac_cv_header_CoreAudio_CoreAudio_h" = xyes; then :
   HAVE_COREAUDIO=1
 else
-  if test "x$with_coreaudio" = "xyes"; then as_fn_error 1 "CoreAudio not found" "$LINENO" 5; else with_coreaudio="no"; HAVE_COREAUDIO=; fi
+   if test "x$with_coreaudio" = "xyes"; then :
+   as_fn_error 1 "CoreAudio not found" "$LINENO" 5
+else
+  with_coreaudio="no"; HAVE_COREAUDIO=
+fi
 fi
 
 
+
 fi
-if test "x$with_coreaudio" != "xno"; then
+if test "x$with_coreaudio" != "xno"; then :
+
 	COREAUDIO_CFLAGS=""
 	COREAUDIO_LIBS="-framework CoreAudio -framework Carbon -framework AudioUnit"
+
 fi
 
 
@@ -12792,7 +13001,9 @@ fi
   full_var="$FROM_VAR"
   while true; do
     new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"; then break; fi
+    if test "x$new_full_var" = "x$full_var"; then :
+  break
+fi
     full_var=$new_full_var
   done
   full_var=$new_full_var
@@ -12814,7 +13025,9 @@ _ACEOF
   full_var="$FROM_VAR"
   while true; do
     new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"; then break; fi
+    if test "x$new_full_var" = "x$full_var"; then :
+  break
+fi
     full_var=$new_full_var
   done
   full_var=$new_full_var
@@ -12832,7 +13045,9 @@ _ACEOF
   full_var="$FROM_VAR"
   while true; do
     new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"; then break; fi
+    if test "x$new_full_var" = "x$full_var"; then :
+  break
+fi
     full_var=$new_full_var
   done
   full_var=$new_full_var
@@ -12849,7 +13064,9 @@ _ACEOF
   full_var="$FROM_VAR"
   while true; do
     new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"; then break; fi
+    if test "x$new_full_var" = "x$full_var"; then :
+  break
+fi
     full_var=$new_full_var
   done
   full_var=$new_full_var
@@ -12866,7 +13083,9 @@ _ACEOF
   full_var="$FROM_VAR"
   while true; do
     new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"; then break; fi
+    if test "x$new_full_var" = "x$full_var"; then :
+  break
+fi
     full_var=$new_full_var
   done
   full_var=$new_full_var
@@ -12883,7 +13102,9 @@ _ACEOF
   full_var="$FROM_VAR"
   while true; do
     new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"; then break; fi
+    if test "x$new_full_var" = "x$full_var"; then :
+  break
+fi
     full_var=$new_full_var
   done
   full_var=$new_full_var
@@ -12900,7 +13121,9 @@ _ACEOF
   full_var="$FROM_VAR"
   while true; do
     new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"; then break; fi
+    if test "x$new_full_var" = "x$full_var"; then :
+  break
+fi
     full_var=$new_full_var
   done
   full_var=$new_full_var
@@ -12917,7 +13140,9 @@ _ACEOF
   full_var="$FROM_VAR"
   while true; do
     new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"; then break; fi
+    if test "x$new_full_var" = "x$full_var"; then :
+  break
+fi
     full_var=$new_full_var
   done
   full_var=$new_full_var
@@ -13000,42 +13225,54 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking Include lzw support (used by GIF and arcZIP)" >&5
 $as_echo_n "checking Include lzw support (used by GIF and arcZIP)... " >&6; }
-if test "x$with_lzw" = "xyes"; then
+if test "x$with_lzw" = "xyes"; then :
+
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 	$as_echo "#define HAVE_LZW 1" >>confdefs.h
 
 	HAVE_LZW=1
+
 else
+
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+
 fi
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking Include lzh support (used by .ym file support)" >&5
 $as_echo_n "checking Include lzh support (used by .ym file support)... " >&6; }
-if test "x$with_lzh" = "xyes"; then
+if test "x$with_lzh" = "xyes"; then :
+
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 	$as_echo "#define HAVE_LZH 1" >>confdefs.h
 
 	HAVE_LZH=1
+
 else
+
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking \"cp -f implies --remove-destination\"" >&5
 $as_echo_n "checking \"cp -f implies --remove-destination\"... " >&6; }
 cp -f --remove-destination Rules.make.in Rules.make.in.tmp > /dev/null 2>&1
-if test "$?" -ne 0; then
+if test "$?" -ne 0; then :
+
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 	CP="cp -f"
+
 else
+
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 	CP="cp -f --remove-destination"
+
 fi
 rm -f Rules.make.in.tmp
 
@@ -13059,8 +13296,8 @@ if test "x$ac_cv_func_iconv_open" = xyes; then :
 fi
 
 		# Check if we have GNU libiconv
-		if test $found_iconv = "no"; then
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libiconv_open in -liconv" >&5
+		if test $found_iconv = "no"; then :
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libiconv_open in -liconv" >&5
 $as_echo_n "checking for libiconv_open in -liconv... " >&6; }
 if ${ac_cv_lib_iconv_libiconv_open+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -13100,10 +13337,10 @@ if test "x$ac_cv_lib_iconv_libiconv_open" = xyes; then :
   ICONV_LIBS=-liconv; with_libiconv=gnu; found_iconv=yes
 fi
 
-		fi
+fi
 		# Check if we have a iconv in -liconv, possibly from vendor
-		if test $found_iconv = "no"; then
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for iconv_open in -liconv" >&5
+		if test $found_iconv = "no"; then :
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for iconv_open in -liconv" >&5
 $as_echo_n "checking for iconv_open in -liconv... " >&6; }
 if ${ac_cv_lib_iconv_iconv_open+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -13143,7 +13380,7 @@ if test "x$ac_cv_lib_iconv_iconv_open" = xyes; then :
   ICONV_LIBS=-liconv; with_libiconv=native; found_iconv=yes
 fi
 
-		fi
+fi
 		;;
 	no)
 		ac_fn_c_check_func "$LINENO" "iconv_open" "ac_cv_func_iconv_open"
@@ -13239,8 +13476,8 @@ fi
 esac
 LIBS=$push_LIBS
 
-if test "x$found_iconv" = "xno" ; then
-	as_fn_error $? "*** No iconv() implementation found in C library or libiconv" "$LINENO" 5
+if test "x$found_iconv" = "xno"; then :
+   as_fn_error $? "*** No iconv() implementation found in C library or libiconv" "$LINENO" 5
 fi
 
 
@@ -13257,8 +13494,10 @@ $as_echo "#define USE_LIBICONV_NATIVE 1" >>confdefs.h
 		;;
 esac
 
-if ! test "x$with_desktop_file_install" = "xno"; then
-	if test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"; then
+if test "x$with_desktop_file_install" != "xno"; then :
+
+	if test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"; then :
+
 		# Extract the first word of "desktop-file-install", so it can be a program name with args.
 set dummy desktop-file-install; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -13297,14 +13536,18 @@ $as_echo "no" >&6; }
 fi
 
 
-		if test "x$DESKTOP_FILE_INSTALL" = "xfailed"; then
+		if test "x$DESKTOP_FILE_INSTALL" = "xfailed"; then :
+
 			as_fn_error $? "Cannot find desktop-file-install (required by x11 and SDL driver)." "$LINENO" 5
-		fi
-	fi
+
 fi
 
-if test "x$with_dumptools" = "xyes"; then
-	BUILD_DUMPTOOLS=1
+fi
+
+fi
+
+if test "x$with_dumptools" = "xyes"; then :
+  BUILD_DUMPTOOLS=1
 fi
 
 
@@ -14617,78 +14860,76 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
-echo
-if test "x$with_debug" = "xyes"; then
-	echo "debug:             ON"
+if test "x$with_debug"     = "xyes"; then :
+  echo "debug:             ON"
 else
-	echo "debug:             OFF"
+  echo "debug:             OFF"
 fi
-
-if test "x$with_adplug" = "xno"; then
-	echo "adplug:            OFF"
+if test "x$with_adplug"    = "xno" ; then :
+  echo "adplug:            OFF"
 else
-	echo "adplug:            ON"
+  echo "adplug:            ON"
 fi
-if test "x$with_mad" = "xno"; then
-	echo "mad:               OFF"
+if test "x$with_mad"       = "xno" ; then :
+  echo "mad:               OFF"
 else
-	echo "mad:               ON"
+  echo "mad:               ON"
 fi
-echo "sidplayfp:         GIT/builtin"
-if test "x$with_flac" = "xno"; then
-	echo "FLAC:              OFF"
+                                           echo "sidplayfp:         GIT/builtin"
+if test "x$with_flac"      = "xno" ; then :
+  echo "FLAC:              OFF"
 else
-	echo "FLAC:              ON"
+  echo "FLAC:              ON"
 fi
-if test "x$with_x11" = "xno"; then
-	echo "x11:               OFF"
+if test "x$with_x11"       = "xno" ; then :
+  echo "x11:               OFF"
 else
-	echo "x11:               ON  (UNIFONTDIR="$UNIFONTDIR")"
+  echo "x11:               ON  (UNIFONTDIR="$UNIFONTDIR")"
 fi
-if test "x$with_sdl" = "xno"; then
-	echo "SDL:               OFF"
+if test "x$with_sdl"       = "xno" ; then :
+  echo "SDL:               OFF"
 else
-	echo "SDL:               ON  (UNIFONTDIR="$UNIFONTDIR")"
+  echo "SDL:               ON  (UNIFONTDIR="$UNIFONTDIR")"
 fi
-if test "x$with_sdl2" = "xno"; then
-	echo "SDL2:              OFF"
+if test "x$with_sdl2"      = "xno" ; then :
+  echo "SDL2:              OFF"
 else
-	echo "SDL2:              ON  (UNIFONTDIR="$UNIFONTDIR")"
+  echo "SDL2:              ON  (UNIFONTDIR="$UNIFONTDIR")"
 fi
-if test "x$with_alsa" = "xno"; then
-	echo "ALSA:              OFF"
+if test "x$with_alsa"      = "xno" ; then :
+  echo "ALSA:              OFF"
 else
-	echo "ALSA:              ON"
+  echo "ALSA:              ON"
 fi
-if test "x$with_oss" = "xno"; then
-	echo "OSS:               OFF"
+if test "x$with_oss"       = "xno" ; then :
+  echo "OSS:               OFF"
 else
-	echo "OSS:               ON"
+  echo "OSS:               ON"
 fi
-if test "x$with_coreaudio" = "xno"; then
-	echo "CoreAudio:         OFF"
+if test "x$with_coreaudio" = "xno" ; then :
+  echo "CoreAudio:         OFF"
 else
-	echo "CoreAudio:         ON"
+  echo "CoreAudio:         ON"
 fi
-if test "$LINUX+set" != "+set"; then
-	echo "linux cdrom:       ON"
-	echo "linux framebuffer: ON"
+if test "$LINUX+set"      != "+set"; then :
+  echo "linux cdrom:       ON"
+                                           echo "linux framebuffer: ON"
 else
-	echo "linux cdrom:       OFF"
-	echo "linux framebuffer: OFF"
+  echo "linux cdrom:       OFF"
+                                                                            echo "linux framebuffer: OFF"
 fi
-if test "x$with_lzw" = "xno"; then
-	echo "include LZW:       OFF"
+if test "x$with_lzw"       = "xno" ; then :
+  echo "include LZW:       OFF"
 else
-	echo "include LZW:       ON"
+  echo "include LZW:       ON"
 fi
-if test "x$with_lzh" = "xno"; then
-	echo "include LZH:       OFF"
+if test "x$with_lzh"       = "xno" ; then :
+  echo "include LZH:       OFF"
 else
-	echo "include LZH:       ON"
+  echo "include LZH:       ON"
 fi
-if test "x$with_dumptools" = "xyes"; then
-	echo "include DumpTools: ON"
+if test "x$with_dumptools" = "xyes"; then :
+  echo "include DumpTools: ON"
 else
-	echo "include DumpTools: OFF"
+  echo "include DumpTools: OFF"
 fi

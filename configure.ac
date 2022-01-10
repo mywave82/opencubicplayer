@@ -5,27 +5,25 @@ AC_CANONICAL_HOST
 
 
 AC_MSG_CHECKING([GIT submodules are checked out])
-if ! test -f playtimidity/timidity-git/Makefile.am; then
-  AC_MSG_ERROR([playtimidity/timidity-git is missing - please execute 'git submodule update --init --recursive'])
-else
-  AC_MSG_RESULT([ok])
-fi
-
-AC_ARG_WITH(debug, [  --with-debug            compile with debug-flags and without SIGALRM],
-if test "x$with_debug" = "xyes"; then
-for i in $CFLAGS; do
-  new_CFLAGS="$new_CFLAGS `echo $i|grep -- -L`";
-  new_CFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
-done;
-CFLAGS="$new_CFLAGS -g"
-for i in $CXXFLAGS; do
-  new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -L`";
-  new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
-done;
-CXXFLAGS="$new_CXXFLAGS -g"
-AC_DEFINE(KICKSTART_GDB, 1) AC_DEFINE(DISABLE_SIGALRM)
-fi
+AS_IF([test -f playtimidity/timidity-git/Makefile.am], [AC_MSG_RESULT([ok])],
+      [AC_MSG_ERROR([playtimidity/timidity-git is missing - please execute 'git submodule update --init --recursive'])]
 )
+
+AC_ARG_WITH(debug, [  --with-debug            compile with debug-flags and without SIGALRM])
+AS_IF([test "x$with_debug" = "xyes"], [
+  for i in $CFLAGS; do
+    new_CFLAGS="$new_CFLAGS `echo $i|grep -- -L`";
+    new_CFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
+  done;
+  CFLAGS="$new_CFLAGS -g"
+  for i in $CXXFLAGS; do
+    new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -L`";
+    new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
+  done;
+  CXXFLAGS="$new_CXXFLAGS -g -DDEBUG=1"
+  AC_DEFINE(KICKSTART_GDB, 1)
+  AC_DEFINE(DISABLE_SIGALRM)
+])
 
 AC_HEADER_TIME
 
@@ -112,7 +110,7 @@ dnl if no prefix given, then use /usr/local, the default prefix
 dnl loop until it doesn"t change anymore
   while true; do
     new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"; then break; fi
+    AS_IF([test "x$new_full_var" = "x$full_var"],[break])
     full_var=$new_full_var
   done
 dnl clean up
@@ -125,9 +123,7 @@ dnl restore prefix and exec_prefix
 
 AC_MSG_CHECKING([gcc version])
 cc_version=`( $CC -dumpversion ) 2>&1`
-if test "$?" -gt 0 || test x$cc_version = x; then
-	AC_MSG_ERROR([not found])
-else
+AS_IF([test "$?" -gt 0 || test x$cc_version = x], [AC_MSG_ERROR([not found])], [
 	case $cc_version in
 		'')
 			AC_MSG_ERROR([not found]);
@@ -140,7 +136,7 @@ else
 			AC_MSG_RESULT([$cc_version, ok])
 			;;
        esac
-fi
+])
 
 AC_MSG_CHECKING([for broken signed char to signed int in loops (gcc version 4.1.1)])
 AC_RUN_IFELSE(
@@ -246,28 +242,21 @@ AC_CHECK_HEADER([pwd.h],           [AC_DEFINE(HAVE_PWD_H,             1)], [])
 AC_CHECK_FUNC([getpwnam], [HAVE_GETPWNAM=1; AC_DEFINE(HAVE_GETPWNAM)])
 
 dnl timidity patch dir
-AC_ARG_WITH(timidity-default-path,
-  AS_HELP_STRING([--with-timidity-default-path=DIR], [Where timidity.cfg is  (PREFIX/share/timidity)]),
+AC_ARG_WITH(timidity-default-path, [AS_HELP_STRING([--with-timidity-default-path=DIR], [Where timidity.cfg is  (PREFIX/share/timidity)])],
   [timiditypkgdatadir=$withval],
   [
-   if test "x$prefix" != "xNONE"; then
-      timiditypkgdatadir='${prefix}/share/timidity'
-   else
-      timiditypkgdatadir='/usr/local/share/timidity'
-   fi
-  ])
+    AS_IF([test "x$prefix" != "xNONE"], [timiditypkgdatadir='${prefix}/share/timidity'],
+          [timiditypkgdatadir='/usr/local/share/timidity'])
+  ]
+)
 tmpdefpath="`eval \"echo ${timiditypkgdatadir}\"`"
 AC_DEFINE_UNQUOTED(TIMIDITY_DEFAULT_PATH,"$tmpdefpath",place to install patches)
 AC_DEFINE(TIMIDITYPKGDATADIR,TIMIDITY_DEFAULT_PATH,a compatibility matter. ignore it.)
 
 dnl We first check for ncursesw, if that fails we revert back to ncurses
 AX_WITH_CURSES
-if test "x$ax_cv_ncursesw" != xyes && test "x$ax_cv_ncurses" != xyes; then
-	AC_MSG_ERROR([requires either NcursesW or Ncurses library])
-fi
-if test "x$ax_cv_curses_color" != xyes; then
-	AC_MSG_ERROR([requires an X/Open-compatible Curses library with color])
-fi
+AS_IF([test "x$ax_cv_ncursesw" != xyes && test "x$ax_cv_ncurses" != xyes], [AC_MSG_ERROR([requires either NcursesW or Ncurses library])])
+AS_IF([test "x$ax_cv_curses_color" != xyes], [AC_MSG_ERROR([requires an X/Open-compatible Curses library with color])])
 push_LIBS=$LIBS
 LIBS=$CURSES_LIB
 AC_CHECK_FUNCS([resize_term])
@@ -292,27 +281,32 @@ AC_LANG_POP
 AC_SUBST(MAD_CFLAGS)
 AC_SUBST(MAD_LIBS)
 AC_SUBST(HAVE_MAD)
-if test "x$with_mad" != "xno"; then
+AS_IF([test "x$with_mad" != "xno"],[
 	PKG_CHECK_MODULES([MAD],[mad],[],[
 	dnl Fall back to non-pkg-config method
-		AC_CHECK_LIB([mad], [mad_stream_init], , [if test "x$with_mad" = "xyes"; then AC_MSG_ERROR("libmad not found"); else with_mad="no"; fi])
-		if test "x$with_mad" != "xno"; then
-			AC_CHECK_HEADER([mad.h], , [if test "x$with_mad" = "xyes"; then AC_MSG_ERROR("libmad header files was not found"); else with_mad="no"; fi])
-		fi
-		if test "x$with_mad" != "xno"; then
+		AC_CHECK_LIB([mad], [mad_stream_init], [], [
+			AS_IF([test "x$with_mad" = "xyes"], [AC_MSG_ERROR("libmad not found")],
+			      [with_mad="no"])
+		])
+		AS_IF([test "x$with_mad" != "xno"], [
+			AC_CHECK_HEADER([mad.h], [], [
+				AS_IF([test "x$with_mad" = "xyes"], [AC_MSG_ERROR("libmad header files was not found")],
+				      [with_mad="no"])
+			])
+		])
+		AS_IF([test "x$with_mad" != "xno"], [
 			MAD_LIBS="-lmad"
 			MAD_CFLAGS=""
 			LIBS=$push_LIBS
-		fi
+		])
 	])
-fi
-AC_SUBST(HAVE_FLAC)
-if test "x$with_mad" = "xno"; then
+])
+AS_IF([test "x$with_mad" = "xno"], [
 	HAVE_MAD=
-else
+],[
 	HAVE_MAD=1
 	AC_DEFINE(HAVE_MAD)
-fi
+])
 
 
 PKG_CHECK_MODULES([LIBJPEG],[libturbojpeg],[AS_ECHO("libturbojpeg flags ... $LIBJPEG_CFLAGS $LIBJPEG_LIBS")],[
@@ -357,164 +351,157 @@ dnl Fall back to non-pkg-config method
 
 AC_SUBST(FLAC_CFLAGS)
 AC_SUBST(FLAC_LIBS)
-if test "x$with_flac" != "xno"; then
+AC_SUBST(HAVE_FLAC)
+AS_IF([test "x$with_flac" != "xno"],[
 	PKG_CHECK_MODULES([FLAC],[flac],[],[
 		AC_CHECK_LIB([FLAC], [FLAC__seekable_stream_decoder_process_until_end_of_metadata], [FLAC_LIBS="-lFLAC"],
 			AC_CHECK_LIB([FLAC], [FLAC__stream_decoder_process_until_end_of_metadata], [FLAC_LIBS="-lFLAC"],
-				[if test "x$with_flac" = "xyes"; then AC_MSG_ERROR("libFLAC not found"); else with_flac="no"; fi],
-			[-lz]),
+				[AS_IF([test "x$with_flac" = "xyes"], [AC_MSG_ERROR("libFLAC not found")], [with_flac="no"])],
+				[-lz]),
 		[-lz])
-		AC_CHECK_HEADER([FLAC/all.h], [FLAC_CFLAGS=""], [if test "x$with_flac" = "xyes"; then AC_MSG_ERROR("libFLAC header files were not found"); else with_flac="no"; fi])
+		AC_CHECK_HEADER([FLAC/all.h], [FLAC_CFLAGS=""],
+			[  AS_IF([test "x$with_flac" = "xyes"], [AC_MSG_ERROR("libFLAC header files were not found")], [with_flac="no"]) ])
 		LIBS=$push_LIBS
 	])
-fi
+])
 AC_SUBST(HAVE_FLAC)
-if test "x$with_flac" = "xno"; then
-	HAVE_FLAC=
-else
-	HAVE_FLAC=1
-fi
+AS_IF([test "x$with_flac" = "xno"], [HAVE_FLAC=], [HAVE_FLAC=1])
 
-if test "x$with_x11" != "xno"; then
-	AC_CHECK_HEADER([X11/extensions/xf86vmode.h], [], [if test "x$with_x11" = "xyes"; then AC_MSG_ERROR("xvidmode header files was not found"); else with_x11="no"; fi],
+AS_IF([test "x$with_x11" != "xno"], [
+	AC_CHECK_HEADER([X11/extensions/xf86vmode.h], [], [ AS_IF([test "x$with_x11" = "xyes"], [AC_MSG_ERROR("xvidmode header files was not found")], [with_x11="no"]) ],
 [#include <X11/Xlib.h>
 ])
-fi
-if test "x$with_x11" != "xno"; then
-	AC_CHECK_HEADER([X11/extensions/XShm.h], [], [if test "x$with_x11" = "xyes"; then AC_MSG_ERROR("XShm header files was not found"); else with_x11="no"; fi],
+])
+
+AS_IF([test "x$with_x11" != "xno"], [
+	AC_CHECK_HEADER([X11/extensions/XShm.h], [], [ AS_IF([test "x$with_x11" = "xyes"], [AC_MSG_ERROR("XShm header files was not found")], [with_x11="no"]) ],
 [#include <X11/Xlib.h>
 ])
-fi
-if test "x$with_x11" != "xno"; then
-	AC_CHECK_HEADER([X11/xpm.h], [], [if test "x$with_x11" = "xyes"; then AC_MSG_ERROR("xpm header files was not found"); else with_x11="no"; fi],
+])
+
+AS_IF([test "x$with_x11" != "xno"], [
+	AC_CHECK_HEADER([X11/xpm.h], [], [ AS_IF([test "x$with_x11" = "xyes"], [AC_MSG_ERROR("xpm header files was not found")], [with_x11="no"]) ],
 [#include <X11/Xlib.h>
 ])
-fi
-if test "x$with_x11" != "xno"; then
-	AC_CHECK_LIB([Xpm], [XpmCreatePixmapFromData], [X11_LIBS="-lXpm -lX11 -L/usr/X11R6/lib"], [if test "x$with_x11" = "xyes"; then AC_MSG_ERROR(["Xpm/X11 not found (expected to be found in /usr/X11R6/lib)"]); else with_x11="no"; fi], [-lXpm -lX11 -L/usr/X11R6/lib])
+])
+
+AS_IF([test "x$with_x11" != "xno"], [
+	AC_CHECK_LIB([Xpm], [XpmCreatePixmapFromData], [X11_LIBS="-lXpm -lX11 -L/usr/X11R6/lib"], [ AS_IF([test "x$with_x11" = "xyes"], [AC_MSG_ERROR(["Xpm/X11 not found (expected to be found in /usr/X11R6/lib)"])], [with_x11="no"]) ], [-lXpm -lX11 -L/usr/X11R6/lib])
 	LIBS=$push_LIBS
-fi
-if test "x$with_x11" != "xno"; then
-	AC_CHECK_LIB([Xext], [XShmQueryExtension], [X11_LIBS="-lXext $X11_LIBS"], [if test "x$with_x11" = "xyes"; then AC_MSG_ERROR(["SHM/X11 not found (expected to be found in /usr/X11R6/lib)"]); else with_x11="no"; fi], [-lX11 -lXext -L/usr/X11R6/lib])
+])
+
+AS_IF([test "x$with_x11" != "xno"], [
+	AC_CHECK_LIB([Xext], [XShmQueryExtension], [X11_LIBS="-lXext $X11_LIBS"], [ AS_IF([test "x$with_x11" = "xyes"], [AC_MSG_ERROR(["SHM/X11 not found (expected to be found in /usr/X11R6/lib)"])], [with_x11="no"]) ], [-lX11 -lXext -L/usr/X11R6/lib])
 	LIBS=$push_LIBS
-fi
-if test "x$with_x11" != "xno"; then
-	AC_CHECK_LIB([Xxf86vm], [XF86VidModeQueryExtension], [X11_LIBS="-lXxf86vm $X11_LIBS"], [if test "x$with_x11" = "xyes"; then AC_MSG_ERROR(["xvidmode was not found (expected to be found in /usr/X11R6/lib)"]); else with_x11="no"; fi], [-lX11 -lXext -L/usr/X11R6/lib])
+])
+
+AS_IF([test "x$with_x11" != "xno"], [
+	AC_CHECK_LIB([Xxf86vm], [XF86VidModeQueryExtension], [X11_LIBS="-lXxf86vm $X11_LIBS"], [ AS_IF([test "x$with_x11" = "xyes"], [AC_MSG_ERROR(["xvidmode was not found (expected to be found in /usr/X11R6/lib)"]) ], [with_x11="no"]) ], [-lX11 -lXext -L/usr/X11R6/lib])
 	LIBS=$push_LIBS
-fi
+])
 AC_SUBST(HAVE_X11)
-if test "x$with_x11" = "xno"; then
+AS_IF([test "x$with_x11" != "xno"], [
 	X11_LIBS=
 	HAVE_X11=
-else
+],[
 	HAVE_X11=1
 	AC_DEFINE(HAVE_X11)
-fi
+])
 
-if test "x$with_sdl" = "xyes" && test "x$with_sdl2" = "xyes"; then
-	AC_MSG_ERROR("Can not use both --with-sdl and --with-sdl2")
-fi
-
-if test "x$with_sdl" = "xyes"; then
-	with_sdl2="no"
-fi
-
-if test "x$with_sdl2" = "xyes"; then
-	with_sdl="no"
-fi
+AS_IF([test "x$with_sdl" = "xyes" && test "x$with_sdl2" = "xyes"], [AC_MSG_ERROR("Can not use both --with-sdl and --with-sdl2")])
+AS_IF([test "x$with_sdl" = "xyes"], [with_sdl2="no"])
+AS_IF([test "x$with_sdl2" = "xyes"], [with_sdl="no"])
 
 AC_SUBST(SDL2_CFLAGS)
 AC_SUBST(SDL2_LIBS)
-if test "x$with_sdl2" != "xno"; then
-	AM_PATH_SDL2(["2.0.0"], with_sdl2=yes;, if test "x$with_sdl2" = "xyes"; then AC_MSG_ERROR("libSDL2 was not found"); else with_sdl2="no"; fi)
-fi
+AS_IF([test "x$with_sdl2" != "xno"], [
+	AM_PATH_SDL2(["2.0.0"], [with_sdl2=yes], AS_IF([test "x$with_sdl2" = "xyes"], [AC_MSG_ERROR("libSDL2 was not found")], [with_sdl2="no"]) )
+])
 SDL2_CFLAGS=$SDL_CFLAGS
 SDL2_LIBS=$SDL_LIBS
 SDL_CFLAGS=
 SDL_LIBS=
 AC_SUBST(HAVE_SDL2)
 
-if test "x$with_sdl2" = "xno"; then
+AS_IF([test "x$with_sdl2" = "xno"],
 	HAVE_SDL2=
-else
+],[
 	HAVE_SDL2=1
 	AC_DEFINE(HAVE_SDL2)
 	with_sdl="no"
-fi
+])
 
 org_cflags="$CFLAGS"
 org_cppflags="$CPPFLAGS"
 AC_SUBST(SDL_CFLAGS)
 AC_SUBST(SDL_LIBS)
-if test "x$with_sdl" != "xno"; then
+AS_IF([test "x$with_sdl" != "xno"],[
 	PKG_CHECK_MODULES([SDL],[sdl],[],[
 	dnl Fall back to non-pkg-config method
-		AC_CHECK_LIB([SDL], [SDL_Init], [SDL_LIBS="-lSDL"], [if test "x$with_sdl" = "xyes"; then AC_MSG_ERROR("libSDL was not found"); else with_sdl="no"; fi])
-
-		if test "x$with_sdl" != "xno"; then
+		AC_CHECK_LIB([SDL], [SDL_Init], [SDL_LIBS="-lSDL"], [ AS_IF([test "x$with_sdl" = "xyes"],[AC_MSG_ERROR("libSDL was not found")],[with_sdl="no"]) ])
+		AS_IF([test "x$with_sdl" != "xno"],[
 			CFLAGS="$CFLAGS -I/usr/include/SDL"
 			CPPFLAGS="$CPPFLAGS -I/usr/include/SDL"
-			AC_CHECK_HEADER([SDL.h], [SDL_CFLAGS="-I/usr/include/SDL"], [if test "x$with_sdl" = "xyes"; then AC_MSG_ERROR("SDL header files not found"); else with_sdl="no"; fi])
-		fi
+			AC_CHECK_HEADER([SDL.h], [SDL_CFLAGS="-I/usr/include/SDL"], [ AS_IF([test "x$with_sdl" = "xyes"], [AC_MSG_ERROR("SDL header files not found")],[with_sdl="no"]) ])
+		])
 	])
-fi
+])
 AC_SUBST(HAVE_SDL)
-if test "x$with_sdl" = "xno"; then
+AS_IF([test "x$with_sdl" = "xno"],[
 	HAVE_SDL=
-else
+],[
 	HAVE_SDL=1
 	AC_DEFINE(HAVE_SDL)
-fi
+])
 CFLAGS="$org_cflags"
 CPPFLAGS="$org_cflags"
 
 AC_SUBST(FREETYPE2_LIBS)
 AC_SUBST(FREETYPE2_CFLAGS)
-if test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11" = "x1"; then
+AS_IF([test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11" = "x1"],[
 	PKG_CHECK_MODULES([FREETYPE2],[freetype2],[],[
 	dnl Fall back to non-pkg-config method
 		AC_CHECK_LIB([freetype], [FT_Init_FreeType], [],[AC_MSG_ERROR("libfreetype not found")])
 		AC_CHECK_HEADER([ft2built.h], [] , [AC_MSG_ERROR("libfreetype header files was not found")])
 	])
-
 dnl locate the ttf-unifont
 	AS_AC_EXPAND(UNIFONTDIR, $with_unifontdir)
 	AC_CHECK_FILE([$UNIFONTDIR/unifont.ttf], [], [AC_MSG_ERROR([$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)])])
 	AC_CHECK_FILE([$UNIFONTDIR/unifont_csur.ttf], [], [AC_MSG_ERROR([$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)])])
 	AC_CHECK_FILE([$UNIFONTDIR/unifont_upper.ttf], [], [AC_MSG_ERROR([$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)])])
 	AC_DEFINE_UNQUOTED([UNIFONTDIR], "$UNIFONTDIR")
-fi
+])
 
 AC_LANG_PUSH(C++)
 org_cxxflags="$CXXFLAGS"
 org_cppflags="$CPPFLAGS"
 AC_SUBST(ADPLUG_CXXFLAGS)
 AC_SUBST(ADPLUG_LIBS)
-if test "x$with_adplug" != "xno"; then
+AS_IF([test "x$with_adplug" != "xno"],[
 	PKG_CHECK_MODULES([ADPLUG],[adplug],[ADPLUG_CXXFLAGS=$ADPLUG_CFLAGS],[
 	dnl Fall back to non-pkg-config method
 		AC_CHECK_HEADER([adplug/adplug.h], [], [with_adplug_failed=yes])
-		if test "x$with_adplug_failed" = "xyes"; then
+		AS_IF([test "x$with_adplug_failed" = "xyes"],[
 			CXXFLAGS="$CXXFLAGS -I/usr/include/libbinio"
 			CPPFLAGS="$CPPFLAGS -I/usr/include/libbinio"
 			unset ac_cv_header_adplug_adplug_h
 			AC_MSG_NOTICE("Trying again with -I/usr/include/libbinio")
 			AC_CHECK_HEADER([adplug/adplug.h],
 				[ADPLUG_CXXFLAGS="-I/usr/include/libbinio"],
-				[if test "x$with_adplug" = "xyes"; then AC_MSG_ERROR("Adplug header files was not found"); else with_adplug="no"; fi]
+				[ AS_IF([test "x$with_adplug" = "xyes"], [AC_MSG_ERROR("Adplug header files was not found")], [with_adplug="no"]) ]
 			)
-		fi
-		if test "x$with_adplug" != "xno"; then
-			AC_CHECK_LIB([adplug], [docell0], [ADPLUG_LIBS="-ladplug"], [if test "x$with_adplug" = "xyes"; then AC_MSG_ERROR("Adplug was not found"); else with_adplug="no"; fi])
+		])
+		AS_IF([test "x$with_adplug" != "xno"],[
+			AC_CHECK_LIB([adplug], [docell0], [ADPLUG_LIBS="-ladplug"], [ AS_IF([test "x$with_adplug" = "xyes"], [AC_MSG_ERROR("Adplug was not found")], [with_adplug="no"]) ])
 			LIBS=$push_LIBS
-		fi
+		])
 	])
-fi
+])
 CXXFLAGS="$org_cxxflags"
 CPPFLAGS="$org_cppflags"
 
-if test "x$with_adplug" != "xno"; then
-AC_MSG_CHECKING([If AdPlug was compiled with another C++ ABI])
+AS_IF([test "x$with_adplug" != "xno"],[
+	AC_MSG_CHECKING([If AdPlug was compiled with another C++ ABI])
 	CXXFLAGS="$CXXFLAGS $ADPLUG_CXXFLAGS"
 	LIBS="$LIBS $ADPLUG_LIBS"
 
@@ -529,7 +516,7 @@ AC_MSG_CHECKING([If AdPlug was compiled with another C++ ABI])
 #include <adplug/adplug.h>
 #include <adplug/players.h>
 #include <adplug/player.h>
-                                 ]],[[
+			]],[[
 	int j;
 	CPlayers::const_iterator i;
 
@@ -544,16 +531,17 @@ AC_MSG_CHECKING([If AdPlug was compiled with another C++ ABI])
 		}
 	}
 	return 0;
-                                 ]])],
+			]]
+		)],
 		[AC_MSG_RESULT([ok])],
 		[AC_MSG_ERROR("Adplug was compiled with a different c++ compiler")]
 	)
 	LIBS=$push_LIBS
 	CXXFLAGS="$org_cxxflags"
 	CPPFLAGS="$org_cppflags"
-fi
+])
 
-if test "x$with_adplug" != "xno"; then
+AS_IF([test "x$with_adplug" != "xno"],[
 AC_MSG_CHECKING([If libbinio used by AdPlug contains bugs https://github.com/adplug/libbinio/issues/2])
 	CXXFLAGS="$CXXFLAGS $ADPLUG_CXXFLAGS"
 	LIBS="$LIBS $ADPLUG_LIBS"
@@ -565,7 +553,7 @@ AC_MSG_CHECKING([If libbinio used by AdPlug contains bugs https://github.com/adp
 #include <cstdlib>
 #include <string.h>
 #include <string.h>
-                                 ]],[[
+		]],[[
 	binisstream *f = new binisstream((void *)"foobar", 6);
 	long size;
 	char test[6] = {1,2,3,4,5,6};
@@ -578,23 +566,21 @@ AC_MSG_CHECKING([If libbinio used by AdPlug contains bugs https://github.com/adp
 
 	/* test should contain "foobar" if all is correct */
 	return memcmp(test, "foobar", 6);
-                                 ]])],
+		]])],
 		[AC_MSG_RESULT([ok])],
 		[AC_MSG_ERROR("libbinio fails to use memoryobjects")]
 	)
 	LIBS=$push_LIBS
 	CXXFLAGS="$org_cxxflags"
 	CPPFLAGS="$org_cppflags"
-fi
+])
 
 dnl SIDPLAY specifics
 AC_MSG_CHECKING([GIT submodules are checked out])
-if ! test -f playsid/libsidplayfp-git/src/sidemu.cpp; then
-  AC_MSG_ERROR([playsid/libsidplayfp-git is missing - please execute 'git submodule update --init --recursive'])
-else if ! test -f playsid/libsidplayfp-git/src/builders/resid-builder/resid/sid.h; then
-  AC_MSG_ERROR([playsid/libsidplayfp-git/src/builders/resid-builder/resid is missing - please execute 'git submodule update --init --recursive'])
-fi
-fi
+AS_IF([test -f playsid/libsidplayfp-git/src/sidemu.cpp], [ AS_IF([test -f playsid/libsidplayfp-git/src/builders/resid-builder/resid/sid.h], [],
+                                                                 [AC_MSG_ERROR([playsid/libsidplayfp-git/src/builders/resid-builder/resid is missing - please execute 'git submodule update --init --recursive'])] )],
+      [AC_MSG_ERROR([playsid/libsidplayfp-git is missing - please execute 'git submodule update --init --recursive'])]
+)
 AC_MSG_RESULT([ok])
 origCXX="$CXX"
 origCXXFLAGS="$CXXFLAGS"
@@ -606,30 +592,18 @@ RESID_INLINE=inline
 AX_CXX_COMPILE_STDCXX_11([noext], [optional])
 AC_ARG_VAR([XA], [6502 assembler - must be full path])
 AC_PATH_PROG([XA],[xa])
-if test -z "$XA"; then
-  AC_MSG_ERROR([xa is needed for compiling 6502 assembler used by libsidplayfp])
-fi
+AS_IF([test -z "$XA"], [AC_MSG_ERROR([xa is needed for compiling 6502 assembler used by libsidplayfp])])
 AC_PATH_PROG([HEXDUMP],[hexdump])
-if test -z "$HEXDUMP"; then
-  AC_MSG_ERROR([hexdump is needed for compiling libsidplayfp])
-fi
+AS_IF([test -z "$HEXDUMP"], [AC_MSG_ERROR([hexdump is needed for compiling libsidplayfp])])
 AC_PATH_PROG([PERL], [perl])
-if test -z "$PERL"; then
-  AC_MSG_ERROR([perl is needed for compiling libsidplayfp])
-fi
+AS_IF([test -z "$PERL"], [AC_MSG_ERROR([perl is needed for compiling libsidplayfp])])
 dnl TODO HAVE_VISIBILITY
 AX_CHECK_COMPILE_FLAG([-fvisibility=hidden -fvisibility-inlines-hidden], [HAVE_VISIBILITY=1;has_visibility=yes], [has_visibility=no])
 AC_CHECK_SIZEOF([short])
 AC_CHECK_SIZEOF([int])
-AS_IF([test $ac_cv_sizeof_short -ne 2],
-  [AC_MSG_ERROR([LIBSIDPLAYFP: size of short must be 16 bit])]
-)
-AS_IF([test $ac_cv_sizeof_int -lt 4],
-  [AC_MSG_ERROR([LIBSIDPLAYFP: only 32 bit or better CPUs are supported])]
-)
-AS_IF([test "x${ac_cv_header_stdint_h}" != "xyes"],
-  [AC_MSG_ERROR([Required header stdint.h not found])]
-)
+AS_IF([test $ac_cv_sizeof_short -ne 2], [AC_MSG_ERROR([LIBSIDPLAYFP: size of short must be 16 bit])])
+AS_IF([test $ac_cv_sizeof_int -lt 4], [AC_MSG_ERROR([LIBSIDPLAYFP: only 32 bit or better CPUs are supported])])
+AS_IF([test "x${ac_cv_header_stdint_h}" != "xyes"], [AC_MSG_ERROR([Required header stdint.h not found])])
 AC_CHECK_DECL(
     [strcasecmp],
     [AC_CHECK_FUNCS([strcasecmp])],
@@ -646,9 +620,6 @@ AC_CHECK_DECL(
         [AC_CHECK_FUNCS([strnicmp])]
     )]
 )
-if test "x$with_debug" = "xyes"; then
-  CXXFLAGS="$CXXFLAGS -DDEBUG=1"
-fi
 AC_CACHE_CHECK([for working bool], ac_cv_cxx_bool,
 [AC_COMPILE_IFELSE(
   [AC_LANG_PROGRAM([],
@@ -656,10 +627,7 @@ AC_CACHE_CHECK([for working bool], ac_cv_cxx_bool,
   [ac_cv_cxx_bool=yes],
   [ac_cv_cxx_bool=no])]
 )
-AS_IF([test "x$ac_cv_cxx_bool" = "xno"],
-  [HAVE_BOOL=0],
-  [HAVE_BOOL=1]
-)
+AS_IF([test "x$ac_cv_cxx_bool" = "xno"], [HAVE_BOOL=0], [HAVE_BOOL=1])
 dnl TODO RESID_BRANCH_HINTS
 dnl Enable branch prediction hints.
 AC_ARG_ENABLE([branch-hints],
@@ -668,25 +636,16 @@ AC_ARG_ENABLE([branch-hints],
   [],
   [enable_branch_hints=yes]
 )
-AS_IF([test "$enable_branch_hints" != no],
-  [RESID_BRANCH_HINTS=1],
-  [RESID_BRANCH_HINTS=0]
-)
+AS_IF([test "$enable_branch_hints" != no], [RESID_BRANCH_HINTS=1], [RESID_BRANCH_HINTS=0])
 AC_CACHE_CHECK([for log1p], [resid_cv_log1p],
   [AC_TRY_COMPILE([#include <math.h>], [ log1p(1); ],
     resid_cv_log1p=yes, resid_cv_log1p=no)])
-AS_IF([test "$resid_cv_log1p" = no],
-  [HAVE_LOG1P=0],
-  [HAVE_LOG1P=1]
-)
+AS_IF([test "$resid_cv_log1p" = no], [HAVE_LOG1P=0], [HAVE_LOG1P=1])
 AC_CACHE_CHECK([for __builtin_expect], [resid_cv_builtin_expect],
   [AC_COMPILE_IFELSE([AC_LANG_SOURCE([int main() { __builtin_expect(0, 0); }])],
     [resid_cv_builtin_expect=yes], [resid_cv_builtin_expect=no])]
 )
-AS_IF([test "$resid_cv_builtin_expect" = no],
-  [HAVE_BUILTIN_EXPECT=0],
-  [HAVE_BUILTIN_EXPECT=1]
-)
+AS_IF([test "$resid_cv_builtin_expect" = no], [HAVE_BUILTIN_EXPECT=0], [HAVE_BUILTIN_EXPECT=1])
 LIBSIDPLAYCXX="$CXX -DHAVE_CONFIG_H=1 -DSIDTUNE_NO_STDIN_LOADER=1 -DPACKAGE_NAME=\\\"sidplayfp\\\" -DVERSION=\\\"2.3.1\\\" -DPACKAGE_VERSION=\\\"2.2.3-1\\\" -DPACKAGE_URL=\\\"\\\""
 LIBSIDPLAYCXXFLAGS="$CXXFLAGS"
 AC_SUBST(LIBSIDPLAYCXX)
@@ -709,32 +668,24 @@ AC_LANG_POP()
 
 PKG_CHECK_MODULES([LIBDISCID],[libdiscid],[],[AC_MSG_ERROR([libdiscid not found])])
 
-if test "x$with_alsa" != "xno"; then
+AS_IF([test "x$with_alsa" != "xno"],[
 	PKG_CHECK_MODULES([ALSA],[alsa],[],[
-		if test "x$with_alsa" = "xyes"; then
-			AC_MSG_ERROR([pkg-config failed]);
-		else
-			with_alsa="no"
-		fi
+		AS_IF([test "x$with_alsa" = "xyes"], [AC_MSG_ERROR([pkg-config failed])], [with_alsa="no"])
 	])
-fi
+])
 
 AC_SUBST(HAVE_ALSA)
-if test "x$with_alsa" = "xno"; then
-	HAVE_ALSA=
-else
-	HAVE_ALSA=1
-fi
+AS_IF([test "x$with_alsa" = "xno"],[HAVE_ALSA=],[HAVE_ALSA=1])
 
 AC_SUBST(HAVE_ADPLUG)
 AC_SUBST(ADPLUG_INI)
-if test "x$with_adplug" = "xno"; then
+AS_IF([test "x$with_adplug" = "xno"],[
 	HAVE_ADPLUG=
 	ADPLUG_INI=
-else
+],[
 	HAVE_ADPLUG=1
 	ADPLUG_INI=opltype
-fi
+])
 
 AC_SUBST(LINUX)
 AC_SUBST(CDROM_SUPPORT)
@@ -744,48 +695,42 @@ AC_SUBST(HAVE_FRAMEBUFFER)
 HAVE_FRAMEBUFFER=1
 LINUX=1
 	AC_CHECK_HEADER([linux/limits.h], [], [AC_MSG_RESULT([linux kernel header files was not found]);LINUX=])
-if test "$LINUX+set" != "+set"; then
-	AC_CHECK_HEADER([linux/major.h], [], [AC_MSG_RESULT([linux kernel header files was not found]);LINUX=])
-fi
-if test "$LINUX+set" != "+set"; then
-	AC_CHECK_HEADER([linux/fb.h], [AC_DEFINE(HAVE_FRAMEBUFFER)], [AC_MSG_RESULT([linux kernel header files was not found]);LINUX=;HAVE_FRAMEBUFFER=])
-fi
-if test "$LINUX+set" != "+set"; then
-	AC_CHECK_HEADER([linux/cdrom.h], [CDROM_SUPPORT=1;CDROM_INI="cdrom"], [AC_MSG_RESULT([linux cdrom kernel header files was not found])])
-fi
+AS_IF([test "$LINUX+set" != "+set"], [ AC_CHECK_HEADER([linux/major.h], [], [AC_MSG_RESULT([linux kernel header files was not found]);LINUX=]) ])
+AS_IF([test "$LINUX+set" != "+set"], [ AC_CHECK_HEADER([linux/fb.h], [AC_DEFINE(HAVE_FRAMEBUFFER)], [AC_MSG_RESULT([linux kernel header files was not found]);LINUX=;HAVE_FRAMEBUFFER=]) ])
+AS_IF([test "$LINUX+set" != "+set"], [ AC_CHECK_HEADER([linux/cdrom.h], [CDROM_SUPPORT=1;CDROM_INI="cdrom"], [AC_MSG_RESULT([linux cdrom kernel header files was not found])]) ])
 
 AC_SUBST(HAVE_OSS)
 AC_SUBST(OSS_LIBS)
 AC_SUBST(OSS_CFLAGS)
-if test "x$with_oss" != "xno"; then
+AS_IF([test "x$with_oss" != "xno"], [
 	PKG_CHECK_MODULES([OSS],[oss],[HAVE_OSS=1],[
 dnl Fall back to non-pkg-config method (Normal for Linux systems)
 		AC_CHECK_HEADER([sys/soundcard.h],
 			[HAVE_OSS=1;AC_DEFINE(HAVE_SYS_SOUNDCARD_H)],
-			[if test "x$with_oss" = "xyes"; then AC_MSG_ERROR([kernel OSS header file was not found], 1); else with_oss="no";HAVE_OSS=;fi]
+			[ AS_IF([test "x$with_oss" = "xyes"], [AC_MSG_ERROR([kernel OSS header file was not found], 1)],[with_oss="no";HAVE_OSS=]) ]
 		)
 	])
-fi
+])
 
 AC_SUBST(HAVE_COREAUDIO)
 AC_SUBST(COREAUDIO_CFLAGS)
 AC_SUBST(COREAUDIO_LIBS)
-if test "x$with_coreaudio" != "xno"; then
-	AC_CHECK_HEADER([CoreServices/CoreServices.h], [HAVE_COREAUDIO=1], [if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi])
-fi
-if test "x$with_coreaudio" != "xno"; then
-	AC_CHECK_HEADER([AudioUnit/AudioUnit.h], [HAVE_COREAUDIO=1], [if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi])
-fi
-if test "x$with_coreaudio" != "xno"; then
-	AC_CHECK_HEADER([AudioToolbox/AudioToolbox.h], [HAVE_COREAUDIO=1], [if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi])
-fi
-if test "x$with_coreaudio" != "xno"; then
-	AC_CHECK_HEADER([CoreAudio/CoreAudio.h], [HAVE_COREAUDIO=1], [if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi])
-fi
-if test "x$with_coreaudio" != "xno"; then
+AS_IF([test "x$with_coreaudio" != "xno"],[
+	AC_CHECK_HEADER([CoreServices/CoreServices.h], [HAVE_COREAUDIO=1], [ AS_IF([test "x$with_coreaudio" = "xyes"], [AC_MSG_ERROR([CoreAudio not found], 1)], [with_coreaudio="no"; HAVE_COREAUDIO=]) ])
+])
+AS_IF([test "x$with_coreaudio" != "xno"],[
+	AC_CHECK_HEADER([AudioUnit/AudioUnit.h], [HAVE_COREAUDIO=1], [ AS_IF([test "x$with_coreaudio" = "xyes"], [AC_MSG_ERROR([CoreAudio not found], 1)], [with_coreaudio="no"; HAVE_COREAUDIO=]) ])
+])
+AS_IF([test "x$with_coreaudio" != "xno"],[
+	AC_CHECK_HEADER([AudioToolbox/AudioToolbox.h], [HAVE_COREAUDIO=1], [ AS_IF([test "x$with_coreaudio" = "xyes"], [AC_MSG_ERROR([CoreAudio not found], 1)], [with_coreaudio="no"; HAVE_COREAUDIO=]) ])
+])
+AS_IF([test "x$with_coreaudio" != "xno"],[
+	AC_CHECK_HEADER([CoreAudio/CoreAudio.h], [HAVE_COREAUDIO=1], [ AS_IF([test "x$with_coreaudio" = "xyes"], [AC_MSG_ERROR([CoreAudio not found], 1)], [with_coreaudio="no"; HAVE_COREAUDIO=]) ])
+])
+AS_IF([test "x$with_coreaudio" != "xno"],[
 	COREAUDIO_CFLAGS=""
 	COREAUDIO_LIBS="-framework CoreAudio -framework Carbon -framework AudioUnit"
-fi
+])
 
 AS_AC_EXPAND(LIBDIR, $libdir/$PACKAGE_NAME$DIR_SUFFIX)
 AC_DEFINE_UNQUOTED(LIBDIR, "$LIBDIR")
@@ -819,33 +764,33 @@ AC_CHECK_PROG([HAVE_MAKEINFO], [makeinfo], [yes], [])
 
 AC_SUBST(HAVE_LZW)
 AC_MSG_CHECKING([Include lzw support (used by GIF and arcZIP)])
-if test "x$with_lzw" = "xyes"; then
+AS_IF([test "x$with_lzw" = "xyes"],[
 	AC_MSG_RESULT([yes])
 	AC_DEFINE(HAVE_LZW, 1)
 	HAVE_LZW=1
-else
+],[
 	AC_MSG_RESULT([no])
-fi
+])
 
 AC_SUBST(HAVE_LZH)
 AC_MSG_CHECKING([Include lzh support (used by .ym file support)])
-if test "x$with_lzh" = "xyes"; then
+AS_IF([test "x$with_lzh" = "xyes"],[
 	AC_MSG_RESULT([yes])
 	AC_DEFINE(HAVE_LZH, 1)
 	HAVE_LZH=1
-else
+],[
 	AC_MSG_RESULT([no])
-fi
+])
 
 AC_MSG_CHECKING("cp -f implies --remove-destination")
 cp -f --remove-destination Rules.make.in Rules.make.in.tmp > /dev/null 2>&1
-if test "$?" -ne 0; then
+AS_IF([test "$?" -ne 0],[
 	AC_MSG_RESULT([yes])
 	CP="cp -f"
-else
+],[
 	AC_MSG_RESULT([no])
 	CP="cp -f --remove-destination"
-fi
+])
 rm -f Rules.make.in.tmp
 AC_SUBST(CP)
 
@@ -860,13 +805,9 @@ case $with_libiconv in
 		# Check in the C library first
 		AC_CHECK_FUNC([iconv_open], [with_libiconv=no; found_iconv=yes])
 		# Check if we have GNU libiconv
-		if test $found_iconv = "no"; then
-			AC_CHECK_LIB([iconv], [libiconv_open], [ICONV_LIBS=-liconv; with_libiconv=gnu; found_iconv=yes])
-		fi
+		AS_IF([test $found_iconv = "no"], [ AC_CHECK_LIB([iconv], [libiconv_open], [ICONV_LIBS=-liconv; with_libiconv=gnu; found_iconv=yes]) ])
 		# Check if we have a iconv in -liconv, possibly from vendor
-		if test $found_iconv = "no"; then
-			AC_CHECK_LIB([iconv], [iconv_open], [ICONV_LIBS=-liconv; with_libiconv=native; found_iconv=yes])
-		fi
+		AS_IF([test $found_iconv = "no"], [ AC_CHECK_LIB([iconv], [iconv_open], [ICONV_LIBS=-liconv; with_libiconv=native; found_iconv=yes]) ])
 		;;
 	no)
 		AC_CHECK_FUNC([iconv_open], [with_libiconv=no; found_iconv=yes])
@@ -880,9 +821,7 @@ case $with_libiconv in
 esac
 LIBS=$push_LIBS
 
-if test "x$found_iconv" = "xno" ; then
-	AC_MSG_ERROR([*** No iconv() implementation found in C library or libiconv])
-fi
+AS_IF([test "x$found_iconv" = "xno"], [ AC_MSG_ERROR([*** No iconv() implementation found in C library or libiconv]) ])
 AC_SUBST(ICONV_LIBS)
 
 case $with_libiconv in
@@ -894,18 +833,16 @@ case $with_libiconv in
 		;;
 esac
 
-if ! test "x$with_desktop_file_install" = "xno"; then
-	if test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"; then
+AS_IF([test "x$with_desktop_file_install" != "xno"],[
+	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"], [
 		AC_CHECK_PROG([DESKTOP_FILE_INSTALL], [desktop-file-install], [desktop-file-install], [failed])
-		if test "x$DESKTOP_FILE_INSTALL" = "xfailed"; then
+		AS_IF([test "x$DESKTOP_FILE_INSTALL" = "xfailed"],[
 			AC_MSG_ERROR([Cannot find desktop-file-install (required by x11 and SDL driver).])
-		fi
-	fi
-fi
+		])
+	])
+])
 
-if test "x$with_dumptools" = "xyes"; then
-	BUILD_DUMPTOOLS=1
-fi
+AS_IF([test "x$with_dumptools" = "xyes"], [BUILD_DUMPTOOLS=1])
 AC_SUBST(BUILD_DUMPTOOLS)
 
 AC_CONFIG_FILES(Rules.make)
@@ -923,78 +860,20 @@ AC_CONFIG_FILES(playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/si
 
 AC_OUTPUT
 
-echo
-if test "x$with_debug" = "xyes"; then
-	echo "debug:             ON"
-else
-	echo "debug:             OFF"
-fi
-
-if test "x$with_adplug" = "xno"; then
-	echo "adplug:            OFF"
-else
-	echo "adplug:            ON"
-fi
-if test "x$with_mad" = "xno"; then
-	echo "mad:               OFF"
-else
-	echo "mad:               ON"
-fi
-echo "sidplayfp:         GIT/builtin"
-if test "x$with_flac" = "xno"; then
-	echo "FLAC:              OFF"
-else
-	echo "FLAC:              ON"
-fi
-if test "x$with_x11" = "xno"; then
-	echo "x11:               OFF"
-else
-	echo "x11:               ON  (UNIFONTDIR="$UNIFONTDIR")"
-fi
-if test "x$with_sdl" = "xno"; then
-	echo "SDL:               OFF"
-else
-	echo "SDL:               ON  (UNIFONTDIR="$UNIFONTDIR")"
-fi
-if test "x$with_sdl2" = "xno"; then
-	echo "SDL2:              OFF"
-else
-	echo "SDL2:              ON  (UNIFONTDIR="$UNIFONTDIR")"
-fi
-if test "x$with_alsa" = "xno"; then
-	echo "ALSA:              OFF"
-else
-	echo "ALSA:              ON"
-fi
-if test "x$with_oss" = "xno"; then
-	echo "OSS:               OFF"
-else
-	echo "OSS:               ON"
-fi
-if test "x$with_coreaudio" = "xno"; then
-	echo "CoreAudio:         OFF"
-else
-	echo "CoreAudio:         ON"
-fi
-if test "$LINUX+set" != "+set"; then
-	echo "linux cdrom:       ON"
-	echo "linux framebuffer: ON"
-else
-	echo "linux cdrom:       OFF"
-	echo "linux framebuffer: OFF"
-fi
-if test "x$with_lzw" = "xno"; then
-	echo "include LZW:       OFF"
-else
-	echo "include LZW:       ON"
-fi
-if test "x$with_lzh" = "xno"; then
-	echo "include LZH:       OFF"
-else
-	echo "include LZH:       ON"
-fi
-if test "x$with_dumptools" = "xyes"; then
-	echo "include DumpTools: ON"
-else
-	echo "include DumpTools: OFF"
-fi
+AS_IF([test "x$with_debug"     = "xyes"], [echo "debug:             ON" ], [echo "debug:             OFF"])
+AS_IF([test "x$with_adplug"    = "xno" ], [echo "adplug:            OFF"], [echo "adplug:            ON"])
+AS_IF([test "x$with_mad"       = "xno" ], [echo "mad:               OFF"], [echo "mad:               ON"])
+                                           echo "sidplayfp:         GIT/builtin"
+AS_IF([test "x$with_flac"      = "xno" ], [echo "FLAC:              OFF"], [echo "FLAC:              ON"])
+AS_IF([test "x$with_x11"       = "xno" ], [echo "x11:               OFF"], [echo "x11:               ON  (UNIFONTDIR="$UNIFONTDIR")"])
+AS_IF([test "x$with_sdl"       = "xno" ], [echo "SDL:               OFF"], [echo "SDL:               ON  (UNIFONTDIR="$UNIFONTDIR")"])
+AS_IF([test "x$with_sdl2"      = "xno" ], [echo "SDL2:              OFF"], [echo "SDL2:              ON  (UNIFONTDIR="$UNIFONTDIR")"])
+AS_IF([test "x$with_alsa"      = "xno" ], [echo "ALSA:              OFF"], [echo "ALSA:              ON"])
+AS_IF([test "x$with_oss"       = "xno" ], [echo "OSS:               OFF"], [echo "OSS:               ON"])
+AS_IF([test "x$with_coreaudio" = "xno" ], [echo "CoreAudio:         OFF"], [echo "CoreAudio:         ON"])
+AS_IF([test "$LINUX+set"      != "+set"], [echo "linux cdrom:       ON"
+                                           echo "linux framebuffer: ON" ], [echo "linux cdrom:       OFF"
+                                                                            echo "linux framebuffer: OFF"])
+AS_IF([test "x$with_lzw"       = "xno" ], [echo "include LZW:       OFF"], [echo "include LZW:       ON"])
+AS_IF([test "x$with_lzh"       = "xno" ], [echo "include LZH:       OFF"], [echo "include LZH:       ON"])
+AS_IF([test "x$with_dumptools" = "xyes"], [echo "include DumpTools: ON" ], [echo "include DumpTools: OFF"])
