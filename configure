@@ -3104,12 +3104,14 @@ fi
 
 if test "x$with_debug" = "xyes"; then :
 
-  for i in $CFLAGS; do
+  for i in $CFLAGS
+  do
     new_CFLAGS="$new_CFLAGS `echo $i|grep -- -L`";
     new_CFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
   done;
   CFLAGS="$new_CFLAGS -g"
-  for i in $CXXFLAGS; do
+  for i in $CXXFLAGS
+  do
     new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -L`";
     new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
   done;

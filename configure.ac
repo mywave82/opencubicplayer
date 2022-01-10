@@ -11,12 +11,14 @@ AS_IF([test -f playtimidity/timidity-git/Makefile.am], [AC_MSG_RESULT([ok])],
 
 AC_ARG_WITH([debug], [AS_HELP_STRING([--with-debug],[compile with debug-flags and without SIGALRM])])
 AS_IF([test "x$with_debug" = "xyes"], [
-  for i in $CFLAGS; do
+  for i in $CFLAGS
+  do
     new_CFLAGS="$new_CFLAGS `echo $i|grep -- -L`";
     new_CFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
   done;
   CFLAGS="$new_CFLAGS -g"
-  for i in $CXXFLAGS; do
+  for i in $CXXFLAGS
+  do
     new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -L`";
     new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
   done;
