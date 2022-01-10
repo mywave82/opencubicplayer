@@ -226,70 +226,27 @@ AC_CONFIG_HEADERS([config.h] [playsid/sidplayfp-config/config.h])
 
 AC_HEADER_STDC
 
-AC_CHECK_HEADER(dirent.h,
-                AC_DEFINE(HAVE_DIRENT_H, 1),
-               )
-AC_CHECK_HEADER(fcntl.h,
-                AC_DEFINE(HAVE_FCNTL_H, 1),
-               )
-AC_CHECK_HEADER(getopt.h,
-                AC_DEFINE(HAVE_GETOPT_H, 1),
-               )
-AC_CHECK_HEADER(ndir.h,
-                AC_DEFINE(HAVE_NDIR_H, 1),
-               )
-AC_CHECK_HEADER(sys/ndir.h,
-                AC_DEFINE(HAVE_SYS_NDIR_H, 1),
-               )
-AC_CHECK_HEADER(sys/dir.h,
-                AC_DEFINE(HAVE_SYS_DIR_H, 1),
-               )
-AC_CHECK_HEADER(stdint.h,
-                AC_DEFINE(HAVE_STDINT_H, 1),
-               )
-AC_CHECK_HEADER(inttypes.h,
-                AC_DEFINE(HAVE_INTTYPES_H, 1),
-               )
-AC_CHECK_HEADER(byteswap.h,
-                AC_DEFINE(HAVE_BYTESWAP_H, 1),
-               )
-AC_CHECK_HEADER(unistd.h,
-                AC_DEFINE(HAVE_UNISTD_H, 1),
-               )
-AC_CHECK_HEADER(limits.h,
-                AC_DEFINE(HAVE_LIMITS_H, 1),
-               )
-AC_CHECK_HEADER(string.h,
-                AC_DEFINE(HAVE_STRING_H, 1),
-                [ AC_DEFINE(NO_STRING_H,1,Define to 1 if you do not have <string.h>.)]
-               )
-AC_CHECK_HEADER(strings.h,
-                AC_DEFINE(HAVE_STRINGS_H, 1),
-               )
-AC_CHECK_HEADER(errno.h,
-                AC_DEFINE(HAVE_ERRNO_H, 1),
-               )
-AC_CHECK_HEADER(sys/cdefs.h,
-                AC_DEFINE(HAVE_SYS_CDEFS_H, 1),
-               )
-AC_CHECK_HEADER(sys/stat.h,
-                AC_DEFINE(HAVE_SYS_STAT_H, 1),
-               )
-AC_CHECK_HEADER(sys/time.h,
-                AC_DEFINE(HAVE_SYS_TIME_H, 1),
-               )
-AC_CHECK_HEADER(sys/types.h,
-                AC_DEFINE(HAVE_SYS_TYPES_H, 1),
-               )
-AC_CHECK_HEADER(sys/param.h,
-                AC_DEFINE(HAVE_SYS_PARAM_H, 1),
-               )
-AC_CHECK_HEADER(machine/endian.h,
-                AC_DEFINE(HAVE_MACHINE_ENDIAN_H, 1),
-               )
-AC_CHECK_HEADER(pwd.h,
-                AC_DEFINE(HAVE_PWD_H, 1),
-               )
+AC_CHECK_HEADER([dirent.h],        [AC_DEFINE(HAVE_DIRENT_H,          1)], [])
+AC_CHECK_HEADER([fcntl.h],         [AC_DEFINE(HAVE_FCNTL_H,           1)], [])
+AC_CHECK_HEADER([getopt.h],        [AC_DEFINE(HAVE_GETOPT_H,          1)], [])
+AC_CHECK_HEADER([ndir.h],          [AC_DEFINE(HAVE_NDIR_H,            1)], [])
+AC_CHECK_HEADER([sys/ndir.h],      [AC_DEFINE(HAVE_SYS_NDIR_H,        1)], [])
+AC_CHECK_HEADER([sys/dir.h],       [AC_DEFINE(HAVE_SYS_DIR_H,         1)], [])
+AC_CHECK_HEADER([stdint.h],        [AC_DEFINE(HAVE_STDINT_H,          1)], [])
+AC_CHECK_HEADER([inttypes.h],      [AC_DEFINE(HAVE_INTTYPES_H,        1)], [])
+AC_CHECK_HEADER([byteswap.h],      [AC_DEFINE(HAVE_BYTESWAP_H,        1)], [])
+AC_CHECK_HEADER([unistd.h],        [AC_DEFINE(HAVE_UNISTD_H,          1)], [])
+AC_CHECK_HEADER([limits.h],        [AC_DEFINE(HAVE_LIMITS_H,          1)], [])
+AC_CHECK_HEADER([string.h],        [AC_DEFINE(HAVE_STRING_H,          1)], [AC_DEFINE(NO_STRING_H,1,"Define to 1 if you do not have <string.h>.")])
+AC_CHECK_HEADER([strings.h],       [AC_DEFINE(HAVE_STRINGS_H,         1)], [])
+AC_CHECK_HEADER([errno.h],         [AC_DEFINE(HAVE_ERRNO_H,           1)], [])
+AC_CHECK_HEADER([sys/cdefs.h],     [AC_DEFINE(HAVE_SYS_CDEFS_H,       1)], [])
+AC_CHECK_HEADER([sys/stat.h],      [AC_DEFINE(HAVE_SYS_STAT_H,        1)], [])
+AC_CHECK_HEADER([sys/time.h],      [AC_DEFINE(HAVE_SYS_TIME_H,        1)], [])
+AC_CHECK_HEADER([sys/types.h],     [AC_DEFINE(HAVE_SYS_TYPES_H,       1)], [])
+AC_CHECK_HEADER([sys/param.h],     [AC_DEFINE(HAVE_SYS_PARAM_H,       1)], [])
+AC_CHECK_HEADER([machine/endian.h],[AC_DEFINE(HAVE_MACHINE_ENDIAN_H,  1)], [])
+AC_CHECK_HEADER([pwd.h],           [AC_DEFINE(HAVE_PWD_H,             1)], [])
 
 AC_CHECK_FUNC(getpwnam, HAVE_GETPWNAM=1; AC_DEFINE(HAVE_GETPWNAM) )
 
@@ -322,10 +279,10 @@ AC_CHECK_FUNCS(resize_term)
 LIBS=$push_LIBS
 
 AC_CHECK_LIB(z, zlibVersion, , AC_MSG_ERROR("zlib not found"))
-AC_CHECK_HEADER(zlib.h, , AC_MSG_ERROR("zlib header files was not found"))
+AC_CHECK_HEADER([zlib.h], [], [AC_MSG_ERROR("zlib header files was not found")])
 
 AC_CHECK_LIB(bz2, BZ2_bzDecompress, , AC_MSG_ERROR([bzip2 library not found (libbz2-dev)]))
-AC_CHECK_HEADER(bzlib.h, , AC_MSG_ERROR([bzip2 header file not found (libbz2-dev)]))
+AC_CHECK_HEADER([bzlib.h], [], [AC_MSG_ERROR("bzip2 header file not found (libbz2-dev)")])
 
 AC_SUBST(DL_LIBS)
 dnl -lc is dirty hack here
@@ -343,9 +300,9 @@ AC_SUBST(HAVE_MAD)
 if test "x$with_mad" != "xno"; then
 	PKG_CHECK_MODULES([MAD],[mad],[],[
 	dnl Fall back to non-pkg-config method
-		AC_CHECK_LIB(mad, mad_stream_init, , if test "x$with_mad" = "xyes"; then AC_MSG_ERROR("libmad not found"); else with_mad="no"; fi)
+		AC_CHECK_LIB([mad], [mad_stream_init], , [if test "x$with_mad" = "xyes"; then AC_MSG_ERROR("libmad not found"); else with_mad="no"; fi])
 		if test "x$with_mad" != "xno"; then
-			AC_CHECK_HEADER(mad.h, , if test "x$with_mad" = "xyes"; then AC_MSG_ERROR("libmad header files was not found"); else with_mad="no"; fi)
+			AC_CHECK_HEADER([mad.h], , [if test "x$with_mad" = "xyes"; then AC_MSG_ERROR("libmad header files was not found"); else with_mad="no"; fi])
 		fi
 		if test "x$with_mad" != "xno"; then
 			MAD_LIBS="-lmad"
@@ -356,7 +313,7 @@ if test "x$with_mad" != "xno"; then
 fi
 AC_SUBST(HAVE_FLAC)
 if test "x$with_mad" = "xno"; then
-	HAVE_MAD=0
+	HAVE_MAD=
 else
 	HAVE_MAD=1
 	AC_DEFINE(HAVE_MAD)
@@ -384,7 +341,7 @@ AC_SUBST(VORBIS_LIBS)
 PKG_CHECK_MODULES([VORBIS],[vorbis],[],[
 dnl Fall back to non-pkg-config method
 	AC_CHECK_LIB(vorbis, vorbis_bitrate_init, , AC_MSG_ERROR("vorbis libraries not found"), -logg)
-	AC_CHECK_HEADER(vorbis/codec.h, , AC_MSG_ERROR("libvorbis header files was not found"))
+	AC_CHECK_HEADER([vorbis/codec.h], [], [AC_MSG_ERROR("libvorbis header files was not found")])
 	VORBIS_LIBS="-lvorbis"
 	VORBIS_CFLAGS=""
 	LIBS=$push_LIBS
@@ -397,7 +354,7 @@ dnl Fall back to non-pkg-config method
 	AC_CHECK_LIB(vorbisfile, ov_pcm_seek_lap, AC_DEFINE(HAVE_OV_PCM_SEEK_LAP, 1),
 		AC_CHECK_LIB(vorbisfile, ov_pcm_seek, AC_DEFINE(HAVE_OV_PCM_SEEK, 1), AC_MSG_ERROR("vorbis libraries not found"), -logg -lvorbis)
 	)
-	AC_CHECK_HEADER(vorbis/vorbisfile.h,, AC_MSG_ERROR("libvorbis header files were not found"))
+	AC_CHECK_HEADER([vorbis/vorbisfile.h], [], [AC_MSG_ERROR("libvorbis header files were not found")])
 	VORBISFILE_LIBS="-lvorbisfile"
 	VORBISFILE_CFLAGS=""
 	LIBS=$push_LIBS
@@ -424,17 +381,17 @@ else
 fi
 
 if test "x$with_x11" != "xno"; then
-	AC_CHECK_HEADER(X11/extensions/xf86vmode.h, , if test "x$with_x11" = "xyes"; then AC_MSG_ERROR("xvidmode header files was not found"); else with_x11="no"; fi,
+	AC_CHECK_HEADER([X11/extensions/xf86vmode.h], [], [if test "x$with_x11" = "xyes"; then AC_MSG_ERROR("xvidmode header files was not found"); else with_x11="no"; fi],
 [#include <X11/Xlib.h>
 ])
 fi
 if test "x$with_x11" != "xno"; then
-	AC_CHECK_HEADER(X11/extensions/XShm.h, , if test "x$with_x11" = "xyes"; then AC_MSG_ERROR("XShm header files was not found"); else with_x11="no"; fi,
+	AC_CHECK_HEADER([X11/extensions/XShm.h], [], [if test "x$with_x11" = "xyes"; then AC_MSG_ERROR("XShm header files was not found"); else with_x11="no"; fi],
 [#include <X11/Xlib.h>
 ])
 fi
 if test "x$with_x11" != "xno"; then
-	AC_CHECK_HEADER(X11/xpm.h, , if test "x$with_x11" = "xyes"; then AC_MSG_ERROR("xpm header files was not found"); else with_x11="no"; fi,
+	AC_CHECK_HEADER([X11/xpm.h], [], [if test "x$with_x11" = "xyes"; then AC_MSG_ERROR("xpm header files was not found"); else with_x11="no"; fi],
 [#include <X11/Xlib.h>
 ])
 fi
@@ -502,7 +459,7 @@ if test "x$with_sdl" != "xno"; then
 		if test "x$with_sdl" != "xno"; then
 			CFLAGS="$CFLAGS -I/usr/include/SDL"
 			CPPFLAGS="$CPPFLAGS -I/usr/include/SDL"
-			AC_CHECK_HEADER(SDL.h, SDL_CFLAGS="-I/usr/include/SDL", if test "x$with_sdl" = "xyes"; then AC_MSG_ERROR("SDL header files not found"); else with_sdl="no"; fi)
+			AC_CHECK_HEADER([SDL.h], [SDL_CFLAGS="-I/usr/include/SDL"], [if test "x$with_sdl" = "xyes"; then AC_MSG_ERROR("SDL header files not found"); else with_sdl="no"; fi])
 		fi
 	])
 fi
@@ -522,7 +479,7 @@ if test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11" = 
 	PKG_CHECK_MODULES([FREETYPE2],[freetype2],[],[
 	dnl Fall back to non-pkg-config method
 		AC_CHECK_LIB(freetype, FT_Init_FreeType, ,AC_MSG_ERROR("libfreetype not found"))
-		AC_CHECK_HEADER(ft2built.h, , AC_MSG_ERROR("libfreetype header files was not found"))
+		AC_CHECK_HEADER([ft2built.h], [] , [AC_MSG_ERROR("libfreetype header files was not found")])
 	])
 
 dnl locate the ttf-unifont
@@ -541,15 +498,15 @@ AC_SUBST(ADPLUG_LIBS)
 if test "x$with_adplug" != "xno"; then
 	PKG_CHECK_MODULES([ADPLUG],[adplug],[ADPLUG_CXXFLAGS=$ADPLUG_CFLAGS],[
 	dnl Fall back to non-pkg-config method
-		AC_CHECK_HEADER(adplug/adplug.h, , with_adplug_failed=yes)
+		AC_CHECK_HEADER([adplug/adplug.h], [], [with_adplug_failed=yes])
 		if test "x$with_adplug_failed" = "xyes"; then
 			CXXFLAGS="$CXXFLAGS -I/usr/include/libbinio"
 			CPPFLAGS="$CPPFLAGS -I/usr/include/libbinio"
 			unset ac_cv_header_adplug_adplug_h
 			AC_MSG_NOTICE("Trying again with -I/usr/include/libbinio")
-			AC_CHECK_HEADER(adplug/adplug.h,
-				ADPLUG_CXXFLAGS="-I/usr/include/libbinio",
-				if test "x$with_adplug" = "xyes"; then AC_MSG_ERROR("Adplug header files was not found"); else with_adplug="no"; fi
+			AC_CHECK_HEADER([adplug/adplug.h],
+				[ADPLUG_CXXFLAGS="-I/usr/include/libbinio"],
+				[if test "x$with_adplug" = "xyes"; then AC_MSG_ERROR("Adplug header files was not found"); else with_adplug="no"; fi]
 			)
 		fi
 		if test "x$with_adplug" != "xno"; then
@@ -769,7 +726,7 @@ fi
 
 AC_SUBST(HAVE_ALSA)
 if test "x$with_alsa" = "xno"; then
-	HAVE_ALSA=0
+	HAVE_ALSA=
 else
 	HAVE_ALSA=1
 fi
@@ -791,15 +748,15 @@ AC_SUBST(CDROM_INI)
 AC_SUBST(HAVE_FRAMEBUFFER)
 HAVE_FRAMEBUFFER=1
 LINUX=1
-	AC_CHECK_HEADER(linux/limits.h, , AC_MSG_RESULT([linux kernel header files was not found]);LINUX=)
+	AC_CHECK_HEADER([linux/limits.h], [], [AC_MSG_RESULT([linux kernel header files was not found]);LINUX=])
 if test "$LINUX+set" != "+set"; then
-	AC_CHECK_HEADER(linux/major.h, , AC_MSG_RESULT([linux kernel header files was not found]);LINUX=)
+	AC_CHECK_HEADER([linux/major.h], [], [AC_MSG_RESULT([linux kernel header files was not found]);LINUX=])
 fi
 if test "$LINUX+set" != "+set"; then
-	AC_CHECK_HEADER(linux/fb.h, AC_DEFINE(HAVE_FRAMEBUFFER), AC_MSG_RESULT([linux kernel header files was not found]);LINUX=;HAVE_FRAMEBUFFER=)
+	AC_CHECK_HEADER([linux/fb.h], [AC_DEFINE(HAVE_FRAMEBUFFER)], [AC_MSG_RESULT([linux kernel header files was not found]);LINUX=;HAVE_FRAMEBUFFER=])
 fi
 if test "$LINUX+set" != "+set"; then
-	AC_CHECK_HEADER(linux/cdrom.h, CDROM_SUPPORT=1;CDROM_INI="cdrom", AC_MSG_RESULT([linux cdrom kernel header files was not found]))
+	AC_CHECK_HEADER([linux/cdrom.h], [CDROM_SUPPORT=1;CDROM_INI="cdrom"], [AC_MSG_RESULT([linux cdrom kernel header files was not found])])
 fi
 
 AC_SUBST(HAVE_OSS)
@@ -808,10 +765,10 @@ AC_SUBST(OSS_CFLAGS)
 if test "x$with_oss" != "xno"; then
 	PKG_CHECK_MODULES([OSS],[oss],[HAVE_OSS=1],[
 dnl Fall back to non-pkg-config method (Normal for Linux systems)
-		AC_CHECK_HEADER(sys/soundcard.h,
-			HAVE_OSS=1
-			AC_DEFINE(HAVE_SYS_SOUNDCARD_H),
-			if test "x$with_oss" = "xyes"; then AC_MSG_ERROR([kernel OSS header file was not found], 1); else with_oss="no"; HAVE_OSS=0;fi)
+		AC_CHECK_HEADER([sys/soundcard.h],
+			[HAVE_OSS=1;AC_DEFINE(HAVE_SYS_SOUNDCARD_H)],
+			[if test "x$with_oss" = "xyes"; then AC_MSG_ERROR([kernel OSS header file was not found], 1); else with_oss="no";HAVE_OSS=;fi]
+		)
 	])
 fi
 
@@ -819,16 +776,16 @@ AC_SUBST(HAVE_COREAUDIO)
 AC_SUBST(COREAUDIO_CFLAGS)
 AC_SUBST(COREAUDIO_LIBS)
 if test "x$with_coreaudio" != "xno"; then
-	AC_CHECK_HEADER(CoreServices/CoreServices.h, HAVE_COREAUDIO=1, if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=0; fi)
+	AC_CHECK_HEADER(CoreServices/CoreServices.h, HAVE_COREAUDIO=1, if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi)
 fi
 if test "x$with_coreaudio" != "xno"; then
-	AC_CHECK_HEADER(AudioUnit/AudioUnit.h, HAVE_COREAUDIO=1, if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=0; fi)
+	AC_CHECK_HEADER(AudioUnit/AudioUnit.h, HAVE_COREAUDIO=1, if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi)
 fi
 if test "x$with_coreaudio" != "xno"; then
-	AC_CHECK_HEADER(AudioToolbox/AudioToolbox.h, HAVE_COREAUDIO=1, if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=0; fi)
+	AC_CHECK_HEADER(AudioToolbox/AudioToolbox.h, HAVE_COREAUDIO=1, if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi)
 fi
 if test "x$with_coreaudio" != "xno"; then
-	AC_CHECK_HEADER(CoreAudio/CoreAudio.h, HAVE_COREAUDIO=1, if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=0; fi)
+	AC_CHECK_HEADER(CoreAudio/CoreAudio.h, HAVE_COREAUDIO=1, if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi)
 fi
 if test "x$with_coreaudio" != "xno"; then
 	COREAUDIO_CFLAGS=""
