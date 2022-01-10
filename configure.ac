@@ -42,27 +42,26 @@ AC_SUBST(LIB_SUFFIX)
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(HAIKU)
 target=`$CC -dumpmachine`
-case "$target" in
-	*-darwin*)
+AS_CASE([$target],
+	[*-darwin*],[
 		SHARED_FLAGS="-dynamiclib -flat_namespace -undefined suppress"
 		CFLAGS="$CFLAGS -fno-common"
 		CXXFLAGS="$CXXFLAGS -fno-common"
 		LIB_SUFFIX=.dylib
 		PTHREAD_LIBS=-pthread
-		;;
-	*-haiku*)
+	],
+	[-haiku*],[
 		SHARED_FLAGS=-shared
 		LIB_SUFFIX=.so
 		PTHREAD_LIBS=
 		with_desktop_file_install=no
 		HAIKU=1
-		;;
-	*)
+	],[
 		SHARED_FLAGS=-shared
 		LIB_SUFFIX=.so
 		PTHREAD_LIBS=-pthread
-		;;
-esac
+	]
+)
 AC_DEFINE_UNQUOTED(LIB_SUFFIX, "$LIB_SUFFIX")
 
 AC_SUBST(DIR_SUFFIX)
@@ -124,18 +123,12 @@ dnl restore prefix and exec_prefix
 AC_MSG_CHECKING([gcc version])
 cc_version=`( $CC -dumpversion ) 2>&1`
 AS_IF([test "$?" -gt 0 || test x$cc_version = x], [AC_MSG_ERROR([not found])], [
-	case $cc_version in
-		'')
-			AC_MSG_ERROR([not found]);
-			;;
+	AS_CASE([$cc_version],
+		[''],                              [AC_MSG_ERROR([not found])],
 # old GCC versions in the 2.95.xx family are known to produce bad crashing binaries (it is still out there on some old systems. In general the all versions before 3.0 is risky
-		2.95.[[2-9]]|2.95.[[2-9]][[-]].*)
-			AC_MSG_ERROR([$cc_version, bad])
-			;;
-		*)
-			AC_MSG_RESULT([$cc_version, ok])
-			;;
-       esac
+		[2.95.[[2-9]]|2.95.[[2-9]][[-]].*],[AC_MSG_ERROR([$cc_version, bad])],
+		                                   [AC_MSG_RESULT([$cc_version, ok])]
+	)
 ])
 
 AC_MSG_CHECKING([for broken signed char to signed int in loops (gcc version 4.1.1)])
