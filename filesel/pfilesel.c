@@ -2896,7 +2896,9 @@ superbreak:
 					} else {
 						cpiKeyHelp(KEY_ALT_P, "Save playlist");
 						cpiKeyHelp(KEY_INSERT, "Append file/directory into the playlist");
+						cpiKeyHelp(KEY_RIGHT, "Append file/directory into the playlist");
 						cpiKeyHelp(KEY_DELETE, "Remove file/directory from the playlist");
+						cpiKeyHelp(KEY_LEFT, "Remove file/directory from the playlist");
 						cpiKeyHelp(KEY_CTRL_RIGHT, "Append all files in current directory into the playlist");
 						cpiKeyHelp(KEY_CTRL_LEFT, "Remove all files in current directory from the playlist");
 						if (!win)
@@ -3125,8 +3127,9 @@ superbreak:
 							else
 								editfilepos="\x01\x01\x02\x02\x06\x03\x06\x07"[editfilepos];
 						}
+						break;
 					}
-					break;
+					/* fallthrough */
 				case KEY_INSERT:
 				/*case 0x5200: // add*/
 					if (editmode)
@@ -3162,8 +3165,9 @@ superbreak:
 							else
 								editfilepos="\x00\x00\x03\x05\x04\x05\x04\x07"[editfilepos];
 						}
+						break;
 					}
-					break;
+					/* fall-through */
 				case KEY_DELETE:
 				/*case 0x5300: // del*/
 					if (editmode)
