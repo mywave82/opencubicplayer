@@ -339,18 +339,9 @@ AC_LANG_POP
 
 AC_SUBST(MAD_CFLAGS)
 AC_SUBST(MAD_LIBS)
-AC_SUBST(LIBJPEG_CFLAGS)
-AC_SUBST(LIBJPEG_LIBS)
-AC_SUBST(LIBPNG_CFLAGS)
-AC_SUBST(LIBPNG_LIBS)
+AC_SUBST(HAVE_MAD)
 if test "x$with_mad" != "xno"; then
-	AC_MSG_CHECKING([mad support])
-	MAD_LIBS=`pkg-config --libs mad 2> /dev/null`
-	MAD_CFLAGS=`pkg-config --cflags mad 2> /dev/null`
-	if test "$?" = 0; then
-		AC_MSG_RESULT("$MAD_CFLAGS $MAD_LIBS")
-	else
-		AC_MSG_RESULT([pkg-config failed]);
+	PKG_CHECK_MODULES([MAD],[mad],[],[
 	dnl Fall back to non-pkg-config method
 		AC_CHECK_LIB(mad, mad_stream_init, , if test "x$with_mad" = "xyes"; then AC_MSG_ERROR("libmad not found"); else with_mad="no"; fi)
 		if test "x$with_mad" != "xno"; then
@@ -361,28 +352,9 @@ if test "x$with_mad" != "xno"; then
 			MAD_CFLAGS=""
 			LIBS=$push_LIBS
 		fi
-	fi
+	])
 fi
-
-AC_MSG_CHECKING([libjpeg / libjpeg-turbo support])
-LIBJPEG_LIBS=`pkg-config --libs libjpeg 2> /dev/null`
-LIBJPEG_CFLAGS=`pkg-config --cflags libjpeg 2> /dev/null`
-if test "$?" = 0; then
-	AC_MSG_RESULT("$LIBJPEG_CFLAGS $LIBJPEG_LIBS")
-else
-	AC_MSG_ERROR([pkg-config failed]);
-fi
-
-AC_MSG_CHECKING([libpng support])
-LIBPNG_LIBS=`pkg-config --libs libpng 2> /dev/null`
-LIBPNG_CFLAGS=`pkg-config --cflags libpng 2> /dev/null`
-if test "$?" = 0; then
-	AC_MSG_RESULT("$LIBPNG_CFLAGS $LIBPNG_LIBS")
-else
-	AC_MSG_ERROR([pkg-config failed]);
-fi
-
-AC_SUBST(HAVE_MAD)
+AC_SUBST(HAVE_FLAC)
 if test "x$with_mad" = "xno"; then
 	HAVE_MAD=0
 else
@@ -390,50 +362,38 @@ else
 	AC_DEFINE(HAVE_MAD)
 fi
 
+
+PKG_CHECK_MODULES([LIBJPEG],[libturbojpeg],[AS_ECHO("libturbojpeg flags ... $LIBJPEG_CFLAGS $LIBJPEG_LIBS")],[
+	PKG_CHECK_MODULES([LIBJPEG],[libjpeg],[AS_ECHO("libjpeg flags ... $LIBJPEG_CFLAGS $LIBJPEG_LIBS")],[AC_MSG_ERROR([failed to find either libturbojpeg or libjpeg])])
+])
+
+PKG_CHECK_MODULES([LIBPNG],[libpng],[],[AC_MSG_ERROR([failed to find libpng])])
+
 AC_SUBST(OGG_CFLAGS)
 AC_SUBST(OGG_LIBS)
-AC_MSG_CHECKING([ogg support])
-OGG_LIBS=`pkg-config --libs ogg 2> /dev/null`
-OGG_CFLAGS=`pkg-config --cflags ogg 2> /dev/null`
-if test "$?" = 0; then
-	AC_MSG_RESULT("$OGG_CFLAGS $OGG_LIBS")
-else
-	AC_MSG_RESULT([pkg-config failed]);
+PKG_CHECK_MODULES([OGG],[ogg],[],[
 dnl Fall back to non-pkg-config method
 	AC_CHECK_LIB(ogg, ogg_sync_init, , AC_MSG_ERROR("ogg libraries not found"))
 	OGG_LIBS="-logg"
 	OGG_CFLAGS=""
 	LIBS=$push_LIBS
-fi
+])
 
 AC_SUBST(VORBIS_CFLAGS)
 AC_SUBST(VORBIS_LIBS)
-AC_MSG_CHECKING([vorbis support])
-VORBIS_LIBS=`pkg-config --libs vorbis 2> /dev/null`
-VORBIS_CFLAGS=`pkg-config --cflags vorbis 2> /dev/null`
-if test "$?" = 0; then
-	AC_MSG_RESULT("$VORBIS_CFLAGS $VORBIS_LIBS")
-else
-	AC_MSG_RESULT([pkg-config failed]);
+PKG_CHECK_MODULES([VORBIS],[vorbis],[],[
 dnl Fall back to non-pkg-config method
 	AC_CHECK_LIB(vorbis, vorbis_bitrate_init, , AC_MSG_ERROR("vorbis libraries not found"), -logg)
 	AC_CHECK_HEADER(vorbis/codec.h, , AC_MSG_ERROR("libvorbis header files was not found"))
 	VORBIS_LIBS="-lvorbis"
 	VORBIS_CFLAGS=""
 	LIBS=$push_LIBS
-fi
+])
 
 AC_SUBST(VORBISFILE_CFLAGS)
 AC_SUBST(VORBISFILE_LIBS)
-AC_MSG_CHECKING([vorbisfile support])
-VORBISFILE_LIBS=`pkg-config --libs vorbisfile 2> /dev/null`
-VORBISFILE_CFLAGS=`pkg-config --cflags vorbisfile 2> /dev/null`
-if test "$?" = 0; then
-	AC_MSG_RESULT("$VORBISFILE_CFLAGS $VORBISFILE_LIBS")
-else
-	AC_MSG_RESULT([pkg-config failed]);
+PKG_CHECK_MODULES([VORBISFILE],[vorbisfile],[],[
 dnl Fall back to non-pkg-config method
-
 	AC_CHECK_LIB(vorbisfile, ov_pcm_seek_lap, AC_DEFINE(HAVE_OV_PCM_SEEK_LAP, 1),
 		AC_CHECK_LIB(vorbisfile, ov_pcm_seek, AC_DEFINE(HAVE_OV_PCM_SEEK, 1), AC_MSG_ERROR("vorbis libraries not found"), -logg -lvorbis)
 	)
@@ -441,20 +401,20 @@ dnl Fall back to non-pkg-config method
 	VORBISFILE_LIBS="-lvorbisfile"
 	VORBISFILE_CFLAGS=""
 	LIBS=$push_LIBS
-fi
+])
 
 AC_SUBST(FLAC_CFLAGS)
 AC_SUBST(FLAC_LIBS)
 if test "x$with_flac" != "xno"; then
-	AC_CHECK_LIB(FLAC, FLAC__seekable_stream_decoder_process_until_end_of_metadata, FLAC_LIBS="-lFLAC",
-		AC_CHECK_LIB(FLAC, FLAC__stream_decoder_process_until_end_of_metadata, FLAC_LIBS="-lFLAC",
-			if test "x$with_flac" = "xyes"; then AC_MSG_ERROR("libFLAC not found"); else with_flac="no"; fi,
-		-lz),
-	-lz)
-	LIBS=$push_LIBS
-fi
-if test "x$with_flac" != "xno"; then
-	AC_CHECK_HEADER(FLAC/all.h, FLAC_CFLAGS="", if test "x$with_flac" = "xyes"; then AC_MSG_ERROR("libFLAC header files were not found"); else with_flac="no"; fi)
+	PKG_CHECK_MODULES([FLAC],[flac],[],[
+		AC_CHECK_LIB(FLAC, FLAC__seekable_stream_decoder_process_until_end_of_metadata, FLAC_LIBS="-lFLAC",
+			AC_CHECK_LIB(FLAC, FLAC__stream_decoder_process_until_end_of_metadata, FLAC_LIBS="-lFLAC",
+				[if test "x$with_flac" = "xyes"; then AC_MSG_ERROR("libFLAC not found"); else with_flac="no"; fi],
+			[-lz]),
+		[-lz])
+		AC_CHECK_HEADER([FLAC/all.h], [FLAC_CFLAGS=""], [if test "x$with_flac" = "xyes"; then AC_MSG_ERROR("libFLAC header files were not found"); else with_flac="no"; fi])
+		LIBS=$push_LIBS
+	])
 fi
 AC_SUBST(HAVE_FLAC)
 if test "x$with_flac" = "xno"; then
@@ -535,14 +495,8 @@ org_cppflags="$CPPFLAGS"
 AC_SUBST(SDL_CFLAGS)
 AC_SUBST(SDL_LIBS)
 if test "x$with_sdl" != "xno"; then
-	AC_MSG_CHECKING([SDL support])
-	SDL_LIBS=`pkg-config --libs sdl 2> /dev/null`
-	SDL_CFLAGS=`pkg-config --cflags sdl 2> /dev/null`
-	if test "$?" = 0; then
-		AC_MSG_RESULT("$SDL_CFLAGS $SDL_LIBS")
-	else
-		AC_MSG_RESULT([pkg-config failed])
-
+	PKG_CHECK_MODULES([SDL],[sdl],[],[
+	dnl Fall back to non-pkg-config method
 		AC_CHECK_LIB(SDL, SDL_Init, SDL_LIBS="-lSDL", if test "x$with_sdl" = "xyes"; then AC_MSG_ERROR("libSDL was not found"); else with_sdl="no"; fi)
 
 		if test "x$with_sdl" != "xno"; then
@@ -550,7 +504,7 @@ if test "x$with_sdl" != "xno"; then
 			CPPFLAGS="$CPPFLAGS -I/usr/include/SDL"
 			AC_CHECK_HEADER(SDL.h, SDL_CFLAGS="-I/usr/include/SDL", if test "x$with_sdl" = "xyes"; then AC_MSG_ERROR("SDL header files not found"); else with_sdl="no"; fi)
 		fi
-	fi
+	])
 fi
 AC_SUBST(HAVE_SDL)
 if test "x$with_sdl" = "xno"; then
@@ -565,17 +519,11 @@ CPPFLAGS="$org_cflags"
 AC_SUBST(FREETYPE2_LIBS)
 AC_SUBST(FREETYPE2_CFLAGS)
 if test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11" = "x1"; then
-	AC_MSG_CHECKING([freetype2 support])
-	FREETYPE2_LIBS=`pkg-config --libs freetype2 2> /dev/null`
-	FREETYPE2_CFLAGS=`pkg-config --cflags freetype2 2> /dev/null`
-	if test "$?" = 0; then
-		AC_MSG_RESULT("$FREETYPE2_CFLAGS $FREETYPE2_LIBS")
-	else
-		AC_MSG_RESULT([pkg-config failed]);
+	PKG_CHECK_MODULES([FREETYPE2],[freetype2],[],[
 	dnl Fall back to non-pkg-config method
 		AC_CHECK_LIB(freetype, FT_Init_FreeType, ,AC_MSG_ERROR("libfreetype not found"))
 		AC_CHECK_HEADER(ft2built.h, , AC_MSG_ERROR("libfreetype header files was not found"))
-	fi
+	])
 
 dnl locate the ttf-unifont
 	AS_AC_EXPAND(UNIFONTDIR, $with_unifontdir)
@@ -591,15 +539,9 @@ org_cppflags="$CPPFLAGS"
 AC_SUBST(ADPLUG_CXXFLAGS)
 AC_SUBST(ADPLUG_LIBS)
 if test "x$with_adplug" != "xno"; then
-	AC_MSG_CHECKING([Adplug support])
-	ADPLUG_LIBS=`pkg-config --libs adplug 2> /dev/null`
-	ADPLUG_CXXFLAGS=`pkg-config --cflags adplug 2> /dev/null`
-	if test "$?" = 0; then
-		AC_MSG_RESULT("$ADPLUG_CXXFLAGS $ADPLUG_LIBS")
-	else
-		AC_MSG_RESULT([pkg-config failed]);
-dnl Fall back to non-pkg-config method
-		AC_CHECK_HEADER(adplug/adplug.h, ,with_adplug_failed=yes)
+	PKG_CHECK_MODULES([ADPLUG],[adplug],[ADPLUG_CXXFLAGS=$ADPLUG_CFLAGS],[
+	dnl Fall back to non-pkg-config method
+		AC_CHECK_HEADER(adplug/adplug.h, , with_adplug_failed=yes)
 		if test "x$with_adplug_failed" = "xyes"; then
 			CXXFLAGS="$CXXFLAGS -I/usr/include/libbinio"
 			CPPFLAGS="$CPPFLAGS -I/usr/include/libbinio"
@@ -614,7 +556,7 @@ dnl Fall back to non-pkg-config method
 			AC_CHECK_LIB(adplug, docell0, ADPLUG_LIBS="-ladplug", if test "x$with_adplug" = "xyes"; then AC_MSG_ERROR("Adplug was not found"); else with_adplug="no"; fi)
 			LIBS=$push_LIBS
 		fi
-	fi
+	])
 fi
 CXXFLAGS="$org_cxxflags"
 CPPFLAGS="$org_cppflags"
@@ -699,12 +641,9 @@ if ! test -f playsid/libsidplayfp-git/src/sidemu.cpp; then
   AC_MSG_ERROR([playsid/libsidplayfp-git is missing - please execute 'git submodule update --init --recursive'])
 else if ! test -f playsid/libsidplayfp-git/src/builders/resid-builder/resid/sid.h; then
   AC_MSG_ERROR([playsid/libsidplayfp-git/src/builders/resid-builder/resid is missing - please execute 'git submodule update --init --recursive'])
-else
-  AC_MSG_RESULT([ok])
 fi
-
-  AC_MSG_RESULT([ok])
 fi
+AC_MSG_RESULT([ok])
 origCXX="$CXX"
 origCXXFLAGS="$CXXFLAGS"
 AC_LANG_PUSH([C++])
@@ -816,33 +755,16 @@ AC_SUBST(HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H)
 AC_SUBST(HAVE_SIDPLAYFP_BUILDERS_RESID_H)
 AC_LANG_POP()
 
-AC_SUBST(LIBDISCID_LIBS)
-AC_SUBST(LIBDISCID_CFLAGS)
-AC_MSG_CHECKING([libdiscid support])
-LIBDISCID_LIBS=`pkg-config --libs libdiscid 2> /dev/null`
-LIBDISCID_CFLAGS=`pkg-config --cflags libdiscid 2> /dev/null`
-if test "$?" = 0; then
-	AC_MSG_RESULT("$LIBDISCID_CFLAGS $LIBDISCID_LIBS")
-else
-	AC_MSG_ERROR([pkg-config failed]);
-fi
+PKG_CHECK_MODULES([LIBDISCID],[libdiscid],[],[AC_MSG_ERROR([libdiscid not found])])
 
-AC_SUBST(ALSA_CFLAGS)
-AC_SUBST(ALSA_LIBS)
 if test "x$with_alsa" != "xno"; then
-	AC_MSG_CHECKING([Alsa support])
-	ALSA_LIBS=`pkg-config --libs alsa 2> /dev/null`
-	ALSA_CFLAGS=`pkg-config --cflags alsa 2> /dev/null`
-	if test "$?" = 0; then
-		AC_MSG_RESULT("$ALSA_CFLAGS $ALSA_LIBS")
-	else
+	PKG_CHECK_MODULES([ALSA],[alsa],[],[
 		if test "x$with_alsa" = "xyes"; then
 			AC_MSG_ERROR([pkg-config failed]);
 		else
-			AC_MSG_RESULT([pkg-config failed]);
 			with_alsa="no"
 		fi
-	fi
+	])
 fi
 
 AC_SUBST(HAVE_ALSA)
@@ -884,20 +806,13 @@ AC_SUBST(HAVE_OSS)
 AC_SUBST(OSS_LIBS)
 AC_SUBST(OSS_CFLAGS)
 if test "x$with_oss" != "xno"; then
-	AC_MSG_CHECKING([liboss])
-	OSS_LIBS=`pkg-config --libs liboss 2> /dev/null`
-	OSS_CFLAGS=`pkg-config --cflags liboss 2> /dev/null`
-	if test "$?" = 0; then
-		AC_MSG_RESULT("$OSS_CFLAGS $OSS_LIBS")
-		HAVE_OSS=1
-	else
-		AC_MSG_RESULT([pkg-config failed]);
-dnl Fall back to non-pkg-config method
+	PKG_CHECK_MODULES([OSS],[oss],[HAVE_OSS=1],[
+dnl Fall back to non-pkg-config method (Normal for Linux systems)
 		AC_CHECK_HEADER(sys/soundcard.h,
 			HAVE_OSS=1
 			AC_DEFINE(HAVE_SYS_SOUNDCARD_H),
 			if test "x$with_oss" = "xyes"; then AC_MSG_ERROR([kernel OSS header file was not found], 1); else with_oss="no"; HAVE_OSS=0;fi)
-	fi
+	])
 fi
 
 AC_SUBST(HAVE_COREAUDIO)
