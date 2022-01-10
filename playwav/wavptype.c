@@ -117,27 +117,27 @@ static int wavReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 				goto out;
 			}
 			LISTlen -= 8;
-			switch (CHUNK)
+			switch (uint32_little(CHUNK))
 			{
-				case uint32_little(0x4d414e49): // "INAM"
+				case 0x4d414e49: // "INAM"
 					if (RIFF_INFO(fp, CHUNKlen, m->title, sizeof (m->title)))
 					{
 						goto out;
 					}
 					break;
-				case uint32_little(0x44525049): // "IPRD"
+				case 0x44525049: // "IPRD"
 					if (RIFF_INFO(fp, CHUNKlen, m->album, sizeof (m->album)))
 					{
 						goto out;
 					}
 					break;
-				case uint32_little(0x54524149): // "IART"
+				case 0x54524149: // "IART"
 					if (RIFF_INFO(fp, CHUNKlen, m->artist, sizeof (m->artist)))
 					{
 						goto out;
 					}
 					break;
-				case uint32_little(0x44524349): // "ICRD"
+				case 0x44524349: // "ICRD"
 					{
 						char temp[16];
 						if (RIFF_INFO(fp, CHUNKlen, temp, sizeof (temp)))
@@ -157,13 +157,13 @@ static int wavReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 						}
 						break;
 					}
-				case uint32_little(0x544d4349): // "ICMT"
+				case 0x544d4349: // "ICMT"
 					if (RIFF_INFO(fp, CHUNKlen, m->comment, sizeof (m->comment)))
 					{
 						goto out;
 					}
 					break;
-				case uint32_little(0x524e4749): // "IGNR"
+				case 0x524e4749: // "IGNR"
 					if (RIFF_INFO(fp, CHUNKlen, m->style, sizeof (m->style)))
 					{
 						goto out;
