@@ -217,7 +217,23 @@ endif
 	rm -f ocp.rsrc
 
 distclean: clean
-	rm -Rf config.h autom4te.cache Rules.make config.log config.status Makefile ocp.ini desktop/opencubicplayer.desktop doc/texi/faq.texi doc/texi/install.texi doc/texi/ocp.texi goodies/pack/Makefile goodies/helpc/Makefile Makefile
+	rm -Rf \
+		autom4te.cache \
+		config.log \
+		config.status \
+		config.h \
+		playsid/sidplayfp-config/config.h \
+		Rules.make \
+		Makefile \
+		goodies/helpc/Makefile \
+		goodies/pack/Makefile \
+		ocp.ini \
+		desktop/opencubicplayer.desktop \
+		doc/opencp.dox \
+		doc/texi/faq.texi \
+		doc/texi/ocp.texi \
+		playsid/libsidplayfp-git/src/builders/resid-builder/resid/siddefs.h \
+		playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h
 
 fstypes$(LIB_SUFFIX): dirs $(fstypes_so)
 	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $(fstypes_so) $(ICONV_LIBS) $(FSTYPES_SO_LIBS)
