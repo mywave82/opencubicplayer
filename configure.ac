@@ -211,14 +211,9 @@ AC_CHECK_FUNCS([strlcpy])
 AC_CHECK_FUNCS([strlcat])
 
 AC_SUBST(MATH_LIBS)
-AC_CHECK_FUNCS([sqrt],
-               [MATH_LIBS=],
-               [AC_CHECK_LIB(m,
-                            sqrt,
-                            MATH_LIBS=-lm,
-                            AC_MSG_ERROR("libm not found")
-                           )
-               ])
+AC_CHECK_FUNCS([sqrt], [MATH_LIBS=], [
+	AC_CHECK_LIB([m], [sqrt], [MATH_LIBS=-lm], [AC_MSG_ERROR("libm not found")])
+])
 
 AC_STRUCT_DIRENT_D_TYPE
 
@@ -248,7 +243,7 @@ AC_CHECK_HEADER([sys/param.h],     [AC_DEFINE(HAVE_SYS_PARAM_H,       1)], [])
 AC_CHECK_HEADER([machine/endian.h],[AC_DEFINE(HAVE_MACHINE_ENDIAN_H,  1)], [])
 AC_CHECK_HEADER([pwd.h],           [AC_DEFINE(HAVE_PWD_H,             1)], [])
 
-AC_CHECK_FUNC(getpwnam, HAVE_GETPWNAM=1; AC_DEFINE(HAVE_GETPWNAM) )
+AC_CHECK_FUNC([getpwnam], [HAVE_GETPWNAM=1; AC_DEFINE(HAVE_GETPWNAM)])
 
 dnl timidity patch dir
 AC_ARG_WITH(timidity-default-path,
@@ -278,10 +273,10 @@ LIBS=$CURSES_LIB
 AC_CHECK_FUNCS([resize_term])
 LIBS=$push_LIBS
 
-AC_CHECK_LIB(z, zlibVersion, , AC_MSG_ERROR("zlib not found"))
+AC_CHECK_LIB([z], [zlibVersion], [], [AC_MSG_ERROR("zlib not found")])
 AC_CHECK_HEADER([zlib.h], [], [AC_MSG_ERROR("zlib header files was not found")])
 
-AC_CHECK_LIB(bz2, BZ2_bzDecompress, , AC_MSG_ERROR([bzip2 library not found (libbz2-dev)]))
+AC_CHECK_LIB([bz2], [BZ2_bzDecompress], [], [AC_MSG_ERROR([bzip2 library not found (libbz2-dev)])])
 AC_CHECK_HEADER([bzlib.h], [], [AC_MSG_ERROR("bzip2 header file not found (libbz2-dev)")])
 
 AC_SUBST(DL_LIBS)
@@ -290,7 +285,7 @@ push_LIBS=$LIBS
 LIBS=
 dnl refresh LIB list
 AC_LANG_PUSH(C)
-AC_CHECK_FUNC(dlopen, DL_LIBS="",AC_CHECK_LIB(dl, dlopen, DL_LIBS="-ldl", AC_MSG_ERROR("dlopen not found")))
+AC_CHECK_FUNC([dlopen], [DL_LIBS=""],[AC_CHECK_LIB([dl], [dlopen], [DL_LIBS="-ldl"], [AC_MSG_ERROR("dlopen not found")])])
 LIBS=$push_LIBS
 AC_LANG_POP
 
@@ -330,7 +325,7 @@ AC_SUBST(OGG_CFLAGS)
 AC_SUBST(OGG_LIBS)
 PKG_CHECK_MODULES([OGG],[ogg],[],[
 dnl Fall back to non-pkg-config method
-	AC_CHECK_LIB(ogg, ogg_sync_init, , AC_MSG_ERROR("ogg libraries not found"))
+	AC_CHECK_LIB([ogg], [ogg_sync_init], [], [AC_MSG_ERROR("ogg libraries not found")])
 	OGG_LIBS="-logg"
 	OGG_CFLAGS=""
 	LIBS=$push_LIBS
@@ -340,7 +335,7 @@ AC_SUBST(VORBIS_CFLAGS)
 AC_SUBST(VORBIS_LIBS)
 PKG_CHECK_MODULES([VORBIS],[vorbis],[],[
 dnl Fall back to non-pkg-config method
-	AC_CHECK_LIB(vorbis, vorbis_bitrate_init, , AC_MSG_ERROR("vorbis libraries not found"), -logg)
+	AC_CHECK_LIB([vorbis], [vorbis_bitrate_init], [], [AC_MSG_ERROR("vorbis libraries not found")], [$OGG_LIBS])
 	AC_CHECK_HEADER([vorbis/codec.h], [], [AC_MSG_ERROR("libvorbis header files was not found")])
 	VORBIS_LIBS="-lvorbis"
 	VORBIS_CFLAGS=""
@@ -351,8 +346,8 @@ AC_SUBST(VORBISFILE_CFLAGS)
 AC_SUBST(VORBISFILE_LIBS)
 PKG_CHECK_MODULES([VORBISFILE],[vorbisfile],[],[
 dnl Fall back to non-pkg-config method
-	AC_CHECK_LIB(vorbisfile, ov_pcm_seek_lap, AC_DEFINE(HAVE_OV_PCM_SEEK_LAP, 1),
-		AC_CHECK_LIB(vorbisfile, ov_pcm_seek, AC_DEFINE(HAVE_OV_PCM_SEEK, 1), AC_MSG_ERROR("vorbis libraries not found"), -logg -lvorbis)
+	AC_CHECK_LIB([vorbisfile], [ov_pcm_seek_lap], [AC_DEFINE(HAVE_OV_PCM_SEEK_LAP, 1)],
+		AC_CHECK_LIB([vorbisfile], [ov_pcm_seek], [AC_DEFINE(HAVE_OV_PCM_SEEK, 1)], [AC_MSG_ERROR("vorbis libraries not found")], [$OGG_LIBS $VORBIS_LIBS])
 	)
 	AC_CHECK_HEADER([vorbis/vorbisfile.h], [], [AC_MSG_ERROR("libvorbis header files were not found")])
 	VORBISFILE_LIBS="-lvorbisfile"
@@ -364,8 +359,8 @@ AC_SUBST(FLAC_CFLAGS)
 AC_SUBST(FLAC_LIBS)
 if test "x$with_flac" != "xno"; then
 	PKG_CHECK_MODULES([FLAC],[flac],[],[
-		AC_CHECK_LIB(FLAC, FLAC__seekable_stream_decoder_process_until_end_of_metadata, FLAC_LIBS="-lFLAC",
-			AC_CHECK_LIB(FLAC, FLAC__stream_decoder_process_until_end_of_metadata, FLAC_LIBS="-lFLAC",
+		AC_CHECK_LIB([FLAC], [FLAC__seekable_stream_decoder_process_until_end_of_metadata], [FLAC_LIBS="-lFLAC"],
+			AC_CHECK_LIB([FLAC], [FLAC__stream_decoder_process_until_end_of_metadata], [FLAC_LIBS="-lFLAC"],
 				[if test "x$with_flac" = "xyes"; then AC_MSG_ERROR("libFLAC not found"); else with_flac="no"; fi],
 			[-lz]),
 		[-lz])
@@ -396,15 +391,15 @@ if test "x$with_x11" != "xno"; then
 ])
 fi
 if test "x$with_x11" != "xno"; then
-	AC_CHECK_LIB(Xpm, XpmCreatePixmapFromData, X11_LIBS="-lXpm -lX11 -L/usr/X11R6/lib", if test "x$with_x11" = "xyes"; then AC_MSG_ERROR(["Xpm/X11 not found (expected to be found in /usr/X11R6/lib)"]); else with_x11="no"; fi, -lXpm -lX11 -L/usr/X11R6/lib)
+	AC_CHECK_LIB([Xpm], [XpmCreatePixmapFromData], [X11_LIBS="-lXpm -lX11 -L/usr/X11R6/lib"], [if test "x$with_x11" = "xyes"; then AC_MSG_ERROR(["Xpm/X11 not found (expected to be found in /usr/X11R6/lib)"]); else with_x11="no"; fi], [-lXpm -lX11 -L/usr/X11R6/lib])
 	LIBS=$push_LIBS
 fi
 if test "x$with_x11" != "xno"; then
-	AC_CHECK_LIB(Xext, XShmQueryExtension, X11_LIBS="-lXext $X11_LIBS", if test "x$with_x11" = "xyes"; then AC_MSG_ERROR(["SHM/X11 not found (expected to be found in /usr/X11R6/lib)"]); else with_x11="no"; fi, -lX11 -lXext -L/usr/X11R6/lib)
+	AC_CHECK_LIB([Xext], [XShmQueryExtension], [X11_LIBS="-lXext $X11_LIBS"], [if test "x$with_x11" = "xyes"; then AC_MSG_ERROR(["SHM/X11 not found (expected to be found in /usr/X11R6/lib)"]); else with_x11="no"; fi], [-lX11 -lXext -L/usr/X11R6/lib])
 	LIBS=$push_LIBS
 fi
 if test "x$with_x11" != "xno"; then
-	AC_CHECK_LIB(Xxf86vm, XF86VidModeQueryExtension, X11_LIBS="-lXxf86vm $X11_LIBS", if test "x$with_x11" = "xyes"; then AC_MSG_ERROR(["xvidmode was not found (expected to be found in /usr/X11R6/lib)"]); else with_x11="no"; fi, -lX11 -lXext -L/usr/X11R6/lib)
+	AC_CHECK_LIB([Xxf86vm], [XF86VidModeQueryExtension], [X11_LIBS="-lXxf86vm $X11_LIBS"], [if test "x$with_x11" = "xyes"; then AC_MSG_ERROR(["xvidmode was not found (expected to be found in /usr/X11R6/lib)"]); else with_x11="no"; fi], [-lX11 -lXext -L/usr/X11R6/lib])
 	LIBS=$push_LIBS
 fi
 AC_SUBST(HAVE_X11)
@@ -454,7 +449,7 @@ AC_SUBST(SDL_LIBS)
 if test "x$with_sdl" != "xno"; then
 	PKG_CHECK_MODULES([SDL],[sdl],[],[
 	dnl Fall back to non-pkg-config method
-		AC_CHECK_LIB(SDL, SDL_Init, SDL_LIBS="-lSDL", if test "x$with_sdl" = "xyes"; then AC_MSG_ERROR("libSDL was not found"); else with_sdl="no"; fi)
+		AC_CHECK_LIB([SDL], [SDL_Init], [SDL_LIBS="-lSDL"], [if test "x$with_sdl" = "xyes"; then AC_MSG_ERROR("libSDL was not found"); else with_sdl="no"; fi])
 
 		if test "x$with_sdl" != "xno"; then
 			CFLAGS="$CFLAGS -I/usr/include/SDL"
@@ -478,16 +473,16 @@ AC_SUBST(FREETYPE2_CFLAGS)
 if test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11" = "x1"; then
 	PKG_CHECK_MODULES([FREETYPE2],[freetype2],[],[
 	dnl Fall back to non-pkg-config method
-		AC_CHECK_LIB(freetype, FT_Init_FreeType, ,AC_MSG_ERROR("libfreetype not found"))
+		AC_CHECK_LIB([freetype], [FT_Init_FreeType], [],[AC_MSG_ERROR("libfreetype not found")])
 		AC_CHECK_HEADER([ft2built.h], [] , [AC_MSG_ERROR("libfreetype header files was not found")])
 	])
 
 dnl locate the ttf-unifont
 	AS_AC_EXPAND(UNIFONTDIR, $with_unifontdir)
-	AC_CHECK_FILE($UNIFONTDIR/unifont.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)]))
-	AC_CHECK_FILE($UNIFONTDIR/unifont_csur.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)]))
-	AC_CHECK_FILE($UNIFONTDIR/unifont_upper.ttf, , AC_MSG_ERROR([$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)]))
-	AC_DEFINE_UNQUOTED(UNIFONTDIR, "$UNIFONTDIR")
+	AC_CHECK_FILE([$UNIFONTDIR/unifont.ttf], [], [AC_MSG_ERROR([$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)])])
+	AC_CHECK_FILE([$UNIFONTDIR/unifont_csur.ttf], [], [AC_MSG_ERROR([$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)])])
+	AC_CHECK_FILE([$UNIFONTDIR/unifont_upper.ttf], [], [AC_MSG_ERROR([$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)])])
+	AC_DEFINE_UNQUOTED([UNIFONTDIR], "$UNIFONTDIR")
 fi
 
 AC_LANG_PUSH(C++)
@@ -510,7 +505,7 @@ if test "x$with_adplug" != "xno"; then
 			)
 		fi
 		if test "x$with_adplug" != "xno"; then
-			AC_CHECK_LIB(adplug, docell0, ADPLUG_LIBS="-ladplug", if test "x$with_adplug" = "xyes"; then AC_MSG_ERROR("Adplug was not found"); else with_adplug="no"; fi)
+			AC_CHECK_LIB([adplug], [docell0], [ADPLUG_LIBS="-ladplug"], [if test "x$with_adplug" = "xyes"; then AC_MSG_ERROR("Adplug was not found"); else with_adplug="no"; fi])
 			LIBS=$push_LIBS
 		fi
 	])
@@ -776,16 +771,16 @@ AC_SUBST(HAVE_COREAUDIO)
 AC_SUBST(COREAUDIO_CFLAGS)
 AC_SUBST(COREAUDIO_LIBS)
 if test "x$with_coreaudio" != "xno"; then
-	AC_CHECK_HEADER(CoreServices/CoreServices.h, HAVE_COREAUDIO=1, if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi)
+	AC_CHECK_HEADER([CoreServices/CoreServices.h], [HAVE_COREAUDIO=1], [if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi])
 fi
 if test "x$with_coreaudio" != "xno"; then
-	AC_CHECK_HEADER(AudioUnit/AudioUnit.h, HAVE_COREAUDIO=1, if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi)
+	AC_CHECK_HEADER([AudioUnit/AudioUnit.h], [HAVE_COREAUDIO=1], [if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi])
 fi
 if test "x$with_coreaudio" != "xno"; then
-	AC_CHECK_HEADER(AudioToolbox/AudioToolbox.h, HAVE_COREAUDIO=1, if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi)
+	AC_CHECK_HEADER([AudioToolbox/AudioToolbox.h], [HAVE_COREAUDIO=1], [if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi])
 fi
 if test "x$with_coreaudio" != "xno"; then
-	AC_CHECK_HEADER(CoreAudio/CoreAudio.h, HAVE_COREAUDIO=1, if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi)
+	AC_CHECK_HEADER([CoreAudio/CoreAudio.h], [HAVE_COREAUDIO=1], [if test "x$with_coreaudio" = "xyes"; then AC_MSG_ERROR([CoreAudio not found], 1); else with_coreaudio="no"; HAVE_COREAUDIO=; fi])
 fi
 if test "x$with_coreaudio" != "xno"; then
 	COREAUDIO_CFLAGS=""
@@ -820,7 +815,7 @@ AC_SUBST(DUMA_LIBS)
 
 
 AC_SUBST(HAVE_MAKEINFO)
-AC_CHECK_PROG(HAVE_MAKEINFO, makeinfo, yes,)
+AC_CHECK_PROG([HAVE_MAKEINFO], [makeinfo], [yes], [])
 
 AC_SUBST(HAVE_LZW)
 AC_MSG_CHECKING([Include lzw support (used by GIF and arcZIP)])
@@ -863,24 +858,24 @@ found_iconv=no
 case $with_libiconv in
 	auto)
 		# Check in the C library first
-		AC_CHECK_FUNC(iconv_open, [with_libiconv=no; found_iconv=yes])
+		AC_CHECK_FUNC([iconv_open], [with_libiconv=no; found_iconv=yes])
 		# Check if we have GNU libiconv
 		if test $found_iconv = "no"; then
-			AC_CHECK_LIB(iconv, libiconv_open, [ICONV_LIBS=-liconv; with_libiconv=gnu; found_iconv=yes])
+			AC_CHECK_LIB([iconv], [libiconv_open], [ICONV_LIBS=-liconv; with_libiconv=gnu; found_iconv=yes])
 		fi
 		# Check if we have a iconv in -liconv, possibly from vendor
 		if test $found_iconv = "no"; then
-			AC_CHECK_LIB(iconv, iconv_open, [ICONV_LIBS=-liconv; with_libiconv=native; found_iconv=yes])
+			AC_CHECK_LIB([iconv], [iconv_open], [ICONV_LIBS=-liconv; with_libiconv=native; found_iconv=yes])
 		fi
 		;;
 	no)
-		AC_CHECK_FUNC(iconv_open, [with_libiconv=no; found_iconv=yes])
+		AC_CHECK_FUNC([iconv_open], [with_libiconv=no; found_iconv=yes])
 		;;
 	gnu|yes)
-		AC_CHECK_LIB(iconv, libiconv_open, [ICONV_LIBS=-liconv; with_libiconv=gnu; found_iconv=yes])
+		AC_CHECK_LIB([iconv], [libiconv_open], [ICONV_LIBS=-liconv; with_libiconv=gnu; found_iconv=yes])
 		;;
 	native)
-		AC_CHECK_LIB(iconv, iconv_open, [ICONV_LIBS=-liconv; with_libiconv=native; found_iconv=yes])
+		AC_CHECK_LIB([iconv], [iconv_open], [ICONV_LIBS=-liconv; with_libiconv=native; found_iconv=yes])
 		;;
 esac
 LIBS=$push_LIBS
@@ -901,7 +896,7 @@ esac
 
 if ! test "x$with_desktop_file_install" = "xno"; then
 	if test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"; then
-		AC_CHECK_PROG(DESKTOP_FILE_INSTALL,desktop-file-install,desktop-file-install,failed)
+		AC_CHECK_PROG([DESKTOP_FILE_INSTALL], [desktop-file-install], [desktop-file-install], [failed])
 		if test "x$DESKTOP_FILE_INSTALL" = "xfailed"; then
 			AC_MSG_ERROR([Cannot find desktop-file-install (required by x11 and SDL driver).])
 		fi

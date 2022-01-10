@@ -6857,7 +6857,8 @@ if test "x$ac_cv_func_sqrt" = xyes; then :
 _ACEOF
  MATH_LIBS=
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqrt in -lm" >&5
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqrt in -lm" >&5
 $as_echo_n "checking for sqrt in -lm... " >&6; }
 if ${ac_cv_lib_m_sqrt+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -6897,7 +6898,6 @@ if test "x$ac_cv_lib_m_sqrt" = xyes; then :
   MATH_LIBS=-lm
 else
   as_fn_error $? "\"libm not found\"" "$LINENO" 5
-
 fi
 
 
@@ -9492,7 +9492,7 @@ if ${ac_cv_lib_vorbis_vorbis_bitrate_init+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lvorbis -logg $LIBS"
+LIBS="-lvorbis $OGG_LIBS $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9555,7 +9555,7 @@ if ${ac_cv_lib_vorbis_vorbis_bitrate_init+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lvorbis -logg $LIBS"
+LIBS="-lvorbis $OGG_LIBS $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9724,7 +9724,7 @@ if ${ac_cv_lib_vorbisfile_ov_pcm_seek+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lvorbisfile -logg -lvorbis $LIBS"
+LIBS="-lvorbisfile $OGG_LIBS $VORBIS_LIBS $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9826,7 +9826,7 @@ if ${ac_cv_lib_vorbisfile_ov_pcm_seek+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lvorbisfile -logg -lvorbis $LIBS"
+LIBS="-lvorbisfile $OGG_LIBS $VORBIS_LIBS $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
