@@ -295,9 +295,7 @@ AS_IF([test "x$with_mad" = "xno"], [
 ])
 
 
-PKG_CHECK_MODULES([LIBJPEG],[libturbojpeg],[AS_ECHO("libturbojpeg flags ... $LIBJPEG_CFLAGS $LIBJPEG_LIBS")],[
-	PKG_CHECK_MODULES([LIBJPEG],[libjpeg],[AS_ECHO("libjpeg flags ... $LIBJPEG_CFLAGS $LIBJPEG_LIBS")],[AC_MSG_ERROR([failed to find either libturbojpeg or libjpeg])])
-])
+PKG_CHECK_MODULES([LIBJPEG],[libjpeg],[AS_ECHO("libjpeg flags ... $LIBJPEG_CFLAGS $LIBJPEG_LIBS")],[AC_MSG_ERROR([failed to find libjpeg])])
 
 PKG_CHECK_MODULES([LIBPNG],[libpng],[],[AC_MSG_ERROR([failed to find libpng])])
 

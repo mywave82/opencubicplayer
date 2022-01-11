@@ -9010,66 +9010,6 @@ fi
 
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libturbojpeg" >&5
-$as_echo_n "checking for libturbojpeg... " >&6; }
-
-if test -n "$LIBJPEG_CFLAGS"; then
-    pkg_cv_LIBJPEG_CFLAGS="$LIBJPEG_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libturbojpeg\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libturbojpeg") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_LIBJPEG_CFLAGS=`$PKG_CONFIG --cflags "libturbojpeg" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$LIBJPEG_LIBS"; then
-    pkg_cv_LIBJPEG_LIBS="$LIBJPEG_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libturbojpeg\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libturbojpeg") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_LIBJPEG_LIBS=`$PKG_CONFIG --libs "libturbojpeg" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        LIBJPEG_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libturbojpeg" 2>&1`
-        else
-	        LIBJPEG_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libturbojpeg" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$LIBJPEG_PKG_ERRORS" >&5
-
-
-
-pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libjpeg" >&5
 $as_echo_n "checking for libjpeg... " >&6; }
 
@@ -9127,101 +9067,17 @@ fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LIBJPEG_PKG_ERRORS" >&5
 
-	as_fn_error $? "failed to find either libturbojpeg or libjpeg" "$LINENO" 5
+	as_fn_error $? "failed to find libjpeg" "$LINENO" 5
 elif test $pkg_failed = untried; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-	as_fn_error $? "failed to find either libturbojpeg or libjpeg" "$LINENO" 5
+	as_fn_error $? "failed to find libjpeg" "$LINENO" 5
 else
 	LIBJPEG_CFLAGS=$pkg_cv_LIBJPEG_CFLAGS
 	LIBJPEG_LIBS=$pkg_cv_LIBJPEG_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 	$as_echo "libjpeg flags ... $LIBJPEG_CFLAGS $LIBJPEG_LIBS"
-fi
-
-elif test $pkg_failed = untried; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-
-pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libjpeg" >&5
-$as_echo_n "checking for libjpeg... " >&6; }
-
-if test -n "$LIBJPEG_CFLAGS"; then
-    pkg_cv_LIBJPEG_CFLAGS="$LIBJPEG_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libjpeg\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libjpeg") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_LIBJPEG_CFLAGS=`$PKG_CONFIG --cflags "libjpeg" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$LIBJPEG_LIBS"; then
-    pkg_cv_LIBJPEG_LIBS="$LIBJPEG_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libjpeg\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libjpeg") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_LIBJPEG_LIBS=`$PKG_CONFIG --libs "libjpeg" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        LIBJPEG_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libjpeg" 2>&1`
-        else
-	        LIBJPEG_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libjpeg" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$LIBJPEG_PKG_ERRORS" >&5
-
-	as_fn_error $? "failed to find either libturbojpeg or libjpeg" "$LINENO" 5
-elif test $pkg_failed = untried; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-	as_fn_error $? "failed to find either libturbojpeg or libjpeg" "$LINENO" 5
-else
-	LIBJPEG_CFLAGS=$pkg_cv_LIBJPEG_CFLAGS
-	LIBJPEG_LIBS=$pkg_cv_LIBJPEG_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-	$as_echo "libjpeg flags ... $LIBJPEG_CFLAGS $LIBJPEG_LIBS"
-fi
-
-else
-	LIBJPEG_CFLAGS=$pkg_cv_LIBJPEG_CFLAGS
-	LIBJPEG_LIBS=$pkg_cv_LIBJPEG_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-	$as_echo "libturbojpeg flags ... $LIBJPEG_CFLAGS $LIBJPEG_LIBS"
 fi
 
 
