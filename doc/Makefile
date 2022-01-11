@@ -9,9 +9,9 @@ clean:
 
 install:
 	$(MAKE) -C texi install TOPDIR="../$(TOPDIR)" DESTDIR="$(DESTDIR)"
-	$(MKDIR) $(DESTDIR)$(MANDIR)
-	$(CP) ocp.1 $(DESTDIR)$(MANDIR)
+	mkdir -p $(DESTDIR)$(MANDIR)/man1
+	$(CP) ocp.1 $(DESTDIR)$(MANDIR)/man1
 
 uninstall:
 	$(MAKE) -C texi uninstall TOPDIR="../$(TOPDIR)" DESTDIR="$(DESTDIR)"
-	rm -f $(DESTDIR)$(MANDIR)/ocp.1
+	rm -f $(DESTDIR)$(MANDIR)/man1/ocp.1

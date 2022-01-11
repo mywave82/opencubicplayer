@@ -1,3 +1,21 @@
+Version 0.2.92
+==============
+
+ * Add ocp.1 manpage
+ * Fixes for build-system regarding install and uninstall
+ * Refactored the ./configure script
+ * Update  ocp -h  help screen
+ * Add keywords to the ocp.desktop file
+ * Give hints about ALT-E key-combo in the filebrowser if you want to edit metadata
+ * Fix some common spelling mistakes
+ * Fix some minor resource-leaks found in an old static analysis report, and
+   unsafe use of strncpy
+ * In the fileselector, use right/left as alternative keys for insert/delete.
+   These keys are for inserting/deleting songs from the playlist, and these keys
+   are lacking on some Macs
+ * OCP was unable to compile at big-endian systems
+ * cphelper.c was unable to compile on some systems
+
 Version 0.2.91
 ==============
 
