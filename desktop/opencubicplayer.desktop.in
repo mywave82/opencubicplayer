@@ -4,6 +4,7 @@ GenericName=Music Player
 GenericName[fr]=Lecteur de musique
 Comment=Open Cubic Player @PACKAGE_VERSION@ for UNIX
 Comment[fr]=Open Cubic Player @PACKAGE_VERSION@ pour UNIX
+Keywords=music;audio;cubic;tracked;tracker;module;player;ocp;
 Exec=@BINDIR@/ocp %F
 Icon=opencubicplayer
 Terminal=false
