@@ -43,7 +43,7 @@ const struct ocp_charset_info_t codepages_IBM[] = /* VGA fonts */
 	{"CP855",            "Code page 855",             "Cyrillic script VGA font"},
 	{"CP856",            "Code page 856",             "Hebrew in Israel VGA font"},
 	{"CP857",            "Code page 857",             "Turkish VGA font"},
-	{"CP858",            "Code page 858",             "modfied version of CP850 - used by PC DOS 2000"},
+	{"CP858",            "Code page 858",             "modified version of CP850 - used by PC DOS 2000"},
 //	{"CP859",            "Code page 859",             "Western Europe VGA font"}, - missing in iconv
 	{"CP860",            "Code page 860",             "Portuguese VGA font"},
 	{"CP861",            "Code page 861",             "Icelandic VGA font"},
@@ -67,7 +67,7 @@ const struct ocp_charset_info_t codepages_IBM[] = /* VGA fonts */
 //	{"CP1040",           "Code page 1040",            "Korean PC Data Extended - Hangul"} - missing in iconv
 //	{"CP1041",           "Code page 1041",            "Korean - Superseeds CP897"} - missing in iconv
 	{"CP1046",           "Code page 1046",            "Used by IBM in Egypt, Iraq, Jordan, Saudi Arabia, and Syria for Arabic VGA font"},
-        {"CP1124",           "Code page 1124",            "ISO 8859-2 modfified for Macedonian VGA font"},
+        {"CP1124",           "Code page 1124",            "ISO 8859-2 modified for Macedonian VGA font"},
 	{"CP1125",           "Code page 1125",            "RST 2018-91 - Ukrainian VGA font"},
 	{"CP1129",           "Code page 1129",            "Vietnamese VGA font"},
 	{"CP1131",           "Code page 1131",            "Belarusian VGA font"}, /* missing in iconv, but present in libiconv */
@@ -156,7 +156,7 @@ const struct ocp_charset_info_t codepages_Cyrillic[] =
 //	{"KOI8-CS2",         "KOI8-CS2",                  "Slovak? (ČSN (Czech technical standard) 369103, devised by the Comecon. This encoded Latin with diacritics, as used in Czech and Slovak, rather than Cyrillic, but the basic idea was the same - text should remain legible with the 8-th bit cleared, thus e.g. Č became C etc.). } // missing in iconv
 	{"CSN_369103",       "KOI8-CS2",                  "ČSN (Czech technical standard) 369103, devised by the Comecon. This encoded Latin with diacritics, as used in Czech and Slovak, rather than Cyrillic."}, // missing in libiconv
 	{"ECMACYRILLIC",     "KOI8-E",                    "ISO-IR-111 / ECMA-113"}, // missing in libiconv
-//	{"KOI8-F",           "KOI8-F",                    "Only used by software from Fingertip Software - KOI8 Unified, includes all uniqe KOI-8 characters"}, // missing in libiconv
+//	{"KOI8-F",           "KOI8-F",                    "Only used by software from Fingertip Software - KOI8 Unified, includes all unique KOI-8 characters"}, // missing in libiconv
 	{"ST_SEV_358-88",    "KOI8-K1",                   "Cyrillic-1 (defined in CSN 36 9103, ST SEV 358-88)"}, // missing in libiconv
 	{"ISO-IR-139",       "KOI8-L2",                   "KOI8-L2 \"Latin-2\" (defined in CSN 36 9103), ISO IR 139 (almost identical to ISO 8859-2 (1987), but has the dollar sign and currency sign swapped)"}, // missing in libiconv
 	{"KOI8-R",           "KOI8-R",                    "(Code page 878) RFC1489 Russian and Bulgarian"}, // Windows-20866

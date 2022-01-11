@@ -138,7 +138,7 @@ static void ayDrawGStrings (void)
 		plPause?((pausetime-starttime)/DOS_CLK_TCK):((dos_clock()-starttime)/DOS_CLK_TCK),
 		&mdbdata
 	);
-#warning TODO: globinfo.trackname, each track can have uniqe names.....
+#warning TODO: globinfo.trackname, each track can have unique names.....
 }
 
 static int ayProcessKey(uint16_t key)

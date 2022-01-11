@@ -7,7 +7,7 @@ static inline void asm_pushl(struct assembler_state_t *state, const uint32_t src
 	state->esp -= 4;
 	if (state->esp & 0x00000003)
 	{
-		fprintf(stderr, "#AC(0) exception occured here\n");
+		fprintf(stderr, "#AC(0) exception occurred here\n");
 		return;
 	}
 	x86_write_memory(state, state->ss, state->esp, 4, src);

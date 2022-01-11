@@ -33,7 +33,8 @@ int main(int argc, char *argv[])
 
 	if (argc<=2)
 	{
-		fprintf(stderr, "argv\n");
+		fprintf(stderr, "Small utility for creating Quake .PAK files\n");
+		fprintf(stderr, "%s target.pak file1 [file2] [...]\n", argv[0]);
 		return -1;
 	}
 	if (!(output=fopen(argv[1], "w+")))
@@ -57,7 +58,7 @@ int main(int argc, char *argv[])
 		off += dir[i].len;
 	}
 
-	if (fwrite("PACK", 4, 1, output)!=1) { perror("fwrite)"); fclose(output); return -1;}
+	if (fwrite("PACK", 4, 1, output)!=1) { perror("fwrite()"); fclose(output); return -1;}
 	off = uint32_little(off);
 	if (fwrite(&off, sizeof(uint32_t), 1, output)!=1) { perror("fwrite()"); fclose(output); return -1;}
 	off = uint32_little(off);
@@ -82,7 +83,7 @@ int main(int argc, char *argv[])
 		dir[i].len = uint32_little(dir[i].len);
 		dir[i].off = uint32_little(dir[i].off);
 	}
-	if (fwrite(dir, sizeof(dir[0]), nfiles, output)!=1) { perror("fwrite)"); fclose(output); return -1;}
+	if (fwrite(dir, sizeof(dir[0]), nfiles, output)!=nfiles) { perror("fwrite()"); fclose(output); return -1;}
 	fclose(output);
 	free(dir);
 	return 0;

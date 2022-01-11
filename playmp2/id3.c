@@ -152,7 +152,7 @@ static int iso8859_1_session_precheck (
 				src++;
 			}
 		} else {
-			/* character is not uniqe for UTF-8 */
+			/* character is not unique for UTF-8 */
 			srclen--;
 			src++;
 		}

@@ -262,7 +262,7 @@ int fb_init(int minor)
 					fprintf(stderr, "S3 MMIO fasttext\n");
 					break;
 				case FB_AUX_TEXT_MGA_STEP16:
-					fprintf(stderr, "MGA Millenium I: text, attr, 14 reserved bytes\n");
+					fprintf(stderr, "MGA Millennium I: text, attr, 14 reserved bytes\n");
 					break;
 				case FB_AUX_TEXT_MGA_STEP8:
 					fprintf(stderr, "other MGAs:      text, attr,  6 reserved bytes\n");

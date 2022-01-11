@@ -6,7 +6,7 @@ static inline void asm_popl(struct assembler_state_t *state, uint32_t *dst)
 {
 	if (state->esp & 0x00000003)
 	{
-		fprintf(stderr, "#AC(0) exception occured here\n");
+		fprintf(stderr, "#AC(0) exception occurred here\n");
 		return;
 	}
 	*dst = x86_read_memory(state, state->ss, state->esp, 4);

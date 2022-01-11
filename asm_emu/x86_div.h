@@ -6,7 +6,7 @@ static inline void asm_divl(struct assembler_state_t *state, const uint32_t src)
 {
 	if (src <= state->edx)
 	{
-		fprintf(stderr, "#DE exception occured here (0x%08x%08x / 0x%08x )\n", state->edx, state->eax, src);
+		fprintf(stderr, "#DE exception occurred here (0x%08x%08x / 0x%08x )\n", state->edx, state->eax, src);
 		state->edx = 0xffffffff;
 		state->eax = 0;
 
@@ -21,7 +21,7 @@ static inline void asm_divw(struct assembler_state_t *state, const uint16_t src)
 {
 	if (src <= state->dx)
 	{
-		fprintf(stderr, "#DE exception occured here\n");
+		fprintf(stderr, "#DE exception occurred here\n");
 		state->edx = 0xffff;
 		state->eax = 0;
 
@@ -36,7 +36,7 @@ static inline void asm_divb(struct assembler_state_t *state, const uint8_t src)
 {
 	if (src <= state->ah)
 	{
-		fprintf(stderr, "#DE exception occured here\n");
+		fprintf(stderr, "#DE exception occurred here\n");
 		state->edx = 0xff;
 		state->eax = 0;
 

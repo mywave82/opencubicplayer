@@ -317,7 +317,7 @@ static void got_id3v1x(uint8_t *buffer)
 	if (parse_ID3v1x(&data, buffer, 128)) return;
 	if (finalize_ID3v1(&ID3, &data)) return;
 
-	debug_printf ("[MPx] Parsing sucessfull\n");
+	debug_printf ("[MPx] Parsing successfull\n");
 
 	apply_id3 (&ID3);
 }
@@ -333,7 +333,7 @@ static void got_id3v12(uint8_t *buffer)
 	if (parse_ID3v12(&data, buffer, 128)) return;
 	if (finalize_ID3v1(&ID3, &data)) return;
 
-	debug_printf ("[MPx] Parsing sucessfull\n");
+	debug_printf ("[MPx] Parsing successfull\n");
 
 	apply_id3 (&ID3);
 }
@@ -346,7 +346,7 @@ static void got_id3v2(uint8_t *buffer, uint32_t length)
 
 	if (parse_ID3v2x (&ID3, buffer, length)) return;
 
-	debug_printf ("[MPx] Parsing sucessfull\n");
+	debug_printf ("[MPx] Parsing successfull\n");
 
 	apply_id3 (&ID3);
 }

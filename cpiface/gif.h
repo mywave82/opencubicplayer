@@ -18,7 +18,7 @@
  * uncompressed or rle compressed. The routine will try to read as much
  * data out of the file as possible without any error. If this routine
  * returns with an error value, the array *pic and *pal could already
- * contain some data, which could be read until the error occured.
+ * contain some data, which could be read until the error occurred.
  *
  * call parameters:
  * -----------------
@@ -45,7 +45,7 @@
  * return values:
  * --------------
  *  0 upon success
- * -1 if an error occured
+ * -1 if an error occurred
  *  a positive value indicating the number of bad code blocks from the lzw
  *  decompression. This means that an error occurred that was not fatal, but
  *  the picture could not be uncompressed completely.

@@ -18,7 +18,7 @@
  * uncompressed or rle compressed. The routine will try to read as much
  * data out of the file as possible without any error. If this routine
  * returns with an error value, the array *pic and *pal could already
- * contain some data, which could be read until the error occured.
+ * contain some data, which could be read until the error occurred.
  *
  * call parameters:
  * -----------------
@@ -45,7 +45,7 @@
  * return values:
  * --------------
  *  0 upon success
- * -1 if an error occured
+ * -1 if an error occurred
  *
  ************************************************************************/
 int TGAread(unsigned char *filedata,

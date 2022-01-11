@@ -394,7 +394,7 @@ uint32_t dirdbFindAndRef(uint32_t parent, char const *name, enum dirdb_use use)
 	}
 	if (strchr(name, '/'))
 	{
-		fprintf (stderr, "dirdbFindAndRef: name containes /\n");
+		fprintf (stderr, "dirdbFindAndRef: name contains /\n");
 		return DIRDB_NOPARENT;
 	}
 

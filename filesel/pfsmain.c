@@ -95,7 +95,7 @@ static interfaceReturnEnum stop;
 /* return values:
  * 0  - no files available (and user hit esc)
  * 1  - we have a new song available
- * -1 - error occured
+ * -1 - error occurred
  */
 
 static int callselector (struct moduleinfostruct *info,

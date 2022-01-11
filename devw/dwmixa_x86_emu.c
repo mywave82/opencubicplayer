@@ -336,12 +336,12 @@ mixrPlayChannelpsetrtn:
 		tmp/=8; /* 8 columns of information in the assembler version */
 		if (tmp > sizeof(routeptrs))
 		{
-			fprintf(stderr, "#GP Exception occured (tmp=%d)\n", tmp);
+			fprintf(stderr, "#GP Exception occurred (tmp=%d)\n", tmp);
 			tmp = 0;
 		}
 		else if (tmp&3)
 		{
-			fprintf(stderr, "#AC(0) Exception occured\n");
+			fprintf(stderr, "#AC(0) Exception occurred\n");
 			tmp = 0;
 		}
 		routeptr = routeptrs[tmp>>2];

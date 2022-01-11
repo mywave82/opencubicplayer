@@ -95,14 +95,14 @@ static inline void x86_write_memory(struct assembler_state_t *state, uint_fast16
 {
 	if (selector < 4)
 	{
-		fprintf(stderr, "#GP exception occured (zero-selector written to)\n");
+		fprintf(stderr, "#GP exception occurred (zero-selector written to)\n");
 		return;
 	}
 	if (selector == 4)
 	{
 		if ((addr+size) > STACK_LENGTH)
 		{
-			fprintf(stderr, "#SS exception occured\n");
+			fprintf(stderr, "#SS exception occurred\n");
 			return;
 		}
 		if (size==4)
@@ -129,14 +129,14 @@ static inline uint_fast32_t x86_read_memory(struct assembler_state_t *state, uin
 {
 	if (selector < 4)
 	{
-		fprintf(stderr, "#GP exception occured (zero-selector red from)\n");
+		fprintf(stderr, "#GP exception occurred (zero-selector red from)\n");
 		return 0;
 	}
 	if (selector == 4)
 	{
 		if ((addr+size) > STACK_LENGTH)
 		{
-			fprintf(stderr, "#SS exception occured\n");
+			fprintf(stderr, "#SS exception occurred\n");
 			return state->stackmemory[addr];
 		}
 		if (size==4)
@@ -343,7 +343,7 @@ static inline int pop_fpu_sub_tag(uint16_t *status)
 {
 	if ((*status & 0x0003) == FPU_TAG_EMPTY)
 	{
-		fprintf(stderr, "pop_fpu_sub_tag: underflow exception occured\n");
+		fprintf(stderr, "pop_fpu_sub_tag: underflow exception occurred\n");
 		return 0x0010;
 	}
 	*status = (*status)>>2;
@@ -355,12 +355,12 @@ static inline int push_fpu_sub_tag(uint16_t *status, int value)
 {
 	if ((*status & 0xc000) != (FPU_TAG_EMPTY<<14))
 	{
-		fprintf(stderr, "push_fpu_sub_tag: overflow exception occured\n");
+		fprintf(stderr, "push_fpu_sub_tag: overflow exception occurred\n");
 		return 0x0010;
 	}
 	if ((value < 0) || (value > 2)) /* this should never happen */
 	{
-		fprintf(stderr, "push_fpu_sub_tag: invalid operation occured\n");
+		fprintf(stderr, "push_fpu_sub_tag: invalid operation occurred\n");
 		return 0x0001;
 	}
 	*status = (*status)<<2;

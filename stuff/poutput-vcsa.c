@@ -762,7 +762,7 @@ int vcsa_init(int minor)
 		 *
 		 * - Stian, 2004
 		 */
-		fprintf(stderr, "vcsa: Trying to make backspace button uniqe (ctrl-h)\n");
+		fprintf(stderr, "vcsa: Trying to make backspace button unique (ctrl-h)\n");
 
 		k.kb_table=0;
 		k.kb_index=14;

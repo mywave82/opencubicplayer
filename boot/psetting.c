@@ -23,7 +23,7 @@
  *    -first release
  *  -fd981014   Felix Domke <tmbinc@gmx.net>
  *    -Bugfix at cfReadINIFile (first if-block, skips the filename in
- *     the commandline, without these, funny errors occured.)
+ *     the commandline, without these, funny errors occurred.)
  *  -fd981106   Felix Domke    <tmbinc@gmx.net>
  *    -edited for new binfile
  *  -ss040613   Stian Skjelstad <stian@nixia.no>

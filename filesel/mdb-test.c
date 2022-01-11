@@ -574,7 +574,7 @@ int mdb_basic_mdbGetModuleReference (void)
 	retval |= (r != ref[0]);
 	fprintf (stderr, "Duplicate calls reveals the same ID: %"PRIu32" %"PRIu32" %s\n" ANSI_COLOR_RESET, ref[0], r, (ref[0] == r) ? ANSI_COLOR_GREEN "OK" : ANSI_COLOR_RED "Failed");
 
-	fprintf (stderr, "Hashes are uniqe: ");
+	fprintf (stderr, "Hashes are unique: ");
 	r = 0;
 	for (i = 0; i < 10; i++)
 	{

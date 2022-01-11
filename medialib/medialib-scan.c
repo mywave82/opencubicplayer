@@ -89,10 +89,10 @@ static void mlScanDraw(const char *title, struct scanlist_t *token)
 		displaystr  (mlTop + i, mlLeft + mlWidth - 1, 0x04, "\xb3", 1);
 	}
 
-	/* Line 1: "Currently scanning filesytem, press <esc> to abort" */
-	displaystr (mlTop + 1, mlLeft + 1,  0x07, "Currently scanning filesytem, press ", 36);
-	displaystr (mlTop + 1, mlLeft + 37, 0x0f, "<esc>", 5);
-	displaystr (mlTop + 1, mlLeft + 42, 0x07, " to abort", mlWidth - 43);
+	/* Line 1: "Currently scanning filesystem, press <esc> to abort" */
+	displaystr (mlTop + 1, mlLeft + 1,  0x07, "Currently scanning filesystem, press ", 37);
+	displaystr (mlTop + 1, mlLeft + 38, 0x0f, "<esc>", 5);
+	displaystr (mlTop + 1, mlLeft + 43, 0x07, " to abort", mlWidth - 44);
 
 	/* Line 2: the current selected path */
 	displaystr_utf8_overflowleft (mlTop + 2, mlLeft + 1, 0x07, token->path, mlWidth - 2);

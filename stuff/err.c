@@ -75,7 +75,7 @@ const char *errGetLongString(int err)
 	switch(err)
 	{
 		case errOk:
-			return "No error occured.";
+			return "No error occurred.";
 		case errGen:
 			return "Generic, unspecified error.";
 		case errAllocMem:
@@ -103,11 +103,11 @@ const char *errGetLongString(int err)
 		case errFormMiss:
 			return "A section was missing inside the file. Maybe it's corrupted.";
 		case errPlay:
-			return "Couldn't play. Maybe a device-error occured.";
+			return "Couldn't play. Maybe a device-error occurred.";
 		case errSymSym:
 			return "A symbol inside a DLL could not be found.";
 		case errSymMod:
 			return "A DLL could not be found.";
 	}
-	return "Another, unknown error occured.";
+	return "Another, unknown error occurred.";
 }
