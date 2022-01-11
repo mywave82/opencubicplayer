@@ -2,7 +2,7 @@
 
 /* Tables to convert codepage 437 into Unicode (UTF-8).
  *
- * OpenCubicPlayer on real "hardware" - VSCA and 8x8 charsets
+ * OpenCubicPlayer on real "hardware" - VCSA and 8x8 charsets
  * at the moment uses a modified version, to fit volume-bars for the analyzer.
  */
 

@@ -109,9 +109,18 @@ static int cmdhlp(void)
 		printf("-p                : quit when playlist is empty\n");
 		printf("-d : force display driver\n");
 		printf("     curses       : ncurses driver\n");
+#ifdef HAVE_X11
 		printf("     x11          : x11 driver\n");
+#endif
+#ifdef HAVE_FRAMEBUFFER
 		printf("     vcsa         : vcsa/fb linux console driver\n");
+#endif
+#ifdef HAVE_SDL
 		printf("     sdl          : SDL video driver\n");
+#endif
+#ifdef HAVE_SDL2
+		printf("     sdl2         : SDL2 video driver\n");
+#endif
 		printf("\nExample : ocp -fl0,r1 -vp75,f2 -spdevpdisk -sr48000 ftstar.xm\n");
 		printf("          (for nice HD rendering of modules)\n");
 		return errHelpPrinted;
