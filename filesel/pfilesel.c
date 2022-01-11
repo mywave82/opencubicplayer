@@ -1641,20 +1641,33 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 
 		free (temppath);
 	}
-	fillstr(sbuf, 0, 0x07, 0xc4, CONSOLE_MAX_X);
-	if (!playlistactive)
-		fillstr(sbuf, plScrWidth-15, 0x07, 0xc2, 1);
-	displaystrattr(2, 0, sbuf, plScrWidth);
+
+	/* horizontal line below path:/ bar */
+	if (playlistactive)
+	{
+		displaychr (2, 0,               0x07, 0xc4, plScrWidth);
+	} else {
+		displaychr (2, 0,               0x07, 0xc4, plScrWidth - 15);
+		displaychr (2, plScrWidth - 15, 0x07, 0xc2, 1);
+		displaychr (2, plScrWidth - 14, 0x07, 0xc4, 14);
+	}
 
 	if (fsEditWin||(selecte>=0)||(selectd>=0))
 	{
 		int Y=dirwinheight+3;
 		char *npath = 0;
 
-		fillstr(sbuf, 0, 0x07, 0xc4, CONSOLE_MAX_X);
-		if (!playlistactive)
-			fillstr(sbuf, plScrWidth-15, 0x07, 0xc1, 1);
-		displaystrattr (Y, 0, sbuf, plScrWidth);
+		/* horizontal line between file-list and the bottom editor */
+		if (playlistactive)
+		{
+			displaychr (Y, 0,               0x07, 0xc4, plScrWidth - 17);
+			displaystr (Y, plScrWidth - 17, 0x07, " ALT-E to edit \xc4\xc4", 17);
+		} else {
+			displaychr (Y, 0,               0x07, 0xc4, plScrWidth - 32);
+			displaystr (Y, plScrWidth - 32, 0x07, " ALT-E to edit \xc4\xc4", 17);
+			displaychr (Y, plScrWidth - 15, 0x07, 0xc1, 1);
+			displaychr (Y, plScrWidth - 14, 0x07, 0xc4, 14);
+		}
 
 		/* fill npath */
 		if (mle->file)
@@ -1684,10 +1697,10 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 		free (npath); npath = 0;
 	}
 
+#warning UTF-8 in quickfind? (and last user of sbuf in this function)
 	fillstr(sbuf, 0, 0x17, 0, CONSOLE_MAX_X);
 	writestring(sbuf, 0, 0x17, " quickfind: [\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa]    press F1 for help, or ALT-C for basic setup ", 74);
 	writestring(sbuf, 13, 0x1F, quickfind, quickfindpos);
-
 	displaystrattr(plScrHeight-1, 0, sbuf, plScrWidth);
 
 	for (i=0; i<dirwinheight; i++)
