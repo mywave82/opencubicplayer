@@ -1,9 +1,7 @@
-Also look at the TODO file
+External libraries and hardware with known issues
 
-external tools and drivers we use:
-
-gcc 2.95  Can't do our assembler inline due to statemens beeing to long, and
-    having to many arguments.
+gcc 2.95  Can't do our assembler inline due to statemens beeing too long, and
+    having too many arguments.
 
 gcc 2.96 (redhat smashed together 2.95 + 3.0 patchset)
     Nope.. can't do assembler good enough.. fails to compile
@@ -57,6 +55,8 @@ XFree86-4.3.0: (matrox driver atleast)
       ocp.ini to trace shiftmask by hand, and not trust XEvent
     * It leaves a /dev/mem filedescriptor open across exec calls
 
+libbinio-1.4: (Used by libadplug)
+    Unable to use memory-mapped files due to an internal bug
 
 And from this software:
 
