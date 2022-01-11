@@ -1448,6 +1448,8 @@ overflowa:
 	return errOk;
 
 safeout:
+	if (instsampnum)
+		free(instsampnum);
 	if (ordlist)
 		free(ordlist);
 	if (temptrack)

@@ -63,7 +63,7 @@ int deviReadDevices(const char *list, struct devinfonode **devs)
 			fprintf(stderr, " ");
 		fprintf(stderr, ": ");
 
-		strncpy(dname,cfGetProfileString(drvhand, "link", ""),19);
+		snprintf (dname, sizeof (dname), "%s", cfGetProfileString(drvhand, "link", ""));
 
 		n->linkhand=lnkLink(dname);
 		if (n->linkhand<=0)
@@ -110,10 +110,8 @@ int deviReadDevices(const char *list, struct devinfonode **devs)
 		n->dev.dma2=cfGetProfileInt(drvhand, "dma2", -1, 10);
 */
 		n->devinfo.subtype=cfGetProfileInt(drvhand, "subtype", -1, 10);
-		strncpy(n->devinfo.path, cfGetProfileString(drvhand, "path", ""), sizeof(n->devinfo.path));
-		n->devinfo.path[sizeof(n->devinfo.path)-1]=0;
-		strncpy(n->devinfo.mixer, cfGetProfileString(drvhand, "mixer", ""), sizeof(n->devinfo.mixer));
-		n->devinfo.mixer[sizeof(n->devinfo.mixer)-1]=0;
+		snprintf (n->devinfo.path, sizeof (n->devinfo.path), "%s", cfGetProfileString(drvhand, "path", ""));
+		snprintf (n->devinfo.mixer, sizeof (n->devinfo.mixer), "%s", cfGetProfileString(drvhand, "mixer", ""));
 		n->devinfo.chan=0;
 		n->devinfo.mem=0;
 		n->devinfo.opt=0;

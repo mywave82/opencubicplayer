@@ -291,6 +291,9 @@ static int initAsm(void)
 #ifdef MIXER_DEBUG
 			fprintf(stderr, "write 1 failed\n");
 #endif
+			close(fd);
+			unlink(file);
+			free(file);
 			return 1;
 		}
 		/*
@@ -305,6 +308,9 @@ static int initAsm(void)
 		if (mmap(start1, len1, PROT_EXEC|PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED, fd, 0)==MAP_FAILED)
 		{
 			perror("mmap()");
+			close(fd);
+			unlink(file);
+			free(file);
 			return 1;
 		}
 		/*

@@ -93,7 +93,7 @@ static void setdevice(struct devinfonode **curdev, struct devinfonode *dev)
 	if (dev->linkhand<0)
 	{
 		char lname[22];
-		strncpy(lname,cfGetProfileString(dev->handle, "link", ""),21);
+		snprintf (lname, sizeof (lname), "%s", cfGetProfileString(dev->handle, "link", ""));
 		dev->linkhand=lnkLink(lname);
 		if (dev->linkhand<0)
 		{

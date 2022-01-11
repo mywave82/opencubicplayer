@@ -354,7 +354,9 @@ static int _mpLoadMDL(struct gmdmodule *m, struct ocpfilehandle_t *file)
 	temptrack=malloc(sizeof(uint8_t)*3000);
 
 	if (!trackends||!trackptrs||!trackbuf||!patdata||!temptrack)
-		return errAllocMem;
+	{
+		goto errAllocMem_withmem;
+	}
 
 	trackptrs[0]=trackbuf;
 	trackends[0]=trackbuf;
@@ -365,13 +367,13 @@ static int _mpLoadMDL(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		if (ocpfilehandle_read_uint16_le (file, &l))
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #19\n");
-			return errFormStruc;
+			goto errFormStruc_withmem;
 		}
 		trackptrs[1+i]=trackbuf+tpos;
 		if (file->read (file, trackbuf+tpos, l) != l)
 		{
 			fprintf(stderr, __FILE__ ": fread() failed #20\n");
-			return errFormStruc;
+			goto errFormStruc_withmem;
 		}
 		tpos+=l;
 		trackends[1+i]=trackbuf+tpos;
@@ -653,7 +655,7 @@ static int _mpLoadMDL(struct gmdmodule *m, struct ocpfilehandle_t *file)
 				trk->ptr=malloc(sizeof(uint8_t)*len);
 				trk->end=trk->ptr+len;
 				if (!trk->ptr)
-					return errAllocMem;
+					goto errAllocMem_withmem;
 				memcpy(trk->ptr, temptrack, len);
 			}
 		}
@@ -781,7 +783,7 @@ static int _mpLoadMDL(struct gmdmodule *m, struct ocpfilehandle_t *file)
 			trk->ptr=malloc(sizeof(uint8_t)*len);
 			trk->end=trk->ptr+len;
 			if (!trk->ptr)
-				return errAllocMem;
+				goto errAllocMem_withmem;
 			memcpy(trk->ptr, temptrack, len);
 		}
 	}
@@ -1382,6 +1384,22 @@ static int _mpLoadMDL(struct gmdmodule *m, struct ocpfilehandle_t *file)
 	}
 
 	return errOk;
+
+errFormStruc_withmem:
+	free (trackends);
+	free (trackptrs);
+	free (trackbuf);
+	free (patdata);
+	free (temptrack);
+	return errFormStruc;
+
+errAllocMem_withmem:
+	free (trackends);
+	free (trackptrs);
+	free (trackbuf);
+	free (patdata);
+	free (temptrack);
+	return errAllocMem;
 }
 
 struct gmdloadstruct mpLoadMDL = { _mpLoadMDL };

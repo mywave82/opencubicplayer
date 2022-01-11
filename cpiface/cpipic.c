@@ -230,7 +230,11 @@ void plReadOpenCPPic(void)
 	{
 		plOpenCPPict=calloc(sizeof(unsigned char), picWidth*picHeight);
 		if(plOpenCPPict==0)
+		{
+			free (filecache);
+			close (file);
 			return;
+		}
 		memset(plOpenCPPict, 0, picWidth*picHeight);
 	}
 

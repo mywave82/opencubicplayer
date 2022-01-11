@@ -152,6 +152,7 @@ static int readiniline(char *key, char *str, char *comment, const char *line)
 
 static int cfReadINIFile(int argc, char *argv[])
 {
+	void *memtmp;
 	char *path;
 	FILE *f;
 	int linenum=0;
@@ -198,7 +199,9 @@ static int cfReadINIFile(int argc, char *argv[])
 				{
 					int index=cfINIApps[cfINIApps_index].nkeys;
 					cfINIApps[cfINIApps_index].nkeys++;
-					cfINIApps[cfINIApps_index].keys=realloc(cfINIApps[cfINIApps_index].keys, sizeof(cfINIApps[cfINIApps_index].keys[0])*(index+1));
+					memtmp = realloc(cfINIApps[cfINIApps_index].keys, sizeof(cfINIApps[cfINIApps_index].keys[0])*(index+1));
+					if (!memtmp) { fprintf (stderr, "cfReadINIFile() realloc failed #1 (%ld)\n", sizeof(cfINIApps[cfINIApps_index].keys[0])*(index+1)); _exit(1); }
+					cfINIApps[cfINIApps_index].keys = memtmp;
 					cfINIApps[cfINIApps_index].keys[index].key=NULL;
 					cfINIApps[cfINIApps_index].keys[index].str=NULL;
 					cfINIApps[cfINIApps_index].keys[index].comment=strdup(commentbuf);
@@ -220,7 +223,9 @@ static int cfReadINIFile(int argc, char *argv[])
 				{
 					cfINIApps_index=cfINInApps;
 					cfINInApps++;
-					cfINIApps=realloc(cfINIApps, sizeof(cfINIApps[cfINInApps])*cfINInApps);
+					memtmp = realloc(cfINIApps, sizeof(cfINIApps[cfINInApps])*cfINInApps);
+					if (!memtmp) { fprintf (stderr, "cfReadINIFile() realloc failed #2 (%ld)\n", sizeof(cfINIApps[cfINInApps])*cfINInApps); _exit(1); }
+					cfINIApps = memtmp;
 					cfINIApps[cfINIApps_index].app=strdup(strbuf);
 					cfINIApps[cfINIApps_index].keys=NULL;
 					cfINIApps[cfINIApps_index].nkeys=0;
@@ -233,7 +238,9 @@ static int cfReadINIFile(int argc, char *argv[])
 				{
 					int index=cfINIApps[cfINIApps_index].nkeys;
 					cfINIApps[cfINIApps_index].nkeys++;
-					cfINIApps[cfINIApps_index].keys=realloc(cfINIApps[cfINIApps_index].keys, sizeof(cfINIApps[cfINIApps_index].keys[0])*(index+1));
+					memtmp = realloc(cfINIApps[cfINIApps_index].keys, sizeof(cfINIApps[cfINIApps_index].keys[0])*(index+1));
+					if (!memtmp) { fprintf (stderr, "cfReadINIFile() realloc failed #3 (%ld)\n", sizeof(cfINIApps[cfINIApps_index].keys[0])*(index+1)); _exit(1); }
+					cfINIApps[cfINIApps_index].keys = memtmp;
 					cfINIApps[cfINIApps_index].keys[index].key=strdup(keybuf);
 					cfINIApps[cfINIApps_index].keys[index].str=strdup(strbuf);
 					cfINIApps[cfINIApps_index].keys[index].comment=(commentbuf[0]?strdup(commentbuf):NULL);
@@ -255,7 +262,9 @@ static int cfReadINIFile(int argc, char *argv[])
 					continue;
 
 				cfINInApps++;
-				cfINIApps=realloc(cfINIApps, sizeof(cfINIApps[cfINInApps])*cfINInApps);
+				memtmp = realloc(cfINIApps, sizeof(cfINIApps[cfINInApps])*cfINInApps);
+				if (!memtmp) { fprintf (stderr, "cfReadINIFile() realloc failed #4 (%ld)\n", sizeof(cfINIApps[cfINInApps])*cfINInApps); _exit(1); }
+				cfINIApps = memtmp;
 				cfINIApps[cfINInApps-1].app=strdup("commandline__");
 				cfINIApps[cfINInApps-1].app[12]=argv[c][1];
 				cfINIApps[cfINInApps-1].keys=NULL;
@@ -273,7 +282,9 @@ static int cfReadINIFile(int argc, char *argv[])
 						temp=argvstat+strlen(argvstat);
 
 					cfINIApps[cfINInApps-1].nkeys++;
-					cfINIApps[cfINInApps-1].keys=realloc(cfINIApps[cfINInApps-1].keys, sizeof(cfINIApps[cfINInApps-1].keys[0])*(index+1));
+					memtmp = realloc(cfINIApps[cfINInApps-1].keys, sizeof(cfINIApps[cfINInApps-1].keys[0])*(index+1));
+					if (!memtmp) { fprintf (stderr, "cfReadINIFile() realloc failed #5 (%ld)\n", sizeof(cfINIApps[cfINInApps-1].keys[0])*(index+1)); _exit(1); }
+					cfINIApps[cfINInApps-1].keys = memtmp;
 					cfINIApps[cfINInApps-1].keys[index].key=strdup("_");
 					cfINIApps[cfINInApps-1].keys[index].key[0]=*argvstat;
 					argvstat++;
@@ -289,7 +300,9 @@ static int cfReadINIFile(int argc, char *argv[])
 			}
 
 		cfINInApps++;
-		cfINIApps=realloc(cfINIApps, sizeof(cfINIApps[cfINInApps])*cfINInApps);
+		memtmp = realloc(cfINIApps, sizeof(cfINIApps[cfINInApps])*cfINInApps);
+		if (!memtmp) { fprintf (stderr, "cfReadINIFile() realloc failed #6 (%ld)\n", sizeof(cfINIApps[cfINInApps])*cfINInApps); _exit(1); }
+		cfINIApps = memtmp;
 		cfINIApps[cfINInApps-1].app=strdup("CommandLine");
 		cfINIApps[cfINInApps-1].keys=NULL;
 		cfINIApps[cfINInApps-1].nkeys=0;
@@ -305,7 +318,9 @@ static int cfReadINIFile(int argc, char *argv[])
 					break;
 
 				cfINIApps[cfINInApps-1].nkeys++;
-				cfINIApps[cfINInApps-1].keys=realloc(cfINIApps[cfINInApps-1].keys, sizeof(cfINIApps[cfINInApps-1].keys[0])*(index+1));
+				memtmp = realloc(cfINIApps[cfINInApps-1].keys, sizeof(cfINIApps[cfINInApps-1].keys[0])*(index+1));
+				if (!memtmp) { fprintf (stderr, "cfReadINIFile() realloc failed #7 (%ld)\n", sizeof(cfINIApps[cfINInApps-1].keys[0])*(index+1)); _exit(1); }
+				cfINIApps[cfINInApps-1].keys = memtmp;
 				cfINIApps[cfINInApps-1].keys[index].key=strdup("_");
 				cfINIApps[cfINInApps-1].keys[index].key[0]=argv[c][1];
 				cfINIApps[cfINInApps-1].keys[index].str=strdup(argv[c]+2);
@@ -314,7 +329,9 @@ static int cfReadINIFile(int argc, char *argv[])
 			}
 
 		cfINInApps++;
-		cfINIApps=realloc(cfINIApps, sizeof(cfINIApps[cfINInApps])*cfINInApps);
+		memtmp = realloc(cfINIApps, sizeof(cfINIApps[cfINInApps])*cfINInApps);
+		if (!memtmp) { fprintf (stderr, "cfReadINIFile() realloc failed #8 (%ld)\n", sizeof(cfINIApps[cfINInApps])*cfINInApps); _exit(1); }
+		cfINIApps = memtmp;
 		cfINIApps[cfINInApps-1].app=strdup("CommandLine--");
 		cfINIApps[cfINInApps-1].keys=NULL;
 		cfINIApps[cfINInApps-1].nkeys=0;
@@ -330,7 +347,9 @@ static int cfReadINIFile(int argc, char *argv[])
 					break;
 
 				cfINIApps[cfINInApps-1].nkeys++;
-				cfINIApps[cfINInApps-1].keys=realloc(cfINIApps[cfINInApps-1].keys, sizeof(cfINIApps[cfINInApps-1].keys[0])*(index+1));
+				memtmp = realloc(cfINIApps[cfINInApps-1].keys, sizeof(cfINIApps[cfINInApps-1].keys[0])*(index+1));
+				if (!memtmp) { fprintf (stderr, "cfReadINIFile() realloc failed #9 (%ld)\n", sizeof(cfINIApps[cfINInApps-1].keys[0])*(index+1)); _exit(1); }
+				cfINIApps[cfINInApps-1].keys = memtmp;
 				cfINIApps[cfINInApps-1].keys[index].key=strdup(argv[c]+2);
 				cfINIApps[cfINInApps-1].keys[index].str=strdup("1");
 				cfINIApps[cfINInApps-1].keys[index].linenum=-1;
@@ -338,7 +357,9 @@ static int cfReadINIFile(int argc, char *argv[])
 			}
 
 		cfINInApps++;
-		cfINIApps=realloc(cfINIApps, sizeof(cfINIApps[cfINInApps])*cfINInApps);
+		memtmp = realloc(cfINIApps, sizeof(cfINIApps[cfINInApps])*cfINInApps);
+		if (!memtmp) { fprintf (stderr, "cfReadINIFile() realloc failed #10 (%ld)\n", sizeof(cfINIApps[cfINInApps])*cfINInApps); _exit(1); }
+		cfINIApps = memtmp;
 		cfINIApps[cfINInApps-1].app=strdup("CommandLine_Files");
 		cfINIApps[cfINInApps-1].keys=NULL;
 		cfINIApps[cfINInApps-1].nkeys=0;
@@ -373,7 +394,9 @@ static int cfReadINIFile(int argc, char *argv[])
 					else
 						sprintf(buffer, "playlist%d", playlists++);
 					cfINIApps[cfINInApps-1].nkeys++;
-					cfINIApps[cfINInApps-1].keys=realloc(cfINIApps[cfINInApps-1].keys, sizeof(cfINIApps[cfINInApps-1].keys[0])*(index+1));
+					memtmp = realloc(cfINIApps[cfINInApps-1].keys, sizeof(cfINIApps[cfINInApps-1].keys[0])*(index+1));
+					if (!memtmp) { fprintf (stderr, "cfReadINIFile() realloc failed #11 (%ld)\n", sizeof(cfINIApps[cfINInApps-1].keys[0])*(index+1)); _exit(1); }
+					cfINIApps[cfINInApps-1].keys = memtmp;
 					cfINIApps[cfINInApps-1].keys[index].key=strdup(buffer);
 					cfINIApps[cfINInApps-1].keys[index].str=strdup(argv[c]+(argv[c][0]=='@'?1:0));
 					cfINIApps[cfINInApps-1].keys[index].linenum=-1;
@@ -435,6 +458,7 @@ const char *cfGetProfileString2(const char *app, const char *app2, const char *k
 void cfSetProfileString(const char *app, const char *key, const char *str)
 {
 	int i, j;
+	void *memtmp;
 	for (i=0; i<cfINInApps; i++)
 		if (!strcasecmp(cfINIApps[i].app, app))
 		{
@@ -449,7 +473,9 @@ void cfSetProfileString(const char *app, const char *key, const char *str)
 doappend:
 			j=cfINIApps[i].nkeys;
 			cfINIApps[i].nkeys++;
-			cfINIApps[i].keys=realloc(cfINIApps[i].keys, sizeof(cfINIApps[i].keys[0])*(j+1));
+			memtmp = realloc(cfINIApps[i].keys, sizeof(cfINIApps[i].keys[0])*(j+1));
+			if (!memtmp) { fprintf (stderr, "cfSetProfileString() realloc failed #1 (%ld)\n", sizeof(cfINIApps[i].keys[0])*(j+1)); _exit(1); }
+			cfINIApps[i].keys = memtmp;
 			cfINIApps[i].keys[j].key=strdup(key);
 			cfINIApps[i].keys[j].str=strdup(str);
 			cfINIApps[i].keys[j].comment=NULL;
@@ -457,7 +483,9 @@ doappend:
 			return;
 		}
 	cfINInApps++;
-	cfINIApps=realloc(cfINIApps, sizeof(cfINIApps[cfINInApps])*cfINInApps);
+	memtmp = realloc(cfINIApps, sizeof(cfINIApps[cfINInApps])*cfINInApps);
+	if (!memtmp) { fprintf (stderr, "cfSetProfileString() realloc failed #2 (%ld)\n", sizeof(cfINIApps[cfINInApps])*cfINInApps); _exit(1); }
+	cfINIApps = memtmp;
 	cfINIApps[i].app=strdup(app);
 	cfINIApps[i].keys=NULL;
 	cfINIApps[i].nkeys=0;
