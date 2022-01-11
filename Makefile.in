@@ -52,6 +52,7 @@ endif
 	mkdir -p "$(DESTDIR)$(BINDIR)"
 	$(CP) ocp "$(DESTDIR)$(BINDIR)/ocp$(DIR_SUFFIX)"
 	if ! test -z $(DIR_SUFFIX); then ln -sf "ocp$(DIR_SUFFIX)" "$(DESTDIR)$(BINDIR)/ocp"; fi
+ifeq ($(DIR_SUFFIX),)
 	$(CP) ocp-curses "$(DESTDIR)$(BINDIR)/ocp-curses"
 ifeq ($(LINUX),1)
 	$(CP) ocp-vcsa "$(DESTDIR)$(BINDIR)/ocp-vcsa"
@@ -64,6 +65,7 @@ ifeq ($(HAVE_SDL2),1)
 endif
 ifeq ($(HAVE_X11),1)
 	$(CP) ocp-x11 "$(DESTDIR)$(BINDIR)/ocp-x11"
+endif
 endif
 	$(MAKE) -C doc DESTDIR="$(DESTDIR)" install TOPDIR="../$(TOPDIR)"
 
@@ -136,7 +138,7 @@ endif
 	$(MAKE) -C stuff TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C medialib TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C doc TOPDIR="../$(TOPDIR)" uninstall
-	rm -Rf "$(DESTDIR)$(DOCDIR)" "$(DESTDIR)$(DATADIR)/ocp$(DIR_SUFFIX)" "$(DESTDIR)$(LIBDIR)" "$(DESTDIR)$(BINDIR)/ocp$(DIR_SUFFIX)" "$(DESTDIR)$(BINDIR)/ocp" "$(DESTDIR)$(BINDIR)/ocp-curses" "$(DESTDIR)$(BINDIR)/ocp-sdl" "$(DESTDIR)$(BINDIR)/ocp-vcsa" "$(DESTDIR)$(BINDIR)/ocp-x11"
+	rm -Rf "$(DESTDIR)$(DOCDIR)" "$(DESTDIR)$(DATADIR)/ocp$(DIR_SUFFIX)" "$(DESTDIR)$(LIBDIR)" "$(DESTDIR)$(BINDIR)/ocp$(DIR_SUFFIX)" "$(DESTDIR)$(BINDIR)/ocp" "$(DESTDIR)$(BINDIR)/ocp-curses" "$(DESTDIR)$(BINDIR)/ocp-sdl" "$(DESTDIR)$(BINDIR)/ocp-sdl2" "$(DESTDIR)$(BINDIR)/ocp-vcsa" "$(DESTDIR)$(BINDIR)/ocp-x11"
 	rm -f "$(DESTDIR)$(DATAROOTDIR)/applications/opencubicplayer.desktop" "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/16x16/apps/opencubicplayer.xpm" "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/48x48/apps/opencubicplayer.xpm"
 
 dirs:
@@ -229,6 +231,7 @@ distclean: clean
 		goodies/pack/Makefile \
 		ocp.ini \
 		desktop/opencubicplayer.desktop \
+		doc/ocp.1 \
 		doc/opencp.dox \
 		doc/texi/faq.texi \
 		doc/texi/ocp.texi \

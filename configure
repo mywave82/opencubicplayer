@@ -631,6 +631,7 @@ HAVE_LZW
 HAVE_MAKEINFO
 DUMA_LIBS
 EFENCE_LIBS
+MANDIR
 DATAROOTDIR
 DATADIR
 SYSCONFDIR
@@ -13011,6 +13012,25 @@ fi
   prefix=$prefix_save
   exec_prefix=$exec_prefix_save
 
+
+  EXP_VAR=MANDIR
+  FROM_VAR=$mandir
+  prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+  full_var="$FROM_VAR"
+  while true; do
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var" = "x$full_var"; then :
+  break
+fi
+    full_var=$new_full_var
+  done
+  full_var=$new_full_var
+  MANDIR="$full_var"
+
+  prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+
 cat >>confdefs.h <<_ACEOF
 #define DATADIR "$DATADIR"
 _ACEOF
@@ -13425,6 +13445,8 @@ ac_config_files="$ac_config_files doc/opencp.dox"
 ac_config_files="$ac_config_files doc/texi/faq.texi"
 
 ac_config_files="$ac_config_files doc/texi/ocp.texi"
+
+ac_config_files="$ac_config_files doc/ocp.1"
 
 ac_config_files="$ac_config_files playsid/libsidplayfp-git/src/builders/resid-builder/resid/siddefs.h"
 
@@ -14132,6 +14154,7 @@ do
     "doc/opencp.dox") CONFIG_FILES="$CONFIG_FILES doc/opencp.dox" ;;
     "doc/texi/faq.texi") CONFIG_FILES="$CONFIG_FILES doc/texi/faq.texi" ;;
     "doc/texi/ocp.texi") CONFIG_FILES="$CONFIG_FILES doc/texi/ocp.texi" ;;
+    "doc/ocp.1") CONFIG_FILES="$CONFIG_FILES doc/ocp.1" ;;
     "playsid/libsidplayfp-git/src/builders/resid-builder/resid/siddefs.h") CONFIG_FILES="$CONFIG_FILES playsid/libsidplayfp-git/src/builders/resid-builder/resid/siddefs.h" ;;
     "playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h") CONFIG_FILES="$CONFIG_FILES playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h" ;;
 

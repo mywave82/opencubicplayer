@@ -22,7 +22,7 @@ install: all
 	mkdir -p "$(DESTDIR)$(DOCDIR)/html"
 	$(CP) -R ocp.html/* "$(DESTDIR)$(DOCDIR)/html"
 uninstall:
-	install-info --delete --dir-file="$(DESTDIR)$(INFODIR)/dir" "$(DESTDIR)$(INFODIR)/ocp.info.gz"
+	install-info --delete --dir-file="$(DESTDIR)$(INFODIR)/dir" "$(DESTDIR)$(INFODIR)/ocp.info.gz" || true
 	rm -f "$(DESTDIR)$(INFODIR)/ocp.info.gz"
 	rm -Rf "$(DESTDIR)$(DOCDIR)/html"
 else

@@ -1,0 +1,56 @@
+.TH OCP 1 "January 9, 2022"
+.SH NAME
+ocp \- music player
+.SH SYNOPSIS
+.B ocp
+.RI "[ options ] [ playlist ] [ modulename ]"
+.SH DESCRIPTION
+This manual page documents briefly the
+.B ocp
+command.
+.PP
+\fBocp\fP is a music player which can play music modules (ahx, mdl, it, s3m,
+xm, mod), wave, audio CD, sid, midi, mp3, adlib, flac, ym, and ogg vorbis.
+.PP
+The player has a built\-in file selector which can be configured using alt\-c.
+.PP
+At any time, press F1 to open the internal help-browser or ALT+k to see a list
+of the possible short-keys at your current view.
+.PP
+If ran with SDL output mode, some extra graphical effects are available.
+.SH OPTIONS
+.TP
+.IP \-h
+Show summary of options.
+.IP \-c
+Use specific configuration.
+.IP \-f
+Fileselector settings
+.IP \-v
+Sound settings
+.IP \-s
+Device settings
+.IP \-p
+Quit when playlist is empty.
+.SH EXAMPLE
+.PP
+\fBocp \-fl0,r1 \-vf2 \-spdevpdisk \-sr48000 fegolhuz.xm\fR
+.PP
+Renders the module to HD.
+.SH SEE ALSO
+.BR oggenc (1),
+.BR flac (1),
+.BR lame (1).
+
+info ocp
+.PP
+@DOCDIR@
+.PP
+You can find a more detailed document about the original DOS version here at
+http://www.cubic.org/player/opencp.pdf .
+.SH AUTHOR
+Open Cubic Player was written by Niklas Beisert and ported to Linux
+by Stian Sebastian Skjelstad.
+.PP
+This manual page was written by G\[:u]rkan Myczko <tar@debian.org>,
+for the Debian project (but may be used by others).

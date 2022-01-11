@@ -14,6 +14,7 @@ dev/smpman_asminctest
 devw/test-dwmixa
 devw/test-dwmixfa
 devw/test-dwmixqa
+doc/ocp.1
 doc/opencp.dox
 doc/texi/faq.texi
 doc/texi/install.texi
