@@ -10291,7 +10291,7 @@ fi
 
 fi
 
-if test "x$with_x11" != "xno"; then :
+if test "x$with_x11" = "xno"; then :
 
 	X11_LIBS=
 	HAVE_X11=

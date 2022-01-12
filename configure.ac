@@ -384,7 +384,7 @@ AS_IF([test "x$with_x11" != "xno"], [
 	LIBS=$push_LIBS
 ])
 AC_SUBST(HAVE_X11)
-AS_IF([test "x$with_x11" != "xno"], [
+AS_IF([test "x$with_x11" = "xno"], [
 	X11_LIBS=
 	HAVE_X11=
 ],[
