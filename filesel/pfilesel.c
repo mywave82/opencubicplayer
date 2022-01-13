@@ -86,6 +86,7 @@
 #include "filesystem-zip.h"
 #include "mdb.h"
 #include "modlist.h"
+#include "musicbrainz.h"
 #include "pfilesel.h"
 #include "stuff/compat.h"
 #include "stuff/framelock.h"
@@ -839,6 +840,9 @@ int fsPreInit(void)
 	if (!dirdbInit())
 		return 0;
 
+	if (!musicbrainz_init())
+		return 0;
+
 	fsRegisterExt("DEV");
 	mt.integer.i = MODULETYPE("DEVv");
 	fsTypeRegister (mt, DEVv_description, "VirtualInterface", &DEVv_p);
@@ -973,6 +977,7 @@ void fsClose(void)
 	filesystem_drive_done ();
 	dmCurDrive = 0;
 
+	musicbrainz_done();
 	adbMetaClose();
 	mdbClose();
 	if (moduleextensions)

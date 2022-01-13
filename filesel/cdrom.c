@@ -47,6 +47,7 @@
 #include "filesystem-drive.h"
 #include "filesystem-file-mem.h"
 #include "mdb.h"
+#include "musicbrainz.h"
 #include "pfilesel.h"
 #include "stuff/err.h"
 
@@ -67,6 +68,8 @@ static struct cdrom_t
 
 	struct ioctl_cdrom_readtoc_request_t lasttoc;
 	char *lastdiscid;
+	void *musicbrainzhandle;
+	struct musicbrainz_database_h *musicbrainzdata;
 } *cdroms = 0;
 static int cdromn = 0;
 
@@ -141,6 +144,8 @@ static void try(const char *dev, const char *vdev)
 			cdroms[cdromn].request_returnvalue=0;
 			cdroms[cdromn].shutdown=0;
 			cdroms[cdromn].lastdiscid=0;
+			cdroms[cdromn].musicbrainzhandle=0;
+			cdroms[cdromn].musicbrainzdata=0;
 
 			fcntl(fd, F_SETFD, 1);
 			cdromn++;
@@ -702,12 +707,23 @@ leadout:
 		if (t)
 		{
 			dh->owner->cdrom->lastdiscid = strdup(t);
+			if (dh->owner->cdrom->musicbrainzhandle)
+			{
+				musicbrainz_lookup_discid_cancel (dh->owner->cdrom->musicbrainzhandle);
+				dh->owner->cdrom->musicbrainzhandle = 0;
+			}
+			if (dh->owner->cdrom->musicbrainzdata)
+			{
+				musicbrainz_database_h_free (dh->owner->cdrom->musicbrainzdata);
+				dh->owner->cdrom->musicbrainzdata = 0;
+			}
+			dh->owner->cdrom->musicbrainzhandle = musicbrainz_lookup_discid_init (dh->owner->cdrom->lastdiscid, &dh->owner->cdrom->musicbrainzdata);
 		}
 failout:
-			if (did)
-			{
-				discid_free (did);
-			}
+		if (did)
+		{
+			discid_free (did);
+		}
 	}
 
 	return dh;
@@ -737,6 +753,16 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 	uint32_t mdb_ref;
 	struct moduleinfostruct mi;
 	char filename[64];
+
+	if (dh->owner->cdrom->musicbrainzhandle)
+	{
+		if (musicbrainz_lookup_discid_iterate (dh->owner->cdrom->musicbrainzhandle, &dh->owner->cdrom->musicbrainzdata))
+		{
+			usleep (1000); /* anything is better than nothing... */
+			return 1;      /* this will throttle this CPU core */
+		}
+		dh->owner->cdrom->musicbrainzhandle = 0;
+	}
 
 	if ((dh->i > dh->tochdr.cdth_trk1) || (dh->i >= 100)) /* last check is not actually needed */
 	{
@@ -773,8 +799,28 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 					mi.modtype.integer.i=MODULETYPE("CDA");
 					mi.channels=2;
 					mi.playtime=(dh->lastlba - dh->initlba) / CD_FRAMES;
-					strcpy(mi.comment, dh->owner->cdrom->vdev);
-					strcpy(mi.title, "CDROM audio disc");
+					if (dh->owner->cdrom->musicbrainzdata)
+					{
+						strcpy(mi.comment, "Looked up via Musicbrainz");
+					} else {
+						strcpy(mi.comment, dh->owner->cdrom->vdev);
+					}
+					if (dh->owner->cdrom->musicbrainzdata && dh->owner->cdrom->musicbrainzdata->album[0])
+					{
+						snprintf (mi.title, sizeof (mi.title), "%s", dh->owner->cdrom->musicbrainzdata->album);
+						snprintf (mi.album, sizeof (mi.album), "%s", dh->owner->cdrom->musicbrainzdata->album);
+					} else if (!mi.title[0])
+					{
+						strcpy(mi.title, "CDROM audio disc");
+					}
+					if (dh->owner->cdrom->musicbrainzdata && dh->owner->cdrom->musicbrainzdata->artist[0][0])
+					{
+						snprintf (mi.artist, sizeof (mi.artist), "%s", dh->owner->cdrom->musicbrainzdata->artist[0]);
+					}
+					if (dh->owner->cdrom->musicbrainzdata && dh->owner->cdrom->musicbrainzdata->date[0])
+					{
+						mi.date = dh->owner->cdrom->musicbrainzdata->date[0];
+					}
 					mdbWriteModuleInfo (mdb_ref, &mi);
 				}
 			}
@@ -788,7 +834,7 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 	if (!dh->owner->cdrom->lasttoc.track[dh->i].is_data)
 	{
 		snprintf(filename, sizeof (filename), "%sTRACK%02u.CDA", dh->owner->cdrom->lastdiscid ? dh->owner->cdrom->lastdiscid : "", dh->i);
-		int len = (dh->owner->cdrom->lasttoc.track[dh->i + 1].lba_addr - dh->owner->cdrom->lasttoc.track[dh->i].lba_addr) * 2352;
+		int len = (dh->owner->cdrom->lasttoc.track[dh->i + 1].lba_addr - dh->owner->cdrom->lasttoc.track[dh->i].lba_addr);
 
 		if (dh->initlba < 0)
 		{
@@ -818,7 +864,7 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 
 		dh->owner->head.ref (&dh->owner->head);
 		file->cdrom = dh->owner->cdrom;
-		mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, len);
+		mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, len * 2352);
 		if (mdb_ref != UINT32_MAX)
 		{
 			if (mdbGetModuleInfo(&mi, mdb_ref))
@@ -826,8 +872,32 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 				mi.modtype.integer.i=MODULETYPE("CDA");
 				mi.channels=2;
 				mi.playtime=len / CD_FRAMES;
-				strcpy(mi.comment, dh->owner->cdrom->vdev);
-				strcpy(mi.title, "CDROM audio track");
+				if (dh->owner->cdrom->musicbrainzdata)
+				{
+					strcpy(mi.comment, "Looked up via Musicbrainz");
+				} else {
+					strcpy(mi.comment, dh->owner->cdrom->vdev);
+				}
+				if (dh->owner->cdrom->musicbrainzdata && dh->owner->cdrom->musicbrainzdata->album[0])
+				{
+					snprintf (mi.album, sizeof (mi.album), "%s", dh->owner->cdrom->musicbrainzdata->album);
+				}
+				if (dh->owner->cdrom->musicbrainzdata && dh->owner->cdrom->musicbrainzdata->title[dh->i])
+				{
+					snprintf (mi.title, sizeof (mi.title), "%s", dh->owner->cdrom->musicbrainzdata->title[dh->i]);
+				} else if (!mi.title[0])
+				{
+					strcpy(mi.title, "CDROM audio track");
+				}
+				if (dh->owner->cdrom->musicbrainzdata && dh->owner->cdrom->musicbrainzdata->artist[dh->i][0])
+				{
+					snprintf (mi.artist, sizeof (mi.artist), "%s", dh->owner->cdrom->musicbrainzdata->artist[dh->i]);
+				}
+				if (dh->owner->cdrom->musicbrainzdata && dh->owner->cdrom->musicbrainzdata->date[dh->i])
+				{
+					mi.date = dh->owner->cdrom->musicbrainzdata->date[dh->i];
+				}
+
 				mdbWriteModuleInfo (mdb_ref, &mi);
 			}
 		}

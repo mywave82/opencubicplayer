@@ -52,6 +52,8 @@ static int fsReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, co
 		strcpy(m->title, "openCP dirdb/medialib: db v1");
 	if (!memcmp(buf, dirdbsigv2, sizeof(dirdbsigv2)))
 		strcpy(m->title, "openCP dirdb/medialib: db v2");
+	if (!memcmp(buf, "Cubic Player MusicBrainz Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 64))
+		strcpy(m->title, "openCP MusicBrainz Data Base");
 	return 0;
 }
 

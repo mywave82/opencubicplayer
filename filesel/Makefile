@@ -27,8 +27,9 @@ filesystem-unix.o             \
 filesystem-z.o                \
 filesystem-zip.o              \
 fsptype.o                     \
-modlist.o                     \
 mdb.o                         \
+modlist.o                     \
+musicbrainz.o                 \
 pfilesel.o                    \
 pfsmain.o
 
@@ -51,7 +52,7 @@ cdrom$(LIB_SUFFIX): $(cdrom_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ $(PTHREAD_LIBS) $(LIBDISCID_LIBS)
 
 pfilesel$(LIB_SUFFIX): $(pfilesel_so)
-	$(CC) $(SHARED_FLAGS) $(MATH_LIBS) $(ICONV_LIBS) -o $@ $^ -lbz2 -lz
+	$(CC) $(SHARED_FLAGS) -o $@ $^ -lbz2 -lz $(MATH_LIBS) $(ICONV_LIBS) $(LIBCJSON_LIBS)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX) adbmeta-test dirdb-test filesystem-bzip2-test filesystem-filehandle-cache-test filesystem-gzip-test filesystem-tar-test mdb-test
@@ -124,6 +125,7 @@ cdrom.o: cdrom.c \
 	filesystem-drive.h \
 	filesystem-file-mem.h \
 	mdb.h \
+	musicbrainz.h \
 	pfilesel.h \
 	../stuff/err.h
 	$(CC) $< -o $@ -c $(LIBDISCID_CFLAGS)
@@ -362,6 +364,14 @@ mdb-test: mdb-test.c \
 	../stuff/imsrtns.h
 	$(CC) $< -o $@
 
+musicbrainz.o: musicbrainz.c \
+	../config.h \
+	../types.h \
+	../boot/psetting.h \
+	musicbrainz.h \
+	../stuff/compat.h
+	$(CC) $< -o $@ -c $(LIBCJSON_CFLAGS)
+
 cphlpfs.o: cphlpfs.c \
 	../config.h \
 	../types.h \
@@ -416,6 +426,7 @@ pfilesel.o: pfilesel.c \
 	filesystem-zip.h \
 	mdb.h \
 	modlist.h \
+	musicbrainz.h \
 	pfilesel.h \
 	../stuff/compat.h \
 	../stuff/framelock.h \

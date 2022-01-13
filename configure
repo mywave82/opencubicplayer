@@ -656,6 +656,8 @@ HAVE_ADPLUG
 HAVE_ALSA
 ALSA_LIBS
 ALSA_CFLAGS
+LIBCJSON_LIBS
+LIBCJSON_CFLAGS
 LIBDISCID_LIBS
 LIBDISCID_CFLAGS
 HAVE_SIDPLAYFP_BUILDERS_RESID_H
@@ -860,6 +862,8 @@ ADPLUG_LIBS
 XA
 LIBDISCID_CFLAGS
 LIBDISCID_LIBS
+LIBCJSON_CFLAGS
+LIBCJSON_LIBS
 ALSA_CFLAGS
 ALSA_LIBS
 OSS_CFLAGS
@@ -1587,6 +1591,10 @@ Some influential environment variables:
               C compiler flags for LIBDISCID, overriding pkg-config
   LIBDISCID_LIBS
               linker flags for LIBDISCID, overriding pkg-config
+  LIBCJSON_CFLAGS
+              C compiler flags for LIBCJSON, overriding pkg-config
+  LIBCJSON_LIBS
+              linker flags for LIBCJSON, overriding pkg-config
   ALSA_CFLAGS C compiler flags for ALSA, overriding pkg-config
   ALSA_LIBS   linker flags for ALSA, overriding pkg-config
   OSS_CFLAGS  C compiler flags for OSS, overriding pkg-config
@@ -12506,6 +12514,77 @@ $as_echo "no" >&6; }
 else
 	LIBDISCID_CFLAGS=$pkg_cv_LIBDISCID_CFLAGS
 	LIBDISCID_LIBS=$pkg_cv_LIBDISCID_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libcjson" >&5
+$as_echo_n "checking for libcjson... " >&6; }
+
+if test -n "$LIBCJSON_CFLAGS"; then
+    pkg_cv_LIBCJSON_CFLAGS="$LIBCJSON_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libcjson\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libcjson") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBCJSON_CFLAGS=`$PKG_CONFIG --cflags "libcjson" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBCJSON_LIBS"; then
+    pkg_cv_LIBCJSON_LIBS="$LIBCJSON_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libcjson\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libcjson") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBCJSON_LIBS=`$PKG_CONFIG --libs "libcjson" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBCJSON_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libcjson" 2>&1`
+        else
+	        LIBCJSON_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libcjson" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBCJSON_PKG_ERRORS" >&5
+
+	as_fn_error $? "libcjson not found" "$LINENO" 5
+elif test $pkg_failed = untried; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	as_fn_error $? "libcjson not found" "$LINENO" 5
+else
+	LIBCJSON_CFLAGS=$pkg_cv_LIBCJSON_CFLAGS
+	LIBCJSON_LIBS=$pkg_cv_LIBCJSON_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 

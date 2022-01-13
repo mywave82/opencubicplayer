@@ -651,6 +651,7 @@ AC_SUBST(HAVE_SIDPLAYFP_BUILDERS_RESID_H)
 AC_LANG_POP()
 
 PKG_CHECK_MODULES([LIBDISCID],[libdiscid],[],[AC_MSG_ERROR([libdiscid not found])])
+PKG_CHECK_MODULES([LIBCJSON],[libcjson],[],[AC_MSG_ERROR([libcjson not found])])
 
 AS_IF([test "x$with_alsa" != "xno"],[
 	PKG_CHECK_MODULES([ALSA],[alsa],[],[
