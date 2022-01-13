@@ -1168,9 +1168,9 @@ static void displayfile(const unsigned int y, unsigned int x, unsigned int width
 						if (mi.date>>16)
 						{
 							snprintf (temp + 7, sizeof (temp) - 7, "%4d", (mi.date >> 16));
-							if (!((mi.date>>16)/100))
+							if ((mi.date>>16) <= 100)
 							{
-								temp[7] = '\'';
+								temp[8] = '\'';
 							}
 						}
 						displaystr (y, x + width - 11 - 11, col, temp, 11); // include one padding
@@ -1225,9 +1225,9 @@ static void displayfile(const unsigned int y, unsigned int x, unsigned int width
 						if (mi.date>>16)
 						{
 							snprintf (temp + 7, sizeof (temp) - 7, "%4d", (mi.date >> 16));
-							if (!((mi.date>>16)/100))
+							if ((mi.date>>16) <= 100)
 							{
-								temp[7] = '\'';
+								temp[8] = '\'';
 							}
 						}
 						displaystr (y, x + width - 11, col, temp, 11);
@@ -1329,7 +1329,7 @@ static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry
 		if (mi->date >> 16)
 		{
 			snprintf (temp+6, 5, "%4d", mi->date >> 16);
-			if (!((mi->date>>16)/100))
+			if ((mi->date>>16) <= 100)
 			{
 				temp[7] = '\'';
 			}
@@ -1484,7 +1484,7 @@ static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentr
 		if (mi->date >> 16)
 		{
 			snprintf (temp+6, 5, "%4d", mi->date >> 16);
-			if (!((mi->date>>16)/100))
+			if ((mi->date>>16) <= 100)
 			{
 				temp[7] = '\'';
 			}
@@ -2304,8 +2304,12 @@ static int fsEditDate(int y, int x, uint32_t *date)
 	{
 		curpos = 0;
 
-		snprintf (str, sizeof (str), "%02d.%02d.%02d", (*date)&0xFF, ((*date)>>8)&0xFF, (*date)>>16);
-
+		snprintf (str, sizeof (str), "%02d.%02d.%04d", (*date)&0xFF, ((*date)>>8)&0xFF, (*date)>>16);
+		if ((((*date)>>16) > 0) && (((*date)>>16) < 100))
+		{
+			str[6] = ' ';
+			str[7] = '\'';
+		}
 		setcurshape(1);
 		state = 1;
 	}
@@ -2341,7 +2345,8 @@ static int fsEditDate(int y, int x, uint32_t *date)
 			case '\'':
 				if (curpos==6)
 				{
-					str[6]=str[7]='0';
+					str[6]=' ';
+					str[7]='\'';
 					curpos=8;
 				}
 				break;
@@ -2364,6 +2369,10 @@ static int fsEditDate(int y, int x, uint32_t *date)
 					break;
 				if (curpos<10)
 					str[curpos]=key;
+				if ((str[6]!=' ') && (str[7] == '\''))
+				{
+					str[7]='0';
+				}
 				/* fall-through */
 			case KEY_RIGHT:
 				curpos="\x01\x03\xff\x04\x06\xff\x07\x08\x09\x09"[curpos];
@@ -2382,7 +2391,16 @@ static int fsEditDate(int y, int x, uint32_t *date)
 				*date=((str[0]-'0')*10+
 				        str[1]-'0')|
 				     (((str[3]-'0')*10+
-				        str[4]-'0')<<8) | (atoi (str + 6) << 16);
+				        str[4]-'0')<<8);
+				if ((str[7]=='\'') && (str[8]=='0') && (str[9]=='0'))
+				{ /* special case for '00 (year 2000 ) */
+					*date += 100 << 16;
+				} else if (str[7] == '\'')
+				{
+					*date +=(atoi (str + 8) << 16);
+				} else {
+					*date += (atoi (str + 6) << 16);
+				}
 				setcurshape(0);
 				state = 0;
 				return 0;
