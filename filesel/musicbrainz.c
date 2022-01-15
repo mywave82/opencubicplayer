@@ -1443,8 +1443,58 @@ static interfaceReturnEnum musicbrainzSetupRun (void)
 							{
 								while (musicbrainz_lookup_discid_iterate (handle, &result))
 								{
-#warning TODO, draw while waiting
+									int superbreak = 0;
+									int mlWidth = 55;
+									int mlHeight = 7;
+									int mlTop = (plScrHeight - mlHeight) / 2 ;
+									int mlLeft = (plScrWidth - mlWidth) / 2;
+
+									fsDraw();
+
+									displaychr  (mlTop + 0, mlLeft,               0x67, '\xda', 1);
+									displaychr  (mlTop + 0, mlLeft + 1,           0x67, '\xc4', mlWidth - 2);
+									displaychr  (mlTop + 0, mlLeft + mlWidth - 1, 0x67, '\xbf', 1);
+
+									displaychr  (mlTop + 1, mlLeft,               0x67, '\xb3', 1);
+									displaychr  (mlTop + 1, mlLeft + 1,           0x67, ' ',    mlWidth - 2);
+									displaychr  (mlTop + 1, mlLeft + mlWidth - 1, 0x67, '\xb3', 1);
+
+									displaychr  (mlTop + 2, mlLeft,               0x67, '\xb3', 1);
+									displaychr  (mlTop + 2, mlLeft + 1,           0x67, ' ',    mlWidth - 2);
+									displaychr  (mlTop + 2, mlLeft + mlWidth - 1, 0x67, '\xb3', 1);
+
+									displaychr  (mlTop + 3, mlLeft,               0x67, '\xb3', 1);
+									displaystr  (mlTop + 3, mlLeft + 1,           0x67, "       Refreshing data from MusicBrainz Server", mlWidth - 2);
+									displaychr  (mlTop + 3, mlLeft + mlWidth - 1, 0x67, '\xb3', 1);
+
+									displaychr  (mlTop + 4, mlLeft,               0x67, '\xb3', 1);
+									displaychr  (mlTop + 4, mlLeft + 1,           0x67, ' ',    mlWidth - 2);
+									displaychr  (mlTop + 4, mlLeft + mlWidth - 1, 0x67, '\xb3', 1);
+
+									displaychr  (mlTop + 5, mlLeft,               0x67, '\xb3', 1);
+									displaychr  (mlTop + 5, mlLeft + 1,           0x67, ' ',    mlWidth - 2);
+									displaychr  (mlTop + 5, mlLeft + mlWidth - 1, 0x67, '\xb3', 1);
+
+									displaychr  (mlTop + 6, mlLeft,               0x67, '\xc0', 1);
+									displaychr  (mlTop + 6, mlLeft + 1,           0x67, '\xc4', mlWidth - 2);
+									displaychr  (mlTop + 6, mlLeft + mlWidth - 1, 0x67, '\xd9', 1);
+
 									framelock ();
+
+									while (ekbhit())
+									{
+										int key = egetch();
+										switch (key)
+										{
+											case KEY_ESC:
+												musicbrainz_lookup_discid_cancel (handle);
+												superbreak = 1;
+										}
+									}
+									if (superbreak)
+									{
+										break;
+									}
 								}
 								musicbrainz_database_h_free (result);
 							}
