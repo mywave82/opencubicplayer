@@ -1,4 +1,26 @@
+/* OpenCP Module Player
+ * copyright (c) 2022 Stian Skjelstad <stian.skjelstad@gmail.com>
+ *
+ * Glue logic for fetching and caching data from MusicBrainz
+ * online music database (CDROM).
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
+
 #include "config.h"
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -16,8 +38,17 @@
 #include <cJSON.h>
 #include "types.h"
 #include "boot/psetting.h"
+#include "dirdb.h"
+#include "filesystem.h"
+#include "filesystem-drive.h"
+#include "filesystem-file-mem.h"
+#include "filesystem-setup.h"
 #include "musicbrainz.h"
+#include "pfilesel.h"
 #include "stuff/compat.h"
+#include "stuff/framelock.h"
+#include "stuff/poutput.h"
+#include "stuff/utf-8.h"
 
 const char musicbrainzsigv1[64] = "Cubic Player MusicBrainz Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 
@@ -25,6 +56,7 @@ struct musicbrainz_queue_t;
 struct musicbrainz_queue_t
 {
 	char discid[28+1];
+	char toc[705+1];
 	struct musicbrainz_queue_t *next;
 };
 
@@ -56,9 +88,24 @@ struct musicbrainz_t
 	int errs;
 };
 
+struct musicbrainz_cacheline_sort_t
+{
+	int pointsat;
+	char artist[MDB_COMPOSER_LEN];
+	char album[MDB_COMPOSER_LEN];
+}; // used by musicbrainzSetup
+
 struct musicbrainz_t musicbrainz = {-1, {0, 0}, 0, 0, 0, 0, 0, NULL, NULL, NULL, -1, -1, 0};
 
 static void musicbrainz_parse_release (cJSON *release, struct musicbrainz_database_h **result);
+static const uint32_t SIZE_PRIVATE      = 0x80000000UL;
+static const uint32_t SIZE_VALID        = 0x40000000UL;
+static const uint32_t SIZE_FORCEREFRESH = 0x20000000UL;
+static const uint32_t SIZE_MASK         = 0x000FFFFFUL;
+
+
+static void musicbrainz_setup_init (void);
+static void musicbrainz_setup_done (void);
 
 static int musicbrainz_spawn (struct musicbrainz_queue_t *t)
 {
@@ -130,7 +177,7 @@ static int musicbrainz_spawn (struct musicbrainz_queue_t *t)
 }
 
 
-void *musicbrainz_lookup_discid_init (const char *discid, struct musicbrainz_database_h **result)
+void *musicbrainz_lookup_discid_init (const char *discid, const char *toc, struct musicbrainz_database_h **result)
 {
 	struct musicbrainz_queue_t *t;
 	int i;
@@ -140,6 +187,13 @@ void *musicbrainz_lookup_discid_init (const char *discid, struct musicbrainz_dat
 
 	if (strlen (discid) > 28)
 	{
+		fprintf (stderr, "INVALID DISCID\n");
+		return 0;
+	}
+
+	if (strlen (toc) > 705)
+	{
+		fprintf (stderr, "INVALID TOC\n");
 		return 0;
 	}
 
@@ -148,40 +202,54 @@ void *musicbrainz_lookup_discid_init (const char *discid, struct musicbrainz_dat
 	{
 		if (!strcmp (musicbrainz.cache[i].discid, discid))
 		{
-			if (!musicbrainz.cache[i].lastscan)
-			{
-				break;
-			}
-			if ((musicbrainz.cache[i].lastscan + 60 * 60 * 24 * 7 * 26) < time(0)) /* is record over 26 weeks old */
-			{
-				break;
-			}
-			cJSON *root = cJSON_ParseWithLength (musicbrainz.cache[i].data, musicbrainz.cache[i].size);
-			{
-				cJSON *releases;
-				if (!root)
-				{
-					return 0;
-				}
+			int old = (musicbrainz.cache[i].lastscan + 60 * 60 * 24 * 7 * 26) < time(0); /* is record over 26 weeks old */
+			int private   = !!(musicbrainz.cache[i].size & SIZE_PRIVATE);
+			int valid     = !!(musicbrainz.cache[i].size & SIZE_VALID);
+			uint32_t size = musicbrainz.cache[i].size & SIZE_MASK;
 
-				// we could search for error, but not finding "releases" is sufficient
-				releases = cJSON_GetObjectItem (root, "releases");
-				if (releases)
+			if (private)
+			{
+				return 0;
+			}
+
+			if (musicbrainz.cache[i].size & SIZE_FORCEREFRESH)
+			{
+				break;
+			}
+
+			if (old || (!valid))
+			{ /* it is old or not valid, rescan... */
+				break;
+			}
+
+			{
+				cJSON *root = cJSON_ParseWithLength (musicbrainz.cache[i].data, size);
 				{
-					long releases_count = cJSON_GetArraySize (releases);
-					long releases_iter;
-					for (releases_iter = 0; (releases_iter < releases_count) && releases_iter == 0; releases_iter++)
-					{ /* there should only be 1 release for a discid lookup */
-						cJSON *release = cJSON_GetArrayItem (releases, releases_iter);
-						if (cJSON_IsObject (release))
-						{
-							musicbrainz_parse_release (release, result);
+					cJSON *releases;
+					if (!root)
+					{
+						return 0;
+					}
+
+					// we could search for error, but not finding "releases" is sufficient
+					releases = cJSON_GetObjectItem (root, "releases");
+					if (releases)
+					{
+						long releases_count = cJSON_GetArraySize (releases);
+						long releases_iter;
+						for (releases_iter = 0; (releases_iter < releases_count) && releases_iter == 0; releases_iter++)
+						{ /* there should only be 1 release for a discid lookup */
+							cJSON *release = cJSON_GetArrayItem (releases, releases_iter);
+							if (cJSON_IsObject (release))
+							{
+								musicbrainz_parse_release (release, result);
+							}
 						}
 					}
 				}
+				cJSON_Delete (root);
+				return 0;
 			}
-			cJSON_Delete (root);
-			return 0;
 		}
 	}
 
@@ -192,6 +260,7 @@ void *musicbrainz_lookup_discid_init (const char *discid, struct musicbrainz_dat
 		return 0;
 	}
 	snprintf (t->discid, sizeof (t->discid), "%s", discid);
+	snprintf (t->toc, sizeof (t->toc), "%s", toc);
 
 	/* are we busy */
 	clock_gettime (CLOCK_MONOTONIC, &now);
@@ -454,7 +523,7 @@ static void musicbrainz_parse_release (cJSON *release, struct musicbrainz_databa
 	}
 }
 
-static void musicbrainz_commit_cache (const char *discid, const char *data, const uint32_t datalen)
+static void musicbrainz_commit_cache (const char *discid, const char *data, const uint32_t datalen, int valid)
 {
 	char *datac = 0;
 	int i;
@@ -471,6 +540,10 @@ static void musicbrainz_commit_cache (const char *discid, const char *data, cons
 	{
 		if (!strcmp (musicbrainz.cache[i].discid, discid))
 		{
+			if ((!valid) && (musicbrainz.cache[i].size & SIZE_VALID))
+			{ /* keep the old record */
+				free (datac);
+			}
 			break;
 		}
 	}
@@ -495,7 +568,7 @@ static void musicbrainz_commit_cache (const char *discid, const char *data, cons
 	memcpy (musicbrainz.cache[i].discid, discid, 28);
 	musicbrainz.cache[i].discid[28] = 0;
 	musicbrainz.cache[i].data = datac;
-	musicbrainz.cache[i].size = datalen;
+	musicbrainz.cache[i].size = datalen | (valid?SIZE_VALID:0);
 	musicbrainz.cache[i].lastscan = time (0);
 	musicbrainz.cachedirty = 1;
 	if (musicbrainz.cachedirtyfrom > i)
@@ -510,15 +583,14 @@ static void musicbrainz_finalize (int retval, struct musicbrainz_database_h **re
 
 	if (retval)
 	{
-		fprintf (stderr, "Curl gave error-code: %d\n", retval);
+		/* execute curl failed, error code in RETVAL */
 #if 0
 		write (2, musicbrainz.err, musicbrainz.errs);
 #endif
+		musicbrainz_commit_cache (musicbrainz.active->discid, musicbrainz.active->toc, strlen (musicbrainz.active->toc), 0);
+
 		return;
 	}
-#if 0
-	write (1, musicbrainz.out, musicbrainz.outs);
-#endif
 
 	{
 		cJSON *root = cJSON_ParseWithLength (musicbrainz.out, musicbrainz.outs);
@@ -534,28 +606,18 @@ static void musicbrainz_finalize (int retval, struct musicbrainz_database_h **re
 		{
 			long releases_count = cJSON_GetArraySize (releases);
 			long releases_iter;
-#if 0
-			for (iter = releases->child; iter; iter = iter->next)
-			{
-				fprintf (stderr, " + %s\n", iter->string);
-			}
-#endif
 			for (releases_iter = 0; (releases_iter < releases_count) && releases_iter == 0; releases_iter++)
 			{ /* there should only be 1 release for a discid lookup */
 				cJSON *release = cJSON_GetArrayItem (releases, releases_iter);
-#if 0
-				for (iter = release->child; iter; iter = iter->next)
-				{
-					fprintf (stderr, " + %s\n", iter->string);
-				}
-#endif
 				if (cJSON_IsObject (release))
 				{
 					musicbrainz_parse_release (release, result);
 				}
 			}
 
-			musicbrainz_commit_cache (musicbrainz.active->discid, musicbrainz.out, musicbrainz.outs);
+			musicbrainz_commit_cache (musicbrainz.active->discid, musicbrainz.out, musicbrainz.outs, 1);
+		} else {
+			musicbrainz_commit_cache (musicbrainz.active->discid, musicbrainz.active->toc, strlen (musicbrainz.active->toc), 0);
 		}
 
 		cJSON_Delete (root);
@@ -736,6 +798,7 @@ int musicbrainz_init (void)
 	{
 		return 0;
 	}
+	musicbrainz_setup_init ();
 
 	makepath_malloc (&path, 0, cfConfigDir, "CPMUSBRN.DAT", 0);
 	fprintf (stderr, "Loading %s .. ", path);
@@ -791,13 +854,13 @@ int musicbrainz_init (void)
 		musicbrainz.cache[musicbrainz.cachecount].size = uint32_little (musicbrainz.cache[musicbrainz.cachecount].size);
 		if (musicbrainz.cache[musicbrainz.cachecount].size)
 		{
-			musicbrainz.cache[musicbrainz.cachecount].data = malloc (musicbrainz.cache[musicbrainz.cachecount].size);
+			musicbrainz.cache[musicbrainz.cachecount].data = malloc (musicbrainz.cache[musicbrainz.cachecount].size & SIZE_MASK);
 			if (!musicbrainz.cache[musicbrainz.cachecount].data)
 			{
 				fprintf (stderr, "musicbrainz_init: malloc() failed\n");
 				break;
 			}
-			if (read (musicbrainz.fddb, musicbrainz.cache[musicbrainz.cachecount].data, musicbrainz.cache[musicbrainz.cachecount].size) != musicbrainz.cache[musicbrainz.cachecount].size)
+			if (read (musicbrainz.fddb, musicbrainz.cache[musicbrainz.cachecount].data, (musicbrainz.cache[musicbrainz.cachecount].size & SIZE_MASK)) != (musicbrainz.cache[musicbrainz.cachecount].size & SIZE_MASK))
 			{
 				free (musicbrainz.cache[musicbrainz.cachecount].data);
 				musicbrainz.cache[musicbrainz.cachecount].data = 0;
@@ -819,6 +882,9 @@ void musicbrainz_done (void)
 	{
 		goto done;
 	}
+
+	musicbrainz_setup_done ();
+
 	if (!musicbrainz.cachedirty)
 	{
 		goto done;
@@ -844,7 +910,7 @@ void musicbrainz_done (void)
 	for (i=0; i < musicbrainz.cachedirtyfrom; i++)
 	{
 		pos += 28 + 8 + 4;
-		pos += musicbrainz.cache[i].size;
+		pos += musicbrainz.cache[i].size & SIZE_MASK;
 	}
 	lseek (musicbrainz.fddb, pos, SEEK_SET);
 	for (; i < musicbrainz.cachecount; i++)
@@ -870,7 +936,7 @@ void musicbrainz_done (void)
 		}
 		while (1)
 		{
-			if (write (musicbrainz.fddb, musicbrainz.cache[i].data, musicbrainz.cache[i].size) != musicbrainz.cache[i].size)
+			if (write (musicbrainz.fddb, musicbrainz.cache[i].data, (musicbrainz.cache[i].size & SIZE_MASK)) != (musicbrainz.cache[i].size & SIZE_MASK))
 			{
 				if ((errno != EAGAIN) && (errno != EINTR))
 				{
@@ -882,7 +948,7 @@ void musicbrainz_done (void)
 			}
 		}
 		pos += 28 + 8 + 4;
-		pos += musicbrainz.cache[i].size;
+		pos += (musicbrainz.cache[i].size & SIZE_MASK);
 	}
 	ftruncate (musicbrainz.fddb, pos);
 done:
@@ -905,47 +971,611 @@ void musicbrainz_database_h_free (struct musicbrainz_database_h *e)
 	free (e);
 }
 
-#if 0
-char *cfConfigDir = "/home/stian/.ocp/";
-int main (int argc, char *argv[])
+/****************************** setup/musicbrain.dev ******************************/
+
+static struct ocpfile_t      *musicbrainzsetup; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv
+
+static int                    musicbrainzSetupInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip);
+static interfaceReturnEnum    musicbrainzSetupRun  (void);
+static struct interfacestruct musicbrainzSetupIntr = {musicbrainzSetupInit, musicbrainzSetupRun, 0, "musicbrainzSetup" INTERFACESTRUCT_TAIL};
+
+static void musicbrainz_setup_init (void)
 {
-	void *handle1;
-	void *handle2;
-	struct musicbrainz_database_h *result1 = 0;
-	struct musicbrainz_database_h *result2 = 0;
+	struct moduleinfostruct m;
+	uint32_t mdbref;
 
-	musicbrainz_init ();
-
-	handle1 = musicbrainz_lookup_discid_init (".ye78cxEoC.U3EqVZrpvrJkqPUk-", &result1);
-	handle2 = musicbrainz_lookup_discid_init ("dDeHI5tMISTDAT89ELxkMi1fTNc-", &result2);
-
-	while (handle1 || handle2)
-	{
-		usleep (10000);
-		if (handle1)
-		{
-			if (!musicbrainz_lookup_discid_iterate (handle1, &result1))
-			{
-				handle1 = 0;
-			}
-		}
-		if (handle2)
-		{
-			if (!musicbrainz_lookup_discid_iterate (handle2, &result2))
-			{
-				handle2 = 0;
-			}
-		}
-		fputc('.', stderr);
-	}
-	fputc('\n', stderr);
-
-	musicbrainz_database_h_free (result1);
-	musicbrainz_database_h_free (result2);
-
-	result1 = 0;
-	result2 = 0;
-
-	musicbrainz_done ();
+	musicbrainzsetup = mem_file_open (dmSetup->basedir, dirdbFindAndRef (dmSetup->basedir->dirdb_ref, "musicbrainz.dev", dirdb_use_file), strdup (musicbrainzSetupIntr.name), strlen (musicbrainzSetupIntr.name));
+	dirdbUnref (musicbrainzsetup->dirdb_ref, dirdb_use_file);
+	mdbref = mdbGetModuleReference2 (musicbrainzsetup->dirdb_ref, strlen (musicbrainzSetupIntr.name));
+	mdbGetModuleInfo (&m, mdbref);
+	m.modtype.integer.i = MODULETYPE("DEVv");
+	strcpy (m.title, "MusicBrain Cache DataBase");
+	mdbWriteModuleInfo (mdbref, &m);
+	filesystem_setup_register_file (musicbrainzsetup);
+	plRegisterInterface (&musicbrainzSetupIntr);
 }
-#endif
+
+static void musicbrainz_setup_done (void)
+{
+	plUnregisterInterface (&musicbrainzSetupIntr);
+	if (musicbrainzsetup)
+	{
+		filesystem_setup_unregister_file (musicbrainzsetup);
+		musicbrainzsetup = 0;
+	}
+}
+
+static int musicbrainzSetupInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip)
+{
+	return 1;
+}
+
+static void musicbrainzSetupDialogDraw (struct musicbrainz_cacheline_sort_t *entry, int epos)
+{
+	int mlWidth = 55;
+	int mlHeight = 7;
+	int mlTop = (plScrHeight - mlHeight) / 2 ;
+	int mlLeft = (plScrWidth - mlWidth) / 2;
+
+	displaychr  (mlTop + 0, mlLeft,               0x17, '\xda', 1);
+	displaychr  (mlTop + 0, mlLeft + 1,           0x17, '\xc4', mlWidth - 2);
+	displaychr  (mlTop + 0, mlLeft + mlWidth - 1, 0x17, '\xbf', 1);
+
+	displaychr  (mlTop + 1, mlLeft,               0x17, '\xb3', 1);
+	displaychr  (mlTop + 1, mlLeft + 1,           0x17, ' ',    mlWidth - 2);
+	displaychr  (mlTop + 1, mlLeft + mlWidth - 1, 0x17, '\xb3', 1);
+
+	displaychr  (mlTop + 2, mlLeft,               0x17, '\xb3', 1);
+	displaychr  (mlTop + 2, mlLeft + 1,           0x17, ' ',    2);
+	if (musicbrainz.cache[entry->pointsat].size & SIZE_PRIVATE)
+	{
+		displaystr  (mlTop + 2, mlLeft +  3, (epos==0)?0x2e:0x17, "[Unmark as private]", 19);
+	} else {
+		displaystr  (mlTop + 2, mlLeft +  3, (epos==0)?0x2e:0x17, "[Mark as private]",   17);
+		displaychr  (mlTop + 2, mlLeft + 20, 0x17, ' ',                   2);
+	}
+	displaychr  (mlTop + 2, mlLeft + 22,         0x17, ' ',                   7);
+	if (musicbrainz.cache[entry->pointsat].size & SIZE_PRIVATE)
+	{
+		displaychr  (mlTop + 2, mlLeft + 29, 0x17, ' ',                   23);
+	} else {//(musicbrainz.cache[entry->pointsat].size & SIZE_UNKNOWN)
+		displaystr  (mlTop + 2, mlLeft + 29, (epos==1)?0x2e:0x17, "[Refresh]",  9);
+		displaychr  (mlTop + 2, mlLeft + 38, 0x17, ' ',         14);
+	}
+	displaychr  (mlTop + 2, mlLeft + 52,          0x17, ' ',    mlWidth - 52 - 1);
+	displaychr  (mlTop + 2, mlLeft + mlWidth - 1, 0x17, '\xb3', 1);
+
+	displaychr  (mlTop + 3, mlLeft,               0x17, '\xb3', 1);
+	displaychr  (mlTop + 3, mlLeft + 1,           0x17, ' ',    mlWidth - 2);
+	displaychr  (mlTop + 3, mlLeft + mlWidth - 1, 0x17, '\xb3', 1);
+
+	displaychr  (mlTop + 4, mlLeft,               0x17, '\xb3', 1);
+	displaychr  (mlTop + 4, mlLeft + 1,           0x17, ' ',    2);
+	displaystr  (mlTop + 4, mlLeft + 3,           (epos==2)?0x2e:0x17, "[Delete entry]", 14);
+	displaychr  (mlTop + 4, mlLeft + 17,          0x17, ' ',    12);
+	if ((!(musicbrainz.cache[entry->pointsat].size & SIZE_PRIVATE)) && (!(musicbrainz.cache[entry->pointsat].size & SIZE_VALID)))
+	{
+		displaystr  (mlTop + 4, mlLeft + 29,  (epos==3)?0x2e:0x17, "[Submit to MusicBrainz]", 23);
+		displaychr  (mlTop + 4, mlLeft + 52,  0x17, ' ',    mlWidth - 1 - 52);
+	} else {
+		displaychr  (mlTop + 4, mlLeft + 29,  0x17, ' ',    mlWidth - 1 - 29);
+	}
+	displaychr  (mlTop + 4, mlLeft + mlWidth - 1, 0x17, '\xb3', 1);
+
+	displaychr  (mlTop + 5, mlLeft,               0x17, '\xb3', 1);
+	displaychr  (mlTop + 5, mlLeft + 1,           0x17, ' ',    mlWidth - 2);
+	displaychr  (mlTop + 5, mlLeft + mlWidth - 1, 0x17, '\xb3', 1);
+
+	displaychr  (mlTop + 6, mlLeft,               0x17, '\xc0', 1);
+	displaychr  (mlTop + 6, mlLeft + 1,           0x17, '\xc4', mlWidth - 2);
+	displaychr  (mlTop + 6, mlLeft + mlWidth - 1, 0x17, '\xd9', 1);
+}
+
+static void musicbrainzSetupDraw (const char *title, int dsel, struct musicbrainz_cacheline_sort_t *sorted)
+{
+	unsigned int mlHeight;
+	unsigned int mlTop;
+	unsigned int mlLeft;
+	unsigned int mlWidth;
+
+	unsigned int i, skip, half, dot;
+
+	const unsigned int DEFAULT_HORIZONTAL_MARGIN = 5;
+	const unsigned int MIN_HEIGHT = 20;
+	const unsigned int MIN_WIDTH = 72;
+	const unsigned int LINES_NOT_AVAILABLE = 8;
+
+	int albumwidth;
+	int artistwidth;
+
+	/* SETUP the framesize */
+	mlHeight = plScrHeight - MIN_HEIGHT;
+	if (mlHeight < MIN_HEIGHT)
+	{
+		mlHeight = MIN_HEIGHT;
+	}
+	mlTop = (plScrHeight - mlHeight) / 2;
+
+	mlLeft = DEFAULT_HORIZONTAL_MARGIN;
+	mlWidth = plScrWidth - (DEFAULT_HORIZONTAL_MARGIN * 2);
+	if (mlWidth < MIN_WIDTH)
+	{
+		mlWidth += (MIN_WIDTH - mlWidth + 1) & ~1;
+		mlLeft -= (MIN_WIDTH - mlWidth + 1) >> 1;
+	}
+	half = (mlHeight - LINES_NOT_AVAILABLE) / 2;
+	if (musicbrainz.cachecount <= mlHeight - LINES_NOT_AVAILABLE)
+	{ /* all entries can fit */
+		skip = 0;
+		dot = -1;
+	} else if (dsel < half)
+	{ /* we are in the top part */
+		skip = 0;
+		dot = 0;
+	} else if (dsel >= (musicbrainz.cachecount - half))
+	{ /* we are at the bottom part */
+		skip = musicbrainz.cachecount - (mlHeight - LINES_NOT_AVAILABLE);
+		dot = mlHeight - LINES_NOT_AVAILABLE;
+	} else {
+		skip = dsel - half;
+		dot = skip * (mlHeight - LINES_NOT_AVAILABLE) / (musicbrainz.cachecount - (mlHeight - LINES_NOT_AVAILABLE));
+	}
+
+	displaychr (mlTop,                mlLeft,               0x09, '\xda', 1);
+	{
+		int CacheLen = strlen (title);
+		int Skip = (mlWidth - CacheLen - 2) / 2;
+		displaychr (mlTop, mlLeft + 1,                       0x09, '\xc4', Skip - 1);
+		displaychr (mlTop, mlLeft + Skip,                    0x09, ' ',   1);
+		displaystr (mlTop, mlLeft + Skip + 1,                0x09, title, CacheLen);
+		displaychr (mlTop, mlLeft + Skip + 1 + CacheLen,     0x09, ' ',   1);
+		displaychr (mlTop, mlLeft + Skip + 1 + CacheLen + 1, 0x09, '\xc4', mlWidth - Skip - 3 - CacheLen);
+	}
+	displaychr (mlTop,                mlLeft + mlWidth - 1, 0x09, '\xbf', 1);
+
+	displaychr (mlTop + 1,            mlLeft,               0x09, '\xb3', 1);
+	displaystr (mlTop + 1,            mlLeft +  1,          0x07, " Use arrow keys and ", 20);
+	displaystr (mlTop + 1,            mlLeft + 21,          0x0f, "<ENTER>", 7);
+	displaystr (mlTop + 1,            mlLeft + 28,          0x07, " to navigate. ", 14);
+	displaystr (mlTop + 1,            mlLeft + 42,          0x0f, "<ESC>", 5);
+	displaystr (mlTop + 1,            mlLeft + 47,          0x07, " to close.", mlWidth - 48);
+	displaychr (mlTop + 1,            mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+
+	displaychr (mlTop + 2,            mlLeft,               0x09, '\xc3', 1);
+	displaychr (mlTop + 2,            mlLeft + 1, 0x09, '\xc4', mlWidth - 2);
+	displaychr (mlTop + 2,            mlLeft + mlWidth - 1, 0x09, '\xb4', 1);
+
+	if (mlWidth < (2 + 2 + 28 + 10 + 32 + 1 + 32)) /* borders + date + "private" + album32 + artist32 */
+	{
+		albumwidth = mlWidth - (2 + 2 + 28);
+		artistwidth = 0;
+	} else {
+		albumwidth = ((mlWidth - (2 + 2 + 28 + 10)) / 2) + 10;
+		if (albumwidth > (64+10))
+		{
+			albumwidth = 64 + 10;
+		}
+		artistwidth = mlWidth - (2 + 2 + 28 + albumwidth);
+	}
+
+	for (i = 3; i < (mlHeight-5); i++)
+	{
+		int index = i - 3 + skip;
+
+		displaychr  (mlTop + i, mlLeft, 0x09, '\xb3', 1);
+
+		assert (index >= 0);
+
+		if (index >= musicbrainz.cachecount)
+		{
+			if (index == 0)
+			{
+				displaystr (mlTop + i, mlLeft + 1, 0x03, " No entries in the database", mlWidth - 2);
+			} else {
+				displayvoid (mlTop + i, mlLeft + 1, mlWidth - 2);
+			}
+		} else {
+			char timebuffer[28];
+			struct tm *thetime;
+			time_t inputtime;
+
+			inputtime = musicbrainz.cache[sorted[index].pointsat].lastscan;
+			thetime = localtime (&inputtime);
+			strftime(timebuffer, sizeof (timebuffer), "%d.%m.%Y %H:%M %z(%Z)", thetime);
+
+			displaychr (mlTop + i, mlLeft + 1, (dsel==index)?0x87:0x07, ' ', 1);
+			displaystr (mlTop + i, mlLeft + 2, (dsel==index)?0x87:0x07, timebuffer, 28); /* includes one exrta space */
+			if (musicbrainz.cache[sorted[index].pointsat].size & SIZE_VALID)
+			{
+				if (musicbrainz.cache[sorted[index].pointsat].size & SIZE_PRIVATE)
+				{
+					displaystr (mlTop + i, mlLeft + 30, (dsel==index)?0x84:0x04, "(private)", 9);
+					displaychr (mlTop + i, mlLeft + 39, (dsel==index)?0x8f:0x07, ' ', 1);
+					displaystr (mlTop + i, mlLeft + 40, (dsel==index)?0x8f:0x07, sorted[index].album, albumwidth - 10);
+				} else {
+					displaystr_utf8 (mlTop + i, mlLeft + 30, (dsel==index)?0x8f:0x07, sorted[index].album, albumwidth);
+				}
+			} else {
+				if (musicbrainz.cache[sorted[index].pointsat].size & SIZE_PRIVATE)
+				{
+					displaystr (mlTop + i, mlLeft + 30, (dsel==index)?0x84:0x04, "(private)", 9);
+					displaychr (mlTop + i, mlLeft + 39, (dsel==index)?0x8f:0x07, ' ', 1);
+					displaystr (mlTop + i, mlLeft + 40, (dsel==index)?0x8a:0x0a, "Unknown disc", artistwidth + albumwidth - 10);
+				} else {
+					displaystr_utf8 (mlTop + i, mlLeft + 30, (dsel==index)?0x8a:0x0a, "Unknown disc", artistwidth + albumwidth);
+				}
+			}
+			if (artistwidth)
+			{
+				displaychr (mlTop + i, mlLeft + 30 + albumwidth, (dsel==index)?0x8f:0x0f, ' ', 1);
+				displaystr (mlTop + i, mlLeft + 31 + albumwidth, (dsel==index)?0x8f:0x07, sorted[index].artist, artistwidth);
+			}
+		}
+		displaychr (mlTop + i, mlLeft + mlWidth - 1, 0x09, ((i-3) == dot) ? '\xdd':'\xb3', 1);
+	}
+
+	displaychr (mlTop + mlHeight - 5, mlLeft,               0x09, '\xc3', 1);
+	displaychr (mlTop + mlHeight - 5, mlLeft + 1,           0x09, '\xc4', mlWidth - 2);
+	displaychr (mlTop + mlHeight - 5, mlLeft + mlWidth - 1, 0x09, '\xb4', 1);
+
+	displaychr (mlTop + mlHeight - 4, mlLeft,               0x09, '\xb3', 1);
+	if (musicbrainz.cachecount)
+	{
+		displaychr (mlTop + mlHeight - 4, mlLeft + 1, 0x07, ' ', 1);
+		displaystr (mlTop + mlHeight - 4, mlLeft + 2, 0x07, musicbrainz.cache[sorted[dsel].pointsat].discid, mlWidth - 2);
+	} else {
+		displayvoid (mlTop + mlHeight - 4, mlLeft + 1,  mlWidth - 2);
+	}
+	displaychr (mlTop + mlHeight - 4, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+
+	displaychr (mlTop + mlHeight - 3, mlLeft,               0x09, '\xb3', 1);
+	if (musicbrainz.cachecount)
+	{
+		displaychr (mlTop + mlHeight - 3, mlLeft + 1, 0x07, ' ', 1);
+		displaystr_utf8 (mlTop + mlHeight - 3, mlLeft + 2, 0x07, sorted[dsel].album, mlWidth - 3);
+	} else {
+		displayvoid (mlTop + mlHeight - 3, mlLeft + 1,  mlWidth - 2);
+	}
+	displaychr (mlTop + mlHeight - 3, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+
+	displaychr (mlTop + mlHeight - 2, mlLeft,               0x09, '\xb3', 1);
+	if (musicbrainz.cachecount)
+	{
+		displaychr (mlTop + mlHeight - 2, mlLeft + 1, 0x07, ' ', 1);
+		displaystr_utf8 (mlTop + mlHeight - 2, mlLeft + 2, 0x07, sorted[dsel].artist, mlWidth - 3);
+	} else {
+		displayvoid (mlTop + mlHeight - 2, mlLeft + 1,  mlWidth - 2);
+	}
+	displaychr (mlTop + mlHeight - 2, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+
+	displaychr (mlTop + mlHeight - 1, mlLeft,               0x09, '\xc0', 1);
+	displaychr (mlTop + mlHeight - 1, mlLeft + 1,           0x09, '\xc4', mlWidth - 2);
+	displaychr (mlTop + mlHeight - 1, mlLeft + mlWidth - 1, 0x09, '\xd9', 1);
+}
+
+static int sortedcompare (const void *a, const void *b)
+{
+	const struct musicbrainz_cacheline_sort_t *c = a;
+	const struct musicbrainz_cacheline_sort_t *d = b;
+
+	int valid_c = !!(musicbrainz.cache[c->pointsat].size & SIZE_VALID);
+	int valid_d = !!(musicbrainz.cache[d->pointsat].size & SIZE_VALID);
+
+	if (!valid_c)
+	{
+		if (valid_d) return 1;
+	} else {
+		int res;
+		if (!valid_d) return -1;
+		res = strcmp (c->album, d->album);
+		if (res > 0)
+		{
+			return 1;
+		} else if (res < 0)
+		{
+			return -1;
+		}
+		res = strcmp (c->artist, d->artist);
+		if (res > 0)
+		{
+			return 1;
+		} else if (res < 0)
+		{
+			return -1;
+		}
+	}
+	return (musicbrainz.cache[c->pointsat].lastscan - musicbrainz.cache[d->pointsat].lastscan);
+
+	return 1;
+}
+
+static struct musicbrainz_cacheline_sort_t *musicbrainz_create_sort(void)
+{
+	int i;
+	struct musicbrainz_cacheline_sort_t *sorted = 0;
+	if (musicbrainz.cachecount)
+	{
+		sorted = malloc (musicbrainz.cachecount * sizeof (sorted[0]));
+		if (!sorted)
+		{
+			fprintf (stderr, "musicbrainzSetupRun: malloc failed\n");
+			return 0;
+		}
+		for (i=0; i < musicbrainz.cachecount; i++)
+		{
+			sorted[i].pointsat = i;
+			sorted[i].album[0] = 0;
+			sorted[i].artist[0] = 0;
+
+			if (musicbrainz.cache[i].size & SIZE_VALID)
+			{
+				cJSON *root = cJSON_ParseWithLength (musicbrainz.cache[i].data, musicbrainz.cache[i].size & SIZE_MASK);
+				cJSON *releases;
+				if (root)
+				{
+					struct musicbrainz_database_h *result = 0;
+					// we could search for error, but not finding "releases" is sufficient
+					releases = cJSON_GetObjectItem (root, "releases");
+					if (releases)
+					{
+						long releases_count = cJSON_GetArraySize (releases);
+						long releases_iter;
+						for (releases_iter = 0; (releases_iter < releases_count) && releases_iter == 0; releases_iter++)
+						{ /* there should only be 1 release for a discid lookup */
+							cJSON *release = cJSON_GetArrayItem (releases, releases_iter);
+							if (cJSON_IsObject (release))
+							{
+								musicbrainz_parse_release (release, &result);
+							}
+						}
+					}
+					cJSON_Delete (root);
+					if (result)
+					{
+						snprintf (sorted[i].album, sizeof (sorted[i].album), "%s", result->album);
+						snprintf (sorted[i].artist, sizeof (sorted[i].artist), "%s", result->artist[0]);
+						musicbrainz_database_h_free (result);
+					}
+				}
+			}
+		}
+		qsort (sorted, musicbrainz.cachecount, sizeof (sorted[0]), sortedcompare);
+	}
+	return sorted;
+}
+
+static interfaceReturnEnum musicbrainzSetupRun (void)
+{
+	int dsel = 0, dialog = 0, epos = 0;
+	struct musicbrainz_cacheline_sort_t *sorted = musicbrainz_create_sort ();
+	if (!sorted && musicbrainz.cachecount)
+	{ /* malloc failure... */
+		return interfaceReturnNextAuto;
+	}
+	while (1)
+	{
+		fsDraw();
+		musicbrainzSetupDraw("MusicBrain Cache DataBase", dsel, sorted);
+		if (dialog)
+		{
+	                musicbrainzSetupDialogDraw (sorted + dsel, epos);
+			while (ekbhit())
+			{
+				int key = egetch();
+				switch (key)
+				{
+					case KEY_DOWN:
+						if (epos == 0)
+						{
+							epos = 2;
+						} else if ((epos == 1) && (!(musicbrainz.cache[sorted[dsel].pointsat].size & SIZE_PRIVATE)) && (!(musicbrainz.cache[sorted[dsel].pointsat].size & SIZE_VALID)))
+						{
+							epos = 3;
+						}
+						break;
+					case KEY_UP:
+						if (epos == 2)
+						{
+							epos = 0;
+						} else if (epos == 3)
+						{
+							epos = 1;
+						}
+						break;
+					case KEY_LEFT:
+						if (epos == 1)
+						{
+							epos = 0;
+						} else if (epos == 3)
+						{
+							epos = 2;
+						}
+						break;
+					case KEY_RIGHT:
+						if ((epos == 0) && (!(musicbrainz.cache[sorted[dsel].pointsat].size & SIZE_PRIVATE)))
+						{
+							epos = 1;
+						} else if ((epos == 2) && (!(musicbrainz.cache[sorted[dsel].pointsat].size & SIZE_PRIVATE)) && (!(musicbrainz.cache[sorted[dsel].pointsat].size & SIZE_VALID)))
+						{
+							epos = 3;
+						}
+						break;
+					case KEY_ESC:
+						if (musicbrainz.cachecount)
+						{
+							epos = 0;
+							dialog = 0;
+							goto superexit;
+						}
+						break;
+					case _KEY_ENTER:
+						if (epos == 0)
+						{ /* toggle public/private */
+							musicbrainz.cache[sorted[dsel].pointsat].size ^= SIZE_PRIVATE;
+							if (musicbrainz.cachedirtyfrom > sorted[dsel].pointsat)
+							{
+								musicbrainz.cachedirtyfrom = sorted[dsel].pointsat;
+							}
+							musicbrainz.cachedirty = 1;
+						} else if (epos == 1)
+						{ /* Refresh */
+							char discid[29];
+							char toc[705+1];
+							struct musicbrainz_database_h *result = 0;
+							void *handle;
+
+							snprintf (discid, sizeof (discid), "%s", musicbrainz.cache[sorted[dsel].pointsat].discid);
+							if ( musicbrainz.cache[sorted[dsel].pointsat].size & SIZE_VALID)
+							{
+								toc[0] = 0; /* we do not overwrite a VALID entry with an invalid one, so no TOC will be stored if this fails */
+							} else {
+								uint32_t size = musicbrainz.cache[sorted[dsel].pointsat].size & SIZE_MASK;
+								if ((size+1) > sizeof (toc))
+								{
+									size = 0;
+								}
+								memcpy (toc, musicbrainz.cache[sorted[dsel].pointsat].data, musicbrainz.cache[sorted[dsel].pointsat].size & SIZE_MASK);
+								toc[size] = 0;
+							}
+							musicbrainz.cache[sorted[dsel].pointsat].size |= SIZE_FORCEREFRESH;
+							handle = musicbrainz_lookup_discid_init (discid, toc, &result);
+							if (handle)
+							{
+								while (musicbrainz_lookup_discid_iterate (handle, &result))
+								{
+#warning TODO, draw while waiting
+									framelock ();
+								}
+								musicbrainz_database_h_free (result);
+							}
+							free (sorted);
+							sorted = musicbrainz_create_sort ();
+							if (!sorted && musicbrainz.cachecount)
+							{ /* malloc failure... */
+								return interfaceReturnNextAuto;
+							}
+							for (dsel = 0; dsel < musicbrainz.cachecount; dsel++)
+							{
+								if (!strcmp (musicbrainz.cache[sorted[dsel].pointsat].discid, discid))
+								{
+									musicbrainz.cache[sorted[dsel].pointsat].size &= ~SIZE_FORCEREFRESH; /* ensure that the flag does not stay, it should not */
+									break;
+								}
+							}
+							if (dsel == musicbrainz.cachecount)
+							{ /* should never happen */
+								dsel = 0;
+							}
+						} else if (epos == 2)
+						{ /* delete */
+							free (musicbrainz.cache[sorted[dsel].pointsat].data);
+							memmove (&musicbrainz.cache[sorted[dsel].pointsat], &musicbrainz.cache[sorted[dsel].pointsat+1], sizeof (musicbrainz.cache[0]) * (musicbrainz.cachecount - sorted[dsel].pointsat) - 1);
+							musicbrainz.cachecount--;
+							if (musicbrainz.cachedirtyfrom > sorted[dsel].pointsat)
+							{
+								musicbrainz.cachedirtyfrom = sorted[dsel].pointsat;
+							}
+							musicbrainz.cachedirty = 1;
+							if ((dsel >= musicbrainz.cachecount) && (musicbrainz.cachecount))
+							{
+								dsel--;
+							}
+							free (sorted);
+							sorted = musicbrainz_create_sort ();
+							if (!sorted && musicbrainz.cachecount)
+							{ /* malloc failure... */
+								return interfaceReturnNextAuto;
+							}
+						} else if (epos == 3)
+						{ /* submit */
+							pid_t pid = fork();
+							if (pid == 0)
+							{
+								int i;
+								char url[1024];
+								int datalen = musicbrainz.cache[sorted[dsel].pointsat].size & SIZE_MASK;
+								char *b = memchr (musicbrainz.cache[sorted[dsel].pointsat].data, ' ', datalen);
+								int tracks = 0;
+								if (b)
+								{
+									char *c = memchr (b + 1, ' ', datalen - (b - musicbrainz.cache[sorted[dsel].pointsat].data) - 1);
+									if (c)
+									{
+										tracks = atoi (b + 1);
+									}
+								}
+								snprintf (url, sizeof (url), "https://musicbrainz.org/cdtoc/attach?id=%s&tracks=%d&toc=%.*s", musicbrainz.cache[sorted[dsel].pointsat].discid, tracks, datalen, musicbrainz.cache[sorted[dsel].pointsat].data);
+								for (i=0; url[i]; i++)
+								{
+									if (url[i] == ' ')
+									{
+										url[i] = '+';
+									}
+								}
+								for (i=3; i < 1024; i++)
+								{
+									close (i);
+								}
+								execlp ("xdg-open", "xdg-open",
+								        url,
+								        NULL);
+								execlp ("sensible-browser", "sensible-browser",
+								        url,
+								        NULL);
+								exit(1);
+							} else if (pid > 0)
+							{
+								int result = 0;
+								while (waitpid (pid, &result, 0) != pid)
+								{
+								}
+							}
+						}
+						epos = 0;
+						dialog = 0;
+						goto superexit;
+				}
+			}
+		} else {
+			while (ekbhit())
+			{
+				int key = egetch();
+				switch (key)
+				{
+					case KEY_HOME:
+						dsel = 0;
+						break;
+					case KEY_END:
+						dsel = musicbrainz.cachecount ? musicbrainz.cachecount - 1 : 0;
+						break;
+					case KEY_UP:
+						if (dsel)
+						{
+							dsel--;
+						}
+						break;
+					case KEY_DOWN:
+						if ((dsel + 1) < musicbrainz.cachecount)
+						{
+							dsel++;
+						}
+						break;
+					case _KEY_ENTER:
+						if (musicbrainz.cachecount)
+						{
+							dialog = 1;
+							goto superexit;
+						}
+						break;
+					case KEY_ESC:
+						free (sorted);
+						return interfaceReturnNextAuto;
+					default:
+						break;
+				}
+			}
+		}
+superexit:
+		framelock();
+	}
+}

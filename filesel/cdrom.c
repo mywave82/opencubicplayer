@@ -68,6 +68,7 @@ static struct cdrom_t
 
 	struct ioctl_cdrom_readtoc_request_t lasttoc;
 	char *lastdiscid;
+	char *lasttocstr;
 	void *musicbrainzhandle;
 	struct musicbrainz_database_h *musicbrainzdata;
 } *cdroms = 0;
@@ -114,11 +115,19 @@ static int cdrom_track_filesize_ready (struct ocpfile_t *);
 
 static void try(const char *dev, const char *vdev)
 {
+	char temppath[256];
 	struct cdrom_t *temp;
 	int fd;
 #ifdef CDROM_VERBOSE
 	fprintf(stderr, "Testing %s\n", dev);
 #endif
+	bzero (temppath, sizeof (temppath));
+	if (readlink (dev, temppath, sizeof (temppath) - 1) > 0)
+	{
+		if (strncmp (temppath, "/dev/sr", 7)) return;
+		if (strncmp (temppath, "/dev/hd", 7)) return;
+		if (strncmp (temppath, "/dev/scd", 8)) return;
+	}
 	if ((fd=open(dev, O_RDONLY|O_NONBLOCK))>=0)
 	{
 		int caps;
@@ -144,6 +153,7 @@ static void try(const char *dev, const char *vdev)
 			cdroms[cdromn].request_returnvalue=0;
 			cdroms[cdromn].shutdown=0;
 			cdroms[cdromn].lastdiscid=0;
+			cdroms[cdromn].lasttocstr=0;
 			cdroms[cdromn].musicbrainzhandle=0;
 			cdroms[cdromn].musicbrainzdata=0;
 
@@ -319,7 +329,7 @@ static int cdint(void)
 
 	dmCDROM=RegisterDrive("cdrom:", &cdrom_root, &cdrom_root);
 
-	fprintf(stderr, "Locating cdroms [    ]\010\010\010\010\010");
+	fprintf(stderr, "Locating cdroms [     ]\010\010\010\010\010\010");
 
 	sprintf(dev, "/dev/cdrom");
 	sprintf(vdev, "cdrom");
@@ -354,6 +364,15 @@ static int cdint(void)
 		sprintf(vdev, "hd%c", a);
 		try(dev, vdev);
 	}
+	fprintf(stderr, ".");
+
+	for (a='0';a<='9';a++)
+	{
+		sprintf(dev, "/dev/sr%c", a);
+		sprintf(vdev, "sr%c", a);
+		try(dev, vdev);
+	}
+
 	fprintf(stderr, ".]\n");
 
 	/* We wait with thread initialization until here, since realloc might move all the cdroms structures */
@@ -384,6 +403,7 @@ static void cdclose(void)
 		close (cdroms[i].fd);
 		cdroms[i].fd = -1;
 		free (cdroms[i].lastdiscid);
+		free (cdroms[i].lasttocstr);
 		//dirdbUnref(cdroms[i].dirdbnode);
 	}
 	free (cdroms);
@@ -592,7 +612,9 @@ static ocpdirhandle_pt cdrom_drive_readdir_start (struct ocpdir_t *_self, void(*
 
 	bzero (&self->cdrom->lasttoc, sizeof (self->cdrom->lasttoc));
 	free (dh->owner->cdrom->lastdiscid);
+	free (dh->owner->cdrom->lasttocstr);
 	dh->owner->cdrom->lastdiscid = 0;
+	dh->owner->cdrom->lasttocstr = 0;
 
 	if (ioctl(self->cdrom->fd, CDROMREADTOCHDR, &dh->tochdr))
 	{ /* should not happen, but sometime it does for unknown reasons? */
@@ -675,7 +697,8 @@ leadout:
 		int first = self->cdrom->lasttoc.starttrack;
 		int last = self->cdrom->lasttoc.lasttrack;
 		int i;
-		char *t;
+		char *discid;
+		char *toc;
 
 		if (!did)
 		{
@@ -703,10 +726,12 @@ leadout:
 			goto failout;
 		}
 
-		t = discid_get_id(did);
-		if (t)
+		discid = discid_get_id (did);
+		toc = discid_get_toc_string (did);
+		if (discid && toc)
 		{
-			dh->owner->cdrom->lastdiscid = strdup(t);
+			dh->owner->cdrom->lastdiscid = strdup(discid);
+			dh->owner->cdrom->lasttocstr = strdup(toc);
 			if (dh->owner->cdrom->musicbrainzhandle)
 			{
 				musicbrainz_lookup_discid_cancel (dh->owner->cdrom->musicbrainzhandle);
@@ -717,7 +742,7 @@ leadout:
 				musicbrainz_database_h_free (dh->owner->cdrom->musicbrainzdata);
 				dh->owner->cdrom->musicbrainzdata = 0;
 			}
-			dh->owner->cdrom->musicbrainzhandle = musicbrainz_lookup_discid_init (dh->owner->cdrom->lastdiscid, &dh->owner->cdrom->musicbrainzdata);
+			dh->owner->cdrom->musicbrainzhandle = musicbrainz_lookup_discid_init (dh->owner->cdrom->lastdiscid, dh->owner->cdrom->lasttocstr, &dh->owner->cdrom->musicbrainzdata);
 		}
 failout:
 		if (did)

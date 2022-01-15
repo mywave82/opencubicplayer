@@ -840,9 +840,6 @@ int fsPreInit(void)
 	if (!dirdbInit())
 		return 0;
 
-	if (!musicbrainz_init())
-		return 0;
-
 	fsRegisterExt("DEV");
 	mt.integer.i = MODULETYPE("DEVv");
 	fsTypeRegister (mt, DEVv_description, "VirtualInterface", &DEVv_p);
@@ -876,6 +873,9 @@ int fsPreInit(void)
 	filesystem_tar_register ();
 	filesystem_Z_register ();
 	filesystem_zip_register ();
+
+	if (!musicbrainz_init()) /* needs setup */
+		return 0;
 
 	currentdir=modlist_create();
 	playlist=modlist_create();
@@ -973,11 +973,12 @@ void fsClose(void)
 		playlist=NULL;
 	}
 
+	musicbrainz_done();
+
 	filesystem_unix_done ();
 	filesystem_drive_done ();
 	dmCurDrive = 0;
 
-	musicbrainz_done();
 	adbMetaClose();
 	mdbClose();
 	if (moduleextensions)

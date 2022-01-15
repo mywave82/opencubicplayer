@@ -368,8 +368,17 @@ musicbrainz.o: musicbrainz.c \
 	../config.h \
 	../types.h \
 	../boot/psetting.h \
+	dirdb.h \
+	filesystem.h \
+	filesystem-drive.h \
+	filesystem-file-mem.h \
+	filesystem-setup.h \
 	musicbrainz.h \
-	../stuff/compat.h
+	pfilesel.h \
+	../stuff/compat.h \
+	../stuff/framelock.h \
+	../stuff/poutput.h \
+	../stuff/utf-8.h
 	$(CC) $< -o $@ -c $(LIBCJSON_CFLAGS)
 
 cphlpfs.o: cphlpfs.c \

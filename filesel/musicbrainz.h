@@ -11,7 +11,8 @@ struct musicbrainz_database_h
 	char artist[100][MDB_ARTIST_LEN];
 };
 
-void *musicbrainz_lookup_discid_init (const char *discid, struct musicbrainz_database_h **result);
+/* toc needs to be string in this format: "1 18 284700 150 15862 33817 51905 71767 88997 102517 118750 137782 154112 158765 175650 182765 202162 217580 239225 248915 268307" */
+void *musicbrainz_lookup_discid_init (const char *discid, const char *toc, struct musicbrainz_database_h **result);
 
 int musicbrainz_lookup_discid_iterate (void *token, struct musicbrainz_database_h **result);
 
