@@ -80,8 +80,8 @@ void (*_conSave)(void);
 
 void (*_plDosShell)(void);
 
-unsigned int plScrHeight;
-unsigned int plScrWidth;
+unsigned int plScrHeight = 80;
+unsigned int plScrWidth = 25;
 enum vidType plVidType;
 unsigned char plScrType;
 int plScrMode;

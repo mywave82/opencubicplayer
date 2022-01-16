@@ -425,6 +425,11 @@ static void swtext_displaycharattr_cpfont_8x8(uint16_t y, uint16_t x, const uint
 /* codepage is optional, to translate...*/
 void swtext_displaystrattr_cpfont_8x8(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len, const uint8_t *codepage)
 {
+	if (!plVidMem)
+	{
+		return;
+	}
+
 	while (len)
 	{
 		uint8_t ch;
@@ -445,6 +450,11 @@ void swtext_displaystrattr_cpfont_8x8(uint16_t y, uint16_t x, const uint16_t *bu
 
 void swtext_displaystr_cpfont_8x8(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len, const uint8_t *codepage)
 {
+	if (!plVidMem)
+	{
+		return;
+	}
+
 	while (len)
 	{
 		uint8_t ch;
@@ -472,6 +482,11 @@ void swtext_displayvoid(uint16_t y, uint16_t x, uint16_t len)
 	unsigned int count;
 	int i;
 
+	if (!plVidMem)
+	{
+		return;
+	}
+
 	switch (plCurrentFont)
 	{
 		default:
@@ -496,6 +511,11 @@ void swtext_displayvoid(uint16_t y, uint16_t x, uint16_t len)
 
 void swtext_displaystrattr_cp437(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len)
 {
+	if (!plVidMem)
+	{
+		return;
+	}
+
 	switch (plCurrentFont)
 	{
 		case _8x16:
@@ -509,6 +529,11 @@ void swtext_displaystrattr_cp437(uint16_t y, uint16_t x, const uint16_t *buf, ui
 
 void swtext_displaystr_cp437(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
 {
+	if (!plVidMem)
+	{
+		return;
+	}
+
 	switch (plCurrentFont)
 	{
 		case _8x16:
@@ -522,6 +547,11 @@ void swtext_displaystr_cp437(uint16_t y, uint16_t x, uint8_t attr, const char *s
 
 void swtext_displaystr_utf8(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
 {
+	if (!plVidMem)
+	{
+		return;
+	}
+
 	switch (plCurrentFont)
 	{
 		case _8x16:
@@ -567,6 +597,11 @@ void swtext_drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t
 	int i;
 	int font_width;
 	int font_height;
+
+	if (!plVidMem)
+	{
+		return;
+	}
 
 	if (hgt>((yh*(unsigned)16)-4))
 		hgt=(yh*16)-4;
@@ -643,6 +678,11 @@ void swtext_idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 	int i;
 	int font_width;
 	int font_height;
+
+	if (!plVidMem)
+	{
+		return;
+	}
 
 	if (hgt>((yh*(unsigned)16)-4))
 		hgt=(yh*16)-4;
@@ -732,6 +772,11 @@ void swtext_cursor_inject (void)
 {
 	swtext_shapestatus = 0;
 
+	if (!plVidMem)
+	{
+		return;
+	}
+
 	/* if we have an active cursor, iterate the blink-timer */
 	if (swtext_curshape)
 	{
@@ -790,6 +835,11 @@ void swtext_cursor_inject (void)
 
 void swtext_cursor_eject (void)
 {
+	if (!plVidMem)
+	{
+		return;
+	}
+
 	/* restore original buffer */
 	if (swtext_shapestatus == 1)
 	{
