@@ -40,6 +40,7 @@
 #include "recache.h"
 #include "resample.h"
 #include "arc.h"
+#include "boot/psetting.h"
 #include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
@@ -461,18 +462,18 @@ static int read_user_config_file(void)
 
 #ifdef __W32__
 /* timidity.cfg or _timidity.cfg or .timidity.cfg*/
-    sprintf(path, "%s" PATH_STRING "timidity.cfg", home);
+    snprintf(path, sizeof (path), "%s" PATH_STRING "timidity.cfg", home);
     status = read_config_file(path, 0, 1);
     if (status != READ_CONFIG_FILE_NOT_FOUND)
         return status;
 
-    sprintf(path, "%s" PATH_STRING "_timidity.cfg", home);
+    snprintf(path, sizeof (path), "%s" PATH_STRING "_timidity.cfg", home);
     status = read_config_file(path, 0, 1);
     if (status != READ_CONFIG_FILE_NOT_FOUND)
         return status;
 #endif
 
-    sprintf(path, "%s" PATH_STRING ".timidity.cfg", home);
+    snprintf(path, sizeof (path), "%s" PATH_STRING ".timidity.cfg", home);
     status = read_config_file(path, 0, 1);
     if (status != 3 /*READ_CONFIG_FILE_NOT_FOUND*/)
         return status;
@@ -562,9 +563,7 @@ static int ocp_ctl_read (int32 *valp)
 static int ocp_ctl_write (char *buf, int32 size)
 {
 	/* stdout redirects ? */
-	write (2, "[timidity] ", 11);
-	write (2, buf, size);
-
+	fprintf (stderr, "[timidity] %.*s", (int)size, buf);
 	return size;
 }
 
@@ -911,6 +910,7 @@ ControlMode *ctl_list[2] = {&ocp_ctl, 0}, *ctl = &ocp_ctl;
 
 static void emulate_main_start()
 {
+	const char *configfile;
 	free_instruments_afterwards = 1;
 
 #ifdef SUPPORT_SOCKET
@@ -925,38 +925,63 @@ static void emulate_main_start()
 
 	timidity_start_initialize();
 
+	configfile = cfGetProfileString ("timidity", "configfile", "");
+
+	if (configfile[0])
+	{
+		int len = strlen (configfile);
+		if (len > 5 && (!strcasecmp (&configfile[len - 4], ".sf2")))
+		{
+			/* add_soundfont lacks constification of filename */
+			add_soundfont ((char *)configfile, -1, -1, -1, -1);
+			goto ready;
+		} else {
+			/* read_config_file lacks constification of filename */
+			if (read_config_file((char *)configfile, 0, 0))
+			{
+				fprintf (stderr, "Failed to load \"%s\", defaulting to global loading\n", configfile);
+			} else {
+				got_a_configuration = 1;
+				goto ready;
+			}
+		}
+	}
 	/* (timidity_pre_load_configuration ())
 	{
 		fprintf (stderr, "[timidity] pre-load config failed\n");
 	}*/
-	/* test CONFIG_FILE first if it is defined to be something else than one of our standard paths */
-	if (strcmp(CONFIG_FILE, "/etc/timidity/timidity.cfg") &&
-	    strcmp(CONFIG_FILE, "/etc/timidity.cfg") &&
-	    strcmp(CONFIG_FILE, "/usr/local/share/timidity/timidity.cfg") &&
-	    strcmp(CONFIG_FILE, "/usr/share/timidity/timidity.cfg") && !read_config_file(CONFIG_FILE, 0, 0))
+	if (!got_a_configuration)
 	{
+		/* test CONFIG_FILE first if it is defined to be something else than one of our standard paths */
+		if (strcmp(CONFIG_FILE, "/etc/timidity/timidity.cfg") &&
+		    strcmp(CONFIG_FILE, "/etc/timidity.cfg") &&
+		    strcmp(CONFIG_FILE, "/usr/local/share/timidity/timidity.cfg") &&
+		    strcmp(CONFIG_FILE, "/usr/share/timidity/timidity.cfg") && !read_config_file(CONFIG_FILE, 0, 0))
+		{
+			got_a_configuration = 1;
+		} else if (!read_config_file("/etc/timidity/timidity.cfg", 0, 0))
+		{
+			got_a_configuration = 1;
+		} else if (!read_config_file("/etc/timidity.cfg", 0, 0))
+		{
+			got_a_configuration = 1;
+		} else if (!read_config_file("/usr/local/share/timidity/timidity.cfg", 0, 0))
+		{
+			got_a_configuration = 1;
+		} else if (!read_config_file("/usr/share/timidity/timidity.cfg", 0, 0))
+		{
 		got_a_configuration = 1;
-	} else if (!read_config_file("/etc/timidity/timidity.cfg", 0, 0))
-	{
-		got_a_configuration = 1;
-	} else if (!read_config_file("/etc/timidity.cfg", 0, 0))
-	{
-		got_a_configuration = 1;
-	} else if (!read_config_file("/usr/local/share/timidity/timidity.cfg", 0, 0))
-	{
-		got_a_configuration = 1;
-	} else if (!read_config_file("/usr/share/timidity/timidity.cfg", 0, 0))
-	{
-		got_a_configuration = 1;
-	} else {
-		ctl->cmsg(CMSG_WARNING, VERB_NORMAL, "Warning: Unable to find global timidity.cfg file");
+		} else {
+			ctl->cmsg(CMSG_WARNING, VERB_NORMAL, "Warning: Unable to find global timidity.cfg file");
+		}
+
+		if (read_user_config_file())
+		{
+			ctl->cmsg(CMSG_ERROR, VERB_NORMAL, "Error: Syntax error in ~/.timidity.cfg");
+		}
 	}
 
-	if (read_user_config_file())
-	{
-		ctl->cmsg(CMSG_ERROR, VERB_NORMAL, "Error: Syntax error in ~/.timidity.cfg");
-	}
-
+ready:
 	/* we need any emulated configuration, perform them now... */
 	if (timidity_post_load_configuration ())
 	{

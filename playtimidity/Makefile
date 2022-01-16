@@ -7,19 +7,21 @@ else
 	DUMPMIDI=
 endif
 
-all: timidityptype.o playtimidity$(LIB_SUFFIX) $(DUMPMIDI)
+all: timidityptype.o timidityconfig.o playtimidity$(LIB_SUFFIX) timidityconfig$(LIB_SUFFIX) $(DUMPMIDI)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX) calcnewt dumpmidi timidity-git/timidity/newton_table.c timidity-git/interface/*.o timidity-git/libarc/*.o timidity-git/timidity/*.o timidity-git/utils/*.o
 
 install:
 	$(CP) playtimidity$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+	$(CP) timidityconfig$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-timidityconfig$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpmidi "$(DESTDIR)$(BINDIR)/dumpmidi"
 endif
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/playtimidity$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-timidityconfig$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpmidi"
 
 cpitimiditysetup.o: \
@@ -158,6 +160,24 @@ timidity-git/timidity/wrdt.o: \
 	../types.h
 	$(CC) $< -o $@ -c -Dtty_wrdt_mode=dumb_wrdt_mode
 
+timidityconfig.o: timidityconfig.c \
+	../config.h \
+	../types.h \
+	timidity-git/timidity/sysdep.h \
+	timidity-git/timidity/timidity.h \
+	../boot/plinkman.h \
+	../boot/psetting.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
+	../filesel/filesystem-drive.h \
+	../filesel/filesystem-file-mem.h \
+	../filesel/filesystem-setup.h \
+	../filesel/pfilesel.h \
+	../stuff/err.h \
+	../stuff/framelock.h \
+	../stuff/poutput.h
+	$(CC) $< -o $@ -c -DDEFAULT_PATH=TIMIDITY_DEFAULT_PATH -DPKGDATADIR=TIMIDITYPKGDATADIR
+
 timidityplay.o: timidityplay.c timidity-git/timidity/playmidi.c\
 	../config.h \
 	../types.h \
@@ -172,6 +192,7 @@ timidityplay.o: timidityplay.c timidity-git/timidity/playmidi.c\
 	timidity-git/timidity/resample.h \
 	timidity-git/timidity/timidity.h \
 	timidity-git/timidity/wrd.h \
+	../boot/psetting.h \
 	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
@@ -223,3 +244,6 @@ timiditypdots.o: \
 playtimidity_so=cpitimiditysetup.o timiditypchan.o timidityplay.o timiditypplay.o timiditypdots.o ocp-output.o $(interface_obj) $(libarc_obj) $(timidity_obj) $(utils_obj)
 playtimidity$(LIB_SUFFIX): $(playtimidity_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ -lm
+
+timidityconfig$(LIB_SUFFIX): timidityconfig.o
+	$(CC) $(SHARED_FLAGS) -o $@ $^

@@ -165,103 +165,21 @@ static void TimiditySetupDraw(int focus)
 
 	displaystr (TimiditySetupFirstLine + 2, 0, (focus&&(TimiditySetupEditPos==1))?0x07:0x08, "  Level:" + 2 - skip, 16 + skip);
 	TimiditySetupDrawBar (focus, 2, skip, (TimiditySetupSelected != 0) ? TimiditySetupLevel : -1, 127, TimiditySetupEditPos == 1);
-#if 0
-	if (TimiditySetupSelected != 0)
-	{
-		int tw = TimiditySetupWidth - 5 - 16 - skip - skip - 2;
-		int pw = tw * TimiditySetupLevel / 127;
-		int p1, p2, p3, p4;
-
-		displaystr (TimiditySetupFirstLine + 2, 16 + skip, (focus&&(TimiditySetupEditPos==1))?0x07:0x08, "[", 1);
-	
-		p1 = tw * 1 / 4;
-		p2 = tw * 2 / 4;
-		p3 = tw * 3 / 4;
-		p4 = tw;
-		if (p1 > pw)
-		{
-			p1 = pw;
-			p2 = 0;
-			p3 = 0;
-			p4 = 0;
-		} else if (p2 > pw)
-		{
-			p2 = pw - p1;
-			p3 = 0;
-			p4 = 0;
-		} else if (p3 > pw)
-		{
-			p3 = pw - p2;
-			p2 -= p1;
-			p4 = 0;
-		} else {
-			p4 = pw - p3;
-			p3 -= p2;
-			p2 -= p1;
-		}
-		displaychr (TimiditySetupFirstLine + 2, 16 + 1 + skip,                     (focus && (TimiditySetupEditPos==1)) ?0x01:0x08, '\xfe', p1);
-		displaychr (TimiditySetupFirstLine + 2, 16 + 1 + skip + p1,                (focus && (TimiditySetupEditPos==1)) ?0x09:0x08, '\xfe', p2);
-		displaychr (TimiditySetupFirstLine + 2, 16 + 1 + skip + p1 + p2,           (focus && (TimiditySetupEditPos==1)) ?0x0b:0x08, '\xfe', p3);
-		displaychr (TimiditySetupFirstLine + 2, 16 + 1 + skip + p1 + p2 + p3,      (focus && (TimiditySetupEditPos==1)) ?0x0f:0x08, '\xfe', p4);
-		displaychr (TimiditySetupFirstLine + 2, 16 + 1 + skip + p1 + p2 + p3 + p4, (focus && (TimiditySetupEditPos==1)) ?0x07:0x08, '\xfa', tw - p1 - p2 - p3 - p4);
-
-		snprintf (temp, sizeof (temp), "]%5d", TimiditySetupLevel);
-		displaystr (TimiditySetupFirstLine + 2, TimiditySetupWidth - 6 - skip, (focus&&(TimiditySetupEditPos==1))?0x07:0x08, temp, 6 + skip);
-	} else {
-		displaystr (TimiditySetupFirstLine + 2, 16 + skip, 0x08, "----", TimiditySetupWidth - 16 - skip);
-	}
-#endif
 
 	displaystr (TimiditySetupFirstLine + 3, 0, (focus&&(TimiditySetupEditPos==2))?0x07:0x08, "  ScaleRoom:" + 2 - skip, 16 + skip);
 	TimiditySetupDrawBar (focus, 3, skip, (TimiditySetupSelected >= 3) ? TimiditySetupScaleRoom : -1, 1000, TimiditySetupEditPos == 2);
-#if 0
-	if (TimiditySetupSelected >= 3)
-	{
-		snprintf (temp, sizeof (temp), "%4d", TimiditySetupScaleRoom);
-		displaystr (TimiditySetupFirstLine + 3, 16 + skip, (focus&&(TimiditySetupEditPos==2))?0x07:0x08, temp, TimiditySetupWidth - 16 - skip);
-	} else {
-		displaystr (TimiditySetupFirstLine + 3, 16 + skip, 0x08, "----", TimiditySetupWidth - 16 - skip);
-	}
-#endif
 
 	displaystr (TimiditySetupFirstLine + 4, 0, (focus&&(TimiditySetupEditPos==3))?0x07:0x08, "  OffsetRoom:" + 2 - skip, 16 + skip);
 	TimiditySetupDrawBar (focus, 4, skip, (TimiditySetupSelected >= 3) ? TimiditySetupOffsetRoom : -1, 1000, TimiditySetupEditPos == 3);
-#if 0
-	if (TimiditySetupSelected >= 3)
-	{
-		snprintf (temp, sizeof (temp), "%4d", TimiditySetupOffsetRoom);
-		displaystr (TimiditySetupFirstLine + 4, 16 + skip, (focus&&(TimiditySetupEditPos==3))?0x07:0x08, temp, TimiditySetupWidth - 16 - skip);
-	} else {
-		displaystr (TimiditySetupFirstLine + 4, 16 + skip, 0x08, "----", TimiditySetupWidth - 16 - skip);
-	}
-#endif
 
 	displaystr (TimiditySetupFirstLine + 5, 0, (focus&&(TimiditySetupEditPos==4))?0x07:0x08, "  PreDelayFactor:" + 2 - skip, 16 + skip);
 	TimiditySetupDrawBar (focus, 5, skip, (TimiditySetupSelected >= 3) ? TimiditySetupPreDelayFactor : -1, 1000, TimiditySetupEditPos == 4);
-#if 0
-	if (TimiditySetupSelected >= 3)
-	{
-		snprintf (temp, sizeof (temp), "%4d", TimiditySetupPreDelayFactor);
-		displaystr (TimiditySetupFirstLine + 5, 16 + skip, (focus&&(TimiditySetupEditPos==4))?0x07:0x08, temp, TimiditySetupWidth - 16 - skip);
-	} else {
-		displaystr (TimiditySetupFirstLine + 5, 16 + skip, 0x08, "----", TimiditySetupWidth - 16 - skip);
-	}
-#endif
 
 	displaystr (TimiditySetupFirstLine + 6, 0, (focus&&(TimiditySetupEditPos==5))?0x07:0x08, "  Delay:" + 2 - skip, 16 + skip);
 	TimiditySetupDrawItems (focus, 6, skip, effect_lr_modes, 4, effect_lr_mode + 1, TimiditySetupEditPos==5);
 
 	displaystr (TimiditySetupFirstLine + 7, 0, (focus&&(TimiditySetupEditPos==6))?0x07:0x08, "  Delay ms:" + 2 - skip, 16 + skip);
 	TimiditySetupDrawBar (focus, 7, skip, (effect_lr_mode >= 0) ? effect_lr_delay_msec : -1, 1000, TimiditySetupEditPos == 6);
-#if 0
-	if (effect_lr_mode >= 0)
-	{
-		snprintf (temp, sizeof (temp), "%4d", effect_lr_delay_msec);
-		displaystr (TimiditySetupFirstLine + 7, 16 + skip, (focus&&(TimiditySetupEditPos==6))?0x07:0x08, temp, TimiditySetupWidth - 16 - skip);
-	} else {
-		displaystr (TimiditySetupFirstLine + 7, 16 + skip, 0x08, "----", TimiditySetupWidth - 16 - skip);
-	}
-#endif
 
 	displaystr (TimiditySetupFirstLine + 8, 0, (focus&&(TimiditySetupEditPos==7))?0x07:0x08, "  Chorus:" + 2 - skip, 16 + skip);
 	TimiditySetupDrawItems (focus, 8, skip, disable_enable, 2, opt_chorus_control, TimiditySetupEditPos==7);
