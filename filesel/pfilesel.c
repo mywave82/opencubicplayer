@@ -1262,15 +1262,9 @@ static void displayfile(const unsigned int y, unsigned int x, unsigned int width
 
 static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry *mle, struct moduleinfostruct *mi, const char *npath)
 {
-#warning TODO, we are missing album and artist....
-/*
-          1         2         3          3         2         1
-0123456789012345678901234567890123456.321098765432109876543210987654321
-  XXXXXXXX.XXX _XXXXXXXXXX! title: xxxxxxxxxxxxxxxxxxxxx    type: XXXX
-   composer: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  date: DD.MM.YYYY
-   style:    xxxxxxxxxxxxxxxxxxxxxxxxx  playtime: XXX:XX  channels: XX
+	const int leftwidth = (plScrWidth - 10 - 9 - 1) / 2;
+	const int rightwidth = plScrWidth - 10 - 9 - 1 - leftwidth;
 
-*/
 	displayvoid (Y + 0, 0, 2);
 	if (mle && mle->utf8_8_dot_3[0])
 	{
@@ -1282,7 +1276,7 @@ static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry
 	if (mle && mle->file)
 	{
 		char temp[13];
-		snprintf (temp, sizeof (temp), "11%" PRIu64 "%c", mi->size, (mi->flags&MDB_BIGMODULE) ? '!' : ' ');
+		snprintf (temp, sizeof (temp), "  %" PRIu64 "%c", mi->size, (mi->flags&MDB_BIGMODULE) ? '!' : ' ');
 		displaystr (Y + 0, 15, 0x0f, temp, 12);
 	} else {
 		displaystr (Y + 0, 15, 0x07, " \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 12);
@@ -1304,13 +1298,15 @@ static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry
 	displayvoid (Y + 0, plScrWidth - 1, 1);
 
 
-	displaystr (Y + 1, 0, 0x07, "   composer: ", 13);
+	displaystr (Y + 1, 0, 0x07, "composer: ", 10);
 	if (mi->composer[0])
 	{
-		displaystr_utf8 (Y + 1, 13, (selecte==4)?0x8f:0x0f, mi->composer, plScrWidth - 13 - 19);
+		displaystr_utf8 (Y + 1, 10, (selecte==4)?0x8f:0x0f, mi->composer, plScrWidth - 10 - 19);
 	} else {
-		displaychr (Y + 1, 13, (selecte==4)?0x87:0x07, '\xfa', plScrWidth - 13 - 19);
+		displaychr (Y + 1, 10, (selecte==4)?0x87:0x07, '\xfa', plScrWidth - 10 - 19);
 	}
+
+
 	displaystr (Y + 1, plScrWidth - 19, 0x07, "  date: ", 8);
 	if (mi->date)
 	{
@@ -1352,51 +1348,70 @@ static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry
 	}
 	displayvoid (Y + 1, plScrWidth - 1, 1);
 
+	displaystr (Y + 2, 0, 0x07, "  artist: ", 10);
+	if (mi->artist[0])
+	{
+		displaystr_utf8 (Y + 2, 10, (selecte==8)?0x8f:0x0f, mi->artist, leftwidth);
+	} else {
+		displaychr (Y + 2, 10, (selecte==8)?0x87:0x07, '\xfa', leftwidth);
+	}
+	displaystr (Y + 2, 10 + leftwidth, 0x07, "  album: ", 9);
+	if (mi->album[0])
+	{
+		displaystr_utf8 (Y + 2, 10 + leftwidth + 9, (selecte==9)?0x8f:0x0f, mi->album, rightwidth);
+	} else {
+		displaychr (Y + 2, 10 + leftwidth + 9, (selecte==9)?0x87:0x07, '\xfa', rightwidth);
+	}
+	displayvoid (Y + 2, plScrWidth - 1, 1);
 
-	displaystr (Y + 2, 0, 0x07, "   style:    ", 13);
+	displaystr (Y + 3, 0, 0x07, "   style: ", 10);
 	if (mi->style[0])
 	{
-		displaystr_utf8 (Y + 2, 13, (selecte==5)?0x8f:0x0f, mi->style, plScrWidth - 13 - 33);
+		displaystr_utf8 (Y + 3, 10, (selecte==5)?0x8f:0x0f, mi->style, plScrWidth - 10 - 33);
 	} else {
-		displaychr (Y + 2, 13, (selecte==5)?0x87:0x07, '\xfa', plScrWidth - 13 - 33);
+		displaychr (Y + 3, 10, (selecte==5)?0x87:0x07, '\xfa', plScrWidth - 10 - 33);
 	}
-	displaystr (Y + 2, plScrWidth - 33, 0x07, "  playtime: ", 12);
+	displaystr (Y + 3, plScrWidth - 33, 0x07, "  playtime: ", 12);
 	if (mi->playtime)
 	{
 		char temp[7];
 		snprintf (temp, sizeof (temp), "%3d:%02d", mi->playtime / 60, mi->playtime % 60);
-		displaystr (Y + 2, plScrWidth - 21, (selecte==3)?0x8f:0x0f, temp, 6);
+		displaystr (Y + 3, plScrWidth - 21, (selecte==3)?0x8f:0x0f, temp, 6);
 	} else {
-		displaystr (Y + 2, plScrWidth - 21, (selecte==3)?0x87:0x07, "\xfa\xfa\xfa:\xfa\xfa", 6);
+		displaystr (Y + 3, plScrWidth - 21, (selecte==3)?0x87:0x07, "\xfa\xfa\xfa:\xfa\xfa", 6);
 	}
-	displaystr (Y + 2, plScrWidth - 15, 0x07, "  channels: ", 12);
+	displaystr (Y + 3, plScrWidth - 15, 0x07, "  channels: ", 12);
 	if (mi->channels)
 	{
 		char temp[3];
 		snprintf (temp, sizeof (temp), "%2d", mi->channels);
-		displaystr (Y + 2, plScrWidth - 3, (selecte==2)?0x8f:0x0f, temp, 2);
+		displaystr (Y + 3, plScrWidth - 3, (selecte==2)?0x8f:0x0f, temp, 2);
 	} else {
-		displaystr (Y + 2, plScrWidth - 3, (selecte==2)?0x87:0x07, "\xfa\xfa", 2);
+		displaystr (Y + 3, plScrWidth - 3, (selecte==2)?0x87:0x07, "\xfa\xfa", 2);
 	}
-	displayvoid (Y + 2, plScrWidth - 1, 1);
+	displayvoid (Y + 3, plScrWidth - 1, 1);
 
 
-	displaystr (Y + 3, 0, 0x07, "   comment:  ", 13);
+	displaystr (Y + 4, 0, 0x07, " comment: ", 10);
 	if (mi->comment[0])
 	{
-		displaystr_utf8 (Y + 3, 13, (selecte==7)?0x8f:0x0f, mi->comment, plScrWidth - 13);
+		displaystr_utf8 (Y + 4, 10, (selecte==7)?0x8f:0x0f, mi->comment, plScrWidth - 11);
 	} else {
-		displaychr (Y + 3, 13, (selecte==7)?0x87:0x07, '\xfa', plScrWidth - 13);
+		displaychr (Y + 4, 10, (selecte==7)?0x87:0x07, '\xfa', plScrWidth - 11);
 	}
+	displayvoid (Y + 4, plScrWidth - 1, 1);
 
-
+#if 0
 	displaystr (Y + 4, 0, 0x07, "   long: ", 10);
 	displaystr_utf8_overflowleft (Y + 4, 10, 0x0F, npath ? npath : "", plScrWidth - 10);
+#endif
 }
 
 static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentry *mle, struct moduleinfostruct *mi, const char *npath)
 {
-#warning TODO, we are missing album and artist....
+	const int leftwidth = (plScrWidth - 37 - 10 - 35) / 2;
+	const int rightwidth = plScrWidth - 37 - 10 - 35 - leftwidth;
+
 	displayvoid (Y + 0, 0, 2);
 	if (mle && mle->utf8_8_dot_3[0])
 	{
@@ -1408,37 +1423,39 @@ static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentr
 	if (mle && mle->file)
 	{
 		char temp[13];
-		snprintf (temp, sizeof (temp), "11%" PRIu64 "%c", mi->size, (mi->flags&MDB_BIGMODULE) ? '!' : ' ');
+		snprintf (temp, sizeof (temp), "  %" PRIu64 "%c", mi->size, (mi->flags&MDB_BIGMODULE) ? '!' : ' ');
 		displaystr (Y + 0, 16, 0x0f, temp, 12);
 	} else {
 		displaystr (Y + 0, 16, 0x07, " \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 12);
 	}
 
-	displaystr (Y + 0, 28, 0x07, "    title:    ", 14);
-
+	displaystr (Y + 0, 28, 0x07, "  title: ", 9);
 	if (mi->title[0])
 	{
-		displaystr_utf8 (Y + 0, 42, (selecte==0)?0x8f:0x0f, mi->title, plScrWidth - 98);
+		displaystr_utf8 (Y + 0, 37, (selecte==0)?0x8f:0x0f, mi->title, leftwidth);
 	} else {
-		displaychr (Y + 0, 42, (selecte==0)?0x87:0x07, '\xfa', plScrWidth - 98);
+		displaychr (Y + 0, 37, (selecte==0)?0x87:0x07, '\xfa', leftwidth);
 	}
-	displaystr (Y + 0, plScrWidth - 56, 0x07, "    type: ", 10);
-	if (mi->modtype.string.c[0])
+
+	displaystr (Y + 0, 37 + leftwidth, 0x07, "  artist: ", 10);
+	if (mi->artist[0])
 	{
-		displaystr (Y + 0, plScrWidth - 46, (selecte==1)?0x8f:0x0f, mi->modtype.string.c, 4);
+		displaystr_utf8 (Y + 0, 47 + leftwidth, (selecte==8)?0x8f:0x0f, mi->artist, rightwidth);
 	} else {
-		displaystr (Y + 0, plScrWidth - 46, (selecte==1)?0x87:0x07, "\xfa\xfa\xfa\xfa", 4);
+		displaychr (Y + 0, 47 + leftwidth, (selecte==8)?0x87:0x07, '\xfa', rightwidth);
 	}
-	displaystr (Y + 0, plScrWidth - 42, 0x07, "     channels: ", 15);
+
+	displaystr (Y + 0, plScrWidth - 35, 0x07, "  channels: ", 12);
 	if (mi->channels)
 	{
 		char temp[3];
 		snprintf (temp, sizeof (temp), "%2d", mi->channels);
-		displaystr (Y + 0, plScrWidth - 27, (selecte==2)?0x8f:0x0f, temp, 2);
+		displaystr (Y + 0, plScrWidth - 35 + 12, (selecte==2)?0x8f:0x0f, temp, 2);
 	} else {
-		displaystr (Y + 0, plScrWidth - 27, (selecte==2)?0x87:0x07, "\xfa\xfa", 2);
+		displaystr (Y + 0, plScrWidth - 35 + 12, (selecte==2)?0x87:0x07, "\xfa\xfa", 2);
 	}
-	displaystr (Y + 0, plScrWidth - 25, 0x07, "      playtime: ", 16);
+
+	displaystr (Y + 0, plScrWidth - 21, 0x07, "  playtime: ", 12);
 	if (mi->playtime)
 	{
 		char temp[7];
@@ -1449,24 +1466,31 @@ static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentr
 	}
 	displayvoid (Y + 0, plScrWidth - 3, 3);
 
-
-	displaystr (Y + 1, 0, 0x07, "                                composer: ", 42);
+	displaystr (Y + 1, 0, 0x07, "                           composer: ", 37);
 	if (mi->composer[0])
 	{
-		displaystr_utf8 (Y + 1, 42, (selecte==4)?0x8f:0x0f, mi->composer, plScrWidth - 98);
+		displaystr_utf8 (Y + 1, 37, (selecte==4)?0x8f:0x0f, mi->composer, leftwidth);
 	} else {
-		displaychr (Y + 1, 42, (selecte==4)?0x8f:0x0f, '\xfa', plScrWidth - 98);
+		displaychr (Y + 1, 37, (selecte==4)?0x8f:0x0f, '\xfa', leftwidth);
 	}
-	displaystr (Y + 1, plScrWidth - 56, 0x07, "   style: ", 10);
-	if (mi->style[0])
-	{
-		displaystr_utf8 (Y + 1, plScrWidth - 46, (selecte==5)?0x8f:0x0f, mi->style, 43);
-	} else {
-		displaychr (Y + 1, plScrWidth - 46, (selecte==5)?0x8f:0x0f, '\xfa', 43);
-	}
-	displayvoid (Y + 1, plScrWidth - 3, 3);
 
-	displaystr(Y + 2, 0, 0x07, "                                date:     ", 42);
+	displaystr (Y + 1, 37 + leftwidth, 0x07, "   album: ", 10);
+	if (mi->album[0])
+	{
+		displaystr_utf8 (Y + 1, 47 + leftwidth, (selecte==9)?0x8f:0x0f, mi->album, rightwidth);
+	} else {
+		displaychr (Y + 1, 47 + leftwidth, (selecte==9)?0x8f:0x0f, '\xfa', rightwidth);
+	}
+
+	displaystr (Y + 1, plScrWidth - 35, 0x07, "     type: ", 11);
+	if (mi->modtype.string.c[0])
+	{
+		displaystr (Y + 1, plScrWidth - 35 + 11, (selecte==1)?0x8f:0x0f, mi->modtype.string.c, 4);
+	} else {
+		displaystr (Y + 1, plScrWidth - 35 + 11, (selecte==1)?0x87:0x07, "\xfa\xfa\xfa\xfa", 4);
+	}
+
+	displaystr(Y + 1, plScrWidth - 20, 0x07, " date: ", 7);
 	if (mi->date)
 	{
 		char temp[11];
@@ -1501,16 +1525,170 @@ static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentr
 			temp[9] = '.';
 			temp[10] = 0;
 		}
-		displaystr (Y + 2, 42, (selecte==6)?0x8f:0x0f, temp, 10);
+		displaystr (Y + 1, plScrWidth - 21 + 8, (selecte==6)?0x8f:0x0f, temp, 10);
 	} else {
-		displaystr (Y + 2, 42, (selecte==6)?0x87:0x07, "\xfa\xfa.\xfa\xfa.\xfa\xfa\xfa\xfa", 10);
+		displaystr (Y + 1, plScrWidth - 21 + 8, (selecte==6)?0x87:0x07, "\xfa\xfa.\xfa\xfa.\xfa\xfa\xfa\xfa", 10);
 	}
-	displaystr (Y + 2, 52, 0x07, "     comment: ", 14);
+	displayvoid (Y + 1, plScrWidth - 3, 3);
+
+	displaystr (Y + 2, 0, 0x07, "                            comment: ", 37);
 	if (mi->comment[0])
 	{
-		displaystr_utf8 (Y + 2, 66, (selecte==7)?0x8f:0x0f, mi->comment, plScrWidth - 69);
+		displaystr_utf8 (Y + 2, 37, (selecte==7)?0x8f:0x0f, mi->comment, plScrWidth - 37 - 43);
 	} else {
-		displaychr (Y + 2, 66, (selecte==7)?0x8f:0x0f, '\xfa', plScrWidth - 69);
+		displaychr (Y + 2, 37, (selecte==7)?0x8f:0x0f, '\xfa', plScrWidth - 37 - 43);
+
+	}
+	displaystr (Y + 2, plScrWidth - 43, 0x07, "  style: ", 9);
+	if (mi->style[0])
+	{
+		displaystr_utf8 (Y + 2, plScrWidth - 43 + 9, (selecte==5)?0x8f:0x0f, mi->style, 43 - 9 - 3);
+	} else {
+		displaychr (Y + 2, plScrWidth - 43 + 9, (selecte==5)?0x8f:0x0f, '\xfa', 43 - 9 - 3);
+	}
+	displayvoid (Y + 2, plScrWidth - 3, 3);
+
+	displaystr (Y + 3, 0, 0x07, "    long: ", 10);
+
+	displaystr_utf8_overflowleft (Y + 3, 10, 0x0F, npath ? npath : "", plScrWidth - 10);
+}
+
+static void fsShowDirBottom180File (int Y, int selecte, const struct modlistentry *mle, struct moduleinfostruct *mi, const char *npath)
+{
+	//"   title: " 10    "  artist: " 10
+	//"composer: " 10    "   album: " 10
+	const int leftwidth = (plScrWidth - (28 + 55 + 10 + 10)) / 2;
+	const int rightwidth = plScrWidth - (28 /* file: abcdef.mod FILESIZE */ + 55 /* style: foobar */+ 10 /* "   title: " */ + 10 /* "  artist: */) - leftwidth;
+
+	displayvoid (Y + 0, 0, 2);
+	if (mle && mle->utf8_8_dot_3[0])
+	{
+		displaystr_utf8 (Y + 0, 2, 0x0F, mle->utf8_8_dot_3, 12);
+	} else {
+		displaystr (Y + 0, 2, 0x07, "\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa.\xfa\xfa\xfa", 12);
+	}
+	displayvoid (Y + 0, 14, 2);
+	if (mle && mle->file)
+	{
+		char temp[13];
+		snprintf (temp, sizeof (temp), "  %" PRIu64 "%c", mi->size, (mi->flags&MDB_BIGMODULE) ? '!' : ' ');
+		displaystr (Y + 0, 16, 0x0f, temp, 12);
+	} else {
+		displaystr (Y + 0, 16, 0x07, " \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 12);
+	}
+
+	displaystr (Y + 0, 28, 0x07, "   title: ", 10);
+	if (mi->title[0])
+	{
+		displaystr_utf8 (Y + 0, 38, (selecte==0)?0x8f:0x0f, mi->title, leftwidth);
+	} else {
+		displaychr (Y + 0, 38, (selecte==0)?0x87:0x07, '\xfa', leftwidth);
+	}
+	displaystr (Y + 0, 28 + 10 + leftwidth, 0x07, "  artist: ", 10);
+	if (mi->artist[0])
+	{
+		displaystr_utf8 (Y + 0, 28 + 10 + leftwidth + 10, (selecte==8)?0x8f:0x0f, mi->artist, rightwidth);
+	} else {
+		displaychr (Y + 0, 28 + 10 + leftwidth + 10, (selecte==8)?0x87:0x07, '\xfa', rightwidth);
+	}
+
+	displaystr (Y + 0, plScrWidth - 55, 0x07, "   type: ", 9);
+	if (mi->modtype.string.c[0])
+	{
+		displaystr (Y + 0, plScrWidth - 46, (selecte==1)?0x8f:0x0f, mi->modtype.string.c, 4);
+	} else {
+		displaystr (Y + 0, plScrWidth - 46, (selecte==1)?0x87:0x07, "\xfa\xfa\xfa\xfa", 4);
+	}
+	displaystr (Y + 0, plScrWidth - 42, 0x07, "     channels: ", 15);
+	if (mi->channels)
+	{
+		char temp[3];
+		snprintf (temp, sizeof (temp), "%2d", mi->channels);
+		displaystr (Y + 0, plScrWidth - 27, (selecte==2)?0x8f:0x0f, temp, 2);
+	} else {
+		displaystr (Y + 0, plScrWidth - 27, (selecte==2)?0x87:0x07, "\xfa\xfa", 2);
+	}
+	displaystr (Y + 0, plScrWidth - 25, 0x07, "      playtime: ", 16);
+	if (mi->playtime)
+	{
+		char temp[7];
+		snprintf (temp, sizeof (temp), "%3d:%02d", mi->playtime / 60, mi->playtime % 60);
+		displaystr (Y + 0, plScrWidth - 9, (selecte==3)?0x8f:0x0f, temp, 6);
+	} else {
+		displaystr (Y + 0, plScrWidth - 9, (selecte==3)?0x87:0x07, "\xfa\xfa\xfa:\xfa\xfa", 6);
+	}
+	displayvoid (Y + 0, plScrWidth - 3, 3);
+
+
+	displaystr (Y + 1, 0, 0x07, "                            composer: ", 38);
+	if (mi->composer[0])
+	{
+		displaystr_utf8 (Y + 1, 38, (selecte==4)?0x8f:0x0f, mi->composer, leftwidth);
+	} else {
+		displaychr (Y + 1, 38, (selecte==4)?0x8f:0x0f, '\xfa', leftwidth);
+	}
+	displaystr (Y + 1, 38 + leftwidth, 0x07, "   album: ", 10);
+	if (mi->album[0])
+	{
+		displaystr_utf8 (Y + 1, 28 + 10 + leftwidth + 10, (selecte==9)?0x8f:0x0f, mi->album, rightwidth);
+	} else {
+		displaychr (Y + 1, 28 + 10 + leftwidth + 10, (selecte==9)?0x87:0x07, '\xfa', rightwidth);
+	}
+
+	displaystr (Y + 1, plScrWidth - 55, 0x07, "  style: ", 9);
+	if (mi->style[0])
+	{
+		displaystr_utf8 (Y + 1, plScrWidth - 46, (selecte==5)?0x8f:0x0f, mi->style, 43);
+	} else {
+		displaychr (Y + 1, plScrWidth - 46, (selecte==5)?0x8f:0x0f, '\xfa', 43);
+	}
+	displayvoid (Y + 1, plScrWidth - 3, 3);
+
+	displaystr(Y + 2, 0, 0x07, "                                date: ", 38);
+	if (mi->date)
+	{
+		char temp[11];
+
+		if (mi->date & 0xff)
+		{
+			snprintf (temp, 3, "%02d", mi->date & 0xff);
+		} else {
+			temp[0] = '.';
+			temp[1] = '.';
+		}
+		temp[2] = '.';
+		if (mi->date & 0xffff)
+		{
+			snprintf (temp+3, 3, "%02d", (mi->date >> 8) & 0xff);
+		} else {
+			temp[3] = '.';
+			temp[4] = '.';
+		}
+		temp[5] = '.';
+		if (mi->date >> 16)
+		{
+			snprintf (temp+6, 5, "%4d", mi->date >> 16);
+			if ((mi->date>>16) <= 100)
+			{
+				temp[7] = '\'';
+			}
+		} else {
+			temp[6] = '.';
+			temp[7] = '.';
+			temp[8] = '.';
+			temp[9] = '.';
+			temp[10] = 0;
+		}
+		displaystr (Y + 2, 38, (selecte==6)?0x8f:0x0f, temp, 10);
+	} else {
+		displaystr (Y + 2, 38, (selecte==6)?0x87:0x07, "\xfa\xfa.\xfa\xfa.\xfa\xfa\xfa\xfa", 10);
+	}
+	displaystr (Y + 2, 48, 0x07, "       comment: ", 16);
+	if (mi->comment[0])
+	{
+		displaystr_utf8 (Y + 2, 64, (selecte==7)?0x8f:0x0f, mi->comment, plScrWidth - 67);
+	} else {
+		displaychr (Y + 2, 64, (selecte==7)?0x8f:0x0f, '\xfa', plScrWidth - 67);
 
 	}
 	displayvoid (Y + 2, plScrWidth - 3, 3);
@@ -1683,7 +1861,10 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 			mdbGetModuleInfo(&mi, mle->mdb_ref);
 
 			dirdbGetFullname_malloc (mle->file->dirdb_ref, &npath, 0);
-			if (plScrWidth>=132)
+			if (plScrWidth>=180)
+			{
+				fsShowDirBottom180File (Y + 1, selecte, mle, &mi, npath);
+			} else if (plScrWidth>=132)
 			{
 				fsShowDirBottom132File (Y + 1, selecte, mle, &mi, npath);
 			} else {
@@ -1943,7 +2124,7 @@ static int fsEditModType (struct moduletype *oldtype, int _Bottom, int _Right)
 		state = 1;
 	}
 
-	displaystr(Top, Left, 0x04, "\xda\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc2\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xcb", 21);
+	displaystr(Top, Left, 0x04, "\xda\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc2\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xc4\xbf", 21);
 
 	for (i=1;i<Height-7;i++)
 	{
@@ -2431,79 +2612,144 @@ static int fsEditFileInfo(struct modlistentry *me)
 	if (!mdbGetModuleInfo(&mdbEditBuf, me->mdb_ref))
 		return 1;
 
-	if (plScrWidth>=132)
+	if (plScrWidth>=180)
 	{
+		const int leftwidth = (plScrWidth - (28 + 55 + 10 + 10)) / 2;
+		const int rightwidth = plScrWidth - (28 /* file: abcdef.mod FILESIZE */ + 55 /* style: foobar */+ 10 /* "   title: " */ + 10 /* "  artist: */) - leftwidth;
+
 		switch (editfilepos)
 		{
 			default:
 			case 0:
-				retval = EditStringUTF8z(plScrHeight-5, 42, plScrWidth - 98, sizeof(mdbEditBuf.title), mdbEditBuf.title);
+				retval = EditStringUTF8z(plScrHeight - 5, 38, leftwidth, sizeof(mdbEditBuf.title), mdbEditBuf.title);
 				break;
 			case 1:
-				retval = fsEditModType(&mdbEditBuf.modtype, plScrHeight - 5, plScrWidth - 42);
+				retval = fsEditModType(&mdbEditBuf.modtype, plScrHeight - 5, plScrWidth - 46 + 4);
 				break;
 			case 2:
-				retval = fsEditChan(plScrHeight-5, plScrWidth - 27, &mdbEditBuf.channels);
+				retval = fsEditChan(plScrHeight - 5, plScrWidth - 27, &mdbEditBuf.channels);
 				break;
 			case 3:
 			{
 				uint16_t playtime = mdbEditBuf.playtime; /* avoid unaligned pointer access */
-				retval = fsEditPlayTime(plScrHeight-5, plScrWidth - 9, &playtime);
+				retval = fsEditPlayTime(plScrHeight - 5, plScrWidth - 9, &playtime);
 				mdbEditBuf.playtime = playtime;
 				break;
 			}
 			case 4:
-				retval = EditStringUTF8z(plScrHeight-4, 42, plScrWidth - 98, sizeof(mdbEditBuf.composer), mdbEditBuf.composer);
+				retval = EditStringUTF8z(plScrHeight - 4, 38, leftwidth, sizeof(mdbEditBuf.composer), mdbEditBuf.composer);
 				break;
 			case 5:
-				retval = EditStringUTF8z(plScrHeight-4, plScrWidth - 46, 43, sizeof(mdbEditBuf.style), mdbEditBuf.style);
+				retval = EditStringUTF8z(plScrHeight - 4, plScrWidth - 46, 43, sizeof(mdbEditBuf.style), mdbEditBuf.style);
 				break;
 			case 6:
 			{
 				uint32_t date = mdbEditBuf.date; /* avoid unaligned pointer access */
-				retval = fsEditDate(plScrHeight-3, 42, &date);
+				retval = fsEditDate(plScrHeight - 3, 38, &date);
 				mdbEditBuf.date = date;
 				break;
 			}
 			case 7:
-				retval = EditStringUTF8z(plScrHeight-3, 66, plScrWidth - 69, sizeof(mdbEditBuf.comment), mdbEditBuf.comment);
+				retval = EditStringUTF8z(plScrHeight - 3, 64, plScrWidth - 67, sizeof(mdbEditBuf.comment), mdbEditBuf.comment);
+				break;
+			case 8:
+				retval = EditStringUTF8z(plScrHeight - 5, 28 + 10 + leftwidth + 10, rightwidth, sizeof(mdbEditBuf.artist), mdbEditBuf.artist);
+				break;
+			case 9:
+				retval = EditStringUTF8z(plScrHeight-4, 28 + 10 + leftwidth + 10, rightwidth, sizeof(mdbEditBuf.album), mdbEditBuf.album);
 				break;
 		}
-	} else {
+	} else if (plScrWidth>=132)
+	{
+		const int leftwidth = (plScrWidth - 37 - 10 - 35) / 2;
+		const int rightwidth = plScrWidth - 37 - 10 - 35 - leftwidth;
+
 		switch (editfilepos)
 		{
 			default:
 			case 0:
-				retval = EditStringUTF8z(plScrHeight-6, 35, plScrWidth - 35 - 13, sizeof(mdbEditBuf.title), mdbEditBuf.title);
+				retval = EditStringUTF8z(plScrHeight - 5, 37, leftwidth, sizeof(mdbEditBuf.title), mdbEditBuf.title);
+				break;
+			case 1:
+				retval = fsEditModType(&mdbEditBuf.modtype, plScrHeight - 4, plScrWidth - 35 + 11 + 4);
+				break;
+			case 2:
+				retval = fsEditChan(plScrHeight - 5, plScrWidth - 35 + 12, &mdbEditBuf.channels);
+				break;
+			case 3:
+			{
+				uint16_t playtime = mdbEditBuf.playtime; /* avoid unaligned pointer access */
+				retval = fsEditPlayTime(plScrHeight - 5, plScrWidth - 9, &playtime);
+				mdbEditBuf.playtime = playtime;
+				break;
+			}
+			case 4:
+				retval = EditStringUTF8z(plScrHeight - 4, 37, leftwidth, sizeof(mdbEditBuf.composer), mdbEditBuf.composer);
+				break;
+			case 5:
+				retval = EditStringUTF8z(plScrHeight - 3, plScrWidth - 43 + 9, 43 - 9 - 3, sizeof(mdbEditBuf.style), mdbEditBuf.style);
+				break;
+			case 6:
+			{
+				uint32_t date = mdbEditBuf.date; /* avoid unaligned pointer access */
+				retval = fsEditDate(plScrHeight - 4, plScrWidth - 21 + 8, &date);
+				mdbEditBuf.date = date;
+				break;
+			}
+			case 7:
+				retval = EditStringUTF8z(plScrHeight - 3, 37, plScrWidth - 37 - 43, sizeof(mdbEditBuf.comment), mdbEditBuf.comment);
+				break;
+			case 8:
+				retval = EditStringUTF8z(plScrHeight - 5, 47 + leftwidth, rightwidth, sizeof(mdbEditBuf.artist), mdbEditBuf.artist);
+				break;
+			case 9:
+				retval = EditStringUTF8z(plScrHeight - 4, 47 + leftwidth, rightwidth, sizeof(mdbEditBuf.album), mdbEditBuf.album);
+				break;
+		}
+	} else {
+		const int leftwidth = (plScrWidth - 10 - 9 - 1) / 2;
+		const int rightwidth = plScrWidth - 10 - 9 - 1 - leftwidth;
+
+		switch (editfilepos)
+		{
+			default:
+			case 0:
+				retval = EditStringUTF8z(plScrHeight - 6, 35, plScrWidth - 35 - 13, sizeof(mdbEditBuf.title), mdbEditBuf.title);
 				break;
 			case 1:
 				retval = fsEditModType(&mdbEditBuf.modtype, plScrHeight - 6, plScrWidth - 1);
 				break;
 			case 2:
-				retval = fsEditChan(plScrHeight-4, plScrWidth - 3, &mdbEditBuf.channels);
+				retval = fsEditChan(plScrHeight - 3, plScrWidth - 3, &mdbEditBuf.channels);
 				break;
 			case 3:
 			{
 				uint16_t playtime = mdbEditBuf.playtime; /* avoid unaligned pointer access */
-				retval = fsEditPlayTime(plScrHeight-4, plScrWidth - 21, &playtime);
+				retval = fsEditPlayTime(plScrHeight - 3, plScrWidth - 21, &playtime);
 				mdbEditBuf.playtime = playtime;
 				break;
 			}
 			case 4:
-				retval = EditStringUTF8z(plScrHeight-5, 13, plScrWidth - 13 - 19, sizeof(mdbEditBuf.composer), mdbEditBuf.composer);
+				retval = EditStringUTF8z(plScrHeight - 5, 10, plScrWidth - 10 - 19, sizeof(mdbEditBuf.composer), mdbEditBuf.composer);
 				break;
 			case 5:
-				retval = EditStringUTF8z(plScrHeight-4, 13, plScrWidth - 13 - 33, sizeof(mdbEditBuf.style), mdbEditBuf.style);
+				retval = EditStringUTF8z(plScrHeight - 3, 10, plScrWidth - 10 - 33, sizeof(mdbEditBuf.style), mdbEditBuf.style);
 				break;
 			case 6:
 				{
 					uint32_t date = mdbEditBuf.date; /* avoid unaligned pointer access */
-					retval = fsEditDate(plScrHeight-5, plScrWidth - 11, &date);
+					retval = fsEditDate(plScrHeight - 5, plScrWidth - 11, &date);
 					mdbEditBuf.date = date;
 					break;
 				}
 			case 7:
-				retval = EditStringUTF8z(plScrHeight-3, 13, plScrWidth - 13, sizeof(mdbEditBuf.comment), mdbEditBuf.comment);
+				retval = EditStringUTF8z(plScrHeight - 2, 10, plScrWidth - 11, sizeof(mdbEditBuf.comment), mdbEditBuf.comment);
+				break;
+			case 8:
+				retval = EditStringUTF8z(plScrHeight - 4, 10, leftwidth, sizeof(mdbEditBuf.artist), mdbEditBuf.artist);
+				break;
+			case 9:
+				retval = EditStringUTF8z(plScrHeight - 4, 10 + leftwidth + 9, rightwidth, sizeof(mdbEditBuf.album), mdbEditBuf.album);
 				break;
 		}
 	}
@@ -2521,7 +2767,7 @@ static int fsEditFileInfo(struct modlistentry *me)
 
 		return 0;
 	}
-	return 1;
+	return retval > 0;
 }
 
 static int fsEditDirInfo(struct modlistentry *me)
@@ -3065,10 +3311,25 @@ superbreak:
 					{
 						if (m && m->file)
 						{
-							if (plScrWidth>=132)
-								editfilepos="\x00\x01\x02\x03\x00\x01\x04\x05"[editfilepos];
-							else
-								editfilepos="\x00\x01\x06\x06\x00\x04\x00\x05"[editfilepos];
+							if (plScrWidth>=180)
+							{
+								/*             /- Title
+								 *             |    /- Type
+								 *             |   |   /- Channels
+								 *             |   |   |   /- Playtime
+								 *             |   |   |   |   /- Composer
+								 *             |   |   |   |   |   /- Style
+								 *             |   |   |   |   |   |   /- Date
+								 *             |   |   |   |   |   |   |   /- Comment
+								 *             |   |   |   |   |   |   |   |   /- Artist
+								 *             |   |   |   |   |   |   |   |   |   /- Album */
+								editfilepos="\x00\x01\x02\x03\x00\x01\x04\x09\x08\x08"[editfilepos];
+							} else if (plScrWidth>=132)
+							{
+								editfilepos="\x00\x02\x02\x03\x00\x01\x03\x04\x08\x08"[editfilepos];
+							} else {
+								editfilepos="\x00\x01\x09\x09\x00\x08\x01\x05\x04\x06"[editfilepos];
+							}
 						}
 					} else if (!win)
 					{
@@ -3085,10 +3346,25 @@ superbreak:
 					{
 						if (m && m->file)
 						{
-							if (plScrWidth>=132)
-								editfilepos="\x04\x05\x05\x05\x06\x07\x06\x07"[editfilepos];
-							else
-								editfilepos="\x04\x06\x07\x07\x05\x07\x03\x07"[editfilepos];
+							if (plScrWidth>=180)
+							{
+								/*             /- Title
+								 *             |    /- Type
+								 *             |   |   /- Channels
+								 *             |   |   |   /- Playtime
+								 *             |   |   |   |   /- Composer
+								 *             |   |   |   |   |   /- Style
+								 *             |   |   |   |   |   |   /- Date
+								 *             |   |   |   |   |   |   |   /- Comment
+								 *             |   |   |   |   |   |   |   |   /- Artist
+								 *             |   |   |   |   |   |   |   |   |   /- Album */
+								editfilepos="\x04\x05\x05\x05\x06\x07\x06\x07\x09\x07"[editfilepos];
+							} else if (plScrWidth>=132)
+							{
+								editfilepos="\x04\x05\x01\x06\x07\x05\x05\x07\x09\x07"[editfilepos];
+							} else {
+								editfilepos="\x04\x06\x07\x07\x08\x07\x09\x07\x05\x03"[editfilepos];
+							}
 						}
 					} else if (!win)
 					{
@@ -3159,10 +3435,25 @@ superbreak:
 					{
 						if (m && m->file)
 						{
-							if (plScrWidth>=132)
-								editfilepos="\x01\x02\x03\x03\x05\x05\x07\x07"[editfilepos];
-							else
-								editfilepos="\x01\x01\x02\x02\x06\x03\x06\x07"[editfilepos];
+							if (plScrWidth>=180)
+							{
+								/*             /- Title
+								 *             |    /- Type
+								 *             |   |   /- Channels
+								 *             |   |   |   /- Playtime
+								 *             |   |   |   |   /- Composer
+								 *             |   |   |   |   |   /- Style
+								 *             |   |   |   |   |   |   /- Date
+								 *             |   |   |   |   |   |   |   /- Comment
+								 *             |   |   |   |   |   |   |   |   /- Artist
+								 *             |   |   |   |   |   |   |   |   |   /- Album */
+								editfilepos="\x08\x02\x03\x03\x09\x05\x07\x07\x01\x05"[editfilepos];
+							} else if (plScrWidth>=132)
+							{
+								editfilepos="\x08\x06\x03\x03\x09\x05\x06\x05\x02\x01"[editfilepos];
+							} else {
+								editfilepos="\x01\x01\x02\x02\x06\x03\x06\x07\x09\x09"[editfilepos];
+							}
 						}
 						break;
 					}
@@ -3197,10 +3488,25 @@ superbreak:
 					{
 						if (m && m->file)
 						{
-							if (plScrWidth>=132)
-								editfilepos="\x00\x00\x01\x02\x04\x04\x06\x06"[editfilepos];
-							else
-								editfilepos="\x00\x00\x03\x05\x04\x05\x04\x07"[editfilepos];
+							if (plScrWidth>=180)
+							{
+								/*             /- Title
+								 *             |    /- Type
+								 *             |   |   /- Channels
+								 *             |   |   |   /- Playtime
+								 *             |   |   |   |   /- Composer
+								 *             |   |   |   |   |   /- Style
+								 *             |   |   |   |   |   |   /- Date
+								 *             |   |   |   |   |   |   |   /- Comment
+								 *             |   |   |   |   |   |   |   |   /- Artist
+								 *             |   |   |   |   |   |   |   |   |   /- Album */
+								editfilepos="\x00\x08\x01\x02\x04\x09\x06\x06\x00\x04"[editfilepos];
+							} else if (plScrWidth>=132)
+							{
+								editfilepos="\x00\x09\x08\x02\x04\x07\x01\x07\x00\x04"[editfilepos];
+							} else {
+								editfilepos="\x00\x00\x03\x05\x04\x05\x04\x07\x08\x08"[editfilepos];
+							}
 						}
 						break;
 					}

@@ -1017,16 +1017,10 @@ static void musicbrainzSetupDialogDraw (struct musicbrainz_cacheline_sort_t *ent
 	int mlTop = (plScrHeight - mlHeight) / 2 ;
 	int mlLeft = (plScrWidth - mlWidth) / 2;
 
-	displaychr  (mlTop + 0, mlLeft,               0x17, '\xda', 1);
-	displaychr  (mlTop + 0, mlLeft + 1,           0x17, '\xc4', mlWidth - 2);
-	displaychr  (mlTop + 0, mlLeft + mlWidth - 1, 0x17, '\xbf', 1);
+	display_nprintf (mlTop + 0, mlLeft, 0x17, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2); /* +---------+ */
+	display_nprintf (mlTop + 1, mlLeft, 0x17, mlWidth, "\xb3%*C \xb3", mlWidth - 2);    /* |         | */
 
-	displaychr  (mlTop + 1, mlLeft,               0x17, '\xb3', 1);
-	displaychr  (mlTop + 1, mlLeft + 1,           0x17, ' ',    mlWidth - 2);
-	displaychr  (mlTop + 1, mlLeft + mlWidth - 1, 0x17, '\xb3', 1);
-
-	displaychr  (mlTop + 2, mlLeft,               0x17, '\xb3', 1);
-	displaychr  (mlTop + 2, mlLeft + 1,           0x17, ' ',    2);
+	displaystr  (mlTop + 2, mlLeft,               0x17, "\xb3  ", 3);
 	if (musicbrainz.cache[entry->pointsat].size & SIZE_PRIVATE)
 	{
 		displaystr  (mlTop + 2, mlLeft +  3, (epos==0)?0x2e:0x17, "[Unmark as private]", 19);
@@ -1045,9 +1039,7 @@ static void musicbrainzSetupDialogDraw (struct musicbrainz_cacheline_sort_t *ent
 	displaychr  (mlTop + 2, mlLeft + 52,          0x17, ' ',    mlWidth - 52 - 1);
 	displaychr  (mlTop + 2, mlLeft + mlWidth - 1, 0x17, '\xb3', 1);
 
-	displaychr  (mlTop + 3, mlLeft,               0x17, '\xb3', 1);
-	displaychr  (mlTop + 3, mlLeft + 1,           0x17, ' ',    mlWidth - 2);
-	displaychr  (mlTop + 3, mlLeft + mlWidth - 1, 0x17, '\xb3', 1);
+	display_nprintf (mlTop + 3, mlLeft, 0x17, mlWidth, "\xb3%*C \xb3", mlWidth - 2);    /* |         | */
 
 	displaychr  (mlTop + 4, mlLeft,               0x17, '\xb3', 1);
 	displaychr  (mlTop + 4, mlLeft + 1,           0x17, ' ',    2);
@@ -1062,13 +1054,8 @@ static void musicbrainzSetupDialogDraw (struct musicbrainz_cacheline_sort_t *ent
 	}
 	displaychr  (mlTop + 4, mlLeft + mlWidth - 1, 0x17, '\xb3', 1);
 
-	displaychr  (mlTop + 5, mlLeft,               0x17, '\xb3', 1);
-	displaychr  (mlTop + 5, mlLeft + 1,           0x17, ' ',    mlWidth - 2);
-	displaychr  (mlTop + 5, mlLeft + mlWidth - 1, 0x17, '\xb3', 1);
-
-	displaychr  (mlTop + 6, mlLeft,               0x17, '\xc0', 1);
-	displaychr  (mlTop + 6, mlLeft + 1,           0x17, '\xc4', mlWidth - 2);
-	displaychr  (mlTop + 6, mlLeft + mlWidth - 1, 0x17, '\xd9', 1);
+	display_nprintf (mlTop + 5, mlLeft, 0x17, mlWidth, "\xb3%*C \xb3",     mlWidth - 2); /* |         | */
+	display_nprintf (mlTop + 6, mlLeft, 0x17, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2); /* +---------+ */
 }
 
 static void musicbrainzSetupDraw (const char *title, int dsel, struct musicbrainz_cacheline_sort_t *sorted)
@@ -1121,41 +1108,27 @@ static void musicbrainzSetupDraw (const char *title, int dsel, struct musicbrain
 		dot = skip * (mlHeight - LINES_NOT_AVAILABLE) / (musicbrainz.cachecount - (mlHeight - LINES_NOT_AVAILABLE));
 	}
 
-	displaychr (mlTop,                mlLeft,               0x09, '\xda', 1);
 	{
-		int CacheLen = strlen (title);
-		int Skip = (mlWidth - CacheLen - 2) / 2;
-		displaychr (mlTop, mlLeft + 1,                       0x09, '\xc4', Skip - 1);
-		displaychr (mlTop, mlLeft + Skip,                    0x09, ' ',   1);
-		displaystr (mlTop, mlLeft + Skip + 1,                0x09, title, CacheLen);
-		displaychr (mlTop, mlLeft + Skip + 1 + CacheLen,     0x09, ' ',   1);
-		displaychr (mlTop, mlLeft + Skip + 1 + CacheLen + 1, 0x09, '\xc4', mlWidth - Skip - 3 - CacheLen);
+			int CacheLen = strlen (title);
+			int Skip = (mlWidth - CacheLen - 2) / 2;
+		display_nprintf (mlTop, mlLeft, 0x09, mlWidth, "\xda%*C\xc4 %s %*C\xc4\xbf", Skip - 1, title, mlWidth - Skip - 3 - CacheLen); /* +----- title ------+ */
 	}
-	displaychr (mlTop,                mlLeft + mlWidth - 1, 0x09, '\xbf', 1);
 
-	displaychr (mlTop + 1,            mlLeft,               0x09, '\xb3', 1);
-	displaystr (mlTop + 1,            mlLeft +  1,          0x07, " Use arrow keys and ", 20);
-	displaystr (mlTop + 1,            mlLeft + 21,          0x0f, "<ENTER>", 7);
-	displaystr (mlTop + 1,            mlLeft + 28,          0x07, " to navigate. ", 14);
-	displaystr (mlTop + 1,            mlLeft + 42,          0x0f, "<ESC>", 5);
-	displaystr (mlTop + 1,            mlLeft + 47,          0x07, " to close.", mlWidth - 48);
-	displaychr (mlTop + 1,            mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	display_nprintf (mlTop + 1, mlLeft, 0x09, mlWidth, "\xb3%0.7o Use arrow keys and %0.15o<ENTER>%0.7o to navigate. %0.15o<ESC>%0.7o to close.%*C %0.9o\xb3", mlWidth - 58);
 
-	displaychr (mlTop + 2,            mlLeft,               0x09, '\xc3', 1);
-	displaychr (mlTop + 2,            mlLeft + 1, 0x09, '\xc4', mlWidth - 2);
-	displaychr (mlTop + 2,            mlLeft + mlWidth - 1, 0x09, '\xb4', 1);
+	display_nprintf (mlTop + 2,  mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2); /* |            | */
 
-	if (mlWidth < (2 + 2 + 28 + 10 + 32 + 1 + 32)) /* borders + date + "private" + album32 + artist32 */
+	if (mlWidth < (1 + 1 + 27 + 2 + 10 + 32 + 2 + 32 + 1 + 1)) /* borders + date + "private" + album32 + artist32 */
 	{
-		albumwidth = mlWidth - (2 + 2 + 28);
+		albumwidth = mlWidth - (1 + 1 + 27 + 2 /* + albumwidth */ + 1 + 1);
 		artistwidth = 0;
 	} else {
-		albumwidth = ((mlWidth - (2 + 2 + 28 + 10)) / 2) + 10;
-		if (albumwidth > (64+10))
+		albumwidth = ((mlWidth - (1 + 1 + 27 + 2 + 9 + 1 /* + albumwidth */+ 1 + 1)) / 2) + 10;
+		if (albumwidth > (9 + 1 + 64))
 		{
-			albumwidth = 64 + 10;
+			albumwidth = 9 + 1 + 64;
 		}
-		artistwidth = mlWidth - (2 + 2 + 28 + albumwidth);
+		artistwidth = mlWidth - (1 + 1 + 27 + 2 + albumwidth + 2 /*+ artistwidth*/ + 1 + 1);
 	}
 
 	for (i = 3; i < (mlHeight-5); i++)
@@ -1184,73 +1157,43 @@ static void musicbrainzSetupDraw (const char *title, int dsel, struct musicbrain
 			strftime(timebuffer, sizeof (timebuffer), "%d.%m.%Y %H:%M %z(%Z)", thetime);
 
 			displaychr (mlTop + i, mlLeft + 1, (dsel==index)?0x87:0x07, ' ', 1);
-			displaystr (mlTop + i, mlLeft + 2, (dsel==index)?0x87:0x07, timebuffer, 28); /* includes one exrta space */
+			displaystr (mlTop + i, mlLeft + 2, (dsel==index)?0x87:0x07, timebuffer, 29); /* includes two exrta space */
 			if (musicbrainz.cache[sorted[index].pointsat].size & SIZE_VALID)
 			{
 				if (musicbrainz.cache[sorted[index].pointsat].size & SIZE_PRIVATE)
 				{
-					displaystr (mlTop + i, mlLeft + 30, (dsel==index)?0x84:0x04, "(private)", 9);
-					displaychr (mlTop + i, mlLeft + 39, (dsel==index)?0x8f:0x07, ' ', 1);
-					displaystr (mlTop + i, mlLeft + 40, (dsel==index)?0x8f:0x07, sorted[index].album, albumwidth - 10);
+					displaystr (mlTop + i, mlLeft + 31, (dsel==index)?0x84:0x04, "(private)", 9);
+					displaychr (mlTop + i, mlLeft + 40, (dsel==index)?0x8f:0x07, ' ', 1);
+					displaystr (mlTop + i, mlLeft + 41, (dsel==index)?0x8f:0x07, sorted[index].album, albumwidth - 10);
 				} else {
-					displaystr_utf8 (mlTop + i, mlLeft + 30, (dsel==index)?0x8f:0x07, sorted[index].album, albumwidth);
+					displaystr_utf8 (mlTop + i, mlLeft + 31, (dsel==index)?0x8f:0x07, sorted[index].album, albumwidth);
 				}
 			} else {
 				if (musicbrainz.cache[sorted[index].pointsat].size & SIZE_PRIVATE)
 				{
-					displaystr (mlTop + i, mlLeft + 30, (dsel==index)?0x84:0x04, "(private)", 9);
-					displaychr (mlTop + i, mlLeft + 39, (dsel==index)?0x8f:0x07, ' ', 1);
-					displaystr (mlTop + i, mlLeft + 40, (dsel==index)?0x8a:0x0a, "Unknown disc", artistwidth + albumwidth - 10);
+					displaystr (mlTop + i, mlLeft + 31, (dsel==index)?0x84:0x04, "(private)", 9);
+					displaychr (mlTop + i, mlLeft + 40, (dsel==index)?0x8f:0x07, ' ', 1);
+					displaystr (mlTop + i, mlLeft + 41, (dsel==index)?0x8a:0x0a, "Unknown disc", albumwidth - 10);
 				} else {
-					displaystr_utf8 (mlTop + i, mlLeft + 30, (dsel==index)?0x8a:0x0a, "Unknown disc", artistwidth + albumwidth);
+					displaystr (mlTop + i, mlLeft + 30, (dsel==index)?0x8a:0x0a, "Unknown disc", albumwidth);
 				}
 			}
 			if (artistwidth)
 			{
-				displaychr (mlTop + i, mlLeft + 30 + albumwidth, (dsel==index)?0x8f:0x0f, ' ', 1);
-				displaystr (mlTop + i, mlLeft + 31 + albumwidth, (dsel==index)?0x8f:0x07, sorted[index].artist, artistwidth);
+				displaychr (mlTop + i, mlLeft + 31 + albumwidth, (dsel==index)?0x8f:0x0f, ' ', 2);
+				displaystr_utf8 (mlTop + i, mlLeft + 33 + albumwidth, (dsel==index)?0x8f:0x07, sorted[index].artist, artistwidth);
 			}
 		}
+		displaychr (mlTop + i, mlLeft + mlWidth - 2, (dsel==index)?0x8f:0x07, ' ', 1);
 		displaychr (mlTop + i, mlLeft + mlWidth - 1, 0x09, ((i-3) == dot) ? '\xdd':'\xb3', 1);
 	}
 
-	displaychr (mlTop + mlHeight - 5, mlLeft,               0x09, '\xc3', 1);
-	displaychr (mlTop + mlHeight - 5, mlLeft + 1,           0x09, '\xc4', mlWidth - 2);
-	displaychr (mlTop + mlHeight - 5, mlLeft + mlWidth - 1, 0x09, '\xb4', 1);
+	display_nprintf (mlTop + mlHeight - 5,  mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2); /* +---------------+ */
 
-	displaychr (mlTop + mlHeight - 4, mlLeft,               0x09, '\xb3', 1);
-	if (musicbrainz.cachecount)
-	{
-		displaychr (mlTop + mlHeight - 4, mlLeft + 1, 0x07, ' ', 1);
-		displaystr (mlTop + mlHeight - 4, mlLeft + 2, 0x07, musicbrainz.cache[sorted[dsel].pointsat].discid, mlWidth - 2);
-	} else {
-		displayvoid (mlTop + mlHeight - 4, mlLeft + 1,  mlWidth - 2);
-	}
-	displaychr (mlTop + mlHeight - 4, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
-
-	displaychr (mlTop + mlHeight - 3, mlLeft,               0x09, '\xb3', 1);
-	if (musicbrainz.cachecount)
-	{
-		displaychr (mlTop + mlHeight - 3, mlLeft + 1, 0x07, ' ', 1);
-		displaystr_utf8 (mlTop + mlHeight - 3, mlLeft + 2, 0x07, sorted[dsel].album, mlWidth - 3);
-	} else {
-		displayvoid (mlTop + mlHeight - 3, mlLeft + 1,  mlWidth - 2);
-	}
-	displaychr (mlTop + mlHeight - 3, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
-
-	displaychr (mlTop + mlHeight - 2, mlLeft,               0x09, '\xb3', 1);
-	if (musicbrainz.cachecount)
-	{
-		displaychr (mlTop + mlHeight - 2, mlLeft + 1, 0x07, ' ', 1);
-		displaystr_utf8 (mlTop + mlHeight - 2, mlLeft + 2, 0x07, sorted[dsel].artist, mlWidth - 3);
-	} else {
-		displayvoid (mlTop + mlHeight - 2, mlLeft + 1,  mlWidth - 2);
-	}
-	displaychr (mlTop + mlHeight - 2, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
-
-	displaychr (mlTop + mlHeight - 1, mlLeft,               0x09, '\xc0', 1);
-	displaychr (mlTop + mlHeight - 1, mlLeft + 1,           0x09, '\xc4', mlWidth - 2);
-	displaychr (mlTop + mlHeight - 1, mlLeft + mlWidth - 1, 0x09, '\xd9', 1);
+	display_nprintf (mlTop + mlHeight - 4, mlLeft, 0x09, mlWidth, "\xb3%0.7o %.*s%0.9o \xb3", mlWidth - 4, musicbrainz.cachecount ? musicbrainz.cache[sorted[dsel].pointsat].discid : "");
+	display_nprintf (mlTop + mlHeight - 3, mlLeft, 0x09, mlWidth, "\xb3%0.7o %.*S%0.9o \xb3", mlWidth - 4, musicbrainz.cachecount ? sorted[dsel].album : "");
+	display_nprintf (mlTop + mlHeight - 2, mlLeft, 0x09, mlWidth, "\xb3%0.7o %.*S%0.9o \xb3", mlWidth - 4, musicbrainz.cachecount ? sorted[dsel].artist : "");
+	display_nprintf (mlTop + mlHeight - 1,  mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2); /* +---------------+ */
 }
 
 static int sortedcompare (const void *a, const void *b)
@@ -1451,33 +1394,13 @@ static interfaceReturnEnum musicbrainzSetupRun (void)
 
 									fsDraw();
 
-									displaychr  (mlTop + 0, mlLeft,               0x67, '\xda', 1);
-									displaychr  (mlTop + 0, mlLeft + 1,           0x67, '\xc4', mlWidth - 2);
-									displaychr  (mlTop + 0, mlLeft + mlWidth - 1, 0x67, '\xbf', 1);
-
-									displaychr  (mlTop + 1, mlLeft,               0x67, '\xb3', 1);
-									displaychr  (mlTop + 1, mlLeft + 1,           0x67, ' ',    mlWidth - 2);
-									displaychr  (mlTop + 1, mlLeft + mlWidth - 1, 0x67, '\xb3', 1);
-
-									displaychr  (mlTop + 2, mlLeft,               0x67, '\xb3', 1);
-									displaychr  (mlTop + 2, mlLeft + 1,           0x67, ' ',    mlWidth - 2);
-									displaychr  (mlTop + 2, mlLeft + mlWidth - 1, 0x67, '\xb3', 1);
-
-									displaychr  (mlTop + 3, mlLeft,               0x67, '\xb3', 1);
-									displaystr  (mlTop + 3, mlLeft + 1,           0x67, "       Refreshing data from MusicBrainz Server", mlWidth - 2);
-									displaychr  (mlTop + 3, mlLeft + mlWidth - 1, 0x67, '\xb3', 1);
-
-									displaychr  (mlTop + 4, mlLeft,               0x67, '\xb3', 1);
-									displaychr  (mlTop + 4, mlLeft + 1,           0x67, ' ',    mlWidth - 2);
-									displaychr  (mlTop + 4, mlLeft + mlWidth - 1, 0x67, '\xb3', 1);
-
-									displaychr  (mlTop + 5, mlLeft,               0x67, '\xb3', 1);
-									displaychr  (mlTop + 5, mlLeft + 1,           0x67, ' ',    mlWidth - 2);
-									displaychr  (mlTop + 5, mlLeft + mlWidth - 1, 0x67, '\xb3', 1);
-
-									displaychr  (mlTop + 6, mlLeft,               0x67, '\xc0', 1);
-									displaychr  (mlTop + 6, mlLeft + 1,           0x67, '\xc4', mlWidth - 2);
-									displaychr  (mlTop + 6, mlLeft + mlWidth - 1, 0x67, '\xd9', 1);
+									display_nprintf (mlTop + 0, mlLeft, 0x1e, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
+									display_nprintf (mlTop + 1, mlLeft, 0x1e, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+									display_nprintf (mlTop + 2, mlLeft, 0x1e, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+									display_nprintf (mlTop + 3, mlLeft, 0x1e, mlWidth, "\xb3%.15o       Refreshing data from MusicBrainz Server%*C \xb3", mlWidth - 48);
+									display_nprintf (mlTop + 4, mlLeft, 0x1e, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+									display_nprintf (mlTop + 5, mlLeft, 0x1e, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+									display_nprintf (mlTop + 6, mlLeft, 0x1e, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
 
 									framelock ();
 

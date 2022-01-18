@@ -3,11 +3,31 @@
 
 #include "boot/console.h" /* currently from boot/console.h... to be moved later */
 
+void displaychr (const uint16_t y, const uint16_t x, const uint8_t attr, const char chr, const uint16_t len);
+
+/* display_nprintf() behaves a lot like printf(), with some exceptions and additions:
+ *
+ *   * The final result is always expanded into width
+ *   * We support flags - + 0 # and space
+ *   * We support width alone  ( %10d )
+ *   * We support precision    ( %10.8d )
+ *   * %d and %u respects the precision, saturating the digits to all 9
+ *   * %c with precision repeats the character
+ *   * %C behaves the same a %c, except it does not pop from arguments, but from fmt string insteawd
+ *   * We support *  (pop an integer from the list)
+ *   * %n.mo to change colors, where n and m are integers, can be omitted or use *
+ *   * %s is CP437 string
+ *   * %S is UTF-8 string
+ *   * We support %d %ld %lld %u %lu %llu %x %lx %llx %X %lX %llX %% %s %c     %o %S
+ *
+ *   * No support for %f %lf %llf %p %n
+ */
+void display_nprintf (unsigned short y, unsigned short x, unsigned char color, unsigned short width, const char *fmt, ...);
+
 #ifndef _CONSOLE_DRIVER
 
 #define vga13() (_vga13())
 #define plSetTextMode(x) (_plSetTextMode(x))
-void displaychr (const uint16_t y, const uint16_t x, const uint8_t attr, const char chr, const uint16_t len);
 #define displayvoid(y, x, len) (_displayvoid(y, x, len))
 #define displaystr(y, x, attr, str, len) (_displaystr(y, x, attr, str, len))
 #define displaystrattr(y, x, buf, len) (_displaystrattr(y, x, buf, len))

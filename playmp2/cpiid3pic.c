@@ -376,9 +376,7 @@ static void ID3PicDraw(int focus)
 	{
 		len = ID3PicWidth - 9;
 	}
-	displaystr (ID3PicFirstLine, ID3PicFirstColumn, focus?0x09:0x01, "ID3 PIC: ", 9);
-	displaystr (ID3PicFirstLine, ID3PicFirstColumn + 9, focus?0x0a:0x02, ID3_APIC_Titles[ID3PicCurrentIndex], len);
-	displaystr (ID3PicFirstLine, ID3PicFirstColumn + 9 + len, focus?0x09:0x00, " (tab to cycle)", ID3PicWidth - len - 9);
+	display_nprintf (ID3PicFirstLine, ID3PicFirstColumn, focus?0x09:0x01, ID3PicWidth, "ID3 PIC: %.*o%.*s%0.*o (tab to cycle)", focus?0x0a:0x02, len, ID3_APIC_Titles[ID3PicCurrentIndex], focus?0x09:0x00);
 }
 
 static int ID3PicIProcessKey(uint16_t key)

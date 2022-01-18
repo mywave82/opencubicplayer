@@ -78,16 +78,14 @@ static void TimiditySetupDrawItems (const int focus, const int lineno, const int
 	int i;
 	for (i=0; i < listlength; i++)
 	{
+		int l = strlen (list[i]);
 		if (selected == i)
 		{
-			displaystr (TimiditySetupFirstLine + lineno, xpos, (focus&&active)?0x09:0x01, "[",     1);                xpos += 1;
-			displaystr (TimiditySetupFirstLine + lineno, xpos, (focus&&active)?0x0f:0x07, list[i], strlen (list[i])); xpos += strlen (list[i]);
-			displaystr (TimiditySetupFirstLine + lineno, xpos, (focus&&active)?0x09:0x01, "]",     1);                xpos += 1;
+			display_nprintf (TimiditySetupFirstLine + lineno, xpos, (focus&&active)?0x09:0x01, l + 2, "[%.*o%s%.*o]", (focus&&active)?0x0f:0x07, list[i], (focus&&active)?0x09:0x01);
 		} else {
-			displaystr (TimiditySetupFirstLine + lineno, xpos, 0x00,                      " ",     1);                xpos += 1;
-			displaystr (TimiditySetupFirstLine + lineno, xpos, (focus&&active)?0x07:0x08, list[i], strlen (list[i])); xpos += strlen (list[i]);
-			displaystr (TimiditySetupFirstLine + lineno, xpos, 0x00,                      " ",     1);                xpos += 1;
+			display_nprintf (TimiditySetupFirstLine + lineno, xpos, 0x00, l + 2, " %.*o%s%.0o ", (focus&&active)?0x07:0x08, list[i]);
 		}
+		xpos += l + 2;
 	}
 	displaystr (TimiditySetupFirstLine + lineno, xpos, 0x00, " ", TimiditySetupWidth - xpos);
 }
@@ -100,7 +98,7 @@ static void TimiditySetupDrawBar (const int focus, const int lineno, const int s
 		int tw = TimiditySetupWidth - 5 - 16 - skip - skip - 2;
 		int pw = tw * level / maxlevel;
 		int p1, p2, p3, p4;
-	
+
 		p1 = tw * 1 / 4;
 		p2 = tw * 2 / 4;
 		p3 = tw * 3 / 4;
