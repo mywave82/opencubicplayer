@@ -150,7 +150,7 @@ int main(int arg, char *argv@<:@@:>@)
 	AC_MSG_RESULT([ok]),
 	AC_MSG_ERROR([failed.
 Try to remove any -O flag or to add -fwrapv to CFLAGS and CXXFLAGS]),
-AC_DEFINE(GCC_411_RUNTIMECHECK, 1)
+	AC_DEFINE(GCC_411_RUNTIMECHECK, 1)
 )
 
 AC_MSG_CHECKING([for PIC])
@@ -450,9 +450,11 @@ AS_IF([test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11
 	])
 dnl locate the ttf-unifont
 	AS_AC_EXPAND(UNIFONTDIR, $with_unifontdir)
-	AC_CHECK_FILE([$UNIFONTDIR/unifont.ttf], [], [AC_MSG_ERROR([$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)])])
-	AC_CHECK_FILE([$UNIFONTDIR/unifont_csur.ttf], [], [AC_MSG_ERROR([$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)])])
-	AC_CHECK_FILE([$UNIFONTDIR/unifont_upper.ttf], [], [AC_MSG_ERROR([$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)])])
+	AS_IF([test "x$cross_compiling" = "xyes"],[AC_MSG_NOTICE([Unable to verify unifont files due to cross-compilation])],[
+		AC_CHECK_FILE([$UNIFONTDIR/unifont.ttf], [], [AC_MSG_ERROR([$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)])])
+		AC_CHECK_FILE([$UNIFONTDIR/unifont_csur.ttf], [], [AC_MSG_ERROR([$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)])])
+		AC_CHECK_FILE([$UNIFONTDIR/unifont_upper.ttf], [], [AC_MSG_ERROR([$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)])])
+	])
 	AC_DEFINE_UNQUOTED([UNIFONTDIR], "$UNIFONTDIR")
 ])
 
@@ -518,7 +520,8 @@ AS_IF([test "x$with_adplug" != "xno"],[
 			]]
 		)],
 		[AC_MSG_RESULT([ok])],
-		[AC_MSG_ERROR("Adplug was compiled with a different c++ compiler")]
+		[AC_MSG_ERROR("Adplug was compiled with a different c++ compiler")],
+		[AC_MSG_NOTICE("Unable to test due to cross-compilation")]
 	)
 	LIBS=$push_LIBS
 	CXXFLAGS="$org_cxxflags"
@@ -552,7 +555,8 @@ AC_MSG_CHECKING([If libbinio used by AdPlug contains bugs https://github.com/adp
 	return memcmp(test, "foobar", 6);
 		]])],
 		[AC_MSG_RESULT([ok])],
-		[AC_MSG_ERROR("libbinio fails to use memoryobjects")]
+		[AC_MSG_ERROR("libbinio fails to use memoryobjects")],
+		[AC_MSG_NOTICE("Unable to test due to cross-compilation")]
 	)
 	LIBS=$push_LIBS
 	CXXFLAGS="$org_cxxflags"

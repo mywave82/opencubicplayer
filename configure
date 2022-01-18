@@ -11156,7 +11156,12 @@ fi
   prefix=$prefix_save
   exec_prefix=$exec_prefix_save
 
-	as_ac_File=`$as_echo "ac_cv_file_$UNIFONTDIR/unifont.ttf" | $as_tr_sh`
+	if test "x$cross_compiling" = "xyes"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Unable to verify unifont files due to cross-compilation" >&5
+$as_echo "$as_me: Unable to verify unifont files due to cross-compilation" >&6;}
+else
+
+		as_ac_File=`$as_echo "ac_cv_file_$UNIFONTDIR/unifont.ttf" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $UNIFONTDIR/unifont.ttf" >&5
 $as_echo_n "checking for $UNIFONTDIR/unifont.ttf... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -11179,7 +11184,7 @@ else
   as_fn_error $? "$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)" "$LINENO" 5
 fi
 
-	as_ac_File=`$as_echo "ac_cv_file_$UNIFONTDIR/unifont_csur.ttf" | $as_tr_sh`
+		as_ac_File=`$as_echo "ac_cv_file_$UNIFONTDIR/unifont_csur.ttf" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $UNIFONTDIR/unifont_csur.ttf" >&5
 $as_echo_n "checking for $UNIFONTDIR/unifont_csur.ttf... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -11202,7 +11207,7 @@ else
   as_fn_error $? "$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)" "$LINENO" 5
 fi
 
-	as_ac_File=`$as_echo "ac_cv_file_$UNIFONTDIR/unifont_upper.ttf" | $as_tr_sh`
+		as_ac_File=`$as_echo "ac_cv_file_$UNIFONTDIR/unifont_upper.ttf" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $UNIFONTDIR/unifont_upper.ttf" >&5
 $as_echo_n "checking for $UNIFONTDIR/unifont_upper.ttf... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -11225,6 +11230,8 @@ else
   as_fn_error $? "$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)" "$LINENO" 5
 fi
 
+
+fi
 	cat >>confdefs.h <<_ACEOF
 #define UNIFONTDIR "$UNIFONTDIR"
 _ACEOF
@@ -11514,10 +11521,9 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
 	if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: \"Unable to test due to cross-compilation\"" >&5
+$as_echo "$as_me: \"Unable to test due to cross-compilation\"" >&6;}
+
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -11555,7 +11561,6 @@ if ac_fn_cxx_try_run "$LINENO"; then :
 $as_echo "ok" >&6; }
 else
   as_fn_error $? "\"Adplug was compiled with a different c++ compiler\"" "$LINENO" 5
-
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
@@ -11575,10 +11580,9 @@ $as_echo_n "checking If libbinio used by AdPlug contains bugs https://github.com
 	LIBS="$LIBS $ADPLUG_LIBS"
 
 	if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: \"Unable to test due to cross-compilation\"" >&5
+$as_echo "$as_me: \"Unable to test due to cross-compilation\"" >&6;}
+
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -11615,7 +11619,6 @@ if ac_fn_cxx_try_run "$LINENO"; then :
 $as_echo "ok" >&6; }
 else
   as_fn_error $? "\"libbinio fails to use memoryobjects\"" "$LINENO" 5
-
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
