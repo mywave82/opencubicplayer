@@ -44,7 +44,7 @@ static FLAC__SeekableStreamDecoderReadStatus read_callback (
 		FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM
 		FLAC__STREAM_DECODER_READ_STATUS_ABORT
 		FLAC__STREAM_DECODER_READ_STATUS_CONTINUE
-	update *bytes with data actuelly read (upto *bytes long into buffer)
+	update *bytes with data actuelly read (up to *bytes long into buffer)
 */
 	int retval;
 

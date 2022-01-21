@@ -319,7 +319,7 @@ const char *MXM_description[] =
 	//                                                                          |
 	"MXM files are created by XM2XMX by Niklas Beisert / pascal, and used by",
 	"MXMPlay a tiny XM player for GUS soundcards used by various PC intro's",
-	"(demos upto 64K). Open Cubic Player has a special loader for this file",
+	"(demos up to 64K). Open Cubic Player has a special loader for this file",
 	"format and playback is done using the XM/FastTracker support.",
 	NULL
 };

@@ -517,7 +517,7 @@ int DumpInstrumentPCM (unsigned char *mem, int len, int base, int instrument)
 	printf ("                   4: [%c] 16-bit (Not support by ScreamTracker 3.01)\n", (mem[base + 0x1f] & 4) ? 'x' : ' ');
 
 	DumpPrefix (mem, len, base + 0x20, 4);
-	printf ("C2 Sample Rate: %d%s%s%s\n", (int)C2Spd, (C2Spd>0xffff)?FONT_BRIGHT_RED : FONT_BRIGHT_GREEN, (C2Spd>0xffff) ? " Scream Tracker 3 only supports upto 65535" : "", FONT_RESET);
+	printf ("C2 Sample Rate: %d%s%s%s\n", (int)C2Spd, (C2Spd>0xffff)?FONT_BRIGHT_RED : FONT_BRIGHT_GREEN, (C2Spd>0xffff) ? " Scream Tracker 3 only supports up to 65535" : "", FONT_RESET);
 
 	DumpPrefix (mem, len, base + 0x24, 12);
 	printf ("Reserved / Internal use / leave at 0\n");
@@ -692,7 +692,7 @@ int DumpInstrumentAdlibMelody (unsigned char *mem, int len, int base, int instru
 	printf ("Reserved/unused\n");
 
 	DumpPrefix (mem, len, base + 0x20, 4);
-	printf ("C2 Sample Rate: %d%s%s%s\n", (int)C2Spd, (C2Spd>0xffff)?FONT_BRIGHT_RED : FONT_BRIGHT_GREEN, (C2Spd>0xffff) ? " Scream Tracker 3 only supports upto 65535" : "", FONT_RESET);
+	printf ("C2 Sample Rate: %d%s%s%s\n", (int)C2Spd, (C2Spd>0xffff)?FONT_BRIGHT_RED : FONT_BRIGHT_GREEN, (C2Spd>0xffff) ? " Scream Tracker 3 only supports up to 65535" : "", FONT_RESET);
 
 	DumpPrefix (mem, len, base + 0x24, 12);
 	printf ("Reserved / Internal use / leave at 0\n");
@@ -767,7 +767,7 @@ int DumpInstrumentAdlibDrum (unsigned char *mem, int len, int base, int instrume
 	printf ("Reserved/unused\n");
 
 	DumpPrefix (mem, len, base + 0x20, 4);
-	printf ("C2 Sample Rate: %d%s%s%s\n", (int)C2Spd, (C2Spd>0xffff)?FONT_BRIGHT_RED : FONT_BRIGHT_GREEN, (C2Spd>0xffff) ? " Scream Tracker 3 only supports upto 65535" : "", FONT_RESET);
+	printf ("C2 Sample Rate: %d%s%s%s\n", (int)C2Spd, (C2Spd>0xffff)?FONT_BRIGHT_RED : FONT_BRIGHT_GREEN, (C2Spd>0xffff) ? " Scream Tracker 3 only supports up to 65535" : "", FONT_RESET);
 
 	DumpPrefix (mem, len, base + 0x24, 12);
 	printf ("Reserved / Internal use / leave at 0\n");

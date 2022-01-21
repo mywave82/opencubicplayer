@@ -7,7 +7,7 @@ struct font_entry_8x8_t
 	//char code[6+1];
 	unsigned char width;
 	/* for 8 lines font, we have have 1 bit per pixel */
-	unsigned char data[16]; /* we fit upto 16 by 8 pixels */
+	unsigned char data[16]; /* we fit up to 16 by 8 pixels */
 	uint8_t score;
 };
 
@@ -17,7 +17,7 @@ struct font_entry_8x16_t
 	//char code[6+1];
 	unsigned char width; /* 8 or 16 */
 	/* for 16 lines font, we have have 1 bit per pixel */
-	unsigned char data[32]; /* we fit upto 16 by 16 pixels */
+	unsigned char data[32]; /* we fit up to 16 by 16 pixels */
 	uint8_t score;
 };
 

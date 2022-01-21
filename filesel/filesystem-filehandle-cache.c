@@ -726,7 +726,7 @@ static int cache_filehandle_read (struct ocpfilehandle_t *_s, void *dst, int len
 				}
 				return returnvalue;
 			} else {
-				/* limit the length of this iteration to run upto the TAIL buffer */
+				/* limit the length of this iteration to run up to the TAIL buffer */
 				if (s->pos + len >= s->cache_line[2].offset)
 				{
 					iterlen = s->cache_line[2].offset - s->pos;

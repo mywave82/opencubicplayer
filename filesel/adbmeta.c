@@ -160,7 +160,7 @@ fillmore:
 					return 1;
 				}
 #ifdef ADBMETA_DEBUG
-				fprintf (stderr, "adbMeta: increased buffer size upto %d bytes\n", (int)size);
+				fprintf (stderr, "adbMeta: increased buffer size up to %d bytes\n", (int)size);
 #endif
 				data = temp;
 			}

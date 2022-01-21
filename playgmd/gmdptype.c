@@ -443,7 +443,7 @@ const char *DMF_description[] =
 {
 	//                                                                          |
 	"DMF - Delusion/XTracker Digital Music File - files are created by X-Tracker",
-	"by D-Lusion. Files can be upto 32 channels. Open Cubic Player convers these",
+	"by D-Lusion. Files can be up to 32 channels. Open Cubic Player convers these",
 	"internally into a generic module with some quirks in the playback.", // quirk: MOD_TICK0 MOD_EXPOFREQ
 	NULL
 };
@@ -459,7 +459,7 @@ const char *MDL_description[] =
 {
 	//                                                                          |
 	"MDL files are created by DigiTrakker by Prodatron. It is a MSDOS based",
-	"tracker with support of upto 32 channels. Open Cubic Player convers these",
+	"tracker with support of up to 32 channels. Open Cubic Player convers these",
 	"internally into a generic module with some quirks in the playback.", // quirk: MOD_EXPOFREQ MP_OFFSETDIV2
 	NULL
 };
@@ -569,7 +569,7 @@ const char *ULT_description[] =
 {
 	//                                                                          |
 	"ULT files are created by UltraTracker by MAS. MS-DOS tracker made for use",
-	"together with the Gravis Ultrasound Soundcard. It features upto 32 channels",
+	"together with the Gravis Ultrasound Soundcard. It features up to 32 channels",
 	"and 256K of sample data - these restrictions matches the Soundcard the",
 	"software was designed for. Open Cubic Player converts these internally into",
 	"a generic module with some quirks in the playback.", // quirk: MOD_GUSVOL
