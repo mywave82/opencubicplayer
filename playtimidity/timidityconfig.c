@@ -15,6 +15,7 @@
 #include "filesel/filesystem-file-mem.h"
 #include "filesel/filesystem-setup.h"
 #include "filesel/pfilesel.h"
+#include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/framelock.h"
 #include "stuff/poutput.h"
@@ -339,167 +340,570 @@ static void timidityConfigFileSelectDraw (int dsel)
 		dot = skip * (mlHeight - LINES_NOT_AVAILABLE) / (contentheight - (mlHeight - LINES_NOT_AVAILABLE));
 	}
 
-	displaychr  (mlTop + 0, mlLeft,               0x09, '\xda', 1);
-	displaychr  (mlTop + 0, mlLeft + 1,           0x09, '\xc4', mlWidth - 2);
-	displaychr  (mlTop + 0, mlLeft + mlWidth - 1, 0x09, '\xbf', 1);
-
-	displaychr  (mlTop + 1, mlLeft,               0x09, '\xb3', 1);
-	displaystr  (mlTop + 1, mlLeft + 1,           0x07, " Please select a new configuration file using the arrow keys and press", mlWidth - 2);
-	displaychr  (mlTop + 1, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
-
-	displaychr  (mlTop + 2, mlLeft,               0x09, '\xb3', 1);
-	displaystr  (mlTop + 2, mlLeft + 1,           0x0f, " <ENTER>", 8);
-	displaystr  (mlTop + 2, mlLeft + 9,           0x07, "  when done, or ", 16);
-	displaystr  (mlTop + 2, mlLeft + 25,          0x0f, "<ESC>", 5);
-	displaystr  (mlTop + 2, mlLeft + 30,          0x07, " to cancel.", mlWidth - 30 - 1);
-	displaychr  (mlTop + 2, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
-
-	displaychr  (mlTop + 3, mlLeft,               0x09, '\xc3', 1);
-	displaychr  (mlTop + 3, mlLeft + 1,           0x09, '\xc4', mlWidth - 2);
-	displaychr  (mlTop + 3, mlLeft + mlWidth - 1, 0x09, '\xb4', 1);
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Please select a new configuration file using the arrow keys and press%*C %0.9o\xb3", mlWidth - 72);
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%0.15o <ENTER>%0.7o when done, or %0.15o<ESC>%0.7o to cancel.%*C %.9o\xb3", mlWidth - 41);
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
 
 	for (mlLine = 4; (mlLine + 1) < mlHeight; mlLine++)
 	{
 		int masterindex = mlLine - 4 + skip;
 
-		displaychr  (mlTop + mlLine, mlLeft,               0x09, '\xb3', 1);
-		displaychr  (mlTop + mlLine, mlLeft + mlWidth - 1, 0x09, ((mlLine - 4) == dot) ? '\xdd' : '\xb3', 1);
+		displaychr  (mlTop, mlLeft,               0x09, '\xb3', 1);
+		displaychr  (mlTop, mlLeft + mlWidth - 1, 0x09, ((mlLine - 4) == dot) ? '\xdd' : '\xb3', 1);
 
 		if (masterindex == 0)
 		{
-			displaystr  (mlTop + mlLine, mlLeft + 1,           0x03, "System default", mlWidth - 2);
+			displaystr  (mlTop++, mlLeft + 1, 0x03, "System default", mlWidth - 2);
 			continue;
 		}
 		if (masterindex == 1)
 		{
-			displaychr (mlTop + mlLine, mlLeft + 1,            (dsel==0)?0x8a:0x0a, ' ', 2);
+			displaychr (mlTop, mlLeft + 1, (dsel==0)?0x8a:0x0a, ' ', 2);
 			if (have_default_timidity)
 			{
 				int pos = strlen (default_timidity_path) + 3;
-				displaystr (mlTop + mlLine, mlLeft + 3,    (dsel==0)?0x8a:0x0a, default_timidity_path, strlen (default_timidity_path));
+				displaystr (mlTop, mlLeft + 3, (dsel==0)?0x8a:0x0a, default_timidity_path, strlen (default_timidity_path));
 				if (have_user_timidity)
 				{
 					int len = (mlWidth - pos - 1) < 26 ? (mlWidth - pos - 1) : 26;
-					displaystr (mlTop + mlLine, mlLeft + pos, (dsel==0)?0x87:0x07, " with user overrides from ", len);
+					displaystr (mlTop, mlLeft + pos, (dsel==0)?0x87:0x07, " with user overrides from ", len);
 					pos += len;
 					if (pos < (mlWidth - 2))
 					{
-						displaystr_utf8 (mlTop + mlLine, mlLeft + pos, (dsel==0)?0x8f:0x0f, user_timidity_path, mlWidth - pos - 1);
+						displaystr_utf8 (mlTop, mlLeft + pos, (dsel==0)?0x8f:0x0f, user_timidity_path, mlWidth - pos - 1);
 					}
 				} else {
-					displaystr (mlTop + mlLine, mlLeft + pos, (dsel==0)?0x87:0x07, " (with no user overrides)", mlWidth - 1 - pos);
+					displaystr (mlTop, mlLeft + pos, (dsel==0)?0x87:0x07, " (with no user overrides)", mlWidth - 1 - pos);
 				}
 			} else {
-				displaystr (mlTop + mlLine, mlLeft + 1, (dsel==0)?0x8c:0x0c, " No global configuration file found", mlWidth - 2);
+				displaystr (mlTop, mlLeft + 1, (dsel==0)?0x8c:0x0c, " No global configuration file found", mlWidth - 2);
 			}
+			mlTop++;
 			continue;
 		}
 		if (masterindex == 3)
 		{
-			displaystr  (mlTop + mlLine, mlLeft + 1,           0x03, "Global configuration files:", mlWidth - 2);
+			displaystr  (mlTop++, mlLeft + 1, 0x03, "Global configuration files:", mlWidth - 2);
 			continue;
 		}
 		if ((masterindex == 4) && (!global_timidity_count))
 		{
-			displaystr  (mlTop + mlLine, mlLeft + 1,           0x0c, " No configuration files found", mlWidth - 2);
+			displaystr  (mlTop++, mlLeft + 1, 0x0c, " No configuration files found", mlWidth - 2);
 			continue;
 		}
 		if ((masterindex >= 4) && (masterindex < (global_timidity_count + 4)))
 		{
-			displaychr      (mlTop + mlLine, mlLeft + 1,       (dsel==(masterindex - 4 + 1))?0x8f:0x0f, ' ', 1);
-			displaystr_utf8 (mlTop + mlLine, mlLeft + 2,       (dsel==(masterindex - 4 + 1))?0x8f:0x0f, global_timidity_path[masterindex - 4], mlWidth - 3);
+			display_nprintf (mlTop++, mlLeft + 1, (dsel==(masterindex - 4 + 1))?0x8f:0x0f, mlWidth - 2, " %.*S", mlWidth - 3, global_timidity_path[masterindex - 4]);
 			continue;
 		}
 		if (masterindex == (global_timidity_count + 5))
 		{
-			displaystr  (mlTop + mlLine, mlLeft + 1,           0x03, "Global SF2 files:", mlWidth - 2);
+			displaystr  (mlTop++, mlLeft + 1,           0x03, "Global SF2 files:", mlWidth - 2);
 			continue;
 		}
 		if ((masterindex == (global_timidity_count + 6)) && (!sf2_files_count))
 		{
-			displaystr  (mlTop + mlLine, mlLeft + 1,           0x0c, " No soundfonts found", mlWidth - 2);
+			displaystr  (mlTop++, mlLeft + 1,           0x0c, " No soundfonts found", mlWidth - 2);
 			continue;
 		}
 		if ((masterindex >= (global_timidity_count + 6)) && (masterindex < (global_timidity_count + sf2_files_count + 6)))
 		{
-			displaychr      (mlTop + mlLine, mlLeft + 1,       (dsel==(masterindex - 6 + 1))?0x8f:0x0f, ' ', 1);
-			displaystr_utf8 (mlTop + mlLine, mlLeft + 2,       (dsel==(masterindex - 6 + 1))?0x8f:0x0f, sf2_files_path[masterindex - global_timidity_count - 6], mlWidth - 3);
+			display_nprintf (mlTop++, mlLeft + 1, (dsel==(masterindex - 6 + 1))?0x8f:0x0f, mlWidth - 2, " %.*S", mlWidth - 3, sf2_files_path[masterindex - global_timidity_count - 6]);
 			continue;
 		}
-		displayvoid (mlTop + mlLine, mlLeft + 1,                         mlWidth - 2);
+		displayvoid (mlTop++, mlLeft + 1, mlWidth - 2);
 	}
 
-	displaychr (mlTop + mlHeight - 1, mlLeft,               0x09, '\xc0', 1);
-	displaychr (mlTop + mlHeight - 1, mlLeft + 1,           0x09, '\xc4', mlWidth - 2);
-	displaychr (mlTop + mlHeight - 1, mlLeft + mlWidth - 1, 0x09, '\xd9', 1);
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
+}
+
+static void ConfigDrawItems (const int lineno, int xpos, const int width, const char **list, const int listlength, const int selected, const int active)
+{
+	int i;
+	int origxpos = xpos;
+	for (i=0; i < listlength; i++)
+	{
+		int l = strlen (list[i]);
+		if (selected == i)
+		{
+			display_nprintf (lineno, xpos, (active)?0x09:0x01, l + 2, "[%.*o%s%.*o]", (active)?0x0f:0x07, list[i], (active)?0x09:0x01);
+		} else {
+			display_nprintf (lineno, xpos, 0x00, l + 2, " %.*o%s%.0o ", (active)?0x07:0x08, list[i]);
+		}
+		xpos += l + 2;
+	}
+	displaychr (lineno, xpos, 0x07, ' ', width - xpos + origxpos);
+}
+
+static void ConfigDrawBar (const int lineno, int xpos, int width, int level, int maxlevel, const int active)
+{
+	char temp[7];
+	int tw = width - 8;
+	int pw = tw * level / maxlevel;
+	int p1, p2, p3, p4;
+
+	p1 = tw * 1 / 4;
+	p2 = tw * 2 / 4;
+	p3 = tw * 3 / 4;
+	p4 = tw;
+	if (p1 > pw)
+	{
+		p1 = pw;
+		p2 = 0;
+		p3 = 0;
+		p4 = 0;
+	} else if (p2 > pw)
+	{
+		p2 = pw - p1;
+		p3 = 0;
+		p4 = 0;
+	} else if (p3 > pw)
+	{
+		p3 = pw - p2;
+		p2 -= p1;
+		p4 = 0;
+	} else {
+		p4 = pw - p3;
+		p3 -= p2;
+		p2 -= p1;
+	}
+	displaystr (lineno, xpos,                         (active)?0x07:0x08, "[", 1);
+	displaychr (lineno, xpos + 1,                     (active)?0x01:0x08, '\xfe', p1);
+	displaychr (lineno, xpos + 1 + p1,                (active)?0x09:0x08, '\xfe', p2);
+	displaychr (lineno, xpos + 1 + p1 + p2,           (active)?0x0b:0x08, '\xfe', p3);
+	displaychr (lineno, xpos + 1 + p1 + p2 + p3,      (active)?0x0f:0x08, '\xfe', p4);
+	displaychr (lineno, xpos + 1 + p1 + p2 + p3 + p4, (active)?0x07:0x08, '\xfa', tw - p1 - p2 - p3 - p4);
+
+	snprintf (temp, sizeof (temp), "]%5d", level);
+	displaystr (lineno, xpos + width - 8, (active)?0x07:0x08, temp, 8);
+}
+
+static int DefaultReverbMode;
+static int DefaultReverbLevel;
+static int DefaultScaleRoom;
+static int DefaultOffsetRoom;
+static int DefaultPredelayFactor;
+static int DefaultDelayMode;
+static int DefaultDelay;
+static int DefaultChorus;
+static void timidityConfigDraw (int EditPos)
+{
+	int large;
+	int mlWidth, mlHeight, mlTop, mlLeft;
+	const char *configfile = cfGetProfileString ("timidity", "configfile", "");
+	const char *reverbs[] = {"disable", "original", "global-original", "freeverb", "global-freeverb"};
+	const char *effect_lr_modes[] = {"disable", "left", "right", "both"};
+	const char *disable_enable[] = {"disable", "enable"};
+
+	if (plScrHeight >= 43)
+	{
+		large = 2;
+		mlHeight = 41;
+	} else if (plScrHeight >= 35)
+	{
+		large = 1;
+		mlHeight = 33;
+	} else {
+		large = 0;
+		mlHeight = 23;
+	}
+
+	mlWidth = 70;
+	mlTop = (plScrHeight - mlHeight) / 2;
+	mlLeft = (plScrWidth - mlWidth) / 2;
+
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
+
+	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Navigate with arrows and hit %.15o<ESC>%.7o to save and exit.%*C %.9o\xb3", mlWidth - 55);
+
+	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 1. TiMdity+ Configfile/Soundfont: %.15o<ENTER>%.7o to change%*C %.9o\xb3", mlWidth - 53 - 1);
+
+	if (!configfile[0])
+	{
+		display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    (Global default)%*C %.9o\xb3", mlWidth - 21 - 1);
+		display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    %*.7oSelect another file%0.7o%*C %.9o\xb3", (EditPos==0)?8:0, mlWidth - 23 - 2);
+	} else {
+		if ((strlen(configfile) > 4) && !strcmp (configfile + strlen (configfile) - 4, ".sf2"))
+		{
+			display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    (SF2 sound font)%*C %.9o\xb3", mlWidth - 21 - 1);
+		} else {
+			display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    (Specific config file)%*C %0.9o\xb3", mlWidth - 27 - 1);
+		}
+		display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o    %*o%*S%0.9o\xb3", (EditPos==0)?8:0, mlWidth - 6, configfile);
+	}
+
+	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 2. Default Reverb Mode:%*C %.9o\xb3", mlWidth - 25 - 1);
+
+	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop, mlLeft, 0x09, mlWidth, "\xb3%.7o   ");
+	ConfigDrawItems (mlTop, mlLeft + 4, mlWidth - 4 - 1, reverbs, 5, DefaultReverbMode, EditPos==1);
+	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+
+	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 3. Default Reverb Level:%*C %.9o\xb3", mlWidth - 26 - 1);
+
+	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
+	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultReverbLevel, 127, EditPos==2);
+	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+
+	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 4. Default Scale Room:%*C %.9o\xb3", mlWidth - 24 - 1);
+
+	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
+	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultScaleRoom, 1000, EditPos==3);
+	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+
+	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 5. Default Offset Room:%*C %.9o\xb3", mlWidth - 25 - 1);
+
+	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
+	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultOffsetRoom, 1000, EditPos==4);
+	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+
+	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 6. Default Predelay Factor:%*C %.9o\xb3", mlWidth - 29 - 1);
+
+	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
+	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultPredelayFactor, 1000, EditPos==5);
+	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+
+	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 7. Default Delay Mode:%*C %.9o\xb3", mlWidth - 24 - 1);
+
+	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop, mlLeft, 0x09, mlWidth, "\xb3%.7o   ");
+	ConfigDrawItems (mlTop, mlLeft + 4, mlWidth - 4 - 1, effect_lr_modes, 4, DefaultDelayMode, EditPos==6);
+	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+
+	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 8. Default Delay (ms):%*C %.9o\xb3", mlWidth - 24 - 1);
+
+	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
+	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultDelay, 1000, EditPos==7);
+	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+
+	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 9. Default Chorus:%*C %.9o\xb3", mlWidth - 20 - 1);
+
+	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop, mlLeft, 0x09, mlWidth, "\xb3%.7o   ");
+	ConfigDrawItems (mlTop, mlLeft + 4, mlWidth - 4 - 1, disable_enable, 2, DefaultChorus, EditPos==8);
+	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+
+	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
 }
 
 static interfaceReturnEnum timidityConfigRun (void)
 {
-	int dsel = 0;
+	int esel = 0;
 
 	refresh_configfiles ();
 
-	{ /* preselect dsel */
-		const char *configfile = cfGetProfileString ("timidity", "configfile", "");
-		int i;
-		if (configfile[0])
-		{
-			for (i=0; i < global_timidity_count; i++)
-			{
-				if (!strcmp (configfile, global_timidity_path[i]))
-				{
-					dsel = i + 1;
-					break;
-				}
-			}
-			if (!dsel)
-			{
-				for (i=0; i < sf2_files_count; i++)
-				{
-					if (!strcmp (configfile, sf2_files_path[i]))
-					{
-						dsel = i + 1 + global_timidity_count;
-					}
-				}
-			}
-		}
-	}
+	DefaultReverbMode     = cfGetProfileInt ("timidity", "reverbmode",       2, 10);
+	DefaultReverbLevel    = cfGetProfileInt ("timidity", "reverblevel",     40, 10);
+	DefaultScaleRoom      = cfGetProfileInt ("timidity", "scaleroom",       28, 10);
+	DefaultOffsetRoom     = cfGetProfileInt ("timidity", "offsetroom",      70, 10);
+	DefaultPredelayFactor = cfGetProfileInt ("timidity", "predelayfactor", 100, 10);
+	DefaultDelayMode      = cfGetProfileInt ("timidity", "delaymode",       -1, 10) + 1;
+	DefaultDelay          = cfGetProfileInt ("timidity", "delay",           25, 10);
+	DefaultChorus         = cfGetProfileInt ("timidity", "chorusenabled",    1, 10);
+	if (DefaultReverbMode     <    0) DefaultReverbMode     =    0;
+	if (DefaultReverbLevel    <    0) DefaultReverbLevel    =    0;
+	if (DefaultScaleRoom      <    0) DefaultScaleRoom      =    0;
+	if (DefaultOffsetRoom     <    0) DefaultOffsetRoom     =    0;
+	if (DefaultPredelayFactor <    0) DefaultPredelayFactor =    0;
+	if (DefaultDelayMode      <    0) DefaultDelayMode      =    0;
+	if (DefaultDelay          <    0) DefaultDelay          =    0;
+	if (DefaultChorus         <    0) DefaultChorus         =    0;
+	if (DefaultReverbMode     >    4) DefaultReverbMode     =    2;
+	if (DefaultReverbLevel    >  127) DefaultReverbLevel    =  127;
+	if (DefaultScaleRoom      > 1000) DefaultScaleRoom      = 1000;
+	if (DefaultOffsetRoom     > 1000) DefaultOffsetRoom     = 1000;
+	if (DefaultPredelayFactor > 1000) DefaultPredelayFactor = 1000;
+	if (DefaultDelayMode      >    3) DefaultDelayMode      =    3;
+	if (DefaultDelay          > 1000) DefaultDelay          = 1000;
+	if (DefaultChorus         >    1) DefaultChorus         =    1;
 
 	while (1)
 	{
 		fsDraw();
-		timidityConfigFileSelectDraw (dsel);
+		timidityConfigDraw (esel);
 		while (ekbhit())
 		{
 			int key = egetch();
+			static uint32_t lastpress = 0;
+			static int repeat;
+			if ((key != KEY_LEFT) && (key != KEY_RIGHT))
+			{
+				lastpress = 0;
+				repeat = 1;
+			} else {
+				uint32_t newpress = dos_clock();
+				if ((newpress-lastpress) > 0x4000) /* 250 ms */
+				{
+					repeat = 1;
+				} else {
+					if (repeat < 20)
+					{
+						repeat += 1;
+					}
+				}
+				lastpress = newpress;
+			}
+
 			switch (key)
 			{
-				case KEY_DOWN:
-					if ((dsel + 1) < (1 + global_timidity_count + sf2_files_count))
+				case _KEY_ENTER:
+					if (esel == 0)
 					{
-						dsel++;
+						int dsel = 0;
+						int inner = 1;
+						{ /* preselect dsel */
+							const char *configfile = cfGetProfileString ("timidity", "configfile", "");
+							int i;
+							if (configfile[0])
+							{
+								for (i=0; i < global_timidity_count; i++)
+								{
+									if (!strcmp (configfile, global_timidity_path[i]))
+									{
+										dsel = i + 1;
+										break;
+									}
+								}
+								if (!dsel)
+								{
+									for (i=0; i < sf2_files_count; i++)
+									{
+										if (!strcmp (configfile, sf2_files_path[i]))
+										{
+											dsel = i + 1 + global_timidity_count;
+										}
+									}
+								}
+							}
+						}
+
+						while (inner)
+						{
+							fsDraw();
+							timidityConfigFileSelectDraw (dsel);
+							while (inner && ekbhit())
+							{
+								int key = egetch();
+								switch (key)
+								{
+									case KEY_DOWN:
+										if ((dsel + 1) < (1 + global_timidity_count + sf2_files_count))
+										{
+											dsel++;
+										}
+										break;
+									case KEY_UP:
+										if (dsel)
+										{
+											dsel--;
+										}
+										break;
+									case KEY_ESC:
+										inner = 0;
+										break;
+									case _KEY_ENTER:
+										if (!dsel)
+										{
+											cfSetProfileString ("timidity", "configfile", "");
+										} else if (dsel < (global_timidity_count + 1))
+										{
+											cfSetProfileString ("timidity", "configfile", global_timidity_path[dsel - 1]);
+										} else {
+											cfSetProfileString ("timidity", "configfile", sf2_files_path[dsel - 1 - global_timidity_count]);
+										}
+										inner = 0;
+										break;
+								}
+							}
+							framelock ();
+						}
+					}
+					break;
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':
+					esel = key - '1';
+					break;
+				case KEY_LEFT:
+					switch (esel)
+					{
+						case 1:
+							if (DefaultReverbMode)
+							{
+								DefaultReverbMode--;
+							}
+							break;
+						case 2:
+							if (repeat > DefaultReverbLevel)
+							{
+								DefaultReverbLevel = 0;
+							} else {
+								DefaultReverbLevel -= repeat;
+							}
+							break;
+						case 3:
+							if (repeat > DefaultScaleRoom)
+							{
+								DefaultScaleRoom = 0;
+							} else {
+								DefaultScaleRoom -= repeat;
+							}
+							break;
+						case 4:
+							if (repeat > DefaultOffsetRoom)
+							{
+								DefaultOffsetRoom = 0;
+							} else {
+								DefaultOffsetRoom -= repeat;
+							}
+							break;
+						case 5:
+							if (repeat > DefaultPredelayFactor)
+							{
+								DefaultPredelayFactor = 0;
+							} else {
+								DefaultPredelayFactor -= repeat;
+							}
+							break;
+						case 6:
+							if (DefaultDelayMode)
+							{
+								DefaultDelayMode -= 1;
+							}
+							break;
+						case 7: if ((repeat + 1) > DefaultDelay)
+							{
+								DefaultDelay = 1;
+							} else {
+								DefaultDelay -= repeat;
+							}
+							break;
+						case 8: if (DefaultChorus)
+							{
+								DefaultChorus -= 1;
+							}
+							break;
+					}
+					break;
+				case KEY_RIGHT:
+					switch (esel)
+					{
+						case 1:
+							if (DefaultReverbMode < 4)
+							{
+								DefaultReverbMode ++;
+							}
+							break;
+						case 2:
+							if ((DefaultReverbLevel + repeat) > 127)
+							{
+								DefaultReverbLevel = 127;
+							} else {
+								DefaultReverbLevel += repeat;
+							}
+							break;
+						case 3:
+							if ((DefaultScaleRoom + repeat) > 1000)
+							{
+								DefaultScaleRoom = 1000;
+							} else {
+								DefaultScaleRoom += repeat;
+							}
+							break;
+						case 4:
+							if ((DefaultOffsetRoom + repeat) > 1000)
+							{
+								DefaultOffsetRoom = 1000;
+							} else {
+								DefaultOffsetRoom += repeat;
+							}
+							break;
+						case 5:
+							if ((DefaultPredelayFactor + repeat) > 1000)
+							{
+								DefaultPredelayFactor = 1000;
+							} else {
+								DefaultPredelayFactor += repeat;
+							}
+							break;
+						case 6:
+							if (DefaultDelayMode < 3)
+							{
+								DefaultDelayMode++;
+							}
+							break;
+						case 7:
+							if ((DefaultDelay + repeat) > 1000)
+							{
+								DefaultDelay = 1000;
+							} else {
+								DefaultDelay += repeat;
+							}
+							break;
+						case 8:
+							if (!DefaultChorus)
+							{
+								DefaultChorus = 1;
+							}
+							break;
+					}
+					break;
+				case KEY_DOWN:
+					if (esel < 8)
+					{
+						esel++;
 					}
 					break;
 				case KEY_UP:
-					if (dsel)
+					if (esel)
 					{
-						dsel--;
+						esel--;
 					}
 					break;
 				case KEY_ESC:
-					goto superexit;
-					break;
-				case _KEY_ENTER:
-					if (!dsel)
-					{
-						cfSetProfileString ("timidity", "configfile", "");
-					} else if (dsel < (global_timidity_count + 1))
-					{
-						cfSetProfileString ("timidity", "configfile", global_timidity_path[dsel - 1]);
-					} else {
-						cfSetProfileString ("timidity", "configfile", sf2_files_path[dsel - 1 - global_timidity_count]);
-					}
+
 					cfStoreConfig();
 					goto superexit;
 					break;
@@ -507,8 +911,19 @@ static interfaceReturnEnum timidityConfigRun (void)
 		}
 		framelock ();
 	}
+
 superexit:
 	reset_configfiles ();
+
+	cfSetProfileInt ("timidity", "reverbmode",     DefaultReverbMode,     10);
+	cfSetProfileInt ("timidity", "reverblevel",    DefaultReverbLevel,    10);
+	cfSetProfileInt ("timidity", "scaleroom",      DefaultScaleRoom,      10);
+	cfSetProfileInt ("timidity", "offsetroom",     DefaultOffsetRoom,     10);
+	cfSetProfileInt ("timidity", "predelayfactor", DefaultPredelayFactor, 10);
+	cfSetProfileInt ("timidity", "delaymode",      DefaultDelayMode - 1,  10);
+	cfSetProfileInt ("timidity", "delay",          DefaultDelay,          10);
+	cfSetProfileInt ("timidity", "chorusenabled",  DefaultChorus,         10);
+	cfStoreConfig ();
 
 	return interfaceReturnNextAuto;
 }

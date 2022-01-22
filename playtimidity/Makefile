@@ -29,6 +29,7 @@ cpitimiditysetup.o: \
 	cpitimiditysetup.h \
 	../config.h \
 	../types.h \
+	../boot/psetting.h \
 	../cpiface/cpiface.h \
 	../stuff/compat.h \
 	../stuff/poutput.h \
@@ -173,6 +174,7 @@ timidityconfig.o: timidityconfig.c \
 	../filesel/filesystem-file-mem.h \
 	../filesel/filesystem-setup.h \
 	../filesel/pfilesel.h \
+	../stuff/compat.h \
 	../stuff/err.h \
 	../stuff/framelock.h \
 	../stuff/poutput.h

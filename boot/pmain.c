@@ -777,9 +777,23 @@ static int init_modules(int argc, char *argv[])
 			cfRemoveEntry("fileselector", "scanmdz");
 		}
 
-		if (epoch < 20211107)
+		if (epoch < 20220121)
 		{
-			cfSetProfileInt("version", "epoch", 20211107, 10);
+			printf("ocp.ini update (0.2.93) timidity now have default options stored in ocp.ini\n");
+			cfSetProfileString ("timidity", "configfile", "");
+			cfSetProfileInt ("timidity", "reverbmode", 3, 10);
+			cfSetProfileInt ("timidity", "reverblevel", 40, 10);
+			cfSetProfileInt ("timidity", "scaleroom", 28, 10);
+			cfSetProfileInt ("timidity", "offsetroom", 70, 10);
+			cfSetProfileInt ("timidity", "predelayfactor", 100, 10);
+			cfSetProfileInt ("timidity", "delaymode", -1, 10);
+			cfSetProfileInt ("timidity", "delay", 25, 10);
+			cfSetProfileInt ("timidity", "chorusenabled", 1, 10);
+		}
+
+		if (epoch < 20220121)
+		{
+			cfSetProfileInt("version", "epoch", 20220121, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -790,13 +804,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20211107)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20220121)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20211107\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20220121\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20211107\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20220121\n\n");
 		}
 		sleep(5);
 	}

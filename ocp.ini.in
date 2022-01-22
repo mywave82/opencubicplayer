@@ -1,5 +1,5 @@
 [version]
-  epoch=20211107
+  epoch=20220121
 
 [general]
 ;link=
@@ -252,3 +252,14 @@
   WAV=14
   WOW=4
   YM=6
+
+[timidity]
+  configfile=        ; leave empty to use system default, or it can specify a specific config file or sound font ending with a .sf2 extension
+  reverbmode=3       ; 0=disable, 1=original, 2=global-original 3=freeverb 4=global-freeverb
+  reverblevel=40     ; a number between 0 and 127
+  scaleroom=28       ; a number between 0 and 1000 - The MIDI commands for room size are multiplied with this value and divided by 100
+  offsetroom=70      ; a number between 0 and 1000 - The MIDI commands for room size have this value divided by 100 and added to it
+  predelayfactor=100 ; a number between 0 and 1000 - The MIDI commands for predelay are multiplied with this value and divided by 100
+  delaymode=-1       ; -1=disable 0=left 1=right 2=both
+  delay=25           ; a number between 0 and 1000 - How much delay in ms, if delaymode is enabled
+  chorusenabled=1    ; 0=disable 1=enable

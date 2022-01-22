@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "boot/psetting.h"
 #include "cpiface/cpiface.h"
 #include "stuff/compat.h"
 #include "stuff/poutput.h"
@@ -92,6 +93,10 @@ static void TimiditySetupDrawItems (const int focus, const int lineno, const int
 
 static void TimiditySetupDrawBar (const int focus, const int lineno, const int skip, int level, int maxlevel, const int active)
 {
+	if (level > 99999)
+	{
+		level = 99999;
+	}
 	if (level >= 0)
 	{
 		char temp[7];
@@ -136,7 +141,6 @@ static void TimiditySetupDrawBar (const int focus, const int lineno, const int s
 	} else {
 		displaystr (TimiditySetupFirstLine + lineno, 16 + skip, 0x08, "----", TimiditySetupWidth - 16 - skip);
 	}
-
 }
 
 static void TimiditySetupDraw(int focus)
@@ -484,6 +488,7 @@ static struct cpitextmoderegstruct cpiTimiditySetup = {"TimSetup", TimiditySetup
 
 void __attribute__ ((visibility ("internal"))) cpiTimiditySetupInit (void)
 {
+#if 0
 	if (opt_reverb_control >= 0)
 	{
 		TimiditySetupSelected = opt_reverb_control;
@@ -492,7 +497,43 @@ void __attribute__ ((visibility ("internal"))) cpiTimiditySetupInit (void)
 		TimiditySetupSelected = (-opt_reverb_control + 128) / 128;
 		TimiditySetupLevel = (-opt_reverb_control) & 0x7f;
 	}
+#else
+	TimiditySetupSelected       = cfGetProfileInt ("timidity", "reverbmode",       2, 10);
+	TimiditySetupLevel          = cfGetProfileInt ("timidity", "reverblevel",     40, 10);
+	TimiditySetupScaleRoom      = cfGetProfileInt ("timidity", "scaleroom",       28, 10);
+	TimiditySetupOffsetRoom     = cfGetProfileInt ("timidity", "offsetroom",      70, 10);
+	TimiditySetupPreDelayFactor = cfGetProfileInt ("timidity", "predelayfactor", 100, 10);
+	effect_lr_mode              = cfGetProfileInt ("timidity", "delaymode",       -1, 10);
+	effect_lr_delay_msec        = cfGetProfileInt ("timidity", "delay",           25, 10);
+	opt_chorus_control          = cfGetProfileInt ("timidity", "chorusenabled",    1, 10);
+	if (TimiditySetupSelected       <    0) TimiditySetupSelected       =    0;
+	if (TimiditySetupLevel          <    0) TimiditySetupLevel          =    0;
+	if (TimiditySetupScaleRoom      <    0) TimiditySetupScaleRoom      =    0;
+	if (TimiditySetupOffsetRoom     <    0) TimiditySetupOffsetRoom     =    0;
+	if (TimiditySetupPreDelayFactor <    0) TimiditySetupPreDelayFactor =    0;
+	if (effect_lr_mode              <   -1) effect_lr_mode              =   -1;
+	if (effect_lr_delay_msec        <    0) effect_lr_delay_msec        =    0;
+	if (opt_chorus_control          <    0) opt_chorus_control          =    0;
+	if (TimiditySetupSelected       >    4) TimiditySetupSelected       =    2;
+	if (TimiditySetupLevel          >  127) TimiditySetupLevel          =  127;
+	if (TimiditySetupScaleRoom      > 1000) TimiditySetupScaleRoom      = 1000;
+	if (TimiditySetupOffsetRoom     > 1000) TimiditySetupOffsetRoom     = 1000;
+	if (TimiditySetupPreDelayFactor > 1000) TimiditySetupPreDelayFactor = 1000;
+	if (effect_lr_mode              >    2) effect_lr_mode              =    2;
+	if (effect_lr_delay_msec        > 1000) effect_lr_delay_msec        = 1000;
+	if (opt_chorus_control          >    1) opt_chorus_control          =    1;
 
+	if (TimiditySetupSelected)
+	{
+		opt_reverb_control = -TimiditySetupLevel - TimiditySetupSelected * 128 + 128;
+	} else {
+		opt_reverb_control = 0;
+	}
+	freeverb_scaleroom = (float)TimiditySetupScaleRoom / 100.0f;
+	freeverb_offsetroom = (float)TimiditySetupOffsetRoom / 100.0f;
+	reverb_predelay_factor= (float)TimiditySetupPreDelayFactor / 100.0f;
+	init_reverb ();
+#endif
 	cpiTextRegisterMode (&cpiTimiditySetup);
 }
 
