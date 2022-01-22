@@ -194,7 +194,7 @@ again:
 
 	if (code == CLEAR && h->block_mode)
 	{
-		h->readcodes = 8; /* discard remaing codes in the buffer */
+		h->readcodes = 8; /* discard remaining codes in the buffer */
 
 		bzero (h->tab_prefix, 256*sizeof (h->tab_prefix[0]));
 		h->free_ent = FIRST - 1;
@@ -244,7 +244,7 @@ again:
 
 	if (h->free_ent > h->maxcode)
 	{
-		h->readcodes = 8; /* discard remaing codes in the buffer, if any */
+		h->readcodes = 8; /* discard remaining codes in the buffer, if any */
 
 		(h->n_bits)++;
 		if (h->n_bits >= h->max_bits)

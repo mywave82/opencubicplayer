@@ -110,7 +110,7 @@ const char *IT_description[] =
 	//                                                                          |
 	"IT files are created by Impulse Tracker or the modern remake Schism Tracker.",
 	"Impulse Tracker was only for MSDOS while Schism Tracker made using SDL works",
-	"on most operating sytems. IT files features 16bit samples and 64 channels.",
+	"on most operating systems. IT files features 16bit samples and 64 channels.",
 	NULL
 };
 

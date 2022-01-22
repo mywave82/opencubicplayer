@@ -49,7 +49,7 @@
  * aybuffpos
  * aybufrate -> conversion-rate converter if user requests speed changes
  *
- * We then measure plrBuffer, and we fill up buf16, we upto the amount we can
+ * We then measure plrBuffer, and we fill up buf16, we up to the amount we can
  * fit, and also if we run out of data, we set one of the "song soon finish"
  * variables
  *

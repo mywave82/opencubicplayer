@@ -115,7 +115,7 @@ const char *MIDI_description[] =
 {
 	//                                                                          |
 	"MIDI files are music files that only contains note and meta data. MIDI in",
-	"itself is also a standard for transfering control signal between",
+	"itself is also a standard for transferring control signal between",
 	"synthesizers and other audio equipment. A MIDI file is record of such a",
 	"signal together with timestamps. Open Cubic Player relies on TiMidity++",
 	"code to playback and requires that the host has configured an instrument",

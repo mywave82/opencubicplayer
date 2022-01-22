@@ -773,7 +773,7 @@ static int init_modules(int argc, char *argv[])
 
 		if (epoch < 20211107)
 		{
-			printf("ocp.ini update (0.2.91) Removed remaing traces of MDZ - features was never ported from DOS version\n");
+			printf("ocp.ini update (0.2.91) Removed remaining traces of MDZ - features was never ported from DOS version\n");
 			cfRemoveEntry("fileselector", "scanmdz");
 		}
 

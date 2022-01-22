@@ -41,7 +41,7 @@ struct interfaceparameters
 	const char *ldlink; // some player "plugins" uses loaders. This is the name of that "loader plugin"
 	const char *loader; // And this is the loader symbol used
 };
-/* description: is NULL terminating string array of upto upto 6 lines of 76 characters
+/* description: is NULL terminating string array of up to 6 lines of 76 characters
  *
  * interface: Usually "plOpenCP" or "VirtualInterface" - last is not user-editable
  */

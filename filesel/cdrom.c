@@ -285,7 +285,7 @@ static void *cdrom_thread (void *_self)
 static const char *CDA_description[] =
 {
 	//                                                                          |
-	"CDA - CDROM Digitial Audio, is a virtual file that links a cdrom audio",
+	"CDA - CDROM Digital Audio, is a virtual file that links a cdrom audio",
 	"track or complete disc to an actual device. The device can be both physical",
 	"or virtual CDROM drive. Marking a random file in the filesystem with this",
 	"filetype will not make it playable.",
