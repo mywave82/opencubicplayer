@@ -187,7 +187,7 @@ poutput-x11.o: poutput-x11.c poutput-x11.h \
 	../types.h \
 	../boot/console.h \
 	../boot/psetting.h \
-	../desktop/opencubicplayer.xpm \
+	../desktop/opencubicplayer-48x48.xpm \
 	framelock.h \
 	poutput.h \
 	poutput-swtext.h \

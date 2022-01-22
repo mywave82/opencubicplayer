@@ -56,7 +56,7 @@
 #include "poutput-swtext.h"
 #include "poutput-x11.h"
 #include "x11-common.h"
-#include "desktop/opencubicplayer.xpm"
+#include "desktop/opencubicplayer-48x48.xpm"
 
 /* TEXT-MODE DRIVER */
 static FontSizeEnum plCurrentFontWanted = _8x8;
@@ -992,7 +992,7 @@ static void create_window(void)
 	                PropModeReplace, (unsigned char *)"Open Cubic Player", 17);
 
 	if (XpmCreatePixmapFromData (mDisplay, window,
-	                             opencubicplayer_xpm,
+	                             opencubicplayer_48x48_xpm,
 	                             &icon,
 	                             &icon_mask,
 	                             NULL) == XpmSuccess)
