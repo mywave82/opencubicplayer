@@ -1948,8 +1948,11 @@ static void plDisplaySetupTextMode(void)
 
 		swtext_displaystr_cp437 (plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
 
-		while (!ekbhit_x11dummy())
+		while (!_ekbhit())
+		{
 				framelock();
+		}
+
 		c=_egetch();
 
 		switch (c)
@@ -1961,7 +1964,7 @@ static void plDisplaySetupTextMode(void)
 				plCurrentFontWanted = plCurrentFont;
 				cfSetProfileInt("x11", "font", plCurrentFont, 10);
 				break;
-			case 27: return;
+			case KEY_ESC: return;
 		}
 	}
 }

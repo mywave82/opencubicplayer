@@ -400,6 +400,9 @@ static void set_state_textmode(int fullscreen, int width, int height)
 		} else {
 			sdl2_dump_renderer();
 		}
+
+		/* This call does nothing until we have a renderer, so that is why we waited until now */
+		SDL_SetWindowMinimumSize (current_window, FontSizeInfo[0].w * 80, FontSizeInfo[0].h * 25);
 	}
 
 	if (!current_texture)
@@ -633,8 +636,10 @@ static void plDisplaySetupTextMode(void)
 
 		swtext_displaystr_cp437(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
 
-		while (!ekbhit_sdl2dummy())
+		while (!_ekbhit())
+		{
 				framelock();
+		}
 		c=_egetch();
 
 		switch (c)
@@ -645,7 +650,7 @@ static void plDisplaySetupTextMode(void)
 				set_state_textmode(do_fullscreen, plScrLineBytes, plScrLines);
 				cfSetProfileInt("x11", "font", plCurrentFont, 10);
 				break;
-			case 27: return;
+			case KEY_ESC: return;
 		}
 	}
 }
@@ -1232,7 +1237,9 @@ static int ekbhit_sdl2dummy(void)
 							{
 								if (plScrType == plScrMode) /* if we are in text-mode, make it a custom one */
 								{
+#ifdef SDL2_DEBUG
 									fprintf (stderr, "CUSTOM MODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+#endif
 									plScrType = plScrMode = 8;
 								}
 							}
