@@ -53,6 +53,7 @@ id3.o: id3.c \
 mpptype.o: mpptype.c \
 	../config.h \
 	../types.h \
+	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
