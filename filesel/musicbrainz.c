@@ -1175,7 +1175,7 @@ static void musicbrainzSetupDraw (const char *title, int dsel, struct musicbrain
 					displaychr (mlTop + i, mlLeft + 40, (dsel==index)?0x8f:0x07, ' ', 1);
 					displaystr (mlTop + i, mlLeft + 41, (dsel==index)?0x8a:0x0a, "Unknown disc", albumwidth - 10);
 				} else {
-					displaystr (mlTop + i, mlLeft + 30, (dsel==index)?0x8a:0x0a, "Unknown disc", albumwidth);
+					displaystr (mlTop + i, mlLeft + 31, (dsel==index)?0x8a:0x0a, "Unknown disc", albumwidth);
 				}
 			}
 			if (artistwidth)
