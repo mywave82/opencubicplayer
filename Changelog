@@ -1,3 +1,33 @@
+Version 0.2.93
+==============
+
+ * Update the desktop icon.
+ * Changing font-size from the ALT+C menu didn't work as expected.
+ * SDL2 now sets the minimum window size for its text-mode operations.
+ * Add Timidity configuration dialog.
+ * Fix some spelling errors reported by Debian Lintian.
+ * FileBrowser:
+   * Add editing of artist and album.
+   * Add a 3rd width layout for the file-display (we now have >=80,
+     >=132 & >=180).
+   * Escape-button when editing UTF-8 text didn't work as expected
+   * Added special case for '00 being year 2000
+ * If cross-compiling, ./configure needs to blindly trust that the adplug
+   libraries are correct and that unifont files are present.
+ * Starting OCP from a directory with compressed files could crash
+ * CDROM:
+   * include /dev/sr[0-9] when search from cdrom-drives
+   * readlink, if the link points to known devices, ignore the entry (this
+     resolves issues where /dev/cdrom is removed when no CDROM-disc is present).
+   * MusicBrainz:
+     * Used for lookup of CDROM track metadata (can be used in future .toc/.bin
+       support).
+     * Add cache-browser
+     * Make it possible to submit unknown discs
+     * Make it possible to refresh given entries
+ * Installing icons should not depend on X11 alone, but either/or X11, SDL or SDL2
+ * Building without X11 support didn't work as expected
+
 Version 0.2.92
 ==============
 
