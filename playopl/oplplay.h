@@ -27,6 +27,7 @@ struct oplTuneInfo {
 
 extern void oplpGetChanInfo(int i, oplChanInfo &ci);
 extern void oplpGetGlobInfo(oplTuneInfo &si);
+extern void oplSetSong (int song);
 extern void oplMute(int i, int m);
 
 #endif

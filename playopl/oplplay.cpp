@@ -73,7 +73,6 @@ static uint32_t oplbuffpos; /* read fine-pos.. when oplbufrate has a fraction */
 static uint32_t oplbufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
 
 static size_t opltowrite; /* this is adplug interface */
-static int currentsong;
 
 static Cocpopl *opl;
 static CPlayer *p;
@@ -129,6 +128,19 @@ void __attribute__ ((visibility ("internal"))) oplClosePlayer(void)
 
 		active=0;
 	}
+}
+
+void __attribute__ ((visibility ("internal"))) oplSetSong (int song)
+{
+	int songs = p->getsubsongs();
+	if (song < 1)
+	{
+		song = 1;
+	} else if (song > songs)
+	{
+		song = songs;
+	}
+	p->rewind (song);
 }
 
 void __attribute__ ((visibility ("internal"))) oplMute(int i, int m)
@@ -209,7 +221,6 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	bit16=!!(plrOpt&PLR_16BIT);
 	signedout=!!(plrOpt&PLR_SIGNEDOUT);
 	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
-	currentsong=1;
 
 	opl = new Cocpopl(plrRate);
 
@@ -779,7 +790,7 @@ void __attribute__ ((visibility ("internal"))) oplpGetGlobInfo(oplTuneInfo &si)
 	std::string title = p->gettitle();  /* same here */
 
 	si.songs=p->getsubsongs();
-	si.currentSong=currentsong;
+	si.currentSong=p->getsubsong();
 
 	snprintf (si.author, sizeof (si.author), "%s", author.c_str());
 	snprintf (si.title, sizeof (si.title), "%s", title.c_str());

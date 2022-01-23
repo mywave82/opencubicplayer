@@ -193,6 +193,8 @@ static void oplDrawGStrings ()
 {
 	mcpDrawGStrings ();
 
+	oplpGetGlobInfo(globinfo);
+
 	mcpDrawGStringsSongXofY
 	(
 		utf8_8_dot_3,
@@ -325,11 +327,18 @@ static void drawchannel(uint16_t *buf, int len, int i) /* TODO */
 
 static int oplProcessKey(uint16_t key)
 {
+	struct oplTuneInfo ti;
+
 	switch (key)
 	{
 		case KEY_ALT_K:
 			cpiKeyHelp('p', "Start/stop pause with fade");
 			cpiKeyHelp('P', "Start/stop pause with fade");
+
+			cpiKeyHelp(KEY_CTRL_HOME, "Restart Song");
+			cpiKeyHelp('<', "Previous Song");
+			cpiKeyHelp('>', "Next song");
+
 			cpiKeyHelp(KEY_CTRL_P, "Start/stop pause");
 			mcpSetProcessKey (key);
 			return 0;
@@ -344,6 +353,18 @@ static int oplProcessKey(uint16_t key)
 				pausetime=dos_clock();
 			plPause=!plPause;
 			oplPause(plPause);
+			break;
+		case KEY_CTRL_HOME:
+			oplpGetGlobInfo (ti);
+			oplSetSong (ti.currentSong);
+			break;
+		case '<':
+			oplpGetGlobInfo (ti);
+			oplSetSong (ti.currentSong - 1);
+			break;
+		case '>':
+			oplpGetGlobInfo (ti);
+			oplSetSong (ti.currentSong + 1);
 			break;
 #if 0
 		case KEY_CTRL_UP:
