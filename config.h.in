@@ -377,7 +377,9 @@
 #define LIBDIR "/usr/lib/ocp"
 #define DATADIR "/usr/share"
 #define DIR_SUFFIX ""
-#define UNIFONTDIR "/usr/share/fonts/truetype/unifont"
+#define UNIFONT_TTF "/usr/share/fonts/truetype/unifont/unifont.ttf"
+#define UNIFONT_CSUR_TTF "/usr/share/fonts/truetype/unifont/unifont_csur.ttf"
+#define UNIFONT_UPPER_TTF "/usr/share/fonts/truetype/unifont/unifont_upper.ttf"
 
 #define LIB_SUFFIX ".so"
 

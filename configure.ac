@@ -84,6 +84,12 @@ AC_ARG_WITH([sdl2],                 [AS_HELP_STRING([--with-sdl2],              
 AC_ARG_WITH([desktop_file_install], [AS_HELP_STRING([--without-desktop_file_install],[Do not install .desktop file (SDL and X11 normally does this)])],           [], [with_desktop_file_install=auto])
 AC_ARG_WITH([dumptools],            [AS_HELP_STRING([--with-dumptools],              [enable building the different fileformat dump utilities])],                 [], [with_dumptools=no])
 AC_ARG_WITH([unifontdir],           [AS_HELP_STRING([--with-unifontdir=/path],       [the path to where ttf-unifont in located (used by X11, SDL1.x and SDL2)])], [], [with_unifontdir="${datarootdir}/fonts/truetype/unifont"])
+AC_ARG_WITH([unifont_ttf],          [AS_HELP_STRING([--with-unifont-ttf=/path],      [the full path to unifont.ttf (default is UNIFONTDIR/unifont.ttf); use this option if the unifont.ttf is named UniFont.ttf or similiar. If the filename contains version number it is recommended that this is fixed in unifont installation with non-version symlinks])],
+                                                                                                                                                                  [], [with_unifont_ttf="${with_unifontdir}/unifont.ttf"])
+AC_ARG_WITH([unifont_csur_ttf],     [AS_HELP_STRING([--with-unifont-csur-ttf=/path], [the full path to unifont_csur.ttf (default is UNIFONTDIR/unifont_csur.ttf)])],
+                                                                                                                                                                  [], [with_unifont_csur_ttf="${with_unifontdir}/unifont_csur.ttf"])
+AC_ARG_WITH([unifont_upper_ttf],    [AS_HELP_STRING([--with-unifont-upper-tff=/path],[the full path to unifont_upper.ttf (default is UNIFONTDIR/unifont_upper.ttf)])],
+                                                                                                                                                                  [], [with_unifont_upper_ttf="${with_unifontdir}/unifont_upper.ttf"])
 
 # normally, this is done automatically first when running AC_OUTPUT, but we need them expanded now
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -448,14 +454,23 @@ AS_IF([test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11
 		AC_CHECK_LIB([freetype], [FT_Init_FreeType], [],[AC_MSG_ERROR("libfreetype not found")])
 		AC_CHECK_HEADER([ft2built.h], [] , [AC_MSG_ERROR("libfreetype header files was not found")])
 	])
-dnl locate the ttf-unifont
-	AS_AC_EXPAND(UNIFONTDIR, $with_unifontdir)
+
+	dnl locate the ttf-unifont
+	AS_AC_EXPAND(UNIFONT_TTF, $with_unifont_ttf)
+	AS_AC_EXPAND(UNIFONT_CSUR_TTF, $with_unifont_csur_ttf)
+	AS_AC_EXPAND(UNIFONT_UPPER_TTF, $with_unifont_upper_ttf)
+	dnl remove double slashes
+	UNIFONT_TTF=`echo "$UNIFONT_TTF" | sed 's/\(\)\/\/*/\1\//g'`
+	UNIFONT_CSUR_TTF=`echo "$UNIFONT_CSUR_TTF" | sed 's/\(\)\/\/*/\1\//g'`
+	UNIFONT_UPPER_TTF=`echo "$UNIFONT_UPPER_TTF" | sed 's/\(\)\/\/*/\1\//g'`
 	AS_IF([test "x$cross_compiling" = "xyes"],[AC_MSG_NOTICE([Unable to verify unifont files due to cross-compilation])],[
-		AC_CHECK_FILE([$UNIFONTDIR/unifont.ttf], [], [AC_MSG_ERROR([$UNIFONTDIR/unifont.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)])])
-		AC_CHECK_FILE([$UNIFONTDIR/unifont_csur.ttf], [], [AC_MSG_ERROR([$UNIFONTDIR/unifont_csur.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)])])
-		AC_CHECK_FILE([$UNIFONTDIR/unifont_upper.ttf], [], [AC_MSG_ERROR([$UNIFONTDIR/unifont_upper.ttf not found - please use --with-unifontdir=/path/ (needed by X11, SDL1.x and SDL2)])])
+		AC_CHECK_FILE([$UNIFONT_TTF], [], [AC_MSG_ERROR([$UNIFONT_TTF (unifont.ttf) not found - please use --with-unifontdir=/dir/ or --with-unifont-ttf=/dir/file (needed by X11, SDL1.x and SDL2)])])
+		AC_CHECK_FILE([$UNIFONT_CSUR_TTF], [], [AC_MSG_ERROR([$UNIFONT_CSUR_TTF (unifont_csur.ttf) not found - please use --with-unifontdir=/dir/ or --with-unifont-csur-ttf=/dir/file (needed by X11, SDL1.x and SDL2)])])
+		AC_CHECK_FILE([$UNIFONT_UPPER_TTF], [], [AC_MSG_ERROR([$UNIFONT_UPPER_TTF (unifont_upper.ttf) not found - please use --with-unifontdir=/dir/ or --with-unifont-upper-ttf=/dir/file (needed by X11, SDL1.x and SDL2)])])
 	])
-	AC_DEFINE_UNQUOTED([UNIFONTDIR], "$UNIFONTDIR")
+	AC_DEFINE_UNQUOTED([UNIFONT_TTF], "$UNIFONT_TTF")
+	AC_DEFINE_UNQUOTED([UNIFONT_CSUR_TTF], "$UNIFONT_CSUR_TTF")
+	AC_DEFINE_UNQUOTED([UNIFONT_UPPER_TTF], "$UNIFONT_UPPER_TTF")
 ])
 
 AC_LANG_PUSH(C++)
@@ -850,9 +865,9 @@ AS_IF([test "x$with_adplug"    = "xno" ], [echo "adplug:            OFF"], [echo
 AS_IF([test "x$with_mad"       = "xno" ], [echo "mad:               OFF"], [echo "mad:               ON"])
                                            echo "sidplayfp:         GIT/builtin"
 AS_IF([test "x$with_flac"      = "xno" ], [echo "FLAC:              OFF"], [echo "FLAC:              ON"])
-AS_IF([test "x$with_x11"       = "xno" ], [echo "x11:               OFF"], [echo "x11:               ON  (UNIFONTDIR="$UNIFONTDIR")"])
-AS_IF([test "x$with_sdl"       = "xno" ], [echo "SDL:               OFF"], [echo "SDL:               ON  (UNIFONTDIR="$UNIFONTDIR")"])
-AS_IF([test "x$with_sdl2"      = "xno" ], [echo "SDL2:              OFF"], [echo "SDL2:              ON  (UNIFONTDIR="$UNIFONTDIR")"])
+AS_IF([test "x$with_x11"       = "xno" ], [echo "x11:               OFF"], [echo "x11:               ON  (unifont: "$UNIFONT_TTF $UNIFONT_CSUR_TTF $UNIFONT_UPPER_TTF")"])
+AS_IF([test "x$with_sdl"       = "xno" ], [echo "SDL:               OFF"], [echo "SDL:               ON  (unifont: "$UNIFONT_TTF $UNIFONT_CSUR_TTF $UNIFONT_UPPER_TTF")"])
+AS_IF([test "x$with_sdl2"      = "xno" ], [echo "SDL2:              OFF"], [echo "SDL2:              ON  (unifont: "$UNIFONT_TTF $UNIFONT_CSUR_TTF $UNIFONT_UPPER_TTF")"])
 AS_IF([test "x$with_alsa"      = "xno" ], [echo "ALSA:              OFF"], [echo "ALSA:              ON"])
 AS_IF([test "x$with_oss"       = "xno" ], [echo "OSS:               OFF"], [echo "OSS:               ON"])
 AS_IF([test "x$with_coreaudio" = "xno" ], [echo "CoreAudio:         OFF"], [echo "CoreAudio:         ON"])

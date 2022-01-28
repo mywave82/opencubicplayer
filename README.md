@@ -144,13 +144,23 @@ https://www.cubic.org/player/
 
 https://repology.org/project/ocp-open-cubic-player/versions
 
+# Unifont.ttf?
+
+When you compile/install and have enabled X11/SDL/SDL2 support, the unifont TTF files are needed. This is a 8x16 font that has a main goal of being UTF-8/Unicode complete.
+For special scripts it will look incorrect, but the character-set should be complete.
+
+In most systems this font will be installed in */usr/share/fonts/truetype/unifont/* . If this path is different for your system, you can provide the correct path with *./configure --with-unifontdir=/your/path* .
+
+If the font-files on your system is not named exactly "unifont.ttf", "unifont\_csur.ttf" and "unifont\_upper.ttf", you can instruct alterntive filenames using *./configure --with-unifont-ttf=/your/path/UniFont.ttf --with-unifont-csur-ttf=/your/path/UniFont-CSUR.ttf --with-unifont-upper-tff=/your/path/UniFont-Upper.ttf"* .
+If the filenames on your system contains version numbers, we ask you to fill a bug-report to your system provider and ask them to add symlinks without version numbers in them.
+
 # Installing on macOS
 
 `brew install ocp`
 
 ### more notes about Darwin
 
-If you use liboss, you might need to edit `/opt/local/lib/pkgconfig/liboss.pc` and remove `-Wno-precomp` (liboss 0.0.1 is known to be broken and crashes, so I discourage the use of liboss)
+If you use liboss, you might need to edit `/opt/local/lib/pkgconfig/liboss.pc` and remove `-Wno-precomp` (liboss 0.0.1 is known to be broken and crashes, so we discourage the use of liboss)
 
 To configure Darwin, my experience is that you need to run configure like this:
 
