@@ -59,7 +59,7 @@ struct tar_instance_dir_t
 	uint32_t               dir_child;
 	uint32_t               file_child;
 
-	char                  *orig_dirname; /* if encoding deviates from UTF-8 */
+	char                  *orig_full_dirpath; /* if encoding deviates from UTF-8 */
 };
 
 struct tar_instance_file_t
@@ -71,7 +71,7 @@ struct tar_instance_file_t
 	uint64_t                   filesize;
 	uint64_t                   fileoffset; /* offset into the tar file */
 
-	char                      *orig_filename; /* if encoding deviates from UTF-8 */
+	char                      *orig_full_filepath; /* if encoding deviates from UTF-8 */
 };
 
 struct tar_instance_filehandle_t
@@ -252,7 +252,7 @@ static void tar_instance_encode_blob (struct tar_instance_t *self, uint8_t **blo
 
 	for (counter=0; counter < self->file_fill; counter++)
 	{
-		int filenamesize = strlen (self->files[counter]->orig_filename);
+		int filenamesize = strlen (self->files[counter]->orig_full_filepath);
 
 		if ((filenamesize + 1 + 16 + *blobfill) > blobsize)
 		{
@@ -283,7 +283,7 @@ static void tar_instance_encode_blob (struct tar_instance_t *self, uint8_t **blo
 		(*blob)[(*blobfill) +  9] = self->files[counter]->fileoffset >> 8;
 		(*blob)[(*blobfill) +  8] = self->files[counter]->fileoffset;
 
-		strcpy ((char *)(*blob) + 16 + (*blobfill), self->files[counter]->orig_filename);
+		strcpy ((char *)(*blob) + 16 + (*blobfill), self->files[counter]->orig_full_filepath);
 		*blobfill += 16 + filenamesize + 1;
 	}
 }
@@ -319,7 +319,8 @@ static void tar_io_unref (struct tar_instance_t *self)
 
 static uint32_t tar_instance_add_create_dir (struct tar_instance_t *self,
                                              const uint32_t         dir_parent,
-                                             char                  *Filename)
+                                             char                  *Dirpath,
+                                             char                  *Dirname)
 {
 	uint32_t *prev, iter;
 	uint32_t dirdb_ref;
@@ -330,7 +331,7 @@ static uint32_t tar_instance_add_create_dir (struct tar_instance_t *self,
 		char *temp = 0;
 		int templen = 0;
 
-		tar_translate (self, Filename, &temp, &templen);
+		tar_translate (self, Dirname, &temp, &templen);
 		dirdb_ref = dirdbFindAndRef (self->dirs[dir_parent]->head.dirdb_ref, temp ? temp : "???", dirdb_use_dir);
 		free (temp); temp = 0;
 	}
@@ -378,7 +379,7 @@ static uint32_t tar_instance_add_create_dir (struct tar_instance_t *self,
 	self->dirs[self->dir_fill]->dir_next = UINT32_MAX;
 	self->dirs[self->dir_fill]->dir_child = UINT32_MAX;
 	self->dirs[self->dir_fill]->file_child = UINT32_MAX;
-	self->dirs[self->dir_fill]->orig_dirname = strdup (Filename);
+	self->dirs[self->dir_fill]->orig_full_dirpath = strdup (Dirpath);
 
 	prev = &self->dirs[dir_parent]->dir_child;
 	for (iter = *prev; iter != UINT32_MAX; iter = self->dirs[iter]->dir_next)
@@ -394,6 +395,7 @@ static uint32_t tar_instance_add_create_dir (struct tar_instance_t *self,
 
 static uint32_t tar_instance_add_file (struct tar_instance_t *self,
                                        const uint32_t         dir_parent,
+                                       char                  *Filepath,
                                        char                  *Filename,
                                        const uint64_t         filesize,
                                        const uint64_t         fileoffset)
@@ -401,7 +403,7 @@ static uint32_t tar_instance_add_file (struct tar_instance_t *self,
 	uint32_t *prev, iter;
 	uint32_t dirdb_ref;
 
-	DEBUG_PRINT ("[TAR] add_file: %s\n", Filename);
+	DEBUG_PRINT ("[TAR] add_file: %s %s\n", Filepath, Filename);
 
 	if (self->file_fill == self->file_size)
 	{
@@ -450,7 +452,7 @@ static uint32_t tar_instance_add_file (struct tar_instance_t *self,
 	self->files[self->file_fill]->file_next  = UINT32_MAX;
 	self->files[self->file_fill]->filesize   = filesize;
 	self->files[self->file_fill]->fileoffset = fileoffset;
-	self->files[self->file_fill]->orig_filename = strdup (Filename);
+	self->files[self->file_fill]->orig_full_filepath = strdup (Filepath);
 
 	prev = &self->dirs[dir_parent]->file_child;
 	for (iter = *prev; iter != UINT32_MAX; iter = self->files[iter]->file_next)
@@ -465,12 +467,12 @@ static uint32_t tar_instance_add_file (struct tar_instance_t *self,
 }
 
 static uint32_t tar_instance_add (struct tar_instance_t *self,
-                                  char                  *Filename,
+                                  char                  *Filepath,
                                   const uint64_t         filesize,
                                   const uint64_t         fileoffset)
 {
 	uint32_t iter = 0;
-	char *ptr = Filename;
+	char *ptr = Filepath;
 	while (1)
 	{
 		char *slash;
@@ -494,7 +496,8 @@ again:
 				/* check if we already have this node */
 				for (search = 1; search < self->dir_fill; search++)
 				{
-					if (!strcmp (self->dirs[search]->orig_dirname, Filename))
+					if ( (self->dirs[search]->dir_parent == iter) &&
+					     (!strcmp (self->dirs[search]->orig_full_dirpath, Filepath)) )
 					{
 						*slash = '/';
 						ptr = slash + 1;
@@ -504,7 +507,7 @@ again:
 				}
 
 				/* no hit, create one */
-				iter = tar_instance_add_create_dir (self, iter, Filename);
+				iter = tar_instance_add_create_dir (self, iter, Filepath, ptr);
 				*slash = '/';
 				ptr = slash + 1;
 				if (iter == 0)
@@ -518,7 +521,7 @@ again:
 		} else {
 			if (strcmp (ptr, ".") && strcmp (ptr, "..") && strlen (ptr)) /* we ignore these entries */
 			{
-				return tar_instance_add_file (self, iter, Filename, filesize, fileoffset);
+				return tar_instance_add_file (self, iter, Filepath, ptr, filesize, fileoffset);
 			}
 			return UINT32_MAX; /* out of memory.... */
 		}
@@ -576,7 +579,7 @@ struct ocpdir_t *tar_check (const struct ocpdirdecompressor_t *self, struct ocpf
 	iter->dirs[0]->dir_next = UINT32_MAX;
 	iter->dirs[0]->dir_child = UINT32_MAX;
 	iter->dirs[0]->file_child = UINT32_MAX;
-	iter->dirs[0]->orig_dirname = 0;
+	iter->dirs[0]->orig_full_dirpath = 0;
 	iter->dir_fill = 1;
 
 	file->ref (file);
@@ -646,14 +649,14 @@ static void tar_instance_unref (struct tar_instance_t *self)
 	for (counter = 1; counter < self->dir_fill; counter++)
 	{
 		dirdbUnref (self->dirs[counter]->head.dirdb_ref, dirdb_use_dir);
-		free (self->dirs[counter]->orig_dirname);
+		free (self->dirs[counter]->orig_full_dirpath);
 		free (self->dirs[counter]);
 	}
 
 	for (counter = 0; counter < self->file_fill; counter++)
 	{
 		dirdbUnref (self->files[counter]->head.dirdb_ref, dirdb_use_file);
-		free (self->files[counter]->orig_filename);
+		free (self->files[counter]->orig_full_filepath);
 		free (self->files[counter]);
 	}
 
@@ -1417,7 +1420,7 @@ static void tar_set_byuser_string (struct ocpdir_t *_self, const char *byuser)
 
 	for (i=1; i < self->owner->dir_fill; i++)
 	{
-		tar_translate (self->owner, self->owner->dirs[i]->orig_dirname, &temp, &templen);
+		tar_translate (self->owner, self->owner->dirs[i]->orig_full_dirpath, &temp, &templen);
 		if (temp)
 		{
 			dirdbUnref (self->owner->dirs[i]->head.dirdb_ref, dirdb_use_dir);
@@ -1431,7 +1434,7 @@ static void tar_set_byuser_string (struct ocpdir_t *_self, const char *byuser)
 
 	for (i=0; i < self->owner->file_fill; i++)
 	{
-		tar_translate (self->owner, self->owner->files[i]->orig_filename, &temp, &templen);
+		tar_translate (self->owner, self->owner->files[i]->orig_full_filepath, &temp, &templen);
 		if (temp)
 		{
 			dirdbUnref (self->owner->files[i]->head.dirdb_ref, dirdb_use_file);
@@ -1463,7 +1466,7 @@ static char **tar_get_test_strings(struct ocpdir_t *__self)
 	count = 0;
 	for (i=1; i < self->dir_fill; i++)
 	{
-		retval[count] = strdup (self->dirs[i]->orig_dirname);
+		retval[count] = strdup (self->dirs[i]->orig_full_dirpath);
 		if (!retval[count])
 		{
 			return retval;
@@ -1472,7 +1475,7 @@ static char **tar_get_test_strings(struct ocpdir_t *__self)
 	}
 	for (i=0; i < self->file_fill; i++)
 	{
-		retval[count] = strdup (self->files[i]->orig_filename);
+		retval[count] = strdup (self->files[i]->orig_full_filepath);
 		if (!retval[count])
 		{
 			return retval;

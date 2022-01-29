@@ -68,7 +68,7 @@ struct zip_instance_dir_t
 	uint32_t                     dir_child;
 	uint32_t                     file_child;
 
-	char                        *orig_dirname; /* if encoding deviates from UTF-8 */
+	char                        *orig_full_dirpath; /* if encoding deviates from UTF-8 */
 	int                          orig_FlaggedUTF8;
 };
 
@@ -85,7 +85,7 @@ struct zip_instance_file_t
 	uint64_t                     compressed_fileoffset_startdisk; /* points to the PK header!! */
 	uint32_t                     compressed_startdisk;
 
-	char                        *orig_filename; /* if encoding deviates from UTF-8 */
+	char                        *orig_full_filepath; /* if encoding deviates from UTF-8, this can be used to recode on the fly too */
 	int                          orig_FlaggedUTF8;
 
 	uint32_t                     LocalHeaderSize;
@@ -202,12 +202,12 @@ static const struct ocpdir_charset_override_API_t zip_charset_API =
 };
 
 static uint32_t zip_instance_add (struct zip_instance_t *self,
-                                  char     *Filename,
-                                  int       Filename_FlaggedUTF8,
-                                  const uint64_t  CompressedSize,
-                                  const uint64_t  UncompressedSize,
-                                  const uint32_t  DiskNumber,
-                                  const uint64_t  OffsetLocalHeader);
+                                  char                  *Filename,
+                                  const int              Filename_FlaggedUTF8,
+                                  const uint64_t         CompressedSize,
+                                  const uint64_t         UncompressedSize,
+                                  const uint32_t         DiskNumber,
+                                  const uint64_t         OffsetLocalHeader);
 
 static void zip_instance_decode_blob (struct zip_instance_t *self, uint8_t *blob, size_t blobsize)
 {
@@ -332,7 +332,7 @@ static void zip_instance_encode_blob (struct zip_instance_t *self, uint8_t **blo
 
 	for (counter=0; counter < self->file_fill; counter++)
 	{
-		int filenamesize = strlen (self->files[counter].orig_filename);
+		int filenamesize = strlen (self->files[counter].orig_full_filepath);
 		/*
 		 * sizeof (uncompressed_filesize)           => 8
 		 * sizeof (compressed_filesize)             => 8
@@ -386,7 +386,8 @@ static void zip_instance_encode_blob (struct zip_instance_t *self, uint8_t **blo
 		(*blob)[(*blobfill) + 24] = self->files[counter].compressed_startdisk;
 
 		(*blob)[(*blobfill) + 28] = self->files[counter].orig_FlaggedUTF8 ? 1 : 0;
-		strcpy ((char *)(*blob) + 29 + (*blobfill), self->files[counter].orig_filename);
+		strcpy ((char *)(*blob) + 29 + (*blobfill), self->files[counter].orig_full_filepath);
+
 		*blobfill += 29 + filenamesize + 1;
 	}
 }
@@ -534,7 +535,8 @@ static void zip_io_unref (struct zip_instance_t *self)
 
 static uint32_t zip_instance_add_create_dir (struct zip_instance_t *self,
                                              const uint32_t         dir_parent,
-                                             char                  *Filename,
+                                             char                  *Dirpath,
+                                             char                  *Dirname,
                                              int                    Filename_FlaggedUTF8)
 {
 	uint32_t *prev, iter;
@@ -546,18 +548,11 @@ static uint32_t zip_instance_add_create_dir (struct zip_instance_t *self,
 		char *temp = 0;
 		int templen = 0;
 
-		zip_translate (self, Filename, &temp, &templen);
+		zip_translate (self, Dirname, &temp, &templen);
 		dirdb_ref = dirdbFindAndRef (self->dirs[dir_parent]->head.dirdb_ref, temp ? temp : "???", dirdb_use_dir);
 		free (temp); temp = 0;
 	} else {
-		char *temp = rindex (Filename, '/');
-		if (temp)
-		{
-			temp++;
-		} else {
-			temp = Filename;
-		}
-		dirdb_ref = dirdbFindAndRef (self->dirs[dir_parent]->head.dirdb_ref, temp, dirdb_use_dir);
+		dirdb_ref = dirdbFindAndRef (self->dirs[dir_parent]->head.dirdb_ref, Dirname, dirdb_use_dir);
 	}
 
 	if (self->dir_fill == self->dir_size)
@@ -603,7 +598,7 @@ static uint32_t zip_instance_add_create_dir (struct zip_instance_t *self,
 	self->dirs[self->dir_fill]->dir_next = UINT32_MAX;
 	self->dirs[self->dir_fill]->dir_child = UINT32_MAX;
 	self->dirs[self->dir_fill]->file_child = UINT32_MAX;
-	self->dirs[self->dir_fill]->orig_dirname = strdup (Filename);
+	self->dirs[self->dir_fill]->orig_full_dirpath = strdup (Dirpath);
 	self->dirs[self->dir_fill]->orig_FlaggedUTF8 = Filename_FlaggedUTF8;
 
 	prev = &self->dirs[dir_parent]->dir_child;
@@ -620,6 +615,7 @@ static uint32_t zip_instance_add_create_dir (struct zip_instance_t *self,
 
 static uint32_t zip_instance_add_file (struct zip_instance_t *self,
                                        const uint32_t         dir_parent,
+                                       char                  *Filepath,
                                        char                  *Filename,
                                        int                    Filename_FlaggedUTF8,
                                        const uint64_t         CompressedSize,
@@ -630,7 +626,7 @@ static uint32_t zip_instance_add_file (struct zip_instance_t *self,
 	uint32_t *prev, iter;
 	uint32_t dirdb_ref;
 
-	DEBUG_PRINT ("[ZIP] add_file: %s %d\n", Filename, Filename_FlaggedUTF8);
+	DEBUG_PRINT ("[ZIP] add_file: %s %s %d\n", Filepath, Filename, Filename_FlaggedUTF8);
 
 	if (self->file_fill == self->file_size)
 	{
@@ -655,14 +651,7 @@ static uint32_t zip_instance_add_file (struct zip_instance_t *self,
 		dirdb_ref = dirdbFindAndRef (self->dirs[dir_parent]->head.dirdb_ref, temp ? temp : "???", dirdb_use_file);
 		free (temp); temp = 0;
 	} else {
-		char *temp = rindex (Filename, '/');
-		if (temp)
-		{
-			temp++;
-		} else {
-			temp = Filename;
-		}
-		dirdb_ref = dirdbFindAndRef (self->dirs[dir_parent]->head.dirdb_ref, temp, dirdb_use_file);
+		dirdb_ref = dirdbFindAndRef (self->dirs[dir_parent]->head.dirdb_ref, Filename, dirdb_use_file);
 	}
 
 	ocpfile_t_fill (&self->files[self->file_fill].head,
@@ -681,7 +670,7 @@ static uint32_t zip_instance_add_file (struct zip_instance_t *self,
 	self->files[self->file_fill].head.refcount   = 0;
 	self->files[self->file_fill].dir_parent = dir_parent;
 	self->files[self->file_fill].file_next  = UINT32_MAX;
-	self->files[self->file_fill].orig_filename = strdup (Filename);
+	self->files[self->file_fill].orig_full_filepath = strdup (Filepath);
 	self->files[self->file_fill].orig_FlaggedUTF8 = Filename_FlaggedUTF8;
 	self->files[self->file_fill].uncompressed_filesize           = UncompressedSize;
 	self->files[self->file_fill].compressed_filesize             = CompressedSize;
@@ -701,15 +690,15 @@ static uint32_t zip_instance_add_file (struct zip_instance_t *self,
 }
 
 static uint32_t zip_instance_add (struct zip_instance_t *self,
-                                  char                  *Filename,
-                                  int                    Filename_FlaggedUTF8,
+                                  char                  *Filepath,
+                                  const int              Filepath_FlaggedUTF8,
                                   const uint64_t         CompressedSize,
                                   const uint64_t         UncompressedSize,
                                   const uint32_t         DiskNumber,
                                   const uint64_t         OffsetLocalHeader)
 {
 	uint32_t iter = 0;
-	char *ptr = Filename;
+	char *ptr = Filepath;
 	while (1)
 	{
 		char *slash;
@@ -735,7 +724,7 @@ again:
 				/* check if we already have this node */
 				for (search = 1; search < self->dir_fill; search++)
 				{
-					if (!strcmp (self->dirs[search]->orig_dirname, Filename))
+					if (!strcmp (self->dirs[search]->orig_full_dirpath, Filepath))
 					{
 						iter = search;
 						*slash = '/';
@@ -747,7 +736,7 @@ again:
 				}
 
 				/* no hit, create one */
-				iter = zip_instance_add_create_dir (self, iter, Filename, Filename_FlaggedUTF8);
+				iter = zip_instance_add_create_dir (self, iter, Filepath, ptr, Filepath_FlaggedUTF8);
 				*slash = '/';
 				ptr = slash + 1;
 				if (iter == 0)
@@ -760,7 +749,7 @@ again:
 		} else {
 			if (strcmp (ptr, ".") && strcmp (ptr, "..") && strlen (ptr)) /* we ignore entries that match these */
 			{
-				return zip_instance_add_file (self, iter, Filename, Filename_FlaggedUTF8, CompressedSize, UncompressedSize, DiskNumber, OffsetLocalHeader);
+				return zip_instance_add_file (self, iter, Filepath, ptr, Filepath_FlaggedUTF8, CompressedSize, UncompressedSize, DiskNumber, OffsetLocalHeader);
 			}
 			return UINT32_MAX; /* out of memory.... */
 		}
@@ -1104,7 +1093,7 @@ static struct ocpdir_t *zip_check (const struct ocpdirdecompressor_t *self, stru
 	iter->dirs[0]->dir_next = UINT32_MAX;
 	iter->dirs[0]->dir_child = UINT32_MAX;
 	iter->dirs[0]->file_child = UINT32_MAX;
-	iter->dirs[0]->orig_dirname = 0;
+	iter->dirs[0]->orig_full_dirpath = 0;
 	iter->dir_fill = 1;
 
 	file->ref (file);
@@ -1201,18 +1190,18 @@ static void zip_instance_unref (struct zip_instance_t *self)
 	self->dirs[0]->head.parent = 0;
 
 	dirdbUnref (self->dirs[0]->head.dirdb_ref, dirdb_use_dir);
-	free (self->dirs[0]->orig_dirname);
+	free (self->dirs[0]->orig_full_dirpath);
 	for (counter = 1; counter < self->dir_fill; counter++)
 	{
 		dirdbUnref (self->dirs[counter]->head.dirdb_ref, dirdb_use_dir);
-		free (self->dirs[counter]->orig_dirname);
+		free (self->dirs[counter]->orig_full_dirpath);
 		free (self->dirs[counter]);
 	}
 
 	for (counter = 0; counter < self->file_fill; counter++)
 	{
 		dirdbUnref (self->files[counter].head.dirdb_ref, dirdb_use_file);
-		free (self->files[counter].orig_filename);
+		free (self->files[counter].orig_full_filepath);
 	}
 
 	free (self->dirs);
@@ -2509,7 +2498,7 @@ static void zip_set_byuser_string (struct ocpdir_t *_self, const char *byuser)
 
 	for (i=1; i < self->owner->dir_fill; i++)
 	{
-		zip_translate (self->owner, self->owner->dirs[i]->orig_dirname, &temp, &templen);
+		zip_translate (self->owner, self->owner->dirs[i]->orig_full_dirpath, &temp, &templen);
 		if (temp)
 		{
 			dirdbUnref (self->owner->dirs[i]->head.dirdb_ref, dirdb_use_dir);
@@ -2523,7 +2512,7 @@ static void zip_set_byuser_string (struct ocpdir_t *_self, const char *byuser)
 
 	for (i=0; i < self->owner->file_fill; i++)
 	{
-		zip_translate (self->owner, self->owner->files[i].orig_filename, &temp, &templen);
+		zip_translate (self->owner, self->owner->files[i].orig_full_filepath, &temp, &templen);
 		if (temp)
 		{
 			dirdbUnref (self->owner->files[i].head.dirdb_ref, dirdb_use_file);
@@ -2565,7 +2554,7 @@ static char **zip_get_test_strings(struct ocpdir_t *__self)
 	{
 		if (!self->dirs[i]->orig_FlaggedUTF8)
 		{
-			retval[count] = strdup (self->dirs[i]->orig_dirname);
+			retval[count] = strdup (self->dirs[i]->orig_full_dirpath);
 			if (!retval[count])
 			{
 				return retval;
@@ -2577,7 +2566,7 @@ static char **zip_get_test_strings(struct ocpdir_t *__self)
 	{
 		if (!self->files[i].orig_FlaggedUTF8)
 		{
-			retval[count] = strdup (self->files[i].orig_filename);
+			retval[count] = strdup (self->files[i].orig_full_filepath);
 			if (!retval[count])
 			{
 				return retval;
