@@ -413,22 +413,22 @@ int fontengine_init (void)
 		return 1;
 	}
 
-	unifont_bmp = TTF_OpenFontFilename(UNIFONTDIR "/unifont.ttf", 16, 0, 0, 0);
+	unifont_bmp = TTF_OpenFontFilename(UNIFONT_TTF, 16, 0, 0, 0);
 	if (!unifont_bmp)
 	{
-		fprintf (stderr, "TTF_OpenFont(\"" UNIFONTDIR "/unifont.ttf\") failed: %s\n", TTF_GetError());
+		fprintf (stderr, "TTF_OpenFont(\"" UNIFONT_TTF "\") failed: %s\n", TTF_GetError());
 		TTF_ClearError();
 	}
-	unifont_csur = TTF_OpenFontFilename(UNIFONTDIR "/unifont_csur.ttf", 16, 0, 0, 0);
+	unifont_csur = TTF_OpenFontFilename(UNIFONT_CSUR_TTF, 16, 0, 0, 0);
 	if (!unifont_csur)
 	{
-		fprintf (stderr, "TTF_OpenFont(\"" UNIFONTDIR "/unifont_csur.ttf\") failed: %s\n", TTF_GetError());
+		fprintf (stderr, "TTF_OpenFont(\"" UNIFONT_CSUR_TTF "\") failed: %s\n", TTF_GetError());
 		TTF_ClearError();
 	}
-	unifont_upper = TTF_OpenFontFilename(UNIFONTDIR "/unifont_upper.ttf", 16, 0, 0, 0);
+	unifont_upper = TTF_OpenFontFilename(UNIFONT_UPPER_TTF , 16, 0, 0, 0);
 	if (!unifont_upper)
 	{
-		fprintf (stderr, "TTF_OpenFont(\"" UNIFONTDIR "/unifont_upper.ttf\") failed: %s\n", TTF_GetError());
+		fprintf (stderr, "TTF_OpenFont(\"" UNIFONT_UPPER_TTF "\") failed: %s\n", TTF_GetError());
 		TTF_ClearError();
 	}
 
