@@ -76,6 +76,7 @@
 #include "filesystem-drive.h"
 #include "filesystem-bzip2.h"
 #include "filesystem-gzip.h"
+#include "filesystem-pak.h"
 #include "filesystem-playlist.h"
 #include "filesystem-playlist-m3u.h"
 #include "filesystem-playlist-pls.h"
@@ -868,6 +869,7 @@ int fsPreInit(void)
 	filesystem_bzip2_register ();
 	filesystem_gzip_register ();
 	filesystem_m3u_register ();
+	filesystem_pak_register ();
 	filesystem_pls_register ();
 	filesystem_setup_register ();
 	filesystem_tar_register ();

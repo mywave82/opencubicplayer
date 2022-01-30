@@ -18,6 +18,7 @@ filesystem-drive.o            \
 filesystem-gzip.o             \
 filesystem-file-mem.o         \
 filesystem-filehandle-cache.o \
+filesystem-pak.o              \
 filesystem-playlist.o         \
 filesystem-playlist-m3u.o     \
 filesystem-playlist-pls.o     \
@@ -228,6 +229,15 @@ filesystem-filehandle-cache-test: filesystem-filehandle-cache-test.c \
 	filesystem-file-mem.o
 	$(CC) $< filesystem-file-mem.o filesystem-dir-mem.o -o $@
 
+filesystem-pak.o: filesystem-pak.c \
+	../config.h \
+	../types.h \
+	adbmeta.h \
+	dirdb.h \
+	filesystem.h \
+	filesystem-pak.h
+	$(CC) $< -o $@ -c
+
 filesystem-playlist.o: filesystem-playlist.c \
 	../config.h \
 	../types.h \
@@ -425,6 +435,7 @@ pfilesel.o: pfilesel.c \
 	filesystem-bzip2.h \
 	filesystem-drive.h \
 	filesystem-gzip.h \
+	filesystem-pak.h \
 	filesystem-playlist.h \
 	filesystem-playlist-m3u.h \
 	filesystem-playlist-pls.h \
