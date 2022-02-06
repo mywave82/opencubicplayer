@@ -1119,9 +1119,26 @@ static int GString_song_x_y_allowgrow (const void *inputa, const void *inputb, c
 	}
 	switch (nextsize)
 	{
-		case 1: return 11;
-		case 2: return 14-11;
-		default: return 0;
+		case 1:
+		{
+			int L;
+
+			if (*songy < 10)
+			{
+				L = 2;
+			} else if (*songy < 100)
+			{
+				L = 4;
+			} else {
+				L = 6;
+			}
+
+			return 9+L;
+		}
+		case 2:
+			return 3;
+		default:
+			return 0;
 	}
 }
 
@@ -1129,19 +1146,39 @@ static void GString_song_x_y_render (const void *inputa, const void *inputb, con
 {
 	const int *songx = inputa;
 	const int *songy = inputb;
-	char temp[3];
+	char temp[4];
 
 	displaystr (lineno, *x, 0x09, "song:", 5); (*x) += 6;
-	snprintf (temp, sizeof (temp), "%02d", *songx);
-	displaystr (lineno, *x, 0x0f, temp,    2); (*x) += 2;
+	if (*songy < 10)
+	{
+		snprintf (temp, sizeof (temp), "%01d", *songx);
+		displaystr (lineno, *x, 0x0f, temp, 2); (*x) += 1;
+	} else if (*songy < 100)
+	{
+		snprintf (temp, sizeof (temp), "%02d", *songx);
+		displaystr (lineno, *x, 0x0f, temp, 2); (*x) += 2;
+	} else {
+		snprintf (temp, sizeof (temp), "%03d", *songx);
+		displaystr (lineno, *x, 0x0f, temp, 3); (*x) += 3;
+	}
 	if (size==1)
 	{
 		displaystr (lineno, *x, 0x07, "/",  1); (*x) += 1;
 	} else {
 		displaystr (lineno, *x, 0x07, " of ",  4); (*x) += 4;
 	}
-	snprintf (temp, sizeof (temp), "%02d", *songy);
-	displaystr (lineno, *x, 0x0f, temp,    2); (*x) += 2;
+	if (*songy < 10)
+	{
+		snprintf (temp, sizeof (temp), "%01d", *songy);
+		displaystr (lineno, *x, 0x0f, temp, 2); (*x) += 1;
+	} else if (*songy < 100)
+	{
+		snprintf (temp, sizeof (temp), "%02d", *songy);
+		displaystr (lineno, *x, 0x0f, temp, 2); (*x) += 2;
+	} else {
+		snprintf (temp, sizeof (temp), "%03d", *songy);
+		displaystr (lineno, *x, 0x0f, temp, 3); (*x) += 3;
+	}
 }
 
 static struct GStringElement GString_song_x_y =
