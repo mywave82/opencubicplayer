@@ -48,7 +48,9 @@ extern struct interfaceparameters AMS_p,
                                   MDL_p,
                                   MIDI_p,
                                   MOD_p,
+#ifdef HAVE_MAD
                                   MPx_p,
+#endif
                                   MTM_p,
                                   OGG_p,
                                   OKT_p,
@@ -72,7 +74,9 @@ extern const char *AMS_description[],
                   *MODd_description[],
                   *MODf_description[],
                   *MODt_description[],
+#ifdef HAVE_MAD
                   *MPx_description[],
+#endif
                   *MTM_description[],
                   *MXM_description[],
                   *OGG_description[],
@@ -151,11 +155,13 @@ static void __attribute__((constructor))init(void)
 	mt.integer.i = MODULETYPE("XM");
 	fsTypeRegister (mt, XM_description, "plOpenCP", &MOD_p);
 
+#ifdef HAVE_MAD
 	fsRegisterExt ("MP1");
 	fsRegisterExt ("MP2");
 	fsRegisterExt ("MP3");
 	mt.integer.i = MODULETYPE("MPx");
 	fsTypeRegister (mt, MPx_description, "plOpenCP", &MPx_p);
+#endif
 
 	fsRegisterExt ("MTM");
 	mt.integer.i = MODULETYPE("MTM");
