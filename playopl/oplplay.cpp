@@ -140,6 +140,7 @@ void __attribute__ ((visibility ("internal"))) oplSetSong (int song)
 	{
 		song = songs;
 	}
+	song--;
 	p->rewind (song);
 }
 
@@ -790,7 +791,7 @@ void __attribute__ ((visibility ("internal"))) oplpGetGlobInfo(oplTuneInfo &si)
 	std::string title = p->gettitle();  /* same here */
 
 	si.songs=p->getsubsongs();
-	si.currentSong=p->getsubsong();
+	si.currentSong=p->getsubsong() + 1;
 
 	snprintf (si.author, sizeof (si.author), "%s", author.c_str());
 	snprintf (si.title, sizeof (si.title), "%s", title.c_str());
