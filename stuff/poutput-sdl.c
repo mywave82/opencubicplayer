@@ -132,7 +132,7 @@ static void set_state_textmode(int fullscreen, int width, int height)
 
 	if (virtual_framebuffer)
 	{
-		free(virtual_framebuffer);
+		free (virtual_framebuffer);
 		plVidMem = virtual_framebuffer = 0;
 	}
 
@@ -166,11 +166,11 @@ again:
 	{
 		switch (plCurrentFont)
 		{
-			case _16x8:
+			case _8x16:
 				plCurrentFont = _8x8;
 				break;
-			default:
 			case _8x8:
+			default:
 				if (!fullscreen)
 				{
 					fprintf(stderr, "[SDL-video] unable to find a small enough font for %d x %d, increasing window size\n", width, height);
@@ -181,7 +181,7 @@ again:
 					fprintf(stderr, "[SDL-video] unable to find a small enough font for %d x %d\n", width, height);
 					exit(-1);
 				}
-			}
+				break;
 		}
 	}
 
@@ -337,7 +337,7 @@ static int __plSetGraphMode(int high)
 
 	if (virtual_framebuffer)
 	{
-		free(virtual_framebuffer);
+		free (virtual_framebuffer);
 		plVidMem = virtual_framebuffer = 0;
 	}
 
@@ -429,9 +429,7 @@ static void plDisplaySetupTextMode(void)
 	while (1)
 	{
 		uint16_t c;
-
 		memset(virtual_framebuffer, 0, plScrLineBytes * plScrLines);
-
 		make_title("sdl-driver setup", 0);
 		swtext_displaystr_cp437(1, 0, 0x07, "1:  font-size:", 14);
 		swtext_displaystr_cp437(1, 15, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
@@ -452,7 +450,7 @@ static void plDisplaySetupTextMode(void)
 		{
 			case '1':
 				/* we can assume that we are in text-mode if we are here */
-				plCurrentFontWanted = plCurrentFont = ((plCurrentFont == _8x8)?_8x16:_8x8;
+				plCurrentFontWanted = plCurrentFont = (plCurrentFont == _8x8)?_8x16:_8x8;
 				set_state_textmode(do_fullscreen, plScrLineBytes, plScrLines);
 				cfSetProfileInt("x11", "font", plCurrentFont, 10);
 				break;
@@ -463,7 +461,7 @@ static void plDisplaySetupTextMode(void)
 
 static const char *plGetDisplayTextModeName(void)
 {
-	static char mode[32];
+	static char mode[48];
 	snprintf(mode, sizeof(mode), "res(%dx%d), font(%s)%s", plScrWidth, plScrHeight,
 		plCurrentFont == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
 	return mode;
@@ -516,6 +514,7 @@ struct keytranslate_t translate[] =
 {
 	{SDLK_BACKSPACE,    KEY_BACKSPACE},
 	{SDLK_TAB,          KEY_TAB},
+	{SDLK_DELETE,       KEY_DELETE},
 	{SDLK_CLEAR,        KEY_DELETE}, /* ??? */
 	{SDLK_RETURN,       _KEY_ENTER},
 	/*SDLK_PAUSE*/
@@ -611,7 +610,6 @@ struct keytranslate_t translate[] =
 	{SDLK_x,            'x'},
 	{SDLK_y,            'y'},
 	{SDLK_z,            'z'},
-	{SDLK_DELETE,       KEY_DELETE},
 	{SDLK_KP0,          '0'},
 	{SDLK_KP1,          '1'},
 	{SDLK_KP2,          '2'},
@@ -774,6 +772,35 @@ struct keytranslate_t translate_ctrl[] =
 	{SDLK_PAGEUP,       KEY_CTRL_PGUP},
 	{SDLK_PAGEDOWN,     KEY_CTRL_PGDN},
 	{SDLK_HOME,         KEY_CTRL_HOME},
+	{SDLK_F1,           KEY_CTRL_F(1)},
+	{SDLK_F2,           KEY_CTRL_F(2)},
+	{SDLK_F3,           KEY_CTRL_F(3)},
+	{SDLK_F4,           KEY_CTRL_F(4)},
+	{SDLK_F5,           KEY_CTRL_F(5)},
+	{SDLK_F6,           KEY_CTRL_F(6)},
+	{SDLK_F7,           KEY_CTRL_F(7)},
+	{SDLK_F8,           KEY_CTRL_F(8)},
+	{SDLK_F9,           KEY_CTRL_F(9)},
+	{SDLK_F10,          KEY_CTRL_F(10)},
+	{SDLK_F11,          KEY_CTRL_F(11)},
+	{SDLK_F12,          KEY_CTRL_F(12)},
+	{-1,                0xffff},
+};
+
+struct keytranslate_t translate_ctrl_shift[] =
+{
+	{SDLK_F1,           KEY_CTRL_SHIFT_F(1)},
+	{SDLK_F2,           KEY_CTRL_SHIFT_F(2)},
+	{SDLK_F3,           KEY_CTRL_SHIFT_F(3)},
+	{SDLK_F4,           KEY_CTRL_SHIFT_F(4)},
+	{SDLK_F5,           KEY_CTRL_SHIFT_F(5)},
+	{SDLK_F6,           KEY_CTRL_SHIFT_F(6)},
+	{SDLK_F7,           KEY_CTRL_SHIFT_F(7)},
+	{SDLK_F8,           KEY_CTRL_SHIFT_F(8)},
+	{SDLK_F9,           KEY_CTRL_SHIFT_F(9)},
+	{SDLK_F10,          KEY_CTRL_SHIFT_F(10)},
+	{SDLK_F11,          KEY_CTRL_SHIFT_F(11)},
+	{SDLK_F12,          KEY_CTRL_SHIFT_F(12)},
 	{-1,                0xffff},
 };
 
@@ -849,6 +876,9 @@ static int ___valid_key(uint16_t key)
 			return 1;
 	for (index=0;translate_ctrl[index].OCP!=0xffff;index++)
 		if (translate_ctrl[index].OCP==key)
+			return 1;
+	for (index=0;translate_ctrl_shift[index].OCP!=0xffff;index++)
+		if (translate_ctrl_shift[index].OCP==key)
 			return 1;
 	for (index=0;translate_alt[index].OCP!=0xffff;index++)
 		if (translate_alt[index].OCP==key)
@@ -1110,7 +1140,8 @@ static int ekbhit_sdldummy(void)
 			{
 				int index;
 
-				if ((event.key.keysym.mod & KMOD_CTRL) && (!(event.key.keysym.mod & ~(KMOD_CTRL|KMOD_SHIFT|KMOD_ALT|KMOD_NUM))))
+				if ( (event.key.keysym.mod &  KMOD_CTRL) &&
+				     (!(event.key.keysym.mod & (KMOD_SHIFT|KMOD_ALT))) )
 				{
 					for (index=0;translate_ctrl[index].OCP!=0xffff;index++)
 						if (translate_ctrl[index].SDL==event.key.keysym.sym)
@@ -1121,7 +1152,22 @@ static int ekbhit_sdldummy(void)
 					break;
 				}
 
-				if ((event.key.keysym.mod & KMOD_SHIFT) && (!(event.key.keysym.mod & ~(KMOD_CTRL|KMOD_SHIFT|KMOD_ALT|KMOD_NUM))))
+				if ( (event.key.keysym.mod & KMOD_CTRL) &&
+				     (event.key.keysym.mod & KMOD_SHIFT) &&
+				    (!((event.key.keysym.mod & KMOD_ALT))) )
+				{
+					for (index=0;translate_ctrl_shift[index].OCP!=0xffff;index++)
+						if (translate_ctrl_shift[index].SDL==event.key.keysym.sym)
+						{
+							___push_key(translate_ctrl_shift[index].OCP);
+							break;
+						}
+					break;
+				}
+
+				if ( (event.key.keysym.mod & KMOD_SHIFT) &&
+
+				     (!(event.key.keysym.mod & (KMOD_CTRL|KMOD_ALT))) )
 				{
 					for (index=0;translate_shift[index].OCP!=0xffff;index++)
 						if (translate_shift[index].SDL==event.key.keysym.sym)
@@ -1132,7 +1178,8 @@ static int ekbhit_sdldummy(void)
 					/* no break here */
 				}
 
-				if ((event.key.keysym.mod & KMOD_ALT) && (!(event.key.keysym.mod & ~(KMOD_CTRL|KMOD_SHIFT|KMOD_ALT|KMOD_NUM))))
+				if ( (event.key.keysym.mod & KMOD_ALT) &&
+                                    (!(event.key.keysym.mod & (KMOD_CTRL|KMOD_SHIFT))) )
 				{
 					/* TODO, handle ALT-ENTER */
 					if (event.key.keysym.sym==SDLK_RETURN)

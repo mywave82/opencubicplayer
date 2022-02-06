@@ -292,7 +292,7 @@ static void set_state_textmode(int fullscreen, int width, int height)
 	if (virtual_framebuffer)
 	{
 		free (virtual_framebuffer);
-		plVidMem = virtual_framebuffer=0;
+		plVidMem = virtual_framebuffer = 0;
 	}
 
 	if (fullscreen != do_fullscreen)
@@ -931,6 +931,35 @@ struct keytranslate_t translate_ctrl[] =
 	{SDLK_PAGEUP,       KEY_CTRL_PGUP},
 	{SDLK_PAGEDOWN,     KEY_CTRL_PGDN},
 	{SDLK_HOME,         KEY_CTRL_HOME},
+	{SDLK_F1,           KEY_CTRL_F(1)},
+	{SDLK_F2,           KEY_CTRL_F(2)},
+	{SDLK_F3,           KEY_CTRL_F(3)},
+	{SDLK_F4,           KEY_CTRL_F(4)},
+	{SDLK_F5,           KEY_CTRL_F(5)},
+	{SDLK_F6,           KEY_CTRL_F(6)},
+	{SDLK_F7,           KEY_CTRL_F(7)},
+	{SDLK_F8,           KEY_CTRL_F(8)},
+	{SDLK_F9,           KEY_CTRL_F(9)},
+	{SDLK_F10,          KEY_CTRL_F(10)},
+	{SDLK_F11,          KEY_CTRL_F(11)},
+	{SDLK_F12,          KEY_CTRL_F(12)},
+	{-1,                0xffff},
+};
+
+struct keytranslate_t translate_ctrl_shift[] =
+{
+	{SDLK_F1,           KEY_CTRL_SHIFT_F(1)},
+	{SDLK_F2,           KEY_CTRL_SHIFT_F(2)},
+	{SDLK_F3,           KEY_CTRL_SHIFT_F(3)},
+	{SDLK_F4,           KEY_CTRL_SHIFT_F(4)},
+	{SDLK_F5,           KEY_CTRL_SHIFT_F(5)},
+	{SDLK_F6,           KEY_CTRL_SHIFT_F(6)},
+	{SDLK_F7,           KEY_CTRL_SHIFT_F(7)},
+	{SDLK_F8,           KEY_CTRL_SHIFT_F(8)},
+	{SDLK_F9,           KEY_CTRL_SHIFT_F(9)},
+	{SDLK_F10,          KEY_CTRL_SHIFT_F(10)},
+	{SDLK_F11,          KEY_CTRL_SHIFT_F(11)},
+	{SDLK_F12,          KEY_CTRL_SHIFT_F(12)},
 	{-1,                0xffff},
 };
 
@@ -1006,6 +1035,9 @@ static int ___valid_key(uint16_t key)
 			return 1;
 	for (index=0;translate_ctrl[index].OCP!=0xffff;index++)
 		if (translate_ctrl[index].OCP==key)
+			return 1;
+	for (index=0;translate_ctrl_shift[index].OCP!=0xffff;index++)
+		if (translate_ctrl_shift[index].OCP==key)
 			return 1;
 	for (index=0;translate_alt[index].OCP!=0xffff;index++)
 		if (translate_alt[index].OCP==key)
@@ -1325,7 +1357,8 @@ static int ekbhit_sdl2dummy(void)
 				fprintf(stderr, "              keysym.sym: 0x%08x ->%s<-\n", (int)event.key.keysym.sym, SDL_GetKeyName(event.key.keysym.sym));
 #endif
 
-				if ((event.key.keysym.mod & KMOD_CTRL) && (!(event.key.keysym.mod & ~(KMOD_CTRL|KMOD_SHIFT|KMOD_ALT|KMOD_NUM))))
+				if ( (event.key.keysym.mod &  KMOD_CTRL) &&
+				     (!(event.key.keysym.mod & (KMOD_SHIFT|KMOD_ALT))) )
 				{
 					for (index=0;translate_ctrl[index].OCP!=0xffff;index++)
 						if (translate_ctrl[index].SDL==event.key.keysym.sym)
@@ -1336,7 +1369,21 @@ static int ekbhit_sdl2dummy(void)
 					break;
 				}
 
-				if ((event.key.keysym.mod & KMOD_SHIFT) && (!(event.key.keysym.mod & ~(KMOD_CTRL|KMOD_SHIFT|KMOD_ALT|KMOD_NUM))))
+				if ( (event.key.keysym.mod & KMOD_CTRL) &&
+				     (event.key.keysym.mod & KMOD_SHIFT) &&
+				    (!((event.key.keysym.mod & KMOD_ALT))) )
+				{
+					for (index=0;translate_ctrl_shift[index].OCP!=0xffff;index++)
+						if (translate_ctrl_shift[index].SDL==event.key.keysym.sym)
+						{
+							___push_key(translate_ctrl_shift[index].OCP);
+							break;
+						}
+					break;
+				}
+
+				if ( (event.key.keysym.mod & KMOD_SHIFT) &&
+				     (!(event.key.keysym.mod & (KMOD_CTRL|KMOD_ALT))) )
 				{
 					for (index=0;translate_shift[index].OCP!=0xffff;index++)
 						if (translate_shift[index].SDL==event.key.keysym.sym)
@@ -1347,7 +1394,8 @@ static int ekbhit_sdl2dummy(void)
 					/* no break here */
 				}
 
-				if ((event.key.keysym.mod & KMOD_ALT) && (!(event.key.keysym.mod & ~(KMOD_CTRL|KMOD_SHIFT|KMOD_ALT|KMOD_NUM))))
+				if ( (event.key.keysym.mod & KMOD_ALT) &&
+                                    (!(event.key.keysym.mod & (KMOD_CTRL|KMOD_SHIFT))) )
 				{
 					/* TODO, handle ALT-ENTER */
 					if (event.key.keysym.sym==SDLK_RETURN)

@@ -880,10 +880,40 @@ static void x11_common_event_loop(void)
 							___push_key(buf[0]);
 						}
 					}
-				} else if ((event.xkey.state&(ControlMask|Mod1Mask))==ControlMask)
+				} else if ((event.xkey.state&(ShiftMask|ControlMask|Mod1Mask))==(ShiftMask|ControlMask))
 				{
 					switch (ks)
 					{
+						case XK_F1:        key=KEY_CTRL_SHIFT_F(1);   break;
+						case XK_F2:        key=KEY_CTRL_SHIFT_F(2);   break;
+						case XK_F3:        key=KEY_CTRL_SHIFT_F(3);   break;
+						case XK_F4:        key=KEY_CTRL_SHIFT_F(4);   break;
+						case XK_F5:        key=KEY_CTRL_SHIFT_F(5);   break;
+						case XK_F6:        key=KEY_CTRL_SHIFT_F(6);   break;
+						case XK_F7:        key=KEY_CTRL_SHIFT_F(7);   break;
+						case XK_F8:        key=KEY_CTRL_SHIFT_F(8);   break;
+						case XK_F9:        key=KEY_CTRL_SHIFT_F(9);   break;
+						case XK_F10:       key=KEY_CTRL_SHIFT_F(10);  break;
+						case XK_F11:       key=KEY_CTRL_SHIFT_F(11);  break;
+						case XK_F12:       key=KEY_CTRL_SHIFT_F(12);  break;
+					}
+
+				} else if ((event.xkey.state&(ShiftMask|ControlMask|Mod1Mask))==ControlMask)
+				{
+					switch (ks)
+					{
+						case XK_F1:        key=KEY_CTRL_F(1);   break;
+						case XK_F2:        key=KEY_CTRL_F(2);   break;
+						case XK_F3:        key=KEY_CTRL_F(3);   break;
+						case XK_F4:        key=KEY_CTRL_F(4);   break;
+						case XK_F5:        key=KEY_CTRL_F(5);   break;
+						case XK_F6:        key=KEY_CTRL_F(6);   break;
+						case XK_F7:        key=KEY_CTRL_F(7);   break;
+						case XK_F8:        key=KEY_CTRL_F(8);   break;
+						case XK_F9:        key=KEY_CTRL_F(9);   break;
+						case XK_F10:       key=KEY_CTRL_F(10);  break;
+						case XK_F11:       key=KEY_CTRL_F(11);  break;
+						case XK_F12:       key=KEY_CTRL_F(12);  break;
 						case XK_Up:        key=KEY_CTRL_UP;     break;
 						case XK_Down:      key=KEY_CTRL_DOWN;   break;
 						case XK_Right:     key=KEY_CTRL_RIGHT;  break;
@@ -892,7 +922,7 @@ static void x11_common_event_loop(void)
 						case XK_Page_Down: key=KEY_CTRL_PGDN;   break;
 						case XK_Home:      key=KEY_CTRL_HOME;   break;
 					}
-				} else if ((event.xkey.state&(ControlMask|Mod1Mask))==Mod1Mask)
+				} else if ((event.xkey.state&(ShiftMask|ControlMask|Mod1Mask))==Mod1Mask)
 				{
 				} else if ((event.xkey.state&(ShiftMask|ControlMask|Mod1Mask))==ShiftMask)
 				{
@@ -1903,6 +1933,18 @@ static int ___valid_key(uint16_t key)
 		case KEY_CTRL_Q:
 		case KEY_CTRL_S:
 		case KEY_CTRL_Z:
+		case KEY_CTRL_F(1):
+		case KEY_CTRL_F(2):
+		case KEY_CTRL_F(3):
+		case KEY_CTRL_F(4):
+		case KEY_CTRL_F(5):
+		case KEY_CTRL_F(6):
+		case KEY_CTRL_F(7):
+		case KEY_CTRL_F(8):
+		case KEY_CTRL_F(9):
+		case KEY_CTRL_F(10):
+		case KEY_CTRL_F(11):
+		case KEY_CTRL_F(12):
 		case KEY_CTRL_BS:
 		case KEY_CTRL_UP:
 		case KEY_CTRL_DOWN:
@@ -1912,6 +1954,18 @@ static int ___valid_key(uint16_t key)
 		case KEY_CTRL_PGDN:
 		case KEY_CTRL_ENTER:
 		case KEY_CTRL_HOME:
+		case KEY_CTRL_SHIFT_F(1):
+		case KEY_CTRL_SHIFT_F(2):
+		case KEY_CTRL_SHIFT_F(3):
+		case KEY_CTRL_SHIFT_F(4):
+		case KEY_CTRL_SHIFT_F(5):
+		case KEY_CTRL_SHIFT_F(6):
+		case KEY_CTRL_SHIFT_F(7):
+		case KEY_CTRL_SHIFT_F(8):
+		case KEY_CTRL_SHIFT_F(9):
+		case KEY_CTRL_SHIFT_F(10):
+		case KEY_CTRL_SHIFT_F(11):
+		case KEY_CTRL_SHIFT_F(12):
 			return 1;
 
 		default:
