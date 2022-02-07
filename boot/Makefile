@@ -20,6 +20,7 @@ pmain.o: pmain.c pmain.h \
 	plinkman.h \
 	psetting.h \
 	../stuff/err.h \
+	../stuff/framelock.h \
 	../stuff/poutput.h
 	$(CC) pmain.c -o $@ -c
 

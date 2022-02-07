@@ -44,7 +44,7 @@ int fsFPSCurrent=0;
 static struct timeval target = {0, 0};
 static struct timeval curr;
 
-static void __attribute__((constructor))fpsInit(void)
+void __attribute__ ((visibility ("internal"))) framelock_init (void)
 {
 	fsFPS=cfGetProfileInt("screen", "fps", 20, 0);
 	if (fsFPS<=0)

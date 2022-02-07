@@ -54,6 +54,7 @@
 
 #include "pmain.h"
 #include "stuff/err.h"
+#include "stuff/framelock.h"
 #include "stuff/poutput.h"
 #include "plinkman.h"
 #include "psetting.h"
@@ -159,6 +160,8 @@ static int init_modules(int argc, char *argv[])
 				return errGen;
 			}
 		}
+
+	framelock_init ();
 
 	lnkInit();
 
