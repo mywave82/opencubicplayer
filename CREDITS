@@ -27,7 +27,7 @@ Luigi Auriemma                                                - Locating some bu
 Adam Sampson <ats@offog.org>                                  - Minor patch
 Chuck Anderson <cra@WPI.EDU>                                  - Patches
 François Revol <revol@free.fr>                                - SDL Audio, and Haiku support
-Jindřich Makovička <makovick@gmail.com>                       - Minor fix in detection for glibc bug 4936, C version of FPU mixer
+Jindřich Makovička <makovick@gmail.com>                       - SDL Audio quirk, minor fix in detection for glibc bug 4936, C version of FPU mixer
 Csaba Halász aka Jester01                                     - Minor SDL keyboard updates
 Ossi Saukko                                                   - Minor patch
 
