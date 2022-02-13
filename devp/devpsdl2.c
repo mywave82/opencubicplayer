@@ -50,7 +50,11 @@ static void *playbuf=0;
 static int buflen;
 volatile static int kernpos, cachepos, bufpos; /* in bytes */
 static int delay; /* in samples */
-static int lastCallbackTime;
+#if SDL_VERSION_ATLEAST(2,0,18)
+static volatile uint64_t lastCallbackTime;
+#else
+static volatile uint32_t lastCallbackTime;
+#endif
 /* kernpos = kernel write header
  * bufpos = the write header given out of this driver */
 
@@ -86,13 +90,17 @@ void theRenderProc(void *userdata, Uint8 *stream, int len)
 	int i, i2;
 	int done = 0;
 
-	lastCallbackTime = SDL_GetTicks();
-
 	PRINT("%s(,,%d)\n", __FUNCTION__, len);
 
 	memset(stream, 0, len);
 
 	SDL_LockAudio();
+
+#if SDL_VERSION_ATLEAST(2,0,18)
+	lastCallbackTime = SDL_GetTicks64();
+#else
+	lastCallbackTime = SDL_GetTicks();
+#endif
 
 	i = cachelen;/* >>2  *stereo + 16it */
 	if (i > len)
@@ -150,13 +158,24 @@ static int sdl2GetBufPos(void)
 static int sdl2GetPlayPos(void)
 {
 	int retval;
+#if SDL_VERSION_ATLEAST(2,0,18)
+	uint64_t curTime;
+#else
+	uint32_t curTime;
+#endif
+
 	PRINT("%s()\n", __FUNCTION__);
 
 	SDL_LockAudio();
 	retval=cachepos;
-	SDL_UnlockAudio();
 
-	int curTime = SDL_GetTicks();
+#if SDL_VERSION_ATLEAST(2,0,18)
+	curTime = SDL_GetTicks64();
+#else
+	curTime = SDL_GetTicks();
+#endif
+
+	SDL_UnlockAudio();
 
 	retval += plrRate * 4 * (curTime - lastCallbackTime) / 1000;
 	retval %= buflen;
@@ -255,6 +274,12 @@ static int sdl2Play(void **buf, unsigned int *len, struct ocpfilehandle_t *sourc
 	desired.samples = plrRate / 8; /**len;*/
 	desired.callback = theRenderProc;
 	desired.userdata = NULL;
+
+#if SDL_VERSION_ATLEAST(2,0,18)
+	lastCallbackTime = SDL_GetTicks64();
+#else
+	lastCallbackTime = SDL_GetTicks();
+#endif
 
 	status=SDL_OpenAudio(&desired, &obtained);
 	if (status < 0)

@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/time.h>
 #include <SDL.h>
 #include <SDL_audio.h>
 #include "types.h"
@@ -50,6 +51,8 @@ static void *playbuf=0;
 static int buflen;
 volatile static int kernpos, cachepos, bufpos; /* in bytes */
 static int delay; /* in samples */
+volatile static struct timeval lastCallbackTime;
+
 /* kernpos = kernel write header
  * bufpos = the write header given out of this driver */
 
@@ -90,6 +93,8 @@ void theRenderProc(void *userdata, Uint8 *stream, int len)
 	memset(stream, 0, len);
 
 	SDL_LockAudio();
+
+	gettimeofday((struct timeval *)&lastCallbackTime, 0);
 
 	i = cachelen;/* >>2  *stereo + 16it */
 	if (i > len)
@@ -147,11 +152,18 @@ static int sdlGetBufPos(void)
 static int sdlGetPlayPos(void)
 {
 	int retval;
+	struct timeval curTime;
+
 	PRINT("%s()\n", __FUNCTION__);
 
 	SDL_LockAudio();
 	retval=cachepos;
+	gettimeofday (&curTime, 0);
 	SDL_UnlockAudio();
+
+	retval += plrRate * 4 * ((curTime.tv_sec - lastCallbackTime.tv_sec)*1000 + (curTime.tv_usec - lastCallbackTime.tv_usec)/1000) / 1000;
+	retval %= buflen;
+
 	return retval;
 }
 
@@ -247,6 +259,8 @@ static int sdlPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source
 	desired.samples = plrRate / 8; /**len;*/
 	desired.callback = theRenderProc;
 	desired.userdata = NULL;
+
+	gettimeofday((struct timeval *)&lastCallbackTime, 0);
 
 	status=SDL_OpenAudio(&desired, &obtained);
 	if (status < 0)
