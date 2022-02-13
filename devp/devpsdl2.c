@@ -50,6 +50,7 @@ static void *playbuf=0;
 static int buflen;
 volatile static int kernpos, cachepos, bufpos; /* in bytes */
 static int delay; /* in samples */
+static int lastCallbackTime;
 /* kernpos = kernel write header
  * bufpos = the write header given out of this driver */
 
@@ -84,6 +85,8 @@ void theRenderProc(void *userdata, Uint8 *stream, int len)
 {
 	int i, i2;
 	int done = 0;
+
+	lastCallbackTime = SDL_GetTicks();
 
 	PRINT("%s(,,%d)\n", __FUNCTION__, len);
 
@@ -152,6 +155,11 @@ static int sdl2GetPlayPos(void)
 	SDL_LockAudio();
 	retval=cachepos;
 	SDL_UnlockAudio();
+
+	int curTime = SDL_GetTicks();
+
+	retval += plrRate * 4 * (curTime - lastCallbackTime) / 1000;
+	retval %= buflen;
 	return retval;
 }
 
