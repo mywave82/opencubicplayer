@@ -176,13 +176,16 @@ static void cdIdler(void)
 	ringbuffer_get_head_bytes (cdbufpos, &req_pos1, &length1, &pos2, &length2);
 
 	emptyframes = length1 / CD_FRAMESIZE_RAW;
+	assert (emptyframes >= 0);
 	if ((!emptyframes) || ((emptyframes < REQUEST_SLOTS) && (!length2)))
 	{
 		return;
 	}
 	emptyframes = (emptyframes > REQUEST_SLOTS) ? REQUEST_SLOTS : emptyframes;
+	assert (emptyframes > 0);
 
 	/* check against track end */
+	assert (lba_stop > lba_next);
 	temp = lba_stop - lba_next;
 	if (emptyframes > temp)
 	{

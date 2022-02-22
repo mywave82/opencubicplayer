@@ -359,16 +359,17 @@ static int cdaProcessKey(uint16_t key)
 				newpos = TOC.track[cdpTrackNum].lba_addr;
 				setnewpos=1;
 			} else {
-				for (i=TOC.lasttrack; i>=TOC.starttrack; i--)
+				for (i=TOC.starttrack; i<=TOC.lasttrack; i++)
 				{
 					if (newpos < TOC.track[i].lba_addr)
 					{
 						break;
 					}
 				}
-				if (!i)
+				i-=1;
+				if (i <= TOC.starttrack)
 				{
-					i = 1;
+					i = TOC.starttrack;
 				}
 				newpos = TOC.track[i].lba_addr;
 				setnewpos = 1;
@@ -384,23 +385,22 @@ static int cdaProcessKey(uint16_t key)
 			break;
 		case KEY_CTRL_LEFT:
 		case '<':
-			if (cdpPlayMode)
+			if (!cdpPlayMode)
 			{
 				newpos = TOC.track[cdpTrackNum].lba_addr;
 				setnewpos = 1;
 			} else {
-				for (i=TOC.lasttrack; i>=TOC.starttrack; i--)
+				for (i=TOC.starttrack; i<=TOC.lasttrack; i++)
 				{
 					if (newpos < TOC.track[i].lba_addr)
 					{
 						break;
 					}
 				}
-				if (i <= 2)
+				i-=2;
+				if (i <= TOC.starttrack)
 				{
-					i = 1;
-				} else {
-					i--;
+					i = TOC.starttrack;
 				}
 				newpos = TOC.track[i].lba_addr;
 				setnewpos = 1;
@@ -427,8 +427,14 @@ static int cdaProcessKey(uint16_t key)
 			break;
 
 		case KEY_CTRL_HOME:
-			newpos = 0;
-			setnewpos = 1;
+			if (!cdpPlayMode)
+			{
+				newpos = TOC.track[cdpTrackNum].lba_addr;
+				setnewpos = 1;
+			} else {
+				newpos = 0;
+				setnewpos = 1;
+			}
 			break;
 
 		default:
