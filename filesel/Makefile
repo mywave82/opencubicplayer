@@ -39,6 +39,7 @@ all: $(cdrom_so) $(pfilesel_so) fstypes.o
 else
 all: $(CDROM_SO) fstypes.o pfilesel$(LIB_SUFFIX)
 endif
+	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR)
 
 test: adbmeta-test dirdb-test filesystem-bzip2-test filesystem-filehandle-cache-test filesystem-gzip-test filesystem-tar-test mdb-test
 	@echo "" && echo "adbmeta-test:"                       && ./adbmeta-test
@@ -67,11 +68,13 @@ install:
 ifeq ($(CDROM_SUPPORT),1)
 	$(CP) $(CDROM_SO) "$(DESTDIR)$(LIBDIR)/autoload/30-cdrom$(LIB_SUFFIX)"
 endif
+	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR) install
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/25-pfilesel$(LIB_SUFFIX)"
 ifeq ($(CDROM_SUPPORT),1)
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-cdrom$(LIB_SUFFIX)"
 endif
+	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR) uninstall
 endif
 
 adbmeta.o: adbmeta.c adbmeta.h \
