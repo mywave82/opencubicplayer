@@ -10757,8 +10757,9 @@ SDL_LIBS=
 
 
 if test "x$with_sdl2" = "xno"; then :
-  HAVE_SDL2=
-]
+
+	HAVE_SDL2=
+
 else
 
 	HAVE_SDL2=1

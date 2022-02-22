@@ -414,6 +414,7 @@ SDL_LIBS=
 AC_SUBST(HAVE_SDL2)
 
 AS_IF([test "x$with_sdl2" = "xno"],
+[
 	HAVE_SDL2=
 ],[
 	HAVE_SDL2=1
