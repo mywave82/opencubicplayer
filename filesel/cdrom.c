@@ -705,7 +705,7 @@ leadout:
 			goto failout;
 		}
 
-		offsets[0] = 0;
+		bzero (offsets, sizeof (offsets));
 		for (i=first; i <= last; i++)
 		{
 			offsets[i] = dh->owner->cdrom->lasttoc.track[i].lba_addr + 150;
@@ -1061,7 +1061,6 @@ static int ocpfilehandle_cdrom_track_ioctl (struct ocpfilehandle_t *_handle, con
 	}
 	return -1;
 }
-
 
 static uint64_t ocpfilehandle_cdrom_track_filesize (struct ocpfilehandle_t *_handle)
 {
