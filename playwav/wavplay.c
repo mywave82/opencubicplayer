@@ -883,7 +883,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 		fprintf(stderr, __FILE__ ": fread failed #10\n");
 		return 0;
 	}
-	PRINT(stderr, __FILE__ ": average number of bytes per second: %d\n", (int)temp);
+	PRINT("average number of bytes per second: %d\n", (int)temp);
 
 	if (wavefile->read (wavefile, &sh, sizeof (sh)) != sizeof (sh))
 	{
