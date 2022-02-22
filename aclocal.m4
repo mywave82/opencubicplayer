@@ -1,6 +1,6 @@
-# generated automatically by aclocal 1.16.3 -*- Autoconf -*-
+# generated automatically by aclocal 1.16.4 -*- Autoconf -*-
 
-# Copyright (C) 1996-2020 Free Software Foundation, Inc.
+# Copyright (C) 1996-2021 Free Software Foundation, Inc.
 
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -291,6 +291,7 @@ AS_VAR_IF([$1], [""], [$5], [$4])dnl
 m4_include([m4/ax_check_compile_flag.m4])
 m4_include([m4/ax_cxx_compile_stdcxx.m4])
 m4_include([m4/ax_cxx_compile_stdcxx_11.m4])
+m4_include([m4/ax_cxx_compile_stdcxx_14.m4])
 m4_include([m4/ax_prog_cc_for_build.m4])
 m4_include([m4/ax_with_curses.m4])
 m4_include([m4/sdl2.m4])

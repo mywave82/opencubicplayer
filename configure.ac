@@ -593,7 +593,11 @@ HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H=1
 HAVE_SIDPLAYFP_BUILDERS_RESID_H=1
 RESID_INLINING=1
 RESID_INLINE=inline
-AX_CXX_COMPILE_STDCXX_11([noext], [optional])
+AX_CXX_COMPILE_STDCXX_14([noext], [optional])
+AS_IF([test $ax_cv_cxx_compile_cxx14__std_cpp14 != "yes"],
+    AX_CXX_COMPILE_STDCXX_11([noext], [optional]),
+    AC_DEFINE([HAVE_CXX11])
+)
 AC_ARG_VAR([XA], [6502 assembler - must be full path])
 AC_PATH_PROG([XA],[xa])
 AS_IF([test -z "$XA"], [AC_MSG_ERROR([xa is needed for compiling 6502 assembler used by libsidplayfp])])
@@ -650,7 +654,7 @@ AC_CACHE_CHECK([for __builtin_expect], [resid_cv_builtin_expect],
     [resid_cv_builtin_expect=yes], [resid_cv_builtin_expect=no])]
 )
 AS_IF([test "$resid_cv_builtin_expect" = no], [HAVE_BUILTIN_EXPECT=0], [HAVE_BUILTIN_EXPECT=1])
-LIBSIDPLAYCXX="$CXX -DHAVE_CONFIG_H=1 -DSIDTUNE_NO_STDIN_LOADER=1 -DPACKAGE_NAME=\\\"sidplayfp\\\" -DVERSION=\\\"2.3.1\\\" -DPACKAGE_VERSION=\\\"2.2.3-1\\\" -DPACKAGE_URL=\\\"\\\""
+LIBSIDPLAYCXX="$CXX -DHAVE_CONFIG_H=1 -DSIDTUNE_NO_STDIN_LOADER=1 -DPACKAGE_NAME=\\\"sidplayfp\\\" -DVERSION=\\\"2.4.10\\\" -DPACKAGE_VERSION=\\\"2.4.10-1\\\" -DPACKAGE_URL=\\\"\\\""
 LIBSIDPLAYCXXFLAGS="$CXXFLAGS"
 AC_SUBST(LIBSIDPLAYCXX)
 AC_SUBST(LIBSIDPLAYCXXFLAGS)
