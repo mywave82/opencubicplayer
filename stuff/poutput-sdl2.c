@@ -1223,6 +1223,7 @@ static int ekbhit_sdl2dummy(void)
 
 	while(SDL_PollEvent(&event))
 	{
+		static int skipone = 0;
 		switch (event.type)
 		{
 			case SDL_WINDOWEVENT:
@@ -1314,6 +1315,41 @@ static int ekbhit_sdl2dummy(void)
 				}
 				break;
 			}
+			case SDL_TEXTEDITING:
+#ifdef SDL2_DEBUG
+				fprintf(stderr, "[SDL2-video] TEXTEDITING\n");
+				fprintf(stderr, "              edit.text=\"");
+				{
+					int i;
+					for (i=0;i<event.edit.start;i++)
+					{
+						fprintf (stderr, "(%c)", event.edit.text[i]);
+					}
+					for (i=0;i<event.edit.length;i++)
+					{
+						fprintf (stderr, "%c", event.edit.text[event.edit.start+i]);
+					}
+				}
+				fprintf (stderr, "\"\n");
+#endif
+				break;
+			case SDL_TEXTINPUT:
+#ifdef SDL2_DEBUG
+				fprintf(stderr, "[SDL2-video] TEXTINPUT\n");
+				fprintf(stderr, "              text=\"%s\"\n", event.text.text);
+#endif
+				if (skipone)
+				{
+					fprintf (stderr, "skipone hit..\n");
+					skipone=0;
+				} else {
+					int i;
+					for (i=0; event.text.text[i]; i++)
+					{
+						___push_key((uint8_t)event.text.text[i]);
+					}
+				}
+				break;
 			case SDL_KEYUP:
 			{
 #ifdef SDL2_DEBUG
@@ -1356,6 +1392,13 @@ static int ekbhit_sdl2dummy(void)
 						(event.key.keysym.mod & KMOD_MODE) ? " KMOD_MODE":"");
 				fprintf(stderr, "              keysym.sym: 0x%08x ->%s<-\n", (int)event.key.keysym.sym, SDL_GetKeyName(event.key.keysym.sym));
 #endif
+				skipone = 0;
+
+				if ((!(event.key.keysym.mod & (KMOD_CTRL|KMOD_ALT))) && // ignore shift
+				      (event.key.keysym.sym >= 32) && (event.key.keysym.sym <= 127))
+				{ // We use SDL_TEXTINPUT event to fetch all these now...
+					break;
+				}
 
 				if ( (event.key.keysym.mod &  KMOD_CTRL) &&
 				     (!(event.key.keysym.mod & (KMOD_SHIFT|KMOD_ALT))) )
@@ -1364,6 +1407,7 @@ static int ekbhit_sdl2dummy(void)
 						if (translate_ctrl[index].SDL==event.key.keysym.sym)
 						{
 							___push_key(translate_ctrl[index].OCP);
+							skipone = 1;
 							break;
 						}
 					break;
@@ -1377,6 +1421,7 @@ static int ekbhit_sdl2dummy(void)
 						if (translate_ctrl_shift[index].SDL==event.key.keysym.sym)
 						{
 							___push_key(translate_ctrl_shift[index].OCP);
+							skipone = 1;
 							break;
 						}
 					break;
@@ -1389,6 +1434,7 @@ static int ekbhit_sdl2dummy(void)
 						if (translate_shift[index].SDL==event.key.keysym.sym)
 						{
 							___push_key(translate_shift[index].OCP);
+							skipone = 1;
 							break;
 						}
 					/* no break here */
@@ -1406,6 +1452,7 @@ static int ekbhit_sdl2dummy(void)
 							if (translate_alt[index].SDL==event.key.keysym.sym)
 							{
 								___push_key(translate_alt[index].OCP);
+								skipone = 1;
 								break;
 							}
 					}
@@ -1420,6 +1467,7 @@ static int ekbhit_sdl2dummy(void)
 					if (translate[index].SDL==event.key.keysym.sym)
 					{
 						___push_key(translate[index].OCP);
+						skipone = 1;
 						break;
 					}
 				}
@@ -1499,6 +1547,8 @@ int sdl2_init(void)
 	SDL_EventState (SDL_WINDOWEVENT, SDL_ENABLE);
 	SDL_EventState (SDL_MOUSEBUTTONDOWN, SDL_ENABLE);
 	SDL_EventState (SDL_KEYDOWN, SDL_ENABLE);
+	SDL_EventState (SDL_TEXTINPUT, SDL_ENABLE);
+	SDL_EventState (SDL_TEXTEDITING, SDL_ENABLE);
 
 	/* Fill some default font and window sizes */
 	plCurrentFontWanted = plCurrentFont = cfGetProfileInt("x11", "font", _8x16, 10);
