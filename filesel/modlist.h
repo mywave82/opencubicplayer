@@ -12,6 +12,7 @@ struct modlistentry
 #define MODLIST_FLAG_DRV     1
 #define MODLIST_FLAG_DOTDOT  2
 #define MODLIST_FLAG_SCANNED 4
+#define MODLIST_FLAG_ISMOD   8
 	int flags;
 
 	uint32_t mdb_ref;
@@ -40,7 +41,7 @@ void modlist_append(struct modlist *modlist, struct modlistentry *entry);
 void modlist_append_dir (struct modlist *modlist, struct ocpdir_t *dir);
 void modlist_append_dotdot (struct modlist *modlist, struct ocpdir_t *dir);
 void modlist_append_drive (struct modlist *modlist, struct dmDrive *drive);
-void modlist_append_file (struct modlist *modlist, struct ocpfile_t *file);
+void modlist_append_file (struct modlist *modlist, struct ocpfile_t *file, int ismod);
 
 void modlist_swap(struct modlist *modlist, unsigned int index1, unsigned int index2);
 void modlist_clear(struct modlist *modlist);

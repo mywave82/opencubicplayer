@@ -30,6 +30,7 @@ extern int fsColorTypes;
 extern int fsInfoMode;
 extern int fsPutArcs;
 extern int fsWriteModInfo;
+extern int fsShowAllFiles;
 #if 0
 extern const char *fsTypeNames[256]; /* type description */
 #endif
@@ -92,6 +93,7 @@ extern void plUnregisterPreprocess(struct preprocregstruct *r);
 #define RD_SUBNOSYMLINK 4
 #define RD_PUTDRIVES 8
 #define RD_PUTRSUBS 16
+#define RD_ISMODONLY 32
 
 int fsMatchFileName12(const char *a, const char *b);
 

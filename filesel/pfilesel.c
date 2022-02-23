@@ -134,6 +134,7 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 	char *childpath_upper;
 	char *iterate;
 #endif
+	int ismod = 0;
 
 	dirdbGetName_internalstr (file->dirdb_ref, &childpath);
 
@@ -237,21 +238,24 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 		perror("pfilesel.c: strdup() failed");
 		goto out;
 	}
-
-	if ((fnmatch(token->mask, childpath_upper, 0))||(!fsIsModule(curext)))
+	if (fnmatch(token->mask, childpath_upper, 0))
 	{
 		free (childpath_upper);
 		goto out;
 	}
 	free(childpath_upper);
 #else
-	if ((fnmatch(token->mask, childpath, FNM_CASEFOLD))||(!fsIsModule(curext)))
+	if (fnmatch(token->mask, childpath, FNM_CASEFOLD))
 	{
 		goto out;
 	}
 #endif
-
-	modlist_append_file (token->ml, file); /* modlist_append() will do refcount on the file */
+	ismod = fsIsModule(curext);
+	if (ismod ||   // always include if file is an actual module
+	    (fsShowAllFiles && (!(token->opt & RD_ISMODONLY)))) // force include if  fsShowAllFiles  is true, except if RD_ISMODONLY
+	{
+		modlist_append_file (token->ml, file, ismod); /* modlist_append() will do refcount on the file */
+	}
 out:
 	free (curext);
 }
@@ -445,7 +449,19 @@ int fsIsModule (const char *ext)
 
 static void addfiles_file (void *token, struct ocpfile_t *file)
 {
-	modlist_append_file (playlist, file); /* modlist_append calls file->ref (file); for us */
+	char *curext = 0;
+	const char *filename = 0;
+	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	getext_malloc (filename, &curext);
+	if (!curext)
+	{
+		return;
+	}
+	if (fsIsModule(curext))
+	{
+		modlist_append_file (playlist, file, 1); /* modlist_append calls file->ref (file); for us */
+	}
+	free (curext);
 }
 
 static void addfiles_dir (void *token, struct ocpdir_t *dir)
@@ -608,6 +624,7 @@ int fsColorTypes=1;
 int fsInfoMode=0;
 int fsPutArcs=1;
 int fsWriteModInfo=1;
+int fsShowAllFiles=0;
 static int fsPlaylistOnly=0;
 
 int fsFilesLeft(void)
@@ -860,6 +877,7 @@ int fsPreInit(void)
 	fsListScramble=!cfGetProfileBool("commandline_f", "o", !fsListScramble, 1);
 	fsLoopMods=cfGetProfileBool("commandline_f", "l", fsLoopMods, 0);
 	fsPlaylistOnly=!!cfGetProfileString("commandline", "p", 0);
+	fsShowAllFiles=cfGetProfileBool2(sec, "fileselector", "showallfiles", 0, 0);
 
 	filesystem_drive_init ();
 
@@ -1025,9 +1043,15 @@ static void displayfile(const unsigned int y, unsigned int x, unsigned int width
 	if (m->file)
 	{
 		col=0x07;
-		mdbGetModuleInfo(&mi, m->mdb_ref);
+		if (m->flags & MODLIST_FLAG_ISMOD)
+		{
+			mdbGetModuleInfo(&mi, m->mdb_ref);
+		} else {
+			bzero (&mi, sizeof (mi));
+			mi.size = m->file->filesize (m->file);
+		}
 	} else {
-		memset(&mi, 0, sizeof(mi));
+		bzero (&mi, sizeof (mi));
 		col=0x0f;
 	}
 	if (sel==1)
@@ -1860,7 +1884,13 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 		{
 			struct moduleinfostruct mi;
 
-			mdbGetModuleInfo(&mi, mle->mdb_ref);
+			if (mle->flags & MODLIST_FLAG_ISMOD)
+			{
+				mdbGetModuleInfo(&mi, mle->mdb_ref);
+			} else {
+				bzero (&mi, sizeof (mi));
+				mi.size = mle->file->filesize (mle->file);
+			}
 
 			dirdbGetFullname_malloc (mle->file->dirdb_ref, &npath, 0);
 			if (plScrWidth>=180)
@@ -1972,22 +2002,24 @@ superbreak:
 		displaystr(11, 37, 0x0F, fsInfoModes[fsInfoMode], plScrWidth - 37);
 		displaystr(12,  0, 0x07, "C:  put archives: ", 18);
 		displaystr(12, 18, 0x0F, fsPutArcs?"on":"off", plScrWidth - 18);
+		displaystr(13,  0, 0x07, "D:  show all files: ", 20);
+		displaystr(13, 20, 0x0F, fsShowAllFiles?"on":"off", plScrWidth - 20);
 
 		fillstr(sbuf, 0, 0x00, 0, plScrWidth);
 		writestring(sbuf, 0, 0x07, "+-: Target framerate: ", 22);
 		writenum(sbuf, 22, 0x0f, fsFPS, 10, 3, 1);
 		writestring(sbuf, 25, 0x07, ", actual framerate: ", 20);
 		writenum(sbuf, 45, 0x0f, LastCurrent=fsFPSCurrent, 10, 3, 1);
-		displaystrattr(13, 0, sbuf, plScrWidth);
+		displaystrattr(14, 0, sbuf, plScrWidth);
 
-		displayvoid (14, 0, plScrWidth);
+		displayvoid (15, 0, plScrWidth);
 
-		displaystr(15, 0, 0x07, "ALT-S (or CTRL-S if in X) to save current setup to ocp.ini", plScrWidth);
+		displaystr(16, 0, 0x07, "ALT-S (or CTRL-S if in X) to save current setup to ocp.ini", plScrWidth);
 		displaystr(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
 
-		displaystr(16, 0, 0x03, (stored?"ocp.ini saved":""), plScrWidth);
+		displaystr(17, 0, 0x03, (stored?"ocp.ini saved":""), plScrWidth);
 
-		for (i=17; i < plScrHeight; i++)
+		for (i=18; i < plScrHeight; i++)
 		{
 			displayvoid (i, 0, plScrWidth);
 		}
@@ -2021,6 +2053,7 @@ superbreak:
 			case 'a': case 'A': stored = 0; fsColorTypes=!fsColorTypes; break;
 			case 'b': case 'B': stored = 0; fsInfoMode=(fsInfoMode+1)%5; break;
 			case 'c': case 'C': stored = 0; fsPutArcs=!fsPutArcs; break;
+			case 'd': case 'D': stored = 0; fsShowAllFiles=!fsShowAllFiles; break;
 			case '+': if (fsFPS<1000) fsFPS++; break;
 			case '-': if (fsFPS>1) fsFPS--; break;
 			case KEY_CTRL_S:
@@ -2040,6 +2073,7 @@ superbreak:
 				cfSetProfileBool(sec, "typecolors", fsColorTypes);
 				/*cfSetProfileInt(sec, "", fsInfoMode);*/
 				cfSetProfileBool(sec, "putarchives", fsPutArcs);
+				cfSetProfileBool(sec, "showallfiles", fsShowAllFiles);
 				cfSetProfileInt("screen", "fps", fsFPS, 10);
 				cfStoreConfig();
 				stored = 1;
@@ -2065,6 +2099,7 @@ superbreak:
 				cpiKeyHelp('A', "Toggle option A");
 				cpiKeyHelp('B', "Toggle option B");
 				cpiKeyHelp('C', "Toggle option C");
+				cpiKeyHelp('D', "Toggle option D");
 				cpiKeyHelp('+', "Increase FPS");
 				cpiKeyHelp('-', "Decrease FPS");
 				cpiKeyHelp(KEY_ALT_S, "Store settings to ocp.ini");
@@ -2611,6 +2646,8 @@ static int fsEditFileInfo(struct modlistentry *me)
 {
 	int retval;
 
+	if (!(me->flags & MODLIST_FLAG_ISMOD))
+		return 1;
 	if (!mdbGetModuleInfo(&mdbEditBuf, me->mdb_ref))
 		return 1;
 
@@ -3057,7 +3094,7 @@ superbreak:
 		if (!ekbhit()&&fsScanNames)
 		{
 			int poll = 1;
-			if (m->file && (!mdbInfoIsAvailable(m->mdb_ref)) && (!(m->flags&MODLIST_FLAG_SCANNED)))
+			if ((m->file && (m->flags & MODLIST_FLAG_ISMOD)) && (!mdbInfoIsAvailable(m->mdb_ref)) && (!(m->flags&MODLIST_FLAG_SCANNED)))
 			{
 				mdbScan(m->file, m->mdb_ref);
 				m->flags |= MODLIST_FLAG_SCANNED;
@@ -3068,7 +3105,7 @@ superbreak:
 				struct modlistentry *scanm;
 				if ((scanm=modlist_get(currentdir, scanposf++)))
 				{
-					if (scanm->file)
+					if (scanm->file && (scanm->flags & MODLIST_FLAG_ISMOD))
 					{
 						if (!mdbInfoIsAvailable(scanm->mdb_ref))
 						{
@@ -3089,7 +3126,7 @@ superbreak:
 				struct modlistentry *scanm;
 				if ((scanm=modlist_get(playlist, scanposp++)))
 				{
-					if (scanm->file)
+					if (scanm->file && (scanm->flags & MODLIST_FLAG_ISMOD))
 					{
 						if (!mdbInfoIsAvailable(scanm->mdb_ref))
 						{
@@ -3199,7 +3236,7 @@ superbreak:
 				case KEY_ESC:
 					return 0;
 				case KEY_ALT_R:
-					if (m->file)
+					if ((m->file)&&(m->flags & MODLIST_FLAG_ISMOD))
 					{
 						if (!mdbGetModuleInfo(&mdbEditBuf, m->mdb_ref))
 							return -1;
@@ -3229,7 +3266,8 @@ superbreak:
 					fsSetup();
 					plSetTextMode(fsScrType);
 					fsScrType=plScrType;
-					break;
+					fsScanDir(0);
+					goto superbreak;
 				case KEY_ALT_P:
 					if (editmode)
 						break;
@@ -3251,7 +3289,7 @@ superbreak:
 				case _KEY_ENTER:
 					if (editmode)
 					{
-						if (m->file)
+						if (m->file && (m->flags & MODLIST_FLAG_ISMOD))
 						{
 							if (fsEditFileInfo(m))
 							{
@@ -3299,7 +3337,7 @@ superbreak:
 								currentdir->pos = i;
 							}
 							dirdbUnref(olddirpath, dirdb_use_pfilesel);
-						} else if (m->file)
+						} else if (m->file && (m->flags & MODLIST_FLAG_ISMOD))
 						{
 							nextplay=m;
 							isnextplay=NextPlayBrowser;
@@ -3466,20 +3504,25 @@ superbreak:
 						break;
 					if (win)
 					{
-						/*if (!*/modlist_append (playlist, m)/*)
-							return -1*/;
+						if (m->flags & MODLIST_FLAG_ISMOD)
+						{
+							modlist_append (playlist, m);
+						}
 						/*playlist->pos=playlist->num-1; */
 						scanposp=fsScanNames?0:~0;
 					} else {
 						if (m->dir)
 						{
-							if (!(fsReadDir (playlist, m->dir, curmask, RD_PUTRSUBS)))
+							if (!(fsReadDir (playlist, m->dir, curmask, RD_PUTRSUBS | RD_ISMODONLY)))
 							{
 								return -1;
 							}
 						} else if (m->file)
 						{
-							modlist_append (playlist, m);
+							if (m->flags & MODLIST_FLAG_ISMOD)
+							{
+								modlist_append (playlist, m);
+							}
 							scanposp=fsScanNames?0:~0;
 						}
 					}
@@ -3563,7 +3606,10 @@ superbreak:
 							me=modlist_get(currentdir, i);
 							if (m->file)
 							{
-								modlist_append (playlist, me);
+								if (me->flags & MODLIST_FLAG_ISMOD)
+								{
+									modlist_append (playlist, me);
+								}
 								scanposp=fsScanNames?0:~0;
 							}
 						}

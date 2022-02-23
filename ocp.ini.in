@@ -1,5 +1,5 @@
 [version]
-  epoch=20220121
+  epoch=20220223
 
 [general]
 ;link=
@@ -97,6 +97,7 @@
   randomplay=off
   loop=off
   path=.
+  showallfiles=off  ; Show all files in the filebrowser, or just audio/music files
 
 ;device configuration:
 ;[handle]

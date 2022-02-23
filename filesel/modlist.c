@@ -188,7 +188,7 @@ void modlist_append_drive (struct modlist *modlist, struct dmDrive *drive)
 	modlist_append (modlist, &entry);
 }
 
-void modlist_append_file (struct modlist *modlist, struct ocpfile_t *file)
+void modlist_append_file (struct modlist *modlist, struct ocpfile_t *file, int ismod)
 {
 	struct modlistentry entry = {0};
 	const char *childpath = 0;
@@ -199,6 +199,7 @@ void modlist_append_file (struct modlist *modlist, struct ocpfile_t *file)
 	}
 
 	entry.file = file; /* modlist_append will do a ref */
+	entry.flags = ismod?MODLIST_FLAG_ISMOD:0;
 	childpath = file->filename_override (file);
 	if (!childpath)
 	{
@@ -207,7 +208,12 @@ void modlist_append_file (struct modlist *modlist, struct ocpfile_t *file)
 	utf8_XdotY_name (8, 3, entry.utf8_8_dot_3, childpath);
 	utf8_XdotY_name (16, 3, entry.utf8_16_dot_3, childpath);
 
-	entry.mdb_ref = mdbGetModuleReference2 (file->dirdb_ref, file->filesize (file));
+	if (ismod)
+	{
+		entry.mdb_ref = mdbGetModuleReference2 (file->dirdb_ref, file->filesize (file));
+	} else {
+		entry.mdb_ref = UINT32_MAX;
+	}
 
 	modlist_append (modlist, &entry);
 }
