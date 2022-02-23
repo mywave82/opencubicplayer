@@ -1,3 +1,23 @@
+Version 0.2.94
+==============
+
+ * Fix compiler-warnings.
+ * Fileselector:
+   * make it possible to list all files, even if they are not audio/music files
+   * Add support for CUE/TOC/BIN/WAVE virtual CDROM support. Both CD-Audio,ISO9660,Juliet,RockRidge and UDF parsing. Also includes libdiscid/musicbrainz information lookup.
+   * Add support for PAK files (Westwood and Quake style)
+ * Remove old i386 assembler code.
+ * Remove old i386 asssembler emulator code.
+ * SDL2: keyboard composition support (international characters etc)
+ * SDL1/SDL2: Interpolate the play position
+ * CDROM Audio Playback: Skipping previous tracks didn't work as expected
+ * ocp.ini fps=X variable was not honored
+ * Update libsidplayfp to latest upstream
+ * Finish keyboard update regarding CTRL+Fx and friends.
+ * If libmad support is not detected, linker error occured at runtime - since we still referenced the meta information from the plugin.
+ * Some systems have different variations in the actual filenames for the unifont ttf files. ./configure can now be instructed about these alternative filenames.
+ * Adplug playback now support subsongs using < and > keys
+
 Version 0.2.93
 ==============
 

@@ -165,7 +165,7 @@ static int musicbrainz_spawn (struct musicbrainz_queue_t *t)
 
 	execlp ("curl", "curl",
 		"--max-redirs", "10",
-		"--user-agent", "opencubicplayer/0.2.93 ( stian.skjelstad@gmail.com )",
+		"--user-agent", "opencubicplayer/" PACKAGE_VERSION " ( stian.skjelstad@gmail.com )",
 		"--header", "Accept: application/json",
 		"--max-time", "10",
 		"-L", temp,
