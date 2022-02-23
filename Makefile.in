@@ -93,7 +93,6 @@ ifneq ($(DESKTOP_FILE_INSTALL),)
 	mkdir -p "$(DESTDIR)$(DATAROOTDIR)/applications"
 	$(DESKTOP_FILE_INSTALL) --vendor="cubic.org" --dir="$(DESTDIR)$(DATAROOTDIR)/applications" desktop/opencubicplayer.desktop
 endif
-	$(MAKE) -C asm_emu TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C boot TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C cpiface TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C dev TOPDIR=../$(TOPDIR) install
@@ -124,7 +123,6 @@ endif
 	$(MAKE) -C doc TOPDIR="../$(TOPDIR)" install
 
 uninstall:
-	$(MAKE) -C asm_emu TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C boot TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C cpiface TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C dev TOPDIR=../$(TOPDIR) uninstall
@@ -157,7 +155,6 @@ endif
 	rm -f "$(DESTDIR)$(DATAROOTDIR)/applications/opencubicplayer.desktop" "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/16x16/apps/opencubicplayer.xpm" "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/48x48/apps/opencubicplayer.xpm"
 
 dirs:
-	$(MAKE) -C asm_emu TOPDIR=../$(TOPDIR)
 	$(MAKE) -C boot TOPDIR=../$(TOPDIR)
 	$(MAKE) -C cpiface TOPDIR=../$(TOPDIR)
 	$(MAKE) -C dev TOPDIR=../$(TOPDIR)
@@ -199,7 +196,6 @@ ocp.hlp: doc/opencp.dox goodies/helpc/ocphhc
 	goodies/helpc/ocphhc doc/opencp.dox $@
 
 clean:
-	$(MAKE) -C asm_emu TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C boot TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C cpiface TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C dev TOPDIR=../$(TOPDIR) clean

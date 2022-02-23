@@ -47,8 +47,6 @@
 
 #if defined(I386_ASM)
 #  include "dwmixfa_8087.c"
-# elif defined(I386_ASM_EMU)
-#  include "dwmixfa_8087_emu.c"
 # else
 #   include "dwmixfa_c.c"
 # endif

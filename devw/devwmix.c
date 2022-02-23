@@ -1251,11 +1251,7 @@ static void mixrInit(const char *sec)
 #ifdef I386_ASM
 		fprintf(stderr, "using dwmixa.c x86-asm version\n");
 #else
-#ifdef I386_ASM_EMU
-		fprintf(stderr, "using dwmixa.c x86-emu-asm version\n");
-#else
 		fprintf(stderr, "using dwmixa.c C version\n");
-#endif
 #endif
 	} else {
 #ifdef I386_ASM

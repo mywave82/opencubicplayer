@@ -42,10 +42,6 @@
 
 #include "dwmixa_x86.c"
 
-#elif defined(I386_ASM_EMU)
-
-#include "dwmixa_x86_emu.c"
-
 #else
 
 #include "dwmixa_c.c"

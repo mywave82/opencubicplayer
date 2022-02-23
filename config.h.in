@@ -161,8 +161,6 @@
 #define I386_ASM 1
 #endif
 
-/* #define I386_ASM_EMU 1 */
-
 /* #define ADBMETA_DEBUG */
 /* #define CDFS_DEBUG */
 /* #define TIMIDITY_DEBUG */

@@ -78,13 +78,11 @@ devwmix.o: devwmix.c \
 
 dwmixa.o: dwmixa.c dwmixa.h \
 	dwmixa_x86.c \
-	dwmixa_x86_emu.c \
 	dwmixa_c.c \
 	dwmix.h \
 	../config.h \
 	../types.h \
-	../dev/mix.h \
-	../asm_emu/x86*.h
+	../dev/mix.h
 	$(CC) -O dwmixa.c -o $@ -c
 
 dwmixqa.o: dwmixqa.c dwmixqa.h \
@@ -116,10 +114,8 @@ devwmixf.o: devwmixf.c \
 
 dwmixfa.o: dwmixfa.c \
 	dwmixfa_8087.c \
-	dwmixfa_8087_emu.c \
 	dwmixfa_c.c \
 	../config.h \
 	../types.h \
-	dwmixfa.h \
-	../asm_emu/x86*.h
+	dwmixfa.h
 	$(CC) dwmixfa.c -o $@ -c

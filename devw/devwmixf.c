@@ -1117,12 +1117,8 @@ static void mixfInit(const char *sec)
 #ifdef I386_ASM
 		fprintf(stderr, "using dwmixfa.c x86-asm version\n");
 #else
-#ifdef I386_ASM_EMU
-		fprintf(stderr, "using dwmixfa.c x86-emu-asm version\n");
-#else
 		fprintf(stderr, "using dwmixfa.c C version\n");
 		/*fprintf(stderr, "using dwmixa.c C version\n");*/
-#endif
 #endif
 
 	dwmixfa_state.postprocs=0;
