@@ -136,7 +136,7 @@ static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
 	uint16_t *ordlist=0;
 	struct sampleinfo **smps=0;
 	struct gmdsample **msmps=0;
-	unsigned int *instsampnum;
+	unsigned int *instsampnum=0;
 
 	unsigned int i,j,t;
 

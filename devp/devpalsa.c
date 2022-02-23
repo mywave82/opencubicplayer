@@ -519,12 +519,12 @@ static void dir_alsa_update_mdb (uint32_t dirdb_ref, const char *name, const cha
 						n--;
 						continue;
 					}
-					snprintf(mi.composer, n-descr+1, "%s", descr);
+					snprintf(mi.composer, n-descr+1, "%.*s", (int)sizeof (mi.composer) - 1, descr);
 					snprintf(mi.comment, sizeof (mi.comment), "%s", n + 1);
 					break;
 				}
 			} else {
-				snprintf(mi.composer, sizeof(mi.composer), "%s", descr);
+				snprintf(mi.composer, sizeof(mi.composer), "%.*s", (int)sizeof (mi.composer) - 1, descr);
 			}
 		}
 	}

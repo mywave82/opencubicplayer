@@ -333,7 +333,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, st
 			break;
 		this->nord--;
 	}
-	if (!this->nord)
+	if (this->nord<=0)
 	{
 		fprintf(stderr, "IT: No orders\n");
 		return errFormMiss;

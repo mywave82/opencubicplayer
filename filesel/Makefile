@@ -453,6 +453,7 @@ pfilesel.o: pfilesel.c \
 	pfilesel.h \
 	../stuff/compat.h \
 	../stuff/framelock.h \
+	../stuff/imsrtns.h \
 	../stuff/poutput.h \
 	../stuff/utf-8.h
 	$(CC) $< -o $@ -c

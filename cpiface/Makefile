@@ -221,6 +221,7 @@ cpiface.o: cpiface.c \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
 	../stuff/err.h \
+	../stuff/imsrtns.h \
 	../stuff/framelock.h \
 	../stuff/poutput.h \
 	../stuff/sets.h \

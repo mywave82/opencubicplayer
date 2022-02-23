@@ -91,6 +91,7 @@
 #include "pfilesel.h"
 #include "stuff/compat.h"
 #include "stuff/framelock.h"
+#include "stuff/imsrtns.h"
 #include "stuff/poutput.h"
 #include "stuff/utf-8.h"
 
@@ -1213,7 +1214,7 @@ static void displayfile(const unsigned int y, unsigned int x, unsigned int width
 					{
 						snprintf (temp, sizeof (temp), "%11"PRIu64, mi.size);
 					} else {
-						snprintf (temp, sizeof (temp), "x%10"PRIx64, mi.size);
+						snprintf (temp, sizeof (temp), "x%10"PRIx64, saturate(mi.size, 0, (uint64_t)0xffffffffffll));
 					}
 					displaystr (y, x + width - 11, (mi.flags&MDB_BIGMODULE)?((col&0xF0)|0x0C):col, temp, 11);
 				}
@@ -1233,7 +1234,7 @@ static void displayfile(const unsigned int y, unsigned int x, unsigned int width
 					{
 						snprintf (temp, sizeof (temp), "%11"PRIu64, mi.size);
 					} else {
-						snprintf (temp, sizeof (temp), "x%10"PRIx64, mi.size);
+						snprintf (temp, sizeof (temp), "x%10"PRIx64, saturate(mi.size, 0, (uint64_t)0xffffffffffffll));
 					}
 					displaystr (y, x + width - 11, (mi.flags&MDB_BIGMODULE)?((col&0xF0)|0x0C):col, temp, 11);
 					break;
@@ -1340,7 +1341,7 @@ static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry
 
 		if (mi->date & 0xff)
 		{
-			snprintf (temp, 3, "%02d", mi->date & 0xff);
+			snprintf (temp, 3, "%02d", saturate(mi->date & 0xff, 0, 99));
 		} else {
 			temp[0] = '.';
 			temp[1] = '.';
@@ -1348,7 +1349,7 @@ static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry
 		temp[2] = '.';
 		if (mi->date & 0xffff)
 		{
-			snprintf (temp+3, 3, "%02d", (mi->date >> 8) & 0xff);
+			snprintf (temp+3, 3, "%02d", saturate((mi->date >> 8) & 0xff, 0, 99));
 		} else {
 			temp[3] = '.';
 			temp[4] = '.';
@@ -1356,7 +1357,7 @@ static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry
 		temp[5] = '.';
 		if (mi->date >> 16)
 		{
-			snprintf (temp+6, 5, "%4d", mi->date >> 16);
+			snprintf (temp+6, 5, "%4d", saturate(mi->date >> 16, 0, 9999));
 			if ((mi->date>>16) <= 100)
 			{
 				temp[7] = '\'';
@@ -1401,7 +1402,7 @@ static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry
 	if (mi->playtime)
 	{
 		char temp[7];
-		snprintf (temp, sizeof (temp), "%3d:%02d", mi->playtime / 60, mi->playtime % 60);
+		snprintf (temp, sizeof (temp), "%3d:%02d", saturate(mi->playtime / 60, 0, 999), mi->playtime % 60);
 		displaystr (Y + 3, plScrWidth - 21, (selecte==3)?0x8f:0x0f, temp, 6);
 	} else {
 		displaystr (Y + 3, plScrWidth - 21, (selecte==3)?0x87:0x07, "\xfa\xfa\xfa:\xfa\xfa", 6);
@@ -1410,7 +1411,7 @@ static void fsShowDirBottom80File (int Y, int selecte, const struct modlistentry
 	if (mi->channels)
 	{
 		char temp[3];
-		snprintf (temp, sizeof (temp), "%2d", mi->channels);
+		snprintf (temp, sizeof (temp), "%2d", saturate(mi->channels, 0, 99));
 		displaystr (Y + 3, plScrWidth - 3, (selecte==2)?0x8f:0x0f, temp, 2);
 	} else {
 		displaystr (Y + 3, plScrWidth - 3, (selecte==2)?0x87:0x07, "\xfa\xfa", 2);
@@ -1475,7 +1476,7 @@ static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentr
 	if (mi->channels)
 	{
 		char temp[3];
-		snprintf (temp, sizeof (temp), "%2d", mi->channels);
+		snprintf (temp, sizeof (temp), "%2d", saturate(mi->channels, 0, 99));
 		displaystr (Y + 0, plScrWidth - 35 + 12, (selecte==2)?0x8f:0x0f, temp, 2);
 	} else {
 		displaystr (Y + 0, plScrWidth - 35 + 12, (selecte==2)?0x87:0x07, "\xfa\xfa", 2);
@@ -1485,7 +1486,7 @@ static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentr
 	if (mi->playtime)
 	{
 		char temp[7];
-		snprintf (temp, sizeof (temp), "%3d:%02d", mi->playtime / 60, mi->playtime % 60);
+		snprintf (temp, sizeof (temp), "%3d:%02d", saturate(mi->playtime / 60, 0, 999), mi->playtime % 60);
 		displaystr (Y + 0, plScrWidth - 9, (selecte==3)?0x8f:0x0f, temp, 6);
 	} else {
 		displaystr (Y + 0, plScrWidth - 9, (selecte==3)?0x87:0x07, "\xfa\xfa\xfa:\xfa\xfa", 6);
@@ -1523,7 +1524,7 @@ static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentr
 
 		if (mi->date & 0xff)
 		{
-			snprintf (temp, 3, "%02d", mi->date & 0xff);
+			snprintf (temp, 3, "%02d", saturate(mi->date & 0xff, 0, 99));
 		} else {
 			temp[0] = '.';
 			temp[1] = '.';
@@ -1531,7 +1532,7 @@ static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentr
 		temp[2] = '.';
 		if (mi->date & 0xffff)
 		{
-			snprintf (temp+3, 3, "%02d", (mi->date >> 8) & 0xff);
+			snprintf (temp+3, 3, "%02d", saturate((mi->date >> 8) & 0xff, 0, 99));
 		} else {
 			temp[3] = '.';
 			temp[4] = '.';
@@ -1539,7 +1540,7 @@ static void fsShowDirBottom132File (int Y, int selecte, const struct modlistentr
 		temp[5] = '.';
 		if (mi->date >> 16)
 		{
-			snprintf (temp+6, 5, "%4d", mi->date >> 16);
+			snprintf (temp+6, 5, "%4d", saturate(mi->date >> 16, 0, 9999));
 			if ((mi->date>>16) <= 100)
 			{
 				temp[7] = '\'';
@@ -1629,7 +1630,7 @@ static void fsShowDirBottom180File (int Y, int selecte, const struct modlistentr
 	if (mi->channels)
 	{
 		char temp[3];
-		snprintf (temp, sizeof (temp), "%2d", mi->channels);
+		snprintf (temp, sizeof (temp), "%2d", saturate(mi->channels, 0, 99));
 		displaystr (Y + 0, plScrWidth - 27, (selecte==2)?0x8f:0x0f, temp, 2);
 	} else {
 		displaystr (Y + 0, plScrWidth - 27, (selecte==2)?0x87:0x07, "\xfa\xfa", 2);
@@ -1638,7 +1639,7 @@ static void fsShowDirBottom180File (int Y, int selecte, const struct modlistentr
 	if (mi->playtime)
 	{
 		char temp[7];
-		snprintf (temp, sizeof (temp), "%3d:%02d", mi->playtime / 60, mi->playtime % 60);
+		snprintf (temp, sizeof (temp), "%3d:%02d", saturate(mi->playtime / 60, 0, 999), mi->playtime % 60);
 		displaystr (Y + 0, plScrWidth - 9, (selecte==3)?0x8f:0x0f, temp, 6);
 	} else {
 		displaystr (Y + 0, plScrWidth - 9, (selecte==3)?0x87:0x07, "\xfa\xfa\xfa:\xfa\xfa", 6);
@@ -1677,7 +1678,7 @@ static void fsShowDirBottom180File (int Y, int selecte, const struct modlistentr
 
 		if (mi->date & 0xff)
 		{
-			snprintf (temp, 3, "%02d", mi->date & 0xff);
+			snprintf (temp, 3, "%02d", saturate(mi->date & 0xff, 0, 99));
 		} else {
 			temp[0] = '.';
 			temp[1] = '.';
@@ -1685,7 +1686,7 @@ static void fsShowDirBottom180File (int Y, int selecte, const struct modlistentr
 		temp[2] = '.';
 		if (mi->date & 0xffff)
 		{
-			snprintf (temp+3, 3, "%02d", (mi->date >> 8) & 0xff);
+			snprintf (temp+3, 3, "%02d", saturate((mi->date >> 8) & 0xff, 0, 99));
 		} else {
 			temp[3] = '.';
 			temp[4] = '.';
@@ -1693,7 +1694,7 @@ static void fsShowDirBottom180File (int Y, int selecte, const struct modlistentr
 		temp[5] = '.';
 		if (mi->date >> 16)
 		{
-			snprintf (temp+6, 5, "%4d", mi->date >> 16);
+			snprintf (temp+6, 5, "%4d", saturate(mi->date >> 16, 0, 9999));
 			if ((mi->date>>16) <= 100)
 			{
 				temp[7] = '\'';
@@ -2436,7 +2437,7 @@ static int fsEditPlayTime(int y, int x, uint16_t *playtime)
 
 	if (state == 0)
 	{
-		snprintf (str, sizeof (str), "%03d:%02d", (*playtime)/60, (*playtime)%60);
+		snprintf (str, sizeof (str), "%03d:%02d", saturate((*playtime)/60, 0, 999), (*playtime)%60);
 
 		curpos=(str[0]!='0')?0:(str[1]!='0')?1:2;
 
@@ -2528,7 +2529,7 @@ static int fsEditDate(int y, int x, uint32_t *date)
 	{
 		curpos = 0;
 
-		snprintf (str, sizeof (str), "%02d.%02d.%04d", (*date)&0xFF, ((*date)>>8)&0xFF, (*date)>>16);
+		snprintf (str, sizeof (str), "%02d.%02d.%04d", saturate((*date)&0xFF, 0, 99), saturate(((*date)>>8)&0xFF, 0, 99), saturate((*date)>>16, 0, 9999));
 		if ((((*date)>>16) > 0) && (((*date)>>16) < 100))
 		{
 			str[6] = ' ';

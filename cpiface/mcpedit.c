@@ -79,19 +79,6 @@ void mcpNormalize(enum mcpNormalizeType Type)
 void mcpDrawGStrings (void)
 {
 	cpiDrawG1String (&mcpset);
-#warning TODO GStrings
-#if 0
-	if (plScrWidth<128)
-	{
-		writestring(buf[1], 58, 0x09, "amp: ...% filter: ... ", 22);
-		_writenum(buf[1], 63, 0x0F, mcpset.amp*100/64, 10, 3);
-		writestring(buf[1], 76, 0x0F, (set.filter==1)?"AOI":(set.filter==2)?"FOI":"off", 3);
-	} else {
-		writestring(buf[1], 81, 0x09, "              amplification: ...%  filter: ...     ", 52);
-		_writenum(buf[1], 110, 0x0F, mcpset.amp*100/64, 10, 3);
-		writestring(buf[1], 124, 0x0F, (set.filter==1)?"AOI":(set.filter==2)?"FOI":"off", 3);
-	}
-#endif
 }
 
 int mcpSetProcessKey(uint16_t key)

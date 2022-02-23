@@ -49,6 +49,8 @@ static inline uint32_t umulshr16(uint32_t a,uint32_t b)
 	return temp>>16;
 }
 
+#define saturate(value,minvalue,maxvalue) (((value) < (minvalue)) ? (minvalue) : ((value) > (maxvalue)) ? (maxvalue) : (value))
+
 #define umldivrnd(mul1, mul2, divby) umuldiv(mul1, mul2, divby) /* dirty */
 
 #define memsetd(dst, what, len) {int i;uint32_t *tmp_dst=(uint32_t *)(dst);for(i=(len);i;i--)*tmp_dst++=(uint32_t)(what);} while(0)

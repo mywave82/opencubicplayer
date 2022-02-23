@@ -65,6 +65,7 @@
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
+#include "stuff/imsrtns.h"
 #include "stuff/framelock.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
@@ -504,7 +505,7 @@ void cpiDrawG1String (struct settings *g1)
 		} else {
 			displaystr (1, x, 0x09, "spd: ", 5); x += 5;
 		}
-		snprintf (temp, sizeof (temp), "%3d", g1->speed * 100 / 256);
+		snprintf (temp, sizeof (temp), "%3d", saturate (g1->speed * 100 / 256, 0, 999));
 		displaystr (1, x, 0x0f, temp, 3); x += 3;
 		displaystr (1, x, 0x07, "% ", 2); x += 2;
 		displaystr (1, x, 0x09, g1->splock?"\x1d ":"  ", 2); x+= 2;
@@ -514,7 +515,7 @@ void cpiDrawG1String (struct settings *g1)
 		} else {
 			displaystr (1, x, 0x09, "ptch: ", 6); x += 6;
 		}
-		snprintf (temp, sizeof (temp), "%3d", g1->pitch * 100 / 256);
+		snprintf (temp, sizeof (temp), "%3d", saturate (g1->pitch * 100 / 256, 0, 999));
 		displaystr (1, x, 0x0f, temp, 3); x += 3;
 		displaychr (1, x, 0x07, '%', 1); x += 1;
 	}
@@ -665,10 +666,10 @@ static void GString_pos_render (const void *inputa, const void *inputb, const vo
 			snprintf (b, 9, "%8" PRIu64, (*filesize));
 			displaystr (lineno, *x, 0x0f,     b, 8); (*x) += 8;
 		} else {
-			snprintf (b, 10, " %8" PRIu64, (*pos)>>10);
+			snprintf (b, 10, " %8" PRIu64, saturate((*pos)>>10, 0, 99999999));
 			displaystr (lineno, *x, 0x0f,     b, 9); (*x) += 9;
 			displaychr (lineno, *x, 0x07,   '/', 1); (*x) += 1;
-			snprintf (b, 9, "%8" PRIu64, (*filesize)>>10);
+			snprintf (b, 9, "%8" PRIu64, saturate((*filesize)>>10, 0, 99999999));
 			displaystr (lineno, *x, 0x0f,     b, 8); (*x) += 8;
 			displaystr (lineno, *x, 0x07, " KB", 3); (*x) += 3;
 		}
@@ -917,19 +918,19 @@ static void GString_date_render (const void *inputa, const void *inputb, const v
 
 	if ((*date)&0xFF)
 	{
-		snprintf (temp, sizeof (temp), "%02d.", (*date) & 0xff);
+		snprintf (temp, sizeof (temp), "%02d.", saturate((*date) & 0xff, 0, 99));
 	} else {
 		snprintf (temp, sizeof (temp), "   ");
 	}
 	if ((*date)&0xFFFF)
 	{
-		snprintf (temp + 3, sizeof (temp) - 3, "%02d.", ((*date) >> 8)&0xff);
+		snprintf (temp + 3, sizeof (temp) - 3, "%02d.", saturate(((*date) >> 8)&0xff, 0, 99));
 	} else {
 		snprintf (temp + 3, sizeof (temp) - 3, "   ");
 	}
 	if ((*date)>>16)
 	{
-		snprintf (temp + 6, sizeof (temp) - 6, "%4d", ((*date) >> 16));
+		snprintf (temp + 6, sizeof (temp) - 6, "%4d", saturate(((*date) >> 16), 0, 9999));
 		if (!(((*date)>>16)/100))
 		{
 			temp[6] = '\'';
@@ -973,7 +974,7 @@ static void GString_playtime_render (const void *inputa, const void *inputb, con
 	} else {
 		displaystr (lineno, *x, 0x09, "length:", 7); (*x) += 7;
 	}
-	snprintf(temp, 7, "%3d.%02d", (*playtime) / 60, (*playtime) % 60);
+	snprintf(temp, 7, "%3d.%02d", saturate((*playtime) / 60, 0, 999), (*playtime) % 60);
 	displaystr (lineno, *x, 0x0f, temp, 6); (*x) += 6;
 }
 
@@ -1151,14 +1152,14 @@ static void GString_song_x_y_render (const void *inputa, const void *inputb, con
 	displaystr (lineno, *x, 0x09, "song:", 5); (*x) += 6;
 	if (*songy < 10)
 	{
-		snprintf (temp, sizeof (temp), "%01d", *songx);
+		snprintf (temp, sizeof (temp), "%01d", saturate(*songx, 0, 9));
 		displaystr (lineno, *x, 0x0f, temp, 2); (*x) += 1;
 	} else if (*songy < 100)
 	{
-		snprintf (temp, sizeof (temp), "%02d", *songx);
+		snprintf (temp, sizeof (temp), "%02d", saturate(*songx, 0, 99));
 		displaystr (lineno, *x, 0x0f, temp, 2); (*x) += 2;
 	} else {
-		snprintf (temp, sizeof (temp), "%03d", *songx);
+		snprintf (temp, sizeof (temp), "%03d", saturate(*songx, 0, 999));
 		displaystr (lineno, *x, 0x0f, temp, 3); (*x) += 3;
 	}
 	if (size==1)
@@ -1169,14 +1170,14 @@ static void GString_song_x_y_render (const void *inputa, const void *inputb, con
 	}
 	if (*songy < 10)
 	{
-		snprintf (temp, sizeof (temp), "%01d", *songy);
+		snprintf (temp, sizeof (temp), "%01d", saturate(*songy, 0, 9));
 		displaystr (lineno, *x, 0x0f, temp, 2); (*x) += 1;
 	} else if (*songy < 100)
 	{
-		snprintf (temp, sizeof (temp), "%02d", *songy);
+		snprintf (temp, sizeof (temp), "%02d", saturate(*songy, 0, 99));
 		displaystr (lineno, *x, 0x0f, temp, 2); (*x) += 2;
 	} else {
-		snprintf (temp, sizeof (temp), "%03d", *songy);
+		snprintf (temp, sizeof (temp), "%03d", saturate(*songy, 0, 999));
 		displaystr (lineno, *x, 0x0f, temp, 3); (*x) += 3;
 	}
 }
@@ -1249,10 +1250,10 @@ static void GString_channels_x_y_render (const void *inputa, const void *inputb,
 	} else {
 		displaystr (lineno, *x, 0x09, "channels: ", 10); (*x) += 10;
 	}
-	snprintf (temp, sizeof (temp), "%02d", *chanx);
+	snprintf (temp, sizeof (temp), "%02d", saturate(*chanx, 0, 99));
 	displaystr (lineno, *x, 0x0f, temp,    2); (*x) += 2;
 	displaystr (lineno, *x, 0x07, "/",     1); (*x) += 1;
-	snprintf (temp, sizeof (temp), "%02d", *chany);
+	snprintf (temp, sizeof (temp), "%02d", saturate(*chany, 0, 99));
 	displaystr (lineno, *x, 0x0f, temp,    2); (*x) += 2;
 }
 
@@ -1466,7 +1467,7 @@ static void GString_amplification_render (const void *inputa, const void *inputb
 		case 2: displaystr (lineno, *x, 0x09, "amplication: ", 13); (*x) +=  13; break;
 	}
 
-	snprintf (temp, sizeof (temp), "%3d", (*amp) * 100 / 64);
+	snprintf (temp, sizeof (temp), "%3d", saturate((*amp) * 100 / 64, 0, 999));
 	displaystr (lineno, *x, 0x0f, temp, 3); (*x) += 3;
 	displaystr (lineno, *x, 0x07, "%", 5); (*x) += 1;
 }
