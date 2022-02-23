@@ -28,45 +28,10 @@
 #include "devwmix.h"
 #include "dwmix.h"
 #include "dwmixqa.h"
-#ifdef I386_ASM
-#include "stuff/pagesize.inc.c"
-#endif
 
 
 static int initAsm(void)
 {
-#ifdef I386_ASM
-
-	/* Self-modifying code needs access to modify it self */
-	int fd;
-	char file[128]="/tmp/ocpXXXXXX";
-	char *start1, *stop1;
-	int len1;
-	fd=mkstemp(file);
-
-	start1=(void *)remap_range2_start;
-	stop1=(void *)remap_range2_stop;
-
-	start1=(char *)(((int)start1)&~(pagesize()-1));
-	len1=((stop1-start1)+pagesize()-1)& ~(pagesize()-1);
-	if (write(fd, start1, len1)!=len1)
-	{
-		close(fd);
-		unlink(file);
-		return 0;
-	}
-	if (mmap(start1, len1, PROT_EXEC|PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED, fd, 0)==MAP_FAILED)
-	{
-		perror("mmap()");
-		close(fd);
-		unlink(file);
-		return 0;
-	}
-
-	close(fd);
-	unlink(file);
-#endif
-
 	return 1;
 }
 

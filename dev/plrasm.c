@@ -32,49 +32,6 @@
 #include "types.h"
 #include "plrasm.h"
 
-#ifdef I386_ASM
-
-void plrClearBuf(void *buf, int len, int unsign)
-{
-	int d0, d1;
-	__asm__ __volatile__
-	(
-#ifdef __PIC__
-		"pushl %%ebx\n"
-#endif
-		"  cmpl $0, %%ecx\n"
-		"  je plrClearBuf_done\n"
-		"  cmpl $0, %%eax\n"
-		"  je plrClearBuf_signed\n"
-		"  mov $0x80008000, %%eax\n"
-		"plrClearBuf_signed:\n"
-		"  testl $2, %%ebx\n"
-		"  jz plrClearBuf_ok1\n"
-		"  stosw\n"
-		"  decl %%ecx\n"
-		"plrClearBuf_ok1:\n"
-		"  shrl $1, %%ecx\n"
-		"  jnc plrClearBuf_ok2\n"
-		"  movw %%ax, (%%edi,%%ecx,4)\n"
-		"plrClearBuf_ok2:\n"
-		"  rep\n"
-		"  stosl\n"
-		"plrClearBuf_done:\n"
-#ifdef __PIC__
-		"popl %%ebx\n"
-#endif
-		: "=&c"(d0), "=&a"(d1)
-		: "D" ((long)buf), "0" (len), "1" (unsign)
-#ifdef __PIC__
-		: "memory"
-#else
-		: "memory", "ebx"
-#endif
-	);
-}
-
-#else
-
 void plrClearBuf(void *buf, int len, int unsign)
 {
 	uint32_t fill;
@@ -91,8 +48,6 @@ void plrClearBuf(void *buf, int len, int unsign)
 	if (len)
 		*(uint16_t *)buf=(uint16_t)fill;
 }
-
-#endif
 
 void plr16to8(uint8_t *dst, const uint16_t *src, unsigned long len)
 {
@@ -111,48 +66,3 @@ extern void plrMono16ToStereo16(int16_t *buf, int len)
 		buf[i<<1] = buf[(i<<1)+1] = buf[i];
 	}
 }
-
-/*
-blockbeg2 macro exp
-blockexp=exp
-blocksize=(1 shl exp)
-  push ecx
-  and ecx,blocksize-1
-  sub ecx,blocksize
-  neg ecx
-  sub esi,ecx
-  sub esi,ecx
-  sub edi,ecx
-  mov eax,(@@blockend-@@block) shr blockexp
-  mul cl
-  add eax,offset @@block
-  pop ecx
-  shr ecx,blockexp
-  inc ecx
-  jmp eax
-@@block:
-endm
-
-blockend2 macro
-@@blockend:
-  add esi,blocksize*2
-  add edi,blocksize
-  dec ecx
-  jnz @@block
-endm
-
-public plr16to8_
-plr16to8_ proc ;//esi=buf16, edi=buf8, ecx=len
-  blockbeg2 6
-    i=0
-    rept blocksize
-      db 8ah, 46h, 2*i+1     ;mov al,ds:[esi+2*i+1]
-      db 88h, 47h, i         ;mov ds:[edi+i],al
-      i=i+1
-    endm
-  blockend2
-  ret
-endp
-
-end
-*/

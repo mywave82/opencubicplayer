@@ -45,8 +45,4 @@
 #include "devwmixf.h"
 #include "dwmixfa.h"
 
-#if defined(I386_ASM)
-#  include "dwmixfa_8087.c"
-# else
-#   include "dwmixfa_c.c"
-# endif
+#include "dwmixfa_c.c"

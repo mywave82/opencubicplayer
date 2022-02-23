@@ -62,9 +62,6 @@
 #include "devwmixf.h"
 #include "stuff/poll.h"
 #include "dwmixfa.h"
-#ifdef I386_ASM
-#include "stuff/pagesize.inc.c"
-#endif
 
 /* NB NB   more includes further down in the file */
 
@@ -981,59 +978,6 @@ static void ClosePlayer()
 
 static int Init(const struct deviceinfo *dev)
 {
-#ifdef I386_ASM
-	/* Self-modifying code needs access to modify it self */
-	{
-		int fd;
-		char *file=strdup("/tmp/ocpXXXXXX");
-		char *start1, *stop1;
-		int len1;
-		fd=mkstemp(file);
-
-		start1=(void *)start_dwmixfa;
-		stop1=(void *)stop_dwmixfa;
-#ifdef MIXER_DEBUG
-		fprintf(stderr, "range1: %p - %p\n", start1, stop1);
-#endif
-		start1=(char *)(((int)start1)&~(pagesize()-1));
-		len1=((stop1-start1)+pagesize()-1)& ~(pagesize()-1);
-#ifdef MIXER_DEBUG
-		fprintf(stderr, "mprot: %p + %08x\n", start1, len1);
-#endif
-		if (write(fd, start1, len1)!=len1)
-		{
-#ifdef MIXER_DEBUG
-			fprintf(stderr, "write 1 failed\n");
-#endif
-			close(fd);
-			unlink(file);
-			free(file);
-			return 0;
-		}
-		if (mmap(start1, len1, PROT_EXEC|PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED, fd, 0)==MAP_FAILED)
-		{
-			perror("mmap()");
-			close(fd);
-			unlink(file);
-			free(file);
-			return 0;
-		}
-
-/*
-		if (mprotect((char *)(((int)remap_range1_start)&~(pagesize()-1)), (((char *)remap_range1_stop-(char *)remap_range1_start)+pagesize()-1)& ~(pagesize()-1), PROT_READ|PROT_WRITE|PROT_EXEC) )
-	    {
-			perror("Couldn't mprotect");
-			return 0;
-		}*/
-#ifdef MIXER_DEBUG
-		fprintf(stderr, "Done ?\n");
-#endif
-		close(fd);
-		unlink(file);
-		free(file);
-	}
-#endif
-
 	volramp=!!(dev->opt&MIXF_VOLRAMP);
 	declick=!!(dev->opt&MIXF_DECLICK);
 
@@ -1114,12 +1058,7 @@ static void mixfInit(const char *sec)
 	const char *regs;
 
 	fprintf(stderr, "[devwmixf] INIT, ");
-#ifdef I386_ASM
-		fprintf(stderr, "using dwmixfa.c x86-asm version\n");
-#else
-		fprintf(stderr, "using dwmixfa.c C version\n");
-		/*fprintf(stderr, "using dwmixa.c C version\n");*/
-#endif
+	fprintf(stderr, "using dwmixfa.c C version\n");
 
 	dwmixfa_state.postprocs=0;
 	regs=cfGetProfileString(sec, "postprocs", "");

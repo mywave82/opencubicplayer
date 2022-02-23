@@ -55,16 +55,6 @@
 #include "dwmixa.h"
 #include "dwmixqa.h"
 
-#if defined(__PIC__) && defined(I386_ASM)
-#warning I386_ASM is disabled in non FPU mixers when compiled PIC
-#undef I386_ASM
-#endif
-
-
-#ifdef I386_ASM
-#include "stuff/pagesize.inc.c"
-#endif
-
 #define MIXBUFLEN 4096
 #define MAXCHAN 255
 
@@ -1109,88 +1099,6 @@ static int wmixInit(const struct deviceinfo *dev)
 	mcpGet=GET;
 	mcpSet=SET;
 
-#ifdef I386_ASM
-
-	/* Self-modifying code needs access to modify it self */
-	{
-		int fd;
-		char *file=strdup("/tmp/ocpXXXXXX");
-		char *start1, *stop1, *start2, *stop2;
-		int len1, len2;
-		fd=mkstemp(file);
-
-		start1=(void *)remap_range1_start;
-		stop1=(void *)remap_range1_stop;
-		start2=(void *)remap_range2_start;
-		stop2=(void *)remap_range2_stop;
-#ifdef MIXER_DEBUG
-		fprintf(stderr, "range1: %p - %p\n", start1, stop1);
-		fprintf(stderr, "range2: %p - %p\n", start2, stop2);
-#endif
-
-		start1=(char *)(((int)start1)&~(pagesize()-1));
-		start2=(char *)(((int)start2)&~(pagesize()-1));
-		len1=((stop1-start1)+pagesize()-1)& ~(pagesize()-1);
-		len2=((stop2-start2)+pagesize()-1)& ~(pagesize()-1);
-#ifdef MIXER_DEBUG
-		fprintf(stderr, "mprot: %p + %08x\n", start1, len1);
-		fprintf(stderr, "mprot: %p + %08x\n", start2, len2);
-#endif
-		if (write(fd, start1, len1)!=len1)
-		{
-#ifdef MIXER_DEBUG
-			fprintf(stderr, "write 1 failed\n");
-#endif
-			close(fd);
-			unlink(file);
-			free(file);
-			return 0;
-		}
-		if (write(fd, start2, len2)!=len2)
-		{
-#ifdef MIXER_DEBUG
-			fprintf(stderr, "write 2 failed\n");
-#endif
-			close(fd);
-			unlink(file);
-			free(file);
-			return 0;
-		}
-
-		if (mmap(start1, len1, PROT_EXEC|PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED, fd, 0)==MAP_FAILED)
-		{
-			perror("mmap()");
-			close(fd);
-			unlink(file);
-			free(file);
-			return 0;
-		}
-
-		if (mmap(start2, len2, PROT_EXEC|PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED, fd, len1)==MAP_FAILED)
-		{
-			perror("mmap()");
-			close(fd);
-			unlink(file);
-			free(file);
-			return 0;
-		}
-
-/*
-		if (mprotect((char *)(((int)remap_range1_start)&~(pagesize()-1)), (((char *)remap_range1_stop-(char *)remap_range1_start)+pagesize()-1)& ~(pagesize()-1), PROT_READ|PROT_WRITE|PROT_EXEC) ||
-		    mprotect((char *)(((int)remap_range2_start)&~(pagesize()-1)), (((char *)remap_range2_stop-(char *)remap_range2_start)+pagesize()-1)& ~(pagesize()-1), PROT_READ|PROT_WRITE|PROT_EXEC) )
-	    {
-			perror("Couldn't mprotect");
-			return 0;
-		}*/
-#ifdef MIXER_DEBUG
-		fprintf(stderr, "Done ?\n");
-#endif
-		close(fd);
-		unlink(file);
-		free(file);
-	}
-#endif
-
 	return 1;
 }
 
@@ -1248,17 +1156,9 @@ static void mixrInit(const char *sec)
 	fprintf(stderr, "[devwmix] INIT, ");
 	if (!quality)
 	{
-#ifdef I386_ASM
-		fprintf(stderr, "using dwmixa.c x86-asm version\n");
-#else
 		fprintf(stderr, "using dwmixa.c C version\n");
-#endif
 	} else {
-#ifdef I386_ASM
-		fprintf(stderr, "using dwmixaq.c x86-asm version\n");
-#else
 		fprintf(stderr, "using dwmixaq.c C version\n");
-#endif
 	}
 
 	postprocs=0;

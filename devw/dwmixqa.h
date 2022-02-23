@@ -7,11 +7,4 @@ extern void mixqAmplifyChannel(int32_t *buf, int16_t *src, uint32_t len, int32_t
 extern void mixqAmplifyChannelUp(int32_t *buf, int16_t *src, uint32_t len, int32_t vol, uint32_t step);
 extern void mixqAmplifyChannelDown(int32_t *buf, int16_t *src, uint32_t len, int32_t vol, uint32_t step);
 
-#ifdef I386_ASM
-
-extern void remap_range2_start(void);
-extern void remap_range2_stop(void);
-
-#endif
-
 #endif

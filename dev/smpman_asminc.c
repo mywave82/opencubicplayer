@@ -27,86 +27,6 @@
  *    -made assembler optimitize safe
  */
 
-#ifdef I386_ASM
-
-static inline unsigned long getpitch(void *ptr, unsigned long len)
-{
-	int d0, d1;
-	register unsigned long ret;
-	__asm__ __volatile__
-	(
-#ifdef __PIC__
-		"pushl %%ebx\n"
-#endif
-		"  xorl %%edx, %%edx\n"
-		"  xorl %%ebx, %%ebx\n"
-		"  xorl %%eax, %%eax\n"
-		"1:\n"
-		"  movb (%%esi), %%dl\n"
-		"  movb 1(%%esi), %%dh\n"
-		"  xorl $0x8080, %%edx\n"
-		"  subb %%dh, %%dl\n"
-		"  sbbb %%dh, %%dh\n"
-		"  incb %%dh\n"
-		"  movw (%%ecx, %%edx, 2), %%bx\n"
-		"  addl %%ebx, %%eax\n"
-		"  incl %%esi\n"
-		"  decl %%edi\n"
-		"jnz 1b\n"
-#ifdef __PIC__
-		"popl %%ebx\n"
-#endif
-		: "=a" (ret), "=&S"(d0), "=&D"(d1)
-		: "1" (ptr), "c" (abstab[0]), "2" (len)
-#ifdef __PIC__
-		: "edx"
-#else
-		: "edx", "ebx"
-#endif
-	);
-	return ret;
-}
-
-static inline unsigned long getpitch16(void *ptr, unsigned long len)
-{
-	int d0, d1;
-	register unsigned long ret;
-	__asm__ __volatile__
-	(
-#ifdef __PIC__
-		"pushl %%ebx\n"
-#endif
-		"  xorl %%edx, %%edx\n"
-		"  xorl %%ebx, %%ebx\n"
-		"  xorl %%eax, %%eax\n"
-		"1:\n"
-		"  movb 1(%%esi), %%dl\n"
-		"  movb 3(%%esi), %%dh\n"
-		"  xorl $0x8080, %%edx\n"
-		"  subb %%dh, %%dl\n"
-		"  sbbb %%dh, %%dh\n"
-		"  incb %%dh\n"
-		"  movw (%%ecx, %%edx, 2), %%bx\n"
-		"  addl %%ebx, %%eax\n"
-		"  addl $2, %%esi\n"
-		"  decl %%edi\n"
-		"  jnz 1b\n"
-#ifdef __PIC__
-		"popl %%ebx\n"
-#endif
-		: "=a" (ret), "=&S"(d0), "=&D"(d1)
-		: "1" (ptr), "c" (abstab[0]), "2" (len)
-#ifdef __PIC__
-		: "edx"
-#else
-		: "edx", "ebx"
-#endif
-	);
-	return ret;
-}
-
-#else
-
 static uint32_t getpitch16(const void *ptr, unsigned long len)
 {
 	uint32_t retval=0;
@@ -148,5 +68,3 @@ static uint32_t getpitch(const void *ptr, unsigned long len)
 	} while (--len);
 	return retval;
 }
-
-#endif

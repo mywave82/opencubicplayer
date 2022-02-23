@@ -38,10 +38,6 @@
 
 #define MIXBUFLEN 2048
 
-#ifdef I386_ASM
-#include "stuff/pagesize.inc.c"
-#endif
-
 static void (*mixGetMixChannel)(unsigned int ch, struct mixchannel *chn, uint32_t rate);
 
 static struct mixchannel *channels;
@@ -262,61 +258,6 @@ void mixSetAmplify(int amp)
 int mixInit(void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t rate), int masterchan, unsigned int chn, int amp)
 {
 	int i,j;
-
-#ifdef I386_ASM
-	{
-		int fd;
-		char *file=strdup("/tmp/ocpXXXXXX");
-		char *start1, *stop1;
-		int len1;
-		fd=mkstemp(file);
-
-		start1=(void *)mixasm_remap_start;
-		stop1=(void *)mixasm_remap_stop;
-
-#ifdef MIXER_DEBUG
-		fprintf(stderr, "mixasm-range: %p - %p\n", start1, stop1);
-#endif
-
-		start1=(char *)(((int)start1)&~(pagesize()-1));
-		len1=((stop1-start1)+pagesize()-1)& ~(pagesize()-1);
-#ifdef MIXER_DEBUG
-		fprintf(stderr, "mprot: %p + %08x\n", start1, len1);
-#endif
-		if (write(fd, start1, len1)!=len1)
-		{
-#ifdef MIXER_DEBUG
-			fprintf(stderr, "write 1 failed\n");
-#endif
-			close(fd);
-			unlink(file);
-			free(file);
-			return 0;
-		}
-
-		if (mmap(start1, len1, PROT_EXEC|PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED, fd, 0)==MAP_FAILED)
-		{
-			perror("mmap()");
-			close(fd);
-			unlink(file);
-			free(file);
-			return 0;
-		}
-
-/*
-		if (mprotect(start1, len1, PROT_READ|PROT_WRITE|PROT_EXEC) ||
-		{
-			perror("Couldn't mprotect");
-			return 0;
-		}*/
-#ifdef MIXER_DEBUG
-		fprintf(stderr, "Done ?\n");
-#endif
-		close(fd);
-		unlink(file);
-		free(file);
-	}
-#endif
 
 	mixGetMixChannel=getchan;
 	mixbuf=malloc(MIXBUFLEN*sizeof(int32_t));

@@ -163,77 +163,6 @@ fftInit(void)
 	}
 }
 
-#ifdef I386_ASM
-/* we drop regparm, since optimze should do this for us since this is static  */
-static /* inline */ void fftCalc(int32_t *xi, int32_t *cos, uint32_t _d2)
-{
-	register int d0, d1;
-	__asm__ __volatile__ (
-#ifdef __PIC__
-	"pushl %%ebx\n"
-#endif
-	"shll $2, %%edx\n"
-
-	"movl (%%esi), %%ebx\n"
-	"movl (%%esi, %%edx), %%ecx\n"
-	"movl %%ebx, %%eax\n"
-	"addl %%ecx, %%ebx\n"
-	"subl %%ecx, %%eax\n"
-	"sarl $1, %%ebx\n"
-	"pushl %%eax\n"
-	"pushl %%eax\n"
-	"movl %%ebx, (%%esi)\n"
-
-	"movl 4(%%esi, %%edx), %%ecx\n"
-	"movl 4(%%esi), %%ebx\n"
-	"movl %%ebx, %%eax\n"
-	"addl %%ecx, %%ebx\n"
-	"subl %%ecx, %%eax\n"
-	"sarl $1, %%ebx\n"
-	"movl %%eax, %%ecx\n"
-	"movl %%ebx, 4(%%esi)\n"
-
-	"addl %%edx, %%esi\n"
-
-	"movl 4(%%edi), %%edx\n"
-	"xorl %%ebx, %%ebx\n"
-	"imull %%edx\n"
-	"shrd $29, %%edx, %%eax\n"
-	"movl (%%edi), %%edx\n"
-	"subl %%eax, %%ebx\n"
-	"popl %%eax\n"
-	"imull %%edx\n"
-	"shrd $29, %%edx, %%eax\n"
-	"addl %%eax, %%ebx\n"
-	"movl 4(%%edi), %%edx\n"
-	"popl %%eax\n"
-	"movl %%ebx, (%%esi)\n"
-	"imull %%edx\n"
-	"shrd $29, %%edx, %%eax\n"
-	"movl %%eax, %%ebx\n"
-	"movl (%%edi), %%eax\n"
-	"imull %%ecx\n"
-	"shrd $29, %%edx, %%eax\n"
-	"addl %%eax, %%ebx\n"
-	"movl %%ebx, 4(%%esi)\n"
-#ifdef __PIC__
-	"popl %%ebx\n"
-#endif
-	: "=&S"(d0),
-	  "=&d"(d1)
-	: "0"(xi),
-	  "D"(cos),
-	  "1"(_d2)
-#ifdef __PIC__
-	: "eax","ecx","memory"
-#else
-	: "eax","ebx","ecx","memory"
-#endif
-	);
-}
-
-#else
-
 static /*inline*/ int imul29(int a, int b)
 {
 	double d=(double)a*(double)b;
@@ -253,8 +182,6 @@ static /*inline*/ void fftCalc(int32_t *xi, int32_t *curcossin, uint32_t d2)
 	xi[d2+0]=imul29(xd[0],curcossin[0])-imul29(xd[1],curcossin[1]);
 	xi[d2+1]=imul29(xd[0],curcossin[1])+imul29(xd[1],curcossin[0]);
 }
-
-#endif
 
 static /*inline*/ void dofft86(int32_t (*x)[2], const int n)
 {

@@ -77,7 +77,6 @@ devwmix.o: devwmix.c \
 	$(CC) devwmix.c -o $@ -c
 
 dwmixa.o: dwmixa.c dwmixa.h \
-	dwmixa_x86.c \
 	dwmixa_c.c \
 	dwmix.h \
 	../config.h \
@@ -86,7 +85,6 @@ dwmixa.o: dwmixa.c dwmixa.h \
 	$(CC) -O dwmixa.c -o $@ -c
 
 dwmixqa.o: dwmixqa.c dwmixqa.h \
-	dwmixqa_x86.c \
 	dwmixqa_c.c \
 	dwmix.h \
 	../config.h \
@@ -113,7 +111,6 @@ devwmixf.o: devwmixf.c \
 	$(CC) devwmixf.c -o $@ -c
 
 dwmixfa.o: dwmixfa.c \
-	dwmixfa_8087.c \
 	dwmixfa_c.c \
 	../config.h \
 	../types.h \

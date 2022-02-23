@@ -81,12 +81,3 @@ typedef struct
 } dwmixfa_state_t;
 
 extern dwmixfa_state_t dwmixfa_state;
-
-
-
-#ifdef I386_ASM
-
-extern void start_dwmixfa(void);   /* these two are used to calculate memory remapping (self modifying code) */
-extern void stop_dwmixfa(void);
-
-#endif

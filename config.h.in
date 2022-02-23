@@ -157,10 +157,6 @@
 
 #undef HAVE_RESIZE_TERM
 
-#if (defined(_X86) || defined(__i386__)) && !defined(__APPLE__)
-#define I386_ASM 1
-#endif
-
 /* #define ADBMETA_DEBUG */
 /* #define CDFS_DEBUG */
 /* #define TIMIDITY_DEBUG */
