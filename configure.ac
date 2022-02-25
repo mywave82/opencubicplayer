@@ -46,7 +46,7 @@ AC_SUBST(HAIKU)
 target=`$CC -dumpmachine`
 AS_CASE([$target],
 	[*-darwin*],[
-		SHARED_FLAGS="-dynamiclib -flat_namespace -undefined suppress"
+		SHARED_FLAGS="-dynamiclib -undefined dynamic_lookup"
 		CFLAGS="$CFLAGS -fno-common"
 		CXXFLAGS="$CXXFLAGS -fno-common"
 		LIB_SUFFIX=.dylib
