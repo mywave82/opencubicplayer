@@ -131,8 +131,8 @@ void __attribute__ ((visibility ("internal"))) Check_Audio (struct cdfs_disc_t *
 		}
 failout:
 		discid_free (did);
-postfailout:
 	}
+postfailout:
 
 	AudioDir = CDFS_Directory_add (disc, 0, "AUDIO");
 
