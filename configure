@@ -6399,7 +6399,7 @@ target=`$CC -dumpmachine`
 case $target in #(
   *-darwin*) :
 
-		SHARED_FLAGS="-dynamiclib -flat_namespace -undefined suppress"
+		SHARED_FLAGS="-dynamiclib -undefined dynamic_lookup"
 		CFLAGS="$CFLAGS -fno-common"
 		CXXFLAGS="$CXXFLAGS -fno-common"
 		LIB_SUFFIX=.dylib
