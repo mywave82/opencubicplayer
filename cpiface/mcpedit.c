@@ -30,7 +30,6 @@
 #include <string.h>
 #include "types.h"
 #include "dev/deviplay.h"
-#include "dev/devisamp.h"
 #include "dev/deviwave.h"
 #include "dev/mcp.h"
 #include "boot/psetting.h"
@@ -118,8 +117,6 @@ int mcpSetProcessKey(uint16_t key)
 			cpiKeyHelp(KEY_CTRL_SHIFT_F(3), "`Load` configuration");
 			cpiKeyHelp(KEY_CTRL_SHIFT_F(4), "`Reset` configuration");
 			cpiKeyHelp(KEY_BACKSPACE, "Cycle mixer-filters");
-			if (smpProcessKey)
-				smpProcessKey(key);
 			if (plrProcessKey)
 				plrProcessKey(key);
 			if (mcpProcessKey)
@@ -342,14 +339,6 @@ int mcpSetProcessKey(uint16_t key)
 			break;
 
 		default:
-			if (smpProcessKey)
-			{
-				int ret=smpProcessKey(key);
-				if (ret==2)
-					cpiResetScreen();
-				if (ret)
-					return 1;
-			}
 			if (plrProcessKey)
 			{
 				int ret=plrProcessKey(key);

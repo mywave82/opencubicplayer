@@ -68,7 +68,6 @@ in which the value must be taken.
 Device setting are accomplished with the suffix @emph{-s}.
 @itemize
 @item -p<name>            use specific player device
-@item -s<name>            use specific sampler device
 @item -w<name>            use specific wavetable device
 @item -r<0..64000>        sample at specific rate
 @item -8                  play/sample/mix as 8bit

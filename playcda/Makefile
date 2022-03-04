@@ -29,7 +29,6 @@ cdaplay.o: cdaplay.c cdaudio.h \
 	../dev/player.h \
 	../dev/plrasm.h \
 	../dev/ringbuffer.h \
-	../dev/sampler.h \
 	../filesel/cdrom.h \
 	../filesel/filesystem.h \
 	../stuff/imsrtns.h \

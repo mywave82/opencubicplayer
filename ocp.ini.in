@@ -1,5 +1,5 @@
 [version]
-  epoch=20220303
+  epoch=20220304
 
 [general]
 ;link=
@@ -23,7 +23,6 @@
 ; note: the first device found in each list will be uses as default
 
   playerdevices=devpALSA devpOSS devpCA devpSDL2 devpSDL devpNone devpDisk
-  samplerdevices=devsOSS devsNone
   wavetabledevices=devwMixF devwmixQ devwMix devwNone
   mixrate=44100           ; -sr44100
   mixprocrate=4096000     ; max channels*rate (for slow cpus) (4096000==64*64000)
@@ -36,7 +35,6 @@
   sampstereo=on           ; -sm-
   smpbufsize=2000         ; milliseconds
   defplayer=              ; -sp
-  defsampler=             ; -ss
   defwavetable=           ; -sw
   midichan=64             ; number of channels used for midi playback
   itchan=64               ; number of channels used for .it playback
@@ -179,21 +177,11 @@
 [devpNone]
   link=devpnone
 
-[devsOSS]
-  link=devsoss
-  revstereo=off
-  path=/dev/dsp
-  mixer=/dev/mixer
-  igain=1  ; -1 to 100 :How much IGAIN do you need to sample. -1 to leave it.. Some buggy soundcards give zero sound if this is not set
-
 [devpSDL]
   link=devpsdl
 
 [devpSDL2]
   link=devpsdl2
-
-[devsNone]
-  link=devsnone
 
 [devwNone]
   link=devwnone

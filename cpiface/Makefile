@@ -174,7 +174,6 @@ mcpedit.o: mcpedit.c \
 	../types.h \
 	cpiface.h \
 	../dev/deviplay.h \
-	../dev/devisamp.h \
 	../dev/deviwave.h \
 	../dev/mcp.h \
 	../boot/psetting.h \

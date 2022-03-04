@@ -136,7 +136,6 @@ this section.
 @example
 [sound]
   playerdevices=devpALSA devpOSS devpCA devpSDL2 devpSDL devpNone devpDisk
-  samplerdevices=devsOSS devsNone
   wavetabledevices=devwMixF devwmixQ devwMix devwNone
   mixrate=44100
   mixprocrate=4096000
@@ -149,7 +148,6 @@ this section.
   sampstereo=on
   smpbufsize=2000
   defplayer=
-  defsampler=
   defwavetable=
   itchan=64
   cdsamplelinein=off
@@ -180,13 +178,6 @@ all devices if you want to use more than one sound card.@footnote{you
 can change devices by using the special
 @file{setup:} drive described in section @xref{fileselector}.} If more
 than one device is listed the first in the list will be used as default.
-@item samplerdevices @tab
-these devices are the least important ones. They are
-only needed if you want to use OCP when playing cd audio tracks or
-start the player in sample mode. The sample data is not calculated
-from files, but sampled from either the cd, line or microphone jack of
-the sound card. You can then use the graphical screens to view the
-sounds.
 @item wavetabledevices @tab
 for mixing several channels you have to use
 @emph{wavetabledevices}. Most sound cards are only able to play to channels
@@ -223,7 +214,7 @@ guarantee for constant cpu resources. To avoid a break in the sample
 stream OCP will calculate in advance. This option sets the buffer lenth in
 miliseconds.
 @item samprate @tab
-When using a @emph{samplerdevice} this value will be used.
+When using diskwriter, this value will be used.
 @item samp16bit @tab
 dito
 @item sampstereo @tab
@@ -240,8 +231,6 @@ options from command line.
 @item defwavetable @tab
 this option sets the default @emph{wavetabledevice}. Can
 also be set with @emph{-sw} command.
-@item defsampler @tab
-the same as the @emph{-ss} command line option.
 @item itchan @tab
 the @file{.it} format can play more than one sample per channel
 simultaniously. A maximum number of channels to mix is required for
@@ -533,13 +522,6 @@ of BSD, old versions of Linux, etc.
   revstereo=on
   path=/dev/dsp
   mixer=/dev/mixer
-
-[devsOSS]
-  link=devsoss
-  revstereo=on
-  path=/dev/dsp
-  mixer=/dev/mixer
-  igain=1
 @end example
 
 @subsection SDL/SDL2

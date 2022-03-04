@@ -39,7 +39,6 @@
 #include "dev/player.h"
 #include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
-#include "dev/sampler.h"
 #include "filesel/cdrom.h"
 #include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"

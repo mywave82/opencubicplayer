@@ -102,7 +102,6 @@ static int cmdhlp(void)
 		printf("     f{0..2}      : set filter (0=off, 1=AOI, 2=FOI)\n");
 		printf("-s : device settings\n");
 		printf("     p<name>      : use specific player device\n");
-		printf("     s<name>      : use specific sampler device\n");
 		printf("     w<name>      : use specific wavetable device\n");
 		printf("     r{0..64000}  : sample at specific rate\n");
 		printf("     8            : play/sample/mix as 8bit\n");
@@ -845,9 +844,18 @@ static int init_modules(int argc, char *argv[])
 			free (chargen);
 		}
 
-		if (epoch < 20220303)
+		if (epoch < 20220304)
 		{
-			cfSetProfileInt("version", "epoch", 20220303, 10);
+			printf("ocp.ini update (0.2.95) removed the last left-overs of dev-sampler\n");
+			cfRemoveEntry("sound", "samplerdevices");
+			cfRemoveEntry("sound", "defsampler");
+			cfRemoveProfile("devsOSS");
+			cfRemoveProfile("devsNone");
+		}
+
+		if (epoch < 20220304)
+		{
+			cfSetProfileInt("version", "epoch", 20220304, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -858,13 +866,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20220303)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20220304)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20220303\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20220304\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20220303\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20220304\n\n");
 		}
 		sleep(5);
 	}

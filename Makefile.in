@@ -97,7 +97,6 @@ endif
 	$(MAKE) -C cpiface TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C dev TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C devp TOPDIR=../$(TOPDIR) install
-	$(MAKE) -C devs TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C devw TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C filesel TOPDIR=../$(TOPDIR) install
 	$(MAKE) -C goodies TOPDIR=../$(TOPDIR) install
@@ -127,7 +126,6 @@ uninstall:
 	$(MAKE) -C cpiface TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C dev TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C devp TOPDIR=../$(TOPDIR) uninstall
-	$(MAKE) -C devs TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C devw TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C filesel TOPDIR=../$(TOPDIR) uninstall
 	$(MAKE) -C goodies TOPDIR=../$(TOPDIR) uninstall
@@ -159,7 +157,6 @@ dirs:
 	$(MAKE) -C cpiface TOPDIR=../$(TOPDIR)
 	$(MAKE) -C dev TOPDIR=../$(TOPDIR)
 	$(MAKE) -C devp TOPDIR=../$(TOPDIR)
-	$(MAKE) -C devs TOPDIR=../$(TOPDIR)
 	$(MAKE) -C devw TOPDIR=../$(TOPDIR)
 	$(MAKE) -C filesel TOPDIR=../$(TOPDIR)
 	$(MAKE) -C goodies TOPDIR=../$(TOPDIR)
@@ -200,7 +197,6 @@ clean:
 	$(MAKE) -C cpiface TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C dev TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C devp TOPDIR=../$(TOPDIR) clean
-	$(MAKE) -C devs TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C devw TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C filesel TOPDIR=../$(TOPDIR) clean
 	$(MAKE) -C goodies TOPDIR=../$(TOPDIR) clean

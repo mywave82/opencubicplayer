@@ -21,7 +21,6 @@ Options:
      f{0..2}      : set filter (0=off, 1=AOI, 2=FOI)
 -s : device settings
      p<name>      : use specific player device
-     s<name>      : use specific sampler device
      w<name>      : use specific wavetable device
      r{0..64000}  : sample at specific rate
      8            : play/sample/mix as 8bit

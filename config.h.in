@@ -175,7 +175,6 @@
 /* #define PAK_VERBOSE */
 /* #define FILEHANDLE_CACHE_DEBUG */
 /* #define PLR_DEBUG */ /* for now makes devposs/devpalsa offer some buffer info */
-/* #define SMP_DEBUG */ /* for now makes devsoss offer some buffer info - not complete */
 /* #define INITCLOSE_DEBUG 1*/
 /* #define LD_DEBUG 1 */
 /* #define TIMER_DEBUG 1 */

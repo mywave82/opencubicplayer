@@ -11,13 +11,11 @@ mcpbase_so=deviwave.o mcp.o mix.o mixasm.o ringbuffer.o smpman.o
 
 mchasm_so=mchasm.o
 
-smpbase_so=devisamp.o sampler.o
-
 ifeq ($(STATIC_BUILD),1)
-all: $(plrbase_so) $(devi_so) $(mcpbase_so) $(mchasm_so) $(smpbase_so)
+all: $(plrbase_so) $(devi_so) $(mcpbase_so) $(mchasm_so)
 #$(mixclip_so)
 else
-all: devi$(LIB_SUFFIX) mcpbase$(LIB_SUFFIX) plrbase$(LIB_SUFFIX) smpbase$(LIB_SUFFIX) mchasm$(LIB_SUFFIX)
+all: devi$(LIB_SUFFIX) mcpbase$(LIB_SUFFIX) plrbase$(LIB_SUFFIX) mchasm$(LIB_SUFFIX)
 #mixclip$(LIB_SUFFIX)
 endif
 
@@ -36,9 +34,6 @@ mcpbase$(LIB_SUFFIX): $(mcpbase_so)
 mchasm$(LIB_SUFFIX): $(mchasm_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
-smpbase$(LIB_SUFFIX): $(smpbase_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
-
 clean:
 	rm -f *.o *$(LIB_SUFFIX) mchasm_test smpman_asminctest ringbuffer-unit-test
 
@@ -49,7 +44,6 @@ else
 install:
 	$(CP) mcpbase$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-mcpbase$(LIB_SUFFIX)"
 	$(CP) plrbase$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-plrbase$(LIB_SUFFIX)"
-	$(CP) smpbase$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-smpbase$(LIB_SUFFIX)"
 #	$(CP) mixclip$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-mixclip$(LIB_SUFFIX)"
 	$(CP) mchasm$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-mchasm$(LIB_SUFFIX)"
 	$(CP) devi$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-devi$(LIB_SUFFIX)"
@@ -58,7 +52,6 @@ install:
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-mcpbase$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-plrbase$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-smpbase$(LIB_SUFFIX)"
 #	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-mixclip$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-mchasm$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-devi$(LIB_SUFFIX)"
@@ -103,26 +96,6 @@ deviplay.o: deviplay.c deviplay.h \
 	../stuff/compat.h \
 	../stuff/err.h
 	$(CC) deviplay.c -o $@ -c
-
-devisamp.o: devisamp.c devisamp.h \
-	../config.h \
-	../types.h \
-	../boot/plinkman.h \
-	../boot/psetting.h \
-	devigen.h \
-	devisamp.h \
-	../filesel/dirdb.h \
-	../filesel/filesystem.h \
-	../filesel/filesystem-drive.h \
-	../filesel/filesystem-file-mem.h \
-	../filesel/filesystem-setup.h \
-	../filesel/mdb.h \
-	../filesel/pfilesel.h \
-	imsdev.h \
-	sampler.h \
-	../stuff/compat.h \
-	../stuff/err.h
-	$(CC) devisamp.c -o $@ -c
 
 deviwave.o: deviwave.c deviwave.h \
 	../config.h \
@@ -195,13 +168,6 @@ ringbuffer.o: ringbuffer.c ringbuffer.h \
 	../config.h \
 	../types.h
 	$(CC) ringbuffer.c -o $@ -c
-
-sampler.o: sampler.c sampler.h \
-	../config.h \
-	../types.h \
-	../stuff/imsrtns.h \
-	mchasm.h
-	$(CC) sampler.c -o $@ -c
 
 smpman.o: smpman.c \
 	../config.h \

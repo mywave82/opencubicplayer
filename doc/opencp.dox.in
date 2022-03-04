@@ -324,7 +324,6 @@ in which the value must be taken.
   Device setting are accomplished with the suffix ~-s~.
 
   -p<name>            use specific player device
-  -s<name>            use specific sampler device
   -w<name>            use specific wavetable device
   -r<0..64000>        sample at specific rate
   -8                  play/sample/mix as 8bit
@@ -1499,7 +1498,6 @@ the configuration permanently you have to modify the entries of this section.
 
   \[sound\]
     playerdevices=devpALSA devpOSS devpCA devpSDL2 devpSDL devpNone devpDisk
-    samplerdevices=devsOSS devsNone
     wavetabledevices=devwMixF devwmixQ devwMix devwNone
     mixrate=44100
     mixprocrate=4096000
@@ -1512,7 +1510,6 @@ the configuration permanently you have to modify the entries of this section.
     sampstereo=on
     smpbufsize=2000
     defplayer=
-    defsampler=
     defwavetable=
     midichan=64
     itchan=64
@@ -1539,12 +1536,6 @@ the configuration permanently you have to modify the entries of this section.
                    procedure. If you have multiple sound cards installed be sure
                    to list all devices if you want to use more than one sound
                    card.
-  ~samplerdevices~   these devices are the least important ones. They are only
-                   needed if you want to use OCP when playing CD Audio tracks
-                   or start the player in sample mode. The sample data is not
-                   calculated from files, but sampled from either the CD, line
-                   or microphone jack of the sound card. You can then use the
-                   graphical screens to view the sounds.
   ~wavetabledevices~ for mixing several channels you have to use ~wavetabledevices~.
                    Most sound cards are only able to play two channels
                    simultaneously normally assigned to the left and right chan-
@@ -1572,7 +1563,7 @@ the configuration permanently you have to modify the entries of this section.
                    no guarantee for constant CPU resources. To avoid a break in
                    the sample stream OCP will calculate in advance. This
                    option sets the buffer length in milliseconds.
-  ~samprate~         When using a ~samplerdevice~ this value will be used.
+  ~samprate~         When using a diskwriter, this value will be used.
   ~samp16bit~        dito
   ~sampstereo~       dito
   ~smpbufsize~       this option sets the length of the sample DMA buffer in
@@ -1584,7 +1575,6 @@ the configuration permanently you have to modify the entries of this section.
                    from command line.
   ~defwavetable~     this option sets the default ~wavetabledevice~. Can also be set
                    with ~-sw~ command.
-  ~defsampler~       the same as the ~-ss~ command line option.
   ~midichan~         unlike the module file types the MIDI file format does not
                    specify the exact amount of channels to use. Complex ~.MID~
                    files can easily try to play several dozens of channels
@@ -1853,13 +1843,6 @@ given hardware. Testing/patching are welcome.
     revstereo=off
     path=/dev/dsp
     mixer=/dev/mixer
-
-  \[devsOSS\]
-    link=devsoss
-    revstereo=on
-    path=/dev/dsp
-    mixer=/dev/mixer
-    igain=1
 
   OSS is the common legacy sound API for most unix systems. This driver should
 work on most unix-like operating systems like different variants of BSD, old

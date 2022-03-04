@@ -2,13 +2,9 @@
 #define _IMSDEV_H
 
 /* All drivers set these, but they are not used to anything */
-#define SS_DEVTYPE 3
 #define SS_PLAYER 0
-#define SS_SAMPLER 1
 #define SS_WAVETABLE 2
-#define SS_MIDI 3
 #define SS_NEEDPLAYER 4
-#define SS_NEEDWAVETABLE 8
 
 struct sounddevice;
 
