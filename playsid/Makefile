@@ -7,7 +7,7 @@ else
 	DUMPSID=
 endif
 
-TARGETS=sidtype$(LIB_SUFFIX) playsid$(LIB_SUFFIX)
+TARGETS=sidconfig$(LIB_SUFFIX) sidtype$(LIB_SUFFIX) playsid$(LIB_SUFFIX)
 
 LIBSIDPLAYCXXFLAGS+= -I./sidplayfp-config -I./libsidplayfp-git/src
 
@@ -85,17 +85,23 @@ clean:
 install:
 	$(CP) playsid$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
 	$(CP) sidtype$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-playsid$(LIB_SUFFIX)"
+	$(CP) sidconfig$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-sidconfig$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpsid "$(DESTDIR)$(BINDIR)/dumpsid"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/sidtype$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/30-playsid$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/sidtype$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-playsid$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-timidityconfig$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpsid"
 
 playsid_so=cpiinfo.o sidplay.o sidpplay.o $(LIBSIDPLAYOBJECTS)
 playsid$(LIB_SUFFIX): $(playsid_so)
 	$(CXX) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^
+
+sidconfig$(LIB_SUFFIX): sidconfig.o
+	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 sidtype_so=sidptype.o
 sidtype$(LIB_SUFFIX): $(sidtype_so)
@@ -340,6 +346,27 @@ cpiinfo.o: \
 	../cpiface/cpiface.h \
 	../stuff/poutput.h
 	$(CXX) $< -o $@ -c 
+
+sidconfig.o: sidconfig.c \
+	md5.inc.c \
+	../config.h \
+	../types.h \
+	../boot/plinkman.h \
+	../boot/psetting.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
+	../filesel/filesystem-drive.h \
+	../filesel/filesystem-file-mem.h \
+	../filesel/filesystem-setup.h \
+	../filesel/filesystem-unix.h \
+	../filesel/pfilesel.h \
+	../stuff/compat.h \
+	../stuff/err.h \
+	../stuff/framelock.h \
+	../stuff/imsrtns.h \
+	../stuff/utf-8.h \
+	../stuff/poutput.h
+	$(CC) $< -o $@ -c
 
 sidptype.o: \
 	sidptype.c \

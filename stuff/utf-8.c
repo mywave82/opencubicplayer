@@ -211,7 +211,7 @@ void displaystr_utf8_overflowleft (uint16_t y, uint16_t x, uint8_t attr, const c
 		tmpposlen -= inc;
 		visuallen = measurestr_utf8 (tmppos, tmpposlen);
 	}
-	displaystr_utf8(y, x, 0x0F, tmppos, len);
+	displaystr_utf8(y, x, attr, tmppos, len);
 }
 
 struct VisualCharacter_t

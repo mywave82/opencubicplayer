@@ -800,9 +800,54 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileBool ("fileselector", "showallfiles", 0);
 		}
 
-		if (epoch < 20220223)
+		if (epoch < 20220303)
 		{
-			cfSetProfileInt("version", "epoch", 20220223, 10);
+			char *kernal, *basic, *chargen, *iter;
+			printf("ocp.ini update (0.2.95) libsidplayfp ROM paths changed into UNIX syntax\n");
+			kernal  = strdup (cfGetProfileString ("libsidplay", "kernal",  "KERNAL.ROM"));
+			basic   = strdup (cfGetProfileString ("libsidplay", "basic",   "BASIC.ROM"));
+			chargen = strdup (cfGetProfileString ("libsidplay", "chargen", "CHARGEN.ROM"));
+			for (iter = kernal; *iter; iter++)
+			{
+				if (*iter == '/')
+				{
+					*iter = '\\';
+				} else if (*iter == '\\')
+				{
+					*iter = '/';
+				}
+			}
+			for (iter = basic; *iter; iter++)
+			{
+				if (*iter == '/')
+				{
+					*iter = '\\';
+				} else if (*iter == '\\')
+				{
+					*iter = '/';
+				}
+			}
+			for (iter = chargen; *iter; iter++)
+			{
+				if (*iter == '/')
+				{
+					*iter = '\\';
+				} else if (*iter == '\\')
+				{
+					*iter = '/';
+				}
+			}
+			cfSetProfileString ("libsidplay", "kernal",  kernal);
+			cfSetProfileString ("libsidplay", "basic",   basic);
+			cfSetProfileString ("libsidplay", "chargen", chargen);
+			free (kernal);
+			free (basic);
+			free (chargen);
+		}
+
+		if (epoch < 20220303)
+		{
+			cfSetProfileInt("version", "epoch", 20220303, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -813,13 +858,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20220223)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20220303)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20220223\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20220303\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20220223\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20220303\n\n");
 		}
 		sleep(5);
 	}

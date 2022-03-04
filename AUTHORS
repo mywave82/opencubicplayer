@@ -36,6 +36,9 @@ playym/ plugin contains code from ST-Sound v1.43.
     Copyright (c) 1996 Kerwin F. Medina
 
 
+playsid/ setup dialog contains code from RSA Data Security, Inc., MD5 message-digest algorithm
+    Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All rights reserved.
+
 
 --
 Stian Skjelstad

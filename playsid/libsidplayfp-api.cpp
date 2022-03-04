@@ -264,9 +264,9 @@ namespace libsidplayfp
 		chargen_ref = dirdbResolvePathWithBaseAndRef (dirdb_base, chargen_string, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH);
 
 #else
-		kernal_ref  = dirdbResolvePathWithBaseAndRef (dirdb_base, kernal_string,  DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_file);
-		basic_ref   = dirdbResolvePathWithBaseAndRef (dirdb_base, basic_string,   DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_file);
-		chargen_ref = dirdbResolvePathWithBaseAndRef (dirdb_base, chargen_string, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_file);
+		kernal_ref  = dirdbResolvePathWithBaseAndRef (dirdb_base, kernal_string,  DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
+		basic_ref   = dirdbResolvePathWithBaseAndRef (dirdb_base, basic_string,   DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
+		chargen_ref = dirdbResolvePathWithBaseAndRef (dirdb_base, chargen_string, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
 
 #endif
 		uint8_t *kernalRom = loadRom(kernal_ref, 8192);
@@ -297,7 +297,7 @@ namespace libsidplayfp
 		char *romPath = 0;
 #ifdef __W32__
 		#error we need to make flags, so we can reverse the slashes
-		dirdbGetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_DRIVE); 
+		dirdbGetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_DRIVE);
 #else
 		dirdbGetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_NODRIVE);
 #endif
