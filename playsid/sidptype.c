@@ -139,6 +139,7 @@ static void __attribute__((constructor))init(void)
 	struct moduletype mt;
 
 	fsRegisterExt("SID");
+	fsRegisterExt("RSID");
 	mt.integer.i = MODULETYPE("SID");
 	fsTypeRegister (mt, SID_description, "plOpenCP", &SID_p);
 
