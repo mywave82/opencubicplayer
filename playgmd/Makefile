@@ -103,6 +103,8 @@ gmdl669.o: gmdl669.c \
 	$(CC) gmdl669.c -o $@ -c
 
 gmdlams.o: gmdlams.c \
+	gmdlams-v1.c \
+	gmdlams-v2.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \

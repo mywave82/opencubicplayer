@@ -115,6 +115,10 @@ nostm:
 			return MODULETYPE("PTM");
 
 	if (len>=7)
+		if (!memcmp(buf, "Extreme", 7))
+			return MODULETYPE("AMS");
+
+	if (len>=7)
 		if (!memcmp(buf, "AMShdr\x1A", 7))
 			return MODULETYPE("AMS");
 
@@ -290,8 +294,23 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		{
 			if (len>=((unsigned char)buf[7])+(unsigned)8)
 			{
-				cp437_f_to_utf8_z (buf + 8, (unsigned char)buf[7], m->title, sizeof (m->title));
-				snprintf (m->comment, sizeof (m->comment), "Advanced Module System %d.%02d", buf[7 + 1 + 1 + (unsigned char)buf[7]], buf[7 + 1 + (unsigned char)buf[7]]);
+				if (!memcmp(buf, "AMShdr\x1A", 7))
+				{
+					cp437_f_to_utf8_z (buf + 8, (unsigned char)buf[7], m->title, sizeof (m->title));
+					snprintf (m->comment, sizeof (m->comment), "Advanced Module System %d.%02x (Velvet Studio)", buf[7 + 1 + 1 + (unsigned char)buf[7]], buf[7 + 1 + (unsigned char)buf[7]]);
+				} else {
+					if (len > 18)
+					{
+						uint16_t extra_len = ((uint8_t)buf[16]) | (((uint8_t)buf[17])<<8);
+						int instrument_len = 17*(uint8_t)buf[10];
+						if ((len >= (18 + extra_len + instrument_len)) &&
+						    (len >= (18 + extra_len + 1 + (uint8_t)buf[18 + extra_len + instrument_len])))
+						{
+							cp437_f_to_utf8_z (buf + 18 + extra_len + instrument_len + 1, (uint8_t)buf[18+extra_len+instrument_len], m->title, sizeof (m->title));
+						}
+					}
+					snprintf (m->comment, sizeof (m->comment), "Advanced Module System %d.%02x (Extreme Tracker)", buf[8], buf[7]);
+				}
 				return 1;
 			}
 		}
@@ -427,9 +446,9 @@ const struct interfaceparameters _669_p =
 const char *AMS_description[] =
 {
 	//                                                                          |
-	"AMS - Advanced Module System - files are created by Velvet Studio by Velvet",
-	"Development. Open Cubic Player convers these internally into a generic",
-	"module with some quirks in the playback.", // quirk: MOD_EXPOFREQ MOD_EXPOPITCHENV
+	"AMS - Advanced Module System - files are created by Extreme Tracker and its",
+	"successor Velvet Studio by Velvet Development. Open Cubic Player converts",
+	"these internally into a generic module with some quirks in the playback.", // quirk: MOD_EXPOFREQ MOD_EXPOPITCHENV
 	NULL
 };
 
