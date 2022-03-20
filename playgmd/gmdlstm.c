@@ -314,8 +314,8 @@ static int _mpLoadSTM(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		for (i=0; i<m->channum; i++)
 		{
 			pp->tracks[i]=t*(m->channum+1)+i;
-			pp->gtrack=t*(m->channum+1)+m->channum;
 		}
+		pp->gtrack=t*(m->channum+1)+m->channum;
 	}
 
 	for (t=0; t<hdr.pats; t++)
