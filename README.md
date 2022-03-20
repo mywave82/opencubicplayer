@@ -7,7 +7,7 @@ UNIX port of Open Cubic Player, which is a text-based player with some few graph
 # What can it play?
 
 Amiga style [modules](https://en.wikipedia.org/wiki/Module_file) files with more: <!-- http://fileformats.archiveteam.org/wiki/Amiga_Module -->
-- \*.AMS, [Velvet Studio](http://www.pouet.net/prod.php?which=64890)
+- \*.AMS, [Velvet Studio](http://www.pouet.net/prod.php?which=64890) and [Extreme's Tracker](https://www.pouet.net/prod.php?which=88711)
 - \*.DMF, [X-Tracker](http://www.pouet.net/prod.php?which=55233)
 - \*.IT, [Impulse Tracker](https://en.wikipedia.org/wiki/Impulse_Tracker) or use the modern [Schism Tracker](http://schismtracker.org/)
 - \*.MDL, [DigiTrakker](http://www.pouet.net/prod.php?which=13371), now developed as [MilkyTracker](https://en.wikipedia.org/wiki/MilkyTracker)
@@ -28,6 +28,7 @@ Code from [STYMulator](http://atariarea.krap.pl/stymulator/) to play music from 
 
 Fork of [libsidplayfp](https://sourceforge.net/p/sidplay-residfp/wiki/Home/) to play music from [C64](https://en.wikipedia.org/wiki/Commodore_64) \([SID 6581/8580](https://en.wikipedia.org/wiki/MOS_Technology_6581)\):
 - \*.SID
+- \*.RSID
 
 Code from [aylet](http://www.svgalib.org/rus/aylet.html) to play music from [ZX Spectrum](https://en.wikipedia.org/wiki/ZX_Spectrum)/[Amstrad CPC](https://en.wikipedia.org/wiki/Amstrad_CPC) \([Yamaha YM2149](https://en.wikipedia.org/wiki/General_Instrument_AY-3-8910)\):
 - \*.AY
