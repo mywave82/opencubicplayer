@@ -86,7 +86,7 @@ AC_ARG_WITH([dumptools],            [AS_HELP_STRING([--with-dumptools],         
 AC_ARG_WITH([unifontdir],           [AS_HELP_STRING([--with-unifontdir=/path],       [the path to where ttf-unifont in located (used by X11, SDL1.x and SDL2)])], [], [with_unifontdir="${datarootdir}/fonts/truetype/unifont"])
 AC_ARG_WITH([unifont_ttf],          [AS_HELP_STRING([--with-unifont-ttf=/path],      [the full path to unifont.ttf (default is UNIFONTDIR/unifont.ttf); use this option if the unifont.ttf is named UniFont.ttf or similiar. If the filename contains version number it is recommended that this is fixed in unifont installation with non-version symlinks])],
                                                                                                                                                                   [], [with_unifont_ttf="${with_unifontdir}/unifont.ttf"])
-AC_ARG_WITH([unifont_csur_ttf],     [AS_HELP_STRING([--with-unifont-csur-ttf=/path], [the full path to unifont_csur.ttf (default is UNIFONTDIR/unifont_csur.ttf)])],
+AC_ARG_WITH([unifont_csur_ttf],     [AS_HELP_STRING([--with-unifont-csur-ttf=/path], [the full path to unifont_csur.ttf (default is UNIFONTDIR/unifont_csur.ttf) or disable by using --without-unifont-csur-ttf])],
                                                                                                                                                                   [], [with_unifont_csur_ttf="${with_unifontdir}/unifont_csur.ttf"])
 AC_ARG_WITH([unifont_upper_ttf],    [AS_HELP_STRING([--with-unifont-upper-tff=/path],[the full path to unifont_upper.ttf (default is UNIFONTDIR/unifont_upper.ttf)])],
                                                                                                                                                                   [], [with_unifont_upper_ttf="${with_unifontdir}/unifont_upper.ttf"])
@@ -458,19 +458,29 @@ AS_IF([test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11
 
 	dnl locate the ttf-unifont
 	AS_AC_EXPAND(UNIFONT_TTF, $with_unifont_ttf)
-	AS_AC_EXPAND(UNIFONT_CSUR_TTF, $with_unifont_csur_ttf)
-	AS_AC_EXPAND(UNIFONT_UPPER_TTF, $with_unifont_upper_ttf)
 	dnl remove double slashes
 	UNIFONT_TTF=`echo "$UNIFONT_TTF" | sed 's/\(\)\/\/*/\1\//g'`
-	UNIFONT_CSUR_TTF=`echo "$UNIFONT_CSUR_TTF" | sed 's/\(\)\/\/*/\1\//g'`
-	UNIFONT_UPPER_TTF=`echo "$UNIFONT_UPPER_TTF" | sed 's/\(\)\/\/*/\1\//g'`
 	AS_IF([test "x$cross_compiling" = "xyes"],[AC_MSG_NOTICE([Unable to verify unifont files due to cross-compilation])],[
 		AC_CHECK_FILE([$UNIFONT_TTF], [], [AC_MSG_ERROR([$UNIFONT_TTF (unifont.ttf) not found - please use --with-unifontdir=/dir/ or --with-unifont-ttf=/dir/file (needed by X11, SDL1.x and SDL2)])])
-		AC_CHECK_FILE([$UNIFONT_CSUR_TTF], [], [AC_MSG_ERROR([$UNIFONT_CSUR_TTF (unifont_csur.ttf) not found - please use --with-unifontdir=/dir/ or --with-unifont-csur-ttf=/dir/file (needed by X11, SDL1.x and SDL2)])])
-		AC_CHECK_FILE([$UNIFONT_UPPER_TTF], [], [AC_MSG_ERROR([$UNIFONT_UPPER_TTF (unifont_upper.ttf) not found - please use --with-unifontdir=/dir/ or --with-unifont-upper-ttf=/dir/file (needed by X11, SDL1.x and SDL2)])])
 	])
 	AC_DEFINE_UNQUOTED([UNIFONT_TTF], "$UNIFONT_TTF")
-	AC_DEFINE_UNQUOTED([UNIFONT_CSUR_TTF], "$UNIFONT_CSUR_TTF")
+
+	dnl CSUR is optional, since some distributions skip this file due to the scripts not being part of unicode standard
+	AS_IF([test x$with_unifont_csur_ttf != "xno"],[
+		AS_AC_EXPAND(UNIFONT_CSUR_TTF, $with_unifont_csur_ttf)
+		dnl remove double slashes
+		UNIFONT_CSUR_TTF=`echo "$UNIFONT_CSUR_TTF" | sed 's/\(\)\/\/*/\1\//g'`
+		AS_IF([test "x$cross_compiling" = "xyes"],[AC_MSG_NOTICE([Unable to verify unifont files due to cross-compilation])],[
+			AC_CHECK_FILE([$UNIFONT_CSUR_TTF], [], [AC_MSG_ERROR([$UNIFONT_CSUR_TTF (unifont_csur.ttf) not found - please use --with-unifontdir=/dir/ or --with-unifont-csur-ttf=/dir/file (needed by X11, SDL1.x and SDL2) or disable by using --without-unifont-csur-ttf])])
+		])
+		AC_DEFINE_UNQUOTED([UNIFONT_CSUR_TTF], "$UNIFONT_CSUR_TTF")
+	])
+
+	AS_AC_EXPAND(UNIFONT_UPPER_TTF, $with_unifont_upper_ttf)
+	UNIFONT_UPPER_TTF=`echo "$UNIFONT_UPPER_TTF" | sed 's/\(\)\/\/*/\1\//g'`
+	AS_IF([test "x$cross_compiling" = "xyes"],[AC_MSG_NOTICE([Unable to verify unifont files due to cross-compilation])],[
+		AC_CHECK_FILE([$UNIFONT_UPPER_TTF], [], [AC_MSG_ERROR([$UNIFONT_UPPER_TTF (unifont_upper.ttf) not found - please use --with-unifontdir=/dir/ or --with-unifont-upper-ttf=/dir/file (needed by X11, SDL1.x and SDL2)])])
+	])
 	AC_DEFINE_UNQUOTED([UNIFONT_UPPER_TTF], "$UNIFONT_UPPER_TTF")
 ])
 
