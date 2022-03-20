@@ -131,7 +131,7 @@ enum
 	cmdPitchSlideUp, cmdPitchSlideDown, cmdPitchSlideToNote,
 	cmdRowPitchSlideUp, cmdRowPitchSlideDown,
 	cmdPanSlide, cmdRowPanSlide,
-	cmdDelay,
+	cmdDelay_NotImplemented_Use_cmdPlayDelay,
 	cmdVolVibrato, cmdVolVibratoSetWave, cmdTremor,
 	cmdPitchVibrato, cmdPitchVibratoSetSpeed, cmdPitchVibratoFine,
 	cmdPitchVibratoSetWave, cmdArpeggio,

@@ -34,12 +34,11 @@
 
 void __attribute__ ((visibility ("internal"))) mpOptimizePatLens(struct gmdmodule *m)
 {
-	uint8_t *lastrows=malloc(sizeof(uint8_t)*m->patnum);
+	uint8_t *lastrows=calloc(sizeof(uint8_t), m->patnum);
 	unsigned int i;
 
 	if (!lastrows)
 		return;
-	memset(lastrows, 0, m->patnum);
 	for (i=0; i<m->ordnum; i++)
 	{
 		struct gmdtrack t;
@@ -268,10 +267,9 @@ int mpAllocInstruments(struct gmdmodule *m, int n)
 	unsigned int i;
 
 	m->instnum=n;
-	m->instruments=malloc(sizeof(struct gmdinstrument)*m->instnum);
+	m->instruments=calloc(sizeof(struct gmdinstrument), m->instnum);
 	if (!m->instruments)
 		return 0;
-	memset(m->instruments, 0, m->instnum*sizeof(struct gmdinstrument));
 	for (i=0; i<m->instnum; i++)
 		memset(m->instruments[i].samples, -1, 2*128);
 	return 1;
@@ -280,30 +278,27 @@ int mpAllocInstruments(struct gmdmodule *m, int n)
 int mpAllocTracks(struct gmdmodule *m, int n)
 {
 	m->tracknum=n;
-	m->tracks=malloc(sizeof(struct gmdtrack)*m->tracknum);
+	m->tracks=calloc(sizeof(struct gmdtrack), m->tracknum);
 	if (!m->tracks)
 		return 0;
-	memset(m->tracks, 0, m->tracknum*sizeof(struct gmdtrack));
 	return 1;
 }
 
 int mpAllocPatterns(struct gmdmodule *m, int n)
 {
 	m->patnum=n;
-	m->patterns=malloc(sizeof(struct gmdpattern)*m->patnum);
+	m->patterns=calloc(sizeof(struct gmdpattern), m->patnum);
 	if (!m->patterns)
 		return 0;
-	memset(m->patterns, 0, m->patnum*sizeof(struct gmdpattern));
 	return 1;
 }
 
 int mpAllocSamples(struct gmdmodule *m, int n)
 {
 	m->sampnum=n;
-	m->samples=malloc(sizeof(struct sampleinfo)*m->sampnum);
+	m->samples=calloc(sizeof(struct sampleinfo), m->sampnum);
 	if (!m->samples)
 		return 0;
-	memset(m->samples, 0, m->sampnum*sizeof(struct sampleinfo));
 	return 1;
 }
 
@@ -319,10 +314,9 @@ int mpAllocEnvelopes(struct gmdmodule *m, int n)
 int mpAllocOrders(struct gmdmodule *m, int n)
 {
 	m->ordnum=n;
-	m->orders=malloc(sizeof(uint16_t)*m->ordnum);
+	m->orders=calloc(sizeof(uint16_t), m->ordnum);
 	if (!m->orders)
 		return 0;
-	memset(m->orders, 0, m->ordnum*sizeof(uint16_t));
 	return 1;
 }
 
@@ -331,10 +325,9 @@ int mpAllocModSamples(struct gmdmodule *m, int n)
 	unsigned int i;
 
 	m->modsampnum=n;
-	m->modsamples=malloc(sizeof(struct gmdsample)*m->modsampnum);
+	m->modsamples=calloc(sizeof(struct gmdsample), m->modsampnum);
 	if (!m->modsamples)
 		return 0;
-	memset(m->modsamples, 0, m->modsampnum*sizeof(struct gmdsample));
 	for (i=0; i<m->modsampnum; i++)
 	{
 		m->modsamples[i].volfade=0xFFFF;
