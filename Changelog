@@ -1,3 +1,15 @@
+Version 0.2.95
+==============
+
+ * Add support for *.AMS Extreme's Tracker (v1.2 and v1.3)
+ * Add *.RSID as a recognized filename
+ * Created a setup-dialog for libsidplayfp (*.SID/*.RSID) playback plugin
+ * Do not require unifont-CSUR (not all distrubutions includes this part of
+   GNU unifont)
+ * Minor fix for *.STM files
+ * Fixed non-standard code that clang failed to compile
+ * MacOS/OSX: remove `-flat_namespace` usage
+
 Version 0.2.94
 ==============
 

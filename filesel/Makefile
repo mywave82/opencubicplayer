@@ -57,6 +57,7 @@ pfilesel$(LIB_SUFFIX): $(pfilesel_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ -lbz2 -lz $(MATH_LIBS) $(ICONV_LIBS) $(LIBCJSON_LIBS)
 
 clean:
+	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR) clean
 	rm -f *.o *$(LIB_SUFFIX) adbmeta-test dirdb-test filesystem-bzip2-test filesystem-filehandle-cache-test filesystem-gzip-test filesystem-tar-test mdb-test
 
 ifeq ($(STATIC_BUILD),1)
