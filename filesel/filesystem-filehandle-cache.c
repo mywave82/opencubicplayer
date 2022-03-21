@@ -931,7 +931,7 @@ redo_topup:
 		 * |----FILE-DATA-ON-DISK------------------------------------|
 		 * |                                                         |
 		 * |-HEAD-CACHE-] [-MOVING-WINDOW-CACHE-]       [-TAIL-CACHE-|
-                 *                       [-WINDOW-CACHE-|------] 
+                 *                       [-WINDOW-CACHE-|------]
 		 *
 		 *                                         ^
 		 *                                         |
@@ -941,14 +941,13 @@ redo_topup:
 		if ((s->pos + iterlen) < (s->cache_line[1].offset + s->cache_line[1].fill + s->cache_line[1].size))
 		{
 			size_t keep = (s->cache_line[1].offset + s->cache_line[1].fill + s->cache_line[1].size) - (s->pos + iterlen);
-                                                    
 
 			DEBUG_PRINT ("CACHE MIDDLE, ONLY KEEP LAST LEN=%d\n", (int)keep);
 
 			memmove (s->cache_line[1].data,
 			         s->cache_line[1].data + s->cache_line[1].fill - keep,
 			         keep);
-			s->cache_line[1].offset += s->cache_line[1].fill - keep; 
+			s->cache_line[1].offset += s->cache_line[1].fill - keep;
 			s->cache_line[1].fill = keep;
 
 			DUMP_SELF (s);
@@ -962,7 +961,7 @@ redo_topup:
 		 * |----FILE-DATA-ON-DISK----------------------------------------------------------|
 		 * |                                                                               |
 		 * |-HEAD-CACHE-] [-MOVING-WINDOW-CACHE-]                             [-TAIL-CACHE-|
-                 *                    
+                 *
 		 *
 		 *                                                              ^
 		 *                                                              |

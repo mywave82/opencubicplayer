@@ -46,7 +46,7 @@ const char adbMetaTag[16] = "OCPArchiveMeta\x1b\x00";
   8 bytes filesize
   4 bytes datasize
   X bytes data
-  
+
  */
 
 struct adbMetaHeader

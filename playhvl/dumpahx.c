@@ -507,8 +507,8 @@ int DumpSamples (unsigned char *mem, int *offset, int len)
 		}
 
 		/* Must be all zero for AHX0 */
-		printf ("                    Filter modulation speed: %d\n", 
-			((mem[*offset+ 1] & 0xf8) >> 3) | 
+		printf ("                    Filter modulation speed: %d\n",
+			((mem[*offset+ 1] & 0xf8) >> 3) |
 			((mem[*offset+12] & 0x80) >> 2) |
 			((mem[*offset+19] & 0x80) >> 1));
 

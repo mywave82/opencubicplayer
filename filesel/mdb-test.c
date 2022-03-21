@@ -35,7 +35,7 @@ static ssize_t mdb_test_read (int fd, void *buf, size_t size);
 static ssize_t mdb_test_write (int fd, void *buf, size_t size);
 static int mdb_test_open(const char *pathname, int flags, ...);
 static off_t mdb_test_lseek (int fd, off_t offset, int whence);
-static int mdb_test_close (int fd); 
+static int mdb_test_close (int fd);
 static int mdb_test_flock (int fd, int operation);
 
 #include "mdb.c"
@@ -401,7 +401,7 @@ int mdb_heap1_mdbNew (int test)
 		(mdbDataSize     !=  24) ? ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET : ANSI_COLOR_RED "Failed, heap stuck" ANSI_COLOR_RESET,
 		(int)mdbDirtyMapSize,
 		(test==1)?
-		(mdbDirtyMapSize != 256) ? ANSI_COLOR_RED "Failed, heap resized" ANSI_COLOR_RESET : ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET : 
+		(mdbDirtyMapSize != 256) ? ANSI_COLOR_RED "Failed, heap resized" ANSI_COLOR_RESET : ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET :
 		(mdbDirtyMapSize != 24) ? ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET : ANSI_COLOR_RED "Failed, heap stuck" ANSI_COLOR_RESET );
 	mdb_heap1_mdbNew_finalize ();
 
@@ -425,7 +425,7 @@ int mdb_heap1_mdbNew (int test)
 		(mdbDataSize     ==  24) ? ANSI_COLOR_RED "Failed, heap resized" ANSI_COLOR_RESET : ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET,
 		(int)mdbDirtyMapSize,
 		(test==1)?
-		(mdbDirtyMapSize != 256) ? ANSI_COLOR_RED "Failed, heap resized" ANSI_COLOR_RESET : ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET : 
+		(mdbDirtyMapSize != 256) ? ANSI_COLOR_RED "Failed, heap resized" ANSI_COLOR_RESET : ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET :
 		(mdbDirtyMapSize != 24) ? ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET : ANSI_COLOR_RED "Failed, heap stuck" ANSI_COLOR_RESET );
 	mdb_heap1_mdbNew_finalize ();
 

@@ -493,7 +493,7 @@ const char *MTM_description[] =
 {
 	//                                                                          |
 	"MTM files are created by Multi Tracker by DigiTrakker by Prodatron. It is a",
-	"MSDOS based tracker, and was the first(?) to support 32 channels. Open Cubic", 
+	"MSDOS based tracker, and was the first(?) to support 32 channels. Open Cubic",
 	"Player convers these internally into a generic module.",
 	NULL
 };
