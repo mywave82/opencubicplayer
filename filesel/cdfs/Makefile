@@ -19,7 +19,7 @@ endif
 .PHONY: all clean install uninstall
 
 cdfs$(LIB_SUFFIX): audio.o cdfs.o cue.o iso9660.o main.o toc.o udf.o wave.o
-	$(CC) $(SHARED_FLAGS) $(ICONV_LIBS) -o $@ $^
+	$(CC) $(SHARED_FLAGS) $(ICONV_LIBS) -o $@ $^ $(LIBDISCID_LIBS)
 
 audio.o: \
 	audio.c \
@@ -28,7 +28,7 @@ audio.o: \
 	audio.h \
 	../musicbrainz.h \
 	cdfs.h
-	$(CC) $< -o $@ -c
+	$(CC) $< -o $@ -c $(LIBDISCID_CFLAGS)
 
 cdfs.o: \
 	cdfs.c \
