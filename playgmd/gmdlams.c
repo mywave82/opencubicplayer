@@ -78,20 +78,21 @@ static const unsigned char envsin[513]=
 struct AMSPatternE
 {
 	uint8_t fill;
-#define FILL_EFFECT 1
-#define FILL_NOTE 2
-#define FILL_INSTRUMENT 4
-#define FILL_VOLUME 8
-#define FILL_PAN 16
-#define FILL_DELAYNOTE 32
-#define FILL_KEYOFF 64
+#define FILL_NOTE 1
+#define FILL_INSTRUMENT 2
+#define FILL_VOLUME 4
+#define FILL_PAN 8
+#define FILL_DELAYNOTE 16
+#define FILL_KEYOFF 32
+#define MAX_EFFECTS 4
 	uint8_t note;
 	uint8_t instrument;
 	uint8_t volume;
 	uint8_t pan;
 	uint8_t delaynote;
-	uint8_t effect; /* how many could the real trackers support? */
-	uint8_t parameter;
+	uint8_t effects;
+	uint8_t effect[MAX_EFFECTS];    /* how many could the real trackers support? */
+	uint8_t parameter[MAX_EFFECTS];
 };
 struct AMSPatternC
 {
@@ -326,7 +327,7 @@ static int _mpLoadAMS_ConvertPattern (struct gmdmodule *m, struct ocpfilehandle_
 {
 	struct gmdpattern *pp = &m->patterns[patternindex];
 	int curchan;
-	unsigned char temptrack[4000]; /* way too big compared to 2+64*(4+6) */
+	unsigned char temptrack[4000]; /* way too big compared to 2+32*2 + 256*(6+2*4) */
 
 	/* configure default panning */
 	if (m->orders[0] == patternindex)
@@ -354,6 +355,7 @@ static int _mpLoadAMS_ConvertPattern (struct gmdmodule *m, struct ocpfilehandle_
 
 		for (row=0; row<pattern->rowcount; row++)
 		{
+			int e;
 			if (pattern->channel[curchan].row[row].fill & (FILL_NOTE | FILL_INSTRUMENT | FILL_VOLUME | FILL_PAN | FILL_DELAYNOTE))
 			{
 				uint8_t *act = cp;
@@ -389,10 +391,10 @@ static int _mpLoadAMS_ConvertPattern (struct gmdmodule *m, struct ocpfilehandle_
 				putcmd(&cp, cmdKeyOff, 0);
 			}
 
-			if (pattern->channel[curchan].row[row].fill & FILL_EFFECT)
+			for (e=0; e < pattern->channel[curchan].row[row].effects; e++)
 			{
-				uint8_t cmd = pattern->channel[curchan].row[row].effect;
-				uint8_t data = pattern->channel[curchan].row[row].parameter;
+				uint8_t cmd = pattern->channel[curchan].row[row].effect[e];
+				uint8_t data = pattern->channel[curchan].row[row].parameter[e];
 				switch (cmd)
 				{
 					case 0x00:
@@ -706,10 +708,11 @@ static int _mpLoadAMS_ConvertPattern (struct gmdmodule *m, struct ocpfilehandle_
 		{
 			for (curchan=0; curchan<m->channum; curchan++)
 			{
-				if (pattern->channel[curchan].row[row].fill & FILL_EFFECT)
+				int e;
+				for (e=0; e < pattern->channel[curchan].row[row].effects; e++)
 				{
-					uint8_t cmd = pattern->channel[curchan].row[row].effect;
-					uint8_t data = pattern->channel[curchan].row[row].parameter;
+					uint8_t cmd = pattern->channel[curchan].row[row].effect[e];
+					uint8_t data = pattern->channel[curchan].row[row].parameter[e];
 					switch (cmd)
 					{
 						case 0x0b:

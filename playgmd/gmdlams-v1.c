@@ -150,12 +150,26 @@ the low 6 bits are assumed to be a volume command. You
 have to multiply the volume by 2 to get the proper value
 (Volume will only be stored this way if it's dividible with 2)
 */
-		uint8_t b0 = (*buffer)[patpos++];
-		uint8_t b1 = (*buffer)[patpos++];
-		uint8_t b2;
-		uint8_t ch = b0 & 0x1f;
+		uint8_t b0, b1, b2, ch;
+
+		b0 = (*buffer)[patpos++];
+
+		DEBUG_PRINTF (stderr, "pattern %02x rowpos %02x  %02x", patternindex, rowpos, b0);
+
+		if (b0 == 0xff)
+		{
+			DEBUG_PRINTF (stderr, "     no data on row\n");
+			rowpos++;
+			continue;
+		}
+
+		ch = b0 & 0x1f;
+		b1 = (*buffer)[patpos++];
+		DEBUG_PRINTF (stderr, " %02x", b1);
+
 		if (!(b0 & 0x40)) /* 0=Only Read Period+SampleNr, 1=Only Read Command */
 		{
+			DEBUG_PRINTF (stderr, " ins+note");
 			if (patpos >= patlen) break;
 			b2 = (*buffer)[patpos++];
 			if (!(b0 & 0x20)) /* 0=Sample Channel, 1=MIDI channel */
@@ -178,6 +192,7 @@ have to multiply the volume by 2 to get the proper value
 				if (patpos >= patlen) break;
 				b0 |= 0x40;
 				b1 = (*buffer)[patpos++];
+				DEBUG_PRINTF (stderr, " %02x", b1);
 			}
 		}
 
@@ -186,6 +201,7 @@ have to multiply the volume by 2 to get the proper value
 anothercommand:
 			if (b1 & 0x40) /* 1=Low 6 bits are volume/2 */
 			{
+				DEBUG_PRINTF (stderr, " vol");
 				if (!(b0 & 0x20)) /* 0=Sample Channel, 1=MIDI channel */
 				{
 					pattern->channel[ch].row[rowpos].volume = (b1 & 0x3f) << 1;
@@ -194,6 +210,7 @@ anothercommand:
 			} else {
 				if (patpos >= patlen) break;
 				b2 = (*buffer)[patpos++];
+				DEBUG_PRINTF (stderr, " %02x cmd", b2);
 
 				if (!(b0 & 0x20)) /* 0=Sample Channel, 1=MIDI channel */
 				{
@@ -212,9 +229,12 @@ anothercommand:
 						pattern->channel[ch].row[rowpos].delaynote = b2 & 0x0f;
 						pattern->channel[ch].row[rowpos].fill |= FILL_DELAYNOTE;
 					} else {
-						pattern->channel[ch].row[rowpos].effect = cmd;
-						pattern->channel[ch].row[rowpos].parameter = b2;
-						pattern->channel[ch].row[rowpos].fill |= FILL_EFFECT;
+						if (pattern->channel[ch].row[rowpos].effects < MAX_EFFECTS)
+						{
+							pattern->channel[ch].row[rowpos].effect[pattern->channel[ch].row[rowpos].effects] = cmd;
+							pattern->channel[ch].row[rowpos].parameter[pattern->channel[ch].row[rowpos].effects] = b2;
+							pattern->channel[ch].row[rowpos].effects++;
+						}
 					}
 					if ((cmd == 0x03) || (cmd == 0x05) || (cmd == 0x15))
 					{
@@ -226,6 +246,7 @@ anothercommand:
 			{
 				if (patpos >= patlen) break;
 				b1 = (*buffer)[patpos++];
+				DEBUG_PRINTF (stderr, " %02x", b1);
 				goto anothercommand;
 			}
 		}
@@ -233,6 +254,7 @@ anothercommand:
 		{
 			rowpos++;
 		}
+		DEBUG_PRINTF (stderr, "\n");
 	}
 
 	return errOk;

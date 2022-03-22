@@ -489,8 +489,11 @@ command:
 		uint8_t b1;
 		uint8_t ch = b0 & 0x1f;
 
+		DEBUG_PRINTF (stderr, "pattern %d row %02x  %02x", patternindex, rowpos, b0);
+
 		if (b0 == 0xff) /* This is not in libmodplug per 20th March 2022 */
 		{
+			DEBUG_PRINTF (stderr, "     no data on row\n");
 			rowpos++;
 			continue;
 		}
@@ -503,6 +506,8 @@ command:
 				break;
 			}
 			b1 = (*buffer)[patpos++];
+
+			DEBUG_PRINTF (stderr, " %02x NOTE", b1);
 
 			/* note */
 			if (b1 & 0x7f)
@@ -521,6 +526,7 @@ command:
 			pattern->channel[ch].row[rowpos].instrument = (*buffer)[patpos++];
 #else
 			pattern->channel[ch].row[rowpos].instrument = (*buffer)[patpos++];
+			DEBUG_PRINTF (stderr, " %02x INSTRUMENT", pattern->channel[ch].row[rowpos].instrument);
 			if (pattern->channel[ch].row[rowpos].instrument)
 			{
 				pattern->channel[ch].row[rowpos].instrument--;
@@ -540,9 +546,11 @@ command:
 				break;
 			}
 			b1 = (*buffer)[patpos++];
+			DEBUG_PRINTF (stderr, " %02x", b1);
 
 			if (b1 & 0x40) /* 1=Low 6 bits are volume/2 */
 			{
+				DEBUG_PRINTF (stderr, " VOL/2");
 				pattern->channel[ch].row[rowpos].volume = (b1 & 0x3f) << 1;
 				pattern->channel[ch].row[rowpos].fill |= FILL_VOLUME;
 			} else {
@@ -554,6 +562,7 @@ command:
 					break;
 				}
 				b2 = (*buffer)[patpos++];
+				DEBUG_PRINTF (stderr, " %02x CMD+PARAM", b2);
 
 				cmd = b1 & 0x3f;
 
@@ -570,9 +579,12 @@ command:
 					pattern->channel[ch].row[rowpos].delaynote = b2 & 0x0f;
 					pattern->channel[ch].row[rowpos].fill |= FILL_DELAYNOTE;
 				} else {
-					pattern->channel[ch].row[rowpos].effect = cmd;
-					pattern->channel[ch].row[rowpos].parameter = b2;
-					pattern->channel[ch].row[rowpos].fill |= FILL_EFFECT;
+					if (pattern->channel[ch].row[rowpos].effects < MAX_EFFECTS)
+					{
+						pattern->channel[ch].row[rowpos].effect[pattern->channel[ch].row[rowpos].effects] = cmd;
+						pattern->channel[ch].row[rowpos].parameter[pattern->channel[ch].row[rowpos].effects] = b2;
+						pattern->channel[ch].row[rowpos].effects++;
+					}
 				}
 				if ((cmd == 0x03) || (cmd == 0x05) || (cmd == 0x15))
 				{
@@ -584,6 +596,7 @@ command:
 		{
 			rowpos++;
 		}
+		DEBUG_PRINTF (stderr, "\n");
 	}
 
 	return errOk;
