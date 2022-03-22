@@ -30,6 +30,7 @@ LIBSIDPLAYOBJECTS=libsidplayfp-builders-resid-builder-resid-builder.o \
 	libsidplayfp-builders-residfp-builder-residfp-Filter.o \
 	libsidplayfp-builders-residfp-builder-residfp-Filter6581.o \
 	libsidplayfp-builders-residfp-builder-residfp-Filter8580.o \
+	libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig.o \
 	libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig6581.o \
 	libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig8580.o \
 	libsidplayfp-builders-residfp-builder-residfp-OpAmp.o \
@@ -203,6 +204,9 @@ libsidplayfp-builders-residfp-builder-residfp-Filter6581.o: \
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-Filter8580.o: \
 	libsidplayfp-git/src/builders/residfp-builder/residfp/Filter8580.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
+libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig.o: \
+	libsidplayfp-git/src/builders/residfp-builder/residfp/FilterModelConfig.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig6581.o: \
 	libsidplayfp-git/src/builders/residfp-builder/residfp/FilterModelConfig6581.cpp
