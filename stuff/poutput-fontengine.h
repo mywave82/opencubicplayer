@@ -31,6 +31,10 @@ void fontengine_8x16_iterate (void);
 uint8_t *fontengine_8x8(uint32_t codepoint, int *width);
 uint8_t *fontengine_8x16(uint32_t codepoint, int *width);
 
+/* usde by fontdebug only */
+int fontengine_8x8_forceunifont (uint32_t codepoint, int *width, uint8_t buffer[16]);
+int fontengine_8x16_forceunifont (uint32_t codepoint, int *width, uint8_t buffer[32]);
+
 int fontengine_init (void);
 
 void fontengine_done (void);

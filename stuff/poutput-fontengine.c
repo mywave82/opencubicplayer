@@ -144,6 +144,7 @@ static void fontengine_8x8_append (struct font_entry_8x8_t *entry)
 			fprintf (stderr, "fontengine_8x8_append: malloc() failure....\n");
 			return;
 		}
+
 		font_entries_8x8 = newentries;
 		font_entries_8x8_allocated = newallocated;
 	}
@@ -169,6 +170,7 @@ static void fontengine_8x16_append (struct font_entry_8x16_t *entry)
 			fprintf (stderr, "fontengine_8x16_append: malloc() failure....\n");
 			return;
 		}
+
 		font_entries_8x16 = newentries;
 		font_entries_8x16_allocated = newallocated;
 	}
@@ -205,11 +207,199 @@ void fontengine_8x8_iterate (void)
 	}
 }
 
+int fontengine_8x8_forceunifont (uint32_t codepoint, int *width, uint8_t data[16])
+{
+	TTF_Surface *text_surface = 0;
+
+	if (codepoint == 0)
+	{
+		codepoint = ' ';
+	}
+
+	       if (                            (codepoint <= 0x0d8ff)  ||
+	            ((codepoint >= 0x0f900) && (codepoint <= 0x0ffff)) )
+	{
+		text_surface = unifont_bmp ? TTF_RenderGlyph32_Shaded (unifont_bmp, codepoint) : 0;
+#ifdef UNIFONT_CSUR_TTF
+	} else if ( ((codepoint >= 0x0e000) && (codepoint <= 0x0f8ff)) )
+	{
+		text_surface = unifont_csur ? TTF_RenderGlyph32_Shaded (unifont_csur, codepoint) : 0;
+#endif
+	} else if ( ((codepoint >= 0x10000) && (codepoint <= 0x1ffff)) ||
+	            ((codepoint >= 0xe0000) && (codepoint <= 0xeffff)) )
+	{
+		text_surface = unifont_upper ? TTF_RenderGlyph32_Shaded (unifont_upper, codepoint) : 0;
+#ifdef UNIFONT_CSUR_TTF
+	} else if ( ((codepoint >= 0xf0000) && (codepoint >= 0xffffd)) )
+	{
+		text_surface = unifont_csur ? TTF_RenderGlyph32_Shaded (unifont_csur, codepoint) : 0;
+#endif
+	}
+
+	if (text_surface && ((text_surface->w == 8) || (text_surface->w == 16)) && (text_surface->h == 16))
+	{
+		int x, y, o=0, i=0;
+		uint8_t data8[32];
+		*width = text_surface->w;
+
+		for (y=0; y < text_surface->h; y++)
+		{
+			for (x=0; x < text_surface->w; x+=8)
+			{
+				data8[o] = 0;
+				if (((uint8_t*)text_surface->pixels)[i++]) data8[o] |= 0x80;
+				if (((uint8_t*)text_surface->pixels)[i++]) data8[o] |= 0x40;
+				if (((uint8_t*)text_surface->pixels)[i++]) data8[o] |= 0x20;
+				if (((uint8_t*)text_surface->pixels)[i++]) data8[o] |= 0x10;
+				if (((uint8_t*)text_surface->pixels)[i++]) data8[o] |= 0x08;
+				if (((uint8_t*)text_surface->pixels)[i++]) data8[o] |= 0x04;
+				if (((uint8_t*)text_surface->pixels)[i++]) data8[o] |= 0x02;
+				if (((uint8_t*)text_surface->pixels)[i++]) data8[o] |= 0x01;
+				o++;
+			}
+			i -= text_surface->w;
+			i += text_surface->pitch;
+		}
+
+		/* SCALE */
+		if (*width == 16)
+		{
+			int iter = 0;
+			int height = 16;
+			uint16_t data16[16];
+			memcpy (data16, data8, 32);
+			while (height > 8)
+			{
+				int i;
+				iter=!iter;
+				if (data16[0] == 0) /* first is blank */
+				{
+					memmove (data16, data16 + 1, (height - 1)<<1);
+					height--;
+					if (height == 8) break;
+				}
+
+				if ((data16[height-2] == 0) && (data16[height-1])) /* two last are blank */
+				{
+					height--;
+					continue;
+				}
+
+				if (iter)
+				{
+					for (i=0; i < (height - 1); i++) /* find duplicates */
+					{
+						if (data16[i] == data16[i+1])
+						{
+							memmove (data16 + i, data16 + i + 1, (height - i - 1)<<1);
+							height--;
+							i = 20;
+							break;
+						}
+					}
+				} else {
+					for (i=height - 2; i >= 0; i--) /* find duplicates */
+					{
+						if (data16[i] == data16[i+1])
+						{
+							memmove (data16 + i, data16 + i + 1, (height - i - 1)<<1);
+							height--;
+							i = 20;
+							break;
+						}
+					}
+				}
+				if (i == 20) continue;
+
+				if ((data16[height-1])) /* last last is blank */
+				{
+					height--;
+					continue;
+				}
+
+				for (i=0;;i++) /* merge lines */
+				{
+					data16[height - i - 1] |= data16[height - i];
+					memmove (data16 + height - i - 1, data16 + height - i, (i)<<1);
+					height--;
+					if (height <= 8) break;
+				}
+			}
+			memcpy (data, data16, 16);
+		} else {
+			int iter = 0;
+			int height = 16;
+			while (height > 8)
+			{
+				int i;
+				iter=!iter;
+				if (data8[0] == 0) /* first is blank */
+				{
+					memmove (data8, data8 + 1, height - 1);
+					height--;
+					if (height == 8) break;
+				}
+
+				if ((data8[height-2] == 0) && (data8[height-1])) /* two last are blank */
+				{
+					height--;
+					continue;
+				}
+
+				if (iter)
+				{
+					for (i=0; i < (height - 1); i++) /* find duplicates */
+					{
+						if (data8[i] == data8[i+1])
+						{
+							memmove (data8 + i, data8 + i + 1, height - i - 1);
+							height--;
+							i = 20;
+							break;
+						}
+					}
+				} else {
+					for (i=height - 2; i >= 0; i--) /* find duplicates */
+					{
+						if (data8[i] == data8[i+1])
+						{
+							memmove (data8 + i, data8 + i + 1, height - i - 1);
+							height--;
+							i = 20;
+							break;
+						}
+					}
+				}
+				if (i == 20) continue;
+
+				if ((data8[height-1])) /* last last is blank */
+				{
+					height--;
+					continue;
+				}
+
+				for (i=0;;i++) /* merge lines */
+				{
+					data8[height - i - 1] |= data8[height - i];
+					memmove (data8 + height - i - 1, data8 + height - i, i);
+					height--;
+					if (height <= 8) break;
+				}
+			}
+			memcpy (data, data8, 8);
+		}
+		return 0;
+	} else {
+		*width = 8;
+		bzero (data, 16);
+		return 1;
+	}
+}
+
 /* width will be set to 8 or 16, depending on the glyph */
 uint8_t *fontengine_8x8(uint32_t codepoint, int *width)
 {
 	int i;
-	TTF_Surface *text_surface = 0;
 	struct font_entry_8x8_t *entry = 0;
 
 	if (codepoint == 0)
@@ -228,72 +418,14 @@ uint8_t *fontengine_8x8(uint32_t codepoint, int *width)
 		}
 	}
 
-#warning TODO, we need to extract and scale these
-#if 0
-	       if (                            (codepoint <= 0x0d8ff)  ||
-	            ((codepoint >= 0x0f900) && (codepoint <= 0x0ffff)) )
-	{
-		text_surface = unifont_bmp ? TTF_RenderGlyph32_Shaded (unifont_bmp, codepoint) : 0;
-	} else if ( ((codepoint >= 0x0e000) && (codepoint <= 0x0f8ff)) )
-	{
-		text_surface = unifont_csur ? TTF_RenderGlyph32_Shaded (unifont_csur, codepoint) : 0;
-	} else if ( ((codepoint >= 0x10000) && (codepoint <= 0x1ffff)) ||
-	            ((codepoint >= 0xe0000) && (codepoint <= 0xeffff)) )
-	{
-		text_surface = unifont_upper ? TTF_RenderGlyph32_Shaded (unifont_upper, codepoint) : 0;
-	} else if ( ((codepoint >= 0xf0000) && (codepoint >= 0xffffd)) )
-	{
-		text_surface = unifont_csur ? TTF_RenderGlyph32_Shaded (unifont_csur, codepoint) : 0;
-	}
-#else
-	fprintf (stderr, "TODO scale glyph U+%X\n", codepoint);
-#endif
-
 	entry = malloc (sizeof (*entry));
-	if (text_surface)
-	{
-		if ((text_surface->w != 8) && (text_surface->w != 16))
-		{
-			memset (entry->data, 0xaa, sizeof (entry->data));
-			entry->width = 8;
-			fprintf (stderr, "TTF + unifont + U+%X: gave invalid width: %d\n", (int)codepoint, (int)text_surface->w);
-		} if (text_surface->h != 16)
-		{
-			memset (entry->data, 0x42, sizeof (entry->data));
-			entry->width = 8;
-			fprintf (stderr, "TTF + unifont + U+%X: gave invalid height: %d\n", (int)codepoint, (int)text_surface->h);
-		} else {
-			int x, y, o=0, i=0;
-			entry->width = text_surface->w;
-			for (y=0; y < text_surface->h; y++)
-			{
-				for (x=0; x < text_surface->w; x+=8)
-				{
-					entry->data[o] = 0;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x80;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x40;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x20;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x10;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x08;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x04;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x02;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x01;
-					o++;
-				}
-				i -= text_surface->w;
-				i += text_surface->pitch;
-			}
-		}
-	} else {
-		memset (entry->data, 0x18, sizeof (entry->data));
-		entry->width = 8;
-		fprintf (stderr, "TTF + unifont + U+%X: did not find a glyph\n", (int)codepoint);
-	}
+	fontengine_8x8_forceunifont (codepoint, width, entry->data);
+
+	entry->width = *width;
 	entry->codepoint = codepoint;
 	entry->score=0;
 	fontengine_8x8_append(entry);
 
-	*width = entry->width;
 	return entry->data;
 }
 
@@ -320,27 +452,13 @@ void fontengine_8x16_iterate (void)
 	}
 }
 
-/* width will be set to 8 or 16, depending on the glyph */
-uint8_t *fontengine_8x16(uint32_t codepoint, int *width)
+int fontengine_8x16_forceunifont (uint32_t codepoint, int *width, uint8_t data[32])
 {
-	int i;
 	TTF_Surface *text_surface = 0;
-	struct font_entry_8x16_t *entry = 0;
 
 	if (codepoint == 0)
 	{
 		codepoint = ' ';
-	}
-
-	for (i=0; i < font_entries_8x16_fill; i++)
-	{
-		if (font_entries_8x16[i]->codepoint == codepoint)
-		{
-			i = fontengine_8x16_scoreup (i);
-			i = fontengine_8x16_scoreup (i);
-			*width = font_entries_8x16[i]->width;
-			return font_entries_8x16[i]->data;
-		}
 	}
 
 	       if (                            (codepoint <= 0x0d8ff)  ||
@@ -363,51 +481,67 @@ uint8_t *fontengine_8x16(uint32_t codepoint, int *width)
 #endif
 	}
 
-	entry = malloc (sizeof (*entry));
-	if (text_surface)
+	if (text_surface && ((text_surface->w == 8) || (text_surface->w == 16)) && (text_surface->h == 16))
 	{
-		if ((text_surface->w != 8) && (text_surface->w != 16))
+		int x, y, o=0, i=0;
+		*width = text_surface->w;
+		for (y=0; y < text_surface->h; y++)
 		{
-			memset (entry->data, 0xaa, sizeof (entry->data));
-			entry->width = 8;
-			fprintf (stderr, "TTF + unifont + U+%X: gave invalid width: %d\n", (int)codepoint, (int)text_surface->w);
-		} if (text_surface->h != 16)
-		{
-			memset (entry->data, 0x42, sizeof (entry->data));
-			entry->width = 8;
-			fprintf (stderr, "TTF + unifont + U+%X: gave invalid height: %d\n", (int)codepoint, (int)text_surface->h);
-		} else {
-			int x, y, o=0, i=0;
-			entry->width = text_surface->w;
-			for (y=0; y < text_surface->h; y++)
+			for (x=0; x < text_surface->w; x+=8)
 			{
-				for (x=0; x < text_surface->w; x+=8)
-				{
-					entry->data[o] = 0;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x80;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x40;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x20;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x10;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x08;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x04;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x02;
-					if (((uint8_t*)text_surface->pixels)[i++]) entry->data[o] |= 0x01;
-					o++;
-				}
-				i -= text_surface->w;
-				i += text_surface->pitch;
+				data[o] = 0;
+				if (((uint8_t*)text_surface->pixels)[i++]) data[o] |= 0x80;
+				if (((uint8_t*)text_surface->pixels)[i++]) data[o] |= 0x40;
+				if (((uint8_t*)text_surface->pixels)[i++]) data[o] |= 0x20;
+				if (((uint8_t*)text_surface->pixels)[i++]) data[o] |= 0x10;
+				if (((uint8_t*)text_surface->pixels)[i++]) data[o] |= 0x08;
+				if (((uint8_t*)text_surface->pixels)[i++]) data[o] |= 0x04;
+				if (((uint8_t*)text_surface->pixels)[i++]) data[o] |= 0x02;
+				if (((uint8_t*)text_surface->pixels)[i++]) data[o] |= 0x01;
+				o++;
 			}
+			i -= text_surface->w;
+			i += text_surface->pitch;
 		}
+		return 0;
 	} else {
-		memset (entry->data, 0x18, sizeof (entry->data));
-		entry->width = 8;
-		fprintf (stderr, "TTF + unifont + U+%X: did not find a glyph\n", (int)codepoint);
+		*width = 8;
+		bzero (data, 32);
+		return 1;
 	}
+}
+
+/* width will be set to 8 or 16, depending on the glyph */
+uint8_t *fontengine_8x16(uint32_t codepoint, int *width)
+{
+	int i;
+//	TTF_Surface *text_surface = 0;
+	struct font_entry_8x16_t *entry = 0;
+
+	if (codepoint == 0)
+	{
+		codepoint = ' ';
+	}
+
+	for (i=0; i < font_entries_8x16_fill; i++)
+	{
+		if (font_entries_8x16[i]->codepoint == codepoint)
+		{
+			i = fontengine_8x16_scoreup (i);
+			i = fontengine_8x16_scoreup (i);
+			*width = font_entries_8x16[i]->width;
+			return font_entries_8x16[i]->data;
+		}
+	}
+
+	entry = malloc (sizeof (*entry));
+	fontengine_8x16_forceunifont (codepoint, width, entry->data);
+
+	entry->width = *width;
 	entry->codepoint = codepoint;
 	entry->score=0;
 	fontengine_8x16_append(entry);
 
-	*width = entry->width;
 	return entry->data;
 }
 
