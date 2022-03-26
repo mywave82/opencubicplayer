@@ -34,7 +34,7 @@
 /* GNU unifont "poutput-fontengine" supports 8x16 (some glyphs are 16x16) */
 /* OpenCubicPlayer built-in font supports (8x16) 8x8 in CP437 only */
 
-static void swtext_displaycharattr_double8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
+void swtext_displaycharattr_double8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
 {
 	uint8_t *target;
 	int i, j;
@@ -64,7 +64,7 @@ static void swtext_displaycharattr_double8x8(uint16_t y, uint16_t x, uint8_t *cp
 	}
 }
 
-static void swtext_displaycharattr_double8x16(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
+void swtext_displaycharattr_double8x16(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
 {
 	uint8_t *target;
 	int i, j;
@@ -144,7 +144,7 @@ static void swtext_displaycharattr_doublefirsthalf8x16(uint16_t y, uint16_t x, u
 	}
 }
 
-static void swtext_displaycharattr_single8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
+void swtext_displaycharattr_single8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
 {
 	uint8_t *target;
 	int i, j;
@@ -168,7 +168,7 @@ static void swtext_displaycharattr_single8x8(uint16_t y, uint16_t x, uint8_t *cp
 	}
 }
 
-static void swtext_displaycharattr_single8x16(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
+void swtext_displaycharattr_single8x16(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr)
 {
 	uint8_t *target;
 	int i, j;

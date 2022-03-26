@@ -1,0 +1,58 @@
+==273260== Memcheck, a memory error detector
+==273260== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==273260== Using Valgrind-3.17.0 and LibVEX; rerun with -h for copyright info
+==273260== Command: ocp
+==273260== 
+Setting to cfConfigDir to /home/stian/.ocp/
+Setting to cfDataDir to /usr/local/share/ocp/data/
+Setting to cfProgramDir to /usr/local/lib/ocp/
+Open Cubic Player for Unix v0.2.95, compiled on Mar 21 2022, 21:21:30
+Ported to Unix by Stian Skjelstad
+linking default objects...
+running initializers...
+initializing fileselector...
+Loading /home/stian/.ocp/CPARCMETA.DAT ..
+Loading /home/stian/.ocp/CPMODNFO.DAT .. Done
+open(cfConfigDir/CPDIRDB.DAT): No such file or directory
+Loading /home/stian/.ocp/CPMUSBRN.DAT .. Done
+Initing console... 
+We have a PTY (so no need to test for framebuffer and/or vcsa)
+[x11] X is online
+[x11] rootwindow: width:7680 height:2160
+[x11] xvidmode disabled in ocp.ini
+Locating cdroms [     ].....]
+wavetabledevices:
+ devwMixF: FPU Mixer....................... (#1 t0)
+ devwmixQ: Mixer........................... (#2 t1)
+ devwMix : Mixer........................... (#3 t0)
+ devwNone: None............................ (#4)
+FPU Mixer selected...
+[devwmixf] INIT, using dwmixfa.c C version
+
+playerdevices:
+ devpALSA: ALSA device driver.............. (#1)
+ devpOSS : OSS player...................... (#2)
+ devpCA  : /usr/local/lib/ocp/devpcoreaudio.so: cannot open shared object file: No such file or directory
+link error
+ devpSDL2: SDL2 Player..................... (#3 p0 q0)
+ devpSDL : SDL Player...................... (#4 p0 q0)
+ devpNone: Super High Quality Quiet Player. (#5)
+ devpDisk: Disk Writer..................... (#6)
+ALSA device driver selected...
+
+Unknown event.type=65
+==273260== 
+==273260== HEAP SUMMARY:
+==273260==     in use at exit: 229,513 bytes in 743 blocks
+==273260==   total heap usage: 103,556 allocs, 102,813 frees, 40,487,374 bytes allocated
+==273260== 
+==273260== LEAK SUMMARY:
+==273260==    definitely lost: 2,376 bytes in 5 blocks
+==273260==    indirectly lost: 1,206 bytes in 6 blocks
+==273260==      possibly lost: 0 bytes in 0 blocks
+==273260==    still reachable: 225,931 bytes in 732 blocks
+==273260==         suppressed: 0 bytes in 0 blocks
+==273260== Rerun with --leak-check=full to see details of leaked memory
+==273260== 
+==273260== For lists of detected and suppressed errors, rerun with: -s
+==273260== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

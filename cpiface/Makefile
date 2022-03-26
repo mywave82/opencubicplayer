@@ -8,13 +8,16 @@ endif
 cpiface_so=fft.o cpianal.o cpichan.o cpidots.o cpiface.o cpigraph.o cpiinst.o cpikube.o cpilinks.o cpimsg.o cpimvol.o cpiphase.o cpipic.o cpiptype.o cpiscope.o cpitext.o cpitrack.o jpeg.o mcpedit.o $(GIF_O) png.o tga.o volctrl.o
 
 ifeq ($(STATIC_BUILD),1)
-all: $(cpiface_so) cpikeyhelp.o
+all: $(cpiface_so) cpikeyhelp.o cpifontdebug.o
 else
-all: cpiface$(LIB_SUFFIX) cpikeyhelp.o
+all: cpiface$(LIB_SUFFIX) cpifontdebug$(LIB_SUFFIX) cpikeyhelp.o
 endif
 
 cpiface$(LIB_SUFFIX): $(cpiface_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ $(LIBJPEG_LIBS) $(LIBPNG_LIBS) $(MATH_LIBS)
+
+cpifontdebug$(LIB_SUFFIX): cpifontdebug.o
+	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
@@ -25,6 +28,7 @@ uninstall:
 else
 install:
 	$(CP) cpiface$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/35-cpiface$(LIB_SUFFIX)"
+	$(CP) cpifontdebug$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/40-cpifontdebug$(LIB_SUFFIX)"
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/35-cpiface$(LIB_SUFFIX)"
@@ -66,6 +70,19 @@ cpidots.o: cpidots.c \
 	../types.h \
 	../stuff/poutput.h
 	$(CC) cpidots.c -o $@ -c
+
+cpifontdebug.o: cpifontdebug.c \
+	cpiface.h \
+	../config.h \
+	../types.h \
+	../boot/console.h \
+	../boot/plinkman.h \
+	../filesel/pfilesel.h \
+	../stuff/err.h \
+	../stuff/poutput.h \
+	../stuff/poutput-fontengine.h \
+	../stuff/poutput-swtext.h
+	$(CC) $< -o $@ -c
 
 cpigraph.o: cpigraph.c \
 	../config.h \

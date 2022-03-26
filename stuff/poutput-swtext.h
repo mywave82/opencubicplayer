@@ -31,5 +31,11 @@ void swtext_cursor_inject(void);
 
 void swtext_cursor_eject(void);
 
+/* only used by fontdebug */
+void swtext_displaycharattr_single8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr);
+void swtext_displaycharattr_double8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr);
+void swtext_displaycharattr_single8x16(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr);
+void swtext_displaycharattr_double8x16(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr);
+
 
 #endif
