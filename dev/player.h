@@ -5,7 +5,6 @@
 #define PLR_16BIT 2
 #define PLR_SIGNEDOUT 4
 #define PLR_REVERSESTEREO 8
-#define PLR_RESTRICTED 16
 
 struct ocpfilehandle_t;
 

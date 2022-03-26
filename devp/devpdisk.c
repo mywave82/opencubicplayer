@@ -141,13 +141,6 @@ static uint32_t gettimer(void)
 
 static void dwSetOptions(uint32_t rate, int opt)
 {
-	/* don't even THINK about removing this line! */
-	if (opt&PLR_RESTRICTED)
-		opt&=~PLR_STEREO;
-	/* don't even THINK about removing this line!
-	 * and after you removed it, thank me for making hacking this that easy ;)
-	 */
-
 	stereo=!!(opt&PLR_STEREO);
 	bit16=!!(opt&PLR_16BIT);
 

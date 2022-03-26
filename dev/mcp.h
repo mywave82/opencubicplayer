@@ -45,7 +45,6 @@ enum
 	mcpCBass, mcpCTreble, mcpCReverb, mcpCChorus, mcpCMute, mcpCStatus,
 	mcpCInstrument, mcpCLoop, mcpCDirect, mcpCFilterFreq, mcpCFilterRez,
 	mcpGTimer, mcpGCmdTimer,
-	mcpGRestrict
 };
 
 extern int mcpReduceSamples(struct sampleinfo *s, int n, long m, int o);

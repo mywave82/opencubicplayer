@@ -245,9 +245,6 @@ static void xmpDrawGStrings (void)
 static void xmpCloseFile(void)
 {
 	xmpStopModule();
-#ifdef RESTRICTED
-	mcpSet(-1, mcpGRestrict, 0);
-#endif
 	xmpFreeModule(&mod);
 }
 

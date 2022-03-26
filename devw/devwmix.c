@@ -82,7 +82,6 @@ static unsigned short transform[2][2];
 static int volopt;
 static unsigned long relpitch;
 static int interpolation;
-static int restricted;
 
 static unsigned char stereo;
 static unsigned char bit16;
@@ -770,8 +769,6 @@ static void SET(int ch, int opt, int val)
 		case mcpMasterPause:
 			_pause=val;
 			break;
-		case mcpGRestrict:
-			restricted=val;
 		break;
 	}
 }
@@ -893,7 +890,7 @@ static int OpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_f
 
 	currentrate=mcpMixProcRate/chan;
 	mixrate=(currentrate>mcpMixMaxRate)?mcpMixMaxRate:currentrate;
-	plrSetOptions(mixrate, mcpMixOpt|(restricted?PLR_RESTRICTED:0));
+	plrSetOptions(mixrate, mcpMixOpt);
 
 	playerproc=proc;
 
@@ -1049,7 +1046,6 @@ static void ClosePlayer()
 	plrClosePlayer();
 
 	channelnum=0;
-	restricted=0;
 
 	mixClose();
 
@@ -1082,7 +1078,6 @@ static int wmixInit(const struct deviceinfo *dev)
 	resample=!!(dev->opt&MIXRQ_RESAMPLE);
 	quality=!!dev->subtype;
 
-	restricted=0;
 	amplify=65535;
 	relspeed=256;
 	relpitch=256;
