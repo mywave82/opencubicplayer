@@ -62,7 +62,6 @@ static void *plrbuf; /* the devp buffer */
 static int stereo; /* boolean */
 static int bit16; /* boolean */
 static int signedout; /* boolean */
-static int reversestereo; /* boolean */
 static int donotloop=1;
 
 /* oplIdler dumping locations */
@@ -221,7 +220,6 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	stereo=!!(plrOpt&PLR_STEREO);
 	bit16=!!(plrOpt&PLR_16BIT);
 	signedout=!!(plrOpt&PLR_SIGNEDOUT);
-	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
 
 	opl = new Cocpopl(plrRate);
 
@@ -500,80 +498,40 @@ void __attribute__ ((visibility ("internal"))) oplIdle(void)
 		{
 			if (stereo)
 			{
-				if (reversestereo)
+				int16_t *p=(int16_t *)plrbuf+2*bufpos;
+				int16_t *b=(int16_t *)buf16;
+				if (signedout)
 				{
-					int16_t *p=(int16_t *)plrbuf+2*bufpos;
-					int16_t *b=(int16_t *)buf16;
-					if (signedout)
+					for (i=0; i<bufdelta; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[0];
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[0];
-							p+=2;
-							b+=2;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1]^0x8000;
-							p[1]=b[0]^0x8000;
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1]^0x8000;
-							p[1]=b[0]^0x8000;
-							p+=2;
-							b+=2;
-						}
+						p[0]=b[0];
+						p[1]=b[1];
+						p+=2;
+						b+=2;
+					}
+					p=(int16_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[0];
+						p[1]=b[1];
+						p+=2;
+						b+=2;
 					}
 				} else {
-					int16_t *p=(int16_t *)plrbuf+2*bufpos;
-					int16_t *b=(int16_t *)buf16;
-					if (signedout)
+					for (i=0; i<bufdelta; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[0];
-							p[1]=b[1];
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[0];
-							p[1]=b[1];
-							p+=2;
-							b+=2;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[0]^0x8000;
-							p[1]=b[1]^0x8000;
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[0]^0x8000;
-							p[1]=b[1]^0x8000;
-							p+=2;
-							b+=2;
-						}
+						p[0]=b[0]^0x8000;
+						p[1]=b[1]^0x8000;
+						p+=2;
+						b+=2;
+					}
+					p=(int16_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[0]^0x8000;
+						p[1]=b[1]^0x8000;
+						p+=2;
+						b+=2;
 					}
 				}
 			} else {
@@ -613,80 +571,40 @@ void __attribute__ ((visibility ("internal"))) oplIdle(void)
 		} else {
 			if (stereo)
 			{
-				if (reversestereo)
+				uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
+				uint8_t *b=(uint8_t *)buf16;
+				if (signedout)
 				{
-					uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
-					uint8_t *b=(uint8_t *)buf16;
-					if (signedout)
+					for (i=0; i<bufdelta; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[3];
-							p[1]=b[1];
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[3];
-							p[1]=b[1];
-							p+=2;
-							b+=4;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[3]^0x80;
-							p[1]=b[1]^0x80;
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[3]^0x80;
-							p[1]=b[1]^0x80;
-							p+=2;
-							b+=4;
-						}
+						p[0]=b[1];
+						p[1]=b[3];
+						p+=2;
+						b+=4;
+					}
+					p=(uint8_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[1];
+						p[1]=b[3];
+						p+=2;
+						b+=4;
 					}
 				} else {
-					uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
-					uint8_t *b=(uint8_t *)buf16;
-					if (signedout)
+					for (i=0; i<bufdelta; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[3];
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[3];
-							p+=2;
-							b+=4;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1]^0x80;
-							p[1]=b[3]^0x80;
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1]^0x80;
-							p[1]=b[3]^0x80;
-							p+=2;
-							b+=4;
-						}
+						p[0]=b[1]^0x80;
+						p[1]=b[3]^0x80;
+						p+=2;
+						b+=4;
+					}
+					p=(uint8_t *)plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[1]^0x80;
+						p[1]=b[3]^0x80;
+						p+=2;
+						b+=4;
 					}
 				}
 			} else {

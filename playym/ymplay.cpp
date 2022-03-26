@@ -56,7 +56,6 @@ static void *devp_plrbuf; /* the devp buffer */
 static int devp_stereo; /* boolean */
 static int devp_bit16; /* boolean */
 static int devp_signedout; /* boolean */
-static int devp_reversestereo; /* boolean */
 static int donotloop=1;
 
 /* ymIdler dumping locations */
@@ -262,7 +261,6 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	devp_stereo=!!(plrOpt&PLR_STEREO);
 	devp_bit16=!!(plrOpt&PLR_16BIT);
 	devp_signedout=!!(plrOpt&PLR_SIGNEDOUT);
-	devp_reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
 
 	looped = 0;
 
@@ -692,80 +690,40 @@ void __attribute__ ((visibility ("internal"))) ymIdle(void)
 		{
 			if (devp_stereo)
 			{
-				if (devp_reversestereo)
+				int16_t *p=(int16_t *)devp_plrbuf+2*devp_bufpos;
+				int16_t *b=(int16_t *)buf16;
+				if (devp_signedout)
 				{
-					int16_t *p=(int16_t *)devp_plrbuf+2*devp_bufpos;
-					int16_t *b=(int16_t *)buf16;
-					if (devp_signedout)
+					for (i=0; i<bufdelta; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[0];
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)devp_plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[0];
-							p+=2;
-							b+=2;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1]^0x8000;
-							p[1]=b[0]^0x8000;
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)devp_plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1]^0x8000;
-							p[1]=b[0]^0x8000;
-							p+=2;
-							b+=2;
-						}
+						p[0]=b[0];
+						p[1]=b[1];
+						p+=2;
+						b+=2;
+					}
+					p=(int16_t *)devp_plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[0];
+						p[1]=b[1];
+						p+=2;
+						b+=2;
 					}
 				} else {
-					int16_t *p=(int16_t *)devp_plrbuf+2*devp_bufpos;
-					int16_t *b=(int16_t *)buf16;
-					if (devp_signedout)
+					for (i=0; i<bufdelta; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[0];
-							p[1]=b[1];
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)devp_plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[0];
-							p[1]=b[1];
-							p+=2;
-							b+=2;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[0]^0x8000;
-							p[1]=b[1]^0x8000;
-							p+=2;
-							b+=2;
-						}
-						p=(int16_t *)devp_plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[0]^0x8000;
-							p[1]=b[1]^0x8000;
-							p+=2;
-							b+=2;
-						}
+						p[0]=b[0]^0x8000;
+						p[1]=b[1]^0x8000;
+						p+=2;
+						b+=2;
+					}
+					p=(int16_t *)devp_plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[0]^0x8000;
+						p[1]=b[1]^0x8000;
+						p+=2;
+						b+=2;
 					}
 				}
 			} else {
@@ -805,80 +763,40 @@ void __attribute__ ((visibility ("internal"))) ymIdle(void)
 		} else {
 			if (devp_stereo)
 			{
-				if (devp_reversestereo)
+				uint8_t *p=(uint8_t *)devp_plrbuf+2*devp_bufpos;
+				uint8_t *b=(uint8_t *)buf16;
+				if (devp_signedout)
 				{
-					uint8_t *p=(uint8_t *)devp_plrbuf+2*devp_bufpos;
-					uint8_t *b=(uint8_t *)buf16;
-					if (devp_signedout)
+					for (i=0; i<bufdelta; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[3];
-							p[1]=b[1];
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)devp_plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[3];
-							p[1]=b[1];
-							p+=2;
-							b+=4;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[3]^0x80;
-							p[1]=b[1]^0x80;
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)devp_plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[3]^0x80;
-							p[1]=b[1]^0x80;
-							p+=2;
-							b+=4;
-						}
+						p[0]=b[1];
+						p[1]=b[3];
+						p+=2;
+						b+=4;
+					}
+					p=(uint8_t *)devp_plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[1];
+						p[1]=b[3];
+						p+=2;
+						b+=4;
 					}
 				} else {
-					uint8_t *p=(uint8_t *)devp_plrbuf+2*devp_bufpos;
-					uint8_t *b=(uint8_t *)buf16;
-					if (devp_signedout)
+					for (i=0; i<bufdelta; i++)
 					{
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[3];
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)devp_plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1];
-							p[1]=b[3];
-							p+=2;
-							b+=4;
-						}
-					} else {
-						for (i=0; i<bufdelta; i++)
-						{
-							p[0]=b[1]^0x80;
-							p[1]=b[3]^0x80;
-							p+=2;
-							b+=4;
-						}
-						p=(uint8_t *)devp_plrbuf;
-						for (i=0; i<pass2; i++)
-						{
-							p[0]=b[1]^0x80;
-							p[1]=b[3]^0x80;
-							p+=2;
-							b+=4;
-						}
+						p[0]=b[1]^0x80;
+						p[1]=b[3]^0x80;
+						p+=2;
+						b+=4;
+					}
+					p=(uint8_t *)devp_plrbuf;
+					for (i=0; i<pass2; i++)
+					{
+						p[0]=b[1]^0x80;
+						p[1]=b[3]^0x80;
+						p+=2;
+						b+=4;
 					}
 				}
 			} else {

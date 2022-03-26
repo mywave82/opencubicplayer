@@ -88,7 +88,6 @@ static int declick;
 static uint8_t stereo;
 static uint8_t bit16;
 static uint8_t signedout;
-static uint8_t reversestereo;
 
 static int     channelnum;
 
@@ -231,10 +230,6 @@ static void transformvol(struct channel *ch)
 	{
 		ch->dstvols[0]=0.5*(fabs(ch->vol[0])+fabs(ch->vol[1]));
 		ch->dstvols[1]=0;
-	} else if (reversestereo)
-	{
-		ch->dstvols[0]=ch->vol[1];
-		ch->dstvols[1]=ch->vol[0];
 	} else {
 		ch->dstvols[0]=ch->vol[0];
 		ch->dstvols[1]=ch->vol[1];
@@ -915,7 +910,6 @@ static int OpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *sour
 	stereo=(plrOpt&PLR_STEREO)?1:0;
 	bit16=(plrOpt&PLR_16BIT)?1:0;
 	signedout=(plrOpt&PLR_SIGNEDOUT)?1:0;
-	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
 	dwmixfa_state.samprate=plrRate;
 	bufpos=0;
 	dopause=0;

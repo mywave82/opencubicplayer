@@ -96,7 +96,6 @@ static void *plrbuf; /* the devp buffer */
 static int stereo; /* boolean */
 static int bit16; /* boolean */
 static int signedout; /* boolean */
-static int reversestereo; /* boolean */
 static int active=0;
 static volatile int PauseSamples;
 
@@ -732,10 +731,6 @@ static void SET(int ch, int opt, int val)
 			break;
 		case mcpMasterPanning:
 			pan=val;
-			if (reversestereo)
-			{
-				pan = -pan;
-			}
 			hvlSetVolume();
 			break;
 		case mcpMasterVolume:
@@ -853,7 +848,6 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 	stereo=!!(plrOpt&PLR_STEREO);
 	bit16=!!(plrOpt&PLR_16BIT);
 	signedout=!!(plrOpt&PLR_SIGNEDOUT);
-	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
 
 	ht = hvl_LoadTune_memory (mem, memlen, 4, plrRate);
 	if (!ht)

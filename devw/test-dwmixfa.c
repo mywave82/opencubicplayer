@@ -82,7 +82,6 @@ static void OpenPlayer(int chan)
 	/*stereo=(plrOpt&PLR_STEREO)?1:0;*/
 	/*bit16=(plrOpt&PLR_16BIT)?1:0;*/
 	/*signedout=(plrOpt&PLR_SIGNEDOUT)?1:0;*/
-	/*reversestereo=!!(plrOpt&PLR_REVERSESTEREO);*/
 	dwmixfa_state.samprate=/*plrRate*/44100;
 /*
 	bufpos=0;

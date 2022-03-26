@@ -83,7 +83,6 @@ static void *plrbuf; /* the devp buffer */
 static int stereo; /* boolean */
 static int bit16; /* boolean */
 static int signedout; /* boolean */
-static int reversestereo; /* boolean */
 static int donotloop=1;
 
 /* timidityIdler dumping locations */
@@ -1517,10 +1516,6 @@ static void SET(int ch, int opt, int val)
 			break;
 		case mcpMasterPanning:
 			pan=val;
-			if (reversestereo)
-			{
-				pan = -pan;
-			}
 			timiditySetVolume();
 			break;
 		case mcpMasterVolume:
@@ -1972,7 +1967,6 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	stereo=!!(plrOpt&PLR_STEREO);
 	bit16=!!(plrOpt&PLR_16BIT);
 	signedout=!!(plrOpt&PLR_SIGNEDOUT);
-	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
 
 	ocp_playmode.rate = plrRate;
 

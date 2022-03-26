@@ -55,7 +55,6 @@ static int stereo; /* 32 bit booleans are fast */
 static int bit16;
 static int signedout;
 static uint32_t samprate;
-static uint8_t reversestereo;
 
 static uint32_t voll,volr;
 static int vol;
@@ -1009,10 +1008,6 @@ static void SET(int ch, int opt, int val)
 			break;
 		case mcpMasterPanning:
 			pan=val;
-			if (reversestereo)
-			{
-				pan = -pan;
-			}
 			oggSetVolume();
 			break;
 		case mcpMasterVolume:
@@ -1116,7 +1111,6 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 	stereo=!!(plrOpt&PLR_STEREO);
 	bit16=!!(plrOpt&PLR_16BIT);
 	signedout=!!(plrOpt&PLR_SIGNEDOUT);
-	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
 	samprate=plrRate;
 
 	oggbufrate=imuldiv(65536, oggrate, samprate);

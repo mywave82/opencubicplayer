@@ -372,58 +372,6 @@ void mixGetMasterSampleSU8S(int16_t *_dst, const void *_src, uint32_t len, uint3
 	} while(len);
 }
 
-void mixGetMasterSampleSS8SR(int16_t *_dst, const void *_src, uint32_t len, uint32_t step)
-{
-	uint32_t addfixed;
-	uint32_t addfloat;
-	uint32_t addfloatcounter;
-	int8_t *src=(int8_t *)_src;
-	int16_t *dst=(int16_t *)_dst;
-	if (!len)
-		return;
-	addfloatcounter=0;
-	addfloat=step&0xffff;
-	addfixed=(step>>15)&0xfffe;
-	do {
-		dst[0]=src[1]<<8;
-		dst[1]=src[0]<<8;
-		src+=addfixed;
-		if ((addfloatcounter+=addfloat)&0xffff0000)
-		{
-			addfloatcounter&=0xffff;
-			src+=2;
-		}
-		dst+=2;
-		len--;
-	} while(len);
-}
-
-void mixGetMasterSampleSU8SR(int16_t *_dst, const void *_src, uint32_t len, uint32_t step)
-{
-	uint32_t addfixed;
-	uint32_t addfloat;
-	uint32_t addfloatcounter;
-	int8_t *src=(int8_t *)_src;
-	uint16_t *dst=(uint16_t *)_dst;
-	if (!len)
-		return;
-	addfloatcounter=0;
-	addfloat=step&0xffff;
-	addfixed=(step>>15)&0xfffe;
-	do {
-		dst[0]=(src[1]<<8)+0x8000;
-		dst[1]=(src[0]<<8)+0x8000;
-		src+=addfixed;
-		if ((addfloatcounter+=addfloat)&0xffff0000)
-		{
-			addfloatcounter&=0xffff;
-			src+=2;
-		}
-		dst+=2;
-		len--;
-	} while(len);
-}
-
 void mixGetMasterSampleMS16M(int16_t *_dst, const void *_src, uint32_t len, uint32_t step)
 {
 	uint32_t addfixed;
@@ -616,59 +564,6 @@ void mixGetMasterSampleSU16S(int16_t *_dst, const void *_src, uint32_t len, uint
 	do {
 		dst[0]=src[0]+0x8000;
 		dst[1]=src[1]+0x8000;
-		src+=addfixed;
-		if ((addfloatcounter+=addfloat)&0xffff0000)
-		{
-			addfloatcounter&=0xffff;
-			src+=2;
-		}
-		dst+=2;
-		len--;
-	} while(len);
-}
-
-void mixGetMasterSampleSS16SR(int16_t *_dst, const void *_src, uint32_t len, uint32_t step)
-{
-	uint32_t addfixed;
-	uint32_t addfloat;
-	uint32_t addfloatcounter;
-	int16_t *src=(int16_t *)_src;
-	int16_t *dst=(int16_t *)_dst;
-	if (!len)
-		return;
-	addfloatcounter=0;
-	addfloat=step&0xffff;
-	addfixed=(step>>15)&0xfffe;
-	do {
-
-		dst[0]=src[1];
-		dst[1]=src[0];
-		src+=addfixed;
-		if ((addfloatcounter+=addfloat)&0xffff0000)
-		{
-			addfloatcounter&=0xffff;
-			src+=2;
-		}
-		dst+=2;
-		len--;
-	} while(len);
-}
-
-void mixGetMasterSampleSU16SR(int16_t *_dst, const void *_src, uint32_t len, uint32_t step)
-{
-	uint32_t addfixed;
-	uint32_t addfloat;
-	uint32_t addfloatcounter;
-	int16_t *src=(int16_t *)_src;
-	uint16_t *dst=(uint16_t *)_dst;
-	if (!len)
-		return;
-	addfloatcounter=0;
-	addfloat=step&0xffff;
-	addfixed=(step>>15)&0xfffe;
-	do {
-		dst[0]=src[1]+0x8000;
-		dst[1]=src[0]+0x8000;
 		src+=addfixed;
 		if ((addfloatcounter+=addfloat)&0xffff0000)
 		{

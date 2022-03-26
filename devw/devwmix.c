@@ -87,7 +87,6 @@ static unsigned char stereo;
 static unsigned char bit16;
 static unsigned char signedout;
 static unsigned long samprate;
-static unsigned char reversestereo;
 
 static int channelnum;
 static struct channel *channels;
@@ -287,10 +286,6 @@ static void transformvol(struct channel *ch)
 	{
 		ch->dstvols[0]=(abs(ch->vol[0])+abs(ch->vol[1])+1)>>1;
 		ch->dstvols[1]=0;
-	} else if (reversestereo)
-	{
-		ch->dstvols[0]=ch->vol[1];
-		ch->dstvols[1]=ch->vol[0];
 	} else {
 		ch->dstvols[0]=ch->vol[0];
 		ch->dstvols[1]=ch->vol[1];
@@ -1001,7 +996,6 @@ static int OpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_f
 	stereo=(plrOpt&PLR_STEREO)?1:0;
 	bit16=(plrOpt&PLR_16BIT)?1:0;
 	signedout=!!(plrOpt&PLR_SIGNEDOUT);
-	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
 
 	samprate=plrRate;
 	bufpos=0;

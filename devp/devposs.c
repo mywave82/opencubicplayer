@@ -540,8 +540,12 @@ static void SetOptions(uint32_t rate, int opt)
 		perror("devposs: ioctl(fd_dsp, SOUND_PCM_WRITE_RATE, rate)");
 #endif
 	}
+
+#warning REVSTEREO needs to be reimplemented!
+/*
 	if (currentcard.opt&REVSTEREO)
 		newopt|=PLR_REVERSESTEREO;
+*/
 
 	plrRate=rate;
 	plrOpt=newopt;

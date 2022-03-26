@@ -24,8 +24,6 @@ extern void mixGetMasterSampleSS8M(int16_t *dst, const void *src, uint32_t len, 
 extern void mixGetMasterSampleSU8M(int16_t *dst, const void *src, uint32_t len, uint32_t step);
 extern void mixGetMasterSampleSS8S(int16_t *dst, const void *src, uint32_t len, uint32_t step);
 extern void mixGetMasterSampleSU8S(int16_t *dst, const void *src, uint32_t len, uint32_t step);
-extern void mixGetMasterSampleSS8SR(int16_t *dst, const void *src, uint32_t len, uint32_t step);
-extern void mixGetMasterSampleSU8SR(int16_t *dst, const void *src, uint32_t len, uint32_t step);
 
 extern void mixGetMasterSampleMS16M(int16_t *dst, const void *src, uint32_t len, uint32_t step);
 extern void mixGetMasterSampleMU16M(int16_t *dst, const void *src, uint32_t len, uint32_t step);
@@ -35,7 +33,5 @@ extern void mixGetMasterSampleSS16M(int16_t *dst, const void *src, uint32_t len,
 extern void mixGetMasterSampleSU16M(int16_t *dst, const void *src, uint32_t len, uint32_t step);
 extern void mixGetMasterSampleSS16S(int16_t *dst, const void *src, uint32_t len, uint32_t step);
 extern void mixGetMasterSampleSU16S(int16_t *dst, const void *src, uint32_t len, uint32_t step);
-extern void mixGetMasterSampleSS16SR(int16_t *dst, const void *src, uint32_t len, uint32_t step);
-extern void mixGetMasterSampleSU16SR(int16_t *dst, const void *src, uint32_t len, uint32_t step);
 
 #endif

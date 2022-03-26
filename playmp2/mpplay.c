@@ -94,7 +94,6 @@ static void *plrbuf; /* the devp buffer */
 static int stereo; /* boolean */
 static int bit16; /* boolean */
 static int signedout; /* boolean */
-static int reversestereo; /* boolean */
 static int donotloop=1;
 
 /* mpegIdler dumping locations */
@@ -1073,10 +1072,6 @@ static void SET(int ch, int opt, int val)
 			break;
 		case mcpMasterPanning:
 			pan=val;
-			if (reversestereo)
-			{
-				pan = -pan;
-			}
 			mpegSetVolume();
 			break;
 		case mcpMasterVolume:
@@ -1328,7 +1323,6 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct oc
 	stereo=!!(plrOpt&PLR_STEREO);
 	bit16=!!(plrOpt&PLR_16BIT);
 	signedout=!!(plrOpt&PLR_SIGNEDOUT);
-	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
 
 	mpegbufrate=imuldiv(65536, mpegrate, plrRate);
 

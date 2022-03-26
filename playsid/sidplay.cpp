@@ -112,7 +112,6 @@ static void *plrbuf; /* the devp buffer */
 static int stereo; /* boolean */
 static int bit16; /* boolean */
 static int signedout; /* boolean */
-static int reversestereo; /* boolean */
 static volatile int PauseSamples; /* Pause, and pitch-bend can stretch the used sample data up and down */
 
 static uint32_t sidbuffpos;
@@ -814,10 +813,6 @@ static void SET(int ch, int opt, int val)
 			break;
 		case mcpMasterPanning:
 			pan=val;
-			if (reversestereo)
-			{
-				pan = -pan;
-			}
 			sidSetVolume();
 			break;
 		case mcpMasterVolume:
@@ -1175,7 +1170,6 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 	stereo=!!(plrOpt&PLR_STEREO);
 	bit16=!!(plrOpt&PLR_16BIT);
 	signedout=!!(plrOpt&PLR_SIGNEDOUT);
-	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
 	srnd=0;
 
 #if 0

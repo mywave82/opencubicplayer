@@ -68,7 +68,6 @@ static uint8_t stereo;
 static uint8_t bit16;
 static uint8_t signedout;
 static uint32_t samprate;
-static uint8_t reversestereo;
 
 static struct ocpfilehandle_t *wavefile;
 static uint32_t waverate;
@@ -724,10 +723,6 @@ static void SET(int ch, int opt, int val)
 			break;
 		case mcpMasterPanning:
 			pan=val;
-			if (reversestereo)
-			{
-				pan = -pan;
-			}
 			wpSetVolume();
 			break;
 		case mcpMasterVolume:
@@ -967,7 +962,6 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 	stereo=!!(plrOpt&PLR_STEREO);
 	bit16=!!(plrOpt&PLR_16BIT);
 	signedout=!!(plrOpt&PLR_SIGNEDOUT);
-	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
 	samprate=plrRate;
 
 	wavebufrate=imuldiv(65536, waverate, samprate);

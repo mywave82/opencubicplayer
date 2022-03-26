@@ -51,7 +51,6 @@ char *(*plrDebug)(void)=0;
 
 static int stereo;
 static int bit16;
-static int reversestereo;
 static int signedout;
 static uint32_t samprate;
 
@@ -101,13 +100,6 @@ void plrGetRealMasterVolume(int *l, int *r)
 		v=v*128/(len*16384);
 		*r=*l=(v>255)?255:v;
 	}
-
-	if (reversestereo)
-	{
-		int t=*r;
-		*r=*l;
-		*l=t;
-	}
 }
 
 void plrGetMasterSample(int16_t *buf, uint32_t len, uint32_t rate, int opt)
@@ -137,36 +129,42 @@ void plrGetMasterSample(int16_t *buf, uint32_t len, uint32_t rate, int opt)
 	pass2=len-imuldiv((uint32_t)buflen-bp,0x10000,step);
 
 	if (bit16)
+	{
 		if (stereo)
+		{
 			if (!stereoout)
+			{
 				fn=signedout?mixGetMasterSampleSS16M:mixGetMasterSampleSU16M;
-			else if (reversestereo)
-				fn=signedout?mixGetMasterSampleSS16SR:mixGetMasterSampleSU16SR;
-			else
+			} else {
 				fn=signedout?mixGetMasterSampleSS16S:mixGetMasterSampleSU16S;
-		else if (!stereoout)
+			}
+		} else if (!stereoout)
+		{
 			fn=signedout?mixGetMasterSampleMS16M:mixGetMasterSampleMU16M;
-		else
+		} else {
 			fn=signedout?mixGetMasterSampleMS16S:mixGetMasterSampleMU16S;
-	else if (stereo)
+		}
+	} else if (stereo)
+	{
 		if (!stereoout)
+		{
 			fn=signedout?mixGetMasterSampleSS8M:mixGetMasterSampleSU8M;
-		else
-			if (reversestereo)
-				fn=signedout?mixGetMasterSampleSS8SR:mixGetMasterSampleSU8SR;
-			else
-				fn=signedout?mixGetMasterSampleSS8S:mixGetMasterSampleSU8S;
-	else if (!stereoout)
+		} else {
+			fn=signedout?mixGetMasterSampleSS8S:mixGetMasterSampleSU8S;
+		}
+	} else if (!stereoout)
+	{
 		fn=signedout?mixGetMasterSampleMS8M:mixGetMasterSampleMU8M;
-	else
+	} else {
 		fn=signedout?mixGetMasterSampleMS8S:mixGetMasterSampleMU8S;
-
+	}
 	if (pass2>0)
 	{
 		fn(buf, plrbuf+(bp<<(stereo+bit16)), len-pass2, step);
 		fn(buf+((len-pass2)<<stereoout), plrbuf, pass2, step);
-	} else
+	} else {
 		fn(buf, plrbuf+(bp<<(stereo+bit16)), len, step);
+	}
 }
 
 
@@ -185,7 +183,6 @@ int plrOpenPlayer(void **buf, uint32_t *len, uint32_t bufl, struct ocpfilehandle
 
 	stereo=!!(plrOpt&PLR_STEREO);
 	bit16=!!(plrOpt&PLR_16BIT);
-	reversestereo=!!(plrOpt&PLR_REVERSESTEREO);
 	signedout=!!(plrOpt&PLR_SIGNEDOUT);
 	samprate=plrRate;
 

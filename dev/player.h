@@ -4,7 +4,6 @@
 #define PLR_STEREO 1
 #define PLR_16BIT 2
 #define PLR_SIGNEDOUT 4
-#define PLR_REVERSESTEREO 8
 
 struct ocpfilehandle_t;
 
