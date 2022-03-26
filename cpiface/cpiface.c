@@ -1267,7 +1267,7 @@ static struct GStringElement GString_channels_x_y =
 
 static int GString_order_x_y_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
 {
-	const uint8_t *ordery = inputb;
+	const uint16_t *ordery = inputb;
 
 	switch (nextsize)
 	{
@@ -1285,8 +1285,8 @@ static int GString_order_x_y_allowgrow (const void *inputa, const void *inputb, 
 
 static void GString_order_x_y_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
 {
-	const uint8_t *orderx = inputa;
-	const uint8_t *ordery = inputb;
+	const uint16_t *orderx = inputa;
+	const uint16_t *ordery = inputb;
 	char temp[5];
 
 	if (size == 1)

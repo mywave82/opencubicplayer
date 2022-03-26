@@ -82,10 +82,11 @@ static int speed;
 static int looped;
 static int donotloop;
 
-static uint8_t pan = 64, srnd = 0;
-static unsigned long voll = 256, volr = 256;
-static int8_t bal = 0;
+static unsigned int voll = 256, volr = 256;
 static int vol;
+static int bal = 0;
+static int pan = 64;
+static int srnd;
 
 static int (*_GET)(int ch, int opt);
 static void (*_SET)(int ch, int opt, int val);
@@ -751,7 +752,6 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 
 	inpause=0;
 	looped=0;
-	cdSetVolume(64, 0, 64, 0);
 /*
 	cdSetAmplify(amplify);   TODO */
 

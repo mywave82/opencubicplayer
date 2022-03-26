@@ -66,10 +66,11 @@ namespace libsidplayfp
 		void mute(int chan, bool mute);
 
 	private:
-		libsidplayfp::Player &sidplayer;
 		SidConfig          m_engCfg;
 		SidTune            m_tune;
 		player_state_t     m_state;
+		uint_least16_t selected_track;
+		libsidplayfp::Player &sidplayer;
 
 		struct m_filter_t
 		{
@@ -82,7 +83,6 @@ namespace libsidplayfp
 			bool           enabled;
 		} m_filter;
 
-		uint_least16_t selected_track;
 		void clearSidEmu (void);
 		bool createSidEmu (void);
 

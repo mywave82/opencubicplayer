@@ -217,7 +217,7 @@ static char *getpfxstr6(unsigned char fx, unsigned char fxparam)
 		case 0x4:
 			return "togMod";
 		case 0x7:
-			if ((fxparam == 0x00) && (fxparam == 0x80))
+			if ((fxparam == 0x00) || (fxparam == 0x80))
 			{
 				return "no-tri";
 			} else {
@@ -225,7 +225,7 @@ static char *getpfxstr6(unsigned char fx, unsigned char fxparam)
 			}
 			return 0;
 		case 0x8:
-			if ((fxparam == 0x00) && (fxparam == 0x80))
+			if ((fxparam == 0x00) || (fxparam == 0x80))
 			{
 				return "no-saw";
 			} else {

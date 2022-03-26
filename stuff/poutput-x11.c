@@ -290,7 +290,7 @@ static void ewmh_init(void)
 			args=(Atom *)tmp; /* removes compiler warning above */
 			for (i = 0; i < nitems; i++)
 			{
-				if ((args[i]==XA_NET_WM_STATE_FULLSCREEN))
+				if (args[i]==XA_NET_WM_STATE_FULLSCREEN)
 					we_have_fullscreen=1;
 			}
 			XFree(tmp);

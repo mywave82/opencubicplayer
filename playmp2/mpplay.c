@@ -51,7 +51,7 @@
 static int inpause;
 static int looped;
 
-static uint32_t voll,volr;
+static unsigned int voll,volr;
 static int vol;
 static int bal;
 static int pan;

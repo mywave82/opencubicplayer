@@ -1218,7 +1218,7 @@ static void hvl_process_frame ( struct hvl_tune *ht, struct hvl_voice *voice )
 
 	if ( voice->vc_RingNewWaveform )
 	{
-		int8_t *rasrc;
+		const int8_t *rasrc;
 
 		if ( voice->vc_RingWaveform > 1 )
 		{
@@ -1233,7 +1233,7 @@ static void hvl_process_frame ( struct hvl_tune *ht, struct hvl_voice *voice )
 
 	if ( voice->vc_NewWaveform )
 	{
-		int8_t *AudioSource;
+		const int8_t *AudioSource;
 
 		AudioSource = ht->ht_WaveformTab[voice->vc_Waveform];
 
@@ -1383,7 +1383,7 @@ static void hvl_set_audio ( struct hvl_voice *voice, double freqf )
 
 	if ( voice->vc_NewWaveform )
 	{
-		int8_t *src;
+		const int8_t *src;
 
 		src = voice->vc_AudioSource;
 
@@ -1428,7 +1428,7 @@ static void hvl_set_audio ( struct hvl_voice *voice, double freqf )
 
 	if ( voice->vc_RingNewWaveform )
 	{
-		int8_t  *src;
+		const int8_t  *src;
 		uint32_t i, WaveLoops;
 
 		src = voice->vc_RingAudioSource;
@@ -1518,8 +1518,8 @@ static void hvl_play_irq ( struct hvl_tune *ht )
 static void
 hvl_mixchunk (struct hvl_tune *ht, int16_t *buf, size_t samples)
 {
-	int8_t   *src[MAX_CHANNELS];
-	int8_t   *rsrc[MAX_CHANNELS];
+	const int8_t *src[MAX_CHANNELS];
+	const int8_t *rsrc[MAX_CHANNELS];
 	uint32_t  delta[MAX_CHANNELS];
 	uint32_t  rdelta[MAX_CHANNELS];
 	int32_t   vol[MAX_CHANNELS];

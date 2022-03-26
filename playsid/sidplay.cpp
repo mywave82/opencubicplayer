@@ -88,7 +88,7 @@ typedef struct
 
 static SidStatBuffer_t last; /* current register values, 3 SID chips */
 
-static SidStatBuffer_t SidStatBuffers[ROW_BUFFERS] = {0}; // half a second
+static SidStatBuffer_t SidStatBuffers[ROW_BUFFERS] = {{0}}; // half a second
 static int SidStatBuffers_available = 0;
 
 static int16_t *sid_buf_stereo; /* stereo interleaved */
@@ -165,7 +165,6 @@ do { \
 static void SidStatBuffers_callback_from_sidbuf (void *arg, int samples_ago)
 {
 	SidStatBuffer_t *state = (SidStatBuffer_t *)arg;
-	int i;
 
 	last = *state;
 
@@ -181,7 +180,6 @@ extern void __attribute__ ((visibility ("internal"))) sidIdler (void)
 
 		int pos1, pos2;
 		int length1, length2;
-		int16_t *dst;
 
 		for (i=0; i < ROW_BUFFERS; i++)
 		{
@@ -271,7 +269,7 @@ static void sidUpdateKernPos (void)
 
 void __attribute__ ((visibility ("internal"))) sidIdle(void)
 {
-	uint32_t bufdelta, newpos;
+	uint32_t bufdelta;
 	uint32_t pass2;
 
 	if (clipbusy++)
