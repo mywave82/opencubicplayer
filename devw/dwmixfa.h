@@ -2,9 +2,9 @@
 #define MIXF_MAXCHAN 255
 
 //#define MIXF_PLAYSTEREO 0     Floating point mixer doesn't support stereo samples, only mono to stereo output
-#define MIXF_INTERPOLATE 2
-#define MIXF_INTERPOLATEQ 4
-#define MIXF_FILTER 8
+#define MIXF_INTERPOLATE 1
+#define MIXF_INTERPOLATEQ 2
+#define MIXF_FILTER 4
 #define MIXF_QUIET 16
 #define MIXF_LOOPED 32
 
@@ -54,8 +54,6 @@ typedef struct
 	float   fl1[MIXF_MAXCHAN]; /* filter lp buffer */
 	float   fb1[MIXF_MAXCHAN]; /* filter bp buffer */
 
-	int     isstereo;   /* flag for stereo output */
-	int     outfmt;     /* output format */
 	float   voll, volr; /* output volume */
 
 	float   ct0[256]; /* interpolation tab for s[-1] */

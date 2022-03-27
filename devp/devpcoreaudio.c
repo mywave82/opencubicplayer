@@ -358,7 +358,7 @@ static int CoreAudioPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *
 static void CoreAudioSetOptions(unsigned int rate, int opt)
 {
 	plrRate=CoreAudioRate; /* fixed */
-	plrOpt=PLR_STEREO|PLR_16BIT|PLR_SIGNEDOUT; /* fixed fixed fixed */
+	plrOpt=PLR_STEREO_16BIT_SIGNED; /* fixed fixed fixed */
 }
 
 static int CoreAudioInit(const struct deviceinfo *c)

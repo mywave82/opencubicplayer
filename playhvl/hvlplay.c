@@ -93,9 +93,6 @@ static volatile uint32_t bufpos; /* devp write head location */
 static uint32_t buflen; /* devp buffer-size in samples */
 static volatile uint32_t kernpos; /* devp read/tail location - used to track when to show buf8_states */
 static void *plrbuf; /* the devp buffer */
-static int stereo; /* boolean */
-static int bit16; /* boolean */
-static int signedout; /* boolean */
 static int active=0;
 static volatile int PauseSamples;
 
@@ -360,7 +357,7 @@ void __attribute__ ((visibility ("internal"))) hvlIdler (void)
 static void hvlUpdateKernPos (void)
 {
 	uint32_t delta, newpos;
-	newpos = plrGetPlayPos() >> (stereo+bit16);
+	newpos = plrGetPlayPos() >> 2 /* stereo + bit16 */;
 	delta = (buflen + newpos - kernpos) % buflen;
 
 	if (PauseSamples)
@@ -404,7 +401,7 @@ void __attribute__ ((visibility ("internal"))) hvlIdle (void)
 	{
 		uint32_t buf_read_pos; /* bufpos is last given buf_write_pos */
 
-		buf_read_pos = plrGetBufPos() >> (stereo+bit16);
+		buf_read_pos = plrGetBufPos() >> 2 /* stereo + bit16 */;
 
 		bufdelta = ( buflen + buf_read_pos - bufpos )%buflen;
 	}
@@ -439,17 +436,9 @@ void __attribute__ ((visibility ("internal"))) hvlIdle (void)
 			else
 				pass2=0;
 
-			if (bit16)
-			{
-				plrClearBuf((uint16_t *)plrbuf+(bufpos<<stereo), (bufdelta-pass2)<<stereo, signedout);
-				if (pass2)
-					plrClearBuf((uint16_t *)plrbuf, pass2<<stereo, signedout);
-			} else {
-				plrClearBuf(buf16, bufdelta<<stereo, signedout);
-				plr16to8((uint8_t *)plrbuf+(bufpos<<stereo), (uint16_t *)buf16, (bufdelta-pass2)<<stereo);
-				if (pass2)
-					plr16to8((uint8_t *)plrbuf, (uint16_t *)buf16+((bufdelta-pass2)<<stereo), pass2<<stereo);
-			}
+			plrClearBuf((uint16_t *)plrbuf+(bufpos << 1 /* stereo */), (bufdelta-pass2) << 1 /* stereo */, 1 /* signedout */);
+			if (pass2)
+				plrClearBuf((uint16_t *)plrbuf, pass2 << 1 /* stereo */ , 1 /* signedout */);
 			bufpos+=bufdelta;
 			if (bufpos>=buflen)
 				bufpos-=buflen;
@@ -513,153 +502,24 @@ void __attribute__ ((visibility ("internal"))) hvlIdle (void)
 			pass2=0;
 		bufdelta-=pass2;
 
-		if (bit16)
 		{
-			if (stereo)
-			{
-				int16_t *p=(int16_t *)plrbuf+2*bufpos;
-				int16_t *b=buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0];
-						p[1]=b[1];
-						p+=2;
-						b+=2;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0];
-						p[1]=b[1];
-						p+=2;
-						b+=2;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p[1]=b[1]^0x8000;
-						p+=2;
-						b+=2;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p[1]=b[1]^0x8000;
-						p+=2;
-						b+=2;
-					}
-				}
-			} else {
-				int16_t *p=(int16_t *)plrbuf+bufpos;
-				int16_t *b=buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0];
-						p++;
-						b++;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0];
-						p++;
-						b++;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p++;
-						b++;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p++;
-						b++;
-					}
-				}
-			}
-		} else {
-			if (stereo)
-			{
-				uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
-				uint8_t *b=(uint8_t *)buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1];
-						p[1]=b[3];
-						p+=2;
-						b+=4;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1];
-						p[1]=b[3];
-						p+=2;
-						b+=4;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1]^0x80;
-						p[1]=b[3]^0x80;
-						p+=2;
-						b+=4;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1]^0x80;
-						p[1]=b[3]^0x80;
-						p+=2;
-						b+=4;
-					}
-				}
-			} else {
-				uint8_t *p=(uint8_t *)plrbuf+bufpos;
-				int16_t *b=buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=(b[0]+b[1])>>9;
-						p++;
-						b+=2;
-					}
+			int16_t *p=(int16_t *)plrbuf+2*bufpos;
+			int16_t *b=buf16;
 
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=(b[0]+b[1])>>9;
-						p++;
-						b+=2;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=((b[0]+b[1])>>9)^0x80;
-						p++;
-						b+=2;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=((b[0]+b[1])>>9)^0x80;
-						p++;
-						b+=2;
-					}
-				}
+			for (i=0; i<bufdelta; i++)
+			{
+				p[0]=b[0];
+				p[1]=b[1];
+				p+=2;
+				b+=2;
+			}
+			p=(int16_t *)plrbuf;
+			for (i=0; i<pass2; i++)
+			{
+				p[0]=b[0];
+				p[1]=b[1];
+				p+=2;
+				b+=2;
 			}
 		}
 		bufpos+=buf16_filled;
@@ -667,7 +527,7 @@ void __attribute__ ((visibility ("internal"))) hvlIdle (void)
 			bufpos-=buflen;
 	}
 
-	plrAdvanceTo(bufpos<<(stereo+bit16));
+	plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
 
 	if (plrIdle)
 		plrIdle();
@@ -843,11 +703,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 
 	hvl_InitReplayer ();
 
-	plrSetOptions(44100, (PLR_SIGNEDOUT|PLR_16BIT)|PLR_STEREO);
-
-	stereo=!!(plrOpt&PLR_STEREO);
-	bit16=!!(plrOpt&PLR_16BIT);
-	signedout=!!(plrOpt&PLR_SIGNEDOUT);
+	plrSetOptions(44100, PLR_STEREO_16BIT_SIGNED);
 
 	ht = hvl_LoadTune_memory (mem, memlen, 4, plrRate);
 	if (!ht)

@@ -68,6 +68,7 @@ devwmix.o: devwmix.c \
 	../dev/mix.h \
 	../stuff/poll.h \
 	../dev/player.h \
+	../dev/plrasm.h \
 	devwmix.h \
 	../stuff/imsrtns.h \
 	../stuff/pagesize.inc.c \
@@ -99,6 +100,7 @@ devwmixf.o: devwmixf.c \
 	../dev/mcp.h \
 	../dev/mix.h \
 	../dev/player.h \
+	../dev/plrasm.h \
 	../stuff/imsrtns.h \
 	../stuff/pagesize.inc.c \
 	devwmixf.h \

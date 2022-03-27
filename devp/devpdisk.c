@@ -40,8 +40,11 @@
 #include <unistd.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "boot/psetting.h"
+#include "dev/devigen.h"
 #include "dev/imsdev.h"
 #include "dev/player.h"
+#include "dev/plrasm.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
@@ -51,8 +54,8 @@ extern struct sounddevice plrDiskWriter;
 static uint32_t filepos;
 static unsigned long buflen;
 static char *playbuf;
+static char *shadowbuf;
 static unsigned long bufpos;
-static unsigned long bufrate;
 static int file;
 static unsigned char *diskcache;
 static unsigned long cachelen;
@@ -65,19 +68,26 @@ static unsigned char writeerr;
 
 static void Flush(void)
 {
-	busy=1;
-	if (cachepos>(cachelen/2))
+	busy++;
+	if (busy != 1)
+	{
+		busy--;
+		return;
+	}
+	if (cachepos > (cachelen/2))
 	{
 		if (!writeerr)
 		{
-rewrite:
 			if (bit16)
 			{
 				int i, j = cachepos/2;
 				uint16_t *d = (uint16_t *)diskcache;
 				for (i=0;i<j;i++)
+				{
 					d[i]=uint16_little(d[i]);
+				}
 			}
+rewrite:
 			if ((unsigned)write(file, diskcache, cachepos)!=cachepos)
 			{
 				if (errno==EAGAIN)
@@ -87,14 +97,15 @@ rewrite:
 				writeerr=1;
 			}
 		}
-		filepos+=cachepos;
-		cachepos=0;
+		filepos += cachepos;
+		cachepos = 0;
 	}
 	busy=0;
 }
 
 static int getbufpos(void)
 {
+	if (cachepos > (cachelen/2)) return bufpos;
 	return (buflen + bufpos - (1<<(stereo+bit16))) % buflen;
 }
 
@@ -105,33 +116,69 @@ static int getplaypos(void)
 
 static void advance(unsigned int pos)
 {
-	busy=1;
+	busy++;
 
-	if (pos<bufpos)
+	if (pos == bufpos)
 	{
-		memcpy(diskcache+cachepos, playbuf+bufpos, buflen-bufpos);
-		memcpy(diskcache+cachepos+buflen-bufpos, playbuf, pos);
-		cachepos+=(buflen-bufpos)+pos;
-	} else {
-		if (pos == bufpos)
+		return;
+	}
+
+	if (shadowbuf)
+	{
+		plrConvertBuffer ((int16_t *)playbuf, shadowbuf, buflen, bufpos, pos, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
+	}
+
+	if (shadowbuf)
+	{
+		unsigned int _buflen = buflen >> ((!bit16)+(!stereo));
+		unsigned int _bufpos = bufpos >> ((!bit16)+(!stereo));
+		unsigned int _pos = pos >> ((!bit16)+(!stereo));
+
+		if (_pos < _bufpos)
 		{
-			memcpy(diskcache+cachepos, playbuf+bufpos, buflen-bufpos);
-			memcpy(diskcache+cachepos+buflen-bufpos, playbuf, pos);
-			cachepos += buflen;
+			memcpy(diskcache + cachepos                   , shadowbuf + _bufpos, _buflen - _bufpos);
+			memcpy(diskcache + cachepos + _buflen -_bufpos, shadowbuf          ,  _pos);
+			cachepos += _buflen - _bufpos + _pos;
+#if 0
+		} else if (_pos == _bufpos) /* is this legal? */
+		{
+			fprintf (stderr, "advance _pos %d == _bufpos %d   ", _pos, _bufpos);
+			memcpy(diskcache + cachepos                    , shadowbuf + _bufpos, _buflen - _bufpos);
+			memcpy(diskcache + cachepos + _buflen - _bufpos, shadowbuf          , _pos);
+			cachepos += _buflen;
+#endif
 		} else {
-			memcpy(diskcache+cachepos, playbuf+bufpos, pos-bufpos);
-			cachepos+=pos-bufpos;
+			memcpy(diskcache + cachepos, shadowbuf + _bufpos, _pos - _bufpos);
+			cachepos += _pos - _bufpos;
+		}
+	} else {
+		if (pos<bufpos)
+		{
+			memcpy(diskcache + cachepos                  , playbuf + bufpos, buflen - bufpos);
+			memcpy(diskcache + cachepos + buflen - bufpos, playbuf         , pos);
+			cachepos += buflen-bufpos +pos;
+#if 0
+		} else if (pos == bufpos) /* is this legal? */
+		{
+			memcpy(diskcache + cachepos                  , playbuf + bufpos, buflen - bufpos);
+			memcpy(diskcache + cachepos + buflen - bufpos, playbuf         , pos);
+			cachepos += buflen;
+#endif
+		} else {
+			memcpy(diskcache + cachepos, playbuf + bufpos, pos - bufpos);
+			cachepos += pos - bufpos;
 		}
 	}
 
-	if (cachepos>cachelen)
+	if (cachepos > cachelen)
 	{
 		fprintf(stderr, "devpdisk: cachepos>cachelen\n");
 		exit(0);
 	}
 
 	bufpos=pos;
-	busy=0;
+
+	busy--;
 }
 
 static uint32_t gettimer(void)
@@ -141,23 +188,18 @@ static uint32_t gettimer(void)
 
 static void dwSetOptions(uint32_t rate, int opt)
 {
-	stereo=!!(opt&PLR_STEREO);
-	bit16=!!(opt&PLR_16BIT);
-
-	if (bit16)
-		opt|=PLR_SIGNEDOUT;
-	else
-		opt&=~PLR_SIGNEDOUT;
+	stereo = !cfGetProfileBool("commandline_s", "m", !cfGetProfileBool("devpDisk", "stereo", 1, 1), 1);
+	bit16 =  !cfGetProfileBool("commandline_s", "8", !cfGetProfileBool("devpDisk", "16bit", 1, 1), 1);
 
 	if (rate<5000)
 		rate=5000;
 
-	if (rate>64000)
-		rate=64000;
+	if (rate>96000)
+		rate=96000;
 
 	playrate=rate;
 	plrRate=rate;
-	plrOpt=opt;
+	plrOpt=PLR_STEREO_16BIT_SIGNED;
 }
 
 static int dwPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file)
@@ -168,20 +210,41 @@ static int dwPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_
 
 	if (*len>32704)
 		*len=32704;
+	buflen=*len;
 	*buf=playbuf=malloc(*len);
 	if (!*buf)
+	{
+		fprintf (stderr, "dwPlay(): malloc() failed #1\n");
 		return 0;
-	memsetd(*buf, (plrOpt&PLR_SIGNEDOUT)?0:(plrOpt&PLR_16BIT)?0x80008000:0x80808080, (*len)>>2);
+	}
+	if ((!bit16) || (!stereo))
+	{ /* we need to convert the signal format... */
+		shadowbuf = malloc ( buflen >> ((!bit16) + (!stereo)));
+		if (!shadowbuf)
+		{
+			fprintf (stderr, "dwPlay(): malloc() failed #2\n");
+			free (playbuf);
+			playbuf=0; *buf=0;
+			return 0;
+		}
+	}
 
 	writeerr=0;
 
-	cachelen=(1024*16*playrate/44100)<<(2+stereo+bit16);
-	if (cachelen<(*len+1024))
-		cachelen=*len+1024;
+	cachelen = 8*playrate;
+	if (cachelen< (2 * (*len) + 1024) )
+	{
+		cachelen=(2 * (*len) + 1024);
+	}
 	cachepos=0;
 	diskcache=malloc(cachelen);
 	if (!diskcache)
+	{
+		free (playbuf);
+		free (shadowbuf);
+		shadowbuf = 0; playbuf=0; *buf=0;
 		return 0;
+	}
 
 	{
 		const char *orig;
@@ -211,7 +274,14 @@ static int dwPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_
 	}
 
 	if (file<0)
+
+	{
+		free (playbuf);
+		free (shadowbuf);
+		free (diskcache);
+		diskcache = 0; shadowbuf = 0; playbuf=0; *buf=0;
 		return 0;
+	}
 
 	while (1)
 	{
@@ -224,12 +294,8 @@ static int dwPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_
 		break;
 	}
 
-	buflen=*len;
 	bufpos=0;
 	busy=0;
-	bufrate=buflen/2;
-	if (bufrate>65520)
-		bufrate=65520;
 	filepos=0;
 
 	plrGetBufPos=getbufpos;
@@ -265,6 +331,15 @@ static void dwStop(void)
 
 	if (!writeerr)
 	{
+		if (bit16)
+		{
+			int i, j = cachepos/2;
+			uint16_t *d = (uint16_t *)diskcache;
+			for (i=0;i<j;i++)
+			{
+				d[i]=uint16_little(d[i]);
+			}
+		}
 rewrite:
 		if (write(file, diskcache, cachepos)<0)
 		{
@@ -309,7 +384,11 @@ reclose:
 			goto reclose;
 	}
 	free(playbuf);
+	free(shadowbuf);
 	free(diskcache);
+	playbuf=0;
+	shadowbuf=0;
+	diskcache=0;
 }
 
 static int dwInit(const struct deviceinfo *d)
@@ -330,21 +409,12 @@ static int dwDetect(struct deviceinfo *card)
 	card->devtype=&plrDiskWriter;
 	card->port=-1;
 	card->port2=-1;
-/*
-	card->irq=-1;
-	card->irq2=-1;
-	card->dma=-1;
-	card->dma2=-1;
-*/
 	card->subtype=-1;
 	card->mem=0;
 	card->chan=2;
 
 	return 1;
 }
-
-#include "dev/devigen.h"
-#include "boot/psetting.h"
 
 struct sounddevice plrDiskWriter={SS_PLAYER, 0, "Disk Writer", dwDetect, dwInit, dwClose, 0};
 

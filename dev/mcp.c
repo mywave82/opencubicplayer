@@ -44,5 +44,4 @@ int (*mcpMixChanSamples)(unsigned int *ch, unsigned int n, int16_t *s, unsigned 
 
 unsigned int mcpMixMaxRate;
 unsigned int mcpMixProcRate;
-int mcpMixOpt;
 unsigned int mcpMixBufSize;

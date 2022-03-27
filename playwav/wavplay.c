@@ -64,9 +64,6 @@ static volatile int active;
 static char opt25[26];
 static char opt50[51];
 
-static uint8_t stereo;
-static uint8_t bit16;
-static uint8_t signedout;
 static uint32_t samprate;
 
 static struct ocpfilehandle_t *wavefile;
@@ -224,7 +221,7 @@ static void wpIdler(void)
 			} else {
 				result >>= (wave16bit + wavestereo);
 			}
-/* The wavebuffer should always be 16bit stereo, so expand if needed */
+			/* The wavebuffer is always 16bit signed stereo, so expand if needed */
 			if (wavestereo)
 			{
 				if (!wave16bit)
@@ -295,7 +292,7 @@ void  __attribute__ ((visibility ("internal"))) wpIdle(void)
 	{
 		uint32_t bufplayed;
 
-		bufplayed=plrGetBufPos()>>(stereo+bit16);
+		bufplayed=plrGetBufPos() >> 2 /* stereo + bit16 */;
 
 		bufdelta=(buflen+bufplayed-bufpos)%buflen;
 	}
@@ -316,17 +313,9 @@ void  __attribute__ ((visibility ("internal"))) wpIdle(void)
 			pass2=bufpos+bufdelta-buflen;
 		else
 			pass2=0;
-		if (bit16)
-		{
-			plrClearBuf((uint16_t *)plrbuf+(bufpos<<stereo), (bufdelta-pass2)<<stereo, signedout);
-			if (pass2)
-				plrClearBuf((uint16_t *)plrbuf, pass2<<stereo, signedout);
-		} else {
-			plrClearBuf(buf16, bufdelta<<stereo, signedout);
-			plr16to8((uint8_t *)plrbuf+(bufpos<<stereo), (uint16_t *)buf16, (bufdelta-pass2)<<stereo);
-			if (pass2)
-				plr16to8((uint8_t *)plrbuf, (uint16_t *)buf16+((bufdelta-pass2)<<stereo), pass2<<stereo);
-		}
+		plrClearBuf((uint16_t *)plrbuf+(bufpos << 1 /* stereo */), (bufdelta-pass2) << 1 /* stereo*/, 1 /* signedout */);
+		if (pass2)
+			plrClearBuf((uint16_t *)plrbuf, pass2 << 1 /* stereo */ , 1 /* signedout */);
 		bufpos+=bufdelta;
 		if (bufpos>=buflen)
 			bufpos-=buflen;
@@ -517,152 +506,24 @@ void  __attribute__ ((visibility ("internal"))) wpIdle(void)
 			pass2=0;
 		bufdelta-=pass2;
 
-		if (bit16)
 		{
-			if (stereo)
+			int16_t *p=(int16_t *)plrbuf+2*bufpos;
+			int16_t *b=buf16;
+
+			for (i=0; i<bufdelta; i++)
 			{
-				int16_t *p=(int16_t *)plrbuf+2*bufpos;
-				int16_t *b=buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0];
-						p[1]=b[1];
-						p+=2;
-						b+=2;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0];
-						p[1]=b[1];
-						p+=2;
-						b+=2;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p[1]=b[1]^0x8000;
-						p+=2;
-						b+=2;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p[1]=b[1]^0x8000;
-						p+=2;
-						b+=2;
-					}
-				}
-			} else {
-				int16_t *p=(int16_t *)plrbuf+bufpos;
-				int16_t *b=buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0];
-						p++;
-						b++;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0];
-						p++;
-						b++;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p++;
-						b++;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p++;
-						b++;
-					}
-				}
+				p[0]=b[0];
+				p[1]=b[1];
+				p+=2;
+				b+=2;
 			}
-		} else {
-			if (stereo)
+			p=(int16_t *)plrbuf;
+			for (i=0; i<pass2; i++)
 			{
-				uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
-				int16_t *b=buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0]>>8;
-						p[1]=b[1]>>8;
-						p+=2;
-						b+=2;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0]>>8;
-						p[1]=b[1]>>8;
-						p+=2;
-						b+=2;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=(b[0]>>8)^0x80;
-						p[1]=(b[0]>>8)^0x80;
-						p+=2;
-						b+=2;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=(b[0]>>8)^0x80;
-						p[1]=(b[1]>>8)^0x80;
-						p+=2;
-						b+=2;
-					}
-				}
-			} else {
-				uint8_t *p=(uint8_t *)plrbuf+bufpos;
-				int16_t *b=buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=(b[0]+b[1])>>9;
-						p++;
-						b+=2;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1];
-						p++;
-						b+=2;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=((b[0]+b[1])>>9)^0x80;
-						p++;
-						b+=2;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=((b[0]+b[1])>>9)^0x80;
-						p++;
-						b+=2;
-					}
-				}
+				p[0]=b[0];
+				p[1]=b[1];
+				p+=2;
+				b+=2;
 			}
 		}
 		bufpos+=buf16_filled;
@@ -670,7 +531,7 @@ void  __attribute__ ((visibility ("internal"))) wpIdle(void)
 			bufpos-=buflen;
 	}
 
-	plrAdvanceTo(bufpos<<(stereo+bit16));
+	plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
 
 	if (plrIdle)
 		plrIdle();
@@ -952,16 +813,13 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	wavepos = 0;
 
-	plrSetOptions(waverate, PLR_STEREO|PLR_16BIT);
+	plrSetOptions(waverate, PLR_STEREO_16BIT_SIGNED);
 
 	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, wavf))
 	{
 		goto undowavebuf;
 	}
 
-	stereo=!!(plrOpt&PLR_STEREO);
-	bit16=!!(plrOpt&PLR_16BIT);
-	signedout=!!(plrOpt&PLR_SIGNEDOUT);
 	samprate=plrRate;
 
 	wavebufrate=imuldiv(65536, waverate, samprate);

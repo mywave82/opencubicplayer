@@ -72,19 +72,16 @@ static uint32_t gettimer(void)
 
 static void qpSetOptions(uint32_t rate, int opt)
 {
-	int stereo=!!(opt&PLR_STEREO);
-	int bit16=!!(opt&PLR_16BIT);
-
 	if (rate<5000)
 		rate=5000;
 
 	if (rate>48000)
 		rate=48000;
 
-	bufrate=rate<<(stereo+bit16); /* !!!!!!!!!! */
+	bufrate=rate<<(2/*stereo+bit16*/); /* !!!!!!!!!! */
 
 	plrRate=rate;
-	plrOpt=opt;
+	plrOpt=PLR_STEREO_16BIT_SIGNED;
 /*
 	tmSetNewRate(plrRate);
 */
@@ -96,7 +93,6 @@ static int qpPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_
 {
 	if (!(thebuf=*buf=malloc(sizeof(unsigned char)*(*len))))
 		return 0;
-	memsetd(*buf, (plrOpt&PLR_SIGNEDOUT)?0:(plrOpt&PLR_16BIT)?0x80008000:0x80808080, *len>>2);
 
 	buflen=*len;
 
@@ -138,12 +134,6 @@ static int qpDetect(struct deviceinfo *card)
 	card->devtype=&plrNone;
 	card->port=-1;
 	card->port2=-1;
-/*
-	card->irq=-1;
-	card->irq2=-1;
-	card->dma=-1;
-	card->dma2=-1;
-*/
 	card->subtype=-1;
 	card->mem=0;
 	card->chan=2;

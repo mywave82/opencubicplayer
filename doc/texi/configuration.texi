@@ -139,14 +139,9 @@ this section.
   wavetabledevices=devwMixF devwmixQ devwMix devwNone
   mixrate=44100
   mixprocrate=4096000
-  mix16bit=on
-  mixstereo=on
   plrbufsize=200
   mixbufsize=200
   samprate=44100
-  samp16bit=on
-  sampstereo=on
-  smpbufsize=2000
   defplayer=
   defwavetable=
   itchan=64
@@ -200,10 +195,6 @@ if you have a slow cpu@footnote{@emph{<}486DX} you might
 not be able to play 32 channels at full mixrate. This value defines
 the maximum ``calculation power'' to which OCP tries to use the full
 mixrate.
-@item mix16bit @tab
-Leave this option enabled unless you have a 8bit sound card.
-@item mixstereo @tab
-dito for stereo cards
 @item plrbufsize @tab
 When using a @emph{playerdevice} to play sample streams a DMA
 buffer is used to minimize cpu resources for handling the sample
@@ -215,13 +206,6 @@ stream OCP will calculate in advance. This option sets the buffer lenth in
 miliseconds.
 @item samprate @tab
 When using diskwriter, this value will be used.
-@item samp16bit @tab
-dito
-@item sampstereo @tab
-dito
-@item smpbufsize @tab
-this options sets the length of the sample DMA buffer in
-miliseconds.
 @item defplayer @tab
 with this option you can override the default
 @emph{playerdevice}. Normally you don't need to set this option, as the
@@ -524,6 +508,14 @@ of BSD, old versions of Linux, etc.
   mixer=/dev/mixer
 @end example
 
+@multitable @columnfractions .3 .7
+@item path @tab
+where /dev/dsp is located. If you have more soundcards, this can be set to for
+instance /dev/dsp3. You can override config with the DSP environment variable.
+@item mixer @tab
+what mixerdevice to use. Override with the MIXER environment variable.
+@end multitable
+
 @subsection SDL/SDL2
 SDL/SDL2 is a cross-platform library that gives a common simple API for
 playing audio, hiding the underlaying operating system. This library will work
@@ -563,16 +555,12 @@ on your cpu power}. In the directory where you have started OCP (not
 necessaryly the directory where the module is located) subsequent
 @file{.wav} files named after the original filename will be created.
 
-@multitable @columnfractions .3 .7
-@item path @tab
-where /dev/dsp is located. If you have more soundcards, this can be set to for
-instance /dev/dsp3. You can override config with the DSP environment variable.
-@item mixer @tab
-what mixerdevice to use. Override with the MIXER environment variable.
-@item igain @tab
-if you don't input from cdrom, try to set igain. With this option, you can
-automatically set igain to a given value (or -1 for not touching it)
-@end multitable
+@example
+[devpDisk]
+  link=devpdisk
+  stereo=on
+  16bit=on
+@end example
 
 @subsection software mixers
 By default OCP will use its own routines for mixing several channels

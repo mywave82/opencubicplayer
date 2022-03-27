@@ -304,7 +304,7 @@ static void sdl2SetOptions(unsigned int rate, int opt)
 {
 	PRINT("%s(%u, %d)\n", __FUNCTION__, rate, opt);
 	plrRate=rate; /* fixed */
-	plrOpt=PLR_STEREO|PLR_16BIT|PLR_SIGNEDOUT; /* fixed fixed fixed */
+	plrOpt=PLR_STEREO_16BIT_SIGNED; /* fixed fixed fixed */
 }
 
 static int sdl2Init(const struct deviceinfo *c)

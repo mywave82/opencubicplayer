@@ -1,9 +1,8 @@
 #ifndef __PLAYER_H
 #define __PLAYER_H
 
-#define PLR_STEREO 1
-#define PLR_16BIT 2
-#define PLR_SIGNEDOUT 4
+/* in the future we might add optional 5.1, 7.1, float etc - All devp drivers MUST atleast support PLR_STEREO_16BIT_SIGNED */
+#define PLR_STEREO_16BIT_SIGNED 1
 
 struct ocpfilehandle_t;
 

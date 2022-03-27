@@ -47,6 +47,7 @@
 #include "cpiface/vol.h"
 #include "dev/imsdev.h"
 #include "dev/player.h"
+#include "dev/plrasm.h"
 #include "dev/devigen.h"
 #ifdef PLR_DEBUG
 #include "stuff/poutput.h"
@@ -64,6 +65,7 @@ static struct deviceinfo currentcard;
 static int fd_dsp=-1;
 static int fd_mixer=-1;
 static char *playbuf;
+static char *shadowbuf;
 static int buflen;
 
 static volatile int kernpos, cachepos, bufpos;
@@ -84,6 +86,8 @@ static volatile int busy=0;
 
 static int mixer_devmask=0;
 static struct ocpvolstruct mixer_entries[SOUND_MIXER_NRDEVICES];
+
+static void SetOptions(uint32_t rate, int opt);
 
 static void flush(void)
 {
@@ -133,6 +137,7 @@ static void flush(void)
 	}
 #endif
 	odelay=abs(odelay); /* This is because of nvidia sound-drivers */
+	odelay<<=2/*bit16+stereo*/;
 	if (odelay>kernlen)
 	{
 #ifdef OSS_DEBUG
@@ -171,24 +176,20 @@ static void flush(void)
 		n=bufpos-cachepos;
 
 	/* first.. don't overrun kernel buffer, since that can block */
-	if (n>info.bytes)
-		n=info.bytes;
-
-	if (n%(1<<(bit16+stereo)))
-	{
-#ifdef OSS_DEBUG
-		write(2, "devposs: flush() alignment failed\n", 35);
-#endif
-		n>>=bit16+stereo;
-		n<<=bit16+stereo;
-	}
+	if (n>(info.bytes<<2/*bit16+stereo*/))
+		n=info.bytes<<2/*bit16+stereo*/;
 
 	if (n<=0)
 	{
 		busy--;
 		return;
 	}
-	result=write(fd_dsp, playbuf+cachepos, n);
+	if (shadowbuf)
+	{
+		result=write(fd_dsp, shadowbuf+(cachepos>>((!stereo)+(!bit16))), n>>((!stereo)+(!bit16)));
+	} else {
+		result=write(fd_dsp, playbuf+cachepos, n);
+	}
 	if (result<0)
 	{
 #ifdef OSS_DEBUG
@@ -198,6 +199,7 @@ static void flush(void)
 		return;
 	}
 	cachepos=(cachepos+result+buflen)%buflen;
+	result<<=((!bit16)+(!stereo));
 	playpos+=result;
 	cachelen-=result;
 	kernlen+=result;
@@ -298,7 +300,7 @@ static int getbufpos(void)
 	if ((!cachelen)&&(!kernlen))
 		retval=(kernpos+buflen-(0<<(bit16+stereo)))%buflen;
 	else*/
-		retval=(kernpos+buflen-(1<<(bit16+stereo)))%buflen;
+		retval=(kernpos+buflen-(1<<2/*bit16+stereo*/))%buflen;
 	busy--;
 	return retval;
 }
@@ -311,20 +313,11 @@ static void advance(unsigned int pos)
 		write(2, "devposs: advance() BUSY set\n", 28);
 #endif
 	}
-/*
-	if (bit16)
+	if (shadowbuf)
 	{
-		int i;
-		i=bufpos;
-		while (i!=pos)
-		{
-			((uint16_t *)playbuf)[i>>1]=uint16_little(((uint16_t *)playbuf)[i>>1]);
-			i+=2;
-			if (i>=buflen)
-				i=0;
-		}
+		plrConvertBuffer ((int16_t *)playbuf, shadowbuf, buflen, bufpos, pos, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, (currentcard.opt&REVSTEREO));
 	}
-*/
+
 	cachelen+=(pos-bufpos+buflen)%buflen;
 	bufpos=pos;
 
@@ -400,7 +393,8 @@ static void ossStop(void)
 {
 	if (fd_dsp<0)
 		return;
-	free(playbuf);
+	free(playbuf); playbuf=0;
+	free(shadowbuf); shadowbuf=0;
 #ifdef PLR_DEBUG
 	plrDebug=0;
 #endif
@@ -432,11 +426,25 @@ static int ossPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source
 		*len=plrRate&~3;
 	if ((*len)>(plrRate*4))
 		*len=plrRate*4;
-	playbuf=*buf=malloc(*len);
-
-	memsetd(*buf, (plrOpt&PLR_SIGNEDOUT)?0:(plrOpt&PLR_16BIT)?0x80008000:0x80808080, (*len)>>2);
-
 	buflen=*len;
+	playbuf=*buf=malloc(*len);
+	if (!playbuf)
+	{
+		fprintf (stderr, "ossPlay(): malloc() failed #1\n");
+		return 0;
+	}
+	if ((!bit16) || (!stereo) || (currentcard.opt&REVSTEREO))
+	{ /* we need to convert the signal format... */
+		shadowbuf = malloc ( buflen >> ((!bit16) + (!stereo)));
+		if (!shadowbuf)
+		{
+			fprintf (stderr, "ossPlay(): malloc() failed #2\n");
+			free (playbuf);
+			playbuf=0; *buf=0;
+			return 0;
+		}
+	}
+
 	bufpos=0;
 	cachepos=0;
 	cachelen=0;
@@ -455,27 +463,33 @@ static int ossPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source
 
 	if ((fd_dsp=open(currentcard.path, O_WRONLY|O_NONBLOCK))<0)
 	{
-#ifdef OSS_DEBUG
 		fprintf(stderr, "devposs: open(%s, O_WRONLY|O_NONBLOCK): %s\n", currentcard.path, strerror(errno));
+#ifdef OSS_DEBUG
 		sleep(3);
 #endif
 		return 0;
 	}
 	if (fcntl(fd_dsp, F_SETFD, FD_CLOEXEC)<0)
+	{
 		perror("devposs: fcntl(fd_dsp, F_SETFD, FD_CLOEXEC)");
+	}
 #ifdef OSS_DEBUG
  #if defined(OSS_GETVERSION)
 	if (ioctl(fd_dsp, OSS_GETVERSION, &tmp)<0)
+	{
 		tmp=0;
+	}
 	if (tmp<361)
+	{
 		tmp= ((tmp&0xf00)<<8) | ((tmp&0xf0)<<4) | (tmp&0xf);
+	}
 
 	fprintf(stderr, "devposs: compiled agains OSS version %d.%d.%d, version %d.%d.%d detected\n", (SOUND_VERSION&0xff0000)>>16, (SOUND_VERSION&0xff00)>>8, SOUND_VERSION&0xff, (tmp&0xff0000)>>16, (tmp&0xff00)>>8, tmp&0xff);
  #elif defined(SOUND_VERSION)
 	fprintf(stderr, "devposs: compiled agains OSS version %d.%d.%d\n", (SOUND_VERSION&0xff0000)>>16, (SOUND_VERSION&0xff00)>>8, SOUND_VERSION&0xff);
  #endif
 #endif
-	plrSetOptions(plrRate, plrOpt);
+	SetOptions(plrRate, plrOpt);
 
 	return 1;
 }
@@ -484,71 +498,50 @@ static void SetOptions(uint32_t rate, int opt)
 {
 	int tmp;
 
-	int newopt;
-
 	int fd;
 
 	if (fd_dsp<0)
 	{
 		if ((fd=open(currentcard.path, O_WRONLY|O_NONBLOCK))<0) /* no need to FD_SET this, since it will be closed very soon */
 		{
-#ifdef OSS_DEBUG
 			fprintf(stderr, "devposs: open(%s, O_WRONLY|O_NONBLOCK): %s\n", currentcard.path, strerror(errno));
+#ifdef OSS_DEBUG
 			sleep(3);
 #endif
 			plrRate=rate;
-			plrOpt=opt; /* have to do... but it stinks */
+			bit16=1;
+			stereo=1;
+			plrOpt=PLR_STEREO_16BIT_SIGNED; /* have to do... but it stinks */
 			return;
 		}
-	} else
+	} else {
 		fd=fd_dsp;
+	}
 
-	if (opt&PLR_16BIT)
-		tmp=16;
-	else
-		tmp=8;
+	tmp=16;
 	if (ioctl(fd, SOUND_PCM_WRITE_BITS, &tmp)<0)
 	{
-#ifdef OSS_DEBUG
 		perror("devposs: ioctl(fd_dsp, SOUND_PCM_WRITE_BITS, &tmp)");
-#endif
 	}
 
-	if ((bit16=(tmp==16)))
-		newopt = PLR_16BIT | PLR_SIGNEDOUT;
-	else
-		newopt = 0;
+	bit16=(tmp==16);
+	/* bit16 is signed,  bit8 would be unsigned */
 
-	if (opt&PLR_STEREO)
-		tmp=2;
-	else
-		tmp=1;
-
+	tmp=2;
 	if (ioctl(fd, SOUND_PCM_WRITE_CHANNELS, &tmp)<0)
 	{
-#ifdef OSS_DEBUG
 		perror("devposs: ioctl(fd_dsp, SOUND_PCM_WRITE_CHANNELS, tmp)");
-#endif
 	}
 
-	if ((stereo=(tmp==2)))
-		newopt |= PLR_STEREO;
+	stereo=(tmp==2);
 
 	if (ioctl(fd, SOUND_PCM_WRITE_RATE, &rate)<0)
 	{
-#ifdef OSS_DEBUG
 		perror("devposs: ioctl(fd_dsp, SOUND_PCM_WRITE_RATE, rate)");
-#endif
 	}
 
-#warning REVSTEREO needs to be reimplemented!
-/*
-	if (currentcard.opt&REVSTEREO)
-		newopt|=PLR_REVERSESTEREO;
-*/
-
 	plrRate=rate;
-	plrOpt=newopt;
+	plrOpt=PLR_STEREO_16BIT_SIGNED;
 	if (fd_dsp<0) /* ugly hack */
 		close(fd);
 }
@@ -697,7 +690,7 @@ no_mixer:
 	mixer_devmask=0;
 
 clean_exit:
-	SetOptions(44100, PLR_16BIT|PLR_STEREO);
+	SetOptions(44100, PLR_STEREO_16BIT_SIGNED);
 	return 1;
 }
 
@@ -720,6 +713,7 @@ static uint32_t ossGetOpt(const char *sec)
 
 	if (cfGetProfileBool(sec, "revstereo", 0, 0))
 		opt|=REVSTEREO;
+
 	return opt;
 }
 

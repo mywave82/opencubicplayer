@@ -48,7 +48,6 @@ float    fadeleft=0.0;          /* 0 */
 float    fl1[MAXVOICES];        /* filter lp buffer */
 float    fb1[MAXVOICES];        /* filter bp buffer */
 float    faderight=0.0;         /* 0 */
-int      isstereo;              /* flag for stereo output */
 int      outfmt;                /* output format */
 float    voll=0.0;
 float    volr=0.0;
@@ -79,11 +78,17 @@ static float __fb1;
 typedef void(*clippercall)(float *input, void *output, uint_fast32_t count);
 
 static void clip_16s(float *input, void *output, uint_fast32_t count);
+#if 0
 static void clip_16u(float *input, void *output, uint_fast32_t count);
 static void clip_8s(float *input, void *output, uint_fast32_t count);
 static void clip_8u(float *input, void *output, uint_fast32_t count);
 
 static const clippercall clippers[4] = {clip_8s, clip_8u, clip_16s, clip_16u};
+#else
+
+static const clippercall clippers[1] = {clip_16s};
+#endif
+
 
 typedef void(*mixercall)(float *destptr, float **sample_pos, uint32_t *sample_pos_fract, uint32_t sample_pitch, uint32_t sample_pitch_fract, float *loopend);
 
@@ -99,18 +104,6 @@ prepare_mixer (void)
 
 	for (i = 0; i < MAXVOICES; i++)
 		state.volleft[i] = dwmixfa_state.volright[i] = 0.0;
-}
-
-static inline
-void clearbufm(float *samples, int count)
-{
-	int i;
-
-	for (i = 0; i < count; i++)
-	{
-		*samples++ = state.fadeleft;
-		state.fadeleft *= cremoveconst;
-	}
 }
 
 static inline
@@ -248,18 +241,21 @@ fade:                                                                   \
     }                                                                   \
 }
 
-MIX_TEMPLATE(m_n, 0, none, none)
 MIX_TEMPLATE(s_n, 1, none, none)
-MIX_TEMPLATE(m_i, 0, lin, none)
 MIX_TEMPLATE(s_i, 1, lin, none)
-MIX_TEMPLATE(m_i2, 0, cub, none)
 MIX_TEMPLATE(s_i2, 1, cub, none)
-MIX_TEMPLATE(m_nf, 0, none, mixf)
 MIX_TEMPLATE(s_nf, 1, none, mixf)
-MIX_TEMPLATE(m_if, 0, lin, mixf)
 MIX_TEMPLATE(s_if, 1, lin, mixf)
-MIX_TEMPLATE(m_i2f, 0, cub, mixf)
 MIX_TEMPLATE(s_i2f, 1, cub, mixf)
+
+#if 0
+
+MIX_TEMPLATE(m_n, 0, none, none)
+MIX_TEMPLATE(m_i, 0, lin, none)
+MIX_TEMPLATE(m_i2, 0, cub, none)
+MIX_TEMPLATE(m_nf, 0, none, mixf)
+MIX_TEMPLATE(m_if, 0, lin, mixf)
+MIX_TEMPLATE(m_i2f, 0, cub, mixf)
 
 static const mixercall mixers[16] = {
 	mixm_n,   mixs_n,   mixm_i,  mixs_i,
@@ -267,6 +263,17 @@ static const mixercall mixers[16] = {
 	mixm_nf,  mixs_nf,  mixm_if, mixs_if,
 	mixm_i2f, mixs_i2f, mix_0,   mix_0
 };
+
+#else
+
+static const mixercall mixers[8] = {
+	mixs_n,   mixs_i,
+	mixs_i2,  mix_0,
+	mixs_nf,  mixs_if,
+	mixs_i2f, mix_0
+};
+
+#endif
 
 void
 mixer (void)
@@ -283,10 +290,7 @@ mixer (void)
 	if (state.nsamples == 0)
 		return;
 
-	if (state.isstereo)
-		clearbufs(state.tempbuf, state.nsamples);
-	else
-		clearbufm(state.tempbuf, state.nsamples);
+	clearbufs(state.tempbuf, state.nsamples);
 
 	for (voice = state.nvoices - 1; voice >= 0; voice--)
 	{
@@ -312,7 +316,7 @@ mixer (void)
 		assert((state.freqf[voice] & 0xffff) == 0);
 		assert((state.smpposf[voice] & 0xffff) == 0);
 */
-		mixer = mixers[(state.isstereo | state.voiceflags[voice]) & 0xf];
+		mixer = mixers[state.voiceflags[voice] & 0x7];
 		state.smpposf[voice] >>= 16;
 		mixer(state.tempbuf,
 		      &state.smpposw[voice], &state.smpposf[voice],
@@ -328,9 +332,9 @@ mixer (void)
 	}
 
 	for (pp = state.postprocs; pp; pp = pp->next)
-		pp->Process(state.tempbuf, state.nsamples, state.samprate, state.isstereo);
+		pp->Process(state.tempbuf, state.nsamples, state.samprate);
 
-	clippers[state.outfmt](state.tempbuf, state.outbuf, state.isstereo ? 2 * state.nsamples : state.nsamples);
+	clippers[0](state.tempbuf, state.outbuf, 2 /* stereo */ * state.nsamples);
 }
 
 static void
@@ -351,6 +355,7 @@ clip_16s(float *input, void *output, uint_fast32_t count)
 	}
 }
 
+#if 0
 static void clip_16u(float *input, void *output, uint_fast32_t count)
 {
 	uint16_t *out = output;
@@ -401,6 +406,7 @@ static void clip_8u(float *input, void *output, uint_fast32_t count)
 			*out = s + 128;
 	}
 }
+#endif
 
 void
 getchanvol(int n, int len)

@@ -49,9 +49,6 @@ void (*plrIdle)(void);
 char *(*plrDebug)(void)=0;
 #endif
 
-static int stereo;
-static int bit16;
-static int signedout;
 static uint32_t samprate;
 
 static uint8_t *plrbuf;
@@ -68,38 +65,26 @@ void plrGetRealMasterVolume(int *l, int *r)
 
 	if (len>buflen)
 		len=buflen;
-	p=plrGetPlayPos()>>(stereo+bit16);
+	p=plrGetPlayPos() >> 2 /* stereo + bit16 */;
 
 	pass2=len-(uint32_t)buflen+p;
 
-	if (stereo)
-	{
-		fn=bit16?(signedout?mixAddAbs16SS:mixAddAbs16S):(signedout?mixAddAbs8SS:mixAddAbs8S);
+	fn=mixAddAbs16SS;
 
-		if (pass2>0)
-			v=fn(plrbuf+(p<<(1+bit16)), len-pass2)+fn(plrbuf, pass2);
-		else
-			v=fn(plrbuf+(p<<(1+bit16)), len);
+	if (pass2>0)
+		v=fn(plrbuf+(p<<(2 /* stereo + bit16 */)), len-pass2)+fn(plrbuf, pass2);
+	else
+		v=fn(plrbuf+(p<<(2 /* stereo + bit16 */)), len);
 
-		v=v*128/(len*16384);
-		*l=(v>255)?255:v;
+	v=v*128/(len*16384);
+	*l=(v>255)?255:v;
 
-		if (pass2>0)
-			v=fn(plrbuf+(p<<(1+bit16))+(1<<bit16), len-pass2)+fn(plrbuf+(1<<bit16), pass2);
-		else
-			v=fn(plrbuf+(p<<(1+bit16))+(1<<bit16), len);
-		v=v*128/(len*16384);
-		*r=(v>255)?255:v;
-	} else {
-		fn=bit16?(signedout?mixAddAbs16MS:mixAddAbs16M):(signedout?mixAddAbs8MS:mixAddAbs8M);
-
-		if (pass2>0)
-			v=fn(plrbuf+(p<<bit16), len-pass2)+fn(plrbuf, pass2);
-		else
-			v=fn(plrbuf+(p<<bit16), len);
-		v=v*128/(len*16384);
-		*r=*l=(v>255)?255:v;
-	}
+	if (pass2>0)
+		v=fn(plrbuf+(p<<(2 /* stereo + bit16 */))+(2 /* stereo << bit16 */ ), len-pass2)+fn(plrbuf + (2 /* stereo << bit16 */ ), pass2);
+	else
+		v=fn(plrbuf+(p<<(2 /* stereo + +bit16 */))+(2 /* stereo << bit16 */ ), len);
+	v=v*128/(len*16384);
+	*r=(v>255)?255:v;
 }
 
 void plrGetMasterSample(int16_t *buf, uint32_t len, uint32_t rate, int opt)
@@ -124,46 +109,18 @@ void plrGetMasterSample(int16_t *buf, uint32_t len, uint32_t rate, int opt)
 		len=maxlen;
 	}
 
-	bp=plrGetPlayPos()>>(stereo+bit16);
+	bp=plrGetPlayPos() >> 2 /* stereo + bit16 */;
 
 	pass2=len-imuldiv((uint32_t)buflen-bp,0x10000,step);
 
-	if (bit16)
-	{
-		if (stereo)
-		{
-			if (!stereoout)
-			{
-				fn=signedout?mixGetMasterSampleSS16M:mixGetMasterSampleSU16M;
-			} else {
-				fn=signedout?mixGetMasterSampleSS16S:mixGetMasterSampleSU16S;
-			}
-		} else if (!stereoout)
-		{
-			fn=signedout?mixGetMasterSampleMS16M:mixGetMasterSampleMU16M;
-		} else {
-			fn=signedout?mixGetMasterSampleMS16S:mixGetMasterSampleMU16S;
-		}
-	} else if (stereo)
-	{
-		if (!stereoout)
-		{
-			fn=signedout?mixGetMasterSampleSS8M:mixGetMasterSampleSU8M;
-		} else {
-			fn=signedout?mixGetMasterSampleSS8S:mixGetMasterSampleSU8S;
-		}
-	} else if (!stereoout)
-	{
-		fn=signedout?mixGetMasterSampleMS8M:mixGetMasterSampleMU8M;
-	} else {
-		fn=signedout?mixGetMasterSampleMS8S:mixGetMasterSampleMU8S;
-	}
+	fn=mixGetMasterSampleSS16S;
+
 	if (pass2>0)
 	{
-		fn(buf, plrbuf+(bp<<(stereo+bit16)), len-pass2, step);
+		fn(buf, plrbuf+(bp << 2 /* stereo + bit16 */ ), len-pass2, step);
 		fn(buf+((len-pass2)<<stereoout), plrbuf, pass2, step);
 	} else {
-		fn(buf, plrbuf+(bp<<(stereo+bit16)), len, step);
+		fn(buf, plrbuf+(bp<<2 /* stereo + bit16 */), len, step);
 	}
 }
 
@@ -173,20 +130,21 @@ int plrOpenPlayer(void **buf, uint32_t *len, uint32_t bufl, struct ocpfilehandle
 	unsigned int dmalen;
 
 	if (!plrPlay)
+	{
 		return 0;
+	}
 
-	dmalen=umuldiv(plrRate<<(!!(plrOpt&PLR_STEREO)+!!(plrOpt&PLR_16BIT)), bufl, 32500)&~15;
+	dmalen=umuldiv(plrRate << 2 /* stereo + bit16 */, bufl, 32500)&~15;
 
 	plrbuf=0;
-	if (!plrPlay((void **)((void *)&plrbuf), &dmalen, source_file)) /* to remove warning :-) */
+	if (!plrPlay((void **)((void *)&plrbuf), &dmalen, source_file))
+	{
 		return 0;
+	}
 
-	stereo=!!(plrOpt&PLR_STEREO);
-	bit16=!!(plrOpt&PLR_16BIT);
-	signedout=!!(plrOpt&PLR_SIGNEDOUT);
 	samprate=plrRate;
 
-	buflen=dmalen>>(stereo+bit16);
+	buflen=dmalen >> 2 /* stereo + bit16 */;
 	*buf=plrbuf;
 	*len=buflen;
 

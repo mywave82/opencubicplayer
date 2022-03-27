@@ -853,9 +853,31 @@ static int init_modules(int argc, char *argv[])
 			cfRemoveProfile("devsNone");
 		}
 
-		if (epoch < 20220304)
+		if (epoch < 20220326)
 		{
-			cfSetProfileInt("version", "epoch", 20220304, 10);
+			printf("ocp.ini update (0.2.96) removed the not-used smpbufsize\n");
+			cfRemoveEntry("sound", "smpbufsize");
+		}
+
+		if (epoch < 20220326)
+		{
+			printf("ocp.ini update (0.2.96) appended stereo=on and 16bit=on to [devpDisk]\n");
+			cfSetProfileBool("devpDisk", "stereo", 1);
+			cfSetProfileBool("devpDisk", "16bit", 1);
+		}
+
+		if (epoch < 20220327)
+		{
+			printf("ocp.ini update (0.2.96) removed mix16bit, mixstereo, samp16bit and sampstereo\n");
+			cfRemoveEntry("sound", "mix16bit");
+			cfRemoveEntry("sound", "mixstereo");
+			cfRemoveEntry("sound", "samp16bit");
+			cfRemoveEntry("sound", "sampstereo");
+		}
+
+		if (epoch < 20220327)
+		{
+			cfSetProfileInt("version", "epoch", 20220327, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -866,13 +888,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20220304)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20220327)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20220304\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20220327\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20220304\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20220327\n\n");
 		}
 		sleep(5);
 	}

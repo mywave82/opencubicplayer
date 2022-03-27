@@ -79,9 +79,6 @@ static void OpenPlayer(int chan)
 		dwmixfa_state.voiceflags[i]=0;
 	}
 
-	/*stereo=(plrOpt&PLR_STEREO)?1:0;*/
-	/*bit16=(plrOpt&PLR_16BIT)?1:0;*/
-	/*signedout=(plrOpt&PLR_SIGNEDOUT)?1:0;*/
 	dwmixfa_state.samprate=/*plrRate*/44100;
 /*
 	bufpos=0;
@@ -147,7 +144,7 @@ static void ClosePlayer()
 int main(int argc, char *argv[])
 {
 	float sample_1[] = {12345.0f, 23451.1234f, 30000.543f, 32767.0f, 1023.09f, -5435.05f, -32768.0f, -16000.02f}; /* normalized around 32767 and -32768 */
-	int16_t output[1024];
+	int16_t output[2048];
 /* INIT START */
 	initAsm();
 
@@ -182,8 +179,6 @@ int main(int argc, char *argv[])
 	dwmixfa_state.outbuf=output+2;
 	dwmixfa_state.nsamples=308;//508;
 
-	dwmixfa_state.isstereo=0; //1;
-
 	dwmixfa_state.voiceflags[0] = MIXF_PLAYING|MIXF_LOOPED; /* this is so broken! */
 
 	dwmixfa_state.freqf[0]=0x3a987654; /* pitch */
@@ -208,16 +203,6 @@ int main(int argc, char *argv[])
 
 	dwmixfa_state.fadeleft=0.5f;
 	dwmixfa_state.faderight=-0.5f;
-
-	dwmixfa_state.outfmt=2; /* 2 = 16bit, 1 = unsigned, can be or'ed */
-
-	//".long clip_8s, clip_8u, clip_16s, clip_16u\n"
-
-/*
-	voll=1.0f;
-	volr=1.0f;
-		This is output from getchanvol probably
-*/
 
 	mixer();
 

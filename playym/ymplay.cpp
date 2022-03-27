@@ -53,9 +53,6 @@ static uint16_t *buf16; /* here we dump out data before it goes live */
 static uint32_t devp_bufpos; /* devp write head location */
 static uint32_t devp_buflen; /* devp buffer-size in samples */
 static void *devp_plrbuf; /* the devp buffer */
-static int devp_stereo; /* boolean */
-static int devp_bit16; /* boolean */
-static int devp_signedout; /* boolean */
 static int donotloop=1;
 
 /* ymIdler dumping locations */
@@ -250,17 +247,13 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 		return 0;
 	}
 
-	plrSetOptions(44100, (PLR_SIGNEDOUT|PLR_16BIT)|PLR_STEREO);
+	plrSetOptions(44100, PLR_STEREO_16BIT_SIGNED);
 
 	_SET=mcpSet;
 	_GET=mcpGet;
 	mcpSet=SET;
 	mcpGet=GET;
 	mcpNormalize (mcpNormalizeDefaultPlayP);
-
-	devp_stereo=!!(plrOpt&PLR_STEREO);
-	devp_bit16=!!(plrOpt&PLR_16BIT);
-	devp_signedout=!!(plrOpt&PLR_SIGNEDOUT);
 
 	looped = 0;
 
@@ -420,13 +413,8 @@ static void ymIdler(void)
 static struct channel_info_t Registers;
 static void ymUpdateRegisters(void)
 {
-#if 0
-/*	int bufplayed;
-
-	bufplayed=plrGetBufPos()>>(devp_stereo+devp_bit16);*/
-#else
 	plrGetBufPos();
-#endif
+
 	while (1)
 	{
 		if (timeslot_tail_devp == timeslot_head_devp)
@@ -512,7 +500,7 @@ void __attribute__ ((visibility ("internal"))) ymIdle(void)
 
 	quietlen=0;
 	/* Where is our devp reading head? */
-	bufplayed=plrGetBufPos()>>(devp_stereo+devp_bit16);
+	bufplayed=plrGetBufPos() >> 2 /* devp_stereo + devp_bit16)*/;
 	bufdelta=(devp_buflen+bufplayed-devp_bufpos)%devp_buflen;
 
 	/* No delta on the devp? */
@@ -686,152 +674,23 @@ void __attribute__ ((visibility ("internal"))) ymIdle(void)
 				timeslot_head_devp = 0;
 		}
 		timeslot_debug();
-		if (devp_bit16)
 		{
-			if (devp_stereo)
+			int16_t *p=(int16_t *)devp_plrbuf+2*devp_bufpos;
+			int16_t *b=(int16_t *)buf16;
+			for (i=0; i<bufdelta; i++)
 			{
-				int16_t *p=(int16_t *)devp_plrbuf+2*devp_bufpos;
-				int16_t *b=(int16_t *)buf16;
-				if (devp_signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0];
-						p[1]=b[1];
-						p+=2;
-						b+=2;
-					}
-					p=(int16_t *)devp_plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0];
-						p[1]=b[1];
-						p+=2;
-						b+=2;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p[1]=b[1]^0x8000;
-						p+=2;
-						b+=2;
-					}
-					p=(int16_t *)devp_plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p[1]=b[1]^0x8000;
-						p+=2;
-						b+=2;
-					}
-				}
-			} else {
-				int16_t *p=(int16_t *)devp_plrbuf+devp_bufpos;
-				int16_t *b=(int16_t *)buf16;
-				if (devp_signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0];
-						p++;
-						b++;
-					}
-					p=(int16_t *)devp_plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0];
-						p++;
-						b++;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p++;
-						b++;
-					}
-					p=(int16_t *)devp_plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p++;
-						b++;
-					}
-				}
+				p[0]=b[0];
+				p[1]=b[1];
+				p+=2;
+				b+=2;
 			}
-		} else {
-			if (devp_stereo)
+			p=(int16_t *)devp_plrbuf;
+			for (i=0; i<pass2; i++)
 			{
-				uint8_t *p=(uint8_t *)devp_plrbuf+2*devp_bufpos;
-				uint8_t *b=(uint8_t *)buf16;
-				if (devp_signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1];
-						p[1]=b[3];
-						p+=2;
-						b+=4;
-					}
-					p=(uint8_t *)devp_plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1];
-						p[1]=b[3];
-						p+=2;
-						b+=4;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1]^0x80;
-						p[1]=b[3]^0x80;
-						p+=2;
-						b+=4;
-					}
-					p=(uint8_t *)devp_plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1]^0x80;
-						p[1]=b[3]^0x80;
-						p+=2;
-						b+=4;
-					}
-				}
-			} else {
-				uint8_t *p=(uint8_t *)devp_plrbuf+devp_bufpos;
-				uint8_t *b=(uint8_t *)buf16;
-				if (devp_signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1];
-						p++;
-						b+=2;
-					}
-					p=(uint8_t *)devp_plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1];
-						p++;
-						b+=2;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1]^0x80;
-						p++;
-						b+=2;
-					}
-					p=(uint8_t *)devp_plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1]^0x80;
-						p++;
-						b+=2;
-					}
-				}
+				p[0]=b[0];
+				p[1]=b[1];
+				p+=2;
+				b+=2;
 			}
 		}
 		devp_bufpos+=bufdelta+pass2;
@@ -846,23 +705,17 @@ void __attribute__ ((visibility ("internal"))) ymIdle(void)
 			pass2=devp_bufpos+bufdelta-devp_buflen;
 		else
 			pass2=0;
-		if (devp_bit16)
-		{
-			plrClearBuf((uint16_t *)devp_plrbuf+(devp_bufpos<<devp_stereo), (bufdelta-pass2)<<devp_stereo, !devp_signedout);
-			if (pass2)
-				plrClearBuf((uint16_t *)devp_plrbuf, pass2<<devp_stereo, !devp_signedout);
-		} else {
-			plrClearBuf(buf16, bufdelta<<devp_stereo, !devp_signedout);
-			plr16to8((uint8_t *)devp_plrbuf+(devp_bufpos<<devp_stereo), buf16, (bufdelta-pass2)<<devp_stereo);
-			if (pass2)
-				plr16to8((uint8_t *)devp_plrbuf, buf16+((bufdelta-pass2)<<devp_stereo), pass2<<devp_stereo);
-		}
+
+		plrClearBuf((uint16_t *)devp_plrbuf+(devp_bufpos << 1 /* devp_stereo */), (bufdelta-pass2) << 1 /* devp_stereo */, 1 /* devp_signedout */);
+		if (pass2)
+			plrClearBuf((uint16_t *)devp_plrbuf, pass2 << 1 /* devp_stereo */, 1 /* devp_signedout */);
+
 		devp_bufpos+=bufdelta;
 		if (devp_bufpos>=devp_buflen)
 			devp_bufpos-=devp_buflen;
 	}
 
-	plrAdvanceTo(devp_bufpos<<(devp_stereo+devp_bit16));
+	plrAdvanceTo(devp_bufpos << 2 /* devp_stereo + devp_bit16 */);
 
 	if (plrIdle)
 		plrIdle();

@@ -49,6 +49,7 @@
 #include "stuff/poll.h"
 #include "dev/mix.h"
 #include "dev/player.h"
+#include "dev/plrasm.h"
 #include "devwmix.h"
 #include "stuff/imsrtns.h"
 #include "dwmix.h"
@@ -83,9 +84,6 @@ static int volopt;
 static unsigned long relpitch;
 static int interpolation;
 
-static unsigned char stereo;
-static unsigned char bit16;
-static unsigned char signedout;
 static unsigned long samprate;
 
 static int channelnum;
@@ -205,9 +203,11 @@ static void calcamptab(signed long amp)
 	else
 		clipmax=0x07FFF000;
 
+#if 0
 	if (!signedout)
 		for (i=0; i<256; i++)
 			amptab[0][i]^=0x8000;
+#endif
 
 	BARRIER
 
@@ -282,14 +282,8 @@ static void transformvol(struct channel *ch)
 		ch->dstvols[0]=ch->dstvols[1]=0;
 		return;
 	}
-	if (!stereo)
-	{
-		ch->dstvols[0]=(abs(ch->vol[0])+abs(ch->vol[1])+1)>>1;
-		ch->dstvols[1]=0;
-	} else {
-		ch->dstvols[0]=ch->vol[0];
-		ch->dstvols[1]=ch->vol[1];
-	}
+	ch->dstvols[0]=ch->vol[0];
+	ch->dstvols[1]=ch->vol[1];
 }
 
 static void calcvol(struct channel *chn)
@@ -373,16 +367,16 @@ static void amplifyfadeq(uint32_t pos, uint32_t cl, int32_t *curvol, int32_t dst
 		l=cl;
 	if (dstvol<*curvol)
 	{
-		mixqAmplifyChannelDown(buf32+pos, scalebuf, l, *curvol, 4<<stereo);
+		mixqAmplifyChannelDown(buf32+pos, scalebuf, l, *curvol, 4 << 1 /* stereo */);
 		*curvol-=l;
 	} else if (dstvol>*curvol)
 	{
-		mixqAmplifyChannelUp(buf32+pos, scalebuf, l, *curvol, 4<<stereo);
+		mixqAmplifyChannelUp(buf32+pos, scalebuf, l, *curvol,  4 << 1 /* stereo */);
 		*curvol+=l;
 	}
 	cl-=l;
 	if (*curvol&&cl)
-		mixqAmplifyChannel(buf32+pos+(l<<stereo), scalebuf+l, cl, *curvol, 4<<stereo);
+		mixqAmplifyChannel(buf32+pos+(l << 1 /* stereo */ ), scalebuf+l, cl, *curvol, 4 << 1 /* stereo */);
 }
 
 static void playchannelq(int ch, uint32_t len)
@@ -397,12 +391,8 @@ static void playchannelq(int ch, uint32_t len)
 		if (quiet)
 			return;
 
-		if (stereo)
-		{
-			amplifyfadeq(0, len, &c->curvols[0], c->dstvols[0]);
-			amplifyfadeq(1, len, &c->curvols[1], c->dstvols[1]);
-		} else
-			amplifyfadeq(0, len, &c->curvols[0], c->dstvols[0]);
+		amplifyfadeq(0, len, &c->curvols[0], c->dstvols[0]);
+		amplifyfadeq(1, len, &c->curvols[1], c->dstvols[1]);
 
 		if (!(c->status&MIXRQ_PLAYING))
 			fadechanq(fadedown, c);
@@ -416,8 +406,10 @@ static void mixer(void)
 	/* mixer used by timerproc
 	 *               Idle
 	 */
+	uint32_t bufplayed;
+	uint32_t bufdelta;
+	uint32_t pass2;
 	int i;
-	int bufdeltatot;
 	struct mixqpostprocregstruct *mode;
 
 	if (!channelnum)
@@ -433,53 +425,59 @@ static void mixer(void)
 
 	BARRIER
 
-	bufdeltatot=((buflen+(plrGetBufPos()>>(stereo+bit16))-bufpos)%buflen);
+	/* Where is our devp reading head? */
+	bufplayed=plrGetBufPos() >> 2 /* stereo + bit16 */;
+	bufdelta=((buflen+bufplayed-bufpos)%buflen);
+
+	/* No delta on the devp? */
+	if (!bufdelta)
+	{
+		clipbusy--;
+		return;
+	}
+
 	if (_pause)
 	{
-		uint32_t pass2=((bufpos+bufdeltatot)>buflen)?(bufpos+bufdeltatot-buflen):0;
+		if ((bufpos+bufdelta)>buflen)
+			pass2=bufpos+bufdelta-buflen;
+		else
+			pass2=0;
 
-		if (bit16)
-		{
-			memsetw((short*)plrbuf+(bufpos<<stereo), signedout?0:0x8000, (bufdeltatot-pass2)<<stereo);
-			if (pass2)
-				memsetw((short*)plrbuf, signedout?0:0x8000, pass2<<stereo);
-		} else {
-			memsetb((char*)plrbuf+(bufpos<<stereo), signedout?0:0x80, (bufdeltatot-pass2)<<stereo);
-			if (pass2)
-				memsetb((char*)plrbuf, signedout?0:0x80, pass2<<stereo);
-		}
+		plrClearBuf((uint16_t *)plrbuf+(bufpos << 1 /* stereo */), (bufdelta-pass2) << 1 /* stereo */, 1 /* signedout */);
+		if (pass2)
+			plrClearBuf((uint16_t *)plrbuf, pass2 << 1 /* stereo */, 1 /* signedout */);
 
-		bufpos+=bufdeltatot;
+		bufpos+=bufdelta;
 		if (bufpos>=buflen)
 		bufpos-=buflen;
 
-		plrAdvanceTo(bufpos<<(stereo+bit16));
-		pausesamps+=bufdeltatot;
-	} else while (bufdeltatot>0)
+		plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
+		pausesamps+=bufdelta;
+	} else while (bufdelta>0)
 	{
-		uint32_t bufdelta=(bufdeltatot>MIXBUFLEN)?MIXBUFLEN:bufdeltatot;
+		uint32_t length1=(bufdelta>MIXBUFLEN)?MIXBUFLEN:bufdelta;
 
-		if (bufdelta>(buflen-bufpos))
-			bufdelta=buflen-bufpos;
-		if (bufdelta>((tickwidth-tickplayed)>>8))
-			bufdelta=(tickwidth-tickplayed)>>8;
+		if (length1>(buflen-bufpos))
+			length1=buflen-bufpos;
+		if (length1>((tickwidth-tickplayed)>>8))
+			length1=(tickwidth-tickplayed)>>8;
 
-		mixrFade(buf32, fadedown, bufdelta, stereo);
+		mixrFade(buf32, fadedown, length1);
 		if (!quality)
 		{
 			for (i=0; i<channelnum; i++)
-				mixrPlayChannel(buf32, fadedown, bufdelta, &channels[i], stereo);
+				mixrPlayChannel(buf32, fadedown, length1, &channels[i]);
 		} else {
 			for (i=0; i<channelnum; i++)
-				playchannelq(i, bufdelta);
+				playchannelq(i, length1);
 		}
 
 		for (mode=postprocs; mode; mode=mode->next)
-			mode->Process(buf32, bufdelta, samprate, stereo);
+			mode->Process(buf32, length1, samprate);
 
-		mixrClip((char*)plrbuf+(bufpos<<(stereo+bit16)), buf32, bufdelta<<stereo, amptab, clipmax, bit16);
+		mixrClip((char*)plrbuf+(bufpos << 2 /* stereo + bit16 */ ), buf32, length1 << 1 /* stereo */, amptab, clipmax);
 
-		tickplayed+=bufdelta<<8;
+		tickplayed+=length1<<8;
 		if (!((tickwidth-tickplayed)>>8))
 		{
 			tickplayed-=tickwidth;
@@ -487,13 +485,13 @@ static void mixer(void)
 			cmdtimerpos+=tickwidth;
 			tickwidth=newtickwidth;
 		}
-		bufpos+=bufdelta;
+		bufpos+=length1;
 		if (bufpos>=buflen)
 			bufpos-=buflen;
 
-		plrAdvanceTo(bufpos<<(stereo+bit16));
-		bufdeltatot-=bufdelta;
-		playsamps+=bufdelta;
+		plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
+		bufdelta-=length1;
+		playsamps+=length1;
 	}
 
 	BARRIER
@@ -993,10 +991,6 @@ static int OpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_f
 		return 0;
 	}
 
-	stereo=(plrOpt&PLR_STEREO)?1:0;
-	bit16=(plrOpt&PLR_16BIT)?1:0;
-	signedout=!!(plrOpt&PLR_SIGNEDOUT);
-
 	samprate=plrRate;
 	bufpos=0;
 	_pause=0;
@@ -1023,7 +1017,7 @@ static int OpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_f
 
 	for (mode=postprocs; mode; mode=mode->next)
 		if (mode->Init)
-			mode->Init(samprate, stereo);
+			mode->Init(samprate);
 
 	return 1;
 }

@@ -1,5 +1,5 @@
 [version]
-  epoch=20220304
+  epoch=20220327
 
 [general]
 ;link=
@@ -26,14 +26,9 @@
   wavetabledevices=devwMixF devwmixQ devwMix devwNone
   mixrate=44100           ; -sr44100
   mixprocrate=4096000     ; max channels*rate (for slow cpus) (4096000==64*64000)
-  mix16bit=on             ; -s8-
-  mixstereo=on            ; -sm-
   plrbufsize=200          ; milliseconds
   mixbufsize=200          ; milliseconds
   samprate=44100          ; -sr44100
-  samp16bit=on            ; -s8-
-  sampstereo=on           ; -sm-
-  smpbufsize=2000         ; milliseconds
   defplayer=              ; -sp
   defwavetable=           ; -sw
   midichan=64             ; number of channels used for midi playback
@@ -49,7 +44,6 @@
   chorus=0                ; -vc0
   surround=off            ; -vs-
   filter=2                ; -vf2   (FOI)
-
 
 [screen] ; default screen section
   usepics=*.gif *.tga
@@ -168,6 +162,8 @@
 
 [devpDisk]
   link=devpdisk
+  stereo=on            ; -sm-
+  16bit=on             ; -s8-
 
 [devpMPx]
   link=devpmpx

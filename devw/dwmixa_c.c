@@ -103,14 +103,16 @@ NAME(int32_t *buf,                                                      \
 }
 
 //#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused"
+//#pragma GCC diagnostic ignored "-Wunused"
+#if 0
 MIX_TEMPLATE(playmono, 0, none8)
-MIX_TEMPLATE(playstereo, 1, none8)
 MIX_TEMPLATE(playmonoi, 0, i8)
-MIX_TEMPLATE(playstereoi, 1, i8)
 MIX_TEMPLATE(playmono16, 0, none16)
-MIX_TEMPLATE(playstereo16, 1, none16)
 MIX_TEMPLATE(playmonoi16, 0, i16)
+#endif
+MIX_TEMPLATE(playstereo, 1, none8)
+MIX_TEMPLATE(playstereoi, 1, i8)
+MIX_TEMPLATE(playstereo16, 1, none16)
 MIX_TEMPLATE(playstereoi16, 1, i16)
 //#pragma GCC diagnostic pop
 
@@ -119,19 +121,21 @@ static void routequiet(int32_t *buf, uint32_t len, struct channel *chan)
 }
 
 typedef void (*route_func)(int32_t *buf, uint32_t len, struct channel *chan);
-static const route_func routeptrs[8]=
+static const route_func routeptrs[4]=
 {
+#if 0
 	playmono,
 	playmono16,
 	playmonoi,
 	playmonoi16,
+#endif
 	playstereo,
 	playstereo16,
 	playstereoi,
 	playstereoi16
 };
 
-void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channel *chan, int stereo)
+void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channel *chan)
 {
 	uint32_t fillen=0;
 	int inloop;
@@ -141,13 +145,8 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 	route_func routeptr;
 	uint32_t mixlen; /* ecx */
 
-	stereo=!!stereo; /* make sure it is 0 or 1 */
-
 	if (!(chan->status&MIXRQ_PLAYING))
 		return;
-
-	if (stereo)
-		route+=4;
 
 	if (chan->status&MIXRQ_INTERPOLATE)
 		route+=2;
@@ -269,7 +268,7 @@ mixrPlayChannelbigloop:
 		if (!ramping[0]&&!ramping[1]&&!chan->curvols[0]&&!chan->curvols[1])
 			routeptr=routequiet;
 		routeptr(buf, mixlen, chan);
-		buf+=mixlen<<stereo;
+		buf+=mixlen << 1 /* stereo */;
 		len-=mixlen;
 		chan->curvols[0]+=mixlen*ramping[0];
 		chan->curvols[1]+=mixlen*ramping[1];
@@ -280,7 +279,7 @@ mixrPlayChannelbigloop:
 			if (!chan->curvols[0]&&!chan->curvols[1])
 				routeptr=routequiet;
 			routeptr(buf, ramploop, chan);
-			buf+=ramploop<<stereo;
+			buf+=ramploop << 1 /* stereo */;
 			len-=ramploop;
 			mixlen+=ramploop;
 		}
@@ -340,20 +339,11 @@ mixrPlayChannelbigloop:
 			curvols[0]=mixrFadeChannelvoltab[chan->curvols[0]][(uint8_t)(chan->realsamp.bit8[chan->pos])];
 			curvols[1]=mixrFadeChannelvoltab[chan->curvols[1]][(uint8_t)(chan->realsamp.bit8[chan->pos])];
 		}
-		if (!stereo)
+		while (fillen)
 		{
-			while (fillen)
-			{
-				*(buf++)+=curvols[0];
-				fillen--;
-			}
-		} else {
-			while (fillen)
-			{
-				*(buf++)+=curvols[0];
-				*(buf++)+=curvols[1];
-				fillen--;
-			}
+			*(buf++)+=curvols[0];
+			*(buf++)+=curvols[1];
+			fillen--;
 		}
 	} else {
 		if (!dofade)
@@ -362,32 +352,24 @@ mixrPlayChannelbigloop:
 	mixrFadeChannel(fadebuf, chan);
 }
 
-void mixrFade(int32_t *buf, int32_t *fade, int len, int stereo)
+void mixrFade(int32_t *buf, int32_t *fade, int len)
 {
 	int32_t samp0 = fade[0];
 	int32_t samp1 = fade[1];
 
-	if (!stereo)
+	do
 	{
-		do
-		{
-			*(buf++)=samp0;
-			samp0 = ((samp0<<7) - samp0)>>7;
-		} while (--len);
-	} else {
-		do
-		{
-			*(buf++)=samp0;
-			*(buf++)=samp1;
-			samp0 = ((samp0<<7) - samp0)>>7;
-			samp1 = ((samp1<<7) - samp1)>>7;
-		} while (--len);
-	}
+		*(buf++)=samp0;
+		*(buf++)=samp1;
+		samp0 = ((samp0<<7) - samp0)>>7;
+		samp1 = ((samp1<<7) - samp1)>>7;
+	} while (--len);
+
 	fade[0]=samp0;
 	fade[1]=samp1;
 }
 
-void mixrClip(void *dst, int32_t *src, int len, void *tab, int32_t max, int b16)
+void mixrClip(void *dst, int32_t *src, int len, void *tab, int32_t max)
 {
 	const uint16_t (*amptab)[256] = tab;
 	const uint16_t *mixrClipamp1 = amptab[0];
@@ -395,55 +377,32 @@ void mixrClip(void *dst, int32_t *src, int len, void *tab, int32_t max, int b16)
 	const uint16_t *mixrClipamp3 = amptab[2];
 	const int32_t mixrClipmax=max;
 	const int32_t mixrClipmin=-max;
-	const uint8_t mixrClipminv =
+	const uint16_t mixrClipminv =
 		(mixrClipamp1[mixrClipmin&0xff]+
 		mixrClipamp2[(mixrClipmin&0xff00)>>8]+
-		mixrClipamp3[(mixrClipmin&0xff0000)>>16])>>8;
-	const uint8_t mixrClipmaxv =
+		mixrClipamp3[(mixrClipmin&0xff0000)>>16]);
+	const uint16_t mixrClipmaxv =
 		(mixrClipamp1[mixrClipmax&0xff]+
 		mixrClipamp2[(mixrClipmax&0xff00)>>8]+
-		mixrClipamp3[(mixrClipmax&0xff0000)>>16])>>8;
+		mixrClipamp3[(mixrClipmax&0xff0000)>>16]);
 
-	if (!b16)
+	uint16_t *_dst=dst;
+	while (len)
 	{
-		uint8_t *_dst=dst;
-		while (len)
+		if (*src<mixrClipmin)
 		{
-			if (*src<mixrClipmin)
-			{
-				*_dst=mixrClipminv;
-			} else if (*src>mixrClipmax)
-			{
-				*_dst=mixrClipmaxv;
-			} else {
-				*_dst=
-					(mixrClipamp1[*src&0xff]+
-					mixrClipamp2[(*src&0xff00)>>8]+
-					mixrClipamp3[(*src&0xff0000)>>16])>>8;
-			}
-			src++;
-			_dst++;
-			len--;
-		}
-	} else {
-		uint16_t *_dst=dst;
-		while (len)
+			*_dst=mixrClipminv;
+		} else if (*src>mixrClipmax)
 		{
-			if (*src<mixrClipmin)
-			{
-				*_dst=mixrClipminv;
-			} else if (*src>mixrClipmax)
-			{
-				*_dst=mixrClipmaxv;
-			} else {
-				*_dst=
-					mixrClipamp1[*src&0xff]+
-					mixrClipamp2[(*src&0xff00)>>8]+
-					mixrClipamp3[(*src&0xff0000)>>16];
-			}
-			src++;
-			_dst++;
-			len--;
+			*_dst=mixrClipmaxv;
+		} else {
+			*_dst=
+				mixrClipamp1[*src&0xff]+
+				mixrClipamp2[(*src&0xff00)>>8]+
+				mixrClipamp3[(*src&0xff0000)>>16];
 		}
+		src++;
+		_dst++;
+		len--;
 	}
 }

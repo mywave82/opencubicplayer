@@ -33,6 +33,7 @@
 #include "cpiface/vol.h"
 #include "dev/imsdev.h"
 #include "dev/player.h"
+#include "dev/plrasm.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/filesystem-drive.h"
@@ -81,6 +82,7 @@ static char alsaMixerName[DEVICE_NAME_MAX+1];
 /* stolen from devposs */
 #define MAX_ALSA_MIXER 256
 static char *playbuf;
+static char *shadowbuf;
 static int buflen; /* in bytes */
 static volatile int kernpos, cachepos, bufpos; /* in bytes */
 static volatile int cachelen, kernlen; /* to make life easier */
@@ -96,6 +98,7 @@ static int alsa_mixers_n=0;
 static volatile uint32_t playpos; /* how many samples have we done totally */
 static int stereo;
 static int bit16;
+static int bitsigned;
 
 static volatile int busy=0;
 
@@ -198,8 +201,7 @@ static int getplaypos(void)
 					tmp=0;
 				}
 			}
-			tmp<<=(bit16+stereo);
-
+			tmp<<=2/*(bit16+stereo*/;
 			if (tmp<kernlen)
 			{
 				kernlen=tmp;
@@ -260,7 +262,7 @@ static void flush(void)
 			odelay=0;
 		}
 	}
-	odelay<<=(bit16+stereo);
+	odelay <<= 2/*bit16+stereo*/;
 
 	if (odelay>kernlen)
 	{
@@ -297,13 +299,18 @@ static void flush(void)
 
 	debug_printf ("      snd_pcm_status_get_avail() = %d\n", tmp);
 
-	tmp = tmp << (bit16+stereo);
+	tmp <<= 2/*bit16+stereo*/;
 
 	if (n > tmp)
 	{
 		n = tmp;
 	}
-	result=snd_pcm_writei(alsa_pcm, playbuf+cachepos, n>>(bit16+stereo));
+	if (shadowbuf)
+	{
+		result=snd_pcm_writei(alsa_pcm, shadowbuf+(cachepos>>((!bit16)+(!stereo))), n >>(bit16+stereo));
+	} else {
+		result=snd_pcm_writei(alsa_pcm, playbuf+cachepos, n>>(2 /* bit16 + stereo */));
+	}
 
 	debug_printf ("      snd_pcm_writei (%d) = %d\n", n>>(bit16+stereo), result);
 
@@ -312,7 +319,12 @@ static void flush(void)
 	{
 		if (debug_output >= 0)
 		{
-			write (debug_output, playbuf+cachepos, result<<(bit16+stereo));
+			if (shadowbuf)
+			{
+				write (debug_output, playbuf+(cachepos>>((!bit16)+(!stereo)), result<<(bit16+stereo));
+			} else {
+				write (debug_output, playbuf+cachepos, result<<2/*bit16+stereo*/);
+			}
 		}
 	}
 #endif
@@ -327,7 +339,7 @@ static void flush(void)
 		busy--;
 		return;
 	}
-	result<<=(bit16+stereo);
+	result<<=2/*bit16+stereo*/;
 	cachepos=(cachepos+result+buflen)%buflen;
 	playpos+=result;
 	cachelen-=result;
@@ -335,12 +347,18 @@ static void flush(void)
 
 	busy--;
 }
+
 /* stolen from devposs */
 static void advance(unsigned int pos)
 {
 	debug_printf ("ALSA_advance: oldpos=%d newpos=%d add=%d (busy=%d)\n", bufpos, pos, (pos-bufpos+buflen)%buflen, busy);
 
 	busy++;
+
+	if (shadowbuf)
+	{
+		plrConvertBuffer ((int16_t *)playbuf, shadowbuf, buflen, bufpos, pos, bit16 /* 16bit */, bitsigned, stereo, 0);
+	}
 
 	cachelen+=(pos-bufpos+buflen)%buflen;
 	bufpos=pos;
@@ -349,6 +367,7 @@ static void advance(unsigned int pos)
 
 	busy--;
 }
+
 /* stolen from devposs */
 static uint32_t gettimer(void)
 {
@@ -758,7 +777,6 @@ end:
 static void SetOptions(unsigned int rate, int opt)
 {
 	int err;
-	snd_pcm_format_t format;
 	unsigned int val;
 	/* start with setting default values, if we bail out */
 	plrRate=rate;
@@ -768,7 +786,7 @@ static void SetOptions(unsigned int rate, int opt)
 	if (!alsa_pcm)
 		return;
 
-	debug_printf ("ALSA_SetOptions (rate=%d, opt=0x%x%s%s)\n", rate, opt, (opt&PLR_16BIT)?" 16bit":" 8bit", (opt&PLR_SIGNEDOUT)?" signed":" unsigned");
+	debug_printf ("ALSA_SetOptions (rate=%d, opt=0x%x)\n", rate, opt);
 
 	err=snd_pcm_hw_params_any(alsa_pcm, hwparams);
 	debug_printf("      snd_pcm_hw_params_any(alsa_pcm, hwparams) = %s\n", snd_strerror(err<0?-err:0));
@@ -786,88 +804,62 @@ static void SetOptions(unsigned int rate, int opt)
 		return;
 	}
 
-	if (opt&PLR_16BIT)
+	err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S16);
+	debug_printf("      snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S16) = %s\n", snd_strerror(-err));
+	if (err==0)
 	{
-		if (opt&PLR_SIGNEDOUT)
-		{
-			format=SND_PCM_FORMAT_S16;
-		} else {
-			format=SND_PCM_FORMAT_U16;
-		}
+		bit16=1;
+		bitsigned=1;
 	} else {
-		if (opt&PLR_SIGNEDOUT)
-		{
-			format=SND_PCM_FORMAT_S8;
-		} else {
-			format=SND_PCM_FORMAT_U8;
-		}
-	}
-
-	err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, format);
-	debug_printf("      snd_pcm_hw_params_set_format(alsa_pcm, hwparams, format %i) = %s\n", format, snd_strerror(-err));
-	if (err)
-	{
-		err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S16);
-		debug_printf("      snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S16) = %s\n", snd_strerror(-err));
+		err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U16);
+		debug_printf("      snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U16) = %s\n", snd_strerror(-err));
 		if (err==0)
 		{
-			opt|=PLR_16BIT|PLR_SIGNEDOUT;
+			bit16=1;
+			bitsigned=0;
 		} else {
-			err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U16);
-			debug_printf("      snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U16) = %s\n", snd_strerror(-err));
+			err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S8);
+			debug_printf("      snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S8) = %s\n", snd_strerror(-err));
 			if (err==0)
 			{
-				opt&=~(PLR_16BIT|PLR_SIGNEDOUT);
-				opt|=PLR_16BIT;
-			} else {
-				err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S8);
-				debug_printf("      snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S8) = %s\n", snd_strerror(-err));
+				bit16=0;
+				bitsigned=1;
+			} else
+			{
+				err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U8);
+				debug_printf("      snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U8) = %s\n", snd_strerror(-err));
 				if (err==0)
 				{
-					opt&=~(PLR_16BIT|PLR_SIGNEDOUT);
-					opt|=PLR_SIGNEDOUT;
-				} else
-				{
-					err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U8);
-					debug_printf("      snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_U8) = %s\n", snd_strerror(-err));
-					if (err==0)
-					{
-						opt&=~(PLR_16BIT|PLR_SIGNEDOUT);
-					} else {
-						fprintf(stderr, "ALSA: snd_pcm_hw_params_set_format() failed: %s\n", snd_strerror(-err));
-						return;
-					}
+					bit16=0;
+					bitsigned=0;
+				} else {
+					fprintf(stderr, "ALSA: snd_pcm_hw_params_set_format() failed: %s\n", snd_strerror(-err));
+					bit16=1;
+					bitsigned=1;
+					return;
 				}
 			}
 		}
 	}
 
-	bit16=!!(opt&PLR_16BIT);
-	if (opt&PLR_STEREO)
-	{
-		val=2;
-	} else {
-		val=1;
-	}
-
+	val=2;
 	err=snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &val);
 	debug_printf("      snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &channels=%i) = %s\n", val, snd_strerror(-err));
-	if (err<0)
-	{
-		fprintf(stderr, "ALSA: snd_pcm_hw_params_set_channels_near() failed: %s\n", snd_strerror(-err));
-		return;
-	}
-	if (val==1)
-	{
-		stereo=0;
-		opt&=~PLR_STEREO;
-	} else if (val==2)
+	if (err==0)
 	{
 		stereo=1;
-		opt|=PLR_STEREO;
 	} else {
-		fprintf(stderr, "ALSA: snd_pcm_hw_params_set_channels_near() gave us %d channels\n", val);
-		return;
+		val=1;
+		err=snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &val);
+		debug_printf("      snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &channels=%i) = %s\n", val, snd_strerror(-err));
+		if (err==0)
+		{
+			stereo=0;
+		} else {
+			fprintf(stderr, "ALSA: snd_pcm_hw_params_set_channels_near() failed: %s\n", snd_strerror(-err));
+			stereo=1;
+			return;
+		}
 	}
 
 	err=snd_pcm_hw_params_set_rate_near(alsa_pcm, hwparams, &rate, 0);
@@ -916,7 +908,7 @@ static void SetOptions(unsigned int rate, int opt)
 		return;
 	}
 	plrRate=rate;
-	plrOpt=opt;
+	plrOpt=PLR_STEREO_16BIT_SIGNED;
 }
 
 #ifdef PLR_DEBUG
@@ -943,8 +935,22 @@ static int alsaPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *sourc
 	if ((*len)>(plrRate*4))
 		*len=plrRate*4;
 	playbuf=*buf=malloc(*len);
-
-	memsetd(*buf, (plrOpt&PLR_SIGNEDOUT)?0:(plrOpt&PLR_16BIT)?0x80008000:0x80808080, (*len)>>2);
+	if (!playbuf)
+	{
+		fprintf (stderr, "alsaPlay: malloc failed #1\n");
+		return 0;
+	}
+	if ((!bit16) || (!stereo) || (!bitsigned))
+	{
+		shadowbuf = malloc ( buflen >> ((!bit16) + (!stereo)));
+		if (!shadowbuf)
+		{
+			fprintf (stderr, "alsaPlay(): malloc() failed #2\n");
+			free (playbuf);
+			playbuf=0; *buf=0;
+			return 0;
+		}
+	}
 
 	buflen=*len;
 	bufpos=0;
@@ -975,7 +981,8 @@ static void alsaStop(void)
 #ifdef PLR_DEBUG
 	plrDebug=0;
 #endif
-	free(playbuf);
+	free(playbuf); playbuf=0;
+	free(shadowbuf); shadowbuf=0;
 
 #ifdef ALSA_DEBUG_OUTPUT
 	close (debug_output);
@@ -1188,7 +1195,7 @@ static int alsaInit(const struct deviceinfo *c)
 		return 0;
 	}
 
-	SetOptions(44100, PLR_16BIT|PLR_STEREO);
+	SetOptions(44100, PLR_STEREO_16BIT_SIGNED);
 	return 1;
 }
 

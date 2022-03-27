@@ -49,20 +49,78 @@ void plrClearBuf(void *buf, int len, int unsign)
 		*(uint16_t *)buf=(uint16_t)fill;
 }
 
-void plr16to8(uint8_t *dst, const uint16_t *src, unsigned long len)
-{
-	while (len)
-	{
-		*dst=(*src)>>8;
-		len--;
-	}
-}
-
-extern void plrMono16ToStereo16(int16_t *buf, int len)
+void plrMono16ToStereo16(int16_t *buf, int len)
 {
 	int i;
 	for (i = len; i >= 0; i--)
 	{
 		buf[i<<1] = buf[(i<<1)+1] = buf[i];
+	}
+}
+
+void plrConvertBuffer (int16_t *srcbuf, void *dstbuf, unsigned int buflen, unsigned int oldpos, unsigned int newpos, int to16bit, int tosigned, int tostereo, int revstereo)
+{
+	int16_t left, right;
+
+	buflen >>= 2; /* 16bit, stereo */
+	oldpos >>= 2;
+	newpos >>= 2;
+
+	while (oldpos != newpos)
+	{
+		if (revstereo)
+		{
+			left =  srcbuf[(oldpos<<1)+1];
+			right = srcbuf[(oldpos<<1)+0];
+		} else {
+			left =  srcbuf[(oldpos<<1)+0];
+			right = srcbuf[(oldpos<<1)+1];
+		}
+		if (!tostereo)
+		{
+			left = ((int)left + right)/2;
+
+			if (to16bit)
+			{
+				if (!tosigned)
+				{
+					left ^= 0x8000;
+				}
+				((int16_t *)dstbuf)[oldpos] = left;
+			} else {
+				if (tosigned)
+				{
+					((uint8_t *)dstbuf)[oldpos] = ((uint16_t )left) >> 8;
+				} else {
+					((uint8_t *)dstbuf)[oldpos] = (((uint16_t )left) >> 8) ^ 0x80;
+				}
+			}
+		} else {
+			if (to16bit)
+			{
+				if (!tosigned)
+				{
+					left ^= 0x8000;
+					right ^= 0x8000;
+				}
+				((int16_t *)dstbuf)[(oldpos<<1)+0] = left;
+				((int16_t *)dstbuf)[(oldpos<<1)+1] = right;
+			} else {
+				if (tosigned)
+				{
+					((uint8_t *)dstbuf)[(oldpos<<1)+0] = ((uint16_t )left) >> 8;
+					((uint8_t *)dstbuf)[(oldpos<<1)+1] = ((uint16_t )right) >> 8;
+				} else {
+					((uint8_t *)dstbuf)[(oldpos<<1)+0] = (((uint16_t )left) >> 8) ^ 0x80;
+					((uint8_t *)dstbuf)[(oldpos<<1)+1] = (((uint16_t )right) >> 8) ^ 0x80;
+				}
+			}
+		}
+
+		oldpos++;
+		if (oldpos >= buflen)
+		{
+			oldpos=0;
+		}
 	}
 }

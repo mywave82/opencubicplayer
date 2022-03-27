@@ -58,6 +58,7 @@
 #include "dev/mcp.h"
 #include "dev/mix.h"
 #include "dev/player.h"
+#include "dev/plrasm.h"
 #include "stuff/imsrtns.h"
 #include "devwmixf.h"
 #include "stuff/poll.h"
@@ -84,10 +85,6 @@ static void *plrbuf;
 
 static int volramp;
 static int declick;
-
-static uint8_t stereo;
-static uint8_t bit16;
-static uint8_t signedout;
 
 static int     channelnum;
 
@@ -226,10 +223,6 @@ static void transformvol(struct channel *ch)
 	if (dwmixfa_state.voiceflags[n]&MIXF_MUTE)
 	{
 		ch->dstvols[0]=ch->dstvols[1]=0;
-	} else if (!stereo)
-	{
-		ch->dstvols[0]=0.5*(fabs(ch->vol[0])+fabs(ch->vol[1]));
-		ch->dstvols[1]=0;
 	} else {
 		ch->dstvols[0]=ch->vol[0];
 		ch->dstvols[1]=ch->vol[1];
@@ -330,64 +323,60 @@ static void setlbuf(struct channel *c)
 
 static void mixmain(/*int min*/)
 {
+	uint32_t bufplayed;
+	uint32_t bufdelta;
+	uint32_t pass2;
 	int i;
-	int /*bufmin,*/
-	    bufdeltatot;
 
 	if (!channelnum)
 		return;
+
 	if (clipbusy++)
 	{
 		clipbusy--;
 		return;
 	}
 
+	/* Where is our devp reading head? */
+	bufplayed=plrGetBufPos() >> 2 /* stereo + bit16 */;
+	bufdelta=((buflen+bufplayed-bufpos)%buflen);
 
-/*
-	bufmin=imulshr16(min, samprate);
-	if (bufmin<0)
-		bufmin=0;*/
-
-	bufdeltatot=((buflen+(plrGetBufPos()>>(stereo+bit16))-bufpos)%buflen);
-/*
-	if (bufdeltatot<bufmin)
-		bufdeltatot=0;*/
+	/* No delta on the devp? */
+	if (!bufdelta)
+	{
+		clipbusy--;
+		return;
+	}
 
 	if (dopause)
 	{
-		int pass2=((bufpos+bufdeltatot)>buflen)?(bufpos+bufdeltatot-buflen):0;
+		if ((bufpos+bufdelta)>buflen)
+			pass2=bufpos+bufdelta-buflen;
+		else
+			pass2=0;
 
-		if (bit16)
-		{
-			memsetw((int16_t *)plrbuf+(bufpos<<stereo), signedout?0:0x8000, (bufdeltatot-pass2)<<stereo);
-			if (pass2)
-				memsetw((int16_t *)plrbuf, signedout?0:0x8000, pass2<<stereo);
-		} else {
-			memsetb((uint8_t *)plrbuf+(bufpos<<stereo), signedout?0:0x80, (bufdeltatot-pass2)<<stereo);
-			if (pass2)
-				memsetb((uint8_t *)plrbuf, signedout?0:0x80, pass2<<stereo);
-		}
+		plrClearBuf((uint16_t *)plrbuf+(bufpos << 1 /* stereo */), (bufdelta-pass2) << 1 /* stereo */, 1 /* signedout */);
+		if (pass2)
+			plrClearBuf((uint16_t *)plrbuf, pass2 << 1 /* stereo */, 1 /* signedout */);
 
-		bufpos+=bufdeltatot;
+		bufpos+=bufdelta;
 		if (bufpos>=buflen)
 			bufpos-=buflen;
 
-		plrAdvanceTo(bufpos<<(stereo+bit16));
-		pausesamps+=bufdeltatot;
-	} else while (bufdeltatot>0)
+		plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
+		pausesamps+=bufdelta;
+	} else while (bufdelta > 0)
 	{
-		unsigned int bufdelta=(bufdeltatot>MIXF_MIXBUFLEN)?MIXF_MIXBUFLEN:bufdeltatot;
+		unsigned int length1=(bufdelta > MIXF_MIXBUFLEN ) ? MIXF_MIXBUFLEN : bufdelta;
 		uint32_t ticks2go;
-		/* float invt2g; */
-		if (bufdelta>(buflen-bufpos))
-			bufdelta=buflen-bufpos;
+
+		if (length1>(buflen-bufpos))
+			length1=buflen-bufpos;
 
 		ticks2go=(tickwidth-tickplayed)>>8;
 
-		if (bufdelta>ticks2go)
-			bufdelta=ticks2go;
-
-		/* invt2g=1.0/(float)ticks2go; */
+		if (length1>ticks2go)
+			length1=ticks2go;
 
 		/* set-up mixing core variables */
 		for (i=0; i<channelnum; i++) if (dwmixfa_state.voiceflags[i]&MIXF_PLAYING)
@@ -423,8 +412,8 @@ static void mixmain(/*int min*/)
 
 			/*voiceflags[i]|=isstereo; <- this was hard to track down*/
 		}
-		dwmixfa_state.nsamples=bufdelta;
-		dwmixfa_state.outbuf=((uint8_t *)(plrbuf))+(bufpos<<(stereo+bit16));
+		dwmixfa_state.nsamples=length1;
+		dwmixfa_state.outbuf=((uint8_t *)(plrbuf))+(bufpos << 2 /* stereo + bit16 */);
 
 		/* optionally turn off the declicking */
 		if (!declick)
@@ -448,7 +437,7 @@ static void mixmain(/*int min*/)
 #endif
 		mixer();
 
-		tickplayed+=bufdelta<<8;
+		tickplayed+=length1<<8;
 		if (!((tickwidth-tickplayed)>>8))
 		{
 			float invt2g;
@@ -484,13 +473,13 @@ static void mixmain(/*int min*/)
 				dwmixfa_state.freso[i]=pow(ch->orgfrez,dwmixfa_state.ffreq[i]);
 			}
 		}
-		bufpos+=bufdelta;
+		bufpos+=length1;
 		if (bufpos>=buflen)
 			bufpos-=buflen;
 
-		plrAdvanceTo(bufpos<<(stereo+bit16));
-		bufdeltatot-=bufdelta;
-		playsamps+=bufdelta;
+		plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
+		bufdelta -= length1;
+		playsamps += length1;
 	}
 
 	clipbusy--;
@@ -907,9 +896,6 @@ static int OpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *sour
 		return 0;
 	}
 
-	stereo=(plrOpt&PLR_STEREO)?1:0;
-	bit16=(plrOpt&PLR_16BIT)?1:0;
-	signedout=(plrOpt&PLR_SIGNEDOUT)?1:0;
 	dwmixfa_state.samprate=plrRate;
 	bufpos=0;
 	dopause=0;
@@ -919,8 +905,6 @@ static int OpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *sour
 	mcpNChan=chan;
 	mcpIdle=Idle;
 
-	dwmixfa_state.isstereo=stereo;
-	dwmixfa_state.outfmt=(bit16<<1)|(!signedout);
 	dwmixfa_state.nvoices=channelnum;
 	prepare_mixer();
 
@@ -942,7 +926,7 @@ static int OpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *sour
 		struct mixfpostprocregstruct *mode;
 
 		for (mode=dwmixfa_state.postprocs; mode; mode=mode->next)
-			if (mode->Init) mode->Init(dwmixfa_state.samprate, stereo);
+			if (mode->Init) mode->Init(dwmixfa_state.samprate);
 	}
 	return 1;
 }

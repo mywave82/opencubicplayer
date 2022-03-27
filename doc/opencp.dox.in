@@ -1501,14 +1501,9 @@ the configuration permanently you have to modify the entries of this section.
     wavetabledevices=devwMixF devwmixQ devwMix devwNone
     mixrate=44100
     mixprocrate=4096000
-    mix16bit=on
-    mixstereo=on
     plrbufsize=500
     mixbufsize=500
     samprate=44100
-    samp16bit=on
-    sampstereo=on
-    smpbufsize=2000
     defplayer=
     defwavetable=
     midichan=64
@@ -1553,8 +1548,6 @@ the configuration permanently you have to modify the entries of this section.
                    channels at full mixrate. This value defines the maximum
                    "calculation power" to which OCP tries to use the full
                    mixrate.
-  ~mix16bit~         Leave this option enabled unless you have a 8bit sound card.
-  ~mixstereo~        dito for stereo cards
   ~plrbufsize~       When using a ~playerdevice~ to play sample streams a DMA
                    buffer is used to minimize CPU resources for handling the
                    sample stream. This option sets the DMA buffer length in
@@ -1564,10 +1557,6 @@ the configuration permanently you have to modify the entries of this section.
                    the sample stream OCP will calculate in advance. This
                    option sets the buffer length in milliseconds.
   ~samprate~         When using a diskwriter, this value will be used.
-  ~samp16bit~        dito
-  ~sampstereo~       dito
-  ~smpbufsize~       this option sets the length of the sample DMA buffer in
-                   milliseconds.
   ~defplayer~        with this option you can override the default ~playerdevice~.
                    Normally you don't need to set this option, as the default
                    device can also be set by order in the ~playerdevice~ option.
@@ -1879,6 +1868,8 @@ on almost all systems.
 
   \[devpDisk\]
     link=devpDisk
+    16bit=on
+    stereo=on
 
   OCP can write all sound output directly to hard disk. Data is written in
 standard ~.WAV~ format. You can use this feature to burn audio cds from any

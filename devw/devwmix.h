@@ -3,8 +3,8 @@
 
 struct mixqpostprocregstruct
 {
-	void (*Process)(int32_t *buffer, int len, int rate, int stereo);
-	void (*Init)(int rate, int stereo);
+	void (*Process)(int32_t *buffer, int len, int rate);
+	void (*Init)(int rate);
 	void (*Close)(void );
 	struct mixqpostprocregstruct *next;
 };

@@ -59,9 +59,6 @@ static uint16_t *buf16; /* here we dump out data before it goes live */
 static uint32_t bufpos; /* devp write head location */
 static uint32_t buflen; /* devp buffer-size in samples */
 static void *plrbuf; /* the devp buffer */
-static int stereo; /* boolean */
-static int bit16; /* boolean */
-static int signedout; /* boolean */
 static int donotloop=1;
 
 /* oplIdler dumping locations */
@@ -215,11 +212,7 @@ void CProvider_Mem::close(binistream *f) const
 
 int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filename /* needed for detection */, const uint8_t *content, const size_t len, struct ocpfilehandle_t *file)
 {
-	plrSetOptions(44100, (PLR_SIGNEDOUT|PLR_16BIT)|PLR_STEREO);
-
-	stereo=!!(plrOpt&PLR_STEREO);
-	bit16=!!(plrOpt&PLR_16BIT);
-	signedout=!!(plrOpt&PLR_SIGNEDOUT);
+	plrSetOptions(44100, PLR_STEREO_16BIT_SIGNED);
 
 	opl = new Cocpopl(plrRate);
 
@@ -233,7 +226,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	oplbufrate=0x10000; /* 1.0 */
 	oplbufpos=0;
 	oplbuffpos=0;
-	oplbufread=4; /* 1 << (stereo + bit16) */
+	oplbufread=4; /* 1 << stereo + bit16 */
 	opltowrite=0;
 
 	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, file))
@@ -301,22 +294,6 @@ static void oplSetVolume(void)
 		voll=(voll*(64-bal))>>6;
 }
 
-/*
-void mpegGetInfo(struct mpeginfo *info)
-{
-	info->pos=datapos;
-	info->len=fl;
-	info->rate=mpegrate;
-	info->stereo=mpegstereo;
-	info->bit16=1;
-}
-int32_t mpegGetPos(void)
-{
-	return datapos;
-}
-void mpegSetPos(int32_t pos)
-*/
-
 static void oplIdler(void)
 {
 	size_t clean;
@@ -335,7 +312,7 @@ static void oplIdler(void)
 		if (!opltowrite)
 		{
 			p->update(); /* TODO, rewind... */
-			opltowrite = (size_t)((float)(plrRate)*256.0 / (p->getrefresh()*((float)_speed)))<<2; /* stereo + 16bit */
+			opltowrite = (size_t)((float)(plrRate)*256.0 / (p->getrefresh()*((float)_speed))) << 2; /* stereo + 16bit */
 		}
 		if ((oplbufread+read)>sizeof(oplbuf))
 			read=sizeof(oplbuf)-oplbufread;
@@ -343,7 +320,6 @@ static void oplIdler(void)
 			read=opltowrite;
 		opl->update((int16_t *)(oplbuf+oplbufread), read>>2); /* given in samples */
 		{
-			/* TODO, asm optimize*/
 			int16_t *base=(int16_t *)(oplbuf+oplbufread);
 			int16_t rs, ls;
 			int len=read>>2;
@@ -381,7 +357,7 @@ void __attribute__ ((visibility ("internal"))) oplIdle(void)
 
 	quietlen=0;
 	/* Where is our devp reading head? */
-	bufplayed=plrGetBufPos()>>(stereo+bit16);
+	bufplayed=plrGetBufPos() >> 2  /* stereo + bit16 */;
 	bufdelta=(buflen+bufplayed-bufpos)%buflen;
 
 	/* No delta on the devp? */
@@ -494,152 +470,24 @@ void __attribute__ ((visibility ("internal"))) oplIdle(void)
 			pass2=0;
 		bufdelta-=pass2;
 
-		if (bit16)
 		{
-			if (stereo)
+			int16_t *p=(int16_t *)plrbuf+2*bufpos;
+			int16_t *b=(int16_t *)buf16;
+
+			for (i=0; i<bufdelta; i++)
 			{
-				int16_t *p=(int16_t *)plrbuf+2*bufpos;
-				int16_t *b=(int16_t *)buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0];
-						p[1]=b[1];
-						p+=2;
-						b+=2;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0];
-						p[1]=b[1];
-						p+=2;
-						b+=2;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p[1]=b[1]^0x8000;
-						p+=2;
-						b+=2;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p[1]=b[1]^0x8000;
-						p+=2;
-						b+=2;
-					}
-				}
-			} else {
-				int16_t *p=(int16_t *)plrbuf+bufpos;
-				int16_t *b=(int16_t *)buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0];
-						p++;
-						b++;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0];
-						p++;
-						b++;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p++;
-						b++;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p++;
-						b++;
-					}
-				}
+				p[0]=b[0];
+				p[1]=b[1];
+				p+=2;
+				b+=2;
 			}
-		} else {
-			if (stereo)
+			p=(int16_t *)plrbuf;
+			for (i=0; i<pass2; i++)
 			{
-				uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
-				uint8_t *b=(uint8_t *)buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1];
-						p[1]=b[3];
-						p+=2;
-						b+=4;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1];
-						p[1]=b[3];
-						p+=2;
-						b+=4;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1]^0x80;
-						p[1]=b[3]^0x80;
-						p+=2;
-						b+=4;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1]^0x80;
-						p[1]=b[3]^0x80;
-						p+=2;
-						b+=4;
-					}
-				}
-			} else {
-				uint8_t *p=(uint8_t *)plrbuf+bufpos;
-				uint8_t *b=(uint8_t *)buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1];
-						p++;
-						b+=2;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1];
-						p++;
-						b+=2;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1]^0x80;
-						p++;
-						b+=2;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1]^0x80;
-						p++;
-						b+=2;
-					}
-				}
+				p[0]=b[0];
+				p[1]=b[1];
+				p+=2;
+				b+=2;
 			}
 		}
 		bufpos+=bufdelta+pass2;
@@ -654,23 +502,15 @@ void __attribute__ ((visibility ("internal"))) oplIdle(void)
 			pass2=bufpos+bufdelta-buflen;
 		else
 			pass2=0;
-		if (bit16)
-		{
-			plrClearBuf((uint16_t *)plrbuf+(bufpos<<stereo), (bufdelta-pass2)<<stereo, signedout);
-			if (pass2)
-				plrClearBuf((uint16_t *)plrbuf, pass2<<stereo, signedout);
-		} else {
-			plrClearBuf(buf16, bufdelta<<stereo, signedout);
-			plr16to8((uint8_t *)plrbuf+(bufpos<<stereo), buf16, (bufdelta-pass2)<<stereo);
-			if (pass2)
-				plr16to8((uint8_t *)plrbuf, buf16+((bufdelta-pass2)<<stereo), pass2<<stereo);
-		}
+		plrClearBuf((uint16_t *)plrbuf+(bufpos << 1 /* stereo */), (bufdelta-pass2) << 1 /* stereo */,  1 /* signedout */);
+		if (pass2)
+			plrClearBuf((uint16_t *)plrbuf, pass2 << 1 /* stereo */, 1 /* signedout */);
 		bufpos+=bufdelta;
 		if (bufpos>=buflen)
 			bufpos-=buflen;
 	}
 
-	plrAdvanceTo(bufpos<<(stereo+bit16));
+	plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
 
 /*
 	fprintf(stderr, "max_ch=%d\n", opl->opl->max_ch);

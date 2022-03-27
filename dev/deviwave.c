@@ -420,11 +420,6 @@ static int wavedevinit(void)
 		else
 			playrate=playrate*11025/11;
 	}
-	mcpMixOpt=0;
-	if (!cfGetProfileBool("commandline_s", "8", !cfGetProfileBool2(cfSoundSec, "sound", "mix16bit", 1, 1), 1))
-		mcpMixOpt|=PLR_16BIT;
-	if (!cfGetProfileBool("commandline_s", "m", !cfGetProfileBool2(cfSoundSec, "sound", "mixstereo", 1, 1), 1))
-		mcpMixOpt|=PLR_STEREO;
 	mcpMixMaxRate=playrate;
 	mcpMixProcRate=cfGetProfileInt2(cfSoundSec, "sound", "mixprocrate", 1536000, 10);
 	mcpMixBufSize=cfGetProfileInt2(cfSoundSec, "sound", "mixbufsize", 100, 10);

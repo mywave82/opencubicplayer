@@ -80,9 +80,6 @@ static uint32_t bufpos; /* devp write head location */
 static uint32_t buflen; /* devp buffer-size in samples */
 static int output_counter;
 static void *plrbuf; /* the devp buffer */
-static int stereo; /* boolean */
-static int bit16; /* boolean */
-static int signedout; /* boolean */
 static int donotloop=1;
 
 /* timidityIdler dumping locations */
@@ -1535,7 +1532,7 @@ static int GET(int ch, int opt)
 
 void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct mglobinfo *gi)
 {
-	int pos = plrGetPlayPos () >> (stereo+bit16);
+	int pos = plrGetPlayPos () >> 2 /* stereo + bit16 */;
 	int32_t curtick = current_sample
 			- aq_soft_filled()
 			- ( gmibuffill ) /* gmibuf length */
@@ -1565,7 +1562,7 @@ again:
 	{
 		uint32_t bufplayed;
 
-		bufplayed=plrGetBufPos()>>(stereo+bit16);
+		bufplayed=plrGetBufPos() >> 2 /* stereo + bit16 */;
 		bufdelta=(buflen+bufplayed-bufpos)%buflen;
 	}
 	/* bufdelta is now in samples */
@@ -1609,17 +1606,9 @@ again:
 			pass2=bufpos+bufdelta-buflen;
 		else
 			pass2=0;
-		if (bit16)
-		{
-			plrClearBuf((uint16_t *)plrbuf+(bufpos<<stereo), (bufdelta-pass2)<<stereo, signedout);
-			if (pass2)
-				plrClearBuf((uint16_t *)plrbuf, pass2<<stereo, signedout);
-		} else {
-			plrClearBuf(buf16, bufdelta<<stereo, signedout);
-			plr16to8((uint8_t *)plrbuf+(bufpos<<stereo), (uint16_t *)buf16, (bufdelta-pass2)<<stereo);
-			if (pass2)
-				plr16to8((uint8_t *)plrbuf, (uint16_t *)buf16+((bufdelta-pass2)<<stereo), pass2<<stereo);
-		}
+		plrClearBuf((uint16_t *)plrbuf+(bufpos << 1 /*stereo*/), (bufdelta-pass2) << 1 /* stereo */, 1 /* signedout */);
+		if (pass2)
+			plrClearBuf((uint16_t *)plrbuf, pass2 << 1 /* stereo */, 1 /* signedout */);
 		bufpos+=bufdelta;
 		if (bufpos>=buflen)
 			bufpos-=buflen;
@@ -1729,152 +1718,24 @@ again:
 		else
 			pass2=0;
 		bufdelta-=pass2;
-		if (bit16)
 		{
-			if (stereo)
+			int16_t *p=(int16_t *)plrbuf+2*bufpos;
+			int16_t *b=(int16_t *)buf16;
+
+			for (i=0; i<bufdelta; i++)
 			{
-				int16_t *p=(int16_t *)plrbuf+2*bufpos;
-				int16_t *b=(int16_t *)buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0];
-						p[1]=b[1];
-						p+=2;
-						b+=2;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0];
-						p[1]=b[1];
-						p+=2;
-						b+=2;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p[1]=b[1]^0x8000;
-						p+=2;
-						b+=2;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p[1]=b[1]^0x8000;
-						p+=2;
-						b+=2;
-					}
-				}
-			} else {
-				int16_t *p=(int16_t *)plrbuf+bufpos;
-				int16_t *b=(int16_t *)buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0];
-						p++;
-						b++;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0];
-						p++;
-						b++;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p++;
-						b++;
-					}
-					p=(int16_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[0]^0x8000;
-						p++;
-						b++;
-					}
-				}
+				p[0]=b[0];
+				p[1]=b[1];
+				p+=2;
+				b+=2;
 			}
-		} else {
-			if (stereo)
+			p=(int16_t *)plrbuf;
+			for (i=0; i<pass2; i++)
 			{
-				uint8_t *p=(uint8_t *)plrbuf+2*bufpos;
-				uint8_t *b=(uint8_t *)buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1];
-						p[1]=b[3];
-						p+=2;
-						b+=4;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1];
-						p[1]=b[3];
-						p+=2;
-						b+=4;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1]^0x80;
-						p[1]=b[3]^0x80;
-						p+=2;
-						b+=4;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1]^0x80;
-						p[1]=b[3]^0x80;
-						p+=2;
-						b+=4;
-					}
-				}
-			} else {
-				uint8_t *p=(uint8_t *)plrbuf+bufpos;
-				uint8_t *b=(uint8_t *)buf16;
-				if (signedout)
-				{
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1];
-						p++;
-						b+=2;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1];
-						p++;
-						b+=2;
-					}
-				} else {
-					for (i=0; i<bufdelta; i++)
-					{
-						p[0]=b[1]^0x80;
-						p++;
-						b+=2;
-					}
-					p=(uint8_t *)plrbuf;
-					for (i=0; i<pass2; i++)
-					{
-						p[0]=b[1]^0x80;
-						p++;
-						b+=2;
-					}
-				}
+				p[0]=b[0];
+				p[1]=b[1];
+				p+=2;
+				b+=2;
 			}
 		}
 		bufpos+=bufdelta+pass2;
@@ -1882,10 +1743,10 @@ again:
 			bufpos-=buflen;
 	}
 
-	plrAdvanceTo(bufpos<<(stereo+bit16));
+	plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
 
 	{
-		int pos = plrGetPlayPos () >> (stereo+bit16);
+		int pos = plrGetPlayPos () >> 2 /* stereo + bit16 */;
 		timidity_SetBufferPos_EventDelayed_PlrBuf (eventDelayed_PlrBuf_lastpos, pos);
 		eventDelayed_PlrBuf_lastpos = pos;
 	}
@@ -1962,11 +1823,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 
 	loading = 1;
 
-	plrSetOptions(44100, (PLR_SIGNEDOUT|PLR_16BIT)|PLR_STEREO);
-
-	stereo=!!(plrOpt&PLR_STEREO);
-	bit16=!!(plrOpt&PLR_16BIT);
-	signedout=!!(plrOpt&PLR_SIGNEDOUT);
+	plrSetOptions(44100, PLR_STEREO_16BIT_SIGNED);
 
 	ocp_playmode.rate = plrRate;
 
@@ -2001,7 +1858,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	gmibuftail=0;
 	gmibufhead=0;
 	gmibuffill=0;
-	gmibuf=malloc(gmibuflen<<2/*stereo+16bit*/);
+	gmibuf=malloc(gmibuflen << 2 /* stereo + 16bit */);
 
 	if (!gmibuf)
 	{
@@ -2017,7 +1874,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 		return errGen;
 	}
 
-	eventDelayed_PlrBuf_lastpos = plrGetPlayPos() >> (stereo+bit16);
+	eventDelayed_PlrBuf_lastpos = plrGetPlayPos() >> 2 /* stereo + bit16 */;
 
 	current_path = strdup (path);
 	emulate_play_midi_file_start(current_path, buffer, bufferlen, &timidity_main_session); /* gmibuflen etc must be set, since we will start to get events already here... */

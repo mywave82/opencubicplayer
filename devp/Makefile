@@ -98,6 +98,7 @@ devposs.o: devposs.c \
 	../dev/imsdev.h \
 	../dev/devigen.h \
 	../dev/player.h \
+	../dev/plrasm.h \
 	../boot/psetting.h  \
 	../stuff/imsrtns.h
 	$(CC) devposs.c $(OSS_CFLAGS) -o $@ -c
@@ -116,13 +117,14 @@ devpdisk.o: devpdisk.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../boot/psetting.h \
+	../dev/devigen.h \
 	../dev/imsdev.h \
 	../dev/player.h \
+	../dev/plrasm.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
-	../stuff/imsrtns.h \
-	../dev/devigen.h \
-	../boot/psetting.h
+	../stuff/imsrtns.h
 	$(CC) devpdisk.c -o $@ -c
 
 devpalsa.o: devpalsa.c \
@@ -133,6 +135,7 @@ devpalsa.o: devpalsa.c \
 	../cpiface/vol.h \
 	../dev/imsdev.h \
 	../dev/player.h \
+	../dev/plrasm.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/filesystem-drive.h \
