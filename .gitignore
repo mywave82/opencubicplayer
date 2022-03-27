@@ -31,6 +31,7 @@ filesel/mdb-test
 goodies/helpc/ocphhc
 goodies/helpc/Makefile
 goodies/pack/Makefile
+goodies/pack/pack
 /Makefile
 ocp
 ocp.hlp
