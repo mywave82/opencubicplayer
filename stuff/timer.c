@@ -241,6 +241,7 @@ static void tmResetTimer(void)
 		spec.it_value.tv_usec=0;
 		setitimer(ITIMER_REAL, &spec, NULL);
 
+		usleep(1000); /* catch signals on the fly */
 		irqDone(SIGALRM);
 	} else if (!tmTimerRoutine)
 		/* recalc to a less/more aggressive clock */
