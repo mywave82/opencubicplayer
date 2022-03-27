@@ -1412,7 +1412,7 @@ static int GString_gvol_allowgrow (const void *inputa, const void *inputb, const
 	switch (nextsize)
 	{
 		case 1: return 9;
-		case 2: return 17-9;
+		case 2: return 18-9;
 		default: return 0;
 	}
 }
