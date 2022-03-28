@@ -52,7 +52,7 @@ unzip $RPM_SOURCE_DIR/opencp25image1.zip
 unzip -o $RPM_SOURCE_DIR/opencp25ani1.zip
 
 %build
-CFLAGS=$RPM_OPT_FLAGS CXXFLAGS=$RPM_OPT_FLAGS ./configure --prefix=%{_prefix} --exec_prefix=%{_exec_prefix} --infodir=%{_infodir} --sysconfdir=/etc --with-dir-suffix= %{?_with_libmad} %{?_without_libmad}
+CFLAGS=$RPM_OPT_FLAGS CXXFLAGS=$RPM_OPT_FLAGS ./configure --prefix=%{_prefix} --exec_prefix=%{_exec_prefix} --infodir=%{_infodir} --sysconfdir=/etc %{?_with_libmad} %{?_without_libmad}
 make
 
 %post

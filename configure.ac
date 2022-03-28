@@ -66,10 +66,6 @@ AS_CASE([$target],
 )
 AC_DEFINE_UNQUOTED(LIB_SUFFIX, "$LIB_SUFFIX")
 
-AC_SUBST(DIR_SUFFIX)
-AC_ARG_WITH([dir_suffix], [AS_HELP_STRING([--with-dir-suffix=],[append this on all paths. Defaults to -$PACKAGE_VERSION])], [DIR_SUFFIX=$with_dir_suffix], [DIR_SUFFIX=-$PACKAGE_VERSION])
-AC_DEFINE_UNQUOTED(DIR_SUFFIX, "$DIR_SUFFIX")
-
 AC_ARG_WITH([x11],                  [AS_HELP_STRING([--with-x11],                    [force/disable x11 support])],                                               [], [with_x11=auto])
 AC_ARG_WITH([adplug],               [AS_HELP_STRING([--with-adplug],                 [force/disable adplug support])],                                            [], [with_adplug=auto])
 AC_ARG_WITH([mad],                  [AS_HELP_STRING([--with-mad],                    [force/disable mad mpeg audio support])],                                    [], [with_mad=auto])
@@ -118,6 +114,11 @@ dnl restore prefix and exec_prefix
   prefix=$prefix_save
   exec_prefix=$exec_prefix_save
 ])
+
+AC_SUBST(DIR_SUFFIX)
+AC_ARG_WITH([dir_suffix], [AS_HELP_STRING([--with-dir-suffix=],[append this on all paths and executables])], [], [])
+AS_AC_EXPAND(DIR_SUFFIX, $with_dir_suffix)
+AC_DEFINE_UNQUOTED(DIR_SUFFIX, "$DIR_SUFFIX")
 
 AC_MSG_CHECKING([gcc version])
 cc_version=`( $CC -dumpversion ) 2>&1`

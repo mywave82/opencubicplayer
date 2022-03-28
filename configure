@@ -796,7 +796,6 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 with_debug
-with_dir_suffix
 with_x11
 with_adplug
 with_mad
@@ -814,6 +813,7 @@ with_unifontdir
 with_unifont_ttf
 with_unifont_csur_ttf
 with_unifont_upper_ttf
+with_dir_suffix
 with_timidity_default_path
 with_ncurses
 with_ncursesw
@@ -1506,8 +1506,6 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-debug            compile with debug-flags and without SIGALRM
-  --with-dir-suffix=      append this on all paths. Defaults to
-                          -$PACKAGE_VERSION
   --with-x11              force/disable x11 support
   --with-adplug           force/disable adplug support
   --with-mad              force/disable mad mpeg audio support
@@ -1544,6 +1542,7 @@ Optional Packages:
   --with-unifont-upper-tff=/path
                           the full path to unifont_upper.ttf (default is
                           UNIFONTDIR/unifont_upper.ttf)
+  --with-dir-suffix=      append this on all paths and executables
   --with-timidity-default-path=DIR
                           Where timidity.cfg is (PREFIX/share/timidity)
   --with-ncurses          force the use of Ncurses or NcursesW
@@ -6428,20 +6427,6 @@ _ACEOF
 
 
 
-
-# Check whether --with-dir_suffix was given.
-if test "${with_dir_suffix+set}" = set; then :
-  withval=$with_dir_suffix; DIR_SUFFIX=$with_dir_suffix
-else
-  DIR_SUFFIX=-$PACKAGE_VERSION
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define DIR_SUFFIX "$DIR_SUFFIX"
-_ACEOF
-
-
-
 # Check whether --with-x11 was given.
 if test "${with_x11+set}" = set; then :
   withval=$with_x11;
@@ -6583,6 +6568,37 @@ test "x$prefix" = xNONE && prefix=$ac_default_prefix
 # Let make expand exec_prefix.
 test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
 
+
+
+
+
+# Check whether --with-dir_suffix was given.
+if test "${with_dir_suffix+set}" = set; then :
+  withval=$with_dir_suffix;
+fi
+
+
+  EXP_VAR=DIR_SUFFIX
+  FROM_VAR=$with_dir_suffix
+  prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+  full_var="$FROM_VAR"
+  while true; do
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var" = "x$full_var"; then :
+  break
+fi
+    full_var=$new_full_var
+  done
+  full_var=$new_full_var
+  DIR_SUFFIX="$full_var"
+
+  prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+
+cat >>confdefs.h <<_ACEOF
+#define DIR_SUFFIX "$DIR_SUFFIX"
+_ACEOF
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking gcc version" >&5
