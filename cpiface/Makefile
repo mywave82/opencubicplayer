@@ -47,12 +47,13 @@ fft.o: fft.c fft.h \
 	$(CC) fft.c -o $@ -c
 
 cpianal.o: cpianal.c \
-	fft.h \
-	cpiface.h \
 	../config.h \
 	../types.h \
-	../stuff/poutput.h \
-	../boot/psetting.h
+	cpiface.h \
+	fft.h \
+	../boot/psetting.h \
+	../dev/mcp.h \
+	../stuff/poutput.h
 	$(CC) cpianal.c -o $@ -c
 
 cpichan.o: cpichan.c \
@@ -90,7 +91,8 @@ cpigraph.o: cpigraph.c \
 	../stuff/poutput.h \
 	cpiface.h \
 	cpipic.h \
-	fft.h
+	fft.h \
+	../dev/mcp.h
 	$(CC) cpigraph.c -o $@ -c
 
 cpiinst.o: cpiinst.c \
@@ -138,10 +140,11 @@ cpimvol.o: cpimvol.c \
 cpiphase.o: cpiphase.c \
 	../config.h \
 	../types.h \
-	../stuff/poutput.h \
 	cpiface.h \
+	cpipic.h \
+	../dev/mcp.h \
 	../stuff/imsrtns.h \
-	cpipic.h
+	../stuff/poutput.h
 	$(CC) cpiphase.c -o $@ -c
 
 cpipic.o: cpipic.c \
@@ -163,9 +166,10 @@ cpiptype.o: cpiptype.c \
 cpiscope.o: cpiscope.c \
 	../config.h \
 	../types.h \
-	../stuff/poutput.h \
 	cpiface.h \
-	cpipic.h
+	cpipic.h \
+	../dev/mcp.h \
+	../stuff/poutput.h
 	$(CC) cpiscope.c -o $@ -c
 
 cpitext.o: cpitext.c \

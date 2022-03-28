@@ -36,6 +36,7 @@
 #include "stuff/poutput.h"
 #include "cpiface.h"
 #include "cpipic.h"
+#include "dev/mcp.h"
 #include "fft.h"
 
 static unsigned char plStripePal1;
@@ -349,7 +350,7 @@ static void plDrawStripes(void)
 		memset(linebuf, 128, 1088);
 		if (!plAnalChan)
 		{
-			plGetMasterSample(plSampBuf, 1024>>plStripeSpeed, plAnalRate, cpiGetSampleStereo);
+			plGetMasterSample(plSampBuf, 1024>>plStripeSpeed, plAnalRate, mcpGetSampleStereo);
 
 			if (plStripeSpeed)
 			{
@@ -443,7 +444,7 @@ static void plDrawStripes(void)
 		memset(linebuf, 128, 272);
 		if (!plAnalChan)
 		{
-			plGetMasterSample(plSampBuf, 256>>plStripeSpeed, plAnalRate, cpiGetSampleStereo);
+			plGetMasterSample(plSampBuf, 256>>plStripeSpeed, plAnalRate, mcpGetSampleStereo);
 			if (plStripeSpeed)
 			{
 				fftanalyseall(ana, plSampBuf, 2, 7);

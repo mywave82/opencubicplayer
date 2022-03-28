@@ -34,9 +34,10 @@
 #include <string.h>
 #include <math.h>
 #include "types.h"
-#include "stuff/poutput.h"
 #include "cpiface.h"
 #include "cpipic.h"
+#include "dev/mcp.h"
+#include "stuff/poutput.h"
 
 #define MAXDOTS 16384
 #define MAXSAMPLEN 1280
@@ -443,7 +444,7 @@ static void plDrawScopes(void)
 	{
 		int i;
 
-		plGetMasterSample(plSampBuf, scopesx, plOszRate/scopenx, plOszMono?0:cpiGetSampleStereo);
+		plGetMasterSample(plSampBuf, scopesx, plOszRate/scopenx, plOszMono?mcpGetSampleMono:mcpGetSampleStereo);
 
 		doscale(plSampBuf, scopesx*scopeny);
 

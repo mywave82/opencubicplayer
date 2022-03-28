@@ -36,10 +36,11 @@
 #include "config.h"
 #include <stdio.h>
 #include "types.h"
-#include "stuff/poutput.h"
-#include "cpiface.h"
 #include "boot/psetting.h"
+#include "cpiface.h"
+#include "dev/mcp.h"
 #include "fft.h"
+#include "stuff/poutput.h"
 
 #define COLBACK 0x00
 #define COLTITLE 0x01
@@ -135,7 +136,7 @@ static void plDrawFFT(char sel)
 		unsigned int wh2;
 		unsigned int fl;
 
-		plGetMasterSample(plSampBuf, 1<<bits, plAnalRate, cpiGetSampleStereo);
+		plGetMasterSample(plSampBuf, 1<<bits, plAnalRate, mcpGetSampleStereo);
 		if (plAnalHeight&1)
 			displayvoid (plAnalFirstLine+plAnalHeight-1, ofs, plAnalWidth-2*ofs);
 		wh2=plAnalHeight>>1;

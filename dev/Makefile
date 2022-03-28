@@ -155,7 +155,9 @@ mixasm.o: mixasm.c mixasm.h \
 player.o: player.c player.h \
 	../config.h \
 	../types.h \
+	../cpiface/cpiface.h \
 	mchasm.h \
+	mcp.h \
 	../stuff/imsrtns.h
 	$(CC) player.c -o $@ -c
 

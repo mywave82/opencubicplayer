@@ -861,7 +861,7 @@ int __attribute__ ((visibility ("internal"))) sidGetLChanSample(unsigned int i, 
 	int sid = i / 3;
 	int ch = (i % 3) + 1;
 
-	int stereo = (opt&cpiGetSampleStereo)?1:0;
+	int stereo = (opt&mcpGetSampleStereo)?1:0;
 	uint32_t step = imuldiv(0x00010000, plrRate, (signed)rate);
 	int16_t *src;
 	int pos1, pos2;
@@ -913,7 +913,7 @@ int __attribute__ ((visibility ("internal"))) sidGetPChanSample(unsigned int i, 
 	int sid = i / 4;
 	int ch = i % 4;
 
-	int stereo = (opt&cpiGetSampleStereo)?1:0;
+	int stereo = (opt&mcpGetSampleStereo)?1:0;
 	uint32_t step = imuldiv(0x00010000, plrRate, (signed)rate);
 	int16_t *src;
 	int pos1, pos2;

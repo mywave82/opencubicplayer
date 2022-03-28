@@ -30,6 +30,7 @@
 #include <string.h>
 #include "types.h"
 #include "mchasm.h"
+#include "mcp.h"
 #include "player.h"
 #include "stuff/imsrtns.h"
 
@@ -102,7 +103,7 @@ void plrGetMasterSample(int16_t *buf, uint32_t len, uint32_t rate, int opt)
 		step=0x800000;
 
 	maxlen=imuldiv(buflen, 0x10000, step);
-	stereoout=(opt&plrGetSampleStereo)?1:0;
+	stereoout=(opt&mcpGetSampleStereo)?1:0;
 	if (len>maxlen)
 	{
 		memset(buf+(maxlen<<stereoout), 0, (len-maxlen)<<(1+stereoout));

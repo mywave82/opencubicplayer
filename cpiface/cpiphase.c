@@ -36,10 +36,11 @@
 #include <string.h>
 #include <math.h>
 #include "types.h"
-#include "stuff/poutput.h"
 #include "cpiface.h"
-#include "stuff/imsrtns.h"
 #include "cpipic.h"
+#include "dev/mcp.h"
+#include "stuff/imsrtns.h"
+#include "stuff/poutput.h"
 
 #define HIGHLIGHT 11
 #define MAXDOTS (64*128   *10)
@@ -370,7 +371,7 @@ static void plDrawScopes(void)
 	int i;
 	if (plOszChan==2)
 	{
-		plGetMasterSample(plSampBuf, samples+1, plOszRate, (plOszMono?0:cpiGetSampleStereo)|cpiGetSampleHQ);
+		plGetMasterSample(plSampBuf, samples+1, plOszRate, (plOszMono?mcpGetSampleMono:mcpGetSampleStereo)|mcpGetSampleHQ);
 		for (i=0; i<scopenx; i++)
 			drawscope(scopedx/2+scopedx*i, scopedy/2, plSampBuf+i, samples, 15, scopenx);
 	} else if (plOszChan==1)
@@ -378,19 +379,19 @@ static void plDrawScopes(void)
 		int i;
 		for (i=0; i<plNPChan; i++)
 		{
-			int paus=plGetPChanSample(i, plSampBuf, samples+1, plOszRate, cpiGetSampleHQ);
+			int paus=plGetPChanSample(i, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
 			drawscope((i%scopenx)*scopedx+scopedx/2, scopedy*(i/scopenx)+scopedy/2, plSampBuf, samples, paus?8:15, 1);
 		}
 	} else if (plOszChan==3)
 	{
-		plGetLChanSample(plSelCh, plSampBuf, samples+1, plOszRate, cpiGetSampleHQ);
+		plGetLChanSample(plSelCh, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
 		drawscope(scopedx/2, scopedy/2, plSampBuf, samples, plMuteCh[plSelCh]?7:15, 1);
 	} else if (plOszChan==0)
 	{
 		int i;
 		for (i=0; i<plNLChan; i++)
 		{
-			plGetLChanSample(i, plSampBuf, samples+1, plOszRate, cpiGetSampleHQ);
+			plGetLChanSample(i, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
 			drawscope((i%scopenx)*scopedx+scopedx/2, scopedy*(i/scopenx)+scopedy/2, plSampBuf, samples, (plSelCh==i)?plMuteCh[i]?(HIGHLIGHT&7):HIGHLIGHT:plMuteCh[i]?8:15, 1);
 		}
 	}

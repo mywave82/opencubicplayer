@@ -638,7 +638,7 @@ void __attribute__ ((visibility ("internal")))  hvlMute (int ch, int m)
 
 int __attribute__ ((visibility ("internal"))) hvlGetChanSample(unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt)
 {
-	int stereo = (opt&cpiGetSampleStereo)?1:0;
+	int stereo = (opt&mcpGetSampleStereo)?1:0;
 	uint32_t step = imuldiv(0x00010000, plrRate, (signed)rate);
 	int16_t *src;
 	int pos1, pos2;

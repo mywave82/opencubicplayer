@@ -6,11 +6,6 @@
 
 struct ocpfilehandle_t;
 
-enum
-{
-	plrGetSampleStereo=1
-};
-
 extern unsigned int plrRate;
 extern int plrOpt;
 extern int (*plrPlay)(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file);

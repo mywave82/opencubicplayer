@@ -61,7 +61,7 @@ enum
 
 enum
 {
-	mcpGetSampleStereo=1, mcpGetSampleHQ=2
+	mcpGetSampleMono=0, mcpGetSampleStereo=1, mcpGetSampleHQ=2
 };
 
 extern int mcpNChan;

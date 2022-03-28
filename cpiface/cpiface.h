@@ -29,11 +29,6 @@ struct cpifaceplayerstruct
 	void (*CloseFile)();
 };
 
-enum
-{
-  cpiGetSampleStereo=1, cpiGetSampleHQ=2
-};
-
 extern unsigned short plNLChan;
 extern unsigned short plNPChan;
 extern unsigned char plSelCh;
