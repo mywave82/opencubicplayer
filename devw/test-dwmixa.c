@@ -711,7 +711,7 @@ static int test_mixrPlayChannel(void)
 	fprintf(stderr, "mixrPlayChannel, stereo, 16 bit\n");
 	test_mixrPlayChannel_fill(1, &ch, 0);
 	mixrPlayChannel(test_mixrPlayChannel_buf, fadebuf, 16, &ch);
-	retval |= test_mixrPlayChannel_dump (&ch, test_mixrPlayChannel_test4, 4820, 4620, MIXRQ_PLAY16BIT, 0x0000000a, 0xc168, 0, 0);
+	retval |= test_mixrPlayChannel_dump (&ch, test_mixrPlayChannel_test4, 100, -100, MIXRQ_PLAY16BIT, 0x0000000a, 0xc168, 0, 0);
 
 	fprintf(stderr, "mixrPlayChannel, stereo, 8 bit, interpolate\n");
 	test_mixrPlayChannel_fill(0, &ch, MIXRQ_INTERPOLATE);
@@ -721,7 +721,7 @@ static int test_mixrPlayChannel(void)
 	fprintf(stderr, "mixrPlayChannel, stereo, 16 bit, interpolate\n");
 	test_mixrPlayChannel_fill(1, &ch, MIXRQ_INTERPOLATE);
 	mixrPlayChannel(test_mixrPlayChannel_buf, fadebuf, 16, &ch);
-	retval |= test_mixrPlayChannel_dump (&ch, test_mixrPlayChannel_test8, 4820, 4620, MIXRQ_INTERPOLATE|MIXRQ_PLAY16BIT, 0x0000000a, 0xc168, 0, 0);
+	retval |= test_mixrPlayChannel_dump (&ch, test_mixrPlayChannel_test8, 100, -100, MIXRQ_INTERPOLATE|MIXRQ_PLAY16BIT, 0x0000000a, 0xc168, 0, 0);
 
 	fprintf(stderr, "mixrPlayChannel, stereo, 8 bit, looped\n");
 	test_mixrPlayChannel_fill(0, &ch, MIXRQ_LOOPED);
