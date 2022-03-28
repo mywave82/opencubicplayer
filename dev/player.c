@@ -46,9 +46,6 @@ int (*plrGetPlayPos)(void);
 void (*plrAdvanceTo)(unsigned int pos);
 uint32_t (*plrGetTimer)(void);
 void (*plrIdle)(void);
-#ifdef PLR_DEBUG
-char *(*plrDebug)(void)=0;
-#endif
 
 static uint32_t samprate;
 

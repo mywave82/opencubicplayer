@@ -58,9 +58,6 @@
 #include "boot/psetting.h"
 #include "cpiface.h"
 #include "cpipic.h"
-#ifdef PLR_DEBUG
-#include "dev/player.h"
-#endif
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
@@ -1846,17 +1843,6 @@ void cpiDrawGStrings (void)
 		displayvoid (2, 0, plScrWidth);
 		displayvoid (3, 0, plScrWidth);
 	}
-
-#ifdef PLR_DEBUG
-	{
-		char *temp;
-		if (plrDebug)
-			temp=plrDebug();
-		else
-			temp="";
-		displaystr (1, 132, 0x07, temp, strlen (temp));
-	}
-#endif
 
 	if (plScrMode<100)
 	{

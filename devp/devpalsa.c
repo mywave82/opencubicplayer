@@ -911,20 +911,6 @@ static void SetOptions(unsigned int rate, int opt)
 	plrOpt=PLR_STEREO_16BIT_SIGNED;
 }
 
-#ifdef PLR_DEBUG
-static char *alsaDebug(void)
-{
-	static char buffer[100];
-	strcpy(buffer, "devpalsa: ");
-	convnum(cachelen, buffer+9, 10, 5, 1);
-	strcat(buffer, "/");
-	convnum(kernlen, buffer+15, 10, 5, 1);
-	strcat(buffer, "/");
-	convnum(buflen, buffer+21, 10, 5, 1);
-	return buffer;
-}
-#endif
-
 static int alsaPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file)
 {
 	if (!alsa_pcm)
@@ -965,9 +951,6 @@ static int alsaPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *sourc
 	plrIdle=flush;
 	plrAdvanceTo=advance;
 	plrGetTimer=gettimer;
-#ifdef PLR_DEBUG
-	plrDebug=alsaDebug;
-#endif
 
 #ifdef ALSA_DEBUG_OUTPUT
 	debug_output = open ("test-alsa.raw", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
@@ -978,9 +961,6 @@ static int alsaPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *sourc
 
 static void alsaStop(void)
 {
-#ifdef PLR_DEBUG
-	plrDebug=0;
-#endif
 	free(playbuf); playbuf=0;
 	free(shadowbuf); shadowbuf=0;
 

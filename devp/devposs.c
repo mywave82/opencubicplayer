@@ -49,9 +49,6 @@
 #include "dev/player.h"
 #include "dev/plrasm.h"
 #include "dev/devigen.h"
-#ifdef PLR_DEBUG
-#include "stuff/poutput.h"
-#endif
 #include "stuff/imsrtns.h"
 
 /* TODO, AFMT_S16_NE, 32bit AFMT_S32_BE would be porn !! */
@@ -395,27 +392,10 @@ static void ossStop(void)
 		return;
 	free(playbuf); playbuf=0;
 	free(shadowbuf); shadowbuf=0;
-#ifdef PLR_DEBUG
-	plrDebug=0;
-#endif
 	plrIdle=0;
 	close(fd_dsp);
 	fd_dsp=-1;
 }
-
-#ifdef PLR_DEBUG
-static char *ossDebug(void)
-{
-	static char buffer[100];
-	strcpy(buffer, "devposs: ");
-	convnum(cachelen, buffer+9, 10, 6, 1);
-	strcat(buffer, "/");
-	convnum(kernlen, buffer+16, 10, 6, 1);
-	strcat(buffer, "/");
-	convnum(buflen, buffer+23, 10, 6, 1);
-	return buffer;
-}
-#endif
 
 static int ossPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file)
 {
@@ -457,9 +437,6 @@ static int ossPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source
 	plrIdle=flush;
 	plrAdvanceTo=advance;
 	plrGetTimer=gettimer;
-#ifdef PLR_DEBUG
-	plrDebug=ossDebug;
-#endif
 
 	if ((fd_dsp=open(currentcard.path, O_WRONLY|O_NONBLOCK))<0)
 	{

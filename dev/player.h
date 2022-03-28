@@ -16,9 +16,6 @@ extern int (*plrGetPlayPos)(void);
 extern void (*plrAdvanceTo)(unsigned int pos);
 extern uint32_t (*plrGetTimer)(void);
 extern void (*plrIdle)(void);
-#ifdef PLR_DEBUG
-extern char *(*plrDebug)(void);
-#endif
 
 extern int plrOpenPlayer(void **buf, uint32_t *len, uint32_t blen, struct ocpfilehandle_t *source_file);
 extern void plrClosePlayer(void);
