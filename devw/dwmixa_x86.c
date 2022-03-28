@@ -112,18 +112,18 @@ void nonepublic_dwmixa1(void)
 		".cfi_startproc\n"
 
 		"playmonolp:\n"
-		"    movb (%esi), %bl\n"
-		"    addl $1234,%edx\n"
+		"    movb (%esi), %bl\n"        // esi = pos   bl=sample-data
+		"    addl $1234,%edx\n"         // edx = fpos << 16
 		"monostepl:\n"
-		"    movl 1234(,%ebx,4), %eax\n"
+		"    movl 1234(,%ebx,4), %eax\n" // ebx=sample-data, 1234=mixrFadeChannelvoltab[vol0], eax=result of lookup
 		"playmonomonosteplvol1:\n"
-		"    adcl $1234, %esi\n"
+		"    adcl $1234, %esi\n"       // 1234 = step real part
 		"monosteph:\n"
-		"    addl %eax, (%edi)\n"
+		"    addl %eax, (%edi)\n"      // edi = destination
 		"    addl $4, %edi\n"
-		"    addl $1234, %ebx\n"
+		"    addl $1234, %ebx\n"       // 1234 = vol0add
 		"monoramp:\n"
-		"  cmpl $1234, %edi\n"
+		"  cmpl $1234, %edi\n"         // 1234 = destination eof (based on len)
 		"monoendp:\n"
 		"  jb playmonolp\n"
 		"  ret\n"
@@ -633,7 +633,7 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 		"  subl %c20(%%edi), %%edx\n"     /* %20 = ch->curvols[1] */
 		"  je mixrPlayChannelnoramp1\n"
 		"  jl mixrPlayChannelramp1down\n"
-		"    movl $1, %8\n"               /*  %8 = ramping[4] */
+		"    movl $1, %8\n"               /*  %8 = ramping[1] */
 		"    cmpl %%edx, %%ecx\n"
 		"    jbe mixrPlayChannelnoramp1\n"
 		"      movb $1, %10\n"            /* %10 = ramploop */

@@ -9,7 +9,7 @@ static inline void asm_negl(struct assembler_state_t *state, uint32_t *dst)
 	write_of(state->eflags, tmp > *dst);
 	write_sf(state->eflags, tmp & 0x80000000);
 	write_zf(state->eflags, !tmp);
-	write_cf(state->eflags, !*dst);
+	write_cf(state->eflags, !!*dst);
 #ifdef X86_PF
 	asm_update_pf(state->eflags, tmp);
 #endif
@@ -26,7 +26,7 @@ static inline void asm_negw(struct assembler_state_t *state, uint16_t *dst)
 	write_of(state->eflags, tmp > *dst);
 	write_sf(state->eflags, tmp & 0x8000);
 	write_zf(state->eflags, !tmp);
-	write_cf(state->eflags, !*dst);
+	write_cf(state->eflags, !!*dst);
 #ifdef X86_PF
 	asm_update_pf(state->eflags, tmp);
 #endif
@@ -43,7 +43,7 @@ static inline void asm_negb(struct assembler_state_t *state, uint8_t *dst)
 	write_of(state->eflags, tmp > *dst);
 	write_sf(state->eflags, tmp & 0x80);
 	write_zf(state->eflags, !tmp);
-	write_cf(state->eflags, !*dst);
+	write_cf(state->eflags, !!*dst);
 #ifdef X86_PF
 	asm_update_pf(state->eflags, tmp);
 #endif

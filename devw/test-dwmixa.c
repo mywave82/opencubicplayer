@@ -25,6 +25,12 @@
 #include "dwmixa.h"
 #include <string.h>
 #include <stdlib.h>
+
+#if defined(__PIC__) && defined(I386_ASM)
+#warning I386_ASM is disabled in non FPU mixers when compiled PIC
+#undef I386_ASM
+#endif
+
 #ifdef I386_ASM
 #include <unistd.h>
 #include <sys/mman.h>
@@ -85,9 +91,9 @@ static void calcinterpoltabr(void)
 		}
 }
 
-static uint8_t test_mixrClip_dst8[34];
-static uint16_t test_mixrClip_dst16[34];
-static int32_t test_mixrClip_src[32];
+static uint8_t  *test_mixrClip_dst8;
+static uint16_t *test_mixrClip_dst16;
+static int32_t  *test_mixrClip_src;
 
 static const int32_t test_mixrClip_fill_src[32] =
 {
@@ -163,16 +169,16 @@ static const uint8_t test_mixrClip_dst8_test4[34] =
 
 static void test_mixrClip_fill(void)
 {
-	memcpy(test_mixrClip_src, test_mixrClip_fill_src, sizeof(test_mixrClip_src));
-	memcpy(test_mixrClip_dst8, test_mixrClip_fill_dst8, sizeof(test_mixrClip_dst8));
-	memcpy(test_mixrClip_dst16, test_mixrClip_fill_dst16, sizeof(test_mixrClip_dst16));
+	memcpy(test_mixrClip_src, test_mixrClip_fill_src, sizeof(test_mixrClip_fill_src));
+	memcpy(test_mixrClip_dst8, test_mixrClip_fill_dst8, sizeof(test_mixrClip_fill_dst8));
+	memcpy(test_mixrClip_dst16, test_mixrClip_fill_dst16, sizeof(test_mixrClip_fill_dst16));
 }
 
 static int test_mixrClip_dump(const uint8_t *t1, const uint16_t *t2)
 {
 	int retval=0;
 	int i;
-	if (memcmp(test_mixrClip_src, test_mixrClip_fill_src, sizeof(test_mixrClip_src)))
+	if (memcmp(test_mixrClip_src, test_mixrClip_fill_src, sizeof(test_mixrClip_fill_src)))
 	{
 		retval=1;
 		fprintf(stderr, "src failed\n");
@@ -185,7 +191,7 @@ static int test_mixrClip_dump(const uint8_t *t1, const uint16_t *t2)
 			fprintf(stderr, "0x%08x%s", (unsigned)test_mixrClip_src[i], i<31?", ":"");
 		fprintf(stderr, "};\n");
 	}
-	if (memcmp(test_mixrClip_dst8, t1, sizeof(test_mixrClip_dst8)))
+	if (memcmp(test_mixrClip_dst8, t1, 34 * sizeof (uint8_t)))
 	{
 		retval=1;
 		fprintf(stderr, "dst8 failed\n");
@@ -198,7 +204,7 @@ static int test_mixrClip_dump(const uint8_t *t1, const uint16_t *t2)
 			fprintf(stderr, "0x%02x%s", test_mixrClip_dst8[i], i<33?", ":"");
 		fprintf(stderr, "}\n");
 	}
-	if (memcmp(test_mixrClip_dst16, t2, sizeof(test_mixrClip_dst16)))
+	if (memcmp(test_mixrClip_dst16, t2, 34 * sizeof (uint16_t)))
 	{
 		retval=1;
 		fprintf(stderr, "dst16 failed\n");
@@ -855,12 +861,12 @@ static int test_mixrPlayChannel(void)
 	fprintf(stderr, "mixrPlayChannel, mono, 16 bit\n");
 	test_mixrPlayChannel_fill(1, &ch, 0);
 	mixrPlayChannel(test_mixrPlayChannel_buf, fadebuf, 32, &ch, 0);
-	retval |= test_mixrPlayChannel_dump (&ch, test_mixrPlayChannel_test3, 4820, 4620, MIXRQ_PLAY16BIT, 0x0000000a, 0xc168, 0, 0);
+	retval |= test_mixrPlayChannel_dump (&ch, test_mixrPlayChannel_test3, 100, -100, MIXRQ_PLAY16BIT, 0x0000000a, 0xc168, 0, 0);
 
 	fprintf(stderr, "mixrPlayChannel, stereo, 16 bit\n");
 	test_mixrPlayChannel_fill(1, &ch, 0);
 	mixrPlayChannel(test_mixrPlayChannel_buf, fadebuf, 16, &ch, 1);
-	retval |= test_mixrPlayChannel_dump (&ch, test_mixrPlayChannel_test4, 4820, 4620, MIXRQ_PLAY16BIT, 0x0000000a, 0xc168, 0, 0);
+	retval |= test_mixrPlayChannel_dump (&ch, test_mixrPlayChannel_test4, 100, -100, MIXRQ_PLAY16BIT, 0x0000000a, 0xc168, 0, 0);
 
 	fprintf(stderr, "mixrPlayChannel, mono, 8 bit, interpolate\n");
 	test_mixrPlayChannel_fill(0, &ch, MIXRQ_INTERPOLATE);
@@ -875,12 +881,12 @@ static int test_mixrPlayChannel(void)
 	fprintf(stderr, "mixrPlayChannel, mono, 16 bit, interpolate\n");
 	test_mixrPlayChannel_fill(1, &ch, MIXRQ_INTERPOLATE);
 	mixrPlayChannel(test_mixrPlayChannel_buf, fadebuf, 32, &ch, 0);
-	retval |= test_mixrPlayChannel_dump (&ch, test_mixrPlayChannel_test7, 4820, 4620, MIXRQ_INTERPOLATE|MIXRQ_PLAY16BIT, 0x0000000a, 0xc168, 0, 0);
+	retval |= test_mixrPlayChannel_dump (&ch, test_mixrPlayChannel_test7, 100, -100, MIXRQ_INTERPOLATE|MIXRQ_PLAY16BIT, 0x0000000a, 0xc168, 0, 0);
 
 	fprintf(stderr, "mixrPlayChannel, stereo, 16 bit, interpolate\n");
 	test_mixrPlayChannel_fill(1, &ch, MIXRQ_INTERPOLATE);
 	mixrPlayChannel(test_mixrPlayChannel_buf, fadebuf, 16, &ch, 1);
-	retval |= test_mixrPlayChannel_dump (&ch, test_mixrPlayChannel_test8, 4820, 4620, MIXRQ_INTERPOLATE|MIXRQ_PLAY16BIT, 0x0000000a, 0xc168, 0, 0);
+	retval |= test_mixrPlayChannel_dump (&ch, test_mixrPlayChannel_test8, 100, -100, MIXRQ_INTERPOLATE|MIXRQ_PLAY16BIT, 0x0000000a, 0xc168, 0, 0);
 
 	fprintf(stderr, "mixrPlayChannel, mono, 8 bit, looped\n");
 	test_mixrPlayChannel_fill(0, &ch, MIXRQ_LOOPED);
@@ -973,6 +979,9 @@ int main(int argc, char *argv[])
 	if (initAsm())
 		return 1;
 
+	test_mixrClip_dst8  = malloc (34 * sizeof (uint8_t));
+	test_mixrClip_dst16 = malloc (34 * sizeof (uint16_t));
+	test_mixrClip_src   = malloc (32 * sizeof (uint32_t));
 
 	amptab=malloc(sizeof(int16_t)*3*256+sizeof(int32_t)); /* PADDING since assembler indexes some bytes beyond tab and ignores upper bits */ /*new short [3][256];*/
 
@@ -987,6 +996,11 @@ int main(int argc, char *argv[])
 	retval |= test_mixrFade();
 
 	retval |= test_mixrPlayChannel();
+
+	free (test_mixrClip_dst8);
+	free (test_mixrClip_dst16);
+	free (test_mixrClip_src);
+
 
 	free(amptab);
 

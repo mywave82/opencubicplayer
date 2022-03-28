@@ -4,7 +4,7 @@
 
 static inline void asm_imul_1_l(struct assembler_state_t *state, uint32_t src)
 {
-	uint64_t result = (uint64_t)((int64_t)((int32_t)src) * (int32_t)state->eax);
+	uint64_t result = (uint64_t)(((int64_t)(int32_t)src) * (int64_t)(int32_t)state->eax);
 	uint32_t low_result = result;
 	uint32_t high_result = result>>32;
 /*
@@ -94,7 +94,7 @@ static inline void asm_imul_1_b(struct assembler_state_t *state, const uint8_t s
 
 static inline void asm_imul_2_l(struct assembler_state_t *state, uint32_t src, uint32_t *dst)
 {
-	uint64_t result = (uint64_t)((int64_t)((int32_t)src) * (int32_t)*dst);
+	uint64_t result = (uint64_t)(((int64_t)(int32_t)src) * (int64_t)(int32_t)*dst);
 	uint32_t low_result = result;
 	uint32_t high_result = result>>32;
 

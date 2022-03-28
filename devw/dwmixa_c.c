@@ -161,7 +161,7 @@ mixrPlayChannelbigloop:
 			}
 		} else { /* mixrPlayChannelforward */
 			abs_step = chan->step;
-			data_left          = chan->length - chan->pos - (!chan->fpos);
+			data_left          = chan->length - chan->pos - (!!chan->fpos);
 			data_left_fraction = -chan->fpos;
 			if (chan->status&MIXRQ_LOOPED)
 			{
@@ -198,6 +198,7 @@ mixrPlayChannelbigloop:
 			}
 		}
 	}
+
 	ramping[0]=0;
 	ramping[1]=0;
 	if (mixlen) /* ecx */
@@ -252,23 +253,17 @@ mixrPlayChannelbigloop:
 		len-=mixlen;
 		chan->curvols[0]+=mixlen*ramping[0];
 		chan->curvols[1]+=mixlen*ramping[1];
-		if (ramploop)
-		{
-			ramping[0]=0;
-			ramping[1]=0;
-			if (!chan->curvols[0]&&!chan->curvols[1])
-				routeptr=routequiet;
-			routeptr(buf, ramploop, chan);
-			buf+=ramploop<<stereo;
-			len-=ramploop;
-			mixlen+=ramploop;
-		}
+
 		{
 			int64_t tmp64=((int64_t)chan->step)*mixlen + ((uint16_t)chan->fpos);
 			chan->fpos=tmp64&0xffff;
 			chan->pos+=(tmp64>>16);
 		}
 
+		if (ramploop)
+		{
+			goto mixrPlayChannelbigloop;
+		}
 	}
 
 	/* if we were in a loop, check if we hit the boundary, if so loop and mix more data if needed*/
@@ -284,8 +279,8 @@ mixrPlayChannelbigloop:
 				mypos+=chan->replen;
 			} else {
 				chan->step=-chan->step;
-				chan->fpos=-chan->fpos;
 				mypos+=!!(chan->fpos);
+				chan->fpos=-chan->fpos;
 				mypos=-mypos+chan->loopstart+chan->loopstart;
 			}
 		} else {
@@ -296,8 +291,8 @@ mixrPlayChannelbigloop:
 				mypos-=chan->replen;
 			} else {
 				chan->step=-chan->step;
-				chan->fpos=-chan->fpos;
 				mypos+=!!(chan->fpos);
+				chan->fpos=-chan->fpos;
 				mypos=-mypos+chan->loopend+chan->loopend;
 			}
 		}
@@ -374,14 +369,14 @@ void mixrClip(void *dst, int32_t *src, int len, void *tab, int32_t max, int b16)
 	const uint16_t *mixrClipamp3 = amptab[2];
 	const int32_t mixrClipmax=max;
 	const int32_t mixrClipmin=-max;
-	const uint8_t mixrClipminv =
-		(mixrClipamp1[mixrClipmin&0xff]+
+	const uint16_t mixrClipminv =
+		mixrClipamp1[mixrClipmin&0xff]+
 		mixrClipamp2[(mixrClipmin&0xff00)>>8]+
-		mixrClipamp3[(mixrClipmin&0xff0000)>>16])>>8;
-	const uint8_t mixrClipmaxv =
-		(mixrClipamp1[mixrClipmax&0xff]+
+		mixrClipamp3[(mixrClipmin&0xff0000)>>16];
+	const uint16_t mixrClipmaxv =
+		mixrClipamp1[mixrClipmax&0xff]+
 		mixrClipamp2[(mixrClipmax&0xff00)>>8]+
-		mixrClipamp3[(mixrClipmax&0xff0000)>>16])>>8;
+		mixrClipamp3[(mixrClipmax&0xff0000)>>16];
 
 	if (!b16)
 	{
@@ -390,10 +385,10 @@ void mixrClip(void *dst, int32_t *src, int len, void *tab, int32_t max, int b16)
 		{
 			if (*src<mixrClipmin)
 			{
-				*_dst=mixrClipminv;
+				*_dst=mixrClipminv>>8;
 			} else if (*src>mixrClipmax)
 			{
-				*_dst=mixrClipmaxv;
+				*_dst=mixrClipmaxv>>8;
 			} else {
 				*_dst=
 					(mixrClipamp1[*src&0xff]+
