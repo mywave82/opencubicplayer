@@ -162,28 +162,28 @@ static void TimiditySetupDraw(int focus)
 
 	displaystr (TimiditySetupFirstLine, 0, focus?COLTITLE1H:COLTITLE1, focus?"   Timidity Setup":"   Timidity Setup (press t to focus)", TimiditySetupWidth);
 
-	displaystr (TimiditySetupFirstLine + 1, 0, (focus&&(TimiditySetupEditPos==1))?0x07:0x08, "  Reverb:" + 2 - skip, 16 + skip);
+	displaystr (TimiditySetupFirstLine + 1, 0, (focus&&(TimiditySetupEditPos==1))?0x07:0x08, &"  Reverb:"[2 - skip], 16 + skip);
 	TimiditySetupDrawItems (focus, 1, skip, reverbs, 5, TimiditySetupSelected, TimiditySetupEditPos==0);
 
-	displaystr (TimiditySetupFirstLine + 2, 0, (focus&&(TimiditySetupEditPos==1))?0x07:0x08, "  Level:" + 2 - skip, 16 + skip);
+	displaystr (TimiditySetupFirstLine + 2, 0, (focus&&(TimiditySetupEditPos==1))?0x07:0x08, &"  Level:"[2 - skip], 16 + skip);
 	TimiditySetupDrawBar (focus, 2, skip, (TimiditySetupSelected != 0) ? TimiditySetupLevel : -1, 127, TimiditySetupEditPos == 1);
 
-	displaystr (TimiditySetupFirstLine + 3, 0, (focus&&(TimiditySetupEditPos==2))?0x07:0x08, "  ScaleRoom:" + 2 - skip, 16 + skip);
+	displaystr (TimiditySetupFirstLine + 3, 0, (focus&&(TimiditySetupEditPos==2))?0x07:0x08, &"  ScaleRoom:"[2 - skip], 16 + skip);
 	TimiditySetupDrawBar (focus, 3, skip, (TimiditySetupSelected >= 3) ? TimiditySetupScaleRoom : -1, 1000, TimiditySetupEditPos == 2);
 
-	displaystr (TimiditySetupFirstLine + 4, 0, (focus&&(TimiditySetupEditPos==3))?0x07:0x08, "  OffsetRoom:" + 2 - skip, 16 + skip);
+	displaystr (TimiditySetupFirstLine + 4, 0, (focus&&(TimiditySetupEditPos==3))?0x07:0x08, &"  OffsetRoom:"[2 - skip], 16 + skip);
 	TimiditySetupDrawBar (focus, 4, skip, (TimiditySetupSelected >= 3) ? TimiditySetupOffsetRoom : -1, 1000, TimiditySetupEditPos == 3);
 
-	displaystr (TimiditySetupFirstLine + 5, 0, (focus&&(TimiditySetupEditPos==4))?0x07:0x08, "  PreDelayFactor:" + 2 - skip, 16 + skip);
+	displaystr (TimiditySetupFirstLine + 5, 0, (focus&&(TimiditySetupEditPos==4))?0x07:0x08, &"  PreDelayFactor:"[2 - skip], 16 + skip);
 	TimiditySetupDrawBar (focus, 5, skip, (TimiditySetupSelected >= 3) ? TimiditySetupPreDelayFactor : -1, 1000, TimiditySetupEditPos == 4);
 
-	displaystr (TimiditySetupFirstLine + 6, 0, (focus&&(TimiditySetupEditPos==5))?0x07:0x08, "  Delay:" + 2 - skip, 16 + skip);
+	displaystr (TimiditySetupFirstLine + 6, 0, (focus&&(TimiditySetupEditPos==5))?0x07:0x08, &"  Delay:"[2 - skip], 16 + skip);
 	TimiditySetupDrawItems (focus, 6, skip, effect_lr_modes, 4, effect_lr_mode + 1, TimiditySetupEditPos==5);
 
-	displaystr (TimiditySetupFirstLine + 7, 0, (focus&&(TimiditySetupEditPos==6))?0x07:0x08, "  Delay ms:" + 2 - skip, 16 + skip);
+	displaystr (TimiditySetupFirstLine + 7, 0, (focus&&(TimiditySetupEditPos==6))?0x07:0x08, &"  Delay ms:"[2 - skip], 16 + skip);
 	TimiditySetupDrawBar (focus, 7, skip, (effect_lr_mode >= 0) ? effect_lr_delay_msec : -1, 1000, TimiditySetupEditPos == 6);
 
-	displaystr (TimiditySetupFirstLine + 8, 0, (focus&&(TimiditySetupEditPos==7))?0x07:0x08, "  Chorus:" + 2 - skip, 16 + skip);
+	displaystr (TimiditySetupFirstLine + 8, 0, (focus&&(TimiditySetupEditPos==7))?0x07:0x08, &"  Chorus:"[2 - skip], 16 + skip);
 	TimiditySetupDrawItems (focus, 8, skip, disable_enable, 2, opt_chorus_control, TimiditySetupEditPos==7);
 }
 
