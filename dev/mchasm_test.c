@@ -92,6 +92,81 @@ int check_pads(char *pad0, char *pad1, char *pad2)
 	return memcmp(pad0, masterpad, 128)||memcmp(pad1, masterpad, 128)||memcmp(pad2, masterpad, 128);
 }
 
+void test23(void)
+{
+	pad_t pad0;
+	int16_t src[20]={-2,0, 0,-4, -3,-3, 1,1, 2,2, 3,3, -1280,-1280, 1270,1270, 10,10, 11,11};
+	pad_t pad1;
+	int16_t dst[10];
+	pad_t pad2;
+	int16_t wewant1[10]={-1, -2, -3,     1,   2,  3, -1280, 1270, 10, 11};
+	int16_t wewant2[10]={-1, -3,  2, -1280,  10,  0,     0,    0,   0, 0};
+	int16_t wewant3[10]={-1, -1, -2,    -2,  -3, -3,     1,    1,   2, 2};
+
+	reset_pads(pad0, pad1, pad2);
+	fputs("mixGetMasterSampleSS16M  (16bit, stereo, signed => 16bit, mono, signed) :\n", stderr);
+
+	fputs("  1x: ", stderr);
+	mixGetMasterSampleSS16M((int16_t *)dst, src, 10, 0x0010000);
+	if (check_pads(pad0, pad1, pad2))
+	{
+		retval=1;
+		fputs("overflow/underflow", stderr);
+		reset_pads(pad0, pad1, pad2);
+	} else if (memcmp(dst, wewant1, sizeof(dst)))
+	{
+		retval=1;
+		fputs(FAILED10, stderr);
+		{
+			int i;
+			fprintf(stderr, "\n");
+			for (i=0;i<10;i++)
+				fprintf(stderr, " %04x %04x", (uint16_t)src[i*2], (uint16_t)src[i*2+1]);
+			fprintf(stderr, "\n");
+			for (i=0;i<10;i++)
+				fprintf(stderr, "     %04x ", (uint16_t)dst[i]);
+			fprintf(stderr, "\n");
+			for (i=0;i<10;i++)
+				fprintf(stderr, "     %04x ", (uint16_t)wewant1[i]);
+			fprintf(stderr, "\n");
+		}
+	} else {
+		fputs(OK10, stderr);
+	}
+
+	fputs("  2x: ", stderr);
+	memset(dst, 0, sizeof(dst));
+	mixGetMasterSampleSS16M((int16_t *)dst, src, 5, 0x0020000);
+	if (check_pads(pad0, pad1, pad2))
+	{
+		retval=1;
+		fputs("overflow/underflow", stderr);
+		reset_pads(pad0, pad1, pad2);
+	} else if (memcmp(dst, wewant2, sizeof(dst)))
+	{
+		retval=1;
+		fputs(FAILED10, stderr);
+	} else {
+		fputs(OK10, stderr);
+	}
+
+	fputs("  0.5x: ", stderr);
+	mixGetMasterSampleSS16M((int16_t *)dst, src, 10, 0x0008000);
+	if (check_pads(pad0, pad1, pad2))
+	{
+		retval=1;
+		fputs("overflow/underflow", stderr);
+		reset_pads(pad0, pad1, pad2);
+	} else if (memcmp(dst, wewant3, sizeof(dst)))
+	{
+		retval=1;
+		fputs(FAILED10, stderr);
+	} else {
+		fputs(OK10, stderr);
+	}
+	fputs("\n", stderr);
+}
+
 void test25(void)
 {
 	pad_t pad0;
@@ -171,6 +246,7 @@ int main(int argc, char *argv[])
 {
 	test4();
 	memset(masterpad, 0, 128);
+	test23();
 	test25();
 
 	return retval;

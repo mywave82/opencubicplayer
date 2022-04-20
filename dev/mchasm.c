@@ -51,6 +51,32 @@ uint32_t mixAddAbs16SS(const void *ch, uint32_t len)
 
 /********************************************************************/
 
+void mixGetMasterSampleSS16M(int16_t *_dst, const void *_src, uint32_t len, uint32_t step)
+{
+	uint32_t addfixed;
+	uint32_t addfloat;
+	uint32_t addfloatcounter;
+	int16_t *src=(int16_t *)_src;
+	int16_t *dst=(int16_t *)_dst;
+
+	if (!len)
+		return;
+	addfloatcounter=0;
+	addfloat=step&0xffff;
+	addfixed=(step>>15)&0xfffe;
+	do {
+		*dst=(src[0]+src[1])>>1;
+		src+=addfixed;
+		if ((addfloatcounter+=addfloat)&0xffff0000)
+		{
+			addfloatcounter&=0xffff;
+			src+=2;
+		}
+		dst+=1;
+		len--;
+	} while(len);
+}
+
 void mixGetMasterSampleSS16S(int16_t *_dst, const void *_src, uint32_t len, uint32_t step)
 {
 	uint32_t addfixed;
