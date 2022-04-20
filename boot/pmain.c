@@ -875,9 +875,15 @@ static int init_modules(int argc, char *argv[])
 			cfRemoveEntry("sound", "sampstereo");
 		}
 
-		if (epoch < 20220327)
+		if (epoch < 20220417)
 		{
-			cfSetProfileInt("version", "epoch", 20220327, 10);
+			printf("ocp.ini update (0.2.96) removed mixbufsize\n");
+			cfRemoveEntry("sound", "mixbufsize");
+		}
+
+		if (epoch < 20220417)
+		{
+			cfSetProfileInt("version", "epoch", 20220417, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -888,13 +894,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20220327)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20220417)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20220327\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20220417\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20220327\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20220417\n\n");
 		}
 		sleep(5);
 	}

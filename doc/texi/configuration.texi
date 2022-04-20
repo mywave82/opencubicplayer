@@ -140,7 +140,6 @@ this section.
   mixrate=44100
   mixprocrate=4096000
   plrbufsize=200
-  mixbufsize=200
   samprate=44100
   defplayer=
   defwavetable=
@@ -196,10 +195,6 @@ not be able to play 32 channels at full mixrate. This value defines
 the maximum ``calculation power'' to which OCP tries to use the full
 mixrate.
 @item plrbufsize @tab
-When using a @emph{playerdevice} to play sample streams a DMA
-buffer is used to minimize cpu resources for handling the sample
-stream. This option sets the DMA buffer length in miliseconds.
-@item mixbufsize @tab
 When running in a multitasking environment there is no
 guarantee for constant cpu resources. To avoid a break in the sample
 stream OCP will calculate in advance. This option sets the buffer lenth in

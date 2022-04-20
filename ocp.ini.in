@@ -1,5 +1,5 @@
 [version]
-  epoch=20220327
+  epoch=20220417
 
 [general]
 ;link=
@@ -27,7 +27,6 @@
   mixrate=44100           ; -sr44100
   mixprocrate=4096000     ; max channels*rate (for slow cpus) (4096000==64*64000)
   plrbufsize=200          ; milliseconds
-  mixbufsize=200          ; milliseconds
   samprate=44100          ; -sr44100
   defplayer=              ; -sp
   defwavetable=           ; -sw

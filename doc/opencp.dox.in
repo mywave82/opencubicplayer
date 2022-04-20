@@ -1502,7 +1502,6 @@ the configuration permanently you have to modify the entries of this section.
     mixrate=44100
     mixprocrate=4096000
     plrbufsize=500
-    mixbufsize=500
     samprate=44100
     defplayer=
     defwavetable=
@@ -1552,10 +1551,6 @@ the configuration permanently you have to modify the entries of this section.
                    buffer is used to minimize CPU resources for handling the
                    sample stream. This option sets the DMA buffer length in
                    milliseconds.
-  ~mixbufsize~       When running OCP in a multitasking environment there is
-                   no guarantee for constant CPU resources. To avoid a break in
-                   the sample stream OCP will calculate in advance. This
-                   option sets the buffer length in milliseconds.
   ~samprate~         When using a diskwriter, this value will be used.
   ~defplayer~        with this option you can override the default ~playerdevice~.
                    Normally you don't need to set this option, as the default

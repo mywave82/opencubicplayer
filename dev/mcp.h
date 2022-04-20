@@ -79,8 +79,6 @@ extern int (*mcpMixChanSamples)(unsigned int *ch, unsigned int n, int16_t *s, un
 
 extern unsigned int mcpMixMaxRate;
 extern unsigned int mcpMixProcRate;
-#define mcpMixOpt PLR_STEREO_16BIT_SIGNED
-extern unsigned int mcpMixBufSize;
 
 extern void (*mcpIdle)(void);
 
