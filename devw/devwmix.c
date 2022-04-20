@@ -37,11 +37,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-
 #include <unistd.h>
-
-#include <sys/mman.h>
-
 #include "types.h"
 #include "boot/plinkman.h"
 #include "dev/imsdev.h"
@@ -68,7 +64,6 @@ static int resample;
 
 static int _pause;
 static long playsamps;
-static long pausesamps;
 
 static struct sampleinfo *samples;
 static int samplenum;
@@ -84,7 +79,7 @@ static int volopt;
 static unsigned long relpitch;
 static int interpolation;
 
-static unsigned long samprate;
+static uint32_t samprate;
 
 static int channelnum;
 static struct channel *channels;
@@ -99,9 +94,6 @@ static int16_t (*interpoltabq2)[16][256][4];
 
 static int16_t *scalebuf=0;
 static int32_t *buf32;
-static uint32_t bufpos;
-static uint32_t buflen;
-static void *plrbuf;
 
 static void (*playerproc)(void);
 static unsigned long tickwidth;
@@ -116,6 +108,8 @@ static int masterbal;
 static int masterpan;
 static int mastersrnd;
 static int masterrvb;
+
+static uint32_t IdleCache; /* To prevent devpDisk lockup */
 
 static void calcinterpoltabr(void)
 	/* used by OpenPlayer */
@@ -403,12 +397,6 @@ static void playchannelq(int ch, uint32_t len)
 
 static void mixer(void)
 {
-	/* mixer used by timerproc
-	 *               Idle
-	 */
-	uint32_t bufplayed;
-	uint32_t bufdelta;
-	uint32_t pass2;
 	int i;
 	struct mixqpostprocregstruct *mode;
 
@@ -425,74 +413,68 @@ static void mixer(void)
 
 	BARRIER
 
-	/* Where is our devp reading head? */
-	bufplayed=plrGetBufPos() >> 2 /* stereo + bit16 */;
-	bufdelta=((buflen+bufplayed-bufpos)%buflen);
-
-	/* No delta on the devp? */
-	if (!bufdelta)
-	{
-		clipbusy--;
-		return;
-	}
-
 	if (_pause)
 	{
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
+		plrAPI->Pause (1);
 
-		plrClearBuf((uint16_t *)plrbuf+(bufpos << 1 /* stereo */), (bufdelta-pass2) << 1 /* stereo */, 1 /* signedout */);
-		if (pass2)
-			plrClearBuf((uint16_t *)plrbuf, pass2 << 1 /* stereo */, 1 /* signedout */);
+	} else {
+		void *targetbuf;
+		unsigned int targetlength; /* in samples */
 
-		bufpos+=bufdelta;
-		if (bufpos>=buflen)
-		bufpos-=buflen;
+		plrAPI->Pause (0);
 
-		plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
-		pausesamps+=bufdelta;
-	} else while (bufdelta>0)
-	{
-		uint32_t length1=(bufdelta>MIXBUFLEN)?MIXBUFLEN:bufdelta;
+		plrAPI->GetBuffer (&targetbuf, &targetlength);
 
-		if (length1>(buflen-bufpos))
-			length1=buflen-bufpos;
-		if (length1>((tickwidth-tickplayed)>>8))
-			length1=(tickwidth-tickplayed)>>8;
-
-		mixrFade(buf32, fadedown, length1);
-		if (!quality)
+		while (targetlength)
 		{
-			for (i=0; i<channelnum; i++)
-				mixrPlayChannel(buf32, fadedown, length1, &channels[i]);
-		} else {
-			for (i=0; i<channelnum; i++)
-				playchannelq(i, length1);
+			if (targetlength > MIXBUFLEN)
+			{
+				targetlength = MIXBUFLEN;
+			}
+			if (targetlength > ((tickwidth-tickplayed)>>8))
+			{
+				targetlength=(tickwidth-tickplayed)>>8;
+			}
+
+			mixrFade(buf32, fadedown, targetlength);
+			if (!quality)
+			{
+				for (i=0; i<channelnum; i++)
+					mixrPlayChannel(buf32, fadedown, targetlength, &channels[i]);
+			} else {
+				for (i=0; i<channelnum; i++)
+					playchannelq(i, targetlength);
+			}
+
+			for (mode=postprocs; mode; mode=mode->next)
+				mode->Process(buf32, targetlength, samprate);
+
+			mixrClip((char*)targetbuf, buf32, targetlength << 1 /* stereo */, amptab, clipmax);
+
+			tickplayed+=targetlength<<8;
+			if (!((tickwidth-tickplayed)>>8))
+			{
+				tickplayed-=tickwidth;
+				playerproc();
+#warning use plrAPI API to track this by buffer instead of delivery (cmdtimerpos)
+				cmdtimerpos+=tickwidth;
+				tickwidth=newtickwidth;
+			}
+
+			playsamps+=targetlength;
+
+			plrAPI->CommitBuffer (targetlength);
+
+			plrAPI->GetBuffer (&targetbuf, &targetlength);
+
+			if (_pause)
+			{
+				break;
+			}
 		}
-
-		for (mode=postprocs; mode; mode=mode->next)
-			mode->Process(buf32, length1, samprate);
-
-		mixrClip((char*)plrbuf+(bufpos << 2 /* stereo + bit16 */ ), buf32, length1 << 1 /* stereo */, amptab, clipmax);
-
-		tickplayed+=length1<<8;
-		if (!((tickwidth-tickplayed)>>8))
-		{
-			tickplayed-=tickwidth;
-			playerproc();
-			cmdtimerpos+=tickwidth;
-			tickwidth=newtickwidth;
-		}
-		bufpos+=length1;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
-
-		plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
-		bufdelta-=length1;
-		playsamps+=length1;
 	}
+
+	plrAPI->Idle();
 
 	BARRIER
 
@@ -506,17 +488,7 @@ static void timerproc(void)
 #ifndef NO_BACKGROUND_MIXER
 	mixer();
 #endif
-	if (plrIdle)
-		plrIdle();
 }
-
-
-
-
-
-
-
-
 
 #ifdef __STRANGE_BUG__
 void *GetReturnAddress12();
@@ -531,7 +503,6 @@ void sbDumpRetAddr(void *ptr)
   fflush(stdout);
 }
 #endif
-
 
 static void SET(int ch, int opt, int val)
 {
@@ -784,10 +755,7 @@ static int GET(int ch, int opt)
 		case mcpCMute:
 			return !!(chn->status&MIXRQ_MUTE);
 		case mcpGTimer:
-			if (_pause)
-				return imuldiv(playsamps, 65536, samprate);
-			else
-				return plrGetTimer()-imuldiv(pausesamps, 65536, samprate);
+			return imuldiv(playsamps - IdleCache, 65536, samprate);
 		case mcpGCmdTimer:
 			return umuldiv(cmdtimerpos, 256, samprate);
 		case mcpMasterReverb:
@@ -799,11 +767,7 @@ static int GET(int ch, int opt)
 static void Idle(void)
 {
 	mixer();
-	if (plrIdle)
-		plrIdle();
 }
-
-
 
 static void GetMixChannel(unsigned int ch, struct mixchannel *chn, uint32_t rate)
 	/* Refered to by OpenPlayer to mixInit */
@@ -870,20 +834,20 @@ static int LoadSamples(struct sampleinfo *sil, int n)
 static int OpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_file)
 {
 	uint32_t currentrate;
-	uint16_t mixrate;
 	struct mixqpostprocregstruct *mode;
+	enum plrRequestFormat format;
 
 	fadedown[0]=fadedown[1]=0;
-	playsamps=pausesamps=0;
+	IdleCache=playsamps=0;
 	if (chan>MAXCHAN)
+	{
 		chan=MAXCHAN;
+	}
 
-	if (!plrPlay)
+	if (!plrAPI)
+	{
 		return 0;
-
-	currentrate=mcpMixProcRate/chan;
-	mixrate=(currentrate>mcpMixMaxRate)?mcpMixMaxRate:currentrate;
-	plrSetOptions(mixrate, mcpMixOpt);
+	}
 
 	playerproc=proc;
 
@@ -894,84 +858,55 @@ static int OpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_f
 		interpoltabq=0;
 		interpoltabq2=0;
 		if (!(voltabsr=malloc(sizeof(uint32_t)*513*256))) /*new long [513][256];*/
-			return 0;
+		{
+			goto error_out;
+		}
 		if (!(interpoltabr=malloc(sizeof(uint8_t)*16*256*2))) /*new unsigned char [16][256][2];*/
 		{
-			free(voltabsr);
-			return 0;
+			goto error_out;
 		}
 	} else {
 		voltabsr=0;
 		interpoltabr=0;
 		if (!(scalebuf=malloc(sizeof(int16_t)*MIXBUFLEN))) /* new short [MIXBUFLEN];*/
-			return 0;
+		{
+			goto error_out;
+		}
 
 		if (!(voltabsq=malloc(sizeof(uint16_t)*513*2*256))) /*new short [513][2][256];*/
 		{
-			free(scalebuf);
-			scalebuf=0;
-			return 0;
+			goto error_out;
 		}
 		if (!(interpoltabq=malloc(sizeof(uint16_t)*2*32*256*2))) /*new unsigned short [2][32][256][2];*/
 		{
-			free(scalebuf);
-			free(voltabsq);
-			scalebuf=0;
-			return 0;
+			goto error_out;
 		}
 		if (!(interpoltabq2=malloc(sizeof(uint16_t)*2*16*256*4))) /*new unsigned short [2][16][256][4];*/
 		{
-			free(scalebuf);
-			free(voltabsq);
-			free(interpoltabq);
-			scalebuf=0;
-			return 0;
+			goto error_out;
 		}
 	}
 	if (!(buf32=malloc(sizeof(uint32_t)*(MIXBUFLEN<<1)))) /*new long [MIXBUFLEN<<1];*/
 	{
-		if (voltabsr) free(voltabsr);
-		if (interpoltabr) free(interpoltabr);
-		if (scalebuf) free(scalebuf);
-		if (voltabsq) free(voltabsq);
-		if (interpoltabq) free(interpoltabq);
-		if (interpoltabq2) free(interpoltabq2);
-		scalebuf=0;
-		return 0;
+		goto error_out;
 	}
 	if (!(amptab=malloc(sizeof(int16_t)*3*256+sizeof(int32_t)))) /* PADDING since assembler indexes some bytes beyond tab and ignores upper bits */ /*new short [3][256];*/
 	{
-		if (voltabsr) free(voltabsr);
-		if (interpoltabr) free(interpoltabr);
-		if (scalebuf) free(scalebuf);
-		if (voltabsq) free(voltabsq);
-		if (interpoltabq) free(interpoltabq);
-		if (interpoltabq2) free(interpoltabq2);
-		free(buf32);
-		scalebuf=0;
-		return 0;
+		goto error_out;
 	}
 
-	if (!(channels=malloc(sizeof(struct channel)*chan))) /*new channel[chan];*/
+	if (!(channels=calloc(sizeof(struct channel), chan))) /*new channel[chan];*/
 	{
-		if (voltabsr) free(voltabsr);
-		if (interpoltabr) free(interpoltabr);
-		if (scalebuf) free(scalebuf);
-		if (voltabsq) free(voltabsq);
-		if (interpoltabq) free(interpoltabq);
-		if (interpoltabq2) free(interpoltabq2);
-		free(buf32);
-		free(channels);
-		scalebuf=0;
-		return 0;
+		goto error_out;
 	}
 
 	mcpGetMasterSample=plrGetMasterSample;
 	mcpGetRealMasterVolume=plrGetRealMasterVolume;
 	if (!mixInit(GetMixChannel, resample, chan, amplify))
-		return 0;
+	{
+		goto error_out;
+	}
 
-	memset(channels, 0, sizeof(struct channel)*chan);
 	calcvols();
 
 	if (!quality)
@@ -985,14 +920,13 @@ static int OpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_f
 		calcvoltabsq();
 	}
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, mcpMixBufSize * plrRate / 1000, source_file))
+	currentrate=mcpMixProcRate/chan;
+	samprate=(currentrate>mcpMixMaxRate)?mcpMixMaxRate:currentrate;
+	format=PLR_STEREO_16BIT_SIGNED;
+	if (!plrAPI->Play (&samprate, &format, source_file))
 	{
-		mixClose();
-		return 0;
+		goto error_out;
 	}
-
-	samprate=plrRate;
-	bufpos=0;
 	_pause=0;
 	orgspeed=12800;
 
@@ -1010,9 +944,7 @@ static int OpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_f
 	{
 		mcpNChan=0;
 		mcpIdle=0;
-		plrClosePlayer();
-		mixClose();
-		return 0;
+		goto error_out_plrAPI_Play;
 	}
 
 	for (mode=postprocs; mode; mode=mode->next)
@@ -1020,6 +952,22 @@ static int OpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_f
 			mode->Init(samprate);
 
 	return 1;
+
+error_out_plrAPI_Play:
+	plrAPI->Stop();
+	mixClose();
+error_out:
+	free (amptab);        amptab = 0;
+	free (voltabsr);      voltabsr = 0;
+	free (interpoltabr);  interpoltabr = 0;
+	free (scalebuf);      scalebuf = 0;
+	free (voltabsq);      voltabsq = 0;
+	free (interpoltabq);  interpoltabq = 0;
+	free (interpoltabq2); interpoltabq2 = 0;
+	free (buf32);         buf32 = 0;
+	free (channels);      channels = 0;
+
+	return 0;
 }
 
 static void ClosePlayer()
@@ -1031,7 +979,7 @@ static void ClosePlayer()
 
 	pollClose();
 
-	plrClosePlayer();
+	plrAPI->Stop();
 
 	channelnum=0;
 
