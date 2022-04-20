@@ -80,7 +80,7 @@ void ringbuffer_reset (struct ringbuffer_t *self)
 	self->tail_callbacks_fill = 0;
 }
 
-void ringbuffer_static_initialize (struct ringbuffer_t *self, int flags, int buffersize_samples)
+static void ringbuffer_static_initialize (struct ringbuffer_t *self, int flags, int buffersize_samples)
 {
 	self->flags = flags;
 	self->cache_sample_shift = 0;
@@ -271,8 +271,14 @@ void ringbuffer_get_tail_samples (struct ringbuffer_t *self, int *pos1, int *len
 
 	*length1 = self->buffersize - self->tail;
 
-	*pos2 = 0;
-	*length2 = self->cache_read_available - *length1;
+	if (pos2)
+	{
+		*pos2 = 0;
+	}
+	if (length2)
+	{
+		*length2 = self->cache_read_available - *length1;
+	}
 
 	return;
 
@@ -280,8 +286,14 @@ clear1:
 	*pos1 = -1;
 	*length1 = 0;
 clear2:
-	*pos2 = -1;
-	*length2 = 0;
+	if (pos2)
+	{
+		*pos2 = -1;
+	}
+	if (length2)
+	{
+		*length2 = 0;
+	}
 }
 
 void ringbuffer_get_processing_samples (struct ringbuffer_t *self, int *pos1, int *length1, int *pos2, int *length2)
@@ -302,8 +314,14 @@ void ringbuffer_get_processing_samples (struct ringbuffer_t *self, int *pos1, in
 
 	*length1 = self->buffersize - self->processing;
 
-	*pos2 = 0;
-	*length2 = self->cache_processing_available - *length1;
+	if (pos2)
+	{
+		*pos2 = 0;
+	}
+	if (length2)
+	{
+		*length2 = self->cache_processing_available - *length1;
+	}
 
 	return;
 
@@ -311,8 +329,58 @@ clear1:
 	*pos1 = -1;
 	*length1 = 0;
 clear2:
-	*pos2 = -1;
-	*length2 = 0;
+	if (pos2)
+	{
+		*pos2 = -1;
+	}
+	if (length2)
+	{
+		*length2 = 0;
+	}
+}
+
+void ringbuffer_get_tailandprocessing_samples (struct ringbuffer_t *self, int *pos1, int *length1, int *pos2, int *length2)
+{
+	int temp = self->cache_read_available + self->cache_processing_available;
+	assert (self->flags & RINGBUFFER_FLAGS_PROCESS);
+
+	if (!temp)
+	{
+		goto clear1;
+	}
+
+	*pos1 = self->tail;
+	if ((self->tail + temp) <= self->buffersize)
+	{
+		*length1 = temp;
+		goto clear2;
+	}
+
+	*length1 = self->buffersize - self->tail;
+
+	if (pos2)
+	{
+		*pos2 = 0;
+	}
+	if (length2)
+	{
+		*length2 = temp - *length1;
+	}
+
+	return;
+
+clear1:
+	*pos1 = -1;
+	*length1 = 0;
+clear2:
+	if (pos2)
+	{
+		*pos2 = -1;
+	}
+	if (length2)
+	{
+		*length2 = 0;
+	}
 }
 
 void ringbuffer_get_head_samples (struct ringbuffer_t *self, int *pos1, int *length1, int *pos2, int *length2)
@@ -331,8 +399,14 @@ void ringbuffer_get_head_samples (struct ringbuffer_t *self, int *pos1, int *len
 
 	*length1 = self->buffersize - self->head;
 
-	*pos2 = 0;
-	*length2 = self->cache_write_available - *length1;
+	if (pos2)
+	{
+		*pos2 = 0;
+	}
+	if (length2)
+	{
+		*length2 = self->cache_write_available - *length1;
+	}
 
 	return;
 
@@ -340,8 +414,14 @@ clear1:
 	*pos1 = -1;
 	*length1 = 0;
 clear2:
-	*pos2 = -1;
-	*length2 = 0;
+	if (pos2)
+	{
+		*pos2 = -1;
+	}
+	if (length2)
+	{
+		*length2 = 0;
+	}
 }
 
 void ringbuffer_tail_consume_bytes(struct ringbuffer_t *self, int bytes)
@@ -382,9 +462,12 @@ void ringbuffer_get_tail_bytes (struct ringbuffer_t *self, int *pos1, int *lengt
 		*pos1 <<= self->cache_sample_shift;
 	}
 
-	if ((*length2 <<= self->cache_sample_shift))
+	if (length2)
 	{
-		*pos2 <<= self->cache_sample_shift;
+		if ((*length2 <<= self->cache_sample_shift))
+		{
+			*pos2 <<= self->cache_sample_shift;
+		}
 	}
 }
 
@@ -396,9 +479,12 @@ void ringbuffer_get_processing_bytes (struct ringbuffer_t *self, int *pos1, int 
 		*pos1 <<= self->cache_sample_shift;
 	}
 
-	if ((*length2 <<= self->cache_sample_shift))
+	if (length2)
 	{
-		*pos2 <<= self->cache_sample_shift;
+		if ((*length2 <<= self->cache_sample_shift))
+		{
+			*pos2 <<= self->cache_sample_shift;
+		}
 	}
 }
 
@@ -410,9 +496,12 @@ void ringbuffer_get_head_bytes (struct ringbuffer_t *self, int *pos1, int *lengt
 		*pos1 <<= self->cache_sample_shift;
 	}
 
-	if ((*length2 <<= self->cache_sample_shift))
+	if (length2)
 	{
-		*pos2 <<= self->cache_sample_shift;
+		if ((*length2 <<= self->cache_sample_shift))
+		{
+			*pos2 <<= self->cache_sample_shift;
+		}
 	}
 }
 
@@ -438,10 +527,10 @@ int ringbuffer_get_head_available_bytes (struct ringbuffer_t *self)
 void ringbuffer_add_tail_callback_samples (struct ringbuffer_t *self, int samples, void (*callback)(void *arg, int samples_ago), const void *arg)
 {
 	int insertat, i;
-	if (samples < 0)
+/*	if (samples < 0)
 	{
 		samples = 0;
-	} else if (samples > (self->cache_read_available + self->cache_processing_available))
+	} else*/ if (samples > (self->cache_read_available + self->cache_processing_available))
 	{
 		samples = self->cache_read_available + self->cache_processing_available;
 	}
@@ -478,10 +567,10 @@ void ringbuffer_add_processing_callback_samples (struct ringbuffer_t *self, int 
 		return;
 	}
 
-	if (samples < 0)
+/*	if (samples < 0)
 	{
 		samples = 0;
-	} else if (samples > (self->cache_read_available))
+	} else*/ if (samples > (self->cache_read_available))
 	{
 		samples = self->cache_read_available;
 	}

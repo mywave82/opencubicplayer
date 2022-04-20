@@ -43,6 +43,7 @@ void ringbuffer_get_head_bytes (struct ringbuffer_t *self, int *pos1, int *lengt
 
 void ringbuffer_get_tail_samples (struct ringbuffer_t *self, int *pos1, int *length1, int *pos2, int *length2);
 void ringbuffer_get_processing_samples (struct ringbuffer_t *self, int *pos1, int *length1, int *pos2, int *length2);
+void ringbuffer_get_tailandprocessing_samples (struct ringbuffer_t *self, int *pos1, int *length1, int *pos2, int *length2);
 void ringbuffer_get_head_samples (struct ringbuffer_t *self, int *pos1, int *length1, int *pos2, int *length2);
 
 int ringbuffer_get_tail_available_bytes (struct ringbuffer_t *self);
@@ -56,9 +57,12 @@ int ringbuffer_get_head_available_samples (struct ringbuffer_t *self);
 struct ringbuffer_t *ringbuffer_new_samples(int flags, int buffersize_samples); /* some users might non-pow(2,x) size buffers */
 void ringbuffer_free(struct ringbuffer_t *self);
 
+#if 0
 void ringbuffer_static_initialize (struct ringbuffer_t *self, int flags, int ringbuffer_shift_samples);
+#endif
 
-/* samples = 0, the callback should happen when the next added samples passes tail
+/* samples = -10, the callback should happen when 10th future added samples passes tail
+ * samples = 0, the callback should happen when the next added samples passes tail
  * samples = 1, the callback should happen when the last added samples passes tail
  * samples = 10, the callback should happen when the 10th last added samples passes tail
  */
