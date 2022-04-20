@@ -2,23 +2,33 @@
 #define __PLAYER_H
 
 /* in the future we might add optional 5.1, 7.1, float etc - All devp drivers MUST atleast support PLR_STEREO_16BIT_SIGNED */
-#define PLR_STEREO_16BIT_SIGNED 1
+enum plrRequestFormat
+{
+	PLR_STEREO_16BIT_SIGNED=1
+};
 
 struct ocpfilehandle_t;
 
-extern unsigned int plrRate;
-extern int plrOpt;
-extern int (*plrPlay)(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file);
-extern void (*plrStop)(void);
-extern void (*plrSetOptions)(uint32_t rate, int opt);
-extern int (*plrGetBufPos)(void);
-extern int (*plrGetPlayPos)(void);
-extern void (*plrAdvanceTo)(unsigned int pos);
-extern uint32_t (*plrGetTimer)(void);
-extern void (*plrIdle)(void);
+struct plrAPI_t
+{
+	unsigned int (*Idle)(void); /* returns the current BufferDelay - should be called periodically, usually at FPS rate - inserts pause-samples if needed */
+	void (*PeekBuffer)(void **buf1, unsigned int *length1, void **buf2, unsigned int *length2); /* used by analyzer, graphs etc - length given in samples */
+	int (*Play)(uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file); // returns 0 on error - DiskWriter plugin uses source_file to name its output. Caller can suggest values in rate and format */
+	void (*GetBuffer)(void **buf, unsigned int *samples);
+	uint32_t (*GetRate)(void); /* this call will probably disappear in the future */
 
-extern int plrOpenPlayer(void **buf, uint32_t *len, uint32_t blen, struct ocpfilehandle_t *source_file);
-extern void plrClosePlayer(void);
+	/* positive numbers = samples in the past
+         * 0 on the last sample commited
+         * negative numbers = samples into the future
+	 */
+	void (*OnBufferCallback) (int samplesuntil, void (*callback)(void *arg, int samples_ago), void *arg);
+	void (*CommitBuffer)(unsigned int samples);
+	void (*Pause)(int pause); // driver will insert dummy samples as needed
+	void (*Stop)(void);
+};
+
+extern const struct plrAPI_t *plrAPI;
+
 extern void plrGetRealMasterVolume(int *l, int *r);
 extern void plrGetMasterSample(int16_t *s, uint32_t len, uint32_t rate, int opt);
 

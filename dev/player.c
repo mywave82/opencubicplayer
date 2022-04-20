@@ -34,122 +34,87 @@
 #include "player.h"
 #include "stuff/imsrtns.h"
 
-struct ocpfilehandle_t;
-
-unsigned int plrRate;
-int plrOpt;
-int (*plrPlay)(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file);
-void (*plrStop)(void);
-void (*plrSetOptions)(uint32_t rate, int opt);
-int (*plrGetBufPos)(void);
-int (*plrGetPlayPos)(void);
-void (*plrAdvanceTo)(unsigned int pos);
-uint32_t (*plrGetTimer)(void);
-void (*plrIdle)(void);
-
-static uint32_t samprate;
-
-static uint8_t *plrbuf;
-static unsigned long buflen;
-
+const struct plrAPI_t *plrAPI;
 
 void plrGetRealMasterVolume(int *l, int *r)
 {
-	uint32_t len=samprate/20;
-	int32_t p;
-	int32_t pass2;
-	mixAddAbsfn fn;
 	unsigned long v;
+#define fn mixAddAbs16SS
+	int16_t *buf1, *buf2;
+	unsigned int length1, length2;
 
-	if (len>buflen)
-		len=buflen;
-	p=plrGetPlayPos() >> 2 /* stereo + bit16 */;
+	plrAPI->PeekBuffer ((void **)&buf1, &length1, (void **)&buf2, &length2);
 
-	pass2=len-(uint32_t)buflen+p;
+	if (!(length1 + length2))
+	{
+		*l = *r = 0;
+		return;
+	}
 
-	fn=mixAddAbs16SS;
+	v=fn(buf1, length1);
+	if (length2)
+		v+=fn(buf2, length2);
 
-	if (pass2>0)
-		v=fn(plrbuf+(p<<(2 /* stereo + bit16 */)), len-pass2)+fn(plrbuf, pass2);
-	else
-		v=fn(plrbuf+(p<<(2 /* stereo + bit16 */)), len);
-
-	v=v*128/(len*16384);
+	v=v*128/((length1+length2)*16384);
 	*l=(v>255)?255:v;
 
-	if (pass2>0)
-		v=fn(plrbuf+(p<<(2 /* stereo + bit16 */))+(2 /* stereo << bit16 */ ), len-pass2)+fn(plrbuf + (2 /* stereo << bit16 */ ), pass2);
-	else
-		v=fn(plrbuf+(p<<(2 /* stereo + +bit16 */))+(2 /* stereo << bit16 */ ), len);
-	v=v*128/(len*16384);
+	v=fn(buf1+1, length1);
+	if (length2)
+		v+=fn(buf2+1, length2);
+
+	v=v*128/(length1+length2*16384);
 	*r=(v>255)?255:v;
+#undef fn
 }
 
 void plrGetMasterSample(int16_t *buf, uint32_t len, uint32_t rate, int opt)
 {
-	uint32_t step=umuldiv(samprate, 0x10000, rate);
-	unsigned int maxlen;
+	uint32_t step=umuldiv(plrAPI->GetRate(), 0x10000, rate);
 	int stereoout;
-	uint32_t bp;
-	int32_t pass2;
-	mixGetMasterSamplefn fn;
+	int16_t *buf1, *buf2;
+	unsigned int length1, length2;
+	unsigned int maxlen;
+	signed int pass2;
 
 	if (step<0x1000)
 		step=0x1000;
 	if (step>0x800000)
 		step=0x800000;
 
-	maxlen=imuldiv(buflen, 0x10000, step);
+	plrAPI->PeekBuffer ((void **)&buf1, &length1, (void **)&buf2, &length2);
 	stereoout=(opt&mcpGetSampleStereo)?1:0;
-	if (len>maxlen)
+
+	/* length1, length2 and len are all in sample space, while mixGetMasterSampleSS16S()
+	 * and mixGetMasterSampleSS16M() are from time where shared audio-buffer was
+	 * stereo/mono/8bit/16bit agnostic and step is multiplied by 2 in order to get stereo.
+	 * So we have to compensate: */
+	length1 >>= 1;
+	length2 >>= 1;
+
+	maxlen = imuldiv((length1 + length2), 0x10000, step); /* step goes with twice the speed on stereo */
+	if (len > maxlen) /* not enough data? zero-fill and limit */
 	{
-		memset(buf+(maxlen<<stereoout), 0, (len-maxlen)<<(1+stereoout));
-		len=maxlen;
+		bzero(buf + maxlen, (len - maxlen) << (1 /* bit16 */ + stereoout));
+		len = maxlen;
 	}
+	pass2 = (signed int)len - (imuldiv (length1, 0x10000, step)); /* pass2 goes negative if length1 can provide more than 256 samples... and maxlen protects both passes */
 
-	bp=plrGetPlayPos() >> 2 /* stereo + bit16 */;
-
-	pass2=len-imuldiv((uint32_t)buflen-bp,0x10000,step);
-
-	fn=mixGetMasterSampleSS16S;
-
-	if (pass2>0)
+	if (stereoout)
 	{
-		fn(buf, plrbuf+(bp << 2 /* stereo + bit16 */ ), len-pass2, step);
-		fn(buf+((len-pass2)<<stereoout), plrbuf, pass2, step);
+		if (pass2 > 0)
+		{
+			mixGetMasterSampleSS16S (buf, buf1, len-pass2, step);
+			mixGetMasterSampleSS16S (buf, buf2, pass2, step);
+		} else {
+			mixGetMasterSampleSS16S (buf, buf1, len, step);
+		}
 	} else {
-		fn(buf, plrbuf+(bp<<2 /* stereo + bit16 */), len, step);
+		if (pass2 > 0)
+		{
+			mixGetMasterSampleSS16M (buf, buf1, len - pass2, step);
+			mixGetMasterSampleSS16M (buf, buf2, pass2, step);
+		} else {
+			mixGetMasterSampleSS16M (buf, buf1, len, step);
+		}
 	}
-}
-
-
-int plrOpenPlayer(void **buf, uint32_t *len, uint32_t bufl, struct ocpfilehandle_t *source_file)
-{
-	unsigned int dmalen;
-
-	if (!plrPlay)
-	{
-		return 0;
-	}
-
-	dmalen=umuldiv(plrRate << 2 /* stereo + bit16 */, bufl, 32500)&~15;
-
-	plrbuf=0;
-	if (!plrPlay((void **)((void *)&plrbuf), &dmalen, source_file))
-	{
-		return 0;
-	}
-
-	samprate=plrRate;
-
-	buflen=dmalen >> 2 /* stereo + bit16 */;
-	*buf=plrbuf;
-	*len=buflen;
-
-	return 1;
-}
-
-void plrClosePlayer(void)
-{
-	plrStop();
 }
