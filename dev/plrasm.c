@@ -58,69 +58,54 @@ void plrMono16ToStereo16(int16_t *buf, int len)
 	}
 }
 
-void plrConvertBuffer (int16_t *srcbuf, void *dstbuf, unsigned int buflen, unsigned int oldpos, unsigned int newpos, int to16bit, int tosigned, int tostereo, int revstereo)
+void plrConvertBuffer (void *dstbuf, int16_t *srcbuf, int samples, int to16bit, int tosigned, int tostereo, int revstereo)
 {
 	int16_t left, right;
 
-	buflen >>= 2; /* 16bit, stereo */
-	oldpos >>= 2;
-	newpos >>= 2;
-
-	while (oldpos != newpos)
+	while (samples)
 	{
 		if (revstereo)
 		{
-			left =  srcbuf[(oldpos<<1)+1];
-			right = srcbuf[(oldpos<<1)+0];
+			left =  srcbuf[1];
+			right = srcbuf[0];
 		} else {
-			left =  srcbuf[(oldpos<<1)+0];
-			right = srcbuf[(oldpos<<1)+1];
+			left =  srcbuf[0];
+			right = srcbuf[1];
 		}
+		srcbuf+=2;
+
 		if (!tostereo)
 		{
 			left = ((int)left + right)/2;
-
+			if (!tosigned)
+			{
+				left ^= 0x8000;
+			}
 			if (to16bit)
 			{
-				if (!tosigned)
-				{
-					left ^= 0x8000;
-				}
-				((int16_t *)dstbuf)[oldpos] = left;
+				((int16_t *)dstbuf)[0] = left;
+				dstbuf = (int16_t *)dstbuf + 1;
 			} else {
-				if (tosigned)
-				{
-					((uint8_t *)dstbuf)[oldpos] = ((uint16_t )left) >> 8;
-				} else {
-					((uint8_t *)dstbuf)[oldpos] = (((uint16_t )left) >> 8) ^ 0x80;
-				}
+				((uint8_t *)dstbuf)[0] = ((uint16_t )left) >> 8;
+				dstbuf = (uint8_t *)dstbuf + 1;
 			}
 		} else {
+			if (!tosigned)
+			{
+				left ^= 0x8000;
+				right ^= 0x8000;
+			}
 			if (to16bit)
 			{
-				if (!tosigned)
-				{
-					left ^= 0x8000;
-					right ^= 0x8000;
-				}
-				((int16_t *)dstbuf)[(oldpos<<1)+0] = left;
-				((int16_t *)dstbuf)[(oldpos<<1)+1] = right;
+				((int16_t *)dstbuf)[0] = left;
+				((int16_t *)dstbuf)[1] = right;
+				dstbuf = (int16_t *)dstbuf + 2;
 			} else {
-				if (tosigned)
-				{
-					((uint8_t *)dstbuf)[(oldpos<<1)+0] = ((uint16_t )left) >> 8;
-					((uint8_t *)dstbuf)[(oldpos<<1)+1] = ((uint16_t )right) >> 8;
-				} else {
-					((uint8_t *)dstbuf)[(oldpos<<1)+0] = (((uint16_t )left) >> 8) ^ 0x80;
-					((uint8_t *)dstbuf)[(oldpos<<1)+1] = (((uint16_t )right) >> 8) ^ 0x80;
-				}
+				((uint8_t *)dstbuf)[0] = ((uint16_t )left) >> 8;
+				((uint8_t *)dstbuf)[1] = ((uint16_t )right) >> 8;
+				dstbuf = (uint8_t *)dstbuf + 2;
 			}
 		}
-
-		oldpos++;
-		if (oldpos >= buflen)
-		{
-			oldpos=0;
-		}
+		samples--;
 	}
 }
