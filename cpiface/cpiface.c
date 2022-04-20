@@ -66,7 +66,6 @@
 #include "stuff/framelock.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
-#include "stuff/timer.h"
 #include <unistd.h>
 #include <time.h>
 

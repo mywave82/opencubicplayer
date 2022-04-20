@@ -244,8 +244,7 @@ cpiface.o: cpiface.c \
 	../stuff/imsrtns.h \
 	../stuff/framelock.h \
 	../stuff/poutput.h \
-	../stuff/sets.h \
-	../stuff/timer.h
+	../stuff/sets.h
 	$(CC) cpiface.c -o $@ -c
 
 volctrl.o: volctrl.c \
