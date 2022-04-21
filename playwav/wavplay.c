@@ -36,22 +36,21 @@
 #include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
-#include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
 #include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poll.h"
 #include "wave.h"
 
-#ifdef WAVE_DEBUG
+#ifdef PLAYWAVE_DEBUG
 # define PRINT(fmt, args...) fprintf(stderr, "%s %s: " fmt, __FILE__, __func__, ##args)
 #else
 # define PRINT(a, ...) do {} while(0)
 #endif
 
 /* options */
-static int inpause;
-static int looped;
+static int wav_inpause;
+static int wav_looped;
 
 static uint32_t voll,volr;
 static int vol;
@@ -64,20 +63,15 @@ static volatile int active;
 static char opt25[26];
 static char opt50[51];
 
-static uint32_t samprate;
+static uint32_t waveRate; /* devp rate */
 
 static struct ocpfilehandle_t *wavefile;
-static uint32_t waverate;
+static uint32_t waverate; /* wavefile rate */
 static uint32_t wavepos;
 static uint32_t wavelen;
 static int waveneedseek;
 static int wavestereo;
 static int wave16bit;
-
-static int16_t  *buf16=0;
-static uint32_t bufpos;
-static uint32_t buflen;
-static void *plrbuf;
 
 static int donotloop;
 
@@ -92,7 +86,7 @@ static volatile int clipbusy=0;
 static int (*_GET)(int ch, int opt);
 static void (*_SET)(int ch, int opt, int val);
 
-#ifdef WAVE_DEBUG
+#ifdef PLAYWAVE_DEBUG
 static const char *compression_code_str(uint_fast16_t code)
 {
 	switch (code)
@@ -261,11 +255,11 @@ static void wpIdler(void)
 			{
 				if (donotloop)
 				{
-					looped |= 1;
+					wav_looped |= 1;
 					wavepos = wavelen;
 					break;
 				} else {
-					looped &= ~1;
+					wav_looped &= ~1;
 					wavepos = 0;
 					waveneedseek = 1;
 				}
@@ -280,268 +274,191 @@ static void wpIdler(void)
 
 void  __attribute__ ((visibility ("internal"))) wpIdle(void)
 {
-	uint_fast32_t bufdelta;
-	uint_fast32_t pass2;
-
 	if (clipbusy++)
 	{
 		clipbusy--;
 		return;
 	}
 
+	if (wav_inpause || (wav_looped == 3))
 	{
-		uint32_t bufplayed;
-
-		bufplayed=plrGetBufPos() >> 2 /* stereo + bit16 */;
-
-		bufdelta=(buflen+bufplayed-bufpos)%buflen;
-	}
-
-	if (!bufdelta)
-	{
-		clipbusy--;
-		if (plrIdle)
-			plrIdle();
-		return;
-	}
-	wpIdler();
-
-
-	if (inpause)
-	{ /* If we are in pause, we fill buffer with the correct type of zeroes */
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		plrClearBuf((uint16_t *)plrbuf+(bufpos << 1 /* stereo */), (bufdelta-pass2) << 1 /* stereo*/, 1 /* signedout */);
-		if (pass2)
-			plrClearBuf((uint16_t *)plrbuf, pass2 << 1 /* stereo */ , 1 /* signedout */);
-		bufpos+=bufdelta;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
+		plrAPI->Pause (1);
 	} else {
-		int pos1, length1, pos2, length2;
-		int i;
-		unsigned int buf16_filled = 0;
+		void *targetbuf;
+		unsigned int targetlength; /* in samples */
 
-		/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-		ringbuffer_get_tail_samples (wavebufpos, &pos1, &length1, &pos2, &length2);
+		plrAPI->Pause (0);
 
-		/* are the speed 1:1, if so filling up buf16 is very easy */
-		if (wavebufrate==0x10000)
+		plrAPI->GetBuffer (&targetbuf, &targetlength);
+
+		if (targetlength)
 		{
-			int16_t *t = buf16;
+			int16_t *t = targetbuf;
+			unsigned int accumulated_target = 0;
+			unsigned int accumulated_source = 0;
+			int pos1, length1, pos2, length2;
 
-			if (bufdelta>(length1+length2))
+			/* fill up our buffers */
+			wpIdler();
+
+			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
+			ringbuffer_get_tail_samples (wavebufpos, &pos1, &length1, &pos2, &length2);
+
+			if (wavebufrate==0x10000)
 			{
-				bufdelta=(length1+length2);
-				looped |= 2;
+				if (targetlength>(length1+length2))
+				{
+					targetlength=(length1+length2);
+					wav_looped |= 2;
+				} else {
+					wav_looped &= ~2;
+				}
 
+				// limit source to not overrun target buffer
+				if (length1 > targetlength)
+				{
+					length1 = targetlength;
+					length2 = 0;
+				} else if ((length1 + length2) > targetlength)
+				{
+					length2 = targetlength - length1;
+				}
+
+				accumulated_source = accumulated_target = length1 + length2;
+
+				while (length1)
+				{
+					while (length1)
+					{
+						int16_t rs, ls;
+
+						rs = ((int16_t*)wavebuf)[(pos1<<1) + 0];
+						ls = ((int16_t*)wavebuf)[(pos1<<1) + 1];
+
+						PANPROC;
+
+						*(t++) = rs;
+						*(t++) = ls;
+
+						pos1++;
+						length1--;
+
+						//accumulated_target++;
+					}
+					length1 = length2;
+					length2 = 0;
+					pos1 = pos2;
+					pos2 = 0;
+				}
+				//accumulated_source = accumulated_target;
 			} else {
-				looped &= ~2;
-			}
+				/* We are going to perform cubic interpolation of rate conversion... this bit is tricky */
+				wav_looped &= ~2;
 
-			//while (buf16_filled < bufdelta)
-			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
-			{
-				int16_t rs;
-				int16_t ls;
-
-				if (!length1)
+				while (targetlength && length1)
 				{
-					pos1 = pos2;
+					while (targetlength && length1)
+					{
+						uint32_t wpm1, wp0, wp1, wp2;
+						int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
+						int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
+						unsigned int progress;
+						int16_t rs, ls;
+
+						if ((length1+length2) <= 3)
+						{
+							wav_looped |= 2;
+							break;
+						}
+						/* will we overflow the wavebuf if we advance? */
+						if ((length1+length2) < ((wavebufrate+wavebuffpos)>>16))
+						{
+							wav_looped |= 2;
+							break;
+						}
+
+						switch (length1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
+						{
+							case 1:  wpm1 = pos1; wp0 = pos2;     wp1 = pos2 + 1; wp2 = pos2 + 2; break;
+							case 2:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos2;     wp2 = pos2 + 1; break;
+							case 3:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos2;     break;
+							default: wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos1 + 3; break;
+						}
+
+						lvm1 = (uint16_t)wavebuf[wpm1*2+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
+						rvm1 = (uint16_t)wavebuf[wpm1*2+1]^0x8000;
+						 lc0 = (uint16_t)wavebuf[wp0*2+0]^0x8000;
+						 rc0 = (uint16_t)wavebuf[wp0*2+1]^0x8000;
+						 lv1 = (uint16_t)wavebuf[wp1*2+0]^0x8000;
+						 rv1 = (uint16_t)wavebuf[wp1*2+1]^0x8000;
+						 lv2 = (uint16_t)wavebuf[wp2*2+0]^0x8000;
+						 rv2 = (uint16_t)wavebuf[wp2*2+1]^0x8000;
+
+						rc1 = rv1-rvm1;
+						rc2 = 2*rvm1-2*rc0+rv1-rv2;
+						rc3 = rc0-rvm1-rv1+rv2;
+						rc3 =  imulshr16(rc3,wavebuffpos);
+						rc3 += rc2;
+						rc3 =  imulshr16(rc3,wavebuffpos);
+						rc3 += rc1;
+						rc3 =  imulshr16(rc3,wavebuffpos);
+						rc3 += rc0;
+						if (rc3<0)
+							rc3=0;
+						if (rc3>65535)
+							rc3=65535;
+
+						lc1 = lv1-lvm1;
+						lc2 = 2*lvm1-2*lc0+lv1-lv2;
+						lc3 = lc0-lvm1-lv1+lv2;
+						lc3 =  imulshr16(lc3,wavebuffpos);
+						lc3 += lc2;
+						lc3 =  imulshr16(lc3,wavebuffpos);
+						lc3 += lc1;
+						lc3 =  imulshr16(lc3,wavebuffpos);
+						lc3 += lc0;
+						if (lc3<0)
+							lc3=0;
+						if (lc3>65535)
+							lc3=65535;
+
+						rs = rc3 ^ 0x8000;
+						ls = lc3 ^ 0x8000;
+
+						PANPROC;
+
+						*(t++) = rs;
+						*(t++) = ls;
+
+						wavebuffpos+=wavebufrate;
+						progress = wavebuffpos>>16;
+						wavebuffpos &= 0xffff;
+						accumulated_source+=progress;
+						pos1+=progress;
+						length1-=progress;
+						targetlength--;
+
+						accumulated_target++;
+					} /* while (targetlength && length1) */
 					length1 = length2;
-					pos2 = 0;
 					length2 = 0;
-				}
-
-				if (!length1)
-				{
-					fprintf (stderr, "playwav: ERROR, length1 == 0, in wpIdle\n");
-					_exit(1);
-				}
-
-				rs = ((int16_t*)wavebuf)[(pos1<<1)    ];
-				ls = ((int16_t*)wavebuf)[(pos1<<1) + 1];
-
-				PANPROC;
-
-				*(t++) = rs;
-				*(t++) = ls;
-
-				pos1++;
-				length1--;
-			}
-
-			ringbuffer_tail_consume_samples (wavebufpos, buf16_filled); /* add this rate buf16_filled == tail_used */
-		} else {
-			/* We are going to perform cubic interpolation of rate conversion... this bit is tricky */
-			unsigned int accumulated_progress = 0;
-
-			looped &= ~2;
-
-			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
-			{
-				uint32_t wpm1, wp0, wp1, wp2;
-				int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
-				int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
-				unsigned int progress;
-				int16_t rs, ls;
-
-				/* will the interpolation overflow? */
-				if ((length1+length2) <= 3)
-				{
-					looped |= 2;
-					break;
-				}
-				/* will we overflow the wavebuf if we advance? */
-				if ((length1+length2) < ((wavebufrate+wavebuffpos)>>16))
-				{
-					looped |= 2;
-					break;
-				}
-
-				switch (length1)
-				{
-					case 1:
-						wpm1 = pos1;
-						wp0  = pos2;
-						wp1  = pos2+1;
-						wp2  = pos2+2;
-						break;
-					case 2:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos2;
-						wp2  = pos2+1;
-						break;
-					case 3:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos1+2;
-						wp2  = pos2;
-						break;
-					default:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos1+2;
-						wp2  = pos1+3;
-						break;
-				}
-
-				lvm1 = (uint16_t)wavebuf[wpm1*2+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
-				rvm1 = (uint16_t)wavebuf[wpm1*2+1]^0x8000;
-				 lc0 = (uint16_t)wavebuf[wp0*2+0]^0x8000;
-				 rc0 = (uint16_t)wavebuf[wp0*2+1]^0x8000;
-				 lv1 = (uint16_t)wavebuf[wp1*2+0]^0x8000;
-				 rv1 = (uint16_t)wavebuf[wp1*2+1]^0x8000;
-				 lv2 = (uint16_t)wavebuf[wp2*2+0]^0x8000;
-				 rv2 = (uint16_t)wavebuf[wp2*2+1]^0x8000;
-
-				rc1 = rv1-rvm1;
-				rc2 = 2*rvm1-2*rc0+rv1-rv2;
-				rc3 = rc0-rvm1-rv1+rv2;
-				rc3 =  imulshr16(rc3,wavebuffpos);
-				rc3 += rc2;
-				rc3 =  imulshr16(rc3,wavebuffpos);
-				rc3 += rc1;
-				rc3 =  imulshr16(rc3,wavebuffpos);
-				rc3 += rc0;
-				if (rc3<0)
-					rc3=0;
-				if (rc3>65535)
-					rc3=65535;
-
-				lc1 = lv1-lvm1;
-				lc2 = 2*lvm1-2*lc0+lv1-lv2;
-				lc3 = lc0-lvm1-lv1+lv2;
-				lc3 =  imulshr16(lc3,wavebuffpos);
-				lc3 += lc2;
-				lc3 =  imulshr16(lc3,wavebuffpos);
-				lc3 += lc1;
-				lc3 =  imulshr16(lc3,wavebuffpos);
-				lc3 += lc0;
-				if (lc3<0)
-					lc3=0;
-				if (lc3>65535)
-					lc3=65535;
-
-				rs = rc3 ^ 0x8000;
-				ls = lc3 ^ 0x8000;
-
-				PANPROC;
-
-				buf16[buf16_filled*2+0] = rs;
-				buf16[buf16_filled*2+1] = ls;
-
-				wavebuffpos+=wavebufrate;
-				progress = wavebuffpos>>16;
-				wavebuffpos &= 0xffff;
-
-				accumulated_progress += progress;
-
-				/* did we wrap? if so, progress up to the wrapping point */
-				if (progress >= length1)
-				{
-					progress -= length1;
 					pos1 = pos2;
-					length1 = length2;
 					pos2 = 0;
-					length2 = 0;
-				}
-				if (progress)
-				{
-					pos1 += progress;
-					length1 -= progress;
-				}
-			}
-			ringbuffer_tail_consume_samples (wavebufpos, accumulated_progress);
-		}
-
-		bufdelta=buf16_filled;
-
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		bufdelta-=pass2;
-
-		{
-			int16_t *p=(int16_t *)plrbuf+2*bufpos;
-			int16_t *b=buf16;
-
-			for (i=0; i<bufdelta; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-			p=(int16_t *)plrbuf;
-			for (i=0; i<pass2; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-		}
-		bufpos+=buf16_filled;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
+				} /* while (targetlength && length1) */
+			} /* if (wavebufrate==0x10000) */
+			ringbuffer_tail_consume_samples (wavebufpos, accumulated_source);
+			plrAPI->CommitBuffer (accumulated_target);
+		} /* if (targetlength) */
 	}
 
-	plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
-
-	if (plrIdle)
-		plrIdle();
+	plrAPI->Idle();
 
 	clipbusy--;
 }
 
 char __attribute__ ((visibility ("internal"))) wpLooped(void)
 {
-	return looped == 3;
+	return wav_looped == 3;
 }
 
 void __attribute__ ((visibility ("internal"))) wpSetLoop(uint8_t s)
@@ -551,14 +468,14 @@ void __attribute__ ((visibility ("internal"))) wpSetLoop(uint8_t s)
 
 void __attribute__ ((visibility ("internal"))) wpPause(uint8_t p)
 {
-	inpause=p;
+	wav_inpause=p;
 }
 
 static void wpSetSpeed(uint16_t sp)
 {
 	if (sp<32)
 		sp=32;
-	wavebufrate=imuldiv(256*sp, waverate, samprate);
+	wavebufrate=imuldiv(256*sp, waverate, waveRate);
 }
 
 static void wpSetVolume (void)
@@ -631,18 +548,16 @@ void __attribute__ ((visibility ("internal"))) wpSetPos(uint32_t pos)
 
 uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehandle_t *wavf)
 {
+	enum plrRequestFormat format;
 	uint32_t temp;
 	uint32_t fmtlen;
 	uint16_t sh;
 
-	if (!plrPlay)
-		return 0;
-
-	if (wavefile)
+	if (!plrAPI)
 	{
-		wavefile->unref (wavefile);
-		wavefile = 0;
+		return 0;
 	}
+
 	wavefile = wavf;
 	wavefile->ref (wavefile);
 
@@ -650,115 +565,125 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	if (wavefile->read (wavefile, &temp, sizeof (temp)) != sizeof (temp))
 	{
-		fprintf(stderr, __FILE__ ": fread failed #1\n");
-		return 0;
+		fprintf(stderr, "[WAVE]: fread failed #1\n");
+		goto error_out_wavefile;
 	}
 	PRINT("comparing header for RIFF: 0x%08x 0x%08x\n", temp, uint32_little(0x46464952));
 	if (temp!=uint32_little(0x46464952))
-		return 0;
+	{
+		fprintf (stderr, "[WAVE]: file does not have a RIFF header\n");
+		goto error_out_wavefile;
+	}
 
 	if (wavefile->read (wavefile, &temp, sizeof (temp)) != sizeof (temp))
 	{
-		fprintf(stderr, __FILE__ ": fread failed #2\n");
-		return 0;
+		fprintf(stderr, "[WAVE] fread failed #2\n");
+		goto error_out_wavefile;
 	}
 	PRINT("ignoring next 32bit: 0x%08x\n", temp);
 
 	if (wavefile->read (wavefile, &temp, sizeof (temp)) != sizeof (temp))
 	{
-		fprintf(stderr, __FILE__ ": fread failed #3\n");
-		return 0;
+		fprintf(stderr, "[WAVE]: fread failed #3\n");
+		goto error_out_wavefile;
 	}
 	PRINT("comparing next header for WAVE: 0x%08x 0x%08x\n", temp, uint32_little(0x45564157));
 
 	if (temp!=uint32_little(0x45564157))
-		return 0;
+	{
+		fprintf(stderr, "[WAVE]: file does not have a WAVE header\n");
+		goto error_out_wavefile;
+	}
 
 	PRINT("going to locate \"fmt \" header\n");
 	while (1)
 	{
 		if (wavefile->read (wavefile, &temp, sizeof (temp)) != sizeof (temp))
 		{
-			fprintf(stderr, __FILE__ ": fread failed #4\n");
-			return 0;
+			fprintf(stderr, "[WAVE]: fread failed #4\n");
+			goto error_out_wavefile;
 		}
 		PRINT("checking 0x%08x 0x%08x\n", temp, uint32_little(0x20746d66));
 		if (temp==uint32_little(0x20746D66))
 			break;
 		if (ocpfilehandle_read_uint32_le (wavefile, &temp))
 		{
-			fprintf(stderr, __FILE__ ": fread failed #5\n");
-			return 0;
+			fprintf(stderr, "[WAVE]: fread failed #5\n");
+			goto error_out_wavefile;
 		}
 		PRINT("failed, skiping next %d bytes\n", temp);
 		wavefile->seek_cur (wavefile, temp);
 	}
+
 	if (ocpfilehandle_read_uint32_le (wavefile, &fmtlen))
 	{
-		fprintf(stderr, __FILE__ ": fread failed #6\n");
-		return 0;
+		fprintf(stderr, "[WAVE]: fread failed #6\n");
+		goto error_out_wavefile;
 	}
-
 	PRINT("fmtlen=%d (must be bigger or equal to 16)\n", fmtlen);
 	if (fmtlen<16)
-		return 0;
-	if (ocpfilehandle_read_uint16_le (wavefile, &sh))
 	{
-		fprintf(stderr, __FILE__ ": fread failed #7\n");
-		return 0;
-	}
-	PRINT("compression code (only 1/pcm is supported): %d %s\n", sh, compression_code_str(sh));
-	if ((sh!=1))
-	{
-		fprintf(stderr, __FILE__ ": not uncomressed raw pcm data\n");
-		return 0;
+		fprintf(stderr, "[WAVE]: format length %d < 16\n", fmtlen);
+		goto error_out_wavefile;
 	}
 
 	if (ocpfilehandle_read_uint16_le (wavefile, &sh))
 	{
-		fprintf(stderr, __FILE__ ": fread failed #8\n");
-		return 0;
+		fprintf(stderr, "[WAVE]: fread failed #7\n");
+		goto error_out_wavefile;
 	}
-	PRINT("number of channels: %d\n", (int)sh);
+	PRINT("compression code (only \"1 PCM\" is supported): \"%d %s\"\n", sh, compression_code_str(sh));
+	if ((sh!=1))
+	{
+		fprintf(stderr, "[WAVE]: not uncomressed raw pcm data\n");
+		goto error_out_wavefile;
+	}
+
+	if (ocpfilehandle_read_uint16_le (wavefile, &sh))
+	{
+		fprintf(stderr, "[WAVE]: fread failed #8\n");
+		goto error_out_wavefile;
+	}
+	PRINT("number of channels: %u\n", sh);
 	if ((sh==0)||(sh>2))
 	{
-		fprintf(stderr, __FILE__ ": unsupported number of channels: %d\n", sh);
-		return 0;
+		fprintf(stderr, "[WAVE]: unsupported number of channels: %u (must be mono or stereo)\n", sh);
+		goto error_out_wavefile;
 	}
 	wavestereo=(sh==2);
 
 	if (ocpfilehandle_read_uint32_le (wavefile, &waverate))
 	{
-		fprintf(stderr, __FILE__ ": fread failed #9\n");
-		return 0;
+		fprintf(stderr, "[WAVE]: fread failed #9\n");
+		goto error_out_wavefile;
 	}
 	PRINT("waverate %d\n", (int)waverate);
 
 	if (ocpfilehandle_read_uint32_le (wavefile, &temp))
 	{
-		fprintf(stderr, __FILE__ ": fread failed #10\n");
-		return 0;
+		fprintf(stderr, "[WAVE]: fread failed #10\n");
+		goto error_out_wavefile;
 	}
 	PRINT("average number of bytes per second: %d\n", (int)temp);
 
 	if (wavefile->read (wavefile, &sh, sizeof (sh)) != sizeof (sh))
 	{
-		fprintf(stderr, __FILE__ ": fread failed #11\n");
-		return 0;
+		fprintf(stderr, "[WAVE]: fread failed #11\n");
+		goto error_out_wavefile;
 	}
 	PRINT("block align: %d\n", (int)sh);
 
 	if (ocpfilehandle_read_uint16_le (wavefile, &sh))
 	{
-		fprintf(stderr, __FILE__ ": fread failed #12\n");
-		return 0;
+		fprintf(stderr, "[WAVE]: fread failed #12\n");
+		goto error_out_wavefile;
 	}
 	PRINT("bits per sample: %d\n", (int)sh);
 
 	if ((sh!=8)&&(sh!=16))
 	{
-		fprintf(stderr, __FILE__ ": unsupported bits per sample: %d\n", (int)sh);
-		return 0;
+		fprintf(stderr, "[WAVE]: unsupported bits per sample: %d\n", (int)sh);
+		goto error_out_wavefile;
 	}
 	wave16bit=(sh==16);
 	wavefile->seek_cur (wavefile, fmtlen - 16);
@@ -768,16 +693,16 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 	{
 		if (wavefile->read (wavefile, &temp, sizeof (temp)) != sizeof (temp))
 		{
-			fprintf(stderr, __FILE__ ": fread failed #13\n");
-			return 0;
+			fprintf(stderr, "[WAVE]: fread failed #13\n");
+			goto error_out_wavefile;
 		}
 		PRINT("checking 0x%08x 0x%08x\n", temp, uint32_little(0x61746164));
 		if (temp==uint32_little(0x61746164))
 			break;
 		if (ocpfilehandle_read_uint32_le (wavefile, &temp))
 		{
-			fprintf(stderr, __FILE__ ": fread failed #14\n");
-			return 0;
+			fprintf(stderr, "[WAVE]: fread failed #14\n");
+			goto error_out_wavefile;
 		}
 		PRINT("failed, skiping next %d bytes\n", temp);
 		wavefile->seek_cur (wavefile, temp);
@@ -785,8 +710,8 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	if (ocpfilehandle_read_uint32_le (wavefile, &wavelen))
 	{
-		fprintf(stderr, __FILE__ ": fread failed #15\n");
-		return 0;
+		fprintf(stderr, "[WAVE]: fread failed #15\n");
+		goto error_out_wavefile;
 	}
 	PRINT("datalength: %d\n", (int)wavelen);
 
@@ -798,47 +723,39 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	if (!wavelen)
 	{
-		fprintf(stderr, __FILE__ ": no data\n");
-		return 0;
+		fprintf(stderr, "[WAVE]: no audio data\n");
+		goto error_out_wavefile;
 	}
-
-	wavebuf=malloc(16*1024);
-	if (!wavebuf)
-	{
-		return 0;
-	}
-
 	wavelen >>= (wave16bit + wavestereo);
-	wavebufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 4*1024);
-
 	wavepos = 0;
 
-	plrSetOptions(waverate, PLR_STEREO_16BIT_SIGNED);
-
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, wavf))
+	wavebuf=malloc(32*1024);
+	if (!wavebuf)
 	{
-		goto undowavebuf;
+		fprintf(stderr, "[WAVE]: malloc failed\n");
+		goto error_out_wavefile;
 	}
 
-	samprate=plrRate;
+	wavebufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 8*1024);
 
-	wavebufrate=imuldiv(65536, waverate, samprate);
+	waveRate = waverate;
+	format=PLR_STEREO_16BIT_SIGNED;
+	if (!plrAPI->Play (&waveRate, &format, wavf))
+	{
+		fprintf(stderr, "playwav: plrOpenPlayer() failed\n");
+		goto error_out_wavebuf;
+	}
+
+	wavebufrate=imuldiv(65536, waverate, waveRate);
 	wavebuffpos = 0;
 	waveneedseek = 0;
 
-	inpause=0;
-	looped=0;
-
-	buf16=malloc(sizeof(uint16_t)*(buflen*2));
-	if (!buf16)
-	{
-		goto undoopen;
-	}
-	bufpos=0;
+	wav_inpause=0;
+	wav_looped=0;
 
 	if (!pollInit(wpIdle))
 	{
-		goto undobuf16;
+		goto error_out_plrOpen;
 	}
 
 	active=1;
@@ -852,14 +769,14 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	return 1;
 
-undobuf16:
-	free (buf16);
-	buf16=0;
-undoopen:
-	plrClosePlayer();
-undowavebuf:
+error_out_plrOpen:
+	plrAPI->Stop();
+error_out_wavebuf:
 	free (wavebuf);
 	wavebuf=0;
+error_out_wavefile:
+	wavefile->unref (wavefile);
+	wavefile = 0;
 
 	return 0;
 }
@@ -872,7 +789,7 @@ void __attribute__ ((visibility ("internal"))) wpClosePlayer(void)
 
 	pollClose();
 
-	plrClosePlayer();
+	plrAPI->Stop();
 
 	if (wavebufpos)
 	{
@@ -884,11 +801,6 @@ void __attribute__ ((visibility ("internal"))) wpClosePlayer(void)
 	{
 		free(wavebuf);
 		wavebuf = 0;
-	}
-	if (buf16)
-	{
-		free(buf16);
-		buf16 = 0;
 	}
 
 	if (wavefile)

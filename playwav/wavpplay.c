@@ -211,8 +211,6 @@ static int wavLooped(void)
 		dopausefade();
 	wpSetLoop(fsLoopMods);
 	wpIdle();
-	if (plrIdle)
-		plrIdle();
 	return !fsLoopMods&&wpLooped();
 }
 

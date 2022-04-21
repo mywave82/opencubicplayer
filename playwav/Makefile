@@ -22,7 +22,6 @@ wavplay.o: wavplay.c \
 	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
-	../dev/plrasm.h \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
 	../stuff/imsrtns.h \

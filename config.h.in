@@ -191,7 +191,7 @@
 /* #define MDB_DEBUG 1 */
 /* #define PLAYMP2_DEBUG 1 */
 /* #define PSETTING_DEBUG 1 */
-/* #define WAVE_DEBUG 1 */
+/* #define PLAYWAVE_DEBUG 1 */
 /* #define XM_LOAD_DEBUG 1 */
 /* #define IT_LOAD_DEBUG 1 */
 /* #define MIDI_LOAD_DEBUG 1 */
