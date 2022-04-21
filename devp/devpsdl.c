@@ -23,18 +23,19 @@
  */
 
 #include "config.h"
+#include <assert.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <sys/time.h>
 #include <SDL.h>
 #include <SDL_audio.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "boot/psetting.h"
 #include "dev/imsdev.h"
 #include "dev/player.h"
-#include "stuff/timer.h"
+#include "dev/ringbuffer.h"
 #include "stuff/imsrtns.h"
 
 #ifdef SDL_DEBUG
@@ -43,295 +44,24 @@
  #define PRINT(...) do {} while(0)
 #endif
 
-extern struct sounddevice plrSDL;
-
-/* stolen from devpcoreaudio.c */
-
-static void *playbuf=0;
-static int buflen;
-volatile static int kernpos, cachepos, bufpos; /* in bytes */
-static int delay; /* in samples */
-volatile static struct timeval lastCallbackTime;
-
-/* kernpos = kernel write header
- * bufpos = the write header given out of this driver */
-
-/*  playbuf     kernpos  cachepos   bufpos      buflen
- *    |           | kernlen |          |          |
- *    |           |   cachelen         |          |
- *
- *  on flush, we update all variables> *  on getbufpos we return kernpos-(1 sample) as safe point to buffer up to
- *  on getplaypos we use last known kernpos if locked, else update kernpos
- */
-
-
-volatile static int cachelen, kernlen; /* to make life easier */
-
-volatile static uint32_t playpos; /* how many samples have we done totally */
-
-/* Avoid deadlocks due to signals catched when in the critical section */
-#define SDL_LockAudio() \
-	sigset_t _orgmask; \
-	sigset_t _mask; \
-	sigemptyset(&_mask); \
-	sigaddset(&_mask, SIGALRM); \
-	sigprocmask(SIG_BLOCK, &_mask, &_orgmask); \
-	SDL_LockAudio()
-
-#define SDL_UnlockAudio() \
-	SDL_UnlockAudio(); \
-	sigprocmask(SIG_SETMASK, &_orgmask, NULL)
-
-
-void theRenderProc(void *userdata, Uint8 *stream, int len)
-{
-	int i, i2;
-	int done = 0;
-
-	PRINT("%s(,,%d)\n", __FUNCTION__, len);
-
-	memset(stream, 0, len);
-
-	SDL_LockAudio();
-
-	gettimeofday((struct timeval *)&lastCallbackTime, 0);
-
-	i = cachelen;/* >>2  *stereo + 16it */
-	if (i > len)
-		i = len;
-
-	kernlen = done = i;
-	cachelen -= i;
-	cachepos = kernpos;
-	playpos += i<<(2/*stereo+bit16*/);
-
-	if ((i+kernpos)>buflen)
-	{
-		i2 = ( i + kernpos ) % buflen;
-		i = i - i2;
-	} else {
-		i2 = 0;
-	}
-
-	memcpy(stream, playbuf+kernpos, i);
-	if (i2)
-		memcpy(stream+i, playbuf, i2);
-
-	kernpos = (kernpos+i+i2)%buflen;
-
-	SDL_UnlockAudio();
-
-	if (done < len)
-		PRINT("%s: got %d of %d\n", __FUNCTION__, done, len);
-}
-
-
-/* stolen from devposs */
-static int sdlGetBufPos(void)
-{
-	int retval;
-	PRINT("%s()\n", __FUNCTION__);
-
-	/* this thing is utterly broken */
-
-	SDL_LockAudio();
-	if (kernpos==bufpos)
-	{
-		if (cachelen|kernlen)
-		{
-			retval=kernpos;
-			SDL_UnlockAudio();
-			return retval;
-		}
-	}
-	retval=(kernpos+buflen-4 /* 1 sample = 4 bytes*/)%buflen;
-	SDL_UnlockAudio();
-	return retval;
-}
-
-static int sdlGetPlayPos(void)
-{
-	int retval;
-	struct timeval curTime;
-
-	PRINT("%s()\n", __FUNCTION__);
-
-	SDL_LockAudio();
-	retval=cachepos;
-	gettimeofday (&curTime, 0);
-	SDL_UnlockAudio();
-
-	retval += plrRate * 4 * ((curTime.tv_sec - lastCallbackTime.tv_sec)*1000 + (curTime.tv_usec - lastCallbackTime.tv_usec)/1000) / 1000;
-	retval %= buflen;
-
-	return retval;
-}
-
-static void sdlIdle(void)
-{
-	PRINT("%s()\n", __FUNCTION__);
-}
-
-static void sdlAdvanceTo(unsigned int pos)
-{
-	PRINT("%s(%u)\n", __FUNCTION__, pos);
-	SDL_LockAudio();
-
-	cachelen+=(pos-bufpos+buflen)%buflen;
-	bufpos=pos;
-
-	SDL_UnlockAudio();
-}
-
-static uint32_t sdlGetTimer(void)
-{
-	long retval;
-	PRINT("%s()\n", __FUNCTION__);
-
-	SDL_LockAudio();
-
-	retval=playpos-kernlen;
-	if (retval < delay)
-		retval = 0;
-	else
-		retval -= delay;
-
-	SDL_UnlockAudio();
-
-	return imuldiv(retval, 65536>>(2/*stereo+bit16*/), plrRate);
-}
-
-static void sdlStop(void)
-{
-	PRINT("%s()\n", __FUNCTION__);
-	/* TODO, forceflush */
-
-	SDL_PauseAudio(1);
-
-	if (playbuf)
-	{
-		free(playbuf);
-		playbuf=0;
-	}
-
-	plrGetBufPos=0;
-	plrGetPlayPos=0;
-	plrIdle=0;
-	plrAdvanceTo=0;
-	plrGetTimer=0;
-
-	SDL_CloseAudio();
-}
-
-static int sdlPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file)
-{
-	SDL_AudioSpec desired, obtained;
-	int status;
-	PRINT("%s(,&%d)\n", __FUNCTION__, *len);
-
-	if ((*len)<(plrRate&~3))
-		*len=plrRate&~3;
-	if ((*len)>(plrRate*4))
-		*len=plrRate*4;
-	playbuf=*buf=malloc(*len);
-
-	memset(*buf, 0x80008000, (*len)>>2);
-	buflen = *len;
-
-	cachepos=0;
-	kernpos=0;
-	bufpos=0;
-	cachelen=0;
-	kernlen=0;
-
-	playpos=0;
-
-	plrGetBufPos=sdlGetBufPos;
-	plrGetPlayPos=sdlGetPlayPos;
-	plrIdle=sdlIdle;
-	plrAdvanceTo=sdlAdvanceTo;
-	plrGetTimer=sdlGetTimer;
-
-
-	desired.freq = plrRate;
-	desired.format = AUDIO_S16SYS;
-	desired.channels = 2;
-	desired.samples = plrRate / 8; /**len;*/
-	desired.callback = theRenderProc;
-	desired.userdata = NULL;
-
-	gettimeofday((struct timeval *)&lastCallbackTime, 0);
-
-	status=SDL_OpenAudio(&desired, &obtained);
-	if (status < 0)
-	{
-		fprintf(stderr, "[SDL] SDL_OpenAudio returned %d (%s)\n", (int)status, SDL_GetError());
-		free(*buf);
-		*buf = playbuf = 0;
-		plrGetBufPos = 0;
-		plrGetPlayPos = 0;
-		plrIdle = 0;
-		plrAdvanceTo = 0;
-		plrGetTimer = 0;
-		return 0;
-	}
-	delay = obtained.samples;
-	/*plrRate = sdlSpec.freq;*/
-	SDL_PauseAudio(0);
-	return 1;
-}
-
-static void sdlSetOptions(unsigned int rate, int opt)
-{
-	PRINT("%s(%u, %d)\n", __FUNCTION__, rate, opt);
-	plrRate=rate; /* fixed */
-	plrOpt=PLR_STEREO_16BIT_SIGNED; /* fixed fixed fixed */
-}
+#include "devpsdl-common.c"
 
 static int sdlInit(const struct deviceinfo *c)
 {
 	char drivername[FILENAME_MAX];
-	int status;
 	PRINT("%s()\n", __FUNCTION__);
-	status = SDL_InitSubSystem(SDL_INIT_AUDIO);
-	if (status == 0)
+	if (SDL_InitSubSystem(SDL_INIT_AUDIO))
 	{
-		fprintf(stderr, "[SDL] Using driver %s\n", SDL_AudioDriverName(drivername, sizeof(drivername)));
-		plrSetOptions=sdlSetOptions;
-		plrPlay=sdlPlay;
-		plrStop=sdlStop;
-		return 1;
+		fprintf(stderr, "[SDL] SDL_InitSubSystem (SDL_INIT_AUDIO) failed: %s\n", SDL_GetError());
+		return 0;
 	}
-	fprintf(stderr, "[SDL] SDL_InitSubSystem returned %d (%s)\n", (int)status, SDL_GetError());
-	return 0;
-}
 
-static void sdlClose(void)
-{
-	PRINT("%s()\n", __FUNCTION__);
-	SDL_QuitSubSystem(SDL_INIT_AUDIO);
-	plrSetOptions=0;
-	plrPlay=0;
-	plrStop=0;
-}
-
-static int sdlDetect(struct deviceinfo *card)
-{
-	PRINT("%s()\n", __FUNCTION__);
-
-	/* ao is now created, the above is needed only ONCE */
-	card->devtype=&plrSDL;
-	card->port=0;
-	card->port2=0;
-	card->subtype=-1;
-	card->mem=0;
-	card->chan=2;
-
+	fprintf(stderr, "[SDL] Using driver %s\n", SDL_AudioDriverName(drivername, sizeof(drivername)));
+	plrAPI = &devpSDL;
 	return 1;
 }
-
 
 struct sounddevice plrSDL={SS_PLAYER, 0, "SDL Player", sdlDetect, sdlInit, sdlClose, 0};
 
 char *dllinfo="driver plrSDL";
-struct linkinfostruct dllextinfo = {.name = "devpsdl", .desc = "OpenCP Player Device: SDL (c) 2011-'22 François Revol", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "devpsdl", .desc = "OpenCP Player Device: SDL (c) 2011-'22 François Revol & Stian Skjelstad", .ver = DLLVERSION, .size = 0};
