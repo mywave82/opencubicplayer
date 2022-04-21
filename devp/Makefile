@@ -99,6 +99,7 @@ devposs.o: devposs.c \
 	../dev/devigen.h \
 	../dev/player.h \
 	../dev/plrasm.h \
+	../dev/ringbuffer.h \
 	../boot/psetting.h  \
 	../stuff/imsrtns.h
 	$(CC) devposs.c $(OSS_CFLAGS) -o $@ -c
@@ -109,7 +110,7 @@ devpnone.o: devpnone.c \
 	../boot/plinkman.h \
 	../dev/imsdev.h \
 	../dev/player.h \
-	../stuff/timer.h \
+	../dev/ringbuffer.h \
 	../stuff/imsrtns.h
 	$(CC) devpnone.c -o $@ -c
 
@@ -122,6 +123,7 @@ devpdisk.o: devpdisk.c \
 	../dev/imsdev.h \
 	../dev/player.h \
 	../dev/plrasm.h \
+	../dev/ringbuffer.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../stuff/imsrtns.h
@@ -136,6 +138,7 @@ devpalsa.o: devpalsa.c \
 	../dev/imsdev.h \
 	../dev/player.h \
 	../dev/plrasm.h \
+	../dev/ringbuffer.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/filesystem-drive.h \
@@ -161,17 +164,23 @@ devpcoreaudio.o: devpcoreaudio.c \
 devpsdl.o: devpsdl.c \
 	../config.h \
 	../types.h \
+	devpsdl-common.c \
 	../boot/plinkman.h \
+	../boot/psetting.h \
 	../dev/imsdev.h \
 	../dev/player.h \
+	../dev/ringbuffer.h \
 	../stuff/imsrtns.h
 	$(CC) devpsdl.c -o $@ -c $(SDL_CFLAGS)
 
 devpsdl2.o: devpsdl2.c \
 	../config.h \
 	../types.h \
+	devpsdl-common.c \
 	../boot/plinkman.h \
+	../boot/psetting.h \
 	../dev/imsdev.h \
 	../dev/player.h \
+	../dev/ringbuffer.h \
 	../stuff/imsrtns.h
 	$(CC) devpsdl2.c -o $@ -c $(SDL2_CFLAGS)

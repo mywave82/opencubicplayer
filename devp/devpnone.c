@@ -17,116 +17,244 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * revision history: (please note changes here)
- *  -nb980510   Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- *    -first release
- *  -kb980717   Tammo Hinrichs <opencp@gmx.net>
- *    -added _dllinfo record
  */
 
 #include "config.h"
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+#include <time.h>
 #include "types.h"
 #include "boot/plinkman.h"
 #include "dev/imsdev.h"
 #include "dev/player.h"
-#include "stuff/timer.h"
+#include "dev/ringbuffer.h"
 #include "stuff/imsrtns.h"
 
-static uint32_t starttime;
-static uint32_t starttime2;
-static uint32_t wrap;
+#define DEVPNONE_BUFRATE 44100
+#define DEVPNONE_BUFLEN (DEVPNONE_BUFRATE/4) /* 250 ms */
+#define DEVPNONE_BUFSIZE (DEVPNONE_BUFLEN<<2) /* stereo + 16bit */
 
-static void short_circuit(void)
-{
-}
-
-static unsigned long buflen;
-static unsigned long bufrate;
+static void *devpNoneBuffer;
+static struct ringbuffer_t *devpNoneRingBuffer;
+static struct timespec devpNoneBasetime;
+static int devpNonePauseSamples;
+static int devpNoneInPause;
 
 extern struct sounddevice plrNone;
 
-static int getpos(void)
+unsigned int devpNoneIdle (void)
 {
-	/* this makes starttime always be a safe low value */
-	uint32_t now = tmGetTimer();
+	struct timespec now;
+	uint_fast32_t rel;
+	unsigned int bufpos;
 
-	if ((now-starttime)>wrap)
-		starttime+=wrap;
-	now-=starttime;
+	clock_gettime (CLOCK_MONOTONIC, &now);
 
-	return imuldiv(now, bufrate, 65536)%buflen;
+	if (now.tv_nsec >= devpNoneBasetime.tv_nsec)
+	{
+		rel = now.tv_nsec - devpNoneBasetime.tv_nsec;
+	} else {
+		rel = 1000000000ll + now.tv_nsec - devpNoneBasetime.tv_nsec;
+	}
+	
+	/* rel is now a number between 0 and 999999999 */
+
+	/* find the ideal tail bufpos */
+	rel<<=2; /* prescale, to increase precision for the below division */
+	bufpos = rel / 90702; /* this is close enough to give us 44100 samples per second */
+	bufpos %= DEVPNONE_BUFLEN; /* our bufferlen is 250ms, which a second can divided up to */
+	if (bufpos >= DEVPNONE_BUFLEN)
+	{
+		bufpos = DEVPNONE_BUFLEN - 1;
+	}
+
+	/* consume tail based on the time */
+	{
+		int pos1, length1, pos2, length2;
+		int eat;
+
+		ringbuffer_get_tail_samples (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
+
+		if (length2 == 0) /* no wrap available */
+		{
+			if (bufpos < pos1)
+			{ /* we are out of sync, eat it all!! */
+				eat = length1;
+			} else {
+				eat = bufpos- pos1;
+				if (eat > length1)
+				{ /* should not be reachable unless we lost sync */
+					eat = length1;
+				}
+			}
+		} else {
+			if (bufpos > pos1)
+			{
+				eat = bufpos - pos1;
+				/* no need to check against length1, since buffer wraps */
+			} else {
+				eat = length1;
+				if (bufpos < length2)
+				{
+					eat += bufpos;
+				} else {
+					eat += length2;
+				}
+			}
+		}
+
+		ringbuffer_tail_consume_samples (devpNoneRingBuffer, eat);
+		if (eat > devpNonePauseSamples)
+		{
+			devpNonePauseSamples = 0;
+		} else {
+			devpNonePauseSamples -= eat;
+		}
+	}
+
+	/* do we need to insert pause-samples? */
+	if (devpNoneInPause)
+	{
+		int pos1, length1, pos2, length2;
+		ringbuffer_get_head_bytes (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
+		bzero ((char *)devpNoneBuffer+pos1, length1);
+		if (length2)
+		{
+			bzero ((char *)devpNoneBuffer+pos2, length2);
+		}
+		ringbuffer_head_add_bytes (devpNoneRingBuffer, length1 + length2);
+		devpNonePauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
+	}
+
+	/* Find the current buffer depth */
+	{
+		int pos1, length1, pos2, length2;
+
+		ringbuffer_get_tail_samples (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
+
+		return length1 + length2 - devpNonePauseSamples;
+	}
 }
 
-static void advance(unsigned int i)
+static void devpNonePeekBuffer (void **buf1, unsigned int *buf1length, void **buf2, unsigned int *buf2length)
 {
+	int pos1, length1, pos2, length2;
+
+	ringbuffer_get_tail_samples (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
+
+	if (length1)
+	{
+		*buf1 = (char *)devpNoneBuffer + (pos1 << 2); /* stereo + 16bit */
+		*buf1length = length1;
+		if (length2)
+		{
+			*buf2 = (char *)devpNoneBuffer + (pos2 << 2); /* stereo + 16bit */
+			*buf2length = length2;
+		} else {
+			*buf2 = 0;
+			*buf2length = 0;
+		}
+	} else {
+		*buf1 = 0;
+		*buf1length = 0;
+		*buf2 = 0;
+		*buf2length = 0;
+	}
 }
 
-static uint32_t gettimer(void)
+static int devpNonePlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file)
 {
-	return tmGetTimer()-starttime2;
-}
+	devpNoneInPause = 0;
+	devpNonePauseSamples = 0;
 
-static void qpSetOptions(uint32_t rate, int opt)
-{
-	if (rate<5000)
-		rate=5000;
+	*rate = DEVPNONE_BUFRATE;
+	*format = PLR_STEREO_16BIT_SIGNED;
 
-	if (rate>48000)
-		rate=48000;
-
-	bufrate=rate<<(2/*stereo+bit16*/); /* !!!!!!!!!! */
-
-	plrRate=rate;
-	plrOpt=PLR_STEREO_16BIT_SIGNED;
-/*
-	tmSetNewRate(plrRate);
-*/
-}
-
-static void *thebuf;
-
-static int qpPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file)
-{
-	if (!(thebuf=*buf=malloc(sizeof(unsigned char)*(*len))))
+	if (!(devpNoneBuffer=calloc(DEVPNONE_BUFSIZE, 1)))
+	{
 		return 0;
+	}
+	if (!(devpNoneRingBuffer = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, DEVPNONE_BUFLEN)))
+	{
+		free (devpNoneBuffer); devpNoneBuffer = 0;
+		return 0;
+	}
 
-	buflen=*len;
-
-	plrGetBufPos=getpos;
-	plrGetPlayPos=getpos;
-	plrAdvanceTo=advance;
-	plrGetTimer=gettimer;
-
-	starttime = starttime2 = tmGetTimer();
-
-	wrap = buflen * bufrate;
-
-	tmInit(short_circuit, plrRate);
+	clock_gettime (CLOCK_MONOTONIC, &devpNoneBasetime);
 
 	return 1;
 }
 
-static void qpStop(void)
+static void devpNoneGetBuffer (void **buf, unsigned int *samples)
 {
-	free(thebuf);
-	tmClose();
+	int pos1, length1;
+	assert (devpNoneRingBuffer);
+	
+	ringbuffer_get_head_samples (devpNoneRingBuffer, &pos1, &length1, 0, 0);
+
+	*samples = length1;
+	*buf = devpNoneBuffer + (pos1<<2); /* stereo + bit16 */
 }
+
+static uint32_t devpNoneGetRate (void)
+{
+	return DEVPNONE_BUFRATE;
+}
+
+static void devpNoneOnBufferCallback (int samplesuntil, void (*callback)(void *arg, int samples_ago), void *arg)
+{
+	assert (devpNoneRingBuffer);
+	ringbuffer_add_tail_callback_samples (devpNoneRingBuffer, samplesuntil, callback, arg);
+}
+
+static void  devpNoneCommitBuffer (unsigned int samples)
+{
+	assert (devpNoneRingBuffer);
+	ringbuffer_head_add_samples (devpNoneRingBuffer, samples);
+}
+
+static void devpNonePause(int pause)
+{
+	assert (devpNoneBuffer);
+	devpNoneInPause = pause;
+}
+
+static void devpNoneStop(void)
+{
+	free(devpNoneBuffer); devpNoneBuffer=0;
+	if (devpNoneRingBuffer)
+	{
+		ringbuffer_reset (devpNoneRingBuffer);
+		ringbuffer_free (devpNoneRingBuffer);
+		devpNoneRingBuffer = 0;
+	}
+}
+
+static const struct plrAPI_t devpNone = {
+	devpNoneIdle,
+	devpNonePeekBuffer,
+	devpNonePlay,
+	devpNoneGetBuffer,
+	devpNoneGetRate,
+	devpNoneOnBufferCallback,
+	devpNoneCommitBuffer,
+	devpNonePause,
+	devpNoneStop
+};
 
 static int qpInit(const struct deviceinfo *c)
 {
-	plrSetOptions=qpSetOptions;
-	plrPlay=qpPlay;
-	plrStop=qpStop;
+	plrAPI = &devpNone;
 	return 1;
 }
 
 static void qpClose(void)
 {
-	plrPlay=0;
+	if (plrAPI  == &devpNone)
+	{
+		plrAPI = 0;
+	}
 }
 
 static int qpDetect(struct deviceinfo *card)
@@ -144,4 +272,4 @@ static int qpDetect(struct deviceinfo *card)
 struct sounddevice plrNone={SS_PLAYER, 0, "Super High Quality Quiet Player", qpDetect, qpInit, qpClose, 0};
 
 char *dllinfo="driver plrNone";
-struct linkinfostruct dllextinfo = {.name = "devpnone", .desc = "OpenCP Player Device: None (c) 1994-'22 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "devpnone", .desc = "OpenCP Player Device: None (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
