@@ -1,6 +1,7 @@
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
+#include "types.h"
 #include "boot/console.h"
 #include "boot/plinkman.h"
 #include "cpiface/cpiface.h"
@@ -9,7 +10,6 @@
 #include "stuff/poutput.h"
 #include "stuff/poutput-fontengine.h"
 #include "stuff/poutput-swtext.h"
-#include "types.h"
 
 static uint32_t unicode;
 
