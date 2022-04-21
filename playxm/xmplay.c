@@ -511,6 +511,12 @@ static void xmpPlayTick(void)
 	struct xmpsample *sm;
 	int vol, pan;
 
+	if ((!looping) && looped)
+	{
+		mcpSet (-1, mcpMasterPause, 1);
+		return;
+	}
+
 	if (firstspeed)
 	{
 		mcpSet(-1, mcpGSpeed, firstspeed);

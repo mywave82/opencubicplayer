@@ -1130,6 +1130,12 @@ static void PlayTick(void)
 
 	int cmdtime;
 
+	if (donotloopmodule && looped)
+	{
+		mcpSet (-1, mcpMasterPause, 1);
+		return;
+	}
+
 	if (!physchan)
 		return;
 

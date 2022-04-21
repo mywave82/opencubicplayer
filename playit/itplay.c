@@ -1643,6 +1643,12 @@ static void playtick(struct itplayer *this)
 {
 	int i;
 
+	if (this->looped&&this->noloop)
+	{
+		mcpSet (-1, mcpMasterPause, 1);
+		return;
+	}
+
 	if (!this->npchan)
 		return;
 
@@ -1651,9 +1657,6 @@ static void playtick(struct itplayer *this)
 
 	for (i=0; i<this->nchan; i++)
 		inittick(&this->channels[i]);
-
-	if (this->looped&&this->noloop)
-		return;
 
 	this->curtick++;
 	if ((this->curtick==(this->speed+this->patdelaytick))&&this->patdelayrow)
