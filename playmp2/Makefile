@@ -90,12 +90,10 @@ mpplay.o: mpplay.c \
 	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
-	../dev/plrasm.h \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
 	id3.h \
 	mpplay.h \
 	../stuff/imsrtns.h \
-	../stuff/poll.h \
-	../stuff/timer.h
+	../stuff/poll.h
 	$(CC) mpplay.c -o $@ $(MAD_CFLAGS) -c

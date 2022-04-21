@@ -189,7 +189,7 @@
 /* #define VCSA_DEBUG 1*/
 /* #define DEBUG_FRAMEBUFFER 1 */
 /* #define MDB_DEBUG 1 */
-/* #define MP_DEBUG 1 */
+/* #define PLAYMP2_DEBUG 1 */
 /* #define PSETTING_DEBUG 1 */
 /* #define WAVE_DEBUG 1 */
 /* #define XM_LOAD_DEBUG 1 */

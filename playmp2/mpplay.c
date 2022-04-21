@@ -32,24 +32,22 @@
 #include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
-#include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
 #include "filesel/filesystem.h"
 #include "id3.h"
 #include "mpplay.h"
 #include "stuff/imsrtns.h"
-#include "stuff/timer.h"
 #include "stuff/poll.h"
 
-#ifdef MP_DEBUG
+#ifdef PLAYMP2_DEBUG
 #define debug_printf(...) fprintf (stderr, __VA_ARGS__)
 #else
 #define debug_printf(format,args...) ((void)0)
 #endif
 
 /* options */
-static int inpause;
-static int looped;
+static int mpeg_inpause;
+static int mpeg_looped;
 
 static unsigned int voll,volr;
 static int vol;
@@ -66,6 +64,8 @@ int __attribute__ ((visibility ("internal"))) mpeg_Bitrate; /* bitrate of the la
 static int mpegrate; /* samp-rate in the mpeg */
 static int mpegstereo;
 static unsigned char *GuardPtr;
+
+static uint32_t mpegRate; /* devp rate */
 /* Are resourses in-use (needs to be freed at Close) ?*/
 static int active=0;
 
@@ -85,12 +85,6 @@ static uint64_t fl;
 static uint64_t datapos;
 static uint64_t newpos;
 
-/* devp pre-buffer zone */
-static int16_t *buf16 = 0; /* here we dump out data before it goes live */
-/* devp buffer zone */
-static uint32_t bufpos; /* devp write head location */
-static uint32_t buflen; /* devp buffer-size in samples */
-static void *plrbuf; /* the devp buffer */
 static int donotloop=1;
 
 /* mpegIdler dumping locations */
@@ -101,6 +95,7 @@ static uint32_t mpegbufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
 
 /* clipper threadlock since we use a timer-signal */
 static volatile int clipbusy;
+#warning Remove mpeg_inSIGINT .... ??
 static volatile int mpeg_inSIGINT;
  /* if (mpeg_inSIGINT), then data is updated into HoldingTag only
   *
@@ -396,7 +391,6 @@ static void id3_feed (const uint8_t *data, uint32_t len)
 	}
 }
 
-
 static int stream_for_frame(void)
 {
 	if (data_in_synth)
@@ -600,7 +594,7 @@ static void mpegIdler(void)
 		}
 		read = length1;
 
-		looped |= 1;
+		mpeg_looped |= 1;
 
 		if (!data_in_synth)
 		{
@@ -612,15 +606,15 @@ static void mpegIdler(void)
 
 		if (!eof)
 		{
-			looped &= ~1;
+			mpeg_looped &= ~1;
 		}
 
-		if (read>(data_in_synth)) /* 16bit + stereo as always */
+		if (read>data_in_synth)
 		{
 			read=data_in_synth;
 		}
 
-		if (synth.pcm.channels==1) /* use channel 0 and 1 twize */
+		if (synth.pcm.channels==1) /* use channel 0 twice */
 			audio_pcm_s16(mpegbuf+(pos1<<1), read, synth.pcm.samples[0]+synth.pcm.length-data_in_synth, synth.pcm.samples[0]+synth.pcm.length-data_in_synth);
 		else /* use channel 0 and 1, even if we maybe have surround */
 			audio_pcm_s16(mpegbuf+(pos1<<1), read, synth.pcm.samples[0]+synth.pcm.length-data_in_synth, synth.pcm.samples[1]+synth.pcm.length-data_in_synth);
@@ -631,264 +625,183 @@ static void mpegIdler(void)
 
 void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 {
-	uint32_t bufdelta;
-	uint32_t pass2;
-
 	if (clipbusy++)
 	{
 		clipbusy--;
 		return;
 	}
 
+	if (mpeg_inpause || (mpeg_looped == 3))
 	{
-		uint32_t bufplayed;
-
-		bufplayed=plrGetBufPos() >> 2 /* stereo + bit16 */;
-
-		bufdelta=(buflen+bufplayed-bufpos)%buflen;
-	}
-	/* No delta on the devp? */
-
-	if (!bufdelta)
-	{
-		clipbusy--;
-		if (plrIdle)
-			plrIdle();
-		return;
-	}
-
-	/* fill up our buffers */
-	mpeg_inSIGINT++;
-	mpegIdler();
-	mpeg_inSIGINT--;
-
-	if (inpause)
-	{ /* If we are in pause, we fill buffer with the correct type of zeroes */
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		plrClearBuf((uint16_t *)plrbuf+(bufpos << 1 /* stereo*/), (bufdelta-pass2) << 1 /* stereo */, 1 /* signedout */);
-		if (pass2)
-			plrClearBuf((uint16_t *)plrbuf, pass2 << 1 /* stereo */, 1 /* signedout */ );
-		bufpos+=bufdelta;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
+		plrAPI->Pause (1);
 	} else {
-		int pos1, length1, pos2, length2;
-		int i;
-		int buf16_filled = 0;
+		void *targetbuf;
+		unsigned int targetlength; /* in samples */
 
-		/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-		ringbuffer_get_tail_samples (mpegbufpos, &pos1, &length1, &pos2, &length2);
+		plrAPI->Pause (0);
 
-		if (mpegbufrate==0x10000) /* 1.0... just copy into buf16 direct until we run out of target buffer or source buffer */
+		plrAPI->GetBuffer (&targetbuf, &targetlength);
+
+		if (targetlength)
 		{
-			int16_t *t = buf16;
+			int16_t *t = targetbuf;
+			unsigned int accumulated_target = 0;
+			unsigned int accumulated_source = 0;
+			int pos1, length1, pos2, length2;
 
-			if (bufdelta>(length1+length2))
+			/* fill up our buffers */
+			mpeg_inSIGINT++;
+			mpegIdler();
+			mpeg_inSIGINT--;
+
+			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
+			ringbuffer_get_tail_samples (mpegbufpos, &pos1, &length1, &pos2, &length2);
+
+			if (mpegbufrate==0x10000)
 			{
-				bufdelta=(length1+length2);
-				looped |= 2;
+				if (targetlength>(length1+length2))
+				{
+					targetlength=(length1+length2); // limiting targetlength here, saves us from doing this per sample later
+					mpeg_looped |= 2;
+				} else {
+					mpeg_looped &= ~2;
+				}
 
+				// limit source to not overrun target buffer
+				if (length1 > targetlength)
+				{
+					length1 = targetlength;
+					length2 = 0;
+				} else if ((length1 + length2) > targetlength)
+				{
+					length2 = targetlength - length1;
+				}
+
+				accumulated_source = accumulated_target = length1 + length2;
+
+				while (length1)
+				{
+					while (length1)
+					{
+						int16_t rs, ls;
+
+						rs = mpegbuf[(pos1<<1) + 0];
+						ls = mpegbuf[(pos1<<1) + 1];
+
+						PANPROC;
+
+						*(t++) = rs;
+						*(t++) = ls;
+
+						pos1++;
+						length1--;
+						//accumulated_target++;
+					}
+					length1 = length2;
+					length2 = 0;
+					pos1 = pos2;
+					pos2 = 0;
+				}
+				//accumulated_source = accumulated_target;
 			} else {
-				looped &= ~2;
-			}
+				mpeg_looped &= ~2;
 
-			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
-			{
-				int16_t rs, ls;
-
-				if (!length1)
+				while (targetlength && length1)
 				{
-					pos1 = pos2;
+					while (targetlength && length1)
+					{
+						uint32_t wpm1, wp0, wp1, wp2;
+						int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
+						int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
+						unsigned int progress;
+						int16_t rs, ls;
+
+						if ((length1+length2) <= 3)
+						{
+							mpeg_looped |= 2;
+							break;
+						}
+						/* will we overflow the mpegbuf if we advance? */
+						if ((length1+length2) < ((mpegbufrate+mpegbuffpos)>>16))
+						{
+							mpeg_looped |= 2;
+							break;
+						}
+
+						switch (length1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
+						{
+							case 1:  wpm1 = pos1; wp0 = pos2;     wp1 = pos2 + 1; wp2 = pos2 + 2; break;
+							case 2:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos2;     wp2 = pos2 + 1; break;
+							case 3:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos2;     break;
+							default: wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos1 + 3; break;
+						}
+
+						rvm1 = (uint16_t)mpegbuf[(wpm1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
+						lvm1 = (uint16_t)mpegbuf[(wpm1<<1)+1]^0x8000;
+						 rc0 = (uint16_t)mpegbuf[(wp0<<1)+0]^0x8000;
+						 lc0 = (uint16_t)mpegbuf[(wp0<<1)+1]^0x8000;
+						 rv1 = (uint16_t)mpegbuf[(wp1<<1)+0]^0x8000;
+						 lv1 = (uint16_t)mpegbuf[(wp1<<1)+1]^0x8000;
+						 rv2 = (uint16_t)mpegbuf[(wp2<<1)+0]^0x8000;
+						 lv2 = (uint16_t)mpegbuf[(wp2<<1)+1]^0x8000;
+
+						rc1 = rv1-rvm1;
+						rc2 = 2*rvm1-2*rc0+rv1-rv2;
+						rc3 = rc0-rvm1-rv1+rv2;
+						rc3 =  imulshr16(rc3,mpegbuffpos);
+						rc3 += rc2;
+						rc3 =  imulshr16(rc3,mpegbuffpos);
+						rc3 += rc1;
+						rc3 =  imulshr16(rc3,mpegbuffpos);
+						rc3 += rc0;
+						if (rc3<0)
+							rc3=0;
+						if (rc3>65535)
+							rc3=65535;
+
+						lc1 = lv1-lvm1;
+						lc2 = 2*lvm1-2*lc0+lv1-lv2;
+						lc3 = lc0-lvm1-lv1+lv2;
+						lc3 =  imulshr16(lc3,mpegbuffpos);
+						lc3 += lc2;
+						lc3 =  imulshr16(lc3,mpegbuffpos);
+						lc3 += lc1;
+						lc3 =  imulshr16(lc3,mpegbuffpos);
+						lc3 += lc0;
+						if (lc3<0)
+							lc3=0;
+						if (lc3>65535)
+							lc3=65535;
+
+						rs = rc3 ^ 0x8000;
+						ls = lc3 ^ 0x8000;
+
+						PANPROC;
+
+						*(t++) = rs;
+						*(t++) = ls;
+						mpegbuffpos += mpegbufrate;
+						progress = mpegbuffpos>>16;
+						mpegbuffpos &= 0xffff;
+						accumulated_source+=progress;
+						pos1+=progress;
+						length1-=progress;
+						targetlength--;
+
+						accumulated_target++;
+					} /* while (targetlength && length1) */
 					length1 = length2;
-					pos2 = 0;
 					length2 = 0;
-				}
-
-				if (!length1)
-				{
-					fprintf (stderr, "mpplay: ERROR, length1 == 0, in mpegIdle\n");
-					_exit(1);
-				}
-
-
-				rs = mpegbuf[pos1<<1];
-				ls = mpegbuf[(pos1<<1) + 1];
-
-				PANPROC;
-
-				*(t++) = rs;
-				*(t++) = ls;
-
-				pos1++;
-				length1--;
-			}
-
-			ringbuffer_tail_consume_samples (mpegbufpos, buf16_filled); /* add this rate buf16_filled == tail_used */
-		} else {
-			/* We are going to perform cubic interpolation of rate conversion... this bit is tricky */
-			unsigned int accumulated_progress = 0;
-
-			looped &= ~2;
-
-			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
-			{
-				uint32_t wpm1, wp0, wp1, wp2;
-				int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
-				int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
-				unsigned int progress;
-				int16_t rs, ls;
-
-				/* will the interpolation overflow? */
-				if ((length1+length2) <= 3)
-				{
-					looped |= 2;
-					break;
-				}
-				/* will we overflow the wavebuf if we advance? */
-				if ((length1+length2) < ((mpegbufrate+mpegbuffpos)>>16))
-				{
-					looped |= 2;
-					break;
-				}
-
-				switch (length1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
-				{
-					case 1:
-						wpm1 = pos1;
-						wp0  = pos2;
-						wp1  = pos2+1;
-						wp2  = pos2+2;
-						break;
-					case 2:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos2;
-						wp2  = pos2+1;
-						break;
-					case 3:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos1+2;
-						wp2  = pos2;
-						break;
-					default:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos1+2;
-						wp2  = pos1+3;
-						break;
-				}
-
-				rvm1 = (uint16_t)mpegbuf[(wpm1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
-				lvm1 = (uint16_t)mpegbuf[(wpm1<<1)+1]^0x8000;
-				 rc0 = (uint16_t)mpegbuf[(wp0<<1)+0]^0x8000;
-				 lc0 = (uint16_t)mpegbuf[(wp0<<1)+1]^0x8000;
-				 rv1 = (uint16_t)mpegbuf[(wp1<<1)+0]^0x8000;
-				 lv1 = (uint16_t)mpegbuf[(wp1<<1)+1]^0x8000;
-				 rv2 = (uint16_t)mpegbuf[(wp2<<1)+0]^0x8000;
-				 lv2 = (uint16_t)mpegbuf[(wp2<<1)+1]^0x8000;
-
-				rc1 = rv1-rvm1;
-				rc2 = 2*rvm1-2*rc0+rv1-rv2;
-				rc3 = rc0-rvm1-rv1+rv2;
-				rc3 =  imulshr16(rc3,mpegbuffpos);
-				rc3 += rc2;
-				rc3 =  imulshr16(rc3,mpegbuffpos);
-				rc3 += rc1;
-				rc3 =  imulshr16(rc3,mpegbuffpos);
-				rc3 += rc0;
-				if (rc3<0)
-					rc3=0;
-				if (rc3>65535)
-					rc3=65535;
-
-				lc1 = lv1-lvm1;
-				lc2 = 2*lvm1-2*lc0+lv1-lv2;
-				lc3 = lc0-lvm1-lv1+lv2;
-				lc3 =  imulshr16(lc3,mpegbuffpos);
-				lc3 += lc2;
-				lc3 =  imulshr16(lc3,mpegbuffpos);
-				lc3 += lc1;
-				lc3 =  imulshr16(lc3,mpegbuffpos);
-				lc3 += lc0;
-				if (lc3<0)
-					lc3=0;
-				if (lc3>65535)
-					lc3=65535;
-
-				rs = rc3 ^ 0x8000;
-				ls = lc3 ^ 0x8000;
-
-				PANPROC;
-
-				buf16[(buf16_filled<<1)+0] = rs;
-				buf16[(buf16_filled<<1)+1] = ls;
-
-				mpegbuffpos += mpegbufrate;
-				progress = mpegbuffpos>>16;
-				mpegbuffpos &= 0xffff;
-
-				accumulated_progress += progress;
-
-				/* did we wrap? if so, progress up to the wrapping point */
-				if (progress >= length1)
-				{
-					progress -= length1;
 					pos1 = pos2;
-					length1 = length2;
 					pos2 = 0;
-					length2 = 0;
-				}
-				if (progress)
-				{
-					pos1 += progress;
-					length1 -= progress;
-				}
-
-			}
-			ringbuffer_tail_consume_samples (mpegbufpos, accumulated_progress);
-		}
-
-		bufdelta=buf16_filled;
-
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		bufdelta-=pass2;
-
-		{
-			int16_t *p=(int16_t *)plrbuf+2*bufpos;
-			int16_t *b=buf16;
-
-			for (i=0; i<bufdelta; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-			p=(int16_t *)plrbuf;
-			for (i=0; i<pass2; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-		}
-		bufpos+=buf16_filled;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
+				} /* while (targetlength && length1) */
+			} /* if (mpegbufrate==0x10000) */
+			ringbuffer_tail_consume_samples (mpegbufpos, accumulated_source);
+			plrAPI->CommitBuffer (accumulated_target);
+		} /* if (targetlength) */
 	}
 
-	plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
-
-	if (plrIdle)
-		plrIdle();
+	plrAPI->Idle();
 
 	clipbusy--;
 }
@@ -899,17 +812,17 @@ void __attribute__ ((visibility ("internal"))) mpegSetLoop(uint8_t s)
 }
 char __attribute__ ((visibility ("internal"))) mpegIsLooped(void)
 {
-	return looped == 3;
+	return mpeg_looped == 3;
 }
 void __attribute__ ((visibility ("internal"))) mpegPause(uint8_t p)
 {
-	inpause=p;
+	mpeg_inpause=p;
 }
 static void mpegSetSpeed (uint16_t sp)
 {
 	if (sp<32)
 		sp=32;
-	mpegbufrate=imuldiv(256*sp, mpegrate, plrRate);
+	mpegbufrate=imuldiv(256*sp, mpegrate, mpegRate);
 }
 static void mpegSetVolume (void)
 {
@@ -973,18 +886,14 @@ void __attribute__ ((visibility ("internal"))) mpegSetPos(uint32_t pos)
 	newpos=pos;
 }
 
-unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandle_t *mpegfile)
+static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 {
-	ofs=0;
-
-	debug_printf ("mpegOpenPlayer (%p)\n", mpegfile);
-
 	if (mpegfile->seek_set (mpegfile, 0) >= 0)
 	{
 		unsigned char sig[4];
 		if (mpegfile->read (mpegfile, sig, 4) != 4)
 		{
-			return -1;
+			return 0;
 		}
 		mpegfile->seek_set (mpegfile, 0);
 		if (!memcmp(sig, "RIFF", 4))
@@ -998,12 +907,12 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct oc
 				uint32_t t;
 				if (mpegfile->read (mpegfile, sig, 4) != 4)
 				{
-					return -1;
+					return 0;
 				}
 				debug_printf ("[mppplay.c]: chunk: %c%c%c%c\n", sig[0], sig[1], sig[2], sig[3]);
 				if (ocpfilehandle_read_uint32_le (mpegfile, &t))
 				{
-					return -1;
+					return 0;
 				}
 				fl = t;
 				debug_printf ("[mppplay.c]: length: %d\n", (int)fl);
@@ -1027,7 +936,7 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct oc
 				mpegfile->seek_set (mpegfile, ofs + fl - 256);
 				if (mpegfile->read (mpegfile, buffer, 256) != 256)
 				{
-					return -1;
+					return 0;
 				}
 				if ((buffer[128] == 'T') &&
 				    (buffer[129] == 'A') &&
@@ -1055,7 +964,7 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct oc
 				mpegfile->seek_set (mpegfile, ofs + fl - 10);
 				if (mpegfile->read (mpegfile, sbuffer, 10) != 10)
 				{
-					return -1;
+					return 0;
 				}
 				if ((sbuffer[0] == '3') &&
 				    (sbuffer[1] == 'D') &&
@@ -1080,7 +989,7 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct oc
 							mpegfile->seek_set (mpegfile, ofs + fl - 20 - size);
 							if (mpegfile->read (mpegfile, buffer, size + 10) != (size + 10))
 							{
-								return -1;
+								return 0;
 							}
 							if ((buffer[0] == 'I') &&
 							    (buffer[1] == 'D') &&
@@ -1107,7 +1016,7 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct oc
 				if (mpegfile->read (mpegfile, bbuffer, fetch_size) != fetch_size)
 				{
 					free (bbuffer);
-					return -1;
+					return 0;
 				}
 				debug_printf ("[MPx] search for ID3v.2x\n");
 				for (s = fetch_size - 15; s >= 0; s--)
@@ -1144,13 +1053,21 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct oc
 		fl=0xffffffff; /* stream */
 	}
 
-	debug_printf ("  mpegOpenPlayer file=%p\n", file);
+	return 1;
+}
 
-	if (file)
+int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandle_t *mpegfile)
+{
+	enum plrRequestFormat format;
+	ofs=0;
+
+	debug_printf ("mpegOpenPlayer (%p)\n", mpegfile);
+
+	if (!mpegOpenPlayer_FindRangeAndTags (mpegfile))
 	{
-		file->unref (file);
-		file = 0;
+		return 0;
 	}
+
 	file = mpegfile;
 	file->ref (file);
 
@@ -1161,8 +1078,8 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct oc
 	data_length=0;
 	data_in_synth=0;
 	eof=0;
-	inpause=0;
-	looped=0;
+	mpeg_inpause=0;
+	mpeg_looped=0;
 
 	mad_stream_init(&stream);
 	mad_frame_init(&frame);
@@ -1176,42 +1093,39 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct oc
 	file->seek_set (file, ofs);
 
 	if (!stream_for_frame())
+	{
+		fprintf(stderr, "[MPx] stream_for_frame() failed\n");
 		goto error_out;
+	}
 	mpegrate=synth.pcm.samplerate;
 
-	plrSetOptions(mpegrate, PLR_STEREO_16BIT_SIGNED);
-
-	mpegbufrate=imuldiv(65536, mpegrate, plrRate);
+	mpegRate=mpegrate;
+	format=PLR_STEREO_16BIT_SIGNED;
+	if (!plrAPI->Play (&mpegRate, &format, file))
+	{
+		fprintf(stderr, "[MPx]: plrAPI->Play() failed\n");
+		goto error_out;
+	}
+	mpegbufrate=imuldiv(65536, mpegrate, mpegRate);
 
 	if (!(mpegbuf=malloc(32768)))
-		goto error_out;
+	{
+		fprintf(stderr, "[MPx]: malloc failed\n");
+		goto error_out_plrAPI_Play;
+	}
 	mpegbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 8192);
 	if (!mpegbufpos)
 	{
-		goto error_out;
+		fprintf(stderr, "[MPx]: ringbuffer_new_samples() failed\n");
+		goto error_out_plrAPI_Play;
 	}
 	mpegbuffpos=0;
-
 	GuardPtr=0;
-
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, file))
-	{
-		debug_printf ("  mpegOpenPlayer plrOpenPlayer failed\n");
-		goto error_out;
-	}
-	debug_printf ("  mpegOpenPlayer plrOpenPlayer OK\n");
-
-	if (!(buf16=malloc(sizeof(uint16_t)*buflen*2)))
-	{
-		plrClosePlayer();
-		goto error_out;
-	}
-	bufpos=0;
 
 	if (!pollInit(mpegIdle))
 	{
-		plrClosePlayer();
-		goto error_out;
+		fprintf(stderr, "[MPx]: pollInit() failed\n");
+		goto error_out_plrAPI_Play;
 	}
 	debug_printf ("  mpegOpenPlayer poll is enabled\n");
 
@@ -1226,10 +1140,16 @@ unsigned char __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct oc
 	opt25_50 = 0;
 	opt25[0] = 0;
 	opt50[0] = 0;
-	return 0;
+	return 1;
 
+error_out_plrAPI_Play:
+	plrAPI->Stop();
 error_out:
-	free (buf16); buf16 = 0;
+	if (file)
+	{
+		file->unref (file);
+		file = 0;
+	}
 	if (mpegbufpos)
 	{
 		ringbuffer_free (mpegbufpos);
@@ -1240,7 +1160,7 @@ error_out:
 	mad_synth_finish(&synth);
 	mad_frame_finish(&frame);
 	mad_stream_finish(&stream);
-	return 1;
+	return 0;
 }
 
 void __attribute__ ((visibility ("internal"))) mpegClosePlayer(void)
@@ -1252,7 +1172,7 @@ void __attribute__ ((visibility ("internal"))) mpegClosePlayer(void)
 	if (active)
 	{
 		pollClose();
-		plrClosePlayer();
+		plrAPI->Stop();
 
 		mad_synth_finish(&synth);
 		mad_frame_finish(&frame);
@@ -1260,7 +1180,6 @@ void __attribute__ ((visibility ("internal"))) mpegClosePlayer(void)
 
 		active=0;
 	}
-	free(buf16); buf16=0;
 	if (mpegbufpos)
 	{
 		ringbuffer_free (mpegbufpos);

@@ -204,8 +204,6 @@ static int mpegLooped(void)
 		dopausefade();
 	mpegSetLoop(fsLoopMods);
 	mpegIdle();
-	if (plrIdle)
-		plrIdle();
 	return !fsLoopMods&&mpegIsLooped();
 }
 
@@ -237,7 +235,7 @@ static int mpegOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *
 	plGetMasterSample=plrGetMasterSample;
 	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-	if (mpegOpenPlayer(mpegfile))
+	if (!mpegOpenPlayer(mpegfile))
 		return errFileRead;
 
 	starttime=dos_clock();
