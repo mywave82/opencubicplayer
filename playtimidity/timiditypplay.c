@@ -38,7 +38,6 @@
 #include "stuff/err.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
-#include "stuff/timer.h"
 
 /* options */
 static time_t starttime;
@@ -111,8 +110,6 @@ static int timidityLooped(void)
 		dopausefade();
 	timiditySetLoop(fsLoopMods);
 	timidityIdle();
-	if (plrIdle)
-		plrIdle();
 	return !fsLoopMods&&timidityIsLooped();
 }
 

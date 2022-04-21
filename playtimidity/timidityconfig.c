@@ -22,7 +22,7 @@
 #include "timidity-git/timidity/sysdep.h"
 #include "timidity-git/timidity/timidity.h"
 
-#ifdef TIMIDITY_DEBUG
+#ifdef PLAYTIMIDITY_DEBUG
 # define PRINT(fmt, args...) fprintf(stderr, "%s %s: " fmt, __FILE__, __func__, ##args)
 #else
 # define PRINT(a, ...) do {} while(0)

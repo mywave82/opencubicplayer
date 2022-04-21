@@ -159,7 +159,7 @@
 
 /* #define ADBMETA_DEBUG */
 /* #define CDFS_DEBUG */
-/* #define TIMIDITY_DEBUG */
+/* #define PLAYTIMIDITY_DEBUG */
 /* #define ZIP_DEBUG */
 /* #define ZIP_VERBOSE */
 /* #define DIRDB_DEBUG */

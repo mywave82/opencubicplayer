@@ -44,7 +44,7 @@
 #include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
-#include "dev/plrasm.h"
+#include "dev/ringbuffer.h"
 #include "filesel/mdb.h"
 #include "stuff/err.h"
 #include "stuff/imsrtns.h"
@@ -56,13 +56,17 @@
 
 #define RC_ASYNC_HACK 0x31337
 
-#ifdef TIMIDITY_DEBUG
+#ifdef PLAYTIMIDITY_DEBUG
 # define PRINT(fmt, args...) fprintf(stderr, "%s %s: " fmt, __FILE__, __func__, ##args)
 #else
 # define PRINT(a, ...) do {} while(0)
 #endif
 
-static int inpause;
+static int gmi_inpause;
+
+static uint64_t samples_committed;
+static uint64_t samples_lastui;
+static uint64_t samples_lastdelay;
 
 static int bal;
 static int vol;
@@ -73,24 +77,18 @@ static uint32_t speed;
 static uint32_t dspeed;
 static int loading;
 
-/* devp pre-buffer zone */
-static uint16_t *buf16 = 0; /* stupid dump that should go away */
 /* devp buffer zone */
-static uint32_t bufpos; /* devp write head location */
-static uint32_t buflen; /* devp buffer-size in samples */
 static int output_counter;
-static void *plrbuf; /* the devp buffer */
 static int donotloop=1;
+static uint32_t gmiRate; /* devp rate */
 
 /* timidityIdler dumping locations */
-static uint8_t *gmibuf = 0;     /* the buffer */
-static uint32_t gmibuflen;  /* total buffer size */
-/*static uint32_t aylen;*/     /* expected wave length */
-static uint32_t gmibufhead; /* actually this is the write head */
-static uint32_t gmibuftail;  /* read pos */
-static uint32_t gmibuffpos; /* read fine-pos.. when rate has a fraction */
+static int16_t *gmibuf = 0;     /* the buffer */
+static struct ringbuffer_t *gmibufpos;
+static int32_t gmibuffree; /* we track the ideal buffer-fill and to not request overfill, timidity needs lots of space during EOF */
 static uint32_t gmibuffill = 0;
-static int32_t gmibuffree;
+
+static uint32_t gmibuffpos; /* read fine-pos.. when rate has a fraction */
 static uint32_t gmibufrate = 0x10000; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
 
 static int (*_GET)(int ch, int opt);
@@ -164,11 +162,10 @@ typedef struct _CtlEventDelayed
 	CtlEvent event;
 } CtlEventDelayed;
 
-static CtlEventDelayed *EventDelayed_PlrBuf_head = 0;
+static CtlEventDelayed *EventDelayed_PlrBuf_head = 0; /* in devp space */
 static CtlEventDelayed *EventDelayed_PlrBuf_tail = 0;
-int                     eventDelayed_PlrBuf_lastpos;
 
-static CtlEventDelayed *EventDelayed_gmibuf_head = 0;
+static CtlEventDelayed *EventDelayed_gmibuf_head = 0; /* in gmibuf space */
 static CtlEventDelayed *EventDelayed_gmibuf_tail = 0;
 
 static void free_EventDelayed (CtlEventDelayed *self)
@@ -333,48 +330,47 @@ static void timidity_apply_EventDelayed (CtlEvent *event)
 	}
 }
 
-static void timidity_append_EventDelayed_PlrBuf (CtlEventDelayed *self)
+static void timidity_append_EventDelayed_PlrBuf (CtlEventDelayed *self, unsigned int delay_samples)
 {
-	self->delay_samples = bufpos; /* absolute position in the buffer */
+	self->delay_samples = delay_samples;
 
 	if (EventDelayed_PlrBuf_head)
 	{
 		EventDelayed_PlrBuf_tail->next = self;
-		EventDelayed_PlrBuf_tail = self;
 	} else {
 		EventDelayed_PlrBuf_head = self;
-		EventDelayed_PlrBuf_tail = self;
 	}
+	EventDelayed_PlrBuf_tail = self;
 }
 
-static void timidity_SetBufferPos_EventDelayed_PlrBuf (int old_pos, int new_pos)
+static void timidity_play_target_EventDelayed_gmibuf (unsigned int delta)
 {
-	CtlEventDelayed *iter;
+	CtlEventDelayed *iter, *next;
 
-	for (iter = EventDelayed_PlrBuf_head; iter;)
+	for (iter = EventDelayed_PlrBuf_head; iter; iter = next)
 	{
-		CtlEventDelayed *next = iter->next;
+		next = iter->next;
 
-		if ( ((old_pos < new_pos) && ((iter->delay_samples >= old_pos) && (iter->delay_samples <= new_pos))) || /* normal progression */
-		     ((old_pos > new_pos) && ((iter->delay_samples >= old_pos) || (iter->delay_samples <= new_pos))) ) /* position wrapped */
+		if (iter->delay_samples > delta)
 		{
+			iter->delay_samples -= delta;
+		} else {
 			assert (EventDelayed_PlrBuf_head == iter);
+
+			iter->delay_samples = 0;
 
 			EventDelayed_PlrBuf_head = next;
 
-			if (!iter->next)
+			iter->next = 0;
+
+			if (!next)
 			{
 				EventDelayed_PlrBuf_tail = 0; /* we are always deleting the head entry if any.. so list is empty if no next */
-			} else {
-				iter->next = 0;
 			}
-			iter->delay_samples = 0;
-			timidity_apply_EventDelayed (&iter->event);
-			free_EventDelayed (iter);
 
-			iter = next;
-		} else {
-			break;
+			timidity_apply_EventDelayed (&iter->event);
+
+			free_EventDelayed (iter);
 		}
 	}
 }
@@ -407,7 +403,7 @@ static void timidity_append_EventDelayed_gmibuf (CtlEvent *event)
 	}
 }
 
-static void timidity_play_EventDelayed_gmibuf (uint32_t samples)
+static void timidity_play_source_EventDelayed_gmibuf (uint32_t samples)
 {
 	CtlEventDelayed *iter, *next;
 
@@ -428,7 +424,7 @@ static void timidity_play_EventDelayed_gmibuf (uint32_t samples)
 				iter->next = 0;
 			}
 			iter->delay_samples = 0;
-			timidity_append_EventDelayed_PlrBuf (iter);
+			timidity_append_EventDelayed_PlrBuf (iter, samples + samples_lastdelay);
 		} else {
 			iter->delay_samples -= samples;
 		}
@@ -532,10 +528,10 @@ void __attribute__ ((visibility ("internal"))) timiditySetRelPos(int pos)
 {
 	if (pos > 0)
 	{ /* async, so set the value, before result */
-		ctl_next_value = plrRate * pos;
+		ctl_next_value = gmiRate * pos;
 		ctl_next_result = RC_FORWARD;
 	} else {
-		ctl_next_value = plrRate * -pos;
+		ctl_next_value = gmiRate * -pos;
 		ctl_next_result = RC_BACK;
 	}
 }
@@ -559,7 +555,7 @@ static int ocp_ctl_read (int32 *valp)
 static int ocp_ctl_write (char *buf, int32 size)
 {
 	/* stdout redirects ? */
-	fprintf (stderr, "[timidity] %.*s", (int)size, buf);
+	fprintf (stderr, "[timidity] CTL WRITE %.*s", (int)size, buf);
 	return size;
 }
 
@@ -568,7 +564,7 @@ static int ocp_ctl_cmsg(int type, int verbosity_level, char *fmt, ...)
 {
 	va_list ap;
 
-#ifndef TIMIDITY_DEBUG
+#ifndef PLAYTIMIDITY_DEBUG
 	if (verbosity_level == VERB_DEBUG_SILLY)
 	{
 		if (!loading)
@@ -584,7 +580,7 @@ static int ocp_ctl_cmsg(int type, int verbosity_level, char *fmt, ...)
 	}
 #endif
 
-	fputs("[timidity] ", stderr);
+	fputs("[timidity] CTL CMSG ", stderr);
 
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
@@ -682,7 +678,7 @@ static void ocp_ctl_event(CtlEvent *event)
 			break;
 		case CTLE_SPEANA:
 			{
-#ifdef TIMIDITY_DEBUG
+#ifdef PLAYTIMIDITY_DEBUG
 				double *v1 = (double *)event->v1;
 				int i;
 				PRINT ("[timidity] ctl->event (event=CTLE_SPEANA, v1=[)\n");
@@ -774,30 +770,39 @@ static void ocp_playmode_close_output(void)
 
 static int ocp_playmode_output_data(char *buf, int32 bytes)
 {
-	PRINT ("[timidity] playmode->output_data (bytes=%d gmibufhead=%d gmibuftail=%d gmibuflen=%d)\n", bytes, gmibufhead, gmibuftail, gmibuflen);
+	int pos1, pos2;
+	int length1, length2;
 
-	gmibuffill += (bytes>>2);
-	gmibuffree -= (bytes>>2);
+	PRINT ("[timidity] playmode->output_data (bytes=%d)\n", bytes);
 
-	if (gmibufhead+(bytes>>2) >= gmibuflen)
+	/* convert bytes into samples */
+	bytes >>= 2; /* stereo + bit16 */
+
+	output_counter += bytes;
+
+	ringbuffer_get_head_samples (gmibufpos, &pos1, &length1, &pos2, &length2);
+
+	while (length1 && bytes)
 	{
-		assert (gmibufhead >= gmibuftail); /* we are not going to overrun the buffer */
+		if (length1>bytes)
+		{
+			length1=bytes;
+		}
+		memcpy (gmibuf + (pos1<<1), buf, length1<<2);
+		buf += length1<<2;
+		bytes -= length1;
 
-		memcpy (gmibuf+(gmibufhead<<2), buf, (gmibuflen-gmibufhead)<<2);
-		buf   += (gmibuflen-gmibufhead)<<2;
-		bytes -= (gmibuflen-gmibufhead)<<2;
-		gmibufhead = 0;
+		gmibuffill += length1;
+		gmibuffree -= length1;
+
+		ringbuffer_head_add_samples (gmibufpos, length1);
+		ringbuffer_get_head_samples (gmibufpos, &pos1, &length1, &pos2, &length2);
 	}
 
 	if (bytes)
 	{
-		assert ((gmibuftail <= gmibufhead) || ((gmibufhead + (bytes>>2)) <= gmibuftail)); /* we are not going to overrun the buffer */
-
-		memcpy (gmibuf+(gmibufhead<<2), buf, bytes);
-		gmibufhead += (bytes>>2);
+		fprintf (stderr, "[timidity]: warning we lost %u samples\n", (unsigned int)bytes);
 	}
-
-	output_counter += (bytes>>2);
 
 	return 0;
 }
@@ -811,7 +816,6 @@ static int ocp_playmode_acntl(int request, void *arg)
 
 		case PM_REQ_DISCARD: /* what-ever... we are the actual master of this */
 			PRINT ("[timidity] playmode->acntl(request=DISCARD)\n");
-#warning TODO implement
 			output_counter = 0;
 			return 0;
 
@@ -821,8 +825,13 @@ static int ocp_playmode_acntl(int request, void *arg)
 			return 0;
 
 		case PM_REQ_GETQSIZ:
-			PRINT ("[timidity] playmode->acntl(request=GETQSIZ) => %d\n", buflen>>1);
-			*((int *)arg) = buflen>>1 /* >>1 is due to STEREO */;
+			PRINT ("[timidity] playmode->acntl(request=GETQSIZ) => %d\n", gmibuffree>>1);
+			if (gmibuffree <= 0)
+			{
+				*((int *)arg) = 0;
+			} else {
+				*((int *)arg) = gmibuffree >> 1; //   buflen>>1 /* >>1 is due to STEREO */;
+			}
 			return 0;
 
 		/* case PM_REQ_SETQSIZ */
@@ -1281,17 +1290,13 @@ static int emulate_play_event (MidiEvent *ev)
 		int32 needed = cet - current_sample;
 		int32 canfit = aq_fillable();
 
-		PRINT ("emulate_play_event, needed=%d canfit=%d clean=%d (%d) -- ", needed, canfit, (int)gmibuffree, gmibuflen);
+		PRINT ("emulate_play_event, needed=%d canfit=%d -- ", needed, canfit);
 
-//		if (canfit <= (gmibuflen >>2)) /* we only use the first quarter of the buffer... the last is reserved for flush at that happens at the end of the track */
 		if ((canfit <= 0) || (gmibuffree <= (audio_buffer_size*2)))
 		{
 			PRINT ("short exit.. we want more buffer to be free\n");
 			return RC_ASYNC_HACK;
 		}
-
-//		if (canfit > (gmibuflen >> 2))
-//			canfit = gmibuflen >> 2;
 
 		if (needed > canfit)
 		{
@@ -1472,7 +1477,7 @@ static void timidityIdler(void)
 
 int __attribute__ ((visibility ("internal"))) timidityIsLooped(void)
 {
-	return gmi_looped;
+	return gmi_looped && gmi_eof;
 }
 
 void __attribute__ ((visibility ("internal"))) timiditySetLoop(unsigned char s)
@@ -1482,7 +1487,7 @@ void __attribute__ ((visibility ("internal"))) timiditySetLoop(unsigned char s)
 
 void __attribute__ ((visibility ("internal"))) timidityPause(unsigned char p)
 {
-	inpause=p;
+	gmi_inpause=p;
 }
 
 static void timiditySetVolume(void)
@@ -1532,11 +1537,9 @@ static int GET(int ch, int opt)
 
 void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct mglobinfo *gi)
 {
-	int pos = plrGetPlayPos () >> 2 /* stereo + bit16 */;
 	int32_t curtick = current_sample
 			- aq_soft_filled()
-			- ( gmibuffill ) /* gmibuf length */
-			- ( (bufpos-pos+buflen)%buflen); /* PlrBuf length */
+			- (samples_committed - samples_lastui);
 	if (curtick < 0)
 	{
 		curtick = 0;
@@ -1547,215 +1550,196 @@ void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct mglobi
 
 void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 {
-	uint32_t bufdelta;
-	uint32_t pass2;
-/*
-	uint32_t toloop;*/
-
 	if (clipbusy++)
 	{
 		clipbusy--;
 		return;
 	}
 
-again:
+	if (gmi_inpause || (gmi_looped && gmi_eof))
 	{
-		uint32_t bufplayed;
-
-		bufplayed=plrGetBufPos() >> 2 /* stereo + bit16 */;
-		bufdelta=(buflen+bufplayed-bufpos)%buflen;
-	}
-	/* bufdelta is now in samples */
-
-	/* No delta on the devp? */
-	if (!bufdelta)
-	{
-		clipbusy--;
-		if (plrIdle)
-			plrIdle();
-		return;
-	}
-
-	timidityIdler();
-
-	{
-		uint32_t towrap=imuldiv(gmibuffill, 65536, gmibufrate);
-
-		if (towrap == 0)
-		{
-			if (gmi_eof)
-			{
-				gmi_looped = 1;
-			}
-
-			clipbusy--;
-
-			return;
-		}
-
-		if (bufdelta>towrap)
-		{
-			/*quietlen=bufdelta-towrap;*/
-			bufdelta=towrap;
-		}
-	}
-
-	if (inpause)
-	{ /* If we are in pause, we fill buffer with the correct type of zeroes */
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		plrClearBuf((uint16_t *)plrbuf+(bufpos << 1 /*stereo*/), (bufdelta-pass2) << 1 /* stereo */, 1 /* signedout */);
-		if (pass2)
-			plrClearBuf((uint16_t *)plrbuf, pass2 << 1 /* stereo */, 1 /* signedout */);
-		bufpos+=bufdelta;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
+		plrAPI->Pause (1);
 	} else {
-		int buf16_filled = 0;
-		uint32_t i;
+		void *targetbuf;
+		unsigned int targetlength; /* in samples */
 
-		if (gmibufrate==0x10000)
+		plrAPI->Pause (0);
+
+		plrAPI->GetBuffer (&targetbuf, &targetlength);
+
+		if (targetlength)
 		{
-			while (buf16_filled<bufdelta) /* due to buffer-wrap */
+			int16_t *t = targetbuf;
+			unsigned int accumulated_target = 0;
+			unsigned int accumulated_source = 0;
+			int pos1, length1, pos2, length2;
+
+			timidityIdler();
+
+			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
+			ringbuffer_get_tail_samples (gmibufpos, &pos1, &length1, &pos2, &length2);
+
+			if (gmibufrate==0x10000)
 			{
-				int w=(bufdelta-buf16_filled);
-				if ((gmibuflen-gmibuftail) < w) /* crop at buffer-wrap if needed */
+				if (targetlength>(length1+length2))
 				{
-					w=gmibuflen-gmibuftail;
+					targetlength=(length1+length2);
+					gmi_looped |= 2;
+				} else {
+					gmi_looped &= ~2;
 				}
-				for (i=0; i < w; i++)
+
+				// limit source to not overrun target buffer
+				if (length1 > targetlength)
 				{
-					int16_t rs = ((int16_t *)gmibuf)[(gmibuftail<<1) + 0];
-					int16_t ls = ((int16_t *)gmibuf)[(gmibuftail<<1) + 1];
-					PANPROC;
-					buf16[(buf16_filled<<1)+0] = rs;
-					buf16[(buf16_filled<<1)+1] = ls;
-					gmibuftail++;
-					buf16_filled++;
-				}
-				if (gmibuftail >= gmibuflen)
+					length1 = targetlength;
+					length2 = 0;
+				} else if ((length1 + length2) > targetlength)
 				{
-					gmibuftail = 0;
+					length2 = targetlength - length1;
 				}
-				timidity_play_EventDelayed_gmibuf (w);
-				gmibuffill-=w;
-				gmibuffree+=w;
-			}
-		} else {
-			int32_t aym1;
-			uint32_t ay1, ay2;
 
-			int32_t rc0, rc1, rc2, rc3, rvm1, rv1, rv2;
-			int32_t lc0, lc1, lc2, lc3, lvm1, lv1, lv2;
+				accumulated_source = accumulated_target = length1 + length2;
 
-			int16_t ls, rs;
-			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
-			{
-				aym1=gmibuftail-4; if (aym1<0) aym1+=gmibuflen;
-				ay1=gmibuftail+4; if (ay1>=gmibuflen) ay1-=gmibuflen;
-				ay2=gmibuftail+8; if (ay2>=gmibuflen) ay2-=gmibuflen;
+				while (length1)
+				{
+					while (length1)
+					{
+						int16_t rs, ls;
 
+						rs = gmibuf[(pos1<<1) + 0];
+						ls = gmibuf[(pos1<<1) + 1];
 
-				rc0 = *(uint16_t *)(gmibuf+(gmibuftail<<2))^0x8000;
-				rvm1= *(uint16_t *)(gmibuf+(aym1<<2))^0x8000;
-				rv1 = *(uint16_t *)(gmibuf+(ay1<<2))^0x8000;
-				rv2 = *(uint16_t *)(gmibuf+(ay2<<2))^0x8000;
-				rc1 = rv1-rvm1;
-				rc2 = 2*rvm1-2*rc0+rv1-rv2;
-				rc3 = rc0-rvm1-rv1+rv2;
-				rc3 =  imulshr16(rc3,gmibuffpos);
-				rc3 += rc2;
-				rc3 =  imulshr16(rc3,gmibuffpos);
-				rc3 += rc1;
-				rc3 =  imulshr16(rc3,gmibuffpos);
-				rc3 += rc0;
-				if (rc3<0)
-					rc3=0;
-				if (rc3>65535)
-					rc3=65535;
+						PANPROC;
 
-				lc0 = *(uint16_t *)(gmibuf+(gmibuftail<<2)+2)^0x8000;
-				lvm1= *(uint16_t *)(gmibuf+(aym1<<2)+2)^0x8000;
-				lv1 = *(uint16_t *)(gmibuf+(ay1<<2)+2)^0x8000;
-				lv2 = *(uint16_t *)(gmibuf+(ay2<<2)+2)^0x8000;
-				lc1 = lv1-lvm1;
-				lc2 = 2*lvm1-2*lc0+lv1-lv2;
-				lc3 = lc0-lvm1-lv1+lv2;
-				lc3 =  imulshr16(lc3,gmibuffpos);
-				lc3 += lc2;
-				lc3 =  imulshr16(lc3,gmibuffpos);
-				lc3 += lc1;
-				lc3 =  imulshr16(lc3,gmibuffpos);
-				lc3 += lc0;
-				if (lc3<0)
-					lc3=0;
-				if (lc3>65535)
-					lc3=65535;
+						*(t++) = rs;
+						*(t++) = ls;
 
-				rs = rc3 ^ 0x8000;
-				ls = lc3 ^ 0x8000;
+						pos1++;
+						length1--;
 
-				PANPROC;
+						//accumulated_target++;
+					}
+					length1 = length2;
+					length2 = 0;
+					pos1 = pos2;
+					pos2 = 0;
+				}
+				//accumulated_source = accumulated_target;
+			} else {
+				/* We are going to perform cubic interpolation of rate conversion... this bit is tricky */
+				gmi_looped &= ~2;
 
-				buf16[2*buf16_filled+0] = rs;
-				buf16[2*buf16_filled+1] = ls;
+				while (targetlength && length1)
+				{
+					while (targetlength && length1)
+					{
+						uint32_t wpm1, wp0, wp1, wp2;
+						int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
+						int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
+						unsigned int progress;
+						int16_t rs, ls;
 
-				gmibuffpos+=gmibufrate;
-				gmibuftail+=(gmibuffpos>>16);
-				if (gmibuftail>=gmibuflen)
-					gmibuftail-=gmibuflen;
-				timidity_play_EventDelayed_gmibuf (gmibuffpos>>16);
-				gmibuffill-=(gmibuffpos>>16);
-				gmibuffree+=(gmibuffpos>>16);
-				gmibuffpos&=0xFFFF;
-			}
-		}
+						/* will the interpolation overflow? */
+						if ((length1+length2) <= 3)
+						{
+							gmi_looped |= 2;
+							break;
+						}
+						/* will we overflow the wavebuf if we advance? */
+						if ((length1+length2) < ((gmibufrate+gmibuffpos)>>16))
+						{
+							gmi_looped |= 2;
+							break;
+						}
 
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		bufdelta-=pass2;
-		{
-			int16_t *p=(int16_t *)plrbuf+2*bufpos;
-			int16_t *b=(int16_t *)buf16;
+						switch (length1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
+						{
+							case 1:  wpm1 = pos1; wp0 = pos2;     wp1 = pos2 + 1; wp2 = pos2 + 2; break;
+							case 2:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos2;     wp2 = pos2 + 1; break;
+							case 3:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos2;     break;
+							default: wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos1 + 3; break;
+						}
+						rvm1 = (uint16_t)gmibuf[(wpm1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
+						lvm1 = (uint16_t)gmibuf[(wpm1<<1)+1]^0x8000;
+						 rc0 = (uint16_t)gmibuf[(wp0 <<1)+0]^0x8000;
+						 lc0 = (uint16_t)gmibuf[(wp0 <<1)+1]^0x8000;
+						 rv1 = (uint16_t)gmibuf[(wp1 <<1)+0]^0x8000;
+						 lv1 = (uint16_t)gmibuf[(wp1 <<1)+1]^0x8000;
+						 rv2 = (uint16_t)gmibuf[(wp2 <<1)+0]^0x8000;
+						 lv2 = (uint16_t)gmibuf[(wp2 <<1)+1]^0x8000;
 
-			for (i=0; i<bufdelta; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-			p=(int16_t *)plrbuf;
-			for (i=0; i<pass2; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-		}
-		bufpos+=bufdelta+pass2;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
+						rc1 = rv1-rvm1;
+						rc2 = 2*rvm1-2*rc0+rv1-rv2;
+						rc3 = rc0-rvm1-rv1+rv2;
+						rc3 =  imulshr16(rc3,gmibuffpos);
+						rc3 += rc2;
+						rc3 =  imulshr16(rc3,gmibuffpos);
+						rc3 += rc1;
+						rc3 =  imulshr16(rc3,gmibuffpos);
+						rc3 += rc0;
+						if (rc3<0)
+							rc3=0;
+						if (rc3>65535)
+							rc3=65535;
+
+						lc1 = lv1-lvm1;
+						lc2 = 2*lvm1-2*lc0+lv1-lv2;
+						lc3 = lc0-lvm1-lv1+lv2;
+						lc3 =  imulshr16(lc3,gmibuffpos);
+						lc3 += lc2;
+						lc3 =  imulshr16(lc3,gmibuffpos);
+						lc3 += lc1;
+						lc3 =  imulshr16(lc3,gmibuffpos);
+						lc3 += lc0;
+						if (lc3<0)
+							lc3=0;
+						if (lc3>65535)
+							lc3=65535;
+
+						rs = rc3 ^ 0x8000;
+						ls = lc3 ^ 0x8000;
+
+						PANPROC;
+
+						*(t++) = rs;
+						*(t++) = ls;
+
+						gmibuffpos+=gmibufrate;
+						progress = gmibuffpos>>16;
+						gmibuffpos &= 0xffff;
+						accumulated_source+=progress;
+						pos1+=progress;
+						length1-=progress;
+						targetlength--;
+
+						accumulated_target++;
+					} /* while (targetlength && length1) */
+					length1 = length2;
+					length2 = 0;
+					pos1 = pos2;
+					pos2 = 0;
+				} /* while (targetlength && length1) */
+			} /* if (gmibufrate==0x10000) */
+			ringbuffer_tail_consume_samples (gmibufpos, accumulated_source);
+			timidity_play_source_EventDelayed_gmibuf (accumulated_source);
+			plrAPI->CommitBuffer (accumulated_target);
+			samples_committed += accumulated_target;
+			gmibuffill-=accumulated_source;
+			gmibuffree+=accumulated_source;
+		} /* if (targetlength) */
 	}
-
-	plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
 
 	{
-		int pos = plrGetPlayPos () >> 2 /* stereo + bit16 */;
-		timidity_SetBufferPos_EventDelayed_PlrBuf (eventDelayed_PlrBuf_lastpos, pos);
-		eventDelayed_PlrBuf_lastpos = pos;
+		uint64_t delay = plrAPI->Idle();
+		uint64_t new_ui = samples_committed - delay;
+		if (new_ui > samples_lastui)
+		{
+			timidity_play_target_EventDelayed_gmibuf (new_ui - samples_lastui);
+			samples_lastui = new_ui;
+			samples_lastdelay = delay;
+		}
 	}
-
-	goto again;
-
-
-	if (plrIdle)
-		plrIdle();
 
 	clipbusy--;
 }
@@ -1766,11 +1750,8 @@ static void doTimidityClosePlayer(int CloseDriver)
 
 	if (CloseDriver)
 	{
-		plrClosePlayer();
+		plrAPI->Stop();
 	}
-
-	free(buf16);
-	buf16 = 0;
 
 	free(gmibuf);
 	gmibuf = 0;
@@ -1801,6 +1782,12 @@ static void doTimidityClosePlayer(int CloseDriver)
 	}
 	EventDelayed_gmibuf_tail = 0;
 
+	if (gmibufpos)
+	{
+		ringbuffer_free (gmibufpos);
+		gmibufpos = 0;
+	}
+
 	free_all_midi_file_info ();
 
 	if (_SET)
@@ -1818,17 +1805,30 @@ static void doTimidityClosePlayer(int CloseDriver)
 
 int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen, struct ocpfilehandle_t *file)
 {
-	if (!plrPlay)
+	uint32_t gmibuflen;
+	enum plrRequestFormat format;
+
+	if (!plrAPI)
+	{
 		return errGen;
+	}
 
 	loading = 1;
 
-	plrSetOptions(44100, PLR_STEREO_16BIT_SIGNED);
+	samples_committed = 0;
+	samples_lastui = 0;
+	samples_lastdelay = 0;
 
-	ocp_playmode.rate = plrRate;
+	gmiRate=0;
+	format=PLR_STEREO_16BIT_SIGNED;
+	if (!plrAPI->Play (&gmiRate, &format, file))
+	{
+		return errGen;
+	}
+	ocp_playmode.rate = gmiRate;
 
 	emulate_main_start();
-	inpause=0;
+	gmi_inpause=0;
 	voll=256;
 	volr=256;
 	pan=64;
@@ -1836,31 +1836,20 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	speed=0x100;
 	loading = 0;
 
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, file))
-	{
-		return errGen;
-	}
-	PRINT ("(plr)buflen=%d\n", buflen);
-
-	buf16=malloc(sizeof(uint16_t)*buflen*2);
-	if (!buf16)
-	{
-		return errAllocMem;
-	}
-	bufpos=0;
-
 	gmibuffree=1;
-	while ((gmibuffree < (plrRate/8+1)) && (gmibuffree < (audio_buffer_size*3)))
+	while ((gmibuffree < (gmiRate/8+1)) && (gmibuffree < (audio_buffer_size*3)))
 	{
 		gmibuffree<<=1;
 	}
-	gmibuflen=gmibuffree + ((plrRate*4/audio_buffer_size)+1)*audio_buffer_size; /* timidity force-flushes multiple seconds at the EOF */
-	gmibuftail=0;
-	gmibufhead=0;
+	gmibuflen=gmibuffree + ((gmiRate*4/audio_buffer_size)+1)*audio_buffer_size; /* timidity force-flushes multiple seconds at the EOF */
 	gmibuffill=0;
 	gmibuf=malloc(gmibuflen << 2 /* stereo + 16bit */);
-
 	if (!gmibuf)
+	{
+		return errAllocMem;
+	}
+	gmibufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, gmibuflen);
+	if (!gmibufpos)
 	{
 		return errAllocMem;
 	}
@@ -1873,8 +1862,6 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	{
 		return errGen;
 	}
-
-	eventDelayed_PlrBuf_lastpos = plrGetPlayPos() >> 2 /* stereo + bit16 */;
 
 	current_path = strdup (path);
 	emulate_play_midi_file_start(current_path, buffer, bufferlen, &timidity_main_session); /* gmibuflen etc must be set, since we will start to get events already here... */

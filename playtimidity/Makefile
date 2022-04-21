@@ -198,7 +198,7 @@ timidityplay.o: timidityplay.c timidity-git/timidity/playmidi.c\
 	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
-	../dev/plrasm.h \
+	../dev/ringbuffer.h \
 	../filesel/mdb.h \
 	../stuff/err.h \
 	../stuff/imsrtns.h \
@@ -220,7 +220,6 @@ timiditypplay.o: timiditypplay.c \
 	../stuff/err.h \
 	../stuff/poutput.h \
 	../stuff/sets.h \
-	../stuff/timer.h \
 	cpitimiditysetup.h \
 	timidityplay.h
 	$(CC) $< -o $@ -c
