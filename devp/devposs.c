@@ -28,6 +28,7 @@
  */
 
 #include "config.h"
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,41 +42,38 @@
 #include <sys/soundcard.h>
 #endif
 #include "types.h"
-
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "cpiface/vol.h"
+#include "dev/devigen.h"
 #include "dev/imsdev.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
-#include "dev/devigen.h"
+#include "dev/ringbuffer.h"
 #include "stuff/imsrtns.h"
-
-/* TODO, AFMT_S16_NE, 32bit AFMT_S32_BE would be porn !! */
 
 #define REVSTEREO 1
 
-extern struct sounddevice plrOSS;
+#ifdef OSS_DEBUG
+#define debug_printf(...) fprintf (stderr, __VA_ARGS__)
+#else
+#define debug_printf(format, args...) ((void)0)
+#endif
+
+static void *devpOSSBuffer;
+static char *devpOSSShadowBuffer;
+static struct ringbuffer_t *devpOSSRingBuffer;
+static int devpOSSPauseSamples;
+static int devpOSSInPause;
+static uint32_t devpOSSRate;
+static const struct plrAPI_t devpOSS;
+
+struct sounddevice plrOSS;
 
 static struct deviceinfo currentcard;
 
 static int fd_dsp=-1;
 static int fd_mixer=-1;
-static char *playbuf;
-static char *shadowbuf;
-static int buflen;
-
-static volatile int kernpos, cachepos, bufpos;
-static volatile int cachelen, kernlen; /* to make life easier */
-
-/*  playbuf     kernpos  cachepos   bufpos      buflen
- *    |           | kernlen | cachelen |          |
- *
- *  on flush, we update all variables> *  on getbufpos we return kernpos-(1 sample) as safe point to buffer up to
- *  on getplaypos we use last known kernpos if locked, else update kernpos
- */
-
-static volatile uint32_t playpos; /* how many samples have we done totally */
 static int stereo;
 static int bit16;
 
@@ -84,11 +82,12 @@ static volatile int busy=0;
 static int mixer_devmask=0;
 static struct ocpvolstruct mixer_entries[SOUND_MIXER_NRDEVICES];
 
-static void SetOptions(uint32_t rate, int opt);
-
-static void flush(void)
+static unsigned int devpOSSIdle(void)
 {
-	int result, n, odelay;
+	int pos1, length1, pos2, length2;
+	int result, odelay, tmp;
+	int kernlen;
+	unsigned int RetVal;
 
 	struct audio_buf_info info;
 
@@ -98,345 +97,230 @@ static void flush(void)
 		write(2, "devposs: flush(), BUSY set\n", 28);
 #endif
 		busy--;
-		return;
+		return 0;
 	}
 
+	debug_printf ("devpOSSIdle PRE: tail:%d processing:%d head:%d\n", ringbuffer_get_tail_available_samples (devpOSSRingBuffer), ringbuffer_get_processing_available_samples(devpOSSRingBuffer), ringbuffer_get_head_available_samples(devpOSSRingBuffer));
+
+/* Update the ringbuffer-tail START */
 #ifdef SNDCTL_DSP_GETODELAY
 	/* update kernlen stuff before we check if cachelen is set furter down */
 	if (ioctl(fd_dsp, SNDCTL_DSP_GETODELAY, &odelay))
 	{
-#ifdef OSS_DEBUG
-		perror("devposs: flush() ioctl(OSS, SNDCTL_DSP_GETODELAY, &count)");
-#endif
+		debug_printf ("devposs: flush() ioctl(OSS, SNDCTL_DSP_GETODELAY, &count): %s\n", strerror (errno));
 		busy--;
-		return;
+		return 0;
 	}
-#ifdef OSS_DEBUG
+	if (odelay<0)
 	{
-		if (odelay<0)
-		{
-			write(2, "devposs: buggy nvidia driver?\n", 30);
-		}
+		debug_printf ("devposs: buggy nvidia driver?\n");
+	} else {
+		debug_printf ("devposs: ODELAY=%d\n", odelay);
 	}
-#endif
 #else
 	{
 		struct count_info i;
 		if (ioctl(fd_dsp, SNDCTL_DSP_GETOPTR, &i))
 		{
-#ifdef OSS_DEBUG
-			perror("devposs: flush() ioctl(OSS, SNDCTL_DSP_GETOPTR, &i)");
-#endif
+			debug_printf ("devposs: flush() ioctl(OSS, SNDCTL_DSP_GETOPTR, &i): %s\n", strerror (errno));
 			busy--;
-			return;
+			return 0;
 		}
 		odelay=i.bytes;
+		debug_printf ("devposs: SNDCTL_DSP_GETOPTR=%d\n", i.bytes);
 	}
 #endif
-	odelay=abs(odelay); /* This is because of nvidia sound-drivers */
-	odelay<<=2/*bit16+stereo*/;
+	odelay=abs(odelay); /* This is because of old nvidia sound-drivers and probably others too */
+	odelay >>= (!!bit16) + (!!stereo);
+
+	kernlen = ringbuffer_get_tail_available_samples (devpOSSRingBuffer);
 	if (odelay>kernlen)
 	{
-#ifdef OSS_DEBUG
-		write(2, "devposs: flush() kernelbug found!\n", 34);
-#endif
+		debug_printf ("devposs: flush() kernelbug found!\n");
 		odelay=kernlen;
 	} else if ((odelay<kernlen))
 	{
-		kernlen=odelay;
-		kernpos=(cachepos-kernlen+buflen)%buflen;
+		ringbuffer_tail_consume_samples (devpOSSRingBuffer, kernlen - odelay);
+		if (devpOSSPauseSamples)
+		{
+			if ((kernlen - odelay) > devpOSSPauseSamples)
+			{
+				devpOSSPauseSamples = 0;
+			} else {
+				devpOSSPauseSamples -= (kernlen - odelay);
+			}
+		}
 	}
+/* Update the ringbuffer-tail DONE */
 
-	if (!cachelen)
+/* do we need to insert pause-samples? START */
+	if (devpOSSInPause)
 	{
-		busy--;
-		return;
+		ringbuffer_get_head_bytes (devpOSSRingBuffer, &pos1, &length1, &pos2, &length2);
+		bzero ((char *)devpOSSBuffer+pos1, length1);
+		if (length2)
+		{
+			bzero ((char *)devpOSSBuffer+pos2, length2);
+		}
+		ringbuffer_head_add_bytes (devpOSSRingBuffer, length1 + length2);
+		devpOSSPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
 	}
+/* do we need to insert pause-samples? DONE */
 
+/* Move data from ringbuffer-head into processing/kernel START */
 	if (ioctl(fd_dsp, SNDCTL_DSP_GETOSPACE, &info))
 	{
-#ifdef OSS_DEBUG
-		perror("devposs: flush() ioctl(OSS, SNDCTL_DSP_GETOSPACE, &info)");
-#endif
+		debug_printf ("devposs: flush() ioctl(OSS, SNDCTL_DSP_GETOSPACE, &info): %s\n", strerror (errno));
 		busy--;
-		return;
+		return 0;
 	}
+	debug_printf("devposs: GETOSPACE.bytes=%d\n", info.bytes);
 	if (!info.bytes)
 	{
 		busy--;
-		return;
-	}
-
-	if (bufpos<=cachepos)
-		n=buflen-cachepos;
-	else
-		n=bufpos-cachepos;
-
-	/* first.. don't overrun kernel buffer, since that can block */
-	if (n>(info.bytes<<2/*bit16+stereo*/))
-		n=info.bytes<<2/*bit16+stereo*/;
-
-	if (n<=0)
-	{
-		busy--;
-		return;
-	}
-	if (shadowbuf)
-	{
-		result=write(fd_dsp, shadowbuf+(cachepos>>((!stereo)+(!bit16))), n>>((!stereo)+(!bit16)));
-	} else {
-		result=write(fd_dsp, playbuf+cachepos, n);
-	}
-	if (result<0)
-	{
-#ifdef OSS_DEBUG
-		perror("devposs: flush() write");
-#endif
-		busy--;
-		return;
-	}
-	cachepos=(cachepos+result+buflen)%buflen;
-	result<<=((!bit16)+(!stereo));
-	playpos+=result;
-	cachelen-=result;
-	kernlen+=result;
-
-	busy--;
-}
-
-static int getplaypos(void)
-{
-	int retval;
-
-	if (busy++)
-	{
-#ifdef OSS_LOCK_DEBUG
-		write(2, "devposs: getplaypos() BUSY set\n", 31);
-#endif
-	} else {
-		int tmp;
-#ifdef SNDCTL_DSP_GETODELAY
-		if (ioctl(fd_dsp, SNDCTL_DSP_GETODELAY, &tmp))
-		{
-#ifdef OSS_DEBUG
-			perror("devposs: ioctl(OSS, SNDCTL_DSP_GETODELAY, &count)");
-#endif
-			busy--;
-			return kernpos;
-		}
-#ifdef OSS_DEBUG
-		{
-			if (tmp<0)
-			{
-				write(2, "devposs: buggy nvidia driver?\n", 30);
-			}
-		}
-#else
-		{
-			struct count_info i;
-			if (ioctl(fd_dsp, SNDCTL_DSP_GETOPTR, &i))
-			{
-#ifdef OSS_DEBUG
-				perror("devposs: flush() ioctl(OSS, SNDCTL_DSP_GETOPTR, &i)");
-#endif
-				busy--;
-				return kernpos;
-			}
-			tmp=i.bytes;
-		}
-#endif
-
-#endif
-		tmp=abs(tmp); /* we love nvidia, don't we */
-		if (tmp>kernlen)
-		{
-#ifdef OSS_DEBUG
-			write(2, "devposs: getplaypos() kernelbug found\n", 38);
-#endif
-		} else {
-			kernlen=tmp;
-		}
-		kernpos=(cachepos-kernlen+buflen)%buflen;
-	}
-	retval=kernpos;
-	if (retval<0)
-	{
-#ifdef OSS_DEBUG
-		write(2, "devposs: assert #1 failed\n", 26);
-		retval=0;
-#endif
-	}
-	busy--;
-	return retval;
-}
-
-static int getbufpos(void)
-{
-	int retval;
-
-	if (busy++)
-	{
-#ifdef OSS_LOCK_DEBUG
-		write(2, "devposs: getbufpos() BUSY set\n", 30);
-#endif
-	}
-
-	if (kernpos==bufpos)
-	{
-		if (cachelen|kernlen)
-		{
-#ifdef OSS_DEBUG
-			write(2, "devposs: getbufpos() unreachable code\n", 38);
-#endif
-			retval=kernpos;
-			busy--;
-			return retval;
-		}
-	}
-/*
-	if ((!cachelen)&&(!kernlen))
-		retval=(kernpos+buflen-(0<<(bit16+stereo)))%buflen;
-	else*/
-		retval=(kernpos+buflen-(1<<2/*bit16+stereo*/))%buflen;
-	busy--;
-	return retval;
-}
-
-static void advance(unsigned int pos)
-{
-	if (busy++)
-	{
-#ifdef OSS_LOCK_DEBUG
-		write(2, "devposs: advance() BUSY set\n", 28);
-#endif
-	}
-	if (shadowbuf)
-	{
-		plrConvertBuffer ((int16_t *)playbuf, shadowbuf, buflen, bufpos, pos, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, (currentcard.opt&REVSTEREO));
-	}
-
-	cachelen+=(pos-bufpos+buflen)%buflen;
-	bufpos=pos;
-
-#ifdef OSS_DEBUG
-	if ((cachelen+kernlen)>buflen)
-		write(2, "devposs: assert #2 failed\n", 26);
-#endif
-
-	busy--;
-}
-
-static uint32_t gettimer(void)
-{
-	long tmp=playpos;
-	int odelay;
-
-	if (busy++)
-	{
-#ifdef OSS_LOCK_DEBUG
-		write(2, "devposs: gettimer(): BUSY set\n", 30);
-#endif
-		odelay=kernlen;
-	} else {
-#ifdef SNDCTL_DSP_GETODELAY
-		if (ioctl(fd_dsp, SNDCTL_DSP_GETODELAY, &odelay))
-		{
-#ifdef OSS_DEBUG
-			perror("ioctl(OSS, SNDCTL_DSP_GETODELAY, &count)");
-#endif
-			odelay=kernlen;
-		}
-#ifdef OSS_DEBUG
-		{
-			if (odelay<0)
-			{
-				write(2, "devposs: buggy nvidia driver?\n", 30);
-			}
-		}
-#endif
-#else
-		{
-			struct count_info i;
-			if (ioctl(fd_dsp, SNDCTL_DSP_GETOPTR, &i))
-		{
-#ifdef OSS_DEBUG
-				perror("devposs: flush() ioctl(OSS, SNDCTL_DSP_GETOPTR, &i)");
-#endif
-				odelay=kernlen;
-			} else
-				odelay=i.bytes;
-		}
-#endif
-
-		odelay=abs(odelay);
-		if (odelay>kernlen)
-		{
-#ifdef OSS_DEBUG
-			write(2, "devposs: gettimer() kernelbug found\n", 36);
-#endif
-			odelay=kernlen;
-		} else {
-			kernlen=odelay;
-			kernpos=(cachepos-kernlen+buflen)%buflen;
-		}
-	}
-
-	tmp-=odelay;
-	busy--;
-	return imuldiv(tmp, 65536>>(stereo+bit16), plrRate);
-}
-
-static void ossStop(void)
-{
-	if (fd_dsp<0)
-		return;
-	free(playbuf); playbuf=0;
-	free(shadowbuf); shadowbuf=0;
-	plrIdle=0;
-	close(fd_dsp);
-	fd_dsp=-1;
-}
-
-static int ossPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file)
-{
-#ifdef OSS_DEBUG
-	int tmp;
-#endif
-	if ((*len)<(plrRate&~3))
-		*len=plrRate&~3;
-	if ((*len)>(plrRate*4))
-		*len=plrRate*4;
-	buflen=*len;
-	playbuf=*buf=malloc(*len);
-	if (!playbuf)
-	{
-		fprintf (stderr, "ossPlay(): malloc() failed #1\n");
 		return 0;
 	}
-	if ((!bit16) || (!stereo) || (currentcard.opt&REVSTEREO))
-	{ /* we need to convert the signal format... */
-		shadowbuf = malloc ( buflen >> ((!bit16) + (!stereo)));
-		if (!shadowbuf)
-		{
-			fprintf (stderr, "ossPlay(): malloc() failed #2\n");
-			free (playbuf);
-			playbuf=0; *buf=0;
-			return 0;
-		}
+	tmp = info.bytes >> ((!bit16) + (!stereo));
+
+	ringbuffer_get_processing_samples (devpOSSRingBuffer, &pos1, &length1, &pos2, &length2);
+	if (tmp < length1)
+	{
+		length1 = tmp;
+		length2 = 0;
+	} else if (tmp < (length1 + length2))
+	{
+		length2 = tmp - length1;
 	}
 
-	bufpos=0;
-	cachepos=0;
-	cachelen=0;
-	playpos=0;
-	kernpos=0;
-	kernlen=0;
+	while (length1)
+	{
+		if (devpOSSShadowBuffer)
+		{
+			plrConvertBuffer (devpOSSShadowBuffer, (int16_t *)devpOSSBuffer + (pos1<<1), length1, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
+			result=write(fd_dsp, devpOSSShadowBuffer, length1<<((!!stereo)+(!!bit16)));
+			if (result > 0)
+			{
+				result >>= (!!stereo) + (!!bit16);
+			}
+		} else {
+			result=write(fd_dsp, (uint8_t *)devpOSSBuffer + (pos1<<2), length1<<2 /* stereo + bit16 */);
+			if (result > 0)
+			{
+				result >>= 2; /* stereo + bit16 */
+			}
+		}
+		if (result > 0)
+		{
+			ringbuffer_processing_consume_samples (devpOSSRingBuffer, result);
+		}
+		if (result < 0)
+		{
+			debug_printf ("devposs: flush() write: %s\n", strerror (errno));
+			break;
+		}
+		if (result != length1)
+		{
+			break;
+		}
+		length1 = length2;
+		length2 = 0;
+		pos1 = pos2;
+		pos2 = 0;
+	}
+/* Move data from ringbuffer-head into processing/kernel STOP */
 
-	plrGetBufPos=getbufpos;
-	plrGetPlayPos=getplaypos;
-	plrIdle=flush;
-	plrAdvanceTo=advance;
-	plrGetTimer=gettimer;
+	debug_printf ("devpOSSIdle POST: tail:%d processing:%d head:%d\n", ringbuffer_get_tail_available_samples (devpOSSRingBuffer), ringbuffer_get_processing_available_samples(devpOSSRingBuffer), ringbuffer_get_head_available_samples(devpOSSRingBuffer));
+
+	ringbuffer_get_tailandprocessing_samples (devpOSSRingBuffer, &pos1, &length1, &pos2, &length2);
+
+	busy--;
+
+	RetVal = length1 + length2;
+	if (devpOSSPauseSamples >= RetVal)
+	{
+		return 0;
+	}
+	return RetVal - devpOSSPauseSamples;
+
+}
+
+static void devpOSSPeekBuffer (void **buf1, unsigned int *buf1length, void **buf2, unsigned int *buf2length)
+{
+	int pos1, length1, pos2, length2;
+
+	ringbuffer_get_tailandprocessing_samples (devpOSSRingBuffer, &pos1, &length1, &pos2, &length2);
+
+	if (length1)
+	{
+		*buf1 = (uint8_t *)devpOSSBuffer + (pos1 << 2); /* stereo + 16bit */
+		*buf1length = length1;
+		if (length2)
+		{
+			*buf2 = (uint8_t *)devpOSSBuffer + (pos2 << 2); /* stereo + 16bit */
+			*buf2length = length2;
+		} else {
+			*buf2 = 0;
+			*buf2length = 0;
+		}
+	} else {
+		*buf1 = 0;
+		*buf1length = 0;
+		*buf2 = 0;
+		*buf2length = 0;
+	}
+}
+
+static void devpOSSGetBuffer (void **buf, unsigned int *samples)
+{
+	int pos1, length1;
+	assert (devpOSSRingBuffer);
+
+	debug_printf("%s()\n", __FUNCTION__);
+
+	ringbuffer_get_head_samples (devpOSSRingBuffer, &pos1, &length1, 0, 0);
+
+	*samples = length1;
+	*buf = (uint8_t *)devpOSSBuffer + (pos1<<2); /* stereo + bit16 */
+}
+
+static uint32_t devpOSSGetRate (void)
+{
+	return devpOSSRate;
+}
+
+static void devpOSSOnBufferCallback (int samplesuntil, void (*callback)(void *arg, int samples_ago), void *arg)
+{
+	assert (devpOSSRingBuffer);
+	ringbuffer_add_tail_callback_samples (devpOSSRingBuffer, samplesuntil, callback, arg);
+}
+
+static void devpOSSCommitBuffer (unsigned int samples)
+{
+	debug_printf ("%s(%u)\n", __FUNCTION__, samples);
+
+	debug_printf ("devpOSSCommitBuffer PRE: tail:%d processing:%d head:%d\n", ringbuffer_get_tail_available_samples (devpOSSRingBuffer), ringbuffer_get_processing_available_samples(devpOSSRingBuffer), ringbuffer_get_head_available_samples(devpOSSRingBuffer));
+
+	ringbuffer_head_add_samples (devpOSSRingBuffer, samples);
+
+	debug_printf ("devpOSSCommitBuffer POST: tail:%d processing:%d head:%d\n", ringbuffer_get_tail_available_samples (devpOSSRingBuffer), ringbuffer_get_processing_available_samples(devpOSSRingBuffer), ringbuffer_get_head_available_samples(devpOSSRingBuffer));
+}
+
+static void devpOSSPause (int pause)
+{
+	assert (devpOSSBuffer);
+	devpOSSInPause = pause;
+}
+
+static int devpOSSPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file)
+{
+	int plrbufsize, buflength;
+	struct audio_buf_info info;
+	int tmp;
+
+	devpOSSInPause = 0;
+	devpOSSPauseSamples = 0;
+
+	*format = PLR_STEREO_16BIT_SIGNED;
 
 	if ((fd_dsp=open(currentcard.path, O_WRONLY|O_NONBLOCK))<0)
 	{
@@ -466,61 +350,130 @@ static int ossPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source
 	fprintf(stderr, "devposs: compiled agains OSS version %d.%d.%d\n", (SOUND_VERSION&0xff0000)>>16, (SOUND_VERSION&0xff00)>>8, SOUND_VERSION&0xff);
  #endif
 #endif
-	SetOptions(plrRate, plrOpt);
+
+	if (ioctl(fd_dsp, SNDCTL_DSP_GETFMTS, &tmp)<0)
+	{
+		perror("devposs: ioctl(fd_dsp, SNDCTL_DSP_GETFMTS, &tmp)");
+		close (fd_dsp);
+		fd_dsp=-1;
+		return 0;
+	}
+	if (tmp & AFMT_S16_NE)
+	{
+		tmp = AFMT_S16_NE;
+		if (ioctl(fd_dsp, SNDCTL_DSP_SETFMT, &tmp)>=0)
+		{
+			bit16 = 1;
+		} else {
+			tmp = AFMT_U8;
+			if (ioctl(fd_dsp, SNDCTL_DSP_SETFMT, &tmp)>=0)
+			{
+				bit16 = 0;
+			} else {
+				perror("devposs: ioctl(fd_dsp, SNDCTL_DSP_SETFMT, {AFMT_S16_NE, AFMT_U8})");
+				close (fd_dsp);
+				fd_dsp=-1;
+				return 0;
+			}
+		}
+	}
+
+	tmp=2;
+	if (ioctl(fd_dsp, SNDCTL_DSP_CHANNELS, &tmp)<0)
+	{
+		perror("devposs: ioctl(fd_dsp, SNDCTL_DSP_CHANNELS, tmp)");
+	}
+	stereo=(tmp==2);
+
+	tmp = *rate;
+	if (!tmp)
+	{
+		tmp = 44100;
+	}
+	if (ioctl(fd_dsp, SNDCTL_DSP_SPEED, &tmp)<0)
+	{
+		perror("devposs: ioctl(fd_dsp, SNDCTL_DSP_SPEED, rate)");
+	}
+	*rate = tmp;
+	devpOSSRate = *rate;
+
+	plrbufsize = cfGetProfileInt2(cfSoundSec, "sound", "plrbufsize", 200, 10);
+	/* clamp the plrbufsize to be atleast 150ms and below 1000 ms */
+	if (plrbufsize < 150)
+	{
+		plrbufsize = 150;
+	}
+	if (plrbufsize > 1000)
+	{
+		plrbufsize = 1000;
+	}
+	buflength = *rate * plrbufsize / 1000;
+
+	/* our buffer should be bigger than the kernel-size one ( + 50ms) */
+	if (!ioctl(fd_dsp, SNDCTL_DSP_GETOSPACE, &info))
+	{
+		if (buflength < ((info.bytes >> ((!!bit16) + (!!stereo))) + (*rate) * 50 / 1000))
+		{
+			buflength = ((info.bytes >> ((!!bit16) + (!!stereo))) + (*rate) * 50 / 1000);
+		}
+	}
+
+	if (!(devpOSSBuffer=calloc (buflength, 4)))
+	{
+		fprintf (stderr, "alsaPlay(): calloc() failed\n");
+		close (fd_dsp);
+		fd_dsp=-1;
+		return 0;
+	}
+
+	if ((!bit16) || (!stereo) || (currentcard.opt&REVSTEREO))
+	{ /* we need to convert the signal format... */
+		devpOSSShadowBuffer = malloc ( buflength << ((!!bit16) + (!!stereo)));
+		if (!devpOSSShadowBuffer)
+		{
+			fprintf (stderr, "ossPlay(): malloc() failed #2\n");
+			free (devpOSSBuffer);
+			devpOSSBuffer = 0;
+			close (fd_dsp);
+			fd_dsp=-1;
+			return 0;
+		}
+	}
+
+	if (!(devpOSSRingBuffer = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, buflength)))
+	{
+		free (devpOSSBuffer);
+		devpOSSBuffer = 0;
+		free (devpOSSShadowBuffer);
+		devpOSSShadowBuffer=0;
+		close (fd_dsp);
+		fd_dsp=-1;
+		return 0;
+	}
 
 	return 1;
 }
 
-static void SetOptions(uint32_t rate, int opt)
+static void devpOSSStop(void)
 {
-	int tmp;
-
-	int fd;
-
 	if (fd_dsp<0)
 	{
-		if ((fd=open(currentcard.path, O_WRONLY|O_NONBLOCK))<0) /* no need to FD_SET this, since it will be closed very soon */
-		{
-			fprintf(stderr, "devposs: open(%s, O_WRONLY|O_NONBLOCK): %s\n", currentcard.path, strerror(errno));
-#ifdef OSS_DEBUG
-			sleep(3);
-#endif
-			plrRate=rate;
-			bit16=1;
-			stereo=1;
-			plrOpt=PLR_STEREO_16BIT_SIGNED; /* have to do... but it stinks */
-			return;
-		}
-	} else {
-		fd=fd_dsp;
+		return;
 	}
+	free (devpOSSBuffer);
+	devpOSSBuffer = 0;
+	free (devpOSSShadowBuffer);
+	devpOSSShadowBuffer=0;
 
-	tmp=16;
-	if (ioctl(fd, SOUND_PCM_WRITE_BITS, &tmp)<0)
+	if (devpOSSRingBuffer)
 	{
-		perror("devposs: ioctl(fd_dsp, SOUND_PCM_WRITE_BITS, &tmp)");
+		ringbuffer_reset (devpOSSRingBuffer);
+		ringbuffer_free (devpOSSRingBuffer);
+		devpOSSRingBuffer = 0;
 	}
 
-	bit16=(tmp==16);
-	/* bit16 is signed,  bit8 would be unsigned */
-
-	tmp=2;
-	if (ioctl(fd, SOUND_PCM_WRITE_CHANNELS, &tmp)<0)
-	{
-		perror("devposs: ioctl(fd_dsp, SOUND_PCM_WRITE_CHANNELS, tmp)");
-	}
-
-	stereo=(tmp==2);
-
-	if (ioctl(fd, SOUND_PCM_WRITE_RATE, &rate)<0)
-	{
-		perror("devposs: ioctl(fd_dsp, SOUND_PCM_WRITE_RATE, rate)");
-	}
-
-	plrRate=rate;
-	plrOpt=PLR_STEREO_16BIT_SIGNED;
-	if (fd_dsp<0) /* ugly hack */
-		close(fd);
+	close (fd_dsp);
+	fd_dsp=-1;
 }
 
 static int ossDetect(struct deviceinfo *card)
@@ -540,23 +493,17 @@ static int ossDetect(struct deviceinfo *card)
 		card->chan=2;
 	if ((temp=getenv("DSP")))
 	{
-#ifdef OSS_DEBUG
-		fprintf(stderr, "devposs: $DSP found\n");
-#endif
+		debug_printf("devposs: $DSP found\n");
 		strncpy(card->path, temp, DEVICE_NAME_MAX);
 		card->path[DEVICE_NAME_MAX-1]=0;
 	} else if (!card->path[0])
 	{
-#ifdef OSS_DEBUG
-		fprintf(stderr, "devposs: path not set, using /dev/dsp\n");
-#endif
+		debug_printf("devposs: path not set, using /dev/dsp\n");
 		strcpy(card->path, "/dev/dsp");
 	}
 	if ((temp=getenv("MIXER")))
 	{
-#ifdef OSS_DEBUG
-		fprintf(stderr, "devposs: $MIXER found\n");
-#endif
+		debug_printf("devposs: $MIXER found\n");
 		strncpy(card->mixer, temp, DEVICE_NAME_MAX);
 		card->mixer[DEVICE_NAME_MAX-1]=0;
 	}
@@ -564,9 +511,7 @@ static int ossDetect(struct deviceinfo *card)
 /* this test will fail with liboss */
 	if (stat(card->path, &st))
 	{
-#ifdef OSS_DEBUG
-		fprintf(stderr, "devposs: stat(%s, &st): %s\n", card->path, strerror(errno));
-#endif
+		debug_printf ("devposs: stat(%s, &st): %s\n", card->path, strerror(errno));
 		return 0;
 	}
 #endif
@@ -576,29 +521,21 @@ static int ossDetect(struct deviceinfo *card)
 	{
 		if ((errno==EAGAIN)||(errno==EINTR))
 		{
-#ifdef OSS_DEBUG
-			fprintf(stderr, "devposs: OSS detected (EAGAIN/EINTR)\n");
-#endif
+			debug_printf ("devposs: OSS detected (EAGAIN/EINTR)\n");
 			return 1;
 		}
-#ifdef OSS_DEBUG
-		fprintf(stderr, "devposs: open(%s, O_WRONLY|O_NONBLOCK): %s\n", card->path, strerror(errno));
-#endif
+		debug_printf ("devposs: open(%s, O_WRONLY|O_NONBLOCK): %s\n", card->path, strerror(errno));
 		return 0;
 	}
 
 #if defined(OSS_GETVERSION)
 	if (ioctl(fd_dsp, OSS_GETVERSION, &tmp)<0)
 	{
-#ifdef OSS_DEBUG
-		perror("devposs: (warning) ioctl(fd_dsp, OSS_GETVERSION, &tmp)");
-#endif
+		debug_printf ("devposs: (warning) ioctl(fd_dsp, OSS_GETVERSION, &tmp): %s\n", strerror (errno));
 	}
 #endif
 
-#ifdef OSS_DEBUG
-	fprintf(stderr, "devposs: OSS detected\n");
-#endif
+	debug_printf ("devposs: OSS detected\n");
 	close(fd_dsp);
 	fd_dsp=-1;
 
@@ -608,31 +545,31 @@ static int ossDetect(struct deviceinfo *card)
 static int ossInit(const struct deviceinfo *card)
 {
 	memcpy(&currentcard, card, sizeof(struct deviceinfo));
-	plrSetOptions=SetOptions;
-	plrPlay=ossPlay;
-	plrStop=ossStop;
+
+	mixer_devmask=0;
 
 	if (!card->mixer[0])
-		fd_mixer=-1;
-	else if ((fd_mixer=open(card->mixer, O_RDWR|O_NONBLOCK))<0)
 	{
+		fd_mixer=-1;
+	} else if ((fd_mixer=open(card->mixer, O_RDWR|O_NONBLOCK))<0)
+	{
+		debug_printf ("devposs: open(%s, O_RDWR|O_NONBLOCK): %s\n", card->mixer, strerror(errno));
 #ifdef OSS_DEBUG
-		fprintf(stderr, "devposs: open(%s, O_RDWR|O_NONBLOCK): %s\n", card->mixer, strerror(errno));
 		sleep(3);
 #endif
-	}
-	if (fd_mixer>=0)
-	{
+	} else { // if (fd_mixer>=0)
 		int i;
 		const char *labels[]=SOUND_DEVICE_LABELS; /* const data should be statically allocated, while the refs we don't care about */
 		if (fcntl(fd_mixer, F_SETFD, FD_CLOEXEC)<0)
 			perror("devposs: fcntl(fd_mixer, F_SETFD, FD_CLOEXEC)");
 		if (ioctl(fd_mixer, SOUND_MIXER_READ_DEVMASK, &mixer_devmask))
 		{
-#ifdef OSS_DEBUG
-			perror("devposs: ioctl(fd_mixer, SOUND_MIXER_READ_DEVMASK)");
-#endif
-			goto no_mixer;
+			debug_printf ("devposs: ioctl(fd_mixer, SOUND_MIXER_READ_DEVMASK): %s\n", strerror (errno));
+//no_mixer:
+			close(fd_mixer);
+			fd_mixer=-1;
+			mixer_devmask=0;
+
 		}
 		for (i=0;i<SOUND_MIXER_NRDEVICES;i++)
 		{
@@ -640,48 +577,40 @@ static int ossInit(const struct deviceinfo *card)
 			{
 				if (ioctl(fd_mixer, MIXER_READ(i), &mixer_entries[i].val))
 				{
-#ifdef OSS_DEBUG
-					perror("devposs: ioctl(fd_mixer, MIXER_READ(i), &val)");
-#endif
+					debug_printf ("devposs: ioctl(fd_mixer, MIXER_READ(i), &val): %s\n", strerror (errno));
 					mixer_entries[i].val=0;
 				} else {
 					mixer_entries[i].val=((mixer_entries[i].val&255)+(mixer_entries[i].val>>8))>>1; /* we don't vare about balance in current version */
 				}
-			} else
+			} else {
 				mixer_entries[i].val=0;
+			}
 			mixer_entries[i].min=0;
 			mixer_entries[i].max=100;
 			mixer_entries[i].step=1;
 			mixer_entries[i].log=0;
 			mixer_entries[i].name=labels[i];
 		}
-	} else {
-		mixer_devmask=0;
 	}
 
-	goto clean_exit;
+	plrAPI = &devpOSS;
 
-no_mixer:
-	close(fd_mixer);
-	fd_mixer=-1;
-	mixer_devmask=0;
-
-clean_exit:
-	SetOptions(44100, PLR_STEREO_16BIT_SIGNED);
 	return 1;
 }
 
 static void ossClose(void)
 {
-	plrPlay=0;
-	plrStop=0;
-	plrSetOptions=0;
 	if (fd_dsp>=0)
 		close(fd_dsp);
 	fd_dsp=-1;
 	if (fd_mixer>=0)
 		close(fd_mixer);
 	fd_mixer=-1;
+	if (plrAPI  == &devpOSS)
+	{
+		plrAPI = 0;
+	}
+
 }
 
 static uint32_t ossGetOpt(const char *sec)
@@ -721,14 +650,25 @@ static int volossSetVolume(struct ocpvolstruct *v, int n)
 		i+=i<<8;
 		if (ioctl(fd_mixer, MIXER_WRITE(n), &i))
 		{
-#ifdef OSS_DEBUG
-			perror("devposs: ioctl(fd_mixer, MIXER_WRITE(n), &val)");
-#endif
+			debug_printf ("devposs: ioctl(fd_mixer, MIXER_WRITE(n), &val): %s\n", strerror (errno));
 		}
 		return 1;
 	}
 	return 0;
 }
+
+static const struct plrAPI_t devpOSS = {
+	devpOSSIdle,
+	devpOSSPeekBuffer,
+	devpOSSPlay,
+	devpOSSGetBuffer,
+	devpOSSGetRate,
+	devpOSSOnBufferCallback,
+	devpOSSCommitBuffer,
+	devpOSSPause,
+	devpOSSStop
+};
+
 
 static struct devaddstruct plrOSSAdd = {ossGetOpt, 0, 0, 0};
 struct sounddevice plrOSS={SS_PLAYER, 0, "OSS player", ossDetect,  ossInit,  ossClose, &plrOSSAdd};
