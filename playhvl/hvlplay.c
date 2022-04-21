@@ -34,7 +34,6 @@
 #include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
-#include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
 #include "loader.h"
 #include "player.h"
@@ -77,6 +76,7 @@ static int hvl_samples_per_row;
 
 static int16_t *hvl_buf_stereo;
 static int16_t *hvl_buf_16chan;
+static uint32_t hvlRate;
 
 static struct ringbuffer_t *hvl_buf_pos;
 /*             tail              processing        head
@@ -85,21 +85,15 @@ static struct ringbuffer_t *hvl_buf_pos;
  *          As the tail catches up, we know data has been played, and we update our stats on the screen
  */
 
-/* devp pre-buffer zone */
-static int16_t *buf16 = 0; /* here we dump out data before it goes live */
-
-/* devp buffer zone */
-static volatile uint32_t bufpos; /* devp write head location */
-static uint32_t buflen; /* devp buffer-size in samples */
-static volatile uint32_t kernpos; /* devp read/tail location - used to track when to show buf8_states */
-static void *plrbuf; /* the devp buffer */
 static int active=0;
-static volatile int PauseSamples;
 
 static uint32_t hvlbuffpos;
 static int hvl_doloop;
 static int hvl_looped;
 static int hvl_inpause;
+
+static uint64_t samples_committed;
+static uint64_t samples_lastui;
 
 static int bal, vol;
 static unsigned long voll,volr;
@@ -354,37 +348,8 @@ void __attribute__ ((visibility ("internal"))) hvlIdler (void)
 	}
 }
 
-static void hvlUpdateKernPos (void)
-{
-	uint32_t delta, newpos;
-	newpos = plrGetPlayPos() >> 2 /* stereo + bit16 */;
-	delta = (buflen + newpos - kernpos) % buflen;
-
-	if (PauseSamples)
-	{
-		if (delta >= PauseSamples)
-		{
-			delta -= PauseSamples;
-			PauseSamples = 0;
-		} else {
-			PauseSamples -= delta;
-			delta = 0;
-		}
-	}
-
-	if (delta)
-	{
-		/* devp-buffer used completed playing DELTA amounts of samples */
-		ringbuffer_tail_consume_samples (hvl_buf_pos, delta);
-	}
-
-	kernpos = newpos;
-}
-
 void __attribute__ ((visibility ("internal"))) hvlIdle (void)
 {
-	uint32_t bufdelta;
-	uint32_t pass2;
 	static volatile int clipbusy=0;
 
 	if (clipbusy++)
@@ -393,144 +358,98 @@ void __attribute__ ((visibility ("internal"))) hvlIdle (void)
 		return;
 	}
 
-	/* "fill" up our buffers */
-	hvlIdler();
+	plrAPI->Idle();
 
-	hvlUpdateKernPos ();
-
+	if (hvl_inpause || (hvl_looped == 3))
 	{
-		uint32_t buf_read_pos; /* bufpos is last given buf_write_pos */
-
-		buf_read_pos = plrGetBufPos() >> 2 /* stereo + bit16 */;
-
-		bufdelta = ( buflen + buf_read_pos - bufpos )%buflen;
-	}
-
-	if (!bufdelta)
-	{
-		clipbusy--;
-		if (plrIdle)
-			plrIdle();
-		return;
-	}
-
-	if (hvl_inpause)
-	{
-		/* If we are in pause, we fill buffer with the correct type of zeroes */
-		/* But we also make sure that the buffer-fill is never more than 0.1s, making it reponsive */
-		uint32_t min_bufdelta;
-
-		if (buflen > plrRate/10)
-		{
-			min_bufdelta = buflen - (plrRate/10);
-		} else {
-			min_bufdelta = 0;
-		}
-
-		if (bufdelta > min_bufdelta)
-		{
-			bufdelta = bufdelta - min_bufdelta;
-
-			if ((bufpos+bufdelta)>buflen)
-				pass2=bufpos+bufdelta-buflen;
-			else
-				pass2=0;
-
-			plrClearBuf((uint16_t *)plrbuf+(bufpos << 1 /* stereo */), (bufdelta-pass2) << 1 /* stereo */, 1 /* signedout */);
-			if (pass2)
-				plrClearBuf((uint16_t *)plrbuf, pass2 << 1 /* stereo */ , 1 /* signedout */);
-			bufpos+=bufdelta;
-			if (bufpos>=buflen)
-				bufpos-=buflen;
-
-			/* Put "data" into PauseSamples, instead of hvl_buf_pos please */
-			PauseSamples += bufdelta;
-			//ringbuffer_processing_consume_samples (hvl_buf_pos, bufdelta); /* add this rate buf16_filled == tail_used */
-		}
+		plrAPI->Pause (1);
 	} else {
-		int pos1, length1, pos2, length2;
-		int i;
-		int buf16_filled = 0;
-		int16_t *t = buf16;
+		void *targetbuf;
+		unsigned int targetlength; /* in samples */
 
+		plrAPI->Pause (0);
 
-		/* how much data is available to transfer into devp.. we are using a ringbuffer, so we might receive two fragments */
-		ringbuffer_get_processing_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);
+		plrAPI->GetBuffer (&targetbuf, &targetlength);
 
-		if (bufdelta > (length1+length2))
+		if (targetlength)
 		{
-			bufdelta=(length1+length2);
-			hvl_looped |= 2;
+			int16_t *t = targetbuf;
+			unsigned int accumulated_target = 0;
+			unsigned int accumulated_source = 0;
+			int pos1, length1, pos2, length2;
 
-		} else {
-			hvl_looped &= ~2;
-		}
+			hvlIdler();
 
-		for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
-		{
-			int16_t rs, ls;
+			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
+			// warning this deviates, it uses get_processing_samples instead of tail, we need to keep a copy of the sound-buffers per channel, so makes more sense to track it here
+			ringbuffer_get_processing_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);
 
-			if (!length1)
+			/* bufrate is always correct, since we get the correct speed always from the renderer */
+
+			//if (hvlbufrate==0x10000)
 			{
-				pos1 = pos2;
-				length1 = length2;
-				pos2 = 0;
-				length2 = 0;
-			}
+				if (targetlength>(length1+length2))
+				{
+					targetlength=(length1+length2);
+					hvl_looped |= 2;
+				} else {
+					hvl_looped &= ~2;
+				}
 
-			assert (length1);
+				// limit source to not overrun target buffer
+				if (length1 > targetlength)
+				{
+					length1 = targetlength;
+					length2 = 0;
+				} else if ((length1 + length2) > targetlength)
+				{
+					length2 = targetlength - length1;
+				}
 
-			rs = hvl_buf_stereo[(pos1<<1)    ];
-			ls = hvl_buf_stereo[(pos1<<1) + 1];
+				accumulated_source = accumulated_target = length1 + length2;
 
-			PANPROC;
+				while (length1)
+				{
+					while (length1)
+					{
+						int16_t rs, ls;
 
-			*(t++) = rs;
-			*(t++) = ls;
+						rs = hvl_buf_stereo[(pos1<<1) + 0];
+						ls = hvl_buf_stereo[(pos1<<1) + 1];
 
-			pos1++;
-			length1--;
-		}
+						PANPROC;
 
-		ringbuffer_processing_consume_samples (hvl_buf_pos, buf16_filled); /* add this rate buf16_filled == tail_used */
+						*(t++) = rs;
+						*(t++) = ls;
 
-		bufdelta=buf16_filled;
+						pos1++;
+						length1--;
 
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		bufdelta-=pass2;
-
-		{
-			int16_t *p=(int16_t *)plrbuf+2*bufpos;
-			int16_t *b=buf16;
-
-			for (i=0; i<bufdelta; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-			p=(int16_t *)plrbuf;
-			for (i=0; i<pass2; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-		}
-		bufpos+=buf16_filled;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
+						//accumulated_target++;
+					}
+					length1 = length2;
+					length2 = 0;
+					pos1 = pos2;
+					pos2 = 0;
+				}
+				//accumulated_source = accumulated_target;
+			} /* } else { } //if (hvlbufrate==0x10000) */
+			// warning this deviates, it uses processing_consume_samples instead of tail...
+			ringbuffer_processing_consume_samples (hvl_buf_pos, accumulated_source);
+			plrAPI->CommitBuffer (accumulated_target);
+			samples_committed += accumulated_target;
+		} /* if (targetlength) */
 	}
 
-	plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
-
-	if (plrIdle)
-		plrIdle();
+	{
+		uint64_t delay = plrAPI->Idle();
+		uint64_t new_ui = samples_committed - delay;
+		if (new_ui > samples_lastui)
+		{
+			ringbuffer_tail_consume_samples (hvl_buf_pos, new_ui - samples_lastui);
+			samples_lastui = new_ui;
+		}
+	}
 
 	clipbusy--;
 }
@@ -552,19 +471,19 @@ void __attribute__ ((visibility ("internal"))) hvlPause (uint8_t p)
 
 static void hvlSetSpeed (uint16_t sp)
 {
-	hvl_samples_per_row = plrRate * 256 / (50 * sp);
+	hvl_samples_per_row = hvlRate * 256 / (50 * sp);
 
 	/* pause can cause slower than MAXIMUM_SLOW_DOWN, so we floor the value at that */
-	if (hvl_samples_per_row > (plrRate * MAXIMUM_SLOW_DOWN / 50))
+	if (hvl_samples_per_row > (hvlRate * MAXIMUM_SLOW_DOWN / 50))
 	{
-		hvl_samples_per_row = plrRate * MAXIMUM_SLOW_DOWN / 50;
+		hvl_samples_per_row = hvlRate * MAXIMUM_SLOW_DOWN / 50;
 	}
 }
 
 static void hvlSetPitch (uint16_t sp)
 {
-	ht->ht_Frequency = plrRate * 256 / sp;
-	ht->ht_FreqF = (double)plrRate * 256 / sp;
+	ht->ht_Frequency = hvlRate * 256 / sp;
+	ht->ht_FreqF = (double)hvlRate * 256 / sp;
 }
 
 static void hvlSetVolume (void)
@@ -639,7 +558,7 @@ void __attribute__ ((visibility ("internal")))  hvlMute (int ch, int m)
 int __attribute__ ((visibility ("internal"))) hvlGetChanSample(unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt)
 {
 	int stereo = (opt&mcpGetSampleStereo)?1:0;
-	uint32_t step = imuldiv(0x00010000, plrRate, (signed)rate);
+	uint32_t step = imuldiv(0x00010000, hvlRate, (signed)rate);
 	int16_t *src;
 	int pos1, pos2;
 	int length1, length2;
@@ -699,21 +618,29 @@ void __attribute__ ((visibility ("internal"))) hvlGetStats (int *row, int *rows,
 
 struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file)
 {
-	int BufSize;
+	enum plrRequestFormat format;
+
+	if (!plrAPI)
+		return 0;
 
 	hvl_InitReplayer ();
 
-	plrSetOptions(44100, PLR_STEREO_16BIT_SIGNED);
+	hvlRate=0;
+	format=PLR_STEREO_16BIT_SIGNED;
+	if (!plrAPI->Play (&hvlRate, &format, file))
+	{
+		return 0;
+	}
 
-	ht = hvl_LoadTune_memory (mem, memlen, 4, plrRate);
+	ht = hvl_LoadTune_memory (mem, memlen, 4, hvlRate);
 	if (!ht)
 	{
-		goto error_out;
+		goto error_out_plrAPI_Play;
 	}
 
 	if( !hvl_InitSubsong( ht, 0 ) )
 	{
-		goto error_out;
+		goto error_out_tune;
 	}
 
 	last_ht_SongNum = 0;
@@ -722,38 +649,27 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 	last_ht_Tempo = 1;
 	last_ht_SpeedMultiplier = 1;
 
-	BufSize=plrBufSize;
-	if (BufSize > 40)
-	{
-		BufSize = 40;
-	}
-	if (!plrOpenPlayer(&plrbuf, &buflen, BufSize * plrRate / 1000, file))
-	{
-		goto error_out;
-	}
-	bufpos=0;
-	kernpos=0;
 	hvlbuffpos = 0x00000000;
-	PauseSamples = 0;
 	hvl_inpause = 0;
 	active = 1;
 	hvl_doloop = 0;
+	samples_committed=0;
+	samples_lastui=0;
 
-	hvl_samples_per_row = plrRate / 50;
+	hvl_samples_per_row = hvlRate / 50;
 
-	buf16 = malloc (sizeof (int16_t) * buflen * 2);
 	hvl_buf_stereo = malloc (sizeof (int16_t) * (ROW_BUFFERS + 2) * MAXIMUM_SLOW_DOWN * 2 * hvl_samples_per_row); /* The + 2 is on purpose, so we do not have to wrap when calling hvl_DecodeFrame(), and another to have enough space when buffer utilization is close to maximum */
 	hvl_buf_16chan = malloc (sizeof (int16_t) * (ROW_BUFFERS + 2) * MAXIMUM_SLOW_DOWN * 2 * MAX_CHANNELS * hvl_samples_per_row);
 
-	if ((!buf16) && (!hvl_buf_stereo) && (!hvl_buf_16chan))
+	if ((!hvl_buf_stereo) && (!hvl_buf_16chan))
 	{
-		goto error_out;
+		goto error_out_mem;
 	}
 
 	hvl_buf_pos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, (ROW_BUFFERS + 1) * MAXIMUM_SLOW_DOWN * hvl_samples_per_row);
 	if (!hvl_buf_pos)
 	{
-		goto error_out;
+		goto error_out_mem;
 	}
 
 	bzero (hvl_muted, sizeof (hvl_muted));
@@ -765,7 +681,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 
 	if (!pollInit(hvlIdle))
 	{
-		goto error_out;
+		goto error_out_ringbuffer;
 	}
 	active = 3;
 
@@ -778,8 +694,25 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 
 	return ht;
 
-error_out:
-	hvlClosePlayer();
+error_out_ringbuffer:
+	if (hvl_buf_pos)
+	{
+		ringbuffer_free (hvl_buf_pos);
+		hvl_buf_pos = 0;
+	}
+error_out_mem:
+	free (hvl_buf_stereo);
+	hvl_buf_stereo = 0;
+	free (hvl_buf_16chan);
+	hvl_buf_16chan = 0;
+error_out_tune:
+	if (ht)
+	{
+		hvl_FreeTune (ht);
+		ht = 0;
+	}
+error_out_plrAPI_Play:
+	plrAPI->Stop();
 
 	return 0;
 }
@@ -792,8 +725,7 @@ void __attribute__ ((visibility ("internal"))) hvlClosePlayer (void)
 	}
 	if (active & 1)
 	{
-		plrClosePlayer();
-		plrbuf = 0;
+		plrAPI->Stop ();
 	}
 	active = 0;
 
@@ -803,23 +735,11 @@ void __attribute__ ((visibility ("internal"))) hvlClosePlayer (void)
 		hvl_buf_pos = 0;
 	}
 
-	if (buf16)
-	{
-		free (buf16);
-		buf16 = 0;
-	}
+	free (hvl_buf_stereo);
+	hvl_buf_stereo = 0;
 
-	if (hvl_buf_stereo)
-	{
-		free (hvl_buf_stereo);
-		hvl_buf_stereo = 0;
-	}
-
-	if (hvl_buf_16chan)
-	{
-		free (hvl_buf_16chan);
-		hvl_buf_16chan = 0;
-	}
+	free (hvl_buf_16chan);
+	hvl_buf_16chan = 0;
 
 	if (ht)
 	{

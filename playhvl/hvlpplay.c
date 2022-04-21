@@ -200,10 +200,6 @@ static int hvlIsLooped(void)
 	}
 	hvlSetLoop(fsLoopMods);
 	hvlIdle();
-	if (plrIdle)
-	{
-		plrIdle();
-	}
 	return !fsLoopMods&&hvlLooped();
 }
 
