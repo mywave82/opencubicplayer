@@ -52,8 +52,7 @@ z80.o: z80.h z80.c z80ops.c edops.c cbops.c main.h
 
 sound.o: sound.c main.h z80.h sound.h \
 	../config.h \
-	../types.h \
-	../dev/player.h
+	../types.h
 	$(CC) -o $@ sound.c -c
 
 aychan.o: aychan.c \
@@ -79,8 +78,7 @@ aypplay.o: aypplay.c ayplay.h \
 	../stuff/compat.h \
 	../stuff/err.h \
 	../stuff/poutput.h \
-	../stuff/sets.h \
-	../stuff/timer.h
+	../stuff/sets.h
 	$(CC) -o $@ aypplay.c -c
 
 ayplay.o: ayplay.c ayplay.h main.h sound.h z80.h \
@@ -89,12 +87,10 @@ ayplay.o: ayplay.c ayplay.h main.h sound.h z80.h \
 	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
-	../dev/plrasm.h \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
 	../stuff/imsrtns.h \
-	../stuff/poll.h \
-	../stuff/timer.h
+	../stuff/poll.h
 	$(CC) -o $@ ayplay.c -c
 
 dumpay: dumpay.o

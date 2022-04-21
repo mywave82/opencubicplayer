@@ -4,7 +4,7 @@
  * sound.h
  */
 
-#define sound_freq (plrRate)
+#define sound_freq playay_sound_freq
 
 struct ay_driver_frame_state_t
 {
@@ -34,3 +34,4 @@ extern void __attribute__ ((visibility ("internal"))) sound_ay_write(int reg,int
 extern void __attribute__ ((visibility ("internal"))) sound_ay_reset(void);
 extern void __attribute__ ((visibility ("internal"))) sound_ay_reset_cpc(void);
 extern void __attribute__ ((visibility ("internal"))) sound_beeper(int on, unsigned long tstates);
+extern unsigned int sound_freq;

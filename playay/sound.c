@@ -29,7 +29,6 @@
 #include <errno.h>
 #include <unistd.h>
 #include "types.h"
-#include "dev/player.h"
 
 #include "main.h"
 #include "z80.h"
@@ -53,6 +52,7 @@
 #define AY_CHANGE_MAX		8000
 
 static int sound_framesiz;
+unsigned int sound_freq __attribute__ ((visibility ("hidden")));
 
 static uint32_t ay_tone_levels[16];
 
