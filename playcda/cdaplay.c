@@ -37,22 +37,13 @@
 #include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
-#include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
 #include "filesel/cdrom.h"
 #include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poll.h"
 
-static int inpause;
-
-/* devp buffer zone */
-static uint32_t bufpos; /* devp write head location */
-static uint32_t buflen; /* devp buffer-size in samples */
-static void *plrbuf; /* the devp buffer */
-
-/* cdIdle dumping location */
-static int16_t *buf16=NULL;
+static int cda_inpause;
 
 static int lba_start;   // start of track
 static int lba_stop;    // end of track
@@ -73,9 +64,11 @@ static struct ringbuffer_t *cdbufpos;
 static uint32_t             cdbuffpos; /* fractional part */
 static uint32_t             cdbufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
 static uint32_t rip_sectors[BUFFER_SLOTS]; /* replace me */
+static uint32_t rip_sectors2[BUFFER_SLOTS]; /* devp space */
+static uint32_t cdRate; /* the devp output rate */
 static volatile int clipbusy;
 static int speed;
-static int looped;
+static int cda_looped;
 static int donotloop;
 
 static unsigned int voll = 256, volr = 256;
@@ -120,13 +113,32 @@ do { \
 	} \
 } while(0)
 
+static void delay_callback_from_devp (void *arg, int samples_ago)
+{
+	uint32_t *rip_sector_last = arg;
+	lba_current = *rip_sector_last;
+}
+
+static void delay_callback_from_cdbufdata (void *arg, int samples_ago)
+{
+	int samples_until = samples_ago * cdbufrate / 65536;
+
+	int index = ((uint32_t *)arg - rip_sectors) / sizeof (rip_sectors[0]);
+
+	rip_sectors2[index] = rip_sectors[index];
+
+	plrAPI->OnBufferCallback (-samples_until, delay_callback_from_devp, &rip_sectors[index]);
+}
+
 static void cdIdlerAddBuffer(void)
 {
 	int temp;
 
 	for (temp = 0; temp < req.lba_count; temp++)
 	{
-		rip_sectors[(req_pos1/CD_FRAMESIZE_RAW)+temp] = lba_next + temp;
+		int index = (req_pos1/CD_FRAMESIZE_RAW)+temp;
+		rip_sectors[index] = lba_next + temp;
+		ringbuffer_add_tail_callback_samples (cdbufpos, - temp * (CD_FRAMESIZE_RAW >> 2) /* stereo + bit16 */, delay_callback_from_cdbufdata, &rip_sectors[index]);
 	}
 
 #ifdef WORDS_BIGENDIAN
@@ -161,12 +173,14 @@ static void cdIdler(void)
 	{
 		if (donotloop)
 		{
-			looped |= 1;
+			cda_looped |= 1;
 			return;
 		} else {
-			looped &= ~1;
+			cda_looped &= ~1;
 			lba_next = lba_start;
 		}
+	} else {
+		cda_looped &= ~1;
 	}
 
 	ringbuffer_get_head_bytes (cdbufpos, &req_pos1, &length1, &pos2, &length2);
@@ -209,255 +223,185 @@ static void cdIdler(void)
 
 void __attribute__ ((visibility ("internal"))) cdIdle(void)
 {
-	uint32_t bufplayed;
-	uint32_t bufdelta;
-	uint32_t pass2;
-
 	if (clipbusy++)
 	{
 		clipbusy--;
 		return;
 	}
 
-	/* Where is our devp reading head? */
-	bufplayed=plrGetBufPos() >> 2 /* stereo + bit16 */;
-	bufdelta=(buflen+bufplayed-bufpos)%buflen;
-
-	/* No delta on the devp? */
-	if (!bufdelta)
+	if (cda_inpause || (cda_looped == 3))
 	{
-		clipbusy--;
-		if (plrIdle)
-			plrIdle();
-		return;
-	}
-
-	/* fill up our buffers */
-	cdIdler();
-
-	if (inpause)
-	{ /* If we are in pause, we fill buffer with the correct type of zeroes */
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		plrClearBuf((uint16_t *)plrbuf+(bufpos << 1 /* stereo */), (bufdelta-pass2) << 1 /* stereo */, 1 /* signedout */);
-		if (pass2)
-			plrClearBuf((uint16_t *)plrbuf, pass2 << 1 /* stereo */, 1 /* signedout */);
-		bufpos+=bufdelta;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
+		plrAPI->Pause (1);
 	} else {
-		int pos1, length1, pos2, length2;
-		int i;
-		int buf16_filled = 0;
+		void *targetbuf;
+		unsigned int targetlength; /* in samples */
 
-		/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-		ringbuffer_get_tail_samples (cdbufpos, &pos1, &length1, &pos2, &length2);
+		plrAPI->Pause (0);
 
-		/* are the speed 1:1, if so filling up buf16 is very easy */
-		if (cdbufrate==0x10000)
+		plrAPI->GetBuffer (&targetbuf, &targetlength);
+
+		if (targetlength)
 		{
-			int16_t *t = buf16;
+			int16_t *t = targetbuf;
+			unsigned int accumulated_target = 0;
+			unsigned int accumulated_source = 0;
+			int pos1, length1, pos2, length2;
 
-			if (bufdelta>(length1+length2))
+			cdIdler();
+
+			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
+			ringbuffer_get_tail_samples (cdbufpos, &pos1, &length1, &pos2, &length2);
+
+			if (cdbufrate==0x10000)
 			{
-				bufdelta=(length1+length2);
-				looped |= 2;
+				if (targetlength>(length1+length2))
+				{
+					targetlength=(length1+length2);
+					cda_looped |= 2;
+				} else {
+					cda_looped &= ~2;
+				}
+
+				// limit source to not overrun target buffer
+				if (length1 > targetlength)
+				{
+					length1 = targetlength;
+					length2 = 0;
+				} else if ((length1 + length2) > targetlength)
+				{
+					length2 = targetlength - length1;
+				}
+
+				accumulated_source = accumulated_target = length1 + length2;
+
+				while (length1)
+				{
+					while (length1)
+					{
+						int16_t rs, ls;
+
+						rs = ((int16_t *)cdbufdata)[(pos1<<1) + 0];
+						ls = ((int16_t *)cdbufdata)[(pos1<<1) + 1];
+
+						PANPROC;
+
+						*(t++) = rs;
+						*(t++) = ls;
+
+						pos1++;
+						length1--;
+
+						//accumulated_target++;
+					}
+					length1 = length2;
+					length2 = 0;
+					pos1 = pos2;
+					pos2 = 0;
+				}
+				//accumulated_source = accumulated_target;
 			} else {
-				looped &= ~2;
-			}
+				/* We are going to perform cubic interpolation of rate conversion... this bit is tricky */
+				cda_looped &= ~2;
 
-			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
-			{
-				int16_t rs, ls;
-
-				if (!length1)
+				while (targetlength && length1)
 				{
-					pos1 = pos2;
+					while (targetlength && length1)
+					{
+						uint32_t wpm1, wp0, wp1, wp2;
+						int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
+						int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
+						unsigned int progress;
+						int16_t rs, ls;
+
+						/* will the interpolation overflow? */
+						if ((length1+length2) <= 3)
+						{
+							cda_looped |= 2;
+							break;
+						}
+						/* will we overflow the wavebuf if we advance? */
+						if ((length1+length2) < ((cdbufrate+cdbuffpos)>>16))
+						{
+							cda_looped |= 2;
+							break;
+						}
+
+						switch (length1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
+						{
+							case 1:  wpm1 = pos1; wp0 = pos2;     wp1 = pos2 + 1; wp2 = pos2 + 2; break;
+							case 2:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos2;     wp2 = pos2 + 1; break;
+							case 3:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos2;     break;
+							default: wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos1 + 3; break;
+						}
+
+						rvm1 = ((uint16_t *)cdbufdata)[(wpm1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
+						lvm1 = ((uint16_t *)cdbufdata)[(wpm1<<1)+1]^0x8000;
+						 rc0 = ((uint16_t *)cdbufdata)[(wp0 <<1)+0]^0x8000;
+						 lc0 = ((uint16_t *)cdbufdata)[(wp0 <<1)+1]^0x8000;
+						 rv1 = ((uint16_t *)cdbufdata)[(wp1 <<1)+0]^0x8000;
+						 lv1 = ((uint16_t *)cdbufdata)[(wp1 <<1)+1]^0x8000;
+						 rv2 = ((uint16_t *)cdbufdata)[(wp2 <<1)+0]^0x8000;
+						 lv2 = ((uint16_t *)cdbufdata)[(wp2 <<1)+1]^0x8000;
+
+						rc1 = rv1-rvm1;
+						rc2 = 2*rvm1-2*rc0+rv1-rv2;
+						rc3 = rc0-rvm1-rv1+rv2;
+						rc3 =  imulshr16(rc3,cdbuffpos);
+						rc3 += rc2;
+						rc3 =  imulshr16(rc3,cdbuffpos);
+						rc3 += rc1;
+						rc3 =  imulshr16(rc3,cdbuffpos);
+						rc3 += rc0;
+						if (rc3<0)
+							rc3=0;
+						if (rc3>65535)
+							rc3=65535;
+
+						lc1 = lv1-lvm1;
+						lc2 = 2*lvm1-2*lc0+lv1-lv2;
+						lc3 = lc0-lvm1-lv1+lv2;
+						lc3 =  imulshr16(lc3,cdbuffpos);
+						lc3 += lc2;
+						lc3 =  imulshr16(lc3,cdbuffpos);
+						lc3 += lc1;
+						lc3 =  imulshr16(lc3,cdbuffpos);
+						lc3 += lc0;
+						if (lc3<0)
+							lc3=0;
+						if (lc3>65535)
+							lc3=65535;
+
+						rs = rc3 ^ 0x8000;
+						ls = lc3 ^ 0x8000;
+
+						PANPROC;
+
+						*(t++) = rs;
+						*(t++) = ls;
+
+						cdbuffpos+=cdbufrate;
+						progress = cdbuffpos>>16;
+						cdbuffpos &= 0xffff;
+						accumulated_source+=progress;
+						pos1+=progress;
+						length1-=progress;
+						targetlength--;
+
+						accumulated_target++;
+					} /* while (targetlength && length1) */
 					length1 = length2;
-					pos2 = 0;
 					length2 = 0;
-				}
-				assert (length1);
-
-				rs = ((int16_t *)cdbufdata)[pos1<<1];
-				ls = ((int16_t *)cdbufdata)[(pos1<<1) + 1];
-
-				PANPROC;
-
-				*(t++) = rs;
-				*(t++) = ls;
-
-				pos1++;
-				length1--;
-			}
-
-			lba_current = rip_sectors[((pos1<<2)-1) / CD_FRAMESIZE_RAW];
-			ringbuffer_tail_consume_samples (cdbufpos, buf16_filled); /* add this rate buf16_filled == tail_used */
-		} else {
-			/* We are going to perform cubic interpolation of rate conversion... this bit is tricky */
-			unsigned int accumulated_progress = 0;
-
-			looped &= ~2;
-
-			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
-			{
-				uint32_t wpm1, wp0, wp1, wp2;
-				int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
-				int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
-				unsigned int progress;
-				int16_t rs, ls;
-
-				/* will the interpolation overflow? */
-				if ((length1+length2) <= 3)
-				{
-					looped |= 2;
-					break;
-				}
-				/* will we overflow the wavebuf if we advance? */
-				if ((length1+length2) < ((cdbufrate+cdbuffpos)>>16))
-				{
-					looped |= 2;
-					break;
-				}
-
-				switch (length1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
-				{
-					case 1:
-						wpm1 = pos1;
-						wp0  = pos2;
-						wp1  = pos2+1;
-						wp2  = pos2+2;
-						break;
-					case 2:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos2;
-						wp2  = pos2+1;
-						break;
-					case 3:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos1+2;
-						wp2  = pos2;
-						break;
-					default:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos1+2;
-						wp2  = pos1+3;
-						break;
-				}
-
-
-				rvm1 = ((uint16_t *)cdbufdata)[(wpm1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
-				lvm1 = ((uint16_t *)cdbufdata)[(wpm1<<1)+1]^0x8000;
-				 rc0 = ((uint16_t *)cdbufdata)[(wp0<<1)+0]^0x8000;
-				 lc0 = ((uint16_t *)cdbufdata)[(wp0<<1)+1]^0x8000;
-				 rv1 = ((uint16_t *)cdbufdata)[(wp1<<1)+0]^0x8000;
-				 lv1 = ((uint16_t *)cdbufdata)[(wp1<<1)+1]^0x8000;
-				 rv2 = ((uint16_t *)cdbufdata)[(wp2<<1)+0]^0x8000;
-				 lv2 = ((uint16_t *)cdbufdata)[(wp2<<1)+1]^0x8000;
-
-				rc1 = rv1-rvm1;
-				rc2 = 2*rvm1-2*rc0+rv1-rv2;
-				rc3 = rc0-rvm1-rv1+rv2;
-				rc3 =  imulshr16(rc3,cdbuffpos);
-				rc3 += rc2;
-				rc3 =  imulshr16(rc3,cdbuffpos);
-				rc3 += rc1;
-				rc3 =  imulshr16(rc3,cdbuffpos);
-				rc3 += rc0;
-				if (rc3<0)
-					rc3=0;
-				if (rc3>65535)
-					rc3=65535;
-
-				lc1 = lv1-lvm1;
-				lc2 = 2*lvm1-2*lc0+lv1-lv2;
-				lc3 = lc0-lvm1-lv1+lv2;
-				lc3 =  imulshr16(lc3,cdbuffpos);
-				lc3 += lc2;
-				lc3 =  imulshr16(lc3,cdbuffpos);
-				lc3 += lc1;
-				lc3 =  imulshr16(lc3,cdbuffpos);
-				lc3 += lc0;
-				if (lc3<0)
-					lc3=0;
-				if (lc3>65535)
-					lc3=65535;
-
-				rs = rc3 ^ 0x8000;
-				ls = lc3 ^ 0x8000;
-
-				PANPROC;
-
-				buf16[(buf16_filled<<1)+0] = rs;
-				buf16[(buf16_filled<<1)+1] = ls;
-
-				cdbuffpos+=cdbufrate;
-				progress = cdbuffpos>>16;
-				cdbuffpos &= 0xffff;
-
-				accumulated_progress += progress;
-
-				/* did we wrap? if so, progress up to the wrapping point */
-				if (progress >= length1)
-				{
-					progress -= length1;
 					pos1 = pos2;
-					length1 = length2;
 					pos2 = 0;
-					length2 = 0;
-				}
-				if (progress)
-				{
-					pos1 += progress;
-					length1 -= progress;
-				}
-			}
-			lba_current = rip_sectors[((pos1<<2)-1) / CD_FRAMESIZE_RAW];
-			ringbuffer_tail_consume_samples (cdbufpos, accumulated_progress);
-		}
+				} /* while (targetlength && length1) */
+			} /* if (cdbufrate==0x10000) */
 
-		bufdelta=buf16_filled;
-
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		bufdelta-=pass2;
-
-		{
-			int16_t *p=(int16_t *)plrbuf+2*bufpos;
-			int16_t *b=buf16;
-
-			for (i=0; i<bufdelta; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-			p=(int16_t *)plrbuf;
-			for (i=0; i<pass2; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-		}
-		bufpos+=buf16_filled;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
+			ringbuffer_tail_consume_samples (cdbufpos, accumulated_source);
+			plrAPI->CommitBuffer (accumulated_target);
+		} /* if (targetlength) */
 	}
 
-	plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
-
-	if (plrIdle)
-		plrIdle();
+	plrAPI->Idle();
 
 	clipbusy--;
 }
@@ -470,7 +414,7 @@ static void cdSetSpeed (unsigned short sp)
 
 	speed=sp;
 
-	cdbufrate=imuldiv(256*sp, 44100, plrRate);
+	cdbufrate=imuldiv(256*sp, 44100, cdRate);
 }
 
 static void cdSetVolume()
@@ -515,19 +459,17 @@ static int GET(int ch, int opt)
 
 void __attribute__ ((visibility ("internal"))) cdPause (void)
 {
-	inpause=1;
+	cda_inpause=1;
 }
 
 void __attribute__ ((visibility ("internal"))) cdClose (void)
 {
-	inpause=1;
+	cda_inpause=1;
+
 	pollClose();
-	plrStop();
-	if (buf16)
-	{
-		free(buf16);
-		buf16=NULL;
-	}
+
+	plrAPI->Stop();
+
 	if (cdbufpos)
 	{
 		ringbuffer_free (cdbufpos);
@@ -562,7 +504,7 @@ void __attribute__ ((visibility ("internal"))) cdClose (void)
 
 void __attribute__ ((visibility ("internal"))) cdUnpause (void)
 {
-	inpause=0;
+	cda_inpause=0;
 }
 
 void __attribute__ ((visibility ("internal"))) cdJump (unsigned long start)
@@ -580,7 +522,7 @@ void __attribute__ ((visibility ("internal"))) cdJump (unsigned long start)
 
 int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsigned long len, struct ocpfilehandle_t *file)
 {
-	inpause = 0;
+	enum plrRequestFormat format;
 
 	lba_next = lba_start = lba_current = start;
 	lba_stop = start + len;
@@ -593,49 +535,33 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 	fh->ref (fh);
 
 	clipbusy = 0;
-	cdbuffpos = 0;
 
-	plrSetOptions(44100, PLR_STEREO_16BIT_SIGNED);
-
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, file))
+	cdRate=44100;
+	format=PLR_STEREO_16BIT_SIGNED;
+	if (!plrAPI->Play (&cdRate, &format, file))
 	{
 		return -1;
 	}
 
-	inpause=0;
-	looped=0;
-/*
-	cdSetAmplify(amplify);   TODO */
-
-
-	if (!(buf16=malloc(sizeof(uint16_t) * buflen * 2 /* stereo */)))
-	{
-		plrClosePlayer ();
-		return -1;
-	}
-	bufpos=0;
+	cda_inpause=0;
+	cda_looped=0;
+	donotloop = 1;
 
 	cdbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, sizeof (cdbufdata) / 4);
 	if (!cdbufpos)
 	{
-		plrClosePlayer ();
-		free (buf16);
-		buf16 = 0;
+		plrAPI->Stop();
 		return 0;
 	}
 	cdbuffpos = 0;
 
 	cdSetSpeed(256);
-	looped = 0;
-	donotloop = 1;
 
 	if (!pollInit(cdIdle))
 	{
 		ringbuffer_free (cdbufpos);
 		cdbufpos = 0;
-		free(buf16);
-		buf16=NULL;
-		plrClosePlayer();
+		plrAPI->Stop();
 		return -1;
 	}
 
@@ -652,10 +578,10 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 void __attribute__ ((visibility ("internal"))) cdGetStatus (struct cdStat *stat)
 {
 	stat->error=0;
-	stat->paused=inpause;
+	stat->paused=cda_inpause;
 	stat->position=lba_current;
-	stat->speed=(inpause?0:speed);
-	stat->looped=(lba_next==lba_stop)&&(looped==3);
+	stat->speed=(cda_inpause?0:speed);
+	stat->looped=(lba_next==lba_stop)&&(cda_looped==3);
 }
 
 void __attribute__ ((visibility ("internal"))) cdSetLoop (int loop)
