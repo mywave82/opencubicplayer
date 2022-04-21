@@ -41,7 +41,6 @@ extern "C"
 #include "stuff/compat.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
-#include "stuff/timer.h"
 }
 #include "stsoundlib/StSoundLibrary.h"
 #include "ymplay.h"
@@ -484,8 +483,6 @@ static int ymLooped(void)
 		dopausefade();
 	ymSetLoop(fsLoopMods);
 	ymIdle();
-	if (plrIdle)
-		plrIdle();
 	return !fsLoopMods&&ymIsLooped();
 }
 

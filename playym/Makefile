@@ -62,7 +62,6 @@ ympplay.o: ympplay.cpp \
 	../stuff/compat.h \
 	../stuff/poutput.h \
 	../stuff/sets.h \
-	../stuff/timer.h \
 	stsoundlib/StSoundLibrary.h \
 	ymplay.h
 	$(CXX) ympplay.cpp -o $@ -c
@@ -74,11 +73,10 @@ ymplay.o: ymplay.cpp \
 	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
-	../dev/plrasm.h \
+	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
 	../stuff/imsrtns.h \
 	../stuff/poll.h \
-	../stuff/timer.h \
 	ymplay.h \
 	stsoundlib/YmMusic.h
 	$(CXX) ymplay.cpp -o $@ -c

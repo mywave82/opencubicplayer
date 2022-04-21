@@ -40,6 +40,9 @@
 
 #define	MAX_DIGIDRUM	40
 
+#define sampleAdress ymsampleAdress
+#define sampleLen ymsampleLen
+
 extern ymu8		*	sampleAdress[MAX_DIGIDRUM];
 extern ymu32		sampleLen[MAX_DIGIDRUM];
 

@@ -28,7 +28,7 @@ extern "C"
 #include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
-#include "dev/plrasm.h"
+#include "dev/ringbuffer.h"
 #include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poll.h"
@@ -36,9 +36,10 @@ extern "C"
 #include "ymplay.h"
 #include "stsoundlib/YmMusic.h"
 
-/* options */
-static int inpause;
-static int looped;
+static int ym_inpause;
+static int ym_looped;
+
+static uint32_t ymRate;
 
 static int vol, bal;
 static unsigned long voll,volr;
@@ -47,36 +48,24 @@ static int srnd;
 /* Are resourses in-use (needs to be freed at Close) ?*/
 static int active=0;
 
-/* devp pre-buffer zone */
-static uint16_t *buf16; /* here we dump out data before it goes live */
 /* devp buffer zone */
-static uint32_t devp_bufpos; /* devp write head location */
-static uint32_t devp_buflen; /* devp buffer-size in samples */
-static void *devp_plrbuf; /* the devp buffer */
 static int donotloop=1;
 
 /* ymIdler dumping locations */
 
 #define TIMESLOTS 128
 #define REGISTERS 10
-struct timeslot
+static struct timeslot
 {
-	int buffer; /* 0: ymbuf_pre/post */
-                    /* 1: buf16 */
-                    /* 2: devp */
-	unsigned int buffer_offset;
+	int inymbuf; /* ymbuf */
+	int indevp;  /* devp */
 	uint8_t registers[REGISTERS];
 } timeslots[TIMESLOTS];
-static int timeslot_head_ym;
-static int timeslot_head_buf16;
-static int timeslot_head_devp;
-static int timeslot_tail_devp;
+static struct timeslot register_current_state;
 
 #define YMBUFLEN 16386
-static ymsample ymbuf_pre[YMBUFLEN]; /* the buffer */
-static int16_t ymbuf_post[YMBUFLEN*2];
-static uint32_t ymbufread; /* actually this is the write head */
-static uint32_t ymbufpos;  /* read pos */
+static ymsample ymbuf[YMBUFLEN]; /* the buffer, mono */
+static struct ringbuffer_t *ymbufpos = 0;
 static uint32_t ymbuffpos; /* read fine-pos.. when ymbufrate has a fraction */
 __attribute__ ((visibility ("internal"))) uint32_t ymbufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
 
@@ -88,30 +77,17 @@ static void (*_SET)(int ch, int opt, int val);
 /* clipper threadlock since we use a timer-signal */
 static volatile int clipbusy=0;
 
-
-
-#define timeslot_debug()
-#if 0
-static void timeslot_debug(void)
+static struct timeslot *register_slot_get (void)
 {
 	int i;
-	for (i=0;i<TIMESLOTS;i++)
+	for (i=0; i < TIMESLOTS; i++)
 	{
-		printf("%d", timeslots[i].buffer);
+		if (timeslots[i].inymbuf) continue;
+		if (timeslots[i].indevp) continue;
+		return timeslots + i;
 	}
-	printf(" %d %d %d %d\n", timeslot_tail_devp, timeslot_head_devp, timeslot_head_buf16, timeslot_head_ym);
-	printf(" %d %d\n", ymbufpos, ymbufread);
+	return 0;
 }
-/*
-   - - - - - -|2 2 2 2 2 2 2|1 1 1 1 1 1 1 1|0 0 0 0 0 0 0 0|- - - - - - -
-              tail_devp     head_devp       head_buf16      head_ym
-                conained in DEVP/kernel space
-                              contained in buf16
-                                             contained in ymbuf_pre/post... can be removed
-*/
-#endif
-
-
 
 #define PANPROC \
 do { \
@@ -136,6 +112,10 @@ do { \
 	} \
 	rs = (ymsample)(_rs * volr / 256.0); \
 	ls = (ymsample)(_ls * voll / 256.0); \
+	if (srnd) \
+	{ \
+		ls ^= 0xffff; \
+	} \
 } while(0)
 
 void __attribute__ ((visibility ("internal"))) ymClosePlayer(void)
@@ -143,15 +123,20 @@ void __attribute__ ((visibility ("internal"))) ymClosePlayer(void)
 	if (active)
 	{
 		pollClose();
-		free(buf16);
 
-		plrClosePlayer();
+		plrAPI->Stop();
 
 		mcpSet=_SET;
 		mcpGet=_GET;
 
 		ymMusicStop(pMusic);
 		ymMusicDestroy(pMusic);
+
+		if (ymbufpos)
+		{
+			ringbuffer_free (ymbufpos);
+			ymbufpos = 0;
+		}
 
 		active=0;
 	}
@@ -221,33 +206,39 @@ void __attribute__ ((visibility ("internal"))) ymSetPos(uint32_t pos)
 
 int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_t *file)
 {
-	void *buffer;
+	enum plrRequestFormat format;
+	void *buffer = 0;
 	uint64_t length = file->filesize (file);
 
 	if (length <= 0)
 	{
-		fprintf(stderr, "[ymplay.cpp]: Unable to determine file length\n");
+		fprintf(stderr, "[ymplay]: Unable to determine file length\n");
 		return 0;
 	}
 	if (length > (1024*1024))
 	{
-		fprintf(stderr, "[ymplay.cpp]: File too big\n");
+		fprintf(stderr, "[ymplay]: File too big\n");
 		return 0;
 	}
 	buffer = malloc(length);
 	if (!buffer)
 	{
-		fprintf(stderr, "[ymplay.cpp]: Unable to malloc()\n");
+		fprintf(stderr, "[ymplay]: Unable to malloc()\n");
 		return 0;
 	}
 	if (file->read (file, buffer, length) != (int)length)
 	{
-		fprintf(stderr, "[ymplay.cpp]: Unable to read file\n");
-		free(buffer);
-		return 0;
+		fprintf(stderr, "[ymplay]: Unable to read file\n");
+		goto error_out_buffer;
 	}
 
-	plrSetOptions(44100, PLR_STEREO_16BIT_SIGNED);
+	ymRate=0;
+	format=PLR_STEREO_16BIT_SIGNED;
+	if (!plrAPI->Play (&ymRate, &format, file))
+	{
+		fprintf(stderr, "[ymplay]: plrAPI->Play() failed\n");
+		goto error_out_buffer;
+	}
 
 	_SET=mcpSet;
 	_GET=mcpGet;
@@ -255,63 +246,64 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	mcpGet=GET;
 	mcpNormalize (mcpNormalizeDefaultPlayP);
 
-	looped = 0;
+	ym_looped = 0;
 
-	pMusic = new CYmMusic(plrRate);
+	bzero (timeslots, sizeof (timeslots));
+
+	pMusic = new CYmMusic(ymRate);
 	if (!pMusic)
 	{
-		fprintf(stderr, "[ymplay.cpp]: Unable to create stymulator object\n");
-		free(buffer);
-		mcpSet=_SET;
-		mcpGet=_GET;
-		return 0;
+		fprintf(stderr, "[ymplay]: Unable to create stymulator object\n");
+		goto error_out_plrAPI_Play;
 	}
 	if (!pMusic->loadMemory(buffer, length))
 	{
-		fprintf(stderr, "[ymplay.cpp]: Unable to load file: %s\n", pMusic->getLastError());
-		free(buffer);
-		mcpSet=_SET;
-		mcpGet=_GET;
-		return 0;
+		fprintf(stderr, "[ymplay]: Unable to load file: %s\n", pMusic->getLastError());
+		goto error_out_plrAPI_Play;
 	}
 
-	free(buffer);
+	free(buffer); buffer = 0;
 
 	ymbufrate=0x10000; /* 1.0 */
-	ymbufpos=0;
+	ymbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_MONO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, YMBUFLEN);
+	if (!ymbufpos)
+	{
+		goto error_out_plrAPI_Play;
+	}
 	ymbuffpos=0;
-	ymbufread=sizeof(ymsample); /* 1 << (stereo + bit16) */
-
-	if (!plrOpenPlayer(&devp_plrbuf, &devp_buflen, plrBufSize * plrRate / 1000, file))
-	{
-		fprintf(stderr, "[ymplay.cpp]: plrOpenPlayer() failed\n");
-		goto error_out;
-	}
-
-	if (!(buf16=(uint16_t *)malloc(sizeof(uint16_t)*devp_buflen*2)))
-	{
-		fprintf(stderr, "[ymplay.cpp]: malloc buf16 failed\n");
-		plrClosePlayer();
-		goto error_out;
-	}
-	devp_bufpos=0;
 
 	if (!pollInit(ymIdle))
 	{
-		fprintf(stderr, "[ymplay.cpp]: pollInit() failed\n");
-		free(buf16);
-		plrClosePlayer();
-		goto error_out;
+		fprintf(stderr, "[ymplay]: pollInit() failed\n");
+		goto error_out_plrAPI_Play;
 	}
 
 	active=1;
 	return 1;
 
-error_out:
-	mcpSet=_SET;
-	mcpGet=_GET;
+error_out_plrAPI_Play:
+	plrAPI->Stop();
 
-	delete(pMusic);
+error_out_buffer:
+	free (buffer); buffer = 0;
+
+	if (ymbufpos)
+	{
+		ringbuffer_free (ymbufpos);
+		ymbufpos = 0;
+	}
+
+	if (mcpSet == SET)
+	{
+		mcpSet=_SET;
+		mcpGet=_GET;
+	}
+
+	if (pMusic)
+	{
+		delete(pMusic);
+		pMusic = 0;
+	}
 	return 0;
 }
 
@@ -323,402 +315,279 @@ void __attribute__ ((visibility ("internal"))) ymSetLoop(int loop)
 
 int __attribute__ ((visibility ("internal"))) ymIsLooped(void)
 {
-	return looped==2;
+	return ym_looped==3;
 }
 
 void __attribute__ ((visibility ("internal"))) ymPause(uint8_t p)
 {
-	inpause=p;
+	ym_inpause=p;
+}
+
+static struct channel_info_t Registers;
+
+static void register_delay_callback_from_devp (void *arg, int samples_ago)
+{
+	struct timeslot *state = (struct timeslot *)arg;
+	state->indevp = 0;
+
+	register_current_state = *state;
+
+	if (register_current_state.registers[0]==0)
+		Registers.frequency_a = 0;
+	else
+		Registers.frequency_a = pMusic->readYmClock() / (register_current_state.registers[0] * 16);
+
+	if (register_current_state.registers[1]==0)
+		Registers.frequency_b = 0;
+	else
+		Registers.frequency_b = pMusic->readYmClock() / (register_current_state.registers[1] * 16);
+
+	if (register_current_state.registers[2]==0)
+		Registers.frequency_c = 0;
+	else
+		Registers.frequency_c = pMusic->readYmClock() / (register_current_state.registers[2] * 16);
+
+	if (register_current_state.registers[3] == 0)
+		Registers.frequency_noise = 0;
+	else
+		Registers.frequency_noise = pMusic->readYmClock() / (register_current_state.registers[3] * 16);
+
+	Registers.mixer_control = register_current_state.registers[4];
+	Registers.level_a = register_current_state.registers[5];
+	Registers.level_b = register_current_state.registers[6];
+	Registers.level_c = register_current_state.registers[7];
+
+	if (register_current_state.registers[8] == 0)
+		Registers.frequency_envelope = 0;
+	else
+		Registers.frequency_envelope = pMusic->readYmClock() / (register_current_state.registers[8] * 256);
+
+	Registers.envelope_shape = register_current_state.registers[9];
+}
+
+static void register_delay_callback_from_ymbuf (void *arg, int samples_ago)
+{
+	struct timeslot *state = (struct timeslot *)arg;
+
+	int samples_until = samples_ago * ymbufrate / 65536;
+
+	state->inymbuf = 0;
+	state->indevp = 1;
+	plrAPI->OnBufferCallback (samples_until, register_delay_callback_from_devp, state);
 }
 
 static void ymIdler(void)
 {
-	size_t clean;
+	int pos1, pos2;
+	int length1, length2;
 
 	if (!active)
 		return;
 
-	clean=(ymbufpos+YMBUFLEN-ymbufread)%YMBUFLEN;
-	if (clean<=1)
-		return;
-	clean-=1;
+	ringbuffer_get_head_samples (ymbufpos, &pos1, &length1, &pos2, &length2);
 
-	while (clean>0)
+	while (length1)
 	{
-		size_t read=clean;
+		struct timeslot *slot;
 
-		if (looped)
+		if ((ym_looped & 1) && donotloop)
 			break;
 
-		/* check for buffer wrapping */
-		if ((ymbufread+read)>YMBUFLEN)
-			read=YMBUFLEN-ymbufread;
+		if ((unsigned int)length1>(ymRate/50))
+			length1=ymRate/50;
 
-		if (read>(plrRate/50))
-			read=plrRate/50;
-
-		if (!pMusic->update(ymbuf_pre+ymbufread, read))
-			looped=1;
-
-		if (((timeslot_head_ym+1)%TIMESLOTS)!=timeslot_tail_devp)
+		if (!pMusic->update(ymbuf + pos1, length1))
+			ym_looped|=1;
+	
+		slot = register_slot_get ();
+		if (slot)
 		{
-			timeslots[timeslot_head_ym].buffer=1;
-			timeslots[timeslot_head_ym].buffer_offset = ymbufread+read;
-			timeslots[timeslot_head_ym].registers[0] = pMusic->readYmRegister(0)|(pMusic->readYmRegister(1)<<8); /* frequency A */
-			timeslots[timeslot_head_ym].registers[1] = pMusic->readYmRegister(2)|(pMusic->readYmRegister(3)<<8); /* frequency B */
-			timeslots[timeslot_head_ym].registers[2] = pMusic->readYmRegister(4)|(pMusic->readYmRegister(5)<<8); /* frequency C */
-			timeslots[timeslot_head_ym].registers[3] = pMusic->readYmRegister(6)&0x1f; /* frequency noise */
-			timeslots[timeslot_head_ym].registers[4] = pMusic->readYmRegister(7); /* mixer control */
-			timeslots[timeslot_head_ym].registers[5] = pMusic->readYmRegister(8); /* volume A */
-			timeslots[timeslot_head_ym].registers[6] = pMusic->readYmRegister(9); /* volume B */
-			timeslots[timeslot_head_ym].registers[7] = pMusic->readYmRegister(10); /* volume C */
-			timeslots[timeslot_head_ym].registers[8] = pMusic->readYmRegister(11)|(pMusic->readYmRegister(12)<<8); /* frequency envelope */
-			timeslots[timeslot_head_ym].registers[9] = pMusic->readYmRegister(13) & 0x0f;  /* envelope shape */
-
-			timeslot_head_ym++;
-			if (timeslot_head_ym == TIMESLOTS)
-				timeslot_head_ym = 0;
-#if 0
-		} else {
-			printf("Buffer full... %d would be equal with %d if added one\n", timeslot_head_ym, timeslot_tail_devp);
-#endif
+			slot->registers[0] = pMusic->readYmRegister(0)|(pMusic->readYmRegister(1)<<8); /* frequency A */
+			slot->registers[1] = pMusic->readYmRegister(2)|(pMusic->readYmRegister(3)<<8); /* frequency B */
+			slot->registers[2] = pMusic->readYmRegister(4)|(pMusic->readYmRegister(5)<<8); /* frequency C */
+			slot->registers[3] = pMusic->readYmRegister(6)&0x1f; /* frequency noise */
+			slot->registers[4] = pMusic->readYmRegister(7); /* mixer control */
+			slot->registers[5] = pMusic->readYmRegister(8); /* volume A */
+			slot->registers[6] = pMusic->readYmRegister(9); /* volume B */
+			slot->registers[7] = pMusic->readYmRegister(10); /* volume C */
+			slot->registers[8] = pMusic->readYmRegister(11)|(pMusic->readYmRegister(12)<<8); /* frequency envelope */
+			slot->registers[9] = pMusic->readYmRegister(13) & 0x0f;  /* envelope shape */
+			slot->inymbuf = 1;
+			ringbuffer_add_tail_callback_samples (ymbufpos, 0, register_delay_callback_from_ymbuf, slot);
 		}
 
-		{
-			/* TODO, asm optimize*/
-			ymsample *base_pre = ymbuf_pre+ymbufread;
-			int16_t *base_post = ymbuf_post+(ymbufread<<1); /* stereo */
-			ymsample rs, ls;
-			int len=read;
-			while (len)
-			{
-				rs=base_pre[0];
-				ls=base_pre[0];
-				PANPROC;
-				if (srnd)
-					rs^=~0;
-				base_post[0]=(int16_t)rs;
-				base_post[1]=(int16_t)ls;
-				base_pre+=1;
-				base_post+=2;
-				len--;
-			}
-		}
-		ymbufread=(ymbufread+read)%YMBUFLEN;
-		clean-=read;
+		ringbuffer_head_add_samples (ymbufpos, length1);
+		ringbuffer_get_head_samples (ymbufpos, &pos1, &length1, &pos2, &length2);
 	}
-	timeslot_debug();
-}
-
-static struct channel_info_t Registers;
-static void ymUpdateRegisters(void)
-{
-	plrGetBufPos();
-
-	while (1)
-	{
-		if (timeslot_tail_devp == timeslot_head_devp)
-			break;
-		/* if mark was infront, we can't reach it yet */
-		if (ymbufread < ymbufpos)
-		{
-/*
-0123456789
---|     |-
-X    X   X
-*/
-			if (timeslots[timeslot_tail_devp].buffer_offset > ymbufpos)
-				break;
-		} else {
-/*
-0123456789
-  |-----|
-X    X   X
-*/
-		/* this logic might be faulty */
-			if ((timeslots[timeslot_tail_devp].buffer_offset > ymbufpos) && (timeslots[timeslot_tail_devp].buffer_offset < ymbufread))
-				break;
-
-		}
-		if (timeslots[timeslot_tail_devp].registers[0]==0)
-			Registers.frequency_a = 0;
-		else
-			Registers.frequency_a = pMusic->readYmClock() / (timeslots[timeslot_tail_devp].registers[0] * 16);
-		if (timeslots[timeslot_tail_devp].registers[1]==0)
-			Registers.frequency_b = 0;
-		else
-			Registers.frequency_b = pMusic->readYmClock() / (timeslots[timeslot_tail_devp].registers[1] * 16);
-		if (timeslots[timeslot_tail_devp].registers[2]==0)
-			Registers.frequency_c = 0;
-		else
-			Registers.frequency_c = pMusic->readYmClock() / (timeslots[timeslot_tail_devp].registers[2] * 16);
-		if (timeslots[timeslot_tail_devp].registers[3] == 0)
-			Registers.frequency_noise = 0;
-		else
-			Registers.frequency_noise = pMusic->readYmClock() / (timeslots[timeslot_tail_devp].registers[3] * 16);
-		Registers.mixer_control = timeslots[timeslot_tail_devp].registers[4];
-		Registers.level_a = timeslots[timeslot_tail_devp].registers[5];
-		Registers.level_b = timeslots[timeslot_tail_devp].registers[6];
-		Registers.level_c = timeslots[timeslot_tail_devp].registers[7];
-
-		if (timeslots[timeslot_tail_devp].registers[8] == 0)
-			Registers.frequency_envelope = 0;
-		else
-			Registers.frequency_envelope = pMusic->readYmClock() / (timeslots[timeslot_tail_devp].registers[8] * 256);
-
-		Registers.envelope_shape = timeslots[timeslot_tail_devp].registers[9];
-
-		timeslots[timeslot_tail_devp].buffer=4;
-		timeslots[timeslot_tail_devp].buffer_offset = 0;
-		timeslot_tail_devp++;
-		if (timeslot_tail_devp == TIMESLOTS)
-			timeslot_tail_devp = 0;
-	}
-	timeslot_debug();
 }
 
 __attribute__ ((visibility ("internal"))) struct channel_info_t *ymRegisters()
 {
-	ymUpdateRegisters();
 	return &Registers;
 }
 
 void __attribute__ ((visibility ("internal"))) ymIdle(void)
 {
-	uint32_t bufplayed;
-	uint32_t bufdelta;
-	uint32_t pass2;
-	int quietlen;
-
 	if (clipbusy++)
 	{
 		clipbusy--;
 		return;
 	}
 
-	ymUpdateRegisters();
-
-	quietlen=0;
-	/* Where is our devp reading head? */
-	bufplayed=plrGetBufPos() >> 2 /* devp_stereo + devp_bit16)*/;
-	bufdelta=(devp_buflen+bufplayed-devp_bufpos)%devp_buflen;
-
-	/* No delta on the devp? */
-	if (!bufdelta)
+	if (ym_inpause || (ym_looped == 3))
 	{
-		clipbusy--;
-		if (plrIdle)
-			plrIdle();
-		return;
-	}
+		plrAPI->Pause (1);
+	} else {
+		void *targetbuf;
+		unsigned int targetlength; /* in samples */
 
-	/* fill up our buffers */
-	ymIdler();
+		plrAPI->Pause (0);
 
-	if (inpause)
-		quietlen=bufdelta;
-	else
-	{
-		uint32_t towrap=imuldiv(((YMBUFLEN+ymbufread-ymbufpos-1)%YMBUFLEN), 65536, ymbufrate);
-		if (bufdelta>towrap)
+		plrAPI->GetBuffer (&targetbuf, &targetlength);
+
+		if (targetlength)
 		{
-			/* will the eof hit inside the delta? */
-			/*quietlen=bufdelta-towrap;*/
-			bufdelta=towrap;
-			if ((looped==1)&&(towrap==0))
-				looped=2;
-		}
-	}
+			int16_t *t = (int16_t *)targetbuf;
+			unsigned int accumulated_target = 0;
+			unsigned int accumulated_source = 0;
+			int pos1, length1, pos2, length2;
 
-	bufdelta-=quietlen;
+			ymIdler();
 
-	if (bufdelta)
-	{
-		uint32_t i;
-		if (ymbufrate==0x10000) /* 1.0... just copy into buf16 direct until we run out of target buffer or source buffer */
-		{
-			uint32_t o=0;
-			while (o<bufdelta)
+			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
+			ringbuffer_get_tail_samples (ymbufpos, &pos1, &length1, &pos2, &length2);
+
+			if (ymbufrate==0x10000)
 			{
-				uint32_t w=bufdelta-o;
-				if ((YMBUFLEN-ymbufpos)<w)
-					w=YMBUFLEN-ymbufpos;
-				while (1)
+				if (targetlength>((unsigned int)length1+length2))
 				{
-					if (timeslot_head_buf16 == timeslot_head_ym)
-						break;
-					/* if mark was infront, we can't reach it yet */
-					if (timeslots[timeslot_head_buf16].buffer_offset < ymbufpos)
-						break;
-					/* if mark is after (after the add), we haven't used it yet */
-					if (timeslots[timeslot_head_buf16].buffer_offset > (ymbufpos + w))
-						break;
-					timeslots[timeslot_head_buf16].buffer=2;
-					timeslots[timeslot_head_buf16].buffer_offset += o - ymbufpos;
-					timeslot_head_buf16++;
-					if (timeslot_head_buf16 == TIMESLOTS)
-						timeslot_head_buf16 = 0;
+					targetlength=(length1+length2);
+					ym_looped |= 2;
+				} else {
+					ym_looped &= ~2;
 				}
-				timeslot_debug();
 
-				memcpy(buf16+(o<<1)/*stereo*/, ymbuf_post+(ymbufpos<<1)/*stereo)*/, w<<2/*stereo+16bit*/);
-				o+=w;
-				ymbufpos+=w;
-				if (ymbufpos>=YMBUFLEN)
-					ymbufpos-=YMBUFLEN;
-			}
-		} else { /* re-sample intil we don't have more target-buffer or source-buffer */
-			unsigned int pre_pos;
-			int32_t c0, c1, c2, c3, ls, rs, vm1, v1, v2, wpm1;
-			uint32_t wp1, wp2;
-/*
-			if ((bufdelta-=2)<0) bufdelta=0;  by my meening, this should be in place   TODO stian */
-			for (i=0; i<bufdelta; i++)
-			{
-				wpm1=ymbufpos-1; if (wpm1<0) wpm1+=YMBUFLEN;
-				wp1=ymbufpos+1; if (wp1>=YMBUFLEN) wp1-=YMBUFLEN;
-				wp2=ymbufpos+2; if (wp2>=YMBUFLEN) wp2-=YMBUFLEN;
-
-				c0 = *(uint16_t *)(ymbuf_post+(ymbufpos<<1))^0x8000;
-				vm1= *(uint16_t *)(ymbuf_post+(wpm1<<1))^0x8000;
-				v1 = *(uint16_t *)(ymbuf_post+(wp1<<1))^0x8000;
-				v2 = *(uint16_t *)(ymbuf_post+(wp2<<1))^0x8000;
-				c1 = v1-vm1;
-				c2 = 2*vm1-2*c0+v1-v2;
-				c3 = c0-vm1-v1+v2;
-				c3 =  imulshr16(c3, ymbuffpos);
-				c3 += c2;
-				c3 =  imulshr16(c3, ymbuffpos);
-				c3 += c1;
-				c3 =  imulshr16(c3, ymbuffpos);
-				ls = c3+c0;
-				if (ls>65535)
-					ls=65535;
-				else if (ls<0)
-					ls=0;
-
-				c0 = *(uint16_t *)(ymbuf_post+(ymbufpos<<1)+1)^0x8000;
-				vm1= *(uint16_t *)(ymbuf_post+(wpm1<<1)+1)^0x8000;
-				v1 = *(uint16_t *)(ymbuf_post+(wp1<<1)+1)^0x8000;
-				v2 = *(uint16_t *)(ymbuf_post+(wp2<<1)+1)^0x8000;
-				c1 = v1-vm1;
-				c2 = 2*vm1-2*c0+v1-v2;
-				c3 = c0-vm1-v1+v2;
-				c3 =  imulshr16(c3, ymbuffpos);
-				c3 += c2;
-				c3 =  imulshr16(c3, ymbuffpos);
-				c3 += c1;
-				c3 =  imulshr16(c3, ymbuffpos);
-				rs = c3+c0;
-				if (rs>65535)
-					rs=65535;
-				else if(rs<0)
-					rs=0;
-				buf16[2*i]=(uint16_t)ls^0x8000;
-				buf16[2*i+1]=(uint16_t)rs^0x8000;
-
-				pre_pos=ymbufpos;
-				ymbuffpos+=ymbufrate;
-				ymbufpos+=(ymbuffpos>>16);
-				ymbuffpos&=0xFFFF;
-				while (1)
+				// limit source to not overrun target buffer
+				if ((unsigned int)length1 > targetlength)
 				{
-					if (timeslot_head_buf16 == timeslot_head_ym)
-						break;
+					length1 = targetlength;
+					length2 = 0;
+				} else if ((unsigned int)(length1 + length2) > targetlength)
+				{
+					length2 = targetlength - length1;
+				}
 
-					if (ymbufpos>=YMBUFLEN)
+				accumulated_source = accumulated_target = length1 + length2;
+
+				while (length1)
+				{
+					while (length1)
 					{
+						int16_t rs, ls;
 
-						/* if we wrap, we only need to check post_add is bigger */
-						if (timeslots[timeslot_head_buf16].buffer_offset > ymbufpos)
-							break;
-					} else {
-						/* if mark was infront, we can't reach it yet */
-						if (timeslots[timeslot_head_buf16].buffer_offset < pre_pos)
-							break;
-						/* if mark is after (after the add), we haven't used it yet */
-						if (timeslots[timeslot_head_buf16].buffer_offset > ymbufpos)
-							break;
+						ls = rs = ymbuf[pos1]; /* mono source... */
+
+						PANPROC;
+
+						*(t++) = rs;
+						*(t++) = ls;
+
+						pos1++;
+						length1--;
+
+						//accumulated_target++;
 					}
-					timeslots[timeslot_head_buf16].buffer=2;
-					timeslots[timeslot_head_buf16].buffer_offset = i;
-					timeslot_head_buf16++;
-					if (timeslot_head_buf16 == TIMESLOTS)
-						timeslot_head_buf16 = 0;
+					length1 = length2;
+					length2 = 0;
+					pos1 = pos2;
+					pos2 = 0;
 				}
-				timeslot_debug();
-				if (ymbufpos>=YMBUFLEN)
-					ymbufpos-=YMBUFLEN;
-			}
-		}
-		/* when we copy out from buf16, pass the buffer-len that wraps around end-of-buffer till pass2 */
-		if ((devp_bufpos+bufdelta)>devp_buflen)
-			pass2=devp_bufpos+bufdelta-devp_buflen;
-		else
-			pass2=0;
-		bufdelta-=pass2;
-
-		while (1)
-		{
-			if (timeslot_head_devp == timeslot_head_buf16)
-				break;
-			timeslots[timeslot_head_devp].buffer=3;
-			if (timeslots[timeslot_head_devp].buffer_offset < bufdelta)
-			{
-				timeslots[timeslot_head_devp].buffer_offset += devp_bufpos;
+				//accumulated_source = accumulated_target;
 			} else {
-				timeslots[timeslot_head_devp].buffer_offset -= bufdelta;
-			}
-			timeslot_head_devp++;
-			if (timeslot_head_devp == TIMESLOTS)
-				timeslot_head_devp = 0;
-		}
-		timeslot_debug();
-		{
-			int16_t *p=(int16_t *)devp_plrbuf+2*devp_bufpos;
-			int16_t *b=(int16_t *)buf16;
-			for (i=0; i<bufdelta; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-			p=(int16_t *)devp_plrbuf;
-			for (i=0; i<pass2; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-		}
-		devp_bufpos+=bufdelta+pass2;
-		if (devp_bufpos>=devp_buflen)
-			devp_bufpos-=devp_buflen;
+				/* We are going to perform cubic interpolation of rate conversion... this bit is tricky */
+				ym_looped &= ~2;
+
+				while (targetlength && length1)
+				{
+					while (targetlength && length1)
+					{
+						uint32_t wpm1, wp0, wp1, wp2;
+						int32_t lc0, lc1, lc2, lc3, lvm1, lv1, lv2;
+						unsigned int progress;
+						int16_t rs, ls;
+
+						/* will the interpolation overflow? */
+						if ((length1+length2) <= 3)
+						{
+							ym_looped |= 2;
+							break;
+						}
+						/* will we overflow the wavebuf if we advance? */
+						if (((unsigned int)length1+length2) < ((ymbufrate+ymbuffpos)>>16))
+						{
+							ym_looped |= 2;
+							break;
+						}
+
+						switch (length1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
+						{
+							case 1:  wpm1 = pos1; wp0 = pos2;     wp1 = pos2 + 1; wp2 = pos2 + 2; break;
+							case 2:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos2;     wp2 = pos2 + 1; break;
+							case 3:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos2;     break;
+							default: wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos1 + 3; break;
+						}
+
+						lvm1 = (uint16_t)ymbuf[wpm1]^0x8000;
+						 lc0 = (uint16_t)ymbuf[wp0 ]^0x8000;
+						 lv1 = (uint16_t)ymbuf[wp1 ]^0x8000;
+						 lv2 = (uint16_t)ymbuf[wp2 ]^0x8000;
+
+
+						lc1 = lv1-lvm1;
+						lc2 = 2*lvm1-2*lc0+lv1-lv2;
+						lc3 = lc0-lvm1-lv1+lv2;
+						lc3 =  imulshr16(lc3,ymbuffpos);
+						lc3 += lc2;
+						lc3 =  imulshr16(lc3,ymbuffpos);
+						lc3 += lc1;
+						lc3 =  imulshr16(lc3,ymbuffpos);
+						lc3 += lc0;
+						if (lc3<0)
+							lc3=0;
+						if (lc3>65535)
+							lc3=65535;
+
+						ls = lc3 ^ 0x8000;
+						rs = ls;
+
+						PANPROC;
+
+						*(t++) = rs;
+						*(t++) = ls;
+
+						ymbuffpos+=ymbufrate;
+						progress = ymbuffpos>>16;
+						ymbuffpos &= 0xffff;
+						accumulated_source+=progress;
+						pos1+=progress;
+						length1-=progress;
+						targetlength--;
+
+						accumulated_target++;
+					} /* while (targetlength && length1) */
+					length1 = length2;
+					length2 = 0;
+					pos1 = pos2;
+					pos2 = 0;
+				} /* while (targetlength && length1) */
+			} /* if (ymbufrate==0x10000) */
+
+			ringbuffer_tail_consume_samples (ymbufpos, accumulated_source);
+			plrAPI->CommitBuffer (accumulated_target);
+		} /* if (targetlength) */
 	}
 
-	bufdelta=quietlen;
-	if (bufdelta)
-	{
-		if ((devp_bufpos+bufdelta)>devp_buflen)
-			pass2=devp_bufpos+bufdelta-devp_buflen;
-		else
-			pass2=0;
-
-		plrClearBuf((uint16_t *)devp_plrbuf+(devp_bufpos << 1 /* devp_stereo */), (bufdelta-pass2) << 1 /* devp_stereo */, 1 /* devp_signedout */);
-		if (pass2)
-			plrClearBuf((uint16_t *)devp_plrbuf, pass2 << 1 /* devp_stereo */, 1 /* devp_signedout */);
-
-		devp_bufpos+=bufdelta;
-		if (devp_bufpos>=devp_buflen)
-			devp_bufpos-=devp_buflen;
-	}
-
-	plrAdvanceTo(devp_bufpos << 2 /* devp_stereo + devp_bit16 */);
-
-	if (plrIdle)
-		plrIdle();
+	plrAPI->Idle();
 
 	clipbusy--;
 }
