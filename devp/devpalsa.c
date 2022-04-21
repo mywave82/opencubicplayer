@@ -26,6 +26,7 @@
 #include <alsa/mixer.h>
 #include <alsa/pcm.h>
 #include <alsa/pcm_plugin.h>
+#include <assert.h>
 #include <string.h>
 #include "types.h"
 #include "boot/plinkman.h"
@@ -34,6 +35,7 @@
 #include "dev/imsdev.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
+#include "dev/ringbuffer.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/filesystem-drive.h"
@@ -47,7 +49,6 @@
 #include "stuff/poutput.h"
 
 //#define ALSA_DEBUG_OUTPUT 1
-//#define ALSA_DEBUG 1
 #ifdef ALSA_DEBUG_OUTPUT
 static int debug_output = -1;
 #endif
@@ -56,6 +57,14 @@ static int debug_output = -1;
 #else
 #define debug_printf(format, args...) ((void)0)
 #endif
+
+static void *devpALSABuffer;
+static char *devpALSAShadowBuffer;
+static struct ringbuffer_t *devpALSARingBuffer;
+static int devpALSAPauseSamples;
+static int devpALSAInPause;
+static uint32_t devpALSARate;
+static const struct plrAPI_t devpALSA;
 
 static struct interfacestruct alsaPCMoutIntr;
 
@@ -81,21 +90,9 @@ static char alsaMixerName[DEVICE_NAME_MAX+1];
 
 /* stolen from devposs */
 #define MAX_ALSA_MIXER 256
-static char *playbuf;
-static char *shadowbuf;
-static int buflen; /* in bytes */
-static volatile int kernpos, cachepos, bufpos; /* in bytes */
-static volatile int cachelen, kernlen; /* to make life easier */
 static struct ocpvolstruct mixer_entries[MAX_ALSA_MIXER];
 static int alsa_mixers_n=0;
-/*  playbuf     kernpos  cachepos   bufpos      buflen
- *    |           | kernlen | cachelen |          |
- *
- *  on flush, we update all variables> *  on getbufpos we return kernpos-(1 sample) as safe point to buffer up to
- *  on getplaypos we use last known kernpos if locked, else update kernpos
- */
 
-static volatile uint32_t playpos; /* how many samples have we done totally */
 static int stereo;
 static int bit16;
 static int bitsigned;
@@ -105,7 +102,6 @@ static volatile int busy=0;
 #warning fix-me!!!!
 uint32_t custom_dsp_mdb_ref=0xffffffff;
 uint32_t custom_mixer_mdb_ref=0xffffffff;
-
 
 static int mlDrawBox(void)
 {
@@ -132,112 +128,31 @@ static int mlDrawBox(void)
 
 	return mlTop;
 }
-/* stolen from devposs */
-static int getbufpos(void)
+
+static unsigned int devpALSAIdle(void)
 {
-	int retval;
-
-	if (busy++)
-	{
-		/* can't escape if already set, and shouldn't happen */
-	}
-
-	if (kernpos==bufpos)
-	{
-		if (cachelen|kernlen)
-		{
-			retval=kernpos;
-			busy--;
-			return retval;
-		}
-	}
-/*
-	if ((!cachelen)&&(!kernlen))
-		retval=(kernpos+buflen-(0<<(bit16+stereo)))%buflen;
-	else*/
-		retval=(kernpos+buflen-(1<<(bit16+stereo)))%buflen;
-	busy--;
-	return retval;
-}
-/* more or less stolen from devposs */
-static int getplaypos(void)
-{
-	int retval;
-
-	if (busy++)
-	{
-	} else {
-		snd_pcm_sframes_t tmp;
-		int err;
-
-		debug_printf("ALSA_getplaypos()\n");
-
-		err=snd_pcm_status(alsa_pcm, alsa_pcm_status);
-		debug_printf("      snd_pcm_status(alsa_pcm, alsa_pcm_status) = %s\n", snd_strerror(-err));
-
-		if (err < 0)
-		{
-			fprintf(stderr, "ALSA: snd_pcm_status() failed: %s\n", snd_strerror(-err));
-		} else {
-			tmp=snd_pcm_status_get_delay(alsa_pcm_status);
-
-			debug_printf("      snd_pcm_status_get_delay(alsa_pcm_status = %d\n", (int)tmp);
-			if (tmp<0)
-			{ /* we ignore buffer-underruns */
-				tmp=0;
-			} else if (tmp==0)
-			{ /* ALSA sometimes (atlast on Stians Ubuntu laptop) gives odelay==0 always */
-				snd_pcm_sframes_t tmp1 = snd_pcm_status_get_avail_max(alsa_pcm_status);
-				snd_pcm_sframes_t tmp2 = snd_pcm_status_get_avail(alsa_pcm_status);
-				tmp = tmp1 - tmp2;
-
-				debug_printf("      (no delay available) fallback:\n");
-				debug_printf("      snd_pcm_status_get_avail_max() = %d\n", (int)tmp1);
-				debug_printf("      snd_pcm_status_get_avail() = %d\n", (int)tmp2);
-				debug_printf("      => %d\n", (int)tmp);
-
-				if (tmp<0)
-				{
-					tmp=0;
-				}
-			}
-			tmp<<=2/*(bit16+stereo*/;
-			if (tmp<kernlen)
-			{
-				kernlen=tmp;
-			}
-			kernpos=(cachepos-kernlen+buflen)%buflen;
-		}
-	}
-	retval=kernpos;
-	busy--;
-
-	debug_printf(" => %d\n", retval);
-
-	return retval;
-}
-
-/* more or less stolen from devposs */
-static void flush(void)
-{
-	int result, n, odelay, tmp;
+	int pos1, length1, pos2, length2;
+	int result, odelay, tmp;
 	int err;
+	int kernlen;
+	unsigned int RetVal;
 
 	if (busy++)
 	{
 		busy--;
-		return;
+		return 0;
 	}
 
-	debug_printf("ALSA_flush()\n");
+	debug_printf("devpALSAIdle()\n");
 
+/* Update the ringbuffer-tail START */
 	err=snd_pcm_status(alsa_pcm, alsa_pcm_status);
 	debug_printf("      snd_pcm_status(alsa_pcm, alsa_pcm_status) = %s\n", snd_strerror(-err));
 	if (err<0)
 	{
 		fprintf(stderr, "ALSA: snd_pcm_status() failed: %s\n", snd_strerror(-err));
 		busy--;
-		return;
+		return 0;
 	}
 
 	odelay=snd_pcm_status_get_delay(alsa_pcm_status);
@@ -245,9 +160,10 @@ static void flush(void)
 
 	if (odelay<0)
 	{ /* we ignore buffer-underruns */
+		fprintf (stderr, "ALSA: snd_pcm_status_get_delay() %d\n", odelay);
 		odelay=0;
 	} else if (odelay==0)
-	{ /* ALSA sometimes (atlast on Stians Ubuntu laptop) gives odelay==0 always */
+	{ /* ALSA sometimes in the distant past gives odelay==0 always */
 		snd_pcm_sframes_t tmp1 = snd_pcm_status_get_avail_max(alsa_pcm_status);
 		snd_pcm_sframes_t tmp2 = snd_pcm_status_get_avail(alsa_pcm_status);
 		odelay = tmp1 - tmp2;
@@ -262,174 +178,176 @@ static void flush(void)
 			odelay=0;
 		}
 	}
-	odelay <<= 2/*bit16+stereo*/;
+
+	kernlen = ringbuffer_get_tail_available_samples (devpALSARingBuffer);
 
 	if (odelay>kernlen)
 	{
 		odelay=kernlen;
-	} else if ((odelay<kernlen))
+	} else if (odelay<kernlen)
 	{
-		kernlen=odelay;
-		kernpos=(cachepos-kernlen+buflen)%buflen;
-	}
-
-	if (!cachelen)
-	{
-		busy--;
-		return;
-	}
-
-	if (bufpos<=cachepos)
-		n=buflen-cachepos;
-	else
-		n=bufpos-cachepos;
-
-	/* TODO, check kernel-size
-	if (n>info.bytes)
-		n=info.bytes;
-	*/
-
-	if (n<=0)
-	{
-		busy--;
-		return;
-	}
-
-	tmp = snd_pcm_status_get_avail(alsa_pcm_status);
-
-	debug_printf ("      snd_pcm_status_get_avail() = %d\n", tmp);
-
-	tmp <<= 2/*bit16+stereo*/;
-
-	if (n > tmp)
-	{
-		n = tmp;
-	}
-	if (shadowbuf)
-	{
-		result=snd_pcm_writei(alsa_pcm, shadowbuf+(cachepos>>((!bit16)+(!stereo))), n >>(bit16+stereo));
-	} else {
-		result=snd_pcm_writei(alsa_pcm, playbuf+cachepos, n>>(2 /* bit16 + stereo */));
-	}
-
-	debug_printf ("      snd_pcm_writei (%d) = %d\n", n>>(bit16+stereo), result);
-
-#ifdef ALSA_DEBUG_OUTPUT
-	if (result > 0)
-	{
-		if (debug_output >= 0)
+		ringbuffer_tail_consume_samples (devpALSARingBuffer, kernlen - odelay);
+		if (devpALSAPauseSamples)
 		{
-			if (shadowbuf)
+			if ((kernlen - odelay) > devpALSAPauseSamples)
 			{
-				write (debug_output, playbuf+(cachepos>>((!bit16)+(!stereo)), result<<(bit16+stereo));
-			} else {
-				write (debug_output, playbuf+cachepos, result<<2/*bit16+stereo*/);
+				devpALSAPauseSamples = 0;
+			} else {
+				devpALSAPauseSamples -= (kernlen - odelay);
 			}
 		}
 	}
-#endif
+/* Update the ringbuffer-tail DONE */
+
+/* do we need to insert pause-samples? START */
+	if (devpALSAInPause)
+	{
+		ringbuffer_get_head_bytes (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
+		bzero ((char *)devpALSABuffer+pos1, length1);
+		if (length2)
+		{
+			bzero ((char *)devpALSABuffer+pos2, length2);
+		}
+		ringbuffer_head_add_bytes (devpALSARingBuffer, length1 + length2);
+		devpALSAPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
+	}
+/* do we need to insert pause-samples? DONE */
+
+/* Move data from ringbuffer-head into processing/kernel START */
+	tmp = snd_pcm_status_get_avail(alsa_pcm_status);
+	debug_printf ("      snd_pcm_status_get_avail() = %d\n", tmp);
+
+	ringbuffer_get_processing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
+	if (tmp < length1)
+	{
+		length1 = tmp;
+		length2 = 0;
+	} else if (tmp < (length1 + length2))
+	{
+		length2 = tmp - length1;
+	}
+
+	result=0; // remove warning in the if further down
+	if (length1)
+	{
+		if (devpALSAShadowBuffer)
+		{
+			plrConvertBuffer (devpALSAShadowBuffer, (int16_t *)devpALSABuffer + (pos1<<1), length1, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
+			result=snd_pcm_writei(alsa_pcm, devpALSAShadowBuffer, length1);
+		} else {
+			result=snd_pcm_writei(alsa_pcm, (uint8_t *)devpALSABuffer + (pos1<<2), length1);
+		}
+		debug_printf ("      snd_pcm_writei (%d) = %d\n", length1, result);
+		if (result > 0)
+		{
+			ringbuffer_processing_consume_samples (devpALSARingBuffer, result);
+		}
+	}
+
+	if (length2 && (result > 0))
+	{
+		if (devpALSAShadowBuffer)
+		{
+			plrConvertBuffer (devpALSAShadowBuffer, (int16_t *)devpALSABuffer + (pos2<<1), length2, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
+			result=snd_pcm_writei(alsa_pcm, devpALSAShadowBuffer, length2);
+		} else {
+			result=snd_pcm_writei(alsa_pcm, (uint8_t *)devpALSABuffer + (pos2<<2), length2);
+		}
+		debug_printf ("      snd_pcm_writei (%d) = %d\n", length2, result);
+		if (result > 0)
+		{
+			ringbuffer_processing_consume_samples (devpALSARingBuffer, result);
+		}
+	}
+
 	if (result<0)
 	{
 		if (result==-EPIPE)
 		{
-			fprintf(stderr, "ALSA: Machine is too slow, calling snd_pcm_prepare()\n");
+			fprintf (stderr, "ALSA: Machine is too slow, calling snd_pcm_prepare()\n");
 			snd_pcm_prepare(alsa_pcm); /* TODO, can this fail? */
 			debug_printf ("      snd_pcm_prepare()\n");
+		} else {
+			fprintf (stderr, "ALSA: snd_pcm_writei() %d\n", result);
 		}
 		busy--;
-		return;
+		return 0;
 	}
-	result<<=2/*bit16+stereo*/;
-	cachepos=(cachepos+result+buflen)%buflen;
-	playpos+=result;
-	cachelen-=result;
-	kernlen+=result;
+/* Move data from ringbuffer-head into processing/kernel STOP */
+
+	ringbuffer_get_tailandprocessing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
 
 	busy--;
-}
 
-/* stolen from devposs */
-static void advance(unsigned int pos)
-{
-	debug_printf ("ALSA_advance: oldpos=%d newpos=%d add=%d (busy=%d)\n", bufpos, pos, (pos-bufpos+buflen)%buflen, busy);
-
-	busy++;
-
-	if (shadowbuf)
+	RetVal = length1 + length2;
+	if (devpALSAPauseSamples >= RetVal)
 	{
-		plrConvertBuffer ((int16_t *)playbuf, shadowbuf, buflen, bufpos, pos, bit16 /* 16bit */, bitsigned, stereo, 0);
+		return 0;
 	}
-
-	cachelen+=(pos-bufpos+buflen)%buflen;
-	bufpos=pos;
-
-	debug_printf ("         cachelen=%d kernlen=%d sum=%d len=%d\n", cachelen, kernlen, cachelen+kernlen, buflen);
-
-	busy--;
+	return RetVal - devpALSAPauseSamples;
 }
 
-/* stolen from devposs */
-static uint32_t gettimer(void)
+static void devpALSAPeekBuffer (void **buf1, unsigned int *buf1length, void **buf2, unsigned int *buf2length)
 {
-	long tmp=playpos;
-	int odelay;
+	int pos1, length1, pos2, length2;
 
-	if (busy++)
+	ringbuffer_get_tailandprocessing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
+
+	if (length1)
 	{
-		odelay=kernlen;
-	} else {
-		int err;
-
-		debug_printf("ALSA_gettimer()");
-
-		err=snd_pcm_status(alsa_pcm, alsa_pcm_status);
-
-		debug_printf ("      snd_pcm_status(alsa_pcm, alsa_pcm_status) = %s\n", snd_strerror(-err));
-
-		if (err<0)
+		*buf1 = (uint8_t *)devpALSABuffer + (pos1 << 2); /* stereo + 16bit */
+		*buf1length = length1;
+		if (length2)
 		{
-			fprintf(stderr, "ALSA: snd_pcm_status() failed: %s\n", snd_strerror(-err));
-			odelay=kernlen;
+			*buf2 = (uint8_t *)devpALSABuffer + (pos2 << 2); /* stereo + 16bit */
+			*buf2length = length2;
 		} else {
-
-			odelay=snd_pcm_status_get_delay(alsa_pcm_status);
-			debug_printf ("      snd_pcm_status_get_delay() = %d\n", odelay);
-
-			if (odelay<0)
-			{ /* we ignore buffer-underruns */
-				odelay=0;
-			} else if (odelay==0)
-			{ /* ALSA sometimes (atlast on Stians Ubuntu laptop) gives odelay==0 always */
-				snd_pcm_sframes_t tmp1 = snd_pcm_status_get_avail_max(alsa_pcm_status);
-				snd_pcm_sframes_t tmp2 = snd_pcm_status_get_avail(alsa_pcm_status);
-				odelay = tmp1 - tmp2;
-
-				debug_printf("      (no delay available) fallback:\n");
-				debug_printf("      snd_pcm_status_get_avail_max() = %d\n", (int)tmp1);
-				debug_printf("      snd_pcm_status_get_avail() = %d\n", (int)tmp2);
-				debug_printf("      => %d\n", (int)odelay);
-
-				if (odelay<0)
-				{
-					odelay=0;
-				}
-			}
-
-			odelay<<=(bit16+stereo);
-			if (odelay>kernlen)
-			{
-				odelay=kernlen;
-			} else if ((odelay<kernlen))
-			{
-				kernlen=odelay;
-				kernpos=(cachepos-kernlen+buflen)%buflen;
-			}
+			*buf2 = 0;
+			*buf2length = 0;
 		}
+	} else {
+		*buf1 = 0;
+		*buf1length = 0;
+		*buf2 = 0;
+		*buf2length = 0;
 	}
+}
 
-	tmp-=odelay;
-	busy--;
-	return imuldiv(tmp, 65536>>(stereo+bit16), plrRate);
+static void devpALSAGetBuffer (void **buf, unsigned int *samples)
+{
+	int pos1, length1;
+	assert (devpALSARingBuffer);
+
+	debug_printf("%s()\n", __FUNCTION__);
+
+	ringbuffer_get_head_samples (devpALSARingBuffer, &pos1, &length1, 0, 0);
+
+	*samples = length1;
+	*buf = (uint8_t *)devpALSABuffer + (pos1<<2); /* stereo + bit16 */
+}
+
+static uint32_t devpALSAGetRate (void)
+{
+	return devpALSARate;
+}
+
+static void devpALSAOnBufferCallback (int samplesuntil, void (*callback)(void *arg, int samples_ago), void *arg)
+{
+	assert (devpALSARingBuffer);
+	ringbuffer_add_tail_callback_samples (devpALSARingBuffer, samplesuntil, callback, arg);
+}
+
+static void devpALSACommitBuffer (unsigned int samples)
+{
+	debug_printf ("%s(%u)\n", __FUNCTION__, samples);
+
+	ringbuffer_head_add_samples (devpALSARingBuffer, samples);
+}
+
+static void devpALSAPause (int pause)
+{
+	assert (devpALSABuffer);
+	devpALSAInPause = pause;
 }
 
 static void dir_alsa_ref (struct ocpdir_t *self)
@@ -772,28 +690,30 @@ end:
 	return retval;
 }
 
-/* plr API start */
-
-static void SetOptions(unsigned int rate, int opt)
+static int devpALSAPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file)
 {
 	int err;
-	unsigned int val;
+	unsigned int uval, realdelay;
+	int plrbufsize, buflength;
 	/* start with setting default values, if we bail out */
-	plrRate=rate;
-	plrOpt=opt;
 
 	alsaOpenDevice();
 	if (!alsa_pcm)
-		return;
+		return 0;
 
-	debug_printf ("ALSA_SetOptions (rate=%d, opt=0x%x)\n", rate, opt);
+	devpALSAInPause = 0;
+	devpALSAPauseSamples = 0;
+
+	*format = PLR_STEREO_16BIT_SIGNED;
+
+	debug_printf ("devpALSAPlay (rate=%d)\n", *rate);
 
 	err=snd_pcm_hw_params_any(alsa_pcm, hwparams);
 	debug_printf("      snd_pcm_hw_params_any(alsa_pcm, hwparams) = %s\n", snd_strerror(err<0?-err:0));
 	if (err<0)
 	{
 		fprintf(stderr, "ALSA: snd_pcm_hw_params_any() failed: %s\n", snd_strerror(-err));
-		return;
+		return 0;
 	}
 
 	err=snd_pcm_hw_params_set_access(alsa_pcm, hwparams, SND_PCM_ACCESS_RW_INTERLEAVED);
@@ -801,7 +721,7 @@ static void SetOptions(unsigned int rate, int opt)
 	if (err)
 	{
 		fprintf(stderr, "ALSA: snd_pcm_hw_params_set_access() failed: %s\n", snd_strerror(-err));
-		return;
+		return 0;
 	}
 
 	err=snd_pcm_hw_params_set_format(alsa_pcm, hwparams, SND_PCM_FORMAT_S16);
@@ -836,52 +756,67 @@ static void SetOptions(unsigned int rate, int opt)
 					fprintf(stderr, "ALSA: snd_pcm_hw_params_set_format() failed: %s\n", snd_strerror(-err));
 					bit16=1;
 					bitsigned=1;
-					return;
+					return 0;
 				}
 			}
 		}
 	}
 
-	val=2;
-	err=snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &val);
-	debug_printf("      snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &channels=%i) = %s\n", val, snd_strerror(-err));
+	uval=2;
+	err=snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &uval);
+	debug_printf("      snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &channels=%i) = %s\n", uval, snd_strerror(-err));
 	if (err==0)
 	{
 		stereo=1;
 	} else {
-		val=1;
-		err=snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &val);
-		debug_printf("      snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &channels=%i) = %s\n", val, snd_strerror(-err));
+		uval=1;
+		err=snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &uval);
+		debug_printf("      snd_pcm_hw_params_set_channels_near(alsa_pcm, hwparams, &channels=%i) = %s\n", uval, snd_strerror(-err));
 		if (err==0)
 		{
 			stereo=0;
 		} else {
 			fprintf(stderr, "ALSA: snd_pcm_hw_params_set_channels_near() failed: %s\n", snd_strerror(-err));
 			stereo=1;
-			return;
+			return 0;
 		}
 	}
 
-	err=snd_pcm_hw_params_set_rate_near(alsa_pcm, hwparams, &rate, 0);
-	debug_printf("      snd_pcm_hw_params_set_rate_near(alsa_pcm, hwparams, &rate = %i, 0) = %s\n", rate, snd_strerror(-err));
+	if (!*rate)
+	{
+#if 0
+		/* this gives values that are insane */
+		uval=0;
+		err=snd_pcm_hw_params_get_rate_max (hwparams, &uval, 0);
+		debug_printf("      snd_pcm_hw_params_get_rate_max (hwparams, &rate = %u, 0) = %s\n", uval, snd_strerror(-err));
+		*rate = uval;
+#else
+		*rate = 48000;
+#endif
+	}
+	uval = *rate;
+	err=snd_pcm_hw_params_set_rate_near(alsa_pcm, hwparams, &uval, 0);
+	debug_printf("      snd_pcm_hw_params_set_rate_near(alsa_pcm, hwparams, &rate = %u, 0) = %s\n", uval, snd_strerror(-err));
 	if (err<0)
 	{
 		fprintf(stderr, "ALSA: snd_pcm_hw_params_set_rate_near() failed: %s\n", snd_strerror(-err));
-		return;
+		return 0;
 	}
-	if (rate==0)
+	if (uval==0)
 	{
 		fprintf(stderr, "ALSA: No usable samplerate available.\n");
-		return;
+		return 0;
 	}
+	*rate = uval;
+	devpALSARate = *rate;
 
-	val = 500000;
-	err=snd_pcm_hw_params_set_buffer_time_near(alsa_pcm, hwparams, &val, 0);
-	debug_printf("      snd_pcm_hw_params_set_buffer_time_near(alsa_pcm, hwparams, 500000 uS => %d, 0) = %s\n", val, snd_strerror(-err));
+	realdelay = 125000;
+	err=snd_pcm_hw_params_set_buffer_time_near(alsa_pcm, hwparams, &realdelay, 0);
+	debug_printf("      snd_pcm_hw_params_set_buffer_time_near(alsa_pcm, hwparams, 125000 uS => %u, 0) = %s\n", realdelay, snd_strerror(-err));
 	if (err)
 	{
 		fprintf(stderr, "ALSA: snd_pcm_hw_params_set_buffer_time_near() failed: %s\n", snd_strerror(-err));
-		return;
+		return 0;
 	}
 
 	err=snd_pcm_hw_params(alsa_pcm, hwparams);
@@ -889,7 +824,7 @@ static void SetOptions(unsigned int rate, int opt)
 	if (err<0)
 	{
 		fprintf(stderr, "ALSA: snd_pcm_hw_params() failed: %s\n", snd_strerror(-err));
-		return;
+		return 0;
 	}
 
 	err=snd_pcm_sw_params_current(alsa_pcm, swparams);
@@ -897,7 +832,7 @@ static void SetOptions(unsigned int rate, int opt)
 	if (err<0)
 	{
 		fprintf(stderr, "ALSA: snd_pcm_sw_params_any() failed: %s\n", snd_strerror(-err));
-		return;
+		return 0;
 	}
 
 	err=snd_pcm_sw_params(alsa_pcm, swparams);
@@ -905,52 +840,53 @@ static void SetOptions(unsigned int rate, int opt)
 	if (err<0)
 	{
 		fprintf(stderr, "ALSA: snd_pcm_sw_params() failed: %s\n", snd_strerror(-err));
-		return;
-	}
-	plrRate=rate;
-	plrOpt=PLR_STEREO_16BIT_SIGNED;
-}
-
-static int alsaPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file)
-{
-	if (!alsa_pcm)
 		return 0;
+	}
 
-	if ((*len)<(plrRate&~3))
-		*len=plrRate&~3;
-	if ((*len)>(plrRate*4))
-		*len=plrRate*4;
-	playbuf=*buf=malloc(*len);
-	if (!playbuf)
+	plrbufsize = cfGetProfileInt2(cfSoundSec, "sound", "plrbufsize", 200, 10);
+	/* clamp the plrbufsize to be atleast 150ms and below 1000 ms */
+	if (plrbufsize < 150)
 	{
-		fprintf (stderr, "alsaPlay: malloc failed #1\n");
+		plrbufsize = 150;
+	}
+	if (plrbufsize > 1000)
+	{
+		plrbufsize = 1000;
+	}
+	buflength = *rate * plrbufsize / 1000;
+
+	realdelay = (uint64_t)*rate * (uint64_t)realdelay / 1000000;
+
+	if (buflength < realdelay * 2)
+	{
+		buflength = realdelay * 2;
+	}
+	if (!(devpALSABuffer=calloc (buflength, 4)))
+	{
+		fprintf (stderr, "alsaPlay(): calloc() failed\n");
 		return 0;
 	}
+
 	if ((!bit16) || (!stereo) || (!bitsigned))
 	{
-		shadowbuf = malloc ( buflen >> ((!bit16) + (!stereo)));
-		if (!shadowbuf)
+		devpALSAShadowBuffer = malloc ( buflength << ((!!bit16) + (!!stereo)));
+		if (!devpALSAShadowBuffer)
 		{
 			fprintf (stderr, "alsaPlay(): malloc() failed #2\n");
-			free (playbuf);
-			playbuf=0; *buf=0;
+			free (devpALSABuffer);
+			devpALSABuffer = 0;
 			return 0;
 		}
 	}
 
-	buflen=*len;
-	bufpos=0;
-	cachepos=0;
-	cachelen=0;
-	playpos=0;
-	kernpos=0;
-	kernlen=0;
-
-	plrGetBufPos=getbufpos;
-	plrGetPlayPos=getplaypos;
-	plrIdle=flush;
-	plrAdvanceTo=advance;
-	plrGetTimer=gettimer;
+	if (!(devpALSARingBuffer = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, buflength)))
+	{
+		free (devpALSABuffer);
+		devpALSABuffer = 0;
+		free (devpALSAShadowBuffer);
+		devpALSAShadowBuffer=0;
+		return 0;
+	}
 
 #ifdef ALSA_DEBUG_OUTPUT
 	debug_output = open ("test-alsa.raw", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
@@ -959,10 +895,16 @@ static int alsaPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *sourc
 	return 1;
 }
 
-static void alsaStop(void)
+static void devpALSAStop(void)
 {
-	free(playbuf); playbuf=0;
-	free(shadowbuf); shadowbuf=0;
+	free(devpALSABuffer); devpALSABuffer=0;
+	free(devpALSAShadowBuffer); devpALSAShadowBuffer=0;
+	if (devpALSARingBuffer)
+	{
+		ringbuffer_reset (devpALSARingBuffer);
+		ringbuffer_free (devpALSARingBuffer);
+		devpALSARingBuffer = 0;
+	}
 
 #ifdef ALSA_DEBUG_OUTPUT
 	close (debug_output);
@@ -1164,9 +1106,7 @@ static int alsaInit(const struct deviceinfo *c)
 
 	plRegisterInterface (&alsaPCMoutIntr);
 
-	plrSetOptions=SetOptions;
-	plrPlay=alsaPlay;
-	plrStop=alsaStop;
+	plrAPI = &devpALSA;
 
 	alsaOpenDevice();
 	if (!alsa_pcm)
@@ -1175,7 +1115,6 @@ static int alsaInit(const struct deviceinfo *c)
 		return 0;
 	}
 
-	SetOptions(44100, PLR_STEREO_16BIT_SIGNED);
 	return 1;
 }
 
@@ -1205,8 +1144,6 @@ static int alsaDetect(struct deviceinfo *card)
 
 static void alsaClose(void)
 {
-	plrPlay=0;
-
 	if (alsasetupregistered)
 	{
 		plUnregisterInterface (&alsaPCMoutIntr);
@@ -1214,6 +1151,11 @@ static void alsaClose(void)
 		filesystem_setup_unregister_dir (&dir_alsa);
 		dirdbUnref (dir_alsa.dirdb_ref, dirdb_use_dir);
 		alsasetupregistered = 0;
+	}
+
+	if (plrAPI  == &devpALSA)
+	{
+		plrAPI = 0;
 	}
 }
 
@@ -1326,11 +1268,8 @@ static int alsaMixerIntrSetDev (struct moduleinfostruct *info, struct ocpfilehan
 /* 1.0.14rc1 added support for snd_device_name_hint */
 	else if (!strncmp(name, "alsa-", 4))
 	{
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-truncation="
-		snprintf (alsaCardName, sizeof (alsaCardName), "%s", info->title);
-		snprintf (alsaMixerName, sizeof (alsaCardName), "%s", info->title);
-#pragma GCC diagnostic pop
+		snprintf (alsaCardName, sizeof (alsaCardName), "%.*s", (unsigned int)sizeof (alsaCardName) - 1, info->title);
+		snprintf (alsaMixerName, sizeof (alsaMixerName), "%.*s", (unsigned int)sizeof (alsaMixerName) - 1, info->title);
 	}
 out:
 	fprintf(stderr, "ALSA: Selected PCM %s\n", alsaCardName);
@@ -1423,6 +1362,18 @@ static void __attribute__((destructor))fini(void)
 
 	alsa_mixers_n=0;
 }
+
+static const struct plrAPI_t devpALSA = {
+	devpALSAIdle,
+	devpALSAPeekBuffer,
+	devpALSAPlay,
+	devpALSAGetBuffer,
+	devpALSAGetRate,
+	devpALSAOnBufferCallback,
+	devpALSACommitBuffer,
+	devpALSAPause,
+	devpALSAStop
+};
 
 struct sounddevice plrAlsa={SS_PLAYER, 1, "ALSA device driver", alsaDetect, alsaInit, alsaClose, NULL};
 static struct interfacestruct alsaPCMoutIntr = {alsaMixerIntrSetDev, 0, 0, "alsaPCMoutIntr" INTERFACESTRUCT_TAIL};
