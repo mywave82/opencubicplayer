@@ -83,9 +83,11 @@ void Cocpopl::write(int reg, int val)
 			if (slot==-1)
 				goto done;
 			if (reg<=0xc8)
-	                hardvols[reg-0xc0][1] = val;
-			if (mute[reg-0xc0]&&mute[reg-0xc0+9])
-				return;
+			{
+		                hardvols[reg-0xc0][1] = val;
+				if (mute[reg-0xc0]&&mute[reg-0xc0+9])
+					return;
+			}
 			break;
 	}
 

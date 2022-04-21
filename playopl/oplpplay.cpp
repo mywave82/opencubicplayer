@@ -42,7 +42,6 @@ extern "C"
 #include "stuff/err.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
-#include "stuff/timer.h"
 }
 #include "oplplay.h"
 
@@ -412,8 +411,6 @@ static int oplLooped(void)
 		dopausefade();
 	oplSetLoop(fsLoopMods);
 	oplIdle();
-	if (plrIdle)
-		plrIdle();
 	return !fsLoopMods&&oplIsLooped();
 }
 

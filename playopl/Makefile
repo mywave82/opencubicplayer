@@ -57,7 +57,6 @@ oplpplay.o: oplpplay.cpp \
 	../stuff/err.h \
 	../stuff/poutput.h \
 	../stuff/sets.h \
-	../stuff/timer.h \
 	oplplay.h
 	$(CXX) $(ADPLUG_CXXFLAGS) oplpplay.cpp -o $@ -c
 
@@ -66,11 +65,10 @@ oplplay.o: oplplay.cpp \
 	../types.h \
 	../cpiface/cpiface.h \
 	../stuff/poll.h \
-	../stuff/timer.h \
-	../dev/player.h \
 	../dev/mcp.h \
 	../dev/deviplay.h \
-	../dev/plrasm.h \
+	../dev/player.h \
+	../dev/ringbuffer.h \
 	../stuff/imsrtns.h \
 	oplplay.h ocpemu.h
 	$(CXX) $(ADPLUG_CXXFLAGS) oplplay.cpp -o $@ -c

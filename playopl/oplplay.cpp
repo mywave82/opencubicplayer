@@ -32,16 +32,16 @@ extern "C"
 #include "dev/player.h"
 #include "dev/mcp.h"
 #include "dev/deviplay.h"
+#include "dev/ringbuffer.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poll.h"
-#include "dev/plrasm.h"
 }
 #include "oplplay.h"
 #include "ocpemu.h"
 
 /* options */
-static int inpause;
-static int looped;
+static int opl_inpause;
+//static int opl_looped;
 
 static unsigned long voll,volr;
 static int pan;
@@ -53,22 +53,16 @@ static int active=0;
 static uint16_t _speed, vol;
 static int16_t bal;
 
-/* devp pre-buffer zone */
-static uint16_t *buf16; /* here we dump out data before it goes live */
-/* devp buffer zone */
-static uint32_t bufpos; /* devp write head location */
-static uint32_t buflen; /* devp buffer-size in samples */
-static void *plrbuf; /* the devp buffer */
 static int donotloop=1;
 
 /* oplIdler dumping locations */
-static uint8_t oplbuf[16*1024]; /* the buffer */
-static uint32_t oplbufread; /* actually this is the write head */
-static uint32_t oplbufpos;  /* read pos */
+static int16_t oplbuf[8*1024]; /* the buffer */
+static struct ringbuffer_t *oplbufpos = 0;
 static uint32_t oplbuffpos; /* read fine-pos.. when oplbufrate has a fraction */
 static uint32_t oplbufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
+static uint32_t oplRate; /* devp rate */
 
-static size_t opltowrite; /* this is adplug interface */
+static int opltowrite; /* this is adplug interface */
 
 static Cocpopl *opl;
 static CPlayer *p;
@@ -102,6 +96,10 @@ do { \
 	} \
 	rs = (int16_t)(_rs * volr / 256.0); \
 	ls = (int16_t)(_ls * voll / 256.0); \
+	if (srnd) \
+	{ \
+		ls ^= 0xffff; \
+	} \
 } while(0)
 
 static void oplSetVolume(void);
@@ -111,10 +109,12 @@ void __attribute__ ((visibility ("internal"))) oplClosePlayer(void)
 {
 	if (active)
 	{
-		pollClose();
-		free(buf16);
+		ringbuffer_free (oplbufpos);
+		oplbufpos = 0;
 
-		plrClosePlayer();
+		pollClose();
+
+		plrAPI->Stop();
 
 		mcpSet=_SET;
 		mcpGet=_GET;
@@ -212,9 +212,16 @@ void CProvider_Mem::close(binistream *f) const
 
 int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filename /* needed for detection */, const uint8_t *content, const size_t len, struct ocpfilehandle_t *file)
 {
-	plrSetOptions(44100, PLR_STEREO_16BIT_SIGNED);
+	enum plrRequestFormat format;
 
-	opl = new Cocpopl(plrRate);
+	oplRate = 0;
+	format=PLR_STEREO_16BIT_SIGNED;
+	if (!plrAPI->Play (&oplRate, &format, file))
+	{
+		return 0;
+	}
+
+	opl = new Cocpopl(oplRate);
 
 	CProvider_Mem prMem (content, len);
 	if (!(p = CAdPlug::factory(filename, opl, CAdPlug::players, prMem)))
@@ -224,25 +231,17 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	}
 
 	oplbufrate=0x10000; /* 1.0 */
-	oplbufpos=0;
-	oplbuffpos=0;
-	oplbufread=4; /* 1 << stereo + bit16 */
-	opltowrite=0;
-
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, file))
-		goto error_out;
-
-	if (!(buf16=(uint16_t *)malloc(sizeof(uint16_t)*buflen*2)))
+	oplbuffpos = 0;
+	//opl_looped = 0;
+	oplbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, sizeof (oplbuf) >> 2 /* stereo + bit16 */);
+	if (!oplbufpos)
 	{
-		plrClosePlayer();
 		goto error_out;
 	}
-	bufpos=0;
+	opltowrite=0;
 
 	if (!pollInit(oplIdle))
 	{
-		free(buf16);
-		plrClosePlayer();
 		goto error_out;
 	}
 
@@ -256,7 +255,12 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	return 1;
 
 error_out:
-
+	plrAPI->Stop();
+	if (oplbufpos)
+	{
+		ringbuffer_free (oplbufpos);
+		oplbufpos = 0;
+	}
 	delete(p);
 	delete(opl);
 	return 0;
@@ -269,12 +273,12 @@ void __attribute__ ((visibility ("internal"))) oplSetLoop(int loop)
 
 int __attribute__ ((visibility ("internal"))) oplIsLooped(void)
 {
-	return looped;
+	return 0; // opl_looped == 3;
 }
 
 void __attribute__ ((visibility ("internal"))) oplPause(uint8_t p)
 {
-	inpause=p;
+	opl_inpause=p;
 }
 
 static void oplSetSpeed(uint16_t sp)
@@ -296,232 +300,216 @@ static void oplSetVolume(void)
 
 static void oplIdler(void)
 {
-	size_t clean;
+	int pos1, pos2;
+	int length1, length2;
 
 	if (!active)
-		return;
-
-	clean=(oplbufpos+sizeof(oplbuf)-oplbufread)%sizeof(oplbuf);
-	if (clean<8)
-		return;
-	clean-=8;
-
-	while (clean>0)
 	{
-		size_t read=clean;
+		return;
+	}
+
+	ringbuffer_get_head_samples (oplbufpos, &pos1, &length1, &pos2, &length2);
+
+	while (length1)
+	{
 		if (!opltowrite)
 		{
 			p->update(); /* TODO, rewind... */
-			opltowrite = (size_t)((float)(plrRate)*256.0 / (p->getrefresh()*((float)_speed))) << 2; /* stereo + 16bit */
+			opltowrite = (int)((float)(oplRate)*256.0 / (p->getrefresh()*((float)_speed)));
 		}
-		if ((oplbufread+read)>sizeof(oplbuf))
-			read=sizeof(oplbuf)-oplbufread;
-		if (read>opltowrite)
-			read=opltowrite;
-		opl->update((int16_t *)(oplbuf+oplbufread), read>>2); /* given in samples */
+		if (length1>opltowrite)
 		{
-			int16_t *base=(int16_t *)(oplbuf+oplbufread);
-			int16_t rs, ls;
-			int len=read>>2;
-			while (len)
-			{
-				rs=/*int16_little(*/base[0]/*)*/;
-				ls=/*int16_little(*/base[1]/*)*/;
-				PANPROC;
-				if (srnd)
-					rs^=~0;
-				base[0]=rs;
-				base[1]=ls;
-				base+=2;
-				len--;
-			}
+			length1=opltowrite;
 		}
-		oplbufread=(oplbufread+read)%sizeof(oplbuf);
-		clean-=read;
-		opltowrite-=read;
+		opl->update(oplbuf+(pos1<<1) /* stereo */, length1); /* given in samples */
+
+		opltowrite-=length1;
+
+		ringbuffer_head_add_samples (oplbufpos, length1);
+		ringbuffer_get_head_samples (oplbufpos, &pos1, &length1, &pos2, &length2);
 	}
 }
 
 void __attribute__ ((visibility ("internal"))) oplIdle(void)
 {
-	uint32_t bufplayed;
-	uint32_t bufdelta;
-	uint32_t pass2;
-	int quietlen;
-
 	if (clipbusy++)
 	{
 		clipbusy--;
 		return;
 	}
 
-	quietlen=0;
-	/* Where is our devp reading head? */
-	bufplayed=plrGetBufPos() >> 2  /* stereo + bit16 */;
-	bufdelta=(buflen+bufplayed-bufpos)%buflen;
-
-	/* No delta on the devp? */
-	if (!bufdelta)
+	if (opl_inpause /*|| (opl_looped == 3)*/)
 	{
-		clipbusy--;
-		if (plrIdle)
-			plrIdle();
-		return;
-	}
+		plrAPI->Pause (1);
+	} else {
+		void *targetbuf;
+		unsigned int targetlength; /* in samples */
 
-	/* fill up our buffers */
-	oplIdler();
+		plrAPI->Pause (0);
 
-	if (inpause)
-		quietlen=bufdelta;
-	else /*if (sizeof(oplbuf)!=opllen)*/ /* EOF of the oplstream? */
-	{           /* should not the crap below match up easy with imuldiv(opllen>>2, 65536, plrRate) ??? TODO */
-		uint32_t towrap=imuldiv((((sizeof(oplbuf)+oplbufread-oplbufpos-1)%sizeof(oplbuf))>>(1 /* we are always given stereo */ + 1 /* we are always given 16bit */)), 65536, oplbufrate);
-		if (bufdelta>towrap)
+		plrAPI->GetBuffer (&targetbuf, &targetlength);
+
+		if (targetlength)
 		{
-			/* will the eof hit inside the delta? */
-			// quietlen=bufdelta-towrap;
-			bufdelta=towrap;
-			// looped=1;
-		}
+			int16_t *t = (int16_t *)targetbuf;
+			unsigned int accumulated_target = 0;
+			unsigned int accumulated_source = 0;
+			int pos1, length1, pos2, length2;
+
+			oplIdler();
+
+			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
+			ringbuffer_get_tail_samples (oplbufpos, &pos1, &length1, &pos2, &length2);
+
+			if (oplbufrate==0x10000)
+			{
+				if (targetlength>(unsigned int)(length1+length2))
+				{
+					targetlength=(length1+length2);
+					//opl_looped |= 2;
+				} else {
+					//opl_looped &= ~2;
+				}
+
+				// limit source to not overrun target buffer
+				if ((unsigned int)length1 > targetlength)
+				{
+					length1 = targetlength;
+					length2 = 0;
+				} else if ((unsigned int)(length1 + length2) > targetlength)
+				{
+					length2 = targetlength - length1;
+				}
+
+				accumulated_source = accumulated_target = length1 + length2;
+
+				while (length1)
+				{
+					while (length1)
+					{
+						int16_t rs, ls;
+
+						rs = oplbuf[(pos1<<1) + 0];
+						ls = oplbuf[(pos1<<1) + 1];
+
+						PANPROC;
+
+						*(t++) = rs;
+						*(t++) = ls;
+
+						pos1++;
+						length1--;
+
+						//accumulated_target++;
+					}
+					length1 = length2;
+					length2 = 0;
+					pos1 = pos2;
+					pos2 = 0;
+				}
+				//accumulated_source = accumulated_target;
+			} else {
+				/* We are going to perform cubic interpolation of rate conversion... this bit is tricky */
+				//opl_looped &= ~2;
+
+				while (targetlength && length1)
+				{
+					while (targetlength && length1)
+					{
+						uint32_t wpm1, wp0, wp1, wp2;
+						int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
+						int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
+						unsigned int progress;
+						int16_t rs, ls;
+
+						/* will the interpolation overflow? */
+						if ((length1+length2) <= 3)
+						{
+							//opl_looped |= 2;
+							break;
+						}
+						/* will we overflow the wavebuf if we advance? */
+						if ((unsigned int)(length1+length2) < ((oplbufrate+oplbuffpos)>>16))
+						{
+							//opl_looped |= 2;
+							break;
+						}
+
+						switch (length1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
+						{
+							case 1:  wpm1 = pos1; wp0 = pos2;     wp1 = pos2 + 1; wp2 = pos2 + 2; break;
+							case 2:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos2;     wp2 = pos2 + 1; break;
+							case 3:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos2;     break;
+							default: wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos1 + 3; break;
+						}
+
+						rvm1 = (uint16_t)oplbuf[(wpm1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
+						lvm1 = (uint16_t)oplbuf[(wpm1<<1)+1]^0x8000;
+						 rc0 = (uint16_t)oplbuf[(wp0 <<1)+0]^0x8000;
+						 lc0 = (uint16_t)oplbuf[(wp0 <<1)+1]^0x8000;
+						 rv1 = (uint16_t)oplbuf[(wp1 <<1)+0]^0x8000;
+						 lv1 = (uint16_t)oplbuf[(wp1 <<1)+1]^0x8000;
+						 rv2 = (uint16_t)oplbuf[(wp2 <<1)+0]^0x8000;
+						 lv2 = (uint16_t)oplbuf[(wp2 <<1)+1]^0x8000;
+
+						rc1 = rv1-rvm1;
+						rc2 = 2*rvm1-2*rc0+rv1-rv2;
+						rc3 = rc0-rvm1-rv1+rv2;
+						rc3 =  imulshr16(rc3,oplbuffpos);
+						rc3 += rc2;
+						rc3 =  imulshr16(rc3,oplbuffpos);
+						rc3 += rc1;
+						rc3 =  imulshr16(rc3,oplbuffpos);
+						rc3 += rc0;
+						if (rc3<0)
+							rc3=0;
+						if (rc3>65535)
+							rc3=65535;
+
+						lc1 = lv1-lvm1;
+						lc2 = 2*lvm1-2*lc0+lv1-lv2;
+						lc3 = lc0-lvm1-lv1+lv2;
+						lc3 =  imulshr16(lc3,oplbuffpos);
+						lc3 += lc2;
+						lc3 =  imulshr16(lc3,oplbuffpos);
+						lc3 += lc1;
+						lc3 =  imulshr16(lc3,oplbuffpos);
+						lc3 += lc0;
+						if (lc3<0)
+							lc3=0;
+						if (lc3>65535)
+							lc3=65535;
+
+						rs = rc3 ^ 0x8000;
+						ls = lc3 ^ 0x8000;
+
+						PANPROC;
+
+						*(t++) = rs;
+						*(t++) = ls;
+
+						oplbuffpos+=oplbufrate;
+						progress = oplbuffpos>>16;
+						oplbuffpos&=0xFFFF;
+						accumulated_source+=progress;
+						pos1+=progress;
+						length1-=progress;
+						targetlength--;
+
+						accumulated_target++;
+					} /* while (targetlength && length1) */
+					length1 = length2;
+					length2 = 0;
+					pos1 = pos2;
+					pos2 = 0;
+				} /* while (targetlength && length1) */
+			} /* if (oplbufrate==0x10000) */
+			ringbuffer_tail_consume_samples (oplbufpos, accumulated_source);
+			plrAPI->CommitBuffer (accumulated_target);
+		} /* if (targetlength) */
 	}
 
-	bufdelta-=quietlen;
-
-	if (bufdelta)
-	{
-		uint32_t i;
-		if (oplbufrate==0x10000) /* 1.0... just copy into buf16 direct until we run out of target buffer or source buffer */
-		{
-			uint32_t o=0;
-			while (o<bufdelta)
-			{
-				uint32_t w=(bufdelta-o)*4;
-				if ((sizeof(oplbuf)-oplbufpos)<w)
-					w=sizeof(oplbuf)-oplbufpos;
-				memcpy(buf16+2*o, oplbuf+oplbufpos, w);
-				o+=w>>2;
-
-				oplbufpos+=w;
-				if (oplbufpos>=sizeof(oplbuf))
-					oplbufpos-=sizeof(oplbuf);
-			}
-		} else { /* re-sample intil we don't have more target-buffer or source-buffer */
-			int32_t c0, c1, c2, c3, ls, rs, vm1, v1, v2, wpm1;
-			uint32_t wp1, wp2;
-/*
-			if ((bufdelta-=2)<0) bufdelta=0;  by my meening, this should be in place   TODO stian
-*/
-			for (i=0; i<bufdelta; i++)
-			{
-				wpm1=oplbufpos-4; if (wpm1<0) wpm1+=sizeof(oplbuf);
-				wp1=oplbufpos+4; if (wp1>=sizeof(oplbuf)) wp1-=sizeof(oplbuf);
-				wp2=oplbufpos+8; if (wp2>=sizeof(oplbuf)) wp2-=sizeof(oplbuf);
-
-				c0 = *(uint16_t *)(oplbuf+oplbufpos)^0x8000;
-				vm1= *(uint16_t *)(oplbuf+wpm1)^0x8000;
-				v1 = *(uint16_t *)(oplbuf+wp1)^0x8000;
-				v2 = *(uint16_t *)(oplbuf+wp2)^0x8000;
-				c1 = v1-vm1;
-				c2 = 2*vm1-2*c0+v1-v2;
-				c3 = c0-vm1-v1+v2;
-				c3 =  imulshr16(c3, oplbuffpos);
-				c3 += c2;
-				c3 =  imulshr16(c3, oplbuffpos);
-				c3 += c1;
-				c3 =  imulshr16(c3, oplbuffpos);
-				ls = c3+c0;
-				if (ls>65535)
-					ls=65535;
-				else if (ls<0)
-					ls=0;
-
-				c0 = *(uint16_t *)(oplbuf+oplbufpos+2)^0x8000;
-				vm1= *(uint16_t *)(oplbuf+wpm1+2)^0x8000;
-				v1 = *(uint16_t *)(oplbuf+wp1+2)^0x8000;
-				v2 = *(uint16_t *)(oplbuf+wp2+2)^0x8000;
-				c1 = v1-vm1;
-				c2 = 2*vm1-2*c0+v1-v2;
-				c3 = c0-vm1-v1+v2;
-				c3 =  imulshr16(c3, oplbuffpos);
-				c3 += c2;
-				c3 =  imulshr16(c3, oplbuffpos);
-				c3 += c1;
-				c3 =  imulshr16(c3, oplbuffpos);
-				rs = c3+c0;
-				if (rs>65535)
-					rs=65535;
-				else if(rs<0)
-					rs=0;
-				buf16[2*i]=(uint16_t)ls^0x8000;
-				buf16[2*i+1]=(uint16_t)rs^0x8000;
-
-				oplbuffpos+=oplbufrate;
-				oplbufpos+=(oplbuffpos>>16)*4;
-				oplbuffpos&=0xFFFF;
-				if (oplbufpos>=sizeof(oplbuf))
-					oplbufpos-=sizeof(oplbuf);
-			}
-		}
-		/* when we copy out from buf16, pass the buffer-len that wraps around end-of-buffer till pass2 */
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		bufdelta-=pass2;
-
-		{
-			int16_t *p=(int16_t *)plrbuf+2*bufpos;
-			int16_t *b=(int16_t *)buf16;
-
-			for (i=0; i<bufdelta; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-			p=(int16_t *)plrbuf;
-			for (i=0; i<pass2; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-		}
-		bufpos+=bufdelta+pass2;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
-	}
-
-	bufdelta=quietlen;
-	if (bufdelta)
-	{
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		plrClearBuf((uint16_t *)plrbuf+(bufpos << 1 /* stereo */), (bufdelta-pass2) << 1 /* stereo */,  1 /* signedout */);
-		if (pass2)
-			plrClearBuf((uint16_t *)plrbuf, pass2 << 1 /* stereo */, 1 /* signedout */);
-		bufpos+=bufdelta;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
-	}
-
-	plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
-
-/*
-	fprintf(stderr, "max_ch=%d\n", opl->opl->max_ch);
-	for (int i=0;i<opl->opl->max_ch;i++)
-	{
-		fprintf(stderr, "kcode=%02x fc=%08x ksl_base=%08x keyon=%02x\n", opl->opl->P_CH[i].kcode, opl->opl->P_CH[i].fc, opl->opl->P_CH[i].ksl_base, opl->opl->P_CH[i].keyon);
-	}
-*/
-
-	if (plrIdle)
-		plrIdle();
+	plrAPI->Idle();
 
 	clipbusy--;
 }
