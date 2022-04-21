@@ -394,7 +394,6 @@ sidplay.o: \
 	../dev/mcp.h \
 	../dev/mixclip.h \
 	../dev/player.h \
-	../dev/plrasm.h \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
 	../stuff/imsrtns.h \
@@ -416,7 +415,6 @@ sidpplay.o: sidpplay.cpp \
 	../stuff/compat.h \
 	../stuff/poutput.h \
 	../stuff/sets.h \
-	../stuff/timer.h \
 	./libsidplayfp-git/src/sidplayfp/SidTuneInfo.h \
 	cpiinfo.h \
 	sidplay.h

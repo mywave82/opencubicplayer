@@ -49,12 +49,6 @@
 
 #include "md5.inc.c"
 
-#ifdef SID_DEBUG
-# define PRINT(fmt, args...) fprintf(stderr, "%s %s: " fmt, __FILE__, __func__, ##args)
-#else
-# define PRINT(a, ...) do {} while(0)
-#endif
-
 struct browser_t
 {
 	int isdir;

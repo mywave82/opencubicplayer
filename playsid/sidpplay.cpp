@@ -50,7 +50,6 @@ extern "C"
 #include "stuff/compat.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
-#include "stuff/timer.h"
 }
 #include "sidplayfp/SidTuneInfo.h"
 #include "cpiinfo.h"
@@ -452,8 +451,6 @@ static int sidLooped()
 		dopausefade();
 	}
 	sidIdle();
-	if (plrIdle)
-		plrIdle();
 	return 0;
 }
 

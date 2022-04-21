@@ -61,7 +61,6 @@ extern "C"
 #include "dev/mcp.h"
 #include "dev/mixclip.h"
 #include "dev/player.h"
-#include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
 #include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
@@ -72,7 +71,7 @@ extern "C"
 #include "libsidplayfp-api.h"
 
 #define MAXIMUM_SLOW_DOWN 32
-#define ROW_BUFFERS 25 /* half a second */
+#define ROW_BUFFERS 30 /* half a second */
 
 static libsidplayfp::ConsolePlayer *mySidPlayer;
 static SidTuneInfo const *mySidTuneInfo;
@@ -101,18 +100,13 @@ static struct ringbuffer_t *sid_buf_pos;
  *          As the tail catches up, we know data has been played, and we update our stats on the screen
  */
 
-/* devp pre-buffer zone */
-static int16_t *buf16 = 0; /* here we dump out data before it goes live */
-
-/* devp buffer zone */
-static volatile uint32_t bufpos; /* devp write head location */
-static uint32_t buflen; /* devp buffer-size in samples */
-static volatile uint32_t kernpos; /* devp read/tail location - used to track when to show buf8_states */
-static void *plrbuf; /* the devp buffer */
-static volatile int PauseSamples; /* Pause, and pitch-bend can stretch the used sample data up and down */
-
 static uint32_t sidbuffpos;
-static uint32_t sidPauseRate;
+static uint32_t sidbufrate;
+static signed int sidbufrate_compensate;
+static uint32_t sidRate; /* devp rate */
+
+static uint64_t samples_committed;
+static uint64_t samples_lastui;
 
 static unsigned long voll,volr;
 static int vol, bal;
@@ -232,316 +226,217 @@ extern void __attribute__ ((visibility ("internal"))) sidIdler (void)
 	}
 }
 
-static void sidUpdateKernPos (void)
-{
-	uint32_t delta, newpos;
-	newpos = plrGetPlayPos() >> 2 /* stereo + bit16 */;
-	delta = (buflen + newpos - kernpos) % buflen;
-
-	if (PauseSamples > 0) /* we have been slowing down */
-	{
-		if (delta >= PauseSamples)
-		{
-			delta -= PauseSamples;
-			PauseSamples = 0;
-		} else {
-			PauseSamples -= delta;
-			delta = 0;
-		}
-	} else if ((PauseSamples < 0) && delta)
-	{ /* we have been speeding up... */
-		delta -= PauseSamples; /* double negative, makes delta grow */
-		PauseSamples = 0;
-	}
-
-	if (delta)
-	{
-		/* devp-buffer used completed playing DELTA amounts of samples */
-		ringbuffer_tail_consume_samples (sid_buf_pos, delta);
-	}
-
-	kernpos = newpos;
-}
-
 void __attribute__ ((visibility ("internal"))) sidIdle(void)
 {
-	uint32_t bufdelta;
-	uint32_t pass2;
-
 	if (clipbusy++)
 	{
 		clipbusy--;
 		return;
 	}
 
-	/* "fill" up our buffers */
-	sidIdler();
-
-	sidUpdateKernPos ();
-
+	if (sid_inpause /*|| (sid_looped == 3)*/)
 	{
-		uint32_t buf_read_pos; /* bufpos is last given buf_write_pos */
-
-		buf_read_pos = plrGetBufPos() >> 2 /* stereo + bit16 */;
-
-		bufdelta = ( buflen + buf_read_pos - bufpos )%buflen;
-	}
-
-	if (!bufdelta)
-	{
-		clipbusy--;
-		if (plrIdle)
-			plrIdle();
-		return;
-	}
-
-	if (sid_inpause)
-	{
-		/* If we are in pause, we fill buffer with the correct type of zeroes */
-		/* But we also make sure that the buffer-fill is never more than 0.1s, making it reponsive */
-		uint32_t min_bufdelta;
-
-		if (buflen > plrRate/10)
-		{
-			min_bufdelta = buflen - (plrRate/10);
-		} else {
-			min_bufdelta = 0;
-		}
-
-		if (bufdelta > min_bufdelta)
-		{
-			bufdelta = bufdelta - min_bufdelta;
-
-			if ((bufpos+bufdelta)>buflen)
-				pass2=bufpos+bufdelta-buflen;
-			else
-				pass2=0;
-
-			plrClearBuf((uint16_t *)plrbuf+(bufpos << 1 /* stereo */), (bufdelta-pass2) << 1 /* stereo */, 1 /* signedout */);
-			if (pass2)
-				plrClearBuf((uint16_t *)plrbuf, pass2 << 1 /* stereo */, 1 /* signedout */ );
-
-			bufpos+=bufdelta;
-			if (bufpos>=buflen)
-				bufpos-=buflen;
-
-			/* Put "data" into PauseSamples, instead of sid_buf_pos please */
-			PauseSamples += bufdelta;
-			//ringbuffer_processing_consume_samples (sid_buf_pos, bufdelta); /* add this rate buf16_filled == tail_used */
-		}
+		plrAPI->Pause (1);
 	} else {
-		int pos1, length1, pos2, length2;
-		int i;
-		int buf16_filled = 0;
+		void *targetbuf;
+		unsigned int targetlength; /* in samples */
 
-		/* how much data is available to transfer into devp.. we are using a ringbuffer, so we might receive two fragments */
-		ringbuffer_get_processing_samples (sid_buf_pos, &pos1, &length1, &pos2, &length2);
+		plrAPI->Pause (0);
 
-		if (sidPauseRate == 0x00010000)
+		plrAPI->GetBuffer (&targetbuf, &targetlength);
+
+		if (targetlength)
 		{
-			int16_t *t = buf16;
+			int16_t *t = (int16_t *)targetbuf;
+			unsigned int accumulated_target = 0;
+			unsigned int accumulated_source = 0;
+			int pos1, length1, pos2, length2;
 
-			if (bufdelta > (length1+length2))
+			sidIdler();
+
+			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
+#warning We are using processing, not tail
+			ringbuffer_get_processing_samples (sid_buf_pos, &pos1, &length1, &pos2, &length2);
+
+			if (sidbufrate == 0x00010000)
 			{
-				bufdelta=(length1+length2);
-				//sid_looped |= 2;
+				if (targetlength>(length1+length2))
+				{
+					targetlength=(length1+length2);
+					//sid_looped |= 2;
+				} else {
+					//sid_looped &= ~2;
+				}
 
+				// limit source to not overrun target buffer
+				if (length1 > targetlength)
+				{
+					length1 = targetlength;
+					length2 = 0;
+				} else if ((length1 + length2) > targetlength)
+				{
+					length2 = targetlength - length1;
+				}
+
+				accumulated_source = accumulated_target = length1 + length2;
+
+				while (length1)
+				{
+					while (length1)
+					{
+						int16_t rs, ls;
+
+						rs = sid_buf_stereo[(pos1<<1) + 0];
+						ls = sid_buf_stereo[(pos1<<1) + 1];
+
+						PANPROC;
+
+						*(t++) = rs;
+						*(t++) = ls;
+
+						pos1++;
+						length1--;
+
+						//accumulated_target++;
+					}
+					length1 = length2;
+					length2 = 0;
+					pos1 = pos2;
+					pos2 = 0;
+				}
+				//accumulated_source = accumulated_target;
 			} else {
-				//sid_looped &= ~2;
-			}
+				/* We are going to perform cubic interpolation of rate conversion... this bit is tricky */
+				// sid_looped &= ~2;
 
-			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
-			{
-				int16_t rs, ls;
-
-				if (!length1)
+				while (targetlength && length1)
 				{
-					pos1 = pos2;
+					while (targetlength && length1)
+					{
+						uint32_t wpm1, wp0, wp1, wp2;
+						int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
+						int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
+						unsigned int progress;
+						int16_t rs, ls;
+
+						/* will the interpolation overflow? */
+						if ((length1+length2) <= 3)
+						{
+							//sid_looped |= 2;
+							break;
+						}
+						/* will we overflow the wavebuf if we advance? */
+						if ((length1+length2) < ((sidbufrate+sidbuffpos)>>16))
+						{
+							//sid_looped |= 2;
+							break;
+						}
+
+						switch (length1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
+						{
+							case 1:  wpm1 = pos1; wp0 = pos2;     wp1 = pos2 + 1; wp2 = pos2 + 2; break;
+							case 2:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos2;     wp2 = pos2 + 1; break;
+							case 3:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos2;     break;
+							default: wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos1 + 3; break;
+						}
+
+						rvm1 = (uint16_t)sid_buf_stereo[(wpm1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
+						lvm1 = (uint16_t)sid_buf_stereo[(wpm1<<1)+1]^0x8000;
+						 rc0 = (uint16_t)sid_buf_stereo[(wp0 <<1)+0]^0x8000;
+						 lc0 = (uint16_t)sid_buf_stereo[(wp0 <<1)+1]^0x8000;
+						 rv1 = (uint16_t)sid_buf_stereo[(wp1 <<1)+0]^0x8000;
+						 lv1 = (uint16_t)sid_buf_stereo[(wp1 <<1)+1]^0x8000;
+						 rv2 = (uint16_t)sid_buf_stereo[(wp2 <<1)+0]^0x8000;
+						 lv2 = (uint16_t)sid_buf_stereo[(wp2 <<1)+1]^0x8000;
+
+						rc1 = rv1-rvm1;
+						rc2 = 2*rvm1-2*rc0+rv1-rv2;
+						rc3 = rc0-rvm1-rv1+rv2;
+						rc3 =  imulshr16(rc3,sidbuffpos);
+						rc3 += rc2;
+						rc3 =  imulshr16(rc3,sidbuffpos);
+						rc3 += rc1;
+						rc3 =  imulshr16(rc3,sidbuffpos);
+						rc3 += rc0;
+						if (rc3<0)
+							rc3=0;
+						if (rc3>65535)
+							rc3=65535;
+
+						lc1 = lv1-lvm1;
+						lc2 = 2*lvm1-2*lc0+lv1-lv2;
+						lc3 = lc0-lvm1-lv1+lv2;
+						lc3 =  imulshr16(lc3,sidbuffpos);
+						lc3 += lc2;
+						lc3 =  imulshr16(lc3,sidbuffpos);
+						lc3 += lc1;
+						lc3 =  imulshr16(lc3,sidbuffpos);
+						lc3 += lc0;
+						if (lc3<0)
+							lc3=0;
+						if (lc3>65535)
+							lc3=65535;
+
+						rs = rc3 ^ 0x8000;
+						ls = lc3 ^ 0x8000;
+
+						PANPROC;
+
+						*(t++) = rs;
+						*(t++) = ls;
+						sidbuffpos+=sidbufrate;
+						progress = sidbuffpos>>16;
+						sidbuffpos &= 0xffff;
+						accumulated_source+=progress;
+						pos1+=progress;
+						length1-=progress;
+						targetlength--;
+
+						accumulated_target++;
+					} /* while (targetlength && length1) */
 					length1 = length2;
-					pos2 = 0;
 					length2 = 0;
-				}
-
-				assert (length1);
-
-				rs = sid_buf_stereo[(pos1<<1)    ];
-				ls = sid_buf_stereo[(pos1<<1) + 1];
-
-				PANPROC;
-
-				*(t++) = rs;
-				*(t++) = ls;
-
-				pos1++;
-				length1--;
-			}
-
-			ringbuffer_processing_consume_samples (sid_buf_pos, buf16_filled); /* add this rate buf16_filled == tail_used */
-		} else {
-			/* We are going to perform cubic interpolation of rate conversion, used for cool pause-slow-down... this bit is tricky */
-			unsigned int accumulated_progress = 0;
-
-			// sid_looped &= ~2;
-
-			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
-			{
-				uint32_t wpm1, wp0, wp1, wp2;
-				int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
-				int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
-				unsigned int progress;
-				int16_t rs, ls;
-
-				/* will the interpolation overflow? */
-				if ((length1+length2) <= 3)
-				{
-					//sid_looped |= 2;
-					break;
-				}
-				/* will we overflow the wavebuf if we advance? */
-				if ((length1+length2) < ((sidPauseRate+sidbuffpos)>>16))
-				{
-					//sid_looped |= 2;
-					break;
-				}
-
-				switch (length1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
-				{
-					case 1:
-						wpm1 = pos1;
-						wp0  = pos2;
-						wp1  = pos2+1;
-						wp2  = pos2+2;
-						break;
-					case 2:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos2;
-						wp2  = pos2+1;
-						break;
-					case 3:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos1+2;
-						wp2  = pos2;
-						break;
-					default:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos1+2;
-						wp2  = pos1+3;
-						break;
-				}
-
-				rvm1 = (uint16_t)sid_buf_stereo[(wpm1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
-				lvm1 = (uint16_t)sid_buf_stereo[(wpm1<<1)+1]^0x8000;
-				 rc0 = (uint16_t)sid_buf_stereo[(wp0<<1)+0]^0x8000;
-				 lc0 = (uint16_t)sid_buf_stereo[(wp0<<1)+1]^0x8000;
-				 rv1 = (uint16_t)sid_buf_stereo[(wp1<<1)+0]^0x8000;
-				 lv1 = (uint16_t)sid_buf_stereo[(wp1<<1)+1]^0x8000;
-				 rv2 = (uint16_t)sid_buf_stereo[(wp2<<1)+0]^0x8000;
-				 lv2 = (uint16_t)sid_buf_stereo[(wp2<<1)+1]^0x8000;
-
-				rc1 = rv1-rvm1;
-				rc2 = 2*rvm1-2*rc0+rv1-rv2;
-				rc3 = rc0-rvm1-rv1+rv2;
-				rc3 =  imulshr16(rc3,sidbuffpos);
-				rc3 += rc2;
-				rc3 =  imulshr16(rc3,sidbuffpos);
-				rc3 += rc1;
-				rc3 =  imulshr16(rc3,sidbuffpos);
-				rc3 += rc0;
-				if (rc3<0)
-					rc3=0;
-				if (rc3>65535)
-					rc3=65535;
-
-				lc1 = lv1-lvm1;
-				lc2 = 2*lvm1-2*lc0+lv1-lv2;
-				lc3 = lc0-lvm1-lv1+lv2;
-				lc3 =  imulshr16(lc3,sidbuffpos);
-				lc3 += lc2;
-				lc3 =  imulshr16(lc3,sidbuffpos);
-				lc3 += lc1;
-				lc3 =  imulshr16(lc3,sidbuffpos);
-				lc3 += lc0;
-				if (lc3<0)
-					lc3=0;
-				if (lc3>65535)
-					lc3=65535;
-
-				rs = rc3 ^ 0x8000;
-				ls = lc3 ^ 0x8000;
-
-				PANPROC;
-
-				buf16[(buf16_filled<<1)+0] = rs;
-				buf16[(buf16_filled<<1)+1] = ls;
-
-				sidbuffpos+=sidPauseRate;
-				progress = sidbuffpos>>16;
-				sidbuffpos &= 0xffff;
-
-				accumulated_progress += progress;
-
-				/* did we wrap? if so, progress up to the wrapping point */
-				if (progress >= length1)
-				{
-					progress -= length1;
 					pos1 = pos2;
-					length1 = length2;
 					pos2 = 0;
-					length2 = 0;
-				}
-				if (progress)
-				{
-					pos1 += progress;
-					length1 -= progress;
-				}
-			}
-
-			PauseSamples += buf16_filled - accumulated_progress;
-			ringbuffer_processing_consume_samples (sid_buf_pos, accumulated_progress);
-		}
-
-		bufdelta=buf16_filled;
-
-		if ((bufpos+bufdelta)>buflen)
-		{
-			pass2=bufpos+bufdelta-buflen;
-		} else {
-			pass2=0;
-		}
-		bufdelta-=pass2;
-
-		{
-			int16_t *p=(int16_t *)plrbuf+2*bufpos;
-			int16_t *b=buf16;
-
-			for (i=0; i<bufdelta; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-			p=(int16_t *)plrbuf;
-			for (i=0; i<pass2; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-		}
-		bufpos+=buf16_filled;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
+				} /* while (targetlength && length1) */
+			} /* if (sidbufrate==0x10000) */
+#warning we are using processing instead of tail here
+			ringbuffer_processing_consume_samples (sid_buf_pos, accumulated_source);
+			plrAPI->CommitBuffer (accumulated_target);
+			samples_committed += accumulated_target;
+#warning Does this hack work as expected?
+			sidbufrate_compensate += accumulated_target - accumulated_source;
+		} /* if (targetlength) */
 	}
 
-	plrAdvanceTo(bufpos << 2  /* stereo + bit16 */);
+	{
+		uint64_t delay = plrAPI->Idle();
+		uint64_t new_ui = samples_committed - delay;
+		if (new_ui > samples_lastui)
+		{
+			int delta = new_ui - samples_lastui;
 
-	if (plrIdle)
-		plrIdle();
+#warning use the new API instead of this wierd hack ???
+			if (sidbufrate_compensate > 0) /* we have been slowing down */
+			{
+				if (delta >= sidbufrate_compensate)
+				{
+					delta -= sidbufrate_compensate;
+					sidbufrate_compensate = 0;
+				} else {
+					sidbufrate_compensate -= delta;
+					delta = 0;
+				}
+			} else if ((sidbufrate_compensate < 0) && delta) /* we have been speeding up... */
+			{
+				delta -= sidbufrate_compensate; /* double negative, makes delta grow */
+				sidbufrate_compensate = 0;
+			}
+
+			ringbuffer_tail_consume_samples (sid_buf_pos, delta);
+			samples_lastui = new_ui;
+		}
+	}
 
 	clipbusy--;
 }
@@ -645,7 +540,7 @@ static void sidSetPitch (uint32_t sp)
 {
 	if (sp > 0x00080000) sp = 0x00080000;
 	if (!sp) sp = 0x1;
-	sidPauseRate = sp;
+	sidbufrate = sp;
 }
 
 static void sidSetVolume (void)
@@ -862,7 +757,7 @@ int __attribute__ ((visibility ("internal"))) sidGetLChanSample(unsigned int i, 
 	int ch = (i % 3) + 1;
 
 	int stereo = (opt&mcpGetSampleStereo)?1:0;
-	uint32_t step = imuldiv(0x00010000, plrRate, (signed)rate);
+	uint32_t step = imuldiv(0x00010000, sidRate, (signed)rate);
 	int16_t *src;
 	int pos1, pos2;
 	int length1, length2;
@@ -914,7 +809,7 @@ int __attribute__ ((visibility ("internal"))) sidGetPChanSample(unsigned int i, 
 	int ch = i % 4;
 
 	int stereo = (opt&mcpGetSampleStereo)?1:0;
-	uint32_t step = imuldiv(0x00010000, plrRate, (signed)rate);
+	uint32_t step = imuldiv(0x00010000, sidRate, (signed)rate);
 	int16_t *src;
 	int pos1, pos2;
 	int length1, length2;
@@ -960,131 +855,94 @@ int __attribute__ ((visibility ("internal"))) sidGetPChanSample(unsigned int i, 
 	return !!sidMuted[ch];
 }
 
-unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle_t *f)
+unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle_t *file)
 {
-	if (!plrPlay)
+	enum plrRequestFormat format=PLR_STEREO_16BIT_SIGNED;
+
+	if (!plrAPI)
 	{
 		return 0;
 	}
 
-	int playrate=cfGetProfileInt("commandline_s", "r", cfGetProfileInt2(cfSoundSec, "sound", "mixrate", 44100, 10), 10);
-	if (playrate<66)
-	{
-		if (playrate%11)
-		{
-			playrate*=1000;
-		} else {
-			playrate=playrate*11025/11;
-		}
-	}
-	plrSetOptions(playrate, PLR_STEREO_16BIT_SIGNED);
+	samples_committed = 0;
+	samples_lastui = 0;
 
-	const int length = f->filesize (f);
+	const int length = file->filesize (file);
+	if (!length)
+	{
+		fprintf (stderr, "[playsid]: FILE is way too small\n");
+		return 0;
+	}
 	if (length > 1024*1024)
 	{
 		fprintf (stderr, "[playsid]: FILE is way too big\n");
 		return 0;
 	}
-	unsigned char *buf=new unsigned char[length];
 
-	if (f->read (f, buf, length) != length)
+	unsigned char *buf=new unsigned char[length];
+	if (!buf)
 	{
-		fprintf(stderr, __FILE__": fread failed #1\n");
-		delete [] buf;
+		fprintf (stderr, "[playsid]: new() #1 failed\n");
 		return 0;
 	}
 
-	mySidPlayer = new libsidplayfp::ConsolePlayer(plrRate);
+	if (file->read (file, buf, length) != length)
+	{
+		fprintf(stderr, "[playsid]: fread failed #1\n");
+		goto error_out_buf;
+	}
+
+	sidRate=0;
+	if (!plrAPI->Play (&sidRate, &format, file))
+	{
+		fprintf (stderr, "[playsid]: plrAPI->Play failed\n");
+		goto error_out_buf;
+	}
+
+	mySidPlayer = new libsidplayfp::ConsolePlayer(sidRate);
 	if (!mySidPlayer->load (buf, length))
 	{
 		fprintf (stderr, "[playsid]: loading file failed\n");
-		delete mySidPlayer; mySidPlayer = NULL;
-		delete [] buf;
-		return 0;
+		goto error_out_mySidPlay;
 	}
-	delete [] buf;
+	delete [] buf; buf = 0;
 	mySidTuneInfo = mySidPlayer->getInfo();
 
 	SidCount = mySidPlayer->getSidCount();
-
 	if (!mySidTuneInfo)
 	{
 		fprintf (stderr, "[playsid]: retrieve info from file failed\n");
-		delete mySidPlayer; mySidPlayer = NULL;
-		return 0;
+		goto error_out_mySidPlay;
 	}
-
-	int BufSize = plrBufSize;
-	if (BufSize > 40)
-	{
-		BufSize = 40;
-	}
-	if (!plrOpenPlayer(&plrbuf, &buflen, BufSize * plrRate / 1000, f))
-	{
-		delete mySidPlayer; mySidPlayer = NULL;
-		                    mySidTuneInfo = NULL;
-		return 0;
-	}
-
-	sid_samples_per_row = plrRate / 50;
-
-	srnd=0;
-
-#if 0
-	myEmuEngine->getConfig(*myEmuConfig);
-
-	myEmuConfig->bitsPerSample=SIDEMU_16BIT;
-	myEmuConfig->sampleFormat=SIDEMU_UNSIGNED_PCM;
-	myEmuConfig->channels=stereo?SIDEMU_STEREO:SIDEMU_MONO;
-	myEmuConfig->sidChips=1;
-
-	myEmuConfig->volumeControl=SIDEMU_FULLPANNING;
-	myEmuConfig->autoPanning=SIDEMU_CENTEREDAUTOPANNING;
-
-	myEmuConfig->mos8580=0;
-	myEmuConfig->measuredVolume=0;
-	myEmuConfig->emulateFilter=1;
-	myEmuConfig->filterFs=SIDEMU_DEFAULTFILTERFS;
-	myEmuConfig->filterFm=SIDEMU_DEFAULTFILTERFM;
-	myEmuConfig->filterFt=SIDEMU_DEFAULTFILTERFT;
-	myEmuConfig->memoryMode=MPU_BANK_SWITCHING;
-	myEmuConfig->clockSpeed=SIDTUNE_CLOCK_PAL;
-	myEmuConfig->forceSongSpeed=0;
-	myEmuConfig->digiPlayerScans=10;
-
-	myEmuEngine->setConfig(*myEmuConfig);
-#endif
 
 	memset(sidMuted, 0, sizeof (sidMuted));
 	sid_inpause=0;
 
-	buf16=new int16_t [buflen*2];
+#warning FIX ME, rate is fixed to 50 at this line!!!
+	sid_samples_per_row = sidRate / 50;
+
 	sid_buf_stereo = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 2 * sid_samples_per_row];
 	sid_buf_4x3[0] = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 4 * sid_samples_per_row];
 	sid_buf_4x3[1] = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 4 * sid_samples_per_row];
 	sid_buf_4x3[2] = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 4 * sid_samples_per_row];
-	if ((!buf16) || (!sid_buf_4x3[0]) || (!sid_buf_4x3[1]) || (!sid_buf_4x3[2]))
+	if ((!sid_buf_4x3[0]) || (!sid_buf_4x3[1]) || (!sid_buf_4x3[2]))
 	{
-		plrClosePlayer();
-		return 0;
+		goto error_out_sid_buffers;
 	}
 
 	sid_buf_pos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, ROW_BUFFERS * MAXIMUM_SLOW_DOWN * sid_samples_per_row);
 	if (!sid_buf_pos)
 	{
-		plrClosePlayer();
-		return 0;
+		goto error_out_sid_buffers;
 	}
 
 	bzero (SidStatBuffers, sizeof (SidStatBuffers));
 	SidStatBuffers_available = ROW_BUFFERS;
 
-	bufpos=0;
-	kernpos=0;
 	sidbuffpos = 0x00000000;
-	PauseSamples = 0;
+	sidbufrate_compensate = 0;
 	sid_inpause = 0;
-	sidPauseRate = 0x00010000;
+	sidbufrate = 0x00010000;
 
 	// construct song message
 	{
@@ -1105,8 +963,7 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 
 	if (!pollInit(sidIdle))
 	{
-		plrClosePlayer();
-		return 0;
+		goto error_out_ringbuffer;
 	}
 
 	_SET=mcpSet;
@@ -1116,13 +973,27 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 	mcpNormalize (mcpNormalizeDefaultPlayP);
 
 	return 1;
+
+error_out_ringbuffer:
+	ringbuffer_free (sid_buf_pos); sid_buf_pos = 0;
+error_out_sid_buffers:
+	delete[] sid_buf_stereo; sid_buf_stereo = NULL;
+	delete[] sid_buf_4x3[0]; sid_buf_4x3[0] = NULL;
+	delete[] sid_buf_4x3[1]; sid_buf_4x3[1] = NULL;
+	delete[] sid_buf_4x3[2]; sid_buf_4x3[2] = NULL;
+error_out_mySidPlay:
+	plrAPI->Stop();
+	delete mySidPlayer; mySidPlayer = NULL;
+error_out_buf:
+	if (buf) delete [] buf;
+	return 0;
 }
 
 void __attribute__ ((visibility ("internal"))) sidClosePlayer(void)
 {
 	pollClose();
 
-	plrClosePlayer();
+	plrAPI->Stop();
 
 	if (sid_buf_pos)
 	{
@@ -1130,7 +1001,6 @@ void __attribute__ ((visibility ("internal"))) sidClosePlayer(void)
 		sid_buf_pos = 0;
 	}
 
-	delete[] buf16;          buf16 = NULL;
 	delete mySidPlayer;      mySidPlayer = NULL;
 	                         mySidTuneInfo = NULL;
 	delete[] sid_buf_stereo; sid_buf_stereo = NULL;
