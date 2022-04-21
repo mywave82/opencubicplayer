@@ -197,8 +197,6 @@ static int flacLooped(void)
 		dopausefade();
 	flacSetLoop(fsLoopMods);
 	flacIdle();
-	if (plrIdle)
-		plrIdle();
 	return !fsLoopMods&&flacIsLooped();
 }
 

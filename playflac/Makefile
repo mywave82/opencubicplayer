@@ -87,11 +87,9 @@ flacplay.o: flacplay.c \
 	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
-	../dev/plrasm.h \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
 	flacplay.h \
 	../stuff/imsrtns.h \
-	../stuff/poll.h \
-	../stuff/timer.h
+	../stuff/poll.h
 	$(CC) flacplay.c -o $@ $(FLAC_CFLAGS) -c
