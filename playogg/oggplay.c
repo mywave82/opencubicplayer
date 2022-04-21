@@ -46,12 +46,11 @@
 #include "filesel/filesystem.h"
 #include "oggplay.h"
 #include "stuff/imsrtns.h"
-#include "stuff/timer.h"
 #include "stuff/poll.h"
 
 static int current_section;
 
-static uint32_t samprate;
+static uint32_t oggRate; /* devp rate */
 
 static uint32_t voll,volr;
 static int vol;
@@ -62,11 +61,6 @@ static int srnd;
 static int opt25_50;
 static char opt25[26];
 static char opt50[51];
-
-static int16_t *buf16=NULL;
-static uint32_t bufpos;
-static uint32_t buflen;
-static void *plrbuf;
 
 static OggVorbis_File ov;
 static int oggstereo;
@@ -80,10 +74,10 @@ static struct ringbuffer_t *oggbufpos = 0;
 static uint_fast32_t oggbuffpos;
 static uint_fast32_t oggbufrate;
 static volatile int active;
-static int looped;
+static int ogg_looped;
 static int donotloop;
 
-static int inpause;
+static int ogg_inpause;
 
 static volatile int clipbusy=0;
 
@@ -191,11 +185,11 @@ static void oggIdler(void)
 		{
 			if (donotloop)
 			{
-				looped |= 1;
+				ogg_looped |= 1;
 				oggpos = ogglen;
 				break;
 			} else {
-				looped &= ~1;
+				ogg_looped &= ~1;
 				oggpos = 0;
 				oggneedseek = 1;
 			}
@@ -207,258 +201,182 @@ static void oggIdler(void)
 
 void __attribute__ ((visibility ("internal"))) oggIdle(void)
 {
-	uint32_t bufdelta;
-	uint32_t pass2;
-
 	if (clipbusy++)
 	{
 		clipbusy--;
 		return;
 	}
 
+	if (ogg_inpause || (ogg_looped == 3))
 	{
-		uint32_t bufplayed;
-
-		bufplayed=plrGetBufPos() >> 2 /* stereo + bit16 */;
-
-		bufdelta=(buflen+bufplayed-bufpos)%buflen;
-	}
-
-	if (!bufdelta)
-	{
-		clipbusy--;
-		if (plrIdle)
-			plrIdle();
-		return;
-	}
-	oggIdler();
-
-	if (inpause)
-	{ /* If we are in pause, we fill buffer with the correct type of zeroes */
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		plrClearBuf((uint16_t *)plrbuf+(bufpos << 1 /* stereo*/), (bufdelta-pass2) << 1 /* stereo */, 1 /* signedout */);
-		if (pass2)
-			plrClearBuf((uint16_t *)plrbuf, pass2 << 1 /* stereo */ , 1 /* signedout */);
-		bufpos+=bufdelta;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
+		plrAPI->Pause (1);
 	} else {
-		int pos1, length1, pos2, length2;
-		int i;
-		int buf16_filled = 0;
+		void *targetbuf;
+		unsigned int targetlength; /* in samples */
 
-		/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-		ringbuffer_get_tail_samples (oggbufpos, &pos1, &length1, &pos2, &length2);
+		plrAPI->Pause (0);
 
-		/* are the speed 1:1, if so filling up buf16 is very easy */
-		if (oggbufrate==0x10000)
+		plrAPI->GetBuffer (&targetbuf, &targetlength);
+
+		if (targetlength)
 		{
-			int16_t *t = buf16;
+			int16_t *t = targetbuf;
+			unsigned int accumulated_target = 0;
+			unsigned int accumulated_source = 0;
+			int pos1, length1, pos2, length2;
 
-			if (bufdelta>(length1+length2))
+			/* fill up our buffers */
+			oggIdler();
+
+			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
+			ringbuffer_get_tail_samples (oggbufpos, &pos1, &length1, &pos2, &length2);
+
+			if (oggbufrate==0x10000)
 			{
-				bufdelta=(length1+length2);
-				looped |= 2;
+				if (targetlength>(length1+length2))
+				{
+					targetlength=(length1+length2); // limiting targetlength here, saves us from doing this per sample later
+					ogg_looped |= 2;
+				} else {
+					ogg_looped &= ~2;
+				}
+
+				// limit source to not overrun target buffer
+				if (length1 > targetlength)
+				{
+					length1 = targetlength;
+					length2 = 0;
+				} else if ((length1 + length2) > targetlength)
+				{
+					length2 = targetlength - length1;
+				}
+
+				accumulated_source = accumulated_target = length1 + length2;
+
+				while (length1)
+				{
+					while (length1)
+					{
+						int16_t rs, ls;
+
+						rs = oggbuf[pos1<<1];
+						ls = oggbuf[(pos1<<1) + 1];
+
+						PANPROC;
+
+						*(t++) = rs;
+						*(t++) = ls;
+
+						pos1++;
+						length1--;
+						//accumulated_target++;
+					}
+					length1 = length2;
+					length2 = 0;
+					pos1 = pos2;
+					pos2 = 0;
+				}
+				//accumulated_source = accumulated_target;
 			} else {
-				looped &= ~2;
-			}
+				ogg_looped &= ~2;
 
-			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
-			{
-				int16_t rs, ls;
-
-				if (!length1)
+				while (targetlength && length1)
 				{
-					pos1 = pos2;
+					while (targetlength && length1)
+					{
+						uint32_t wpm1, wp0, wp1, wp2;
+						int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
+						int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
+						unsigned int progress;
+						int16_t rs, ls;
+
+						if ((length1+length2) <= 3)
+						{
+							ogg_looped |= 2;
+							break;
+						}
+						/* will we overflow the oggbuf if we advance? */
+						if ((length1+length2) < ((oggbufrate+oggbuffpos)>>16))
+						{
+							ogg_looped |= 2;
+							break;
+						}
+
+						switch (length1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
+						{
+							case 1:  wpm1 = pos1; wp0 = pos2;     wp1 = pos2 + 1; wp2 = pos2 + 2; break;
+							case 2:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos2;     wp2 = pos2 + 1; break;
+							case 3:  wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos2;     break;
+							default: wpm1 = pos1; wp0 = pos1 + 1; wp1 = pos1 + 2; wp2 = pos1 + 3; break;
+						}
+
+						rvm1 = (uint16_t)oggbuf[(wpm1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
+						lvm1 = (uint16_t)oggbuf[(wpm1<<1)+1]^0x8000;
+						 rc0 = (uint16_t)oggbuf[(wp0 <<1)+0]^0x8000;
+						 lc0 = (uint16_t)oggbuf[(wp0 <<1)+1]^0x8000;
+						 rv1 = (uint16_t)oggbuf[(wp1 <<1)+0]^0x8000;
+						 lv1 = (uint16_t)oggbuf[(wp1 <<1)+1]^0x8000;
+						 rv2 = (uint16_t)oggbuf[(wp2 <<1)+0]^0x8000;
+						 lv2 = (uint16_t)oggbuf[(wp2 <<1)+1]^0x8000;
+
+						rc1 = rv1-rvm1;
+						rc2 = 2*rvm1-2*rc0+rv1-rv2;
+						rc3 = rc0-rvm1-rv1+rv2;
+						rc3 =  imulshr16(rc3,oggbuffpos);
+						rc3 += rc2;
+						rc3 =  imulshr16(rc3,oggbuffpos);
+						rc3 += rc1;
+						rc3 =  imulshr16(rc3,oggbuffpos);
+						rc3 += rc0;
+						if (rc3<0)
+							rc3=0;
+						if (rc3>65535)
+							rc3=65535;
+
+						lc1 = lv1-lvm1;
+						lc2 = 2*lvm1-2*lc0+lv1-lv2;
+						lc3 = lc0-lvm1-lv1+lv2;
+						lc3 =  imulshr16(lc3,oggbuffpos);
+						lc3 += lc2;
+						lc3 =  imulshr16(lc3,oggbuffpos);
+						lc3 += lc1;
+						lc3 =  imulshr16(lc3,oggbuffpos);
+						lc3 += lc0;
+						if (lc3<0)
+							lc3=0;
+						if (lc3>65535)
+							lc3=65535;
+
+						rs = rc3 ^ 0x8000;
+						ls = lc3 ^ 0x8000;
+
+						PANPROC;
+
+						*(t++) = rs;
+						*(t++) = ls;
+
+						oggbuffpos+=oggbufrate;
+						progress = oggbuffpos>>16;
+						oggbuffpos &= 0xffff;
+						accumulated_source+=progress;
+						pos1+=progress;
+						length1-=progress;
+						targetlength--;
+
+						accumulated_target++;
+					} /* while (targetlength && length1) */
 					length1 = length2;
-					pos2 = 0;
 					length2 = 0;
-				}
-
-				if (!length1)
-				{
-					fprintf (stderr, "playogg: ERROR, length1 == 0, in oggIdle\n");
-					_exit(1);
-				}
-
-				rs = oggbuf[pos1<<1];
-				ls = oggbuf[(pos1<<1) + 1];
-
-				PANPROC;
-
-				*(t++) = rs;
-				*(t++) = ls;
-
-				pos1++;
-				length1--;
-			}
-
-			ringbuffer_tail_consume_samples (oggbufpos, buf16_filled); /* add this rate buf16_filled == tail_used */
-		} else {
-			/* We are going to perform cubic interpolation of rate conversion... this bit is tricky */
-			unsigned int accumulated_progress = 0;
-
-			looped &= ~2;
-
-			for (buf16_filled=0; buf16_filled<bufdelta; buf16_filled++)
-			{
-				uint32_t wpm1, wp0, wp1, wp2;
-				int32_t rc0, rc1, rc2, rc3, rvm1,rv1,rv2;
-				int32_t lc0, lc1, lc2, lc3, lvm1,lv1,lv2;
-				unsigned int progress;
-				int16_t rs, ls;
-
-				/* will the interpolation overflow? */
-				if ((length1+length2) <= 3)
-				{
-					looped |= 2;
-					break;
-				}
-				/* will we overflow the wavebuf if we advance? */
-				if ((length1+length2) < ((oggbufrate+oggbuffpos)>>16))
-				{
-					looped |= 2;
-					break;
-				}
-
-				switch (length1) /* if we are close to the wrap between buffer segment 1 and 2, len1 will grow down to a small number */
-				{
-					case 1:
-						wpm1 = pos1;
-						wp0  = pos2;
-						wp1  = pos2+1;
-						wp2  = pos2+2;
-						break;
-					case 2:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos2;
-						wp2  = pos2+1;
-						break;
-					case 3:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos1+2;
-						wp2  = pos2;
-						break;
-					default:
-						wpm1 = pos1;
-						wp0  = pos1+1;
-						wp1  = pos1+2;
-						wp2  = pos1+3;
-						break;
-				}
-
-
-				rvm1 = (uint16_t)oggbuf[(wpm1<<1)+0]^0x8000; /* we temporary need data to be unsigned - hence the ^0x8000 */
-				lvm1 = (uint16_t)oggbuf[(wpm1<<1)+1]^0x8000;
-				 rc0 = (uint16_t)oggbuf[(wp0<<1)+0]^0x8000;
-				 lc0 = (uint16_t)oggbuf[(wp0<<1)+1]^0x8000;
-				 rv1 = (uint16_t)oggbuf[(wp1<<1)+0]^0x8000;
-				 lv1 = (uint16_t)oggbuf[(wp1<<1)+1]^0x8000;
-				 rv2 = (uint16_t)oggbuf[(wp2<<1)+0]^0x8000;
-				 lv2 = (uint16_t)oggbuf[(wp2<<1)+1]^0x8000;
-
-				rc1 = rv1-rvm1;
-				rc2 = 2*rvm1-2*rc0+rv1-rv2;
-				rc3 = rc0-rvm1-rv1+rv2;
-				rc3 =  imulshr16(rc3,oggbuffpos);
-				rc3 += rc2;
-				rc3 =  imulshr16(rc3,oggbuffpos);
-				rc3 += rc1;
-				rc3 =  imulshr16(rc3,oggbuffpos);
-				rc3 += rc0;
-				if (rc3<0)
-					rc3=0;
-				if (rc3>65535)
-					rc3=65535;
-
-				lc1 = lv1-lvm1;
-				lc2 = 2*lvm1-2*lc0+lv1-lv2;
-				lc3 = lc0-lvm1-lv1+lv2;
-				lc3 =  imulshr16(lc3,oggbuffpos);
-				lc3 += lc2;
-				lc3 =  imulshr16(lc3,oggbuffpos);
-				lc3 += lc1;
-				lc3 =  imulshr16(lc3,oggbuffpos);
-				lc3 += lc0;
-				if (lc3<0)
-					lc3=0;
-				if (lc3>65535)
-					lc3=65535;
-
-				rs = rc3 ^ 0x8000;
-				ls = lc3 ^ 0x8000;
-
-				PANPROC;
-
-				buf16[(buf16_filled<<1)+0] = rs;
-				buf16[(buf16_filled<<1)+1] = ls;
-
-				oggbuffpos+=oggbufrate;
-				progress = oggbuffpos>>16;
-				oggbuffpos &= 0xffff;
-
-				accumulated_progress += progress;
-
-				/* did we wrap? if so, progress up to the wrapping point */
-				if (progress >= length1)
-				{
-					progress -= length1;
 					pos1 = pos2;
-					length1 = length2;
 					pos2 = 0;
-					length2 = 0;
-				}
-				if (progress)
-				{
-					pos1 += progress;
-					length1 -= progress;
-				}
-			}
-			ringbuffer_tail_consume_samples (oggbufpos, accumulated_progress);
-		}
-
-		bufdelta=buf16_filled;
-
-		if ((bufpos+bufdelta)>buflen)
-			pass2=bufpos+bufdelta-buflen;
-		else
-			pass2=0;
-		bufdelta-=pass2;
-
-		{
-			int16_t *p=(int16_t *)plrbuf+2*bufpos;
-			int16_t *b=buf16;
-
-			for (i=0; i<bufdelta; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-			p=(int16_t *)plrbuf;
-			for (i=0; i<pass2; i++)
-			{
-				p[0]=b[0];
-				p[1]=b[1];
-				p+=2;
-				b+=2;
-			}
-		}
-		bufpos+=buf16_filled;
-		if (bufpos>=buflen)
-			bufpos-=buflen;
+				} /* while (targetlength && length1) */
+			} /* if (oggbufrate==0x10000) */
+			ringbuffer_tail_consume_samples (oggbufpos, accumulated_source);
+			plrAPI->CommitBuffer (accumulated_target);
+		} /* if (targetlength) */
 	}
 
-	plrAdvanceTo(bufpos << 2 /* stereo + bit16 */);
-
-	if (plrIdle)
-		plrIdle();
+	plrAPI->Idle();
 
 	clipbusy--;
 }
@@ -826,7 +744,7 @@ static void add_comment(const char *src)
 
 char __attribute__ ((visibility ("internal"))) oggLooped(void)
 {
-	return looped == 3;
+	return ogg_looped == 3;
 }
 
 void __attribute__ ((visibility ("internal"))) oggSetLoop(uint8_t s)
@@ -836,14 +754,14 @@ void __attribute__ ((visibility ("internal"))) oggSetLoop(uint8_t s)
 
 void __attribute__ ((visibility ("internal"))) oggPause(uint8_t p)
 {
-	inpause=p;
+	ogg_inpause=p;
 }
 
 static void oggSetSpeed (uint16_t sp)
 {
 	if (sp<32)
 		sp=32;
-	oggbufrate=imuldiv(256*sp, oggrate, samprate);
+	oggbufrate=imuldiv(256*sp, oggrate, oggRate);
 }
 
 static void oggSetVolume (void)
@@ -888,8 +806,7 @@ static int GET(int ch, int opt)
 
 ogg_int64_t __attribute__ ((visibility ("internal"))) oggGetPos(void)
 {
-#warning TODO, deduct devp buffer!
-	return (oggpos+ogglen-ringbuffer_get_tail_available_samples(oggbufpos))%ogglen;
+	return (ogglen + ogglen + oggpos - ringbuffer_get_tail_available_samples(oggbufpos) - plrAPI->Idle())%ogglen;
 }
 
 void __attribute__ ((visibility ("internal"))) oggGetInfo(struct ogginfo *info)
@@ -927,161 +844,9 @@ void __attribute__ ((visibility ("internal"))) oggSetPos(ogg_int64_t pos)
 	ringbuffer_reset(oggbufpos);
 }
 
-static ov_callbacks callbacks =
-{
-	read_func,
-	seek_func,
-	close_func,
-	tell_func
-};
-int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle_t *oggf)
-{
-	int result;
-	struct vorbis_info *vi;
-
-	if (!plrPlay)
-		return 0;
-
-	oggf->seek_set (oggf, 0);
-	if (oggfile)
-	{
-		oggfile->unref (oggfile);
-		oggfile = 0;
-	}
-	oggfile = oggf;
-	oggfile->ref (oggfile);
-	if ((result = ov_open_callbacks(oggfile, &ov, NULL, 0, callbacks)))
-	{
-		switch (result)
-		{
-			case OV_EREAD:      fprintf (stderr, "ov_open_callbacks(): A read from media returned an error.\n"); break;
-			case OV_ENOTVORBIS: fprintf (stderr, "ov_open_callbacks(): Bitstream does not contain any Vorbis data.\n"); break;
-			case OV_EVERSION:   fprintf (stderr, "ov_open_callbacks(): Vorbis version mismatch.\n"); break;
-			case OV_EBADHEADER: fprintf (stderr, "ov_open_callbacks(): Invalid Vorbis bitstream header.\n"); break;
-			case OV_EFAULT:     fprintf (stderr, "ov_open_callbacks(): Internal logic fault; indicates a bug or heap/stack corruption.\n"); break;
-			default:            fprintf (stderr, "ov_open_callbacks(): Unknown error %d\n", result); break;
-		}
-		return 0; /* we don't bother to do more exact */
-	}
-
-	vi=ov_info(&ov,-1);
-	oggstereo=(vi->channels>=2);
-	oggrate=vi->rate;
-
-	plrSetOptions(oggrate, PLR_STEREO_16BIT_SIGNED);
-	samprate=plrRate;
-
-	oggbufrate=imuldiv(65536, oggrate, samprate);
-
-	ogglen=ov_pcm_total(&ov, -1);
-	if (!ogglen)
-		return 0;
-
-	oggbuf=malloc(1024 * 128);
-	if (!oggbuf)
-		return 0;
-	oggbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 1024*32);
-	if (!oggbufpos)
-	{
-		free(oggbuf);
-		oggbuf = 0;
-		return 0;
-	}
-	oggbuffpos=0;
-	current_section=0;
-	oggneedseek=0;
-
-	{
-		int i;
-
-		vorbis_comment *vf = 0;
-		vf = ov_comment (&ov, -1);
-		if (vf)
-		{
-			for (i=0; i < vf->comments; i++)
-			{
-				add_comment(vf->user_comments[i]);
-			}
-		}
-	}
-
-	if (!plrOpenPlayer(&plrbuf, &buflen, plrBufSize * plrRate / 1000, oggf))
-	{
-		ringbuffer_free (oggbufpos);
-		oggbufpos = 0;
-
-		free(oggbuf);
-		oggbuf = 0;
-		return 0;
-	}
-
-	inpause=0;
-	looped=0;
-
-	buf16=malloc(sizeof(uint16_t)*buflen*2);
-	if (!buf16)
-	{
-		plrClosePlayer();
-
-		ringbuffer_free (oggbufpos);
-		oggbufpos = 0;
-
-		free(oggbuf);
-		oggbuf = 0;
-		return 0;
-	}
-	bufpos=0;
-
-	if (!pollInit(oggIdle))
-	{
-		plrClosePlayer();
-
-		free (buf16);
-		buf16 = 0;
-
-		ringbuffer_free (oggbufpos);
-		oggbufpos = 0;
-
-		free(oggbuf);
-		oggbuf = 0;
-
-		return 0;
-	}
-
-	_SET=mcpSet;
-	_GET=mcpGet;
-	mcpSet=SET;
-	mcpGet=GET;
-
-	mcpNormalize (mcpNormalizeDefaultPlayP);
-
-	active=1;
-	opt25_50 = 0;
-	opt25[0] = 0;
-	opt50[0] = 0;
-
-	return 1;
-}
-
-void __attribute__ ((visibility ("internal"))) oggClosePlayer(void)
+static void oggFreeComments (void)
 {
 	int i, j;
-	active=0;
-
-	pollClose();
-
-	plrClosePlayer();
-
-	ringbuffer_free (oggbufpos);
-	oggbufpos = 0;
-
-	free(oggbuf);
-	oggbuf=NULL;
-
-	free(buf16);
-	buf16=NULL;
-
-	ov_clear(&ov);
 
 	for (i=0; i < ogg_comments_count; i++)
 	{
@@ -1105,6 +870,158 @@ void __attribute__ ((visibility ("internal"))) oggClosePlayer(void)
 	free (ogg_pictures);
 	ogg_pictures = 0;
 	ogg_pictures_count = 0;
+}
+
+static ov_callbacks callbacks =
+{
+	read_func,
+	seek_func,
+	close_func,
+	tell_func
+};
+int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle_t *oggf)
+{
+	enum plrRequestFormat format;
+	int result;
+	struct vorbis_info *vi;
+
+	if (!plrAPI)
+	{
+		return 0;
+	}
+
+	oggfile = oggf;
+	oggfile->seek_set (oggfile, 0);
+	oggfile->ref (oggfile);
+	if ((result = ov_open_callbacks(oggfile, &ov, NULL, 0, callbacks)))
+	{
+		switch (result)
+		{
+			case OV_EREAD:      fprintf (stderr, "ov_open_callbacks(): A read from media returned an error.\n"); break;
+			case OV_ENOTVORBIS: fprintf (stderr, "ov_open_callbacks(): Bitstream does not contain any Vorbis data.\n"); break;
+			case OV_EVERSION:   fprintf (stderr, "ov_open_callbacks(): Vorbis version mismatch.\n"); break;
+			case OV_EBADHEADER: fprintf (stderr, "ov_open_callbacks(): Invalid Vorbis bitstream header.\n"); break;
+			case OV_EFAULT:     fprintf (stderr, "ov_open_callbacks(): Internal logic fault; indicates a bug or heap/stack corruption.\n"); break;
+			default:            fprintf (stderr, "ov_open_callbacks(): Unknown error %d\n", result); break;
+		}
+		goto error_out_file;
+	}
+
+	vi=ov_info(&ov,-1);
+	oggstereo=(vi->channels>=2);
+	oggrate=vi->rate;
+
+	oggRate=oggrate;
+	format=PLR_STEREO_16BIT_SIGNED;
+	if (!plrAPI->Play (&oggRate, &format, oggfile))
+	{
+		fprintf(stderr, "playogg: plrOpenPlayer() failed\n");
+		goto error_out_file;
+	}
+
+	oggbufrate=imuldiv(65536, oggrate, oggRate);
+
+	ogglen=ov_pcm_total(&ov, -1);
+	if (!ogglen)
+	{
+		goto error_out_plrAPI_Play;
+	}
+
+	oggbuf=malloc(1024 * 128);
+	if (!oggbuf)
+	{
+		goto error_out_plrAPI_Play;
+	}
+	oggbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 1024*32);
+	if (!oggbufpos)
+	{
+		goto error_out_oggbuf;
+	}
+	oggbuffpos=0;
+	current_section=0;
+	oggneedseek=0;
+
+	{
+		int i;
+
+		vorbis_comment *vf = 0;
+		vf = ov_comment (&ov, -1);
+		if (vf)
+		{
+			for (i=0; i < vf->comments; i++)
+			{
+				add_comment(vf->user_comments[i]);
+			}
+		}
+	}
+
+	ogg_inpause=0;
+	ogg_looped=0;
+
+	if (!pollInit(oggIdle))
+	{
+		goto error_out_ringbuffer;
+	}
+
+	_SET=mcpSet;
+	_GET=mcpGet;
+	mcpSet=SET;
+	mcpGet=GET;
+
+	mcpNormalize (mcpNormalizeDefaultPlayP);
+
+	active=1;
+	opt25_50 = 0;
+	opt25[0] = 0;
+	opt50[0] = 0;
+
+	return 1;
+
+error_out_ringbuffer:
+	ringbuffer_free (oggbufpos);
+	oggbufpos = 0;
+
+error_out_oggbuf:
+	free(oggbuf);
+	oggbuf = 0;
+
+error_out_plrAPI_Play:
+	plrAPI->Stop();
+
+error_out_file:
+	ov_clear(&ov);
+
+	oggFreeComments ();
+
+	if (oggfile)
+	{
+		oggfile->unref (oggfile);
+		oggfile = 0;
+	}
+	return 0;
+}
+
+void __attribute__ ((visibility ("internal"))) oggClosePlayer(void)
+{
+	if (active)
+	{
+		pollClose();
+		plrAPI->Stop();
+	}
+	active=0;
+
+	if (oggbufpos)
+	{
+		ringbuffer_free (oggbufpos);
+		oggbufpos = 0;
+	}
+
+	free(oggbuf);
+	oggbuf=NULL;
+
+	ov_clear(&ov);
+
+	oggFreeComments ();
 
 	if (oggfile)
 	{

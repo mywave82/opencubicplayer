@@ -207,8 +207,6 @@ static int oggIsLooped(void)
 		dopausefade();
 	oggSetLoop(fsLoopMods);
 	oggIdle();
-	if (plrIdle)
-		plrIdle();
 	return !fsLoopMods&&oggLooped();
 }
 

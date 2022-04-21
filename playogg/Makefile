@@ -55,7 +55,6 @@ oggplay.o: oggplay.c \
 	../filesel/filesystem.h \
 	oggplay.h \
 	../stuff/imsrtns.h \
-	../stuff/timer.h \
 	../stuff/poll.h
 	$(CC) oggplay.c -o $@ $(OGG_CFLAGS) $(VORBIS_CFLAGS) $(VORBISFILE_CFLAGS) -c
 
