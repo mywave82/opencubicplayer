@@ -103,6 +103,7 @@ struct ocpfilehandle_t *cache_filehandle_open_pre (struct ocpfile_t *owner, char
 		&retval->head,
 		cache_filehandle_ref,
 		cache_filehandle_unref,
+	        owner,
 		cache_filehandle_seek_set,
 		cache_filehandle_seek_cur,
 		cache_filehandle_seek_end,
@@ -128,6 +129,8 @@ struct ocpfilehandle_t *cache_filehandle_open_pre (struct ocpfile_t *owner, char
 	retval->cache_line[2].data = tailptr;
 	retval->cache_line[2].fill = retval->cache_line[2].size = taillen;
 
+	retval->head.origin->ref (retval->head.origin);
+
 	return &retval->head;
 }
 
@@ -140,6 +143,7 @@ struct ocpfilehandle_t *cache_filehandle_open (struct ocpfilehandle_t *parent)
 		&retval->head,
 		cache_filehandle_ref,
 		cache_filehandle_unref,
+	        parent->origin,
 		cache_filehandle_seek_set,
 		cache_filehandle_seek_cur,
 		cache_filehandle_seek_end,
@@ -164,6 +168,8 @@ struct ocpfilehandle_t *cache_filehandle_open (struct ocpfilehandle_t *parent)
 		retval->filesize_pending = 1;
 		retval->filesize = 0;//UINT64_C(0xffffffffffffffff);
 	}
+
+	retval->head.origin->ref (retval->head.origin);
 
 	retval->head.refcount = 1;
 
@@ -204,6 +210,12 @@ static void cache_filehandle_unref (struct ocpfilehandle_t *_s)
 	{
 		s->parent->unref (s->parent);
 		s->parent = 0;
+	}
+
+	if (s->head.origin)
+	{
+		s->head.origin->unref (s->head.origin);
+		s->head.origin = 0;
 	}
 
 	free (s);

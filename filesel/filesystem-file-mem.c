@@ -187,6 +187,7 @@ static struct ocpfilehandle_t *mem_filehandle_open_real (struct mem_ocpfile_t *o
 		&s->head,
 		mem_filehandle_ref,
 		mem_filehandle_unref,
+		&owner->head,
 		mem_filehandle_seek_set,
 		mem_filehandle_seek_cur,
 		mem_filehandle_seek_end,

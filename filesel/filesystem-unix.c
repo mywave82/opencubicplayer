@@ -433,6 +433,7 @@ static struct ocpfilehandle_t *unix_file_open (struct ocpfile_t *_s)
 		&r->head,
 		unix_filehandle_ref,
 		unix_filehandle_unref,
+		_s,
 		unix_filehandle_seek_set,
 		unix_filehandle_seek_cur,
 		unix_filehandle_seek_end,

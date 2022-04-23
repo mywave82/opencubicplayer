@@ -446,6 +446,7 @@ static struct ocpfilehandle_t *Z_ocpfile_open (struct ocpfile_t *_s)
 	ocpfilehandle_t_fill (&retval->head,
 	                       Z_ocpfilehandle_ref,
 	                       Z_ocpfilehandle_unref,
+	                       _s,
 	                       Z_ocpfilehandle_seek_set,
 	                       Z_ocpfilehandle_seek_cur,
 	                       Z_ocpfilehandle_seek_end,

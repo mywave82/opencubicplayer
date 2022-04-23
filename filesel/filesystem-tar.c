@@ -1100,6 +1100,7 @@ static struct ocpfilehandle_t *tar_file_open (struct ocpfile_t *_self)
 	ocpfilehandle_t_fill (&retval->head,
 	                       tar_filehandle_ref,
 	                       tar_filehandle_unref,
+	                       _self,
 	                       tar_filehandle_seek_set,
 	                       tar_filehandle_seek_cur,
 	                       tar_filehandle_seek_end,

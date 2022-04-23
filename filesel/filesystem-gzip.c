@@ -519,6 +519,7 @@ static struct ocpfilehandle_t *gzip_ocpfile_open (struct ocpfile_t *_s)
 	ocpfilehandle_t_fill (&retval->head,
 	                       gzip_ocpfilehandle_ref,
 	                       gzip_ocpfilehandle_unref,
+	                      &s->head,
 	                       gzip_ocpfilehandle_seek_set,
 	                       gzip_ocpfilehandle_seek_cur,
 	                       gzip_ocpfilehandle_seek_end,

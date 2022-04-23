@@ -132,6 +132,8 @@ struct ocpfilehandle_t
 	void (*ref)(struct ocpfilehandle_t *);
 	void (*unref)(struct ocpfilehandle_t *);
 
+	struct ocpfile_t *origin;
+
 	int (*seek_set)(struct ocpfilehandle_t *, int64_t pos); /* returns 0 for OK, and -1 on error, should use positive numbers */
 	int (*seek_cur)(struct ocpfilehandle_t *, int64_t pos); /* returns 0 for OK, and -1 on error */
 	int (*seek_end)(struct ocpfilehandle_t *, int64_t pos); /* returns 0 for OK, and -1 on error, should use negative numbers */
@@ -159,6 +161,7 @@ static inline void ocpfilehandle_t_fill (
 	struct ocpfilehandle_t *s,
 	void (*ref)(struct ocpfilehandle_t *),
 	void (*unref)(struct ocpfilehandle_t *),
+	struct ocpfile_t *origin,
 	int (*seek_set)(struct ocpfilehandle_t *, int64_t pos),
 	int (*seek_cur)(struct ocpfilehandle_t *, int64_t pos),
 	int (*seek_end)(struct ocpfilehandle_t *, int64_t pos),
@@ -174,6 +177,7 @@ static inline void ocpfilehandle_t_fill (
 {
 	s->ref               = ref;
 	s->unref             = unref;
+	s->origin            = origin;
 	s->seek_set          = seek_set;
 	s->seek_cur          = seek_cur;
 	s->seek_end          = seek_end;

@@ -1018,6 +1018,7 @@ static struct ocpfilehandle_t *pak_file_open (struct ocpfile_t *_self)
 	ocpfilehandle_t_fill (&retval->head,
 	                       pak_filehandle_ref,
 	                       pak_filehandle_unref,
+	                       _self,
 	                       pak_filehandle_seek_set,
 	                       pak_filehandle_seek_cur,
 	                       pak_filehandle_seek_end,

@@ -2144,6 +2144,7 @@ static struct ocpfilehandle_t *zip_file_open (struct ocpfile_t *_self)
 	ocpfilehandle_t_fill (&retval->head,
 	                       zip_filehandle_ref,
 	                       zip_filehandle_unref,
+	                       _self,
 	                       zip_filehandle_seek_set,
 	                       zip_filehandle_seek_cur,
 	                       zip_filehandle_seek_end,

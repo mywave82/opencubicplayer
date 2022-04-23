@@ -519,6 +519,7 @@ static struct ocpfilehandle_t *bzip2_ocpfile_open (struct ocpfile_t *_s)
 	ocpfilehandle_t_fill (&retval->head,
 	                       bzip2_ocpfilehandle_ref,
 	                       bzip2_ocpfilehandle_unref,
+	                      &s->head,
 	                       bzip2_ocpfilehandle_seek_set,
 	                       bzip2_ocpfilehandle_seek_cur,
 	                       bzip2_ocpfilehandle_seek_end,
