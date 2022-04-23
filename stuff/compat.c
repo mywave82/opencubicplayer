@@ -1369,3 +1369,37 @@ void strreplace (char *dst, char old, char replacement)
 		dst++;
 	}
 }
+
+/* Detect MacOS / OS-X */
+#if defined(__APPLE__) && defined(__MACH__)
+# if !defined(MAC_OS_X_VERSION_10_12) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12
+#  include <mach/clock.h>
+#  include <mach/mach_host.h>
+int clock_gettime(clockid_t clk_id, struct timespec *tv)
+{
+	int retval;
+	static clock_serv_t cclock;
+	static int initialized = 0;
+	mach_timespec_t mts;
+
+	if (!initialized)
+	{
+		host_get_clock_service(mach_host_self(), clk_id, &cclock);
+		initialized = 1;
+	}
+	retval = clock_get_time(cclock, &mts);
+	if (retval)
+	{
+		tv->tv_sec = 0;
+		tv->tv_nsec = 0;
+		return retval;
+	}
+	//mach_port_deallocate(mach_task_self(), cclock);
+
+	tv->tv_sec = mts.tv_sec;
+	tv->tv_nsec = mts.tv_nsec;
+
+	return 0;
+}
+# endif
+#endif

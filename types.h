@@ -65,4 +65,17 @@
 # endif
 #endif
 
+/* Detect MacOS / OS-X */
+#if defined(__APPLE__) && defined(__MACH__)
+# include <Availability.h>
+# if !defined(MAC_OS_X_VERSION_10_12) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12
+# include <time.h>
+# include <mach/clock_types.h>
+#  define CLOCK_REALTIME CALENDAR_CLOCK
+#  define CLOCK_MONOTONIC SYSTEM_CLOCK
+typedef int clockid_t;
+int clock_gettime(clockid_t clk_id, struct timespec *tp);
+# endif
+#endif
+
 #endif
