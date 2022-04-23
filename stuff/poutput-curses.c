@@ -220,7 +220,7 @@ static void displaystr_utf8(unsigned short y, unsigned short x, unsigned char at
 					char ch;
 					char *dst = &ch;
 					size_t dstlen=1;
-					if (iconv (utf8_to_native, (char **)&buf, &srclen, &dst, &dstlen)<0)
+					if (iconv (utf8_to_native, (char **)&buf, &srclen, &dst, &dstlen)<(size_t)-1)
 					{
 						goto skipone;
 					}
