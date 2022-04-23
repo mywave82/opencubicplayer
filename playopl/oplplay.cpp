@@ -33,6 +33,8 @@ extern "C"
 #include "dev/mcp.h"
 #include "dev/deviplay.h"
 #include "dev/ringbuffer.h"
+#include "filesel/dirdb.h"
+#include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poll.h"
 }
@@ -177,14 +179,25 @@ static int GET(int ch, int opt)
 class CProvider_Mem: public CFileProvider
 {
 	private:
+		char *filename;
+		struct ocpfilehandle_t *file;
 		const uint8_t *file_data;
 		int file_size;
 
 	public:
-		CProvider_Mem(const uint8_t *file_data, int file_size) :
+		CProvider_Mem(const char *filename, struct ocpfilehandle_t *file, const uint8_t *file_data, int file_size) :
 			file_data(file_data),
 			file_size(file_size)
 		{
+			this->filename = strdup (filename);
+			this->file = file;
+			this->file->ref (this->file);
+		}
+
+		~CProvider_Mem(void)
+		{
+			free (this->filename);
+			this->file->unref (this->file);
 		}
 
 		virtual binistream *open(std::string filename) const;
@@ -193,16 +206,70 @@ class CProvider_Mem: public CFileProvider
 
 binistream *CProvider_Mem::open(std::string filename) const
 {
-	binisstream *f = new binisstream((uint8_t *)this->file_data, this->file_size);
+	binisstream *retval = NULL;
+	if (!strcmp (filename.c_str(), this->filename))
+	{
+		retval = new binisstream((uint8_t *)this->file_data, this->file_size);
+	} else {
+		uint32_t d = dirdbFindAndRef (file->origin->parent->dirdb_ref, filename.c_str(), dirdb_use_children);
 
-	if (!f) return 0;
-	if (f->error()) { delete f; return 0; }
+		fprintf (stderr, "[OPL] Also need %s\n", filename.c_str());
+
+		if (d != UINT32_MAX)
+		{
+			struct ocpfile_t *f = file->origin->parent->readdir_file (file->origin->parent, d);
+			dirdbUnref (d, dirdb_use_children);
+			if (f)
+			{
+				struct ocpfilehandle_t *file = f->open (f);
+				f->unref (f);
+
+				if (file)
+				{
+					size_t buffersize = 16*1024;
+					uint8_t *buffer = (uint8_t *)malloc (buffersize);
+					size_t bufferfill = 0;
+
+					int res;
+					while (!file->eof(file))
+					{
+						if (buffersize == bufferfill)
+						{
+							if (buffersize >= 16*1024*1024)
+							{
+								fprintf (stderr, "CProvider_Mem: %s is bigger than 16 Mb - further loading blocked\n", filename.c_str());
+								break;
+							}
+							buffersize += 16*1024;
+							buffer = (uint8_t *)realloc (buffer, buffersize);
+						}
+						res = file->read (file, buffer + bufferfill, buffersize - bufferfill);
+						if (res<=0)
+							break;
+						bufferfill += res;
+					}
+					if (bufferfill)
+					{
+						retval = new binisstream(buffer, bufferfill);
+					}
+					free (buffer);
+				} else {
+					fprintf (stderr, "[OPL] Unable to open %s\n", filename.c_str());
+				}
+			} else {
+				fprintf (stderr, "[OPL] Unable to find %s\n", filename.c_str());
+			}
+		}
+	}
+
+	if (!retval) return 0;
+	if (retval->error()) { delete retval; return 0; }
 
 	// Open all files as little endian with IEEE floats by default
-	f->setFlag(binio::BigEndian, false);
-	f->setFlag(binio::FloatIEEE);
+	retval->setFlag(binio::BigEndian, false);
+	retval->setFlag(binio::FloatIEEE);
 
-	return f;
+	return retval;
 }
 
 void CProvider_Mem::close(binistream *f) const
@@ -223,7 +290,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 
 	opl = new Cocpopl(oplRate);
 
-	CProvider_Mem prMem (content, len);
+	CProvider_Mem prMem (filename, file, content, len);
 	if (!(p = CAdPlug::factory(filename, opl, CAdPlug::players, prMem)))
 	{
 		delete (opl);

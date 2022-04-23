@@ -69,6 +69,8 @@ oplplay.o: oplplay.cpp \
 	../dev/deviplay.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
 	../stuff/imsrtns.h \
 	oplplay.h ocpemu.h
 	$(CXX) $(ADPLUG_CXXFLAGS) oplplay.cpp -o $@ -c
