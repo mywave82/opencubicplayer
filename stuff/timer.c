@@ -39,6 +39,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <sys/time.h>
+#include <unistd.h>
 #include "types.h"
 #include "irq.h"
 #include "imsrtns.h"
