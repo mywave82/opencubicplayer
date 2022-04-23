@@ -156,8 +156,10 @@ devpcoreaudio.o: devpcoreaudio.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../boot/psetting.h \
 	../dev/imsdev.h \
 	../dev/player.h \
+	../dev/ringbuffer.h \
 	../stuff/imsrtns.h
 	$(CC) devpcoreaudio.c -o $@ -c $(DEVPCOREAUDIO_CFLAGS)
 

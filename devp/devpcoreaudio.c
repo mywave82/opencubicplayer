@@ -29,8 +29,10 @@
 #include <AudioToolbox/AudioToolbox.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "boot/psetting.h"
 #include "dev/imsdev.h"
 #include "dev/player.h"
+#include "dev/ringbuffer.h"
 #include "stuff/imsrtns.h"
 
 static AudioUnit theOutputUnit;
@@ -38,24 +40,15 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 struct sounddevice plrCoreAudio;
 static int needfini=0;
 
-static unsigned int CoreAudioRate;
-static void *playbuf=0;
-static int buflen;
-volatile static int kernpos, cachepos, bufpos; /* in bytes */
-/* kernpos = kernel write header
- * bufpos = the write header given out of this driver */
+static void *devpCoreAudioBuffer;
+static struct ringbuffer_t *devpCoreAudioRingBuffer;
+static uint32_t devpCoreAudioRate;
+static int devpCoreAudioPauseSamples;
+static int devpCoreAudioInPause;
 
-/*  playbuf     kernpos  cachepos   bufpos      buflen
- *    |           | kernlen | cachelen |          |
- *
- *  on flush, we update all variables> *  on getbufpos we return kernpos-(1 sample) as safe point to buffer up to
- *  on getplaypos we use last known kernpos if locked, else update kernpos
- */
+volatile static uint32_t lastCallbackTime;
+static volatile unsigned int lastLength;
 
-
-volatile static int cachelen, kernlen; /* to make life easier */
-
-volatile static uint64_t playpos; /* how many samples have we done totally */
 
 static const char *OSStatus_to_string(OSStatus status)
 {
@@ -154,187 +147,270 @@ static void ostype2string (OSType inType, char *outString)
 
 static OSStatus theRenderProc(void *inRefCon, AudioUnitRenderActionFlags *inActionFlags, const AudioTimeStamp *inTimeStamp, UInt32 inBusNumber, UInt32 inNumFrames, AudioBufferList *ioData)
 {
-	int i, i2;
+	int pos1, length1, pos2, length2;
+	int len = ioData->mBuffers[0].mDataByteSize;
+	uint8_t *stream = ioData->mBuffers[0].mData;
 
-#ifdef COREAUDIO_DEBUG
-	fprintf(stderr, "renderproc ENTER\n");
-#endif
 	pthread_mutex_lock(&mutex);
 
-#ifdef COREAUDIO_DEBUG
-	fprintf(stderr, "renderproc BEGIN\n");
-	fprintf (stderr, "  INPUT  cachelen=%d\n", (int)cachelen);
-	fprintf (stderr, "         ioData->mBuffers[0].mDataByteSize=%d\n", (int)ioData->mBuffers[0].mDataByteSize);
-#endif
-
-	i = cachelen;/* >>2  *stereo + 16it */
-	if (i > ioData->mBuffers[0].mDataByteSize)
-		i = ioData->mBuffers[0].mDataByteSize;
-
-	kernlen = ioData->mBuffers[0].mDataByteSize = i;
-	cachelen -= i;
-	cachepos = kernpos;
-	playpos += i<<(2/*stereo+bit16*/);
-
-#ifdef COREAUDIO_DEBUG
-	fprintf (stderr, "  OUTPUT kernlen=%d\n", i);
-	fprintf (stderr, "         ioData->mBuffers[0].mDataByteSize=%d\n", i);
-	fprintf (stderr, "         cachepos=%d\n", (int)cachepos);
-	fprintf (stderr, "         cachelen=%d\n", (int)cachelen);
-	fprintf (stderr, "         playpos=%d\n", (int)playpos);
-#endif
-
-	if ((i+kernpos)>buflen)
 	{
-		i2 = ( i + kernpos ) % buflen;
-		i = i - i2;
-	} else {
-		i2 = 0;
+		struct timespec tp;
+		clock_gettime (CLOCK_MONOTONIC, &tp);
+		lastCallbackTime = tp.tv_sec * 1000000;
+		lastCallbackTime += tp.tv_nsec / 1000;
 	}
 
-#ifdef COREAUDIO_DEBUG
-	fprintf (stderr, "  PROC   i=%d i2=%d\n", i, i2);
-#endif
+	ringbuffer_get_tail_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
+	ringbuffer_tail_consume_samples (devpCoreAudioRingBuffer, length1 + length2);
 
-	memcpy(ioData->mBuffers[0].mData, playbuf+kernpos, i);
-	if (i2)
-		memcpy(ioData->mBuffers[0].mData+i, playbuf, i2);
+	if (devpCoreAudioPauseSamples)
+	{
+		if ((length1 + length2) > devpCoreAudioPauseSamples)
+		{
+			devpCoreAudioPauseSamples = 0;
+		} else {
+			devpCoreAudioPauseSamples -= (length1 + length2);
+		}
+	}
 
-	kernpos = (kernpos+i+i2)%buflen;
+	ringbuffer_get_processing_bytes (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
 
-#ifdef COREAUDIO_DEBUG
-	fprintf (stderr, "         kernpos=%d\n", (int)kernpos);
+	if (length1 > len)
+	{
+		length1 = len;
+	}
 
+	memcpy(stream, (uint8_t *)devpCoreAudioBuffer + pos1, length1);
+	ringbuffer_processing_consume_bytes (devpCoreAudioRingBuffer, length1);
+	len -= length1;
+	stream += length1;
+	lastLength = length1 >> 2 /* stereo + bit16 */;
 
-
-
-/*
-playbuf      kernpos      cachepos     bufpos       buflen
-|            12345678     12345678     12345678     12345678
-|            |  kernlen   |  cachelen  |            |
-|            |  12345678  |  12345678  |            |
-*/
-	fprintf (stderr, "playbuf      kernpos      cachepos     bufpos       buflen\n");
-	fprintf (stderr, "|            %-8d     %-8d     %-8d     %-8d\n", (int)kernpos, (int)cachepos, (int)bufpos, (int)buflen);
-	fprintf (stderr, "|            |  %-8d  |  %-8d  |            |\n", (int)kernlen, (int)cachelen);
-
-
-	fprintf(stderr, "renderproc END\n");
-#endif
+	if (len && length2)
+	{
+		if (length2 > len)
+		{
+			length2 = len;
+		}
+		memcpy (stream, (uint8_t *)devpCoreAudioBuffer + pos2, length2);
+		ringbuffer_processing_consume_bytes (devpCoreAudioRingBuffer, length2);
+		len -= length2;
+		stream += length2;
+		lastLength += length2 >> 2 /* stereo + bit16 */;
+	}
 
 	pthread_mutex_unlock(&mutex);
+
+	if (len)
+	{
+		bzero (stream, len);
+#ifdef COREAUDIO_DEBUG
+		fprintf (stderr, "%s: buffer overrun - %d left\n", __FUNCTION__, len);
+#endif
+	}
 
 	return noErr;
 }
 
-/* stolen from devposs */
-static int CoreAudioGetBufPos(void)
+static void devpCoreAudioGetBuffer (void **buf, unsigned int *samples)
 {
-	int retval;
-
-	/* this thing is utterly broken */
+	int pos1, length1;
+	assert (devpCoreAudioRingBuffer);
 
 	pthread_mutex_lock(&mutex);
-	if (kernpos==bufpos)
+
+	ringbuffer_get_head_samples (devpCoreAudioRingBuffer, &pos1, &length1, 0, 0);
+
+	pthread_mutex_unlock(&mutex);
+
+	*samples = length1;
+	*buf = devpCoreAudioBuffer + (pos1<<2); /* stereo + bit16 */
+}
+
+static unsigned int devpCoreAudioIdle(void)
+{
+	int pos1, length1, pos2, length2;
+	unsigned int RetVal;
+
+	pthread_mutex_lock(&mutex);
+
+/* START: this magic updates the tail by time, causing events in the ringbuffer to be fired if needed and audio-visuals to be more responsive */
 	{
-		if (cachelen|kernlen)
+		struct timespec tp;
+		uint32_t curTime;
+		signed int expect_consume;
+		signed int expect_left;
+		signed int consume;
+
+		ringbuffer_get_tail_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
+
+		clock_gettime (CLOCK_MONOTONIC, &tp);
+		curTime = tp.tv_sec * 1000000;
+		curTime += tp.tv_nsec / 1000;
+
+		expect_consume = devpCoreAudioRate * (curTime - lastCallbackTime) / 1000;
+		expect_left = (signed int)lastLength - expect_consume;
+		if (expect_left < 0)
 		{
-			retval=kernpos;
-			pthread_mutex_unlock(&mutex);
-			return retval;
+			expect_left = 0;
+		}
+		consume = (signed int)(length1 + length2) - expect_left;
+		if (consume > 0)
+		{
+			ringbuffer_tail_consume_samples (devpCoreAudioRingBuffer, consume);
 		}
 	}
-	retval=(kernpos+buflen-4 /* 1 sample = 4 bytes*/)%buflen;
+/* STOP */
+
+	ringbuffer_get_tailandprocessing_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
+
+	/* do we need to insert pause-samples? */
+	if (devpCoreAudioInPause)
+	{
+		int pos1, length1, pos2, length2;
+		ringbuffer_get_head_bytes (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
+		bzero ((char *)devpCoreAudioBuffer+pos1, length1);
+		if (length2)
+		{
+			bzero ((char *)devpCoreAudioBuffer+pos2, length2);
+		}
+		ringbuffer_head_add_bytes (devpCoreAudioRingBuffer, length1 + length2);
+		devpCoreAudioPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
+	}
+
 	pthread_mutex_unlock(&mutex);
-	return retval;
+
+	RetVal = length1 + length2;
+
+	if (devpCoreAudioPauseSamples >= RetVal)
+	{
+		return 0;
+	}
+	return RetVal - devpCoreAudioPauseSamples;
+
 }
 
-static int CoreAudioGetPlayPos(void)
+static uint32_t devpCoreAudioGetRate (void)
 {
-	int retval;
+	return devpCoreAudioRate;
+}
+
+static void devpCoreAudioOnBufferCallback (int samplesuntil, void (*callback)(void *arg, int samples_ago), void *arg)
+{
+	assert (devpCoreAudioRingBuffer);
 
 	pthread_mutex_lock(&mutex);
-	retval=kernpos;
+
+	ringbuffer_add_tail_callback_samples (devpCoreAudioRingBuffer, samplesuntil, callback, arg);
+
 	pthread_mutex_unlock(&mutex);
-        return retval;
 }
 
-static void CoreAudioIdle(void)
-{
-}
 
-static void CoreAudioAdvanceTo(unsigned int pos)
+static void devpCoreAudioCommitBuffer (unsigned int samples)
 {
 	pthread_mutex_lock(&mutex);
 
-	cachelen+=(pos-bufpos+buflen)%buflen;
-	bufpos=pos;
+	ringbuffer_head_add_samples (devpCoreAudioRingBuffer, samples);
 
 	pthread_mutex_unlock(&mutex);
 }
 
-static uint32_t CoreAudioGetTimer(void)
+static void devpCoreAudioPause (int pause)
 {
-	long retval;
-
-	pthread_mutex_lock(&mutex);
-
-	retval=playpos-(kernlen + cachelen);
-
-	pthread_mutex_unlock(&mutex);
-
-	return imuldiv(retval, 65536>>(2/*stereo+bit16*/), plrRate);
+	assert (devpCoreAudioBuffer);
+	devpCoreAudioInPause = pause;
 }
 
-static void CoreAudioStop(void)
+static void devpCoreAudioStop(void)
 {
 	OSErr status;
 
 	/* TODO, forceflush */
 
-	if (playbuf)
-	{
-		free(playbuf);
-		playbuf=0;
-	}
-
-	plrGetBufPos=0;
-	plrGetPlayPos=0;
-	plrIdle=0;
-	plrAdvanceTo=0;
-	plrGetTimer=0;
-
 	status=AudioOutputUnitStop(theOutputUnit);
 	if (status)
+	{
 		fprintf(stderr, "[CoreAudio] AudioOutputUnitStop returned %d (%s)\nn", (int)status, OSStatus_to_string(status));
+	}
+
+	free (devpCoreAudioBuffer);
+	devpCoreAudioBuffer = 0;
+	ringbuffer_free (devpCoreAudioRingBuffer);
+	devpCoreAudioRingBuffer = 0;
 }
 
-static int CoreAudioPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *source_file)
+static void devpCoreAudioPeekBuffer (void **buf1, unsigned int *buf1length, void **buf2, unsigned int *buf2length)
+{
+	int pos1, length1, pos2, length2;
+
+	devpCoreAudioIdle (); /* update the tail */
+
+	pthread_mutex_lock(&mutex);
+	ringbuffer_get_tailandprocessing_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
+	pthread_mutex_unlock(&mutex);
+
+	if (length1)
+	{
+		*buf1 = (char *)devpCoreAudioBuffer + (pos1 << 2); /* stereo + 16bit */
+		*buf1length = length1;
+		if (length2)
+		{
+			*buf2 = (char *)devpCoreAudioBuffer + (pos2 << 2); /* stereo + 16bit */
+			*buf2length = length2;
+		} else {
+			*buf2 = 0;
+			*buf2length = 0;
+		}
+	} else {
+		*buf1 = 0;
+		*buf1length = 0;
+		*buf2 = 0;
+		*buf2length = 0;
+	}
+}
+
+
+static int devpCoreAudioPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file)
 {
 	OSErr status;
+	int plrbufsize; /* given in ms */
+	int buflength;
 
-	if ((*len)<(plrRate&~3))
-		*len=plrRate&~3;
-	if ((*len)>(plrRate*4))
-		*len=plrRate*4;
-	playbuf=*buf=malloc(*len);
+	devpCoreAudioInPause = 0;
+	devpCoreAudioPauseSamples = 0;
+	{
+		struct timespec tp;
+		clock_gettime (CLOCK_MONOTONIC, &tp);
+		lastCallbackTime = tp.tv_sec * 1000000;
+		lastCallbackTime += tp.tv_nsec / 1000;
+	}
 
-	memset(*buf, 0x80008000, (*len)>>2);
-	buflen = *len;
+	*rate = devpCoreAudioRate; /* fixed */
+	*format = PLR_STEREO_16BIT_SIGNED; /* fixed */
 
-	cachepos=0;
-	kernpos=0;
-	bufpos=0;
-	cachelen=0;
-	kernlen=0;
+	plrbufsize = cfGetProfileInt2(cfSoundSec, "sound", "plrbufsize", 200, 10);
+	/* clamp the plrbufsize to be atleast 150ms and below 1000 ms */
+	if (plrbufsize < 150)
+	{
+		plrbufsize = 150;
+	}
+	if (plrbufsize > 1000)
+	{
+		plrbufsize = 1000;
+	}
+	buflength = devpCoreAudioRate * plrbufsize / 1000;
 
-	playpos=0;
+	if (!(devpCoreAudioBuffer=calloc (buflength, 4)))
+	{
+		return 0;
+	}
 
-	plrGetBufPos=CoreAudioGetBufPos;
-	plrGetPlayPos=CoreAudioGetPlayPos;
-	plrIdle=CoreAudioIdle;
-	plrAdvanceTo=CoreAudioAdvanceTo;
-	plrGetTimer=CoreAudioGetTimer;
+	if (!(devpCoreAudioRingBuffer = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, buflength)))
+	{
+		free (devpCoreAudioBuffer); devpCoreAudioBuffer = 0;
+		return 0;
+	}
 
 	status=AudioOutputUnitStart(theOutputUnit);
 #ifdef COREAUDIO_DEBUG
@@ -343,37 +419,37 @@ static int CoreAudioPlay(void **buf, unsigned int *len, struct ocpfilehandle_t *
 	if (status)
 	{
 		fprintf(stderr, "[CoreAudio] AudioOutputUnitStart returned %d (%s)\n", (int)status, OSStatus_to_string(status));
-		free(*buf);
-		*buf = playbuf = 0;
-		plrGetBufPos = 0;
-		plrGetPlayPos = 0;
-		plrIdle = 0;
-		plrAdvanceTo = 0;
-		plrGetTimer = 0;
+		free (devpCoreAudioBuffer); devpCoreAudioBuffer = 0;
+		ringbuffer_free (devpCoreAudioRingBuffer); devpCoreAudioRingBuffer = 0;
 		return 0;
 	}
 	return 1;
 }
 
-static void CoreAudioSetOptions(unsigned int rate, int opt)
-{
-	plrRate=CoreAudioRate; /* fixed */
-	plrOpt=PLR_STEREO_16BIT_SIGNED; /* fixed fixed fixed */
-}
+static const struct plrAPI_t devpCoreAudio = {
+	devpCoreAudioIdle,
+	devpCoreAudioPeekBuffer,
+	devpCoreAudioPlay,
+	devpCoreAudioGetBuffer,
+	devpCoreAudioGetRate,
+	devpCoreAudioOnBufferCallback,
+	devpCoreAudioCommitBuffer,
+	devpCoreAudioPause,
+	devpCoreAudioStop
+};
 
 static int CoreAudioInit(const struct deviceinfo *c)
 {
-	plrSetOptions=CoreAudioSetOptions;
-	plrPlay=CoreAudioPlay;
-	plrStop=CoreAudioStop;
+	plrAPI = &devpCoreAudio;
 	return 1;
 }
 
 static void CoreAudioClose(void)
 {
-	plrSetOptions=0;
-	plrPlay=0;
-	plrStop=0;
+	if (plrAPI == &devpCoreAudio)
+	{
+		plrAPI = 0;
+	}
 }
 
 static int CoreAudioDetect(struct deviceinfo *card)
@@ -496,7 +572,7 @@ static int CoreAudioDetect(struct deviceinfo *card)
 	print_format("default inDesc: ", &inDesc);
 #endif
 
-	CoreAudioRate = inDesc.mSampleRate;
+	devpCoreAudioRate = inDesc.mSampleRate;
 	/* inDesc.mSampleRate = 44100; Use default here */
 	inDesc.mFormatID=kAudioFormatLinearPCM;
 	inDesc.mChannelsPerFrame=channels;
