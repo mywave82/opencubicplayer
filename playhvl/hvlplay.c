@@ -66,7 +66,7 @@ static int16_t  last_ht_PosNr;           /* These are delayed, so should be corr
 static int16_t  last_ht_Tempo;           /* These are delayed, so should be correct */
 static uint8_t  last_ht_SpeedMultiplier; /* These are delayed, so should be correct */
 
-static struct hvl_statbuffer_t hvl_statbuffer[ROW_BUFFERS] = {0}; // half a second */
+static struct hvl_statbuffer_t hvl_statbuffer[ROW_BUFFERS] = {{0}}; // half a second */
 static int hvl_statbuffers_available = 0;
 
 struct hvl_chaninfo __attribute__ ((visibility ("internal"))) ChanInfo[MAX_CHANNELS];

@@ -130,7 +130,7 @@ void modlist_append (struct modlist *modlist, struct modlistentry *entry)
 
 void modlist_append_dir (struct modlist *modlist, struct ocpdir_t *dir)
 {
-	struct modlistentry entry = {0};
+	struct modlistentry entry = {{0}};
 	const char *childpath = 0;
 
 	if (!dir)
@@ -150,7 +150,7 @@ void modlist_append_dir (struct modlist *modlist, struct ocpdir_t *dir)
 
 void modlist_append_dotdot (struct modlist *modlist, struct ocpdir_t *dir)
 {
-	struct modlistentry entry = {0};
+	struct modlistentry entry = {{0}};
 
 	if (!dir)
 	{
@@ -169,7 +169,7 @@ void modlist_append_dotdot (struct modlist *modlist, struct ocpdir_t *dir)
 
 void modlist_append_drive (struct modlist *modlist, struct dmDrive *drive)
 {
-	struct modlistentry entry = {0};
+	struct modlistentry entry = {{0}};
 	const char *childpath = 0;
 
 	if (!drive)
@@ -190,7 +190,7 @@ void modlist_append_drive (struct modlist *modlist, struct dmDrive *drive)
 
 void modlist_append_file (struct modlist *modlist, struct ocpfile_t *file, int ismod)
 {
-	struct modlistentry entry = {0};
+	struct modlistentry entry = {{0}};
 	const char *childpath = 0;
 
 	if (!file)

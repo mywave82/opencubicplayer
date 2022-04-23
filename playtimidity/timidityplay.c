@@ -178,7 +178,7 @@ static void free_EventDelayed (CtlEventDelayed *self)
 	free (self);
 }
 
-struct mchaninfo channelstat[16] = {0};
+struct mchaninfo channelstat[16] = {{{0}}};
 
 void __attribute__ ((visibility ("internal"))) timidityGetChanInfo(uint8_t ch, struct mchaninfo *ci)
 {
