@@ -299,10 +299,20 @@ void sigsegv(int signal)
 
 	/* loose setuid stuff before we launch any other external tools */
 	if (getegid()!=getgid())
-		setegid(getgid());
+	{
+		if (setegid(getgid()))
+		{
+			perror ("warning: setegid(getgid())");
+		}
+	}
 
 	if (geteuid()!=getuid())
-		seteuid(getuid());
+	{
+		if (seteuid(getuid()))
+		{
+			perror ("warning: seteuid(getuid())");
+		}
+	}
 
 	if(_plSetTextMode)
 		if (*_plSetTextMode) /* don't reset if we havn't used the screen yet */
