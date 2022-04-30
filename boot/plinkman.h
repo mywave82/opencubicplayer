@@ -19,7 +19,9 @@ struct __attribute__ ((aligned (64))) linkinfostruct
 struct dll_handle
 {
 	void *handle;
+	char *file;
 	int id;
+	int refcount;
 	struct linkinfostruct *info;
 };
 extern struct dll_handle loadlist[MAXDLLLIST];

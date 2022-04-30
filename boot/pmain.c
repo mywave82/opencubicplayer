@@ -911,17 +911,10 @@ static int init_modules(int argc, char *argv[])
 	lnkLink(cfGetProfileString2(cfConfigSec, "defaultconfig", "prelink", ""));
 	lnkLink(cfGetProfileString("general", "prelink", ""));
 
+	if (lnkLinkDir(cfProgramDirAutoload)<0)
 	{
-		char *buffer;
-		buffer = malloc (strlen (cfProgramDir) + 9 + 1);
-		sprintf(buffer, "%sautoload/", cfProgramDir);
-		if (lnkLinkDir(buffer)<0)
-		{
-			fprintf(stderr, "could not autoload directory: %s\n", buffer);
-			free (buffer);
-			return -1;
-		}
-		free (buffer);
+		fprintf(stderr, "could not autoload directory: %s\n", cfProgramDirAutoload);
+		return -1;
 	}
 
 	if (lnkLink(cfGetProfileString("general", "link", ""))<0)
@@ -1014,6 +1007,8 @@ static int _bootup(int argc, char *argv[], const char *ConfigDir, const char *Da
 	cfConfigDir = (char *)ConfigDir;
 	cfDataDir = strdup (DataDir);
 	cfProgramDir = (char *)ProgramDir;
+	cfProgramDirAutoload = malloc (strlen (cfProgramDir) + 9 + 1);
+	sprintf(cfProgramDirAutoload, "%sautoload/", cfProgramDir);
 
 	if (cfGetConfig(argc, argv))
 	{
@@ -1021,6 +1016,7 @@ static int _bootup(int argc, char *argv[], const char *ConfigDir, const char *Da
 		free (cfDataDir); cfDataDir = 0;
 		cfProgramDir = 0;
 		free (cfTempDir); cfTempDir = 0;
+		free (cfProgramDirAutoload); cfProgramDirAutoload = 0;
 		return -1;
 	}
 
@@ -1037,6 +1033,8 @@ static int _bootup(int argc, char *argv[], const char *ConfigDir, const char *Da
 	free (cfDataDir); cfDataDir = 0;
 	cfProgramDir = 0;
 	free (cfTempDir); cfTempDir = 0;
+	free (cfProgramDirAutoload); cfProgramDirAutoload = 0;
+
 
 	return 0;
 }

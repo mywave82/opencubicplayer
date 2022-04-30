@@ -49,6 +49,7 @@ char *cfConfigDir;
 char *cfDataDir;
 char *cfProgramDir;
 char *cfTempDir;
+char *cfProgramDirAutoload;
 
 #define KEYBUF_LEN 105
 #define STRBUF_LEN 405

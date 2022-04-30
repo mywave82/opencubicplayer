@@ -141,25 +141,45 @@ char *lnkReadInfoReg(const int id, const char *key)
 	return reglist;
 }
 
-static int _lnkDoLoad(const char *file)
+static int _lnkDoLoad(char *file)
 {
+	int i;
+
+	for (i=0; i < loadlist_n; i++)
+	{
+		if (!strcmp (loadlist[i].file, file))
+		{
+			loadlist[i].refcount++;
+			free (file);
+			return loadlist[i].id;
+		}
+	}
+
 	if (loadlist_n>=MAXDLLLIST)
 	{
 		fprintf(stderr, "Too many open shared objects\n");
+		free (file);
 		return -1;
 	}
 
 	if (!(loadlist[loadlist_n].handle=dlopen(file, RTLD_NOW|RTLD_GLOBAL)))
 	{
 		fprintf(stderr, "%s\n", dlerror());
+		free (file);
 		return -1;
 	}
 
 	loadlist[loadlist_n].id=++handlecounter;
+	loadlist[loadlist_n].refcount=1;
+	loadlist[loadlist_n].file=file;
 
 	if (!(loadlist[loadlist_n].info=(struct linkinfostruct *)dlsym(loadlist[loadlist_n].handle, "dllextinfo")))
 	{
 		fprintf(stderr, "lnkDoLoad(%s): dlsym(dllextinfo): %s\n", file, dlerror());
+		free (file);
+		dlclose (loadlist[loadlist_n].handle);
+		loadlist[loadlist_n].handle=0;
+		loadlist[loadlist_n].file=0;
 		return -1;
 	}
 
@@ -183,12 +203,16 @@ static int lnkDoLoad(const char *file)
 #ifdef LD_DEBUG
 	fprintf(stderr, "Request to load %s\n", file);
 #endif
-	makepath_malloc (&buffer, 0, cfProgramDir, file, LIB_SUFFIX);
+	if (!strncmp (file, "autoload/", 9))
+	{
+		makepath_malloc (&buffer, 0, cfProgramDirAutoload, file + 9, LIB_SUFFIX);
+	} else {
+		makepath_malloc (&buffer, 0, cfProgramDir, file, LIB_SUFFIX);
+	}
 #ifdef LD_DEBUG
 	fprintf(stderr, "Attempting to load %s\n", buffer);
 #endif
-	retval = _lnkDoLoad(buffer);
-	free (buffer);
+	retval = _lnkDoLoad(buffer); // steals the string
 	return retval;
 }
 
@@ -264,14 +288,12 @@ int lnkLinkDir(const char *dir)
 	for (n=0;n<files;n++)
 	{
 		makepath_malloc (&buffer, 0, dir, filenames[n], 0);
-		if (_lnkDoLoad(buffer)<0)
+		if (_lnkDoLoad(buffer)<0) // steals the string
 		{
-			free (buffer);
 			for (;n<files;n++)
 				free(filenames[n]);
 			return -1;
 		}
-		free (buffer);
 		free (filenames[n]);
 	}
 	return 0; /* all okey */
@@ -309,16 +331,23 @@ void lnkFree(const int id)
 			if (loadlist[i].handle) /* this happens for static plugins */
 				dlclose(loadlist[i].handle);
 #endif
+			free (loadlist[i].file);
 		}
 		loadlist_n=0;
 	} else {
 		for (i=loadlist_n-1;i>=0;i--)
 			if (loadlist[i].id==id)
 			{
+				loadlist[i].refcount--;
+				if (loadlist[i].refcount)
+				{
+					return;
+				}
 #ifndef NO_DLCLOSE
 				if (loadlist[i].handle) /* this happens for static plugins */
 					dlclose(loadlist[i].handle);
 #endif
+				free (loadlist[i].file);
 				memmove(&loadlist[i], &loadlist[i+1], (MAXDLLLIST-i-1)*sizeof(loadlist[0]));
 				loadlist_n--;
 				return;
@@ -343,6 +372,8 @@ static void lnkLoadStatics(void)
 		}
 
 		loadlist[loadlist_n].handle=NULL;
+
+		loadlist[loadlist_n].refcount=1;;
 
 		loadlist[loadlist_n].id=++handlecounter;
 

@@ -22,6 +22,7 @@ extern char *cfConfigDir;
 extern char *cfDataDir;
 extern char *cfTempDir;
 extern char *cfProgramDir;
+extern char *cfProgramDirAutoload;
 extern const char *cfConfigSec;
 extern const char *cfSoundSec;
 extern const char *cfScreenSec;
