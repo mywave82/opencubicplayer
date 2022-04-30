@@ -67,7 +67,7 @@ AS_CASE([$target],
 AC_DEFINE_UNQUOTED(LIB_SUFFIX, "$LIB_SUFFIX")
 
 AC_ARG_WITH([x11],                  [AS_HELP_STRING([--with-x11],                    [force/disable x11 support])],                                               [], [with_x11=auto])
-AC_ARG_WITH([adplug],               [AS_HELP_STRING([--with-adplug],                 [force/disable adplug support])],                                            [], [with_adplug=auto])
+#AC_ARG_WITH([adplug],               [AS_HELP_STRING([--with-adplug],                 [force/disable adplug support])],                                            [], [with_adplug=auto])
 AC_ARG_WITH([mad],                  [AS_HELP_STRING([--with-mad],                    [force/disable mad mpeg audio support])],                                    [], [with_mad=auto])
 AC_ARG_WITH([alsa],                 [AS_HELP_STRING([--with-alsa],                   [force/disable alsa support])],                                              [], [with_alsa=auto])
 AC_ARG_WITH([oss],                  [AS_HELP_STRING([--with-oss],                    [force/disable oss support])],                                               [], [with_oss=auto])
@@ -210,10 +210,15 @@ AC_CONFIG_HEADERS([config.h] [playsid/sidplayfp-config/config.h])
 
 AC_HEADER_STDC
 
+AC_SUBST(HAVE_GETOPT_H)
+AC_SUBST(HAVE_SYS_IO_H)
+AC_SUBST(HAVE_SYS_STAT_H)
+AC_SUBST(HAVE_SYS_TYPES_H)
 AC_CHECK_HEADER([dirent.h],        [AC_DEFINE(HAVE_DIRENT_H,          1)], [])
 AC_CHECK_HEADER([fcntl.h],         [AC_DEFINE(HAVE_FCNTL_H,           1)], [])
-AC_CHECK_HEADER([getopt.h],        [AC_DEFINE(HAVE_GETOPT_H,          1)], [])
+AC_CHECK_HEADER([getopt.h],        [AC_DEFINE(HAVE_GETOPT_H,          1)] HAVE_GETOPT_H=1, [])
 AC_CHECK_HEADER([ndir.h],          [AC_DEFINE(HAVE_NDIR_H,            1)], [])
+AC_CHECK_HEADER([sys/io],                                                 HAVE_SYS_IO_H=1, [])
 AC_CHECK_HEADER([sys/ndir.h],      [AC_DEFINE(HAVE_SYS_NDIR_H,        1)], [])
 AC_CHECK_HEADER([sys/dir.h],       [AC_DEFINE(HAVE_SYS_DIR_H,         1)], [])
 AC_CHECK_HEADER([stdint.h],        [AC_DEFINE(HAVE_STDINT_H,          1)], [])
@@ -225,9 +230,9 @@ AC_CHECK_HEADER([string.h],        [AC_DEFINE(HAVE_STRING_H,          1)], [AC_D
 AC_CHECK_HEADER([strings.h],       [AC_DEFINE(HAVE_STRINGS_H,         1)], [])
 AC_CHECK_HEADER([errno.h],         [AC_DEFINE(HAVE_ERRNO_H,           1)], [])
 AC_CHECK_HEADER([sys/cdefs.h],     [AC_DEFINE(HAVE_SYS_CDEFS_H,       1)], [])
-AC_CHECK_HEADER([sys/stat.h],      [AC_DEFINE(HAVE_SYS_STAT_H,        1)], [])
+AC_CHECK_HEADER([sys/stat.h],      [AC_DEFINE(HAVE_SYS_STAT_H,        1) HAVE_SYS_STAT_H=1], [])
 AC_CHECK_HEADER([sys/time.h],      [AC_DEFINE(HAVE_SYS_TIME_H,        1)], [])
-AC_CHECK_HEADER([sys/types.h],     [AC_DEFINE(HAVE_SYS_TYPES_H,       1)], [])
+AC_CHECK_HEADER([sys/types.h],     [AC_DEFINE(HAVE_SYS_TYPES_H,       1) HAVE_SYS_TYPES_H=1], [])
 AC_CHECK_HEADER([sys/param.h],     [AC_DEFINE(HAVE_SYS_PARAM_H,       1)], [])
 AC_CHECK_HEADER([machine/endian.h],[AC_DEFINE(HAVE_MACHINE_ENDIAN_H,  1)], [])
 AC_CHECK_HEADER([pwd.h],           [AC_DEFINE(HAVE_PWD_H,             1)], [])
@@ -485,110 +490,174 @@ AS_IF([test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11
 	AC_DEFINE_UNQUOTED([UNIFONT_UPPER_TTF], "$UNIFONT_UPPER_TTF")
 ])
 
+
+
+dnl This is for external libbinio + adplug
+dnl AC_LANG_PUSH(C++)
+dnl org_cxxflags="$CXXFLAGS"
+dnl org_cppflags="$CPPFLAGS"
+dnl AC_SUBST(ADPLUG_CXXFLAGS)
+dnl AC_SUBST(ADPLUG_LIBS)
+dnl AS_IF([test "x$with_adplug" != "xno"],[
+dnl 	PKG_CHECK_MODULES([ADPLUG],[adplug],[ADPLUG_CXXFLAGS=$ADPLUG_CFLAGS],[
+dnl 	dnl Fall back to non-pkg-config method
+dnl 		AC_CHECK_HEADER([adplug/adplug.h], [], [with_adplug_failed=yes])
+dnl 		AS_IF([test "x$with_adplug_failed" = "xyes"],[
+dnl 			CXXFLAGS="$CXXFLAGS -I/usr/include/libbinio"
+dnl 			CPPFLAGS="$CPPFLAGS -I/usr/include/libbinio"
+dnl 			unset ac_cv_header_adplug_adplug_h
+dnl 			AC_MSG_NOTICE("Trying again with -I/usr/include/libbinio")
+dnl 			AC_CHECK_HEADER([adplug/adplug.h],
+dnl 				[ADPLUG_CXXFLAGS="-I/usr/include/libbinio"],
+dnl 				[ AS_IF([test "x$with_adplug" = "xyes"], [AC_MSG_ERROR("Adplug header files was not found")], [with_adplug="no"]) ]
+dnl 			)
+dnl 		])
+dnl 		AS_IF([test "x$with_adplug" != "xno"],[
+dnl 			AC_CHECK_LIB([adplug], [docell0], [ADPLUG_LIBS="-ladplug"], [ AS_IF([test "x$with_adplug" = "xyes"], [AC_MSG_ERROR("Adplug was not found")], [with_adplug="no"]) ])
+dnl 			LIBS=$push_LIBS
+dnl 		])
+dnl 	])
+dnl ])
+dnl CXXFLAGS="$org_cxxflags"
+dnl CPPFLAGS="$org_cppflags"
+dnl AS_IF([test "x$with_adplug" != "xno"],[
+dnl 	AC_MSG_CHECKING([If AdPlug was compiled with another C++ ABI])
+dnl 	CXXFLAGS="$CXXFLAGS $ADPLUG_CXXFLAGS"
+dnl 	LIBS="$LIBS $ADPLUG_LIBS"
+dnl
+dnl 	AC_LINK_IFELSE(
+dnl 		[AC_LANG_PROGRAM([[#include <adplug/emuopl.h>]],[[CEmuopl opl = CEmuopl(48000, 1, 1);]])],
+dnl 		[],
+dnl 		[AC_MSG_ERROR("Adplug was compiled with a different c++ compiler")]
+dnl 	)
+dnl
+dnl 	AC_RUN_IFELSE(
+dnl 		[AC_LANG_PROGRAM([[
+dnl #include <adplug/adplug.h>
+dnl #include <adplug/players.h>
+dnl #include <adplug/player.h>
+dnl 			]],[[
+dnl 	int j;
+dnl 	CPlayers::const_iterator i;
+dnl
+dnl 	for (i = CAdPlug::players.begin(); i != CAdPlug::players.end(); i++)
+dnl 	{
+dnl 		for (j = 0; (*i)->get_extension(j); j++)
+dnl 		{
+dnl 			if (CFileProvider::extension("OPL", (*i)->get_extension(j)))
+dnl 			{
+dnl 				return 0;
+dnl 			}
+dnl 		}
+dnl 	}
+dnl 	return 0;
+dnl 			]]
+dnl 		)],
+dnl 		[AC_MSG_RESULT([ok])],
+dnl 		[AC_MSG_ERROR("Adplug was compiled with a different c++ compiler")],
+dnl 		[AC_MSG_NOTICE("Unable to test due to cross-compilation")]
+dnl 	)
+dnl 	LIBS=$push_LIBS
+dnl 	CXXFLAGS="$org_cxxflags"
+dnl 	CPPFLAGS="$org_cppflags"
+dnl ])
+dnl
+dnl AS_IF([test "x$with_adplug" != "xno"],[
+dnl AC_MSG_CHECKING([If libbinio used by AdPlug contains bugs https://github.com/adplug/libbinio/issues/2])
+dnl 	CXXFLAGS="$CXXFLAGS $ADPLUG_CXXFLAGS"
+dnl 	LIBS="$LIBS $ADPLUG_LIBS"
+dnl
+dnl 	AC_RUN_IFELSE(
+dnl 		[AC_LANG_PROGRAM([[
+dnl #include <binio.h>
+dnl #include <binstr.h>
+dnl #include <cstdlib>
+dnl #include <string.h>
+dnl #include <string.h>
+dnl 		]],[[
+dnl 	binisstream *f = new binisstream((void *)"foobar", 6);
+dnl 	long size;
+dnl 	char test[6] = {1,2,3,4,5,6};
+dnl
+dnl 	f->seek(0, binio::End);
+dnl 	size = f->pos();
+dnl 	f->seek(0);
+dnl
+dnl 	if (f->readString(test, size) != 6) return -1;
+dnl
+dnl 	/* test should contain "foobar" if all is correct */
+dnl 	return memcmp(test, "foobar", 6);
+dnl 		]])],
+dnl 		[AC_MSG_RESULT([ok])],
+dnl 		[AC_MSG_ERROR("libbinio fails to use memoryobjects")],
+dnl 		[AC_MSG_NOTICE("Unable to test due to cross-compilation")]
+dnl 	)
+dnl 	LIBS=$push_LIBS
+dnl 	CXXFLAGS="$org_cxxflags"
+dnl 	CPPFLAGS="$org_cppflags"
+dnl ])
+dnl
+dnl AC_SUBST(HAVE_ADPLUG)
+dnl AC_SUBST(ADPLUG_INI)
+dnl AS_IF([test "x$with_adplug" = "xno"],[
+dnl 	HAVE_ADPLUG=
+dnl 	ADPLUG_INI=
+dnl ],[
+dnl 	HAVE_ADPLUG=1
+dnl 	ADPLUG_INI=opltype
+dnl ])
+dnl AC_LANG_POP()
+dnl This is for builtin libbinio + adplug
+# Conditionally build iostream wrappers
 AC_LANG_PUSH(C++)
-org_cxxflags="$CXXFLAGS"
-org_cppflags="$CPPFLAGS"
-AC_SUBST(ADPLUG_CXXFLAGS)
-AC_SUBST(ADPLUG_LIBS)
-AS_IF([test "x$with_adplug" != "xno"],[
-	PKG_CHECK_MODULES([ADPLUG],[adplug],[ADPLUG_CXXFLAGS=$ADPLUG_CFLAGS],[
-	dnl Fall back to non-pkg-config method
-		AC_CHECK_HEADER([adplug/adplug.h], [], [with_adplug_failed=yes])
-		AS_IF([test "x$with_adplug_failed" = "xyes"],[
-			CXXFLAGS="$CXXFLAGS -I/usr/include/libbinio"
-			CPPFLAGS="$CPPFLAGS -I/usr/include/libbinio"
-			unset ac_cv_header_adplug_adplug_h
-			AC_MSG_NOTICE("Trying again with -I/usr/include/libbinio")
-			AC_CHECK_HEADER([adplug/adplug.h],
-				[ADPLUG_CXXFLAGS="-I/usr/include/libbinio"],
-				[ AS_IF([test "x$with_adplug" = "xyes"], [AC_MSG_ERROR("Adplug header files was not found")], [with_adplug="no"]) ]
-			)
-		])
-		AS_IF([test "x$with_adplug" != "xno"],[
-			AC_CHECK_LIB([adplug], [docell0], [ADPLUG_LIBS="-ladplug"], [ AS_IF([test "x$with_adplug" = "xyes"], [AC_MSG_ERROR("Adplug was not found")], [with_adplug="no"]) ])
-			LIBS=$push_LIBS
-		])
-	])
+AC_ARG_ENABLE([iostream], AC_HELP_STRING([--disable-iostream], [ADPLUG: Do not build iostream wrapper streams]))
+AS_IF([test ${enable_iostream:=yes} = yes], [
+  AC_CHECK_LIB(stdc++,main, AC_SUBST(ENABLE_IOSTREAM,1),
+                            AC_SUBST(ENABLE_IOSTREAM,0))
+],[
+  AC_SUBST(ENABLE_IOSTREAM,0)
 ])
-CXXFLAGS="$org_cxxflags"
-CPPFLAGS="$org_cppflags"
-
-AS_IF([test "x$with_adplug" != "xno"],[
-	AC_MSG_CHECKING([If AdPlug was compiled with another C++ ABI])
-	CXXFLAGS="$CXXFLAGS $ADPLUG_CXXFLAGS"
-	LIBS="$LIBS $ADPLUG_LIBS"
-
-	AC_LINK_IFELSE(
-		[AC_LANG_PROGRAM([[#include <adplug/emuopl.h>]],[[CEmuopl opl = CEmuopl(48000, 1, 1);]])],
-		[],
-		[AC_MSG_ERROR("Adplug was compiled with a different c++ compiler")]
-	)
-
-	AC_RUN_IFELSE(
-		[AC_LANG_PROGRAM([[
-#include <adplug/adplug.h>
-#include <adplug/players.h>
-#include <adplug/player.h>
-			]],[[
-	int j;
-	CPlayers::const_iterator i;
-
-	for (i = CAdPlug::players.begin(); i != CAdPlug::players.end(); i++)
-	{
-		for (j = 0; (*i)->get_extension(j); j++)
-		{
-			if (CFileProvider::extension("OPL", (*i)->get_extension(j)))
-			{
-				return 0;
-			}
-		}
-	}
-	return 0;
-			]]
-		)],
-		[AC_MSG_RESULT([ok])],
-		[AC_MSG_ERROR("Adplug was compiled with a different c++ compiler")],
-		[AC_MSG_NOTICE("Unable to test due to cross-compilation")]
-	)
-	LIBS=$push_LIBS
-	CXXFLAGS="$org_cxxflags"
-	CPPFLAGS="$org_cppflags"
+# Conditionally build std::string methods
+AC_ARG_ENABLE([string], AC_HELP_STRING([--disable-string], [ADPLUG: Do not build std::string methods]))
+AS_IF([test ${enable_string:=yes} = yes], [
+  AC_CHECK_LIB(stdc++, main, AC_SUBST(ENABLE_STRING,1),
+                             AC_SUBST(ENABLE_STRING,0))
+],[
+  AC_SUBST(ENABLE_STRING,0)
 ])
-
-AS_IF([test "x$with_adplug" != "xno"],[
-AC_MSG_CHECKING([If libbinio used by AdPlug contains bugs https://github.com/adplug/libbinio/issues/2])
-	CXXFLAGS="$CXXFLAGS $ADPLUG_CXXFLAGS"
-	LIBS="$LIBS $ADPLUG_LIBS"
-
-	AC_RUN_IFELSE(
-		[AC_LANG_PROGRAM([[
-#include <binio.h>
-#include <binstr.h>
-#include <cstdlib>
-#include <string.h>
-#include <string.h>
-		]],[[
-	binisstream *f = new binisstream((void *)"foobar", 6);
-	long size;
-	char test[6] = {1,2,3,4,5,6};
-
-	f->seek(0, binio::End);
-	size = f->pos();
-	f->seek(0);
-
-	if (f->readString(test, size) != 6) return -1;
-
-	/* test should contain "foobar" if all is correct */
-	return memcmp(test, "foobar", 6);
-		]])],
-		[AC_MSG_RESULT([ok])],
-		[AC_MSG_ERROR("libbinio fails to use memoryobjects")],
-		[AC_MSG_NOTICE("Unable to test due to cross-compilation")]
-	)
-	LIBS=$push_LIBS
-	CXXFLAGS="$org_cxxflags"
-	CPPFLAGS="$org_cppflags"
+AS_IF([test x${with_iso} = xyes], [
+  AC_SUBST(ISO_STDLIB,1)
+],[
+  AS_IF([test x${with_iso} = xno], [
+    AC_SUBST(ISO_STDLIB,0)
+  ],[
+    AC_CHECK_TYPE([std::basic_istream<char>],
+                  AC_SUBST(ISO_STDLIB,1),
+                  AC_SUBST(ISO_STDLIB,0),
+                  [
+                   AC_LANG_SOURCE([
+#include <iostream>
+    ]) ] )
+  ])
 ])
+AC_ARG_WITH([math],AC_HELP_STRING([--without-math], [ADPLUG: Do not build routines depending on 'math.h']))
+AS_IF([test ${with_math:=yes} = yes], [
+  AC_CHECK_FUNC(ldexp, AC_SUBST(WITH_MATH,1), AC_SUBST(WITH_MATH,0))
+],[
+  AC_SUBST(WITH_MATH,0)
+])
+# Check if 'long long' or 'long double' are available and use them instead.
+AC_CHECK_TYPE(long long, AC_SUBST(TYPE_INT,"long long"), AC_SUBST(TYPE_INT,long))
+AC_CHECK_TYPE(long double, AC_SUBST(TYPE_FLOAT,"long double"), AC_SUBST(TYPE_FLOAT,double))
+AC_SUBST(HAVE_ADPLUG)
+AC_SUBST(ADPLUG_INI)
+HAVE_ADPLUG=1
+ADPLUG_INI=opltype
+AC_SUBST(VERSION, "2.3.4-beta") dnl this name is risky!!
+AC_LANG_POP()
+dnl Adplug+libbinio complete
+
+
 
 dnl SIDPLAY specifics
 AC_MSG_CHECKING([GIT submodules are checked out])
@@ -683,7 +752,6 @@ AC_SUBST(RESID_BRANCH_HINTS)
 AC_SUBST(NEW_8580_FILTER)
 AC_SUBST(HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H)
 AC_SUBST(HAVE_SIDPLAYFP_BUILDERS_RESID_H)
-AC_LANG_POP()
 
 PKG_CHECK_MODULES([LIBDISCID],[libdiscid],[],[AC_MSG_ERROR([libdiscid not found])])
 PKG_CHECK_MODULES([LIBCJSON],[libcjson],[],[AC_MSG_ERROR([libcjson not found])])
@@ -696,16 +764,6 @@ AS_IF([test "x$with_alsa" != "xno"],[
 
 AC_SUBST(HAVE_ALSA)
 AS_IF([test "x$with_alsa" = "xno"],[HAVE_ALSA=],[HAVE_ALSA=1])
-
-AC_SUBST(HAVE_ADPLUG)
-AC_SUBST(ADPLUG_INI)
-AS_IF([test "x$with_adplug" = "xno"],[
-	HAVE_ADPLUG=
-	ADPLUG_INI=
-],[
-	HAVE_ADPLUG=1
-	ADPLUG_INI=opltype
-])
 
 AC_SUBST(LINUX)
 AC_SUBST(CDROM_SUPPORT)
@@ -873,11 +931,14 @@ AC_CONFIG_FILES(doc/texi/ocp.texi)
 AC_CONFIG_FILES(doc/ocp.1)
 AC_CONFIG_FILES(playsid/libsidplayfp-git/src/builders/resid-builder/resid/siddefs.h)
 AC_CONFIG_FILES(playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h)
+AC_CONFIG_FILES(playopl/libbinio-git/src/binio.h)
+AC_CONFIG_FILES(playopl/adplug-git/src/version.h)
 
 AC_OUTPUT
 
 AS_IF([test "x$with_debug"     = "xyes"], [echo "debug:             ON" ], [echo "debug:             OFF"])
-AS_IF([test "x$with_adplug"    = "xno" ], [echo "adplug:            OFF"], [echo "adplug:            ON"])
+dnl AS_IF([test "x$with_adplug"    = "xno" ], [echo "adplug:            OFF"], [echo "adplug:            ON"])
+                                           echo "adplug:            GIT/builtin"
 AS_IF([test "x$with_mad"       = "xno" ], [echo "mad:               OFF"], [echo "mad:               ON"])
                                            echo "sidplayfp:         GIT/builtin"
 AS_IF([test "x$with_flac"      = "xno" ], [echo "FLAC:              OFF"], [echo "FLAC:              ON"])

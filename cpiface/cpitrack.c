@@ -90,6 +90,8 @@ static char pattitle1[CONSOLE_MAX_X+1];
 static uint16_t pattitle2[CONSOLE_MAX_X];
 static int patwidth, patpad;
 
+static int overrideplNLChan;
+
 enum
 {
 	cpiTrkFXIns=1,cpiTrkFXNote=2,cpiTrkFXVol=4,cpiTrkFXNoPan=8
@@ -138,19 +140,19 @@ static void getfx2(uint16_t *bp, int n, int o)
 
 static void getscrollpos(int tr, int *firstchan, int *chnn)
 {
-	if (plNLChan>tr)
+	if (overrideplNLChan>tr)
 	{
 		if (plSelCh<(tr>>1))
 			*firstchan=0;
 		else
-			if (plSelCh>=(plNLChan-(tr>>1)))
-				*firstchan=plNLChan-tr;
+			if (plSelCh>=(overrideplNLChan-(tr>>1)))
+				*firstchan=overrideplNLChan-tr;
 			else
 				*firstchan=plSelCh-((tr>>1));
 		*chnn=tr;
 	} else {
 		*firstchan=0;
-		*chnn=plNLChan;
+		*chnn=overrideplNLChan;
 	}
 }
 
@@ -270,8 +272,8 @@ static void preparepatgen(int pat, const struct patviewtype *pt)
 
 	int maxch=(plPatWidth-pt->gcmd*4-3)/pt->width;
 
-	if (maxch>plNLChan)
-		maxch=plNLChan;
+	if (maxch>overrideplNLChan)
+		maxch=overrideplNLChan;
 
 	patpad=(plPatWidth-maxch*pt->width-pt->gcmd*4-3)>=4;
 
@@ -543,7 +545,7 @@ static void calcPatType(void)
 	for (i=0; i<6 /* the sixth entry we do not care to probe, since it will be the default */; i++)
 	{
 		int maxch=(plPatWidth-Probes[i].ref->gcmd*4-3)/Probes[i].ref->width;
-		if (maxch >= plNLChan) /* all channels can fit in this mode */
+		if (maxch >= overrideplNLChan) /* all channels can fit in this mode */
 		{
 			break;
 		}
@@ -858,6 +860,28 @@ static struct cpitextmoderegstruct cpiTModeTrack = {"trak", TrakGetWin, TrakSetW
 
 void cpiTrkSetup(const struct cpitrakdisplaystruct *c, int npat)
 {
+	overrideplNLChan=plNLChan;
+	plPatternNum=npat;
+	plPatManualPat=-1;
+	plPrepdPat=-1;
+	plPatType=-1;
+	getcurpos=c->getcurpos;
+	getpatlen=c->getpatlen;
+	getpatname=c->getpatname;
+	seektrack=c->seektrack;
+	startrow=c->startrow;
+	getnote=c->getnote;
+	getins=c->getins;
+	getvol=c->getvol;
+	getpan=c->getpan;
+	getfx=c->getfx;
+	getgcmd=c->getgcmd;
+	cpiTextRegisterMode(&cpiTModeTrack);
+}
+
+void cpiTrkSetup2(const struct cpitrakdisplaystruct *c, int npat, int tracks)
+{
+	overrideplNLChan=tracks;
 	plPatternNum=npat;
 	plPatManualPat=-1;
 	plPrepdPat=-1;

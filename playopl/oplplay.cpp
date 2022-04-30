@@ -19,12 +19,12 @@
  */
 
 #include "config.h"
-#include <binio.h>
-#include <binstr.h>
+#include "libbinio-git/src/binio.h"
+#include "libbinio-git/src/binstr.h"
 #include <cstdlib>
 #include <string.h>
-#include <adplug/adplug.h>
-#include <adplug/fprovide.h>
+#include "adplug-git/src/adplug.h"
+#include "adplug-git/src/fprovide.h"
 #include "types.h"
 extern "C"
 {
@@ -39,6 +39,7 @@ extern "C"
 #include "stuff/poll.h"
 }
 #include "oplplay.h"
+#include "oplptrak.h"
 #include "ocpemu.h"
 
 /* options */
@@ -125,6 +126,8 @@ void __attribute__ ((visibility ("internal"))) oplClosePlayer(void)
 		delete(opl);
 
 		active=0;
+
+		oplTrkDone();
 	}
 }
 
@@ -176,16 +179,28 @@ static int GET(int ch, int opt)
 	return 0;
 }
 
+class binisstreamfree: public binisstream
+{
+public:
+	binisstreamfree(void *str, unsigned long len) : binsbase(str, len), binisstream (str, len)
+	{
+	}
+	~binisstreamfree()
+	{
+		free (data);
+	}
+};
+
 class CProvider_Mem: public CFileProvider
 {
 	private:
 		char *filename;
 		struct ocpfilehandle_t *file;
-		const uint8_t *file_data;
+		uint8_t *file_data;
 		int file_size;
 
 	public:
-		CProvider_Mem(const char *filename, struct ocpfilehandle_t *file, const uint8_t *file_data, int file_size) :
+		CProvider_Mem(const char *filename, struct ocpfilehandle_t *file, uint8_t *file_data, int file_size) :
 			file_data(file_data),
 			file_size(file_size)
 		{
@@ -196,12 +211,13 @@ class CProvider_Mem: public CFileProvider
 
 		~CProvider_Mem(void)
 		{
-			free (this->filename);
-			this->file->unref (this->file);
+			free (filename);
+			free (file_data);
+			file->unref (file);
 		}
 
-		virtual binistream *open(std::string filename) const;
-		virtual void close(binistream *f) const;
+		virtual binistream *open(std::string filename) const override;
+		virtual void close(binistream *f) const override;
 };
 
 binistream *CProvider_Mem::open(std::string filename) const
@@ -209,7 +225,7 @@ binistream *CProvider_Mem::open(std::string filename) const
 	binisstream *retval = NULL;
 	if (!strcmp (filename.c_str(), this->filename))
 	{
-		retval = new binisstream((uint8_t *)this->file_data, this->file_size);
+		retval = new binisstream(this->file_data, this->file_size);
 	} else {
 		uint32_t d = dirdbFindAndRef (file->origin->parent->dirdb_ref, filename.c_str(), dirdb_use_children);
 
@@ -250,9 +266,11 @@ binistream *CProvider_Mem::open(std::string filename) const
 					}
 					if (bufferfill)
 					{
-						retval = new binisstream(buffer, bufferfill);
+						retval = new binisstreamfree(buffer, bufferfill);
+					} else {
+						free (buffer);
 					}
-					free (buffer);
+					file->unref (file);
 				} else {
 					fprintf (stderr, "[OPL] Unable to open %s\n", filename.c_str());
 				}
@@ -277,7 +295,7 @@ void CProvider_Mem::close(binistream *f) const
 	delete f;
 }
 
-int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filename /* needed for detection */, const uint8_t *content, const size_t len, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filename /* needed for detection */, uint8_t *content, const size_t len, struct ocpfilehandle_t *file)
 {
 	enum plrRequestFormat format;
 
@@ -285,6 +303,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	format=PLR_STEREO_16BIT_SIGNED;
 	if (!plrAPI->Play (&oplRate, &format, file))
 	{
+		free (content);
 		return 0;
 	}
 
@@ -293,6 +312,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	CProvider_Mem prMem (filename, file, content, len);
 	if (!(p = CAdPlug::factory(filename, opl, CAdPlug::players, prMem)))
 	{
+		free (content);
 		delete (opl);
 		return 0;
 	}
@@ -319,6 +339,9 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	mcpNormalize (mcpNormalizeDefaultPlayP);
 
 	active=1;
+
+	oplTrkSetup(p);
+
 	return 1;
 
 error_out:
@@ -330,6 +353,7 @@ error_out:
 	}
 	delete(p);
 	delete(opl);
+	free (content);
 	return 0;
 }
 

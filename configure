@@ -651,8 +651,6 @@ CDROM_INI
 X11_LIBS
 CDROM_SUPPORT
 LINUX
-ADPLUG_INI
-HAVE_ADPLUG
 HAVE_ALSA
 ALSA_LIBS
 ALSA_CFLAGS
@@ -676,9 +674,15 @@ HEXDUMP
 XA
 HAVE_CXX11
 HAVE_CXX14
-ADPLUG_CFLAGS
-ADPLUG_LIBS
-ADPLUG_CXXFLAGS
+VERSION
+ADPLUG_INI
+HAVE_ADPLUG
+TYPE_FLOAT
+TYPE_INT
+WITH_MATH
+ISO_STDLIB
+ENABLE_STRING
+ENABLE_IOSTREAM
 UNIFONT_UPPER_TTF
 UNIFONT_CSUR_TTF
 UNIFONT_TTF
@@ -715,6 +719,10 @@ PKG_CONFIG_PATH
 PKG_CONFIG
 CURSES_CPPFLAGS
 CURSES_LIB
+HAVE_SYS_TYPES_H
+HAVE_SYS_STAT_H
+HAVE_SYS_IO_H
+HAVE_GETOPT_H
 MATH_LIBS
 DIR_SUFFIX
 HAIKU
@@ -797,7 +805,6 @@ ac_user_opts='
 enable_option_checking
 with_debug
 with_x11
-with_adplug
 with_mad
 with_alsa
 with_oss
@@ -821,6 +828,9 @@ with_sdl_prefix
 with_sdl_exec_prefix
 enable_sdltest
 enable_sdlframework
+enable_iostream
+enable_string
+with_math
 enable_branch_hints
 with_efence
 with_duma
@@ -863,8 +873,6 @@ SDL_CFLAGS
 SDL_LIBS
 FREETYPE2_CFLAGS
 FREETYPE2_LIBS
-ADPLUG_CFLAGS
-ADPLUG_LIBS
 XA
 LIBDISCID_CFLAGS
 LIBDISCID_LIBS
@@ -1500,6 +1508,8 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-sdltest       Do not try to compile and run a test SDL program
   --disable-sdlframework Do not search for SDL2.framework
+  --disable-iostream      ADPLUG: Do not build iostream wrapper streams
+  --disable-string        ADPLUG: Do not build std::string methods
   --enable-branch-hints   enable static branch prediction hints [default=yes]
 
 Optional Packages:
@@ -1507,7 +1517,6 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-debug            compile with debug-flags and without SIGALRM
   --with-x11              force/disable x11 support
-  --with-adplug           force/disable adplug support
   --with-mad              force/disable mad mpeg audio support
   --with-alsa             force/disable alsa support
   --with-oss              force/disable oss support
@@ -1549,6 +1558,7 @@ Optional Packages:
   --without-ncursesw      do not use NcursesW (wide character support)
   --with-sdl-prefix=PFX   Prefix where SDL is installed (optional)
   --with-sdl-exec-prefix=PFX Exec prefix where SDL is installed (optional)
+  --without-math          ADPLUG: Do not build routines depending on 'math.h'
   --with-efence           Enable usage of efence
   --with-duma             Enable usage of duma
   --with-libiconv=        [auto/no/gnu/native] what kind of libiconv library
@@ -1602,9 +1612,6 @@ Some influential environment variables:
               C compiler flags for FREETYPE2, overriding pkg-config
   FREETYPE2_LIBS
               linker flags for FREETYPE2, overriding pkg-config
-  ADPLUG_CFLAGS
-              C compiler flags for ADPLUG, overriding pkg-config
-  ADPLUG_LIBS linker flags for ADPLUG, overriding pkg-config
   XA          6502 assembler - must be full path
   LIBDISCID_CFLAGS
               C compiler flags for LIBDISCID, overriding pkg-config
@@ -2183,97 +2190,6 @@ fi
 
 } # ac_fn_c_check_header_mongrel
 
-# ac_fn_cxx_check_header_mongrel LINENO HEADER VAR INCLUDES
-# ---------------------------------------------------------
-# Tests whether HEADER exists, giving a warning if it cannot be compiled using
-# the include files in INCLUDES and setting the cache variable VAR
-# accordingly.
-ac_fn_cxx_check_header_mongrel ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  if eval \${$3+:} false; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
-$as_echo_n "checking for $2... " >&6; }
-if eval \${$3+:} false; then :
-  $as_echo_n "(cached) " >&6
-fi
-eval ac_res=\$$3
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-else
-  # Is the header compilable?
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking $2 usability" >&5
-$as_echo_n "checking $2 usability... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-#include <$2>
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  ac_header_compiler=yes
-else
-  ac_header_compiler=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_header_compiler" >&5
-$as_echo "$ac_header_compiler" >&6; }
-
-# Is the header present?
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking $2 presence" >&5
-$as_echo_n "checking $2 presence... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <$2>
-_ACEOF
-if ac_fn_cxx_try_cpp "$LINENO"; then :
-  ac_header_preproc=yes
-else
-  ac_header_preproc=no
-fi
-rm -f conftest.err conftest.i conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_header_preproc" >&5
-$as_echo "$ac_header_preproc" >&6; }
-
-# So?  What about this header?
-case $ac_header_compiler:$ac_header_preproc:$ac_cxx_preproc_warn_flag in #((
-  yes:no: )
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: accepted by the compiler, rejected by the preprocessor!" >&5
-$as_echo "$as_me: WARNING: $2: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: proceeding with the compiler's result" >&5
-$as_echo "$as_me: WARNING: $2: proceeding with the compiler's result" >&2;}
-    ;;
-  no:yes:* )
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: present but cannot be compiled" >&5
-$as_echo "$as_me: WARNING: $2: present but cannot be compiled" >&2;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2:     check for missing prerequisite headers?" >&5
-$as_echo "$as_me: WARNING: $2:     check for missing prerequisite headers?" >&2;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: see the Autoconf documentation" >&5
-$as_echo "$as_me: WARNING: $2: see the Autoconf documentation" >&2;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2:     section \"Present But Cannot Be Compiled\"" >&5
-$as_echo "$as_me: WARNING: $2:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: proceeding with the compiler's result" >&5
-$as_echo "$as_me: WARNING: $2: proceeding with the compiler's result" >&2;}
-( $as_echo "## ---------------------------------------- ##
-## Report this to stian.skjelstad@gmail.com ##
-## ---------------------------------------- ##"
-     ) | sed "s/^/$as_me: WARNING:     /" >&2
-    ;;
-esac
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
-$as_echo_n "checking for $2... " >&6; }
-if eval \${$3+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  eval "$3=\$ac_header_compiler"
-fi
-eval ac_res=\$$3
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-fi
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-
-} # ac_fn_cxx_check_header_mongrel
-
 # ac_fn_cxx_try_link LINENO
 # -------------------------
 # Try to link conftest.$ac_ext, and return whether this succeeded.
@@ -2319,6 +2235,127 @@ fi
   as_fn_set_status $ac_retval
 
 } # ac_fn_cxx_try_link
+
+# ac_fn_cxx_check_type LINENO TYPE VAR INCLUDES
+# ---------------------------------------------
+# Tests whether TYPE exists after having included INCLUDES, setting cache
+# variable VAR accordingly.
+ac_fn_cxx_check_type ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+$as_echo_n "checking for $2... " >&6; }
+if eval \${$3+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  eval "$3=no"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+if (sizeof ($2))
+	 return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+if (sizeof (($2)))
+	    return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+
+else
+  eval "$3=yes"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+
+} # ac_fn_cxx_check_type
+
+# ac_fn_cxx_check_func LINENO FUNC VAR
+# ------------------------------------
+# Tests whether FUNC exists, setting the cache variable VAR accordingly
+ac_fn_cxx_check_func ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+$as_echo_n "checking for $2... " >&6; }
+if eval \${$3+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+/* Define $2 to an innocuous variant, in case <limits.h> declares $2.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define $2 innocuous_$2
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char $2 (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef $2
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char $2 ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined __stub_$2 || defined __stub___$2
+choke me
+#endif
+
+int
+main ()
+{
+return $2 ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  eval "$3=yes"
+else
+  eval "$3=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+
+} # ac_fn_cxx_check_func
 
 # ac_fn_cxx_try_run LINENO
 # ------------------------
@@ -2590,73 +2627,6 @@ $as_echo "$ac_res" >&6; }
   eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
 
 } # ac_fn_cxx_check_decl
-
-# ac_fn_cxx_check_func LINENO FUNC VAR
-# ------------------------------------
-# Tests whether FUNC exists, setting the cache variable VAR accordingly
-ac_fn_cxx_check_func ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
-$as_echo_n "checking for $2... " >&6; }
-if eval \${$3+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-/* Define $2 to an innocuous variant, in case <limits.h> declares $2.
-   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define $2 innocuous_$2
-
-/* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char $2 (); below.
-    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
-    <limits.h> exists even on freestanding compilers.  */
-
-#ifdef __STDC__
-# include <limits.h>
-#else
-# include <assert.h>
-#endif
-
-#undef $2
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char $2 ();
-/* The GNU C library defines this for functions which it implements
-    to always fail with ENOSYS.  Some functions are actually named
-    something starting with __ and the normal name is an alias.  */
-#if defined __stub_$2 || defined __stub___$2
-choke me
-#endif
-
-int
-main ()
-{
-return $2 ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  eval "$3=yes"
-else
-  eval "$3=no"
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-fi
-eval ac_res=\$$3
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-
-} # ac_fn_cxx_check_func
 cat >config.log <<_ACEOF
 This file contains any messages produced by compilers while
 running configure, to aid debugging if configure makes a mistake.
@@ -6434,14 +6404,7 @@ else
   with_x11=auto
 fi
 
-
-# Check whether --with-adplug was given.
-if test "${with_adplug+set}" = set; then :
-  withval=$with_adplug;
-else
-  with_adplug=auto
-fi
-
+#AC_ARG_WITH([adplug],               [AS_HELP_STRING([--with-adplug],                 [force/disable adplug support])],                                            [], [with_adplug=auto])
 
 # Check whether --with-mad was given.
 if test "${with_mad+set}" = set; then :
@@ -7289,6 +7252,10 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 fi
 
 
+
+
+
+
 ac_fn_c_check_header_mongrel "$LINENO" "dirent.h" "ac_cv_header_dirent_h" "$ac_includes_default"
 if test "x$ac_cv_header_dirent_h" = xyes; then :
   $as_echo "#define HAVE_DIRENT_H 1" >>confdefs.h
@@ -7306,7 +7273,7 @@ fi
 ac_fn_c_check_header_mongrel "$LINENO" "getopt.h" "ac_cv_header_getopt_h" "$ac_includes_default"
 if test "x$ac_cv_header_getopt_h" = xyes; then :
   $as_echo "#define HAVE_GETOPT_H 1" >>confdefs.h
-
+ HAVE_GETOPT_H=1
 fi
 
 
@@ -7314,6 +7281,12 @@ ac_fn_c_check_header_mongrel "$LINENO" "ndir.h" "ac_cv_header_ndir_h" "$ac_inclu
 if test "x$ac_cv_header_ndir_h" = xyes; then :
   $as_echo "#define HAVE_NDIR_H 1" >>confdefs.h
 
+fi
+
+
+ac_fn_c_check_header_mongrel "$LINENO" "sys/io" "ac_cv_header_sys_io" "$ac_includes_default"
+if test "x$ac_cv_header_sys_io" = xyes; then :
+  HAVE_SYS_IO_H=1
 fi
 
 
@@ -7401,7 +7374,7 @@ fi
 ac_fn_c_check_header_mongrel "$LINENO" "sys/stat.h" "ac_cv_header_sys_stat_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_stat_h" = xyes; then :
   $as_echo "#define HAVE_SYS_STAT_H 1" >>confdefs.h
-
+ HAVE_SYS_STAT_H=1
 fi
 
 
@@ -7415,7 +7388,7 @@ fi
 ac_fn_c_check_header_mongrel "$LINENO" "sys/types.h" "ac_cv_header_sys_types_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_types_h" = xyes; then :
   $as_echo "#define HAVE_SYS_TYPES_H 1" >>confdefs.h
-
+ HAVE_SYS_TYPES_H=1
 fi
 
 
@@ -11370,396 +11343,209 @@ _ACEOF
 
 fi
 
+
+
+# Conditionally build iostream wrappers
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-org_cxxflags="$CXXFLAGS"
-org_cppflags="$CPPFLAGS"
-
-
-
-
-if test "x$with_adplug" != "xno"; then :
-
-
-pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for adplug" >&5
-$as_echo_n "checking for adplug... " >&6; }
-
-if test -n "$ADPLUG_CFLAGS"; then
-    pkg_cv_ADPLUG_CFLAGS="$ADPLUG_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"adplug\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "adplug") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_ADPLUG_CFLAGS=`$PKG_CONFIG --cflags "adplug" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$ADPLUG_LIBS"; then
-    pkg_cv_ADPLUG_LIBS="$ADPLUG_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"adplug\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "adplug") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_ADPLUG_LIBS=`$PKG_CONFIG --libs "adplug" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
+# Check whether --enable-iostream was given.
+if test "${enable_iostream+set}" = set; then :
+  enableval=$enable_iostream;
 fi
 
 
+if test ${enable_iostream:=yes} = yes; then :
 
-if test $pkg_failed = yes; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        ADPLUG_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "adplug" 2>&1`
-        else
-	        ADPLUG_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "adplug" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$ADPLUG_PKG_ERRORS" >&5
-
-
-			ac_fn_cxx_check_header_mongrel "$LINENO" "adplug/adplug.h" "ac_cv_header_adplug_adplug_h" "$ac_includes_default"
-if test "x$ac_cv_header_adplug_adplug_h" = xyes; then :
-
-else
-  with_adplug_failed=yes
-fi
-
-
-		if test "x$with_adplug_failed" = "xyes"; then :
-
-			CXXFLAGS="$CXXFLAGS -I/usr/include/libbinio"
-			CPPFLAGS="$CPPFLAGS -I/usr/include/libbinio"
-			unset ac_cv_header_adplug_adplug_h
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: \"Trying again with -I/usr/include/libbinio\"" >&5
-$as_echo "$as_me: \"Trying again with -I/usr/include/libbinio\"" >&6;}
-			ac_fn_cxx_check_header_mongrel "$LINENO" "adplug/adplug.h" "ac_cv_header_adplug_adplug_h" "$ac_includes_default"
-if test "x$ac_cv_header_adplug_adplug_h" = xyes; then :
-  ADPLUG_CXXFLAGS="-I/usr/include/libbinio"
-else
-   if test "x$with_adplug" = "xyes"; then :
-  as_fn_error $? "\"Adplug header files was not found\"" "$LINENO" 5
-else
-  with_adplug="no"
-fi
-
-fi
-
-
-
-fi
-		if test "x$with_adplug" != "xno"; then :
-
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for docell0 in -ladplug" >&5
-$as_echo_n "checking for docell0 in -ladplug... " >&6; }
-if ${ac_cv_lib_adplug_docell0+:} false; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lstdc++" >&5
+$as_echo_n "checking for main in -lstdc++... " >&6; }
+if ${ac_cv_lib_stdcpp_main+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-ladplug  $LIBS"
+LIBS="-lstdc++  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char docell0 ();
+
 int
 main ()
 {
-return docell0 ();
+return main ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_adplug_docell0=yes
+  ac_cv_lib_stdcpp_main=yes
 else
-  ac_cv_lib_adplug_docell0=no
+  ac_cv_lib_stdcpp_main=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_adplug_docell0" >&5
-$as_echo "$ac_cv_lib_adplug_docell0" >&6; }
-if test "x$ac_cv_lib_adplug_docell0" = xyes; then :
-  ADPLUG_LIBS="-ladplug"
-else
-   if test "x$with_adplug" = "xyes"; then :
-  as_fn_error $? "\"Adplug was not found\"" "$LINENO" 5
-else
-  with_adplug="no"
-fi
-fi
-
-			LIBS=$push_LIBS
-
-fi
-
-elif test $pkg_failed = untried; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-			ac_fn_cxx_check_header_mongrel "$LINENO" "adplug/adplug.h" "ac_cv_header_adplug_adplug_h" "$ac_includes_default"
-if test "x$ac_cv_header_adplug_adplug_h" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_stdcpp_main" >&5
+$as_echo "$ac_cv_lib_stdcpp_main" >&6; }
+if test "x$ac_cv_lib_stdcpp_main" = xyes; then :
+  ENABLE_IOSTREAM=1
 
 else
-  with_adplug_failed=yes
+  ENABLE_IOSTREAM=0
+
 fi
 
 
-		if test "x$with_adplug_failed" = "xyes"; then :
-
-			CXXFLAGS="$CXXFLAGS -I/usr/include/libbinio"
-			CPPFLAGS="$CPPFLAGS -I/usr/include/libbinio"
-			unset ac_cv_header_adplug_adplug_h
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: \"Trying again with -I/usr/include/libbinio\"" >&5
-$as_echo "$as_me: \"Trying again with -I/usr/include/libbinio\"" >&6;}
-			ac_fn_cxx_check_header_mongrel "$LINENO" "adplug/adplug.h" "ac_cv_header_adplug_adplug_h" "$ac_includes_default"
-if test "x$ac_cv_header_adplug_adplug_h" = xyes; then :
-  ADPLUG_CXXFLAGS="-I/usr/include/libbinio"
 else
-   if test "x$with_adplug" = "xyes"; then :
-  as_fn_error $? "\"Adplug header files was not found\"" "$LINENO" 5
-else
-  with_adplug="no"
-fi
 
-fi
-
+  ENABLE_IOSTREAM=0
 
 
 fi
-		if test "x$with_adplug" != "xno"; then :
+# Conditionally build std::string methods
+# Check whether --enable-string was given.
+if test "${enable_string+set}" = set; then :
+  enableval=$enable_string;
+fi
 
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for docell0 in -ladplug" >&5
-$as_echo_n "checking for docell0 in -ladplug... " >&6; }
-if ${ac_cv_lib_adplug_docell0+:} false; then :
+if test ${enable_string:=yes} = yes; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lstdc++" >&5
+$as_echo_n "checking for main in -lstdc++... " >&6; }
+if ${ac_cv_lib_stdcpp_main+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-ladplug  $LIBS"
+LIBS="-lstdc++  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char docell0 ();
+
 int
 main ()
 {
-return docell0 ();
+return main ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_adplug_docell0=yes
+  ac_cv_lib_stdcpp_main=yes
 else
-  ac_cv_lib_adplug_docell0=no
+  ac_cv_lib_stdcpp_main=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_adplug_docell0" >&5
-$as_echo "$ac_cv_lib_adplug_docell0" >&6; }
-if test "x$ac_cv_lib_adplug_docell0" = xyes; then :
-  ADPLUG_LIBS="-ladplug"
-else
-   if test "x$with_adplug" = "xyes"; then :
-  as_fn_error $? "\"Adplug was not found\"" "$LINENO" 5
-else
-  with_adplug="no"
-fi
-fi
-
-			LIBS=$push_LIBS
-
-fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_stdcpp_main" >&5
+$as_echo "$ac_cv_lib_stdcpp_main" >&6; }
+if test "x$ac_cv_lib_stdcpp_main" = xyes; then :
+  ENABLE_STRING=1
 
 else
-	ADPLUG_CFLAGS=$pkg_cv_ADPLUG_CFLAGS
-	ADPLUG_LIBS=$pkg_cv_ADPLUG_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-	ADPLUG_CXXFLAGS=$ADPLUG_CFLAGS
-fi
+  ENABLE_STRING=0
 
 fi
-CXXFLAGS="$org_cxxflags"
-CPPFLAGS="$org_cppflags"
 
-if test "x$with_adplug" != "xno"; then :
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking If AdPlug was compiled with another C++ ABI" >&5
-$as_echo_n "checking If AdPlug was compiled with another C++ ABI... " >&6; }
-	CXXFLAGS="$CXXFLAGS $ADPLUG_CXXFLAGS"
-	LIBS="$LIBS $ADPLUG_LIBS"
-
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <adplug/emuopl.h>
-int
-main ()
-{
-CEmuopl opl = CEmuopl(48000, 1, 1);
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
 
 else
-  as_fn_error $? "\"Adplug was compiled with a different c++ compiler\"" "$LINENO" 5
+
+  ENABLE_STRING=0
+
 
 fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
+if test x${with_iso} = xyes; then :
 
-	if test "$cross_compiling" = yes; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: \"Unable to test due to cross-compilation\"" >&5
-$as_echo "$as_me: \"Unable to test due to cross-compilation\"" >&6;}
+  ISO_STDLIB=1
+
 
 else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-#include <adplug/adplug.h>
-#include <adplug/players.h>
-#include <adplug/player.h>
+  if test x${with_iso} = xno; then :
 
-int
-main ()
-{
+    ISO_STDLIB=0
 
-	int j;
-	CPlayers::const_iterator i;
-
-	for (i = CAdPlug::players.begin(); i != CAdPlug::players.end(); i++)
-	{
-		for (j = 0; (*i)->get_extension(j); j++)
-		{
-			if (CFileProvider::extension("OPL", (*i)->get_extension(j)))
-			{
-				return 0;
-			}
-		}
-	}
-	return 0;
-
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_run "$LINENO"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-else
-  as_fn_error $? "\"Adplug was compiled with a different c++ compiler\"" "$LINENO" 5
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-	LIBS=$push_LIBS
-	CXXFLAGS="$org_cxxflags"
-	CPPFLAGS="$org_cppflags"
-
-fi
-
-if test "x$with_adplug" != "xno"; then :
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking If libbinio used by AdPlug contains bugs https://github.com/adplug/libbinio/issues/2" >&5
-$as_echo_n "checking If libbinio used by AdPlug contains bugs https://github.com/adplug/libbinio/issues/2... " >&6; }
-	CXXFLAGS="$CXXFLAGS $ADPLUG_CXXFLAGS"
-	LIBS="$LIBS $ADPLUG_LIBS"
-
-	if test "$cross_compiling" = yes; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: \"Unable to test due to cross-compilation\"" >&5
-$as_echo "$as_me: \"Unable to test due to cross-compilation\"" >&6;}
 
 else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-#include <binio.h>
-#include <binstr.h>
-#include <cstdlib>
-#include <string.h>
-#include <string.h>
+    as_ac_Type=`$as_echo "ac_cv_type_std::basic_istream<char>" | $as_tr_sh`
+ac_fn_cxx_check_type "$LINENO" "std::basic_istream<char>" "$as_ac_Type" "
 
-int
-main ()
-{
+#include <iostream>
 
-	binisstream *f = new binisstream((void *)"foobar", 6);
-	long size;
-	char test[6] = {1,2,3,4,5,6};
+"
+if eval test \"x\$"$as_ac_Type"\" = x"yes"; then :
+  ISO_STDLIB=1
 
-	f->seek(0, binio::End);
-	size = f->pos();
-	f->seek(0);
-
-	if (f->readString(test, size) != 6) return -1;
-
-	/* test should contain "foobar" if all is correct */
-	return memcmp(test, "foobar", 6);
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_run "$LINENO"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
 else
-  as_fn_error $? "\"libbinio fails to use memoryobjects\"" "$LINENO" 5
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-	LIBS=$push_LIBS
-	CXXFLAGS="$org_cxxflags"
-	CPPFLAGS="$org_cppflags"
+  ISO_STDLIB=0
 
 fi
+
+
+fi
+
+fi
+
+# Check whether --with-math was given.
+if test "${with_math+set}" = set; then :
+  withval=$with_math;
+fi
+
+if test ${with_math:=yes} = yes; then :
+
+  ac_fn_cxx_check_func "$LINENO" "ldexp" "ac_cv_func_ldexp"
+if test "x$ac_cv_func_ldexp" = xyes; then :
+  WITH_MATH=1
+
+else
+  WITH_MATH=0
+
+fi
+
+
+else
+
+  WITH_MATH=0
+
+
+fi
+# Check if 'long long' or 'long double' are available and use them instead.
+ac_fn_cxx_check_type "$LINENO" "long long" "ac_cv_type_long_long" "$ac_includes_default"
+if test "x$ac_cv_type_long_long" = xyes; then :
+  TYPE_INT="long long"
+
+else
+  TYPE_INT=long
+
+fi
+
+ac_fn_cxx_check_type "$LINENO" "long double" "ac_cv_type_long_double" "$ac_includes_default"
+if test "x$ac_cv_type_long_double" = xyes; then :
+  TYPE_FLOAT="long double"
+
+else
+  TYPE_FLOAT=double
+
+fi
+
+
+
+HAVE_ADPLUG=1
+ADPLUG_INI=opltype
+VERSION="2.3.4-beta"
+ ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking GIT submodules are checked out" >&5
 $as_echo_n "checking GIT submodules are checked out... " >&6; }
@@ -13045,11 +12831,11 @@ LIBSIDPLAYCXX="$CXX -DHAVE_CONFIG_H=1 -DSIDTUNE_NO_STDIN_LOADER=1 -DPACKAGE_NAME
 LIBSIDPLAYCXXFLAGS="$CXXFLAGS"
 
 
-ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 CXX=$origCXX
 CXXFLAGS=$origCXXFLAGS
@@ -13063,12 +12849,6 @@ NEW_8580_FILTER=0
 
 
 
-
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
@@ -13307,20 +13087,6 @@ if test "x$with_alsa" = "xno"; then :
   HAVE_ALSA=
 else
   HAVE_ALSA=1
-fi
-
-
-
-if test "x$with_adplug" = "xno"; then :
-
-	HAVE_ADPLUG=
-	ADPLUG_INI=
-
-else
-
-	HAVE_ADPLUG=1
-	ADPLUG_INI=opltype
-
 fi
 
 
@@ -14155,6 +13921,10 @@ ac_config_files="$ac_config_files playsid/libsidplayfp-git/src/builders/resid-bu
 
 ac_config_files="$ac_config_files playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h"
 
+ac_config_files="$ac_config_files playopl/libbinio-git/src/binio.h"
+
+ac_config_files="$ac_config_files playopl/adplug-git/src/version.h"
+
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -14860,6 +14630,8 @@ do
     "doc/ocp.1") CONFIG_FILES="$CONFIG_FILES doc/ocp.1" ;;
     "playsid/libsidplayfp-git/src/builders/resid-builder/resid/siddefs.h") CONFIG_FILES="$CONFIG_FILES playsid/libsidplayfp-git/src/builders/resid-builder/resid/siddefs.h" ;;
     "playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h") CONFIG_FILES="$CONFIG_FILES playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h" ;;
+    "playopl/libbinio-git/src/binio.h") CONFIG_FILES="$CONFIG_FILES playopl/libbinio-git/src/binio.h" ;;
+    "playopl/adplug-git/src/version.h") CONFIG_FILES="$CONFIG_FILES playopl/adplug-git/src/version.h" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
@@ -15447,11 +15219,7 @@ if test "x$with_debug"     = "xyes"; then :
 else
   echo "debug:             OFF"
 fi
-if test "x$with_adplug"    = "xno" ; then :
-  echo "adplug:            OFF"
-else
-  echo "adplug:            ON"
-fi
+                                           echo "adplug:            GIT/builtin"
 if test "x$with_mad"       = "xno" ; then :
   echo "mad:               OFF"
 else

@@ -5,3 +5,9 @@
 	path = playsid/libsidplayfp-git
 	url = https://github.com/mywave82/libsidplayfp.git
 	branch = ocp
+[submodule "playopl/libbinio-git"]
+	path = playopl/libbinio-git
+	url = https://github.com/mywave82/libbinio.git
+[submodule "playopl/adplug-git"]
+	path = playopl/adplug-git
+	url = https://github.com/mywave82/adplug.git

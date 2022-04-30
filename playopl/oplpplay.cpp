@@ -461,10 +461,9 @@ static int oplOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 
 	if (!oplOpenPlayer(filename, buffer, bufferfill, file))
 	{
-		free (buffer);
 		return -1;
 	}
-	free (buffer);
+	buffer=0;
 
 	starttime=dos_clock();
 	plPause=0;
@@ -482,10 +481,10 @@ static int oplOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 extern "C"
 {
 	cpifaceplayerstruct oplPlayer = {"[AdPlug OPL plugin]", oplOpenFile, oplCloseFile};
-	struct linkinfostruct dllextinfo =
-	{
-		"playopl" /* name */,
-		"OpenCP AdPlug (OPL) Player (c) 2005-'22 Stian Skjelstad" /* desc */,
-		DLLVERSION /* ver */
-	};
+//	struct linkinfostruct dllextinfo =
+//	{
+//		"playopl" /* name */,
+//		"OpenCP AdPlug (OPL) Player (c) 2005-'22 Stian Skjelstad" /* desc */,
+//		DLLVERSION /* ver */
+//	};
 }

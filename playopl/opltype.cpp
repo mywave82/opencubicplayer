@@ -25,6 +25,9 @@
 #include <adplug/adplug.h>
 #include <adplug/players.h>
 #include <adplug/player.h>
+#include "adplug.h"
+#include "players.h"
+#include "player.h"
 #include "types.h"
 extern "C" {
 #include "boot/plinkman.h"
@@ -33,6 +36,7 @@ extern "C" {
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
+#include "stuff/err.h"
 }
 
 static int oplReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
@@ -71,7 +75,7 @@ const char *OPL_description[] =
 
 struct interfaceparameters OPL_p =
 {
-	"playopl", "oplPlayer",
+	"autoload/40-playopl", "oplPlayer",
 	0, 0
 };
 
@@ -106,12 +110,13 @@ static void oplEvent(int event)
 
 static struct mdbreadinforegstruct oplReadInfoReg = {"adplug", oplReadInfo, oplEvent MDBREADINFOREGSTRUCT_TAIL};
 
-static void __attribute__((constructor))init(void)
+static int oplTypePreInit(void)
 {
 	mdbRegisterReadInfo(&oplReadInfoReg);
+	return errOk;
 }
 
-static void __attribute__((destructor))done(void)
+static void oplTypePreDone(void)
 {
 	mdbUnregisterReadInfo(&oplReadInfoReg);
 }
@@ -120,8 +125,10 @@ extern "C" {
 	const char *dllinfo = "";
 	struct linkinfostruct dllextinfo =
 	{
-		"opltype" /* name */,
-		"OpenCP OPL Detection (c) 2005-'22 Stian Skjelstad" /* desc */,
-		DLLVERSION /* ver */
+		.name="opltype",
+		.desc="OpenCP Adplug (OPL) Detection and Player (c) 2005-'22 Stian Skjelstad",
+		.ver=DLLVERSION,
+		.PreInit=oplTypePreInit,
+		.PreClose=oplTypePreDone,
 	};
 }
