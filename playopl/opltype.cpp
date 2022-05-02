@@ -31,6 +31,7 @@
 #include "types.h"
 extern "C" {
 #include "boot/plinkman.h"
+#include "boot/psetting.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
@@ -110,14 +111,48 @@ static void oplEvent(int event)
 
 static struct mdbreadinforegstruct oplReadInfoReg = {"adplug", oplReadInfo, oplEvent MDBREADINFOREGSTRUCT_TAIL};
 
+struct CAdPlugDatabase *adplugdb_ocp;
+
 static int oplTypePreInit(void)
 {
+	char *path=0;
+	const char *home = getenv ("HOME");
+
+	adplugdb_ocp = new CAdPlugDatabase();
+	if (adplugdb_ocp)
+	{
+		makepath_malloc (&path, 0, cfDataDir, "adplug.db", 0);
+		if (path)
+		{
+			adplugdb_ocp->load(path);
+			free (path); path=0;
+		}
+		adplugdb_ocp->load("/usr/com/adplug/adplug.db");
+		adplugdb_ocp->load("/usr/share/adplug/adplug.db");
+		if (home && home[0])
+		{
+			path = (char *)malloc (strlen(home) + 19);
+			if (path)
+			{
+				sprintf (path, "%s%s.adplug/adplug.db", home, home[strlen(home)]-1=='/'?"":"/");
+				adplugdb_ocp->load(path);
+				free (path); path=0;
+			}
+		}
+		CAdPlug::set_database (adplugdb_ocp);
+	}
 	mdbRegisterReadInfo(&oplReadInfoReg);
 	return errOk;
 }
 
 static void oplTypePreDone(void)
 {
+	if (adplugdb_ocp)
+	{
+		CAdPlug::set_database (0);
+		delete (adplugdb_ocp);
+		adplugdb_ocp = 0;
+	}
 	mdbUnregisterReadInfo(&oplReadInfoReg);
 }
 

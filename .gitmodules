@@ -11,3 +11,6 @@
 [submodule "playopl/adplug-git"]
 	path = playopl/adplug-git
 	url = https://github.com/mywave82/adplug.git
+[submodule "playopl/adplugdb-git"]
+	path = playopl/adplugdb-git
+	url = https://github.com/adplug/database.git
