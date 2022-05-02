@@ -46,6 +46,7 @@ LIBSIDPLAYOBJECTS=libsidplayfp-builders-resid-builder-resid-builder.o \
 	libsidplayfp-c64-CIA-SerialPort.o \
 	libsidplayfp-c64-CIA-timer.o \
 	libsidplayfp-c64-CPU-mos6510.o \
+	libsidplayfp-c64-CPU-mos6510debug.o \
 	libsidplayfp-c64-CIA-tod.o \
 	libsidplayfp-c64-mmu.o \
 	libsidplayfp-c64-VIC_II-mos656x.o \
@@ -255,6 +256,9 @@ libsidplayfp-c64-CIA-tod.o: \
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-c64-CPU-mos6510.o: \
 	libsidplayfp-git/src/c64/CPU/mos6510.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
+libsidplayfp-c64-CPU-mos6510debug.o: \
+	libsidplayfp-git/src/c64/CPU/mos6510debug.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-c64-mmu.o: \
 	libsidplayfp-git/src/c64/mmu.cpp
