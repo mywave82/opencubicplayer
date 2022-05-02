@@ -15,11 +15,13 @@ playay plugin contains modified code from the aylet project v0.5a.
     Copyright (C) MAME
 
 
-playopl plugin contains some code from the original AdPlug project (which is
-also links too). This code has been released under GPLv2 with the permission
-from the original copyright holder, Simon Peter.
+playopl plugin contains:
+   * some code from the original AdPlug project. This code has been released
+     under GPLv2 with the permission from the original copyright holder.
     Copyright (C) 1999 - 2002 Simon Peter <dn.tlp@gmx.net>, et al.
-
+   * a fork of the Adplug GIT master with modifications
+   * a copy of the libbinio GIT master
+   * a copy of the adplugdb GIT master
 
 playtimidity plugin contains a fork of TiMidity++ GIT master with modifications.
     Copyright (C) 1999-2004 Masanao Izumo <iz@onicos.co.jp>
@@ -36,8 +38,10 @@ playym/ plugin contains code from ST-Sound v1.43.
     Copyright (c) 1996 Kerwin F. Medina
 
 
-playsid/ setup dialog contains code from RSA Data Security, Inc., MD5 message-digest algorithm
+playsid/ setup dialog contains
+   * code from RSA Data Security, Inc., MD5 message-digest algorithm
     Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All rights reserved.
+   * a fork of the original libsidplayfp GIT master with modifications
 
 
 --
