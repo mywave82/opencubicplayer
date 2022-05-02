@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 0.2.95
+%define version 0.2.96
 
 # Default to _with_libmad if neither _with_libmad or _without_libmad is defined
 %{!?_with_libmad: %{!?_without_libmad: %define _with_libmad --with-libmad}}
@@ -24,13 +24,12 @@ License: GPL-2, Creative Commons Attribution 3.0
 # The extra data provided is Creative Commons Attribute 3.0
 
 %if 0%{?suse_version}
-BuildRequires: ncurses-devel zlib-devel bzip2-devel libadplug-devel libSDL2-devel libogg-devel libvorbis-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme unzip texinfo update-desktop-files libjpeg62-turbo-devel libpng16-devel xa libdiscid-devel cjson-devel alsa-devel libfreetype2-devel gnu-unifont-bitmap-fonts
+BuildRequires: ncurses-devel zlib-devel bzip2-devel libSDL2-devel libogg-devel libvorbis-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme unzip texinfo update-desktop-files libjpeg62-turbo-devel libpng16-devel xa libdiscid-devel cjson-devel alsa-devel libfreetype2-devel gnu-unifont-bitmap-fonts
 %else
 %if 0%{?fedora} || 0%{?rhel_version} || 0%{?centos_version}
-#libbinio adplug-devel   (fedora soon has a working libbinio)
 BuildRequires: ncurses-devel zlib-devel bzip2-devel SDL2-devel libogg-devel libvorbis-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme unzip texinfo libjpeg-turbo-devel libpng-devel xa libdiscid-devel cjson-devel alsa-lib-devel libfreetype-devel unifont-fonts
 %else
-BuildRequires: ncurses-devel zlib-devel bzip2-devel adplug-devel libSDL2-devel libogg-devel libvorbis-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme unzip texinfo libjpeg-turbo-devel libpng-devel xa libdiscid-devel cjson-devel alsa-lib-devel libfreetype-devel unifont-fonts
+BuildRequires: ncurses-devel zlib-devel bzip2-devel libSDL2-devel libogg-devel libvorbis-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme unzip texinfo libjpeg-turbo-devel libpng-devel xa libdiscid-devel cjson-devel alsa-lib-devel libfreetype-devel unifont-fonts
 %endif
 %endif
 
