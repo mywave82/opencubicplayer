@@ -22,9 +22,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <adplug/adplug.h>
-#include <adplug/players.h>
-#include <adplug/player.h>
+#include "adplug-git/src/adplug.h"
+#include "adplug-git/src/players.h"
+#include "adplug-git/src/player.h"
 #include "adplug.h"
 #include "players.h"
 #include "player.h"

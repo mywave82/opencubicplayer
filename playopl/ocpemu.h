@@ -28,9 +28,9 @@
 #ifndef H_ADPLUG_OCPOPL
 #define H_ADPLUG_OCPOPL
 
-#include <adplug/opl.h>
+#include "adplug-git/src/opl.h"
 extern "C" {
-#include <adplug/fmopl.h>
+#include "adplug-git/src/fmopl.h"
 }
 
 class Cocpopl: public Copl
