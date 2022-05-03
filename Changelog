@@ -1,3 +1,9 @@
+Version 0.2.97
+==============
+
+ * Two files still references the system adplug header files instead of the
+   built-in provided ones
+
 Version 0.2.96
 ==============
 
