@@ -615,7 +615,10 @@ AC_LANG_PUSH(C++)
 
 origCXX="$CXX"
 origCXXFLAGS="$CXXFLAGS"
-AX_CXX_COMPILE_STDCXX_11([noext], [optional])
+AX_CXX_COMPILE_STDCXX_14([noext], [optional])
+AS_IF([test $ax_cv_cxx_compile_cxx14__std_cpp14 != "yes"],
+    AX_CXX_COMPILE_STDCXX_11([noext], [optional]),
+)
 AC_SUBST(ADPLUG_CXX)
 AC_SUBST(ADPLUG_CXXFLAGS)
 ADPLUG_CXX="$CXX"
