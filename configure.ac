@@ -610,7 +610,19 @@ dnl ])
 dnl AC_LANG_POP()
 dnl This is for builtin libbinio + adplug
 # Conditionally build iostream wrappers
+
 AC_LANG_PUSH(C++)
+
+origCXX="$CXX"
+origCXXFLAGS="$CXXFLAGS"
+AX_CXX_COMPILE_STDCXX_11([noext], [optional])
+AC_SUBST(ADPLUG_CXX)
+AC_SUBST(ADPLUG_CXXFLAGS)
+ADPLUG_CXX="$CXX"
+ADPLUG_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="$origCXXFLAGS"
+CXX="$origCXX"
+
 AC_ARG_ENABLE([iostream], AC_HELP_STRING([--disable-iostream], [ADPLUG: Do not build iostream wrapper streams]))
 AS_IF([test ${enable_iostream:=yes} = yes], [
   AC_CHECK_LIB(stdc++,main, AC_SUBST(ENABLE_IOSTREAM,1),
