@@ -7413,6 +7413,13 @@ if test "x$ac_cv_header_pwd_h" = xyes; then :
 fi
 
 
+ac_fn_c_check_header_mongrel "$LINENO" "AvailabilityVersions.h" "ac_cv_header_AvailabilityVersions_h" "$ac_includes_default"
+if test "x$ac_cv_header_AvailabilityVersions_h" = xyes; then :
+  $as_echo "#define HAVE_AVAILABILITYVERSIONS_H 1" >>confdefs.h
+
+fi
+
+
 
 ac_fn_c_check_func "$LINENO" "getpwnam" "ac_cv_func_getpwnam"
 if test "x$ac_cv_func_getpwnam" = xyes; then :

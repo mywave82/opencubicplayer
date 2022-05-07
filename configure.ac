@@ -236,6 +236,7 @@ AC_CHECK_HEADER([sys/types.h],     [AC_DEFINE(HAVE_SYS_TYPES_H,       1) HAVE_SY
 AC_CHECK_HEADER([sys/param.h],     [AC_DEFINE(HAVE_SYS_PARAM_H,       1)], [])
 AC_CHECK_HEADER([machine/endian.h],[AC_DEFINE(HAVE_MACHINE_ENDIAN_H,  1)], [])
 AC_CHECK_HEADER([pwd.h],           [AC_DEFINE(HAVE_PWD_H,             1)], [])
+AC_CHECK_HEADER([AvailabilityVersions.h], [AC_DEFINE(HAVE_AVAILABILITYVERSIONS_H, 1)], [])
 
 AC_CHECK_FUNC([getpwnam], [HAVE_GETPWNAM=1; AC_DEFINE(HAVE_GETPWNAM)])
 

@@ -68,6 +68,10 @@
 /* Detect MacOS / OS-X */
 #if defined(__APPLE__) && defined(__MACH__)
 # include <Availability.h>
+# ifdef HAVE_AVAILABILITYVERSIONS_H
+/* This header file is available from MacOS version 10.15 */
+#  include <AvailabilityVersions.h>
+#endif
 # if !defined(MAC_OS_X_VERSION_10_12) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12
 # include <time.h>
 # include <mach/clock_types.h>
