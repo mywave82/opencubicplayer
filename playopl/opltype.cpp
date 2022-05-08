@@ -111,7 +111,7 @@ static void oplEvent(int event)
 
 static struct mdbreadinforegstruct oplReadInfoReg = {"adplug", oplReadInfo, oplEvent MDBREADINFOREGSTRUCT_TAIL};
 
-struct CAdPlugDatabase *adplugdb_ocp;
+class CAdPlugDatabase *adplugdb_ocp;
 
 static int oplTypePreInit(void)
 {
