@@ -46,6 +46,7 @@
 
 static AudioUnit theOutputUnit;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutexattr_t mta;
 struct sounddevice plrCoreAudio;
 static int needfini=0;
 
@@ -502,6 +503,10 @@ static int CoreAudioDetect(struct deviceinfo *card)
 	AudioComponent comp;
 
 	UInt32 /*maxFrames,*/ size;
+
+	pthread_mutexattr_init (&mta);
+	pthread_mutexattr_settype (&mta, PTHREAD_MUTEX_RECURSIVE);
+	pthread_mutex_init (&mutex, &mta);
 
 	AURenderCallbackStruct renderCallback;
 
