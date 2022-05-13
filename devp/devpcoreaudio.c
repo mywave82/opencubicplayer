@@ -19,10 +19,13 @@
  */
 
 #include "config.h"
+#include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <math.h>
 #include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
 #include <CoreAudio/CoreAudio.h>
 #include <CoreServices/CoreServices.h>
 #include <AudioUnit/AudioUnit.h>
@@ -34,6 +37,12 @@
 #include "dev/player.h"
 #include "dev/ringbuffer.h"
 #include "stuff/imsrtns.h"
+
+#ifdef COREAUDIO_DEBUG
+# define debug_printf(...) fprintf(stderr, __VA_ARGS__)
+#else
+# define debug_printf(...) do {} while(0)
+#endif
 
 static AudioUnit theOutputUnit;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -114,7 +123,6 @@ static void print_format(const char* str,AudioStreamBasicDescription *f){
             (int)f->mChannelsPerFrame);
 
 }
-
 #endif
 
 #if 0
@@ -151,6 +159,8 @@ static OSStatus theRenderProc(void *inRefCon, AudioUnitRenderActionFlags *inActi
 	int len = ioData->mBuffers[0].mDataByteSize;
 	uint8_t *stream = ioData->mBuffers[0].mData;
 
+	debug_printf ("theRenderProc: ENTER\n");
+
 	pthread_mutex_lock(&mutex);
 
 	{
@@ -163,6 +173,8 @@ static OSStatus theRenderProc(void *inRefCon, AudioUnitRenderActionFlags *inActi
 	ringbuffer_get_tail_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
 	ringbuffer_tail_consume_samples (devpCoreAudioRingBuffer, length1 + length2);
 
+	debug_printf ("theRenderProc: consumed %d + %d (paused=%d)\n", length1, length2, devpCoreAudioPauseSamples);
+
 	if (devpCoreAudioPauseSamples)
 	{
 		if ((length1 + length2) > devpCoreAudioPauseSamples)
@@ -174,6 +186,8 @@ static OSStatus theRenderProc(void *inRefCon, AudioUnitRenderActionFlags *inActi
 	}
 
 	ringbuffer_get_processing_bytes (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
+
+	debug_printf ("theRenderProc: processing available %d + %d, len %d => %d\n", length1, length2, len, (length1 > len) ? len : length1);
 
 	if (length1 > len)
 	{
@@ -201,12 +215,12 @@ static OSStatus theRenderProc(void *inRefCon, AudioUnitRenderActionFlags *inActi
 
 	pthread_mutex_unlock(&mutex);
 
+	debug_printf ("theRenderProc: EXIT\n");
+
 	if (len)
 	{
 		bzero (stream, len);
-#ifdef COREAUDIO_DEBUG
-		fprintf (stderr, "%s: buffer overrun - %d left\n", __FUNCTION__, len);
-#endif
+		debug_printf ("theRenderProc: buffer overrun - %d left\n", len);
 	}
 
 	return noErr;
@@ -214,14 +228,20 @@ static OSStatus theRenderProc(void *inRefCon, AudioUnitRenderActionFlags *inActi
 
 static void devpCoreAudioGetBuffer (void **buf, unsigned int *samples)
 {
-	int pos1, length1;
+	int pos1, length1, pos2, length2;
 	assert (devpCoreAudioRingBuffer);
+
+	debug_printf ("devpCoreAudioGetBuffer: ENTER\n");
 
 	pthread_mutex_lock(&mutex);
 
-	ringbuffer_get_head_samples (devpCoreAudioRingBuffer, &pos1, &length1, 0, 0);
+	ringbuffer_get_head_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
+
+	debug_printf ("devpCoreAudioGetBuffer: %d + %d\n", length1, length2);
 
 	pthread_mutex_unlock(&mutex);
+
+	debug_printf ("devpCoreAudioGetBuffer: EXIT\n");
 
 	*samples = length1;
 	*buf = devpCoreAudioBuffer + (pos1<<2); /* stereo + bit16 */
@@ -231,6 +251,8 @@ static unsigned int devpCoreAudioIdle(void)
 {
 	int pos1, length1, pos2, length2;
 	unsigned int RetVal;
+
+	debug_printf ("devpCoreAudioIdle: ENTER\n");
 
 	pthread_mutex_lock(&mutex);
 
@@ -258,6 +280,7 @@ static unsigned int devpCoreAudioIdle(void)
 		if (consume > 0)
 		{
 			ringbuffer_tail_consume_samples (devpCoreAudioRingBuffer, consume);
+			debug_printf ("devpCoreAudioIdle: time %" PRIu32" - %" PRIu32" => preconsume %d\n", lastCallbackTime, curTime, consume);
 		}
 	}
 /* STOP */
@@ -278,9 +301,14 @@ static unsigned int devpCoreAudioIdle(void)
 		devpCoreAudioPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
 	}
 
+
+	debug_printf ("devpCoreAudioIdle: current delay: %d + %d\n", length1, length2);
+
 	pthread_mutex_unlock(&mutex);
 
 	RetVal = length1 + length2;
+
+	debug_printf ("devpCoreAudioIdle: EXIT\n");
 
 	if (devpCoreAudioPauseSamples >= RetVal)
 	{
@@ -299,21 +327,31 @@ static void devpCoreAudioOnBufferCallback (int samplesuntil, void (*callback)(vo
 {
 	assert (devpCoreAudioRingBuffer);
 
+	debug_printf ("devpCoreAudioOnBufferCallback: ENTER\n");
+
 	pthread_mutex_lock(&mutex);
 
 	ringbuffer_add_tail_callback_samples (devpCoreAudioRingBuffer, samplesuntil, callback, arg);
 
 	pthread_mutex_unlock(&mutex);
+
+	debug_printf ("devpCoreAudioOnBufferCallback: EXIT\n");
 }
 
 
 static void devpCoreAudioCommitBuffer (unsigned int samples)
 {
+	debug_printf ("devpCoreAudioCommitBuffer: ENTER\n");
+
 	pthread_mutex_lock(&mutex);
+
+	debug_printf ("devpCoreAudioCommitBuffer: %u\n", samples);
 
 	ringbuffer_head_add_samples (devpCoreAudioRingBuffer, samples);
 
 	pthread_mutex_unlock(&mutex);
+
+	debug_printf ("devpCoreAudioCommitBuffer: EXIT\n");
 }
 
 static void devpCoreAudioPause (int pause)
@@ -346,9 +384,13 @@ static void devpCoreAudioPeekBuffer (void **buf1, unsigned int *buf1length, void
 
 	devpCoreAudioIdle (); /* update the tail */
 
+	debug_printf ("devpCoreAudioPeekBuffer: ENTER\n");
+
 	pthread_mutex_lock(&mutex);
 	ringbuffer_get_tailandprocessing_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
 	pthread_mutex_unlock(&mutex);
+
+	debug_printf ("devpCoreAudioPeekBuffer: EXIT\n");
 
 	if (length1)
 	{
@@ -413,9 +455,7 @@ static int devpCoreAudioPlay (uint32_t *rate, enum plrRequestFormat *format, str
 	}
 
 	status=AudioOutputUnitStart(theOutputUnit);
-#ifdef COREAUDIO_DEBUG
-	fprintf(stderr, "[CoreAudio] AudioOutputUnitStart(AudioUnit ci = theOutputUnit) = %d %s\n", (int)status, OSStatus_to_string(status));
-#endif
+	debug_printf ("[CoreAudio] AudioOutputUnitStart(AudioUnit ci = theOutputUnit) = %d %s\n", (int)status, OSStatus_to_string(status));
 	if (status)
 	{
 		fprintf(stderr, "[CoreAudio] AudioOutputUnitStart returned %d (%s)\n", (int)status, OSStatus_to_string(status));
@@ -474,9 +514,7 @@ static int CoreAudioDetect(struct deviceinfo *card)
 	desc.componentFlagsMask = 0;
 
 	comp = AudioComponentFindNext (0, &desc);
-#ifdef COREAUDIO_DEBUG
-	fprintf(stderr, "[CoreAudio] AudioComponentFindNext (Component aComponent = 0, ComponentDescription *looking = {componentType=kAudioUnitType_Output, componentSubType=kAudioUnitSubType_DefaultOutput, componentManufacturer = kAudioUnitManufacturer_Apple, componentFlags = 0, componentFlagsMask = 0}) = %d\n", (int)comp);
-#endif
+	debug_printf ("[CoreAudio] AudioComponentFindNext (Component aComponent = 0, ComponentDescription *looking = {componentType=kAudioUnitType_Output, componentSubType=kAudioUnitSubType_DefaultOutput, componentManufacturer = kAudioUnitManufacturer_Apple, componentFlags = 0, componentFlagsMask = 0}) = %d\n", (int)comp);
 	if ( !comp )
 	{
 		fprintf(stderr, "[CoreAudio] Unable to find the Output Unit component\n");
@@ -484,9 +522,7 @@ static int CoreAudioDetect(struct deviceinfo *card)
 	}
 
 	status = AudioComponentInstanceNew (comp, &theOutputUnit);
-#ifdef COREAUDIO_DEBUG
-	fprintf(stderr, "[CoreAudio] AudioComponentInstanceNew(Component aComponent = %d, ComponentInstance *ci = &theOutputUnit) = %d %s\n", (int)comp, (int)status, OSStatus_to_string(status));
-#endif
+	debug_printf ("[CoreAudio] AudioComponentInstanceNew(Component aComponent = %d, ComponentInstance *ci = &theOutputUnit) = %d %s\n", (int)comp, (int)status, OSStatus_to_string(status));
 	if (status)
 	{
 		fprintf(stderr, "[CoreAudio] Unable to open Output Unit component (status = %d (%s))\n", (int)status, OSStatus_to_string(status));
@@ -550,9 +586,7 @@ static int CoreAudioDetect(struct deviceinfo *card)
 #endif
 
 	status = AudioUnitInitialize (theOutputUnit);
-#ifdef COREAUDIO_DEBUG
-	fprintf(stderr, "[CoreAudio] AudioUnitInitialize(AudioUnit inUnit = theOutputUnit) = %d %s\n", (int)status, OSStatus_to_string(status));
-#endif
+	debug_printf ("[CoreAudio] AudioUnitInitialize(AudioUnit inUnit = theOutputUnit) = %d %s\n", (int)status, OSStatus_to_string(status));
 	if (status) {
 		fprintf(stderr, "[CoreAudio] Unable to initialize Output Unit component (status = %d (%s))\n", (int)status, OSStatus_to_string(status));
 		goto errorout_component;
@@ -560,9 +594,7 @@ static int CoreAudioDetect(struct deviceinfo *card)
 
 	size = sizeof(inDesc);
 	status = AudioUnitGetProperty (theOutputUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &inDesc, &size);
-#ifdef COREAUDIO_DEBUG
-	fprintf(stderr, "AudioUnitGetProperty(AudioUnit inUnit = theOutputUnit, AudioUnitPropertyID inID = kAudioUnitProperty_StreamFormat, AudioUnitScope inScope = kAudioUnitScope_Input, AudioUnitElement inElement = 0, void *outData = &inDesc, UInt32 *ioDataSize = &sizeof(inDesc)) = %d %s\n", (int)status, OSStatus_to_string(status));
-#endif
+	debug_printf ("[CoreAudio] AudioUnitGetProperty(AudioUnit inUnit = theOutputUnit, AudioUnitPropertyID inID = kAudioUnitProperty_StreamFormat, AudioUnitScope inScope = kAudioUnitScope_Input, AudioUnitElement inElement = 0, void *outData = &inDesc, UInt32 *ioDataSize = &sizeof(inDesc)) = %d %s\n", (int)status, OSStatus_to_string(status));
 	if (status) {
 		fprintf(stderr, "[CoreAudio] Unable to get the input (default) format (status = %d (%s))\n", (int)status, OSStatus_to_string(status));
 		goto errorout_uninit;
@@ -589,9 +621,7 @@ static int CoreAudioDetect(struct deviceinfo *card)
 #endif
 
 	status = AudioUnitSetProperty (theOutputUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &inDesc, sizeof(inDesc));
-#ifdef COREAUDIO_DEBUG
-	fprintf(stderr, "AudioUnitSetProperty(AudioUnit inUnit = theOutputUnit, AudioUnitPropertyID inID = kAudioUnitProperty_StreamFormat, AudioUnitScope inScope = kAudioUnitScope_Input, AudioUnitElement inElement = 0, void *outData = &inDesc, UInt32 *ioDataSize = &sizeof(inDesc)) = %d %s\n", (int)status, OSStatus_to_string(status));
-#endif
+	debug_printf ("[CoreAudio] AudioUnitSetProperty(AudioUnit inUnit = theOutputUnit, AudioUnitPropertyID inID = kAudioUnitProperty_StreamFormat, AudioUnitScope inScope = kAudioUnitScope_Input, AudioUnitElement inElement = 0, void *outData = &inDesc, UInt32 *ioDataSize = &sizeof(inDesc)) = %d %s\n", (int)status, OSStatus_to_string(status));
 	if (status) {
 		fprintf(stderr, "[CoreAudio] Unable to set the input format (status = %d (%s))\n", (int)status, OSStatus_to_string(status));
 		goto errorout_uninit;
@@ -611,9 +641,7 @@ static int CoreAudioDetect(struct deviceinfo *card)
 	renderCallback.inputProc = theRenderProc;
 	renderCallback.inputProcRefCon = 0;
 	status = AudioUnitSetProperty(theOutputUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, 0, &renderCallback, sizeof(AURenderCallbackStruct));
-#ifdef COREAUDIO_DEBUG
-	fprintf(stderr, "AudioUnitSetProperty(AudioUnit inUnit = theOutputUnit, AudioUnitPropertyID inID = kAudioUnitProperty_SetRenderCallback, AudioUnitScope inScope = kAudioUnitScope_Input, AudioUnitElement inElement = 0, void *outData = AURenderCallbackStruct {inputProc = theRenderProc, inputProcRefCon = 0}, UInt32 *ioDataSize = &sizeof(AURenderCallbackStruct)) = %d %s\n", (int)status, OSStatus_to_string(status));
-#endif
+	debug_printf ("[CoreAudio] AudioUnitSetProperty(AudioUnit inUnit = theOutputUnit, AudioUnitPropertyID inID = kAudioUnitProperty_SetRenderCallback, AudioUnitScope inScope = kAudioUnitScope_Input, AudioUnitElement inElement = 0, void *outData = AURenderCallbackStruct {inputProc = theRenderProc, inputProcRefCon = 0}, UInt32 *ioDataSize = &sizeof(AURenderCallbackStruct)) = %d %s\n", (int)status, OSStatus_to_string(status));
         if (status) {
 		fprintf(stderr, "[CoreAudio] Unable to set the render callback (status = %d (%s))\n", (int)status, OSStatus_to_string(status));
 		goto errorout_uninit;
@@ -643,10 +671,8 @@ static void __attribute__((destructor))fini(void)
 {
 	if (needfini)
 	{
-#ifdef COREAUDIO_DEBUG
-		fprintf(stderr, "[CoreAudio] AudioUnitUninitialize (theOutputUnit)\n");
-		fprintf(stderr, "[CoreAudio] AudioComponentInstanceDispose (theOutputUnit)\n");
-#endif
+		debug_printf ("[CoreAudio] AudioUnitUninitialize (theOutputUnit)\n");
+		debug_printf ("[CoreAudio] AudioComponentInstanceDispose (theOutputUnit)\n");
 		AudioUnitUninitialize (theOutputUnit);
 		AudioComponentInstanceDispose (theOutputUnit);
 	}
