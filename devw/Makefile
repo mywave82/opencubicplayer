@@ -53,7 +53,6 @@ devwnone.o: devwnone.c \
 	../boot/plinkman.h \
 	../dev/imsdev.h \
 	../dev/mcp.h \
-	../stuff/timer.h \
 	../dev/mix.h \
 	../stuff/imsrtns.h \
 	dwnone_asminc.c

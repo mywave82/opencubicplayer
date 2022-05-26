@@ -28,11 +28,11 @@
 #include "config.h"
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "types.h"
 #include "boot/plinkman.h"
 #include "dev/imsdev.h"
 #include "dev/mcp.h"
-#include "stuff/timer.h"
 #include "dev/mix.h"
 #include "stuff/imsrtns.h"
 
@@ -97,6 +97,11 @@ static int mastervol;
 static int masterpan;
 static int masterbal;
 
+static struct timespec dwNoneNow;
+static uint_fast32_t dwNoneDiff;
+static struct timespec dwNoneStart;
+static uint_fast32_t dwNoneGTimerPos;
+
 #include "dwnone_asminc.c"
 
 static void calcstep(struct channel *c)
@@ -150,10 +155,27 @@ static void playchannels(unsigned short len)
 	}
 }
 
-
-static void timerproc(void)
+static void Idle(void)
 {
-	unsigned int bufdelta=samprate*TIMERRATE/1193046;
+	struct timespec now;
+	unsigned int bufdelta;
+
+	clock_gettime (CLOCK_MONOTONIC, &now);
+	dwNoneGTimerPos = (now.tv_sec  - dwNoneStart.tv_sec) * 65536 +
+	                  (now.tv_nsec - dwNoneStart.tv_nsec) / 15258;
+
+	now.tv_nsec /= 1000; /* usec is enough */
+	if (now.tv_sec > dwNoneNow.tv_sec)
+	{
+		dwNoneDiff += 1000000 + now.tv_nsec - dwNoneNow.tv_nsec;
+	} else {
+		dwNoneDiff += now.tv_nsec - dwNoneNow.tv_nsec;
+	}
+
+	dwNoneNow = now;
+
+	bufdelta = (uint64_t)dwNoneDiff * samprate / 1000000;
+	dwNoneDiff -= bufdelta * 1000000 / samprate;
 
 	if (channelnum&&!pause)
 	{
@@ -170,7 +192,6 @@ static void timerproc(void)
 		tickplayed+=bufdelta;
 	}
 }
-
 
 static void calcvols(void)
 {
@@ -343,7 +364,7 @@ static int GET(int ch, int opt)
 		case mcpCMute:
 			return !!(channels[ch].status&NONE_MUTE);
 		case mcpGTimer:
-			return tmGetTimer();
+			return dwNoneGTimerPos;
 		case mcpGCmdTimer:
 			return umuldiv(cmdtimerpos, 65536, samprate);
 	}
@@ -424,9 +445,14 @@ static int OpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *sour
 	cmdtimerpos=0;
 
 	channelnum=chan;
-	tmInit(timerproc, TIMERRATE);
+	clock_gettime (CLOCK_MONOTONIC, &dwNoneNow);
+	dwNoneStart = dwNoneNow;
+	dwNoneNow.tv_nsec /= 1000; /* usec is enough */
+	dwNoneDiff = 0;
+	dwNoneGTimerPos = 0;
 
 	mcpNChan=chan;
+	mcpIdle=Idle;
 
 	return 1;
 }
@@ -434,7 +460,7 @@ static int OpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *sour
 static void ClosePlayer(void)
 {
 	mcpNChan=0;
-	tmClose();
+	mcpIdle=0;
 	channelnum=0;
 	mixClose();
 	free(channels);
