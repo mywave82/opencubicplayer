@@ -40,14 +40,12 @@
 #include "stuff/poutput.h"
 #include "cpiface.h"
 #include "stuff/compat.h"
-#include "stuff/timer.h"
 #include "boot/psetting.h"
 
 static unsigned char *plWuerfel=NULL;
 static int plWuerfelDirect;
 static uint8_t wuerfelpal[720];
 static uint16_t wuerfelpos;
-static time_t wuerfeltnext;
 static uint32_t wuerfelscroll;
 static uint16_t wuerfelstframes;
 static uint16_t wuerfelframes;
@@ -66,6 +64,10 @@ static uint8_t *wuerfelframebuf;
 static uint32_t cfUseAnis=0xFFFFFFFF;
 static uint32_t wuerfelFilesCount=0;
 static char **wuerfelFiles=0;
+
+static struct timespec wurfelTicker;
+static uint32_t wurfelTicks;
+
 
 static void memcpyintr(uint8_t *d, const uint8_t *s, unsigned long l)
 {
@@ -122,7 +124,6 @@ static char plLoadWuerfel(void)
 	int i;
 	uint16_t maxframe;
 	uint32_t framemem;
-	char *path;
 
 	if (plWuerfel)
 		plCloseWuerfel();
@@ -137,17 +138,12 @@ static char plLoadWuerfel(void)
 	if (cfUseAnis >= wuerfelFilesCount)
 		cfUseAnis = wuerfelFilesCount-1;
 
-	makepath_malloc (&path, 0, cfDataDir, wuerfelFiles[cfUseAnis], 0);
-	fprintf(stderr, "Parsing %s\n", path);
-
-	wuerfelfile=fopen(path, "r");
+	wuerfelfile=fopen(wuerfelFiles[cfUseAnis], "r");
 	if (!wuerfelfile)
 	{
 		perror(__FILE__" fopen:");
-		free (path);
 		return 0;
 	}
-	free (path); path=0;
 
 	if (fread(sig, 8, 1, wuerfelfile)!=1)
 	{
@@ -336,7 +332,6 @@ static void plPrepareWuerfel(void)
 		gupdatepal(i, wuerfelpal[i*3-48], wuerfelpal[i*3+1-48], wuerfelpal[i*3+2-48]);
 	gflushpal();
 	wuerfelpos=0;
-	wuerfeltnext=0;
 	wuerfelscroll=0;
 /* This was commented out
     outpw(0x3c4, 0x0302);
@@ -388,20 +383,35 @@ static void wuerfelDraw(void)
 	unsigned int i;
 	uint8_t *curframe;
 	uint16_t framelen;
+	struct timespec now;
 
-	if (!wuerfelcodelens)
+	if (!plWuerfel)
 		return;
 
-	if (tmGetTimer()<(wuerfeltnext+(wuerfelversion?wuerfelcodelens[wuerfelpos]:3072)))
+	if (wuerfelversion && (!wuerfelcodelens))
 		return;
 
-	wuerfeltnext=tmGetTimer();
-
-	if(!wuerfelversion)
+	clock_gettime (CLOCK_MONOTONIC, &now);
+	now.tv_nsec /= 10000;
+	if (now.tv_sec > wurfelTicker.tv_sec)
 	{
-		/* TODO-vga-mode-stuff
-		outp(0x3c4, 4);
-		outp(0x3c5, inp(0x3c5)&~8);  */
+		wurfelTicks += (now.tv_sec - wurfelTicker.tv_sec) * 100000 + now.tv_nsec - wurfelTicker.tv_nsec;
+	} else {
+		wurfelTicks += now.tv_nsec - wurfelTicker.tv_nsec;
+	}
+	wurfelTicker = now;
+
+	if (!wuerfelversion)
+	{
+		if (wurfelTicks < 4000)
+			return;
+
+		wurfelTicks -= 4000;
+	} else {
+		if (wurfelTicks < wuerfelcodelens[wuerfelpos])
+			return;
+
+		wurfelTicks -= wuerfelcodelens[wuerfelpos];
 	}
 
 	if (wuerfeldlt)
@@ -490,7 +500,7 @@ static int wuerfelKey(uint16_t key)
   case 0x4700: /*home */
     break;
 #endif
-		case 9: /* tab */
+		case KEY_TAB: /* tab */
 		/*case 0x0F00:  shift-tab
 		case 0xA500:*/
 			plWuerfelDirect=!plWuerfelDirect;
@@ -507,6 +517,8 @@ static void wuerfelSetMode(void)
 {
 	plLoadWuerfel();
 	plPrepareWuerfel();
+	clock_gettime (CLOCK_MONOTONIC, &wurfelTicker);
+	wurfelTicker.tv_nsec /= 10000;
 }
 
 static int wuerfelEvent(int ev)
@@ -546,15 +558,9 @@ static int wuerfelIProcessKey(uint16_t key)
 
 static struct cpimoderegstruct cpiModeWuerfel = {"wuerfel2", wuerfelSetMode, wuerfelDraw, wuerfelIProcessKey, wuerfelKey, wuerfelEvent CPIMODEREGSTRUCT_TAIL};
 
-static void __attribute__((constructor))init(void)
+static void parse_wurfel_directory (const char *src, DIR *d)
 {
-	DIR *d;
 	struct dirent *de;
-	cpiRegisterDefMode(&cpiModeWuerfel);
-
-	d = opendir (cfDataDir);
-	if (!d)
-	  return;
 
 	while ( ( de = readdir(d) ) )
 	{
@@ -566,7 +572,7 @@ static void __attribute__((constructor))init(void)
 		/* Don't bother to check for len > 4 here, since above strncasecmp() will catch that */
 		if ( strcasecmp ( de->d_name + len - 4, ".DAT") )
 			continue;
-		fprintf(stderr, "wuerfel mode: discovered %s%s\n", cfDataDir, de->d_name);
+		fprintf(stderr, "wuerfel mode: discovered %s%s\n", src, de->d_name);
 		new = realloc (wuerfelFiles, (wuerfelFilesCount + 1) * sizeof (char *) );
 		if (!new)
 		{
@@ -574,15 +580,35 @@ static void __attribute__((constructor))init(void)
 			break;
 		} else {
 			wuerfelFiles = new;
-			if (!(wuerfelFiles[wuerfelFilesCount] = strdup (de->d_name)))
+			if (!(wuerfelFiles[wuerfelFilesCount] = malloc (strlen (src) + strlen (de->d_name) + 1)))
 			{
 				perror(__FILE__ ", strdup() failed\n");
 				break;
 			}
+			sprintf (wuerfelFiles[wuerfelFilesCount], "%s%s", src, de->d_name);
 			wuerfelFilesCount++;
 		}
 	}
-	closedir (d);
+}
+
+static void __attribute__((constructor))init(void)
+{
+	DIR *d;
+	cpiRegisterDefMode(&cpiModeWuerfel);
+
+	d = opendir (cfDataDir);
+	if (d)
+	{
+		parse_wurfel_directory (cfDataDir, d);
+		closedir (d);
+	}
+
+	d = opendir (cfConfigDir);
+	if (d)
+	{
+		parse_wurfel_directory (cfConfigDir, d);
+		closedir (d);
+	}
 }
 
 static void __attribute__((destructor))done(void)

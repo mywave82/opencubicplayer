@@ -109,8 +109,7 @@ cpikube.o: cpikube.c \
 	../types.h \
 	../boot/psetting.h \
 	../stuff/compat.h \
-	../stuff/poutput.h \
-	../stuff/timer.h
+	../stuff/poutput.h
 	$(CC) cpikube.c -o $@ -c
 
 cpilinks.o: cpilinks.c \
