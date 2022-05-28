@@ -1083,7 +1083,7 @@ static int GString_pausetime_allowgrow (const void *inputa, const void *inputb, 
 static void GString_pausetime_render (const void *inputa, const void *inputb, const void *inputc, const int size, int *x, const int lineno)
 {
 	const uint_fast8_t  *inpause = inputa;
-	const uint_fast16_t *seconds = inputb;
+	      uint_fast16_t  seconds = *(const uint_fast16_t *)inputb;
 	char temp[7];
 
 	switch (size)
@@ -1093,7 +1093,8 @@ static void GString_pausetime_render (const void *inputa, const void *inputb, co
 	}
 	displaystr (lineno, *x, 0x09, "time:", 5); (*x) += 5;
 
-	snprintf(temp, 7, "%3d.%02d", (int)((*seconds) / 60), (int)((*seconds) % 60));
+	if (seconds > 59999) seconds = 59999;
+	snprintf(temp, 7, "%3d.%02d", (int)((seconds) / 60), (int)((seconds) % 60));
 	displaystr (lineno, *x, 0x0f, temp, 6); (*x) += 6;
 }
 
