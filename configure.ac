@@ -1,4 +1,4 @@
-AC_INIT(ocp, 0.2.97, stian.skjelstad@gmail.com)
+AC_INIT([ocp],[0.2.97],[stian.skjelstad@gmail.com])
 AC_DEFINE(DLLVERSION, [0x00000261])
 
 AC_CANONICAL_HOST
@@ -27,7 +27,12 @@ AS_IF([test "x$with_debug" = "xyes"], [
   AC_DEFINE(DISABLE_SIGALRM)
 ])
 
-AC_HEADER_TIME
+AC_CHECK_HEADERS_ONCE([sys/time.h])
+# Timidity relies on this obsolete test
+if test $ac_cv_header_sys_time_h = yes; then
+  AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
+	     and <time.h>.  This macro is obsolete.])
+fi
 
 AC_PROG_CC
 AX_PROG_CC_FOR_BUILD
@@ -207,8 +212,6 @@ AC_CHECK_FUNCS([sqrt], [MATH_LIBS=], [
 AC_STRUCT_DIRENT_D_TYPE
 
 AC_CONFIG_HEADERS([config.h] [playsid/sidplayfp-config/config.h])
-
-AC_HEADER_STDC
 
 AC_SUBST(HAVE_GETOPT_H)
 AC_SUBST(HAVE_SYS_IO_H)
@@ -628,7 +631,7 @@ ADPLUG_CXXFLAGS="$CXXFLAGS"
 CXXFLAGS="$origCXXFLAGS"
 CXX="$origCXX"
 
-AC_ARG_ENABLE([iostream], AC_HELP_STRING([--disable-iostream], [ADPLUG: Do not build iostream wrapper streams]))
+AC_ARG_ENABLE([iostream], AS_HELP_STRING([--disable-iostream],[ADPLUG: Do not build iostream wrapper streams]))
 AS_IF([test ${enable_iostream:=yes} = yes], [
   AC_CHECK_LIB(stdc++,main, AC_SUBST(ENABLE_IOSTREAM,1),
                             AC_SUBST(ENABLE_IOSTREAM,0))
@@ -636,7 +639,7 @@ AS_IF([test ${enable_iostream:=yes} = yes], [
   AC_SUBST(ENABLE_IOSTREAM,0)
 ])
 # Conditionally build std::string methods
-AC_ARG_ENABLE([string], AC_HELP_STRING([--disable-string], [ADPLUG: Do not build std::string methods]))
+AC_ARG_ENABLE([string], AS_HELP_STRING([--disable-string],[ADPLUG: Do not build std::string methods]))
 AS_IF([test ${enable_string:=yes} = yes], [
   AC_CHECK_LIB(stdc++, main, AC_SUBST(ENABLE_STRING,1),
                              AC_SUBST(ENABLE_STRING,0))
@@ -658,7 +661,7 @@ AS_IF([test x${with_iso} = xyes], [
     ]) ] )
   ])
 ])
-AC_ARG_WITH([math],AC_HELP_STRING([--without-math], [ADPLUG: Do not build routines depending on 'math.h']))
+AC_ARG_WITH([math],AS_HELP_STRING([--without-math],[ADPLUG: Do not build routines depending on 'math.h']))
 AS_IF([test ${with_math:=yes} = yes], [
   AC_CHECK_FUNC(ldexp, AC_SUBST(WITH_MATH,1), AC_SUBST(WITH_MATH,0))
 ],[
@@ -744,8 +747,7 @@ AC_ARG_ENABLE([branch-hints],
 )
 AS_IF([test "$enable_branch_hints" != no], [RESID_BRANCH_HINTS=1], [RESID_BRANCH_HINTS=0])
 AC_CACHE_CHECK([for log1p], [resid_cv_log1p],
-  [AC_TRY_COMPILE([#include <math.h>], [ log1p(1); ],
-    resid_cv_log1p=yes, resid_cv_log1p=no)])
+  [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <math.h>]], [[ log1p(1); ]])],[resid_cv_log1p=yes],[resid_cv_log1p=no])])
 AS_IF([test "$resid_cv_log1p" = no], [HAVE_LOG1P=0], [HAVE_LOG1P=1])
 AC_CACHE_CHECK([for __builtin_expect], [resid_cv_builtin_expect],
   [AC_COMPILE_IFELSE([AC_LANG_SOURCE([int main() { __builtin_expect(0, 0); }])],
