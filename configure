@@ -3690,8 +3690,6 @@ then :
     new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
   done;
   CXXFLAGS="$new_CXXFLAGS -g -DDEBUG=1"
-  printf "%s\n" "#define KICKSTART_GDB 1" >>confdefs.h
-
 
 fi
 

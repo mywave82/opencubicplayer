@@ -23,7 +23,6 @@ AS_IF([test "x$with_debug" = "xyes"], [
     new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
   done;
   CXXFLAGS="$new_CXXFLAGS -g -DDEBUG=1"
-  AC_DEFINE(KICKSTART_GDB, 1)
 ])
 
 AC_CHECK_HEADERS_ONCE([sys/time.h])

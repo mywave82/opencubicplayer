@@ -60,11 +60,6 @@ static char *_cfConfigDir;
 static char *_cfDataDir;
 static char *_cfProgramDir;
 
-#ifdef KICKSTART_GDB
-static char *argv0;
-static char *dir;
-#endif
-
 static int AllowSymlinked;
 
 /* This has todo with video-mode rescue */
@@ -268,18 +263,29 @@ static void dumpcontext(int signal)
 		fprintf(stderr, "Division by zero / Floating Point Error\n");
 	else if (signal==SIGINT)
 		fprintf(stderr, "User pressed ctrl-C\n");
-	else
+	else {
 		fprintf(stderr, "Unknown fault\n");
+		fprintf(stderr, "signal=%d\n", signal);
+	}
+
 #if defined(__linux) && ( defined(_X86) || defined(__i386__) )
-	fprintf(stderr, "signal=%d\n", signal);
-	fprintf(stderr, "eax=0x%08x ebx=0x%08x ecx=0x%08x edx=0x%08x\n", (int)r.eax, (int)r.ebx, (int)r.ecx, (int)r.edx);
+	fprintf(stderr, "eax=0x%08lx ebx=0x%08lx ecx=0x%08lx edx=0x%08lx\n", r.eax, r.ebx, r.ecx, r.edx);
+	fprintf(stderr, "edi=0x%08lx esi=0x%08lx ebp=0x%08lx esp=0x%08lx\n", r.edi, r.esi, r.ebp, r.esp_at_signal);
 	fprintf(stderr, "cs=0x%04x ds=0x%04x es=0x%04x fs=0x%04x gs=0x%04x ss=0x%04x\n", r.cs, r.ds, r.es, r.fs, r.gs, r.ss);
-	fprintf(stderr, "edi=0x%08x esi=0x%08x ebp=0x%08x esp=0x%08x\n", (int)r.edi, (int)r.esi, (int)r.ebp, (int)r.esp_at_signal);
-	fprintf(stderr, "eip=0x%08x\n", (int)r.eip);
-	fprintf(stderr, "eflags=0x%08x\n", (int)r.eflags);
-	fprintf(stderr, "err=%d trapno=%d cr2=0x%08x oldmask=0x%08x\n", (int)r.err, (int)r.trapno, (int)r.cr2, (int)r.oldmask);
+	fprintf(stderr, "eip=0x%08lx\n", r.eip);
+	fprintf(stderr, "eflags=0x%08lx\n", r.eflags);
+	fprintf(stderr, "err=%ld trapno=0x%08lx cr2=0x%08lx oldmask=0x%08lx\n", r.err, r.trapno, r.cr2, r.oldmask);
 	fprintf(stderr, "\n");
-#endif /* we should have an else here for BSD */
+#elif defined (__linux) &&  defined(__x86_64__)
+	fprintf(stderr, "rax=0x%016"PRIx64" rbx=0x%016"PRIx64" rcx=0x%016"PRIx64" rdx=0x%016"PRIx64"\n", r.rax, r.rbx, r.rcx, r.rdx);
+	fprintf(stderr, "rdi=0x%016"PRIx64" rsi=0x%016"PRIx64" rbp=0x%016"PRIx64" rsp=0x%016"PRIx64"\n", r.rdi, r.rsi, r.rbp, r.rsp);
+	fprintf(stderr, " r8=0x%016"PRIx64"  r9=0x%016"PRIx64" r10=0x%016"PRIx64" r11=0x%016"PRIx64"\n", r.r8, r.r9, r.r10, r.r11);
+	fprintf(stderr, "r12=0x%016"PRIx64" r13=0x%016"PRIx64" r14=0x%016"PRIx64" r15=0x%016"PRIx64"\n", r.r12, r.r13, r.r14, r.r15);
+	fprintf(stderr, "cs=0x%04x fs=0x%04x gs=0x%04x\n", r.cs, r.fs, r.gs);
+	fprintf(stderr, "eip=0x%016"PRIx64"\n", r.rip);
+	fprintf(stderr, "eflags=0x%016"PRIx64"\n", r.eflags);
+	fprintf(stderr, "err=%"PRIu64" trapno=0x016%"PRIx64" cr2=0x%016"PRIx64" oldmask=0x%016"PRIx64"\n", r.err, r.trapno, r.cr2, r.oldmask);
+#endif
 }
 
 #if defined(__linux)
@@ -289,11 +295,6 @@ void sigsegv(int signal)
 #endif
 {
 	struct itimerval i[3];
-#ifdef KICKSTART_GDB
-	char *argv[5];
-	char buffer[32];
-	pid_t pid;
-#endif
 
 	stopstuff(i);
 
@@ -323,41 +324,6 @@ void sigsegv(int signal)
 	dumpcontext(signal);
 #endif
 
-#ifdef KICKSTART_GDB
-	/* first hook up stderr if is not */
-	/* don't start gdb if we weren't for instance x11 */
-	if (isatty(0))
-	{
-		argv[0]="gdb";
-		argv[1]=argv0;
-		argv[2]="-p";
-		snprintf(buffer, sizeof(buffer), "%d", getpid());
-		argv[3]=buffer;
-		argv[4]=NULL;
-
-		if (!(pid=fork()))
-		{
-			if (!isatty(2))
-			{
-				eintr_close(2);
-				eintr_dup(1);
-			}
-			setsid();
-
-			if (dir)
-				if (chdir(dir))
-					perror(__FILE__ " chdir()");
-			execvp("gdb", argv);
-
-			perror("execvp(gdb)\n");
-			exit(EXIT_FAILURE);
-		} else if (pid>=0) /* not an error */
-		{
-			int status;
-			eintr_waitpid(pid, &status, 0);
-		}
-	}
-#endif
 	if (signal!=SIGINT)
 		exit(signal);
 	else
@@ -600,17 +566,6 @@ int main(int argc, char *argv[])
 	signal(SIGINT, sigsegv);
 #endif
 
-#ifdef KICKSTART_GDB
-	argv0=argv[0];
-
-#ifdef __linux
-	dir=get_current_dir_name();
-#elif defined(HAVE_GETCWD)
-	dir=getcwd(malloc(PATH_MAX), PATH_MAX);
-#else /* BSD */
-	dir=getwd(malloc(PATH_MAX));
-#endif
-#endif
 
 	AllowSymlinked=(getuid()==geteuid());
 
@@ -630,12 +585,6 @@ int main(int argc, char *argv[])
 	}
 
 	retval = runocp(handle, argc, argv);
-
-#ifdef KICKSTART_GDB
-	free(dir);
-
-	dir=0;
-#endif
 
 	if (_cfConfigDir)
 		free(_cfConfigDir);
