@@ -160,10 +160,16 @@ extern "C" {
 	const char *dllinfo = "";
 	struct linkinfostruct dllextinfo =
 	{
-		.name="opltype",
-		.desc="OpenCP Adplug (OPL) Detection and Player (c) 2005-'22 Stian Skjelstad",
-		.ver=DLLVERSION,
-		.PreInit=oplTypePreInit,
-		.PreClose=oplTypePreDone,
+		.name      = "opltype",
+		.desc      = "OpenCP Adplug (OPL) Detection and Player (c) 2005-'22 Stian Skjelstad",
+		.ver       = DLLVERSION,
+		.size      = 0,
+		.PreInit   = oplTypePreInit,
+		.Init      = 0,
+		.LateInit  = 0,
+		.PreClose  = oplTypePreDone,
+		.Close     =  0,
+		.LateClose =  0
 	};
+
 }
