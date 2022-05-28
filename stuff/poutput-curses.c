@@ -59,6 +59,7 @@
 #include "poutput-curses.h"
 #include "boot/console.h"
 #include "poutput.h"
+#include "poll.h"
 #include "boot/psetting.h"
 #include "cp437.h"
 #include "utf-8.h"
@@ -868,6 +869,9 @@ static void conSave(void)
 static void plDosShell(void)
 {
 	pid_t child;
+
+	printf ("Spawning a new shell - Exit shell to return back to Open Cubic Player\n");
+
 	if (!(child=fork()))
 	{
 		char *shell=getenv("SHELL");
@@ -887,12 +891,15 @@ static void plDosShell(void)
 		while(1)
 		{
 			int status, retval;
-			if ((retval=waitpid(child, &status, 0))<0)
+			if ((retval=waitpid(child, &status, WNOHANG))<=0)
 			{
 				if (errno==EINTR)
 					continue;
+				usleep (50000); /* 50ms, 20 FPS */
+				tmTimerHandler ();
+			} else {
+				break;
 			}
-			break;
 		}
 	}
 }

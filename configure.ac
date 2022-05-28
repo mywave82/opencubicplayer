@@ -9,7 +9,7 @@ AS_IF([test -f playtimidity/timidity-git/Makefile.am], [AC_MSG_RESULT([ok])],
       [AC_MSG_ERROR([playtimidity/timidity-git is missing - please execute 'git submodule update --init --recursive'])]
 )
 
-AC_ARG_WITH([debug], [AS_HELP_STRING([--with-debug],[compile with debug-flags and without SIGALRM])])
+AC_ARG_WITH([debug], [AS_HELP_STRING([--with-debug],[compile with debug-flags])])
 AS_IF([test "x$with_debug" = "xyes"], [
   for i in $CFLAGS
   do
@@ -24,7 +24,6 @@ AS_IF([test "x$with_debug" = "xyes"], [
   done;
   CXXFLAGS="$new_CXXFLAGS -g -DDEBUG=1"
   AC_DEFINE(KICKSTART_GDB, 1)
-  AC_DEFINE(DISABLE_SIGALRM)
 ])
 
 AC_CHECK_HEADERS_ONCE([sys/time.h])

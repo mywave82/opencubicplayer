@@ -13,19 +13,6 @@ volatile static uint32_t lastCallbackTime;
 #endif
 static volatile unsigned int lastLength;
 
-/* Avoid deadlocks due to signals catched when in the critical section */
-#define SDL_LockAudio() \
-	sigset_t _orgmask; \
-	sigset_t _mask; \
-	sigemptyset(&_mask); \
-	sigaddset(&_mask, SIGALRM); \
-	sigprocmask(SIG_BLOCK, &_mask, &_orgmask); \
-	SDL_LockAudio()
-
-#define SDL_UnlockAudio() \
-	SDL_UnlockAudio(); \
-	sigprocmask(SIG_SETMASK, &_orgmask, NULL)
-
 void theRenderProc(void *userdata, Uint8 *stream, int len)
 {
 	int pos1, length1, pos2, length2;

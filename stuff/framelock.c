@@ -32,9 +32,6 @@
 #include "filesel/pfilesel.h"
 #include "stuff/err.h"
 #include "framelock.h"
-#ifdef DISABLE_SIGALRM
-#include "timer.h"
-#endif
 
 static int Current = 0;
 static int PendingPoll = 0;
@@ -70,9 +67,7 @@ rerun:
 	}
 	target.tv_usec+=1000000/fsFPS;
 
-#ifdef DISABLE_SIGALRM
 	tmTimerHandler();
-#endif
 	Current++;
 }
 
@@ -93,9 +88,7 @@ void preemptive_framelock (void)
 	}
 	target.tv_usec+=1000000/fsFPS;
 
-#ifdef DISABLE_SIGALRM
 	tmTimerHandler();
-#endif
 	Current++;
 	PendingPoll = 1;
 }
@@ -122,9 +115,8 @@ int poll_framelock(void)
 	}
 	target.tv_usec+=1000000/fsFPS;
 
-#ifdef DISABLE_SIGALRM
 	tmTimerHandler();
-#endif
+
 	Current++;
 	PendingPoll = 0;
 	return 1;

@@ -4,4 +4,6 @@
 int pollInit(void (*)(void));
 void pollClose(void);
 
+void tmTimerHandler(void);
+
 #endif

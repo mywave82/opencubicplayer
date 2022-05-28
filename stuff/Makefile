@@ -32,9 +32,9 @@ poutput_so_libs+=$(FREETYPE2_LIBS)
 endif
 
 ifeq ($(STATIC_BUILD),1)
-all: compat.o err.o framelock.o irq.o timer.o $(hardware_so) $(sets_so) $(poutput_so)
+all: compat.o err.o framelock.o poll.o $(hardware_so) $(sets_so) $(poutput_so)
 else
-all: compat.o err.o framelock.o irq.o timer.o hardware$(LIB_SUFFIX) sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX)
+all: compat.o err.o framelock.o poll.o hardware$(LIB_SUFFIX) sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX)
 endif
 
 test: compat-test
@@ -92,18 +92,12 @@ poutput-keyboard.o: poutput-keyboard.c \
 	../types.h
 	$(CC) poutput-keyboard.c -o $@ -c
 
-timer.o: timer.c timer.h irq.h \
+poll.o: poll.c poll.h \
 	../config.h \
 	../types.h \
-	compat.h \
 	imsrtns.h \
 	poll.h
-	$(CC) timer.c -o $@ -c
-
-irq.o: irq.c irq.h \
-	../config.h \
-	../types.h
-	$(CC) irq.c -o $@ -c
+	$(CC) poll.c -o $@ -c
 
 latin1.o: latin1.c latin1.h \
 	../config.h \
@@ -118,6 +112,7 @@ poutput-curses.o: poutput-curses.c poutput-curses.h \
 	../boot/console.h \
 	../boot/psetting.h \
 	cp437.h \
+	poll.h \
 	utf-8.h
 	$(CC) poutput-curses.c -o $@ -c
 
@@ -192,6 +187,7 @@ poutput-x11.o: poutput-x11.c poutput-x11.h \
 	poutput.h \
 	poutput-swtext.h \
 	pfonts.h \
+	poll.h \
 	x11-common.h
 	$(CC) poutput-x11.c -o $@ -c
 
@@ -258,7 +254,7 @@ framelock.o: framelock.c framelock.h \
 	../boot/plinkman.h \
 	../boot/psetting.h \
 	../filesel/pfilesel.h \
-	timer.h \
+	poll.h \
 	err.h
 	$(CC) framelock.c -o $@ -c
 

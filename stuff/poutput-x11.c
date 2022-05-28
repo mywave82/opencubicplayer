@@ -55,6 +55,7 @@
 #include "poutput-fontengine.h"
 #include "poutput-swtext.h"
 #include "poutput-x11.h"
+#include "poll.h"
 #include "x11-common.h"
 #include "desktop/opencubicplayer-48x48.xpm"
 
@@ -710,6 +711,8 @@ static void x11_common_event_loop(void)
 				break;
 			case FocusOut:
 				break;
+			case ReparentNotify:
+				break;
 			case Expose:
 				/* silently ignore these */
 				break;
@@ -1077,6 +1080,7 @@ static void create_image(void)
 
 		shmctl(shminfo[0].shmid, IPC_RMID, 0);
 	} else {
+		shm_completiontype = -1;
 		if (!(image=XGetImage(mDisplay, window, 0, 0, plScrLineBytes, plScrLines, AllPlanes, ZPixmap)))
 		{
 			fprintf(stderr, "[x11] Failed to create XImage\n");
@@ -1090,11 +1094,12 @@ static void destroy_image(void)
 {
 	if (shm_completiontype>=0)
 	{
-		XShmDetach(mDisplay, &shminfo[0]);
 		if (image)
+		{
+			XShmDetach(mDisplay, &shminfo[0]);
 			XDestroyImage(image);
-		shmdt(shminfo[0].shmaddr);
-		shm_completiontype=-1;
+			shmdt(shminfo[0].shmaddr);
+		}
 	} else {
 		if (image)
 			XDestroyImage(image);
@@ -1744,6 +1749,12 @@ static void plDosShell(void)
 	pid_t child;
 	XEvent event;
 
+	if (!isatty(0) || (!isatty(1)))
+	{
+		/* we are not executed from a terminal, this will be confusing for the user */
+		return;
+	}
+
 	if (xvidmode_event_base>=0)
 	{
 		XF86VidModeSwitchToMode(mDisplay, mScreen, &default_modeline);
@@ -1757,6 +1768,8 @@ static void plDosShell(void)
 	XSync(mDisplay, False);
 	while (XPending(mDisplay))
 		XNextEvent(mDisplay, &event);
+
+	printf ("Spawning a new shell - Exit shell to return back to Open Cubic Player\n");
 
 	if (!(child=fork()))
 	{
@@ -1777,12 +1790,15 @@ static void plDosShell(void)
 		while(1)
 		{
 			int status, retval;
-			if ((retval=waitpid(child, &status, 0))<0)
+			if ((retval=waitpid(child, &status, WNOHANG))<=0)
 			{
 				if (errno==EINTR)
 					continue;
+				usleep (50000); /* 50ms, 20 FPS */
+				tmTimerHandler ();
+			} else {
+				break;
 			}
-			break;
 		}
 	}
 
