@@ -31,7 +31,8 @@
 #include "boot/psetting.h"
 #include "filesel/pfilesel.h"
 #include "stuff/err.h"
-#include "framelock.h"
+#include "stuff/framelock.h"
+#include "stuff/poll.h"
 
 static int Current = 0;
 static int PendingPoll = 0;
