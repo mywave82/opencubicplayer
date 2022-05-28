@@ -7,10 +7,27 @@ endif
 
 cpiface_so=fft.o cpianal.o cpichan.o cpidots.o cpiface.o cpigraph.o cpiinst.o cpikube.o cpilinks.o cpimsg.o cpimvol.o cpiphase.o cpipic.o cpiptype.o cpiscope.o cpitext.o cpitrack.o jpeg.o mcpedit.o $(GIF_O) png.o tga.o volctrl.o
 
+ifeq ($(HAVE_X11),1)
+NEED_CPIFONTDEBUG=1
+endif
+ifeq ($(HAVE_SDL),1)
+NEED_CPIFONTDEBUG=1
+endif
+ifeq ($(HAVE_SDL2),1)
+NEED_CPIFONTDEBUG=1
+endif
+ifeq ($(NEED_CPIFONTDEBUG),1)
 ifeq ($(STATIC_BUILD),1)
-all: $(cpiface_so) cpikeyhelp.o cpifontdebug.o
+ HAVE_CPIFONTDEBUG=cpifontdebug.o
 else
-all: cpiface$(LIB_SUFFIX) cpifontdebug$(LIB_SUFFIX) cpikeyhelp.o
+ HAVE_CPIFONTDEBUG=cpifontdebug$(LIB_SUFFIX)
+endif
+endif
+
+ifeq ($(STATIC_BUILD),1)
+all: $(cpiface_so) cpikeyhelp.o $(HAVE_CPIFONTDEBUG)
+else
+all: cpiface$(LIB_SUFFIX) $(HAVE_CPIFONTDEBUG) cpikeyhelp.o
 endif
 
 cpiface$(LIB_SUFFIX): $(cpiface_so)
@@ -28,7 +45,9 @@ uninstall:
 else
 install:
 	$(CP) cpiface$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/35-cpiface$(LIB_SUFFIX)"
+ifeq ($(NEED_CPIFONTDEBUG),1)
 	$(CP) cpifontdebug$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/40-cpifontdebug$(LIB_SUFFIX)"
+endif
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/35-cpiface$(LIB_SUFFIX)"
