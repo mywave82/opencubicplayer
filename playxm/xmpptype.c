@@ -111,7 +111,7 @@ static uint32_t xmpGetModuleType(const char *buf, int len, const char *filename)
 				}
 				if (((signed char *)buf)[20+i*30+j]<0x20) /* non-ASCII? */
 				{
-					fprintf (stderr, "instrument %d has problem at character %d\n", i, j);
+					//fprintf (stderr, "instrument %d has problem at character %d\n", i, j);
 					goto out;
 				}
 			}
