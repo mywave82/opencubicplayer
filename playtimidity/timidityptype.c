@@ -88,7 +88,7 @@ static int timidityReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *
 	}
 	len+=i;
 
-	while ((i+4)<len)
+	while (((i+4)<flen) && (i+4 < len))
 	{
 		int datalen;
 
@@ -102,7 +102,7 @@ static int timidityReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *
 			continue;
 		}
 		datalen=buf[i+3];
-		if (i + datalen + 4 <= len)
+		if ((i + datalen + 4 <= flen) && (i + datalen + 4 < len))
 		{
 			cp437_f_to_utf8_z ((char *)buf+i+4, datalen, m->title, sizeof (m->title));
 		}

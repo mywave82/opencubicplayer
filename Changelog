@@ -12,6 +12,7 @@ Version 0.2.98
  * Update wurfel mode - search for animations in ~/.ocp aswell as the global
    data directory
  * playopl would fail to compile with clang
+ * Parsing RIFF files could randomly crash (MID, WAV and MP2 files are RIFF)
 
 Version 0.2.97
 ==============
