@@ -13,6 +13,7 @@ Version 0.2.98
    data directory
  * playopl would fail to compile with clang
  * Parsing RIFF files could randomly crash (MID, WAV and MP2 files are RIFF)
+ * MIDI playback could randomly assert on events-delay logic
 
 Version 0.2.97
 ==============

@@ -330,12 +330,30 @@ static void timidity_apply_EventDelayed (CtlEvent *event)
 	}
 }
 
-static void timidity_append_EventDelayed_PlrBuf (CtlEventDelayed *self, unsigned int delay_samples)
+static void timidity_append_EventDelayed_PlrBuf (CtlEventDelayed *self, signed int delay_samples)
 {
+	if (delay_samples <= 0)
+	{
+		timidity_apply_EventDelayed (&self->event);
+
+		free_EventDelayed (self);
+
+		return;
+	}
+
 	self->delay_samples = delay_samples;
 
 	if (EventDelayed_PlrBuf_head)
 	{
+#if 0
+		assert (EventDelayed_PlrBuf_tail->delay_samples <= self->delay_samples);
+#else
+		// just in case above assert do hit, we ensure that the events the cue are in rising order
+		if (self->delay_samples < EventDelayed_PlrBuf_tail->delay_samples)
+		{
+			EventDelayed_PlrBuf_tail->delay_samples = self->delay_samples;
+		}
+#endif
 		EventDelayed_PlrBuf_tail->next = self;
 	} else {
 		EventDelayed_PlrBuf_head = self;
@@ -378,6 +396,7 @@ static void timidity_play_target_EventDelayed_gmibuf (unsigned int delta)
 static void timidity_append_EventDelayed_gmibuf (CtlEvent *event)
 {
 	CtlEventDelayed *self = calloc (sizeof (*self), 1);
+
 	if (!self)
 	{
 		perror ("timidity_append_EventDelayed_gmibuf malloc");
@@ -403,7 +422,7 @@ static void timidity_append_EventDelayed_gmibuf (CtlEvent *event)
 	}
 }
 
-static void timidity_play_source_EventDelayed_gmibuf (uint32_t samples)
+static void timidity_play_source_EventDelayed_gmibuf (uint32_t samplesin, uint32_t samplesout)
 {
 	CtlEventDelayed *iter, *next;
 
@@ -411,7 +430,7 @@ static void timidity_play_source_EventDelayed_gmibuf (uint32_t samples)
 	{
 		next = iter->next;
 
-		if (iter->delay_samples <= samples)
+		if (iter->delay_samples <= samplesin)
 		{
 			assert (iter == EventDelayed_gmibuf_head);
 
@@ -423,10 +442,9 @@ static void timidity_play_source_EventDelayed_gmibuf (uint32_t samples)
 			} else {
 				iter->next = 0;
 			}
-			iter->delay_samples = 0;
-			timidity_append_EventDelayed_PlrBuf (iter, samples + samples_lastdelay);
+			timidity_append_EventDelayed_PlrBuf (iter, (int)samples_lastdelay + samplesout - (samplesin - iter->delay_samples));
 		} else {
-			iter->delay_samples -= samples;
+			iter->delay_samples -= samplesin;
 		}
 	}
 }
@@ -1722,7 +1740,7 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 				} /* while (targetlength && length1) */
 			} /* if (gmibufrate==0x10000) */
 			ringbuffer_tail_consume_samples (gmibufpos, accumulated_source);
-			timidity_play_source_EventDelayed_gmibuf (accumulated_source);
+			timidity_play_source_EventDelayed_gmibuf (accumulated_source, accumulated_target);
 			plrAPI->CommitBuffer (accumulated_target);
 			samples_committed += accumulated_target;
 			gmibuffill-=accumulated_source;
@@ -1737,8 +1755,8 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 		{
 			timidity_play_target_EventDelayed_gmibuf (new_ui - samples_lastui);
 			samples_lastui = new_ui;
-			samples_lastdelay = delay;
 		}
+		samples_lastdelay = delay;
 	}
 
 	clipbusy--;
