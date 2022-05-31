@@ -1,3 +1,18 @@
+Version 0.2.98
+==============
+
+ * MacOS updates:
+   * Not able to compile on newer versions
+   * Random lockups and crashes
+ * Compiling psetting.c on x86 with gcc generated a lot of warnings
+ * G++ 7.5.0 failed to compile one of the files
+ * Remove kickstarting GDB on crash when configured with --with-debug
+ * Remove usage of SIGALRM. This was only partially safe with native OSS and
+   ALSA drivers
+ * Update wurfel mode - search for animations in ~/.ocp aswell as the global
+   data directory
+ * playopl would fail to compile with clang
+
 Version 0.2.97
 ==============
 
