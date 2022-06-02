@@ -397,6 +397,7 @@ static int stream_for_frame(void)
 		return 1;
 	if (datapos!=newpos) /* force buffer flush */
 	{
+		debug_printf ("[MPx] forcing buffer flush\n");
 		datapos=newpos;
 		file->seek_set (file, datapos + ofs);
 		data_length=0;
@@ -486,7 +487,7 @@ static int stream_for_frame(void)
 			if (len)
 			{
 				mad_stream_buffer(&stream, data, data_length += len);
-				//debug_printf ("[MPx]   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08x/0x%08x\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
+				debug_printf ("[MPx] POST mad_stream_buffer   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64"\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
 			}
 		}
 		stream.error=0;
@@ -556,6 +557,10 @@ static int stream_for_frame(void)
 		}
 		if (!opt25_50)
 		{
+			debug_printf ("[MPx] MPEG 2 layer %s, %s%s\n", 
+				(frame.header.layer==MAD_LAYER_I)?"I":(frame.header.layer==MAD_LAYER_I)?"II":"III",
+				(frame.header.mode==MAD_MODE_SINGLE_CHANNEL)?"mono":(frame.header.mode==MAD_MODE_DUAL_CHANNEL)?"Dual Channel":(frame.header.mode==MAD_MODE_JOINT_STEREO)?"Joint Stereo":"Stereo",
+				(frame.header.emphasis==MAD_EMPHASIS_NONE)?"":(frame.header.emphasis==MAD_EMPHASIS_50_15_US)?", 50/15us emphasis":(frame.header.emphasis==MAD_EMPHASIS_CCITT_J_17)?", CCITT J.17 emph":", unknown emphasis");
 			opt25_50=1;
 			snprintf (opt25, sizeof (opt25), "MPEG 2 layer %s, %s",
 				(frame.header.layer==MAD_LAYER_I)?"I":(frame.header.layer==MAD_LAYER_I)?"II":"III",
@@ -567,6 +572,7 @@ static int stream_for_frame(void)
 				(frame.header.emphasis==MAD_EMPHASIS_NONE)?"":(frame.header.emphasis==MAD_EMPHASIS_50_15_US)?", 50/15us emphasis":(frame.header.emphasis==MAD_EMPHASIS_CCITT_J_17)?", CCITT J.17 emph":", unknown emphasis");
 		}
 		mad_synth_frame(&synth, &frame);
+		fprintf (stderr, "[MPx] synth pcm.length=%d pcm.bitrate=%d pcm.channels=%d\n", synth.pcm.length, synth.pcm.samplerate, synth.pcm.channels);
 		data_in_synth=synth.pcm.length;
 		mpeg_Bitrate=frame.header.bitrate;
 		mpegstereo=synth.pcm.channels==2;
