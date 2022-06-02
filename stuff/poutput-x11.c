@@ -1794,7 +1794,7 @@ static void plDosShell(void)
 			{
 				if (errno==EINTR)
 					continue;
-				usleep (50000); /* 50ms, 20 FPS */
+				usleep (20000); /* 20ms, 50 FPS */
 				tmTimerHandler ();
 			} else {
 				break;

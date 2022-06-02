@@ -39,8 +39,8 @@ static int PendingPoll = 0;
 int fsFPS=25;
 int fsFPSCurrent=0;
 
-static struct timeval target = {0, 0};
-static struct timeval curr;
+static struct timeval targetFPS = {0, 0};
+static struct timeval targetAudioPoll = {0, 0};
 
 void __attribute__ ((visibility ("internal"))) framelock_init (void)
 {
@@ -49,63 +49,115 @@ void __attribute__ ((visibility ("internal"))) framelock_init (void)
 		fsFPS=20;
 }
 
+/* If fsFPS < 50, we run to parallel timers. One for framelock and one for AudioPoll. If fsFPS > 50, we run them on the same timer */
+
+static void AudioPoll(struct timeval *curr)
+{
+	if (curr->tv_sec != targetAudioPoll.tv_sec)
+	{
+		targetAudioPoll.tv_sec = curr->tv_sec;
+		targetAudioPoll.tv_usec = 1000000/50;
+		tmTimerHandler ();
+	} else if (curr->tv_usec >= targetAudioPoll.tv_usec)
+	{
+		targetAudioPoll.tv_usec += 1000000/50;
+		tmTimerHandler ();
+	}
+}
+
 void framelock(void)
 {
+	struct timeval curr;
+
 	PendingPoll = 0;
 rerun:
 	gettimeofday(&curr, 0);
-	if (curr.tv_sec!=target.tv_sec)
+
+	if (fsFPS < 50)
+	{
+		AudioPoll (&curr);
+	}
+
+	if (curr.tv_sec!=targetFPS.tv_sec)
 	{
 		fsFPSCurrent=Current;
 		Current=1;
-		target.tv_sec=curr.tv_sec;
-		target.tv_usec=1000000/fsFPS;
+		targetFPS.tv_sec=curr.tv_sec;
+		targetFPS.tv_usec=1000000/fsFPS;
 		return;
-	} else if (curr.tv_usec<target.tv_usec)
+	} else if ((fsFPS >= 50) || (targetFPS.tv_usec < targetAudioPoll.tv_usec))
 	{
-		usleep(target.tv_usec-curr.tv_usec);
+		if (curr.tv_usec<targetFPS.tv_usec)
+		{
+			usleep(targetFPS.tv_usec-curr.tv_usec);
+		}
+		targetFPS.tv_usec+=1000000/fsFPS;
+	} else {
+		if (curr.tv_usec < targetAudioPoll.tv_usec)
+		{
+			usleep(targetAudioPoll.tv_usec-curr.tv_usec);
+		}
 		goto rerun;
 	}
-	target.tv_usec+=1000000/fsFPS;
-
-	tmTimerHandler();
+	//if (fsFPS >= 50)
+	{
+		tmTimerHandler();
+	}
 	Current++;
 }
 
 void preemptive_framelock (void)
 {
+	struct timeval curr;
+
 	gettimeofday(&curr, 0);
-	if (curr.tv_sec!=target.tv_sec)
+
+	if (fsFPS < 50)
+	{
+		AudioPoll (&curr);
+	}
+
+	if (curr.tv_sec!=targetFPS.tv_sec)
 	{
 		fsFPSCurrent=Current;
 		Current=1;
-		target.tv_sec=curr.tv_sec;
-		target.tv_usec=1000000/fsFPS;
+		targetFPS.tv_sec=curr.tv_sec;
+		targetFPS.tv_usec=1000000/fsFPS;
 		PendingPoll = 1;
 		return;
-	} else if (curr.tv_usec<target.tv_usec)
+	} else if (curr.tv_usec<targetFPS.tv_usec)
 	{
 		return; /* we were suppose to sleep */
 	}
-	target.tv_usec+=1000000/fsFPS;
-
-	tmTimerHandler();
+	targetFPS.tv_usec+=1000000/fsFPS;
+	//if (fsFPS >= 50)
+	{
+		tmTimerHandler();
+	}
 	Current++;
 	PendingPoll = 1;
 }
 
 int poll_framelock(void)
 {
+	struct timeval curr;
+
 	gettimeofday(&curr, 0);
-	if (curr.tv_sec!=target.tv_sec)
+
+	if (fsFPS < 50)
+	{
+		AudioPoll (&curr);
+	}
+
+	if (curr.tv_sec!=targetFPS.tv_sec)
 	{
 		fsFPSCurrent=Current;
 		Current=1;
-		target.tv_sec=curr.tv_sec;
-		target.tv_usec=1000000/fsFPS;
+		targetFPS.tv_sec=curr.tv_sec;
+		targetFPS.tv_usec=1000000/fsFPS;
 		PendingPoll = 0;
 		return 1;
-	} else if (curr.tv_usec<target.tv_usec)
+	} else if (curr.tv_usec<targetFPS.tv_usec)
 	{
 		if (PendingPoll)
 		{
@@ -114,9 +166,12 @@ int poll_framelock(void)
 		}
 		return 0; /* we were suppose to sleep */
 	}
-	target.tv_usec+=1000000/fsFPS;
+	targetFPS.tv_usec+=1000000/fsFPS;
 
-	tmTimerHandler();
+	//if (fsFPS >= 50)
+	{
+		tmTimerHandler();
+	}
 
 	Current++;
 	PendingPoll = 0;
