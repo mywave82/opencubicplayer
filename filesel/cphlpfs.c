@@ -41,7 +41,7 @@ static int plHelpKey(unsigned short key)
 {
 	switch(key)
 	{
-		case 'h': case 'H': case '?': case '!': case KEY_F(1): case KEY_ESC:
+		case 'h': case 'H': case '?': case '!': case KEY_F(1): case KEY_ESC: case KEY_EXIT:
 			fsmode=0;
 			break;
 		default:

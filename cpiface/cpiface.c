@@ -2388,7 +2388,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 		if (plEscTick)
 		{
 			plEscTick=0;
-			if (key==KEY_ESC)
+			if ((key==KEY_ESC) || (key==KEY_EXIT))
 			{
 				return interfaceReturnQuit;
 			}
@@ -2415,6 +2415,8 @@ static interfaceReturnEnum plmpDrawScreen(void)
 		switch (key)
 		{
 			struct cpimoderegstruct *mod;
+			case KEY_EXIT:
+				return interfaceReturnQuit;
 			case KEY_ESC:
 				plEscTick=dos_clock();
 				break;

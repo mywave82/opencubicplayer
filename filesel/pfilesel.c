@@ -206,7 +206,8 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 							{
 								while (ekbhit())
 								{
-									if (egetch() == ' ')
+									int key = egetch();
+									if ((key == ' ') || (key == KEY_EXIT))
 									{
 										token->cancel_recursive = 1;
 									}
@@ -333,7 +334,8 @@ int fsReadDir (struct modlist *ml, struct ocpdir_t *dir, const char *mask, unsig
 		{
 			while (ekbhit())
 			{
-				if (egetch() == ' ')
+				int key = egetch();
+				if ((key == ' ') || (key == KEY_EXIT))
 				{
 					token.cancel_recursive = 1;
 				}
@@ -2080,6 +2082,7 @@ superbreak:
 				stored = 1;
 				break;
 			}
+			case KEY_EXIT:
 			case KEY_ESC:
 				    return;
 			case KEY_ALT_K:
@@ -2299,6 +2302,7 @@ static int fsEditModType (struct moduletype *oldtype, int _Bottom, int _Right)
 						curindex++;
 				}
 				break;
+			case KEY_EXIT:
 			case KEY_ESC:
 				if (editcol)
 				{
@@ -2401,6 +2405,7 @@ static int fsEditChan(int y, int x, uint8_t *chan)
 				if (key==KEY_BACKSPACE)
 					str[curpos]='0';
 				break;
+			case KEY_EXIT:
 			case KEY_ESC:
 				setcurshape(0);
 				state = 0;
@@ -2487,6 +2492,7 @@ static int fsEditPlayTime(int y, int x, uint16_t *playtime)
 				if (key==KEY_BACKSPACE)
 					str[curpos]='0';
 				break;
+			case KEY_EXIT:
 			case KEY_ESC:
 				setcurshape(0);
 				state = 0;
@@ -2608,6 +2614,7 @@ static int fsEditDate(int y, int x, uint32_t *date)
 				if (key==KEY_BACKSPACE)
 					str[curpos]='0';
 				break;
+			case KEY_EXIT:
 			case KEY_ESC:
 				setcurshape(0);
 				state = 0;
@@ -3234,6 +3241,7 @@ superbreak:
 					}
 					state = 2;
 					goto superbreak;
+				case KEY_EXIT:
 				case KEY_ESC:
 					return 0;
 				case KEY_ALT_R:

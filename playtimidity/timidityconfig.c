@@ -734,6 +734,7 @@ static interfaceReturnEnum timidityConfigRun (void)
 											dsel--;
 										}
 										break;
+									case KEY_EXIT:
 									case KEY_ESC:
 										inner = 0;
 										break;
@@ -902,8 +903,8 @@ static interfaceReturnEnum timidityConfigRun (void)
 						esel--;
 					}
 					break;
+				case KEY_EXIT:
 				case KEY_ESC:
-
 					cfStoreConfig();
 					goto superexit;
 					break;

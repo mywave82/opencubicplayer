@@ -421,6 +421,7 @@ int EditStringUTF8z (unsigned int y, unsigned int x, unsigned int w, int l, char
 					workstring_length--;
 				}
 				break;
+			case KEY_EXIT:
 			case KEY_ESC:
 				setcurshape(0);
 				free (workstring_data);     workstring_data = 0;
@@ -656,6 +657,7 @@ int EditStringUTF8(unsigned int y, unsigned int x, unsigned int w, char **s)
 					workstring_length--;
 				}
 				break;
+			case KEY_EXIT:
 			case KEY_ESC:
 				setcurshape(0);
 				free (workstring_data);     workstring_data = 0;

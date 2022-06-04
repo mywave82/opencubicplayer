@@ -182,6 +182,7 @@ static interfaceReturnEnum medialibRefreshRun (void)
 						dir->unref (dir);
 					}
 					/* fall-trough */
+				case KEY_EXIT:
 				case KEY_ESC:
 					return interfaceReturnNextAuto;
 				default:

@@ -187,6 +187,7 @@ static interfaceReturnEnum medialibRemoveRun (void)
 
 					mlFlushBlob ();
 					/* fall-trough */
+				case KEY_EXIT:
 				case KEY_ESC:
 					return interfaceReturnNextAuto;
 				default:

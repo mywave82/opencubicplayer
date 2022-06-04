@@ -1343,6 +1343,7 @@ static interfaceReturnEnum musicbrainzSetupRun (void)
 							epos = 3;
 						}
 						break;
+					case KEY_EXIT:
 					case KEY_ESC:
 						if (musicbrainz.cachecount)
 						{
@@ -1409,6 +1410,7 @@ static interfaceReturnEnum musicbrainzSetupRun (void)
 										int key = egetch();
 										switch (key)
 										{
+											case KEY_EXIT:
 											case KEY_ESC:
 												musicbrainz_lookup_discid_cancel (handle);
 												superbreak = 1;
@@ -1540,6 +1542,7 @@ static interfaceReturnEnum musicbrainzSetupRun (void)
 							goto superexit;
 						}
 						break;
+					case KEY_EXIT:
 					case KEY_ESC:
 						free (sorted);
 						return interfaceReturnNextAuto;

@@ -750,7 +750,7 @@ static void x11_common_event_loop(void)
 				    (event.xclient.message_type == WM_PROTOCOLS) &&
 				    (event.xclient.data.l[0] == WM_DELETE_WINDOW))
 				{
-					___push_key(KEY_ESC);
+					___push_key(KEY_EXIT);
 				}
 				break;
 			case ConfigureNotify:
@@ -2034,6 +2034,7 @@ static void plDisplaySetupTextMode(void)
 				plCurrentFontWanted = plCurrentFont;
 				cfSetProfileInt("x11", "font", plCurrentFont, 10);
 				break;
+			case KEY_EXIT:
 			case KEY_ESC: return;
 		}
 	}

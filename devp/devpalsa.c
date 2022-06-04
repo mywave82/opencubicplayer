@@ -1216,48 +1216,49 @@ static int alsaMixerIntrSetDev (struct moduleinfostruct *info, struct ocpfilehan
 					str[curpos++]=key;
 			} else switch (key)
 			{
-			case KEY_ESC:
-				setcurshape(0);
-				return 0;
-			case KEY_LEFT:
-				if (curpos)
-					curpos--;
-				break;
-			case KEY_RIGHT:
-				if (curpos<cmdlen)
-					curpos++;
-				break;
-			case KEY_HOME:
-				curpos=0;
-				break;
-			case KEY_END:
-				curpos=cmdlen;
-				break;
-			case KEY_INSERT:
-				{
-					insmode=!insmode;
-					setcurshape(insmode?1:2);
-				}
-				break;
-			case KEY_DELETE:
-				if (curpos!=cmdlen)
-				{
-					memmove(str+curpos, str+curpos+1, cmdlen-curpos);
-					cmdlen--;
-				}
-				break;
-			case KEY_BACKSPACE:
-				if (curpos)
-				{
-					memmove(str+curpos-1, str+curpos, cmdlen-curpos+1);
-					curpos--;
-					cmdlen--;
-				}
-				break;
-			case _KEY_ENTER:
-				strcpy(alsaCardName, str);
-				setcurshape(0);
-				goto out;
+				case KEY_EXIT:
+				case KEY_ESC:
+					setcurshape(0);
+					return 0;
+				case KEY_LEFT:
+					if (curpos)
+						curpos--;
+					break;
+				case KEY_RIGHT:
+					if (curpos<cmdlen)
+						curpos++;
+					break;
+				case KEY_HOME:
+					curpos=0;
+					break;
+				case KEY_END:
+					curpos=cmdlen;
+					break;
+				case KEY_INSERT:
+					{
+						insmode=!insmode;
+						setcurshape(insmode?1:2);
+					}
+					break;
+				case KEY_DELETE:
+					if (curpos!=cmdlen)
+					{
+						memmove(str+curpos, str+curpos+1, cmdlen-curpos);
+						cmdlen--;
+					}
+					break;
+				case KEY_BACKSPACE:
+					if (curpos)
+					{
+						memmove(str+curpos-1, str+curpos, cmdlen-curpos+1);
+						curpos--;
+						cmdlen--;
+					}
+					break;
+				case _KEY_ENTER:
+					strcpy(alsaCardName, str);
+					setcurshape(0);
+					goto out;
 			}
 			while ((curpos-scrolled)>=(plScrWidth-10))
 				scrolled+=8;

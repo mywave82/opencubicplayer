@@ -116,6 +116,7 @@ static void mlScanDraw(const char *title, struct scanlist_t *token)
 		int key = egetch();
 		switch (key)
 		{
+			case KEY_EXIT:
 			case KEY_ESC:
 				token->abort = 1;
 				break;

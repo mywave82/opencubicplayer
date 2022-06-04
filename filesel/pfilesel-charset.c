@@ -603,6 +603,7 @@ static int fsEditCharset (struct ocpdir_t *dir)
 			case KEY_NPAGE:
 				break;
 
+			case KEY_EXIT:
 			case KEY_ESC:
 				LoadIconv (&iconv_handle, NULL, &testtext, &displaytext);
 				state = 0;

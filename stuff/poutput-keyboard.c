@@ -114,6 +114,10 @@ int ___peek_key(void)
 #endif
 
 	retval=ring_buffer[ring_tail];
+	if (retval == KEY_EXIT)
+	{
+		return retval;
+	}
 	ring_tail=(ring_tail+1)%BUFFER_LEN;
 	key_len--;
 	if (retval>255)

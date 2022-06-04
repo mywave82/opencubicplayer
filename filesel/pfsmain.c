@@ -219,7 +219,7 @@ static int _fsMain(int argc, char *argv[])
 		while (ekbhit())
 		{
 			uint16_t key=egetch();
-			if ((key==0)||(key==3)||(key==27))
+			if ((key==0)||(key==3)||(key==KEY_ESC)||(key==KEY_EXIT))
 				stop=interfaceReturnQuit;
 		}*/
 		if (stop==interfaceReturnQuit)

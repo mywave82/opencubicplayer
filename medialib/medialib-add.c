@@ -364,6 +364,7 @@ static interfaceReturnEnum medialibAddRun (void)
 						adbMetaCommit ();
 					}
 					/* fall-trough */
+				case KEY_EXIT:
 				case KEY_ESC:
 					medialibAddClear();
 					return interfaceReturnNextAuto;

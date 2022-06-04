@@ -454,6 +454,7 @@ static void plDisplaySetupTextMode(void)
 				set_state_textmode(do_fullscreen, plScrLineBytes, plScrLines);
 				cfSetProfileInt("x11", "font", plCurrentFont, 10);
 				break;
+			case KEY_EXIT:
 			case KEY_ESC: return;
 		}
 	}
@@ -1078,7 +1079,7 @@ static int ekbhit_sdldummy(void)
 #ifdef SDL_DEBUG
 				fprintf(stderr, "[SDL-video] QUIT\n");
 #endif
-				___push_key(KEY_ESC);
+				___push_key(KEY_EXIT);
 				break;
 			}
 			case SDL_VIDEORESIZE:
