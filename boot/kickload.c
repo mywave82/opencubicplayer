@@ -286,6 +286,8 @@ static void dumpcontext(int signal)
 	fprintf(stderr, "eflags=0x%016"PRIx64"\n", r.eflags);
 	fprintf(stderr, "err=%"PRIu64" trapno=0x016%"PRIx64" cr2=0x%016"PRIx64" oldmask=0x%016"PRIx64"\n", r.err, r.trapno, r.cr2, r.oldmask);
 #endif
+
+	exit (0);
 }
 
 #if defined(__linux)
