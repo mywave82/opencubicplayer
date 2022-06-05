@@ -171,8 +171,15 @@ void cpiTextRecalc(void)
 		if (mode->GetWin(&win[nwin]))
 			win[nwin++].owner=mode;
 	}
+
+	if (plScrWidth < 80) /* happens during transition from wuerfel to text mode */
+	{
+		return;
+	}
+
 #ifdef CPIFACE_DEBUG
 	fprintf (stderr, "cpiTextRecalc\n");
+	fprintf (stderr, "plScrWidth=%d plScrHeight=%d\n", plScrWidth, plScrHeight);
 	fprintf (stderr, "step 1, found all active modes\n");
 	for (i=0; i<nwin; i++)
 	{

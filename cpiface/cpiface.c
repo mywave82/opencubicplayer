@@ -1953,14 +1953,26 @@ void cpiResetScreen(void)
 static void cpiChangeMode(struct cpimoderegstruct *m)
 {
 	if (curmode)
+	{
 		if (curmode->Event)
+		{
 			curmode->Event(cpievClose);
-	if (!m)
-		m=&cpiModeText;
-	curmode=m;
-	if (m->Event) /* do not relay on parseing from left in if's  - Stian*/
+		}
+	}
+	curmode = m ? m : &cpiModeText;
+again:
+	if (m->Event)
+	{
 		if (!m->Event(cpievOpen))
-		curmode=&cpiModeText;
+		{
+			fprintf (stderr, "cpimode[%s]->Event(cpievOpen) failed\n", m->handle);
+			if (curmode != &cpiModeText)
+			{
+				curmode=&cpiModeText;
+				goto again;
+			}
+		}
+	}
 	curmode->SetMode();
 }
 
