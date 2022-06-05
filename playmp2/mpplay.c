@@ -445,6 +445,7 @@ static int stream_for_frame(void)
 			} else
 				len = 0;
 			debug_printf ("[MPx] wanted to read %"PRIu32" bytes, and got %"PRIu32" bytes\n", target, len);
+
 			if (!len)
 			{
 				len=0;
@@ -509,10 +510,27 @@ static int stream_for_frame(void)
 		}
 
 		/* decode data */
+		{
+			int tagsize = id3_tag_query(stream.this_frame, stream.bufend - stream.this_frame);
+			if (tagsize>0)
+			{
+				id3_tag_init (tagsize);
+				mad_stream_skip(&stream, tagsize);
+				continue;
+			}
+		}
+		debug_printf ("[MPx] about to call mad_header_decode()\n");
+		if (mad_header_decode(&frame.header, &stream) == -1)
+		{
+			debug_printf ("[MPx] mad_header_decode() failed: %s\n", mad_stream_errorstr(&stream));
+			goto error;
+		}
+		debug_printf ("[MPx] about to call mad_frame_decode()\n");
+
 		if (mad_frame_decode(&frame, &stream) == -1)
 		{
 			debug_printf ("[MPx] mad_frame_decode() failed: %s\n", mad_stream_errorstr(&stream));
-
+error:
 			if (stream.error==MAD_ERROR_BUFLEN)
 			{
 				if (eof)
@@ -557,7 +575,7 @@ static int stream_for_frame(void)
 		}
 		if (!opt25_50)
 		{
-			debug_printf ("[MPx] MPEG 2 layer %s, %s%s\n", 
+			debug_printf ("[MPx] MPEG 2 layer %s, %s%s\n",
 				(frame.header.layer==MAD_LAYER_I)?"I":(frame.header.layer==MAD_LAYER_I)?"II":"III",
 				(frame.header.mode==MAD_MODE_SINGLE_CHANNEL)?"mono":(frame.header.mode==MAD_MODE_DUAL_CHANNEL)?"Dual Channel":(frame.header.mode==MAD_MODE_JOINT_STEREO)?"Joint Stereo":"Stereo",
 				(frame.header.emphasis==MAD_EMPHASIS_NONE)?"":(frame.header.emphasis==MAD_EMPHASIS_50_15_US)?", 50/15us emphasis":(frame.header.emphasis==MAD_EMPHASIS_CCITT_J_17)?", CCITT J.17 emph":", unknown emphasis");
@@ -572,7 +590,7 @@ static int stream_for_frame(void)
 				(frame.header.emphasis==MAD_EMPHASIS_NONE)?"":(frame.header.emphasis==MAD_EMPHASIS_50_15_US)?", 50/15us emphasis":(frame.header.emphasis==MAD_EMPHASIS_CCITT_J_17)?", CCITT J.17 emph":", unknown emphasis");
 		}
 		mad_synth_frame(&synth, &frame);
-		fprintf (stderr, "[MPx] synth pcm.length=%d pcm.bitrate=%d pcm.channels=%d\n", synth.pcm.length, synth.pcm.samplerate, synth.pcm.channels);
+		debug_printf ("[MPx] synth pcm.length=%d pcm.bitrate=%d pcm.channels=%d\n", synth.pcm.length, synth.pcm.samplerate, synth.pcm.channels);
 		data_in_synth=synth.pcm.length;
 		mpeg_Bitrate=frame.header.bitrate;
 		mpegstereo=synth.pcm.channels==2;
@@ -1078,7 +1096,7 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 	file->ref (file);
 
 	debug_printf ("  mpegOpenPlayer file=%p\n", file);
-	debug_printf ("  mpegOpenPlayer ofs=0x%08"PRIx64"llx fl=0x%08"PRIx64"\n", ofs, fl);
+	debug_printf ("  mpegOpenPlayer ofs=0x%08"PRIx64" fl=0x%08"PRIx64"\n", ofs, fl);
 
 	newpos=datapos=0;
 	data_length=0;
@@ -1089,6 +1107,7 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 
 	mad_stream_init(&stream);
 	mad_frame_init(&frame);
+
 	mad_synth_init(&synth);
 	mad_stream_options(&stream, MAD_OPTION_IGNORECRC);
 
