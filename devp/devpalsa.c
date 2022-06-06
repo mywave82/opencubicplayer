@@ -155,12 +155,34 @@ static unsigned int devpALSAIdle(void)
 		return 0;
 	}
 
-	odelay=snd_pcm_status_get_delay(alsa_pcm_status);
-	debug_printf("      snd_pcm_status_get_delay(alsa_pcm_status) = %d\n", odelay);
+#ifdef ALSA_DEBUG
+	switch (snd_pcm_status_get_state (alsa_pcm_status))
+	{
+		case SND_PCM_STATE_OPEN:         fprintf (stderr, "  SND_PCM_STATE_OPEN: Open\n"); break;
+		case SND_PCM_STATE_SETUP:        fprintf (stderr, "  SND_PCM_STATE_SETUP: Setup installed\n"); break;
+		case SND_PCM_STATE_PREPARED:     fprintf (stderr, "  SND_PCM_STATE_PREPARED: Ready to start\n"); break;
+		case SND_PCM_STATE_RUNNING:      fprintf (stderr, "  SND_PCM_STATE_RUNNING: Running\n"); break;
+		case SND_PCM_STATE_XRUN:         fprintf (stderr, "  SND_PCM_STATE_XRUN: Stopped: underrun (playback) or overrun (capture) detected\n"); break;
+		case SND_PCM_STATE_DRAINING:     fprintf (stderr, "  SND_PCM_STATE_DRAINING: Draining: running (playback) or stopped (capture)\n"); break;
+		case SND_PCM_STATE_PAUSED:       fprintf (stderr, "  SND_PCM_STATE_PAUSED: Paused\n"); break;
+		case SND_PCM_STATE_SUSPENDED:    fprintf (stderr, "  SND_PCM_STATE_SUSPENDED: Hardware is suspended\n"); break;
+		case SND_PCM_STATE_DISCONNECTED: fprintf (stderr, "  SND_PCM_STATE_DISCONNECTED: Hardware is disconnected\n"); break;
+		case SND_PCM_STATE_PRIVATE1:     fprintf (stderr, "  SND_PCM_STATE_PRIVATE1: Private - used internally in the library - do not use\n"); break;
+	}
+#endif
+	if (snd_pcm_status_get_state (alsa_pcm_status) == SND_PCM_STATE_XRUN)
+	{
+		fprintf (stderr, "ALSA: Buffer underrun detected, restarting PCM stream\n");
+		snd_pcm_prepare (alsa_pcm);
+		goto error_out;
+	} else {
+		odelay=snd_pcm_status_get_delay(alsa_pcm_status);
+		debug_printf("      snd_pcm_status_get_delay(alsa_pcm_status) = %d\n", odelay);
+	}
 
-	if (odelay<0)
-	{ /* we ignore buffer-underruns */
-		fprintf (stderr, "ALSA: snd_pcm_status_get_delay() %d\n", odelay);
+	if (odelay<0) /* buffer under-run on old buggy drivers? */
+	{
+		fprintf (stderr, "ALSA: snd_pcm_status_get_delay() negative values? %d\n", odelay);
 		odelay=0;
 	} else if (odelay==0)
 	{ /* ALSA sometimes in the distant past gives odelay==0 always */
@@ -275,6 +297,7 @@ static unsigned int devpALSAIdle(void)
 	}
 /* Move data from ringbuffer-head into processing/kernel STOP */
 
+error_out:
 	ringbuffer_get_tailandprocessing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
 
 	busy--;
