@@ -258,7 +258,8 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 		else
 			if ((loopstart+looplength)>length)
 				looplength=length-loopstart;
-		if (mi.finetune&0x08)
+
+		if (mi.finetune&0x08) /* sign extend. Total range is -8 to +7 in 1/8th semitones */
 			mi.finetune|=0xF0;
 
 		memcpy(ip->name, mi.name, 22);
@@ -271,7 +272,7 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 		sp->handle=0xFFFF;
 		sp->stdpan=-1;
 		sp->opt=0;
-		sp->normnote=-mi.finetune*32;
+		sp->normnote=-mi.finetune*32; /* 256 = 1 semitone, 256/8 = 32 (1/8th semitone) */
 		sp->normtrans=0;
 		sp->stdvol=(mi.volume>0x3F)?0xFF:(mi.volume<<2);
 		sp->volenv=0xFFFF;

@@ -638,6 +638,10 @@ static void xmpPlayTick(void)
 			procvol=patptr[nchan*currow+i][2];
 			proccmd=patptr[nchan*currow+i][3];
 			procdat=patptr[nchan*currow+i][4];
+			if (procnot)
+			{
+				ch->chDelayNote = procnot;
+			}
 
 			if (!patdelay)
 			{
@@ -954,8 +958,6 @@ static void xmpPlayTick(void)
 						patdelay=procdat+1;
 					break;
 				case xmpCmdDelayNote:
-					if (procnot)
-						ch->chDelayNote=procnot;
 					ch->fx=xfxDelay;
 					ch->notefx=xfxNXDelay;
 					ch->chDelayIns=procins;
