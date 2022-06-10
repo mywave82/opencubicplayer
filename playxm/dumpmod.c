@@ -1000,7 +1000,7 @@ int main(int argc, char *argv[])
 
 	if (help)
 	{
-		fprintf (stderr, "Usage:\n%s [--color=auto/never/on] [--savesamples -s] [--savepatterns -p] [--help] file.stm  (%d)\n", argv[0], help);
+		fprintf (stderr, "Usage:\n%s [--color=auto/never/on] [--savesamples -s] [--savepatterns -p] [--help] file.mod  (%d)\n", argv[0], help);
 		return 1;
 	}
 
