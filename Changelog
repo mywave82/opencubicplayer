@@ -1,3 +1,19 @@
+Version 0.2.99
+==============
+ * Specify branch for the adplug git submodule
+ * Minor error in the help text from the dumpmod utility
+ * playxm (XM playback engine): A delay FX command should use the last note
+   given in the channel, and not the last note that also had a delay.
+ * ALSA: On buffer underruns (most common happens during SDL2 recreating
+   windows and when debugging) the audio must be restarted.
+ * Going from wuerfel to text mode caused OCP to freeze.
+ * When running OCP in SDL/SDL2/X11 window and the user tries to close the
+   window, we no longer issue a single <esc> key, but recursivly insert <exit>
+   key until the program quits.
+ * FreeBSD and possible others need to poll Audio Drivers as 50+ FPS, so if
+   your screen FPS was set to 20, the audio would not be smooth. Added a second
+   timer for this use-case.
+
 Version 0.2.98
 ==============
 

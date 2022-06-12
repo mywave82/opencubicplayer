@@ -1,5 +1,5 @@
-AC_INIT([ocp],[0.2.98],[stian.skjelstad@gmail.com])
-AC_DEFINE(DLLVERSION, [0x00000262])
+AC_INIT([ocp],[0.2.99],[stian.skjelstad@gmail.com])
+AC_DEFINE(DLLVERSION, [0x00000263])
 
 AC_CANONICAL_HOST
 
