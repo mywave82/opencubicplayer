@@ -607,8 +607,8 @@ typedef enum {NextPlayNone, NextPlayBrowser, NextPlayPlaylist} NextPlay;
 static NextPlay isnextplay = NextPlayNone;
 /* These guys has with rendering todo and stuff like that */
 static unsigned short dirwinheight;
-static char quickfind[12];
-static unsigned char quickfindpos;
+static char quickfind[24*6+1];
+static char quickfindlen;
 static short editfilepos=0;
 static short editdirpos=0;
 static short editmode=0;
@@ -665,7 +665,8 @@ static char fsScanDir (int pos)
 
 	modlist_sort(currentdir);
 	currentdir->pos=(op>=currentdir->num)?(currentdir->num-1):op;
-	quickfindpos=0;
+	quickfind[0] = 0;
+	quickfindlen = 0;
 	scanposf=fsScanNames?0:~0;
 
 	adbMetaCommit ();
@@ -1828,8 +1829,6 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 	unsigned int vrelpos= ~0;
 	unsigned int prelpos= ~0;
 
-	uint16_t sbuf[CONSOLE_MAX_X];
-
 	if (currentdir->num>dirwinheight)
 		vrelpos=dirwinheight*currentdir->pos/currentdir->num;
 	if (playlist->num>dirwinheight)
@@ -1919,11 +1918,14 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 		free (npath); npath = 0;
 	}
 
-#warning UTF-8 in quickfind? (and last user of sbuf in this function)
-	fillstr(sbuf, 0, 0x17, 0, CONSOLE_MAX_X);
-	writestring(sbuf, 0, 0x17, " quickfind: [\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa]    press F1 for help, or ALT-C for basic setup ", 74);
-	writestring(sbuf, 13, 0x1F, quickfind, quickfindpos);
-	displaystrattr(plScrHeight-1, 0, sbuf, plScrWidth);
+	if (plScrWidth <= 90)
+	{
+		displaystr (plScrHeight-1, 0, 0x17, " quickfind: [            ]    press F1 for help, or ALT-C for basic setup", plScrWidth);
+		displaystr_utf8_overflowleft (plScrHeight-1, 13, 0x1f, quickfind, 12);
+	} else {
+		displaystr (plScrHeight-1, 0, 0x17, " quickfind: [                        ]    press F1 for help, or ALT-C for basic setup", plScrWidth);
+		displaystr_utf8_overflowleft (plScrHeight-1, 13, 0x1f, quickfind, 24);
+	}
 
 	for (i=0; i<dirwinheight; i++)
 	{
@@ -2994,7 +2996,8 @@ signed int fsFileSelect(void)
 
 	isnextplay=NextPlayNone;
 
-	quickfindpos=0;
+	quickfind[0] = 0;
+	quickfindlen = 0;
 
 	if (fsPlaylistOnly)
 		return 0;
@@ -3159,31 +3162,52 @@ superbreak:
 		{
 			c=egetch();
 
+			if (c == VIRT_KEY_RESIZE)
+			{
+				continue;
+			}
+
 			if (!editmode)
 			{
 				if (((c>=32)&&(c<=255)&&(c!=KEY_CTRL_BS))||(c==KEY_BACKSPACE))
 				{
 					if (c==KEY_BACKSPACE)
 					{
-						if (quickfindpos)
-							quickfindpos--;
-						if ((quickfindpos==8)&&(quickfind[8]=='.'))
-							while (quickfindpos&&(quickfind[quickfindpos-1]==' '))
-								quickfindpos--;
-					} else
-						if (quickfindpos<12)
+						if (quickfindlen)
 						{
-							if ((c=='.')&&(quickfindpos&&(*quickfind!='.')))
+							int len = strlen (quickfind);
+							int more;
+							do
 							{
-								while (quickfindpos<9)
-									quickfind[(int)quickfindpos++]=' ';
-								quickfind[8]='.';
-							} else
-								if (quickfindpos!=8)
-									quickfind[(int)quickfindpos++]=toupper(c);
+								more = ((quickfind[len-1] & 0xc0) == 0x80);
+								quickfind[len - 1] = 0;
+								len --;
+							} while (more && len);
+							quickfindlen--;
 						}
-					memcpy(quickfind+quickfindpos, &"        .   "[quickfindpos], 12-quickfindpos);
-					if (!quickfindpos)
+					} else {
+						static uint8_t input_buffer[8];
+						static int input_buffer_fill;
+						uint32_t codepoint;
+						int incr = 0;
+
+						input_buffer[input_buffer_fill++] = c;
+						input_buffer[input_buffer_fill] = 0x80; /* dummy follow... */
+						codepoint = utf8_decode ((char *)input_buffer, input_buffer_fill + 1, &incr);
+						if (incr > input_buffer_fill)
+						{ /* we need more data */
+							assert (input_buffer_fill < 6);
+							continue;
+						}
+						input_buffer_fill = 0;
+
+						if (quickfindlen < 24)
+						{
+							utf8_encode (quickfind + strlen (quickfind), codepoint);
+							quickfindlen++;
+						}
+					}
+					if (!quickfindlen)
 						continue;
 					if (!win)
 						currentdir->pos=modlist_fuzzyfind(currentdir, quickfind);
@@ -3193,7 +3217,8 @@ superbreak:
 				}
 			}
 
-			quickfindpos=0;
+			quickfind[0] = 0;
+			quickfindlen = 0;
 
 			switch (c)
 			{
