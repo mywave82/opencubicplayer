@@ -360,7 +360,11 @@ int modlist_fuzzyfind(struct modlist *modlist, const char *filename)
 		int index = modlist->sortindex[i];
 		struct modlistentry *m = &modlist->files[index];
 
-		dirdbGetName_internalstr (m->file ? m->file->dirdb_ref : m->dir->dirdb_ref, &temp);
+		temp = m->file ? m->file->filename_override(m->file) : 0;
+		if (!temp)
+		{
+			dirdbGetName_internalstr (m->file ? m->file->dirdb_ref : m->dir->dirdb_ref, &temp);
+		}
 		diff = fuzzycmp(temp, filename);
 		score = diff - temp;
 
