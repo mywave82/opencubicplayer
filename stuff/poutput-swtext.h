@@ -4,10 +4,12 @@
 /* These renders to plVidMem, so this virtual buffer need to be render-buffer for these helper functions to be used
  */
 
+#if 0
 /* codepage is optional, to translate...*/
 void swtext_displaystrattr_cpfont_8x8(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len, const uint8_t *codepage);
 
 void swtext_displaystr_cpfont_8x8(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len, const uint8_t *codepage);
+#endif
 
 void swtext_displayvoid(uint16_t y, uint16_t x, uint16_t len);
 

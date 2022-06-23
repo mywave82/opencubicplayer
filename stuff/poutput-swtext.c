@@ -396,6 +396,7 @@ static void swtext_displaystr_unifont_utf8_8x16(uint16_t y, uint16_t x, uint8_t 
 	}
 }
 
+#if 0
 static void swtext_displaycharattr_cpfont_8x8(uint16_t y, uint16_t x, const uint8_t ch, uint8_t attr)
 {
 	uint8_t *target;
@@ -474,6 +475,7 @@ void swtext_displaystr_cpfont_8x8(uint16_t y, uint16_t x, uint8_t attr, const ch
 		x++;
 	}
 }
+#endif
 
 void swtext_displayvoid(uint16_t y, uint16_t x, uint16_t len)
 {
