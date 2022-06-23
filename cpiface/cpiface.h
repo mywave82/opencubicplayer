@@ -225,6 +225,11 @@ void mcpDrawGStringsTracked (const char                    *filename8_3,
                              const struct moduleinfostruct *mdbdata);
 
 extern int mcpSetProcessKey(uint16_t key);
-extern void mcpSetFadePars(int i);
+
+
+/* For the sliding pause effect, range 64 = normal speed, 1 = almost complete stop.
+ * For complete stop with wavetable use mcpSet (-1, mcpMasterPause, 1) and for stream playback the stream has to send zero-data
+ */
+extern void mcpSetMasterPauseFadeParameters(int i);
 
 #endif

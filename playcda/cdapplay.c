@@ -102,12 +102,12 @@ static void dopausefade(void)
 			plPause=1;
 			cdPause();
 			plChanChanged=1;
-			mcpSetFadePars(64);
+			mcpSetMasterPauseFadeParameters (64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetFadePars(i);
+	mcpSetMasterPauseFadeParameters (i);
 }
 static char *gettimestr(unsigned long s, char *time)
 {

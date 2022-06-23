@@ -96,12 +96,12 @@ static void dopausefade(void)
 			pausetime=dos_clock();
 			timidityPause(plPause=1);
 			plChanChanged=1;
-			mcpSetFadePars(64);
+			mcpSetMasterPauseFadeParameters (64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetFadePars(i);
+	mcpSetMasterPauseFadeParameters (i);
 }
 
 static int timidityLooped(void)
