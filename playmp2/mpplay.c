@@ -525,6 +525,7 @@ static int stream_for_frame(void)
 			debug_printf ("[MPx] mad_header_decode() failed: %s\n", mad_stream_errorstr(&stream));
 			goto error;
 		}
+		debug_printf ("[MPx] header samplerate=%d bitrate=%ld\n", frame.header.samplerate, frame.header.bitrate);
 		debug_printf ("[MPx] about to call mad_frame_decode()\n");
 
 		if (mad_frame_decode(&frame, &stream) == -1)
@@ -590,7 +591,7 @@ error:
 				(frame.header.emphasis==MAD_EMPHASIS_NONE)?"":(frame.header.emphasis==MAD_EMPHASIS_50_15_US)?", 50/15us emphasis":(frame.header.emphasis==MAD_EMPHASIS_CCITT_J_17)?", CCITT J.17 emph":", unknown emphasis");
 		}
 		mad_synth_frame(&synth, &frame);
-		debug_printf ("[MPx] synth pcm.length=%d pcm.bitrate=%d pcm.channels=%d\n", synth.pcm.length, synth.pcm.samplerate, synth.pcm.channels);
+		debug_printf ("[MPx] synth pcm.length=%d pcm.samplerate=%d pcm.channels=%d\n", synth.pcm.length, synth.pcm.samplerate, synth.pcm.channels);
 		data_in_synth=synth.pcm.length;
 		mpeg_Bitrate=frame.header.bitrate;
 		mpegstereo=synth.pcm.channels==2;
@@ -1107,7 +1108,6 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 
 	mad_stream_init(&stream);
 	mad_frame_init(&frame);
-
 	mad_synth_init(&synth);
 	mad_stream_options(&stream, MAD_OPTION_IGNORECRC);
 
@@ -1122,7 +1122,7 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 		fprintf(stderr, "[MPx] stream_for_frame() failed\n");
 		goto error_out;
 	}
-	mpegrate=synth.pcm.samplerate;
+	mpegrate=frame.header.samplerate;
 
 	mpegRate=mpegrate;
 	format=PLR_STEREO_16BIT_SIGNED;
