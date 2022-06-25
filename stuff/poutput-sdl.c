@@ -1059,6 +1059,106 @@ static void RefreshScreenText(void)
 	swtext_cursor_eject();
 }
 
+static uint32_t utf16_try_decode (uint16_t *data_he, int *length)
+{
+	if (!*length) return 0;
+
+	/* normal single cell character */
+	if ((data_he[0] < 0xd800) ||
+            (data_he[0] > 0xdfff))
+	{
+		(*length) = 0;
+		return data_he[0];
+	}
+	if ((data_he[0] & 0xfc00) != 0xd800)
+	{
+		(*length) = 0;
+		return 0;
+	}
+	if ((*length) < 2)
+	{
+		return 0;
+	}
+	if ((data_he[1] & 0xfc00) != 0xdc00)
+	{
+		(*length) = 0;
+		return 0;
+	}
+	(*length) = 0;
+	return ((uint_fast32_t)(data_he[0] & 0x03ff) << 10) | (data_he[1] & 0x03ff);
+}
+
+/* duplicate from utf8.c: poutput.so is not available yet, and SDL 1.x is only for legacy use */
+static int utf8_encode (char *dst, uint32_t codepoint)
+{
+	if (codepoint == 0)
+	{
+		dst[0] = 0;
+		return 0;
+	}
+
+	if (codepoint <= 0x7f)
+	{
+		dst[0] = codepoint;
+		dst[1] = 0;
+		return 1;
+	}
+
+	if (codepoint <= 0x7ff)
+	{
+		dst[0] = 0xC0 | (codepoint >> 6);
+		dst[1] = 0x80 | (codepoint & 0x3f);
+		dst[2] = 0;
+		return 2;
+	}
+
+	if (codepoint <= 0xffff)
+	{
+		dst[0] = 0xe0 |  (codepoint >> 12);
+		dst[1] = 0x80 | ((codepoint >>  6) & 0x3f);
+		dst[2] = 0x80 |  (codepoint        & 0x3f);
+		dst[3] = 0;
+		return 3;
+	}
+
+	if (codepoint <= 0x1fffff)
+	{
+		dst[0] = 0xf0 |  (codepoint >> 18);
+		dst[1] = 0x80 | ((codepoint >> 12) & 0x3f);
+		dst[2] = 0x80 | ((codepoint >>  6) & 0x3f);
+		dst[3] = 0x80 |  (codepoint        & 0x3f);
+		dst[4] = 0;
+		return 4;
+	}
+
+	if (codepoint <= 0x3ffffff)
+	{ /* non-standard */
+		dst[0] = 0xf8 |  (codepoint >> 24);
+		dst[1] = 0x80 | ((codepoint >> 18) & 0x3f);
+		dst[2] = 0x80 | ((codepoint >> 12) & 0x3f);
+		dst[3] = 0x80 | ((codepoint >>  6) & 0x3f);
+		dst[4] = 0x80 |  (codepoint        & 0x3f);
+		dst[5] = 0;
+		return 5;
+	}
+
+	if (codepoint <= 0x7fffffff)
+	{ /* non-standard */
+		dst[0] = 0xfc |  (codepoint >> 30);
+		dst[1] = 0x80 | ((codepoint >> 24) & 0x3f);
+		dst[2] = 0x80 | ((codepoint >> 18) & 0x3f);
+		dst[3] = 0x80 | ((codepoint >> 12) & 0x3f);
+		dst[4] = 0x80 | ((codepoint >>  6) & 0x3f);
+		dst[5] = 0x80 |  (codepoint        & 0x3f);
+		dst[6] = 0;
+		return 6;
+	}
+
+	/* 7 bytes has never been used */
+	dst[0] = 0;
+	return 0;
+}
+
 static int ekbhit_sdldummy(void)
 {
 	SDL_Event event;
@@ -1140,6 +1240,32 @@ static int ekbhit_sdldummy(void)
 			case SDL_KEYDOWN:
 			{
 				int index;
+
+				if ( (event.key.keysym.mod & KMOD_CTRL) &&
+				     (event.key.keysym.mod & KMOD_ALT) &&
+				     (event.key.keysym.unicode))
+				{
+					int count = 0;
+					uint16_t data[2];
+					uint32_t code;
+					data[count] = event.key.keysym.unicode;
+					count++;
+					code = utf16_try_decode (data, &count);
+					if ((code == 0) && (count == 2))
+					{
+						count = 0;
+					}
+					if (code)
+					{
+						char dst[8];
+						utf8_encode (dst, code);
+						for (index =0; dst[index]; index++)
+						{
+							___push_key((uint8_t)dst[index]);
+						}
+					}
+					break;
+				}
 
 				if ( (event.key.keysym.mod &  KMOD_CTRL) &&
 				     (!(event.key.keysym.mod & (KMOD_SHIFT|KMOD_ALT))) )
@@ -1245,6 +1371,8 @@ int sdl_init(void)
 		SDL_Quit();
 		return 1;
 	}
+
+	SDL_EnableUNICODE (1);
 
 	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 
