@@ -53,7 +53,7 @@ static void displayshortins(int sel)
 	int y,x,i;
 	uint16_t buf[40];
 	int cols=plInstWidth/40; /* 2 */
-	int left=cols%40;
+	int left=plInstWidth%40;
 
 	displaystr(plInstFirstLine-1, 0, sel?0x09:0x01, "   instruments (short):", 23);
 	if (sel)
@@ -88,7 +88,7 @@ static void displayxshortins(int sel)
 	int y,x,i;
 	uint16_t buf[33];
 	int cols=plInstWidth/33; /* 4 */
-	int left=cols%33;
+	int left=plInstWidth%33;
 
 	displaystr(plInstFirstLine-1, 0, sel?0x09:0x01, "   instruments (short):", 23);
 	if (sel)
