@@ -28,11 +28,12 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <X11/keysym.h>
 #include <X11/X.h>
+#include <X11/XKBlib.h>
 #include <X11/Xlib.h>
 #include <X11/xpm.h>
 #include <X11/Xutil.h>
-#include <X11/keysym.h>
 #include <X11/extensions/xf86vmode.h>
 #include <X11/extensions/XShm.h>
 #include <sys/ipc.h>
@@ -75,6 +76,8 @@ static unsigned long Textmode_Window_Height = 0;
 static void *X11ScrTextGUIOverlayAddBGRA(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra);
 static void X11ScrTextGUIOverlayRemove(void *handle);
 
+static XIM im;
+static XIC ic;
 
 /* "stolen" from Mplayer START */
 static void vo_hidecursor(Display * disp, Window win)
@@ -692,6 +695,7 @@ static void x11_common_event_loop(void)
 		int n_chars = 0;
 		char buf[21];
 		KeySym ks;
+		Status status = 0;
 
 		uint16_t key;
 
@@ -708,8 +712,16 @@ static void x11_common_event_loop(void)
 			case FocusIn:
 				gettimeofday(&LastFocusIn, NULL);
 				JustFocusIn=1;
+				if (ic)
+				{
+					XSetICFocus (ic);
+				}
 				break;
 			case FocusOut:
+				if (ic)
+				{
+					XUnsetICFocus (ic);
+				}
 				break;
 			case ReparentNotify:
 				break;
@@ -835,8 +847,21 @@ static void x11_common_event_loop(void)
 				}
 				break;
 			case KeyPress:
-				n_chars = XLookupString(&event.xkey, buf, 20, &ks, NULL);
+				if (ic)
+				{
+					n_chars = Xutf8LookupString (ic, &event.xkey, buf, 20, &ks, &status);
+				} else {
+					n_chars = XLookupString(&event.xkey, buf, 20, &ks, NULL);
+				}
 				key=0;
+				if (n_chars > 1)
+				{
+					int i;
+					for (i=0; i < n_chars; i++)
+					{
+						___push_key((uint8_t)buf[i]);
+					}
+				}
 				if ((n_chars==1)/*&&(buf[0]>=32*/&&ks!=XK_Delete)
 				{
 					/* fprintf (stderr, "PRESS: %d %c, ShiftMask=%d, ControlMask=%d, Mod1Mask=%d\n", buf[0], buf[0], event.xkey.state & ShiftMask, event.xkey.state & ControlMask, event.xkey.state & Mod1Mask); */
@@ -880,10 +905,10 @@ static void x11_common_event_loop(void)
 					} else {
 						if (!(event.xkey.state&(ControlMask|Mod1Mask)))
 						{
-							___push_key(buf[0]);
+							___push_key((uint8_t)buf[0]);
 						}
 					}
-				} else if ((event.xkey.state&(ShiftMask|ControlMask|Mod1Mask))==(ShiftMask|ControlMask))
+				} else if ((n_chars==0) && ((event.xkey.state&(ShiftMask|ControlMask|Mod1Mask))==(ShiftMask|ControlMask)))
 				{
 					switch (ks)
 					{
@@ -901,7 +926,7 @@ static void x11_common_event_loop(void)
 						case XK_F12:       key=KEY_CTRL_SHIFT_F(12);  break;
 					}
 
-				} else if ((event.xkey.state&(ShiftMask|ControlMask|Mod1Mask))==ControlMask)
+				} else if ((n_chars==0) && ((event.xkey.state&(ShiftMask|ControlMask|Mod1Mask))==ControlMask))
 				{
 					switch (ks)
 					{
@@ -925,9 +950,9 @@ static void x11_common_event_loop(void)
 						case XK_Page_Down: key=KEY_CTRL_PGDN;   break;
 						case XK_Home:      key=KEY_CTRL_HOME;   break;
 					}
-				} else if ((event.xkey.state&(ShiftMask|ControlMask|Mod1Mask))==Mod1Mask)
+				} else if ((n_chars==0) && ((event.xkey.state&(ShiftMask|ControlMask|Mod1Mask))==Mod1Mask))
 				{
-				} else if ((event.xkey.state&(ShiftMask|ControlMask|Mod1Mask))==ShiftMask)
+				} else if ((n_chars==0) && ((event.xkey.state&(ShiftMask|ControlMask|Mod1Mask))==ShiftMask))
 				{
 					switch (ks)
 					{
@@ -948,7 +973,8 @@ static void x11_common_event_loop(void)
 						default:
 							___push_key(buf[0]);
 					}
-				} else switch (ks)
+				} else if (n_chars==0)
+				switch (ks)
 				{
 					case XK_Escape:    key=KEY_ESC;    break;
 					case XK_F1:        key=KEY_F(1);     break;
@@ -1043,6 +1069,15 @@ static void create_window(void)
 		fprintf(stderr, "[x11] Failed to create GC object\n");
 		exit(-1);
 	}
+
+	if (im)
+	{
+		ic = XCreateIC (im, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, window, XNFocusWindow, window, NULL);
+		if (!ic)
+		{
+			fprintf (stderr, "[x11] failed to create IC\n");
+		}
+	}
 }
 
 static void create_image(void)
@@ -1112,8 +1147,16 @@ static void destroy_window(void)
 	if (copyGC)
 		XFreeGC(mDisplay, copyGC);
 	copyGC=(GC)0;
+	if (ic)
+	{
+		XDestroyIC (ic);
+		ic = 0;
+	}
 	if (window)
+	{
 		XDestroyWindow(mDisplay, window);
+		window = 0;
+	}
 	if (icon)
 		XFreePixmap(mDisplay, icon);
 	if (icon_mask)
@@ -2040,6 +2083,56 @@ static void plDisplaySetupTextMode(void)
 	}
 }
 
+static void x11_keyboard_init (void)
+{
+	Bool xkb_repeat = 0;
+	char *prev_xmods  = XSetLocaleModifiers(NULL);
+	const char *new_xmods = "";
+	const char *env_xmods = getenv("XMODIFIERS");
+	int has_dbus_ime_support = 0;
+
+	XkbSetDetectableAutoRepeat(mDisplay, True, &xkb_repeat);
+
+	if (prev_xmods)
+	{
+		prev_xmods = strdup(prev_xmods);
+	}
+	if (env_xmods && strstr(env_xmods, "@im=ibus"))
+	{
+		has_dbus_ime_support = 1;
+	}
+	if (env_xmods && strstr(env_xmods, "@im=fcitx"))
+	{
+		has_dbus_ime_support = 1;
+	}
+	if (has_dbus_ime_support || !xkb_repeat)
+	{
+		new_xmods = "@im=none";
+	}
+	XSetLocaleModifiers(new_xmods);
+	im = XOpenIM(mDisplay, NULL, "Open Cubic Player", "Main Window");
+	if (!im)
+	{
+		fprintf (stderr, "[x11] failed to create IM\n");
+	}
+
+	XSetLocaleModifiers(prev_xmods);
+
+	if (prev_xmods)
+	{
+		free(prev_xmods);
+	}
+}
+
+static void x11_keyboard_done (void)
+{
+	if (im)
+	{
+		XCloseIM (im);
+		im = 0;
+	}
+}
+
 int x11_init(int use_explicit)
 {
 	if ( (!use_explicit) && (!cfGetProfileBool("x11", "autodetect", 1, 0)) )
@@ -2066,6 +2159,8 @@ int x11_init(int use_explicit)
 	}
 
 	plScrMode=255;
+
+	x11_keyboard_init();
 
 	xvidmode_init();
 
@@ -2129,6 +2224,7 @@ void x11_done(void)
 	destroy_image();
 	destroy_window();
 	xvidmode_done();
+	x11_keyboard_done();
 	x11_disconnect();
 
 	if (virtual_framebuffer)
