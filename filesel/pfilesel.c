@@ -1970,52 +1970,34 @@ void fsSetup(void)
 	plSetTextMode(fsScrType);
 	while (1)
 	{
-		const char *fsInfoModes[]= {"name and size","composer","comment","style and playtime","long filenames"};
-		uint16_t sbuf[CONSOLE_MAX_X];
+		const char *fsInfoModes[] =
+		{
+			"title, channels and size",
+			"composer and date",
+			"comment",
+			"style and playtime",
+			"long filenames"
+		};
 		const char *modename = plGetDisplayTextModeName();
 		int i;
 
 superbreak:
 		make_title("file selector setup", 0);
 
-		displaystr( 1,  0, 0x07, "1:  screen mode: ", 17);
-		displaystr( 1, 17, 0x0f, modename, plScrWidth - 17);
-		/*
-		displaystr( 1,  0, 0x07, "1:  screen mode (if driver supports it TODO): ", 45);
-		displaystr( 1, 45, 0x0F, (fsScrType&4)?"132x":" 80x", 4);
-		displaystr( 1, 49, 0x0F, ((fsScrType&3)==0)?"25":((fsScrType&3)==1)?"30":((fsScrType&3)==2)?"50":"60", plScrWidth - 49);
-		*/
-		displaystr( 2,  0, 0x07, "2:  scramble module list order: ", 32);
-		displaystr( 2, 32, 0x0F, fsListScramble?"on":"off", plScrWidth - 32);
-		displaystr( 3,  0, 0x07, "3:  remove modules from playlist when played: ", 46);
-		displaystr( 3, 46, 0x0F, fsListRemove?"on":"off", plScrWidth - 46);
-		displaystr( 4,  0, 0x07, "4:  loop modules: ", 18);
-		displaystr( 4, 18, 0x0F, fsLoopMods?"on":"off", plScrWidth - 18);
-		displaystr( 5,  0, 0x07, "5:  scan module informatin: ", 28);
-		displaystr( 5, 28, 0x0F, fsScanNames?"on":"off", plScrWidth - 28);
-		displaystr( 6,  0, 0x07, "6:  scan archive contents: ", 27);
-		displaystr( 6, 27, 0x0F, fsScanArcs?"on":"off", plScrWidth - 27);
-		displaystr( 7,  0, 0x07, "7:  scan module information in archives: ", 41);
-		displaystr( 7, 41, 0x0F, fsScanInArc?"on":"off", plScrWidth - 41);
-		displaystr( 8,  0, 0x07, "8:  save module information to disk: ", 37);
-		displaystr( 8, 37, 0x0F, fsWriteModInfo?"on":"off", plScrWidth - 37);
-		displaystr( 9,  0, 0x07, "9:  edit window: ", 17);
-		displaystr( 9, 17, 0x0F, fsEditWin?"on":"off", plScrWidth - 17);
-		displaystr(10,  0, 0x07, "A:  module type colors: ", 24);
-		displaystr(10, 24, 0x0F, fsColorTypes?"on":"off", plScrWidth - 24);
-		displaystr(11,  0, 0x07, "B:  module information display mode: ", 37);
-		displaystr(11, 37, 0x0F, fsInfoModes[fsInfoMode], plScrWidth - 37);
-		displaystr(12,  0, 0x07, "C:  put archives: ", 18);
-		displaystr(12, 18, 0x0F, fsPutArcs?"on":"off", plScrWidth - 18);
-		displaystr(13,  0, 0x07, "D:  show all files: ", 20);
-		displaystr(13, 20, 0x0F, fsShowAllFiles?"on":"off", plScrWidth - 20);
-
-		fillstr(sbuf, 0, 0x00, 0, plScrWidth);
-		writestring(sbuf, 0, 0x07, "+-: Target framerate: ", 22);
-		writenum(sbuf, 22, 0x0f, fsFPS, 10, 3, 1);
-		writestring(sbuf, 25, 0x07, ", actual framerate: ", 20);
-		writenum(sbuf, 45, 0x0f, LastCurrent=fsFPSCurrent, 10, 3, 1);
-		displaystrattr(14, 0, sbuf, plScrWidth);
+		display_nprintf ( 1, 0, 0x07, plScrWidth, "1:  screen mode: %.15o%s",                              modename);
+		display_nprintf ( 2, 0, 0x07, plScrWidth, "2:  scramble module list order: %.15o%s",               fsListScramble?"on":"off");
+		display_nprintf ( 3, 0, 0x07, plScrWidth, "3:  remove modules from playlist when played: %.15o%s", fsListRemove?"on":"off");
+		display_nprintf ( 4, 0, 0x07, plScrWidth, "4:  loop modules: %.15o%s",                             fsLoopMods?"on":"off");
+		display_nprintf ( 5, 0, 0x07, plScrWidth, "5:  scan module informatin: %.15o%s",                   fsScanNames?"on":"off");
+		display_nprintf ( 6, 0, 0x07, plScrWidth, "6:  scan archive contents: %.15o%s",                    fsScanArcs?"on":"off");
+		display_nprintf ( 7, 0, 0x07, plScrWidth, "7:  scan module information in archives: %.15o%s",      fsScanInArc?"on":"off");
+		display_nprintf ( 8, 0, 0x07, plScrWidth, "8:  save module information to disk: %.15o%s",          fsWriteModInfo?"on":"off");
+		display_nprintf ( 9, 0, 0x07, plScrWidth, "9:  edit window: %.15o%s",                              fsEditWin?"on":"off");
+		display_nprintf (10, 0, 0x07, plScrWidth, "A:  module type colors: %.15o%s",                       fsColorTypes?"on":"off");
+		display_nprintf (11, 0, 0x07, plScrWidth, "B:  module information display mode: %.15o%s",          fsInfoModes[fsInfoMode]);
+		display_nprintf (12, 0, 0x07, plScrWidth, "C:  put archives: %.15o%s",                             fsPutArcs?"on":"off");
+		display_nprintf (13, 0, 0x07, plScrWidth, "D:  show all files: %.15o%s",                           fsShowAllFiles?"on":"off");
+		display_nprintf (14, 0, 0x07, plScrWidth, "+-: target framerate:%.15o%-4d%.7o, actual framerate: %.15o%d", fsFPS, LastCurrent=fsFPSCurrent);
 
 		displayvoid (15, 0, plScrWidth);
 
