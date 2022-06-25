@@ -4,9 +4,10 @@
 extern "C"
 {
 	struct ocpfilehandle_t;
+	struct cpifaceSessionAPI_t;
 }
 extern void oplClosePlayer(void);
-extern int oplOpenPlayer (const char *filename /* needed for detection */, uint8_t *content /* data is stolen */, const size_t len, struct ocpfilehandle_t *file);
+extern int oplOpenPlayer (const char *filename /* needed for detection */, uint8_t *content /* data is stolen */, const size_t len, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI);
 extern void oplSetLoop(int);
 extern int oplIsLooped(void);
 extern void oplPause(uint8_t p);

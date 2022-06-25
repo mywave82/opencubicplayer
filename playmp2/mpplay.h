@@ -16,8 +16,9 @@ struct mpeginfo
 struct ID3_t;
 struct ocpfilehandle_t;
 
+struct cpifaceSessionAPI_t;
 extern int __attribute__ ((visibility ("internal"))) mpeg_Bitrate; /* bitrate of the last decoded frame */
-extern int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandle_t *);
+extern int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpiSessionAPI);
 extern void __attribute__ ((visibility ("internal"))) mpegClosePlayer(void);
 extern void __attribute__ ((visibility ("internal"))) mpegIdle(void);
 extern void __attribute__ ((visibility ("internal"))) mpegSetLoop(uint8_t s);

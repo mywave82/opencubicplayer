@@ -13,7 +13,8 @@ struct waveinfo
 };
 
 struct ocpfilehandle_t;
-extern unsigned char __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehandle_t *fp);
+struct cpifaceSessionAPI_t;
+extern unsigned char __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehandle_t *fp, struct cpifaceSessionAPI_t *cpiSessionAPI);
 extern void __attribute__ ((visibility ("internal"))) wpClosePlayer(void);
 extern void __attribute__ ((visibility ("internal"))) wpIdle(void);
 extern void __attribute__ ((visibility ("internal"))) wpSetLoop(unsigned char s);

@@ -1492,7 +1492,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadSamples(struct xmodule *m)
 	return mcpLoadSamples(m->sampleinfos, m->nsampi);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI)
 {
 	int i;
 
@@ -1544,7 +1544,7 @@ int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, s
 	realtempo=m->inibpm;
 	realspeed=m->initempo;
 	firstspeed=256*2*curbpm/5;
-	if (!mcpOpenPlayer(nchan, xmpPlayTick, file))
+	if (!mcpOpenPlayer(nchan, xmpPlayTick, file, cpiSessionAPI))
 		return 0;
 
 	mcpNormalize (mcpNormalizeDefaultPlayW);

@@ -490,7 +490,7 @@ static void cdaCloseFile(void)
 	cdClose();
 }
 
-static int cdaOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int cdaOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
 {
 	const char *name = 0;
 	int32_t start = -1;
@@ -549,10 +549,8 @@ static int cdaOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	plIsEnd=cdaLooped;
 	plProcessKey=cdaProcessKey;
 	plDrawGStrings=cdaDrawGStrings;
-	plGetMasterSample=plrGetMasterSample;
-	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-	if (cdOpen(start, stop - start, file))
+	if (cdOpen(start, stop - start, file, cpiSessionAPI))
 		return -1;
 
 	pausefadedirect=0;

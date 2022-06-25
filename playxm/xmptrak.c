@@ -58,7 +58,8 @@ static int xmgetpatlen(int n)
 
 static void xmseektrack(int n, int c)
 {
-	xmcurpat=plPatterns[plOrders[n]]-plNLChan;
+	/* mod.nchan == cpiSessionAPI->LogicalChannelCount */
+	xmcurpat=plPatterns[plOrders[n]] - mod.nchan;
 	xmcurchan=c;
 	xmcurrow=-1;
 	xmcurpatlen=plPatLens[plOrders[n]];
@@ -67,7 +68,8 @@ static void xmseektrack(int n, int c)
 static int xmstartrow(void)
 {
 	xmcurrow++;
-	xmcurpat+=plNLChan;
+	/* mod.nchan == cpiSessionAPI->LogicalChannelCount */
+	xmcurpat += mod.nchan;
 	if (xmcurrow>=xmcurpatlen)
 		return -1;
 	return xmcurrow;
@@ -378,7 +380,8 @@ static void xmgetgcmd(unsigned short *bp, int n)
 {
 	int p=0;
 	int i;
-	for (i=0; i<plNLChan; i++)
+	/* mod.nchan == cpiSessionAPI->LogicalChannelCount */
+	for (i=0; i<mod.nchan; i++)
 	{
 		int data;
 		if (p==n)

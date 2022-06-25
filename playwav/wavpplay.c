@@ -219,7 +219,7 @@ static void wavCloseFile()
 	wpClosePlayer();
 }
 
-static int wavOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *wavf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int wavOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *wavf, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	struct waveinfo inf;
@@ -236,10 +236,8 @@ static int wavOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *wa
 	plIsEnd=wavLooped;
 	plProcessKey=wavProcessKey;
 	plDrawGStrings=wavDrawGStrings;
-	plGetMasterSample=plrGetMasterSample;
-	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-	if (!wpOpenPlayer(wavf))
+	if (!wpOpenPlayer(wavf, cpiSessionAPI))
 	{
 #ifdef INITCLOSE_DEBUG
 		fprintf(stderr, "wpOpenPlayer FAILED\n");

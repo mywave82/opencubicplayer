@@ -190,7 +190,7 @@ static int timidityProcessKey(uint16_t key)
 
 }
 
-static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	int err;
@@ -207,11 +207,9 @@ static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_
 	plIsEnd=timidityLooped;
 	plProcessKey=timidityProcessKey;
 	plDrawGStrings=timidityDrawGStrings;
-	plGetMasterSample=plrGetMasterSample;
-	plGetRealMasterVolume=plrGetRealMasterVolume;
 	plUseDots(timidityGetDots);
 
-	plNLChan=16;
+	cpiSessionAPI->LogicalChannelCount = 16;
 	timidityChanSetup(/*&mid*/);
 
 	{
@@ -243,7 +241,7 @@ static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_
 			bufferfill += res;
 		}
 
-		err = timidityOpenPlayer(path, buffer, bufferfill, file); /* buffer will be owned by the player */
+		err = timidityOpenPlayer(path, buffer, bufferfill, file, cpiSessionAPI); /* buffer will be owned by the player */
 		if (err)
 		{
 			free (buffer);

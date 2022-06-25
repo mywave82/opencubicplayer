@@ -76,7 +76,7 @@ static void drawpeakpower(int y, int x)
 	                                                " -- "
 	                                                "\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa"
 							"] ", 40);
-	plGetRealMasterVolume(&l, &r);
+	cpifaceSessionAPI.GetRealMasterVolume(&l, &r);
 	logvolbar(&l, &r);
 	l=(l+2)>>2;
 	r=(r+2)>>2;
@@ -104,7 +104,7 @@ static void drawbigpeakpower(int y, int x)
 			" -=\xf0\xf0=- "
 			"\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa"
 			"]   ", 80);
-	plGetRealMasterVolume(&l, &r);
+	cpifaceSessionAPI.GetRealMasterVolume(&l, &r);
 	logvolbar(&l, &r);
 	l=(l+1)>>1;
 	r=(r+1)>>1;
@@ -199,7 +199,7 @@ static int MVolIProcessKey(unsigned short key)
 			cpiTextSetMode("mvol");
 			return 1;
 		case 'x': case 'X':
-			plMVolType=plNLChan?2:1;
+			plMVolType=cpifaceSessionAPI.LogicalChannelCount ? 2 : 1;
 			break;
 		case KEY_ALT_X:
 			plMVolType=1;
@@ -228,7 +228,7 @@ static int MVolAProcessKey(unsigned short key)
 
 static int MVolCan(void)
 {
-	return !!plGetRealMasterVolume;
+	return !!cpifaceSessionAPI.GetRealMasterVolume;
 }
 
 static int MVolEvent(int ev)

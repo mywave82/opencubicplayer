@@ -34,7 +34,8 @@ int __attribute__ ((visibility ("internal"))) timidityGetDots(struct notedotsdat
 {
 	int i,j;
 	int pos=0;
-	for (i=0; i<plNLChan; i++)
+	/* cpiSessionAPI->LogicalChannelCount is fixed at 16 */
+	for (i=0; i<16; i++)
 	{
 		struct mchaninfo ci;
 

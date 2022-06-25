@@ -546,7 +546,7 @@ void __attribute__ ((visibility ("internal"))) wpSetPos(uint32_t pos)
 	ringbuffer_reset(wavebufpos);
 }
 
-uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehandle_t *wavf)
+uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehandle_t *wavf, struct cpifaceSessionAPI_t *cpiSessionAPI)
 {
 	enum plrRequestFormat format;
 	uint32_t temp;
@@ -740,7 +740,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	waveRate = waverate;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&waveRate, &format, wavf))
+	if (!plrAPI->Play (&waveRate, &format, wavf, cpiSessionAPI))
 	{
 		fprintf(stderr, "playwav: plrOpenPlayer() failed\n");
 		goto error_out_wavebuf;

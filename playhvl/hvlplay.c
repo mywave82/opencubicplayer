@@ -616,7 +616,7 @@ void __attribute__ ((visibility ("internal"))) hvlGetStats (int *row, int *rows,
 	*speedmult = last_ht_SpeedMultiplier;
 }
 
-struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file)
+struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI)
 {
 	enum plrRequestFormat format;
 
@@ -627,7 +627,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 
 	hvlRate=0;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&hvlRate, &format, file))
+	if (!plrAPI->Play (&hvlRate, &format, file, cpiSessionAPI))
 	{
 		return 0;
 	}

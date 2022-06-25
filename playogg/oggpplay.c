@@ -219,7 +219,7 @@ static void oggCloseFile(void)
 	OggPicDone ();
 }
 
-static int oggOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *oggf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int oggOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *oggf, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	struct ogginfo inf;
@@ -236,10 +236,8 @@ static int oggOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *o
 	plIsEnd=oggIsLooped;
 	plProcessKey=oggProcessKey;
 	plDrawGStrings=oggDrawGStrings;
-	plGetMasterSample=plrGetMasterSample;
-	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-	if (!oggOpenPlayer(oggf))
+	if (!oggOpenPlayer(oggf, cpiSessionAPI))
 		return -1;
 
 	starttime=dos_clock();

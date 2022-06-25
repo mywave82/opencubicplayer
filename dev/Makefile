@@ -141,6 +141,7 @@ mix.o: mix.c mix.h \
 	../config.h \
 	../types.h \
 	mcp.h \
+	../cpiface/cpiface.h \
 	../stuff/imsrtns.h \
 	../stuff/pagesize.inc.c \
 	mixasm.h

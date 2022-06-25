@@ -43,7 +43,8 @@ extern struct ogg_picture_t __attribute__ ((visibility ("internal")))  *ogg_pict
 extern int                  __attribute__ ((visibility ("internal")))   ogg_pictures_count;
 
 struct ocpfilehandle_t;
-extern int  __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle_t *);
+struct cpifaceSessionAPI_t;
+extern int  __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpiSessionAPI);
 extern void __attribute__ ((visibility ("internal"))) oggClosePlayer(void);
 extern void __attribute__ ((visibility ("internal"))) oggIdle(void);
 extern void __attribute__ ((visibility ("internal"))) oggSetLoop(uint8_t s);

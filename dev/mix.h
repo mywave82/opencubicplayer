@@ -27,7 +27,9 @@ struct mixchannel
 	} vol;
 };
 
-extern int mixInit(void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t rate), int resamp, unsigned int chan, int amp);
+struct cpifaceSessionAPI_t; /* cpiface.h */
+
+extern int mixInit(void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t rate), int resamp, unsigned int chan, int amp, struct cpifaceSessionAPI_t *cpiSessionAPI);
 extern void mixClose(void);
 extern void mixSetAmplify(int amp);
 extern void mixGetRealVolume(int ch, int *l, int *r);

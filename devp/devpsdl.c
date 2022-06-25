@@ -33,6 +33,7 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
+#include "cpiface/cpiface.h"
 #include "dev/imsdev.h"
 #include "dev/player.h"
 #include "dev/ringbuffer.h"

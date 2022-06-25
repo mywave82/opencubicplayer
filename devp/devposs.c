@@ -44,6 +44,7 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
+#include "cpiface/cpiface.h"
 #include "cpiface/vol.h"
 #include "dev/devigen.h"
 #include "dev/imsdev.h"
@@ -311,7 +312,7 @@ static void devpOSSPause (int pause)
 	devpOSSInPause = pause;
 }
 
-static int devpOSSPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file)
+static int devpOSSPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI)
 {
 	int plrbufsize, buflength;
 	struct audio_buf_info info;
@@ -386,7 +387,7 @@ static int devpOSSPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 	stereo=(tmp==2);
 
 	tmp = *rate;
-	if (!tmp)
+	if (tmp <= 0)
 	{
 		tmp = 44100;
 	}
@@ -451,6 +452,9 @@ static int devpOSSPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 		return 0;
 	}
 
+	cpiSessionAPI->GetMasterSample = plrGetMasterSample;
+	cpiSessionAPI->GetRealMasterVolume = plrGetRealMasterVolume;
+
 	return 1;
 }
 
@@ -460,6 +464,7 @@ static void devpOSSStop(void)
 	{
 		return;
 	}
+
 	free (devpOSSBuffer);
 	devpOSSBuffer = 0;
 	free (devpOSSShadowBuffer);

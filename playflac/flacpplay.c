@@ -209,7 +209,7 @@ static void flacCloseFile(void)
 	FlacPicDone ();
 }
 
-static int flacOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *flacf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int flacOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *flacf, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	struct flacinfo inf;
@@ -226,10 +226,8 @@ static int flacOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *
 	plIsEnd=flacLooped;
 	plProcessKey=flacProcessKey;
 	plDrawGStrings=flacDrawGStrings;
-	plGetMasterSample=plrGetMasterSample;
-	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-	if (!flacOpenPlayer(flacf))
+	if (!flacOpenPlayer(flacf, cpiSessionAPI))
 		return -1;
 
 	starttime=dos_clock();

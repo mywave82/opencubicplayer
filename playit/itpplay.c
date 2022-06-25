@@ -213,7 +213,8 @@ static void itpDrawGStrings (void)
 
 	getglobinfo(&itplayer, &tmp, &bpm, &gvol, &gs);
 
-	for (i=0; i<plNPChan; i++)
+	/* mcpNChan == cpifaceSessionAPI.PhysicalChannelCount */
+	for (i=0; i<mcpNChan; i++)
 	{
 		if (mcpGet(i, mcpCStatus))
 		{
@@ -236,7 +237,7 @@ static void itpDrawGStrings (void)
 		gvol,
 		(gs==ifxGVSUp)?1:(gs==ifxGVSDown)?-1:0,
 		nch,
-		plNPChan,
+		mcpNChan,
 		mcpset.amp,
 		(set.filter==1)?"AOI":(set.filter==2)?"FOI":"off",
 		plPause,
@@ -256,17 +257,19 @@ static void itpCloseFile(void)
 static void itpMarkInsSamp(uint8_t *ins, uint8_t *smp)
 {
 	int i;
-	for (i=0; i<plNLChan; i++)
+
+	/* mod.nchan == cpiSessionAPI->LogicalChannelCount */
+	for (i=0; i<mod.nchan; i++)
 	{
 		int j;
 		if (plMuteCh[i])
 			continue;
-		for (j=0; j<plNLChan; j++)
+		for (j=0; j<mod.nchan; j++)
 		{
 			int lc, in, sm;
 			if (!chanactive(&itplayer, j, &lc))
 				continue;
-			if (lc!=i) /* unrolled if() since left<->right order varies - stian */
+			if (lc!=i)
 				continue;
 			in=getchanins(&itplayer, j);
 			sm=getchansamp(&itplayer, j);
@@ -531,7 +534,8 @@ static int itpGetDots(struct notedotsdata *d, int max)
 {
 	int i,j;
 	int pos=0;
-	for (i=0; i<plNLChan; i++)
+	/* mod.nchan == cpiSessionAPI->LogicalChannelCount */
+	for (i=0; i<mod.nchan; i++)
 	{
 		if (pos>=max)
 			break;
@@ -563,14 +567,11 @@ static int itpGetLChanSample(unsigned int ch, int16_t *buf, unsigned int len, ui
 	return getchansample(&itplayer, ch, buf, len, rate, opt);
 }
 
-static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	int retval;
 	int nch;
-
-	if (!mcpOpenPlayer)
-		return errGen;
 
 	if (!file)
 		return errFileOpen;
@@ -595,7 +596,7 @@ static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	it_optimizepatlens(&mod);
 
 	nch=cfGetProfileInt2(cfSoundSec, "sound", "itchan", 64, 10);
-	if (!play(&itplayer, &mod, nch, file))
+	if (!play(&itplayer, &mod, nch, file, cpiSessionAPI))
 		retval=errPlay;
 
 	if (retval)
@@ -606,23 +607,21 @@ static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 
 	insts=mod.instruments;
 	samps=mod.samples;
-	plNLChan=mod.nchan;
 	plIsEnd=itpLooped;
 	plIdle=itpIdle;
 	plProcessKey=itpProcessKey;
 	plDrawGStrings=itpDrawGStrings;
 	plSetMute=itpMute;
 	plGetLChanSample=itpGetLChanSample;
+	cpiSessionAPI->LogicalChannelCount = mod.nchan;
+	cpiSessionAPI->PhysicalChannelCount = mcpNChan;
 	plUseDots(itpGetDots);
 	plUseChannels(drawchannel);
 	itpInstSetup(mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, /*mod.nsampi,*/ 0, itpMarkInsSamp);
 	itTrkSetup(&mod);
 	if (mod.message)
 		plUseMessage(mod.message);
-	plNPChan=mcpNChan;
 
-	plGetRealMasterVolume=mcpGetRealMasterVolume;
-	plGetMasterSample=mcpGetMasterSample;
 	plGetPChanSample=mcpGetChanSample;
 
 	starttime=dos_clock();

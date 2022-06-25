@@ -419,7 +419,7 @@ static void oplCloseFile(void)
 	oplClosePlayer();
 }
 
-static int oplOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int oplOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	size_t buffersize = 16*1024;
@@ -456,10 +456,8 @@ static int oplOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	plIsEnd=oplLooped;
 	plProcessKey=oplProcessKey;
 	plDrawGStrings=oplDrawGStrings;
-	plGetMasterSample=plrGetMasterSample;
-	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-	if (!oplOpenPlayer(filename, buffer, bufferfill, file))
+	if (!oplOpenPlayer(filename, buffer, bufferfill, file, cpiSessionAPI))
 	{
 		return -1;
 	}
@@ -469,7 +467,8 @@ static int oplOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	plPause=0;
 	pausefadedirect=0;
 
-	plNLChan=plNPChan=18;
+	cpiSessionAPI->LogicalChannelCount = 18;
+	cpiSessionAPI->PhysicalChannelCount = 18;
 	plUseChannels(drawchannel);
 	plSetMute=oplMute;
 

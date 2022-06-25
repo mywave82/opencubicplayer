@@ -194,7 +194,7 @@ static int ayProcessKey(uint16_t key)
 
 }
 
-static int ayOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int ayOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 
@@ -211,13 +211,11 @@ static int ayOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fil
 	plProcessKey=ayProcessKey;
 	plDrawGStrings=ayDrawGStrings;
 	plSetMute=aySetMute;
-	plGetMasterSample=plrGetMasterSample;
-	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-	plNLChan=6;
+	cpiSessionAPI->LogicalChannelCount = 6;
 	ayChanSetup();
 
-	if (!ayOpenPlayer(file))
+	if (!ayOpenPlayer(file, cpiSessionAPI))
 	{
 #ifdef INITCLOSE_DEBUG
 		fprintf(stderr, "ayOpenPlayer FAILED\n");

@@ -949,7 +949,7 @@ static void flacFreeComments (void)
 	flac_pictures_count = 0;
 }
 
-int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI)
 {
 	enum plrRequestFormat format;
 	int temp;
@@ -1048,7 +1048,7 @@ w
 
 	flacRate=flacrate;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&flacRate, &format, file))
+	if (!plrAPI->Play (&flacRate, &format, file, cpiSessionAPI))
 	{
 		fprintf(stderr, "playflac: plrOpenPlayer() failed\n");
 		goto error_out_decoder;

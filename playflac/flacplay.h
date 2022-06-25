@@ -44,7 +44,8 @@ extern struct flac_picture_t __attribute__ ((visibility ("internal")))  *flac_pi
 extern int                   __attribute__ ((visibility ("internal")))   flac_pictures_count;
 extern void __attribute__ ((visibility ("internal"))) flacMetaDataUnlock(void);
 
-extern int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandle_t *);
+struct cpifaceSessionAPI_t;
+extern int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpiSessionAPI);
 extern void __attribute__ ((visibility ("internal"))) flacClosePlayer(void);
 extern void __attribute__ ((visibility ("internal"))) flacIdle(void);
 extern void __attribute__ ((visibility ("internal"))) flacSetLoop(uint8_t s);

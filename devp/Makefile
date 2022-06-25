@@ -94,6 +94,7 @@ devposs.o: devposs.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../cpiface/cpiface.h \
 	../cpiface/vol.h \
 	../dev/imsdev.h \
 	../dev/devigen.h \
@@ -108,6 +109,7 @@ devpnone.o: devpnone.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../cpiface/cpiface.h \
 	../dev/imsdev.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \
@@ -119,6 +121,7 @@ devpdisk.o: devpdisk.c \
 	../types.h \
 	../boot/plinkman.h \
 	../boot/psetting.h \
+	../cpiface/cpiface.h \
 	../dev/devigen.h \
 	../dev/imsdev.h \
 	../dev/player.h \
@@ -134,6 +137,7 @@ devpalsa.o: devpalsa.c \
 	../types.h \
 	../boot/plinkman.h \
 	../boot/psetting.h \
+	../cpiface/cpiface.h \
 	../cpiface/vol.h \
 	../dev/imsdev.h \
 	../dev/player.h \
@@ -157,6 +161,7 @@ devpcoreaudio.o: devpcoreaudio.c \
 	../types.h \
 	../boot/plinkman.h \
 	../boot/psetting.h \
+	../cpiface/cpiface.h \
 	../dev/imsdev.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \
@@ -169,6 +174,7 @@ devpsdl.o: devpsdl.c \
 	devpsdl-common.c \
 	../boot/plinkman.h \
 	../boot/psetting.h \
+	../cpiface/cpiface.h \
 	../dev/imsdev.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \
@@ -181,6 +187,7 @@ devpsdl2.o: devpsdl2.c \
 	devpsdl-common.c \
 	../boot/plinkman.h \
 	../boot/psetting.h \
+	../cpiface/cpiface.h \
 	../dev/imsdev.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \

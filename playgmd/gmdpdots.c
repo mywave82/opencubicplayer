@@ -30,13 +30,12 @@
 #include "gmdplay.h"
 #include "gmdpdots.h"
 
-/*extern unsigned short plNLChan;*/
-
 int __attribute__ ((visibility ("internal"))) gmdGetDots(struct notedotsdata *d, int max)
 {
 	int pos=0;
 	int i;
-	for (i=0; i<plNLChan; i++)
+	/* mod.channum == cpiSessionAPI->LogicalChannelCount */
+	for (i=0; i<mod.channum; i++)
 	{
 		struct chaninfo ci;
 		int vl,vr;

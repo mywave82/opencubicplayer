@@ -196,7 +196,7 @@ static void plPrepareStripeScr(void)
 
 	if ((plAnalChan==2)&&!plGetLChanSample)
 		plAnalChan=0;
-	if (((plAnalChan==0)||(plAnalChan==1))&&!plGetMasterSample)
+	if (((plAnalChan==0)||(plAnalChan==1)) && (!cpifaceSessionAPI.GetMasterSample))
 		plAnalChan=2;
 	if ((plAnalChan==2)&&!plGetLChanSample)
 		plAnalChan=0;
@@ -350,7 +350,7 @@ static void plDrawStripes(void)
 		memset(linebuf, 128, 1088);
 		if (!plAnalChan)
 		{
-			plGetMasterSample(plSampBuf, 1024>>plStripeSpeed, plAnalRate, mcpGetSampleStereo);
+			cpifaceSessionAPI.GetMasterSample(plSampBuf, 1024>>plStripeSpeed, plAnalRate, mcpGetSampleStereo);
 
 			if (plStripeSpeed)
 			{
@@ -389,7 +389,7 @@ static void plDrawStripes(void)
 			}
 		} else {
 			if (plAnalChan!=2)
-				plGetMasterSample(plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
+				cpifaceSessionAPI.GetMasterSample(plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
 			else
 				plGetLChanSample(plSelCh, plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
 			if (plStripeSpeed)
@@ -444,7 +444,7 @@ static void plDrawStripes(void)
 		memset(linebuf, 128, 272);
 		if (!plAnalChan)
 		{
-			plGetMasterSample(plSampBuf, 256>>plStripeSpeed, plAnalRate, mcpGetSampleStereo);
+			cpifaceSessionAPI.GetMasterSample(plSampBuf, 256>>plStripeSpeed, plAnalRate, mcpGetSampleStereo);
 			if (plStripeSpeed)
 			{
 				fftanalyseall(ana, plSampBuf, 2, 7);
@@ -481,7 +481,7 @@ static void plDrawStripes(void)
 			}
 		} else {
 			if (plAnalChan!=2)
-				plGetMasterSample(plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
+				cpifaceSessionAPI.GetMasterSample(plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
 			else
 				plGetLChanSample(plSelCh, plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
 			if (plStripeSpeed)
@@ -630,7 +630,7 @@ static void strDraw(void)
 
 static int strCan(void)
 {
-	if (!plGetLChanSample&&!plGetMasterSample)
+	if ((!plGetLChanSample) && (!cpifaceSessionAPI.GetMasterSample))
 		return 0;
 	return 1;
 }

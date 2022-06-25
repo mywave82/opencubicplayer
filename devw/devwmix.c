@@ -504,7 +504,7 @@ void sbDumpRetAddr(void *ptr)
 }
 #endif
 
-static void SET(int ch, int opt, int val)
+static void devwMixSET(int ch, int opt, int val)
 {
 	/* Refered by OpenPlayer
 	 */
@@ -737,7 +737,7 @@ static void SET(int ch, int opt, int val)
 	}
 }
 
-static int GET(int ch, int opt)
+static int devwMixGET(int ch, int opt)
 {
 	/* Refered by OpenPlayer
 	 */
@@ -802,7 +802,7 @@ static void GetMixChannel(unsigned int ch, struct mixchannel *chn, uint32_t rate
 		chn->status|=MIX_INTERPOLATE;
 }
 
-static int LoadSamples(struct sampleinfo *sil, int n)
+static int devwMixLoadSamples(struct sampleinfo *sil, int n)
 {
 #if 0
 	int i;
@@ -831,7 +831,7 @@ static int LoadSamples(struct sampleinfo *sil, int n)
 	return 1;
 }
 
-static int OpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_file)
+static int devwMixOpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI)
 {
 	uint32_t currentrate;
 	struct mixqpostprocregstruct *mode;
@@ -900,11 +900,17 @@ static int OpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_f
 		goto error_out;
 	}
 
-	mcpGetMasterSample=plrGetMasterSample;
-	mcpGetRealMasterVolume=plrGetRealMasterVolume;
-	if (!mixInit(GetMixChannel, resample, chan, amplify))
+	currentrate=mcpMixProcRate/chan;
+	samprate=(currentrate>mcpMixMaxRate)?mcpMixMaxRate:currentrate;
+	format=PLR_STEREO_16BIT_SIGNED;
+	if (!plrAPI->Play (&samprate, &format, source_file, cpiSessionAPI))
 	{
 		goto error_out;
+	}
+
+	if (!mixInit(GetMixChannel, resample, chan, amplify, cpiSessionAPI))
+	{
+		goto error_out_plrAPI_Play;
 	}
 
 	calcvols();
@@ -920,13 +926,6 @@ static int OpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_f
 		calcvoltabsq();
 	}
 
-	currentrate=mcpMixProcRate/chan;
-	samprate=(currentrate>mcpMixMaxRate)?mcpMixMaxRate:currentrate;
-	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&samprate, &format, source_file))
-	{
-		goto error_out;
-	}
 	_pause=0;
 	orgspeed=12800;
 
@@ -944,7 +943,7 @@ static int OpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_f
 	{
 		mcpNChan=0;
 		mcpIdle=0;
-		goto error_out_plrAPI_Play;
+		goto error_out_mixInit;
 	}
 
 	for (mode=postprocs; mode; mode=mode->next)
@@ -953,9 +952,10 @@ static int OpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_f
 
 	return 1;
 
+error_out_mixInit:
+	mixClose();
 error_out_plrAPI_Play:
 	plrAPI->Stop();
-	mixClose();
 error_out:
 	free (amptab);        amptab = 0;
 	free (voltabsr);      voltabsr = 0;
@@ -970,7 +970,7 @@ error_out:
 	return 0;
 }
 
-static void ClosePlayer()
+static void devwMixClosePlayer()
 {
 	struct mixqpostprocregstruct *mode;
 
@@ -1024,18 +1024,20 @@ static int wmixInit(const struct deviceinfo *dev)
 	mastersrnd=0;
 	channelnum=0;
 
-	mcpLoadSamples=LoadSamples;
-	mcpOpenPlayer=OpenPlayer;
-	mcpClosePlayer=ClosePlayer;
-	mcpGet=GET;
-	mcpSet=SET;
+	mcpLoadSamples=devwMixLoadSamples;
+	mcpOpenPlayer=devwMixOpenPlayer;
+	mcpClosePlayer=devwMixClosePlayer;
+	mcpGet=devwMixGET;
+	mcpSet=devwMixSET;
 
 	return 1;
 }
 
 static void wmixClose(void)
 {
-	mcpOpenPlayer=0;
+	mcpLoadSamples = 0;
+	mcpOpenPlayer = 0;
+	mcpClosePlayer = 0;
 }
 
 

@@ -57,13 +57,14 @@ static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
 static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
 static struct moduleinfostruct mdbdata;
 
-static struct gmdmodule mod;
+__attribute__ ((visibility ("internal"))) struct gmdmodule mod;
 static char patlock;
 
 static void gmdMarkInsSamp(uint8_t *ins, uint8_t *samp)
 {
 	int i;
-	for (i=0; i<plNLChan; i++)
+	/* mod.channum == cpiSessionAPI->LogicalChannelCount */
+	for (i=0; i<mod.channum; i++)
 	{
 		struct chaninfo ci;
 		mpGetChanInfo(i, &ci);
@@ -302,7 +303,7 @@ static int gmdLooped(void)
 	return (!fsLoopMods&&mpLooped());
 }
 
-static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader)
+static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI)
 {
 	const char *filename;
 	uint64_t i;
@@ -357,7 +358,6 @@ static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 
 	if (plCompoMode)
 		mpRemoveText(&mod);
-	plNLChan=mod.channum;
 	plPanType=!!(mod.options&MOD_MODPAN);
 
 	plIsEnd=gmdLooped;
@@ -366,6 +366,10 @@ static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	plDrawGStrings=gmdDrawGStrings;
 	plSetMute=mpMute;
 	plGetLChanSample=mpGetChanSample;
+
+	cpiSessionAPI->LogicalChannelCount = mod.channum;
+	cpiSessionAPI->PhysicalChannelCount = mcpNChan;
+
 	plUseDots(gmdGetDots);
 	if (mod.message)
 		plUseMessage(mod.message);
@@ -382,12 +386,9 @@ static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	gmdChanSetup(&mod);
 	gmdTrkSetup(&mod);
 
-	if (!mpPlayModule(&mod, file))
+	if (!mpPlayModule(&mod, file, cpiSessionAPI))
 		retval=errPlay;
-	plNPChan=mcpNChan;
 
-	plGetRealMasterVolume=mcpGetRealMasterVolume;
-	plGetMasterSample=mcpGetMasterSample;
 	plGetPChanSample=mcpGetChanSample;
 
 	if (retval)

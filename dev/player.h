@@ -9,11 +9,13 @@ enum plrRequestFormat
 
 struct ocpfilehandle_t;
 
+struct cpifaceSessionAPI_t; /* cpiface.h */
+
 struct plrAPI_t
 {
 	unsigned int (*Idle)(void); /* returns the current BufferDelay - should be called periodically, usually at FPS rate - inserts pause-samples if needed */
 	void (*PeekBuffer)(void **buf1, unsigned int *length1, void **buf2, unsigned int *length2); /* used by analyzer, graphs etc - length given in samples */
-	int (*Play)(uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file); // returns 0 on error - DiskWriter plugin uses source_file to name its output. Caller can suggest values in rate and format */
+	int (*Play)(uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI); // returns 0 on error - DiskWriter plugin uses source_file to name its output. Caller can suggest values in rate and format */
 	void (*GetBuffer)(void **buf, unsigned int *samples);
 	uint32_t (*GetRate)(void); /* this call will probably disappear in the future */
 

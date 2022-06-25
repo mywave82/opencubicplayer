@@ -26,6 +26,7 @@
 #include <time.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "cpiface/cpiface.h"
 #include "dev/imsdev.h"
 #include "dev/player.h"
 #include "dev/ringbuffer.h"
@@ -163,7 +164,7 @@ static void devpNonePeekBuffer (void **buf1, unsigned int *buf1length, void **bu
 	}
 }
 
-static int devpNonePlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file)
+static int devpNonePlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI)
 {
 	devpNoneInPause = 0;
 	devpNonePauseSamples = 0;
@@ -182,6 +183,9 @@ static int devpNonePlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 	}
 
 	clock_gettime (CLOCK_MONOTONIC, &devpNoneBasetime);
+
+	cpiSessionAPI->GetMasterSample = plrGetMasterSample;
+	cpiSessionAPI->GetRealMasterVolume = plrGetRealMasterVolume;
 
 	return 1;
 }

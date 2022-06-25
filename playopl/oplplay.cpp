@@ -295,13 +295,13 @@ void CProvider_Mem::close(binistream *f) const
 	delete f;
 }
 
-int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filename /* needed for detection */, uint8_t *content, const size_t len, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filename /* needed for detection */, uint8_t *content, const size_t len, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI)
 {
 	enum plrRequestFormat format;
 
 	oplRate = 0;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&oplRate, &format, file))
+	if (!plrAPI->Play (&oplRate, &format, file, cpiSessionAPI))
 	{
 		free (content);
 		return 0;

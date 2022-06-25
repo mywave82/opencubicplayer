@@ -855,7 +855,7 @@ int __attribute__ ((visibility ("internal"))) sidGetPChanSample(unsigned int i, 
 	return !!sidMuted[ch];
 }
 
-unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle_t *file)
+unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI)
 {
 	enum plrRequestFormat format=PLR_STEREO_16BIT_SIGNED;
 
@@ -893,7 +893,7 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 	}
 
 	sidRate=0;
-	if (!plrAPI->Play (&sidRate, &format, file))
+	if (!plrAPI->Play (&sidRate, &format, file, cpiSessionAPI))
 	{
 		fprintf (stderr, "[playsid]: plrAPI->Play failed\n");
 		goto error_out_buf;

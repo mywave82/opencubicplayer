@@ -255,7 +255,7 @@ static void SetInstr(struct channel *chn, unsigned short samp)
 	chn->vol[1]=0;
 }
 
-static void SET(int ch, int opt, int val)
+static void devwNoneSET(int ch, int opt, int val)
 {
 	int tmp;
 	switch (opt)
@@ -355,7 +355,7 @@ static void SET(int ch, int opt, int val)
 	}
 }
 
-static int GET(int ch, int opt)
+static int devwNoneGET(int ch, int opt)
 {
 	switch (opt)
 	{
@@ -402,7 +402,7 @@ static void GetMixChannel(unsigned int ch, struct mixchannel *chn, uint32_t rate
 
 
 
-static int LoadSamples(struct sampleinfo *sil, int n)
+static int devwNoneLoadSamples(struct sampleinfo *sil, int n)
 {
 	if (!mcpReduceSamples(sil, n, 0x40000000, mcpRedToMono))
 		return 0;
@@ -414,7 +414,7 @@ static int LoadSamples(struct sampleinfo *sil, int n)
 }
 
 
-static int OpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *source_file)
+static int devwNoneOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI)
 {
 	if (chan>MAXCHAN)
 		chan=MAXCHAN;
@@ -427,7 +427,7 @@ static int OpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *sour
 
 	playerproc=proc;
 
-	if (!mixInit(GetMixChannel, 1, chan, amplify))
+	if (!mixInit(GetMixChannel, 1, chan, amplify, cpiSessionAPI))
 	{
 		free(channels);
 		channels=0;
@@ -457,7 +457,7 @@ static int OpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *sour
 	return 1;
 }
 
-static void ClosePlayer(void)
+static void devwNoneClosePlayer(void)
 {
 	mcpNChan=0;
 	mcpIdle=0;
@@ -479,18 +479,20 @@ static int Init(const struct deviceinfo *c)
 
 	channelnum=0;
 
-	mcpLoadSamples=LoadSamples;
-	mcpOpenPlayer=OpenPlayer;
-	mcpClosePlayer=ClosePlayer;
-	mcpSet=SET;
-	mcpGet=GET;
+	mcpLoadSamples = devwNoneLoadSamples;
+	mcpOpenPlayer = devwNoneOpenPlayer;
+	mcpClosePlayer = devwNoneClosePlayer;
+	mcpSet = devwNoneSET;
+	mcpGet = devwNoneGET;
 
 	return 1;
 }
 
 static void Close(void)
 {
-	mcpOpenPlayer=0;
+	mcpLoadSamples = 0;
+	mcpOpenPlayer = 0;
+	mcpClosePlayer = 0;
 }
 
 

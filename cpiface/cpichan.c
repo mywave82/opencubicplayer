@@ -45,7 +45,7 @@ static void drawchannels()
 {
 	uint16_t buf[CONSOLE_MAX_X];
 	int i,y,x;
-	int h=(plChannelType==1)?((plNLChan+1)/2):plNLChan;
+	int h=(plChannelType==1) ? ((cpifaceSessionAPI.LogicalChannelCount + 1)/2) : cpifaceSessionAPI.LogicalChannelCount;
 	int sh=(plChannelType==1)?(plSelCh/2):plSelCh;
 	int first;
 	memset(buf, 0, sizeof(buf));
@@ -74,7 +74,7 @@ static void drawchannels()
 				i=2*first+y*2+x;
 				if (plPanType&&(y&1))
 					i^=1;
-				if (i<plNLChan)
+				if (i < cpifaceSessionAPI.LogicalChannelCount)
 				{
 					if (plChanWidth<132)
 					{
@@ -127,7 +127,7 @@ static int ChanGetWin(struct cpitextmodequerystruct *q)
 {
 	if ((plChannelType==3)&&(plScrWidth<132))
 		plChannelType=0;
-	if (!plNLChan)
+	if (!cpifaceSessionAPI.LogicalChannelCount)
 		return 0;
 
 	switch (plChannelType)
@@ -135,15 +135,15 @@ static int ChanGetWin(struct cpitextmodequerystruct *q)
 		case 0:
 			return 0;
 		case 1:
-			q->hgtmax=(plNLChan+1)>>1;
+			q->hgtmax=(cpifaceSessionAPI.LogicalChannelCount + 1)>>1;
 			q->xmode=3;
 			break;
 		case 2:
-			q->hgtmax=plNLChan;
+			q->hgtmax = cpifaceSessionAPI.LogicalChannelCount;
 			q->xmode=1;
 			break;
 		case 3:
-			q->hgtmax=plNLChan;
+			q->hgtmax = cpifaceSessionAPI.LogicalChannelCount;
 			q->xmode=2;
 			break;
 	}
@@ -229,7 +229,7 @@ static void __attribute__((destructor))done(void)
 void plUseChannels(void (*Display)(uint16_t *buf, int len, int i))
 {
 	ChanDisplay=Display;
-	if (!plNLChan)
+	if (!cpifaceSessionAPI.LogicalChannelCount)
 		return;
 	cpiTextRegisterMode(&cpiTModeChan);
 }

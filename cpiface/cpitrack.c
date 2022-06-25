@@ -90,6 +90,7 @@ static char pattitle1[CONSOLE_MAX_X+1];
 static uint16_t pattitle2[CONSOLE_MAX_X];
 static int patwidth, patpad;
 
+#warning Make a better API for this
 static int overrideplNLChan;
 
 enum
@@ -860,7 +861,7 @@ static struct cpitextmoderegstruct cpiTModeTrack = {"trak", TrakGetWin, TrakSetW
 
 void cpiTrkSetup(const struct cpitrakdisplaystruct *c, int npat)
 {
-	overrideplNLChan=plNLChan;
+	overrideplNLChan=cpifaceSessionAPI.LogicalChannelCount;
 	plPatternNum=npat;
 	plPatManualPat=-1;
 	plPrepdPat=-1;

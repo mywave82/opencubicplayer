@@ -491,7 +491,7 @@ static void ymCloseFile(void)
 	ymClosePlayer();
 }
 
-static int ymOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int ymOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 
@@ -504,17 +504,17 @@ static int ymOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fil
 	plIsEnd=ymLooped;
 	plProcessKey=ymProcessKey;
 	plDrawGStrings=ymDrawGStrings;
-	plGetMasterSample=plrGetMasterSample;
-	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-	if (!ymOpenPlayer(file))
+	if (!ymOpenPlayer(file, cpiSessionAPI))
 		return -1;
 
 	starttime=dos_clock();
 	plPause=0;
 	pausefadedirect=0;
 
-	plNLChan=plNPChan=5;
+	cpiSessionAPI->LogicalChannelCount = 5;
+	cpiSessionAPI->PhysicalChannelCount = 5;
+
 	plUseChannels(drawchannel);
 	plSetMute=ymMute;
 

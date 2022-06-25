@@ -106,6 +106,7 @@ enum
 };
 
 struct ocpfilehandle_t;
+struct cpifaceSessionAPI_t;
 extern int __attribute__ ((visibility ("internal"))) xmpLoadSamples(struct xmodule *m);
 extern int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, struct ocpfilehandle_t *f);
 extern int __attribute__ ((visibility ("internal"))) xmpLoadMOD(struct xmodule *m, struct ocpfilehandle_t *f);
@@ -119,7 +120,7 @@ extern int __attribute__ ((visibility ("internal"))) xmpLoadWOW(struct xmodule *
 extern int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, struct ocpfilehandle_t *f);
 extern void __attribute__ ((visibility ("internal"))) xmpFreeModule(struct xmodule *m);
 
-extern int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, struct ocpfilehandle_t *file);
+extern int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI);
 extern void __attribute__ ((visibility ("internal"))) xmpStopModule(void);
 extern void __attribute__ ((visibility ("internal"))) xmpSetPos(int ord, int row);
 
@@ -195,4 +196,7 @@ enum
 extern void __attribute__ ((visibility ("internal"))) xmpInstSetup(const struct xmpinstrument *ins, int nins, const struct xmpsample *smp, int nsmp, const struct sampleinfo *smpi, int nsmpi, int type, void (*MarkyBoy)(char *, char *));
 extern void __attribute__ ((visibility ("internal"))) xmTrkSetup(const struct xmodule *mod);
 extern void __attribute__ ((visibility ("internal"))) xmpInstClear(void);
+
+extern __attribute__ ((visibility ("internal"))) struct xmodule mod;
+
 #endif

@@ -31,6 +31,7 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
+#include "cpiface/cpiface.h"
 #include "cpiface/vol.h"
 #include "dev/imsdev.h"
 #include "dev/player.h"
@@ -713,7 +714,7 @@ end:
 	return retval;
 }
 
-static int devpALSAPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file)
+static int devpALSAPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI)
 {
 	int err;
 	unsigned int uval, realdelay;
@@ -914,6 +915,9 @@ static int devpALSAPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 #ifdef ALSA_DEBUG_OUTPUT
 	debug_output = open ("test-alsa.raw", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
 #endif
+
+	cpiSessionAPI->GetMasterSample = plrGetMasterSample;
+	cpiSessionAPI->GetRealMasterVolume = plrGetRealMasterVolume;
 
 	return 1;
 }

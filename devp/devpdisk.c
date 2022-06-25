@@ -42,6 +42,7 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
+#include "cpiface/cpiface.h"
 #include "dev/devigen.h"
 #include "dev/imsdev.h"
 #include "dev/player.h"
@@ -200,7 +201,7 @@ static void devpDiskOnBufferCallback (int samplesuntil, void (*callback)(void *a
 	ringbuffer_add_tail_callback_samples (devpDiskRingBuffer, samplesuntil, callback, arg);
 }
 
-static int devpDiskPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file)
+static int devpDiskPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI)
 {
 	int plrbufsize; /* given in ms */
 	int buflength;
@@ -316,6 +317,9 @@ static int devpDiskPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 	}
 
 	busy=0;
+
+	cpiSessionAPI->GetMasterSample = plrGetMasterSample;
+	cpiSessionAPI->GetRealMasterVolume = plrGetRealMasterVolume;
 
 	return 1;
 

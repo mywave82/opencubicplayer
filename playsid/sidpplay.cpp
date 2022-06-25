@@ -454,7 +454,7 @@ static int sidLooped()
 	return 0;
 }
 
-static int sidOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *sidf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int sidOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *sidf, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 
@@ -467,11 +467,11 @@ static int sidOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *si
 	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
 	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
-	if (!sidOpenPlayer(sidf))
+	if (!sidOpenPlayer(sidf, cpiSessionAPI))
 		return -1;
 
-	plNLChan=sidNumberOfChips()*3;
-	plNPChan=sidNumberOfChips()*4;
+	cpiSessionAPI->LogicalChannelCount = sidNumberOfChips() * 3;
+	cpiSessionAPI->PhysicalChannelCount = sidNumberOfChips() * 4;
 	plIdle=sidIdle;
 	plUseChannels(drawchannel);
 	plSetMute=sidMute;
@@ -479,8 +479,6 @@ static int sidOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *si
 	plIsEnd=sidLooped;
 	plProcessKey=sidProcessKey;
 	plDrawGStrings=sidDrawGStrings;
-	plGetMasterSample=plrGetMasterSample;
-	plGetRealMasterVolume=plrGetRealMasterVolume;
 
 	plGetPChanSample=sidGetPChanSample;
 	plGetLChanSample=sidGetLChanSample;

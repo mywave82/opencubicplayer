@@ -53,7 +53,7 @@
 #include "stuff/sets.h"
 #include "xmplay.h"
 
-static struct xmodule mod;
+__attribute__ ((visibility ("internal"))) struct xmodule mod;
 static time_t starttime;
 static time_t pausetime;
 static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
@@ -255,7 +255,8 @@ static void xmpMarkInsSamp(char *ins, char *smp)
 	int i;
 	int in, sm;
 
-	for (i=0; i<plNLChan; i++)
+	/* mod.nchan == cpiSessionAPI->LogicalChannelCount */
+	for (i=0; i<mod.nchan; i++)
 	{
 		if (!xmpChanActive(i)||plMuteCh[i])
 			continue;
@@ -539,7 +540,8 @@ static int xmpGetDots(struct notedotsdata *d, int max)
 
 	int smp,frq,voll,volr,sus;
 
-	for (i=0; i<plNLChan; i++)
+	/* mod.nchan == cpiSessionAPI->LogicalChannelCount */
+	for (i=0; i<mod.nchan; i++)
 	{
 		if (pos>=max)
 			break;
@@ -555,7 +557,7 @@ static int xmpGetDots(struct notedotsdata *d, int max)
 	return pos;
 }
 
-static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *_loader) /* no loader needed/used by this plugin */
+static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *_loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	int (*loader)(struct xmodule *, struct ocpfilehandle_t *)=0;
@@ -603,7 +605,7 @@ static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 
 	xmpOptimizePatLens(&mod);
 
-	if (!xmpPlayModule(&mod, file))
+	if (!xmpPlayModule(&mod, file, cpiSessionAPI))
 		retval=errPlay;
 
 	if (retval)
@@ -614,7 +616,6 @@ static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 
 	insts=mod.instruments;
 	samps=mod.samples;
-	plNLChan=mod.nchan;
 
 	plIsEnd=xmpLooped;
 	plIdle=xmpIdle;
@@ -623,6 +624,9 @@ static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	plSetMute=xmpMute;
 	plGetLChanSample=xmpGetLChanSample;
 
+	cpiSessionAPI->LogicalChannelCount = mod.nchan;
+	cpiSessionAPI->PhysicalChannelCount = mcpNChan;
+
 	plUseDots(xmpGetDots);
 
 	plUseChannels(drawchannel);
@@ -630,9 +634,6 @@ static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	xmpInstSetup(mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, mod.nsampi, 0, xmpMarkInsSamp);
 	xmTrkSetup(&mod);
 
-	plNPChan=mcpNChan;
-	plGetRealMasterVolume=mcpGetRealMasterVolume;
-	plGetMasterSample=mcpGetMasterSample;
 	plGetPChanSample=mcpGetChanSample;
 
 	starttime=dos_clock();

@@ -87,35 +87,35 @@ static void plPrepareScopeScr(void)
 {
 	char str[49];
 
-	if ((plOszChan==2)&&!plGetMasterSample)
+	if ((plOszChan==2) && (!cpifaceSessionAPI.GetMasterSample))
 		plOszChan=3;
 	if (((plOszChan==3)||(plOszChan==0))&&!plGetLChanSample)
 		plOszChan=1;
 	if ((plOszChan==1)&&!plGetPChanSample)
 		plOszChan=2;
-	if ((plOszChan==2)&&!plGetMasterSample)
+	if ((plOszChan==2) && (!cpifaceSessionAPI.GetMasterSample))
 		plOszChan=3;
 
 	if (plOszChan==0)
 	{
-		scopenx=sqrt(plNLChan*2);
-		scopeny=(plNLChan+scopenx-1)/scopenx;
-		scopedx=640/scopenx;
-		scopedy=384/scopeny;
-		scopefx=((int)(plScopesAmp*sqrt(plNLChan<<4)))>>2;
-		scopefy=(scopefx*plScopesRatio)>>5;
-		samples=64*128/plNLChan;
+		scopenx = sqrt (cpifaceSessionAPI.LogicalChannelCount * 2);
+		scopeny = (cpifaceSessionAPI.LogicalChannelCount + scopenx - 1)/scopenx;
+		scopedx = 640/scopenx;
+		scopedy = 384/scopeny;
+		scopefx = ((int)(plScopesAmp*sqrt(cpifaceSessionAPI.LogicalChannelCount << 4)))>>2;
+		scopefy = (scopefx*plScopesRatio)>>5;
+		samples = 64 * 128 / cpifaceSessionAPI.LogicalChannelCount;
 		if (samples>1024)
 			samples=1024;
 	} else if (plOszChan==1)
 	{
-		scopenx=sqrt(plNPChan*2);
-		scopeny=(plNPChan+scopenx-1)/scopenx;
-		scopedx=640/scopenx;
-		scopedy=384/scopeny;
-		scopefx=((int)(plScopesAmp*sqrt(plNPChan<<4)))>>2;
-		scopefy=(scopefx*plScopesRatio)>>5;
-		samples=64*128/plNPChan;
+		scopenx = sqrt (cpifaceSessionAPI.PhysicalChannelCount * 2);
+		scopeny = (cpifaceSessionAPI.PhysicalChannelCount + scopenx - 1)/scopenx;
+		scopedx = 640/scopenx;
+		scopedy = 384/scopeny;
+		scopefx = ((int)(plScopesAmp*sqrt (cpifaceSessionAPI.PhysicalChannelCount << 4)))>>2;
+		scopefy = (scopefx*plScopesRatio)>>5;
+		samples = 64 * 128 / cpifaceSessionAPI.PhysicalChannelCount;
 		if (samples>1024)
 			samples=1024;
 	} else if (plOszChan==2)
@@ -132,7 +132,7 @@ static void plPrepareScopeScr(void)
 		scopeny=1;
 		scopedx=640;
 		scopedy=384;
-		scopefx=plScopesAmp*plNLChan;
+		scopefx = plScopesAmp * cpifaceSessionAPI.LogicalChannelCount;
 		scopefy=(scopefx*plScopesRatio)>>5;
 		samples=1024;
 	}
@@ -371,13 +371,13 @@ static void plDrawScopes(void)
 	int i;
 	if (plOszChan==2)
 	{
-		plGetMasterSample(plSampBuf, samples+1, plOszRate, (plOszMono?mcpGetSampleMono:mcpGetSampleStereo)|mcpGetSampleHQ);
+		cpifaceSessionAPI.GetMasterSample(plSampBuf, samples+1, plOszRate, (plOszMono?mcpGetSampleMono:mcpGetSampleStereo)|mcpGetSampleHQ);
 		for (i=0; i<scopenx; i++)
 			drawscope(scopedx/2+scopedx*i, scopedy/2, plSampBuf+i, samples, 15, scopenx);
 	} else if (plOszChan==1)
 	{
 		int i;
-		for (i=0; i<plNPChan; i++)
+		for (i=0; i<cpifaceSessionAPI.PhysicalChannelCount; i++)
 		{
 			int paus=plGetPChanSample(i, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
 			drawscope((i%scopenx)*scopedx+scopedx/2, scopedy*(i/scopenx)+scopedy/2, plSampBuf, samples, paus?8:15, 1);
@@ -389,7 +389,7 @@ static void plDrawScopes(void)
 	} else if (plOszChan==0)
 	{
 		int i;
-		for (i=0; i<plNLChan; i++)
+		for (i=0; i < cpifaceSessionAPI.LogicalChannelCount; i++)
 		{
 			plGetLChanSample(i, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
 			drawscope((i%scopenx)*scopedx+scopedx/2, scopedy*(i/scopenx)+scopedy/2, plSampBuf, samples, (plSelCh==i)?plMuteCh[i]?(HIGHLIGHT&7):HIGHLIGHT:plMuteCh[i]?8:15, 1);
@@ -414,7 +414,7 @@ static void scoSetMode(void)
 
 static int scoCan(void)
 {
-	if (!plGetLChanSample&&!plGetPChanSample&&!plGetMasterSample)
+	if (!plGetLChanSample&&!plGetPChanSample && (!cpifaceSessionAPI.GetMasterSample))
 		return 0;
 	return 1;
 }

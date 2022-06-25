@@ -885,7 +885,7 @@ static int GET(int ch, int opt)
 	return 0;
 }
 
-int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI)
 {
 	uint32_t ayRate;
 	enum plrRequestFormat format;
@@ -904,7 +904,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 
 	ayRate=0;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&ayRate, &format, file))
+	if (!plrAPI->Play (&ayRate, &format, file, cpiSessionAPI))
 	{
 		goto errorout_aydata;
 	}

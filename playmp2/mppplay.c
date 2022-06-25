@@ -214,7 +214,7 @@ static void mpegCloseFile(void)
 	mpegClosePlayer();
 }
 
-static int mpegOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *mpegfile, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int mpegOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *mpegfile, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	struct mpeginfo inf;
@@ -232,10 +232,8 @@ static int mpegOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *
 	plIsEnd=mpegLooped;
 	plProcessKey=mpegProcessKey;
 	plDrawGStrings=mpegDrawGStrings;
-	plGetMasterSample=plrGetMasterSample;
-	plGetRealMasterVolume=plrGetRealMasterVolume;
 
-	if (!mpegOpenPlayer(mpegfile))
+	if (!mpegOpenPlayer(mpegfile, cpiSessionAPI))
 		return errFileRead;
 
 	starttime=dos_clock();

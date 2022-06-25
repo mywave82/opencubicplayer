@@ -66,13 +66,14 @@ enum
 
 extern int mcpNChan;
 
+struct cpifaceSessionAPI_t;
+
 extern int (*mcpLoadSamples)(struct sampleinfo* si, int n);
-extern int (*mcpOpenPlayer)(int, void (*p)(void), struct ocpfilehandle_t *source_file);
+extern int (*mcpOpenPlayer)(int, void (*p)(void), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI);
 extern void (*mcpClosePlayer)(void);
 extern void (*mcpSet)(int ch, int opt, int val);
 extern int (*mcpGet)(int ch, int opt);
 extern void (*mcpGetRealVolume)(int ch, int *l, int *r);
-extern void (*mcpGetRealMasterVolume)(int *l, int *r);
 extern void (*mcpGetMasterSample)(int16_t *s, unsigned int len, uint32_t rate, int opt);
 extern int (*mcpGetChanSample)(unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
 extern int (*mcpMixChanSamples)(unsigned int *ch, unsigned int n, int16_t *s, unsigned int len, uint32_t rate, int opt);

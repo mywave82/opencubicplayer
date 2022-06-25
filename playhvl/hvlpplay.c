@@ -208,7 +208,7 @@ static void hvlCloseFile(void)
 	hvlClosePlayer();
 }
 
-static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	uint8_t *filebuf;
@@ -218,7 +218,6 @@ static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	{
 		return errFileOpen;
 	}
-
 
 	filelen = file->filesize (file);
 
@@ -253,7 +252,7 @@ static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 		return errFileRead;
 	}
 
-	hvlOpenPlayer (filebuf, filelen, file);
+	hvlOpenPlayer (filebuf, filelen, file, cpiSessionAPI);
 	free (filebuf);
 	if (!current_hvl_tune)
 	{
@@ -263,14 +262,12 @@ static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	plIsEnd=hvlIsLooped;
 	plProcessKey=hvlProcessKey;
 	plDrawGStrings=hvlDrawGStrings;
-	plGetMasterSample=plrGetMasterSample;
-	plGetRealMasterVolume=plrGetRealMasterVolume;
 
 	starttime=dos_clock();
 	plPause=0;
 	pausefadedirect=0;
-	plNPChan=ht->ht_Channels;
-	plNLChan=ht->ht_Channels;
+	cpiSessionAPI->PhysicalChannelCount = ht->ht_Channels;
+	cpiSessionAPI->LogicalChannelCount = ht->ht_Channels;
 	plIdle=hvlIdle;
 	plSetMute=hvlMute;
 	plGetPChanSample=hvlGetChanSample;

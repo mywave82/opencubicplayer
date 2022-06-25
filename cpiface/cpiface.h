@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 
+struct cpifaceSessionAPI_t;
 struct moduleinfostruct;
 struct ocpfilehandle_t;
 struct cpifaceplayerstruct
@@ -25,12 +26,21 @@ struct cpifaceplayerstruct
 	int (*OpenFile) (struct moduleinfostruct *info,
 	                 struct ocpfilehandle_t *f,
 	                 const char *ldlink, // some player "plugins" uses loaders. This is the name of that "loader plugin"
-	                 const char *loader); // And this is the loader symbol used
+	                 const char *loader, // And this is the loader symbol used
+	                 struct cpifaceSessionAPI_t *cpiSessionAPI); // devp/devw and other APIs can hook up here!
 	void (*CloseFile)();
 };
 
-extern unsigned short plNLChan;
-extern unsigned short plNPChan;
+struct cpifaceSessionAPI_t
+{
+	void (*GetRealMasterVolume)(int *l, int *r);
+	void (*GetMasterSample)(int16_t *, unsigned int len, uint32_t rate, int mode);
+	uint_fast16_t LogicalChannelCount;  /* number of logical channels. Used by "Channel" viewer and selector, note-dot viewer, can be used by scope viewers, and is the default value used by track viewer */
+	uint_fast16_t PhysicalChannelCount; /* number of physical audio channels. Sometimes a format uses shadow channels for effects or smooth transitions. Can be used by scope viewers. */
+};
+extern __attribute__ ((visibility ("internal"))) struct cpifaceSessionAPI_t cpifaceSessionAPI;
+
+#warning move all these into cpifaceAPISource_t
 extern unsigned char plSelCh;
 extern unsigned char plChanChanged;
 extern char plPause;
@@ -38,8 +48,6 @@ extern char plMuteCh[];
 extern char plPanType;
 extern int (*plProcessKey)(uint16_t key);
 extern void (*plDrawGStrings)(void);
-extern void (*plGetRealMasterVolume)(int *l, int *r);
-extern void (*plGetMasterSample)(int16_t *, unsigned int len, uint32_t rate, int mode);
 extern int (*plIsEnd)(void);
 extern void (*plIdle)(void);
 extern void (*plSetMute)(int i, int m);

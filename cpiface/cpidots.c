@@ -166,14 +166,14 @@ static void plDrawDots()
 {
 	int i,j,k,n,m;
 	int chan0;
-	int chann=plNLChan;
+	int chann = cpifaceSessionAPI.LogicalChannelCount;
 	int pos;
 
 	if (chann>MAXVIEWCHAN)
 		chann=MAXVIEWCHAN;
 	chan0=plSelCh-(chann/2);
-	if ((chan0+chann)>=plNLChan)
-		chan0=plNLChan-chann;
+	if ((chan0+chann) >= cpifaceSessionAPI.LogicalChannelCount)
+		chan0 = cpifaceSessionAPI.LogicalChannelCount - chann;
 	if (chan0<0)
 		chan0=0;
 
@@ -351,7 +351,7 @@ static void plPrepareDots()
 
 	memset(dotuse, 0, sizeof (dotuse));
 
-	chann=plNLChan;
+	chann = cpifaceSessionAPI.LogicalChannelCount;
 	if (chann>MAXVIEWCHAN)
 		chann=MAXVIEWCHAN;
 

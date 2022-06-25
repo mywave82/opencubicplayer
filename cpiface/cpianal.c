@@ -77,7 +77,7 @@ static void plDrawFFT(char sel)
 
 	if ((plAnalChan==2)&&!plGetLChanSample)
 		plAnalChan=0;
-	if (((plAnalChan==0)||(plAnalChan==1))&&!plGetMasterSample)
+	if (((plAnalChan==0)||(plAnalChan==1)) && (!cpifaceSessionAPI.GetMasterSample))
 		plAnalChan=2;
 	if ((plAnalChan==2)&&!plGetLChanSample)
 		plAnalChan=0;
@@ -136,7 +136,7 @@ static void plDrawFFT(char sel)
 		unsigned int wh2;
 		unsigned int fl;
 
-		plGetMasterSample(plSampBuf, 1<<bits, plAnalRate, mcpGetSampleStereo);
+		cpifaceSessionAPI.GetMasterSample(plSampBuf, 1<<bits, plAnalRate, mcpGetSampleStereo);
 		if (plAnalHeight&1)
 			displayvoid (plAnalFirstLine+plAnalHeight-1, ofs, plAnalWidth-2*ofs);
 		wh2=plAnalHeight>>1;
@@ -160,7 +160,7 @@ static void plDrawFFT(char sel)
 
 	} else {
 		if (plAnalChan!=2)
-			plGetMasterSample(plSampBuf, 1<<bits, plAnalRate, 0);
+			cpifaceSessionAPI.GetMasterSample(plSampBuf, 1<<bits, plAnalRate, 0);
 		else
 			plGetLChanSample(plSelCh, plSampBuf, 1<<bits, plAnalRate, 0);
 		fftanalyseall(ana, plSampBuf, 1, bits);
@@ -303,7 +303,7 @@ static void AnalClose(void)
 
 static int AnalCan(void)
 {
-	if (!plGetMasterSample&&!plGetLChanSample)
+	if ((!cpifaceSessionAPI.GetMasterSample) && (!plGetLChanSample))
 		return 0;
 	return 1;
 }

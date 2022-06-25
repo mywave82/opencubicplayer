@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include "types.h"
 #include "mcp.h"
+#include "cpiface/cpiface.h"
 #include "stuff/imsrtns.h"
 #include "mix.h"
 #include "mixasm.h"
@@ -255,7 +256,7 @@ void mixSetAmplify(int amp)
 	calcamptab((amplify*channum)>>11);
 }
 
-int mixInit(void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t rate), int masterchan, unsigned int chn, int amp)
+int mixInit(void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t rate), int masterchan, unsigned int chn, int amp, struct cpifaceSessionAPI_t *cpiSessionAPI)
 {
 	int i,j;
 
@@ -282,9 +283,9 @@ int mixInit(void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t ra
 	mcpGetChanSample=mixGetChanSample;
 	mcpMixChanSamples=mixMixChanSamples;
 	if (masterchan)
-	{
-		mcpGetRealMasterVolume=mixGetRealMasterVolume;
-		mcpGetMasterSample=mixGetMasterSample;
+	{ /* override devp */
+		cpiSessionAPI->GetRealMasterVolume = mixGetRealMasterVolume;
+		cpiSessionAPI->GetMasterSample = mixGetMasterSample;
 	}
 
 	channum=chn;
