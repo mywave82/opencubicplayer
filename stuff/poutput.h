@@ -13,7 +13,7 @@ void displaychr (const uint16_t y, const uint16_t x, const uint8_t attr, const c
  *   * We support precision    ( %10.8d )
  *   * %d and %u respects the precision, saturating the digits to all 9
  *   * %c with precision repeats the character
- *   * %C behaves the same a %c, except it does not pop from arguments, but from fmt string insteawd
+ *   * %C behaves the same a %c, except it does not pop from arguments, but from fmt string instead
  *   * We support *  (pop an integer from the list)
  *   * %n.mo to change colors, where n and m are integers, can be omitted or use *
  *   * %s is CP437 string
