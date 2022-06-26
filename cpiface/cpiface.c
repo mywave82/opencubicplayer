@@ -2134,6 +2134,8 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.LogicalChannelCount = 0;
 	cpifaceSessionAPI.PhysicalChannelCount = 0;
 
+	plPanType=0;
+
 	cpiModes=0;
 
 	plEscTick=0;

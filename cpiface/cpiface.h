@@ -45,7 +45,7 @@ extern unsigned char plSelCh;
 extern unsigned char plChanChanged;
 extern char plPause;
 extern char plMuteCh[];
-extern char plPanType;
+extern char plPanType; /* If this is one, it causes the visual channel-layout to swap right and left channel for every second channel group - currenly only used by some S3M files */
 extern int (*plProcessKey)(uint16_t key);
 extern void (*plDrawGStrings)(void);
 extern int (*plIsEnd)(void);
