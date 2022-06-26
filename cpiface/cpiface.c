@@ -2203,6 +2203,8 @@ static void plmpCloseFile()
 
 static void plmpOpenScreen()
 {
+	plChanChanged=0; /* force redraw of selected channel */
+
 	if (!curmode)
 		curmode=&cpiModeText;
 	if (curmode->Event&&!curmode->Event(cpievOpen))
@@ -2355,8 +2357,6 @@ static interfaceReturnEnum plmpDrawScreen(void)
 	int needdraw = 1;
 	struct cpimoderegstruct *mod;
 	static int plInKeyboardHelp = 0;
-
-	plChanChanged=0;
 
 	if (plIsEnd)
 	{
@@ -2538,6 +2538,8 @@ superbreak:
 		curmode->Draw();
 	}
 	framelock();
+
+	plChanChanged=0;
 
 	return interfaceReturnContinue;
 }

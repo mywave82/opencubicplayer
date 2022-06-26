@@ -185,7 +185,6 @@ extern void cpiTrkSetup(const struct cpitrakdisplaystruct *c, int npat);
 extern void cpiTrkSetup2(const struct cpitrakdisplaystruct *c, int npat, int tracks);
 
 extern char plNoteStr[132][4];
-extern unsigned char plChanChanged;
 extern char plCompoMode;
 
 /* mcpedit.c */

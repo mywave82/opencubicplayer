@@ -68,7 +68,6 @@ static void startpausefade(void)
 
 	if (plPause)
 	{
-		plChanChanged=1;
 		ymPause(plPause=0);
 		pausefadedirect=1;
 	} else
@@ -98,7 +97,6 @@ static void dopausefade(void)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			ymPause(plPause=1);
-			plChanChanged=1;
 			mcpSetMasterPauseFadeParameters (64);
 			return;
 		}

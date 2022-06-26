@@ -70,7 +70,6 @@ static void startpausefade(void)
 
 	if (plPause)
 	{
-		plChanChanged=1;
 		plPause=0;
 		cdUnpause ();
 		pausefadedirect=1;
@@ -101,7 +100,6 @@ static void dopausefade(void)
 			pausefadedirect=0;
 			plPause=1;
 			cdPause();
-			plChanChanged=1;
 			mcpSetMasterPauseFadeParameters (64);
 			return;
 		}

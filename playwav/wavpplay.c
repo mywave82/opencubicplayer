@@ -72,7 +72,6 @@ static void startpausefade(void)
 
 	if (plPause)
 	{
-		plChanChanged=1;
 		wpPause(plPause=0);
 		pausefadedirect=1;
 	} else
@@ -102,7 +101,6 @@ static void dopausefade(void)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			wpPause(plPause=1);
-			plChanChanged=1;
 			mcpSetMasterPauseFadeParameters (64);
 			return;
 		}

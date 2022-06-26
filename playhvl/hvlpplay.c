@@ -72,7 +72,6 @@ static void startpausefade (void)
 
 	if (plPause)
 	{
-		plChanChanged = 1;
 		hvlPause ( plPause = 0 );
 		pausefadedirect = 1;
 	} else
@@ -102,7 +101,6 @@ static void dopausefade (void)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			hvlPause(plPause=1);
-			plChanChanged=1;
 			mcpSetMasterPauseFadeParameters (64);
 			return;
 		}
@@ -175,7 +173,6 @@ static int hvlProcessKey(uint16_t key)
 			}
 			plPause=!plPause;
 			hvlPause(plPause);
-			plChanChanged=1; /* ? */
 			break;
 		case KEY_CTRL_HOME:
 			hvlRestartSong();

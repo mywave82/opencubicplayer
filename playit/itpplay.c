@@ -79,7 +79,6 @@ static void startpausefade(void)
 
 	if (plPause)
 	{
-		plChanChanged=1;
 		mcpSet(-1, mcpMasterPause, plPause=0);
 		pausefadedirect=1;
 	} else
@@ -109,7 +108,6 @@ static void dopausefade(void)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			mcpSet(-1, mcpMasterPause, plPause=1);
-			plChanChanged=1;
 			mcpSetMasterPauseFadeParameters (64);
 			return;
 		}
@@ -149,7 +147,6 @@ static int itpProcessKey(uint16_t key)
 			else
 				pausetime=dos_clock();
 			mcpSet(-1, mcpMasterPause, plPause^=1);
-			plChanChanged=1;
 			break;
 		case KEY_CTRL_HOME:
 			itpInstClear();
