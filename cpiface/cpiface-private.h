@@ -4,7 +4,17 @@
 struct cpifaceSessionPrivate_t
 {
 	struct cpifaceSessionAPI_t Public;
-	struct insdisplaystruct    InsDisplay;
+
+	/* instrument visualizer */
+	struct insdisplaystruct Inst;
+	int   InstScroll;
+	int   InstFirstLine;
+	int   InstStartCol;
+	int   InstLength;
+	int   InstHeight;
+	int   InstWidth;
+	char  InstType;
+	char  InstMode;
 };
 
 extern __attribute__ ((visibility ("internal"))) struct cpifaceSessionPrivate_t cpifaceSessionAPI;

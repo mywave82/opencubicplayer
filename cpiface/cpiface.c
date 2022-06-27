@@ -57,6 +57,7 @@
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "cpiface.h"
+#include "cpiface-private.h"
 #include "cpipic.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -71,9 +72,9 @@
 
 #define MAXLCHAN 64
 
-extern struct mdbreadinforegstruct cpiReadInfoReg;
+__attribute__ ((visibility ("internal"))) struct cpifaceSessionPrivate_t cpifaceSessionAPI;
 
-__attribute__ ((visibility ("internal"))) struct cpifaceSessionAPI_t cpifaceSessionAPI;
+extern struct mdbreadinforegstruct cpiReadInfoReg;
 
 extern struct cpimoderegstruct cpiModeText;
 
@@ -1863,12 +1864,12 @@ void cpiDrawGStrings (void)
 		if (limit<2)
 			limit=2;
 
-		chann = cpifaceSessionAPI.LogicalChannelCount;
+		chann = cpifaceSessionAPI.Public.LogicalChannelCount;
 		if (chann>limit)
 			chann=limit;
 		chan0=plSelCh-(chann/2);
-		if ((chan0+chann) >= cpifaceSessionAPI.LogicalChannelCount)
-			chan0 = cpifaceSessionAPI.LogicalChannelCount - chann;
+		if ((chan0+chann) >= cpifaceSessionAPI.Public.LogicalChannelCount)
+			chan0 = cpifaceSessionAPI.Public.LogicalChannelCount - chann;
 		if (chan0<0)
 			chan0 = 0;
 
@@ -1906,7 +1907,7 @@ void cpiDrawGStrings (void)
 		if (chann)
 		{
 			displaychr (4, offset - 1, 0x08, chan0 ? 0x1b : 0x04, 1);
-			displaychr (4, offset + 1 + chann, 0x08, ((chan0+chann) != cpifaceSessionAPI.LogicalChannelCount) ? 0x1a : 0x04, 1);
+			displaychr (4, offset + 1 + chann, 0x08, ((chan0+chann) != cpifaceSessionAPI.Public.LogicalChannelCount) ? 0x1a : 0x04, 1);
 		}
 	} else {
 		if (plChanChanged)
@@ -1920,12 +1921,12 @@ void cpiDrawGStrings (void)
 			if (limit<2)
 				limit=2;
 
-			chann = cpifaceSessionAPI.LogicalChannelCount;;
+			chann = cpifaceSessionAPI.Public.LogicalChannelCount;;
 			if (chann>limit)
 				chann=limit;
 			chan0=plSelCh-(chann/2);
-			if ((chan0+chann) >= cpifaceSessionAPI.LogicalChannelCount)
-				chan0 = cpifaceSessionAPI.LogicalChannelCount - chann;
+			if ((chan0+chann) >= cpifaceSessionAPI.Public.LogicalChannelCount)
+				chan0 = cpifaceSessionAPI.Public.LogicalChannelCount - chann;
 			if (chan0<0)
 				chan0 = 0;
 
@@ -1935,7 +1936,7 @@ void cpiDrawGStrings (void)
 			{ /* needs tuning... TODO */
 				gdrawchar8(384+i*8, 64, '0'+(i+chan0+1)/10, plMuteCh[i+chan0]?8:7, 0);
 				gdrawchar8(384+i*8, 72, '0'+(i+chan0+1)%10, plMuteCh[i+chan0]?8:7, 0);
-				gdrawchar8(384+i*8, 80, ((i+chan0)==plSelCh)?0x18:((i==0)&&chan0)?0x1B:((i==(chann-1))&&((chan0+chann) != cpifaceSessionAPI.LogicalChannelCount))?0x1A:' ', 15, 0);
+				gdrawchar8(384+i*8, 80, ((i+chan0)==plSelCh)?0x18:((i==0)&&chan0)?0x1B:((i==(chann-1))&&((chan0+chann) != cpifaceSessionAPI.Public.LogicalChannelCount))?0x1A:' ', 15, 0);
 			}
 		}
 	}
@@ -2129,10 +2130,10 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	void *fp;
 	int retval;
 
-	cpifaceSessionAPI.GetRealMasterVolume = 0;
-	cpifaceSessionAPI.GetMasterSample = 0;
-	cpifaceSessionAPI.LogicalChannelCount = 0;
-	cpifaceSessionAPI.PhysicalChannelCount = 0;
+	cpifaceSessionAPI.Public.GetRealMasterVolume = 0;
+	cpifaceSessionAPI.Public.GetMasterSample = 0;
+	cpifaceSessionAPI.Public.LogicalChannelCount = 0;
+	cpifaceSessionAPI.Public.PhysicalChannelCount = 0;
 
 	plPanType=0;
 
@@ -2166,7 +2167,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 
 	curplayer=(struct cpifaceplayerstruct*)fp;
 
-	retval=curplayer->OpenFile(info, fi, ip->ldlink, ip->loader, &cpifaceSessionAPI);
+	retval=curplayer->OpenFile(info, fi, ip->ldlink, ip->loader, &cpifaceSessionAPI.Public);
 
 	if (retval)
 	{
@@ -2264,12 +2265,12 @@ static int cpiChanProcessKey(uint16_t key)
 			break;
 		/*case 0x4800: //up*/
 		case KEY_UP:
-			plSelCh=(plSelCh - 1 + cpifaceSessionAPI.LogicalChannelCount) % cpifaceSessionAPI.LogicalChannelCount;
+			plSelCh=(plSelCh - 1 + cpifaceSessionAPI.Public.LogicalChannelCount) % cpifaceSessionAPI.Public.LogicalChannelCount;
 			plChanChanged=1;
 			break;
 		/*case 0x4d00: //right*/
 		case KEY_RIGHT:
-			if ((plSelCh+1) < cpifaceSessionAPI.LogicalChannelCount)
+			if ((plSelCh+1) < cpifaceSessionAPI.Public.LogicalChannelCount)
 			{
 				plSelCh++;
 				plChanChanged=1;
@@ -2277,7 +2278,7 @@ static int cpiChanProcessKey(uint16_t key)
 			break;
 		/*case 0x5000: //down*/
 		case KEY_DOWN:
-			plSelCh=(plSelCh+1) % cpifaceSessionAPI.LogicalChannelCount;
+			plSelCh=(plSelCh+1) % cpifaceSessionAPI.Public.LogicalChannelCount;
 			plChanChanged=1;
 			break;
 
@@ -2296,7 +2297,7 @@ static int cpiChanProcessKey(uint16_t key)
 /*
 				else
 					key=(key>>8)-0x78+10;*/
-			if (key >= cpifaceSessionAPI.LogicalChannelCount)
+			if (key >= cpifaceSessionAPI.Public.LogicalChannelCount)
 				break;
 			plSelCh=key;
 
@@ -2309,14 +2310,14 @@ static int cpiChanProcessKey(uint16_t key)
 		case 's': case 'S':
 			if (plSelCh==soloch)
 			{
-				for (i=0; i < cpifaceSessionAPI.LogicalChannelCount; i++)
+				for (i=0; i < cpifaceSessionAPI.Public.LogicalChannelCount; i++)
 				{
 					plMuteCh[i]=0;
 					plSetMute(i, plMuteCh[i]);
 				}
 				soloch=-1;
 			} else {
-				for (i=0; i < cpifaceSessionAPI.LogicalChannelCount; i++)
+				for (i=0; i < cpifaceSessionAPI.Public.LogicalChannelCount; i++)
 				{
 					plMuteCh[i]=i!=plSelCh;
 					plSetMute(i, plMuteCh[i]);
@@ -2327,7 +2328,7 @@ static int cpiChanProcessKey(uint16_t key)
 			break;
 
 		case KEY_CTRL_Q: case KEY_CTRL_S: /* TODO-keys*/
-			for (i=0; i < cpifaceSessionAPI.LogicalChannelCount; i++)
+			for (i=0; i < cpifaceSessionAPI.Public.LogicalChannelCount; i++)
 			{
 				plMuteCh[i]=0;
 				plSetMute(i, plMuteCh[i]);
@@ -2498,7 +2499,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 					}
 				}
 				if (mod) break; /* forward the break */
-				if (cpifaceSessionAPI.LogicalChannelCount)
+				if (cpifaceSessionAPI.Public.LogicalChannelCount)
 				{
 #ifdef KEYBOARD_DEBUG
 					fprintf (stderr, "plmpDrawScreen: cpifaceSessionAPI.LogicalChannelCount!=0   =>   cpiChanProcessKey()\n");
@@ -2516,7 +2517,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 #ifdef KEYBOARD_DEBUG
 					fprintf (stderr, "plmpDrawScreen: plProcessKey()\n");
 #endif
-					plProcessKey (&cpifaceSessionAPI, key);
+					plProcessKey (&cpifaceSessionAPI.Public, key);
 				}
 				if (needdraw)
 				{

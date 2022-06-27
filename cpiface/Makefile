@@ -263,6 +263,7 @@ cpiface.o: cpiface.c \
 	../boot/plinkman.h \
 	../boot/psetting.h \
 	cpiface.h \
+	cpiface-private.h \
 	cpipic.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
