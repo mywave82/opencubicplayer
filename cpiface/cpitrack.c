@@ -39,6 +39,7 @@
 #include "stuff/poutput.h"
 #include "boot/psetting.h"
 #include "cpiface.h"
+#include "cpiface-private.h"
 
 #define COLPTNOTE 0x0A
 #define COLNOTE 0x0F
@@ -861,7 +862,7 @@ static struct cpitextmoderegstruct cpiTModeTrack = {"trak", TrakGetWin, TrakSetW
 
 void cpiTrkSetup(const struct cpitrakdisplaystruct *c, int npat)
 {
-	overrideplNLChan=cpifaceSessionAPI.LogicalChannelCount;
+	overrideplNLChan = cpifaceSessionAPI.Public.LogicalChannelCount;
 	plPatternNum=npat;
 	plPatManualPat=-1;
 	plPrepdPat=-1;

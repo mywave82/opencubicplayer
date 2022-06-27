@@ -46,7 +46,7 @@ static const struct xmpsample *plModSamples;
 
 static char plInstShowFreq;
 
-static void xmpDisplayIns40(unsigned short *buf, int n, int plInstMode)
+static void xmpDisplayIns40 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
@@ -54,7 +54,7 @@ static void xmpDisplayIns40(unsigned short *buf, int n, int plInstMode)
 	writestring(buf, 5, col, plInstr[n].name, 35);
 }
 
-static void xmpDisplayIns33(unsigned short *buf, int n, int plInstMode)
+static void xmpDisplayIns33 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
@@ -62,7 +62,7 @@ static void xmpDisplayIns33(unsigned short *buf, int n, int plInstMode)
 	writestring(buf, 5, col, plInstr[n].name, 28);
 }
 
-static void xmpDisplayIns52(unsigned short *buf, int n, int plInstMode)
+static void xmpDisplayIns52 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"    \xfe##: ":"     ##: ", 9);
@@ -70,7 +70,7 @@ static void xmpDisplayIns52(unsigned short *buf, int n, int plInstMode)
 	writestring(buf, 9, col, plInstr[n].name, 43);
 }
 
-static void xmpDisplayIns80(unsigned short *buf, int n, int plInstMode)
+static void xmpDisplayIns80 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col;
 	writestring(buf, 0, 0, "", 80);
@@ -133,7 +133,7 @@ static void xmpDisplayIns80(unsigned short *buf, int n, int plInstMode)
 	}
 }
 
-static void xmpDisplayIns132(unsigned short *buf, int n, int plInstMode)
+static void xmpDisplayIns132 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col;
 	writestring(buf, 0, 0, "", 132);
@@ -202,34 +202,34 @@ static void xmpDisplayIns132(unsigned short *buf, int n, int plInstMode)
 	}
 }
 
-static void xmpDisplayIns(unsigned short *buf, int len, int n, int plInstMode)
+static void xmpDisplayIns (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int len, int n, int plInstMode)
 {
 	switch (len)
 	{
 		case 33:
-			xmpDisplayIns33(buf, n, plInstMode);
+			xmpDisplayIns33 (cpiSession, buf, n, plInstMode);
 			break;
 		case 40:
-			xmpDisplayIns40(buf, n, plInstMode);
+			xmpDisplayIns40 (cpiSession, buf, n, plInstMode);
 			break;
 		case 52:
-			xmpDisplayIns52(buf, n, plInstMode);
+			xmpDisplayIns52 (cpiSession, buf, n, plInstMode);
 			break;
 		case 80:
-			xmpDisplayIns80(buf, n, plInstMode);
+			xmpDisplayIns80 (cpiSession, buf, n, plInstMode);
 			break;
 /*
 		case 132:
 */
 		default:
-			xmpDisplayIns132(buf, n, plInstMode);
+			xmpDisplayIns132 (cpiSession, buf, n, plInstMode);
 			break;
 	}
 }
 
-static void (*Mark)(char *, char *);
+static void (*Mark) (struct cpifaceSessionAPI_t *cpiSession, char *, char *);
 
-static void xmpMark()
+static void xmpMark (struct cpifaceSessionAPI_t *cpiSession)
 {
 	int i;
 	for (i=0; i<instnum; i++)
@@ -238,16 +238,16 @@ static void xmpMark()
 	for (i=0; i<sampnum; i++)
 		if (plSampUsed[i])
 			plSampUsed[i]=1;
-	Mark(plInstUsed, plSampUsed);
+	Mark(cpiSession, plInstUsed, plSampUsed);
 }
 
-void __attribute__ ((visibility ("internal"))) xmpInstClear(void)
+void __attribute__ ((visibility ("internal"))) xmpInstClear (struct cpifaceSessionAPI_t *cpiSession)
 {
 	memset(plInstUsed, 0, instnum);
 	memset(plSampUsed, 0, sampnum);
 }
 
-static void Done(void)
+static void Done (struct cpifaceSessionAPI_t *cpiSession)
 {
 	free(plInstUsed);
 	free(plSampUsed);
@@ -255,7 +255,7 @@ static void Done(void)
 	free(plBigSampNum);
 }
 
-void __attribute__ ((visibility ("internal"))) xmpInstSetup(const struct xmpinstrument *ins, int nins, const struct xmpsample *smp, int nsmp, const struct sampleinfo *smpi, int dummy, int type, void (*MarkyBoy)(char *, char *))
+void __attribute__ ((visibility ("internal"))) xmpInstSetup(struct cpifaceSessionAPI_t *cpiSession, const struct xmpinstrument *ins, int nins, const struct xmpsample *smp, int nsmp, const struct sampleinfo *smpi, int dummy, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpiSession, char *, char *))
 {
 	int i,j;
 	int biginstlen=0;
@@ -315,14 +315,9 @@ void __attribute__ ((visibility ("internal"))) xmpInstSetup(const struct xmpinst
 	}
 
 	{
-		static struct insdisplaystruct plInsDisplay;
+		struct insdisplaystruct plInsDisplay;
 		plInstShowFreq=type;
 		plInsDisplay.Clear=xmpInstClear;
-/*
-		plInsDisplay.n40=instnum;
-		plInsDisplay.n52=instnum;
-		plInsDisplay.n80=biginstlen;
-*/
 		plInsDisplay.height=instnum;
 		plInsDisplay.bigheight=biginstlen;
 		plInsDisplay.title80=plInstShowFreq?
@@ -334,7 +329,7 @@ void __attribute__ ((visibility ("internal"))) xmpInstSetup(const struct xmpinst
 		plInsDisplay.Mark=xmpMark;
 		plInsDisplay.Display=xmpDisplayIns;
 		plInsDisplay.Done=Done;
-		xmpInstClear();
+		xmpInstClear (cpiSession);
 		plUseInstruments(&plInsDisplay);
 	}
 }

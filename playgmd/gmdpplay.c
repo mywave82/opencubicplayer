@@ -60,7 +60,7 @@ static struct moduleinfostruct mdbdata;
 __attribute__ ((visibility ("internal"))) struct gmdmodule mod;
 static char patlock;
 
-static void gmdMarkInsSamp(uint8_t *ins, uint8_t *samp)
+static void gmdMarkInsSamp (struct cpifaceSessionAPI_t *cpiSession, uint8_t *ins, uint8_t *samp)
 {
 	int i;
 	/* mod.channum == cpiSessionAPI->LogicalChannelCount */
@@ -212,7 +212,7 @@ static void gmdDrawGStrings (void)
 	);
 }
 
-static int gmdProcessKey(unsigned short key)
+static int gmdProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 {
 	uint16_t pat;
 	uint8_t row;
@@ -244,7 +244,7 @@ static int gmdProcessKey(unsigned short key)
 			mcpSet(-1, mcpMasterPause, plPause^=1);
 			break;
 		case KEY_CTRL_HOME:
-			gmdInstClear();
+			gmdInstClear (cpiSession);
 			mpSetPosition(0, 0);
 			if (plPause)
 				starttime=pausetime;
@@ -370,7 +370,7 @@ static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	plUseDots(gmdGetDots);
 	if (mod.message)
 		plUseMessage(mod.message);
-	gmdInstSetup(mod.instruments, mod.instnum, mod.modsamples, mod.modsampnum, mod.samples, mod.sampnum,
+	gmdInstSetup (cpiSessionAPI, mod.instruments, mod.instnum, mod.modsamples, mod.modsampnum, mod.samples, mod.sampnum,
 			( (info->modtype.integer.i==MODULETYPE("S3M")) || (info->modtype.integer.i==MODULETYPE("PTM")) )
 				?
 				1

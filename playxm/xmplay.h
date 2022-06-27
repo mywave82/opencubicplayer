@@ -193,9 +193,11 @@ enum
 	xfxDelay, xfxSetFinetune
 };
 
-extern void __attribute__ ((visibility ("internal"))) xmpInstSetup(const struct xmpinstrument *ins, int nins, const struct xmpsample *smp, int nsmp, const struct sampleinfo *smpi, int nsmpi, int type, void (*MarkyBoy)(char *, char *));
-extern void __attribute__ ((visibility ("internal"))) xmTrkSetup(const struct xmodule *mod);
-extern void __attribute__ ((visibility ("internal"))) xmpInstClear(void);
+struct cpifaceSessionAPI_t;
+
+extern void __attribute__ ((visibility ("internal"))) xmpInstSetup (struct cpifaceSessionAPI_t *cpiSession, const struct xmpinstrument *ins, int nins, const struct xmpsample *smp, int nsmp, const struct sampleinfo *smpi, int nsmpi, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpiSession, char *, char *));
+extern void __attribute__ ((visibility ("internal"))) xmTrkSetup (const struct xmodule *mod);
+extern void __attribute__ ((visibility ("internal"))) xmpInstClear (struct cpifaceSessionAPI_t *cpiSession);
 
 extern __attribute__ ((visibility ("internal"))) struct xmodule mod;
 

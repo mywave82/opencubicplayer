@@ -279,7 +279,7 @@ static void cdaDrawGStrings (void)
 	}
 }
 
-static int cdaProcessKey(uint16_t key)
+static int cdaProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 {
 	int i;
 	struct cdStat stat;

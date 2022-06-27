@@ -322,7 +322,7 @@ static void drawchannel(uint16_t *buf, int len, int i) /* TODO */
 
 
 
-static int oplProcessKey(uint16_t key)
+static int oplProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 {
 	struct oplTuneInfo ti;
 

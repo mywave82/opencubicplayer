@@ -80,7 +80,7 @@ extern struct cpimoderegstruct cpiModeText;
 static struct cpifaceplayerstruct *curplayer;
 void (*plSetMute)(int i, int m);
 void (*plDrawGStrings)(void);
-int (*plProcessKey)(uint16_t key);
+int (*plProcessKey)(struct cpifaceSessionAPI_t *cpiSession, uint16_t key);
 int (*plIsEnd)(void);
 void (*plIdle)(void);
 
@@ -2516,7 +2516,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 #ifdef KEYBOARD_DEBUG
 					fprintf (stderr, "plmpDrawScreen: plProcessKey()\n");
 #endif
-					plProcessKey(key);
+					plProcessKey (&cpifaceSessionAPI, key);
 				}
 				if (needdraw)
 				{

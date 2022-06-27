@@ -383,7 +383,7 @@ static void sidCloseFile(void)
 	SidInfoDone();
 }
 
-static int sidProcessKey(uint16_t key)
+static int sidProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 {
 	uint8_t csg;
 	switch (key)

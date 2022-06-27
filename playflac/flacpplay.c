@@ -122,7 +122,7 @@ static void flacDrawGStrings (void)
 	);
 }
 
-static int flacProcessKey(uint16_t key)
+static int flacProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 {
 	switch (key)
 	{

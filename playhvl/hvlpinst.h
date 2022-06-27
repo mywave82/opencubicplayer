@@ -1,6 +1,8 @@
 #ifndef _HVLPINST_H
 #define _HVLPINST_H 1
 
-void __attribute__ ((visibility ("internal"))) hvlInstSetup (void);
+struct cpifaceSessionAPI_t;
+
+void __attribute__ ((visibility ("internal"))) hvlInstSetup (struct cpifaceSessionAPI_t *cpiSession);
 
 #endif

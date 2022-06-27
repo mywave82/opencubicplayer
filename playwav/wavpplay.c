@@ -133,7 +133,7 @@ static void wavDrawGStrings (void)
 	);
 }
 
-static int wavProcessKey(unsigned short key)
+static int wavProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 {
 	switch (key)
 	{

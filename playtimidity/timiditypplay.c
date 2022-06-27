@@ -135,7 +135,7 @@ static void timidityDrawGStrings (void)
 	);
 }
 
-static int timidityProcessKey(uint16_t key)
+static int timidityProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 {
 	switch (key)
 	{

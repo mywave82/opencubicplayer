@@ -44,8 +44,9 @@ struct gmdinstrument
 };
 
 struct sampleinfo;
+struct cpifaceSessionAPI_t;
 
-extern void __attribute__ ((visibility ("internal"))) gmdInstSetup(const struct gmdinstrument *ins, int nins, const struct gmdsample *smp, int nsmp, const struct sampleinfo *smpi, int nsmpi, int type, void (*MarkyBoy)(uint8_t *, uint8_t *));
-extern void __attribute__ ((visibility ("internal"))) gmdInstClear(void);
+extern void __attribute__ ((visibility ("internal"))) gmdInstSetup (struct cpifaceSessionAPI_t *cpiSession, const struct gmdinstrument *ins, int nins, const struct gmdsample *smp, int nsmp, const struct sampleinfo *smpi, int nsmpi, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpiSession, uint8_t *, uint8_t *));
+extern void __attribute__ ((visibility ("internal"))) gmdInstClear (struct cpifaceSessionAPI_t *cpiSession);
 
 #endif

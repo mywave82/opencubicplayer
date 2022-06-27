@@ -35,6 +35,7 @@
 #include "types.h"
 #include "stuff/poutput.h"
 #include "cpiface.h"
+#include "cpiface-private.h"
 #include "cpipic.h"
 #include "dev/mcp.h"
 #include "fft.h"
@@ -196,7 +197,7 @@ static void plPrepareStripeScr(void)
 
 	if ((plAnalChan==2)&&!plGetLChanSample)
 		plAnalChan=0;
-	if (((plAnalChan==0)||(plAnalChan==1)) && (!cpifaceSessionAPI.GetMasterSample))
+	if (((plAnalChan==0)||(plAnalChan==1)) && (!cpifaceSessionAPI.Public.GetMasterSample))
 		plAnalChan=2;
 	if ((plAnalChan==2)&&!plGetLChanSample)
 		plAnalChan=0;
@@ -350,7 +351,7 @@ static void plDrawStripes(void)
 		memset(linebuf, 128, 1088);
 		if (!plAnalChan)
 		{
-			cpifaceSessionAPI.GetMasterSample(plSampBuf, 1024>>plStripeSpeed, plAnalRate, mcpGetSampleStereo);
+			cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, 1024>>plStripeSpeed, plAnalRate, mcpGetSampleStereo);
 
 			if (plStripeSpeed)
 			{
@@ -389,7 +390,7 @@ static void plDrawStripes(void)
 			}
 		} else {
 			if (plAnalChan!=2)
-				cpifaceSessionAPI.GetMasterSample(plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
+				cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
 			else
 				plGetLChanSample(plSelCh, plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
 			if (plStripeSpeed)
@@ -444,7 +445,7 @@ static void plDrawStripes(void)
 		memset(linebuf, 128, 272);
 		if (!plAnalChan)
 		{
-			cpifaceSessionAPI.GetMasterSample(plSampBuf, 256>>plStripeSpeed, plAnalRate, mcpGetSampleStereo);
+			cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, 256>>plStripeSpeed, plAnalRate, mcpGetSampleStereo);
 			if (plStripeSpeed)
 			{
 				fftanalyseall(ana, plSampBuf, 2, 7);
@@ -481,7 +482,7 @@ static void plDrawStripes(void)
 			}
 		} else {
 			if (plAnalChan!=2)
-				cpifaceSessionAPI.GetMasterSample(plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
+				cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
 			else
 				plGetLChanSample(plSelCh, plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
 			if (plStripeSpeed)
@@ -630,7 +631,7 @@ static void strDraw(void)
 
 static int strCan(void)
 {
-	if ((!plGetLChanSample) && (!cpifaceSessionAPI.GetMasterSample))
+	if ((!plGetLChanSample) && (!cpifaceSessionAPI.Public.GetMasterSample))
 		return 0;
 	return 1;
 }

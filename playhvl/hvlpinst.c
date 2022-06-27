@@ -23,14 +23,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include "types.h"
-//#include "dev/mcp.h"
 #include "hvlpinst.h"
 #include "hvlplay.h"
 #include "cpiface/cpiface.h"
 #include "player.h"
 #include "stuff/poutput.h"
 
-static void hvlDisplayIns40(unsigned short *buf, int n, int plInstMode)
+static void hvlDisplayIns40 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring (buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
@@ -38,7 +37,7 @@ static void hvlDisplayIns40(unsigned short *buf, int n, int plInstMode)
 	writestring (buf, 5, col, ht->ht_Instruments[n].ins_Name, 35);
 }
 
-static void hvlDisplayIns33(unsigned short *buf, int n, int plInstMode)
+static void hvlDisplayIns33 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 
@@ -47,7 +46,7 @@ static void hvlDisplayIns33(unsigned short *buf, int n, int plInstMode)
 	writestring (buf, 5, col, ht->ht_Instruments[n].ins_Name, 28);
 }
 
-static void hvlDisplayIns52(unsigned short *buf, int n, int plInstMode)
+static void hvlDisplayIns52 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring (buf, 0, col, (!plInstMode&&plInstUsed[n])?"    \xfe##: ":"     ##: ", 9);
@@ -55,7 +54,7 @@ static void hvlDisplayIns52(unsigned short *buf, int n, int plInstMode)
 	writestring (buf, 9, col, ht->ht_Instruments[n].ins_Name, 43);
 }
 
-static void hvlDisplayIns80(unsigned short *buf, int n, int plInstMode)
+static void hvlDisplayIns80 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col;
 
@@ -72,7 +71,7 @@ static void hvlDisplayIns80(unsigned short *buf, int n, int plInstMode)
 	writenum    (buf, 77, col, ht->ht_Instruments[n].ins_PList.pls_Length, 10, 3, 0);
 }
 
-static void hvlDisplayIns132(unsigned short *buf, int n, int plInstMode)
+static void hvlDisplayIns132 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col;
 
@@ -110,59 +109,52 @@ static void hvlDisplayIns132(unsigned short *buf, int n, int plInstMode)
 	writenum    (buf, 124, col, ht->ht_Instruments[n].ins_PList.pls_Length, 10, 3, 0);
 }
 
-static void hvlDisplayIns(unsigned short *buf, int len, int n, int plInstMode)
+static void hvlDisplayIns (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int len, int n, int plInstMode)
 {
 	switch (len)
 	{
 		case 33:
-			hvlDisplayIns33(buf, n, plInstMode);
+			hvlDisplayIns33 (cpiSession, buf, n, plInstMode);
 			break;
 		case 40:
-			hvlDisplayIns40(buf, n, plInstMode);
+			hvlDisplayIns40 (cpiSession, buf, n, plInstMode);
 			break;
 		case 52:
-			hvlDisplayIns52(buf, n, plInstMode);
+			hvlDisplayIns52 (cpiSession, buf, n, plInstMode);
 			break;
 		case 80:
-			hvlDisplayIns80(buf, n, plInstMode);
+			hvlDisplayIns80 (cpiSession, buf, n, plInstMode);
 			break;
 		case 132:
-			hvlDisplayIns132(buf, n, plInstMode);
+			hvlDisplayIns132 (cpiSession, buf, n, plInstMode);
 			break;
 	}
 }
 
-static void hvlMark(void)
+static void hvlMark (struct cpifaceSessionAPI_t *cpiSession)
 {
 	/* moved into hvl_statbuffer_callback_from_hvlbuf */
 }
 
-static void hvlInstClear(void)
+static void hvlInstClear (struct cpifaceSessionAPI_t *cpiSession)
 {
 }
 
-static void hvlDone(void)
+static void hvlDone (struct cpifaceSessionAPI_t *cpiSession)
 {
 }
 
-void __attribute__ ((visibility ("internal"))) hvlInstSetup (void)
+void __attribute__ ((visibility ("internal"))) hvlInstSetup (struct cpifaceSessionAPI_t *cpiSession)
 {
 	struct insdisplaystruct plInsDisplay;
 
 	plInsDisplay.Clear=hvlInstClear;
-/*
-	plInsDisplay.n40=ht->ht_InstrumentNr;
-	plInsDisplay.n52=ht->ht_InstrumentNr;
-	plInsDisplay.n80=ht->ht_InstrumentNr;         TODO TODO TODO TODO TODO TODO
-*/
 	plInsDisplay.title80 = " ##   instrument name / song message                  volume length  pls-spd/len";
-
 	plInsDisplay.title132 = " ##   instrument name / song message                          volume length   filter       square       vibrato   pls-speed/length  ";
-
 	plInsDisplay.Mark=hvlMark;
 	plInsDisplay.Display=hvlDisplayIns;
 	plInsDisplay.Done=hvlDone;
-	hvlInstClear();
+	hvlInstClear (cpiSession);
 	plInsDisplay.height=ht->ht_InstrumentNr;
 	plInsDisplay.bigheight=ht->ht_InstrumentNr;
 	plUseInstruments(&plInsDisplay);

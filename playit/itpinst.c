@@ -49,7 +49,7 @@ static const struct it_sample *plModSamples;
 
 static uint8_t plInstShowFreq;
 
-static void itDisplayIns40(uint16_t *buf, int n, int plInstMode)
+static void itDisplayIns40 (struct cpifaceSessionAPI_t *cpiSession, uint16_t *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
@@ -57,7 +57,7 @@ static void itDisplayIns40(uint16_t *buf, int n, int plInstMode)
 	writestring(buf, 5, col, plInstr[n].name, 35);
 }
 
-static void itDisplayIns33(uint16_t *buf, int n, int plInstMode)
+static void itDisplayIns33 (struct cpifaceSessionAPI_t *cpiSession, uint16_t *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
@@ -65,7 +65,7 @@ static void itDisplayIns33(uint16_t *buf, int n, int plInstMode)
 	writestring(buf, 5, col, plInstr[n].name, 28);
 }
 
-static void itDisplayIns52(uint16_t *buf, int n, int plInstMode)
+static void itDisplayIns52 (struct cpifaceSessionAPI_t *cpiSession, uint16_t *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"    \xfe##: ":"     ##: ", 9);
@@ -73,7 +73,7 @@ static void itDisplayIns52(uint16_t *buf, int n, int plInstMode)
 	writestring(buf, 9, col, plInstr[n].name, 43);
 }
 
-static void itDisplayIns80(uint16_t *buf, int n, int plInstMode)
+static void itDisplayIns80 (struct cpifaceSessionAPI_t *cpiSession, uint16_t *buf, int n, int plInstMode)
 {
 	char col;
 	writestring(buf, 0, 0, "", 80);
@@ -136,7 +136,7 @@ static void itDisplayIns80(uint16_t *buf, int n, int plInstMode)
 	}
 }
 
-static void itDisplayIns132(uint16_t *buf, int n, int plInstMode)
+static void itDisplayIns132 (struct cpifaceSessionAPI_t *cpiSession, uint16_t *buf, int n, int plInstMode)
 {
 	char col;
 	writestring(buf, 0, 0, "", 132);
@@ -203,31 +203,31 @@ static void itDisplayIns132(uint16_t *buf, int n, int plInstMode)
 	}
 }
 
-static void itDisplayIns(uint16_t *buf, int len, int n, int plInstMode)
+static void itDisplayIns (struct cpifaceSessionAPI_t *cpiSession, uint16_t *buf, int len, int n, int plInstMode)
 {
 	switch (len)
 	{
 		case 33:
-			itDisplayIns33(buf, n, plInstMode);
+			itDisplayIns33 (cpiSession, buf, n, plInstMode);
 			break;
 		case 40:
-			itDisplayIns40(buf, n, plInstMode);
+			itDisplayIns40 (cpiSession, buf, n, plInstMode);
 			break;
 		case 52:
-			itDisplayIns52(buf, n, plInstMode);
+			itDisplayIns52 (cpiSession, buf, n, plInstMode);
 			break;
 		case 80:
-			itDisplayIns80(buf, n, plInstMode);
+			itDisplayIns80 (cpiSession, buf, n, plInstMode);
 			break;
 		case 132:
-			itDisplayIns132(buf, n, plInstMode);
+			itDisplayIns132 (cpiSession, buf, n, plInstMode);
 			break;
 	}
 }
 
-static void (*Mark)(uint8_t *, uint8_t *);
+static void (*Mark) (struct cpifaceSessionAPI_t *cpiSession, uint8_t *, uint8_t *);
 
-static void itMark(void)
+static void itMark (struct cpifaceSessionAPI_t *cpiSession)
 {
 	int i;
 	for (i=0; i<instnum; i++)
@@ -236,16 +236,16 @@ static void itMark(void)
 	for (i=0; i<sampnum; i++)
 		if (plSampUsed[i])
 			plSampUsed[i]=1;
-	Mark(plInstUsed, plSampUsed);
+	Mark (cpiSession, plInstUsed, plSampUsed);
 }
 
-void __attribute__ ((visibility ("internal"))) itpInstClear(void)
+void __attribute__ ((visibility ("internal"))) itpInstClear (struct cpifaceSessionAPI_t *cpiSession)
 {
 	memset(plInstUsed, 0, instnum);
 	memset(plSampUsed, 0, sampnum);
 }
 
-static void Done(void)
+static void Done (struct cpifaceSessionAPI_t *cpiSession)
 {
 	if (plInstUsed)
 	{
@@ -269,7 +269,7 @@ static void Done(void)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) itpInstSetup(const struct it_instrument *ins, int nins, const struct it_sample *smp, int nsmp, const struct it_sampleinfo *smpi, /*int unused,*/ int type, void (*MarkyBoy)(uint8_t *, uint8_t *))
+void __attribute__ ((visibility ("internal"))) itpInstSetup (struct cpifaceSessionAPI_t *cpiSession, const struct it_instrument *ins, int nins, const struct it_sample *smp, int nsmp, const struct it_sampleinfo *smpi, /*int unused,*/ int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpiSession, uint8_t *, uint8_t *))
 {
 	int i,j;
 	int biginstlen=0;
@@ -283,7 +283,7 @@ void __attribute__ ((visibility ("internal"))) itpInstSetup(const struct it_inst
 	if (!plSampUsed||!plInstUsed)
 		return;
 
-	itpInstClear();
+	itpInstClear (cpiSession);
 
 	Mark=MarkyBoy;
 
@@ -335,11 +335,6 @@ void __attribute__ ((visibility ("internal"))) itpInstSetup(const struct it_inst
 
 	plInstShowFreq=type;
 	plInsDisplay.Clear=itpInstClear;
-/*
-	plInsDisplay.n40=instnum;
-	plInsDisplay.n52=instnum;
-	plInsDisplay.n80=biginstlen;
-*/
 	plInsDisplay.height=instnum;
 	plInsDisplay.bigheight=biginstlen;
 	plInsDisplay.title80=plInstShowFreq?
@@ -352,6 +347,6 @@ void __attribute__ ((visibility ("internal"))) itpInstSetup(const struct it_inst
 	plInsDisplay.Mark=itMark;
 	plInsDisplay.Display=itDisplayIns;
 	plInsDisplay.Done=Done;
-	itpInstClear();
+	itpInstClear (cpiSession);
 	plUseInstruments(&plInsDisplay);
 }

@@ -422,7 +422,7 @@ static void drawchannel(uint16_t *buf, int len, int i)
 	}
 }
 
-static int ymProcessKey(uint16_t key)
+static int ymProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 {
 	switch (key)
 	{

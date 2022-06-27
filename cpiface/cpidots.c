@@ -37,6 +37,7 @@
 #include "types.h"
 #include "stuff/poutput.h"
 #include "cpiface.h"
+#include "cpiface-private.h"
 #include "cpipic.h"
 
 #define MAXPCHAN 64
@@ -166,14 +167,14 @@ static void plDrawDots()
 {
 	int i,j,k,n,m;
 	int chan0;
-	int chann = cpifaceSessionAPI.LogicalChannelCount;
+	int chann = cpifaceSessionAPI.Public.LogicalChannelCount;
 	int pos;
 
 	if (chann>MAXVIEWCHAN)
 		chann=MAXVIEWCHAN;
 	chan0=plSelCh-(chann/2);
-	if ((chan0+chann) >= cpifaceSessionAPI.LogicalChannelCount)
-		chan0 = cpifaceSessionAPI.LogicalChannelCount - chann;
+	if ((chan0+chann) >= cpifaceSessionAPI.Public.LogicalChannelCount)
+		chan0 = cpifaceSessionAPI.Public.LogicalChannelCount - chann;
 	if (chan0<0)
 		chan0=0;
 
@@ -351,7 +352,7 @@ static void plPrepareDots()
 
 	memset(dotuse, 0, sizeof (dotuse));
 
-	chann = cpifaceSessionAPI.LogicalChannelCount;
+	chann = cpifaceSessionAPI.Public.LogicalChannelCount;
 	if (chann>MAXVIEWCHAN)
 		chann=MAXVIEWCHAN;
 

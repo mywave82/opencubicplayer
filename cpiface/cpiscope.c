@@ -35,6 +35,7 @@
 #include <math.h>
 #include "types.h"
 #include "cpiface.h"
+#include "cpiface-private.h"
 #include "cpipic.h"
 #include "dev/mcp.h"
 #include "stuff/poutput.h"
@@ -118,18 +119,18 @@ static void plPrepareScopeScr(void)
 {
 	char str[49];
 
-	if ((plOszChan==2)&& (!cpifaceSessionAPI.GetMasterSample))
+	if ((plOszChan==2)&& (!cpifaceSessionAPI.Public.GetMasterSample))
 		plOszChan=3;
 	if (((plOszChan==3)||(plOszChan==0))&&!plGetLChanSample)
 		plOszChan=1;
 	if ((plOszChan==1)&&!plGetPChanSample)
 		plOszChan=2;
-	if ((plOszChan==2) && (!cpifaceSessionAPI.GetMasterSample))
+	if ((plOszChan==2) && (!cpifaceSessionAPI.Public.GetMasterSample))
 		plOszChan=3;
 
 	if (plOszChan==0)
 	{
-		int chann = cpifaceSessionAPI.LogicalChannelCount;
+		int chann = cpifaceSessionAPI.Public.LogicalChannelCount;
 		if (chann>(MAXVIEWCHAN2*2))
 			chann=(MAXVIEWCHAN2*2);
 		scopenx=2;
@@ -139,17 +140,17 @@ static void plPrepareScopeScr(void)
 		scopesx=512/scopenx;
 		scopesy=336/scopeny;
 		scopetlen=scopesx/2;
-		makescaletab (plScopesAmp * cpifaceSessionAPI.PhysicalChannelCount / scopeny, scopesy/2);
+		makescaletab (plScopesAmp * cpifaceSessionAPI.Public.PhysicalChannelCount / scopeny, scopesy/2);
 	} else if (plOszChan==1)
 	{
-		scopenx=sqrt( (cpifaceSessionAPI.PhysicalChannelCount + 2)/3);
-		scopeny=(cpifaceSessionAPI.PhysicalChannelCount+scopenx-1)/scopenx;
+		scopenx=sqrt( (cpifaceSessionAPI.Public.PhysicalChannelCount + 2)/3);
+		scopeny = (cpifaceSessionAPI.Public.PhysicalChannelCount + scopenx - 1)/scopenx;
 		scopedx=640/scopenx;
 		scopedy=384/scopeny;
 		scopesx=512/scopenx;
 		scopesy=336/scopeny;
 		scopetlen=scopesx/2;
-		makescaletab (plScopesAmp * cpifaceSessionAPI.PhysicalChannelCount / scopeny, scopesy/2);
+		makescaletab (plScopesAmp * cpifaceSessionAPI.Public.PhysicalChannelCount / scopeny, scopesy/2);
 	} else if (plOszChan==2)
 	{
 		scopenx=1;
@@ -168,7 +169,7 @@ static void plPrepareScopeScr(void)
 		scopesx=640;
 		scopesy=382;
 		scopetlen=scopesx;
-		makescaletab (plScopesAmp * cpifaceSessionAPI.PhysicalChannelCount, scopesy/2);
+		makescaletab (plScopesAmp * cpifaceSessionAPI.Public.PhysicalChannelCount, scopesy/2);
 	}
 
 	strcpy(str, "   scopes: ");
@@ -351,17 +352,17 @@ static void plDrawScopes(void)
 {
 	if (plOszChan==0)
 	{
-		int chann=(cpifaceSessionAPI.LogicalChannelCount + 1) / 2;
+		int chann = (cpifaceSessionAPI.Public.LogicalChannelCount + 1) / 2;
 		int chan0;
 		int i;
 
 		if (chann>MAXVIEWCHAN2)
 			chann=MAXVIEWCHAN2;
 		chan0=(plSelCh/2)-(chann/2);
-		if ((chan0+chann)>=((cpifaceSessionAPI.LogicalChannelCount+1)/2))
-			chan0=((cpifaceSessionAPI.LogicalChannelCount+1)/2)-chann;
+		if ((chan0+chann) >= ((cpifaceSessionAPI.Public.LogicalChannelCount+1)/2))
+			chan0 = ((cpifaceSessionAPI.Public.LogicalChannelCount+1)/2)-chann;
 		if (chan0<0)
-			chan0=0;
+			chan0 = 0;
 		chan0*=2;
 		chann*=2;
 
@@ -370,7 +371,7 @@ static void plDrawScopes(void)
 			int x=(plPanType?(((i+i+i+chan0)&2)>>1):(i&1));
 			int paus;
 			int16_t *bp;
-			if ((i+chan0)==cpifaceSessionAPI.LogicalChannelCount)
+			if ((i+chan0)==cpifaceSessionAPI.Public.LogicalChannelCount)
 			{
 				if (plChanChanged)
 			        {
@@ -412,7 +413,7 @@ static void plDrawScopes(void)
 		int i;
 		int16_t *bp;
 
-		for (i=0; i<cpifaceSessionAPI.PhysicalChannelCount; i++)
+		for (i=0; i < cpifaceSessionAPI.Public.PhysicalChannelCount; i++)
 		{
 			int paus=plGetPChanSample(i, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
 			if (paus==3)
@@ -444,7 +445,7 @@ static void plDrawScopes(void)
 	{
 		int i;
 
-		cpifaceSessionAPI.GetMasterSample(plSampBuf, scopesx, plOszRate/scopenx, plOszMono?mcpGetSampleMono:mcpGetSampleStereo);
+		cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, scopesx, plOszRate/scopenx, plOszMono?mcpGetSampleMono:mcpGetSampleStereo);
 
 		doscale(plSampBuf, scopesx*scopeny);
 
@@ -492,7 +493,7 @@ static void scoSetMode(void)
 
 static int scoCan(void)
 {
-	if (!plGetLChanSample&&!plGetPChanSample && (!cpifaceSessionAPI.GetMasterSample))
+	if (!plGetLChanSample&&!plGetPChanSample && (!cpifaceSessionAPI.Public.GetMasterSample))
 		return 0;
 	return 1;
 }

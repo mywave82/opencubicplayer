@@ -147,7 +147,7 @@ static void hvlDrawGStrings (void)
 //writestring(buf[2], 22, 0x0F, current_hvl_tune?current_hvl_tune->ht_Name:"", 44);
 }
 
-static int hvlProcessKey(uint16_t key)
+static int hvlProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -269,7 +269,7 @@ static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	plSetMute=hvlMute;
 	plGetPChanSample=hvlGetChanSample;
 	plUseDots(hvlGetDots);
-	hvlInstSetup ();
+	hvlInstSetup (cpiSessionAPI);
 	hvlChanSetup ();
 	hvlTrkSetup ();
 

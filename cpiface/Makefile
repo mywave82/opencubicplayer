@@ -69,6 +69,7 @@ cpianal.o: cpianal.c \
 	../config.h \
 	../types.h \
 	cpiface.h \
+	cpiface-private.h \
 	fft.h \
 	../boot/psetting.h \
 	../dev/mcp.h \
@@ -77,6 +78,7 @@ cpianal.o: cpianal.c \
 
 cpichan.o: cpichan.c \
 	cpiface.h \
+	cpiface-private.h \
 	../config.h \
 	../types.h \
 	../boot/psetting.h \
@@ -85,6 +87,7 @@ cpichan.o: cpichan.c \
 
 cpidots.o: cpidots.c \
 	cpiface.h \
+	cpiface-private.h \
 	cpipic.h \
 	../config.h \
 	../types.h \
@@ -109,6 +112,7 @@ cpigraph.o: cpigraph.c \
 	../types.h \
 	../stuff/poutput.h \
 	cpiface.h \
+	cpiface-private.h \
 	cpipic.h \
 	fft.h \
 	../dev/mcp.h
@@ -119,7 +123,8 @@ cpiinst.o: cpiinst.c \
 	../types.h \
 	../boot/psetting.h \
 	../stuff/poutput.h \
-	cpiface.h
+	cpiface.h \
+	cpiface-private.h
 	$(CC) cpiinst.c -o $@ -c
 
 cpikube.o: cpikube.c \
@@ -152,13 +157,15 @@ cpimvol.o: cpimvol.c \
 	../types.h \
 	../boot/psetting.h \
 	../stuff/poutput.h \
-	cpiface.h
+	cpiface.h \
+	cpiface-private.h
 	$(CC) cpimvol.c -o $@ -c
 
 cpiphase.o: cpiphase.c \
 	../config.h \
 	../types.h \
 	cpiface.h \
+	cpiface-private.h \
 	cpipic.h \
 	../dev/mcp.h \
 	../stuff/imsrtns.h \
@@ -185,6 +192,7 @@ cpiscope.o: cpiscope.c \
 	../config.h \
 	../types.h \
 	cpiface.h \
+	cpiface-private.h \
 	cpipic.h \
 	../dev/mcp.h \
 	../stuff/poutput.h
@@ -205,7 +213,8 @@ cpitrack.o: cpitrack.c \
 	../types.h \
 	../stuff/poutput.h \
 	../boot/psetting.h \
-	cpiface.h
+	cpiface.h \
+	cpiface-private.h
 	$(CC) cpitrack.c -o $@ -c
 
 mcpedit.o: mcpedit.c \

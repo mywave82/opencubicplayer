@@ -38,6 +38,7 @@
 #include "types.h"
 #include "boot/psetting.h"
 #include "cpiface.h"
+#include "cpiface-private.h"
 #include "dev/mcp.h"
 #include "fft.h"
 #include "stuff/poutput.h"
@@ -77,7 +78,7 @@ static void plDrawFFT(char sel)
 
 	if ((plAnalChan==2)&&!plGetLChanSample)
 		plAnalChan=0;
-	if (((plAnalChan==0)||(plAnalChan==1)) && (!cpifaceSessionAPI.GetMasterSample))
+	if (((plAnalChan==0)||(plAnalChan==1)) && (!cpifaceSessionAPI.Public.GetMasterSample))
 		plAnalChan=2;
 	if ((plAnalChan==2)&&!plGetLChanSample)
 		plAnalChan=0;
@@ -136,7 +137,7 @@ static void plDrawFFT(char sel)
 		unsigned int wh2;
 		unsigned int fl;
 
-		cpifaceSessionAPI.GetMasterSample(plSampBuf, 1<<bits, plAnalRate, mcpGetSampleStereo);
+		cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, 1<<bits, plAnalRate, mcpGetSampleStereo);
 		if (plAnalHeight&1)
 			displayvoid (plAnalFirstLine+plAnalHeight-1, ofs, plAnalWidth-2*ofs);
 		wh2=plAnalHeight>>1;
@@ -160,7 +161,7 @@ static void plDrawFFT(char sel)
 
 	} else {
 		if (plAnalChan!=2)
-			cpifaceSessionAPI.GetMasterSample(plSampBuf, 1<<bits, plAnalRate, 0);
+			cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, 1<<bits, plAnalRate, 0);
 		else
 			plGetLChanSample(plSelCh, plSampBuf, 1<<bits, plAnalRate, 0);
 		fftanalyseall(ana, plSampBuf, 1, bits);
@@ -303,7 +304,7 @@ static void AnalClose(void)
 
 static int AnalCan(void)
 {
-	if ((!cpifaceSessionAPI.GetMasterSample) && (!plGetLChanSample))
+	if ((!cpifaceSessionAPI.Public.GetMasterSample) && (!plGetLChanSample))
 		return 0;
 	return 1;
 }

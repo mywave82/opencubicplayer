@@ -38,7 +38,6 @@ struct cpifaceSessionAPI_t
 	uint_fast16_t LogicalChannelCount;  /* number of logical channels. Used by "Channel" viewer and selector, note-dot viewer, can be used by scope viewers, and is the default value used by track viewer */
 	uint_fast16_t PhysicalChannelCount; /* number of physical audio channels. Sometimes a format uses shadow channels for effects or smooth transitions. Can be used by scope viewers. */
 };
-extern __attribute__ ((visibility ("internal"))) struct cpifaceSessionAPI_t cpifaceSessionAPI;
 
 #warning move all these into cpifaceAPISource_t
 extern unsigned char plSelCh;
@@ -46,7 +45,7 @@ extern unsigned char plChanChanged;
 extern char plPause;
 extern char plMuteCh[];
 extern char plPanType; /* If this is one, it causes the visual channel-layout to swap right and left channel for every second channel group - currenly only used by some S3M files */
-extern int (*plProcessKey)(uint16_t key);
+extern int (*plProcessKey) (struct cpifaceSessionAPI_t *cpiSession, uint16_t key);
 extern void (*plDrawGStrings)(void);
 extern int (*plIsEnd)(void);
 extern void (*plIdle)(void);
@@ -144,12 +143,12 @@ extern void plUseMessage(char **);
 struct insdisplaystruct
 {
 	int height, bigheight;
-	char *title80;
-	char *title132;
-	void (*Mark)(void);
-	void (*Clear)(void);
-	void (*Display)(uint16_t *buf, int len, int n, int mode);
-	void (*Done)(void);
+	char *title80; /* cp437 */
+	char *title132; /* cp437 */
+	void (*Mark)(struct cpifaceSessionAPI_t *cpiSession);
+	void (*Clear)(struct cpifaceSessionAPI_t *cpiSession);
+	void (*Display)(struct cpifaceSessionAPI_t *cpiSession, uint16_t *buf, int len, int n, int mode);
+	void (*Done)(struct cpifaceSessionAPI_t *cpiSession);
 };
 
 extern void plUseInstruments(struct insdisplaystruct *x);

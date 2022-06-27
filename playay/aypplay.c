@@ -136,7 +136,7 @@ static void ayDrawGStrings (void)
 #warning TODO: globinfo.trackname, each track can have unique names.....
 }
 
-static int ayProcessKey(uint16_t key)
+static int ayProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 {
 	int csg;
 	struct ayinfo globinfo;

@@ -117,7 +117,7 @@ static void dopausefade(void)
 }
 
 
-static int itpProcessKey(uint16_t key)
+static int itpProcessKey(struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 {
 	int row;
 	int pat, p;
@@ -149,7 +149,7 @@ static int itpProcessKey(uint16_t key)
 			mcpSet(-1, mcpMasterPause, plPause^=1);
 			break;
 		case KEY_CTRL_HOME:
-			itpInstClear();
+			itpInstClear (cpiSession);
 			setpos (&itplayer, 0, 0);
 			if (plPause)
 				starttime=pausetime;
@@ -251,7 +251,7 @@ static void itpCloseFile(void)
 
 /**********************************************************************/
 
-static void itpMarkInsSamp(uint8_t *ins, uint8_t *smp)
+static void itpMarkInsSamp(struct cpifaceSessionAPI_t *cpiSession, uint8_t *ins, uint8_t *smp)
 {
 	int i;
 
@@ -614,7 +614,7 @@ static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	cpiSessionAPI->PhysicalChannelCount = mcpNChan;
 	plUseDots(itpGetDots);
 	plUseChannels(drawchannel);
-	itpInstSetup(mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, /*mod.nsampi,*/ 0, itpMarkInsSamp);
+	itpInstSetup (cpiSessionAPI, mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, /*mod.nsampi,*/ 0, itpMarkInsSamp);
 	itTrkSetup(&mod);
 	if (mod.message)
 		plUseMessage(mod.message);

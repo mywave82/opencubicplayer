@@ -131,7 +131,7 @@ static void oggDrawGStrings (void)
 	);
 }
 
-static int oggProcessKey(uint16_t key)
+static int oggProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 {
 	switch (key)
 	{

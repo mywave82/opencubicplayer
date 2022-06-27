@@ -120,7 +120,7 @@ static void dopausefade(void)
 }
 
 
-static int xmpProcessKey(uint16_t key)
+static int xmpProcessKey(struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 {
 	int row;
 	int pat, p;
@@ -152,7 +152,7 @@ static int xmpProcessKey(uint16_t key)
 			mcpSet(-1, mcpMasterPause, plPause^=1);
 			break;
 		case KEY_CTRL_HOME:
-			xmpInstClear();
+			xmpInstClear (cpiSession);
 			xmpSetPos(0, 0);
 			if (plPause)
 				starttime=pausetime;
@@ -247,7 +247,7 @@ static void xmpCloseFile(void)
 
 /***********************************************************************/
 
-static void xmpMarkInsSamp(char *ins, char *smp)
+static void xmpMarkInsSamp (struct cpifaceSessionAPI_t *cpiSession, char *ins, char *smp)
 {
 	int i;
 	int in, sm;
@@ -628,7 +628,7 @@ static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 
 	plUseChannels(drawchannel);
 
-	xmpInstSetup(mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, mod.nsampi, 0, xmpMarkInsSamp);
+	xmpInstSetup(cpiSessionAPI, mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, mod.nsampi, 0, xmpMarkInsSamp);
 	xmTrkSetup(&mod);
 
 	plGetPChanSample=mcpGetChanSample;

@@ -36,8 +36,7 @@
 #include "boot/psetting.h"
 #include "stuff/poutput.h"
 #include "cpiface.h"
-
-static struct insdisplaystruct plInsDisplay;
+#include "cpiface-private.h"
 
 static int plInstScroll;
 static int plInstFirstLine;
@@ -71,12 +70,12 @@ static void displayshortins(int sel)
 		for (x=0; x<cols; x++)
 		{
 			i=y+plInstScroll+x*plInstLength;
-			if (i>=plInsDisplay.height)
+			if (i>=cpifaceSessionAPI.InsDisplay.height)
 			{
 				displayvoid(y+plInstFirstLine, x*40, 40);
 				continue;
 			}
-			plInsDisplay.Display(buf, 40, i, plInstMode);
+			cpifaceSessionAPI.InsDisplay.Display (&cpifaceSessionAPI.Public, buf, 40, i, plInstMode);
 			displaystrattr(y+plInstFirstLine, x*40 + plInstStartCol, buf, 40);
 		}
 		displayvoid(y+plInstFirstLine, 40*cols, left);
@@ -105,12 +104,12 @@ static void displayxshortins(int sel)
 		for (x=0; x<cols; x++)
 		{
 			i=y+plInstScroll+x*plInstLength;
-			if (i>=plInsDisplay.height)
+			if (i >= cpifaceSessionAPI.InsDisplay.height)
 			{
 				displayvoid(y+plInstFirstLine, x*33, 33);
 				continue;
 			}
-			plInsDisplay.Display(buf, 33, i, plInstMode);
+			cpifaceSessionAPI.InsDisplay.Display (&cpifaceSessionAPI.Public, buf, 33, i, plInstMode);
 			displaystrattr(y+plInstFirstLine, x*33 + plInstStartCol, buf, 33);
 		}
 		displayvoid(y+plInstFirstLine, 33*cols, left);
@@ -130,12 +129,12 @@ static void displaysideins(int sel)
 		displaystr(plInstFirstLine-1, plInstStartCol + 28, 0x08, " press i to select mode", 52-27);
 	for (y=0; y<plInstHeight; y++)
 	{
-		if (y>=plInsDisplay.height)
+		if (y >= cpifaceSessionAPI.InsDisplay.height)
 		{
 			displayvoid(y+plInstFirstLine, plInstStartCol /* 80 */, plInstWidth /* 52 */);
 			continue;
 		}
-		plInsDisplay.Display(buf, plInstWidth /* 52 */, y+plInstScroll, plInstMode);
+		cpifaceSessionAPI.InsDisplay.Display (&cpifaceSessionAPI.Public, buf, plInstWidth /* 52 */, y+plInstScroll, plInstMode);
 		displaystrattr(y+plInstFirstLine, plInstStartCol /* 80 */, buf, plInstWidth /* 52 */);
 		displayvoid(y+plInstFirstLine, 52, left);
 	}
@@ -152,15 +151,15 @@ static void displaylongins(int sel)
 		displaystr(plInstFirstLine-2, 23, 0x08, " press i to toggle mode", 57);
 	else
 		displaystr(plInstFirstLine-2, 23, 0x08, " press i to select mode", 57);
-	displaystr(plInstFirstLine-1, 0, 0x07, plInsDisplay.title80, 80);
+	displaystr(plInstFirstLine-1, 0, 0x07, cpifaceSessionAPI.InsDisplay.title80, 80);
 	for (y=0; y<plInstHeight; y++)
 	{
-		if (y>=plInsDisplay.bigheight)
+		if (y >= cpifaceSessionAPI.InsDisplay.bigheight)
 		{
 			displayvoid(y+plInstFirstLine, plInstStartCol/* 0 */, 80);
 			continue;
 		}
-		plInsDisplay.Display(buf, 80, y+plInstScroll, plInstMode);
+		cpifaceSessionAPI.InsDisplay.Display (&cpifaceSessionAPI.Public, buf, 80, y+plInstScroll, plInstMode);
 
 		displaystrattr(y+plInstFirstLine, plInstStartCol /* 0 */, buf, 80);
 		displayvoid(y+plInstFirstLine, 80, left);
@@ -178,15 +177,15 @@ static void displayxlongins(int sel)
 		displaystr(plInstFirstLine-2, 23, 0x08, " press i to toggle mode", 109);
 	else
 		displaystr(plInstFirstLine-2, 23, 0x08, " press i to select mode", 109);
-	displaystr(plInstFirstLine-1, 0, 0x07, plInsDisplay.title132, 132);
+	displaystr(plInstFirstLine-1, 0, 0x07, cpifaceSessionAPI.InsDisplay.title132, 132);
 	for (y=0; y<plInstHeight; y++)
 	{
-		if (y>=plInsDisplay.bigheight)
+		if (y >= cpifaceSessionAPI.InsDisplay.bigheight)
 		{
 			displayvoid(y+plInstFirstLine, plInstStartCol/* 0 */, 132);
 			continue;
 		}
-		plInsDisplay.Display(buf, 132, y+plInstScroll, plInstMode);
+		cpifaceSessionAPI.InsDisplay.Display (&cpifaceSessionAPI.Public, buf, 132, y+plInstScroll, plInstMode);
 		displaystrattr(y+plInstFirstLine, plInstStartCol /* 0 */, buf, 132);
 		displayvoid(y+plInstFirstLine, 132, left);
 	}
@@ -202,7 +201,7 @@ static void plDisplayInstruments(int sel)
 	if (plInstScroll<0)
 		plInstScroll=0;
 
-	plInsDisplay.Mark();
+	cpifaceSessionAPI.InsDisplay.Mark (&cpifaceSessionAPI.Public);
 
 	switch (plInstType)
 	{
@@ -237,16 +236,16 @@ static void InstSetWin(int xpos, int wid, int ypos, int hgt)
 		if (plInstWidth>=132)
 		{
 			int cols = plScrWidth/33;
-			plInstLength = (plInsDisplay.height + cols - 1) / cols;
+			plInstLength = (cpifaceSessionAPI.InsDisplay.height + cols - 1) / cols;
 		} else {
 			int cols = plScrWidth/40;
-			plInstLength = (plInsDisplay.height + cols - 1) / cols;
+			plInstLength = (cpifaceSessionAPI.InsDisplay.height + cols - 1) / cols;
 		}
 	} else if (plInstType==2)
 	{
-		plInstLength=plInsDisplay.bigheight;
+		plInstLength = cpifaceSessionAPI.InsDisplay.bigheight;
 	} else {
-		plInstLength=plInsDisplay.height;
+		plInstLength = cpifaceSessionAPI.InsDisplay.height;
 	}
 }
 
@@ -264,23 +263,23 @@ static int InstGetWin(struct cpitextmodequerystruct *q)
 			if (plInstWidth>=132)
 			{
 				int cols = plScrWidth/33;
-				int lines = (plInsDisplay.height + cols - 1) / cols;
+				int lines = (cpifaceSessionAPI.InsDisplay.height + cols - 1) / cols;
 				q->hgtmax=1+lines;
 			} else {
 				int cols = plScrWidth/40;
-				int lines = (plInsDisplay.height + cols - 1) / cols;
+				int lines = (cpifaceSessionAPI.InsDisplay.height + cols - 1) / cols;
 				q->hgtmax=1+lines;
 			}
 			q->xmode=1;
 			break;
 		case 2:
-			q->hgtmin=3;
-			q->hgtmax=2+plInsDisplay.bigheight;
-			q->xmode=3;
+			q->hgtmin = 3;
+			q->hgtmax = 2 + cpifaceSessionAPI.InsDisplay.bigheight;
+			q->xmode = 3;
 			break;
 		case 3:
-			q->hgtmin=2;
-			q->hgtmax=1+plInsDisplay.height;
+			q->hgtmin = 2;
+			q->hgtmax = 1 + cpifaceSessionAPI.InsDisplay.height;
 			q->xmode=2;
 			break;
 	}
@@ -367,7 +366,7 @@ static int InstAProcessKey(uint16_t key)
 			plInstScroll=plInstLength;
 			break;
 		case KEY_ALT_I:
-			plInsDisplay.Clear();
+			cpifaceSessionAPI.InsDisplay.Clear (&cpifaceSessionAPI.Public);
 			break;
 		case KEY_TAB: /* tab */
 		case KEY_SHIFT_TAB: /* 0x0f00 */
@@ -388,7 +387,7 @@ static int InstEvent(int ev)
 			plInstType=cfGetProfileInt2(cfScreenSec, "screen", "insttype", 3, 10)&3;
 			return 0;
 		case cpievDone: case cpievDoneAll:
-			if(plInsDisplay.Done) plInsDisplay.Done();
+			if(cpifaceSessionAPI.InsDisplay.Done) cpifaceSessionAPI.InsDisplay.Done (&cpifaceSessionAPI.Public);
 				return 0;
 	}
 	return 1;
@@ -409,7 +408,6 @@ static void __attribute__((destructor))done(void)
 void plUseInstruments(struct insdisplaystruct *x)
 {
 	plInstScroll=0;
-	/*plInsDisplay=x;*/
-	memcpy(&plInsDisplay, x, sizeof(*x));
+	cpifaceSessionAPI.InsDisplay = *x;
 	cpiTextRegisterMode(&cpiTModeInst);
 }

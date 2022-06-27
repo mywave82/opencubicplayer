@@ -31,6 +31,7 @@
 #include "boot/psetting.h"
 #include "stuff/poutput.h"
 #include "cpiface.h"
+#include "cpiface-private.h"
 
 #define COLTEXT 0x07
 #define COLTITLEH 0x09
@@ -76,7 +77,7 @@ static void drawpeakpower(int y, int x)
 	                                                " -- "
 	                                                "\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa"
 							"] ", 40);
-	cpifaceSessionAPI.GetRealMasterVolume(&l, &r);
+	cpifaceSessionAPI.Public.GetRealMasterVolume(&l, &r);
 	logvolbar(&l, &r);
 	l=(l+2)>>2;
 	r=(r+2)>>2;
@@ -104,7 +105,7 @@ static void drawbigpeakpower(int y, int x)
 			" -=\xf0\xf0=- "
 			"\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa"
 			"]   ", 80);
-	cpifaceSessionAPI.GetRealMasterVolume(&l, &r);
+	cpifaceSessionAPI.Public.GetRealMasterVolume(&l, &r);
 	logvolbar(&l, &r);
 	l=(l+1)>>1;
 	r=(r+1)>>1;
@@ -199,7 +200,7 @@ static int MVolIProcessKey(unsigned short key)
 			cpiTextSetMode("mvol");
 			return 1;
 		case 'x': case 'X':
-			plMVolType=cpifaceSessionAPI.LogicalChannelCount ? 2 : 1;
+			plMVolType=cpifaceSessionAPI.Public.LogicalChannelCount ? 2 : 1;
 			break;
 		case KEY_ALT_X:
 			plMVolType=1;
@@ -228,7 +229,7 @@ static int MVolAProcessKey(unsigned short key)
 
 static int MVolCan(void)
 {
-	return !!cpifaceSessionAPI.GetRealMasterVolume;
+	return !!cpifaceSessionAPI.Public.GetRealMasterVolume;
 }
 
 static int MVolEvent(int ev)

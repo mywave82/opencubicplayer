@@ -48,7 +48,7 @@ static const struct gmdsample *plModSamples;
 
 static char plInstShowFreq;
 
-static void gmdDisplayIns40(unsigned short *buf, int n, int plInstMode)
+static void gmdDisplayIns40 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
@@ -56,7 +56,7 @@ static void gmdDisplayIns40(unsigned short *buf, int n, int plInstMode)
 	writestring(buf, 5, col, plInstr[n].name, 35);
 }
 
-static void gmdDisplayIns33(unsigned short *buf, int n, int plInstMode)
+static void gmdDisplayIns33 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
@@ -64,7 +64,7 @@ static void gmdDisplayIns33(unsigned short *buf, int n, int plInstMode)
 	writestring(buf, 5, col, plInstr[n].name, 28);
 }
 
-static void gmdDisplayIns52(unsigned short *buf, int n, int plInstMode)
+static void gmdDisplayIns52 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"    \xfe##: ":"     ##: ", 9);
@@ -72,7 +72,7 @@ static void gmdDisplayIns52(unsigned short *buf, int n, int plInstMode)
 	writestring(buf, 9, col, plInstr[n].name, 43);
 }
 
-static void gmdDisplayIns80(unsigned short *buf, int n, int plInstMode)
+static void gmdDisplayIns80 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col;
 	writestring(buf, 0, 0, "", 80);
@@ -136,7 +136,7 @@ static void gmdDisplayIns80(unsigned short *buf, int n, int plInstMode)
 	}
 }
 
-static void gmdDisplayIns132(unsigned short *buf, int n, int plInstMode)
+static void gmdDisplayIns132 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col;
 
@@ -204,31 +204,31 @@ static void gmdDisplayIns132(unsigned short *buf, int n, int plInstMode)
 	}
 }
 
-static void gmdDisplayIns(unsigned short *buf, int len, int n, int plInstMode)
+static void gmdDisplayIns (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int len, int n, int plInstMode)
 {
 	switch (len)
 	{
 		case 33:
-			gmdDisplayIns33(buf, n, plInstMode);
+			gmdDisplayIns33 (cpiSession, buf, n, plInstMode);
 			break;
 		case 40:
-			gmdDisplayIns40(buf, n, plInstMode);
+			gmdDisplayIns40 (cpiSession, buf, n, plInstMode);
 			break;
 		case 52:
-			gmdDisplayIns52(buf, n, plInstMode);
+			gmdDisplayIns52 (cpiSession, buf, n, plInstMode);
 			break;
 		case 80:
-			gmdDisplayIns80(buf, n, plInstMode);
+			gmdDisplayIns80 (cpiSession, buf, n, plInstMode);
 			break;
 		case 132:
-			gmdDisplayIns132(buf, n, plInstMode);
+			gmdDisplayIns132 (cpiSession, buf, n, plInstMode);
 			break;
 	}
 }
 
-static void (*Mark)(uint8_t *, uint8_t *);
+static void (*Mark) (struct cpifaceSessionAPI_t *cpiSession, uint8_t *, uint8_t *);
 
-static void gmdMark(void)
+static void gmdMark (struct cpifaceSessionAPI_t *cpiSession)
 {
 	int i;
 	for (i=0; i<instnum; i++)
@@ -237,16 +237,16 @@ static void gmdMark(void)
 	for (i=0; i<sampnum; i++)
 		if (plSampUsed[i])
 			plSampUsed[i]=1;
-	Mark(plInstUsed, plSampUsed);
+	Mark (cpiSession, plInstUsed, plSampUsed);
 }
 
-void __attribute__ ((visibility ("internal"))) gmdInstClear(void)
+void __attribute__ ((visibility ("internal"))) gmdInstClear (struct cpifaceSessionAPI_t *cpiSession)
 {
 	memset(plInstUsed, 0, instnum);
 	memset(plSampUsed, 0, sampnum);
 }
 
-static void Done(void)
+static void Done (struct cpifaceSessionAPI_t *cpiSession)
 {
 	free(plInstUsed);
 	free(plSampUsed);
@@ -254,7 +254,7 @@ static void Done(void)
 	free(plBigSampNum);
 }
 
-void __attribute__ ((visibility ("internal"))) gmdInstSetup(const struct gmdinstrument *ins, int nins, const struct gmdsample *smp, int nsmp, const struct sampleinfo *smpi, int _notused, int type, void (*MarkyBoy)(uint8_t *, uint8_t *))
+void __attribute__ ((visibility ("internal"))) gmdInstSetup (struct cpifaceSessionAPI_t *cpiSession, const struct gmdinstrument *ins, int nins, const struct gmdsample *smp, int nsmp, const struct sampleinfo *smpi, int _notused, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpiSession, uint8_t *, uint8_t *))
 {
 	int i,j;
 	int biginstlen;
@@ -314,11 +314,6 @@ void __attribute__ ((visibility ("internal"))) gmdInstSetup(const struct gmdinst
 
 	plInstShowFreq=type;
 	plInsDisplay.Clear=gmdInstClear;
-/*
-	plInsDisplay.n40=instnum;
-	plInsDisplay.n52=instnum;
-	plInsDisplay.n80=biginstlen;         TODO TODO TODO TODO TODO TODO
-*/
 	plInsDisplay.title80=plInstShowFreq?
 		" ##   instrument name / song message    length replen bit samprate vol pan  flgs":
 		" ##   instrument name / song message    length replen bit  base ft vol pan  flgs";
@@ -328,7 +323,7 @@ void __attribute__ ((visibility ("internal"))) gmdInstSetup(const struct gmdinst
 	plInsDisplay.Mark=gmdMark;
 	plInsDisplay.Display=gmdDisplayIns;
 	plInsDisplay.Done=Done;
-	gmdInstClear();
+	gmdInstClear (cpiSession);
 	plInsDisplay.height=instnum;
 	plInsDisplay.bigheight=biginstlen;
 	plUseInstruments(&plInsDisplay);
