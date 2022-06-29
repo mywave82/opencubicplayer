@@ -37,10 +37,10 @@ struct cpifaceSessionAPI_t
 	void (*GetMasterSample)(int16_t *, unsigned int len, uint32_t rate, int mode);
 	uint_fast16_t LogicalChannelCount;  /* number of logical channels. Used by "Channel" viewer and selector, note-dot viewer, can be used by scope viewers, and is the default value used by track viewer */
 	uint_fast16_t PhysicalChannelCount; /* number of physical audio channels. Sometimes a format uses shadow channels for effects or smooth transitions. Can be used by scope viewers. */
+	uint8_t SelectedChannel; /* Used by most viewers*/
 };
 
 #warning move all these into cpifaceAPISource_t
-extern unsigned char plSelCh;
 extern unsigned char plChanChanged;
 extern char plPause;
 extern char plMuteCh[];

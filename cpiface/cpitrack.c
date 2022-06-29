@@ -144,13 +144,13 @@ static void getscrollpos(int tr, int *firstchan, int *chnn)
 {
 	if (overrideplNLChan>tr)
 	{
-		if (plSelCh<(tr>>1))
+		if (cpifaceSessionAPI.Public.SelectedChannel < (tr>>1))
 			*firstchan=0;
 		else
-			if (plSelCh>=(overrideplNLChan-(tr>>1)))
+			if (cpifaceSessionAPI.Public.SelectedChannel >= (overrideplNLChan-(tr>>1)))
 				*firstchan=overrideplNLChan-tr;
 			else
-				*firstchan=plSelCh-((tr>>1));
+				*firstchan=cpifaceSessionAPI.Public.SelectedChannel - ((tr>>1));
 		*chnn=tr;
 	} else {
 		*firstchan=0;
@@ -335,7 +335,7 @@ static void preparepatgen(int pat, const struct patviewtype *pt)
 	for (i=0; i<chnn; i++)
 	{
 		char chpaus=plMuteCh[i+firstchan];
-		char sel=((i+firstchan)==plSelCh);
+		char sel=((i+firstchan)==cpifaceSessionAPI.Public.SelectedChannel);
 		writenum(pattitle2, n0+pt->width*i, sel?COLTITLE2H:chpaus?COLTITLE2M:COLLNUM, i+firstchan+1, 10, (pt->width==1)?1:2, pt->width>2);
 		writestring(patmask, p0+pt->width*i, COLBACK, chpaus?pt->paused:sel?pt->selected:pt->normal, pt->width);
 	}

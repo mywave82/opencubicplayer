@@ -71,8 +71,8 @@ static void gmdMarkInsSamp (struct cpifaceSessionAPI_t *cpiSession, uint8_t *ins
 
 		if (!mpGetMute(i)&&mpGetChanStatus(i)&&ci.vol)
 		{
-			ins[ci.ins]=((plSelCh==i)||(ins[ci.ins]==3))?3:2;
-			samp[ci.smp]=((plSelCh==i)||(samp[ci.smp]==3))?3:2;
+			ins[ci.ins]=((cpiSession->SelectedChannel==i)||(ins[ci.ins]==3))?3:2;
+			samp[ci.smp]=((cpiSession->SelectedChannel==i)||(samp[ci.smp]==3))?3:2;
 		}
 	}
 }

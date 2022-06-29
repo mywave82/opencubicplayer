@@ -90,7 +90,6 @@ char plMuteCh[MAXLCHAN];
 int (*plGetLChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
 int (*plGetPChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
 
-unsigned char plSelCh;
 unsigned char plChanChanged;
 static signed char soloch=-1;
 
@@ -1867,7 +1866,7 @@ void cpiDrawGStrings (void)
 		chann = cpifaceSessionAPI.Public.LogicalChannelCount;
 		if (chann>limit)
 			chann=limit;
-		chan0=plSelCh-(chann/2);
+		chan0 = cpifaceSessionAPI.Public.SelectedChannel - (chann / 2);
 		if ((chan0+chann) >= cpifaceSessionAPI.Public.LogicalChannelCount)
 			chan0 = cpifaceSessionAPI.Public.LogicalChannelCount - chann;
 		if (chan0<0)
@@ -1880,7 +1879,7 @@ void cpiDrawGStrings (void)
 			unsigned char chr;
 			unsigned char col = 0;
 
-			if (plMuteCh[i+chan0]&&((i+chan0)!=plSelCh))
+			if (plMuteCh[i+chan0]&&((i+chan0) != cpifaceSessionAPI.Public.SelectedChannel))
 			{
 				chr = 0xc4;
 				col = 0x08;
@@ -1890,7 +1889,7 @@ void cpiDrawGStrings (void)
 				{
 					col |= 0x80;
 				} else {
-					if ((i+chan0)!=plSelCh)
+					if ((i+chan0) != cpifaceSessionAPI.Public.SelectedChannel)
 					{
 						col |= 0x08;
 					} else {
@@ -1898,8 +1897,8 @@ void cpiDrawGStrings (void)
 					}
 				}
 			}
-			displaychr (4, offset + i + ((i + chan0) >= plSelCh), col, chr, 1);
-			if ((i+chan0)==plSelCh)
+			displaychr (4, offset + i + ((i + chan0) >= cpifaceSessionAPI.Public.SelectedChannel), col, chr, 1);
+			if ((i + chan0) == cpifaceSessionAPI.Public.SelectedChannel)
 			{
 				displaychr (4, offset + i, col, '0' + (i + chan0 + 1)/10, 1);
 			}
@@ -1924,7 +1923,7 @@ void cpiDrawGStrings (void)
 			chann = cpifaceSessionAPI.Public.LogicalChannelCount;;
 			if (chann>limit)
 				chann=limit;
-			chan0=plSelCh-(chann/2);
+			chan0 = cpifaceSessionAPI.Public.SelectedChannel - (chann / 2);
 			if ((chan0+chann) >= cpifaceSessionAPI.Public.LogicalChannelCount)
 				chan0 = cpifaceSessionAPI.Public.LogicalChannelCount - chann;
 			if (chan0<0)
@@ -1936,7 +1935,7 @@ void cpiDrawGStrings (void)
 			{ /* needs tuning... TODO */
 				gdrawchar8(384+i*8, 64, '0'+(i+chan0+1)/10, plMuteCh[i+chan0]?8:7, 0);
 				gdrawchar8(384+i*8, 72, '0'+(i+chan0+1)%10, plMuteCh[i+chan0]?8:7, 0);
-				gdrawchar8(384+i*8, 80, ((i+chan0)==plSelCh)?0x18:((i==0)&&chan0)?0x1B:((i==(chann-1))&&((chan0+chann) != cpifaceSessionAPI.Public.LogicalChannelCount))?0x1A:' ', 15, 0);
+				gdrawchar8(384+i*8, 80, ((i+chan0)==cpifaceSessionAPI.Public.SelectedChannel)?0x18:((i==0)&&chan0)?0x1B:((i==(chann-1))&&((chan0+chann) != cpifaceSessionAPI.Public.LogicalChannelCount))?0x1A:' ', 15, 0);
 			}
 		}
 	}
@@ -2186,7 +2185,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 
 	soloch=-1;
 	memset(plMuteCh, 0, sizeof(plMuteCh));
-	plSelCh=0;
+	cpifaceSessionAPI.Public.SelectedChannel = 0;
 
 	return 1;
 }
@@ -2257,28 +2256,28 @@ static int cpiChanProcessKey(uint16_t key)
 			cpiKeyHelp(KEY_CTRL_Q, "Enable all channels");
 			return 0;
 		case KEY_LEFT:
-			if (plSelCh)
+			if (cpifaceSessionAPI.Public.SelectedChannel)
 			{
-				plSelCh--;
+				cpifaceSessionAPI.Public.SelectedChannel--;
 				plChanChanged=1;
 			}
 			break;
 		/*case 0x4800: //up*/
 		case KEY_UP:
-			plSelCh=(plSelCh - 1 + cpifaceSessionAPI.Public.LogicalChannelCount) % cpifaceSessionAPI.Public.LogicalChannelCount;
+			cpifaceSessionAPI.Public.SelectedChannel = (cpifaceSessionAPI.Public.SelectedChannel - 1 + cpifaceSessionAPI.Public.LogicalChannelCount) % cpifaceSessionAPI.Public.LogicalChannelCount;
 			plChanChanged=1;
 			break;
 		/*case 0x4d00: //right*/
 		case KEY_RIGHT:
-			if ((plSelCh+1) < cpifaceSessionAPI.Public.LogicalChannelCount)
+			if ((cpifaceSessionAPI.Public.SelectedChannel + 1) < cpifaceSessionAPI.Public.LogicalChannelCount)
 			{
-				plSelCh++;
+				cpifaceSessionAPI.Public.SelectedChannel++;
 				plChanChanged=1;
 			}
 			break;
 		/*case 0x5000: //down*/
 		case KEY_DOWN:
-			plSelCh=(plSelCh+1) % cpifaceSessionAPI.Public.LogicalChannelCount;
+			cpifaceSessionAPI.Public.SelectedChannel = (cpifaceSessionAPI.Public.SelectedChannel + 1) % cpifaceSessionAPI.Public.LogicalChannelCount;
 			plChanChanged=1;
 			break;
 
@@ -2299,16 +2298,16 @@ static int cpiChanProcessKey(uint16_t key)
 					key=(key>>8)-0x78+10;*/
 			if (key >= cpifaceSessionAPI.Public.LogicalChannelCount)
 				break;
-			plSelCh=key;
+			cpifaceSessionAPI.Public.SelectedChannel = key;
 
 		case 'q': case 'Q':
-			plMuteCh[plSelCh]=!plMuteCh[plSelCh];
-			plSetMute(plSelCh, plMuteCh[plSelCh]);
+			plMuteCh[cpifaceSessionAPI.Public.SelectedChannel] = !plMuteCh[cpifaceSessionAPI.Public.SelectedChannel];
+			plSetMute(cpifaceSessionAPI.Public.SelectedChannel, plMuteCh[cpifaceSessionAPI.Public.SelectedChannel]);
 			plChanChanged=1;
 			break;
 
 		case 's': case 'S':
-			if (plSelCh==soloch)
+			if (cpifaceSessionAPI.Public.SelectedChannel == soloch)
 			{
 				for (i=0; i < cpifaceSessionAPI.Public.LogicalChannelCount; i++)
 				{
@@ -2319,10 +2318,10 @@ static int cpiChanProcessKey(uint16_t key)
 			} else {
 				for (i=0; i < cpifaceSessionAPI.Public.LogicalChannelCount; i++)
 				{
-					plMuteCh[i]=i!=plSelCh;
+					plMuteCh[i] = i != cpifaceSessionAPI.Public.SelectedChannel;
 					plSetMute(i, plMuteCh[i]);
 				}
-				soloch=plSelCh;
+				soloch = cpifaceSessionAPI.Public.SelectedChannel;
 			}
 			plChanChanged=1;
 			break;

@@ -46,7 +46,7 @@ static void drawchannels()
 	uint16_t buf[CONSOLE_MAX_X];
 	int i,y,x;
 	int h=(plChannelType==1) ? ((cpifaceSessionAPI.Public.LogicalChannelCount + 1)/2) : cpifaceSessionAPI.Public.LogicalChannelCount;
-	int sh=(plChannelType==1)?(plSelCh/2):plSelCh;
+	int sh=(plChannelType==1) ? (cpifaceSessionAPI.Public.SelectedChannel / 2) : cpifaceSessionAPI.Public.SelectedChannel;
 	int first;
 	memset(buf, 0, sizeof(buf));
 	if (h>plChanHeight)
@@ -79,12 +79,12 @@ static void drawchannels()
 					if (plChanWidth<132)
 					{
 						writestring(buf, x*40, plMuteCh[i]?0x08:0x07, " ##:", 4);
-						writestring(buf, x*40, 0x0F, (i==plSelCh)?">":sign, 1);
+						writestring(buf, x*40, 0x0F, (i==cpifaceSessionAPI.Public.SelectedChannel) ? ">" : sign, 1);
 						_writenum(buf, x*40+1, plMuteCh[i]?0x08:0x07, i+1, 10, 2);
 						ChanDisplay(buf+x*40+4, 36, i);
 					} else {
 						writestring(buf, x*66, plMuteCh[i]?0x08:0x07, " ##:", 4);
-						writestring(buf, x*66, 0x0F, (i==plSelCh)?">":sign, 1);
+						writestring(buf, x*66, 0x0F, (i==cpifaceSessionAPI.Public.SelectedChannel) ? ">" : sign, 1);
 						_writenum(buf, x*66+1, plMuteCh[i]?0x08:0x07, i+1, 10, 2);
 						ChanDisplay(buf+x*66+4, 62, i);
 					}
@@ -96,8 +96,10 @@ static void drawchannels()
 			}
 		} else {
 			int i=y+first;
-			if ((y+first)==plSelCh)
+			if ((y + first) == cpifaceSessionAPI.Public.SelectedChannel)
+			{
 				sign=">";
+			}
 			if (plChannelType==2)
 			{
 				writestring(buf, 0, plMuteCh[i]?0x08:0x07, " ##:", 4);

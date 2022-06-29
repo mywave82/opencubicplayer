@@ -259,8 +259,8 @@ static void xmpMarkInsSamp (struct cpifaceSessionAPI_t *cpiSession, char *ins, c
 			continue;
 		in=xmpGetChanIns(i);
 		sm=xmpGetChanSamp(i);
-		ins[in-1]=((plSelCh==i)||(ins[in-1]==3))?3:2;
-		smp[sm]=((plSelCh==i)||(smp[sm]==3))?3:2;
+		ins[in-1]=((cpiSession->SelectedChannel==i)||(ins[in-1]==3))?3:2;
+		smp[sm]=((cpiSession->SelectedChannel==i)||(smp[sm]==3))?3:2;
 	}
 }
 

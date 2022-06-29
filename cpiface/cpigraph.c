@@ -392,7 +392,7 @@ static void plDrawStripes(void)
 			if (plAnalChan!=2)
 				cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
 			else
-				plGetLChanSample(plSelCh, plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
+				plGetLChanSample (cpifaceSessionAPI.Public.SelectedChannel, plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
 			if (plStripeSpeed)
 			{
 				fftanalyseall(ana, plSampBuf, 1, 10);
@@ -484,7 +484,7 @@ static void plDrawStripes(void)
 			if (plAnalChan!=2)
 				cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
 			else
-				plGetLChanSample(plSelCh, plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
+				plGetLChanSample (cpifaceSessionAPI.Public.SelectedChannel, plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
 			if (plStripeSpeed)
 			{
 				fftanalyseall(ana, plSampBuf, 1, 8);

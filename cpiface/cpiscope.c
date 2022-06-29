@@ -358,7 +358,7 @@ static void plDrawScopes(void)
 
 		if (chann>MAXVIEWCHAN2)
 			chann=MAXVIEWCHAN2;
-		chan0=(plSelCh/2)-(chann/2);
+		chan0 = (cpifaceSessionAPI.Public.SelectedChannel / 2) - (chann / 2);
 		if ((chan0+chann) >= ((cpifaceSessionAPI.Public.LogicalChannelCount+1)/2))
 			chan0 = ((cpifaceSessionAPI.Public.LogicalChannelCount+1)/2)-chann;
 		if (chan0<0)
@@ -385,8 +385,8 @@ static void plDrawScopes(void)
 			paus=plMuteCh[i];
 			if (plChanChanged)
 			{
-				gdrawchar8p(x?616:8, 96+scopedy*(i>>1)+scopedy/2-3, '0'+(i+1+chan0)/10, ((i+chan0)==plSelCh)?15:paus?8:7, plOpenCPPict?(plOpenCPPict-96*640):0);
-				gdrawchar8p(x?624:16, 96+scopedy*(i>>1)+scopedy/2-3, '0'+(i+1+chan0)%10, ((i+chan0)==plSelCh)?15:paus?8:7, plOpenCPPict?(plOpenCPPict-96*640):0);
+				gdrawchar8p(x?616: 8, 96+scopedy*(i>>1)+scopedy/2-3, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSessionAPI.Public.SelectedChannel)?15:paus?8:7, plOpenCPPict?(plOpenCPPict-96*640):0);
+				gdrawchar8p(x?624:16, 96+scopedy*(i>>1)+scopedy/2-3, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSessionAPI.Public.SelectedChannel)?15:paus?8:7, plOpenCPPict?(plOpenCPPict-96*640):0);
 			}
 
 			bp=plSampBuf;
@@ -454,8 +454,8 @@ static void plDrawScopes(void)
 	} else {
 		char col;
 		int16_t *bp;
-		plGetLChanSample(plSelCh, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
-		col=plMuteCh[plSelCh]?7:15;
+		plGetLChanSample (cpifaceSessionAPI.Public.SelectedChannel, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
+		col=plMuteCh[cpifaceSessionAPI.Public.SelectedChannel]?7:15;
 		bp=plSampBuf;
 		if (plOszTrigger)
 		{

@@ -251,7 +251,7 @@ static int parse_RIFF(struct MIDI_Session *s, unsigned char *head, unsigned char
 				uint8_t vel = readu8 (&ptr, endptr, &eof);
 
 				if (eof) { fprintf (stderr, "premature eof encountered (3)\n"); return -1; }
-				fprintf_level (stderr, s); fprintf (stderr, "time %d, event 0x%02x, channel %d, NOTE ON, key %d, velocity %d\n", time, event, ch, key, vel);
+				fprintf_level (stderr, s); fprintf (stderr, "time %d, event 0x%02x, channel %d, NOTE ON, key %d, velocity %d%s\n", time, event, ch, key, vel, (vel==0)?" (NOTE OFF)":"");
 			} else if ((event & 0xf0) == 0xa0)
 			{
 				uint8_t ch = event & 0x0f;

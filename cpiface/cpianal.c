@@ -87,7 +87,7 @@ static void plDrawFFT(char sel)
 	if (plAnalChan==2)
 	{
 		s=s2;
-		snprintf(s2, sizeof(s2), "single channel: %3i", plSelCh+1);
+		snprintf(s2, sizeof(s2), "single channel: %3i", cpifaceSessionAPI.Public.SelectedChannel + 1);
 	} else {
 		if (plAnalChan)
 			s="master channel, mono";
@@ -163,7 +163,7 @@ static void plDrawFFT(char sel)
 		if (plAnalChan!=2)
 			cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, 1<<bits, plAnalRate, 0);
 		else
-			plGetLChanSample(plSelCh, plSampBuf, 1<<bits, plAnalRate, 0);
+			plGetLChanSample (cpifaceSessionAPI.Public.SelectedChannel, plSampBuf, 1<<bits, plAnalRate, 0);
 		fftanalyseall(ana, plSampBuf, 1, bits);
 		for (i=0; i<wid; i++)
 			if (plAnalFlip&1)

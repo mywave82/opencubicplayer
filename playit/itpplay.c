@@ -270,8 +270,8 @@ static void itpMarkInsSamp(struct cpifaceSessionAPI_t *cpiSession, uint8_t *ins,
 				continue;
 			in=getchanins(&itplayer, j);
 			sm=getchansamp(&itplayer, j);
-			ins[in-1]=((plSelCh==i)||(ins[in-1]==3))?3:2;
-			smp[sm]=((plSelCh==i)||(smp[sm]==3))?3:2;
+			ins[in-1] = ((cpiSession->SelectedChannel==i)||(ins[in-1]==3))?3:2;
+			smp[sm] = ((cpiSession->SelectedChannel==i)||(smp[sm]==3))?3:2;
 		}
 	}
 }

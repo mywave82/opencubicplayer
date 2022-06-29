@@ -385,15 +385,15 @@ static void plDrawScopes(void)
 		}
 	} else if (plOszChan==3)
 	{
-		plGetLChanSample(plSelCh, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
-		drawscope(scopedx/2, scopedy/2, plSampBuf, samples, plMuteCh[plSelCh]?7:15, 1);
+		plGetLChanSample (cpifaceSessionAPI.Public.SelectedChannel, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
+		drawscope(scopedx/2, scopedy/2, plSampBuf, samples, plMuteCh[cpifaceSessionAPI.Public.SelectedChannel]?7:15, 1);
 	} else if (plOszChan==0)
 	{
 		int i;
 		for (i=0; i < cpifaceSessionAPI.Public.LogicalChannelCount; i++)
 		{
 			plGetLChanSample(i, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
-			drawscope((i%scopenx)*scopedx+scopedx/2, scopedy*(i/scopenx)+scopedy/2, plSampBuf, samples, (plSelCh==i)?plMuteCh[i]?(HIGHLIGHT&7):HIGHLIGHT:plMuteCh[i]?8:15, 1);
+			drawscope((i%scopenx)*scopedx+scopedx/2, scopedy*(i/scopenx)+scopedy/2, plSampBuf, samples, (cpifaceSessionAPI.Public.SelectedChannel==i)?plMuteCh[i]?(HIGHLIGHT&7):HIGHLIGHT:plMuteCh[i]?8:15, 1);
 		}
 	}
 	drawframe();

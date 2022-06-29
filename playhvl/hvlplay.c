@@ -72,6 +72,8 @@ static int hvl_statbuffers_available = 0;
 struct hvl_chaninfo __attribute__ ((visibility ("internal"))) ChanInfo[MAX_CHANNELS];
 
 struct hvl_tune *ht = 0;
+#warning current_cpifaceSession is temporary
+static struct cpifaceSessionAPI_t *current_cpifaceSession = 0;
 static int hvl_samples_per_row;
 
 static int16_t *hvl_buf_stereo;
@@ -198,7 +200,7 @@ static void hvl_statbuffer_callback_from_hvlbuf (void *arg, int samples_ago)
 	{
 		if ((state->ChanInfo[i].ins >= 0) && (state->ChanInfo[i].ins <= 255))
 		{
-			if (plSelCh == i)
+			if (current_cpifaceSession->SelectedChannel == i)
 			{
 				plInstUsed[state->ChanInfo[i].ins] = 3;
 			} else {
@@ -632,6 +634,8 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 		return 0;
 	}
 
+	current_cpifaceSession = cpiSessionAPI;
+
 	ht = hvl_LoadTune_memory (mem, memlen, 4, hvlRate);
 	if (!ht)
 	{
@@ -714,6 +718,8 @@ error_out_tune:
 error_out_plrAPI_Play:
 	plrAPI->Stop();
 
+	current_cpifaceSession = 0;
+
 	return 0;
 }
 
@@ -746,6 +752,8 @@ void __attribute__ ((visibility ("internal"))) hvlClosePlayer (void)
 		hvl_FreeTune (ht);
 		ht = 0;
 	}
+
+	current_cpifaceSession = 0;
 
 	if (_SET)
 	{
