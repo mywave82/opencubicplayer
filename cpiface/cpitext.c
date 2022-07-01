@@ -33,6 +33,7 @@
 #include "stuff/poutput.h"
 #include "filesel/pfilesel.h"
 #include "cpiface.h"
+#include "cpiface-private.h"
 #include "boot/psetting.h"
 #include "boot/plinkman.h"
 
@@ -160,7 +161,7 @@ void cpiTextRecalc(void)
 	int sidemin,sidemax,sidesize;
 	int winmin,winmax,winsize;
 
-	plChanChanged=1;
+	cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
 
 	LastWidth=plScrWidth;
 	LastHeight=plScrHeight;

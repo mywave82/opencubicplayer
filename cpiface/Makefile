@@ -204,6 +204,7 @@ cpitext.o: cpitext.c \
 	../stuff/poutput.h \
 	../filesel/pfilesel.h \
 	cpiface.h \
+	cpiface-private.h \
 	../boot/psetting.h \
 	../boot/plinkman.h
 	$(CC) cpitext.c -o $@ -c

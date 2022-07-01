@@ -327,7 +327,7 @@ static int plScopesKey(uint16_t key)
 		case 'o': case 'O':
 			plOszChan=(plOszChan+1)%4;
 			plPrepareScopes();
-			plChanChanged=1;
+			cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
 			break;
 		default:
 			return 0;
@@ -373,9 +373,9 @@ static void plDrawScopes(void)
 			int16_t *bp;
 			if ((i+chan0)==cpifaceSessionAPI.Public.LogicalChannelCount)
 			{
-				if (plChanChanged)
+				if (cpifaceSessionAPI.Public.SelectedChannelChanged)
 			        {
-					gdrawchar8p(x?616:8, 96+scopedy*(i>>1)+scopedy/2-3, ' ', 0, plOpenCPPict?(plOpenCPPict-96*640):0);
+					gdrawchar8p(x?616: 8, 96+scopedy*(i>>1)+scopedy/2-3, ' ', 0, plOpenCPPict?(plOpenCPPict-96*640):0);
 					gdrawchar8p(x?624:16, 96+scopedy*(i>>1)+scopedy/2-3, ' ', 0, plOpenCPPict?(plOpenCPPict-96*640):0);
 				}
 				removescope((scopedx-scopesx)/2+x*scopedx, scopedy*(i/scopenx)+scopedy/2, scopes+((i&~1)|x)*scopesx, scopesx);
@@ -383,7 +383,7 @@ static void plDrawScopes(void)
 			}
 			plGetLChanSample(i+chan0, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
 			paus=plMuteCh[i];
-			if (plChanChanged)
+			if (cpifaceSessionAPI.Public.SelectedChannelChanged)
 			{
 				gdrawchar8p(x?616: 8, 96+scopedy*(i>>1)+scopedy/2-3, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSessionAPI.Public.SelectedChannel)?15:paus?8:7, plOpenCPPict?(plOpenCPPict-96*640):0);
 				gdrawchar8p(x?624:16, 96+scopedy*(i>>1)+scopedy/2-3, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSessionAPI.Public.SelectedChannel)?15:paus?8:7, plOpenCPPict?(plOpenCPPict-96*640):0);

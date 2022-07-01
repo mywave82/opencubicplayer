@@ -233,7 +233,7 @@ static int plScopesKey(uint16_t key)
 		case 'b': case 'B':
 			plOszChan=(plOszChan+1)%4;
 			plPrepareScopes();
-			plChanChanged=1;
+			cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
 			break;
 		default:
 			return 0;

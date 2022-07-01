@@ -90,7 +90,6 @@ char plMuteCh[MAXLCHAN];
 int (*plGetLChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
 int (*plGetPChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
 
-unsigned char plChanChanged;
 static signed char soloch=-1;
 
 char plPause;
@@ -111,13 +110,13 @@ static struct interfacestruct plOpenCP;
 void cpiSetGraphMode(int big)
 {
 	plSetGraphMode(big);
-	plChanChanged=1;
+	cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
 }
 
 void cpiSetTextMode(int size)
 {
 	plSetTextMode(size);
-	plChanChanged=1;
+	cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
 }
 
 /*
@@ -1909,7 +1908,7 @@ void cpiDrawGStrings (void)
 			displaychr (4, offset + 1 + chann, 0x08, ((chan0+chann) != cpifaceSessionAPI.Public.LogicalChannelCount) ? 0x1a : 0x04, 1);
 		}
 	} else {
-		if (plChanChanged)
+		if (cpifaceSessionAPI.Public.SelectedChannelChanged)
 		{
 			int chann;
 			int chan0;
@@ -2205,7 +2204,7 @@ static void plmpCloseFile()
 
 static void plmpOpenScreen()
 {
-	plChanChanged=0; /* force redraw of selected channel */
+	cpifaceSessionAPI.Public.SelectedChannelChanged = 0; /* force redraw of selected channel */
 
 	if (!curmode)
 		curmode=&cpiModeText;
@@ -2259,43 +2258,37 @@ static int cpiChanProcessKey(uint16_t key)
 			if (cpifaceSessionAPI.Public.SelectedChannel)
 			{
 				cpifaceSessionAPI.Public.SelectedChannel--;
-				plChanChanged=1;
+				cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
 			}
 			break;
 		/*case 0x4800: //up*/
 		case KEY_UP:
 			cpifaceSessionAPI.Public.SelectedChannel = (cpifaceSessionAPI.Public.SelectedChannel - 1 + cpifaceSessionAPI.Public.LogicalChannelCount) % cpifaceSessionAPI.Public.LogicalChannelCount;
-			plChanChanged=1;
+			cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
 			break;
 		/*case 0x4d00: //right*/
 		case KEY_RIGHT:
 			if ((cpifaceSessionAPI.Public.SelectedChannel + 1) < cpifaceSessionAPI.Public.LogicalChannelCount)
 			{
 				cpifaceSessionAPI.Public.SelectedChannel++;
-				plChanChanged=1;
+				cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
 			}
 			break;
 		/*case 0x5000: //down*/
 		case KEY_DOWN:
 			cpifaceSessionAPI.Public.SelectedChannel = (cpifaceSessionAPI.Public.SelectedChannel + 1) % cpifaceSessionAPI.Public.LogicalChannelCount;
-			plChanChanged=1;
+			cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
 			break;
 
 
 		case '1': case '2': case '3': case '4': case '5':
 		case '6': case '7': case '8': case '9': case '0':
-/*TODO-keys
-	  case 0x7800: case 0x7900: case 0x7A00: case 0x7B00: case 0x7C00:
-	  case 0x7D00: case 0x7E00: case 0x7F00: case 0x8000: case 0x8100:*/
 			if (key=='0')
+			{
 				key=9;
-			else
-/*
-				if (key<='9')*/
-					key-='1';
-/*
-				else
-					key=(key>>8)-0x78+10;*/
+			} else {
+				key-='1';
+			}
 			if (key >= cpifaceSessionAPI.Public.LogicalChannelCount)
 				break;
 			cpifaceSessionAPI.Public.SelectedChannel = key;
@@ -2303,7 +2296,7 @@ static int cpiChanProcessKey(uint16_t key)
 		case 'q': case 'Q':
 			plMuteCh[cpifaceSessionAPI.Public.SelectedChannel] = !plMuteCh[cpifaceSessionAPI.Public.SelectedChannel];
 			plSetMute(cpifaceSessionAPI.Public.SelectedChannel, plMuteCh[cpifaceSessionAPI.Public.SelectedChannel]);
-			plChanChanged=1;
+			cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
 			break;
 
 		case 's': case 'S':
@@ -2323,7 +2316,7 @@ static int cpiChanProcessKey(uint16_t key)
 				}
 				soloch = cpifaceSessionAPI.Public.SelectedChannel;
 			}
-			plChanChanged=1;
+			cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
 			break;
 
 		case KEY_CTRL_Q: case KEY_CTRL_S: /* TODO-keys*/
@@ -2333,7 +2326,7 @@ static int cpiChanProcessKey(uint16_t key)
 				plSetMute(i, plMuteCh[i]);
 			}
 			soloch=-1;
-			plChanChanged=1;
+			cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
 			break;
 		default:
 			return 0;
@@ -2541,7 +2534,7 @@ superbreak:
 	}
 	framelock();
 
-	plChanChanged=0;
+	cpifaceSessionAPI.Public.SelectedChannelChanged = 0;
 
 	return interfaceReturnContinue;
 }

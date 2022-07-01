@@ -585,7 +585,7 @@ static void gmdDrawPattern(int sel)
 			pat=0;
 	}
 
-	if ((plPrepdPat!=pat)||plChanChanged)
+	if ((plPrepdPat!=pat) || cpifaceSessionAPI.Public.SelectedChannelChanged)
 	{
 		if (plPatWidth<128)
 			switch (plPatType)

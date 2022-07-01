@@ -178,7 +178,8 @@ static void plDrawDots()
 	if (chan0<0)
 		chan0=0;
 
-	if (plChanChanged)
+	if (cpifaceSessionAPI.Public.SelectedChannelChanged)
+	{
 		for (i=0; i<chann; i++)
 		{
 			if (dothgt>=16)
@@ -194,7 +195,7 @@ static void plDrawDots()
 				gdrawchar8p (624, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSessionAPI.Public.SelectedChannel) ? 15 : plMuteCh[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
 			}
 		}
-
+	}
 	n=plGetDots(dotdata, MAXPCHAN);
 
 	k=0;

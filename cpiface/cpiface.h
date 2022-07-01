@@ -33,15 +33,15 @@ struct cpifaceplayerstruct
 
 struct cpifaceSessionAPI_t
 {
-	void (*GetRealMasterVolume)(int *l, int *r);
-	void (*GetMasterSample)(int16_t *, unsigned int len, uint32_t rate, int mode);
+	void (*GetRealMasterVolume)(int *l, int *r); /* filled in by devp/devw driver */
+	void (*GetMasterSample)(int16_t *, unsigned int len, uint32_t rate, int mode); /* filled in by devp/devw driver */
 	uint_fast16_t LogicalChannelCount;  /* number of logical channels. Used by "Channel" viewer and selector, note-dot viewer, can be used by scope viewers, and is the default value used by track viewer */
 	uint_fast16_t PhysicalChannelCount; /* number of physical audio channels. Sometimes a format uses shadow channels for effects or smooth transitions. Can be used by scope viewers. */
 	uint8_t SelectedChannel; /* Used by most viewers*/
+	uint8_t SelectedChannelChanged; /* Used to cache redraws of channels */
 };
 
 #warning move all these into cpifaceAPISource_t
-extern unsigned char plChanChanged;
 extern char plPause;
 extern char plMuteCh[];
 extern char plPanType; /* If this is one, it causes the visual channel-layout to swap right and left channel for every second channel group - currenly only used by some S3M files */
