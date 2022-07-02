@@ -819,7 +819,7 @@ static int devwMixFLoadSamples(struct sampleinfo *sil, int n)
 	return 1;
 }
 
-static int devwMixFOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI)
+static int devwMixFOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
 	uint32_t currentrate;
@@ -848,12 +848,12 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle
 	currentrate=mcpMixProcRate/chan;
 	dwmixfa_state.samprate=(currentrate>mcpMixMaxRate)?mcpMixMaxRate:currentrate;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&dwmixfa_state.samprate, &format, source_file, cpiSessionAPI))
+	if (!plrAPI->Play (&dwmixfa_state.samprate, &format, source_file, cpifaceSession))
 	{
 		goto error_out;
 	}
 
-	if (!mixInit(GetMixChannel, 0, chan, amplify, cpiSessionAPI))
+	if (!mixInit(GetMixChannel, 0, chan, amplify, cpifaceSession))
 	{
 		goto error_out_plrAPI_Play;
 	}

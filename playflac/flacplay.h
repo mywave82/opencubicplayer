@@ -45,7 +45,7 @@ extern int                   __attribute__ ((visibility ("internal")))   flac_pi
 extern void __attribute__ ((visibility ("internal"))) flacMetaDataUnlock(void);
 
 struct cpifaceSessionAPI_t;
-extern int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpiSessionAPI);
+extern int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpifaceSession);
 extern void __attribute__ ((visibility ("internal"))) flacClosePlayer(void);
 extern void __attribute__ ((visibility ("internal"))) flacIdle(void);
 extern void __attribute__ ((visibility ("internal"))) flacSetLoop(uint8_t s);
@@ -55,10 +55,10 @@ extern void __attribute__ ((visibility ("internal"))) flacGetInfo(struct flacinf
 extern uint64_t __attribute__ ((visibility ("internal"))) flacGetPos(void);
 extern void __attribute__ ((visibility ("internal"))) flacSetPos(uint64_t pos);
 
-extern void __attribute__ ((visibility ("internal"))) FlacInfoInit (void);
-extern void __attribute__ ((visibility ("internal"))) FlacInfoDone (void);
+extern void __attribute__ ((visibility ("internal"))) FlacInfoInit (struct cpifaceSessionAPI_t *cpifaceSession);
+extern void __attribute__ ((visibility ("internal"))) FlacInfoDone (struct cpifaceSessionAPI_t *cpifaceSession);
 
-extern void __attribute__ ((visibility ("internal"))) FlacPicInit (void);
-extern void __attribute__ ((visibility ("internal"))) FlacPicDone (void);
+extern void __attribute__ ((visibility ("internal"))) FlacPicInit (struct cpifaceSessionAPI_t *cpifaceSession);
+extern void __attribute__ ((visibility ("internal"))) FlacPicDone (struct cpifaceSessionAPI_t *cpifaceSession);
 
 #endif

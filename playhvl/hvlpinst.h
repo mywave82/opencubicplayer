@@ -3,6 +3,6 @@
 
 struct cpifaceSessionAPI_t;
 
-void __attribute__ ((visibility ("internal"))) hvlInstSetup (struct cpifaceSessionAPI_t *cpiSession);
+void __attribute__ ((visibility ("internal"))) hvlInstSetup (struct cpifaceSessionAPI_t *cpifaceSession);
 
 #endif

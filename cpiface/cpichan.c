@@ -40,13 +40,12 @@ static int plChanWidth;
 static char plChannelType;
 static int plChanStartCol;
 
-
-static void drawchannels()
+static void ChanDraw (struct cpifaceSessionAPI_t *cpifaceSession, int ignore)
 {
 	uint16_t buf[CONSOLE_MAX_X];
 	int i,y,x;
-	int h=(plChannelType==1) ? ((cpifaceSessionAPI.Public.LogicalChannelCount + 1)/2) : cpifaceSessionAPI.Public.LogicalChannelCount;
-	int sh=(plChannelType==1) ? (cpifaceSessionAPI.Public.SelectedChannel / 2) : cpifaceSessionAPI.Public.SelectedChannel;
+	int h =(plChannelType==1) ? ((cpifaceSession->LogicalChannelCount + 1) / 2) : cpifaceSession->LogicalChannelCount;
+	int sh=(plChannelType==1) ?  (cpifaceSession->SelectedChannel          / 2) : cpifaceSession->SelectedChannel;
 	int first;
 	memset(buf, 0, sizeof(buf));
 	if (h>plChanHeight)
@@ -74,17 +73,17 @@ static void drawchannels()
 				i=2*first+y*2+x;
 				if (plPanType&&(y&1))
 					i^=1;
-				if (i < cpifaceSessionAPI.Public.LogicalChannelCount)
+				if (i < cpifaceSession->LogicalChannelCount)
 				{
 					if (plChanWidth<132)
 					{
 						writestring(buf, x*40, plMuteCh[i]?0x08:0x07, " ##:", 4);
-						writestring(buf, x*40, 0x0F, (i==cpifaceSessionAPI.Public.SelectedChannel) ? ">" : sign, 1);
+						writestring(buf, x*40, 0x0F, (i==cpifaceSession->SelectedChannel) ? ">" : sign, 1);
 						_writenum(buf, x*40+1, plMuteCh[i]?0x08:0x07, i+1, 10, 2);
 						ChanDisplay(buf+x*40+4, 36, i);
 					} else {
 						writestring(buf, x*66, plMuteCh[i]?0x08:0x07, " ##:", 4);
-						writestring(buf, x*66, 0x0F, (i==cpifaceSessionAPI.Public.SelectedChannel) ? ">" : sign, 1);
+						writestring(buf, x*66, 0x0F, (i==cpifaceSession->SelectedChannel) ? ">" : sign, 1);
 						_writenum(buf, x*66+1, plMuteCh[i]?0x08:0x07, i+1, 10, 2);
 						ChanDisplay(buf+x*66+4, 62, i);
 					}
@@ -96,7 +95,7 @@ static void drawchannels()
 			}
 		} else {
 			int i=y+first;
-			if ((y + first) == cpifaceSessionAPI.Public.SelectedChannel)
+			if ((y + first) == cpifaceSession->SelectedChannel)
 			{
 				sign=">";
 			}
@@ -117,7 +116,7 @@ static void drawchannels()
 	}
 }
 
-static void ChanSetWin(int xpos, int wid, int ypos, int hgt)
+static void ChanSetWin(struct cpifaceSessionAPI_t *cpifaceSession, int xpos, int wid, int ypos, int hgt)
 {
 	plChanFirstLine=ypos;
 	plChanStartCol=xpos;
@@ -125,11 +124,11 @@ static void ChanSetWin(int xpos, int wid, int ypos, int hgt)
 	plChanWidth=wid;
 }
 
-static int ChanGetWin(struct cpitextmodequerystruct *q)
+static int ChanGetWin(struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
 {
 	if ((plChannelType==3)&&(plScrWidth<132))
 		plChannelType=0;
-	if (!cpifaceSessionAPI.Public.LogicalChannelCount)
+	if (!cpifaceSession->LogicalChannelCount)
 		return 0;
 
 	switch (plChannelType)
@@ -137,15 +136,15 @@ static int ChanGetWin(struct cpitextmodequerystruct *q)
 		case 0:
 			return 0;
 		case 1:
-			q->hgtmax=(cpifaceSessionAPI.Public.LogicalChannelCount + 1)>>1;
+			q->hgtmax=(cpifaceSession->LogicalChannelCount + 1)>>1;
 			q->xmode=3;
 			break;
 		case 2:
-			q->hgtmax = cpifaceSessionAPI.Public.LogicalChannelCount;
+			q->hgtmax = cpifaceSession->LogicalChannelCount;
 			q->xmode=1;
 			break;
 		case 3:
-			q->hgtmax = cpifaceSessionAPI.Public.LogicalChannelCount;
+			q->hgtmax = cpifaceSession->LogicalChannelCount;
 			q->xmode=2;
 			break;
 	}
@@ -159,12 +158,7 @@ static int ChanGetWin(struct cpitextmodequerystruct *q)
 	return 1;
 }
 
-static void ChanDraw(int ignore)
-{
-	drawchannels();
-}
-
-static int ChanIProcessKey(uint16_t key)
+static int ChanIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -175,7 +169,7 @@ static int ChanIProcessKey(uint16_t key)
 		case 'c': case 'C':
 			if (!plChannelType)
 				plChannelType=(plChannelType+1)%4;
-			cpiTextSetMode("chan");
+			cpiTextSetMode (cpifaceSession, "chan");
 			return 1;
 		case 'x': case 'X':
 			plChannelType=3;
@@ -187,7 +181,7 @@ static int ChanIProcessKey(uint16_t key)
 	return 0;
 }
 
-static int ChanAProcessKey(uint16_t key)
+static int ChanAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -197,7 +191,7 @@ static int ChanAProcessKey(uint16_t key)
 			return 0;
 		case 'c': case 'C':
 			plChannelType=(plChannelType+1)%4;
-			cpiTextRecalc();
+			cpiTextRecalc (cpifaceSession);
 			break;
 		default:
 			return 0;
@@ -205,7 +199,7 @@ static int ChanAProcessKey(uint16_t key)
 	return 1;
 }
 
-static int ChanEvent(int ev)
+static int ChanEvent(struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
@@ -228,11 +222,11 @@ static void __attribute__((destructor))done(void)
 	cpiTextUnregisterDefMode(&cpiTModeChan);
 }
 
-void plUseChannels(void (*Display)(uint16_t *buf, int len, int i))
+void plUseChannels (struct cpifaceSessionAPI_t *cpifaceSession, void (*Display)(uint16_t *buf, int len, int i))
 {
 	ChanDisplay=Display;
-	if (!cpifaceSessionAPI.Public.LogicalChannelCount)
+	if (!cpifaceSession->LogicalChannelCount)
 		return;
-	cpiTextRegisterMode(&cpiTModeChan);
+	cpiTextRegisterMode(cpifaceSession, &cpiTModeChan);
 }
 

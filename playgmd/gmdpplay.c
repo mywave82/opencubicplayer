@@ -60,10 +60,10 @@ static struct moduleinfostruct mdbdata;
 __attribute__ ((visibility ("internal"))) struct gmdmodule mod;
 static char patlock;
 
-static void gmdMarkInsSamp (struct cpifaceSessionAPI_t *cpiSession, uint8_t *ins, uint8_t *samp)
+static void gmdMarkInsSamp (struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *ins, uint8_t *samp)
 {
 	int i;
-	/* mod.channum == cpiSessionAPI->LogicalChannelCount */
+	/* mod.channum == cpifaceSession->LogicalChannelCount */
 	for (i=0; i<mod.channum; i++)
 	{
 		struct chaninfo ci;
@@ -71,8 +71,8 @@ static void gmdMarkInsSamp (struct cpifaceSessionAPI_t *cpiSession, uint8_t *ins
 
 		if (!mpGetMute(i)&&mpGetChanStatus(i)&&ci.vol)
 		{
-			ins[ci.ins]=((cpiSession->SelectedChannel==i)||(ins[ci.ins]==3))?3:2;
-			samp[ci.smp]=((cpiSession->SelectedChannel==i)||(samp[ci.smp]==3))?3:2;
+			ins[ci.ins]=((cpifaceSession->SelectedChannel==i)||(ins[ci.ins]==3))?3:2;
+			samp[ci.smp]=((cpifaceSession->SelectedChannel==i)||(samp[ci.smp]==3))?3:2;
 		}
 	}
 }
@@ -180,16 +180,17 @@ static void dopausefade(void)
 	mcpSetMasterPauseFadeParameters (i);
 }
 
-static void gmdDrawGStrings (void)
+static void gmdDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct globinfo gi;
 
-	mcpDrawGStrings ();
+	mcpDrawGStrings (cpifaceSession);
 
 	mpGetGlobInfo (&gi);
 
 	mcpDrawGStringsTracked
 	(
+		cpifaceSession,
 		utf8_8_dot_3,
 		utf8_16_dot_3,
 		0,          /* song X */
@@ -212,7 +213,7 @@ static void gmdDrawGStrings (void)
 	);
 }
 
-static int gmdProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
+static int gmdProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	uint16_t pat;
 	uint8_t row;
@@ -244,7 +245,7 @@ static int gmdProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 			mcpSet(-1, mcpMasterPause, plPause^=1);
 			break;
 		case KEY_CTRL_HOME:
-			gmdInstClear (cpiSession);
+			gmdInstClear (cpifaceSession);
 			mpSetPosition(0, 0);
 			if (plPause)
 				starttime=pausetime;
@@ -279,7 +280,7 @@ static int gmdProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 	return 1;
 }
 
-static void gmdCloseFile(void)
+static void gmdCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	gmdActive=0;
 	mpStopModule();
@@ -300,7 +301,7 @@ static int gmdLooped(void)
 	return (!fsLoopMods&&mpLooped());
 }
 
-static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI)
+static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader)
 {
 	const char *filename;
 	uint64_t i;
@@ -364,13 +365,13 @@ static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	plSetMute=mpMute;
 	plGetLChanSample=mpGetChanSample;
 
-	cpiSessionAPI->LogicalChannelCount = mod.channum;
-	cpiSessionAPI->PhysicalChannelCount = mcpNChan;
+	cpifaceSession->LogicalChannelCount = mod.channum;
+	cpifaceSession->PhysicalChannelCount = mcpNChan;
 
 	plUseDots(gmdGetDots);
 	if (mod.message)
 		plUseMessage(mod.message);
-	gmdInstSetup (cpiSessionAPI, mod.instruments, mod.instnum, mod.modsamples, mod.modsampnum, mod.samples, mod.sampnum,
+	gmdInstSetup (cpifaceSession, mod.instruments, mod.instnum, mod.modsamples, mod.modsampnum, mod.samples, mod.sampnum,
 			( (info->modtype.integer.i==MODULETYPE("S3M")) || (info->modtype.integer.i==MODULETYPE("PTM")) )
 				?
 				1
@@ -380,10 +381,10 @@ static int gmdOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 					2
 					:
 					0, gmdMarkInsSamp);
-	gmdChanSetup(&mod);
-	gmdTrkSetup(&mod);
+	gmdChanSetup (cpifaceSession, &mod);
+	gmdTrkSetup (cpifaceSession, &mod);
 
-	if (!mpPlayModule(&mod, file, cpiSessionAPI))
+	if (!mpPlayModule(&mod, file, cpifaceSession))
 		retval=errPlay;
 
 	plGetPChanSample=mcpGetChanSample;

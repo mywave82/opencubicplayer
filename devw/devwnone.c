@@ -414,7 +414,7 @@ static int devwNoneLoadSamples(struct sampleinfo *sil, int n)
 }
 
 
-static int devwNoneOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI)
+static int devwNoneOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (chan>MAXCHAN)
 		chan=MAXCHAN;
@@ -427,7 +427,7 @@ static int devwNoneOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle
 
 	playerproc=proc;
 
-	if (!mixInit(GetMixChannel, 1, chan, amplify, cpiSessionAPI))
+	if (!mixInit(GetMixChannel, 1, chan, amplify, cpifaceSession))
 	{
 		free(channels);
 		channels=0;

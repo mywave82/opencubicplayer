@@ -520,7 +520,7 @@ void __attribute__ ((visibility ("internal"))) cdJump (unsigned long start)
 	cdbuffpos = 0;
 }
 
-int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsigned long len, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI)
+int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsigned long len, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
 
@@ -538,7 +538,7 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 
 	cdRate=44100;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&cdRate, &format, file, cpiSessionAPI))
+	if (!plrAPI->Play (&cdRate, &format, file, cpifaceSession))
 	{
 		return -1;
 	}

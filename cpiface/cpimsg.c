@@ -43,7 +43,7 @@ static char *const *plSongMessage;
 static short plMsgScroll;
 static short plMsgHeight;
 
-static void plDisplayMessage(void)
+static void plDisplayMessage (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int y;
 
@@ -59,7 +59,7 @@ static void plDisplayMessage(void)
 			displayvoid(y+plWinFirstLine, 0, 80);
 }
 
-static int plMsgKey(uint16_t key)
+static int plMsgKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -105,10 +105,10 @@ static int plMsgKey(uint16_t key)
 	return 1;
 }
 
-static void msgDraw(void)
+static void msgDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiDrawGStrings();
-	plDisplayMessage();
+	cpiDrawGStrings (cpifaceSession);
+	plDisplayMessage (cpifaceSession);
 }
 
 static void msgSetMode(void)
@@ -118,7 +118,7 @@ static void msgSetMode(void)
 	plWinHeight=19;
 }
 
-static int msgIProcessKey(uint16_t key)
+static int msgIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -133,7 +133,7 @@ static int msgIProcessKey(uint16_t key)
 	return 0;
 }
 
-static int msgEvent(int _ignore)
+static int msgEvent (struct cpifaceSessionAPI_t *cpifaceSession, int _ignore)
 {
 	return 1;
 }

@@ -67,7 +67,7 @@ static void logvolbar(int *l, int *r)
 		*r=64;
 }
 
-static void drawpeakpower(int y, int x)
+static void drawpeakpower (struct cpifaceSessionAPI_t *cpifaceSession, int y, int x)
 {
 	unsigned short strbuf[40];
 	int l,r;
@@ -77,7 +77,7 @@ static void drawpeakpower(int y, int x)
 	                                                " -- "
 	                                                "\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa"
 							"] ", 40);
-	cpifaceSessionAPI.Public.GetRealMasterVolume(&l, &r);
+	cpifaceSession->GetRealMasterVolume (&l, &r);
 	logvolbar(&l, &r);
 	l=(l+2)>>2;
 	r=(r+2)>>2;
@@ -94,7 +94,7 @@ static void drawpeakpower(int y, int x)
 		displaystrattr(y+1, x, strbuf, 40);
 }
 
-static void drawbigpeakpower(int y, int x)
+static void drawbigpeakpower (struct cpifaceSessionAPI_t *cpifaceSession, int y, int x)
 {
 	unsigned short strbuf[80];
 	int l,r;
@@ -105,7 +105,7 @@ static void drawbigpeakpower(int y, int x)
 			" -=\xf0\xf0=- "
 			"\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa"
 			"]   ", 80);
-	cpifaceSessionAPI.Public.GetRealMasterVolume(&l, &r);
+	cpifaceSession->GetRealMasterVolume (&l, &r);
 	logvolbar(&l, &r);
 	l=(l+1)>>1;
 	r=(r+1)>>1;
@@ -122,7 +122,7 @@ static void drawbigpeakpower(int y, int x)
 		displaystrattr(y+1, x, strbuf, 80);
 }
 
-static void MVolDraw(int sel)
+static void MVolDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 {
 	if (plMVolType==2)
 	{
@@ -133,10 +133,10 @@ static void MVolDraw(int sel)
 			displayvoid (plMVolFirstLine+1, plMVolFirstCol /* 80 */, 8);
 			displayvoid (plMVolFirstLine+1, plMVolFirstCol + 48 /* 128 */, 4);
 		}
-		drawpeakpower(plMVolFirstLine, plMVolFirstCol + 8 /* 88 */);
+		drawpeakpower (cpifaceSession, plMVolFirstLine, plMVolFirstCol + 8 /* 88 */);
 	} else {
 		int l=(plMVolWidth>=132)?(plMVolWidth/2)-40 :20;
-		displaystr(plMVolFirstLine, plMVolFirstCol /* 0 */, plPause?COLMUTE:(sel?COLTITLEH:COLTEXT), "  peak power level:", l);
+		displaystr(plMVolFirstLine, plMVolFirstCol /* 0 */, plPause?COLMUTE:(focus?COLTITLEH:COLTEXT), "  peak power level:", l);
 		displayvoid (plMVolFirstLine, plMVolWidth-l + plMVolFirstCol /* 0 */ , l);
 		if (plMVolHeight==2)
 		{
@@ -144,13 +144,13 @@ static void MVolDraw(int sel)
 			displayvoid (plMVolFirstLine+1, plMVolWidth-l + plMVolFirstCol /* 0 */, l);
 		}
 		if (plMVolWidth>=132)
-			drawbigpeakpower(plMVolFirstLine, l);
+			drawbigpeakpower (cpifaceSession, plMVolFirstLine, l);
 		else
-			drawpeakpower(plMVolFirstLine, l);
+			drawpeakpower (cpifaceSession, plMVolFirstLine, l);
 	}
 }
 
-static void MVolSetWin(int xpos, int wid, int ypos, int hgt)
+static void MVolSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, int wid, int ypos, int hgt)
 {
 	plMVolFirstCol=xpos;
 	plMVolFirstLine=ypos;
@@ -158,7 +158,7 @@ static void MVolSetWin(int xpos, int wid, int ypos, int hgt)
 	plMVolWidth=wid;
 }
 
-static int MVolGetWin(struct cpitextmodequerystruct *q)
+static int MVolGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
 {
 	int pplheight;
 
@@ -186,7 +186,7 @@ static int MVolGetWin(struct cpitextmodequerystruct *q)
 	return 1;
 }
 
-static int MVolIProcessKey(unsigned short key)
+static int MVolIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -197,10 +197,10 @@ static int MVolIProcessKey(unsigned short key)
 		case 'v': case 'V':
 			if (!plMVolType)
 				plMVolType=1;
-			cpiTextSetMode("mvol");
+			cpiTextSetMode (cpifaceSession, "mvol");
 			return 1;
 		case 'x': case 'X':
-			plMVolType=cpifaceSessionAPI.Public.LogicalChannelCount ? 2 : 1;
+			plMVolType = cpifaceSession->LogicalChannelCount ? 2 : 1;
 			break;
 		case KEY_ALT_X:
 			plMVolType=1;
@@ -209,7 +209,7 @@ static int MVolIProcessKey(unsigned short key)
 	return 0;
 }
 
-static int MVolAProcessKey(unsigned short key)
+static int MVolAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -219,7 +219,7 @@ static int MVolAProcessKey(unsigned short key)
 			return 0;
 		case 'v': case 'V':
 			plMVolType=(plMVolType+1)%3;
-			cpiTextRecalc();
+			cpiTextRecalc (cpifaceSession);
 			break;
 		default:
 			return 0;
@@ -227,17 +227,17 @@ static int MVolAProcessKey(unsigned short key)
 	return 1;
 }
 
-static int MVolCan(void)
+static int MVolCan (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	return !!cpifaceSessionAPI.Public.GetRealMasterVolume;
+	return !!cpifaceSession->GetRealMasterVolume;
 }
 
-static int MVolEvent(int ev)
+static int MVolEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
 		case cpievInit:
-			return MVolCan();
+			return MVolCan (cpifaceSession);
 		case cpievInitAll:
 			plMVolType=cfGetProfileInt2(cfScreenSec, "screen", "mvoltype", 2, 10)%3;
 			return 1;

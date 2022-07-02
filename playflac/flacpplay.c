@@ -98,16 +98,17 @@ static void dopausefade(void)
 	mcpSetMasterPauseFadeParameters (i);
 }
 
-static void flacDrawGStrings (void)
+static void flacDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct flacinfo inf;
 
-	mcpDrawGStrings ();
+	mcpDrawGStrings (cpifaceSession);
 
 	flacGetInfo (&inf);
 
 	mcpDrawGStringsFixedLengthStream
 	(
+		cpifaceSession,
 		utf8_8_dot_3,
 		utf8_16_dot_3,
 		inf.pos, // this is in samples :-(
@@ -122,7 +123,7 @@ static void flacDrawGStrings (void)
 	);
 }
 
-static int flacProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
+static int flacProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -199,15 +200,15 @@ static int flacLooped(void)
 }
 
 
-static void flacCloseFile(void)
+static void flacCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	flacClosePlayer();
 
-	FlacInfoDone ();
-	FlacPicDone ();
+	FlacInfoDone (cpifaceSession);
+	FlacPicDone (cpifaceSession);
 }
 
-static int flacOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *flacf, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
+static int flacOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *flacf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	struct flacinfo inf;
@@ -225,7 +226,7 @@ static int flacOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *
 	plProcessKey=flacProcessKey;
 	plDrawGStrings=flacDrawGStrings;
 
-	if (!flacOpenPlayer(flacf, cpiSessionAPI))
+	if (!flacOpenPlayer(flacf, cpifaceSession))
 		return -1;
 
 	starttime=dos_clock();
@@ -237,8 +238,8 @@ static int flacOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *
 	flaclen=inf.len;
 	flacrate=inf.rate;
 
-	FlacInfoInit ();
-	FlacPicInit ();
+	FlacInfoInit (cpifaceSession);
+	FlacPicInit (cpifaceSession);
 
 	return errOk;
 }

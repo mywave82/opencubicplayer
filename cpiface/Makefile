@@ -283,6 +283,7 @@ volctrl.o: volctrl.c \
 	../boot/plinkman.h \
 	../boot/psetting.h \
 	cpiface.h \
+	cpiface-private.h \
 	../stuff/imsrtns.h \
 	vol.h
 	$(CC) volctrl.c -o $@ -c

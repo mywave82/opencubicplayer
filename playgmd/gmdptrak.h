@@ -1,6 +1,7 @@
 #ifndef __GMDTRK_H
 #define __GMDTRK_H
 
-extern void __attribute__ ((visibility ("internal"))) gmdTrkSetup(const struct gmdmodule *m);
+struct cpifaceSessionAPI_t;
+extern void __attribute__ ((visibility ("internal"))) gmdTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct gmdmodule *m);
 
 #endif

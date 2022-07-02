@@ -463,7 +463,7 @@ static void drawchannel(uint16_t *buf, int len, int i)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) ayChanSetup(void)
+void __attribute__ ((visibility ("internal"))) ayChanSetup (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	plUseChannels(drawchannel);
+	plUseChannels (cpifaceSession, drawchannel);
 }

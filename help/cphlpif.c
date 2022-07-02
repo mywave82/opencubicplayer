@@ -42,15 +42,15 @@ static int plHelpInit(void)
 	return 1;
 }
 
-static void hlpDraw(void)
+static void hlpDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiDrawGStrings();
+	cpiDrawGStrings (cpifaceSession);
 	brSetWinHeight(plScrHeight-6);
 	brDisplayHelp();
 	framelock();
 }
 
-static void hlpSetMode(void)
+static void hlpSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpiSetTextMode(0);
 	brSetWinStart(6);
@@ -62,7 +62,7 @@ static int hlpOpen(void)
 	return 1;
 }
 
-static int hlpIProcessKey(unsigned short key)
+static int hlpIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -84,7 +84,7 @@ static int hlpIProcessKey(unsigned short key)
 	return 1;
 }
 
-static int plHelpKey(unsigned short key)
+static int plHelpKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch(key)
 	{
@@ -107,7 +107,7 @@ static int plHelpKey(unsigned short key)
 	return 1;
 }
 
-static int hlpEvent(int ev)
+static int hlpEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{

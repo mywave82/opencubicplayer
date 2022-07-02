@@ -39,7 +39,7 @@ static int plHelpScroll;
 static int mode;
 
 
-static void plDisplayHelp(void)
+static void plDisplayHelp (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int y;
 	struct linkinfostruct l;
@@ -99,7 +99,7 @@ static void plDisplayHelp(void)
 	}
 }
 
-static int plHelpKey(uint16_t key)
+static int plHelpKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -155,11 +155,11 @@ static int plHelpKey(uint16_t key)
 	return 1;
 }
 
-static void hlpDraw(void)
+static void hlpDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	plWinHeight=plScrHeight-6;
-	cpiDrawGStrings();
-	plDisplayHelp();
+	cpiDrawGStrings (cpifaceSession);
+	plDisplayHelp (cpifaceSession);
 }
 
 static void hlpSetMode()
@@ -168,7 +168,7 @@ static void hlpSetMode()
 	plWinHeight=plScrHeight-6;
 }
 
-static int hlpIProcessKey(uint16_t key)
+static int hlpIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -184,7 +184,7 @@ static int hlpIProcessKey(uint16_t key)
 	return 1;
 }
 
-static int hlpEvent(int ignore)
+static int hlpEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ignore)
 {
 	return 1;
 }

@@ -104,7 +104,7 @@ extern int __attribute__ ((visibility ("internal"))) mpLoadSamples(struct gmdmod
 extern void __attribute__ ((visibility ("internal"))) mpRemoveText(struct gmdmodule *m);
 
 struct cpifaceSessionAPI_t;
-extern char __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodule *, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI);
+extern char __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodule *, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
 extern void __attribute__ ((visibility ("internal"))) mpStopModule(void);
 extern void __attribute__ ((visibility ("internal"))) mpSetPosition(int16_t pat, int16_t row);
 extern void __attribute__ ((visibility ("internal"))) mpGetPosition(uint16_t *pat, uint8_t *row);

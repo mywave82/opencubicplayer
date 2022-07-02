@@ -103,7 +103,8 @@ extern int plScrLines;                  /* How many graphical lines do we have *
 
 void make_title (const char *part, int escapewarning);
 struct settings;
-void cpiDrawG1String (struct settings *g1);
+struct cpifaceSessionAPI_t;
+void cpiDrawG1String (struct cpifaceSessionAPI_t *cpifaceSession, struct settings *g1);
 
 
 extern int plScrTextGUIOverlay;         /* Is text rendered virtually into a framebuffer, AND supports overlays? */

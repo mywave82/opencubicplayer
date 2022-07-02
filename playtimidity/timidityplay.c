@@ -1821,7 +1821,7 @@ static void doTimidityClosePlayer(int CloseDriver)
 	}
 }
 
-int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI)
+int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	uint32_t gmibuflen;
 	enum plrRequestFormat format;
@@ -1839,7 +1839,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 
 	gmiRate=0;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&gmiRate, &format, file, cpiSessionAPI))
+	if (!plrAPI->Play (&gmiRate, &format, file, cpifaceSession))
 	{
 		return errGen;
 	}

@@ -109,7 +109,7 @@ static void dopausefade (void)
 	mcpSetMasterPauseFadeParameters (i);
 }
 
-static void hvlDrawGStrings (void)
+static void hvlDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int     row,     rows;
 	int   order,   orders;
@@ -117,12 +117,13 @@ static void hvlDrawGStrings (void)
 	int tempo;
 	int speedmult;
 
-	mcpDrawGStrings ();
+	mcpDrawGStrings (cpifaceSession);
 
 	hvlGetStats (&row, &rows, &order, &orders, &subsong, &subsongs, &tempo, &speedmult);
 
 	mcpDrawGStringsTracked
 	(
+		cpifaceSession,
 		utf8_8_dot_3,
 		utf8_16_dot_3,
 		subsong,    /* song X */
@@ -147,7 +148,7 @@ static void hvlDrawGStrings (void)
 //writestring(buf[2], 22, 0x0F, current_hvl_tune?current_hvl_tune->ht_Name:"", 44);
 }
 
-static int hvlProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
+static int hvlProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -200,12 +201,12 @@ static int hvlIsLooped(void)
 	return !fsLoopMods&&hvlLooped();
 }
 
-static void hvlCloseFile(void)
+static void hvlCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	hvlClosePlayer();
 }
 
-static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
+static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	uint8_t *filebuf;
@@ -249,7 +250,7 @@ static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 		return errFileRead;
 	}
 
-	hvlOpenPlayer (filebuf, filelen, file, cpiSessionAPI);
+	hvlOpenPlayer (filebuf, filelen, file, cpifaceSession);
 	free (filebuf);
 	if (!current_hvl_tune)
 	{
@@ -263,15 +264,15 @@ static int hvlOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	starttime=dos_clock();
 	plPause=0;
 	pausefadedirect=0;
-	cpiSessionAPI->PhysicalChannelCount = ht->ht_Channels;
-	cpiSessionAPI->LogicalChannelCount = ht->ht_Channels;
+	cpifaceSession->PhysicalChannelCount = ht->ht_Channels;
+	cpifaceSession->LogicalChannelCount = ht->ht_Channels;
 	plIdle=hvlIdle;
 	plSetMute=hvlMute;
 	plGetPChanSample=hvlGetChanSample;
 	plUseDots(hvlGetDots);
-	hvlInstSetup (cpiSessionAPI);
-	hvlChanSetup ();
-	hvlTrkSetup ();
+	hvlInstSetup (cpifaceSession);
+	hvlChanSetup (cpifaceSession);
+	hvlTrkSetup (cpifaceSession);
 
 	return errOk;
 }

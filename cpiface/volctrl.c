@@ -48,6 +48,7 @@
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "cpiface.h"
+#include "cpiface-private.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poutput.h"
 #include "vol.h"
@@ -56,20 +57,12 @@ static enum modeenum { modeNone=0, mode80=1, mode52=2 } mode;
 static int focus, active;
 static int x0, y0, x1, y1, yoff;       /* origin x, origin y, width, height */
 static int AddVolsByName(char *n);
-static int GetVols();
 static int vols;                       /* number of registered vols */
 static struct regvolstruct             /* the registered vols */
 {
 	struct ocpvolregstruct *volreg;
 	int id;
 } vol[100];                            /* TODO: dynamically? on the other hand: which display has more than 100 lines? :) */
-
-static int GetWin(struct cpitextmodequerystruct *q);
-static void SetWin(int xmin, int xwid, int ymin, int ywid);
-static void Draw(int focus);
-static int IProcessKey(uint16_t);
-static int AProcessKey(uint16_t);
-static int Event(int ev);
 
 static int AddVolsByName(char *n)
 {
@@ -127,7 +120,7 @@ static int GetVols(void)
 	return 1;
 }
 
-static int GetWin(struct cpitextmodequerystruct *q)
+static int volctrlGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
 {
 	switch(mode)
 	{
@@ -152,7 +145,7 @@ static int GetWin(struct cpitextmodequerystruct *q)
 	return 1;
 }
 
-static void SetWin(int xmin, int xwid, int ymin, int ywid)
+static void volctrlSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xmin, int xwid, int ymin, int ywid)
 {
 	x0=xmin;
 	y0=ymin;
@@ -160,7 +153,7 @@ static void SetWin(int xmin, int xwid, int ymin, int ywid)
 	y1=ywid;
 }
 
-static void Draw(int focus)
+static void volctrlDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 {
 	uint16_t buf[CONSOLE_MAX_X];
 	size_t ll;
@@ -296,7 +289,7 @@ static void Draw(int focus)
 	}
 }
 
-static int IProcessKey(uint16_t key)
+static int volctrlIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -311,10 +304,10 @@ static int IProcessKey(uint16_t key)
 				if((mode==mode52)&&(plScrWidth<132))
 					mode=modeNone;
 				if(mode!=modeNone)
-					cpiTextSetMode("volctrl");
-				cpiTextRecalc();
+					cpiTextSetMode (cpifaceSession, "volctrl");
+				cpiTextRecalc (cpifaceSession);
 			} else {
-				cpiTextSetMode("volctrl");
+				cpiTextSetMode (cpifaceSession, "volctrl");
 			}
 			return 1;
 		case 'x': case 'X':
@@ -335,7 +328,7 @@ static int IProcessKey(uint16_t key)
 	return 0;
 }
 
-static int AProcessKey(uint16_t key)
+static int volctrlAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -353,7 +346,7 @@ static int AProcessKey(uint16_t key)
 				active--;
 				if(active<0)
 					active=vols-1;
-				Draw(focus);
+				volctrlDraw (cpifaceSession, focus);
 				return 1;
 			}
 			break;
@@ -363,7 +356,7 @@ static int AProcessKey(uint16_t key)
 				active++;
 				if (active>(vols-1))
 					active=0;
-				Draw(focus);
+				volctrlDraw (cpifaceSession, focus);
 				return 1;
 			}
 			break;
@@ -414,7 +407,7 @@ static int AProcessKey(uint16_t key)
 	return 1;
 }
 
-static int Event(int ev)
+static int volctrlEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch(ev)
 	{
@@ -436,14 +429,14 @@ static int Event(int ev)
 			if(cfGetProfileBool("screen", plScrWidth<132?"volctrl80":"volctrl132", plScrWidth<132?0:!0, plScrWidth<132?0:!0))
 			{
 				if(plScrWidth<132) mode=mode80;
-				cpiTextRecalc();
+				cpiTextRecalc(&cpifaceSessionAPI.Public);
 			}
 			return(1);
 	}
 	return 0;
 }
 
-static struct cpitextmoderegstruct cpiVolCtrl={"volctrl", GetWin, SetWin, Draw, IProcessKey, AProcessKey, Event CPITEXTMODEREGSTRUCT_TAIL};
+static struct cpitextmoderegstruct cpiVolCtrl={"volctrl", volctrlGetWin, volctrlSetWin, volctrlDraw, volctrlIProcessKey, volctrlAProcessKey, volctrlEvent CPITEXTMODEREGSTRUCT_TAIL};
 
 static void __attribute__((constructor))init(void)
 {

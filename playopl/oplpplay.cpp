@@ -186,14 +186,15 @@ static void drawlongvolbar(uint16_t *buf, int, unsigned char st)
 }
 
 
-static void oplDrawGStrings ()
+static void oplDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	mcpDrawGStrings ();
+	mcpDrawGStrings (cpifaceSession);
 
 	oplpGetGlobInfo(globinfo);
 
 	mcpDrawGStringsSongXofY
 	(
+		cpifaceSession,
 		utf8_8_dot_3,
 		utf8_16_dot_3,
 		globinfo.currentSong,
@@ -322,7 +323,7 @@ static void drawchannel(uint16_t *buf, int len, int i) /* TODO */
 
 
 
-static int oplProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
+static int oplProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	struct oplTuneInfo ti;
 
@@ -412,12 +413,12 @@ static int oplLooped(void)
 	return !fsLoopMods&&oplIsLooped();
 }
 
-static void oplCloseFile(void)
+static void oplCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	oplClosePlayer();
 }
 
-static int oplOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
+static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	size_t buffersize = 16*1024;
@@ -455,7 +456,7 @@ static int oplOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	plProcessKey=oplProcessKey;
 	plDrawGStrings=oplDrawGStrings;
 
-	if (!oplOpenPlayer(filename, buffer, bufferfill, file, cpiSessionAPI))
+	if (!oplOpenPlayer(filename, buffer, bufferfill, file, cpifaceSession))
 	{
 		return -1;
 	}
@@ -465,9 +466,9 @@ static int oplOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	plPause=0;
 	pausefadedirect=0;
 
-	cpiSessionAPI->LogicalChannelCount = 18;
-	cpiSessionAPI->PhysicalChannelCount = 18;
-	plUseChannels(drawchannel);
+	cpifaceSession->LogicalChannelCount = 18;
+	cpifaceSession->PhysicalChannelCount = 18;
+	plUseChannels (cpifaceSession, drawchannel);
 	plSetMute=oplMute;
 
 	oplpGetGlobInfo(globinfo);

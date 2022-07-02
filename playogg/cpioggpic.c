@@ -218,7 +218,7 @@ static int Refresh_OggPictures (void)
 	return 1;
 }
 
-static void OggPicSetWin(int xpos, int wid, int ypos, int hgt)
+static void OggPicSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, int wid, int ypos, int hgt)
 {
 	int i;
 	OggPicVisible = 1;
@@ -262,7 +262,7 @@ static void OggPicSetWin(int xpos, int wid, int ypos, int hgt)
 	}
 }
 
-static int OggPicGetWin(struct cpitextmodequerystruct *q)
+static int OggPicGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
 {
 	OggPicVisible = 0;
 	if (OggPicHandle)
@@ -355,7 +355,7 @@ static const char *PictureType (const int pt)
 	}
 }
 
-static void OggPicDraw(int focus)
+static void OggPicDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 {
 	const char *picture_type = PictureType (ogg_pictures[OggPicCurrentIndex].picture_type);
 	int left = OggPicWidth;
@@ -384,7 +384,7 @@ static void OggPicDraw(int focus)
 	}
 }
 
-static int OggPicIProcessKey(uint16_t key)
+static int OggPicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 
 {	if (!plScrTextGUIOverlay)
 	{
@@ -402,7 +402,7 @@ static int OggPicIProcessKey(uint16_t key)
 			{
 				OggPicActive=1;
 			}
-			cpiTextSetMode("oggpic");
+			cpiTextSetMode (cpifaceSession, "oggpic");
 			return 1;
 		case 'x': case 'X':
 			OggPicActive=3;
@@ -414,7 +414,7 @@ static int OggPicIProcessKey(uint16_t key)
 	return 0;
 }
 
-static int OggPicAProcessKey(uint16_t key)
+static int OggPicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	if (!plScrTextGUIOverlay)
 	{
@@ -471,7 +471,7 @@ static int OggPicAProcessKey(uint16_t key)
 			{
 				OggPicActive=0;
 			}
-			cpiTextRecalc();
+			cpiTextRecalc (cpifaceSession);
 			break;
 		default:
 			return 0;
@@ -479,7 +479,7 @@ static int OggPicAProcessKey(uint16_t key)
 	return 1;
 }
 
-static int OggPicEvent(int ev)
+static int OggPicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
@@ -537,16 +537,13 @@ static int OggPicEvent(int ev)
 
 static struct cpitextmoderegstruct cpiOggPic = {"oggpic", OggPicGetWin, OggPicSetWin, OggPicDraw, OggPicIProcessKey, OggPicAProcessKey, OggPicEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) OggPicInit (void)
+void __attribute__ ((visibility ("internal"))) OggPicInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-
-	//cpiTextRegisterDefMode(&cpiOggPic);
-	cpiTextRegisterMode(&cpiOggPic);
+	cpiTextRegisterMode (cpifaceSession, &cpiOggPic);
 }
 
 
-void __attribute__ ((visibility ("internal"))) OggPicDone (void)
+void __attribute__ ((visibility ("internal"))) OggPicDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	//cpiTextUnregisterDefMode(&cpiOggPic);
-	cpiTextUnregisterMode(&cpiOggPic);
+	cpiTextUnregisterMode (cpifaceSession, &cpiOggPic);
 }

@@ -164,7 +164,7 @@ static void devpNonePeekBuffer (void **buf1, unsigned int *buf1length, void **bu
 	}
 }
 
-static int devpNonePlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI)
+static int devpNonePlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	devpNoneInPause = 0;
 	devpNonePauseSamples = 0;
@@ -184,8 +184,8 @@ static int devpNonePlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 
 	clock_gettime (CLOCK_MONOTONIC, &devpNoneBasetime);
 
-	cpiSessionAPI->GetMasterSample = plrGetMasterSample;
-	cpiSessionAPI->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->GetMasterSample = plrGetMasterSample;
+	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
 
 	return 1;
 }

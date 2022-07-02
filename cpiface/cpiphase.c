@@ -84,39 +84,39 @@ static void plPrepareScopes(void)
 	dotbufpos=dotbuf;
 }
 
-static void plPrepareScopeScr(void)
+static void plPrepareScopeScr (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	char str[49];
 
-	if ((plOszChan==2) && (!cpifaceSessionAPI.Public.GetMasterSample))
+	if ((plOszChan==2) && (!cpifaceSession->GetMasterSample))
 		plOszChan=3;
 	if (((plOszChan==3)||(plOszChan==0))&&!plGetLChanSample)
 		plOszChan=1;
 	if ((plOszChan==1)&&!plGetPChanSample)
 		plOszChan=2;
-	if ((plOszChan==2) && (!cpifaceSessionAPI.Public.GetMasterSample))
+	if ((plOszChan==2) && (!cpifaceSession->GetMasterSample))
 		plOszChan=3;
 
 	if (plOszChan==0)
 	{
-		scopenx = sqrt (cpifaceSessionAPI.Public.LogicalChannelCount * 2);
-		scopeny = (cpifaceSessionAPI.Public.LogicalChannelCount + scopenx - 1)/scopenx;
+		scopenx = sqrt (cpifaceSession->LogicalChannelCount * 2);
+		scopeny = (cpifaceSession->LogicalChannelCount + scopenx - 1)/scopenx;
 		scopedx = 640/scopenx;
 		scopedy = 384/scopeny;
-		scopefx = ((int)(plScopesAmp*sqrt(cpifaceSessionAPI.Public.LogicalChannelCount << 4)))>>2;
+		scopefx = ((int)(plScopesAmp*sqrt(cpifaceSession->LogicalChannelCount << 4)))>>2;
 		scopefy = (scopefx*plScopesRatio)>>5;
-		samples = 64 * 128 / cpifaceSessionAPI.Public.LogicalChannelCount;
+		samples = 64 * 128 / cpifaceSession->LogicalChannelCount;
 		if (samples>1024)
 			samples=1024;
 	} else if (plOszChan==1)
 	{
-		scopenx = sqrt (cpifaceSessionAPI.Public.PhysicalChannelCount * 2);
-		scopeny = (cpifaceSessionAPI.Public.PhysicalChannelCount + scopenx - 1)/scopenx;
+		scopenx = sqrt (cpifaceSession->PhysicalChannelCount * 2);
+		scopeny = (cpifaceSession->PhysicalChannelCount + scopenx - 1)/scopenx;
 		scopedx = 640/scopenx;
 		scopedy = 384/scopeny;
-		scopefx = ((int)(plScopesAmp*sqrt (cpifaceSessionAPI.Public.PhysicalChannelCount << 4)))>>2;
+		scopefx = ((int)(plScopesAmp*sqrt (cpifaceSession->PhysicalChannelCount << 4)))>>2;
 		scopefy = (scopefx*plScopesRatio)>>5;
-		samples = 64 * 128 / cpifaceSessionAPI.Public.PhysicalChannelCount;
+		samples = 64 * 128 / cpifaceSession->PhysicalChannelCount;
 		if (samples>1024)
 			samples=1024;
 	} else if (plOszChan==2)
@@ -133,7 +133,7 @@ static void plPrepareScopeScr(void)
 		scopeny=1;
 		scopedx=640;
 		scopedy=384;
-		scopefx = plScopesAmp * cpifaceSessionAPI.Public.LogicalChannelCount;
+		scopefx = plScopesAmp * cpifaceSession->LogicalChannelCount;
 		scopefy=(scopefx*plScopesRatio)>>5;
 		samples=1024;
 	}
@@ -158,7 +158,7 @@ static void plPrepareScopeScr(void)
 	gdrawstr(4, 0, 0x09, str, 48);
 }
 
-static int plScopesKey(uint16_t key)
+static int plScopesKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -233,12 +233,12 @@ static int plScopesKey(uint16_t key)
 		case 'b': case 'B':
 			plOszChan=(plOszChan+1)%4;
 			plPrepareScopes();
-			cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
+			cpifaceSession->SelectedChannelChanged = 1;
 			break;
 		default:
 			return 0;
 	}
-	plPrepareScopeScr();
+	plPrepareScopeScr (cpifaceSession);
 	return 1;
 }
 
@@ -367,60 +367,60 @@ static void drawframe(void)
 	dotbufpos=dotbuf;
 }
 
-static void plDrawScopes(void)
+static void plDrawScopes (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i;
 	if (plOszChan==2)
 	{
-		cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, samples+1, plOszRate, (plOszMono?mcpGetSampleMono:mcpGetSampleStereo)|mcpGetSampleHQ);
+		cpifaceSession->GetMasterSample(plSampBuf, samples+1, plOszRate, (plOszMono?mcpGetSampleMono:mcpGetSampleStereo)|mcpGetSampleHQ);
 		for (i=0; i<scopenx; i++)
 			drawscope(scopedx/2+scopedx*i, scopedy/2, plSampBuf+i, samples, 15, scopenx);
 	} else if (plOszChan==1)
 	{
 		int i;
-		for (i=0; i<cpifaceSessionAPI.Public.PhysicalChannelCount; i++)
+		for (i=0; i < cpifaceSession->PhysicalChannelCount; i++)
 		{
 			int paus=plGetPChanSample(i, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
 			drawscope((i%scopenx)*scopedx+scopedx/2, scopedy*(i/scopenx)+scopedy/2, plSampBuf, samples, paus?8:15, 1);
 		}
 	} else if (plOszChan==3)
 	{
-		plGetLChanSample (cpifaceSessionAPI.Public.SelectedChannel, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
-		drawscope(scopedx/2, scopedy/2, plSampBuf, samples, plMuteCh[cpifaceSessionAPI.Public.SelectedChannel]?7:15, 1);
+		plGetLChanSample (cpifaceSession->SelectedChannel, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
+		drawscope(scopedx/2, scopedy/2, plSampBuf, samples, plMuteCh[cpifaceSession->SelectedChannel]?7:15, 1);
 	} else if (plOszChan==0)
 	{
 		int i;
-		for (i=0; i < cpifaceSessionAPI.Public.LogicalChannelCount; i++)
+		for (i=0; i < cpifaceSession->LogicalChannelCount; i++)
 		{
 			plGetLChanSample(i, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
-			drawscope((i%scopenx)*scopedx+scopedx/2, scopedy*(i/scopenx)+scopedy/2, plSampBuf, samples, (cpifaceSessionAPI.Public.SelectedChannel==i)?plMuteCh[i]?(HIGHLIGHT&7):HIGHLIGHT:plMuteCh[i]?8:15, 1);
+			drawscope((i%scopenx)*scopedx+scopedx/2, scopedy*(i/scopenx)+scopedy/2, plSampBuf, samples, (cpifaceSession->SelectedChannel==i)?plMuteCh[i]?(HIGHLIGHT&7):HIGHLIGHT:plMuteCh[i]?8:15, 1);
 		}
 	}
 	drawframe();
 }
 
-static void scoDraw(void)
+static void scoDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiDrawGStrings();
-	plDrawScopes();
+	cpiDrawGStrings (cpifaceSession);
+	plDrawScopes (cpifaceSession);
 }
 
-static void scoSetMode(void)
+static void scoSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	plReadOpenCPPic();
 	cpiSetGraphMode(0);
 	plPrepareScopes();
-	plPrepareScopeScr();
+	plPrepareScopeScr (cpifaceSession);
 }
 
-static int scoCan(void)
+static int scoCan (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if (!plGetLChanSample&&!plGetPChanSample && (!cpifaceSessionAPI.Public.GetMasterSample))
+	if (!plGetLChanSample&&!plGetPChanSample && (!cpifaceSession->GetMasterSample))
 		return 0;
 	return 1;
 }
 
-static int scoIProcessKey(uint16_t key)
+static int scoIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -429,7 +429,7 @@ static int scoIProcessKey(uint16_t key)
 			cpiKeyHelp('B', "Enable phase mode");
 			return 0;
 		case 'b': case 'B':
-			cpiSetMode("phase");
+			cpiSetMode ("phase");
 			break;
 		default:
 			return 0;
@@ -437,12 +437,12 @@ static int scoIProcessKey(uint16_t key)
 	return 1;
 }
 
-static int scoEvent(int ev)
+static int scoEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
 		case cpievInit:
-			return scoCan();
+			return scoCan (cpifaceSession);
 		case cpievInitAll:
 			return plScopesInit();
 	}

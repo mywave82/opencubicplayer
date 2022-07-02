@@ -204,7 +204,7 @@ void __attribute__ ((visibility ("internal"))) ymSetPos(uint32_t pos)
 	ymMusicSeek(pMusic, pos);
 }
 
-int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI)
+int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
 	void *buffer = 0;
@@ -234,7 +234,7 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 
 	ymRate=0;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&ymRate, &format, file, cpiSessionAPI))
+	if (!plrAPI->Play (&ymRate, &format, file, cpifaceSession))
 	{
 		fprintf(stderr, "[ymplay]: plrAPI->Play() failed\n");
 		goto error_out_buffer;

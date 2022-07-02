@@ -107,16 +107,17 @@ static void dopausefade(void)
 	mcpSetMasterPauseFadeParameters (i);
 }
 
-static void oggDrawGStrings (void)
+static void oggDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct ogginfo inf;
 
-	mcpDrawGStrings ();
+	mcpDrawGStrings (cpifaceSession);
 
 	oggGetInfo (&inf);
 
 	mcpDrawGStringsFixedLengthStream
 	(
+		cpifaceSession,
 		utf8_8_dot_3,
 		utf8_16_dot_3,
 		inf.pos,
@@ -131,7 +132,7 @@ static void oggDrawGStrings (void)
 	);
 }
 
-static int oggProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
+static int oggProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -209,15 +210,15 @@ static int oggIsLooped(void)
 }
 
 
-static void oggCloseFile(void)
+static void oggCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	oggClosePlayer();
 
-	OggInfoDone ();
-	OggPicDone ();
+	OggInfoDone (cpifaceSession);
+	OggPicDone (cpifaceSession);
 }
 
-static int oggOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *oggf, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
+static int oggOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *oggf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	struct ogginfo inf;
@@ -235,7 +236,7 @@ static int oggOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *o
 	plProcessKey=oggProcessKey;
 	plDrawGStrings=oggDrawGStrings;
 
-	if (!oggOpenPlayer(oggf, cpiSessionAPI))
+	if (!oggOpenPlayer(oggf, cpifaceSession))
 		return -1;
 
 	starttime=dos_clock();
@@ -246,8 +247,8 @@ static int oggOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *o
 	ogglen=inf.len;
 	oggrate=inf.rate;
 
-	OggInfoInit ();
-	OggPicInit ();
+	OggInfoInit (cpifaceSession);
+	OggPicInit (cpifaceSession);
 
 	return errOk;
 }

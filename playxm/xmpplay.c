@@ -120,7 +120,7 @@ static void dopausefade(void)
 }
 
 
-static int xmpProcessKey(struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
+static int xmpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	int row;
 	int pat, p;
@@ -152,7 +152,7 @@ static int xmpProcessKey(struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 			mcpSet(-1, mcpMasterPause, plPause^=1);
 			break;
 		case KEY_CTRL_HOME:
-			xmpInstClear (cpiSession);
+			xmpInstClear (cpifaceSession);
 			xmpSetPos(0, 0);
 			if (plPause)
 				starttime=pausetime;
@@ -204,19 +204,20 @@ static void xmpIdle(void)
 		dopausefade();
 }
 
-static void xmpDrawGStrings (void)
+static void xmpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int pos=xmpGetRealPos();
 	int gvol,bpm,tmp;
 	struct xmpglobinfo gi;
 
-	mcpDrawGStrings ();
+	mcpDrawGStrings (cpifaceSession);
 
 	xmpGetGlobInfo(&tmp, &bpm, &gvol);
 	xmpGetGlobInfo2(&gi);
 
 	mcpDrawGStringsTracked
 	(
+		cpifaceSession,
 		utf8_8_dot_3,
 		utf8_16_dot_3,
 		0,          /* song X */
@@ -239,7 +240,7 @@ static void xmpDrawGStrings (void)
 	);
 }
 
-static void xmpCloseFile(void)
+static void xmpCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	xmpStopModule();
 	xmpFreeModule(&mod);
@@ -247,20 +248,20 @@ static void xmpCloseFile(void)
 
 /***********************************************************************/
 
-static void xmpMarkInsSamp (struct cpifaceSessionAPI_t *cpiSession, char *ins, char *smp)
+static void xmpMarkInsSamp (struct cpifaceSessionAPI_t *cpifaceSession, char *ins, char *smp)
 {
 	int i;
 	int in, sm;
 
-	/* mod.nchan == cpiSessionAPI->LogicalChannelCount */
+	/* mod.nchan == cpifaceSession->LogicalChannelCount */
 	for (i=0; i<mod.nchan; i++)
 	{
 		if (!xmpChanActive(i)||plMuteCh[i])
 			continue;
 		in=xmpGetChanIns(i);
 		sm=xmpGetChanSamp(i);
-		ins[in-1]=((cpiSession->SelectedChannel==i)||(ins[in-1]==3))?3:2;
-		smp[sm]=((cpiSession->SelectedChannel==i)||(smp[sm]==3))?3:2;
+		ins[in-1]=((cpifaceSession->SelectedChannel==i)||(ins[in-1]==3))?3:2;
+		smp[sm]=((cpifaceSession->SelectedChannel==i)||(smp[sm]==3))?3:2;
 	}
 }
 
@@ -537,7 +538,7 @@ static int xmpGetDots(struct notedotsdata *d, int max)
 
 	int smp,frq,voll,volr,sus;
 
-	/* mod.nchan == cpiSessionAPI->LogicalChannelCount */
+	/* mod.nchan == cpifaceSession->LogicalChannelCount */
 	for (i=0; i<mod.nchan; i++)
 	{
 		if (pos>=max)
@@ -554,7 +555,7 @@ static int xmpGetDots(struct notedotsdata *d, int max)
 	return pos;
 }
 
-static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *_loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
+static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *_loader) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	int (*loader)(struct xmodule *, struct ocpfilehandle_t *)=0;
@@ -602,7 +603,7 @@ static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 
 	xmpOptimizePatLens(&mod);
 
-	if (!xmpPlayModule(&mod, file, cpiSessionAPI))
+	if (!xmpPlayModule(&mod, file, cpifaceSession))
 		retval=errPlay;
 
 	if (retval)
@@ -621,15 +622,15 @@ static int xmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	plSetMute=xmpMute;
 	plGetLChanSample=xmpGetLChanSample;
 
-	cpiSessionAPI->LogicalChannelCount = mod.nchan;
-	cpiSessionAPI->PhysicalChannelCount = mcpNChan;
+	cpifaceSession->LogicalChannelCount = mod.nchan;
+	cpifaceSession->PhysicalChannelCount = mcpNChan;
 
 	plUseDots(xmpGetDots);
 
-	plUseChannels(drawchannel);
+	plUseChannels (cpifaceSession, drawchannel);
 
-	xmpInstSetup(cpiSessionAPI, mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, mod.nsampi, 0, xmpMarkInsSamp);
-	xmTrkSetup(&mod);
+	xmpInstSetup (cpifaceSession, mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, mod.nsampi, 0, xmpMarkInsSamp);
+	xmTrkSetup (cpifaceSession, &mod);
 
 	plGetPChanSample=mcpGetChanSample;
 

@@ -474,10 +474,10 @@ static struct cpitrakdisplaystruct gmdptrkdisplay=
 };
 
 
-void __attribute__ ((visibility ("internal"))) gmdTrkSetup(const struct gmdmodule *mod)
+void __attribute__ ((visibility ("internal"))) gmdTrkSetup(struct cpifaceSessionAPI_t *cpifaceSession, const struct gmdmodule *mod)
 {
 	plPatterns=mod->patterns;
 	plOrders=mod->orders;
 	plTracks=mod->tracks;
-	cpiTrkSetup(&gmdptrkdisplay, mod->ordnum);
+	cpiTrkSetup (cpifaceSession, &gmdptrkdisplay, mod->ordnum);
 }

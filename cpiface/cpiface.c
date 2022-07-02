@@ -80,8 +80,8 @@ extern struct cpimoderegstruct cpiModeText;
 
 static struct cpifaceplayerstruct *curplayer;
 void (*plSetMute)(int i, int m);
-void (*plDrawGStrings)(void);
-int (*plProcessKey)(struct cpifaceSessionAPI_t *cpiSession, uint16_t key);
+void (*plDrawGStrings)(struct cpifaceSessionAPI_t *cpifaceSession);
+int (*plProcessKey)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key);
 int (*plIsEnd)(void);
 void (*plIdle)(void);
 
@@ -182,7 +182,7 @@ spd/ptch       =22 "spd: 123% = ptch: 123%"
                =25 "speed: 123% = pitch: 123%"
 */
 
-void cpiDrawG1String (struct settings *g1)
+void cpiDrawG1String (struct cpifaceSessionAPI_t *cpifaceSession, struct settings *g1)
 {
 	int volumemode = 0;
 	int echomode = 0;
@@ -1576,7 +1576,8 @@ void GStrings_render (int lineno, int count, const struct GStringElement **Eleme
 	displayvoid (lineno, x, endspace);
 }
 
-void mcpDrawGStringsFixedLengthStream (const char                    *filename8_3,
+void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t    *cpifaceSession,
+                                       const char                    *filename8_3,
                                        const char                    *filename16_3,
                                        const uint64_t                 pos,
                                        const uint64_t                 size, /* can be smaller than the file-size due to meta-data */
@@ -1658,7 +1659,8 @@ void mcpDrawGStringsFixedLengthStream (const char                    *filename8_
 	GStrings_render (3, 6, Elements2, sizes2, sizeinputa2, sizeinputb2, sizeinputc2);
 }
 
-void mcpDrawGStringsSongXofY (const char                    *filename8_3,
+void mcpDrawGStringsSongXofY (struct cpifaceSessionAPI_t    *cpifaceSession,
+                              const char                    *filename8_3,
                               const char                    *filename16_3,
                               const int                      songX,
                               const int                      songY,
@@ -1727,7 +1729,8 @@ void mcpDrawGStringsSongXofY (const char                    *filename8_3,
 	GStrings_render (3, 5, Elements2, sizes2, sizeinputa2, sizeinputb2, sizeinputc2);
 }
 
-void mcpDrawGStringsTracked (const char                    *filename8_3,
+void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t    *cpifaceSession,
+                             const char                    *filename8_3,
                              const char                    *filename16_3,
                              const int                      songX,
                              const int                      songY, /* 0 or smaller, disables this, else 2 digits.. */
@@ -1828,12 +1831,12 @@ void mcpDrawGStringsTracked (const char                    *filename8_3,
 	GStrings_render (3,  6, Elements2, sizes2, sizeinputa2, sizeinputb2, sizeinputc2);
 }
 
-void cpiDrawGStrings (void)
+void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	make_title (curplayer ? curplayer->playername : "", plEscTick);
 
 	if (plDrawGStrings)
-		plDrawGStrings();
+		plDrawGStrings (cpifaceSession);
 	else {
 		displayvoid (1, 0, plScrWidth);
 		displayvoid (2, 0, plScrWidth);
@@ -1862,12 +1865,12 @@ void cpiDrawGStrings (void)
 		if (limit<2)
 			limit=2;
 
-		chann = cpifaceSessionAPI.Public.LogicalChannelCount;
+		chann = cpifaceSession->LogicalChannelCount;
 		if (chann>limit)
 			chann=limit;
-		chan0 = cpifaceSessionAPI.Public.SelectedChannel - (chann / 2);
-		if ((chan0+chann) >= cpifaceSessionAPI.Public.LogicalChannelCount)
-			chan0 = cpifaceSessionAPI.Public.LogicalChannelCount - chann;
+		chan0 = cpifaceSession->SelectedChannel - (chann / 2);
+		if ((chan0+chann) >= cpifaceSession->LogicalChannelCount)
+			chan0 = cpifaceSession->LogicalChannelCount - chann;
 		if (chan0<0)
 			chan0 = 0;
 
@@ -1878,7 +1881,7 @@ void cpiDrawGStrings (void)
 			unsigned char chr;
 			unsigned char col = 0;
 
-			if (plMuteCh[i+chan0]&&((i+chan0) != cpifaceSessionAPI.Public.SelectedChannel))
+			if (plMuteCh[i+chan0]&&((i+chan0) != cpifaceSession->SelectedChannel))
 			{
 				chr = 0xc4;
 				col = 0x08;
@@ -1888,7 +1891,7 @@ void cpiDrawGStrings (void)
 				{
 					col |= 0x80;
 				} else {
-					if ((i+chan0) != cpifaceSessionAPI.Public.SelectedChannel)
+					if ((i+chan0) != cpifaceSession->SelectedChannel)
 					{
 						col |= 0x08;
 					} else {
@@ -1896,8 +1899,8 @@ void cpiDrawGStrings (void)
 					}
 				}
 			}
-			displaychr (4, offset + i + ((i + chan0) >= cpifaceSessionAPI.Public.SelectedChannel), col, chr, 1);
-			if ((i + chan0) == cpifaceSessionAPI.Public.SelectedChannel)
+			displaychr (4, offset + i + ((i + chan0) >= cpifaceSession->SelectedChannel), col, chr, 1);
+			if ((i + chan0) == cpifaceSession->SelectedChannel)
 			{
 				displaychr (4, offset + i, col, '0' + (i + chan0 + 1)/10, 1);
 			}
@@ -1905,10 +1908,10 @@ void cpiDrawGStrings (void)
 		if (chann)
 		{
 			displaychr (4, offset - 1, 0x08, chan0 ? 0x1b : 0x04, 1);
-			displaychr (4, offset + 1 + chann, 0x08, ((chan0+chann) != cpifaceSessionAPI.Public.LogicalChannelCount) ? 0x1a : 0x04, 1);
+			displaychr (4, offset + 1 + chann, 0x08, ((chan0+chann) != cpifaceSession->LogicalChannelCount) ? 0x1a : 0x04, 1);
 		}
 	} else {
-		if (cpifaceSessionAPI.Public.SelectedChannelChanged)
+		if (cpifaceSession->SelectedChannelChanged)
 		{
 			int chann;
 			int chan0;
@@ -1919,12 +1922,12 @@ void cpiDrawGStrings (void)
 			if (limit<2)
 				limit=2;
 
-			chann = cpifaceSessionAPI.Public.LogicalChannelCount;;
+			chann = cpifaceSession->LogicalChannelCount;;
 			if (chann>limit)
 				chann=limit;
-			chan0 = cpifaceSessionAPI.Public.SelectedChannel - (chann / 2);
-			if ((chan0+chann) >= cpifaceSessionAPI.Public.LogicalChannelCount)
-				chan0 = cpifaceSessionAPI.Public.LogicalChannelCount - chann;
+			chan0 = cpifaceSession->SelectedChannel - (chann / 2);
+			if ((chan0+chann) >= cpifaceSession->LogicalChannelCount)
+				chan0 = cpifaceSession->LogicalChannelCount - chann;
 			if (chan0<0)
 				chan0 = 0;
 
@@ -1934,7 +1937,7 @@ void cpiDrawGStrings (void)
 			{ /* needs tuning... TODO */
 				gdrawchar8(384+i*8, 64, '0'+(i+chan0+1)/10, plMuteCh[i+chan0]?8:7, 0);
 				gdrawchar8(384+i*8, 72, '0'+(i+chan0+1)%10, plMuteCh[i+chan0]?8:7, 0);
-				gdrawchar8(384+i*8, 80, ((i+chan0)==cpifaceSessionAPI.Public.SelectedChannel)?0x18:((i==0)&&chan0)?0x1B:((i==(chann-1))&&((chan0+chann) != cpifaceSessionAPI.Public.LogicalChannelCount))?0x1A:' ', 15, 0);
+				gdrawchar8(384+i*8, 80, ((i+chan0)==cpifaceSession->SelectedChannel)?0x18:((i==0)&&chan0)?0x1B:((i==(chann-1))&&((chan0+chann) != cpifaceSession->LogicalChannelCount))?0x1A:' ', 15, 0);
 			}
 		}
 	}
@@ -1952,14 +1955,14 @@ static void cpiChangeMode(struct cpimoderegstruct *m)
 	{
 		if (curmode->Event)
 		{
-			curmode->Event(cpievClose);
+			curmode->Event (&cpifaceSessionAPI.Public, cpievClose);
 		}
 	}
 	curmode = m ? m : &cpiModeText;
 again:
 	if (m->Event)
 	{
-		if (!m->Event(cpievOpen))
+		if (!m->Event (&cpifaceSessionAPI.Public, cpievOpen))
 		{
 			fprintf (stderr, "cpimode[%s]->Event(cpievOpen) failed\n", m->handle);
 			if (curmode != &cpiModeText)
@@ -1989,7 +1992,7 @@ void cpiSetMode(const char *hand)
 void cpiRegisterMode(struct cpimoderegstruct *m)
 {
 	if (m->Event)
-		if (!m->Event(cpievInit))
+		if (!m->Event (&cpifaceSessionAPI.Public, cpievInit))
 			return;
 	m->next=cpiModes;
 	cpiModes=m;
@@ -2027,7 +2030,7 @@ static void cpiVerifyDefModes(void)
 
 	while (cpiDefModes)
 	{
-		if (cpiDefModes->Event&&!cpiDefModes->Event(cpievInitAll))
+		if (cpiDefModes->Event&&!cpiDefModes->Event (&cpifaceSessionAPI.Public, cpievInitAll))
 			cpiDefModes=cpiDefModes->nextdef;
 		else
 			break;
@@ -2037,7 +2040,7 @@ static void cpiVerifyDefModes(void)
 	{
 		if (p->nextdef)
 		{
-			if (p->nextdef->Event&&!p->nextdef->Event(cpievInitAll))
+			if (p->nextdef->Event&&!p->nextdef->Event (&cpifaceSessionAPI.Public, cpievInitAll))
 				p->nextdef=p->nextdef->nextdef;
 			else
 				p=p->nextdef;
@@ -2052,7 +2055,7 @@ static void cpiInitAllModes(void)
 
 	for (p=cpiModes;p;p=p->next)
 		if (p->Event)
-			p->Event(cpievInit);
+			p->Event (&cpifaceSessionAPI.Public, cpievInit);
 }
 
 void cpiUnregisterDefMode(struct cpimoderegstruct *m)
@@ -2109,7 +2112,7 @@ static void plmpClose(void)
 	while (cpiDefModes)
 	{
 		if (cpiDefModes->Event)
-			cpiDefModes->Event(cpievDoneAll);
+			cpiDefModes->Event (&cpifaceSessionAPI.Public, cpievDoneAll);
 		cpiDefModes=cpiDefModes->nextdef;
 	}
 
@@ -2165,7 +2168,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 
 	curplayer=(struct cpifaceplayerstruct*)fp;
 
-	retval=curplayer->OpenFile(info, fi, ip->ldlink, ip->loader, &cpifaceSessionAPI.Public);
+	retval=curplayer->OpenFile (&cpifaceSessionAPI.Public, info, fi, ip->ldlink, ip->loader);
 
 	if (retval)
 	{
@@ -2192,11 +2195,11 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 static void plmpCloseFile()
 {
 	cpiGetMode(curmodehandle);
-	curplayer->CloseFile();
+	curplayer->CloseFile (&cpifaceSessionAPI.Public);
 	while (cpiModes)
 	{
 		if (cpiModes->Event)
-			cpiModes->Event(cpievDone);
+			cpiModes->Event (&cpifaceSessionAPI.Public, cpievDone);
 		cpiModes=cpiModes->next;
 	}
 	lnkFree(linkhandle);
@@ -2208,7 +2211,7 @@ static void plmpOpenScreen()
 
 	if (!curmode)
 		curmode=&cpiModeText;
-	if (curmode->Event&&!curmode->Event(cpievOpen))
+	if (curmode->Event&&!curmode->Event (&cpifaceSessionAPI.Public, cpievOpen))
 		curmode=&cpiModeText;
 	curmode->SetMode();
 }
@@ -2217,7 +2220,7 @@ static void plmpOpenScreen()
 static void plmpCloseScreen()
 {
 	if (curmode->Event)
-		curmode->Event(cpievClose);
+		curmode->Event (&cpifaceSessionAPI.Public, cpievClose);
 /*
   cpimoderegstruct *mod;
   for (mod=cpiModes; mod; mod=mod->next)
@@ -2226,7 +2229,7 @@ static void plmpCloseScreen()
 */
 }
 
-static int cpiChanProcessKey(uint16_t key)
+static int cpiChanProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	int i;
 	switch (key)
@@ -2255,29 +2258,29 @@ static int cpiChanProcessKey(uint16_t key)
 			cpiKeyHelp(KEY_CTRL_Q, "Enable all channels");
 			return 0;
 		case KEY_LEFT:
-			if (cpifaceSessionAPI.Public.SelectedChannel)
+			if (cpifaceSession->SelectedChannel)
 			{
-				cpifaceSessionAPI.Public.SelectedChannel--;
-				cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
+				cpifaceSession->SelectedChannel--;
+				cpifaceSession->SelectedChannelChanged = 1;
 			}
 			break;
 		/*case 0x4800: //up*/
 		case KEY_UP:
-			cpifaceSessionAPI.Public.SelectedChannel = (cpifaceSessionAPI.Public.SelectedChannel - 1 + cpifaceSessionAPI.Public.LogicalChannelCount) % cpifaceSessionAPI.Public.LogicalChannelCount;
-			cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
+			cpifaceSession->SelectedChannel = (cpifaceSession->SelectedChannel - 1 + cpifaceSession->LogicalChannelCount) % cpifaceSession->LogicalChannelCount;
+			cpifaceSession->SelectedChannelChanged = 1;
 			break;
 		/*case 0x4d00: //right*/
 		case KEY_RIGHT:
-			if ((cpifaceSessionAPI.Public.SelectedChannel + 1) < cpifaceSessionAPI.Public.LogicalChannelCount)
+			if ((cpifaceSession->SelectedChannel + 1) < cpifaceSession->LogicalChannelCount)
 			{
-				cpifaceSessionAPI.Public.SelectedChannel++;
-				cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
+				cpifaceSession->SelectedChannel++;
+				cpifaceSession->SelectedChannelChanged = 1;
 			}
 			break;
 		/*case 0x5000: //down*/
 		case KEY_DOWN:
-			cpifaceSessionAPI.Public.SelectedChannel = (cpifaceSessionAPI.Public.SelectedChannel + 1) % cpifaceSessionAPI.Public.LogicalChannelCount;
-			cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
+			cpifaceSession->SelectedChannel = (cpifaceSession->SelectedChannel + 1) % cpifaceSession->LogicalChannelCount;
+			cpifaceSession->SelectedChannelChanged = 1;
 			break;
 
 
@@ -2289,44 +2292,44 @@ static int cpiChanProcessKey(uint16_t key)
 			} else {
 				key-='1';
 			}
-			if (key >= cpifaceSessionAPI.Public.LogicalChannelCount)
+			if (key >= cpifaceSession->LogicalChannelCount)
 				break;
-			cpifaceSessionAPI.Public.SelectedChannel = key;
+			cpifaceSession->SelectedChannel = key;
 
 		case 'q': case 'Q':
-			plMuteCh[cpifaceSessionAPI.Public.SelectedChannel] = !plMuteCh[cpifaceSessionAPI.Public.SelectedChannel];
-			plSetMute(cpifaceSessionAPI.Public.SelectedChannel, plMuteCh[cpifaceSessionAPI.Public.SelectedChannel]);
-			cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
+			plMuteCh[cpifaceSession->SelectedChannel] = !plMuteCh[cpifaceSession->SelectedChannel];
+			plSetMute(cpifaceSession->SelectedChannel, plMuteCh[cpifaceSession->SelectedChannel]);
+			cpifaceSession->SelectedChannelChanged = 1;
 			break;
 
 		case 's': case 'S':
-			if (cpifaceSessionAPI.Public.SelectedChannel == soloch)
+			if (cpifaceSession->SelectedChannel == soloch)
 			{
-				for (i=0; i < cpifaceSessionAPI.Public.LogicalChannelCount; i++)
+				for (i=0; i < cpifaceSession->LogicalChannelCount; i++)
 				{
 					plMuteCh[i]=0;
 					plSetMute(i, plMuteCh[i]);
 				}
 				soloch=-1;
 			} else {
-				for (i=0; i < cpifaceSessionAPI.Public.LogicalChannelCount; i++)
+				for (i=0; i < cpifaceSession->LogicalChannelCount; i++)
 				{
-					plMuteCh[i] = i != cpifaceSessionAPI.Public.SelectedChannel;
+					plMuteCh[i] = i != cpifaceSession->SelectedChannel;
 					plSetMute(i, plMuteCh[i]);
 				}
-				soloch = cpifaceSessionAPI.Public.SelectedChannel;
+				soloch = cpifaceSession->SelectedChannel;
 			}
-			cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
+			cpifaceSession->SelectedChannelChanged = 1;
 			break;
 
 		case KEY_CTRL_Q: case KEY_CTRL_S: /* TODO-keys*/
-			for (i=0; i < cpifaceSessionAPI.Public.LogicalChannelCount; i++)
+			for (i=0; i < cpifaceSession->LogicalChannelCount; i++)
 			{
 				plMuteCh[i]=0;
 				plSetMute(i, plMuteCh[i]);
 			}
 			soloch=-1;
-			cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
+			cpifaceSession->SelectedChannelChanged = 1;
 			break;
 		default:
 			return 0;
@@ -2334,7 +2337,7 @@ static int cpiChanProcessKey(uint16_t key)
 	return 1;
 }
 
-void cpiForwardIProcessKey(uint16_t key)
+void cpiForwardIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	struct cpimoderegstruct *mod;
 
@@ -2343,7 +2346,7 @@ void cpiForwardIProcessKey(uint16_t key)
 #ifdef KEYBOARD_DEBUG
 		fprintf (stderr, "cpiForwardIProcessKey: mod[%s]->IProcessKey()\n", mod->handle);
 #endif
-		mod->IProcessKey(key);
+		mod->IProcessKey (cpifaceSession, key);
 	}
 }
 
@@ -2368,14 +2371,14 @@ static interfaceReturnEnum plmpDrawScreen(void)
 	}
 
 	for (mod=cpiModes; mod; mod=mod->next)
-		mod->Event(cpievKeepalive);
+		mod->Event (&cpifaceSessionAPI.Public, cpievKeepalive);
 
 	if (plEscTick&&(dos_clock()>(time_t)(plEscTick+2*DOS_CLK_TCK)))
 		plEscTick=0;
 
 	if (plInKeyboardHelp)
 	{
-		curmode->Draw();
+		curmode->Draw (&cpifaceSessionAPI.Public);
 		plInKeyboardHelp = cpiKeyHelpDisplay();
 		if (!plInKeyboardHelp)
 		{
@@ -2408,7 +2411,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 			cpiKeyHelpClear();
 		}
 
-		if (curmode->AProcessKey(key))
+		if (curmode->AProcessKey (&cpifaceSessionAPI.Public, key))
 		{
 #ifdef KEYBOARD_DEBUG
 			fprintf (stderr, "plmpDrawScreen: curmode[%s]->AProcessKey() swallowed the key\n", curmode->handle);
@@ -2482,7 +2485,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 #ifdef KEYBOARD_DEBUG
 					fprintf (stderr, "plmpDrawScreen: mod[%s]->IProcessKey()\n", mod->handle);
 #endif
-					if (mod->IProcessKey(key))
+					if (mod->IProcessKey (&cpifaceSessionAPI.Public, key))
 					{
 #ifdef KEYBOARD_DEBUG
 						fprintf (stderr, "plmpDrawScreen:   key was swallowed\n");
@@ -2496,7 +2499,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 #ifdef KEYBOARD_DEBUG
 					fprintf (stderr, "plmpDrawScreen: cpifaceSessionAPI.LogicalChannelCount!=0   =>   cpiChanProcessKey()\n");
 #endif
-					if (cpiChanProcessKey(key))
+					if (cpiChanProcessKey (&cpifaceSessionAPI.Public, key))
 					{
 #ifdef KEYBOARD_DEBUG
 						fprintf (stderr, "plmpDrawScreen:   key was swallowed\n");
@@ -2514,7 +2517,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 				if (needdraw)
 				{
 					needdraw = 0;
-					curmode->Draw();
+					curmode->Draw (&cpifaceSessionAPI.Public);
 				}
 				if (key == KEY_ALT_K)
 				{
@@ -2530,7 +2533,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 superbreak:
 	if (needdraw)
 	{
-		curmode->Draw();
+		curmode->Draw(&cpifaceSessionAPI.Public);
 	}
 	framelock();
 

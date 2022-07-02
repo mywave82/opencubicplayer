@@ -99,7 +99,7 @@ static void Update_ID3infoLastHeightNeed(struct ID3_t *ID3)
 	ID3InfoDesiredHeight = needed;
 }
 
-static void ID3InfoSetWin(int xpos, int wid, int ypos, int hgt)
+static void ID3InfoSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, int wid, int ypos, int hgt)
 {
 	ID3InfoFirstColumn=xpos;
 	ID3InfoFirstLine=ypos;
@@ -107,7 +107,7 @@ static void ID3InfoSetWin(int xpos, int wid, int ypos, int hgt)
 	ID3InfoWidth=wid;
 }
 
-static int ID3InfoGetWin(struct cpitextmodequerystruct *q)
+static int ID3InfoGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
 {
 	struct ID3_t *ID3;
 
@@ -152,7 +152,7 @@ static int ID3InfoGetWin(struct cpitextmodequerystruct *q)
 	return 1;
 }
 
-static void ID3InfoDraw(int focus)
+static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 {
 	int line = 0;
 	char StringBuffer[64*3];
@@ -346,7 +346,7 @@ static void ID3InfoDraw(int focus)
 	}
 }
 
-static int ID3InfoIProcessKey(uint16_t key)
+static int ID3InfoIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -359,7 +359,7 @@ static int ID3InfoIProcessKey(uint16_t key)
 			{
 				ID3InfoActive=1;
 			}
-			cpiTextSetMode("id3info");
+			cpiTextSetMode (cpifaceSession, "id3info");
 			return 1;
 		case 'x': case 'X':
 			ID3InfoActive=1;
@@ -371,7 +371,7 @@ static int ID3InfoIProcessKey(uint16_t key)
 	return 0;
 }
 
-static int ID3InfoAProcessKey(uint16_t key)
+static int ID3InfoAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -381,7 +381,7 @@ static int ID3InfoAProcessKey(uint16_t key)
 			{
 				ID3InfoActive=0;
 			}
-			cpiTextRecalc();
+			cpiTextRecalc (cpifaceSession);
 			break;
 
 		case KEY_ALT_K:
@@ -414,7 +414,7 @@ static int ID3InfoAProcessKey(uint16_t key)
 }
 
 
-static int ID3InfoEvent(int ev)
+static int ID3InfoEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
@@ -423,7 +423,7 @@ static int ID3InfoEvent(int ev)
 			{
 				if (ID3InfoActive)
 				{
-					cpiTextRecalc();
+					cpiTextRecalc (cpifaceSession);
 				}
 				ID3InfoNeedRecalc = 0;
 			}
@@ -444,14 +444,12 @@ static int ID3InfoEvent(int ev)
 
 static struct cpitextmoderegstruct cpiID3Info = {"id3info", ID3InfoGetWin, ID3InfoSetWin, ID3InfoDraw, ID3InfoIProcessKey, ID3InfoAProcessKey, ID3InfoEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) ID3InfoInit (void)
+void __attribute__ ((visibility ("internal"))) ID3InfoInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	//cpiTextRegisterDefMode(&cpiID3Info);
-	cpiTextRegisterMode(&cpiID3Info);
+	cpiTextRegisterMode (cpifaceSession, &cpiID3Info);
 }
 
-void __attribute__ ((visibility ("internal"))) ID3InfoDone (void)
+void __attribute__ ((visibility ("internal"))) ID3InfoDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	//cpiTextUnregisterDefMode(&cpiID3Info);
-	cpiTextUnregisterMode(&cpiID3Info);
+	cpiTextUnregisterMode (cpifaceSession, &cpiID3Info);
 }

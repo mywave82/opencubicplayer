@@ -268,7 +268,7 @@ static int Refresh_ID3Pictures (struct ID3_t *ID3)
 	return 1;
 }
 
-static void ID3PicSetWin(int xpos, int wid, int ypos, int hgt)
+static void ID3PicSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, int wid, int ypos, int hgt)
 {
 	int i;
 	ID3PicVisible = 1;
@@ -315,7 +315,7 @@ static void ID3PicSetWin(int xpos, int wid, int ypos, int hgt)
 	}
 }
 
-static int ID3PicGetWin(struct cpitextmodequerystruct *q)
+static int ID3PicGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
 {
 	ID3PicVisible = 0;
 	if (ID3PicHandle)
@@ -369,7 +369,7 @@ static int ID3PicGetWin(struct cpitextmodequerystruct *q)
 	return 1;
 }
 
-static void ID3PicDraw(int focus)
+static void ID3PicDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 {
 	int len = strlen (ID3_APIC_Titles[ID3PicCurrentIndex]);
 	if ((len + 9) > ID3PicWidth)
@@ -379,7 +379,7 @@ static void ID3PicDraw(int focus)
 	display_nprintf (ID3PicFirstLine, ID3PicFirstColumn, focus?0x09:0x01, ID3PicWidth, "ID3 PIC: %.*o%.*s%0.*o (tab to cycle)", focus?0x0a:0x02, len, ID3_APIC_Titles[ID3PicCurrentIndex], focus?0x09:0x00);
 }
 
-static int ID3PicIProcessKey(uint16_t key)
+static int ID3PicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	if (!plScrTextGUIOverlay)
 	{
@@ -401,7 +401,7 @@ static int ID3PicIProcessKey(uint16_t key)
 					ID3PicActive=2;
 				}
 			}
-			cpiTextSetMode("id3pic");
+			cpiTextSetMode (cpifaceSession, "id3pic");
 			return 1;
 		case 'x': case 'X':
 			ID3PicActive=3;
@@ -413,7 +413,7 @@ static int ID3PicIProcessKey(uint16_t key)
 	return 0;
 }
 
-static int ID3PicAProcessKey(uint16_t key)
+static int ID3PicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	int i;
 	if (!plScrTextGUIOverlay)
@@ -474,7 +474,7 @@ static int ID3PicAProcessKey(uint16_t key)
 			{
 				ID3PicActive=0;
 			}
-			cpiTextRecalc();
+			cpiTextRecalc (cpifaceSession);
 			break;
 		default:
 			return 0;
@@ -482,7 +482,7 @@ static int ID3PicAProcessKey(uint16_t key)
 	return 1;
 }
 
-static int ID3PicEvent(int ev)
+static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	struct ID3_t *ID3;
 
@@ -494,7 +494,7 @@ static int ID3PicEvent(int ev)
 				mpegGetID3(&ID3);
 				if (Refresh_ID3Pictures(ID3))
 				{
-					cpiTextRecalc();
+					cpiTextRecalc (cpifaceSession);
 				}
 			}
 			break;
@@ -554,12 +554,12 @@ static int ID3PicEvent(int ev)
 
 static struct cpitextmoderegstruct cpiID3Pic = {"id3pic", ID3PicGetWin, ID3PicSetWin, ID3PicDraw, ID3PicIProcessKey, ID3PicAProcessKey, ID3PicEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-static void __attribute__((constructor))init(void)
+static void __attribute__((constructor))init (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextRegisterMode(&cpiID3Pic);
+	cpiTextRegisterMode (cpifaceSession, &cpiID3Pic);
 }
 
-static void __attribute__((destructor))done(void)
+static void __attribute__((destructor))done (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextUnregisterMode(&cpiID3Pic);
+	cpiTextUnregisterMode (cpifaceSession, &cpiID3Pic);
 }

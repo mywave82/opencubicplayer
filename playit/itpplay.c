@@ -117,7 +117,7 @@ static void dopausefade(void)
 }
 
 
-static int itpProcessKey(struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
+static int itpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	int row;
 	int pat, p;
@@ -149,7 +149,7 @@ static int itpProcessKey(struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 			mcpSet(-1, mcpMasterPause, plPause^=1);
 			break;
 		case KEY_CTRL_HOME:
-			itpInstClear (cpiSession);
+			itpInstClear (cpifaceSession);
 			setpos (&itplayer, 0, 0);
 			if (plPause)
 				starttime=pausetime;
@@ -200,13 +200,13 @@ static void itpIdle(void)
 		dopausefade();
 }
 
-static void itpDrawGStrings (void)
+static void itpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int pos=getrealpos(&itplayer)>>8;
 	int gvol, bpm, tmp, gs;
 	int i, nch = 0;
 
-	mcpDrawGStrings ();
+	mcpDrawGStrings (cpifaceSession);
 
 	getglobinfo(&itplayer, &tmp, &bpm, &gvol, &gs);
 
@@ -221,6 +221,7 @@ static void itpDrawGStrings (void)
 
 	mcpDrawGStringsTracked
 	(
+		cpifaceSession,
 		utf8_8_dot_3,
 		utf8_16_dot_3,
 		0,          /* song X */
@@ -243,7 +244,7 @@ static void itpDrawGStrings (void)
 	);
 }
 
-static void itpCloseFile(void)
+static void itpCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	stop(&itplayer);
 	it_free(&mod);
@@ -251,11 +252,11 @@ static void itpCloseFile(void)
 
 /**********************************************************************/
 
-static void itpMarkInsSamp(struct cpifaceSessionAPI_t *cpiSession, uint8_t *ins, uint8_t *smp)
+static void itpMarkInsSamp(struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *ins, uint8_t *smp)
 {
 	int i;
 
-	/* mod.nchan == cpiSessionAPI->LogicalChannelCount */
+	/* mod.nchan == cpifaceSession->LogicalChannelCount */
 	for (i=0; i<mod.nchan; i++)
 	{
 		int j;
@@ -270,8 +271,8 @@ static void itpMarkInsSamp(struct cpifaceSessionAPI_t *cpiSession, uint8_t *ins,
 				continue;
 			in=getchanins(&itplayer, j);
 			sm=getchansamp(&itplayer, j);
-			ins[in-1] = ((cpiSession->SelectedChannel==i)||(ins[in-1]==3))?3:2;
-			smp[sm] = ((cpiSession->SelectedChannel==i)||(smp[sm]==3))?3:2;
+			ins[in-1] = ((cpifaceSession->SelectedChannel==i)||(ins[in-1]==3))?3:2;
+			smp[sm] = ((cpifaceSession->SelectedChannel==i)||(smp[sm]==3))?3:2;
 		}
 	}
 }
@@ -531,7 +532,7 @@ static int itpGetDots(struct notedotsdata *d, int max)
 {
 	int i,j;
 	int pos=0;
-	/* mod.nchan == cpiSessionAPI->LogicalChannelCount */
+	/* mod.nchan == cpifaceSession->LogicalChannelCount */
 	for (i=0; i<mod.nchan; i++)
 	{
 		if (pos>=max)
@@ -564,7 +565,7 @@ static int itpGetLChanSample(unsigned int ch, int16_t *buf, unsigned int len, ui
 	return getchansample(&itplayer, ch, buf, len, rate, opt);
 }
 
-static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
+static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	int retval;
@@ -593,7 +594,7 @@ static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	it_optimizepatlens(&mod);
 
 	nch=cfGetProfileInt2(cfSoundSec, "sound", "itchan", 64, 10);
-	if (!play(&itplayer, &mod, nch, file, cpiSessionAPI))
+	if (!play(&itplayer, &mod, nch, file, cpifaceSession))
 		retval=errPlay;
 
 	if (retval)
@@ -610,12 +611,12 @@ static int itpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi
 	plDrawGStrings=itpDrawGStrings;
 	plSetMute=itpMute;
 	plGetLChanSample=itpGetLChanSample;
-	cpiSessionAPI->LogicalChannelCount = mod.nchan;
-	cpiSessionAPI->PhysicalChannelCount = mcpNChan;
+	cpifaceSession->LogicalChannelCount = mod.nchan;
+	cpifaceSession->PhysicalChannelCount = mcpNChan;
 	plUseDots(itpGetDots);
-	plUseChannels(drawchannel);
-	itpInstSetup (cpiSessionAPI, mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, /*mod.nsampi,*/ 0, itpMarkInsSamp);
-	itTrkSetup(&mod);
+	plUseChannels (cpifaceSession, drawchannel);
+	itpInstSetup (cpifaceSession, mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, /*mod.nsampi,*/ 0, itpMarkInsSamp);
+	itTrkSetup (cpifaceSession, &mod);
 	if (mod.message)
 		plUseMessage(mod.message);
 

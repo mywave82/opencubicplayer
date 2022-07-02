@@ -395,9 +395,9 @@ static void drawchannel(unsigned short *buf, int len, int i)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) gmdChanSetup(const struct gmdmodule *mod)
+void __attribute__ ((visibility ("internal"))) gmdChanSetup(struct cpifaceSessionAPI_t *cpifaceSession, const struct gmdmodule *mod)
 {
 	plChanInstr=mod->instruments;
 	plChanModSamples=mod->modsamples;
-	plUseChannels(drawchannel);
+	plUseChannels (cpifaceSession, drawchannel);
 }

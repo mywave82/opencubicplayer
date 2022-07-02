@@ -121,12 +121,13 @@ static void dopausefade (void)
 	mcpSetMasterPauseFadeParameters (i);
 }
 
-static void sidDrawGStrings (void)
+static void sidDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	mcpDrawGStrings ();
+	mcpDrawGStrings (cpifaceSession);
 
 	mcpDrawGStringsSongXofY
 	(
+		cpifaceSession,
 		utf8_8_dot_3,
 		utf8_16_dot_3,
 		sidGetSong(),
@@ -377,13 +378,13 @@ static void drawchannel(uint16_t *buf, int len, int i)
 	}
 }
 
-static void sidCloseFile(void)
+static void sidCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	sidClosePlayer();
-	SidInfoDone();
+	SidInfoDone (cpifaceSession);
 }
 
-static int sidProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
+static int sidProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	uint8_t csg;
 	switch (key)
@@ -451,7 +452,7 @@ static int sidLooped()
 	return 0;
 }
 
-static int sidOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *sidf, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
+static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *sidf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 
@@ -464,13 +465,13 @@ static int sidOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *si
 	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
 	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
-	if (!sidOpenPlayer(sidf, cpiSessionAPI))
+	if (!sidOpenPlayer(sidf, cpifaceSession))
 		return -1;
 
-	cpiSessionAPI->LogicalChannelCount = sidNumberOfChips() * 3;
-	cpiSessionAPI->PhysicalChannelCount = sidNumberOfChips() * 4;
+	cpifaceSession->LogicalChannelCount = sidNumberOfChips() * 3;
+	cpifaceSession->PhysicalChannelCount = sidNumberOfChips() * 4;
 	plIdle=sidIdle;
-	plUseChannels(drawchannel);
+	plUseChannels (cpifaceSession, drawchannel);
 	plSetMute=sidMute;
 
 	plIsEnd=sidLooped;
@@ -485,7 +486,7 @@ static int sidOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *si
 
 	pausefadedirect=0;
 
-	SidInfoInit();
+	SidInfoInit (cpifaceSession);
 
 	return 0;
 }

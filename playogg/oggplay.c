@@ -879,7 +879,7 @@ static ov_callbacks callbacks =
 	close_func,
 	tell_func
 };
-int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle_t *oggf, struct cpifaceSessionAPI_t *cpiSessionAPI)
+int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle_t *oggf, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
 	int result;
@@ -913,7 +913,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 
 	oggRate=oggrate;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&oggRate, &format, oggfile, cpiSessionAPI))
+	if (!plrAPI->Play (&oggRate, &format, oggfile, cpifaceSession))
 	{
 		fprintf(stderr, "playogg: plrOpenPlayer() failed\n");
 		goto error_out_file;

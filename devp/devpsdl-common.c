@@ -172,7 +172,7 @@ static void devpSDLPeekBuffer (void **buf1, unsigned int *buf1length, void **buf
 	}
 }
 
-static int devpSDLPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI)
+static int devpSDLPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	SDL_AudioSpec desired, obtained;
 	int status;
@@ -253,8 +253,8 @@ static int devpSDLPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 		return 0;
 	}
 
-	cpiSessionAPI->GetMasterSample = plrGetMasterSample;
-	cpiSessionAPI->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->GetMasterSample = plrGetMasterSample;
+	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
 
 #warning This needs to delay until we have received the first commit
 	SDL_PauseAudio(0);

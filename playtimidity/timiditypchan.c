@@ -210,8 +210,8 @@ static void drawchannel(uint16_t *buf, int len, int i)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) timidityChanSetup(/*const struct midifile *mid*/)
+void __attribute__ ((visibility ("internal"))) timidityChanSetup (struct cpifaceSessionAPI_t *cpifaceSession/*const struct midifile *mid*/)
 {
 	/*plChanMInstr=mid->instruments; TODO ?*/
-	plUseChannels(drawchannel);
+	plUseChannels (cpifaceSession, drawchannel);
 }

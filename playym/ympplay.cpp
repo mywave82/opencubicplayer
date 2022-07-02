@@ -179,16 +179,17 @@ static void drawlongvolbar(uint16_t *buf, int l, int r, unsigned char st)
 	}
 }
 
-static void ymDrawGStrings (void)
+static void ymDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	ymMusicInfo_t globinfo;
 
-	mcpDrawGStrings ();
+	mcpDrawGStrings (cpifaceSession);
 
 	ymMusicGetInfo(pMusic, &globinfo);
 
 	mcpDrawGStringsFixedLengthStream
 	(
+		cpifaceSession,
 		utf8_8_dot_3,
 		utf8_16_dot_3,
 		ymMusicGetPos(pMusic),
@@ -422,7 +423,7 @@ static void drawchannel(uint16_t *buf, int len, int i)
 	}
 }
 
-static int ymProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
+static int ymProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -484,12 +485,12 @@ static int ymLooped(void)
 	return !fsLoopMods&&ymIsLooped();
 }
 
-static void ymCloseFile(void)
+static void ymCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	ymClosePlayer();
 }
 
-static int ymOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
+static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 
@@ -503,17 +504,17 @@ static int ymOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fil
 	plProcessKey=ymProcessKey;
 	plDrawGStrings=ymDrawGStrings;
 
-	if (!ymOpenPlayer(file, cpiSessionAPI))
+	if (!ymOpenPlayer(file, cpifaceSession))
 		return -1;
 
 	starttime=dos_clock();
 	plPause=0;
 	pausefadedirect=0;
 
-	cpiSessionAPI->LogicalChannelCount = 5;
-	cpiSessionAPI->PhysicalChannelCount = 5;
+	cpifaceSession->LogicalChannelCount = 5;
+	cpifaceSession->PhysicalChannelCount = 5;
 
-	plUseChannels(drawchannel);
+	plUseChannels (cpifaceSession, drawchannel);
 	plSetMute=ymMute;
 
 	return 0;

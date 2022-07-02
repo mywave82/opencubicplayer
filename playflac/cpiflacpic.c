@@ -218,7 +218,7 @@ static int Refresh_FlacPictures (void)
 	return 1;
 }
 
-static void FlacPicSetWin(int xpos, int wid, int ypos, int hgt)
+static void FlacPicSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, int wid, int ypos, int hgt)
 {
 	int i;
 	FlacPicVisible = 1;
@@ -266,7 +266,7 @@ static void FlacPicSetWin(int xpos, int wid, int ypos, int hgt)
 	flacMetaDataUnlock();
 }
 
-static int FlacPicGetWin(struct cpitextmodequerystruct *q)
+static int FlacPicGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
 {
 	FlacPicVisible = 0;
 	if (FlacPicHandle)
@@ -359,7 +359,7 @@ static const char *PictureType (const int pt)
 	}
 }
 
-static void FlacPicDraw(int focus)
+static void FlacPicDraw(struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 {
 	const char *picture_type;
 	int left = FlacPicWidth;
@@ -394,7 +394,7 @@ static void FlacPicDraw(int focus)
 	flacMetaDataUnlock();
 }
 
-static int FlacPicIProcessKey(uint16_t key)
+static int FlacPicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	if (!plScrTextGUIOverlay)
 	{
@@ -412,7 +412,7 @@ static int FlacPicIProcessKey(uint16_t key)
 			{
 				FlacPicActive=1;
 			}
-			cpiTextSetMode("flacpic");
+			cpiTextSetMode (cpifaceSession, "flacpic");
 			return 1;
 		case 'x': case 'X':
 			FlacPicActive=3;
@@ -424,7 +424,7 @@ static int FlacPicIProcessKey(uint16_t key)
 	return 0;
 }
 
-static int FlacPicAProcessKey(uint16_t key)
+static int FlacPicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	if (!plScrTextGUIOverlay)
 	{
@@ -483,7 +483,7 @@ static int FlacPicAProcessKey(uint16_t key)
 			{
 				FlacPicActive=0;
 			}
-			cpiTextRecalc();
+			cpiTextRecalc (cpifaceSession);
 			break;
 		default:
 			return 0;
@@ -491,7 +491,7 @@ static int FlacPicAProcessKey(uint16_t key)
 	return 1;
 }
 
-static int FlacPicEvent(int ev)
+static int FlacPicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
@@ -553,15 +553,13 @@ static int FlacPicEvent(int ev)
 
 static struct cpitextmoderegstruct cpiFlacPic = {"flacpic", FlacPicGetWin, FlacPicSetWin, FlacPicDraw, FlacPicIProcessKey, FlacPicAProcessKey, FlacPicEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) FlacPicInit (void)
+void __attribute__ ((visibility ("internal"))) FlacPicInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-
-	//cpiTextRegisterDefMode(&cpiFlacPic);
-	cpiTextRegisterMode(&cpiFlacPic);
+	cpiTextRegisterMode (cpifaceSession, &cpiFlacPic);
 }
 
 
-void __attribute__ ((visibility ("internal"))) FlacPicDone (void)
+void __attribute__ ((visibility ("internal"))) FlacPicDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	//cpiTextUnregisterDefMode(&cpiFlacPic);
+	cpiTextUnregisterMode (cpifaceSession, &cpiFlacPic);
 }

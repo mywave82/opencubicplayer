@@ -103,16 +103,17 @@ static void dopausefade(void)
 	mcpSetMasterPauseFadeParameters (i);
 }
 
-static void mpegDrawGStrings (void)
+static void mpegDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct mpeginfo inf;
 
-	cpiDrawG1String (&mcpset);
+	cpiDrawG1String (cpifaceSession, &mcpset);
 
 	mpegGetInfo (&inf);
 
 	mcpDrawGStringsFixedLengthStream
 	(
+		cpifaceSession,
 		utf8_8_dot_3,
 		utf8_16_dot_3,
 		inf.pos,
@@ -127,7 +128,7 @@ static void mpegDrawGStrings (void)
 	);
 }
 
-static int mpegProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
+static int mpegProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -206,13 +207,13 @@ static int mpegLooped(void)
 }
 
 
-static void mpegCloseFile(void)
+static void mpegCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	ID3InfoDone();
-	mpegClosePlayer();
+	ID3InfoDone (cpifaceSession);
+	mpegClosePlayer ();
 }
 
-static int mpegOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *mpegfile, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
+static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *mpegfile, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	struct mpeginfo inf;
@@ -231,7 +232,7 @@ static int mpegOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *
 	plProcessKey=mpegProcessKey;
 	plDrawGStrings=mpegDrawGStrings;
 
-	if (!mpegOpenPlayer(mpegfile, cpiSessionAPI))
+	if (!mpegOpenPlayer(mpegfile, cpifaceSession))
 		return errFileRead;
 
 	starttime=dos_clock();
@@ -242,7 +243,7 @@ static int mpegOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *
 	mpeglen=inf.len;
 	mpegrate=inf.rate;
 
-	ID3InfoInit();
+	ID3InfoInit (cpifaceSession);
 
 	return errOk;
 }

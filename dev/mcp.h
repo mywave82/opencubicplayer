@@ -69,7 +69,7 @@ extern int mcpNChan;
 struct cpifaceSessionAPI_t;
 
 extern int (*mcpLoadSamples)(struct sampleinfo* si, int n);
-extern int (*mcpOpenPlayer)(int, void (*p)(void), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI);
+extern int (*mcpOpenPlayer)(int, void (*p)(void), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession);
 extern void (*mcpClosePlayer)(void);
 extern void (*mcpSet)(int ch, int opt, int val);
 extern int (*mcpGet)(int ch, int opt);

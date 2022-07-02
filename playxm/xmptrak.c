@@ -58,7 +58,7 @@ static int xmgetpatlen(int n)
 
 static void xmseektrack(int n, int c)
 {
-	/* mod.nchan == cpiSessionAPI->LogicalChannelCount */
+	/* mod.nchan == cpifaceSession->LogicalChannelCount */
 	xmcurpat=plPatterns[plOrders[n]] - mod.nchan;
 	xmcurchan=c;
 	xmcurrow=-1;
@@ -68,7 +68,7 @@ static void xmseektrack(int n, int c)
 static int xmstartrow(void)
 {
 	xmcurrow++;
-	/* mod.nchan == cpiSessionAPI->LogicalChannelCount */
+	/* mod.nchan == cpifaceSession->LogicalChannelCount */
 	xmcurpat += mod.nchan;
 	if (xmcurrow>=xmcurpatlen)
 		return -1;
@@ -380,7 +380,7 @@ static void xmgetgcmd(unsigned short *bp, int n)
 {
 	int p=0;
 	int i;
-	/* mod.nchan == cpiSessionAPI->LogicalChannelCount */
+	/* mod.nchan == cpifaceSession->LogicalChannelCount */
 	for (i=0; i<mod.nchan; i++)
 	{
 		int data;
@@ -460,10 +460,10 @@ static struct cpitrakdisplaystruct xmtrakdisplay=
 	xmgetins, xmgetvol, xmgetpan, xmgetfx, xmgetgcmd
 };
 
-void __attribute__ ((visibility ("internal"))) xmTrkSetup(const struct xmodule *mod)
+void __attribute__ ((visibility ("internal"))) xmTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct xmodule *mod)
 {
 	plPatterns=mod->patterns;
 	plOrders=mod->orders;
 	plPatLens=mod->patlens;
-	cpiTrkSetup(&xmtrakdisplay, mod->nord);
+	cpiTrkSetup (cpifaceSession, &xmtrakdisplay, mod->nord);
 }

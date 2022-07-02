@@ -56,7 +56,7 @@ static void Update_OgginfoLastHeightNeed(void)
 	OggInfoDesiredHeight = needed;
 }
 
-static void OggInfoSetWin(int xpos, int wid, int ypos, int hgt)
+static void OggInfoSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, int wid, int ypos, int hgt)
 {
 	OggInfoFirstColumn=xpos;
 	OggInfoFirstLine=ypos;
@@ -64,7 +64,7 @@ static void OggInfoSetWin(int xpos, int wid, int ypos, int hgt)
 	OggInfoWidth=wid;
 }
 
-static int OggInfoGetWin(struct cpitextmodequerystruct *q)
+static int OggInfoGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
 {
 #if 0
 	if (ogg_comments_count <= 0)
@@ -109,7 +109,7 @@ static int OggInfoGetWin(struct cpitextmodequerystruct *q)
 	return 1;
 }
 
-static void OggInfoDraw(int focus)
+static void OggInfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 {
 	int line = 0;
 
@@ -162,7 +162,7 @@ static void OggInfoDraw(int focus)
 	}
 }
 
-static int OggInfoIProcessKey(uint16_t key)
+static int OggInfoIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -175,7 +175,7 @@ static int OggInfoIProcessKey(uint16_t key)
 			{
 				OggInfoActive=1;
 			}
-			cpiTextSetMode("ogginfo");
+			cpiTextSetMode (cpifaceSession, "ogginfo");
 			return 1;
 		case 'x': case 'X':
 			OggInfoActive=3;
@@ -187,7 +187,7 @@ static int OggInfoIProcessKey(uint16_t key)
 	return 0;
 }
 
-static int OggInfoAProcessKey(uint16_t key)
+static int OggInfoAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -197,7 +197,7 @@ static int OggInfoAProcessKey(uint16_t key)
 			{
 				OggInfoActive=0;
 			}
-			cpiTextRecalc();
+			cpiTextRecalc (cpifaceSession);
 			break;
 
 		case KEY_ALT_K:
@@ -229,8 +229,9 @@ static int OggInfoAProcessKey(uint16_t key)
 	return 1;
 }
 
+static struct cpitextmoderegstruct cpiOggInfo;
 
-static int OggInfoEvent(int ev)
+static int OggInfoEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
@@ -247,17 +248,14 @@ static int OggInfoEvent(int ev)
 	return 1;
 }
 
-
 static struct cpitextmoderegstruct cpiOggInfo = {"ogginfo", OggInfoGetWin, OggInfoSetWin, OggInfoDraw, OggInfoIProcessKey, OggInfoAProcessKey, OggInfoEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) OggInfoInit (void)
+void __attribute__ ((visibility ("internal"))) OggInfoInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	//cpiTextRegisterDefMode(&cpiOggInfo);
-	cpiTextRegisterMode(&cpiOggInfo);
+	cpiTextRegisterMode (cpifaceSession, &cpiOggInfo);
 }
 
-void __attribute__ ((visibility ("internal"))) OggInfoDone (void)
+void __attribute__ ((visibility ("internal"))) OggInfoDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	//cpiTextUnregisterDefMode(&cpiOggInfo);
-	cpiTextUnregisterMode(&cpiOggInfo);
+	cpiTextUnregisterMode (cpifaceSession, &cpiOggInfo);
 }

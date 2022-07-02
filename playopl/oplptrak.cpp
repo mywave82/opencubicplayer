@@ -485,7 +485,7 @@ static struct cpitrakdisplaystruct oplptrkdisplay=
 	getins, getvol, getpan, getfx, getgcmd
 };
 
-void __attribute__ ((visibility ("internal"))) oplTrkSetup(CPlayer *p)
+void __attribute__ ((visibility ("internal"))) oplTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, CPlayer *p)
 {
 	curPosition = 0xffff;
 	trkP = p;
@@ -494,7 +494,7 @@ void __attribute__ ((visibility ("internal"))) oplTrkSetup(CPlayer *p)
 	int plOrders=trkP->getorders();
 	if (plOrders && trkP->getrows())
 	{
-		cpiTrkSetup2(&oplptrkdisplay, plOrders, cacheChannels); /* the tracker tracks does not map 1:1 to physical channels, usually 1:2 */
+		cpiTrkSetup2 (cpifaceSession, &oplptrkdisplay, plOrders, cacheChannels); /* the tracker tracks does not map 1:1 to physical channels, usually 1:2 */
 	}
 }
 

@@ -50,14 +50,14 @@ static int TimiditySetupScaleRoom = 28;
 static int TimiditySetupOffsetRoom = 70;
 static int TimiditySetupPreDelayFactor = 100;
 
-static void TimiditySetupSetWin(int _ignore, int wid, int ypos, int hgt)
+static void TimiditySetupSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int _ignore, int wid, int ypos, int hgt)
 {
 	TimiditySetupFirstLine=ypos;
 	TimiditySetupHeight=hgt;
 	TimiditySetupWidth=wid;
 }
 
-static int TimiditySetupGetWin(struct cpitextmodequerystruct *q)
+static int TimiditySetupGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
 {
 	if (!TimiditySetupActive)
 	{
@@ -73,7 +73,7 @@ static int TimiditySetupGetWin(struct cpitextmodequerystruct *q)
 	return 1;
 }
 
-static void TimiditySetupDrawItems (const int focus, const int lineno, const int skip, const char **list, const int listlength, const int selected, const int active)
+static void TimiditySetupDrawItems (struct cpifaceSessionAPI_t *cpifaceSession, const int focus, const int lineno, const int skip, const char **list, const int listlength, const int selected, const int active)
 {
 	int xpos = 16 + skip;
 	int i;
@@ -91,7 +91,7 @@ static void TimiditySetupDrawItems (const int focus, const int lineno, const int
 	displaystr (TimiditySetupFirstLine + lineno, xpos, 0x00, " ", TimiditySetupWidth - xpos);
 }
 
-static void TimiditySetupDrawBar (const int focus, const int lineno, const int skip, int level, int maxlevel, const int active)
+static void TimiditySetupDrawBar (struct cpifaceSessionAPI_t *cpifaceSession, const int focus, const int lineno, const int skip, int level, int maxlevel, const int active)
 {
 	if (level > 99999)
 	{
@@ -143,7 +143,7 @@ static void TimiditySetupDrawBar (const int focus, const int lineno, const int s
 	}
 }
 
-static void TimiditySetupDraw(int focus)
+static void TimiditySetupDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 {
 	const char *reverbs[] = {"disable", "original", "global-original", "freeverb", "global-freeverb"};
 	const char *effect_lr_modes[] = {"disable", "left", "right", "both"};
@@ -163,31 +163,31 @@ static void TimiditySetupDraw(int focus)
 	displaystr (TimiditySetupFirstLine, 0, focus?COLTITLE1H:COLTITLE1, focus?"   Timidity Setup":"   Timidity Setup (press t to focus)", TimiditySetupWidth);
 
 	displaystr (TimiditySetupFirstLine + 1, 0, (focus&&(TimiditySetupEditPos==1))?0x07:0x08, &"  Reverb:"[2 - skip], 16 + skip);
-	TimiditySetupDrawItems (focus, 1, skip, reverbs, 5, TimiditySetupSelected, TimiditySetupEditPos==0);
+	TimiditySetupDrawItems (cpifaceSession, focus, 1, skip, reverbs, 5, TimiditySetupSelected, TimiditySetupEditPos==0);
 
 	displaystr (TimiditySetupFirstLine + 2, 0, (focus&&(TimiditySetupEditPos==1))?0x07:0x08, &"  Level:"[2 - skip], 16 + skip);
-	TimiditySetupDrawBar (focus, 2, skip, (TimiditySetupSelected != 0) ? TimiditySetupLevel : -1, 127, TimiditySetupEditPos == 1);
+	TimiditySetupDrawBar (cpifaceSession, focus, 2, skip, (TimiditySetupSelected != 0) ? TimiditySetupLevel : -1, 127, TimiditySetupEditPos == 1);
 
 	displaystr (TimiditySetupFirstLine + 3, 0, (focus&&(TimiditySetupEditPos==2))?0x07:0x08, &"  ScaleRoom:"[2 - skip], 16 + skip);
-	TimiditySetupDrawBar (focus, 3, skip, (TimiditySetupSelected >= 3) ? TimiditySetupScaleRoom : -1, 1000, TimiditySetupEditPos == 2);
+	TimiditySetupDrawBar (cpifaceSession, focus, 3, skip, (TimiditySetupSelected >= 3) ? TimiditySetupScaleRoom : -1, 1000, TimiditySetupEditPos == 2);
 
 	displaystr (TimiditySetupFirstLine + 4, 0, (focus&&(TimiditySetupEditPos==3))?0x07:0x08, &"  OffsetRoom:"[2 - skip], 16 + skip);
-	TimiditySetupDrawBar (focus, 4, skip, (TimiditySetupSelected >= 3) ? TimiditySetupOffsetRoom : -1, 1000, TimiditySetupEditPos == 3);
+	TimiditySetupDrawBar (cpifaceSession, focus, 4, skip, (TimiditySetupSelected >= 3) ? TimiditySetupOffsetRoom : -1, 1000, TimiditySetupEditPos == 3);
 
 	displaystr (TimiditySetupFirstLine + 5, 0, (focus&&(TimiditySetupEditPos==4))?0x07:0x08, &"  PreDelayFactor:"[2 - skip], 16 + skip);
-	TimiditySetupDrawBar (focus, 5, skip, (TimiditySetupSelected >= 3) ? TimiditySetupPreDelayFactor : -1, 1000, TimiditySetupEditPos == 4);
+	TimiditySetupDrawBar (cpifaceSession, focus, 5, skip, (TimiditySetupSelected >= 3) ? TimiditySetupPreDelayFactor : -1, 1000, TimiditySetupEditPos == 4);
 
 	displaystr (TimiditySetupFirstLine + 6, 0, (focus&&(TimiditySetupEditPos==5))?0x07:0x08, &"  Delay:"[2 - skip], 16 + skip);
-	TimiditySetupDrawItems (focus, 6, skip, effect_lr_modes, 4, effect_lr_mode + 1, TimiditySetupEditPos==5);
+	TimiditySetupDrawItems (cpifaceSession, focus, 6, skip, effect_lr_modes, 4, effect_lr_mode + 1, TimiditySetupEditPos==5);
 
 	displaystr (TimiditySetupFirstLine + 7, 0, (focus&&(TimiditySetupEditPos==6))?0x07:0x08, &"  Delay ms:"[2 - skip], 16 + skip);
-	TimiditySetupDrawBar (focus, 7, skip, (effect_lr_mode >= 0) ? effect_lr_delay_msec : -1, 1000, TimiditySetupEditPos == 6);
+	TimiditySetupDrawBar (cpifaceSession, focus, 7, skip, (effect_lr_mode >= 0) ? effect_lr_delay_msec : -1, 1000, TimiditySetupEditPos == 6);
 
 	displaystr (TimiditySetupFirstLine + 8, 0, (focus&&(TimiditySetupEditPos==7))?0x07:0x08, &"  Chorus:"[2 - skip], 16 + skip);
-	TimiditySetupDrawItems (focus, 8, skip, disable_enable, 2, opt_chorus_control, TimiditySetupEditPos==7);
+	TimiditySetupDrawItems (cpifaceSession, focus, 8, skip, disable_enable, 2, opt_chorus_control, TimiditySetupEditPos==7);
 }
 
-static int TimiditySetupIProcessKey(uint16_t key)
+static int TimiditySetupIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -197,7 +197,7 @@ static int TimiditySetupIProcessKey(uint16_t key)
 			break;
 		case 't': case 'T':
 			TimiditySetupActive=1;
-			cpiTextSetMode("TimSetup");
+			cpiTextSetMode (cpifaceSession, "TimSetup");
 			return 1;
 		case 'x': case 'X':
 			TimiditySetupActive=1;
@@ -209,7 +209,7 @@ static int TimiditySetupIProcessKey(uint16_t key)
 	return 0;
 }
 
-static int TimiditySetupAProcessKey(uint16_t key)
+static int TimiditySetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	static uint32_t lastpress = 0;
 	static int repeat;
@@ -234,7 +234,7 @@ static int TimiditySetupAProcessKey(uint16_t key)
 	{
 		case 't': case 'T':
 			TimiditySetupActive=!TimiditySetupActive;
-			cpiTextRecalc();
+			cpiTextRecalc (cpifaceSession);
 			break;
 
 		case KEY_ALT_K:
@@ -466,7 +466,7 @@ static int TimiditySetupAProcessKey(uint16_t key)
 	return 1;
 }
 
-static int TimiditySetupEvent(int ev)
+static int TimiditySetupEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
@@ -486,7 +486,7 @@ static int TimiditySetupEvent(int ev)
 
 static struct cpitextmoderegstruct cpiTimiditySetup = {"TimSetup", TimiditySetupGetWin, TimiditySetupSetWin, TimiditySetupDraw, TimiditySetupIProcessKey, TimiditySetupAProcessKey, TimiditySetupEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) cpiTimiditySetupInit (void)
+void __attribute__ ((visibility ("internal"))) cpiTimiditySetupInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 #if 0
 	if (opt_reverb_control >= 0)
@@ -534,10 +534,10 @@ void __attribute__ ((visibility ("internal"))) cpiTimiditySetupInit (void)
 	reverb_predelay_factor= (float)TimiditySetupPreDelayFactor / 100.0f;
 	init_reverb ();
 #endif
-	cpiTextRegisterMode (&cpiTimiditySetup);
+	cpiTextRegisterMode (cpifaceSession, &cpiTimiditySetup);
 }
 
-void __attribute__ ((visibility ("internal"))) cpiTimiditySetupDone (void)
+void __attribute__ ((visibility ("internal"))) cpiTimiditySetupDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	//cpiTextUnregisterDefMode(&cpiSidInfo);
+	cpiTextUnregisterMode (cpifaceSession, &cpiTimiditySetup);
 }

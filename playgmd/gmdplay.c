@@ -1556,7 +1556,7 @@ static void PlayTick(void)
 	putque(cmdtime, -1, (currentrow<<8)|(currentpattern<<16), 0);
 }
 
-char __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI)
+char __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i;
 	for (i=65; i<=128; i++)
@@ -1622,7 +1622,7 @@ char __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodu
 	querpos=0;
 	quewpos=0;
 
-	if (!mcpOpenPlayer(channels, PlayTick, file, cpiSessionAPI))
+	if (!mcpOpenPlayer(channels, PlayTick, file, cpifaceSession))
 		return 0;
 
 	mcpNormalize (mcpNormalizeDefaultPlayW);

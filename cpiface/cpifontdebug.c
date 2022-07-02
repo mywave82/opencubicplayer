@@ -26,7 +26,7 @@ static void down_check(void)
 	if ((unicode >= 0xE01EF) && (unicode < 0x0F0000)) unicode = 0xE0100;
 }
 
-static int fontdebugAProcessKey(uint16_t key)
+static int fontdebugAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -68,7 +68,7 @@ static int fontdebugAProcessKey(uint16_t key)
 	return 1;
 }
 
-static int fontdebugIProcessKey(uint16_t key)
+static int fontdebugIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -137,7 +137,7 @@ static void fontdebugDisplayText_8x8(int x, int y, uint32_t *text)
 	}
 }
 
-static void fontdebugDraw(void)
+static void fontdebugDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 #define POSX_8  50
 #define POSX_16 0
@@ -146,7 +146,7 @@ static void fontdebugDraw(void)
 	uint8_t header8[128];
 	uint32_t header32[128];
 
-	cpiDrawGStrings();
+	cpiDrawGStrings (cpifaceSession);
 	snprintf ((char *)header8, sizeof (header8), "U+%06x - U+%06x", unicode, unicode+0xff);
 	for (i=0; header8[i]; i++)
 	{
@@ -202,7 +202,7 @@ static void fontdebugDraw(void)
 	}
 }
 
-static int fontdebugEvent(int ev)
+static int fontdebugEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{

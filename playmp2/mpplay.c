@@ -1081,7 +1081,7 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 	return 1;
 }
 
-int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandle_t *mpegfile, struct cpifaceSessionAPI_t *cpiSessionAPI)
+int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandle_t *mpegfile, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
 	ofs=0;
@@ -1126,7 +1126,7 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 
 	mpegRate=mpegrate;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&mpegRate, &format, file, cpiSessionAPI))
+	if (!plrAPI->Play (&mpegRate, &format, file, cpifaceSession))
 	{
 		fprintf(stderr, "[MPx]: plrAPI->Play() failed\n");
 		goto error_out;

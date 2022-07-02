@@ -115,22 +115,22 @@ static void plPrepareScopes(void)
 	memset(scopes, 0, MAXDOTS*2);
 }
 
-static void plPrepareScopeScr(void)
+static void plPrepareScopeScr (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	char str[49];
 
-	if ((plOszChan==2)&& (!cpifaceSessionAPI.Public.GetMasterSample))
+	if ((plOszChan==2)&& (!cpifaceSession->GetMasterSample))
 		plOszChan=3;
 	if (((plOszChan==3)||(plOszChan==0))&&!plGetLChanSample)
 		plOszChan=1;
 	if ((plOszChan==1)&&!plGetPChanSample)
 		plOszChan=2;
-	if ((plOszChan==2) && (!cpifaceSessionAPI.Public.GetMasterSample))
+	if ((plOszChan==2) && (!cpifaceSession->GetMasterSample))
 		plOszChan=3;
 
 	if (plOszChan==0)
 	{
-		int chann = cpifaceSessionAPI.Public.LogicalChannelCount;
+		int chann = cpifaceSession->LogicalChannelCount;
 		if (chann>(MAXVIEWCHAN2*2))
 			chann=(MAXVIEWCHAN2*2);
 		scopenx=2;
@@ -140,17 +140,17 @@ static void plPrepareScopeScr(void)
 		scopesx=512/scopenx;
 		scopesy=336/scopeny;
 		scopetlen=scopesx/2;
-		makescaletab (plScopesAmp * cpifaceSessionAPI.Public.PhysicalChannelCount / scopeny, scopesy/2);
+		makescaletab (plScopesAmp * cpifaceSession->PhysicalChannelCount / scopeny, scopesy/2);
 	} else if (plOszChan==1)
 	{
-		scopenx=sqrt( (cpifaceSessionAPI.Public.PhysicalChannelCount + 2)/3);
-		scopeny = (cpifaceSessionAPI.Public.PhysicalChannelCount + scopenx - 1)/scopenx;
+		scopenx=sqrt( (cpifaceSession->PhysicalChannelCount + 2)/3);
+		scopeny = (cpifaceSession->PhysicalChannelCount + scopenx - 1)/scopenx;
 		scopedx=640/scopenx;
 		scopedy=384/scopeny;
 		scopesx=512/scopenx;
 		scopesy=336/scopeny;
 		scopetlen=scopesx/2;
-		makescaletab (plScopesAmp * cpifaceSessionAPI.Public.PhysicalChannelCount / scopeny, scopesy/2);
+		makescaletab (plScopesAmp * cpifaceSession->PhysicalChannelCount / scopeny, scopesy/2);
 	} else if (plOszChan==2)
 	{
 		scopenx=1;
@@ -169,7 +169,7 @@ static void plPrepareScopeScr(void)
 		scopesx=640;
 		scopesy=382;
 		scopetlen=scopesx;
-		makescaletab (plScopesAmp * cpifaceSessionAPI.Public.PhysicalChannelCount, scopesy/2);
+		makescaletab (plScopesAmp * cpifaceSession->PhysicalChannelCount, scopesy/2);
 	}
 
 	strcpy(str, "   scopes: ");
@@ -259,7 +259,7 @@ static void removescope(int x, int y, int16_t *out, int num)
 	plotbuf(replacbuf, buf-replacbuf);
 }
 
-static int plScopesKey(uint16_t key)
+static int plScopesKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -327,12 +327,12 @@ static int plScopesKey(uint16_t key)
 		case 'o': case 'O':
 			plOszChan=(plOszChan+1)%4;
 			plPrepareScopes();
-			cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
+			cpifaceSession->SelectedChannelChanged = 1;
 			break;
 		default:
 			return 0;
 	}
-	plPrepareScopeScr();
+	plPrepareScopeScr (cpifaceSession);
 	return 1;
 }
 
@@ -348,19 +348,19 @@ static int plScopesInit(void)
 	return 1;
 }
 
-static void plDrawScopes(void)
+static void plDrawScopes (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (plOszChan==0)
 	{
-		int chann = (cpifaceSessionAPI.Public.LogicalChannelCount + 1) / 2;
+		int chann = (cpifaceSession->LogicalChannelCount + 1) / 2;
 		int chan0;
 		int i;
 
 		if (chann>MAXVIEWCHAN2)
 			chann=MAXVIEWCHAN2;
-		chan0 = (cpifaceSessionAPI.Public.SelectedChannel / 2) - (chann / 2);
-		if ((chan0+chann) >= ((cpifaceSessionAPI.Public.LogicalChannelCount+1)/2))
-			chan0 = ((cpifaceSessionAPI.Public.LogicalChannelCount+1)/2)-chann;
+		chan0 = (cpifaceSession->SelectedChannel / 2) - (chann / 2);
+		if ((chan0+chann) >= ((cpifaceSession->LogicalChannelCount+1)/2))
+			chan0 = ((cpifaceSession->LogicalChannelCount+1)/2)-chann;
 		if (chan0<0)
 			chan0 = 0;
 		chan0*=2;
@@ -371,9 +371,9 @@ static void plDrawScopes(void)
 			int x=(plPanType?(((i+i+i+chan0)&2)>>1):(i&1));
 			int paus;
 			int16_t *bp;
-			if ((i+chan0)==cpifaceSessionAPI.Public.LogicalChannelCount)
+			if ((i+chan0)==cpifaceSession->LogicalChannelCount)
 			{
-				if (cpifaceSessionAPI.Public.SelectedChannelChanged)
+				if (cpifaceSession->SelectedChannelChanged)
 			        {
 					gdrawchar8p(x?616: 8, 96+scopedy*(i>>1)+scopedy/2-3, ' ', 0, plOpenCPPict?(plOpenCPPict-96*640):0);
 					gdrawchar8p(x?624:16, 96+scopedy*(i>>1)+scopedy/2-3, ' ', 0, plOpenCPPict?(plOpenCPPict-96*640):0);
@@ -383,10 +383,10 @@ static void plDrawScopes(void)
 			}
 			plGetLChanSample(i+chan0, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
 			paus=plMuteCh[i];
-			if (cpifaceSessionAPI.Public.SelectedChannelChanged)
+			if (cpifaceSession->SelectedChannelChanged)
 			{
-				gdrawchar8p(x?616: 8, 96+scopedy*(i>>1)+scopedy/2-3, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSessionAPI.Public.SelectedChannel)?15:paus?8:7, plOpenCPPict?(plOpenCPPict-96*640):0);
-				gdrawchar8p(x?624:16, 96+scopedy*(i>>1)+scopedy/2-3, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSessionAPI.Public.SelectedChannel)?15:paus?8:7, plOpenCPPict?(plOpenCPPict-96*640):0);
+				gdrawchar8p(x?616: 8, 96+scopedy*(i>>1)+scopedy/2-3, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel)?15:paus?8:7, plOpenCPPict?(plOpenCPPict-96*640):0);
+				gdrawchar8p(x?624:16, 96+scopedy*(i>>1)+scopedy/2-3, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel)?15:paus?8:7, plOpenCPPict?(plOpenCPPict-96*640):0);
 			}
 
 			bp=plSampBuf;
@@ -413,7 +413,7 @@ static void plDrawScopes(void)
 		int i;
 		int16_t *bp;
 
-		for (i=0; i < cpifaceSessionAPI.Public.PhysicalChannelCount; i++)
+		for (i=0; i < cpifaceSession->PhysicalChannelCount; i++)
 		{
 			int paus=plGetPChanSample(i, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
 			if (paus==3)
@@ -445,7 +445,7 @@ static void plDrawScopes(void)
 	{
 		int i;
 
-		cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, scopesx, plOszRate/scopenx, plOszMono?mcpGetSampleMono:mcpGetSampleStereo);
+		cpifaceSession->GetMasterSample(plSampBuf, scopesx, plOszRate/scopenx, plOszMono?mcpGetSampleMono:mcpGetSampleStereo);
 
 		doscale(plSampBuf, scopesx*scopeny);
 
@@ -454,8 +454,8 @@ static void plDrawScopes(void)
 	} else {
 		char col;
 		int16_t *bp;
-		plGetLChanSample (cpifaceSessionAPI.Public.SelectedChannel, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
-		col=plMuteCh[cpifaceSessionAPI.Public.SelectedChannel]?7:15;
+		plGetLChanSample (cpifaceSession->SelectedChannel, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
+		col=plMuteCh[cpifaceSession->SelectedChannel]?7:15;
 		bp=plSampBuf;
 		if (plOszTrigger)
 		{
@@ -477,28 +477,28 @@ static void plDrawScopes(void)
 	}
 }
 
-static void scoDraw(void)
+static void scoDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiDrawGStrings();
-	plDrawScopes();
+	cpiDrawGStrings (cpifaceSession);
+	plDrawScopes (cpifaceSession);
 }
 
-static void scoSetMode(void)
+static void scoSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	plReadOpenCPPic();
 	cpiSetGraphMode(0);
 	plPrepareScopes();
-	plPrepareScopeScr();
+	plPrepareScopeScr (cpifaceSession);
 }
 
-static int scoCan(void)
+static int scoCan (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if (!plGetLChanSample&&!plGetPChanSample && (!cpifaceSessionAPI.Public.GetMasterSample))
+	if (!plGetLChanSample&&!plGetPChanSample && (!cpifaceSession->GetMasterSample))
 		return 0;
 	return 1;
 }
 
-static int scoIProcessKey(uint16_t key)
+static int scoIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -515,12 +515,12 @@ static int scoIProcessKey(uint16_t key)
 	return 1;
 }
 
-static int scoEvent(int ev)
+static int scoEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
 		case cpievInit:
-			return scoCan();
+			return scoCan (cpifaceSession);
 		case cpievInitAll:
 			return plScopesInit();
 	}

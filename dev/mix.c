@@ -256,7 +256,7 @@ void mixSetAmplify(int amp)
 	calcamptab((amplify*channum)>>11);
 }
 
-int mixInit(void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t rate), int masterchan, unsigned int chn, int amp, struct cpifaceSessionAPI_t *cpiSessionAPI)
+int mixInit(void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t rate), int masterchan, unsigned int chn, int amp, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i,j;
 
@@ -284,8 +284,8 @@ int mixInit(void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t ra
 	mcpMixChanSamples=mixMixChanSamples;
 	if (masterchan)
 	{ /* override devp */
-		cpiSessionAPI->GetRealMasterVolume = mixGetRealMasterVolume;
-		cpiSessionAPI->GetMasterSample = mixGetMasterSample;
+		cpifaceSession->GetRealMasterVolume = mixGetRealMasterVolume;
+		cpifaceSession->GetMasterSample = mixGetMasterSample;
 	}
 
 	channum=chn;

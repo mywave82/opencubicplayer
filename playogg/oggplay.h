@@ -44,7 +44,7 @@ extern int                  __attribute__ ((visibility ("internal")))   ogg_pict
 
 struct ocpfilehandle_t;
 struct cpifaceSessionAPI_t;
-extern int  __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpiSessionAPI);
+extern int  __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpifaceSession);
 extern void __attribute__ ((visibility ("internal"))) oggClosePlayer(void);
 extern void __attribute__ ((visibility ("internal"))) oggIdle(void);
 extern void __attribute__ ((visibility ("internal"))) oggSetLoop(uint8_t s);
@@ -54,10 +54,10 @@ extern void __attribute__ ((visibility ("internal"))) oggGetInfo(struct ogginfo 
 extern ogg_int64_t __attribute__ ((visibility ("internal"))) oggGetPos(void);
 extern void __attribute__ ((visibility ("internal"))) oggSetPos(ogg_int64_t pos);
 
-extern void __attribute__ ((visibility ("internal"))) OggInfoInit (void);
-extern void __attribute__ ((visibility ("internal"))) OggInfoDone (void);
+extern void __attribute__ ((visibility ("internal"))) OggInfoInit (struct cpifaceSessionAPI_t *cpifaceSession);
+extern void __attribute__ ((visibility ("internal"))) OggInfoDone (struct cpifaceSessionAPI_t *cpifaceSession);
 
-extern void __attribute__ ((visibility ("internal"))) OggPicInit (void);
-extern void __attribute__ ((visibility ("internal"))) OggPicDone (void);
+extern void __attribute__ ((visibility ("internal"))) OggPicInit (struct cpifaceSessionAPI_t *cpifaceSession);
+extern void __attribute__ ((visibility ("internal"))) OggPicDone (struct cpifaceSessionAPI_t *cpifaceSession);
 
 #endif

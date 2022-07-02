@@ -312,7 +312,7 @@ static void devpOSSPause (int pause)
 	devpOSSInPause = pause;
 }
 
-static int devpOSSPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI)
+static int devpOSSPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int plrbufsize, buflength;
 	struct audio_buf_info info;
@@ -452,8 +452,8 @@ static int devpOSSPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 		return 0;
 	}
 
-	cpiSessionAPI->GetMasterSample = plrGetMasterSample;
-	cpiSessionAPI->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->GetMasterSample = plrGetMasterSample;
+	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
 
 	return 1;
 }

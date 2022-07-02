@@ -1811,7 +1811,7 @@ int __attribute__ ((visibility ("internal"))) loadsamples(struct it_module *m)
 	return mcpLoadSamples(m->sampleinfos, m->nsampi);
 }
 
-int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI)
+int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i;
 	staticthis=this;
@@ -1903,7 +1903,7 @@ int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const 
 		c->tremoroffcounter=0;
 	}
 
-	if (!mcpOpenPlayer(ch, playtickstatic, file, cpiSessionAPI))
+	if (!mcpOpenPlayer(ch, playtickstatic, file, cpifaceSession))
 		return 0;
 
 	mcpNormalize (mcpNormalizeDefaultPlayW);

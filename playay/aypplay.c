@@ -101,7 +101,7 @@ static void dopausefade(void)
 	mcpSetMasterPauseFadeParameters (i);
 }
 
-static void ayCloseFile()
+static void ayCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	ayClosePlayer();
 }
@@ -115,16 +115,17 @@ static int ayLooped(void)
 	return !fsLoopMods&&ayIsLooped();
 }
 
-static void ayDrawGStrings (void)
+static void ayDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct ayinfo globinfo;
 
-	mcpDrawGStrings ();
+	mcpDrawGStrings (cpifaceSession);
 
 	ayGetInfo (&globinfo);
 
 	mcpDrawGStringsSongXofY
 	(
+		cpifaceSession,
 		utf8_8_dot_3,
 		utf8_16_dot_3,
 		globinfo.track,
@@ -136,7 +137,7 @@ static void ayDrawGStrings (void)
 #warning TODO: globinfo.trackname, each track can have unique names.....
 }
 
-static int ayProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
+static int ayProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	int csg;
 	struct ayinfo globinfo;
@@ -192,7 +193,7 @@ static int ayProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
 
 }
 
-static int ayOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
+static int ayOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 
@@ -210,10 +211,10 @@ static int ayOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fil
 	plDrawGStrings=ayDrawGStrings;
 	plSetMute=aySetMute;
 
-	cpiSessionAPI->LogicalChannelCount = 6;
-	ayChanSetup();
+	cpifaceSession->LogicalChannelCount = 6;
+	ayChanSetup (cpifaceSession);
 
-	if (!ayOpenPlayer(file, cpiSessionAPI))
+	if (!ayOpenPlayer(file, cpifaceSession))
 	{
 #ifdef INITCLOSE_DEBUG
 		fprintf(stderr, "ayOpenPlayer FAILED\n");

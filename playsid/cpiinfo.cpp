@@ -76,14 +76,14 @@ HEADER
 
 #endif
 
-static void SidInfoSetWin(int _ignore, int wid, int ypos, int hgt)
+static void SidInfoSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int _ignore, int wid, int ypos, int hgt)
 {
 	SidInfoFirstLine=ypos;
 	SidInfoHeight=hgt;
 	SidInfoWidth=wid;
 }
 
-static int SidInfoGetWin(struct cpitextmodequerystruct *q)
+static int SidInfoGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
 {
 	if (!SidInfoActive)
 		return 0;
@@ -97,7 +97,7 @@ static int SidInfoGetWin(struct cpitextmodequerystruct *q)
 	return 1;
 }
 
-static void SidInfoDraw(int focus)
+static void SidInfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 {
 	char LineBuffer[CONSOLE_MAX_X+1];
 	int i;
@@ -335,7 +335,7 @@ static void SidInfoDraw(int focus)
 	line++;
 }
 
-static int SidInfoIProcessKey(uint16_t key)
+static int SidInfoIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -345,7 +345,7 @@ static int SidInfoIProcessKey(uint16_t key)
 			break;
 		case 't': case 'T':
 			SidInfoActive=1;
-			cpiTextSetMode("sidinfo");
+			cpiTextSetMode (cpifaceSession, "sidinfo");
 			return 1;
 		case 'x': case 'X':
 			SidInfoActive=1;
@@ -357,13 +357,13 @@ static int SidInfoIProcessKey(uint16_t key)
 	return 0;
 }
 
-static int SidInfoAProcessKey(uint16_t key)
+static int SidInfoAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
 		case 't': case 'T':
 			SidInfoActive=!SidInfoActive;
-			cpiTextRecalc();
+			cpiTextRecalc (cpifaceSession);
 			break;
 
 		case KEY_ALT_K:
@@ -396,7 +396,7 @@ static int SidInfoAProcessKey(uint16_t key)
 }
 
 
-static int SidInfoEvent(int ev)
+static int SidInfoEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
@@ -416,13 +416,12 @@ static int SidInfoEvent(int ev)
 
 static struct cpitextmoderegstruct cpiSidInfo = {"sidinfo", SidInfoGetWin, SidInfoSetWin, SidInfoDraw, SidInfoIProcessKey, SidInfoAProcessKey, SidInfoEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) SidInfoInit (void)
+void __attribute__ ((visibility ("internal"))) SidInfoInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	//cpiTextRegisterDefMode(&cpiSidInfo);
-	cpiTextRegisterMode(&cpiSidInfo);
+	cpiTextRegisterMode (cpifaceSession, &cpiSidInfo);
 }
 
-void __attribute__ ((visibility ("internal"))) SidInfoDone (void)
+void __attribute__ ((visibility ("internal"))) SidInfoDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	//cpiTextUnregisterDefMode(&cpiSidInfo);
+	cpiTextUnregisterMode (cpifaceSession, &cpiSidInfo);
 }

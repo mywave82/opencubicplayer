@@ -120,7 +120,7 @@ extern int __attribute__ ((visibility ("internal"))) xmpLoadWOW(struct xmodule *
 extern int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, struct ocpfilehandle_t *f);
 extern void __attribute__ ((visibility ("internal"))) xmpFreeModule(struct xmodule *m);
 
-extern int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI);
+extern int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
 extern void __attribute__ ((visibility ("internal"))) xmpStopModule(void);
 extern void __attribute__ ((visibility ("internal"))) xmpSetPos(int ord, int row);
 
@@ -195,9 +195,9 @@ enum
 
 struct cpifaceSessionAPI_t;
 
-extern void __attribute__ ((visibility ("internal"))) xmpInstSetup (struct cpifaceSessionAPI_t *cpiSession, const struct xmpinstrument *ins, int nins, const struct xmpsample *smp, int nsmp, const struct sampleinfo *smpi, int nsmpi, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpiSession, char *, char *));
-extern void __attribute__ ((visibility ("internal"))) xmTrkSetup (const struct xmodule *mod);
-extern void __attribute__ ((visibility ("internal"))) xmpInstClear (struct cpifaceSessionAPI_t *cpiSession);
+extern void __attribute__ ((visibility ("internal"))) xmpInstSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct xmpinstrument *ins, int nins, const struct xmpsample *smp, int nsmp, const struct sampleinfo *smpi, int nsmpi, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpifaceSession, char *, char *));
+extern void __attribute__ ((visibility ("internal"))) xmTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct xmodule *mod);
+extern void __attribute__ ((visibility ("internal"))) xmpInstClear (struct cpifaceSessionAPI_t *cpifaceSession);
 
 extern __attribute__ ((visibility ("internal"))) struct xmodule mod;
 

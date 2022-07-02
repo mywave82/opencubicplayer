@@ -29,7 +29,7 @@
 #include "player.h"
 #include "stuff/poutput.h"
 
-static void hvlDisplayIns40 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
+static void hvlDisplayIns40 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring (buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
@@ -37,7 +37,7 @@ static void hvlDisplayIns40 (struct cpifaceSessionAPI_t *cpiSession, unsigned sh
 	writestring (buf, 5, col, ht->ht_Instruments[n].ins_Name, 35);
 }
 
-static void hvlDisplayIns33 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
+static void hvlDisplayIns33 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 
@@ -46,7 +46,7 @@ static void hvlDisplayIns33 (struct cpifaceSessionAPI_t *cpiSession, unsigned sh
 	writestring (buf, 5, col, ht->ht_Instruments[n].ins_Name, 28);
 }
 
-static void hvlDisplayIns52 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
+static void hvlDisplayIns52 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring (buf, 0, col, (!plInstMode&&plInstUsed[n])?"    \xfe##: ":"     ##: ", 9);
@@ -54,7 +54,7 @@ static void hvlDisplayIns52 (struct cpifaceSessionAPI_t *cpiSession, unsigned sh
 	writestring (buf, 9, col, ht->ht_Instruments[n].ins_Name, 43);
 }
 
-static void hvlDisplayIns80 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
+static void hvlDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col;
 
@@ -71,7 +71,7 @@ static void hvlDisplayIns80 (struct cpifaceSessionAPI_t *cpiSession, unsigned sh
 	writenum    (buf, 77, col, ht->ht_Instruments[n].ins_PList.pls_Length, 10, 3, 0);
 }
 
-static void hvlDisplayIns132 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
+static void hvlDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col;
 
@@ -109,42 +109,42 @@ static void hvlDisplayIns132 (struct cpifaceSessionAPI_t *cpiSession, unsigned s
 	writenum    (buf, 124, col, ht->ht_Instruments[n].ins_PList.pls_Length, 10, 3, 0);
 }
 
-static void hvlDisplayIns (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int len, int n, int plInstMode)
+static void hvlDisplayIns (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int len, int n, int plInstMode)
 {
 	switch (len)
 	{
 		case 33:
-			hvlDisplayIns33 (cpiSession, buf, n, plInstMode);
+			hvlDisplayIns33 (cpifaceSession, buf, n, plInstMode);
 			break;
 		case 40:
-			hvlDisplayIns40 (cpiSession, buf, n, plInstMode);
+			hvlDisplayIns40 (cpifaceSession, buf, n, plInstMode);
 			break;
 		case 52:
-			hvlDisplayIns52 (cpiSession, buf, n, plInstMode);
+			hvlDisplayIns52 (cpifaceSession, buf, n, plInstMode);
 			break;
 		case 80:
-			hvlDisplayIns80 (cpiSession, buf, n, plInstMode);
+			hvlDisplayIns80 (cpifaceSession, buf, n, plInstMode);
 			break;
 		case 132:
-			hvlDisplayIns132 (cpiSession, buf, n, plInstMode);
+			hvlDisplayIns132 (cpifaceSession, buf, n, plInstMode);
 			break;
 	}
 }
 
-static void hvlMark (struct cpifaceSessionAPI_t *cpiSession)
+static void hvlMark (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	/* moved into hvl_statbuffer_callback_from_hvlbuf */
 }
 
-static void hvlInstClear (struct cpifaceSessionAPI_t *cpiSession)
+static void hvlInstClear (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 }
 
-static void hvlDone (struct cpifaceSessionAPI_t *cpiSession)
+static void hvlDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 }
 
-void __attribute__ ((visibility ("internal"))) hvlInstSetup (struct cpifaceSessionAPI_t *cpiSession)
+void __attribute__ ((visibility ("internal"))) hvlInstSetup (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct insdisplaystruct plInsDisplay;
 
@@ -154,8 +154,8 @@ void __attribute__ ((visibility ("internal"))) hvlInstSetup (struct cpifaceSessi
 	plInsDisplay.Mark=hvlMark;
 	plInsDisplay.Display=hvlDisplayIns;
 	plInsDisplay.Done=hvlDone;
-	hvlInstClear (cpiSession);
+	hvlInstClear (cpifaceSession);
 	plInsDisplay.height=ht->ht_InstrumentNr;
 	plInsDisplay.bigheight=ht->ht_InstrumentNr;
-	plUseInstruments(&plInsDisplay);
+	plUseInstruments (cpifaceSession, &plInsDisplay);
 }

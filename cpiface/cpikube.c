@@ -378,7 +378,7 @@ static void decodrledlt(uint8_t *rp, uint16_t rbuflen)
 	}
 }
 
-static void wuerfelDraw(void)
+static void wuerfelDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	unsigned int i;
 	uint8_t *curframe;
@@ -491,7 +491,7 @@ static void wuerfelDraw(void)
 		wuerfelpos=wuerfelstframes+(wuerfelpos-wuerfelstframes+(plWuerfelDirect?(wuerfelframes-1):1))%wuerfelframes;
 }
 
-static int wuerfelKey(uint16_t key)
+static int wuerfelKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -521,7 +521,7 @@ static void wuerfelSetMode(void)
 	wurfelTicker.tv_nsec /= 10000;
 }
 
-static int wuerfelEvent(int ev)
+static int wuerfelEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
@@ -540,7 +540,7 @@ static int wuerfelEvent(int ev)
 	return 1;
 }
 
-static int wuerfelIProcessKey(uint16_t key)
+static int wuerfelIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{

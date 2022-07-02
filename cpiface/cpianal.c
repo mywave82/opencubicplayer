@@ -65,7 +65,7 @@ static int plAnalFlip=0;
 static int16_t plSampBuf[4096];
 static uint16_t ana[1024];
 
-static void plDrawFFT(char sel)
+static void AnalDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 {
 	char str[80]; /* contains the title string */
 	char s2[20];
@@ -78,7 +78,7 @@ static void plDrawFFT(char sel)
 
 	if ((plAnalChan==2)&&!plGetLChanSample)
 		plAnalChan=0;
-	if (((plAnalChan==0)||(plAnalChan==1)) && (!cpifaceSessionAPI.Public.GetMasterSample))
+	if (((plAnalChan==0)||(plAnalChan==1)) && (!cpifaceSession->GetMasterSample))
 		plAnalChan=2;
 	if ((plAnalChan==2)&&!plGetLChanSample)
 		plAnalChan=0;
@@ -87,7 +87,7 @@ static void plDrawFFT(char sel)
 	if (plAnalChan==2)
 	{
 		s=s2;
-		snprintf(s2, sizeof(s2), "single channel: %3i", cpifaceSessionAPI.Public.SelectedChannel + 1);
+		snprintf(s2, sizeof(s2), "single channel: %3i", cpifaceSession->SelectedChannel + 1);
 	} else {
 		if (plAnalChan)
 			s="master channel, mono";
@@ -119,7 +119,7 @@ static void plDrawFFT(char sel)
 		  s
 	);
 
-	displaystr(plAnalFirstLine-1, 0, sel?COLTITLEH:COLTITLE, str, plAnalWidth);
+	displaystr(plAnalFirstLine-1, 0, focus?COLTITLEH:COLTITLE, str, plAnalWidth);
 
 	wid=plAnalWidth-8;
 	ofs=(plAnalWidth-wid)>>1;
@@ -137,7 +137,7 @@ static void plDrawFFT(char sel)
 		unsigned int wh2;
 		unsigned int fl;
 
-		cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, 1<<bits, plAnalRate, mcpGetSampleStereo);
+		cpifaceSession->GetMasterSample(plSampBuf, 1<<bits, plAnalRate, mcpGetSampleStereo);
 		if (plAnalHeight&1)
 			displayvoid (plAnalFirstLine+plAnalHeight-1, ofs, plAnalWidth-2*ofs);
 		wh2=plAnalHeight>>1;
@@ -161,9 +161,9 @@ static void plDrawFFT(char sel)
 
 	} else {
 		if (plAnalChan!=2)
-			cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, 1<<bits, plAnalRate, 0);
+			cpifaceSession->GetMasterSample(plSampBuf, 1<<bits, plAnalRate, 0);
 		else
-			plGetLChanSample (cpifaceSessionAPI.Public.SelectedChannel, plSampBuf, 1<<bits, plAnalRate, 0);
+			plGetLChanSample (cpifaceSession->SelectedChannel, plSampBuf, 1<<bits, plAnalRate, 0);
 		fftanalyseall(ana, plSampBuf, 1, bits);
 		for (i=0; i<wid; i++)
 			if (plAnalFlip&1)
@@ -173,14 +173,14 @@ static void plDrawFFT(char sel)
 	}
 }
 
-static void AnalSetWin(int unused, int wid, int ypos, int hgt)
+static void AnalSetWin(struct cpifaceSessionAPI_t *cpifaceSession, int unused, int wid, int ypos, int hgt)
 {
 	plAnalFirstLine=ypos+1;
 	plAnalHeight=hgt-1;
 	plAnalWidth=wid;
 }
 
-static int AnalGetWin(struct cpitextmodequerystruct *q)
+static int AnalGetWin(struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
 {
 	if (!analactive)
 		return 0;
@@ -195,12 +195,7 @@ static int AnalGetWin(struct cpitextmodequerystruct *q)
 	return 1;
 }
 
-static void AnalDraw(int focus)
-{
-	plDrawFFT(focus);
-}
-
-static int AnalIProcessKey(uint16_t key)
+static int AnalIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -210,7 +205,7 @@ static int AnalIProcessKey(uint16_t key)
 			break;
 		case 'a': case 'A':
 			analactive=1;
-			cpiTextSetMode("anal");
+			cpiTextSetMode (cpifaceSession, "anal");
 			return 1; /* do swallow */
 		case 'x': case 'X':
 			analactive=1;
@@ -222,7 +217,7 @@ static int AnalIProcessKey(uint16_t key)
 	return 0;
 }
 
-static int AnalAProcessKey(uint16_t key)
+static int AnalAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -243,7 +238,7 @@ static int AnalAProcessKey(uint16_t key)
 			break;
 		case 'a':
 			analactive=!analactive;
-			cpiTextRecalc();
+			cpiTextRecalc (cpifaceSession);
 			break;
 		case KEY_CTRL_PGUP:
 		/*case 0x7600: //ctrl-pgdn*/
@@ -302,9 +297,9 @@ static void AnalClose(void)
 {
 }
 
-static int AnalCan(void)
+static int AnalCan (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if ((!cpifaceSessionAPI.Public.GetMasterSample) && (!plGetLChanSample))
+	if ((!cpifaceSession->GetMasterSample) && (!plGetLChanSample))
 		return 0;
 	return 1;
 }
@@ -313,12 +308,12 @@ static void AnalSetMode(void)
 {
 }
 
-static int AnalEvent(int ev)
+static int AnalEvent(struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
 		case cpievInit:
-			return AnalCan();
+			return AnalCan(cpifaceSession);
 		case cpievInitAll:
 			return AnalInit();
 		case cpievDoneAll:

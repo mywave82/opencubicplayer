@@ -109,16 +109,17 @@ static void dopausefade(void)
 	mcpSetMasterPauseFadeParameters (i);
 }
 
-static void wavDrawGStrings (void)
+static void wavDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct waveinfo inf;
 
-	mcpDrawGStrings ();
+	mcpDrawGStrings (cpifaceSession);
 
 	wpGetInfo (&inf);
 
 	mcpDrawGStringsFixedLengthStream
 	(
+		cpifaceSession,
 		utf8_8_dot_3,
 		utf8_16_dot_3,
 		inf.pos,
@@ -133,7 +134,7 @@ static void wavDrawGStrings (void)
 	);
 }
 
-static int wavProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
+static int wavProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -217,7 +218,7 @@ static void wavCloseFile()
 	wpClosePlayer();
 }
 
-static int wavOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *wavf, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
+static int wavOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *wavf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	struct waveinfo inf;
@@ -235,7 +236,7 @@ static int wavOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *wa
 	plProcessKey=wavProcessKey;
 	plDrawGStrings=wavDrawGStrings;
 
-	if (!wpOpenPlayer(wavf, cpiSessionAPI))
+	if (!wpOpenPlayer(wavf, cpifaceSession))
 	{
 #ifdef INITCLOSE_DEBUG
 		fprintf(stderr, "wpOpenPlayer FAILED\n");

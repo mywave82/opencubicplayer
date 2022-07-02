@@ -415,7 +415,7 @@ static void devpCoreAudioPeekBuffer (void **buf1, unsigned int *buf1length, void
 }
 
 
-static int devpCoreAudioPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI)
+static int devpCoreAudioPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	OSErr status;
 	int plrbufsize; /* given in ms */
@@ -466,8 +466,8 @@ static int devpCoreAudioPlay (uint32_t *rate, enum plrRequestFormat *format, str
 		return 0;
 	}
 
-	cpiSessionAPI->GetMasterSample = plrGetMasterSample;
-	cpiSessionAPI->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->GetMasterSample = plrGetMasterSample;
+	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
 
 	return 1;
 }

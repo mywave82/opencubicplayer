@@ -140,17 +140,17 @@ static void getfx2(uint16_t *bp, int n, int o)
 	getfx(bp, n-p);
 }
 
-static void getscrollpos(int tr, int *firstchan, int *chnn)
+static void getscrollpos (struct cpifaceSessionAPI_t *cpifaceSession, int tr, int *firstchan, int *chnn)
 {
 	if (overrideplNLChan>tr)
 	{
-		if (cpifaceSessionAPI.Public.SelectedChannel < (tr>>1))
+		if (cpifaceSession->SelectedChannel < (tr>>1))
 			*firstchan=0;
 		else
-			if (cpifaceSessionAPI.Public.SelectedChannel >= (overrideplNLChan-(tr>>1)))
+			if (cpifaceSession->SelectedChannel >= (overrideplNLChan-(tr>>1)))
 				*firstchan=overrideplNLChan-tr;
 			else
-				*firstchan=cpifaceSessionAPI.Public.SelectedChannel - ((tr>>1));
+				*firstchan=cpifaceSession->SelectedChannel - ((tr>>1));
 		*chnn=tr;
 	} else {
 		*firstchan=0;
@@ -261,7 +261,7 @@ struct patviewtype
 	void (*putcmd)(uint16_t *bp);
 };
 
-static void preparepatgen(int pat, const struct patviewtype *pt)
+static void preparepatgen (struct cpifaceSessionAPI_t *cpifaceSession, int pat, const struct patviewtype *pt)
 {
 	int i;
 	int firstchan,chnn;
@@ -281,7 +281,7 @@ static void preparepatgen(int pat, const struct patviewtype *pt)
 
 	plPrepdPat=pat;
 
-	getscrollpos(maxch, &firstchan, &chnn);
+	getscrollpos (cpifaceSession, maxch, &firstchan, &chnn);
 
 	strcpy(pattitle1, "   pattern view:  order ");
 	convnum(pat, pattitle1+strlen(pattitle1), 16, 3, 0);
@@ -335,7 +335,7 @@ static void preparepatgen(int pat, const struct patviewtype *pt)
 	for (i=0; i<chnn; i++)
 	{
 		char chpaus=plMuteCh[i+firstchan];
-		char sel=((i+firstchan)==cpifaceSessionAPI.Public.SelectedChannel);
+		char sel=((i+firstchan)==cpifaceSession->SelectedChannel);
 		writenum(pattitle2, n0+pt->width*i, sel?COLTITLE2H:chpaus?COLTITLE2M:COLLNUM, i+firstchan+1, 10, (pt->width==1)?1:2, pt->width>2);
 		writestring(patmask, p0+pt->width*i, COLBACK, chpaus?pt->paused:sel?pt->selected:pt->normal, pt->width);
 	}
@@ -556,8 +556,7 @@ static void calcPatType(void)
 	plPatType=Probes[i].PatType;
 }
 
-
-static void gmdDrawPattern(int sel)
+static void TrakDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 {
 	int pos=getcurpos();
 	int pat=pos>>8;
@@ -585,46 +584,46 @@ static void gmdDrawPattern(int sel)
 			pat=0;
 	}
 
-	if ((plPrepdPat!=pat) || cpifaceSessionAPI.Public.SelectedChannelChanged)
+	if ((plPrepdPat!=pat) || cpifaceSession->SelectedChannelChanged)
 	{
 		if (plPatWidth<128)
 			switch (plPatType)
 			{
-				case 0: preparepatgen(pat, &pat6480); break;
-				case 1: preparepatgen(pat, &pat6480); break;
-				case 2: preparepatgen(pat, &pat4880); break;
-				case 3: preparepatgen(pat, &pat4880); break;
-				case 4: preparepatgen(pat, &pat3280); break;
-				case 5: preparepatgen(pat, &pat3280); break;
-				case 6: preparepatgen(pat, &pat2480); break;
-				case 7: preparepatgen(pat, &pat2480f); break;
-				case 8: preparepatgen(pat, &pat1680); break;
-				case 9: preparepatgen(pat, &pat1680f); break;
-				case 10: preparepatgen(pat, &pat880); break;
-				case 11: preparepatgen(pat, &pat880f); break;
-				case 12: preparepatgen(pat, &pat480f); break;
-				case 13: preparepatgen(pat, &pat480); break;
+				case 0: preparepatgen (cpifaceSession, pat, &pat6480); break;
+				case 1: preparepatgen (cpifaceSession, pat, &pat6480); break;
+				case 2: preparepatgen (cpifaceSession, pat, &pat4880); break;
+				case 3: preparepatgen (cpifaceSession, pat, &pat4880); break;
+				case 4: preparepatgen (cpifaceSession, pat, &pat3280); break;
+				case 5: preparepatgen (cpifaceSession, pat, &pat3280); break;
+				case 6: preparepatgen (cpifaceSession, pat, &pat2480); break;
+				case 7: preparepatgen (cpifaceSession, pat, &pat2480f); break;
+				case 8: preparepatgen (cpifaceSession, pat, &pat1680); break;
+				case 9: preparepatgen (cpifaceSession, pat, &pat1680f); break;
+				case 10: preparepatgen (cpifaceSession, pat, &pat880); break;
+				case 11: preparepatgen (cpifaceSession, pat, &pat880f); break;
+				case 12: preparepatgen (cpifaceSession, pat, &pat480f); break;
+				case 13: preparepatgen (cpifaceSession, pat, &pat480); break;
 			} else switch (plPatType)
 			{
-				case 0: preparepatgen(pat, &pat64132m); break;
-				case 1: preparepatgen(pat, &pat64132); break;
-				case 2: preparepatgen(pat, &pat48132); break;
-				case 3: preparepatgen(pat, &pat48132); break;
-				case 4: preparepatgen(pat, &pat32132); break;
-				case 5: preparepatgen(pat, &pat32132f); break;
-				case 6: preparepatgen(pat, &pat24132); break;
-				case 7: preparepatgen(pat, &pat24132f); break;
-				case 8: preparepatgen(pat, &pat16132); break;
-				case 9: preparepatgen(pat, &pat16132); break;
-				case 10: preparepatgen(pat, &pat8132f); break;
-				case 11: preparepatgen(pat, &pat8132); break;
-				case 12: preparepatgen(pat, &pat4132); break;
-				case 13: preparepatgen(pat, &pat4132); break;
+				case 0: preparepatgen (cpifaceSession, pat, &pat64132m); break;
+				case 1: preparepatgen (cpifaceSession, pat, &pat64132); break;
+				case 2: preparepatgen (cpifaceSession, pat, &pat48132); break;
+				case 3: preparepatgen (cpifaceSession, pat, &pat48132); break;
+				case 4: preparepatgen (cpifaceSession, pat, &pat32132); break;
+				case 5: preparepatgen (cpifaceSession, pat, &pat32132f); break;
+				case 6: preparepatgen (cpifaceSession, pat, &pat24132); break;
+				case 7: preparepatgen (cpifaceSession, pat, &pat24132f); break;
+				case 8: preparepatgen (cpifaceSession, pat, &pat16132); break;
+				case 9: preparepatgen (cpifaceSession, pat, &pat16132); break;
+				case 10: preparepatgen (cpifaceSession, pat, &pat8132f); break;
+				case 11: preparepatgen (cpifaceSession, pat, &pat8132); break;
+				case 12: preparepatgen (cpifaceSession, pat, &pat4132); break;
+				case 13: preparepatgen (cpifaceSession, pat, &pat4132); break;
 			}
 	}
 
 	/* show the two header lines*/
-	displaystr(plPatFirstLine-2, 0, sel?COLTITLE1H:COLTITLE1, pattitle1, plPatWidth);
+	displaystr(plPatFirstLine-2, 0, focus?COLTITLE1H:COLTITLE1, pattitle1, plPatWidth);
 	displaystrattr(plPatFirstLine-1, 0, pattitle2, plPatWidth);
 	/* done */
 
@@ -657,7 +656,7 @@ static void gmdDrawPattern(int sel)
 	}
 }
 
-static int gmdTrkProcessKey(uint16_t key)
+static int gmdTrkProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	if (plPatType < 0)
 	{ /* more an assertion... should not be able to get so far without this beeing calculated. Usually we would draw atleast one frame before processing keyboard presses */
@@ -773,14 +772,14 @@ static int gmdTrkProcessKey(uint16_t key)
 	return 1;
 }
 
-static void TrakSetWin(int _ignore, int wid, int ypos, int hgt)
+static void TrakSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int _ignore, int wid, int ypos, int hgt)
 {
 	plPatFirstLine=ypos+2;
 	plPatHeight=hgt-2;
 	plPatWidth=wid;
 }
 
-static int TrakGetWin(struct cpitextmodequerystruct *q)
+static int TrakGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
 {
 	if (!plTrackActive)
 		return 0;
@@ -795,12 +794,7 @@ static int TrakGetWin(struct cpitextmodequerystruct *q)
 	return 1;
 }
 
-static void TrakDraw(int focus)
-{
-	gmdDrawPattern(focus);
-}
-
-static int TrakIProcessKey(uint16_t key)
+static int TrakIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -810,7 +804,7 @@ static int TrakIProcessKey(uint16_t key)
 			break;
 		case 't': case 'T':
 			plTrackActive=1;
-			cpiTextSetMode("trak");
+			cpiTextSetMode (cpifaceSession, "trak");
 			calcPatType();
 			return 1;
 		case 'x': case 'X':
@@ -824,21 +818,21 @@ static int TrakIProcessKey(uint16_t key)
 	return 0;
 }
 
-static int TrakAProcessKey(uint16_t key)
+static int TrakAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
 		case 't': case 'T':
 			plTrackActive=!plTrackActive;
-			cpiTextRecalc();
+			cpiTextRecalc (cpifaceSession);
 			break;
 		default:
-			return gmdTrkProcessKey(key);
+			return gmdTrkProcessKey (cpifaceSession, key);
 	}
 	return 1;
 }
 
-static int trkEvent(int ev)
+static int trkEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
@@ -846,7 +840,7 @@ static int trkEvent(int ev)
 			plTrackActive=cfGetProfileBool2(cfScreenSec, "screen", "pattern", 1, 1);
 			return 0;
 		case cpievInit:
-			plPatBuf=calloc(sizeof(short), (plPatBufH/*don't ask where we get these from */)*CONSOLE_MAX_X);
+			plPatBuf=calloc(sizeof(uint16_t), (plPatBufH/*don't ask where we get these from */)*CONSOLE_MAX_X);
 			if (!plPatBuf)
 				return 0;
 			break;
@@ -860,9 +854,9 @@ static int trkEvent(int ev)
 
 static struct cpitextmoderegstruct cpiTModeTrack = {"trak", TrakGetWin, TrakSetWin, TrakDraw, TrakIProcessKey, TrakAProcessKey, trkEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void cpiTrkSetup(const struct cpitrakdisplaystruct *c, int npat)
+void cpiTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpitrakdisplaystruct *c, int npat)
 {
-	overrideplNLChan = cpifaceSessionAPI.Public.LogicalChannelCount;
+	overrideplNLChan = cpifaceSession->LogicalChannelCount;
 	plPatternNum=npat;
 	plPatManualPat=-1;
 	plPrepdPat=-1;
@@ -878,10 +872,10 @@ void cpiTrkSetup(const struct cpitrakdisplaystruct *c, int npat)
 	getpan=c->getpan;
 	getfx=c->getfx;
 	getgcmd=c->getgcmd;
-	cpiTextRegisterMode(&cpiTModeTrack);
+	cpiTextRegisterMode (cpifaceSession, &cpiTModeTrack);
 }
 
-void cpiTrkSetup2(const struct cpitrakdisplaystruct *c, int npat, int tracks)
+void cpiTrkSetup2 (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpitrakdisplaystruct *c, int npat, int tracks)
 {
 	overrideplNLChan=tracks;
 	plPatternNum=npat;
@@ -899,7 +893,7 @@ void cpiTrkSetup2(const struct cpitrakdisplaystruct *c, int npat, int tracks)
 	getpan=c->getpan;
 	getfx=c->getfx;
 	getgcmd=c->getgcmd;
-	cpiTextRegisterMode(&cpiTModeTrack);
+	cpiTextRegisterMode (cpifaceSession, &cpiTModeTrack);
 }
 
 static void __attribute__((constructor))init(void)

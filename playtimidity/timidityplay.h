@@ -30,7 +30,7 @@ struct mchaninfo
 };
 
 struct cpifaceSessionAPI_t;
-extern int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI);
+extern int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
 extern void __attribute__ ((visibility ("internal"))) timidityClosePlayer(void);
 extern void __attribute__ ((visibility ("internal"))) timidityIdle(void);
 extern void __attribute__ ((visibility ("internal"))) timiditySetLoop(uint8_t s);

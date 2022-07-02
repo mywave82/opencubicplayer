@@ -48,7 +48,7 @@ static const struct gmdsample *plModSamples;
 
 static char plInstShowFreq;
 
-static void gmdDisplayIns40 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
+static void gmdDisplayIns40 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
@@ -56,7 +56,7 @@ static void gmdDisplayIns40 (struct cpifaceSessionAPI_t *cpiSession, unsigned sh
 	writestring(buf, 5, col, plInstr[n].name, 35);
 }
 
-static void gmdDisplayIns33 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
+static void gmdDisplayIns33 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
@@ -64,7 +64,7 @@ static void gmdDisplayIns33 (struct cpifaceSessionAPI_t *cpiSession, unsigned sh
 	writestring(buf, 5, col, plInstr[n].name, 28);
 }
 
-static void gmdDisplayIns52 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
+static void gmdDisplayIns52 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"    \xfe##: ":"     ##: ", 9);
@@ -72,7 +72,7 @@ static void gmdDisplayIns52 (struct cpifaceSessionAPI_t *cpiSession, unsigned sh
 	writestring(buf, 9, col, plInstr[n].name, 43);
 }
 
-static void gmdDisplayIns80 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
+static void gmdDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col;
 	writestring(buf, 0, 0, "", 80);
@@ -136,7 +136,7 @@ static void gmdDisplayIns80 (struct cpifaceSessionAPI_t *cpiSession, unsigned sh
 	}
 }
 
-static void gmdDisplayIns132 (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int n, int plInstMode)
+static void gmdDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
 {
 	char col;
 
@@ -204,31 +204,31 @@ static void gmdDisplayIns132 (struct cpifaceSessionAPI_t *cpiSession, unsigned s
 	}
 }
 
-static void gmdDisplayIns (struct cpifaceSessionAPI_t *cpiSession, unsigned short *buf, int len, int n, int plInstMode)
+static void gmdDisplayIns (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int len, int n, int plInstMode)
 {
 	switch (len)
 	{
 		case 33:
-			gmdDisplayIns33 (cpiSession, buf, n, plInstMode);
+			gmdDisplayIns33 (cpifaceSession, buf, n, plInstMode);
 			break;
 		case 40:
-			gmdDisplayIns40 (cpiSession, buf, n, plInstMode);
+			gmdDisplayIns40 (cpifaceSession, buf, n, plInstMode);
 			break;
 		case 52:
-			gmdDisplayIns52 (cpiSession, buf, n, plInstMode);
+			gmdDisplayIns52 (cpifaceSession, buf, n, plInstMode);
 			break;
 		case 80:
-			gmdDisplayIns80 (cpiSession, buf, n, plInstMode);
+			gmdDisplayIns80 (cpifaceSession, buf, n, plInstMode);
 			break;
 		case 132:
-			gmdDisplayIns132 (cpiSession, buf, n, plInstMode);
+			gmdDisplayIns132 (cpifaceSession, buf, n, plInstMode);
 			break;
 	}
 }
 
-static void (*Mark) (struct cpifaceSessionAPI_t *cpiSession, uint8_t *, uint8_t *);
+static void (*Mark) (struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *, uint8_t *);
 
-static void gmdMark (struct cpifaceSessionAPI_t *cpiSession)
+static void gmdMark (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i;
 	for (i=0; i<instnum; i++)
@@ -237,16 +237,16 @@ static void gmdMark (struct cpifaceSessionAPI_t *cpiSession)
 	for (i=0; i<sampnum; i++)
 		if (plSampUsed[i])
 			plSampUsed[i]=1;
-	Mark (cpiSession, plInstUsed, plSampUsed);
+	Mark (cpifaceSession, plInstUsed, plSampUsed);
 }
 
-void __attribute__ ((visibility ("internal"))) gmdInstClear (struct cpifaceSessionAPI_t *cpiSession)
+void __attribute__ ((visibility ("internal"))) gmdInstClear (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	memset(plInstUsed, 0, instnum);
 	memset(plSampUsed, 0, sampnum);
 }
 
-static void Done (struct cpifaceSessionAPI_t *cpiSession)
+static void Done (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	free(plInstUsed);
 	free(plSampUsed);
@@ -254,7 +254,7 @@ static void Done (struct cpifaceSessionAPI_t *cpiSession)
 	free(plBigSampNum);
 }
 
-void __attribute__ ((visibility ("internal"))) gmdInstSetup (struct cpifaceSessionAPI_t *cpiSession, const struct gmdinstrument *ins, int nins, const struct gmdsample *smp, int nsmp, const struct sampleinfo *smpi, int _notused, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpiSession, uint8_t *, uint8_t *))
+void __attribute__ ((visibility ("internal"))) gmdInstSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct gmdinstrument *ins, int nins, const struct gmdsample *smp, int nsmp, const struct sampleinfo *smpi, int _notused, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *, uint8_t *))
 {
 	int i,j;
 	int biginstlen;
@@ -323,8 +323,8 @@ void __attribute__ ((visibility ("internal"))) gmdInstSetup (struct cpifaceSessi
 	plInsDisplay.Mark=gmdMark;
 	plInsDisplay.Display=gmdDisplayIns;
 	plInsDisplay.Done=Done;
-	gmdInstClear (cpiSession);
+	gmdInstClear (cpifaceSession);
 	plInsDisplay.height=instnum;
 	plInsDisplay.bigheight=biginstlen;
-	plUseInstruments(&plInsDisplay);
+	plUseInstruments (cpifaceSession, &plInsDisplay);
 }

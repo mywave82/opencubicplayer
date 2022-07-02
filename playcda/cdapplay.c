@@ -125,14 +125,14 @@ static char *gettimestr(unsigned long s, char *time)
 	return time;
 }
 
-static void cdaDrawGStrings (void)
+static void cdaDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int trackno;
 	char timestr[9];
 
 	struct cdStat stat;
 
-	mcpDrawGStrings ();
+	mcpDrawGStrings (cpifaceSession);
 
 	cdGetStatus (&stat);
 
@@ -279,7 +279,7 @@ static void cdaDrawGStrings (void)
 	}
 }
 
-static int cdaProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
+static int cdaProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	int i;
 	struct cdStat stat;
@@ -483,12 +483,12 @@ static int cdaLooped(void)
 	return 0;
 }
 
-static void cdaCloseFile(void)
+static void cdaCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cdClose();
 }
 
-static int cdaOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
+static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	const char *name = 0;
 	int32_t start = -1;
@@ -548,7 +548,7 @@ static int cdaOpenFile (struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	plProcessKey=cdaProcessKey;
 	plDrawGStrings=cdaDrawGStrings;
 
-	if (cdOpen(start, stop - start, file, cpiSessionAPI))
+	if (cdOpen(start, stop - start, file, cpifaceSession))
 		return -1;
 
 	pausefadedirect=0;

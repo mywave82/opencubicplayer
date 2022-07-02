@@ -34,7 +34,7 @@ int __attribute__ ((visibility ("internal"))) gmdGetDots(struct notedotsdata *d,
 {
 	int pos=0;
 	int i;
-	/* mod.channum == cpiSessionAPI->LogicalChannelCount */
+	/* mod.channum == cpifaceSession->LogicalChannelCount */
 	for (i=0; i<mod.channum; i++)
 	{
 		struct chaninfo ci;

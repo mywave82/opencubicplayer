@@ -365,7 +365,7 @@ struct itplayer
 
 struct cpifaceSessionAPI_t;
 extern int __attribute__ ((visibility ("internal"))) loadsamples(struct it_module *m);/* - done */
-extern int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpiSessionAPI); /* - done */
+extern int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession); /* - done */
 extern void __attribute__ ((visibility ("internal"))) stop(struct itplayer *this); /* - done */
 
 extern int __attribute__ ((visibility ("internal"))) getsync(struct itplayer *this, int ch, int *time); /* - done */
@@ -433,11 +433,11 @@ static int random(struct itplayer *this); - done
 static int processenvelope(const struct it_envelope *env, int *pos, int noteoff, int active); - done
 */
 
-extern void __attribute__ ((visibility ("internal"))) itpInstClear (struct cpifaceSessionAPI_t *cpiSession);
+extern void __attribute__ ((visibility ("internal"))) itpInstClear (struct cpifaceSessionAPI_t *cpifaceSession);
 
-extern void __attribute__ ((visibility ("internal"))) itpInstSetup (struct cpifaceSessionAPI_t *cpiSession, const struct it_instrument *ins, int nins, const struct it_sample *smp, int nsmp, const struct it_sampleinfo *smpi,/* int unused,*/ int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpiSession, uint8_t *, uint8_t *)); /* private, done */
+extern void __attribute__ ((visibility ("internal"))) itpInstSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct it_instrument *ins, int nins, const struct it_sample *smp, int nsmp, const struct it_sampleinfo *smpi,/* int unused,*/ int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *, uint8_t *)); /* private, done */
 
-extern void __attribute__ ((visibility ("internal"))) itTrkSetup(const struct it_module *mod); /* private, done */
+extern void __attribute__ ((visibility ("internal"))) itTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct it_module *mod); /* private, done */
 
 extern __attribute__ ((visibility ("internal"))) struct itplayer itplayer;
 #endif

@@ -111,16 +111,17 @@ static int timidityLooped(void)
 	return !fsLoopMods&&timidityIsLooped();
 }
 
-static void timidityDrawGStrings (void)
+static void timidityDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct mglobinfo gi;
 
-	mcpDrawGStrings ();
+	mcpDrawGStrings (cpifaceSession);
 
 	timidityGetGlobInfo(&gi);
 
 	mcpDrawGStringsFixedLengthStream
 	(
+		cpifaceSession,
 		utf8_8_dot_3,
 		utf8_16_dot_3,
 		gi.curtick,
@@ -135,7 +136,7 @@ static void timidityDrawGStrings (void)
 	);
 }
 
-static int timidityProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t key)
+static int timidityProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -188,7 +189,7 @@ static int timidityProcessKey (struct cpifaceSessionAPI_t *cpiSession, uint16_t 
 
 }
 
-static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader, struct cpifaceSessionAPI_t *cpiSessionAPI) /* no loader needed/used by this plugin */
+static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
 {
 	const char *filename;
 	int err;
@@ -207,7 +208,7 @@ static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_
 	plDrawGStrings=timidityDrawGStrings;
 	plUseDots(timidityGetDots);
 
-	cpiSessionAPI->LogicalChannelCount = 16;
+	cpifaceSession->LogicalChannelCount = 16;
 	timidityChanSetup(/*&mid*/);
 
 	{
@@ -239,7 +240,7 @@ static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_
 			bufferfill += res;
 		}
 
-		err = timidityOpenPlayer(path, buffer, bufferfill, file, cpiSessionAPI); /* buffer will be owned by the player */
+		err = timidityOpenPlayer(path, buffer, bufferfill, file, cpifaceSession); /* buffer will be owned by the player */
 		if (err)
 		{
 			free (buffer);
@@ -251,15 +252,15 @@ static int timidityOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_
 	plPause=0;
 	pausefadedirect=0;
 
-	cpiTimiditySetupInit ();
+	cpiTimiditySetupInit (cpifaceSession);
 
 	return errOk;
 }
 
-static void timidityCloseFile(void)
+static void timidityCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	timidityClosePlayer();
-	cpiTimiditySetupDone ();
+	cpiTimiditySetupDone (cpifaceSession);
 }
 
 struct cpifaceplayerstruct timidityPlayer = {"[TiMidity++ MIDI plugin]", timidityOpenFile, timidityCloseFile};

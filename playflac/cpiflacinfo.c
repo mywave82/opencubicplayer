@@ -56,7 +56,7 @@ static void Update_FlacinfoLastHeightNeed(void)
 	FlacInfoDesiredHeight = needed;
 }
 
-static void FlacInfoSetWin(int xpos, int wid, int ypos, int hgt)
+static void FlacInfoSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, int wid, int ypos, int hgt)
 {
 	FlacInfoFirstColumn=xpos;
 	FlacInfoFirstLine=ypos;
@@ -64,7 +64,7 @@ static void FlacInfoSetWin(int xpos, int wid, int ypos, int hgt)
 	FlacInfoWidth=wid;
 }
 
-static int FlacInfoGetWin(struct cpitextmodequerystruct *q)
+static int FlacInfoGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
 {
 #if 0
 	if (flac_comments_count <= 0)
@@ -113,7 +113,7 @@ static int FlacInfoGetWin(struct cpitextmodequerystruct *q)
 	return 1;
 }
 
-static void FlacInfoDraw(int focus)
+static void FlacInfoDraw(struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 {
 	int line = 0;
 
@@ -170,7 +170,7 @@ static void FlacInfoDraw(int focus)
 	flacMetaDataUnlock();
 }
 
-static int FlacInfoIProcessKey(uint16_t key)
+static int FlacInfoIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -183,7 +183,7 @@ static int FlacInfoIProcessKey(uint16_t key)
 			{
 				FlacInfoActive=1;
 			}
-			cpiTextSetMode("flacinfo");
+			cpiTextSetMode(cpifaceSession, "flacinfo");
 			return 1;
 		case 'x': case 'X':
 			FlacInfoActive=3;
@@ -195,7 +195,7 @@ static int FlacInfoIProcessKey(uint16_t key)
 	return 0;
 }
 
-static int FlacInfoAProcessKey(uint16_t key)
+static int FlacInfoAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -205,7 +205,7 @@ static int FlacInfoAProcessKey(uint16_t key)
 			{
 				FlacInfoActive=0;
 			}
-			cpiTextRecalc();
+			cpiTextRecalc (cpifaceSession);
 			break;
 
 		case KEY_ALT_K:
@@ -238,7 +238,7 @@ static int FlacInfoAProcessKey(uint16_t key)
 }
 
 
-static int FlacInfoEvent(int ev)
+static int FlacInfoEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
@@ -258,13 +258,12 @@ static int FlacInfoEvent(int ev)
 
 static struct cpitextmoderegstruct cpiFlacInfo = {"flacinfo", FlacInfoGetWin, FlacInfoSetWin, FlacInfoDraw, FlacInfoIProcessKey, FlacInfoAProcessKey, FlacInfoEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) FlacInfoInit (void)
+void __attribute__ ((visibility ("internal"))) FlacInfoInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	//cpiTextRegisterDefMode(&cpiFlacInfo);
-	cpiTextRegisterMode(&cpiFlacInfo);
+	cpiTextRegisterMode (cpifaceSession, &cpiFlacInfo);
 }
 
-void __attribute__ ((visibility ("internal"))) FlacInfoDone (void)
+void __attribute__ ((visibility ("internal"))) FlacInfoDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	//cpiTextUnregisterDefMode(&cpiFlacInfo);
+	cpiTextUnregisterMode (cpifaceSession, &cpiFlacInfo);
 }

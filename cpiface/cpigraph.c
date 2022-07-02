@@ -191,13 +191,13 @@ static void plPrepareStripes(void)
 	}
 }
 
-static void plPrepareStripeScr(void)
+static void plPrepareStripeScr (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	char str[49];
 
 	if ((plAnalChan==2)&&!plGetLChanSample)
 		plAnalChan=0;
-	if (((plAnalChan==0)||(plAnalChan==1)) && (!cpifaceSessionAPI.Public.GetMasterSample))
+	if (((plAnalChan==0)||(plAnalChan==1)) && (!cpifaceSession->GetMasterSample))
 		plAnalChan=2;
 	if ((plAnalChan==2)&&!plGetLChanSample)
 		plAnalChan=0;
@@ -338,7 +338,7 @@ void drawgbarb(unsigned long x, unsigned char h)
 
 }
 
-static void plDrawStripes(void)
+static void plDrawStripes (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i, j;
 	unsigned char *sp;
@@ -351,7 +351,7 @@ static void plDrawStripes(void)
 		memset(linebuf, 128, 1088);
 		if (!plAnalChan)
 		{
-			cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, 1024>>plStripeSpeed, plAnalRate, mcpGetSampleStereo);
+			cpifaceSession->GetMasterSample(plSampBuf, 1024>>plStripeSpeed, plAnalRate, mcpGetSampleStereo);
 
 			if (plStripeSpeed)
 			{
@@ -390,9 +390,9 @@ static void plDrawStripes(void)
 			}
 		} else {
 			if (plAnalChan!=2)
-				cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
+				cpifaceSession->GetMasterSample(plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
 			else
-				plGetLChanSample (cpifaceSessionAPI.Public.SelectedChannel, plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
+				plGetLChanSample (cpifaceSession->SelectedChannel, plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
 			if (plStripeSpeed)
 			{
 				fftanalyseall(ana, plSampBuf, 1, 10);
@@ -445,7 +445,7 @@ static void plDrawStripes(void)
 		memset(linebuf, 128, 272);
 		if (!plAnalChan)
 		{
-			cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, 256>>plStripeSpeed, plAnalRate, mcpGetSampleStereo);
+			cpifaceSession->GetMasterSample(plSampBuf, 256>>plStripeSpeed, plAnalRate, mcpGetSampleStereo);
 			if (plStripeSpeed)
 			{
 				fftanalyseall(ana, plSampBuf, 2, 7);
@@ -482,9 +482,9 @@ static void plDrawStripes(void)
 			}
 		} else {
 			if (plAnalChan!=2)
-				cpifaceSessionAPI.Public.GetMasterSample(plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
+				cpifaceSession->GetMasterSample(plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
 			else
-				plGetLChanSample (cpifaceSessionAPI.Public.SelectedChannel, plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
+				plGetLChanSample (cpifaceSession->SelectedChannel, plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
 			if (plStripeSpeed)
 			{
 				fftanalyseall(ana, plSampBuf, 1, 8);
@@ -537,14 +537,14 @@ static void plDrawStripes(void)
 	}
 }
 
-static void strSetMode(void)
+static void strSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpiSetGraphMode(plStripeBig);
 	plPrepareStripes();
-	plPrepareStripeScr();
+	plPrepareStripeScr (cpifaceSession);
 }
 
-static int plStripeKey(uint16_t key)
+static int plStripeKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -603,12 +603,12 @@ static int plStripeKey(uint16_t key)
 			break;
 		case 'G':
 			plStripeBig=!plStripeBig;
-			strSetMode();
+			strSetMode (cpifaceSession);
 			break;
 		default:
 			return 0;
 	}
-	plPrepareStripeScr();
+	plPrepareStripeScr (cpifaceSession);
 	return 1;
 }
 
@@ -623,20 +623,20 @@ static int plStripeInit(void)
 	return 1;
 }
 
-static void strDraw(void)
+static void strDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiDrawGStrings();
-	plDrawStripes();
+	cpiDrawGStrings (cpifaceSession);
+	plDrawStripes (cpifaceSession);
 }
 
-static int strCan(void)
+static int strCan (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if ((!plGetLChanSample) && (!cpifaceSessionAPI.Public.GetMasterSample))
+	if ((!plGetLChanSample) && (!cpifaceSession->GetMasterSample))
 		return 0;
 	return 1;
 }
 
-static int strIProcessKey(uint16_t key)
+static int strIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
@@ -654,12 +654,12 @@ static int strIProcessKey(uint16_t key)
 	return 1;
 }
 
-static int strEvent(int ev)
+static int strEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
 		case cpievInit:
-			return strCan();
+			return strCan (cpifaceSession);
 		case cpievInitAll:
 			return plStripeInit();
 	}

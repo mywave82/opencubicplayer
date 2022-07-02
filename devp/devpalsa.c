@@ -714,7 +714,7 @@ end:
 	return retval;
 }
 
-static int devpALSAPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpiSessionAPI)
+static int devpALSAPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int err;
 	unsigned int uval, realdelay;
@@ -916,8 +916,8 @@ static int devpALSAPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 	debug_output = open ("test-alsa.raw", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
 #endif
 
-	cpiSessionAPI->GetMasterSample = plrGetMasterSample;
-	cpiSessionAPI->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->GetMasterSample = plrGetMasterSample;
+	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
 
 	return 1;
 }

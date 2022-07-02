@@ -23,12 +23,12 @@ struct ocpfilehandle_t;
 struct cpifaceplayerstruct
 {
 	const char *playername;
-	int (*OpenFile) (struct moduleinfostruct *info,
+	int (*OpenFile) (struct cpifaceSessionAPI_t *cpifaceSession,
+	                 struct moduleinfostruct *info,
 	                 struct ocpfilehandle_t *f,
 	                 const char *ldlink, // some player "plugins" uses loaders. This is the name of that "loader plugin"
-	                 const char *loader, // And this is the loader symbol used
-	                 struct cpifaceSessionAPI_t *cpiSessionAPI); // devp/devw and other APIs can hook up here!
-	void (*CloseFile)();
+	                 const char *loader); // And this is the loader symbol used
+	void (*CloseFile)(struct cpifaceSessionAPI_t *cpifaceSession);
 };
 
 struct cpifaceSessionAPI_t
@@ -45,8 +45,8 @@ struct cpifaceSessionAPI_t
 extern char plPause;
 extern char plMuteCh[];
 extern char plPanType; /* If this is one, it causes the visual channel-layout to swap right and left channel for every second channel group - currenly only used by some S3M files */
-extern int (*plProcessKey) (struct cpifaceSessionAPI_t *cpiSession, uint16_t key);
-extern void (*plDrawGStrings)(void);
+extern int (*plProcessKey) (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key);
+extern void (*plDrawGStrings)(struct cpifaceSessionAPI_t *cpifaceSession);
 extern int (*plIsEnd)(void);
 extern void (*plIdle)(void);
 extern void (*plSetMute)(int i, int m);
@@ -61,10 +61,10 @@ struct cpimoderegstruct
 {
   char handle[9];
   void (*SetMode)();
-  void (*Draw)();
-  int (*IProcessKey)(uint16_t);
-  int (*AProcessKey)(uint16_t);
-  int (*Event)(int ev);
+  void (*Draw)(struct cpifaceSessionAPI_t *cpifaceSession);
+  int (*IProcessKey)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t);
+  int (*AProcessKey)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t);
+  int (*Event)(struct cpifaceSessionAPI_t *cpifaceSession, int ev);
   struct cpimoderegstruct *next;
   struct cpimoderegstruct *nextdef;
 };
@@ -94,12 +94,12 @@ struct cpitextmodequerystruct
 struct cpitextmoderegstruct
 {
   char handle[9];
-  int (*GetWin)(struct cpitextmodequerystruct *q);
-  void (*SetWin)(int xmin, int xwid, int ymin, int ywid);
-  void (*Draw)(int focus);
-  int (*IProcessKey)(unsigned short);
-  int (*AProcessKey)(unsigned short);
-  int (*Event)(int ev);
+  int (*GetWin)(struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q);
+  void (*SetWin)(struct cpifaceSessionAPI_t *cpifaceSession, int xmin, int xwid, int ymin, int ywid);
+  void (*Draw)(struct cpifaceSessionAPI_t *cpifaceSession, int focus);
+  int (*IProcessKey)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key);
+  int (*AProcessKey)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key);
+  int (*Event)(struct cpifaceSessionAPI_t *cpifaceSession, int ev);
   int active;
   struct cpitextmoderegstruct *nextact;
   struct cpitextmoderegstruct *next;
@@ -117,7 +117,7 @@ enum
   cpievKeepalive=42
 };
 
-extern void cpiDrawGStrings(void);
+extern void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession);
 extern void cpiSetGraphMode(int big);
 extern void cpiSetTextMode(int size);
 extern void cpiResetScreen(void);
@@ -129,14 +129,14 @@ extern void cpiUnregisterMode(struct cpimoderegstruct *m);
 
 extern void cpiSetMode(const char *hand);
 extern void cpiGetMode(char *hand);
-extern void cpiTextRegisterMode(struct cpitextmoderegstruct *mode);
-extern void cpiTextUnregisterMode(struct cpitextmoderegstruct *m);
+extern void cpiTextRegisterMode (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmoderegstruct *mode);
+extern void cpiTextUnregisterMode (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmoderegstruct *m);
 extern void cpiTextRegisterDefMode(struct cpitextmoderegstruct *mode);
 extern void cpiTextUnregisterDefMode(struct cpitextmoderegstruct *m);
-extern void cpiTextSetMode(const char *name);
-extern void cpiTextRecalc(void);
+extern void cpiTextSetMode(struct cpifaceSessionAPI_t *cpifaceSession, const char *name);
+extern void cpiTextRecalc (struct cpifaceSessionAPI_t *cpifaceSession);
 
-void cpiForwardIProcessKey(uint16_t key);
+void cpiForwardIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key);
 
 extern void plUseMessage(char **);
 
@@ -145,15 +145,15 @@ struct insdisplaystruct
 	int height, bigheight;
 	char *title80; /* cp437 */
 	char *title132; /* cp437 */
-	void (*Mark)(struct cpifaceSessionAPI_t *cpiSession);
-	void (*Clear)(struct cpifaceSessionAPI_t *cpiSession);
-	void (*Display)(struct cpifaceSessionAPI_t *cpiSession, uint16_t *buf, int len, int n, int mode);
-	void (*Done)(struct cpifaceSessionAPI_t *cpiSession);
+	void (*Mark)(struct cpifaceSessionAPI_t *cpifaceSession);
+	void (*Clear)(struct cpifaceSessionAPI_t *cpifaceSession);
+	void (*Display)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int n, int mode);
+	void (*Done)(struct cpifaceSessionAPI_t *cpifaceSession);
 };
 
-extern void plUseInstruments(struct insdisplaystruct *x);
+extern void plUseInstruments(struct cpifaceSessionAPI_t *cpifaceSession, struct insdisplaystruct *x);
 
-extern void plUseChannels(void (*Display)(unsigned short *buf, int len, int i));
+extern void plUseChannels(struct cpifaceSessionAPI_t *cpifaceSession, void (*Display)(unsigned short *buf, int len, int i));
 
 struct notedotsdata
 {
@@ -180,17 +180,18 @@ struct cpitrakdisplaystruct
 	void (*getgcmd)(uint16_t *bp, int n);
 };
 
-extern void cpiTrkSetup(const struct cpitrakdisplaystruct *c, int npat);
-extern void cpiTrkSetup2(const struct cpitrakdisplaystruct *c, int npat, int tracks);
+extern void cpiTrkSetup  (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpitrakdisplaystruct *c, int npat);
+extern void cpiTrkSetup2 (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpitrakdisplaystruct *c, int npat, int tracks);
 
 extern char plNoteStr[132][4];
 extern char plCompoMode;
 
 /* mcpedit.c */
-extern void mcpDrawGStrings(void);
+extern void mcpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession);
 
 struct moduleinfostruct;
-void mcpDrawGStringsFixedLengthStream (const char                    *filename8_3,
+void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t *cpifaceSession,
+                                       const char                    *filename8_3,
                                        const char                    *filename16_3,
                                        const uint64_t                 pos,
                                        const uint64_t                 size, /* can be smaller than the file-size due to meta-data */
@@ -202,7 +203,8 @@ void mcpDrawGStringsFixedLengthStream (const char                    *filename8_
                                        const uint_fast16_t            seconds,
                                        const struct moduleinfostruct *mdbdata);
 
-void mcpDrawGStringsSongXofY (const char                    *filename8_3,
+void mcpDrawGStringsSongXofY (struct cpifaceSessionAPI_t *cpifaceSession,
+                              const char                    *filename8_3,
                               const char                    *filename16_3,
                               const int                      songX,
                               const int                      songY,
@@ -210,7 +212,8 @@ void mcpDrawGStringsSongXofY (const char                    *filename8_3,
                               const uint_fast16_t            seconds,
                               const struct moduleinfostruct *mdbdata);
 
-void mcpDrawGStringsTracked (const char                    *filename8_3,
+void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t *cpifaceSession,
+                             const char                    *filename8_3,
                              const char                    *filename16_3,
                              const int                      songX,
                              const int                      songY, /* 0 or smaller, disables this, else 2 digits.. */

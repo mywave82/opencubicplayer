@@ -46,15 +46,15 @@ static int modeactive;
 
 static unsigned int LastWidth, LastHeight;
 
-void cpiTextRegisterMode(struct cpitextmoderegstruct *mode)
+void cpiTextRegisterMode (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmoderegstruct *mode)
 {
-	if (mode->Event&&!mode->Event(cpievInit))
+	if (mode->Event&&!mode->Event (cpifaceSession, cpievInit))
 		return;
 	mode->next=cpiTextModes;
 	cpiTextModes=mode;
 }
 
-void cpiTextUnregisterMode(struct cpitextmoderegstruct *m)
+void cpiTextUnregisterMode (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmoderegstruct *m)
 {
 	struct cpitextmoderegstruct **prev;
 	for (prev = &cpiTextModes; *prev; *prev = (*prev)->next)
@@ -73,13 +73,13 @@ void cpiTextRegisterDefMode(struct cpitextmoderegstruct *mode)
 	cpiTextDefModes=mode;
 }
 
-static void cpiTextVerifyDefModes(void)
+static void cpiTextVerifyDefModes (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cpitextmoderegstruct *p;
 
 	while (cpiTextDefModes)
 	{
-		if (cpiTextDefModes->Event&&!cpiTextDefModes->Event(cpievInitAll))
+		if (cpiTextDefModes->Event&&!cpiTextDefModes->Event(cpifaceSession, cpievInitAll))
 			cpiTextDefModes=cpiTextDefModes->nextdef;
 		else
 			break;
@@ -89,7 +89,7 @@ static void cpiTextVerifyDefModes(void)
 	{
 		if (p->nextdef)
 		{
-			if (p->nextdef->Event&&!p->nextdef->Event(cpievInitAll))
+			if (p->nextdef->Event&&!p->nextdef->Event (cpifaceSession, cpievInitAll))
 				p->nextdef=p->nextdef->nextdef;
 			else
 				p=p->nextdef;
@@ -111,12 +111,12 @@ void cpiTextUnregisterDefMode(struct cpitextmoderegstruct *m)
 	}
 }
 
-static void cpiSetFocus(const char *name)
+static void cpiSetFocus (struct cpifaceSessionAPI_t *cpifaceSession, const char *name)
 {
 	struct cpitextmoderegstruct *mode;
 
 	if (cpiFocus&&cpiFocus->Event)
-		cpiFocus->Event(cpievLoseFocus);
+		cpiFocus->Event (cpifaceSession, cpievLoseFocus);
 	cpiFocus=0;
 	if (!name)
 	{
@@ -127,15 +127,15 @@ static void cpiSetFocus(const char *name)
 		if (!strcasecmp(name, mode->handle))
 			break;
 	*cpiFocusHandle=0;
-	if (!mode||(mode->Event&&!mode->Event(cpievGetFocus)))
+	if (!mode||(mode->Event&&!mode->Event (cpifaceSession, cpievGetFocus)))
 		return;
 	cpiFocus=mode;
 	mode->active=1;
 	strcpy(cpiFocusHandle, cpiFocus->handle);
-	cpiTextRecalc();
+	cpiTextRecalc (&cpifaceSessionAPI.Public);
 }
 
-void cpiTextSetMode(const char *name)
+void cpiTextSetMode (struct cpifaceSessionAPI_t *cpifaceSession, const char *name)
 {
 	if (!name)
 		name=cpiFocusHandle;
@@ -144,10 +144,10 @@ void cpiTextSetMode(const char *name)
 		strcpy(cpiFocusHandle, name);
 		cpiSetMode("text");
 	} else
-		cpiSetFocus(name);
+		cpiSetFocus (cpifaceSession, name);
 }
 
-void cpiTextRecalc(void)
+void cpiTextRecalc (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	unsigned int i;
 	int winfirst=5;
@@ -161,7 +161,7 @@ void cpiTextRecalc(void)
 	int sidemin,sidemax,sidesize;
 	int winmin,winmax,winsize;
 
-	cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
+	cpifaceSession->SelectedChannelChanged = 1;
 
 	LastWidth=plScrWidth;
 	LastHeight=plScrHeight;
@@ -169,7 +169,7 @@ void cpiTextRecalc(void)
 	for (mode=cpiTextActModes; mode; mode=mode->nextact)
 	{
 		mode->active=0;
-		if (mode->GetWin(&win[nwin]))
+		if (mode->GetWin (cpifaceSession, &win[nwin]))
 			win[nwin++].owner=mode;
 	}
 
@@ -287,14 +287,14 @@ void cpiTextRecalc(void)
 #ifdef CPIFACE_DEBUG
 			fprintf (stderr, "Placing window %-8s top %d %d %d %d\n", win[best].owner->handle, 0, plScrWidth, winfirst, hgt);
 #endif
-			win[best].owner->SetWin(0, plScrWidth, winfirst, hgt);
+			win[best].owner->SetWin (cpifaceSession, 0, plScrWidth, winfirst, hgt);
 			winfirst+=hgt;
 			sidefirst+=hgt;
 		} else {
 #ifdef CPIFACE_DEBUG
 			fprintf (stderr, "Placing window %-8s bot %d %d %d %d\n", win[best].owner->handle, 0, plScrWidth, winfirst+winheight-hgt, hgt);
 #endif
-			win[best].owner->SetWin(0, plScrWidth, winfirst+winheight-hgt, hgt);
+			win[best].owner->SetWin (cpifaceSession, 0, plScrWidth, winfirst+winheight-hgt, hgt);
 		}
 		win[best].owner->active=1;
 		winheight-=hgt;
@@ -336,13 +336,13 @@ void cpiTextRecalc(void)
 #ifdef CPIFACE_DEBUG
 			fprintf (stderr, "Placing window %-8s top %d %d %d %d\n", win[best].owner->handle, plScrWidth-52, 52, sidefirst, hgt);
 #endif
-			win[best].owner->SetWin(plScrWidth-52, 52, sidefirst, hgt);
+			win[best].owner->SetWin (cpifaceSession, plScrWidth-52, 52, sidefirst, hgt);
 			sidefirst+=hgt;
 		} else {
 #ifdef CPIFACE_DEBUG
 			fprintf (stderr, "Placing window %-8s bot %d %d %d %d\n", win[best].owner->handle, plScrWidth-52, 52, sidefirst+sideheight-hgt, hgt);
 #endif
-			win[best].owner->SetWin(plScrWidth-52, 52, sidefirst+sideheight-hgt, hgt);
+			win[best].owner->SetWin (cpifaceSession, plScrWidth-52, 52, sidefirst+sideheight-hgt, hgt);
 		}
 		win[best].owner->active=1;
 		sideheight-=hgt;
@@ -405,7 +405,7 @@ void cpiTextRecalc(void)
 			fprintf (stderr, "Placing window %-8s top %d %d %d %d\n", win[best].owner->handle, 0, wid, winfirst, hgt);
 #endif
 
-			win[best].owner->SetWin(0, wid, winfirst, hgt);
+			win[best].owner->SetWin (cpifaceSession, 0, wid, winfirst, hgt);
 			winfirst+=hgt;
 		} else {
 			if (plScrWidth < 132)
@@ -418,7 +418,7 @@ void cpiTextRecalc(void)
 			fprintf (stderr, "Placing window %-8s bot %d %d %d %d\n", win[best].owner->handle, 0, wid, winfirst+winheight-hgt, hgt);
 #endif
 
-			win[best].owner->SetWin(0, wid, winfirst+winheight-hgt, hgt);
+			win[best].owner->SetWin (cpifaceSession, 0, wid, winfirst+winheight-hgt, hgt);
 		}
 		win[best].owner->active=1;
 		winheight-=hgt;
@@ -441,33 +441,33 @@ void cpiTextRecalc(void)
 #endif
 }
 
-static void txtSetMode(void)
+static void txtSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cpitextmoderegstruct *mode;
 	plSetTextMode(fsScrType);
 	fsScrType=plScrType;
 	for (mode=cpiTextActModes; mode; mode=mode->nextact)
 		if (mode->Event)
-			mode->Event(cpievSetMode);
-	cpiTextRecalc();
+			mode->Event (cpifaceSession, cpievSetMode);
+	cpiTextRecalc (&cpifaceSessionAPI.Public);
 }
 
-static void txtDraw(void)
+static void txtDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cpitextmoderegstruct *mode;
 
 	if ((LastWidth!=plScrWidth)||(LastHeight!=plScrHeight)) /* xterms as so fun */
-		cpiTextRecalc();
+		cpiTextRecalc (cpifaceSession);
 
-	cpiDrawGStrings();
+	cpiDrawGStrings (cpifaceSession);
 	for (mode=cpiTextActModes; mode; mode=mode->nextact)
 		if (mode->active)
-			mode->Draw(mode==cpiFocus);
+			mode->Draw (cpifaceSession, mode==cpiFocus);
 	for (mode=cpiTextModes; mode; mode=mode->next)
-		mode->Event(cpievKeepalive);
+		mode->Event (cpifaceSession, cpievKeepalive);
 }
 
-static int txtIProcessKey(uint16_t key)
+static int txtIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	struct cpitextmoderegstruct *mode;
 #ifdef KEYBOARDTEXT_DEBUG
@@ -478,7 +478,7 @@ static int txtIProcessKey(uint16_t key)
 #ifdef KEYBOARDTEXT_DEBUG
 		fprintf(stderr, "Checking mode %s\n", mode->handle);
 #endif
-		if (mode->IProcessKey(key))
+		if (mode->IProcessKey (cpifaceSession, key))
 		{
 #ifdef KEYBOARDTEXT_DEBUG
 			fprintf(stderr, "Mode swallowed event\ntxtIProcessKey:STOP\n");
@@ -493,14 +493,14 @@ static int txtIProcessKey(uint16_t key)
 	{
 		case 'x': case 'X':
 			fsScrType=7;
-			cpiTextSetMode(cpiFocusHandle);
+			cpiTextSetMode (cpifaceSession, cpiFocusHandle);
 			return 1;
 		case KEY_ALT_X:
 			fsScrType=0;
-			cpiTextSetMode(cpiFocusHandle);
+			cpiTextSetMode (cpifaceSession, cpiFocusHandle);
 			return 1;
 		case 'z': case 'Z':
-			cpiTextSetMode(cpiFocusHandle);
+			cpiTextSetMode (cpifaceSession, cpiFocusHandle);
 			break;
 		default:
 			return 0;
@@ -508,14 +508,14 @@ static int txtIProcessKey(uint16_t key)
 	return 1;
 }
 
-static int txtAProcessKey(uint16_t key)
+static int txtAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 #ifdef KEYBOARDTEXT_DEBUG
 	fprintf(stderr, "txtAProcessKey:START\ncpiFocus is %s\n", cpiFocus?"set":"unset");
 #endif
 	if (cpiFocus)
 		if (cpiFocus->active)
-			if (cpiFocus->AProcessKey(key))
+			if (cpiFocus->AProcessKey (cpifaceSession, key))
 			{
 #ifdef KEYBOARDTEXT_DEBUG
 				fprintf(stderr, "cpiFocus %s swallowed event\ntxtAProcessKey:STOP\n", cpiFocus->handle);
@@ -538,27 +538,27 @@ static int txtAProcessKey(uint16_t key)
 			return 0;
 		case 'x': case 'X':
 			fsScrType=7;
-			cpiForwardIProcessKey (key);
+			cpiForwardIProcessKey (cpifaceSession, key);
 			cpiResetScreen();
 			return 1;
 		case KEY_ALT_X:
 			fsScrType=0;
-			cpiForwardIProcessKey (key);
+			cpiForwardIProcessKey (cpifaceSession, key);
 			cpiResetScreen();
 			return 1;
 		case 'z': case 'Z':
 			fsScrType^=2;
-			cpiForwardIProcessKey (key);
+			cpiForwardIProcessKey (cpifaceSession, key);
 			cpiResetScreen();
 			break;
 		case KEY_ALT_Z:
 			fsScrType^=4;
-			cpiForwardIProcessKey (key);
+			cpiForwardIProcessKey (cpifaceSession, key);
 			cpiResetScreen();
 			break;
 		case KEY_CTRL_Z:
 			fsScrType^=1;
-			cpiForwardIProcessKey (key);
+			cpiForwardIProcessKey (cpifaceSession, key);
 			cpiResetScreen();
 			break;
 		default:
@@ -567,40 +567,40 @@ static int txtAProcessKey(uint16_t key)
 	return 1;
 }
 
-static int txtInit(void)
+static int txtInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cpitextmoderegstruct *mode;
 	for (mode=cpiTextDefModes; mode; mode=mode->nextdef)
-		cpiTextRegisterMode(mode);
-	cpiSetFocus(cpiFocusHandle);
+		cpiTextRegisterMode (cpifaceSession, mode);
+	cpiSetFocus (cpifaceSession, cpiFocusHandle);
 	return 1;
 }
 
-static void txtClose(void)
+static void txtClose (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cpitextmoderegstruct *mode;
 	for (mode=cpiTextModes; mode; mode=mode->next)
 		if (mode->Event)
-			 mode->Event(cpievDone);
+			 mode->Event (cpifaceSession, cpievDone);
 	cpiTextModes=0;
 }
 
-static int txtInitAll(void)
+static int txtInitAll (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextVerifyDefModes();
+	cpiTextVerifyDefModes (cpifaceSession);
 	return 1;
 }
 
-static void txtCloseAll(void)
+static void txtCloseAll (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cpitextmoderegstruct *mode;
 	for (mode=cpiTextDefModes; mode; mode=mode->nextdef)
 		if (mode->Event)
-			mode->Event(cpievDoneAll);
+			mode->Event (cpifaceSession, cpievDoneAll);
 	cpiTextDefModes=0;
 }
 
-static int txtOpenMode(void)
+static int txtOpenMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cpitextmoderegstruct *mode;
 
@@ -608,46 +608,46 @@ static int txtOpenMode(void)
 	cpiTextActModes=0;
 	for (mode=cpiTextModes; mode; mode=mode->next)
 	{
-		if (mode->Event&&!mode->Event(cpievOpen))
+		if (mode->Event&&!mode->Event (cpifaceSession, cpievOpen))
 			continue;
 		mode->nextact=cpiTextActModes;
 		cpiTextActModes=mode;
 	}
-	cpiSetFocus(cpiFocusHandle);
+	cpiSetFocus (cpifaceSession, cpiFocusHandle);
 
 	return 1;
 }
 
-static void txtCloseMode(void)
+static void txtCloseMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cpitextmoderegstruct *mode;
 
-	cpiSetFocus(0);
+	cpiSetFocus (cpifaceSession, 0);
 	for (mode=cpiTextActModes; mode; mode=mode->nextact)
 		if (mode->Event)
-			mode->Event(cpievClose);
+			mode->Event (cpifaceSession, cpievClose);
 	cpiTextActModes=0;
 	modeactive=0;
 }
 
-static int txtEvent(int ev)
+static int txtEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
 		case cpievOpen:
-			return txtOpenMode();
+			return txtOpenMode (cpifaceSession);
 		case cpievClose:
-			txtCloseMode();
+			txtCloseMode (cpifaceSession);
 			return 1;
 		case cpievInit:
-			return txtInit();
+			return txtInit (cpifaceSession);
 		case cpievDone:
-			txtClose();
+			txtClose (cpifaceSession);
 			return 1;
 		case cpievInitAll:
-			return txtInitAll();
+			return txtInitAll (cpifaceSession);
 		case cpievDoneAll:
-			txtCloseAll();
+			txtCloseAll (cpifaceSession);
 			return 1;
 	}
 	return 1;
