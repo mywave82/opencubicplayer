@@ -269,7 +269,7 @@ static void itpMarkInsSamp(struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *
 	for (i=0; i<mod.nchan; i++)
 	{
 		int j;
-		if (plMuteCh[i])
+		if (cpifaceSession->MuteChannel[i])
 			continue;
 		for (j=0; j<mod.nchan; j++)
 		{
@@ -392,7 +392,7 @@ static char *fxstr12[]={0, "volumeslide\x18","volumeslide\x19",
 
 static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i)
 {
-	uint8_t st=plMuteCh[i];
+	uint8_t st = cpifaceSession->MuteChannel[i];
 
 	uint8_t tcol=st?0x08:0x0F;
 	uint8_t tcold=st?0x08:0x07;
@@ -568,8 +568,9 @@ static int itpGetDots(struct notedotsdata *d, int max)
   return pos;
 }
 
-static void itpMute(int i, int m)
+static void itpMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
 {
+	cpifaceSession->MuteChannel[i] = m;
 	mutechan(&itplayer, i, m);
 }
 
@@ -621,7 +622,7 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	plIsEnd=itpLooped;
 	plProcessKey=itpProcessKey;
 	plDrawGStrings=itpDrawGStrings;
-	plSetMute=itpMute;
+	cpifaceSession->SetMuteChannel = itpMute;
 	plGetLChanSample=itpGetLChanSample;
 	cpifaceSession->LogicalChannelCount = mod.nchan;
 	cpifaceSession->PhysicalChannelCount = mcpNChan;

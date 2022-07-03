@@ -70,8 +70,6 @@
 #include <unistd.h>
 #include <time.h>
 
-#define MAXLCHAN 64
-
 __attribute__ ((visibility ("internal"))) struct cpifaceSessionPrivate_t cpifaceSessionAPI;
 
 extern struct mdbreadinforegstruct cpiReadInfoReg;
@@ -79,12 +77,9 @@ extern struct mdbreadinforegstruct cpiReadInfoReg;
 extern struct cpimoderegstruct cpiModeText;
 
 static struct cpifaceplayerstruct *curplayer;
-void (*plSetMute)(int i, int m);
 void (*plDrawGStrings)(struct cpifaceSessionAPI_t *cpifaceSession);
 int (*plProcessKey)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key);
 int (*plIsEnd)(struct cpifaceSessionAPI_t *cpifaceSession);
-
-char plMuteCh[MAXLCHAN];
 
 int (*plGetLChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
 int (*plGetPChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
@@ -1878,13 +1873,13 @@ void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 			unsigned char chr;
 			unsigned char col = 0;
 
-			if (plMuteCh[i+chan0]&&((i+chan0) != cpifaceSession->SelectedChannel))
+			if (cpifaceSession->MuteChannel[i+chan0]&&((i+chan0) != cpifaceSession->SelectedChannel))
 			{
 				chr = 0xc4;
 				col = 0x08;
 			} else {
 				chr = '0'+(i+chan0+1)%10;
-				if (plMuteCh[i+chan0])
+				if (cpifaceSession->MuteChannel[i+chan0])
 				{
 					col |= 0x80;
 				} else {
@@ -1932,8 +1927,8 @@ void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 			for (i=0; i<chann; i++)
 			{ /* needs tuning... TODO */
-				gdrawchar8(384+i*8, 64, '0'+(i+chan0+1)/10, plMuteCh[i+chan0]?8:7, 0);
-				gdrawchar8(384+i*8, 72, '0'+(i+chan0+1)%10, plMuteCh[i+chan0]?8:7, 0);
+				gdrawchar8(384+i*8, 64, '0'+(i+chan0+1)/10, cpifaceSession->MuteChannel[i+chan0]?8:7, 0);
+				gdrawchar8(384+i*8, 72, '0'+(i+chan0+1)%10, cpifaceSession->MuteChannel[i+chan0]?8:7, 0);
 				gdrawchar8(384+i*8, 80, ((i+chan0)==cpifaceSession->SelectedChannel)?0x18:((i==0)&&chan0)?0x1B:((i==(chann-1))&&((chan0+chann) != cpifaceSession->LogicalChannelCount))?0x1A:' ', 15, 0);
 			}
 		}
@@ -2134,13 +2129,15 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.LogicalChannelCount = 0;
 	cpifaceSessionAPI.Public.PhysicalChannelCount = 0;
 
+	cpifaceSessionAPI.Public.SetMuteChannel = 0;
+	bzero (cpifaceSessionAPI.Public.MuteChannel, sizeof(cpifaceSessionAPI.Public.MuteChannel));
+
 	plPanType=0;
 
 	cpiModes=0;
 
 	plEscTick=0;
 
-	plSetMute=0;
 	plIsEnd=0;
 	plGetLChanSample=0;
 	plGetPChanSample=0;
@@ -2182,7 +2179,6 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	curmode=mod;
 
 	soloch=-1;
-	memset(plMuteCh, 0, sizeof(plMuteCh));
 	cpifaceSessionAPI.Public.SelectedChannel = 0;
 
 	return 1;
@@ -2293,8 +2289,7 @@ static int cpiChanProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 			cpifaceSession->SelectedChannel = key;
 
 		case 'q': case 'Q':
-			plMuteCh[cpifaceSession->SelectedChannel] = !plMuteCh[cpifaceSession->SelectedChannel];
-			plSetMute(cpifaceSession->SelectedChannel, plMuteCh[cpifaceSession->SelectedChannel]);
+			cpifaceSession->SetMuteChannel (cpifaceSession, cpifaceSession->SelectedChannel, !cpifaceSession->MuteChannel[cpifaceSession->SelectedChannel]);
 			cpifaceSession->SelectedChannelChanged = 1;
 			break;
 
@@ -2303,15 +2298,13 @@ static int cpiChanProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 			{
 				for (i=0; i < cpifaceSession->LogicalChannelCount; i++)
 				{
-					plMuteCh[i]=0;
-					plSetMute(i, plMuteCh[i]);
+					cpifaceSession->SetMuteChannel (cpifaceSession, i, 0);
 				}
 				soloch=-1;
 			} else {
 				for (i=0; i < cpifaceSession->LogicalChannelCount; i++)
 				{
-					plMuteCh[i] = i != cpifaceSession->SelectedChannel;
-					plSetMute(i, plMuteCh[i]);
+					cpifaceSession->SetMuteChannel (cpifaceSession, i, i != cpifaceSession->SelectedChannel);
 				}
 				soloch = cpifaceSession->SelectedChannel;
 			}
@@ -2321,8 +2314,7 @@ static int cpiChanProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 		case KEY_CTRL_Q: case KEY_CTRL_S: /* TODO-keys*/
 			for (i=0; i < cpifaceSession->LogicalChannelCount; i++)
 			{
-				plMuteCh[i]=0;
-				plSetMute(i, plMuteCh[i]);
+				cpifaceSession->SetMuteChannel (cpifaceSession, i, 0);
 			}
 			soloch=-1;
 			cpifaceSession->SelectedChannelChanged = 1;

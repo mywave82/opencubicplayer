@@ -3,7 +3,7 @@
 
 #include "gmdinst.h"
 
-#define MP_MAXCHANNELS 32
+#define GMD_MAXLCHAN 32
 
 struct ocpfilehandle_t;
 
@@ -20,7 +20,7 @@ struct gmdpattern
 	char name[32];
 	uint16_t patlen;
 	uint16_t gtrack;
-	uint16_t tracks[MP_MAXCHANNELS];
+	uint16_t tracks[GMD_MAXLCHAN];
 };
 
 
@@ -116,10 +116,9 @@ extern char __attribute__ ((visibility ("internal"))) mpLooped(void );
 extern void __attribute__ ((visibility ("internal"))) mpSetLoop(unsigned char s);
 extern void __attribute__ ((visibility ("internal"))) mpLockPat(int st);
 extern int __attribute__ ((visibility ("internal"))) mpGetChanSample(unsigned int ch, int16_t *buf, unsigned int len, uint32_t rate, int opt);
-extern void __attribute__ ((visibility ("internal"))) mpMute(int ch, int m);
+extern void __attribute__ ((visibility ("internal"))) mpMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m);
 extern void __attribute__ ((visibility ("internal"))) mpGetRealVolume(int ch, int *l, int *r);
 extern int __attribute__ ((visibility ("internal"))) mpGetChanStatus(int ch);
-extern int __attribute__ ((visibility ("internal"))) mpGetMute(int ch);
 
 enum
 {

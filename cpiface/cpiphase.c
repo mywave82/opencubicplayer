@@ -386,14 +386,14 @@ static void plDrawScopes (struct cpifaceSessionAPI_t *cpifaceSession)
 	} else if (plOszChan==3)
 	{
 		plGetLChanSample (cpifaceSession->SelectedChannel, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
-		drawscope(scopedx/2, scopedy/2, plSampBuf, samples, plMuteCh[cpifaceSession->SelectedChannel]?7:15, 1);
+		drawscope(scopedx/2, scopedy/2, plSampBuf, samples, cpifaceSession->MuteChannel[cpifaceSession->SelectedChannel]?7:15, 1);
 	} else if (plOszChan==0)
 	{
 		int i;
 		for (i=0; i < cpifaceSession->LogicalChannelCount; i++)
 		{
 			plGetLChanSample(i, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
-			drawscope((i%scopenx)*scopedx+scopedx/2, scopedy*(i/scopenx)+scopedy/2, plSampBuf, samples, (cpifaceSession->SelectedChannel==i)?plMuteCh[i]?(HIGHLIGHT&7):HIGHLIGHT:plMuteCh[i]?8:15, 1);
+			drawscope((i%scopenx)*scopedx+scopedx/2, scopedy*(i/scopenx)+scopedy/2, plSampBuf, samples, (cpifaceSession->SelectedChannel==i)?cpifaceSession->MuteChannel[i]?(HIGHLIGHT&7):HIGHLIGHT:cpifaceSession->MuteChannel[i]?8:15, 1);
 		}
 	}
 	drawframe();

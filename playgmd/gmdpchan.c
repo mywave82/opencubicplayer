@@ -199,7 +199,7 @@ static char *getfxstr15(unsigned char fx)
 static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct chaninfo ci;
-	unsigned char st=mpGetMute(i);
+	unsigned char st = cpifaceSession->MuteChannel[i];
 
 	unsigned char tcol=st?0x08:0x0F;
 	unsigned char tcold=st?0x08:0x07;
@@ -225,7 +225,7 @@ static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct chaninfo ci;
-	unsigned char st=mpGetMute(i);
+	unsigned char st = cpifaceSession->MuteChannel[i];
 
 	unsigned char tcol=st?0x08:0x0F;
 	unsigned char tcold=st?0x08:0x07;
@@ -262,7 +262,7 @@ static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct chaninfo ci;
-	unsigned char st=mpGetMute(i);
+	unsigned char st = cpifaceSession->MuteChannel[i];
 
 	unsigned char tcol=st?0x08:0x0F;
 	unsigned char tcold=st?0x08:0x07;
@@ -301,7 +301,7 @@ static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct chaninfo ci;
-	unsigned char st=mpGetMute(i);
+	unsigned char st = cpifaceSession->MuteChannel[i];
 
 	unsigned char tcol=st?0x08:0x0F;
 	unsigned char tcold=st?0x08:0x07;
@@ -350,7 +350,7 @@ static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 static void drawchannel44 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int i)
 {
 	struct chaninfo ci;
-	unsigned char st=mpGetMute(i);
+	unsigned char st = cpifaceSession->MuteChannel[i];
 
 	unsigned char tcol=st?0x08:0x0F;
 	unsigned char tcold=st?0x08:0x07;

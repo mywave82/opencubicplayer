@@ -653,8 +653,9 @@ void __attribute__ ((visibility ("internal"))) sidToggleFilter(void)
 }
 #endif
 
-void __attribute__ ((visibility ("internal"))) sidMute(int i, int m)
+void __attribute__ ((visibility ("internal"))) sidMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
 {
+	cpifaceSession->MuteChannel[i] = m;
 	sidMuted[i] = m;
 	mySidPlayer->mute(i, m);
 }

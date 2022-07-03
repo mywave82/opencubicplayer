@@ -125,7 +125,7 @@ extern void __attribute__ ((visibility ("internal"))) xmpStopModule(void);
 extern void __attribute__ ((visibility ("internal"))) xmpSetPos(int ord, int row);
 
 extern void __attribute__ ((visibility ("internal"))) xmpGetRealVolume(int i, int *l, int *r);
-extern void __attribute__ ((visibility ("internal"))) xmpMute(int i, int m);
+extern void __attribute__ ((visibility ("internal"))) xmpMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m);
 extern int __attribute__ ((visibility ("internal"))) xmpGetLChanSample(unsigned int ch, int16_t *b, unsigned int len, uint32_t rate, int opt);
 extern uint16_t __attribute__ ((visibility ("internal"))) xmpGetPos(void);
 extern int __attribute__ ((visibility ("internal"))) xmpGetRealPos(void);

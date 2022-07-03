@@ -119,12 +119,12 @@ static void _write_envelope (uint16_t *buf, const int offset, unsigned char colo
 	}
 }
 
-static void _drawchannel36 (uint16_t *buf, const int i, struct ay_driver_frame_state_t *ci, const uint16_t channel_period, uint8_t amplitude)
+static void _drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, const int i, struct ay_driver_frame_state_t *ci, const uint16_t channel_period, uint8_t amplitude)
 {
 	unsigned char tcol=0x0F;
 	unsigned char tcold=0x07;
 	unsigned char tcolr=0x0B;
-	unsigned char mute=ayGetMute(i);
+	unsigned char mute = cpifaceSession->MuteChannel[i];
 
 	writestring(buf, 0, tcol, "Chan        - Hz vol:               ", 36);
 	writenum(buf, 5, tcol, i + 1, 10, 1, 0);
@@ -144,26 +144,27 @@ static void _drawchannel36 (uint16_t *buf, const int i, struct ay_driver_frame_s
 	}
 }
 
-static void drawchannel36 (uint16_t *buf, int i)
+static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct ay_driver_frame_state_t ci;
 
 	unsigned char tcol=0x0F;
-	//unsigned char tcold=0x07;
+	// unsigned char tcold=0x07;
 	unsigned char tcolr=0x0B;
+	// unsigned char mute = cpifaceSession->MuteChannel[i];
 
 	ayGetChans(&ci);
 
 	switch (i)
 	{
 		case 0:
-			_drawchannel36 (buf, 0, &ci, ci.channel_a_period, ci.amplitude_a);
+			_drawchannel36 (cpifaceSession, buf, 0, &ci, ci.channel_a_period, ci.amplitude_a);
 			break;
 		case 1:
-			_drawchannel36 (buf, 1, &ci, ci.channel_b_period, ci.amplitude_b);
+			_drawchannel36 (cpifaceSession, buf, 1, &ci, ci.channel_b_period, ci.amplitude_b);
 			break;
 		case 2:
-			_drawchannel36 (buf, 2, &ci, ci.channel_c_period, ci.amplitude_c);
+			_drawchannel36 (cpifaceSession, buf, 2, &ci, ci.channel_c_period, ci.amplitude_c);
 			break;
 		case 3:
 			writestring(buf, 0, tcol, "Buzzer        Hz                    ", 36);
@@ -183,12 +184,12 @@ static void drawchannel36 (uint16_t *buf, int i)
 	}
 }
 
-static void _drawchannel44 (uint16_t *buf, const int i, struct ay_driver_frame_state_t *ci, const uint16_t channel_period, uint8_t amplitude)
+static void _drawchannel44 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, const int i, struct ay_driver_frame_state_t *ci, const uint16_t channel_period, uint8_t amplitude)
 {
 	unsigned char tcol=0x0F;
 	unsigned char tcold=0x07;
 	unsigned char tcolr=0x0B;
-	unsigned char mute=ayGetMute(i);
+	unsigned char mute = cpifaceSession->MuteChannel[i];
 
 	writestring(buf, 0, tcol, "Chan          Hz volume:       |          | ", 44);
 	writenum(buf, 5, tcol, i + 1, 10, 1, 0);
@@ -208,27 +209,27 @@ static void _drawchannel44 (uint16_t *buf, const int i, struct ay_driver_frame_s
 	}
 }
 
-static void drawchannel44(uint16_t *buf, int i)
+static void drawchannel44 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct ay_driver_frame_state_t ci;
-	//unsigned char mute=ayGetMute(i);
 
 	unsigned char tcol=0x0F;
-//	unsigned char tcold=0x07;
+	// unsigned char tcold=0x07;
 	unsigned char tcolr=0x0B;
+	// unsigned char mute = cpifaceSession->MuteChannel[i];
 
 	ayGetChans(&ci);
 
 	switch (i)
 	{
 		case 0:
-			_drawchannel44 (buf, 0, &ci, ci.channel_a_period, ci.amplitude_a);
+			_drawchannel44 (cpifaceSession, buf, 0, &ci, ci.channel_a_period, ci.amplitude_a);
 			break;
 		case 1:
-			_drawchannel44 (buf, 1, &ci, ci.channel_b_period, ci.amplitude_b);
+			_drawchannel44 (cpifaceSession, buf, 1, &ci, ci.channel_b_period, ci.amplitude_b);
 			break;
 		case 2:
-			_drawchannel44 (buf, 2, &ci, ci.channel_c_period, ci.amplitude_c);
+			_drawchannel44 (cpifaceSession, buf, 2, &ci, ci.channel_c_period, ci.amplitude_c);
 			break;
 		case 3:
 			writestring(buf, 0, tcol, "Buzzer        Hz               |          | ", 44);
@@ -248,12 +249,12 @@ static void drawchannel44(uint16_t *buf, int i)
 	}
 }
 
-static void _drawchannel62 (uint16_t *buf, const int i, struct ay_driver_frame_state_t *ci, const uint16_t channel_period, uint8_t amplitude)
+static void _drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, const int i, struct ay_driver_frame_state_t *ci, const uint16_t channel_period, uint8_t amplitude)
 {
 	unsigned char tcol=0x0F;
 	unsigned char tcold=0x07;
 	unsigned char tcolr=0x0B;
-	unsigned char mute=ayGetMute(i);
+	unsigned char mute = cpifaceSession->MuteChannel[i];
 
 	writestring(buf, 0, tcol, "Channel               Hz volume:       |             |        ", 62);
 	writenum(buf, 8, tcol, i + 1, 10, 1, 0);
@@ -273,27 +274,27 @@ static void _drawchannel62 (uint16_t *buf, const int i, struct ay_driver_frame_s
 	}
 }
 
-static void drawchannel62 (uint16_t *buf, int i)
+static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct ay_driver_frame_state_t ci;
-	//unsigned char mute=ayGetMute(i);
 
 	unsigned char tcol=0x0F;
-//	unsigned char tcold=0x07;
+	// unsigned char tcold=0x07;
 	unsigned char tcolr=0x0B;
+	// unsigned char mute = cpifaceSession->MuteChannel[i];
 
 	ayGetChans(&ci);
 
 	switch (i)
 	{
 		case 0:
-			_drawchannel62 (buf, 0, &ci, ci.channel_a_period, ci.amplitude_a);
+			_drawchannel62 (cpifaceSession, buf, 0, &ci, ci.channel_a_period, ci.amplitude_a);
 			break;
 		case 1:
-			_drawchannel62 (buf, 1, &ci, ci.channel_b_period, ci.amplitude_b);
+			_drawchannel62 (cpifaceSession, buf, 1, &ci, ci.channel_b_period, ci.amplitude_b);
 			break;
 		case 2:
-			_drawchannel62 (buf, 2, &ci, ci.channel_c_period, ci.amplitude_c);
+			_drawchannel62 (cpifaceSession, buf, 2, &ci, ci.channel_c_period, ci.amplitude_c);
 			break;
 		case 3:
 			writestring(buf, 0, tcol, "Buzzer                Hz               |             |        ", 62);
@@ -313,12 +314,12 @@ static void drawchannel62 (uint16_t *buf, int i)
 	}
 }
 
-static void _drawchannel76 (uint16_t *buf, const int i, struct ay_driver_frame_state_t *ci, const uint16_t channel_period, uint8_t amplitude)
+static void _drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, const int i, struct ay_driver_frame_state_t *ci, const uint16_t channel_period, uint8_t amplitude)
 {
 	unsigned char tcol=0x0F;
 	unsigned char tcold=0x07;
 	unsigned char tcolr=0x0B;
-	unsigned char mute=ayGetMute(i);
+	unsigned char mute = cpifaceSession->MuteChannel[i];
 
 	writestring(buf, 0, tcol, "Channel               Hz  volume:                   |                  |    ", 76);
 	writenum(buf, 8, tcol, i + 1, 10, 1, 0);
@@ -338,26 +339,27 @@ static void _drawchannel76 (uint16_t *buf, const int i, struct ay_driver_frame_s
 	}
 }
 
-static void drawchannel76(uint16_t *buf, int i)
+static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct ay_driver_frame_state_t ci;
 
 	unsigned char tcol=0x0F;
-//	unsigned char tcold=0x07;
+	// unsigned char tcold=0x07;
 	unsigned char tcolr=0x0B;
+	// unsigned char mute = cpifaceSession->MuteChannel[i];
 
 	ayGetChans(&ci);
 
 	switch (i)
 	{
 		case 0:
-			_drawchannel76 (buf, 0, &ci, ci.channel_a_period, ci.amplitude_a);
+			_drawchannel76 (cpifaceSession, buf, 0, &ci, ci.channel_a_period, ci.amplitude_a);
 			break;
 		case 1:
-			_drawchannel76 (buf, 1, &ci, ci.channel_b_period, ci.amplitude_b);
+			_drawchannel76 (cpifaceSession, buf, 1, &ci, ci.channel_b_period, ci.amplitude_b);
 			break;
 		case 2:
-			_drawchannel76 (buf, 2, &ci, ci.channel_c_period, ci.amplitude_c);
+			_drawchannel76 (cpifaceSession, buf, 2, &ci, ci.channel_c_period, ci.amplitude_c);
 			break;
 		case 3:
 			writestring(buf, 0, tcol, "Buzzer                Hz                            |                  |    ", 76);
@@ -377,12 +379,12 @@ static void drawchannel76(uint16_t *buf, int i)
 	}
 }
 
-static void _drawchannel128 (uint16_t *buf, const int i, struct ay_driver_frame_state_t *ci, const uint16_t channel_period, uint8_t amplitude)
+static void _drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, const int i, struct ay_driver_frame_state_t *ci, const uint16_t channel_period, uint8_t amplitude)
 {
 	unsigned char tcol=0x0F;
 	unsigned char tcold=0x07;
 	unsigned char tcolr=0x0B;
-	unsigned char mute=ayGetMute(i);
+	unsigned char mute = cpifaceSession->MuteChannel[i];
 
 	writestring(buf, 0, tcol, "Channel                Hz  volume:                    |                                   |                                     ", 128);
 	writenum(buf, 8, tcol, i + 1, 10, 1, 0);
@@ -402,27 +404,26 @@ static void _drawchannel128 (uint16_t *buf, const int i, struct ay_driver_frame_
 	}
 }
 
-static void drawchannel128(uint16_t *buf, int i)
+static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct ay_driver_frame_state_t ci;
-	//unsigned char mute=ayGetMute(i);
-
 	unsigned char tcol=0x0F;
-//	unsigned char tcold=0x07;
+	// unsigned char tcold=0x07;
 	unsigned char tcolr=0x0B;
+	// unsigned char mute = cpifaceSession->MuteChannel[i];
 
 	ayGetChans(&ci);
 
 	switch (i)
 	{
 		case 0:
-			_drawchannel128 (buf, 0, &ci, ci.channel_a_period, ci.amplitude_a);
+			_drawchannel128 (cpifaceSession, buf, 0, &ci, ci.channel_a_period, ci.amplitude_a);
 			break;
 		case 1:
-			_drawchannel128 (buf, 1, &ci, ci.channel_b_period, ci.amplitude_b);
+			_drawchannel128 (cpifaceSession, buf, 1, &ci, ci.channel_b_period, ci.amplitude_b);
 			break;
 		case 2:
-			_drawchannel128 (buf, 2, &ci, ci.channel_c_period, ci.amplitude_c);
+			_drawchannel128 (cpifaceSession, buf, 2, &ci, ci.channel_c_period, ci.amplitude_c);
 			break;
 		case 3:
 			writestring(buf, 0, tcol, "Buzzer                 Hz                             |                                   |                                     ", 128);
@@ -446,19 +447,19 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 	switch (len)
 	{
 		case 36:
-			drawchannel36(buf, i);
+			drawchannel36 (cpifaceSession, buf, i);
 			break;
 		case 44:
-			drawchannel44(buf, i);
+			drawchannel44 (cpifaceSession, buf, i);
 			break;
 		case 62:
-			drawchannel62(buf, i);
+			drawchannel62 (cpifaceSession, buf, i);
 			break;
 		case 76:
-			drawchannel76(buf, i);
+			drawchannel76 (cpifaceSession, buf, i);
 			break;
 		case 128:
-			drawchannel128(buf, i);
+			drawchannel128 (cpifaceSession, buf, i);
 			break;
 	}
 }

@@ -270,7 +270,7 @@ static const char *fx11[]={"","sync","ringmod","sync + ring"};
 static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i)
 {
 	sidChanInfo ci;
-	unsigned char st=plMuteCh[i];
+	unsigned char st = cpifaceSession->MuteChannel[i];
 
 	unsigned char tcol=st?0x08:0x0F;
 	unsigned char tcold=st?0x08:0x07;
@@ -475,7 +475,7 @@ static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->LogicalChannelCount = sidNumberOfChips() * 3;
 	cpifaceSession->PhysicalChannelCount = sidNumberOfChips() * 4;
 	plUseChannels (cpifaceSession, drawchannel);
-	plSetMute=sidMute;
+	cpifaceSession->SetMuteChannel = sidMute;
 
 	plIsEnd=sidLooped;
 	plProcessKey=sidProcessKey;

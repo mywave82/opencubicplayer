@@ -263,7 +263,7 @@ static void xmpMarkInsSamp (struct cpifaceSessionAPI_t *cpifaceSession, char *in
 	/* mod.nchan == cpifaceSession->LogicalChannelCount */
 	for (i=0; i<mod.nchan; i++)
 	{
-		if (!xmpChanActive(i)||plMuteCh[i])
+		if (!xmpChanActive(i)||cpifaceSession->MuteChannel[i])
 			continue;
 		in=xmpGetChanIns(i);
 		sm=xmpGetChanSamp(i);
@@ -403,7 +403,7 @@ static char *getfxstr15(unsigned char fx)
 
 static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i)
 {
-	unsigned char st=plMuteCh[i];
+	unsigned char st = cpifaceSession->MuteChannel[i];
 
 	unsigned char tcol=st?0x08:0x0F;
 	unsigned char tcold=st?0x08:0x07;
@@ -629,7 +629,7 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	plIsEnd=xmpLooped;
 	plProcessKey=xmpProcessKey;
 	plDrawGStrings=xmpDrawGStrings;
-	plSetMute=xmpMute;
+	cpifaceSession->SetMuteChannel = xmpMute;
 	plGetLChanSample=xmpGetLChanSample;
 
 	cpifaceSession->LogicalChannelCount = mod.nchan;

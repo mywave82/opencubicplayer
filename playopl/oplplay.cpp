@@ -145,8 +145,9 @@ void __attribute__ ((visibility ("internal"))) oplSetSong (int song)
 	p->rewind (song);
 }
 
-void __attribute__ ((visibility ("internal"))) oplMute(int i, int m)
+void __attribute__ ((visibility ("internal"))) oplMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
 {
+	cpifaceSession->MuteChannel[i] = m;
 	opl->setmute(i, m);
 }
 static void SET(int ch, int opt, int val)

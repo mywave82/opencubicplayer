@@ -62,6 +62,7 @@
 #include <unistd.h>
 #include "types.h"
 
+#include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
@@ -559,8 +560,9 @@ void __attribute__ ((visibility ("internal"))) ay_driver_frame(int16_t *quad_sam
 	aydumpbuffer_n=bytes / 12;
 }
 
-void __attribute__ ((visibility ("internal"))) aySetMute(int ch, int mute)
+void __attribute__ ((visibility ("internal"))) aySetMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int mute)
 {
+	cpifaceSession->MuteChannel[ch] = mute;
 	switch (ch)
 	{
 		case 0: ayMute[0] = mute; break;
@@ -568,19 +570,6 @@ void __attribute__ ((visibility ("internal"))) aySetMute(int ch, int mute)
 		case 2: ayMute[2] = mute; break;
 		case 3: ayMute[3] = mute; break;
 	}
-}
-
-int  __attribute__ ((visibility ("internal"))) ayGetMute(int ch)
-{
-	switch (ch)
-	{
-		case 0: return ayMute[0];
-		case 1: return ayMute[1];
-		case 2: return ayMute[2];
-		case 3: return ayMute[3];
-		default: return 0;
-	}
-
 }
 
 static void aydumpbuffer_delay_callback_from_devp (void *arg, int samples_ago)

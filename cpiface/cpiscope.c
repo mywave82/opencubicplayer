@@ -382,7 +382,7 @@ static void plDrawScopes (struct cpifaceSessionAPI_t *cpifaceSession)
 				break;
 			}
 			plGetLChanSample(i+chan0, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
-			paus=plMuteCh[i];
+			paus = cpifaceSession->MuteChannel[i];
 			if (cpifaceSession->SelectedChannelChanged)
 			{
 				gdrawchar8p(x?616: 8, 96+scopedy*(i>>1)+scopedy/2-3, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel)?15:paus?8:7, plOpenCPPict?(plOpenCPPict-96*640):0);
@@ -455,7 +455,7 @@ static void plDrawScopes (struct cpifaceSessionAPI_t *cpifaceSession)
 		char col;
 		int16_t *bp;
 		plGetLChanSample (cpifaceSession->SelectedChannel, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
-		col=plMuteCh[cpifaceSession->SelectedChannel]?7:15;
+		col = cpifaceSession->MuteChannel[cpifaceSession->SelectedChannel]?7:15;
 		bp=plSampBuf;
 		if (plOszTrigger)
 		{

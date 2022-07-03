@@ -552,8 +552,9 @@ void __attribute__ ((visibility ("internal"))) hvlNextSubSong ()
 	hvl_InitSubsong (ht, ht->ht_SongNum);
 }
 
-void __attribute__ ((visibility ("internal")))  hvlMute (int ch, int m)
+void __attribute__ ((visibility ("internal")))  hvlMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m)
 {
+	cpifaceSession->MuteChannel[ch] = m;
 	hvl_muted[ch] = m;
 }
 

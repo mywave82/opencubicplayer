@@ -84,6 +84,7 @@ aypplay.o: aypplay.c ayplay.h \
 ayplay.o: ayplay.c ayplay.h main.h sound.h z80.h \
 	../config.h \
 	../types.h \
+	../cpiface/cpiface.h \
 	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \

@@ -184,15 +184,15 @@ static void plDrawDots (struct cpifaceSessionAPI_t *cpifaceSession)
 		{
 			if (dothgt>=16)
 			{
-				gdrawcharp  (  8, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : plMuteCh[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
-				gdrawcharp  ( 16, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : plMuteCh[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
-				gdrawcharp  (616, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : plMuteCh[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
-				gdrawcharp  (624, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : plMuteCh[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				gdrawcharp  (  8, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				gdrawcharp  ( 16, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				gdrawcharp  (616, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				gdrawcharp  (624, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
 			} else {
-				gdrawchar8p (  8, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : plMuteCh[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
-				gdrawchar8p ( 16, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : plMuteCh[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
-				gdrawchar8p (616, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : plMuteCh[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
-				gdrawchar8p (624, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : plMuteCh[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				gdrawchar8p (  8, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				gdrawchar8p ( 16, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				gdrawchar8p (616, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				gdrawchar8p (624, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
 			}
 		}
 	}
@@ -216,7 +216,7 @@ static void plDrawDots (struct cpifaceSessionAPI_t *cpifaceSession)
 		if ((xp<16)||(xp>614))
 			continue;
 		dotdata[i].note=xp;
-		if (plMuteCh[dotdata[i].chan])
+		if (cpifaceSession->MuteChannel[dotdata[i].chan])
 			dotdata[i].col=8;
 
 		dotchan[k]=dotdata[i].chan;

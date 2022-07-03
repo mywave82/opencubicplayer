@@ -215,7 +215,7 @@ static void oplDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i) /* TODO */
 {
-        unsigned char st=plMuteCh[i];
+        unsigned char st = cpifaceSession->MuteChannel[i];
 
         unsigned char tcol=st?0x08:0x0F;
         unsigned char tcold=st?0x08:0x07;
@@ -481,7 +481,7 @@ static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->LogicalChannelCount = 18;
 	cpifaceSession->PhysicalChannelCount = 18;
 	plUseChannels (cpifaceSession, drawchannel);
-	plSetMute=oplMute;
+	cpifaceSession->SetMuteChannel = oplMute;
 
 	oplpGetGlobInfo(globinfo);
 

@@ -334,8 +334,8 @@ static void preparepatgen (struct cpifaceSessionAPI_t *cpifaceSession, int pat, 
 		n0--;
 	for (i=0; i<chnn; i++)
 	{
-		char chpaus=plMuteCh[i+firstchan];
-		char sel=((i+firstchan)==cpifaceSession->SelectedChannel);
+		uint8_t chpaus = cpifaceSession->MuteChannel[i+firstchan];
+		uint8_t sel=((i+firstchan)==cpifaceSession->SelectedChannel);
 		writenum(pattitle2, n0+pt->width*i, sel?COLTITLE2H:chpaus?COLTITLE2M:COLLNUM, i+firstchan+1, 10, (pt->width==1)?1:2, pt->width>2);
 		writestring(patmask, p0+pt->width*i, COLBACK, chpaus?pt->paused:sel?pt->selected:pt->normal, pt->width);
 	}
@@ -409,7 +409,7 @@ static void preparepatgen (struct cpifaceSessionAPI_t *cpifaceSession, int pat, 
 		{
 			int chpaus;
 			seektrack(firstpat, i+firstchan);
-			chpaus=plMuteCh[i+firstchan];
+			chpaus = cpifaceSession->MuteChannel[i+firstchan];
 			while (1)
 			{
 				int currow=startrow();

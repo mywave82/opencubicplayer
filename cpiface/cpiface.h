@@ -17,6 +17,8 @@
 
 #include <stdio.h>
 
+#define MAXLCHAN 64
+
 struct cpifaceSessionAPI_t;
 struct moduleinfostruct;
 struct ocpfilehandle_t;
@@ -41,6 +43,10 @@ struct cpifaceSessionAPI_t
 	uint_fast16_t LogicalChannelCount;  /* number of logical channels. Used by "Channel" viewer and selector, note-dot viewer, can be used by scope viewers, and is the default value used by track viewer */
 	uint_fast16_t PhysicalChannelCount; /* number of physical audio channels. Sometimes a format uses shadow channels for effects or smooth transitions. Can be used by scope viewers. */
 
+	/* Callbacks and status from cpiface to plugin */
+	uint8_t MuteChannel[MAXLCHAN]; /* Reflects the status of channel muting used by channel visualizers. Should be controlled by the playback plugin */
+	void (*SetMuteChannel)(struct cpifaceSessionAPI_t *cpifaceSession, int LogicalChannel, int IsMuted); /* Callback from cpiface to set the Mute channel for a given logical channel */
+
 	/* Normally controlled by playback plugin */
 	uint8_t InPause; /* used by cpiface UI elements to know if the playback is paused or not */
 
@@ -50,12 +56,10 @@ struct cpifaceSessionAPI_t
 };
 
 #warning move all these into cpifaceAPISource_t
-extern char plMuteCh[];
 extern char plPanType; /* If this is one, it causes the visual channel-layout to swap right and left channel for every second channel group - currenly only used by some S3M files */
 extern int (*plProcessKey) (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key);
 extern void (*plDrawGStrings)(struct cpifaceSessionAPI_t *cpifaceSession);
 extern int (*plIsEnd)(struct cpifaceSessionAPI_t *cpifaceSession);
-extern void (*plSetMute)(int i, int m);
 extern int (*plGetLChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
 extern int (*plGetPChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
 

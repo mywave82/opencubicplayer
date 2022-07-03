@@ -217,9 +217,10 @@ static int ayOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	plIsEnd=ayLooped;
 	plProcessKey=ayProcessKey;
 	plDrawGStrings=ayDrawGStrings;
-	plSetMute=aySetMute;
 
+	cpifaceSession->SetMuteChannel = aySetMute;
 	cpifaceSession->LogicalChannelCount = 6;
+
 	ayChanSetup (cpifaceSession);
 
 	if (!ayOpenPlayer(file, cpifaceSession))

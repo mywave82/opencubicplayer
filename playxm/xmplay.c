@@ -1472,8 +1472,9 @@ int __attribute__ ((visibility ("internal"))) xmpGetLChanSample(unsigned int ch,
 	return mcpGetChanSample(ch, b, len, rate, opt);
 }
 
-void __attribute__ ((visibility ("internal"))) xmpMute(int i, int m)
+void __attribute__ ((visibility ("internal"))) xmpMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
 {
+	cpifaceSession->MuteChannel[i] = m;
 	mutech[i]=m;
 }
 

@@ -4,7 +4,7 @@
 struct ocpfilehandle_t;
 struct cpifaceSessionAPI_t;
 extern void __attribute__ ((visibility ("internal"))) ymClosePlayer(void);
-extern void __attribute__ ((visibility ("internal"))) ymMute(int i, int m);
+extern void __attribute__ ((visibility ("internal"))) ymMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m);
 extern int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
 extern void __attribute__ ((visibility ("internal"))) ymSetLoop(int loop);
 extern int __attribute__ ((visibility ("internal"))) ymIsLooped(void);

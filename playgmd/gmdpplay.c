@@ -69,7 +69,7 @@ static void gmdMarkInsSamp (struct cpifaceSessionAPI_t *cpifaceSession, uint8_t 
 		struct chaninfo ci;
 		mpGetChanInfo(i, &ci);
 
-		if (!mpGetMute(i)&&mpGetChanStatus(i)&&ci.vol)
+		if (!cpifaceSession->MuteChannel[i]&&mpGetChanStatus(i)&&ci.vol)
 		{
 			ins[ci.ins]=((cpifaceSession->SelectedChannel==i)||(ins[ci.ins]==3))?3:2;
 			samp[ci.smp]=((cpifaceSession->SelectedChannel==i)||(samp[ci.smp]==3))?3:2;
@@ -366,7 +366,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	plIsEnd=gmdLooped;
 	plProcessKey=gmdProcessKey;
 	plDrawGStrings=gmdDrawGStrings;
-	plSetMute=mpMute;
+	cpifaceSession->SetMuteChannel = mpMute;
 	plGetLChanSample=mpGetChanSample;
 
 	cpifaceSession->LogicalChannelCount = mod.channum;

@@ -37,8 +37,7 @@
 #include "gmdplay.h"
 #include "stuff/imsrtns.h"
 
-#define MAXLCHAN MP_MAXCHANNELS
-#define MAXPCHAN 32
+#define GMD_MAXPCHAN 32
 
 struct trackdata
 {
@@ -111,7 +110,7 @@ struct trackdata
 	int mute;
 };
 
-static int pchan[MAXPCHAN];
+static int pchan[GMD_MAXPCHAN];
 
 
 static uint16_t notetab[16]={32768,30929,29193,27554,26008,24548,23170,21870,20643,19484,18390,17358,16384,15464,14596,13777};
@@ -166,7 +165,7 @@ static int lockpattern;
 static uint16_t patternnum;
 static uint16_t looppat;
 static uint16_t endpat;
-static struct trackdata tdata[MP_MAXCHANNELS];
+static struct trackdata tdata[GMD_MAXLCHAN];
 static struct trackdata *tdataend;
 static struct gmdtrack gtrack;
 static const struct gmdenvelope *envelopes;
@@ -185,13 +184,13 @@ static int16_t brkpat;
 static int16_t brkrow;
 static uint8_t newtickmode;
 static uint8_t processtick;
-static uint8_t patlooprow[MAXLCHAN];
-static uint8_t patloopcount[MAXLCHAN];
+static uint8_t patlooprow[GMD_MAXLCHAN];
+static uint8_t patloopcount[GMD_MAXLCHAN];
 static uint8_t globchan;
 static uint8_t patdelay;
 static uint8_t globalvol;
-static uint8_t globalvolslide[MAXLCHAN];
-static int8_t globalvolslval[MAXLCHAN];
+static uint8_t globalvolslide[GMD_MAXLCHAN];
+static int8_t globalvolslval[GMD_MAXLCHAN];
 static uint8_t looped;
 static uint8_t exponential;
 static uint8_t samiextrawurscht;
@@ -897,7 +896,7 @@ static void PlayCommand(struct trackdata *t, const uint8_t *cmd, uint8_t len)
 static void DoGCommand(void)
 {
 	int i;
-	for (i=0; i<MAXLCHAN; i++)
+	for (i=0; i<GMD_MAXLCHAN; i++)
 		if (globalvolslide[i])
 			if (processtick)
 				globalvol=checkvol(globalvol+globalvolslval[i]);
@@ -1692,7 +1691,7 @@ void __attribute__ ((visibility ("internal"))) mpGetGlobInfo(struct globinfo *gi
 	gi->patnum=patternnum;
 	gi->globvol=globalvol;
 	gi->globvolslide=0;
-	for (i=0; i<MAXLCHAN; i++)
+	for (i=0; i<GMD_MAXLCHAN; i++)
 		if (globalvolslide[i])
 			gi->globvolslide=globalvolslide[i];
 }
@@ -1795,16 +1794,12 @@ int __attribute__ ((visibility ("internal"))) mpGetChanSample(unsigned int ch, i
 	return mcpGetChanSample(tdata[ch].phys, buf, len, rate, opt);
 }
 
-void __attribute__ ((visibility ("internal"))) mpMute(int ch, int mute)
+void __attribute__ ((visibility ("internal"))) mpMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int mute)
 {
+	cpifaceSession->MuteChannel[ch] = mute;
 	tdata[ch].mute=mute;
 	if (tdata[ch].phys!=-1)
 		mcpSet(tdata[ch].phys, mcpCMute, mute);
-}
-
-int __attribute__ ((visibility ("internal"))) mpGetMute(int ch)
-{
-	return tdata[ch].mute;
 }
 
 int __attribute__ ((visibility ("internal"))) mpGetChanStatus(int ch)

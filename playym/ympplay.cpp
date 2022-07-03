@@ -219,8 +219,7 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 {
 	int voll=15, volr=15;
 	int env = 0;
-#warning TODO
-        unsigned char st=plMuteCh[i]; /* TODO */
+        unsigned char st = cpifaceSession->MuteChannel[i]; /* TODO */
 
         unsigned char tcol=st?0x08:0x0F;
         unsigned char tcold=st?0x08:0x07;
@@ -526,7 +525,7 @@ static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	cpifaceSession->PhysicalChannelCount = 5;
 
 	plUseChannels (cpifaceSession, drawchannel);
-	plSetMute=ymMute;
+	cpifaceSession->SetMuteChannel = ymMute;
 
 	return 0;
 }

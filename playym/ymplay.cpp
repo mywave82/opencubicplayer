@@ -142,8 +142,9 @@ void __attribute__ ((visibility ("internal"))) ymClosePlayer(void)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) ymMute(int i, int m)
+void __attribute__ ((visibility ("internal"))) ymMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
 {
+	cpifaceSession->MuteChannel[i] = m;
 	fprintf(stderr, "TODO, ymMute(i, m)\n");
 }
 

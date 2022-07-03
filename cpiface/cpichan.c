@@ -77,14 +77,14 @@ static void ChanDraw (struct cpifaceSessionAPI_t *cpifaceSession, int ignore)
 				{
 					if (plChanWidth<132)
 					{
-						writestring(buf, x*40, plMuteCh[i]?0x08:0x07, " ##:", 4);
+						writestring(buf, x*40, cpifaceSession->MuteChannel[i]?0x08:0x07, " ##:", 4);
 						writestring(buf, x*40, 0x0F, (i==cpifaceSession->SelectedChannel) ? ">" : sign, 1);
-						_writenum(buf, x*40+1, plMuteCh[i]?0x08:0x07, i+1, 10, 2);
+						_writenum(buf, x*40+1, cpifaceSession->MuteChannel[i]?0x08:0x07, i+1, 10, 2);
 						ChanDisplay (cpifaceSession, buf+x*40+4, 36, i);
 					} else {
-						writestring(buf, x*66, plMuteCh[i]?0x08:0x07, " ##:", 4);
+						writestring(buf, x*66, cpifaceSession->MuteChannel[i]?0x08:0x07, " ##:", 4);
 						writestring(buf, x*66, 0x0F, (i==cpifaceSession->SelectedChannel) ? ">" : sign, 1);
-						_writenum(buf, x*66+1, plMuteCh[i]?0x08:0x07, i+1, 10, 2);
+						_writenum(buf, x*66+1, cpifaceSession->MuteChannel[i]?0x08:0x07, i+1, 10, 2);
 						ChanDisplay (cpifaceSession, buf+x*66+4, 62, i);
 					}
 				} else
@@ -101,14 +101,14 @@ static void ChanDraw (struct cpifaceSessionAPI_t *cpifaceSession, int ignore)
 			}
 			if (plChannelType==2)
 			{
-				writestring(buf, 0, plMuteCh[i]?0x08:0x07, " ##:", 4);
+				writestring(buf, 0, cpifaceSession->MuteChannel[i]?0x08:0x07, " ##:", 4);
 				writestring(buf, 0, 0x0F, sign, 1);
-				_writenum(buf, 1, plMuteCh[i]?0x08:0x07, i+1, 10, 2);
+				_writenum(buf, 1, cpifaceSession->MuteChannel[i]?0x08:0x07, i+1, 10, 2);
 				ChanDisplay (cpifaceSession, buf+4, (plChanWidth<128)?76:128, y+first);
 			} else {
-				writestring(buf, 0, plMuteCh[i]?0x08:0x07, "     ##:", 8);
+				writestring(buf, 0, cpifaceSession->MuteChannel[i]?0x08:0x07, "     ##:", 8);
 				writestring(buf, 4, 0x0F, sign, 1);
-				_writenum(buf, 5, plMuteCh[i]?0x08:0x07, i+1, 10, 2);
+				_writenum(buf, 5, cpifaceSession->MuteChannel[i]?0x08:0x07, i+1, 10, 2);
 				ChanDisplay (cpifaceSession, buf+8, 44, y+first);
 			}
 		}

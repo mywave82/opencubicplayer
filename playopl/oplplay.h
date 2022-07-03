@@ -29,6 +29,6 @@ struct oplTuneInfo {
 extern void oplpGetChanInfo(int i, oplChanInfo &ci);
 extern void oplpGetGlobInfo(oplTuneInfo &si);
 extern void oplSetSong (int song);
-extern void oplMute(int i, int m);
+extern void oplMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m);
 
 #endif
