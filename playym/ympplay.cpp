@@ -53,28 +53,32 @@ static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
 static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
 static struct moduleinfostruct mdbdata;
 
-static void startpausefade(void)
+static void startpausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if (plPause)
+	if (cpifaceSession->InPause)
+	{
 		starttime=starttime+dos_clock()-pausetime;
+	}
 
 	if (pausefadedirect)
 	{
 		if (pausefadedirect<0)
-			plPause=1;
+		{
+			cpifaceSession->InPause = 1;
+		}
 		pausefadestart=2*dos_clock()-DOS_CLK_TCK-pausefadestart;
 	} else
 		pausefadestart=dos_clock();
 
-	if (plPause)
+	if (cpifaceSession->InPause)
 	{
-		ymPause(plPause=0);
+		ymPause (cpifaceSession->InPause = 0);
 		pausefadedirect=1;
 	} else
 		pausefadedirect=-1;
 }
 
-static void dopausefade(void)
+static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int16_t i;
 	if (pausefadedirect>0)
@@ -96,7 +100,7 @@ static void dopausefade(void)
 			i=0;
 			pausefadedirect=0;
 			pausetime=dos_clock();
-			ymPause(plPause=1);
+			ymPause (cpifaceSession->InPause = 1);
 			mcpSetMasterPauseFadeParameters (64);
 			return;
 		}
@@ -137,7 +141,7 @@ static void logvolbar(int &l, int &r)
 		r=64;
 }
 */
-static void drawvolbar(uint16_t *buf, int l, int r, unsigned char st)
+static void drawvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int l, int r, unsigned char st)
 {
 	/*logvolbar(l, r);
 	l=(l+4)>>3;
@@ -145,8 +149,10 @@ static void drawvolbar(uint16_t *buf, int l, int r, unsigned char st)
 	l=l>>1;
 	r=r>>1;
 
-	if (plPause)
+	if (cpifaceSession->InPause)
+	{
 		l=r=0;
+	}
 	if (st)
 	{
 		writestring(buf, 8-l, 0x08, "\376\376\376\376\376\376\376\376", l);
@@ -159,14 +165,16 @@ static void drawvolbar(uint16_t *buf, int l, int r, unsigned char st)
 	}
 }
 
-static void drawlongvolbar(uint16_t *buf, int l, int r, unsigned char st)
+static void drawlongvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int l, int r, unsigned char st)
 {
 /*
 	logvolbar(l, r);
 	l=(l+2)>>2;
 	r=(r+2)>>2;*/
-	if (plPause)
+	if (cpifaceSession->InPause)
+	{
 		l=r=0;
+	}
 	if (st)
 	{
 		writestring(buf, 16-l, 0x08, "\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376", l);
@@ -198,8 +206,8 @@ static void ymDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		globinfo.pSongType?globinfo.pSongType:"", /* opt25 */
 		globinfo.pSongType?globinfo.pSongType:"", /* opt50 */
 		-1,
-		plPause,
-		plPause?((pausetime-starttime)/DOS_CLK_TCK):((dos_clock()-starttime)/DOS_CLK_TCK),
+		cpifaceSession->InPause,
+		cpifaceSession->InPause ? ((pausetime-starttime)/DOS_CLK_TCK) : ((dos_clock()-starttime)/DOS_CLK_TCK),
 		&mdbdata
 	);
 	/* globinfo.pSongAuthor should be in mdbdata
@@ -207,7 +215,7 @@ static void ymDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 	 */
 }
 
-static void drawchannel(uint16_t *buf, int len, int i)
+static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i)
 {
 	int voll=15, volr=15;
 	int env = 0;
@@ -353,7 +361,7 @@ static void drawchannel(uint16_t *buf, int len, int i)
 				writenum(buf+13, 0, tcol, ftype, 16, 1, 0);
 			if (efx)
 				writestring(buf+15, 0, tcol, fx2[efx], 2);*/
-			drawvolbar(buf+18, voll, volr, st);
+			drawvolbar (cpifaceSession, buf+18, voll, volr, st);
 			break;
 		case 44:
 			writestring(buf+1, 0, tcol, waves4[channel_mode], 4);
@@ -369,7 +377,7 @@ static void drawchannel(uint16_t *buf, int len, int i)
 				writestring(buf+18, 0, tcol, filters3[ftype], 3);
 			if (efx)
 				writestring(buf+22, 0, tcol, fx2[efx], 2);*/
-			drawvolbar(buf+26, voll, volr, st);
+			drawvolbar (cpifaceSession, buf+26, voll, volr, st);
 			break;
 		case 62:
 			writestring(buf+1, 0, tcol, waves16[channel_mode], 16);
@@ -386,7 +394,7 @@ static void drawchannel(uint16_t *buf, int len, int i)
 				writestring(buf+31, 0, tcol, filters3[ftype], 3);
 			if (efx)
 				writestring(buf+35, 0, tcol, fx7[efx], 7);*/
-			drawvolbar(buf+44, voll, volr, st);
+			drawvolbar (cpifaceSession, buf+44, voll, volr, st);
 			break;
 		case 76:
 			writestring(buf+1, 0, tcol, waves16[channel_mode], 16);
@@ -402,7 +410,7 @@ static void drawchannel(uint16_t *buf, int len, int i)
 			if (ci.filtenabled && ftype)
 				writestring(buf+39, 0, tcol, filters3[ftype], 3);
 			writestring(buf+45, 0, tcol, fx11[efx], 11);*/
-			drawvolbar(buf+59, voll, volr, st);
+			drawvolbar (cpifaceSession, buf+59, voll, volr, st);
 			break;
 		case 128:
 			writestring(buf+1, 0, tcol, waves16[channel_mode], 16);
@@ -418,7 +426,7 @@ static void drawchannel(uint16_t *buf, int len, int i)
 			if (ci.filtenabled && ftype)
 				writestring(buf+47, 0, tcol, filters12[ftype], 12);
 			writestring(buf+64, 0, tcol, fx11[efx], 11);*/
-			drawlongvolbar(buf+81, voll, volr, st);
+			drawlongvolbar (cpifaceSession, buf+81, voll, volr, st);
 			break;
 	}
 }
@@ -441,16 +449,17 @@ static int ymProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
-			startpausefade();
+			startpausefade (cpifaceSession);
 			break;
 		case KEY_CTRL_P:
 			pausefadedirect=0;
-			if (plPause)
+			if (cpifaceSession->InPause)
+			{
 				starttime=starttime+dos_clock()-pausetime;
-			else
+			} else {
 				pausetime=dos_clock();
-			plPause=!plPause;
-			ymPause(plPause);
+			}
+			ymPause (cpifaceSession->InPause = !cpifaceSession->InPause);
 			break;
 		case KEY_CTRL_UP:
 			ymSetPos(ymGetPos()-50);
@@ -476,10 +485,12 @@ static int ymProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 }
 
 
-static int ymLooped(void)
+static int ymLooped (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (pausefadedirect)
-		dopausefade();
+	{
+		dopausefade (cpifaceSession);
+	}
 	ymSetLoop(fsLoopMods);
 	ymIdle();
 	return !fsLoopMods&&ymIsLooped();
@@ -508,7 +519,7 @@ static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 		return -1;
 
 	starttime=dos_clock();
-	plPause=0;
+	cpifaceSession->InPause = 0;
 	pausefadedirect=0;
 
 	cpifaceSession->LogicalChannelCount = 5;

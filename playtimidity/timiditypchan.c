@@ -33,7 +33,7 @@
 #warning TODO midGetMute
 #define midGetMute(i) 0
 
-static void drawchannel36(uint16_t *buf, int i)
+static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct mchaninfo ci;
 	unsigned char mute=midGetMute(i);
@@ -61,7 +61,7 @@ static void drawchannel36(uint16_t *buf, int i)
 		writestring(buf, 10+4*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
 }
 
-static void drawchannel62(uint16_t *buf, int i)
+static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct mchaninfo ci;
 	unsigned char mute=midGetMute(i);
@@ -89,7 +89,7 @@ static void drawchannel62(uint16_t *buf, int i)
 		writestring(buf, 24+4*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
 }
 
-static void drawchannel76(uint16_t *buf, int i)
+static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct mchaninfo ci;
 	unsigned char mute=midGetMute(i);
@@ -119,7 +119,7 @@ static void drawchannel76(uint16_t *buf, int i)
 	}
 }
 
-static void drawchannel128(uint16_t *buf, int i)
+static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct mchaninfo ci;
 	unsigned char mute=midGetMute(i);
@@ -158,7 +158,7 @@ static void drawchannel128(uint16_t *buf, int i)
 	}
 }
 
-static void drawchannel44(uint16_t *buf, int i)
+static void drawchannel44 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct mchaninfo ci;
 	unsigned char mute=midGetMute(i);
@@ -188,24 +188,24 @@ static void drawchannel44(uint16_t *buf, int i)
 		writestring(buf, 10+4*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
 }
 
-static void drawchannel(uint16_t *buf, int len, int i)
+static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i)
 {
 	switch (len)
 	{
 		case 36:
-			drawchannel36(buf, i);
+			drawchannel36 (cpifaceSession, buf, i);
 			break;
 		case 44:
-			drawchannel44(buf, i);
+			drawchannel44 (cpifaceSession, buf, i);
 			break;
 		case 62:
-			drawchannel62(buf, i);
+			drawchannel62 (cpifaceSession, buf, i);
 			break;
 		case 76:
-			drawchannel76(buf, i);
+			drawchannel76 (cpifaceSession, buf, i);
 			break;
 		case 128:
-			drawchannel128(buf, i);
+			drawchannel128 (cpifaceSession, buf, i);
 			break;
 	}
 }

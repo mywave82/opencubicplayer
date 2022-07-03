@@ -52,9 +52,9 @@ static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
 static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
 static struct moduleinfostruct mdbdata;
 
-static void startpausefade (void)
+static void startpausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if (plPause)
+	if (cpifaceSession->InPause)
 	{
 		starttime = starttime + dos_clock () - pausetime;
 	}
@@ -63,22 +63,22 @@ static void startpausefade (void)
 	{
 		if (pausefadedirect < 0)
 		{
-			plPause = 1;
+			cpifaceSession->InPause = 1;
 		}
 		pausefadestart = 2 * dos_clock () - DOS_CLK_TCK - pausefadestart;
 	} else {
 		pausefadestart = dos_clock ();
 	}
 
-	if (plPause)
+	if (cpifaceSession->InPause)
 	{
-		hvlPause ( plPause = 0 );
+		hvlPause (cpifaceSession->InPause = 0);
 		pausefadedirect = 1;
 	} else
 		pausefadedirect = -1;
 }
 
-static void dopausefade (void)
+static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int16_t i;
 	if (pausefadedirect>0)
@@ -100,7 +100,7 @@ static void dopausefade (void)
 			i=0;
 			pausefadedirect=0;
 			pausetime=dos_clock();
-			hvlPause(plPause=1);
+			hvlPause (cpifaceSession->InPause = 1);
 			mcpSetMasterPauseFadeParameters (64);
 			return;
 		}
@@ -140,8 +140,8 @@ static void hvlDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		0,          /* chan Y */
 		-1,         /* amplification */
 		0,          /* filter */
-		plPause,
-		plPause?((pausetime-starttime)/DOS_CLK_TCK):((dos_clock()-starttime)/DOS_CLK_TCK),
+		cpifaceSession->InPause,
+		cpifaceSession->InPause ? ((pausetime-starttime)/DOS_CLK_TCK) : ((dos_clock()-starttime)/DOS_CLK_TCK),
 		&mdbdata
 	);
 #warning we are missing the current tune title
@@ -162,18 +162,18 @@ static int hvlProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
-			startpausefade();
+			startpausefade (cpifaceSession);
 			break;
 		case KEY_CTRL_P:
 			pausefadedirect=0;
-			if (plPause)
+			if (cpifaceSession->InPause)
 			{
 				starttime=starttime+dos_clock()-pausetime;
 			} else {
 				pausetime=dos_clock();
 			}
-			plPause=!plPause;
-			hvlPause(plPause);
+			cpifaceSession->InPause = !cpifaceSession->InPause;
+			hvlPause (cpifaceSession->InPause);
 			break;
 		case KEY_CTRL_HOME:
 			hvlRestartSong();
@@ -190,11 +190,11 @@ static int hvlProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 	return 1;
 }
 
-static int hvlIsLooped(void)
+static int hvlIsLooped (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (pausefadedirect)
 	{
-		dopausefade();
+		dopausefade (cpifaceSession);
 	}
 	hvlSetLoop(fsLoopMods);
 	hvlIdle();
@@ -262,11 +262,10 @@ static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	plDrawGStrings=hvlDrawGStrings;
 
 	starttime=dos_clock();
-	plPause=0;
+	cpifaceSession->InPause = 0;
 	pausefadedirect=0;
 	cpifaceSession->PhysicalChannelCount = ht->ht_Channels;
 	cpifaceSession->LogicalChannelCount = ht->ht_Channels;
-	plIdle=hvlIdle;
 	plSetMute=hvlMute;
 	plGetPChanSample=hvlGetChanSample;
 	plUseDots(hvlGetDots);

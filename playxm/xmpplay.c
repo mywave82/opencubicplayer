@@ -67,28 +67,32 @@ static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
 
-static void startpausefade(void)
+static void startpausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if (plPause)
+	if (cpifaceSession->InPause)
+	{
 		starttime=starttime+dos_clock()-pausetime;
+	}
 
 	if (pausefadedirect)
 	{
 		if (pausefadedirect<0)
-			plPause=1;
+		{
+			cpifaceSession->InPause = 1;
+		}
 		pausefadestart=2*dos_clock()-DOS_CLK_TCK-pausefadestart;
 	} else
 		pausefadestart=dos_clock();
 
-	if (plPause)
+	if (cpifaceSession->InPause)
 	{
-		mcpSet(-1, mcpMasterPause, plPause=0);
+		mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = 0);
 		pausefadedirect=1;
 	} else
 		pausefadedirect=-1;
 }
 
-static void dopausefade(void)
+static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int16_t i;
 	if (pausefadedirect>0)
@@ -110,7 +114,7 @@ static void dopausefade(void)
 			i=0;
 			pausefadedirect=0;
 			pausetime=dos_clock();
-			mcpSet(-1, mcpMasterPause, plPause=1);
+			mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = 1);
 			mcpSetMasterPauseFadeParameters (64);
 			return;
 		}
@@ -141,23 +145,27 @@ static int xmpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
-			startpausefade();
+			startpausefade (cpifaceSession);
 			break;
 		case KEY_CTRL_P:
 			pausefadedirect=0;
-			if (plPause)
+			if (cpifaceSession->InPause)
+			{
 				starttime=starttime+dos_clock()-pausetime;
-			else
+			} else {
 				pausetime=dos_clock();
-			mcpSet(-1, mcpMasterPause, plPause^=1);
+			}
+			mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = !cpifaceSession->InPause);
 			break;
 		case KEY_CTRL_HOME:
 			xmpInstClear (cpifaceSession);
 			xmpSetPos(0, 0);
-			if (plPause)
+			if (cpifaceSession->InPause)
+			{
 				starttime=pausetime;
-			else
+			} else {
 				starttime=dos_clock();
+			}
 			break;
 		case '<':
 		case KEY_CTRL_LEFT:
@@ -190,18 +198,17 @@ static int xmpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 	return 1;
 }
 
-static int xmpLooped(void)
-{
-	return !fsLoopMods&&xmpLoop();
-}
-
-static void xmpIdle(void)
+static int xmpLooped (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	xmpSetLoop(fsLoopMods);
 	if (mcpIdle)
 		mcpIdle();
 	if (pausefadedirect)
-		dopausefade();
+	{
+		dopausefade (cpifaceSession);
+	}
+
+	return !fsLoopMods&&xmpLoop();
 }
 
 static void xmpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -234,8 +241,8 @@ static void xmpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		0,          /* chan Y */
 		mcpset.amp,
 		(set.filter==1)?"AOI":(set.filter==2)?"FOI":"off",
-		plPause,
-		plPause?((pausetime-starttime)/DOS_CLK_TCK):((dos_clock()-starttime)/DOS_CLK_TCK),
+		cpifaceSession->InPause,
+		cpifaceSession->InPause ? ((pausetime-starttime)/DOS_CLK_TCK) : ((dos_clock()-starttime)/DOS_CLK_TCK),
 		&mdbdata
 	);
 }
@@ -287,7 +294,7 @@ static void logvolbar(int *l, int *r)
 		*r=64;
 }
 
-static void drawvolbar(unsigned short *buf, int i, unsigned char st)
+static void drawvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i, unsigned char st)
 {
 	int l,r;
 	xmpGetRealVolume(i, &l, &r);
@@ -295,8 +302,10 @@ static void drawvolbar(unsigned short *buf, int i, unsigned char st)
 
 	l=(l+4)>>3;
 	r=(r+4)>>3;
-	if (plPause)
+	if (cpifaceSession->InPause)
+	{
 		l=r=0;
+	}
 	if (st)
 	{
 		writestring(buf, 8-l, 0x08, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", l);
@@ -309,15 +318,17 @@ static void drawvolbar(unsigned short *buf, int i, unsigned char st)
 	}
 }
 
-static void drawlongvolbar(unsigned short *buf, int i, unsigned char st)
+static void drawlongvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i, unsigned char st)
 {
 	int l,r;
 	xmpGetRealVolume(i, &l, &r);
 	logvolbar(&l, &r);
 	l=(l+2)>>2;
 	r=(r+2)>>2;
-	if (plPause)
+	if (cpifaceSession->InPause)
+	{
 		l=r=0;
+	}
 	if (st)
 	{
 		writestring(buf, 16-l, 0x08, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", l);
@@ -390,7 +401,7 @@ static char *getfxstr15(unsigned char fx)
 
 
 
-static void drawchannel(uint16_t *buf, int len, int i)
+static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i)
 {
 	unsigned char st=plMuteCh[i];
 
@@ -436,7 +447,7 @@ static void drawchannel(uint16_t *buf, int len, int i)
 			fxstr=getfxstr6(ci.fx);
 			if (fxstr)
 				writestring(buf, 11, tcol, fxstr, 6);
-			drawvolbar(buf+18, i, st);
+			drawvolbar (cpifaceSession, buf+18, i, st);
 			break;
 		case 62:
 			if (ins) {
@@ -456,7 +467,7 @@ static void drawchannel(uint16_t *buf, int len, int i)
 			fxstr=getfxstr6(ci.fx);
 			if (fxstr)
 				writestring(buf, 36, tcol, fxstr, 6);
-			drawvolbar(buf+44, i, st);
+			drawvolbar (cpifaceSession, buf+44, i, st);
 			break;
 		case 76:
 			if (ins)
@@ -479,7 +490,7 @@ static void drawchannel(uint16_t *buf, int len, int i)
 			if (fxstr)
 				writestring(buf, 42, tcol, fxstr, 15);
 
-			drawvolbar(buf+59, i, st);
+			drawvolbar (cpifaceSession, buf+59, i, st);
 			break;
 		case 128:
 			if (ins)
@@ -510,7 +521,7 @@ static void drawchannel(uint16_t *buf, int len, int i)
 			fxstr=getfxstr15(ci.fx);
 			if (fxstr)
 				writestring(buf, 62, tcol, fxstr, 15);
-			drawlongvolbar(buf+80, i, st);
+			drawlongvolbar (cpifaceSession, buf+80, i, st);
 			break;
 		case 44:
 			writenum(buf,  1, tcol, xmpGetChanIns(i), 16, 2, 0);
@@ -524,7 +535,7 @@ static void drawchannel(uint16_t *buf, int len, int i)
 			fxstr=getfxstr6(ci.fx);
 			if (fxstr)
 				writestring(buf, 17, tcol, fxstr, 6);
-			drawvolbar(buf+26, i, st);
+			drawvolbar (cpifaceSession, buf+26, i, st);
 			break;
 	}
 }
@@ -616,7 +627,6 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	samps=mod.samples;
 
 	plIsEnd=xmpLooped;
-	plIdle=xmpIdle;
 	plProcessKey=xmpProcessKey;
 	plDrawGStrings=xmpDrawGStrings;
 	plSetMute=xmpMute;
@@ -635,7 +645,7 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	plGetPChanSample=mcpGetChanSample;
 
 	starttime=dos_clock();
-	plPause=0;
+	cpifaceSession->InPause = 0;
 	mcpSet(-1, mcpMasterPause, 0);
 	pausefadedirect=0;
 

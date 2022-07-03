@@ -51,28 +51,32 @@ static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
 static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
 static struct moduleinfostruct mdbdata;
 
-static void startpausefade(void)
+static void startpausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if (plPause)
+	if (cpifaceSession->InPause)
+	{
 		starttime=starttime+dos_clock()-pausetime;
+	}
 
 	if (pausefadedirect)
 	{
 		if (pausefadedirect<0)
-			plPause=1;
+		{
+			cpifaceSession->InPause = 1;
+		}
 		pausefadestart=2*dos_clock()-DOS_CLK_TCK-pausefadestart;
 	} else
 		pausefadestart=dos_clock();
 
-	if (plPause)
+	if (cpifaceSession->InPause)
 	{
-		mpegPause(plPause=0);
+		mpegPause (cpifaceSession->InPause = 0);
 		pausefadedirect=1;
 	} else
 		pausefadedirect=-1;
 }
 
-static void dopausefade(void)
+static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int16_t i;
 	if (pausefadedirect>0)
@@ -94,7 +98,7 @@ static void dopausefade(void)
 			i=0;
 			pausefadedirect=0;
 			pausetime=dos_clock();
-			mpegPause(plPause=1);
+			mpegPause (cpifaceSession->InPause = 1);
 			mcpSetMasterPauseFadeParameters (64);
 			return;
 		}
@@ -122,8 +126,8 @@ static void mpegDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		inf.opt25,
 		inf.opt50,
 		inf.rate / 1000,
-		plPause,
-		plPause?((pausetime-starttime)/DOS_CLK_TCK):((dos_clock()-starttime)/DOS_CLK_TCK),
+		cpifaceSession->InPause,
+		cpifaceSession->InPause ? ((pausetime-starttime)/DOS_CLK_TCK) : ((dos_clock()-starttime)/DOS_CLK_TCK),
 		&mdbdata
 	);
 }
@@ -146,16 +150,17 @@ static int mpegProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
-			startpausefade();
+			startpausefade (cpifaceSession);
 			break;
 		case KEY_CTRL_P:
 			pausefadedirect=0;
-			if (plPause)
+			if (cpifaceSession->InPause)
+			{
 				starttime=starttime+dos_clock()-pausetime;
-			else
+			} else {
 				pausetime=dos_clock();
-			plPause=!plPause;
-			mpegPause(plPause);
+			}
+			mpegPause (cpifaceSession->InPause = !cpifaceSession->InPause);
 			break;
 		case KEY_CTRL_UP:
 			mpegSetPos(mpegGetPos()-mpegrate);
@@ -197,10 +202,12 @@ static int mpegProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 }
 
 
-static int mpegLooped(void)
+static int mpegLooped (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (pausefadedirect)
-		dopausefade();
+	{
+		dopausefade (cpifaceSession);
+	}
 	mpegSetLoop(fsLoopMods);
 	mpegIdle();
 	return !fsLoopMods&&mpegIsLooped();
@@ -236,7 +243,7 @@ static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 		return errFileRead;
 
 	starttime=dos_clock();
-	plPause=0;
+	cpifaceSession->InPause = 0;
 	pausefadedirect=0;
 
 	mpegGetInfo(&inf);

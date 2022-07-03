@@ -50,28 +50,32 @@ static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
 
-static void startpausefade(void)
+static void startpausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if (plPause)
+	if (cpifaceSession->InPause)
+	{
 		starttime=starttime+dos_clock()-pausetime;
+	}
 
 	if (pausefadedirect)
 	{
 		if (pausefadedirect<0)
-			plPause=1;
+		{
+			cpifaceSession->InPause = 1;
+		}
 		pausefadestart=2*dos_clock()-DOS_CLK_TCK-pausefadestart;
 	} else
 		pausefadestart=dos_clock();
 
-	if (plPause)
+	if (cpifaceSession->InPause)
 	{
-		timidityPause(plPause=0);
+		timidityPause (cpifaceSession->InPause = 0);
 		pausefadedirect=1;
 	} else
 		pausefadedirect=-1;
 }
 
-static void dopausefade(void)
+static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int16_t i;
 	if (pausefadedirect>0)
@@ -93,7 +97,7 @@ static void dopausefade(void)
 			i=0;
 			pausefadedirect=0;
 			pausetime=dos_clock();
-			timidityPause(plPause=1);
+			timidityPause (cpifaceSession->InPause = 1);
 			mcpSetMasterPauseFadeParameters (64);
 			return;
 		}
@@ -102,10 +106,12 @@ static void dopausefade(void)
 	mcpSetMasterPauseFadeParameters (i);
 }
 
-static int timidityLooped(void)
+static int timidityLooped (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (pausefadedirect)
-		dopausefade();
+	{
+		dopausefade (cpifaceSession);
+	}
 	timiditySetLoop(fsLoopMods);
 	timidityIdle();
 	return !fsLoopMods&&timidityIsLooped();
@@ -130,8 +136,8 @@ static void timidityDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		"",//gi.opt25,
 		"",//gi.opt50,
 		-1,
-		plPause,
-		plPause?((pausetime-starttime)/DOS_CLK_TCK):((dos_clock()-starttime)/DOS_CLK_TCK),
+		cpifaceSession->InPause,
+		cpifaceSession->InPause ? ((pausetime-starttime)/DOS_CLK_TCK) : ((dos_clock()-starttime)/DOS_CLK_TCK),
 		&mdbdata
 	);
 }
@@ -154,16 +160,18 @@ static int timidityProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
-			startpausefade();
+			startpausefade (cpifaceSession);
 			break;
 		case KEY_CTRL_P:
 			pausefadedirect=0;
-			if (plPause)
+			if (cpifaceSession->InPause)
+			{
 				starttime=starttime+dos_clock()-pausetime;
-			else
+			} else {
 				pausetime=dos_clock();
-			plPause=!plPause;
-			timidityPause(plPause);
+			}
+			cpifaceSession->InPause = !cpifaceSession->InPause;
+			timidityPause (cpifaceSession->InPause);
 			break;
 		case KEY_CTRL_UP:
 			timiditySetRelPos(-1); /* seconds */
@@ -249,7 +257,7 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 	}
 
 	starttime=dos_clock();
-	plPause=0;
+	cpifaceSession->InPause = 0;
 	pausefadedirect=0;
 
 	cpiTimiditySetupInit (cpifaceSession);

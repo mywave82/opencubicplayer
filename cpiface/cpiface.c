@@ -82,8 +82,7 @@ static struct cpifaceplayerstruct *curplayer;
 void (*plSetMute)(int i, int m);
 void (*plDrawGStrings)(struct cpifaceSessionAPI_t *cpifaceSession);
 int (*plProcessKey)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key);
-int (*plIsEnd)(void);
-void (*plIdle)(void);
+int (*plIsEnd)(struct cpifaceSessionAPI_t *cpifaceSession);
 
 char plMuteCh[MAXLCHAN];
 
@@ -91,8 +90,6 @@ int (*plGetLChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t r
 int (*plGetPChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
 
 static signed char soloch=-1;
-
-char plPause;
 
 char plCompoMode;
 char plPanType;
@@ -2133,6 +2130,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 
 	cpifaceSessionAPI.Public.GetRealMasterVolume = 0;
 	cpifaceSessionAPI.Public.GetMasterSample = 0;
+	cpifaceSessionAPI.Public.InPause = 0;
 	cpifaceSessionAPI.Public.LogicalChannelCount = 0;
 	cpifaceSessionAPI.Public.PhysicalChannelCount = 0;
 
@@ -2141,11 +2139,9 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpiModes=0;
 
 	plEscTick=0;
-	plPause=0;
 
 	plSetMute=0;
 	plIsEnd=0;
-	plIdle=0;
 	plGetLChanSample=0;
 	plGetPChanSample=0;
 
@@ -2358,16 +2354,11 @@ static interfaceReturnEnum plmpDrawScreen(void)
 
 	if (plIsEnd)
 	{
-		if (plIsEnd())
+		if (plIsEnd(&cpifaceSessionAPI.Public))
 		{
 			plInKeyboardHelp = 0;
 			return interfaceReturnNextAuto;
 		}
-	}
-
-	if (plIdle)
-	{
-		plIdle();
 	}
 
 	for (mod=cpiModes; mod; mod=mod->next)

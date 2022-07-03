@@ -58,26 +58,28 @@ static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
 
-static void startpausefade(void)
+static void startpausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (pausefadedirect)
 	{
 		if (pausefadedirect<0)
-			plPause=1;
+		{
+			cpifaceSession->InPause = 1;
+		}
 		pausefadestart=2*dos_clock()-DOS_CLK_TCK-pausefadestart;
 	} else
 		pausefadestart=dos_clock();
 
-	if (plPause)
+	if (cpifaceSession->InPause)
 	{
-		plPause=0;
+		cpifaceSession->InPause = 0;
 		cdUnpause ();
 		pausefadedirect=1;
 	} else
 		pausefadedirect=-1;
 }
 
-static void dopausefade(void)
+static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int16_t i;
 	if (pausefadedirect>0)
@@ -98,7 +100,7 @@ static void dopausefade(void)
 		{
 			i=0;
 			pausefadedirect=0;
-			plPause=1;
+			cpifaceSession->InPause = 1;
 			cdPause();
 			mcpSetMasterPauseFadeParameters (64);
 			return;
@@ -312,12 +314,12 @@ static int cdaProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
-			startpausefade();
+			startpausefade (cpifaceSession);
 			break;
 		case KEY_CTRL_P:
 			pausefadedirect=0;
-			plPause=!plPause;
-			if (plPause)
+			cpifaceSession->InPause = !cpifaceSession->InPause;
+			if (cpifaceSession->InPause)
 				cdPause();
 			else
 				cdUnpause();
@@ -441,12 +443,14 @@ static int cdaProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 	return 1;
 }
 
-static int cdaLooped(void)
+static int cdaLooped (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cdStat stat;
 
 	if (pausefadedirect)
-		dopausefade();
+	{
+		dopausefade (cpifaceSession);
+	}
 
 	cdSetLoop(fsLoopMods);
 
@@ -542,7 +546,7 @@ static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	newpos=start;
 	setnewpos=0;
-	plPause=0;
+	cpifaceSession->InPause = 0;
 
 	plIsEnd=cdaLooped;
 	plProcessKey=cdaProcessKey;

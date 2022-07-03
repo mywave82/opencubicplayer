@@ -441,7 +441,7 @@ static void drawchannel128(uint16_t *buf, int i)
 	}
 }
 
-static void drawchannel(uint16_t *buf, int len, int i)
+static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i)
 {
 	switch (len)
 	{

@@ -69,10 +69,10 @@ static void logvolbar(int *l, int *r)
 
 static void drawpeakpower (struct cpifaceSessionAPI_t *cpifaceSession, int y, int x)
 {
-	unsigned short strbuf[40];
+	uint16_t strbuf[40];
 	int l,r;
 
-	writestring(strbuf, 0, plPause?COLMUTE:COLTEXT, " ["
+	writestring(strbuf, 0, cpifaceSession->InPause?COLMUTE:COLTEXT, " ["
 	                                                "\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa"
 	                                                " -- "
 	                                                "\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa"
@@ -81,7 +81,7 @@ static void drawpeakpower (struct cpifaceSessionAPI_t *cpifaceSession, int y, in
 	logvolbar(&l, &r);
 	l=(l+2)>>2;
 	r=(r+2)>>2;
-	if (plPause)
+	if (cpifaceSession->InPause)
 	{
 		writestring(strbuf, 18-l, COLMUTE, "----------------", l);
 		writestring(strbuf, 22, COLMUTE, "----------------", r);
@@ -96,10 +96,10 @@ static void drawpeakpower (struct cpifaceSessionAPI_t *cpifaceSession, int y, in
 
 static void drawbigpeakpower (struct cpifaceSessionAPI_t *cpifaceSession, int y, int x)
 {
-	unsigned short strbuf[80];
+	uint16_t strbuf[80];
 	int l,r;
 
-	writestring(strbuf, 0, plPause?COLMUTE:COLTEXT,
+	writestring(strbuf, 0, cpifaceSession->InPause?COLMUTE:COLTEXT,
 			"   ["
 			"\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa"
 			" -=\xf0\xf0=- "
@@ -109,7 +109,7 @@ static void drawbigpeakpower (struct cpifaceSessionAPI_t *cpifaceSession, int y,
 	logvolbar(&l, &r);
 	l=(l+1)>>1;
 	r=(r+1)>>1;
-	if (plPause)
+	if (cpifaceSession->InPause)
 	{
 		writestring(strbuf, 36-l, COLMUTE, "--------------------------------", l);
 		writestring(strbuf, 44, COLMUTE, "--------------------------------", r);
@@ -136,7 +136,7 @@ static void MVolDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		drawpeakpower (cpifaceSession, plMVolFirstLine, plMVolFirstCol + 8 /* 88 */);
 	} else {
 		int l=(plMVolWidth>=132)?(plMVolWidth/2)-40 :20;
-		displaystr(plMVolFirstLine, plMVolFirstCol /* 0 */, plPause?COLMUTE:(focus?COLTITLEH:COLTEXT), "  peak power level:", l);
+		displaystr(plMVolFirstLine, plMVolFirstCol /* 0 */, cpifaceSession->InPause?COLMUTE:(focus?COLTITLEH:COLTEXT), "  peak power level:", l);
 		displayvoid (plMVolFirstLine, plMVolWidth-l + plMVolFirstCol /* 0 */ , l);
 		if (plMVolHeight==2)
 		{

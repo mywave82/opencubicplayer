@@ -33,22 +33,28 @@ struct cpifaceplayerstruct
 
 struct cpifaceSessionAPI_t
 {
+	/* configured by devp/devw */
 	void (*GetRealMasterVolume)(int *l, int *r); /* filled in by devp/devw driver */
 	void (*GetMasterSample)(int16_t *, unsigned int len, uint32_t rate, int mode); /* filled in by devp/devw driver */
+
+	/* configured by playback plugin during intialization of the given playback file */
 	uint_fast16_t LogicalChannelCount;  /* number of logical channels. Used by "Channel" viewer and selector, note-dot viewer, can be used by scope viewers, and is the default value used by track viewer */
 	uint_fast16_t PhysicalChannelCount; /* number of physical audio channels. Sometimes a format uses shadow channels for effects or smooth transitions. Can be used by scope viewers. */
+
+	/* Normally controlled by playback plugin */
+	uint8_t InPause; /* used by cpiface UI elements to know if the playback is paused or not */
+
+	/* Normally controlled by cpiface */
 	uint8_t SelectedChannel; /* Used by most viewers*/
 	uint8_t SelectedChannelChanged; /* Used to cache redraws of channels */
 };
 
 #warning move all these into cpifaceAPISource_t
-extern char plPause;
 extern char plMuteCh[];
 extern char plPanType; /* If this is one, it causes the visual channel-layout to swap right and left channel for every second channel group - currenly only used by some S3M files */
 extern int (*plProcessKey) (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key);
 extern void (*plDrawGStrings)(struct cpifaceSessionAPI_t *cpifaceSession);
-extern int (*plIsEnd)(void);
-extern void (*plIdle)(void);
+extern int (*plIsEnd)(struct cpifaceSessionAPI_t *cpifaceSession);
 extern void (*plSetMute)(int i, int m);
 extern int (*plGetLChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
 extern int (*plGetPChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
@@ -153,7 +159,7 @@ struct insdisplaystruct
 
 extern void plUseInstruments(struct cpifaceSessionAPI_t *cpifaceSession, struct insdisplaystruct *x);
 
-extern void plUseChannels(struct cpifaceSessionAPI_t *cpifaceSession, void (*Display)(unsigned short *buf, int len, int i));
+extern void plUseChannels(struct cpifaceSessionAPI_t *cpifaceSession, void (*Display)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i));
 
 struct notedotsdata
 {

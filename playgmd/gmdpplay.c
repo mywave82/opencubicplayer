@@ -128,28 +128,32 @@ static time_t pausefadestart;
 static uint8_t pausefaderelspeed;
 static int8_t pausefadedirect;
 
-static void startpausefade(void)
+static void startpausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if (plPause)
+	if (cpifaceSession->InPause)
+	{
 		starttime=starttime+dos_clock()-pausetime;
+	}
 
 	if (pausefadedirect)
 	{
 		if (pausefadedirect<0)
-			plPause=1;
+		{
+			cpifaceSession->InPause = 1;
+		}
 		pausefadestart=2*dos_clock()-DOS_CLK_TCK-pausefadestart;
 	} else
 		pausefadestart=dos_clock();
 
-	if (plPause)
+	if (cpifaceSession->InPause)
 	{
-		mcpSet(-1, mcpMasterPause, plPause=0);
+		mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = 0);
 		pausefadedirect=1;
 	} else
 		pausefadedirect=-1;
 }
 
-static void dopausefade(void)
+static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int16_t i;
 	if (pausefadedirect>0)
@@ -171,7 +175,7 @@ static void dopausefade(void)
 			i=0;
 			pausefadedirect=0;
 			pausetime=dos_clock();
-			mcpSet(-1, mcpMasterPause, plPause=1);
+			mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = 1);
 			mcpSetMasterPauseFadeParameters (64);
 			return;
 		}
@@ -207,8 +211,8 @@ static void gmdDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		0,          /* chan Y */
 		mcpset.amp,
 		(set.filter==1)?"AOI":(set.filter==2)?"FOI":"off",
-		plPause,
-		plPause?((pausetime-starttime)/DOS_CLK_TCK):((dos_clock()-starttime)/DOS_CLK_TCK),
+		cpifaceSession->InPause,
+		cpifaceSession->InPause ? ((pausetime-starttime)/DOS_CLK_TCK) : ((dos_clock()-starttime)/DOS_CLK_TCK),
 		&mdbdata
 	);
 }
@@ -234,23 +238,27 @@ static int gmdProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
-			startpausefade();
+			startpausefade (cpifaceSession);
 			break;
 		case KEY_CTRL_P:
 			pausefadedirect=0;
-			if (plPause)
+			if (cpifaceSession->InPause)
+			{
 				starttime=starttime+dos_clock()-pausetime;
-			else
+			} else {
 				pausetime=dos_clock();
-			mcpSet(-1, mcpMasterPause, plPause^=1);
+			}
+			mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = !cpifaceSession->InPause);
 			break;
 		case KEY_CTRL_HOME:
 			gmdInstClear (cpifaceSession);
 			mpSetPosition(0, 0);
-			if (plPause)
+			if (cpifaceSession->InPause)
+			{
 				starttime=pausetime;
-			else
+			} else {
 				starttime=dos_clock();
+			}
 			break;
 		case '<':
 		case KEY_CTRL_LEFT:
@@ -287,17 +295,14 @@ static void gmdCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 	mpFree(&mod);
 }
 
-static void gmdIdle(void)
+static int gmdLooped (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	mpSetLoop(fsLoopMods);
 	if (mcpIdle)
 		mcpIdle();
 	if (pausefadedirect)
-		dopausefade();
-}
+		dopausefade (cpifaceSession);
 
-static int gmdLooped(void)
-{
 	return (!fsLoopMods&&mpLooped());
 }
 
@@ -359,7 +364,6 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	plPanType=!!(mod.options&MOD_MODPAN);
 
 	plIsEnd=gmdLooped;
-	plIdle=gmdIdle;
 	plProcessKey=gmdProcessKey;
 	plDrawGStrings=gmdDrawGStrings;
 	plSetMute=mpMute;
@@ -396,7 +400,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	}
 
 	starttime=dos_clock();
-	plPause=0;
+	cpifaceSession->InPause = 0;
 	mcpSet(-1, mcpMasterPause, 0);
 	pausefadedirect=0;
 

@@ -55,7 +55,7 @@ static void logvolbar(int *l, int *r)
 		*r=64;
 }
 
-static void drawvolbar(unsigned short *buf, int i, unsigned char st)
+static void drawvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i, unsigned char st)
 {
 	int l,r;
 	mpGetRealVolume(i, &l, &r);
@@ -63,8 +63,10 @@ static void drawvolbar(unsigned short *buf, int i, unsigned char st)
 
 	l=(l+4)>>3;
 	r=(r+4)>>3;
-	if (plPause)
+	if (cpifaceSession->InPause)
+	{
 		l=r=0;
+	}
 	if (st)
 	{
 		writestring(buf, 8-l, 0x08, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", l);
@@ -77,15 +79,17 @@ static void drawvolbar(unsigned short *buf, int i, unsigned char st)
 	}
 }
 
-static void drawlongvolbar(unsigned short *buf, int i, unsigned char st)
+static void drawlongvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i, unsigned char st)
 {
 	int l,r;
 	mpGetRealVolume(i, &l, &r);
 	logvolbar(&l, &r);
 	l=(l+2)>>2;
 	r=(r+2)>>2;
-	if (plPause)
+	if (cpifaceSession->InPause)
+	{
 		l=r=0;
+	}
 	if (st)
 	{
 		writestring(buf, 16-l, 0x08, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", l);
@@ -192,7 +196,7 @@ static char *getfxstr15(unsigned char fx)
 }
 
 
-static void drawchannel36(unsigned short *buf, int i)
+static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct chaninfo ci;
 	unsigned char st=mpGetMute(i);
@@ -214,11 +218,11 @@ static void drawchannel36(unsigned short *buf, int i)
 		fxstr=getfxstr6(ci.fx);
 		if (fxstr)
 			writestring(buf, 11, tcol, fxstr, 6);
-		drawvolbar(buf+18, i, st);
+		drawvolbar (cpifaceSession, buf+18, i, st);
 	}
 }
 
-static void drawchannel62(unsigned short *buf, int i)
+static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct chaninfo ci;
 	unsigned char st=mpGetMute(i);
@@ -251,11 +255,11 @@ static void drawchannel62(unsigned short *buf, int i)
 		fxstr=getfxstr6(ci.fx);
 		if (fxstr)
 			writestring(buf, 36, tcol, fxstr, 6);
-		drawvolbar(buf+44, i, st);
+		drawvolbar (cpifaceSession, buf+44, i, st);
 	}
 }
 
-static void drawchannel76(unsigned short *buf, int i)
+static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct chaninfo ci;
 	unsigned char st=mpGetMute(i);
@@ -290,11 +294,11 @@ static void drawchannel76(unsigned short *buf, int i)
 		if (fxstr)
 			writestring(buf, 42, tcol, fxstr, 15);
 
-		drawvolbar(buf+59, i, st);
+		drawvolbar (cpifaceSession, buf+59, i, st);
 	}
 }
 
-static void drawchannel128(unsigned short *buf, int i)
+static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {
 	struct chaninfo ci;
 	unsigned char st=mpGetMute(i);
@@ -339,11 +343,11 @@ static void drawchannel128(unsigned short *buf, int i)
 		if (fxstr)
 			writestring(buf, 62, tcol, fxstr, 15);
 
-		drawlongvolbar(buf+80, i, st);
+		drawlongvolbar (cpifaceSession, buf+80, i, st);
 	}
 }
 
-static void drawchannel44(unsigned short *buf, int i)
+static void drawchannel44 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int i)
 {
 	struct chaninfo ci;
 	unsigned char st=mpGetMute(i);
@@ -369,28 +373,28 @@ static void drawchannel44(unsigned short *buf, int i)
 		fxstr=getfxstr6(ci.fx);
 		if (fxstr)
 			writestring(buf, 17, tcol, fxstr, 6);
-		drawvolbar(buf+26, i, st);
+		drawvolbar (cpifaceSession, buf+26, i, st);
 	}
 }
 
-static void drawchannel(unsigned short *buf, int len, int i)
+static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i)
 {
 	switch (len)
 	{
 		case 36:
-			drawchannel36(buf, i);
+			drawchannel36 (cpifaceSession, buf, i);
 			break;
 		case 44:
-			drawchannel44(buf, i);
+			drawchannel44 (cpifaceSession, buf, i);
 			break;
 		case 62:
-			drawchannel62(buf, i);
+			drawchannel62 (cpifaceSession, buf, i);
 			break;
 		case 76:
-			drawchannel76(buf, i);
+			drawchannel76 (cpifaceSession, buf, i);
 			break;
 		case 128:
-			drawchannel128(buf, i);
+			drawchannel128 (cpifaceSession, buf, i);
 			break;
 	}
 }

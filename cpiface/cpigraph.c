@@ -344,7 +344,7 @@ static void plDrawStripes (struct cpifaceSessionAPI_t *cpifaceSession)
 	unsigned char *sp;
 	static unsigned char linebuf[1088];
 
-	if (plPause)
+	if (cpifaceSession->InPause)
 		return;
 	if (plStripeBig)
 	{

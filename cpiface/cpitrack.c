@@ -306,16 +306,16 @@ static void preparepatgen (struct cpifaceSessionAPI_t *cpifaceSession, int pat, 
 		case 0:
 			break;
 		case 1:
-			writestring(pattitle2, 4, plPause?COLTITLE2M:COLTITLE2, "gbl", 3);
+			writestring(pattitle2, 4, cpifaceSession->InPause?COLTITLE2M:COLTITLE2, "gbl", 3);
 			break;
 		case 2:
-			writestring(pattitle2, 5, plPause?COLTITLE2M:COLTITLE2, "global", 6);
+			writestring(pattitle2, 5, cpifaceSession->InPause?COLTITLE2M:COLTITLE2, "global", 6);
 			break;
 		case 3:
-			writestring(pattitle2, 5, plPause?COLTITLE2M:COLTITLE2, "global cmd", 10);
+			writestring(pattitle2, 5, cpifaceSession->InPause?COLTITLE2M:COLTITLE2, "global cmd", 10);
 			break;
 		default:
-			writestring(pattitle2, pt->gcmd*2-4, plPause?COLTITLE2M:COLTITLE2, "global commands", 15);
+			writestring(pattitle2, pt->gcmd*2-4, cpifaceSession->InPause?COLTITLE2M:COLTITLE2, "global commands", 15);
 			break;
 	}
 
@@ -325,7 +325,7 @@ static void preparepatgen (struct cpifaceSessionAPI_t *cpifaceSession, int pat, 
 		writestring(patmask, patwidth-3, COLLNUM, "00", 2);
 	writestring(patmask, 3, COLBACK, "\xba", 1);
 	writestring(patmask, 3+pt->gcmd*4, COLBACK, "\xba", 1);
-	if (!plPause)
+	if (!cpifaceSession->InPause)
 		for (i=0; i<pt->gcmd; i++)
 			writestring(patmask, 4+4*i, COLBACK, "\xfa\xfa\xfa", 3);
 
@@ -399,7 +399,7 @@ static void preparepatgen (struct cpifaceSessionAPI_t *cpifaceSession, int pat, 
 				{
 					uint16_t *bp=plPatBuf[currow+firstrow-firstprow]+4;
 					getgcmd(bp, pt->gcmd);
-					if (plPause)
+					if (cpifaceSession->InPause)
 						setattrgrey(bp, pt->gcmd*4);
 				}
 			}

@@ -33,7 +33,7 @@
 #include "cpiface.h"
 #include "cpiface-private.h"
 
-static void (*ChanDisplay)(uint16_t *buf, int len, int i);
+static void (*ChanDisplay)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i);
 static int plChanFirstLine;
 static int plChanHeight;
 static int plChanWidth;
@@ -80,12 +80,12 @@ static void ChanDraw (struct cpifaceSessionAPI_t *cpifaceSession, int ignore)
 						writestring(buf, x*40, plMuteCh[i]?0x08:0x07, " ##:", 4);
 						writestring(buf, x*40, 0x0F, (i==cpifaceSession->SelectedChannel) ? ">" : sign, 1);
 						_writenum(buf, x*40+1, plMuteCh[i]?0x08:0x07, i+1, 10, 2);
-						ChanDisplay(buf+x*40+4, 36, i);
+						ChanDisplay (cpifaceSession, buf+x*40+4, 36, i);
 					} else {
 						writestring(buf, x*66, plMuteCh[i]?0x08:0x07, " ##:", 4);
 						writestring(buf, x*66, 0x0F, (i==cpifaceSession->SelectedChannel) ? ">" : sign, 1);
 						_writenum(buf, x*66+1, plMuteCh[i]?0x08:0x07, i+1, 10, 2);
-						ChanDisplay(buf+x*66+4, 62, i);
+						ChanDisplay (cpifaceSession, buf+x*66+4, 62, i);
 					}
 				} else
 					if (plChanWidth<132)
@@ -104,12 +104,12 @@ static void ChanDraw (struct cpifaceSessionAPI_t *cpifaceSession, int ignore)
 				writestring(buf, 0, plMuteCh[i]?0x08:0x07, " ##:", 4);
 				writestring(buf, 0, 0x0F, sign, 1);
 				_writenum(buf, 1, plMuteCh[i]?0x08:0x07, i+1, 10, 2);
-				ChanDisplay(buf+4, (plChanWidth<128)?76:128, y+first);
+				ChanDisplay (cpifaceSession, buf+4, (plChanWidth<128)?76:128, y+first);
 			} else {
 				writestring(buf, 0, plMuteCh[i]?0x08:0x07, "     ##:", 8);
 				writestring(buf, 4, 0x0F, sign, 1);
 				_writenum(buf, 5, plMuteCh[i]?0x08:0x07, i+1, 10, 2);
-				ChanDisplay(buf+8, 44, y+first);
+				ChanDisplay (cpifaceSession, buf+8, 44, y+first);
 			}
 		}
 		displaystrattr(plChanFirstLine+y, plChanStartCol, buf, plChanWidth);
@@ -222,7 +222,7 @@ static void __attribute__((destructor))done(void)
 	cpiTextUnregisterDefMode(&cpiTModeChan);
 }
 
-void plUseChannels (struct cpifaceSessionAPI_t *cpifaceSession, void (*Display)(uint16_t *buf, int len, int i))
+void plUseChannels (struct cpifaceSessionAPI_t *cpifaceSession, void (*Display)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i))
 {
 	ChanDisplay=Display;
 	if (!cpifaceSession->LogicalChannelCount)
