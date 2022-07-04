@@ -139,7 +139,6 @@ static int itpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			cpiKeyHelp(KEY_CTRL_UP, "Jump back (small)");
 			cpiKeyHelp(KEY_CTRL_DOWN, "Jump forward (small)");
 			cpiKeyHelp(KEY_CTRL_HOME, "Jump to start of track");
-			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade (cpifaceSession);
@@ -189,7 +188,7 @@ static int itpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			setpos(&itplayer, pat, row+8);
 			break;
 		default:
-			return mcpSetProcessKey (key);
+			return 0;
 	}
 	return 1;
 }
@@ -214,8 +213,6 @@ static void itpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 	int pos=getrealpos(&itplayer)>>8;
 	int gvol, bpm, tmp, gs;
 	int i, nch = 0;
-
-	mcpDrawGStrings (cpifaceSession);
 
 	getglobinfo(&itplayer, &tmp, &bpm, &gvol, &gs);
 
@@ -620,8 +617,8 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	insts=mod.instruments;
 	samps=mod.samples;
 	plIsEnd=itpLooped;
-	plProcessKey=itpProcessKey;
-	plDrawGStrings=itpDrawGStrings;
+	cpifaceSession->ProcessKey = itpProcessKey;
+	cpifaceSession->DrawGStrings = itpDrawGStrings;
 	cpifaceSession->SetMuteChannel = itpMute;
 	plGetLChanSample=itpGetLChanSample;
 	cpifaceSession->LogicalChannelCount = mod.nchan;

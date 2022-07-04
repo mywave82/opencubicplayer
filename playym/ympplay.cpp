@@ -191,8 +191,6 @@ static void ymDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	ymMusicInfo_t globinfo;
 
-	mcpDrawGStrings (cpifaceSession);
-
 	ymMusicGetInfo(pMusic, &globinfo);
 
 	mcpDrawGStringsFixedLengthStream
@@ -445,7 +443,6 @@ static int ymProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			cpiKeyHelp(KEY_CTRL_RIGHT, "Forward 10 second");
 			cpiKeyHelp('>', "Forward 10 second");
 			cpiKeyHelp(KEY_CTRL_HOME, "Rewind to start");
-			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade (cpifaceSession);
@@ -478,7 +475,7 @@ static int ymProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			ymSetPos(0);
 			break;
 		default:
-			return mcpSetProcessKey (key);
+			return 0;
 	}
 	return 1;
 }
@@ -511,8 +508,8 @@ static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	plIsEnd=ymLooped;
-	plProcessKey=ymProcessKey;
-	plDrawGStrings=ymDrawGStrings;
+	cpifaceSession->ProcessKey = ymProcessKey;
+	cpifaceSession->DrawGStrings = ymDrawGStrings;
 
 	if (!ymOpenPlayer(file, cpifaceSession))
 		return -1;

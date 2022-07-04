@@ -134,8 +134,6 @@ static void cdaDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	struct cdStat stat;
 
-	mcpDrawGStrings (cpifaceSession);
-
 	cdGetStatus (&stat);
 
 	for (trackno=1; trackno<=TOC.lasttrack; trackno++)
@@ -311,7 +309,6 @@ static int cdaProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 				cpiKeyHelp('>', "Jump track forward");
 				cpiKeyHelp(KEY_CTRL_RIGHT, "Jump track forward");
 			}
-			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade (cpifaceSession);
@@ -438,7 +435,7 @@ static int cdaProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			break;
 
 		default:
-			return mcpSetProcessKey (key);
+			return 0;
 	}
 	return 1;
 }
@@ -549,8 +546,8 @@ static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->InPause = 0;
 
 	plIsEnd=cdaLooped;
-	plProcessKey=cdaProcessKey;
-	plDrawGStrings=cdaDrawGStrings;
+	cpifaceSession->ProcessKey = cdaProcessKey;
+	cpifaceSession->DrawGStrings = cdaDrawGStrings;
 
 	if (cdOpen(start, stop - start, file, cpifaceSession))
 		return -1;

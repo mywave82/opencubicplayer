@@ -142,7 +142,6 @@ static int xmpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			cpiKeyHelp(KEY_CTRL_UP, "Jump back (small)");
 			cpiKeyHelp(KEY_CTRL_DOWN, "Jump forward (small)");
 			cpiKeyHelp(KEY_CTRL_HOME, "Jump to start of track");
-			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade (cpifaceSession);
@@ -192,8 +191,7 @@ static int xmpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			xmpSetPos(pat, row+8);
 			break;
 		default:
-			return mcpSetProcessKey (key);
-				return 1;
+			return 0;
 	}
 	return 1;
 }
@@ -216,8 +214,6 @@ static void xmpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 	int pos=xmpGetRealPos();
 	int gvol,bpm,tmp;
 	struct xmpglobinfo gi;
-
-	mcpDrawGStrings (cpifaceSession);
 
 	xmpGetGlobInfo(&tmp, &bpm, &gvol);
 	xmpGetGlobInfo2(&gi);
@@ -627,8 +623,8 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	samps=mod.samples;
 
 	plIsEnd=xmpLooped;
-	plProcessKey=xmpProcessKey;
-	plDrawGStrings=xmpDrawGStrings;
+	cpifaceSession->ProcessKey = xmpProcessKey;
+	cpifaceSession->DrawGStrings = xmpDrawGStrings;
 	cpifaceSession->SetMuteChannel = xmpMute;
 	plGetLChanSample=xmpGetLChanSample;
 

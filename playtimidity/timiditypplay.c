@@ -121,8 +121,6 @@ static void timidityDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct mglobinfo gi;
 
-	mcpDrawGStrings (cpifaceSession);
-
 	timidityGetGlobInfo(&gi);
 
 	mcpDrawGStringsFixedLengthStream
@@ -157,7 +155,6 @@ static int timidityProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 			cpiKeyHelp(KEY_CTRL_UP, "Jump back (small)");
 			cpiKeyHelp(KEY_CTRL_DOWN, "Jump forward (small)");
 			cpiKeyHelp(KEY_CTRL_HOME, "Jump to start of track");
-			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade (cpifaceSession);
@@ -191,7 +188,7 @@ static int timidityProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 			timidityRestart ();
 			break;
 		default:
-			return mcpSetProcessKey (key);
+			return 0;
 	}
 	return 1;
 
@@ -212,8 +209,8 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	plIsEnd=timidityLooped;
-	plProcessKey=timidityProcessKey;
-	plDrawGStrings=timidityDrawGStrings;
+	cpifaceSession->ProcessKey = timidityProcessKey;
+	cpifaceSession->DrawGStrings = timidityDrawGStrings;
 	plUseDots(timidityGetDots);
 
 	cpifaceSession->LogicalChannelCount = 16;

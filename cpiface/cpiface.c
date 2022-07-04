@@ -59,6 +59,7 @@
 #include "cpiface.h"
 #include "cpiface-private.h"
 #include "cpipic.h"
+#include "dev/mcp.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
@@ -77,8 +78,6 @@ extern struct mdbreadinforegstruct cpiReadInfoReg;
 extern struct cpimoderegstruct cpiModeText;
 
 static struct cpifaceplayerstruct *curplayer;
-void (*plDrawGStrings)(struct cpifaceSessionAPI_t *cpifaceSession);
-int (*plProcessKey)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key);
 int (*plIsEnd)(struct cpifaceSessionAPI_t *cpifaceSession);
 
 int (*plGetLChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
@@ -1827,10 +1826,12 @@ void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	make_title (curplayer ? curplayer->playername : "", plEscTick);
 
-	if (plDrawGStrings)
-		plDrawGStrings (cpifaceSession);
-	else {
-		displayvoid (1, 0, plScrWidth);
+	cpiDrawG1String (cpifaceSession, &mcpset);
+
+	if (cpifaceSession->DrawGStrings)
+	{
+		cpifaceSession->DrawGStrings (cpifaceSession);
+	} else {
 		displayvoid (2, 0, plScrWidth);
 		displayvoid (3, 0, plScrWidth);
 	}
@@ -2128,6 +2129,8 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.InPause = 0;
 	cpifaceSessionAPI.Public.LogicalChannelCount = 0;
 	cpifaceSessionAPI.Public.PhysicalChannelCount = 0;
+	cpifaceSessionAPI.Public.DrawGStrings = 0;
+
 
 	cpifaceSessionAPI.Public.SetMuteChannel = 0;
 	bzero (cpifaceSessionAPI.Public.MuteChannel, sizeof(cpifaceSessionAPI.Public.MuteChannel));
@@ -2340,7 +2343,6 @@ void cpiForwardIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 
 static interfaceReturnEnum plmpDrawScreen(void)
 {
-	int needdraw = 1;
 	struct cpimoderegstruct *mod;
 	static int plInKeyboardHelp = 0;
 
@@ -2399,7 +2401,6 @@ static interfaceReturnEnum plmpDrawScreen(void)
 #ifdef KEYBOARD_DEBUG
 			fprintf (stderr, "plmpDrawScreen: curmode[%s]->AProcessKey() swallowed the key\n", curmode->handle);
 #endif
-			needdraw = 1;
 			continue;
 		}
 
@@ -2490,18 +2491,31 @@ static interfaceReturnEnum plmpDrawScreen(void)
 						break;
 					}
 				}
-				if (plProcessKey)
+				if (cpifaceSessionAPI.Public.ProcessKey)
 				{
 #ifdef KEYBOARD_DEBUG
 					fprintf (stderr, "plmpDrawScreen: plProcessKey()\n");
 #endif
-					plProcessKey (&cpifaceSessionAPI.Public, key);
+					if (cpifaceSessionAPI.Public.ProcessKey (&cpifaceSessionAPI.Public, key))
+					{
+#ifdef KEYBOARD_DEBUG
+						fprintf (stderr, "plmpDrawScreen:   key was swallowed\n");
+#endif
+						break;
+					}
 				}
-				if (needdraw)
+
+#ifdef KEYBOARD_DEBUG
+				fprintf (stderr, "plmpDrawScreen: mcpSetProcessKey()\n");
+#endif
+				if (mcpSetProcessKey (key))
 				{
-					needdraw = 0;
-					curmode->Draw (&cpifaceSessionAPI.Public);
+#ifdef KEYBOARD_DEBUG
+					fprintf (stderr, "plmpDrawScreen:   key was swallowed\n");
+#endif
+					break;
 				}
+
 				if (key == KEY_ALT_K)
 				{
 					plInKeyboardHelp = 1;
@@ -2509,15 +2523,10 @@ static interfaceReturnEnum plmpDrawScreen(void)
 				}
 				break;
 		}
-
-		needdraw=1;
 	}
 
 superbreak:
-	if (needdraw)
-	{
-		curmode->Draw(&cpifaceSessionAPI.Public);
-	}
+	curmode->Draw(&cpifaceSessionAPI.Public);
 	framelock();
 
 	cpifaceSessionAPI.Public.SelectedChannelChanged = 0;

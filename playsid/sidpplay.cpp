@@ -123,8 +123,6 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static void sidDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	mcpDrawGStrings (cpifaceSession);
-
 	mcpDrawGStringsSongXofY
 	(
 		cpifaceSession,
@@ -402,7 +400,6 @@ static int sidProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			cpiKeyHelp('>', "Next track");
 			cpiKeyHelp(KEY_CTRL_RIGHT, "Next track");
 			cpiKeyHelp(KEY_CTRL_HOME, "Next to start of song");
-			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade (cpifaceSession);
@@ -441,7 +438,7 @@ static int sidProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			starttime=dos_clock();
 			break;
 		default:
-			return mcpSetProcessKey (key);
+			return 0;
 	}
 	return 1;
 }
@@ -478,8 +475,8 @@ static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->SetMuteChannel = sidMute;
 
 	plIsEnd=sidLooped;
-	plProcessKey=sidProcessKey;
-	plDrawGStrings=sidDrawGStrings;
+	cpifaceSession->ProcessKey = sidProcessKey;
+	cpifaceSession->DrawGStrings = sidDrawGStrings;
 
 	plGetPChanSample=sidGetPChanSample;
 	plGetLChanSample=sidGetLChanSample;

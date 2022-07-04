@@ -117,8 +117,6 @@ static void hvlDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 	int tempo;
 	int speedmult;
 
-	mcpDrawGStrings (cpifaceSession);
-
 	hvlGetStats (&row, &rows, &order, &orders, &subsong, &subsongs, &tempo, &speedmult);
 
 	mcpDrawGStringsTracked
@@ -159,7 +157,6 @@ static int hvlProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			cpiKeyHelp('<', "Previous sub-song");
 			cpiKeyHelp('>', "Next sub-song");
 			cpiKeyHelp(KEY_CTRL_HOME, "Restart song");
-			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade (cpifaceSession);
@@ -185,7 +182,7 @@ static int hvlProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			hvlNextSubSong();
 			break;
 		default:
-			return mcpSetProcessKey (key);
+			return 0;
 	}
 	return 1;
 }
@@ -258,8 +255,8 @@ static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	}
 
 	plIsEnd=hvlIsLooped;
-	plProcessKey=hvlProcessKey;
-	plDrawGStrings=hvlDrawGStrings;
+	cpifaceSession->ProcessKey = hvlProcessKey;
+	cpifaceSession->DrawGStrings = hvlDrawGStrings;
 
 	starttime=dos_clock();
 	cpifaceSession->InPause = 0;

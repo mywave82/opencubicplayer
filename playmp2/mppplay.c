@@ -111,8 +111,6 @@ static void mpegDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct mpeginfo inf;
 
-	cpiDrawG1String (cpifaceSession, &mcpset);
-
 	mpegGetInfo (&inf);
 
 	mcpDrawGStringsFixedLengthStream
@@ -147,7 +145,6 @@ static int mpegProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 			cpiKeyHelp(KEY_CTRL_UP, "Jump back (small)");
 			cpiKeyHelp(KEY_CTRL_DOWN, "Jump forward (small)");
 			cpiKeyHelp(KEY_CTRL_HOME, "Jump to start of track");
-			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade (cpifaceSession);
@@ -196,7 +193,7 @@ static int mpegProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 			mpegSetPos(0);
 			break;
 		default:
-			return mcpSetProcessKey (key);
+			return 0;
 	}
 	return 1;
 }
@@ -236,8 +233,8 @@ static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	plIsEnd=mpegLooped;
-	plProcessKey=mpegProcessKey;
-	plDrawGStrings=mpegDrawGStrings;
+	cpifaceSession->ProcessKey = mpegProcessKey;
+	cpifaceSession->DrawGStrings = mpegDrawGStrings;
 
 	if (!mpegOpenPlayer(mpegfile, cpifaceSession))
 		return errFileRead;

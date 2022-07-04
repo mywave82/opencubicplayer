@@ -46,6 +46,8 @@ struct cpifaceSessionAPI_t
 	/* Callbacks and status from cpiface to plugin */
 	uint8_t MuteChannel[MAXLCHAN]; /* Reflects the status of channel muting used by channel visualizers. Should be controlled by the playback plugin */
 	void (*SetMuteChannel)(struct cpifaceSessionAPI_t *cpifaceSession, int LogicalChannel, int IsMuted); /* Callback from cpiface to set the Mute channel for a given logical channel */
+	void (*DrawGStrings)(struct cpifaceSessionAPI_t *cpifaceSession); /* Draw the header, usually utilizes some of the fixed provides */
+	int (*ProcessKey) (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key); /* Decode keyboard presses from the user. Return value 1 = key is swalled, 0 = key is not swallowed.  */
 
 	/* Normally controlled by playback plugin */
 	uint8_t InPause; /* used by cpiface UI elements to know if the playback is paused or not */
@@ -57,8 +59,6 @@ struct cpifaceSessionAPI_t
 
 #warning move all these into cpifaceAPISource_t
 extern char plPanType; /* If this is one, it causes the visual channel-layout to swap right and left channel for every second channel group - currenly only used by some S3M files */
-extern int (*plProcessKey) (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key);
-extern void (*plDrawGStrings)(struct cpifaceSessionAPI_t *cpifaceSession);
 extern int (*plIsEnd)(struct cpifaceSessionAPI_t *cpifaceSession);
 extern int (*plGetLChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
 extern int (*plGetPChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
@@ -195,9 +195,6 @@ extern void cpiTrkSetup2 (struct cpifaceSessionAPI_t *cpifaceSession, const stru
 
 extern char plNoteStr[132][4];
 extern char plCompoMode;
-
-/* mcpedit.c */
-extern void mcpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession);
 
 struct moduleinfostruct;
 void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t *cpifaceSession,

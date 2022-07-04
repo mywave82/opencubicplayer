@@ -188,8 +188,6 @@ static void gmdDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct globinfo gi;
 
-	mcpDrawGStrings (cpifaceSession);
-
 	mpGetGlobInfo (&gi);
 
 	mcpDrawGStringsTracked
@@ -235,7 +233,6 @@ static int gmdProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			cpiKeyHelp('>', "Jump forward (big)");
 			cpiKeyHelp(KEY_CTRL_RIGHT, "Jump forward (big)");
 			cpiKeyHelp(KEY_CTRL_HOME, "Jump start of track");
-			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade (cpifaceSession);
@@ -283,7 +280,7 @@ static int gmdProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			mpLockPat(patlock);
 			break;
 		default:
-			return mcpSetProcessKey (key);
+			return 0;
 	}
 	return 1;
 }
@@ -364,8 +361,8 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	plPanType=!!(mod.options&MOD_MODPAN);
 
 	plIsEnd=gmdLooped;
-	plProcessKey=gmdProcessKey;
-	plDrawGStrings=gmdDrawGStrings;
+	cpifaceSession->ProcessKey = gmdProcessKey;
+	cpifaceSession->DrawGStrings = gmdDrawGStrings;
 	cpifaceSession->SetMuteChannel = mpMute;
 	plGetLChanSample=mpGetChanSample;
 

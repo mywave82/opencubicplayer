@@ -125,8 +125,6 @@ static void ayDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct ayinfo globinfo;
 
-	mcpDrawGStrings (cpifaceSession);
-
 	ayGetInfo (&globinfo);
 
 	mcpDrawGStringsSongXofY
@@ -159,7 +157,6 @@ static int ayProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			cpiKeyHelp(KEY_CTRL_LEFT, "Jump to previous track");
 			cpiKeyHelp('>', "Jump to next track");
 			cpiKeyHelp(KEY_CTRL_RIGHT, "Jump to next track");
-			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade (cpifaceSession);
@@ -195,7 +192,7 @@ static int ayProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			break;
 
 		default:
-			return mcpSetProcessKey (key);
+			return 0;
 	}
 	return 1;
 
@@ -215,8 +212,8 @@ static int ayOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	plIsEnd=ayLooped;
-	plProcessKey=ayProcessKey;
-	plDrawGStrings=ayDrawGStrings;
+	cpifaceSession->ProcessKey = ayProcessKey;
+	cpifaceSession->DrawGStrings = ayDrawGStrings;
 
 	cpifaceSession->SetMuteChannel = aySetMute;
 	cpifaceSession->LogicalChannelCount = 6;

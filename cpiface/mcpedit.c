@@ -79,11 +79,6 @@ void mcpNormalize(enum mcpNormalizeType Type)
 	}
 }
 
-void mcpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
-{
-	cpiDrawG1String (cpifaceSession, &mcpset);
-}
-
 int mcpSetProcessKey(uint16_t key)
 {
 	switch (key)

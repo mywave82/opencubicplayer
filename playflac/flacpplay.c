@@ -104,8 +104,6 @@ static void flacDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct flacinfo inf;
 
-	mcpDrawGStrings (cpifaceSession);
-
 	flacGetInfo (&inf);
 
 	mcpDrawGStringsFixedLengthStream
@@ -140,7 +138,6 @@ static int flacProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 			cpiKeyHelp(KEY_CTRL_UP, "Jump back (small)");
 			cpiKeyHelp(KEY_CTRL_DOWN, "Jump forward (small)");
 			cpiKeyHelp(KEY_CTRL_HOME, "Jump to start of track");
-			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade (cpifaceSession);
@@ -186,7 +183,7 @@ static int flacProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 			flacSetPos(0);
 			break;
 		default:
-			return mcpSetProcessKey (key);
+			return 0;
 	}
 	return 1;
 }
@@ -227,8 +224,8 @@ static int flacOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	plIsEnd=flacLooped;
-	plProcessKey=flacProcessKey;
-	plDrawGStrings=flacDrawGStrings;
+	cpifaceSession->ProcessKey = flacProcessKey;
+	cpifaceSession->DrawGStrings = flacDrawGStrings;
 
 	if (!flacOpenPlayer(flacf, cpifaceSession))
 		return -1;

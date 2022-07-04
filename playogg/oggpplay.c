@@ -116,8 +116,6 @@ static void oggDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct ogginfo inf;
 
-	mcpDrawGStrings (cpifaceSession);
-
 	oggGetInfo (&inf);
 
 	mcpDrawGStringsFixedLengthStream
@@ -152,7 +150,6 @@ static int oggProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			cpiKeyHelp(KEY_CTRL_UP, "Jump back (small)");
 			cpiKeyHelp(KEY_CTRL_DOWN, "Jump forward (small)");
 			cpiKeyHelp(KEY_CTRL_HOME, "Jump to start of track");
-			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade (cpifaceSession);
@@ -202,7 +199,7 @@ static int oggProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			oggSetPos(0);
 			break;
 		default:
-			return mcpSetProcessKey (key);
+			return 0;
 	}
 	return 1;
 }
@@ -242,8 +239,8 @@ static int oggOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	plIsEnd=oggIsLooped;
-	plProcessKey=oggProcessKey;
-	plDrawGStrings=oggDrawGStrings;
+	cpifaceSession->ProcessKey = oggProcessKey;
+	cpifaceSession->DrawGStrings = oggDrawGStrings;
 
 	if (!oggOpenPlayer(oggf, cpifaceSession))
 		return -1;

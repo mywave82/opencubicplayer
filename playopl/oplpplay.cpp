@@ -193,11 +193,8 @@ static void drawlongvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 	}
 }
 
-
 static void oplDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	mcpDrawGStrings (cpifaceSession);
-
 	oplpGetGlobInfo(globinfo);
 
 	mcpDrawGStringsSongXofY
@@ -346,7 +343,6 @@ static int oplProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			cpiKeyHelp('>', "Next song");
 
 			cpiKeyHelp(KEY_CTRL_P, "Start/stop pause");
-			mcpSetProcessKey (key);
 			return 0;
 		case 'p': case 'P':
 			startpausefade (cpifaceSession);
@@ -408,7 +404,7 @@ static int oplProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			break;
 	#endif
 		default:
-			return mcpSetProcessKey (key);
+			return 0;
 	}
 	return 1;
 }
@@ -465,8 +461,8 @@ static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	plIsEnd=oplLooped;
-	plProcessKey=oplProcessKey;
-	plDrawGStrings=oplDrawGStrings;
+	cpifaceSession->ProcessKey = oplProcessKey;
+	cpifaceSession->DrawGStrings = oplDrawGStrings;
 
 	if (!oplOpenPlayer(filename, buffer, bufferfill, file, cpifaceSession))
 	{
