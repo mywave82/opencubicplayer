@@ -83,6 +83,8 @@ static snd_pcm_sw_params_t *swparams = NULL;
 struct sounddevice plrAlsa;
 /*static struct deviceinfo currentcard;*/
 static struct ocpdir_t dir_alsa;
+static uint32_t dir_alsa_custom = 0xffffffff;
+static uint32_t custom_mdb_ref = 0xffffffff;
 
 static void alsaOpenDevice(void);
 
@@ -100,34 +102,17 @@ static int bitsigned;
 
 static volatile int busy=0;
 
-#warning fix-me!!!!
-uint32_t custom_dsp_mdb_ref=0xffffffff;
-uint32_t custom_mixer_mdb_ref=0xffffffff;
-
-static int mlDrawBox(void)
+static void update_custom_dev (void)
 {
-	int mlTop=plScrHeight/2-2;
-	unsigned int i;
-
-	displayvoid(mlTop+1, 5, plScrWidth-10);
-	displayvoid(mlTop+2, 5, plScrWidth-10);
-	displayvoid(mlTop+3, 5, plScrWidth-10);
-	displaystr(mlTop, 4, 0x04, "\xda", 1);
-	for (i=5;i<(plScrWidth-5);i++)
-		displaystr(mlTop, i, 0x04, "\xc4", 1);
-	displaystr(mlTop, plScrWidth-5, 0x04, "\xbf", 1);
-	displaystr(mlTop+1, 4, 0x04, "\xb3", 1);
-	displaystr(mlTop+2, 4, 0x04, "\xb3", 1);
-	displaystr(mlTop+3, 4, 0x04, "\xb3", 1);
-	displaystr(mlTop+1, plScrWidth-5, 0x04, "\xb3", 1);
-	displaystr(mlTop+2, plScrWidth-5, 0x04, "\xb3", 1);
-	displaystr(mlTop+3, plScrWidth-5, 0x04, "\xb3", 1);
-	displaystr(mlTop+4, 4, 0x04, "\xc0", 1);
-	for (i=5;i<(plScrWidth-5);i++)
-		displaystr(mlTop+4, i, 0x04, "\xc4", 1);
-	displaystr(mlTop+4, plScrWidth-5, 0x04, "\xd9", 1);
-
-	return mlTop;
+	if (custom_mdb_ref != 0xffffffff)
+	{
+		struct moduleinfostruct mi;
+		mdbGetModuleInfo(&mi, custom_mdb_ref);
+		snprintf(mi.title, sizeof(mi.title), "%s", alsaCardName);
+		snprintf(mi.composer, sizeof(mi.composer), "%s", alsaMixerName);
+		mi.modtype.integer.i = MODULETYPE("DEVv");
+		mdbWriteModuleInfo(custom_mdb_ref, &mi);
+	}
 }
 
 static unsigned int devpALSAIdle(void)
@@ -391,7 +376,8 @@ struct dirhandle_alsa_t
 
 	int i;
 	int count;
-	void **hints;
+	void **hints_pcm;
+	void **hints_ctl;
 };
 
 static ocpdirhandle_pt dir_alsa_readdir_start (struct ocpdir_t *self, void(*callback_file)(void *token, struct ocpfile_t *),
@@ -407,7 +393,7 @@ static ocpdirhandle_pt dir_alsa_readdir_start (struct ocpdir_t *self, void(*call
 
 	debug_printf ("dir_alsa_readdir_start()\n");
 
-	result=snd_device_name_hint(-1, "pcm", &retval->hints);
+	result=snd_device_name_hint(-1, "pcm", &retval->hints_pcm);
 	debug_printf ("      snd_device_name_hint() = %s\n", snd_strerror(-result));
 	if (result)
 	{
@@ -420,6 +406,23 @@ static ocpdirhandle_pt dir_alsa_readdir_start (struct ocpdir_t *self, void(*call
 	retval->token = token;
 	retval->count = 1;
 
+
+	{
+		char namebuffer[128];
+		uint32_t dirdb_ref;
+		struct ocpfile_t *child;
+
+		snprintf (namebuffer, sizeof (namebuffer), "custom.dev");
+
+		dirdb_ref = dirdbFindAndRef (self->dirdb_ref,  namebuffer, dirdb_use_file);
+		child = mem_file_open (self, dirdb_ref, strdup (alsaPCMoutIntr.name), strlen (alsaPCMoutIntr.name));
+		child->is_nodetect = 1;
+		callback_file (token, child);
+		child->unref (child);
+		dirdbUnref (dirdb_ref, dirdb_use_file);
+	}
+
+
 	return retval;
 }
 
@@ -429,7 +432,18 @@ static void dir_alsa_readdir_cancel (ocpdirhandle_pt _handle)
 
 	debug_printf ("dir_alsa_readdir_cancel()\n");
 
-	snd_device_name_free_hint (handle->hints);
+	if (handle->hints_pcm)
+	{
+		snd_device_name_free_hint (handle->hints_pcm);
+		handle->hints_pcm = 0;
+	}
+
+	if (handle->hints_ctl)
+	{
+		snd_device_name_free_hint (handle->hints_ctl);
+		handle->hints_ctl = 0;
+	}
+
 	free (handle);
 }
 
@@ -498,36 +512,36 @@ static int dir_alsa_readdir_iterate (ocpdirhandle_pt _handle)
 {
 	struct dirhandle_alsa_t *handle = (struct dirhandle_alsa_t *)_handle;
 
-	debug_printf ("dir_alsa_readdir_iterate() (handle->hints[%d]=%p\n", handle->i, handle->hints[handle->i]);
+	char *name, *descr, *io;
+	char namebuffer[128];
+	uint32_t dirdb_ref;
+	struct ocpfile_t *child;
+	int result;
 
-	if (handle->hints[handle->i])
+	debug_printf ("dir_alsa_readdir_iterate() i=%d handle->hints_pcm=%p handle->hints_ctl=%p\n", handle->i, handle->hints_pcm, handle->hints_ctl);
+
+	if (handle->hints_pcm && handle->hints_pcm[handle->i])
 	{
-		char *name, *descr, *io;
-		char namebuffer[128];
-		uint32_t dirdb_ref;
-		struct ocpfile_t *child;
-
-		name = snd_device_name_get_hint(handle->hints[handle->i], "NAME");
-		descr = snd_device_name_get_hint(handle->hints[handle->i], "DESC");
-		io = snd_device_name_get_hint(handle->hints[handle->i], "IOID");
+		name = snd_device_name_get_hint(handle->hints_pcm[handle->i], "NAME");
+		descr = snd_device_name_get_hint(handle->hints_pcm[handle->i], "DESC");
+		io = snd_device_name_get_hint(handle->hints_pcm[handle->i], "IOID");
 
 		debug_printf ("snd_device_name_get_hint()\n");
 		debug_printf ("       [%d] name=%s\n", handle->i, name?name:"(NULL)");
 		debug_printf ("            desc=%s\n", descr?descr:"(NULL)");
-		debug_printf ("            io=%s\n", io?io:"(IO)");
+		debug_printf ("            io=%s\n", io?io:"(NULL)");
 
 		if (!name) /* should never happen */
 		{
-			goto end;
+			goto pcm_end;
 		}
 		if (io && (!strcmp(io, "Input"))) /* ignore input only cards */
 		{
-			goto end;
+			goto pcm_end;
 		}
 
-#warning Ideal would be to link dirdb_ref and shortname in an API!!!!!!!!
 //		snprintf (namebuffer, sizeof (namebuffer), "ALSA-PCM-%s.dev", name);
-		snprintf (namebuffer, sizeof (namebuffer), "alsa-%03d.dev", handle->count);
+		snprintf (namebuffer, sizeof (namebuffer), "pcm-%03d.dev", handle->count);
 
 		dirdb_ref = dirdbFindAndRef (handle->owner->dirdb_ref,  namebuffer, dirdb_use_file);
 
@@ -539,12 +553,67 @@ static int dir_alsa_readdir_iterate (ocpdirhandle_pt _handle)
 		child->unref (child);
 		dirdbUnref (dirdb_ref, dirdb_use_file);
 		handle->count++;
-end:
+pcm_end:
 		free (name);
 		free (descr);
 		free (io);
 
 		handle->i++;
+
+		if (!handle->hints_pcm[handle->i])
+		{
+			debug_printf ("PCM complete, MIX next\n");
+
+			snd_device_name_free_hint (handle->hints_pcm);
+			handle->hints_pcm = 0;
+			handle->i = 0;
+			handle->count = 1;
+
+			result=snd_device_name_hint(-1, "ctl", &handle->hints_ctl);
+			debug_printf ("      snd_device_name_hint() = %s\n", snd_strerror(-result));
+			if (result)
+			{
+				return 0;
+			}
+			return 1;
+		}
+		return 1;
+	} else if (handle->hints_ctl && handle->hints_ctl[handle->i])
+	{
+		name = snd_device_name_get_hint(handle->hints_ctl[handle->i], "NAME");
+		descr = snd_device_name_get_hint(handle->hints_ctl[handle->i], "DESC");
+		io = snd_device_name_get_hint(handle->hints_ctl[handle->i], "IOID");
+
+		debug_printf ("snd_device_name_get_hint()\n");
+		debug_printf ("       [%d] name=%s\n", handle->i, name?name:"(NULL)");
+		debug_printf ("            desc=%s\n", descr?descr:"(NULL)");
+		debug_printf ("            io=%s\n", io?io:"(NULL)");
+
+		if (!name) /* should never happen */
+		{
+			goto mix_end;
+		}
+
+//		snprintf (namebuffer, sizeof (namebuffer), "ALSA-MIX-%s.dev", name);
+		snprintf (namebuffer, sizeof (namebuffer), "mix-%03d.dev", handle->count);
+
+		dirdb_ref = dirdbFindAndRef (handle->owner->dirdb_ref,  namebuffer, dirdb_use_file);
+
+		dir_alsa_update_mdb (dirdb_ref, name, descr);
+
+		child = mem_file_open (handle->owner, dirdb_ref, strdup (alsaPCMoutIntr.name), strlen (alsaPCMoutIntr.name));
+		child->is_nodetect = 1;
+		handle->callback_file (handle->token, child);
+		child->unref (child);
+		dirdbUnref (dirdb_ref, dirdb_use_file);
+		handle->count++;
+mix_end:
+		free (name);
+		free (descr);
+		free (io);
+
+		handle->i++;
+
 		return 1;
 	} else {
 		return 0;
@@ -557,117 +626,16 @@ static struct ocpdir_t *dir_alsa_readdir_dir (struct ocpdir_t *_self, uint32_t d
 	return 0;
 }
 
-static struct ocpfile_t *dir_alsa_readdir_file (struct ocpdir_t *_self, uint32_t dirdb_ref)
-{
-	int result, i;
-	const char *searchpath = 0;
-	uint32_t parent_dirdb_ref;
-	void **hints;
-	int count = 1;
-
-	debug_printf ("dir_alsa_readdir_file()\n");
-
-/* assertion begin */
-	parent_dirdb_ref = dirdbGetParentAndRef (dirdb_ref, dirdb_use_file);
-	dirdbUnref (parent_dirdb_ref, dirdb_use_file);
-	if (parent_dirdb_ref != _self->dirdb_ref)
-	{
-		fprintf (stderr, "dir_alsa_readdir_file: dirdb_ref->parent is not the expected value\n");
-		return 0;
-	}
-/* assertion end */
-
-	dirdbGetName_internalstr (dirdb_ref, &searchpath);
-	if (!searchpath)
-	{
-		return 0;
-	}
-
-	result=snd_device_name_hint(-1, "pcm", &hints);
-	debug_printf ("      snd_device_name_hint() = %s\n", snd_strerror(-result));
-	if (result)
-	{
-		return 0;
-	}
-
-	for (i=0; hints[i]; i++)
-	{
-		char *name, *descr, *io;
-		char namebuffer[128];
-		struct ocpfile_t *child;
-
-		name = snd_device_name_get_hint (hints[i], "NAME");
-		descr = snd_device_name_get_hint (hints[i], "DESC");
-		io = snd_device_name_get_hint (hints[i], "IOID");
-
-		debug_printf ("snd_device_name_get_hint()\n");
-		debug_printf ("       [%d] name=%s\n", i, name?name:"(NULL)");
-		debug_printf ("            desc=%s\n", descr?descr:"(NULL)");
-		debug_printf ("            io=%s\n", io?io:"(NULL)");
-
-		if (!name) /* should never happen */
-		{
-			free (descr);
-			free (io);
-			continue;
-		}
-		if (io && (!strcmp(io, "Input"))) /* ignore input only cards */
-		{
-			free (name);
-			free (descr);
-			free (io);
-			continue;
-		}
-
-		//struct modlistentry entry;
-		//memset(&entry, 0, sizeof(entry));
-#if 0
-		snprintf(shortname, 4, "alsa-%03ddev", handle->count);
-#else
-		//memcpy (shortname, "alsa-", 5);
-		//snprintf(shortname+5, 4, "%03d", handle->count);
-		//memcpy (shortname + 8, "dev", 3);
-#endif
-#warning Ideal would be to link dirdb_ref and shortname in an API!!!!!!!!
-//		snprintf(namebuffer, sizeof(namebuffer), "ALSA-PCM-%s.dev", name);
-		snprintf (namebuffer, sizeof (namebuffer), "alsa-%03d.dev", count);
-
-		if (strcmp (searchpath, namebuffer))
-		{
-			count++;
-			free (name);
-			free (descr);
-			free (io);
-			continue;
-		}
-
-		dir_alsa_update_mdb (dirdb_ref, name, descr);
-
-		free (name);
-		free (descr);
-		free (io);
-		snd_device_name_free_hint (hints);
-
-		child = mem_file_open (_self, dirdb_ref, strdup (alsaPCMoutIntr.name), strlen (alsaPCMoutIntr.name));
-		child->is_nodetect = 1;
-		return child;
-	}
-
-	snd_device_name_free_hint (hints);
-
-	return 0;
-}
-
 static int detect_cards (void)
 {
 	int result;
 	int retval = 0;
 	int i;
-	void **hints = 0;
+	void **hints_pcm = 0;
 
 	debug_printf ("ALSA_detect_card\n");
 
-	result=snd_device_name_hint(-1, "pcm", &hints);
+	result=snd_device_name_hint(-1, "pcm", &hints_pcm);
 	debug_printf ("      snd_device_name_hint() = %s\n", snd_strerror(-result));
 
 	if (result)
@@ -675,12 +643,12 @@ static int detect_cards (void)
 		return retval; /* zero cards found */
 	}
 
-	for (i=0; hints[i]; i++)
+	for (i=0; hints_pcm[i]; i++)
 	{
 		char *name, *descr, *io;
-		name = snd_device_name_get_hint(hints[i], "NAME");
-		descr = snd_device_name_get_hint(hints[i], "DESC");
-		io = snd_device_name_get_hint(hints[i], "IOID");
+		name = snd_device_name_get_hint(hints_pcm[i], "NAME");
+		descr = snd_device_name_get_hint(hints_pcm[i], "DESC");
+		io = snd_device_name_get_hint(hints_pcm[i], "IOID");
 
 		debug_printf ("       [%d] name=%s\n", i, name?name:"(NULL)");
 		debug_printf ("            desc=%s\n", descr?descr:"(NULL)");
@@ -707,7 +675,7 @@ end:
 
 	debug_printf ("     snd_device_name_free_hint()\n");
 
-	snd_device_name_free_hint (hints);
+	snd_device_name_free_hint (hints_pcm);
 
 	debug_printf (" => %d\n", retval);
 
@@ -1123,7 +1091,7 @@ static int alsaInit(const struct deviceinfo *c)
 	                dir_alsa_readdir_cancel,
 	                dir_alsa_readdir_iterate,
 	                dir_alsa_readdir_dir,
-	                dir_alsa_readdir_file,
+	                0, /* no speed optimization in doing direct file, due to iterator being the same code logic as dir_alsa_readdir_iterate() */
 	                0,
 			dirdbFindAndRef (dmSetup->basedir->dirdb_ref, "alsa", dirdb_use_dir),
 	                0, /* refcount, ALSA ignores this */
@@ -1131,7 +1099,13 @@ static int alsaInit(const struct deviceinfo *c)
 	                0  /* is_playlist */);
 	filesystem_setup_register_dir (&dir_alsa);
 
+	dir_alsa_custom = dirdbFindAndRef (dir_alsa.dirdb_ref, "custom.dev", dirdb_use_file);
+
+	custom_mdb_ref = mdbGetModuleReference2 (dir_alsa_custom, strlen (alsaPCMoutIntr.name));
+
 	plRegisterInterface (&alsaPCMoutIntr);
+
+	update_custom_dev ();
 
 	plrAPI = &devpALSA;
 
@@ -1177,6 +1151,10 @@ static void alsaClose(void)
 
 		filesystem_setup_unregister_dir (&dir_alsa);
 		dirdbUnref (dir_alsa.dirdb_ref, dirdb_use_dir);
+
+		dirdbUnref (dir_alsa_custom, dirdb_use_file);
+		dir_alsa_custom = 0xffffffff;
+
 		alsasetupregistered = 0;
 	}
 
@@ -1186,36 +1164,85 @@ static void alsaClose(void)
 	}
 }
 
+#define MIN(a,b) (((a)<(b))?a:b)
+
+static int mlDrawBox (int esel, int first, const char texts[2][DEVICE_NAME_MAX+1], unsigned int *curpos)
+{
+	int mlTop=plScrHeight/2-3;
+	const int maxwidth = plScrWidth - 10;
+	const int fixedwidth = 1 + 7 + 1 + 1;
+	int textwidth = MIN (DEVICE_NAME_MAX + 1, maxwidth - fixedwidth);
+	int mlWidth = textwidth + fixedwidth;
+	int i;
+
+	const int mlLeft = (plScrWidth - mlWidth) / 2;
+
+	static int scrolled[2];
+
+	for (i=0; i < 2; i++)
+	{
+		if (first)
+		{
+			scrolled[i] = 0;
+		}
+
+		while ((curpos[i]-scrolled[i]) >= textwidth)
+			scrolled[i] += 8;
+		while (scrolled[i] && (((int)curpos[i] - (int)scrolled[i]) < (textwidth - 8)))
+			scrolled[i] -= 8;
+	}
+
+	display_nprintf (mlTop,     mlLeft, 0x04, mlWidth, "\xda" "%*C\xc4" "\xbf", mlWidth - 2);
+	display_nprintf (mlTop + 1, mlLeft, 0x04, mlWidth, "\xb3" "%.11o" "%*C " "Please provide PCM and mixer strings" "%*C " "%.4o" "\xb3", (mlWidth - 36 - 2) / 2, (mlWidth - 36 - 2 + 1) / 2);
+
+	display_nprintf (mlTop + 2, mlLeft, 0x04, mlWidth, "\xb3" "%.7o" "PCM:   " "%*.*o" "%.*s" "%0.7o" "%*C " "%.4o" "\xb3",
+		(esel==0)?7:0, (esel==0)?0:7, textwidth, texts[0] + scrolled[0], mlWidth - 2 - 7 - textwidth);
+
+	display_nprintf (mlTop + 3, mlLeft, 0x04, mlWidth, "\xb3" "%.7o" "Mixer: " "%*.*o" "%.*s" "%0.7o" "%*C " "%.4o" "\xb3",
+		(esel==1)?7:0, (esel==1)?0:7, textwidth, texts[1] + scrolled[1], mlWidth - 2 - 7 - textwidth);
+
+	display_nprintf (mlTop + 4, mlLeft, 0x04, mlWidth, "\xb3" "%.11o" "%*C " "-- Finish with enter, abort with escape --" "%*C " "%.4o" "\xb3", (mlWidth - 42 - 2) / 2, (mlWidth - 42 - 2 + 1) / 2);
+	display_nprintf (mlTop + 5, mlLeft, 0x04, mlWidth, "\xc0" "%*C\xc4" "\xd9", mlWidth - 2);
+
+	setcur(mlTop + 2 + esel, mlLeft + 1 + 7 + curpos[esel] - scrolled[esel]);
+
+	return mlTop;
+}
+
 static int alsaMixerIntrSetDev (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip)
 {
 	const char *name;
 
 	dirdbGetName_internalstr (f->dirdb_ref, &name);
 
-#warning we must add custom.dev in the file-list!!
 	if (!strcmp(name, "custom.dev"))
 	{
-		int mlTop=mlDrawBox();
-		char str[DEVICE_NAME_MAX+1];
-		unsigned int curpos;
-		unsigned int cmdlen;
-		int insmode=1;
-		unsigned int scrolled=0;
+		char str[2][DEVICE_NAME_MAX+1];
+		unsigned int curpos[2];
+		unsigned int cmdlen[2];
+		int insmode[2]={1,1};
+		int esel = 0;
+		int first = 1;
 
-		strcpy(str, alsaCardName);
+		strcpy(str[0], alsaCardName);
+		strcpy(str[1], alsaMixerName);
 
-		displaystr(mlTop+1, 5, 0x0b, "Give me something to crunch!!", 29);
-		displaystr(mlTop+3, 5, 0x0b, "-- Finish with enter, abort with escape --", 32);
+		curpos[0]=strlen(str[0]);
+		curpos[1]=strlen(str[1]);
 
-		curpos=strlen(str);
-		cmdlen=strlen(str);
+		cmdlen[0]=strlen(str[0]);
+		cmdlen[1]=strlen(str[1]);
+
 		setcurshape(1);
 
 		while (1)
 		{
 			uint16_t key;
-			displaystr(mlTop+2, 5, 0x8f, str+scrolled, plScrWidth-10);
-			setcur(mlTop+2, 5+curpos-scrolled);
+
+			fsDraw ();
+
+			mlDrawBox (esel, first, str, curpos);
+			first = 0;
 
 			while (!ekbhit())
 				framelock();
@@ -1223,100 +1250,100 @@ static int alsaMixerIntrSetDev (struct moduleinfostruct *info, struct ocpfilehan
 
 			if ((key>=0x20)&&(key<=0x7f))
 			{
-				if (insmode)
+				if (insmode[esel])
 				{
-					if ((cmdlen+1)<sizeof(str))
+					if ((cmdlen[esel] + 1) < sizeof(str[esel]))
 					{
-						memmove(str+curpos+1, str+curpos, cmdlen-curpos+1);
-						str[curpos++]=key;
-						cmdlen++;
+						memmove (str[esel] + curpos[esel] + 1, str[esel] + curpos[esel], cmdlen[esel] - curpos[esel] + 1);
+						str[esel][curpos[esel]++] = key;
+						cmdlen[esel]++;
 					}
-				} else if (curpos==cmdlen)
+				} else if (curpos[esel] == cmdlen[esel])
 				{
-					if ((cmdlen+1)<(sizeof(str)))
+					if ((cmdlen[esel] + 1) < sizeof(str[esel]))
 					{
-						str[curpos++]=key;
-						str[curpos]=0;
-						cmdlen++;
+						str[esel][curpos[esel]++] = key;
+						str[esel][curpos[esel]]= 0 ;
+						cmdlen[esel]++;
 					}
-				} else
-					str[curpos++]=key;
+				} else {
+					str[esel][curpos[esel]++] = key;
+				}
 			} else switch (key)
 			{
 				case KEY_EXIT:
 				case KEY_ESC:
-					setcurshape(0);
+					setcurshape (0);
 					return 0;
 				case KEY_LEFT:
-					if (curpos)
-						curpos--;
+					if (curpos[esel])
+					{
+						curpos[esel]--;
+					}
 					break;
 				case KEY_RIGHT:
-					if (curpos<cmdlen)
-						curpos++;
+					if (curpos[esel] < cmdlen[esel])
+					{
+						curpos[esel]++;
+					}
+					break;
+				case KEY_UP:
+					esel = 0;
+					setcurshape (insmode[esel] ? 1 : 2);
+					break;
+				case KEY_DOWN:
+					esel = 1;
+					setcurshape (insmode[esel] ? 1 : 2);
 					break;
 				case KEY_HOME:
-					curpos=0;
+					curpos[esel] = 0;
 					break;
 				case KEY_END:
-					curpos=cmdlen;
+					curpos[esel] = cmdlen[esel];
 					break;
 				case KEY_INSERT:
 					{
-						insmode=!insmode;
-						setcurshape(insmode?1:2);
+						insmode[esel] = !insmode[esel];
+						setcurshape(insmode[esel]?1:2);
 					}
 					break;
 				case KEY_DELETE:
-					if (curpos!=cmdlen)
+					if (curpos[esel] != cmdlen[esel])
 					{
-						memmove(str+curpos, str+curpos+1, cmdlen-curpos);
-						cmdlen--;
+						memmove (str[esel] + curpos[esel], str[esel] + curpos[esel] + 1, cmdlen[esel] - curpos[esel]);
+						cmdlen[esel]--;
 					}
 					break;
 				case KEY_BACKSPACE:
-					if (curpos)
+					if (curpos[esel])
 					{
-						memmove(str+curpos-1, str+curpos, cmdlen-curpos+1);
-						curpos--;
-						cmdlen--;
+						memmove (str[esel] + curpos[esel] - 1, str[esel] + curpos[esel], cmdlen[esel] - curpos[esel] + 1);
+						curpos[esel]--;
+						cmdlen[esel]--;
 					}
 					break;
 				case _KEY_ENTER:
-					strcpy(alsaCardName, str);
-					setcurshape(0);
+					strcpy (alsaCardName, str[0]);
+					strcpy (alsaMixerName, str[1]);
+					setcurshape (0);
 					goto out;
 			}
-			while ((curpos-scrolled)>=(plScrWidth-10))
-				scrolled+=8;
-			while (((signed)curpos-(signed)scrolled)<0)
-				scrolled-=8;
 		}
 	}
 /* 1.0.14rc1 added support for snd_device_name_hint */
-	else if (!strncmp(name, "alsa-", 4))
+	else if (!strncmp(name, "pcm-", 4))
 	{
 		snprintf (alsaCardName, sizeof (alsaCardName), "%.*s", (unsigned int)sizeof (alsaCardName) - 1, info->title);
+	}
+	else if (!strncmp (name, "mix-", 4))
+	{
 		snprintf (alsaMixerName, sizeof (alsaMixerName), "%.*s", (unsigned int)sizeof (alsaMixerName) - 1, info->title);
 	}
 out:
 	fprintf(stderr, "ALSA: Selected PCM %s\n", alsaCardName);
 	fprintf(stderr, "ALSA: Selected Mixer %s\n", alsaMixerName);
 
-	if (custom_dsp_mdb_ref!=0xffffffff)
-	{
-		struct moduleinfostruct mi;
-		mdbGetModuleInfo(&mi, custom_dsp_mdb_ref);
-		snprintf(mi.title, sizeof(mi.title), "%s", alsaCardName);
-		mdbWriteModuleInfo(custom_dsp_mdb_ref, &mi);
-	}
-	if (custom_mixer_mdb_ref!=0xffffffff)
-	{
-		struct moduleinfostruct mi;
-		mdbGetModuleInfo(&mi, custom_mixer_mdb_ref);
-		snprintf(mi.title, sizeof(mi.title), "%s", alsaMixerName);
-		mdbWriteModuleInfo(custom_mixer_mdb_ref, &mi);
-	}
+	update_custom_dev ();
 
 	return 0;
 }
