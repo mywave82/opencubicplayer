@@ -88,26 +88,4 @@ extern int mcpGetFreq8363(int note);
 extern int mcpGetNote6848(int freq);
 extern int mcpGetNote8363(int freq);
 
-enum mcpNormalizeType
-{
-	mcpNormalizeNoFilter = 0,
-	mcpNormalizeFilterAOIFOI = 1,
-
-	mcpNormalizeMustSpeedPitchLock = 0,
-	mcpNormalizeCanSpeedPitchUnlock = 4,
-
-	mcpNormalizeCannotEcho = 0,
-	mcpNormalizeCanEcho = 8, /* no wave-table can actually do this (yet) */
-
-	mcpNormalizeCannotAmplify = 0,
-	mcpNormalizeCanAmplify = 16,
-
-	mcpNormalizeDefaultPlayW = 21,
-	mcpNormalizeDefaultPlayP = 0,
-};
-
-extern struct settings mcpset;
-
-extern void mcpNormalize (enum mcpNormalizeType Type);
-
 #endif

@@ -42,7 +42,6 @@
 #include "boot/plinkman.h"
 #include "dev/imsdev.h"
 #include "dev/mcp.h"
-#include "stuff/poll.h"
 #include "dev/mix.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
@@ -481,15 +480,6 @@ static void mixer(void)
 	clipbusy--;
 }
 
-static void timerproc(void)
-{
-	/* Referred by OpenPlayer
-	 */
-#ifndef NO_BACKGROUND_MIXER
-	mixer();
-#endif
-}
-
 #ifdef __STRANGE_BUG__
 void *GetReturnAddress12();
 #pragma aux GetReturnAddress12="mov eax, [esp+12]" value [eax];
@@ -764,7 +754,7 @@ static int devwMixGET(int ch, int opt)
 	return 0;
 }
 
-static void Idle(void)
+static void devwMixIdle(void)
 {
 	mixer();
 }
@@ -931,7 +921,7 @@ static int devwMixOpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *s
 
 	channelnum=chan;
 	mcpNChan=chan;
-	mcpIdle=Idle;
+	mcpIdle = devwMixIdle;
 
 	calcamptab(amplify);
 	calcspeed();
@@ -939,12 +929,6 @@ static int devwMixOpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *s
 	tickwidth=newtickwidth;
 	tickplayed=0;
 	cmdtimerpos=0;
-	if (!pollInit(timerproc))
-	{
-		mcpNChan=0;
-		mcpIdle=0;
-		goto error_out_mixInit;
-	}
 
 	for (mode=postprocs; mode; mode=mode->next)
 		if (mode->Init)
@@ -952,8 +936,7 @@ static int devwMixOpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *s
 
 	return 1;
 
-error_out_mixInit:
-	mixClose();
+	// mixClose();
 error_out_plrAPI_Play:
 	plrAPI->Stop();
 error_out:
@@ -976,8 +959,6 @@ static void devwMixClosePlayer()
 
 	mcpNChan=0;
 	mcpIdle=0;
-
-	pollClose();
 
 	plrAPI->Stop();
 

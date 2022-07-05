@@ -64,7 +64,6 @@ extern "C"
 #include "dev/ringbuffer.h"
 #include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
-#include "stuff/poll.h"
 }
 
 #include "sidplay.h"
@@ -962,21 +961,15 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 		plUseMessage((char **)msg);
 	}
 
-	if (!pollInit(sidIdle))
-	{
-		goto error_out_ringbuffer;
-	}
-
 	_SET=mcpSet;
 	_GET=mcpGet;
 	mcpSet=SET;
 	mcpGet=GET;
-	mcpNormalize (mcpNormalizeDefaultPlayP);
+	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	return 1;
 
-error_out_ringbuffer:
-	ringbuffer_free (sid_buf_pos); sid_buf_pos = 0;
+	//ringbuffer_free (sid_buf_pos); sid_buf_pos = 0;
 error_out_sid_buffers:
 	delete[] sid_buf_stereo; sid_buf_stereo = NULL;
 	delete[] sid_buf_4x3[0]; sid_buf_4x3[0] = NULL;
@@ -992,8 +985,6 @@ error_out_buf:
 
 void __attribute__ ((visibility ("internal"))) sidClosePlayer(void)
 {
-	pollClose();
-
 	plrAPI->Stop();
 
 	if (sid_buf_pos)

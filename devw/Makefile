@@ -65,7 +65,6 @@ devwmix.o: devwmix.c \
 	../dev/devigen.h \
 	../dev/mcp.h \
 	../dev/mix.h \
-	../stuff/poll.h \
 	../dev/player.h \
 	../dev/plrasm.h \
 	devwmix.h \
@@ -103,7 +102,6 @@ devwmixf.o: devwmixf.c \
 	../stuff/imsrtns.h \
 	../stuff/pagesize.inc.c \
 	devwmixf.h \
-	../stuff/poll.h \
 	dwmixfa.h \
 	../dev/devigen.h \
 	../boot/psetting.h \

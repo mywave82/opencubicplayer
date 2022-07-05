@@ -33,13 +33,13 @@
 #include <string.h>
 #include <unistd.h>
 #include "types.h"
+#include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
 #include "dev/ringbuffer.h"
 #include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
-#include "stuff/poll.h"
 #include "wave.h"
 
 #ifdef PLAYWAVE_DEBUG
@@ -753,11 +753,6 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 	wav_inpause=0;
 	wav_looped=0;
 
-	if (!pollInit(wpIdle))
-	{
-		goto error_out_plrOpen;
-	}
-
 	active=1;
 
 	_SET=mcpSet;
@@ -765,12 +760,11 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 	mcpSet=SET;
 	mcpGet=GET;
 
-	mcpNormalize (mcpNormalizeDefaultPlayP);
+	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	return 1;
 
-error_out_plrOpen:
-	plrAPI->Stop();
+	//plrAPI->Stop();
 error_out_wavebuf:
 	free (wavebuf);
 	wavebuf=0;
@@ -786,8 +780,6 @@ void __attribute__ ((visibility ("internal"))) wpClosePlayer(void)
 	active=0;
 
 	PRINT("Freeing resources\n");
-
-	pollClose();
 
 	plrAPI->Stop();
 

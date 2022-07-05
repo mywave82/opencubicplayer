@@ -113,12 +113,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			sidPause (cpifaceSession->InPause=1);
-			mcpSetMasterPauseFadeParameters (64);
+			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (i);
+	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 static void sidDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -474,7 +474,7 @@ static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	plUseChannels (cpifaceSession, drawchannel);
 	cpifaceSession->SetMuteChannel = sidMute;
 
-	plIsEnd=sidLooped;
+	cpifaceSession->IsEnd = sidLooped;
 	cpifaceSession->ProcessKey = sidProcessKey;
 	cpifaceSession->DrawGStrings = sidDrawGStrings;
 

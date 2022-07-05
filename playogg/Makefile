@@ -44,6 +44,7 @@ oggtype.o: oggtype.c \
 oggplay.o: oggplay.c \
 	../config.h \
 	../types.h \
+	../cpiface/cpiface.h \
 	../cpiface/gif.h \
 	../cpiface/jpeg.h \
 	../cpiface/png.h \
@@ -54,8 +55,7 @@ oggplay.o: oggplay.c \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
 	oggplay.h \
-	../stuff/imsrtns.h \
-	../stuff/poll.h
+	../stuff/imsrtns.h
 	$(CC) oggplay.c -o $@ $(OGG_CFLAGS) $(VORBIS_CFLAGS) $(VORBISFILE_CFLAGS) -c
 
 oggpplay.o: oggpplay.c \

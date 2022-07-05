@@ -101,12 +101,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			hvlPause (cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (64);
+			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (i);
+	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 static void hvlDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -136,8 +136,6 @@ static void hvlDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		0,          /* gvol slide direction */
 		0,          /* chan X */
 		0,          /* chan Y */
-		-1,         /* amplification */
-		0,          /* filter */
 		cpifaceSession->InPause,
 		cpifaceSession->InPause ? ((pausetime-starttime)/DOS_CLK_TCK) : ((dos_clock()-starttime)/DOS_CLK_TCK),
 		&mdbdata
@@ -254,7 +252,7 @@ static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 		return errGen;
 	}
 
-	plIsEnd=hvlIsLooped;
+	cpifaceSession->IsEnd = hvlIsLooped;
 	cpifaceSession->ProcessKey = hvlProcessKey;
 	cpifaceSession->DrawGStrings = hvlDrawGStrings;
 

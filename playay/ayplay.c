@@ -69,7 +69,6 @@
 #include "dev/ringbuffer.h"
 #include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
-#include "stuff/poll.h"
 
 #include "ayplay.h"
 #include "main.h"
@@ -946,11 +945,6 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 	ay_z80_init(aydata.tracks[ay_track].data,
 	            aydata.tracks[ay_track].data_stacketc);
 
-	if (!pollInit(ayIdle))
-	{
-		goto errorout_sound_init;
-	}
-
 #ifdef PLAYAY_DEBUG_OUTPUT
 	debug_output = open ("test.raw", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
 #endif
@@ -960,12 +954,11 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 	mcpSet=SET;
 	mcpGet=GET;
 
-	mcpNormalize (mcpNormalizeDefaultPlayP);
+	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	return 1;
 
-errorout_sound_init:
-	sound_end();
+	//sound_end();
 errorout_ringbuffer_aybufpos:
 	ringbuffer_free (aybufpos);
 	aybufpos = 0;
@@ -984,8 +977,6 @@ errorout_aydata:
 
 void __attribute__ ((visibility ("internal"))) ayClosePlayer(void)
 {
-	pollClose();
-
 	sound_end();
 
 	plrAPI->Stop();

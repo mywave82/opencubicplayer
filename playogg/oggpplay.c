@@ -104,12 +104,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			oggPause (cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (64);
+			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (i);
+	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 static void oggDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -238,7 +238,7 @@ static int oggOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
 	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
-	plIsEnd=oggIsLooped;
+	cpifaceSession->IsEnd = oggIsLooped;
 	cpifaceSession->ProcessKey = oggProcessKey;
 	cpifaceSession->DrawGStrings = oggDrawGStrings;
 

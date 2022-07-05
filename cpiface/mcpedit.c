@@ -36,50 +36,47 @@
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 #include "cpiface.h"
-
-struct settings mcpset;
+#include "cpiface-private.h"
 
 static int finespeed=8;
 
-static enum mcpNormalizeType mcpType;
-
-static int MasterPauseFadeParameter = 64;
-
-void mcpNormalize(enum mcpNormalizeType Type)
+void mcpNormalize (struct cpifaceSessionAPI_t *cpifaceSession, enum mcpNormalizeType Type)
 {
-	mcpType = Type;
-	mcpset = set;
-	MasterPauseFadeParameter = 64;
+	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
 
-	if (!(mcpType & mcpNormalizeCanSpeedPitchUnlock))
+	f->mcpType = Type;
+	f->mcpset = set;
+	f->MasterPauseFadeParameter = 64;
+
+	if (!(f->mcpType & mcpNormalizeCanSpeedPitchUnlock))
 	{
-		mcpset.speed = mcpset.pitch;
-		mcpset.splock = 1;
+		f->mcpset.speed = f->mcpset.pitch;
+		f->mcpset.splock = 1;
 	}
-	if (!(mcpType & mcpNormalizeCanEcho))
+	if (!(f->mcpType & mcpNormalizeCanEcho))
 	{
-		mcpset.viewfx = 0;
-		//mcpset.useecho = 0;
+		f->mcpset.viewfx = 0;
+		//f->mcpset.useecho = 0;
 	}
 
-	mcpSet(-1, mcpMasterAmplify, 256*mcpset.amp);
-	mcpSet(-1, mcpMasterVolume, mcpset.vol);
-	mcpSet(-1, mcpMasterBalance, mcpset.bal);
-	mcpSet(-1, mcpMasterPanning, mcpset.pan);
-	mcpSet(-1, mcpMasterSurround, mcpset.srnd);
-	mcpSet(-1, mcpMasterPitch, mcpset.pitch);
-	mcpSet(-1, mcpMasterSpeed, mcpset.speed);
-	mcpSet(-1, mcpMasterReverb, mcpset.reverb);
-	mcpSet(-1, mcpMasterChorus, mcpset.chorus);
-	if (mcpType & mcpNormalizeCanEcho)
+	mcpSet(-1, mcpMasterAmplify,  256*f->mcpset.amp);
+	mcpSet(-1, mcpMasterVolume,   f->mcpset.vol);
+	mcpSet(-1, mcpMasterBalance,  f->mcpset.bal);
+	mcpSet(-1, mcpMasterPanning,  f->mcpset.pan);
+	mcpSet(-1, mcpMasterSurround, f->mcpset.srnd);
+	mcpSet(-1, mcpMasterPitch,    f->mcpset.pitch);
+	mcpSet(-1, mcpMasterSpeed,    f->mcpset.speed);
+	mcpSet(-1, mcpMasterReverb,   f->mcpset.reverb);
+	mcpSet(-1, mcpMasterChorus,   f->mcpset.chorus);
+	if (f->mcpType & mcpNormalizeCanEcho)
 	{
-		mcpSet(-1, mcpMasterFilter, set.filter);
+		mcpSet(-1, mcpMasterFilter, f->mcpset.filter);
 	} else {
 		mcpSet(-1, mcpMasterFilter, 0);
 	}
 }
 
-int mcpSetProcessKey(uint16_t key)
+int mcpSetProcessKey (struct cpifaceSessionPrivate_t *f, uint16_t key)
 {
 	switch (key)
 	{
@@ -101,13 +98,13 @@ int mcpSetProcessKey(uint16_t key)
 			cpiKeyHelp(KEY_F(10), "Increase speed (fine)");
 			cpiKeyHelp(KEY_F(11), "Decrease pitch (fine)");
 			cpiKeyHelp(KEY_F(12), "Increase pitch (fine)");
-			if (mcpType & mcpNormalizeCanSpeedPitchUnlock)
+			if (f->mcpType & mcpNormalizeCanSpeedPitchUnlock)
 			{
 				cpiKeyHelp(KEY_CTRL_F(12), "Toggle lock between pitch/speed");
 				cpiKeyHelp('\\', "Toggle lock between pitch/speed");
 			}
 			cpiKeyHelp(KEY_CTRL_F(11), "Toggle between fine/course speed/pitch control");
-			if (mcpType & mcpNormalizeCanAmplify)
+			if (f->mcpType & mcpNormalizeCanAmplify)
 			{
 				cpiKeyHelp (KEY_SHIFT_F(2), "Decrease amplification");
 				cpiKeyHelp (KEY_SHIFT_F(3), "Increase amplification");
@@ -122,122 +119,122 @@ int mcpSetProcessKey(uint16_t key)
 				mcpProcessKey(key);
 			return 0;
 		case '-':
-			if (mcpset.vol>=2)
-				mcpset.vol-=2;
-			mcpSet(-1, mcpMasterVolume, mcpset.vol * MasterPauseFadeParameter / 64);
+			if (f->mcpset.vol>=2)
+				f->mcpset.vol-=2;
+			mcpSet(-1, mcpMasterVolume, f->mcpset.vol * f->MasterPauseFadeParameter / 64);
 			break;
 		case '+':
-			if (mcpset.vol<=62)
-				mcpset.vol+=2;
-			mcpSet(-1, mcpMasterVolume, mcpset.vol * MasterPauseFadeParameter / 64);
+			if (f->mcpset.vol<=62)
+				f->mcpset.vol+=2;
+			mcpSet(-1, mcpMasterVolume, f->mcpset.vol * f->MasterPauseFadeParameter / 64);
 			break;
 		case '/':
-			if ((mcpset.bal-=4)<-64)
-				mcpset.bal=-64;
-			mcpSet(-1, mcpMasterBalance, mcpset.bal);
+			if ((f->mcpset.bal-=4)<-64)
+				f->mcpset.bal=-64;
+			mcpSet(-1, mcpMasterBalance, f->mcpset.bal);
 			break;
 		case '*':
-			if ((mcpset.bal+=4)>64)
-				mcpset.bal=64;
-			mcpSet(-1, mcpMasterBalance, mcpset.bal);
+			if ((f->mcpset.bal+=4)>64)
+				f->mcpset.bal=64;
+			mcpSet(-1, mcpMasterBalance, f->mcpset.bal);
 			break;
 		case ',':
-			if ((mcpset.pan-=4)<-64)
-				mcpset.pan=-64;
-			mcpSet(-1, mcpMasterPanning, mcpset.pan);
+			if ((f->mcpset.pan-=4)<-64)
+				f->mcpset.pan=-64;
+			mcpSet(-1, mcpMasterPanning, f->mcpset.pan);
 			break;
 		case '.':
-			if ((mcpset.pan+=4)>64)
-				mcpset.pan=64;
-			mcpSet(-1, mcpMasterPanning, mcpset.pan);
+			if ((f->mcpset.pan+=4)>64)
+				f->mcpset.pan=64;
+			mcpSet(-1, mcpMasterPanning, f->mcpset.pan);
 			break;
 		/*case 0x3c00: //f2*/
 		case KEY_F(2):
-			if ((mcpset.vol-=8)<0)
-				mcpset.vol=0;
-			mcpSet(-1, mcpMasterVolume, mcpset.vol * MasterPauseFadeParameter / 64);
+			if ((f->mcpset.vol-=8)<0)
+				f->mcpset.vol=0;
+			mcpSet(-1, mcpMasterVolume, f->mcpset.vol * f->MasterPauseFadeParameter / 64);
 			break;
 		/*case 0x3d00: //f3*/
 		case KEY_F(3):
-			if ((mcpset.vol+=8)>64)
-				mcpset.vol=64;
-			mcpSet(-1, mcpMasterVolume, mcpset.vol * MasterPauseFadeParameter / 64);
+			if ((f->mcpset.vol+=8)>64)
+				f->mcpset.vol=64;
+			mcpSet(-1, mcpMasterVolume, f->mcpset.vol * f->MasterPauseFadeParameter / 64);
 			break;
 		/*case 0x3e00: //f4*/
 		case KEY_F(4):
-			mcpSet(-1, mcpMasterSurround, mcpset.srnd=!mcpset.srnd);
+			mcpSet(-1, mcpMasterSurround, f->mcpset.srnd=!f->mcpset.srnd);
 			break;
 		/*case 0x3f00: //f5*/
 		case KEY_F(5):
-			if ((mcpset.pan-=16)<-64)
-				mcpset.pan=-64;
-			mcpSet(-1, mcpMasterPanning, mcpset.pan);
+			if ((f->mcpset.pan-=16)<-64)
+				f->mcpset.pan=-64;
+			mcpSet(-1, mcpMasterPanning, f->mcpset.pan);
 			break;
 		/*case 0x4000: //f6*/
 		case KEY_F(6):
-			if ((mcpset.pan+=16)>64)
-				mcpset.pan=64;
-			mcpSet(-1, mcpMasterPanning, mcpset.pan);
+			if ((f->mcpset.pan+=16)>64)
+				f->mcpset.pan=64;
+			mcpSet(-1, mcpMasterPanning, f->mcpset.pan);
 			break;
 		/*case 0x4100: //f7*/
 		case KEY_F(7):
-			if ((mcpset.bal-=16)<-64)
-				mcpset.bal=-64;
-			mcpSet(-1, mcpMasterBalance, mcpset.bal);
+			if ((f->mcpset.bal-=16)<-64)
+				f->mcpset.bal=-64;
+			mcpSet(-1, mcpMasterBalance, f->mcpset.bal);
 			break;
 		/*case 0x4200: //f8*/
 		case KEY_F(8):
-			if ((mcpset.bal+=16)>64)
-				mcpset.bal=64;
-			mcpSet(-1, mcpMasterBalance, mcpset.bal);
+			if ((f->mcpset.bal+=16)>64)
+				f->mcpset.bal=64;
+			mcpSet(-1, mcpMasterBalance, f->mcpset.bal);
 			break;
 		/*case 0x4300: //f9*/
 		case KEY_F(9):
-			if ((mcpset.speed-=finespeed)<16)
-				mcpset.speed=16;
-			mcpSet(-1, mcpMasterSpeed, mcpset.speed * MasterPauseFadeParameter / 64);
-			if (mcpset.splock)
-				mcpSet(-1, mcpMasterPitch, (mcpset.pitch=mcpset.speed) * MasterPauseFadeParameter / 64);
+			if ((f->mcpset.speed-=finespeed)<16)
+				f->mcpset.speed=16;
+			mcpSet(-1, mcpMasterSpeed, f->mcpset.speed * f->MasterPauseFadeParameter / 64);
+			if (f->mcpset.splock)
+				mcpSet(-1, mcpMasterPitch, (f->mcpset.pitch=f->mcpset.speed) * f->MasterPauseFadeParameter / 64);
 			break;
 		/*case 0x4400: //f10*/
 		case KEY_F(10):
-			if ((mcpset.speed+=finespeed)>2048)
-				mcpset.speed=2048;
-			mcpSet(-1, mcpMasterSpeed, mcpset.speed * MasterPauseFadeParameter / 64);
-			if (mcpset.splock)
-				mcpSet(-1, mcpMasterPitch, (mcpset.pitch=mcpset.speed) * MasterPauseFadeParameter / 64);
+			if ((f->mcpset.speed+=finespeed)>2048)
+				f->mcpset.speed=2048;
+			mcpSet(-1, mcpMasterSpeed, f->mcpset.speed * f->MasterPauseFadeParameter / 64);
+			if (f->mcpset.splock)
+				mcpSet(-1, mcpMasterPitch, (f->mcpset.pitch=f->mcpset.speed) * f->MasterPauseFadeParameter / 64);
 			break;
 		/*case 0x8500: //f11*/
 		case KEY_F(11):
-			if ((mcpset.pitch-=finespeed)<16)
-				mcpset.pitch=16;
-			mcpSet(-1, mcpMasterPitch, (mcpset.pitch) * MasterPauseFadeParameter / 64);
-			if (mcpset.splock)
-				mcpSet(-1, mcpMasterSpeed, (mcpset.speed=mcpset.pitch) * MasterPauseFadeParameter  / 64);
+			if ((f->mcpset.pitch-=finespeed)<16)
+				f->mcpset.pitch=16;
+			mcpSet(-1, mcpMasterPitch, (f->mcpset.pitch) * f->MasterPauseFadeParameter / 64);
+			if (f->mcpset.splock)
+				mcpSet(-1, mcpMasterSpeed, (f->mcpset.speed=f->mcpset.pitch) * f->MasterPauseFadeParameter  / 64);
 			break;
 		/*case 0x8600: //f12*/
 		case KEY_F(12):
-			if ((mcpset.pitch+=finespeed)>2048)
-				mcpset.pitch=2048;
-			mcpSet(-1, mcpMasterPitch, mcpset.pitch * MasterPauseFadeParameter / 64);
-			if (mcpset.splock)
-				mcpSet(-1, mcpMasterSpeed, (mcpset.speed=mcpset.pitch) * MasterPauseFadeParameter / 64);
+			if ((f->mcpset.pitch+=finespeed)>2048)
+				f->mcpset.pitch=2048;
+			mcpSet(-1, mcpMasterPitch, f->mcpset.pitch * f->MasterPauseFadeParameter / 64);
+			if (f->mcpset.splock)
+				mcpSet(-1, mcpMasterSpeed, (f->mcpset.speed=f->mcpset.pitch) * f->MasterPauseFadeParameter / 64);
 			break;
 
 		case KEY_SHIFT_F(2):
-			if (mcpType & mcpNormalizeCanAmplify)
+			if (f->mcpType & mcpNormalizeCanAmplify)
 			{
-				if ((mcpset.amp-=4)<4)
-					mcpset.amp=4;
-				mcpSet(-1, mcpMasterAmplify, 256*mcpset.amp);
+				if ((f->mcpset.amp-=4)<4)
+					f->mcpset.amp=4;
+				mcpSet(-1, mcpMasterAmplify, 256*f->mcpset.amp);
 			}
 			break;
 		case KEY_SHIFT_F(3):
-			if (mcpType & mcpNormalizeCanAmplify)
+			if (f->mcpType & mcpNormalizeCanAmplify)
 			{
-				if ((mcpset.amp+=4)>508)
-					mcpset.amp=508;
-				mcpSet(-1, mcpMasterAmplify, 256*mcpset.amp);
+				if ((f->mcpset.amp+=4)>508)
+					f->mcpset.amp=508;
+				mcpSet(-1, mcpMasterAmplify, 256*f->mcpset.amp);
 			}
 			break;
 
@@ -245,39 +242,39 @@ int mcpSetProcessKey(uint16_t key)
 		case KEY_SHIFT_F(4):
 			if (mcpType & mcpNormalizeCanEcho)
 			{
-				mcpset.viewfx^=1;
+				f->mcpset.viewfx^=1;
 			}
 			break;
 		case KEY_SHIFT_F(5):
 			if (mcpType & mcpNormalizeCanEcho)
 			{
-				if ((mcpset.reverb-=8)<-64)
-					mcpset.reverb=-64;
-				mcpSet(-1, mcpMasterReverb, mcpset.reverb);
+				if ((f->mcpset.reverb-=8)<-64)
+					f->mcpset.reverb=-64;
+				mcpSet(-1, mcpMasterReverb, f->mcpset.reverb);
 			}
 			break;
 		case KEY_SHIFT_F(6):
 			if (mcpType & mcpNormalizeCanEcho)
 			{
-				if ((mcpset.reverb+=8)>64)
-					mcpset.reverb=64;
-				mcpSet(-1, mcpMasterReverb, mcpset.reverb);
+				if ((f->mcpset.reverb+=8)>64)
+					f->mcpset.reverb=64;
+				mcpSet(-1, mcpMasterReverb, f->mcpset.reverb);
 			}
 			break;
 		case KEY_SHIFT_F(7):
 			if (mcpType & mcpNormalizeCanEcho)
 			{
-				if ((mcpset.chorus-=8)<-64)
-					mcpset.chorus=-64;
-				mcpSet(-1, mcpMasterChorus, mcpset.chorus);
+				if ((f->mcpset.chorus-=8)<-64)
+					f->mcpset.chorus=-64;
+				mcpSet(-1, mcpMasterChorus, f->mcpset.chorus);
 			}
 			break;
 		case KEY_SHIFT_F(8):
 			if (mcpType & mcpNormalizeCanEcho)
 			{
-				if ((mcpset.chorus+=8)>64)
-					mcpset.chorus=64;
-				mcpSet(-1, mcpMasterChorus, mcpset.chorus);
+				if ((f->mcpset.chorus+=8)>64)
+					f->mcpset.chorus=64;
+				mcpSet(-1, mcpMasterChorus, f->mcpset.chorus);
 			}
 			break;
 #endif
@@ -288,53 +285,53 @@ int mcpSetProcessKey(uint16_t key)
 
 		case KEY_CTRL_F(12):
 		case '\\':
-			if (mcpType & mcpNormalizeCanSpeedPitchUnlock)
+			if (f->mcpType & mcpNormalizeCanSpeedPitchUnlock)
 			{
-				mcpset.splock^=1;
+				f->mcpset.splock^=1;
 			}
 			break;
 		case KEY_BACKSPACE:
-			if (mcpType & mcpNormalizeFilterAOIFOI)
+			if (f->mcpType & mcpNormalizeFilterAOIFOI)
 			{
-				mcpSet(-1, mcpMasterFilter, set.filter=(set.filter==1)?2:(set.filter==2)?0:1);
-				mcpset.filter=set.filter;
+				set.filter = f->mcpset.filter = (f->mcpset.filter + 1) % 3;
+				mcpSet(-1, mcpMasterFilter, f->mcpset.filter);
 			}
 			break;
 
 		case KEY_CTRL_SHIFT_F(2):
-			set.pan=mcpset.pan;
-			set.bal=mcpset.bal;
-			set.vol=mcpset.vol;
-			set.speed=mcpset.speed;
-			set.pitch=mcpset.pitch;
-			set.amp=mcpset.amp;
-			set.reverb=mcpset.reverb;
-			set.chorus=mcpset.chorus;
-			set.srnd=mcpset.srnd;
+			set.pan=f->mcpset.pan;
+			set.bal=f->mcpset.bal;
+			set.vol=f->mcpset.vol;
+			set.speed=f->mcpset.speed;
+			set.pitch=f->mcpset.pitch;
+			set.amp=f->mcpset.amp;
+			set.reverb=f->mcpset.reverb;
+			set.chorus=f->mcpset.chorus;
+			set.srnd=f->mcpset.srnd;
 			break;
 
 		case KEY_CTRL_SHIFT_F(3):
-			mcpNormalize(mcpType);
+			mcpNormalize (&f->Public, f->mcpType);
 			break;
 
 		case KEY_CTRL_SHIFT_F(4):
-			mcpset.pan=64;
-			mcpset.bal=0;
-			mcpset.vol=64;
-			mcpset.speed=256;
-			mcpset.pitch=256;
-			mcpset.chorus=0;
-			mcpset.reverb=0;
-			mcpset.amp=64;
-			mcpSet(-1, mcpMasterAmplify, 256*mcpset.amp);
-			mcpSet(-1, mcpMasterVolume, mcpset.vol * MasterPauseFadeParameter / 64);
-			mcpSet(-1, mcpMasterBalance, mcpset.bal);
-			mcpSet(-1, mcpMasterPanning, mcpset.pan);
-			mcpSet(-1, mcpMasterSurround, mcpset.srnd);
-			mcpSet(-1, mcpMasterPitch, mcpset.pitch);
-			mcpSet(-1, mcpMasterSpeed, mcpset.speed);
-			mcpSet(-1, mcpMasterReverb, mcpset.reverb);
-			mcpSet(-1, mcpMasterChorus, mcpset.chorus);
+			f->mcpset.pan=64;
+			f->mcpset.bal=0;
+			f->mcpset.vol=64;
+			f->mcpset.speed=256;
+			f->mcpset.pitch=256;
+			f->mcpset.chorus=0;
+			f->mcpset.reverb=0;
+			f->mcpset.amp=64;
+			mcpSet(-1, mcpMasterAmplify, 256*f->mcpset.amp);
+			mcpSet(-1, mcpMasterVolume, f->mcpset.vol * f->MasterPauseFadeParameter / 64);
+			mcpSet(-1, mcpMasterBalance, f->mcpset.bal);
+			mcpSet(-1, mcpMasterPanning, f->mcpset.pan);
+			mcpSet(-1, mcpMasterSurround, f->mcpset.srnd);
+			mcpSet(-1, mcpMasterPitch, f->mcpset.pitch);
+			mcpSet(-1, mcpMasterSpeed, f->mcpset.speed);
+			mcpSet(-1, mcpMasterReverb, f->mcpset.reverb);
+			mcpSet(-1, mcpMasterChorus, f->mcpset.chorus);
 			break;
 
 		default:
@@ -360,10 +357,12 @@ int mcpSetProcessKey(uint16_t key)
 	return 1;
 }
 
-void mcpSetMasterPauseFadeParameters (int i)
+void mcpSetMasterPauseFadeParameters (struct cpifaceSessionAPI_t *cpifaceSession, int i)
 {
-	MasterPauseFadeParameter = i;
-	mcpSet(-1, mcpMasterPitch, mcpset.pitch*i/64);
-	mcpSet(-1, mcpMasterSpeed, mcpset.speed*i/64);
-	mcpSet(-1, mcpMasterVolume, mcpset.vol*i/64);
+	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
+
+	f->MasterPauseFadeParameter = i;
+	mcpSet(-1, mcpMasterPitch, f->mcpset.pitch*i/64);
+	mcpSet(-1, mcpMasterSpeed, f->mcpset.speed*i/64);
+	mcpSet(-1, mcpMasterVolume, f->mcpset.vol*i/64);
 }

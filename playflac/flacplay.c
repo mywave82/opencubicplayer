@@ -27,6 +27,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "types.h"
+#include "cpiface/cpiface.h"
 #include "cpiface/gif.h"
 #include "cpiface/jpeg.h"
 #include "cpiface/png.h"
@@ -37,7 +38,6 @@
 #include "filesel/filesystem.h"
 #include "flacplay.h"
 #include "stuff/imsrtns.h"
-#include "stuff/poll.h"
 
 /* options */
 static int flac_inpause;
@@ -1072,24 +1072,17 @@ w
 	}
 	flacbuffpos=0;
 
-	if (!pollInit(flacIdle))
-	{
-		fprintf(stderr, "playflac: pollInit failed\n");
-		goto error_out_flacbufpos;
-	}
-
 	_SET=mcpSet;
 	_GET=mcpGet;
 	mcpSet=SET;
 	mcpGet=GET;
 
-	mcpNormalize (mcpNormalizeDefaultPlayP);
+	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	return 1;
 
-error_out_flacbufpos:
-	ringbuffer_free (flacbufpos);
-	flacbufpos = 0;
+	//ringbuffer_free (flacbufpos);
+	//flacbufpos = 0;
 error_out_flacbuf:
 	free (flacbuf);
 	flacbuf = 0;
@@ -1115,8 +1108,6 @@ error_out_flacfile:
 
 void __attribute__ ((visibility ("internal"))) flacClosePlayer(void)
 {
-	pollClose();
-
 	plrAPI->Stop();
 
 	if (flacbuf)

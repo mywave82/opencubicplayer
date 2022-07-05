@@ -89,7 +89,6 @@ ymplay.o: ymplay.cpp \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
 	../stuff/imsrtns.h \
-	../stuff/poll.h \
 	ymplay.h \
 	stsoundlib/YmMusic.h
 	$(CXX) ymplay.cpp -o $@ -c

@@ -34,6 +34,7 @@
 #include "types.h"
 #include "boot/psetting.h"
 #include "cdaudio.h"
+#include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
@@ -41,7 +42,6 @@
 #include "filesel/cdrom.h"
 #include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
-#include "stuff/poll.h"
 
 static int cda_inpause;
 
@@ -466,8 +466,6 @@ void __attribute__ ((visibility ("internal"))) cdClose (void)
 {
 	cda_inpause=1;
 
-	pollClose();
-
 	plrAPI->Stop();
 
 	if (cdbufpos)
@@ -557,20 +555,12 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 
 	cdSetSpeed(256);
 
-	if (!pollInit(cdIdle))
-	{
-		ringbuffer_free (cdbufpos);
-		cdbufpos = 0;
-		plrAPI->Stop();
-		return -1;
-	}
-
 	_SET=mcpSet;
 	_GET=mcpGet;
 	mcpSet=SET;
 	mcpGet=GET;
 
-	mcpNormalize (mcpNormalizeDefaultPlayP);
+	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	return 0;
 }

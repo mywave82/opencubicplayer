@@ -36,7 +36,6 @@ extern "C"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
-#include "stuff/poll.h"
 }
 #include "oplplay.h"
 #include "oplptrak.h"
@@ -114,8 +113,6 @@ void __attribute__ ((visibility ("internal"))) oplClosePlayer(void)
 	{
 		ringbuffer_free (oplbufpos);
 		oplbufpos = 0;
-
-		pollClose();
 
 		plrAPI->Stop();
 
@@ -328,16 +325,11 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	}
 	opltowrite=0;
 
-	if (!pollInit(oplIdle))
-	{
-		goto error_out;
-	}
-
 	_SET=mcpSet;
 	_GET=mcpGet;
 	mcpSet=SET;
 	mcpGet=GET;
-	mcpNormalize (mcpNormalizeDefaultPlayP);
+	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	active=1;
 

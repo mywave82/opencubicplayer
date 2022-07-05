@@ -102,7 +102,6 @@ oplplay.o: oplplay.cpp \
 	../config.h \
 	../types.h \
 	../cpiface/cpiface.h \
-	../stuff/poll.h \
 	../dev/mcp.h \
 	../dev/deviplay.h \
 	../dev/player.h \

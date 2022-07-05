@@ -97,12 +97,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			ayPause (cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (64);
+			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (i);
+	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 static void ayCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -211,7 +211,7 @@ static int ayOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
 	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
-	plIsEnd=ayLooped;
+	cpifaceSession->IsEnd = ayLooped;
 	cpifaceSession->ProcessKey = ayProcessKey;
 	cpifaceSession->DrawGStrings = ayDrawGStrings;
 

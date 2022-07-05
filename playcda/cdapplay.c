@@ -102,12 +102,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			cpifaceSession->InPause = 1;
 			cdPause();
-			mcpSetMasterPauseFadeParameters (64);
+			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (i);
+	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
 }
 static char *gettimestr(unsigned long s, char *time)
 {
@@ -545,7 +545,7 @@ static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	setnewpos=0;
 	cpifaceSession->InPause = 0;
 
-	plIsEnd=cdaLooped;
+	cpifaceSession->IsEnd = cdaLooped;
 	cpifaceSession->ProcessKey = cdaProcessKey;
 	cpifaceSession->DrawGStrings = cdaDrawGStrings;
 

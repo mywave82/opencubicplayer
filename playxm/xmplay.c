@@ -1548,7 +1548,7 @@ int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, s
 	if (!mcpOpenPlayer(nchan, xmpPlayTick, file, cpifaceSession))
 		return 0;
 
-	mcpNormalize (mcpNormalizeDefaultPlayW);
+	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayW);
 
 	if (nchan!=mcpNChan)
 	{

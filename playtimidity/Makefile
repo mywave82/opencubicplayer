@@ -195,6 +195,7 @@ timidityplay.o: timidityplay.c timidity-git/timidity/playmidi.c\
 	timidity-git/timidity/timidity.h \
 	timidity-git/timidity/wrd.h \
 	../boot/psetting.h \
+	../cpiface/cpiface.h \
 	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
@@ -202,7 +203,6 @@ timidityplay.o: timidityplay.c timidity-git/timidity/playmidi.c\
 	../filesel/mdb.h \
 	../stuff/err.h \
 	../stuff/imsrtns.h \
-	../stuff/poll.h \
 	timidityplay.h
 	$(CC) $< -o $@ -c -DANOTHER_MAIN -Dmain=timidity_main -DDEFAULT_PATH=TIMIDITY_DEFAULT_PATH -DPKGDATADIR=TIMIDITYPKGDATADIR
 

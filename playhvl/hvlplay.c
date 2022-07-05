@@ -38,7 +38,6 @@
 #include "loader.h"
 #include "player.h"
 #include "stuff/imsrtns.h"
-#include "stuff/poll.h"
 
 #define MAXIMUM_SLOW_DOWN 32
 #define ROW_BUFFERS 25 /* half a second */
@@ -86,8 +85,6 @@ static struct ringbuffer_t *hvl_buf_pos;
  *
  *          As the tail catches up, we know data has been played, and we update our stats on the screen
  */
-
-static int active=0;
 
 static uint32_t hvlbuffpos;
 static int hvl_doloop;
@@ -656,7 +653,6 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 
 	hvlbuffpos = 0x00000000;
 	hvl_inpause = 0;
-	active = 1;
 	hvl_doloop = 0;
 	samples_committed=0;
 	samples_lastui=0;
@@ -684,27 +680,20 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 
 	bzero (plInstUsed, sizeof (plInstUsed));
 
-	if (!pollInit(hvlIdle))
-	{
-		goto error_out_ringbuffer;
-	}
-	active = 3;
-
 	_SET=mcpSet;
 	_GET=mcpGet;
 	mcpSet=SET;
 	mcpGet=GET;
 
-	mcpNormalize (mcpNormalizeDefaultPlayP);
+	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	return ht;
 
-error_out_ringbuffer:
-	if (hvl_buf_pos)
-	{
-		ringbuffer_free (hvl_buf_pos);
-		hvl_buf_pos = 0;
-	}
+	//if (hvl_buf_pos)
+	//{
+	//	ringbuffer_free (hvl_buf_pos);
+	//	hvl_buf_pos = 0;
+	//}
 error_out_mem:
 	free (hvl_buf_stereo);
 	hvl_buf_stereo = 0;
@@ -726,15 +715,7 @@ error_out_plrAPI_Play:
 
 void __attribute__ ((visibility ("internal"))) hvlClosePlayer (void)
 {
-	if (active & 2)
-	{
-		pollClose();
-	}
-	if (active & 1)
-	{
-		plrAPI->Stop ();
-	}
-	active = 0;
+	plrAPI->Stop ();
 
 	if (hvl_buf_pos)
 	{

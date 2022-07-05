@@ -90,8 +90,7 @@ ayplay.o: ayplay.c ayplay.h main.h sound.h z80.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
-	../stuff/imsrtns.h \
-	../stuff/poll.h
+	../stuff/imsrtns.h
 	$(CC) -o $@ ayplay.c -c
 
 dumpay: dumpay.o

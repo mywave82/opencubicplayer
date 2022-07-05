@@ -19,7 +19,7 @@ make 3.79.1:
     and shit like that.
 
 glibc 2.3 and the linuxthread library is not compatible with Eletric Fence when
-    timer is used. define NO_BACKGROUND_MIXER if you intend to use efence
+    timer is used.
 
 ncurses-5.2-26: (on redhat 7.3 for instance)
     Has some drawing bugs when drawing spaces, it sometimes failes to detect

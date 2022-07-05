@@ -401,7 +401,6 @@ sidplay.o: \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
 	../stuff/imsrtns.h \
-	../stuff/poll.h \
 	sidplay.h \
 	libsidplayfp-api.h
 	$(LIBSIDPLAYCXX) -I.. $(LIBSIDPLAYCXXFLAGS) $< -o $@ -c

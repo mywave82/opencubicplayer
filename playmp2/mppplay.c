@@ -99,12 +99,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			mpegPause (cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (64);
+			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (i);
+	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 static void mpegDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -232,7 +232,7 @@ static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
 	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
-	plIsEnd=mpegLooped;
+	cpifaceSession->IsEnd = mpegLooped;
 	cpifaceSession->ProcessKey = mpegProcessKey;
 	cpifaceSession->DrawGStrings = mpegDrawGStrings;
 

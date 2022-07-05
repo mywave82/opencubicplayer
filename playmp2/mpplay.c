@@ -29,6 +29,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "types.h"
+#include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
@@ -37,7 +38,6 @@
 #include "id3.h"
 #include "mpplay.h"
 #include "stuff/imsrtns.h"
-#include "stuff/poll.h"
 
 #ifdef PLAYMP2_DEBUG
 #define debug_printf(...) fprintf (stderr, __VA_ARGS__)
@@ -1147,19 +1147,12 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 	mpegbuffpos=0;
 	GuardPtr=0;
 
-	if (!pollInit(mpegIdle))
-	{
-		fprintf(stderr, "[MPx]: pollInit() failed\n");
-		goto error_out_plrAPI_Play;
-	}
-	debug_printf ("  mpegOpenPlayer poll is enabled\n");
-
 	_SET=mcpSet;
 	_GET=mcpGet;
 	mcpSet=SET;
 	mcpGet=GET;
 
-	mcpNormalize (mcpNormalizeDefaultPlayP);
+	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	active = 1;
 	opt25_50 = 0;
@@ -1196,7 +1189,6 @@ void __attribute__ ((visibility ("internal"))) mpegClosePlayer(void)
 
 	if (active)
 	{
-		pollClose();
 		plrAPI->Stop();
 
 		mad_synth_finish(&synth);

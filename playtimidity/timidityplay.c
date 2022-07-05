@@ -41,6 +41,7 @@
 #include "resample.h"
 #include "arc.h"
 #include "boot/psetting.h"
+#include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
@@ -48,7 +49,6 @@
 #include "filesel/mdb.h"
 #include "stuff/err.h"
 #include "stuff/imsrtns.h"
-#include "stuff/poll.h"
 
 #include "timidityplay.h"
 
@@ -1764,8 +1764,6 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 
 static void doTimidityClosePlayer(int CloseDriver)
 {
-	pollClose();
-
 	if (CloseDriver)
 	{
 		plrAPI->Stop();
@@ -1884,20 +1882,12 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	current_path = strdup (path);
 	emulate_play_midi_file_start(current_path, buffer, bufferlen, &timidity_main_session); /* gmibuflen etc must be set, since we will start to get events already here... */
 
-	if (!pollInit(timidityIdle))
-	{
-		doTimidityClosePlayer (1);
-		current_file_info->midi_data = NULL;
-		current_file_info->midi_data_size = 0;
-		return errGen;
-	}
-
 	_SET=mcpSet;
 	_GET=mcpGet;
 	mcpSet=SET;
 	mcpGet=GET;
 
-	mcpNormalize (mcpNormalizeNoFilter | mcpNormalizeCanSpeedPitchUnlock | mcpNormalizeCannotEcho | mcpNormalizeCannotAmplify);
+	mcpNormalize (cpifaceSession, mcpNormalizeNoFilter | mcpNormalizeCanSpeedPitchUnlock | mcpNormalizeCannotEcho | mcpNormalizeCannotAmplify);
 
 	return errOk;
 }

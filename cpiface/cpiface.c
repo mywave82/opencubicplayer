@@ -59,13 +59,13 @@
 #include "cpiface.h"
 #include "cpiface-private.h"
 #include "cpipic.h"
-#include "dev/mcp.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/imsrtns.h"
 #include "stuff/framelock.h"
+#include "stuff/poll.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 #include <unistd.h>
@@ -78,7 +78,6 @@ extern struct mdbreadinforegstruct cpiReadInfoReg;
 extern struct cpimoderegstruct cpiModeText;
 
 static struct cpifaceplayerstruct *curplayer;
-int (*plIsEnd)(struct cpifaceSessionAPI_t *cpifaceSession);
 
 int (*plGetLChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
 int (*plGetPChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
@@ -173,7 +172,7 @@ spd/ptch       =22 "spd: 123% = ptch: 123%"
                =25 "speed: 123% = pitch: 123%"
 */
 
-void cpiDrawG1String (struct cpifaceSessionAPI_t *cpifaceSession, struct settings *g1)
+static void cpiDrawG1String (struct cpifaceSessionPrivate_t *f)
 {
 	int volumemode = 0;
 	int echomode = 0;
@@ -206,8 +205,8 @@ void cpiDrawG1String (struct cpifaceSessionAPI_t *cpifaceSession, struct setting
 	}
 
 	/* increase the view-mode of each component until we can't grow them anymore */
-#warning TODO, we can cache this as long a g1->viewfx and screenwidth has not changed!
-	if (g1->viewfx)
+#warning TODO, we can cache this as long a f->mcpset.viewfx and screenwidth has not changed!
+	if (f->mcpset.viewfx)
 	{
 		width = (int)volumesizes[volumemode] + echosizes[echomode] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[speedpitchmode] + headspace + endspace;
 
@@ -318,10 +317,10 @@ void cpiDrawG1String (struct cpifaceSessionAPI_t *cpifaceSession, struct setting
 		switch (volumemode>>1)
 		{
 			default:
-			case 0: va=(g1->vol+4)>>3; vi= 8-va; break;
-			case 1: va=(g1->vol+2)>>2; vi=16-va; break;
-			case 2: va=(g1->vol+1)>>1; vi=32-va; break;
-			case 3: va= g1->vol      ; vi=64-va; break;
+			case 0: va=(f->mcpset.vol+4)>>3; vi= 8-va; break;
+			case 1: va=(f->mcpset.vol+2)>>2; vi=16-va; break;
+			case 2: va=(f->mcpset.vol+1)>>1; vi=32-va; break;
+			case 3: va= f->mcpset.vol      ; vi=64-va; break;
 		}
 		displaychr (1, x, 0x0f, '\xfe', va); x += va;
 		displaychr (1, x, 0x09, '\xfa', vi); x += vi;
@@ -330,7 +329,7 @@ void cpiDrawG1String (struct cpifaceSessionAPI_t *cpifaceSession, struct setting
 	displayvoid (1, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2);
 	if (interspace2) interspace2--;
 
-	if (g1->viewfx)
+	if (f->mcpset.viewfx)
 	{
 		if (echomode)
 		{
@@ -338,7 +337,7 @@ void cpiDrawG1String (struct cpifaceSessionAPI_t *cpifaceSession, struct setting
 		} else {
 			displaystr (1, x, 0x09, "echo: ",       5);  x +=  5;
 		}
-		displaystr (1, x, 0x0f, g1->useecho?"x":"o", 1); x += 1;
+		displaystr (1, x, 0x0f, f->mcpset.useecho?"x":"o", 1); x += 1;
 
 		displayvoid (1, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2);
 		if (interspace2) interspace2--;
@@ -357,10 +356,10 @@ void cpiDrawG1String (struct cpifaceSessionAPI_t *cpifaceSession, struct setting
 			switch (reverbchorusmode >> 1)
 			{
 				default:
-				case 0: l = ((g1->reverb+70)>>4); w =  8; temp = "-\xfa\xfa\xfam\xfa\xfa\xfa+"; break;
-				case 1: l = ((g1->reverb+68)>>3); w = 16; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
-				case 2: l = ((g1->reverb+66)>>2); w = 32; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
-				case 3: l = ((g1->reverb+64)>>1); w = 64; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+				case 0: l = ((f->mcpset.reverb+70)>>4); w =  8; temp = "-\xfa\xfa\xfam\xfa\xfa\xfa+"; break;
+				case 1: l = ((f->mcpset.reverb+68)>>3); w = 16; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+				case 2: l = ((f->mcpset.reverb+66)>>2); w = 32; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+				case 3: l = ((f->mcpset.reverb+64)>>1); w = 64; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
 			}
 			displaystr (1, x, 0x07, temp, l); x += l;
 			displaychr (1, x, 0x0f, 'I', 1); x += 1;
@@ -384,10 +383,10 @@ void cpiDrawG1String (struct cpifaceSessionAPI_t *cpifaceSession, struct setting
 			switch (reverbchorusmode >> 1)
 			{
 				default:
-				case 0: l = ((g1->chorus+70)>>4); w =  8; temp = "-\xfa\xfa\xfam\xfa\xfa\xfa+"; break;
-				case 1: l = ((g1->chorus+68)>>3); w = 16; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
-				case 2: l = ((g1->chorus+66)>>2); w = 32; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
-				case 3: l = ((g1->chorus+64)>>1); w = 64; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+				case 0: l = ((f->mcpset.chorus+70)>>4); w =  8; temp = "-\xfa\xfa\xfam\xfa\xfa\xfa+"; break;
+				case 1: l = ((f->mcpset.chorus+68)>>3); w = 16; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+				case 2: l = ((f->mcpset.chorus+66)>>2); w = 32; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+				case 3: l = ((f->mcpset.chorus+64)>>1); w = 64; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
 			}
 			displaystr (1, x, 0x07, temp, l); x += l;
 			displaychr (1, x, 0x0f, 'I', 1); x += 1;
@@ -400,7 +399,7 @@ void cpiDrawG1String (struct cpifaceSessionAPI_t *cpifaceSession, struct setting
 		} else {
 			displaystr (1, x, 0x09, "srnd: ",      5); x +=  5;
 		}
-		displaystr (1, x, 0x0f, g1->srnd?"x":"o", 1); x += 1;
+		displaystr (1, x, 0x0f, f->mcpset.srnd?"x":"o", 1); x += 1;
 
 		displayvoid (1, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2);
 		if (interspace2) interspace2--;
@@ -420,10 +419,10 @@ void cpiDrawG1String (struct cpifaceSessionAPI_t *cpifaceSession, struct setting
 			switch (panningbalancemode >> 1)
 			{
 				default:
-				case 0: r = ((g1->pan+70)>>4); w =  8; temp = "l\xfa\xfa\xfam\xfa\xfa\xfar"; break;
-				case 1: r = ((g1->pan+68)>>3); w = 16; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
-				case 2: r = ((g1->pan+66)>>2); w = 32; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
-				case 3: r = ((g1->pan+64)>>1); w = 64; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
+				case 0: r = ((f->mcpset.pan+70)>>4); w =  8; temp = "l\xfa\xfa\xfam\xfa\xfa\xfar"; break;
+				case 1: r = ((f->mcpset.pan+68)>>3); w = 16; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
+				case 2: r = ((f->mcpset.pan+66)>>2); w = 32; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
+				case 3: r = ((f->mcpset.pan+64)>>1); w = 64; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
 			}
 			l = w - r;
 			if (r < l)
@@ -466,10 +465,10 @@ void cpiDrawG1String (struct cpifaceSessionAPI_t *cpifaceSession, struct setting
 			switch (panningbalancemode >> 1)
 			{
 				default:
-				case 0: l = ((g1->bal+70)>>4); w =  8; temp = "l\xfa\xfa\xfam\xfa\xfa\xfar"; break;
-				case 1: l = ((g1->bal+68)>>3); w = 16; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
-				case 2: l = ((g1->bal+66)>>2); w = 32; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
-				case 3: l = ((g1->bal+64)>>1); w = 64; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
+				case 0: l = ((f->mcpset.bal+70)>>4); w =  8; temp = "l\xfa\xfa\xfam\xfa\xfa\xfar"; break;
+				case 1: l = ((f->mcpset.bal+68)>>3); w = 16; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
+				case 2: l = ((f->mcpset.bal+66)>>2); w = 32; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
+				case 3: l = ((f->mcpset.bal+64)>>1); w = 64; temp = "l\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfar"; break;
 			}
 			displaystr (1, x, 0x07, temp, l); x += l;
 			displaychr (1, x, 0x0f, 'I', 1); x += 1;
@@ -488,17 +487,17 @@ void cpiDrawG1String (struct cpifaceSessionAPI_t *cpifaceSession, struct setting
 		} else {
 			displaystr (1, x, 0x09, "spd: ", 5); x += 5;
 		}
-		snprintf (temp, sizeof (temp), "%3d", saturate (g1->speed * 100 / 256, 0, 999));
+		snprintf (temp, sizeof (temp), "%3d", saturate (f->mcpset.speed * 100 / 256, 0, 999));
 		displaystr (1, x, 0x0f, temp, 3); x += 3;
 		displaystr (1, x, 0x07, "% ", 2); x += 2;
-		displaystr (1, x, 0x09, g1->splock?"\x1d ":"  ", 2); x+= 2;
+		displaystr (1, x, 0x09, f->mcpset.splock?"\x1d ":"  ", 2); x+= 2;
 		if (speedpitchmode)
 		{
 			displaystr (1, x, 0x09, "pitch: ", 7); x += 7;
 		} else {
 			displaystr (1, x, 0x09, "ptch: ", 6); x += 6;
 		}
-		snprintf (temp, sizeof (temp), "%3d", saturate (g1->pitch * 100 / 256, 0, 999));
+		snprintf (temp, sizeof (temp), "%3d", saturate (f->mcpset.pitch * 100 / 256, 0, 999));
 		displaystr (1, x, 0x0f, temp, 3); x += 3;
 		displaychr (1, x, 0x07, '%', 1); x += 1;
 	}
@@ -1735,12 +1734,11 @@ void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t    *cpifaceSession,
                              const int                      gvol_slide_direction,
                              const uint8_t                  chanX,
                              const uint8_t                  chanY, /* set to zero to disable */
-                             const int                      amplification, /* -1 for disable */
-                             const char                    *filter, /* 3 character string if non-null */
                              const uint_fast8_t             inpause,
                              const uint_fast16_t            seconds,
                              const struct moduleinfostruct *mdbdata)
 {
+	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
 	const struct GStringElement *Elements1[10] = {&GString_song_x_y, &GString_row_x_y, &GString_order_x_y, &GString_speed, &GString_tempo, &GString_gvol, &GString_channels_x_y, &GString_comment, &GString_amplification, &GString_filter};
 	const struct GStringElement *Elements2[6] = {&GString_filename, &GString_title, &GString_composer, &GString_artist, &GString_style, &GString_pausetime};
 
@@ -1753,6 +1751,19 @@ void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t    *cpifaceSession,
 	const void *sizeinputa2[6];
 	const void *sizeinputb2[6];
 	const void *sizeinputc2[6];
+
+	int amplification = -1;
+	char *filter = 0;
+
+	if (f->mcpType & mcpNormalizeCanAmplify)
+	{
+		amplification = f->mcpset.amp;
+	}
+
+	if (f->mcpType & mcpNormalizeFilterAOIFOI)
+	{
+		filter = (f->mcpset.filter==1) ? "AOI" : (f->mcpset.filter==2) ? "FOI" : "off";
+	}
 
 	sizeinputa1[0] = &songX;
 	sizeinputb1[0] = &songY;
@@ -1824,13 +1835,15 @@ void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t    *cpifaceSession,
 
 void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
+	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
+
 	make_title (curplayer ? curplayer->playername : "", plEscTick);
 
-	cpiDrawG1String (cpifaceSession, &mcpset);
+	cpiDrawG1String (f);
 
-	if (cpifaceSession->DrawGStrings)
+	if (f->Public.DrawGStrings)
 	{
-		cpifaceSession->DrawGStrings (cpifaceSession);
+		f->Public.DrawGStrings (&f->Public);
 	} else {
 		displayvoid (2, 0, plScrWidth);
 		displayvoid (3, 0, plScrWidth);
@@ -1858,12 +1871,12 @@ void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		if (limit<2)
 			limit=2;
 
-		chann = cpifaceSession->LogicalChannelCount;
+		chann = f->Public.LogicalChannelCount;
 		if (chann>limit)
 			chann=limit;
-		chan0 = cpifaceSession->SelectedChannel - (chann / 2);
-		if ((chan0+chann) >= cpifaceSession->LogicalChannelCount)
-			chan0 = cpifaceSession->LogicalChannelCount - chann;
+		chan0 = f->Public.SelectedChannel - (chann / 2);
+		if ((chan0+chann) >= f->Public.LogicalChannelCount)
+			chan0 = f->Public.LogicalChannelCount - chann;
 		if (chan0<0)
 			chan0 = 0;
 
@@ -1874,17 +1887,17 @@ void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 			unsigned char chr;
 			unsigned char col = 0;
 
-			if (cpifaceSession->MuteChannel[i+chan0]&&((i+chan0) != cpifaceSession->SelectedChannel))
+			if (f->Public.MuteChannel[i+chan0]&&((i+chan0) != f->Public.SelectedChannel))
 			{
 				chr = 0xc4;
 				col = 0x08;
 			} else {
 				chr = '0'+(i+chan0+1)%10;
-				if (cpifaceSession->MuteChannel[i+chan0])
+				if (f->Public.MuteChannel[i+chan0])
 				{
 					col |= 0x80;
 				} else {
-					if ((i+chan0) != cpifaceSession->SelectedChannel)
+					if ((i+chan0) != f->Public.SelectedChannel)
 					{
 						col |= 0x08;
 					} else {
@@ -1892,8 +1905,8 @@ void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 					}
 				}
 			}
-			displaychr (4, offset + i + ((i + chan0) >= cpifaceSession->SelectedChannel), col, chr, 1);
-			if ((i + chan0) == cpifaceSession->SelectedChannel)
+			displaychr (4, offset + i + ((i + chan0) >= f->Public.SelectedChannel), col, chr, 1);
+			if ((i + chan0) == f->Public.SelectedChannel)
 			{
 				displaychr (4, offset + i, col, '0' + (i + chan0 + 1)/10, 1);
 			}
@@ -1901,10 +1914,10 @@ void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		if (chann)
 		{
 			displaychr (4, offset - 1, 0x08, chan0 ? 0x1b : 0x04, 1);
-			displaychr (4, offset + 1 + chann, 0x08, ((chan0+chann) != cpifaceSession->LogicalChannelCount) ? 0x1a : 0x04, 1);
+			displaychr (4, offset + 1 + chann, 0x08, ((chan0+chann) != f->Public.LogicalChannelCount) ? 0x1a : 0x04, 1);
 		}
 	} else {
-		if (cpifaceSession->SelectedChannelChanged)
+		if (f->Public.SelectedChannelChanged)
 		{
 			int chann;
 			int chan0;
@@ -1915,12 +1928,12 @@ void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 			if (limit<2)
 				limit=2;
 
-			chann = cpifaceSession->LogicalChannelCount;;
+			chann = f->Public.LogicalChannelCount;;
 			if (chann>limit)
 				chann=limit;
-			chan0 = cpifaceSession->SelectedChannel - (chann / 2);
-			if ((chan0+chann) >= cpifaceSession->LogicalChannelCount)
-				chan0 = cpifaceSession->LogicalChannelCount - chann;
+			chan0 = f->Public.SelectedChannel - (chann / 2);
+			if ((chan0+chann) >= f->Public.LogicalChannelCount)
+				chan0 = f->Public.LogicalChannelCount - chann;
 			if (chan0<0)
 				chan0 = 0;
 
@@ -1928,9 +1941,9 @@ void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 			for (i=0; i<chann; i++)
 			{ /* needs tuning... TODO */
-				gdrawchar8(384+i*8, 64, '0'+(i+chan0+1)/10, cpifaceSession->MuteChannel[i+chan0]?8:7, 0);
-				gdrawchar8(384+i*8, 72, '0'+(i+chan0+1)%10, cpifaceSession->MuteChannel[i+chan0]?8:7, 0);
-				gdrawchar8(384+i*8, 80, ((i+chan0)==cpifaceSession->SelectedChannel)?0x18:((i==0)&&chan0)?0x1B:((i==(chann-1))&&((chan0+chann) != cpifaceSession->LogicalChannelCount))?0x1A:' ', 15, 0);
+				gdrawchar8(384+i*8, 64, '0'+(i+chan0+1)/10, f->Public.MuteChannel[i+chan0]?8:7, 0);
+				gdrawchar8(384+i*8, 72, '0'+(i+chan0+1)%10, f->Public.MuteChannel[i+chan0]?8:7, 0);
+				gdrawchar8(384+i*8, 80, ((i+chan0)==f->Public.SelectedChannel)?0x18:((i==0)&&chan0)?0x1B:((i==(chann-1))&&((chan0+chann) != f->Public.LogicalChannelCount))?0x1A:' ', 15, 0);
 			}
 		}
 	}
@@ -2118,6 +2131,14 @@ static void plmpClose(void)
 
 static int linkhandle;
 
+static void cpifaceIdle (void)
+{
+	if (cpifaceSessionAPI.Public.IsEnd)
+	{
+		cpifaceSessionAPI.Public.IsEnd (&cpifaceSessionAPI.Public);
+	}
+}
+
 static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi, const struct interfaceparameters *ip)
 {
 	struct cpimoderegstruct *mod;
@@ -2141,7 +2162,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 
 	plEscTick=0;
 
-	plIsEnd=0;
+	cpifaceSessionAPI.Public.IsEnd=0;
 	plGetLChanSample=0;
 	plGetPChanSample=0;
 
@@ -2174,6 +2195,8 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 		return 0;
 	}
 
+	pollInit (cpifaceIdle);
+
 	for (mod=cpiDefModes; mod; mod=mod->nextdef)
 		cpiRegisterMode(mod);
 	for (mod=cpiModes; mod; mod=mod->next)
@@ -2189,6 +2212,8 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 
 static void plmpCloseFile()
 {
+	pollClose ();
+
 	cpiGetMode(curmodehandle);
 	curplayer->CloseFile (&cpifaceSessionAPI.Public);
 	while (cpiModes)
@@ -2346,9 +2371,9 @@ static interfaceReturnEnum plmpDrawScreen(void)
 	struct cpimoderegstruct *mod;
 	static int plInKeyboardHelp = 0;
 
-	if (plIsEnd)
+	if (cpifaceSessionAPI.Public.IsEnd)
 	{
-		if (plIsEnd(&cpifaceSessionAPI.Public))
+		if (cpifaceSessionAPI.Public.IsEnd(&cpifaceSessionAPI.Public))
 		{
 			plInKeyboardHelp = 0;
 			return interfaceReturnNextAuto;
@@ -2508,7 +2533,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 #ifdef KEYBOARD_DEBUG
 				fprintf (stderr, "plmpDrawScreen: mcpSetProcessKey()\n");
 #endif
-				if (mcpSetProcessKey (key))
+				if (mcpSetProcessKey (&cpifaceSessionAPI, key))
 				{
 #ifdef KEYBOARD_DEBUG
 					fprintf (stderr, "plmpDrawScreen:   key was swallowed\n");

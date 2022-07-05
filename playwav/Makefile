@@ -19,13 +19,13 @@ playwav$(LIB_SUFFIX): $(playwav_so)
 wavplay.o: wavplay.c \
 	../config.h \
 	../types.h \
+	../cpiface/cpiface.h \
 	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
 	../stuff/imsrtns.h \
-	../stuff/poll.h \
 	wave.h
 	$(CC) wavplay.c -o $@ -c
 

@@ -176,12 +176,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (64);
+			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (i);
+	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 static void gmdDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -207,8 +207,6 @@ static void gmdDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		(gi.globvolslide==fxGVSUp)?1:(gi.globvolslide==fxGVSDown)?-1:0,
 		0,          /* chan X */
 		0,          /* chan Y */
-		mcpset.amp,
-		(set.filter==1)?"AOI":(set.filter==2)?"FOI":"off",
 		cpifaceSession->InPause,
 		cpifaceSession->InPause ? ((pausetime-starttime)/DOS_CLK_TCK) : ((dos_clock()-starttime)/DOS_CLK_TCK),
 		&mdbdata
@@ -360,7 +358,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 		mpRemoveText(&mod);
 	plPanType=!!(mod.options&MOD_MODPAN);
 
-	plIsEnd=gmdLooped;
+	cpifaceSession->IsEnd = gmdLooped;
 	cpifaceSession->ProcessKey = gmdProcessKey;
 	cpifaceSession->DrawGStrings = gmdDrawGStrings;
 	cpifaceSession->SetMuteChannel = mpMute;

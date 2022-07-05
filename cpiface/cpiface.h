@@ -48,6 +48,7 @@ struct cpifaceSessionAPI_t
 	void (*SetMuteChannel)(struct cpifaceSessionAPI_t *cpifaceSession, int LogicalChannel, int IsMuted); /* Callback from cpiface to set the Mute channel for a given logical channel */
 	void (*DrawGStrings)(struct cpifaceSessionAPI_t *cpifaceSession); /* Draw the header, usually utilizes some of the fixed provides */
 	int (*ProcessKey) (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key); /* Decode keyboard presses from the user. Return value 1 = key is swalled, 0 = key is not swallowed.  */
+	int (*IsEnd)(struct cpifaceSessionAPI_t *cpifaceSession); /* The main "idle" function that should forward audio to the devw/devp. It should return 1 if looped and EOF detected */
 
 	/* Normally controlled by playback plugin */
 	uint8_t InPause; /* used by cpiface UI elements to know if the playback is paused or not */
@@ -59,7 +60,6 @@ struct cpifaceSessionAPI_t
 
 #warning move all these into cpifaceAPISource_t
 extern char plPanType; /* If this is one, it causes the visual channel-layout to swap right and left channel for every second channel group - currenly only used by some S3M files */
-extern int (*plIsEnd)(struct cpifaceSessionAPI_t *cpifaceSession);
 extern int (*plGetLChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
 extern int (*plGetPChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
 
@@ -234,18 +234,35 @@ void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t *cpifaceSession,
                              const int                      gvol_slide_direction,
                              const uint8_t                  chanX,
                              const uint8_t                  chanY, /* set to zero to disable */
-                             const int                      amplification, /* -1 for disable */
-                             const char                    *filter, /* 3 character string if non-null */
                              const uint_fast8_t             inpause,
                              const uint_fast16_t            seconds,
                              const struct moduleinfostruct *mdbdata);
-
-extern int mcpSetProcessKey(uint16_t key);
 
 
 /* For the sliding pause effect, range 64 = normal speed, 1 = almost complete stop.
  * For complete stop with wavetable use mcpSet (-1, mcpMasterPause, 1) and for stream playback the stream has to send zero-data
  */
-extern void mcpSetMasterPauseFadeParameters(int i);
+void mcpSetMasterPauseFadeParameters (struct cpifaceSessionAPI_t *cpifaceSession, int i);
+
+enum mcpNormalizeType
+{
+	mcpNormalizeNoFilter = 0,
+	mcpNormalizeFilterAOIFOI = 1,
+
+	mcpNormalizeMustSpeedPitchLock = 0,
+	mcpNormalizeCanSpeedPitchUnlock = 4,
+
+	mcpNormalizeCannotEcho = 0,
+	mcpNormalizeCanEcho = 8, /* no wave-table can actually do this (yet) */
+
+	mcpNormalizeCannotAmplify = 0,
+	mcpNormalizeCanAmplify = 16,
+
+	mcpNormalizeDefaultPlayW = 21,
+	mcpNormalizeDefaultPlayP = 0,
+};
+
+struct cpifaceSessionAPI_t;
+void mcpNormalize (struct cpifaceSessionAPI_t *cpifaceSession, enum mcpNormalizeType Type);
 
 #endif

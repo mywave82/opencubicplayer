@@ -31,7 +31,6 @@ extern "C"
 #include "dev/ringbuffer.h"
 #include "filesel/filesystem.h"
 #include "stuff/imsrtns.h"
-#include "stuff/poll.h"
 }
 #include "ymplay.h"
 #include "stsoundlib/YmMusic.h"
@@ -122,8 +121,6 @@ void __attribute__ ((visibility ("internal"))) ymClosePlayer(void)
 {
 	if (active)
 	{
-		pollClose();
-
 		plrAPI->Stop();
 
 		mcpSet=_SET;
@@ -245,7 +242,7 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	_GET=mcpGet;
 	mcpSet=SET;
 	mcpGet=GET;
-	mcpNormalize (mcpNormalizeDefaultPlayP);
+	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	ym_looped = 0;
 
@@ -272,12 +269,6 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 		goto error_out_plrAPI_Play;
 	}
 	ymbuffpos=0;
-
-	if (!pollInit(ymIdle))
-	{
-		fprintf(stderr, "[ymplay]: pollInit() failed\n");
-		goto error_out_plrAPI_Play;
-	}
 
 	active=1;
 	return 1;

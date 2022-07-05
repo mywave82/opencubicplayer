@@ -102,14 +102,6 @@ static void OpenPlayer(int chan)
 	/* tickplayed=0; */
 	/* cmdtimerpos=0; */
 /*
-	if (!pollInit(timerproc))
-	{
-		mcpNChan=0;
-		mcpIdle=0;
-		plrClosePlayer();
-		mixClose();
-		return 0;
-	}
 	{
 		struct mixfpostprocregstruct *mode;
 
@@ -126,8 +118,6 @@ static void ClosePlayer()
 
 	  mcpNChan=0;
 	  mcpIdle=0;
-
-	  pollClose();
 
 	  plrClosePlayer();
 

@@ -81,6 +81,7 @@ flacpplay.o: flacpplay.c \
 flacplay.o: flacplay.c \
 	../config.h \
 	../types.h \
+	../cpiface/cpiface.h \
 	../cpiface/gif.h \
 	../cpiface/jpeg.h \
 	../cpiface/png.h \
@@ -90,6 +91,5 @@ flacplay.o: flacplay.c \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
 	flacplay.h \
-	../stuff/imsrtns.h \
-	../stuff/poll.h
+	../stuff/imsrtns.h
 	$(CC) flacplay.c -o $@ $(FLAC_CFLAGS) -c

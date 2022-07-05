@@ -222,6 +222,7 @@ mcpedit.o: mcpedit.c \
 	../config.h \
 	../types.h \
 	cpiface.h \
+	cpiface-private.h \
 	../dev/deviplay.h \
 	../dev/deviwave.h \
 	../dev/mcp.h \
@@ -266,7 +267,6 @@ cpiface.o: cpiface.c \
 	cpiface.h \
 	cpiface-private.h \
 	cpipic.h \
-	../dev/mcp.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
@@ -274,6 +274,7 @@ cpiface.o: cpiface.c \
 	../stuff/imsrtns.h \
 	../stuff/framelock.h \
 	../stuff/poutput.h \
+	../stuff/poll.h \
 	../stuff/sets.h
 	$(CC) cpiface.c -o $@ -c
 

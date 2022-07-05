@@ -35,6 +35,7 @@
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
 #include "types.h"
+#include "cpiface/cpiface.h"
 #include "cpiface/gif.h"
 #include "cpiface/jpeg.h"
 #include "cpiface/png.h"
@@ -46,7 +47,6 @@
 #include "filesel/filesystem.h"
 #include "oggplay.h"
 #include "stuff/imsrtns.h"
-#include "stuff/poll.h"
 
 static int current_section;
 
@@ -958,17 +958,12 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 	ogg_inpause=0;
 	ogg_looped=0;
 
-	if (!pollInit(oggIdle))
-	{
-		goto error_out_ringbuffer;
-	}
-
 	_SET=mcpSet;
 	_GET=mcpGet;
 	mcpSet=SET;
 	mcpGet=GET;
 
-	mcpNormalize (mcpNormalizeDefaultPlayP);
+	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	active=1;
 	opt25_50 = 0;
@@ -977,9 +972,8 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 
 	return 1;
 
-error_out_ringbuffer:
-	ringbuffer_free (oggbufpos);
-	oggbufpos = 0;
+	//ringbuffer_free (oggbufpos);
+	//oggbufpos = 0;
 
 error_out_oggbuf:
 	free(oggbuf);
@@ -1005,7 +999,6 @@ void __attribute__ ((visibility ("internal"))) oggClosePlayer(void)
 {
 	if (active)
 	{
-		pollClose();
 		plrAPI->Stop();
 	}
 	active=0;

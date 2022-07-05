@@ -130,7 +130,7 @@
 #define KEY_PPAGE 339  /* 0x4900 curses.h */
 #endif
 
-#define KEY_CTRL_ENTER 0xff00 /* x11 only */
+#define KEY_CTRL_ENTER 0xff00 /* SDL/SDL2/X11 only */
 #define KEY_ALT_ENTER  0xff01 /* used to be 10, collides with ctrl+j */
 #define VIRT_KEY_RESIZE     0xff02 /* dummy key */
 
@@ -210,7 +210,6 @@
 #define VCSA_VERBOSE 1
 /* #define CDROM_VERBOSE 1 */
 
-/* #define NO_BACKGROUND_MIXER 1 */ /* needed if you intent to use efence with glibc */
 #define FIX_BACKSPACE 1 /* lot of linux distroes has a broken backspace key in consoles. See stuff-vsca.c */
 
 /* Multibyte support, don't think so.. VGA hardware is hardwired to one byte, so fuck the stupid new standards, since they SUCK */

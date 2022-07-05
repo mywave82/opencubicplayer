@@ -87,6 +87,7 @@ mppplay.o: mppplay.c \
 mpplay.o: mpplay.c \
 	../config.h \
 	../types.h \
+	../cpiface/cpiface.h \
 	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
@@ -94,6 +95,5 @@ mpplay.o: mpplay.c \
 	../filesel/filesystem.h \
 	id3.h \
 	mpplay.h \
-	../stuff/imsrtns.h \
-	../stuff/poll.h
+	../stuff/imsrtns.h
 	$(CC) mpplay.c -o $@ $(MAD_CFLAGS) -c

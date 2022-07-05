@@ -1906,7 +1906,7 @@ int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const 
 	if (!mcpOpenPlayer(ch, playtickstatic, file, cpifaceSession))
 		return 0;
 
-	mcpNormalize (mcpNormalizeDefaultPlayW);
+	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayW);
 
 	this->npchan=mcpNChan;
 

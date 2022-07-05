@@ -112,12 +112,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (64);
+			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (i);
+	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 
@@ -242,8 +242,6 @@ static void itpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		(gs==ifxGVSUp)?1:(gs==ifxGVSDown)?-1:0,
 		nch,
 		mcpNChan,
-		mcpset.amp,
-		(set.filter==1)?"AOI":(set.filter==2)?"FOI":"off",
 		cpifaceSession->InPause,
 		cpifaceSession->InPause ? ((pausetime-starttime)/DOS_CLK_TCK) : ((dos_clock()-starttime)/DOS_CLK_TCK),
 		&mdbdata
@@ -616,7 +614,7 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	insts=mod.instruments;
 	samps=mod.samples;
-	plIsEnd=itpLooped;
+	cpifaceSession->IsEnd = itpLooped;
 	cpifaceSession->ProcessKey = itpProcessKey;
 	cpifaceSession->DrawGStrings = itpDrawGStrings;
 	cpifaceSession->SetMuteChannel = itpMute;

@@ -59,7 +59,6 @@
 #include "dev/plrasm.h"
 #include "stuff/imsrtns.h"
 #include "devwmixf.h"
-#include "stuff/poll.h"
 #include "dwmixfa.h"
 
 /* NB NB   more includes further down in the file */
@@ -467,13 +466,6 @@ static void mixmain(void)
 	clipbusy--;
 }
 
-static void timerproc()
-{
-#ifndef NO_BACKGROUND_MIXER
-	mixmain();
-#endif
-}
-
 static void devwMixFSET(int ch, int opt, int val)
 {
 	struct channel *chn;
@@ -751,7 +743,7 @@ static int devwMixFGET(int ch, int opt)
 	return 0;
 }
 
-static void Idle(void)
+static void devwMixFIdle (void)
 {
 	mixmain();
 }
@@ -872,7 +864,7 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle
 
 	channelnum=chan;
 	mcpNChan=chan;
-	mcpIdle=Idle;
+	mcpIdle = devwMixFIdle;
 
 	dwmixfa_state.nvoices=channelnum;
 	prepare_mixer();
@@ -882,13 +874,6 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle
 	tickplayed=0;
 	cmdtimerpos=0;
 
-	/*/  playerproc();*/  /* some timing is wrong here! */
-
-	if (!pollInit(timerproc))
-	{
-		goto error_out_mixInit;
-	}
-
 	{
 		struct mixfpostprocregstruct *mode;
 
@@ -897,8 +882,7 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle
 	}
 	return 1;
 
-error_out_mixInit:
-	mixClose();
+	//mixClose();
 error_out_plrAPI_Play:
 	plrAPI->Stop();
 error_out:
@@ -915,8 +899,6 @@ static void devwMixFClosePlayer()
 
 	mcpNChan=0;
 	mcpIdle=0;
-
-	pollClose();
 
 	plrAPI->Stop();
 

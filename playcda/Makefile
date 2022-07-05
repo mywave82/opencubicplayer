@@ -24,14 +24,14 @@ cdaplay.o: cdaplay.c cdaudio.h \
 	../types.h \
 	../boot/plinkman.h \
 	cdaudio.h \
+	../cpiface/cpiface.h \
 	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \
 	../filesel/cdrom.h \
 	../filesel/filesystem.h \
-	../stuff/imsrtns.h \
-	../stuff/poll.h
+	../stuff/imsrtns.h
 	$(CC) cdaplay.c -o $@ -c
 
 cdapplay.o: cdapplay.c cdaudio.h \
