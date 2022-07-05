@@ -75,8 +75,8 @@ extern void (*mcpSet)(int ch, int opt, int val);
 extern int (*mcpGet)(int ch, int opt);
 extern void (*mcpGetRealVolume)(int ch, int *l, int *r);
 extern void (*mcpGetMasterSample)(int16_t *s, unsigned int len, uint32_t rate, int opt);
-extern int (*mcpGetChanSample)(unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
-extern int (*mcpMixChanSamples)(unsigned int *ch, unsigned int n, int16_t *s, unsigned int len, uint32_t rate, int opt);
+extern int (*mcpGetChanSample) (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
+extern int (*mcpMixChanSamples) (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int *ch, unsigned int n, int16_t *s, unsigned int len, uint32_t rate, int opt);
 
 extern unsigned int mcpMixMaxRate;
 extern unsigned int mcpMixProcRate;

@@ -42,7 +42,7 @@ extern char __attribute__ ((visibility ("internal"))) sidGetVideo(void);
 extern void __attribute__ ((visibility ("internal"))) sidMute (struct cpifaceSessionAPI_t *, int i, int m);
 extern void __attribute__ ((visibility ("internal"))) sidGetChanInfo(int i, sidChanInfo &ci);
 
-int __attribute__ ((visibility ("internal"))) sidGetLChanSample(unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
-int __attribute__ ((visibility ("internal"))) sidGetPChanSample(unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
+int __attribute__ ((visibility ("internal"))) sidGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
+int __attribute__ ((visibility ("internal"))) sidGetPChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
 
 #endif

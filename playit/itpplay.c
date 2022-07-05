@@ -569,9 +569,9 @@ static void itpMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
 	mutechan(&itplayer, i, m);
 }
 
-static int itpGetLChanSample(unsigned int ch, int16_t *buf, unsigned int len, uint32_t rate, int opt)
+static int itpGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *buf, unsigned int len, uint32_t rate, int opt)
 {
-	return getchansample(&itplayer, ch, buf, len, rate, opt);
+	return getchansample (cpifaceSession, &itplayer, ch, buf, len, rate, opt);
 }
 
 static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
@@ -618,7 +618,7 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->ProcessKey = itpProcessKey;
 	cpifaceSession->DrawGStrings = itpDrawGStrings;
 	cpifaceSession->SetMuteChannel = itpMute;
-	plGetLChanSample=itpGetLChanSample;
+	cpifaceSession->GetLChanSample = itpGetLChanSample;
 	cpifaceSession->LogicalChannelCount = mod.nchan;
 	cpifaceSession->PhysicalChannelCount = mcpNChan;
 	plUseDots(itpGetDots);
@@ -628,7 +628,7 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	if (mod.message)
 		plUseMessage(mod.message);
 
-	plGetPChanSample=mcpGetChanSample;
+	cpifaceSession->GetPChanSample = mcpGetChanSample;
 
 	starttime=dos_clock();
 	cpifaceSession->InPause = 0;

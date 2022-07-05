@@ -751,7 +751,7 @@ void __attribute__ ((visibility ("internal"))) sidGetChanInfo(int i, sidChanInfo
 	ci.rightvol=rightvol>>8;
 }
 
-int __attribute__ ((visibility ("internal"))) sidGetLChanSample(unsigned int i, int16_t *s, unsigned int len, uint32_t rate, int opt)
+int __attribute__ ((visibility ("internal"))) sidGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int i, int16_t *s, unsigned int len, uint32_t rate, int opt)
 {
 	int sid = i / 3;
 	int ch = (i % 3) + 1;
@@ -803,7 +803,7 @@ int __attribute__ ((visibility ("internal"))) sidGetLChanSample(unsigned int i, 
 	return !!sidMuted[ch];
 }
 
-int __attribute__ ((visibility ("internal"))) sidGetPChanSample(unsigned int i, int16_t *s, unsigned int len, uint32_t rate, int opt)
+int __attribute__ ((visibility ("internal"))) sidGetPChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int i, int16_t *s, unsigned int len, uint32_t rate, int opt)
 {
 	int sid = i / 4;
 	int ch = i % 4;

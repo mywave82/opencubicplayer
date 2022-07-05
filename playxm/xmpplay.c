@@ -624,7 +624,7 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->ProcessKey = xmpProcessKey;
 	cpifaceSession->DrawGStrings = xmpDrawGStrings;
 	cpifaceSession->SetMuteChannel = xmpMute;
-	plGetLChanSample=xmpGetLChanSample;
+	cpifaceSession->GetLChanSample = xmpGetLChanSample;
 
 	cpifaceSession->LogicalChannelCount = mod.nchan;
 	cpifaceSession->PhysicalChannelCount = mcpNChan;
@@ -636,7 +636,7 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	xmpInstSetup (cpifaceSession, mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, mod.nsampi, 0, xmpMarkInsSamp);
 	xmTrkSetup (cpifaceSession, &mod);
 
-	plGetPChanSample=mcpGetChanSample;
+	cpifaceSession->GetPChanSample = mcpGetChanSample;
 
 	starttime=dos_clock();
 	cpifaceSession->InPause = 0;

@@ -555,7 +555,7 @@ void __attribute__ ((visibility ("internal")))  hvlMute (struct cpifaceSessionAP
 	hvl_muted[ch] = m;
 }
 
-int __attribute__ ((visibility ("internal"))) hvlGetChanSample(unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt)
+int __attribute__ ((visibility ("internal"))) hvlGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt)
 {
 	int stereo = (opt&mcpGetSampleStereo)?1:0;
 	uint32_t step = imuldiv(0x00010000, hvlRate, (signed)rate);

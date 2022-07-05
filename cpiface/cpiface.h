@@ -42,6 +42,8 @@ struct cpifaceSessionAPI_t
 	/* configured by playback plugin during intialization of the given playback file */
 	uint_fast16_t LogicalChannelCount;  /* number of logical channels. Used by "Channel" viewer and selector, note-dot viewer, can be used by scope viewers, and is the default value used by track viewer */
 	uint_fast16_t PhysicalChannelCount; /* number of physical audio channels. Sometimes a format uses shadow channels for effects or smooth transitions. Can be used by scope viewers. */
+	int (*GetLChanSample)(struct cpifaceSessionAPI_t *cpifacesession, unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt); /* Get sample data for a given logical channel, used by visualizers */
+	int (*GetPChanSample)(struct cpifaceSessionAPI_t *cpifacesession, unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt); /* Get sample data for a given physical channel, used by visualizers */
 
 	/* Callbacks and status from cpiface to plugin */
 	uint8_t MuteChannel[MAXLCHAN]; /* Reflects the status of channel muting used by channel visualizers. Should be controlled by the playback plugin */
@@ -60,8 +62,6 @@ struct cpifaceSessionAPI_t
 
 #warning move all these into cpifaceAPISource_t
 extern char plPanType; /* If this is one, it causes the visual channel-layout to swap right and left channel for every second channel group - currenly only used by some S3M files */
-extern int (*plGetLChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
-extern int (*plGetPChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
 
 extern void cpiKeyHelp(uint16_t key, const char *shorthelp);
 extern void cpiKeyHelpClear(void);

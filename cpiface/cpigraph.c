@@ -195,11 +195,11 @@ static void plPrepareStripeScr (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	char str[49];
 
-	if ((plAnalChan==2)&&!plGetLChanSample)
+	if ((plAnalChan==2) && !cpifaceSession->GetLChanSample)
 		plAnalChan=0;
-	if (((plAnalChan==0)||(plAnalChan==1)) && (!cpifaceSession->GetMasterSample))
+	if (((plAnalChan==0) || (plAnalChan==1)) && (!cpifaceSession->GetMasterSample))
 		plAnalChan=2;
-	if ((plAnalChan==2)&&!plGetLChanSample)
+	if ((plAnalChan==2) && !cpifaceSession->GetLChanSample)
 		plAnalChan=0;
 
 	strcpy(str, "   ");
@@ -392,7 +392,7 @@ static void plDrawStripes (struct cpifaceSessionAPI_t *cpifaceSession)
 			if (plAnalChan!=2)
 				cpifaceSession->GetMasterSample(plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
 			else
-				plGetLChanSample (cpifaceSession->SelectedChannel, plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
+				cpifaceSession->GetLChanSample (cpifaceSession, cpifaceSession->SelectedChannel, plSampBuf, 2048>>plStripeSpeed, plAnalRate, 0);
 			if (plStripeSpeed)
 			{
 				fftanalyseall(ana, plSampBuf, 1, 10);
@@ -484,7 +484,7 @@ static void plDrawStripes (struct cpifaceSessionAPI_t *cpifaceSession)
 			if (plAnalChan!=2)
 				cpifaceSession->GetMasterSample(plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
 			else
-				plGetLChanSample (cpifaceSession->SelectedChannel, plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
+				cpifaceSession->GetLChanSample (cpifaceSession, cpifaceSession->SelectedChannel, plSampBuf, 512>>plStripeSpeed, plAnalRate, 0);
 			if (plStripeSpeed)
 			{
 				fftanalyseall(ana, plSampBuf, 1, 8);
@@ -631,7 +631,7 @@ static void strDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static int strCan (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if ((!plGetLChanSample) && (!cpifaceSession->GetMasterSample))
+	if ((!cpifaceSession->GetLChanSample) && (!cpifaceSession->GetMasterSample))
 		return 0;
 	return 1;
 }

@@ -362,7 +362,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->ProcessKey = gmdProcessKey;
 	cpifaceSession->DrawGStrings = gmdDrawGStrings;
 	cpifaceSession->SetMuteChannel = mpMute;
-	plGetLChanSample=mpGetChanSample;
+	cpifaceSession->GetLChanSample = mpGetChanSample;
 
 	cpifaceSession->LogicalChannelCount = mod.channum;
 	cpifaceSession->PhysicalChannelCount = mcpNChan;
@@ -386,7 +386,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	if (!mpPlayModule(&mod, file, cpifaceSession))
 		retval=errPlay;
 
-	plGetPChanSample=mcpGetChanSample;
+	cpifaceSession->GetPChanSample = mcpGetChanSample;
 
 	if (retval)
 	{

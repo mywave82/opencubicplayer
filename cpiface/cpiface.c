@@ -79,9 +79,6 @@ extern struct cpimoderegstruct cpiModeText;
 
 static struct cpifaceplayerstruct *curplayer;
 
-int (*plGetLChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
-int (*plGetPChanSample)(unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt);
-
 static signed char soloch=-1;
 
 char plCompoMode;
@@ -2152,7 +2149,6 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.PhysicalChannelCount = 0;
 	cpifaceSessionAPI.Public.DrawGStrings = 0;
 
-
 	cpifaceSessionAPI.Public.SetMuteChannel = 0;
 	bzero (cpifaceSessionAPI.Public.MuteChannel, sizeof(cpifaceSessionAPI.Public.MuteChannel));
 
@@ -2162,9 +2158,9 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 
 	plEscTick=0;
 
-	cpifaceSessionAPI.Public.IsEnd=0;
-	plGetLChanSample=0;
-	plGetPChanSample=0;
+	cpifaceSessionAPI.Public.IsEnd = 0;
+	cpifaceSessionAPI.Public.GetLChanSample = 0;
+	cpifaceSessionAPI.Public.GetPChanSample = 0;
 
 	linkhandle=lnkLink(ip->pllink);
 	if (linkhandle<0)

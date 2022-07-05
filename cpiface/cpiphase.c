@@ -90,9 +90,9 @@ static void plPrepareScopeScr (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	if ((plOszChan==2) && (!cpifaceSession->GetMasterSample))
 		plOszChan=3;
-	if (((plOszChan==3)||(plOszChan==0))&&!plGetLChanSample)
+	if (((plOszChan==3) || (plOszChan==0)) && !cpifaceSession->GetLChanSample)
 		plOszChan=1;
-	if ((plOszChan==1)&&!plGetPChanSample)
+	if ((plOszChan==1) && !cpifaceSession->GetPChanSample)
 		plOszChan=2;
 	if ((plOszChan==2) && (!cpifaceSession->GetMasterSample))
 		plOszChan=3;
@@ -380,19 +380,19 @@ static void plDrawScopes (struct cpifaceSessionAPI_t *cpifaceSession)
 		int i;
 		for (i=0; i < cpifaceSession->PhysicalChannelCount; i++)
 		{
-			int paus=plGetPChanSample(i, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
+			int paus = cpifaceSession->GetPChanSample (cpifaceSession, i, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
 			drawscope((i%scopenx)*scopedx+scopedx/2, scopedy*(i/scopenx)+scopedy/2, plSampBuf, samples, paus?8:15, 1);
 		}
 	} else if (plOszChan==3)
 	{
-		plGetLChanSample (cpifaceSession->SelectedChannel, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
+		cpifaceSession->GetLChanSample (cpifaceSession, cpifaceSession->SelectedChannel, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
 		drawscope(scopedx/2, scopedy/2, plSampBuf, samples, cpifaceSession->MuteChannel[cpifaceSession->SelectedChannel]?7:15, 1);
 	} else if (plOszChan==0)
 	{
 		int i;
 		for (i=0; i < cpifaceSession->LogicalChannelCount; i++)
 		{
-			plGetLChanSample(i, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
+			cpifaceSession->GetLChanSample (cpifaceSession, i, plSampBuf, samples+1, plOszRate, mcpGetSampleHQ);
 			drawscope((i%scopenx)*scopedx+scopedx/2, scopedy*(i/scopenx)+scopedy/2, plSampBuf, samples, (cpifaceSession->SelectedChannel==i)?cpifaceSession->MuteChannel[i]?(HIGHLIGHT&7):HIGHLIGHT:cpifaceSession->MuteChannel[i]?8:15, 1);
 		}
 	}
@@ -415,7 +415,7 @@ static void scoSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static int scoCan (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if (!plGetLChanSample&&!plGetPChanSample && (!cpifaceSession->GetMasterSample))
+	if (!cpifaceSession->GetLChanSample && !cpifaceSession->GetPChanSample && (!cpifaceSession->GetMasterSample))
 		return 0;
 	return 1;
 }

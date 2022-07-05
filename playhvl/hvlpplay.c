@@ -262,7 +262,7 @@ static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->PhysicalChannelCount = ht->ht_Channels;
 	cpifaceSession->LogicalChannelCount = ht->ht_Channels;
 	cpifaceSession->SetMuteChannel = hvlMute;
-	plGetPChanSample=hvlGetChanSample;
+	cpifaceSession->GetPChanSample = hvlGetChanSample;
 	plUseDots(hvlGetDots);
 	hvlInstSetup (cpifaceSession);
 	hvlChanSetup (cpifaceSession);

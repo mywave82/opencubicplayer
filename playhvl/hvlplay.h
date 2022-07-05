@@ -47,6 +47,6 @@ struct hvl_chaninfo
 void hvlGetChanInfo (int chan, struct hvl_chaninfo *ci);
 void hvlGetChanVolume (int chan, int *l, int *r);
 
-int __attribute__ ((visibility ("internal"))) hvlGetChanSample(unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
+int __attribute__ ((visibility ("internal"))) hvlGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
 
 #endif

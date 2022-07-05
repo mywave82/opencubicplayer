@@ -76,11 +76,11 @@ static void AnalDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 	unsigned int i;
 	int bits;
 
-	if ((plAnalChan==2)&&!plGetLChanSample)
+	if ((plAnalChan==2) && !cpifaceSession->GetLChanSample)
 		plAnalChan=0;
-	if (((plAnalChan==0)||(plAnalChan==1)) && (!cpifaceSession->GetMasterSample))
+	if (((plAnalChan==0) || (plAnalChan==1)) && (!cpifaceSession->GetMasterSample))
 		plAnalChan=2;
-	if ((plAnalChan==2)&&!plGetLChanSample)
+	if ((plAnalChan==2) && !cpifaceSession->GetLChanSample)
 		plAnalChan=0;
 
 	/* make the *s point to the right string */
@@ -163,7 +163,7 @@ static void AnalDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		if (plAnalChan!=2)
 			cpifaceSession->GetMasterSample(plSampBuf, 1<<bits, plAnalRate, 0);
 		else
-			plGetLChanSample (cpifaceSession->SelectedChannel, plSampBuf, 1<<bits, plAnalRate, 0);
+			cpifaceSession->GetLChanSample (cpifaceSession, cpifaceSession->SelectedChannel, plSampBuf, 1<<bits, plAnalRate, 0);
 		fftanalyseall(ana, plSampBuf, 1, bits);
 		for (i=0; i<wid; i++)
 			if (plAnalFlip&1)
@@ -299,7 +299,7 @@ static void AnalClose(void)
 
 static int AnalCan (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if ((!cpifaceSession->GetMasterSample) && (!plGetLChanSample))
+	if ((!cpifaceSession->GetMasterSample) && (!cpifaceSession->GetLChanSample))
 		return 0;
 	return 1;
 }

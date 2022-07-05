@@ -1784,14 +1784,14 @@ void __attribute__ ((visibility ("internal"))) mpLockPat(int st)
 		lockpattern=-1;
 }
 
-int __attribute__ ((visibility ("internal"))) mpGetChanSample(unsigned int ch, int16_t *buf, unsigned int len, uint32_t rate, int opt)
+int __attribute__ ((visibility ("internal"))) mpGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *buf, unsigned int len, uint32_t rate, int opt)
 {
 	if (tdata[ch].phys==-1)
 	{
 		memset(buf, 0, len*2);
 		return 1;
 	}
-	return mcpGetChanSample(tdata[ch].phys, buf, len, rate, opt);
+	return mcpGetChanSample (cpifaceSession, tdata[ch].phys, buf, len, rate, opt);
 }
 
 void __attribute__ ((visibility ("internal"))) mpMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int mute)

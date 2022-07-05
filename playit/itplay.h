@@ -379,7 +379,7 @@ extern int __attribute__ ((visibility ("internal"))) getrealpos(struct itplayer 
 extern void __attribute__ ((visibility ("internal"))) setpos(struct itplayer *this, int ord, int row); /* - done */
 extern void __attribute__ ((visibility ("internal"))) mutechan(struct itplayer *this, int c, int m); /* - done */
 extern void __attribute__ ((visibility ("internal"))) getglobinfo(struct itplayer *this, int *speed, int *bpm, int *gvol, int *gs); /* - done */
-extern int __attribute__ ((visibility ("internal"))) getchansample(struct itplayer *this, int ch, int16_t *buf, int len, uint32_t rate, int opt); /* - done */
+extern int __attribute__ ((visibility ("internal"))) getchansample (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int16_t *buf, int len, uint32_t rate, int opt); /* - done */
 extern int __attribute__ ((visibility ("internal"))) getdotsdata(struct itplayer *this, int ch, int pch, int *smp, int *note, int *voll, int *volr, int *sus); /* - done */
 extern void __attribute__ ((visibility ("internal"))) itplayer_getrealvol(struct itplayer *this, int ch, int *l, int *r); /* - done */
 extern void __attribute__ ((visibility ("internal"))) setloop(struct itplayer *this, int s); /* - done */

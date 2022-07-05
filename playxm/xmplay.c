@@ -1467,9 +1467,9 @@ void __attribute__ ((visibility ("internal"))) xmpSetPos(int ord, int row)
 	realpos=(curord<<16)|(currow<<8);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpGetLChanSample(unsigned int ch, int16_t *b, unsigned int len, uint32_t rate, int opt)
+int __attribute__ ((visibility ("internal"))) xmpGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *b, unsigned int len, uint32_t rate, int opt)
 {
-	return mcpGetChanSample(ch, b, len, rate, opt);
+	return mcpGetChanSample (cpifaceSession, ch, b, len, rate, opt);
 }
 
 void __attribute__ ((visibility ("internal"))) xmpMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)

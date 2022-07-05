@@ -119,11 +119,11 @@ static void plPrepareScopeScr (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	char str[49];
 
-	if ((plOszChan==2)&& (!cpifaceSession->GetMasterSample))
+	if ((plOszChan==2) && (!cpifaceSession->GetMasterSample))
 		plOszChan=3;
-	if (((plOszChan==3)||(plOszChan==0))&&!plGetLChanSample)
+	if (((plOszChan==3) || (plOszChan==0)) && !cpifaceSession->GetLChanSample)
 		plOszChan=1;
-	if ((plOszChan==1)&&!plGetPChanSample)
+	if ((plOszChan==1) && !cpifaceSession->GetPChanSample)
 		plOszChan=2;
 	if ((plOszChan==2) && (!cpifaceSession->GetMasterSample))
 		plOszChan=3;
@@ -381,7 +381,7 @@ static void plDrawScopes (struct cpifaceSessionAPI_t *cpifaceSession)
 				removescope((scopedx-scopesx)/2+x*scopedx, scopedy*(i/scopenx)+scopedy/2, scopes+((i&~1)|x)*scopesx, scopesx);
 				break;
 			}
-			plGetLChanSample(i+chan0, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
+			cpifaceSession->GetLChanSample (cpifaceSession, i+chan0, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
 			paus = cpifaceSession->MuteChannel[i];
 			if (cpifaceSession->SelectedChannelChanged)
 			{
@@ -415,7 +415,7 @@ static void plDrawScopes (struct cpifaceSessionAPI_t *cpifaceSession)
 
 		for (i=0; i < cpifaceSession->PhysicalChannelCount; i++)
 		{
-			int paus=plGetPChanSample(i, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
+			int paus = cpifaceSession->GetPChanSample (cpifaceSession, i, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
 			if (paus==3)
 			{
 				removescope((scopedx-scopesx)/2+(i%scopenx)*scopedx, scopedy*(i/scopenx)+scopedy/2, scopes+i*scopesx, scopesx);
@@ -454,7 +454,7 @@ static void plDrawScopes (struct cpifaceSessionAPI_t *cpifaceSession)
 	} else {
 		char col;
 		int16_t *bp;
-		plGetLChanSample (cpifaceSession->SelectedChannel, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
+		cpifaceSession->GetLChanSample (cpifaceSession, cpifaceSession->SelectedChannel, plSampBuf, scopesx+(plOszTrigger?scopetlen:0), plOszRate/scopenx, 0);
 		col = cpifaceSession->MuteChannel[cpifaceSession->SelectedChannel]?7:15;
 		bp=plSampBuf;
 		if (plOszTrigger)
@@ -493,7 +493,7 @@ static void scoSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static int scoCan (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if (!plGetLChanSample&&!plGetPChanSample && (!cpifaceSession->GetMasterSample))
+	if ((!cpifaceSession->GetLChanSample) && (!cpifaceSession->GetPChanSample) && (!cpifaceSession->GetMasterSample))
 		return 0;
 	return 1;
 }

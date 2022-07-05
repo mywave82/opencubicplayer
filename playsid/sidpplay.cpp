@@ -478,8 +478,8 @@ static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->ProcessKey = sidProcessKey;
 	cpifaceSession->DrawGStrings = sidDrawGStrings;
 
-	plGetPChanSample=sidGetPChanSample;
-	plGetLChanSample=sidGetLChanSample;
+	cpifaceSession->GetPChanSample = sidGetPChanSample;
+	cpifaceSession->GetLChanSample = sidGetLChanSample;
 
 	starttime=dos_clock();
 	cpifaceSession->InPause = 0;

@@ -1946,7 +1946,7 @@ int __attribute__ ((visibility ("internal"))) getrealpos(struct itplayer *this)
 	return this->realpos;
 }
 
-int __attribute__ ((visibility ("internal"))) getchansample(struct itplayer *this, int ch, int16_t *buf, int len, uint32_t rate, int opt)
+int __attribute__ ((visibility ("internal"))) getchansample (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int16_t *buf, int len, uint32_t rate, int opt)
 {
 	int i,n;
 	unsigned int chn[64];
@@ -1954,7 +1954,7 @@ int __attribute__ ((visibility ("internal"))) getchansample(struct itplayer *thi
 	for (i=0; i<this->npchan; i++)
 		if (this->pchannels[i].lch==ch)
 			chn[n++]=i;
-	mcpMixChanSamples(chn, n, buf, len, rate, opt);
+	mcpMixChanSamples (cpifaceSession, chn, n, buf, len, rate, opt);
 	return 1;
 }
 

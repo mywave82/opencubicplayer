@@ -115,7 +115,7 @@ extern void __attribute__ ((visibility ("internal"))) mpGetGlobInfo(struct globi
 extern char __attribute__ ((visibility ("internal"))) mpLooped(void );
 extern void __attribute__ ((visibility ("internal"))) mpSetLoop(unsigned char s);
 extern void __attribute__ ((visibility ("internal"))) mpLockPat(int st);
-extern int __attribute__ ((visibility ("internal"))) mpGetChanSample(unsigned int ch, int16_t *buf, unsigned int len, uint32_t rate, int opt);
+extern int __attribute__ ((visibility ("internal"))) mpGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *buf, unsigned int len, uint32_t rate, int opt);
 extern void __attribute__ ((visibility ("internal"))) mpMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m);
 extern void __attribute__ ((visibility ("internal"))) mpGetRealVolume(int ch, int *l, int *r);
 extern int __attribute__ ((visibility ("internal"))) mpGetChanStatus(int ch);
