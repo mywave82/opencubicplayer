@@ -82,7 +82,6 @@ static struct cpifaceplayerstruct *curplayer;
 static signed char soloch=-1;
 
 char plCompoMode;
-char plPanType;
 
 static struct cpimoderegstruct *cpiModes;
 static struct cpimoderegstruct *cpiDefModes;
@@ -2152,7 +2151,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.SetMuteChannel = 0;
 	bzero (cpifaceSessionAPI.Public.MuteChannel, sizeof(cpifaceSessionAPI.Public.MuteChannel));
 
-	plPanType=0;
+	cpifaceSessionAPI.Public.PanType=0;
 
 	cpiModes=0;
 

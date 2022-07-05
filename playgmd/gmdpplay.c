@@ -356,7 +356,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	if (plCompoMode)
 		mpRemoveText(&mod);
-	plPanType=!!(mod.options&MOD_MODPAN);
+	cpifaceSession->PanType = !!(mod.options & MOD_MODPAN);
 
 	cpifaceSession->IsEnd = gmdLooped;
 	cpifaceSession->ProcessKey = gmdProcessKey;

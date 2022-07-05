@@ -71,7 +71,7 @@ static void ChanDraw (struct cpifaceSessionAPI_t *cpifaceSession, int ignore)
 			for (x=0; x<2; x++)
 			{
 				i=2*first+y*2+x;
-				if (plPanType&&(y&1))
+				if (cpifaceSession->PanType && (y&1))
 					i^=1;
 				if (i < cpifaceSession->LogicalChannelCount)
 				{

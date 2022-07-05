@@ -54,14 +54,12 @@ struct cpifaceSessionAPI_t
 
 	/* Normally controlled by playback plugin */
 	uint8_t InPause; /* used by cpiface UI elements to know if the playback is paused or not */
+	uint8_t PanType; /* If this is one, it causes the visual channel-layout to swap right and left channel for every second channel group - currenly only used by some S3M files */
 
 	/* Normally controlled by cpiface */
 	uint8_t SelectedChannel; /* Used by most viewers*/
 	uint8_t SelectedChannelChanged; /* Used to cache redraws of channels */
 };
-
-#warning move all these into cpifaceAPISource_t
-extern char plPanType; /* If this is one, it causes the visual channel-layout to swap right and left channel for every second channel group - currenly only used by some S3M files */
 
 extern void cpiKeyHelp(uint16_t key, const char *shorthelp);
 extern void cpiKeyHelpClear(void);
@@ -262,7 +260,6 @@ enum mcpNormalizeType
 	mcpNormalizeDefaultPlayP = 0,
 };
 
-struct cpifaceSessionAPI_t;
 void mcpNormalize (struct cpifaceSessionAPI_t *cpifaceSession, enum mcpNormalizeType Type);
 
 #endif

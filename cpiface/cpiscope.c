@@ -368,7 +368,7 @@ static void plDrawScopes (struct cpifaceSessionAPI_t *cpifaceSession)
 
 		for (i=0; i<chann; i++)
 		{
-			int x=(plPanType?(((i+i+i+chan0)&2)>>1):(i&1));
+			int x = cpifaceSession->PanType ? (((i+i+i+chan0)&2)>>1) : (i&1);
 			int paus;
 			int16_t *bp;
 			if ((i+chan0)==cpifaceSession->LogicalChannelCount)
