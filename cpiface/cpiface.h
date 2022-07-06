@@ -50,7 +50,7 @@ struct cpifaceSessionAPI_t
 	void (*SetMuteChannel)(struct cpifaceSessionAPI_t *cpifaceSession, int LogicalChannel, int IsMuted); /* Callback from cpiface to set the Mute channel for a given logical channel */
 	void (*DrawGStrings)(struct cpifaceSessionAPI_t *cpifaceSession); /* Draw the header, usually utilizes some of the fixed provides */
 	int (*ProcessKey) (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key); /* Decode keyboard presses from the user. Return value 1 = key is swalled, 0 = key is not swallowed.  */
-	int (*IsEnd)(struct cpifaceSessionAPI_t *cpifaceSession); /* The main "idle" function that should forward audio to the devw/devp. It should return 1 if looped and EOF detected */
+	int (*IsEnd)(struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod); /* The main "idle" function that should forward audio to the devw/devp. It should return 1 if looped and EOF detected. LoopMod dictates if the user has selected loop-single or not at any given time */
 
 	/* Normally controlled by playback plugin */
 	uint8_t InPause; /* used by cpiface UI elements to know if the playback is paused or not */

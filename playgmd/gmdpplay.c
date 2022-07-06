@@ -290,15 +290,18 @@ static void gmdCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 	mpFree(&mod);
 }
 
-static int gmdLooped (struct cpifaceSessionAPI_t *cpifaceSession)
+static int gmdLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
-	mpSetLoop(fsLoopMods);
-	if (mcpIdle)
-		mcpIdle();
 	if (pausefadedirect)
+	{
 		dopausefade (cpifaceSession);
-
-	return (!fsLoopMods&&mpLooped());
+	}
+	mpSetLoop (LoopMod);
+	if (mcpIdle)
+	{
+		mcpIdle();
+	}
+	return (!LoopMod) && mpLooped();
 }
 
 static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader)

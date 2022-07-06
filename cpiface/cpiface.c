@@ -2131,7 +2131,7 @@ static void cpifaceIdle (void)
 {
 	if (cpifaceSessionAPI.Public.IsEnd)
 	{
-		cpifaceSessionAPI.Public.IsEnd (&cpifaceSessionAPI.Public);
+		cpifaceSessionAPI.Public.IsEnd (&cpifaceSessionAPI.Public, fsLoopMods);
 	}
 }
 
@@ -2368,7 +2368,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 
 	if (cpifaceSessionAPI.Public.IsEnd)
 	{
-		if (cpifaceSessionAPI.Public.IsEnd(&cpifaceSessionAPI.Public))
+		if (cpifaceSessionAPI.Public.IsEnd(&cpifaceSessionAPI.Public, fsLoopMods))
 		{
 			plInKeyboardHelp = 0;
 			return interfaceReturnNextAuto;

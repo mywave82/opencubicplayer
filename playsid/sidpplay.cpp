@@ -443,8 +443,8 @@ static int sidProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 	return 1;
 }
 
-static int sidLooped (struct cpifaceSessionAPI_t *cpifaceSession)
-{
+static int sidLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
+{ /* We do not detect loops at the moment */
 	if (pausefadedirect)
 	{
 		dopausefade (cpifaceSession);

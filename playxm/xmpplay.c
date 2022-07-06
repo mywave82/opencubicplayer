@@ -196,17 +196,19 @@ static int xmpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 	return 1;
 }
 
-static int xmpLooped (struct cpifaceSessionAPI_t *cpifaceSession)
+static int xmpLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
-	xmpSetLoop(fsLoopMods);
-	if (mcpIdle)
-		mcpIdle();
 	if (pausefadedirect)
 	{
 		dopausefade (cpifaceSession);
 	}
+	xmpSetLoop (LoopMod);
+	if (mcpIdle)
+	{
+		mcpIdle();
+	}
 
-	return !fsLoopMods&&xmpLoop();
+	return (!LoopMod) && xmpLoop();
 }
 
 static void xmpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)

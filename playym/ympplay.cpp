@@ -481,15 +481,15 @@ static int ymProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 }
 
 
-static int ymLooped (struct cpifaceSessionAPI_t *cpifaceSession)
+static int ymLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
 	if (pausefadedirect)
 	{
 		dopausefade (cpifaceSession);
 	}
-	ymSetLoop(fsLoopMods);
+	ymSetLoop (LoopMod);
 	ymIdle();
-	return !fsLoopMods&&ymIsLooped();
+	return (!LoopMod) && ymIsLooped();
 }
 
 static void ymCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)

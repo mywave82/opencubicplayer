@@ -185,15 +185,15 @@ static int hvlProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 	return 1;
 }
 
-static int hvlIsLooped (struct cpifaceSessionAPI_t *cpifaceSession)
+static int hvlIsLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
 	if (pausefadedirect)
 	{
 		dopausefade (cpifaceSession);
 	}
-	hvlSetLoop(fsLoopMods);
-	hvlIdle();
-	return !fsLoopMods&&hvlLooped();
+	hvlSetLoop (LoopMod);
+	hvlIdle ();
+	return (!LoopMod) && hvlLooped();
 }
 
 static void hvlCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)

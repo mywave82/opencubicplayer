@@ -199,15 +199,15 @@ static int mpegProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 }
 
 
-static int mpegLooped (struct cpifaceSessionAPI_t *cpifaceSession)
+static int mpegLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
 	if (pausefadedirect)
 	{
 		dopausefade (cpifaceSession);
 	}
-	mpegSetLoop(fsLoopMods);
-	mpegIdle();
-	return !fsLoopMods&&mpegIsLooped();
+	mpegSetLoop (LoopMod);
+	mpegIdle ();
+	return (!LoopMod) && mpegIsLooped();
 }
 
 

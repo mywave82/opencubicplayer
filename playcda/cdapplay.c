@@ -440,7 +440,7 @@ static int cdaProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 	return 1;
 }
 
-static int cdaLooped (struct cpifaceSessionAPI_t *cpifaceSession)
+static int cdaLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
 	struct cdStat stat;
 
@@ -449,37 +449,26 @@ static int cdaLooped (struct cpifaceSessionAPI_t *cpifaceSession)
 		dopausefade (cpifaceSession);
 	}
 
-	cdSetLoop(fsLoopMods);
+	cdSetLoop (LoopMod);
 
 	cdIdle();
 
 	cdGetStatus(&stat);
-
-	/*
-	if (status->error&STATUS_ERROR)
-		return 1;
-	*/
 
 	if (stat.looped)
 		return 1;
 
 	if (setnewpos)
 	{
-		if (newpos<0)
-			newpos=0;
-#if 0
-		if (newpos>=(signed)length)
+		if (newpos < 0)
 		{
-			if (fsLoopMods)
-				newpos=0;
-			else
-				return 1;
+			newpos = 0;
 		}
-#endif
-		cdJump(newpos /*, length-newpos*/);
-		setnewpos=0;
-	} else
-		newpos=stat.position;
+		cdJump (newpos);
+		setnewpos = 0;
+	} else {
+		newpos = stat.position;
+	}
 
 	return 0;
 }
@@ -541,7 +530,7 @@ static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 		return -1;
 	}
 
-	newpos=start;
+	newpos = start;
 	setnewpos=0;
 	cpifaceSession->InPause = 0;
 

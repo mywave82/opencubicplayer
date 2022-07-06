@@ -193,19 +193,19 @@ static int itpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 	return 1;
 }
 
-static int itpLooped (struct cpifaceSessionAPI_t *cpifaceSession)
+static int itpLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
-	setloop(&itplayer, fsLoopMods);
-	if (mcpIdle)
-	{
-		mcpIdle();
-	}
 	if (pausefadedirect)
 	{
 		dopausefade(cpifaceSession);
 	}
+	setloop(&itplayer, LoopMod);
+	if (mcpIdle)
+	{
+		mcpIdle();
+	}
 
-	return !fsLoopMods&&getloop(&itplayer);
+	return (!LoopMod) && getloop(&itplayer);
 }
 
 static void itpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)

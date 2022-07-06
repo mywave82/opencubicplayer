@@ -410,15 +410,15 @@ static int oplProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 }
 
 
-static int oplLooped (struct cpifaceSessionAPI_t *cpifaceSession)
+static int oplLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
 	if (pausefadedirect)
 	{
 		dopausefade (cpifaceSession);
 	}
-	oplSetLoop(fsLoopMods);
+	oplSetLoop (LoopMod);
 	oplIdle();
-	return !fsLoopMods&&oplIsLooped();
+	return (!LoopMod) && oplIsLooped();
 }
 
 static void oplCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)

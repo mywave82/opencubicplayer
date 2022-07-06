@@ -189,15 +189,15 @@ static int flacProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 }
 
 
-static int flacLooped (struct cpifaceSessionAPI_t *cpifaceSession)
+static int flacLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
 	if (pausefadedirect)
 	{
 		dopausefade (cpifaceSession);
 	}
-	flacSetLoop(fsLoopMods);
-	flacIdle();
-	return !fsLoopMods&&flacIsLooped();
+	flacSetLoop (LoopMod);
+	flacIdle ();
+	return (!LoopMod) && flacIsLooped();
 }
 
 

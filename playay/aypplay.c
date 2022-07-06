@@ -110,15 +110,15 @@ static void ayCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 	ayClosePlayer();
 }
 
-static int ayLooped (struct cpifaceSessionAPI_t *cpifaceSession)
+static int ayLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
 	if (pausefadedirect)
 	{
 		dopausefade (cpifaceSession);
 	}
-	aySetLoop(fsLoopMods);
-	ayIdle();
-	return !fsLoopMods&&ayIsLooped();
+	aySetLoop (LoopMod);
+	ayIdle ();
+	return (!LoopMod) && ayIsLooped();
 }
 
 static void ayDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)

@@ -204,15 +204,15 @@ static int oggProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 	return 1;
 }
 
-static int oggIsLooped (struct cpifaceSessionAPI_t *cpifaceSession)
+static int oggIsLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
 	if (pausefadedirect)
 	{
 		dopausefade (cpifaceSession);
 	}
-	oggSetLoop(fsLoopMods);
-	oggIdle();
-	return !fsLoopMods&&oggLooped();
+	oggSetLoop (LoopMod);
+	oggIdle ();
+	return (!LoopMod) && oggLooped();
 }
 
 

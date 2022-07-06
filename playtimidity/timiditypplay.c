@@ -106,15 +106,15 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
-static int timidityLooped (struct cpifaceSessionAPI_t *cpifaceSession)
+static int timidityLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
 	if (pausefadedirect)
 	{
 		dopausefade (cpifaceSession);
 	}
-	timiditySetLoop(fsLoopMods);
-	timidityIdle();
-	return !fsLoopMods&&timidityIsLooped();
+	timiditySetLoop (LoopMod);
+	timidityIdle ();
+	return (!LoopMod) && timidityIsLooped();
 }
 
 static void timidityDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)

@@ -207,15 +207,15 @@ static int wavProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 }
 
 
-static int wavLooped (struct cpifaceSessionAPI_t *cpifaceSession)
+static int wavLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
 	if (pausefadedirect)
 	{
 		dopausefade (cpifaceSession);
 	}
-	wpSetLoop(fsLoopMods);
-	wpIdle();
-	return !fsLoopMods&&wpLooped();
+	wpSetLoop (LoopMod);
+	wpIdle ();
+	return (!LoopMod) && wpLooped();
 }
 
 static void wavCloseFile()
