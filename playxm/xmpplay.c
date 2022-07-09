@@ -86,7 +86,7 @@ static void startpausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	if (cpifaceSession->InPause)
 	{
-		mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = 0);
+		cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = 0);
 		pausefadedirect=1;
 	} else
 		pausefadedirect=-1;
@@ -114,7 +114,7 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			i=0;
 			pausefadedirect=0;
 			pausetime=dos_clock();
-			mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = 1);
+			cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = 1);
 			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
@@ -154,11 +154,11 @@ static int xmpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			} else {
 				pausetime=dos_clock();
 			}
-			mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = !cpifaceSession->InPause);
+			cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = !cpifaceSession->InPause);
 			break;
 		case KEY_CTRL_HOME:
 			xmpInstClear (cpifaceSession);
-			xmpSetPos(0, 0);
+			xmpSetPos (cpifaceSession, 0, 0);
 			if (cpifaceSession->InPause)
 			{
 				starttime=pausetime;
@@ -170,25 +170,25 @@ static int xmpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 		case KEY_CTRL_LEFT:
 			p=xmpGetPos();
 			pat=p>>8;
-			xmpSetPos(pat-1, 0);
+			xmpSetPos (cpifaceSession, pat-1, 0);
 			break;
 		case '>':
 		case KEY_CTRL_RIGHT:
 			p=xmpGetPos();
 			pat=p>>8;
-			xmpSetPos(pat+1, 0);
+			xmpSetPos (cpifaceSession, pat+1, 0);
 			break;
 		case KEY_CTRL_UP:
 			p=xmpGetPos();
 			pat=p>>8;
 			row=p&0xFF;
-			xmpSetPos(pat, row-8);
+			xmpSetPos (cpifaceSession, pat, row-8);
 			break;
 		case KEY_CTRL_DOWN:
 			p=xmpGetPos();
 			pat=p>>8;
 			row=p&0xFF;
-			xmpSetPos(pat, row+8);
+			xmpSetPos (cpifaceSession, pat, row+8);
 			break;
 		default:
 			return 0;
@@ -203,17 +203,14 @@ static int xmpLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade (cpifaceSession);
 	}
 	xmpSetLoop (LoopMod);
-	if (mcpIdle)
-	{
-		mcpIdle();
-	}
+	mcpAPI->mcpIdle (cpifaceSession);
 
 	return (!LoopMod) && xmpLoop();
 }
 
 static void xmpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	int pos=xmpGetRealPos();
+	int pos = xmpGetRealPos (cpifaceSession);
 	int gvol,bpm,tmp;
 	struct xmpglobinfo gi;
 
@@ -259,7 +256,7 @@ static void xmpMarkInsSamp (struct cpifaceSessionAPI_t *cpifaceSession, char *in
 	/* mod.nchan == cpifaceSession->LogicalChannelCount */
 	for (i=0; i<mod.nchan; i++)
 	{
-		if (!xmpChanActive(i)||cpifaceSession->MuteChannel[i])
+		if (!xmpChanActive (cpifaceSession, i) || cpifaceSession->MuteChannel[i])
 			continue;
 		in=xmpGetChanIns(i);
 		sm=xmpGetChanSamp(i);
@@ -293,7 +290,7 @@ static void logvolbar(int *l, int *r)
 static void drawvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i, unsigned char st)
 {
 	int l,r;
-	xmpGetRealVolume(i, &l, &r);
+	xmpGetRealVolume (cpifaceSession, i, &l, &r);
 	logvolbar(&l, &r);
 
 	l=(l+4)>>3;
@@ -317,7 +314,7 @@ static void drawvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bu
 static void drawlongvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i, unsigned char st)
 {
 	int l,r;
-	xmpGetRealVolume(i, &l, &r);
+	xmpGetRealVolume (cpifaceSession, i, &l, &r);
 	logvolbar(&l, &r);
 	l=(l+2)>>2;
 	r=(r+2)>>2;
@@ -428,7 +425,7 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 			break;
 	}
 
-	if (!xmpChanActive(i))
+	if (!xmpChanActive (cpifaceSession, i))
 		return;
 
 	ins=xmpGetChanIns(i);
@@ -538,7 +535,7 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 
 /*************************************************************************/
 
-static int xmpGetDots(struct notedotsdata *d, int max)
+static int xmpGetDots (struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *d, int max)
 {
 	int pos=0;
 	int i;
@@ -550,7 +547,7 @@ static int xmpGetDots(struct notedotsdata *d, int max)
 	{
 		if (pos>=max)
 			break;
-		if (!xmpGetDotsData(i, &smp, &frq, &voll, &volr, &sus))
+		if (!xmpGetDotsData (cpifaceSession, i, &smp, &frq, &voll, &volr, &sus))
 			continue;
 		d[pos].voll=voll;
 		d[pos].volr=volr;
@@ -568,7 +565,7 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	int (*loader)(struct xmodule *, struct ocpfilehandle_t *)=0;
 	int retval;
 
-	if (!mcpOpenPlayer)
+	if (!mcpAPI->mcpOpenPlayer)
 		return errGen;
 
 	if (!file)
@@ -626,10 +623,10 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->ProcessKey = xmpProcessKey;
 	cpifaceSession->DrawGStrings = xmpDrawGStrings;
 	cpifaceSession->SetMuteChannel = xmpMute;
-	cpifaceSession->GetLChanSample = xmpGetLChanSample;
+	cpifaceSession->GetLChanSample = cpifaceSession->mcpGetChanSample;
+	cpifaceSession->GetPChanSample = cpifaceSession->mcpGetChanSample;
 
 	cpifaceSession->LogicalChannelCount = mod.nchan;
-	cpifaceSession->PhysicalChannelCount = mcpNChan;
 
 	plUseDots(xmpGetDots);
 
@@ -638,11 +635,9 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	xmpInstSetup (cpifaceSession, mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, mod.nsampi, 0, xmpMarkInsSamp);
 	xmTrkSetup (cpifaceSession, &mod);
 
-	cpifaceSession->GetPChanSample = mcpGetChanSample;
-
 	starttime=dos_clock();
 	cpifaceSession->InPause = 0;
-	mcpSet(-1, mcpMasterPause, 0);
+	cpifaceSession->mcpSet(-1, mcpMasterPause, 0);
 	pausefadedirect=0;
 
 	return errOk;

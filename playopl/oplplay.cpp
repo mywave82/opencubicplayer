@@ -69,9 +69,6 @@ static int opltowrite; /* this is adplug interface */
 static Cocpopl *opl;
 static CPlayer *p;
 
-static int (*_GET)(int ch, int opt);
-static void (*_SET)(int ch, int opt, int val);
-
 /* clipper threadlock since we use a timer-signal */
 static volatile int clipbusy=0;
 
@@ -116,9 +113,6 @@ void __attribute__ ((visibility ("internal"))) oplClosePlayer(void)
 
 		plrAPI->Stop();
 
-		mcpSet=_SET;
-		mcpGet=_GET;
-
 		delete(p);
 		delete(opl);
 
@@ -147,7 +141,7 @@ void __attribute__ ((visibility ("internal"))) oplMute (struct cpifaceSessionAPI
 	cpifaceSession->MuteChannel[i] = m;
 	opl->setmute(i, m);
 }
-static void SET(int ch, int opt, int val)
+static void oplSet(int ch, int opt, int val)
 {
 	switch (opt)
 	{
@@ -172,7 +166,8 @@ static void SET(int ch, int opt, int val)
 			break;
 	}
 }
-static int GET(int ch, int opt)
+
+static int oplGet(int ch, int opt)
 {
 	return 0;
 }
@@ -325,10 +320,8 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	}
 	opltowrite=0;
 
-	_SET=mcpSet;
-	_GET=mcpGet;
-	mcpSet=SET;
-	mcpGet=GET;
+	cpifaceSession->mcpSet = oplSet;
+	cpifaceSession->mcpGet = oplGet;
 	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	active=1;

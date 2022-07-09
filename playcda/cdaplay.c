@@ -77,9 +77,6 @@ static int bal = 0;
 static int pan = 64;
 static int srnd;
 
-static int (*_GET)(int ch, int opt);
-static void (*_SET)(int ch, int opt, int val);
-
 static struct ioctl_cdrom_readaudio_request_t req;
 static int req_active = 0;
 static int req_pos1;
@@ -426,7 +423,7 @@ static void cdSetVolume()
 		volr=(volr*(64-bal))>>6;
 }
 
-static void SET(int ch, int opt, int val)
+static void cdSet (int ch, int opt, int val)
 {
 	switch (opt)
 	{
@@ -452,7 +449,8 @@ static void SET(int ch, int opt, int val)
 			break;
 	}
 }
-static int GET(int ch, int opt)
+
+static int cdGet (int ch, int opt)
 {
 	return 0;
 }
@@ -486,17 +484,6 @@ void __attribute__ ((visibility ("internal"))) cdClose (void)
 	{
 		fh->unref (fh);
 		fh = 0;
-	}
-
-	if (_SET)
-	{
-		mcpSet = _SET;
-		_SET = 0;
-	}
-	if (_GET)
-	{
-		mcpGet = _GET;
-		_GET = 0;
 	}
 }
 
@@ -555,10 +542,8 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 
 	cdSetSpeed(256);
 
-	_SET=mcpSet;
-	_GET=mcpGet;
-	mcpSet=SET;
-	mcpGet=GET;
+	cpifaceSession->mcpSet=cdSet;
+	cpifaceSession->mcpGet=cdGet;
 
 	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 

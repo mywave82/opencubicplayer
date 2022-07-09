@@ -133,7 +133,7 @@ static int getpatlen(int n)
 	return trkP->getrows();
 }
 
-static int getcurpos(void)
+static int getcurpos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	return (trkP->getorder() << 8) | trkP->getrow();
 }

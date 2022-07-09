@@ -83,9 +83,6 @@ static volatile int clipbusy=0;
 
 static struct ocpfilehandle_t *oggfile;
 
-static int (*_GET)(int ch, int opt);
-static void (*_SET)(int ch, int opt, int val);
-
 #define PANPROC \
 do { \
 	float _rs = rs, _ls = ls; \
@@ -773,7 +770,7 @@ static void oggSetVolume (void)
 		volr=(volr*(64-bal))>>6;
 }
 
-static void SET(int ch, int opt, int val)
+static void oggSet(int ch, int opt, int val)
 {
 	switch (opt)
 	{
@@ -799,7 +796,8 @@ static void SET(int ch, int opt, int val)
 			break;
 	}
 }
-static int GET(int ch, int opt)
+
+static int oggGet(int ch, int opt)
 {
 	return 0;
 }
@@ -958,10 +956,8 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 	ogg_inpause=0;
 	ogg_looped=0;
 
-	_SET=mcpSet;
-	_GET=mcpGet;
-	mcpSet=SET;
-	mcpGet=GET;
+	cpifaceSession->mcpSet = oggSet;
+	cpifaceSession->mcpGet = oggGet;
 
 	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
@@ -1021,16 +1017,4 @@ void __attribute__ ((visibility ("internal"))) oggClosePlayer(void)
 		oggfile->unref (oggfile);
 		oggfile = 0;
 	}
-
-	if (_SET)
-	{
-		mcpSet = _SET;
-		_SET = 0;
-	}
-	if (_GET)
-	{
-		mcpGet = _GET;
-		_GET = 0;
-	}
 }
-

@@ -69,7 +69,7 @@ static void gmdMarkInsSamp (struct cpifaceSessionAPI_t *cpifaceSession, uint8_t 
 		struct chaninfo ci;
 		mpGetChanInfo(i, &ci);
 
-		if (!cpifaceSession->MuteChannel[i]&&mpGetChanStatus(i)&&ci.vol)
+		if (!cpifaceSession->MuteChannel[i] && mpGetChanStatus (cpifaceSession, i) && ci.vol)
 		{
 			ins[ci.ins]=((cpifaceSession->SelectedChannel==i)||(ins[ci.ins]==3))?3:2;
 			samp[ci.smp]=((cpifaceSession->SelectedChannel==i)||(samp[ci.smp]==3))?3:2;
@@ -147,7 +147,7 @@ static void startpausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	if (cpifaceSession->InPause)
 	{
-		mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = 0);
+		cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = 0);
 		pausefadedirect=1;
 	} else
 		pausefadedirect=-1;
@@ -175,7 +175,7 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			i=0;
 			pausefadedirect=0;
 			pausetime=dos_clock();
-			mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = 1);
+			cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = 1);
 			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
@@ -243,11 +243,11 @@ static int gmdProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			} else {
 				pausetime=dos_clock();
 			}
-			mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = !cpifaceSession->InPause);
+			cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = !cpifaceSession->InPause);
 			break;
 		case KEY_CTRL_HOME:
 			gmdInstClear (cpifaceSession);
-			mpSetPosition(0, 0);
+			mpSetPosition (cpifaceSession, 0, 0);
 			if (cpifaceSession->InPause)
 			{
 				starttime=pausetime;
@@ -258,20 +258,20 @@ static int gmdProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 		case '<':
 		case KEY_CTRL_LEFT:
 			mpGetPosition(&pat, &row);
-			mpSetPosition(pat-1, 0);
+			mpSetPosition (cpifaceSession, pat-1, 0);
 			break;
 		case '>':
 		case KEY_CTRL_RIGHT:
 			mpGetPosition(&pat, &row);
-			mpSetPosition(pat+1, 0);
+			mpSetPosition (cpifaceSession, pat+1, 0);
 			break;
 		case KEY_CTRL_UP:
 			mpGetPosition(&pat, &row);
-			mpSetPosition(pat, row-8);
+			mpSetPosition (cpifaceSession, pat, row-8);
 			break;
 		case KEY_CTRL_DOWN:
 			mpGetPosition(&pat, &row);
-			mpSetPosition(pat, row+8);
+			mpSetPosition (cpifaceSession, pat, row+8);
 			break;
 		case KEY_ALT_L:
 			patlock=!patlock;
@@ -286,7 +286,7 @@ static int gmdProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 static void gmdCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	gmdActive=0;
-	mpStopModule();
+	mpStopModule (cpifaceSession);
 	mpFree(&mod);
 }
 
@@ -297,10 +297,8 @@ static int gmdLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade (cpifaceSession);
 	}
 	mpSetLoop (LoopMod);
-	if (mcpIdle)
-	{
-		mcpIdle();
-	}
+	mcpAPI->mcpIdle (cpifaceSession);
+
 	return (!LoopMod) && mpLooped();
 }
 
@@ -310,7 +308,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	uint64_t i;
 	int retval;
 
-	if (!mcpOpenPlayer)
+	if (!mcpAPI->mcpOpenPlayer)
 		return errGen;
 
 	if (!file)
@@ -368,7 +366,6 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->GetLChanSample = mpGetChanSample;
 
 	cpifaceSession->LogicalChannelCount = mod.channum;
-	cpifaceSession->PhysicalChannelCount = mcpNChan;
 
 	plUseDots(gmdGetDots);
 	if (mod.message)
@@ -389,7 +386,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	if (!mpPlayModule(&mod, file, cpifaceSession))
 		retval=errPlay;
 
-	cpifaceSession->GetPChanSample = mcpGetChanSample;
+	cpifaceSession->GetPChanSample = cpifaceSession->mcpGetChanSample;
 
 	if (retval)
 	{
@@ -399,7 +396,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	starttime=dos_clock();
 	cpifaceSession->InPause = 0;
-	mcpSet(-1, mcpMasterPause, 0);
+	cpifaceSession->mcpSet(-1, mcpMasterPause, 0);
 	pausefadedirect=0;
 
 	gmdActive=1;

@@ -30,7 +30,7 @@
 #include "timidityplay.h"
 #include "cpiface/cpiface.h"
 
-int __attribute__ ((visibility ("internal"))) timidityGetDots(struct notedotsdata *d, int max)
+int __attribute__ ((visibility ("internal"))) timidityGetDots (struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *d, int max)
 {
 	int i,j;
 	int pos=0;

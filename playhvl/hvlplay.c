@@ -99,9 +99,6 @@ static unsigned long voll,volr;
 static int pan;
 static int srnd;
 
-static int (*_GET)(int ch, int opt);
-static void (*_SET)(int ch, int opt, int val);
-
 static uint8_t hvl_muted[MAX_CHANNELS];
 
 #define PANPROC \
@@ -494,7 +491,7 @@ static void hvlSetVolume (void)
 		volr=(volr*(64-bal))>>6;
 }
 
-static void SET(int ch, int opt, int val)
+static void hvlSet (int ch, int opt, int val)
 {
 	switch (opt)
 	{
@@ -521,7 +518,8 @@ static void SET(int ch, int opt, int val)
 			break;
 	}
 }
-static int GET(int ch, int opt)
+
+static int hvlGet (int ch, int opt)
 {
 	return 0;
 }
@@ -680,10 +678,8 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 
 	bzero (plInstUsed, sizeof (plInstUsed));
 
-	_SET=mcpSet;
-	_GET=mcpGet;
-	mcpSet=SET;
-	mcpGet=GET;
+	cpifaceSession->mcpSet = hvlSet;
+	cpifaceSession->mcpGet = hvlGet;
 
 	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
@@ -736,15 +732,4 @@ void __attribute__ ((visibility ("internal"))) hvlClosePlayer (void)
 	}
 
 	current_cpifaceSession = 0;
-
-	if (_SET)
-	{
-		mcpSet = _SET;
-		_SET = 0;
-	}
-	if (_GET)
-	{
-		mcpGet = _GET;
-		_GET = 0;
-	}
 }

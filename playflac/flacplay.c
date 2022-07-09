@@ -80,9 +80,6 @@ static int donotloop=1;
 
 static volatile int clipbusy=0;
 
-static int (*_GET)(int ch, int opt);
-static void (*_SET)(int ch, int opt, int val);
-
 static int flacPendingSeek = 0;
 static uint64_t flacPendingSeekPos;
 
@@ -859,7 +856,7 @@ static void flacSetVolume(void)
 		voll=(voll*(64-bal))>>6;
 }
 
-static void SET(int ch, int opt, int val)
+static void flacSet (int ch, int opt, int val)
 {
 	switch (opt)
 	{
@@ -885,7 +882,8 @@ static void SET(int ch, int opt, int val)
 			break;
 	}
 }
-static int GET(int ch, int opt)
+
+static int flacGet (int ch, int opt)
 {
 	return 0;
 }
@@ -1072,10 +1070,8 @@ w
 	}
 	flacbuffpos=0;
 
-	_SET=mcpSet;
-	_GET=mcpGet;
-	mcpSet=SET;
-	mcpGet=GET;
+	cpifaceSession->mcpSet=flacSet;
+	cpifaceSession->mcpGet=flacGet;
 
 	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
@@ -1138,15 +1134,4 @@ void __attribute__ ((visibility ("internal"))) flacClosePlayer(void)
 	decoder = NULL;
 
 	flacFreeComments ();
-
-	if (_SET)
-	{
-		mcpSet = _SET;
-		_SET = 0;
-	}
-	if (_GET)
-	{
-		mcpGet = _GET;
-		_GET = 0;
-	}
 }

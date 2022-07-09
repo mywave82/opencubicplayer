@@ -40,6 +40,7 @@
 #include <unistd.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "cpiface/cpiface.h"
 #include "dev/imsdev.h"
 #include "dev/mcp.h"
 #include "dev/mix.h"
@@ -94,7 +95,7 @@ static int16_t (*interpoltabq2)[16][256][4];
 static int16_t *scalebuf=0;
 static int32_t *buf32;
 
-static void (*playerproc)(void);
+static void (*playerproc)(struct cpifaceSessionAPI_t *cpifaceSession);
 static unsigned long tickwidth;
 static unsigned long tickplayed;
 static unsigned long orgspeed;
@@ -392,10 +393,9 @@ static void playchannelq(int ch, uint32_t len)
 	}
 }
 
-
-
-static void mixer(void)
+static void devwMixIdle  (struct cpifaceSessionAPI_t *cpifaceSession)
 {
+	/* mixer */
 	int i;
 	struct mixqpostprocregstruct *mode;
 
@@ -454,7 +454,7 @@ static void mixer(void)
 			if (!((tickwidth-tickplayed)>>8))
 			{
 				tickplayed-=tickwidth;
-				playerproc();
+				playerproc (cpifaceSession);
 #warning use plrAPI API to track this by buffer instead of delivery (cmdtimerpos)
 				cmdtimerpos+=tickwidth;
 				tickwidth=newtickwidth;
@@ -754,11 +754,6 @@ static int devwMixGET(int ch, int opt)
 	return 0;
 }
 
-static void devwMixIdle(void)
-{
-	mixer();
-}
-
 static void GetMixChannel(unsigned int ch, struct mixchannel *chn, uint32_t rate)
 	/* Refered to by OpenPlayer to mixInit */
 {
@@ -821,7 +816,7 @@ static int devwMixLoadSamples(struct sampleinfo *sil, int n)
 	return 1;
 }
 
-static int devwMixOpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
+static int devwMixOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *cpifaceSession), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	uint32_t currentrate;
 	struct mixqpostprocregstruct *mode;
@@ -920,8 +915,9 @@ static int devwMixOpenPlayer(int chan, void (*proc)(), struct ocpfilehandle_t *s
 	orgspeed=12800;
 
 	channelnum=chan;
-	mcpNChan=chan;
-	mcpIdle = devwMixIdle;
+	cpifaceSession->PhysicalChannelCount = chan;
+	cpifaceSession->mcpGet = devwMixGET;
+	cpifaceSession->mcpSet = devwMixSET;
 
 	calcamptab(amplify);
 	calcspeed();
@@ -957,9 +953,6 @@ static void devwMixClosePlayer()
 {
 	struct mixqpostprocregstruct *mode;
 
-	mcpNChan=0;
-	mcpIdle=0;
-
 	plrAPI->Stop();
 
 	channelnum=0;
@@ -990,6 +983,14 @@ static void devwMixClosePlayer()
 	interpoltabq2=NULL;
 }
 
+static const struct mcpAPI_t devwMix =
+{
+	devwMixOpenPlayer,
+	devwMixLoadSamples,
+	devwMixIdle,
+	devwMixClosePlayer
+};
+
 static int wmixInit(const struct deviceinfo *dev)
 {
 	resample=!!(dev->opt&MIXRQ_RESAMPLE);
@@ -1005,20 +1006,17 @@ static int wmixInit(const struct deviceinfo *dev)
 	mastersrnd=0;
 	channelnum=0;
 
-	mcpLoadSamples=devwMixLoadSamples;
-	mcpOpenPlayer=devwMixOpenPlayer;
-	mcpClosePlayer=devwMixClosePlayer;
-	mcpGet=devwMixGET;
-	mcpSet=devwMixSET;
+	mcpAPI = &devwMix;
 
 	return 1;
 }
 
 static void wmixClose(void)
 {
-	mcpLoadSamples = 0;
-	mcpOpenPlayer = 0;
-	mcpClosePlayer = 0;
+	if (mcpAPI == &devwMix)
+	{
+		mcpAPI = 0;
+	}
 }
 
 

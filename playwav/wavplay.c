@@ -83,9 +83,6 @@ static uint32_t wavebufrate;
 
 static volatile int clipbusy=0;
 
-static int (*_GET)(int ch, int opt);
-static void (*_SET)(int ch, int opt, int val);
-
 #ifdef PLAYWAVE_DEBUG
 static const char *compression_code_str(uint_fast16_t code)
 {
@@ -487,7 +484,7 @@ static void wpSetVolume (void)
 		voll=(voll*(64-bal))>>6;
 }
 
-static void SET(int ch, int opt, int val)
+static void wpSet(int ch, int opt, int val)
 {
 	switch (opt)
 	{
@@ -513,7 +510,8 @@ static void SET(int ch, int opt, int val)
 			break;
 	}
 }
-static int GET(int ch, int opt)
+
+static int wpGet(int ch, int opt)
 {
 	return 0;
 }
@@ -755,10 +753,8 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	active=1;
 
-	_SET=mcpSet;
-	_GET=mcpGet;
-	mcpSet=SET;
-	mcpGet=GET;
+	cpifaceSession->mcpSet = wpSet;
+	cpifaceSession->mcpGet = wpGet;
 
 	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
@@ -799,16 +795,5 @@ void __attribute__ ((visibility ("internal"))) wpClosePlayer(void)
 	{
 		wavefile->unref (wavefile);
 		wavefile = 0;
-	}
-
-	if (_SET)
-	{
-		mcpSet = _SET;
-		_SET = 0;
-	}
-	if (_GET)
-	{
-		mcpGet = _GET;
-		_GET = 0;
 	}
 }

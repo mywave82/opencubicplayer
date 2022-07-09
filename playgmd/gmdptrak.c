@@ -80,9 +80,9 @@ static int getpatlen(int n)
 	return plPatterns[plOrders[n]].patlen;
 }
 
-static int getcurpos(void)
+static int getcurpos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	return mpGetRealPos()>>8;
+	return mpGetRealPos(cpifaceSession)>>8;
 }
 
 static int getnote(uint16_t *bp, int small)

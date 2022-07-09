@@ -51,6 +51,7 @@ devwnone.o: devwnone.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../cpiface/cpiface.h \
 	../dev/imsdev.h \
 	../dev/mcp.h \
 	../dev/mix.h \
@@ -62,6 +63,7 @@ devwmix.o: devwmix.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../cpiface/cpiface.h \
 	../dev/devigen.h \
 	../dev/mcp.h \
 	../dev/mix.h \
@@ -94,6 +96,7 @@ devwmixf.o: devwmixf.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../cpiface/cpiface.h \
 	../dev/imsdev.h \
 	../dev/mcp.h \
 	../dev/mix.h \

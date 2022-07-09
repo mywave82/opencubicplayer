@@ -52,6 +52,7 @@
 #include <unistd.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "cpiface/cpiface.h"
 #include "dev/imsdev.h"
 #include "dev/mcp.h"
 #include "dev/mix.h"
@@ -123,7 +124,7 @@ struct channel
 };
 static struct channel *channels;
 
-static void (*playerproc)(void);
+static void (*playerproc)(struct cpifaceSessionAPI_t *cpifaceSession);
 
 static uint32_t tickwidth;
 static uint32_t tickplayed;
@@ -313,8 +314,9 @@ static void setlbuf(struct channel *c)
 	}
 }
 
-static void mixmain(void)
+static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
+	/* mixmain */
 	int i;
 
 	if (!channelnum)
@@ -418,7 +420,7 @@ static void mixmain(void)
 				float invt2g;
 				tickplayed-=tickwidth;
 
-				playerproc();
+				playerproc (cpifaceSession);
 
 				cmdtimerpos+=tickwidth;
 				tickwidth=newtickwidth;
@@ -743,11 +745,6 @@ static int devwMixFGET(int ch, int opt)
 	return 0;
 }
 
-static void devwMixFIdle (void)
-{
-	mixmain();
-}
-
 /* Houston, we've got a problem there... the display mixer isn't
  * able to handle floating point values at all. shit.
  * (kebby, irgendwann mal: "ich will das nicht")
@@ -811,7 +808,7 @@ static int devwMixFLoadSamples(struct sampleinfo *sil, int n)
 	return 1;
 }
 
-static int devwMixFOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
+static int devwMixFOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *cpifaceSession), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
 	uint32_t currentrate;
@@ -849,7 +846,7 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle
 	{
 		goto error_out_plrAPI_Play;
 	}
-	mcpGetRealVolume=getrealvol;
+	cpifaceSession->mcpGetRealVolume = getrealvol; /* override mixInit */
 
 	calcvols();
 
@@ -863,8 +860,9 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle
 	orgspeed=12800;
 
 	channelnum=chan;
-	mcpNChan=chan;
-	mcpIdle = devwMixFIdle;
+	cpifaceSession->PhysicalChannelCount = chan;
+	cpifaceSession->mcpGet = devwMixFGET;
+	cpifaceSession->mcpSet = devwMixFSET;
 
 	dwmixfa_state.nvoices=channelnum;
 	prepare_mixer();
@@ -888,17 +886,12 @@ error_out_plrAPI_Play:
 error_out:
 	free (dwmixfa_state.tempbuf); dwmixfa_state.tempbuf = 0;
 	free (channels);              channels = 0;
-	mcpNChan=0;
-	mcpIdle=0;
 	return 0;
 }
 
 static void devwMixFClosePlayer()
 {
 	struct mixfpostprocregstruct *mode;
-
-	mcpNChan=0;
-	mcpIdle=0;
 
 	plrAPI->Stop();
 
@@ -913,6 +906,14 @@ static void devwMixFClosePlayer()
 	free(dwmixfa_state.tempbuf);
 	dwmixfa_state.tempbuf = 0;
 }
+
+static const struct mcpAPI_t devwMixF =
+{
+	devwMixFOpenPlayer,
+	devwMixFLoadSamples,
+	devwMixFIdle,
+	devwMixFClosePlayer
+};
 
 static int Init(const struct deviceinfo *dev)
 {
@@ -931,20 +932,17 @@ static int Init(const struct deviceinfo *dev)
 	mastersrnd=0;
 	channelnum=0;
 
-	mcpLoadSamples = devwMixFLoadSamples;
-	mcpOpenPlayer = devwMixFOpenPlayer;
-	mcpClosePlayer = devwMixFClosePlayer;
-	mcpGet = devwMixFGET;
-	mcpSet = devwMixFSET;
+	mcpAPI = &devwMixF;
 
 	return 1;
 }
 
 static void Close()
 {
-	mcpLoadSamples = 0;
-	mcpOpenPlayer = 0;
-	mcpClosePlayer = 0;
+	if (mcpAPI == &devwMixF)
+	{
+		mcpAPI = 0;
+	}
 }
 
 

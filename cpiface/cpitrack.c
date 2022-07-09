@@ -64,7 +64,7 @@
 
 static int plTrackActive;
 
-static int (*getcurpos)();
+static int (*getcurpos)(struct cpifaceSessionAPI_t *cpifaceSession);
 static int (*getpatlen)(int n);
 static const char *(*getpatname)(int n);
 static void (*seektrack)(int n, int c);
@@ -558,7 +558,7 @@ static void calcPatType(void)
 
 static void TrakDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 {
-	int pos=getcurpos();
+	int pos = getcurpos (cpifaceSession);
 	int pat=pos>>8;
 	int currow=pos&0xFF;
 	int curpat=pat;
@@ -760,7 +760,7 @@ static int gmdTrkProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_
 		case ' ':
 			if (plPatManualPat==-1)
 			{
-				int p=getcurpos();
+				int p = getcurpos (cpifaceSession);
 				plPatManualPat=p>>8;
 				plPatManualRow=p&0xFF;
 			} else

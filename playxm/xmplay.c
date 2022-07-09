@@ -272,11 +272,11 @@ static int panrange(int x)
 }
 
 
-static void ReadQue()
+static void ReadQue (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int type,val1,val2,t;
 	int i;
-	int time=mcpGet(-1, mcpGTimer);
+	int time = cpifaceSession->mcpGet(-1, mcpGTimer);
 	while (1)
 	{
 		if (querpos==quewpos)
@@ -505,7 +505,7 @@ static void PlayNote(struct channel *ch)
 
 static uint16_t notetab[16]={32768,30929,29193,27554,26008,24548,23170,21870,20643,19484,18390,17358,16384,15464,14596,13777};
 
-static void xmpPlayTick(void)
+static void xmpPlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i;
 	struct xmpsample *sm;
@@ -513,18 +513,18 @@ static void xmpPlayTick(void)
 
 	if ((!looping) && looped)
 	{
-		mcpSet (-1, mcpMasterPause, 1);
+		cpifaceSession->mcpSet (-1, mcpMasterPause, 1);
 		return;
 	}
 
 	if (firstspeed)
 	{
-		mcpSet(-1, mcpGSpeed, firstspeed);
+		cpifaceSession->mcpSet (-1, mcpGSpeed, firstspeed);
 		firstspeed=0;
 	}
 
-	cmdtime=mcpGet(-1, mcpGCmdTimer);
-	ReadQue();
+	cmdtime = cpifaceSession->mcpGet (-1, mcpGCmdTimer);
+	ReadQue (cpifaceSession);
 
 	tick0=0;
 	for (i=0; i<nchan; i++)
@@ -795,7 +795,7 @@ static void xmpPlayTick(void)
 					if (procdat>=0x20)
 					{
 						curbpm=procdat;
-						mcpSet(-1, mcpGSpeed, 256*2*curbpm/5);
+						cpifaceSession->mcpSet (-1, mcpGSpeed, 256*2*curbpm/5);
 						putque(queTempo, -1, curbpm);
 					} else {
 						curtempo=procdat;
@@ -1274,7 +1274,7 @@ static void xmpPlayTick(void)
 
 		if (!ch->cursamp)
 		{
-			mcpSet(i, mcpCStatus, 0);
+			cpifaceSession->mcpSet (i, mcpCStatus, 0);
 			continue;
 		}
 
@@ -1355,36 +1355,36 @@ static void xmpPlayTick(void)
 		}
 
 		if (ch->nextstop)
-			mcpSet(i, mcpCStatus, 0);
+			cpifaceSession->mcpSet (i, mcpCStatus, 0);
 		if (ch->nextsamp!=(unsigned)-1)
-			mcpSet(i, mcpCInstrument, ch->nextsamp);
+			cpifaceSession->mcpSet( i, mcpCInstrument, ch->nextsamp);
 		if (ch->nextpos!=(unsigned)-1)
 		{
-			mcpSet(i, mcpCPosition, ch->nextpos);
-			mcpSet(i, mcpCLoop, 1);
-			mcpSet(i, mcpCDirect, 0);
-			mcpSet(i, mcpCStatus, 1);
+			cpifaceSession->mcpSet (i, mcpCPosition, ch->nextpos);
+			cpifaceSession->mcpSet (i, mcpCLoop, 1);
+			cpifaceSession->mcpSet (i, mcpCDirect, 0);
+			cpifaceSession->mcpSet (i, mcpCStatus, 1);
 		}
 		if (linearfreq)
-			mcpSet(i, mcpCPitch, -ch->chFinalPitch);
+			cpifaceSession->mcpSet (i, mcpCPitch, -ch->chFinalPitch);
 		else
-			mcpSet(i, mcpCPitch6848, ch->chFinalPitch);
-		mcpSet(i, mcpCVolume, (looping||!looped)?vol:0);
-		mcpSet(i, mcpCPanning, pan);
-		mcpSet(i, mcpCMute, mutech[i]);
+			cpifaceSession->mcpSet (i, mcpCPitch6848, ch->chFinalPitch);
+		cpifaceSession->mcpSet (i, mcpCVolume, (looping||!looped)?vol:0);
+		cpifaceSession->mcpSet (i, mcpCPanning, pan);
+		cpifaceSession->mcpSet (i, mcpCMute, mutech[i]);
 	}
 	putque(quePos, -1, curtick|(curord<<16)|(currow<<8));
 }
 
-int __attribute__ ((visibility ("internal"))) xmpGetRealPos(void)
+int __attribute__ ((visibility ("internal"))) xmpGetRealPos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	ReadQue();
+	ReadQue (cpifaceSession);
 	return realpos;
 }
 
-int __attribute__ ((visibility ("internal"))) xmpChanActive(int ch)
+int __attribute__ ((visibility ("internal"))) xmpChanActive (struct cpifaceSessionAPI_t *cpifaceSession, int ch)
 {
-	return mcpGet(ch, mcpCStatus)&&channels[ch].cursamp&&channels[ch].chVol&&channels[ch].chFadeVol;
+	return cpifaceSession->mcpGet(ch, mcpCStatus)&&channels[ch].cursamp&&channels[ch].chVol&&channels[ch].chFadeVol;
 }
 
 int __attribute__ ((visibility ("internal"))) xmpGetChanIns(int ch)
@@ -1399,11 +1399,11 @@ int __attribute__ ((visibility ("internal"))) xmpGetChanSamp(int ch)
 	return channels[ch].cursamp-samples;
 }
 
-int __attribute__ ((visibility ("internal"))) xmpGetDotsData(int ch, int *smp, int *frq, int *voll, int *volr, int *sus)
+int __attribute__ ((visibility ("internal"))) xmpGetDotsData (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *smp, int *frq, int *voll, int *volr, int *sus)
 {
 	struct channel *c;
 
-	if (!mcpGet(ch, mcpCStatus))
+	if (!cpifaceSession->mcpGet (ch, mcpCStatus))
 		return 0;
 	c=&channels[ch];
 	if (!c->cursamp||!c->chVol||!c->chFadeVol)
@@ -1413,14 +1413,14 @@ int __attribute__ ((visibility ("internal"))) xmpGetDotsData(int ch, int *smp, i
 		*frq=60*256+c->cursamp->normnote-freqrange(c->chFinalPitch);
 	else
 		*frq=60*256+c->cursamp->normnote+mcpGetNote8363(6848*8363/freqrange(c->chFinalPitch));
-	mcpGetRealVolume(ch, voll, volr);
+	cpifaceSession->mcpGetRealVolume (ch, voll, volr);
 	*sus=c->chSustain;
 	return 1;
 }
 
-void __attribute__ ((visibility ("internal"))) xmpGetRealVolume(int ch, int *voll, int *volr)
+void __attribute__ ((visibility ("internal"))) xmpGetRealVolume (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *voll, int *volr)
 {
-	mcpGetRealVolume(ch, voll, volr);
+	cpifaceSession->mcpGetRealVolume (ch, voll, volr);
 }
 
 uint16_t __attribute__ ((visibility ("internal"))) xmpGetPos(void)
@@ -1428,7 +1428,7 @@ uint16_t __attribute__ ((visibility ("internal"))) xmpGetPos(void)
 	return (curord<<8)|currow;
 }
 
-void __attribute__ ((visibility ("internal"))) xmpSetPos(int ord, int row)
+void __attribute__ ((visibility ("internal"))) xmpSetPos (struct cpifaceSessionAPI_t *cpifaceSession, int ord, int row)
 {
 	int i;
 
@@ -1455,7 +1455,7 @@ void __attribute__ ((visibility ("internal"))) xmpSetPos(int ord, int row)
 			row=0;
 	}
 	for (i=0; i<nchan; i++)
-		mcpSet(i, mcpCReset, 0);
+		cpifaceSession->mcpSet (i, mcpCReset, 0);
 	jumptoord=ord;
 	jumptorow=row;
 	curtick=curtempo;
@@ -1465,11 +1465,6 @@ void __attribute__ ((visibility ("internal"))) xmpSetPos(int ord, int row)
 	querpos=0;
 	quewpos=0;
 	realpos=(curord<<16)|(currow<<8);
-}
-
-int __attribute__ ((visibility ("internal"))) xmpGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *b, unsigned int len, uint32_t rate, int opt)
-{
-	return mcpGetChanSample (cpifaceSession, ch, b, len, rate, opt);
 }
 
 void __attribute__ ((visibility ("internal"))) xmpMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
@@ -1490,7 +1485,7 @@ void __attribute__ ((visibility ("internal"))) xmpSetLoop(int x)
 
 int __attribute__ ((visibility ("internal"))) xmpLoadSamples(struct xmodule *m)
 {
-	return mcpLoadSamples(m->sampleinfos, m->nsampi);
+	return mcpAPI->mcpLoadSamples (m->sampleinfos, m->nsampi);
 }
 
 int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
@@ -1545,14 +1540,14 @@ int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, s
 	realtempo=m->inibpm;
 	realspeed=m->initempo;
 	firstspeed=256*2*curbpm/5;
-	if (!mcpOpenPlayer(nchan, xmpPlayTick, file, cpifaceSession))
+	if (!mcpAPI->mcpOpenPlayer(nchan, xmpPlayTick, file, cpifaceSession))
 		return 0;
 
 	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayW);
 
-	if (nchan!=mcpNChan)
+	if (nchan != cpifaceSession->PhysicalChannelCount)
 	{
-		mcpClosePlayer();
+		mcpAPI->mcpClosePlayer();
 		return 0;
 	}
 
@@ -1561,7 +1556,7 @@ int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, s
 
 void __attribute__ ((visibility ("internal"))) xmpStopModule(void)
 {
-	mcpClosePlayer();
+	mcpAPI->mcpClosePlayer ();
 	free(que);
 }
 

@@ -368,9 +368,9 @@ extern int __attribute__ ((visibility ("internal"))) loadsamples(struct it_modul
 extern int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession); /* - done */
 extern void __attribute__ ((visibility ("internal"))) stop(struct itplayer *this); /* - done */
 
-extern int __attribute__ ((visibility ("internal"))) getsync(struct itplayer *this, int ch, int *time); /* - done */
+extern int __attribute__ ((visibility ("internal"))) getsync (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *time); /* - done */
 extern int __attribute__ ((visibility ("internal"))) getpos(struct itplayer *this); /* - done */
-extern int __attribute__ ((visibility ("internal"))) getrealpos(struct itplayer *this); /* - done */
+extern int __attribute__ ((visibility ("internal"))) getrealpos (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this); /* - done */
 /* extern int __attribute__ ((visibility ("internal"))) getticktime(struct itplayer *this); */ /* - done */
 /* extern int __attribute__ ((visibility ("internal"))) getrowtime(struct itplayer *this); */ /* - done */
 /* extern void __attribute__ ((visibility ("internal"))) setevpos(struct itplayer *this, int ch, int pos, int modtype, int mod); */ /* - done */
@@ -378,16 +378,16 @@ extern int __attribute__ ((visibility ("internal"))) getrealpos(struct itplayer 
 /* extern int __attribute__ ((visibility ("internal"))) findevpos(struct itplayer *this, int pos, int *time); */ /* - done */
 extern void __attribute__ ((visibility ("internal"))) setpos(struct itplayer *this, int ord, int row); /* - done */
 extern void __attribute__ ((visibility ("internal"))) mutechan(struct itplayer *this, int c, int m); /* - done */
-extern void __attribute__ ((visibility ("internal"))) getglobinfo(struct itplayer *this, int *speed, int *bpm, int *gvol, int *gs); /* - done */
+extern void __attribute__ ((visibility ("internal"))) getglobinfo (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int *speed, int *bpm, int *gvol, int *gs); /* - done */
 extern int __attribute__ ((visibility ("internal"))) getchansample (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int16_t *buf, int len, uint32_t rate, int opt); /* - done */
-extern int __attribute__ ((visibility ("internal"))) getdotsdata(struct itplayer *this, int ch, int pch, int *smp, int *note, int *voll, int *volr, int *sus); /* - done */
-extern void __attribute__ ((visibility ("internal"))) itplayer_getrealvol(struct itplayer *this, int ch, int *l, int *r); /* - done */
+extern int __attribute__ ((visibility ("internal"))) getdotsdata (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int pch, int *smp, int *note, int *voll, int *volr, int *sus); /* - done */
+extern void __attribute__ ((visibility ("internal"))) itplayer_getrealvol(struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *l, int *r); /* - done */
 extern void __attribute__ ((visibility ("internal"))) setloop(struct itplayer *this, int s); /* - done */
 extern int __attribute__ ((visibility ("internal"))) getloop(struct itplayer *this); /* - done */
-extern int __attribute__ ((visibility ("internal"))) chanactive(struct itplayer *this, int ch, int *lc); /* - done */
+extern int __attribute__ ((visibility ("internal"))) chanactive (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *lc); /* - done */
 extern int __attribute__ ((visibility ("internal"))) getchanins(struct itplayer *this, int ch); /* - done */
 extern int __attribute__ ((visibility ("internal"))) getchansamp(struct itplayer *this, int ch); /* - done */
-extern int __attribute__ ((visibility ("internal"))) lchanactive(struct itplayer *, int lc); /* - done */
+extern int __attribute__ ((visibility ("internal"))) lchanactive (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *, int lc); /* - done */
 extern void __attribute__ ((visibility ("internal"))) getchaninfo(struct itplayer *this, uint8_t ch, struct it_chaninfo *ci); /* - done */
 extern int __attribute__ ((visibility ("internal"))) getchanalloc(struct itplayer *this, uint8_t ch); /* - done */
 

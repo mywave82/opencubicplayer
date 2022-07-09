@@ -70,9 +70,6 @@ __attribute__ ((visibility ("internal"))) uint32_t ymbufrate; /* re-sampling rat
 
 __attribute__ ((visibility ("internal"))) CYmMusic *pMusic;
 
-static int (*_GET)(int ch, int opt);
-static void (*_SET)(int ch, int opt, int val);
-
 /* clipper threadlock since we use a timer-signal */
 static volatile int clipbusy=0;
 
@@ -123,9 +120,6 @@ void __attribute__ ((visibility ("internal"))) ymClosePlayer(void)
 	{
 		plrAPI->Stop();
 
-		mcpSet=_SET;
-		mcpGet=_GET;
-
 		ymMusicStop(pMusic);
 		ymMusicDestroy(pMusic);
 
@@ -161,7 +155,7 @@ static void ymSetVolume(void)
 		voll=(voll*(64-bal))>>6;
 }
 
-static void SET(int ch, int opt, int val)
+static void ymSet (int ch, int opt, int val)
 {
 	switch (opt)
 	{
@@ -186,7 +180,8 @@ static void SET(int ch, int opt, int val)
 			break;
 	}
 }
-static int GET(int ch, int opt)
+
+static int ymGet (int ch, int opt)
 {
 	return 0;
 }
@@ -238,10 +233,8 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 		goto error_out_buffer;
 	}
 
-	_SET=mcpSet;
-	_GET=mcpGet;
-	mcpSet=SET;
-	mcpGet=GET;
+	cpifaceSession->mcpSet = ymSet;
+	cpifaceSession->mcpGet = ymGet;
 	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	ym_looped = 0;
@@ -283,12 +276,6 @@ error_out_buffer:
 	{
 		ringbuffer_free (ymbufpos);
 		ymbufpos = 0;
-	}
-
-	if (mcpSet == SET)
-	{
-		mcpSet=_SET;
-		mcpGet=_GET;
 	}
 
 	if (pMusic)

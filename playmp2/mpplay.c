@@ -107,9 +107,6 @@ static struct ID3_t CurrentTag;
 static struct ID3_t HoldingTag;
 static int newHoldingTag;
 
-static int (*_GET)(int ch, int opt);
-static void (*_SET)(int ch, int opt, int val);
-
 #define PANPROC \
 do { \
 	float _rs = rs, _ls = ls; \
@@ -857,7 +854,7 @@ static void mpegSetVolume (void)
 	else
 		volr=(volr*(64-bal))>>6;
 }
-static void SET(int ch, int opt, int val)
+static void mpegSet(int ch, int opt, int val)
 {
 	switch (opt)
 	{
@@ -883,7 +880,8 @@ static void SET(int ch, int opt, int val)
 			break;
 	}
 }
-static int GET(int ch, int opt)
+
+static int mpegGet(int ch, int opt)
 {
 	return 0;
 }
@@ -1147,10 +1145,8 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 	mpegbuffpos=0;
 	GuardPtr=0;
 
-	_SET=mcpSet;
-	_GET=mcpGet;
-	mcpSet=SET;
-	mcpGet=GET;
+	cpifaceSession->mcpSet = mpegSet;
+	cpifaceSession->mcpGet = mpegGet;
 
 	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
@@ -1213,16 +1209,4 @@ void __attribute__ ((visibility ("internal"))) mpegClosePlayer(void)
 		file->unref (file);
 		file = 0;
 	}
-
-	if (_SET)
-	{
-		mcpSet = _SET;
-		_SET = 0;
-	}
-	if (_GET)
-	{
-		mcpGet = _GET;
-		_GET = 0;
-	}
-
 }

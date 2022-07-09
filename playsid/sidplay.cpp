@@ -111,8 +111,6 @@ static unsigned long voll,volr;
 static int vol, bal;
 static int pan;
 static int srnd;
-static int (*_GET)(int ch, int opt);
-static void (*_SET)(int ch, int opt, int val);
 
 static char sid_inpause;
 
@@ -552,7 +550,7 @@ static void sidSetVolume (void)
 		voll=(voll*(64-bal))>>6;
 }
 
-static void SET(int ch, int opt, int val)
+static void sidSet(int ch, int opt, int val)
 {
 	switch (opt)
 	{
@@ -581,7 +579,8 @@ static void SET(int ch, int opt, int val)
 #warning FILTER TODO
 	}
 }
-static int GET(int ch, int opt)
+
+static int sidGet(int ch, int opt)
 {
 	return 0;
 }
@@ -961,10 +960,8 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 		plUseMessage((char **)msg);
 	}
 
-	_SET=mcpSet;
-	_GET=mcpGet;
-	mcpSet=SET;
-	mcpGet=GET;
+	cpifaceSession->mcpSet = sidSet;
+	cpifaceSession->mcpGet = sidGet;
 	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	return 1;
@@ -999,15 +996,4 @@ void __attribute__ ((visibility ("internal"))) sidClosePlayer(void)
 	delete[] sid_buf_4x3[0]; sid_buf_4x3[0] = NULL;
 	delete[] sid_buf_4x3[1]; sid_buf_4x3[1] = NULL;
 	delete[] sid_buf_4x3[2]; sid_buf_4x3[2] = NULL;
-
-	if (_SET)
-	{
-		mcpSet = _SET;
-		_SET = 0;
-	}
-	if (_GET)
-	{
-		mcpGet = _GET;
-		_GET = 0;
-	}
 }

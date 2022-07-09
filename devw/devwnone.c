@@ -31,6 +31,7 @@
 #include <time.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "cpiface/cpiface.h"
 #include "dev/imsdev.h"
 #include "dev/mcp.h"
 #include "dev/mix.h"
@@ -85,7 +86,7 @@ static int filter;
 static int channelnum;
 static struct channel *channels;
 
-static void (*playerproc)(void);
+static void (*playerproc) (struct cpifaceSessionAPI_t *cpifaceSession);
 static unsigned long tickwidth;
 static unsigned long tickplayed;
 static unsigned long orgspeed;
@@ -155,7 +156,7 @@ static void playchannels(unsigned short len)
 	}
 }
 
-static void Idle(void)
+static void devwNoneIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct timespec now;
 	unsigned int bufdelta;
@@ -184,7 +185,7 @@ static void Idle(void)
 			playchannels(tickwidth-tickplayed);
 			bufdelta-=tickwidth-tickplayed;
 			tickplayed=0;
-			playerproc();
+			playerproc (cpifaceSession);
 			cmdtimerpos+=tickwidth;
 			tickwidth=newtickwidth;
 		}
@@ -414,7 +415,7 @@ static int devwNoneLoadSamples(struct sampleinfo *sil, int n)
 }
 
 
-static int devwNoneOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
+static int devwNoneOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *cpifaceSession), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (chan>MAXCHAN)
 		chan=MAXCHAN;
@@ -423,7 +424,6 @@ static int devwNoneOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle
 	{
 		return 0;
 	}
-
 
 	playerproc=proc;
 
@@ -451,21 +451,29 @@ static int devwNoneOpenPlayer(int chan, void (*proc)(void), struct ocpfilehandle
 	dwNoneDiff = 0;
 	dwNoneGTimerPos = 0;
 
-	mcpNChan=chan;
-	mcpIdle=Idle;
+	cpifaceSession->PhysicalChannelCount = chan;
+
+	cpifaceSession->mcpSet = devwNoneSET;
+	cpifaceSession->mcpGet = devwNoneGET;
 
 	return 1;
 }
 
 static void devwNoneClosePlayer(void)
 {
-	mcpNChan=0;
-	mcpIdle=0;
 	channelnum=0;
 	mixClose();
 	free(channels);
 	channels=0;
 }
+
+static const struct mcpAPI_t devwNone =
+{
+	devwNoneOpenPlayer,
+	devwNoneLoadSamples,
+	devwNoneIdle,
+	devwNoneClosePlayer
+};
 
 static int Init(const struct deviceinfo *c)
 {
@@ -479,22 +487,18 @@ static int Init(const struct deviceinfo *c)
 
 	channelnum=0;
 
-	mcpLoadSamples = devwNoneLoadSamples;
-	mcpOpenPlayer = devwNoneOpenPlayer;
-	mcpClosePlayer = devwNoneClosePlayer;
-	mcpSet = devwNoneSET;
-	mcpGet = devwNoneGET;
+	mcpAPI = &devwNone;
 
 	return 1;
 }
 
 static void Close(void)
 {
-	mcpLoadSamples = 0;
-	mcpOpenPlayer = 0;
-	mcpClosePlayer = 0;
+	if (mcpAPI == &devwNone)
+	{
+		mcpAPI = 0;
+	}
 }
-
 
 static int Detect(struct deviceinfo *c)
 {

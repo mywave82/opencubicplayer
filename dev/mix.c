@@ -279,9 +279,9 @@ int mixInit(void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t ra
 	mixCalcIntrpolTab();
 	amplify=amp*8;
 
-	mcpGetRealVolume=mixGetRealVolume;
-	mcpGetChanSample=mixGetChanSample;
-	mcpMixChanSamples=mixMixChanSamples;
+	cpifaceSession->mcpGetRealVolume = mixGetRealVolume;
+	cpifaceSession->mcpGetChanSample = mixGetChanSample;
+	cpifaceSession->mcpMixChanSamples = mixMixChanSamples;
 	if (masterchan)
 	{ /* override devp */
 		cpifaceSession->GetRealMasterVolume = mixGetRealMasterVolume;

@@ -30,7 +30,7 @@
 #include "gmdplay.h"
 #include "gmdpdots.h"
 
-int __attribute__ ((visibility ("internal"))) gmdGetDots(struct notedotsdata *d, int max)
+int __attribute__ ((visibility ("internal"))) gmdGetDots (struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *d, int max)
 {
 	int pos=0;
 	int i;
@@ -40,12 +40,12 @@ int __attribute__ ((visibility ("internal"))) gmdGetDots(struct notedotsdata *d,
 		struct chaninfo ci;
 		int vl,vr;
 
-		if (!mpGetChanStatus(i))
+		if (!mpGetChanStatus (cpifaceSession, i))
 			continue;
 
 		mpGetChanInfo(i, &ci);
 
-		mpGetRealVolume(i, &vl, &vr);
+		mpGetRealVolume (cpifaceSession, i, &vl, &vr);
 		if (!vl&&!vr&&!ci.vol)
 			continue;
 

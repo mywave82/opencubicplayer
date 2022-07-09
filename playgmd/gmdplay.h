@@ -105,10 +105,10 @@ extern void __attribute__ ((visibility ("internal"))) mpRemoveText(struct gmdmod
 
 struct cpifaceSessionAPI_t;
 extern char __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodule *, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) mpStopModule(void);
-extern void __attribute__ ((visibility ("internal"))) mpSetPosition(int16_t pat, int16_t row);
+extern void __attribute__ ((visibility ("internal"))) mpStopModule (struct cpifaceSessionAPI_t *cpifaceSession);
+extern void __attribute__ ((visibility ("internal"))) mpSetPosition (struct cpifaceSessionAPI_t *cpifaceSession, int16_t pat, int16_t row);
 extern void __attribute__ ((visibility ("internal"))) mpGetPosition(uint16_t *pat, uint8_t *row);
-extern int __attribute__ ((visibility ("internal"))) mpGetRealPos(void);
+extern int __attribute__ ((visibility ("internal"))) mpGetRealPos (struct cpifaceSessionAPI_t *cpifaceSession);
 extern void __attribute__ ((visibility ("internal"))) mpGetChanInfo(uint8_t ch, struct chaninfo *ci);
 extern uint16_t __attribute__ ((visibility ("internal"))) mpGetRealNote(uint8_t ch);
 extern void __attribute__ ((visibility ("internal"))) mpGetGlobInfo(struct globinfo *gi);
@@ -117,8 +117,8 @@ extern void __attribute__ ((visibility ("internal"))) mpSetLoop(unsigned char s)
 extern void __attribute__ ((visibility ("internal"))) mpLockPat(int st);
 extern int __attribute__ ((visibility ("internal"))) mpGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *buf, unsigned int len, uint32_t rate, int opt);
 extern void __attribute__ ((visibility ("internal"))) mpMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m);
-extern void __attribute__ ((visibility ("internal"))) mpGetRealVolume(int ch, int *l, int *r);
-extern int __attribute__ ((visibility ("internal"))) mpGetChanStatus(int ch);
+extern void __attribute__ ((visibility ("internal"))) mpGetRealVolume (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *l, int *r);
+extern int __attribute__ ((visibility ("internal"))) mpGetChanStatus (struct cpifaceSessionAPI_t *cpifaceSession, int ch);
 
 enum
 {

@@ -122,20 +122,19 @@ extern void __attribute__ ((visibility ("internal"))) xmpFreeModule(struct xmodu
 
 extern int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
 extern void __attribute__ ((visibility ("internal"))) xmpStopModule(void);
-extern void __attribute__ ((visibility ("internal"))) xmpSetPos(int ord, int row);
+extern void __attribute__ ((visibility ("internal"))) xmpSetPos (struct cpifaceSessionAPI_t *cpifaceSession, int ord, int row);
 
-extern void __attribute__ ((visibility ("internal"))) xmpGetRealVolume(int i, int *l, int *r);
+extern void __attribute__ ((visibility ("internal"))) xmpGetRealVolume (struct cpifaceSessionAPI_t *cpifaceSession, int i, int *l, int *r);
 extern void __attribute__ ((visibility ("internal"))) xmpMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m);
-extern int __attribute__ ((visibility ("internal"))) xmpGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *b, unsigned int len, uint32_t rate, int opt);
 extern uint16_t __attribute__ ((visibility ("internal"))) xmpGetPos(void);
-extern int __attribute__ ((visibility ("internal"))) xmpGetRealPos(void);
-extern int __attribute__ ((visibility ("internal"))) xmpGetDotsData(int ch, int *smp, int *frq, int *l, int *r, int *sus);
+extern int __attribute__ ((visibility ("internal"))) xmpGetRealPos (struct cpifaceSessionAPI_t *cpifaceSession);
+extern int __attribute__ ((visibility ("internal"))) xmpGetDotsData (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *smp, int *frq, int *l, int *r, int *sus);
 extern int __attribute__ ((visibility ("internal"))) xmpPrecalcTime(struct xmodule *m, int startpos, int (*calc)[2], int n, int ite);
 extern int __attribute__ ((visibility ("internal"))) xmpLoop(void);
 extern void __attribute__ ((visibility ("internal"))) xmpSetLoop(int);
 extern int __attribute__ ((visibility ("internal"))) xmpGetChanIns(int);
 extern int __attribute__ ((visibility ("internal"))) xmpGetChanSamp(int);
-extern int __attribute__ ((visibility ("internal"))) xmpChanActive(int);
+extern int __attribute__ ((visibility ("internal"))) xmpChanActive (struct cpifaceSessionAPI_t *cpifaceSession, int ch);
 extern void __attribute__ ((visibility ("internal"))) xmpGetGlobInfo(int *tmp, int *bpm, int *gvol);
 extern void __attribute__ ((visibility ("internal"))) xmpOptimizePatLens(struct xmodule *m);
 /*extern int __attribute__ ((visibility ("internal"))) xmpGetSync(int ch, int *time);*/

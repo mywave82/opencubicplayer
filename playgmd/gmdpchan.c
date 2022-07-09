@@ -58,7 +58,7 @@ static void logvolbar(int *l, int *r)
 static void drawvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i, unsigned char st)
 {
 	int l,r;
-	mpGetRealVolume(i, &l, &r);
+	mpGetRealVolume (cpifaceSession, i, &l, &r);
 	logvolbar(&l, &r);
 
 	l=(l+4)>>3;
@@ -82,7 +82,7 @@ static void drawvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bu
 static void drawlongvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i, unsigned char st)
 {
 	int l,r;
-	mpGetRealVolume(i, &l, &r);
+	mpGetRealVolume (cpifaceSession, i, &l, &r);
 	logvolbar(&l, &r);
 	l=(l+2)>>2;
 	r=(r+2)>>2;
@@ -208,7 +208,7 @@ static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	mpGetChanInfo(i, &ci);
 
 	writestring(buf, 0, tcold, " -- --- -- ------ \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 36);
-	if (mpGetChanStatus(i)&&ci.vol)
+	if (mpGetChanStatus (cpifaceSession, i) && ci.vol)
 	{
 		char *fxstr;
 
@@ -234,7 +234,7 @@ static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	mpGetChanInfo(i, &ci);
 
 	writestring(buf, 0, tcold, "                        ---\xfa --\xfa -\xfa ------  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 62);
-	if (mpGetChanStatus(i)&&ci.vol)
+	if (mpGetChanStatus (cpifaceSession, i) && ci.vol)
 	{
 		char *fxstr;
 		if (ci.ins!=0xFF)
@@ -271,7 +271,7 @@ static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	mpGetChanInfo(i, &ci);
 
 	writestring(buf,  0, tcold, "                             \xb3    \xb3   \xb3  \xb3               \xb3 \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", 76);
-	if (mpGetChanStatus(i)&&ci.vol)
+	if (mpGetChanStatus (cpifaceSession, i) && ci.vol)
 	{
 		char *fxstr;
 		if (ci.ins!=0xFF)
@@ -311,7 +311,7 @@ static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 
 	writestring(buf,  0, tcold, "                             \xb3                   \xb3    \xb3   \xb3  \xb3               \xb3  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", 128);
 
-	if (mpGetChanStatus(i)&&ci.vol)
+	if (mpGetChanStatus (cpifaceSession, i) && ci.vol)
 	{
 		char *fxstr;
 		if (ci.ins!=0xFF)
@@ -359,7 +359,7 @@ static void drawchannel44 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned 
 	mpGetChanInfo(i, &ci);
 
 	writestring(buf, 0, tcold, " --  ---\xfa --\xfa -\xfa ------   \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 44);
-	if (mpGetChanStatus(i)&&ci.vol)
+	if (mpGetChanStatus (cpifaceSession, i) && ci.vol)
 	{
 		char *fxstr;
 		writenum(buf,  1, tcol, ci.ins+1, 16, 2, 0);

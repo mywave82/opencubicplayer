@@ -2,6 +2,7 @@
 #define __MCP_H
 
 struct ocpfilehandle_t;
+struct cpifaceSessionAPI_t;
 
 struct sampleinfo
 {
@@ -64,24 +65,18 @@ enum
 	mcpGetSampleMono=0, mcpGetSampleStereo=1, mcpGetSampleHQ=2
 };
 
-extern int mcpNChan;
+struct mcpAPI_t
+{
+	int (*mcpOpenPlayer)(int, void (*p)(struct cpifaceSessionAPI_t *cpifaceSession), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession);
+	int (*mcpLoadSamples)(struct sampleinfo* si, int n);
+	void (*mcpIdle)(struct cpifaceSessionAPI_t *cpifaceSession);
+	void (*mcpClosePlayer)(void);
+};
 
-struct cpifaceSessionAPI_t;
-
-extern int (*mcpLoadSamples)(struct sampleinfo* si, int n);
-extern int (*mcpOpenPlayer)(int, void (*p)(void), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession);
-extern void (*mcpClosePlayer)(void);
-extern void (*mcpSet)(int ch, int opt, int val);
-extern int (*mcpGet)(int ch, int opt);
-extern void (*mcpGetRealVolume)(int ch, int *l, int *r);
-extern void (*mcpGetMasterSample)(int16_t *s, unsigned int len, uint32_t rate, int opt);
-extern int (*mcpGetChanSample) (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
-extern int (*mcpMixChanSamples) (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int *ch, unsigned int n, int16_t *s, unsigned int len, uint32_t rate, int opt);
+extern const struct mcpAPI_t *mcpAPI;
 
 extern unsigned int mcpMixMaxRate;
 extern unsigned int mcpMixProcRate;
-
-extern void (*mcpIdle)(void);
 
 extern int mcpGetFreq6848(int note);
 extern int mcpGetFreq8363(int note);

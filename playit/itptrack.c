@@ -521,9 +521,9 @@ static const char *xmgetpatname(int unused)
 	return 0;
 }
 
-static int xmgetcurpos(void)
+static int xmgetcurpos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-  return getrealpos(&itplayer)>>8;
+	return getrealpos (cpifaceSession, &itplayer)>>8;
 }
 
 static struct cpitrakdisplaystruct xmtrakdisplay=

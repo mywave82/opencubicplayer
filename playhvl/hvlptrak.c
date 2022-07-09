@@ -68,7 +68,7 @@ static int getpatlen(int n)
 	return ht->ht_TrackLength;
 }
 
-static int getcurpos(void)
+static int getcurpos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int     row,     rows;
 	int   order,   orders;

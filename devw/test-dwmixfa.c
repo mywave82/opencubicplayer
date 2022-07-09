@@ -88,7 +88,6 @@ static void OpenPlayer(int chan)
 	channelnum=chan;
 /*
 	mcpNChan=chan;
-	mcpIdle=Idle;
 
 	isstereo=stereo;
 	outfmt=(bit16<<1)|(!signedout);*/
@@ -117,7 +116,6 @@ static void ClosePlayer()
 	  struct mixfpostprocregstruct *mode;
 
 	  mcpNChan=0;
-	  mcpIdle=0;
 
 	  plrClosePlayer();
 

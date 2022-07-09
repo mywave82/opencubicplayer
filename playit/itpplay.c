@@ -83,7 +83,7 @@ static void startpausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	if (cpifaceSession->InPause)
 	{
-		mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = 0);
+		cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = 0);
 		pausefadedirect=1;
 	} else
 		pausefadedirect=-1;
@@ -111,7 +111,7 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			i=0;
 			pausefadedirect=0;
 			pausetime=dos_clock();
-			mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = 1);
+			cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = 1);
 			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
@@ -151,7 +151,7 @@ static int itpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			} else {
 				pausetime=dos_clock();
 			}
-			mcpSet(-1, mcpMasterPause, cpifaceSession->InPause = !cpifaceSession->InPause);
+			cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = !cpifaceSession->InPause);
 			break;
 		case KEY_CTRL_HOME:
 			itpInstClear (cpifaceSession);
@@ -200,26 +200,22 @@ static int itpLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade(cpifaceSession);
 	}
 	setloop(&itplayer, LoopMod);
-	if (mcpIdle)
-	{
-		mcpIdle();
-	}
+	mcpAPI->mcpIdle (cpifaceSession);
 
 	return (!LoopMod) && getloop(&itplayer);
 }
 
 static void itpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	int pos=getrealpos(&itplayer)>>8;
+	int pos = getrealpos (cpifaceSession, &itplayer)>>8;
 	int gvol, bpm, tmp, gs;
 	int i, nch = 0;
 
-	getglobinfo(&itplayer, &tmp, &bpm, &gvol, &gs);
+	getglobinfo (cpifaceSession, &itplayer, &tmp, &bpm, &gvol, &gs);
 
-	/* mcpNChan == cpifaceSessionAPI.PhysicalChannelCount */
-	for (i=0; i<mcpNChan; i++)
+	for (i=0; i < cpifaceSession->PhysicalChannelCount; i++)
 	{
-		if (mcpGet(i, mcpCStatus))
+		if (cpifaceSession->mcpGet(i, mcpCStatus))
 		{
 			nch++;
 		}
@@ -241,7 +237,7 @@ static void itpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		gvol,
 		(gs==ifxGVSUp)?1:(gs==ifxGVSDown)?-1:0,
 		nch,
-		mcpNChan,
+		cpifaceSession->PhysicalChannelCount,
 		cpifaceSession->InPause,
 		cpifaceSession->InPause ? ((pausetime-starttime)/DOS_CLK_TCK) : ((dos_clock()-starttime)/DOS_CLK_TCK),
 		&mdbdata
@@ -269,7 +265,7 @@ static void itpMarkInsSamp(struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *
 		for (j=0; j<mod.nchan; j++)
 		{
 			int lc, in, sm;
-			if (!chanactive(&itplayer, j, &lc))
+			if (!chanactive (cpifaceSession, &itplayer, j, &lc))
 				continue;
 			if (lc!=i)
 				continue;
@@ -308,7 +304,7 @@ static void logvolbar(int *l, int *r)
 static void drawvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i, uint8_t st)
 {
 	int l,r;
-	itplayer_getrealvol(&itplayer, i, &l, &r);
+	itplayer_getrealvol (cpifaceSession, &itplayer, i, &l, &r);
 	logvolbar(&l, &r);
 
 	l=(l+4)>>3;
@@ -332,7 +328,7 @@ static void drawvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bu
 static void drawlongvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i, uint8_t st)
 {
 	int l,r;
-	itplayer_getrealvol(&itplayer, i, &l, &r);
+	itplayer_getrealvol (cpifaceSession, &itplayer, i, &l, &r);
 	logvolbar(&l, &r);
 	l=(l+2)>>2;
 	r=(r+2)>>2;
@@ -422,7 +418,7 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 	if (av)
 		writenum(buf, 1, tcold, av, 16, 2, 0);
 
-	if (!lchanactive(&itplayer, i))
+	if (!lchanactive (cpifaceSession, &itplayer, i))
 		return;
 
 	getchaninfo(&itplayer, i, &ci);
@@ -536,7 +532,7 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 
 /************************************************************************/
 
-static int itpGetDots(struct notedotsdata *d, int max)
+static int itpGetDots (struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *d, int max)
 {
 	int i,j;
 	int pos=0;
@@ -549,7 +545,7 @@ static int itpGetDots(struct notedotsdata *d, int max)
 		while (pos<max)
 		{
 			int smp, voll, volr, note, sus;
-			j=getdotsdata(&itplayer, i, j, &smp, &note, &voll, &volr, &sus);
+			j = getdotsdata (cpifaceSession, &itplayer, i, j, &smp, &note, &voll, &volr, &sus);
 			if (j==-1)
 				break;
 			d[pos].voll=voll;
@@ -620,7 +616,6 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->SetMuteChannel = itpMute;
 	cpifaceSession->GetLChanSample = itpGetLChanSample;
 	cpifaceSession->LogicalChannelCount = mod.nchan;
-	cpifaceSession->PhysicalChannelCount = mcpNChan;
 	plUseDots(itpGetDots);
 	plUseChannels (cpifaceSession, drawchannel);
 	itpInstSetup (cpifaceSession, mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, /*mod.nsampi,*/ 0, itpMarkInsSamp);
@@ -628,11 +623,11 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	if (mod.message)
 		plUseMessage(mod.message);
 
-	cpifaceSession->GetPChanSample = mcpGetChanSample;
+	cpifaceSession->GetPChanSample = cpifaceSession->mcpGetChanSample;
 
 	starttime=dos_clock();
 	cpifaceSession->InPause = 0;
-	mcpSet(-1, mcpMasterPause, 0);
+	cpifaceSession->mcpSet (-1, mcpMasterPause, 0);
 	pausefadedirect=0;
 
 	return errOk;

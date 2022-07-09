@@ -141,9 +141,6 @@ static uint32_t aybufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
 /* clipper threadlock since we use a timer-signal */
 static volatile int clipbusy=0;
 
-static int (*_GET)(int ch, int opt);
-static void (*_SET)(int ch, int opt, int val);
-
 static struct aydumpbuffer_delayed_states_t *aydumpbuffer_delayed_states_slot_get(void)
 {
 	int i;
@@ -842,7 +839,7 @@ static void aySetVolume(void)
 		volr=(volr*(64-bal))>>6;
 }
 
-static void SET(int ch, int opt, int val)
+static void aySet (int ch, int opt, int val)
 {
 	switch (opt)
 	{
@@ -868,7 +865,8 @@ static void SET(int ch, int opt, int val)
 			break;
 	}
 }
-static int GET(int ch, int opt)
+
+static int ayGet (int ch, int opt)
 {
 	return 0;
 }
@@ -949,10 +947,8 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 	debug_output = open ("test.raw", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
 #endif
 
-	_SET=mcpSet;
-	_GET=mcpGet;
-	mcpSet=SET;
-	mcpGet=GET;
+	cpifaceSession->mcpSet=aySet;
+	cpifaceSession->mcpGet=ayGet;
 
 	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
@@ -999,16 +995,6 @@ void __attribute__ ((visibility ("internal"))) ayClosePlayer(void)
 	close (debug_output);
 	debug_output = -1;
 #endif
-	if (_SET)
-	{
-		mcpSet = _SET;
-		_SET = 0;
-	}
-	if (_GET)
-	{
-		mcpGet = _GET;
-		_GET = 0;
-	}
 }
 
 int __attribute__ ((visibility ("internal"))) ayIsLooped(void)

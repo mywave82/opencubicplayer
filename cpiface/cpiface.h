@@ -38,12 +38,18 @@ struct cpifaceSessionAPI_t
 	/* configured by devp/devw */
 	void (*GetRealMasterVolume)(int *l, int *r); /* filled in by devp/devw driver */
 	void (*GetMasterSample)(int16_t *, unsigned int len, uint32_t rate, int mode); /* filled in by devp/devw driver */
+	void (*mcpGetRealVolume)(int ch, int *l, int *r); /* filled in by devw */
+	int (*mcpGetChanSample) (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt); /* filled in by devw - retrives sample data from a given physical channels */
+	int (*mcpMixChanSamples) (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int *ch, unsigned int n, int16_t *s, unsigned int len, uint32_t rate, int opt); /* filled in by devw driver - retrives sample data from multiple physicals channels combined, for making a logical channel*/
 
 	/* configured by playback plugin during intialization of the given playback file */
 	uint_fast16_t LogicalChannelCount;  /* number of logical channels. Used by "Channel" viewer and selector, note-dot viewer, can be used by scope viewers, and is the default value used by track viewer */
-	uint_fast16_t PhysicalChannelCount; /* number of physical audio channels. Sometimes a format uses shadow channels for effects or smooth transitions. Can be used by scope viewers. */
+	uint_fast16_t PhysicalChannelCount; /* number of physical audio channels. Sometimes a format uses shadow channels for effects or smooth transitions. Can be used by scope viewers. Initialized by devw to the former value named mcpNChan */
 	int (*GetLChanSample)(struct cpifaceSessionAPI_t *cpifacesession, unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt); /* Get sample data for a given logical channel, used by visualizers */
 	int (*GetPChanSample)(struct cpifaceSessionAPI_t *cpifacesession, unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt); /* Get sample data for a given physical channel, used by visualizers */
+	void (*mcpSet)(int ch, int opt, int val); /* Filled in by devw or playback plugin */
+	int (*mcpGet)(int ch, int opt); /* Filled in by devw or playback plugin */
+
 
 	/* Callbacks and status from cpiface to plugin */
 	uint8_t MuteChannel[MAXLCHAN]; /* Reflects the status of channel muting used by channel visualizers. Should be controlled by the playback plugin */
@@ -171,11 +177,11 @@ struct notedotsdata
 	uint8_t col;
 };
 
-extern void plUseDots(int (*get)(struct notedotsdata *, int));
+extern void plUseDots(int (*get)(struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *, int));
 
 struct cpitrakdisplaystruct
 {
-	int (*getcurpos)(void);
+	int (*getcurpos) (struct cpifaceSessionAPI_t *cpifaceSession);
 	int (*getpatlen)(int n);
 	const char *(*getpatname)(int n);
 	void (*seektrack)(int n, int c);

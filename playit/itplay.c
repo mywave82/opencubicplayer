@@ -119,20 +119,20 @@ static int8_t sintab[256] =
 };
 
 
-static void playtick(struct itplayer *this);
+static void playtick (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this);
 static int range64(int v);
 static int range128(int v);
 static void dovibrato(struct itplayer *this, struct it_logchan *c);
 static void putque(struct itplayer *this, int type, int val1, int val2);
-static void readque(struct itplayer *this);
+static void readque (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this);
 static void dotremolo(struct itplayer *this, struct it_logchan *c);
 static void dodelay(struct itplayer *this, struct it_logchan *c);
 static void dopanbrello(struct itplayer *this, struct it_logchan *c);
 
 
-static void playtickstatic(void)
+static void playtickstatic (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	playtick(staticthis);
+	playtick (cpifaceSession, staticthis);
 }
 
 static void playnote(struct itplayer *this, struct it_logchan *c, const uint8_t *cmd)
@@ -1428,39 +1428,39 @@ static void processchan(struct itplayer *this, struct it_physchan *p)
 
 }
 
-static void putchandata(struct itplayer *this, struct it_physchan *p)
+static void putchandata (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, struct it_physchan *p)
 {
 	if (p->newsamp!=-1)
 	{
-		mcpSet(p->no, mcpCReset, 0);
-		mcpSet(p->no, mcpCInstrument, p->newsamp);
+		cpifaceSession->mcpSet (p->no, mcpCReset, 0);
+		cpifaceSession->mcpSet (p->no, mcpCInstrument, p->newsamp);
 		p->newsamp=-1;
 	}
 	if (p->newpos!=-1)
 	{
-		mcpSet(p->no, mcpCPosition, p->newpos);
-		mcpSet(p->no, mcpCLoop, 1);
-		mcpSet(p->no, mcpCDirect, 0);
-		mcpSet(p->no, mcpCStatus, 1);
+		cpifaceSession->mcpSet (p->no, mcpCPosition, p->newpos);
+		cpifaceSession->mcpSet (p->no, mcpCLoop, 1);
+		cpifaceSession->mcpSet (p->no, mcpCDirect, 0);
+		cpifaceSession->mcpSet (p->no, mcpCStatus, 1);
 		p->newpos=-1;
 		p->dead=0;
 	}
 	if (p->noteoff&&!p->looptype)
 	{
-		mcpSet(p->no, mcpCLoop, 2);
+		cpifaceSession->mcpSet (p->no, mcpCLoop, 2);
 		p->looptype=1;
 	}
 	if (this->linear)
-		mcpSet(p->no, mcpCPitch, p->fpitch);
+		cpifaceSession->mcpSet (p->no, mcpCPitch, p->fpitch);
 	else
-		mcpSet(p->no, mcpCPitch6848, -p->fpitch);
+		cpifaceSession->mcpSet (p->no, mcpCPitch6848, -p->fpitch);
 
-	mcpSet(p->no, mcpCVolume, p->fvol);
-	mcpSet(p->no, mcpCPanning, p->fpan);
-	mcpSet(p->no, mcpCSurround, p->srnd);
-	mcpSet(p->no, mcpCMute, this->channels[p->lch].mute);
-	mcpSet(p->no, mcpCFilterFreq, p->fcutoff);
-	mcpSet(p->no, mcpCFilterRez, p->reso);
+	cpifaceSession->mcpSet (p->no, mcpCVolume, p->fvol);
+	cpifaceSession->mcpSet (p->no, mcpCPanning, p->fpan);
+	cpifaceSession->mcpSet (p->no, mcpCSurround, p->srnd);
+	cpifaceSession->mcpSet (p->no, mcpCMute, this->channels[p->lch].mute);
+	cpifaceSession->mcpSet (p->no, mcpCFilterFreq, p->fcutoff);
+	cpifaceSession->mcpSet (p->no, mcpCFilterRez, p->reso);
 }
 
 void __attribute__ ((visibility ("internal"))) mutechan(struct itplayer *this, int c, int m)
@@ -1531,14 +1531,14 @@ static void allocatechan(struct itplayer *this, struct it_logchan *c)
 
 }
 
-static void getproctime(struct itplayer *this)
+static void getproctime (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)
 {
-	this->proctime=mcpGet(-1, mcpGCmdTimer);
+	this->proctime = cpifaceSession->mcpGet (-1, mcpGCmdTimer);
 }
 
-static void putglobdata(struct itplayer *this)
+static void putglobdata (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)
 {
-	mcpSet(-1, mcpGSpeed, 256*2*this->tempo/5);
+	cpifaceSession->mcpSet (-1, mcpGSpeed, 256*2*this->tempo/5);
 }
 
 static void putque(struct itplayer *this, int type, int val1, int val2)
@@ -1552,15 +1552,15 @@ static void putque(struct itplayer *this, int type, int val1, int val2)
 	this->quewpos=(this->quewpos+1)%this->quelen;
 }
 
-static int gettime(void)
+static int gettime (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	return mcpGet(-1, mcpGTimer);
+	return cpifaceSession->mcpGet (-1, mcpGTimer);
 }
 
-static void readque(struct itplayer *this)
+static void readque (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)
 {
 	int i;
-	int time=gettime();
+	int time = gettime (cpifaceSession);
 	while (1)
 	{
 		int t, val1, val2;
@@ -1623,9 +1623,9 @@ static void readque(struct itplayer *this)
 	}
 }
 
-static void checkchan(struct itplayer *this, struct it_physchan *p)
+static void checkchan (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, struct it_physchan *p)
 {
-	if (!mcpGet(p->no, mcpCStatus))
+	if (!cpifaceSession->mcpGet (p->no, mcpCStatus))
 		p->dead=1;
 	if (p->dead&&(this->channels[p->lch].pch!=p))
 		p->notecut=1;
@@ -1634,26 +1634,26 @@ static void checkchan(struct itplayer *this, struct it_physchan *p)
 		if (this->channels[p->lch].pch==p)
 			this->channels[p->lch].pch=0;
 		p->lch=-1;
-		mcpSet(p->no, mcpCReset, 0);
+		cpifaceSession->mcpSet(p->no, mcpCReset, 0);
 		return;
 	}
 }
 
-static void playtick(struct itplayer *this)
+static void playtick (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)
 {
 	int i;
 
 	if (this->looped&&this->noloop)
 	{
-		mcpSet (-1, mcpMasterPause, 1);
+		cpifaceSession->mcpSet (-1, mcpMasterPause, 1);
 		return;
 	}
 
 	if (!this->npchan)
 		return;
 
-	getproctime(this);
-	readque(this);
+	getproctime (cpifaceSession, this);
+	readque (cpifaceSession, this);
 
 	for (i=0; i<this->nchan; i++)
 		inittick(&this->channels[i]);
@@ -1788,7 +1788,7 @@ static void playtick(struct itplayer *this)
 		updatechan(&this->channels[i]);
 	for (i=0; i<this->npchan; i++)
 		if (this->pchannels[i].lch!=-1)
-			checkchan(this, &this->pchannels[i]);
+			checkchan (cpifaceSession, this, &this->pchannels[i]);
 	for (i=0; i<this->npchan; i++)
 		if (this->pchannels[i].lch!=-1)
 			processchan(this, &this->pchannels[i]);
@@ -1800,15 +1800,15 @@ static void playtick(struct itplayer *this)
 		}
 	for (i=0; i<this->npchan; i++)
 		if (this->pchannels[i].lch!=-1)
-			putchandata(this, &this->pchannels[i]);
+			putchandata (cpifaceSession, this, &this->pchannels[i]);
 
-	putglobdata(this);
+	putglobdata (cpifaceSession, this);
 	putque(this, quePos, -1, (this->curtick&0xFF)|(this->currow<<8)|(this->curord<<16));
 }
 
 int __attribute__ ((visibility ("internal"))) loadsamples(struct it_module *m)
 {
-	return mcpLoadSamples(m->sampleinfos, m->nsampi);
+	return mcpAPI->mcpLoadSamples(m->sampleinfos, m->nsampi);
 }
 
 int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
@@ -1903,19 +1903,19 @@ int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const 
 		c->tremoroffcounter=0;
 	}
 
-	if (!mcpOpenPlayer(ch, playtickstatic, file, cpifaceSession))
+	if (!mcpAPI->mcpOpenPlayer(ch, playtickstatic, file, cpifaceSession))
 		return 0;
 
 	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayW);
 
-	this->npchan=mcpNChan;
+	this->npchan = cpifaceSession->PhysicalChannelCount;
 
 	return 1;
 }
 
 void __attribute__ ((visibility ("internal"))) stop(struct itplayer *this)
 {
-	mcpClosePlayer();
+	mcpAPI->mcpClosePlayer ();
 	if (this->channels)
 	{
 		free(this->channels);
@@ -1940,9 +1940,9 @@ int __attribute__ ((visibility ("internal"))) getpos(struct itplayer *this)
 	return (this->curtick&0xFF)|(this->currow<<8)|(this->curord<<16);
 }
 
-int __attribute__ ((visibility ("internal"))) getrealpos(struct itplayer *this)
+int __attribute__ ((visibility ("internal"))) getrealpos (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)
 {
-	readque(this);
+	readque (cpifaceSession, this);
 	return this->realpos;
 }
 
@@ -1954,11 +1954,11 @@ int __attribute__ ((visibility ("internal"))) getchansample (struct cpifaceSessi
 	for (i=0; i<this->npchan; i++)
 		if (this->pchannels[i].lch==ch)
 			chn[n++]=i;
-	mcpMixChanSamples (cpifaceSession, chn, n, buf, len, rate, opt);
+	cpifaceSession->mcpMixChanSamples (cpifaceSession, chn, n, buf, len, rate, opt);
 	return 1;
 }
 
-void __attribute__ ((visibility ("internal"))) itplayer_getrealvol(struct itplayer *this, int ch, int *l, int *r)
+void __attribute__ ((visibility ("internal"))) itplayer_getrealvol (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *l, int *r)
 {
 	int i, voll, volr;
 
@@ -1967,7 +1967,7 @@ void __attribute__ ((visibility ("internal"))) itplayer_getrealvol(struct itplay
 	for (i=0; i<this->npchan; i++)
 		if (this->pchannels[i].lch==ch)
 		{
-			mcpGetRealVolume(i, &voll, &volr);
+			cpifaceSession->mcpGetRealVolume (i, &voll, &volr);
 			(*l)+=voll;
 			(*r)+=volr;
 		}
@@ -1994,7 +1994,7 @@ void __attribute__ ((visibility ("internal"))) setpos(struct itplayer *this, int
 	this->realpos=(this->gotorow<<8)|(this->gotoord<<16);
 }
 
-int __attribute__ ((visibility ("internal"))) getdotsdata(struct itplayer *this, int ch, int pch, int *smp, int *note, int *voll, int *volr, int *sus)
+int __attribute__ ((visibility ("internal"))) getdotsdata (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int pch, int *smp, int *note, int *voll, int *volr, int *sus)
 {
 	struct it_physchan *p;
 	for (; pch<this->npchan; pch++)
@@ -2013,29 +2013,29 @@ int __attribute__ ((visibility ("internal"))) getdotsdata(struct itplayer *this,
 		else
 			*note=0;
 
-	mcpGetRealVolume(p->no, voll, volr);
+	cpifaceSession->mcpGetRealVolume (p->no, voll, volr);
 	*sus=!(p->noteoff||p->notefade);
 	return pch+1;
 }
 
-void __attribute__ ((visibility ("internal"))) getglobinfo(struct itplayer *this, int *tmp, int *bp, int *gv, int *gs)
+void __attribute__ ((visibility ("internal"))) getglobinfo (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int *tmp, int *bp, int *gv, int *gs)
 {
-	readque(this);
+	readque (cpifaceSession, this);
 	*tmp=this->realspeed;
 	*bp=this->realtempo;
 	*gv=this->realgvol;
 	*gs=this->gvolslide?(this->gvolslide>0?ifxGVSUp:ifxGVSDown):0;
 }
 
-int __attribute__ ((visibility ("internal"))) getsync(struct itplayer *this, int ch, int *time)
+int __attribute__ ((visibility ("internal"))) getsync (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *time)
 {
-	readque(this);
+	readque (cpifaceSession, this);
 	if ((ch<0)||(ch>=this->nchan))
 	{
-		*time=gettime()-this->realsynctime;
+		*time = gettime(cpifaceSession) - this->realsynctime;
 		return this->realsync;
 	} else {
-		*time=gettime()-this->channels[ch].realsynctime;
+		*time = gettime(cpifaceSession) - this->channels[ch].realsynctime;
 		return this->channels[ch].realsync;
 	}
 }
@@ -2102,23 +2102,23 @@ int __attribute__ ((visibility ("internal"))) getloop(struct itplayer *this)
 	return this->looped;
 }
 
-int __attribute__ ((visibility ("internal"))) chanactive(struct itplayer *this, int ch, int *lc)
+int __attribute__ ((visibility ("internal"))) chanactive (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *lc)
 {
 	struct it_physchan *p=&this->pchannels[ch];
 	*lc=p->lch;
 	if (!(*lc>-1)&&p->smp&&p->fvol)
 		return 0; /* force mcpGet to be checked last - stian */
-	return mcpGet(ch, mcpCStatus);
+	return cpifaceSession->mcpGet(ch, mcpCStatus);
 }
 
-int __attribute__ ((visibility ("internal"))) lchanactive(struct itplayer *this, int lc)
+int __attribute__ ((visibility ("internal"))) lchanactive (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int lc)
 {
 	struct it_physchan *p=this->channels[lc].pch;
 	if (!p)
 		return 0; /* avoid strange crashes on some archs - stian */
 	if (!(p->smp&&p->fvol))
 		return 0; /* force mcpGet to be checked last - stian */
-	return mcpGet(p->no, mcpCStatus);
+	return cpifaceSession->mcpGet (p->no, mcpCStatus);
 }
 
 int __attribute__ ((visibility ("internal"))) getchanins(struct itplayer *this, int ch)

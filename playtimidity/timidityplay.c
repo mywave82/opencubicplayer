@@ -91,9 +91,6 @@ static uint32_t gmibuffill = 0;
 static uint32_t gmibuffpos; /* read fine-pos.. when rate has a fraction */
 static uint32_t gmibufrate = 0x10000; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
 
-static int (*_GET)(int ch, int opt);
-static void (*_SET)(int ch, int opt, int val);
-
 #define PANPROC \
 do { \
 	float _rs = rs, _ls = ls; \
@@ -1517,7 +1514,7 @@ static void timiditySetVolume(void)
 		volr=(volr*(64-bal))>>6;
 }
 
-static void SET(int ch, int opt, int val)
+static void timiditySet (int ch, int opt, int val)
 {
 	switch (opt)
 	{
@@ -1548,7 +1545,8 @@ static void SET(int ch, int opt, int val)
 			break;
 	}
 }
-static int GET(int ch, int opt)
+
+static int timidityGet (int ch, int opt)
 {
 	return 0;
 }
@@ -1805,18 +1803,6 @@ static void doTimidityClosePlayer(int CloseDriver)
 	}
 
 	free_all_midi_file_info ();
-
-	if (_SET)
-	{
-		mcpSet = _SET;
-		_SET = 0;
-	}
-
-	if (_GET)
-	{
-		mcpGet = _GET;
-		_GET = 0;
-	}
 }
 
 int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
@@ -1882,10 +1868,8 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	current_path = strdup (path);
 	emulate_play_midi_file_start(current_path, buffer, bufferlen, &timidity_main_session); /* gmibuflen etc must be set, since we will start to get events already here... */
 
-	_SET=mcpSet;
-	_GET=mcpGet;
-	mcpSet=SET;
-	mcpGet=GET;
+	cpifaceSession->mcpSet = timiditySet;
+	cpifaceSession->mcpGet = timidityGet;
 
 	mcpNormalize (cpifaceSession, mcpNormalizeNoFilter | mcpNormalizeCanSpeedPitchUnlock | mcpNormalizeCannotEcho | mcpNormalizeCannotAmplify);
 

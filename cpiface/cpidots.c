@@ -43,7 +43,7 @@
 #define MAXPCHAN 64
 #define MAXVIEWCHAN 32
 
-static int (*plGetDots)(struct notedotsdata *, int);
+static int (*plGetDots)(struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *, int);
 
 static int plDotsMiddle = 72*256;
 static int plDotsScale = 32;
@@ -196,7 +196,7 @@ static void plDrawDots (struct cpifaceSessionAPI_t *cpifaceSession)
 			}
 		}
 	}
-	n=plGetDots(dotdata, MAXPCHAN);
+	n = plGetDots (cpifaceSession, dotdata, MAXPCHAN);
 
 	k=0;
 	for (i=0; i<n; i++)
@@ -471,10 +471,10 @@ static int plDotsEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ignore)
 
 static struct cpimoderegstruct plDotsMode = {"dots", dotSetMode, dotDraw, dotIProcessKey, plDotsKey, plDotsEvent CPIMODEREGSTRUCT_TAIL};
 
-void plUseDots(int (*get)(struct notedotsdata *, int))
+void plUseDots(int (*get)(struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *, int))
 {
 	if (plVidType==vidNorm)
 		return;
-	plGetDots=get;
+	plGetDots = get;
 	cpiRegisterMode(&plDotsMode);
 }

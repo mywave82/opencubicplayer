@@ -211,10 +211,10 @@ static int quelen;
 #define EPITCHMIN -72*256
 #define EPITCHMAX 96*256
 
-static void readque(void)
+static void readque (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int type,val1/*,val2*/;
-	int time=mcpGet(-1, mcpGTimer);
+	int time = cpifaceSession->mcpGet (-1, mcpGTimer);
 	while (1)
 	{
 		if (querpos==quewpos)
@@ -291,7 +291,7 @@ static inline signed long checkpitch(int32_t pitch)
 		return checkpitchh(pitch);
 }
 
-static uint8_t PlayNote(struct trackdata *t, const uint8_t *dat)
+static uint8_t PlayNote (struct cpifaceSessionAPI_t *cpifaceSession, struct trackdata *t, const uint8_t *dat)
 {
 	const uint8_t *od=dat;
 	int16_t ins=-1;
@@ -361,7 +361,7 @@ static uint8_t PlayNote(struct trackdata *t, const uint8_t *dat)
 		{
 			if (t->phys!=-1)
 			{
-				mcpSet(t->phys, mcpCReset, 0);
+				cpifaceSession->mcpSet (t->phys, mcpCReset, 0);
 				pchan[t->phys]=-1;
 				t->phys=-1;
 			}
@@ -421,7 +421,7 @@ static uint8_t PlayNote(struct trackdata *t, const uint8_t *dat)
 	return dat-od;
 }
 
-static void PlayGCommand(const uint8_t *cmd, uint8_t len)
+static void PlayGCommand (struct cpifaceSessionAPI_t *cpifaceSession, const uint8_t *cmd, uint8_t len)
 {
 	const uint8_t *cend=cmd+len;
 	while (cmd<cend)
@@ -433,10 +433,10 @@ static void PlayGCommand(const uint8_t *cmd, uint8_t len)
 				break;
 			case cmdSpeed:
 				speed=*cmd;
-				mcpSet(-1, mcpGSpeed, 256*2*speed/5);
+				cpifaceSession->mcpSet(-1, mcpGSpeed, 256*2*speed/5);
 				break;
 			case cmdFineSpeed:
-				mcpSet(-1, mcpGSpeed, 256*2*(10*speed+*cmd)/50);
+				cpifaceSession->mcpSet(-1, mcpGSpeed, 256*2*(10*speed+*cmd)/50);
 				break;
 			case cmdBreak:
 				if (brkpat==-1)
@@ -495,14 +495,14 @@ static void PlayGCommand(const uint8_t *cmd, uint8_t len)
 	}
 }
 
-static void PlayCommand(struct trackdata *t, const uint8_t *cmd, uint8_t len)
+static void PlayCommand (struct cpifaceSessionAPI_t *cpifaceSession, struct trackdata *t, const uint8_t *cmd, uint8_t len)
 {
 	const uint8_t *cend=cmd+len;
 	while (cmd<cend)
 	{
 		if (*cmd&cmdPlayNote)
 		{
-			cmd+=PlayNote(t, cmd);
+			cmd+=PlayNote (cpifaceSession, t, cmd);
 			continue;
 		}
 		switch (*cmd++)
@@ -902,10 +902,10 @@ static void DoGCommand(void)
 				globalvol=checkvol(globalvol+globalvolslval[i]);
 }
 
-static void DoCommand(struct trackdata *t)
+static void DoCommand (struct cpifaceSessionAPI_t *cpifaceSession, struct trackdata *t)
 {
 	if (t->delay==currenttick)
-		PlayNote(t, t->delaycmd);
+		PlayNote (cpifaceSession, t, t->delaycmd);
 
 	switch (t->volslide)
 	{
@@ -1122,7 +1122,7 @@ static void putque(int time, int type, int val1, int val2)
 	quewpos=(quewpos+1)%quelen;
 }
 
-static void PlayTick(void)
+static void PlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct trackdata *td;
 	int i;
@@ -1131,7 +1131,7 @@ static void PlayTick(void)
 
 	if (donotloopmodule && looped)
 	{
-		mcpSet (-1, mcpMasterPause, 1);
+		cpifaceSession->mcpSet (-1, mcpMasterPause, 1);
 		return;
 	}
 
@@ -1139,10 +1139,10 @@ static void PlayTick(void)
 		return;
 
 	for (i=0; i<physchan; i++)
-		if (!mcpGet(i, mcpCStatus))
+		if (!cpifaceSession->mcpGet (i, mcpCStatus))
 			if (pchan[i]!=-1)
 			{
-				mcpSet(i, mcpCReset, 0);
+				cpifaceSession->mcpSet (i, mcpCReset, 0);
 				tdata[pchan[i]].phys=-1;
 				pchan[i]=-1;
 			}
@@ -1235,13 +1235,13 @@ static void PlayTick(void)
 				}
 				for (i=0; i<physchan; i++)
 				{
-					mcpSet(i, mcpCReset, 0);
+					cpifaceSession->mcpSet (i, mcpCReset, 0);
 					pchan[i]=-1;
 				}
 				tempo=6;
 				speed=125;
 				globalvol=0xFF;
-				mcpSet(-1, mcpGSpeed, 12800);
+				cpifaceSession->mcpSet (-1, mcpGSpeed, 12800);
 			}
 			LoadPattern(currentpattern, currentrow);
 		}
@@ -1269,7 +1269,7 @@ static void PlayTick(void)
 					break;
 				if (t->ptr[0]!=currentrow)
 					break;
-				PlayCommand(td, t->ptr+2, t->ptr[1]);
+				PlayCommand (cpifaceSession, td, t->ptr+2, t->ptr[1]);
 				t->ptr+=t->ptr[1]+2;
 			}
 		}
@@ -1280,7 +1280,7 @@ static void PlayTick(void)
 				break;
 			if (gtrack.ptr[0]!=currentrow)
 				break;
-			PlayGCommand(gtrack.ptr+2, gtrack.ptr[1]);
+			PlayGCommand (cpifaceSession, gtrack.ptr+2, gtrack.ptr[1]);
 			gtrack.ptr+=gtrack.ptr[1]+2;
 		}
 
@@ -1290,7 +1290,7 @@ static void PlayTick(void)
 
 	DoGCommand();
 	for (td=tdata; td<tdataend; td++)
-		DoCommand(td);
+		DoCommand (cpifaceSession, td);
 
 	for (td=tdata; td<tdataend; td++)
 	{
@@ -1495,7 +1495,7 @@ static void PlayTick(void)
 
 		if (td->newinst!=-1)
 			if (td->phys!=-1)
-				mcpSet(td->phys, mcpCInstrument, td->newinst);
+				cpifaceSession->mcpSet (td->phys, mcpCInstrument, td->newinst);
 		if (td->newpos!=(uint_fast32_t)-1)
 		{
 			uint_fast32_t l;
@@ -1511,8 +1511,8 @@ static void PlayTick(void)
 					tdata[pchan[i]].phys=-1;
 				pchan[i]=td->num;
 				td->phys=i;
-				mcpSet(td->phys, mcpCReset, 0);
-				mcpSet(td->phys, mcpCInstrument, td->samp->handle);
+				cpifaceSession->mcpSet (td->phys, mcpCReset, 0);
+				cpifaceSession->mcpSet (td->phys, mcpCInstrument, td->samp->handle);
 			}
 			sm=&sampleinfos[td->samp->handle];
 			l=sm->length;
@@ -1525,33 +1525,33 @@ static void PlayTick(void)
 			if (td->newpos>=l)
 				td->newpos=l-16;
 
-			mcpSet(td->phys, mcpCPosition, td->newpos);
-			mcpSet(td->phys, mcpCLoop, 1);
-			mcpSet(td->phys, mcpCDirect, 0);
-			mcpSet(td->phys, mcpCStatus, 1);
+			cpifaceSession->mcpSet (td->phys, mcpCPosition, td->newpos);
+			cpifaceSession->mcpSet (td->phys, mcpCLoop, 1);
+			cpifaceSession->mcpSet (td->phys, mcpCDirect, 0);
+			cpifaceSession->mcpSet (td->phys, mcpCStatus, 1);
 		}
 		if (td->newdir!=-1)
-			mcpSet(td->phys, mcpCDirect, td->newdir);
+			cpifaceSession->mcpSet (td->phys, mcpCDirect, td->newdir);
 		if (td->newloop!=-1)
-			mcpSet(td->phys, mcpCLoop, td->newloop);
+			cpifaceSession->mcpSet (td->phys, mcpCLoop, td->newloop);
 		if (td->phys!=-1)
 		{
 			if (td->stopchan)
-				mcpSet(td->phys, mcpCStatus, 0);
-			mcpSet(td->phys, mcpCVolume, (donotloopmodule&&looped)?0:vol);
-			mcpSet(td->phys, mcpCPanning, pan);
-			mcpSet(td->phys, mcpCPanY, td->pany);
-			mcpSet(td->phys, mcpCPanZ, td->panz);
-			mcpSet(td->phys, mcpCSurround, td->pansrnd);
+				cpifaceSession->mcpSet (td->phys, mcpCStatus, 0);
+			cpifaceSession->mcpSet (td->phys, mcpCVolume, (donotloopmodule&&looped)?0:vol);
+			cpifaceSession->mcpSet (td->phys, mcpCPanning, pan);
+			cpifaceSession->mcpSet (td->phys, mcpCPanY, td->pany);
+			cpifaceSession->mcpSet (td->phys, mcpCPanZ, td->panz);
+			cpifaceSession->mcpSet (td->phys, mcpCSurround, td->pansrnd);
 			if (exponential)
-				mcpSet(td->phys, mcpCPitch, -checkpitche(td->finalpitch));
+				cpifaceSession->mcpSet (td->phys, mcpCPitch, -checkpitche(td->finalpitch));
 			else
-				mcpSet(td->phys, mcpCPitch6848, checkpitchh(td->finalpitch));
-			mcpSet(td->phys, mcpCMute, td->mute);
+				cpifaceSession->mcpSet (td->phys, mcpCPitch6848, checkpitchh(td->finalpitch));
+			cpifaceSession->mcpSet(td->phys, mcpCMute, td->mute);
 		}
 	}
-	readque();
-	cmdtime=mcpGet(-1, mcpGCmdTimer);
+	readque (cpifaceSession);
+	cmdtime = cpifaceSession->mcpGet (-1, mcpGCmdTimer);
 	putque(cmdtime, -1, (currentrow<<8)|(currentpattern<<16), 0);
 }
 
@@ -1621,22 +1621,22 @@ char __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodu
 	querpos=0;
 	quewpos=0;
 
-	if (!mcpOpenPlayer(channels, PlayTick, file, cpifaceSession))
+	if (!mcpAPI->mcpOpenPlayer(channels, PlayTick, file, cpifaceSession))
 		return 0;
 
 	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayW);
 
-	physchan=mcpNChan;
+	physchan = cpifaceSession->PhysicalChannelCount;
 
 	return 1;
 }
 
-void __attribute__ ((visibility ("internal"))) mpStopModule(void)
+void __attribute__ ((visibility ("internal"))) mpStopModule (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i;
 	for (i=0; i<physchan; i++)
-		mcpSet(i, mcpCReset, 0);
-	mcpClosePlayer();
+		cpifaceSession->mcpSet (i, mcpCReset, 0);
+	mcpAPI->mcpClosePlayer();
 	free(que);
 }
 
@@ -1702,13 +1702,13 @@ void __attribute__ ((visibility ("internal"))) mpGetPosition(uint16_t *pat, uint
 	*row=currentrow;
 }
 
-int __attribute__ ((visibility ("internal"))) mpGetRealPos(void)
+int __attribute__ ((visibility ("internal"))) mpGetRealPos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	readque();
+	readque (cpifaceSession);
 	return realpos;
 }
 
-void __attribute__ ((visibility ("internal"))) mpSetPosition(int16_t pat, int16_t row)
+void __attribute__ ((visibility ("internal"))) mpSetPosition (struct cpifaceSessionAPI_t *cpifaceSession, int16_t pat, int16_t row)
 {
 	unsigned int i;
 	if (row<0)
@@ -1751,7 +1751,7 @@ void __attribute__ ((visibility ("internal"))) mpSetPosition(int16_t pat, int16_
 			lockpattern=pat;
 		for (i=0; i<physchan; i++)
 		{
-			mcpSet(i, mcpCReset, 0);
+			cpifaceSession->mcpSet (i, mcpCReset, 0);
 			pchan[i]=-1;
 		}
 		for (i=0; i<channels; i++)
@@ -1791,7 +1791,7 @@ int __attribute__ ((visibility ("internal"))) mpGetChanSample (struct cpifaceSes
 		memset(buf, 0, len*2);
 		return 1;
 	}
-	return mcpGetChanSample (cpifaceSession, tdata[ch].phys, buf, len, rate, opt);
+	return cpifaceSession->mcpGetChanSample (cpifaceSession, tdata[ch].phys, buf, len, rate, opt);
 }
 
 void __attribute__ ((visibility ("internal"))) mpMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int mute)
@@ -1799,27 +1799,27 @@ void __attribute__ ((visibility ("internal"))) mpMute (struct cpifaceSessionAPI_
 	cpifaceSession->MuteChannel[ch] = mute;
 	tdata[ch].mute=mute;
 	if (tdata[ch].phys!=-1)
-		mcpSet(tdata[ch].phys, mcpCMute, mute);
+		cpifaceSession->mcpSet (tdata[ch].phys, mcpCMute, mute);
 }
 
-int __attribute__ ((visibility ("internal"))) mpGetChanStatus(int ch)
+int __attribute__ ((visibility ("internal"))) mpGetChanStatus (struct cpifaceSessionAPI_t *cpifaceSession, int ch)
 {
 	if (tdata[ch].phys==-1)
 		return 0;
-	return mcpGet(tdata[ch].phys, mcpCStatus);
+	return cpifaceSession->mcpGet (tdata[ch].phys, mcpCStatus);
 }
 
-void __attribute__ ((visibility ("internal"))) mpGetRealVolume(int ch, int *l, int *r)
+void __attribute__ ((visibility ("internal"))) mpGetRealVolume (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *l, int *r)
 {
 	if (tdata[ch].phys==-1)
 	{
 		*l=*r=0;
 		return;
 	}
-	mcpGetRealVolume(tdata[ch].phys, l, r);
+	cpifaceSession->mcpGetRealVolume (tdata[ch].phys, l, r);
 }
 
 int __attribute__ ((visibility ("internal"))) mpLoadSamples(struct gmdmodule *m)
 {
-	return mcpLoadSamples(m->samples, m->sampnum);
+	return mcpAPI->mcpLoadSamples(m->samples, m->sampnum);
 }

@@ -2160,6 +2160,11 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.IsEnd = 0;
 	cpifaceSessionAPI.Public.GetLChanSample = 0;
 	cpifaceSessionAPI.Public.GetPChanSample = 0;
+	cpifaceSessionAPI.Public.mcpGetChanSample = 0;
+	cpifaceSessionAPI.Public.mcpMixChanSamples = 0;
+	cpifaceSessionAPI.Public.mcpSet = 0;
+	cpifaceSessionAPI.Public.mcpGet = 0;
+	cpifaceSessionAPI.Public.mcpGetRealVolume = 0;
 
 	linkhandle=lnkLink(ip->pllink);
 	if (linkhandle<0)
