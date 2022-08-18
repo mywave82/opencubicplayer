@@ -116,7 +116,7 @@ static void oggDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct ogginfo inf;
 
-	oggGetInfo (&inf);
+	oggGetInfo (cpifaceSession, &inf);
 
 	mcpDrawGStringsFixedLengthStream
 	(
@@ -166,37 +166,37 @@ static int oggProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			oggPause (cpifaceSession->InPause);
 			break;
 		case KEY_CTRL_UP:
-			oggSetPos(oggGetPos()-oggrate);
+			oggSetPos (cpifaceSession, oggGetPos (cpifaceSession) - oggrate);
 			break;
 		case KEY_CTRL_DOWN:
-			oggSetPos(oggGetPos()+oggrate);
+			oggSetPos (cpifaceSession, oggGetPos (cpifaceSession) + oggrate);
 			break;
 		case '<':
 		case KEY_CTRL_LEFT:
 			{
-				ogg_int64_t pos = oggGetPos();
+				ogg_int64_t pos = oggGetPos (cpifaceSession);
 				ogg_int64_t newpos = pos -(ogglen>>5);
 				if (newpos > pos)
 				{
 					newpos = 0;
 				}
-				oggSetPos(newpos);
+				oggSetPos (cpifaceSession, newpos);
 			}
 			break;
 		case '>':
 		case KEY_CTRL_RIGHT:
 			{
-				ogg_int64_t pos = oggGetPos();
+				ogg_int64_t pos = oggGetPos (cpifaceSession);
 				ogg_int64_t newpos = pos + (ogglen>>5);
 				if ((newpos < pos) || (newpos > ogglen)) /* catch both wrap around (not likely), and overshots */
 				{
 					newpos = ogglen - 4;
 				}
-				oggSetPos(newpos);
+				oggSetPos (cpifaceSession, newpos);
 			}
 			break;
 		case KEY_CTRL_HOME:
-			oggSetPos(0);
+			oggSetPos (cpifaceSession, 0);
 			break;
 		default:
 			return 0;
@@ -211,14 +211,14 @@ static int oggIsLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade (cpifaceSession);
 	}
 	oggSetLoop (LoopMod);
-	oggIdle ();
+	oggIdle (cpifaceSession);
 	return (!LoopMod) && oggLooped();
 }
 
 
 static void oggCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	oggClosePlayer();
+	oggClosePlayer (cpifaceSession);
 
 	OggInfoDone (cpifaceSession);
 	OggPicDone (cpifaceSession);
@@ -249,7 +249,7 @@ static int oggOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->InPause = 0;
 	pausefadedirect=0;
 
-	oggGetInfo(&inf);
+	oggGetInfo (cpifaceSession, &inf);
 	ogglen=inf.len;
 	oggrate=inf.rate;
 

@@ -417,13 +417,13 @@ static int oplLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade (cpifaceSession);
 	}
 	oplSetLoop (LoopMod);
-	oplIdle();
+	oplIdle (cpifaceSession);
 	return (!LoopMod) && oplIsLooped();
 }
 
 static void oplCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	oplClosePlayer();
+	oplClosePlayer (cpifaceSession);
 }
 
 static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */

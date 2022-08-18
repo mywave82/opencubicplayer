@@ -68,7 +68,7 @@ static void drawvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bu
 		v = 0;
 	} else {
 		int l, r;
-		hvlGetChanVolume(i, &l, &r);
+		hvlGetChanVolume (cpifaceSession, i, &l, &r);
 		v = logvolbar(l, r);
 	}
 

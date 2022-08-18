@@ -37,7 +37,7 @@ cpitimiditysetup.o: \
 	timidity-git/timidity/playmidi.h \
 	timidity-git/timidity/reverb.h \
 	timidity-git/timidity/timidity.h
-	$(CC) cpitimiditysetup.c -o $@ -c
+	$(CC) cpitimiditysetup.c -o $@ -c -DDEFAULT_PATH=TIMIDITY_DEFAULT_PATH -DPKGDATADIR=TIMIDITYPKGDATADIR
 
 timidityptype.o: timidityptype.c \
 	../config.h \
@@ -63,7 +63,7 @@ CFLAGS+= -Itimidity-git/interface -Itimidity-git/libarc -Itimidity-git/libunimod
 	%.c \
 	../config.h \
 	../types.h
-	$(CC) $< -o $@ -c -DNO_CURSES
+	$(CC) $< -o $@ -c -DNO_CURSES -DDEFAULT_PATH=TIMIDITY_DEFAULT_PATH -DPKGDATADIR=TIMIDITYPKGDATADIR
 
 libarc_obj=\
 	timidity-git/libarc/arc.o \
@@ -147,7 +147,7 @@ timidity-git/timidity/resample.o: \
 	timidity-git/timidity/newton_table.c \
 	../config.h \
 	../types.h
-	$(CC) $< -o $@ -c
+	$(CC) $< -o $@ -c -DDEFAULT_PATH=TIMIDITY_DEFAULT_PATH -DPKGDATADIR=TIMIDITYPKGDATADIR
 
 timidity-git/timidity/timidity.o: \
 	timidity-git/timidity/timidity.c \
@@ -159,7 +159,7 @@ timidity-git/timidity/wrdt.o: \
 	timidity-git/timidity/wrdt.c \
 	../config.h \
 	../types.h
-	$(CC) $< -o $@ -c -Dtty_wrdt_mode=dumb_wrdt_mode
+	$(CC) $< -o $@ -c -Dtty_wrdt_mode=dumb_wrdt_mode -DDEFAULT_PATH=TIMIDITY_DEFAULT_PATH -DPKGDATADIR=TIMIDITYPKGDATADIR
 
 timidityconfig.o: timidityconfig.c \
 	../config.h \
@@ -229,7 +229,8 @@ timiditypchan.o: timiditypchan.c \
 	../dev/mcp.h \
 	timidityplay.h \
 	../stuff/poutput.h \
-	../cpiface/cpiface.h
+	../cpiface/cpiface.h \
+	timidity-git/timidity/timidity.h
 	$(CC) $< -o $@ -c
 
 timiditypdots.o: \
@@ -242,7 +243,7 @@ timiditypdots.o: \
 	../cpiface/cpiface.h
 	$(CC) $< -o $@ -c
 
-playtimidity_so=cpitimiditysetup.o timiditypchan.o timidityplay.o timiditypplay.o timiditypdots.o ocp-output.o $(interface_obj) $(libarc_obj) $(timidity_obj) $(utils_obj)
+playtimidity_so=$(interface_obj) $(libarc_obj) $(timidity_obj) $(utils_obj) cpitimiditysetup.o timiditypchan.o timidityplay.o timiditypplay.o timiditypdots.o ocp-output.o 
 playtimidity$(LIB_SUFFIX): $(playtimidity_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ -lm
 

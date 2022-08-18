@@ -1,6 +1,7 @@
 [submodule "playgmi/timidity-git"]
 	path = playtimidity/timidity-git
 	url = https://github.com/mywave82/timidity.git
+	branch = ocp
 [submodule "playsid/libsidplayfp-git"]
 	path = playsid/libsidplayfp-git
 	url = https://github.com/mywave82/libsidplayfp.git

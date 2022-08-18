@@ -136,7 +136,7 @@ void __attribute__ ((visibility ("internal"))) hvlGetChanInfo (int chan, struct 
 	ci->muted = hvl_muted[chan];
 }
 
-void __attribute__ ((visibility ("internal"))) hvlGetChanVolume (int chan, int *l, int *r)
+void __attribute__ ((visibility ("internal"))) hvlGetChanVolume (struct cpifaceSessionAPI_t *cpifaceSession, int chan, int *l, int *r)
 {
 	int16_t *src;
 	int pos1, pos2;
@@ -146,7 +146,7 @@ void __attribute__ ((visibility ("internal"))) hvlGetChanVolume (int chan, int *
 	*l = 0;
 	*r = 0;
 
-	ringbuffer_get_tail_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);
+	cpifaceSession->ringbufferAPI->get_tail_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);
 
 	src = hvl_buf_16chan + MAX_CHANNELS * 2 * pos1;
 
@@ -213,7 +213,7 @@ static void hvl_statbuffer_callback_from_hvlbuf (void *arg, int samples_ago)
 	hvl_statbuffers_available++;
 }
 
-void __attribute__ ((visibility ("internal"))) hvlIdler (void)
+void __attribute__ ((visibility ("internal"))) hvlIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	while (hvl_statbuffers_available) /* we only prepare more data if hvl_statbuffers_available is non-zero. This gives about 0.5 seconds worth of sample-data */
 	{
@@ -282,7 +282,7 @@ void __attribute__ ((visibility ("internal"))) hvlIdler (void)
 			hvl_statbuffer[i].ChanInfo[j].fxBparam   = Step->stp_FXbParam;
 		}
 
-		ringbuffer_get_head_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);
+		cpifaceSession->ringbufferAPI->get_head_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);
 
 		/* We can fit length1+length2 samples into out devp-mirrored buffer */
 
@@ -334,17 +334,17 @@ void __attribute__ ((visibility ("internal"))) hvlIdler (void)
 		}
 
 		hvl_statbuffer[i].in_use = 1;
-		ringbuffer_add_tail_callback_samples (hvl_buf_pos, 0, hvl_statbuffer_callback_from_hvlbuf, hvl_statbuffer + i);
+		cpifaceSession->ringbufferAPI->add_tail_callback_samples (hvl_buf_pos, 0, hvl_statbuffer_callback_from_hvlbuf, hvl_statbuffer + i);
 
 		/* Adding hvl_samples_per_row to our devp-mirrored buffer */
 
-		ringbuffer_head_add_samples (hvl_buf_pos, hvl_samples_per_row);
+		cpifaceSession->ringbufferAPI->head_add_samples (hvl_buf_pos, hvl_samples_per_row);
 
 		hvl_statbuffers_available--;
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) hvlIdle (void)
+void __attribute__ ((visibility ("internal"))) hvlIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	static volatile int clipbusy=0;
 
@@ -374,11 +374,11 @@ void __attribute__ ((visibility ("internal"))) hvlIdle (void)
 			unsigned int accumulated_source = 0;
 			int pos1, length1, pos2, length2;
 
-			hvlIdler();
+			hvlIdler (cpifaceSession);
 
 			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
 			// warning this deviates, it uses get_processing_samples instead of tail, we need to keep a copy of the sound-buffers per channel, so makes more sense to track it here
-			ringbuffer_get_processing_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);
+			cpifaceSession->ringbufferAPI->get_processing_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);
 
 			/* bufrate is always correct, since we get the correct speed always from the renderer */
 
@@ -431,7 +431,7 @@ void __attribute__ ((visibility ("internal"))) hvlIdle (void)
 				//accumulated_source = accumulated_target;
 			} /* } else { } //if (hvlbufrate==0x10000) */
 			// warning this deviates, it uses processing_consume_samples instead of tail...
-			ringbuffer_processing_consume_samples (hvl_buf_pos, accumulated_source);
+			cpifaceSession->ringbufferAPI->processing_consume_samples (hvl_buf_pos, accumulated_source);
 			plrAPI->CommitBuffer (accumulated_target);
 			samples_committed += accumulated_target;
 		} /* if (targetlength) */
@@ -442,7 +442,7 @@ void __attribute__ ((visibility ("internal"))) hvlIdle (void)
 		uint64_t new_ui = samples_committed - delay;
 		if (new_ui > samples_lastui)
 		{
-			ringbuffer_tail_consume_samples (hvl_buf_pos, new_ui - samples_lastui);
+			cpifaceSession->ringbufferAPI->tail_consume_samples (hvl_buf_pos, new_ui - samples_lastui);
 			samples_lastui = new_ui;
 		}
 	}
@@ -562,7 +562,7 @@ int __attribute__ ((visibility ("internal"))) hvlGetChanSample (struct cpifaceSe
 	int length1, length2;
 	uint32_t posf = 0;
 
-	ringbuffer_get_tail_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);
+	cpifaceSession->ringbufferAPI->get_tail_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);
 
 	src = hvl_buf_16chan + MAX_CHANNELS * 2 * pos1;
 
@@ -665,7 +665,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 		goto error_out_mem;
 	}
 
-	hvl_buf_pos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, (ROW_BUFFERS + 1) * MAXIMUM_SLOW_DOWN * hvl_samples_per_row);
+	hvl_buf_pos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, (ROW_BUFFERS + 1) * MAXIMUM_SLOW_DOWN * hvl_samples_per_row);
 	if (!hvl_buf_pos)
 	{
 		goto error_out_mem;
@@ -687,7 +687,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 
 	//if (hvl_buf_pos)
 	//{
-	//	ringbuffer_free (hvl_buf_pos);
+	//	cpifaceSession->ringbufferAPI->free (hvl_buf_pos);
 	//	hvl_buf_pos = 0;
 	//}
 error_out_mem:
@@ -709,13 +709,13 @@ error_out_plrAPI_Play:
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) hvlClosePlayer (void)
+void __attribute__ ((visibility ("internal"))) hvlClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	plrAPI->Stop ();
 
 	if (hvl_buf_pos)
 	{
-		ringbuffer_free (hvl_buf_pos);
+		cpifaceSession->ringbufferAPI->free (hvl_buf_pos);
 		hvl_buf_pos = 0;
 	}
 

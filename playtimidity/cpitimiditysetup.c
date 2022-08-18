@@ -50,6 +50,9 @@ static int TimiditySetupScaleRoom = 28;
 static int TimiditySetupOffsetRoom = 70;
 static int TimiditySetupPreDelayFactor = 100;
 
+#warning TODO remove me
+extern struct timiditycontext_t tc;
+
 static void TimiditySetupSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int _ignore, int wid, int ypos, int hgt)
 {
 	TimiditySetupFirstLine=ypos;
@@ -178,13 +181,13 @@ static void TimiditySetupDraw (struct cpifaceSessionAPI_t *cpifaceSession, int f
 	TimiditySetupDrawBar (cpifaceSession, focus, 5, skip, (TimiditySetupSelected >= 3) ? TimiditySetupPreDelayFactor : -1, 1000, TimiditySetupEditPos == 4);
 
 	displaystr (TimiditySetupFirstLine + 6, 0, (focus&&(TimiditySetupEditPos==5))?0x07:0x08, &"  Delay:"[2 - skip], 16 + skip);
-	TimiditySetupDrawItems (cpifaceSession, focus, 6, skip, effect_lr_modes, 4, effect_lr_mode + 1, TimiditySetupEditPos==5);
+	TimiditySetupDrawItems (cpifaceSession, focus, 6, skip, effect_lr_modes, 4, tc.effect_lr_mode + 1, TimiditySetupEditPos==5);
 
 	displaystr (TimiditySetupFirstLine + 7, 0, (focus&&(TimiditySetupEditPos==6))?0x07:0x08, &"  Delay ms:"[2 - skip], 16 + skip);
-	TimiditySetupDrawBar (cpifaceSession, focus, 7, skip, (effect_lr_mode >= 0) ? effect_lr_delay_msec : -1, 1000, TimiditySetupEditPos == 6);
+	TimiditySetupDrawBar (cpifaceSession, focus, 7, skip, (tc.effect_lr_mode >= 0) ? tc.effect_lr_delay_msec : -1, 1000, TimiditySetupEditPos == 6);
 
 	displaystr (TimiditySetupFirstLine + 8, 0, (focus&&(TimiditySetupEditPos==7))?0x07:0x08, &"  Chorus:"[2 - skip], 16 + skip);
-	TimiditySetupDrawItems (cpifaceSession, focus, 8, skip, disable_enable, 2, opt_chorus_control, TimiditySetupEditPos==7);
+	TimiditySetupDrawItems (cpifaceSession, focus, 8, skip, disable_enable, 2, tc.opt_chorus_control, TimiditySetupEditPos==7);
 }
 
 static int TimiditySetupIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
@@ -273,11 +276,11 @@ static int TimiditySetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession,
 					TimiditySetupSelected--;
 					if (TimiditySetupSelected)
 					{
-						opt_reverb_control = -TimiditySetupLevel - TimiditySetupSelected * 128 + 128;
+						tc.opt_reverb_control = -TimiditySetupLevel - TimiditySetupSelected * 128 + 128;
 					} else {
-						opt_reverb_control = 0;
+						tc.opt_reverb_control = 0;
 					}
-					init_reverb ();
+					init_reverb (&tc);
 				}
 			} else if (TimiditySetupEditPos==1)
 			{
@@ -289,8 +292,8 @@ static int TimiditySetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession,
 					} else {
 						TimiditySetupLevel -= repeat;
 					}
-					opt_reverb_control = -TimiditySetupLevel - TimiditySetupSelected * 128 + 128;
-					init_reverb ();
+					tc.opt_reverb_control = -TimiditySetupLevel - TimiditySetupSelected * 128 + 128;
+					init_reverb (&tc);
 				}
 			} else if (TimiditySetupEditPos==2)
 			{
@@ -302,8 +305,8 @@ static int TimiditySetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession,
 					} else {
 						TimiditySetupScaleRoom -= repeat;
 					}
-					freeverb_scaleroom = (float)TimiditySetupScaleRoom / 100.0f;
-					init_reverb ();
+					tc.freeverb_scaleroom = (float)TimiditySetupScaleRoom / 100.0f;
+					init_reverb (&tc);
 				}
 			} else if (TimiditySetupEditPos==3)
 			{
@@ -315,8 +318,8 @@ static int TimiditySetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession,
 					} else {
 						TimiditySetupOffsetRoom -= repeat;
 					}
-					freeverb_offsetroom = (float)TimiditySetupOffsetRoom / 100.0f;
-					init_reverb ();
+					tc.freeverb_offsetroom = (float)TimiditySetupOffsetRoom / 100.0f;
+					init_reverb (&tc);
 				}
 			} else if (TimiditySetupEditPos==4)
 			{
@@ -329,31 +332,31 @@ static int TimiditySetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession,
 						TimiditySetupPreDelayFactor -= repeat;
 					}
 					TimiditySetupPreDelayFactor--;
-					reverb_predelay_factor= (float)TimiditySetupPreDelayFactor / 100.0f;
-					init_reverb ();
+					tc.reverb_predelay_factor = (float)TimiditySetupPreDelayFactor / 100.0f;
+					init_reverb (&tc);
 				}
 			} else if (TimiditySetupEditPos==5)
 			{
-				if (effect_lr_mode > -1)
+				if (tc.effect_lr_mode > -1)
 				{
-					effect_lr_mode--;
+					tc.effect_lr_mode--;
 				}
 			} else if (TimiditySetupEditPos==6)
 			{
-				if ((effect_lr_mode >= 0) && (effect_lr_delay_msec > 1))
+				if ((tc.effect_lr_mode >= 0) && (tc.effect_lr_delay_msec > 1))
 				{
-					if (repeat >= effect_lr_delay_msec)
+					if (repeat >= tc.effect_lr_delay_msec)
 					{
-						effect_lr_delay_msec = 1;
+						tc.effect_lr_delay_msec = 1;
 					} else {
-						effect_lr_delay_msec -= repeat;
+						tc.effect_lr_delay_msec -= repeat;
 					}
 				}
 			} else if (TimiditySetupEditPos==7)
 			{
-				if (opt_chorus_control > 0)
+				if (tc.opt_chorus_control > 0)
 				{
-					opt_chorus_control--;
+					tc.opt_chorus_control--;
 				}
 			}
 			break;
@@ -365,11 +368,11 @@ static int TimiditySetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession,
 					TimiditySetupSelected++;
 					if (TimiditySetupSelected)
 					{
-						opt_reverb_control = -TimiditySetupLevel - TimiditySetupSelected * 128 + 128;
+						tc.opt_reverb_control = -TimiditySetupLevel - TimiditySetupSelected * 128 + 128;
 					} else {
-						opt_reverb_control = 0;
+						tc.opt_reverb_control = 0;
 					}
-					init_reverb ();
+					init_reverb (&tc);
 				}
 			} else if (TimiditySetupEditPos==1)
 			{
@@ -381,8 +384,8 @@ static int TimiditySetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession,
 					} else {
 						TimiditySetupLevel += repeat;
 					}
-					opt_reverb_control = -TimiditySetupLevel - TimiditySetupSelected * 128 + 128;
-					init_reverb ();
+					tc.opt_reverb_control = -TimiditySetupLevel - TimiditySetupSelected * 128 + 128;
+					init_reverb (&tc);
 				}
 			} else if (TimiditySetupEditPos==2)
 			{
@@ -394,8 +397,8 @@ static int TimiditySetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession,
 					} else {
 						TimiditySetupScaleRoom += repeat;
 					}
-					freeverb_scaleroom = (float)TimiditySetupScaleRoom / 100.0f;
-					init_reverb ();
+					tc.freeverb_scaleroom = (float)TimiditySetupScaleRoom / 100.0f;
+					init_reverb (&tc);
 				}
 			} else if (TimiditySetupEditPos==3)
 			{
@@ -407,8 +410,8 @@ static int TimiditySetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession,
 					} else {
 						TimiditySetupOffsetRoom += repeat;
 					}
-					freeverb_offsetroom = (float)TimiditySetupOffsetRoom / 100.0f;
-					init_reverb ();
+					tc.freeverb_offsetroom = (float)TimiditySetupOffsetRoom / 100.0f;
+					init_reverb (&tc);
 				}
 			} else if (TimiditySetupEditPos==4)
 			{
@@ -420,31 +423,31 @@ static int TimiditySetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession,
 					} else {
 						TimiditySetupPreDelayFactor += repeat;
 					}
-					reverb_predelay_factor= (float)TimiditySetupPreDelayFactor / 100.0f;
-					init_reverb ();
+					tc.reverb_predelay_factor = (float)TimiditySetupPreDelayFactor / 100.0f;
+					init_reverb (&tc);
 				}
 			} else if (TimiditySetupEditPos==5)
 			{
-				if (effect_lr_mode < 2)
+				if (tc.effect_lr_mode < 2)
 				{
-					effect_lr_mode++;
+					tc.effect_lr_mode++;
 				}
 			} else if (TimiditySetupEditPos==6)
 			{
-				if ((effect_lr_mode >= 0) && (effect_lr_delay_msec < 1000))
+				if ((tc.effect_lr_mode >= 0) && (tc.effect_lr_delay_msec < 1000))
 				{
-					if ((effect_lr_delay_msec + repeat) > 1000)
+					if ((tc.effect_lr_delay_msec + repeat) > 1000)
 					{
-						effect_lr_delay_msec = 1000;
+						tc.effect_lr_delay_msec = 1000;
 					} else {
-						effect_lr_delay_msec += repeat;
+						tc.effect_lr_delay_msec += repeat;
 					}
 				}
 			} else if (TimiditySetupEditPos==7)
 			{
-				if (opt_chorus_control < 1)
+				if (tc.opt_chorus_control < 1)
 				{
-					opt_chorus_control++;
+					tc.opt_chorus_control++;
 				}
 			}
 			break;
@@ -483,19 +486,18 @@ static int TimiditySetupEvent (struct cpifaceSessionAPI_t *cpifaceSession, int e
 	return 1;
 }
 
-
 static struct cpitextmoderegstruct cpiTimiditySetup = {"TimSetup", TimiditySetupGetWin, TimiditySetupSetWin, TimiditySetupDraw, TimiditySetupIProcessKey, TimiditySetupAProcessKey, TimiditySetupEvent CPITEXTMODEREGSTRUCT_TAIL};
 
 void __attribute__ ((visibility ("internal"))) cpiTimiditySetupInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 #if 0
-	if (opt_reverb_control >= 0)
+	if (tc.opt_reverb_control >= 0)
 	{
-		TimiditySetupSelected = opt_reverb_control;
+		TimiditySetupSelected = tc.opt_reverb_control;
 		TimiditySetupLevel = DEFAULT_REVERB_SEND_LEVEL;
 	} else {
-		TimiditySetupSelected = (-opt_reverb_control + 128) / 128;
-		TimiditySetupLevel = (-opt_reverb_control) & 0x7f;
+		TimiditySetupSelected = (-tc.opt_reverb_control + 128) / 128;
+		TimiditySetupLevel = (-tc.opt_reverb_control) & 0x7f;
 	}
 #else
 	TimiditySetupSelected       = cfGetProfileInt ("timidity", "reverbmode",       2, 10);
@@ -503,36 +505,36 @@ void __attribute__ ((visibility ("internal"))) cpiTimiditySetupInit (struct cpif
 	TimiditySetupScaleRoom      = cfGetProfileInt ("timidity", "scaleroom",       28, 10);
 	TimiditySetupOffsetRoom     = cfGetProfileInt ("timidity", "offsetroom",      70, 10);
 	TimiditySetupPreDelayFactor = cfGetProfileInt ("timidity", "predelayfactor", 100, 10);
-	effect_lr_mode              = cfGetProfileInt ("timidity", "delaymode",       -1, 10);
-	effect_lr_delay_msec        = cfGetProfileInt ("timidity", "delay",           25, 10);
-	opt_chorus_control          = cfGetProfileInt ("timidity", "chorusenabled",    1, 10);
+	tc.effect_lr_mode           = cfGetProfileInt ("timidity", "delaymode",       -1, 10);
+	tc.effect_lr_delay_msec     = cfGetProfileInt ("timidity", "delay",           25, 10);
+	tc.opt_chorus_control       = cfGetProfileInt ("timidity", "chorusenabled",    1, 10);
 	if (TimiditySetupSelected       <    0) TimiditySetupSelected       =    0;
 	if (TimiditySetupLevel          <    0) TimiditySetupLevel          =    0;
 	if (TimiditySetupScaleRoom      <    0) TimiditySetupScaleRoom      =    0;
 	if (TimiditySetupOffsetRoom     <    0) TimiditySetupOffsetRoom     =    0;
 	if (TimiditySetupPreDelayFactor <    0) TimiditySetupPreDelayFactor =    0;
-	if (effect_lr_mode              <   -1) effect_lr_mode              =   -1;
-	if (effect_lr_delay_msec        <    0) effect_lr_delay_msec        =    0;
-	if (opt_chorus_control          <    0) opt_chorus_control          =    0;
+	if (tc.effect_lr_mode           <   -1) tc.effect_lr_mode           =   -1;
+	if (tc.effect_lr_delay_msec     <    0) tc.effect_lr_delay_msec     =    0;
+	if (tc.opt_chorus_control       <    0) tc.opt_chorus_control       =    0;
 	if (TimiditySetupSelected       >    4) TimiditySetupSelected       =    2;
 	if (TimiditySetupLevel          >  127) TimiditySetupLevel          =  127;
 	if (TimiditySetupScaleRoom      > 1000) TimiditySetupScaleRoom      = 1000;
 	if (TimiditySetupOffsetRoom     > 1000) TimiditySetupOffsetRoom     = 1000;
 	if (TimiditySetupPreDelayFactor > 1000) TimiditySetupPreDelayFactor = 1000;
-	if (effect_lr_mode              >    2) effect_lr_mode              =    2;
-	if (effect_lr_delay_msec        > 1000) effect_lr_delay_msec        = 1000;
-	if (opt_chorus_control          >    1) opt_chorus_control          =    1;
+	if (tc.effect_lr_mode           >    2) tc.effect_lr_mode           =    2;
+	if (tc.effect_lr_delay_msec     > 1000) tc.effect_lr_delay_msec     = 1000;
+	if (tc.opt_chorus_control       >    1) tc.opt_chorus_control       =    1;
 
 	if (TimiditySetupSelected)
 	{
-		opt_reverb_control = -TimiditySetupLevel - TimiditySetupSelected * 128 + 128;
+		tc.opt_reverb_control = -TimiditySetupLevel - TimiditySetupSelected * 128 + 128;
 	} else {
-		opt_reverb_control = 0;
+		tc.opt_reverb_control = 0;
 	}
-	freeverb_scaleroom = (float)TimiditySetupScaleRoom / 100.0f;
-	freeverb_offsetroom = (float)TimiditySetupOffsetRoom / 100.0f;
-	reverb_predelay_factor= (float)TimiditySetupPreDelayFactor / 100.0f;
-	init_reverb ();
+	tc.freeverb_scaleroom = (float)TimiditySetupScaleRoom / 100.0f;
+	tc.freeverb_offsetroom = (float)TimiditySetupOffsetRoom / 100.0f;
+	tc.reverb_predelay_factor = (float)TimiditySetupPreDelayFactor / 100.0f;
+	init_reverb (&tc);
 #endif
 	cpiTextRegisterMode (cpifaceSession, &cpiTimiditySetup);
 }

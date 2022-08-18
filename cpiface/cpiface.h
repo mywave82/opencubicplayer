@@ -33,8 +33,12 @@ struct cpifaceplayerstruct
 	void (*CloseFile)(struct cpifaceSessionAPI_t *cpifaceSession);
 };
 
+struct ringbufferAPI_t;
+
 struct cpifaceSessionAPI_t
 {
+	const struct ringbufferAPI_t *ringbufferAPI;
+
 	/* configured by devp/devw */
 	void (*GetRealMasterVolume)(int *l, int *r); /* filled in by devp/devw driver */
 	void (*GetMasterSample)(int16_t *, unsigned int len, uint32_t rate, int mode); /* filled in by devp/devw driver */

@@ -59,6 +59,7 @@
 #include "cpiface.h"
 #include "cpiface-private.h"
 #include "cpipic.h"
+#include "dev/ringbuffer.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
@@ -2140,6 +2141,8 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	struct cpimoderegstruct *mod;
 	void *fp;
 	int retval;
+
+	cpifaceSessionAPI.Public.ringbufferAPI = &ringbufferAPI;
 
 	cpifaceSessionAPI.Public.GetRealMasterVolume = 0;
 	cpifaceSessionAPI.Public.GetMasterSample = 0;

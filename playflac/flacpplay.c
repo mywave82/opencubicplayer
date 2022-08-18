@@ -152,15 +152,15 @@ static int flacProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 			flacPause(cpifaceSession->InPause);
 			break;
 		case KEY_CTRL_UP:
-			flacSetPos(flacGetPos()-flacrate);
+			flacSetPos (flacGetPos (cpifaceSession) - flacrate);
 			break;
 		case KEY_CTRL_DOWN:
-			flacSetPos(flacGetPos()+flacrate);
+			flacSetPos (flacGetPos (cpifaceSession) + flacrate);
 			break;
 		case '<':
 		case KEY_CTRL_LEFT:
 			{
-				uint64_t oldpos = flacGetPos();
+				uint64_t oldpos = flacGetPos (cpifaceSession);
 				unsigned int skip=flaclen>>5;
 				if (skip<128*1024)
 					skip=128*1024;
@@ -176,7 +176,7 @@ static int flacProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 				int skip=flaclen>>5;
 				if (skip<128*1024)
 					skip=128*1024;
-				flacSetPos(flacGetPos()+skip);
+				flacSetPos (flacGetPos (cpifaceSession) + skip);
 			}
 			break;
 		case KEY_CTRL_HOME:
@@ -196,14 +196,14 @@ static int flacLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade (cpifaceSession);
 	}
 	flacSetLoop (LoopMod);
-	flacIdle ();
+	flacIdle (cpifaceSession);
 	return (!LoopMod) && flacIsLooped();
 }
 
 
 static void flacCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	flacClosePlayer();
+	flacClosePlayer (cpifaceSession);
 
 	FlacInfoDone (cpifaceSession);
 	FlacPicDone (cpifaceSession);

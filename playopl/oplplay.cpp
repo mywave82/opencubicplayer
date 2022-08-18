@@ -104,11 +104,11 @@ do { \
 static void oplSetVolume(void);
 static void oplSetSpeed(uint16_t sp);
 
-void __attribute__ ((visibility ("internal"))) oplClosePlayer(void)
+void __attribute__ ((visibility ("internal"))) oplClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (active)
 	{
-		ringbuffer_free (oplbufpos);
+		cpifaceSession->ringbufferAPI->free (oplbufpos);
 		oplbufpos = 0;
 
 		plrAPI->Stop();
@@ -313,7 +313,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	oplbufrate=0x10000; /* 1.0 */
 	oplbuffpos = 0;
 	//opl_looped = 0;
-	oplbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, sizeof (oplbuf) >> 2 /* stereo + bit16 */);
+	oplbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, sizeof (oplbuf) >> 2 /* stereo + bit16 */);
 	if (!oplbufpos)
 	{
 		goto error_out;
@@ -334,7 +334,7 @@ error_out:
 	plrAPI->Stop();
 	if (oplbufpos)
 	{
-		ringbuffer_free (oplbufpos);
+		cpifaceSession->ringbufferAPI->free (oplbufpos);
 		oplbufpos = 0;
 	}
 	delete(p);
@@ -375,7 +375,7 @@ static void oplSetVolume(void)
 		voll=(voll*(64-bal))>>6;
 }
 
-static void oplIdler(void)
+static void oplIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int pos1, pos2;
 	int length1, length2;
@@ -385,7 +385,7 @@ static void oplIdler(void)
 		return;
 	}
 
-	ringbuffer_get_head_samples (oplbufpos, &pos1, &length1, &pos2, &length2);
+	cpifaceSession->ringbufferAPI->get_head_samples (oplbufpos, &pos1, &length1, &pos2, &length2);
 
 	while (length1)
 	{
@@ -402,12 +402,12 @@ static void oplIdler(void)
 
 		opltowrite-=length1;
 
-		ringbuffer_head_add_samples (oplbufpos, length1);
-		ringbuffer_get_head_samples (oplbufpos, &pos1, &length1, &pos2, &length2);
+		cpifaceSession->ringbufferAPI->head_add_samples (oplbufpos, length1);
+		cpifaceSession->ringbufferAPI->get_head_samples (oplbufpos, &pos1, &length1, &pos2, &length2);
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) oplIdle(void)
+void __attribute__ ((visibility ("internal"))) oplIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -433,10 +433,10 @@ void __attribute__ ((visibility ("internal"))) oplIdle(void)
 			unsigned int accumulated_source = 0;
 			int pos1, length1, pos2, length2;
 
-			oplIdler();
+			oplIdler (cpifaceSession);
 
 			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-			ringbuffer_get_tail_samples (oplbufpos, &pos1, &length1, &pos2, &length2);
+			cpifaceSession->ringbufferAPI->get_tail_samples (oplbufpos, &pos1, &length1, &pos2, &length2);
 
 			if (oplbufrate==0x10000)
 			{
@@ -581,7 +581,7 @@ void __attribute__ ((visibility ("internal"))) oplIdle(void)
 					pos2 = 0;
 				} /* while (targetlength && length1) */
 			} /* if (oplbufrate==0x10000) */
-			ringbuffer_tail_consume_samples (oplbufpos, accumulated_source);
+			cpifaceSession->ringbufferAPI->tail_consume_samples (oplbufpos, accumulated_source);
 			plrAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}

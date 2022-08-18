@@ -206,7 +206,7 @@ static int mpegLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade (cpifaceSession);
 	}
 	mpegSetLoop (LoopMod);
-	mpegIdle ();
+	mpegIdle (cpifaceSession);
 	return (!LoopMod) && mpegIsLooped();
 }
 
@@ -214,7 +214,7 @@ static int mpegLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 static void mpegCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	ID3InfoDone (cpifaceSession);
-	mpegClosePlayer ();
+	mpegClosePlayer (cpifaceSession);
 }
 
 static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *mpegfile, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */

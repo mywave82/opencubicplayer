@@ -107,7 +107,7 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static void ayCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	ayClosePlayer();
+	ayClosePlayer (cpifaceSession);
 }
 
 static int ayLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
@@ -117,7 +117,7 @@ static int ayLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade (cpifaceSession);
 	}
 	aySetLoop (LoopMod);
-	ayIdle ();
+	ayIdle (cpifaceSession);
 	return (!LoopMod) && ayIsLooped();
 }
 
@@ -177,7 +177,7 @@ static int ayProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			csg=globinfo.track-1;
 			if (csg)
 			{
-				ayStartSong(csg);
+				ayStartSong (cpifaceSession, csg);
 				starttime=dos_clock();
 			}
 			break;
@@ -186,7 +186,7 @@ static int ayProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			csg=globinfo.track+1;
 			if (csg<=globinfo.numtracks)
 			{
-				ayStartSong(csg);
+				ayStartSong (cpifaceSession, csg);
 				starttime=dos_clock();
 			}
 			break;

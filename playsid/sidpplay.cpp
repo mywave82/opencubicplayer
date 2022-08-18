@@ -382,7 +382,7 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 
 static void sidCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	sidClosePlayer();
+	sidClosePlayer (cpifaceSession);
 	SidInfoDone (cpifaceSession);
 }
 
@@ -449,7 +449,7 @@ static int sidLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 	{
 		dopausefade (cpifaceSession);
 	}
-	sidIdle();
+	sidIdle (cpifaceSession);
 	return 0;
 }
 

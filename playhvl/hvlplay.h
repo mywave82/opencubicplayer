@@ -8,8 +8,8 @@ struct hvl_tune;
 struct cpifaceSessionAPI_t;
 extern struct hvl_tune __attribute__ ((visibility ("internal"))) *current_hvl_tune;
 extern struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
-extern void            __attribute__ ((visibility ("internal")))  hvlClosePlayer (void);
-extern void            __attribute__ ((visibility ("internal")))  hvlIdle (void);
+extern void            __attribute__ ((visibility ("internal")))  hvlClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
+extern void            __attribute__ ((visibility ("internal")))  hvlIdle (struct cpifaceSessionAPI_t *cpifaceSession);
 extern void            __attribute__ ((visibility ("internal")))  hvlSetLoop (uint8_t s);
 extern char            __attribute__ ((visibility ("internal")))  hvlLooped (void);
 extern void            __attribute__ ((visibility ("internal")))  hvlPause (uint8_t p);
@@ -45,7 +45,7 @@ struct hvl_chaninfo
 	int muted; /* force-muted - TODO */
 };
 void hvlGetChanInfo (int chan, struct hvl_chaninfo *ci);
-void hvlGetChanVolume (int chan, int *l, int *r);
+void hvlGetChanVolume (struct cpifaceSessionAPI_t *cpifaceSession, int chan, int *l, int *r);
 
 int __attribute__ ((visibility ("internal"))) hvlGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
 

@@ -192,13 +192,13 @@ static int hvlIsLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade (cpifaceSession);
 	}
 	hvlSetLoop (LoopMod);
-	hvlIdle ();
+	hvlIdle (cpifaceSession);
 	return (!LoopMod) && hvlLooped();
 }
 
 static void hvlCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	hvlClosePlayer();
+	hvlClosePlayer (cpifaceSession);
 }
 
 static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */

@@ -19,8 +19,8 @@ struct ocpfilehandle_t;
 struct cpifaceSessionAPI_t;
 extern int __attribute__ ((visibility ("internal"))) mpeg_Bitrate; /* bitrate of the last decoded frame */
 extern int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) mpegClosePlayer(void);
-extern void __attribute__ ((visibility ("internal"))) mpegIdle(void);
+extern void __attribute__ ((visibility ("internal"))) mpegClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
+extern void __attribute__ ((visibility ("internal"))) mpegIdle (struct cpifaceSessionAPI_t *cpifaceSession);
 extern void __attribute__ ((visibility ("internal"))) mpegSetLoop(uint8_t s);
 extern char __attribute__ ((visibility ("internal"))) mpegIsLooped(void);
 extern void __attribute__ ((visibility ("internal"))) mpegPause(uint8_t p);

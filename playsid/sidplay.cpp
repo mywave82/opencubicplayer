@@ -159,7 +159,7 @@ static void SidStatBuffers_callback_from_sidbuf (void *arg, int samples_ago)
 	SidStatBuffers_available++;
 }
 
-extern void __attribute__ ((visibility ("internal"))) sidIdler (void)
+extern void __attribute__ ((visibility ("internal"))) sidIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	while (SidStatBuffers_available) /* we only prepare more data if SidStatBuffers_available is non-zero. This gives about 0.5 seconds worth of sample-data */
 	{
@@ -178,7 +178,7 @@ extern void __attribute__ ((visibility ("internal"))) sidIdler (void)
 		}
 		assert (i != ROW_BUFFERS);
 
-		ringbuffer_get_head_samples (sid_buf_pos, &pos1, &length1, &pos2, &length2);
+		cpifaceSession->ringbufferAPI->get_head_samples (sid_buf_pos, &pos1, &length1, &pos2, &length2);
 
 		/* We can fit length1+length2 samples into out devp-mirrored buffer */
 
@@ -213,17 +213,17 @@ extern void __attribute__ ((visibility ("internal"))) sidIdler (void)
 		}
 
 		SidStatBuffers[i].in_use = 1;
-		ringbuffer_add_tail_callback_samples (sid_buf_pos, 0, SidStatBuffers_callback_from_sidbuf, SidStatBuffers + i);
+		cpifaceSession->ringbufferAPI->add_tail_callback_samples (sid_buf_pos, 0, SidStatBuffers_callback_from_sidbuf, SidStatBuffers + i);
 
 		/* Adding sid_samples_per_row to our devp-mirrored buffer */
 
-		ringbuffer_head_add_samples (sid_buf_pos, sid_samples_per_row);
+		cpifaceSession->ringbufferAPI->head_add_samples (sid_buf_pos, sid_samples_per_row);
 
 		SidStatBuffers_available--;
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) sidIdle(void)
+void __attribute__ ((visibility ("internal"))) sidIdle(struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -249,11 +249,11 @@ void __attribute__ ((visibility ("internal"))) sidIdle(void)
 			unsigned int accumulated_source = 0;
 			int pos1, length1, pos2, length2;
 
-			sidIdler();
+			sidIdler (cpifaceSession);
 
 			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-#warning We are using processing, not tail
-			ringbuffer_get_processing_samples (sid_buf_pos, &pos1, &length1, &pos2, &length2);
+			/* We are using processing, not tail */
+			cpifaceSession->ringbufferAPI->get_processing_samples (sid_buf_pos, &pos1, &length1, &pos2, &length2);
 
 			if (sidbufrate == 0x00010000)
 			{
@@ -397,11 +397,10 @@ void __attribute__ ((visibility ("internal"))) sidIdle(void)
 					pos2 = 0;
 				} /* while (targetlength && length1) */
 			} /* if (sidbufrate==0x10000) */
-#warning we are using processing instead of tail here
-			ringbuffer_processing_consume_samples (sid_buf_pos, accumulated_source);
+			/* We are using processing instead of tail here */
+			cpifaceSession->ringbufferAPI->processing_consume_samples (sid_buf_pos, accumulated_source);
 			plrAPI->CommitBuffer (accumulated_target);
 			samples_committed += accumulated_target;
-#warning Does this hack work as expected?
 			sidbufrate_compensate += accumulated_target - accumulated_source;
 		} /* if (targetlength) */
 	}
@@ -430,7 +429,7 @@ void __attribute__ ((visibility ("internal"))) sidIdle(void)
 				sidbufrate_compensate = 0;
 			}
 
-			ringbuffer_tail_consume_samples (sid_buf_pos, delta);
+			cpifaceSession->ringbufferAPI->tail_consume_samples (sid_buf_pos, delta);
 			samples_lastui = new_ui;
 		}
 	}
@@ -762,7 +761,7 @@ int __attribute__ ((visibility ("internal"))) sidGetLChanSample (struct cpifaceS
 	int length1, length2;
 	uint32_t posf = 0;
 
-	ringbuffer_get_tail_samples (sid_buf_pos, &pos1, &length1, &pos2, &length2);
+	cpifaceSession->ringbufferAPI->get_tail_samples (sid_buf_pos, &pos1, &length1, &pos2, &length2);
 
 	src = sid_buf_4x3[sid] + pos1 * 4 + ch;
 
@@ -814,7 +813,7 @@ int __attribute__ ((visibility ("internal"))) sidGetPChanSample (struct cpifaceS
 	int length1, length2;
 	uint32_t posf = 0;
 
-	ringbuffer_get_tail_samples (sid_buf_pos, &pos1, &length1, &pos2, &length2);
+	cpifaceSession->ringbufferAPI->get_tail_samples (sid_buf_pos, &pos1, &length1, &pos2, &length2);
 
 	src = sid_buf_4x3[sid] + pos1 * 4 + ch;
 
@@ -929,7 +928,7 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 		goto error_out_sid_buffers;
 	}
 
-	sid_buf_pos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, ROW_BUFFERS * MAXIMUM_SLOW_DOWN * sid_samples_per_row);
+	sid_buf_pos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, ROW_BUFFERS * MAXIMUM_SLOW_DOWN * sid_samples_per_row);
 	if (!sid_buf_pos)
 	{
 		goto error_out_sid_buffers;
@@ -966,7 +965,7 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 
 	return 1;
 
-	//ringbuffer_free (sid_buf_pos); sid_buf_pos = 0;
+	//cpifaceSession->ringbufferAPI->free (sid_buf_pos); sid_buf_pos = 0;
 error_out_sid_buffers:
 	delete[] sid_buf_stereo; sid_buf_stereo = NULL;
 	delete[] sid_buf_4x3[0]; sid_buf_4x3[0] = NULL;
@@ -980,13 +979,13 @@ error_out_buf:
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) sidClosePlayer(void)
+void __attribute__ ((visibility ("internal"))) sidClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	plrAPI->Stop();
 
 	if (sid_buf_pos)
 	{
-		ringbuffer_free (sid_buf_pos);
+		cpifaceSession->ringbufferAPI->free (sid_buf_pos);
 		sid_buf_pos = 0;
 	}
 

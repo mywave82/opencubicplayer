@@ -263,6 +263,8 @@ static FLAC__StreamDecoderWriteStatus write_callback (
 	size of buffer =  frame->header.channels * frame->header.blocksize * frame->header.bits_per_sample / 8
 	buffer is a 2D array with [channel][sample] as index
 */
+	struct cpifaceSessionAPI_t *cpifaceSession = client_data;
+
 	unsigned int i;
 
 	int pos1, length1, pos2, length2;
@@ -272,7 +274,7 @@ static FLAC__StreamDecoderWriteStatus write_callback (
 	else
 		flaclastpos=frame->header.number.sample_number;
 
-	ringbuffer_get_head_samples (flacbufpos, &pos1, &length1, &pos2, &length2);
+	cpifaceSession->ringbufferAPI->get_head_samples (flacbufpos, &pos1, &length1, &pos2, &length2);
 
 	if (frame->header.blocksize > (length1+length2))
 	{
@@ -295,7 +297,7 @@ static FLAC__StreamDecoderWriteStatus write_callback (
 		}
 	}
 
-	ringbuffer_head_add_samples (flacbufpos, frame->header.blocksize);
+	cpifaceSession->ringbufferAPI->head_add_samples (flacbufpos, frame->header.blocksize);
 
 	samples_for_bitrate += frame->header.blocksize;
 	samplerate_for_bitrate = frame->header.sample_rate;
@@ -582,9 +584,9 @@ static void error_callback(
 	fprintf(stderr, "playflac: ERROR libflac: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
 }
 
-static void flacIdler(void)
+static void flacIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	while (ringbuffer_get_head_available_samples (flacbufpos) >= flac_max_blocksize)
+	while (cpifaceSession->ringbufferAPI->get_head_available_samples (flacbufpos) >= flac_max_blocksize)
 	{
 		uint64_t prePOS;
 		uint64_t postPOS;
@@ -643,7 +645,7 @@ void __attribute__ ((visibility ("internal"))) flacMetaDataUnlock(void)
 	clipbusy--;
 }
 
-void __attribute__ ((visibility ("internal"))) flacIdle(void)
+void __attribute__ ((visibility ("internal"))) flacIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -670,10 +672,10 @@ void __attribute__ ((visibility ("internal"))) flacIdle(void)
 			int pos1, length1, pos2, length2;
 
 			/* fill up our buffers */
-			flacIdler();
+			flacIdler (cpifaceSession);
 
 			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-			ringbuffer_get_tail_samples (flacbufpos, &pos1, &length1, &pos2, &length2);
+			cpifaceSession->ringbufferAPI->get_tail_samples (flacbufpos, &pos1, &length1, &pos2, &length2);
 
 			if (flacbufrate==0x10000)
 			{
@@ -817,7 +819,7 @@ void __attribute__ ((visibility ("internal"))) flacIdle(void)
 					pos2 = 0;
 				} /* while (targetlength && length1) */
 			} /* if (flacbufrate==0x10000) */
-			ringbuffer_tail_consume_samples (flacbufpos, accumulated_source);
+			cpifaceSession->ringbufferAPI->tail_consume_samples (flacbufpos, accumulated_source);
 			plrAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}
@@ -900,9 +902,9 @@ void __attribute__ ((visibility ("internal"))) flacGetInfo(struct flacinfo *info
 	snprintf (info->opt50, sizeof (info->opt50), "%s - %s", FLAC__VERSION_STRING, FLAC__VENDOR_STRING);
 	info->bitrate=bitrate;
 }
-uint64_t __attribute__ ((visibility ("internal"))) flacGetPos(void)
+uint64_t __attribute__ ((visibility ("internal"))) flacGetPos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	return (flaclastpos + samples - ringbuffer_get_tail_available_samples (flacbufpos)) % samples;
+	return (flaclastpos + samples - cpifaceSession->ringbufferAPI->get_tail_available_samples (flacbufpos)) % samples;
 }
 void __attribute__ ((visibility ("internal"))) flacSetPos(uint64_t pos)
 {
@@ -1000,7 +1002,7 @@ int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandl
 	FLAC__seekable_stream_decoder_set_tell_callback(decoder, tell_callback);
 	FLAC__seekable_stream_decoder_set_length_callback(decoder, length_callback);
 	FLAC__seekable_stream_decoder_set_eof_callback(decoder, eof_callback);
-	FLAC__seekable_stream_decoder_set_client_data(decoder, 0);
+	FLAC__seekable_stream_decoder_set_client_data(decoder, cpifaceSession);
 	FLAC__seekable_stream_decoder_set_error_callback(decoder, error_callback);
 	if ((temp=FLAC__seekable_stream_decoder_init(decoder))!=FLAC__SEEKABLE_STREAM_DECODER_OK)
 	{
@@ -1008,7 +1010,6 @@ int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandl
 		goto error_out_decoder;
 	}
 	if (!FLAC__seekable_stream_decoder_process_until_end_of_metadata(decoder))
-w
 	{
 		fprintf(stderr, "playflac: FLAC__seekable_stream_decoder_process_until_end_of_metadata() failed\n");
 		goto error_out_decoder;
@@ -1025,7 +1026,7 @@ w
 	   write_callback,
 	   metadata_callback,
 	   error_callback,
-	   0 /*my_client_data*/
+	   cpifaceSession /*my_client_data*/
 	)) != FLAC__STREAM_DECODER_INIT_STATUS_OK)
 	{
 		fprintf(stderr, "playflac: FLAC__stream_decoder_init_stream() failed, %s\n", FLAC__StreamDecoderStateString[temp]);
@@ -1062,7 +1063,7 @@ w
 		goto error_out_plrAPI_Start;
 	}
 
-	flacbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_STEREO, flacbuflen);
+	flacbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_STEREO, flacbuflen);
 	if (!flacbufpos)
 	{
 		fprintf(stderr, "playflac: ringbuffer_new_samples() failed\n");
@@ -1077,7 +1078,7 @@ w
 
 	return 1;
 
-	//ringbuffer_free (flacbufpos);
+	//cpifaceSession->ringbufferAPI->free (flacbufpos);
 	//flacbufpos = 0;
 error_out_flacbuf:
 	free (flacbuf);
@@ -1102,7 +1103,7 @@ error_out_flacfile:
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) flacClosePlayer(void)
+void __attribute__ ((visibility ("internal"))) flacClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	plrAPI->Stop();
 
@@ -1113,7 +1114,7 @@ void __attribute__ ((visibility ("internal"))) flacClosePlayer(void)
 	}
 	if (flacbufpos)
 	{
-		ringbuffer_free (flacbufpos);
+		cpifaceSession->ringbufferAPI->free (flacbufpos);
 		flacbufpos = 0;
 	}
 

@@ -214,6 +214,7 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 	plUseDots(timidityGetDots);
 
 	cpifaceSession->LogicalChannelCount = 16;
+	cpifaceSession->SetMuteChannel = timidityMute;
 	timidityChanSetup(/*&mid*/);
 
 	{

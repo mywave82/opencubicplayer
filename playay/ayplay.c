@@ -588,12 +588,12 @@ static void aydumpbuffer_delay_callback_from_aybuf_to_devp (void *arg, int sampl
 	plrAPI->OnBufferCallback (-samples_until, aydumpbuffer_delay_callback_from_devp, state);
 }
 
-static void ayIdler(void)
+static void ayIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int pos1, pos2;
 	int length1, length2;
 
-	ringbuffer_get_head_samples (aybufpos, &pos1, &length1, &pos2, &length2);
+	cpifaceSession->ringbufferAPI->get_head_samples (aybufpos, &pos1, &length1, &pos2, &length2);
 
 	while (length1)
 	{
@@ -623,7 +623,7 @@ static void ayIdler(void)
 		if (aydumpbuffer_delayed_state)
 		{
 			aydumpbuffer_delayed_state->inaybuf = 1;
-			ringbuffer_add_tail_callback_samples (aybufpos, 0, aydumpbuffer_delay_callback_from_aybuf_to_devp, aydumpbuffer_delayed_state);
+			cpifaceSession->ringbufferAPI->add_tail_callback_samples (aybufpos, 0, aydumpbuffer_delay_callback_from_aybuf_to_devp, aydumpbuffer_delayed_state);
 			aydumpbuffer_delayed_state = 0;
 		}
 
@@ -634,12 +634,12 @@ static void ayIdler(void)
 		memcpy (aybuf + (pos1<<1), aydumpbuffer, length1<<2);
 		aydumpbuffer += length1<<1;
 		aydumpbuffer_n -= length1;
-		ringbuffer_head_add_samples (aybufpos, length1);
-		ringbuffer_get_head_samples (aybufpos, &pos1, &length1, &pos2, &length2);
+		cpifaceSession->ringbufferAPI->head_add_samples (aybufpos, length1);
+		cpifaceSession->ringbufferAPI->get_head_samples (aybufpos, &pos1, &length1, &pos2, &length2);
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) ayIdle(void)
+void __attribute__ ((visibility ("internal"))) ayIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -665,10 +665,10 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 			unsigned int accumulated_source = 0;
 			int pos1, length1, pos2, length2;
 
-			ayIdler();
+			ayIdler (cpifaceSession);
 
 			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-			ringbuffer_get_tail_samples (aybufpos, &pos1, &length1, &pos2, &length2);
+			cpifaceSession->ringbufferAPI->get_tail_samples (aybufpos, &pos1, &length1, &pos2, &length2);
 
 			if (aybufrate==0x10000)
 			{
@@ -813,7 +813,7 @@ void __attribute__ ((visibility ("internal"))) ayIdle(void)
 					pos2 = 0;
 				} /* while (targetlength && length1) */
 			} /* if (aybufrate==0x10000) */
-			ringbuffer_tail_consume_samples (aybufpos, accumulated_source);
+			cpifaceSession->ringbufferAPI->tail_consume_samples (aybufpos, accumulated_source);
 			plrAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}
@@ -904,7 +904,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 		goto errorout_plrAPI_Start;
 	}
 
-	aybufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 16384);
+	aybufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 16384);
 	if (!aybufpos)
 	{
 		goto errorout_aybuf;
@@ -956,7 +956,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 
 	//sound_end();
 errorout_ringbuffer_aybufpos:
-	ringbuffer_free (aybufpos);
+	cpifaceSession->ringbufferAPI->free (aybufpos);
 	aybufpos = 0;
 errorout_aybuf:
 	free(aybuf);
@@ -971,7 +971,7 @@ errorout_aydata:
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) ayClosePlayer(void)
+void __attribute__ ((visibility ("internal"))) ayClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	sound_end();
 
@@ -979,7 +979,7 @@ void __attribute__ ((visibility ("internal"))) ayClosePlayer(void)
 
 	if (aybufpos)
 	{
-		ringbuffer_free (aybufpos);
+		cpifaceSession->ringbufferAPI->free (aybufpos);
 		aybufpos = 0;
 	}
 
@@ -1022,8 +1022,8 @@ void __attribute__ ((visibility ("internal"))) ayGetInfo(struct ayinfo *info)
 }
 
 
-void __attribute__ ((visibility ("internal"))) ayStartSong(int song)
+void __attribute__ ((visibility ("internal"))) ayStartSong (struct cpifaceSessionAPI_t *cpifaceSession, int song)
 {
 	new_ay_track=song-1;
-	ringbuffer_reset(aybufpos);
+	cpifaceSession->ringbufferAPI->reset(aybufpos);
 }

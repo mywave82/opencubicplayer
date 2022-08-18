@@ -596,7 +596,7 @@ error:
 	}
 }
 
-static void mpegIdler(void)
+static void mpegIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (!active)
 		return;
@@ -608,7 +608,7 @@ static void mpegIdler(void)
 
 		size_t read;
 
-		ringbuffer_get_head_samples (mpegbufpos, &pos1, &length1, &pos2, &length2);
+		cpifaceSession->ringbufferAPI->get_head_samples (mpegbufpos, &pos1, &length1, &pos2, &length2);
 
 		if (!length1)
 		{
@@ -640,12 +640,12 @@ static void mpegIdler(void)
 			audio_pcm_s16(mpegbuf+(pos1<<1), read, synth.pcm.samples[0]+synth.pcm.length-data_in_synth, synth.pcm.samples[0]+synth.pcm.length-data_in_synth);
 		else /* use channel 0 and 1, even if we maybe have surround */
 			audio_pcm_s16(mpegbuf+(pos1<<1), read, synth.pcm.samples[0]+synth.pcm.length-data_in_synth, synth.pcm.samples[1]+synth.pcm.length-data_in_synth);
-		ringbuffer_head_add_samples (mpegbufpos, read);
+		cpifaceSession->ringbufferAPI->head_add_samples (mpegbufpos, read);
 		data_in_synth-=read;
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) mpegIdle(void)
+void __attribute__ ((visibility ("internal"))) mpegIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -673,11 +673,11 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 
 			/* fill up our buffers */
 			mpeg_inSIGINT++;
-			mpegIdler();
+			mpegIdler (cpifaceSession);
 			mpeg_inSIGINT--;
 
 			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-			ringbuffer_get_tail_samples (mpegbufpos, &pos1, &length1, &pos2, &length2);
+			cpifaceSession->ringbufferAPI->get_tail_samples (mpegbufpos, &pos1, &length1, &pos2, &length2);
 
 			if (mpegbufrate==0x10000)
 			{
@@ -818,7 +818,7 @@ void __attribute__ ((visibility ("internal"))) mpegIdle(void)
 					pos2 = 0;
 				} /* while (targetlength && length1) */
 			} /* if (mpegbufrate==0x10000) */
-			ringbuffer_tail_consume_samples (mpegbufpos, accumulated_source);
+			cpifaceSession->ringbufferAPI->tail_consume_samples (mpegbufpos, accumulated_source);
 			plrAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}
@@ -1136,7 +1136,7 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 		fprintf(stderr, "[MPx]: malloc failed\n");
 		goto error_out_plrAPI_Play;
 	}
-	mpegbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 8192);
+	mpegbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 8192);
 	if (!mpegbufpos)
 	{
 		fprintf(stderr, "[MPx]: ringbuffer_new_samples() failed\n");
@@ -1166,7 +1166,7 @@ error_out:
 	}
 	if (mpegbufpos)
 	{
-		ringbuffer_free (mpegbufpos);
+		cpifaceSession->ringbufferAPI->free (mpegbufpos);
 		mpegbufpos = 0;
 	}
 	free(mpegbuf); mpegbuf=0;
@@ -1177,7 +1177,7 @@ error_out:
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) mpegClosePlayer(void)
+void __attribute__ ((visibility ("internal"))) mpegClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	free (id3_tag_buffer); id3_tag_buffer = 0;
 	id3_tag_target = 0;
@@ -1195,7 +1195,7 @@ void __attribute__ ((visibility ("internal"))) mpegClosePlayer(void)
 	}
 	if (mpegbufpos)
 	{
-		ringbuffer_free (mpegbufpos);
+		cpifaceSession->ringbufferAPI->free (mpegbufpos);
 		mpegbufpos = 0;
 	}
 	free(mpegbuf); mpegbuf=0;

@@ -37,8 +37,6 @@
 #include "controls.h"
 #include "audio_cnv.h"
 
-int audio_buffer_bits = DEFAULT_AUDIO_BUFFER_BITS;
-
 /*****************************************************************/
 /* Some functions to convert signed 32-bit data to other formats */
 

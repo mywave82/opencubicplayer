@@ -62,6 +62,8 @@
 # define PRINT(a, ...) do {} while(0)
 #endif
 
+struct timiditycontext_t tc;
+
 static int gmi_inpause;
 
 static uint64_t samples_committed;
@@ -130,26 +132,20 @@ static int gmi_looped;
 static int ctl_next_result = RC_NONE;
 static int ctl_next_value = 0;
 
-/* timidity.c */
-extern char *opt_aq_max_buff;
-extern char *opt_aq_fill_buff;
-extern int   opt_aq_fill_buff_free_needed;
-
 /* main interfaces (To be used another main) */
 #if defined(main) || defined(ANOTHER_MAIN) || defined ( IA_W32GUI ) || defined ( IA_W32G_SYN )
 #define MAIN_INTERFACE
 #else
 #define MAIN_INTERFACE static
 #endif /* main */
-MAIN_INTERFACE void timidity_start_initialize(void);
-MAIN_INTERFACE int read_config_file(char *name, int self, int allow_missing_file);
-MAIN_INTERFACE int timidity_post_load_configuration(void);
-MAIN_INTERFACE void timidity_init_player(void);
-MAIN_INTERFACE int timidity_play_main(int nfiles, char **files);
-extern int got_a_configuration;
-MAIN_INTERFACE void tmdy_free_config(void);
-extern void init_effect(void);
-void timidity_init_aq_buff(void);
+MAIN_INTERFACE void timidity_start_initialize(struct timiditycontext_t *c);
+MAIN_INTERFACE int read_config_file(struct timiditycontext_t *c, char *name, int self, int allow_missing_file);
+MAIN_INTERFACE int timidity_post_load_configuration(struct timiditycontext_t *c);
+MAIN_INTERFACE void timidity_init_player(struct timiditycontext_t *c);
+MAIN_INTERFACE int timidity_play_main(struct timiditycontext_t *c, int nfiles, char **files);
+MAIN_INTERFACE void tmdy_free_config(struct timiditycontext_t *c);
+extern void init_effect(struct timiditycontext_t *c);
+void timidity_init_aq_buff(struct timiditycontext_t *c);
 
 struct _CtlEventDelayed;
 typedef struct _CtlEventDelayed
@@ -470,18 +466,18 @@ static int read_user_config_file(void)
 #ifdef __W32__
 /* timidity.cfg or _timidity.cfg or .timidity.cfg*/
     snprintf(path, sizeof (path), "%s" PATH_STRING "timidity.cfg", home);
-    status = read_config_file(path, 0, 1);
+    status = read_config_file(&tc, path, 0, 1);
     if (status != READ_CONFIG_FILE_NOT_FOUND)
         return status;
 
     snprintf(path, sizeof (path), "%s" PATH_STRING "_timidity.cfg", home);
-    status = read_config_file(path, 0, 1);
+    status = read_config_file(&tc, path, 0, 1);
     if (status != READ_CONFIG_FILE_NOT_FOUND)
         return status;
 #endif
 
     snprintf(path, sizeof (path), "%s" PATH_STRING ".timidity.cfg", home);
-    status = read_config_file(path, 0, 1);
+    status = read_config_file(&tc, path, 0, 1);
     if (status != 3 /*READ_CONFIG_FILE_NOT_FOUND*/)
         return status;
 
@@ -495,7 +491,7 @@ int __attribute__ ((visibility ("internal"))) get_module_type (char *fn)
 	return IS_OTHER_FILE; /* Open Cubic Player will provide module support */
 }
 
-int __attribute__ ((visibility ("internal"))) convert_mod_to_midi_file(MidiEvent * ev)
+int __attribute__ ((visibility ("internal"))) convert_mod_to_midi_file(struct timiditycontext_t *c, MidiEvent * ev)
 {
 	ctl->cmsg(CMSG_INFO, VERB_NORMAL,
 	          "Aborting!  timidity attempted to convert module to midi file\n");
@@ -507,7 +503,7 @@ char __attribute__ ((visibility ("internal"))) *get_module_title (struct timidit
 	return NULL;
 }
 
-int __attribute__ ((visibility ("internal"))) load_module_file (struct timidity_file *tf, int mod_type)
+int __attribute__ ((visibility ("internal"))) load_module_file (struct timiditycontext_t *c, struct timidity_file *tf, int mod_type)
 {
 	return 1; /* Fail to load */
 }
@@ -783,10 +779,12 @@ static void ocp_playmode_close_output(void)
 }
 
 
-static int ocp_playmode_output_data(char *buf, int32 bytes)
+static int ocp_playmode_output_data(struct timiditycontext_t *c, char *buf, int32 bytes)
 {
 	int pos1, pos2;
 	int length1, length2;
+
+	struct cpifaceSessionAPI_t *cpifaceSession = c->contextowner;
 
 	PRINT ("[timidity] playmode->output_data (bytes=%d)\n", bytes);
 
@@ -795,7 +793,7 @@ static int ocp_playmode_output_data(char *buf, int32 bytes)
 
 	output_counter += bytes;
 
-	ringbuffer_get_head_samples (gmibufpos, &pos1, &length1, &pos2, &length2);
+	cpifaceSession->ringbufferAPI->get_head_samples (gmibufpos, &pos1, &length1, &pos2, &length2);
 
 	while (length1 && bytes)
 	{
@@ -810,8 +808,8 @@ static int ocp_playmode_output_data(char *buf, int32 bytes)
 		gmibuffill += length1;
 		gmibuffree -= length1;
 
-		ringbuffer_head_add_samples (gmibufpos, length1);
-		ringbuffer_get_head_samples (gmibufpos, &pos1, &length1, &pos2, &length2);
+		cpifaceSession->ringbufferAPI->head_add_samples (gmibufpos, length1);
+		cpifaceSession->ringbufferAPI->get_head_samples (gmibufpos, &pos1, &length1, &pos2, &length2);
 	}
 
 	if (bytes)
@@ -928,22 +926,22 @@ PlayMode *play_mode_list[2] = {&ocp_playmode, 0}, *target_play_mode = &ocp_playm
 
 ControlMode *ctl_list[2] = {&ocp_ctl, 0}, *ctl = &ocp_ctl;
 
-static void emulate_main_start()
+static void emulate_main_start(struct timiditycontext_t *c)
 {
 	const char *configfile;
-	free_instruments_afterwards = 1;
+	c->free_instruments_afterwards = 1;
 
 #ifdef SUPPORT_SOCKET
 	init_mail_addr();
-	if(url_user_agent == NULL)
+	if(c->url_user_agent == NULL)
 	{
-		url_user_agent = (char *)safe_malloc(10 + strlen(timidity_version));
-		strcpy(url_user_agent, "TiMidity-");
-		strcat(url_user_agent, timidity_version);
+		c->url_user_agent = (char *)safe_malloc(10 + strlen(timidity_version));
+		strcpy(c->url_user_agent, "TiMidity-");
+		strcat(c->url_user_agent, timidity_version);
 	}
 #endif /* SUPPORT_SOCKET */
 
-	timidity_start_initialize();
+	timidity_start_initialize(&tc);
 
 	configfile = cfGetProfileString ("timidity", "configfile", "");
 
@@ -953,15 +951,15 @@ static void emulate_main_start()
 		if (len > 5 && (!strcasecmp (&configfile[len - 4], ".sf2")))
 		{
 			/* add_soundfont lacks constification of filename */
-			add_soundfont ((char *)configfile, -1, -1, -1, -1);
+			add_soundfont (&tc, (char *)configfile, -1, -1, -1, -1);
 			goto ready;
 		} else {
 			/* read_config_file lacks constification of filename */
-			if (read_config_file((char *)configfile, 0, 0))
+			if (read_config_file(&tc, (char *)configfile, 0, 0))
 			{
 				fprintf (stderr, "Failed to load \"%s\", defaulting to global loading\n", configfile);
 			} else {
-				got_a_configuration = 1;
+				c->got_a_configuration = 1;
 				goto ready;
 			}
 		}
@@ -970,27 +968,27 @@ static void emulate_main_start()
 	{
 		fprintf (stderr, "[timidity] pre-load config failed\n");
 	}*/
-	if (!got_a_configuration)
+	if (!c->got_a_configuration)
 	{
 		/* test CONFIG_FILE first if it is defined to be something else than one of our standard paths */
 		if (strcmp(CONFIG_FILE, "/etc/timidity/timidity.cfg") &&
 		    strcmp(CONFIG_FILE, "/etc/timidity.cfg") &&
 		    strcmp(CONFIG_FILE, "/usr/local/share/timidity/timidity.cfg") &&
-		    strcmp(CONFIG_FILE, "/usr/share/timidity/timidity.cfg") && !read_config_file(CONFIG_FILE, 0, 0))
+		    strcmp(CONFIG_FILE, "/usr/share/timidity/timidity.cfg") && !read_config_file(&tc, CONFIG_FILE, 0, 0))
 		{
-			got_a_configuration = 1;
-		} else if (!read_config_file("/etc/timidity/timidity.cfg", 0, 0))
+			c->got_a_configuration = 1;
+		} else if (!read_config_file(&tc, "/etc/timidity/timidity.cfg", 0, 0))
 		{
-			got_a_configuration = 1;
-		} else if (!read_config_file("/etc/timidity.cfg", 0, 0))
+			c->got_a_configuration = 1;
+		} else if (!read_config_file(&tc, "/etc/timidity.cfg", 0, 0))
 		{
-			got_a_configuration = 1;
-		} else if (!read_config_file("/usr/local/share/timidity/timidity.cfg", 0, 0))
+			c->got_a_configuration = 1;
+		} else if (!read_config_file(&tc, "/usr/local/share/timidity/timidity.cfg", 0, 0))
 		{
-			got_a_configuration = 1;
-		} else if (!read_config_file("/usr/share/timidity/timidity.cfg", 0, 0))
+			c->got_a_configuration = 1;
+		} else if (!read_config_file(&tc, "/usr/share/timidity/timidity.cfg", 0, 0))
 		{
-		got_a_configuration = 1;
+		c->got_a_configuration = 1;
 		} else {
 			ctl->cmsg(CMSG_WARNING, VERB_NORMAL, "Warning: Unable to find global timidity.cfg file");
 		}
@@ -1003,60 +1001,64 @@ static void emulate_main_start()
 
 ready:
 	/* we need any emulated configuration, perform them now... */
-	if (timidity_post_load_configuration ())
+	if (timidity_post_load_configuration (&tc))
 	{
 		fprintf (stderr, "[timidity] post-load config failed\n");
 	}
 
-	timidity_init_player ();
+	timidity_init_player (&tc);
 }
 
-static void emulate_main_end()
+static void emulate_main_end(struct timiditycontext_t *c)
 {
 	int i;
 
 #ifdef SUPPORT_SOCKET
-	if (url_user_agent)
-		free(url_user_agent);
-	if (url_http_proxy_host)
-		free(url_http_proxy_host);
-	if (url_ftp_proxy_host)
-		free(url_ftp_proxy_host);
-	if (user_mailaddr)
-		free(user_mailaddr);
+	if (c->url_user_agent)
+		free(c->url_user_agent);
+	if (c->url_http_proxy_host)
+		free(c->url_http_proxy_host);
+	if (c->url_ftp_proxy_host)
+		free(c->url_ftp_proxy_host);
+	if (c->user_mailaddr)
+		free(c->user_mailaddr);
+	c->url_user_agent = NULL;
+	c->url_http_proxy_host = NULL;
+	c->url_ftp_proxy_host = NULL;
+	c->user_mailddr = NULL;
 #endif
 
-	if (opt_aq_max_buff)
-		free(opt_aq_max_buff);
-	opt_aq_max_buff = NULL;
+	if (c->opt_aq_max_buff)
+		free(c->opt_aq_max_buff);
+	c->opt_aq_max_buff = NULL;
 
-	if (opt_aq_fill_buff && opt_aq_fill_buff_free_needed)
-		free(opt_aq_fill_buff);
-	opt_aq_fill_buff_free_needed = 1;
-	opt_aq_fill_buff = NULL;
+	if (c->opt_aq_fill_buff && !c->opt_aq_fill_buff_free_not_needed)
+		free(c->opt_aq_fill_buff);
+	c->opt_aq_fill_buff_free_not_needed = 0;
+	c->opt_aq_fill_buff = NULL;
 
-	if (output_text_code)
-		free(output_text_code);
-	output_text_code = NULL;
+	if (c->output_text_code)
+		free(c->output_text_code);
+	c->output_text_code = NULL;
 
-	free_soft_queue();
-	free_instruments(0);
-	playmidi_stream_free();
-	free_soundfonts();
-	free_cache_data();
-	free_wrd();
-	free_readmidi();
-	free_global_mblock();
-	tmdy_free_config();
-	free_reverb_buffer();
-	free_effect_buffers();
-	free(voice); voice=0;
-	free_gauss_table();
+	free_soft_queue(c);
+	free_instruments(c, 0);
+	playmidi_stream_free(c);
+	free_soundfonts(c);
+	free_cache_data(c);
+	free_wrd(c);
+	free_readmidi(c);
+	free_global_mblock(c);
+	tmdy_free_config(c);
+	free_reverb_buffer(c);
+	free_effect_buffers(c);
+	free(c->voice); c->voice=0;
+	free_gauss_table(c);
 	for (i = 0; i < MAX_CHANNELS; i++)
-		free_drum_effect(i);
+		free_drum_effect(c, i);
 }
 
-int emulate_timidity_play_main_start ()
+int emulate_timidity_play_main_start (struct timiditycontext_t *c)
 {
 	if(wrdt->open(NULL))
 	{
@@ -1074,7 +1076,7 @@ int emulate_timidity_play_main_start ()
 
 	if (play_mode->flag & PF_PCM_STREAM)
 	{
-		play_mode->extra_param[1] = aq_calc_fragsize();
+		play_mode->extra_param[1] = aq_calc_fragsize(c);
 		ctl->cmsg(CMSG_INFO, VERB_DEBUG_SILLY,
 		          "requesting fragment size: %d",
 		          play_mode->extra_param[1]);
@@ -1088,26 +1090,26 @@ int emulate_timidity_play_main_start ()
 		return 2;
 	}
 
-	if(!control_ratio)
+	if(!tc.control_ratio)
 	{
-	    control_ratio = play_mode->rate / CONTROLS_PER_SECOND;
-	    if(control_ratio < 1)
-		control_ratio = 1;
-	    else if (control_ratio > MAX_CONTROL_RATIO)
-		control_ratio = MAX_CONTROL_RATIO;
+	    tc.control_ratio = play_mode->rate / CONTROLS_PER_SECOND;
+	    if(tc.control_ratio < 1)
+		tc.control_ratio = 1;
+	    else if (tc.control_ratio > MAX_CONTROL_RATIO)
+		tc.control_ratio = MAX_CONTROL_RATIO;
 	}
 
-	init_load_soundfont();
-	aq_setup();
-	timidity_init_aq_buff();
+	init_load_soundfont(&tc);
+	aq_setup(&tc);
+	timidity_init_aq_buff(&tc);
 
-	if(allocate_cache_size > 0)
-		resamp_cache_reset();
+	if(tc.allocate_cache_size > 0)
+		resamp_cache_reset(&tc);
 
 	return 0;
 }
 
-static void emulate_timidity_play_main_end (void)
+static void emulate_timidity_play_main_end (struct timiditycontext_t *c)
 {
 	// if (intr) aq_flush(1);
 
@@ -1120,7 +1122,7 @@ static void emulate_timidity_play_main_end (void)
 		close_soundspec();
 #endif /* SUPPORT_SOUNDSPEC */
 
-	free_archive_files();
+	free_archive_files(c);
 #ifdef SUPPORT_SOCKET
 	url_news_connection_cache(URL_NEWS_CLOSE_CACHE);
 #endif /* SUPPORT_SOCKET */
@@ -1139,86 +1141,87 @@ static int emulate_play_midi_file_start(const char *fn, uint8_t *data, size_t da
 {
 	int i, j, rc;
 
-
 	s->first = 1;
 	s->event = NULL;
 
 	/* Set current file information */
-	current_file_info = get_midi_file_info((char *)fn, 1);
-	current_file_info->midi_data = (char *)data;
-	current_file_info->midi_data_size = datalen;
+	tc.current_file_info = get_midi_file_info(&tc, (char *)fn, 1);
+	tc.current_file_info->midi_data = (char *)data;
+	tc.current_file_info->midi_data_size = datalen;
 
-	rc = check_apply_control();
+	rc = check_apply_control(&tc);
 	if(RC_IS_SKIP_FILE(rc) && rc != RC_RELOAD)
 		return rc;
 
 	/* Reset key & speed each files */
-	current_keysig = (opt_init_keysig == 8) ? 0 : opt_init_keysig;
-	note_key_offset = key_adjust;
-	midi_time_ratio = tempo_adjust;
+	tc.current_keysig = (tc.opt_init_keysig == 8) ? 0 : tc.opt_init_keysig;
+	tc.note_key_offset = tc.key_adjust;
+	tc.midi_time_ratio = tc.tempo_adjust;
 	for (i = 0; i < MAX_CHANNELS; i++)
 	{
 		for (j = 0; j < 12; j++)
-			channel[i].scale_tuning[j] = 0;
-		channel[i].prev_scale_tuning = 0;
-		channel[i].temper_type = 0;
+			tc.channel[i].scale_tuning[j] = 0;
+		tc.channel[i].prev_scale_tuning = 0;
+		tc.channel[i].temper_type = 0;
 	}
-	CLEAR_CHANNELMASK(channel_mute);
-	if (temper_type_mute & 1)
-		FILL_CHANNELMASK(channel_mute);
+	CLEAR_CHANNELMASK(tc.channel_mute);
+	if (tc.temper_type_mute & 1)
+		FILL_CHANNELMASK(tc.channel_mute);
 
 	/* Reset restart offset */
-	midi_restart_time = 0;
+	tc.midi_restart_time = 0;
 
 #ifdef REDUCE_VOICE_TIME_TUNING
 	/* Reset voice reduction stuff */
-	min_bad_nv = 256;
-	max_good_nv = 1;
-	ok_nv_total = 32;
-	ok_nv_counts = 1;
-	ok_nv = 32;
-	ok_nv_sample = 0;
-	old_rate = -1;
-	reduce_quality_flag = no_4point_interpolation;
-	restore_voices(0);
+	tc.min_bad_nv = 256;
+	tc.max_good_nv = 1;
+	tc.ok_nv_total = 32;
+	tc.ok_nv_counts = 1;
+	tc.ok_nv = 32;
+	tc.ok_nv_sample = 0;
+	tc.old_rate = -1;
+	tc.reduce_quality_flag = tc.no_4point_interpolation;
+	restore_voices(&tc, 0);
 #endif
 
-	ctl_mode_event(CTLE_METRONOME, 0, 0, 0);
-	ctl_mode_event(CTLE_KEYSIG, 0, current_keysig, 0);
-	ctl_mode_event(CTLE_TEMPER_KEYSIG, 0, 0, 0);
-	ctl_mode_event(CTLE_KEY_OFFSET, 0, note_key_offset, 0);
-	i = current_keysig + ((current_keysig < 8) ? 7 : -9), j = 0;
+	ctl_mode_event(&tc, CTLE_METRONOME, 0, 0, 0);
+	ctl_mode_event(&tc, CTLE_KEYSIG, 0, tc.current_keysig, 0);
+	ctl_mode_event(&tc, CTLE_TEMPER_KEYSIG, 0, 0, 0);
+	ctl_mode_event(&tc, CTLE_KEY_OFFSET, 0, tc.note_key_offset, 0);
+	i = tc.current_keysig + ((tc.current_keysig < 8) ? 7 : -9), j = 0;
 	while (i != 7)
 		i += (i < 7) ? 5 : -7, j++;
-	j += note_key_offset, j -= floor(j / 12.0) * 12;
-	current_freq_table = j;
-	ctl_mode_event(CTLE_TEMPO, 0, current_play_tempo, 0);
-	ctl_mode_event(CTLE_TIME_RATIO, 0, 100 / midi_time_ratio + 0.5, 0);
+	j += tc.note_key_offset, j -= floor(j / 12.0) * 12;
+	tc.current_freq_table = j;
+	ctl_mode_event(&tc, CTLE_TEMPO, 0, tc.current_play_tempo, 0);
+	ctl_mode_event(&tc, CTLE_TIME_RATIO, 0, 100 / tc.midi_time_ratio + 0.5, 0);
 	for (i = 0; i < MAX_CHANNELS; i++)
 	{
-		ctl_mode_event(CTLE_TEMPER_TYPE, 0, i, channel[i].temper_type);
-		ctl_mode_event(CTLE_MUTE, 0, i, temper_type_mute & 1);
+		ctl_mode_event(&tc, CTLE_TEMPER_TYPE, 0, i, tc.channel[i].temper_type);
+		ctl_mode_event(&tc, CTLE_MUTE, 0, i, tc.temper_type_mute & 1);
 	}
 
 	return rc;
 }
 
-static int emulate_play_midi_start(MidiEvent *eventlist, int32 samples)
+static int emulate_play_midi_start(struct timiditycontext_t *c, MidiEvent *eventlist, int32 samples)
 {
 	int rc = RC_NONE;
 
-	sample_count = samples;
-	event_list = eventlist;
-	lost_notes = cut_notes = 0;
-	check_eot_flag = 1;
+	c->sample_count = samples;
+	c->event_list = eventlist;
+	c->lost_notes = c->cut_notes = 0;
+	c->check_eot_flag = 1;
 
-	wrd_midi_event(-1, -1); /* For initialize */
+	wrd_midi_event(&tc, -1, -1); /* For initialize */
 
-	reset_midi(0);
-	if(!opt_realtime_playing && allocate_cache_size > 0 && !IS_CURRENT_MOD_FILE && (play_mode->flag&PF_PCM_STREAM))
+	reset_midi (&tc, 0);
+#define c (&tc)
+	if(!tc.opt_realtime_playing && tc.allocate_cache_size > 0 && !IS_CURRENT_MOD_FILE && (play_mode->flag&PF_PCM_STREAM))
+#undef c
 	{
-		play_midi_prescan(eventlist);
-		reset_midi(0);
+		play_midi_prescan(&tc, eventlist);
+		reset_midi(&tc, 0);
 	}
 
 #if 0
@@ -1226,18 +1229,18 @@ static int emulate_play_midi_start(MidiEvent *eventlist, int32 samples)
 	if(RC_IS_SKIP_FILE(rc))
 		return rc;
 #else
-	init_effect ();
+	init_effect (&tc);
 #endif
 
-	skip_to(midi_restart_time);
+	skip_to(&tc, c->midi_restart_time);
 
-	if(midi_restart_time > 0)
+	if(c->midi_restart_time > 0)
 	{
 		/* Need to update interface display */
 		int i;
 		for(i = 0; i < MAX_CHANNELS; i++)
 		{
-			redraw_controllers(i);
+			redraw_controllers(&tc, i);
 		}
 	}
 
@@ -1292,18 +1295,20 @@ static int dump_rc(int rc)
 	return rc;
 }
 
-static int emulate_play_event (MidiEvent *ev)
+static int emulate_play_event (struct timiditycontext_t *c, MidiEvent *ev)
 {
 	int32 cet;
 
 	/* Open Cubic Player always stream, so we skip some checks */
 
+#define c (&tc)
 	cet = MIDI_EVENT_TIME(ev);
+#undef c
 
-	if(cet > current_sample)
+	if(cet > tc.current_sample)
 	{
-		int32 needed = cet - current_sample;
-		int32 canfit = aq_fillable();
+		int32 needed = cet - tc.current_sample;
+		int32 canfit = aq_fillable(&tc);
 
 		PRINT ("emulate_play_event, needed=%d canfit=%d -- ", needed, canfit);
 
@@ -1319,9 +1324,9 @@ static int emulate_play_event (MidiEvent *ev)
 
 			PRINT ("needed > canfit\n");
 
-			rc = compute_data(canfit);
+			rc = compute_data(&tc, canfit);
 
-			ctl_mode_event(CTLE_REFRESH, 0, 0, 0);
+			ctl_mode_event(&tc, CTLE_REFRESH, 0, 0, 0);
 			if (rc == RC_NONE)
 				rc = RC_ASYNC_HACK;
 			return rc;
@@ -1332,10 +1337,10 @@ static int emulate_play_event (MidiEvent *ev)
 
 	PRINT ("emulate_play_event calling play_event\n");
 
-	return dump_rc(play_event (ev));
+	return dump_rc(play_event (&tc, ev));
 }
 
-static int emulate_play_midi_iterate(void)
+static int emulate_play_midi_iterate(struct timiditycontext_t *c)
 {
 	int rc;
 
@@ -1343,24 +1348,26 @@ static int emulate_play_midi_iterate(void)
 	{
 		if (gmibuffree > (audio_buffer_size*2))
 		{
-			int32_t cet = MIDI_EVENT_TIME (current_event);
+#define c (&tc)
+			int32_t cet = MIDI_EVENT_TIME (tc.current_event);
+#undef c
 
-			midi_restart_time = 1;
+			tc.midi_restart_time = 1;
 
 			/* detect if the next event is more that buffer-size away */
-			if ((cet > current_sample) && (cet - current_sample) > audio_buffer_size)
+			if ((cet > tc.current_sample) && (cet - tc.current_sample) > audio_buffer_size)
 			{ /* inject a dummy event to just push audio samples... */
-				MidiEvent *pushed_event = current_event;
+				MidiEvent *pushed_event = tc.current_event;
 				MidiEvent dummy;
-				dummy.time = (float)(current_sample + (audio_buffer_size/2))/midi_time_ratio;
+				dummy.time = (float)(tc.current_sample + (audio_buffer_size/2))/tc.midi_time_ratio;
 				dummy.type = ME_NONE;
 				dummy.channel = 0;
 				dummy.a = 0;
 				dummy.b = 0;
-				PRINT ("emulate_play_midi_iterate calling FAKED emulate_play_event (estimate samples  %d)\n", MIDI_EVENT_TIME (&dummy) - current_sample);
-				rc = emulate_play_event (&dummy);
+				PRINT ("emulate_play_midi_iterate calling FAKED emulate_play_event (estimate samples  %d)\n", MIDI_EVENT_TIME (&dummy) - tc.current_sample);
+				rc = emulate_play_event (&tc, &dummy);
 				dump_rc (rc);
-				current_event = pushed_event;
+				tc.current_event = pushed_event;
 				if (rc == RC_NONE)
 				{
 					rc = RC_ASYNC_HACK;
@@ -1368,20 +1375,20 @@ static int emulate_play_midi_iterate(void)
 				break;
 			} else {
 				PRINT ("emulate_play_midi_iterate calling emulate_play_event\n");
-				rc = emulate_play_event(current_event);
+				rc = emulate_play_event(&tc, tc.current_event);
 				dump_rc (rc);
 				if(rc != RC_NONE)
 					break;
-				if (midi_restart_time)  /* don't skip the first event if == 0 */
+				if (tc.midi_restart_time)  /* don't skip the first event if == 0 */
 				{
 					if (speed != 0x10000)
 					{
-						int32_t diff = (current_event[1].time - current_sample);
+						int32_t diff = (tc.current_event[1].time - tc.current_sample);
 						int32_t newdiff = diff * 0x10000 / speed;
-						current_sample += (diff - newdiff);
-						PRINT ("current_sample override %d - %d => %d\n", diff, newdiff, diff - newdiff);
+						tc.current_sample += (diff - newdiff);
+						PRINT ("tc.current_sample override %d - %d => %d\n", diff, newdiff, diff - newdiff);
 					}
-					current_event++;
+					tc.current_event++;
 				}
 			}
 		} else {
@@ -1394,7 +1401,7 @@ static int emulate_play_midi_iterate(void)
 	return rc;
 }
 
-static int emulate_play_midi_file_iterate(const char *fn, struct emulate_play_midi_file_session *s)
+static int emulate_play_midi_file_iterate(struct timiditycontext_t *c, const char *fn, struct emulate_play_midi_file_session *s)
 {
 	int i, rc;
 
@@ -1403,24 +1410,24 @@ static int emulate_play_midi_file_iterate(const char *fn, struct emulate_play_mi
 play_reload: /* Come here to reload MIDI file */
 		PRINT ("RELOAD RELOAD RELOAD RC_TUNE_END perhaps?\n");
 		s->first = 0;
-		rc = play_midi_load_file((char *)fn, &s->event, &s->nsamples);
+		rc = play_midi_load_file(&tc, (char *)fn, &s->event, &s->nsamples);
 
 		dump_rc (rc);
 		if (RC_IS_SKIP_FILE(rc))
 			goto play_end; /* skip playing */
 
-		init_mblock(&playmidi_pool);
+		init_mblock(&c->playmidi_pool);
 
-		ctl_mode_event(CTLE_PLAY_START, 0, s->nsamples, 0);
+		ctl_mode_event(&tc, CTLE_PLAY_START, 0, s->nsamples, 0);
 		play_mode->acntl(PM_REQ_PLAY_START, NULL);
 
-		rc = emulate_play_midi_start(s->event, s->nsamples);
+		rc = emulate_play_midi_start(&tc, s->event, s->nsamples);
 
 		if (rc != RC_NONE)
 			return rc;
 	}
 
-	rc = emulate_play_midi_iterate();
+	rc = emulate_play_midi_iterate(c);
 
 	if (rc == RC_ASYNC_HACK)
 		return rc;
@@ -1428,32 +1435,32 @@ play_reload: /* Come here to reload MIDI file */
 	/* shut down */
 
 	play_mode->acntl(PM_REQ_PLAY_END, NULL);
-	ctl_mode_event(CTLE_PLAY_END, 0, 0, 0);
-	reuse_mblock(&playmidi_pool);
+	ctl_mode_event(&tc, CTLE_PLAY_END, 0, 0, 0);
+	reuse_mblock(c, &c->playmidi_pool);
 
 	for(i = 0; i < MAX_CHANNELS; i++)
 	{
-		memset(channel[i].drums, 0, sizeof(channel[i].drums));
+		memset(tc.channel[i].drums, 0, sizeof(tc.channel[i].drums));
 	}
 
 play_end:
-	free_all_midi_file_info ();
+	free_all_midi_file_info (&tc);
 
 	if(wrdt->opened)
 		wrdt->end();
 
-	if(free_instruments_afterwards)
+	if(c->free_instruments_afterwards)
 	{
 		int cnt;
-		free_instruments(0);
-		cnt = free_global_mblock(); /* free unused memory */
+		free_instruments(&tc, 0);
+		cnt = free_global_mblock(c); /* free unused memory */
 		if(cnt > 0)
 		{
 			ctl->cmsg(CMSG_INFO, VERB_VERBOSE, "%d memory blocks are free", cnt);
 		}
 	}
 
-	free_special_patch(-1);
+	free_special_patch(c, -1);
 
 	if(s->event != NULL)
 	{
@@ -1470,7 +1477,7 @@ play_end:
 	return rc;
 }
 
-static void timidityIdler(void)
+static void timidityIdler(struct timiditycontext_t *c)
 {
 	int rc;
 
@@ -1481,7 +1488,7 @@ static void timidityIdler(void)
 
 		if (gmibuffree > (audio_buffer_size*2))
 		{
-			rc = emulate_play_midi_file_iterate(current_path, &timidity_main_session);
+			rc = emulate_play_midi_file_iterate(&tc, current_path, &timidity_main_session);
 			if (rc == RC_ASYNC_HACK)
 				break;
 		} else {
@@ -1503,6 +1510,19 @@ void __attribute__ ((visibility ("internal"))) timiditySetLoop(unsigned char s)
 void __attribute__ ((visibility ("internal"))) timidityPause(unsigned char p)
 {
 	gmi_inpause=p;
+}
+
+void __attribute__ ((visibility ("internal"))) timidityMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m)
+{
+	//sync_restart (&tc, 0);
+	cpifaceSession->MuteChannel[ch] = m;
+	if (m)
+	{
+		SET_CHANNELMASK(tc.channel_mute, ch);
+	} else {
+		UNSET_CHANNELMASK(tc.channel_mute, ch);
+	}
+	//ctl_mode_event (&tc, CTLE_MUTE, 0, ch, m);
 }
 
 static void timiditySetVolume(void)
@@ -1553,8 +1573,8 @@ static int timidityGet (int ch, int opt)
 
 void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct mglobinfo *gi)
 {
-	int32_t curtick = current_sample
-			- aq_soft_filled()
+	int32_t curtick = tc.current_sample
+			- aq_soft_filled(&tc)
 			- (samples_committed - samples_lastui);
 	if (curtick < 0)
 	{
@@ -1590,7 +1610,7 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 			unsigned int accumulated_source = 0;
 			int pos1, length1, pos2, length2;
 
-			timidityIdler();
+			timidityIdler(&tc);
 
 			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
 			ringbuffer_get_tail_samples (gmibufpos, &pos1, &length1, &pos2, &length2);
@@ -1770,9 +1790,9 @@ static void doTimidityClosePlayer(int CloseDriver)
 	free(gmibuf);
 	gmibuf = 0;
 
-	emulate_timidity_play_main_end ();
+	emulate_timidity_play_main_end (&tc);
 
-	emulate_main_end ();
+	emulate_main_end (&tc);
 
 	free (timidity_main_session.event);
 	timidity_main_session.event = NULL;
@@ -1802,13 +1822,121 @@ static void doTimidityClosePlayer(int CloseDriver)
 		gmibufpos = 0;
 	}
 
-	free_all_midi_file_info ();
+	free_all_midi_file_info (&tc);
 }
 
 int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	uint32_t gmibuflen;
 	enum plrRequestFormat format;
+
+	bzero (&tc, sizeof (tc));
+	tc.contextowner = cpifaceSession;
+#ifdef ALWAYS_TRACE_TEXT_META_EVENT
+	tc.opt_trace_text_meta_event = 1;
+#endif
+	tc.ignore_midi_error = 1;
+	tc.play_system_mode = DEFAULT_SYSTEM_MODE;
+	tc.xg_reverb_type_msb = 0x01;
+	tc.xg_chorus_type_msb = 0x41;
+	tc.readmidi_read_init_first = 1;
+	tc.opt_default_module = MODULE_TIMIDITY_DEFAULT;
+	tc.amplification = DEFAULT_AMPLIFICATION;
+	tc.adjust_panning_immediately = 1;
+	tc.max_voices = DEFAULT_VOICES;
+	tc.voices = DEFAULT_VOICES;
+	tc.midi_time_ratio = 1.0;
+#ifdef MODULATION_WHEEL_ALLOW
+	tc.opt_modulation_wheel = 1;
+#endif
+#ifdef PORTAMENTO_ALLOW
+	tc.opt_portamento = 1;
+#endif
+#ifdef NRPN_VIBRATO_ALLOW
+	tc.opt_nrpn_vibrato = 1;
+#endif
+#ifdef REVERB_CONTROL_ALLOW
+	tc.opt_reverb_control = 1;
+#else
+# ifdef FREEVERB_CONTROL_ALLOW
+	tc.opt_reverb_control = 3;
+# endif
+#endif
+#ifdef CHORUS_CONTROL_ALLOW
+	tc.opt_chorus_control = 1;
+#endif
+#ifdef SURROUND_CHORUS_ALLOW
+	tc.opt_surround_chorus = 1;
+#endif
+#ifdef GM_CHANNEL_PRESSURE_ALLOW
+	tc.opt_channel_pressure = 1;
+#endif
+#ifdef VOICE_CHAMBERLIN_LPF_ALLOW
+	tc.opt_lpf_def = 1;
+#else
+#ifdef VOICE_MOOG_LPF_ALLOW
+	tc.opt_lpf_def = 2;
+#endif /* VOICE_MOOG_LPF_ALLOW */
+#endif /* VOICE_CHAMBERLIN_LPF_ALLOW */
+#ifdef OVERLAP_VOICE_ALLOW
+	tc.opt_overlap_voice_allow = 1;
+#endif
+#ifdef TEMPER_CONTROL_ALLOW
+	tc.opt_temper_control = 1;
+#endif
+	tc.noise_sharp_type = 4;
+	tc.special_tonebank = -1;
+	tc.effect_lr_mode = -1;
+	tc.effect_lr_delay_msec = 25;
+	tc.opt_init_keysig = 8;
+	tc.opt_force_keysig = 8;
+	tc.tempo_adjust = 1.0;
+	tc.opt_drum_power = 100;
+	tc.opt_buffer_fragments = -1;
+	tc.stream_max_compute = 500;
+	tc.master_volume_ratio = 0xffff;
+	tc.compensation_ratio = 1.0;
+#ifdef DEFAULT_PATH
+	tc.defaultpathlist.path = DEFAULT_PATH;
+	tc.pathlist = &tc.defaultpathlist;
+#endif
+	tc.open_file_noise_mode = OF_NORMAL;
+	tc.tonebank[0] = &tc.standard_tonebank;
+	tc.drumset[0] = &tc.standard_drumset;
+#ifdef FAST_DECAY
+	tc.fast_decay = 1;
+#endif
+	tc.opt_sf_close_each_file = SF_CLOSE_EACH_FILE;
+	tc.min_sustain_time = 5000;
+	tc.allocate_cache_size = DEFAULT_CACHE_DATA_SIZE;
+	tc.gauss_n = DEFAULT_GAUSS_ORDER;
+	tc.newt_n = 11;
+	tc.newt_old_trunc_x = -1;
+	tc.newt_grow = -1;
+	tc.newt_max = 13;
+#ifndef FIXED_RESAMPLATION
+	tc.cur_resample = DEFAULT_RESAMPLATION;
+#endif
+	tc.reverb_predelay_factor = 1.0;
+	tc.REV_INP_LEV = 1.0;
+	memcpy (tc.layer_items, layer_items_default, sizeof (layer_items_default));
+	tc.vol_table = tc.def_vol_table;
+	tc.xg_vol_table = tc.gs_vol_table;
+	tc.pan_table = sc_pan_table;
+#ifdef LOOKUP_HACK
+	tc._l2u = _l2u_ + 4096;
+#endif
+	tc.mimpi_bug_emulation_level = MIMPI_BUG_EMULATION_LEVEL;
+	tc.trace_loop_lasttime = -1;
+	tc.mag01[1] = MATRIX_A;
+	tc.def_prog = -1;
+	tc.audio_buffer_bits = DEFAULT_AUDIO_BUFFER_BITS;
+#ifdef REDUCE_VOICE_TIME_TUNING
+	tc.restore_voices_old_voices = -1;
+#endif
+	tc.ctl_timestamp_last_secs = -1;
+	tc.ctl_timestamp_last_voices = -1;
+	tc.play_midi_file_last_rc = RC_NONE;
 
 	if (!plrAPI)
 	{
@@ -1829,7 +1957,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	}
 	ocp_playmode.rate = gmiRate;
 
-	emulate_main_start();
+	emulate_main_start(&tc);
 	gmi_inpause=0;
 	voll=256;
 	volr=256;
@@ -1839,11 +1967,13 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	loading = 0;
 
 	gmibuffree=1;
+#define c (&tc)
 	while ((gmibuffree < (gmiRate/8+1)) && (gmibuffree < (audio_buffer_size*3)))
 	{
 		gmibuffree<<=1;
 	}
 	gmibuflen=gmibuffree + ((gmiRate*4/audio_buffer_size)+1)*audio_buffer_size; /* timidity force-flushes multiple seconds at the EOF */
+#undef c
 	gmibuffill=0;
 	gmibuf=malloc(gmibuflen << 2 /* stereo + 16bit */);
 	if (!gmibuf)
@@ -1860,7 +1990,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	gmi_looped=0;
 	gmi_eof=0;
 
-	if (emulate_timidity_play_main_start ())
+	if (emulate_timidity_play_main_start (&tc))
 	{
 		return errGen;
 	}

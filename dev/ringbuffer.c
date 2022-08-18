@@ -597,6 +597,41 @@ void ringbuffer_add_processing_callback_samples (struct ringbuffer_t *self, int 
 	self->processing_callbacks_fill++;
 }
 
+const struct ringbufferAPI_t ringbufferAPI =
+{
+	ringbuffer_reset,
+	ringbuffer_tail_consume_bytes,
+	ringbuffer_tail_set_bytes,
+	ringbuffer_processing_consume_bytes,
+	ringbuffer_processing_set_bytes,
+	ringbuffer_head_add_bytes,
+	ringbuffer_head_set_bytes,
+	ringbuffer_tail_consume_samples,
+	ringbuffer_tail_set_samples,
+	ringbuffer_processing_consume_samples,
+	ringbuffer_processing_set_samples,
+	ringbuffer_head_add_samples,
+	ringbuffer_head_set_samples,
+	ringbuffer_get_tail_bytes,
+	ringbuffer_get_processing_bytes,
+	ringbuffer_get_head_bytes,
+	ringbuffer_get_tail_samples,
+	ringbuffer_get_processing_samples,
+	ringbuffer_get_tailandprocessing_samples,
+	ringbuffer_get_head_samples,
+	ringbuffer_get_tail_available_bytes,
+	ringbuffer_get_processing_available_bytes,
+	ringbuffer_get_head_available_bytes,
+	ringbuffer_get_tail_available_samples,
+	ringbuffer_get_processing_available_samples,
+	ringbuffer_get_head_available_samples,
+	ringbuffer_new_samples,
+	ringbuffer_free,
+	ringbuffer_add_tail_callback_samples,
+	ringbuffer_add_processing_callback_samples,
+};
+
+
 
 /* UNIT TEST */
 #ifdef UNIT_TEST

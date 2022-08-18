@@ -27,11 +27,10 @@
 #include "timidityplay.h"
 #include "stuff/poutput.h"
 #include "cpiface/cpiface.h"
+#include "timidity-git/timidity/timidity.h"
 
-/* static const struct minstrument *plChanMInstr; */
-
-#warning TODO midGetMute
-#define midGetMute(i) 0
+extern struct timiditycontext_t tc;
+#define midGetMute(i) IS_SET_CHANNELMASK(tc.channel_mute, i)
 
 static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
 {

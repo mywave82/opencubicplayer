@@ -127,7 +127,7 @@ static void delay_callback_from_cdbufdata (void *arg, int samples_ago)
 	plrAPI->OnBufferCallback (-samples_until, delay_callback_from_devp, &rip_sectors[index]);
 }
 
-static void cdIdlerAddBuffer(void)
+static void cdIdlerAddBuffer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int temp;
 
@@ -135,7 +135,7 @@ static void cdIdlerAddBuffer(void)
 	{
 		int index = (req_pos1/CD_FRAMESIZE_RAW)+temp;
 		rip_sectors[index] = lba_next + temp;
-		ringbuffer_add_tail_callback_samples (cdbufpos, - temp * (CD_FRAMESIZE_RAW >> 2) /* stereo + bit16 */, delay_callback_from_cdbufdata, &rip_sectors[index]);
+		cpifaceSession->ringbufferAPI->add_tail_callback_samples (cdbufpos, - temp * (CD_FRAMESIZE_RAW >> 2) /* stereo + bit16 */, delay_callback_from_cdbufdata, &rip_sectors[index]);
 	}
 
 #ifdef WORDS_BIGENDIAN
@@ -144,11 +144,11 @@ static void cdIdlerAddBuffer(void)
 		((uint16_t *)req.ptr)[temp] = uint16_little(((uint16_t *)req.ptr)[temp]);
 	}
 #endif
-	ringbuffer_head_add_bytes (cdbufpos, req.lba_count * CD_FRAMESIZE_RAW);
+	cpifaceSession->ringbufferAPI->head_add_bytes (cdbufpos, req.lba_count * CD_FRAMESIZE_RAW);
 	lba_next += req.lba_count;
 }
 
-static void cdIdler(void)
+static void cdIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int pos2;
 	int length1, length2;
@@ -161,7 +161,7 @@ static void cdIdler(void)
 		{
 			return;
 		}
-		cdIdlerAddBuffer();
+		cdIdlerAddBuffer (cpifaceSession);
 		req_active = 0;
 	}
 
@@ -180,7 +180,7 @@ static void cdIdler(void)
 		cda_looped &= ~1;
 	}
 
-	ringbuffer_get_head_bytes (cdbufpos, &req_pos1, &length1, &pos2, &length2);
+	cpifaceSession->ringbufferAPI->get_head_bytes (cdbufpos, &req_pos1, &length1, &pos2, &length2);
 
 	emptyframes = length1 / CD_FRAMESIZE_RAW;
 	assert (emptyframes >= 0);
@@ -210,7 +210,7 @@ static void cdIdler(void)
 		case -1:
 			return;
 		case 0:
-			cdIdlerAddBuffer();
+			cdIdlerAddBuffer (cpifaceSession);
 			return;
 		case 1:
 			req_active = 1;
@@ -218,7 +218,7 @@ static void cdIdler(void)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) cdIdle(void)
+void __attribute__ ((visibility ("internal"))) cdIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -244,10 +244,10 @@ void __attribute__ ((visibility ("internal"))) cdIdle(void)
 			unsigned int accumulated_source = 0;
 			int pos1, length1, pos2, length2;
 
-			cdIdler();
+			cdIdler (cpifaceSession);
 
 			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-			ringbuffer_get_tail_samples (cdbufpos, &pos1, &length1, &pos2, &length2);
+			cpifaceSession->ringbufferAPI->get_tail_samples (cdbufpos, &pos1, &length1, &pos2, &length2);
 
 			if (cdbufrate==0x10000)
 			{
@@ -393,7 +393,7 @@ void __attribute__ ((visibility ("internal"))) cdIdle(void)
 				} /* while (targetlength && length1) */
 			} /* if (cdbufrate==0x10000) */
 
-			ringbuffer_tail_consume_samples (cdbufpos, accumulated_source);
+			cpifaceSession->ringbufferAPI->tail_consume_samples (cdbufpos, accumulated_source);
 			plrAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}
@@ -460,7 +460,7 @@ void __attribute__ ((visibility ("internal"))) cdPause (void)
 	cda_inpause=1;
 }
 
-void __attribute__ ((visibility ("internal"))) cdClose (void)
+void __attribute__ ((visibility ("internal"))) cdClose (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cda_inpause=1;
 
@@ -468,7 +468,7 @@ void __attribute__ ((visibility ("internal"))) cdClose (void)
 
 	if (cdbufpos)
 	{
-		ringbuffer_free (cdbufpos);
+		cpifaceSession->ringbufferAPI->free (cdbufpos);
 		cdbufpos = 0;
 	}
 
@@ -492,7 +492,7 @@ void __attribute__ ((visibility ("internal"))) cdUnpause (void)
 	cda_inpause=0;
 }
 
-void __attribute__ ((visibility ("internal"))) cdJump (unsigned long start)
+void __attribute__ ((visibility ("internal"))) cdJump (struct cpifaceSessionAPI_t *cpifaceSession, unsigned long start)
 {
 	int pos1, length1, pos2, length2;
 	if (start < lba_start) start = lba_start;
@@ -500,8 +500,8 @@ void __attribute__ ((visibility ("internal"))) cdJump (unsigned long start)
 
 	lba_next = start;
 
-	ringbuffer_get_tail_bytes (cdbufpos, &pos1, &length1, &pos2, &length2);
-	ringbuffer_tail_consume_bytes (cdbufpos, length1 + length2);
+	cpifaceSession->ringbufferAPI->get_tail_bytes (cdbufpos, &pos1, &length1, &pos2, &length2);
+	cpifaceSession->ringbufferAPI->tail_consume_bytes (cdbufpos, length1 + length2);
 	cdbuffpos = 0;
 }
 
@@ -514,7 +514,7 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 
 	if (fh)
 	{
-		cdClose ();
+		cdClose (cpifaceSession);
 	}
 	fh = file;
 	fh->ref (fh);
@@ -532,7 +532,7 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 	cda_looped=0;
 	donotloop = 1;
 
-	cdbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, sizeof (cdbufdata) / 4);
+	cdbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, sizeof (cdbufdata) / 4);
 	if (!cdbufpos)
 	{
 		plrAPI->Stop();

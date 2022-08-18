@@ -451,7 +451,7 @@ static int cdaLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 
 	cdSetLoop (LoopMod);
 
-	cdIdle();
+	cdIdle (cpifaceSession);
 
 	cdGetStatus(&stat);
 
@@ -464,7 +464,7 @@ static int cdaLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		{
 			newpos = 0;
 		}
-		cdJump (newpos);
+		cdJump (cpifaceSession, newpos);
 		setnewpos = 0;
 	} else {
 		newpos = stat.position;
@@ -475,7 +475,7 @@ static int cdaLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 
 static void cdaCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cdClose();
+	cdClose (cpifaceSession);
 }
 
 static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */

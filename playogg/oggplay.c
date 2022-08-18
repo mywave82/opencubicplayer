@@ -112,7 +112,7 @@ do { \
 	} \
 } while(0)
 
-static void oggIdler(void)
+static void oggIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (!active)
 		return;
@@ -139,7 +139,7 @@ static void oggIdler(void)
 			fprintf (stderr, "[playogg]: warning, frame position is broken in file (got=%" PRId64 ", expected= %" PRId64 ")\n", ov_pcm_tell(&ov), oggpos);
 		}
 
-		ringbuffer_get_head_samples (oggbufpos, &pos1, &length1, &pos2, &length2);
+		cpifaceSession->ringbufferAPI->get_head_samples (oggbufpos, &pos1, &length1, &pos2, &length2);
 
 		if (!length1)
 		{
@@ -173,7 +173,7 @@ static void oggIdler(void)
 					plrMono16ToStereo16 (oggbuf+(pos1<<1), result);
 				}
 			}
-			ringbuffer_head_add_samples (oggbufpos, result);
+			cpifaceSession->ringbufferAPI->head_add_samples (oggbufpos, result);
 		} else {
 			break;
 		}
@@ -196,7 +196,7 @@ static void oggIdler(void)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) oggIdle(void)
+void __attribute__ ((visibility ("internal"))) oggIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -223,10 +223,10 @@ void __attribute__ ((visibility ("internal"))) oggIdle(void)
 			int pos1, length1, pos2, length2;
 
 			/* fill up our buffers */
-			oggIdler();
+			oggIdler (cpifaceSession);
 
 			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-			ringbuffer_get_tail_samples (oggbufpos, &pos1, &length1, &pos2, &length2);
+			cpifaceSession->ringbufferAPI->get_tail_samples (oggbufpos, &pos1, &length1, &pos2, &length2);
 
 			if (oggbufrate==0x10000)
 			{
@@ -368,7 +368,7 @@ void __attribute__ ((visibility ("internal"))) oggIdle(void)
 					pos2 = 0;
 				} /* while (targetlength && length1) */
 			} /* if (oggbufrate==0x10000) */
-			ringbuffer_tail_consume_samples (oggbufpos, accumulated_source);
+			cpifaceSession->ringbufferAPI->tail_consume_samples (oggbufpos, accumulated_source);
 			plrAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}
@@ -802,15 +802,15 @@ static int oggGet(int ch, int opt)
 	return 0;
 }
 
-ogg_int64_t __attribute__ ((visibility ("internal"))) oggGetPos(void)
+ogg_int64_t __attribute__ ((visibility ("internal"))) oggGetPos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	return (ogglen + ogglen + oggpos - ringbuffer_get_tail_available_samples(oggbufpos) - plrAPI->Idle())%ogglen;
+	return (ogglen + ogglen + oggpos - cpifaceSession->ringbufferAPI->get_tail_available_samples(oggbufpos) - plrAPI->Idle())%ogglen;
 }
 
-void __attribute__ ((visibility ("internal"))) oggGetInfo(struct ogginfo *info)
+void __attribute__ ((visibility ("internal"))) oggGetInfo (struct cpifaceSessionAPI_t *cpifaceSession, struct ogginfo *info)
 {
 	static int lastsafe=0;
-	info->pos=oggGetPos();
+	info->pos = oggGetPos (cpifaceSession);
 	info->len=ogglen;
 	info->rate=oggrate;
 	info->stereo=oggstereo;
@@ -833,13 +833,13 @@ void __attribute__ ((visibility ("internal"))) oggGetInfo(struct ogginfo *info)
 	info->opt50=opt50;
 }
 
-void __attribute__ ((visibility ("internal"))) oggSetPos(ogg_int64_t pos)
+void __attribute__ ((visibility ("internal"))) oggSetPos (struct cpifaceSessionAPI_t *cpifaceSession, ogg_int64_t pos)
 {
 	pos=(pos+ogglen)%ogglen;
 
 	oggneedseek=1;
 	oggpos=pos;
-	ringbuffer_reset(oggbufpos);
+	cpifaceSession->ringbufferAPI->reset (oggbufpos);
 }
 
 static void oggFreeComments (void)
@@ -930,7 +930,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 	{
 		goto error_out_plrAPI_Play;
 	}
-	oggbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 1024*32);
+	oggbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 1024*32);
 	if (!oggbufpos)
 	{
 		goto error_out_oggbuf;
@@ -968,7 +968,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 
 	return 1;
 
-	//ringbuffer_free (oggbufpos);
+	//cpifaceSession->ringbufferAPI->free (oggbufpos);
 	//oggbufpos = 0;
 
 error_out_oggbuf:
@@ -991,7 +991,7 @@ error_out_file:
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) oggClosePlayer(void)
+void __attribute__ ((visibility ("internal"))) oggClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (active)
 	{
@@ -1001,7 +1001,7 @@ void __attribute__ ((visibility ("internal"))) oggClosePlayer(void)
 
 	if (oggbufpos)
 	{
-		ringbuffer_free (oggbufpos);
+		cpifaceSession->ringbufferAPI->free (oggbufpos);
 		oggbufpos = 0;
 	}
 
