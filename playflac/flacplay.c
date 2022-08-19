@@ -631,7 +631,8 @@ static void flacIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 			}
 		}
 		postPOS = flacfile->getpos (flacfile);
-		bitrate = (postPOS - prePOS) * 8 * samplerate_for_bitrate / samples_for_bitrate;
+		/* Due to logic above extra check is necessary on samples_for_bitrate */
+		bitrate = samples_for_bitrate != 0 ? (postPOS - prePOS) * 8 * samplerate_for_bitrate / samples_for_bitrate : 0;
 	}
 }
 
