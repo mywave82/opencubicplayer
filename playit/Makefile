@@ -28,6 +28,7 @@ itpptype.o: itpptype.c \
 itload.o: itload.c \
 	../config.h \
 	../types.h \
+	../cpiface/cpiface.h \
 	../dev/mcp.h \
 	../filesel/filesystem.h \
 	itplay.h \

@@ -806,7 +806,7 @@ static int _mpLoadAMS_ConvertPattern (struct gmdmodule *m, struct ocpfilehandle_
 #include "gmdlams-v1.c"
 #include "gmdlams-v2.c"
 
-static int _mpLoadAMS(struct gmdmodule *m, struct ocpfilehandle_t *file)
+static int _mpLoadAMS (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	unsigned char sig[7];
 

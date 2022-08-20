@@ -105,21 +105,21 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			wpPause (cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
+			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
+	cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 static void wavDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct waveinfo inf;
 
-	wpGetInfo (&inf);
+	wpGetInfo (cpifaceSession, &inf);
 
-	mcpDrawGStringsFixedLengthStream
+	cpifaceSession->drawHelperAPI->GStringsFixedLengthStream
 	(
 		cpifaceSession,
 		utf8_8_dot_3,
@@ -168,37 +168,37 @@ static int wavProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			wpPause (cpifaceSession->InPause);
 			break;
 		case KEY_CTRL_UP:
-			wpSetPos(wpGetPos()-waverate);
+			wpSetPos (cpifaceSession, wpGetPos (cpifaceSession) - waverate);
 			break;
 		case KEY_CTRL_DOWN:
-			wpSetPos(wpGetPos()+waverate);
+			wpSetPos (cpifaceSession, wpGetPos (cpifaceSession) + waverate);
 			break;
 		case '<':
 		case KEY_CTRL_LEFT:
 			{
-				uint32_t pos = wpGetPos();
+				uint32_t pos = wpGetPos (cpifaceSession);
 				uint32_t newpos = pos -(wavelen>>5);
 				if (newpos > pos)
 				{
 					newpos = 0;
 				}
-				wpSetPos(newpos);
+				wpSetPos (cpifaceSession, newpos);
 			}
 			break;
 		case '>':
 		case KEY_CTRL_RIGHT:
 			{
-				uint32_t pos = wpGetPos();
+				uint32_t pos = wpGetPos (cpifaceSession);
 				uint32_t newpos = pos + (wavelen>>5);
 				if ((newpos < pos) || (newpos > wavelen)) /* catch both wrap around (not likely), and overshots */
 				{
 					newpos = wavelen - 4;
 				}
-				wpSetPos(newpos);
+				wpSetPos (cpifaceSession, newpos);
 			}
 			break;
 		case KEY_CTRL_HOME:
-			wpSetPos(0);
+			wpSetPos (cpifaceSession, 0);
 			break;
 		default:
 			return 0;
@@ -214,13 +214,13 @@ static int wavLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade (cpifaceSession);
 	}
 	wpSetLoop (LoopMod);
-	wpIdle ();
+	wpIdle (cpifaceSession);
 	return (!LoopMod) && wpLooped();
 }
 
-static void wavCloseFile()
+static void wavCloseFile(struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	wpClosePlayer();
+	wpClosePlayer(cpifaceSession);
 }
 
 static int wavOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *wavf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
@@ -253,7 +253,7 @@ static int wavOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->InPause = 0;
 	pausefadedirect=0;
 
-	wpGetInfo(&inf);
+	wpGetInfo(cpifaceSession, &inf);
 	wavelen=inf.len;
 	waverate=inf.rate;
 

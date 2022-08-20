@@ -40,13 +40,14 @@
 #include <string.h>
 #include <stdio.h>
 #include "types.h"
+#include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "filesel/filesystem.h"
 #include "itplay.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
 
-int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t *cpifaceSession, struct it_module *this, struct ocpfilehandle_t *file)
 {
 	int i,j,k,n;
 
@@ -595,7 +596,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct it_module *this, st
 		sp->vis=shdr.vis;
 		sp->dfp=shdr.dfp;
 		sp->handle=i;
-		sp->normnote=-mcpGetNote8363(shdr.c5spd);
+		sp->normnote=-cpifaceSession->mcpAPI->GetNote8363(shdr.c5spd);
 		sip->length=shdr.length;
 		sip->samprate=shdr.c5spd>>((shdr.flags&2)?1:0);
 		sip->samprate=8363;

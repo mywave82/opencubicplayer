@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "filesel/filesystem.h"
 #include "gmdplay.h"
@@ -81,7 +82,7 @@ static inline void putcmd(uint8_t **p, uint8_t c, uint8_t d)
 	*(*p)++=d;
 }
 
-static int _mpLoadSTM(struct gmdmodule *m, struct ocpfilehandle_t *file)
+static int _mpLoadSTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	unsigned int t,t2,i;
 	uint8_t orders[128];
@@ -222,7 +223,7 @@ static int _mpLoadSTM(struct gmdmodule *m, struct ocpfilehandle_t *file)
 			ip->samples[j]=i;
 		memcpy(sp->name, sins.dosname, 12);
 		sp->name[12]=0;
-		sp->normnote=-mcpGetNote8363(sins.c3spd); // TODO, this seems off
+		sp->normnote=-cpifaceSession->mcpAPI->GetNote8363(sins.c3spd); // TODO, this seems off
 		sp->stdvol=(sins.volume>0x3F)?0xFF:(sins.volume<<2);
 		sp->stdpan=-1;
 		sp->opt=0;

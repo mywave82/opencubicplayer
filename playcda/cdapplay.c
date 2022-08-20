@@ -102,12 +102,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			cpifaceSession->InPause = 1;
 			cdPause();
-			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
+			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
+	cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, i);
 }
 static char *gettimestr(unsigned long s, char *time)
 {

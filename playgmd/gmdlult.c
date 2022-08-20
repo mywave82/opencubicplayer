@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "filesel/filesystem.h"
 #include "gmdplay.h"
@@ -60,7 +61,7 @@ static void FreeResources(struct LoadULTResources *r)
 	}
 }
 
-static int _mpLoadULT(struct gmdmodule *m, struct ocpfilehandle_t *file)
+static int _mpLoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	char id[15];
 	uint8_t ver;
@@ -229,7 +230,7 @@ static int _mpLoadULT(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		sp->name[12]=0;
 
 		sp->handle=i;
-		sp->normnote=-mcpGetNote8363(mi.c2spd);
+		sp->normnote=-cpifaceSession->mcpAPI->GetNote8363(mi.c2spd);
 		sp->stdvol=mi.vol;
 		sp->stdpan=-1;
 		sp->opt=(mi.opt&4)?MP_OFFSETDIV2:0;

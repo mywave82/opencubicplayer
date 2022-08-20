@@ -110,7 +110,7 @@ extern void __attribute__ ((visibility ("internal"))) mpSetPosition (struct cpif
 extern void __attribute__ ((visibility ("internal"))) mpGetPosition(uint16_t *pat, uint8_t *row);
 extern int __attribute__ ((visibility ("internal"))) mpGetRealPos (struct cpifaceSessionAPI_t *cpifaceSession);
 extern void __attribute__ ((visibility ("internal"))) mpGetChanInfo(uint8_t ch, struct chaninfo *ci);
-extern uint16_t __attribute__ ((visibility ("internal"))) mpGetRealNote(uint8_t ch);
+extern uint16_t __attribute__ ((visibility ("internal"))) mpGetRealNote(struct cpifaceSessionAPI_t *cpifaceSession, uint8_t ch);
 extern void __attribute__ ((visibility ("internal"))) mpGetGlobInfo(struct globinfo *gi);
 extern char __attribute__ ((visibility ("internal"))) mpLooped(void );
 extern void __attribute__ ((visibility ("internal"))) mpSetLoop(unsigned char s);
@@ -202,7 +202,7 @@ enum
 
 struct ocpfilehandle_t;
 struct gmdloadstruct {
-	int (*load)(struct gmdmodule *m, struct ocpfilehandle_t *file);
+	int (*load)(struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
 };
 
 extern __attribute__ ((visibility ("internal"))) struct gmdmodule mod;

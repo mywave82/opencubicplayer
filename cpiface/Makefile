@@ -267,6 +267,7 @@ cpiface.o: cpiface.c \
 	cpiface.h \
 	cpiface-private.h \
 	cpipic.h \
+	../dev/mcp.h \
 	../dev/ringbuffer.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \

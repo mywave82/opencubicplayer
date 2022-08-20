@@ -353,7 +353,7 @@ static void putque(int type, int val1, int val2)
 }
 
 
-static void PlayNote(struct channel *ch)
+static void PlayNote(struct cpifaceSessionAPI_t *cpifaceSession, struct channel *ch)
 {
 	int portatmp=0;
 	int delaytmp;
@@ -446,7 +446,7 @@ static void PlayNote(struct channel *ch)
 
 			frq=48*256-(((procnot-1)<<8)-ch->chCurNormNote);
 			if (!linearfreq)
-				frq=mcpGetFreq6848(frq);
+				frq=cpifaceSession->mcpAPI->GetFreq6848(frq);
 			ch->chPitch=frq;
 			ch->chFinalPitch=frq;
 			ch->chPortaToPitch=frq;
@@ -471,7 +471,7 @@ static void PlayNote(struct channel *ch)
 		} else {
 			int32_t frq=48*256-(((procnot-1)<<8)-ch->chCurNormNote);
 			if (!linearfreq)
-				frq=mcpGetFreq6848(frq);
+				frq=cpifaceSession->mcpAPI->GetFreq6848(frq);
 			ch->chPortaToPitch=frq;
 		}
 	}
@@ -653,7 +653,7 @@ static void xmpPlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 					ch->chCurIns=procins;
 				}
 				if (procins<=ninst)
-					PlayNote(ch);
+					PlayNote(cpifaceSession, ch);
 			}
 
 			ch->chVCommand=procvol>>4;
@@ -1036,7 +1036,7 @@ static void xmpPlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 					{
 						ch->chFinalPitch=((ch->chPitch+ch->chCurNormNote+0x80)&~0xFF)-ch->chCurNormNote;
 					} else {
-						ch->chFinalPitch=mcpGetFreq6848(((mcpGetNote6848(ch->chPitch)+ch->chCurNormNote+0x80)&~0xFF)-ch->chCurNormNote);
+						ch->chFinalPitch=cpifaceSession->mcpAPI->GetFreq6848(((cpifaceSession->mcpAPI->GetNote6848(ch->chPitch)+ch->chCurNormNote+0x80)&~0xFF)-ch->chCurNormNote);
 					}
 				} else
 					ch->chFinalPitch=ch->chPitch;
@@ -1083,7 +1083,7 @@ static void xmpPlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 					if (linearfreq)
 						ch->chFinalPitch=((ch->chPitch+ch->chCurNormNote+0x80)&~0xFF)-ch->chCurNormNote;
 					else
-						ch->chFinalPitch=mcpGetFreq6848(((mcpGetNote6848(ch->chPitch)+ch->chCurNormNote+0x80)&~0xFF)-ch->chCurNormNote);
+						ch->chFinalPitch=cpifaceSession->mcpAPI->GetFreq6848(((cpifaceSession->mcpAPI->GetNote6848(ch->chPitch)+ch->chCurNormNote+0x80)&~0xFF)-ch->chCurNormNote);
 				} else
 					ch->chFinalPitch=ch->chPitch;
 				break;
@@ -1122,7 +1122,7 @@ static void xmpPlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 					if (linearfreq)
 						ch->chFinalPitch=((ch->chPitch+ch->chCurNormNote+0x80)&~0xFF)-ch->chCurNormNote;
 					else
-						ch->chFinalPitch=mcpGetFreq6848(((mcpGetNote6848(ch->chPitch)+ch->chCurNormNote+0x80)&~0xFF)-ch->chCurNormNote);
+						ch->chFinalPitch=cpifaceSession->mcpAPI->GetFreq6848(((cpifaceSession->mcpAPI->GetNote6848(ch->chPitch)+ch->chCurNormNote+0x80)&~0xFF)-ch->chCurNormNote);
 				} else
 					ch->chFinalPitch=ch->chPitch;
 
@@ -1256,7 +1256,7 @@ static void xmpPlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 				proccmd=0;
 				procdat=0;
 				procvol=0;
-				PlayNote(ch);
+				PlayNote(cpifaceSession, ch);
 				switch (ch->chDelayVol>>4)
 				{
 					case xmpVCmdVol0x: case xmpVCmdVol1x: case xmpVCmdVol2x: case xmpVCmdVol3x:
@@ -1412,7 +1412,7 @@ int __attribute__ ((visibility ("internal"))) xmpGetDotsData (struct cpifaceSess
 	if (linearfreq)
 		*frq=60*256+c->cursamp->normnote-freqrange(c->chFinalPitch);
 	else
-		*frq=60*256+c->cursamp->normnote+mcpGetNote8363(6848*8363/freqrange(c->chFinalPitch));
+		*frq=60*256+c->cursamp->normnote+cpifaceSession->mcpAPI->GetNote8363(6848*8363/freqrange(c->chFinalPitch));
 	cpifaceSession->mcpGetRealVolume (ch, voll, volr);
 	*sus=c->chSustain;
 	return 1;
@@ -1485,7 +1485,7 @@ void __attribute__ ((visibility ("internal"))) xmpSetLoop(int x)
 
 int __attribute__ ((visibility ("internal"))) xmpLoadSamples(struct xmodule *m)
 {
-	return mcpAPI->mcpLoadSamples (m->sampleinfos, m->nsampi);
+	return mcpDevAPI->mcpLoadSamples (m->sampleinfos, m->nsampi);
 }
 
 int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
@@ -1540,14 +1540,14 @@ int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, s
 	realtempo=m->inibpm;
 	realspeed=m->initempo;
 	firstspeed=256*2*curbpm/5;
-	if (!mcpAPI->mcpOpenPlayer(nchan, xmpPlayTick, file, cpifaceSession))
+	if (!mcpDevAPI->mcpOpenPlayer(nchan, xmpPlayTick, file, cpifaceSession))
 		return 0;
 
-	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayW);
+	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayW);
 
 	if (nchan != cpifaceSession->PhysicalChannelCount)
 	{
-		mcpAPI->mcpClosePlayer();
+		mcpDevAPI->mcpClosePlayer();
 		return 0;
 	}
 
@@ -1556,7 +1556,7 @@ int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, s
 
 void __attribute__ ((visibility ("internal"))) xmpStopModule(void)
 {
-	mcpAPI->mcpClosePlayer ();
+	mcpDevAPI->mcpClosePlayer ();
 	free(que);
 }
 

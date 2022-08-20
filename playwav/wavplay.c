@@ -165,7 +165,7 @@ do { \
 } while(0)
 
 
-static void wpIdler(void)
+static void wpIdler(struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (!active)
 		return;
@@ -177,7 +177,7 @@ static void wpIdler(void)
 		int pos1, pos2;
 		int length1, length2;
 
-		ringbuffer_get_head_samples (wavebufpos, &pos1, &length1, &pos2, &length2);
+		cpifaceSession->ringbufferAPI->get_head_samples (wavebufpos, &pos1, &length1, &pos2, &length2);
 
 		if (!length1)
 		{
@@ -246,7 +246,7 @@ static void wpIdler(void)
 
 				}
 			}
-			ringbuffer_head_add_samples (wavebufpos, result);
+			cpifaceSession->ringbufferAPI->head_add_samples (wavebufpos, result);
 
 			if ((wavepos+result) >= wavelen)
 			{
@@ -269,7 +269,7 @@ static void wpIdler(void)
 	}
 }
 
-void  __attribute__ ((visibility ("internal"))) wpIdle(void)
+void  __attribute__ ((visibility ("internal"))) wpIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -296,10 +296,10 @@ void  __attribute__ ((visibility ("internal"))) wpIdle(void)
 			int pos1, length1, pos2, length2;
 
 			/* fill up our buffers */
-			wpIdler();
+			wpIdler(cpifaceSession);
 
 			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-			ringbuffer_get_tail_samples (wavebufpos, &pos1, &length1, &pos2, &length2);
+			cpifaceSession->ringbufferAPI->get_tail_samples (wavebufpos, &pos1, &length1, &pos2, &length2);
 
 			if (wavebufrate==0x10000)
 			{
@@ -443,7 +443,7 @@ void  __attribute__ ((visibility ("internal"))) wpIdle(void)
 					pos2 = 0;
 				} /* while (targetlength && length1) */
 			} /* if (wavebufrate==0x10000) */
-			ringbuffer_tail_consume_samples (wavebufpos, accumulated_source);
+			cpifaceSession->ringbufferAPI->tail_consume_samples (wavebufpos, accumulated_source);
 			plrAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}
@@ -517,14 +517,14 @@ static int wpGet(int ch, int opt)
 }
 
 
-uint32_t __attribute__ ((visibility ("internal"))) wpGetPos(void)
+uint32_t __attribute__ ((visibility ("internal"))) wpGetPos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	return (wavepos + wavelen - ringbuffer_get_tail_available_samples (wavebufpos))%wavelen;
+	return (wavepos + wavelen - cpifaceSession->ringbufferAPI->get_tail_available_samples (wavebufpos))%wavelen;
 }
 
-void __attribute__ ((visibility ("internal"))) wpGetInfo(struct waveinfo *info)
+void __attribute__ ((visibility ("internal"))) wpGetInfo (struct cpifaceSessionAPI_t *cpifaceSession, struct waveinfo *info)
 {
-	info->pos=wpGetPos();
+	info->pos=wpGetPos(cpifaceSession);
 	info->len=wavelen;
 	info->rate=waverate;
 	info->stereo=wavestereo;
@@ -533,7 +533,7 @@ void __attribute__ ((visibility ("internal"))) wpGetInfo(struct waveinfo *info)
 	info->opt50=opt50;
 }
 
-void __attribute__ ((visibility ("internal"))) wpSetPos(uint32_t pos)
+void __attribute__ ((visibility ("internal"))) wpSetPos (struct cpifaceSessionAPI_t *cpifaceSession, uint32_t pos)
 {
 	PRINT("wpSetPos called for pos %lu", (unsigned long)pos);
 
@@ -541,7 +541,7 @@ void __attribute__ ((visibility ("internal"))) wpSetPos(uint32_t pos)
 
 	waveneedseek=1;
 	wavepos=pos;
-	ringbuffer_reset(wavebufpos);
+	cpifaceSession->ringbufferAPI->reset (wavebufpos);
 }
 
 uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehandle_t *wavf, struct cpifaceSessionAPI_t *cpifaceSession)
@@ -734,7 +734,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 		goto error_out_wavefile;
 	}
 
-	wavebufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 8*1024);
+	wavebufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 8*1024);
 
 	waveRate = waverate;
 	format=PLR_STEREO_16BIT_SIGNED;
@@ -756,7 +756,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 	cpifaceSession->mcpSet = wpSet;
 	cpifaceSession->mcpGet = wpGet;
 
-	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
+	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	return 1;
 
@@ -771,7 +771,7 @@ error_out_wavefile:
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) wpClosePlayer(void)
+void __attribute__ ((visibility ("internal"))) wpClosePlayer(struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	active=0;
 
@@ -781,7 +781,7 @@ void __attribute__ ((visibility ("internal"))) wpClosePlayer(void)
 
 	if (wavebufpos)
 	{
-		ringbuffer_free (wavebufpos);
+		cpifaceSession->ringbufferAPI->free (wavebufpos);
 		wavebufpos = 0;
 	}
 

@@ -98,12 +98,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			timidityPause (cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
+			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
+	cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 static int timidityLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
@@ -113,7 +113,7 @@ static int timidityLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopM
 		dopausefade (cpifaceSession);
 	}
 	timiditySetLoop (LoopMod);
-	timidityIdle ();
+	timidityIdle (cpifaceSession);
 	return (!LoopMod) && timidityIsLooped();
 }
 
@@ -123,7 +123,7 @@ static void timidityDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	timidityGetGlobInfo(&gi);
 
-	mcpDrawGStringsFixedLengthStream
+	cpifaceSession->drawHelperAPI->GStringsFixedLengthStream
 	(
 		cpifaceSession,
 		utf8_8_dot_3,
@@ -265,7 +265,7 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 
 static void timidityCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	timidityClosePlayer();
+	timidityClosePlayer (cpifaceSession);
 	cpiTimiditySetupDone (cpifaceSession);
 }
 

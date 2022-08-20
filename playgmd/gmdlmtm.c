@@ -66,7 +66,7 @@ static void FreeResources (struct LoadMTMResources *r)
 	}
 }
 
-static int _mpLoadMTM(struct gmdmodule *m, struct ocpfilehandle_t *file)
+static int _mpLoadMTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	struct __attribute__((packed)) {
 		uint32_t sig;

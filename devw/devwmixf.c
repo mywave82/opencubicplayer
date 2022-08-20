@@ -907,7 +907,7 @@ static void devwMixFClosePlayer()
 	dwmixfa_state.tempbuf = 0;
 }
 
-static const struct mcpAPI_t devwMixF =
+static const struct mcpDevAPI_t devwMixF =
 {
 	devwMixFOpenPlayer,
 	devwMixFLoadSamples,
@@ -932,16 +932,16 @@ static int Init(const struct deviceinfo *dev)
 	mastersrnd=0;
 	channelnum=0;
 
-	mcpAPI = &devwMixF;
+	mcpDevAPI = &devwMixF;
 
 	return 1;
 }
 
 static void Close()
 {
-	if (mcpAPI == &devwMixF)
+	if (mcpDevAPI == &devwMixF)
 	{
-		mcpAPI = 0;
+		mcpDevAPI = 0;
 	}
 }
 

@@ -961,7 +961,7 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 
 	cpifaceSession->mcpSet = sidSet;
 	cpifaceSession->mcpGet = sidGet;
-	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
+	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	return 1;
 

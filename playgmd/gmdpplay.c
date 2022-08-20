@@ -77,7 +77,7 @@ static void gmdMarkInsSamp (struct cpifaceSessionAPI_t *cpifaceSession, uint8_t 
 	}
 }
 
-static int mpLoadGen(struct gmdmodule *m, struct ocpfilehandle_t *file, struct moduletype type, const char *link, const char *name)
+static int mpLoadGen(struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file, struct moduletype type, const char *link, const char *name)
 {
 	int hnd;
 	struct gmdloadstruct *loadfn;
@@ -117,7 +117,7 @@ static int mpLoadGen(struct gmdmodule *m, struct ocpfilehandle_t *file, struct m
 	fprintf(stderr, "loading using %s-%s\n", link, name);
 #endif
 	memset(m->composer, 0, sizeof(m->composer));
-	retval=loadfn->load(m, file);
+	retval=loadfn->load(cpifaceSession, m, file);
 
 	lnkFree(hnd);
 
@@ -176,12 +176,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
+			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
+	cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 static void gmdDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -190,7 +190,7 @@ static void gmdDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	mpGetGlobInfo (&gi);
 
-	mcpDrawGStringsTracked
+	cpifaceSession->drawHelperAPI->GStringsTracked
 	(
 		cpifaceSession,
 		utf8_8_dot_3,
@@ -297,7 +297,7 @@ static int gmdLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade (cpifaceSession);
 	}
 	mpSetLoop (LoopMod);
-	mcpAPI->mcpIdle (cpifaceSession);
+	mcpDevAPI->mcpIdle (cpifaceSession);
 
 	return (!LoopMod) && mpLooped();
 }
@@ -308,7 +308,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	uint64_t i;
 	int retval;
 
-	if (!mcpAPI->mcpOpenPlayer)
+	if (!mcpDevAPI->mcpOpenPlayer)
 		return errGen;
 
 	if (!file)
@@ -324,7 +324,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
 	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
-	retval=mpLoadGen(&mod, file, info->modtype, ldlink, loader);
+	retval=mpLoadGen(cpifaceSession, &mod, file, info->modtype, ldlink, loader);
 
 	if (!retval)
 	{

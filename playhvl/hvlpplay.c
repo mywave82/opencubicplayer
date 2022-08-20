@@ -101,12 +101,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			hvlPause (cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
+			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
+	cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 static void hvlDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -119,7 +119,7 @@ static void hvlDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	hvlGetStats (&row, &rows, &order, &orders, &subsong, &subsongs, &tempo, &speedmult);
 
-	mcpDrawGStringsTracked
+	cpifaceSession->drawHelperAPI->GStringsTracked
 	(
 		cpifaceSession,
 		utf8_8_dot_3,

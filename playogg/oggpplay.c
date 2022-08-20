@@ -104,12 +104,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			oggPause (cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
+			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
+	cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 static void oggDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -118,7 +118,7 @@ static void oggDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	oggGetInfo (cpifaceSession, &inf);
 
-	mcpDrawGStringsFixedLengthStream
+	cpifaceSession->drawHelperAPI->GStringsFixedLengthStream
 	(
 		cpifaceSession,
 		utf8_8_dot_3,

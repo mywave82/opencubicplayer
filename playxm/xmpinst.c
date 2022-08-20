@@ -110,7 +110,7 @@ static void xmpDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, unsigne
 			writenum(buf, 64, col, sm->normnote&0xFF, 16, 2, 0);
 		} else
 			if (plInstShowFreq==1)
-				writenum(buf, 60, col, mcpGetFreq8363(-sm->normnote), 10, 6, 1);
+				writenum(buf, 60, col, cpifaceSession->mcpAPI->GetFreq8363(-sm->normnote), 10, 6, 1);
 			else
 				writenum(buf, 60, col, si->samprate, 10, 6, 1);
 		if (sm->stdvol!=-1)
@@ -175,7 +175,7 @@ static void xmpDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, unsign
 			writenum(buf, 94, col, sm->normnote&0xFF, 16, 2, 0);
 		} else
 			if (plInstShowFreq==1)
-				writenum(buf, 90, col, mcpGetFreq8363(-sm->normnote), 10, 6, 1);
+				writenum(buf, 90, col, cpifaceSession->mcpAPI->GetFreq8363(-sm->normnote), 10, 6, 1);
 			else
 				writenum(buf, 90, col, si->samprate, 10, 6, 1);
 

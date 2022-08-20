@@ -1148,7 +1148,7 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 	cpifaceSession->mcpSet = mpegSet;
 	cpifaceSession->mcpGet = mpegGet;
 
-	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
+	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	active = 1;
 	opt25_50 = 0;

@@ -139,7 +139,7 @@ static void FreeResources (struct LoadMDLResources *r)
 	}
 }
 
-static int _mpLoadMDL(struct gmdmodule *m, struct ocpfilehandle_t *file)
+static int _mpLoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	uint32_t waste32;
 	uint16_t waste16;

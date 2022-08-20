@@ -1584,7 +1584,7 @@ void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct mglobi
 	gi->ticknum = timidity_main_session.nsamples;
 }
 
-void __attribute__ ((visibility ("internal"))) timidityIdle(void)
+void __attribute__ ((visibility ("internal"))) timidityIdle(struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -1613,7 +1613,7 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 			timidityIdler(&tc);
 
 			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-			ringbuffer_get_tail_samples (gmibufpos, &pos1, &length1, &pos2, &length2);
+			cpifaceSession->ringbufferAPI->get_tail_samples (gmibufpos, &pos1, &length1, &pos2, &length2);
 
 			if (gmibufrate==0x10000)
 			{
@@ -1757,7 +1757,7 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 					pos2 = 0;
 				} /* while (targetlength && length1) */
 			} /* if (gmibufrate==0x10000) */
-			ringbuffer_tail_consume_samples (gmibufpos, accumulated_source);
+			cpifaceSession->ringbufferAPI->tail_consume_samples (gmibufpos, accumulated_source);
 			timidity_play_source_EventDelayed_gmibuf (accumulated_source, accumulated_target);
 			plrAPI->CommitBuffer (accumulated_target);
 			samples_committed += accumulated_target;
@@ -1780,7 +1780,7 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(void)
 	clipbusy--;
 }
 
-static void doTimidityClosePlayer(int CloseDriver)
+static void doTimidityClosePlayer(struct cpifaceSessionAPI_t *cpifaceSession, int CloseDriver)
 {
 	if (CloseDriver)
 	{
@@ -1818,7 +1818,7 @@ static void doTimidityClosePlayer(int CloseDriver)
 
 	if (gmibufpos)
 	{
-		ringbuffer_free (gmibufpos);
+		cpifaceSession->ringbufferAPI->free (gmibufpos);
 		gmibufpos = 0;
 	}
 
@@ -1980,7 +1980,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	{
 		return errAllocMem;
 	}
-	gmibufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, gmibuflen);
+	gmibufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, gmibuflen);
 	if (!gmibufpos)
 	{
 		return errAllocMem;
@@ -2001,13 +2001,13 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	cpifaceSession->mcpSet = timiditySet;
 	cpifaceSession->mcpGet = timidityGet;
 
-	mcpNormalize (cpifaceSession, mcpNormalizeNoFilter | mcpNormalizeCanSpeedPitchUnlock | mcpNormalizeCannotEcho | mcpNormalizeCannotAmplify);
+	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeNoFilter | mcpNormalizeCanSpeedPitchUnlock | mcpNormalizeCannotEcho | mcpNormalizeCannotAmplify);
 
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) timidityClosePlayer(void)
+void __attribute__ ((visibility ("internal"))) timidityClosePlayer(struct cpifaceSessionAPI_t *cpifaceSession)
 {
 #warning we need to break idle loop with EVENT set to quit, in order to make a clean exit..
-	doTimidityClosePlayer (1);
+	doTimidityClosePlayer (cpifaceSession, 1);
 }

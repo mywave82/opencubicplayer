@@ -40,7 +40,7 @@ static inline void putcmd(uint8_t **p, uint8_t c, uint8_t d)
 	*(*p)++=d;
 }
 
-static int _mpLoad669(struct gmdmodule *m, struct ocpfilehandle_t *file)
+static int _mpLoad669 (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	unsigned int t;
 

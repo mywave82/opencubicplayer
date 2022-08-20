@@ -959,7 +959,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 	cpifaceSession->mcpSet = oggSet;
 	cpifaceSession->mcpGet = oggGet;
 
-	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
+	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	active=1;
 	opt25_50 = 0;

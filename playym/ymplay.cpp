@@ -114,7 +114,7 @@ do { \
 	} \
 } while(0)
 
-void __attribute__ ((visibility ("internal"))) ymClosePlayer(void)
+void __attribute__ ((visibility ("internal"))) ymClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (active)
 	{
@@ -125,7 +125,7 @@ void __attribute__ ((visibility ("internal"))) ymClosePlayer(void)
 
 		if (ymbufpos)
 		{
-			ringbuffer_free (ymbufpos);
+			cpifaceSession->ringbufferAPI->free (ymbufpos);
 			ymbufpos = 0;
 		}
 
@@ -235,7 +235,7 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 
 	cpifaceSession->mcpSet = ymSet;
 	cpifaceSession->mcpGet = ymGet;
-	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
+	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	ym_looped = 0;
 
@@ -256,7 +256,7 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	free(buffer); buffer = 0;
 
 	ymbufrate=0x10000; /* 1.0 */
-	ymbufpos = ringbuffer_new_samples (RINGBUFFER_FLAGS_MONO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, YMBUFLEN);
+	ymbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_MONO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, YMBUFLEN);
 	if (!ymbufpos)
 	{
 		goto error_out_plrAPI_Play;
@@ -274,7 +274,7 @@ error_out_buffer:
 
 	if (ymbufpos)
 	{
-		ringbuffer_free (ymbufpos);
+		cpifaceSession->ringbufferAPI->free (ymbufpos);
 		ymbufpos = 0;
 	}
 
@@ -355,7 +355,7 @@ static void register_delay_callback_from_ymbuf (void *arg, int samples_ago)
 	plrAPI->OnBufferCallback (samples_until, register_delay_callback_from_devp, state);
 }
 
-static void ymIdler(void)
+static void ymIdler(struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int pos1, pos2;
 	int length1, length2;
@@ -363,7 +363,7 @@ static void ymIdler(void)
 	if (!active)
 		return;
 
-	ringbuffer_get_head_samples (ymbufpos, &pos1, &length1, &pos2, &length2);
+	cpifaceSession->ringbufferAPI->get_head_samples (ymbufpos, &pos1, &length1, &pos2, &length2);
 
 	while (length1)
 	{
@@ -392,11 +392,11 @@ static void ymIdler(void)
 			slot->registers[8] = pMusic->readYmRegister(11)|(pMusic->readYmRegister(12)<<8); /* frequency envelope */
 			slot->registers[9] = pMusic->readYmRegister(13) & 0x0f;  /* envelope shape */
 			slot->inymbuf = 1;
-			ringbuffer_add_tail_callback_samples (ymbufpos, 0, register_delay_callback_from_ymbuf, slot);
+			cpifaceSession->ringbufferAPI->add_tail_callback_samples (ymbufpos, 0, register_delay_callback_from_ymbuf, slot);
 		}
 
-		ringbuffer_head_add_samples (ymbufpos, length1);
-		ringbuffer_get_head_samples (ymbufpos, &pos1, &length1, &pos2, &length2);
+		cpifaceSession->ringbufferAPI->head_add_samples (ymbufpos, length1);
+		cpifaceSession->ringbufferAPI->get_head_samples (ymbufpos, &pos1, &length1, &pos2, &length2);
 	}
 }
 
@@ -405,7 +405,7 @@ __attribute__ ((visibility ("internal"))) struct channel_info_t *ymRegisters()
 	return &Registers;
 }
 
-void __attribute__ ((visibility ("internal"))) ymIdle(void)
+void __attribute__ ((visibility ("internal"))) ymIdle(struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -431,10 +431,10 @@ void __attribute__ ((visibility ("internal"))) ymIdle(void)
 			unsigned int accumulated_source = 0;
 			int pos1, length1, pos2, length2;
 
-			ymIdler();
+			ymIdler (cpifaceSession);
 
 			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-			ringbuffer_get_tail_samples (ymbufpos, &pos1, &length1, &pos2, &length2);
+			cpifaceSession->ringbufferAPI->get_tail_samples (ymbufpos, &pos1, &length1, &pos2, &length2);
 
 			if (ymbufrate==0x10000)
 			{
@@ -561,7 +561,7 @@ void __attribute__ ((visibility ("internal"))) ymIdle(void)
 				} /* while (targetlength && length1) */
 			} /* if (ymbufrate==0x10000) */
 
-			ringbuffer_tail_consume_samples (ymbufpos, accumulated_source);
+			cpifaceSession->ringbufferAPI->tail_consume_samples (ymbufpos, accumulated_source);
 			plrAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}

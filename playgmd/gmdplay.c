@@ -396,7 +396,7 @@ static uint8_t PlayNote (struct cpifaceSessionAPI_t *cpifaceSession, struct trac
 		if (exponential)
 			t->pitchslidepitch=t->finalpitch=t->pitch=60*256-(t->nteval<<8)+t->samp->normnote;
 		else
-			t->pitchslidepitch=t->finalpitch=t->pitch=mcpGetFreq6848(60*256+t->samp->normnote-(t->nteval<<8));
+			t->pitchslidepitch=t->finalpitch=t->pitch=cpifaceSession->mcpAPI->GetFreq6848(60*256+t->samp->normnote-(t->nteval<<8));
 		if (samiextrawurscht&&t->insofs)
 			pos=(t->samp->opt&MP_OFFSETDIV2)?(t->insofs>>1):t->insofs;
 		t->newpos=pos;
@@ -411,7 +411,7 @@ static uint8_t PlayNote (struct cpifaceSessionAPI_t *cpifaceSession, struct trac
 			if (exponential)
 				t->pitchslidepitch=60*256-(t->nteval<<8)+t->samp->normnote;
 			else
-				t->pitchslidepitch=mcpGetFreq6848(60*256+t->samp->normnote-(t->nteval<<8));
+				t->pitchslidepitch=cpifaceSession->mcpAPI->GetFreq6848(60*256+t->samp->normnote-(t->nteval<<8));
 		}
 	}
 
@@ -962,7 +962,7 @@ static void DoCommand (struct cpifaceSessionAPI_t *cpifaceSession, struct trackd
 				if (exponential)
 					t->finalpitch=((t->pitch+0x80-t->samp->normnote)&~0xFF)+t->samp->normnote;
 				else
-					t->finalpitch=mcpGetFreq6848(((mcpGetNote6848(t->pitch)+0x80-t->samp->normnote)&~0xFF)+t->samp->normnote);
+					t->finalpitch=cpifaceSession->mcpAPI->GetFreq6848(((cpifaceSession->mcpAPI->GetNote6848(t->pitch)+0x80-t->samp->normnote)&~0xFF)+t->samp->normnote);
 			else
 				t->finalpitch=t->pitch;
 			break;
@@ -1385,7 +1385,7 @@ static void PlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 				int16_t dep=((env->env[td->pchenvpos]-128)<<fs->pchint)>>1;
 
 				if (expopitchenv&&!exponential)
-					td->finalpitch=checkpitch(umuldiv(td->finalpitch, mcpGetFreq8363(dep), 8363));
+					td->finalpitch=checkpitch(umuldiv(td->finalpitch, cpifaceSession->mcpAPI->GetFreq8363(dep), 8363));
 				else
 					td->finalpitch=checkpitch(td->finalpitch-dep);
 
@@ -1438,7 +1438,7 @@ static void PlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 			dep=(dep*td->vibsweeppos)>>16;
 
 			if (expopitchenv&&!exponential)
-				td->finalpitch=checkpitch(umuldiv(td->finalpitch, mcpGetFreq8363(dep), 8363));
+				td->finalpitch=checkpitch(umuldiv(td->finalpitch, cpifaceSession->mcpAPI->GetFreq8363(dep), 8363));
 			else
 				td->finalpitch=checkpitch(td->finalpitch-dep);
 
@@ -1456,7 +1456,7 @@ static void PlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
         dep=dep*td->vibsweeppos/fs.vibswp;
 
 	if (expopitchenv&&!exponential)
-        td->finalpitch=checkpitch(umuldiv(td->finalpitch, mcpGetFreq8363(dep), 8363));
+        td->finalpitch=checkpitch(umuldiv(td->finalpitch, cpifaceSession->mcpAPI->GetFreq8363(dep), 8363));
 	else
         td->finalpitch=checkpitch(td->finalpitch-dep);
 
@@ -1621,10 +1621,10 @@ char __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodu
 	querpos=0;
 	quewpos=0;
 
-	if (!mcpAPI->mcpOpenPlayer(channels, PlayTick, file, cpifaceSession))
+	if (!mcpDevAPI->mcpOpenPlayer(channels, PlayTick, file, cpifaceSession))
 		return 0;
 
-	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayW);
+	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayW);
 
 	physchan = cpifaceSession->PhysicalChannelCount;
 
@@ -1636,7 +1636,7 @@ void __attribute__ ((visibility ("internal"))) mpStopModule (struct cpifaceSessi
 	int i;
 	for (i=0; i<physchan; i++)
 		cpifaceSession->mcpSet (i, mcpCReset, 0);
-	mcpAPI->mcpClosePlayer();
+	mcpDevAPI->mcpClosePlayer();
 	free(que);
 }
 
@@ -1668,13 +1668,13 @@ void __attribute__ ((visibility ("internal"))) mpGetChanInfo(uint8_t ch, struct 
 
 
 
-uint16_t __attribute__ ((visibility ("internal"))) mpGetRealNote(uint8_t ch)
+uint16_t __attribute__ ((visibility ("internal"))) mpGetRealNote(struct cpifaceSessionAPI_t *cpifaceSession, uint8_t ch)
 {
 	struct trackdata *td=&tdata[ch];
 	if (exponential)
 		return 60*256+td->samp->normnote-checkpitche(td->finalpitch);
 	else
-		return 60*256+td->samp->normnote+mcpGetNote8363(6848*8363/checkpitchh(td->finalpitch));
+		return 60*256+td->samp->normnote+cpifaceSession->mcpAPI->GetNote8363(6848*8363/checkpitchh(td->finalpitch));
   /*    return td.nteval<<8; */
 }
 
@@ -1821,5 +1821,5 @@ void __attribute__ ((visibility ("internal"))) mpGetRealVolume (struct cpifaceSe
 
 int __attribute__ ((visibility ("internal"))) mpLoadSamples(struct gmdmodule *m)
 {
-	return mcpAPI->mcpLoadSamples(m->samples, m->sampnum);
+	return mcpDevAPI->mcpLoadSamples(m->samples, m->sampnum);
 }

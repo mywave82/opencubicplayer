@@ -467,7 +467,7 @@ static void devwNoneClosePlayer(void)
 	channels=0;
 }
 
-static const struct mcpAPI_t devwNone =
+static const struct mcpDevAPI_t devwNone =
 {
 	devwNoneOpenPlayer,
 	devwNoneLoadSamples,
@@ -487,16 +487,16 @@ static int Init(const struct deviceinfo *c)
 
 	channelnum=0;
 
-	mcpAPI = &devwNone;
+	mcpDevAPI = &devwNone;
 
 	return 1;
 }
 
 static void Close(void)
 {
-	if (mcpAPI == &devwNone)
+	if (mcpDevAPI == &devwNone)
 	{
-		mcpAPI = 0;
+		mcpDevAPI = 0;
 	}
 }
 

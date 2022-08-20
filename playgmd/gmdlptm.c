@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "cpiface/cpiface.h"
 #include "filesel/filesystem.h"
 #include "dev/mcp.h"
 #include "gmdplay.h"
@@ -60,7 +61,7 @@ static void FreeResources (struct LoadPTMResources *r)
 	}
 }
 
-static int _mpLoadPTM(struct gmdmodule *m, struct ocpfilehandle_t *file)
+static int _mpLoadPTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 
 	uint16_t t;
@@ -226,7 +227,7 @@ static int _mpLoadPTM(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		memcpy(sp->name, sins.dosname, 12);
 		sp->name[13]=0;
 		sp->handle=i;
-		sp->normnote=-mcpGetNote8363(sins.samprate);
+		sp->normnote=-cpifaceSession->mcpAPI->GetNote8363(sins.samprate);
 		sp->stdvol=(sins.volume>0x3F)?0xFF:(sins.volume<<2);
 		sp->stdpan=-1;
 		sp->opt=(sins.type&0x10)?MP_OFFSETDIV2:0;

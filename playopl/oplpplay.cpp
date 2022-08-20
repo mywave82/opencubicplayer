@@ -104,12 +104,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			oplPause (cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
+			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
+	cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 static char convnote(long freq)
@@ -197,7 +197,7 @@ static void oplDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	oplpGetGlobInfo(globinfo);
 
-	mcpDrawGStringsSongXofY
+	cpifaceSession->drawHelperAPI->GStringsSongXofY
 	(
 		cpifaceSession,
 		utf8_8_dot_3,

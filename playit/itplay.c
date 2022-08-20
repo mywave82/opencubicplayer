@@ -126,7 +126,7 @@ static void dovibrato(struct itplayer *this, struct it_logchan *c);
 static void putque(struct itplayer *this, int type, int val1, int val2);
 static void readque (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this);
 static void dotremolo(struct itplayer *this, struct it_logchan *c);
-static void dodelay(struct itplayer *this, struct it_logchan *c);
+static void dodelay(struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, struct it_logchan *c);
 static void dopanbrello(struct itplayer *this, struct it_logchan *c);
 
 
@@ -135,7 +135,7 @@ static void playtickstatic (struct cpifaceSessionAPI_t *cpifaceSession)
 	playtick (cpifaceSession, staticthis);
 }
 
-static void playnote(struct itplayer *this, struct it_logchan *c, const uint8_t *cmd)
+static void playnote(struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, struct it_logchan *c, const uint8_t *cmd)
 {
 	int instchange=0;
 	/* int triginst=0;  unused */
@@ -378,7 +378,7 @@ static void playnote(struct itplayer *this, struct it_logchan *c, const uint8_t 
 
 	frq=p->noteoffset-256*(c->lastnote-cmdNNote);
 	if (!this->linear)
-		frq=mcpGetFreq6848(frq);
+		frq=cpifaceSession->mcpAPI->GetFreq6848(frq);
 	c->dpitch=frq;
 	if (!porta)
 		c->fpitch=c->pitch=c->dpitch;
@@ -590,7 +590,7 @@ static void parsemidicmd(struct it_logchan *c, char *cmd, int z)
 	}
 }
 
-static void playcmd(struct itplayer *this, struct it_logchan *c, int cmd, int data)
+static void playcmd(struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, struct it_logchan *c, int cmd, int data)
 {
 	int i;
 	c->command=cmd;
@@ -922,7 +922,7 @@ static void playcmd(struct itplayer *this, struct it_logchan *c, int cmd, int da
 					c->fx=ifxDelay;
 					if (!c->specialdata)
 						c->specialdata++; /* SD0 should do the same as SD1 */
-					dodelay(this, c);
+					dodelay(cpifaceSession, this, c);
 					break;
 				case cmdSPatDelayRow:
 					if (!this->patdelayrow) /* only use the first command, per row */
@@ -1075,12 +1075,12 @@ static void doportanote(struct itplayer *this, struct it_logchan *c, int v) /* i
 		c->dpitch=0;
 }
 
-static void dodelay(struct itplayer *this, struct it_logchan *c)
+static void dodelay(struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, struct it_logchan *c)
 {
 	if (this->curtick==c->specialdata)
 	{
 		if (c->delayed[0]||c->delayed[1])
-			playnote(this, c, c->delayed);
+			playnote(cpifaceSession, this, c, c->delayed);
 		if (c->delayed[2])
 			playvcmd(this, c, c->delayed[2]);
 	} else if (((this->curtick+1)==(this->speed+this->patdelaytick))&&(!this->patdelayrow))
@@ -1108,7 +1108,7 @@ static const uint16_t arpnotetab[] =
 	16384, 15464, 14596, 13777
 };
 
-static void processfx(struct itplayer *this, struct it_logchan *c)
+static void processfx(struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, struct it_logchan *c)
 {
 	switch (c->command)
 	{
@@ -1214,7 +1214,7 @@ static void processfx(struct itplayer *this, struct it_logchan *c)
 						c->pch->notecut=1;
 					break;
 				case cmdSNoteDelay:
-					dodelay(this, c);
+					dodelay(cpifaceSession, this, c);
 					break;
 				case cmdSPatDelayRow:
 					break;
@@ -1762,11 +1762,11 @@ static void playtick (struct cpifaceSessionAPI_t *cpifaceSession, struct itplaye
 				delay=1;
 			} else {
 				if (this->patptr[0]||this->patptr[1])
-					playnote(this, c, this->patptr);
+					playnote(cpifaceSession, this, c, this->patptr);
 				delay=0;
 			}
 			if (this->patptr[3])
-				playcmd(this, c, this->patptr[3], this->patptr[4]); /* we need notedata to know if Portamento should do anything */
+				playcmd(cpifaceSession, this, c, this->patptr[3], this->patptr[4]); /* we need notedata to know if Portamento should do anything */
 			if (!delay)
 				if (this->patptr[2])
 					playvcmd(this, c, this->patptr[2]);
@@ -1777,7 +1777,7 @@ static void playtick (struct cpifaceSessionAPI_t *cpifaceSession, struct itplaye
 			this->patdelayrow--;
 	} else
 		for (i=0; i<this->nchan; i++)
-			processfx(this, &this->channels[i]);
+			processfx(cpifaceSession, this, &this->channels[i]);
 
 	this->manualgoto=0;
 	this->gvolslide=0;
@@ -1808,7 +1808,7 @@ static void playtick (struct cpifaceSessionAPI_t *cpifaceSession, struct itplaye
 
 int __attribute__ ((visibility ("internal"))) loadsamples(struct it_module *m)
 {
-	return mcpAPI->mcpLoadSamples(m->sampleinfos, m->nsampi);
+	return mcpDevAPI->mcpLoadSamples(m->sampleinfos, m->nsampi);
 }
 
 int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
@@ -1903,10 +1903,10 @@ int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const 
 		c->tremoroffcounter=0;
 	}
 
-	if (!mcpAPI->mcpOpenPlayer(ch, playtickstatic, file, cpifaceSession))
+	if (!mcpDevAPI->mcpOpenPlayer(ch, playtickstatic, file, cpifaceSession))
 		return 0;
 
-	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayW);
+	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayW);
 
 	this->npchan = cpifaceSession->PhysicalChannelCount;
 
@@ -1915,7 +1915,7 @@ int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const 
 
 void __attribute__ ((visibility ("internal"))) stop(struct itplayer *this)
 {
-	mcpAPI->mcpClosePlayer ();
+	mcpDevAPI->mcpClosePlayer ();
 	if (this->channels)
 	{
 		free(this->channels);
@@ -2009,7 +2009,7 @@ int __attribute__ ((visibility ("internal"))) getdotsdata (struct cpifaceSession
 		*note=p->noteoffset+p->fpitch;
 	else
 		if (p->noteoffset+p->fpitch)
-			*note=p->noteoffset+mcpGetNote8363(6848*8363/p->fpitch);
+			*note=p->noteoffset+cpifaceSession->mcpAPI->GetNote8363(6848*8363/p->fpitch);
 		else
 			*note=0;
 

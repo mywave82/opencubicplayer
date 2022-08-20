@@ -35,9 +35,15 @@ struct cpifaceplayerstruct
 
 struct ringbufferAPI_t;
 
+struct mcpAPI_t;
+
+struct drawHelperAPI_t;
+
 struct cpifaceSessionAPI_t
 {
 	const struct ringbufferAPI_t *ringbufferAPI;
+	const struct mcpAPI_t        *mcpAPI;
+	const struct drawHelperAPI_t *drawHelperAPI;
 
 	/* configured by devp/devw */
 	void (*GetRealMasterVolume)(int *l, int *r); /* filled in by devp/devw driver */
@@ -271,5 +277,59 @@ enum mcpNormalizeType
 };
 
 void mcpNormalize (struct cpifaceSessionAPI_t *cpifaceSession, enum mcpNormalizeType Type);
+
+struct mcpAPI_t
+{
+	void (*Normalize) (struct cpifaceSessionAPI_t *cpifaceSession, enum mcpNormalizeType Type);
+	void (*SetMasterPauseFadeParameters) (struct cpifaceSessionAPI_t *cpifaceSession, int i);
+	int (*GetFreq6848) (int note);
+	int (*GetFreq8363) (int note);
+	int (*GetNote6848) (int freq);
+	int (*GetNote8363) (int freq);
+};
+
+struct drawHelperAPI_t
+{
+	void (*GStringsFixedLengthStream) (struct cpifaceSessionAPI_t *cpifaceSession,
+	                                   const char                    *filename8_3,
+	                                   const char                    *filename16_3,
+	                                   const uint64_t                 pos,
+	                                   const uint64_t                 size, /* can be smaller than the file-size due to meta-data */
+	                                   const char                     sizesuffix, /* 0 = "" (MIDI), 1 = KB */
+	                                   const char                    *opt25,
+	                                   const char                    *opt50,
+	                                   const int_fast16_t             kbs,  /* kilo-bit-per-second */
+	                                   const uint_fast8_t             inpause,
+	                                   const uint_fast16_t            seconds,
+	                                   const struct moduleinfostruct *mdbdata);
+
+	void (*GStringsSongXofY) (struct cpifaceSessionAPI_t *cpifaceSession,
+	                          const char                    *filename8_3,
+	                          const char                    *filename16_3,
+	                          const int                      songX,
+	                          const int                      songY,
+	                          const uint_fast8_t             inpause,
+	                          const uint_fast16_t            seconds,
+	                          const struct moduleinfostruct *mdbdata);
+
+	void (*GStringsTracked) (struct cpifaceSessionAPI_t *cpifaceSession,
+	                         const char                    *filename8_3,
+	                         const char                    *filename16_3,
+	                         const int                      songX,
+	                         const int                      songY, /* 0 or smaller, disables this, else 2 digits.. */
+	                         const uint8_t                  rowX,
+	                         const uint8_t                  rowY, /* displayed as 2 hex digits */
+	                         const uint16_t                 orderX,
+	                         const uint16_t                 orderY, /* displayed as 1,2,3 or 4 hex digits, depending on this size */
+	                         const uint8_t                  speed, /* displayed as %3 (with no space prefix) decimal digits */
+	                         const uint8_t                  tempo, /* displayed as %3 decimal digits */
+	                         const int16_t                  gvol, /* -1 for disable, else 0x00..0xff */
+	                         const int                      gvol_slide_direction,
+	                         const uint8_t                  chanX,
+	                         const uint8_t                  chanY, /* set to zero to disable */
+	                         const uint_fast8_t             inpause,
+	                         const uint_fast16_t            seconds,
+	                         const struct moduleinfostruct *mdbdata);
+};
 
 #endif

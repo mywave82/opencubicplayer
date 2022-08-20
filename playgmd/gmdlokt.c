@@ -61,7 +61,7 @@ static void FreeResources(struct LoadOKTResources *r)
 	}
 }
 
-static int _mpLoadOKT(struct gmdmodule *m, struct ocpfilehandle_t *file)
+static int _mpLoadOKT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 
 	uint8_t hsig[8];

@@ -65,7 +65,7 @@ enum
 	mcpGetSampleMono=0, mcpGetSampleStereo=1, mcpGetSampleHQ=2
 };
 
-struct mcpAPI_t
+struct mcpDevAPI_t
 {
 	int (*mcpOpenPlayer)(int, void (*p)(struct cpifaceSessionAPI_t *cpifaceSession), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession);
 	int (*mcpLoadSamples)(struct sampleinfo* si, int n);
@@ -73,7 +73,7 @@ struct mcpAPI_t
 	void (*mcpClosePlayer)(void);
 };
 
-extern const struct mcpAPI_t *mcpAPI;
+extern const struct mcpDevAPI_t *mcpDevAPI;
 
 extern unsigned int mcpMixMaxRate;
 extern unsigned int mcpMixProcRate;

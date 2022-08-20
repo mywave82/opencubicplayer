@@ -92,12 +92,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			flacPause(cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
+			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
+	cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 static void flacDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -106,7 +106,7 @@ static void flacDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	flacGetInfo (&inf);
 
-	mcpDrawGStringsFixedLengthStream
+	cpifaceSession->drawHelperAPI->GStringsFixedLengthStream
 	(
 		cpifaceSession,
 		utf8_8_dot_3,

@@ -107,8 +107,9 @@ struct it_module
 	int geffect;
 };
 
+struct cpifaceSessionAPI_t;
 struct ocpfilehandle_t;
-extern int __attribute__ ((visibility ("internal"))) it_load(struct it_module *, struct ocpfilehandle_t *); /* done */
+extern int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t *cpifaceSession, struct it_module *, struct ocpfilehandle_t *); /* done */
 extern void __attribute__ ((visibility ("internal"))) it_free(struct it_module *); /* done */
 extern void __attribute__ ((visibility ("internal"))) it_optimizepatlens(struct it_module *); /* done */
 extern int __attribute__ ((visibility ("internal"))) it_precalctime(struct it_module *, int startpos, int (*calctimer)[2], int calcn, int ite); /* done */

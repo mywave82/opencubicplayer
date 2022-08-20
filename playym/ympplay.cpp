@@ -101,12 +101,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			ymPause (cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
+			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
+	cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 static char convnote(long freq)
@@ -193,7 +193,7 @@ static void ymDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	ymMusicGetInfo(pMusic, &globinfo);
 
-	mcpDrawGStringsFixedLengthStream
+	cpifaceSession->drawHelperAPI->GStringsFixedLengthStream
 	(
 		cpifaceSession,
 		utf8_8_dot_3,
@@ -488,13 +488,13 @@ static int ymLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade (cpifaceSession);
 	}
 	ymSetLoop (LoopMod);
-	ymIdle();
+	ymIdle (cpifaceSession);
 	return (!LoopMod) && ymIsLooped();
 }
 
 static void ymCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	ymClosePlayer();
+	ymClosePlayer (cpifaceSession);
 }
 
 static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */

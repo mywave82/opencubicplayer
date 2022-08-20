@@ -322,7 +322,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 
 	cpifaceSession->mcpSet = oplSet;
 	cpifaceSession->mcpGet = oplGet;
-	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
+	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	active=1;
 

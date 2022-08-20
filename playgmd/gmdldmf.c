@@ -133,7 +133,7 @@ static void calctempo(uint16_t rpm, uint8_t *tempo, uint8_t *bpm)
 	(*bpm)=rpm*(*tempo)/24;
 }
 
-static int _mpLoadDMF(struct gmdmodule *m, struct ocpfilehandle_t *file)
+static int _mpLoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	struct __attribute__((packed)) {
 		uint8_t sig[4];

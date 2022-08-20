@@ -54,7 +54,7 @@ int __attribute__ ((visibility ("internal"))) gmdGetDots (struct cpifaceSessionA
 		d[pos].voll=vl;
 		d[pos].volr=vr;
 		d[pos].chan=i;
-		d[pos].note=mpGetRealNote(i);
+		d[pos].note=mpGetRealNote(cpifaceSession, i);
 		d[pos].col=32+(ci.ins&15);/* sustain */
 		pos++;
 	}

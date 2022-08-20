@@ -97,12 +97,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			ayPause (cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
+			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
+	cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 static void ayCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -127,7 +127,7 @@ static void ayDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	ayGetInfo (&globinfo);
 
-	mcpDrawGStringsSongXofY
+	cpifaceSession->drawHelperAPI->GStringsSongXofY
 	(
 		cpifaceSession,
 		utf8_8_dot_3,

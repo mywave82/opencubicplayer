@@ -27,7 +27,7 @@
 #include "types.h"
 #include "mcp.h"
 
-const struct mcpAPI_t *mcpAPI;
+const struct mcpDevAPI_t *mcpDevAPI;
 
 unsigned int mcpMixMaxRate;
 unsigned int mcpMixProcRate;

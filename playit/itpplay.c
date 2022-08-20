@@ -112,12 +112,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
+			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
+	cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 
@@ -200,7 +200,7 @@ static int itpLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade(cpifaceSession);
 	}
 	setloop(&itplayer, LoopMod);
-	mcpAPI->mcpIdle (cpifaceSession);
+	mcpDevAPI->mcpIdle (cpifaceSession);
 
 	return (!LoopMod) && getloop(&itplayer);
 }
@@ -221,7 +221,7 @@ static void itpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		}
 	}
 
-	mcpDrawGStringsTracked
+	cpifaceSession->drawHelperAPI->GStringsTracked
 	(
 		cpifaceSession,
 		utf8_8_dot_3,
@@ -586,7 +586,7 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
 	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
-	if (!(retval=it_load(&mod, file)))
+	if (!(retval=it_load(cpifaceSession, &mod, file)))
 		if (!loadsamples(&mod))
 			retval=-1;
 

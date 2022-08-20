@@ -681,7 +681,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 	cpifaceSession->mcpSet = hvlSet;
 	cpifaceSession->mcpGet = hvlGet;
 
-	mcpNormalize (cpifaceSession, mcpNormalizeDefaultPlayP);
+	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	return ht;
 

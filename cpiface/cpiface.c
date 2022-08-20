@@ -59,6 +59,7 @@
 #include "cpiface.h"
 #include "cpiface-private.h"
 #include "cpipic.h"
+#include "dev/mcp.h"
 #include "dev/ringbuffer.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -73,6 +74,23 @@
 #include <time.h>
 
 __attribute__ ((visibility ("internal"))) struct cpifaceSessionPrivate_t cpifaceSessionAPI;
+
+static struct mcpAPI_t mcpAPI =
+{
+	mcpNormalize,
+	mcpSetMasterPauseFadeParameters,
+	mcpGetFreq6848,
+	mcpGetFreq8363,
+	mcpGetNote6848,
+	mcpGetNote8363
+};
+
+static struct drawHelperAPI_t drawHelperAPI =
+{
+	mcpDrawGStringsFixedLengthStream,
+	mcpDrawGStringsSongXofY,
+	mcpDrawGStringsTracked
+};
 
 extern struct mdbreadinforegstruct cpiReadInfoReg;
 
@@ -2143,6 +2161,8 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	int retval;
 
 	cpifaceSessionAPI.Public.ringbufferAPI = &ringbufferAPI;
+	cpifaceSessionAPI.Public.mcpAPI = &mcpAPI;
+	cpifaceSessionAPI.Public.drawHelperAPI = &drawHelperAPI;
 
 	cpifaceSessionAPI.Public.GetRealMasterVolume = 0;
 	cpifaceSessionAPI.Public.GetMasterSample = 0;

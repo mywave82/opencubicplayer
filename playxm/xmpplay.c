@@ -115,12 +115,12 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			pausefadedirect=0;
 			pausetime=dos_clock();
 			cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = 1);
-			mcpSetMasterPauseFadeParameters (cpifaceSession, 64);
+			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
 	pausefaderelspeed=i;
-	mcpSetMasterPauseFadeParameters (cpifaceSession, i);
+	cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 
@@ -203,7 +203,7 @@ static int xmpLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade (cpifaceSession);
 	}
 	xmpSetLoop (LoopMod);
-	mcpAPI->mcpIdle (cpifaceSession);
+	mcpDevAPI->mcpIdle (cpifaceSession);
 
 	return (!LoopMod) && xmpLoop();
 }
@@ -217,7 +217,7 @@ static void xmpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 	xmpGetGlobInfo(&tmp, &bpm, &gvol);
 	xmpGetGlobInfo2(&gi);
 
-	mcpDrawGStringsTracked
+	cpifaceSession->drawHelperAPI->GStringsTracked
 	(
 		cpifaceSession,
 		utf8_8_dot_3,
@@ -565,7 +565,7 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	int (*loader)(struct xmodule *, struct ocpfilehandle_t *)=0;
 	int retval;
 
-	if (!mcpAPI->mcpOpenPlayer)
+	if (!mcpDevAPI->mcpOpenPlayer)
 		return errGen;
 
 	if (!file)
