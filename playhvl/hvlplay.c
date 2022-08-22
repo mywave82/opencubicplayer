@@ -467,6 +467,9 @@ void __attribute__ ((visibility ("internal"))) hvlPause (uint8_t p)
 
 static void hvlSetSpeed (uint16_t sp)
 {
+	/* Dealing with situ if sp == 0, avoding SIGFPE, division by zero */
+	if( 0 == sp ) return;
+
 	hvl_samples_per_row = hvlRate * 256 / (50 * sp);
 
 	/* pause can cause slower than MAXIMUM_SLOW_DOWN, so we floor the value at that */
@@ -478,6 +481,9 @@ static void hvlSetSpeed (uint16_t sp)
 
 static void hvlSetPitch (uint16_t sp)
 {
+	/* Dealing with situ if sp == 0, avoding SIGFPE, division by zero */
+	if ( 0 == sp ) return;
+
 	ht->ht_Frequency = hvlRate * 256 / sp;
 	ht->ht_FreqF = (double)hvlRate * 256 / sp;
 }
