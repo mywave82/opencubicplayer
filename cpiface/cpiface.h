@@ -25,6 +25,9 @@ struct ocpfilehandle_t;
 struct ringbufferAPI_t;
 struct mcpAPI_t;
 struct drawHelperAPI_t;
+struct notedotsdata;
+struct insdisplaystruct;
+struct cpitrakdisplaystruct;
 
 struct cpifaceplayerstruct
 {
@@ -59,9 +62,17 @@ struct cpifaceSessionAPI_t
 	uint_fast16_t PhysicalChannelCount; /* number of physical audio channels. Sometimes a format uses shadow channels for effects or smooth transitions. Can be used by scope viewers. Initialized by devw to the former value named mcpNChan */
 	int (*GetLChanSample)(struct cpifaceSessionAPI_t *cpifacesession, unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt); /* Get sample data for a given logical channel, used by visualizers */
 	int (*GetPChanSample)(struct cpifaceSessionAPI_t *cpifacesession, unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt); /* Get sample data for a given physical channel, used by visualizers */
+
+	/* playback plugin provides callbacks during setup for channel, instrument, dots, message and track visualizers */
+	void (*UseChannels) (struct cpifaceSessionAPI_t *cpifaceSession, void (*Display)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i));
+	void (*UseDots) (int (*get)(struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *, int));
+	void (*UseInstruments) (struct cpifaceSessionAPI_t *cpifaceSession, struct insdisplaystruct *x);
+	void (*UseMessage) (char **msg);
+	void (*TrackSetup)  (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpitrakdisplaystruct *c, int npat);
+	void (*TrackSetup2) (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpitrakdisplaystruct *c, int npat, int tracks);
+
 	void (*mcpSet)(int ch, int opt, int val); /* Filled in by devw or playback plugin */
 	int (*mcpGet)(int ch, int opt); /* Filled in by devw or playback plugin */
-
 
 	/* Callbacks and status from cpiface to plugin */
 	uint8_t MuteChannel[MAXLCHAN]; /* Reflects the status of channel muting used by channel visualizers. Should be controlled by the playback plugin */

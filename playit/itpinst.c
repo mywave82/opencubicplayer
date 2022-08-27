@@ -348,5 +348,5 @@ void __attribute__ ((visibility ("internal"))) itpInstSetup (struct cpifaceSessi
 	plInsDisplay.Display=itDisplayIns;
 	plInsDisplay.Done=Done;
 	itpInstClear (cpifaceSession);
-	plUseInstruments (cpifaceSession, &plInsDisplay);
+	cpifaceSession->UseInstruments (cpifaceSession, &plInsDisplay);
 }

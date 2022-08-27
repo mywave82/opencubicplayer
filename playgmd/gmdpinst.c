@@ -326,5 +326,5 @@ void __attribute__ ((visibility ("internal"))) gmdInstSetup (struct cpifaceSessi
 	gmdInstClear (cpifaceSession);
 	plInsDisplay.height=instnum;
 	plInsDisplay.bigheight=biginstlen;
-	plUseInstruments (cpifaceSession, &plInsDisplay);
+	cpifaceSession->UseInstruments (cpifaceSession, &plInsDisplay);
 }

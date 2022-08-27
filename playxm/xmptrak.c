@@ -465,5 +465,5 @@ void __attribute__ ((visibility ("internal"))) xmTrkSetup (struct cpifaceSession
 	plPatterns=mod->patterns;
 	plOrders=mod->orders;
 	plPatLens=mod->patlens;
-	cpiTrkSetup (cpifaceSession, &xmtrakdisplay, mod->nord);
+	cpifaceSession->TrackSetup (cpifaceSession, &xmtrakdisplay, mod->nord);
 }

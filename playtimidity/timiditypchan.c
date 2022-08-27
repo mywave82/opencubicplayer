@@ -211,6 +211,5 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 
 void __attribute__ ((visibility ("internal"))) timidityChanSetup (struct cpifaceSessionAPI_t *cpifaceSession/*const struct midifile *mid*/)
 {
-	/*plChanMInstr=mid->instruments; TODO ?*/
-	plUseChannels (cpifaceSession, drawchannel);
+	cpifaceSession->UseChannels (cpifaceSession, drawchannel);
 }

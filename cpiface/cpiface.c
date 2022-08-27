@@ -2198,6 +2198,13 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.PhysicalChannelCount = 0;
 	cpifaceSessionAPI.Public.DrawGStrings = 0;
 
+	cpifaceSessionAPI.Public.UseChannels = plUseChannels;
+	cpifaceSessionAPI.Public.UseDots = plUseDots;
+	cpifaceSessionAPI.Public.UseInstruments = plUseInstruments;
+	cpifaceSessionAPI.Public.UseMessage = plUseMessage;
+	cpifaceSessionAPI.Public.TrackSetup = cpiTrkSetup;
+	cpifaceSessionAPI.Public.TrackSetup2 = cpiTrkSetup2;
+
 	cpifaceSessionAPI.Public.SetMuteChannel = 0;
 	bzero (cpifaceSessionAPI.Public.MuteChannel, sizeof(cpifaceSessionAPI.Public.MuteChannel));
 

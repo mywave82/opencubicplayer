@@ -508,7 +508,7 @@ static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	cpifaceSession->LogicalChannelCount = 5;
 	cpifaceSession->PhysicalChannelCount = 5;
 
-	plUseChannels (cpifaceSession, drawchannel);
+	cpifaceSession->UseChannels (cpifaceSession, drawchannel);
 	cpifaceSession->SetMuteChannel = ymMute;
 
 	return 0;

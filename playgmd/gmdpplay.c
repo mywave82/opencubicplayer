@@ -354,9 +354,11 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	cpifaceSession->LogicalChannelCount = mod.channum;
 
-	plUseDots(gmdGetDots);
+	cpifaceSession->UseDots(gmdGetDots);
 	if (mod.message)
-		plUseMessage(mod.message);
+	{
+		cpifaceSession->UseMessage(mod.message);
+	}
 	gmdInstSetup (cpifaceSession, mod.instruments, mod.instnum, mod.modsamples, mod.modsampnum, mod.samples, mod.sampnum,
 			( (info->modtype.integer.i==MODULETYPE("S3M")) || (info->modtype.integer.i==MODULETYPE("PTM")) )
 				?

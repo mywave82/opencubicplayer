@@ -479,5 +479,5 @@ void __attribute__ ((visibility ("internal"))) gmdTrkSetup(struct cpifaceSession
 	plPatterns=mod->patterns;
 	plOrders=mod->orders;
 	plTracks=mod->tracks;
-	cpiTrkSetup (cpifaceSession, &gmdptrkdisplay, mod->ordnum);
+	cpifaceSession->TrackSetup (cpifaceSession, &gmdptrkdisplay, mod->ordnum);
 }

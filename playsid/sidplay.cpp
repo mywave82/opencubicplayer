@@ -956,7 +956,7 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 			msg[i++]=mySidTuneInfo->commentString(j);
 		if(i<msgLen)
 			msg[i++]=mySidTuneInfo->formatString();
-		plUseMessage((char **)msg);
+		cpifaceSession->UseMessage((char **)msg);
 	}
 
 	cpifaceSession->mcpSet = sidSet;

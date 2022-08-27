@@ -157,5 +157,5 @@ void __attribute__ ((visibility ("internal"))) hvlInstSetup (struct cpifaceSessi
 	hvlInstClear (cpifaceSession);
 	plInsDisplay.height=ht->ht_InstrumentNr;
 	plInsDisplay.bigheight=ht->ht_InstrumentNr;
-	plUseInstruments (cpifaceSession, &plInsDisplay);
+	cpifaceSession->UseInstruments (cpifaceSession, &plInsDisplay);
 }

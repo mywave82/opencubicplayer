@@ -195,7 +195,7 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 	cpifaceSession->IsEnd = timidityLooped;
 	cpifaceSession->ProcessKey = timidityProcessKey;
 	cpifaceSession->DrawGStrings = timidityDrawGStrings;
-	plUseDots(timidityGetDots);
+	cpifaceSession->UseDots(timidityGetDots);
 
 	cpifaceSession->LogicalChannelCount = 16;
 	cpifaceSession->SetMuteChannel = timidityMute;

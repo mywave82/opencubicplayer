@@ -456,7 +456,7 @@ static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	cpifaceSession->LogicalChannelCount = sidNumberOfChips() * 3;
 	cpifaceSession->PhysicalChannelCount = sidNumberOfChips() * 4;
-	plUseChannels (cpifaceSession, drawchannel);
+	cpifaceSession->UseChannels (cpifaceSession, drawchannel);
 	cpifaceSession->SetMuteChannel = sidMute;
 
 	cpifaceSession->IsEnd = sidLooped;

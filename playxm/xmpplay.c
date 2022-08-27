@@ -614,9 +614,9 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	cpifaceSession->LogicalChannelCount = mod.nchan;
 
-	plUseDots(xmpGetDots);
+	cpifaceSession->UseDots(xmpGetDots);
 
-	plUseChannels (cpifaceSession, drawchannel);
+	cpifaceSession->UseChannels (cpifaceSession, drawchannel);
 
 	xmpInstSetup (cpifaceSession, mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, mod.nsampi, 0, xmpMarkInsSamp);
 	xmTrkSetup (cpifaceSession, &mod);

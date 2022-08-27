@@ -616,6 +616,6 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 
 void __attribute__ ((visibility ("internal"))) hvlChanSetup (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	plUseChannels (cpifaceSession, drawchannel);
+	cpifaceSession->UseChannels (cpifaceSession, drawchannel);
 }
 

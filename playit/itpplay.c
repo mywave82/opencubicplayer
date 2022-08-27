@@ -600,12 +600,14 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->SetMuteChannel = itpMute;
 	cpifaceSession->GetLChanSample = itpGetLChanSample;
 	cpifaceSession->LogicalChannelCount = mod.nchan;
-	plUseDots(itpGetDots);
-	plUseChannels (cpifaceSession, drawchannel);
+	cpifaceSession->UseDots(itpGetDots);
+	cpifaceSession->UseChannels (cpifaceSession, drawchannel);
 	itpInstSetup (cpifaceSession, mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, /*mod.nsampi,*/ 0, itpMarkInsSamp);
 	itTrkSetup (cpifaceSession, &mod);
 	if (mod.message)
-		plUseMessage(mod.message);
+	{
+		cpifaceSession->UseMessage(mod.message);
+	}
 
 	cpifaceSession->GetPChanSample = cpifaceSession->mcpGetChanSample;
 

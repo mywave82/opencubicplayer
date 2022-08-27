@@ -461,7 +461,7 @@ static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	cpifaceSession->LogicalChannelCount = 18;
 	cpifaceSession->PhysicalChannelCount = 18;
-	plUseChannels (cpifaceSession, drawchannel);
+	cpifaceSession->UseChannels (cpifaceSession, drawchannel);
 	cpifaceSession->SetMuteChannel = oplMute;
 
 	oplpGetGlobInfo(globinfo);

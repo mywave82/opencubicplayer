@@ -330,6 +330,6 @@ void __attribute__ ((visibility ("internal"))) xmpInstSetup(struct cpifaceSessio
 		plInsDisplay.Display=xmpDisplayIns;
 		plInsDisplay.Done=Done;
 		xmpInstClear (cpifaceSession);
-		plUseInstruments (cpifaceSession, &plInsDisplay);
+		cpifaceSession->UseInstruments (cpifaceSession, &plInsDisplay);
 	}
 }

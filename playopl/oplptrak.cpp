@@ -494,7 +494,7 @@ void __attribute__ ((visibility ("internal"))) oplTrkSetup (struct cpifaceSessio
 	int plOrders=trkP->getorders();
 	if (plOrders && trkP->getrows())
 	{
-		cpiTrkSetup2 (cpifaceSession, &oplptrkdisplay, plOrders, cacheChannels); /* the tracker tracks does not map 1:1 to physical channels, usually 1:2 */
+		cpifaceSession->TrackSetup2 (cpifaceSession, &oplptrkdisplay, plOrders, cacheChannels); /* the tracker tracks does not map 1:1 to physical channels, usually 1:2 */
 	}
 }
 

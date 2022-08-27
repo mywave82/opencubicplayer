@@ -403,5 +403,5 @@ void __attribute__ ((visibility ("internal"))) gmdChanSetup(struct cpifaceSessio
 {
 	plChanInstr=mod->instruments;
 	plChanModSamples=mod->modsamples;
-	plUseChannels (cpifaceSession, drawchannel);
+	cpifaceSession->UseChannels (cpifaceSession, drawchannel);
 }
