@@ -61,6 +61,8 @@
 #include "cpipic.h"
 #include "dev/mcp.h"
 #include "dev/ringbuffer.h"
+#include "filesel/dirdb.h"
+#include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
@@ -74,6 +76,35 @@
 #include <time.h>
 
 __attribute__ ((visibility ("internal"))) struct cpifaceSessionPrivate_t cpifaceSessionAPI;
+
+static void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t *cpifaceSession,
+                                              const uint64_t                 pos,
+                                              const uint64_t                 size, /* can be smaller than the file-size due to meta-data */
+                                              const char                     sizesuffix, /* 0 = "" (MIDI), 1 = KB */
+                                              const char                    *opt25,
+                                              const char                    *opt50,
+                                              const int_fast16_t             kbs,  /* kilo-bit-per-second */
+                                              const uint_fast16_t            seconds);
+
+static void mcpDrawGStringsSongXofY (struct cpifaceSessionAPI_t *cpifaceSession,
+                                     const int                      songX,
+                                     const int                      songY,
+                                     const uint_fast16_t            seconds);
+
+static void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t *cpifaceSession,
+                                    const int                      songX,
+                                    const int                      songY, /* 0 or smaller, disables this, else 2 digits.. */
+                                    const uint8_t                  rowX,
+                                    const uint8_t                  rowY, /* displayed as 2 hex digits */
+                                    const uint16_t                 orderX,
+                                    const uint16_t                 orderY, /* displayed as 1,2,3 or 4 hex digits, depending on this size */
+                                    const uint8_t                  speed, /* displayed as %3 (with no space prefix) decimal digits */
+                                    const uint8_t                  tempo, /* displayed as %3 decimal digits */
+                                    const int16_t                  gvol, /* -1 for disable, else 0x00..0xff */
+                                    const int                      gvol_slide_direction,
+                                    const uint8_t                  chanX,
+                                    const uint8_t                  chanY, /* set to zero to disable */
+                                    const uint_fast16_t            seconds);
 
 static struct mcpAPI_t mcpAPI =
 {
@@ -1581,18 +1612,14 @@ void GStrings_render (int lineno, int count, const struct GStringElement **Eleme
 	displayvoid (lineno, x, endspace);
 }
 
-void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t    *cpifaceSession,
-                                       const char                    *filename8_3,
-                                       const char                    *filename16_3,
-                                       const uint64_t                 pos,
-                                       const uint64_t                 size, /* can be smaller than the file-size due to meta-data */
-                                       const char                     sizesuffix, /* 0 = "" (MIDI), 1 = KB */
-                                       const char                    *opt25,
-                                       const char                    *opt50,
-                                       const int_fast16_t             kbs,  /* kilo-bit-per-second */
-                                       const uint_fast8_t             inpause,
-                                       const uint_fast16_t            seconds,
-                                       const struct moduleinfostruct *mdbdata
+static void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t    *cpifaceSession,
+                                              const uint64_t                 pos,
+                                              const uint64_t                 size, /* can be smaller than the file-size due to meta-data */
+                                              const char                     sizesuffix, /* 0 = "" (MIDI), 1 = KB */
+                                              const char                    *opt25,
+                                              const char                    *opt50,
+                                              const int_fast16_t             kbs,  /* kilo-bit-per-second */
+                                              const uint_fast16_t            seconds
 )
 {
 	const struct GStringElement *Elements1[7] = {&GString_pos, &GString_bitrate, &GString_title, &GString_comment, &GString_album, &GString_date, &GString_playtime};
@@ -1616,47 +1643,47 @@ void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t    *cpifaceSes
 	sizeinputb1[1] = 0;
 	sizeinputc1[1] = 0;
 
-	sizeinputa1[2] = mdbdata->title;
-	sizeinputb1[2] = (void *)(long)measurestr_utf8 (mdbdata->title, strlen (mdbdata->title));
+	sizeinputa1[2] = cpifaceSession->mdbdata.title;
+	sizeinputb1[2] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.title, strlen (cpifaceSession->mdbdata.title));
 	sizeinputc1[2] = 0;
 
-	sizeinputa1[3] = mdbdata->comment;
-	sizeinputb1[3] = (void *)(long)measurestr_utf8 (mdbdata->comment, strlen (mdbdata->comment));
+	sizeinputa1[3] = cpifaceSession->mdbdata.comment;
+	sizeinputb1[3] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.comment, strlen (cpifaceSession->mdbdata.comment));
 	sizeinputc1[3] = 0;
 
-	sizeinputa1[4] = mdbdata->album;
-	sizeinputb1[4] = (void *)(long)measurestr_utf8 (mdbdata->album, strlen (mdbdata->album));
+	sizeinputa1[4] = cpifaceSession->mdbdata.album;
+	sizeinputb1[4] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.album, strlen (cpifaceSession->mdbdata.album));
 	sizeinputc1[4] = 0;
 
-	sizeinputa1[5] = &mdbdata->date;
+	sizeinputa1[5] = &cpifaceSession->mdbdata.date;
 	sizeinputb1[5] = 0;
 	sizeinputc1[5] = 0;
 
-	sizeinputa1[6] = &mdbdata->playtime;
+	sizeinputa1[6] = &cpifaceSession->mdbdata.playtime;
 	sizeinputb1[6] = 0;
 	sizeinputc1[6] = 0;
 
-	sizeinputa2[0] = filename8_3;
-	sizeinputb2[0] = filename16_3;
+	sizeinputa2[0] = cpifaceSession->utf8_8_dot_3;
+	sizeinputb2[0] = cpifaceSession->utf8_16_dot_3;
 	sizeinputc2[0] = 0;
 
-	sizeinputa2[1] = mdbdata->composer;
-	sizeinputb2[1] = (void *)(long)measurestr_utf8 (mdbdata->composer, strlen (mdbdata->composer));
+	sizeinputa2[1] = cpifaceSession->mdbdata.composer;
+	sizeinputb2[1] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.composer, strlen (cpifaceSession->mdbdata.composer));
 	sizeinputc2[1] = 0;
 
-	sizeinputa2[2] = mdbdata->artist;
-	sizeinputb2[2] = (void *)(long)measurestr_utf8 (mdbdata->artist, strlen (mdbdata->artist));
+	sizeinputa2[2] = cpifaceSession->mdbdata.artist;
+	sizeinputb2[2] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.artist, strlen (cpifaceSession->mdbdata.artist));
 	sizeinputc2[2] = 0;
 
-	sizeinputa2[3] = mdbdata->style;
-	sizeinputb2[3] = (void *)(long)measurestr_utf8 (mdbdata->style, strlen (mdbdata->style));
+	sizeinputa2[3] = cpifaceSession->mdbdata.style;
+	sizeinputb2[3] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.style, strlen (cpifaceSession->mdbdata.style));
 	sizeinputc2[3] = 0;
 
 	sizeinputa2[4] = opt25;
 	sizeinputb2[4] = opt50;
 	sizeinputc2[4] = 0;
 
-	sizeinputa2[5] = &inpause;
+	sizeinputa2[5] = &cpifaceSession->InPause;
 	sizeinputb2[5] = &seconds;
 	sizeinputc2[5] = 0;
 
@@ -1664,14 +1691,11 @@ void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t    *cpifaceSes
 	GStrings_render (3, 6, Elements2, sizes2, sizeinputa2, sizeinputb2, sizeinputc2);
 }
 
-void mcpDrawGStringsSongXofY (struct cpifaceSessionAPI_t    *cpifaceSession,
-                              const char                    *filename8_3,
-                              const char                    *filename16_3,
-                              const int                      songX,
-                              const int                      songY,
-                              const uint_fast8_t             inpause,
-                              const uint_fast16_t            seconds,
-                              const struct moduleinfostruct *mdbdata)
+static void mcpDrawGStringsSongXofY (struct cpifaceSessionAPI_t    *cpifaceSession,
+                                     const int                      songX,
+                                     const int                      songY,
+                                     const uint_fast16_t            seconds
+)
 {
 	const struct GStringElement *Elements1[6] = {&GString_song_x_y, &GString_title, &GString_comment, &GString_album, &GString_date, &GString_playtime};
 	const struct GStringElement *Elements2[5] = {&GString_filename, &GString_composer, &GString_artist, &GString_style, &GString_pausetime};
@@ -1690,43 +1714,43 @@ void mcpDrawGStringsSongXofY (struct cpifaceSessionAPI_t    *cpifaceSession,
 	sizeinputb1[0] = &songY;
 	sizeinputc1[0] = 0;
 
-	sizeinputa1[1] = mdbdata->title;
-	sizeinputb1[1] = (void *)(long)measurestr_utf8 (mdbdata->title, strlen (mdbdata->title));
+	sizeinputa1[1] = cpifaceSession->mdbdata.title;
+	sizeinputb1[1] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.title, strlen (cpifaceSession->mdbdata.title));
 	sizeinputc1[1] = 0;
 
-	sizeinputa1[2] = mdbdata->comment;
-	sizeinputb1[2] = (void *)(long)measurestr_utf8 (mdbdata->comment, strlen (mdbdata->comment));
+	sizeinputa1[2] = cpifaceSession->mdbdata.comment;
+	sizeinputb1[2] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.comment, strlen (cpifaceSession->mdbdata.comment));
 	sizeinputc1[2] = 0;
 
-	sizeinputa1[3] = mdbdata->album;
-	sizeinputb1[3] = (void *)(long)measurestr_utf8 (mdbdata->album, strlen (mdbdata->album));
+	sizeinputa1[3] = cpifaceSession->mdbdata.album;
+	sizeinputb1[3] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.album, strlen (cpifaceSession->mdbdata.album));
 	sizeinputc1[3] = 0;
 
-	sizeinputa1[4] = &mdbdata->date;
+	sizeinputa1[4] = &cpifaceSession->mdbdata.date;
 	sizeinputb1[4] = 0;
 	sizeinputc1[4] = 0;
 
-	sizeinputa1[5] = &mdbdata->playtime;
+	sizeinputa1[5] = &cpifaceSession->mdbdata.playtime;
 	sizeinputb1[5] = 0;
 	sizeinputc1[5] = 0;
 
-	sizeinputa2[0] = filename8_3;
-	sizeinputb2[0] = filename16_3;
+	sizeinputa2[0] = cpifaceSession->utf8_8_dot_3;
+	sizeinputb2[0] = cpifaceSession->utf8_16_dot_3;
 	sizeinputc2[0] = 0;
 
-	sizeinputa2[1] = mdbdata->composer;
-	sizeinputb2[1] = (void *)(long)measurestr_utf8 (mdbdata->composer, strlen (mdbdata->composer));
+	sizeinputa2[1] = cpifaceSession->mdbdata.composer;
+	sizeinputb2[1] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.composer, strlen (cpifaceSession->mdbdata.composer));
 	sizeinputc2[1] = 0;
 
-	sizeinputa2[2] = mdbdata->artist;
-	sizeinputb2[2] = (void *)(long)measurestr_utf8 (mdbdata->artist, strlen (mdbdata->artist));
+	sizeinputa2[2] = cpifaceSession->mdbdata.artist;
+	sizeinputb2[2] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.artist, strlen (cpifaceSession->mdbdata.artist));
 	sizeinputc2[2] = 0;
 
-	sizeinputa2[3] = mdbdata->style;
-	sizeinputb2[3] = (void *)(long)measurestr_utf8 (mdbdata->style, strlen (mdbdata->style));
+	sizeinputa2[3] = cpifaceSession->mdbdata.style;
+	sizeinputb2[3] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.style, strlen (cpifaceSession->mdbdata.style));
 	sizeinputc2[3] = 0;
 
-	sizeinputa2[4] = &inpause;
+	sizeinputa2[4] = &cpifaceSession->InPause;
 	sizeinputb2[4] = &seconds;
 	sizeinputc2[4] = 0;
 
@@ -1734,24 +1758,21 @@ void mcpDrawGStringsSongXofY (struct cpifaceSessionAPI_t    *cpifaceSession,
 	GStrings_render (3, 5, Elements2, sizes2, sizeinputa2, sizeinputb2, sizeinputc2);
 }
 
-void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t    *cpifaceSession,
-                             const char                    *filename8_3,
-                             const char                    *filename16_3,
-                             const int                      songX,
-                             const int                      songY, /* 0 or smaller, disables this, else 2 digits.. */
-                             const uint8_t                  rowX,
-                             const uint8_t                  rowY, /* displayed as 2 hex digits */
-                             const uint16_t                 orderX,
-                             const uint16_t                 orderY, /* displayed as 1,2,3 or 4 hex digits, depending on this size */
-                             const uint8_t                  speed, /* displayed as %3 (with no space prefix) decimal digits */
-                             const uint8_t                  tempo, /* displayed as %3 decimal digits */
-                             const int16_t                  gvol, /* -1 for disable, else 0x00..0xff */
-                             const int                      gvol_slide_direction,
-                             const uint8_t                  chanX,
-                             const uint8_t                  chanY, /* set to zero to disable */
-                             const uint_fast8_t             inpause,
-                             const uint_fast16_t            seconds,
-                             const struct moduleinfostruct *mdbdata)
+static void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t    *cpifaceSession,
+                                    const int                      songX,
+                                    const int                      songY, /* 0 or smaller, disables this, else 2 digits.. */
+                                    const uint8_t                  rowX,
+                                    const uint8_t                  rowY, /* displayed as 2 hex digits */
+                                    const uint16_t                 orderX,
+                                    const uint16_t                 orderY, /* displayed as 1,2,3 or 4 hex digits, depending on this size */
+                                    const uint8_t                  speed, /* displayed as %3 (with no space prefix) decimal digits */
+                                    const uint8_t                  tempo, /* displayed as %3 decimal digits */
+                                    const int16_t                  gvol, /* -1 for disable, else 0x00..0xff */
+                                    const int                      gvol_slide_direction,
+                                    const uint8_t                  chanX,
+                                    const uint8_t                  chanY, /* set to zero to disable */
+                                    const uint_fast16_t            seconds
+)
 {
 	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
 	const struct GStringElement *Elements1[10] = {&GString_song_x_y, &GString_row_x_y, &GString_order_x_y, &GString_speed, &GString_tempo, &GString_gvol, &GString_channels_x_y, &GString_comment, &GString_amplification, &GString_filter};
@@ -1808,8 +1829,8 @@ void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t    *cpifaceSession,
 	sizeinputb1[6] = &chanY;
 	sizeinputc1[6] = 0;
 
-	sizeinputa1[7] = mdbdata->comment;
-	sizeinputb1[7] = (void *)(long)measurestr_utf8 (mdbdata->comment, strlen (mdbdata->comment));
+	sizeinputa1[7] = cpifaceSession->mdbdata.comment;
+	sizeinputb1[7] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.comment, strlen (cpifaceSession->mdbdata.comment));
 	sizeinputc1[7] = 0;
 
 	sizeinputa1[8] = &amplification;
@@ -1820,27 +1841,27 @@ void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t    *cpifaceSession,
 	sizeinputb1[9] = 0;
 	sizeinputc1[9] = 0;
 
-	sizeinputa2[0] = filename8_3;
-	sizeinputb2[0] = filename16_3;
+	sizeinputa2[0] = cpifaceSession->utf8_8_dot_3;
+	sizeinputb2[0] = cpifaceSession->utf8_16_dot_3;
 	sizeinputc2[0] = 0;
 
-	sizeinputa2[1] = mdbdata->title;
-	sizeinputb2[1] = (void *)(long)measurestr_utf8 (mdbdata->title, strlen (mdbdata->title));
+	sizeinputa2[1] = cpifaceSession->mdbdata.title;
+	sizeinputb2[1] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.title, strlen (cpifaceSession->mdbdata.title));
 	sizeinputc2[1] = 0;
 
-	sizeinputa2[2] = mdbdata->composer;
-	sizeinputb2[2] = (void *)(long)measurestr_utf8 (mdbdata->composer, strlen (mdbdata->composer));
+	sizeinputa2[2] = cpifaceSession->mdbdata.composer;
+	sizeinputb2[2] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.composer, strlen (cpifaceSession->mdbdata.composer));
 	sizeinputc2[2] = 0;
 
-	sizeinputa2[3] = mdbdata->artist;
-	sizeinputb2[3] = (void *)(long)measurestr_utf8 (mdbdata->artist, strlen (mdbdata->artist));
+	sizeinputa2[3] = cpifaceSession->mdbdata.artist;
+	sizeinputb2[3] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.artist, strlen (cpifaceSession->mdbdata.artist));
 	sizeinputc2[3] = 0;
 
-	sizeinputa2[4] = mdbdata->style;
-	sizeinputb2[4] = (void *)(long)measurestr_utf8 (mdbdata->style, strlen (mdbdata->style));
+	sizeinputa2[4] = cpifaceSession->mdbdata.style;
+	sizeinputb2[4] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.style, strlen (cpifaceSession->mdbdata.style));
 	sizeinputc2[4] = 0;
 
-	sizeinputa2[5] = &inpause;
+	sizeinputa2[5] = &cpifaceSession->InPause;
 	sizeinputb2[5] = &seconds;
 	sizeinputc2[5] = 0;
 
@@ -2159,10 +2180,16 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	struct cpimoderegstruct *mod;
 	void *fp;
 	int retval;
+	const char *filename;
 
 	cpifaceSessionAPI.Public.ringbufferAPI = &ringbufferAPI;
 	cpifaceSessionAPI.Public.mcpAPI = &mcpAPI;
 	cpifaceSessionAPI.Public.drawHelperAPI = &drawHelperAPI;
+
+	dirdbGetName_internalstr (fi->dirdb_ref, &filename);
+	utf8_XdotY_name ( 8, 3, cpifaceSessionAPI.Public.utf8_8_dot_3 , filename);
+	utf8_XdotY_name (16, 3, cpifaceSessionAPI.Public.utf8_16_dot_3, filename);
+	cpifaceSessionAPI.Public.mdbdata = *info;
 
 	cpifaceSessionAPI.Public.GetRealMasterVolume = 0;
 	cpifaceSessionAPI.Public.GetMasterSample = 0;

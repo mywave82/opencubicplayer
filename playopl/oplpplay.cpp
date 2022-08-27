@@ -50,10 +50,6 @@ static time_t pausetime;      /* when did the pause start (fully paused) */
 static time_t pausefadestart; /* when did the pause fade start, used to make the slide */
 static int8_t pausefadedirection; /* 0 = no slide, +1 = sliding from pause to normal, -1 = sliding from normal to pause */
 
-static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
-static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
-static struct moduleinfostruct mdbdata;
-
 static oplTuneInfo globinfo;
 static oplChanInfo ci;
 
@@ -195,13 +191,9 @@ static void oplDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 	cpifaceSession->drawHelperAPI->GStringsSongXofY
 	(
 		cpifaceSession,
-		utf8_8_dot_3,
-		utf8_16_dot_3,
 		globinfo.currentSong,
 		globinfo.songs,
-		cpifaceSession->InPause,
-		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000),
-		&mdbdata
+		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000)
 	);
 }
 
@@ -429,7 +421,6 @@ static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	uint8_t *buffer = (uint8_t *)malloc (buffersize);
 	size_t bufferfill = 0;
 
-	mdbdata = *info;
 	dirdbGetName_internalstr (file->dirdb_ref, &filename);
 	{
 		int res;
@@ -453,8 +444,6 @@ static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 		}
 	}
 	fprintf(stderr, "OPL/AdPlug: loading %s\n", filename);
-	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
-	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	cpifaceSession->IsEnd = oplLooped;
 	cpifaceSession->ProcessKey = oplProcessKey;

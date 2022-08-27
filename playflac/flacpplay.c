@@ -43,10 +43,6 @@ static time_t pausetime;      /* when did the pause start (fully paused) */
 static time_t pausefadestart; /* when did the pause fade start, used to make the slide */
 static int8_t pausefadedirection; /* 0 = no slide, +1 = sliding from pause to normal, -1 = sliding from normal to pause */
 
-static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
-static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
-static struct moduleinfostruct mdbdata;
-
 static void togglepausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (pausefadedirection)
@@ -107,17 +103,13 @@ static void flacDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 	cpifaceSession->drawHelperAPI->GStringsFixedLengthStream
 	(
 		cpifaceSession,
-		utf8_8_dot_3,
-		utf8_16_dot_3,
 		inf.pos, // this is in samples :-(
 		inf.len, // this is in samples :-(
 		1, /* KB */
 		inf.opt25,
 		inf.opt50,
 		inf.bitrate / 1000,
-		cpifaceSession->InPause,
-		cpifaceSession->InPause?((pausetime - starttime) / 1000):((clock_ms() - starttime) / 1000),
-		&mdbdata
+		cpifaceSession->InPause?((pausetime - starttime) / 1000):((clock_ms() - starttime) / 1000)
 	);
 }
 
@@ -220,11 +212,8 @@ static int flacOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 	if (!flacf)
 		return -1;
 
-	mdbdata = *info;
 	dirdbGetName_internalstr (flacf->dirdb_ref, &filename);
 	fprintf(stderr, "preloading %s...\n", filename);
-	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
-	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	cpifaceSession->IsEnd = flacLooped;
 	cpifaceSession->ProcessKey = flacProcessKey;

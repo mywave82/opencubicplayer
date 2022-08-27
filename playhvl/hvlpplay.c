@@ -48,10 +48,6 @@ static time_t pausetime;      /* when did the pause start (fully paused) */
 static time_t pausefadestart; /* when did the pause fade start, used to make the slide */
 static int8_t pausefadedirection; /* 0 = no slide, +1 = sliding from pause to normal, -1 = sliding from normal to pause */
 
-static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
-static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
-static struct moduleinfostruct mdbdata;
-
 static void togglepausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (pausefadedirection)
@@ -115,8 +111,6 @@ static void hvlDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 	cpifaceSession->drawHelperAPI->GStringsTracked
 	(
 		cpifaceSession,
-		utf8_8_dot_3,
-		utf8_16_dot_3,
 		subsong,    /* song X */
 		subsongs,   /* song Y */
 		row,        /* row X */
@@ -129,9 +123,7 @@ static void hvlDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		0,          /* gvol slide direction */
 		0,          /* chan X */
 		0,          /* chan Y */
-		cpifaceSession->InPause,
-		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000),
-		&mdbdata
+		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000)
 	);
 #warning we are missing the current tune title
 //writestring(buf[2], 22, 0x0F, current_hvl_tune?current_hvl_tune->ht_Name:"", 44);
@@ -210,12 +202,8 @@ static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	filelen = file->filesize (file);
 
-	mdbdata = *info;
-
 	dirdbGetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s (%"PRIu64" bytes)...\n", filename, filelen);
-	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
-	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	if (filelen < 14)
 	{

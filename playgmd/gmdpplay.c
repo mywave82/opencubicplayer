@@ -56,10 +56,6 @@ static time_t pausetime;      /* when did the pause start (fully paused) */
 static time_t pausefadestart; /* when did the pause fade start, used to make the slide */
 static int8_t pausefadedirection; /* 0 = no slide, +1 = sliding from pause to normal, -1 = sliding from normal to pause */
 
-static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
-static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
-static struct moduleinfostruct mdbdata;
-
 __attribute__ ((visibility ("internal"))) struct gmdmodule mod;
 static char patlock;
 
@@ -188,8 +184,6 @@ static void gmdDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 	cpifaceSession->drawHelperAPI->GStringsTracked
 	(
 		cpifaceSession,
-		utf8_8_dot_3,
-		utf8_16_dot_3,
 		0,          /* song X */
 		0,          /* song Y */
 		gi.currow,  /* row X */
@@ -202,9 +196,7 @@ static void gmdDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		(gi.globvolslide==fxGVSUp)?1:(gi.globvolslide==fxGVSDown)?-1:0,
 		0,          /* chan X */
 		0,          /* chan Y */
-		cpifaceSession->InPause,
-		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000),
-		&mdbdata
+		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000)
 	);
 }
 
@@ -315,13 +307,9 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	patlock=0;
 
-	mdbdata = *info;
-
 	i = file->filesize (file);
 	dirdbGetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s... (%uk)\n", filename, (unsigned int)(i>>10));
-	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
-	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	retval=mpLoadGen(cpifaceSession, &mod, file, info->modtype, ldlink, loader);
 

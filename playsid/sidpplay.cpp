@@ -60,10 +60,6 @@ static time_t pausetime;      /* when did the pause start (fully paused) */
 static time_t pausefadestart; /* when did the pause fade start, used to make the slide */
 static int8_t pausefadedirection; /* 0 = no slide, +1 = sliding from pause to normal, -1 = sliding from normal to pause */
 
-static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
-static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
-static struct moduleinfostruct mdbdata;
-
 static void togglepausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (pausefadedirection)
@@ -119,13 +115,9 @@ static void sidDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 	cpifaceSession->drawHelperAPI->GStringsSongXofY
 	(
 		cpifaceSession,
-		utf8_8_dot_3,
-		utf8_16_dot_3,
 		sidGetSong(),
 		sidGetSongs(),
-		cpifaceSession->InPause,
-		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000),
-		&mdbdata
+		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000)
 	);
 }
 
@@ -456,11 +448,8 @@ static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	if (!sidf)
 		return -1;
 
-	mdbdata = *info;
 	dirdbGetName_internalstr (sidf->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s...\n", filename);
-	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
-	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	if (!sidOpenPlayer(sidf, cpifaceSession))
 		return -1;

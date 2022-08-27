@@ -50,10 +50,6 @@ static time_t pausetime;      /* when did the pause start (fully paused) */
 static time_t pausefadestart; /* when did the pause fade start, used to make the slide */
 static int8_t pausefadedirection; /* 0 = no slide, +1 = sliding from pause to normal, -1 = sliding from normal to pause */
 
-static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
-static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
-static struct moduleinfostruct mdbdata;
-
 static void togglepausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (pausefadedirection)
@@ -191,17 +187,13 @@ static void ymDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 	cpifaceSession->drawHelperAPI->GStringsFixedLengthStream
 	(
 		cpifaceSession,
-		utf8_8_dot_3,
-		utf8_16_dot_3,
 		ymMusicGetPos(pMusic),
 		globinfo.musicTimeInMs,
 		0, /* miliseconds... */
 		globinfo.pSongType?globinfo.pSongType:"", /* opt25 */
 		globinfo.pSongType?globinfo.pSongType:"", /* opt50 */
 		-1,
-		cpifaceSession->InPause,
-		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000),
-		&mdbdata
+		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000)
 	);
 	/* globinfo.pSongAuthor should be in mdbdata
 	 * globinfo.pSongComment should be in mdbdata
@@ -499,11 +491,8 @@ static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 {
 	const char *filename;
 
-	mdbdata = *info;
 	dirdbGetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "preloading %s...\n", filename);
-	utf8_XdotY_name ( 8, 3, utf8_8_dot_3 , filename);
-	utf8_XdotY_name (16, 3, utf8_16_dot_3, filename);
 
 	cpifaceSession->IsEnd = ymLooped;
 	cpifaceSession->ProcessKey = ymProcessKey;

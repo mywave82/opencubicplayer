@@ -269,6 +269,8 @@ cpiface.o: cpiface.c \
 	cpipic.h \
 	../dev/mcp.h \
 	../dev/ringbuffer.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
