@@ -842,8 +842,8 @@ void __attribute__ ((visibility ("internal"))) mpegPause(uint8_t p)
 }
 static void mpegSetSpeed (uint16_t sp)
 {
-	if (sp<32)
-		sp=32;
+	if (sp < 4)
+		sp = 4;
 	mpegbufrate=imuldiv(256*sp, mpegrate, mpegRate);
 }
 static void mpegSetVolume (void)

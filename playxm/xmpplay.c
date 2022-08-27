@@ -54,8 +54,12 @@
 #include "xmplay.h"
 
 __attribute__ ((visibility ("internal"))) struct xmodule mod;
-static time_t starttime;
-static time_t pausetime;
+
+static time_t starttime;      /* when did the song start, if paused, this is slided if unpaused */
+static time_t pausetime;      /* when did the pause start (fully paused) */
+static time_t pausefadestart; /* when did the pause fade start, used to make the slide */
+static int8_t pausefadedirection; /* 0 = no slide, +1 = sliding from pause to normal, -1 = sliding from normal to pause */
+
 static char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
 static char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
 static struct moduleinfostruct mdbdata;
@@ -63,63 +67,53 @@ static struct moduleinfostruct mdbdata;
 static struct xmpinstrument *insts;
 static struct xmpsample *samps;
 
-static time_t pausefadestart;
-static uint8_t pausefaderelspeed;
-static int8_t pausefadedirect;
-
-static void startpausefade (struct cpifaceSessionAPI_t *cpifaceSession)
+static void togglepausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if (cpifaceSession->InPause)
-	{
-		starttime=starttime+dos_clock()-pausetime;
-	}
-
-	if (pausefadedirect)
-	{
-		if (pausefadedirect<0)
-		{
-			cpifaceSession->InPause = 1;
-		}
-		pausefadestart=2*dos_clock()-DOS_CLK_TCK-pausefadestart;
-	} else
-		pausefadestart=dos_clock();
-
-	if (cpifaceSession->InPause)
-	{
+	if (pausefadedirection)
+	{ /* we are already in a pause-fade, reset the fade-start point */
+		pausefadestart = clock_ms() - 1000 + (clock_ms() - pausefadestart);
+		pausefadedirection *= -1; /* inverse the direction */
+	} else if (cpifaceSession->InPause)
+	{ /* we are in full pause already */
+		pausefadestart = clock_ms();
+		starttime = starttime + pausefadestart - pausetime; /* we are unpausing, so push starttime the amount we have been paused */
 		cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = 0);
-		pausefadedirect=1;
-	} else
-		pausefadedirect=-1;
+		pausefadedirection = 1;
+	} else { /* we were not in pause, start the pause fade */
+		pausefadestart = clock_ms();
+		pausefadedirection = -1;
+	}
 }
 
 static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int16_t i;
-	if (pausefadedirect>0)
-	{
-		i=(dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
-		if (i<0)
-			i=0;
-		if (i>=64)
+	if (pausefadedirection > 0)
+	{ /* unpause fade */
+		i = ((int_fast32_t)(clock_ms() - pausefadestart)) * 64 / 1000;
+		if (i < 1)
 		{
-			i=64;
-			pausefadedirect=0;
+			i = 1;
 		}
-	} else {
-		i=64-(dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
-		if (i>=64)
-			i=64;
-		if (i<=0)
+		if (i >= 64)
 		{
-			i=0;
-			pausefadedirect=0;
-			pausetime=dos_clock();
+			i = 64;
+			pausefadedirection = 0; /* we reached the end of the slide */
+		}
+	} else { /* pause fade */
+		i = 64 - ((int_fast32_t)(clock_ms() - pausefadestart)) * 64 / 1000;
+		if (i >= 64)
+		{
+			i = 64;
+		}
+		if (i <= 0)
+		{ /* we reached the end of the slide, finish the pause command */
+			pausefadedirection = 0;
+			pausetime = clock_ms();
 			cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = 1);
-			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
 			return;
 		}
 	}
-	pausefaderelspeed=i;
 	cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
@@ -144,26 +138,30 @@ static int xmpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			cpiKeyHelp(KEY_CTRL_HOME, "Jump to start of track");
 			return 0;
 		case 'p': case 'P':
-			startpausefade (cpifaceSession);
+			togglepausefade (cpifaceSession);
 			break;
 		case KEY_CTRL_P:
-			pausefadedirect=0;
+			/* cancel any pause-fade that might be in progress */
+			pausefadedirection = 0;
+			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
+
 			if (cpifaceSession->InPause)
 			{
-				starttime=starttime+dos_clock()-pausetime;
+				starttime = starttime + clock_ms() - pausetime; /* we are unpausing, so push starttime for the amount we have been paused */
 			} else {
-				pausetime=dos_clock();
+				pausetime = clock_ms();
 			}
-			cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = !cpifaceSession->InPause);
+			cpifaceSession->InPause = !cpifaceSession->InPause;
+			cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause);
 			break;
 		case KEY_CTRL_HOME:
 			xmpInstClear (cpifaceSession);
 			xmpSetPos (cpifaceSession, 0, 0);
 			if (cpifaceSession->InPause)
 			{
-				starttime=pausetime;
+				starttime = pausetime;
 			} else {
-				starttime=dos_clock();
+				starttime = clock_ms();
 			}
 			break;
 		case '<':
@@ -198,7 +196,7 @@ static int xmpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 
 static int xmpLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
-	if (pausefadedirect)
+	if (pausefadedirection)
 	{
 		dopausefade (cpifaceSession);
 	}
@@ -235,7 +233,7 @@ static void xmpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		0,          /* chan X */
 		0,          /* chan Y */
 		cpifaceSession->InPause,
-		cpifaceSession->InPause ? ((pausetime-starttime)/DOS_CLK_TCK) : ((dos_clock()-starttime)/DOS_CLK_TCK),
+		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000),
 		&mdbdata
 	);
 }
@@ -635,10 +633,10 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	xmpInstSetup (cpifaceSession, mod.instruments, mod.ninst, mod.samples, mod.nsamp, mod.sampleinfos, mod.nsampi, 0, xmpMarkInsSamp);
 	xmTrkSetup (cpifaceSession, &mod);
 
-	starttime=dos_clock();
+	starttime = clock_ms();
 	cpifaceSession->InPause = 0;
 	cpifaceSession->mcpSet(-1, mcpMasterPause, 0);
-	pausefadedirect=0;
+	pausefadedirection = 0;
 
 	return errOk;
 }

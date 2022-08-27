@@ -2178,7 +2178,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 
 	cpiModes=0;
 
-	plEscTick=0;
+	plEscTick = 0;
 
 	cpifaceSessionAPI.Public.IsEnd = 0;
 	cpifaceSessionAPI.Public.GetLChanSample = 0;
@@ -2406,8 +2406,8 @@ static interfaceReturnEnum plmpDrawScreen(void)
 	for (mod=cpiModes; mod; mod=mod->next)
 		mod->Event (&cpifaceSessionAPI.Public, cpievKeepalive);
 
-	if (plEscTick&&(dos_clock()>(time_t)(plEscTick+2*DOS_CLK_TCK)))
-		plEscTick=0;
+	if (plEscTick && (clock_ms() > (time_t)(plEscTick+2000) ) ) /* 2000 ms */
+		plEscTick = 0;
 
 	if (plInKeyboardHelp)
 	{
@@ -2458,7 +2458,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 			case KEY_EXIT:
 				return interfaceReturnQuit;
 			case KEY_ESC:
-				plEscTick=dos_clock();
+				plEscTick = clock_ms();
 				break;
 			case _KEY_ENTER:
 				return interfaceReturnNextManuel;

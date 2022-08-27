@@ -961,8 +961,8 @@ static interfaceReturnEnum sidConfigRun (void)
 				lastpress = 0;
 				repeat = 1;
 			} else {
-				uint32_t newpress = dos_clock();
-				if ((newpress-lastpress) > 0x2000) /* 125 ms */
+				uint32_t newpress = clock_ms();
+				if ((newpress-lastpress) > 250) /* 125 ms */
 				{
 					repeat = 1;
 				} else {

@@ -1539,11 +1539,15 @@ static void timiditySet (int ch, int opt, int val)
 	switch (opt)
 	{
 		case mcpMasterSpeed:
+			if (val < 4)
+				val = 4;
 			dspeed = val * 0x100;
 			speed = (float)dspeed * ((float)0x10000 / gmibufrate);
 			PRINT ("#1  dspeed=0x%08x gmibufrate=0x%08x speed=0x%08x\n", dspeed, gmibufrate, speed);
 			break;
 		case mcpMasterPitch:
+			if (val < 4)
+				val = 4;
 			gmibufrate = val * 0x100;
 			speed = (float)dspeed * ((float)0x10000 / gmibufrate);
 			PRINT ("#2  dspeed=0x%08x gmibufrate=0x%08x speed=0x%08x\n", dspeed, gmibufrate, speed);

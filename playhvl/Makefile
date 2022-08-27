@@ -11,7 +11,7 @@ all: hvlptype.o playhvl$(LIB_SUFFIX) $(DUMPAHX)
 
 playhvl_so=loader.o player.o hvlpchan.o hvlpdots.o hvlpinst.o hvlpplay.o hvlplay.o hvlptrak.o
 playhvl$(LIB_SUFFIX): $(playhvl_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
+	$(CC) $(SHARED_FLAGS) -o $@ $^ $(MATH_LIBS)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX) dumpahx

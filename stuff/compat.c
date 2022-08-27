@@ -72,13 +72,6 @@
 #include <Threads.h>
 #endif
 
-time_t dos_clock(void)
-{
-	struct timeval t;
-	gettimeofday(&t, NULL);
-	return t.tv_sec*0x10000+t.tv_usec*1024/15625;
-}
-
 void getext_malloc(const char *src, char **ext)
 {
 	const char *ref1;

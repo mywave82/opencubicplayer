@@ -405,12 +405,9 @@ void __attribute__ ((visibility ("internal"))) cdIdle (struct cpifaceSessionAPI_
 
 static void cdSetSpeed (unsigned short sp)
 {
-
-	if (sp<32)
-		sp=32;
-
+	if (sp < 4)
+		sp = 4;
 	speed=sp;
-
 	cdbufrate=imuldiv(256*sp, 44100, cdRate);
 }
 
@@ -455,9 +452,9 @@ static int cdGet (int ch, int opt)
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) cdPause (void)
+void __attribute__ ((visibility ("internal"))) cdPause (int p)
 {
-	cda_inpause=1;
+	cda_inpause = p;
 }
 
 void __attribute__ ((visibility ("internal"))) cdClose (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -485,11 +482,6 @@ void __attribute__ ((visibility ("internal"))) cdClose (struct cpifaceSessionAPI
 		fh->unref (fh);
 		fh = 0;
 	}
-}
-
-void __attribute__ ((visibility ("internal"))) cdUnpause (void)
-{
-	cda_inpause=0;
 }
 
 void __attribute__ ((visibility ("internal"))) cdJump (struct cpifaceSessionAPI_t *cpifaceSession, unsigned long start)

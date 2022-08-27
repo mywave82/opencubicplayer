@@ -141,8 +141,8 @@ void __attribute__ ((visibility ("internal"))) ymMute (struct cpifaceSessionAPI_
 
 static void ymSetSpeed(uint16_t sp)
 {
-	if (sp<32)
-		sp=32;
+	if (sp < 4)
+		sp  = 4;
 	ymbufrate=256*sp;
 }
 

@@ -54,59 +54,54 @@ static int cdpViewSectors; /* view-option */
 static signed long newpos; /* skip to */
 static unsigned char setnewpos; /* and the fact we should skip */
 
-static time_t pausefadestart;
-static uint8_t pausefaderelspeed;
-static int8_t pausefadedirect;
+static time_t pausefadestart; /* when did the pause fade start, used to make the slide */
+static int8_t pausefadedirection; /* 0 = no slide, +1 = sliding from pause to normal, -1 = sliding from normal to pause */
 
-static void startpausefade (struct cpifaceSessionAPI_t *cpifaceSession)
+static void togglepausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if (pausefadedirect)
-	{
-		if (pausefadedirect<0)
-		{
-			cpifaceSession->InPause = 1;
-		}
-		pausefadestart=2*dos_clock()-DOS_CLK_TCK-pausefadestart;
-	} else
-		pausefadestart=dos_clock();
-
-	if (cpifaceSession->InPause)
-	{
-		cpifaceSession->InPause = 0;
-		cdUnpause ();
-		pausefadedirect=1;
-	} else
-		pausefadedirect=-1;
+	if (pausefadedirection)
+	{ /* we are already in a pause-fade, reset the fade-start point */
+		pausefadestart = clock_ms() - 1000 + (clock_ms() - pausefadestart);
+		pausefadedirection *= -1; /* inverse the direction */
+	} else if (cpifaceSession->InPause)
+	{ /* we are in full pause already */
+		pausefadestart = clock_ms();
+		cdPause (cpifaceSession->InPause = 0);
+		pausefadedirection = 1;
+	} else { /* we were not in pause, start the pause fade */
+		pausefadestart = clock_ms();
+		pausefadedirection = -1;
+	}
 }
 
 static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int16_t i;
-	if (pausefadedirect>0)
-	{
-		i=(dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
-		if (i<0)
-			i=0;
-		if (i>=64)
+	if (pausefadedirection > 0)
+	{ /* unpause fade */
+		i = ((int_fast32_t)(clock_ms() - pausefadestart)) * 64 / 1000;
+		if (i < 1)
 		{
-			i=64;
-			pausefadedirect=0;
+			i = 1;
 		}
-	} else {
-		i=64-(dos_clock()-pausefadestart)*64/DOS_CLK_TCK;
-		if (i>=64)
-			i=64;
-		if (i<=0)
+		if (i >= 64)
 		{
-			i=0;
-			pausefadedirect=0;
-			cpifaceSession->InPause = 1;
-			cdPause();
-			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
+			i = 64;
+			pausefadedirection = 0; /* we reached the end of the slide */
+		}
+	} else { /* pause fade */
+		i = 64 - ((int_fast32_t)(clock_ms() - pausefadestart)) * 64 / 1000;
+		if (i >= 64)
+		{
+			i = 64;
+		}
+		if (i <= 0)
+		{ /* we reached the end of the slide, finish the pause command */
+			pausefadedirection = 0;
+			cdPause (cpifaceSession->InPause = 1);
 			return;
 		}
 	}
-	pausefaderelspeed=i;
 	cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, i);
 }
 static char *gettimestr(unsigned long s, char *time)
@@ -311,15 +306,19 @@ static int cdaProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			}
 			return 0;
 		case 'p': case 'P':
-			startpausefade (cpifaceSession);
+			togglepausefade (cpifaceSession);
 			break;
 		case KEY_CTRL_P:
-			pausefadedirect=0;
-			cpifaceSession->InPause = !cpifaceSession->InPause;
+			/* cancel any pause-fade that might be in progress */
+			pausefadedirection = 0;
+			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
+
 			if (cpifaceSession->InPause)
-				cdPause();
-			else
-				cdUnpause();
+			{
+				cdPause (cpifaceSession->InPause = 0);
+			} else {
+				cdPause (cpifaceSession->InPause = 1);
+			}
 
 			break;
 		case 't':
@@ -444,7 +443,7 @@ static int cdaLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
 	struct cdStat stat;
 
-	if (pausefadedirect)
+	if (pausefadedirection)
 	{
 		dopausefade (cpifaceSession);
 	}
@@ -541,7 +540,7 @@ static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	if (cdOpen(start, stop - start, file, cpifaceSession))
 		return -1;
 
-	pausefadedirect=0;
+	pausefadedirection = 0;
 
 	return errOk;
 }

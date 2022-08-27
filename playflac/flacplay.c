@@ -845,8 +845,8 @@ void __attribute__ ((visibility ("internal"))) flacPause(int p)
 
 static void flacSetSpeed(uint16_t sp)
 {
-	if (sp<32)
-		sp=32;
+	if (sp < 4)
+		sp = 4;
 	flacbufrate=imuldiv(256*sp, flacrate, flacRate);
 }
 

@@ -756,8 +756,8 @@ void __attribute__ ((visibility ("internal"))) oggPause(uint8_t p)
 
 static void oggSetSpeed (uint16_t sp)
 {
-	if (sp<32)
-		sp=32;
+	if (sp < 4)
+		sp = 4;
 	oggbufrate=imuldiv(256*sp, oggrate, oggRate);
 }
 

@@ -706,7 +706,7 @@ static void devwMixSET(int ch, int opt, int val)
 			calcspeed();
 			break;
 		case mcpMasterPitch:
-			relpitch=val;
+			relpitch=(val<4)?4:val;
 			calcsteps();
 			break;
 		case mcpMasterFilter:

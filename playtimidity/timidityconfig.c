@@ -667,8 +667,8 @@ static interfaceReturnEnum timidityConfigRun (void)
 				lastpress = 0;
 				repeat = 1;
 			} else {
-				uint32_t newpress = dos_clock();
-				if ((newpress-lastpress) > 0x4000) /* 250 ms */
+				uint32_t newpress = clock_ms();
+				if ((newpress-lastpress) > 250) /* 250 ms */
 				{
 					repeat = 1;
 				} else {

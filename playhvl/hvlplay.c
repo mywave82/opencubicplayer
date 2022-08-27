@@ -224,6 +224,14 @@ void __attribute__ ((visibility ("internal"))) hvlIdler (struct cpifaceSessionAP
 		int16_t *src;
 		int16_t *dst;
 
+		/* limit the internal render buffer to 100ms */
+		cpifaceSession->ringbufferAPI->get_tailandprocessing_samples (hvl_buf_pos, &pos1, &length1, &pos2, &length2);
+		length1 += length2;
+		if (length1 >= hvlRate / 10)
+		{
+			break;
+		}
+
 		for (i=0; i < ROW_BUFFERS; i++)
 		{
 			if (hvl_statbuffer[i].in_use)
@@ -467,6 +475,8 @@ void __attribute__ ((visibility ("internal"))) hvlPause (uint8_t p)
 
 static void hvlSetSpeed (uint16_t sp)
 {
+	if (sp < 4)
+		sp = 4;
 	hvl_samples_per_row = hvlRate * 256 / (50 * sp);
 
 	/* pause can cause slower than MAXIMUM_SLOW_DOWN, so we floor the value at that */
@@ -478,6 +488,8 @@ static void hvlSetSpeed (uint16_t sp)
 
 static void hvlSetPitch (uint16_t sp)
 {
+	if (sp < 4)
+		sp = 4;
 	ht->ht_Frequency = hvlRate * 256 / sp;
 	ht->ht_FreqF = (double)hvlRate * 256 / sp;
 }
@@ -681,7 +693,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 	cpifaceSession->mcpSet = hvlSet;
 	cpifaceSession->mcpGet = hvlGet;
 
-	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
+	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP | mcpNormalizeCanSpeedPitchUnlock);
 
 	return ht;
 

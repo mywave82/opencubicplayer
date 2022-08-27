@@ -825,8 +825,8 @@ void __attribute__ ((visibility ("internal"))) ayIdle (struct cpifaceSessionAPI_
 
 static void aySetSpeed(uint16_t sp)
 {
-	if (sp<32)
-		sp=32;
+	if (sp < 4)
+		sp = 4;
 	aybufrate=256*sp;
 }
 

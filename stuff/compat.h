@@ -1,11 +1,10 @@
 #ifndef _COMPAT_H
 #define _COMPAT_H
 
+#include <time.h>
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
-
-#define DOS_CLK_TCK 0x10000
-
-extern time_t dos_clock(void);
+#endif
 
 void getext_malloc (const char *src, char **ext);
 extern int splitpath4_malloc(const char *src, char **drive, char **path, char **file, char **ext); /* returns non-zero on errors */
@@ -81,8 +80,6 @@ int stat(const char *filename, struct stat *st);
 #include <sys/stat.h>
 #endif /* HAVE_SYS_STAT_H*/
 
-#endif
-
 #ifndef S_ISDIR
 #define S_ISDIR(mode) (((mode)&0xF000) == 0x4000)
 #endif /* S_ISDIR */
@@ -98,3 +95,14 @@ extern size_t strlcat(char *dst, const char *src, size_t size);
 #endif
 
 extern void strreplace (char *dst, char old, char replacement);
+
+static inline uint64_t clock_ms(void)
+{
+	struct timespec ts;
+
+	clock_gettime (CLOCK_MONOTONIC, &ts);
+
+	return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+}
+
+#endif

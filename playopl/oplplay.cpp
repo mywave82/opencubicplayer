@@ -360,8 +360,8 @@ void __attribute__ ((visibility ("internal"))) oplPause(uint8_t p)
 
 static void oplSetSpeed(uint16_t sp)
 {
-	if (sp<32)
-		sp=32;
+	if (sp < 4)
+		sp = 4;
 	oplbufrate=256*sp;
 	_speed=sp;
 }
