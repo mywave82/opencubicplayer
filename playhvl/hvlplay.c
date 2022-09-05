@@ -606,7 +606,7 @@ int __attribute__ ((visibility ("internal"))) hvlGetChanSample (struct cpifaceSe
 			}
 			if (!length1)
 			{
-				memsetd(s, 0, len<<stereo);
+				bzero(s, (len<<stereo)<<2);
 				return !!hvl_muted[ch];
 			}
 		}

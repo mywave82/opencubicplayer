@@ -116,7 +116,7 @@ void writestring(uint16_t *buf, unsigned short ofs, unsigned char attr, const ch
 
 void writestringattr(uint16_t *buf, unsigned short ofs, const uint16_t *str, unsigned short len)
 {
-	memcpyb(buf+ofs, (void *)str, len*2);
+	memcpy (buf+ofs, (void *)str, len*2);
 }
 
 void generic_gdrawchar8(unsigned short x, unsigned short y, unsigned char c, unsigned char f, unsigned char b)

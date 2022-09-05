@@ -267,7 +267,7 @@ int __attribute__ ((visibility ("internal"))) decompress8 (struct ocpfilehandle_
 	if (!destbuf)
 		return 0;
 
-	memsetb(destbuf,0,len);
+	bzero (destbuf, len);
 	destpos=destbuf; /* position in output buffer */
 
 	/* now unpack data till the dest buffer is full */

@@ -793,7 +793,7 @@ int __attribute__ ((visibility ("internal"))) sidGetLChanSample (struct cpifaceS
 			}
 			if (!length1)
 			{
-				memsetd(s, 0, len<<stereo);
+				bzero (s, (len<<stereo)<<2);
 				return !!sidMuted[ch];
 			}
 		}
@@ -845,7 +845,7 @@ int __attribute__ ((visibility ("internal"))) sidGetPChanSample (struct cpifaceS
 			}
 			if (!length1)
 			{
-				memsetd(s, 0, len<<stereo);
+				bzero (s, (len<<stereo)<<2);
 				return !!sidMuted[ch];
 			}
 		}

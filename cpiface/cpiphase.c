@@ -289,7 +289,7 @@ static void radix(uint32_t *dest, uint32_t *source, long n, int byte)
 
 	uint32_t *dp;
 
-	memsetd(count, 0, 256);
+	bzero (count, sizeof (count));
 	for (i=0; i<n; i++)
 		count[((uint8_t*)&source[i])[byte]]++;
 

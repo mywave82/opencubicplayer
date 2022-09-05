@@ -21,10 +21,6 @@
 
 /* Assembler optimization per cpu we can wait with.... */
 
-#define memsetb(dst, what, len) memset(dst, what, len*1) /* let the compiler handle this */
-#define memcpyb(dst, src, len) memcpy(dst, src, len) /* let the compiler handle this */
-#define memcpyf(dst, src, len) memcpy(dst, src, len*sizeof(float)) /* let the compiler handle this.. even this one... not even used yet */
-
 static inline int32_t imuldiv(int32_t a,int32_t b,int32_t c)
 {
 	int64_t temp = (int64_t)a*(int64_t)b;
@@ -53,7 +49,6 @@ static inline uint32_t umulshr16(uint32_t a,uint32_t b)
 
 #define umldivrnd(mul1, mul2, divby) umuldiv(mul1, mul2, divby) /* dirty */
 
-#define memsetd(dst, what, len) {int i;uint32_t *tmp_dst=(uint32_t *)(dst);for(i=(len);i;i--)*tmp_dst++=(uint32_t)(what);} while(0)
 #define memsetw(dst, what, len) {int i;uint16_t *tmp_dst=(uint16_t *)(dst);for(i=(len);i;i--)*tmp_dst++=(uint16_t)(what);} while(0)
 
 #endif
