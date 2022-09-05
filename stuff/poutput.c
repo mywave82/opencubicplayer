@@ -119,18 +119,6 @@ void writestringattr(uint16_t *buf, unsigned short ofs, const uint16_t *str, uns
 	memcpyb(buf+ofs, (void *)str, len*2);
 }
 
-void fillstr(uint16_t *buf, const unsigned short ofs, const unsigned char chr, const unsigned char attr, unsigned short len)
-{
-	buf+=ofs;
-	while(len)
-	{
-		*buf=(chr<<8)+attr;
-		buf++;
-		len--;
-	}
-
-}
-
 void generic_gdrawchar8(unsigned short x, unsigned short y, unsigned char c, unsigned char f, unsigned char b)
 {
 	unsigned char *cp=plFont88[c];
