@@ -283,18 +283,8 @@ static void preparepatgen (struct cpifaceSessionAPI_t *cpifaceSession, int pat, 
 
 	getscrollpos (cpifaceSession, maxch, &firstchan, &chnn);
 
-	strcpy(pattitle1, "   pattern view:  order ");
-	convnum(pat, pattitle1+strlen(pattitle1), 16, 3, 0);
-	strcat(pattitle1, ", ");
-	convnum(maxch, pattitle1+strlen(pattitle1), 10, 2, 1);
-	strcat(pattitle1, " channels,  ");
-	strcat(pattitle1, pt->title);
 	pname=getpatname(pat);
-	if (pname&&*pname)
-	{
-		strcat(pattitle1, ": ");
-		strcat(pattitle1, pname);
-	}
+	snprintf (pattitle1, sizeof (pattitle1), "   pattern view:  order %03X, %2d channels,  %s%s%s", pat, maxch, pt->title, (pname&&*pname)?": ":"", (pname&&*pname)?pname:"");
 
 	p0=4+4*pt->gcmd;
 	patwidth=p0+pt->width*chnn+4;

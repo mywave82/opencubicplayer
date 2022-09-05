@@ -202,18 +202,10 @@ static void plPrepareStripeScr (struct cpifaceSessionAPI_t *cpifaceSession)
 	if ((plAnalChan==2) && !cpifaceSession->GetLChanSample)
 		plAnalChan=0;
 
-	strcpy(str, "   ");
-	if (plStripeBig)
-		strcat(str, "big ");
-	strcat(str, "graphic spectrum analyser");
+	snprintf (str, sizeof (str), "   %sgraphic spectrum analyser", plStripeBig?"big ":"");
 	gdrawstr(4, 0, 0x09, str, 48);
 
-	strcpy(str, "max: ");
-	convnum(plAnalRate>>1, str+strlen(str), 10, 5, 1);
-	strcat(str, "Hz  (");
-	strcat(str, plStripeSpeed?"fast, ":"fine, ");
-	strcat(str, (plAnalChan==0)?"both":(plAnalChan==1)?"mid":"chan");
-	strcat(str, ")");
+	snprintf (str, sizeof (str), "max: %5dHz  (%s, %s)", (plAnalRate>>1) % 100000, plStripeSpeed?"fast":"fine", (plAnalChan==0)?"both":(plAnalChan==1)?"mid":"chan");
 
 	if (plStripeBig)
 		gdrawstr(42, 96, 0x09, str, 32);

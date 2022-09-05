@@ -172,28 +172,10 @@ static void plPrepareScopeScr (struct cpifaceSessionAPI_t *cpifaceSession)
 		makescaletab (plScopesAmp * cpifaceSession->PhysicalChannelCount, scopesy/2);
 	}
 
-	strcpy(str, "   scopes: ");
-	convnum(plOszRate/scopenx, str+strlen(str), 10, 6, 1);
-	strcat(str, " pix/s");
-	strcat(str, ", ");
-	if (plOszChan==2)
-	{
-		strcat(str, "master");
-		if (plOszMono)
-			strcat(str, ", mono");
-		else
-			strcat(str, ", stereo");
-	} else {
-		if (plOszChan==0)
-			strcat(str, "logical");
-		else
-			if (plOszChan==1)
-				strcat(str, "physical");
-			else
-				strcat(str, "solo");
-		if (plOszTrigger)
-			strcat(str, ", triggered");
-	}
+	snprintf (str, sizeof (str), "   scopes: %6d pix/s, %s%s", (plOszRate/scopenx) % 1000000,
+		(plOszChan==2)?"master":(plOszChan==0)?"logical":(plOszChan==1)?"physical":"solo",
+		(plOszChan==2)?(plOszMono?", mono":", stereo"):(plOszTrigger?", triggered":""));
+
 	gdrawstr(4, 0, 0x09, str, 48);
 }
 

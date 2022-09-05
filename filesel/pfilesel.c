@@ -2343,7 +2343,7 @@ static int fsEditChan(int y, int x, uint8_t *chan)
 	if (state == 0)
 	{
 		curpos = 0;
-		convnum(*chan, str, 10, 2, 0);
+		snprintf (str, sizeof (str), "%02d", *chan);
 		setcurshape(1);
 		state = 1;
 	}

@@ -76,9 +76,6 @@ extern int ___peek_key(void);
 extern /*uint16_t*/int ___pop_key(void);
 extern void ___setup_key(int(*kbhit)(void), int(*getch)(void));
 
-extern char *convnum(unsigned long num, char *buf, unsigned char radix, unsigned short len, char clip0/*=1*/);
-#define _convnum(num,buf,radix,len) convnum(num,buf,radix,len,1)
-
 extern void writenum(uint16_t *buf, unsigned short ofs, unsigned char attr, unsigned long num, unsigned char radix, unsigned short len, char clip0/*=1*/);
 #define _writenum(buf, ofs, attr, num, radix, len) writenum(buf, ofs, attr, num, radix, len, 1)
 extern void writestring(uint16_t *buf, unsigned short ofs, unsigned char attr, const char *str, unsigned short len);

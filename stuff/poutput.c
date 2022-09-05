@@ -78,25 +78,6 @@ void make_title (const char *part, int escapewarning)
 	}
 }
 
-char *convnum(unsigned long num, char *buf, unsigned char radix, unsigned short len, char clip0)
-{
-	int i;
-	for (i=0; i<len; i++)
-	{
-		buf[len-1-i]="0123456789ABCDEF"[num%radix];
-		num/=radix;
-	}
-	buf[len]=0;
-	if (clip0)
-		for (i=0; i<(len-1); i++)
-		{
-			if (buf[i]!='0')
-				break;
-			buf[i]=' ';
-		}
-	return buf;
-}
-
 void writenum(uint16_t *buf, unsigned short ofs, unsigned char attr, unsigned long num, unsigned char radix, unsigned short len, char clip0)
 {
 	char convbuf[20];

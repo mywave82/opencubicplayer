@@ -597,7 +597,6 @@ void brDisplayHelp(void)
 	unsigned int curlinky;
 	char destbuffer[60];
 	char strbuffer[256];
-	char numbuffer[4];
 	int descxp;
 	unsigned int y;
 
@@ -614,18 +613,7 @@ void brDisplayHelp(void)
 
 	displaystr(plWinFirstLine-1, 0, 0x09, "   OpenCP help ][   ", 20);
 
-
-	if (HelpfileErr==hlpErrOk)
-		strcpy(strbuffer, curpage->desc);
-	else
-		strcpy(strbuffer, "Error!");
-
-	_convnum(100*plHelpScroll/MAX(plHelpHeight-plWinHeight, 1), numbuffer, 10, 3);
-
-	strcat(strbuffer, "-");
-	strcat(strbuffer, numbuffer);
-	strcat(strbuffer, "%");
-
+	snprintf (strbuffer, sizeof (strbuffer), "%s-%3d%%", (HelpfileErr==hlpErrOk)?curpage->desc:"Error!", 100*plHelpScroll/MAX(plHelpHeight-plWinHeight, 1));
 	memset(destbuffer, 0x20, 60);
 	descxp=MAX(0, 59-(signed)strlen(strbuffer));
 
@@ -664,46 +652,42 @@ void brDisplayHelp(void)
 		int addx = (plScrWidth - 80) / 2;
 		for (y=0; y<plWinHeight; y++)
 		{
+			int yp=(y+plHelpScroll)*80;
 			if ((y+plHelpScroll)>=plHelpHeight)
 			{
 				displayvoid(y+plWinFirstLine, 0, plScrWidth);
 				continue;
 			}
+
+			displayvoid (y+plWinFirstLine, 0, addx);
 			if (y!=curlinky)
-			{
-				displayvoid(y+plWinFirstLine, 0, addx);
-				displaystrattr(y+plWinFirstLine, 0+addx, &curpage->rendered[(y+plHelpScroll)*80], 80);
-				displayvoid(y+plWinFirstLine, 80+addx, plScrWidth-80-addx);
-			} else {
-				int yp=(y+plHelpScroll)*80;
+			{ /* display line as is, no links needs to be highlighted */
+				displaystrattr(y+plWinFirstLine, 0+addx, &curpage->rendered[yp], 80);
+			} else { /* there is a link that should be highlighted on the current line */
 				int xp;
 			        char dummystr[82];
 				int i, off;
 
-				displayvoid(y+plWinFirstLine, 0, addx);
 				if (curlink->posx!=0)
-			        {
+			        { /* print data before the link */
 					displaystrattr(y+plWinFirstLine, addx, &curpage->rendered[yp], curlink->posx);
 			        };
 
-			        xp=curlink->posx+curlink->len;
+				/* highlight the link */
+				for (i=0, off=yp+curlink->posx; curpage->rendered[off] & 0xff; i++, off++)
+					dummystr[i]=curpage->rendered[off] & 0xff;
+				dummystr[i]=0;
+				displaystr(y+plWinFirstLine, curlink->posx+addx, 4, dummystr, curlink->len);
 
+				/* print data after the link */
+			        xp=curlink->posx+curlink->len;
 			        displaystrattr(y+plWinFirstLine, xp+addx,
 		                       &curpage->rendered[yp+xp],
 		                       79-xp);
 
-
-				for (i=0, off=yp+curlink->posx; curpage->rendered[off] & 0xff; i++, off++)
-					dummystr[i]=curpage->rendered[off] & 0xff;
-
-				dummystr[i]=0;
-
-				displaystr(y+plWinFirstLine, curlink->posx+addx, 4, dummystr, curlink->len);
-
-				displayvoid(y+plWinFirstLine, 80+addx, plScrWidth-80-addx);
-
 			        /* and all this just to prevent flickering. ARG! */
 			}
+			displayvoid (y+plWinFirstLine, 80+addx, plScrWidth-80-addx);
 		}
 	}
 }
