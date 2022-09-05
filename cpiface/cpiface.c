@@ -2205,6 +2205,10 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.TrackSetup = cpiTrkSetup;
 	cpifaceSessionAPI.Public.TrackSetup2 = cpiTrkSetup2;
 
+	cpifaceSessionAPI.Public.KeyHelp        = cpiKeyHelp;
+	cpifaceSessionAPI.Public.KeyHelpClear   = cpiKeyHelpClear;
+	cpifaceSessionAPI.Public.KeyHelpDisplay = cpiKeyHelpDisplay;
+
 	cpifaceSessionAPI.Public.SetMuteChannel = 0;
 	bzero (cpifaceSessionAPI.Public.MuteChannel, sizeof(cpifaceSessionAPI.Public.MuteChannel));
 

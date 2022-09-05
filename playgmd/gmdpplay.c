@@ -207,17 +207,17 @@ static int gmdProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp(KEY_ALT_L, "Pattern lock toggle");
-			cpiKeyHelp('p', "Start/stop pause with fade");
-			cpiKeyHelp('P', "Start/stop pause with fade");
-			cpiKeyHelp(KEY_CTRL_UP, "Jump back (small)");
-			cpiKeyHelp(KEY_CTRL_DOWN, "Jump forward (small)");
-			cpiKeyHelp(KEY_CTRL_P, "Start/stop pause");
-			cpiKeyHelp('<', "Jump back (big)");
-			cpiKeyHelp(KEY_CTRL_LEFT, "Jump back (big)");
-			cpiKeyHelp('>', "Jump forward (big)");
-			cpiKeyHelp(KEY_CTRL_RIGHT, "Jump forward (big)");
-			cpiKeyHelp(KEY_CTRL_HOME, "Jump start of track");
+			cpifaceSession->KeyHelp (KEY_ALT_L, "Pattern lock toggle");
+			cpifaceSession->KeyHelp ('p', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp ('P', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp (KEY_CTRL_UP, "Jump back (small)");
+			cpifaceSession->KeyHelp (KEY_CTRL_DOWN, "Jump forward (small)");
+			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
+			cpifaceSession->KeyHelp ('<', "Jump back (big)");
+			cpifaceSession->KeyHelp (KEY_CTRL_LEFT, "Jump back (big)");
+			cpifaceSession->KeyHelp ('>', "Jump forward (big)");
+			cpifaceSession->KeyHelp (KEY_CTRL_RIGHT, "Jump forward (big)");
+			cpifaceSession->KeyHelp (KEY_CTRL_HOME, "Jump start of track");
 			return 0;
 		case 'p': case 'P':
 			togglepausefade (cpifaceSession);

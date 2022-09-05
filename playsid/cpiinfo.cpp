@@ -340,8 +340,8 @@ static int SidInfoIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('t', "Enable SID info viewer");
-			cpiKeyHelp('T', "Enable SID info viewer");
+			cpifaceSession->KeyHelp ('t', "Enable SID info viewer");
+			cpifaceSession->KeyHelp ('T', "Enable SID info viewer");
 			break;
 		case 't': case 'T':
 			SidInfoActive=1;
@@ -367,12 +367,12 @@ static int SidInfoAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 			break;
 
 		case KEY_ALT_K:
-			cpiKeyHelp('t',       "Disable SID info viewer");
-			cpiKeyHelp('T',       "Disable SID info viewer");
-			cpiKeyHelp(KEY_PPAGE, "Scroll SID info viewer up");
-			cpiKeyHelp(KEY_NPAGE, "Scroll SID info viewer down");
-			cpiKeyHelp(KEY_HOME,  "Scroll SID info viewer to the top");
-			cpiKeyHelp(KEY_END,   "Scroll SID info viewer to the bottom");
+			cpifaceSession->KeyHelp ('t',       "Disable SID info viewer");
+			cpifaceSession->KeyHelp ('T',       "Disable SID info viewer");
+			cpifaceSession->KeyHelp (KEY_PPAGE, "Scroll SID info viewer up");
+			cpifaceSession->KeyHelp (KEY_NPAGE, "Scroll SID info viewer down");
+			cpifaceSession->KeyHelp (KEY_HOME,  "Scroll SID info viewer to the top");
+			cpifaceSession->KeyHelp (KEY_END,   "Scroll SID info viewer to the bottom");
 			return 0;
 
 		case KEY_PPAGE:

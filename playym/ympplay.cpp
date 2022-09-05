@@ -420,16 +420,16 @@ static int ymProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('p', "Start/stop pause with fade");
-			cpiKeyHelp('P', "Start/stop pause with fade");
-			cpiKeyHelp(KEY_CTRL_P, "Start/stop pause");
-			cpiKeyHelp(KEY_CTRL_UP, "Rewind 1 second");
-			cpiKeyHelp(KEY_CTRL_LEFT, "Rewind 10 second");
-			cpiKeyHelp('<', "Rewind 10 second");
-			cpiKeyHelp(KEY_CTRL_DOWN, "Forward 1 second");
-			cpiKeyHelp(KEY_CTRL_RIGHT, "Forward 10 second");
-			cpiKeyHelp('>', "Forward 10 second");
-			cpiKeyHelp(KEY_CTRL_HOME, "Rewind to start");
+			cpifaceSession->KeyHelp ('p', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp ('P', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
+			cpifaceSession->KeyHelp (KEY_CTRL_UP, "Rewind 1 second");
+			cpifaceSession->KeyHelp (KEY_CTRL_LEFT, "Rewind 10 second");
+			cpifaceSession->KeyHelp ('<', "Rewind 10 second");
+			cpifaceSession->KeyHelp (KEY_CTRL_DOWN, "Forward 1 second");
+			cpifaceSession->KeyHelp (KEY_CTRL_RIGHT, "Forward 10 second");
+			cpifaceSession->KeyHelp ('>', "Forward 10 second");
+			cpifaceSession->KeyHelp (KEY_CTRL_HOME, "Rewind to start");
 			return 0;
 		case 'p': case 'P':
 			togglepausefade (cpifaceSession);

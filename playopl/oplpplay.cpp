@@ -320,14 +320,12 @@ static int oplProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('p', "Start/stop pause with fade");
-			cpiKeyHelp('P', "Start/stop pause with fade");
-
-			cpiKeyHelp(KEY_CTRL_HOME, "Restart Song");
-			cpiKeyHelp('<', "Previous Song");
-			cpiKeyHelp('>', "Next song");
-
-			cpiKeyHelp(KEY_CTRL_P, "Start/stop pause");
+			cpifaceSession->KeyHelp ('p', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp ('P', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp (KEY_CTRL_HOME, "Restart Song");
+			cpifaceSession->KeyHelp ('<', "Previous Song");
+			cpifaceSession->KeyHelp ('>', "Next song");
+			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
 			return 0;
 		case 'p': case 'P':
 			togglepausefade (cpifaceSession);

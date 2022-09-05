@@ -377,14 +377,14 @@ static int sidProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('p', "Start/stop pause with fade");
-			cpiKeyHelp('P', "Start/stop pause with fade");
-			cpiKeyHelp(KEY_CTRL_P, "Start/stop pause");
-			cpiKeyHelp('<', "Previous track");
-			cpiKeyHelp(KEY_CTRL_LEFT, "Previous track");
-			cpiKeyHelp('>', "Next track");
-			cpiKeyHelp(KEY_CTRL_RIGHT, "Next track");
-			cpiKeyHelp(KEY_CTRL_HOME, "Next to start of song");
+			cpifaceSession->KeyHelp ('p', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp ('P', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
+			cpifaceSession->KeyHelp ('<', "Previous track");
+			cpifaceSession->KeyHelp (KEY_CTRL_LEFT, "Previous track");
+			cpifaceSession->KeyHelp ('>', "Next track");
+			cpifaceSession->KeyHelp (KEY_CTRL_RIGHT, "Next track");
+			cpifaceSession->KeyHelp (KEY_CTRL_HOME, "Next to start of song");
 			return 0;
 		case 'p': case 'P':
 			togglepausefade (cpifaceSession);

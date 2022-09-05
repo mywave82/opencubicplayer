@@ -195,8 +195,8 @@ static int TimiditySetupIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession,
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('t', "Enable Timidity Setup Viewer");
-			cpiKeyHelp('T', "Enable Timidity Setup Viewer");
+			cpifaceSession->KeyHelp ('t', "Enable Timidity Setup Viewer");
+			cpifaceSession->KeyHelp ('T', "Enable Timidity Setup Viewer");
 			break;
 		case 't': case 'T':
 			TimiditySetupActive=1;
@@ -241,16 +241,16 @@ static int TimiditySetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession,
 			break;
 
 		case KEY_ALT_K:
-			cpiKeyHelp('t',       "Disable Timidity Setup Viewer");
-			cpiKeyHelp('T',       "Disable Timidity Setup Viewer");
-			cpiKeyHelp(KEY_UP,    "Move cursor up");
-			cpiKeyHelp(KEY_DOWN,  "Move cursor down");
+			cpifaceSession->KeyHelp ('t',       "Disable Timidity Setup Viewer");
+			cpifaceSession->KeyHelp ('T',       "Disable Timidity Setup Viewer");
+			cpifaceSession->KeyHelp (KEY_UP,    "Move cursor up");
+			cpifaceSession->KeyHelp (KEY_DOWN,  "Move cursor down");
 			return 0;
 #if 0
-			cpiKeyHelp(KEY_PPAGE, "Scroll SID info viewer up");
-			cpiKeyHelp(KEY_NPAGE, "Scroll SID info viewer down");
-			cpiKeyHelp(KEY_HOME,  "Scroll SID info viewer to the top");
-			cpiKeyHelp(KEY_END,   "Scroll SID info viewer to the bottom");
+			cpifaceSession->KeyHelp (KEY_PPAGE, "Scroll SID info viewer up");
+			cpifaceSession->KeyHelp (KEY_NPAGE, "Scroll SID info viewer down");
+			cpifaceSession->KeyHelp (KEY_HOME,  "Scroll SID info viewer to the top");
+			cpifaceSession->KeyHelp (KEY_END,   "Scroll SID info viewer to the bottom");
 			return 0;
 
 		case KEY_PPAGE:

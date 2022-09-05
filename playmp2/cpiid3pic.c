@@ -389,8 +389,8 @@ static int ID3PicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('c', "Enable ID3 picture viewer");
-			cpiKeyHelp('C', "Enable ID3 picture viewer");
+			cpifaceSession->KeyHelp ('c', "Enable ID3 picture viewer");
+			cpifaceSession->KeyHelp ('C', "Enable ID3 picture viewer");
 			break;
 		case 'c': case 'C':
 			if (!ID3PicActive)
@@ -424,9 +424,9 @@ static int ID3PicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('c', "Change ID3 picture view mode");
-			cpiKeyHelp('C', "Change ID3 picture view mode");
-			cpiKeyHelp(KEY_TAB, "Rotate ID3 pictures");
+			cpifaceSession->KeyHelp ('c', "Change ID3 picture view mode");
+			cpifaceSession->KeyHelp ('C', "Change ID3 picture view mode");
+			cpifaceSession->KeyHelp (KEY_TAB, "Rotate ID3 pictures");
 			return 0;
 		case KEY_TAB:
 			for (i=0; i < (sizeof(((struct ID3_t *)0)->APIC) / sizeof (((struct ID3_t *)0)->APIC[0])); i++)

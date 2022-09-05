@@ -285,24 +285,24 @@ static int cdaProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('p', "Start/stop pause with fade");
-			cpiKeyHelp('P', "Start/stop pause with fade");
-			cpiKeyHelp(KEY_CTRL_P, "Start/stop pause");
-			cpiKeyHelp('t', "Toggle sector view mode");
-			cpiKeyHelp(KEY_DOWN, "Jump back (small)");
-			cpiKeyHelp(KEY_UP, "Jump forward (small)");
-			cpiKeyHelp(KEY_CTRL_DOWN, "Jump back (big)");
-			cpiKeyHelp(KEY_CTRL_UP, "Jump forward (big)");
-			cpiKeyHelp(KEY_LEFT, "Jump back");
-			cpiKeyHelp(KEY_RIGHT, "Jump forward");
-			cpiKeyHelp(KEY_HOME, "Jump to start of track");
-			cpiKeyHelp(KEY_CTRL_HOME, "Jump to start of disc");
-			cpiKeyHelp('<', "Jump track back");
-			cpiKeyHelp(KEY_CTRL_LEFT, "Jump track back");
+			cpifaceSession->KeyHelp ('p', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp ('P', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
+			cpifaceSession->KeyHelp ('t', "Toggle sector view mode");
+			cpifaceSession->KeyHelp (KEY_DOWN, "Jump back (small)");
+			cpifaceSession->KeyHelp (KEY_UP, "Jump forward (small)");
+			cpifaceSession->KeyHelp (KEY_CTRL_DOWN, "Jump back (big)");
+			cpifaceSession->KeyHelp (KEY_CTRL_UP, "Jump forward (big)");
+			cpifaceSession->KeyHelp (KEY_LEFT, "Jump back");
+			cpifaceSession->KeyHelp (KEY_RIGHT, "Jump forward");
+			cpifaceSession->KeyHelp (KEY_HOME, "Jump to start of track");
+			cpifaceSession->KeyHelp (KEY_CTRL_HOME, "Jump to start of disc");
+			cpifaceSession->KeyHelp ('<', "Jump track back");
+			cpifaceSession->KeyHelp (KEY_CTRL_LEFT, "Jump track back");
 			if (cdpPlayMode)
 			{
-				cpiKeyHelp('>', "Jump track forward");
-				cpiKeyHelp(KEY_CTRL_RIGHT, "Jump track forward");
+				cpifaceSession->KeyHelp ('>', "Jump track forward");
+				cpifaceSession->KeyHelp (KEY_CTRL_RIGHT, "Jump track forward");
 			}
 			return 0;
 		case 'p': case 'P':

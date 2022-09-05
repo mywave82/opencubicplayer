@@ -136,13 +136,13 @@ static int ayProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('p', "Start/stop pause with fade");
-			cpiKeyHelp('P', "Start/stop pause with fade");
-			cpiKeyHelp(KEY_CTRL_P, "Start/stop pause");
-			cpiKeyHelp('<', "Jump to previous track");
-			cpiKeyHelp(KEY_CTRL_LEFT, "Jump to previous track");
-			cpiKeyHelp('>', "Jump to next track");
-			cpiKeyHelp(KEY_CTRL_RIGHT, "Jump to next track");
+			cpifaceSession->KeyHelp ('p', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp ('P', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
+			cpifaceSession->KeyHelp ('<', "Jump to previous track");
+			cpifaceSession->KeyHelp (KEY_CTRL_LEFT, "Jump to previous track");
+			cpifaceSession->KeyHelp ('>', "Jump to next track");
+			cpifaceSession->KeyHelp (KEY_CTRL_RIGHT, "Jump to next track");
 			return 0;
 		case 'p': case 'P':
 			togglepausefade (cpifaceSession);

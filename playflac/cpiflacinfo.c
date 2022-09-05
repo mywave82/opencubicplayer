@@ -175,8 +175,8 @@ static int FlacInfoIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('i', "Enable Flac info viewer");
-			cpiKeyHelp('I', "Enable Flac info viewer");
+			cpifaceSession->KeyHelp ('i', "Enable Flac info viewer");
+			cpifaceSession->KeyHelp ('I', "Enable Flac info viewer");
 			break;
 		case 'i': case 'I':
 			if (!FlacInfoActive)
@@ -209,12 +209,12 @@ static int FlacInfoAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 			break;
 
 		case KEY_ALT_K:
-			cpiKeyHelp('i',       "Disable Flac info viewer");
-			cpiKeyHelp('I',       "Disable Flac info viewer");
-			cpiKeyHelp(KEY_PPAGE, "Scroll Flac info viewer up");
-			cpiKeyHelp(KEY_NPAGE, "Scroll Flac info viewer down");
-			cpiKeyHelp(KEY_HOME,  "Scroll Flac info viewer to the top");
-			cpiKeyHelp(KEY_END,   "Scroll Flac info viewer to the bottom");
+			cpifaceSession->KeyHelp ('i',       "Disable Flac info viewer");
+			cpifaceSession->KeyHelp ('I',       "Disable Flac info viewer");
+			cpifaceSession->KeyHelp (KEY_PPAGE, "Scroll Flac info viewer up");
+			cpifaceSession->KeyHelp (KEY_NPAGE, "Scroll Flac info viewer down");
+			cpifaceSession->KeyHelp (KEY_HOME,  "Scroll Flac info viewer to the top");
+			cpifaceSession->KeyHelp (KEY_END,   "Scroll Flac info viewer to the bottom");
 			return 0;
 
 		case KEY_PPAGE:

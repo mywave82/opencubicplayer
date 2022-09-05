@@ -404,8 +404,8 @@ static int FlacPicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('c', "Enable Flac picture viewer");
-			cpiKeyHelp('C', "Enable Flac picture viewer");
+			cpifaceSession->KeyHelp ('c', "Enable Flac picture viewer");
+			cpifaceSession->KeyHelp ('C', "Enable Flac picture viewer");
 			break;
 		case 'c': case 'C':
 			if (!FlacPicActive)
@@ -434,9 +434,9 @@ static int FlacPicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('c', "Change Flac picture view mode");
-			cpiKeyHelp('C', "Change Flac picture view mode");
-			cpiKeyHelp(KEY_TAB, "Rotate Flac pictures");
+			cpifaceSession->KeyHelp ('c', "Change Flac picture view mode");
+			cpifaceSession->KeyHelp ('C', "Change Flac picture view mode");
+			cpifaceSession->KeyHelp (KEY_TAB, "Rotate Flac pictures");
 			return 0;
 		case KEY_TAB:
 			FlacPicCurrentIndex++;

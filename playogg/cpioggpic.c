@@ -394,8 +394,8 @@ static int OggPicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('c', "Enable Ogg picture viewer");
-			cpiKeyHelp('C', "Enable Ogg picture viewer");
+			cpifaceSession->KeyHelp ('c', "Enable Ogg picture viewer");
+			cpifaceSession->KeyHelp ('C', "Enable Ogg picture viewer");
 			break;
 		case 'c': case 'C':
 			if (!OggPicActive)
@@ -424,9 +424,9 @@ static int OggPicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('c', "Change Ogg picture view mode");
-			cpiKeyHelp('C', "Change Ogg picture view mode");
-			cpiKeyHelp(KEY_TAB, "Rotate Ogg pictures");
+			cpifaceSession->KeyHelp ('c', "Change Ogg picture view mode");
+			cpifaceSession->KeyHelp ('C', "Change Ogg picture view mode");
+			cpifaceSession->KeyHelp (KEY_TAB, "Rotate Ogg pictures");
 			return 0;
 		case KEY_TAB:
 			OggPicCurrentIndex++;

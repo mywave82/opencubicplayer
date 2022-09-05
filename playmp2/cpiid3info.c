@@ -351,8 +351,8 @@ static int ID3InfoIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('i', "Enable ID3 info viewer");
-			cpiKeyHelp('I', "Enable ID3 info viewer");
+			cpifaceSession->KeyHelp ('i', "Enable ID3 info viewer");
+			cpifaceSession->KeyHelp ('I', "Enable ID3 info viewer");
 			break;
 		case 'i': case 'I':
 			if (!ID3InfoActive)
@@ -385,12 +385,12 @@ static int ID3InfoAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 			break;
 
 		case KEY_ALT_K:
-			cpiKeyHelp('i',       "Disable ID3 info viewer");
-			cpiKeyHelp('I',       "Disable ID3 info viewer");
-			cpiKeyHelp(KEY_PPAGE, "Scroll ID3 info viewer up");
-			cpiKeyHelp(KEY_NPAGE, "Scroll ID3 info viewer down");
-			cpiKeyHelp(KEY_HOME,  "Scroll ID3 info viewer to the top");
-			cpiKeyHelp(KEY_END,   "Scroll ID3 info viewer to the bottom");
+			cpifaceSession->KeyHelp ('i',       "Disable ID3 info viewer");
+			cpifaceSession->KeyHelp ('I',       "Disable ID3 info viewer");
+			cpifaceSession->KeyHelp (KEY_PPAGE, "Scroll ID3 info viewer up");
+			cpifaceSession->KeyHelp (KEY_NPAGE, "Scroll ID3 info viewer down");
+			cpifaceSession->KeyHelp (KEY_HOME,  "Scroll ID3 info viewer to the top");
+			cpifaceSession->KeyHelp (KEY_END,   "Scroll ID3 info viewer to the bottom");
 			return 0;
 
 		case KEY_PPAGE:

@@ -134,12 +134,12 @@ static int hvlProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('p', "Start/stop pause with fade");
-			cpiKeyHelp('P', "Start/stop pause with fade");
-			cpiKeyHelp(KEY_CTRL_P, "Start/stop pause");
-			cpiKeyHelp('<', "Previous sub-song");
-			cpiKeyHelp('>', "Next sub-song");
-			cpiKeyHelp(KEY_CTRL_HOME, "Restart song");
+			cpifaceSession->KeyHelp ('p', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp ('P', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
+			cpifaceSession->KeyHelp ('<', "Previous sub-song");
+			cpifaceSession->KeyHelp ('>', "Next sub-song");
+			cpifaceSession->KeyHelp (KEY_CTRL_HOME, "Restart song");
 			return 0;
 		case 'p': case 'P':
 			togglepausefade (cpifaceSession);

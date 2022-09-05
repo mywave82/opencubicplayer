@@ -71,6 +71,10 @@ struct cpifaceSessionAPI_t
 	void (*TrackSetup)  (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpitrakdisplaystruct *c, int npat);
 	void (*TrackSetup2) (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpitrakdisplaystruct *c, int npat, int tracks);
 
+	void (*KeyHelp) (uint16_t key, const char *shorthelp); /* Called on ALT-K to issue help about each keyboard shortcut */
+	void (*KeyHelpClear) (void); /* Clears the current keyboard shortcut list, only used by keyboard/display loops */
+	int  (*KeyHelpDisplay) (void); /* Draws the keyboard shortcut list and polls keyboard. Call for each draw-iteration until it returns zero */
+
 	void (*mcpSet)(int ch, int opt, int val); /* Filled in by devw or playback plugin */
 	int (*mcpGet)(int ch, int opt); /* Filled in by devw or playback plugin */
 
