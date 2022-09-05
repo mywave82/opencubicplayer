@@ -163,7 +163,7 @@ static void oggIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 
 			if (result<=0) /* broken data... we can survive */
 			{
-				plrClearBuf (oggbuf+(pos1<<1), read<<1, 1); /* always clear stereo */
+				bzero (oggbuf+(pos1<<1), read<<2); /* always clear 16bit, stereo, signed */
 				fprintf (stderr, "[playogg] ov_read failed: %ld\n", result);
 				result=read;
 			} else {

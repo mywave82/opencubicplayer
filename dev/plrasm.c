@@ -32,23 +32,6 @@
 #include "types.h"
 #include "plrasm.h"
 
-void plrClearBuf(void *buf, int len, int unsign)
-{
-	uint32_t fill;
-	if (unsign)
-		fill=0;
-	else
-		fill=0x80008000;
-	while (len>1)
-	{
-		*(uint32_t *)buf=fill;
-		buf=(char *)buf+sizeof(fill);
-		len-=2;
-	}
-	if (len)
-		*(uint16_t *)buf=(uint16_t)fill;
-}
-
 void plrMono16ToStereo16(int16_t *buf, int len)
 {
 	int i;
