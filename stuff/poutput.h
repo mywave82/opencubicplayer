@@ -17,7 +17,7 @@ void displaychr (const uint16_t y, const uint16_t x, const uint8_t attr, const c
  *   * We support *  (pop an integer from the list)
  *   * %n.mo to change colors, where n and m are integers, can be omitted or use *
  *   * %s is CP437 string
- *   * %S is UTF-8 string
+ *   * %S is UTF-8 string (and space prefix overflows at the left instead of the right)
  *   * We support %d %ld %lld %u %lu %llu %x %lx %llx %X %lX %llX %% %s %c     %o %S
  *
  *   * No support for %f %lf %llf %p %n

@@ -101,7 +101,14 @@ static void ConfigDrawItems (const int lineno, int xpos, const int width, const 
 		}
 		xpos += l + 2;
 	}
-	displaychr (lineno, xpos, 0x07, ' ', width - xpos + origxpos);
+	displayvoid (lineno, xpos, width - xpos + origxpos);
+}
+
+static void ConfigDrawMenuItems (const int lineno, int xpos, const int width, const char *item, const char **list, const int listlength, const int selected, const int active)
+{
+	display_nprintf (lineno, xpos, 0x09, 23, "\xb3%.7o %s:", item);
+	ConfigDrawItems (lineno, xpos + 23, width - 24, list, listlength, selected, active);
+	displaychr (lineno, xpos + width - 1, 0x09, '\xb3', 1);
 }
 
 static void ConfigDrawBar (const int lineno, int xpos, int width, int scale, const char *suffix, int minlevel, int maxlevel, int level, const int active)
@@ -153,6 +160,22 @@ static void ConfigDrawBar (const int lineno, int xpos, int width, int scale, con
         p2 = 22 - pos;
 
 	display_nprintf (lineno, xpos, (active)?0x07:0x08, width, "%10s%-7s [%*C.#%*C.] %-6s", prefix, min, p1, p2, max);
+}
+
+static void ConfigDrawMenuBar (const int lineno, int xpos, int width, const char *item, int scale, const char *suffix, int minlevel, int maxlevel, int level, const int active)
+{
+	display_nprintf (lineno, xpos, 0x09, 23, "\xb3%.7o %s:", item);
+	ConfigDrawBar (lineno, xpos + 23, width - 24, scale, suffix, minlevel, maxlevel, level, active);
+	displaychr (lineno, xpos + width - 1, 0x09, '\xb3', 1);
+}
+
+static void ConfigDrawMenuRom (const int lineno, int xpos, int width, const char *item, int active, const char *path)
+{
+	display_nprintf (lineno, xpos, 0x09, width, "\xb3%.7o %20s %.*o%*S%.9o\xb3",
+		item,
+		active?0x0f:0x08,
+		width - 24,
+		path);
 }
 
 struct hash_pairs_t
@@ -242,6 +265,14 @@ static void ConfigDrawHashInfo (const int lineno, int xpos, int width, const cha
 	displaystr (lineno, xpos, CERR, "Unknown ROM file", width); return;
 }
 
+static void ConfigDrawHashMenuInfo (const int lineno, int xpos, int width, const char *hash_8192, const char *hash_4096, int expect)
+{
+	display_nprintf (lineno, xpos, 0x09, 25, "\xb3%.7o");
+	ConfigDrawHashInfo (lineno, xpos + 25, width - 26, hash_8192, hash_4096, expect);
+	displaychr (lineno, xpos + width - 1, 0x09, '\xb3', 1);
+
+}
+
 #if 0
  +----------------------------------------------------------------------------\
  |                     libsidplayfp configuration                             |
@@ -286,82 +317,48 @@ static void sidConfigDraw (int EditPos)
 	mlTop = (plScrHeight - mlHeight) / 2;
 	mlLeft = (plScrWidth - mlWidth) / 2;
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
+	display_nprintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o                     libsidplayfp configuration%*C %.9o\xb3", mlWidth - 49);
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%.15o  Navigate with  %.15o<\x18>%.7o,%.15o<\x19>%.7o,%.15o<\x1a>%.7o,%.15o<\x1b>%.7o and %.15o<ENTER>%.7o; hit %.15o<ESC>%.7o to save and exit.%*C %.9o\xb3", mlWidth - 75);
+	display_nprintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o                     libsidplayfp configuration%*C %.9o\xb3", mlWidth - 49);
+	display_nprintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%.15o  Navigate with  %.15o<\x18>%.7o,%.15o<\x19>%.7o,%.15o<\x1a>%.7o,%.15o<\x1b>%.7o and %.15o<ENTER>%.7o; hit %.15o<ESC>%.7o to save and exit.%*C %.9o\xb3", mlWidth - 75);
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
+	display_nprintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 23, "\xb3%.7o  1: emulator:");
-	ConfigDrawItems (mlTop, mlLeft + 23, mlWidth - 24, emulators, 2, config_emulator, EditPos==0);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 1: emulator", emulators, 2, config_emulator, EditPos==0);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 23, "\xb3%.7o  2: default C64:");
-	ConfigDrawItems (mlTop, mlLeft + 23, mlWidth - 24, C64models, 5, config_defaultC64, EditPos==1);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 2: default C64", C64models, 5, config_defaultC64, EditPos==1);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 23, "\xb3%.7o  3: force C64 model:");
-	ConfigDrawItems (mlTop, mlLeft + 23, mlWidth - 24, offon, 2, config_forceC64, EditPos==2);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 3: force C64 model", offon, 2, config_forceC64, EditPos==2);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 23, "\xb3%.7o  4: default SID:");
-	ConfigDrawItems (mlTop, mlLeft + 23, mlWidth - 24, SIDmodels, 2, config_defaultSID, EditPos==3);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 4: default SID", SIDmodels, 2, config_defaultSID, EditPos==3);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 23, "\xb3%.7o  5: force SID:");
-	ConfigDrawItems (mlTop, mlLeft + 23, mlWidth - 24, offon, 2, config_forceSID, EditPos==4);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 5: force SID", offon, 2, config_forceSID, EditPos==4);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 23, "\xb3%.7o  6: CIA:");
-	ConfigDrawItems (mlTop, mlLeft + 23, mlWidth - 24, CIAmodels, 3, config_CIA, EditPos==5);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 6: CIA", CIAmodels, 3, config_CIA, EditPos==5);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 23, "\xb3%.7o  7: filter:");
-	ConfigDrawItems (mlTop, mlLeft + 23, mlWidth - 24, offon, 2, config_filter, EditPos==6);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 7: filter", offon, 2, config_filter, EditPos==6);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 23, "\xb3%.7o  8: filterbias:");
-	ConfigDrawBar (mlTop, mlLeft + 23, mlWidth - 24, 10, "mv", -5000, 5000, config_filterbias, EditPos==7);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, " 8: filterbias", 10, "mv", -5000, 5000, config_filterbias, EditPos==7);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 23, "\xb3%.7o  9: filtercurce6581:");
-	ConfigDrawBar (mlTop, mlLeft + 23, mlWidth - 24, 100, "", -0, 100, config_filtercurve6581, EditPos==8);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, " 9: filtercurve6581", 100, "", -0, 100, config_filtercurve6581, EditPos==8);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 23, "\xb3%.7o 10: filtercurce8580:");
-	ConfigDrawBar (mlTop, mlLeft + 23, mlWidth - 24, 100, "", 0, 100, config_filtercurve8580, EditPos==9);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, "10: filtercurve8580", 100, "", 0, 100, config_filtercurve8580, EditPos==9);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 23, "\xb3%.7o 11: digiboost:");
-	ConfigDrawItems (mlTop, mlLeft + 23, mlWidth - 24, offon, 2, config_digiboost, EditPos==10);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, "11: digiboost", offon, 2, config_digiboost, EditPos==10);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 23, "\xb3%.7o 12: kernal.rom:");
-	displaystr_utf8_overflowleft (mlTop, mlLeft + 23, (EditPos==11)?0x0f:0x08, config_kernal, mlWidth - 24);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, "12: kernal.rom:", EditPos==11, config_kernal);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 25, "\xb3%.7o");
-	ConfigDrawHashInfo (mlTop, mlLeft + 25, mlWidth - 26, entry_kernal.hash_8192, entry_kernal.hash_4096, 0);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, entry_kernal.hash_8192, entry_kernal.hash_4096, 0);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 23, "\xb3%.7o 13: basic.rom:");
-	displaystr_utf8_overflowleft (mlTop, mlLeft + 23, (EditPos==12)?0x0f:0x08, config_basic, mlWidth - 24);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, "13: basic.rom:", EditPos==12, config_basic);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 25, "\xb3%.7o");
-	ConfigDrawHashInfo (mlTop, mlLeft + 25, mlWidth - 26, entry_basic.hash_8192, entry_basic.hash_4096, 1);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, entry_basic.hash_8192, entry_basic.hash_4096, 1);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 23, "\xb3%.7o 14: chargen.rom:");
-	displaystr_utf8_overflowleft (mlTop, mlLeft + 23, (EditPos==13)?0x0f:0x08, config_chargen, mlWidth - 24);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, "14: chargen.rom", EditPos==13, config_chargen);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 25, "\xb3%.7o");
-	ConfigDrawHashInfo (mlTop, mlLeft + 25, mlWidth - 26, entry_chargen.hash_8192, entry_chargen.hash_4096, 2);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, entry_chargen.hash_8192, entry_chargen.hash_4096, 2);
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
+	display_nprintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
 	switch (EditPos)
 	{
 		case 0:

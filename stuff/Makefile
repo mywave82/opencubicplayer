@@ -32,9 +32,9 @@ poutput_so_libs+=$(FREETYPE2_LIBS)
 endif
 
 ifeq ($(STATIC_BUILD),1)
-all: compat.o err.o framelock.o poll.o $(hardware_so) $(sets_so) $(poutput_so)
+all: compat.o err.o framelock.o poll.o $(hardware_so) $(sets_so) $(poutput_so) utf-8.o
 else
-all: compat.o err.o framelock.o poll.o hardware$(LIB_SUFFIX) sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX)
+all: compat.o err.o framelock.o poll.o hardware$(LIB_SUFFIX) sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX) utf-8.o
 endif
 
 test: compat-test

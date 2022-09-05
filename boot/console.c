@@ -30,6 +30,7 @@
 #include "types.h"
 #include "console.h"
 #include "stuff/poutput.h"
+#include "stuff/utf-8.h"
 
 void (*_vga13)(void);
 void (*_plSetTextMode)(uint8_t size) = 0;
@@ -342,7 +343,12 @@ after_dot:
 						displaychr (y, x, color, ' ', requested_width - requested_precision);
 						x += requested_width - requested_precision;
 					}
-					_displaystr_utf8 (y, x, color, src, requested_precision);
+					if (spaceflag)
+					{
+						_displaystr_utf8 (y, x, color, src, requested_precision);
+					} else {
+						displaystr_utf8_overflowleft (y, x, color, src, requested_precision);
+					}
 					x += requested_precision;
 					if ((requested_width > requested_precision) && !minusflag)
 					{
