@@ -197,7 +197,7 @@ static unsigned int devpOSSIdle(void)
 	{
 		if (devpOSSShadowBuffer)
 		{
-			plrConvertBuffer (devpOSSShadowBuffer, (int16_t *)devpOSSBuffer + (pos1<<1), length1, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
+			plrConvertBufferFromStereo16BitSigned (devpOSSShadowBuffer, (int16_t *)devpOSSBuffer + (pos1<<1), length1, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
 			result=write(fd_dsp, devpOSSShadowBuffer, length1<<((!!stereo)+(!!bit16)));
 			if (result > 0)
 			{

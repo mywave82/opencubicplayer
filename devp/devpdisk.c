@@ -97,11 +97,11 @@ static void devpDiskConsume(int flush)
 
 	if (devpDiskShadowBuffer)
 	{
-		plrConvertBuffer (devpDiskCache + devpDiskCachePos, (int16_t *)devpDiskBuffer + (pos1 << 1), length1, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
+		plrConvertBufferFromStereo16BitSigned (devpDiskCache + devpDiskCachePos, (int16_t *)devpDiskBuffer + (pos1 << 1), length1, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
 		devpDiskCachePos += length1 << ((!!bit16) + (!!stereo));
 		if (length2)
 		{
-			plrConvertBuffer (devpDiskCache + devpDiskCachePos, (int16_t *)devpDiskBuffer + (pos2 << 1), length2, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
+			plrConvertBufferFromStereo16BitSigned (devpDiskCache + devpDiskCachePos, (int16_t *)devpDiskBuffer + (pos2 << 1), length2, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
 			devpDiskCachePos += length2 << ((!!bit16) + (!!stereo));
 		}
 	} else {

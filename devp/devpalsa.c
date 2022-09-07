@@ -240,7 +240,7 @@ static unsigned int devpALSAIdle(void)
 	{
 		if (devpALSAShadowBuffer)
 		{
-			plrConvertBuffer (devpALSAShadowBuffer, (int16_t *)devpALSABuffer + (pos1<<1), length1, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
+			plrConvertBufferFromStereo16BitSigned (devpALSAShadowBuffer, (int16_t *)devpALSABuffer + (pos1<<1), length1, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
 			result=snd_pcm_writei(alsa_pcm, devpALSAShadowBuffer, length1);
 		} else {
 			result=snd_pcm_writei(alsa_pcm, (uint8_t *)devpALSABuffer + (pos1<<2), length1);
@@ -256,7 +256,7 @@ static unsigned int devpALSAIdle(void)
 	{
 		if (devpALSAShadowBuffer)
 		{
-			plrConvertBuffer (devpALSAShadowBuffer, (int16_t *)devpALSABuffer + (pos2<<1), length2, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
+			plrConvertBufferFromStereo16BitSigned (devpALSAShadowBuffer, (int16_t *)devpALSABuffer + (pos2<<1), length2, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
 			result=snd_pcm_writei(alsa_pcm, devpALSAShadowBuffer, length2);
 		} else {
 			result=snd_pcm_writei(alsa_pcm, (uint8_t *)devpALSABuffer + (pos2<<2), length2);
