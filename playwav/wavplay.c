@@ -209,9 +209,9 @@ static void wpIdler(struct cpifaceSessionAPI_t *cpifaceSession)
 					memset (wavebuf+(pos1<<1), 0x80, read<<(wavestereo));
 				}
 				result = read;
-			} else {
-				result >>= (wave16bit + wavestereo);
 			}
+			result >>= (wave16bit + wavestereo);
+
 			/* The wavebuffer is always 16bit signed stereo, so expand if needed */
 			if (wavestereo)
 			{
@@ -223,6 +223,13 @@ static void wpIdler(struct cpifaceSessionAPI_t *cpifaceSession)
 					for (i=((result-1)<<1); i>=0; i--)
 					{
 						dst[i] = (src[i] | (((uint16_t)src[i]) << 8)) ^ 0x8080;
+					}
+				} else {
+					int i;
+					int16_t *dst = wavebuf + (pos1<<1);
+					for (i=((result-1)<<1); i>=0; i--)
+					{
+						dst[i] = int16_little (dst[i]);
 					}
 				}
 			} else {
@@ -241,9 +248,8 @@ static void wpIdler(struct cpifaceSessionAPI_t *cpifaceSession)
 					int16_t *src = dst;
 					for (i=result-1; i>=0; i--)
 					{
-						dst[(i<<1) + 1] = dst[i<<1] = src[i];
+						dst[(i<<1) + 1] = dst[i<<1] = int16_little (src[i]);
 					}
-
 				}
 			}
 			cpifaceSession->ringbufferAPI->head_add_samples (wavebufpos, result);
