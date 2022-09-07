@@ -112,6 +112,15 @@ do { \
 	} \
 } while(0)
 
+static void plrMono16ToStereo16(int16_t *buf, int len)
+{ /* convert from end to start, so that we do not overwrite samples as data expands in size */
+	int i;
+	for (i = len; i >= 0; i--)
+	{
+		buf[i<<1] = buf[(i<<1)+1] = buf[i];
+	}
+}
+
 static void oggIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (!active)
