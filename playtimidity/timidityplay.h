@@ -42,7 +42,7 @@ extern void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct
 
 extern void __attribute__ ((visibility ("internal"))) timidityGetChanInfo(uint8_t ch, struct mchaninfo *ci);
 
-extern void __attribute__ ((visibility ("internal"))) timidityChanSetup(/*const struct midifile *mid*/);
+extern void __attribute__ ((visibility ("internal"))) timidityChanSetup(struct cpifaceSessionAPI_t *cpifaceSession/*const struct midifile *mid*/);
 extern int __attribute__ ((visibility ("internal"))) timidityGetDots (struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *d, int max);
 extern void __attribute__ ((visibility ("internal"))) timidityMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m);
 

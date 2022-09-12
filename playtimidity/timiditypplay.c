@@ -199,7 +199,7 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 
 	cpifaceSession->LogicalChannelCount = 16;
 	cpifaceSession->SetMuteChannel = timidityMute;
-	timidityChanSetup(/*&mid*/);
+	timidityChanSetup(cpifaceSession);
 
 	{
 		const char *path;
