@@ -2310,7 +2310,12 @@ static int fsEditModType (struct moduletype *oldtype, int _Bottom, int _Right)
 					cfStoreConfig();
 					editcol=0;
 				} else {
-					*oldtype = fsTypes[curindex].modtype;
+					if (curindex != fsTypesCount)
+					{
+						*oldtype = fsTypes[curindex].modtype;
+					} else {
+						oldtype->integer.i = 0;
+					}
 					state = 0;
 					return 0;
 				}
