@@ -7,21 +7,19 @@ else
 	DUMPMIDI=
 endif
 
-all: timidityptype.o playtimidity$(LIB_SUFFIX) timidityconfig$(LIB_SUFFIX) $(DUMPMIDI)
+all: 40-playtimidity$(LIB_SUFFIX) $(DUMPMIDI)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX) calcnewt dumpmidi timidity-git/timidity/newton_table.c timidity-git/interface/*.o timidity-git/libarc/*.o timidity-git/timidity/*.o timidity-git/utils/*.o
 
 install:
-	$(CP) playtimidity$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
-	$(CP) timidityconfig$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-timidityconfig$(LIB_SUFFIX)"
+	$(CP) 40-playtimidity$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpmidi "$(DESTDIR)$(BINDIR)/dumpmidi"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/playtimidity$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-timidityconfig$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playtimidity$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpmidi"
 
 cpitimiditysetup.o: \
@@ -39,15 +37,17 @@ cpitimiditysetup.o: \
 	timidity-git/timidity/timidity.h
 	$(CC) cpitimiditysetup.c -o $@ -c -DDEFAULT_PATH=TIMIDITY_DEFAULT_PATH -DPKGDATADIR=TIMIDITYPKGDATADIR
 
-timidityptype.o: timidityptype.c \
+timiditytype.o: timiditytype.c \
 	../config.h \
 	../types.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	../stuff/cp437.h \
-	../stuff/compat.h
-	$(CC) timidityptype.c -o $@ -c
+	../stuff/compat.h \
+	../stuff/err.h \
+	timiditytype.h
+	$(CC) timiditytype.c -o $@ -c
 
 dumpmidi.o: dumpmidi.c \
 	../config.h \
@@ -177,7 +177,8 @@ timidityconfig.o: timidityconfig.c \
 	../stuff/compat.h \
 	../stuff/err.h \
 	../stuff/framelock.h \
-	../stuff/poutput.h
+	../stuff/poutput.h \
+	timidityconfig.h
 	$(CC) $< -o $@ -c -DDEFAULT_PATH=TIMIDITY_DEFAULT_PATH -DPKGDATADIR=TIMIDITYPKGDATADIR
 
 timidityplay.o: timidityplay.c timidity-git/timidity/playmidi.c\
@@ -221,7 +222,9 @@ timiditypplay.o: timiditypplay.c \
 	../stuff/poutput.h \
 	../stuff/sets.h \
 	cpitimiditysetup.h \
-	timidityplay.h
+	timidityconfig.h \
+	timidityplay.h \
+	timiditytype.h
 	$(CC) $< -o $@ -c
 
 timiditypchan.o: timiditypchan.c \
@@ -243,9 +246,6 @@ timiditypdots.o: \
 	../cpiface/cpiface.h
 	$(CC) $< -o $@ -c
 
-playtimidity_so=$(interface_obj) $(libarc_obj) $(timidity_obj) $(utils_obj) cpitimiditysetup.o timiditypchan.o timidityplay.o timiditypplay.o timiditypdots.o ocp-output.o 
-playtimidity$(LIB_SUFFIX): $(playtimidity_so)
+playtimidity_so=$(interface_obj) $(libarc_obj) $(timidity_obj) $(utils_obj) cpitimiditysetup.o timiditypchan.o timidityconfig.o timidityplay.o timiditypplay.o timiditypdots.o timiditytype.o ocp-output.o
+40-playtimidity$(LIB_SUFFIX): $(playtimidity_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ -lm
-
-timidityconfig$(LIB_SUFFIX): timidityconfig.o
-	$(CC) $(SHARED_FLAGS) -o $@ $^

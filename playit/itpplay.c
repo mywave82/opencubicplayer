@@ -48,6 +48,7 @@
 #include "stuff/err.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
+#include "ittype.h"
 
 __attribute__ ((visibility ("internal"))) struct itplayer itplayer = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 static struct it_module mod = {{0},0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,{0},{0},0,0,0,0,0};
@@ -619,5 +620,15 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
+static int itInit (void)
+{
+	return it_type_init ();
+}
+
+static void itClose (void)
+{
+	it_type_done ();
+}
+
 struct cpifaceplayerstruct itpPlayer = {"[ImpulseTracker plugin]", itpOpenFile, itpCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playit", .desc = "OpenCP IT Player (c) 1997-'22 Tammo Hinrichs, Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playit", .desc = "OpenCP IT Player (c) 1997-'22 Tammo Hinrichs, Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = itInit, .Close = itClose};

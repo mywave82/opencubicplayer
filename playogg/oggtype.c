@@ -32,6 +32,8 @@
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
+#include "stuff/err.h"
+#include "oggtype.h"
 
 static int oggReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
 {
@@ -131,7 +133,7 @@ static int oggReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, co
 	return 1;
 }
 
-const char *OGG_description[] =
+static const char *OGG_description[] =
 {
 	//                                                                          |
 	"OGG Vorbis is an open format, royalty free, lossy, audio compressed file",
@@ -139,11 +141,27 @@ const char *OGG_description[] =
 	NULL
 };
 
-const struct interfaceparameters OGG_p =
+static const struct interfaceparameters OGG_p =
 {
-	"playogg", "oggPlayer",
+	"autoload/40-playogg", "oggPlayer",
 	0, 0
 };
 
+static struct mdbreadinforegstruct oggReadInfoReg = {"OGG", oggReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
 
-struct mdbreadinforegstruct oggReadInfoReg = {"OGG", oggReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+int __attribute__ ((visibility ("internal"))) ogg_type_init (void)
+{
+	struct moduletype mt;
+	fsRegisterExt ("OGA");
+	fsRegisterExt ("OGG");
+	mt.integer.i = MODULETYPE("OGG");
+	fsTypeRegister (mt, OGG_description, "plOpenCP", &OGG_p);
+
+	mdbRegisterReadInfo(&oggReadInfoReg);
+	return errOk;
+}
+
+void __attribute__ ((visibility ("internal"))) ogg_type_done (void)
+{
+	mdbUnregisterReadInfo(&oggReadInfoReg);
+}

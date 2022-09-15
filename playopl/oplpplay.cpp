@@ -44,6 +44,7 @@ extern "C"
 #include "stuff/sets.h"
 }
 #include "oplplay.h"
+#include "opltype.h"
 
 static time_t starttime;      /* when did the song start, if paused, this is slided if unpaused */
 static time_t pausetime;      /* when did the pause start (fully paused) */
@@ -467,13 +468,32 @@ static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
+static int oplInit (void)
+{
+	return opl_type_init ();
+}
+
+static void oplClose (void)
+{
+	opl_type_done ();
+}
+
 extern "C"
 {
 	cpifaceplayerstruct oplPlayer = {"[AdPlug OPL plugin]", oplOpenFile, oplCloseFile};
-//	struct linkinfostruct dllextinfo =
-//	{
-//		"playopl" /* name */,
-//		"OpenCP AdPlug (OPL) Player (c) 2005-'22 Stian Skjelstad" /* desc */,
-//		DLLVERSION /* ver */
-//	};
+
+	const char *dllinfo = "";
+	struct linkinfostruct dllextinfo =
+	{ /* c++ historically does not support named initializers, and size needs to be writable... */
+		/* .name = */ "playopl",
+		/* .desc = */ "OpenCP Adplug (OPL) Detection and Player (c) 2005-'22 Stian Skjelstad",
+		/* .ver  = */ DLLVERSION,
+		/* .size = */ 0,
+		/* .PreInit = */ 0,
+		/* .Init = */ oplInit,
+		/* .LateInit = */ 0,
+		/* .PreClose = */ 0,
+		/* .Close = */ oplClose,
+		/* .LateClose = */ 0,
+	};
 }

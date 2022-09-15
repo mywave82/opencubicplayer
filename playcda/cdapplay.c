@@ -45,6 +45,7 @@
 #include "stuff/err.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
+#include "cdatype.h"
 
 static struct ioctl_cdrom_readtoc_request_t TOC;
 static unsigned char cdpPlayMode; /* 1 = disk, 0 = track */
@@ -545,6 +546,16 @@ static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
+static int cdaInit (void)
+{
+	return cda_type_init ();
+}
+
+static void cdaClose (void)
+{
+	return cda_type_done ();
+}
+
 struct cpifaceplayerstruct cdaPlayer = {"[CDROM Audio plugin]", cdaOpenFile, cdaCloseFile};
 char *dllinfo = "";
-struct linkinfostruct dllextinfo = {.name = "playcda", .desc = "OpenCP CDA Player (c) 1995-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playcda", .desc = "OpenCP CDA Player (c) 1995-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = cdaInit, .Close = cdaClose };

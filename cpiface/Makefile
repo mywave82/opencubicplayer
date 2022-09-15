@@ -185,6 +185,7 @@ cpipic.o: cpipic.c \
 cpiptype.o: cpiptype.c \
 	../config.h \
 	../types.h \
+	cpiptype.h \
 	../filesel/mdb.h
 	$(CC) cpiptype.c -o $@ -c
 
@@ -267,6 +268,7 @@ cpiface.o: cpiface.c \
 	cpiface.h \
 	cpiface-private.h \
 	cpipic.h \
+	cpiptype.h \
 	../dev/mcp.h \
 	../dev/ringbuffer.h \
 	../filesel/dirdb.h \

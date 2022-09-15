@@ -7,7 +7,7 @@ else
 	DUMPSID=
 endif
 
-TARGETS=sidconfig$(LIB_SUFFIX) sidtype$(LIB_SUFFIX) playsid$(LIB_SUFFIX)
+TARGETS=40-playsid$(LIB_SUFFIX)
 
 LIBSIDPLAYCXXFLAGS+= -I./sidplayfp-config -I./libsidplayfp-git/src
 
@@ -85,29 +85,18 @@ clean:
 	libsidplayfp-git/src/builders/resid-builder/resid/wave8580_PST.h
 
 install:
-	$(CP) playsid$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
-	$(CP) sidtype$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-playsid$(LIB_SUFFIX)"
-	$(CP) sidconfig$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-sidconfig$(LIB_SUFFIX)"
+	$(CP) 40-playsid$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpsid "$(DESTDIR)$(BINDIR)/dumpsid"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/sidtype$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-playsid$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-timidityconfig$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-sidplay$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpsid"
 
-playsid_so=cpiinfo.o sidplay.o sidpplay.o $(LIBSIDPLAYOBJECTS)
-playsid$(LIB_SUFFIX): $(playsid_so)
+playsid_so=cpiinfo.o sidplay.o sidpplay.o sidconfig.o sidtype.o $(LIBSIDPLAYOBJECTS)
+40-playsid$(LIB_SUFFIX): $(playsid_so)
 	$(CXX) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^
-
-sidconfig$(LIB_SUFFIX): sidconfig.o
-	$(CC) $(SHARED_FLAGS) -o $@ $^
-
-sidtype_so=sidptype.o
-sidtype$(LIB_SUFFIX): $(sidtype_so)
-	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^
 
 libsidplayfp-git/src/builders/resid-builder/resid/wave6581__ST.h: \
 	libsidplayfp-git/src/builders/resid-builder/resid/wave6581__ST.dat
@@ -373,7 +362,8 @@ sidconfig.o: sidconfig.c \
 	../stuff/framelock.h \
 	../stuff/imsrtns.h \
 	../stuff/utf-8.h \
-	../stuff/poutput.h
+	../stuff/poutput.h \
+	sidconfig.h
 	$(CC) $< -o $@ -c
 
 sidptype.o: \
@@ -384,7 +374,9 @@ sidptype.o: \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
-	../stuff/latin1.h
+	../stuff/err.h \
+	../stuff/latin1.h \
+	sidtype.h
 	$(CC) $< -o $@ -c
 
 sidplay.o: \
@@ -420,7 +412,9 @@ sidpplay.o: sidpplay.cpp \
 	../stuff/sets.h \
 	./libsidplayfp-git/src/sidplayfp/SidTuneInfo.h \
 	cpiinfo.h \
-	sidplay.h
+	sidplay.h \
+	sidtype.h \
+	sidconfig.h
 	$(CXX) $(LIBSIDPLAYCXXFLAGS) $< -o $@ -c
 
 dumpsid: dumpsid.o

@@ -28,8 +28,8 @@
 #include "filesel/pfilesel.h"
 #include "stuff/cp437.h"
 #include "stuff/compat.h"
-
-static struct mdbreadinforegstruct ayReadInfoReg;
+#include "stuff/err.h"
+#include "aytype.h"
 
 static int ayReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
 {
@@ -102,6 +102,9 @@ static int ayReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, con
 	return 1;
 }
 
+
+static struct mdbreadinforegstruct ayReadInfoReg = {"AY", ayReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+
 static const char *AY_description[] =
 {
 	//                                                                          |
@@ -113,35 +116,22 @@ static const char *AY_description[] =
 
 static const struct interfaceparameters AY_p =
 {
-	"playay", "ayPlayer",
+	"autoload/40-playay", "ayPlayer",
 	0, 0
 };
 
-
-static void ayEvent(int event)
+int __attribute__ ((visibility ("internal"))) ay_type_init (void)
 {
-	switch (event)
-	{
-		case mdbEvInit:
-		{
-			struct moduletype mt;
-			fsRegisterExt("ay");
-			mt.integer.i = MODULETYPE("AY");
-			fsTypeRegister (mt, AY_description, "plOpenCP", &AY_p);
-		}
-	}
-}
+	struct moduletype mt;
+	fsRegisterExt("ay");
+	mt.integer.i = MODULETYPE("AY");
+	fsTypeRegister (mt, AY_description, "plOpenCP", &AY_p);
 
-static void __attribute__((constructor))init(void)
-{
 	mdbRegisterReadInfo(&ayReadInfoReg);
+	return errOk;
 }
 
-static void __attribute__((destructor))done(void)
+void __attribute__ ((visibility ("internal"))) ay_type_done (void)
 {
 	mdbUnregisterReadInfo(&ayReadInfoReg);
 }
-
-static struct mdbreadinforegstruct ayReadInfoReg = {"AY", ayReadInfo, ayEvent MDBREADINFOREGSTRUCT_TAIL};
-char *dllinfo = "";
-struct linkinfostruct dllextinfo = {.name = "aytype", .desc = "OpenCP AY Detection (c) 2005-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

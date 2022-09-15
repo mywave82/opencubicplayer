@@ -47,12 +47,12 @@
 #include "boot/psetting.h"
 #include "dirdb.h"
 #include "filesystem.h"
+#include "fsptype.h"
 #include "mdb.h"
 #include "pfilesel.h"
 #include "stuff/err.h"
 #include "stuff/poutput.h"
 
-extern struct mdbreadinforegstruct fsReadInfoReg;
 
 static struct moduleinfostruct nextinfo;
 static struct moduleinfostruct plModuleInfo;

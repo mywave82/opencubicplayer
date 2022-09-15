@@ -1,14 +1,6 @@
 TOPDIR=./
 include $(TOPDIR)Rules.make
 
-ifeq ($(HAVE_MAD),1)
-	FSTYPES_SO_MAD=playmp2/mpptype.o playmp2/id3.o
-	FSTYPES_SO_LIBS=$(LIBJPEG_LIBS) $(LIBPNG_LIBS)
-else
-	FSTYPES_SO_MAD=
-	FSTYPES_SO_LIBS=
-endif
-
 SUBDIRS=boot cpiface dev doc devp devw filesel goodies help medialib playay playcda playflac playgmd playtimidity playhvl playit playogg playopl
 ifeq ($(HAVE_MAD),1)
 SUBDIRS+=playmp2
@@ -24,18 +16,12 @@ include filesel/Makefile-static
 include stuff/Makefile-static
 include dev/Makefile-static
 include help/Makefile-static
-fstypes_so=playgmd/gmdptype.o playtimidity/timidityptype.o playit/itpptype.o playogg/oggtype.o $(FSTYPES_SO_MAD) playwav/wavptype.o playxm/xmpptype.o filesel/fstypes.o
-libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o cpiface/cpikeyhelp.o stuff/compat.o stuff/err.o stuff/framelock.o stuff/poll.o boot/console.o $(fstypes_so) $(STATIC_OBJECTS) stuff/utf-8.o boot/plinkman_end.o
+libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o cpiface/cpikeyhelp.o stuff/compat.o stuff/err.o stuff/framelock.o stuff/poll.o boot/console.o $(STATIC_OBJECTS) stuff/utf-8.o boot/plinkman_end.o
+else
+libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o cpiface/cpikeyhelp.o stuff/compat.o stuff/err.o stuff/framelock.o stuff/poll.o boot/console.o stuff/utf-8.o boot/plinkman_end.o
+endif
 
 all: subdirs ocp ocp.hlp libocp$(LIB_SUFFIX)
-
-else
-fstypes_so=playgmd/gmdptype.o playtimidity/timidityptype.o playhvl/hvlptype.o playit/itpptype.o playogg/oggtype.o $(FSTYPES_SO_MAD) playwav/wavptype.o playxm/xmpptype.o filesel/fstypes.o
-libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o cpiface/cpikeyhelp.o stuff/compat.o stuff/err.o stuff/framelock.o stuff/poll.o boot/console.o stuff/utf-8.o boot/plinkman_end.o
-
-all: subdirs ocp ocp.hlp fstypes$(LIB_SUFFIX) libocp$(LIB_SUFFIX)
-
-endif
 
 install: all
 	mkdir -p "$(DESTDIR)$(DOCDIR)"
@@ -47,9 +33,6 @@ install: all
 	mkdir -p "$(DESTDIR)$(LIBDIR)"
 	$(CP) libocp$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
 	mkdir -p "$(DESTDIR)$(LIBDIR)/autoload"
-ifneq ($(STATIC_BUILD),1)
-	$(CP) fstypes$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-fstypes$(LIB_SUFFIX)"
-endif
 	mkdir -p "$(DESTDIR)$(BINDIR)"
 	$(CP) ocp "$(DESTDIR)$(BINDIR)/ocp$(DIR_SUFFIX)"
 	if ! test -z $(DIR_SUFFIX); then ln -sf "ocp$(DIR_SUFFIX)" "$(DESTDIR)$(BINDIR)/ocp"; fi
@@ -145,9 +128,6 @@ distclean: clean
 		doc/texi/ocp.texi \
 		playsid/libsidplayfp-git/src/builders/resid-builder/resid/siddefs.h \
 		playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h
-
-fstypes$(LIB_SUFFIX): $(fstypes_so)
-	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $(fstypes_so) $(ICONV_LIBS) $(FSTYPES_SO_LIBS)
 
 libocp$(LIB_SUFFIX): $(libocp_so)
 	$(CC) $(SHARED_FLAGS) $(LDFLAGS) $(STATIC_LIBS) -o $@ $(libocp_so)

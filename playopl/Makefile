@@ -6,8 +6,7 @@ ADPLUG_CXXFLAGS+=-Ilibbinio-git/src -Iadplug-git/src
 ADPLUG_LIBS= #$(LIBBINIO_TARGETS) $(LIBADPLUG_TARGETS)
 
 ifeq ($(HAVE_ADPLUG),1)
-#TARGETS=opltype$(LIB_SUFFIX) playopl$(LIB_SUFFIX)
-TARGETS=playopl$(LIB_SUFFIX)
+TARGETS=40-playopl$(LIB_SUFFIX)
 endif
 
 LIBADPLUG_CXXFLAGS=$(ADPLUG_CXXFLAGS)-DVERSION=\"2.3.4-beta\" -Dstricmp=strcasecmp -Ilibbinio-git/src $(ADPLUG_CXX_FLAGS)
@@ -44,24 +43,16 @@ clean:
 
 install:
 ifeq ($(HAVE_ADPLUG),1)
-#	$(CP) playopl$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
-#	$(CP) opltype$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-opltype$(LIB_SUFFIX)"
-	$(CP) playopl$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/40-playopl$(LIB_SUFFIX)"
+	$(CP) 40-playopl$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/40-playopl$(LIB_SUFFIX)"
 	mkdir -p "$(DESTDIR)$(DATADIR)/ocp$(DIR_SUFFIX)/data"
 	$(CP) adplugdb-git/adplug.db "$(DESTDIR)$(DATADIR)/ocp$(DIR_SUFFIX)/data"
 endif
 
 uninstall:
 ifeq ($(HAVE_ADPLUG),1)
-#	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-opltype$(LIB_SUFFIX)"
-#	rm -f "$(DESTDIR)$(LIBDIR)/playopl$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playopl$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(DATADIR)/ocp$(DIR_SUFFIX)/data/adplug.db
+	rm -f "$(DESTDIR)$(DATADIR)/ocp$(DIR_SUFFIX)/data/adplug.db"
 endif
-
-#opltype_so=opltype.o adplug_a2m.o adplug_adl.o adplug_adlib.o adplug_adplug.o adplug_amd.o adplug_adtrack.o adplug_bam.o adplug_bmf.o adplug_cff.o adplug_cmf.o adplug_cmfmcsop.o adplug_d00.o adplug_database.o adplug_debug.o adplug_dfm.o adplug_dmo.o adplug_dro.o adplug_dro2.o adplug_dtm.o adplug_flash.o adplug_fmc.o adplug_fprovide.o adplug_got.o adplug_herad.o adplug_hsc.o adplug_hsp.o adplug_hybrid.o adplug_hyp.o adplug_imf.o adplug_jbm.o adplug_ksm.o adplug_lds.o adplug_mad.o adplug_mdi.o adplug_mid.o adplug_mkj.o adplug_msc.o adplug_mtk.o adplug_mus.o adplug_player.o adplug_players.o adplug_protrack.o adplug_psi.o adplug_rad2.o adplug_rat.o adplug_raw.o adplug_rix.o adplug_rol.o adplug_s3m.o adplug_sa2.o adplug_sng.o adplug_sop.o adplug_u6m.o adplug_vgm.o adplug_xad.o adplug_xsm.o libbinio_binio.o libbinio_binfile.o libbinio_binstr.o #$(LIBADPLUG_TARGETS)
-#opltype$(LIB_SUFFIX): $(opltype_so)
-#	$(ADPLUG_CXX) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(ADPLUG_LIBS)
 
 opltype.o: opltype.cpp \
 	../config.h \
@@ -73,11 +64,12 @@ opltype.o: opltype.cpp \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
-	../stuff/err.h
+	../stuff/err.h \
+	opltype.h
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) opltype.cpp -o $@ -c
 
 playopl_so=oplpplay.o oplplay.o oplptrak.o ocpemu.o opltype.o $(LIBBINIO_TARGETS) $(LIBADPLUG_TARGETS)
-playopl$(LIB_SUFFIX): $(playopl_so)
+40-playopl$(LIB_SUFFIX): $(playopl_so)
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(ADPLUG_LIBS) $(MATH_LIBS)
 
 oplpplay.o: oplpplay.cpp \
@@ -95,7 +87,8 @@ oplpplay.o: oplpplay.cpp \
 	../stuff/err.h \
 	../stuff/poutput.h \
 	../stuff/sets.h \
-	oplplay.h
+	oplplay.h \
+	opltype.h
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) oplpplay.cpp -o $@ -c
 
 oplplay.o: oplplay.cpp \

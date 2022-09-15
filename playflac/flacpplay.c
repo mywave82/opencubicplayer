@@ -30,6 +30,7 @@
 #include "filesel/pfilesel.h"
 #include "filesel/mdb.h"
 #include "flacplay.h"
+#include "flactype.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/poutput.h"
@@ -237,5 +238,15 @@ static int flacOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 	return errOk;
 }
 
+static int flacInit (void)
+{
+	return flac_type_init ();
+}
+
+static void flacClose (void)
+{
+	flac_type_done ();
+}
+
 struct cpifaceplayerstruct flacPlayer = {"[FLAC plugin]", flacOpenFile, flacCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playflac", .desc = "OpenCP FLAC Player (c) 2007-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playflac", .desc = "OpenCP FLAC Player (c) 2007-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = flacInit, .Close = flacClose};

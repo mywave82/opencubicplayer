@@ -30,8 +30,10 @@ extern "C" {
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
+#include "stuff/err.h"
 }
 #include "lzh/lzh.h"
+#include "ymtype.h"
 
 struct __attribute__((packed)) pymHeader
 {
@@ -347,7 +349,7 @@ static int ymReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, co
 #endif
 }
 
-const char *YM_description[] =
+static const char *YM_description[] =
 {
 	//                                                                          |
 	"YM files as music, primary from Atari systems. Atari machines features a",
@@ -358,44 +360,26 @@ const char *YM_description[] =
 	NULL
 };
 
-struct interfaceparameters YM_p =
+static struct interfaceparameters YM_p =
 {
-	"playym", "ymPlayer",
+	"autoload/40-playym", "ymPlayer",
 	0, 0
 };
 
-static void ymEvent(int event)
-{
-	switch (event)
-	{
-		case mdbEvInit:
-		{
-			struct moduletype mt;
+static struct mdbreadinforegstruct ymReadInfoReg = {"YM", ymReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
 
-			fsRegisterExt("YM");
-			mt.integer.i = MODULETYPE("YM");
-			fsTypeRegister (mt, YM_description, "plOpenCP", &YM_p);
-		}
-	}
-}
-static struct mdbreadinforegstruct ymReadInfoReg = {"YM", ymReadInfo, ymEvent MDBREADINFOREGSTRUCT_TAIL};
-
-static void __attribute__((constructor))init(void)
+int __attribute__((visibility ("internal"))) ym_type_init (void)
 {
+	struct moduletype mt;
+	fsRegisterExt("YM");
+	mt.integer.i = MODULETYPE("YM");
+	fsTypeRegister (mt, YM_description, "plOpenCP", &YM_p);
+
 	mdbRegisterReadInfo(&ymReadInfoReg);
+	return errOk;
 }
 
-static void __attribute__((destructor))done(void)
+void __attribute__((visibility ("internal"))) ym_type_done (void)
 {
 	mdbUnregisterReadInfo(&ymReadInfoReg);
-}
-
-extern "C" {
-	const char *dllinfo = "";
-	struct linkinfostruct dllextinfo =
-	{
-		"ymtype" /* name */,
-		"OpenCP YM Detection (c) 2010-'22 Stian Skjelstad" /* desc */,
-		DLLVERSION /* ver */
-	};
 }

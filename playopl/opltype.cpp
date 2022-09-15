@@ -26,6 +26,7 @@
 #include "adplug-git/src/players.h"
 #include "adplug-git/src/player.h"
 #include "adplug.h"
+#include "opltype.h"
 #include "players.h"
 #include "player.h"
 #include "types.h"
@@ -64,7 +65,7 @@ static int oplReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, co
 
 }
 
-const char *OPL_description[] =
+static const char *OPL_description[] =
 {
 	//                                                                          |
 	"OPL style music is collection of fileformats that all have in common that",
@@ -74,46 +75,17 @@ const char *OPL_description[] =
 	NULL
 };
 
-struct interfaceparameters OPL_p =
+static struct interfaceparameters OPL_p =
 {
 	"autoload/40-playopl", "oplPlayer",
 	0, 0
 };
 
-static void oplEvent(int event)
-{
-	switch (event)
-	{
-		case mdbEvInit:
-		{
-			CPlayers::const_iterator i;
-			int j;
-			const char *s;
-			char _s[6];
-			struct moduletype mt;
+static struct mdbreadinforegstruct oplReadInfoReg = {"adplug", oplReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
 
-			for(i = CAdPlug::players.begin(); i != CAdPlug::players.end(); i++)
-			{
-				for(j = 0; (s=(*i)->get_extension(j)); j++)
-				{
-					strncpy(_s, s+1, 5);
-					_s[5]=0;
-					strupr(_s);
-					fsRegisterExt(_s);
-				}
-			}
+static class CAdPlugDatabase *adplugdb_ocp;
 
-			mt.integer.i = MODULETYPE("OPL");
-			fsTypeRegister (mt, OPL_description, "plOpenCP", &OPL_p);
-		}
-	}
-}
-
-static struct mdbreadinforegstruct oplReadInfoReg = {"adplug", oplReadInfo, oplEvent MDBREADINFOREGSTRUCT_TAIL};
-
-class CAdPlugDatabase *adplugdb_ocp;
-
-static int oplTypePreInit(void)
+int __attribute__ ((visibility ("internal"))) opl_type_init (void)
 {
 	char *path=0;
 	const char *home = getenv ("HOME");
@@ -141,11 +113,34 @@ static int oplTypePreInit(void)
 		}
 		CAdPlug::set_database (adplugdb_ocp);
 	}
+
+	{
+		CPlayers::const_iterator i;
+		int j;
+		const char *s;
+		char _s[6];
+		struct moduletype mt;
+
+		for(i = CAdPlug::players.begin(); i != CAdPlug::players.end(); i++)
+		{
+			for(j = 0; (s=(*i)->get_extension(j)); j++)
+			{
+				strncpy(_s, s+1, 5);
+				_s[5]=0;
+				strupr(_s);
+				fsRegisterExt(_s);
+		}
+			}
+
+		mt.integer.i = MODULETYPE("OPL");
+		fsTypeRegister (mt, OPL_description, "plOpenCP", &OPL_p);
+	}
+
 	mdbRegisterReadInfo(&oplReadInfoReg);
 	return errOk;
 }
 
-static void oplTypePreDone(void)
+void __attribute__ ((visibility ("internal"))) opl_type_done (void)
 {
 	if (adplugdb_ocp)
 	{
@@ -154,22 +149,4 @@ static void oplTypePreDone(void)
 		adplugdb_ocp = 0;
 	}
 	mdbUnregisterReadInfo(&oplReadInfoReg);
-}
-
-extern "C" {
-	const char *dllinfo = "";
-	struct linkinfostruct dllextinfo =
-	{
-		.name      = "opltype",
-		.desc      = "OpenCP Adplug (OPL) Detection and Player (c) 2005-'22 Stian Skjelstad",
-		.ver       = DLLVERSION,
-		.size      = 0,
-		.PreInit   = oplTypePreInit,
-		.Init      = 0,
-		.LateInit  = 0,
-		.PreClose  = oplTypePreDone,
-		.Close     =  0,
-		.LateClose =  0
-	};
-
 }

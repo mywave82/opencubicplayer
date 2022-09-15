@@ -52,6 +52,7 @@
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 #include "xmplay.h"
+#include "xmtype.h"
 
 __attribute__ ((visibility ("internal"))) struct xmodule mod;
 
@@ -629,5 +630,15 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
+static int xmInit (void)
+{
+	return xm_type_init ();
+}
+
+static void xmClose (void)
+{
+	xm_type_done ();
+}
+
 struct cpifaceplayerstruct xmpPlayer = {"[FastTracker II plugin]", xmpOpenFile, xmpCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playxm", .desc = "OpenCP XM/MOD Player (c) 1995-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playxm", .desc = "OpenCP XM/MOD Player (c) 1995-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = xmInit, .Close = xmClose};

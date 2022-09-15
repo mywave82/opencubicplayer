@@ -7,7 +7,7 @@ else
 	DUMPAY=
 endif
 
-TARGETS=aytype$(LIB_SUFFIX) playay$(LIB_SUFFIX) $(DUMPAY)
+TARGETS=40-playay$(LIB_SUFFIX) $(DUMPAY)
 
 CFLAGS+=-fPIC
 
@@ -17,21 +17,15 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX) dumpay
 
 install:
-	$(CP) aytype$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-aytype$(LIB_SUFFIX)"
-	$(CP) playay$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+	$(CP) 40-playay$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/40-playay$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpay "$(DESTDIR)$(BINDIR)/dumpay"
 endif
 
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-aytype$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/playay$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playay$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpay"
-
-aytype_so=aytype.o
-aytype$(LIB_SUFFIX): $(aytype_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 aytype.o: aytype.c \
 	../config.h \
@@ -40,11 +34,13 @@ aytype.o: aytype.c \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
-	../stuff/cp437.h
+	../stuff/cp437.h \
+	../stuff/err.h \
+	aytype.h
 	$(CC) aytype.c -o $@ -c
 
-playay_so=z80.o sound.o aychan.o aypplay.o ayplay.o
-playay$(LIB_SUFFIX): $(playay_so)
+playay_so=z80.o sound.o aychan.o aypplay.o ayplay.o aytype.o
+40-playay$(LIB_SUFFIX): $(playay_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 z80.o: z80.h z80.c z80ops.c edops.c cbops.c main.h

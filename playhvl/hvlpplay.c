@@ -37,6 +37,7 @@
 #include "hvlpinst.h"
 #include "hvlplay.h"
 #include "hvlptrak.h"
+#include "hvltype.h"
 #include "player.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
@@ -255,5 +256,15 @@ static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
+static int hvlInit (void)
+{
+	return hvl_type_init ();
+}
+
+static void hvlClose (void)
+{
+	hvl_type_done ();
+}
+
 struct cpifaceplayerstruct hvlPlayer = {"[HivelyTracker plugin]", hvlOpenFile, hvlCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playhvl", .desc = "OpenCP HVL Player (c) 2019-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playhvl", .desc = "OpenCP HVL Player (c) 2019-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = hvlInit, .Close = hvlClose};

@@ -29,8 +29,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "cpiptype.h"
 #include "filesel/mdb.h"
-
 
 static int cpiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *file, const char *buf, size_t len)
 {

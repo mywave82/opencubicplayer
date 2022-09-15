@@ -7,23 +7,23 @@ else
 	DUMPERS=
 endif
 
-all: xmpptype.o playxm$(LIB_SUFFIX) $(DUMPERS)
+all: 40-playxm$(LIB_SUFFIX) $(DUMPERS)
 
-playxm_so=xmlmod.o xmlmxm.o xmload.o xmload.o xmpinst.o xmplay.o xmpplay.o xmptrak.o xmrtns.o xmtime.o
-playxm$(LIB_SUFFIX): $(playxm_so)
+playxm_so=xmlmod.o xmlmxm.o xmload.o xmload.o xmpinst.o xmplay.o xmpplay.o xmptrak.o xmrtns.o xmtime.o xmtype.o
+40-playxm$(LIB_SUFFIX): $(playxm_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX) dumpmod
 
 install:
-	$(CP) playxm$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+	$(CP) 40-playxm$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpmod "$(DESTDIR)$(BINDIR)/dumpmod"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/playxm$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playxm$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpmod"
 
 dumpmod: dumpmod.o
@@ -34,15 +34,17 @@ dumpmod.o: \
 	$(CC) -o $@ $< -c
 
 
-xmpptype.o: xmpptype.c \
+xmtype.o: xmtype.c \
 	../config.h \
 	../types.h \
 	../filesel/filesystem.h \
 	../filesel/dirdb.h \
 	../filesel/pfilesel.h \
 	../filesel/mdb.h \
-	../stuff/cp437.h
-	$(CC) xmpptype.c -o $@ -c
+	../stuff/cp437.h \
+	../stuff/err.h \
+	xmtype.h
+	$(CC) xmtype.c -o $@ -c
 
 xmlmod.o: xmlmod.c \
 	../config.h \
@@ -91,6 +93,7 @@ xmplay.o: xmplay.c \
 xmpplay.o: xmpplay.c \
 	../config.h \
 	xmplay.h \
+	xmtype.h \
 	../types.h \
 	../boot/plinkman.h \
 	../cpiface/cpiface.h \

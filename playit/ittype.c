@@ -31,6 +31,8 @@
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/cp437.h"
+#include "stuff/err.h"
+#include "ittype.h"
 
 static uint32_t itpGetModuleType(const char *buf)
 {
@@ -105,7 +107,7 @@ static int itpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	return 1;
 }
 
-const char *IT_description[] =
+static const char *IT_description[] =
 {
 	//                                                                          |
 	"IT files are created by Impulse Tracker or the modern remake Schism Tracker.",
@@ -114,11 +116,26 @@ const char *IT_description[] =
 	NULL
 };
 
-struct interfaceparameters IT_p =
+static struct interfaceparameters IT_p =
 {
-	"playit", "itpPlayer",
+	"autoload/40-playit", "itpPlayer",
 	0, 0
 };
 
+static struct mdbreadinforegstruct itpReadInfoReg = {"IT", itpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
 
-struct mdbreadinforegstruct itpReadInfoReg = {"IT", itpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+int __attribute__ ((visibility ("internal"))) it_type_init (void)
+{
+	struct moduletype mt;
+	fsRegisterExt ("IT");
+	mt.integer.i = MODULETYPE("IT");
+	fsTypeRegister (mt, IT_description, "plOpenCP", &IT_p);
+
+	mdbRegisterReadInfo(&itpReadInfoReg);
+	return errOk;
+}
+
+void __attribute__ ((visibility ("internal"))) it_type_done (void)
+{
+	mdbUnregisterReadInfo(&itpReadInfoReg);
+}

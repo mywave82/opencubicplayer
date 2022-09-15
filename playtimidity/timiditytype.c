@@ -33,6 +33,8 @@
 #include "filesel/pfilesel.h"
 #include "stuff/cp437.h"
 #include "stuff/compat.h"
+#include "stuff/err.h"
+#include "timiditytype.h"
 
 static uint32_t timidityGetModuleType (const uint8_t *buf)
 {
@@ -111,7 +113,7 @@ static int timidityReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *
 	return 1;
 }
 
-const char *MIDI_description[] =
+static const char *MIDI_description[] =
 {
 	//                                                                          |
 	"MIDI files are music files that only contains note and meta data. MIDI in",
@@ -123,11 +125,29 @@ const char *MIDI_description[] =
 	NULL
 };
 
-struct interfaceparameters MIDI_p =
+static struct interfaceparameters MIDI_p =
 {
-	"playtimidity", "timidityPlayer",
+	"autoload/40-playtimidity", "timidityPlayer",
 	0, 0
 };
 
+static struct mdbreadinforegstruct timidityReadInfoReg = {"MIDI", timidityReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
 
-struct mdbreadinforegstruct timidityReadInfoReg = {"MIDI", timidityReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+
+int __attribute__ ((visibility ("internal"))) timidity_type_init (void)
+{
+	struct moduletype mt;
+	fsRegisterExt ("MID");
+	fsRegisterExt ("MIDI");
+	fsRegisterExt ("RMI");
+	mt.integer.i = MODULETYPE("MIDI");
+	fsTypeRegister (mt, MIDI_description, "plOpenCP", &MIDI_p);
+
+	mdbRegisterReadInfo(&timidityReadInfoReg);
+	return errOk;
+}
+
+void __attribute__ ((visibility ("internal"))) timidity_type_done (void)
+{
+	mdbUnregisterReadInfo(&timidityReadInfoReg);
+}

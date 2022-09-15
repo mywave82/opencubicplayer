@@ -1,20 +1,20 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-all: oggtype.o playogg$(LIB_SUFFIX)
+all: 40-playogg$(LIB_SUFFIX)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) playogg$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+	$(CP) 40-playogg$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/playogg$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playogg$(LIB_SUFFIX)"
 
-playogg_so=cpiogginfo.o cpioggpic.o oggplay.o oggpplay.o
-playogg$(LIB_SUFFIX): $(playogg_so)
-	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(OGG_LIBS) $(MATH_LIBS) $(VORBIS_LIBS) $(VORBISFILE_LIBS)
+playogg_so=cpiogginfo.o cpioggpic.o oggplay.o oggpplay.o oggtype.o
+40-playogg$(LIB_SUFFIX): $(playogg_so)
+	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(OGG_LIBS) $(MATH_LIBS) $(VORBIS_LIBS) $(VORBISFILE_LIBS) $(LIBJPEG_LIBS) $(LIBPNG_LIBS)
 
 cpiogginfo.o: cpiogginfo.c \
 	../config.h \
@@ -38,7 +38,9 @@ oggtype.o: oggtype.c \
 	../types.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
-	../filesel/pfilesel.h
+	../filesel/pfilesel.h \
+	oggtype.h \
+	../stuff/err.h
 	$(CC) oggtype.c -o $@ -c
 
 oggplay.o: oggplay.c \
@@ -70,6 +72,7 @@ oggpplay.o: oggpplay.c \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	oggplay.h \
+	oggtype.h \
 	../stuff/compat.h  \
 	../stuff/err.h \
 	../stuff/poutput.h \

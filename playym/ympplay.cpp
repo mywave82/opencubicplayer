@@ -44,6 +44,7 @@ extern "C"
 }
 #include "stsoundlib/StSoundLibrary.h"
 #include "ymplay.h"
+#include "ymtype.h"
 
 static time_t starttime;      /* when did the song start, if paused, this is slided if unpaused */
 static time_t pausetime;      /* when did the pause start (fully paused) */
@@ -514,13 +515,29 @@ static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	return 0;
 }
 
+static int ymInit (void)
+{
+	return ym_type_init ();
+}
+
+static void ymClose (void)
+{
+	ym_type_done ();
+}
+
 extern "C"
 {
 	cpifaceplayerstruct ymPlayer = {"[STYMulator plugin]", ymOpenFile, ymCloseFile};
 	struct linkinfostruct dllextinfo =
-	{
-		"playym" /* name */,
-		"OpenCP STYMulator Player (c) 2010-'22 Stian Skjelstad" /* desc */,
-		DLLVERSION /* ver */
+	{ /* c++ historically does not support named initializers, and size needs to be writable... */
+		/* .name = */ "playym",
+		/* .desc = */ "OpenCP STYMulator Player (c) 2010-'22 Stian Skjelstad",
+		/* .ver  = */ DLLVERSION,
+		/* .size = */ 0,
+		/* .PreInit = */ 0,
+		/* .Init = */ ymInit,
+		/* .LateInit = */ 0,
+		/* .Close = */ ymClose,
+		/* .LateClose = */ 0
 	};
 }

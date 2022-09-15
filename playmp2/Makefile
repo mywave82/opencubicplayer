@@ -7,16 +7,21 @@ else
 	DUMPID3=
 endif
 
-all: mpptype.o id3.o playmp2$(LIB_SUFFIX) $(DUMPID3)
+all: id3.o 40-playmp2$(LIB_SUFFIX) $(DUMPID3)
+
+playmp2_so=cpiid3info.o cpiid3pic.o mppplay.o mpplay.o
+playmp2_so+=mptype.o id3.o
+40-playmp2$(LIB_SUFFIX): $(playmp2_so)
+	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(MAD_LIBS) $(MATH_LIBS) $(LIBJPEG_LIBS) $(LIBPNG_LIBS)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) playmp2$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+	$(CP) 40-playmp2$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/playmp2$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playmp2$(LIB_SUFFIX)"
 
 dumpid3: dumpid3.o
 	$(CC) $(LDFLAGS) -o $@ $^ -lz
@@ -50,7 +55,7 @@ id3.o: id3.c \
 	id3.h
 	$(CC) $< -o $@ -c
 
-mpptype.o: mpptype.c \
+mptype.o: mptype.c \
 	../config.h \
 	../types.h \
 	../filesel/dirdb.h \
@@ -58,13 +63,12 @@ mpptype.o: mpptype.c \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	id3.h \
+	mptype.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h \
 	../stuff/utf-8.h
-	$(CC) mpptype.c -o $@ -c
+	$(CC) mptype.c -o $@ -c
 
-playmp2_so=cpiid3info.o cpiid3pic.o mppplay.o mpplay.o
-playmp2$(LIB_SUFFIX): $(playmp2_so)
-	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(MAD_LIBS) $(MATH_LIBS)
 mppplay.o: mppplay.c \
 	../config.h \
 	../types.h \
@@ -78,6 +82,7 @@ mppplay.o: mppplay.c \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	mpplay.h \
+	mptype.h \
 	../stuff/compat.h \
 	../stuff/err.h \
 	../stuff/poutput.h \

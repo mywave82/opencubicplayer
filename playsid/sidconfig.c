@@ -47,6 +47,7 @@
 #include "stuff/utf-8.h"
 #include "stuff/poutput.h"
 
+#include "sidconfig.h"
 #include "md5.inc.c"
 
 struct browser_t
@@ -1271,7 +1272,7 @@ static int                    sidConfigInit (struct moduleinfostruct *info, stru
 static interfaceReturnEnum    sidConfigRun  (void);
 static struct interfacestruct sidConfigIntr = {sidConfigInit, sidConfigRun, 0, "libsidplayfp Config" INTERFACESTRUCT_TAIL};
 
-static int sid_config_init (void)
+int __attribute__ ((visibility ("internal"))) sid_config_init (void)
 {
 	struct moduleinfostruct m;
 	uint32_t mdbref;
@@ -1289,7 +1290,7 @@ static int sid_config_init (void)
 	return errOk;
 }
 
-static void sid_config_done (void)
+void __attribute__ ((visibility ("internal"))) sid_config_done (void)
 {
 	plUnregisterInterface (&sidConfigIntr);
 	if (sidconfig)
@@ -1298,9 +1299,3 @@ static void sid_config_done (void)
 		sidconfig = 0;
 	}
 }
-
-#ifndef SUPPORT_STATIC_PLUGINS
-char *dllinfo = "";
-#endif
-
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "sidconfig", .desc = "OpenCP libsidplayfp configuration (c) 2022 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = sid_config_init, .Close = sid_config_done};

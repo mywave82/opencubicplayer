@@ -1,19 +1,19 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-all: wavptype.o playwav$(LIB_SUFFIX)
+all: 40-playwav$(LIB_SUFFIX)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) playwav$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+	$(CP) 40-playwav$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/playwav$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playwav$(LIB_SUFFIX)"
 
-playwav_so=wavplay.o wavpplay.o
-playwav$(LIB_SUFFIX): $(playwav_so)
+playwav_so=wavplay.o wavpplay.o wavtype.o
+40-playwav$(LIB_SUFFIX): $(playwav_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 wavplay.o: wavplay.c \
@@ -26,16 +26,19 @@ wavplay.o: wavplay.c \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
 	../stuff/imsrtns.h \
-	wave.h
+	wave.h \
+	wavtype.h
 	$(CC) wavplay.c -o $@ -c
 
-wavptype.o: wavptype.c \
+wavtype.o: wavtype.c \
 	../config.h \
 	../types.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
-	../filesel/pfilesel.h
-	$(CC) wavptype.c -o $@ -c
+	../filesel/pfilesel.h \
+	../stuff/err.h \
+	wavtype.h
+	$(CC) wavtype.c -o $@ -c
 
 wavpplay.o: wavpplay.c \
 	../config.h \

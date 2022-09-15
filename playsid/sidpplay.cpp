@@ -50,6 +50,8 @@ extern "C"
 #include "stuff/compat.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
+#include "sidtype.h"
+#include "sidconfig.h"
 }
 #include "sidplayfp/SidTuneInfo.h"
 #include "cpiinfo.h"
@@ -475,13 +477,33 @@ static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return 0;
 }
 
+static int sidInit (void)
+{
+	int err;
+	if ((err = sid_config_init ())) return err;
+	if ((err = sid_type_init ())) return err;
+	return err;
+}
+
+static void sidClose (void)
+{
+	sid_type_done ();
+	sid_config_done ();
+}
+
 extern "C"
 {
 	cpifaceplayerstruct sidPlayer = {"[libsidplayfp plugin]", sidOpenFile, sidCloseFile};
 	struct linkinfostruct dllextinfo =
-	{
-		"playsid" /* name */,
-		"OpenCP SID Player (c) 1993-'22 Michael Schwendt, Tammo Hinrichs, Stian Skjelstad" /* desc */,
-		DLLVERSION /* ver */
+	{ /* c++ historically does not support named initializers, and size needs to be writable... */
+		/* .name = */ "playsid",
+		/* .desc = */ "OpenCP SID Player (c) 1993-'22 Michael Schwendt, Tammo Hinrichs, Stian Skjelstad",
+		/* .ver  = */ DLLVERSION,
+		/* .size = */ 0,
+		/* .PreInit = */ 0,
+		/* .Init = */ sidInit,
+		/* .LateInit = */ 0,
+		/* .Close = */ sidClose,
+		/* .LateClose = */ 0
 	};
 }

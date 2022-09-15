@@ -1,23 +1,31 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-PLAYCDA_SO=playcda$(LIB_SUFFIX)
+PLAYCDA_SO=40-playcda$(LIB_SUFFIX)
 
 all: $(PLAYCDA_SO)
 
-playcda_so=cdaplay.o cdapplay.o
-playcda$(LIB_SUFFIX): $(playcda_so)
+playcda_so=cdaplay.o cdapplay.o cdatype.o
+40-playcda$(LIB_SUFFIX): $(playcda_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) $(PLAYCDA_SO) "$(DESTDIR)$(LIBDIR)"
+	$(CP) $(PLAYCDA_SO) "$(DESTDIR)$(LIBDIR)/autoload/"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/$(PLAYCDA_SO)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/$(PLAYCDA_SO)"
 
+cdatype.o: cdatype.c cdatype.h \
+	../config.h \
+	../types.h \
+	../filesel/mdb.h \
+	../filesel/pfilesel.h \
+	../stuff/err.h \
+	cdatype.h
+	$(CC) cdatype.c -o $@ -c
 
 cdaplay.o: cdaplay.c cdaudio.h \
 	../config.h \

@@ -31,6 +31,8 @@
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/cp437.h"
+#include "stuff/err.h"
+#include "gmdtype.h"
 
 static uint32_t gmdGetModuleType(const char *buf, const size_t len)
 {
@@ -428,7 +430,7 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	return 0;
 }
 
-const char *_669_description[] =
+static const char *_669_description[] =
 {
 	//                                                                          |
 	"669 files are created by Composer 669 by Renaissance (and UNIS669 Composer).",
@@ -437,13 +439,13 @@ const char *_669_description[] =
 	NULL
 };
 
-const struct interfaceparameters _669_p =
+static const struct interfaceparameters _669_p =
 {
-	"playgmd", "gmdPlayer",
+	"autoload/40-playgmd", "gmdPlayer",
 	"load669", "mpLoad669"
 };
 
-const char *AMS_description[] =
+static const char *AMS_description[] =
 {
 	//                                                                          |
 	"AMS - Advanced Module System - files are created by Extreme Tracker and its",
@@ -452,13 +454,13 @@ const char *AMS_description[] =
 	NULL
 };
 
-const struct interfaceparameters AMS_p =
+static const struct interfaceparameters AMS_p =
 {
-	"playgmd", "gmdPlayer",
+	"autoload/40-playgmd", "gmdPlayer",
 	"loadams", "mpLoadAMS"
 };
 
-const char *DMF_description[] =
+static const char *DMF_description[] =
 {
 	//                                                                          |
 	"DMF - Delusion/XTracker Digital Music File - files are created by X-Tracker",
@@ -467,14 +469,13 @@ const char *DMF_description[] =
 	NULL
 };
 
-const struct interfaceparameters DMF_p =
+static const struct interfaceparameters DMF_p =
 {
-	"playgmd", "gmdPlayer",
+	"autoload/40-playgmd", "gmdPlayer",
 	"loaddmf", "mpLoadDMF"
 };
 
-
-const char *MDL_description[] =
+static const char *MDL_description[] =
 {
 	//                                                                          |
 	"MDL files are created by DigiTrakker by Prodatron. It is a MSDOS based",
@@ -483,13 +484,13 @@ const char *MDL_description[] =
 	NULL
 };
 
-const struct interfaceparameters MDL_p =
+static const struct interfaceparameters MDL_p =
 {
-	"playgmd", "gmdPlayer",
+	"autoload/40-playgmd", "gmdPlayer",
 	"loadmdl", "mpLoadMDL"
 };
 
-const char *MTM_description[] =
+static const char *MTM_description[] =
 {
 	//                                                                          |
 	"MTM files are created by Multi Tracker by DigiTrakker by Prodatron. It is a",
@@ -498,13 +499,13 @@ const char *MTM_description[] =
 	NULL
 };
 
-const struct interfaceparameters MTM_p =
+static const struct interfaceparameters MTM_p =
 {
-	"playgmd", "gmdPlayer",
+	"autoload/40-playgmd", "gmdPlayer",
 	"loadmtm", "mpLoadMTM"
 };
 
-const char *OKT_description[] =
+static const char *OKT_description[] =
 {
 	//                                                                          |
 	"OKT files are created by Oktalyzer by Armin Sander. This is an 8 channel",
@@ -515,12 +516,11 @@ const char *OKT_description[] =
 	NULL
 };
 
-const struct interfaceparameters OKT_p =
+static const struct interfaceparameters OKT_p =
 {
-	"playgmd", "gmdPlayer",
+	"autoload/40-playgmd", "gmdPlayer",
 	"loadokt", "mpLoadOKT"
 };
-
 
 /* http://fileformats.archiveteam.org/wiki/Poly_Tracker_module
  * .ptm files are modules produced by Poly Tracker. As Poly Tracker was intended
@@ -531,7 +531,7 @@ const struct interfaceparameters OKT_p =
  * There have been around a dozen versions of the PTM format, including
  * customized test versions.
  */
-const char *PTM_description[] =
+static const char *PTM_description[] =
 {
 	//                                                                          |
 	"PTM files are created by PolyTracker by Lone Ranger of AcmE. This tracker",
@@ -542,13 +542,13 @@ const char *PTM_description[] =
 	NULL
 };
 
-const struct interfaceparameters PTM_p =
+static const struct interfaceparameters PTM_p =
 {
-	"playgmd", "gmdPlayer",
+	"autoload/40-playgmd", "gmdPlayer",
 	"loadptm", "mpLoadPTM"
 };
 
-const char *STM_description[] =
+static const char *STM_description[] =
 {
 	//                                                                          |
 	"STM files are created by Scream Tracker II by Future Crew (or by BMOD2STM",
@@ -560,13 +560,13 @@ const char *STM_description[] =
 	NULL
 };
 
-const struct interfaceparameters STM_p =
+static const struct interfaceparameters STM_p =
 {
-	"playgmd", "gmdPlayer",
+	"autoload/40-playgmd", "gmdPlayer",
 	"loadstm", "mpLoadSTM"
 };
 
-const char *S3M_description[] =
+static const char *S3M_description[] =
 {
 	//                                                                          |
 	"S3M files are created by Scream Tracker 3 by Future Crew. Files support",
@@ -578,13 +578,13 @@ const char *S3M_description[] =
 	NULL
 };
 
-const struct interfaceparameters S3M_p =
+static const struct interfaceparameters S3M_p =
 {
-	"playgmd", "gmdPlayer",
+	"autoload/40-playgmd", "gmdPlayer",
 	"loads3m", "mpLoadS3M"
 };
 
-const char *ULT_description[] =
+static const char *ULT_description[] =
 {
 	//                                                                          |
 	"ULT files are created by UltraTracker by MAS. MS-DOS tracker made for use",
@@ -595,10 +595,66 @@ const char *ULT_description[] =
 	NULL
 };
 
-const struct interfaceparameters ULT_p =
+static const struct interfaceparameters ULT_p =
 {
-	"playgmd", "gmdPlayer",
+	"autoload/40-playgmd", "gmdPlayer",
 	"loadult", "mpLoadULT"
 };
 
-struct mdbreadinforegstruct gmdReadInfoReg = {"MOD", gmdReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct gmdReadInfoReg = {"MOD", gmdReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+
+
+int __attribute__ ((visibility ("internal"))) gmd_type_init (void)
+{
+	struct moduletype mt;
+
+	fsRegisterExt ("669");
+	mt.integer.i = MODULETYPE("669");
+	fsTypeRegister (mt, _669_description, "plOpenCP", &_669_p);
+
+	fsRegisterExt ("AMS");
+	mt.integer.i = MODULETYPE("AMS");
+	fsTypeRegister (mt, AMS_description, "plOpenCP", &AMS_p);
+
+	fsRegisterExt ("DMF");
+	mt.integer.i = MODULETYPE("DMF");
+	fsTypeRegister (mt, DMF_description, "plOpenCP", &DMF_p);
+
+	fsRegisterExt ("MDL");
+	mt.integer.i = MODULETYPE("MDL");
+	fsTypeRegister (mt, MDL_description, "plOpenCP", &MDL_p);
+
+	fsRegisterExt ("MTM");
+	mt.integer.i = MODULETYPE("MTM");
+	fsTypeRegister (mt, MTM_description, "plOpenCP", &MTM_p);
+
+	fsRegisterExt ("OKT");
+	fsRegisterExt ("OKTA");
+	mt.integer.i = MODULETYPE("OKT");
+	fsTypeRegister (mt, OKT_description, "plOpenCP", &OKT_p);
+
+	fsRegisterExt ("PTM");
+	mt.integer.i = MODULETYPE("PTM");
+	fsTypeRegister (mt, PTM_description, "plOpenCP", &PTM_p);
+
+	fsRegisterExt ("S3M");
+	mt.integer.i = MODULETYPE("S3M");
+	fsTypeRegister (mt, S3M_description, "plOpenCP", &S3M_p);
+
+	fsRegisterExt ("STM");
+	mt.integer.i = MODULETYPE("STM");
+	fsTypeRegister (mt, STM_description, "plOpenCP", &STM_p);
+
+	fsRegisterExt ("ULT");
+	mt.integer.i = MODULETYPE("ULT");
+	fsTypeRegister (mt, ULT_description, "plOpenCP", &ULT_p);
+
+	mdbRegisterReadInfo(&gmdReadInfoReg);
+
+	return errOk;
+}
+
+void __attribute__ ((visibility ("internal"))) gmd_type_done (void)
+{
+	mdbUnregisterReadInfo(&gmdReadInfoReg);
+}

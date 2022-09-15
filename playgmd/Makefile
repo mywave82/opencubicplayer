@@ -7,10 +7,10 @@ else
 	DUMPERS=
 endif
 
-all: gmdptype.o load669$(LIB_SUFFIX) loadams$(LIB_SUFFIX) loaddmf$(LIB_SUFFIX) loadmdl$(LIB_SUFFIX) loadmtm$(LIB_SUFFIX) loadokt$(LIB_SUFFIX) loadptm$(LIB_SUFFIX) loads3m$(LIB_SUFFIX) loadstm$(LIB_SUFFIX) loadult$(LIB_SUFFIX) playgmd$(LIB_SUFFIX) $(DUMPERS)
+all: load669$(LIB_SUFFIX) loadams$(LIB_SUFFIX) loaddmf$(LIB_SUFFIX) loadmdl$(LIB_SUFFIX) loadmtm$(LIB_SUFFIX) loadokt$(LIB_SUFFIX) loadptm$(LIB_SUFFIX) loads3m$(LIB_SUFFIX) loadstm$(LIB_SUFFIX) loadult$(LIB_SUFFIX) 40-playgmd$(LIB_SUFFIX) $(DUMPERS)
 
-playgmd_so=gmdpchan.o gmdpdots.o gmdpinst.o gmdplay.o gmdpplay.o gmdptrak.o gmdrtns.o gmdtime.o
-playgmd$(LIB_SUFFIX): $(playgmd_so)
+playgmd_so=gmdpchan.o gmdpdots.o gmdpinst.o gmdplay.o gmdpplay.o gmdptrak.o gmdrtns.o gmdtime.o gmdtype.o
+40-playgmd$(LIB_SUFFIX): $(playgmd_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 load669_so=gmdl669.o
@@ -57,14 +57,16 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX) dumpstm dumps3m
 
 install:
-	$(CP) load669$(LIB_SUFFIX) loadams$(LIB_SUFFIX) loaddmf$(LIB_SUFFIX) loadmdl$(LIB_SUFFIX) loadmtm$(LIB_SUFFIX) loadokt$(LIB_SUFFIX) loadptm$(LIB_SUFFIX) loads3m$(LIB_SUFFIX) loadstm$(LIB_SUFFIX) loadult$(LIB_SUFFIX) playgmd$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+	$(CP) load669$(LIB_SUFFIX) loadams$(LIB_SUFFIX) loaddmf$(LIB_SUFFIX) loadmdl$(LIB_SUFFIX) loadmtm$(LIB_SUFFIX) loadokt$(LIB_SUFFIX) loadptm$(LIB_SUFFIX) loads3m$(LIB_SUFFIX) loadstm$(LIB_SUFFIX) loadult$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+	$(CP) 40-playgmd$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
+
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpstm "$(DESTDIR)$(BINDIR)/dumpstm"
 	$(CP) dumps3m "$(DESTDIR)$(BINDIR)/dumps3m"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/load669$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadams$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loaddmf$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadmdl$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadmtm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadokt$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadptm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loads3m$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadstm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadult$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/playgmd$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/load669$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadams$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loaddmf$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadmdl$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadmtm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadokt$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadptm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loads3m$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadstm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadult$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/40-playgmd$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpstm"
 	rm -f "$(DESTDIR)$(BINDIR)/dumps3m"
 
@@ -82,14 +84,16 @@ dumps3m.o: \
 	dumps3m.c
 	$(CC) -o $@ $< -c
 
-gmdptype.o: gmdptype.c \
+gmdtype.o: gmdtype.c \
 	../config.h \
 	../types.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
-	../stuff/cp437.h
-	$(CC) gmdptype.c -o $@ -c
+	../stuff/cp437.h \
+	../stuff/err.h \
+	gmdtype.h
+	$(CC) gmdtype.c -o $@ -c
 
 gmdl669.o: gmdl669.c \
 	../config.h \
@@ -257,6 +261,7 @@ gmdpplay.o: gmdpplay.c \
 	gmdpdots.h \
 	gmdplay.h \
 	gmdptrak.h \
+	gmdtype.h \
 	../stuff/compat.h \
 	../stuff/err.h \
 	../stuff/poutput.h \

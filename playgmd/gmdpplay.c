@@ -44,6 +44,7 @@
 #include "gmdpdots.h"
 #include "gmdplay.h"
 #include "gmdptrak.h"
+#include "gmdtype.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/poutput.h"
@@ -394,7 +395,17 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
+static int gmdInit (void)
+{
+	return gmd_type_init ();
+}
+
+static void gmdClose (void)
+{
+	gmd_type_done ();
+}
+
 struct cpifaceplayerstruct gmdPlayer = {"[General module plugin]", gmdOpenFile, gmdCloseFile};
 
 char *dllinfo = "";
-struct linkinfostruct dllextinfo = {.name = "playgmd", .desc = "OpenCP General Module Player (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playgmd", .desc = "OpenCP General Module Player (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = gmdInit, .Close = gmdClose};

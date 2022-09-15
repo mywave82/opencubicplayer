@@ -30,7 +30,9 @@
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
+#include "stuff/err.h"
 #include "stuff/latin1.h"
+#include "sidtype.h"
 
 struct __attribute__((packed)) psidHeader
 {
@@ -129,12 +131,12 @@ static const char *SID_description[] =
 
 static const struct interfaceparameters SID_p =
 {
-	"playsid", "sidPlayer",
+	"autoload/40-playsid", "sidPlayer",
 	0, 0
 };
 
 
-static void __attribute__((constructor))init(void)
+int __attribute__ ((visibility ("internal"))) sid_type_init (void)
 {
 	struct moduletype mt;
 
@@ -144,12 +146,11 @@ static void __attribute__((constructor))init(void)
 	fsTypeRegister (mt, SID_description, "plOpenCP", &SID_p);
 
 	mdbRegisterReadInfo(&sidReadInfoReg);
+
+	return errOk;
 }
 
-static void __attribute__((destructor))done(void)
+void __attribute__ ((visibility ("internal"))) sid_type_done (void)
 {
 	mdbUnregisterReadInfo(&sidReadInfoReg);
 }
-
-char *dllinfo = "";
-struct linkinfostruct dllextinfo = {.name = "sidtype", .desc = "OpenCP SID Detection (c) 2005-'22 Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

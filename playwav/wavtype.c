@@ -31,6 +31,8 @@
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
+#include "stuff/err.h"
+#include "wavtype.h"
 
 static unsigned char wavGetModuleType(const char *buf)
 {
@@ -184,7 +186,7 @@ out:
 	return 1;
 }
 
-const char *WAV_description[] =
+static const char *WAV_description[] =
 {
 	//                                                                          |
 	"WAV files as PCM uncompress raw audio samples stored inside a RIFF file",
@@ -194,10 +196,27 @@ const char *WAV_description[] =
 	NULL
 };
 
-struct interfaceparameters WAV_p =
+static struct interfaceparameters WAV_p =
 {
-	"playwav", "wavPlayer",
+	"autoload/40-playwav", "wavPlayer",
 	0, 0
 };
 
-struct mdbreadinforegstruct wavReadInfoReg = {"WAVE", wavReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct wavReadInfoReg = {"WAVE", wavReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+
+int __attribute__ ((visibility ("internal"))) wav_type_init (void)
+{
+	struct moduletype mt;
+	fsRegisterExt ("WAV");
+	fsRegisterExt ("WAVE");
+	mt.integer.i = MODULETYPE("WAV");
+	fsTypeRegister (mt, WAV_description, "plOpenCP", &WAV_p);
+
+	mdbRegisterReadInfo(&wavReadInfoReg);
+	return errOk;
+}
+
+void __attribute__ ((visibility ("internal"))) wav_type_done (void)
+{
+	mdbUnregisterReadInfo(&wavReadInfoReg);
+}

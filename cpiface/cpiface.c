@@ -59,6 +59,7 @@
 #include "cpiface.h"
 #include "cpiface-private.h"
 #include "cpipic.h"
+#include "cpiptype.h"
 #include "dev/mcp.h"
 #include "dev/ringbuffer.h"
 #include "filesel/dirdb.h"
@@ -122,8 +123,6 @@ static struct drawHelperAPI_t drawHelperAPI =
 	mcpDrawGStringsSongXofY,
 	mcpDrawGStringsTracked
 };
-
-extern struct mdbreadinforegstruct cpiReadInfoReg;
 
 extern struct cpimoderegstruct cpiModeText;
 

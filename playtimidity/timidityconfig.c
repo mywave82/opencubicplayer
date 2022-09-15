@@ -19,6 +19,7 @@
 #include "stuff/err.h"
 #include "stuff/framelock.h"
 #include "stuff/poutput.h"
+#include "timidityconfig.h"
 #include "timidity-git/timidity/sysdep.h"
 #include "timidity-git/timidity/timidity.h"
 
@@ -935,7 +936,7 @@ static int                    timidityConfigInit (struct moduleinfostruct *info,
 static interfaceReturnEnum    timidityConfigRun  (void);
 static struct interfacestruct timidityConfigIntr = {timidityConfigInit, timidityConfigRun, 0, "TiMidity+ Config" INTERFACESTRUCT_TAIL};
 
-static int timidity_config_init (void)
+int __attribute__ ((visibility ("internal"))) timidity_config_init (void)
 {
 	struct moduleinfostruct m;
 	uint32_t mdbref;
@@ -953,7 +954,7 @@ static int timidity_config_init (void)
 	return errOk;
 }
 
-static void timidity_config_done (void)
+void __attribute__ ((visibility ("internal"))) timidity_config_done (void)
 {
 	plUnregisterInterface (&timidityConfigIntr);
 	if (timidityconfig)
@@ -962,9 +963,3 @@ static void timidity_config_done (void)
 		timidityconfig = 0;
 	}
 }
-
-#ifndef SUPPORT_STATIC_PLUGINS
-char *dllinfo = "";
-#endif
-
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "timidityconfig", .desc = "OpenCP UNIX TiMidity+ configuration (c) 2022 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = timidity_config_init, .Close = timidity_config_done};

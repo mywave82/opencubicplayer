@@ -48,8 +48,6 @@
  * aybufpos ringbuffer_t tracker
  * aybuffpos
  * aybufrate -> conversion-rate converter if user requests speed changes
- *
- * We convert if needed to target 8/16bit, signed/unsigned, mono/stereo
  */
 
 #include "config.h"

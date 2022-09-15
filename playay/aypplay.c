@@ -28,6 +28,7 @@
 #include <time.h>
 #include "types.h"
 #include "ayplay.h"
+#include "aytype.h"
 #include "boot/plinkman.h"
 #include "cpiface/cpiface.h"
 #include "dev/player.h"
@@ -221,5 +222,15 @@ static int ayOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	return errOk;
 }
 
+static int ayInit (void)
+{
+	return ay_type_init ();
+}
+
+static void ayClose (void)
+{
+	ay_type_done ();
+}
+
 struct cpifaceplayerstruct ayPlayer = {"[Aylet plugin]", ayOpenFile, ayCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playay", .desc = "OpenCP aylet Player (c) 2005-'22 Russell Marks, Ian Collier & Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playay", .desc = "OpenCP aylet Player (c) 2005-'22 Russell Marks, Ian Collier & Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = ayInit, .Close = ayClose};

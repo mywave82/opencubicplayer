@@ -41,6 +41,8 @@
 #include "id3.h"
 #include "stuff/imsrtns.h"
 #include "stuff/utf-8.h"
+#include "stuff/err.h"
+#include "mptype.h"
 
 #define VBRFRAMES      15
 
@@ -630,7 +632,7 @@ outofframes:
 	return 0;
 }
 
-const char *MPx_description[] =
+static const char *MPx_description[] =
 {
 	//                                                                          |
 	"MP2/MP3 files are mpeg II Layer 2/3 audio files. This is a lossy, audio",
@@ -638,10 +640,29 @@ const char *MPx_description[] =
 	NULL
 };
 
-const struct interfaceparameters MPx_p =
+static const struct interfaceparameters MPx_p =
 {
-	"playmp2", "mpegPlayer",
+	"autoload/40-playmp2", "mpegPlayer",
 	0, 0
 };
 
-struct mdbreadinforegstruct ampegpReadInfoReg = {"MPx", ampegpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct ampegpReadInfoReg = {"MPx", ampegpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+
+int __attribute__ ((visibility ("internal"))) ampeg_type_init (void)
+{
+	struct moduletype mt;
+
+	fsRegisterExt ("MP1");
+	fsRegisterExt ("MP2");
+	fsRegisterExt ("MP3");
+	mt.integer.i = MODULETYPE("MPx");
+	fsTypeRegister (mt, MPx_description, "plOpenCP", &MPx_p);
+
+	mdbRegisterReadInfo(&ampegpReadInfoReg);
+	return errOk;
+}
+
+void __attribute__ ((visibility ("internal"))) ampeg_type_done (void)
+{
+	mdbUnregisterReadInfo(&ampegpReadInfoReg);
+}

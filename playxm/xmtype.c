@@ -35,6 +35,8 @@
 #include "filesel/pfilesel.h"
 #include "filesel/mdb.h"
 #include "stuff/cp437.h"
+#include "stuff/err.h"
+#include "xmtype.h"
 
 static uint32_t xmpGetModuleType(const char *buf, int len, const char *filename)
 {
@@ -240,13 +242,13 @@ static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	return 0;
 }
 
-struct interfaceparameters MOD_p =
+static struct interfaceparameters MOD_p =
 {
-	"playxm", "xmpPlayer",
+	"autoload/40-playxm", "xmpPlayer",
 	0, 0
 };
 
-const char *M15_description[] =
+static const char *M15_description[] =
 {
 	//                                                                          |
 	"M15 files are loaded as amiga NoiseTracker 15 instruments modules with no",
@@ -255,7 +257,7 @@ const char *M15_description[] =
 	NULL
 };
 
-const char *M15t_description[] =
+static const char *M15t_description[] =
 {
 	//                                                                          |
 	"M15t files are loaded as amiga NoiseTracker 15 instruments modules with no",
@@ -265,7 +267,7 @@ const char *M15t_description[] =
 	NULL
 };
 
-const char *M31_description[] =
+static const char *M31_description[] =
 {
 	//                                                                          |
 	"M31 files are loaded as amiga NoiseTracker 31 instruments modules with no",
@@ -274,7 +276,7 @@ const char *M31_description[] =
 	NULL
 };
 
-const char *MOD_description[] =
+static const char *MOD_description[] =
 {
 	//                                                                          |
 	"MOD files are loaded as amiga ProTracker 1.1b modules with valid signature.",
@@ -284,7 +286,7 @@ const char *MOD_description[] =
 	NULL
 };
 
-const char *MODd_description[] =
+static const char *MODd_description[] =
 {
 	//                                                                          |
 	"MODd files are loaded as amiga ProTracker 1.1b modules with valid signature,",
@@ -294,7 +296,7 @@ const char *MODd_description[] =
 	NULL
 };
 
-const char *MODf_description[] =
+static const char *MODf_description[] =
 {
 	//                                                                          |
 	"MODf files are loaded as Fast Tracker II modules with valid signature, with",
@@ -304,7 +306,7 @@ const char *MODf_description[] =
 	NULL
 };
 
-const char *MODt_description[] =
+static const char *MODt_description[] =
 {
 	//                                                                          |
 	"MODt files are loaded as amiga ProTracker 1.1b modules with valid signature,",
@@ -314,7 +316,7 @@ const char *MODt_description[] =
 	NULL
 };
 
-const char *MXM_description[] =
+static const char *MXM_description[] =
 {
 	//                                                                          |
 	"MXM files are created by XM2XMX by Niklas Beisert / pascal, and used by",
@@ -324,7 +326,7 @@ const char *MXM_description[] =
 	NULL
 };
 
-const char *WOW_description[] =
+static const char *WOW_description[] =
 {
 	//                                                                          |
 	"WOW files are converted from Composer 669 files using Mod's Grave utility",
@@ -334,7 +336,7 @@ const char *WOW_description[] =
 	NULL
 };
 
-const char *XM_description[] =
+static const char *XM_description[] =
 {
 	//                                                                          |
 	"XM - eXtended Module - files are created by Fast Tracker II by Fredrik",
@@ -344,4 +346,42 @@ const char *XM_description[] =
 	NULL
 };
 
-struct mdbreadinforegstruct xmpReadInfoReg = {"MOD/XM", xmpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct xmpReadInfoReg = {"MOD/XM", xmpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+
+int __attribute__((visibility ("internal"))) xm_type_init (void)
+{
+	struct moduletype mt;
+	fsRegisterExt ("NST");
+	fsRegisterExt ("MOD");
+	fsRegisterExt ("MXM");
+	fsRegisterExt ("WOW");
+	fsRegisterExt ("XM");
+	mt.integer.i = MODULETYPE("M15");
+	fsTypeRegister (mt, M15_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("M15t");
+	fsTypeRegister (mt, M15t_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("M31");
+	fsTypeRegister (mt, M31_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("MOD");
+	fsTypeRegister (mt, MOD_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("MODd");
+	fsTypeRegister (mt, MODd_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("MODf");
+	fsTypeRegister (mt, MODf_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("MODt");
+	fsTypeRegister (mt, MODt_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("MXM");
+	fsTypeRegister (mt, MXM_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("WOW");
+	fsTypeRegister (mt, WOW_description, "plOpenCP", &MOD_p);
+	mt.integer.i = MODULETYPE("XM");
+	fsTypeRegister (mt, XM_description, "plOpenCP", &MOD_p);
+
+	mdbRegisterReadInfo(&xmpReadInfoReg);
+	return errOk;
+}
+
+void __attribute__((visibility ("internal"))) xm_type_done (void)
+{
+	mdbUnregisterReadInfo(&xmpReadInfoReg);
+}

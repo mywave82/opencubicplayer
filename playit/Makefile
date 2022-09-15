@@ -1,29 +1,31 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-all: itpptype.o playit$(LIB_SUFFIX)
+all: 40-playit$(LIB_SUFFIX)
 
-playit_so=itload.o itpinst.o itplay.o itpplay.o itptrack.o itrtns.o itsex.o ittime.o
-playit$(LIB_SUFFIX): $(playit_so)
+playit_so=itload.o itpinst.o itplay.o itpplay.o itptrack.o itrtns.o itsex.o ittime.o ittype.o
+40-playit$(LIB_SUFFIX): $(playit_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) playit$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+	$(CP) 40-playit$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/playit$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playit$(LIB_SUFFIX)"
 
-itpptype.o: itpptype.c \
+ittype.o: ittype.c \
 	../config.h \
 	../types.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
-	../stuff/cp437.h
-	$(CC) itpptype.c -o $@ -c
+	../stuff/cp437.h \
+	../stuff/err.h \
+	ittype.h
+	$(CC) ittype.c -o $@ -c
 
 itload.o: itload.c \
 	../config.h \
@@ -67,6 +69,7 @@ itpplay.o: itpplay.c \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	itplay.h \
+	ittype.h \
 	../stuff/compat.h \
 	../stuff/err.h \
 	../stuff/poutput.h \

@@ -39,6 +39,7 @@
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "oggplay.h"
+#include "oggtype.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/poutput.h"
@@ -245,6 +246,15 @@ static int oggOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
+static int oggInit (void)
+{
+	return ogg_type_init ();
+}
+
+static void oggClose (void)
+{
+	ogg_type_done ();
+}
 
 struct cpifaceplayerstruct oggPlayer = {"[OGG Vorbis plugin]", oggOpenFile, oggCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playogg", .desc = "OpenCP Ogg Vorbis Player (c) 1994-'22 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playogg", .desc = "OpenCP Ogg Vorbis Player (c) 1994-'22 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .size = 0, .Init = oggInit, .Close = oggClose};

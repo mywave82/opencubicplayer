@@ -1,7 +1,7 @@
 #ifndef __PLAYSID_H
 #define __PLAYSID_H
 
-struct sidChanInfo
+typedef struct sidChanInfo
 {
 	uint16_t freq;
 	uint16_t pulse;

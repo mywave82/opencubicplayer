@@ -2,7 +2,7 @@ TOPDIR=../
 include $(TOPDIR)Rules.make
 
 ifeq ($(HAVE_FLAC),1)
-TARGETS=flacptype$(LIB_SUFFIX) playflac$(LIB_SUFFIX)
+TARGETS=40-playflac$(LIB_SUFFIX)
 endif
 
 CFLAGS+=-fPIC
@@ -17,19 +17,13 @@ clean:
 
 install:
 ifeq ($(HAVE_FLAC),1)
-	$(CP) playflac$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
-	$(CP) flacptype$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-flacptype$(LIB_SUFFIX)"
+	$(CP) 40-playflac$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
 endif
 
 uninstall:
 ifeq ($(HAVE_FLAC),1)
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-flacptype$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/playflac$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playflac$(LIB_SUFFIX)"
 endif
-
-flacptype_so=flacptype.o
-flacptype$(LIB_SUFFIX): $(flacptype_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 cpiflacinfo.o: cpiflacinfo.c \
 	../config.h \
@@ -48,17 +42,19 @@ cpiflacpic.o: cpiflacpic.c \
 	flacplay.h
 	$(CC) $< -o $@ -c
 
-flacptype.o: flacptype.c \
+flactype.o: flactype.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
 	../filesel/mdb.h \
-	../filesel/pfilesel.h
-	$(CC) flacptype.c -o $@ -c
+	../filesel/pfilesel.h \
+	../stuff/err.h \
+	flactype.h
+	$(CC) flactype.c -o $@ -c
 
-playflac_so=cpiflacinfo.o cpiflacpic.o flacpplay.o flacplay.o
-playflac$(LIB_SUFFIX): $(playflac_so)
-	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(FLAC_LIBS)
+playflac_so=cpiflacinfo.o cpiflacpic.o flacpplay.o flacplay.o flactype.o
+40-playflac$(LIB_SUFFIX): $(playflac_so)
+	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(FLAC_LIBS) $(LIBJPEG_LIBS) $(LIBPNG_LIBS)
 
 flacpplay.o: flacpplay.c \
 	../config.h \
@@ -72,6 +68,7 @@ flacpplay.o: flacpplay.c \
 	../filesel/pfilesel.h \
 	../filesel/mdb.h \
 	flacplay.h \
+	flactype.h \
 	../stuff/compat.h \
 	../stuff/err.h \
 	../stuff/poutput.h \

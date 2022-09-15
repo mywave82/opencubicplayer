@@ -35,6 +35,7 @@
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "mpplay.h"
+#include "mptype.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/poutput.h"
@@ -238,5 +239,15 @@ static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 	return errOk;
 }
 
+static int mpegInit (void)
+{
+	return ampeg_type_init ();
+}
+
+static void mpegClose (void)
+{
+	ampeg_type_done ();
+}
+
 struct cpifaceplayerstruct mpegPlayer = {"[MPEG, libmad plugin]", mpegOpenFile, mpegCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playmp2", .desc = "OpenCP Audio MPEG Player (c) 1994-'22 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playmp2", .desc = "OpenCP Audio MPEG Player (c) 1994-'22 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .size = 0, .Init = mpegInit, .Close = mpegClose};

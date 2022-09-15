@@ -7,7 +7,7 @@ else
 LZH_LIB:=
 endif
 
-all: lzh_dir stsoundlib_dir ymtype$(LIB_SUFFIX) playym$(LIB_SUFFIX)
+all: lzh_dir stsoundlib_dir 40-playym$(LIB_SUFFIX)
 
 .PHONY: all clean install uninstall lzh_dir stsoundlib_dir
 
@@ -25,30 +25,21 @@ stsoundlib/libym.a: stsoundlib_dir
 
 
 install:
-	$(CP) ymtype$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-ymtype$(LIB_SUFFIX)"
-	$(CP) playym$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+	$(CP) 40-playym$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
 
 uninstall:
+	$(RM) -f "$(DESTDIR)$(LIBDIR)/autoload/40-playym$(LIB_SUFFIX)"
 
 clean:
 	$(MAKE) -C lzh clean TOPDIR="../$(TOPDIR)"
 	$(MAKE) -C stsoundlib clean TOPDIR="../$(TOPDIR)"
 	rm -f *.o *$(LIB_SUFFIX)
 
-
-ymtype_so=ymtype.o
-ifeq ($(HAVE_LZH),1)
-ymtype_so+=lzh/liblzh.a
-endif
-ymtype$(LIB_SUFFIX): $(ymtype_so)
-	$(CXX) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $(ymtype_so) $(LZH_LIB) -Llzh
-
-
-playym_so=ympplay.o ymplay.o stsoundlib/libym.a
+playym_so=ympplay.o ymplay.o stsoundlib/libym.a ymtype.o
 ifeq ($(HAVE_LZH),1)
 playym_so+=lzh/liblzh.a
 endif
-playym$(LIB_SUFFIX): $(playym_so)
+40-playym$(LIB_SUFFIX): $(playym_so)
 	$(CXX) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $(playym_so) $(LZH_LIB) -lym -Llzh -Lstsoundlib
 
 ymtype.o: ymtype.cpp \
@@ -58,7 +49,9 @@ ymtype.o: ymtype.cpp \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
-	lzh/lzh.h
+	../stuff/err.h \
+	lzh/lzh.h \
+	ymtype.h
 	$(CXX) ymtype.cpp -o $@ -c
 
 ympplay.o: ympplay.cpp \
@@ -76,7 +69,8 @@ ympplay.o: ympplay.cpp \
 	../stuff/poutput.h \
 	../stuff/sets.h \
 	stsoundlib/StSoundLibrary.h \
-	ymplay.h
+	ymplay.h \
+	ymtype.h
 	$(CXX) ympplay.cpp -o $@ -c
 
 ymplay.o: ymplay.cpp \

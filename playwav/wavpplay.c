@@ -45,6 +45,7 @@
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 #include "wave.h"
+#include "wavtype.h"
 
 static unsigned long wavelen;
 static unsigned long waverate;
@@ -247,5 +248,15 @@ static int wavOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
+static int wavInit (void)
+{
+	return wav_type_init ();
+}
+
+static void wavClose (void)
+{
+	wav_type_done ();
+}
+
 struct cpifaceplayerstruct wavPlayer = {"[WAVE plugin]", wavOpenFile, wavCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playwav", .desc = "OpenCP Wave Player (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playwav", .desc = "OpenCP Wave Player (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init=wavInit, .Close=wavClose};

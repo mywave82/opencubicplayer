@@ -31,6 +31,7 @@
 #include "types.h"
 #include "dirdb.h"
 #include "filesystem.h"
+#include "fsptype.h"
 #include "mdb.h"
 
 

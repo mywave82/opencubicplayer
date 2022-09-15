@@ -38,6 +38,8 @@
 #include "stuff/err.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
+#include "timidityconfig.h"
+#include "timiditytype.h"
 
 static time_t starttime;      /* when did the song start, if paused, this is slided if unpaused */
 static time_t pausetime;      /* when did the pause start (fully paused) */
@@ -199,7 +201,7 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 
 	cpifaceSession->LogicalChannelCount = 16;
 	cpifaceSession->SetMuteChannel = timidityMute;
-	timidityChanSetup(cpifaceSession);
+	timidityChanSetup (cpifaceSession);
 
 	{
 		const char *path;
@@ -253,5 +255,20 @@ static void timidityCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 	cpiTimiditySetupDone (cpifaceSession);
 }
 
+static int timidityInit (void)
+{
+	int err;
+	if ((err = timidity_type_init ())) return err;
+	if ((err = timidity_config_init ())) return err;
+
+	return err;
+}
+
+static void timidityClose (void)
+{
+	timidity_config_done ();
+	timidity_type_done ();
+}
+
 struct cpifaceplayerstruct timidityPlayer = {"[TiMidity++ MIDI plugin]", timidityOpenFile, timidityCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playtimidity", .desc = "OpenCP TiMidity++ Player (c) 2016-'22 TiMidity++ team & Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+struct linkinfostruct dllextinfo = {.name = "playtimidity", .desc = "OpenCP TiMidity++ Player (c) 2016-'22 TiMidity++ team & Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init=timidityInit, .Close=timidityClose};

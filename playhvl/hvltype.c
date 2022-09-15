@@ -26,6 +26,8 @@
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/cp437.h"
+#include "stuff/err.h"
+#include "hvltype.h"
 
 static int hvlReadMemInfo_ahx(struct moduleinfostruct *m, const char *_buf, size_t buflen)
 {
@@ -244,7 +246,7 @@ static int hvlReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	return retval;
 }
 
-const char *HVL_description[] =
+static const char *HVL_description[] =
 {
 	//                                                                          |
 	"HVL/AHX file format originates in file format created in the mid '90s by",
@@ -255,10 +257,28 @@ const char *HVL_description[] =
 
 };
 
-struct interfaceparameters HVL_p =
+static struct interfaceparameters HVL_p =
 {
-	"playhvl", "hvlPlayer",
+	"autoload/40-playhvl", "hvlPlayer",
 	0, 0
 };
 
-struct mdbreadinforegstruct hvlReadInfoReg = {"HVL/AHX", hvlReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct hvlReadInfoReg = {"HVL/AHX", hvlReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+
+int __attribute__ ((visibility ("internal"))) hvl_type_init (void)
+{
+	struct moduletype mt;
+
+	fsRegisterExt ("HVL");
+	fsRegisterExt ("AHX");
+	mt.integer.i = MODULETYPE("HVL");
+	fsTypeRegister (mt, HVL_description, "plOpenCP", &HVL_p);
+
+	mdbRegisterReadInfo(&hvlReadInfoReg);
+	return errOk;
+}
+
+void __attribute__ ((visibility ("internal"))) hvl_type_done (void)
+{
+	mdbUnregisterReadInfo(&hvlReadInfoReg);
+}

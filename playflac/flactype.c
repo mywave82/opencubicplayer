@@ -24,8 +24,8 @@
 #include "boot/plinkman.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
-
-static struct mdbreadinforegstruct flacReadInfoReg;
+#include "stuff/err.h"
+#include "flactype.h"
 
 static int flacReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
 {
@@ -202,6 +202,8 @@ static int flacReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, 
 	return 1;
 }
 
+static struct mdbreadinforegstruct flacReadInfoReg = {"FLAC", flacReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+
 static const char *FLAC_description[] =
 {
 	//                                                                          |
@@ -212,38 +214,27 @@ static const char *FLAC_description[] =
 
 static const struct interfaceparameters FLAC_p =
 {
-	"playflac", "flacPlayer",
+	"autoload/40-playflac", "flacPlayer",
 	0, 0
 };
 
-static void flacEvent(int event)
+int __attribute__ ((visibility ("internal"))) flac_type_init (void)
 {
-	switch (event)
-	{
-		case mdbEvInit:
-		{
-			struct moduletype mt;
+	struct moduletype mt;
 
-			fsRegisterExt("FLA");
-			fsRegisterExt("FLAC");
-			fsRegisterExt("FLC");
+	fsRegisterExt("FLA");
+	fsRegisterExt("FLAC");
+	fsRegisterExt("FLC");
 
-			mt.integer.i = MODULETYPE("FLAC");
-			fsTypeRegister (mt, FLAC_description, "plOpenCP", &FLAC_p);
-		}
-	}
-}
+	mt.integer.i = MODULETYPE("FLAC");
+	fsTypeRegister (mt, FLAC_description, "plOpenCP", &FLAC_p);
 
-static void __attribute__((constructor))init(void)
-{
 	mdbRegisterReadInfo(&flacReadInfoReg);
+
+	return errOk;
 }
 
-static void __attribute__((destructor))done(void)
+void __attribute__ ((visibility ("internal"))) flac_type_done(void)
 {
 	mdbUnregisterReadInfo(&flacReadInfoReg);
 }
-
-static struct mdbreadinforegstruct flacReadInfoReg = {"FLAC", flacReadInfo, flacEvent MDBREADINFOREGSTRUCT_TAIL};
-char *dllinfo = "";
-struct linkinfostruct dllextinfo = {.name = "flacptype", .desc = "OpenCP FLAC Detection (c) 2007-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0};

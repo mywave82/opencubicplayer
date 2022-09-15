@@ -35,9 +35,9 @@ pfilesel.o                    \
 pfsmain.o
 
 ifeq ($(STATIC_BUILD),1)
-all: $(cdrom_so) $(pfilesel_so) fstypes.o
+all: $(cdrom_so) $(pfilesel_so)
 else
-all: $(CDROM_SO) fstypes.o pfilesel$(LIB_SUFFIX)
+all: $(CDROM_SO) pfilesel$(LIB_SUFFIX)
 endif
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR)
 
@@ -409,6 +409,7 @@ fsptype.o: fsptype.c \
 	../types.h \
 	dirdb.h \
 	filesystem.h \
+	fsptype.h \
 	mdb.h
 	$(CC) $< -o $@ -c
 
@@ -459,13 +460,6 @@ pfilesel.o: pfilesel.c \
 	../stuff/utf-8.h
 	$(CC) $< -o $@ -c
 
-fstypes.o: fstypes.c \
-	../config.h \
-	../boot/plinkman.h \
-	mdb.h \
-	pfilesel.h
-	$(CC) $< -o $@ -c
-
 pfsmain.o: pfsmain.c \
 	../config.h \
 	../types.h \
@@ -476,6 +470,7 @@ pfsmain.o: pfsmain.c \
 	filesystem.h \
 	mdb.h \
 	pfilesel.h \
+	fsptype.h \
 	../stuff/err.h \
 	../stuff/poutput.h
 	$(CC) $< -o $@ -c
