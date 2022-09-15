@@ -162,18 +162,19 @@ void mdbRegisterReadInfo (struct mdbreadinforegstruct *r)
 
 void mdbUnregisterReadInfo (struct mdbreadinforegstruct *r)
 {
-	struct mdbreadinforegstruct **prev = &mdbReadInfos;
+	struct mdbreadinforegstruct **prev = &mdbReadInfos, *iter = mdbReadInfos;
 
-	while (*prev)
+	while (iter)
 	{
-		if (*prev == r)
+		if (iter == r)
 		{
 			DEBUG_PRINT ("mdbUnregisterReadInfo(%s)\n", r->name);
 
-			*prev = (*prev)->next;
+			*prev = iter->next;
 			return;
 		}
-		prev = &(*prev)->next;
+		prev = &iter->next;
+		iter = iter->next;
 	}
 
 	DEBUG_PRINT ("mdbUnregisterReadInfo(%s) # WARNING, unable to find entry\n", r->name);
