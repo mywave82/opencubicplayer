@@ -928,6 +928,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 
 	oggbufrate=imuldiv(65536, oggrate, oggRate);
 
+	oggpos=0;
 	ogglen=ov_pcm_total(&ov, -1);
 	if (!ogglen)
 	{
