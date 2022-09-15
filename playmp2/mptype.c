@@ -646,7 +646,7 @@ static const struct interfaceparameters MPx_p =
 	0, 0
 };
 
-static struct mdbreadinforegstruct ampegpReadInfoReg = {"MPx", ampegpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct ampegpReadInfoReg = {"MPx", ampegpReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 int __attribute__ ((visibility ("internal"))) ampeg_type_init (void)
 {

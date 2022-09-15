@@ -58,4 +58,4 @@ static int fsReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, co
 	return 0;
 }
 
-struct mdbreadinforegstruct fsReadInfoReg = {"DataBases", fsReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+struct mdbreadinforegstruct fsReadInfoReg = {"DataBases", fsReadInfo MDBREADINFOREGSTRUCT_TAIL};

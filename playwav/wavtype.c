@@ -202,7 +202,7 @@ static struct interfaceparameters WAV_p =
 	0, 0
 };
 
-static struct mdbreadinforegstruct wavReadInfoReg = {"WAVE", wavReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct wavReadInfoReg = {"WAVE", wavReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 int __attribute__ ((visibility ("internal"))) wav_type_init (void)
 {

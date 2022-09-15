@@ -154,10 +154,6 @@ void mdbRegisterReadInfo (struct mdbreadinforegstruct *r)
 
 	r->next=mdbReadInfos;
 	mdbReadInfos=r;
-	if (r->Event)
-	{
-		r->Event(mdbEvInit);
-	}
 }
 
 void mdbUnregisterReadInfo (struct mdbreadinforegstruct *r)

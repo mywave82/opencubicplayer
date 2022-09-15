@@ -263,7 +263,7 @@ static struct interfaceparameters HVL_p =
 	0, 0
 };
 
-static struct mdbreadinforegstruct hvlReadInfoReg = {"HVL/AHX", hvlReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct hvlReadInfoReg = {"HVL/AHX", hvlReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 int __attribute__ ((visibility ("internal"))) hvl_type_init (void)
 {

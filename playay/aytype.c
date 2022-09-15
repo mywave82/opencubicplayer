@@ -103,7 +103,7 @@ static int ayReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, con
 }
 
 
-static struct mdbreadinforegstruct ayReadInfoReg = {"AY", ayReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct ayReadInfoReg = {"AY", ayReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 static const char *AY_description[] =
 {

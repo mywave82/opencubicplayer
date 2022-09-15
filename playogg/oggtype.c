@@ -147,7 +147,7 @@ static const struct interfaceparameters OGG_p =
 	0, 0
 };
 
-static struct mdbreadinforegstruct oggReadInfoReg = {"OGG", oggReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct oggReadInfoReg = {"OGG", oggReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 int __attribute__ ((visibility ("internal"))) ogg_type_init (void)
 {

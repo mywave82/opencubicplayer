@@ -366,7 +366,7 @@ static struct interfaceparameters YM_p =
 	0, 0
 };
 
-static struct mdbreadinforegstruct ymReadInfoReg = {"YM", ymReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct ymReadInfoReg = {"YM", ymReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 int __attribute__((visibility ("internal"))) ym_type_init (void)
 {

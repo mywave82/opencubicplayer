@@ -346,7 +346,7 @@ static const char *XM_description[] =
 	NULL
 };
 
-static struct mdbreadinforegstruct xmpReadInfoReg = {"MOD/XM", xmpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct xmpReadInfoReg = {"MOD/XM", xmpReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 int __attribute__((visibility ("internal"))) xm_type_init (void)
 {

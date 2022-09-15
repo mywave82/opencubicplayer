@@ -131,7 +131,7 @@ static struct interfaceparameters MIDI_p =
 	0, 0
 };
 
-static struct mdbreadinforegstruct timidityReadInfoReg = {"MIDI", timidityReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct timidityReadInfoReg = {"MIDI", timidityReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 
 int __attribute__ ((visibility ("internal"))) timidity_type_init (void)

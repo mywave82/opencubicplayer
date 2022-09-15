@@ -202,7 +202,7 @@ static int flacReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, 
 	return 1;
 }
 
-static struct mdbreadinforegstruct flacReadInfoReg = {"FLAC", flacReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct flacReadInfoReg = {"FLAC", flacReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 static const char *FLAC_description[] =
 {

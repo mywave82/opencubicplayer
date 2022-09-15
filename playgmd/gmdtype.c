@@ -601,7 +601,7 @@ static const struct interfaceparameters ULT_p =
 	"loadult", "mpLoadULT"
 };
 
-static struct mdbreadinforegstruct gmdReadInfoReg = {"MOD", gmdReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct gmdReadInfoReg = {"MOD", gmdReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 
 int __attribute__ ((visibility ("internal"))) gmd_type_init (void)

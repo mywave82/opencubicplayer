@@ -81,7 +81,7 @@ static struct interfaceparameters OPL_p =
 	0, 0
 };
 
-static struct mdbreadinforegstruct oplReadInfoReg = {"adplug", oplReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct oplReadInfoReg = {"adplug", oplReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 static class CAdPlugDatabase *adplugdb_ocp;
 

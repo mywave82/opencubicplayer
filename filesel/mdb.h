@@ -64,17 +64,11 @@ enum
 };
 #endif
 
-enum
-{
-  mdbEvInit, mdbEvDone
-};
-
 struct mdbreadinforegstruct /* this is to test a file, and give it a tag..*/
 {
 	const char *name; /* for debugging */
 	// buf includes the first 1084 byte of the file, enought to include signature in .MOD files */
 	int (*ReadInfo)(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len);
-	void (*Event)(int mdbEv);
 	struct mdbreadinforegstruct *next;
 };
 

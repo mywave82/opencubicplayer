@@ -122,7 +122,7 @@ static struct interfaceparameters IT_p =
 	0, 0
 };
 
-static struct mdbreadinforegstruct itpReadInfoReg = {"IT", itpReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct itpReadInfoReg = {"IT", itpReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 int __attribute__ ((visibility ("internal"))) it_type_init (void)
 {

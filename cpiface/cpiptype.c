@@ -47,4 +47,4 @@ static int cpiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *file,
 	return 0;
 }
 
-struct mdbreadinforegstruct cpiReadInfoReg = {"ANI", cpiReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+struct mdbreadinforegstruct cpiReadInfoReg = {"ANI", cpiReadInfo MDBREADINFOREGSTRUCT_TAIL};

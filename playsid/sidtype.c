@@ -118,7 +118,7 @@ static int sidReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	return 0;
 }
 
-static struct mdbreadinforegstruct sidReadInfoReg = {"SID", sidReadInfo, 0 MDBREADINFOREGSTRUCT_TAIL};
+static struct mdbreadinforegstruct sidReadInfoReg = {"SID", sidReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 static const char *SID_description[] =
 {
