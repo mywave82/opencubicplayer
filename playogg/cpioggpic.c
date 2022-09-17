@@ -545,5 +545,6 @@ void __attribute__ ((visibility ("internal"))) OggPicInit (struct cpifaceSession
 
 void __attribute__ ((visibility ("internal"))) OggPicDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
+	OggPicVisible = 0;
 	cpiTextUnregisterMode (cpifaceSession, &cpiOggPic);
 }
