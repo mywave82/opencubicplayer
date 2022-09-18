@@ -1111,8 +1111,4 @@ static int cdrom_track_filesize_ready (struct ocpfile_t *_self)
 	return 1;
 }
 
-#ifndef SUPPORT_STATIC_PLUGINS
-const char *dllinfo = "";
-#endif
-
 DLLEXTINFO_PREFIX const struct linkinfostruct dllextinfo = {.name = "cdrom", .desc = "OpenCP UNIX audio-cdrom filebrowser (c) 2004-'22 Stian Skjelstad", .ver = DLLVERSION, .Init = cdint, .Close = cdclose};

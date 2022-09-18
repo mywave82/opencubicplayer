@@ -335,5 +335,4 @@ static void mlclose(void)
 	}
 }
 
-const char *dllinfo = "";
 const struct linkinfostruct dllextinfo = {.name = "medialib", .desc = "OpenCP medialib (c) 2005-'22 Stian Skjelstad", .ver = DLLVERSION, .Init = mlint, .Close = mlclose};

@@ -576,7 +576,5 @@ static void reset_api(void)
 	_plDosShell=__plDosShell;
 	_vga13=NULL;
 }
-#ifndef SUPPORT_STATIC_PLUGINS
-const char *dllinfo = "";
-#endif
+
 DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "poutput", .desc = "OpenCP Output Routines (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .Init = console_init, .Close = console_done};

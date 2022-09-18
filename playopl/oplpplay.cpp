@@ -481,7 +481,6 @@ static void oplClose (void)
 extern "C"
 {
 	const cpifaceplayerstruct oplPlayer = {"[AdPlug OPL plugin]", oplOpenFile, oplCloseFile};
-	const char *dllinfo = "";
 	struct linkinfostruct dllextinfo =
 	{ /* c++ historically does not support named initializers, and size needs to be writable... */
 		/* .name = */ "playopl",

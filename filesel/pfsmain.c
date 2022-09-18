@@ -423,8 +423,4 @@ static void __attribute__((destructor))done(void)
 		ocpmain = 0;
 }
 
-#ifndef SUPPORT_STATIC_PLUGINS
-const char *dllinfo = "";
-#endif
-
 DLLEXTINFO_PREFIX const struct linkinfostruct dllextinfo = {.name = "pfilesel", .desc = "OpenCP Fileselector (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .PreInit = fspreint, .Init = fsint, .LateInit = fslateint, .LateClose = fsclose};

@@ -959,7 +959,4 @@ static void hlpGlobalClose(void)
 	hlpFreePages();
 }
 
-#ifndef SUPPORT_STATIC_PLUGINS
-const char *dllinfo = "";
-#endif
 DLLEXTINFO_PREFIX const struct linkinfostruct dllextinfo = {.name = "cphelper", .desc = "OpenCP help browser (c) 1998-'22 Fabian Giesen", .ver = DLLVERSION, .Init = hlpGlobalInit, .Close = hlpGlobalClose};
