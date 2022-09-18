@@ -252,4 +252,4 @@ static void mpegClose (void)
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) mpegPlayer = {"[MPEG, libmad plugin]", mpegOpenFile, mpegCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playmp2", .desc = "OpenCP Audio MPEG Player (c) 1994-'22 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .size = 0, .Init = mpegInit, .Close = mpegClose};
+const struct linkinfostruct dllextinfo = {.name = "playmp2", .desc = "OpenCP Audio MPEG Player (c) 1994-'22 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .Init = mpegInit, .Close = mpegClose};

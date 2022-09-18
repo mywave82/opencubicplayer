@@ -533,7 +533,6 @@ extern "C"
 		/* .name = */ "playym",
 		/* .desc = */ "OpenCP STYMulator Player (c) 2010-'22 Stian Skjelstad",
 		/* .ver  = */ DLLVERSION,
-		/* .size = */ 0,
 		/* .PreInit = */ 0,
 		/* .Init = */ ymInit,
 		/* .LateInit = */ 0,

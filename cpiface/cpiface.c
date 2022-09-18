@@ -2627,7 +2627,7 @@ char plNoteStr[132][4]=
 static struct interfacestruct plOpenCP = {plmpOpenFile, plmpCallBack, plmpCloseFile, "plOpenCP", NULL};
 
 #ifndef SUPPORT_STATIC_PLUGINS
-char *dllinfo = "";
+const char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cpiface", .desc = "OpenCP Interface (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .LateInit = plmpInit, .PreClose = plmpClose};
+DLLEXTINFO_PREFIX const struct linkinfostruct dllextinfo = {.name = "cpiface", .desc = "OpenCP Interface (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .LateInit = plmpInit, .PreClose = plmpClose};
 /* OpenCP Module Player */

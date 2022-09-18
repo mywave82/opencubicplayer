@@ -61,23 +61,6 @@
 
 struct mainstruct *ocpmain = 0;
 
-static void plCloseAll(void)
-{
-	int i;
-
-	for (i=0;i<loadlist_n;i++)
-		if (loadlist[i].info->PreClose)
-			loadlist[i].info->PreClose();
-
-	for (i=0;i<loadlist_n;i++)
-		if (loadlist[i].info->Close)
-			loadlist[i].info->Close();
-
-	for (i=0;i<loadlist_n;i++)
-		if (loadlist[i].info->LateClose)
-			loadlist[i].info->LateClose();
-}
-
 static int cmdhlp(void)
 {
 	if (cfGetProfileString("commandline", "h", 0) || cfGetProfileString("commandline", "?", 0) || cfGetProfileString("commandline--", "help", 0))
@@ -134,7 +117,6 @@ extern char compiledate[], compiletime[]/*, compiledby[]*/;
 static int init_modules(int argc, char *argv[])
 {
 	int ret;
-	int i;
 
 	if ((ret=cmdhlp()))
 		return ret;
@@ -931,20 +913,10 @@ static int init_modules(int argc, char *argv[])
 
 	fprintf(stderr, "running initializers...\n");
 
-	for (i=0;i<loadlist_n;i++)
-		if (loadlist[i].info->PreInit)
-			if (loadlist[i].info->PreInit()<0)
-				return errGen;
-
-	for (i=0;i<loadlist_n;i++)
-		if (loadlist[i].info->Init)
-			if (loadlist[i].info->Init()<0)
-				return errGen;
-
-	for (i=0;i<loadlist_n;i++)
-		if (loadlist[i].info->LateInit)
-			if (loadlist[i].info->LateInit()<0)
-				return errGen;
+	if (lnkInitAll())
+	{
+		return errGen;
+	}
 
 	if (!ocpmain)
 	{
@@ -961,7 +933,7 @@ static int init_modules(int argc, char *argv[])
 
 void done_modules(void)
 {
-	plCloseAll();
+	lnkCloseAll();
 	lnkFree(0);
 }
 

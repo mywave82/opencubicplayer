@@ -233,4 +233,4 @@ static void ayClose (void)
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) ayPlayer = {"[Aylet plugin]", ayOpenFile, ayCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playay", .desc = "OpenCP aylet Player (c) 2005-'22 Russell Marks, Ian Collier & Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = ayInit, .Close = ayClose};
+const struct linkinfostruct dllextinfo = {.name = "playay", .desc = "OpenCP aylet Player (c) 2005-'22 Russell Marks, Ian Collier & Stian Skjelstad", .ver = DLLVERSION, .Init = ayInit, .Close = ayClose};

@@ -499,7 +499,6 @@ extern "C"
 		/* .name = */ "playsid",
 		/* .desc = */ "OpenCP SID Player (c) 1993-'22 Michael Schwendt, Tammo Hinrichs, Stian Skjelstad",
 		/* .ver  = */ DLLVERSION,
-		/* .size = */ 0,
 		/* .PreInit = */ 0,
 		/* .Init = */ sidInit,
 		/* .LateInit = */ 0,

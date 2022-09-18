@@ -487,7 +487,6 @@ extern "C"
 		/* .name = */ "playopl",
 		/* .desc = */ "OpenCP Adplug (OPL) Detection and Player (c) 2005-'22 Stian Skjelstad",
 		/* .ver  = */ DLLVERSION,
-		/* .size = */ 0,
 		/* .PreInit = */ 0,
 		/* .Init = */ oplInit,
 		/* .LateInit = */ 0,

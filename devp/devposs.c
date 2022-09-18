@@ -679,5 +679,5 @@ static struct devaddstruct plrOSSAdd = {ossGetOpt, 0, 0, 0};
 struct sounddevice plrOSS={SS_PLAYER, 0, "OSS player", ossDetect,  ossInit,  ossClose, &plrOSSAdd};
 struct ocpvolregstruct voloss={volossGetNumVolume, volossGetVolume, volossSetVolume};
 
-char *dllinfo = "driver plrOSS; volregs voloss";
-struct linkinfostruct dllextinfo = {.name = "devposs", .desc = "OpenCP Player Device: OSS (c) 2004-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+const char *dllinfo = "driver plrOSS; volregs voloss";
+const struct linkinfostruct dllextinfo = {.name = "devposs", .desc = "OpenCP Player Device: OSS (c) 2004-'22 Stian Skjelstad", .ver = DLLVERSION};

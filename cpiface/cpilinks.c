@@ -43,6 +43,7 @@ static void plDisplayHelp (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int y;
 	struct linkinfostruct l;
+	off_t size;
 
 	plHelpHeight=lnkCountLinks()*(mode?2:1);
 	if ((plHelpScroll+plWinHeight)>plHelpHeight)
@@ -54,7 +55,7 @@ static void plDisplayHelp (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	for (y=0; y<plWinHeight; y++)
 	{
-		if (lnkGetLinkInfo(&l, (y+plHelpScroll)/(mode?2:1)))
+		if (lnkGetLinkInfo(&l, &size, (y+plHelpScroll)/(mode?2:1)))
 		{
 			int dl=strlen(l.desc);
 			int i;
@@ -72,9 +73,9 @@ static void plDisplayHelp (struct cpifaceSessionAPI_t *cpifaceSession)
 				writestring(buf, 0, 0, "", /*80*/132);
 
 				writestring(buf, 2, 0x0A, l.name, 8);
-				if (l.size)
+				if (size)
 				{
-					writenum(buf, 12, 0x07, (l.size+1023)>>10, 10, 6, 1);
+					writenum(buf, 12, 0x07, (size+1023)>>10, 10, 6, 1);
 					writestring(buf, 18, 0x07, "k", 1);
 				} else
 					writestring(buf, 12, 0x07, "builtin", 7);

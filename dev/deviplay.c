@@ -486,6 +486,6 @@ static void plrPrep(struct moduleinfostruct *m, struct ocpfilehandle_t **bp)
 static struct interfacestruct plrIntr = {plrSetDev, 0, 0, "plrIntr" INTERFACESTRUCT_TAIL};
 static struct preprocregstruct plrPreprocess = {plrPrep PREPROCREGSTRUCT_TAIL};
 #ifndef SUPPORT_STATIC_PLUGINS
-char *dllinfo = "";
+const char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "plrbase", .desc = "OpenCP Player Devices System (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = playdevinit, .Close = playdevclose};
+DLLEXTINFO_PREFIX const struct linkinfostruct dllextinfo = {.name = "plrbase", .desc = "OpenCP Player Devices System (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .Init = playdevinit, .Close = playdevclose};

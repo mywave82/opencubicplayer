@@ -249,4 +249,4 @@ static void flacClose (void)
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) flacPlayer = {"[FLAC plugin]", flacOpenFile, flacCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playflac", .desc = "OpenCP FLAC Player (c) 2007-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = flacInit, .Close = flacClose};
+const struct linkinfostruct dllextinfo = {.name = "playflac", .desc = "OpenCP FLAC Player (c) 2007-'22 Stian Skjelstad", .ver = DLLVERSION, .Init = flacInit, .Close = flacClose};

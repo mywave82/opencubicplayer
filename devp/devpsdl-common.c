@@ -358,5 +358,3 @@ static int sdlDetect(struct deviceinfo *card)
 
 	return 1;
 }
-
-

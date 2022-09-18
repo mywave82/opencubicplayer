@@ -232,7 +232,7 @@ static void FontDebugClose(void)
 }
 
 #ifndef SUPPORT_STATIC_PLUGINS
-char *dllinfo = "";
+const char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cpifontdebug", .desc = "OpenCP Font Debugger (c) 2022 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .LateInit = FontDebugInit, .PreClose = FontDebugClose};
+const DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cpifontdebug", .desc = "OpenCP Font Debugger (c) 2022 Stian Skjelstad", .ver = DLLVERSION, .LateInit = FontDebugInit, .PreClose = FontDebugClose};
 /* OpenCP Module Player */

@@ -271,4 +271,4 @@ static void timidityClose (void)
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) timidityPlayer = {"[TiMidity++ MIDI plugin]", timidityOpenFile, timidityCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playtimidity", .desc = "OpenCP TiMidity++ Player (c) 2016-'22 TiMidity++ team & Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init=timidityInit, .Close=timidityClose};
+const struct linkinfostruct dllextinfo = {.name = "playtimidity", .desc = "OpenCP TiMidity++ Player (c) 2016-'22 TiMidity++ team & Stian Skjelstad", .ver = DLLVERSION, .Init=timidityInit, .Close=timidityClose};

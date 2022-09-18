@@ -641,4 +641,4 @@ static void xmClose (void)
 }
 
 const struct cpifaceplayerstruct __attribute__((visibility ("internal"))) xmpPlayer = {"[FastTracker II plugin]", xmpOpenFile, xmpCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playxm", .desc = "OpenCP XM/MOD Player (c) 1995-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = xmInit, .Close = xmClose};
+const struct linkinfostruct dllextinfo = {.name = "playxm", .desc = "OpenCP XM/MOD Player (c) 1995-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .Init = xmInit, .Close = xmClose};

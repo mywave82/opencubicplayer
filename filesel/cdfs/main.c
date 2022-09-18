@@ -441,7 +441,7 @@ static void cdfsclose(void)
 
 
 #ifndef SUPPORT_STATIC_PLUGINS
-char *dllinfo = "";
+const char *dllinfo = "";
 #endif
 
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cdfs", .desc = "OpenCP virtual CDFS filebrowser (c) 2022 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = cdfsint, .Close = cdfsclose};
+DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "cdfs", .desc = "OpenCP virtual CDFS filebrowser (c) 2022 Stian Skjelstad", .ver = DLLVERSION, .Init = cdfsint, .Close = cdfsclose};

@@ -1038,6 +1038,6 @@ static int mixfProcKey(uint16_t key)
 
 struct devaddstruct mcpFMixAdd = {mixfGetOpt, mixfInit, 0, mixfProcKey};
 struct sounddevice mcpFMixer={SS_WAVETABLE|SS_NEEDPLAYER, 0, "FPU Mixer", Detect, Init, Close, &mcpFMixAdd};
-char *dllinfo="driver mcpFMixer";
+const char *dllinfo="driver mcpFMixer";
 
-struct linkinfostruct dllextinfo = {.name = "devwmixf", .desc = "OpenCP Wavetable Device: FPU HighQuality Mixer (c) 1999-'22 Tammo Hinrichs, Fabian Giesen, Stian Skjelstad, Jindřich Makovička", .ver = DLLVERSION, .size = 0};
+const struct linkinfostruct dllextinfo = {.name = "devwmixf", .desc = "OpenCP Wavetable Device: FPU HighQuality Mixer (c) 1999-'22 Tammo Hinrichs, Fabian Giesen, Stian Skjelstad, Jindřich Makovička", .ver = DLLVERSION};

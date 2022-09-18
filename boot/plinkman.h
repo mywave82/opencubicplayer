@@ -6,7 +6,6 @@ struct __attribute__ ((aligned (64))) linkinfostruct
 	const char *name;
 	const char *desc;
 	uint32_t ver;
-	uint32_t size;
 
 	int (*PreInit)(void); /* high priority init */
 	int (*Init)(void);
@@ -22,9 +21,9 @@ struct dll_handle
 	char *file;
 	int id;
 	int refcount;
-	struct linkinfostruct *info;
+	off_t size;
+	const struct linkinfostruct *info;
 };
-extern struct dll_handle loadlist[MAXDLLLIST];
 extern int loadlist_n;
 
 extern int lnkLinkDir(const char *dir);
@@ -36,7 +35,10 @@ extern void *lnkGetSymbol(const int id, const char *name);
 extern char *_lnkReadInfoReg(const char *key);
 extern char *lnkReadInfoReg(const int id, const char *key);
 extern int lnkCountLinks(void);
-extern int lnkGetLinkInfo(struct linkinfostruct *l, int index);
+extern int lnkGetLinkInfo(struct linkinfostruct *l, off_t *size, int index);
+
+int lnkInitAll (void);
+void lnkCloseAll (void);
 
 #ifdef SUPPORT_STATIC_PLUGINS
 #define DLLEXTINFO_PREFIX __attribute__ ((section ("plugin_list"))) __attribute__ ((used)) static

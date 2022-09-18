@@ -1434,5 +1434,5 @@ struct sounddevice plrAlsa={SS_PLAYER, 1, "ALSA device driver", alsaDetect, alsa
 static struct interfacestruct alsaPCMoutIntr = {alsaMixerIntrSetDev, 0, 0, "alsaPCMoutIntr" INTERFACESTRUCT_TAIL};
 struct ocpvolregstruct volalsa={volalsaGetNumVolume, volalsaGetVolume, volalsaSetVolume};
 
-char *dllinfo="driver plrAlsa; volregs volalsa";
-struct linkinfostruct dllextinfo = {.name = "devpalsa", .desc = "OpenCP Player Device: ALSA (c) 2005-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+const char *dllinfo="driver plrAlsa; volregs volalsa";
+const struct linkinfostruct dllextinfo = {.name = "devpalsa", .desc = "OpenCP Player Device: ALSA (c) 2005-'22 Stian Skjelstad", .ver = DLLVERSION};

@@ -491,6 +491,6 @@ static void mcpPrep(struct moduleinfostruct *info, struct ocpfilehandle_t **bp)
 static struct interfacestruct mcpIntr = {mcpSetDev, 0, 0, "mcpIntr" INTERFACESTRUCT_TAIL};
 static struct preprocregstruct mcpPreprocess = {mcpPrep PREPROCREGSTRUCT_TAIL};
 #ifndef SUPPORT_STATIC_PLUGINS
-char *dllinfo = "";
+const char *dllinfo = "";
 #endif
-DLLEXTINFO_PREFIX struct linkinfostruct dllextinfo = {.name = "mcpbase", .desc = "OpenCP Wavetable Devices System (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = wavedevinit, .Close = wavedevclose};
+DLLEXTINFO_PREFIX const struct linkinfostruct dllextinfo = {.name = "mcpbase", .desc = "OpenCP Wavetable Devices System (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .Init = wavedevinit, .Close = wavedevclose};

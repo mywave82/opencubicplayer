@@ -259,4 +259,4 @@ static void wavClose (void)
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) wavPlayer = {"[WAVE plugin]", wavOpenFile, wavCloseFile};
-struct linkinfostruct dllextinfo = {.name = "playwav", .desc = "OpenCP Wave Player (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init=wavInit, .Close=wavClose};
+const struct linkinfostruct dllextinfo = {.name = "playwav", .desc = "OpenCP Wave Player (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .Init=wavInit, .Close=wavClose};

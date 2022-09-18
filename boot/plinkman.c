@@ -55,11 +55,11 @@
 #include "stuff/compat.h"
 
 static int handlecounter;
-struct dll_handle loadlist[MAXDLLLIST];
+static struct dll_handle loadlist[MAXDLLLIST];
 int loadlist_n;
 
 #ifdef SUPPORT_STATIC_PLUGINS
-DLLEXTINFO_PREFIX struct linkinfostruct staticdlls = {.name = "static", .desc = "Compiled in plugins (c) 2009-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+const DLLEXTINFO_PREFIX struct linkinfostruct staticdlls = {.name = "static", .desc = "Compiled in plugins (c) 2009-'22 Stian Skjelstad", .ver = DLLVERSION};
 #endif
 
 static char reglist[1024];
@@ -187,7 +187,7 @@ static int _lnkDoLoad(char *file)
 		struct stat st;
 		if (stat(file, &st))
 			st.st_size=0;
-		loadlist[loadlist_n].info->size=st.st_size;
+		loadlist[loadlist_n].size=st.st_size;
 	}
 
 	loadlist_n++;
@@ -420,7 +420,7 @@ int lnkCountLinks(void)
 	return loadlist_n;
 }
 
-int lnkGetLinkInfo(struct linkinfostruct *l, int index)
+int lnkGetLinkInfo(struct linkinfostruct *l, off_t *size, int index)
 {
 	if (index<0)
 		return 0;
@@ -429,6 +429,47 @@ int lnkGetLinkInfo(struct linkinfostruct *l, int index)
 	if (!loadlist[index].info)
 		return 0;
 	memcpy(l, loadlist[index].info, sizeof(struct linkinfostruct));
+	*size = loadlist[index].size;
+
 	return 1;
+}
+
+int lnkInitAll (void)
+{
+	int i;
+
+	for (i=0;i<loadlist_n;i++)
+		if (loadlist[i].info->PreInit)
+			if (loadlist[i].info->PreInit()<0)
+				return 1;
+
+	for (i=0;i<loadlist_n;i++)
+		if (loadlist[i].info->Init)
+			if (loadlist[i].info->Init()<0)
+				return 1;
+
+	for (i=0;i<loadlist_n;i++)
+		if (loadlist[i].info->LateInit)
+			if (loadlist[i].info->LateInit()<0)
+				return 1;
+
+	return 0;
+}
+
+void lnkCloseAll (void)
+{
+	int i;
+
+	for (i=0;i<loadlist_n;i++)
+		if (loadlist[i].info->PreClose)
+			loadlist[i].info->PreClose();
+
+	for (i=0;i<loadlist_n;i++)
+		if (loadlist[i].info->Close)
+			loadlist[i].info->Close();
+
+	for (i=0;i<loadlist_n;i++)
+		if (loadlist[i].info->LateClose)
+			loadlist[i].info->LateClose();
 }
 
