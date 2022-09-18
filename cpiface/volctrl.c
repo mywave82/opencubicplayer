@@ -103,20 +103,6 @@ static int GetVols(void)
 			AddVolsByName(buf);
 		}
 	}
-	dllinfo=cfGetProfileString("sound", "volregs", 0);
-	if(dllinfo)
-	{
-		int num=cfCountSpaceList(dllinfo, 100);
-		int i;
-
-		for(i=0; i<num; i++)
-		{
-			char buf[100];
-			cfGetSpaceListEntry(buf, &dllinfo, 100);
-			if(!AddVolsByName(buf))
-				return 0;
-		}
-	}
 	return 1;
 }
 
