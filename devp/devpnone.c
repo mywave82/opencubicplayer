@@ -244,7 +244,8 @@ static const struct plrAPI_t devpNone = {
 	devpNoneOnBufferCallback,
 	devpNoneCommitBuffer,
 	devpNonePause,
-	devpNoneStop
+	devpNoneStop,
+	0
 };
 
 static int qpInit(const struct deviceinfo *c)

@@ -332,7 +332,8 @@ static const struct plrAPI_t devpSDL = {
 	devpSDLOnBufferCallback,
 	devpSDLCommitBuffer,
 	devpSDLPause,
-	devpSDLStop
+	devpSDLStop,
+	0
 };
 
 static void sdlClose(void)

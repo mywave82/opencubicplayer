@@ -1418,6 +1418,7 @@ static void __attribute__((destructor))fini(void)
 	alsa_mixers_n=0;
 }
 
+static struct ocpvolregstruct volalsa={volalsaGetNumVolume, volalsaGetVolume, volalsaSetVolume};
 static const struct plrAPI_t devpALSA = {
 	devpALSAIdle,
 	devpALSAPeekBuffer,
@@ -1427,12 +1428,12 @@ static const struct plrAPI_t devpALSA = {
 	devpALSAOnBufferCallback,
 	devpALSACommitBuffer,
 	devpALSAPause,
-	devpALSAStop
+	devpALSAStop,
+	&volalsa
 };
 
 struct sounddevice plrAlsa={SS_PLAYER, 1, "ALSA device driver", alsaDetect, alsaInit, alsaClose, NULL};
 static struct interfacestruct alsaPCMoutIntr = {alsaMixerIntrSetDev, 0, 0, "alsaPCMoutIntr" INTERFACESTRUCT_TAIL};
-struct ocpvolregstruct volalsa={volalsaGetNumVolume, volalsaGetVolume, volalsaSetVolume};
 
-const char *dllinfo="driver plrAlsa; volregs volalsa";
+const char *dllinfo="driver plrAlsa";
 const struct linkinfostruct dllextinfo = {.name = "devpalsa", .desc = "OpenCP Player Device: ALSA (c) 2005-'22 Stian Skjelstad", .ver = DLLVERSION};

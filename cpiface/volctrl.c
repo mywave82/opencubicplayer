@@ -45,10 +45,10 @@
 #include "config.h"
 #include <string.h>
 #include "types.h"
-#include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "cpiface.h"
 #include "cpiface-private.h"
+#include "dev/player.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poutput.h"
 #include "vol.h"
@@ -56,7 +56,6 @@
 static enum modeenum { modeNone=0, mode80=1, mode52=2 } mode;
 static int focus, active;
 static int x0, y0, x1, y1, yoff;       /* origin x, origin y, width, height */
-static int AddVolsByName(char *n);
 static int vols;                       /* number of registered vols */
 static struct regvolstruct             /* the registered vols */
 {
@@ -64,46 +63,29 @@ static struct regvolstruct             /* the registered vols */
 	int id;
 } vol[100];                            /* TODO: dynamically? on the other hand: which display has more than 100 lines? :) */
 
-static int AddVolsByName(char *n)
+static int GetVols(struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	struct ocpvolregstruct *x=(struct ocpvolregstruct *)_lnkGetSymbol(n);
-	int num;
-	int i;
-	if(!x)
-		return(0);
-	num=x->GetVolumes();
-	for(i=0; i<num; i++)
+	if (plrAPI && plrAPI->VolRegs)
 	{
-		struct ocpvolstruct y;
-		if(vols>=100)
-			return 0;
-		if(x->GetVolume(&y, i))
-		{
-			vol[vols].volreg=x;
-			vol[vols].id=i;
-			vols++;
-		}
-	}
-	return 1;
-}
-
-static int GetVols(void)
-{
-	char const *dllinfo=_lnkReadInfoReg("volregs");
-	vols=0;
-
-	if(dllinfo)
-	{
-		int num=cfCountSpaceList(dllinfo, 100);
+		struct ocpvolregstruct *x = plrAPI->VolRegs;
+		int num = x->GetVolumes();
 		int i;
+
 		for(i=0; i<num; i++)
 		{
-			char buf[100];
-			cfGetSpaceListEntry(buf, &dllinfo, 100);
-			AddVolsByName(buf);
+			struct ocpvolstruct y;
+			if(vols>=100)
+				return 0;
+			if(x->GetVolume(&y, i))
+			{
+				vol[vols].volreg=x;
+				vol[vols].id=i;
+				vols++;
+			}
 		}
+		return 1;
 	}
-	return 1;
+	return 0;
 }
 
 static int volctrlGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
@@ -398,7 +380,7 @@ static int volctrlEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 	switch(ev)
 	{
 		case cpievInit:
-			GetVols();
+			GetVols(cpifaceSession);
 			mode=modeNone;
 			return(!!vols);
 		case cpievInitAll:

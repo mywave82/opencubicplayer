@@ -11,6 +11,8 @@ struct ocpfilehandle_t;
 
 struct cpifaceSessionAPI_t; /* cpiface.h */
 
+struct ocpvolregstruct; /* vol.h */
+
 struct plrAPI_t
 {
 	unsigned int (*Idle)(void); /* returns the current BufferDelay - should be called periodically, usually at FPS rate - inserts pause-samples if needed */
@@ -27,6 +29,7 @@ struct plrAPI_t
 	void (*CommitBuffer)(unsigned int samples);
 	void (*Pause)(int pause); // driver will insert dummy samples as needed
 	void (*Stop)(void);
+	struct ocpvolregstruct *VolRegs; /* null if feature is not present */
 };
 
 extern const struct plrAPI_t *plrAPI;

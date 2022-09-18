@@ -110,20 +110,6 @@ static void parseinfo (char *pi, const char *key)
 	}
 }
 
-char *_lnkReadInfoReg(const char *key)
-{
-	int i;
-	char **pi;
-	*reglist=0;
-	for (i=0;i<loadlist_n;i++)
-		if ((pi=dlsym(loadlist[i].handle, "dllinfo")))
-			parseinfo(*pi, key);
-	if (*reglist)
-		reglist[strlen(reglist)-1]=0;
-	return reglist;
-}
-
-
 char *lnkReadInfoReg(const int id, const char *key)
 {
 	char **pi=0;

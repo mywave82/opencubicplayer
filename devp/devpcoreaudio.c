@@ -481,7 +481,8 @@ static const struct plrAPI_t devpCoreAudio = {
 	devpCoreAudioOnBufferCallback,
 	devpCoreAudioCommitBuffer,
 	devpCoreAudioPause,
-	devpCoreAudioStop
+	devpCoreAudioStop,
+	0
 };
 
 static int CoreAudioInit(const struct deviceinfo *c)

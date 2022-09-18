@@ -662,6 +662,8 @@ static int volossSetVolume(struct ocpvolstruct *v, int n)
 	return 0;
 }
 
+static struct ocpvolregstruct voloss={volossGetNumVolume, volossGetVolume, volossSetVolume};
+
 static const struct plrAPI_t devpOSS = {
 	devpOSSIdle,
 	devpOSSPeekBuffer,
@@ -671,13 +673,13 @@ static const struct plrAPI_t devpOSS = {
 	devpOSSOnBufferCallback,
 	devpOSSCommitBuffer,
 	devpOSSPause,
-	devpOSSStop
+	devpOSSStop,
+	&voloss
 };
 
 
 static struct devaddstruct plrOSSAdd = {ossGetOpt, 0, 0, 0};
 struct sounddevice plrOSS={SS_PLAYER, 0, "OSS player", ossDetect,  ossInit,  ossClose, &plrOSSAdd};
-struct ocpvolregstruct voloss={volossGetNumVolume, volossGetVolume, volossSetVolume};
 
-const char *dllinfo = "driver plrOSS; volregs voloss";
+const char *dllinfo = "driver plrOSS";
 const struct linkinfostruct dllextinfo = {.name = "devposs", .desc = "OpenCP Player Device: OSS (c) 2004-'22 Stian Skjelstad", .ver = DLLVERSION};
