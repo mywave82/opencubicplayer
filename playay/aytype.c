@@ -114,18 +114,12 @@ static const char *AY_description[] =
 	NULL
 };
 
-static const struct interfaceparameters AY_p =
-{
-	"autoload/40-playay", "ayPlayer",
-	0, 0
-};
-
 int __attribute__ ((visibility ("internal"))) ay_type_init (void)
 {
 	struct moduletype mt;
 	fsRegisterExt("ay");
 	mt.integer.i = MODULETYPE("AY");
-	fsTypeRegister (mt, AY_description, "plOpenCP", &AY_p);
+	fsTypeRegister (mt, AY_description, "plOpenCP", &ayPlayer);
 
 	mdbRegisterReadInfo(&ayReadInfoReg);
 	return errOk;

@@ -6,6 +6,7 @@
 
 struct ocpfilehandle_t;
 struct moduleinfostruct;
+struct cpifaceplayerstruct;
 extern int fsGetNextFile (struct moduleinfostruct *info, struct ocpfilehandle_t **filehandle); /* info comes from external buffer */
 extern int fsGetPrevFile (struct moduleinfostruct *info, struct ocpfilehandle_t **filehandle); /* info comes from external buffer */
 extern int fsFilesLeft(void);
@@ -35,18 +36,11 @@ extern int fsShowAllFiles;
 extern const char *fsTypeNames[256]; /* type description */
 #endif
 
-struct interfaceparameters
-{
-	const char *pllink; // "plOpenCP" uses this "plugin"
-	const char *player; // "plOpenCP" uses this symbol name from "plugin" as the player object
-	const char *ldlink; // some player "plugins" uses loaders. This is the name of that "loader plugin"
-	const char *loader; // And this is the loader symbol used
-};
 /* description: is NULL terminating string array of up to 6 lines of 76 characters
  *
  * interface: Usually "plOpenCP" or "VirtualInterface" - last is not user-editable
  */
-void fsTypeRegister (struct moduletype modtype, const char **description, const char *interface, const struct interfaceparameters *ip);
+void fsTypeRegister (struct moduletype modtype, const char **description, const char *interface, const struct cpifaceplayerstruct *cp);
 uint8_t fsModTypeColor(struct moduletype modtype); /* replaces fsTypeCols[] */
 
 extern void fsRegisterExt(const char *ext);
@@ -72,7 +66,7 @@ typedef enum {
 
 struct interfacestruct
 {
-	int (*Init)(struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip);
+	int (*Init)(struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *cp);
 	interfaceReturnEnum (*Run)(void);
 	void (*Close)(void);
 	const char *name;
@@ -82,7 +76,7 @@ struct interfacestruct
 
 void plRegisterInterface(struct interfacestruct *interface);
 void plUnregisterInterface(struct interfacestruct *interface);
-void plFindInterface(struct moduletype modtype, const struct interfacestruct **i, const struct interfaceparameters **ip);
+void plFindInterface(struct moduletype modtype, const struct interfacestruct **i, const struct cpifaceplayerstruct **cp);
 
 extern struct preprocregstruct *plPreprocess;
 extern void plRegisterPreprocess(struct preprocregstruct *r);

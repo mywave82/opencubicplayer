@@ -478,7 +478,7 @@ static void cdaCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 	cdClose (cpifaceSession);
 }
 
-static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 	const char *name = 0;
 	int32_t start = -1;
@@ -556,6 +556,6 @@ static void cdaClose (void)
 	return cda_type_done ();
 }
 
-struct cpifaceplayerstruct cdaPlayer = {"[CDROM Audio plugin]", cdaOpenFile, cdaCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) cdaPlayer = {"[CDROM Audio plugin]", cdaOpenFile, cdaCloseFile};
 char *dllinfo = "";
 struct linkinfostruct dllextinfo = {.name = "playcda", .desc = "OpenCP CDA Player (c) 1995-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = cdaInit, .Close = cdaClose };

@@ -61,7 +61,7 @@ static void FreeResources(struct LoadULTResources *r)
 	}
 }
 
-static int _mpLoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) LoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	char id[15];
 	uint8_t ver;
@@ -628,7 +628,3 @@ static int _mpLoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmod
 
 	return errOk;
 }
-
-struct gmdloadstruct mpLoadULT = { _mpLoadULT };
-
-struct linkinfostruct dllextinfo = {.name = "gmdlult", .desc = "OpenCP Module Loader: *.ULT (c) 1994-'22 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

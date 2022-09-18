@@ -35,19 +35,12 @@ static const char *CDA_description[] =
 	NULL
 };
 
-static const struct interfaceparameters CDA_p =
-{
-	"autoload/40-playcda", "cdaPlayer",
-	0, 0
-};
-
-
 int __attribute__ ((visibility ("internal"))) cda_type_init (void)
 {
 	struct moduletype mt;
 	fsRegisterExt ("CDA");
 	mt.integer.i = MODULETYPE("CDA");
-	fsTypeRegister (mt, CDA_description, "plOpenCP", &CDA_p);
+	fsTypeRegister (mt, CDA_description, "plOpenCP", &cdaPlayer);
 
 	return errOk;
 }

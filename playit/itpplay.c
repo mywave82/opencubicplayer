@@ -559,7 +559,7 @@ static int itpGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsign
 	return getchansample (cpifaceSession, &itplayer, ch, buf, len, rate, opt);
 }
 
-static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 	const char *filename;
 	int retval;
@@ -630,5 +630,5 @@ static void itClose (void)
 	it_type_done ();
 }
 
-struct cpifaceplayerstruct itpPlayer = {"[ImpulseTracker plugin]", itpOpenFile, itpCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) itPlayer = {"[ImpulseTracker plugin]", itpOpenFile, itpCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playit", .desc = "OpenCP IT Player (c) 1997-'22 Tammo Hinrichs, Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = itInit, .Close = itClose};

@@ -82,7 +82,7 @@ struct browser_t entry_kernal;
 struct browser_t entry_basic;
 struct browser_t entry_chargen;
 
-static int sidConfigInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip)
+static int sidConfigInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *ip)
 {
 	return 1;
 }
@@ -1268,7 +1268,7 @@ superexit:
 
 static struct ocpfile_t      *sidconfig; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv
 
-static int                    sidConfigInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip);
+static int                    sidConfigInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *);
 static interfaceReturnEnum    sidConfigRun  (void);
 static struct interfacestruct sidConfigIntr = {sidConfigInit, sidConfigRun, 0, "libsidplayfp Config" INTERFACESTRUCT_TAIL};
 

@@ -205,10 +205,11 @@ static int mpegLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 static void mpegCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	ID3InfoDone (cpifaceSession);
+	ID3PicDone (cpifaceSession);
 	mpegClosePlayer (cpifaceSession);
 }
 
-static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *mpegfile, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *mpegfile)
 {
 	const char *filename;
 	struct mpeginfo inf;
@@ -235,6 +236,7 @@ static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 	mpegrate=inf.rate;
 
 	ID3InfoInit (cpifaceSession);
+	ID3PicInit (cpifaceSession);
 
 	return errOk;
 }
@@ -249,5 +251,5 @@ static void mpegClose (void)
 	ampeg_type_done ();
 }
 
-struct cpifaceplayerstruct mpegPlayer = {"[MPEG, libmad plugin]", mpegOpenFile, mpegCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) mpegPlayer = {"[MPEG, libmad plugin]", mpegOpenFile, mpegCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playmp2", .desc = "OpenCP Audio MPEG Player (c) 1994-'22 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .size = 0, .Init = mpegInit, .Close = mpegClose};

@@ -66,7 +66,7 @@ static void FreeResources (struct LoadMTMResources *r)
 	}
 }
 
-static int _mpLoadMTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) LoadMTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	struct __attribute__((packed)) {
 		uint32_t sig;
@@ -557,7 +557,3 @@ static int _mpLoadMTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmod
 
 	return errOk;
 }
-
-struct gmdloadstruct mpLoadMTM = { _mpLoadMTM };
-
-struct linkinfostruct dllextinfo = {.name = "gmdlmtm", .desc = "OpenCP Module Loader: *.MTM (c) 1994-'22 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

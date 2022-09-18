@@ -82,7 +82,7 @@ static inline void putcmd(uint8_t **p, uint8_t c, uint8_t d)
 	*(*p)++=d;
 }
 
-static int _mpLoadSTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) LoadSTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	unsigned int t,t2,i;
 	uint8_t orders[128];
@@ -639,7 +639,3 @@ static int _mpLoadSTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmod
 
 	return errOk;
 }
-
-struct gmdloadstruct mpLoadSTM = { _mpLoadSTM };
-
-struct linkinfostruct dllextinfo = {.name = "gmdlstm", .desc = "OpenCP Module Loader: *.STM (c) 2019-'22, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

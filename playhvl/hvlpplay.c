@@ -190,7 +190,7 @@ static void hvlCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 	hvlClosePlayer (cpifaceSession);
 }
 
-static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 	const char *filename;
 	uint8_t *filebuf;
@@ -266,5 +266,5 @@ static void hvlClose (void)
 	hvl_type_done ();
 }
 
-struct cpifaceplayerstruct hvlPlayer = {"[HivelyTracker plugin]", hvlOpenFile, hvlCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) hvlPlayer = {"[HivelyTracker plugin]", hvlOpenFile, hvlCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playhvl", .desc = "OpenCP HVL Player (c) 2019-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = hvlInit, .Close = hvlClose};

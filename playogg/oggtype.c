@@ -141,12 +141,6 @@ static const char *OGG_description[] =
 	NULL
 };
 
-static const struct interfaceparameters OGG_p =
-{
-	"autoload/40-playogg", "oggPlayer",
-	0, 0
-};
-
 static struct mdbreadinforegstruct oggReadInfoReg = {"OGG", oggReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 int __attribute__ ((visibility ("internal"))) ogg_type_init (void)
@@ -155,7 +149,7 @@ int __attribute__ ((visibility ("internal"))) ogg_type_init (void)
 	fsRegisterExt ("OGA");
 	fsRegisterExt ("OGG");
 	mt.integer.i = MODULETYPE("OGG");
-	fsTypeRegister (mt, OGG_description, "plOpenCP", &OGG_p);
+	fsTypeRegister (mt, OGG_description, "plOpenCP", &oggPlayer);
 
 	mdbRegisterReadInfo(&oggReadInfoReg);
 	return errOk;

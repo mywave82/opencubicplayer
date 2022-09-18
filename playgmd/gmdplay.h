@@ -9,6 +9,8 @@ struct ocpfilehandle_t;
 
 struct sampleinfo;
 
+struct ocpfilehandle_t;
+
 struct gmdtrack
 {
 	unsigned char *ptr;
@@ -200,10 +202,16 @@ enum
 	fxPanVibrato
 };
 
-struct ocpfilehandle_t;
-struct gmdloadstruct {
-	int (*load)(struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
-};
+int __attribute__ ((visibility ("internal"))) Load669 (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+int __attribute__ ((visibility ("internal"))) LoadAMS (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+int __attribute__ ((visibility ("internal"))) LoadMTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+int __attribute__ ((visibility ("internal"))) LoadOKT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+int __attribute__ ((visibility ("internal"))) LoadPTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+int __attribute__ ((visibility ("internal"))) LoadSTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+int __attribute__ ((visibility ("internal"))) LoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
 
 extern __attribute__ ((visibility ("internal"))) struct gmdmodule mod;
 

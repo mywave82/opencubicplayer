@@ -129,53 +129,6 @@ static void gmdMarkInsSamp (struct cpifaceSessionAPI_t *cpifaceSession, uint8_t 
 	}
 }
 
-static int mpLoadGen(struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file, struct moduletype type, const char *link, const char *name)
-{
-	int hnd;
-	struct gmdloadstruct *loadfn;
-	volatile uint8_t retval;
-
-	if ((!link)||(!name))
-	{
-#ifdef LD_DEBUG
-		fprintf (stderr, "ldlink or loader information is missing\n");
-#endif
-		return errSymMod;
-	}
-
-#ifdef LD_DEBUG
-	fprintf(stderr, " (%s) Trying to locate \"%s\", func \"%s\"\n", secname, link, name);
-#endif
-
-	hnd=lnkLink(link);
-	if (hnd<=0)
-	{
-#ifdef LD_DEBUG
-		fprintf(stderr, "Failed to locate ldlink \"%s\"\n", link);
-#endif
-		return errSymMod;
-	}
-
-	loadfn=_lnkGetSymbol(name);
-	if (!loadfn)
-	{
-#ifdef LD_DEBUG
-		fprintf(stderr, "Failed to locate loaded \"%s\"\n", name);
-#endif
-		lnkFree(hnd);
-		return errSymSym;
-	}
-#ifdef LD_DEBUG
-	fprintf(stderr, "loading using %s-%s\n", link, name);
-#endif
-	memset(m->composer, 0, sizeof(m->composer));
-	retval=loadfn->load(cpifaceSession, m, file);
-
-	lnkFree(hnd);
-
-	return retval;
-}
-
 static void gmdDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct globinfo gi;
@@ -294,7 +247,7 @@ static int gmdLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 	return (!LoopMod) && mpLooped();
 }
 
-static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader)
+static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, int (*loader) (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file))
 {
 	const char *filename;
 	uint64_t i;
@@ -312,7 +265,8 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	dirdbGetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s... (%uk)\n", filename, (unsigned int)(i>>10));
 
-	retval=mpLoadGen(cpifaceSession, &mod, file, info->modtype, ldlink, loader);
+	bzero (info->composer, sizeof (info->composer));
+	retval = loader (cpifaceSession, &mod, file);
 
 	if (!retval)
 	{
@@ -395,6 +349,56 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
+static int gmdOpenFile669 (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+{
+	return gmdOpenFile (cpifaceSession, info, file, Load669);
+}
+
+static int gmdOpenFileAMS (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+{
+	return gmdOpenFile (cpifaceSession, info, file, LoadAMS);
+}
+
+static int gmdOpenFileDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+{
+	return gmdOpenFile (cpifaceSession, info, file, LoadDMF);
+}
+
+static int gmdOpenFileMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+{
+	return gmdOpenFile (cpifaceSession, info, file, LoadMDL);
+}
+
+static int gmdOpenFileMTM (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+{
+	return gmdOpenFile (cpifaceSession, info, file, LoadMTM);
+}
+
+static int gmdOpenFileOKT (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+{
+	return gmdOpenFile (cpifaceSession, info, file, LoadOKT);
+}
+
+static int gmdOpenFilePTM (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+{
+	return gmdOpenFile (cpifaceSession, info, file, LoadPTM);
+}
+
+static int gmdOpenFileS3M (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+{
+	return gmdOpenFile (cpifaceSession, info, file, LoadS3M);
+}
+
+static int gmdOpenFileSTM (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+{
+	return gmdOpenFile (cpifaceSession, info, file, LoadSTM);
+}
+
+static int gmdOpenFileULT (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+{
+	return gmdOpenFile (cpifaceSession, info, file, LoadULT);
+}
+
 static int gmdInit (void)
 {
 	return gmd_type_init ();
@@ -405,7 +409,16 @@ static void gmdClose (void)
 	gmd_type_done ();
 }
 
-struct cpifaceplayerstruct gmdPlayer = {"[General module plugin]", gmdOpenFile, gmdCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayer669 = {"[General module plugin: 669]", gmdOpenFile669, gmdCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerAMS = {"[General module plugin: AMS]", gmdOpenFileAMS, gmdCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerDMF = {"[General module plugin: DMF]", gmdOpenFileDMF, gmdCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerMDL = {"[General module plugin: MDL]", gmdOpenFileMDL, gmdCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerMTM = {"[General module plugin: MTM]", gmdOpenFileMTM, gmdCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerOKT = {"[General module plugin: OKT]", gmdOpenFileOKT, gmdCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerPTM = {"[General module plugin: PTM]", gmdOpenFilePTM, gmdCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerS3M = {"[General module plugin: S3M]", gmdOpenFileS3M, gmdCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerSTM = {"[General module plugin: STM]", gmdOpenFileSTM, gmdCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerULT = {"[General module plugin: ULT]", gmdOpenFileULT, gmdCloseFile};
 
 char *dllinfo = "";
 struct linkinfostruct dllextinfo = {.name = "playgmd", .desc = "OpenCP General Module Player (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = gmdInit, .Close = gmdClose};

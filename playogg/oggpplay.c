@@ -214,7 +214,7 @@ static void oggCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 	OggPicDone (cpifaceSession);
 }
 
-static int oggOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *oggf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int oggOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *oggf)
 {
 	const char *filename;
 	struct ogginfo inf;
@@ -256,5 +256,5 @@ static void oggClose (void)
 	ogg_type_done ();
 }
 
-struct cpifaceplayerstruct oggPlayer = {"[OGG Vorbis plugin]", oggOpenFile, oggCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) oggPlayer = {"[OGG Vorbis plugin]", oggOpenFile, oggCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playogg", .desc = "OpenCP Ogg Vorbis Player (c) 1994-'22 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .size = 0, .Init = oggInit, .Close = oggClose};

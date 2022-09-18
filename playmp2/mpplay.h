@@ -30,5 +30,7 @@ extern void __attribute__ ((visibility ("internal"))) mpegSetPos(uint32_t pos);
 extern void __attribute__ ((visibility ("internal"))) mpegGetID3(struct ID3_t **ID3);
 extern void __attribute__ ((visibility ("internal"))) ID3InfoInit (struct cpifaceSessionAPI_t *cpifaceSession);
 extern void __attribute__ ((visibility ("internal"))) ID3InfoDone (struct cpifaceSessionAPI_t *cpifaceSession);
+extern void __attribute__ ((visibility ("internal"))) ID3PicInit (struct cpifaceSessionAPI_t *cpifaceSession);
+extern void __attribute__ ((visibility ("internal"))) ID3PicDone (struct cpifaceSessionAPI_t *cpifaceSession);
 
 #endif

@@ -293,7 +293,7 @@ static void refresh_configfiles (void)
 	}
 }
 
-static int timidityConfigInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip)
+static int timidityConfigInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *)
 {
 	return 1;
 }
@@ -932,7 +932,7 @@ superexit:
 
 static struct ocpfile_t      *timidityconfig; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv
 
-static int                    timidityConfigInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip);
+static int                    timidityConfigInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *);
 static interfaceReturnEnum    timidityConfigRun  (void);
 static struct interfacestruct timidityConfigIntr = {timidityConfigInit, timidityConfigRun, 0, "TiMidity+ Config" INTERFACESTRUCT_TAIL};
 

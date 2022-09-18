@@ -488,7 +488,7 @@ static void ymCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 	ymClosePlayer (cpifaceSession);
 }
 
-static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 	const char *filename;
 
@@ -527,7 +527,7 @@ static void ymClose (void)
 
 extern "C"
 {
-	cpifaceplayerstruct ymPlayer = {"[STYMulator plugin]", ymOpenFile, ymCloseFile};
+	const cpifaceplayerstruct ymPlayer = {"[STYMulator plugin]", ymOpenFile, ymCloseFile};
 	struct linkinfostruct dllextinfo =
 	{ /* c++ historically does not support named initializers, and size needs to be writable... */
 		/* .name = */ "playym",

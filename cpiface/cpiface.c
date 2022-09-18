@@ -126,7 +126,7 @@ static struct drawHelperAPI_t drawHelperAPI =
 
 extern struct cpimoderegstruct cpiModeText;
 
-static struct cpifaceplayerstruct *curplayer;
+static const struct cpifaceplayerstruct *curplayer;
 
 static signed char soloch=-1;
 
@@ -2164,8 +2164,6 @@ static void plmpClose(void)
 	}
 }
 
-static int linkhandle;
-
 static void cpifaceIdle (void)
 {
 	if (cpifaceSessionAPI.Public.IsEnd)
@@ -2174,10 +2172,9 @@ static void cpifaceIdle (void)
 	}
 }
 
-static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi, const struct interfaceparameters *ip)
+static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi, const struct cpifaceplayerstruct *cp)
 {
 	struct cpimoderegstruct *mod;
-	void *fp;
 	int retval;
 	const char *filename;
 
@@ -2226,30 +2223,12 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.mcpGet = 0;
 	cpifaceSessionAPI.Public.mcpGetRealVolume = 0;
 
-	linkhandle=lnkLink(ip->pllink);
-	if (linkhandle<0)
-	{
-		fprintf(stderr, "Error finding plugin (pllink) %s\n", ip->pllink);
-		return 0;
-	}
+	curplayer=cp;
 
-	fp=lnkGetSymbol(linkhandle, ip->player);
-	if (!fp)
-	{
-		lnkFree(linkhandle);
-		fprintf(stderr, "Error finding symbol (player) %s from plugin %s\n", ip->player, ip->pllink);
-		fprintf(stderr, "link error\n");
-		sleep(1);
-		return 0;
-	}
-
-	curplayer=(struct cpifaceplayerstruct*)fp;
-
-	retval=curplayer->OpenFile (&cpifaceSessionAPI.Public, info, fi, ip->ldlink, ip->loader);
+	retval=curplayer->OpenFile (&cpifaceSessionAPI.Public, info, fi);
 
 	if (retval)
 	{
-		lnkFree(linkhandle);
 		fprintf(stderr, "error: %s\n", errGetShortString(retval));
 		sleep(1);
 		return 0;
@@ -2282,7 +2261,6 @@ static void plmpCloseFile()
 			cpiModes->Event (&cpifaceSessionAPI.Public, cpievDone);
 		cpiModes=cpiModes->next;
 	}
-	lnkFree(linkhandle);
 }
 
 static void plmpOpenScreen()

@@ -4,4 +4,6 @@
 int __attribute__ ((visibility ("internal"))) sid_type_init (void);
 void __attribute__ ((visibility ("internal"))) sid_type_done (void);
 
+extern const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) sidPlayer;
+
 #endif

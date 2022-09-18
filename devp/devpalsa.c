@@ -1209,7 +1209,7 @@ static int mlDrawBox (int esel, int first, const char texts[2][DEVICE_NAME_MAX+1
 	return mlTop;
 }
 
-static int alsaMixerIntrSetDev (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip)
+static int alsaMixerIntrSetDev (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *cp)
 {
 	const char *name;
 

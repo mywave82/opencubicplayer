@@ -212,12 +212,6 @@ static const char *FLAC_description[] =
 	NULL
 };
 
-static const struct interfaceparameters FLAC_p =
-{
-	"autoload/40-playflac", "flacPlayer",
-	0, 0
-};
-
 int __attribute__ ((visibility ("internal"))) flac_type_init (void)
 {
 	struct moduletype mt;
@@ -227,7 +221,7 @@ int __attribute__ ((visibility ("internal"))) flac_type_init (void)
 	fsRegisterExt("FLC");
 
 	mt.integer.i = MODULETYPE("FLAC");
-	fsTypeRegister (mt, FLAC_description, "plOpenCP", &FLAC_p);
+	fsTypeRegister (mt, FLAC_description, "plOpenCP", &flacPlayer);
 
 	mdbRegisterReadInfo(&flacReadInfoReg);
 

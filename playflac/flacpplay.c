@@ -205,7 +205,7 @@ static void flacCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 	FlacPicDone (cpifaceSession);
 }
 
-static int flacOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *flacf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int flacOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *flacf)
 {
 	const char *filename;
 	struct flacinfo inf;
@@ -248,5 +248,5 @@ static void flacClose (void)
 	flac_type_done ();
 }
 
-struct cpifaceplayerstruct flacPlayer = {"[FLAC plugin]", flacOpenFile, flacCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) flacPlayer = {"[FLAC plugin]", flacOpenFile, flacCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playflac", .desc = "OpenCP FLAC Player (c) 2007-'22 Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = flacInit, .Close = flacClose};

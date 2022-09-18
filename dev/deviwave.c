@@ -459,7 +459,7 @@ static void wavedevclose(void)
 	}
 }
 
-static int mcpSetDev(struct moduleinfostruct *mi, struct ocpfilehandle_t *fp, const struct interfaceparameters *ip)
+static int mcpSetDev(struct moduleinfostruct *mi, struct ocpfilehandle_t *fp, const struct cpifaceplayerstruct *cp)
 {
 	const char *path;
 	char *name;
@@ -487,7 +487,6 @@ static void mcpPrep(struct moduleinfostruct *info, struct ocpfilehandle_t **bp)
 		mcpSetDevice(cfGetProfileString2(cfSoundSec, "sound", "bigmodules", ""), 0);
 */
 }
-
 
 static struct interfacestruct mcpIntr = {mcpSetDev, 0, 0, "mcpIntr" INTERFACESTRUCT_TAIL};
 static struct preprocregstruct mcpPreprocess = {mcpPrep PREPROCREGSTRUCT_TAIL};

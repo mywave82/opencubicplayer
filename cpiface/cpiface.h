@@ -34,9 +34,7 @@ struct cpifaceplayerstruct
 	const char *playername;
 	int (*OpenFile) (struct cpifaceSessionAPI_t *cpifaceSession,
 	                 struct moduleinfostruct *info,
-	                 struct ocpfilehandle_t *f,
-	                 const char *ldlink, // some player "plugins" uses loaders. This is the name of that "loader plugin"
-	                 const char *loader); // And this is the loader symbol used
+	                 struct ocpfilehandle_t *f);
 	void (*CloseFile)(struct cpifaceSessionAPI_t *cpifaceSession);
 };
 

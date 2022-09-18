@@ -40,7 +40,7 @@ static inline void putcmd(uint8_t **p, uint8_t c, uint8_t d)
 	*(*p)++=d;
 }
 
-static int _mpLoad669 (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) Load669 (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	unsigned int t;
 
@@ -412,7 +412,3 @@ static int _mpLoad669 (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmod
 
 	return errOk;
 }
-
-struct gmdloadstruct mpLoad669 = { _mpLoad669 };
-
-struct linkinfostruct dllextinfo = {.name = "gmdl669", .desc = "OpenCP Module Loader: *.669 (c) 1994-'22 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

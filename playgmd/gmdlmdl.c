@@ -139,7 +139,7 @@ static void FreeResources (struct LoadMDLResources *r)
 	}
 }
 
-static int _mpLoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	uint32_t waste32;
 	uint16_t waste16;
@@ -1401,7 +1401,3 @@ errAllocMem_withmem:
 	free (temptrack);
 	return errAllocMem;
 }
-
-struct gmdloadstruct mpLoadMDL = { _mpLoadMDL };
-
-struct linkinfostruct dllextinfo = {.name = "gmdlmdl", .desc = "OpenCP Module Loader: *.MDL (c) 1994-'22 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

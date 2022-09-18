@@ -61,7 +61,7 @@ static void FreeResources(struct LoadOKTResources *r)
 	}
 }
 
-static int _mpLoadOKT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) LoadOKT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 
 	uint8_t hsig[8];
@@ -644,7 +644,3 @@ static int _mpLoadOKT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmod
 
 	return errOk;
 }
-
-struct gmdloadstruct mpLoadOKT = { _mpLoadOKT };
-
-struct linkinfostruct dllextinfo = {.name = "gmdlokt", .desc = "OpenCP Module Loader: *.OKT (c) 1994-'22 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

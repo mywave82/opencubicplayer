@@ -116,12 +116,6 @@ static const char *IT_description[] =
 	NULL
 };
 
-static struct interfaceparameters IT_p =
-{
-	"autoload/40-playit", "itpPlayer",
-	0, 0
-};
-
 static struct mdbreadinforegstruct itpReadInfoReg = {"IT", itpReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 int __attribute__ ((visibility ("internal"))) it_type_init (void)
@@ -129,7 +123,7 @@ int __attribute__ ((visibility ("internal"))) it_type_init (void)
 	struct moduletype mt;
 	fsRegisterExt ("IT");
 	mt.integer.i = MODULETYPE("IT");
-	fsTypeRegister (mt, IT_description, "plOpenCP", &IT_p);
+	fsTypeRegister (mt, IT_description, "plOpenCP", &itPlayer);
 
 	mdbRegisterReadInfo(&itpReadInfoReg);
 	return errOk;

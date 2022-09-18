@@ -443,7 +443,7 @@ static int sidLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 	return 0;
 }
 
-static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *sidf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *sidf)
 {
 	const char *filename;
 
@@ -493,7 +493,7 @@ static void sidClose (void)
 
 extern "C"
 {
-	cpifaceplayerstruct sidPlayer = {"[libsidplayfp plugin]", sidOpenFile, sidCloseFile};
+	const cpifaceplayerstruct sidPlayer = {"[libsidplayfp plugin]", sidOpenFile, sidCloseFile};
 	struct linkinfostruct dllextinfo =
 	{ /* c++ historically does not support named initializers, and size needs to be writable... */
 		/* .name = */ "playsid",

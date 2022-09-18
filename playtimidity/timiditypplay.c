@@ -183,7 +183,7 @@ static int timidityProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 
 }
 
-static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 	const char *filename;
 	int err;
@@ -270,5 +270,5 @@ static void timidityClose (void)
 	timidity_type_done ();
 }
 
-struct cpifaceplayerstruct timidityPlayer = {"[TiMidity++ MIDI plugin]", timidityOpenFile, timidityCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) timidityPlayer = {"[TiMidity++ MIDI plugin]", timidityOpenFile, timidityCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playtimidity", .desc = "OpenCP TiMidity++ Player (c) 2016-'22 TiMidity++ team & Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init=timidityInit, .Close=timidityClose};

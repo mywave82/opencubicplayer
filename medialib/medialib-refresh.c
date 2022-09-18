@@ -116,7 +116,7 @@ static void mlRefreshDraw(const char *title)
 	}
 }
 
-static int medialibRefreshInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip)
+static int medialibRefreshInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *ip)
 {
 	if (medialib_sources_count)
 	{

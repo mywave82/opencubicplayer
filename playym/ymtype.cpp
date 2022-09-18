@@ -360,12 +360,6 @@ static const char *YM_description[] =
 	NULL
 };
 
-static struct interfaceparameters YM_p =
-{
-	"autoload/40-playym", "ymPlayer",
-	0, 0
-};
-
 static struct mdbreadinforegstruct ymReadInfoReg = {"YM", ymReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 int __attribute__((visibility ("internal"))) ym_type_init (void)
@@ -373,7 +367,7 @@ int __attribute__((visibility ("internal"))) ym_type_init (void)
 	struct moduletype mt;
 	fsRegisterExt("YM");
 	mt.integer.i = MODULETYPE("YM");
-	fsTypeRegister (mt, YM_description, "plOpenCP", &YM_p);
+	fsTypeRegister (mt, YM_description, "plOpenCP", &ymPlayer);
 
 	mdbRegisterReadInfo(&ymReadInfoReg);
 	return errOk;

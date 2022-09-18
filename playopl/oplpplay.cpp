@@ -413,7 +413,7 @@ static void oplCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 	oplClosePlayer (cpifaceSession);
 }
 
-static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 	const char *filename;
 	size_t buffersize = 16*1024;
@@ -480,8 +480,7 @@ static void oplClose (void)
 
 extern "C"
 {
-	cpifaceplayerstruct oplPlayer = {"[AdPlug OPL plugin]", oplOpenFile, oplCloseFile};
-
+	const cpifaceplayerstruct oplPlayer = {"[AdPlug OPL plugin]", oplOpenFile, oplCloseFile};
 	const char *dllinfo = "";
 	struct linkinfostruct dllextinfo =
 	{ /* c++ historically does not support named initializers, and size needs to be writable... */

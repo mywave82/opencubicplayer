@@ -242,12 +242,6 @@ static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	return 0;
 }
 
-static struct interfaceparameters MOD_p =
-{
-	"autoload/40-playxm", "xmpPlayer",
-	0, 0
-};
-
 static const char *M15_description[] =
 {
 	//                                                                          |
@@ -357,25 +351,25 @@ int __attribute__((visibility ("internal"))) xm_type_init (void)
 	fsRegisterExt ("WOW");
 	fsRegisterExt ("XM");
 	mt.integer.i = MODULETYPE("M15");
-	fsTypeRegister (mt, M15_description, "plOpenCP", &MOD_p);
+	fsTypeRegister (mt, M15_description, "plOpenCP", &xmpPlayer);
 	mt.integer.i = MODULETYPE("M15t");
-	fsTypeRegister (mt, M15t_description, "plOpenCP", &MOD_p);
+	fsTypeRegister (mt, M15t_description, "plOpenCP", &xmpPlayer);
 	mt.integer.i = MODULETYPE("M31");
-	fsTypeRegister (mt, M31_description, "plOpenCP", &MOD_p);
+	fsTypeRegister (mt, M31_description, "plOpenCP", &xmpPlayer);
 	mt.integer.i = MODULETYPE("MOD");
-	fsTypeRegister (mt, MOD_description, "plOpenCP", &MOD_p);
+	fsTypeRegister (mt, MOD_description, "plOpenCP", &xmpPlayer);
 	mt.integer.i = MODULETYPE("MODd");
-	fsTypeRegister (mt, MODd_description, "plOpenCP", &MOD_p);
+	fsTypeRegister (mt, MODd_description, "plOpenCP", &xmpPlayer);
 	mt.integer.i = MODULETYPE("MODf");
-	fsTypeRegister (mt, MODf_description, "plOpenCP", &MOD_p);
+	fsTypeRegister (mt, MODf_description, "plOpenCP", &xmpPlayer);
 	mt.integer.i = MODULETYPE("MODt");
-	fsTypeRegister (mt, MODt_description, "plOpenCP", &MOD_p);
+	fsTypeRegister (mt, MODt_description, "plOpenCP", &xmpPlayer);
 	mt.integer.i = MODULETYPE("MXM");
-	fsTypeRegister (mt, MXM_description, "plOpenCP", &MOD_p);
+	fsTypeRegister (mt, MXM_description, "plOpenCP", &xmpPlayer);
 	mt.integer.i = MODULETYPE("WOW");
-	fsTypeRegister (mt, WOW_description, "plOpenCP", &MOD_p);
+	fsTypeRegister (mt, WOW_description, "plOpenCP", &xmpPlayer);
 	mt.integer.i = MODULETYPE("XM");
-	fsTypeRegister (mt, XM_description, "plOpenCP", &MOD_p);
+	fsTypeRegister (mt, XM_description, "plOpenCP", &xmpPlayer);
 
 	mdbRegisterReadInfo(&xmpReadInfoReg);
 	return errOk;

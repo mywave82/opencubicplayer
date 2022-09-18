@@ -356,12 +356,12 @@ struct fsType
 	uint8_t color; /* for the file-selector */
 	const char **description;
 	const char *interface;
-	const struct interfaceparameters *ip;
+	const struct cpifaceplayerstruct *cp;
 };
 struct fsType *fsTypes;
 int fsTypesCount;
 
-void fsTypeRegister (struct moduletype modtype, const char **description, const char *interface, const struct interfaceparameters *ip)
+void fsTypeRegister (struct moduletype modtype, const char **description, const char *interface, const struct cpifaceplayerstruct *cp)
 {
 	int i;
 	char m[5];
@@ -395,7 +395,7 @@ void fsTypeRegister (struct moduletype modtype, const char **description, const 
 	fsTypes[i].color = cfGetProfileInt ("fscolors", m, 7, 10);
 	fsTypes[i].description = description;
 	fsTypes[i].interface = interface;
-	fsTypes[i].ip = ip;
+	fsTypes[i].cp = cp;
 	fsTypesCount++;
 }
 
@@ -834,12 +834,6 @@ void fsForceRemove(const uint32_t dirdbref)
 	modlist_remove_all_by_path(playlist, dirdbref);
 }
 
-#warning Make this interface more intelligent + IOCTL....
-static struct interfaceparameters DEVv_p =
-{
-	0, 0,
-	0, 0
-};
 static const char *DEVv_description[] =
 {
 	"Virtual files used for Open Cubic Player to change audio device",
@@ -864,7 +858,7 @@ int fsPreInit(void)
 
 	fsRegisterExt("DEV");
 	mt.integer.i = MODULETYPE("DEVv");
-	fsTypeRegister (mt, DEVv_description, "VirtualInterface", &DEVv_p);
+	fsTypeRegister (mt, DEVv_description, "VirtualInterface", 0);
 
 	fsScrType=cfGetProfileInt2(cfScreenSec, "screen", "screentype", 7, 10)&7;
 	fsColorTypes=cfGetProfileBool2(sec, "fileselector", "typecolors", 1, 1);
@@ -923,7 +917,7 @@ int fsLateInit(void)
 }
 
 struct interfacestruct *CurrentVirtualInterface;
-static int VirtualInterfaceInit (struct moduleinfostruct *info, struct ocpfilehandle_t *fi, const struct interfaceparameters *ip)
+static int VirtualInterfaceInit (struct moduleinfostruct *info, struct ocpfilehandle_t *fi, const struct cpifaceplayerstruct *cp)
 {
 #warning "VirtualInterface" should change into using ioctl for the action....
 	char name[128];
@@ -943,7 +937,7 @@ static int VirtualInterfaceInit (struct moduleinfostruct *info, struct ocpfileha
 	{
 		if (!strcmp (CurrentVirtualInterface->name, name))
 		{
-			int res = CurrentVirtualInterface->Init (info, fi, ip);
+			int res = CurrentVirtualInterface->Init (info, fi, cp);
 			if (!res)
 			{
 				CurrentVirtualInterface = 0;
@@ -3894,7 +3888,7 @@ void plUnregisterInterface(struct interfacestruct *interface)
 	fprintf(stderr, __FILE__ ": Failed to unregister interface %s\n", interface->name);
 }
 
-void plFindInterface(struct moduletype modtype, const struct interfacestruct **in, const struct interfaceparameters **ip)
+void plFindInterface(struct moduletype modtype, const struct interfacestruct **in, const struct cpifaceplayerstruct **cp)
 {
 	int i;
 	for (i=0; i < fsTypesCount; i++)
@@ -3908,20 +3902,20 @@ void plFindInterface(struct moduletype modtype, const struct interfacestruct **i
 				if (!strcmp(curr->name, fsTypes[i].interface))
 				{
 					*in = curr;
-					*ip = fsTypes[i].ip;
+					*cp = fsTypes[i].cp;
 					return;
 				}
 				curr = curr->next;
 			}
 			fprintf(stderr, __FILE__ ": Unable to find interface for filetype %s\n", modtype.string.c);
 			*in = 0;
-			*ip = 0;
+			*cp = 0;
 			return;
 		}
 	}
 	fprintf(stderr, __FILE__ ": Unable to find moduletype: %4s\n", modtype.string.c);
 	*in = 0;
-	*ip = 0;
+	*cp = 0;
 	return;
 }
 

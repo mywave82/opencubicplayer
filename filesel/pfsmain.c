@@ -104,12 +104,12 @@ static int callselector (struct moduleinfostruct *info,
                          enumForceCallFS forcecall,
                          enumForceNext forcenext,
                          const struct interfacestruct     **iface,
-                         const struct interfaceparameters **ifacep)
+                         const struct cpifaceplayerstruct **ifacep)
 {
 	int ret;
 	int result;
 	const struct interfacestruct     *intr = 0;
-	const struct interfaceparameters *ip   = 0;
+	const struct cpifaceplayerstruct *cp   = 0;
 	struct moduleinfostruct tmodinfo;
 
 	if (*fi)
@@ -155,7 +155,7 @@ static int callselector (struct moduleinfostruct *info,
 				}
 			}
 
-			plFindInterface(tmodinfo.modtype, &intr, &ip);
+			plFindInterface(tmodinfo.modtype, &intr, &cp);
 
 			conSave();
 			{
@@ -168,7 +168,7 @@ static int callselector (struct moduleinfostruct *info,
 			{
 				ret=0;
 				*iface = intr;
-				*ifacep = ip;
+				*ifacep = cp;
 				*info = tmodinfo;
 
 				return result?-1:1;
@@ -192,9 +192,9 @@ static int callselector (struct moduleinfostruct *info,
 static int _fsMain(int argc, char *argv[])
 {
 	const struct interfacestruct     *plintr        = 0;
-	const struct interfaceparameters *plintrparam   = 0;
+	const struct cpifaceplayerstruct *plintrparam   = 0;
 	const struct interfacestruct     *nextintr      = 0;
-	const struct interfaceparameters *nextintrparam = 0;
+	const struct cpifaceplayerstruct *nextintrparam = 0;
 	struct ocpfilehandle_t *thisf=NULL;
 	struct ocpfilehandle_t *nextf=NULL;
 

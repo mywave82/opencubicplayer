@@ -550,7 +550,7 @@ static int xmpGetDots (struct cpifaceSessionAPI_t *cpifaceSession, struct notedo
 	return pos;
 }
 
-static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file, const char *ldlink, const char *_loader) /* no loader needed/used by this plugin */
+static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 	const char *filename;
 	int (*loader)(struct xmodule *, struct ocpfilehandle_t *)=0;
@@ -640,5 +640,5 @@ static void xmClose (void)
 	xm_type_done ();
 }
 
-struct cpifaceplayerstruct xmpPlayer = {"[FastTracker II plugin]", xmpOpenFile, xmpCloseFile};
+const struct cpifaceplayerstruct __attribute__((visibility ("internal"))) xmpPlayer = {"[FastTracker II plugin]", xmpOpenFile, xmpCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playxm", .desc = "OpenCP XM/MOD Player (c) 1995-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init = xmInit, .Close = xmClose};

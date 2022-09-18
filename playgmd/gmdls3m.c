@@ -45,7 +45,7 @@ static inline void putcmd(uint8_t **p, uint8_t c, uint8_t d)
 	*(*p)++=d;
 }
 
-static int _mpLoadS3M (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	unsigned int t,i;
 	uint8_t orders[256];
@@ -822,7 +822,3 @@ static int _mpLoadS3M (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmod
 
 	return errOk;
 }
-
-struct gmdloadstruct mpLoadS3M = { _mpLoadS3M };
-
-struct linkinfostruct dllextinfo = {.name = "gmdls3m", .desc = "OpenCP Module Loader: *.S3M (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

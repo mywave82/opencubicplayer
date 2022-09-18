@@ -439,12 +439,6 @@ static const char *_669_description[] =
 	NULL
 };
 
-static const struct interfaceparameters _669_p =
-{
-	"autoload/40-playgmd", "gmdPlayer",
-	"load669", "mpLoad669"
-};
-
 static const char *AMS_description[] =
 {
 	//                                                                          |
@@ -452,12 +446,6 @@ static const char *AMS_description[] =
 	"successor Velvet Studio by Velvet Development. Open Cubic Player converts",
 	"these internally into a generic module with some quirks in the playback.", // quirk: MOD_EXPOFREQ MOD_EXPOPITCHENV
 	NULL
-};
-
-static const struct interfaceparameters AMS_p =
-{
-	"autoload/40-playgmd", "gmdPlayer",
-	"loadams", "mpLoadAMS"
 };
 
 static const char *DMF_description[] =
@@ -469,12 +457,6 @@ static const char *DMF_description[] =
 	NULL
 };
 
-static const struct interfaceparameters DMF_p =
-{
-	"autoload/40-playgmd", "gmdPlayer",
-	"loaddmf", "mpLoadDMF"
-};
-
 static const char *MDL_description[] =
 {
 	//                                                                          |
@@ -482,12 +464,6 @@ static const char *MDL_description[] =
 	"tracker with support of up to 32 channels. Open Cubic Player convers these",
 	"internally into a generic module with some quirks in the playback.", // quirk: MOD_EXPOFREQ MP_OFFSETDIV2
 	NULL
-};
-
-static const struct interfaceparameters MDL_p =
-{
-	"autoload/40-playgmd", "gmdPlayer",
-	"loadmdl", "mpLoadMDL"
 };
 
 static const char *MTM_description[] =
@@ -499,12 +475,6 @@ static const char *MTM_description[] =
 	NULL
 };
 
-static const struct interfaceparameters MTM_p =
-{
-	"autoload/40-playgmd", "gmdPlayer",
-	"loadmtm", "mpLoadMTM"
-};
-
 static const char *OKT_description[] =
 {
 	//                                                                          |
@@ -514,12 +484,6 @@ static const char *OKT_description[] =
 	"Player converts these internally into a generic module with some quirks in",
 	"the playback.", // quirk: MOD_TICK0
 	NULL
-};
-
-static const struct interfaceparameters OKT_p =
-{
-	"autoload/40-playgmd", "gmdPlayer",
-	"loadokt", "mpLoadOKT"
 };
 
 /* http://fileformats.archiveteam.org/wiki/Poly_Tracker_module
@@ -542,12 +506,6 @@ static const char *PTM_description[] =
 	NULL
 };
 
-static const struct interfaceparameters PTM_p =
-{
-	"autoload/40-playgmd", "gmdPlayer",
-	"loadptm", "mpLoadPTM"
-};
-
 static const char *STM_description[] =
 {
 	//                                                                          |
@@ -558,12 +516,6 @@ static const char *STM_description[] =
 	"module with some quirks in the playback. The Speed and Tempo commands are",
 	"estimated using speed/tempo and fine-speed/tempo commands.", // quirk: MOD_S3M
 	NULL
-};
-
-static const struct interfaceparameters STM_p =
-{
-	"autoload/40-playgmd", "gmdPlayer",
-	"loadstm", "mpLoadSTM"
 };
 
 static const char *S3M_description[] =
@@ -578,12 +530,6 @@ static const char *S3M_description[] =
 	NULL
 };
 
-static const struct interfaceparameters S3M_p =
-{
-	"autoload/40-playgmd", "gmdPlayer",
-	"loads3m", "mpLoadS3M"
-};
-
 static const char *ULT_description[] =
 {
 	//                                                                          |
@@ -595,14 +541,7 @@ static const char *ULT_description[] =
 	NULL
 };
 
-static const struct interfaceparameters ULT_p =
-{
-	"autoload/40-playgmd", "gmdPlayer",
-	"loadult", "mpLoadULT"
-};
-
 static struct mdbreadinforegstruct gmdReadInfoReg = {"MOD", gmdReadInfo MDBREADINFOREGSTRUCT_TAIL};
-
 
 int __attribute__ ((visibility ("internal"))) gmd_type_init (void)
 {
@@ -610,44 +549,44 @@ int __attribute__ ((visibility ("internal"))) gmd_type_init (void)
 
 	fsRegisterExt ("669");
 	mt.integer.i = MODULETYPE("669");
-	fsTypeRegister (mt, _669_description, "plOpenCP", &_669_p);
+	fsTypeRegister (mt, _669_description, "plOpenCP", &gmdPlayer669);
 
 	fsRegisterExt ("AMS");
 	mt.integer.i = MODULETYPE("AMS");
-	fsTypeRegister (mt, AMS_description, "plOpenCP", &AMS_p);
+	fsTypeRegister (mt, AMS_description, "plOpenCP", &gmdPlayerAMS);
 
 	fsRegisterExt ("DMF");
 	mt.integer.i = MODULETYPE("DMF");
-	fsTypeRegister (mt, DMF_description, "plOpenCP", &DMF_p);
+	fsTypeRegister (mt, DMF_description, "plOpenCP", &gmdPlayerDMF);
 
 	fsRegisterExt ("MDL");
 	mt.integer.i = MODULETYPE("MDL");
-	fsTypeRegister (mt, MDL_description, "plOpenCP", &MDL_p);
+	fsTypeRegister (mt, MDL_description, "plOpenCP", &gmdPlayerMDL);
 
 	fsRegisterExt ("MTM");
 	mt.integer.i = MODULETYPE("MTM");
-	fsTypeRegister (mt, MTM_description, "plOpenCP", &MTM_p);
+	fsTypeRegister (mt, MTM_description, "plOpenCP", &gmdPlayerMTM);
 
 	fsRegisterExt ("OKT");
 	fsRegisterExt ("OKTA");
 	mt.integer.i = MODULETYPE("OKT");
-	fsTypeRegister (mt, OKT_description, "plOpenCP", &OKT_p);
+	fsTypeRegister (mt, OKT_description, "plOpenCP", &gmdPlayerOKT);
 
 	fsRegisterExt ("PTM");
 	mt.integer.i = MODULETYPE("PTM");
-	fsTypeRegister (mt, PTM_description, "plOpenCP", &PTM_p);
+	fsTypeRegister (mt, PTM_description, "plOpenCP", &gmdPlayerPTM);
 
 	fsRegisterExt ("S3M");
 	mt.integer.i = MODULETYPE("S3M");
-	fsTypeRegister (mt, S3M_description, "plOpenCP", &S3M_p);
+	fsTypeRegister (mt, S3M_description, "plOpenCP", &gmdPlayerS3M);
 
 	fsRegisterExt ("STM");
 	mt.integer.i = MODULETYPE("STM");
-	fsTypeRegister (mt, STM_description, "plOpenCP", &STM_p);
+	fsTypeRegister (mt, STM_description, "plOpenCP", &gmdPlayerSTM);
 
 	fsRegisterExt ("ULT");
 	mt.integer.i = MODULETYPE("ULT");
-	fsTypeRegister (mt, ULT_description, "plOpenCP", &ULT_p);
+	fsTypeRegister (mt, ULT_description, "plOpenCP", &gmdPlayerULT);
 
 	mdbRegisterReadInfo(&gmdReadInfoReg);
 

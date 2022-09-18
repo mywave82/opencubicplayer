@@ -196,12 +196,6 @@ static const char *WAV_description[] =
 	NULL
 };
 
-static struct interfaceparameters WAV_p =
-{
-	"autoload/40-playwav", "wavPlayer",
-	0, 0
-};
-
 static struct mdbreadinforegstruct wavReadInfoReg = {"WAVE", wavReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 int __attribute__ ((visibility ("internal"))) wav_type_init (void)
@@ -210,7 +204,7 @@ int __attribute__ ((visibility ("internal"))) wav_type_init (void)
 	fsRegisterExt ("WAV");
 	fsRegisterExt ("WAVE");
 	mt.integer.i = MODULETYPE("WAV");
-	fsTypeRegister (mt, WAV_description, "plOpenCP", &WAV_p);
+	fsTypeRegister (mt, WAV_description, "plOpenCP", &wavPlayer);
 
 	mdbRegisterReadInfo(&wavReadInfoReg);
 	return errOk;

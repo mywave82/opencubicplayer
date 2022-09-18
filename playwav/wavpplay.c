@@ -214,7 +214,7 @@ static void wavCloseFile(struct cpifaceSessionAPI_t *cpifaceSession)
 	wpClosePlayer(cpifaceSession);
 }
 
-static int wavOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *wavf, const char *ldlink, const char *loader) /* no loader needed/used by this plugin */
+static int wavOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *wavf)
 {
 	const char *filename;
 	struct waveinfo inf;
@@ -258,5 +258,5 @@ static void wavClose (void)
 	wav_type_done ();
 }
 
-struct cpifaceplayerstruct wavPlayer = {"[WAVE plugin]", wavOpenFile, wavCloseFile};
+const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) wavPlayer = {"[WAVE plugin]", wavOpenFile, wavCloseFile};
 struct linkinfostruct dllextinfo = {.name = "playwav", .desc = "OpenCP Wave Player (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .size = 0, .Init=wavInit, .Close=wavClose};

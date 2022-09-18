@@ -257,12 +257,6 @@ static const char *HVL_description[] =
 
 };
 
-static struct interfaceparameters HVL_p =
-{
-	"autoload/40-playhvl", "hvlPlayer",
-	0, 0
-};
-
 static struct mdbreadinforegstruct hvlReadInfoReg = {"HVL/AHX", hvlReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 int __attribute__ ((visibility ("internal"))) hvl_type_init (void)
@@ -272,7 +266,7 @@ int __attribute__ ((visibility ("internal"))) hvl_type_init (void)
 	fsRegisterExt ("HVL");
 	fsRegisterExt ("AHX");
 	mt.integer.i = MODULETYPE("HVL");
-	fsTypeRegister (mt, HVL_description, "plOpenCP", &HVL_p);
+	fsTypeRegister (mt, HVL_description, "plOpenCP", &hvlPlayer);
 
 	mdbRegisterReadInfo(&hvlReadInfoReg);
 	return errOk;

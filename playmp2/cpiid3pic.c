@@ -416,6 +416,7 @@ static int ID3PicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 static int ID3PicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	int i;
+
 	if (!plScrTextGUIOverlay)
 	{
 		return 0;
@@ -499,6 +500,7 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 			}
 			break;
 		case cpievInit:
+			ID3PicLastSerial = -1;
 			if (plScrTextGUIOverlay)
 			{
 				mpegGetID3(&ID3);
@@ -547,6 +549,7 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 				ID3PicHandle = 0;
 			}
 			Free_ID3Pictures ();
+			ID3PicVisible = 0;
 			break;
 	}
 	return 1;
@@ -554,12 +557,12 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpitextmoderegstruct cpiID3Pic = {"id3pic", ID3PicGetWin, ID3PicSetWin, ID3PicDraw, ID3PicIProcessKey, ID3PicAProcessKey, ID3PicEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-static void __attribute__((constructor))init (struct cpifaceSessionAPI_t *cpifaceSession)
+void __attribute__ ((visibility ("internal"))) ID3PicInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpiTextRegisterMode (cpifaceSession, &cpiID3Pic);
 }
 
-static void __attribute__((destructor))done (struct cpifaceSessionAPI_t *cpifaceSession)
+void __attribute__ ((visibility ("internal"))) ID3PicDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpiTextUnregisterMode (cpifaceSession, &cpiID3Pic);
 }

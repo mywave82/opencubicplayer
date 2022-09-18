@@ -133,7 +133,7 @@ static void calctempo(uint16_t rpm, uint8_t *tempo, uint8_t *bpm)
 	(*bpm)=rpm*(*tempo)/24;
 }
 
-static int _mpLoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	struct __attribute__((packed)) {
 		uint8_t sig[4];
@@ -880,7 +880,3 @@ safeout:
 		free(temptrack);
 	return retval;
 }
-
-struct gmdloadstruct mpLoadDMF = { _mpLoadDMF };
-
-struct linkinfostruct dllextinfo = {.name = "gmdldmf", .desc = "OpenCP Module Loader: *.DMF (c) 1994-'22 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};

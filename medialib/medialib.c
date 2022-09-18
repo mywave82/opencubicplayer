@@ -70,15 +70,15 @@ static struct ocpfile_t    *removefiles;  // needs to overlay an dialog above fi
 static struct ocpdir_t      listall;  // complete query
 static struct ocpdir_t      search;   // needs to throttle a dialog, before it can complete!! upon listing
 
-static int                    medialibAddInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip);
+static int                    medialibAddInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *cp);
 static interfaceReturnEnum    medialibAddRun  (void);
 static struct interfacestruct medialibAddIntr = {medialibAddInit, medialibAddRun, 0, "medialibAdd" INTERFACESTRUCT_TAIL};
 
-static int                    medialibRefreshInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip);
+static int                    medialibRefreshInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *cp);
 static interfaceReturnEnum    medialibRefreshRun  (void);
 static struct interfacestruct medialibRefreshIntr = {medialibRefreshInit, medialibRefreshRun, 0, "medialibRefresh" INTERFACESTRUCT_TAIL};
 
-static int                    medialibRemoveInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip);
+static int                    medialibRemoveInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *cp);
 static interfaceReturnEnum    medialibRemoveRun  (void);
 static struct interfacestruct medialibRemoveIntr = {medialibRemoveInit, medialibRemoveRun, 0, "medialibRemove" INTERFACESTRUCT_TAIL};
 

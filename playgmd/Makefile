@@ -7,57 +7,16 @@ else
 	DUMPERS=
 endif
 
-all: load669$(LIB_SUFFIX) loadams$(LIB_SUFFIX) loaddmf$(LIB_SUFFIX) loadmdl$(LIB_SUFFIX) loadmtm$(LIB_SUFFIX) loadokt$(LIB_SUFFIX) loadptm$(LIB_SUFFIX) loads3m$(LIB_SUFFIX) loadstm$(LIB_SUFFIX) loadult$(LIB_SUFFIX) 40-playgmd$(LIB_SUFFIX) $(DUMPERS)
+all: 40-playgmd$(LIB_SUFFIX) $(DUMPERS)
 
-playgmd_so=gmdpchan.o gmdpdots.o gmdpinst.o gmdplay.o gmdpplay.o gmdptrak.o gmdrtns.o gmdtime.o gmdtype.o
+playgmd_so=gmdpchan.o gmdpdots.o gmdpinst.o gmdplay.o gmdpplay.o gmdptrak.o gmdrtns.o gmdtime.o gmdtype.o gmdl669.o gmdlams.o gmdldmf.o gmdlmdl.o gmdlmtm.o gmdlokt.o gmdlptm.o gmdls3m.o gmdlstm.o gmdlult.o
 40-playgmd$(LIB_SUFFIX): $(playgmd_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
-
-load669_so=gmdl669.o
-load669$(LIB_SUFFIX): $(load669_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
-
-loadams_so=gmdlams.o
-loadams$(LIB_SUFFIX): $(loadams_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
-
-loaddmf_so=gmdldmf.o
-loaddmf$(LIB_SUFFIX): $(loaddmf_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
-
-loadmdl_so=gmdlmdl.o
-loadmdl$(LIB_SUFFIX): $(loadmdl_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
-
-loadmtm_so=gmdlmtm.o
-loadmtm$(LIB_SUFFIX): $(loadmtm_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
-
-loadokt_so=gmdlokt.o
-loadokt$(LIB_SUFFIX): $(loadokt_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
-
-loadptm_so=gmdlptm.o
-loadptm$(LIB_SUFFIX): $(loadptm_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
-
-loads3m_so=gmdls3m.o
-loads3m$(LIB_SUFFIX): $(loads3m_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
-
-loadstm_so=gmdlstm.o
-loadstm$(LIB_SUFFIX): $(loadstm_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
-
-loadult_so=gmdlult.o
-loadult$(LIB_SUFFIX): $(loadult_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX) dumpstm dumps3m
 
 install:
-	$(CP) load669$(LIB_SUFFIX) loadams$(LIB_SUFFIX) loaddmf$(LIB_SUFFIX) loadmdl$(LIB_SUFFIX) loadmtm$(LIB_SUFFIX) loadokt$(LIB_SUFFIX) loadptm$(LIB_SUFFIX) loads3m$(LIB_SUFFIX) loadstm$(LIB_SUFFIX) loadult$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
 	$(CP) 40-playgmd$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
 
 ifeq ($(BUILD_DUMPTOOLS),1)
@@ -66,7 +25,7 @@ ifeq ($(BUILD_DUMPTOOLS),1)
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/load669$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadams$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loaddmf$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadmdl$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadmtm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadokt$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadptm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loads3m$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadstm$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/loadult$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/40-playgmd$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playgmd$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpstm"
 	rm -f "$(DESTDIR)$(BINDIR)/dumps3m"
 

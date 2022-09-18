@@ -26,13 +26,13 @@
 #include "adplug-git/src/players.h"
 #include "adplug-git/src/player.h"
 #include "adplug.h"
-#include "opltype.h"
 #include "players.h"
 #include "player.h"
 #include "types.h"
 extern "C" {
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
+#include "cpiface/cpiface.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
@@ -40,6 +40,7 @@ extern "C" {
 #include "stuff/compat.h"
 #include "stuff/err.h"
 }
+#include "opltype.h"
 
 static int oplReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
 {
@@ -73,12 +74,6 @@ static const char *OPL_description[] =
 	"standard on PC Adlib, Sound Blaster and many other cards. Open Cubic Player",
 	"relies on libadplug for loading and rendering of these files.",
 	NULL
-};
-
-static struct interfaceparameters OPL_p =
-{
-	"autoload/40-playopl", "oplPlayer",
-	0, 0
 };
 
 static struct mdbreadinforegstruct oplReadInfoReg = {"adplug", oplReadInfo MDBREADINFOREGSTRUCT_TAIL};
@@ -133,7 +128,7 @@ int __attribute__ ((visibility ("internal"))) opl_type_init (void)
 			}
 
 		mt.integer.i = MODULETYPE("OPL");
-		fsTypeRegister (mt, OPL_description, "plOpenCP", &OPL_p);
+		fsTypeRegister (mt, OPL_description, "plOpenCP", &oplPlayer);
 	}
 
 	mdbRegisterReadInfo(&oplReadInfoReg);

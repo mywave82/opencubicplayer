@@ -457,7 +457,7 @@ static void playdevclose(void)
 	}
 }
 
-static int plrSetDev(struct moduleinfostruct *mi, struct ocpfilehandle_t *fp, const struct interfaceparameters *ip)
+static int plrSetDev(struct moduleinfostruct *mi, struct ocpfilehandle_t *fp, const struct cpifaceplayerstruct *cp)
 {
 	const char *path;
 	char *name;

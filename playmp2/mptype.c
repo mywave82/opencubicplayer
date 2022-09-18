@@ -640,12 +640,6 @@ static const char *MPx_description[] =
 	NULL
 };
 
-static const struct interfaceparameters MPx_p =
-{
-	"autoload/40-playmp2", "mpegPlayer",
-	0, 0
-};
-
 static struct mdbreadinforegstruct ampegpReadInfoReg = {"MPx", ampegpReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
 int __attribute__ ((visibility ("internal"))) ampeg_type_init (void)
@@ -656,7 +650,7 @@ int __attribute__ ((visibility ("internal"))) ampeg_type_init (void)
 	fsRegisterExt ("MP2");
 	fsRegisterExt ("MP3");
 	mt.integer.i = MODULETYPE("MPx");
-	fsTypeRegister (mt, MPx_description, "plOpenCP", &MPx_p);
+	fsTypeRegister (mt, MPx_description, "plOpenCP", &mpegPlayer);
 
 	mdbRegisterReadInfo(&ampegpReadInfoReg);
 	return errOk;

@@ -125,14 +125,7 @@ static const char *MIDI_description[] =
 	NULL
 };
 
-static struct interfaceparameters MIDI_p =
-{
-	"autoload/40-playtimidity", "timidityPlayer",
-	0, 0
-};
-
 static struct mdbreadinforegstruct timidityReadInfoReg = {"MIDI", timidityReadInfo MDBREADINFOREGSTRUCT_TAIL};
-
 
 int __attribute__ ((visibility ("internal"))) timidity_type_init (void)
 {
@@ -141,7 +134,7 @@ int __attribute__ ((visibility ("internal"))) timidity_type_init (void)
 	fsRegisterExt ("MIDI");
 	fsRegisterExt ("RMI");
 	mt.integer.i = MODULETYPE("MIDI");
-	fsTypeRegister (mt, MIDI_description, "plOpenCP", &MIDI_p);
+	fsTypeRegister (mt, MIDI_description, "plOpenCP", &timidityPlayer);
 
 	mdbRegisterReadInfo(&timidityReadInfoReg);
 	return errOk;

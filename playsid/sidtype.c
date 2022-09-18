@@ -27,6 +27,7 @@
 #include <string.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "cpiface/cpiface.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -129,13 +130,6 @@ static const char *SID_description[] =
 	NULL
 };
 
-static const struct interfaceparameters SID_p =
-{
-	"autoload/40-playsid", "sidPlayer",
-	0, 0
-};
-
-
 int __attribute__ ((visibility ("internal"))) sid_type_init (void)
 {
 	struct moduletype mt;
@@ -143,7 +137,7 @@ int __attribute__ ((visibility ("internal"))) sid_type_init (void)
 	fsRegisterExt("SID");
 	fsRegisterExt("RSID");
 	mt.integer.i = MODULETYPE("SID");
-	fsTypeRegister (mt, SID_description, "plOpenCP", &SID_p);
+	fsTypeRegister (mt, SID_description, "plOpenCP", &sidPlayer);
 
 	mdbRegisterReadInfo(&sidReadInfoReg);
 

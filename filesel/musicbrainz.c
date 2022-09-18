@@ -975,7 +975,7 @@ void musicbrainz_database_h_free (struct musicbrainz_database_h *e)
 
 static struct ocpfile_t      *musicbrainzsetup; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv
 
-static int                    musicbrainzSetupInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip);
+static int                    musicbrainzSetupInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *cp);
 static interfaceReturnEnum    musicbrainzSetupRun  (void);
 static struct interfacestruct musicbrainzSetupIntr = {musicbrainzSetupInit, musicbrainzSetupRun, 0, "musicbrainzSetup" INTERFACESTRUCT_TAIL};
 
@@ -1005,7 +1005,7 @@ static void musicbrainz_setup_done (void)
 	}
 }
 
-static int musicbrainzSetupInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct interfaceparameters *ip)
+static int musicbrainzSetupInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *cp)
 {
 	return 1;
 }
