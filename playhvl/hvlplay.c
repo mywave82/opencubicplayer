@@ -664,6 +664,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 	hvlbuffpos = 0x00000000;
 	hvl_inpause = 0;
 	hvl_doloop = 0;
+	hvl_looped = 0;
 	samples_committed=0;
 	samples_lastui=0;
 
