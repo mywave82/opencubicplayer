@@ -248,15 +248,15 @@ static int wavOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
-static int wavInit (void)
+static int wavPluginInit (struct PluginInitAPI_t *API)
 {
-	return wav_type_init ();
+	return wav_type_init (API);
 }
 
-static void wavClose (void)
+static void wavPluginClose (struct PluginCloseAPI_t *API)
 {
-	wav_type_done ();
+	wav_type_done (API);
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) wavPlayer = {"[WAVE plugin]", wavOpenFile, wavCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playwav", .desc = "OpenCP Wave Player (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .Init=wavInit, .Close=wavClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playwav", .desc = "OpenCP Wave Player (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit=wavPluginInit, .PluginClose=wavPluginClose};

@@ -114,18 +114,26 @@ static const char *AY_description[] =
 	NULL
 };
 
-int __attribute__ ((visibility ("internal"))) ay_type_init (void)
+int __attribute__ ((visibility ("internal"))) ay_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
-	fsRegisterExt("ay");
-	mt.integer.i = MODULETYPE("AY");
-	fsTypeRegister (mt, AY_description, "plOpenCP", &ayPlayer);
 
-	mdbRegisterReadInfo(&ayReadInfoReg);
+	API->fsRegisterExt("ay");
+
+	mt.integer.i = MODULETYPE("AY");
+	API->fsTypeRegister (mt, AY_description, "plOpenCP", &ayPlayer);
+
+	API->mdbRegisterReadInfo(&ayReadInfoReg);
+
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) ay_type_done (void)
+void __attribute__ ((visibility ("internal"))) ay_type_done (struct PluginCloseAPI_t *API)
 {
-	mdbUnregisterReadInfo(&ayReadInfoReg);
+	struct moduletype mt;
+
+	mt.integer.i = MODULETYPE("AY");
+	API->fsTypeUnregister (mt);
+
+	API->mdbUnregisterReadInfo(&ayReadInfoReg);
 }

@@ -58,6 +58,7 @@ id3.o: id3.c \
 mptype.o: mptype.c \
 	../config.h \
 	../types.h \
+	../boot/plinkman.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \

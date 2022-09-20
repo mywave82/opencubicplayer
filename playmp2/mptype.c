@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include "types.h"
+#include "boot/plinkman.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
@@ -642,21 +643,28 @@ static const char *MPx_description[] =
 
 static struct mdbreadinforegstruct ampegpReadInfoReg = {"MPx", ampegpReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__ ((visibility ("internal"))) ampeg_type_init (void)
+int __attribute__ ((visibility ("internal"))) ampeg_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
-	fsRegisterExt ("MP1");
-	fsRegisterExt ("MP2");
-	fsRegisterExt ("MP3");
-	mt.integer.i = MODULETYPE("MPx");
-	fsTypeRegister (mt, MPx_description, "plOpenCP", &mpegPlayer);
+	API->fsRegisterExt ("MP1");
+	API->fsRegisterExt ("MP2");
+	API->fsRegisterExt ("MP3");
 
-	mdbRegisterReadInfo(&ampegpReadInfoReg);
+	mt.integer.i = MODULETYPE("MPx");
+	API->fsTypeRegister (mt, MPx_description, "plOpenCP", &mpegPlayer);
+
+	API->mdbRegisterReadInfo(&ampegpReadInfoReg);
+
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) ampeg_type_done (void)
+void __attribute__ ((visibility ("internal"))) ampeg_type_done (struct PluginCloseAPI_t *API)
 {
-	mdbUnregisterReadInfo(&ampegpReadInfoReg);
+	struct moduletype mt;
+
+	mt.integer.i = MODULETYPE("MPx");
+	API->fsTypeUnregister (mt);
+
+	API->mdbUnregisterReadInfo(&ampegpReadInfoReg);
 }

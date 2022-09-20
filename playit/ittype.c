@@ -27,6 +27,7 @@
 #include <string.h>
 #include <time.h>
 #include "types.h"
+#include "boot/plinkman.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -118,18 +119,26 @@ static const char *IT_description[] =
 
 static struct mdbreadinforegstruct itpReadInfoReg = {"IT", itpReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__ ((visibility ("internal"))) it_type_init (void)
+int __attribute__ ((visibility ("internal"))) it_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
-	fsRegisterExt ("IT");
-	mt.integer.i = MODULETYPE("IT");
-	fsTypeRegister (mt, IT_description, "plOpenCP", &itPlayer);
 
-	mdbRegisterReadInfo(&itpReadInfoReg);
+	API->fsRegisterExt ("IT");
+
+	mt.integer.i = MODULETYPE("IT");
+	API->fsTypeRegister (mt, IT_description, "plOpenCP", &itPlayer);
+
+	API->mdbRegisterReadInfo(&itpReadInfoReg);
+
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) it_type_done (void)
+void __attribute__ ((visibility ("internal"))) it_type_done (struct PluginCloseAPI_t *API)
 {
-	mdbUnregisterReadInfo(&itpReadInfoReg);
+	struct moduletype mt;
+
+	mt.integer.i = MODULETYPE("IT");
+	API->fsTypeUnregister (mt);
+
+	API->mdbUnregisterReadInfo(&itpReadInfoReg);
 }

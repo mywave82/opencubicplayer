@@ -241,15 +241,15 @@ static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 	return errOk;
 }
 
-static int mpegInit (void)
+static int mpegPluginInit (struct PluginInitAPI_t *API)
 {
-	return ampeg_type_init ();
+	return ampeg_type_init (API);
 }
 
-static void mpegClose (void)
+static void mpegPluginClose (struct PluginCloseAPI_t *API)
 {
-	ampeg_type_done ();
+	ampeg_type_done (API);
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) mpegPlayer = {"[MPEG, libmad plugin]", mpegOpenFile, mpegCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playmp2", .desc = "OpenCP Audio MPEG Player (c) 1994-'22 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 95, .Init = mpegInit, .Close = mpegClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playmp2", .desc = "OpenCP Audio MPEG Player (c) 1994-'22 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 95, .PluginInit = mpegPluginInit, .PluginClose = mpegPluginClose};

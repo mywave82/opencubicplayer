@@ -222,15 +222,15 @@ static int ayOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	return errOk;
 }
 
-static int ayInit (void)
+static int ayPluginInit (struct PluginInitAPI_t *API)
 {
-	return ay_type_init ();
+	return ay_type_init (API);
 }
 
-static void ayClose (void)
+static void ayPluginClose (struct PluginCloseAPI_t *API)
 {
-	ay_type_done ();
+	ay_type_done (API);
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) ayPlayer = {"[Aylet plugin]", ayOpenFile, ayCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playay", .desc = "OpenCP aylet Player (c) 2005-'22 Russell Marks, Ian Collier & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .Init = ayInit, .Close = ayClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playay", .desc = "OpenCP aylet Player (c) 2005-'22 Russell Marks, Ian Collier & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = ayPluginInit, .PluginClose = ayPluginClose};

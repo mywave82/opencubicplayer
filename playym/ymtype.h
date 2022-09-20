@@ -1,9 +1,15 @@
 #ifndef PLAYYM_YMTYPE_H
 #define PLAYYM_YMTYPE_H 1
 
-int __attribute__((visibility ("internal"))) ym_type_init (void);
+extern "C"
+{
+	struct PluginInitAPI_t;
+	struct PluginCloseAPI_t;
+}
 
-void __attribute__((visibility ("internal"))) ym_type_done (void);
+int __attribute__((visibility ("internal"))) ym_type_init (PluginInitAPI_t *API);
+
+void __attribute__((visibility ("internal"))) ym_type_done (PluginCloseAPI_t *API);
 
 extern "C"
 {

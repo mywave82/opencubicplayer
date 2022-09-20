@@ -80,7 +80,7 @@ static struct mdbreadinforegstruct oplReadInfoReg = {"adplug", oplReadInfo MDBRE
 
 static class CAdPlugDatabase *adplugdb_ocp;
 
-int __attribute__ ((visibility ("internal"))) opl_type_init (void)
+int __attribute__ ((visibility ("internal"))) opl_type_init (PluginInitAPI_t *API)
 {
 	char *path=0;
 	const char *home = getenv ("HOME");
@@ -123,19 +123,20 @@ int __attribute__ ((visibility ("internal"))) opl_type_init (void)
 				strncpy(_s, s+1, 5);
 				_s[5]=0;
 				strupr(_s);
-				fsRegisterExt(_s);
-		}
+				API->fsRegisterExt(_s);
 			}
+		}
 
 		mt.integer.i = MODULETYPE("OPL");
-		fsTypeRegister (mt, OPL_description, "plOpenCP", &oplPlayer);
+		API->fsTypeRegister (mt, OPL_description, "plOpenCP", &oplPlayer);
 	}
 
-	mdbRegisterReadInfo(&oplReadInfoReg);
+	API->mdbRegisterReadInfo(&oplReadInfoReg);
+
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) opl_type_done (void)
+void __attribute__ ((visibility ("internal"))) opl_type_done (PluginCloseAPI_t *API)
 {
 	if (adplugdb_ocp)
 	{
@@ -143,5 +144,13 @@ void __attribute__ ((visibility ("internal"))) opl_type_done (void)
 		delete (adplugdb_ocp);
 		adplugdb_ocp = 0;
 	}
-	mdbUnregisterReadInfo(&oplReadInfoReg);
+
+	{
+		struct moduletype mt;
+
+		mt.integer.i = MODULETYPE("OPL");
+		API->fsTypeUnregister (mt);
+	}
+
+	API->mdbUnregisterReadInfo(&oplReadInfoReg);
 }

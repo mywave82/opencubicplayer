@@ -546,15 +546,15 @@ static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
-static int cdaInit (void)
+static int cdaPluginInit (struct PluginInitAPI_t *API)
 {
-	return cda_type_init ();
+	return cda_type_init (API);
 }
 
-static void cdaClose (void)
+static void cdaPluginClose (struct PluginCloseAPI_t *API)
 {
-	return cda_type_done ();
+	cda_type_done (API);
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) cdaPlayer = {"[CDROM Audio plugin]", cdaOpenFile, cdaCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playcda", .desc = "OpenCP CDA Player (c) 1995-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .Init = cdaInit, .Close = cdaClose };
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playcda", .desc = "OpenCP CDA Player (c) 1995-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = cdaPluginInit, .PluginClose = cdaPluginClose};

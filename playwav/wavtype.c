@@ -28,6 +28,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "boot/plinkman.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -198,19 +199,27 @@ static const char *WAV_description[] =
 
 static struct mdbreadinforegstruct wavReadInfoReg = {"WAVE", wavReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__ ((visibility ("internal"))) wav_type_init (void)
+int __attribute__ ((visibility ("internal"))) wav_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
-	fsRegisterExt ("WAV");
-	fsRegisterExt ("WAVE");
-	mt.integer.i = MODULETYPE("WAV");
-	fsTypeRegister (mt, WAV_description, "plOpenCP", &wavPlayer);
 
-	mdbRegisterReadInfo(&wavReadInfoReg);
+	API->fsRegisterExt ("WAV");
+	API->fsRegisterExt ("WAVE");
+
+	mt.integer.i = MODULETYPE("WAV");
+	API->fsTypeRegister (mt, WAV_description, "plOpenCP", &wavPlayer);
+
+	API->mdbRegisterReadInfo(&wavReadInfoReg);
+
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) wav_type_done (void)
+void __attribute__ ((visibility ("internal"))) wav_type_done (struct PluginCloseAPI_t *API)
 {
-	mdbUnregisterReadInfo(&wavReadInfoReg);
+	struct moduletype mt;
+
+	mt.integer.i = MODULETYPE("WAV");
+	API->fsTypeUnregister (mt);
+
+	API->mdbUnregisterReadInfo(&wavReadInfoReg);
 }

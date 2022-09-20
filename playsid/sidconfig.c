@@ -1277,7 +1277,7 @@ int __attribute__ ((visibility ("internal"))) sid_config_init (void)
 	struct moduleinfostruct m;
 	uint32_t mdbref;
 
-	sidconfig= mem_file_open (dmSetup->basedir, dirdbFindAndRef (dmSetup->basedir->dirdb_ref, "sidconfig.dev", dirdb_use_file), strdup (sidConfigIntr.name), strlen (sidConfigIntr.name));
+	sidconfig = mem_file_open (dmSetup->basedir, dirdbFindAndRef (dmSetup->basedir->dirdb_ref, "sidconfig.dev", dirdb_use_file), strdup (sidConfigIntr.name), strlen (sidConfigIntr.name));
 	dirdbUnref (sidconfig->dirdb_ref, dirdb_use_file);
 	mdbref = mdbGetModuleReference2 (sidconfig->dirdb_ref, strlen (sidConfigIntr.name));
 	mdbGetModuleInfo (&m, mdbref);

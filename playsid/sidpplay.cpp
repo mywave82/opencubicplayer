@@ -477,17 +477,17 @@ static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return 0;
 }
 
-static int sidInit (void)
+static int sidPluginInit (PluginInitAPI_t *API)
 {
 	int err;
 	if ((err = sid_config_init ())) return err;
-	if ((err = sid_type_init ())) return err;
+	if ((err = sid_type_init (API))) return err;
 	return err;
 }
 
-static void sidClose (void)
+static void sidPluginClose (struct PluginCloseAPI_t *API)
 {
-	sid_type_done ();
+	sid_type_done (API);
 	sid_config_done ();
 }
 
@@ -501,9 +501,12 @@ extern "C"
 		/* .ver  = */ DLLVERSION,
 		/* .sortindex = */ 95,
 		/* .PreInit = */ 0,
-		/* .Init = */ sidInit,
+		/* .Init = */ 0,
 		/* .LateInit = */ 0,
-		/* .Close = */ sidClose,
+		/* .PluginInit = */ sidPluginInit,
+		/* .PluginClose = */ sidPluginClose,
+		/* .PreClose = */ 0,
+		/* .Close = */ 0,
 		/* .LateClose = */ 0
 	};
 }

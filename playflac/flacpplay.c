@@ -238,15 +238,15 @@ static int flacOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 	return errOk;
 }
 
-static int flacInit (void)
+static int flacPluginInit (struct PluginInitAPI_t *API)
 {
-	return flac_type_init ();
+	return flac_type_init (API);
 }
 
-static void flacClose (void)
+static void flacPluginClose (struct PluginCloseAPI_t *API)
 {
-	flac_type_done ();
+	flac_type_done (API);
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) flacPlayer = {"[FLAC plugin]", flacOpenFile, flacCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playflac", .desc = "OpenCP FLAC Player (c) 2007-'22 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .Init = flacInit, .Close = flacClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playflac", .desc = "OpenCP FLAC Player (c) 2007-'22 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = flacPluginInit, .PluginClose = flacPluginClose};

@@ -256,15 +256,15 @@ static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
-static int hvlInit (void)
+static int hvlPluginInit (struct PluginInitAPI_t *API)
 {
-	return hvl_type_init ();
+	return hvl_type_init (API);
 }
 
-static void hvlClose (void)
+static void hvlPluginClose (struct PluginCloseAPI_t *API)
 {
-	hvl_type_done ();
+	hvl_type_done (API);
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) hvlPlayer = {"[HivelyTracker plugin]", hvlOpenFile, hvlCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playhvl", .desc = "OpenCP HVL Player (c) 2019-'22 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .Init = hvlInit, .Close = hvlClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playhvl", .desc = "OpenCP HVL Player (c) 2019-'22 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = hvlPluginInit, .PluginClose = hvlPluginClose};

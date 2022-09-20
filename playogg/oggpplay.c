@@ -246,15 +246,15 @@ static int oggOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
-static int oggInit (void)
+static int oggPluginInit (struct PluginInitAPI_t *API)
 {
-	return ogg_type_init ();
+	return ogg_type_init (API);
 }
 
-static void oggClose (void)
+static void oggPluginClose (struct PluginCloseAPI_t *API)
 {
-	ogg_type_done ();
+	ogg_type_done (API);
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) oggPlayer = {"[OGG Vorbis plugin]", oggOpenFile, oggCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playogg", .desc = "OpenCP Ogg Vorbis Player (c) 1994-'22 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 95, .Init = oggInit, .Close = oggClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playogg", .desc = "OpenCP Ogg Vorbis Player (c) 1994-'22 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 95, .PluginInit = oggPluginInit, .PluginClose = oggPluginClose};

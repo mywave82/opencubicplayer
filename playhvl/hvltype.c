@@ -22,6 +22,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "boot/plinkman.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -259,20 +260,27 @@ static const char *HVL_description[] =
 
 static struct mdbreadinforegstruct hvlReadInfoReg = {"HVL/AHX", hvlReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__ ((visibility ("internal"))) hvl_type_init (void)
+int __attribute__ ((visibility ("internal"))) hvl_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
-	fsRegisterExt ("HVL");
-	fsRegisterExt ("AHX");
-	mt.integer.i = MODULETYPE("HVL");
-	fsTypeRegister (mt, HVL_description, "plOpenCP", &hvlPlayer);
+	API->fsRegisterExt ("HVL");
+	API->fsRegisterExt ("AHX");
 
-	mdbRegisterReadInfo(&hvlReadInfoReg);
+	mt.integer.i = MODULETYPE("HVL");
+	API->fsTypeRegister (mt, HVL_description, "plOpenCP", &hvlPlayer);
+
+	API->mdbRegisterReadInfo(&hvlReadInfoReg);
+
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) hvl_type_done (void)
+void __attribute__ ((visibility ("internal"))) hvl_type_done (struct PluginCloseAPI_t *API)
 {
-	mdbUnregisterReadInfo(&hvlReadInfoReg);
+	struct moduletype mt;
+
+	mt.integer.i = MODULETYPE("HVL");
+	API->fsTypeUnregister (mt);
+
+	API->mdbUnregisterReadInfo(&hvlReadInfoReg);
 }

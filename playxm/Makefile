@@ -37,6 +37,7 @@ dumpmod.o: \
 xmtype.o: xmtype.c \
 	../config.h \
 	../types.h \
+	../boot/plinkman.h \
 	../filesel/filesystem.h \
 	../filesel/dirdb.h \
 	../filesel/pfilesel.h \

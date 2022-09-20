@@ -13,9 +13,10 @@ extern int fsFilesLeft(void);
 extern signed int fsFileSelect(void);
 /* extern char fsAddFiles(const char *);      use the playlist instead..*/
 extern int fsPreInit(void);
-extern int fsLateInit(void);
 extern int fsInit(void);
+extern int fsLateInit(void);
 extern void fsClose(void);
+extern void fsLateClose(void);
 
 extern int fsFPS; /* see stuff/framelock.c */
 extern int fsFPSCurrent; /* see stuff/framelock.c */
@@ -41,6 +42,7 @@ extern const char *fsTypeNames[256]; /* type description */
  * interface: Usually "plOpenCP" or "VirtualInterface" - last is not user-editable
  */
 void fsTypeRegister (struct moduletype modtype, const char **description, const char *interface, const struct cpifaceplayerstruct *cp);
+void fsTypeUnregister (struct moduletype modtype);
 uint8_t fsModTypeColor(struct moduletype modtype); /* replaces fsTypeCols[] */
 
 extern void fsRegisterExt(const char *ext);

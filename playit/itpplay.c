@@ -620,15 +620,15 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
-static int itInit (void)
+static int itPluginInit (struct PluginInitAPI_t *API)
 {
-	return it_type_init ();
+	return it_type_init (API);
 }
 
-static void itClose (void)
+static void itPluginClose (struct PluginCloseAPI_t *API)
 {
-	it_type_done ();
+	it_type_done (API);
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) itPlayer = {"[ImpulseTracker plugin]", itpOpenFile, itpCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playit", .desc = "OpenCP IT Player (c) 1997-'22 Tammo Hinrichs, Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .Init = itInit, .Close = itClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playit", .desc = "OpenCP IT Player (c) 1997-'22 Tammo Hinrichs, Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = itPluginInit, .PluginClose = itPluginClose};

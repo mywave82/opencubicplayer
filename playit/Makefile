@@ -19,6 +19,7 @@ uninstall:
 ittype.o: ittype.c \
 	../config.h \
 	../types.h \
+	../boot/plinkman.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \

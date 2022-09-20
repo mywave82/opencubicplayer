@@ -212,23 +212,28 @@ static const char *FLAC_description[] =
 	NULL
 };
 
-int __attribute__ ((visibility ("internal"))) flac_type_init (void)
+int __attribute__ ((visibility ("internal"))) flac_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
-	fsRegisterExt("FLA");
-	fsRegisterExt("FLAC");
-	fsRegisterExt("FLC");
+	API->fsRegisterExt("FLA");
+	API->fsRegisterExt("FLAC");
+	API->fsRegisterExt("FLC");
 
 	mt.integer.i = MODULETYPE("FLAC");
-	fsTypeRegister (mt, FLAC_description, "plOpenCP", &flacPlayer);
+	API->fsTypeRegister (mt, FLAC_description, "plOpenCP", &flacPlayer);
 
-	mdbRegisterReadInfo(&flacReadInfoReg);
+	API->mdbRegisterReadInfo(&flacReadInfoReg);
 
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) flac_type_done(void)
+void __attribute__ ((visibility ("internal"))) flac_type_done (struct PluginCloseAPI_t *API)
 {
-	mdbUnregisterReadInfo(&flacReadInfoReg);
+	struct moduletype mt;
+
+	mt.integer.i = MODULETYPE("FLAC");
+	API->fsTypeUnregister (mt);
+
+	API->mdbUnregisterReadInfo(&flacReadInfoReg);
 }

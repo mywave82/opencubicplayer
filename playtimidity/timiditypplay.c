@@ -255,20 +255,20 @@ static void timidityCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 	cpiTimiditySetupDone (cpifaceSession);
 }
 
-static int timidityInit (void)
+static int timidityPluginInit (struct PluginInitAPI_t *API)
 {
 	int err;
-	if ((err = timidity_type_init ())) return err;
+	if ((err = timidity_type_init (API))) return err;
 	if ((err = timidity_config_init ())) return err;
 
 	return err;
 }
 
-static void timidityClose (void)
+static void timidityPluginClose (struct PluginCloseAPI_t *API)
 {
 	timidity_config_done ();
-	timidity_type_done ();
+	timidity_type_done (API);
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) timidityPlayer = {"[TiMidity++ MIDI plugin]", timidityOpenFile, timidityCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playtimidity", .desc = "OpenCP TiMidity++ Player (c) 2016-'22 TiMidity++ team & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .Init=timidityInit, .Close=timidityClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playtimidity", .desc = "OpenCP TiMidity++ Player (c) 2016-'22 TiMidity++ team & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit=timidityPluginInit, .PluginClose=timidityPluginClose};

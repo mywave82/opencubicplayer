@@ -198,6 +198,25 @@ static int _fsMain(int argc, char *argv[])
 	struct ocpfilehandle_t *thisf=NULL;
 	struct ocpfilehandle_t *nextf=NULL;
 
+	struct PluginInitAPI_t PluginInitAPI =
+	{
+		mdbRegisterReadInfo,
+		fsTypeRegister,
+		fsRegisterExt
+	};
+
+	struct PluginCloseAPI_t PluginCloseAPI =
+	{
+		mdbUnregisterReadInfo,
+		fsTypeUnregister
+	};
+
+
+	if (lnkPluginInitAll(&PluginInitAPI))
+	{
+		return errGen;
+	}
+
 	conSave();
 
 	callfs=DoNotAutoCallFS;
@@ -361,6 +380,9 @@ static int _fsMain(int argc, char *argv[])
 		thisf = NULL;
 	}
 
+	lnkPluginCloseAll(&PluginCloseAPI);
+
+
 	return errOk;
 }
 
@@ -419,6 +441,8 @@ static void fsclose()
 	mdbUnregisterReadInfo(&fsReadInfoReg);
 
 	fsClose();
+
+	fsLateClose();
 }
 
 DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "pfilesel", .desc = "OpenCP Fileselector (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 25, .PreInit = fspreint, .Init = fsint, .LateInit = fslateint, .LateClose = fsclose};

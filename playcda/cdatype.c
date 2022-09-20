@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "types.h"
+#include "boot/plinkman.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
 #include "stuff/err.h"
@@ -35,16 +36,22 @@ static const char *CDA_description[] =
 	NULL
 };
 
-int __attribute__ ((visibility ("internal"))) cda_type_init (void)
+int __attribute__ ((visibility ("internal"))) cda_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
-	fsRegisterExt ("CDA");
+
+	API->fsRegisterExt ("CDA");
+
 	mt.integer.i = MODULETYPE("CDA");
-	fsTypeRegister (mt, CDA_description, "plOpenCP", &cdaPlayer);
+	API->fsTypeRegister (mt, CDA_description, "plOpenCP", &cdaPlayer);
 
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) cda_type_done (void)
+void __attribute__ ((visibility ("internal"))) cda_type_done (struct PluginCloseAPI_t *API)
 {
+	struct moduletype mt;
+
+	mt.integer.i = MODULETYPE("CDA");
+	API->fsTypeUnregister (mt);
 }

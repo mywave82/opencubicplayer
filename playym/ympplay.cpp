@@ -515,14 +515,14 @@ static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	return 0;
 }
 
-static int ymInit (void)
+static int ymPluginInit (PluginInitAPI_t *API)
 {
-	return ym_type_init ();
+	return ym_type_init (API);
 }
 
-static void ymClose (void)
+static void ymPluginClose (PluginCloseAPI_t *API)
 {
-	ym_type_done ();
+	ym_type_done (API);
 }
 
 extern "C"
@@ -535,9 +535,12 @@ extern "C"
 		/* .ver  = */ DLLVERSION,
 		/* .sortindex = */ 95,
 		/* .PreInit = */ 0,
-		/* .Init = */ ymInit,
+		/* .Init = */ 0,
 		/* .LateInit = */ 0,
-		/* .Close = */ ymClose,
+		/* .PluginInit = */ ymPluginInit,
+		/* .PluginClose = */ ymPluginClose,
+		/* .PreClose = */ 0,
+		/* .Close = */ 0,
 		/* .LateClose = */ 0
 	};
 }

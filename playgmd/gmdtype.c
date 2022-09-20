@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "boot/plinkman.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -543,57 +544,89 @@ static const char *ULT_description[] =
 
 static struct mdbreadinforegstruct gmdReadInfoReg = {"MOD", gmdReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__ ((visibility ("internal"))) gmd_type_init (void)
+int __attribute__ ((visibility ("internal"))) gmd_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
-	fsRegisterExt ("669");
+	API->fsRegisterExt ("669");
 	mt.integer.i = MODULETYPE("669");
-	fsTypeRegister (mt, _669_description, "plOpenCP", &gmdPlayer669);
+	API->fsTypeRegister (mt, _669_description, "plOpenCP", &gmdPlayer669);
 
-	fsRegisterExt ("AMS");
+	API->fsRegisterExt ("AMS");
 	mt.integer.i = MODULETYPE("AMS");
-	fsTypeRegister (mt, AMS_description, "plOpenCP", &gmdPlayerAMS);
+	API->fsTypeRegister (mt, AMS_description, "plOpenCP", &gmdPlayerAMS);
 
-	fsRegisterExt ("DMF");
+	API->fsRegisterExt ("DMF");
 	mt.integer.i = MODULETYPE("DMF");
-	fsTypeRegister (mt, DMF_description, "plOpenCP", &gmdPlayerDMF);
+	API->fsTypeRegister (mt, DMF_description, "plOpenCP", &gmdPlayerDMF);
 
-	fsRegisterExt ("MDL");
+	API->fsRegisterExt ("MDL");
 	mt.integer.i = MODULETYPE("MDL");
-	fsTypeRegister (mt, MDL_description, "plOpenCP", &gmdPlayerMDL);
+	API->fsTypeRegister (mt, MDL_description, "plOpenCP", &gmdPlayerMDL);
 
-	fsRegisterExt ("MTM");
+	API->fsRegisterExt ("MTM");
 	mt.integer.i = MODULETYPE("MTM");
-	fsTypeRegister (mt, MTM_description, "plOpenCP", &gmdPlayerMTM);
+	API->fsTypeRegister (mt, MTM_description, "plOpenCP", &gmdPlayerMTM);
 
-	fsRegisterExt ("OKT");
-	fsRegisterExt ("OKTA");
+	API->fsRegisterExt ("OKT");
+	API->fsRegisterExt ("OKTA");
 	mt.integer.i = MODULETYPE("OKT");
-	fsTypeRegister (mt, OKT_description, "plOpenCP", &gmdPlayerOKT);
+	API->fsTypeRegister (mt, OKT_description, "plOpenCP", &gmdPlayerOKT);
 
-	fsRegisterExt ("PTM");
+	API->fsRegisterExt ("PTM");
 	mt.integer.i = MODULETYPE("PTM");
-	fsTypeRegister (mt, PTM_description, "plOpenCP", &gmdPlayerPTM);
+	API->fsTypeRegister (mt, PTM_description, "plOpenCP", &gmdPlayerPTM);
 
-	fsRegisterExt ("S3M");
+	API->fsRegisterExt ("S3M");
 	mt.integer.i = MODULETYPE("S3M");
-	fsTypeRegister (mt, S3M_description, "plOpenCP", &gmdPlayerS3M);
+	API->fsTypeRegister (mt, S3M_description, "plOpenCP", &gmdPlayerS3M);
 
-	fsRegisterExt ("STM");
+	API->fsRegisterExt ("STM");
 	mt.integer.i = MODULETYPE("STM");
-	fsTypeRegister (mt, STM_description, "plOpenCP", &gmdPlayerSTM);
+	API->fsTypeRegister (mt, STM_description, "plOpenCP", &gmdPlayerSTM);
 
-	fsRegisterExt ("ULT");
+	API->fsRegisterExt ("ULT");
 	mt.integer.i = MODULETYPE("ULT");
-	fsTypeRegister (mt, ULT_description, "plOpenCP", &gmdPlayerULT);
+	API->fsTypeRegister (mt, ULT_description, "plOpenCP", &gmdPlayerULT);
 
-	mdbRegisterReadInfo(&gmdReadInfoReg);
+	API->mdbRegisterReadInfo(&gmdReadInfoReg);
 
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) gmd_type_done (void)
+void __attribute__ ((visibility ("internal"))) gmd_type_done (struct PluginCloseAPI_t *API)
 {
-	mdbUnregisterReadInfo(&gmdReadInfoReg);
+	struct moduletype mt;
+
+	mt.integer.i = MODULETYPE("669");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("AMS");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("DMF");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("MDL");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("MTM");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("OKT");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("PTM");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("S3M");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("STM");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("ULT");
+	API->fsTypeUnregister (mt);
+
+	API->mdbUnregisterReadInfo(&gmdReadInfoReg);
 }

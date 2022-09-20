@@ -40,6 +40,7 @@ cpitimiditysetup.o: \
 timiditytype.o: timiditytype.c \
 	../config.h \
 	../types.h \
+	../boot/plinkman.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \

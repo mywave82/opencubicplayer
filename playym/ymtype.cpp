@@ -362,18 +362,26 @@ static const char *YM_description[] =
 
 static struct mdbreadinforegstruct ymReadInfoReg = {"YM", ymReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__((visibility ("internal"))) ym_type_init (void)
+int __attribute__((visibility ("internal"))) ym_type_init (PluginInitAPI_t *API)
 {
 	struct moduletype mt;
-	fsRegisterExt("YM");
-	mt.integer.i = MODULETYPE("YM");
-	fsTypeRegister (mt, YM_description, "plOpenCP", &ymPlayer);
 
-	mdbRegisterReadInfo(&ymReadInfoReg);
+	API->fsRegisterExt("YM");
+
+	mt.integer.i = MODULETYPE("YM");
+	API->fsTypeRegister (mt, YM_description, "plOpenCP", &ymPlayer);
+
+	API->mdbRegisterReadInfo(&ymReadInfoReg);
+
 	return errOk;
 }
 
-void __attribute__((visibility ("internal"))) ym_type_done (void)
+void __attribute__((visibility ("internal"))) ym_type_done (PluginCloseAPI_t *API)
 {
-	mdbUnregisterReadInfo(&ymReadInfoReg);
+	struct moduletype mt;
+
+	mt.integer.i = MODULETYPE("YM");
+	API->fsTypeUnregister (mt);
+
+	API->mdbUnregisterReadInfo(&ymReadInfoReg);
 }

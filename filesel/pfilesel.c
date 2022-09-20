@@ -399,6 +399,28 @@ void fsTypeRegister (struct moduletype modtype, const char **description, const 
 	fsTypesCount++;
 }
 
+void fsTypeUnregister (struct moduletype modtype)
+{
+	int i;
+
+	for (i=0; i < fsTypesCount; i++)
+	{
+		if (fsTypes[i].modtype.integer.i == modtype.integer.i)
+		{
+			memmove (fsTypes + i, fsTypes + i + 1, fsTypesCount - i - 1);
+			fsTypesCount--;
+			if (!fsTypesCount)
+			{
+				free (fsTypes);
+				fsTypes = 0;
+			}
+			return;
+		}
+		if (strncmp (fsTypes[i].modtype.string.c, modtype.string.c, 4) > 0) break;
+	}
+
+}
+
 uint8_t fsModTypeColor(struct moduletype modtype)
 {
 	int i;
@@ -899,6 +921,14 @@ int fsPreInit(void)
 	playlist=modlist_create();
 
 	return 1;
+}
+
+void fsLateClose(void)
+{
+	struct moduletype mt;
+
+	mt.integer.i = MODULETYPE("DEVv");
+	fsTypeUnregister (mt);
 }
 
 int fsLateInit(void)

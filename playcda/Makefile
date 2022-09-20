@@ -19,6 +19,7 @@ uninstall:
 cdatype.o: cdatype.c cdatype.h \
 	../config.h \
 	../types.h \
+	../boot/plinkman.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	../stuff/err.h \

@@ -130,21 +130,27 @@ static const char *SID_description[] =
 	NULL
 };
 
-int __attribute__ ((visibility ("internal"))) sid_type_init (void)
+int __attribute__ ((visibility ("internal"))) sid_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
-	fsRegisterExt("SID");
-	fsRegisterExt("RSID");
-	mt.integer.i = MODULETYPE("SID");
-	fsTypeRegister (mt, SID_description, "plOpenCP", &sidPlayer);
+	API->fsRegisterExt("SID");
+	API->fsRegisterExt("RSID");
 
-	mdbRegisterReadInfo(&sidReadInfoReg);
+	mt.integer.i = MODULETYPE("SID");
+	API->fsTypeRegister (mt, SID_description, "plOpenCP", &sidPlayer);
+
+	API->mdbRegisterReadInfo(&sidReadInfoReg);
 
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) sid_type_done (void)
+void __attribute__ ((visibility ("internal"))) sid_type_done (struct PluginCloseAPI_t *API)
 {
-	mdbUnregisterReadInfo(&sidReadInfoReg);
+	struct moduletype mt;
+
+	mt.integer.i = MODULETYPE("SID");
+	API->fsTypeUnregister (mt);
+
+	API->mdbUnregisterReadInfo(&sidReadInfoReg);
 }

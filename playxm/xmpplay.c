@@ -630,15 +630,15 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
-static int xmInit (void)
+static int xmPluginInit (struct PluginInitAPI_t *API)
 {
-	return xm_type_init ();
+	return xm_type_init (API);
 }
 
-static void xmClose (void)
+static void xmPluginClose (struct PluginCloseAPI_t *API)
 {
-	xm_type_done ();
+	xm_type_done (API);
 }
 
 const struct cpifaceplayerstruct __attribute__((visibility ("internal"))) xmpPlayer = {"[FastTracker II plugin]", xmpOpenFile, xmpCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playxm", .desc = "OpenCP XM/MOD Player (c) 1995-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .Init = xmInit, .Close = xmClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playxm", .desc = "OpenCP XM/MOD Player (c) 1995-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = xmPluginInit, .PluginClose = xmPluginClose};

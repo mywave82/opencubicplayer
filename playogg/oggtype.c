@@ -29,6 +29,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "boot/plinkman.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -143,19 +144,26 @@ static const char *OGG_description[] =
 
 static struct mdbreadinforegstruct oggReadInfoReg = {"OGG", oggReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__ ((visibility ("internal"))) ogg_type_init (void)
+int __attribute__ ((visibility ("internal"))) ogg_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
-	fsRegisterExt ("OGA");
-	fsRegisterExt ("OGG");
-	mt.integer.i = MODULETYPE("OGG");
-	fsTypeRegister (mt, OGG_description, "plOpenCP", &oggPlayer);
 
-	mdbRegisterReadInfo(&oggReadInfoReg);
+	API->fsRegisterExt ("OGA");
+	API->fsRegisterExt ("OGG");
+
+	mt.integer.i = MODULETYPE("OGG");
+	API->fsTypeRegister (mt, OGG_description, "plOpenCP", &oggPlayer);
+
+	API->mdbRegisterReadInfo(&oggReadInfoReg);
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) ogg_type_done (void)
+void __attribute__ ((visibility ("internal"))) ogg_type_done (struct PluginCloseAPI_t *API)
 {
-	mdbUnregisterReadInfo(&oggReadInfoReg);
+	struct moduletype mt;
+
+	mt.integer.i = MODULETYPE("OGG");
+	API->fsTypeUnregister (mt);
+
+	API->mdbUnregisterReadInfo(&oggReadInfoReg);
 }

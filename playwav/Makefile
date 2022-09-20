@@ -33,6 +33,7 @@ wavplay.o: wavplay.c \
 wavtype.o: wavtype.c \
 	../config.h \
 	../types.h \
+	../boot/plinkman.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \

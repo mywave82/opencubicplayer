@@ -1,6 +1,22 @@
 #ifndef _PLINKMAN_H
 #define _PLINKMAN_H 1
 
+struct mdbreadinforegstruct;
+struct moduletype;
+struct cpifaceplayerstruct;
+struct PluginInitAPI_t
+{
+	void (*mdbRegisterReadInfo)(struct mdbreadinforegstruct *r);
+	void (*fsTypeRegister) (struct moduletype modtype, const char **description, const char *interface, const struct cpifaceplayerstruct *cp);
+	void (*fsRegisterExt)(const char *ext);
+};
+
+struct PluginCloseAPI_t
+{
+	void (*mdbUnregisterReadInfo)(struct mdbreadinforegstruct *r);
+	void (*fsTypeUnregister) (struct moduletype modtype);
+};
+
 struct __attribute__ ((aligned (64))) linkinfostruct
 {
 	const char *name;
@@ -11,6 +27,8 @@ struct __attribute__ ((aligned (64))) linkinfostruct
 	int (*PreInit)(void); /* high priority init */
 	int (*Init)(void);
 	int (*LateInit)(void);
+	int (*PluginInit)(struct PluginInitAPI_t *API);
+	void (*PluginClose)(struct PluginCloseAPI_t *API);
 	void (*PreClose)(void);
 	void (*Close)(void);
 	void (*LateClose)(void); /* low priority Close */
@@ -38,6 +56,8 @@ extern int lnkCountLinks(void);
 extern int lnkGetLinkInfo(struct linkinfostruct *l, off_t *size, int index);
 
 int lnkInitAll (void);
+int lnkPluginInitAll (struct PluginInitAPI_t *API);
+void lnkPluginCloseAll (struct PluginCloseAPI_t *API);
 void lnkCloseAll (void);
 
 #ifdef SUPPORT_STATIC_PLUGINS

@@ -30,6 +30,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "boot/plinkman.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/pfilesel.h"
@@ -342,40 +343,84 @@ static const char *XM_description[] =
 
 static struct mdbreadinforegstruct xmpReadInfoReg = {"MOD/XM", xmpReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__((visibility ("internal"))) xm_type_init (void)
+int __attribute__((visibility ("internal"))) xm_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
-	fsRegisterExt ("NST");
-	fsRegisterExt ("MOD");
-	fsRegisterExt ("MXM");
-	fsRegisterExt ("WOW");
-	fsRegisterExt ("XM");
-	mt.integer.i = MODULETYPE("M15");
-	fsTypeRegister (mt, M15_description, "plOpenCP", &xmpPlayer);
-	mt.integer.i = MODULETYPE("M15t");
-	fsTypeRegister (mt, M15t_description, "plOpenCP", &xmpPlayer);
-	mt.integer.i = MODULETYPE("M31");
-	fsTypeRegister (mt, M31_description, "plOpenCP", &xmpPlayer);
-	mt.integer.i = MODULETYPE("MOD");
-	fsTypeRegister (mt, MOD_description, "plOpenCP", &xmpPlayer);
-	mt.integer.i = MODULETYPE("MODd");
-	fsTypeRegister (mt, MODd_description, "plOpenCP", &xmpPlayer);
-	mt.integer.i = MODULETYPE("MODf");
-	fsTypeRegister (mt, MODf_description, "plOpenCP", &xmpPlayer);
-	mt.integer.i = MODULETYPE("MODt");
-	fsTypeRegister (mt, MODt_description, "plOpenCP", &xmpPlayer);
-	mt.integer.i = MODULETYPE("MXM");
-	fsTypeRegister (mt, MXM_description, "plOpenCP", &xmpPlayer);
-	mt.integer.i = MODULETYPE("WOW");
-	fsTypeRegister (mt, WOW_description, "plOpenCP", &xmpPlayer);
-	mt.integer.i = MODULETYPE("XM");
-	fsTypeRegister (mt, XM_description, "plOpenCP", &xmpPlayer);
 
-	mdbRegisterReadInfo(&xmpReadInfoReg);
+	API->fsRegisterExt ("NST");
+	API->fsRegisterExt ("MOD");
+	API->fsRegisterExt ("MXM");
+	API->fsRegisterExt ("WOW");
+	API->fsRegisterExt ("XM");
+
+	mt.integer.i = MODULETYPE("M15");
+	API->fsTypeRegister (mt, M15_description, "plOpenCP", &xmpPlayer);
+
+	mt.integer.i = MODULETYPE("M15t");
+	API->fsTypeRegister (mt, M15t_description, "plOpenCP", &xmpPlayer);
+
+	mt.integer.i = MODULETYPE("M31");
+	API->fsTypeRegister (mt, M31_description, "plOpenCP", &xmpPlayer);
+
+	mt.integer.i = MODULETYPE("MOD");
+	API->fsTypeRegister (mt, MOD_description, "plOpenCP", &xmpPlayer);
+
+	mt.integer.i = MODULETYPE("MODd");
+	API->fsTypeRegister (mt, MODd_description, "plOpenCP", &xmpPlayer);
+
+	mt.integer.i = MODULETYPE("MODf");
+	API->fsTypeRegister (mt, MODf_description, "plOpenCP", &xmpPlayer);
+
+	mt.integer.i = MODULETYPE("MODt");
+	API->fsTypeRegister (mt, MODt_description, "plOpenCP", &xmpPlayer);
+
+	mt.integer.i = MODULETYPE("MXM");
+	API->fsTypeRegister (mt, MXM_description, "plOpenCP", &xmpPlayer);
+
+	mt.integer.i = MODULETYPE("WOW");
+	API->fsTypeRegister (mt, WOW_description, "plOpenCP", &xmpPlayer);
+
+	mt.integer.i = MODULETYPE("XM");
+	API->fsTypeRegister (mt, XM_description, "plOpenCP", &xmpPlayer);
+
+	API->mdbRegisterReadInfo(&xmpReadInfoReg);
+
 	return errOk;
 }
 
-void __attribute__((visibility ("internal"))) xm_type_done (void)
+void __attribute__((visibility ("internal"))) xm_type_done (struct PluginCloseAPI_t *API)
 {
-	mdbUnregisterReadInfo(&xmpReadInfoReg);
+	struct moduletype mt;
+
+	mt.integer.i = MODULETYPE("M15");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("M15t");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("M31");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("MOD");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("MODd");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("MODf");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("MODt");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("MXM");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("WOW");
+	API->fsTypeUnregister (mt);
+
+	mt.integer.i = MODULETYPE("XM");
+	API->fsTypeUnregister (mt);
+
+	API->mdbUnregisterReadInfo(&xmpReadInfoReg);
 }

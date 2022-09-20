@@ -28,6 +28,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "boot/plinkman.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -127,20 +128,28 @@ static const char *MIDI_description[] =
 
 static struct mdbreadinforegstruct timidityReadInfoReg = {"MIDI", timidityReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__ ((visibility ("internal"))) timidity_type_init (void)
+int __attribute__ ((visibility ("internal"))) timidity_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
-	fsRegisterExt ("MID");
-	fsRegisterExt ("MIDI");
-	fsRegisterExt ("RMI");
-	mt.integer.i = MODULETYPE("MIDI");
-	fsTypeRegister (mt, MIDI_description, "plOpenCP", &timidityPlayer);
 
-	mdbRegisterReadInfo(&timidityReadInfoReg);
+	API->fsRegisterExt ("MID");
+	API->fsRegisterExt ("MIDI");
+	API->fsRegisterExt ("RMI");
+
+	mt.integer.i = MODULETYPE("MIDI");
+	API->fsTypeRegister (mt, MIDI_description, "plOpenCP", &timidityPlayer);
+
+	API->mdbRegisterReadInfo(&timidityReadInfoReg);
+
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) timidity_type_done (void)
+void __attribute__ ((visibility ("internal"))) timidity_type_done (struct PluginCloseAPI_t *API)
 {
-	mdbUnregisterReadInfo(&timidityReadInfoReg);
+	struct moduletype mt;
+
+	mt.integer.i = MODULETYPE("MIDI");
+	API->fsTypeUnregister (mt);
+
+	API->mdbUnregisterReadInfo(&timidityReadInfoReg);
 }

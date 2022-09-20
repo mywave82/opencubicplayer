@@ -46,6 +46,7 @@ dumps3m.o: \
 gmdtype.o: gmdtype.c \
 	../config.h \
 	../types.h \
+	../boot/plinkman.h \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \

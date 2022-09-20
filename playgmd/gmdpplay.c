@@ -399,14 +399,14 @@ static int gmdOpenFileULT (struct cpifaceSessionAPI_t *cpifaceSession, struct mo
 	return gmdOpenFile (cpifaceSession, info, file, LoadULT);
 }
 
-static int gmdInit (void)
+static int gmdPluginInit (struct PluginInitAPI_t *API)
 {
-	return gmd_type_init ();
+	return gmd_type_init (API);
 }
 
-static void gmdClose (void)
+static void gmdPluginClose (struct PluginCloseAPI_t *API)
 {
-	gmd_type_done ();
+	gmd_type_done (API);
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayer669 = {"[General module plugin: 669]", gmdOpenFile669, gmdCloseFile};
@@ -420,4 +420,4 @@ const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPl
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerSTM = {"[General module plugin: STM]", gmdOpenFileSTM, gmdCloseFile};
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerULT = {"[General module plugin: ULT]", gmdOpenFileULT, gmdCloseFile};
 
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playgmd", .desc = "OpenCP General Module Player (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .Init = gmdInit, .Close = gmdClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playgmd", .desc = "OpenCP General Module Player (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = gmdPluginInit, .PluginClose = gmdPluginClose};
