@@ -1,0 +1,5 @@
+medialib_so=medialib.o
+
+ifeq ($(STATIC_CORE),1)
+ STATIC_OBJECTS += $(patsubst %.o,medialib/%.o,$(medialib_so))
+endif

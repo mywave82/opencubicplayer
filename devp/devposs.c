@@ -682,4 +682,4 @@ static struct devaddstruct plrOSSAdd = {ossGetOpt, 0, 0, 0};
 struct sounddevice plrOSS={SS_PLAYER, 0, "OSS player", ossDetect,  ossInit,  ossClose, &plrOSSAdd};
 
 const char *dllinfo = "driver plrOSS";
-const struct linkinfostruct dllextinfo = {.name = "devposs", .desc = "OpenCP Player Device: OSS (c) 2004-'22 Stian Skjelstad", .ver = DLLVERSION};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devposs", .desc = "OpenCP Player Device: OSS (c) 2004-'22 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};

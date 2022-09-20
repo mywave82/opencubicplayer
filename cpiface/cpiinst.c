@@ -385,12 +385,12 @@ static int InstEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpitextmoderegstruct cpiTModeInst = {"inst", InstGetWin, InstSetWin, InstDraw, InstIProcessKey, InstAProcessKey, InstEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-static void __attribute__((constructor))init(void)
+void __attribute__ ((visibility ("internal"))) cpiInstInit (void)
 {
 	cpiTextRegisterDefMode(&cpiTModeInst);
 }
 
-static void __attribute__((destructor))done(void)
+void __attribute__ ((visibility ("internal"))) cpiInstDone (void)
 {
 	cpiTextUnregisterDefMode(&cpiTModeInst);
 }

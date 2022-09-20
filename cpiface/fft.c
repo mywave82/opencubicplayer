@@ -135,8 +135,8 @@ static int32_t cossintab86[SAMPLES2][2]=
 };
 static uint16_t permtab[SAMPLES];
 
-static void
-__attribute__((constructor))
+void
+__attribute__ ((visibility ("internal")))
 fftInit(void)
 {
 	int i,j,k;

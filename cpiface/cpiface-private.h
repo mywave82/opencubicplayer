@@ -26,6 +26,31 @@ struct cpifaceSessionPrivate_t
 
 extern __attribute__ ((visibility ("internal"))) struct cpifaceSessionPrivate_t cpifaceSessionAPI;
 
+void __attribute__ ((visibility ("internal"))) fftInit(void);
+
+void __attribute__ ((visibility ("internal"))) cpiAnalInit (void);
+void __attribute__ ((visibility ("internal"))) cpiAnalDone (void);
+void __attribute__ ((visibility ("internal"))) cpiChanInit (void);
+void __attribute__ ((visibility ("internal"))) cpiChanDone (void);
+void __attribute__ ((visibility ("internal"))) cpiGraphInit (void);
+void __attribute__ ((visibility ("internal"))) cpiGraphDone (void);
+void __attribute__ ((visibility ("internal"))) cpiInstInit (void);
+void __attribute__ ((visibility ("internal"))) cpiInstDone (void);
+void __attribute__ ((visibility ("internal"))) cpiWurfel2Init (void);
+void __attribute__ ((visibility ("internal"))) cpiWurfel2Done (void);
+void __attribute__ ((visibility ("internal"))) cpiLinksInit (void);
+void __attribute__ ((visibility ("internal"))) cpiLinksDone (void);
+void __attribute__ ((visibility ("internal"))) cpiMVolInit (void);
+void __attribute__ ((visibility ("internal"))) cpiMVolDone (void);
+void __attribute__ ((visibility ("internal"))) cpiPhaseInit (void);
+void __attribute__ ((visibility ("internal"))) cpiPhaseDone (void);
+void __attribute__ ((visibility ("internal"))) cpiScopeInit (void);
+void __attribute__ ((visibility ("internal"))) cpiScopeDone (void);
+void __attribute__ ((visibility ("internal"))) cpiTrackInit (void);
+void __attribute__ ((visibility ("internal"))) cpiTrackDone (void);
+void __attribute__ ((visibility ("internal"))) cpiVolCtrlInit (void);
+void __attribute__ ((visibility ("internal"))) cpiVolCtrlDone (void);
+
 int mcpSetProcessKey (struct cpifaceSessionPrivate_t *f, uint16_t key);
 
 #endif

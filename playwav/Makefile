@@ -1,19 +1,19 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-all: 40-playwav$(LIB_SUFFIX)
+all: playwav$(LIB_SUFFIX)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) 40-playwav$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
+	$(CP) playwav$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playwav$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playwav$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playwav$(LIB_SUFFIX)"
 
 playwav_so=wavplay.o wavpplay.o wavtype.o
-40-playwav$(LIB_SUFFIX): $(playwav_so)
+playwav$(LIB_SUFFIX): $(playwav_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 wavplay.o: wavplay.c \

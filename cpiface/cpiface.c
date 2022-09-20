@@ -2119,8 +2119,41 @@ void cpiUnregisterDefMode(struct cpimoderegstruct *m)
 	}
 }
 
+static int plmpInit (void)
+{
+	fftInit ();
+	cpiAnalInit ();
+	cpiChanInit ();
+	cpiGraphInit ();
+	cpiInstInit ();
+	cpiWurfel2Init ();
+	cpiLinksInit ();
+	cpiMVolInit ();
+	cpiPhaseInit ();
+	cpiScopeInit ();
+	cpiTrackInit ();
+	cpiVolCtrlInit ();
+
+	return errOk;
+}
+
+static void plmpClose (void)
+{
+	cpiAnalDone ();
+	cpiChanDone ();
+	cpiGraphDone ();
+	cpiInstDone ();
+	cpiWurfel2Done ();
+	cpiLinksDone ();
+	cpiMVolDone ();
+	cpiPhaseDone ();
+	cpiScopeDone ();
+	cpiTrackDone ();
+	cpiVolCtrlDone ();
+}
+
 static int plmpInited = 0;
-static int plmpInit(void)
+static int plmpLateInit(void)
 {
 	plCompoMode=cfGetProfileBool2(cfScreenSec, "screen", "compomode", 0, 0);
 	strncpy(curmodehandle, cfGetProfileString2(cfScreenSec, "screen", "startupmode", "text"), 8);
@@ -2141,7 +2174,7 @@ static int plmpInit(void)
 	return errOk;
 }
 
-static void plmpClose(void)
+static void plmpPreClose(void)
 {
 	if (plmpInited)
 	{
@@ -2626,5 +2659,5 @@ char plNoteStr[132][4]=
 
 static struct interfacestruct plOpenCP = {plmpOpenFile, plmpCallBack, plmpCloseFile, "plOpenCP", NULL};
 
-DLLEXTINFO_PREFIX const struct linkinfostruct dllextinfo = {.name = "cpiface", .desc = "OpenCP Interface (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .LateInit = plmpInit, .PreClose = plmpClose};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "cpiface", .desc = "OpenCP Interface (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 35, .Init = plmpInit, .LateInit = plmpLateInit, .PreClose = plmpPreClose, .Close = plmpClose};
 /* OpenCP Module Player */

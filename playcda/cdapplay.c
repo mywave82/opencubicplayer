@@ -557,4 +557,4 @@ static void cdaClose (void)
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) cdaPlayer = {"[CDROM Audio plugin]", cdaOpenFile, cdaCloseFile};
-const struct linkinfostruct dllextinfo = {.name = "playcda", .desc = "OpenCP CDA Player (c) 1995-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .Init = cdaInit, .Close = cdaClose };
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playcda", .desc = "OpenCP CDA Player (c) 1995-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .Init = cdaInit, .Close = cdaClose };

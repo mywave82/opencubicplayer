@@ -1,19 +1,19 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-all: 40-playogg$(LIB_SUFFIX)
+all: playogg$(LIB_SUFFIX)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) 40-playogg$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
+	$(CP) playogg$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playogg$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playogg$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playogg$(LIB_SUFFIX)"
 
 playogg_so=cpiogginfo.o cpioggpic.o oggplay.o oggpplay.o oggtype.o
-40-playogg$(LIB_SUFFIX): $(playogg_so)
+playogg$(LIB_SUFFIX): $(playogg_so)
 	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(OGG_LIBS) $(MATH_LIBS) $(VORBIS_LIBS) $(VORBISFILE_LIBS) $(LIBJPEG_LIBS) $(LIBPNG_LIBS)
 
 cpiogginfo.o: cpiogginfo.c \

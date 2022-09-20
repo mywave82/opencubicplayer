@@ -754,6 +754,8 @@ HAVE_SYS_IO_H
 HAVE_GETOPT_H
 MATH_LIBS
 DIR_SUFFIX
+STATIC_CORE
+STATIC_BUILD
 HAIKU
 PTHREAD_LIBS
 LIB_SUFFIX
@@ -831,6 +833,7 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 with_debug
+with_builtin
 with_x11
 with_mad
 with_alsa
@@ -1541,6 +1544,10 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-debug            compile with debug-flags
+  --with-builtin=core,auto,none
+                          force/disable builtin plugins support. For now
+                          playback plugins, audio mixers and audio drivers are
+                          always modules
   --with-x11              force/disable x11 support
   --with-mad              force/disable mad mpeg audio support
   --with-alsa             force/disable alsa support
@@ -7407,6 +7414,16 @@ printf "%s\n" "#define LIB_SUFFIX \"$LIB_SUFFIX\"" >>confdefs.h
 
 
 
+# Check whether --with-builtin was given.
+if test ${with_builtin+y}
+then :
+  withval=$with_builtin;
+else $as_nop
+  with_builtin=auto
+fi
+
+
+
 # Check whether --with-x11 was given.
 if test ${with_x11+y}
 then :
@@ -7557,6 +7574,31 @@ test "x$prefix" = xNONE && prefix=$ac_default_prefix
 # Let make expand exec_prefix.
 test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
 
+
+
+
+
+case $with_builtin in #(
+  'none') :
+
+		builtin="none"
+	 ;; #(
+  'auto'|'core') :
+
+		builtin="core"
+		printf "%s\n" "#define SUPPORT_STATIC_PLUGINS 1" >>confdefs.h
+
+		printf "%s\n" "#define STATIC_CORE 1" >>confdefs.h
+
+		STATIC_BUILD=1
+		STATIC_CORE=1
+	 ;; #(
+  *) :
+
+		as_fn_error $? "Unknown --with-builtin combination: $with_builtin" "$LINENO" 5
+
+ ;;
+esac;
 
 
 
@@ -17192,6 +17234,7 @@ then :
 else $as_nop
   echo "debug:             OFF"
 fi
+                                           echo "builtin:           $builtin"
                                            echo "adplug:            GIT/builtin"
 if test "x$with_mad"       = "xno"
 then :

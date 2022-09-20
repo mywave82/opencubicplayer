@@ -494,11 +494,12 @@ static void sidClose (void)
 extern "C"
 {
 	const cpifaceplayerstruct sidPlayer = {"[libsidplayfp plugin]", sidOpenFile, sidCloseFile};
-	struct linkinfostruct dllextinfo =
+	DLLEXTINFO_PLAYBACK_PREFIX_CPP struct linkinfostruct dllextinfo =
 	{ /* c++ historically does not support named initializers, and size needs to be writable... */
 		/* .name = */ "playsid",
 		/* .desc = */ "OpenCP SID Player (c) 1993-'22 Michael Schwendt, Tammo Hinrichs, Stian Skjelstad",
 		/* .ver  = */ DLLVERSION,
+		/* .sortindex = */ 95,
 		/* .PreInit = */ 0,
 		/* .Init = */ sidInit,
 		/* .LateInit = */ 0,

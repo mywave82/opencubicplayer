@@ -3867,22 +3867,16 @@ void plRegisterInterface(struct interfacestruct *interface)
 
 void plUnregisterInterface(struct interfacestruct *interface)
 {
-	struct interfacestruct *curr = plInterfaces;
-
-	if (curr == interface)
-	{
-		plInterfaces = interface->next;
-		return;
-	}
+	struct interfacestruct **curr = &plInterfaces;
 
 	while (curr)
 	{
-		if (curr->next == interface)
+		if (*curr == interface)
 		{
-			curr->next = curr->next->next;
+			*curr = (*curr)->next;
 			return;
 		}
-		curr = curr->next;
+		curr = &((*curr)->next);
 	}
 
 	fprintf(stderr, __FILE__ ": Failed to unregister interface %s\n", interface->name);

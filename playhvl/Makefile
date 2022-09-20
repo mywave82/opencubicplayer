@@ -7,23 +7,23 @@ else
 	DUMPAHX=
 endif
 
-all: 40-playhvl$(LIB_SUFFIX) $(DUMPAHX)
+all: playhvl$(LIB_SUFFIX) $(DUMPAHX)
 
 playhvl_so=loader.o player.o hvlpchan.o hvlpdots.o hvlpinst.o hvlpplay.o hvlplay.o hvlptrak.o hvltype.o
-40-playhvl$(LIB_SUFFIX): $(playhvl_so)
+playhvl$(LIB_SUFFIX): $(playhvl_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ $(MATH_LIBS)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX) dumpahx
 
 install:
-	$(CP) 40-playhvl$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
+	$(CP) playhvl$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playhvl$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpahx "$(DESTDIR)$(BINDIR)/dumpahx"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playhvl$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playhvl$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpahx"
 
 dumpahx: dumpahx.o

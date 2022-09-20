@@ -591,7 +591,7 @@ static void parse_wurfel_directory (const char *src, DIR *d)
 	}
 }
 
-static void __attribute__((constructor))init(void)
+void __attribute__ ((visibility ("internal"))) cpiWurfel2Init (void)
 {
 	DIR *d;
 	cpiRegisterDefMode(&cpiModeWuerfel);
@@ -611,7 +611,7 @@ static void __attribute__((constructor))init(void)
 	}
 }
 
-static void __attribute__((destructor))done(void)
+void __attribute__ ((visibility ("internal"))) cpiWurfel2Done (void)
 {
 	unsigned int i;
 	for (i=0;i<wuerfelFilesCount;i++)

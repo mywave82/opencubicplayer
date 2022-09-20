@@ -329,12 +329,12 @@ static int AnalEvent(struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpitextmoderegstruct cpiTModeAnal = {"anal", AnalGetWin, AnalSetWin, AnalDraw, AnalIProcessKey, AnalAProcessKey, AnalEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-static void __attribute__((constructor))init(void)
+void __attribute__ ((visibility ("internal"))) cpiAnalInit (void)
 {
 	cpiTextRegisterDefMode(&cpiTModeAnal);
 }
 
-static void __attribute__((destructor))done(void)
+void __attribute__ ((visibility ("internal"))) cpiAnalDone (void)
 {
 	cpiTextUnregisterDefMode(&cpiTModeAnal);
 }

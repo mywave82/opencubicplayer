@@ -64,4 +64,4 @@ static int ssInit(void)
   return errOk;
 }
 
-DLLEXTINFO_PREFIX const struct linkinfostruct dllextinfo = {.name = "sets", .desc = "OpenCP Sound Settings Auxiliary Routines (c) 1994-'22 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .Init = ssInit};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "sets", .desc = "OpenCP Sound Settings Auxiliary Routines (c) 1994-'22 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 10, .Init = ssInit};

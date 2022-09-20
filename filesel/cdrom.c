@@ -1111,4 +1111,4 @@ static int cdrom_track_filesize_ready (struct ocpfile_t *_self)
 	return 1;
 }
 
-DLLEXTINFO_PREFIX const struct linkinfostruct dllextinfo = {.name = "cdrom", .desc = "OpenCP UNIX audio-cdrom filebrowser (c) 2004-'22 Stian Skjelstad", .ver = DLLVERSION, .Init = cdint, .Close = cdclose};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "cdrom", .desc = "OpenCP UNIX audio-cdrom filebrowser (c) 2004-'22 Stian Skjelstad", .ver = DLLVERSION, .Init = cdint, .Close = cdclose, .sortindex = 30};

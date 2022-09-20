@@ -481,11 +481,12 @@ static void oplClose (void)
 extern "C"
 {
 	const cpifaceplayerstruct oplPlayer = {"[AdPlug OPL plugin]", oplOpenFile, oplCloseFile};
-	struct linkinfostruct dllextinfo =
+	DLLEXTINFO_PLAYBACK_PREFIX_CPP struct linkinfostruct dllextinfo =
 	{ /* c++ historically does not support named initializers, and size needs to be writable... */
 		/* .name = */ "playopl",
 		/* .desc = */ "OpenCP Adplug (OPL) Detection and Player (c) 2005-'22 Stian Skjelstad",
 		/* .ver  = */ DLLVERSION,
+		/* .sortindex = */ 95,
 		/* .PreInit = */ 0,
 		/* .Init = */ oplInit,
 		/* .LateInit = */ 0,

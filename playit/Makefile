@@ -1,20 +1,20 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
 
-all: 40-playit$(LIB_SUFFIX)
+all: playit$(LIB_SUFFIX)
 
 playit_so=itload.o itpinst.o itplay.o itpplay.o itptrack.o itrtns.o itsex.o ittime.o ittype.o
-40-playit$(LIB_SUFFIX): $(playit_so)
+playit$(LIB_SUFFIX): $(playit_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) 40-playit$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
+	$(CP) playit$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playit$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playit$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playit$(LIB_SUFFIX)"
 
 ittype.o: ittype.c \
 	../config.h \

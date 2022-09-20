@@ -7,7 +7,7 @@ else
 	DUMPSID=
 endif
 
-TARGETS=40-playsid$(LIB_SUFFIX)
+TARGETS=playsid$(LIB_SUFFIX)
 
 LIBSIDPLAYCXXFLAGS+= -I./sidplayfp-config -I./libsidplayfp-git/src
 
@@ -85,17 +85,17 @@ clean:
 	libsidplayfp-git/src/builders/resid-builder/resid/wave8580_PST.h
 
 install:
-	$(CP) 40-playsid$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
+	$(CP) playsid$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playsid$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpsid "$(DESTDIR)$(BINDIR)/dumpsid"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-sidplay$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-sidplay$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpsid"
 
 playsid_so=cpiinfo.o sidplay.o sidpplay.o sidconfig.o sidtype.o $(LIBSIDPLAYOBJECTS)
-40-playsid$(LIB_SUFFIX): $(playsid_so)
+playsid$(LIB_SUFFIX): $(playsid_so)
 	$(CXX) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^
 
 libsidplayfp-git/src/builders/resid-builder/resid/wave6581__ST.h: \

@@ -7,21 +7,21 @@ else
 	DUMPID3=
 endif
 
-all: id3.o 40-playmp2$(LIB_SUFFIX) $(DUMPID3)
+all: id3.o playmp2$(LIB_SUFFIX) $(DUMPID3)
 
 playmp2_so=cpiid3info.o cpiid3pic.o mppplay.o mpplay.o
 playmp2_so+=mptype.o id3.o
-40-playmp2$(LIB_SUFFIX): $(playmp2_so)
+playmp2$(LIB_SUFFIX): $(playmp2_so)
 	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(MAD_LIBS) $(MATH_LIBS) $(LIBJPEG_LIBS) $(LIBPNG_LIBS)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) 40-playmp2$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
+	$(CP) playmp2$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playmp2$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playmp2$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playmp2$(LIB_SUFFIX)"
 
 dumpid3: dumpid3.o
 	$(CC) $(LDFLAGS) -o $@ $^ -lz

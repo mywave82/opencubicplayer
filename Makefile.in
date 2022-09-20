@@ -9,17 +9,21 @@ SUBDIRS+=playsid playwav playxm playym stuff
 
 .PHONY: all clean subdirs $(SUBDIRS)
 
-ifeq ($(STATIC_BUILD),1)
-STATIC_OBJECTS=
+include boot/Makefile-static
 include cpiface/Makefile-static
 include filesel/Makefile-static
+include filesel/cdfs/Makefile-static
 include stuff/Makefile-static
 include dev/Makefile-static
 include help/Makefile-static
-libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o cpiface/cpikeyhelp.o stuff/compat.o stuff/err.o stuff/framelock.o stuff/poll.o boot/console.o $(STATIC_OBJECTS) stuff/utf-8.o boot/plinkman_end.o
-else
-libocp_so=boot/plinkman.o boot/compdate.o boot/psetting.o boot/pmain.o cpiface/cpikeyhelp.o stuff/compat.o stuff/err.o stuff/framelock.o stuff/poll.o boot/console.o stuff/utf-8.o boot/plinkman_end.o
+include medialib/Makefile-static
+
+libocp_start_so=$(LIBOCP_START_OBJECTS)
+libocp_so:=$(LIBOCP_OBJECTS)
+ifeq ($(STATIC_BUILD),1)
+libocp_so+=$(STATIC_OBJECTS)
 endif
+libocp_end_so=$(LIBOCP_END_OBJECTS)
 
 all: subdirs ocp ocp.hlp libocp$(LIB_SUFFIX)
 
@@ -129,5 +133,5 @@ distclean: clean
 		playsid/libsidplayfp-git/src/builders/resid-builder/resid/siddefs.h \
 		playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h
 
-libocp$(LIB_SUFFIX): $(libocp_so)
-	$(CC) $(SHARED_FLAGS) $(LDFLAGS) $(STATIC_LIBS) -o $@ $(libocp_so)
+libocp$(LIB_SUFFIX): $(libocp_start_so) $(libocp_so) $(libocp_end_so)
+	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(STATIC_LIBS)

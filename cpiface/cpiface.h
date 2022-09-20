@@ -165,7 +165,6 @@ extern void cpiUnregisterDefMode(struct cpimoderegstruct *m);
 extern void cpiRegisterMode(struct cpimoderegstruct *m); /* This list is cleared automatically on song close, and deflist is appended on load */
 extern void cpiUnregisterMode(struct cpimoderegstruct *m);
 
-
 extern void cpiSetMode(const char *hand);
 extern void cpiGetMode(char *hand);
 extern void cpiTextRegisterMode (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmoderegstruct *mode);

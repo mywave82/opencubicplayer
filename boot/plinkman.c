@@ -59,7 +59,7 @@ static struct dll_handle loadlist[MAXDLLLIST];
 int loadlist_n;
 
 #ifdef SUPPORT_STATIC_PLUGINS
-const DLLEXTINFO_PREFIX struct linkinfostruct staticdlls = {.name = "static", .desc = "Compiled in plugins (c) 2009-'22 Stian Skjelstad", .ver = DLLVERSION};
+DLLEXTINFO_BEGIN_PREFIX struct linkinfostruct staticdlls = {.name = "static", .desc = "Compiled in plugins (c) 2009-'22 Stian Skjelstad", .ver = DLLVERSION};
 #endif
 
 static char reglist[1024];
@@ -127,13 +127,67 @@ char *lnkReadInfoReg(const int id, const char *key)
 	return reglist;
 }
 
-static int _lnkDoLoad(char *file)
+static int lnkAppend (char *file, void *handle, off_t size, const struct linkinfostruct *info)
 {
 	int i;
 
 	for (i=0; i < loadlist_n; i++)
 	{
-		if (!strcmp (loadlist[i].file, file))
+		if (info->sortindex > loadlist[i].info->sortindex)
+		{
+			continue;
+		}
+		if (loadlist[i].info->sortindex == info->sortindex)
+		{
+			if (!loadlist[i].file)
+			{
+				continue;
+			}
+			if (!file)
+			{
+				continue;
+			}
+			if (strcmp (file, loadlist[i].file) > 0)
+			{
+				continue;
+			}
+		}
+		break;
+	}
+
+	if (loadlist_n>=MAXDLLLIST)
+	{
+		fprintf(stderr, "Too many open shared objects\n");
+		free (file);
+		return -1;
+	}
+
+	if (i < loadlist_n)
+	{
+		memmove (loadlist + i + 1, loadlist + i, sizeof (loadlist[0]) * (loadlist_n - i));
+	}
+	loadlist[i].id = ++handlecounter;
+	loadlist[i].file = file;
+	loadlist[i].info = info;
+	loadlist[i].handle = handle;
+	loadlist[i].refcount = 1;
+	loadlist[i].size = size;
+
+	loadlist_n ++;
+
+	return loadlist[i].id;
+}
+
+static int _lnkDoLoad(char *file)
+{
+	int i;
+	void *handle;
+	off_t size = 0;
+	const struct linkinfostruct *info;
+
+	for (i=0; i < loadlist_n; i++)
+	{
+		if (loadlist[i].file && (!strcmp (loadlist[i].file, file)))
 		{
 			loadlist[i].refcount++;
 			free (file);
@@ -148,37 +202,30 @@ static int _lnkDoLoad(char *file)
 		return -1;
 	}
 
-	if (!(loadlist[loadlist_n].handle=dlopen(file, RTLD_NOW|RTLD_GLOBAL)))
+	if (!(handle=dlopen(file, RTLD_NOW|RTLD_GLOBAL)))
 	{
 		fprintf(stderr, "%s\n", dlerror());
 		free (file);
 		return -1;
 	}
 
-	loadlist[loadlist_n].id=++handlecounter;
-	loadlist[loadlist_n].refcount=1;
-	loadlist[loadlist_n].file=file;
-
-	if (!(loadlist[loadlist_n].info=(struct linkinfostruct *)dlsym(loadlist[loadlist_n].handle, "dllextinfo")))
+	if (!(info=(const struct linkinfostruct *)dlsym(handle, "dllextinfo")))
 	{
 		fprintf(stderr, "lnkDoLoad(%s): dlsym(dllextinfo): %s\n", file, dlerror());
 		free (file);
-		dlclose (loadlist[loadlist_n].handle);
-		loadlist[loadlist_n].handle=0;
-		loadlist[loadlist_n].file=0;
+		dlclose (handle);
 		return -1;
 	}
 
 	{
 		struct stat st;
-		if (stat(file, &st))
-			st.st_size=0;
-		loadlist[loadlist_n].size=st.st_size;
+		if (!stat(file, &st))
+		{
+			size = st.st_size;
+		}
 	}
 
-	loadlist_n++;
-
-	return handlecounter;
+	return lnkAppend (file, handle, size, info);
 }
 
 static int lnkDoLoad(const char *file)
@@ -344,32 +391,24 @@ void lnkFree(const int id)
 #ifdef SUPPORT_STATIC_PLUGINS
 static void lnkLoadStatics(void)
 {
-	struct linkinfostruct *iterator = &staticdlls;
+	const struct linkinfostruct *iterator = &staticdlls + 1; /* skip the head */
+
+	#ifdef LD_DEBUG
+	fprintf (stderr, "About to add static modules: iterator=%p %s\n", iterator, iterator->name);
+	#endif
+
 	while (iterator->name)
 	{
 		#ifdef LD_DEBUG
 		fprintf(stderr, "[lnk] Adding static module: \"%s\"\n", iterator->name);
 		#endif
 
-		if (loadlist_n>=MAXDLLLIST)
-		{
-			fprintf(stderr, "[lnk] Too many open shared objects\n");
-			return; /* this is really not reachable, but nice to test... */
-		}
-
-		loadlist[loadlist_n].handle=NULL;
-
-		loadlist[loadlist_n].refcount=1;;
-
-		loadlist[loadlist_n].id=++handlecounter;
-
-		loadlist[loadlist_n].info=iterator;
-
-		loadlist[loadlist_n].info->size=0;
-
-		loadlist_n++;
+		lnkAppend (0, 0, 0, iterator);
 
 		iterator++;
+		#ifdef LD_DEBUG
+		fprintf (stderr, "iterator=%p &=%p name=%p string=%s\n", iterator, &iterator->name, iterator->name, iterator->name);
+		#endif
 	}
 	return;
 }

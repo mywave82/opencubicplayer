@@ -121,14 +121,15 @@ static int hlpEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpimoderegstruct hlpHelpBrowser = {"coolhelp", hlpSetMode, hlpDraw, hlpIProcessKey, plHelpKey, hlpEvent CPIMODEREGSTRUCT_TAIL};
 
-static void __attribute__((constructor))init(void)
+static int HelpInit (void)
 {
 	cpiRegisterDefMode(&hlpHelpBrowser);
+	return errOk;
 }
 
-static void __attribute__((destructor))done(void)
+static void HelpClose (void)
 {
 	cpiUnregisterDefMode(&hlpHelpBrowser);
 }
 
-DLLEXTINFO_PREFIX const struct linkinfostruct dllextinfo = {.name = "cphlpif", .desc = "OpenCP help browser CPIFACE wrapper (c) 1998-'22 Fabian Giesen", .ver = DLLVERSION};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "cphlpif", .desc = "OpenCP help browser CPIFACE wrapper (c) 1998-'22 Fabian Giesen", .ver = DLLVERSION, .sortindex = 40, .Init = HelpInit, .Close = HelpClose};

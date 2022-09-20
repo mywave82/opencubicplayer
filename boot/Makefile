@@ -1,7 +1,8 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
+include Makefile-static
 
-all: kickload.o compdate.o psetting.o plinkman.o plinkman_end.o pmain.o console.o
+all: $(boot_libocp_start_so) $(boot_libocp_so) $(boot_libocp_end_so)
 
 clean:
 	rm -f *.o *.a *$(LIB_SUFFIX)

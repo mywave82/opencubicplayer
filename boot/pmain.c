@@ -863,9 +863,15 @@ static int init_modules(int argc, char *argv[])
 			cfRemoveEntry("sound", "mixbufsize");
 		}
 
-		if (epoch < 20220417)
+		if (epoch < 20220919)
 		{
-			cfSetProfileInt("version", "epoch", 20220417, 10);
+			fprintf(stderr, "ocp.ini update (0.2.100) removes [defaultconfig] link=medialib\n");
+			cfRemoveEntry("defaultconfig", "link");
+		}
+
+		if (epoch < 20220919)
+		{
+			cfSetProfileInt("version", "epoch", 20220919, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -876,13 +882,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20220417)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20220919)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20220417\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20220919\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20220417\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20220919\n\n");
 		}
 		sleep(5);
 	}

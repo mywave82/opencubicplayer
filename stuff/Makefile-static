@@ -1,25 +1,44 @@
+
+hardware_so=hardware.o freq.o
+sets_so=sets.o
+poutput_so=console.o cp437.o latin1.o poutput-curses.o poutput-keyboard.o pfonts.o poutput.o
+poutput_so_libs=$(NCURSES_LIBS) $(ICONV_LIBS)
+
 ifeq ($(LINUX),1)
-LINUX_OBJ=stuff/poutput-vcsa.o stuff/poutput-fb.o
-LINUX_LIBS=$(ICONV_LIBS)
+poutput_so+=poutput-vcsa.o poutput-fb.o
 endif
 
-# framelock.so
-STATIC_OBJECTS += stuff/framelock.o
-
-# hardware.so
-STATIC_OBJECTS += stuff/timer.o stuff/irq.o stuff/hardware.o stuff/freq.o
-
-# sets.so
-STATIC_OBJECTS += stuff/sets.o
-
-# poutput.so
-STATIC_OBJECTS += stuff/console.o stuff/poutput-curses.o $(LINUX_OBJ) stuff/poutput-keyboard.o stuff/pfonts.o stuff/poutput.o
-STATIC_LIBS += $(LINUX_LIBS) $(NCURSES_LIBS)
 ifeq ($(HAVE_X11),1)
-STATIC_OBJECTS += stuff/poutput-x11.o stuff/x11-common.o
-STATIC_LIBS += $(X11_LIBS)
+poutput_so+=poutput-x11.o x11-common.o
+poutput_so_libs+=$(X11_LIBS)
+NEED_TTF=1
 endif
+
 ifeq ($(HAVE_SDL),1)
-STATIC_OBJECTS += stuff/poutput-sdl.o stuff/x11-common.o
-STATIC_LIBS += $(SDL_LIBS)
+poutput_so+=poutput-sdl.o
+poutput_so_libs+=$(SDL_LIBS)
+NEED_TTF=1
 endif
+
+ifeq ($(HAVE_SDL2),1)
+poutput_so+=poutput-sdl2.o
+poutput_so_libs+=$(SDL2_LIBS)
+NEED_TTF=1
+endif
+
+ifeq ($(NEED_TTF),1)
+poutput_so+=ttf.o poutput-swtext.o poutput-fontengine.o
+poutput_so_libs+=$(FREETYPE2_LIBS)
+endif
+
+# libocp_so is linked by parent
+stuff_libocp_so:=compat.o err.o framelock.o poll.o utf-8.o
+
+ifeq ($(STATIC_CORE),1)
+ STATIC_OBJECTS += $(patsubst %.o,stuff/%.o,$(hardware_so))
+ STATIC_OBJECTS += $(patsubst %.o,stuff/%.o,$(sets_so))
+ STATIC_OBJECTS += $(patsubst %.o,stuff/%.o,$(poutput_so))
+ STATIC_LIBS += $(poutput_so_libs)
+endif
+
+LIBOCP_OBJECTS += $(patsubst %.o,stuff/%.o,$(stuff_libocp_so))

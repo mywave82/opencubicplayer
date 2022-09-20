@@ -364,8 +364,17 @@ static int _fsMain(int argc, char *argv[])
 	return errOk;
 }
 
+static struct mainstruct fsmain = { _fsMain };
+
 static int fspreint(void)
 {
+	if (ocpmain)
+	{
+		fprintf(stderr, "pfsmain.c: ocpmain != NULL\n");
+	} else {
+		ocpmain = &fsmain;
+	}
+
 	mdbRegisterReadInfo(&fsReadInfoReg);
 
 	fprintf(stderr, "initializing fileselector...\n");
@@ -402,25 +411,14 @@ static int fslateint(void)
 
 static void fsclose()
 {
+	if (ocpmain != &fsmain)
+	{
+		ocpmain = 0;
+	}
+
 	mdbUnregisterReadInfo(&fsReadInfoReg);
 
 	fsClose();
 }
 
-static struct mainstruct fsmain = { _fsMain };
-
-static void __attribute__((constructor))init(void)
-{
-	if (ocpmain)
-		fprintf(stderr, "pfsmain.c: ocpmain != NULL\n");
-	else
-		ocpmain = &fsmain;
-}
-
-static void __attribute__((destructor))done(void)
-{
-	if (ocpmain!=&fsmain)
-		ocpmain = 0;
-}
-
-DLLEXTINFO_PREFIX const struct linkinfostruct dllextinfo = {.name = "pfilesel", .desc = "OpenCP Fileselector (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .PreInit = fspreint, .Init = fsint, .LateInit = fslateint, .LateClose = fsclose};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "pfilesel", .desc = "OpenCP Fileselector (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 25, .PreInit = fspreint, .Init = fsint, .LateInit = fslateint, .LateClose = fsclose};

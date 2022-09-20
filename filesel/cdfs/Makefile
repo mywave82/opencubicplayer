@@ -1,12 +1,17 @@
 TOPDIR=../../
 include $(TOPDIR)Rules.make
+include Makefile-static
 
+ifeq ($(STATIC_CORE),1)
+all: $(cdfs_so)
+else
 all: cdfs$(LIB_SUFFIX)
+endif
 
 clean:
 	rm -f cdfs$(LIB_SUFFIX) *.o
 
-ifeq ($(STATIC_BUILD),1)
+ifeq ($(STATIC_CORE),1)
 install:
 uninstall:
 else
@@ -18,7 +23,7 @@ endif
 
 .PHONY: all clean install uninstall
 
-cdfs$(LIB_SUFFIX): audio.o cdfs.o cue.o iso9660.o main.o toc.o udf.o wave.o
+cdfs$(LIB_SUFFIX): $(cdfs_so)
 	$(CC) $(SHARED_FLAGS) $(ICONV_LIBS) -o $@ $^ $(LIBDISCID_LIBS)
 
 audio.o: \

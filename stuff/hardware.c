@@ -28,4 +28,4 @@
 #include "types.h"
 #include "boot/plinkman.h"
 
-DLLEXTINFO_PREFIX const struct linkinfostruct dllextinfo = {.name = "hardware", .desc = "OpenCP Signal and Timer Routines (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "hardware", .desc = "OpenCP Signal and Timer Routines (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 10};

@@ -1,22 +1,11 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
+include Makefile-static
 
-#mixclip_so=mixclip.o
-
-plrbase_so=deviplay.o plrasm.o player.o
-
-devi_so=devigen.o
-
-mcpbase_so=deviwave.o mcp.o mix.o mixasm.o ringbuffer.o smpman.o
-
-mchasm_so=mchasm.o
-
-ifeq ($(STATIC_BUILD),1)
-all: $(plrbase_so) $(devi_so) $(mcpbase_so) $(mchasm_so)
-#$(mixclip_so)
+ifeq ($(STATIC_CORE),1)
+all: $(plrbase_so) $(devi_so) $(mcpbase_so) $(mchasm_so) #$(mixclip_so)
 else
-all: devi$(LIB_SUFFIX) mcpbase$(LIB_SUFFIX) plrbase$(LIB_SUFFIX) mchasm$(LIB_SUFFIX)
-#mixclip$(LIB_SUFFIX)
+all: devi$(LIB_SUFFIX) mcpbase$(LIB_SUFFIX) plrbase$(LIB_SUFFIX) mchasm$(LIB_SUFFIX) #mixclip$(LIB_SUFFIX)
 endif
 
 #mixclip$(LIB_SUFFIX): $(mixclip_so)
@@ -37,7 +26,7 @@ mchasm$(LIB_SUFFIX): $(mchasm_so)
 clean:
 	rm -f *.o *$(LIB_SUFFIX) mchasm_test smpman_asminctest ringbuffer-unit-test
 
-ifeq ($(STATIC_BUILD),1)
+ifeq ($(STATIC_CORE),1)
 install:
 uninstall:
 else

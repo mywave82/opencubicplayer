@@ -660,12 +660,12 @@ static int strEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpimoderegstruct cpiModeGraph = {"graph", strSetMode, strDraw, strIProcessKey, plStripeKey, strEvent CPIMODEREGSTRUCT_TAIL};
 
-static void __attribute__((constructor))init(void)
+void __attribute__ ((visibility ("internal"))) cpiGraphInit (void)
 {
 	cpiRegisterDefMode(&cpiModeGraph);
 }
 
-static void __attribute__((destructor))done(void)
+void __attribute__ ((visibility ("internal"))) cpiGraphDone (void)
 {
 	cpiUnregisterDefMode(&cpiModeGraph);
 }

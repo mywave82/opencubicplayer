@@ -1,20 +1,29 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
+include Makefile-static
 
+ifeq ($(STATIC_CORE),1)
+all: $(medialib_so)
+else
 all: medialib$(LIB_SUFFIX)
+endif
 
-medialib_so=medialib.o
 medialib$(LIB_SUFFIX): $(medialib_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
+ifeq ($(STATIC_CORE),1)
 install:
-	$(CP) medialib$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+uninstall:
+else
+install:
+	$(CP) medialib$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/90-medialib$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/medialib$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/90-medialib$(LIB_SUFFIX)"
+endif
 
 medialib.o: medialib.c \
 	medialib-add.c \

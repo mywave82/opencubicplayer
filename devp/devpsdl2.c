@@ -92,4 +92,4 @@ static int sdlInit(const struct deviceinfo *c)
 struct sounddevice plrSDL={SS_PLAYER, 0, "SDL Player", sdlDetect, sdlInit, sdlClose, 0};
 
 const char *dllinfo="driver plrSDL";
-const struct linkinfostruct dllextinfo = {.name = "devpsdl2", .desc = "OpenCP Player Device: SDL2 (c) 2011-'22 François Revol & Stian Skjelstad", .ver = DLLVERSION};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpsdl2", .desc = "OpenCP Player Device: SDL2 (c) 2011-'22 François Revol & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};

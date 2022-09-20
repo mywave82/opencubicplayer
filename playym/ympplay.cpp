@@ -528,11 +528,12 @@ static void ymClose (void)
 extern "C"
 {
 	const cpifaceplayerstruct ymPlayer = {"[STYMulator plugin]", ymOpenFile, ymCloseFile};
-	struct linkinfostruct dllextinfo =
+	DLLEXTINFO_PLAYBACK_PREFIX_CPP struct linkinfostruct dllextinfo =
 	{ /* c++ historically does not support named initializers, and size needs to be writable... */
 		/* .name = */ "playym",
 		/* .desc = */ "OpenCP STYMulator Player (c) 2010-'22 Stian Skjelstad",
 		/* .ver  = */ DLLVERSION,
+		/* .sortindex = */ 95,
 		/* .PreInit = */ 0,
 		/* .Init = */ ymInit,
 		/* .LateInit = */ 0,

@@ -1,9 +1,38 @@
-STATIC_LIBS += -lz -lbz2 $(MATH_LIBS)
-
-# cdrom.so
 ifeq ($(CDROM_SUPPORT),1)
-STATIC_OBJECTS += filesel/cdrom.o
+CDROM_SO=cdrom$(LIB_SUFFIX)
+cdrom_so=cdrom.o
 endif
 
-# pfilesel.so
-STATIC_OBJECTS += filesel/cphlpfs.o filesel/dirdb.o filesel/pfilesel.o filesel/pfsmain.o filesel/modlist.o filesel/fsptype.o filesel/mdb.o filesel/pfspls.o filesel/pfsm3u.o filesel/gendir.o filesel/playlist.o
+pfilesel_so=\
+adbmeta.o                     \
+charsets.o                    \
+cphlpfs.o                     \
+dirdb.o                       \
+filesystem.o                  \
+filesystem-bzip2.o            \
+filesystem-dir-mem.o          \
+filesystem-drive.o            \
+filesystem-gzip.o             \
+filesystem-file-mem.o         \
+filesystem-filehandle-cache.o \
+filesystem-pak.o              \
+filesystem-playlist.o         \
+filesystem-playlist-m3u.o     \
+filesystem-playlist-pls.o     \
+filesystem-setup.o            \
+filesystem-tar.o              \
+filesystem-unix.o             \
+filesystem-z.o                \
+filesystem-zip.o              \
+fsptype.o                     \
+mdb.o                         \
+modlist.o                     \
+musicbrainz.o                 \
+pfilesel.o                    \
+pfsmain.o
+
+ifeq ($(STATIC_CORE),1)
+ STATIC_OBJECTS += $(patsubst %.o,filesel/%.o,$(cdrom_so))
+ STATIC_OBJECTS += $(patsubst %.o,filesel/%.o,$(pfilesel_so))
+ STATIC_LIBS += -lz -lbz2 $(MATH_LIBS) $(PTHREAD_LIBS) $(LIBDISCID_LIBS) $(ICONV_LIBS) $(LIBCJSON_LIBS)
+endif

@@ -212,12 +212,12 @@ static int ChanEvent(struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpitextmoderegstruct cpiTModeChan = {"chan", ChanGetWin, ChanSetWin, ChanDraw, ChanIProcessKey, ChanAProcessKey, ChanEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-static void __attribute__((constructor))init(void)
+void __attribute__ ((visibility ("internal"))) cpiChanInit (void)
 {
 	cpiTextRegisterDefMode(&cpiTModeChan);
 }
 
-static void __attribute__((destructor))done(void)
+void __attribute__ ((visibility ("internal"))) cpiChanDone (void)
 {
 	cpiTextUnregisterDefMode(&cpiTModeChan);
 }

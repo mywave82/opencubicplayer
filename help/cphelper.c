@@ -959,4 +959,4 @@ static void hlpGlobalClose(void)
 	hlpFreePages();
 }
 
-DLLEXTINFO_PREFIX const struct linkinfostruct dllextinfo = {.name = "cphelper", .desc = "OpenCP help browser (c) 1998-'22 Fabian Giesen", .ver = DLLVERSION, .Init = hlpGlobalInit, .Close = hlpGlobalClose};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "cphelper", .desc = "OpenCP help browser (c) 1998-'22 Fabian Giesen", .ver = DLLVERSION, .sortindex = 20, .Init = hlpGlobalInit, .Close = hlpGlobalClose};

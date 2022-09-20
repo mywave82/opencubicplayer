@@ -886,12 +886,12 @@ void cpiTrkSetup2 (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpit
 	cpiTextRegisterMode (cpifaceSession, &cpiTModeTrack);
 }
 
-static void __attribute__((constructor))init(void)
+void __attribute__ ((visibility ("internal"))) cpiTrackInit (void)
 {
 	cpiTextRegisterDefMode(&cpiTModeTrack);
 }
 
-static void __attribute__((destructor))done(void)
+void __attribute__ ((visibility ("internal"))) cpiTrackDone (void)
 {
 	cpiTextUnregisterDefMode(&cpiTModeTrack);
 }

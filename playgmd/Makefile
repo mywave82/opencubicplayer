@@ -7,17 +7,17 @@ else
 	DUMPERS=
 endif
 
-all: 40-playgmd$(LIB_SUFFIX) $(DUMPERS)
+all: playgmd$(LIB_SUFFIX) $(DUMPERS)
 
 playgmd_so=gmdpchan.o gmdpdots.o gmdpinst.o gmdplay.o gmdpplay.o gmdptrak.o gmdrtns.o gmdtime.o gmdtype.o gmdl669.o gmdlams.o gmdldmf.o gmdlmdl.o gmdlmtm.o gmdlokt.o gmdlptm.o gmdls3m.o gmdlstm.o gmdlult.o
-40-playgmd$(LIB_SUFFIX): $(playgmd_so)
+playgmd$(LIB_SUFFIX): $(playgmd_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX) dumpstm dumps3m
 
 install:
-	$(CP) 40-playgmd$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
+	$(CP) playgmd$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playgmd$(LIB_SUFFIX)"
 
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpstm "$(DESTDIR)$(BINDIR)/dumpstm"
@@ -25,7 +25,7 @@ ifeq ($(BUILD_DUMPTOOLS),1)
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playgmd$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playgmd$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpstm"
 	rm -f "$(DESTDIR)$(BINDIR)/dumps3m"
 

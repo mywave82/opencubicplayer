@@ -257,4 +257,4 @@ static void oggClose (void)
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) oggPlayer = {"[OGG Vorbis plugin]", oggOpenFile, oggCloseFile};
-const struct linkinfostruct dllextinfo = {.name = "playogg", .desc = "OpenCP Ogg Vorbis Player (c) 1994-'22 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .Init = oggInit, .Close = oggClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playogg", .desc = "OpenCP Ogg Vorbis Player (c) 1994-'22 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 95, .Init = oggInit, .Close = oggClose};

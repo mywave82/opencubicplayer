@@ -7,23 +7,23 @@ else
 	DUMPERS=
 endif
 
-all: 40-playxm$(LIB_SUFFIX) $(DUMPERS)
+all: playxm$(LIB_SUFFIX) $(DUMPERS)
 
 playxm_so=xmlmod.o xmlmxm.o xmload.o xmload.o xmpinst.o xmplay.o xmpplay.o xmptrak.o xmrtns.o xmtime.o xmtype.o
-40-playxm$(LIB_SUFFIX): $(playxm_so)
+playxm$(LIB_SUFFIX): $(playxm_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX) dumpmod
 
 install:
-	$(CP) 40-playxm$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
+	$(CP) playxm$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playxm$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpmod "$(DESTDIR)$(BINDIR)/dumpmod"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playxm$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playxm$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpmod"
 
 dumpmod: dumpmod.o

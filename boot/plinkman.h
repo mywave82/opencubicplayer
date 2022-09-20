@@ -6,6 +6,7 @@ struct __attribute__ ((aligned (64))) linkinfostruct
 	const char *name;
 	const char *desc;
 	uint32_t ver;
+	uint32_t sortindex;
 
 	int (*PreInit)(void); /* high priority init */
 	int (*Init)(void);
@@ -40,9 +41,21 @@ int lnkInitAll (void);
 void lnkCloseAll (void);
 
 #ifdef SUPPORT_STATIC_PLUGINS
-#define DLLEXTINFO_PREFIX __attribute__ ((section ("plugin_list"))) __attribute__ ((used)) static
+# define DLLEXTINFO_BEGIN_PREFIX __attribute__ ((section ("plugin_list"))) __attribute__ ((used)) /* if const, gcc will attempt to unroll while() causing the list to be zero entries long */
+# define DLLEXTINFO_END_PREFIX   static const __attribute__ ((section ("plugin_list"))) __attribute__ ((used))
 #else
-#define DLLEXTINFO_PREFIX
+# define DLLEXTINFO_BEGIN_PREFIX
+# define DLLEXTINFO_END_PREFIX
 #endif
+
+#ifdef STATIC_CORE
+# define DLLEXTINFO_CORE_PREFIX  static const __attribute__ ((section ("plugin_list"))) __attribute__ ((used))
+#else
+# define DLLEXTINFO_CORE_PREFIX const
+#endif
+
+#define DLLEXTINFO_DRIVER_PREFIX       const
+#define DLLEXTINFO_PLAYBACK_PREFIX     const
+#define DLLEXTINFO_PLAYBACK_PREFIX_CPP /* C++, const implies static */
 
 #endif

@@ -2,7 +2,7 @@ TOPDIR=../
 include $(TOPDIR)Rules.make
 
 ifeq ($(HAVE_FLAC),1)
-TARGETS=40-playflac$(LIB_SUFFIX)
+TARGETS=playflac$(LIB_SUFFIX)
 endif
 
 CFLAGS+=-fPIC
@@ -17,13 +17,11 @@ clean:
 
 install:
 ifeq ($(HAVE_FLAC),1)
-	$(CP) 40-playflac$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
+	$(CP) playflac$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playflac$(LIB_SUFFIX)"
 endif
 
 uninstall:
-ifeq ($(HAVE_FLAC),1)
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playflac$(LIB_SUFFIX)"
-endif
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playflac$(LIB_SUFFIX)"
 
 cpiflacinfo.o: cpiflacinfo.c \
 	../config.h \
@@ -53,7 +51,7 @@ flactype.o: flactype.c \
 	$(CC) flactype.c -o $@ -c
 
 playflac_so=cpiflacinfo.o cpiflacpic.o flacpplay.o flacplay.o flactype.o
-40-playflac$(LIB_SUFFIX): $(playflac_so)
+playflac$(LIB_SUFFIX): $(playflac_so)
 	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(FLAC_LIBS) $(LIBJPEG_LIBS) $(LIBPNG_LIBS)
 
 flacpplay.o: flacpplay.c \

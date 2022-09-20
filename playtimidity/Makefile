@@ -7,19 +7,19 @@ else
 	DUMPMIDI=
 endif
 
-all: 40-playtimidity$(LIB_SUFFIX) $(DUMPMIDI)
+all: playtimidity$(LIB_SUFFIX) $(DUMPMIDI)
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX) calcnewt dumpmidi timidity-git/timidity/newton_table.c timidity-git/interface/*.o timidity-git/libarc/*.o timidity-git/timidity/*.o timidity-git/utils/*.o
 
 install:
-	$(CP) 40-playtimidity$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/"
+	$(CP) playtimidity$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playtimidity$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpmidi "$(DESTDIR)$(BINDIR)/dumpmidi"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playtimidity$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playtimidity$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpmidi"
 
 cpitimiditysetup.o: \
@@ -247,5 +247,5 @@ timiditypdots.o: \
 	$(CC) $< -o $@ -c
 
 playtimidity_so=$(interface_obj) $(libarc_obj) $(timidity_obj) $(utils_obj) cpitimiditysetup.o timiditypchan.o timidityconfig.o timidityplay.o timiditypplay.o timiditypdots.o timiditytype.o ocp-output.o
-40-playtimidity$(LIB_SUFFIX): $(playtimidity_so)
+playtimidity$(LIB_SUFFIX): $(playtimidity_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ -lm

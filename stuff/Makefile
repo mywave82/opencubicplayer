@@ -1,47 +1,18 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
+include Makefile-static
 
-ifeq ($(LINUX),1)
-LINUX_OBJ=poutput-vcsa.o poutput-fb.o
-LINUX_LIBS=$(ICONV_LIBS)
-endif
-
-hardware_so=hardware.o freq.o
-sets_so=sets.o
-poutput_so=console.o cp437.o latin1.o poutput-curses.o $(LINUX_OBJ) poutput-keyboard.o pfonts.o poutput.o utf-8.o
-poutput_so_libs=$(ICONV_LIBS)
-ifeq ($(HAVE_X11),1)
-poutput_so+=poutput-x11.o x11-common.o
-poutput_so_libs+=$(X11_LIBS)
-NEED_TTF=1
-endif
-ifeq ($(HAVE_SDL),1)
-poutput_so+=poutput-sdl.o
-poutput_so_libs+=$(SDL_LIBS)
-NEED_TTF=1
-endif
-ifeq ($(HAVE_SDL2),1)
-poutput_so+=poutput-sdl2.o
-poutput_so_libs+=$(SDL2_LIBS)
-NEED_TTF=1
-endif
-
-ifeq ($(NEED_TTF),1)
-poutput_so+=ttf.o poutput-swtext.o poutput-fontengine.o
-poutput_so_libs+=$(FREETYPE2_LIBS)
-endif
-
-ifeq ($(STATIC_BUILD),1)
-all: compat.o err.o framelock.o poll.o $(hardware_so) $(sets_so) $(poutput_so) utf-8.o
+ifeq ($(STATIC_CORE),1)
+all: $(stuff_libocp_so) $(hardware_so) $(sets_so) $(poutput_so)
 else
-all: compat.o err.o framelock.o poll.o hardware$(LIB_SUFFIX) sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX) utf-8.o
+all: $(stuff_libocp_so) hardware$(LIB_SUFFIX) sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX)
 endif
 
 test: compat-test
 	./compat-test.sh
 
 poutput$(LIB_SUFFIX): $(poutput_so)
-	$(CC) $(SHARED_FLAGS) $(LINUX_LIBS) -o $@ $^ $(NCURSES_LIBS) $(poutput_so_libs)
+	$(CC) $(SHARED_FLAGS) -o $@ $^ $(poutput_so_libs)
 
 hardware$(LIB_SUFFIX): $(hardware_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
@@ -52,7 +23,7 @@ sets$(LIB_SUFFIX): $(sets_so)
 clean:
 	rm -f *.o *$(LIB_SUFFIX) compat-test
 
-ifeq ($(STATIC_BUILD),1)
+ifeq ($(STATIC_CORE),1)
 install:
 uninstall:
 else
@@ -62,7 +33,9 @@ install:
 	$(CP) hardware$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-hardware$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/hardware$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/12-poutput$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/10-sets$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/autoload/10-hardware$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/12-poutput$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-sets$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-hardware$(LIB_SUFFIX)"
 endif
 
 cp437.o: cp437.c cp437.h \

@@ -631,4 +631,4 @@ static void itClose (void)
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) itPlayer = {"[ImpulseTracker plugin]", itpOpenFile, itpCloseFile};
-const struct linkinfostruct dllextinfo = {.name = "playit", .desc = "OpenCP IT Player (c) 1997-'22 Tammo Hinrichs, Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .Init = itInit, .Close = itClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playit", .desc = "OpenCP IT Player (c) 1997-'22 Tammo Hinrichs, Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .Init = itInit, .Close = itClose};

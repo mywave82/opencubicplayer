@@ -392,7 +392,8 @@ extern void *memmem(const void *haystack, size_t haystacklen,
 
 #undef GCC_411_RUNTIMECHECK
 
-// #define SUPPORT_STATIC_PLUGINS 1
+#undef SUPPORT_STATIC_PLUGINS
+#undef STATIC_CORE
 
 #undef HAVE_SYSCONF
 

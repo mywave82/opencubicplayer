@@ -1,45 +1,23 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
+include Makefile-static
 
-ifeq ($(HAVE_LZW),1)
-GIF_O=gif.o
-endif
-
-cpiface_so=fft.o cpianal.o cpichan.o cpidots.o cpiface.o cpigraph.o cpiinst.o cpikube.o cpilinks.o cpimsg.o cpimvol.o cpiphase.o cpipic.o cpiptype.o cpiscope.o cpitext.o cpitrack.o jpeg.o mcpedit.o $(GIF_O) png.o tga.o volctrl.o
-
-ifeq ($(HAVE_X11),1)
-NEED_CPIFONTDEBUG=1
-endif
-ifeq ($(HAVE_SDL),1)
-NEED_CPIFONTDEBUG=1
-endif
-ifeq ($(HAVE_SDL2),1)
-NEED_CPIFONTDEBUG=1
-endif
-ifeq ($(NEED_CPIFONTDEBUG),1)
-ifeq ($(STATIC_BUILD),1)
- HAVE_CPIFONTDEBUG=cpifontdebug.o
+ifeq ($(STATIC_CORE),1)
+all: $(cpiface_so) $(cpiface_libocp_so) $(cpifontdebug_so)
 else
- HAVE_CPIFONTDEBUG=cpifontdebug$(LIB_SUFFIX)
-endif
-endif
-
-ifeq ($(STATIC_BUILD),1)
-all: $(cpiface_so) cpikeyhelp.o $(HAVE_CPIFONTDEBUG)
-else
-all: cpiface$(LIB_SUFFIX) $(HAVE_CPIFONTDEBUG) cpikeyhelp.o
+all: cpiface$(LIB_SUFFIX) $(cpiface_libocp_so) $(CPIFONTDEBUG_SO)
 endif
 
 cpiface$(LIB_SUFFIX): $(cpiface_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ $(LIBJPEG_LIBS) $(LIBPNG_LIBS) $(MATH_LIBS)
 
-cpifontdebug$(LIB_SUFFIX): cpifontdebug.o
+cpifontdebug$(LIB_SUFFIX): $(cpifontdebug_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
-ifeq ($(STATIC_BUILD),1)
+ifeq ($(STATIC_CORE),1)
 install:
 uninstall:
 else
@@ -51,6 +29,7 @@ endif
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/35-cpiface$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-cpifacefontdebug$(LIB_SUFFIX)"
 endif
 
 cpikeyhelp.o: cpikeyhelp.c cpiface.h \

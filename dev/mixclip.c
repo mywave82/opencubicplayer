@@ -114,4 +114,4 @@ void mixClipAlt2(uint16_t *dst, const uint16_t *src, uint32_t len, const uint16_
 }
 #endif
 
-DLLEXTINFO_PREFIX const struct linkinfostruct dllextinfo = {.name = "mixclip", .desc = "OpenCP common clipper for various streams (c) 1994-'22 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .size = 0};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "mixclip", .desc = "OpenCP common clipper for various streams (c) 1994-'22 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 10};

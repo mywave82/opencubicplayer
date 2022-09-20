@@ -335,4 +335,4 @@ static void mlclose(void)
 	}
 }
 
-const struct linkinfostruct dllextinfo = {.name = "medialib", .desc = "OpenCP medialib (c) 2005-'22 Stian Skjelstad", .ver = DLLVERSION, .Init = mlint, .Close = mlclose};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "medialib", .desc = "OpenCP medialib (c) 2005-'22 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 90, .Init = mlint, .Close = mlclose};

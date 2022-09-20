@@ -1,10 +1,32 @@
 GIF_O=
 ifeq ($(HAVE_LZW),1)
-GIF_O=cpiface/gif.o
+GIF_O=gif.o
 endif
 
-# cpiface.so
-STATIC_OBJECTS += cpiface/fft.o cpiface/cpianal.o cpiface/cpichan.o cpiface/cpidots.o cpiface/cpiface.o cpiface/cpigraph.o cpiface/cpiinst.o cpiface/cpikube.o cpiface/cpilinks.o cpiface/cpimsg.o cpiface/cpimvol.o cpiface/cpiphase.o cpiface/cpipic.o cpiface/cpiptype.o cpiface/cpiscope.o cpiface/cpitext.o cpiface/cpitrack.o cpiface/mcpedit.o $(GIF_O) cpiface/tga.o cpiface/volctrl.o
+cpiface_so=fft.o cpianal.o cpichan.o cpidots.o cpiface.o cpigraph.o cpiinst.o cpikube.o cpilinks.o cpimsg.o cpimvol.o cpiphase.o cpipic.o cpiptype.o cpiscope.o cpitext.o cpitrack.o jpeg.o mcpedit.o $(GIF_O) png.o tga.o volctrl.o
 
-# keyhelp.so
-STATIC_OBJECTS += cpiface/cpikeyhelp.o
+# libocp_so is linked by parent
+cpiface_libocp_so=cpikeyhelp.o
+
+ifeq ($(HAVE_X11),1)
+ NEED_CPIFONTDEBUG=1
+endif
+ifeq ($(HAVE_SDL),1)
+ NEED_CPIFONTDEBUG=1
+endif
+ifeq ($(HAVE_SDL2),1)
+ NEED_CPIFONTDEBUG=1
+endif
+ifeq ($(NEED_CPIFONTDEBUG),1)
+ cpifontdebug_so = cpifontdebug.o
+ CPIFONTDEBUG_SO = cpifontdebug$(LIB_SUFFIX)
+endif
+
+ifeq ($(STATIC_CORE),1)
+ STATIC_OBJECTS += $(patsubst %.o,cpiface/%.o,$(cpiface_so))
+ STATIC_OBJECTS += $(patsubst %.o,cpiface/%.o,$(cpifontdebug_so))
+
+ STATIC_LIBS += $(LIBJPEG_LIBS) $(LIBPNG_LIBS) $(MATH_LIBS)
+endif
+
+LIBOCP_OBJECTS += $(patsubst %.o,cpiface/%.o,$(cpiface_libocp_so))

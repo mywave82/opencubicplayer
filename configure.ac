@@ -69,6 +69,10 @@ AS_CASE([$target],
 )
 AC_DEFINE_UNQUOTED(LIB_SUFFIX, "$LIB_SUFFIX")
 
+AC_ARG_WITH([builtin],              [AS_HELP_STRING([--with-builtin=core,auto,none],
+                                                                                     [force/disable builtin plugins support. For now playback plugins, audio mixers and audio drivers are always modules])],
+                                                                                                                                                                  [], [with_builtin=auto])
+
 AC_ARG_WITH([x11],                  [AS_HELP_STRING([--with-x11],                    [force/disable x11 support])],                                               [], [with_x11=auto])
 #AC_ARG_WITH([adplug],               [AS_HELP_STRING([--with-adplug],                 [force/disable adplug support])],                                            [], [with_adplug=auto])
 AC_ARG_WITH([mad],                  [AS_HELP_STRING([--with-mad],                    [force/disable mad mpeg audio support])],                                    [], [with_mad=auto])
@@ -117,6 +121,24 @@ dnl restore prefix and exec_prefix
   prefix=$prefix_save
   exec_prefix=$exec_prefix_save
 ])
+
+AC_SUBST(STATIC_BUILD)
+AC_SUBST(STATIC_CORE)
+AS_CASE([$with_builtin],
+	['none'], [
+		builtin="none"
+	],
+	['auto'|'core'], [
+		builtin="core"
+		AC_DEFINE([SUPPORT_STATIC_PLUGINS],[1])
+		AC_DEFINE([STATIC_CORE],[1])
+		STATIC_BUILD=1
+		STATIC_CORE=1
+	],[
+		AC_MSG_ERROR([Unknown --with-builtin combination: $with_builtin])
+		]
+);
+
 
 AC_SUBST(DIR_SUFFIX)
 AC_ARG_WITH([dir_suffix], [AS_HELP_STRING([--with-dir-suffix=],[append this on all paths and executables])], [], [])
@@ -955,6 +977,7 @@ AC_CONFIG_FILES(playopl/adplug-git/src/version.h)
 AC_OUTPUT
 
 AS_IF([test "x$with_debug"     = "xyes"], [echo "debug:             ON" ], [echo "debug:             OFF"])
+                                           echo "builtin:           $builtin"
 dnl AS_IF([test "x$with_adplug"    = "xno" ], [echo "adplug:            OFF"], [echo "adplug:            ON"])
                                            echo "adplug:            GIT/builtin"
 AS_IF([test "x$with_mad"       = "xno" ], [echo "mad:               OFF"], [echo "mad:               ON"])

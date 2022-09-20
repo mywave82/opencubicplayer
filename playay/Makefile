@@ -7,7 +7,7 @@ else
 	DUMPAY=
 endif
 
-TARGETS=40-playay$(LIB_SUFFIX) $(DUMPAY)
+TARGETS=playay$(LIB_SUFFIX) $(DUMPAY)
 
 CFLAGS+=-fPIC
 
@@ -17,14 +17,14 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX) dumpay
 
 install:
-	$(CP) 40-playay$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/40-playay$(LIB_SUFFIX)"
+	$(CP) playay$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playay$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpay "$(DESTDIR)$(BINDIR)/dumpay"
 endif
 
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-playay$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playay$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpay"
 
 aytype.o: aytype.c \
@@ -40,7 +40,7 @@ aytype.o: aytype.c \
 	$(CC) aytype.c -o $@ -c
 
 playay_so=z80.o sound.o aychan.o aypplay.o ayplay.o aytype.o
-40-playay$(LIB_SUFFIX): $(playay_so)
+playay$(LIB_SUFFIX): $(playay_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 z80.o: z80.h z80.c z80ops.c edops.c cbops.c main.h

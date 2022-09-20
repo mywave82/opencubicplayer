@@ -1,0 +1,7 @@
+boot_libocp_start_so=plinkman.o
+boot_libocp_so=kickload.o compdate.o psetting.o pmain.o console.o
+boot_libocp_end_so=plinkman_end.o
+
+LIBOCP_START_OBJECTS += $(patsubst %.o,boot/%.o,$(boot_libocp_start_so))
+LIBOCP_OBJECTS += $(patsubst %.o,boot/%.o,$(boot_libocp_so))
+LIBOCP_END_OBJECTS += $(patsubst %.o,boot/%.o,$(boot_libocp_end_so))

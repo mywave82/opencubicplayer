@@ -1,5 +1,5 @@
 [version]
-  epoch=20220417
+  epoch=20220919
 
 [general]
 ;link=
@@ -10,7 +10,7 @@
 
 
 [defaultconfig] ; default configuration
-  link=medialib
+;  link=
 ;  prelink= ; preloaded dlls
 
 [sound] ; default sound section

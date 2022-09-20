@@ -1,5 +1,8 @@
-# cphelper.so
-STATIC_OBJECTS += help/cphelper.o
+cphelper_so=cphelper.o
 
-#cphlpif.so
-STATIC_OBJECTS += help/cphlpif.o
+cphlpif_so=cphlpif.o
+
+ifeq ($(STATIC_CORE),1)
+ STATIC_OBJECTS += $(patsubst %.o,help/%.o,$(cphelper_so))
+ STATIC_OBJECTS += $(patsubst %.o,help/%.o,$(cphlpif_so))
+endif

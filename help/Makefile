@@ -1,11 +1,8 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
+include Makefile-static
 
-cphelper_so=cphelper.o
-
-cphlpif_so=cphlpif.o
-
-ifeq ($(STATIC_BUILD),1)
+ifeq ($(STATIC_CORE),1)
 all: $(cphelper_so) $(cphlpif_so)
 else
 all: cphelper$(LIB_SUFFIX) cphlpif$(LIB_SUFFIX)
@@ -14,7 +11,7 @@ endif
 clean:
 	rm -f *$(LIB_SUFFIX) *.o
 
-ifeq ($(STATIC_BUILD),1)
+ifeq ($(STATIC_CORE),1)
 install:
 uninstall:
 else

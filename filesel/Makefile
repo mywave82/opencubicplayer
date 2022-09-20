@@ -1,40 +1,9 @@
 TOPDIR=../
 include $(TOPDIR)Rules.make
+include Makefile-static
 
-ifeq ($(CDROM_SUPPORT),1)
-CDROM_SO=cdrom$(LIB_SUFFIX)
-cdrom_so=cdrom.o
-endif
 
-pfilesel_so=\
-adbmeta.o                     \
-charsets.o                    \
-cphlpfs.o                     \
-dirdb.o                       \
-filesystem.o                  \
-filesystem-bzip2.o            \
-filesystem-dir-mem.o          \
-filesystem-drive.o            \
-filesystem-gzip.o             \
-filesystem-file-mem.o         \
-filesystem-filehandle-cache.o \
-filesystem-pak.o              \
-filesystem-playlist.o         \
-filesystem-playlist-m3u.o     \
-filesystem-playlist-pls.o     \
-filesystem-setup.o            \
-filesystem-tar.o              \
-filesystem-unix.o             \
-filesystem-z.o                \
-filesystem-zip.o              \
-fsptype.o                     \
-mdb.o                         \
-modlist.o                     \
-musicbrainz.o                 \
-pfilesel.o                    \
-pfsmain.o
-
-ifeq ($(STATIC_BUILD),1)
+ifeq ($(STATIC_CORE),1)
 all: $(cdrom_so) $(pfilesel_so)
 else
 all: $(CDROM_SO) pfilesel$(LIB_SUFFIX)
@@ -60,7 +29,7 @@ clean:
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR) clean
 	rm -f *.o *$(LIB_SUFFIX) adbmeta-test dirdb-test filesystem-bzip2-test filesystem-filehandle-cache-test filesystem-gzip-test filesystem-tar-test mdb-test
 
-ifeq ($(STATIC_BUILD),1)
+ifeq ($(STATIC_CORE),1)
 install:
 uninstall:
 else
@@ -72,9 +41,7 @@ endif
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR) install
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/25-pfilesel$(LIB_SUFFIX)"
-ifeq ($(CDROM_SUPPORT),1)
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-cdrom$(LIB_SUFFIX)"
-endif
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR) uninstall
 endif
 
