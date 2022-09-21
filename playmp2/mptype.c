@@ -122,7 +122,7 @@ static uint32_t fetch32(const uint8_t *buf)
 	return buf[0]|(buf[1]<<8)|(buf[2]<<16)|(buf[3]<<24);
 }
 
-static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *_buf, size_t len)
+static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *_buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 	int64_t relstart = 0; /* offset */
 	const uint8_t *buf = (const uint8_t *)_buf;

@@ -42,7 +42,7 @@ static uint32_t itpGetModuleType(const char *buf)
 	return 0;
 }
 
-static int itpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
+static int itpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 	uint32_t type;
 	int i;
@@ -62,7 +62,7 @@ static int itpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		if (buf[0x2B]<2)
 			return 0;
 
-	cp437_f_to_utf8_z (buf + 4, 26, m->title, sizeof (m->title));
+	API->cp437_f_to_utf8_z (buf + 4, 26, m->title, sizeof (m->title));
 	m->channels=0;
 	for (i=0; i<64; i++)
 		if (!(buf[64+i]&0x80))

@@ -35,7 +35,7 @@
 #include "mdb.h"
 
 
-static int fsReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
+static int fsReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 	if (!memcmp(buf, "CPArchiveCache\x1B\x00", 16))
 		strcpy(m->title, "openCP archive data base (old!)");

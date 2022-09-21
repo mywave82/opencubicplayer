@@ -126,7 +126,7 @@ out:
 	return 0;
 }
 
-static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
+static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 	const char *filename = 0;
 	uint32_t type;
@@ -160,17 +160,17 @@ static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	    (type == MODULETYPE("M31")) )
 	{
 		m->channels=4;
-		cp437_f_to_utf8_z (buf + 0, 20, m->title, sizeof (m->title));
+		API->cp437_f_to_utf8_z (buf + 0, 20, m->title, sizeof (m->title));
 		return 0; /* not a hard hit.... */
 	} else if (type == MODULETYPE("MODt"))
 	{
 		m->channels=4;
-		cp437_f_to_utf8_z (buf + 0, 20, m->title, sizeof (m->title));
+		API->cp437_f_to_utf8_z (buf + 0, 20, m->title, sizeof (m->title));
 		return 1;
 	} else if (type == MODULETYPE("WOW"))
 	{
 		m->channels=8;
-		cp437_f_to_utf8_z (buf + 0, 20, m->title, sizeof (m->title));
+		API->cp437_f_to_utf8_z (buf + 0, 20, m->title, sizeof (m->title));
 		snprintf (m->comment, sizeof (m->comment), "%s", "Converted from .669 with Mod's Grave");
 		return 1;
 	} else if (type == MODULETYPE("MOD"))
@@ -218,7 +218,7 @@ static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 			}
 		}
 
-		cp437_f_to_utf8_z (buf + 0, 20, m->title, sizeof (m->title));
+		API->cp437_f_to_utf8_z (buf + 0, 20, m->title, sizeof (m->title));
 		return 1;
 	} else if (type == MODULETYPE("XM"))
 	{
@@ -229,7 +229,7 @@ static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 			strcpy(m->title,"too old version");
 			return 0;
 		} else {
-			cp437_f_to_utf8_z (xmhdr->name, 20, m->title, sizeof (m->title));
+			API->cp437_f_to_utf8_z (xmhdr->name, 20, m->title, sizeof (m->title));
 			m->channels=buf[68];
 		}
 		snprintf (m->comment, sizeof (m->comment), "Fast Tracker II v%d.%02d", uint16_little(xmhdr->ver) >> 8, uint16_little(xmhdr->ver) & 0xff);

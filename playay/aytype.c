@@ -31,7 +31,7 @@
 #include "stuff/err.h"
 #include "aytype.h"
 
-static int ayReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
+static int ayReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 	int authorptr;
 	const char *authorstr;
@@ -83,9 +83,9 @@ static int ayReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, con
 	{
 		if (memchr(authorstr, 0, left)) /* we have \0 before end of buffer */
 		{
-			cp437_f_to_utf8_z (authorstr, strlen (authorstr), m->composer, sizeof (m->composer));
+			API->cp437_f_to_utf8_z (authorstr, strlen (authorstr), m->composer, sizeof (m->composer));
 		} else {
-			cp437_f_to_utf8_z (authorstr, left, m->composer, sizeof (m->composer));
+			API->cp437_f_to_utf8_z (authorstr, left, m->composer, sizeof (m->composer));
 		}
 	}
 
@@ -93,9 +93,9 @@ static int ayReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, con
 	{
 		if (memchr(miscstr, 0, left)) /* we have \0 before end of buffer */
 		{
-			cp437_f_to_utf8_z (miscstr, strlen (miscstr), m->comment, sizeof (m->comment));
+			API->cp437_f_to_utf8_z (miscstr, strlen (miscstr), m->comment, sizeof (m->comment));
 		} else {
-			cp437_f_to_utf8_z (miscstr, left, m->comment, sizeof (m->comment));
+			API->cp437_f_to_utf8_z (miscstr, left, m->comment, sizeof (m->comment));
 		}
 	}
 

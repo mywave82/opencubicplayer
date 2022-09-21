@@ -73,7 +73,7 @@ static int RIFF_INFO (struct ocpfilehandle_t *fp, uint32_t len, char *dst, int d
 	return 0;
 }
 
-static int wavReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
+static int wavReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 	if (len < 40)
 	{

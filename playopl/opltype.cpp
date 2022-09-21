@@ -42,7 +42,7 @@ extern "C" {
 }
 #include "opltype.h"
 
-static int oplReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
+static int oplReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 	const char *filename = 0;
 	CPlayers::const_iterator i;

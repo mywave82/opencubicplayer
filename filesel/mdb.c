@@ -41,8 +41,10 @@
 #include "filesystem.h"
 #include "mdb.h"
 #include "pfilesel.h"
+#include "stuff/cp437.h"
 #include "stuff/compat.h"
 #include "stuff/imsrtns.h"
+#include "stuff/latin1.h"
 
 #ifdef MDB_DEBUG
 #define DEBUG_PRINT(...) do { fprintf(stderr, __VA_ARGS__); } while (0)
@@ -177,6 +179,11 @@ void mdbUnregisterReadInfo (struct mdbreadinforegstruct *r)
 }
 
 /* detect file infomation using 'plugins' */
+static const struct mdbReadInfoAPI_t mdbReadInfoAPI =
+{
+	cp437_f_to_utf8_z,
+	latin1_f_to_utf8_z
+};
 int mdbReadInfo (struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 {
 	char mdbScanBuf[1084];
@@ -201,7 +208,7 @@ int mdbReadInfo (struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 	/* slow version that also allows more I/O */
 	for (rinfos=mdbReadInfos; rinfos; rinfos=rinfos->next)
 		if (rinfos->ReadInfo)
-			if (rinfos->ReadInfo(m, f, mdbScanBuf, maxl))
+			if (rinfos->ReadInfo(m, f, mdbScanBuf, maxl, &mdbReadInfoAPI))
 				return 1;
 
 	return m->modtype.integer.i != 0;

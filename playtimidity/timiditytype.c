@@ -47,7 +47,7 @@ static uint32_t timidityGetModuleType (const uint8_t *buf)
 	return 0;
 }
 
-static int timidityReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *_buf, size_t flen)
+static int timidityReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *_buf, size_t flen, const struct mdbReadInfoAPI_t *API)
 {
 	const uint8_t *buf = (const uint8_t *)_buf;
 	int type;
@@ -107,7 +107,7 @@ static int timidityReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *
 		datalen=buf[i+3];
 		if ((i + datalen + 4 <= flen) && (i + datalen + 4 < len))
 		{
-			cp437_f_to_utf8_z ((char *)buf+i+4, datalen, m->title, sizeof (m->title));
+			API->cp437_f_to_utf8_z ((char *)buf+i+4, datalen, m->title, sizeof (m->title));
 		}
 		break;
 	}

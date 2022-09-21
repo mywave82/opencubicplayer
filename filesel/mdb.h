@@ -49,26 +49,18 @@ struct moduleinfostruct
 	char album[MDB_COMPOSER_LEN];
 };
 
-#if 0
-enum
+struct mdbReadInfoAPI_t
 {
-	mtMOD=0, mtMODd=1, mtMODt=2, mtM31=3, mtM15=6, mtM15t=7, mtWOW=8,
-	mtS3M=9, mtXM=10, mtMTM=11, mt669=12, mtULT=13, mtDMF=14, mtOKT=15,
-	mtMID=16, mtCDA=17, mtMIDd=18, mtPTM=19, mtMED=20, mtMDL=21, mtAMS=22,
-	mtINP=23, /* These three now uses a common mtDEVv instead mtDEVp=24, mtDEVs=25, mtDEVw=26, */ mtIT=27, mtWAV=28, mtVOC=29,
-	mtMPx=30, mtSID=31, mtMXM=32, mtMODf=33, mtWMA=34, mtOGG=35, mtOPL=36,
-	mtAY=37, mtFLAC=38, mtYM=39, mtSTM=40, mtHVL=41,
-	/* These two no longer makes it into the mdb mtPLS=128, mtM3U=129, */ mtANI=130,
-
-	mtDEVv=0xfe, mtUnRead=0xFF
+	void (*cp437_f_to_utf8_z) (const char *src, size_t srclen, char *dst, size_t dstlen);
+	void (*latin1_f_to_utf8_z) (const char *src, size_t srclen, char *dst, size_t dstlen);
 };
-#endif
+
 
 struct mdbreadinforegstruct /* this is to test a file, and give it a tag..*/
 {
 	const char *name; /* for debugging */
 	// buf includes the first 1084 byte of the file, enought to include signature in .MOD files */
-	int (*ReadInfo)(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len);
+	int (*ReadInfo)(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API);
 	struct mdbreadinforegstruct *next;
 };
 

@@ -153,7 +153,7 @@ nostm:
 }
 
 
-static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
+static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 	uint32_t type;
 	int i;
@@ -172,7 +172,7 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	{
 		if (len > 0x1f)
 		{
-			cp437_f_to_utf8_z (buf, 20, m->title, sizeof (m->title));
+			API->cp437_f_to_utf8_z (buf, 20, m->title, sizeof (m->title));
 			m->channels = 4;
 			if (!memcmp (buf+0x14, "!Scream!", 4))
 			{
@@ -197,7 +197,7 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		{
 			uint16_t cwt;
 
-			cp437_f_to_utf8_z (buf, 28, m->title, sizeof (m->title));
+			API->cp437_f_to_utf8_z (buf, 28, m->title, sizeof (m->title));
 			m->channels=0;
 			for (i=0; i<32; i++)
 				if (buf[64+i]!=(char)0xFF)
@@ -249,7 +249,7 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 
 			snprintf (m->comment, sizeof (m->comment), "DigiTrakker %d.%d", buf[4]>>4, buf[4]&0x0f);
 
-			cp437_f_to_utf8_z (buf+11, 32, m->title, sizeof (m->title));
+			API->cp437_f_to_utf8_z (buf+11, 32, m->title, sizeof (m->title));
 			for (i=strlen(m->title); i>0; i--)
 			{
 				if (m->title[i-1]==' ')
@@ -260,7 +260,7 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 				}
 			}
 
-			cp437_f_to_utf8_z (buf+43, 20, m->composer, sizeof (m->composer));
+			API->cp437_f_to_utf8_z (buf+43, 20, m->composer, sizeof (m->composer));
 			for (i=strlen(m->composer); i>0; i--)
 			{
 				if (m->composer[i-1]==' ')
@@ -286,7 +286,7 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	{
 		if (len>=39)
 		{
-			cp437_f_to_utf8_z (buf, 28, m->title, sizeof (m->title));
+			API->cp437_f_to_utf8_z (buf, 28, m->title, sizeof (m->title));
 			m->channels=buf[38];
 			snprintf (m->comment, sizeof (m->comment), "PolyTracker v%d.%02d", buf[29], buf[30]);
 			return 1;
@@ -299,7 +299,7 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 			{
 				if (!memcmp(buf, "AMShdr\x1A", 7))
 				{
-					cp437_f_to_utf8_z (buf + 8, (unsigned char)buf[7], m->title, sizeof (m->title));
+					API->cp437_f_to_utf8_z (buf + 8, (unsigned char)buf[7], m->title, sizeof (m->title));
 					snprintf (m->comment, sizeof (m->comment), "Advanced Module System %d.%02x (Velvet Studio)", buf[7 + 1 + 1 + (unsigned char)buf[7]], buf[7 + 1 + (unsigned char)buf[7]]);
 				} else {
 					if (len > 18)
@@ -309,7 +309,7 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 						if ((len >= (18 + extra_len + instrument_len)) &&
 						    (len >= (18 + extra_len + 1 + (uint8_t)buf[18 + extra_len + instrument_len])))
 						{
-							cp437_f_to_utf8_z (buf + 18 + extra_len + instrument_len + 1, (uint8_t)buf[18+extra_len+instrument_len], m->title, sizeof (m->title));
+							API->cp437_f_to_utf8_z (buf + 18 + extra_len + instrument_len + 1, (uint8_t)buf[18+extra_len+instrument_len], m->title, sizeof (m->title));
 						}
 					}
 					snprintf (m->comment, sizeof (m->comment), "Advanced Module System %d.%02x (Extreme Tracker)", buf[8], buf[7]);
@@ -321,7 +321,7 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	{
 		if (len>=24)
 		{
-			cp437_f_to_utf8_z (buf + 4, 20, m->title, sizeof (m->title));
+			API->cp437_f_to_utf8_z (buf + 4, 20, m->title, sizeof (m->title));
 			snprintf (m->comment, sizeof (m->comment), "MultiTracker v%d.%d", buf[4]>>4, buf[4]&0x0f);
 			m->channels=buf[33];
 			return 1;
@@ -330,7 +330,7 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	{
 		if (len>=(2+32))
 		{
-			cp437_f_to_utf8_z (buf + 2, 32, m->title, sizeof (m->title));
+			API->cp437_f_to_utf8_z (buf + 2, 32, m->title, sizeof (m->title));
 			m->channels=8;
 			return 1;
 		}
@@ -346,7 +346,7 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	{
 		if (len>=(15+32))
 		{
-			cp437_f_to_utf8_z (buf + 15, 32, m->title, sizeof (m->title));
+			API->cp437_f_to_utf8_z (buf + 15, 32, m->title, sizeof (m->title));
 
 			switch (buf[14])
 			{
@@ -378,8 +378,8 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	{
 		if (len>=(43+20))
 		{
-			cp437_f_to_utf8_z (buf + 13, 30, m->title, sizeof (m->title));
-			cp437_f_to_utf8_z (buf + 43, 20, m->composer, sizeof (m->composer));
+			API->cp437_f_to_utf8_z (buf + 13, 30, m->title, sizeof (m->title));
+			API->cp437_f_to_utf8_z (buf + 43, 20, m->composer, sizeof (m->composer));
 			m->date=uint32_little(*(uint32_t *)(buf+63))&0xFFFFFF;
 			switch (buf[4])
 			{

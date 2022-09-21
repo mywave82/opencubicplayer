@@ -36,7 +36,7 @@
 #include "stuff/err.h"
 #include "oggtype.h"
 
-static int oggReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len)
+static int oggReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 	uint8_t offset;
 	uint32_t length;

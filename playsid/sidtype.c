@@ -56,7 +56,7 @@ struct __attribute__((packed)) psidHeader
 };
 
 
-static int sidReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
+static int sidReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 	int i;
 	struct psidHeader *ph;
@@ -71,14 +71,14 @@ static int sidReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		m->modtype.integer.i=MODULETYPE("SID");
 		m->channels=ph->songs[1];
 
-		latin1_f_to_utf8_z (ph->name, sizeof (ph->name), m->title, sizeof (m->title));
+		API->latin1_f_to_utf8_z (ph->name, sizeof (ph->name), m->title, sizeof (m->title));
 
-		latin1_f_to_utf8_z (ph->author, sizeof (ph->author), m->composer, sizeof (m->composer));
+		API->latin1_f_to_utf8_z (ph->author, sizeof (ph->author), m->composer, sizeof (m->composer));
 
 		if (ph->copyright[0])
 		{
 			strcpy (m->comment, "(C)");
-			latin1_f_to_utf8_z (ph->copyright, sizeof (ph->copyright), m->comment + 3, sizeof (m->comment) - 3);
+			API->latin1_f_to_utf8_z (ph->copyright, sizeof (ph->copyright), m->comment + 3, sizeof (m->comment) - 3);
 		}
 		return 1;
 	}
@@ -103,7 +103,7 @@ static int sidReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		if (strlen(snginfo)<6)
 			strcpy(snginfo,"raw SID file");
 
-		latin1_f_to_utf8_z (snginfo, strlen (snginfo), m->title, sizeof (m->title));
+		API->latin1_f_to_utf8_z (snginfo, strlen (snginfo), m->title, sizeof (m->title));
 		m->composer[0] = 0;
 		m->comment[0] = 0;
 		return 1;

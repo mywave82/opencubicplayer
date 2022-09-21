@@ -327,8 +327,10 @@ mdb.o: mdb.c \
 	filesystem.h \
 	mdb.h \
 	pfilesel.h \
+	../stuff/cp437.h \
 	../stuff/compat.h \
-	../stuff/imsrtns.h
+	../stuff/imsrtns.h \
+	../stuff/latin1.h
 	$(CC) $< -o $@ -c
 
 mdb-test: mdb-test.c \

@@ -315,7 +315,7 @@ static int ymReadMemInfo2(struct moduleinfostruct *m, const char *buf, size_t le
 }
 
 
-static int ymReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
+static int ymReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 #ifdef HAVE_LZH
 	uint32_t fileSize;

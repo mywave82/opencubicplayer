@@ -27,7 +27,7 @@
 #include "stuff/err.h"
 #include "flactype.h"
 
-static int flacReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
+static int flacReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 	const uint8_t *mybuf;
 	size_t mylen;

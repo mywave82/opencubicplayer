@@ -30,7 +30,7 @@
 #include "stuff/err.h"
 #include "hvltype.h"
 
-static int hvlReadMemInfo_ahx(struct moduleinfostruct *m, const char *_buf, size_t buflen)
+static int hvlReadMemInfo_ahx(struct moduleinfostruct *m, const char *_buf, size_t buflen, const struct mdbReadInfoAPI_t *API)
 {
 	const uint8_t *buf = (const uint8_t *)_buf;
 	const uint8_t *bptr, *tptr;
@@ -84,13 +84,13 @@ static int hvlReadMemInfo_ahx(struct moduleinfostruct *m, const char *_buf, size
 		}
 		if (!*(tptr++))
 		{
-			cp437_f_to_utf8_z ((char *)bptr, strlen ((char *)bptr), m->title, sizeof (m->title));
+			API->cp437_f_to_utf8_z ((char *)bptr, strlen ((char *)bptr), m->title, sizeof (m->title));
 			return 1;
 		}
 	}
 }
 
-static int hvlReadMemInfo_hvl(struct moduleinfostruct *m, const char *_buf, size_t buflen)
+static int hvlReadMemInfo_hvl(struct moduleinfostruct *m, const char *_buf, size_t buflen, const struct mdbReadInfoAPI_t *API)
 {
 	const uint8_t *buf = (const uint8_t *)_buf;
 	const uint8_t *bptr, *tptr;
@@ -161,13 +161,13 @@ static int hvlReadMemInfo_hvl(struct moduleinfostruct *m, const char *_buf, size
 		}
 		if (!*(tptr++))
 		{
-			cp437_f_to_utf8_z ((char *)bptr, strlen ((char *)bptr), m->title, sizeof (m->title));
+			API->cp437_f_to_utf8_z ((char *)bptr, strlen ((char *)bptr), m->title, sizeof (m->title));
 			return 1;
 		}
 	}
 }
 
-static int hvlReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len)
+static int hvlReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 
 	if (len >= 4)
@@ -178,7 +178,7 @@ static int hvlReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 		    ( buf[3] < 3 ) )
 		{
 			m->modtype.integer.i = MODULETYPE("HVL");
-			return hvlReadMemInfo_ahx (m, buf, len);;
+			return hvlReadMemInfo_ahx (m, buf, len, API);
 		}
 
 		if( ( buf[0] == 'H' ) &&
@@ -187,14 +187,14 @@ static int hvlReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t le
 		    ( buf[3] < 2 ) )
 		{
 			m->modtype.integer.i = MODULETYPE("HVL");
-			return hvlReadMemInfo_hvl (m, buf, len);;
+			return hvlReadMemInfo_hvl (m, buf, len, API);
 		}
 	}
 
 	return 0;
 }
 
-static int hvlReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len)
+static int hvlReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 	size_t filelen;
 	char *buffer;
@@ -240,7 +240,7 @@ static int hvlReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	fp->seek_set (fp, 0);
 	if (fp->read (fp, buffer, filelen) == filelen)
 	{
-		retval = hvlReadMemInfo (m, buffer, filelen);
+		retval = hvlReadMemInfo (m, buffer, filelen, API);
 	}
 	free (buffer);
 	fp->seek_set (fp, 0);

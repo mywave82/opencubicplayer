@@ -32,7 +32,7 @@
 #include "cpiptype.h"
 #include "filesel/mdb.h"
 
-static int cpiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *file, const char *buf, size_t len)
+static int cpiReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *file, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 	if (!memcmp(buf, "CPANI\x1A\x00\x00", 8))
 	{
