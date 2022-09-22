@@ -392,6 +392,7 @@ void lnkFree(const int id)
 static void lnkLoadStatics(void)
 {
 	const struct linkinfostruct *iterator = &staticdlls + 1; /* skip the head */
+	asm("":"+r"(iterator)); /* if staticdlls is const, gcc with optimization will detect going past array and assume zero data. Make gcc forget how iterator was assigned */
 
 	#ifdef LD_DEBUG
 	fprintf (stderr, "About to add static modules: iterator=%p %s\n", iterator, iterator->name);

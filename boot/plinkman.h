@@ -61,7 +61,7 @@ void lnkPluginCloseAll (struct PluginCloseAPI_t *API);
 void lnkCloseAll (void);
 
 #ifdef SUPPORT_STATIC_PLUGINS
-# define DLLEXTINFO_BEGIN_PREFIX __attribute__ ((section ("plugin_list"))) __attribute__ ((used)) /* if const, gcc will attempt to unroll while() causing the list to be zero entries long */
+# define DLLEXTINFO_BEGIN_PREFIX const __attribute__ ((section ("plugin_list"))) __attribute__ ((used))
 # define DLLEXTINFO_END_PREFIX   static const __attribute__ ((section ("plugin_list"))) __attribute__ ((used))
 #else
 # define DLLEXTINFO_BEGIN_PREFIX
