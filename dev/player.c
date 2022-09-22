@@ -34,7 +34,7 @@
 #include "player.h"
 #include "stuff/imsrtns.h"
 
-const struct plrAPI_t *plrAPI;
+const struct plrDevAPI_t *plrDevAPI;
 
 void plrGetRealMasterVolume(int *l, int *r)
 {
@@ -43,7 +43,7 @@ void plrGetRealMasterVolume(int *l, int *r)
 	int16_t *buf1, *buf2;
 	unsigned int length1, length2;
 
-	plrAPI->PeekBuffer ((void **)&buf1, &length1, (void **)&buf2, &length2);
+	plrDevAPI->PeekBuffer ((void **)&buf1, &length1, (void **)&buf2, &length2);
 
 	if (!(length1 + length2))
 	{
@@ -69,7 +69,7 @@ void plrGetRealMasterVolume(int *l, int *r)
 
 void plrGetMasterSample(int16_t *buf, uint32_t len, uint32_t rate, int opt)
 {
-	uint32_t step=umuldiv(plrAPI->GetRate(), 0x10000, rate);
+	uint32_t step=umuldiv(plrDevAPI->GetRate(), 0x10000, rate);
 	int stereoout;
 	int16_t *buf1, *buf2;
 	unsigned int length1, length2;
@@ -81,7 +81,7 @@ void plrGetMasterSample(int16_t *buf, uint32_t len, uint32_t rate, int opt)
 	if (step>0x800000)
 		step=0x800000;
 
-	plrAPI->PeekBuffer ((void **)&buf1, &length1, (void **)&buf2, &length2);
+	plrDevAPI->PeekBuffer ((void **)&buf1, &length1, (void **)&buf2, &length2);
 	stereoout=(opt&mcpGetSampleStereo)?1:0;
 
 	/* length1, length2 and len are all in sample space, while mixGetMasterSampleSS16S()

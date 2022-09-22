@@ -124,6 +124,7 @@ struct aydumpbuffer_delayed_states_t
 	struct ay_driver_frame_state_t aydumpbuffer_states;
 	int inaybuf;
 	int indevp; /* if both of the in* flags are empty, entry is not in use */
+	const struct plrDevAPI_t *plrDevAPI;
 };
 static struct aydumpbuffer_delayed_states_t aydumpbuffer_delayed_states[MAX_BUF8_DELAYED_STATES];
 static struct aydumpbuffer_delayed_states_t *aydumpbuffer_delayed_state = 0;
@@ -460,7 +461,7 @@ static void tunetime_reset(void)
 
 /* returns zero if we want to exit the emulation (i.e. exit track) */
 static int silent_for=0;
-int __attribute__ ((visibility ("internal"))) ay_do_interrupt(void)
+int __attribute__ ((visibility ("internal"))) ay_do_interrupt (const struct plrDevAPI_t *plrDevAPI)
 {
 	/* check for fade needed */
 	if(!done_fade && stopafter && ay_tunetime.min*60+ay_tunetime.sec>=stopafter)
@@ -483,6 +484,7 @@ int __attribute__ ((visibility ("internal"))) ay_do_interrupt(void)
 	}
 
 	aydumpbuffer_delayed_state = aydumpbuffer_delayed_states_slot_get();
+	aydumpbuffer_delayed_state->plrDevAPI = plrDevAPI;
 	if (!aydumpbuffer_delayed_state)
 	{
 		fprintf (stderr, "WARNING: aydumpbuffer_delayed_states_slot_get() gave null\n");
@@ -583,7 +585,7 @@ static void aydumpbuffer_delay_callback_from_aybuf_to_devp (void *arg, int sampl
 
 	state->inaybuf = 0;
 	state->indevp = 1;
-	plrAPI->OnBufferCallback (-samples_until, aydumpbuffer_delay_callback_from_devp, state);
+	state->plrDevAPI->OnBufferCallback (-samples_until, aydumpbuffer_delay_callback_from_devp, state);
 }
 
 static void ayIdler (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -615,7 +617,7 @@ static void ayIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 				            aydata.tracks[ay_track].data_stacketc);
 			}
 
-			ay_z80loop();
+			ay_z80loop (cpifaceSession->plrDevAPI);
 		}
 
 		if (aydumpbuffer_delayed_state)
@@ -647,14 +649,14 @@ void __attribute__ ((visibility ("internal"))) ayIdle (struct cpifaceSessionAPI_
 
 	if (ay_inpause || (ay_looped == 3))
 	{
-		plrAPI->Pause (1);
+		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
 		void *targetbuf;
 		unsigned int targetlength; /* in samples */
 
-		plrAPI->Pause (0);
+		cpifaceSession->plrDevAPI->Pause (0);
 
-		plrAPI->GetBuffer (&targetbuf, &targetlength);
+		cpifaceSession->plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 		if (targetlength)
 		{
@@ -812,11 +814,11 @@ void __attribute__ ((visibility ("internal"))) ayIdle (struct cpifaceSessionAPI_
 				} /* while (targetlength && length1) */
 			} /* if (aybufrate==0x10000) */
 			cpifaceSession->ringbufferAPI->tail_consume_samples (aybufpos, accumulated_source);
-			plrAPI->CommitBuffer (accumulated_target);
+			cpifaceSession->plrDevAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}
 
-	plrAPI->Idle();
+	cpifaceSession->plrDevAPI->Idle();
 
 	clipbusy--;
 }
@@ -878,7 +880,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 	aydata.tracks = NULL;
 	aydumpbuffer_n = 0;
 
-	if (!plrAPI)
+	if (!cpifaceSession->plrDevAPI)
 		return 0;
 
 	if(!read_ay_file(file)) /* 0 meens error */
@@ -888,7 +890,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 
 	ayRate=0;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&ayRate, &format, file, cpifaceSession))
+	if (!cpifaceSession->plrDevAPI->Play (&ayRate, &format, file, cpifaceSession))
 	{
 		goto errorout_aydata;
 	}
@@ -899,7 +901,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 	aybuf = malloc(16384 << 2 /* stereo + 16bit */);
 	if (!aybuf)
 	{
-		goto errorout_plrAPI_Start;
+		goto errorout_plrDevAPI_Start;
 	}
 
 	aybufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 16384);
@@ -959,8 +961,8 @@ errorout_ringbuffer_aybufpos:
 errorout_aybuf:
 	free(aybuf);
 	aybuf = 0;
-errorout_plrAPI_Start:
-	plrAPI->Stop ();
+errorout_plrDevAPI_Start:
+	cpifaceSession->plrDevAPI->Stop ();
 errorout_aydata:
 	free(aydata.tracks);
 	aydata.tracks = 0;
@@ -973,7 +975,7 @@ void __attribute__ ((visibility ("internal"))) ayClosePlayer (struct cpifaceSess
 {
 	sound_end();
 
-	plrAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop();
 
 	if (aybufpos)
 	{

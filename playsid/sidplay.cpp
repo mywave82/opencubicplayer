@@ -233,14 +233,14 @@ void __attribute__ ((visibility ("internal"))) sidIdle(struct cpifaceSessionAPI_
 
 	if (sid_inpause /*|| (sid_looped == 3)*/)
 	{
-		plrAPI->Pause (1);
+		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
 		void *targetbuf;
 		unsigned int targetlength; /* in samples */
 
-		plrAPI->Pause (0);
+		cpifaceSession->plrDevAPI->Pause (0);
 
-		plrAPI->GetBuffer (&targetbuf, &targetlength);
+		cpifaceSession->plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 		if (targetlength)
 		{
@@ -399,14 +399,14 @@ void __attribute__ ((visibility ("internal"))) sidIdle(struct cpifaceSessionAPI_
 			} /* if (sidbufrate==0x10000) */
 			/* We are using processing instead of tail here */
 			cpifaceSession->ringbufferAPI->processing_consume_samples (sid_buf_pos, accumulated_source);
-			plrAPI->CommitBuffer (accumulated_target);
+			cpifaceSession->plrDevAPI->CommitBuffer (accumulated_target);
 			samples_committed += accumulated_target;
 			sidbufrate_compensate += accumulated_target - accumulated_source;
 		} /* if (targetlength) */
 	}
 
 	{
-		uint64_t delay = plrAPI->Idle();
+		uint64_t delay = cpifaceSession->plrDevAPI->Idle();
 		uint64_t new_ui = samples_committed - delay;
 		if (new_ui > samples_lastui)
 		{
@@ -857,7 +857,7 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 {
 	enum plrRequestFormat format=PLR_STEREO_16BIT_SIGNED;
 
-	if (!plrAPI)
+	if (!cpifaceSession->plrDevAPI)
 	{
 		return 0;
 	}
@@ -891,9 +891,9 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 	}
 
 	sidRate=0;
-	if (!plrAPI->Play (&sidRate, &format, file, cpifaceSession))
+	if (!cpifaceSession->plrDevAPI->Play (&sidRate, &format, file, cpifaceSession))
 	{
-		fprintf (stderr, "[playsid]: plrAPI->Play failed\n");
+		fprintf (stderr, "[playsid]: plrDevAPI->Play failed\n");
 		goto error_out_buf;
 	}
 
@@ -972,7 +972,7 @@ error_out_sid_buffers:
 	delete[] sid_buf_4x3[1]; sid_buf_4x3[1] = NULL;
 	delete[] sid_buf_4x3[2]; sid_buf_4x3[2] = NULL;
 error_out_mySidPlay:
-	plrAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop();
 	delete mySidPlayer; mySidPlayer = NULL;
 error_out_buf:
 	if (buf) delete [] buf;
@@ -981,7 +981,7 @@ error_out_buf:
 
 void __attribute__ ((visibility ("internal"))) sidClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	plrAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop();
 
 	if (sid_buf_pos)
 	{

@@ -463,7 +463,7 @@ static void devpDiskPause (int pause)
 { /* a no-op on devpDisk */
 }
 
-static const struct plrAPI_t devpDisk = {
+static const struct plrDevAPI_t devpDisk = {
 	devpDiskIdle,
 	devpDiskPeekBuffer,
 	devpDiskPlay,
@@ -478,15 +478,15 @@ static const struct plrAPI_t devpDisk = {
 
 static int dwInit(const struct deviceinfo *d)
 {
-	plrAPI=&devpDisk;
+	plrDevAPI=&devpDisk;
 	return 1;
 }
 
 static void dwClose(void)
 {
-	if (plrAPI  == &devpDisk)
+	if (plrDevAPI  == &devpDisk)
 	{
-		plrAPI = 0;
+		plrDevAPI = 0;
 	}
 }
 

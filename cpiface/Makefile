@@ -249,6 +249,7 @@ cpiface.o: cpiface.c \
 	cpipic.h \
 	cpiptype.h \
 	../dev/mcp.h \
+	../dev/player.h \
 	../dev/ringbuffer.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \

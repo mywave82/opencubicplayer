@@ -472,7 +472,7 @@ static int devpCoreAudioPlay (uint32_t *rate, enum plrRequestFormat *format, str
 	return 1;
 }
 
-static const struct plrAPI_t devpCoreAudio = {
+static const struct plrDevAPI_t devpCoreAudio = {
 	devpCoreAudioIdle,
 	devpCoreAudioPeekBuffer,
 	devpCoreAudioPlay,
@@ -487,15 +487,15 @@ static const struct plrAPI_t devpCoreAudio = {
 
 static int CoreAudioInit(const struct deviceinfo *c)
 {
-	plrAPI = &devpCoreAudio;
+	plrDevAPI = &devpCoreAudio;
 	return 1;
 }
 
 static void CoreAudioClose(void)
 {
-	if (plrAPI == &devpCoreAudio)
+	if (plrDevAPI == &devpCoreAudio)
 	{
-		plrAPI = 0;
+		plrDevAPI = 0;
 	}
 }
 

@@ -330,14 +330,14 @@ static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	if (dopause)
 	{
-		plrAPI->Pause (1);
+		plrDevAPI->Pause (1);
 	} else {
 		void *targetbuf;
 		unsigned int targetlength; /* in samples */
 
-		plrAPI->Pause (0);
+		plrDevAPI->Pause (0);
 
-		plrAPI->GetBuffer (&targetbuf, &targetlength);
+		plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 		while (targetlength)
 		{
@@ -452,9 +452,9 @@ static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 
 			playsamps += targetlength;
 
-			plrAPI->CommitBuffer (targetlength);
+			plrDevAPI->CommitBuffer (targetlength);
 
-			plrAPI->GetBuffer (&targetbuf, &targetlength);
+			plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 			if (dopause)
 			{
@@ -463,7 +463,7 @@ static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 		}
 	}
 
-	IdleCache = plrAPI->Idle();
+	IdleCache = plrDevAPI->Idle();
 
 	clipbusy--;
 }
@@ -818,7 +818,7 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t 
 	if (chan>MIXF_MAXCHAN)
 		chan=MIXF_MAXCHAN;
 
-	if (!plrAPI)
+	if (!plrDevAPI)
 	{
 		return 0;
 	}
@@ -837,14 +837,14 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t 
 	currentrate=mcpMixProcRate/chan;
 	dwmixfa_state.samprate=(currentrate>mcpMixMaxRate)?mcpMixMaxRate:currentrate;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&dwmixfa_state.samprate, &format, source_file, cpifaceSession))
+	if (!plrDevAPI->Play (&dwmixfa_state.samprate, &format, source_file, cpifaceSession))
 	{
 		goto error_out;
 	}
 
 	if (!mixInit(GetMixChannel, 0, chan, amplify, cpifaceSession))
 	{
-		goto error_out_plrAPI_Play;
+		goto error_out_plrDevAPI_Play;
 	}
 	cpifaceSession->mcpGetRealVolume = getrealvol; /* override mixInit */
 
@@ -881,8 +881,8 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t 
 	return 1;
 
 	//mixClose();
-error_out_plrAPI_Play:
-	plrAPI->Stop();
+error_out_plrDevAPI_Play:
+	plrDevAPI->Stop();
 error_out:
 	free (dwmixfa_state.tempbuf); dwmixfa_state.tempbuf = 0;
 	free (channels);              channels = 0;
@@ -893,7 +893,7 @@ static void devwMixFClosePlayer()
 {
 	struct mixfpostprocregstruct *mode;
 
-	plrAPI->Stop();
+	plrDevAPI->Stop();
 
 	channelnum=0;
 

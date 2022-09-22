@@ -25,8 +25,10 @@
 #define Z80_save  5
 #define Z80_log   6
 
-extern void __attribute__ ((visibility ("internal"))) ay_z80_init(const unsigned char *data,const unsigned char *stacketc);
-extern void __attribute__ ((visibility ("internal"))) ay_z80loop(void);
+struct plrDevAPI_t;
+
+extern void __attribute__ ((visibility ("internal"))) ay_z80_init(const unsigned char *data, const unsigned char *stacketc);
+extern void __attribute__ ((visibility ("internal"))) ay_z80loop (const struct plrDevAPI_t *plrDevAPI);
 
 #define fetch(x) (ay_mem[x])
 #define fetch2(x) ((fetch(((x)+1)&0xffff)<<8)|fetch(x))

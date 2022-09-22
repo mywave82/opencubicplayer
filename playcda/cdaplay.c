@@ -56,6 +56,12 @@ static struct ocpfilehandle_t *fh;
 #endif
 #define CD_FRAMESIZE_RAW 2352
 
+struct rip_sector_t
+{
+	uint32_t lba;
+	const struct plrDevAPI_t *plrDevAPI;
+};
+
 #define BUFFER_SLOTS 75*4
 #define REQUEST_SLOTS 16
 /* cdIdler dumping locations */
@@ -63,8 +69,8 @@ static unsigned char        cdbufdata[CD_FRAMESIZE_RAW*BUFFER_SLOTS];
 static struct ringbuffer_t *cdbufpos;
 static uint32_t             cdbuffpos; /* fractional part */
 static uint32_t             cdbufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
-static uint32_t rip_sectors[BUFFER_SLOTS]; /* replace me */
-static uint32_t rip_sectors2[BUFFER_SLOTS]; /* devp space */
+static struct rip_sector_t rip_sectors[BUFFER_SLOTS]; /* replace me */
+static struct rip_sector_t rip_sectors2[BUFFER_SLOTS]; /* devp space */
 static uint32_t cdRate; /* the devp output rate */
 static volatile int clipbusy;
 static int speed;
@@ -112,19 +118,20 @@ do { \
 
 static void delay_callback_from_devp (void *arg, int samples_ago)
 {
-	uint32_t *rip_sector_last = arg;
-	lba_current = *rip_sector_last;
+	struct rip_sector_t *rip_sector_last = arg;
+	lba_current = rip_sector_last->lba;
 }
 
 static void delay_callback_from_cdbufdata (void *arg, int samples_ago)
 {
+	struct rip_sector_t *cur = arg;
 	int samples_until = samples_ago * cdbufrate / 65536;
 
-	int index = ((uint32_t *)arg - rip_sectors) / sizeof (rip_sectors[0]);
+	int index = (cur - rip_sectors) / sizeof (rip_sectors[0]);
 
 	rip_sectors2[index] = rip_sectors[index];
 
-	plrAPI->OnBufferCallback (-samples_until, delay_callback_from_devp, &rip_sectors[index]);
+	cur->plrDevAPI->OnBufferCallback (-samples_until, delay_callback_from_devp, &rip_sectors[index]);
 }
 
 static void cdIdlerAddBuffer (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -134,7 +141,8 @@ static void cdIdlerAddBuffer (struct cpifaceSessionAPI_t *cpifaceSession)
 	for (temp = 0; temp < req.lba_count; temp++)
 	{
 		int index = (req_pos1/CD_FRAMESIZE_RAW)+temp;
-		rip_sectors[index] = lba_next + temp;
+		rip_sectors[index].lba = lba_next + temp;
+		rip_sectors[index].plrDevAPI = cpifaceSession->plrDevAPI;
 		cpifaceSession->ringbufferAPI->add_tail_callback_samples (cdbufpos, - temp * (CD_FRAMESIZE_RAW >> 2) /* stereo + bit16 */, delay_callback_from_cdbufdata, &rip_sectors[index]);
 	}
 
@@ -228,14 +236,14 @@ void __attribute__ ((visibility ("internal"))) cdIdle (struct cpifaceSessionAPI_
 
 	if (cda_inpause || (cda_looped == 3))
 	{
-		plrAPI->Pause (1);
+		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
 		void *targetbuf;
 		unsigned int targetlength; /* in samples */
 
-		plrAPI->Pause (0);
+		cpifaceSession->plrDevAPI->Pause (0);
 
-		plrAPI->GetBuffer (&targetbuf, &targetlength);
+		cpifaceSession->plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 		if (targetlength)
 		{
@@ -394,11 +402,11 @@ void __attribute__ ((visibility ("internal"))) cdIdle (struct cpifaceSessionAPI_
 			} /* if (cdbufrate==0x10000) */
 
 			cpifaceSession->ringbufferAPI->tail_consume_samples (cdbufpos, accumulated_source);
-			plrAPI->CommitBuffer (accumulated_target);
+			cpifaceSession->plrDevAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}
 
-	plrAPI->Idle();
+	cpifaceSession->plrDevAPI->Idle();
 
 	clipbusy--;
 }
@@ -461,7 +469,7 @@ void __attribute__ ((visibility ("internal"))) cdClose (struct cpifaceSessionAPI
 {
 	cda_inpause=1;
 
-	plrAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop();
 
 	if (cdbufpos)
 	{
@@ -515,7 +523,7 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 
 	cdRate=44100;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&cdRate, &format, file, cpifaceSession))
+	if (!cpifaceSession->plrDevAPI->Play (&cdRate, &format, file, cpifaceSession))
 	{
 		return -1;
 	}
@@ -527,7 +535,7 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 	cdbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, sizeof (cdbufdata) / 4);
 	if (!cdbufpos)
 	{
-		plrAPI->Stop();
+		cpifaceSession->plrDevAPI->Stop();
 		return 0;
 	}
 	cdbuffpos = 0;

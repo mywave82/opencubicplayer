@@ -62,6 +62,7 @@
 #include "cpiptype.h"
 #include "dev/mcp.h"
 #include "dev/ringbuffer.h"
+#include "dev/player.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
@@ -2211,6 +2212,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	int retval;
 	const char *filename;
 
+	cpifaceSessionAPI.Public.plrDevAPI = plrDevAPI;
 	cpifaceSessionAPI.Public.ringbufferAPI = &ringbufferAPI;
 	cpifaceSessionAPI.Public.mcpAPI = &mcpAPI;
 	cpifaceSessionAPI.Public.drawHelperAPI = &drawHelperAPI;

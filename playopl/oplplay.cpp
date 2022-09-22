@@ -111,7 +111,7 @@ void __attribute__ ((visibility ("internal"))) oplClosePlayer (struct cpifaceSes
 		cpifaceSession->ringbufferAPI->free (oplbufpos);
 		oplbufpos = 0;
 
-		plrAPI->Stop();
+		cpifaceSession->plrDevAPI->Stop();
 
 		delete(p);
 		delete(opl);
@@ -294,7 +294,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 
 	oplRate = 0;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&oplRate, &format, file, cpifaceSession))
+	if (!cpifaceSession->plrDevAPI->Play (&oplRate, &format, file, cpifaceSession))
 	{
 		free (content);
 		return 0;
@@ -330,7 +330,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	return 1;
 
 error_out:
-	plrAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop();
 	if (oplbufpos)
 	{
 		cpifaceSession->ringbufferAPI->free (oplbufpos);
@@ -416,14 +416,14 @@ void __attribute__ ((visibility ("internal"))) oplIdle (struct cpifaceSessionAPI
 
 	if (opl_inpause /*|| (opl_looped == 3)*/)
 	{
-		plrAPI->Pause (1);
+		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
 		void *targetbuf;
 		unsigned int targetlength; /* in samples */
 
-		plrAPI->Pause (0);
+		cpifaceSession->plrDevAPI->Pause (0);
 
-		plrAPI->GetBuffer (&targetbuf, &targetlength);
+		cpifaceSession->plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 		if (targetlength)
 		{
@@ -581,11 +581,11 @@ void __attribute__ ((visibility ("internal"))) oplIdle (struct cpifaceSessionAPI
 				} /* while (targetlength && length1) */
 			} /* if (oplbufrate==0x10000) */
 			cpifaceSession->ringbufferAPI->tail_consume_samples (oplbufpos, accumulated_source);
-			plrAPI->CommitBuffer (accumulated_target);
+			cpifaceSession->plrDevAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}
 
-	plrAPI->Idle();
+	cpifaceSession->plrDevAPI->Idle();
 
 	clipbusy--;
 }

@@ -30,7 +30,8 @@ enum cb_action_tag
 extern int action_callback(enum cb_action_tag action);
 #endif
 
-extern int __attribute__ ((visibility ("internal"))) ay_do_interrupt(void);
+struct plrDevAPI_t;
+extern int __attribute__ ((visibility ("internal"))) ay_do_interrupt (const struct plrDevAPI_t *plrDevAPI);
 extern unsigned int __attribute__ ((visibility ("internal"))) ay_in(int h,int l);
 extern unsigned int __attribute__ ((visibility ("internal"))) ay_out(int h,int l,int a);
 

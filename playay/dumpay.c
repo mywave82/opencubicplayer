@@ -125,7 +125,8 @@ unsigned int ay_out(int h,int l,int a)
 {
 	return 0;
 }
-int ay_do_interrupt(void)
+struct plrDevAPI_t;
+int ay_do_interrupt(const struct plrDevAPI_t *API)
 {
 	return 0;
 }
@@ -658,7 +659,7 @@ static void tryprint_songs (const unsigned char *buffer, int length, uint16_t i_
 		{
 			ay_tstates = 0;
 			ay_tsmax = 1;
-			ay_z80loop();
+			ay_z80loop (0);
 			if (intsample || (op == 0xf3) || (op == 0xfb))
 			{
 				predisassemble_session_add (&session_c, pc);
@@ -680,7 +681,7 @@ static void tryprint_songs (const unsigned char *buffer, int length, uint16_t i_
 			{
 				ay_tstates = 0;
 				ay_tsmax = 1;
-				ay_z80loop();
+				ay_z80loop(0);
 				if (intsample || (op == 0xf3) || (op == 0xfb))
 				{
 					predisassemble_session_add (&session_c, pc);

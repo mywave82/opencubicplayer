@@ -67,7 +67,7 @@ static struct ringbuffer_t *devpOSSRingBuffer;
 static int devpOSSPauseSamples;
 static int devpOSSInPause;
 static uint32_t devpOSSRate;
-static const struct plrAPI_t devpOSS;
+static const struct plrDevAPI_t devpOSS;
 
 struct sounddevice plrOSS;
 
@@ -598,7 +598,7 @@ static int ossInit(const struct deviceinfo *card)
 		}
 	}
 
-	plrAPI = &devpOSS;
+	plrDevAPI = &devpOSS;
 
 	return 1;
 }
@@ -611,9 +611,9 @@ static void ossClose(void)
 	if (fd_mixer>=0)
 		close(fd_mixer);
 	fd_mixer=-1;
-	if (plrAPI  == &devpOSS)
+	if (plrDevAPI  == &devpOSS)
 	{
-		plrAPI = 0;
+		plrDevAPI = 0;
 	}
 
 }
@@ -664,7 +664,7 @@ static int volossSetVolume(struct ocpvolstruct *v, int n)
 
 static struct ocpvolregstruct voloss={volossGetNumVolume, volossGetVolume, volossSetVolume};
 
-static const struct plrAPI_t devpOSS = {
+static const struct plrDevAPI_t devpOSS = {
 	devpOSSIdle,
 	devpOSSPeekBuffer,
 	devpOSSPlay,

@@ -215,14 +215,14 @@ void __attribute__ ((visibility ("internal"))) oggIdle (struct cpifaceSessionAPI
 
 	if (ogg_inpause || (ogg_looped == 3))
 	{
-		plrAPI->Pause (1);
+		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
 		void *targetbuf;
 		unsigned int targetlength; /* in samples */
 
-		plrAPI->Pause (0);
+		cpifaceSession->plrDevAPI->Pause (0);
 
-		plrAPI->GetBuffer (&targetbuf, &targetlength);
+		cpifaceSession->plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 		if (targetlength)
 		{
@@ -378,11 +378,11 @@ void __attribute__ ((visibility ("internal"))) oggIdle (struct cpifaceSessionAPI
 				} /* while (targetlength && length1) */
 			} /* if (oggbufrate==0x10000) */
 			cpifaceSession->ringbufferAPI->tail_consume_samples (oggbufpos, accumulated_source);
-			plrAPI->CommitBuffer (accumulated_target);
+			cpifaceSession->plrDevAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}
 
-	plrAPI->Idle();
+	cpifaceSession->plrDevAPI->Idle();
 
 	clipbusy--;
 }
@@ -813,7 +813,7 @@ static int oggGet(int ch, int opt)
 
 ogg_int64_t __attribute__ ((visibility ("internal"))) oggGetPos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	return (ogglen + ogglen + oggpos - cpifaceSession->ringbufferAPI->get_tail_available_samples(oggbufpos) - plrAPI->Idle())%ogglen;
+	return (ogglen + ogglen + oggpos - cpifaceSession->ringbufferAPI->get_tail_available_samples(oggbufpos) - cpifaceSession->plrDevAPI->Idle())%ogglen;
 }
 
 void __attribute__ ((visibility ("internal"))) oggGetInfo (struct cpifaceSessionAPI_t *cpifaceSession, struct ogginfo *info)
@@ -892,7 +892,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 	int result;
 	struct vorbis_info *vi;
 
-	if (!plrAPI)
+	if (!cpifaceSession->plrDevAPI)
 	{
 		return 0;
 	}
@@ -920,7 +920,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 
 	oggRate=oggrate;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&oggRate, &format, oggfile, cpifaceSession))
+	if (!cpifaceSession->plrDevAPI->Play (&oggRate, &format, oggfile, cpifaceSession))
 	{
 		fprintf(stderr, "playogg: plrOpenPlayer() failed\n");
 		goto error_out_file;
@@ -932,13 +932,13 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 	ogglen=ov_pcm_total(&ov, -1);
 	if (!ogglen)
 	{
-		goto error_out_plrAPI_Play;
+		goto error_out_plrDevAPI_Play;
 	}
 
 	oggbuf=malloc(1024 * 128);
 	if (!oggbuf)
 	{
-		goto error_out_plrAPI_Play;
+		goto error_out_plrDevAPI_Play;
 	}
 	oggbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 1024*32);
 	if (!oggbufpos)
@@ -985,8 +985,8 @@ error_out_oggbuf:
 	free(oggbuf);
 	oggbuf = 0;
 
-error_out_plrAPI_Play:
-	plrAPI->Stop();
+error_out_plrDevAPI_Play:
+	cpifaceSession->plrDevAPI->Stop();
 
 error_out_file:
 	ov_clear(&ov);
@@ -1005,7 +1005,7 @@ void __attribute__ ((visibility ("internal"))) oggClosePlayer (struct cpifaceSes
 {
 	if (active)
 	{
-		plrAPI->Stop();
+		cpifaceSession->plrDevAPI->Stop();
 	}
 	active=0;
 

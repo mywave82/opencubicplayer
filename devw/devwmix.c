@@ -414,15 +414,15 @@ static void devwMixIdle  (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	if (_pause)
 	{
-		plrAPI->Pause (1);
+		plrDevAPI->Pause (1);
 
 	} else {
 		void *targetbuf;
 		unsigned int targetlength; /* in samples */
 
-		plrAPI->Pause (0);
+		plrDevAPI->Pause (0);
 
-		plrAPI->GetBuffer (&targetbuf, &targetlength);
+		plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 		while (targetlength)
 		{
@@ -455,16 +455,16 @@ static void devwMixIdle  (struct cpifaceSessionAPI_t *cpifaceSession)
 			{
 				tickplayed-=tickwidth;
 				playerproc (cpifaceSession);
-#warning use plrAPI API to track this by buffer instead of delivery (cmdtimerpos)
+#warning use plrDevAPI API to track this by buffer instead of delivery (cmdtimerpos)
 				cmdtimerpos+=tickwidth;
 				tickwidth=newtickwidth;
 			}
 
 			playsamps+=targetlength;
 
-			plrAPI->CommitBuffer (targetlength);
+			plrDevAPI->CommitBuffer (targetlength);
 
-			plrAPI->GetBuffer (&targetbuf, &targetlength);
+			plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 			if (_pause)
 			{
@@ -473,7 +473,7 @@ static void devwMixIdle  (struct cpifaceSessionAPI_t *cpifaceSession)
 		}
 	}
 
-	plrAPI->Idle();
+	plrDevAPI->Idle();
 
 	BARRIER
 
@@ -829,7 +829,7 @@ static int devwMixOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *
 		chan=MAXCHAN;
 	}
 
-	if (!plrAPI)
+	if (!plrDevAPI)
 	{
 		return 0;
 	}
@@ -888,14 +888,14 @@ static int devwMixOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *
 	currentrate=mcpMixProcRate/chan;
 	samprate=(currentrate>mcpMixMaxRate)?mcpMixMaxRate:currentrate;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&samprate, &format, source_file, cpifaceSession))
+	if (!plrDevAPI->Play (&samprate, &format, source_file, cpifaceSession))
 	{
 		goto error_out;
 	}
 
 	if (!mixInit(GetMixChannel, resample, chan, amplify, cpifaceSession))
 	{
-		goto error_out_plrAPI_Play;
+		goto error_out_plrDevAPI_Play;
 	}
 
 	calcvols();
@@ -933,8 +933,8 @@ static int devwMixOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *
 	return 1;
 
 	// mixClose();
-error_out_plrAPI_Play:
-	plrAPI->Stop();
+error_out_plrDevAPI_Play:
+	plrDevAPI->Stop();
 error_out:
 	free (amptab);        amptab = 0;
 	free (voltabsr);      voltabsr = 0;
@@ -953,7 +953,7 @@ static void devwMixClosePlayer()
 {
 	struct mixqpostprocregstruct *mode;
 
-	plrAPI->Stop();
+	plrDevAPI->Stop();
 
 	channelnum=0;
 

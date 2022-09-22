@@ -656,14 +656,14 @@ void __attribute__ ((visibility ("internal"))) flacIdle (struct cpifaceSessionAP
 
 	if (flac_inpause || (eof_buffer && eof_flacfile))
 	{
-		plrAPI->Pause (1);
+		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
 		void *targetbuf;
 		unsigned int targetlength; /* in samples */
 
-		plrAPI->Pause (0);
+		cpifaceSession->plrDevAPI->Pause (0);
 
-		plrAPI->GetBuffer (&targetbuf, &targetlength);
+		cpifaceSession->plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 		if (targetlength)
 		{
@@ -821,11 +821,11 @@ void __attribute__ ((visibility ("internal"))) flacIdle (struct cpifaceSessionAP
 				} /* while (targetlength && length1) */
 			} /* if (flacbufrate==0x10000) */
 			cpifaceSession->ringbufferAPI->tail_consume_samples (flacbufpos, accumulated_source);
-			plrAPI->CommitBuffer (accumulated_target);
+			cpifaceSession->plrDevAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}
 
-	plrAPI->Idle();
+	cpifaceSession->plrDevAPI->Idle();
 
 	clipbusy--;
 }
@@ -956,7 +956,7 @@ int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandl
 	int temp;
 	uint32_t flacbuflen;
 
-	if (!plrAPI)
+	if (!cpifaceSession->plrDevAPI)
 	{
 		return 0;
 	}
@@ -1048,7 +1048,7 @@ int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandl
 
 	flacRate=flacrate;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&flacRate, &format, file, cpifaceSession))
+	if (!cpifaceSession->plrDevAPI->Play (&flacRate, &format, file, cpifaceSession))
 	{
 		fprintf(stderr, "playflac: plrOpenPlayer() failed\n");
 		goto error_out_decoder;
@@ -1061,7 +1061,7 @@ int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandl
 	if (!(flacbuf=malloc(flacbuflen*sizeof(uint16_t)*2/*stereo*/)))
 	{
 		fprintf(stderr, "playflac: malloc() failed\n");
-		goto error_out_plrAPI_Start;
+		goto error_out_plrDevAPI_Start;
 	}
 
 	flacbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_STEREO, flacbuflen);
@@ -1084,8 +1084,8 @@ int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandl
 error_out_flacbuf:
 	free (flacbuf);
 	flacbuf = 0;
-error_out_plrAPI_Start:
-	plrAPI->Stop ();
+error_out_plrDevAPI_Start:
+	cpifaceSession->plrDevAPI->Stop ();
 error_out_decoder:
 #if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
 	FLAC__seekable_stream_decoder_finish(decoder);
@@ -1106,7 +1106,7 @@ error_out_flacfile:
 
 void __attribute__ ((visibility ("internal"))) flacClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	plrAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop();
 
 	if (flacbuf)
 	{

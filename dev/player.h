@@ -13,7 +13,7 @@ struct cpifaceSessionAPI_t; /* cpiface.h */
 
 struct ocpvolregstruct; /* vol.h */
 
-struct plrAPI_t
+struct plrDevAPI_t
 {
 	unsigned int (*Idle)(void); /* returns the current BufferDelay - should be called periodically, usually at FPS rate - inserts pause-samples if needed */
 	void (*PeekBuffer)(void **buf1, unsigned int *length1, void **buf2, unsigned int *length2); /* used by analyzer, graphs etc - length given in samples */
@@ -32,7 +32,7 @@ struct plrAPI_t
 	struct ocpvolregstruct *VolRegs; /* null if feature is not present */
 };
 
-extern const struct plrAPI_t *plrAPI;
+extern const struct plrDevAPI_t *plrDevAPI;
 
 extern void plrGetRealMasterVolume(int *l, int *r);
 extern void plrGetMasterSample(int16_t *s, uint32_t len, uint32_t rate, int opt);

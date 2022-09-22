@@ -59,6 +59,7 @@ static struct timeslot
 	int inymbuf; /* ymbuf */
 	int indevp;  /* devp */
 	uint8_t registers[REGISTERS];
+	const struct plrDevAPI_t *plrDevAPI;
 } timeslots[TIMESLOTS];
 static struct timeslot register_current_state;
 
@@ -118,7 +119,7 @@ void __attribute__ ((visibility ("internal"))) ymClosePlayer (struct cpifaceSess
 {
 	if (active)
 	{
-		plrAPI->Stop();
+		cpifaceSession->plrDevAPI->Stop();
 
 		ymMusicStop(pMusic);
 		ymMusicDestroy(pMusic);
@@ -227,9 +228,9 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 
 	ymRate=0;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&ymRate, &format, file, cpifaceSession))
+	if (!cpifaceSession->plrDevAPI->Play (&ymRate, &format, file, cpifaceSession))
 	{
-		fprintf(stderr, "[ymplay]: plrAPI->Play() failed\n");
+		fprintf(stderr, "[ymplay]: plrDevAPI->Play() failed\n");
 		goto error_out_buffer;
 	}
 
@@ -245,12 +246,12 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	if (!pMusic)
 	{
 		fprintf(stderr, "[ymplay]: Unable to create stymulator object\n");
-		goto error_out_plrAPI_Play;
+		goto error_out_plrDevAPI_Play;
 	}
 	if (!pMusic->loadMemory(buffer, length))
 	{
 		fprintf(stderr, "[ymplay]: Unable to load file: %s\n", pMusic->getLastError());
-		goto error_out_plrAPI_Play;
+		goto error_out_plrDevAPI_Play;
 	}
 
 	free(buffer); buffer = 0;
@@ -259,15 +260,15 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	ymbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_MONO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, YMBUFLEN);
 	if (!ymbufpos)
 	{
-		goto error_out_plrAPI_Play;
+		goto error_out_plrDevAPI_Play;
 	}
 	ymbuffpos=0;
 
 	active=1;
 	return 1;
 
-error_out_plrAPI_Play:
-	plrAPI->Stop();
+error_out_plrDevAPI_Play:
+	cpifaceSession->plrDevAPI->Stop();
 
 error_out_buffer:
 	free (buffer); buffer = 0;
@@ -352,7 +353,7 @@ static void register_delay_callback_from_ymbuf (void *arg, int samples_ago)
 
 	state->inymbuf = 0;
 	state->indevp = 1;
-	plrAPI->OnBufferCallback (samples_until, register_delay_callback_from_devp, state);
+	state->plrDevAPI->OnBufferCallback (samples_until, register_delay_callback_from_devp, state);
 }
 
 static void ymIdler(struct cpifaceSessionAPI_t *cpifaceSession)
@@ -392,6 +393,7 @@ static void ymIdler(struct cpifaceSessionAPI_t *cpifaceSession)
 			slot->registers[8] = pMusic->readYmRegister(11)|(pMusic->readYmRegister(12)<<8); /* frequency envelope */
 			slot->registers[9] = pMusic->readYmRegister(13) & 0x0f;  /* envelope shape */
 			slot->inymbuf = 1;
+			slot->plrDevAPI = cpifaceSession->plrDevAPI;
 			cpifaceSession->ringbufferAPI->add_tail_callback_samples (ymbufpos, 0, register_delay_callback_from_ymbuf, slot);
 		}
 
@@ -415,14 +417,14 @@ void __attribute__ ((visibility ("internal"))) ymIdle(struct cpifaceSessionAPI_t
 
 	if (ym_inpause || (ym_looped == 3))
 	{
-		plrAPI->Pause (1);
+		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
 		void *targetbuf;
 		unsigned int targetlength; /* in samples */
 
-		plrAPI->Pause (0);
+		cpifaceSession->plrDevAPI->Pause (0);
 
-		plrAPI->GetBuffer (&targetbuf, &targetlength);
+		cpifaceSession->plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 		if (targetlength)
 		{
@@ -562,11 +564,11 @@ void __attribute__ ((visibility ("internal"))) ymIdle(struct cpifaceSessionAPI_t
 			} /* if (ymbufrate==0x10000) */
 
 			cpifaceSession->ringbufferAPI->tail_consume_samples (ymbufpos, accumulated_source);
-			plrAPI->CommitBuffer (accumulated_target);
+			cpifaceSession->plrDevAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}
 
-	plrAPI->Idle();
+	cpifaceSession->plrDevAPI->Idle();
 
 	clipbusy--;
 }

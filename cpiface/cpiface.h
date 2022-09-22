@@ -23,6 +23,7 @@ struct cpifaceSessionAPI_t;
 #include "filesel/mdb.h" /* struct moduleinfostruct; */
 struct ocpfilehandle_t;
 struct ringbufferAPI_t;
+struct plrDevAPI_t;
 struct mcpAPI_t;
 struct drawHelperAPI_t;
 struct notedotsdata;
@@ -40,6 +41,7 @@ struct cpifaceplayerstruct
 
 struct cpifaceSessionAPI_t
 {
+	const struct plrDevAPI_t     *plrDevAPI;
 	const struct ringbufferAPI_t *ringbufferAPI;
 	const struct mcpAPI_t        *mcpAPI;
 	const struct drawHelperAPI_t *drawHelperAPI;

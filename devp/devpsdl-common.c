@@ -323,7 +323,7 @@ static void devpSDLStop (void)
 	}
 }
 
-static const struct plrAPI_t devpSDL = {
+static const struct plrDevAPI_t devpSDL = {
 	devpSDLIdle,
 	devpSDLPeekBuffer,
 	devpSDLPlay,
@@ -340,9 +340,9 @@ static void sdlClose(void)
 {
 	PRINT("%s()\n", __FUNCTION__);
 	SDL_QuitSubSystem(SDL_INIT_AUDIO);
-	if (plrAPI  == &devpSDL)
+	if (plrDevAPI  == &devpSDL)
 	{
-		plrAPI = 0;
+		plrDevAPI = 0;
 	}
 }
 

@@ -235,7 +235,7 @@ static void devpNoneStop(void)
 	}
 }
 
-static const struct plrAPI_t devpNone = {
+static const struct plrDevAPI_t devpNone = {
 	devpNoneIdle,
 	devpNonePeekBuffer,
 	devpNonePlay,
@@ -250,15 +250,15 @@ static const struct plrAPI_t devpNone = {
 
 static int qpInit(const struct deviceinfo *c)
 {
-	plrAPI = &devpNone;
+	plrDevAPI = &devpNone;
 	return 1;
 }
 
 static void qpClose(void)
 {
-	if (plrAPI  == &devpNone)
+	if (plrDevAPI  == &devpNone)
 	{
-		plrAPI = 0;
+		plrDevAPI = 0;
 	}
 }
 

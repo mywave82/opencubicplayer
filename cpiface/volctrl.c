@@ -65,9 +65,9 @@ static struct regvolstruct             /* the registered vols */
 
 static int GetVols(struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if (plrAPI && plrAPI->VolRegs)
+	if (plrDevAPI && plrDevAPI->VolRegs)
 	{
-		struct ocpvolregstruct *x = plrAPI->VolRegs;
+		struct ocpvolregstruct *x = plrDevAPI->VolRegs;
 		int num = x->GetVolumes();
 		int i;
 

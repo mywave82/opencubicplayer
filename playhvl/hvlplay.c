@@ -362,18 +362,18 @@ void __attribute__ ((visibility ("internal"))) hvlIdle (struct cpifaceSessionAPI
 		return;
 	}
 
-	plrAPI->Idle();
+	cpifaceSession->plrDevAPI->Idle();
 
 	if (hvl_inpause || (hvl_looped == 3))
 	{
-		plrAPI->Pause (1);
+		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
 		void *targetbuf;
 		unsigned int targetlength; /* in samples */
 
-		plrAPI->Pause (0);
+		cpifaceSession->plrDevAPI->Pause (0);
 
-		plrAPI->GetBuffer (&targetbuf, &targetlength);
+		cpifaceSession->plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 		if (targetlength)
 		{
@@ -440,13 +440,13 @@ void __attribute__ ((visibility ("internal"))) hvlIdle (struct cpifaceSessionAPI
 			} /* } else { } //if (hvlbufrate==0x10000) */
 			// warning this deviates, it uses processing_consume_samples instead of tail...
 			cpifaceSession->ringbufferAPI->processing_consume_samples (hvl_buf_pos, accumulated_source);
-			plrAPI->CommitBuffer (accumulated_target);
+			cpifaceSession->plrDevAPI->CommitBuffer (accumulated_target);
 			samples_committed += accumulated_target;
 		} /* if (targetlength) */
 	}
 
 	{
-		uint64_t delay = plrAPI->Idle();
+		uint64_t delay = cpifaceSession->plrDevAPI->Idle();
 		uint64_t new_ui = samples_committed - delay;
 		if (new_ui > samples_lastui)
 		{
@@ -630,14 +630,14 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 {
 	enum plrRequestFormat format;
 
-	if (!plrAPI)
+	if (!cpifaceSession->plrDevAPI)
 		return 0;
 
 	hvl_InitReplayer ();
 
 	hvlRate=0;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&hvlRate, &format, file, cpifaceSession))
+	if (!cpifaceSession->plrDevAPI->Play (&hvlRate, &format, file, cpifaceSession))
 	{
 		return 0;
 	}
@@ -647,7 +647,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 	ht = hvl_LoadTune_memory (mem, memlen, 4, hvlRate);
 	if (!ht)
 	{
-		goto error_out_plrAPI_Play;
+		goto error_out_plrDevAPI_Play;
 	}
 
 	if( !hvl_InitSubsong( ht, 0 ) )
@@ -714,8 +714,8 @@ error_out_tune:
 		hvl_FreeTune (ht);
 		ht = 0;
 	}
-error_out_plrAPI_Play:
-	plrAPI->Stop();
+error_out_plrDevAPI_Play:
+	cpifaceSession->plrDevAPI->Stop();
 
 	current_cpifaceSession = 0;
 
@@ -724,7 +724,7 @@ error_out_plrAPI_Play:
 
 void __attribute__ ((visibility ("internal"))) hvlClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	plrAPI->Stop ();
+	cpifaceSession->plrDevAPI->Stop ();
 
 	if (hvl_buf_pos)
 	{

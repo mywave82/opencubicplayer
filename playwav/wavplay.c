@@ -285,14 +285,14 @@ void  __attribute__ ((visibility ("internal"))) wpIdle (struct cpifaceSessionAPI
 
 	if (wav_inpause || (wav_looped == 3))
 	{
-		plrAPI->Pause (1);
+		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
 		void *targetbuf;
 		unsigned int targetlength; /* in samples */
 
-		plrAPI->Pause (0);
+		cpifaceSession->plrDevAPI->Pause (0);
 
-		plrAPI->GetBuffer (&targetbuf, &targetlength);
+		cpifaceSession->plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 		if (targetlength)
 		{
@@ -450,11 +450,11 @@ void  __attribute__ ((visibility ("internal"))) wpIdle (struct cpifaceSessionAPI
 				} /* while (targetlength && length1) */
 			} /* if (wavebufrate==0x10000) */
 			cpifaceSession->ringbufferAPI->tail_consume_samples (wavebufpos, accumulated_source);
-			plrAPI->CommitBuffer (accumulated_target);
+			cpifaceSession->plrDevAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}
 
-	plrAPI->Idle();
+	cpifaceSession->plrDevAPI->Idle();
 
 	clipbusy--;
 }
@@ -557,7 +557,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 	uint32_t fmtlen;
 	uint16_t sh;
 
-	if (!plrAPI)
+	if (!cpifaceSession->plrDevAPI)
 	{
 		return 0;
 	}
@@ -744,7 +744,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	waveRate = waverate;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&waveRate, &format, wavf, cpifaceSession))
+	if (!cpifaceSession->plrDevAPI->Play (&waveRate, &format, wavf, cpifaceSession))
 	{
 		fprintf(stderr, "playwav: plrOpenPlayer() failed\n");
 		goto error_out_wavebuf;
@@ -766,7 +766,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	return 1;
 
-	//plrAPI->Stop();
+	//cpifaceSession->plrDevAPI->Stop();
 error_out_wavebuf:
 	free (wavebuf);
 	wavebuf=0;
@@ -783,7 +783,7 @@ void __attribute__ ((visibility ("internal"))) wpClosePlayer(struct cpifaceSessi
 
 	PRINT("Freeing resources\n");
 
-	plrAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop();
 
 	if (wavebufpos)
 	{

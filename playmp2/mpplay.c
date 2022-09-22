@@ -655,14 +655,14 @@ void __attribute__ ((visibility ("internal"))) mpegIdle (struct cpifaceSessionAP
 
 	if (mpeg_inpause || (mpeg_looped == 3))
 	{
-		plrAPI->Pause (1);
+		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
 		void *targetbuf;
 		unsigned int targetlength; /* in samples */
 
-		plrAPI->Pause (0);
+		cpifaceSession->plrDevAPI->Pause (0);
 
-		plrAPI->GetBuffer (&targetbuf, &targetlength);
+		cpifaceSession->plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 		if (targetlength)
 		{
@@ -819,11 +819,11 @@ void __attribute__ ((visibility ("internal"))) mpegIdle (struct cpifaceSessionAP
 				} /* while (targetlength && length1) */
 			} /* if (mpegbufrate==0x10000) */
 			cpifaceSession->ringbufferAPI->tail_consume_samples (mpegbufpos, accumulated_source);
-			plrAPI->CommitBuffer (accumulated_target);
+			cpifaceSession->plrDevAPI->CommitBuffer (accumulated_target);
 		} /* if (targetlength) */
 	}
 
-	plrAPI->Idle();
+	cpifaceSession->plrDevAPI->Idle();
 
 	clipbusy--;
 }
@@ -1124,9 +1124,9 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 
 	mpegRate=mpegrate;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&mpegRate, &format, file, cpifaceSession))
+	if (!cpifaceSession->plrDevAPI->Play (&mpegRate, &format, file, cpifaceSession))
 	{
-		fprintf(stderr, "[MPx]: plrAPI->Play() failed\n");
+		fprintf(stderr, "[MPx]: plrDevAPI->Play() failed\n");
 		goto error_out;
 	}
 	mpegbufrate=imuldiv(65536, mpegrate, mpegRate);
@@ -1134,13 +1134,13 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 	if (!(mpegbuf=malloc(32768)))
 	{
 		fprintf(stderr, "[MPx]: malloc failed\n");
-		goto error_out_plrAPI_Play;
+		goto error_out_plrDevAPI_Play;
 	}
 	mpegbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 8192);
 	if (!mpegbufpos)
 	{
 		fprintf(stderr, "[MPx]: ringbuffer_new_samples() failed\n");
-		goto error_out_plrAPI_Play;
+		goto error_out_plrDevAPI_Play;
 	}
 	mpegbuffpos=0;
 	GuardPtr=0;
@@ -1156,8 +1156,8 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 	opt50[0] = 0;
 	return 1;
 
-error_out_plrAPI_Play:
-	plrAPI->Stop();
+error_out_plrDevAPI_Play:
+	cpifaceSession->plrDevAPI->Stop();
 error_out:
 	if (file)
 	{
@@ -1185,7 +1185,7 @@ void __attribute__ ((visibility ("internal"))) mpegClosePlayer (struct cpifaceSe
 
 	if (active)
 	{
-		plrAPI->Stop();
+		cpifaceSession->plrDevAPI->Stop();
 
 		mad_synth_finish(&synth);
 		mad_frame_finish(&frame);

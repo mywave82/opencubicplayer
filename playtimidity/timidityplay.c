@@ -1598,14 +1598,14 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(struct cpifaceSessio
 
 	if (gmi_inpause || (gmi_looped && gmi_eof))
 	{
-		plrAPI->Pause (1);
+		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
 		void *targetbuf;
 		unsigned int targetlength; /* in samples */
 
-		plrAPI->Pause (0);
+		cpifaceSession->plrDevAPI->Pause (0);
 
-		plrAPI->GetBuffer (&targetbuf, &targetlength);
+		cpifaceSession->plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 		if (targetlength)
 		{
@@ -1763,7 +1763,7 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(struct cpifaceSessio
 			} /* if (gmibufrate==0x10000) */
 			cpifaceSession->ringbufferAPI->tail_consume_samples (gmibufpos, accumulated_source);
 			timidity_play_source_EventDelayed_gmibuf (accumulated_source, accumulated_target);
-			plrAPI->CommitBuffer (accumulated_target);
+			cpifaceSession->plrDevAPI->CommitBuffer (accumulated_target);
 			samples_committed += accumulated_target;
 			gmibuffill-=accumulated_source;
 			gmibuffree+=accumulated_source;
@@ -1771,7 +1771,7 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(struct cpifaceSessio
 	}
 
 	{
-		uint64_t delay = plrAPI->Idle();
+		uint64_t delay = cpifaceSession->plrDevAPI->Idle();
 		uint64_t new_ui = samples_committed - delay;
 		if (new_ui > samples_lastui)
 		{
@@ -1788,7 +1788,7 @@ static void doTimidityClosePlayer(struct cpifaceSessionAPI_t *cpifaceSession, in
 {
 	if (CloseDriver)
 	{
-		plrAPI->Stop();
+		cpifaceSession->plrDevAPI->Stop();
 	}
 
 	free(gmibuf);
@@ -1942,7 +1942,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	tc.ctl_timestamp_last_voices = -1;
 	tc.play_midi_file_last_rc = RC_NONE;
 
-	if (!plrAPI)
+	if (!cpifaceSession->plrDevAPI)
 	{
 		return errGen;
 	}
@@ -1955,7 +1955,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 
 	gmiRate=0;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrAPI->Play (&gmiRate, &format, file, cpifaceSession))
+	if (!cpifaceSession->plrDevAPI->Play (&gmiRate, &format, file, cpifaceSession))
 	{
 		return errGen;
 	}

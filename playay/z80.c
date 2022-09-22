@@ -73,7 +73,7 @@ interrupted=0;
 sp=stacketc[0]*256+stacketc[1];
 }
 
-void __attribute__ ((visibility ("internal"))) ay_z80loop(void)
+void __attribute__ ((visibility ("internal"))) ay_z80loop (const struct plrDevAPI_t *plrDevAPI)
 {
   while (ay_tstates<ay_tsmax)
   {
@@ -117,7 +117,7 @@ void __attribute__ ((visibility ("internal"))) ay_z80loop(void)
       ay_tstates = ay_tsmax;
     }
   }
-  ay_do_interrupt();
+  ay_do_interrupt(plrDevAPI);
   ay_tstates-=ay_tsmax;
 #ifndef Z80_DISABLE_INTERRUPT
   interrupted=1;

@@ -65,7 +65,7 @@ static struct ringbuffer_t *devpALSARingBuffer;
 static int devpALSAPauseSamples;
 static int devpALSAInPause;
 static uint32_t devpALSARate;
-static const struct plrAPI_t devpALSA;
+static const struct plrDevAPI_t devpALSA;
 
 static struct interfacestruct alsaPCMoutIntr;
 
@@ -1107,7 +1107,7 @@ static int alsaInit(const struct deviceinfo *c)
 
 	update_custom_dev ();
 
-	plrAPI = &devpALSA;
+	plrDevAPI = &devpALSA;
 
 	alsaOpenDevice();
 	if (!alsa_pcm)
@@ -1158,9 +1158,9 @@ static void alsaClose(void)
 		alsasetupregistered = 0;
 	}
 
-	if (plrAPI  == &devpALSA)
+	if (plrDevAPI  == &devpALSA)
 	{
-		plrAPI = 0;
+		plrDevAPI = 0;
 	}
 }
 
@@ -1419,7 +1419,7 @@ static void __attribute__((destructor))fini(void)
 }
 
 static struct ocpvolregstruct volalsa={volalsaGetNumVolume, volalsaGetVolume, volalsaSetVolume};
-static const struct plrAPI_t devpALSA = {
+static const struct plrDevAPI_t devpALSA = {
 	devpALSAIdle,
 	devpALSAPeekBuffer,
 	devpALSAPlay,

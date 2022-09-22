@@ -58,7 +58,7 @@ static int sdlInit(const struct deviceinfo *c)
 	}
 
 	fprintf(stderr, "[SDL] Using driver %s\n", SDL_AudioDriverName(drivername, sizeof(drivername)));
-	plrAPI = &devpSDL;
+	plrDevAPI = &devpSDL;
 	return 1;
 }
 

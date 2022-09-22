@@ -85,7 +85,7 @@ static int sdlInit(const struct deviceinfo *c)
 #else
 	fprintf(stderr, "[SDL] Using audio driver %s\n", SDL_GetCurrentAudioDriver());
 #endif
-	plrAPI = &devpSDL;
+	plrDevAPI = &devpSDL;
 	return 1;
 }
 
