@@ -373,6 +373,9 @@
 #undef UNIFONT_TTF
 #undef UNIFONT_CSUR_TTF
 #undef UNIFONT_UPPER_TTF
+#undef UNIFONT_OTF
+#undef UNIFONT_CSUR_OTF
+#undef UNIFONT_UPPER_OTF
 
 #define LIB_SUFFIX ".so"
 

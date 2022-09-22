@@ -44,11 +44,10 @@ static int font_entries_8x16_fill;
 static int font_entries_8x16_allocated;
 
 static TTF_Font *unifont_bmp;
-#ifdef UNIFONT_CSUR_TTF
+#if defined(UNIFONT_CSUR_TTF) || defined(UNIFONT_CSUR_OTF)
 static TTF_Font *unifont_csur;
 #endif
 static TTF_Font *unifont_upper;
-
 
 struct font_entry_8x8_t  cp437_8x8 [256];
 struct font_entry_8x16_t cp437_8x16[256];
@@ -220,7 +219,7 @@ int fontengine_8x8_forceunifont (uint32_t codepoint, int *width, uint8_t data[16
 	            ((codepoint >= 0x0f900) && (codepoint <= 0x0ffff)) )
 	{
 		text_surface = unifont_bmp ? TTF_RenderGlyph32_Shaded (unifont_bmp, codepoint) : 0;
-#ifdef UNIFONT_CSUR_TTF
+#if defined(UNIFONT_CSUR_TTF) || defined(UNIFONT_CSUR_OTF)
 	} else if ( ((codepoint >= 0x0e000) && (codepoint <= 0x0f8ff)) )
 	{
 		text_surface = unifont_csur ? TTF_RenderGlyph32_Shaded (unifont_csur, codepoint) : 0;
@@ -229,7 +228,7 @@ int fontengine_8x8_forceunifont (uint32_t codepoint, int *width, uint8_t data[16
 	            ((codepoint >= 0xe0000) && (codepoint <= 0xeffff)) )
 	{
 		text_surface = unifont_upper ? TTF_RenderGlyph32_Shaded (unifont_upper, codepoint) : 0;
-#ifdef UNIFONT_CSUR_TTF
+#if defined(UNIFONT_CSUR_TTF) || defined(UNIFONT_CSUR_OTF)
 	} else if ( ((codepoint >= 0xf0000) && (codepoint >= 0xffffd)) )
 	{
 		text_surface = unifont_csur ? TTF_RenderGlyph32_Shaded (unifont_csur, codepoint) : 0;
@@ -465,7 +464,7 @@ int fontengine_8x16_forceunifont (uint32_t codepoint, int *width, uint8_t data[3
 	            ((codepoint >= 0x0f900) && (codepoint <= 0x0ffff)) )
 	{
 		text_surface = unifont_bmp ? TTF_RenderGlyph32_Shaded (unifont_bmp, codepoint) : 0;
-#ifdef UNIFONT_CSUR_TTF
+#if defined(UNIFONT_CSUR_TTF) || defined(UNIFONT_CSUR_OTF)
 	} else if ( ((codepoint >= 0x0e000) && (codepoint <= 0x0f8ff)) )
 	{
 		text_surface = unifont_csur ? TTF_RenderGlyph32_Shaded (unifont_csur, codepoint) : 0;
@@ -474,7 +473,7 @@ int fontengine_8x16_forceunifont (uint32_t codepoint, int *width, uint8_t data[3
 	            ((codepoint >= 0xe0000) && (codepoint <= 0xeffff)) )
 	{
 		text_surface = unifont_upper ? TTF_RenderGlyph32_Shaded (unifont_upper, codepoint) : 0;
-#ifdef UNIFONT_CSUR_TTF
+#if defined(UNIFONT_CSUR_TTF) || defined(UNIFONT_CSUR_OTF)
 	} else if ( ((codepoint >= 0xf0000) && (codepoint >= 0xffffd)) )
 	{
 		text_surface = unifont_csur ? TTF_RenderGlyph32_Shaded (unifont_csur, codepoint) : 0;
@@ -548,6 +547,10 @@ uint8_t *fontengine_8x16(uint32_t codepoint, int *width)
 int fontengine_init (void)
 {
 	int i;
+
+	char error_ttf[256];
+	char error_otf[256];
+
 	if ( TTF_Init() < 0)
 	{
 		fprintf (stderr, "[TTF] Unable to init truetype-font library: %s\n", TTF_GetError());
@@ -559,22 +562,64 @@ int fontengine_init (void)
 	unifont_bmp = TTF_OpenFontFilename(UNIFONT_TTF, 16, 0, 0, 0);
 	if (!unifont_bmp)
 	{
-		fprintf (stderr, "TTF_OpenFont(\"" UNIFONT_TTF "\") failed: %s\n", TTF_GetError());
+		snprintf (error_ttf, sizeof (error_ttf), "TTF_OpenFont(\"" UNIFONT_TTF "\") failed: %s\n", TTF_GetError());
 		TTF_ClearError();
+
+		unifont_bmp = TTF_OpenFontFilename(UNIFONT_OTF, 16, 0, 0, 0);
+		if (!unifont_bmp)
+		{
+			snprintf (error_otf, sizeof (error_otf), "TTF_OpenFont(\"" UNIFONT_OTF "\") failed: %s\n", TTF_GetError());
+			TTF_ClearError();
+
+			fputs (error_ttf, stderr);
+			fputs (error_otf, stderr);
+		}
 	}
+
 #ifdef UNIFONT_CSUR_TTF
 	unifont_csur = TTF_OpenFontFilename(UNIFONT_CSUR_TTF, 16, 0, 0, 0);
 	if (!unifont_csur)
 	{
-		fprintf (stderr, "TTF_OpenFont(\"" UNIFONT_CSUR_TTF "\") failed: %s\n", TTF_GetError());
+		snprintf (error_ttf, sizeof (error_ttf), "TTF_OpenFont(\"" UNIFONT_CSUR_TTF "\") failed: %s\n", TTF_GetError());
 		TTF_ClearError();
 	}
 #endif
+#ifdef UNIFONT_CSUR_OTF
+	if (!unifont_csur)
+	{
+		unifont_csur = TTF_OpenFontFilename(UNIFONT_CSUR_OTF, 16, 0, 0, 0);
+		if (!unifont_csur)
+		{
+			snprintf (error_otf, sizeof (error_otf), "TTF_OpenFont(\"" UNIFONT_CSUR_OTF "\") failed: %s\n", TTF_GetError());
+			TTF_ClearError();
+		}
+	}
+#endif
+	if (!unifont_csur)
+	{
+#ifdef UNIFONT_CSUR_TTF
+		fputs (error_ttf, stderr);
+#endif
+#ifdef UNIFONT_CSUR_OTF
+		fputs (error_otf, stderr);
+#endif
+	}
+
 	unifont_upper = TTF_OpenFontFilename(UNIFONT_UPPER_TTF , 16, 0, 0, 0);
 	if (!unifont_upper)
 	{
-		fprintf (stderr, "TTF_OpenFont(\"" UNIFONT_UPPER_TTF "\") failed: %s\n", TTF_GetError());
+		snprintf (error_ttf, sizeof (error_ttf), "TTF_OpenFont(\"" UNIFONT_UPPER_TTF "\") failed: %s\n", TTF_GetError());
 		TTF_ClearError();
+
+		unifont_upper = TTF_OpenFontFilename(UNIFONT_UPPER_OTF , 16, 0, 0, 0);
+		if (!unifont_upper)
+		{
+			snprintf (error_otf, sizeof (error_otf), "TTF_OpenFont(\"" UNIFONT_UPPER_OTF "\") failed: %s\n", TTF_GetError());
+			TTF_ClearError();
+
+			fputs (error_ttf, stderr);
+			fputs (error_otf, stderr);
+		}
 	}
 
 	for (i=0; i < 256; i++)
@@ -667,7 +712,7 @@ void fontengine_done (void)
 		TTF_CloseFont(unifont_bmp);
 		unifont_bmp = 0;
 	}
-#ifdef UNIFONT_CSUR_TTF
+#if defined(UNIFONT_CSUR_TTF) || defined(UNIFONT_CSUR_OTF)
 	if (unifont_csur)
 	{
 		TTF_CloseFont(unifont_csur);
