@@ -305,7 +305,6 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	CProvider_Mem prMem (filename, file, content, len);
 	if (!(p = CAdPlug::factory(filename, opl, CAdPlug::players, prMem)))
 	{
-		free (content);
 		delete (opl);
 		return 0;
 	}
