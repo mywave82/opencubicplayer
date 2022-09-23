@@ -15,7 +15,7 @@ Stian Sebastian Skjelstad aka mw| <stian.skjelstad@gmail.com> - Maintainer of th
 Lars Åge Kamfjord aka Laaknor <lak@globelan.net>              - Debian compile-tests (x86)
                                                               - Skolelinux compile-tests (x86)
 Andreas Kristiansen aka Kafka                                 - Comments
-Mathias Boeen                                                 - Debian compile-tests (x86)
+Mathias Bøhn                                                  - Debian compile-tests (x86)
 Mathias Nilsen aka beta <matni@frisurf.no>                    - Fedora Core 2 compile-tests
 Helge aka alge                                                - Debian SID compile-tests (x86)
                                                               - Fedore Core 1 compile-tests (x86)
@@ -27,9 +27,11 @@ Luigi Auriemma                                                - Locating some bu
 Adam Sampson <ats@offog.org>                                  - Minor patch
 Chuck Anderson <cra@WPI.EDU>                                  - Patches
 François Revol <revol@free.fr>                                - SDL Audio, and Haiku support
-Jindřich Makovička <makovick@gmail.com>                       - SDL Audio quirk, minor fix in detection for glibc bug 4936, C version of FPU mixer
+Jindřich Makovička <makovick@gmail.com>                       - SDL Audio quirk, minor fix in detection for glibc bug 4936, C version of FPU mixer, audio position interpolation
 Csaba Halász aka Jester01                                     - Minor SDL keyboard updates
 Ossi Saukko                                                   - Minor patch
+Nanda H Krishna                                               - Minor patch
+cysp74                                                        - Minor patch
 
 
 Also, see AUTHORS file
