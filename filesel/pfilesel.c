@@ -3899,7 +3899,7 @@ void plUnregisterInterface(struct interfacestruct *interface)
 {
 	struct interfacestruct **curr = &plInterfaces;
 
-	while (curr)
+	while (*curr)
 	{
 		if (*curr == interface)
 		{
