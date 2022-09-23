@@ -1402,20 +1402,6 @@ both options are totally independent of each other.
 ~;~. The rest of the line starting from the ~;~ is considered as a comment and not
 processed.
 
-  Normally the definition for an option ends with the end of the line. If many
-parameters are needed to specify an option they may exceed the default line
-width of 80 characters. Although this is no problem for OCP it is not nice
-looking. You can extend a line logically by using the unix like ~backquote~ at
-the end of a line to begin a new line without interrupting the current option
-definition.
-
-  \[example\]
-    option1=parameter1 parameter2
-    option2=parameter1 \\
-            parameter2
-
-  Both optains contain exactly the same parameters.
-
   When modifying the configuration you should always start with the default
 configuration file and configure it to your needs. Building a bug free config
 file from scratch is difficult.

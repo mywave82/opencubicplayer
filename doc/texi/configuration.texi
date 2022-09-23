@@ -51,20 +51,6 @@ Comments can be placed anywhere in the configuration file and are
 marked by a @emph{;}. The rest of the line starting from the
 @emph{;} is considered as a comment and not processed.
 
-Normally the definition for an option ends with the end of the
-line. If many parameters are needed to specify an option they may
-exceed the default line width of 80 characters. Although this is no
-problem for OCP it is not nice looking. You can extend a line
-logically by using the unix like @emph{backquote} at the end of a line
-to begin a newline without interupting the current option definition.
-@example
-[example]
-  option1=parameter1 parameter2
-  option2=parameter1 \
-          parameter2
-@end example
-Both options contain exactly the same parameters.
-
 When modifying the configuration you should always start with the
 default configuration file and configure it to your needs. Building a
 bug free config file from scratch is difficult. @footnote{And remember
