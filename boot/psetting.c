@@ -93,8 +93,7 @@ static int readiniline(char *key, char *str, char *comment, const char *line)
   /* this line is a comment ?*/
 	if (((*line)==';')||((*line)=='#')||(!*line))
 	{
-		strncpy(comment, line, COMMENTBUF_LEN);
-		comment[COMMENTBUF_LEN-1]=0;
+		snprintf (comment, COMMENTBUF_LEN, "%.*s", COMMENTBUF_LEN-1, line);
 		return 0;
 	}
 
@@ -257,11 +256,12 @@ static int cfReadINIFile(int argc, char *argv[])
 		for (c=1;c<argc;c++)
 			if ((argv[c][0]=='-')&&argv[c][1])
 			{
-				if ((argv[c][1]=='-')&&(!argv[c][2])) /* Unix legacy */
+				if ((argv[c][1]=='-')&&(!argv[c][2])) /* Unix legacy: stop reading parameters if ran like       ./ocp -dcurses -- -filename.xm */
 					break;
-				if (argv[c][1]=='-')
+				if (argv[c][1]=='-') /* Ignore parameters that start with double dash like  ./ocp --help */
 					continue;
 
+				/* Generate a new section as ini file contained [commandline_x] and create keypairs for supporting v100,p80,c10,dcurses => v=100 p=80 c=10 d=curses */
 				cfINInApps++;
 				memtmp = realloc(cfINIApps, sizeof(cfINIApps[cfINInApps])*cfINInApps);
 				if (!memtmp) { fprintf (stderr, "cfReadINIFile() realloc failed #4 (%lu)\n", (unsigned long)(sizeof(cfINIApps[cfINInApps])*cfINInApps)); _exit(1); }
@@ -300,6 +300,7 @@ static int cfReadINIFile(int argc, char *argv[])
 				}
 			}
 
+		/* Generate a new section as ini file contained [CommandLine] and create keypairs for all arguments as-is:   v100,p10,c10,dcurses => v=100,p10,c10,dcurses */
 		cfINInApps++;
 		memtmp = realloc(cfINIApps, sizeof(cfINIApps[cfINInApps])*cfINInApps);
 		if (!memtmp) { fprintf (stderr, "cfReadINIFile() realloc failed #6 (%lu)\n", (unsigned long)(sizeof(cfINIApps[cfINInApps])*cfINInApps)); _exit(1); }
@@ -315,7 +316,7 @@ static int cfReadINIFile(int argc, char *argv[])
 			{
 				int index=cfINIApps[cfINInApps-1].nkeys;
 
-				if ((argv[c][1]=='-')&&(!argv[c][2])) /* Unix legacy */
+				if ((argv[c][1]=='-')&&(!argv[c][2])) /* Unix legacy: stop reading parameters if ran like       ./ocp -dcurses -- -filename.xm */
 					break;
 
 				cfINIApps[cfINInApps-1].nkeys++;
@@ -329,6 +330,7 @@ static int cfReadINIFile(int argc, char *argv[])
 				cfINIApps[cfINInApps-1].keys[index].comment=NULL;
 			}
 
+		/* Generate a new section as ini file contained [CommandLine--] and create keypairs for all --arguments as-is --help  => help=1 */
 		cfINInApps++;
 		memtmp = realloc(cfINIApps, sizeof(cfINIApps[cfINInApps])*cfINInApps);
 		if (!memtmp) { fprintf (stderr, "cfReadINIFile() realloc failed #8 (%lu)\n", (unsigned long)(sizeof(cfINIApps[cfINInApps])*cfINInApps)); _exit(1); }
@@ -344,7 +346,7 @@ static int cfReadINIFile(int argc, char *argv[])
 			{
 				int index=cfINIApps[cfINInApps-1].nkeys;
 
-				if (!argv[c][2]) /* Unix legacy */
+				if (!argv[c][2]) /* Unix legacy: stop reading parameters if ran like       ./ocp -dcurses -- -filename.xm */
 					break;
 
 				cfINIApps[cfINInApps-1].nkeys++;

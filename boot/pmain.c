@@ -148,7 +148,7 @@ static int init_modules(int argc, char *argv[])
 
 	fprintf(stderr, "linking default objects...\n");
 
-	cfConfigSec="defaultconfig";
+	cfConfigSec=cfGetProfileString("CommandLine", "c", "defaultconfig");
 
 	{
 		int epoch = cfGetProfileInt("version", "epoch", 0, 10);
