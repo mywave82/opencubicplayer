@@ -13,6 +13,13 @@
 ;  link=
 ;  prelink= ; preloaded dlls
 
+;[altconfig]               ; example alternative to defaultconfig, would be enabled with  ocp -caltconfig
+;  soundsec=altsound       ; name of section that should override [sound]
+;  screensec=altscreen     ; ditto [screen]
+;  fileselsec=fileselector ; ditto [fileselector]
+;[altsound]                ; options here will override [sound] if given
+;  playerdevices=devpALSA  ; override playerdevices
+
 [sound] ; default sound section
 ; these drivers will be loaded at startup. change parameters at the
 ; sections for the devices.
