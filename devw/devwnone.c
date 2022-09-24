@@ -29,6 +29,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#ifdef __FreeBSD__
+#include <sys/types.h>
+#endif
 #include "types.h"
 #include "boot/plinkman.h"
 #include "cpiface/cpiface.h"
