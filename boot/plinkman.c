@@ -127,7 +127,7 @@ char *lnkReadInfoReg(const int id, const char *key)
 	return reglist;
 }
 
-static int lnkAppend (char *file, void *handle, off_t size, const struct linkinfostruct *info)
+static int lnkAppend (char *file, void *handle, uint32_t size, const struct linkinfostruct *info)
 {
 	int i;
 
@@ -182,7 +182,7 @@ static int _lnkDoLoad(char *file)
 {
 	int i;
 	void *handle;
-	off_t size = 0;
+	uint32_t size = 0;
 	const struct linkinfostruct *info;
 
 	for (i=0; i < loadlist_n; i++)
@@ -446,7 +446,7 @@ int lnkCountLinks(void)
 	return loadlist_n;
 }
 
-int lnkGetLinkInfo(struct linkinfostruct *l, off_t *size, int index)
+int lnkGetLinkInfo(struct linkinfostruct *l, uint32_t *size, int index)
 {
 	if (index<0)
 		return 0;

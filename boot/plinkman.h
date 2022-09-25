@@ -40,7 +40,7 @@ struct dll_handle
 	char *file;
 	int id;
 	int refcount;
-	off_t size;
+	uint32_t size;
 	const struct linkinfostruct *info;
 };
 extern int loadlist_n;
@@ -53,7 +53,7 @@ extern void lnkInit(void);
 extern void *lnkGetSymbol(const int id, const char *name);
 extern char *lnkReadInfoReg(const int id, const char *key);
 extern int lnkCountLinks(void);
-extern int lnkGetLinkInfo(struct linkinfostruct *l, off_t *size, int index);
+extern int lnkGetLinkInfo(struct linkinfostruct *l, uint32_t *size, int index);
 
 int lnkInitAll (void);
 int lnkPluginInitAll (struct PluginInitAPI_t *API);

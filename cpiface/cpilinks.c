@@ -43,7 +43,7 @@ static void plDisplayHelp (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int y;
 	struct linkinfostruct l;
-	off_t size;
+	uint32_t size;
 
 	plHelpHeight=lnkCountLinks()*(mode?2:1);
 	if ((plHelpScroll+plWinHeight)>plHelpHeight)
