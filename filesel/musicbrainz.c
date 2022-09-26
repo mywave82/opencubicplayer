@@ -41,7 +41,7 @@
 #include "dirdb.h"
 #include "filesystem.h"
 #include "filesystem-drive.h"
-#include "filesystem-file-mem.h"
+#include "filesystem-file-dev.h"
 #include "filesystem-setup.h"
 #include "musicbrainz.h"
 #include "pfilesel.h"
@@ -151,10 +151,16 @@ static int musicbrainz_spawn (struct musicbrainz_queue_t *t)
 	open ("/dev/null", O_RDONLY);
 
 	close (1); /* stdout */
-	dup (fdout[1]);
+	if (dup (fdout[1]) != 1)
+	{
+		perror ("dup() failed");
+	}
 
 	close (2); /* stderr */
-	dup (fderr[1]);
+	if (dup (fderr[1]) != 2)
+	{
+		perror ("dup() failed");
+	}
 
 	close (fdout[0]);
 	close (fdout[1]);
@@ -171,7 +177,7 @@ static int musicbrainz_spawn (struct musicbrainz_queue_t *t)
 		"-L", temp,
 		NULL);
 
-	perror ("execve(curl");
+	perror ("execve(curl)");
 
 	_exit (1);
 }
@@ -950,7 +956,10 @@ void musicbrainz_done (void)
 		pos += 28 + 8 + 4;
 		pos += (musicbrainz.cache[i].size & SIZE_MASK);
 	}
-	ftruncate (musicbrainz.fddb, pos);
+	if (ftruncate (musicbrainz.fddb, pos))
+	{
+		perror ("ftruncate() failed");
+	}
 done:
 	for (i=0; i < musicbrainz.cachecount; i++)
 	{
@@ -975,39 +984,33 @@ void musicbrainz_database_h_free (struct musicbrainz_database_h *e)
 
 static struct ocpfile_t      *musicbrainzsetup; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv
 
-static int                    musicbrainzSetupInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *cp);
-static interfaceReturnEnum    musicbrainzSetupRun  (void);
-static struct interfacestruct musicbrainzSetupIntr = {musicbrainzSetupInit, musicbrainzSetupRun, 0, "musicbrainzSetup" INTERFACESTRUCT_TAIL};
+static void musicbrainzSetupRun  (void **token, const struct DevInterfaceAPI_t *API);
 
 static void musicbrainz_setup_init (void)
 {
-	struct moduleinfostruct m;
-	uint32_t mdbref;
+	musicbrainzsetup = dev_file_create (
+		dmSetup->basedir,
+		"musicbrainz.dev",
+		"MusicBrainz Cache DataBase",
+		"",
+		0, /* token */
+		0, /* Init */
+		musicbrainzSetupRun,
+		0, /* Close */
+		0  /* Destructor */
+	);
 
-	musicbrainzsetup = mem_file_open (dmSetup->basedir, dirdbFindAndRef (dmSetup->basedir->dirdb_ref, "musicbrainz.dev", dirdb_use_file), strdup (musicbrainzSetupIntr.name), strlen (musicbrainzSetupIntr.name));
-	dirdbUnref (musicbrainzsetup->dirdb_ref, dirdb_use_file);
-	mdbref = mdbGetModuleReference2 (musicbrainzsetup->dirdb_ref, strlen (musicbrainzSetupIntr.name));
-	mdbGetModuleInfo (&m, mdbref);
-	m.modtype.integer.i = MODULETYPE("DEVv");
-	strcpy (m.title, "MusicBrain Cache DataBase");
-	mdbWriteModuleInfo (mdbref, &m);
 	filesystem_setup_register_file (musicbrainzsetup);
-	plRegisterInterface (&musicbrainzSetupIntr);
 }
 
 static void musicbrainz_setup_done (void)
 {
-	plUnregisterInterface (&musicbrainzSetupIntr);
 	if (musicbrainzsetup)
 	{
 		filesystem_setup_unregister_file (musicbrainzsetup);
+		musicbrainzsetup->unref (musicbrainzsetup);
 		musicbrainzsetup = 0;
 	}
-}
-
-static int musicbrainzSetupInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *cp)
-{
-	return 1;
 }
 
 static void musicbrainzSetupDialogDraw (struct musicbrainz_cacheline_sort_t *entry, int epos)
@@ -1287,13 +1290,13 @@ static struct musicbrainz_cacheline_sort_t *musicbrainz_create_sort(void)
 	return sorted;
 }
 
-static interfaceReturnEnum musicbrainzSetupRun (void)
+static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *API)
 {
 	int dsel = 0, dialog = 0, epos = 0;
 	struct musicbrainz_cacheline_sort_t *sorted = musicbrainz_create_sort ();
 	if (!sorted && musicbrainz.cachecount)
 	{ /* malloc failure... */
-		return interfaceReturnNextAuto;
+		return;
 	}
 	while (1)
 	{
@@ -1427,7 +1430,7 @@ static interfaceReturnEnum musicbrainzSetupRun (void)
 							sorted = musicbrainz_create_sort ();
 							if (!sorted && musicbrainz.cachecount)
 							{ /* malloc failure... */
-								return interfaceReturnNextAuto;
+								return;
 							}
 							for (dsel = 0; dsel < musicbrainz.cachecount; dsel++)
 							{
@@ -1459,7 +1462,7 @@ static interfaceReturnEnum musicbrainzSetupRun (void)
 							sorted = musicbrainz_create_sort ();
 							if (!sorted && musicbrainz.cachecount)
 							{ /* malloc failure... */
-								return interfaceReturnNextAuto;
+								return;
 							}
 						} else if (epos == 3)
 						{ /* submit */
@@ -1545,7 +1548,7 @@ static interfaceReturnEnum musicbrainzSetupRun (void)
 					case KEY_EXIT:
 					case KEY_ESC:
 						free (sorted);
-						return interfaceReturnNextAuto;
+						return;
 					default:
 						break;
 				}

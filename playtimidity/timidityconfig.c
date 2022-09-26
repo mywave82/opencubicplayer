@@ -12,7 +12,7 @@
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/filesystem-drive.h"
-#include "filesel/filesystem-file-mem.h"
+#include "filesel/filesystem-file-dev.h"
 #include "filesel/filesystem-setup.h"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
@@ -291,11 +291,6 @@ static void refresh_configfiles (void)
 	{
 		qsort (sf2_files_path, sf2_files_count, sizeof (sf2_files_path[0]), mystrcmp);
 	}
-}
-
-static int timidityConfigInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *)
-{
-	return 1;
 }
 
 static void timidityConfigFileSelectDraw (int dsel)
@@ -623,7 +618,7 @@ static void timidityConfigDraw (int EditPos)
 	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
 }
 
-static interfaceReturnEnum timidityConfigRun (void)
+static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 {
 	int esel = 0;
 
@@ -926,40 +921,36 @@ superexit:
 	cfSetProfileInt ("timidity", "delay",          DefaultDelay,          10);
 	cfSetProfileInt ("timidity", "chorusenabled",  DefaultChorus,         10);
 	cfStoreConfig ();
-
-	return interfaceReturnNextAuto;
 }
 
-static struct ocpfile_t      *timidityconfig; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv
-
-static int                    timidityConfigInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *);
-static interfaceReturnEnum    timidityConfigRun  (void);
-static struct interfacestruct timidityConfigIntr = {timidityConfigInit, timidityConfigRun, 0, "TiMidity+ Config" INTERFACESTRUCT_TAIL};
+static struct ocpfile_t *timidityconfig; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv
+static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API);
 
 int __attribute__ ((visibility ("internal"))) timidity_config_init (void)
 {
-	struct moduleinfostruct m;
-	uint32_t mdbref;
+	timidityconfig = dev_file_create (
+		dmSetup->basedir,
+		"timidityconfig.dev",
+		"TiMidity+ Configuration",
+		"",
+		0, /* token */
+		0, /* Init */
+		timidityConfigRun,
+		0, /* Close */
+		0  /* Destructor */
+	);
 
-	timidityconfig= mem_file_open (dmSetup->basedir, dirdbFindAndRef (dmSetup->basedir->dirdb_ref, "timidityconfig.dev", dirdb_use_file), strdup (timidityConfigIntr.name), strlen (timidityConfigIntr.name));
-	dirdbUnref (timidityconfig->dirdb_ref, dirdb_use_file);
-	mdbref = mdbGetModuleReference2 (timidityconfig->dirdb_ref, strlen (timidityConfigIntr.name));
-	mdbGetModuleInfo (&m, mdbref);
-	m.modtype.integer.i = MODULETYPE("DEVv");
-	strcpy (m.title, "TiMidity+ Configuration");
-	mdbWriteModuleInfo (mdbref, &m);
 	filesystem_setup_register_file (timidityconfig);
-	plRegisterInterface (&timidityConfigIntr);
 
 	return errOk;
 }
 
 void __attribute__ ((visibility ("internal"))) timidity_config_done (void)
 {
-	plUnregisterInterface (&timidityConfigIntr);
 	if (timidityconfig)
 	{
 		filesystem_setup_unregister_file (timidityconfig);
+		timidityconfig->unref (timidityconfig);
 		timidityconfig = 0;
 	}
 }

@@ -37,7 +37,7 @@
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/filesystem-drive.h"
-#include "filesel/filesystem-file-mem.h"
+#include "filesel/filesystem-file-dev.h"
 #include "filesel/filesystem-setup.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -51,7 +51,6 @@ int (*plrProcessKey)(uint16_t);
 static struct devinfonode *plPlayerDevices;
 static struct devinfonode *curplaydev;
 static struct devinfonode *defplaydev;
-static struct interfacestruct plrIntr;
 static struct preprocregstruct plrPreprocess;
 
 int plrBufSize;
@@ -141,48 +140,13 @@ static void plrResetDevice(void)
 	setdevice(&curplaydev, defplaydev);
 }
 
-struct file_devp_t
+static int dir_devp_file_Init (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API)
 {
-	struct ocpfile_t head;
-//	uint32_t filesize;
-	struct devinfonode *dev;
-};
-
-static void file_devp_ref (struct ocpfile_t *_self)
-{
-	struct file_devp_t *self = (struct file_devp_t *)_self;
-	self->head.refcount++;
-}
-static void file_devp_unref (struct ocpfile_t *_self)
-{
-	struct file_devp_t *self = (struct file_devp_t *)_self;
-	self->head.refcount--;
-	if (!self->head.refcount)
+	const char **device = (const char **)token;
+	if (*device)
 	{
-		dirdbUnref (self->head.dirdb_ref, dirdb_use_file);
-		free (self);
+		plrSetDevice(*device, 1);
 	}
-}
-
-static struct ocpfilehandle_t *file_devp_open (struct ocpfile_t *_self)
-{
-	struct file_devp_t *self = (struct file_devp_t *)_self;
-	char *buffer = strdup (plrIntr.name);
-	struct ocpfilehandle_t *retval = mem_filehandle_open (/*self->head.parent,*/ self->head.dirdb_ref, buffer, strlen (plrIntr.name));
-	if (!retval)
-	{
-		free (buffer);
-	}
-	return retval;
-}
-
-static uint64_t file_devp_filesize (struct ocpfile_t *_self)
-{
-	return strlen (plrIntr.name);
-}
-
-static int file_devp_filesize_ready (struct ocpfile_t *_self)
-{
 	return 1;
 }
 
@@ -202,6 +166,7 @@ struct dir_devp_handle_t
 	struct ocpdir_t *owner;
 	struct devinfonode *next;
 };
+
 static ocpdirhandle_pt dir_devp_readdir_start (struct ocpdir_t *self, void (*callback_file)(void *token, struct ocpfile_t *),
 	                                                              void (*callback_dir )(void *token, struct ocpdir_t  *), void *token)
 {
@@ -234,42 +199,39 @@ static int dir_devp_readdir_iterate (ocpdirhandle_pt _handle)
 	{
 		if (handle->next == iter)
 		{
-			struct file_devp_t *file = malloc (sizeof (*file));
+			char npath[64];
+			struct ocpfile_t *file;
+
+			snprintf (npath, sizeof(npath), "%s.DEV", iter->handle);
+
+			file = dev_file_create
+			(
+				handle->owner,
+				npath,
+				iter->name, /* mdb title */
+				"", /* mdb composer */
+				strdup (iter->handle),
+				dir_devp_file_Init,
+				0, /* Run */
+				0, /* Close */
+				free /* Destructor */
+			);
+
 			if (file)
 			{
-				char npath[64];
-				uint32_t mdb_ref;
-
-				snprintf (npath, sizeof(npath), "%s.DEV", iter->handle);
-
-				ocpfile_t_fill (&file->head,
-				                 file_devp_ref,
-				                 file_devp_unref,
-				                 handle->owner,
-				                 file_devp_open,
-				                 file_devp_filesize,
-				                 file_devp_filesize_ready,
-				                 0, /* filename_override */
-				                 dirdbFindAndRef (handle->owner->dirdb_ref, npath, dirdb_use_file),
-				                 1, /* refcount */
-				                 1  /* is_nodetect */);
-				/* file->filesize = iter->devinfo.mem; */
-				file->dev = iter;
-
-				mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, strlen (plrIntr.name));
-				if (mdb_ref!=0xffffffff)
+				uint32_t mdb_ref = mdbGetModuleReference2 (file->dirdb_ref, 0);
+				if (mdb_ref != 0xffffffff)
 				{
 					struct moduleinfostruct mi;
 					mdbGetModuleInfo(&mi, mdb_ref);
-					mi.flags = MDB_VIRTUAL;
 					mi.channels = iter->devinfo.chan;
-					snprintf (mi.title, sizeof(mi.title), "%s", iter->name);
-					mi.modtype.integer.i = MODULETYPE("DEVv");
 					mdbWriteModuleInfo (mdb_ref, &mi);
 				}
-				handle->callback_file (handle->token, &file->head);
-				file->head.unref (&file->head);
+
+				handle->callback_file (handle->token, file);
+				file->unref (file);
 			}
+
 			handle->next = iter->next;
 			return 1;
 		}
@@ -309,7 +271,7 @@ static struct ocpfile_t *dir_devp_readdir_file (struct ocpdir_t *_self, uint32_t
 	for (iter = plPlayerDevices; iter; iter = iter->next)
 	{
 		char npath[64];
-		struct file_devp_t *file;
+		struct ocpfile_t *file;
 		uint32_t mdb_ref;
 
 		snprintf (npath, sizeof(npath), "%s.DEV", iter->handle);
@@ -319,41 +281,32 @@ static struct ocpfile_t *dir_devp_readdir_file (struct ocpdir_t *_self, uint32_t
 			continue;
 		}
 
-		file = malloc (sizeof (*file));
-		if (!file)
+		file = dev_file_create
+		(
+			_self,
+			npath,
+			iter->name, /* mdb title */
+			"", /* mdb composer */
+			strdup (iter->handle),
+			dir_devp_file_Init,
+			0, /* Run */
+			0, /* Close */
+			free /* Destructor */
+		);
+
+		if (file)
 		{
-			fprintf (stderr, "dir_devp_readdir_file: out of memory\n");
-			return 0;
+			mdb_ref = mdbGetModuleReference2 (file->dirdb_ref, 0);
+			if (mdb_ref != 0xffffffff)
+			{
+				struct moduleinfostruct mi;
+				mdbGetModuleInfo(&mi, mdb_ref);
+				mi.channels = iter->devinfo.chan;
+				mdbWriteModuleInfo (mdb_ref, &mi);
+			}
+
+			return file;
 		}
-
-		ocpfile_t_fill (&file->head,
-		                 file_devp_ref,
-		                 file_devp_unref,
-		                 _self,
-		                 file_devp_open,
-		                 file_devp_filesize,
-		                 file_devp_filesize_ready,
-		                 0, /* filename_override */
-		                 dirdbRef (dirdb_ref, dirdb_use_file),
-		                 1, /* refcount */
-		                 1  /* is_nodetect */);
-
-		/* file->filesize = iter->devinfo.mem; */
-		file->dev = iter;
-
-		mdb_ref = mdbGetModuleReference2 (file->head.dirdb_ref, strlen (plrIntr.name));
-		if (mdb_ref!=0xffffffff)
-		{
-			struct moduleinfostruct mi;
-			mdbGetModuleInfo(&mi, mdb_ref);
-			mi.flags = MDB_VIRTUAL;
-			mi.channels = iter->devinfo.chan;
-			snprintf (mi.title, sizeof(mi.title), "%s", iter->name);
-			mi.modtype.integer.i = MODULETYPE("DEVv");
-			mdbWriteModuleInfo (mdb_ref, &mi);
-		}
-
-		return &file->head;
 	}
 	return 0;
 }
@@ -369,7 +322,6 @@ static int playdevinit(void)
 
 	playdevinited = 1;
 
-	plRegisterInterface (&plrIntr);
 	plRegisterPreprocess (&plrPreprocess);
 
 	ocpdir_t_fill (&dir_devp,
@@ -441,7 +393,6 @@ static void playdevclose(void)
 		filesystem_setup_unregister_dir (&dir_devp);
 		dirdbUnref (dir_devp.dirdb_ref, dirdb_use_dir);
 
-		plUnregisterInterface (&plrIntr);
 		plUnregisterPreprocess (&plrPreprocess);
 
 		playdevinited = 0;
@@ -457,32 +408,10 @@ static void playdevclose(void)
 	}
 }
 
-static int plrSetDev(struct moduleinfostruct *mi, struct ocpfilehandle_t *fp, const struct cpifaceplayerstruct *cp)
-{
-	const char *path;
-	char *name;
-
-	if (mi->modtype.integer.i != MODULETYPE("DEVv"))
-	{
-		return 0;
-	}
-
-	dirdbGetName_internalstr (fp->dirdb_ref, &path);
-	splitpath4_malloc (path, 0, 0, &name, 0);
-
-	plrSetDevice(name, 1);
-
-	free (name);
-
-	return 0;
-}
-
-
 static void plrPrep(struct moduleinfostruct *m, struct ocpfilehandle_t **bp)
 {
 	plrResetDevice();
 }
 
-static struct interfacestruct plrIntr = {plrSetDev, 0, 0, "plrIntr" INTERFACESTRUCT_TAIL};
 static struct preprocregstruct plrPreprocess = {plrPrep PREPROCREGSTRUCT_TAIL};
 DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "plrbase", .desc = "OpenCP Player Devices System (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .Init = playdevinit, .Close = playdevclose, .sortindex = 30};

@@ -13,5 +13,4 @@ struct ocpfilehandle_t *mem_filehandle_open (int dirdb_ref, char *ptr, uint32_t 
 /* takes ownership of memory */
 struct ocpfile_t *mem_file_open (struct ocpdir_t *parent, int dirdb_ref, char *ptr, uint32_t len);
 
-
 #endif

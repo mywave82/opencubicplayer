@@ -146,7 +146,7 @@ devpalsa.o: devpalsa.c \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/filesystem-drive.h \
-	../filesel/filesystem-file-mem.h \
+	../filesel/filesystem-file-dev.h \
 	../filesel/filesystem-setup.h \
 	../filesel/mdb.h \
 	../filesel/modlist.h \

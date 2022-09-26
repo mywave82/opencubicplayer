@@ -116,7 +116,7 @@ static void mlRefreshDraw(const char *title)
 	}
 }
 
-static int medialibRefreshInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *ip)
+static int medialibRefreshInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API)
 {
 	if (medialib_sources_count)
 	{
@@ -127,7 +127,7 @@ static int medialibRefreshInit (struct moduleinfostruct *info, struct ocpfilehan
 	}
 }
 
-static interfaceReturnEnum medialibRefreshRun (void)
+static void medialibRefreshRun (void **token, const struct DevInterfaceAPI_t *API)
 {
 	while (1)
 	{
@@ -165,7 +165,7 @@ static interfaceReturnEnum medialibRefreshRun (void)
 						filesystem_resolve_dirdb_dir (medialib_sources[medialibRefreshSelected].dirdb_ref, &drive, &dir);
 						if (!dir)
 						{
-							return interfaceReturnNextAuto;
+							return;
 						}
 
 						dirdbTagSetParent (medialib_sources[medialibRefreshSelected].dirdb_ref);
@@ -184,7 +184,7 @@ static interfaceReturnEnum medialibRefreshRun (void)
 					/* fall-trough */
 				case KEY_EXIT:
 				case KEY_ESC:
-					return interfaceReturnNextAuto;
+					return;
 				default:
 					break;
 			}

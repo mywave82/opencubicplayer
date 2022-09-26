@@ -74,6 +74,7 @@
 #include "dirdb.h"
 #include "filesystem.h"
 #include "filesystem-drive.h"
+#include "filesystem-file-dev.h"
 #include "filesystem-bzip2.h"
 #include "filesystem-gzip.h"
 #include "filesystem-pak.h"
@@ -946,53 +947,53 @@ int fsLateInit(void)
 	return 1;
 }
 
-struct interfacestruct *CurrentVirtualInterface;
+static struct IOCTL_DevInterface *CurrentVirtualDevice;
+static struct ocpfilehandle_t *CurrentVirtualDeviceFile;
+static struct DevInterfaceAPI_t DevInterfaceAPI =
+{
+	cpiKeyHelp,
+	cpiKeyHelpClear,
+	cpiKeyHelpDisplay
+};
+
 static int VirtualInterfaceInit (struct moduleinfostruct *info, struct ocpfilehandle_t *fi, const struct cpifaceplayerstruct *cp)
 {
-#warning "VirtualInterface" should change into using ioctl for the action....
-	char name[128];
-	int res;
-
-	fi->seek_set (fi, 0);
-	res = fi->read (fi, name, sizeof (name) - 1);
-	if (res <= 0)
+	CurrentVirtualDevice = 0;
+	if (fi->ioctl (fi, IOCTL_DEVINTERFACE, &CurrentVirtualDevice))
 	{
-		fi->seek_set (fi, 0);
+		CurrentVirtualDevice = 0;
 		return 0;
 	}
-	name[res] = 0;
-	fi->seek_set (fi, 0);
-
-	for (CurrentVirtualInterface = plInterfaces; CurrentVirtualInterface; CurrentVirtualInterface = CurrentVirtualInterface->next)
+	if (CurrentVirtualDevice)
 	{
-		if (!strcmp (CurrentVirtualInterface->name, name))
+		if (!CurrentVirtualDevice->Init (info, fi, &DevInterfaceAPI))
 		{
-			int res = CurrentVirtualInterface->Init (info, fi, cp);
-			if (!res)
-			{
-				CurrentVirtualInterface = 0;
-				return 0;
-			}
-			return 1;
+			CurrentVirtualDevice = 0;
+			return 0;
 		}
+		CurrentVirtualDeviceFile = fi;
+		CurrentVirtualDeviceFile->ref (CurrentVirtualDeviceFile);
 	}
-	return 0;
+	return 1;
 }
 
 static interfaceReturnEnum VirtualInterfaceRun (void)
 {
-	if (CurrentVirtualInterface && CurrentVirtualInterface->Run)
+	if (CurrentVirtualDevice)
 	{
-		return CurrentVirtualInterface->Run ();
+		return CurrentVirtualDevice->Run (CurrentVirtualDeviceFile, &DevInterfaceAPI);
 	}
-	return interfaceReturnNextAuto; /* good choice? */
+	return interfaceReturnNextAuto;
 }
 
 static void VirtualInterfaceClose (void)
 {
-	if (CurrentVirtualInterface && CurrentVirtualInterface->Close)
+	if (CurrentVirtualDevice)
 	{
-		return CurrentVirtualInterface->Close ();
+		CurrentVirtualDevice->Close (CurrentVirtualDeviceFile, &DevInterfaceAPI);
+		CurrentVirtualDeviceFile->unref (CurrentVirtualDeviceFile);
+		CurrentVirtualDeviceFile = 0;
+		CurrentVirtualDevice = 0;
 	}
 }
 

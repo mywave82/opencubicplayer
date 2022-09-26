@@ -36,7 +36,7 @@
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/filesystem-drive.h"
-#include "filesel/filesystem-file-mem.h"
+#include "filesel/filesystem-file-dev.h"
 #include "filesel/filesystem-setup.h"
 #include "filesel/filesystem-unix.h"
 #include "filesel/pfilesel.h"
@@ -81,11 +81,6 @@ static char *config_chargen;
 struct browser_t entry_kernal;
 struct browser_t entry_basic;
 struct browser_t entry_chargen;
-
-static int sidConfigInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *ip)
-{
-	return 1;
-}
 
 static void ConfigDrawItems (const int lineno, int xpos, const int width, const char **list, const int listlength, const int selected, const int active)
 {
@@ -904,7 +899,7 @@ static void refresh_dir (uint32_t ref, uint32_t old, int *esel)
 	}
 }
 
-static interfaceReturnEnum sidConfigRun (void)
+static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 {
 	int esel = 0;
 
@@ -1262,40 +1257,37 @@ superexit:
 	dirdbUnref (entry_kernal.dirdb_ref, dirdb_use_file);
 	dirdbUnref (entry_basic.dirdb_ref, dirdb_use_file);
 	dirdbUnref (entry_chargen.dirdb_ref, dirdb_use_file);
-
-	return interfaceReturnNextAuto;
 }
 
-static struct ocpfile_t      *sidconfig; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv
+static struct ocpfile_t *sidconfig; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv
 
-static int                    sidConfigInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *);
-static interfaceReturnEnum    sidConfigRun  (void);
-static struct interfacestruct sidConfigIntr = {sidConfigInit, sidConfigRun, 0, "libsidplayfp Config" INTERFACESTRUCT_TAIL};
+static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API);
 
 int __attribute__ ((visibility ("internal"))) sid_config_init (void)
 {
-	struct moduleinfostruct m;
-	uint32_t mdbref;
+	sidconfig = dev_file_create (
+		dmSetup->basedir,
+		"sidconfig.dev",
+		"libsidplayfp Configuration",
+		"",
+		0, /* token */
+		0, /* Init */
+		sidConfigRun,
+		0, /* Close */
+		0  /* Destructor */
+	);
 
-	sidconfig = mem_file_open (dmSetup->basedir, dirdbFindAndRef (dmSetup->basedir->dirdb_ref, "sidconfig.dev", dirdb_use_file), strdup (sidConfigIntr.name), strlen (sidConfigIntr.name));
-	dirdbUnref (sidconfig->dirdb_ref, dirdb_use_file);
-	mdbref = mdbGetModuleReference2 (sidconfig->dirdb_ref, strlen (sidConfigIntr.name));
-	mdbGetModuleInfo (&m, mdbref);
-	m.modtype.integer.i = MODULETYPE("DEVv");
-	strcpy (m.title, "libsidplayfp Configuration");
-	mdbWriteModuleInfo (mdbref, &m);
 	filesystem_setup_register_file (sidconfig);
-	plRegisterInterface (&sidConfigIntr);
 
 	return errOk;
 }
 
 void __attribute__ ((visibility ("internal"))) sid_config_done (void)
 {
-	plUnregisterInterface (&sidConfigIntr);
 	if (sidconfig)
 	{
 		filesystem_setup_unregister_file (sidconfig);
+		sidconfig->unref (sidconfig);
 		sidconfig = 0;
 	}
 }

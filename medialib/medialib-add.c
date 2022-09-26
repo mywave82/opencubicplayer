@@ -236,13 +236,16 @@ static void medialibAddClear (void)
 	medialibAddDirEntries = 0;
 	medialibAddDirSize = 0;
 
-	medialibAddCurDir->unref (medialibAddCurDir);
-	medialibAddCurDir = 0;
+	if (medialibAddCurDir)
+	{
+		medialibAddCurDir->unref (medialibAddCurDir);
+		medialibAddCurDir = 0;
+	}
 	free (medialibAddPath);
 	      medialibAddPath = 0;
 }
 
-static int medialibAddInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *cp)
+static int medialibAddInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API)
 {
 #ifndef __W32__
 	if (dmFILE->cwd)
@@ -268,7 +271,7 @@ static int medialib_source_cmp(const void *p1, const void *p2)
 	return strcmp (q1->path, q2->path);
 }
 
-static interfaceReturnEnum medialibAddRun (void)
+static void medialibAddRun (void **token, const struct DevInterfaceAPI_t *API)
 {
 	int dsel = 0;
 	while (1)
@@ -367,7 +370,7 @@ static interfaceReturnEnum medialibAddRun (void)
 				case KEY_EXIT:
 				case KEY_ESC:
 					medialibAddClear();
-					return interfaceReturnNextAuto;
+					return;
 				default:
 					break;
 			}
@@ -375,5 +378,3 @@ static interfaceReturnEnum medialibAddRun (void)
 		framelock();
 	}
 }
-
-

@@ -102,10 +102,10 @@ static void mlRemoveDraw(const char *title)
 	displaystr (mlTop + 1, mlLeft + 1,  0x07, "Select an item and press ", 25);
 	displaystr (mlTop + 1, mlLeft + 26, 0x0f, "<delete>", 8);
 	displaystr (mlTop + 1, mlLeft + 34, 0x07, " or ", 4);
-	displaystr (mlTop + 1, mlLeft + 38, 0x0f, "<left>", 5);
+	displaystr (mlTop + 1, mlLeft + 38, 0x0f, "<left>", 6);
 	displaystr (mlTop + 1, mlLeft + 43, 0x07, ", or ", 5);
-	displaystr (mlTop + 1, mlLeft + 48, 0x0f, "<esc>", 5);
-	displaystr (mlTop + 1, mlLeft + 53, 0x07, " to abort", mlWidth - 54);
+	displaystr (mlTop + 1, mlLeft + 49, 0x0f, "<esc>", 5);
+	displaystr (mlTop + 1, mlLeft + 54, 0x07, " to abort", mlWidth - 55);
 
 	for (i=0; i < (mlHeight - 4); i++)
 	{
@@ -118,7 +118,7 @@ static void mlRemoveDraw(const char *title)
 	}
 }
 
-static int medialibRemoveInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *cp)
+static int medialibRemoveInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API)
 {
 	if (medialib_sources_count)
 	{
@@ -129,7 +129,7 @@ static int medialibRemoveInit (struct moduleinfostruct *info, struct ocpfilehand
 	}
 }
 
-static interfaceReturnEnum medialibRemoveRun (void)
+static void medialibRemoveRun (void **token, const struct DevInterfaceAPI_t *API)
 {
 	while (1)
 	{
@@ -189,7 +189,7 @@ static interfaceReturnEnum medialibRemoveRun (void)
 					/* fall-trough */
 				case KEY_EXIT:
 				case KEY_ESC:
-					return interfaceReturnNextAuto;
+					return;
 				default:
 					break;
 			}

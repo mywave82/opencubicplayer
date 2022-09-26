@@ -148,6 +148,16 @@ filesystem-drive.o: filesystem-drive.c \
 	../stuff/compat.h
 	$(CC) $< -o $@ -c
 
+filesystem-file-dev.o: filesystem-file-dev.c \
+	../config.h \
+	../types.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
+	../filesel/filesystem-file-dev.h \
+	../filesel/mdb.h \
+	../filesel/pfilesel.h
+	$(CC) $< -o $@ -c
+
 filesystem-file-mem.o: filesystem-file-mem.c \
 	../config.h \
 	../types.h \
@@ -351,13 +361,13 @@ musicbrainz.o: musicbrainz.c \
 	../config.h \
 	../types.h \
 	../boot/psetting.h \
-	dirdb.h \
-	filesystem.h \
-	filesystem-drive.h \
-	filesystem-file-mem.h \
-	filesystem-setup.h \
-	musicbrainz.h \
-	pfilesel.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
+	../filesel/filesystem-drive.h \
+	../filesel/filesystem-file-dev.h \
+	../filesel/filesystem-setup.h \
+	../filesel/musicbrainz.h \
+	../filesel/pfilesel.h \
 	../stuff/compat.h \
 	../stuff/framelock.h \
 	../stuff/poutput.h \
@@ -408,6 +418,7 @@ pfilesel.o: pfilesel.c \
 	filesystem.h \
 	filesystem-bzip2.h \
 	filesystem-drive.h \
+	filesystem-file-dev.h \
 	filesystem-gzip.h \
 	filesystem-pak.h \
 	filesystem-playlist.h \

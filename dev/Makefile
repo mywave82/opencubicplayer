@@ -76,7 +76,7 @@ deviplay.o: deviplay.c deviplay.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/filesystem-drive.h \
-	../filesel/filesystem-file-mem.h \
+	../filesel/filesystem-file-dev.h \
 	../filesel/filesystem-setup.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
@@ -96,7 +96,7 @@ deviwave.o: deviwave.c deviwave.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/filesystem-drive.h \
-	../filesel/filesystem-file-mem.h \
+	../filesel/filesystem-file-dev.h \
 	../filesel/filesystem-setup.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \

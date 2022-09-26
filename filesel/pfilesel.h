@@ -76,6 +76,13 @@ struct interfacestruct
 };
 #define INTERFACESTRUCT_TAIL ,0
 
+struct DevInterface
+{
+	int (*Init)(struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *cp);
+	interfaceReturnEnum (*Run)(const struct cpifaceplayerstruct *cp);
+	void (*Close)(const struct cpifaceplayerstruct *cp);
+};
+
 void plRegisterInterface(struct interfacestruct *interface);
 void plUnregisterInterface(struct interfacestruct *interface);
 void plFindInterface(struct moduletype modtype, const struct interfacestruct **i, const struct cpifaceplayerstruct **cp);

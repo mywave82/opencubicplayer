@@ -40,7 +40,7 @@
 #include "filesel/filesystem.h"
 #include "filesel/filesystem-dir-mem.h"
 #include "filesel/filesystem-drive.h"
-#include "filesel/filesystem-file-mem.h"
+#include "filesel/filesystem-file-dev.h"
 #include "filesel/filesystem-unix.h"
 #include "filesel/modlist.h"
 #include "filesel/mdb.h"
@@ -70,17 +70,14 @@ static struct ocpfile_t    *removefiles;  // needs to overlay an dialog above fi
 static struct ocpdir_t      listall;  // complete query
 static struct ocpdir_t      search;   // needs to throttle a dialog, before it can complete!! upon listing
 
-static int                    medialibAddInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *cp);
-static interfaceReturnEnum    medialibAddRun  (void);
-static struct interfacestruct medialibAddIntr = {medialibAddInit, medialibAddRun, 0, "medialibAdd" INTERFACESTRUCT_TAIL};
+static int  medialibAddInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API);
+static void medialibAddRun  (void **token, const struct DevInterfaceAPI_t *API);
 
-static int                    medialibRefreshInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *cp);
-static interfaceReturnEnum    medialibRefreshRun  (void);
-static struct interfacestruct medialibRefreshIntr = {medialibRefreshInit, medialibRefreshRun, 0, "medialibRefresh" INTERFACESTRUCT_TAIL};
+static int  medialibRefreshInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API);
+static void medialibRefreshRun  (void **token, const struct DevInterfaceAPI_t *API);
 
-static int                    medialibRemoveInit (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct cpifaceplayerstruct *cp);
-static interfaceReturnEnum    medialibRemoveRun  (void);
-static struct interfacestruct medialibRemoveIntr = {medialibRemoveInit, medialibRemoveRun, 0, "medialibRemove" INTERFACESTRUCT_TAIL};
+static int  medialibRemoveInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API);
+static void medialibRemoveRun  (void **token, const struct DevInterfaceAPI_t *API);
 
 static void              ocpdir_listall_ref (struct ocpdir_t *self);
 static void              ocpdir_listall_unref (struct ocpdir_t *self);
@@ -191,8 +188,6 @@ static int mlint(void)
 	struct ocpdir_t *r;
 	unsigned char *data = 0;
 	size_t datasize = 0;
-	uint32_t mdbref;
-	struct moduleinfostruct m;
 
 	medialib_root = ocpdir_mem_alloc (0, "medialib:");
 	if (!medialib_root)
@@ -209,35 +204,44 @@ static int mlint(void)
 		free (data);
 	}
 
-	addfiles = mem_file_open (r, dirdbFindAndRef (r->dirdb_ref, "add.dev", dirdb_use_medialib), strdup (medialibAddIntr.name), strlen (medialibAddIntr.name));
-	dirdbUnref (addfiles->dirdb_ref, dirdb_use_medialib);
-	mdbref = mdbGetModuleReference2 (addfiles->dirdb_ref, strlen (medialibAddIntr.name));
-	mdbGetModuleInfo (&m, mdbref);
-	m.modtype.integer.i = MODULETYPE("DEVv");
-	strcpy (m.title, "medialib add source");
-	mdbWriteModuleInfo (mdbref, &m);
+	addfiles = dev_file_create (
+		r, /* parent-dir */
+		"add.dev",
+		"medialib add source",
+		"",
+		0, /* token */
+		medialibAddInit,
+		medialibAddRun,
+		0, /* Close */
+		0  /* Destructor */
+	);
 	ocpdir_mem_add_file (medialib_root, addfiles);
-	plRegisterInterface (&medialibAddIntr);
 
-	refreshfiles = mem_file_open (r, dirdbFindAndRef (r->dirdb_ref, "refresh.dev", dirdb_use_medialib), strdup (medialibRefreshIntr.name), strlen (medialibRefreshIntr.name));
-	dirdbUnref (refreshfiles->dirdb_ref, dirdb_use_medialib);
-	mdbref = mdbGetModuleReference2 (refreshfiles->dirdb_ref, strlen (medialibRefreshIntr.name));
-	mdbGetModuleInfo (&m, mdbref);
-	m.modtype.integer.i = MODULETYPE("DEVv");
-	strcpy (m.title, "medialib refresh source");
-	mdbWriteModuleInfo (mdbref, &m);
+	refreshfiles = dev_file_create (
+		r, /* parent-dir */
+		"refresh.dev",
+		"medialib refresh source",
+		"",
+		0, /* token */
+		medialibRefreshInit,
+		medialibRefreshRun,
+		0, /* Close */
+		0  /* Destructor */
+	);
 	ocpdir_mem_add_file (medialib_root, refreshfiles);
-	plRegisterInterface (&medialibRefreshIntr);
 
-	removefiles = mem_file_open (r, dirdbFindAndRef (r->dirdb_ref, "remove.dev", dirdb_use_medialib), strdup (medialibRemoveIntr.name), strlen (medialibRemoveIntr.name));
-	dirdbUnref (removefiles->dirdb_ref, dirdb_use_medialib);
-	mdbref = mdbGetModuleReference2 (removefiles->dirdb_ref, strlen (medialibRemoveIntr.name));
-	mdbGetModuleInfo (&m, mdbref);
-	m.modtype.integer.i = MODULETYPE("DEVv");
-	strcpy (m.title, "medialib remove source");
-	mdbWriteModuleInfo (mdbref, &m);
+	removefiles = dev_file_create (
+		r, /* parent-dir */
+		"remove.dev",
+		"medialib remove source",
+		"",
+		0, /* token */
+		medialibRemoveInit,
+		medialibRemoveRun,
+		0, /* Close */
+		0  /* Destructor */
+	);
 	ocpdir_mem_add_file (medialib_root, removefiles);
-	plRegisterInterface (&medialibRemoveIntr);
 
 	ocpdir_t_fill (&listall,
 	                ocpdir_listall_ref,
@@ -287,7 +291,6 @@ static void mlclose(void)
 
 	mlSearchClear();
 
-	plUnregisterInterface (&medialibRemoveIntr);
 	if (removefiles)
 	{
 		ocpdir_mem_remove_file (medialib_root, removefiles);
@@ -295,7 +298,6 @@ static void mlclose(void)
 		removefiles = 0;
 	}
 
-	plUnregisterInterface (&medialibRefreshIntr);
 	if (refreshfiles)
 	{
 		ocpdir_mem_remove_file (medialib_root, refreshfiles);
@@ -303,7 +305,6 @@ static void mlclose(void)
 		refreshfiles = 0;
 	}
 
-	plUnregisterInterface (&medialibAddIntr);
 	if (addfiles)
 	{
 		ocpdir_mem_remove_file (medialib_root, addfiles);
