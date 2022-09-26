@@ -674,7 +674,7 @@ struct keytranslate_t translate[] =
 {
 	{SDLK_BACKSPACE,    KEY_BACKSPACE},
 	{SDLK_TAB,          KEY_TAB},
-	{SDLK_DELETE,       KEY_DELETE}, /* ??? */
+	{SDLK_DELETE,       KEY_DELETE},
 	{SDLK_RETURN,       _KEY_ENTER},
 	{SDLK_RETURN2,      _KEY_ENTER},
 	/*SDLK_PAUSE*/
@@ -1396,7 +1396,7 @@ static int ekbhit_sdl2dummy(void)
 				skipone = 0;
 
 				if ((!(event.key.keysym.mod & (KMOD_CTRL|KMOD_ALT))) && // ignore shift
-				      (event.key.keysym.sym >= 32) && (event.key.keysym.sym <= 127))
+				      (event.key.keysym.sym >= 32) && (event.key.keysym.sym < 127))
 				{ // We use SDL_TEXTINPUT event to fetch all these now...
 					break;
 				}
@@ -1461,8 +1461,13 @@ static int ekbhit_sdl2dummy(void)
 				}
 
 				if (event.key.keysym.mod & (KMOD_CTRL|KMOD_SHIFT|KMOD_ALT))
+				{
 					break;
+				}
 
+#ifdef SDL2_DEBUG
+				fprintf (stderr, "KEY: %d 0x%x\n", event.key.keysym.sym, event.key.keysym.sym);
+#endif
 				for (index=0;translate[index].OCP!=0xffff;index++)
 				{
 					if (translate[index].SDL==event.key.keysym.sym)

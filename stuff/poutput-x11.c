@@ -862,10 +862,13 @@ static void x11_common_event_loop(void)
 						___push_key((uint8_t)buf[i]);
 					}
 				}
-				if ((n_chars==1)/*&&(buf[0]>=32*/&&ks!=XK_Delete)
+				if ((n_chars==1)/*&&(buf[0]>=32*/)
 				{
 					/* fprintf (stderr, "PRESS: %d %c, ShiftMask=%d, ControlMask=%d, Mod1Mask=%d\n", buf[0], buf[0], event.xkey.state & ShiftMask, event.xkey.state & ControlMask, event.xkey.state & Mod1Mask); */
-					if ((event.xkey.state&(ShiftMask|ControlMask|Mod1Mask))==ControlMask)
+					if (ks == XK_Delete)
+					{
+						key = KEY_DELETE;
+					} else if ((event.xkey.state&(ShiftMask|ControlMask|Mod1Mask))==ControlMask)
 					{
 						switch (toupper(buf[0]))
 						{
