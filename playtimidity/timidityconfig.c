@@ -483,11 +483,11 @@ static int DefaultPredelayFactor;
 static int DefaultDelayMode;
 static int DefaultDelay;
 static int DefaultChorus;
-static void timidityConfigDraw (int EditPos)
+static void timidityConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 {
 	int large;
 	int mlWidth, mlHeight, mlTop, mlLeft;
-	const char *configfile = cfGetProfileString ("timidity", "configfile", "");
+	const char *configfile = API->configAPI->GetProfileString ("timidity", "configfile", "");
 	const char *reverbs[] = {"disable", "original", "global-original", "freeverb", "global-freeverb"};
 	const char *effect_lr_modes[] = {"disable", "left", "right", "both"};
 	const char *disable_enable[] = {"disable", "enable"};
@@ -624,14 +624,14 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 
 	refresh_configfiles ();
 
-	DefaultReverbMode     = cfGetProfileInt ("timidity", "reverbmode",       2, 10);
-	DefaultReverbLevel    = cfGetProfileInt ("timidity", "reverblevel",     40, 10);
-	DefaultScaleRoom      = cfGetProfileInt ("timidity", "scaleroom",       28, 10);
-	DefaultOffsetRoom     = cfGetProfileInt ("timidity", "offsetroom",      70, 10);
-	DefaultPredelayFactor = cfGetProfileInt ("timidity", "predelayfactor", 100, 10);
-	DefaultDelayMode      = cfGetProfileInt ("timidity", "delaymode",       -1, 10) + 1;
-	DefaultDelay          = cfGetProfileInt ("timidity", "delay",           25, 10);
-	DefaultChorus         = cfGetProfileInt ("timidity", "chorusenabled",    1, 10);
+	DefaultReverbMode     = API->configAPI->GetProfileInt ("timidity", "reverbmode",       2, 10);
+	DefaultReverbLevel    = API->configAPI->GetProfileInt ("timidity", "reverblevel",     40, 10);
+	DefaultScaleRoom      = API->configAPI->GetProfileInt ("timidity", "scaleroom",       28, 10);
+	DefaultOffsetRoom     = API->configAPI->GetProfileInt ("timidity", "offsetroom",      70, 10);
+	DefaultPredelayFactor = API->configAPI->GetProfileInt ("timidity", "predelayfactor", 100, 10);
+	DefaultDelayMode      = API->configAPI->GetProfileInt ("timidity", "delaymode",       -1, 10) + 1;
+	DefaultDelay          = API->configAPI->GetProfileInt ("timidity", "delay",           25, 10);
+	DefaultChorus         = API->configAPI->GetProfileInt ("timidity", "chorusenabled",    1, 10);
 	if (DefaultReverbMode     <    0) DefaultReverbMode     =    0;
 	if (DefaultReverbLevel    <    0) DefaultReverbLevel    =    0;
 	if (DefaultScaleRoom      <    0) DefaultScaleRoom      =    0;
@@ -652,7 +652,7 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 	while (1)
 	{
 		fsDraw();
-		timidityConfigDraw (esel);
+		timidityConfigDraw (esel, API);
 		while (ekbhit())
 		{
 			int key = egetch();
@@ -684,7 +684,7 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 						int dsel = 0;
 						int inner = 1;
 						{ /* preselect dsel */
-							const char *configfile = cfGetProfileString ("timidity", "configfile", "");
+							const char *configfile = API->configAPI->GetProfileString ("timidity", "configfile", "");
 							int i;
 							if (configfile[0])
 							{
@@ -737,12 +737,12 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 									case _KEY_ENTER:
 										if (!dsel)
 										{
-											cfSetProfileString ("timidity", "configfile", "");
+											API->configAPI->SetProfileString ("timidity", "configfile", "");
 										} else if (dsel < (global_timidity_count + 1))
 										{
-											cfSetProfileString ("timidity", "configfile", global_timidity_path[dsel - 1]);
+											API->configAPI->SetProfileString ("timidity", "configfile", global_timidity_path[dsel - 1]);
 										} else {
-											cfSetProfileString ("timidity", "configfile", sf2_files_path[dsel - 1 - global_timidity_count]);
+											API->configAPI->SetProfileString ("timidity", "configfile", sf2_files_path[dsel - 1 - global_timidity_count]);
 										}
 										inner = 0;
 										break;
@@ -901,7 +901,7 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 					break;
 				case KEY_EXIT:
 				case KEY_ESC:
-					cfStoreConfig();
+					API->configAPI->StoreConfig();
 					goto superexit;
 					break;
 			}
@@ -912,15 +912,15 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 superexit:
 	reset_configfiles ();
 
-	cfSetProfileInt ("timidity", "reverbmode",     DefaultReverbMode,     10);
-	cfSetProfileInt ("timidity", "reverblevel",    DefaultReverbLevel,    10);
-	cfSetProfileInt ("timidity", "scaleroom",      DefaultScaleRoom,      10);
-	cfSetProfileInt ("timidity", "offsetroom",     DefaultOffsetRoom,     10);
-	cfSetProfileInt ("timidity", "predelayfactor", DefaultPredelayFactor, 10);
-	cfSetProfileInt ("timidity", "delaymode",      DefaultDelayMode - 1,  10);
-	cfSetProfileInt ("timidity", "delay",          DefaultDelay,          10);
-	cfSetProfileInt ("timidity", "chorusenabled",  DefaultChorus,         10);
-	cfStoreConfig ();
+	API->configAPI->SetProfileInt ("timidity", "reverbmode",     DefaultReverbMode,     10);
+	API->configAPI->SetProfileInt ("timidity", "reverblevel",    DefaultReverbLevel,    10);
+	API->configAPI->SetProfileInt ("timidity", "scaleroom",      DefaultScaleRoom,      10);
+	API->configAPI->SetProfileInt ("timidity", "offsetroom",     DefaultOffsetRoom,     10);
+	API->configAPI->SetProfileInt ("timidity", "predelayfactor", DefaultPredelayFactor, 10);
+	API->configAPI->SetProfileInt ("timidity", "delaymode",      DefaultDelayMode - 1,  10);
+	API->configAPI->SetProfileInt ("timidity", "delay",          DefaultDelay,          10);
+	API->configAPI->SetProfileInt ("timidity", "chorusenabled",  DefaultChorus,         10);
+	API->configAPI->StoreConfig ();
 }
 
 static struct ocpfile_t *timidityconfig; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv

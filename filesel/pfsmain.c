@@ -202,7 +202,8 @@ static int _fsMain(int argc, char *argv[])
 	{
 		mdbRegisterReadInfo,
 		fsTypeRegister,
-		fsRegisterExt
+		fsRegisterExt,
+		&configAPI
 	};
 
 	struct PluginCloseAPI_t PluginCloseAPI =

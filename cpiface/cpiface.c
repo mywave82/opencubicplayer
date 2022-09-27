@@ -2216,6 +2216,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.ringbufferAPI = &ringbufferAPI;
 	cpifaceSessionAPI.Public.mcpAPI = &mcpAPI;
 	cpifaceSessionAPI.Public.drawHelperAPI = &drawHelperAPI;
+	cpifaceSessionAPI.Public.configAPI = &configAPI;
 
 	dirdbGetName_internalstr (fi->dirdb_ref, &filename);
 	utf8_XdotY_name ( 8, 3, cpifaceSessionAPI.Public.utf8_8_dot_3 , filename);

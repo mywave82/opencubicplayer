@@ -32,6 +32,8 @@
 
 extern "C"
 {
+#include "config.h"
+#include "types.h"
 #include "boot/psetting.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem-unix.h"
@@ -127,7 +129,7 @@ namespace libsidplayfp
 		}
 	}
 
-	ConsolePlayer::ConsolePlayer (const unsigned int rate) :
+	ConsolePlayer::ConsolePlayer (const unsigned int rate, const struct configAPI_t *configAPI) :
 		m_tune(nullptr),
 		m_state(playerStopped),
 		selected_track(0),
@@ -138,7 +140,7 @@ namespace libsidplayfp
 		m_engCfg = sidplayer.config();
 		m_engCfg.powerOnDelay = 10000;
 
-		const char *defaultC64model = cfGetProfileString("libsidplayfp", "defaultC64", "PAL");
+		const char *defaultC64model = configAPI->GetProfileString("libsidplayfp", "defaultC64", "PAL");
 		if (!strcasecmp(defaultC64model, "PAL"))
 		{
 			//fprintf (stderr, "defaultC64=PAL\n");
@@ -168,10 +170,10 @@ namespace libsidplayfp
 			m_engCfg.defaultC64Model = SidConfig::PAL;
 		}
 
-		m_engCfg.forceC64Model = cfGetProfileBool("libsidplayfp", "forceC64", 0, 0);
+		m_engCfg.forceC64Model = configAPI->GetProfileBool("libsidplayfp", "forceC64", 0, 0);
 		//fprintf (stderr, "forceC64Model=%d\n", m_engCfg.forceC64Model);
 
-		const char *defaultSIDmodel = cfGetProfileString("libsidplayfp", "defaultSID", "MOS6581");
+		const char *defaultSIDmodel = configAPI->GetProfileString("libsidplayfp", "defaultSID", "MOS6581");
 		if (!strcasecmp(defaultSIDmodel, "MOS6581"))
 		{
 			//fprintf (stderr, "defaultSID=MOS6581\n");
@@ -185,10 +187,10 @@ namespace libsidplayfp
 			m_engCfg.defaultSidModel = SidConfig::MOS6581;
 		}
 
-		m_engCfg.forceSidModel = cfGetProfileBool("libsidplayfp", "forceSID", 0, 0);
+		m_engCfg.forceSidModel = configAPI->GetProfileBool("libsidplayfp", "forceSID", 0, 0);
 		//fprintf (stderr, "forceSIDModel=%d\n", m_engCfg.forceSidModel);
 
-		const char *CIAmodel = cfGetProfileString("libsidplayfp", "CIA", "MOS6526");
+		const char *CIAmodel = configAPI->GetProfileString("libsidplayfp", "CIA", "MOS6526");
 		if (!strcasecmp(CIAmodel, "MOS6526"))
 		{
 			//fprintf (stderr, "CIA=MOS6526\n");
@@ -210,10 +212,10 @@ namespace libsidplayfp
 
 		m_engCfg.playback = SidConfig::STEREO;
 
-		m_filter.enabled = cfGetProfileBool("libsidplayfp", "filter", 1, 0);
+		m_filter.enabled = configAPI->GetProfileBool("libsidplayfp", "filter", 1, 0);
 		//fprintf (stderr, "filter=%d\n", m_filter.enabled);
 
-		const char *bias = cfGetProfileString("libsidplayfp", "filterbias", "0.0");
+		const char *bias = configAPI->GetProfileString("libsidplayfp", "filterbias", "0.0");
 		m_filter.bias = strtod(bias, &endptr);
 		if ((*endptr != 0) || (bias == endptr))
 		{
@@ -223,7 +225,7 @@ namespace libsidplayfp
 			//fprintf (stderr, "filterbias=%lf\n", m_filter.bias);
 		}
 
-		const char *curve6581 = cfGetProfileString("libsidplayfp", "filtercurve6581", "0.5");
+		const char *curve6581 = configAPI->GetProfileString("libsidplayfp", "filtercurve6581", "0.5");
 		m_filter.filterCurve6581 = strtod(curve6581, &endptr);
 		if ((*endptr != 0) || (curve6581 == endptr))
 		{
@@ -233,7 +235,7 @@ namespace libsidplayfp
 			//fprintf (stderr, "filtercurve6581=%lf\n", m_filter.filterCurve6581);
 		}
 
-		const char *curve8580 = cfGetProfileString("libsidplayfp", "filtercurve8580", "0.5");
+		const char *curve8580 = configAPI->GetProfileString("libsidplayfp", "filtercurve8580", "0.5");
 		m_filter.filterCurve8580 = strtod(curve8580, &endptr);
 		if ((*endptr != 0) || (curve8580 == endptr))
 		{
@@ -243,15 +245,15 @@ namespace libsidplayfp
 			//fprintf (stderr, "filtercurve8580=%lf\n", m_filter.filterCurve8580);
 		}
 
-		m_engCfg.digiBoost = cfGetProfileBool("libsidplayfp", "digiboost", 0, 0);
+		m_engCfg.digiBoost = configAPI->GetProfileBool("libsidplayfp", "digiboost", 0, 0);
 		//fprintf (stderr, "digiboost=%d\n", m_engCfg.digiBoost);
 
 		// TODO, add check of this return value
-		createSidEmu();
+		createSidEmu (configAPI);
 
-		const char *kernal_string  = cfGetProfileString("libsidplayfp", "kernal",  "KERNAL.ROM");
-		const char *basic_string   = cfGetProfileString("libsidplayfp", "basic",   "BASIC.ROM");
-		const char *chargen_string = cfGetProfileString("libsidplayfp", "chargen", "CHARGEN.ROM");
+		const char *kernal_string  = configAPI->GetProfileString("libsidplayfp", "kernal",  "KERNAL.ROM");
+		const char *basic_string   = configAPI->GetProfileString("libsidplayfp", "basic",   "BASIC.ROM");
+		const char *chargen_string = configAPI->GetProfileString("libsidplayfp", "chargen", "CHARGEN.ROM");
 
 		uint32_t dirdb_base = cfConfigDir_dirdbref; /* should be the parent_dir of the file you want to load */
 		uint32_t kernal_ref;
@@ -338,12 +340,12 @@ namespace libsidplayfp
 
 
 	// Create the sid emulation
-	bool ConsolePlayer::createSidEmu (/*SIDEMUS emu*/)
+	bool ConsolePlayer::createSidEmu (const struct configAPI_t *configAPI /*SIDEMUS emu*/)
 	{
 		// Remove old driver and emulation - should be no-op
 		clearSidEmu ();
 
-		int use_residfp = !strcmp(cfGetProfileString("libsidplayfp", "emulator", "residfp"), "residfp");
+		int use_residfp = !strcmp(configAPI->GetProfileString("libsidplayfp", "emulator", "residfp"), "residfp");
 
 		//fprintf (stderr, "use_residfp=%d\n", use_residfp);
 

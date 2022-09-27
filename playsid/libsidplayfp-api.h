@@ -1,6 +1,11 @@
 #ifndef __PLAYSID_LIBSIDPLAYFP_API_H
 #define __PLAYSID_LIBSIDPLAYFP_API_H
 
+extern "C"
+{
+struct configAPI_t;
+}
+
 #include <sidplayfp/SidTune.h>
 #include <c64/c64.h>
 #include <player.h>
@@ -25,7 +30,7 @@ namespace libsidplayfp
 			playerRunning,
 		} player_state_t;
 
-		ConsolePlayer (const unsigned int rate);
+		ConsolePlayer (const unsigned int rate, const struct configAPI_t *configAPI);
 		virtual ~ConsolePlayer (void);
 
 		bool load (const uint_least8_t* sourceBuffer, uint_least32_t bufferLen);
@@ -84,7 +89,7 @@ namespace libsidplayfp
 		} m_filter;
 
 		void clearSidEmu (void);
-		bool createSidEmu (void);
+		bool createSidEmu (const struct configAPI_t *configAPI);
 
 		bool open (void);
 

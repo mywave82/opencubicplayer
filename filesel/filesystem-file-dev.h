@@ -5,6 +5,7 @@
 
 #include "filesel/pfilesel.h" // interfaceReturnEnum
 
+struct configAPI_t;
 struct ocpdir_t;
 struct ocpfile_t;
 struct ocpfilehandle_t;
@@ -12,6 +13,7 @@ struct moduleinfostruct;
 
 struct DevInterfaceAPI_t
 {
+	struct configAPI_t *configAPI;
 	void (*KeyHelp) (uint16_t key, const char *shorthelp); /* Called on ALT-K to issue help about each keyboard shortcut */
 	void (*KeyHelpClear) (void); /* Clears the current keyboard shortcut list, only used by keyboard/display loops */
 	int  (*KeyHelpDisplay) (void); /* Draws the keyboard shortcut list and polls keyboard. Call for each draw-iteration until it returns zero */

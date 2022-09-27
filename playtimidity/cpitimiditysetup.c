@@ -500,14 +500,14 @@ void __attribute__ ((visibility ("internal"))) cpiTimiditySetupInit (struct cpif
 		TimiditySetupLevel = (-tc.opt_reverb_control) & 0x7f;
 	}
 #else
-	TimiditySetupSelected       = cfGetProfileInt ("timidity", "reverbmode",       2, 10);
-	TimiditySetupLevel          = cfGetProfileInt ("timidity", "reverblevel",     40, 10);
-	TimiditySetupScaleRoom      = cfGetProfileInt ("timidity", "scaleroom",       28, 10);
-	TimiditySetupOffsetRoom     = cfGetProfileInt ("timidity", "offsetroom",      70, 10);
-	TimiditySetupPreDelayFactor = cfGetProfileInt ("timidity", "predelayfactor", 100, 10);
-	tc.effect_lr_mode           = cfGetProfileInt ("timidity", "delaymode",       -1, 10);
-	tc.effect_lr_delay_msec     = cfGetProfileInt ("timidity", "delay",           25, 10);
-	tc.opt_chorus_control       = cfGetProfileInt ("timidity", "chorusenabled",    1, 10);
+	TimiditySetupSelected       = cpifaceSession->configAPI->GetProfileInt ("timidity", "reverbmode",       2, 10);
+	TimiditySetupLevel          = cpifaceSession->configAPI->GetProfileInt ("timidity", "reverblevel",     40, 10);
+	TimiditySetupScaleRoom      = cpifaceSession->configAPI->GetProfileInt ("timidity", "scaleroom",       28, 10);
+	TimiditySetupOffsetRoom     = cpifaceSession->configAPI->GetProfileInt ("timidity", "offsetroom",      70, 10);
+	TimiditySetupPreDelayFactor = cpifaceSession->configAPI->GetProfileInt ("timidity", "predelayfactor", 100, 10);
+	tc.effect_lr_mode           = cpifaceSession->configAPI->GetProfileInt ("timidity", "delaymode",       -1, 10);
+	tc.effect_lr_delay_msec     = cpifaceSession->configAPI->GetProfileInt ("timidity", "delay",           25, 10);
+	tc.opt_chorus_control       = cpifaceSession->configAPI->GetProfileInt ("timidity", "chorusenabled",    1, 10);
 	if (TimiditySetupSelected       <    0) TimiditySetupSelected       =    0;
 	if (TimiditySetupLevel          <    0) TimiditySetupLevel          =    0;
 	if (TimiditySetupScaleRoom      <    0) TimiditySetupScaleRoom      =    0;

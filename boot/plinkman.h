@@ -4,11 +4,13 @@
 struct mdbreadinforegstruct;
 struct moduletype;
 struct cpifaceplayerstruct;
+struct configAPI_t;
 struct PluginInitAPI_t
 {
 	void (*mdbRegisterReadInfo)(struct mdbreadinforegstruct *r);
 	void (*fsTypeRegister) (struct moduletype modtype, const char **description, const char *interface, const struct cpifaceplayerstruct *cp);
 	void (*fsRegisterExt)(const char *ext);
+	const struct configAPI_t *configAPI;
 };
 
 struct PluginCloseAPI_t

@@ -20,6 +20,7 @@
 #define MAXLCHAN 64
 
 struct cpifaceSessionAPI_t;
+struct configAPI_t;
 #include "filesel/mdb.h" /* struct moduleinfostruct; */
 struct ocpfilehandle_t;
 struct ringbufferAPI_t;
@@ -45,6 +46,7 @@ struct cpifaceSessionAPI_t
 	const struct ringbufferAPI_t *ringbufferAPI;
 	const struct mcpAPI_t        *mcpAPI;
 	const struct drawHelperAPI_t *drawHelperAPI;
+	const struct configAPI_t     *configAPI;
 
 	char utf8_8_dot_3  [12*4+1]; /* UTF-8 ready, filled in by cpiface */
 	char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready, filled in by cpiface */

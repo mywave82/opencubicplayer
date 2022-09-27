@@ -45,19 +45,12 @@
 #include "psetting.h"
 #include "stuff/compat.h"
 
-char *cfConfigDir;
-char *cfDataDir;
 char *cfProgramDir;
-char *cfTempDir;
 char *cfProgramDirAutoload;
 
 #define KEYBUF_LEN 105
 #define STRBUF_LEN 405
 #define COMMENTBUF_LEN 256
-
-const char *cfConfigSec;
-const char *cfSoundSec;
-const char *cfScreenSec;
 
 struct profilekey
 {
@@ -441,7 +434,7 @@ void cfCloseConfig()
 	cfFreeINI();
 }
 
-const char *cfGetProfileString(const char *app, const char *key, const char *def)
+static const char *_cfGetProfileString(const char *app, const char *key, const char *def)
 {
 	int i,j;
 	for (i=0; i<cfINInApps; i++)
@@ -453,12 +446,12 @@ const char *cfGetProfileString(const char *app, const char *key, const char *def
 	return def;
 }
 
-const char *cfGetProfileString2(const char *app, const char *app2, const char *key, const char *def)
+static const char *_cfGetProfileString2(const char *app, const char *app2, const char *key, const char *def)
 {
 	return cfGetProfileString(app, key, cfGetProfileString(app2, key, def));
 }
 
-void cfSetProfileString(const char *app, const char *key, const char *str)
+static void _cfSetProfileString(const char *app, const char *key, const char *str)
 {
 	int i, j;
 	void *memtmp;
@@ -497,32 +490,32 @@ doappend:
 	goto doappend;
 }
 
-int cfGetProfileInt(const char *app, const char *key, int def, int radix)
+static int _cfGetProfileInt(const char *app, const char *key, int def, int radix)
 {
-	const char *s=cfGetProfileString(app, key, "");
+	const char *s=_cfGetProfileString(app, key, "");
 	if (!*s)
 		return def;
 	return strtol(s, 0, radix);
 }
 
-int cfGetProfileInt2(const char *app, const char *app2, const char *key, int def, int radix)
+static int _cfGetProfileInt2(const char *app, const char *app2, const char *key, int def, int radix)
 {
-	return cfGetProfileInt(app, key, cfGetProfileInt(app2, key, def, radix), radix);
+	return _cfGetProfileInt(app, key, _cfGetProfileInt(app2, key, def, radix), radix);
 }
 
-void cfSetProfileInt(const char *app, const char *key, int str, int radix)
+static void _cfSetProfileInt(const char *app, const char *key, int str, int radix)
 {
 	char buffer[64];
 	if (radix==16)
 		snprintf(buffer, sizeof(buffer), "0x%x", str);
 	else
 		snprintf(buffer, sizeof(buffer), "%d", str);
-	cfSetProfileString(app, key, buffer);
+	_cfSetProfileString(app, key, buffer);
 }
 
-int cfGetProfileBool(const char *app, const char *key, int def, int err)
+static int _cfGetProfileBool(const char *app, const char *key, int def, int err)
 {
-	const char *s=cfGetProfileString(app, key, 0);
+	const char *s=_cfGetProfileString(app, key, 0);
 	if (!s)
 		return def;
 	if (!*s)
@@ -534,17 +527,17 @@ int cfGetProfileBool(const char *app, const char *key, int def, int err)
 	return err;
 }
 
-int cfGetProfileBool2(const char *app, const char *app2, const char *key, int def, int err)
+static int _cfGetProfileBool2(const char *app, const char *app2, const char *key, int def, int err)
 {
-	return cfGetProfileBool(app, key, cfGetProfileBool(app2, key, def, err), err);
+	return _cfGetProfileBool(app, key, _cfGetProfileBool(app2, key, def, err), err);
 }
 
-void cfSetProfileBool(const char *app, const char *key, const int str)
+static void _cfSetProfileBool(const char *app, const char *key, const int str)
 {
-	cfSetProfileString(app, key, (str?"on":"off"));
+	_cfSetProfileString(app, key, (str?"on":"off"));
 }
 
-void cfRemoveEntry(const char *app, const char *key)
+static void _cfRemoveEntry(const char *app, const char *key)
 {
 	int i, j;
 	for (i=0; i<cfINInApps; i++)
@@ -574,7 +567,7 @@ void cfRemoveEntry(const char *app, const char *key)
 		}
 }
 
-void cfRemoveProfile(const char *app)
+static void _cfRemoveProfile(const char *app)
 {
 	int i, j;
 	for (i=0; i<cfINInApps; i++)
@@ -654,14 +647,14 @@ int cfGetConfig(int argc, char *argv[])
 		return -1;
 	}
 
-	t=cfGetProfileString("general", "datadir", NULL);
+	t=_cfGetProfileString("general", "datadir", NULL);
 	if (t)
 	{
 		free (cfDataDir);
 		cfDataDir = strdup (t);
 	}
 
-	if ((t=cfGetProfileString("general", "tempdir", t)))
+	if ((t=_cfGetProfileString("general", "tempdir", t)))
 	{
 		cfTempDir = strdup (t);
 	} else if ((t=getenv("TEMP")))
@@ -717,7 +710,7 @@ int cfGetConfig(int argc, char *argv[])
 	return 0;
 }
 
-int cfStoreConfig(void)
+static int _cfStoreConfig(void)
 {
 	char *path;
 	FILE *f;
@@ -774,3 +767,19 @@ int cfStoreConfig(void)
 	fclose(f);
 	return 0;
 }
+
+struct configAPI_t configAPI =
+{
+	_cfStoreConfig,
+	_cfGetProfileString,
+	_cfGetProfileString2,
+	_cfSetProfileString,
+	_cfGetProfileBool,
+	_cfGetProfileBool2,
+	_cfSetProfileBool,
+	_cfGetProfileInt,
+	_cfGetProfileInt2,
+	_cfSetProfileInt,
+	_cfRemoveEntry,
+	_cfRemoveProfile
+};

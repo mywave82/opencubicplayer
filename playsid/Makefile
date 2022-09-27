@@ -323,6 +323,8 @@ libsidplayfp-utils-MD5-MD5.o: \
 
 libsidplayfp-api.o: \
 	libsidplayfp-api.cpp \
+	../config.h \
+	../types.h \
 	libsidplayfp-api.h \
 	./libsidplayfp-git/src/sidplayfp/sidbuilder.h \
 	./libsidplayfp-git/src/sidplayfp/SidInfo.h \

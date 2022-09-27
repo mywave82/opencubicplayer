@@ -926,7 +926,7 @@ PlayMode *play_mode_list[2] = {&ocp_playmode, 0}, *target_play_mode = &ocp_playm
 
 ControlMode *ctl_list[2] = {&ocp_ctl, 0}, *ctl = &ocp_ctl;
 
-static void emulate_main_start(struct timiditycontext_t *c)
+static void emulate_main_start(struct timiditycontext_t *c, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	const char *configfile;
 	c->free_instruments_afterwards = 1;
@@ -943,7 +943,7 @@ static void emulate_main_start(struct timiditycontext_t *c)
 
 	timidity_start_initialize(&tc);
 
-	configfile = cfGetProfileString ("timidity", "configfile", "");
+	configfile = cpifaceSession->configAPI->GetProfileString ("timidity", "configfile", "");
 
 	if (configfile[0])
 	{
@@ -1961,7 +1961,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	}
 	ocp_playmode.rate = gmiRate;
 
-	emulate_main_start(&tc);
+	emulate_main_start(&tc, cpifaceSession);
 	gmi_inpause=0;
 	voll=256;
 	volr=256;

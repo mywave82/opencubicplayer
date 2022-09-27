@@ -951,6 +951,7 @@ static struct IOCTL_DevInterface *CurrentVirtualDevice;
 static struct ocpfilehandle_t *CurrentVirtualDeviceFile;
 static struct DevInterfaceAPI_t DevInterfaceAPI =
 {
+	&configAPI,
 	cpiKeyHelp,
 	cpiKeyHelpClear,
 	cpiKeyHelpDisplay

@@ -905,20 +905,20 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 
 	uint32_t dirdb_base = cfConfigDir_dirdbref;
 
-	config_emulator = emulator_to_int         (cfGetProfileString ("libsidplayfp", "emulator",        "residfp"));
-	config_defaultC64 = defaultC64_to_int     (cfGetProfileString ("libsidplayfp", "defaultC64",      "PAL"));
-	config_forceC64 =                          cfGetProfileBool   ("libsidplayfp", "forceC64",        0, 0);
-	config_defaultSID = defaultSID_to_int     (cfGetProfileString ("libsidplayfp", "defaultSID",      "MOS6581"));
-	config_forceSID =                          cfGetProfileBool   ("libsidplayfp", "forceSID",        0, 0);
-	config_CIA = CIA_to_int                   (cfGetProfileString ("libsidplayfp", "CIA",             "MOS6526"));
-	config_filter =                            cfGetProfileBool   ("libsidplayfp", "filter",          1, 1);
-	config_filterbias = float10x_to_int       (cfGetProfileString ("libsidplayfp", "filterbias",      "0.0"));
-	config_filtercurve6581 = float100x_to_int (cfGetProfileString ("libsidplayfp", "filtercurve6581", "0.5"));
-	config_filtercurve8580 = float100x_to_int (cfGetProfileString ("libsidplayfp", "filtercurve8580", "0.5"));
-	config_digiboost =                         cfGetProfileBool   ("libsidplayfp", "digiboost",       0, 0);
-	config_kernal = strdup                    (cfGetProfileString ("libsidplayfp", "kernal",          "KERNEL.ROM"));
-	config_basic = strdup                     (cfGetProfileString ("libsidplayfp", "basic",           "BASIC.ROM"));
-	config_chargen = strdup                   (cfGetProfileString ("libsidplayfp", "chargen",         "CHARGEN.ROM"));
+	config_emulator = emulator_to_int         (API->configAPI->GetProfileString ("libsidplayfp", "emulator",        "residfp"));
+	config_defaultC64 = defaultC64_to_int     (API->configAPI->GetProfileString ("libsidplayfp", "defaultC64",      "PAL"));
+	config_forceC64 =                          API->configAPI->GetProfileBool   ("libsidplayfp", "forceC64",        0, 0);
+	config_defaultSID = defaultSID_to_int     (API->configAPI->GetProfileString ("libsidplayfp", "defaultSID",      "MOS6581"));
+	config_forceSID =                          API->configAPI->GetProfileBool   ("libsidplayfp", "forceSID",        0, 0);
+	config_CIA = CIA_to_int                   (API->configAPI->GetProfileString ("libsidplayfp", "CIA",             "MOS6526"));
+	config_filter =                            API->configAPI->GetProfileBool   ("libsidplayfp", "filter",          1, 1);
+	config_filterbias = float10x_to_int       (API->configAPI->GetProfileString ("libsidplayfp", "filterbias",      "0.0"));
+	config_filtercurve6581 = float100x_to_int (API->configAPI->GetProfileString ("libsidplayfp", "filtercurve6581", "0.5"));
+	config_filtercurve8580 = float100x_to_int (API->configAPI->GetProfileString ("libsidplayfp", "filtercurve8580", "0.5"));
+	config_digiboost =                         API->configAPI->GetProfileBool   ("libsidplayfp", "digiboost",       0, 0);
+	config_kernal = strdup                    (API->configAPI->GetProfileString ("libsidplayfp", "kernal",          "KERNEL.ROM"));
+	config_basic = strdup                     (API->configAPI->GetProfileString ("libsidplayfp", "basic",           "BASIC.ROM"));
+	config_chargen = strdup                   (API->configAPI->GetProfileString ("libsidplayfp", "chargen",         "CHARGEN.ROM"));
 
 	if (config_filterbias < -5000) config_filterbias = -5000;
 	if (config_filterbias > 5000) config_filterbias = 5000;
@@ -1000,7 +1000,7 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 
 #if 0
 						{ /* preselect dsel */
-							const char *configfile = cfGetProfileString ("timidity", "configfile", "");
+							const char *configfile = API->configAPI->GetProfileString ("timidity", "configfile", "");
 							int i;
 							if (configfile[0])
 							{
@@ -1228,7 +1228,7 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 					break;
 				case KEY_EXIT:
 				case KEY_ESC:
-					cfStoreConfig();
+					API->configAPI->StoreConfig();
 					goto superexit;
 					break;
 			}
@@ -1238,21 +1238,21 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 
 superexit:
 
-	cfSetProfileString ("libsidplayfp", "emulator", emulator_from_int (config_emulator));
-	cfSetProfileString ("libsidplayfp", "defaultC64", defaultC64_from_int (config_defaultC64));
-	cfSetProfileBool   ("libsidplayfp", "forceC64", config_forceC64);
-	cfSetProfileString ("libsidplayfp", "defaultSID", defaultSID_from_int (config_defaultSID));
-	cfSetProfileBool   ("libsidplayfp", "forceSID", config_forceSID);
-	cfSetProfileString ("libsidplayfp", "CIA", CIA_from_int (config_CIA));
-	cfSetProfileBool   ("libsidplayfp", "filter", config_filter);
-	cfSetProfileString ("libsidplayfp", "filterbias", int_to_float10x(config_filterbias));
-	cfSetProfileString ("libsidplayfp", "filtercurve6581", int_to_float100x(config_filtercurve6581));
-	cfSetProfileString ("libsidplayfp", "filtercurve8580", int_to_float100x(config_filtercurve8580));
-	cfSetProfileBool   ("libsidplayfp", "digiboost", config_digiboost);
-	cfSetProfileString ("libsidplayfp", "kernal",    config_kernal); free (config_kernal);
-	cfSetProfileString ("libsidplayfp", "basic",     config_basic); free (config_basic);
-	cfSetProfileString ("libsidplayfp", "chargen",   config_chargen); free (config_chargen);
-	cfStoreConfig ();
+	API->configAPI->SetProfileString ("libsidplayfp", "emulator", emulator_from_int (config_emulator));
+	API->configAPI->SetProfileString ("libsidplayfp", "defaultC64", defaultC64_from_int (config_defaultC64));
+	API->configAPI->SetProfileBool   ("libsidplayfp", "forceC64", config_forceC64);
+	API->configAPI->SetProfileString ("libsidplayfp", "defaultSID", defaultSID_from_int (config_defaultSID));
+	API->configAPI->SetProfileBool   ("libsidplayfp", "forceSID", config_forceSID);
+	API->configAPI->SetProfileString ("libsidplayfp", "CIA", CIA_from_int (config_CIA));
+	API->configAPI->SetProfileBool   ("libsidplayfp", "filter", config_filter);
+	API->configAPI->SetProfileString ("libsidplayfp", "filterbias", int_to_float10x(config_filterbias));
+	API->configAPI->SetProfileString ("libsidplayfp", "filtercurve6581", int_to_float100x(config_filtercurve6581));
+	API->configAPI->SetProfileString ("libsidplayfp", "filtercurve8580", int_to_float100x(config_filtercurve8580));
+	API->configAPI->SetProfileBool   ("libsidplayfp", "digiboost", config_digiboost);
+	API->configAPI->SetProfileString ("libsidplayfp", "kernal",    config_kernal); free (config_kernal);
+	API->configAPI->SetProfileString ("libsidplayfp", "basic",     config_basic); free (config_basic);
+	API->configAPI->SetProfileString ("libsidplayfp", "chargen",   config_chargen); free (config_chargen);
+	API->configAPI->StoreConfig ();
 
 	dirdbUnref (entry_kernal.dirdb_ref, dirdb_use_file);
 	dirdbUnref (entry_basic.dirdb_ref, dirdb_use_file);
