@@ -107,47 +107,39 @@ enum
 
 struct ocpfilehandle_t;
 struct cpifaceSessionAPI_t;
-extern int __attribute__ ((visibility ("internal"))) xmpLoadSamples(struct xmodule *m);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m);
 extern int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMOD(struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMODt(struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMODd(struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMODf(struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadM31(struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadM15(struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadM15t(struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadWOW(struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, struct ocpfilehandle_t *f);
-extern void __attribute__ ((visibility ("internal"))) xmpFreeModule(struct xmodule *m);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadMOD  (struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadMODt (struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadMODd (struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadMODf (struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadM31  (struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadM15  (struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadM15t (struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadWOW  (struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadMXM  (struct xmodule *m, struct ocpfilehandle_t *f);
+extern void __attribute__ ((visibility ("internal"))) xmpFreeModule (struct xmodule *m);
 
-extern int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) xmpStopModule(void);
+extern int __attribute__ ((visibility ("internal"))) xmpPlayModule (struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
+extern void __attribute__ ((visibility ("internal"))) xmpStopModule (struct cpifaceSessionAPI_t *cpifaceSession);
 extern void __attribute__ ((visibility ("internal"))) xmpSetPos (struct cpifaceSessionAPI_t *cpifaceSession, int ord, int row);
 
 extern void __attribute__ ((visibility ("internal"))) xmpGetRealVolume (struct cpifaceSessionAPI_t *cpifaceSession, int i, int *l, int *r);
 extern void __attribute__ ((visibility ("internal"))) xmpMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m);
-extern uint16_t __attribute__ ((visibility ("internal"))) xmpGetPos(void);
+extern uint16_t __attribute__ ((visibility ("internal"))) xmpGetPos (void);
 extern int __attribute__ ((visibility ("internal"))) xmpGetRealPos (struct cpifaceSessionAPI_t *cpifaceSession);
 extern int __attribute__ ((visibility ("internal"))) xmpGetDotsData (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *smp, int *frq, int *l, int *r, int *sus);
-extern int __attribute__ ((visibility ("internal"))) xmpPrecalcTime(struct xmodule *m, int startpos, int (*calc)[2], int n, int ite);
-extern int __attribute__ ((visibility ("internal"))) xmpLoop(void);
-extern void __attribute__ ((visibility ("internal"))) xmpSetLoop(int);
-extern int __attribute__ ((visibility ("internal"))) xmpGetChanIns(int);
-extern int __attribute__ ((visibility ("internal"))) xmpGetChanSamp(int);
+extern int __attribute__ ((visibility ("internal"))) xmpPrecalcTime (struct xmodule *m, int startpos, int (*calc)[2], int n, int ite);
+extern int __attribute__ ((visibility ("internal"))) xmpLoop (void);
+extern void __attribute__ ((visibility ("internal"))) xmpSetLoop (int);
+extern int __attribute__ ((visibility ("internal"))) xmpGetChanIns (int);
+extern int __attribute__ ((visibility ("internal"))) xmpGetChanSamp (int);
 extern int __attribute__ ((visibility ("internal"))) xmpChanActive (struct cpifaceSessionAPI_t *cpifaceSession, int ch);
-extern void __attribute__ ((visibility ("internal"))) xmpGetGlobInfo(int *tmp, int *bpm, int *gvol);
-extern void __attribute__ ((visibility ("internal"))) xmpOptimizePatLens(struct xmodule *m);
-/*extern int __attribute__ ((visibility ("internal"))) xmpGetSync(int ch, int *time);*/
-/*extern int __attribute__ ((visibility ("internal"))) xmpGetTime(void); */
+extern void __attribute__ ((visibility ("internal"))) xmpGetGlobInfo (int *tmp, int *bpm, int *gvol);
+extern void __attribute__ ((visibility ("internal"))) xmpOptimizePatLens (struct xmodule *m);
 
-/*extern int __attribute__ ((visibility ("internal"))) xmpGetTickTime(void);*/
-/*extern int __attribute__ ((visibility ("internal"))) xmpGetRowTime(void);*/
-/*extern void __attribute__ ((visibility ("internal"))) xmpSetEvPos(int ch, int pos, int modtype, int mod);*/
-/*extern int __attribute__ ((visibility ("internal"))) xmpGetEvPos(int ch, int *time);*/
-/*extern int __attribute__ ((visibility ("internal"))) xmpFindEvPos(int pos, int *time);*/
-
-extern void __attribute__ ((visibility ("internal"))) xmpGetChanInfo(uint8_t ch, struct xmpchaninfo *ci);
-extern void __attribute__ ((visibility ("internal"))) xmpGetGlobInfo2(struct xmpglobinfo *gi);
+extern void __attribute__ ((visibility ("internal"))) xmpGetChanInfo (uint8_t ch, struct xmpchaninfo *ci);
+extern void __attribute__ ((visibility ("internal"))) xmpGetGlobInfo2 (struct xmpglobinfo *gi);
 
 enum
 {

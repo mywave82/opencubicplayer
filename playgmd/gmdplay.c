@@ -1621,7 +1621,7 @@ char __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodu
 	querpos=0;
 	quewpos=0;
 
-	if (!mcpDevAPI->mcpOpenPlayer(channels, PlayTick, file, cpifaceSession))
+	if (!cpifaceSession->mcpDevAPI->OpenPlayer (channels, PlayTick, file, cpifaceSession))
 		return 0;
 
 	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayW);
@@ -1635,8 +1635,10 @@ void __attribute__ ((visibility ("internal"))) mpStopModule (struct cpifaceSessi
 {
 	int i;
 	for (i=0; i<physchan; i++)
+	{
 		cpifaceSession->mcpSet (i, mcpCReset, 0);
-	mcpDevAPI->mcpClosePlayer();
+	}
+	cpifaceSession->mcpDevAPI->ClosePlayer ();
 	free(que);
 }
 
@@ -1819,7 +1821,7 @@ void __attribute__ ((visibility ("internal"))) mpGetRealVolume (struct cpifaceSe
 	cpifaceSession->mcpGetRealVolume (tdata[ch].phys, l, r);
 }
 
-int __attribute__ ((visibility ("internal"))) mpLoadSamples(struct gmdmodule *m)
+int __attribute__ ((visibility ("internal"))) mpLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m)
 {
-	return mcpDevAPI->mcpLoadSamples(m->samples, m->sampnum);
+	return cpifaceSession->mcpDevAPI->LoadSamples (m->samples, m->sampnum);
 }

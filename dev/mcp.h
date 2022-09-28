@@ -67,10 +67,10 @@ enum
 
 struct mcpDevAPI_t
 {
-	int (*mcpOpenPlayer)(int, void (*p)(struct cpifaceSessionAPI_t *cpifaceSession), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession);
-	int (*mcpLoadSamples)(struct sampleinfo* si, int n);
-	void (*mcpIdle)(struct cpifaceSessionAPI_t *cpifaceSession);
-	void (*mcpClosePlayer)(void);
+	int (*OpenPlayer)(int, void (*p)(struct cpifaceSessionAPI_t *cpifaceSession), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession);
+	int (*LoadSamples)(struct sampleinfo* si, int n);
+	void (*Idle)(struct cpifaceSessionAPI_t *cpifaceSession);
+	void (*ClosePlayer)(void);
 };
 
 extern const struct mcpDevAPI_t *mcpDevAPI;

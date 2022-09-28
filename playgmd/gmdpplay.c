@@ -242,7 +242,7 @@ static int gmdLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade (cpifaceSession);
 	}
 	mpSetLoop (LoopMod);
-	mcpDevAPI->mcpIdle (cpifaceSession);
+	cpifaceSession->mcpDevAPI->Idle (cpifaceSession);
 
 	return (!LoopMod) && mpLooped();
 }
@@ -253,7 +253,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	uint64_t i;
 	int retval;
 
-	if (!mcpDevAPI->mcpOpenPlayer)
+	if (!cpifaceSession->mcpDevAPI->OpenPlayer)
 		return errGen;
 
 	if (!file)
@@ -278,7 +278,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 		if (!mpReduceSamples(&mod))
 			retval=errAllocMem;
-		else if (!mpLoadSamples(&mod))
+		else if (!mpLoadSamples (cpifaceSession, &mod))
 			retval=errAllocSamp;
 		else {
 			mpReduceMessage(&mod);

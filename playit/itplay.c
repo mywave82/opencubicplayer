@@ -1806,12 +1806,12 @@ static void playtick (struct cpifaceSessionAPI_t *cpifaceSession, struct itplaye
 	putque(this, quePos, -1, (this->curtick&0xFF)|(this->currow<<8)|(this->curord<<16));
 }
 
-int __attribute__ ((visibility ("internal"))) loadsamples(struct it_module *m)
+int __attribute__ ((visibility ("internal"))) loadsamples (struct cpifaceSessionAPI_t *cpifaceSession, struct it_module *m)
 {
-	return mcpDevAPI->mcpLoadSamples(m->sampleinfos, m->nsampi);
+	return cpifaceSession->mcpDevAPI->LoadSamples(m->sampleinfos, m->nsampi);
 }
 
-int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+int __attribute__ ((visibility ("internal"))) play (struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i;
 	staticthis=this;
@@ -1903,7 +1903,7 @@ int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const 
 		c->tremoroffcounter=0;
 	}
 
-	if (!mcpDevAPI->mcpOpenPlayer(ch, playtickstatic, file, cpifaceSession))
+	if (!cpifaceSession->mcpDevAPI->OpenPlayer(ch, playtickstatic, file, cpifaceSession))
 		return 0;
 
 	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayW);
@@ -1913,9 +1913,9 @@ int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const 
 	return 1;
 }
 
-void __attribute__ ((visibility ("internal"))) stop(struct itplayer *this)
+void __attribute__ ((visibility ("internal"))) stop (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)
 {
-	mcpDevAPI->mcpClosePlayer ();
+	cpifaceSession->mcpDevAPI->ClosePlayer ();
 	if (this->channels)
 	{
 		free(this->channels);

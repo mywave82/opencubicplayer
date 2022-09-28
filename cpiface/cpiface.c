@@ -2215,6 +2215,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.plrDevAPI = plrDevAPI;
 	cpifaceSessionAPI.Public.ringbufferAPI = &ringbufferAPI;
 	cpifaceSessionAPI.Public.mcpAPI = &mcpAPI;
+	cpifaceSessionAPI.Public.mcpDevAPI = mcpDevAPI;
 	cpifaceSessionAPI.Public.drawHelperAPI = &drawHelperAPI;
 	cpifaceSessionAPI.Public.configAPI = &configAPI;
 

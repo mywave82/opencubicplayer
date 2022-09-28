@@ -198,7 +198,7 @@ static int xmpLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade (cpifaceSession);
 	}
 	xmpSetLoop (LoopMod);
-	mcpDevAPI->mcpIdle (cpifaceSession);
+	cpifaceSession->mcpDevAPI->Idle (cpifaceSession);
 
 	return (!LoopMod) && xmpLoop();
 }
@@ -233,7 +233,7 @@ static void xmpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static void xmpCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	xmpStopModule();
+	xmpStopModule (cpifaceSession);
 	xmpFreeModule(&mod);
 }
 
@@ -556,7 +556,7 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	int (*loader)(struct xmodule *, struct ocpfilehandle_t *)=0;
 	int retval;
 
-	if (!mcpDevAPI->mcpOpenPlayer)
+	if (!cpifaceSession->mcpDevAPI->OpenPlayer)
 		return errGen;
 
 	if (!file)
@@ -580,7 +580,7 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 		return errFormStruc;
 
 	if (!(retval=loader(&mod, file)))
-		if (!xmpLoadSamples(&mod))
+		if (!xmpLoadSamples (cpifaceSession, &mod))
 			retval=-1;
 
 /*

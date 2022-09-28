@@ -1483,12 +1483,12 @@ void __attribute__ ((visibility ("internal"))) xmpSetLoop(int x)
 	looping=x;
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadSamples(struct xmodule *m)
+int __attribute__ ((visibility ("internal"))) xmpLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m)
 {
-	return mcpDevAPI->mcpLoadSamples (m->sampleinfos, m->nsampi);
+	return cpifaceSession->mcpDevAPI->LoadSamples (m->sampleinfos, m->nsampi);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+int __attribute__ ((visibility ("internal"))) xmpPlayModule (struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i;
 
@@ -1540,23 +1540,23 @@ int __attribute__ ((visibility ("internal"))) xmpPlayModule(struct xmodule *m, s
 	realtempo=m->inibpm;
 	realspeed=m->initempo;
 	firstspeed=256*2*curbpm/5;
-	if (!mcpDevAPI->mcpOpenPlayer(nchan, xmpPlayTick, file, cpifaceSession))
+	if (!cpifaceSession->mcpDevAPI->OpenPlayer(nchan, xmpPlayTick, file, cpifaceSession))
 		return 0;
 
 	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayW);
 
 	if (nchan != cpifaceSession->PhysicalChannelCount)
 	{
-		mcpDevAPI->mcpClosePlayer();
+		cpifaceSession->mcpDevAPI->ClosePlayer ();
 		return 0;
 	}
 
 	return 1;
 }
 
-void __attribute__ ((visibility ("internal"))) xmpStopModule(void)
+void __attribute__ ((visibility ("internal"))) xmpStopModule (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	mcpDevAPI->mcpClosePlayer ();
+	cpifaceSession->mcpDevAPI->ClosePlayer ();
 	free(que);
 }
 
@@ -1566,74 +1566,6 @@ void __attribute__ ((visibility ("internal"))) xmpGetGlobInfo(int *tmp, int *bpm
 	*bpm=realtempo;
 	*gvol=realgvol;
 }
-
-/*
-int __attribute__ ((visibility ("internal"))) xmpGetTime(void)
-{
-	return mcpGet(-1, mcpGTimer);
-}*/
-
-/*int __attribute__ ((visibility ("internal"))) xmpGetSync(int ch, int *time)
-{
-	ReadQue();
-	if ((ch<0)||(ch>=nchan))
-	{
-		*time=xmpGetTime()-realsynctime;
-		return realsync;
-	} else {
-		*time=xmpGetTime()-channels[ch].chSyncTime;
-		return channels[ch].chSync;
-	}
-}*/
-
-/*int __attribute__ ((visibility ("internal"))) xmpGetTickTime(void)
-{
-	ReadQue();
-	return 65536*5/(2*realtempo);
-}*/
-
-/*int __attribute__ ((visibility ("internal"))) xmpGetRowTime(void)
-{
-	ReadQue();
-	return 65536*5*realspeed/(2*realtempo);
-}*/
-
-/*void __attribute__ ((visibility ("internal"))) xmpSetEvPos(int ch, int pos, int modtype, int mod)
-{
-	struct channel *c;
-	if ((ch<0)||(ch>=nchan))
-		return;
-	c=&channels[ch];
-	c->evpos0=pos;
-	c->evmodtype=modtype;
-	c->evmod=mod;
-	c->evmodpos=0;
-	c->evpos=-1;
-	c->evtime=-1;
-}*/
-
-/*int __attribute__ ((visibility ("internal"))) xmpGetEvPos(int ch, int *time)
-{
-	ReadQue();
-	if ((ch<0)||(ch>=nchan))
-	{
-		*time=-1;
-		return -1;
-	}
-	*time=xmpGetTime()-channels[ch].evtime;
-	return channels[ch].evpos;
-}*/
-
-/*int __attribute__ ((visibility ("internal"))) xmpFindEvPos(int pos, int *time)
-{
-	int i;
-	ReadQue();
-	for (i=0; i<nchan; i++)
-		if (channels[i].evpos==pos)
-			break;
-	*time=xmpGetTime()-channels[i].evtime;
-	return channels[i].evpos;
-}*/
 
 void __attribute__ ((visibility ("internal"))) xmpGetChanInfo(unsigned char ch, struct xmpchaninfo *ci)
 {

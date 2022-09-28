@@ -193,7 +193,7 @@ static int itpLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 		dopausefade(cpifaceSession);
 	}
 	setloop(&itplayer, LoopMod);
-	mcpDevAPI->mcpIdle (cpifaceSession);
+	cpifaceSession->mcpDevAPI->Idle (cpifaceSession);
 
 	return (!LoopMod) && getloop(&itplayer);
 }
@@ -235,7 +235,7 @@ static void itpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static void itpCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	stop(&itplayer);
+	stop (cpifaceSession, &itplayer);
 	it_free(&mod);
 }
 
@@ -572,7 +572,7 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	fprintf(stderr, "loading %s (%uk)...\n", filename, (unsigned int)(file->filesize(file)>>10));
 
 	if (!(retval=it_load(cpifaceSession, &mod, file)))
-		if (!loadsamples(&mod))
+		if (!loadsamples (cpifaceSession, &mod))
 			retval=-1;
 
 	if (retval)

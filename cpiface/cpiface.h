@@ -26,6 +26,7 @@ struct ocpfilehandle_t;
 struct ringbufferAPI_t;
 struct plrDevAPI_t;
 struct mcpAPI_t;
+struct mcpDevAPI_t;
 struct drawHelperAPI_t;
 struct notedotsdata;
 struct insdisplaystruct;
@@ -43,6 +44,7 @@ struct cpifaceplayerstruct
 struct cpifaceSessionAPI_t
 {
 	const struct plrDevAPI_t     *plrDevAPI;
+	const struct mcpDevAPI_t     *mcpDevAPI;
 	const struct ringbufferAPI_t *ringbufferAPI;
 	const struct mcpAPI_t        *mcpAPI;
 	const struct drawHelperAPI_t *drawHelperAPI;
