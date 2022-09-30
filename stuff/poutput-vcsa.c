@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/vt.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,6 +41,7 @@
 #include <sys/ioctl.h>
 #endif
 #include <sys/poll.h>
+#include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
 #include <iconv.h>
@@ -583,6 +585,8 @@ static void conSave(void)
 	conactive=1;
 }
 
+static int sigintcounter = 0;
+
 static int ekbhit_linux(void)
 {
 	struct pollfd set;
@@ -600,6 +604,7 @@ static int ekbhit_linux(void)
 			exit(1);
 		}
 	}
+
 	set.fd=0;
 	set.events=POLLIN;
 	poll(&set, 1, 0);
@@ -613,8 +618,17 @@ static int egetch_linux(void)
 	unsigned char key_len, i=0;
 	int result;
 
+	if (sigintcounter)
+	{
+		sigintcounter--;
+		return 27;
+	}
+
 	if (!ekbhit_linux())
+	{
 		return 0;
+	}
+
 	result=read(0, key_buffer, 128);
 	if (result>0)
 		key_len=result;
@@ -664,6 +678,15 @@ static void setcur(uint16_t y, uint16_t x)
 			continue;
 		fprintf(stderr, __FILE__ " write() failed #3\n");
 		exit(1);
+	}
+}
+
+static void sigint(int signal)
+{
+	sigintcounter++;
+	if (sigintcounter > 2) /* program is frozen and we already have two presses in the queue */
+	{
+		kill (getpid(), SIGQUIT);
 	}
 }
 
@@ -781,6 +804,9 @@ int vcsa_init(int minor)
 		make_chr_table();
 	vgaMakePal();
 	set_plScrType();
+
+	signal(SIGINT, sigint); /* emulate ESC key on ctrl-c, but multiple presses + OCP deadlocked will make it quit by force */
+
 #ifdef VCSA_VERBOSE
 	fprintf(stderr, "vcsa: driver is online\n");
 #endif

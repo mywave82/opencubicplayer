@@ -781,12 +781,20 @@ static void RefreshScreen(void)
 	curses_unblock_signals ();
 }
 
-static int buffer=ERR;
+static int buffer = ERR;
+static int sigintcounter = 0;
 
 static int ekbhit(void)
 {
-	if (buffer!=ERR)
+	if (sigintcounter)
+	{
 		return 1;
+	}
+
+	if (buffer!=ERR)
+	{
+		return 1;
+	}
 
 	curses_block_signals ();
 
@@ -805,6 +813,12 @@ static int ekbhit(void)
 static int egetch(void)
 {
 	int retval;
+
+	if (sigintcounter)
+	{
+		sigintcounter--;
+		return 27;
+	}
 
 	curses_block_signals ();
 
@@ -909,6 +923,15 @@ static const char *plGetDisplayTextModeName(void)
 	static char mode[16];
 	snprintf(mode, sizeof(mode), "%d x %d", Width, Height);
 	return mode;
+}
+
+static void sigint(int signal)
+{
+	sigintcounter++;
+	if (sigintcounter > 2) /* program is frozen and we already have two presses in the queue */
+	{
+		kill (getpid(), SIGQUIT);
+	}
 }
 
 int curses_init(void)
@@ -1312,6 +1335,8 @@ no_translit:
 #if CAN_RESIZE
 	signal(SIGWINCH, adjust);        /* arrange interrupts to resize */
 #endif
+	signal(SIGINT, sigint); /* emulate ESC key on ctrl-c, but multiple presses + OCP deadlocked will make it quit by force */
+
 	_displayvoid=displayvoid;
 	_displaystrattr=displaystrattr;
 	_displaystr=displaystr;
