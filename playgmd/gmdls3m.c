@@ -337,7 +337,7 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 #endif
 		return errAllocMem;
 	}
-	if (!(temptrack=malloc(sizeof(uint8_t)*2000)))
+	if (!(temptrack=malloc(sizeof(uint8_t)*5000))) /* a full-blown pattern with maxed out channels and globals can fill 4224 bytes */
 	{
 #ifdef S3M_LOAD_DEBUG
 		fprintf(stderr, "S3M: Out of mem (2)\n");
@@ -460,7 +460,9 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 						nte=(nte>>4)*12+(nte&0x0F)+12;
 					else {
 						if (nte==254)
+						{
 							putcmd(&cp, cmdNoteCut, 0);
+						}
 						nte=-1;
 					}
 				}
@@ -526,7 +528,9 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 				}
 
 				if (pansrnd)
+				{
 					putcmd(&cp, cmdPanSurround, 0);
+				}
 
 				switch (command)
 				{
