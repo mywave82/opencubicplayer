@@ -62,7 +62,7 @@ void plrGetRealMasterVolume(int *l, int *r)
 	if (length2)
 		v+=fn(buf2+1, length2);
 
-	v=v*128/(length1+length2*16384);
+	v=v*128/((length1+length2)*16384);
 	*r=(v>255)?255:v;
 #undef fn
 }
