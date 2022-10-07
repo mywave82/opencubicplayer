@@ -242,12 +242,11 @@ void mixGetRealMasterVolume(int *l, int *r)
 		if ((channels[i].status&MIX_MUTE)||!(channels[i].status&MIX_PLAYING))
 			continue;
 		v=mixAddAbs(&channels[i], 256);
-		l+=(((v*channels[i].vol.vols[0])>>16)*amplify)>>18;
-		r+=(((v*channels[i].vol.vols[1])>>16)*amplify)>>18;
+		(*l)+=(((v*channels[i].vol.vols[0])>>16)*amplify)>>18;
+		(*r)+=(((v*channels[i].vol.vols[1])>>16)*amplify)>>18;
 	}
 	*l=(*l>255)?255:*l;
 	*r=(*r>255)?255:*r;
-
 }
 
 void mixSetAmplify(int amp)
