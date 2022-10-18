@@ -102,15 +102,15 @@ subdirs: $(SUBDIRS)
 $(SUBDIRS):
 	$(MAKE) -C $@ TOPDIR=../$(TOPDIR)
 
-ocp: boot/kickload.o
-	$(CC) $(LDFLAGS) -o $@ $^ @DL_LIBS@ @EFENCE_LIBS@ @DUMA_LIBS@
+ocp: boot
+	$(CC) $(LDFLAGS) -o $@ boot/kickload.o @DL_LIBS@ @EFENCE_LIBS@ @DUMA_LIBS@
 ifeq ($(HAIKU),1)
 	rc -o ocp.rsrc ocp.rdef
 	xres -o $@ ocp.rsrc
 	mimeset $@
 endif
 
-ocp.hlp: doc/opencp.dox goodies/helpc/ocphhc
+ocp.hlp: doc/opencp.dox goodies
 	goodies/helpc/ocphhc doc/opencp.dox $@
 
 distclean: clean
@@ -133,5 +133,5 @@ distclean: clean
 		playsid/libsidplayfp-git/src/builders/resid-builder/resid/siddefs.h \
 		playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h
 
-libocp$(LIB_SUFFIX): $(libocp_start_so) $(libocp_so) $(libocp_end_so)
-	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(STATIC_LIBS)
+libocp$(LIB_SUFFIX): subdirs
+	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $(libocp_start_so) $(libocp_so) $(libocp_end_so) $(STATIC_LIBS)

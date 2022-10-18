@@ -11,12 +11,11 @@ dirdb.o                       \
 filesystem.o                  \
 filesystem-bzip2.o            \
 filesystem-dir-mem.o          \
-filesystem-file-dev.o         \
 filesystem-drive.o            \
-filesystem-gzip.o             \
 filesystem-file-dev.o         \
 filesystem-file-mem.o         \
 filesystem-filehandle-cache.o \
+filesystem-gzip.o             \
 filesystem-pak.o              \
 filesystem-playlist.o         \
 filesystem-playlist-m3u.o     \
