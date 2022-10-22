@@ -63,15 +63,24 @@ void lnkPluginCloseAll (struct PluginCloseAPI_t *API);
 void lnkCloseAll (void);
 
 #ifdef SUPPORT_STATIC_PLUGINS
-# define DLLEXTINFO_BEGIN_PREFIX const __attribute__ ((section ("plugin_list"))) __attribute__ ((used))
-# define DLLEXTINFO_END_PREFIX   static const __attribute__ ((section ("plugin_list"))) __attribute__ ((used))
+# ifdef __APPLE__
+#  define DLLEXTINFO_BEGIN_PREFIX const __attribute__ ((section ("__DATA,plugin_list"))) __attribute__ ((used))
+#  define DLLEXTINFO_END_PREFIX   static const __attribute__ ((section ("__DATA,plugin_list"))) __attribute__ ((used))
+# else
+#  define DLLEXTINFO_BEGIN_PREFIX const __attribute__ ((section ("plugin_list"))) __attribute__ ((used))
+#  define DLLEXTINFO_END_PREFIX   static const __attribute__ ((section ("plugin_list"))) __attribute__ ((used))
+# endif
 #else
 # define DLLEXTINFO_BEGIN_PREFIX
 # define DLLEXTINFO_END_PREFIX
 #endif
 
 #ifdef STATIC_CORE
-# define DLLEXTINFO_CORE_PREFIX  static const __attribute__ ((section ("plugin_list"))) __attribute__ ((used))
+# ifdef __APPLE__
+#  define DLLEXTINFO_CORE_PREFIX  static const __attribute__ ((section ("__DATA,plugin_list"))) __attribute__ ((used))
+# else
+#  define DLLEXTINFO_CORE_PREFIX  static const __attribute__ ((section ("plugin_list"))) __attribute__ ((used))
+# endif
 #else
 # define DLLEXTINFO_CORE_PREFIX const
 #endif
