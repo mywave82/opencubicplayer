@@ -82,8 +82,18 @@
 # include <mach/clock_types.h>
 #  define CLOCK_REALTIME CALENDAR_CLOCK
 #  define CLOCK_MONOTONIC SYSTEM_CLOCK
+
+#  ifdef __cplusplus
+extern "C" {
+#  endif
+
 typedef int clockid_t;
 int clock_gettime(clockid_t clk_id, struct timespec *tp);
+
+#  ifdef __cplusplus
+}
+#  endif
+
 # endif
 #endif
 
