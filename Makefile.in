@@ -27,7 +27,7 @@ libocp_end_so=$(LIBOCP_END_OBJECTS)
 
 all: subdirs ocp ocp.hlp libocp$(LIB_SUFFIX)
 
-install: all
+install:
 	mkdir -p "$(DESTDIR)$(DOCDIR)"
 	$(CP) AUTHORS BUGS COPYING CREDITS KEYBOARD_REMAPS SUID "$(DESTDIR)$(DOCDIR)"
 	mkdir -p "$(DESTDIR)$(DATADIR)/ocp$(DIR_SUFFIX)/data"
