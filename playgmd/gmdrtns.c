@@ -200,26 +200,6 @@ int __attribute__ ((visibility ("internal"))) mpReduceSamples(struct gmdmodule *
 	return 1;
 }
 
-void __attribute__ ((visibility ("internal"))) mpRemoveText(struct gmdmodule *m)
-{
-	unsigned int i;
-
-	*m->name=0;
-	*m->composer=0;
-	if (m->message)
-	{
-		free(*m->message);
-	}
-	m->message=0;
-
-	for (i=0; i<m->patnum; i++)
-		*m->patterns[i].name=0;
-	for (i=0; i<m->instnum; i++)
-		*m->instruments[i].name=0;
-	for (i=0; i<m->modsampnum; i++)
-		*m->modsamples[i].name=0;
-}
-
 void mpReset(struct gmdmodule *m)
 {
 	m->instruments=0;

@@ -103,7 +103,6 @@ extern void __attribute__ ((visibility ("internal"))) mpReduceInstruments (struc
 extern void __attribute__ ((visibility ("internal"))) mpReduceMessage( struct gmdmodule *m);
 extern int __attribute__ ((visibility ("internal"))) mpReduceSamples (struct gmdmodule *m);
 extern int __attribute__ ((visibility ("internal"))) mpLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m);
-extern void __attribute__ ((visibility ("internal"))) mpRemoveText (struct gmdmodule *m);
 
 struct cpifaceSessionAPI_t;
 extern char __attribute__ ((visibility ("internal"))) mpPlayModule (const struct gmdmodule *, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
