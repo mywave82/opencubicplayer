@@ -46,7 +46,9 @@ plinkman_end.o: plinkman_end.c plinkman.h \
 kickload.o: kickload.c \
 	../config.h \
 	../types.h \
-	pmain.h \
+	../boot/pmain.h \
+	../boot/console.h \
+	../stuff/poutput.h \
 	../Rules.make
 	$(CC) kickload.c -o $@ -c
 

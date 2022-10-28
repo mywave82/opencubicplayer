@@ -549,7 +549,7 @@ static int wuerfelIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 			cpiKeyHelp('W', "Enable wurfel mode");
 			return 0;
 		case 'w': case 'W':
-			if (_vga13)
+			if (vga13)
 				cpiSetMode("wuerfel2");
 		return 1;
 	}

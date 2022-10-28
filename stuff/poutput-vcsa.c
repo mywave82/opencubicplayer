@@ -48,12 +48,13 @@
 
 #include "types.h"
 
-#include "poutput-vcsa.h"
 #include "boot/console.h"
+#include "stuff/pfonts.h"
 #include "stuff/poutput.h"
+#include "stuff/poutput-fb.h"
+#include "stuff/poutput-vcsa.h"
+#include "stuff/utf-8.h"
 #include "boot/psetting.h"
-#include "pfonts.h"
-#include "utf-8.h"
 
 /* TODO ioctl KDMAPDISP, GIO_SCRNMAP */
 static unsigned short plScrRowBytes;
@@ -73,13 +74,14 @@ static int font_replaced=0;
 static const char *activecharset;
 static iconv_t activecharset_cd = (iconv_t)(-1);
 
-
 /* Replace font stuff goes here */
 
 static unsigned char orgfont[512*32];
 static struct console_font_op orgfontdesc;
 
-static void setcurshape(unsigned short shape);
+static void vcsa_SetCursorShape (uint16_t shape);
+
+static struct consoleDriver_t vcsaConsoleDriver;
 
 static void set_kernel_sizes(int x, int y)
 {
@@ -91,7 +93,7 @@ static void set_kernel_sizes(int x, int y)
 		perror("ioctl(1, VT_RESIZE, &sizes)");
 }
 
-static void set_plScrType(void)
+static void vcsa_setplScrType(void)
 {
 	lseek(vgafd, 0, SEEK_SET);
 	while (read(vgafd, &scrn, sizeof(scrn))<0)
@@ -106,33 +108,35 @@ static void set_plScrType(void)
 
 	set_kernel_sizes(scrn.cols, scrn.lines);
 
-	plScrHeight = scrn.lines;
-	plScrWidth = scrn.cols;
+	conStatus.TextHeight = scrn.lines;
+	conStatus.TextWidth  = scrn.cols;
 	plScrRowBytes = scrn.cols * 2;
 
 	/* first we set the VERY default value */
-	if (plScrHeight<50)
-		plScrType=0;
-	else
-		plScrType=2;
+	if (conStatus.TextHeight < 50)
+	{
+		conStatus.LastTextMode = 0;
+	} else {
+		conStatus.LastTextMode = 2;
+	}
 
 	/* this code should cover most vga modes, and matches the old OCP code */
-	if (plScrWidth==80)
+	if (conStatus.TextWidth == 80)
 	{
-		switch (plScrHeight)
+		switch (conStatus.TextHeight)
 		{
-			case 25: plScrType=0; break;
-			case 50: plScrType=2; break;
-			case 60: plScrType=3; break;
+			case 25: conStatus.LastTextMode = 0; break;
+			case 50: conStatus.LastTextMode = 2; break;
+			case 60: conStatus.LastTextMode = 3; break;
 		}
-	} else if((plScrWidth==132)||(plScrWidth==128))
+	} else if((conStatus.TextWidth==132) || (conStatus.TextWidth==128))
 	{
-		switch (plScrHeight)
+		switch (conStatus.TextHeight)
 		{
-			case 25: plScrType=4; break;
-			case 30: plScrType=5; break;
-			case 50: plScrType=6; break;
-			case 60: plScrType=7; break;
+			case 25: conStatus.LastTextMode = 4; break;
+			case 30: conStatus.LastTextMode = 5; break;
+			case 50: conStatus.LastTextMode = 6; break;
+			case 60: conStatus.LastTextMode = 7; break;
 		}
 	}
 }
@@ -173,7 +177,7 @@ static int set_font(int lines, int verbose)
 	newfontdesc.height=lines;
 	ioctl(1, KDFONTOP, &newfontdesc);*/
 
-	setcurshape(255);
+	vcsa_SetCursorShape (255);
 	font_replaced=lines;
 	return 0;
 }
@@ -305,7 +309,7 @@ static void make_chr_table(void)
 
 /* font stuff done */
 
-static void vgaMakePal(void)
+static void vgaMakePal (void)
 {
 	int pal[16];
 	char palstr[1024];
@@ -327,7 +331,20 @@ static void vgaMakePal(void)
 			plpalette[16*bg+fg]=16*pal[bg]+pal[fg];
 }
 
-static void displaystr(unsigned short y, unsigned short x, unsigned char attr, const char *str, unsigned short len)
+static void vcsa_DisplayChr (uint16_t y, uint16_t x, uint8_t attr, char chr, uint16_t len)
+{
+	char *p=vgatextram+(y*plScrRowBytes+x*2);
+	unsigned short i;
+
+	attr=plpalette[attr];
+	for (i=0; i<len; i++)
+	{
+		*p++=chr_table[(uint8_t)chr];
+		*p++=attr;
+	}
+}
+
+static void vcsa_DisplayStr (uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
 {
 	char *p=vgatextram+(y*plScrRowBytes+x*2);
 	unsigned short i;
@@ -342,7 +359,7 @@ static void displaystr(unsigned short y, unsigned short x, unsigned char attr, c
 	}
 }
 
-static void displaystrattr(unsigned short y, unsigned short x, const unsigned short *buf, unsigned short len)
+static void vcsa_DisplayStrAttr (uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len)
 {
 	char *p=vgatextram+(y*plScrRowBytes+x*2);
 	unsigned char *b=(unsigned char *)buf;
@@ -354,11 +371,11 @@ static void displaystrattr(unsigned short y, unsigned short x, const unsigned sh
 	}
 }
 
-static void displaystr_utf8(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
+static void vcsa_DisplayStr_utf8 (uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
 {
 	if ((iconv_t)(-1)==activecharset_cd)
 	{
-		displaystr (y, x, attr, str, len);
+		vcsa_DisplayStr (y, x, attr, str, len);
 		return;
 	} else {
 		char   tobuffer[CONSOLE_MAX_X+1];
@@ -388,11 +405,11 @@ static void displaystr_utf8(uint16_t y, uint16_t x, uint8_t attr, const char *st
 		{
 			*to = 0;
 		}
-		displaystr (y, x, attr, tobuffer, len);
+		vcsa_DisplayStr (y, x, attr, tobuffer, len);
 	}
 }
 
-static int measurestr_utf8 (const char *str, int srclen)
+static int vcsa_MeasureStr_utf8 (const char *str, int srclen)
 {
 	int retval;
 	for (retval = 0; str[retval] && retval < srclen; retval++)
@@ -402,7 +419,7 @@ static int measurestr_utf8 (const char *str, int srclen)
 }
 
 
-static void displayvoid(unsigned short y, unsigned short x, unsigned short len)
+static void vcsa_DisplayVoid (uint16_t y, uint16_t x, uint16_t len)
 {
 	char *addr=vgatextram+y*plScrRowBytes+x*2;
 	while (len--)
@@ -412,7 +429,7 @@ static void displayvoid(unsigned short y, unsigned short x, unsigned short len)
 	}
 }
 
-static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
+static void vcsa_iDrawBar (uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
 {
 	unsigned int i;
 	char *scrptr;
@@ -453,7 +470,7 @@ static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, ui
 	}
 }
 
-static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
+static void vcsa_DrawBar (uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
 {
 	unsigned int i;
 	char *scrptr;
@@ -492,15 +509,18 @@ static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uin
 	}
 }
 
-static void plSetTextMode(unsigned char x)
+static void vcsa_SetTextMode (uint8_t x)
 {
 	unsigned int i;
 
 #ifdef VCSA_DEBUG
 	fprintf(stderr, "vcsa: set mode %d\n", x);
 #endif
-	_plSetGraphMode(-1);
-	plScrMode=0;
+	if (vcsaConsoleDriver.SetGraphMode)
+	{
+		vcsaConsoleDriver.SetGraphMode (-1);
+	}
+	conStatus.CurrentMode = 0;
 
 	if (font_replaced)
 	{
@@ -510,13 +530,13 @@ static void plSetTextMode(unsigned char x)
 			case 1: /* 80 * 25 */
 			case 4: /* 132 * 25 */
 			case 5: /* 132 * 30 */
-				/*if (((plScrHeight==50)||(plScrHeight==60))&&font_replaced==8)
+				/*if (((conStatus.TextHeight==50) || (conStatus.TextHeight==60)) && font_replaced==8)
 				{
 					if (!set_font(16, 0))
 					{
 						font_replaced=16;
-						plScrHeight/=2;
-						set_plScrType();
+						conStatus.TextHeight /= 2;
+						vcsa_setplScrType();
 					}
 				}*/
 				set_font(16, 0);
@@ -525,13 +545,13 @@ static void plSetTextMode(unsigned char x)
 			case 3: /* 80 * 60 */
 			case 6: /* 132 * 50 */
 			case 7: /* 132 * 60 */
-				/*if (((plScrHeight==25)||(plScrHeight==30))&&font_replaced==16)
+				/*if (((conStatus.TextHeight==25) || (conStatus.TextHeight==30)) && font_replaced==16)
 				{
 					if (!set_font(8, 0))
 					{
 						font_replaced=8;
-						plScrHeight*=2;
-						set_plScrType();
+						conStatus.TextHeight *= 2;
+						vcsa_setplScrType();
 					}
 				}*/
 				set_font(8, 0); /* force reload font */
@@ -539,15 +559,29 @@ static void plSetTextMode(unsigned char x)
 		}
 	}
 
-	set_plScrType();
+	vcsa_setplScrType ();
 
-	for (i=0;i<plScrHeight;i++)
-		displayvoid(i, 0, plScrWidth);
+	for (i = 0; i < conStatus.TextHeight; i++)
+	{
+		vcsa_DisplayVoid (i, 0, conStatus.TextWidth);
+	}
+}
+
+static void vcsa_DisplaySetupTextMode (void)
+{
+	/* dummy */
+}
+
+static const char *vcsa_GetDisplayTextModeName (void)
+{
+	static char mode[16];
+	snprintf(mode, sizeof(mode), "%d x %d", scrn.cols, scrn.lines);
+	return mode;
 }
 
 static int conactive=0;
 
-static int conRestore(void)
+static int vcsa_consoleRestore (void)
 {
 	if (!conactive)
 		return 0;
@@ -566,7 +600,7 @@ static int conRestore(void)
 	return 0;
 }
 
-static void conSave(void)
+static void vcsa_consoleSave (void)
 {
 	if (conactive)
 		return;
@@ -585,13 +619,19 @@ static void conSave(void)
 	conactive=1;
 }
 
-static int sigintcounter = 0;
+static void vcsa_DosShell (void)
+{
+#warning implement me
+	return;
+}
 
+static int sigintcounter = 0;
+ 
 static int ekbhit_linux(void)
 {
 	struct pollfd set;
 
-	if (!plScrMode)
+	if (!conStatus.CurrentMode)
 	{
 		lseek(vgafd, 4, SEEK_SET);
 		while (write(vgafd, vgatextram, vgamemsize) < 0)
@@ -643,7 +683,7 @@ static int egetch_linux(void)
 	}
 	return 0;
 }
-static void setcurshape(unsigned short shape)
+static void vcsa_SetCursorShape (uint16_t shape)
 {
 	char *buffer="";
 	int l;
@@ -665,7 +705,7 @@ static void setcurshape(unsigned short shape)
 	}
 }
 
-static void setcur(uint16_t y, uint16_t x)
+static void vcsa_SetCursorPosition (uint16_t y, uint16_t x)
 {
 	scrn.x=x;
 	scrn.y=y;
@@ -689,6 +729,8 @@ static void sigint(int signal)
 		kill (getpid(), SIGQUIT);
 	}
 }
+
+static int need_fb_done = 0;
 
 int vcsa_init(int minor)
 {
@@ -723,33 +765,18 @@ int vcsa_init(int minor)
 		exit(1);
 	}
 
-	plScrHeight = scrn.lines;
-	plScrWidth = scrn.cols;
+	conStatus.TextHeight = scrn.lines;
+	conStatus.TextWidth  = scrn.cols;
 	plScrRowBytes = scrn.cols * 2;
 
-	vgamemsize = plScrHeight * plScrWidth * 2;
-	vgamemsize*=2;
+	vgamemsize = conStatus.TextHeight * conStatus.TextWidth * 2;
+	vgamemsize *= 2;
 	vgatextram = calloc(vgamemsize, 1);
 	consoleram = calloc(vgamemsize+4, 1);
 
 #ifdef VCSA_VERBOSE
-	fprintf(stderr, "vcsa: %dx%d(%d) => %d bytes buffer\n", plScrWidth, plScrHeight, plScrHeight, vgamemsize);
+	fprintf(stderr, "vcsa: %dx%d => %d bytes buffer\n", conStatus.TextWidth, conStatus.TextHeight, vgamemsize);
 #endif
-
-	_plSetTextMode=plSetTextMode;
-	_displaystr=displaystr;
-	_setcur=setcur;
-	_setcurshape=setcurshape;
-	_displaystrattr=displaystrattr;
-	_displayvoid=displayvoid;
-	_displaystr_utf8=displaystr_utf8;
-	_measurestr_utf8=measurestr_utf8;
-
-	_drawbar=drawbar;
-	_idrawbar=idrawbar;
-
-	_conRestore=conRestore;
-	_conSave=conSave;
 
 	{
 		struct kbentry k;
@@ -799,29 +826,41 @@ int vcsa_init(int minor)
 		}
 #endif
 	}
+
+	conDriver = &vcsaConsoleDriver;
 	___setup_key(ekbhit_linux, egetch_linux);
+
 	if (init_fonts())
 		make_chr_table();
 	vgaMakePal();
-	set_plScrType();
+	vcsa_setplScrType();
 
 	signal(SIGINT, sigint); /* emulate ESC key on ctrl-c, but multiple presses + OCP deadlocked will make it quit by force */
 
 #ifdef VCSA_VERBOSE
 	fprintf(stderr, "vcsa: driver is online\n");
 #endif
-	plVidType=vidNorm;
+	conStatus.VidType = vidNorm;
 
+	if (!fb_init (minor, &vcsaConsoleDriver))
+	{
+		need_fb_done = 1;
+	}
 	return 0;
 }
 
 void vcsa_done(void)
 {
+	if (need_fb_done)
+	{
+		fb_done ();
+		need_fb_done = 0;
+	}
 	restore_fonts();
 	tcsetattr(0, TCSANOW, &orgterm);
 
-	conRestore();
-	setcurshape(1);
+	vcsa_consoleRestore ();
+	vcsa_SetCursorShape (1);
 
 	free(vgatextram);
 	free(consoleram);
@@ -834,3 +873,36 @@ void vcsa_done(void)
 		activecharset_cd = (iconv_t)(-1);
 	}
 }
+
+static struct consoleDriver_t vcsaConsoleDriver =
+{
+	0,   /* vga13 */
+	vcsa_SetTextMode,
+	vcsa_DisplaySetupTextMode,
+	vcsa_GetDisplayTextModeName,
+	vcsa_MeasureStr_utf8,
+	vcsa_DisplayStr_utf8,
+	vcsa_DisplayChr,
+	vcsa_DisplayStr,
+	vcsa_DisplayStrAttr,
+	vcsa_DisplayVoid,
+	vcsa_DrawBar,
+	vcsa_iDrawBar,
+	0,   /* TextOverlayAddBGRA */
+	0,   /* TextOverlayRemove */
+	0,   /* SetGraphMode */
+	0,   /* gDrawChar16 */
+	0,   /* gDrawChar16P */
+	0,   /* gDrawChar8 */
+	0,   /* gDrawChar8P */
+	0,   /* gDrawStr */
+	0,   /* gUpdateStr */
+	0,   /* gUpdatePal */
+	0,   /* gFlushPal */
+	consoleHasKey,
+	vcsa_SetCursorPosition,
+	vcsa_SetCursorShape,
+	vcsa_consoleRestore,
+	vcsa_consoleSave,
+	vcsa_DosShell
+};

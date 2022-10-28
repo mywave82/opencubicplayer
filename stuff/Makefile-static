@@ -1,7 +1,7 @@
 
 hardware_so=hardware.o freq.o
 sets_so=sets.o
-poutput_so=console.o cp437.o latin1.o poutput-curses.o poutput-keyboard.o pfonts.o poutput.o
+poutput_so=console.o cp437.o latin1.o poutput-curses.o pfonts.o poutput.o
 poutput_so_libs=$(NCURSES_LIBS) $(ICONV_LIBS)
 
 ifeq ($(LINUX),1)
@@ -32,7 +32,7 @@ poutput_so_libs+=$(FREETYPE2_LIBS)
 endif
 
 # libocp_so is linked by parent
-stuff_libocp_so:=compat.o err.o framelock.o poll.o utf-8.o
+stuff_libocp_so:=compat.o err.o framelock.o poll.o poutput-keyboard.o utf-8.o
 
 ifeq ($(STATIC_CORE),1)
  STATIC_OBJECTS += $(patsubst %.o,stuff/%.o,$(hardware_so))

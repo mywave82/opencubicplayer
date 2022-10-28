@@ -54,18 +54,20 @@
 #include <FindDirectory.h>
 #endif
 #include "types.h"
-#include "pmain.h"
+#include "boot/pmain.h"
+#include "boot/console.h"
+#include "stuff/poutput.h"
 
 static char *_cfConfigDir;
 static char *_cfDataDir;
 static char *_cfProgramDir;
 
 static int AllowSymlinked;
+static struct consoleStatus_t *_conStatus;
+static struct consoleDriver_t **_conDriver;
 
 /* This has todo with video-mode rescue */
-static int *plScrMode, crashmode;
-static void (**_plSetTextMode)(unsigned char size);
-static void (**_plSetGraphMode)(unsigned char size);
+static int crashmode;
 
 static inline void eintr_close(int fd)
 {
@@ -107,14 +109,12 @@ static void stopstuff(struct itimerval *i)
 {
 	struct itimerval z;
 
-	memset(&z, 0, sizeof(z));
+	bzero (&z, sizeof(z));
 	setitimer(ITIMER_REAL, &z, &i[0]);
 	setitimer(ITIMER_VIRTUAL, &z, &i[1]);
 	setitimer(ITIMER_PROF, &z, &i[2]);
-	crashmode=*plScrMode;
-	if (_plSetTextMode != NULL)
-		if (*_plSetTextMode != NULL)
-			(*_plSetTextMode)((unsigned char)255);
+	crashmode = plScrMode;
+	(*_conDriver)->SetTextMode ((unsigned char)255);
 }
 static void restartstuff(struct itimerval *i)
 {
@@ -123,18 +123,13 @@ static void restartstuff(struct itimerval *i)
 	setitimer(ITIMER_PROF, &i[2], 0);
 	if (crashmode==101)
 	{
-		if (_plSetGraphMode != NULL)
-			if (*_plSetGraphMode != NULL)
-				(*_plSetGraphMode)((unsigned char)1);
+		(*_conDriver)->SetGraphMode ((unsigned char)1);
 	} else if (crashmode==100)
 	{
-		if (_plSetGraphMode != NULL)
-			if (*_plSetGraphMode != NULL)
-				(*_plSetGraphMode)((unsigned char)0);
-	} else
-		if (_plSetTextMode != NULL)
-			if (*_plSetTextMode != NULL)
-				(*_plSetTextMode)((unsigned char)crashmode);
+		(*_conDriver)->SetGraphMode ((unsigned char)0);
+	} else {
+		(*_conDriver)->SetTextMode ((unsigned char)crashmode);
+	}
 }
 
 static const char *locate_ocp_ini_try(const char *base)
@@ -317,9 +312,7 @@ void sigsegv(int signal)
 		}
 	}
 
-	if(_plSetTextMode)
-		if (*_plSetTextMode) /* don't reset if we havn't used the screen yet */
-			reset();
+	reset();
 #if defined(__linux)
 	dumpcontext(signal, r);
 #else
@@ -521,20 +514,14 @@ static int runocp(void *handle, int argc, char *argv[])
 		fprintf(stderr, "Failed to locate symbol bootup in libocp" LIB_SUFFIX ": %s\n", dlerror());
 		return -1;
 	}
-
-	if (!(plScrMode=(int *)(dlsym(handle, "plScrMode"))))
+	if (!(_conStatus=dlsym(handle, "conStatus")))
 	{
-		fprintf(stderr, "Failed to locate symbol plScrMode in libocp" LIB_SUFFIX ": %s\n", dlerror());
+		fprintf(stderr, "Failed to locate symbol conStatus in libocp" LIB_SUFFIX ": %s\n", dlerror());
 		return -1;
 	}
-	if (!(_plSetTextMode=(void (**)(unsigned char))(dlsym(handle, "_plSetTextMode"))))
+	if (!(_conDriver=dlsym(handle, "conDriver")))
 	{
-		fprintf(stderr, "Failed to locate symbol _plSetTextMode in libocp" LIB_SUFFIX ": %s\n", dlerror());
-		return -1;
-	}
-	if (!(_plSetGraphMode=(void (**)(unsigned char))(dlsym(handle, "_plSetGraphMode"))))
-	{
-		fprintf(stderr, "Failed to locate symbol _plSetGraphMode in libocp" LIB_SUFFIX ": %s\n", dlerror());
+		fprintf(stderr, "Failed to locate symbol conDriver in libocp" LIB_SUFFIX ": %s\n", dlerror());
 		return -1;
 	}
 
@@ -567,7 +554,6 @@ int main(int argc, char *argv[])
 	signal(SIGBUS, sigsegv);
 	signal(SIGINT, sigsegv);
 #endif
-
 
 	AllowSymlinked=(getuid()==geteuid());
 

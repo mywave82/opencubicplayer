@@ -41,7 +41,6 @@
 #include "boot/console.h"
 #include "poutput.h"
 #include "poutput-curses.h"
-#include "poutput-fb.h"
 #ifdef HAVE_X11
 #include "poutput-x11.h"
 #endif
@@ -57,7 +56,6 @@
 #include "latin1.h"
 #include "utf-8.h"
 
-static void reset_api(void);
 static void (*console_clean)(void)=NULL;
 
 static void vgaMakePal(void)
@@ -89,14 +87,11 @@ static int console_init(void)
 	char _stdout[128];
 	char _stdin[128];
 # ifdef HAVE_FRAMEBUFFER
-	int test_fb=0;
 	int test_vcsa=0;
 # endif
 #endif
 
 	vgaMakePal();
-
-	reset_api();
 
 	fprintf(stderr, "Initing console... \n");
 	fflush(stderr);
@@ -129,7 +124,7 @@ static int console_init(void)
 			} else if (!strcmp(driver, "vcsa"))
 			{
 #ifdef HAVE_FRAMEBUFFER
-				memset(_stdin, 0, sizeof(_stdin));
+				bzero(_stdin, sizeof(_stdin));
 				if (readlink("/proc/self/fd/0", _stdin, sizeof(_stdin)-1)<0)
 				if (readlink("/dev/fd/0", _stdin, sizeof(_stdin)-1)<0)
 				{
@@ -143,13 +138,12 @@ static int console_init(void)
 				}
 				if (((st.st_rdev&0xff00)>>8)!=TTY_MAJOR)
 				{
-					fprintf(stderr, "stdin is not a tty\n");
+					fprintf(stderr, "stdin is not a tty (%s)\n", _stdin);
 					return -1;
 				}
 				if (!vcsa_init(st.st_rdev&0xff))
 				{
 					console_clean=vcsa_done;
-					fb_init(st.st_rdev&0xff);
 					return 0;
 				}
 				fprintf(stderr, "vcsa init failed\n");
@@ -186,8 +180,8 @@ static int console_init(void)
 		}
 	}
 #ifdef __linux
-	memset(_stdin, 0, sizeof(_stdin));
-	memset(_stdout, 0, sizeof(_stdout));
+	bzero(_stdin, sizeof(_stdin));
+	bzero(_stdout, sizeof(_stdout));
 
 	if (readlink("/proc/self/fd/0", _stdin, sizeof(_stdin)-1)<0)
 	if (readlink("/dev/fd/0", _stdin, sizeof(_stdin)-1)<0)
@@ -248,7 +242,6 @@ static int console_init(void)
 		case TTY_MAJOR:
 			fprintf(stderr, "We have a tty, testing:\n    Framebuffer (/dev/fb)\n    VCSA (/dev/vcsa)\n    Curses\n");
 #ifdef HAVE_FRAMEBUFFER
-			test_fb=1;
 			test_vcsa=1;
 #endif
 			break;
@@ -311,8 +304,6 @@ static int console_init(void)
 		if (!vcsa_init(st.st_rdev&0xff))
 		{
 			console_clean=vcsa_done;
-			if (test_fb)
-				fb_init(st.st_rdev&0xff);
 			return 0;
 		}
 	}
@@ -360,221 +351,7 @@ static void console_done(void)
 		console_clean();
 		console_clean=NULL;
 	}
-	reset_api();
-}
-
-static void __plSetTextMode(unsigned char x)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "plSetTextMode not implemented in this console driver\n");
-#endif
-}
-static void __displaystr(unsigned short y, unsigned short x, unsigned char attr, const char *str, unsigned short len)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "displaystr not implemented in this console driver\n");
-#endif
-}
-static void __displaystrattr(unsigned short y, unsigned short x, const unsigned short *buf, unsigned short len)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "displaystrattr not implemented in this console driver\n");
-#endif
-}
-static void __displayvoid(unsigned short y, unsigned short x, unsigned short len)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "displayvoid not implemented in this console driver\n");
-#endif
-}
-static void __displaystr_utf8(unsigned short y, unsigned short x, unsigned char attr, const char *str, unsigned short len)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "displaystr_utf8 not implemented in this console driver\n");
-#endif
-}
-static int __measurestr_utf8 (const char *src, int srclen)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "displaystr_utf8 not implemented in this console driver\n");
-#endif
-	return 0;
-}
-static int __plSetGraphMode(int size)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "plSetGraphMode not implemented in this console driver\n");
-#endif
-	return -1;
-}
-static void __gdrawchar(unsigned short x, unsigned short y, unsigned char c, unsigned char f, unsigned char b)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "gdrawchar not implemented in this console driver\n");
-#endif
-}
-static void __gdrawcharp(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "gdrawcharp not implemented in this console driver\n");
-#endif
-}
-static void __gdrawchar8(unsigned short x, unsigned short y, unsigned char c, unsigned char f, unsigned char b)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "gdrawchar8 not implemented in this console driver\n");
-#endif
-}
-static void __gdrawchar8p(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "gdrawchar8p not implemented in this console driver\n");
-#endif
-}
-static void __gdrawstr(uint16_t y, uint16_t x, uint8_t attr, const char *s, uint16_t len)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "gdrawstr not implemented in this console driver\n");
-#endif
-}
-static void __gupdatestr(unsigned short y, unsigned short x, const uint16_t *str, unsigned short len, uint16_t *old)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "gupdatestr not implemented in this console driver\n");
-#endif
-}
-static void __gupdatepal(unsigned char color, unsigned char red, unsigned char green, unsigned char blue)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "gupdatepal not implemented in this console driver\n");
-#endif
-}
-static void __gflushpal(void)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "gflushpal not implemented in this console driver\n");
-#endif
-}
-
-static int __ekbhit(void)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "ekbhit not implemented in this console driver\n");
-#endif
-	return 0;
-}
-static int __egetch(void)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "egetch not implemented in this console driver\n");
-#endif
-	return 0;
-}
-static int __validkey(uint16_t key)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "validkey not implemented in this console driver\n");
-#endif
-	return 0;
-}
-static void __drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "drawbar not implemented in this console driver\n");
-#endif
-}
-
-static void __idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "idrawbar not implemented in this console driver\n");
-#endif
-}
-
-static void __setcur(uint16_t y, uint16_t x)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "setcur not implemented in this console driver\n");
-#endif
-}
-static void __setcurshape(unsigned short shape)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "setcurshape not implemented in this console driver\n");
-#endif
-}
-static int __conRestore(void)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "conRestore not implemented in this console driver\n");
-#endif
-	return 1;
-}
-static void __conSave(void)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "conSave not implemented in this console driver\n");
-#endif
-}
-static void __plDosShell(void)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "plDosShell not implemented in this console driver\n");
-#endif
-}
-static void __plDisplaySetupTextMode(void)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "plDisplaySetupTextMode not implemented in this console driver\n");
-#endif
-}
-static const char *__plGetDisplayTextModeName(void)
-{
-#ifdef CONSOLE_DEBUG
-	fprintf(stderr, "plGetDisplayTextModeName not implemented in this console driver\n");
-#endif
-	return "unknown";
-}
-
-
-static void reset_api(void)
-{
-	_plSetTextMode=__plSetTextMode;
-	_displaystr=__displaystr;
-	_displaystrattr=__displaystrattr;
-	_displayvoid=__displayvoid;
-
-	_displaystr_utf8=__displaystr_utf8;
-	_measurestr_utf8 = __measurestr_utf8;
-
-	_plDisplaySetupTextMode=__plDisplaySetupTextMode;
-	_plGetDisplayTextModeName=__plGetDisplayTextModeName;
-
-	_plSetGraphMode=__plSetGraphMode;
-	_gdrawchar=__gdrawchar;
-	_gdrawcharp=__gdrawcharp;
-	_gdrawchar8=__gdrawchar8;
-	_gdrawchar8p=__gdrawchar8p;
-	_gdrawstr=__gdrawstr;
-	_gupdatestr=__gupdatestr;
-	_gupdatepal=__gupdatepal;
-	_gflushpal=__gflushpal;
-
-	_ekbhit=__ekbhit;
-	_egetch=__egetch;
-	_validkey=__validkey;
-
-	_drawbar=__drawbar;
-	_idrawbar=__idrawbar;
-
-	_setcur=__setcur;
-	_setcurshape=__setcurshape;
-
-	_conRestore=__conRestore;
-	_conSave=__conSave;
-
-	_plDosShell=__plDosShell;
-	_vga13=NULL;
+	conDriver = &dummyConsoleDriver;
 }
 
 DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "poutput", .desc = "OpenCP Output Routines (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 12, .Init = console_init, .Close = console_done};

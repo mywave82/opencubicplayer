@@ -37,19 +37,15 @@
 static uint16_t ring_buffer[BUFFER_LEN];
 static int ring_head, ring_tail;
 
-static int(*kbhit)(void);
-static int(*getnextchar)(void);
-static int ___valid_key(uint16_t key);
+static int(*driver_kbhit)(void);
+static int(*driver_getch)(void);
 
-void ___setup_key(int(*_kbhit)(void), int(*_getch)(void))
+void ___setup_key(int(*kbhit)(void), int(*getch)(void))
 {
 	ring_head=0;
 	ring_tail=0;
-	kbhit=_kbhit;
-	getnextchar=_getch;
-	_ekbhit=___peek_key;
-	_egetch=___pop_key;
-	_validkey=___valid_key;
+	driver_kbhit=kbhit;
+	driver_getch=getch;
 }
 
 void ___push_key(uint16_t key)
@@ -64,28 +60,40 @@ void ___push_key(uint16_t key)
 	ring_buffer[ring_head]=key;
 	ring_head=(ring_head+1)%BUFFER_LEN;
 }
-int ___peek_key(void)
+
+int ekbhit(void)
 {
 	if (ring_head!=ring_tail)
+	{
 		return 1;
-	return kbhit();
+	}
+	if (driver_kbhit)
+	{
+		return driver_kbhit();
+	}
+	return 0;
 }
-/*uint16_t*/int ___pop_key(void)
+
+int egetch(void)
 {
 	int retval=0;
 	int escapelevel=0; /* number of [ */
 	int upcode=0;
 	int key_len, i;
 
-	while (((ring_head+1)%BUFFER_LEN)!=ring_tail)
+	while ((((ring_head+1)%BUFFER_LEN)!=ring_tail) && driver_getch)
 	{
-		int temp=getnextchar();
+		int temp = driver_getch();
 		if (!temp)
+		{
 			break;
+		}
 		___push_key(temp);
 	}
 	if (ring_head==ring_tail)
+	{
 		return retval;
+	}
 
 	/* this code now expects escape code not to enter this part of the code
 	 * broken up into more than one single buffer read
@@ -486,7 +494,7 @@ int ___peek_key(void)
 #ifdef KEYBOARD_DEBUG
 		fprintf(stderr, "poutput-keyboard.c: upcode %d, escapelevel %d gave no result\n", upcode, escapelevel);
 #endif
-		return ___pop_key();
+		return egetch();
 	}
 #ifdef KEYBOARD_DEBUG
 	fprintf(stderr, "gave result %04x\n", retval);
@@ -494,7 +502,7 @@ int ___peek_key(void)
 	return retval;
 }
 
-int ___valid_key(uint16_t key)
+int consoleHasKey(uint16_t key)
 {
 	switch (key)
 	{

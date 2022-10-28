@@ -932,8 +932,6 @@ static int init_modules(int argc, char *argv[])
 	if (ocpmain->main(argc, argv)<0)
 		return errGen;
 
-	plSetTextMode(255);
-
 	return 0;
 }
 

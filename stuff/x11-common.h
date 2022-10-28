@@ -3,20 +3,21 @@
 
 #include <X11/X.h>
 #include <X11/Xlib.h>
+#include <stdint.h>
 
 extern uint32_t x11_palette32[256];
 extern uint16_t x11_palette16[256];
 extern uint16_t x11_palette15[256];
 
-extern void x11_gupdatepal(unsigned char color, unsigned char _red, unsigned char _green, unsigned char _blue);
-extern void x11_gflushpal(void);
+void x11_gUpdatePal (uint8_t color, uint8_t _red, uint8_t _green, uint8_t _blue);
+void x11_gFlushPal (void);
 
 extern Display *mDisplay;
 extern int mLocalDisplay;
 extern int mScreen;
 extern int x11_depth;
 
-extern int x11_connect(void);
-extern void x11_disconnect(void);
+int x11_connect (void);
+void x11_disconnect (void);
 
 #endif

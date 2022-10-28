@@ -23,8 +23,10 @@
  *    -first release
  */
 
+#define _CONSOLE_DRIVER 1
 #include "config.h"
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "types.h"
@@ -32,57 +34,141 @@
 #include "stuff/poutput.h"
 #include "stuff/utf-8.h"
 
-void (*_vga13)(void);
-void (*_plSetTextMode)(uint8_t size) = 0;
-void (*_plDisplaySetupTextMode)(void);
-const char *(*_plGetDisplayTextModeName)(void);
-
-void displaychr (const uint16_t y, const uint16_t x, const uint8_t attr, const char chr, const uint16_t len)
+static void dummySetTextMode (uint8_t x)
 {
-#define DISPLAYCHR_LEN 256
-	int i;
-	char buffer[DISPLAYCHR_LEN];
-	if (!len) return;
-	memset (buffer, chr, DISPLAYCHR_LEN);
-	for (i=0; i * DISPLAYCHR_LEN < len; i++)
-	{
-		int l = len - i * DISPLAYCHR_LEN;
-		if (l > DISPLAYCHR_LEN) l = DISPLAYCHR_LEN;
-		_displaystr (y, x + i * DISPLAYCHR_LEN, attr, buffer, l);
-	}
+	fprintf (stderr, "SetTextMode() called premature\n");
 }
 
-void (*_displaystr)(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
-void (*_displaystrattr)(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len);
-void (*_displayvoid)(uint16_t y, uint16_t x, uint16_t len);
+static void dummyDisplaySetupTextMode (void)
+{
+	fprintf (stderr, "DisplaySetupTextMode() called premature\n");
+}
 
-void (*_displaystr_utf8)(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
-int  (*_measurestr_utf8)(const char *src, int srclen);
+static const char *dummyGetDisplayTextModeName (void)
+{
+	fprintf (stderr, "GetDisplayTextModeName() called premature\n");
+	return "";
+}
+static int dummyMeasureStr_utf8 (const char *src, int srclen)
+{
+	fprintf (stderr, "MeasureStr_utf8() called premature\n");
+	return 0;
+}
 
-int (*_plSetGraphMode)(int); /* -1 reset, 0 640x480 1 1024x768 */
-void (*_gdrawchar)(uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b);
-void (*_gdrawcharp)(uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *picp);
-void (*_gdrawchar8)(uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b);
-void (*_gdrawchar8p)(uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *picp);
-void (*_gdrawstr)(uint16_t y, uint16_t x, uint8_t attr, const char *s, uint16_t len);
-void (*_gupdatestr)(uint16_t y, uint16_t x, const uint16_t *str, uint16_t len, uint16_t *old);
-void (*_gupdatepal)(uint8_t color, uint8_t red, uint8_t green, uint8_t blue);
-void (*_gflushpal)(void);
+static void dummyDisplayStr_utf8 (uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
+{
+	fprintf (stderr, "DisplayStr_utf8() called premature\n");
+}
 
-int (*_ekbhit)(void);
-int (*_egetch)(void);
-int (*_validkey)(uint16_t);
+static void dummyDisplayChr (uint16_t y, uint16_t x, uint8_t attr, char chr, uint16_t len)
+{
+	fprintf (stderr, "dummyDisplayChr() called premature\n");
+}
 
-void (*_drawbar)(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c);
-void (*_idrawbar)(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c);
+static void dummyDisplayStr (uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
+{
+	fprintf (stderr, "DisplayStr() called premature\n");
+}
 
-void (*_setcur)(uint16_t y, uint16_t x) ;
-void (*_setcurshape)(uint16_t shape);
+static void dummyDisplayStrAttr (uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len)
+{
+	fprintf (stderr, "DisplayStrAttr() called premature\n");
+}
 
-int (*_conRestore)(void);
-void (*_conSave)(void);
+static void dummyDisplayVoid (uint16_t y, uint16_t x, uint16_t len)
+{
+	fprintf (stderr, "DisplayVoid() called premature\n");
+}
 
-void (*_plDosShell)(void);
+static void dummyDrawBar (uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
+{
+	fprintf (stderr, "DrawBar() called premature\n");
+}
+
+static void dummyiDrawBar (uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c)
+{
+	fprintf (stderr, "iDrawBar() called premature\n");
+}
+
+static int dummyHasKey (uint16_t)
+{
+	fprintf (stderr, "HasKey() called premature\n");
+	return 0;
+}
+
+static void dummySetCursorPosition (uint16_t y, uint16_t x)
+{
+	fprintf (stderr, "SetCursorPosition() called premature\n");
+}
+
+static void dummySetCursorShape (uint16_t shape)
+{
+	fprintf (stderr, "SetCursorShape() called premature\n");
+}
+
+static int dummyconsoleRestore (void)
+{
+	fprintf (stderr, "consoleRestore() called premature\n");
+	return 0;
+}
+
+static void dummyconsoleSave (void)
+{
+	fprintf (stderr, "consoleSave() called premature\n");
+}
+
+static void dummyDosShell (void)
+{
+	fprintf (stderr, "dummyDosShell() called premature\n");
+}
+
+const struct consoleDriver_t dummyConsoleDriver =
+{
+	0, /* vga13 */
+	dummySetTextMode,
+	dummyDisplaySetupTextMode,
+	dummyGetDisplayTextModeName,
+	dummyMeasureStr_utf8,
+	dummyDisplayStr_utf8,
+	dummyDisplayChr,
+	dummyDisplayStr,
+	dummyDisplayStrAttr,
+	dummyDisplayVoid,
+	dummyDrawBar,
+	dummyiDrawBar,
+	0, /* TextOverlayAddBGRA */
+	0, /* TextOverlayRemove */
+	0, /* SetGraphMode */
+	0, /* gDrawChar */
+	0, /* gDrawCharP */
+	0, /* gDrawChar8 */
+	0, /* gDrawChar8P */
+	0, /* gDrawStr */
+	0, /* gUpdateStr */
+	0, /* gUpdatePal */
+	0, /* gFlushPal */
+	dummyHasKey,
+	dummySetCursorPosition,
+	dummySetCursorShape,
+	dummyconsoleRestore,
+	dummyconsoleSave,
+	dummyDosShell
+};
+
+const struct consoleDriver_t *conDriver = &dummyConsoleDriver;
+struct consoleStatus_t conStatus =
+{
+	80,
+	25,
+	0,
+	vidNorm,
+	0,
+	0,
+	0,
+	0,
+	0,
+	_8x16
+};
 
 unsigned int plScrHeight = 80;
 unsigned int plScrWidth = 25;
@@ -92,8 +178,6 @@ int plScrMode;
 uint8_t *plVidMem;
 
 int plScrTextGUIOverlay;
-void *(*plScrTextGUIOverlayAddBGRA)(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra);
-void (*plScrTextGUIOverlayRemove)(void *handle);
 
 void display_nprintf (unsigned short y, unsigned short x, unsigned char color, unsigned short width, const char *fmt, ...)
 {
@@ -126,7 +210,7 @@ void display_nprintf (unsigned short y, unsigned short x, unsigned char color, u
 			{
 				len = width;
 			}
-			_displaystr (y, x, color, fmt, len);
+			conDriver->DisplayStr (y, x, color, fmt, len);
 			x += len;
 			width -= len;
 			fmt = next;
@@ -135,7 +219,7 @@ void display_nprintf (unsigned short y, unsigned short x, unsigned char color, u
 		fmt++;
 		if ((*fmt) == '%')
 		{
-			displaychr (y, x, color, '%', 1);
+			conDriver->DisplayChr (y, x, color, '%', 1);
 			x++;
 			width--;
 			fmt++;
@@ -250,14 +334,14 @@ after_dot:
 					}
 					if ((requested_width > requested_precision) && minusflag)
 					{
-						displaychr (y, x, color, ' ', requested_width - requested_precision);
+						conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 						x += requested_width - requested_precision;
 					}
-					displaychr (y, x, color, c, requested_precision);
+					conDriver->DisplayChr (y, x, color, c, requested_precision);
 					x += requested_precision;
 					if ((requested_width > requested_precision) && !minusflag)
 					{
-						displaychr (y, x, color, ' ', requested_width - requested_precision);
+						conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 						x += requested_width - requested_precision;
 					}
 					width -= requested_width;
@@ -304,14 +388,14 @@ after_dot:
 					}
 					if ((requested_width > requested_precision) && minusflag)
 					{
-						displaychr (y, x, color, ' ', requested_width - requested_precision);
+						conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 						x += requested_width - requested_precision;
 					}
-					_displaystr (y, x, color, src, requested_precision);
+					conDriver->DisplayStr (y, x, color, src, requested_precision);
 					x += requested_precision;
 					if ((requested_width > requested_precision) && !minusflag)
 					{
-						displaychr (y, x, color, ' ', requested_width - requested_precision);
+						conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 						x += requested_width - requested_precision;
 					}
 					width -= requested_width;
@@ -321,7 +405,7 @@ after_dot:
 			case 'S':
 				{
 					const char *src = va_arg (ap, const char *);
-					int src_width = _measurestr_utf8 (src, strlen (src));
+					int src_width = conDriver->MeasureStr_utf8 (src, strlen (src));
 					if (requested_precision==INT_MAX)
 					{
 						requested_precision = src_width;
@@ -340,19 +424,19 @@ after_dot:
 					}
 					if ((requested_width > requested_precision) && minusflag)
 					{
-						displaychr (y, x, color, ' ', requested_width - requested_precision);
+						conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 						x += requested_width - requested_precision;
 					}
 					if (spaceflag)
 					{
-						_displaystr_utf8 (y, x, color, src, requested_precision);
+						conDriver->DisplayStr_utf8 (y, x, color, src, requested_precision);
 					} else {
 						displaystr_utf8_overflowleft (y, x, color, src, requested_precision);
 					}
 					x += requested_precision;
 					if ((requested_width > requested_precision) && !minusflag)
 					{
-						displaychr (y, x, color, ' ', requested_width - requested_precision);
+						conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 						x += requested_width - requested_precision;
 					}
 					width -= requested_width;
@@ -465,14 +549,14 @@ after_dot:
 								}
 								if ((requested_width > requested_precision) && minusflag)
 								{
-									displaychr (y, x, color, ' ', requested_width - requested_precision);
+									conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 									x += requested_width - requested_precision;
 								}
-								_displaystr (y, x, color, buffer, requested_precision);
+								conDriver->DisplayStr (y, x, color, buffer, requested_precision);
 								x += requested_precision;
 								if ((requested_width > requested_precision) && !minusflag)
 								{
-									displaychr (y, x, color, ' ', requested_width - requested_precision);
+									conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 									x += requested_width - requested_precision;
 								}
 								width -= requested_width;
@@ -538,14 +622,14 @@ after_dot:
 								}
 								if ((requested_width > requested_precision) && minusflag)
 								{
-									displaychr (y, x, color, ' ', requested_width - requested_precision);
+									conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 									x += requested_width - requested_precision;
 								}
-								_displaystr (y, x, color, buffer, requested_precision);
+								conDriver->DisplayStr (y, x, color, buffer, requested_precision);
 								x += requested_precision;
 								if ((requested_width > requested_precision) && !minusflag)
 								{
-									displaychr (y, x, color, ' ', requested_width - requested_precision);
+									conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 									x += requested_width - requested_precision;
 								}
 								width -= requested_width;
@@ -572,7 +656,7 @@ after_dot:
 	} // while
 	if (width)
 	{
-		displaychr (y, x, color, ' ', width);
+		conDriver->DisplayChr (y, x, color, ' ', width);
 	}
 	va_end(ap);
 }

@@ -5,7 +5,7 @@ include Makefile-static
 ifeq ($(STATIC_CORE),1)
 all: $(stuff_libocp_so) $(hardware_so) $(sets_so) $(poutput_so)
 else
-all: $(stuff_libocp_so) hardware$(LIB_SUFFIX) sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX)
+all: $(stuff_libocp_so) hardware$(LIB_SUFFIX) sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX) poutput-keyboard.o
 endif
 
 test: compat-test
@@ -200,7 +200,6 @@ console.o: console.c \
 	../boot/psetting.h \
 	../stuff/latin1.h \
 	poutput-curses.h \
-	poutput-fb.h \
 	poutput-sdl.h \
 	poutput-sdl2.h \
 	poutput-x11.h \

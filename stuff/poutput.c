@@ -36,7 +36,6 @@
  *     the generic functions is still kept in this file.
  */
 
-#define _CONSOLE_DRIVER
 #include "config.h"
 #include <string.h>
 #include "types.h"
@@ -45,16 +44,12 @@
 #include "poutput.h"
 
 unsigned char plpalette[256];
-int plScrLineBytes;
-int plScrLines;
 
-FontSizeEnum plCurrentFont;
 const struct FontSizeInfo_t FontSizeInfo[] =
 {
 	{8, 8},
 	{8, 16}
 };
-
 
 void make_title (const char *part, int escapewarning)
 {
@@ -72,9 +67,9 @@ void make_title (const char *part, int escapewarning)
 
 	if (plScrMode<100)
 	{
-		_displaystr (0, 0, escapewarning?0xc0:0x30, buf, plScrWidth);
+		displaystr (0, 0, escapewarning?0xc0:0x30, buf, plScrWidth);
 	} else {
-		_gdrawstr (0, 0, escapewarning?0xc0:0x30, buf, plScrWidth);
+		gdrawstr (0, 0, escapewarning?0xc0:0x30, buf, plScrWidth);
 	}
 }
 
@@ -153,7 +148,7 @@ void generic_gdrawchar8p(unsigned short x, unsigned short y, unsigned char c, un
 
 	if (!picp)
 	{
-		_gdrawchar8(x,y,c,f,0);
+		gdrawchar8(x,y,c,f,0);
 		return;
 	}
 
@@ -219,7 +214,7 @@ void generic_gdrawcharp(unsigned short x, unsigned short y, unsigned char c, uns
 
 	if (!picp)
 	{
-		_gdrawchar(x,y,c,f,0);
+		gdrawchar(x,y,c,f,0);
 		return;
 	}
 

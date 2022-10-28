@@ -47,14 +47,14 @@ int mLocalDisplay=0;
 int mScreen;
 int x11_depth=8;
 
-void x11_gupdatepal(unsigned char color, unsigned char _red, unsigned char _green, unsigned char _blue)
+void x11_gUpdatePal (uint8_t color, uint8_t _red, uint8_t _green, uint8_t _blue)
 {
 	red[color]=_red<<10;
 	green[color]=_green<<10;
 	blue[color]=_blue<<10;
 }
 
-void x11_gflushpal(void)
+void x11_gFlushPal (void)
 {
 	int i, r, g, b;
 	if (x11_depth==8)
@@ -94,7 +94,7 @@ void x11_gflushpal(void)
 
 static int inited=0;
 
-int x11_connect(void)
+int x11_connect (void)
 {
 	char *dispName;
 
@@ -124,13 +124,13 @@ int x11_connect(void)
 	return 0;
 }
 
-void x11_disconnect(void)
+void x11_disconnect (void)
 {
 	if (!inited)
 		return;
 	if (!(--inited))
 	{
-		XCloseDisplay(mDisplay);
-		mDisplay=NULL;
+		XCloseDisplay (mDisplay);
+		mDisplay = NULL;
 	}
 }

@@ -1,9 +1,104 @@
 #ifndef __POUTPUT_H
 #define __POUTPUT_H
 
-#include "boot/console.h" /* currently from boot/console.h... to be moved later */
+#include "boot/console.h"
 
-void displaychr (const uint16_t y, const uint16_t x, const uint8_t attr, const char chr, const uint16_t len);
+typedef enum {
+	_8x8 = 0,
+	_8x16 = 1,
+	_FONT_MAX = 1
+} FontSizeEnum;
+
+struct FontSizeInfo_t
+{
+	uint8_t w, h;
+};
+extern const struct FontSizeInfo_t FontSizeInfo[_FONT_MAX+1];
+
+struct consoleDriver_t
+{
+	void (*vga13)(void); /* Used by würfel-mode only */
+
+	void (*SetTextMode)(uint8_t x); /* configures text-mode */
+		/* index  text   font  physical
+		 *  0     80x25  8x16   640x400
+		 *  1     80x30  8x16   640x480
+		 *  2     80x50  8x8    640x400
+		 *  3     80x60  8x8    640x480
+		 *  4    128x48  8x16  1024x768
+		 *  5    160x64  8x16  1280x1024
+		 *  6    128x96  8x8   1024x768
+		 *  7    160x128 8x8   1280x1024
+		 *  8 custom window
+		 * 255 = close window / release keyboard (formed gdb helper, and called during shutdown */
+
+	void        (*DisplaySetupTextMode)  (void); /* Used by ALT-C, lets the driver configure itself, usually font-size - Driver can assume that TextMode is active */
+	const char *(*GetDisplayTextModeName)(void); /* Used by ALT-C dialog to resume the current "mode" (e.g. font-size) */
+
+	int  (*MeasureStr_utf8)(const char *src, int srclen);
+
+	void (*DisplayStr_utf8)(uint16_t y, uint16_t x, uint8_t attr, const char *str,                      uint16_t len); /* len = maxlength to use on screen, not input length */
+	void (*DisplayChr)     (uint16_t y, uint16_t x, uint8_t attr,       char chr,                       uint16_t len);
+	void (*DisplayStr)     (uint16_t y, uint16_t x, uint8_t attr, const char *str,                      uint16_t len);
+	void (*DisplayStrAttr) (uint16_t y, uint16_t x,                                const uint16_t *buf, uint16_t len);
+	void (*DisplayVoid)    (uint16_t y, uint16_t x,                                                     uint16_t len);
+        void (* DrawBar)       (uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c);
+        void (*iDrawBar)       (uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c);
+
+	void *(*TextOverlayAddBGRA)(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra);
+	void  (*TextOverlayRemove) (void *handle);
+
+	int (*SetGraphMode) (int size);
+		/* index
+		 *  0     640x480
+		 *  1    1024x768
+		 */
+	void (*gDrawChar16) (uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b);
+	void (*gDrawChar16P)(uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *picp);
+	void (*gDrawChar8)  (uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b);
+	void (*gDrawChar8P) (uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *picp);
+	void (*gDrawStr)    (uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len); /* matches DisplayStr */
+	void (*gUpdateStr)  (uint16_t y, uint16_t x, const uint16_t *str, uint16_t len, uint16_t *old);
+	void (*gUpdatePal)  (uint8_t color, uint8_t red, uint8_t green, uint8_t blue);
+	void (*gFlushPal)   (void);
+
+	int (*HasKey)        (uint16_t);
+
+	void (*SetCursorPosition)(uint16_t y, uint16_t x);
+	void (*SetCursorShape)   (uint16_t shape);
+
+	int  (*consoleRestore)(void);
+	void (*consoleSave)   (void);
+
+	void (*DosShell)(void);
+};
+
+enum vidType
+{
+	vidNorm, /* text-only systems - console, curses etc.. can support setting video-mode */
+	vidVESA, /* text and graphical systems.. can support setting video-mode */
+	vidModern, /* text and graphical systems.. try to not override video-mode */
+};
+
+struct consoleStatus_t
+{
+	/* console resolutiom */
+	unsigned int TextHeight; /* range 25..inifinity */
+	unsigned int TextWidth;  /* range 80..CONSOLE_MAX_X  CONSOLE_MAX_X is 1024 */
+
+	int TextGUIOverlay;   /* TextOverlayAddBGRA / TextOverlayRemove  is supported */
+
+	enum vidType VidType; /* Does driver support text, text+graph, text+graph+flag(try to avoid changing size) */
+
+	unsigned int LastTextMode;  /* Last set TextMode (left as is if entering graph mode */
+	unsigned int CurrentMode; /* Last set GraphMode, most drivers merges including graphic modes (100 = LoRes, 101 = HiRes, 13=vga13() */
+
+	uint8_t *VidMem; /* framebuffer used by Graph, Scope etc. when in graph mode*/
+	unsigned int GraphBytesPerLine; /* How many bytes does one line from plVidMem use (can be padded) */
+	unsigned int GraphLines;     /* How many graphical lines do we have */
+
+	FontSizeEnum CurrentFont; /* Only drivers can change this, and their helper functions can use it. For end-users, its usage is only usefull in combination with plScrTextGUIOverlay API */
+};
 
 /* display_nprintf() behaves a lot like printf(), with some exceptions and additions:
  *
@@ -26,105 +121,89 @@ void display_nprintf (unsigned short y, unsigned short x, unsigned char color, u
 
 #ifndef _CONSOLE_DRIVER
 
-#define vga13() (_vga13())
-#define plSetTextMode(x) (_plSetTextMode(x))
-#define displayvoid(y, x, len) (_displayvoid(y, x, len))
-#define displaystr(y, x, attr, str, len) (_displaystr(y, x, attr, str, len))
-#define displaystrattr(y, x, buf, len) (_displaystrattr(y, x, buf, len))
-#define displaystr_utf8(y, x, attr, str, len) (_displaystr_utf8(y, x, attr, str, len))
-#define measurestr_utf8(str, strlen) (_measurestr_utf8(str, strlen))
-#define plSetGraphMode(size) (_plSetGraphMode(size))
+#define vga13                                   conDriver->vga13
+#define plSetTextMode(x)                        conDriver->SetTextMode(x)
+#define plDisplaySetupTextMode()                conDriver->DisplaySetupTextMode()
+#define plGetDisplayTextModeName()              conDriver->GetDisplayTextModeName()
+#define measurestr_utf8(s,l)                    conDriver->MeasureStr_utf8(s,l)
+#define displaystr_utf8(y,x,a,s,l)              conDriver->DisplayStr_utf8(y,x,a,s,l)
+#define displaychr(y,x,a,c,l)                   conDriver->DisplayChr(y,x,a,c,l)
+#define displaystr(y,x,a,s,l)                   conDriver->DisplayStr(y,x,a,s,l)
+#define displaystrattr(y,x,b,l)                 conDriver->DisplayStrAttr(y,x,b,l)
+#define displayvoid(y,x,l)                      conDriver->DisplayVoid(y,x,l)
+#define drawbar(x,yb,yh,hgt,c)                  conDriver->DrawBar(x,yb,yh,hgt,c)
+#define idrawbar(x,yb,yh,hgt,c)                 conDriver->iDrawBar(x,yb,yh,hgt,c)
+#define plScrTextGUIOverlayAddBGRA(x,y,w,h,p,d) conDriver->TextOverlayAddBGRA(x,y,w,h,p,d)
+#define plScrTextGUIOverlayRemove(h)            conDriver->TextOverlayRemove(h)
+#define plSetGraphMode(s)                       conDriver->SetGraphMode(s)
 
 /* 8x16 OCP font, front and back color */
-#define gdrawchar(x, y, c, f, b) (_gdrawchar(x, y, c, f, b))
-/* 8x16 OCP font, front color, picp for background (or zero if no picture present) -  picp needs to be same format/size as plScrLineBytes */
-#define gdrawcharp(x, y, c, f, picp) (_gdrawcharp(x, y, c, f, picp))
-
+#define gdrawchar(x,y,c,f,b)                    conDriver->gDrawChar16(x,y,c,f,b)
+/* 8x16 OCP font, front color, picp for backgroud (or zero if no picture present) -  picp needs to be same format/size as plScrLineBytes */
+#define gdrawcharp(x,y,c,f,picp)                conDriver->gDrawChar16P(x,y,c,f,picp)
 /* 8x8 OCP font, front and back color */
-#define gdrawchar8(x, y, c, f, b) (_gdrawchar8(x, y, c, f, b))
+#define gdrawchar8(x,y,c,f,b)                   conDriver->gDrawChar8(x,y,c,f,b)
 /* 8x8 OCP font, front color, picp for background (or zero if no picture present) -  picp needs to be same format/size as plScrLineBytes */
-#define gdrawchar8p(x, y, c, f, picp) (_gdrawchar8p(x, y, c, f, picp))
+#define gdrawchar8p(x,y,c,f,picp)               conDriver->gDrawChar8P(x,y,c,f,picp)
+#define gdrawstr(y,x,a,s,l)                     conDriver->gDrawStr(y,x,a,s,l)
+#define gupdatestr(y,x,s,l,old)                 conDriver->gUpdateStr(y,x,s,l,old)
+#define gupdatepal(c,r,g,b)                     conDriver->gUpdatePal(c,r,g,b)
+#define gflushpal()                             conDriver->gFlushPal()
 
-#define gdrawstr(y, x, attr, s, len) (_gdrawstr(y, x, attr, s, len))
-#define gupdatestr(y, x, str, len, old) (_gupdatestr(y, x, str, len, old))
-#define drawbar(x, yb, yh, hgt, c) (_drawbar(x, yb, yh, hgt, c))
-#define idrawbar(x, yb, yh, hgt, c) (_idrawbar(x, yb, yh, hgt, c))
-#define gupdatepal(c,r,g,b) (_gupdatepal(c,r,g,b))
-#define gflushpal() (_gflushpal())
-#define plDisplaySetupTextmode() (_plDisplaySetupText())
-#define plGetDisplayTextModeName() (_plGetDisplayTextModeName())
-#define RefreshScreen() (_RefreshScreen())
+#define validkey(k)                             conDriver->HasKey(k)
 
-#define ekbhit() (_ekbhit())
-#define egetch() (_egetch())
-#define validkey(k) (_validkey(k))
+#define setcur(y,x)                             conDriver->SetCursorPosition(y, x)
+#define setcurshape(shape)                      conDriver->SetCursorShape(shape)
 
-#define setcur(y, x) _setcur(y, x)
-#define setcurshape(shape) _setcurshape(shape)
-#define conRestore() _conRestore()
-#define conSave() _conSave()
+#define conRestore()                            conDriver->consoleRestore()
+#define conSave()                               conDriver->consoleSave()
 
-#define plDosShell() _plDosShell()
+#define plDosShell()                            conDriver->DosShell()
+
+#define plScrHeight                             conStatus.TextHeight /* How many textlines can we currently fit. Undefined for wurfel-mode */
+#define plScrWidth                              conStatus.TextWidth  /* How many characters can we currently fir on a line */
+#define plScrTextGUIOverlay                     conStatus.TextGUIOverlay /* Is text rendered virtually into a framebuffer, AND supports overlays? */
+#define plVidType                               conStatus.VidType      /* do we support, text, GUI or GUI without real resolutions */
+#define plScrType                               conStatus.LastTextMode /* Last set textmode */
+#define plScrMode                               conStatus.CurrentMode  /* If we are in graphical mode, this value is set to either 13 (for wurfel), 100 for 640x480, 101 for 1024x768, 255 for custom */
+#define plVidMem                                conStatus.VidMem      /* This points to the current selected bank, and should atleast provide 64k of available bufferspace */
+#define plScrLineBytes                          conStatus.GraphBytesPerLine /* How many bytes does one line from plVidMem use (can be padded) */
+#define plScrLines                              conStatus.GraphLines   /* How many graphical lines do we have */
+#define plCurrentFont                           conStatus.CurrentFont
 
 #endif
 
-/* standard functions that can be used to embed in ekbhit and egetch when
- * escaped key-codes are used, or you want to push ready keys (values above 256)
- */
-extern void ___push_key(uint16_t);
-extern int ___peek_key(void);
-extern /*uint16_t*/int ___pop_key(void);
-extern void ___setup_key(int(*kbhit)(void), int(*getch)(void));
-
-extern void writenum(uint16_t *buf, unsigned short ofs, unsigned char attr, unsigned long num, unsigned char radix, unsigned short len, char clip0/*=1*/);
+// TODO move us into API
+int ekbhit(void);
+int egetch(void);
+void writenum(uint16_t *buf, unsigned short ofs, unsigned char attr, unsigned long num, unsigned char radix, unsigned short len, char clip0/*=1*/);
 #define _writenum(buf, ofs, attr, num, radix, len) writenum(buf, ofs, attr, num, radix, len, 1)
-extern void writestring(uint16_t *buf, unsigned short ofs, unsigned char attr, const char *str, unsigned short len);
-extern void writestringattr(uint16_t *buf, unsigned short ofs, const uint16_t *str, unsigned short len);
-
-enum vidType
-{
-	vidNorm, /* text-only systems - console, curses etc.. can support setting video-mode */
-	vidVESA, /* text and graphical systems.. can support setting video-mode */
-	vidModern, /* text and graphical systems.. try to not override video-mode */
-};
-
-extern unsigned int plScrHeight;        /* How many textlines can we currently fit. Undefined for wurfel-mode */
-extern unsigned int plScrWidth;         /* How many characters can we currently fir on a line */
-extern enum vidType plVidType;                  /* vidNorm for textmode only, or vidVESA for graphical support also */
-extern unsigned char plScrType;         /* Last set textmode */
-extern int plScrMode;                   /* If we are in graphical mode, this value is set to either 13 (for wurfel), 100 for 640x480, 101 for 1024x768, 255 for custom */
-extern uint8_t *plVidMem;               /* This points to the current selected bank, and should atleast provide 64k of available bufferspace */
-extern int plScrLineBytes;              /* How many bytes does one line from plVidMem use (can be padded) */
-extern int plScrLines;                  /* How many graphical lines do we have */
+void writestring(uint16_t *buf, unsigned short ofs, unsigned char attr, const char *str, unsigned short len);
+void writestringattr(uint16_t *buf, unsigned short ofs, const uint16_t *str, unsigned short len);
 
 void make_title (const char *part, int escapewarning);
 
-extern int plScrTextGUIOverlay;         /* Is text rendered virtually into a framebuffer, AND supports overlays? */
-
-typedef enum {
-	_8x8 = 0,
-	_8x16 = 1,
-	_FONT_MAX = 1
-} FontSizeEnum;
-
-struct FontSizeInfo_t
-{
-	uint8_t w, h;
-};
-extern const struct FontSizeInfo_t FontSizeInfo[_FONT_MAX+1];
-
-extern FontSizeEnum plCurrentFont; /* Only drivers can change this, and their helper functions can use it */
-
 #ifdef _CONSOLE_DRIVER
 
-extern unsigned char plpalette[256];
+/* kbhit and getch will be called on ekbhit() and egetch() - they can be dummy callbacks to refresh the console.
+ *
+ * Console drivers that implemented getch() are expected to return keyboard/console escape codes.
+ *
+ * Console drivers that decode keyboard themself should use ___push_key(), and international characters are split up into UTF-8 bytes
+ */
+void ___setup_key(int(*kbhit)(void), int(*getch)(void));
+void ___push_key(uint16_t);
 
-extern void generic_gdrawstr(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
-extern void generic_gdrawchar8(unsigned short x, unsigned short y, unsigned char c, unsigned char f, unsigned char b);
-extern void generic_gdrawchar8p(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp);
-extern void generic_gdrawchar(unsigned short x, unsigned short y, unsigned char c, unsigned char f, unsigned char b);
-extern void generic_gdrawcharp(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp);
-extern void generic_gupdatestr(unsigned short y, unsigned short x, const uint16_t *str, unsigned short len, uint16_t *old);
+int consoleHasKey(uint16_t key);
+
+extern unsigned char plpalette[256]; /* palette might be overridden via ocp.ini */
+
+void generic_gdrawstr(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
+void generic_gdrawchar8(uint16_t x, uint16_t y, unsigned char c, unsigned char f, unsigned char b);
+void generic_gdrawchar8p(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp);
+void generic_gdrawchar(unsigned short x, unsigned short y, unsigned char c, unsigned char f, unsigned char b);
+void generic_gdrawcharp(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp);
+void generic_gupdatestr(unsigned short y, unsigned short x, const uint16_t *str, unsigned short len, uint16_t *old);
 #endif
 
 #endif

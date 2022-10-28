@@ -61,7 +61,7 @@ static const mode_gui_data_t mode_gui_data[] =
 	{-1, -1, -1}
 };
 
-static FontSizeEnum plCurrentFontWanted;
+static FontSizeEnum sdl2_CurrentFontWanted;
 
 typedef struct
 {
@@ -95,12 +95,15 @@ static void (*set_state)(int fullscreen, int width, int height) = 0;
 static int do_fullscreen = 0;
 static int plScrRowBytes = 0;
 static int ekbhit_sdl2dummy(void);
-static int ___valid_key(uint16_t key);
-static void sdl2_gflushpal(void);
-static void sdl2_gupdatepal(unsigned char color, unsigned char _red, unsigned char _green, unsigned char _blue);
+static int sdl2_SetGraphMode (int high);
+static int sdl2_HasKey (uint16_t key);
+static void sdl2_gFlushPal (void);
+static void sdl2_gUpdatePal (uint8_t color, uint8_t _red, uint8_t _green, uint8_t _blue);
 
-static void *SDL2ScrTextGUIOverlayAddBGRA(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra);
-static void SDL2ScrTextGUIOverlayRemove(void *handle);
+static void *sdl2_TextOverlayAddBGRA (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra);
+static void sdl2_TextOverlayRemove (void *handle);
+
+static const struct consoleDriver_t sdl2ConsoleDriver;
 
 static uint32_t sdl2_palette[256] = {
 	0xff000000,
@@ -282,6 +285,9 @@ static void sdl2_dump_renderer (void)
 
 static void set_state_textmode(int fullscreen, int width, int height)
 {
+#ifdef SDL2_DEBUG
+	fprintf (stderr, " set_state_textmode(fullscreen=%d, width=%d, height=%d\n", fullscreen, width, height);
+#endif
 	/* texture WILL for sure resize, so just get rid of it! */
 	if (current_texture)
 	{
@@ -292,23 +298,35 @@ static void set_state_textmode(int fullscreen, int width, int height)
 	if (virtual_framebuffer)
 	{
 		free (virtual_framebuffer);
-		plVidMem = virtual_framebuffer = 0;
+		conStatus.VidMem = virtual_framebuffer = 0;
 	}
 
 	if (fullscreen != do_fullscreen)
 	{
+#ifdef SDL2_DEBUG
+		fprintf (stderr, " fullscreen =! do_fullscreen\n");
+#endif
 		if (fullscreen)
 		{
-			last_text_width  = plScrLineBytes;
-			last_text_height = plScrLines;
+			last_text_width  = conStatus.GraphBytesPerLine;
+			last_text_height = conStatus.GraphLines;
+#ifdef SDL2_DEBUG
+			fprintf (stderr, " store previous resolution into last_text_width and last_text_height\n");
+#endif
 		} else {
 			width = last_text_width;
 			height = last_text_height;
+#ifdef SDL2_DEBUG
+			fprintf (stderr, " restore and override width and height\n");
+#endif
 		}
 	}
 
 	if ((fullscreen != do_fullscreen) || (!current_window))
 	{
+#ifdef SDL2_DEBUG
+		fprintf (stderr, " destroy and recreate window\n");
+#endif
 		sdl2_close_window();
 
 		do_fullscreen = fullscreen;
@@ -348,30 +366,38 @@ static void set_state_textmode(int fullscreen, int width, int height)
 
 		if (!current_window)
 		{
+#ifdef SDL2_DEBUG
 			fprintf (stderr, "[SDL2-video]: SDL_CreateWindow: %s (fullscreen=%d %dx%d)\n", SDL_GetError(), fullscreen, width, height);
+#endif
 			SDL_ClearError();
 		}
+	} else {
+#ifdef SDL2_DEBUG
+		fprintf (stderr, "Leave window\n");
+#endif
 	}
 
-	while ( ((width/FontSizeInfo[plCurrentFont].w) < 80) || ((height/FontSizeInfo[plCurrentFont].h) < 25))
+	while ( ((width/FontSizeInfo[conStatus.CurrentFont].w) < 80) || ((height/FontSizeInfo[conStatus.CurrentFont].h) < 25))
 	{
 #ifdef SDL2_DEBUG
 		fprintf (stderr, "[SDL2-video] find a smaller font, since (%d/%d)=%d < 80   or   (%d/%d)=%d < 25\n",
-				width, FontSizeInfo[plCurrentFont].w, width/FontSizeInfo[plCurrentFont].w,
-				height, FontSizeInfo[plCurrentFont].h, width/FontSizeInfo[plCurrentFont].h);
+				width,  FontSizeInfo[conStatus.CurrentFont].w, width/FontSizeInfo[conStatus.CurrentFont].w,
+				height, FontSizeInfo[conStatus.CurrentFont].h, width/FontSizeInfo[conStatus.CurrentFont].h);
 #endif
-		switch (plCurrentFont)
+		switch (conStatus.CurrentFont)
 		{
 			case _8x16:
-				plCurrentFont = _8x8;
+				conStatus.CurrentFont = _8x8;
 				break;
 			case _8x8:
 			default:
 				if (!fullscreen)
 				{
+#ifdef SDL2_DEBUG
 					fprintf(stderr, "[SDL2-video] unable to find a small enough font for %d x %d, increasing window size\n", width, height);
-					width = FontSizeInfo[plCurrentFont].w * 80;
-					height = FontSizeInfo[plCurrentFont].h * 25;
+#endif
+					width  = FontSizeInfo[conStatus.CurrentFont].w * 80;
+					height = FontSizeInfo[conStatus.CurrentFont].h * 25;
 					SDL_SetWindowSize (current_window, width, height);
 				} else {
 					fprintf(stderr, "[SDL2-video] unable to find a small enough font for %d x %d\n", width, height);
@@ -381,12 +407,12 @@ static void set_state_textmode(int fullscreen, int width, int height)
 		}
 	}
 
-	plScrWidth     = width/FontSizeInfo[plCurrentFont].w;
-	plScrHeight    = height/FontSizeInfo[plCurrentFont].h;
-	plScrLineBytes = width;
-	plScrLines     = height;
+	conStatus.TextWidth         = width /FontSizeInfo[conStatus.CurrentFont].w;
+	conStatus.TextHeight        = height/FontSizeInfo[conStatus.CurrentFont].h;
+	conStatus.GraphBytesPerLine = width;
+	conStatus.GraphLines        = height;
 
-	plScrRowBytes = plScrWidth*2;
+	plScrRowBytes = conStatus.TextWidth * 2;
 
 	if (!current_renderer)
 	{
@@ -410,7 +436,9 @@ static void set_state_textmode(int fullscreen, int width, int height)
 		current_texture = SDL_CreateTexture (current_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
 		if (!current_texture)
 		{
+#ifdef SDL2_DEBUG
 			fprintf (stderr, "[SDL2-video]: SDL_CreateTexture: %s\n", SDL_GetError());
+#endif
 			SDL_ClearError();
 			current_texture = SDL_CreateTexture (current_renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, width, height);
 			if (!current_texture)
@@ -422,37 +450,43 @@ static void set_state_textmode(int fullscreen, int width, int height)
 		}
 	}
 
-	plVidMem = virtual_framebuffer = calloc (plScrLineBytes, plScrLines);
+	conStatus.VidMem = virtual_framebuffer = calloc (conStatus.GraphBytesPerLine, conStatus.GraphLines);
 
-	sdl2_gflushpal();
+	sdl2_gFlushPal ();
 
 	___push_key(VIRT_KEY_RESIZE);
 }
 
-static void plSetTextMode(unsigned char x)
+static void sdl2_SetTextMode(unsigned char x)
 {
+#ifdef SDL2_DEBUG
+	fprintf (stderr, "sdl2_SetTextMode(%d)\n", x);
+#endif
 	set_state = set_state_textmode;
 
-	___setup_key(ekbhit_sdl2dummy, ekbhit_sdl2dummy);
-	_validkey=___valid_key;
-
-	if ((x==plScrMode) && (current_window))
+	if ((x == conStatus.CurrentMode) && (current_window))
 	{
-		memset(virtual_framebuffer, 0, plScrLineBytes * plScrLines);
+		bzero (virtual_framebuffer, conStatus.GraphBytesPerLine * conStatus.GraphLines);
 		return;
 	}
 
-	_plSetGraphMode(-1); /* closes the window, so gdb helper below will have a clear screen */
+	sdl2_SetGraphMode (-1); /* closes the window, so gdb helper below will have a clear screen */
 
 	if (x==255)
 	{
-		plScrMode=255;
+#ifdef SDL2_DEBUG
+		fprintf (stderr, "gdb helper, plScrMode=255\n", x);
+#endif
+		conStatus.CurrentMode = 255;
 		return; /* gdb helper */
 	}
 
 	/* if invalid mode, set it to custom */
 	if (x>7)
 	{
+#ifdef SDL2_DEBUG
+		fprintf (stderr, "custom request\n", x);
+#endif
 		x=8;
 
 		set_state_textmode(
@@ -460,7 +494,14 @@ static void plSetTextMode(unsigned char x)
 			last_text_width,
 			last_text_height);
 	} else {
-		plCurrentFont = mode_tui_data[x].font;
+#ifdef SDL2_DEBUG
+		fprintf (stderr, "plCurrentFont=%d (mode_tui_data[%d].font))\n", mode_tui_data[x].font, x);
+		fprintf (stderr, "mode_tui_data[%d].gui_mode=%d\n", x, mode_tui_data[x].gui_mode);
+		fprintf (stderr, "mode_gui_data[%d].width=%d\n", mode_tui_data[x].gui_mode, mode_gui_data[mode_tui_data[x].gui_mode].width);
+		fprintf (stderr, "mode_gui_data[%d].height=%d", mode_tui_data[x].gui_mode, mode_gui_data[mode_tui_data[x].gui_mode].height);
+#endif
+
+		conStatus.CurrentFont = mode_tui_data[x].font;
 
 		set_state_textmode(
 			do_fullscreen,
@@ -468,7 +509,10 @@ static void plSetTextMode(unsigned char x)
 			mode_gui_data[mode_tui_data[x].gui_mode].height);
 	}
 
-	plScrType = plScrMode = x;
+	conStatus.LastTextMode = conStatus.CurrentMode = x;
+#ifdef SDL2_DEBUG
+	fprintf (stderr, "plScrType = plScrMode = %d\n", conStatus.LastTextMode );
+#endif
 }
 
 static int cachemode = -1;
@@ -487,15 +531,15 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 	switch (cachemode)
 	{
 		case 13:
-			plScrMode=13;
+			conStatus.CurrentMode = 13;
 			mode = MODE_320_200;
 			break;
 		case 0:
-			plScrMode=100;
+			conStatus.CurrentMode = 100;
 			mode = MODE_640_480;
 			break;
 		case 1:
-			plScrMode=101;
+			conStatus.CurrentMode = 101;
 			mode = MODE_1024_768;
 			break;
 		default:
@@ -546,7 +590,9 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 		current_texture = SDL_CreateTexture (current_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
 		if (!current_texture)
 		{
+#ifdef SDL2_DEBUG
 			fprintf (stderr, "[SDL2-video]: SDL_CreateTexture: %s\n", SDL_GetError());
+#endif
 			SDL_ClearError();
 			current_texture = SDL_CreateTexture (current_renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, width, height);
 			if (!current_texture)
@@ -558,20 +604,20 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 		}
 	}
 
-	plScrLineBytes=width;
-	plScrLines=height;
-	plScrWidth=plScrLineBytes/8;
-	plScrHeight=plScrLines/16;
+	conStatus.GraphBytesPerLine = width;
+	conStatus.GraphLines        = height;
+	conStatus.TextWidth         = conStatus.GraphBytesPerLine/8;
+	conStatus.TextHeight        = conStatus.GraphLines/16;
 
-	plScrRowBytes=plScrWidth*2;
+	plScrRowBytes = conStatus.TextWidth * 2;
 
-	sdl2_gflushpal();
+	sdl2_gFlushPal ();
 
 	___push_key(VIRT_KEY_RESIZE);
 	return;
 }
 
-static int __plSetGraphMode(int high)
+static int sdl2_SetGraphMode (int high)
 {
 	if (high>=0)
 		set_state = set_state_graphmode;
@@ -583,7 +629,7 @@ static int __plSetGraphMode(int high)
 	if (virtual_framebuffer)
 	{
 		free (virtual_framebuffer);
-		plVidMem = virtual_framebuffer = 0;
+		conStatus.VidMem = virtual_framebuffer = 0;
 	}
 	sdl2_close_window();
 
@@ -592,63 +638,63 @@ static int __plSetGraphMode(int high)
 		return 0;
 	}
 
-	___setup_key(ekbhit_sdl2dummy, ekbhit_sdl2dummy);
-	_validkey=___valid_key;
-
 	set_state_graphmode(do_fullscreen, 0, 0);
 
-	plVidMem = virtual_framebuffer=malloc(plScrLineBytes * plScrLines);
+	conStatus.VidMem = virtual_framebuffer = malloc (conStatus.GraphBytesPerLine * conStatus.GraphLines);
 
 quick:
 	if (virtual_framebuffer)
-		memset(virtual_framebuffer, 0, plScrLineBytes * plScrLines);
+	{
+		bzero (virtual_framebuffer, conStatus.GraphBytesPerLine * conStatus.GraphLines);
+	}
 
-	sdl2_gflushpal();
+	sdl2_gFlushPal ();
 	return 0;
 }
 
-static void __vga13(void)
+static void sdl2_vga13 (void)
 {
-	_plSetGraphMode(13);
+	sdl2_SetGraphMode (13);
 }
 
-static int conRestore(void)
+static int sdl2_consoleRestore(void)
 {
 	return 0;
 }
-static void conSave(void)
+
+static void sdl2_consoleSave(void)
 {
 }
 
-static void plDisplaySetupTextMode(void)
+static void sdl2_DisplaySetupTextMode(void)
 {
 	while (1)
 	{
 		uint16_t c;
-		memset(virtual_framebuffer, 0, plScrLineBytes * plScrLines);
+		bzero (virtual_framebuffer, conStatus.GraphBytesPerLine * conStatus.GraphLines);
 		make_title("sdl2-driver setup", 0);
 		swtext_displaystr_cp437(1, 0, 0x07, "1:  font-size:", 14);
-		swtext_displaystr_cp437(1, 15, plCurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
-		swtext_displaystr_cp437(1, 19, plCurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
+		swtext_displaystr_cp437(1, 15, conStatus.CurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
+		swtext_displaystr_cp437(1, 19, conStatus.CurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
 /*
 		swtext_displaystr_cp437(2, 0, 0x07, "2:  fullscreen: ", 16);
 		swtext_displaystr_cp437(3, 0, 0x07, "3:  resolution in fullscreen:", 29);*/
 
-		swtext_displaystr_cp437(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
+		swtext_displaystr_cp437(conStatus.TextHeight - 1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", conStatus.TextWidth);
 
-		while (!_ekbhit())
+		while (!ekbhit())
 		{
 				framelock();
 		}
-		c=_egetch();
+		c = egetch();
 
 		switch (c)
 		{
 			case '1':
 				/* we can assume that we are in text-mode if we are here */
-				plCurrentFontWanted = plCurrentFont = (plCurrentFont == _8x8)?_8x16:_8x8;
-				set_state_textmode(do_fullscreen, plScrLineBytes, plScrLines);
-				cfSetProfileInt("x11", "font", plCurrentFont, 10);
+				sdl2_CurrentFontWanted = conStatus.CurrentFont = (conStatus.CurrentFont == _8x8)?_8x16:_8x8;
+				set_state_textmode(do_fullscreen, conStatus.GraphBytesPerLine, conStatus.GraphLines);
+				cfSetProfileInt("x11", "font", conStatus.CurrentFont, 10);
 				break;
 			case KEY_EXIT:
 			case KEY_ESC: return;
@@ -656,11 +702,11 @@ static void plDisplaySetupTextMode(void)
 	}
 }
 
-static const char *plGetDisplayTextModeName(void)
+static const char *sdl2_GetDisplayTextModeName(void)
 {
 	static char mode[48];
-	snprintf(mode, sizeof(mode), "res(%dx%d), font(%s)%s", plScrWidth, plScrHeight,
-		plCurrentFont == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
+	snprintf(mode, sizeof(mode), "res(%dx%d), font(%s)%s", conStatus.TextWidth, conStatus.TextHeight,
+		conStatus.CurrentFont == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
 	return mode;
 }
 
@@ -1021,7 +1067,7 @@ struct keytranslate_t translate_alt[] =
 	{-1,                0xffff},
 };
 
-static int ___valid_key(uint16_t key)
+static int sdl2_HasKey (uint16_t key)
 {
 	int index;
 
@@ -1063,7 +1109,7 @@ static struct SDL2ScrTextGUIOverlay_t **SDL2ScrTextGUIOverlays;
 static int                              SDL2ScrTextGUIOverlays_count;
 static int                              SDL2ScrTextGUIOverlays_size;
 
-static void *SDL2ScrTextGUIOverlayAddBGRA(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra)
+static void *sdl2_TextOverlayAddBGRA (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra)
 {
 	struct SDL2ScrTextGUIOverlay_t *e = malloc (sizeof (*e));
 	e->x = x;
@@ -1083,7 +1129,7 @@ static void *SDL2ScrTextGUIOverlayAddBGRA(unsigned int x, unsigned int y, unsign
 	return e;
 }
 
-static void SDL2ScrTextGUIOverlayRemove(void *handle)
+static void sdl2_TextOverlayRemove (void *handle)
 {
 	int i;
 	for (i=0; i < SDL2ScrTextGUIOverlays_count; i++)
@@ -1096,7 +1142,7 @@ static void SDL2ScrTextGUIOverlayRemove(void *handle)
 			return;
 		}
 	}
-	fprintf (stderr, "[SDL2] Warning: SDL2ScrTextGUIOverlayRemove, handle %p not found\n", handle);
+	fprintf (stderr, "[SDL2] Warning: sdl2_TextOverlayRemove, handle %p not found\n", handle);
 }
 
 static void RefreshScreenGraph(void)
@@ -1125,10 +1171,14 @@ static void RefreshScreenGraph(void)
 			int j;
 
 			dst = (uint32_t *)dst_line;
-			for (j=0;j<plScrLineBytes;j++)
+			for (j = 0; j < conStatus.GraphBytesPerLine; j++)
+			{
 				*(dst++)=sdl2_palette[*(src++)];
-			if ((++Y)>=plScrLines)
+			}
+			if ((++Y) >= conStatus.GraphLines)
+			{
 				break;
+			}
 			dst_line += /*current_surface->*/pitch;
 		}
 
@@ -1142,7 +1192,7 @@ static void RefreshScreenGraph(void)
 				int tx, x;
 				uint8_t *src, *dst;
 
-				if (y >= plScrLines) { break; }
+				if (y >= conStatus.GraphLines) { break; }
 
 				tx = SDL2ScrTextGUIOverlays[i]->x + SDL2ScrTextGUIOverlays[i]->width;
 				x = (SDL2ScrTextGUIOverlays[i]->x < 0) ? 0 : SDL2ScrTextGUIOverlays[i]->x;
@@ -1152,7 +1202,7 @@ static void RefreshScreenGraph(void)
 
 				for (; x < tx; x++)
 				{
-					if (x >= plScrLineBytes) { break; }
+					if (x >= conStatus.GraphBytesPerLine) { break; }
 
 					if (src[3] == 0)
 					{
@@ -1187,10 +1237,10 @@ static void RefreshScreenGraph(void)
 	SDL_RenderCopy (current_renderer, current_texture, NULL, NULL);
 	SDL_RenderPresent (current_renderer);
 
-	if (plCurrentFont == _8x8)
+	if (conStatus.CurrentFont == _8x8)
 	{
 		fontengine_8x8_iterate ();
-	} else if (plCurrentFont == _8x16)
+	} else if (conStatus.CurrentFont == _8x16)
 	{
 		fontengine_8x16_iterate ();
 	}
@@ -1215,7 +1265,7 @@ static int ekbhit_sdl2dummy(void)
 {
 	SDL_Event event;
 
-	if (plScrMode<=8)
+	if (conStatus.CurrentMode <= 8)
 	{
 		RefreshScreenText();
 	} else {
@@ -1260,8 +1310,8 @@ static int ekbhit_sdl2dummy(void)
 #endif
 						if (current_window && (SDL_GetWindowID(current_window) == event.window.windowID))
 						{
-							plCurrentFont = plCurrentFontWanted;
-							if (!do_fullscreen && (plScrMode == plScrType))
+							conStatus.CurrentFont = sdl2_CurrentFontWanted;
+							if (!do_fullscreen && (conStatus.CurrentMode == conStatus.LastTextMode ))
 							{
 								last_text_height = event.window.data2;
 								last_text_width = event.window.data1;
@@ -1269,12 +1319,12 @@ static int ekbhit_sdl2dummy(void)
 							set_state(do_fullscreen, event.window.data1, event.window.data2);
 							if (!do_fullscreen)
 							{
-								if (plScrType == plScrMode) /* if we are in text-mode, make it a custom one */
+								if (conStatus.LastTextMode == conStatus.CurrentMode) /* if we are in text-mode, make it a custom one */
 								{
 #ifdef SDL2_DEBUG
 									fprintf (stderr, "CUSTOM MODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 #endif
-									plScrType = plScrMode = 8;
+									conStatus.LastTextMode = conStatus.CurrentMode = 8;
 								}
 							}
 						} else {
@@ -1303,7 +1353,7 @@ static int ekbhit_sdl2dummy(void)
 						break;
 
 					case 3:
-						set_state(!do_fullscreen, plScrLineBytes, plScrLines);
+						set_state (!do_fullscreen, conStatus.GraphBytesPerLine, conStatus.GraphLines);
 						break;
 
 					case 4:
@@ -1447,7 +1497,7 @@ static int ekbhit_sdl2dummy(void)
 					/* TODO, handle ALT-ENTER */
 					if (event.key.keysym.sym==SDLK_RETURN)
 					{
-						set_state(!do_fullscreen, plScrLineBytes, plScrLines);
+						set_state (!do_fullscreen, conStatus.GraphBytesPerLine, conStatus.GraphLines);
 					} else {
 						for (index=0;translate_alt[index].OCP!=0xffff;index++)
 							if (translate_alt[index].SDL==event.key.keysym.sym)
@@ -1485,11 +1535,11 @@ static int ekbhit_sdl2dummy(void)
 	return 0;
 }
 
-static void sdl2_gflushpal(void)
+static void sdl2_gFlushPal(void)
 {
 }
 
-static void sdl2_gupdatepal(unsigned char index, unsigned char _red, unsigned char _green, unsigned char _blue)
+static void sdl2_gUpdatePal (uint8_t index, uint8_t _red, uint8_t _green, uint8_t _blue)
 {
 	uint8_t *pal = (uint8_t *)sdl2_palette;
 	pal[(index<<2)+3] = 0xff;
@@ -1557,51 +1607,23 @@ int sdl2_init(void)
 	SDL_EventState (SDL_TEXTEDITING, SDL_ENABLE);
 
 	/* Fill some default font and window sizes */
-	plCurrentFontWanted = plCurrentFont = cfGetProfileInt("x11", "font", _8x16, 10);
-	if (plCurrentFont > _FONT_MAX)
+	sdl2_CurrentFontWanted = conStatus.CurrentFont = cfGetProfileInt("x11", "font", _8x16, 10);
+	if (conStatus.CurrentFont > _FONT_MAX)
 	{
-		plCurrentFont = _8x16;
+		conStatus.CurrentFont = _8x16;
 	}
-	last_text_width  = plScrLineBytes = 640;
-	last_text_height = plScrLines     = 480;
-	plScrType = plScrMode = 8;
+	last_text_width  = conStatus.GraphBytesPerLine = 640;
+	last_text_height = conStatus.GraphLines        = 480;
+	conStatus.LastTextMode = conStatus.CurrentMode = 8;
 
 	need_quit = 1;
 
-	_plSetTextMode=plSetTextMode;
-	_plSetGraphMode=__plSetGraphMode;
-	_gdrawstr=generic_gdrawstr;
-	_gdrawchar8=generic_gdrawchar8;
-	_gdrawchar8p=generic_gdrawchar8p;
-	_gdrawcharp=generic_gdrawcharp;
-	_gdrawchar=generic_gdrawchar;
-	_gupdatestr=generic_gupdatestr;
-	_gupdatepal=sdl2_gupdatepal;
-	_gflushpal=sdl2_gflushpal;
-	_vga13=__vga13;
+	conDriver = &sdl2ConsoleDriver;
+	___setup_key(ekbhit_sdl2dummy, ekbhit_sdl2dummy);
 
-	_displayvoid=swtext_displayvoid;
-	_displaystrattr=swtext_displaystrattr_cp437;
-	_displaystr=swtext_displaystr_cp437;
-	_displaystr_utf8=swtext_displaystr_utf8;
-	_measurestr_utf8=swtext_measurestr_utf8;
+	conStatus.TextGUIOverlay = 1;
 
-	_drawbar=swtext_drawbar;
-	_idrawbar=swtext_idrawbar;
-
-	_setcur=swtext_setcur;
-	_setcurshape=swtext_setcurshape;
-	_conRestore=conRestore;
-	_conSave=conSave;
-
-	_plGetDisplayTextModeName = plGetDisplayTextModeName;
-	_plDisplaySetupTextMode = plDisplaySetupTextMode;
-
-	plScrTextGUIOverlay        = 1;
-	plScrTextGUIOverlayAddBGRA = SDL2ScrTextGUIOverlayAddBGRA;
-	plScrTextGUIOverlayRemove  = SDL2ScrTextGUIOverlayRemove;
-
-	plVidType=vidModern;
+	conStatus.VidType = vidModern;
 
 	return 0;
 error_out:
@@ -1626,7 +1648,7 @@ void sdl2_done(void)
 	if (virtual_framebuffer)
 	{
 		free (virtual_framebuffer);
-		plVidMem = virtual_framebuffer = 0;
+		conStatus.VidMem = virtual_framebuffer = 0;
 	}
 
 	need_quit = 0;
@@ -1636,3 +1658,41 @@ void sdl2_done(void)
 	SDL2ScrTextGUIOverlays_size = 0;
 	SDL2ScrTextGUIOverlays_count = 0;
 }
+
+static void sdl2_DosShell (void)
+{
+	/* dummy */
+}
+
+static const struct consoleDriver_t sdl2ConsoleDriver =
+{
+	sdl2_vga13,
+	sdl2_SetTextMode,
+	sdl2_DisplaySetupTextMode,
+	sdl2_GetDisplayTextModeName,
+	swtext_measurestr_utf8,
+	swtext_displaystr_utf8,
+	swtext_displaychr_cp437,
+	swtext_displaystr_cp437,
+	swtext_displaystrattr_cp437,
+	swtext_displayvoid,
+	swtext_drawbar,
+	swtext_idrawbar,
+	sdl2_TextOverlayAddBGRA,
+	sdl2_TextOverlayRemove,
+	sdl2_SetGraphMode,
+	generic_gdrawchar,
+	generic_gdrawcharp,
+	generic_gdrawchar8,
+	generic_gdrawchar8p,
+	generic_gdrawstr,
+	generic_gupdatestr,
+	sdl2_gUpdatePal,
+	sdl2_gFlushPal,
+	sdl2_HasKey,
+	swtext_setcur,
+	swtext_setcurshape,
+	sdl2_consoleRestore,
+	sdl2_consoleSave,
+	sdl2_DosShell
+};

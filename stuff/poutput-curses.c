@@ -71,7 +71,7 @@
 #endif
 
 #if CAN_RESIZE
-static void adjust(int sig);
+static void adjust (int sig);
 #endif
 
 static NCURSES_ATTR_T attr_table[256];
@@ -88,39 +88,50 @@ static int useunicode = 0;
 
 static iconv_t utf8_to_native = (iconv_t)-1;
 
-static void displayvoid(unsigned short y, unsigned short x, unsigned short len)
+static struct consoleDriver_t ncursesConsoleDriver;
+
+static void ncurses_DisplayChr (uint16_t y, uint16_t x, uint8_t attr, char chr, uint16_t len)
 {
+	if (!len)
+	{
+		return;
+	}
 #ifdef HAVE_NCURSESW
 	if (useunicode)
 	{
 		wchar_t buffer[CONSOLE_MAX_X+1];
-		wchar_t *ptr = buffer;
+		unsigned int i;
 
-		while(len)
+		for (i=0; i < len; i++)
 		{
-			*(ptr++) = chr_table[' '];
-			len--;
+			buffer[i] = chr_table[(uint8_t)chr];
 		}
-		attrset (attr_table[plpalette[0]]);
-		*ptr = 0;
-		mvaddwstr(y, x, buffer);
+		buffer[i] = 0;
 
+		attrset (attr_table[plpalette[attr]]);
+		mvaddwstr(y, x, buffer);
 	} else
 #endif
 	{
+		chtype output;
+
+		if (((!chr)||(chr==' '))&&(!(attr&0x80))&&fixbadgraphic)
+		{
+			output=chr_table['X']|attr_table[plpalette[(attr&0xf0)+((attr>>4)&0xf)]];
+		} else {
+			output=chr_table[(uint8_t)chr]|attr_table[plpalette[attr]];
+		}
+
 		move(y, x);
 		while(len)
 		{
-			chtype output;
-			output='X'|attr_table[plpalette[0]];
 			addch(output);
 			len--;
 		}
 	}
-
 }
 
-static void displaystr(unsigned short y, unsigned short x, unsigned char attr, const char *buf, unsigned short len)
+static void ncurses_DisplayStr (uint16_t y, uint16_t x, uint8_t attr, const char *buf, uint16_t len)
 {
 #ifdef HAVE_NCURSESW
 	if (useunicode)
@@ -164,7 +175,7 @@ static void displaystr(unsigned short y, unsigned short x, unsigned char attr, c
 	}
 }
 
-static void displaystr_utf8(unsigned short y, unsigned short x, unsigned char attr, const char *buf, unsigned short len)
+static void ncurses_DisplayStr_utf8 (uint16_t y, uint16_t x, uint8_t attr, const char *buf, uint16_t len)
 {
 #ifdef HAVE_NCURSESW
 	if (useunicode)
@@ -256,7 +267,7 @@ static void displaystr_utf8(unsigned short y, unsigned short x, unsigned char at
 	}
 }
 
-static int measurestr_utf8 (const char *buf, int buflen)
+static int ncurses_MeasureStr_utf8 (const char *buf, int buflen)
 {
 	int retval = 0;
 #ifdef HAVE_NCURSESW
@@ -292,7 +303,7 @@ static int measurestr_utf8 (const char *buf, int buflen)
 	return retval;
 }
 
-static void displaystrattr(unsigned short y, unsigned short x, const uint16_t *buf, unsigned short len)
+static void ncurses_DisplayStrAttr (uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len)
 {
 #ifdef HAVE_NCURSESW
 	if (useunicode)
@@ -357,6 +368,11 @@ static void displaystrattr(unsigned short y, unsigned short x, const uint16_t *b
 	}
 }
 
+static void ncurses_DisplayVoid (uint16_t y, uint16_t x, uint16_t len)
+{
+	ncurses_DisplayChr (y, x, 0x07, ' ', len);
+}
+
 #ifdef HAVE_NCURSESW
 static wchar_t bartops_unicode[17] = {
 ' ',
@@ -373,9 +389,7 @@ L'\u2588', L'\u2588'};
 static char bartops[18]="  ___...---===**#";
 static char ibartops[18]="  ```^^^~~~===**#";
 
-static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c);
-
-static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
+static void ncurses_iDrawBar (uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
 {
 #ifdef HAVE_NCURSESW
 	if (useunicode)
@@ -451,7 +465,7 @@ static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, ui
 		{
 			uint32_t v = ( value >= 16 ) ? 16 : value;
 			value -= v;
-			displaystr(y, x, c&0xff, ibartops + v, 1);
+			ncurses_DisplayStr(y, x, c&0xff, ibartops + v, 1);
 			y++;
 		}
 		c>>=8;
@@ -459,7 +473,7 @@ static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, ui
 		{
 			uint32_t v = ( value >= 16 ) ? 16 : value;
 			value -= v;
-			displaystr(y, x, c&0xff, ibartops + v, 1);
+			ncurses_DisplayStr(y, x, c&0xff, ibartops + v, 1);
 			y++;
 		}
 		c>>=8;
@@ -467,13 +481,13 @@ static void idrawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, ui
 		{
 			uint32_t v = ( value >= 16 ) ? 16 : value;
 			value -= v;
-			displaystr(y, x, c&0xff, ibartops + v, 1);
+			ncurses_DisplayStr(y, x, c&0xff, ibartops + v, 1);
 			y++;
 		}
 	}
 }
 
-static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
+static void ncurses_DrawBar (uint16_t x, uint16_t y, uint16_t height, uint32_t value, uint32_t c)
 {
 #ifdef HAVE_NCURSESW
 	if (useunicode)
@@ -536,7 +550,7 @@ static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uin
 		{
 			uint32_t v = ( value >= 16 ) ? 16 : value;
 			value -= v;
-			displaystr(y, x, c&0xff, bartops + v, 1);
+			ncurses_DisplayStr(y, x, c&0xff, bartops + v, 1);
 			y--;
 		}
 		c>>=8;
@@ -544,7 +558,7 @@ static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uin
 		{
 			uint32_t v = ( value >= 16 ) ? 16 : value;
 			value -= v;
-			displaystr(y, x, c&0xff, bartops + v, 1);
+			ncurses_DisplayStr(y, x, c&0xff, bartops + v, 1);
 			y--;
 		}
 		c>>=8;
@@ -552,16 +566,16 @@ static void drawbar(uint16_t x, uint16_t y, uint16_t height, uint32_t value, uin
 		{
 			uint32_t v = ( value >= 16 ) ? 16 : value;
 			value -= v;
-			displaystr(y, x, c&0xff, bartops + v, 1);
+			ncurses_DisplayStr(y, x, c&0xff, bartops + v, 1);
 			y--;
 		}
 	}
 }
 
-static int ekbhit(void);
-static int egetch(void);
+static int ncurses_ekbhit (void);
+static int ncurses_egetch (void);
 #ifdef NCURSES_VERSION
-static int validkey_ncurses(uint16_t key)
+static int ncurses_HasKey (uint16_t key)
 {
 	switch (key)
 	{
@@ -677,23 +691,23 @@ static int validkey_ncurses(uint16_t key)
 }
 #endif
 
-static void plSetTextMode(unsigned char x)
+static void ncurses_SetTextMode (uint8_t x)
 {
 	unsigned int i;
 
-	_plSetGraphMode(-1);
+	// If we make a stackable curses driver, we will need this
+	//conDriver->SetGraphMode (-1);
 
-	___setup_key(ekbhit, egetch);
-#ifdef NCURSES_VERSION
-	_validkey = validkey_ncurses;
-#endif
+	___setup_key (ncurses_ekbhit, ncurses_egetch);
 
-	plScrHeight=Height;
-	plScrWidth=Width;
-	plScrMode=0;
+	conStatus.TextHeight = Height;
+	conStatus.TextWidth = Width;
+	conStatus.CurrentMode = 0;
 
-	for (i=0;i<plScrHeight;i++)
-		displayvoid(i, 0, plScrWidth);
+	for (i = 0; i < conStatus.TextHeight; i++)
+	{
+		ncurses_DisplayVoid (i, 0, conStatus.TextWidth);
+	}
 }
 
 #if (defined(NCURSES_VERSION_MAJOR)&&((NCURSES_VERSION_MAJOR<5)||((NCURSES_VERSION_MAJOR==5)&&(NCURSES_VERSION_MINOR<9))||((NCURSES_VERSION_MAJOR==5)&&(NCURSES_VERSION_MINOR==9)&&(NCURSES_VERSION_PATCH<20150103))))
@@ -703,7 +717,7 @@ static void plSetTextMode(unsigned char x)
 static int block_level = 0;
 static sigset_t block_mask;
 
-static void curses_block_signals ()
+static void ncurses_block_signals (void)
 {
 	if (!block_level)
 	{
@@ -716,7 +730,7 @@ static void curses_block_signals ()
 	block_level ++;
 }
 
-static void curses_unblock_signals ()
+static void ncurses_unblock_signals (void)
 {
 	block_level --;
 	if (!block_level)
@@ -726,11 +740,11 @@ static void curses_unblock_signals ()
 }
 
 #else
-static void curses_block_signals ()
+static void ncurses_block_signals (void)
 {
 }
 
-static void curses_unblock_signals ()
+static void ncurses_unblock_signals (void)
 {
 }
 
@@ -738,39 +752,41 @@ static void curses_unblock_signals ()
 
 #ifdef CAN_RESIZE
 int resized=0;
-static void adjust(int sig)
+static void adjust (int sig)
 {
 	resized=1;
 	signal(SIGWINCH, adjust);    /* some systems need this */
 }
-static void do_resize(void)
+static void do_resize (void)
 {
 	struct winsize size;
 
-	curses_block_signals();
+	ncurses_block_signals();
 
 	if (ioctl(fileno(stdout), TIOCGWINSZ, &size) == 0)
 	{
 		resize_term(size.ws_row, size.ws_col);
 		wrefresh(curscr);
 
-		Height=plScrHeight=size.ws_row;
-		if ((Width=plScrWidth=size.ws_col)>CONSOLE_MAX_X)
-			Width=plScrWidth=CONSOLE_MAX_X;
-		else if (plScrWidth<80)
-			Width=plScrWidth=80; /* If a console gets smaller than THIS, the user deserves to get fucked up his or her ASS */
-
+		Height = conStatus.TextHeight = size.ws_row;
+		if ((Width = conStatus.TextWidth = size.ws_col) > CONSOLE_MAX_X)
+		{
+			Width = conStatus.TextWidth = CONSOLE_MAX_X;
+		} else if (conStatus.TextWidth < 80)
+		{
+			Width = conStatus.TextWidth = 80; /* If a console gets smaller than THIS, we are doomed */
+		}
 		___push_key(VIRT_KEY_RESIZE);
 	}
 	resized=0;
 
-	curses_unblock_signals();
+	ncurses_unblock_signals();
 }
 #endif /* CAN_RESIZE */
 
-static void RefreshScreen(void)
+static void ncurses_RefreshScreen (void)
 {
-	curses_block_signals ();
+	ncurses_block_signals ();
 
 #ifdef CAN_RESIZE
 	if (resized)
@@ -778,13 +794,13 @@ static void RefreshScreen(void)
 #endif
 	refresh();
 
-	curses_unblock_signals ();
+	ncurses_unblock_signals ();
 }
 
 static int buffer = ERR;
 static int sigintcounter = 0;
 
-static int ekbhit(void)
+static int ncurses_ekbhit (void)
 {
 	if (sigintcounter)
 	{
@@ -796,21 +812,21 @@ static int ekbhit(void)
 		return 1;
 	}
 
-	curses_block_signals ();
+	ncurses_block_signals ();
 
 	buffer=getch();
 	if (buffer!=ERR)
 	{
-		curses_unblock_signals ();
+		ncurses_unblock_signals ();
 		return 1;
 	}
-	RefreshScreen();
+	ncurses_RefreshScreen();
 
-	curses_unblock_signals ();
+	ncurses_unblock_signals ();
 	return 0;
 }
 
-static int egetch(void)
+static int ncurses_egetch (void)
 {
 	int retval;
 
@@ -820,21 +836,21 @@ static int egetch(void)
 		return 27;
 	}
 
-	curses_block_signals ();
+	ncurses_block_signals ();
 
-	RefreshScreen();
+	ncurses_RefreshScreen();
 	if (buffer!=ERR)
 	{
 		retval=buffer;
 		buffer=ERR;
 
-		curses_unblock_signals ();
+		ncurses_unblock_signals ();
 
 		return retval;
 	}
 	retval=getch();
 
-	curses_unblock_signals ();
+	ncurses_unblock_signals ();
 
 	if (retval==ERR)
 		retval=0;
@@ -842,19 +858,19 @@ static int egetch(void)
 	return retval;
 }
 
-static void setcur(uint16_t y, uint16_t x)
+static void ncurses_SetCursorPosition (uint16_t y, uint16_t x)
 {
 	move(y, x);
 }
 
-static void setcurshape(unsigned short shape)
+static void ncurses_SetCursorShape (uint16_t shape)
 {
 	curs_set(shape);
 }
 
 static int conactive=0;
 
-static int conRestore(void)
+static int ncurses_consoleRestore (void)
 {
 	if (!conactive)
 		return 0;
@@ -863,11 +879,12 @@ static int conRestore(void)
 	return 0;
 }
 
-static void conSave(void)
+static void ncurses_consoleSave (void)
 {
 	if (conactive)
 		return;
 	fflush(stderr);
+	clear();
 	refresh();
 	cbreak();
 	nodelay(stdscr, TRUE);
@@ -880,7 +897,7 @@ static void conSave(void)
 	conactive=1;
 }
 
-static void plDosShell(void)
+static void ncurses_plDosShell (void)
 {
 	pid_t child;
 
@@ -918,14 +935,19 @@ static void plDosShell(void)
 	}
 }
 
-static const char *plGetDisplayTextModeName(void)
+static void ncurses_DisplaySetupTextMode (void)
+{
+	/* dummy */
+}
+
+static const char *ncurses_GetDisplayTextModeName (void)
 {
 	static char mode[16];
 	snprintf(mode, sizeof(mode), "%d x %d", Width, Height);
 	return mode;
 }
 
-static void sigint(int signal)
+static void ncurses_sigint (int signal)
 {
 	sigintcounter++;
 	if (sigintcounter > 2) /* program is frozen and we already have two presses in the queue */
@@ -934,7 +956,7 @@ static void sigint(int signal)
 	}
 }
 
-int curses_init(void)
+int curses_init (void)
 {
 	int i;
 	char *temp;
@@ -1331,30 +1353,14 @@ no_translit:
 		set_escdelay (25);
 	}
 
-	conSave();
+	ncurses_consoleSave ();
 #if CAN_RESIZE
 	signal(SIGWINCH, adjust);        /* arrange interrupts to resize */
 #endif
-	signal(SIGINT, sigint); /* emulate ESC key on ctrl-c, but multiple presses + OCP deadlocked will make it quit by force */
+	signal(SIGINT, ncurses_sigint); /* emulate ESC key on ctrl-c, but multiple presses + OCP deadlocked will make it quit by force */
 
-	_displayvoid=displayvoid;
-	_displaystrattr=displaystrattr;
-	_displaystr=displaystr;
-	_displaystr_utf8=displaystr_utf8;
-	_measurestr_utf8=measurestr_utf8;
-	___setup_key(ekbhit, egetch); /* filters in more keys */
-	_plSetTextMode=plSetTextMode;
-	_drawbar=drawbar;
-	_idrawbar=idrawbar;
-
-	_conRestore=conRestore;
-	_conSave=conSave;
-	_plDosShell=plDosShell;
-
-	_setcur=setcur;
-	_setcurshape=setcurshape;
-
-	_plGetDisplayTextModeName = plGetDisplayTextModeName;
+	conDriver = &ncursesConsoleDriver;
+	___setup_key (ncurses_ekbhit, ncurses_egetch); /* filters in more keys */
 
 	start_color();
 
@@ -1389,28 +1395,68 @@ no_translit:
 			attr_table[i] |= A_STANDOUT;
 	}
 
-	plVidType=vidNorm;
-	plScrType=0;
-	plScrMode=0;
-	RefreshScreen();
+	conStatus.VidType = vidNorm;
+	conStatus.LastTextMode = 0;
+	conStatus.CurrentMode = 0;
+	ncurses_RefreshScreen();
 
-	Height=plScrHeight=LINES;
-	if ((Width=plScrWidth=COLS)>CONSOLE_MAX_X)
-		Width=plScrWidth=CONSOLE_MAX_X;
-	else if (plScrWidth<80)
-		Width=plScrWidth=80; /* If a console gets smaller than THIS, the user-experience will be non-normal */
+	Height = conStatus.TextHeight = LINES;
+	if ((Width = conStatus.TextWidth = COLS) > CONSOLE_MAX_X)
+	{
+		Width = conStatus.TextWidth = CONSOLE_MAX_X;
+	} else if (conStatus.TextWidth < 80)
+	{
+		Width = conStatus.TextWidth = 80; /* If a console gets smaller than THIS, the user-experience will be non-normal */
+	}
 
-	conRestore();
+	ncurses_consoleRestore ();
 
 	return 0;
 }
 
-void curses_done(void)
+void curses_done (void)
 {
 	if (utf8_to_native != (iconv_t)-1)
 	{
 		iconv_close (utf8_to_native);
 		utf8_to_native = (iconv_t)-1;
 	}
-	conRestore();
+	ncurses_consoleRestore ();
 }
+
+static struct consoleDriver_t ncursesConsoleDriver =
+{
+	0,   /* vga13 */
+	ncurses_SetTextMode,
+	ncurses_DisplaySetupTextMode,
+	ncurses_GetDisplayTextModeName,
+	ncurses_MeasureStr_utf8,
+	ncurses_DisplayStr_utf8,
+	ncurses_DisplayChr,
+	ncurses_DisplayStr,
+	ncurses_DisplayStrAttr,
+	ncurses_DisplayVoid,
+	ncurses_DrawBar,
+	ncurses_iDrawBar,
+	0,   /* TextOverlayAddBGRA */
+	0,   /* TextOverlayRemove */
+	0,   /* SetGraphMode */
+	0,   /* gDrawChar16 */
+	0,   /* gDrawChar16P */
+	0,   /* gDrawChar8 */
+	0,   /* gDrawChar8P */
+	0,   /* gDrawStr */
+	0,   /* gUpdateStr */
+	0,   /* gUpdatePal */
+	0,   /* gFlushPal */
+#ifdef NCURSES_VERSION
+	ncurses_HasKey,
+#else
+	consoleHasKey,
+#endif
+	ncurses_SetCursorPosition,
+	ncurses_SetCursorShape,
+	ncurses_consoleRestore,
+	ncurses_consoleSave,
+	ncurses_plDosShell
+};

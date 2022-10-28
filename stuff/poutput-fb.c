@@ -120,20 +120,22 @@ static int test_mode(struct fb_var_screeninfo *info)
 	return 0;
 }
 
-static void __gupdatepal(unsigned char color, unsigned char _red, unsigned char _green, unsigned char _blue)
+static void fb_gUpdatePal (uint8_t color, uint8_t _red, uint8_t _green, uint8_t _blue)
 {
 	red[color]=_red<<10;
 	green[color]=_green<<10;
 	blue[color]=_blue<<10;
 }
 
-static void __gflushpal(void)
+static void fb_gFlushPal (void)
 {
 	if (ioctl(fd, FBIOPUTCMAP, &colormap))
+	{
 		perror("fb: ioctl(fb, FBIOGETCMAP, &colormap)");
+	}
 }
 
-static int __plSetGraphMode(int high)
+static int fb_SetGraphMode (int high)
 {
 /*
 	struct fb_fix_screeninfo fix2;
@@ -149,32 +151,35 @@ static int __plSetGraphMode(int high)
 #endif
 	if (high==-1)
 	{
-		plVidMem = 0;
+		show_cursor ();
+		conStatus.VidMem = 0;
 		ioctl(fd, FBIOPUT_VSCREENINFO, &orgmode);
 		return 0;
 	}
+
+	hide_cursor ();
 
 	if (high)
 	{
 		if (!highres.xres)
 			return -1;
-		plScrMode=101;
-		plScrWidth=128;
-		plScrHeight=60;
+		conStatus.CurrentMode = 101;
+		conStatus.TextWidth = 128;
+		conStatus.TextHeight = 60;
 		ioctl(fd, FBIOPUT_VSCREENINFO, &highres);
-		plScrLineBytes=1024; /* not good, but my framebuffer bugs to much */
+		conStatus.GraphBytesPerLine = 1024; /* not good, but my framebuffer bugs too much */
 	} else {
 		if (!lowres.xres)
 			return -1;
-		plScrMode=100;
-		plScrWidth=80;
-		plScrHeight=60;
+		conStatus.CurrentMode = 100;
+		conStatus.TextWidth = 80;
+		conStatus.TextHeight = 60;
 		ioctl(fd, FBIOPUT_VSCREENINFO, &lowres);
-		plScrLineBytes=640; /* not good, but my framebuffer bugs to much */
+		conStatus.GraphBytesPerLine = 640; /* not good, but my framebuffer bugs too much */
 	}
 
-	plVidMem = fbmem;
-	memset(fbmem, 0, fix.smem_len);
+	conStatus.VidMem = fbmem;
+	bzero (fbmem, fix.smem_len);
 
 	colormap.start=0;
 	colormap.len=256;
@@ -192,19 +197,19 @@ static int __plSetGraphMode(int high)
 	if (ioctl(fd, FBIOGET_FSCREENINFO, &fix2))
 		perror("fb: ioctl(1, FBIOGET_FSCREENINFO, &fix)");
 	fix2.line_length=fix.line_length;
-	fprintf(stderr, "DEBUG LINES: current %d, org %d, new %d\n", plScrLineBytes, fix.line_length, fix2.line_length);
-	plScrLineBytes=fix2.line_length;
+	fprintf(stderr, "DEBUG LINES: current %d, org %d, new %d\n", conStatus.GraphBytesPerLine, fix.line_length, fix2.line_length);
+	conStatus.GraphBytesPerLine = fix2.line_length;
 	 */
 	return 0;
 }
 
-int fb_init(int minor)
+int fb_init (int minor, struct consoleDriver_t *driver)
 {
 	struct fb_var_screeninfo var2;
 	char *temp;
 
-	memset(&lowres, 0, sizeof(lowres));
-	memset(&lowres, 0, sizeof(highres));
+	bzero (&lowres, sizeof(lowres));
+	bzero (&lowres, sizeof(highres));
 
 	if ((temp=getenv("FRAMEBUFFER")))
 	{
@@ -230,7 +235,7 @@ int fb_init(int minor)
 		fd=-1;
 		return -1;
 	}
-	plScrLineBytes=fix.line_length;
+	conStatus.GraphBytesPerLine = fix.line_length;
 #ifdef VERBOSE_FRAMEBUFFER
 	fprintf(stderr, "fb: FIX SCREEN INFO\n");
 	fprintf(stderr, "fb:  id=%s\n", fix.id);
@@ -440,32 +445,34 @@ int fb_init(int minor)
 	{
 		perror("fb: mmap()");
 		close(fd);
-		fd=-1;
+		fd = -1;
 		return -1;
 	}
 
-	_plSetGraphMode=__plSetGraphMode;
-	_gdrawstr=generic_gdrawstr;
-	_gdrawchar8=generic_gdrawchar8;
-	_gdrawchar8p=generic_gdrawchar8p;
-	_gdrawcharp=generic_gdrawcharp;
-	_gdrawchar=generic_gdrawchar;
-	_gupdatestr=generic_gupdatestr;
-	_gupdatepal=__gupdatepal;
-	_gflushpal=__gflushpal;
-	hide_cursor();
-	plVidType=vidVESA;
+	driver->SetGraphMode = fb_SetGraphMode;
+	driver->gDrawChar16  = generic_gdrawchar;
+	driver->gDrawChar16P = generic_gdrawcharp;
+	driver->gDrawChar8   = generic_gdrawchar8;
+	driver->gDrawChar8P  = generic_gdrawchar8p;
+	driver->gDrawStr     = generic_gdrawstr;
+	driver->gUpdateStr   = generic_gupdatestr;
+	driver->gUpdatePal   = fb_gUpdatePal;
+	driver->gFlushPal    = fb_gFlushPal;
+
+	conStatus.VidType = vidVESA;
 
 	return 0;
 }
 
-void fb_done(void)
+void fb_done (void)
 {
 	show_cursor();
 	munmap(fbmem, fix.smem_len);
-	if (fd<0)
+	if (fd < 0)
+	{
 		return;
+	}
 	ioctl(fd, FBIOPUT_VSCREENINFO, &orgmode);
 	close(fd);
-	fd=-1;
+	fd = -1;
 }
