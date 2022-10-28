@@ -41,6 +41,15 @@ struct cpifaceplayerstruct
 	void (*CloseFile)(struct cpifaceSessionAPI_t *cpifaceSession);
 };
 
+enum cpiInstWidth
+{
+	cpiInstWidth_33 = 33,
+	cpiInstWidth_40 = 40,
+	cpiInstWidth_52 = 52,
+	cpiInstWidth_80 = 80,
+	cpiInstWidth_132 = 132,
+};
+
 struct cpifaceSessionAPI_t
 {
 	const struct plrDevAPI_t     *plrDevAPI;
@@ -191,7 +200,7 @@ struct insdisplaystruct
 	char *title132; /* cp437 */
 	void (*Mark)(struct cpifaceSessionAPI_t *cpifaceSession);
 	void (*Clear)(struct cpifaceSessionAPI_t *cpifaceSession);
-	void (*Display)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int n, int mode);
+	void (*Display)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiInstWidth width, int n, int mode, int compoMode);
 	void (*Done)(struct cpifaceSessionAPI_t *cpifaceSession);
 };
 

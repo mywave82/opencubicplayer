@@ -49,31 +49,31 @@ static const struct it_sample *plModSamples;
 
 static uint8_t plInstShowFreq;
 
-static void itDisplayIns40 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode)
+static void itDisplayIns40 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
 	writenum(buf, 1, col, n+1, 16, 2, 0);
-	writestring(buf, 5, col, plInstr[n].name, 35);
+	writestring(buf, 5, col, compoMode?"#":plInstr[n].name, 35);
 }
 
-static void itDisplayIns33 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode)
+static void itDisplayIns33 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
 	writenum(buf, 1, col, n+1, 16, 2, 0);
-	writestring(buf, 5, col, plInstr[n].name, 28);
+	writestring(buf, 5, col, compoMode?"#":plInstr[n].name, 28);
 }
 
-static void itDisplayIns52 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode)
+static void itDisplayIns52 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"    \xfe##: ":"     ##: ", 9);
 	writenum(buf, 5, col, n+1, 16, 2, 0);
-	writestring(buf, 9, col, plInstr[n].name, 43);
+	writestring(buf, 9, col, compoMode?"#":plInstr[n].name, 43);
 }
 
-static void itDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode)
+static void itDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col;
 	writestring(buf, 0, 0, "", 80);
@@ -84,7 +84,7 @@ static void itDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 		col=plInstMode?0x07:"\x08\x08\x0B\x0A"[plInstUsed[plBigInstNum[n]]];
 		writestring(buf, 0, col, (!plInstMode&&plInstUsed[plBigInstNum[n]])?"\xfe##: ":" ##: ", 5);
 		writenum(buf, 1, col, plBigInstNum[n]+1, 16, 2, 0);
-		writestring(buf, 5, col, ins->name, 31);
+		writestring(buf, 5, col, compoMode?"#":ins->name, 31);
 	}
 
 	if (plBigSampNum[n]!=0xFFFF)
@@ -136,7 +136,7 @@ static void itDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 	}
 }
 
-static void itDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode)
+static void itDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col;
 	writestring(buf, 0, 0, "", 132);
@@ -147,7 +147,7 @@ static void itDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_
 		col=plInstMode?0x07:"\x08\x08\x0B\x0A"[plInstUsed[plBigInstNum[n]]];
 		writestring(buf, 0, col, (!plInstMode&&plInstUsed[plBigInstNum[n]])?"\xfe##: ":" ##: ", 5);
 		writenum(buf, 1, col, plBigInstNum[n]+1, 16, 2, 0);
-		writestring(buf, 5, col, ins->name, 35);
+		writestring(buf, 5, col, compoMode?"#":ins->name, 35);
 	}
 
 	if (plBigSampNum[n]!=0xFFFF)
@@ -158,7 +158,7 @@ static void itDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_
 		col=plInstMode?0x07:"\x08\x08\x0B\x0A"[plSampUsed[plBigSampNum[n]]];
 		writestring(buf, 34, col, (!plInstMode&&plSampUsed[plBigSampNum[n]])?"\xfe###: ":" ###: ", 6);
 		writenum(buf, 35, col, plBigSampNum[n], 16, 3, 0);
-		writestring(buf, 40, col, sm->name, 28);
+		writestring(buf, 40, col, compoMode?"#":sm->name, 28);
 		if (si->type&mcpSampLoop)
 		{
 			_writenum(buf, 70, col, si->loopend, 10, 6);
@@ -203,24 +203,24 @@ static void itDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_
 	}
 }
 
-static void itDisplayIns (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int n, int plInstMode)
+static void itDisplayIns (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiInstWidth width, int n, int plInstMode, int compoMode)
 {
-	switch (len)
+	switch (width)
 	{
-		case 33:
-			itDisplayIns33 (cpifaceSession, buf, n, plInstMode);
+		case cpiInstWidth_33:
+			itDisplayIns33 (cpifaceSession, buf, n, plInstMode, compoMode);
 			break;
-		case 40:
-			itDisplayIns40 (cpifaceSession, buf, n, plInstMode);
+		case cpiInstWidth_40:
+			itDisplayIns40 (cpifaceSession, buf, n, plInstMode, compoMode);
 			break;
-		case 52:
-			itDisplayIns52 (cpifaceSession, buf, n, plInstMode);
+		case cpiInstWidth_52:
+			itDisplayIns52 (cpifaceSession, buf, n, plInstMode, compoMode);
 			break;
-		case 80:
-			itDisplayIns80 (cpifaceSession, buf, n, plInstMode);
+		case cpiInstWidth_80:
+			itDisplayIns80 (cpifaceSession, buf, n, plInstMode, compoMode);
 			break;
-		case 132:
-			itDisplayIns132 (cpifaceSession, buf, n, plInstMode);
+		case cpiInstWidth_132:
+			itDisplayIns132 (cpifaceSession, buf, n, plInstMode, compoMode);
 			break;
 	}
 }

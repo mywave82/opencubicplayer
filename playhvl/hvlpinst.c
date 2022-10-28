@@ -29,32 +29,32 @@
 #include "player.h"
 #include "stuff/poutput.h"
 
-static void hvlDisplayIns40 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
+static void hvlDisplayIns40 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring (buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
 	writenum    (buf, 1, col, n+1, 16, 2, 0);
-	writestring (buf, 5, col, ht->ht_Instruments[n].ins_Name, 35);
+	writestring (buf, 5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name, 35);
 }
 
-static void hvlDisplayIns33 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
+static void hvlDisplayIns33 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 
 	writestring (buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
 	writenum    (buf, 1, col, n+1, 16, 2, 0);
-	writestring (buf, 5, col, ht->ht_Instruments[n].ins_Name, 28);
+	writestring (buf, 5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name, 28);
 }
 
-static void hvlDisplayIns52 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
+static void hvlDisplayIns52 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring (buf, 0, col, (!plInstMode&&plInstUsed[n])?"    \xfe##: ":"     ##: ", 9);
 	writenum    (buf, 5, col, n+1, 16, 2, 0);
-	writestring (buf, 9, col, ht->ht_Instruments[n].ins_Name, 43);
+	writestring (buf, 9, col, compoMode?"#":ht->ht_Instruments[n].ins_Name, 43);
 }
 
-static void hvlDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
+static void hvlDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col;
 
@@ -63,7 +63,7 @@ static void hvlDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, unsigne
 	col = plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring (buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
 	writenum    (buf,  1, col, n+1,                                        16, 2, 0);
-	writestring (buf,  5, col, ht->ht_Instruments[n].ins_Name, 50);
+	writestring (buf,  5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name,     50);
 	writenum    (buf, 56, col, ht->ht_Instruments[n].ins_Volume,           10, 3, 0);
 	writenum    (buf, 63, col, ht->ht_Instruments[n].ins_WaveLength,       10, 3, 0);
 	writenum    (buf, 73, col, ht->ht_Instruments[n].ins_PList.pls_Speed,  10, 3, 0);
@@ -71,7 +71,7 @@ static void hvlDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, unsigne
 	writenum    (buf, 77, col, ht->ht_Instruments[n].ins_PList.pls_Length, 10, 3, 0);
 }
 
-static void hvlDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
+static void hvlDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col;
 
@@ -81,7 +81,7 @@ static void hvlDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, unsign
 
 	writestring (buf,   0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
 	writenum    (buf,   1, col, n+1, 16, 2, 0);
-	writestring (buf,   5, col, ht->ht_Instruments[n].ins_Name,             58);
+	writestring (buf,   5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name,     58);
 
 	writenum    (buf,  64, col, ht->ht_Instruments[n].ins_Volume,           10, 3, 0);
 	writenum    (buf,  71, col, ht->ht_Instruments[n].ins_WaveLength,       10, 3, 0);
@@ -109,24 +109,24 @@ static void hvlDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, unsign
 	writenum    (buf, 124, col, ht->ht_Instruments[n].ins_PList.pls_Length, 10, 3, 0);
 }
 
-static void hvlDisplayIns (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int len, int n, int plInstMode)
+static void hvlDisplayIns (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiInstWidth width, int n, int plInstMode, int compoMode)
 {
-	switch (len)
+	switch (width)
 	{
-		case 33:
-			hvlDisplayIns33 (cpifaceSession, buf, n, plInstMode);
+		case cpiInstWidth_33:
+			hvlDisplayIns33 (cpifaceSession, buf, n, plInstMode, compoMode);
 			break;
-		case 40:
-			hvlDisplayIns40 (cpifaceSession, buf, n, plInstMode);
+		case cpiInstWidth_40:
+			hvlDisplayIns40 (cpifaceSession, buf, n, plInstMode, compoMode);
 			break;
-		case 52:
-			hvlDisplayIns52 (cpifaceSession, buf, n, plInstMode);
+		case cpiInstWidth_52:
+			hvlDisplayIns52 (cpifaceSession, buf, n, plInstMode, compoMode);
 			break;
-		case 80:
-			hvlDisplayIns80 (cpifaceSession, buf, n, plInstMode);
+		case cpiInstWidth_80:
+			hvlDisplayIns80 (cpifaceSession, buf, n, plInstMode, compoMode);
 			break;
-		case 132:
-			hvlDisplayIns132 (cpifaceSession, buf, n, plInstMode);
+		case cpiInstWidth_132:
+			hvlDisplayIns132 (cpifaceSession, buf, n, plInstMode, compoMode);
 			break;
 	}
 }

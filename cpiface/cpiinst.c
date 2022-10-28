@@ -66,7 +66,7 @@ static void displayshortins (struct cpifaceSessionAPI_t *cpifaceSession, int sel
 				displayvoid ( y + cpifaceSessionAPI.InstFirstLine, x*40, 40);
 				continue;
 			}
-			cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, 40, i, cpifaceSessionAPI.InstMode);
+			cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpiInstWidth_40, i, cpifaceSessionAPI.InstMode, plCompoMode);
 			displaystrattr (y + cpifaceSessionAPI.InstFirstLine, x*40 + cpifaceSessionAPI.InstStartCol, buf, 40);
 		}
 		displayvoid (y + cpifaceSessionAPI.InstFirstLine, 40*cols, left);
@@ -100,7 +100,7 @@ static void displayxshortins (struct cpifaceSessionAPI_t *cpifaceSession, int se
 				displayvoid (y + cpifaceSessionAPI.InstFirstLine, x*33, 33);
 				continue;
 			}
-			cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, 33, i, cpifaceSessionAPI.InstMode);
+			cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpiInstWidth_33, i, cpifaceSessionAPI.InstMode, plCompoMode);
 			displaystrattr (y + cpifaceSessionAPI.InstFirstLine, x * 33 + cpifaceSessionAPI.InstStartCol, buf, 33);
 		}
 		displayvoid (y + cpifaceSessionAPI.InstFirstLine, 33*cols, left);
@@ -125,8 +125,8 @@ static void displaysideins (struct cpifaceSessionAPI_t *cpifaceSession, int sel)
 			displayvoid (y + cpifaceSessionAPI.InstFirstLine, cpifaceSessionAPI.InstStartCol /* 80 */, cpifaceSessionAPI.InstWidth /* 52 */);
 			continue;
 		}
-		cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpifaceSessionAPI.InstWidth /* 52 */,  y + cpifaceSessionAPI.InstScroll, cpifaceSessionAPI.InstMode);
-		displaystrattr (y + cpifaceSessionAPI.InstFirstLine, cpifaceSessionAPI.InstStartCol /* 80 */, buf, cpifaceSessionAPI.InstWidth /* 52 */);
+		cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpiInstWidth_52, y + cpifaceSessionAPI.InstScroll, cpifaceSessionAPI.InstMode, plCompoMode);
+		displaystrattr (y + cpifaceSessionAPI.InstFirstLine, cpifaceSessionAPI.InstStartCol /* 80 */, buf, 52);
 		displayvoid (y + cpifaceSessionAPI.InstFirstLine, 52, left);
 	}
 }
@@ -150,8 +150,7 @@ static void displaylongins (struct cpifaceSessionAPI_t *cpifaceSession, int sel)
 			displayvoid (y + cpifaceSessionAPI.InstFirstLine, cpifaceSessionAPI.InstStartCol /* 0 */, 80);
 			continue;
 		}
-		cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, 80, y + cpifaceSessionAPI.InstScroll, cpifaceSessionAPI.InstMode);
-
+		cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpiInstWidth_80, y + cpifaceSessionAPI.InstScroll, cpifaceSessionAPI.InstMode, plCompoMode);
 		displaystrattr (y + cpifaceSessionAPI.InstFirstLine, cpifaceSessionAPI.InstStartCol /* 0 */, buf, 80);
 		displayvoid (y + cpifaceSessionAPI.InstFirstLine, 80, left);
 	}
@@ -176,7 +175,7 @@ static void displayxlongins (struct cpifaceSessionAPI_t *cpifaceSession, int sel
 			displayvoid (y + cpifaceSessionAPI.InstFirstLine, cpifaceSessionAPI.InstStartCol /* 0 */, 132);
 			continue;
 		}
-		cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, 132, y + cpifaceSessionAPI.InstScroll, cpifaceSessionAPI.InstMode);
+		cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpiInstWidth_132, y + cpifaceSessionAPI.InstScroll, cpifaceSessionAPI.InstMode, plCompoMode);
 		displaystrattr (y + cpifaceSessionAPI.InstFirstLine, cpifaceSessionAPI.InstStartCol /* 0 */, buf, 132);
 		displayvoid (y + cpifaceSessionAPI.InstFirstLine, 132, left);
 	}

@@ -48,31 +48,31 @@ static const struct gmdsample *plModSamples;
 
 static char plInstShowFreq;
 
-static void gmdDisplayIns40 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
+static void gmdDisplayIns40 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
 	writenum(buf, 1, col, n+1, 16, 2, 0);
-	writestring(buf, 5, col, plInstr[n].name, 35);
+	writestring(buf, 5, col, compoMode?"#":plInstr[n].name, 35);
 }
 
-static void gmdDisplayIns33 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
+static void gmdDisplayIns33 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
 	writenum(buf, 1, col, n+1, 16, 2, 0);
-	writestring(buf, 5, col, plInstr[n].name, 28);
+	writestring(buf, 5, col, compoMode?"#":plInstr[n].name, 28);
 }
 
-static void gmdDisplayIns52 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
+static void gmdDisplayIns52 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	writestring(buf, 0, col, (!plInstMode&&plInstUsed[n])?"    \xfe##: ":"     ##: ", 9);
 	writenum(buf, 5, col, n+1, 16, 2, 0);
-	writestring(buf, 9, col, plInstr[n].name, 43);
+	writestring(buf, 9, col, compoMode?"#":plInstr[n].name, 43);
 }
 
-static void gmdDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
+static void gmdDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col;
 	writestring(buf, 0, 0, "", 80);
@@ -82,7 +82,7 @@ static void gmdDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, unsigne
 		col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[plBigInstNum[n]]];
 		writestring(buf, 0, col, (!plInstMode&&plInstUsed[plBigInstNum[n]])?"\xfe##: ":" ##: ", 5);
 		writenum(buf, 1, col, plBigInstNum[n]+1, 16, 2, 0);
-		writestring(buf, 5, col, ins->name, 31);
+		writestring(buf, 5, col, compoMode?"#":ins->name, 31);
 	}
 
 	if (plBigSampNum[n]!=0xFFFF)
@@ -110,11 +110,12 @@ static void gmdDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, unsigne
 		{
 			writestring(buf, 60, col, plNoteStr[(sm->normnote+60*256)>>8], 3);
 			writenum(buf, 64, col, sm->normnote&0xFF, 16, 2, 0);
-		} else
+		} else {
 			if (plInstShowFreq==1)
 				writenum(buf, 60, col, cpifaceSession->mcpAPI->GetFreq8363(-sm->normnote), 10, 6, 1);
 			else
 				writenum(buf, 60, col, si->samprate, 10, 6, 1);
+		}
 
 		if (sm->stdvol!=-1)
 			writenum(buf, 68, col, sm->stdvol, 16, 2, 0);
@@ -136,7 +137,7 @@ static void gmdDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, unsigne
 	}
 }
 
-static void gmdDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int n, int plInstMode)
+static void gmdDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col;
 
@@ -147,7 +148,7 @@ static void gmdDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, unsign
 		col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[plBigInstNum[n]]];
 		writestring(buf, 0, col, (!plInstMode&&plInstUsed[plBigInstNum[n]])?"\xfe##: ":" ##: ", 5);
 		writenum(buf, 1, col, plBigInstNum[n]+1, 16, 2, 0);
-		writestring(buf, 5, col, ins->name, 35);
+		writestring(buf, 5, col, compoMode?"#":ins->name, 35);
 	}
 
 	if (plBigSampNum[n]!=0xFFFF)
@@ -157,7 +158,7 @@ static void gmdDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, unsign
 		col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plSampUsed[plBigSampNum[n]]];
 		writestring(buf, 34, col, (!plInstMode&&plSampUsed[plBigSampNum[n]])?"\xfe###: ":" ###: ", 6);
 		writenum(buf, 35, col, plBigSampNum[n], 16, 3, 0);
-		writestring(buf, 40, col, sm->name, 28);
+		writestring(buf, 40, col, compoMode?"#":sm->name, 28);
 		si=&plSamples[sm->handle];
 		if (si->type&mcpSampLoop)
 		{
@@ -204,24 +205,24 @@ static void gmdDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, unsign
 	}
 }
 
-static void gmdDisplayIns (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int len, int n, int plInstMode)
+static void gmdDisplayIns (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiInstWidth width, int n, int plInstMode, int compoMode)
 {
-	switch (len)
+	switch (width)
 	{
-		case 33:
-			gmdDisplayIns33 (cpifaceSession, buf, n, plInstMode);
+		case cpiInstWidth_33:
+			gmdDisplayIns33 (cpifaceSession, buf, n, plInstMode, compoMode);
 			break;
-		case 40:
-			gmdDisplayIns40 (cpifaceSession, buf, n, plInstMode);
+		case cpiInstWidth_40:
+			gmdDisplayIns40 (cpifaceSession, buf, n, plInstMode, compoMode);
 			break;
-		case 52:
-			gmdDisplayIns52 (cpifaceSession, buf, n, plInstMode);
+		case cpiInstWidth_52:
+			gmdDisplayIns52 (cpifaceSession, buf, n, plInstMode, compoMode);
 			break;
-		case 80:
-			gmdDisplayIns80 (cpifaceSession, buf, n, plInstMode);
+		case cpiInstWidth_80:
+			gmdDisplayIns80 (cpifaceSession, buf, n, plInstMode, compoMode);
 			break;
-		case 132:
-			gmdDisplayIns132 (cpifaceSession, buf, n, plInstMode);
+		case cpiInstWidth_132:
+			gmdDisplayIns132 (cpifaceSession, buf, n, plInstMode, compoMode);
 			break;
 	}
 }
