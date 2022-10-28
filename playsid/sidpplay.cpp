@@ -252,7 +252,7 @@ static const char *fx11[]={"","sync","ringmod","sync + ring"};
                                                Filter
 */
 
-static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i)
+static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiChanWidth width, int i, int compoMode)
 {
 	sidChanInfo ci;
 	unsigned char st = cpifaceSession->MuteChannel[i];
@@ -263,21 +263,21 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 	unsigned char tcolr=st?0x08:0x0B;  unused
 */
 
-	switch (len)
+	switch (width)
 	{
-		case 36:
+		case cpiChanWidth_36:
 			writestring(buf, 0, tcold, " ---- --- -- - -- \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 36);
 			break;
-		case 62:
+		case cpiChanWidth_62:
 			writestring(buf, 0, tcold, " ---------------- ---- --- --- --- -------  \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 62);
 			break;
-		case 128:
+		case cpiChanWidth_128:
 			writestring(buf, 0, tcold, "                   \263        \263       \263       \263                \263               \263   \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372", 128);
 			break;
-		case 76:
+		case cpiChanWidth_76:
 			writestring(buf, 0, tcold, "                  \263      \263     \263     \263     \263             \263 \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372", 76);
 			break;
-		case 44:
+		case cpiChanWidth_44:
 			writestring(buf, 0, tcold, " ---- ---- --- -- --- --  \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 44);
 			break;
 	}
@@ -302,9 +302,9 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 	uint8_t ftype=(ci.filttype>>4)&7;
 	uint8_t efx=(ci.wave>>1)&3;
 
-	switch(len)
+	switch (width)
 	{
-		case 36:
+		case cpiChanWidth_36:
 			writestring(buf+1, 0, tcol, waves4[ci.wave>>4], 4);
 			writestring(buf+6, 0, tcol, nchar, 3);
 			writenum(buf+10, 0, tcol, ci.pulse>>4, 16, 2, 0);
@@ -315,7 +315,7 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 			drawvolbar (cpifaceSession, buf+18, ci.leftvol, ci.rightvol, st);
 			break;
 
-		case 44:
+		case cpiChanWidth_44:
 			writestring(buf+1, 0, tcol, waves4[ci.wave>>4], 4);
 			writenum(buf+6, 0, tcol, ci.ad, 16, 2, 0);
 			writenum(buf+8, 0, tcol, ci.sr, 16, 2, 0);
@@ -328,7 +328,7 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 			drawvolbar (cpifaceSession, buf+26, ci.leftvol, ci.rightvol, st);
 			break;
 
-		case 62:
+		case cpiChanWidth_62:
 			writestring(buf+1, 0, tcol, waves16[ci.wave>>4], 16);
 			writenum(buf+18, 0, tcol, ci.ad, 16, 2, 0);
 			writenum(buf+20, 0, tcol, ci.sr, 16, 2, 0);
@@ -341,7 +341,7 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 			drawvolbar (cpifaceSession, buf+44, ci.leftvol, ci.rightvol, st);
 			break;
 
-		case 76:
+		case cpiChanWidth_76:
 			writestring(buf+1, 0, tcol, waves16[ci.wave>>4], 16);
 			writenum(buf+20, 0, tcol, ci.ad, 16, 2, 0);
 			writenum(buf+22, 0, tcol, ci.sr, 16, 2, 0);
@@ -353,7 +353,7 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 			drawvolbar (cpifaceSession, buf+59, ci.leftvol, ci.rightvol, st);
 			break;
 
-		case 128:
+		case cpiChanWidth_128:
 			writestring(buf+1, 0, tcol, waves16[ci.wave>>4], 16);
 			writenum(buf+22, 0, tcol, ci.ad, 16, 2, 0);
 			writenum(buf+24, 0, tcol, ci.sr, 16, 2, 0);

@@ -442,23 +442,23 @@ static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 	}
 }
 
-static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i)
+static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiChanWidth width, int i, int compoMode)
 {
-	switch (len)
+	switch (width)
 	{
-		case 36:
+		case cpiChanWidth_36:
 			drawchannel36 (cpifaceSession, buf, i);
 			break;
-		case 44:
+		case cpiChanWidth_44:
 			drawchannel44 (cpifaceSession, buf, i);
 			break;
-		case 62:
+		case cpiChanWidth_62:
 			drawchannel62 (cpifaceSession, buf, i);
 			break;
-		case 76:
+		case cpiChanWidth_76:
 			drawchannel76 (cpifaceSession, buf, i);
 			break;
-		case 128:
+		case cpiChanWidth_128:
 			drawchannel128 (cpifaceSession, buf, i);
 			break;
 	}

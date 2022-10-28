@@ -50,6 +50,15 @@ enum cpiInstWidth
 	cpiInstWidth_132 = 132,
 };
 
+enum cpiChanWidth
+{
+	cpiChanWidth_36 = 36,
+	cpiChanWidth_44 = 44,
+	cpiChanWidth_62 = 62,
+	cpiChanWidth_76 = 76,
+	cpiChanWidth_128 = 128,
+};
+
 struct cpifaceSessionAPI_t
 {
 	const struct plrDevAPI_t     *plrDevAPI;
@@ -77,7 +86,7 @@ struct cpifaceSessionAPI_t
 	int (*GetPChanSample)(struct cpifaceSessionAPI_t *cpifacesession, unsigned int ch, int16_t *, unsigned int len, uint32_t rate, int opt); /* Get sample data for a given physical channel, used by visualizers */
 
 	/* playback plugin provides callbacks during setup for channel, instrument, dots, message and track visualizers */
-	void (*UseChannels) (struct cpifaceSessionAPI_t *cpifaceSession, void (*Display)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i));
+	void (*UseChannels) (struct cpifaceSessionAPI_t *cpifaceSession, void (*Display)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiChanWidth width, int i, int compoMode));
 	void (*UseDots) (int (*get)(struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *, int));
 	void (*UseInstruments) (struct cpifaceSessionAPI_t *cpifaceSession, struct insdisplaystruct *x);
 	void (*UseMessage) (char **msg);
@@ -206,7 +215,7 @@ struct insdisplaystruct
 
 extern void plUseInstruments(struct cpifaceSessionAPI_t *cpifaceSession, struct insdisplaystruct *x);
 
-extern void plUseChannels(struct cpifaceSessionAPI_t *cpifaceSession, void (*Display)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i));
+extern void plUseChannels(struct cpifaceSessionAPI_t *cpifaceSession, void (*Display)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiChanWidth width, int i, int compoMode));
 
 struct notedotsdata
 {

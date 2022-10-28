@@ -385,7 +385,7 @@ static char *getfxstr15(unsigned char fx)
 
 
 
-static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i)
+static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiChanWidth width, int i, int compoMode)
 {
 	unsigned char st = cpifaceSession->MuteChannel[i];
 
@@ -397,21 +397,21 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 	char *fxstr;
 	struct xmpchaninfo ci;
 
-	switch (len)
+	switch (width)
 	{
-		case 36:
+		case cpiChanWidth_36:
 			writestring(buf, 0, tcold, " -- --- -- ------ \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 36);
 			break;
-		case 62:
+		case cpiChanWidth_62:
 			writestring(buf, 0, tcold, "                        ---\xfa --\xfa -\xfa ------  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 62);
 			break;
-		case 128:
+		case cpiChanWidth_128:
 			writestring(buf,  0, tcold, "                             \xb3                   \xb3    \xb3   \xb3  \xb3               \xb3  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", 128);
 			break;
-		case 76:
+		case cpiChanWidth_76:
 			writestring(buf,  0, tcold, "                             \xb3    \xb3   \xb3  \xb3               \xb3 \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa", 76);
 			break;
-		case 44:
+		case cpiChanWidth_44:
 			writestring(buf, 0, tcold, " --  ---\xfa --\xfa -\xfa ------   \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 44);
 			break;
 	}
@@ -422,9 +422,9 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 	ins=xmpGetChanIns(i);
 	smp=xmpGetChanSamp(i);
 	xmpGetChanInfo(i, &ci);
-	switch (len)
+	switch (width)
 	{
-		case 36:
+		case cpiChanWidth_36:
 			writenum(buf,  1, tcol, ins, 16, 2, 0);
 			writestring(buf,  4, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
 			writenum(buf, 8, tcol, ci.vol, 16, 2, 0);
@@ -433,11 +433,12 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 				writestring(buf, 11, tcol, fxstr, 6);
 			drawvolbar (cpifaceSession, buf+18, i, st);
 			break;
-		case 62:
+		case cpiChanWidth_62:
 			if (ins) {
-				if (*insts[ins-1].name)
+				if ((*insts[ins-1].name) && (!compoMode))
+				{
 					writestring(buf,  1, tcol, insts[ins-1].name, 21);
-				else {
+				} else {
 					writestring(buf,  1, 0x08, "(  )", 4);
 					writenum(buf,  2, 0x08, ins, 16, 2, 0);
 				}
@@ -453,12 +454,13 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 				writestring(buf, 36, tcol, fxstr, 6);
 			drawvolbar (cpifaceSession, buf+44, i, st);
 			break;
-		case 76:
+		case cpiChanWidth_76:
 			if (ins)
 			{
-				if (*insts[ins-1].name)
+				if ((*insts[ins-1].name) && (!compoMode))
+				{
 					writestring(buf,  1, tcol, insts[ins-1].name, 28);
-				else {
+				} else {
 					writestring(buf,  1, 0x08, "(  )", 4);
 					writenum(buf,  2, 0x08, ins, 16, 2, 0);
 				}
@@ -476,21 +478,23 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 
 			drawvolbar (cpifaceSession, buf+59, i, st);
 			break;
-		case 128:
+		case cpiChanWidth_128:
 			if (ins)
 			{
-				if (*insts[ins-1].name)
+				if ((*insts[ins-1].name) && (!compoMode))
+				{
 					writestring(buf,  1, tcol, insts[ins-1].name, 28);
-				else {
+				} else {
 					writestring(buf,  1, 0x08, "(  )", 4);
 					writenum(buf,  2, 0x08, ins, 16, 2, 0);
 				}
 			}
 			if (smp!=0xFFFF)
 			{
-				if (*samps[smp].name)
+				if ((*samps[smp].name) && (!compoMode))
+				{
 					writestring(buf, 31, tcol, samps[smp].name, 17);
-				else {
+				} else {
 					writestring(buf, 31, 0x08, "(    )", 6);
 					writenum(buf, 32, 0x08, smp, 16, 4, 0);
 				}
@@ -507,7 +511,7 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 				writestring(buf, 62, tcol, fxstr, 15);
 			drawlongvolbar (cpifaceSession, buf+80, i, st);
 			break;
-		case 44:
+		case cpiChanWidth_44:
 			writenum(buf,  1, tcol, xmpGetChanIns(i), 16, 2, 0);
 			writestring(buf,  5, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
 			writestring(buf, 8, tcol, ci.pitchslide ? &" \x18\x19\x0D\x18\x19\x0D"[ci.pitchslide] : &" ~\xf0"[ci.pitchfx], 1);

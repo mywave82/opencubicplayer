@@ -196,7 +196,7 @@ static char *getfxstr15(unsigned char fx)
 }
 
 
-static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
+static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i, int compoMode)
 {
 	struct chaninfo ci;
 	unsigned char st = cpifaceSession->MuteChannel[i];
@@ -222,7 +222,7 @@ static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	}
 }
 
-static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
+static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i, int compoMode)
 {
 	struct chaninfo ci;
 	unsigned char st = cpifaceSession->MuteChannel[i];
@@ -239,9 +239,10 @@ static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 		char *fxstr;
 		if (ci.ins!=0xFF)
 		{
-			if (*plChanInstr[ci.ins].name)
+			if ((*plChanInstr[ci.ins].name) && (!compoMode))
+			{
 				writestring(buf,  1, tcol, plChanInstr[ci.ins].name, 21);
-			else {
+			} else {
 				writestring(buf,  1, 0x08, "(  )", 4);
 				writenum(buf,  2, 0x08, ci.ins+1, 16, 2, 0);
 			}
@@ -259,7 +260,7 @@ static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	}
 }
 
-static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
+static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i, int compoMode)
 {
 	struct chaninfo ci;
 	unsigned char st = cpifaceSession->MuteChannel[i];
@@ -276,9 +277,10 @@ static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 		char *fxstr;
 		if (ci.ins!=0xFF)
 		{
-			if (*plChanInstr[ci.ins].name)
+			if ((*plChanInstr[ci.ins].name) && (!compoMode))
+			{
 				writestring(buf,  1, tcol, plChanInstr[ci.ins].name, 28);
-			else {
+			} else {
 				writestring(buf,  1, 0x08, "(  )", 4);
 				writenum(buf,  2, 0x08, ci.ins+1, 16, 2, 0);
 			}
@@ -298,7 +300,7 @@ static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	}
 }
 
-static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
+static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i, int compoMode)
 {
 	struct chaninfo ci;
 	unsigned char st = cpifaceSession->MuteChannel[i];
@@ -316,18 +318,20 @@ static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 		char *fxstr;
 		if (ci.ins!=0xFF)
 		{
-			if (*plChanInstr[ci.ins].name)
+			if ((*plChanInstr[ci.ins].name) && (!compoMode))
+			{
 				writestring(buf,  1, tcol, plChanInstr[ci.ins].name, 28);
-			else {
+			} else {
 				writestring(buf,  1, 0x08, "(  )", 4);
 				writenum(buf,  2, 0x08, ci.ins+1, 16, 2, 0);
 			}
 		}
 		if (ci.smp!=0xFFFF)
 		{
-			if (*plChanModSamples[ci.smp].name)
+			if ((*plChanModSamples[ci.smp].name) && (!compoMode))
+			{
 				writestring(buf, 31, tcol, plChanModSamples[ci.smp].name, 17);
-			else {
+			} else {
 				writestring(buf, 31, 0x08, "(    )", 6);
 				writenum(buf, 32, 0x08, ci.smp, 16, 4, 0);
 			}
@@ -347,7 +351,7 @@ static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 	}
 }
 
-static void drawchannel44 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned short *buf, int i)
+static void drawchannel44 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i, int compoMode)
 {
 	struct chaninfo ci;
 	unsigned char st = cpifaceSession->MuteChannel[i];
@@ -377,24 +381,24 @@ static void drawchannel44 (struct cpifaceSessionAPI_t *cpifaceSession, unsigned 
 	}
 }
 
-static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int len, int i)
+static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiChanWidth width, int i, int compoMode)
 {
-	switch (len)
+	switch (width)
 	{
-		case 36:
-			drawchannel36 (cpifaceSession, buf, i);
+		case cpiChanWidth_36:
+			drawchannel36 (cpifaceSession, buf, i, compoMode);
 			break;
-		case 44:
-			drawchannel44 (cpifaceSession, buf, i);
+		case cpiChanWidth_44:
+			drawchannel44 (cpifaceSession, buf, i, compoMode);
 			break;
-		case 62:
-			drawchannel62 (cpifaceSession, buf, i);
+		case cpiChanWidth_62:
+			drawchannel62 (cpifaceSession, buf, i, compoMode);
 			break;
-		case 76:
-			drawchannel76 (cpifaceSession, buf, i);
+		case cpiChanWidth_76:
+			drawchannel76 (cpifaceSession, buf, i, compoMode);
 			break;
-		case 128:
-			drawchannel128 (cpifaceSession, buf, i);
+		case cpiChanWidth_128:
+			drawchannel128 (cpifaceSession, buf, i, compoMode);
 			break;
 	}
 }
