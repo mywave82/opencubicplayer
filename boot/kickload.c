@@ -113,7 +113,7 @@ static void stopstuff(struct itimerval *i)
 	setitimer(ITIMER_REAL, &z, &i[0]);
 	setitimer(ITIMER_VIRTUAL, &z, &i[1]);
 	setitimer(ITIMER_PROF, &z, &i[2]);
-	crashmode = plScrMode;
+	crashmode = (*_conStatus).CurrentMode;
 	(*_conDriver)->SetTextMode ((unsigned char)255);
 }
 static void restartstuff(struct itimerval *i)

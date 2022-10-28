@@ -90,7 +90,7 @@ static void dummyiDrawBar (uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, u
 	fprintf (stderr, "iDrawBar() called premature\n");
 }
 
-static int dummyHasKey (uint16_t)
+static int dummyHasKey (uint16_t key)
 {
 	fprintf (stderr, "HasKey() called premature\n");
 	return 0;
