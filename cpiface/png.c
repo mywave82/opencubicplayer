@@ -34,7 +34,7 @@
 
 struct png_virt_io
 {
-	uint8_t *src;
+	const uint8_t *src;
 	uint_fast32_t len;
 	uint_fast32_t pos;
 };
@@ -52,7 +52,7 @@ static void png_read_ocp(png_structp png_ptr, png_bytep data, png_size_t length)
 	io->pos += length;
 }
 
-int try_open_png (uint16_t *width, uint16_t *height, uint8_t **data_bgra, uint8_t *src, uint_fast32_t srclen)
+int try_open_png (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const uint8_t *src, uint_fast32_t srclen)
 {
 	png_structp png_ptr      = 0;
 	png_infop   info_ptr     = 0;
