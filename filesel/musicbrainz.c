@@ -1305,9 +1305,9 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 		if (dialog)
 		{
 	                musicbrainzSetupDialogDraw (sorted + dsel, epos);
-			while (ekbhit())
+			while (conFunc.KeyboardHit())
 			{
-				int key = egetch();
+				int key = conFunc.KeyboardGetChar();
 				switch (key)
 				{
 					case KEY_DOWN:
@@ -1408,9 +1408,9 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 
 									framelock ();
 
-									while (ekbhit())
+									while (conFunc.KeyboardHit())
 									{
-										int key = egetch();
+										int key = conFunc.KeyboardGetChar();
 										switch (key)
 										{
 											case KEY_EXIT:
@@ -1515,9 +1515,9 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 				}
 			}
 		} else {
-			while (ekbhit())
+			while (conFunc.KeyboardHit())
 			{
-				int key = egetch();
+				int key = conFunc.KeyboardGetChar();
 				switch (key)
 				{
 					case KEY_HOME:

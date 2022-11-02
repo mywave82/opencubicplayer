@@ -506,9 +506,9 @@ static int fsEditCharset (struct ocpdir_t *dir)
 		}
 	}
 
-	while (ekbhit())
+	while (conFunc.KeyboardHit())
 	{
-		uint16_t c = egetch();
+		uint16_t c = conFunc.KeyboardGetChar();
 		switch (c)
 		{
 			case KEY_UP:

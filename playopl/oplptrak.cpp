@@ -86,7 +86,7 @@ static void preparepattern (int rows, int channels)
   }
 }
 
-static int startrow(void)
+static int opl_startrow (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	curRow++;
 	if (curRow >= cacheRows)
@@ -97,7 +97,7 @@ static int startrow(void)
 	return curRow;
 }
 
-static void trackdata (void *arg, unsigned char row, unsigned char channel, unsigned char note, CPlayer::TrackedCmds command, unsigned char inst, unsigned char volume, unsigned char param)
+static void opl_trackdata (void *arg, unsigned char row, unsigned char channel, unsigned char note, CPlayer::TrackedCmds command, unsigned char inst, unsigned char volume, unsigned char param)
 {
 	pattern[row * cacheChannels + channel].note = note;
 	pattern[row * cacheChannels + channel].command = command;
@@ -107,7 +107,7 @@ static void trackdata (void *arg, unsigned char row, unsigned char channel, unsi
 	return;
 }
 
-static void seektrack(int n, int c)
+static void opl_seektrack (struct cpifaceSessionAPI_t *cpifaceSession, int n, int c)
 {
 	if (curPosition != n)
 	{
@@ -116,29 +116,29 @@ static void seektrack(int n, int c)
 		curPosition = n;
 		if (pattern)
 		{
-			trkP->gettrackdata (trkP->getpattern (curPosition), trackdata, 0);
+			trkP->gettrackdata (trkP->getpattern (curPosition), opl_trackdata, 0);
 		}
 	}
 	curRow = -1;
 	curChannel = c;
 }
 
-static const char *getpatname(int n)
+static const char *opl_getpatname (struct cpifaceSessionAPI_t *cpifaceSession, int n)
 {
 	return 0; /* patterns do not have labels */
 }
 
-static int getpatlen(int n)
+static int opl_getpatlen (struct cpifaceSessionAPI_t *cpifaceSession, int n)
 {
 	return trkP->getrows();
 }
 
-static int getcurpos (struct cpifaceSessionAPI_t *cpifaceSession)
+static int opl_getcurpos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	return (trkP->getorder() << 8) | trkP->getrow();
 }
 
-static int getnote(uint16_t *buf, int small)
+static int opl_getnote (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int small)
 {
 	uint8_t color;
 
@@ -159,52 +159,52 @@ static int getnote(uint16_t *buf, int small)
 	switch (small)
 	{
 		case 0:
-			writestring(buf, 0, color, &"CCDDEFFGGAAB"[(cacheNote & 0x7f)%12], 1);
-			writestring(buf, 1, color, &"-#-#--#-#-#-"[(cacheNote & 0x7f)%12], 1);
-			writestring(buf, 2, color, &"-0123456789" [(cacheNote & 0x7f)/12], 1);
+			cpifaceSession->conFunc->WriteString (buf, 0, color, &"CCDDEFFGGAAB"[(cacheNote & 0x7f)%12], 1);
+			cpifaceSession->conFunc->WriteString (buf, 1, color, &"-#-#--#-#-#-"[(cacheNote & 0x7f)%12], 1);
+			cpifaceSession->conFunc->WriteString (buf, 2, color, &"-0123456789" [(cacheNote & 0x7f)/12], 1);
 			break;
 		case 1:
-			writestring(buf, 0, color, &"cCdDefFgGaAb"[(cacheNote & 0x7f)%12], 1);
-			writestring(buf, 1, color, &"-0123456789" [(cacheNote & 0x7f)/12], 1);
+			cpifaceSession->conFunc->WriteString (buf, 0, color, &"cCdDefFgGaAb"[(cacheNote & 0x7f)%12], 1);
+			cpifaceSession->conFunc->WriteString (buf, 1, color, &"-0123456789" [(cacheNote & 0x7f)/12], 1);
 			break;
 		case 2:
-			writestring(buf, 0, color, &"cCdDefFgGaAb"[(cacheNote & 0x7f)%12], 1);
+			cpifaceSession->conFunc->WriteString (buf, 0, color, &"cCdDefFgGaAb"[(cacheNote & 0x7f)%12], 1);
 			break;
 	}
 	return 1;
 }
 
-static int getvol(uint16_t *buf)
+static int opl_getvol (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf)
 {
 	uint8_t cacheVolume = pattern[curRow * cacheChannels + curChannel].volume;
 
 	if (cacheVolume != 0xff)
 	{
-		writenum(buf, 0, COLVOL, cacheVolume, 16, 2, 0);
+		cpifaceSession->conFunc->WriteNum (buf, 0, COLVOL, cacheVolume, 16, 2, 0);
 		return 1;
 	}
 
 	return 0;
 }
 
-static int getins(uint16_t *buf)
+static int opl_getins (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf)
 {
 	uint8_t cacheInst = pattern[curRow * cacheChannels + curChannel].inst;
 
 	if (cacheInst)
 	{
-		writenum(buf, 0, COLINS, cacheInst, 16, 2, 0);
+		cpifaceSession->conFunc->WriteNum (buf, 0, COLINS, cacheInst, 16, 2, 0);
 		return 1;
 	}
 	return 0;
 }
 
-static int getpan(uint16_t *buf)
+static int opl_getpan (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf)
 {
 	return 0;
 }
 
-static void _getgcmd(uint16_t *buf, int *n, uint8_t fx, uint8_t param)
+static void _opl_getgcmd (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int *n, uint8_t fx, uint8_t param)
 {
 	switch (fx)
 	{
@@ -212,67 +212,68 @@ static void _getgcmd(uint16_t *buf, int *n, uint8_t fx, uint8_t param)
 			break;
 
 		case CPlayer::TrackedCmdSpeed:
-			writestring(buf, 0, COLSPEED, "s", 1);
-			writenum(buf, 1, COLSPEED, param, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLSPEED, "s", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLSPEED, param, 16, 2, 0);
 			*n = *n - 1;
 			break;
 
 		case CPlayer::TrackedCmdTempo:
-			writestring(buf, 0, COLSPEED, "t", 1);
-			writenum(buf, 1, COLSPEED, param, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLSPEED, "t", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLSPEED, param, 16, 2, 0);
 			*n = *n - 1;
 			break;
 
 		case CPlayer::TrackedCmdPatternJumpTo:
-			writestring(buf, 0, COLACT, "\x1A", 1);
-			writenum(buf, 1, COLACT, param, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x1A", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
 			*n = *n - 1;
 			break;
 
 		case CPlayer::TrackedCmdPatternBreak:
-			writestring(buf, 0, COLACT, "\x19", 1);
-			writenum(buf, 1, COLACT, param, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x19", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
 			*n = *n - 1;
 			break;
 
 		case CPlayer::TrackedCmdPatternSetLoop:
-			writestring(buf, 0, COLACT, (param==1)?"lp1":(param==2)?"lp2":"lp-", 3);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, (param==1)?"lp1":(param==2)?"lp2":"lp-", 3);
 			*n = *n - 1;
 			break;
 
 		case CPlayer::TrackedCmdPatternDoLoop:
-			writestring(buf, 0, COLACT, "pl", 2);
-			writenum(buf, 2, COLACT, param, 16, 1, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "pl", 2);
+			cpifaceSession->conFunc->WriteNum    (buf, 2, COLACT, param, 16, 1, 0);
 			*n = *n - 1;
 			break;
 
 		case CPlayer::TrackedCmdPatternDelay:
-			writestring(buf, 0, COLACT, "pd", 2);
-			writenum(buf, 2, COLACT, param & 15, 16, 1, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "pd", 2);
+			cpifaceSession->conFunc->WriteNum    (buf, 2, COLACT, param & 15, 16, 1, 0);
 			*n = *n - 1;
 			break;
 
 		case CPlayer::TrackedCmdGlobalVolume:
-			writestring(buf, 0, COLVOL, "v", 1);
-			writenum(buf, 2, COLVOL, param, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "v", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 2, COLVOL, param, 16, 2, 0);
 			*n = *n - 1;
 			break;
 	}
 }
 
 
-static void getgcmd(uint16_t *buf, int n)
+static void opl_getgcmd (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n)
 {
 	int i;
 
 	for (i=0; i<cacheChannels; i++)
 	{
-		_getgcmd (buf, &n, pattern[curRow * cacheChannels + i].command,
-		                   pattern[curRow * cacheChannels + i].param);
+		_opl_getgcmd (cpifaceSession, buf, &n,
+		              pattern[curRow * cacheChannels + i].command,
+		              pattern[curRow * cacheChannels + i].param);
 	}
 }
 
-static void getfx(uint16_t *buf, int n)
+static void opl_getfx (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n)
 {
 	CPlayer::TrackedCmds cacheCommand = pattern[curRow * cacheChannels + curChannel].command;
 	uint8_t cacheParam = pattern[curRow * cacheChannels + curChannel].param;
@@ -292,197 +293,197 @@ static void getfx(uint16_t *buf, int n)
 			return;
 
 		case CPlayer::TrackedCmdNoteCut:
-			writestring(buf, 0, COLINS, "off", 3);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLINS, "off", 3);
 			return;
 
 		case CPlayer::TrackedCmdArpeggio:
-			writestring(buf, 0, COLPITCH, "\xf0", 1);
-			writenum(buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\xf0", 1);
+			cpifaceSession->conFunc->WriteNum (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdPitchSlideUp:
-			writestring(buf, 0, COLPITCH, "\x18", 1);
-			writenum(buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\x18", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdPitchSlideDown:
-			writestring(buf, 0, COLPITCH, "\x19", 1);
-			writenum(buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\x19", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdPitchSlideUpDown:
 			if (!cacheParam)
 			{
-				writestring(buf, 0, COLVOL, "\x12""00", 3);
+				cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x12""00", 3);
 			} else {
 				if (cacheParam & 0xF0)
 				{
-					writestring(buf, 0, COLVOL, "\x18", 1);
-					writenum(buf, 1, COLVOL, cacheParam>>4, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x18", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam>>4, 16, 2, 0);
 				} else {
-					writestring(buf, 0, COLVOL, "\x19", 1);
-					writenum(buf, 1, COLVOL, cacheParam&0xF, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x19", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam&0xF, 16, 2, 0);
 				}
 			}
 			return;
 
 		case CPlayer::TrackedCmdPitchFineSlideUp:
-			writestring(buf, 0, COLPITCH, "+", 1);
-			writenum(buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "+", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdPitchFineSlideDown:
-			writestring(buf, 0, COLPITCH, "-", 2);
-			writenum(buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "-", 2);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdTonePortamento:
-			writestring(buf, 0, COLPITCH, "\x0D", 1);
-			writenum(buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\x0D", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdTonePortamentoVolumeSlide:
-			writestring(buf, 0, COLACT, "\x0D", 1);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x0D", 1);
 			if ((cacheParam & 0xF0)!=0x00)
 			{
-				writestring(buf, 1, COLVOL, "\x18", 1);
-				writenum(buf, 2, COLVOL, cacheParam >> 4, 16, 1, 0);
+				cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x18", 1);
+				cpifaceSession->conFunc->WriteNum    (buf, 2, COLVOL, cacheParam >> 4, 16, 1, 0);
 			} else if ((cacheParam & 0xF0)!=0x00)
 			{
-				writestring(buf, 1, COLVOL, "\x19", 1);
-				writenum(buf, 2, COLVOL, cacheParam & 0xF, 16, 1, 0);
+				cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x19", 1);
+				cpifaceSession->conFunc->WriteNum    (buf, 2, COLVOL, cacheParam & 0xF, 16, 1, 0);
 			} else {
-				writenum(buf, 1, COLVOL, cacheParam, 16, 2, 0);
+				cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			}
 			return;
 
 		case CPlayer::TrackedCmdVibratoFine:
 		case CPlayer::TrackedCmdVibrato:
-			writestring(buf, 0, COLPITCH, "~", 1);
-			writenum(buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "~", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdVibratoVolumeSlide:
-			writestring(buf, 0, COLPITCH, "~", 1);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "~", 1);
 			if (!cacheParam)
 			{
-				writestring(buf, 1, COLVOL, "\x12""0", 2);
+				cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x12""0", 2);
 			} else {
 				if (cacheParam&0xF0)
 				{
-					writestring(buf, 1, COLVOL, "\x18", 1);
-					writenum(buf, 2, COLVOL, cacheParam>>4, 16, 1, 0);
+					cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x18", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 2, COLVOL, cacheParam>>4, 16, 1, 0);
 				} else {
-					writestring(buf, 1, COLVOL, "\x19", 1);
-					writenum(buf, 2, COLVOL, cacheParam&0xF, 16, 1, 0);
+					cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x19", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 2, COLVOL, cacheParam&0xF, 16, 1, 0);
 				}
 			}
 			return;
 
 		case CPlayer::TrackedCmdReleaseSustainedNotes:
-			writestring(buf, 0, COLACT, "^", 1);
-			writenum(buf, 1, COLACT, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "^", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdVolumeSlideUpDown:
 			if ((cacheParam & 0xF0)!=0x00)
 			{
-				writestring(buf, 0, COLVOL, "\x18", 1);
-				writenum(buf, 1, COLVOL, cacheParam >> 4, 16, 2, 0);
+				cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x18", 1);
+				cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam >> 4, 16, 2, 0);
 			} else if ((cacheParam &0xF0)!=0x00)
 			{
-				writestring(buf, 1, COLVOL, "\x19", 1);
-				writenum(buf, 1, COLVOL, cacheParam & 0xF, 16, 2, 0);
+				cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x19", 1);
+				cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam & 0xF, 16, 2, 0);
 			} else {
-				writestring(buf, 1, COLVOL, "\x12", 1);
-				writenum(buf, 1, COLVOL, cacheParam, 16, 2, 0);
+				cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x12", 1);
+				cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			}
 			return;
 
 		case CPlayer::TrackedCmdVolumeFineSlideUp:
-			writestring(buf, 0, COLVOL, "+", 1);
-			writenum(buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "+", 1);
+			cpifaceSession->conFunc->WriteNum (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdVolumeFineSlideDown:
-			writestring(buf, 0, COLVOL, "-", 1);
-			writenum(buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "-", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdVolumeFadeIn:
-			writestring(buf, 0, COLVOL, "\x1a", 1);
-			writenum(buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x1a", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLCarrierModulatorVolume:
-			writestring(buf, 0, COLOPL, "!", 1);
-			writenum(buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "!", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLCarrierVolume:
-			writestring(buf, 0, COLOPL, "c", 1);
-			writenum(buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "c", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLModulatorVolume:
-			writestring(buf, 0, COLOPL, "m", 1);
-			writenum(buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "m", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLCarrierModulatorWaveform:
-			writestring(buf, 0, COLOPL, "~", 1);
-			writenum(buf, 1, COLOPL, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "~", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLOPL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLTremoloVibrato:
-			writestring(buf, 0, COLOPL, "!", 1);
-			writenum(buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "!", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLTremolo:
-			writestring(buf, 0, COLOPL, "~", 1);
-			writenum(buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "~", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLVibrato:
-			writestring(buf, 0, COLOPL, "~", 1);
-			writenum(buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "~", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPL3Multiplier:
-			writestring(buf, 0, COLOPL, "M", 1);
-			writenum(buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "M", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLFeedback:
-			writestring(buf, 0, COLOPL, "f", 1);
-			writenum(buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "f", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPL3Volume:
-			writestring(buf, 0, COLOPL, "v", 1);
-			writenum(buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "v", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLVoiceMode:
-			writestring(buf, 0, COLOPL, "voc", 3);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "voc", 3);
 			return;
 
 		case CPlayer::TrackedCmdOPLDrumMode:
-			writestring(buf, 0, COLOPL, "drm", 3);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "drm", 3);
 			return;
 
 		case CPlayer::TrackedCmdRetrigger:
-			writestring(buf, 0, COLACT, "\x13", 1);
-			writenum(buf, 1, COLACT, cacheParam, 16, 2, 0);
+			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x13", 1);
+			cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, cacheParam, 16, 2, 0);
 			return;
 	}
 }
 
-static struct cpitrakdisplaystruct oplptrkdisplay=
+static struct cpitrakdisplaystruct oplptrkdisplay =
 {
-	getcurpos, getpatlen, getpatname, seektrack, startrow, getnote,
-	getins, getvol, getpan, getfx, getgcmd
+	opl_getcurpos, opl_getpatlen, opl_getpatname, opl_seektrack, opl_startrow, opl_getnote,
+	opl_getins, opl_getvol, opl_getpan, opl_getfx, opl_getgcmd
 };
 
 void __attribute__ ((visibility ("internal"))) oplTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, CPlayer *p)

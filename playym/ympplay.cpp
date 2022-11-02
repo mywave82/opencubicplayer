@@ -147,13 +147,13 @@ static void drawvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bu
 	}
 	if (st)
 	{
-		writestring(buf, 8-l, 0x08, "\376\376\376\376\376\376\376\376", l);
-		writestring(buf, 9, 0x08, "\376\376\376\376\376\376\376\376", r);
+		cpifaceSession->conFunc->WriteString (buf, 8-l, 0x08, "\376\376\376\376\376\376\376\376", l);
+		cpifaceSession->conFunc->WriteString (buf, 9, 0x08, "\376\376\376\376\376\376\376\376", r);
 	} else {
 		uint16_t left[] =  {0x0ffe, 0x0bfe, 0x0bfe, 0x09fe, 0x09fe, 0x01fe, 0x01fe, 0x01fe};
 		uint16_t right[] = {0x01fe, 0x01fe, 0x01fe, 0x09fe, 0x09fe, 0x0bfe, 0x0bfe, 0x0ffe};
-		writestringattr(buf, 8-l, left+8-l, l);
-		writestringattr(buf, 9, right, r);
+		cpifaceSession->conFunc->WriteStringAttr (buf, 8-l, left+8-l, l);
+		cpifaceSession->conFunc->WriteStringAttr (buf, 9, right, r);
 	}
 }
 
@@ -169,13 +169,13 @@ static void drawlongvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 	}
 	if (st)
 	{
-		writestring(buf, 16-l, 0x08, "\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376", l);
-		writestring(buf, 17,   0x08, "\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376", r);
+		cpifaceSession->conFunc->WriteString (buf, 16-l, 0x08, "\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376", l);
+		cpifaceSession->conFunc->WriteString (buf, 17,   0x08, "\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376", r);
 	} else {
 		uint16_t left[] =  {0x0ffe, 0x0ffe, 0x0bfe, 0x0bfe, 0x0bfe, 0x0bfe, 0x09fe, 0x09fe, 0x09fe, 0x09fe, 0x01fe, 0x01fe, 0x01fe, 0x01fe, 0x01fe, 0x01fe};
 		uint16_t right[] = {0x01fe, 0x01fe, 0x01fe, 0x01fe, 0x01fe, 0x01fe, 0x09fe, 0x09fe, 0x09fe, 0x09fe, 0x0bfe, 0x0bfe, 0x0bfe, 0x0bfe, 0x0ffe, 0x0ffe};
-		writestringattr(buf, 16-l, left+16-l, l);
-		writestringattr(buf, 17,   right, r);
+		cpifaceSession->conFunc->WriteStringAttr (buf, 16-l, left+16-l, l);
+		cpifaceSession->conFunc->WriteStringAttr (buf, 17,   right, r);
 	}
 }
 
@@ -298,19 +298,19 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 	switch (width)
 	{
 		case cpiChanWidth_36:
-			writestring(buf, 0, tcold, " ---- --- -- - -- \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 36);
+			cpifaceSession->conFunc->WriteString (buf, 0, tcold, " ---- --- -- - -- \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 36);
 			break;
 		case cpiChanWidth_62:
-			writestring(buf, 0, tcold, " ---------------- ---- --- --- --- -------  \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 62);
+			cpifaceSession->conFunc->WriteString (buf, 0, tcold, " ---------------- ---- --- --- --- -------  \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 62);
 			break;
 		case cpiChanWidth_128:
-			writestring(buf, 0, tcold, "                   \263        \263       \263       \263                \263               \263   \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372", 128);
+			cpifaceSession->conFunc->WriteString (buf, 0, tcold, "                   \263        \263       \263       \263                \263               \263   \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372", 128);
 			break;
 		case cpiChanWidth_76:
-			writestring(buf, 0, tcold, "                  \263      \263     \263     \263     \263             \263 \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372", 76);
+			cpifaceSession->conFunc->WriteString (buf, 0, tcold, "                  \263      \263     \263     \263     \263             \263 \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372", 76);
 			break;
 		case cpiChanWidth_44:
-			writestring(buf, 0, tcold, " ---- ---- --- -- --- --  \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 44);
+			cpifaceSession->conFunc->WriteString (buf, 0, tcold, " ---- ---- --- -- --- --  \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 44);
 
 		break;
 	}
@@ -336,81 +336,81 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 	switch (width)
 	{
 		case cpiChanWidth_36:
-			writestring(buf+1, 0, tcol, waves4[channel_mode], 4);
-			writestring(buf+6, 0, tcol, nchar, 3);
+			cpifaceSession->conFunc->WriteString (buf+1, 0, tcol, waves4[channel_mode], 4);
+			cpifaceSession->conFunc->WriteString (buf+6, 0, tcol, nchar, 3);
 			if (env)
-				writestring(buf+10, 0, tcol, "En", 2);
+				cpifaceSession->conFunc->WriteString (buf+10, 0, tcol, "En", 2);
 /*
-			writenum(buf+10, 0, tcol, ci.pulse>>4, 16, 2, 0);
+			cpifaceSession->conFunc->WriteNum (buf+10, 0, tcol, ci.pulse>>4, 16, 2, 0);
 			if (ci.filtenabled && ftype)
-				writenum(buf+13, 0, tcol, ftype, 16, 1, 0);
+				cpifaceSession->conFunc->WriteNum (buf+13, 0, tcol, ftype, 16, 1, 0);
 			if (efx)
-				writestring(buf+15, 0, tcol, fx2[efx], 2);*/
+				cpifaceSession->conFunc->WriteString (buf+15, 0, tcol, fx2[efx], 2);*/
 			drawvolbar (cpifaceSession, buf+18, voll, volr, st);
 			break;
 		case cpiChanWidth_44:
-			writestring(buf+1, 0, tcol, waves4[channel_mode], 4);
+			cpifaceSession->conFunc->WriteString (buf+1, 0, tcol, waves4[channel_mode], 4);
 /*
-			writenum(buf+6, 0, tcol, ci.ad, 16, 2, 0);
-			writenum(buf+8, 0, tcol, ci.sr, 16, 2, 0);*/
-			writestring(buf+11, 0, tcol, nchar, 3);
+			cpifaceSession->conFunc->WriteNum (buf+6, 0, tcol, ci.ad, 16, 2, 0);
+			cpifaceSession->conFunc->WriteNum (buf+8, 0, tcol, ci.sr, 16, 2, 0);*/
+			cpifaceSession->conFunc->WriteString (buf+11, 0, tcol, nchar, 3);
 			if (env)
-				writestring(buf+15, 0, tcol, "En", 2);
+				cpifaceSession->conFunc->WriteString (buf+15, 0, tcol, "En", 2);
 /*
-			writenum(buf+15, 0, tcol, ci.pulse>>4, 16, 2, 0);
+			cpifaceSession->conFunc->WriteNum (buf+15, 0, tcol, ci.pulse>>4, 16, 2, 0);
 			if (ci.filtenabled && ftype)
-				writestring(buf+18, 0, tcol, filters3[ftype], 3);
+				cpifaceSession->conFunc->WriteString (buf+18, 0, tcol, filters3[ftype], 3);
 			if (efx)
-				writestring(buf+22, 0, tcol, fx2[efx], 2);*/
+				cpifaceSession->conFunc->WriteString (buf+22, 0, tcol, fx2[efx], 2);*/
 			drawvolbar (cpifaceSession, buf+26, voll, volr, st);
 			break;
 		case cpiChanWidth_62:
-			writestring(buf+1, 0, tcol, waves16[channel_mode], 16);
+			cpifaceSession->conFunc->WriteString (buf+1, 0, tcol, waves16[channel_mode], 16);
 /*
-			writenum(buf+18, 0, tcol, ci.ad, 16, 2, 0);
-			writenum(buf+20, 0, tcol, ci.sr, 16, 2, 0);*/
-			writestring(buf+23, 0, tcol, nchar, 3);
+			cpifaceSession->conFunc->WriteNum (buf+18, 0, tcol, ci.ad, 16, 2, 0);
+			cpifaceSession->conFunc->WriteNum (buf+20, 0, tcol, ci.sr, 16, 2, 0);*/
+			cpifaceSession->conFunc->WriteString (buf+23, 0, tcol, nchar, 3);
 
 			if (env)
-				writestring(buf+27, 0, tcol, "Env", 3);
+				cpifaceSession->conFunc->WriteString (buf+27, 0, tcol, "Env", 3);
 /*
-			writenum(buf+27, 0, tcol, ci.pulse, 16, 3, 0);
+			cpifaceSession->conFunc->WriteNum (buf+27, 0, tcol, ci.pulse, 16, 3, 0);
 			if (ci.filtenabled && ftype)
-				writestring(buf+31, 0, tcol, filters3[ftype], 3);
+				cpifaceSession->conFunc->WriteString (buf+31, 0, tcol, filters3[ftype], 3);
 			if (efx)
-				writestring(buf+35, 0, tcol, fx7[efx], 7);*/
+				cpifaceSession->conFunc->WriteString (buf+35, 0, tcol, fx7[efx], 7);*/
 			drawvolbar (cpifaceSession, buf+44, voll, volr, st);
 			break;
 		case cpiChanWidth_76:
-			writestring(buf+1, 0, tcol, waves16[channel_mode], 16);
-			writenum(buf+19, 0, tcol, freq, 10, 6, 0);
+			cpifaceSession->conFunc->WriteString (buf+1, 0, tcol, waves16[channel_mode], 16);
+			cpifaceSession->conFunc->WriteNum (buf+19, 0, tcol, freq, 10, 6, 0);
 /*
-			writenum(buf+20, 0, tcol, ci.ad, 16, 2, 0);
-			writenum(buf+22, 0, tcol, ci.sr, 16, 2, 0);*/
-			writestring(buf+27, 0, tcol, nchar, 3);
+			cpifaceSession->conFunc->WriteNum (buf+20, 0, tcol, ci.ad, 16, 2, 0);
+			cpifaceSession->conFunc->WriteNum (buf+22, 0, tcol, ci.sr, 16, 2, 0);*/
+			cpifaceSession->conFunc->WriteString (buf+27, 0, tcol, nchar, 3);
 			if (env)
-				writestring(buf+33, 0, tcol, "Env", 3);
+				cpifaceSession->conFunc->WriteString (buf+33, 0, tcol, "Env", 3);
 /*
-			writenum(buf+33, 0, tcol, ci.pulse, 16, 3, 0);
+			cpifaceSession->conFunc->WriteNum (buf+33, 0, tcol, ci.pulse, 16, 3, 0);
 			if (ci.filtenabled && ftype)
-				writestring(buf+39, 0, tcol, filters3[ftype], 3);
-			writestring(buf+45, 0, tcol, fx11[efx], 11);*/
+				cpifaceSession->conFunc->WriteString (buf+39, 0, tcol, filters3[ftype], 3);
+			cpifaceSession->conFunc->WriteString (buf+45, 0, tcol, fx11[efx], 11);*/
 			drawvolbar (cpifaceSession, buf+59, voll, volr, st);
 			break;
 		case cpiChanWidth_128:
-			writestring(buf+1, 0, tcol, waves16[channel_mode], 16);
-			writenum(buf+21, 0, tcol, freq, 10, 6, 0);
+			cpifaceSession->conFunc->WriteString (buf+1, 0, tcol, waves16[channel_mode], 16);
+			cpifaceSession->conFunc->WriteNum (buf+21, 0, tcol, freq, 10, 6, 0);
 /*
-			writenum(buf+22, 0, tcol, ci.ad, 16, 2, 0);
-			writenum(buf+24, 0, tcol, ci.sr, 16, 2, 0);*/
-			writestring(buf+31, 0, tcol, nchar, 3);
+			cpifaceSession->conFunc->WriteNum (buf+22, 0, tcol, ci.ad, 16, 2, 0);
+			cpifaceSession->conFunc->WriteNum (buf+24, 0, tcol, ci.sr, 16, 2, 0);*/
+			cpifaceSession->conFunc->WriteString (buf+31, 0, tcol, nchar, 3);
 			if (env)
-				writestring(buf+39, 0, tcol, "Env", 3);
+				cpifaceSession->conFunc->WriteString (buf+39, 0, tcol, "Env", 3);
 /*
-			writenum(buf+39, 0, tcol, ci.pulse, 16, 3, 0);
+			cpifaceSession->conFunc->WriteNum (buf+39, 0, tcol, ci.pulse, 16, 3, 0);
 			if (ci.filtenabled && ftype)
-				writestring(buf+47, 0, tcol, filters12[ftype], 12);
-			writestring(buf+64, 0, tcol, fx11[efx], 11);*/
+				cpifaceSession->conFunc->WriteString (buf+47, 0, tcol, filters12[ftype], 12);
+			cpifaceSession->conFunc->WriteString (buf+64, 0, tcol, fx11[efx], 11);*/
 			drawlongvolbar (cpifaceSession, buf+81, voll, volr, st);
 			break;
 	}

@@ -33,8 +33,9 @@
 #include "cpiface/cpiface.h"
 #include "framelock.h"
 #include "poutput.h"
-#include "poutput-sdl.h"
 #include "poutput-fontengine.h"
+#include "poutput-keyboard.h"
+#include "poutput-sdl.h"
 #include "poutput-swtext.h"
 
 typedef enum

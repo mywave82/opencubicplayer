@@ -64,17 +64,17 @@
 
 static int plTrackActive;
 
-static int (*getcurpos)(struct cpifaceSessionAPI_t *cpifaceSession);
-static int (*getpatlen)(int n);
-static const char *(*getpatname)(int n);
-static void (*seektrack)(int n, int c);
-static int (*startrow)();
-static int (*getnote)(uint16_t *bp, int small);
-static int (*getins)(uint16_t *bp);
-static int (*getvol)(uint16_t *bp);
-static int (*getpan)(uint16_t *bp);
-static void (*getfx)(uint16_t *bp, int n);
-static void (*getgcmd)(uint16_t *bp, int n);
+static int         (*getcurpos) (struct cpifaceSessionAPI_t *cpifaceSession);
+static int         (*getpatlen) (struct cpifaceSessionAPI_t *cpifaceSession, int n);
+static const char *(*getpatname)(struct cpifaceSessionAPI_t *cpifaceSession, int n);
+static void        (*seektrack) (struct cpifaceSessionAPI_t *cpifaceSession, int n, int c);
+static int         (*startrow)  (struct cpifaceSessionAPI_t *cpifaceSession);
+static int         (*getnote)   (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp, int small);
+static int         (*getins)    (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp);
+static int         (*getvol)    (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp);
+static int         (*getpan)    (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp);
+static void        (*getfx)     (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp, int n);
+static void        (*getgcmd)   (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp, int n);
 
 static int plPatternNum;
 static int plPrepdPat;
@@ -99,11 +99,11 @@ enum
 	cpiTrkFXIns=1,cpiTrkFXNote=2,cpiTrkFXVol=4,cpiTrkFXNoPan=8
 };
 
-static void getfx2(uint16_t *bp, int n, int o)
+static void getfx2 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp, int n, int o)
 {
 	int p=0;
 	if (o&cpiTrkFXIns)
-		if (getins(bp+1))
+		if (getins (cpifaceSession, bp+1))
 		{
 			writestring(bp, 0, COLINS, "i", 1);
 			p++;
@@ -112,7 +112,7 @@ static void getfx2(uint16_t *bp, int n, int o)
 	if (p==n)
 		return;
 	if (o&cpiTrkFXNote)
-		if (getnote(bp, 0))
+		if (getnote (cpifaceSession, bp, 0))
 		{
 			p++;
 			bp+=3;
@@ -120,7 +120,7 @@ static void getfx2(uint16_t *bp, int n, int o)
 	if (p==n)
 		return;
 	if (o&cpiTrkFXVol)
-		if (getvol(bp+1))
+		if (getvol (cpifaceSession, bp+1))
 		{
 			writestring(bp, 0, COLVOL, "v", 1);
 			p++;
@@ -129,7 +129,7 @@ static void getfx2(uint16_t *bp, int n, int o)
 	if (p==n)
 		return;
 	if (!(o&cpiTrkFXNoPan))
-		if (getpan(bp+1))
+		if (getpan (cpifaceSession, bp+1))
 		{
 			writestring(bp, 0, COLPAN, "p", 1);
 			p++;
@@ -137,7 +137,7 @@ static void getfx2(uint16_t *bp, int n, int o)
 		}
 	if (p==n)
 		return;
-	getfx(bp, n-p);
+	getfx (cpifaceSession, bp, n-p);
 }
 
 static void getscrollpos (struct cpifaceSessionAPI_t *cpifaceSession, int tr, int *firstchan, int *chnn)
@@ -169,83 +169,85 @@ static void setattrgrey(uint16_t *buf, int len)
 	}
 }
 
-static void preparetrack1(uint16_t *bp)
+static void preparetrack1 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 {
-	getnote(bp, 2);
+	getnote (cpifaceSession, bp, 2);
 }
 
-static void preparetrack2(uint16_t *bp)
+static void preparetrack2 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 {
-	getnote(bp, 1);
+	getnote (cpifaceSession, bp, 1);
 }
 
-static void preparetrack3(uint16_t *bp)
+static void preparetrack3 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 {
-	getnote(bp, 0);
+	getnote (cpifaceSession, bp, 0);
 }
 
-static void preparetrack3f(uint16_t *bp)
+static void preparetrack3f (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 {
-	if (!getnote(bp, 0))
-		getfx2(bp, 1, cpiTrkFXVol);
+	if (!getnote (cpifaceSession, bp, 0))
+	{
+		getfx2 (cpifaceSession, bp, 1, cpiTrkFXVol);
+	}
 }
 
 
-static void preparetrack6nf(uint16_t *bp)
+static void preparetrack6nf (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 {
-	getnote(bp, 0);
-	getfx2(bp+3, 1, cpiTrkFXVol);
+	getnote (cpifaceSession, bp    , 0);
+	getfx2  (cpifaceSession, bp + 3, 1, cpiTrkFXVol);
 }
 
-static void preparetrack17invff(uint16_t *bp)
+static void preparetrack17invff (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 {
-	getins(bp);
-	getnote(bp+3, 0);
-	getvol(bp+7);
-	getfx2(bp+10, 2, 0);
+	getins  (cpifaceSession, bp);
+	getnote (cpifaceSession, bp +  3, 0);
+	getvol  (cpifaceSession, bp +  7);
+	getfx2  (cpifaceSession, bp + 10, 2, 0);
 }
 
-static void preparetrack14invff(uint16_t *bp)
+static void preparetrack14invff (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 {
-	getins(bp);
-	getnote(bp+2, 0);
-	getvol(bp+5);
-	getfx2(bp+7, 2, 0);
+	getins  (cpifaceSession, bp);
+	getnote (cpifaceSession, bp + 2, 0);
+	getvol  (cpifaceSession, bp + 5);
+	getfx2  (cpifaceSession, bp + 7, 2, 0);
 }
 
-static void preparetrack14nvff(uint16_t *bp)
+static void preparetrack14nvff (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 {
-	getnote(bp, 0);
-	getvol(bp+4);
-	getfx2(bp+7, 2, 0);
+	getnote (cpifaceSession, bp    , 0);
+	getvol  (cpifaceSession, bp + 4);
+	getfx2  (cpifaceSession, bp + 7, 2, 0);
 }
 
-static void preparetrack26invpffff(uint16_t *bp)
+static void preparetrack26invpffff (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 {
-	getins(bp);
-	getnote(bp+3, 0);
-	getvol(bp+7);
-	getpan(bp+10);
-	getfx2(bp+13, 4, cpiTrkFXNoPan);
+	getins  (cpifaceSession, bp);
+	getnote (cpifaceSession, bp +  3, 0);
+	getvol  (cpifaceSession, bp +  7);
+	getpan  (cpifaceSession, bp + 10);
+	getfx2  (cpifaceSession, bp + 13, 4, cpiTrkFXNoPan);
 }
 
-static void preparetrack16fffff(uint16_t *bp)
+static void preparetrack16fffff (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 {
-	getfx2(bp, 5, cpiTrkFXIns|cpiTrkFXNote|cpiTrkFXVol);
+	getfx2 (cpifaceSession, bp, 5, cpiTrkFXIns|cpiTrkFXNote|cpiTrkFXVol);
 }
 
-static void preparetrack8nvf(uint16_t *bp)
+static void preparetrack8nvf (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 {
-	getnote(bp, 0);
-	getvol(bp+3);
-	getfx2(bp+5, 1, 0);
+	getnote (cpifaceSession, bp    , 0);
+	getvol  (cpifaceSession, bp + 3);
+	getfx2  (cpifaceSession, bp + 5, 1, 0);
 }
 
-static void preparetrack8inf(uint16_t *bp)
+static void preparetrack8inf (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 {
-	getins(bp);
-	getnote(bp+2, 0);
-	getfx2(bp+5, 1, cpiTrkFXVol);
+	getins  (cpifaceSession, bp);
+	getnote (cpifaceSession, bp + 2, 0);
+	getfx2  (cpifaceSession, bp + 5, 1, cpiTrkFXVol);
 }
 
 struct patviewtype
@@ -258,7 +260,7 @@ struct patviewtype
 	const char *paused;
 	const char *normal;
 	const char *selected;
-	void (*putcmd)(uint16_t *bp);
+	void (*putcmd)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp);
 };
 
 static void preparepatgen (struct cpifaceSessionAPI_t *cpifaceSession, int pat, const struct patviewtype *pt)
@@ -283,7 +285,7 @@ static void preparepatgen (struct cpifaceSessionAPI_t *cpifaceSession, int pat, 
 
 	getscrollpos (cpifaceSession, maxch, &firstchan, &chnn);
 
-	pname=getpatname(pat);
+	pname = getpatname (cpifaceSession, pat);
 	snprintf (pattitle1, sizeof (pattitle1), "   pattern view:  order %03X, %2d channels,  %s%s%s", pat, maxch, pt->title, (pname&&*pname)?": ":"", (pname&&*pname)?pname:"");
 
 	p0=4+4*pt->gcmd;
@@ -336,7 +338,7 @@ static void preparepatgen (struct cpifaceSessionAPI_t *cpifaceSession, int pat, 
 	while (firstpat)
 	{
 		firstpat--;
-		firstrow-=getpatlen(firstpat);
+		firstrow -= getpatlen (cpifaceSession, firstpat);
 		if (firstrow<=0)
 		{
 			firstprow-=firstrow;
@@ -359,7 +361,7 @@ static void preparepatgen (struct cpifaceSessionAPI_t *cpifaceSession, int pat, 
 		int curlen;
 		int lastprow;
 
-		if (!(curlen=getpatlen(firstpat)))
+		if (!(curlen = getpatlen (cpifaceSession, firstpat)))
 		{
 			/* skip zerolength patterns */
 			firstpat++;
@@ -379,16 +381,16 @@ static void preparepatgen (struct cpifaceSessionAPI_t *cpifaceSession, int pat, 
 
 		if (pt->gcmd)
 		{
-			seektrack(firstpat, -1);
+			seektrack (cpifaceSession, firstpat, -1);
 			while (1)
 			{
-				int currow=startrow();
+				int currow = startrow (cpifaceSession);
 				if (currow==-1)
 					break;
 				if ((currow>=firstprow)&&(currow<lastprow))
 				{
 					uint16_t *bp=plPatBuf[currow+firstrow-firstprow]+4;
-					getgcmd(bp, pt->gcmd);
+					getgcmd (cpifaceSession, bp, pt->gcmd);
 					if (cpifaceSession->InPause)
 						setattrgrey(bp, pt->gcmd*4);
 				}
@@ -398,17 +400,17 @@ static void preparepatgen (struct cpifaceSessionAPI_t *cpifaceSession, int pat, 
 		for (i=0; i<chnn; i++)
 		{
 			int chpaus;
-			seektrack(firstpat, i+firstchan);
+			seektrack (cpifaceSession, firstpat, i+firstchan);
 			chpaus = cpifaceSession->MuteChannel[i+firstchan];
 			while (1)
 			{
-				int currow=startrow();
+				int currow = startrow (cpifaceSession);
 				if (currow==-1)
 					break;
 				if ((currow>=firstprow)&&(currow<lastprow))
 				{
 					uint16_t *bp=plPatBuf[currow+firstrow-firstprow]+p0+i*pt->width;
-					pt->putcmd(bp);
+					pt->putcmd (cpifaceSession, bp);
 					if (chpaus)
 						setattrgrey(bp, pt->width);
 				}
@@ -566,7 +568,7 @@ static void TrakDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		pat=plPatManualPat;
 		crow=plPatManualRow;
 	}
-	while (!getpatlen(pat))
+	while (!getpatlen (cpifaceSession, pat))
 	{
 		pat++;
 		crow=0;
@@ -617,7 +619,7 @@ static void TrakDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 	displaystrattr(plPatFirstLine-1, 0, pattitle2, plPatWidth);
 	/* done */
 
-	/* plen=getpatlen(pat); */
+	/* plen = getpatlen(cpifaceSession, pat); */
 	for (i=0, row=crow-min(plPatHeight/3, 20); i<plPatHeight; i++, row++)
 	{
 		/* if no manual position, and we are not at the current position, display the buffer normal */
@@ -677,10 +679,14 @@ static int gmdTrkProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_
 				{
 					plPatManualPat--;
 					if (plPatManualPat<0)
+					{
 						plPatManualPat=plPatternNum-1;
-					while (!getpatlen(plPatManualPat))
+					}
+					while (!getpatlen (cpifaceSession, plPatManualPat))
+					{
 						plPatManualPat--;
-					plPatManualRow=getpatlen(plPatManualPat)-1;
+					}
+					plPatManualRow = getpatlen (cpifaceSession, plPatManualPat)-1;
 				}
 			}
 			break;
@@ -694,13 +700,17 @@ static int gmdTrkProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_
 				}
 			} else {
 				plPatManualRow+=8;
-				if (plPatManualRow>=getpatlen(plPatManualPat))
+				if (plPatManualRow >= getpatlen (cpifaceSession, plPatManualPat))
 				{
 					plPatManualPat++;
-					while ((plPatManualPat<plPatternNum)&&!getpatlen(plPatManualPat))
+					while ((plPatManualPat < plPatternNum) && !getpatlen(cpifaceSession, plPatManualPat))
+					{
 						plPatManualPat++;
+					}
 					if (plPatManualPat>=plPatternNum)
+					{
 						plPatManualPat=0;
+					}
 					plPatManualRow=0;
 				}
 			}
@@ -847,42 +857,42 @@ static struct cpitextmoderegstruct cpiTModeTrack = {"trak", TrakGetWin, TrakSetW
 void cpiTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpitrakdisplaystruct *c, int npat)
 {
 	overrideplNLChan = cpifaceSession->LogicalChannelCount;
-	plPatternNum=npat;
-	plPatManualPat=-1;
-	plPrepdPat=-1;
-	plPatType=-1;
-	getcurpos=c->getcurpos;
-	getpatlen=c->getpatlen;
-	getpatname=c->getpatname;
-	seektrack=c->seektrack;
-	startrow=c->startrow;
-	getnote=c->getnote;
-	getins=c->getins;
-	getvol=c->getvol;
-	getpan=c->getpan;
-	getfx=c->getfx;
-	getgcmd=c->getgcmd;
+	plPatternNum     = npat;
+	plPatManualPat   = -1;
+	plPrepdPat       = -1;
+	plPatType        = -1;
+	getcurpos        = c->getcurpos;
+	getpatlen        = c->getpatlen;
+	getpatname       = c->getpatname;
+	seektrack        = c->seektrack;
+	startrow         = c->startrow;
+	getnote          = c->getnote;
+	getins           = c->getins;
+	getvol           = c->getvol;
+	getpan           = c->getpan;
+	getfx            = c->getfx;
+	getgcmd          = c->getgcmd;
 	cpiTextRegisterMode (cpifaceSession, &cpiTModeTrack);
 }
 
 void cpiTrkSetup2 (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpitrakdisplaystruct *c, int npat, int tracks)
 {
-	overrideplNLChan=tracks;
-	plPatternNum=npat;
-	plPatManualPat=-1;
-	plPrepdPat=-1;
-	plPatType=-1;
-	getcurpos=c->getcurpos;
-	getpatlen=c->getpatlen;
-	getpatname=c->getpatname;
-	seektrack=c->seektrack;
-	startrow=c->startrow;
-	getnote=c->getnote;
-	getins=c->getins;
-	getvol=c->getvol;
-	getpan=c->getpan;
-	getfx=c->getfx;
-	getgcmd=c->getgcmd;
+	overrideplNLChan = tracks;
+	plPatternNum     = npat;
+	plPatManualPat   = -1;
+	plPrepdPat       = -1;
+	plPatType        = -1;
+	getcurpos        = c->getcurpos;
+	getpatlen        = c->getpatlen;
+	getpatname       = c->getpatname;
+	seektrack        = c->seektrack;
+	startrow         = c->startrow;
+	getnote          = c->getnote;
+	getins           = c->getins;
+	getvol           = c->getvol;
+	getpan           = c->getpan;
+	getfx            = c->getfx;
+	getgcmd          = c->getgcmd;
 	cpiTextRegisterMode (cpifaceSession, &cpiTModeTrack);
 }
 

@@ -39,9 +39,11 @@
 #include "config.h"
 #include <string.h>
 #include "types.h"
-#include "pfonts.h"
 #include "imsrtns.h"
+#include "framelock.h"
+#include "pfonts.h"
 #include "poutput.h"
+#include "poutput-keyboard.h"
 
 unsigned char plpalette[256];
 
@@ -73,48 +75,7 @@ void make_title (const char *part, int escapewarning)
 	}
 }
 
-void writenum(uint16_t *buf, unsigned short ofs, unsigned char attr, unsigned long num, unsigned char radix, unsigned short len, char clip0)
-{
-	char convbuf[20];
-	uint16_t *p=buf+ofs;
-	char *cp=convbuf+len;
-	int i;
-	for (i=0; i<len; i++)
-	{
-		*--cp="0123456789ABCDEF"[num%radix];
-		num/=radix;
-	}
-	for (i=0; i<len; i++)
-	{
-		if (clip0&&(convbuf[i]=='0')&&(i!=(len-1)))
-		{
-			*p++=' '|(attr<<8);
-			cp++;
-		} else {
-			*p++=(*cp++)|(attr<<8);
-			clip0=0;
-		}
-	}
-}
-
-void writestring(uint16_t *buf, unsigned short ofs, unsigned char attr, const char *str, unsigned short len)
-{
-	uint16_t *p=buf+ofs;
-	int i;
-	for (i=0; i<len; i++)
-	{
-		*p++=(*((unsigned char *)(str)))|(attr<<8);
-		if (*str)
-			str++;
-	}
-}
-
-void writestringattr(uint16_t *buf, unsigned short ofs, const uint16_t *str, unsigned short len)
-{
-	memcpy (buf+ofs, (void *)str, len*2);
-}
-
-void generic_gdrawchar8(unsigned short x, unsigned short y, unsigned char c, unsigned char f, unsigned char b)
+void generic_gdrawchar8 (uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b)
 {
 	unsigned char *cp=plFont88[c];
 	unsigned long p=y*plScrLineBytes+x;
@@ -138,7 +99,7 @@ void generic_gdrawchar8(unsigned short x, unsigned short y, unsigned char c, uns
 	}
 }
 
-void generic_gdrawchar8p(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp)
+void generic_gdrawchar8p (uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *picp)
 {
 	unsigned char *cp=plFont88[c];
 	unsigned long p=y*plScrLineBytes+x;
@@ -174,7 +135,7 @@ void generic_gdrawchar8p(unsigned short x, unsigned short y, unsigned char c, un
 	}
 }
 
-void generic_gdrawstr(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
+void generic_gdrawstr (uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
 {
 	unsigned long p=16*y*plScrLineBytes+x*8;
 	uint8_t *sp;
@@ -203,7 +164,7 @@ void generic_gdrawstr(uint16_t y, uint16_t x, uint8_t attr, const char *str, uin
 	}
 }
 
-void generic_gdrawcharp(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp)
+void generic_gdrawcharp (uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *picp)
 {
 
 	unsigned char *cp=plFont816[c];
@@ -240,7 +201,7 @@ void generic_gdrawcharp(unsigned short x, unsigned short y, unsigned char c, uns
 	}
 }
 
-void generic_gdrawchar(unsigned short x, unsigned short y, unsigned char c, unsigned char f, unsigned char b)
+void generic_gdrawchar (uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b)
 {
 	unsigned char *cp=plFont816[c];
 	unsigned long p=y*plScrLineBytes+x;
@@ -263,7 +224,7 @@ void generic_gdrawchar(unsigned short x, unsigned short y, unsigned char c, unsi
 	}
 }
 
-void generic_gupdatestr(unsigned short y, unsigned short x, const uint16_t *str, unsigned short len, uint16_t *old)
+void generic_gupdatestr (uint16_t y, uint16_t x, const uint16_t *str, uint16_t len, uint16_t *old)
 {
 	unsigned long p=16*y*plScrLineBytes+x*8;
 	uint8_t *sp;

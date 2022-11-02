@@ -133,9 +133,9 @@ static void medialibRefreshRun (void **token, const struct DevInterfaceAPI_t *AP
 	{
 		fsDraw();
 		mlRefreshDraw("Refresh files in medialib");
-		while (ekbhit())
+		while (conFunc.KeyboardHit())
 		{
-			int key = egetch();
+			int key = conFunc.KeyboardGetChar();
 			switch (key)
 			{
 				case KEY_HOME:

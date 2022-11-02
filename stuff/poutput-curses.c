@@ -57,6 +57,7 @@
 #include "types.h"
 
 #include "poutput-curses.h"
+#include "poutput-keyboard.h"
 #include "boot/console.h"
 #include "poutput.h"
 #include "poll.h"

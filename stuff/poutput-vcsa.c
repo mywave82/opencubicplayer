@@ -52,6 +52,7 @@
 #include "stuff/pfonts.h"
 #include "stuff/poutput.h"
 #include "stuff/poutput-fb.h"
+#include "stuff/poutput-keyboard.h"
 #include "stuff/poutput-vcsa.h"
 #include "stuff/utf-8.h"
 #include "boot/psetting.h"

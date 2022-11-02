@@ -653,9 +653,9 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 	{
 		fsDraw();
 		timidityConfigDraw (esel, API);
-		while (ekbhit())
+		while (conFunc.KeyboardHit())
 		{
-			int key = egetch();
+			int key = conFunc.KeyboardGetChar();
 			static uint32_t lastpress = 0;
 			static int repeat;
 			if ((key != KEY_LEFT) && (key != KEY_RIGHT))
@@ -713,9 +713,9 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 						{
 							fsDraw();
 							timidityConfigFileSelectDraw (dsel);
-							while (inner && ekbhit())
+							while (inner && conFunc.KeyboardHit())
 							{
-								int key = egetch();
+								int key = conFunc.KeyboardGetChar();
 								switch (key)
 								{
 									case KEY_DOWN:

@@ -52,17 +52,21 @@ compat-test: compat-test.c \
 	../boot/plinkman.h
 	$(CC) $< -o $@
 
-poutput.o: poutput.h poutput.c \
+poutput.o: poutput.c \
 	../config.h \
 	../types.h \
 	imsrtns.h \
-	pfonts.h
+	framelock.h \
+	pfonts.h \
+	poutput.h \
+	poutput-keyboard.h
 	$(CC) poutput.c -o $@ -c
 
 poutput-keyboard.o: poutput-keyboard.c \
-	poutput.h \
 	../config.h \
-	../types.h
+	../types.h \
+	poutput.h \
+	poutput-keyboard.h
 	$(CC) poutput-keyboard.c -o $@ -c
 
 poll.o: poll.c poll.h \
@@ -78,25 +82,29 @@ latin1.o: latin1.c latin1.h \
 	utf-8.h
 	$(CC) $< -o $@ -c
 
-poutput-curses.o: poutput-curses.c poutput-curses.h \
+poutput-curses.o: poutput-curses.c \
 	../config.h \
 	../types.h \
-	poutput.h \
 	../boot/console.h \
 	../boot/psetting.h \
-	cp437.h \
-	poll.h \
-	utf-8.h
+	../stuff/cp437.h \
+	../stuff/poll.h \
+	../stuff/poutput.h \
+	../stuff/poutput-curses.h \
+	../stuff/poutput-keyboard.h \
+	../stuff/utf-8.h
 	$(CC) poutput-curses.c -o $@ -c
 
-poutput-vcsa.o: poutput-vcsa.c poutput-vcsa.h \
+poutput-vcsa.o: poutput-vcsa.c \
 	../config.h \
 	../types.h \
-	poutput.h \
 	../boot/console.h \
 	../boot/psetting.h \
-	pfonts.h \
-	utf-8.h
+	../stuff/pfonts.h \
+	../stuff/poutput.h \
+	../stuff/poutput-keyboard.h \
+	../stuff/poutput-vcsa.h \
+	../stuff/utf-8.h
 	$(CC) poutput-vcsa.c -o $@ -c
 
 poutput-fb.o: poutput-fb.c poutput-fb.h \
@@ -115,28 +123,32 @@ poutput-fontengine.o: poutput-fontengine.c poutput-fontengine.h \
 	utf-8.h
 	$(CC) $< -o $@ -c
 
-poutput-sdl.o: poutput-sdl.c poutput-sdl.h \
+poutput-sdl.o: poutput-sdl.c \
 	ttf.h \
 	../config.h \
 	../types.h \
 	../boot/console.h \
 	../boot/psetting.h \
-	framelock.h \
-	poutput.h \
-	poutput-fontengine.h \
-	poutput-swtext.h
+	../stuff/framelock.h \
+	../stuff/poutput.h \
+	../stuff/poutput-fontengine.h \
+	../stuff/poutput-keyboard.h \
+	../stuff/poutput-sdl.h \
+	../stuff/poutput-swtext.h
 	$(CC) $(SDL_CFLAGS) poutput-sdl.c -o $@ -c
 
-poutput-sdl2.o: poutput-sdl2.c poutput-sdl2.h \
+poutput-sdl2.o: poutput-sdl2.c \
 	ttf.h \
 	../config.h \
 	../types.h \
 	../boot/console.h \
 	../boot/psetting.h \
-	framelock.h \
-	poutput.h \
-	poutput-fontengine.h \
-	poutput-swtext.h
+	../stuff/framelock.h \
+	../stuff/poutput.h \
+	../stuff/poutput-fontengine.h \
+	../stuff/poutput-keyboard.h \
+	../stuff/poutput-sdl2.h \
+	../stuff/poutput-swtext.h
 	$(CC) $(SDL2_CFLAGS) poutput-sdl2.c -o $@ -c
 
 poutput-swtext.o: poutput-swtext.c poutput-swtext.h \
@@ -150,18 +162,20 @@ poutput-swtext.o: poutput-swtext.c poutput-swtext.h \
 	../types.h
 	$(CC) $(CFLAGS) $< -o $@ -c
 
-poutput-x11.o: poutput-x11.c poutput-x11.h \
+poutput-x11.o: poutput-x11.c \
 	../config.h \
 	../types.h \
 	../boot/console.h \
 	../boot/psetting.h \
 	../desktop/opencubicplayer-48x48.xpm \
-	framelock.h \
-	poutput.h \
-	poutput-swtext.h \
-	pfonts.h \
-	poll.h \
-	x11-common.h
+	../stuff/framelock.h \
+	../stuff/poutput.h \
+	../stuff/poutput-keyboard.h \
+	../stuff/poutput-swtext.h \
+	../stuff/poutput-x11.h \
+	../stuff/pfonts.h \
+	../stuff/poll.h \
+	../stuff/x11-common.h
 	$(CC) poutput-x11.c -o $@ -c
 
 x11-common.o: x11-common.c x11-common.h \

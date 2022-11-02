@@ -50,28 +50,30 @@ static const uint8_t *curtrkend;
 static const uint8_t *currow;
 static const uint8_t *currowend;
 
-static int startrow(void)
+static int gmd_startrow (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if (curtrk>=curtrkend)
+	if (curtrk >= curtrkend)
+	{
 		return -1;
+	}
 	currow=curtrk+2;
 	currowend=curtrk+=2+curtrk[1];
 	return currow[-2];
 }
 
-static void seektrack(int n, int c)
+static void gmd_seektrack (struct cpifaceSessionAPI_t *cpifaceSession, int n, int c)
 {
 	n=(c==-1)?plPatterns[plOrders[n]].gtrack:plPatterns[plOrders[n]].tracks[c];
 	curtrk=plTracks[n].ptr;
 	curtrkend=plTracks[n].end;
 }
 
-static const char *getpatname(int n)
+static const char *gmd_getpatname (struct cpifaceSessionAPI_t *cpifaceSession, int n)
 {
 	return plPatterns[plOrders[n]].name;
 }
 
-static int getpatlen(int n)
+static int gmd_getpatlen (struct cpifaceSessionAPI_t *cpifaceSession, int n)
 {
 	if (plOrders[n] == 0xffff)
 	{
@@ -80,12 +82,12 @@ static int getpatlen(int n)
 	return plPatterns[plOrders[n]].patlen;
 }
 
-static int getcurpos (struct cpifaceSessionAPI_t *cpifaceSession)
+static int gmd_getcurpos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	return mpGetRealPos(cpifaceSession)>>8;
+	return mpGetRealPos (cpifaceSession)>>8;
 }
 
-static int getnote(uint16_t *bp, int small)
+static int gmd_getnote (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp, int small)
 {
 	const uint8_t *ptr=currow;
 
@@ -101,16 +103,16 @@ static int getnote(uint16_t *bp, int small)
 				switch (small)
 				{
 					case 0:
-						writestring(bp, 0, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"CCDDEFFGGAAB"[(*ptr&~0x80)%12], 1);
-						writestring(bp, 1, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"-#-#--#-#-#-"[(*ptr&~0x80)%12], 1);
-						writestring(bp, 2, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"-0123456789"[(*ptr&~0x80)/12], 1);
+						cpifaceSession->conFunc->WriteString (bp, 0, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"CCDDEFFGGAAB"[(*ptr&~0x80)%12], 1);
+						cpifaceSession->conFunc->WriteString (bp, 1, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"-#-#--#-#-#-"[(*ptr&~0x80)%12], 1);
+						cpifaceSession->conFunc->WriteString (bp, 2, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"-0123456789"[(*ptr&~0x80)/12], 1);
 						break;
 					case 1:
-						writestring(bp, 0, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"cCdDefFgGaAb"[(*ptr&0x7F)%12], 1);
-						writestring(bp, 1, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"-0123456789"[(*ptr&0x7F)/12], 1);
+						cpifaceSession->conFunc->WriteString (bp, 0, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"cCdDefFgGaAb"[(*ptr&0x7F)%12], 1);
+						cpifaceSession->conFunc->WriteString (bp, 1, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"-0123456789"[(*ptr&0x7F)/12], 1);
 						break;
 					case 2:
-						writestring(bp, 0, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"cCdDefFgGaAb"[(*ptr&0x7F)%12], 1);
+						cpifaceSession->conFunc->WriteString (bp, 0, (*ptr&0x80)?COLPTNOTE:COLNOTE, &"cCdDefFgGaAb"[(*ptr&0x7F)%12], 1);
 						break;
 				}
 				return 1;
@@ -127,7 +129,7 @@ static int getnote(uint16_t *bp, int small)
 	return 0;
 }
 
-static int getvol(uint16_t *bp)
+static int gmd_getvol (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 {
 	const uint8_t *ptr=currow;
 
@@ -142,7 +144,7 @@ static int getvol(uint16_t *bp)
 				ptr++;
 			if (pn&cmdPlayVol)
 			{
-				writenum(bp, 0, COLVOL, *ptr++, 16, 2, 0);
+				cpifaceSession->conFunc->WriteNum (bp, 0, COLVOL, *ptr++, 16, 2, 0);
 				return 1;
 			}
 			if (pn&cmdPlayPan)
@@ -155,7 +157,7 @@ static int getvol(uint16_t *bp)
 	return 0;
 }
 
-static int getins(uint16_t *bp)
+static int gmd_getins (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 {
 	const uint8_t *ptr=currow;
 
@@ -166,7 +168,7 @@ static int getins(uint16_t *bp)
 			uint8_t pn=*ptr++;
 			if (pn&cmdPlayIns)
 			{
-				writenum(bp, 0, COLINS, *ptr++, 16, 2, 0);
+				cpifaceSession->conFunc->WriteNum (bp, 0, COLINS, *ptr++, 16, 2, 0);
 				return 1;
 			}
 			if (pn&cmdPlayNte)
@@ -183,7 +185,7 @@ static int getins(uint16_t *bp)
 	return 0;
 }
 
-static int getpan(uint16_t *bp)
+static int gmd_getpan (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 {
 	const uint8_t *ptr=currow;
 	while (ptr<currowend)
@@ -199,7 +201,7 @@ static int getpan(uint16_t *bp)
 				ptr++;
 			if (pn&cmdPlayPan)
 			{
-				writenum(bp, 0, COLPAN, *ptr++, 16, 2, 0);
+				cpifaceSession->conFunc->WriteNum (bp, 0, COLPAN, *ptr++, 16, 2, 0);
 				return 1;
 			}
 			if (pn&cmdPlayDelay)
@@ -210,7 +212,7 @@ static int getpan(uint16_t *bp)
 	return 0;
 }
 
-static void getgcmd(uint16_t *buf, int n)
+static void gmd_getgcmd (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n)
 {
 	const uint8_t *ptr=currow;
 
@@ -219,40 +221,40 @@ static void getgcmd(uint16_t *buf, int n)
 		switch (*ptr++)
 		{
 			case cmdTempo:
-				writestring(buf, 0, COLSPEED, "t", 1);
-				writenum(buf, 1, COLSPEED, *ptr, 16, 2, 0);
+				cpifaceSession->conFunc->WriteString (buf, 0, COLSPEED, "t", 1);
+				cpifaceSession->conFunc->WriteNum    (buf, 1, COLSPEED, *ptr, 16, 2, 0);
 				break;
 			case cmdSpeed:
-				writestring(buf, 0, COLSPEED, "s", 1);
-				writenum(buf, 1, COLSPEED, *ptr, 16, 2, 0);
+				cpifaceSession->conFunc->WriteString (buf, 0, COLSPEED, "s", 1);
+				cpifaceSession->conFunc->WriteNum    (buf, 1, COLSPEED, *ptr, 16, 2, 0);
 				break;
 			case cmdFineSpeed:
-				writestring(buf, 0, COLSPEED, "s.", 2);
-				writenum(buf, 2, COLSPEED, *ptr, 16, 1, 0);
+				cpifaceSession->conFunc->WriteString (buf, 0, COLSPEED, "s.", 2);
+				cpifaceSession->conFunc->WriteNum    (buf, 2, COLSPEED, *ptr, 16, 1, 0);
 				break;
 			case cmdBreak:
-				writestring(buf, 0, COLACT, "\x19", 1);
-				writenum(buf, 1, COLACT, *ptr, 16, 2, 0);
+				cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x19", 1);
+				cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, *ptr, 16, 2, 0);
 				break;
 			case cmdGoto:
-				writestring(buf, 0, COLACT, "\x1A", 1);
-				writenum(buf, 1, COLACT, *ptr, 16, 2, 0);
+				cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x1A", 1);
+				cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, *ptr, 16, 2, 0);
 				break;
 			case cmdPatLoop:
-				writestring(buf, 0, COLACT, "pl", 2);
-				writenum(buf, 2, COLACT, *ptr, 16, 1, 0);
+				cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "pl", 2);
+				cpifaceSession->conFunc->WriteNum    (buf, 2, COLACT, *ptr, 16, 1, 0);
 				break;
 			case cmdGlobVol:
-				writestring(buf, 0, COLVOL, "v", 1);
-				writenum(buf, 1, COLVOL, *ptr, 16, 2, 0);
+				cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "v", 1);
+				cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, *ptr, 16, 2, 0);
 				break;
 			case cmdGlobVolSlide:
-				writestring(buf, 0, COLVOL, (*(int8_t*)ptr>0)?"\x18":(*(int8_t*)ptr<0)?"\x19":"\x12", 1);
-				writenum(buf, 1, COLVOL, abs(*(int8_t*)ptr), 16, 2, 0);
+				cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, (*(int8_t*)ptr>0)?"\x18":(*(int8_t*)ptr<0)?"\x19":"\x12", 1);
+				cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, abs(*(int8_t*)ptr), 16, 2, 0);
 				break;
 			case cmdPatDelay:
-				writestring(buf, 0, COLACT, "pd", 2);
-				writenum(buf, 2, COLACT, *ptr, 16, 1, 0);
+				cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "pd", 2);
+				cpifaceSession->conFunc->WriteNum    (buf, 2, COLACT, *ptr, 16, 1, 0);
 				break;
 			default:
 				buf-=4;
@@ -264,7 +266,7 @@ static void getgcmd(uint16_t *buf, int n)
 	}
 }
 
-static void getfx(uint16_t *buf, int n)
+static void gmd_getfx (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n)
 {
 	const uint8_t *ptr=currow;
 	while (n&&(ptr<currowend))
@@ -282,8 +284,8 @@ static void getfx(uint16_t *buf, int n)
 				ptr++;
 			if (pn&cmdPlayDelay)
 			{
-				writestring(buf, 0, COLACT, "d", 1);
-				writenum(buf, 1, COLACT, *ptr++, 16, 2, 0);
+				cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "d", 1);
+				cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, *ptr++, 16, 2, 0);
 				buf+=3;
 				n--;
 			}
@@ -294,167 +296,167 @@ static void getfx(uint16_t *buf, int n)
 					switch (*ptr)
 					{
 						case cmdContVolSlide:
-							writestring(buf, 0, COLVOL, "\x12""00", 3);
+							cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x12""00", 3);
 							break;
 						case cmdContRowVolSlide:
-							writestring(buf, 0, COLVOL, "\xfa""00", 3);
+							cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\xfa""00", 3);
 							break;
 						case cmdContMixVolSlide:
-							writestring(buf, 0, COLVOL, "\x12\xfa""0", 3);
+							cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x12\xfa""0", 3);
 							break;
 						case cmdContMixVolSlideUp:
-							writestring(buf, 0, COLVOL, "\x18""+0", 3);
+							cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x18""+0", 3);
 							break;
 						case cmdContMixVolSlideDown:
-							writestring(buf, 0, COLVOL, "\x19""-0", 3);
+							cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x19""-0", 3);
 							break;
 						case cmdContMixPitchSlideUp:
-							writestring(buf, 0, COLPITCH, "\x18""+0", 3);
+							cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\x18""+0", 3);
 							break;
 						case cmdContMixPitchSlideDown:
-							writestring(buf, 0, COLPITCH, "\x19""-0", 3);
+							cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\x19""-0", 3);
 							break;
 					}
 					break;
 				case cmdChannelVol:
-					writestring(buf, 0, COLVOL, "V", 1);
-					writenum(buf, 1, COLVOL, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "V", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, *ptr, 16, 2, 0);
 					break;
 				case cmdPitchSlideUp: case cmdPitchSlideUDMF:
-					writestring(buf, 0, COLPITCH, "\x18", 1);
-					writenum(buf, 1, COLPITCH, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\x18", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, *ptr, 16, 2, 0);
 					break;
 				case cmdPitchSlideDown: case cmdPitchSlideDDMF:
-					writestring(buf, 0, COLPITCH, "\x19", 1);
-					writenum(buf, 1, COLPITCH, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\x19", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, *ptr, 16, 2, 0);
 					break;
 				case cmdRowPitchSlideUp:
-					writestring(buf, 0, COLPITCH, "+", 1);
-					writenum(buf, 1, COLPITCH, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "+", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, *ptr, 16, 2, 0);
 					break;
 				case cmdRowPitchSlideDown:
-					writestring(buf, 0, COLPITCH, "-", 1);
-					writenum(buf, 1, COLPITCH, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "-", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, *ptr, 16, 2, 0);
 					break;
 				case cmdRowPitchSlideDMF:
-					writestring(buf, 0, COLPITCH, ((int8_t)*ptr<0)?"-":"+", 1);
-					writenum(buf, 1, COLPITCH, abs((int8_t)*ptr), 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, ((int8_t)*ptr<0)?"-":"+", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, abs((int8_t)*ptr), 16, 2, 0);
 					break;
 				case cmdPitchSlideToNote: case cmdPitchSlideNDMF:
-					writestring(buf, 0, COLPITCH, "\x0D", 1);
-					writenum(buf, 1, COLPITCH, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\x0D", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, *ptr, 16, 2, 0);
 					break;
 				case cmdPitchVibrato:
 				case cmdPitchVibratoSinDMF:
 				case cmdPitchVibratoTrgDMF:
 				case cmdPitchVibratoRecDMF:
-					writestring(buf, 0, COLPITCH, "~", 1);
-					writenum(buf, 1, COLPITCH, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "~", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, *ptr, 16, 2, 0);
 					break;
 				case cmdPitchVibratoFine:
-					writestring(buf, 0, COLPITCH, "~", 1);
-					writenum(buf, 1, COLPITCH, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "~", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, *ptr, 16, 2, 0);
 					break;
 				case cmdPitchVibratoSetSpeed:
-					writestring(buf, 0, COLPITCH, "~\x1A", 2);
-					writenum(buf, 2, COLPITCH, *ptr, 16, 1, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "~\x1A", 2);
+					cpifaceSession->conFunc->WriteNum    (buf, 2, COLPITCH, *ptr, 16, 1, 0);
 					break;
 				case cmdPitchVibratoSetWave:
-					writestring(buf, 0, COLPITCH, "~=", 2);
-					writestring(buf, 2, COLPITCH, &"~\\*\x1C?           ~\\\x1C?"[*ptr], 1);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "~=", 2);
+					cpifaceSession->conFunc->WriteString (buf, 2, COLPITCH, &"~\\*\x1C?           ~\\\x1C?"[*ptr], 1);
 					break;
 				case cmdArpeggio:
-					writestring(buf, 0, COLPITCH, "\xf0", 1);
-					writenum(buf, 1, COLPITCH, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\xf0", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, *ptr, 16, 2, 0);
 					break;
 				case cmdVolSlideUp:
 				case cmdVolSlideUDMF:
-					writestring(buf, 0, COLVOL, "\x18", 1);
-					writenum(buf, 1, COLVOL, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x18", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, *ptr, 16, 2, 0);
 					break;
 				case cmdVolSlideDown:
 				case cmdVolSlideDDMF:
-					writestring(buf, 0, COLVOL, "\x19", 1);
-					writenum(buf, 1, COLVOL, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x19", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, *ptr, 16, 2, 0);
 					break;
 				case cmdRowVolSlideUp:
-					writestring(buf, 0, COLVOL, "+", 1);
-					writenum(buf, 1, COLVOL, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "+", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, *ptr, 16, 2, 0);
 					break;
 				case cmdRowVolSlideDown:
-					writestring(buf, 0, COLVOL, "-", 1);
-					writenum(buf, 1, COLVOL, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "-", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, *ptr, 16, 2, 0);
 					break;
 				case cmdVolVibrato:
 				case cmdVolVibratoSinDMF:
 				case cmdVolVibratoTrgDMF:
 				case cmdVolVibratoRecDMF:
-					writestring(buf, 0, COLVOL, "~", 1);
-					writenum(buf, 1, COLVOL, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "~", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, *ptr, 16, 2, 0);
 					break;
 				case cmdVolVibratoSetWave:
-					writestring(buf, 0, COLVOL, "~=", 2);
-					writestring(buf, 2, COLVOL, &"~\\*\x1C?           ~/\x1C?"[*ptr], 1);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "~=", 2);
+					cpifaceSession->conFunc->WriteString (buf, 2, COLVOL, &"~\\*\x1C?           ~/\x1C?"[*ptr], 1);
 					break;
 				case cmdTremor:
-					writestring(buf, 0, COLVOL, "\xA9", 1);
-					writenum(buf, 1, COLVOL, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\xA9", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, *ptr, 16, 2, 0);
 					break;
 				case cmdPanSlide:
-					writestring(buf, 0, COLPAN, (*(int8_t*)ptr>0)?"\x1A":(*(int8_t*)ptr<0)?"\x1B":"\x1D", 1);
-					writenum(buf, 1, COLPAN, abs(*(int8_t*)ptr), 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPAN, (*(int8_t*)ptr>0)?"\x1A":(*(int8_t*)ptr<0)?"\x1B":"\x1D", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLPAN, abs(*(int8_t*)ptr), 16, 2, 0);
 					break;
 				case cmdPanSlideLDMF:
-					writestring(buf, 0, COLPAN, "\x1B", 1);
-					writenum(buf, 1, COLPAN, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPAN, "\x1B", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLPAN, *ptr, 16, 2, 0);
 					break;
 				case cmdPanSlideRDMF:
-					writestring(buf, 0, COLPAN, "\x1A", 1);
-					writenum(buf, 1, COLPAN, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPAN, "\x1A", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLPAN, *ptr, 16, 2, 0);
 					break;
 				case cmdPanVibratoSinDMF:
-					writestring(buf, 0, COLPAN, "~", 1);
-					writenum(buf, 1, COLPAN, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPAN, "~", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLPAN, *ptr, 16, 2, 0);
 					break;
 				case cmdPanSurround:
-					writestring(buf, 0, COLPAN, ">\x01<", 3);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPAN, ">\x01<", 3);
 					break;
 				case cmdRetrig:
-					writestring(buf, 0, COLACT, "\x13", 1);
-					writenum(buf, 1, COLACT, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x13", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, *ptr, 16, 2, 0);
 					break;
 				case cmdOffset:
-					writestring(buf, 0, COLACT, "\x1A", 1);
-					writenum(buf, 1, COLACT, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x1A", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, *ptr, 16, 2, 0);
 					break;
 				case cmdOffsetEnd:
-					writestring(buf, 0, COLACT, "\x1B", 1);
-					writenum(buf, 1, COLACT, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x1B", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, *ptr, 16, 2, 0);
 					break;
 				case cmdSetDir:
-					writestring(buf, 0, COLACT, (*ptr==0)?"-->":(*ptr==1)?"<--":"<->", 3);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLACT, (*ptr==0)?"-->":(*ptr==1)?"<--":"<->", 3);
 					break;
 				case cmdSetLoop:
-					writestring(buf, 0, COLACT, (*ptr==1)?"lp1":(*ptr==2)?"lp2":"lp-", 3);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLACT, (*ptr==1)?"lp1":(*ptr==2)?"lp2":"lp-", 3);
 					break;
 				case cmdNoteCut:
-					writestring(buf, 0, COLACT, "^", 1);
-					writenum(buf, 1, COLACT, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "^", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, *ptr, 16, 2, 0);
 					break;
 				case cmdKeyOff:
-					writestring(buf, 0, COLINS, "off", 3);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLINS, "off", 3);
 					break;
 				case cmdSetEnvPos:
-					writestring(buf, 0, COLINS, "\x1A", 1);
-					writenum(buf, 1, COLINS, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLINS, "\x1A", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLINS, *ptr, 16, 2, 0);
 					break;
 				case cmdPanHeight:
-					writestring(buf, 0, COLPAN, "Y", 1);
-					writenum(buf, 1, COLPAN, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPAN, "Y", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLPAN, *ptr, 16, 2, 0);
 					break;
 				case cmdPanDepth:
-					writestring(buf, 0, COLPAN, "Z", 1);
-					writenum(buf, 1, COLPAN, *ptr, 16, 2, 0);
+					cpifaceSession->conFunc->WriteString (buf, 0, COLPAN, "Z", 1);
+					cpifaceSession->conFunc->WriteNum    (buf, 1, COLPAN, *ptr, 16, 2, 0);
 					break;
 				default:
 					buf-=3;
@@ -469,8 +471,8 @@ static void getfx(uint16_t *buf, int n)
 
 static struct cpitrakdisplaystruct gmdptrkdisplay=
 {
-	getcurpos, getpatlen, getpatname, seektrack, startrow, getnote,
-	getins, getvol, getpan, getfx, getgcmd
+	gmd_getcurpos, gmd_getpatlen, gmd_getpatname, gmd_seektrack, gmd_startrow, gmd_getnote,
+	gmd_getins, gmd_getvol, gmd_getpan, gmd_getfx, gmd_getgcmd
 };
 
 

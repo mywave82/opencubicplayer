@@ -942,9 +942,9 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 	{
 		fsDraw();
 		sidConfigDraw (esel);
-		while (ekbhit())
+		while (conFunc.KeyboardHit())
 		{
-			int key = egetch();
+			int key = conFunc.KeyboardGetChar();
 			static uint32_t lastpress = 0;
 			static uint16_t lastkey = 0;
 			static int repeat;
@@ -1029,9 +1029,9 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 						{
 							fsDraw();
 							sidDrawDir (dsel, esel - 11);
-							while (inner && ekbhit())
+							while (inner && conFunc.KeyboardHit())
 							{
-								int key = egetch();
+								int key = conFunc.KeyboardGetChar();
 								switch (key)
 								{
 									case KEY_DOWN:

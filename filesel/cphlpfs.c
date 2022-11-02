@@ -78,9 +78,9 @@ unsigned char fsHelp2(void)
 
 		brDisplayHelp();
 
-		while (!ekbhit())
+		while (!conFunc.KeyboardHit())
 			framelock();
-		key=egetch();
+		key=conFunc.KeyboardGetChar();
 
 		plHelpKey(key);
 		framelock();

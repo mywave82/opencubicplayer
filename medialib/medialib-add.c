@@ -278,9 +278,9 @@ static void medialibAddRun (void **token, const struct DevInterfaceAPI_t *API)
 	{
 		fsDraw();
 		mlAddDraw("Add files to medialib", medialibAddPath ? medialibAddPath : "out of memory", dsel);
-		while (ekbhit())
+		while (conFunc.KeyboardHit())
 		{
-			int key = egetch();
+			int key = conFunc.KeyboardGetChar();
 			switch (key)
 			{
 				case KEY_HOME:

@@ -127,7 +127,7 @@ static void hvlDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000)
 	);
 #warning we are missing the current tune title
-//writestring(buf[2], 22, 0x0F, current_hvl_tune?current_hvl_tune->ht_Name:"", 44);
+//cpifaceSession->conFunc->WriteString (buf[2], 22, 0x0F, current_hvl_tune?current_hvl_tune->ht_Name:"", 44);
 }
 
 static int hvlProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)

@@ -135,9 +135,9 @@ static void medialibRemoveRun (void **token, const struct DevInterfaceAPI_t *API
 	{
 		fsDraw();
 		mlRemoveDraw("Remove files from medialib");
-		while (ekbhit())
+		while (conFunc.KeyboardHit())
 		{
-			int key = egetch();
+			int key = conFunc.KeyboardGetChar();
 			switch (key)
 			{
 				case KEY_HOME:

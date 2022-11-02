@@ -55,6 +55,8 @@ kickload.o: kickload.c \
 console.o: console.c console.h \
 	../config.h \
 	../types.h \
+	../stuff/framelock.h \
 	../stuff/poutput.h \
+	../stuff/poutput-keyboard.h \
 	../stuff/utf-8.h
 	$(CC) console.c -o $@ -c

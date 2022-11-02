@@ -54,6 +54,7 @@
 #include "framelock.h"
 #include "poutput.h"
 #include "poutput-fontengine.h"
+#include "poutput-keyboard.h"
 #include "poutput-swtext.h"
 #include "poutput-x11.h"
 #include "poll.h"

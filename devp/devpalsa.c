@@ -1264,9 +1264,9 @@ static void alsaSetCustomRun (void **token, const struct DevInterfaceAPI_t *API)
 		mlDrawBox (esel, first, str, curpos);
 		first = 0;
 
-		while (!ekbhit())
+		while (!conFunc.KeyboardHit())
 			framelock();
-		key=egetch();
+		key=conFunc.KeyboardGetChar();
 
 		if ((key>=0x20)&&(key<=0x7f))
 		{

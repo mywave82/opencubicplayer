@@ -143,7 +143,6 @@ static void cdaDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	if (plScrWidth<128)
 	{
-		//writestring(buf[1], 0, 0x09, " mode: ....... start:   :..:..  pos:   :..:..  length:   :..:..  size: ...... kb", plScrWidth);
 		displaystr (2,  0, 0x09, " mode: ", 7);
 		displaystr (2,  7, 0x0f, cdpPlayMode?"disk   ":"track  ", 7);
 		displaystr (2, 14, 0x09, " start: ", 8);
@@ -175,7 +174,6 @@ static void cdaDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		displaystr (2, 71, 0x0f, timestr, 6);
 		displaystr (2, 77, 0x09, " kb", plScrWidth - 77);
 
-		//writestring(buf[2], 0, 0x09, "track: ..      start:   :..:..  pos:   :..:..  length:   :..:..  size: ...... kb", plScrWidth);
 		displaystr (3,  0, 0x09, "track: ", 7);
 		snprintf (timestr, sizeof (timestr), "%2d", trackno);
 		displaystr (3,  7, 0x0f, timestr, 2);
@@ -208,7 +206,6 @@ static void cdaDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		displaystr (3, 71, 0x0f, timestr, 6);
 		displaystr (3, 77, 0x09, " kb", plScrWidth - 77);
 	} else {
-		//writestring(buf[1],  0, 0x09, "      mode: .......    start:   :..:..     pos:   :..:..     length:   :..:..     size: ...... kb", plScrWidth);
 		displaystr (2,  0, 0x09, "      mode: ", 12);
 		displaystr (2, 12, 0x0f, cdpPlayMode?"disk   ":"track  ", 7);
 		displaystr (2, 19, 0x09, "    start: ", 11);
@@ -240,7 +237,6 @@ static void cdaDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		displaystr (2, 88, 0x0f, timestr, 6);
 		displaystr (2, 94, 0x09, " kb", plScrWidth - 94);
 
-		//writestring(buf[2],  0, 0x09, "     track: ..         start:   :..:..     pos:   :..:..     length:   :..:..     size: ...... kb", plScrWidth);
 		displaystr (3,  0, 0x09, "     track: ", 12);
 		snprintf (timestr, sizeof (timestr), "%2d", trackno);
 		displaystr (3, 12, 0x0f, timestr, 2);

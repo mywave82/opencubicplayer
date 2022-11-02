@@ -205,9 +205,9 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 						{
 							if (poll_framelock())
 							{
-								while (ekbhit())
+								while (conFunc.KeyboardHit())
 								{
-									int key = egetch();
+									int key = conFunc.KeyboardGetChar();
 									if ((key == ' ') || (key == KEY_EXIT))
 									{
 										token->cancel_recursive = 1;
@@ -537,7 +537,7 @@ static int initRootDir(const char *sec)
 			{
 				if (poll_framelock())
 				{
-					ekbhit();
+					conFunc.KeyboardHit();
 				}
 			}
 			playlist->head.readdir_cancel (dirhandle);
@@ -2043,13 +2043,17 @@ superbreak:
 			framelock();
 			continue;
 		} else {
-			while (!ekbhit()&&(LastCurrent==fsFPSCurrent))
+			while ( !conFunc.KeyboardHit() && (LastCurrent==fsFPSCurrent) )
+			{
 				framelock();
-			if (!ekbhit())
+			}
+			if (!conFunc.KeyboardHit())
+			{
 				continue;
+			}
 		}
 
-		c=egetch();
+		c = conFunc.KeyboardGetChar();
 
 		switch (c)
 		{
@@ -2267,9 +2271,9 @@ static int fsEditModType (struct moduletype *oldtype, int _Bottom, int _Right)
 		state = 1;
 	}
 	framelock();
-	while (ekbhit())
+	while (conFunc.KeyboardHit())
 	{
-		switch(egetch())
+		switch (conFunc.KeyboardGetChar())
 		{
 			case KEY_RIGHT:
 				if (curindex != fsTypesCount)
@@ -2393,9 +2397,9 @@ static int fsEditChan(int y, int x, uint8_t *chan)
 	}
 	framelock();
 
-	while (ekbhit())
+	while (conFunc.KeyboardHit())
 	{
-		uint16_t key=egetch();
+		int16_t key = conFunc.KeyboardGetChar();
 		switch (key)
 		{
 			case ' ':
@@ -2480,9 +2484,9 @@ static int fsEditPlayTime(int y, int x, uint16_t *playtime)
 	}
 	framelock();
 
-	while (ekbhit())
+	while (conFunc.KeyboardHit())
 	{
-		uint16_t key=egetch();
+		uint16_t key = conFunc.KeyboardGetChar();
 		switch (key)
 		{
 			case ':':
@@ -2574,9 +2578,9 @@ static int fsEditDate(int y, int x, uint32_t *date)
 	}
 	framelock();
 
-	while (ekbhit())
+	while (conFunc.KeyboardHit())
 	{
-		uint16_t key=egetch();
+		uint16_t key = conFunc.KeyboardGetChar();
 		switch (key)
 		{
 			case '.':
@@ -3115,7 +3119,7 @@ superbreak:
 			state = 0;
 		}
 
-		if (!ekbhit()&&fsScanNames)
+		if (!conFunc.KeyboardHit() && fsScanNames)
 		{
 			int poll = 1;
 			if ((m->file && (m->flags & MODLIST_FLAG_ISMOD)) && (!mdbInfoIsAvailable(m->mdb_ref)) && (!(m->flags&MODLIST_FLAG_SCANNED)))
@@ -3171,9 +3175,9 @@ superbreak:
 				framelock();
 			}
 			continue;
-		} else while (ekbhit())
+		} else while (conFunc.KeyboardHit())
 		{
-			c=egetch();
+			c = conFunc.KeyboardGetChar();
 
 			if (c == VIRT_KEY_RESIZE)
 			{

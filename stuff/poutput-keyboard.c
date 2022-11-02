@@ -30,6 +30,8 @@
 #endif
 #include "types.h"
 #include "poutput.h"
+#include "poutput-keyboard.h"
+
 
 /* #define KEYB_DEBUG */
 
@@ -61,7 +63,7 @@ void ___push_key(uint16_t key)
 	ring_head=(ring_head+1)%BUFFER_LEN;
 }
 
-int ekbhit(void)
+int ekbhit (void)
 {
 	if (ring_head!=ring_tail)
 	{
@@ -74,7 +76,7 @@ int ekbhit(void)
 	return 0;
 }
 
-int egetch(void)
+int egetch (void)
 {
 	int retval=0;
 	int escapelevel=0; /* number of [ */

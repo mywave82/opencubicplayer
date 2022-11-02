@@ -61,12 +61,13 @@ enum cpiChanWidth
 
 struct cpifaceSessionAPI_t
 {
-	const struct plrDevAPI_t     *plrDevAPI;
-	const struct mcpDevAPI_t     *mcpDevAPI;
-	const struct ringbufferAPI_t *ringbufferAPI;
-	const struct mcpAPI_t        *mcpAPI;
-	const struct drawHelperAPI_t *drawHelperAPI;
-	const struct configAPI_t     *configAPI;
+	const struct plrDevAPI_t        *plrDevAPI;
+	const struct mcpDevAPI_t        *mcpDevAPI;
+	const struct ringbufferAPI_t    *ringbufferAPI;
+	const struct mcpAPI_t           *mcpAPI;
+	const struct drawHelperAPI_t    *drawHelperAPI;
+	const struct configAPI_t        *configAPI;
+	const struct consoleFunctions_t *conFunc;
 
 	char utf8_8_dot_3  [12*4+1]; /* UTF-8 ready, filled in by cpiface */
 	char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready, filled in by cpiface */
@@ -229,17 +230,17 @@ extern void plUseDots(int (*get)(struct cpifaceSessionAPI_t *cpifaceSession, str
 
 struct cpitrakdisplaystruct
 {
-	int (*getcurpos) (struct cpifaceSessionAPI_t *cpifaceSession);
-	int (*getpatlen)(int n);
-	const char *(*getpatname)(int n);
-	void (*seektrack)(int n, int c);
-	int (*startrow)(void);
-	int (*getnote)(uint16_t *bp, int small);
-	int (*getins)(uint16_t *bp);
-	int (*getvol)(uint16_t *bp);
-	int (*getpan)(uint16_t *bp);
-	void (*getfx)(uint16_t *bp, int n);
-	void (*getgcmd)(uint16_t *bp, int n);
+	int         (*getcurpos)  (struct cpifaceSessionAPI_t *cpifaceSession);
+	int         (*getpatlen)  (struct cpifaceSessionAPI_t *cpifaceSession, int n);
+	const char *(*getpatname) (struct cpifaceSessionAPI_t *cpifaceSession, int n);
+	void        (*seektrack)  (struct cpifaceSessionAPI_t *cpifaceSession, int n, int c);
+	int         (*startrow)   (struct cpifaceSessionAPI_t *cpifaceSession);
+	int         (*getnote)    (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp, int small);
+	int         (*getins)     (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp);
+	int         (*getvol)     (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp);
+	int         (*getpan)     (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp);
+	void        (*getfx)      (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp, int n);
+	void        (*getgcmd)    (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp, int n);
 };
 
 extern void cpiTrkSetup  (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpitrakdisplaystruct *c, int npat);

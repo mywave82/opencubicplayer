@@ -376,7 +376,7 @@ static void ID3PicDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 	{
 		len = ID3PicWidth - 9;
 	}
-	display_nprintf (ID3PicFirstLine, ID3PicFirstColumn, focus?0x09:0x01, ID3PicWidth, "ID3 PIC: %.*o%.*s%0.*o (tab to cycle)", focus?0x0a:0x02, len, ID3_APIC_Titles[ID3PicCurrentIndex], focus?0x09:0x00);
+	cpifaceSession->conFunc->DisplayPrintf (ID3PicFirstLine, ID3PicFirstColumn, focus?0x09:0x01, ID3PicWidth, "ID3 PIC: %.*o%.*s%0.*o (tab to cycle)", focus?0x0a:0x02, len, ID3_APIC_Titles[ID3PicCurrentIndex], focus?0x09:0x00);
 }
 
 static int ID3PicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)

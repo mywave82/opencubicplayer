@@ -100,6 +100,20 @@ struct consoleStatus_t
 	FontSizeEnum CurrentFont; /* Only drivers can change this, and their helper functions can use it. For end-users, its usage is only usefull in combination with plScrTextGUIOverlay API */
 };
 
+struct consoleFunctions_t
+{
+	void (*DisplayPrintf) (uint16_t y, uint16_t x, uint8_t color, uint16_t width, const char *fmt, ...); /* display_nprintf() */
+
+	void (*WriteNum)        (uint16_t *buf, uint16_t ofs, uint8_t attr, unsigned long num, uint8_t radix, uint16_t len, int clip0/*=1*/);
+	void (*WriteString)     (uint16_t *buf, uint16_t ofs, uint8_t attr, const char *str, uint16_t len);
+	void (*WriteStringAttr) (uint16_t *buf, uint16_t ofs, const uint16_t *str, uint16_t len);
+
+	int  (*KeyboardHit) (void); /* ekbhit */
+	int  (*KeyboardGetChar) (void); /* egetch */
+	void (*FrameLock) (void);
+};
+extern const struct consoleFunctions_t conFunc;
+
 /* display_nprintf() behaves a lot like printf(), with some exceptions and additions:
  *
  *   * The final result is always expanded into width
@@ -117,7 +131,7 @@ struct consoleStatus_t
  *
  *   * No support for %f %lf %llf %p %n
  */
-void display_nprintf (unsigned short y, unsigned short x, unsigned char color, unsigned short width, const char *fmt, ...);
+void display_nprintf (uint16_t y, uint16_t x, uint8_t color, uint16_t width, const char *fmt, ...);
 
 #ifndef _CONSOLE_DRIVER
 
@@ -171,39 +185,24 @@ void display_nprintf (unsigned short y, unsigned short x, unsigned char color, u
 #define plScrLines                              conStatus.GraphLines   /* How many graphical lines do we have */
 #define plCurrentFont                           conStatus.CurrentFont
 
+#else
+
+void generic_gdrawstr (uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
+void generic_gdrawchar8 (uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b);
+void generic_gdrawchar8p (uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *picp);
+void generic_gdrawchar (uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b);
+void generic_gdrawcharp (uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *picp);
+void generic_gupdatestr (uint16_t y, uint16_t x, const uint16_t *str, uint16_t len, uint16_t *old);
+
 #endif
 
 // TODO move us into API
-int ekbhit(void);
-int egetch(void);
-void writenum(uint16_t *buf, unsigned short ofs, unsigned char attr, unsigned long num, unsigned char radix, unsigned short len, char clip0/*=1*/);
-#define _writenum(buf, ofs, attr, num, radix, len) writenum(buf, ofs, attr, num, radix, len, 1)
-void writestring(uint16_t *buf, unsigned short ofs, unsigned char attr, const char *str, unsigned short len);
-void writestringattr(uint16_t *buf, unsigned short ofs, const uint16_t *str, unsigned short len);
+void writenum (uint16_t *buf, uint16_t ofs, uint8_t attr, unsigned long num, uint8_t radix, uint16_t len, int clip0/*=1*/);
+void writestring (uint16_t *buf, uint16_t ofs, uint8_t attr, const char *str, uint16_t len);
+void writestringattr (uint16_t *buf, uint16_t ofs, const uint16_t *str, uint16_t len);
 
 void make_title (const char *part, int escapewarning);
 
-#ifdef _CONSOLE_DRIVER
-
-/* kbhit and getch will be called on ekbhit() and egetch() - they can be dummy callbacks to refresh the console.
- *
- * Console drivers that implemented getch() are expected to return keyboard/console escape codes.
- *
- * Console drivers that decode keyboard themself should use ___push_key(), and international characters are split up into UTF-8 bytes
- */
-void ___setup_key(int(*kbhit)(void), int(*getch)(void));
-void ___push_key(uint16_t);
-
-int consoleHasKey(uint16_t key);
-
 extern unsigned char plpalette[256]; /* palette might be overridden via ocp.ini */
-
-void generic_gdrawstr(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
-void generic_gdrawchar8(uint16_t x, uint16_t y, unsigned char c, unsigned char f, unsigned char b);
-void generic_gdrawchar8p(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp);
-void generic_gdrawchar(unsigned short x, unsigned short y, unsigned char c, unsigned char f, unsigned char b);
-void generic_gdrawcharp(unsigned short x, unsigned short y, unsigned char c, unsigned char f, void *picp);
-void generic_gupdatestr(unsigned short y, unsigned short x, const uint16_t *str, unsigned short len, uint16_t *old);
-#endif
 
 #endif

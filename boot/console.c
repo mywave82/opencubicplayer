@@ -31,7 +31,9 @@
 #include <string.h>
 #include "types.h"
 #include "console.h"
+#include "stuff/framelock.h"
 #include "stuff/poutput.h"
+#include "stuff/poutput-keyboard.h"
 #include "stuff/utf-8.h"
 
 static void dummySetTextMode (uint8_t x)
@@ -179,7 +181,7 @@ uint8_t *plVidMem;
 
 int plScrTextGUIOverlay;
 
-void display_nprintf (unsigned short y, unsigned short x, unsigned char color, unsigned short width, const char *fmt, ...)
+void display_nprintf (uint16_t y, uint16_t x, uint8_t color, uint16_t width, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -660,3 +662,55 @@ after_dot:
 	}
 	va_end(ap);
 }
+
+void writenum (uint16_t *buf, uint16_t ofs, uint8_t attr, unsigned long num, uint8_t radix, uint16_t len, int clip0)
+{
+	char convbuf[20];
+	uint16_t *p=buf+ofs;
+	char *cp=convbuf+len;
+	int i;
+	for (i=0; i<len; i++)
+	{
+		*--cp="0123456789ABCDEF"[num%radix];
+		num/=radix;
+	}
+	for (i=0; i<len; i++)
+	{
+		if (clip0&&(convbuf[i]=='0')&&(i!=(len-1)))
+		{
+			*p++=' '|(attr<<8);
+			cp++;
+		} else {
+			*p++=(*cp++)|(attr<<8);
+			clip0=0;
+		}
+	}
+}
+
+void writestring (uint16_t *buf, uint16_t ofs, uint8_t attr, const char *str, uint16_t len)
+{
+	uint16_t *p=buf+ofs;
+	int i;
+	for (i=0; i<len; i++)
+	{
+		*p++=(*((unsigned char *)(str)))|(attr<<8);
+		if (*str)
+			str++;
+	}
+}
+
+void writestringattr (uint16_t *buf, uint16_t ofs, const uint16_t *str, uint16_t len)
+{
+	memcpy (buf+ofs, (void *)str, len*2);
+}
+
+const struct consoleFunctions_t conFunc =
+{
+	display_nprintf,
+	writenum,
+	writestring,
+	writestringattr,
+	ekbhit,
+	egetch,
+	framelock,
+};
