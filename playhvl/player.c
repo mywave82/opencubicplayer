@@ -914,8 +914,10 @@ static void hvl_process_frame ( struct hvl_tune *ht, struct hvl_voice *voice )
 
 			if ( voice->vc_HardCutRelease )
 			{
-				voice->vc_ADSR.rVolume = -(voice->vc_ADSRVolume - (voice->vc_Instrument->ins_Envelope.rVolume << 8)) / voice->vc_HardCutReleaseF;
 				voice->vc_ADSR.rFrames = voice->vc_HardCutReleaseF;
+				voice->vc_ADSR.rVolume = 0;
+				if (voice->vc_ADSR.rFrames > 0)
+					voice->vc_ADSR.rVolume = -(voice->vc_ADSRVolume - (voice->vc_Instrument->ins_Envelope.rVolume << 8)) / voice->vc_HardCutReleaseF;
 				voice->vc_ADSR.aFrames = voice->vc_ADSR.dFrames = voice->vc_ADSR.sFrames = 0;
 			} else {
 				voice->vc_NoteMaxVolume = 0;
