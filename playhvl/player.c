@@ -1142,7 +1142,7 @@ static void hvl_process_frame ( struct hvl_tune *ht, struct hvl_voice *voice )
 		}
 
 		// NoFilterInit
-		FMax = (voice->vc_FilterSpeed < 3) ? (5-voice->vc_FilterSpeed) : 1;
+		FMax = (voice->vc_FilterSpeed < 4) ? (5-voice->vc_FilterSpeed) : 1;
 
 		for ( i=0; i<FMax; i++ )
 		{
