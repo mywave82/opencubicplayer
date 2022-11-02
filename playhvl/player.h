@@ -218,7 +218,7 @@ struct hvl_tune
 	uint32_t               ht_PlayingTime;
 	int16_t                ht_Tempo;           /* Ticks per row */
 	int16_t                ht_PosNr;           /* Current order(position)*/
-	int16_t                ht_StepWaitFrames;  /* How many ticks left until next row */
+	uint16_t               ht_StepWaitFrames;  /* How many ticks left until next row */
 	int16_t                ht_NoteNr;          /* Current row(note) */
 	uint16_t               ht_PosJumpNote;     /* Target row(note), if break occurs */
 	uint8_t                ht_GetNewPosition;
