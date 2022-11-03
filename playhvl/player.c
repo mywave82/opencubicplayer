@@ -337,13 +337,13 @@ static void hvl_process_stepfx_1 ( struct hvl_tune *ht, struct hvl_voice *voice,
 	}
 }
 
-static void hvl_process_stepfx_2 ( struct hvl_tune *ht, struct hvl_voice *voice, int32_t FX, int32_t FXParam, int32_t *Note )
+static void hvl_process_stepfx_2 ( const struct hvl_tune *ht, struct hvl_voice *voice, int32_t FX, int32_t FXParam, int32_t *Note )
 {
 	switch ( FX )
 	{
 		case 0x9: // Set squarewave offset
 			voice->vc_SquarePos    = FXParam >> (5 - voice->vc_WaveLength);
-			voice->vc_PlantSquare  = 1;
+			//voice->vc_PlantSquare  = 1;
 			voice->vc_IgnoreSquare = 1;
 			break;
 
@@ -494,7 +494,7 @@ static void hvl_process_stepfx_3 ( struct hvl_tune *ht, struct hvl_voice *voice,
 static void hvl_process_step ( struct hvl_tune *ht, struct hvl_voice *voice )
 {
 	int32_t  Note, Instr, donenotedel;
-	struct   hvl_step *Step;
+	const struct hvl_step *Step;
 
 	if ( voice->vc_TrackOn == 0 )
 	{
@@ -687,7 +687,7 @@ static void hvl_process_step ( struct hvl_tune *ht, struct hvl_voice *voice )
 	hvl_process_stepfx_3 ( ht, voice, Step->stp_FXb&0xf, Step->stp_FXbParam );
 }
 
-static void hvl_plist_command_parse ( struct hvl_tune *ht, struct hvl_voice *voice, int32_t FX, int32_t FXParam )
+static void hvl_plist_command_parse ( const struct hvl_tune *ht, struct hvl_voice *voice, int32_t FX, int32_t FXParam )
 {
 	switch ( FX )
 	{
@@ -1184,7 +1184,7 @@ static void hvl_process_frame ( struct hvl_tune *ht, struct hvl_voice *voice )
 		// CalcSquare
 		uint32_t  i;
 		int32_t   Delta;
-		int8_t   *SquarePtr;
+		const int8_t *SquarePtr;
 		int32_t  X;
 
 		SquarePtr = &waves[WO_SQUARES+(voice->vc_FilterPos-0x20)*(0xfc+0xfc+0x80*0x1f+0x80+0x280*3)];

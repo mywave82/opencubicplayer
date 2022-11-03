@@ -31,11 +31,11 @@
 struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_ahx (const uint8_t *buf, uint32_t buflen, uint32_t defstereo, uint32_t freq )
 {
 	const uint8_t       *bptr;
-	char                *nptr, *tptr;
+	const char          *nptr, *tptr;
 	uint32_t             i, j, k, l, posn, insn, ssn, hs, trkn, trkl;
 	struct hvl_tune     *ht;
 	struct hvl_plsentry *ple;
-	int32_t              defgain[] = { 71, 72, 76, 85, 100 };
+	const int32_t        defgain[] = { 71, 72, 76, 85, 100 };
 
 	if (buflen < 14)
 	{
@@ -267,7 +267,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_ahx (const u
 	}
 
 	// nptr = (chat *)&buf[((buf[4]<<8)|buf[5]); can not be trusted, since it only stores the last 16bits (legacy)
-	nptr = (char *)bptr;
+	nptr = (const char *)bptr;
 	tptr = nptr;
 	while (1)
 	{
@@ -319,7 +319,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_ahx (const u
 struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (const uint8_t *buf, uint32_t buflen, uint32_t defstereo, uint32_t freq )
 {
 	struct hvl_tune *ht;
-	char            *nptr, *tptr;
+	const char      *nptr, *tptr;
 	const uint8_t   *bptr;
 	uint32_t         i, j, posn, insn, ssn, chnn, hs, trkl, trkn;
 	struct           hvl_plsentry *ple;
