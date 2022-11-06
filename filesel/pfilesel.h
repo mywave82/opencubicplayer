@@ -100,7 +100,6 @@ extern void plUnregisterPreprocess(struct preprocregstruct *r);
 
 int fsMatchFileName12(const char *a, const char *b);
 
-extern void fsDraw(void); /* used by medialib to have backdrop for the dialogs they display on the screen */
 extern void fsSetup(void);
 extern void fsRescanDir(void);
 

@@ -133,7 +133,7 @@ static void medialibRemoveRun (void **token, const struct DevInterfaceAPI_t *API
 {
 	while (1)
 	{
-		fsDraw();
+		API->fsDraw();
 		mlRemoveDraw("Remove files from medialib");
 		while (API->console->KeyboardHit())
 		{

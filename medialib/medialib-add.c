@@ -276,7 +276,7 @@ static void medialibAddRun (void **token, const struct DevInterfaceAPI_t *API)
 	int dsel = 0;
 	while (1)
 	{
-		fsDraw();
+		API->fsDraw();
 		mlAddDraw("Add files to medialib", medialibAddPath ? medialibAddPath : "out of memory", dsel);
 		while (API->console->KeyboardHit())
 		{

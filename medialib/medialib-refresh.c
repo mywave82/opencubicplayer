@@ -131,7 +131,7 @@ static void medialibRefreshRun (void **token, const struct DevInterfaceAPI_t *AP
 {
 	while (1)
 	{
-		fsDraw();
+		API->fsDraw();
 		mlRefreshDraw("Refresh files in medialib");
 		while (API->console->KeyboardHit())
 		{

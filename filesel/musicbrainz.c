@@ -1299,7 +1299,7 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 	}
 	while (1)
 	{
-		fsDraw();
+		API->fsDraw();
 		musicbrainzSetupDraw("MusicBrain Cache DataBase", dsel, sorted);
 		if (dialog)
 		{
@@ -1395,7 +1395,7 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 									int mlTop = (plScrHeight - mlHeight) / 2 ;
 									int mlLeft = (plScrWidth - mlWidth) / 2;
 
-									fsDraw();
+									API->fsDraw();
 
 									display_nprintf (mlTop + 0, mlLeft, 0x1e, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
 									display_nprintf (mlTop + 1, mlLeft, 0x1e, mlWidth, "\xb3%*C \xb3", mlWidth - 2);

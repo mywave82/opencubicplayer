@@ -111,6 +111,8 @@ struct preprocregstruct *plPreprocess = 0;
 
 static int fsSavePlayList(const struct modlist *ml);
 
+static void fsDraw(void);
+
 static struct interfacestruct *plInterfaces;
 
 struct fsReadDir_token_t
@@ -955,7 +957,8 @@ static struct DevInterfaceAPI_t DevInterfaceAPI =
 	&Console,
 	cpiKeyHelp,
 	cpiKeyHelpClear,
-	cpiKeyHelpDisplay
+	cpiKeyHelpDisplay,
+	fsDraw
 };
 
 static int VirtualInterfaceInit (struct moduleinfostruct *info, struct ocpfilehandle_t *fi, const struct cpifaceplayerstruct *cp)
@@ -2949,7 +2952,7 @@ static int fsEditViewPath(void)
 	return 0;
 }
 
-void fsDraw(void)
+static void fsDraw(void)
 { /* used by medialib to have backdrop for the dialogs they display on the screen */
 	signed int firstv, firstp;
 	struct modlistentry *m;

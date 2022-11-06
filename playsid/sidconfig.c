@@ -939,7 +939,7 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 
 	while (1)
 	{
-		fsDraw();
+		API->fsDraw();
 		sidConfigDraw (esel, API);
 		while (API->console->KeyboardHit())
 		{
@@ -1026,7 +1026,7 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 #endif
 						while (inner)
 						{
-							fsDraw();
+							API->fsDraw();
 							sidDrawDir (dsel, esel - 11, API);
 							while (inner && API->console->KeyboardHit())
 							{

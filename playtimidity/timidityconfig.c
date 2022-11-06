@@ -650,7 +650,7 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 
 	while (1)
 	{
-		fsDraw();
+		API->fsDraw();
 		timidityConfigDraw (esel, API);
 		while (API->console->KeyboardHit())
 		{
@@ -710,7 +710,7 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 
 						while (inner)
 						{
-							fsDraw();
+							API->fsDraw();
 							timidityConfigFileSelectDraw (dsel, API);
 							while (inner && API->console->KeyboardHit())
 							{

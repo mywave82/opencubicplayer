@@ -1258,7 +1258,7 @@ static void alsaSetCustomRun (void **token, const struct DevInterfaceAPI_t *API)
 	{
 		uint16_t key;
 
-		fsDraw ();
+		API->fsDraw ();
 
 		mlDrawBox (esel, first, str, curpos, API);
 		first = 0;
