@@ -24,8 +24,6 @@
 #include "types.h"
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"
-#include "cpiface/jpeg.h"
-#include "cpiface/png.h"
 #include "stuff/poutput.h"
 #include "id3.h"
 #include "mpplay.h"
@@ -225,7 +223,7 @@ static void ID3Picture_Scale(struct ID3_pic_raw_t *srcdst, int width, int height
 	srcdst->scaled_height = 0;
 }
 
-static int Refresh_ID3Pictures (struct ID3_t *ID3)
+static int Refresh_ID3Pictures (struct cpifaceSessionAPI_t *cpifaceSession, struct ID3_t *ID3)
 {
 	int i;
 
@@ -244,10 +242,10 @@ static int Refresh_ID3Pictures (struct ID3_t *ID3)
 	{
 		if (ID3->APIC[i].data && ID3->APIC[i].is_jpeg)
 		{
-			try_open_jpeg (&ID3Pictures[i].real_width, &ID3Pictures[i].real_height, &ID3Pictures[i].real_data_bgra, ID3->APIC[i].data, ID3->APIC[i].size);
+			cpifaceSession->console->try_open_jpeg (&ID3Pictures[i].real_width, &ID3Pictures[i].real_height, &ID3Pictures[i].real_data_bgra, ID3->APIC[i].data, ID3->APIC[i].size);
 		} else if (ID3->APIC[i].data && ID3->APIC[i].is_png)
 		{
-			try_open_png (&ID3Pictures[i].real_width, &ID3Pictures[i].real_height, &ID3Pictures[i].real_data_bgra, ID3->APIC[i].data, ID3->APIC[i].size);
+			cpifaceSession->console->try_open_png (&ID3Pictures[i].real_width, &ID3Pictures[i].real_height, &ID3Pictures[i].real_data_bgra, ID3->APIC[i].data, ID3->APIC[i].size);
 		}
 		if (ID3Pictures[i].real_width && ID3Pictures[i].real_height && ID3Pictures[i].real_data_bgra)
 		{
@@ -493,7 +491,7 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 			if (cpifaceSession->console->TextGUIOverlay)
 			{
 				mpegGetID3(&ID3);
-				if (Refresh_ID3Pictures(ID3))
+				if (Refresh_ID3Pictures (cpifaceSession, ID3))
 				{
 					cpifaceSession->cpiTextRecalc (cpifaceSession);
 				}
@@ -504,7 +502,7 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 			if (cpifaceSession->console->TextGUIOverlay)
 			{
 				mpegGetID3(&ID3);
-				Refresh_ID3Pictures(ID3);
+				Refresh_ID3Pictures (cpifaceSession, ID3);
 				ID3PicActive=3;
 			}
 			break;

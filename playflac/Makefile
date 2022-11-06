@@ -77,14 +77,12 @@ flacplay.o: flacplay.c \
 	../config.h \
 	../types.h \
 	../cpiface/cpiface.h \
-	../cpiface/gif.h \
-	../cpiface/jpeg.h \
-	../cpiface/png.h \
 	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
 	flacplay.h \
-	../stuff/imsrtns.h
+	../stuff/imsrtns.h \
+	../stuff/poutput.h
 	$(CC) flacplay.c -o $@ $(FLAC_CFLAGS) -c

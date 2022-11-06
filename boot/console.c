@@ -31,6 +31,9 @@
 #include <string.h>
 #include "types.h"
 #include "console.h"
+#include "cpiface/gif.h"
+#include "cpiface/jpeg.h"
+#include "cpiface/png.h"
 #include "stuff/framelock.h"
 #include "stuff/poutput.h"
 #include "stuff/poutput-keyboard.h"
@@ -699,6 +702,13 @@ struct console_t Console =
 	ekbhit,
 	egetch,
 	framelock,
+#ifdef HAVE_LZW
+	GIF87_try_open_bgra,
+#else
+	0,
+#endif
+	try_open_jpeg,
+	try_open_png,
 	80,      /* TextHeight */
 	25,      /* TextWidth */
 	0,       /* TextGUIOverlay */

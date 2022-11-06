@@ -28,9 +28,6 @@
 #include <unistd.h>
 #include "types.h"
 #include "cpiface/cpiface.h"
-#include "cpiface/gif.h"
-#include "cpiface/jpeg.h"
-#include "cpiface/png.h"
 #include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
@@ -38,6 +35,7 @@
 #include "filesel/filesystem.h"
 #include "flacplay.h"
 #include "stuff/imsrtns.h"
+#include "stuff/poutput.h"
 
 /* options */
 static int flac_inpause;
@@ -317,6 +315,8 @@ static void metadata_callback(
 	void *client_data)
 #endif
 {
+	struct cpifaceSessionAPI_t *cpifaceSession = client_data;
+
 	switch (metadata->type)
 	{
 		case FLAC__METADATA_TYPE_STREAMINFO:
@@ -430,7 +430,7 @@ static void metadata_callback(
 			{
 				uint16_t actual_height, actual_width;
 				uint8_t *data_bgra;
-				if (!GIF87_try_open_bgra (&actual_width, &actual_height, &data_bgra, metadata->data.picture.data, metadata->data.picture.data_length))
+				if (!cpifaceSession->console->try_open_gif (&actual_width, &actual_height, &data_bgra, metadata->data.picture.data, metadata->data.picture.data_length))
 				{
 					add_picture (actual_width, actual_height, data_bgra, (const char *)metadata->data.picture.description, metadata->data.picture.type);
 				}
@@ -442,7 +442,7 @@ static void metadata_callback(
 			{
 				uint16_t actual_height, actual_width;
 				uint8_t *data_bgra;
-				if (!try_open_png (&actual_width, &actual_height, &data_bgra, metadata->data.picture.data, metadata->data.picture.data_length))
+				if (!cpifaceSession->console->try_open_png (&actual_width, &actual_height, &data_bgra, metadata->data.picture.data, metadata->data.picture.data_length))
 				{
 					add_picture (actual_width, actual_height, data_bgra, (const char *)metadata->data.picture.description, metadata->data.picture.type);
 				}
@@ -452,7 +452,7 @@ static void metadata_callback(
 			{
 				uint16_t actual_height, actual_width;
 				uint8_t *data_bgra;
-				if (!try_open_jpeg (&actual_width, &actual_height, &data_bgra, metadata->data.picture.data, metadata->data.picture.data_length))
+				if (!cpifaceSession->console->try_open_jpeg (&actual_width, &actual_height, &data_bgra, metadata->data.picture.data, metadata->data.picture.data_length))
 				{
 					add_picture (actual_width, actual_height, data_bgra, (const char *)metadata->data.picture.description, metadata->data.picture.type);
 				}

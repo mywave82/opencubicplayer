@@ -36,9 +36,6 @@
 #include <vorbis/vorbisfile.h>
 #include "types.h"
 #include "cpiface/cpiface.h"
-#include "cpiface/gif.h"
-#include "cpiface/jpeg.h"
-#include "cpiface/png.h"
 #include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
@@ -47,6 +44,7 @@
 #include "filesel/filesystem.h"
 #include "oggplay.h"
 #include "stuff/imsrtns.h"
+#include "stuff/poutput.h"
 
 static int current_section;
 
@@ -496,7 +494,7 @@ static void add_picture(const uint16_t actual_width,
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #endif
-static void add_picture_binary(const uint8_t *src, unsigned int srclen)
+static void add_picture_binary (struct cpifaceSessionAPI_t *cpifaceSession, const uint8_t *src, unsigned int srclen)
 {
 	uint32_t picture_type;
 	uint32_t mime_length;
@@ -598,7 +596,7 @@ static void add_picture_binary(const uint8_t *src, unsigned int srclen)
 	{
 		uint16_t actual_height, actual_width;
 		uint8_t *data_bgra;
-		if (!GIF87_try_open_bgra (&actual_width, &actual_height, &data_bgra, data, data_length))
+		if (!cpifaceSession->console->try_open_gif (&actual_width, &actual_height, &data_bgra, data, data_length))
 		{
 			add_picture (actual_width, actual_height, data_bgra, (const char *)description, description_length, picture_type);
 		}
@@ -610,7 +608,7 @@ static void add_picture_binary(const uint8_t *src, unsigned int srclen)
 	{
 		uint16_t actual_height, actual_width;
 		uint8_t *data_bgra;
-		if (!try_open_png (&actual_width, &actual_height, &data_bgra, (uint8_t *)data, data_length))
+		if (!cpifaceSession->console->try_open_png (&actual_width, &actual_height, &data_bgra, (uint8_t *)data, data_length))
 		{
 			add_picture (actual_width, actual_height, data_bgra, (const char *)description, description_length, picture_type);
 		}
@@ -621,7 +619,7 @@ static void add_picture_binary(const uint8_t *src, unsigned int srclen)
 	{
 		uint16_t actual_height, actual_width;
 		uint8_t *data_bgra;
-		if (!try_open_jpeg (&actual_width, &actual_height, &data_bgra, data, data_length))
+		if (!cpifaceSession->console->try_open_jpeg (&actual_width, &actual_height, &data_bgra, data, data_length))
 		{
 			add_picture (actual_width, actual_height, data_bgra, (const char *)description, description_length, picture_type);
 		}
@@ -643,7 +641,7 @@ static uint8_t base64_index (const char src)
 	return 65;
 }
 
-static void add_picture_base64(const char *src)
+static void add_picture_base64 (struct cpifaceSessionAPI_t *cpifaceSession, const char *src)
 {
 	int srclen = strlen (src);
 	uint8_t *dst;
@@ -708,17 +706,17 @@ static void add_picture_base64(const char *src)
 
 	dst -= dstlen;
 
-	add_picture_binary(dst, dstlen);
+	add_picture_binary (cpifaceSession, dst, dstlen);
 
 	free (dst);
 }
 
-static void add_comment(const char *src)
+static void add_comment (struct cpifaceSessionAPI_t *cpifaceSession, const char *src)
 {
 	char *equal, *tmp, *tmp2;
 	if (!strncasecmp (src, "METADATA_BLOCK_PICTURE=", 23))
 	{
-		add_picture_base64(src + 23);
+		add_picture_base64 (cpifaceSession, src + 23);
 		return;
 	}
 	equal = strchr (src, '=');
@@ -958,7 +956,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 		{
 			for (i=0; i < vf->comments; i++)
 			{
-				add_comment(vf->user_comments[i]);
+				add_comment (cpifaceSession, vf->user_comments[i]);
 			}
 		}
 	}

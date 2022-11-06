@@ -3,10 +3,10 @@ ifeq ($(HAVE_LZW),1)
 GIF_O=gif.o
 endif
 
-cpiface_so=fft.o cpianal.o cpichan.o cpidots.o cpiface.o cpigraph.o cpiinst.o cpikube.o cpilinks.o cpimsg.o cpimvol.o cpiphase.o cpipic.o cpiptype.o cpiscope.o cpitext.o cpitrack.o jpeg.o mcpedit.o $(GIF_O) png.o tga.o volctrl.o
+cpiface_so=fft.o cpianal.o cpichan.o cpidots.o cpiface.o cpigraph.o cpiinst.o cpikube.o cpilinks.o cpimsg.o cpimvol.o cpiphase.o cpipic.o cpiptype.o cpiscope.o cpitext.o cpitrack.o mcpedit.o tga.o volctrl.o
 
 # libocp_so is linked by parent
-cpiface_libocp_so=cpikeyhelp.o
+cpiface_libocp_so=cpikeyhelp.o jpeg.o $(GIF_O) png.o
 
 ifeq ($(HAVE_X11),1)
  NEED_CPIFONTDEBUG=1
@@ -22,11 +22,13 @@ ifeq ($(NEED_CPIFONTDEBUG),1)
  CPIFONTDEBUG_SO = cpifontdebug$(LIB_SUFFIX)
 endif
 
+STATIC_LIBS += $(LIBJPEG_LIBS) $(LIBPNG_LIBS)
+
 ifeq ($(STATIC_CORE),1)
  STATIC_OBJECTS += $(patsubst %.o,cpiface/%.o,$(cpiface_so))
  STATIC_OBJECTS += $(patsubst %.o,cpiface/%.o,$(cpifontdebug_so))
 
- STATIC_LIBS += $(LIBJPEG_LIBS) $(LIBPNG_LIBS) $(MATH_LIBS)
+ STATIC_LIBS += $(MATH_LIBS)
 endif
 
 LIBOCP_OBJECTS += $(patsubst %.o,cpiface/%.o,$(cpiface_libocp_so))

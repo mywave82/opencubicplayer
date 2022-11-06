@@ -94,7 +94,11 @@ struct console_t
 	int  (*KeyboardGetChar) (void); /* egetch */
 	void (*FrameLock) (void);
 
-	/* console resolutiom */
+	int (*try_open_gif)  (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const uint8_t *src, int           srclen);
+	int (*try_open_jpeg) (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const uint8_t *src, uint_fast32_t srclen);
+	int (*try_open_png)  (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const uint8_t *src, uint_fast32_t srclen);
+
+	/* console resolution */
 	unsigned int TextHeight; /* range 25..inifinity */
 	unsigned int TextWidth;  /* range 80..CONSOLE_MAX_X  CONSOLE_MAX_X is 1024 */
 

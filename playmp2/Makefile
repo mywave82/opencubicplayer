@@ -42,8 +42,6 @@ cpiid3pic.o: cpiid3pic.c \
 	../config.h \
 	../types.h \
 	../cpiface/cpiface.h \
-	../cpiface/jpeg.h \
-	../cpiface/png.h \
 	../stuff/poutput.h \
 	id3.h \
 	mpplay.h

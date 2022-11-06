@@ -55,6 +55,9 @@ kickload.o: kickload.c \
 console.o: console.c console.h \
 	../config.h \
 	../types.h \
+	../cpiface/gif.h \
+	../cpiface/jpeg.h \
+	../cpiface/png.h \
 	../stuff/framelock.h \
 	../stuff/poutput.h \
 	../stuff/poutput-keyboard.h \

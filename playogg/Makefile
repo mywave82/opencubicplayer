@@ -48,9 +48,6 @@ oggplay.o: oggplay.c \
 	../config.h \
 	../types.h \
 	../cpiface/cpiface.h \
-	../cpiface/gif.h \
-	../cpiface/jpeg.h \
-	../cpiface/png.h \
 	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
@@ -58,7 +55,8 @@ oggplay.o: oggplay.c \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
 	oggplay.h \
-	../stuff/imsrtns.h
+	../stuff/imsrtns.h \
+	../stuff/poutput.h
 	$(CC) oggplay.c -o $@ $(OGG_CFLAGS) $(VORBIS_CFLAGS) $(VORBISFILE_CFLAGS) -c
 
 oggpplay.o: oggpplay.c \
