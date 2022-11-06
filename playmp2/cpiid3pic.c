@@ -401,7 +401,7 @@ static int ID3PicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 					ID3PicActive=2;
 				}
 			}
-			cpiTextSetMode (cpifaceSession, "id3pic");
+			cpifaceSession->cpiTextSetMode (cpifaceSession, "id3pic");
 			return 1;
 		case 'x': case 'X':
 			ID3PicActive=3;
@@ -475,7 +475,7 @@ static int ID3PicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 			{
 				ID3PicActive=0;
 			}
-			cpiTextRecalc (cpifaceSession);
+			cpifaceSession->cpiTextRecalc (cpifaceSession);
 			break;
 		default:
 			return 0;
@@ -495,7 +495,7 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 				mpegGetID3(&ID3);
 				if (Refresh_ID3Pictures(ID3))
 				{
-					cpiTextRecalc (cpifaceSession);
+					cpifaceSession->cpiTextRecalc (cpifaceSession);
 				}
 			}
 			break;
@@ -559,10 +559,10 @@ static struct cpitextmoderegstruct cpiID3Pic = {"id3pic", ID3PicGetWin, ID3PicSe
 
 void __attribute__ ((visibility ("internal"))) ID3PicInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextRegisterMode (cpifaceSession, &cpiID3Pic);
+	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiID3Pic);
 }
 
 void __attribute__ ((visibility ("internal"))) ID3PicDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextUnregisterMode (cpifaceSession, &cpiID3Pic);
+	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiID3Pic);
 }

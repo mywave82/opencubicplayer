@@ -345,7 +345,7 @@ static int SidInfoIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 			break;
 		case 't': case 'T':
 			SidInfoActive=1;
-			cpiTextSetMode (cpifaceSession, "sidinfo");
+			cpifaceSession->cpiTextSetMode (cpifaceSession, "sidinfo");
 			return 1;
 		case 'x': case 'X':
 			SidInfoActive=1;
@@ -363,7 +363,7 @@ static int SidInfoAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 	{
 		case 't': case 'T':
 			SidInfoActive=!SidInfoActive;
-			cpiTextRecalc (cpifaceSession);
+			cpifaceSession->cpiTextRecalc (cpifaceSession);
 			break;
 
 		case KEY_ALT_K:
@@ -418,10 +418,10 @@ static struct cpitextmoderegstruct cpiSidInfo = {"sidinfo", SidInfoGetWin, SidIn
 
 void __attribute__ ((visibility ("internal"))) SidInfoInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextRegisterMode (cpifaceSession, &cpiSidInfo);
+	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiSidInfo);
 }
 
 void __attribute__ ((visibility ("internal"))) SidInfoDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextUnregisterMode (cpifaceSession, &cpiSidInfo);
+	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiSidInfo);
 }

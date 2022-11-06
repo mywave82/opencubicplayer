@@ -359,7 +359,7 @@ static int ID3InfoIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 			{
 				ID3InfoActive=1;
 			}
-			cpiTextSetMode (cpifaceSession, "id3info");
+			cpifaceSession->cpiTextSetMode (cpifaceSession, "id3info");
 			return 1;
 		case 'x': case 'X':
 			ID3InfoActive=1;
@@ -381,7 +381,7 @@ static int ID3InfoAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 			{
 				ID3InfoActive=0;
 			}
-			cpiTextRecalc (cpifaceSession);
+			cpifaceSession->cpiTextRecalc (cpifaceSession);
 			break;
 
 		case KEY_ALT_K:
@@ -423,7 +423,7 @@ static int ID3InfoEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 			{
 				if (ID3InfoActive)
 				{
-					cpiTextRecalc (cpifaceSession);
+					cpifaceSession->cpiTextRecalc (cpifaceSession);
 				}
 				ID3InfoNeedRecalc = 0;
 			}
@@ -446,10 +446,10 @@ static struct cpitextmoderegstruct cpiID3Info = {"id3info", ID3InfoGetWin, ID3In
 
 void __attribute__ ((visibility ("internal"))) ID3InfoInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextRegisterMode (cpifaceSession, &cpiID3Info);
+	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiID3Info);
 }
 
 void __attribute__ ((visibility ("internal"))) ID3InfoDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextUnregisterMode (cpifaceSession, &cpiID3Info);
+	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiID3Info);
 }

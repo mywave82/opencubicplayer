@@ -2244,6 +2244,11 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.mcpGet = 0;
 	cpifaceSessionAPI.Public.mcpGetRealVolume = 0;
 
+	cpifaceSessionAPI.Public.cpiTextRegisterMode = cpiTextRegisterMode;
+	cpifaceSessionAPI.Public.cpiTextUnregisterMode = cpiTextUnregisterMode;
+	cpifaceSessionAPI.Public.cpiTextSetMode = cpiTextSetMode;
+	cpifaceSessionAPI.Public.cpiTextRecalc = cpiTextRecalc;
+
 	curplayer=cp;
 
 	retval=curplayer->OpenFile (&cpifaceSessionAPI.Public, info, fi);

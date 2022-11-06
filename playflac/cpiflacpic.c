@@ -412,7 +412,7 @@ static int FlacPicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 			{
 				FlacPicActive=1;
 			}
-			cpiTextSetMode (cpifaceSession, "flacpic");
+			cpifaceSession->cpiTextSetMode (cpifaceSession, "flacpic");
 			return 1;
 		case 'x': case 'X':
 			FlacPicActive=3;
@@ -483,7 +483,7 @@ static int FlacPicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 			{
 				FlacPicActive=0;
 			}
-			cpiTextRecalc (cpifaceSession);
+			cpifaceSession->cpiTextRecalc (cpifaceSession);
 			break;
 		default:
 			return 0;
@@ -555,11 +555,10 @@ static struct cpitextmoderegstruct cpiFlacPic = {"flacpic", FlacPicGetWin, FlacP
 
 void __attribute__ ((visibility ("internal"))) FlacPicInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextRegisterMode (cpifaceSession, &cpiFlacPic);
+	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiFlacPic);
 }
-
 
 void __attribute__ ((visibility ("internal"))) FlacPicDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextUnregisterMode (cpifaceSession, &cpiFlacPic);
+	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiFlacPic);
 }

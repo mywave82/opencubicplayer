@@ -183,7 +183,7 @@ static int FlacInfoIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 			{
 				FlacInfoActive=1;
 			}
-			cpiTextSetMode(cpifaceSession, "flacinfo");
+			cpifaceSession->cpiTextSetMode(cpifaceSession, "flacinfo");
 			return 1;
 		case 'x': case 'X':
 			FlacInfoActive=3;
@@ -205,7 +205,7 @@ static int FlacInfoAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 			{
 				FlacInfoActive=0;
 			}
-			cpiTextRecalc (cpifaceSession);
+			cpifaceSession->cpiTextRecalc (cpifaceSession);
 			break;
 
 		case KEY_ALT_K:
@@ -260,10 +260,10 @@ static struct cpitextmoderegstruct cpiFlacInfo = {"flacinfo", FlacInfoGetWin, Fl
 
 void __attribute__ ((visibility ("internal"))) FlacInfoInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextRegisterMode (cpifaceSession, &cpiFlacInfo);
+	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiFlacInfo);
 }
 
 void __attribute__ ((visibility ("internal"))) FlacInfoDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextUnregisterMode (cpifaceSession, &cpiFlacInfo);
+	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiFlacInfo);
 }

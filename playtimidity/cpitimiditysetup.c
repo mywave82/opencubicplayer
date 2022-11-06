@@ -200,7 +200,7 @@ static int TimiditySetupIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession,
 			break;
 		case 't': case 'T':
 			TimiditySetupActive=1;
-			cpiTextSetMode (cpifaceSession, "TimSetup");
+			cpifaceSession->cpiTextSetMode (cpifaceSession, "TimSetup");
 			return 1;
 		case 'x': case 'X':
 			TimiditySetupActive=1;
@@ -237,7 +237,7 @@ static int TimiditySetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession,
 	{
 		case 't': case 'T':
 			TimiditySetupActive=!TimiditySetupActive;
-			cpiTextRecalc (cpifaceSession);
+			cpifaceSession->cpiTextRecalc (cpifaceSession);
 			break;
 
 		case KEY_ALT_K:
@@ -536,10 +536,10 @@ void __attribute__ ((visibility ("internal"))) cpiTimiditySetupInit (struct cpif
 	tc.reverb_predelay_factor = (float)TimiditySetupPreDelayFactor / 100.0f;
 	init_reverb (&tc);
 #endif
-	cpiTextRegisterMode (cpifaceSession, &cpiTimiditySetup);
+	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiTimiditySetup);
 }
 
 void __attribute__ ((visibility ("internal"))) cpiTimiditySetupDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextUnregisterMode (cpifaceSession, &cpiTimiditySetup);
+	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiTimiditySetup);
 }

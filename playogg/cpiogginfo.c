@@ -175,7 +175,7 @@ static int OggInfoIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 			{
 				OggInfoActive=1;
 			}
-			cpiTextSetMode (cpifaceSession, "ogginfo");
+			cpifaceSession->cpiTextSetMode (cpifaceSession, "ogginfo");
 			return 1;
 		case 'x': case 'X':
 			OggInfoActive=3;
@@ -197,7 +197,7 @@ static int OggInfoAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 			{
 				OggInfoActive=0;
 			}
-			cpiTextRecalc (cpifaceSession);
+			cpifaceSession->cpiTextRecalc (cpifaceSession);
 			break;
 
 		case KEY_ALT_K:
@@ -252,10 +252,10 @@ static struct cpitextmoderegstruct cpiOggInfo = {"ogginfo", OggInfoGetWin, OggIn
 
 void __attribute__ ((visibility ("internal"))) OggInfoInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextRegisterMode (cpifaceSession, &cpiOggInfo);
+	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiOggInfo);
 }
 
 void __attribute__ ((visibility ("internal"))) OggInfoDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextUnregisterMode (cpifaceSession, &cpiOggInfo);
+	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiOggInfo);
 }

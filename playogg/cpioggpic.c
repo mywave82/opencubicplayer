@@ -402,7 +402,7 @@ static int OggPicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 			{
 				OggPicActive=1;
 			}
-			cpiTextSetMode (cpifaceSession, "oggpic");
+			cpifaceSession->cpiTextSetMode (cpifaceSession, "oggpic");
 			return 1;
 		case 'x': case 'X':
 			OggPicActive=3;
@@ -471,7 +471,7 @@ static int OggPicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 			{
 				OggPicActive=0;
 			}
-			cpiTextRecalc (cpifaceSession);
+			cpifaceSession->cpiTextRecalc (cpifaceSession);
 			break;
 		default:
 			return 0;
@@ -539,12 +539,11 @@ static struct cpitextmoderegstruct cpiOggPic = {"oggpic", OggPicGetWin, OggPicSe
 
 void __attribute__ ((visibility ("internal"))) OggPicInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiTextRegisterMode (cpifaceSession, &cpiOggPic);
+	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiOggPic);
 }
-
 
 void __attribute__ ((visibility ("internal"))) OggPicDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	OggPicVisible = 0;
-	cpiTextUnregisterMode (cpifaceSession, &cpiOggPic);
+	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiOggPic);
 }
