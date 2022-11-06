@@ -1995,25 +1995,20 @@ static void cpiChangeMode(struct cpimoderegstruct *m)
 {
 	if (curmode)
 	{
-		if (curmode->Event)
-		{
-			curmode->Event (&cpifaceSessionAPI.Public, cpievClose);
-		}
+		curmode->Event (&cpifaceSessionAPI.Public, cpievClose);
 	}
 	curmode = m ? m : &cpiModeText;
 again:
-	if (m->Event)
+	if (!m->Event (&cpifaceSessionAPI.Public, cpievOpen))
 	{
-		if (!m->Event (&cpifaceSessionAPI.Public, cpievOpen))
+		fprintf (stderr, "cpimode[%s]->Event(cpievOpen) failed\n", m->handle);
+		if (curmode != &cpiModeText)
 		{
-			fprintf (stderr, "cpimode[%s]->Event(cpievOpen) failed\n", m->handle);
-			if (curmode != &cpiModeText)
-			{
-				curmode=&cpiModeText;
-				goto again;
-			}
+			curmode=&cpiModeText;
+			goto again;
 		}
 	}
+
 	curmode->SetMode();
 }
 
@@ -2033,9 +2028,10 @@ void cpiSetMode(const char *hand)
 
 void cpiRegisterMode(struct cpimoderegstruct *m)
 {
-	if (m->Event)
-		if (!m->Event (&cpifaceSessionAPI.Public, cpievInit))
-			return;
+	if (!m->Event (&cpifaceSessionAPI.Public, cpievInit))
+	{
+		return;
+	}
 	m->next=cpiModes;
 	cpiModes=m;
 }
@@ -2066,28 +2062,18 @@ void cpiRegisterDefMode(struct cpimoderegstruct *m)
 	cpiDefModes=m;
 }
 
-static void cpiVerifyDefModes(void)
+static void cpiVerifyDefModes (void)
 {
-	struct cpimoderegstruct *p;
+	struct cpimoderegstruct **iter, **next;
 
-	while (cpiDefModes)
+	for (iter = &cpiDefModes; iter && *iter; iter = next)
 	{
-		if (cpiDefModes->Event&&!cpiDefModes->Event (&cpifaceSessionAPI.Public, cpievInitAll))
-			cpiDefModes=cpiDefModes->nextdef;
-		else
-			break;
-	}
-	p = cpiDefModes;
-	while (p)
-	{
-		if (p->nextdef)
+		next = &(*iter)->nextdef;
+
+		if (!(*iter)->Event (0, cpievInitAll)) /* no session is available yet */
 		{
-			if (p->nextdef->Event&&!p->nextdef->Event (&cpifaceSessionAPI.Public, cpievInitAll))
-				p->nextdef=p->nextdef->nextdef;
-			else
-				p=p->nextdef;
-		} else
-			break;
+			*iter = *next; /* remove failed item from the linked list */
+		}
 	}
 }
 
@@ -2095,9 +2081,10 @@ static void cpiInitAllModes(void)
 {
 	struct cpimoderegstruct *p;
 
-	for (p=cpiModes;p;p=p->next)
-		if (p->Event)
-			p->Event (&cpifaceSessionAPI.Public, cpievInit);
+	for (p=cpiModes; p; p=p->next)
+	{
+		p->Event (&cpifaceSessionAPI.Public, cpievInit);
+	}
 }
 
 void cpiUnregisterDefMode(struct cpimoderegstruct *m)
@@ -2161,7 +2148,7 @@ static int plmpLateInit(void)
 
 	cpiRegisterDefMode(&cpiModeText);
 
-	cpiVerifyDefModes();
+	cpiVerifyDefModes ();
 
 	cpiInitAllModes();
 
@@ -2183,9 +2170,8 @@ static void plmpPreClose(void)
 
 	while (cpiDefModes)
 	{
-		if (cpiDefModes->Event)
-			cpiDefModes->Event (&cpifaceSessionAPI.Public, cpievDoneAll);
-		cpiDefModes=cpiDefModes->nextdef;
+		cpiDefModes->Event (&cpifaceSessionAPI.Public, cpievDoneAll);
+		cpiDefModes = cpiDefModes->nextdef;
 	}
 
 	if(plOpenCPPict)
@@ -2292,8 +2278,7 @@ static void plmpCloseFile()
 	curplayer->CloseFile (&cpifaceSessionAPI.Public);
 	while (cpiModes)
 	{
-		if (cpiModes->Event)
-			cpiModes->Event (&cpifaceSessionAPI.Public, cpievDone);
+		cpiModes->Event (&cpifaceSessionAPI.Public, cpievDone);
 		cpiModes=cpiModes->next;
 	}
 }
@@ -2304,7 +2289,7 @@ static void plmpOpenScreen()
 
 	if (!curmode)
 		curmode=&cpiModeText;
-	if (curmode->Event&&!curmode->Event (&cpifaceSessionAPI.Public, cpievOpen))
+	if (!curmode->Event (&cpifaceSessionAPI.Public, cpievOpen))
 		curmode=&cpiModeText;
 	curmode->SetMode();
 }
@@ -2312,14 +2297,7 @@ static void plmpOpenScreen()
 
 static void plmpCloseScreen()
 {
-	if (curmode->Event)
-		curmode->Event (&cpifaceSessionAPI.Public, cpievClose);
-/*
-  cpimoderegstruct *mod;
-  for (mod=cpiModes; mod; mod=mod->next)
-    if (mod->Event)
-      mod->Event(cpievClose);
-*/
+	curmode->Event (&cpifaceSessionAPI.Public, cpievClose);
 }
 
 static int cpiChanProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
@@ -2454,7 +2432,9 @@ static interfaceReturnEnum plmpDrawScreen(void)
 	}
 
 	for (mod=cpiModes; mod; mod=mod->next)
+	{
 		mod->Event (&cpifaceSessionAPI.Public, cpievKeepalive);
+	}
 
 	if (plEscTick && (clock_ms() > (time_t)(plEscTick+2000) ) ) /* 2000 ms */
 		plEscTick = 0;
