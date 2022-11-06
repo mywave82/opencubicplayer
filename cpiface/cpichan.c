@@ -201,12 +201,6 @@ static int ChanAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 
 static int ChanEvent(struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
-	switch (ev)
-	{
-		case cpievInitAll:
-			plChannelType=cfGetProfileInt2(cfScreenSec, "screen", "channeltype", 3, 10)&3;
-			return 0;
-	}
 	return 1;
 }
 
@@ -214,13 +208,9 @@ static struct cpitextmoderegstruct cpiTModeChan = {"chan", ChanGetWin, ChanSetWi
 
 void __attribute__ ((visibility ("internal"))) cpiChanInit (void)
 {
-	cpiTextRegisterDefMode(&cpiTModeChan);
+	plChannelType = cfGetProfileInt2(cfScreenSec, "screen", "channeltype", 3, 10)&3;
 }
 
-void __attribute__ ((visibility ("internal"))) cpiChanDone (void)
-{
-	cpiTextUnregisterDefMode(&cpiTModeChan);
-}
 
 void plUseChannels (struct cpifaceSessionAPI_t *cpifaceSession, void (*Display)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiChanWidth width, int i, int compoMode))
 {

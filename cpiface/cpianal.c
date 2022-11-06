@@ -293,19 +293,11 @@ static int AnalInit(void)
 	return 1;
 }
 
-static void AnalClose(void)
-{
-}
-
 static int AnalCan (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if ((!cpifaceSession->GetMasterSample) && (!cpifaceSession->GetLChanSample))
 		return 0;
 	return 1;
-}
-
-static void AnalSetMode(void)
-{
 }
 
 static int AnalEvent(struct cpifaceSessionAPI_t *cpifaceSession, int ev)
@@ -316,12 +308,6 @@ static int AnalEvent(struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 			return AnalCan(cpifaceSession);
 		case cpievInitAll:
 			return AnalInit();
-		case cpievDoneAll:
-			AnalClose();
-			return 1;
-		case cpievSetMode:
-			AnalSetMode();
-			return 1;
 	}
 	return 1;
 }

@@ -372,10 +372,7 @@ static int InstEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
-		case cpievInitAll:
-			cpifaceSessionAPI.InstType = cfGetProfileInt2(cfScreenSec, "screen", "insttype", 3, 10) & 3;
-			return 0;
-		case cpievDone: case cpievDoneAll:
+		case cpievDone:
 			if(cpifaceSessionAPI.Inst.Done) cpifaceSessionAPI.Inst.Done (cpifaceSession);
 				return 0;
 	}
@@ -386,12 +383,7 @@ static struct cpitextmoderegstruct cpiTModeInst = {"inst", InstGetWin, InstSetWi
 
 void __attribute__ ((visibility ("internal"))) cpiInstInit (void)
 {
-	cpiTextRegisterDefMode(&cpiTModeInst);
-}
-
-void __attribute__ ((visibility ("internal"))) cpiInstDone (void)
-{
-	cpiTextUnregisterDefMode(&cpiTModeInst);
+	cpifaceSessionAPI.InstType = cfGetProfileInt2(cfScreenSec, "screen", "insttype", 3, 10) & 3;
 }
 
 void plUseInstruments (struct cpifaceSessionAPI_t *cpifaceSession, struct insdisplaystruct *x)

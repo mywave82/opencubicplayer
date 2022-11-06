@@ -836,9 +836,6 @@ static int trkEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
 	switch (ev)
 	{
-		case cpievInitAll:
-			plTrackActive=cfGetProfileBool2(cfScreenSec, "screen", "pattern", 1, 1);
-			return 0;
 		case cpievInit:
 			plPatBuf=calloc(sizeof(uint16_t), (plPatBufH/*don't ask where we get these from */)*CONSOLE_MAX_X);
 			if (!plPatBuf)
@@ -898,10 +895,6 @@ void cpiTrkSetup2 (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpit
 
 void __attribute__ ((visibility ("internal"))) cpiTrackInit (void)
 {
-	cpiTextRegisterDefMode(&cpiTModeTrack);
+	plTrackActive=cfGetProfileBool2(cfScreenSec, "screen", "pattern", 1, 1);
 }
 
-void __attribute__ ((visibility ("internal"))) cpiTrackDone (void)
-{
-	cpiTextUnregisterDefMode(&cpiTModeTrack);
-}

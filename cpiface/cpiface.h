@@ -176,7 +176,7 @@ enum
 {
   cpievOpen, cpievClose,
   cpievInit, cpievDone,       /* used to test if you can be added to Mode list (called on every song) */
-  cpievInitAll, cpievDoneAll, /* used to test if you can be added to DefMode list (called by cpiRegisterDefMode) */
+  cpievInitAll, cpievDoneAll, /* called during initialization to verify that the mode is globally working (once per runtime) */
   cpievGetFocus, cpievLoseFocus, cpievSetMode,
   cpievKeepalive=42
 };

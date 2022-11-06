@@ -48,7 +48,7 @@ static unsigned int LastWidth, LastHeight;
 
 void cpiTextRegisterMode (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmoderegstruct *mode)
 {
-	if (mode->Event&&!mode->Event (cpifaceSession, cpievInit))
+	if (!mode->Event (cpifaceSession, cpievInit))
 		return;
 	mode->next=cpiTextModes;
 	cpiTextModes=mode;
@@ -56,12 +56,13 @@ void cpiTextRegisterMode (struct cpifaceSessionAPI_t *cpifaceSession, struct cpi
 
 void cpiTextUnregisterMode (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmoderegstruct *m)
 {
-	struct cpitextmoderegstruct **prev;
-	for (prev = &cpiTextModes; *prev; *prev = (*prev)->next)
+	struct cpitextmoderegstruct **iter;
+
+	for (iter = &cpiTextModes; *iter; *iter = (*iter)->nextdef)
 	{
-		if (*prev == m)
+		if (*iter == m)
 		{
-			*prev = m->next;
+			*iter = m->next;
 			return;
 		}
 	}
@@ -75,37 +76,28 @@ void cpiTextRegisterDefMode(struct cpitextmoderegstruct *mode)
 
 static void cpiTextVerifyDefModes (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	struct cpitextmoderegstruct *p;
+	struct cpitextmoderegstruct **iter, **next;
 
-	while (cpiTextDefModes)
+	for (iter = &cpiTextDefModes; iter && *iter; iter = next)
 	{
-		if (cpiTextDefModes->Event&&!cpiTextDefModes->Event(cpifaceSession, cpievInitAll))
-			cpiTextDefModes=cpiTextDefModes->nextdef;
-		else
-			break;
-	}
-	p = cpiTextDefModes;
-	while (p)
-	{
-		if (p->nextdef)
+		next = &(*iter)->nextdef;
+
+		if (!(*iter)->Event(cpifaceSession, cpievInitAll))
 		{
-			if (p->nextdef->Event&&!p->nextdef->Event (cpifaceSession, cpievInitAll))
-				p->nextdef=p->nextdef->nextdef;
-			else
-				p=p->nextdef;
-		} else
-			break;
+			*iter = *next; /* remove failed item from the linked list */
+		}
 	}
 }
 
 void cpiTextUnregisterDefMode(struct cpitextmoderegstruct *m)
 {
-	struct cpitextmoderegstruct **prev;
-	for (prev = &cpiTextDefModes; *prev; *prev = (*prev)->nextdef)
+	struct cpitextmoderegstruct **iter;
+
+	for (iter = &cpiTextDefModes; *iter; *iter = (*iter)->nextdef)
 	{
-		if (*prev == m)
+		if (*iter == m)
 		{
-			*prev = m->nextdef;
+			*iter = m->nextdef;
 			return;
 		}
 	}
@@ -115,8 +107,10 @@ static void cpiSetFocus (struct cpifaceSessionAPI_t *cpifaceSession, const char 
 {
 	struct cpitextmoderegstruct *mode;
 
-	if (cpiFocus&&cpiFocus->Event)
+	if (cpiFocus)
+	{
 		cpiFocus->Event (cpifaceSession, cpievLoseFocus);
+	}
 	cpiFocus=0;
 	if (!name)
 	{
@@ -127,7 +121,7 @@ static void cpiSetFocus (struct cpifaceSessionAPI_t *cpifaceSession, const char 
 		if (!strcasecmp(name, mode->handle))
 			break;
 	*cpiFocusHandle=0;
-	if (!mode||(mode->Event&&!mode->Event (cpifaceSession, cpievGetFocus)))
+	if (!mode||(!mode->Event (cpifaceSession, cpievGetFocus)))
 		return;
 	cpiFocus=mode;
 	mode->active=1;
@@ -447,8 +441,9 @@ static void txtSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 	plSetTextMode(fsScrType);
 	fsScrType=plScrType;
 	for (mode=cpiTextActModes; mode; mode=mode->nextact)
-		if (mode->Event)
-			mode->Event (cpifaceSession, cpievSetMode);
+	{
+		mode->Event (cpifaceSession, cpievSetMode);
+	}
 	cpiTextRecalc (&cpifaceSessionAPI.Public);
 }
 
@@ -571,7 +566,9 @@ static int txtInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cpitextmoderegstruct *mode;
 	for (mode=cpiTextDefModes; mode; mode=mode->nextdef)
+	{
 		cpiTextRegisterMode (cpifaceSession, mode);
+	}
 	cpiSetFocus (cpifaceSession, cpiFocusHandle);
 	return 1;
 }
@@ -580,8 +577,9 @@ static void txtClose (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cpitextmoderegstruct *mode;
 	for (mode=cpiTextModes; mode; mode=mode->next)
-		if (mode->Event)
-			 mode->Event (cpifaceSession, cpievDone);
+	{
+		 mode->Event (cpifaceSession, cpievDone);
+	}
 	cpiTextModes=0;
 }
 
@@ -594,9 +592,11 @@ static int txtInitAll (struct cpifaceSessionAPI_t *cpifaceSession)
 static void txtCloseAll (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cpitextmoderegstruct *mode;
+
 	for (mode=cpiTextDefModes; mode; mode=mode->nextdef)
-		if (mode->Event)
-			mode->Event (cpifaceSession, cpievDoneAll);
+	{
+		mode->Event (cpifaceSession, cpievDoneAll);
+	}
 	cpiTextDefModes=0;
 }
 
@@ -608,7 +608,7 @@ static int txtOpenMode (struct cpifaceSessionAPI_t *cpifaceSession)
 	cpiTextActModes=0;
 	for (mode=cpiTextModes; mode; mode=mode->next)
 	{
-		if (mode->Event&&!mode->Event (cpifaceSession, cpievOpen))
+		if (!mode->Event (cpifaceSession, cpievOpen))
 			continue;
 		mode->nextact=cpiTextActModes;
 		cpiTextActModes=mode;
@@ -624,8 +624,9 @@ static void txtCloseMode (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	cpiSetFocus (cpifaceSession, 0);
 	for (mode=cpiTextActModes; mode; mode=mode->nextact)
-		if (mode->Event)
-			mode->Event (cpifaceSession, cpievClose);
+	{
+		mode->Event (cpifaceSession, cpievClose);
+	}
 	cpiTextActModes=0;
 	modeactive=0;
 }

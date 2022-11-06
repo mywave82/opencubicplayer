@@ -2141,15 +2141,12 @@ static int plmpInit (void)
 static void plmpClose (void)
 {
 	cpiAnalDone ();
-	cpiChanDone ();
 	cpiGraphDone ();
-	cpiInstDone ();
 	cpiWurfel2Done ();
 	cpiLinksDone ();
 	cpiMVolDone ();
 	cpiPhaseDone ();
 	cpiScopeDone ();
-	cpiTrackDone ();
 	cpiVolCtrlDone ();
 }
 
