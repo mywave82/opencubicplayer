@@ -67,7 +67,7 @@ struct cpifaceSessionAPI_t
 	const struct mcpAPI_t           *mcpAPI;
 	const struct drawHelperAPI_t    *drawHelperAPI;
 	const struct configAPI_t        *configAPI;
-	const struct consoleFunctions_t *conFunc;
+	const struct console_t          *console;
 
 	char utf8_8_dot_3  [12*4+1]; /* UTF-8 ready, filled in by cpiface */
 	char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready, filled in by cpiface */

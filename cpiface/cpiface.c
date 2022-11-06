@@ -2218,7 +2218,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.mcpDevAPI = mcpDevAPI;
 	cpifaceSessionAPI.Public.drawHelperAPI = &drawHelperAPI;
 	cpifaceSessionAPI.Public.configAPI = &configAPI;
-	cpifaceSessionAPI.Public.conFunc = &conFunc;
+	cpifaceSessionAPI.Public.console = &Console;
 
 	dirdbGetName_internalstr (fi->dirdb_ref, &filename);
 	utf8_XdotY_name ( 8, 3, cpifaceSessionAPI.Public.utf8_8_dot_3 , filename);
@@ -2475,9 +2475,9 @@ static interfaceReturnEnum plmpDrawScreen(void)
 		return interfaceReturnContinue;
 	}
 
-	while (conFunc.KeyboardHit())
+	while (Console.KeyboardHit())
 	{
-		uint16_t key = conFunc.KeyboardGetChar();
+		uint16_t key = Console.KeyboardGetChar();
 
 		if (plEscTick)
 		{

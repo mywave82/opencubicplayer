@@ -72,7 +72,7 @@ static int OggInfoGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpi
 		return 0;
 	}
 #endif
-	if ((OggInfoActive==3)&&(plScrWidth<132))
+	if ((OggInfoActive==3) && (cpifaceSession->console->TextWidth < 132))
 	{
 		OggInfoActive=0;
 	}
@@ -118,7 +118,7 @@ static void OggInfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		OggInfoScroll--;
 	}
 
-	displaystr(OggInfoFirstLine + (line++), OggInfoFirstColumn, focus?COLTITLE1H:COLTITLE1, "Ogg tag view - page up/dn to scroll", OggInfoWidth);
+	cpifaceSession->console->Driver->DisplayStr(OggInfoFirstLine + (line++), OggInfoFirstColumn, focus?COLTITLE1H:COLTITLE1, "Ogg tag view - page up/dn to scroll", OggInfoWidth);
 
 	line -= OggInfoScroll;
 
@@ -126,11 +126,11 @@ static void OggInfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 	{
 		if (OggInfoHeight > 2)
 		{
-			displayvoid (OggInfoFirstLine + line, OggInfoFirstColumn, OggInfoWidth);
+			cpifaceSession->console->Driver->DisplayVoid (OggInfoFirstLine + line, OggInfoFirstColumn, OggInfoWidth);
 			line++;
 		}
 
-		displaystr (OggInfoFirstLine + line, OggInfoFirstColumn, 0x07, "     No information to display", OggInfoWidth);
+		cpifaceSession->console->Driver->DisplayStr (OggInfoFirstLine + line, OggInfoFirstColumn, 0x07, "     No information to display", OggInfoWidth);
 		line++;
 	} else {
 		int i, j;
@@ -143,12 +143,12 @@ static void OggInfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 				{
 					if (j == 0)
 					{
-						displaystr  (OggInfoFirstLine + line, OggInfoFirstColumn,                                   0x07, ogg_comments[i]->title,                      strlen (ogg_comments[i]->title));
-						displaystr  (OggInfoFirstLine + line, OggInfoFirstColumn + strlen (ogg_comments[i]->title), 0x07,                    ":", OggInfoWidestTitle - strlen (ogg_comments[i]->title) + 2);
+						cpifaceSession->console->Driver->DisplayStr  (OggInfoFirstLine + line, OggInfoFirstColumn,                                   0x07, ogg_comments[i]->title,                      strlen (ogg_comments[i]->title));
+						cpifaceSession->console->Driver->DisplayStr  (OggInfoFirstLine + line, OggInfoFirstColumn + strlen (ogg_comments[i]->title), 0x07,                    ":", OggInfoWidestTitle - strlen (ogg_comments[i]->title) + 2);
 					} else {
-						displayvoid (OggInfoFirstLine + line, OggInfoFirstColumn, OggInfoWidestTitle + 2);
+						cpifaceSession->console->Driver->DisplayVoid (OggInfoFirstLine + line, OggInfoFirstColumn, OggInfoWidestTitle + 2);
 					}
-					displaystr_utf8 (OggInfoFirstLine + line, OggInfoFirstColumn + OggInfoWidestTitle + 2, 0x09, ogg_comments[i]->value[j], OggInfoWidth - OggInfoWidestTitle - 2);
+					cpifaceSession->console->Driver->DisplayStr_utf8 (OggInfoFirstLine + line, OggInfoFirstColumn + OggInfoWidestTitle + 2, 0x09, ogg_comments[i]->value[j], OggInfoWidth - OggInfoWidestTitle - 2);
 				}
 				line++;
 			}
@@ -157,7 +157,7 @@ static void OggInfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 
 	while (line < OggInfoHeight)
 	{
-		displayvoid (OggInfoFirstLine + line, OggInfoFirstColumn, OggInfoWidth);
+		cpifaceSession->console->Driver->DisplayVoid (OggInfoFirstLine + line, OggInfoFirstColumn, OggInfoWidth);
 		line++;
 	}
 }
@@ -193,7 +193,7 @@ static int OggInfoAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 	{
 		case 'i': case 'I':
 			OggInfoActive=(OggInfoActive+1)%4;
-			if ((OggInfoActive==3)&&(plScrWidth<132))
+			if ((OggInfoActive==3) && (cpifaceSession->console->TextWidth < 132))
 			{
 				OggInfoActive=0;
 			}

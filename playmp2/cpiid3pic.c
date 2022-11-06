@@ -275,7 +275,7 @@ static void ID3PicSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, 
 
 	if (ID3PicHandle)
 	{
-		plScrTextGUIOverlayRemove (ID3PicHandle);
+		cpifaceSession->console->Driver->TextOverlayRemove (ID3PicHandle);
 		ID3PicHandle = 0;
 	}
 	ID3PicFirstLine=ypos;
@@ -293,7 +293,7 @@ static void ID3PicSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, 
 
 	if (ID3Pictures[ID3PicCurrentIndex].scaled_data_bgra)
 	{
-		ID3PicHandle = plScrTextGUIOverlayAddBGRA
+		ID3PicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 		(
 			ID3PicFontSizeX * ID3PicFirstColumn,
 			ID3PicFontSizeY * (ID3PicFirstLine + 1),
@@ -303,7 +303,7 @@ static void ID3PicSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, 
 			ID3Pictures[ID3PicCurrentIndex].scaled_data_bgra
 		);
 	} else {
-		ID3PicHandle = plScrTextGUIOverlayAddBGRA
+		ID3PicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 		(
 			ID3PicFontSizeX * ID3PicFirstColumn,
 			ID3PicFontSizeY * (ID3PicFirstLine + 1),
@@ -320,11 +320,11 @@ static int ID3PicGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpit
 	ID3PicVisible = 0;
 	if (ID3PicHandle)
 	{
-		plScrTextGUIOverlayRemove (ID3PicHandle);
+		cpifaceSession->console->Driver->TextOverlayRemove (ID3PicHandle);
 		ID3PicHandle = 0;
 	}
 
-	if ((ID3PicActive==3)&&(plScrWidth<132))
+	if ((ID3PicActive==3) && (cpifaceSession->console->TextWidth < 132))
 		ID3PicActive=2;
 
 	if ((ID3PicMaxHeight == 0) || (ID3PicMaxWidth == 0))
@@ -332,7 +332,7 @@ static int ID3PicGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpit
 		return 0;
 	}
 
-	switch (plCurrentFont)
+	switch (cpifaceSession->console->CurrentFont)
 	{
 		case _8x8:
 			q->hgtmax = 1 + (ID3PicMaxHeight +  7) /  8;
@@ -376,12 +376,12 @@ static void ID3PicDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 	{
 		len = ID3PicWidth - 9;
 	}
-	cpifaceSession->conFunc->DisplayPrintf (ID3PicFirstLine, ID3PicFirstColumn, focus?0x09:0x01, ID3PicWidth, "ID3 PIC: %.*o%.*s%0.*o (tab to cycle)", focus?0x0a:0x02, len, ID3_APIC_Titles[ID3PicCurrentIndex], focus?0x09:0x00);
+	cpifaceSession->console->DisplayPrintf (ID3PicFirstLine, ID3PicFirstColumn, focus?0x09:0x01, ID3PicWidth, "ID3 PIC: %.*o%.*s%0.*o (tab to cycle)", focus?0x0a:0x02, len, ID3_APIC_Titles[ID3PicCurrentIndex], focus?0x09:0x00);
 }
 
 static int ID3PicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
-	if (!plScrTextGUIOverlay)
+	if (!cpifaceSession->console->TextGUIOverlay)
 	{
 		return 0;
 	}
@@ -396,7 +396,7 @@ static int ID3PicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 			if (!ID3PicActive)
 			{
 				ID3PicActive=(ID3PicActive+1)%4;
-				if ((ID3PicActive==3)&&(plScrWidth<132))
+				if ((ID3PicActive==3) && (cpifaceSession->console->TextWidth < 132))
 				{
 					ID3PicActive=2;
 				}
@@ -417,7 +417,7 @@ static int ID3PicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 {
 	int i;
 
-	if (!plScrTextGUIOverlay)
+	if (!cpifaceSession->console->TextGUIOverlay)
 	{
 		return 0;
 	}
@@ -441,13 +441,13 @@ static int ID3PicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 
 			if (ID3PicHandle)
 			{
-				plScrTextGUIOverlayRemove (ID3PicHandle);
+				cpifaceSession->console->Driver->TextOverlayRemove (ID3PicHandle);
 				ID3PicHandle = 0;
 			}
 
 			if (ID3Pictures[ID3PicCurrentIndex].scaled_data_bgra)
 			{
-				ID3PicHandle = plScrTextGUIOverlayAddBGRA
+				ID3PicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 				(
 					ID3PicFontSizeX * ID3PicFirstColumn,
 					ID3PicFontSizeY * (ID3PicFirstLine + 1),
@@ -457,7 +457,7 @@ static int ID3PicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 					ID3Pictures[ID3PicCurrentIndex].scaled_data_bgra
 				);
 			} else {
-				ID3PicHandle = plScrTextGUIOverlayAddBGRA
+				ID3PicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 				(
 					ID3PicFontSizeX * ID3PicFirstColumn,
 					ID3PicFontSizeY * (ID3PicFirstLine + 1),
@@ -471,7 +471,7 @@ static int ID3PicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 			break;
 		case 'c': case 'C':
 			ID3PicActive=(ID3PicActive+1)%4;
-			if ((ID3PicActive==3)&&(plScrWidth<132))
+			if ((ID3PicActive==3) && (cpifaceSession->console->TextWidth < 132))
 			{
 				ID3PicActive=0;
 			}
@@ -490,7 +490,7 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 	switch (ev)
 	{
 		case cpievKeepalive:
-			if (plScrTextGUIOverlay)
+			if (cpifaceSession->console->TextGUIOverlay)
 			{
 				mpegGetID3(&ID3);
 				if (Refresh_ID3Pictures(ID3))
@@ -501,7 +501,7 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 			break;
 		case cpievInit:
 			ID3PicLastSerial = -1;
-			if (plScrTextGUIOverlay)
+			if (cpifaceSession->console->TextGUIOverlay)
 			{
 				mpegGetID3(&ID3);
 				Refresh_ID3Pictures(ID3);
@@ -511,16 +511,16 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 		case cpievClose:
 			if (ID3PicHandle)
 			{
-				plScrTextGUIOverlayRemove (ID3PicHandle);
+				cpifaceSession->console->Driver->TextOverlayRemove (ID3PicHandle);
 				ID3PicHandle = 0;
 			}
 			break;
 		case cpievOpen:
-			if (ID3PicVisible && (!ID3PicHandle) && plScrTextGUIOverlay)
+			if (ID3PicVisible && (!ID3PicHandle) && cpifaceSession->console->TextGUIOverlay)
 			{
 				if (ID3Pictures[ID3PicCurrentIndex].scaled_data_bgra)
 				{
-					ID3PicHandle = plScrTextGUIOverlayAddBGRA
+					ID3PicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 					(
 						ID3PicFontSizeX * ID3PicFirstColumn,
 						ID3PicFontSizeY * (ID3PicFirstLine + 1),
@@ -530,7 +530,7 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 						ID3Pictures[ID3PicCurrentIndex].scaled_data_bgra
 					);
 				} else {
-					ID3PicHandle = plScrTextGUIOverlayAddBGRA
+					ID3PicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 					(
 						ID3PicFontSizeX * ID3PicFirstColumn,
 						ID3PicFontSizeY * (ID3PicFirstLine + 1),
@@ -545,7 +545,7 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 		case cpievDone:
 			if (ID3PicHandle)
 			{
-				plScrTextGUIOverlayRemove (ID3PicHandle);
+				cpifaceSession->console->Driver->TextOverlayRemove (ID3PicHandle);
 				ID3PicHandle = 0;
 			}
 			Free_ID3Pictures ();

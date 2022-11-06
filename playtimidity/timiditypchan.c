@@ -46,18 +46,18 @@ static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 
 	timidityGetChanInfo(i, &ci);
 
-	cpifaceSession->conFunc->WriteString (buf, 0, tcold, " -- -- -. \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa   ", 36);
+	cpifaceSession->console->WriteString (buf, 0, tcold, " -- -- -. \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa   ", 36);
 
 	if (!ci.notenum)
 		return;
-	cpifaceSession->conFunc->WriteNum    (buf, 1, tcol, ci.program, 16, 2, 0);
-	cpifaceSession->conFunc->WriteNum    (buf, 4, tcol, ci.gvol, 16, 2, 0);
-	cpifaceSession->conFunc->WriteString (buf, 7, tcol, &"L123456MM9ABCDER"[ci.pan>>3], 1);
-	cpifaceSession->conFunc->WriteString (buf, 8, tcol, &" P"[ci.pedal], 1);
+	cpifaceSession->console->WriteNum    (buf, 1, tcol, ci.program, 16, 2, 0);
+	cpifaceSession->console->WriteNum    (buf, 4, tcol, ci.gvol, 16, 2, 0);
+	cpifaceSession->console->WriteString (buf, 7, tcol, &"L123456MM9ABCDER"[ci.pan>>3], 1);
+	cpifaceSession->console->WriteString (buf, 8, tcol, &" P"[ci.pedal], 1);
 	if (ci.notenum>6)
 		ci.notenum=6;
 	for (j=0; j<ci.notenum; j++)
-		cpifaceSession->conFunc->WriteString (buf, 10+4*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
+		cpifaceSession->console->WriteString (buf, 10+4*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
 }
 
 static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
@@ -74,18 +74,18 @@ static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 
 	timidityGetChanInfo(i, &ci);
 
-	cpifaceSession->conFunc->WriteString (buf, 0, tcold, "                  -- -. \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa ", 62);
+	cpifaceSession->console->WriteString (buf, 0, tcold, "                  -- -. \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa ", 62);
 
 	if (!ci.notenum)
 		return;
-	cpifaceSession->conFunc->WriteString (buf,  1, tcol, ci.instrument, 16);
-	cpifaceSession->conFunc->WriteNum    (buf, 18, tcol, ci.gvol, 16, 2, 0);
-	cpifaceSession->conFunc->WriteString (buf, 21, tcol, &"L123456MM9ABCDER"[ci.pan>>3], 1);
-	cpifaceSession->conFunc->WriteString (buf, 22, tcol, &" P"[ci.pedal], 1);
+	cpifaceSession->console->WriteString (buf,  1, tcol, ci.instrument, 16);
+	cpifaceSession->console->WriteNum    (buf, 18, tcol, ci.gvol, 16, 2, 0);
+	cpifaceSession->console->WriteString (buf, 21, tcol, &"L123456MM9ABCDER"[ci.pan>>3], 1);
+	cpifaceSession->console->WriteString (buf, 22, tcol, &" P"[ci.pedal], 1);
 	if (ci.notenum>9)
 		ci.notenum=9;
 	for (j=0; j<ci.notenum; j++)
-		cpifaceSession->conFunc->WriteString (buf, 24+4*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
+		cpifaceSession->console->WriteString (buf, 24+4*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
 }
 
 static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
@@ -102,19 +102,19 @@ static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 
 	timidityGetChanInfo(i, &ci);
 
-	cpifaceSession->conFunc->WriteString (buf, 0, tcold, "               \xfa  \xfa \xfa \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa", 76);
+	cpifaceSession->console->WriteString (buf, 0, tcold, "               \xfa  \xfa \xfa \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa", 76);
 
 	if (!ci.notenum)
 		return;
-	cpifaceSession->conFunc->WriteString (buf,  1, tcol, ci.instrument, 14);
-	cpifaceSession->conFunc->WriteNum    (buf, 16, tcol, ci.gvol, 16, 2, 0);
-	cpifaceSession->conFunc->WriteString (buf, 19, tcol, &"L123456MM9ABCDER"[ci.pan>>3], 1);
+	cpifaceSession->console->WriteString (buf,  1, tcol, ci.instrument, 14);
+	cpifaceSession->console->WriteNum    (buf, 16, tcol, ci.gvol, 16, 2, 0);
+	cpifaceSession->console->WriteString (buf, 19, tcol, &"L123456MM9ABCDER"[ci.pan>>3], 1);
 	if (ci.notenum>7)
 		ci.notenum=7;
 	for (j=0; j<ci.notenum; j++)
 	{
-		cpifaceSession->conFunc->WriteString (buf, 22+8*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
-		cpifaceSession->conFunc->WriteNum    (buf, 26+8*j, (ci.opt[j]&1)?tcold:0x08, ci.vol[j], 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 22+8*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
+		cpifaceSession->console->WriteNum    (buf, 26+8*j, (ci.opt[j]&1)?tcold:0x08, ci.vol[j], 16, 2, 0);
 	}
 }
 
@@ -132,7 +132,7 @@ static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 
 	timidityGetChanInfo(i, &ci);
 
-	cpifaceSession->conFunc->WriteString (buf, 0, tcold,
+	cpifaceSession->console->WriteString (buf, 0, tcold,
 			"                  \xfa  \xfa \xfa     \xfa  \xfa  \xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa"
 			"  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  "
 			"\xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  \xfa\xfa\xfa \xfa\xfa  ", 128);
@@ -140,20 +140,20 @@ static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 	if (!ci.notenum)
 		return;
 
-	cpifaceSession->conFunc->WriteString (buf,  1, tcol, ci.instrument, 16);
-	cpifaceSession->conFunc->WriteNum    (buf, 19, tcol, ci.gvol, 16, 2, 0);
-	cpifaceSession->conFunc->WriteString (buf, 22, tcol, &"L123456MM9ABCDER"[ci.pan>>3], 1);
-	cpifaceSession->conFunc->WriteString (buf, 24, tcol, (ci.pitch<0)?"-":(ci.pitch>0)?"+":" ", 1);
-	cpifaceSession->conFunc->WriteNum    (buf, 25, tcol, abs(ci.pitch), 16, 4, 0);
-	cpifaceSession->conFunc->WriteNum    (buf, 30, tcol, ci.reverb, 16, 2, 0);
-	cpifaceSession->conFunc->WriteNum    (buf, 33, tcol, ci.chorus, 16, 2, 0);
+	cpifaceSession->console->WriteString (buf,  1, tcol, ci.instrument, 16);
+	cpifaceSession->console->WriteNum    (buf, 19, tcol, ci.gvol, 16, 2, 0);
+	cpifaceSession->console->WriteString (buf, 22, tcol, &"L123456MM9ABCDER"[ci.pan>>3], 1);
+	cpifaceSession->console->WriteString (buf, 24, tcol, (ci.pitch<0)?"-":(ci.pitch>0)?"+":" ", 1);
+	cpifaceSession->console->WriteNum    (buf, 25, tcol, abs(ci.pitch), 16, 4, 0);
+	cpifaceSession->console->WriteNum    (buf, 30, tcol, ci.reverb, 16, 2, 0);
+	cpifaceSession->console->WriteNum    (buf, 33, tcol, ci.chorus, 16, 2, 0);
 
 	if (ci.notenum>11)
 		ci.notenum=11;
 	for (j=0; j<ci.notenum; j++)
 	{
-		cpifaceSession->conFunc->WriteString (buf, 38+8*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
-		cpifaceSession->conFunc->WriteNum    (buf, 42+8*j, (ci.opt[j]&1)?tcold:0x08, ci.vol[j], 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 38+8*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
+		cpifaceSession->console->WriteNum    (buf, 42+8*j, (ci.opt[j]&1)?tcold:0x08, ci.vol[j], 16, 2, 0);
 	}
 }
 
@@ -171,20 +171,20 @@ static void drawchannel44 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 
 	timidityGetChanInfo(i, &ci);
 
-	cpifaceSession->conFunc->WriteString (buf, 0, tcold, " -- -- -. \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa   ", 44);
+	cpifaceSession->console->WriteString (buf, 0, tcold, " -- -- -. \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa \xfa\xfa\xfa   ", 44);
 
 	if (!ci.notenum)
 		return;
 
-	cpifaceSession->conFunc->WriteNum    (buf, 1, tcol, ci.program, 16, 2, 0);
-	cpifaceSession->conFunc->WriteNum    (buf, 4, tcol, ci.gvol, 16, 2, 0);
-	cpifaceSession->conFunc->WriteString (buf, 7, tcol, &"L123456MM9ABCDER"[ci.pan>>3], 1);
-	cpifaceSession->conFunc->WriteString (buf, 8, tcol, &" P"[ci.pedal], 1);
+	cpifaceSession->console->WriteNum    (buf, 1, tcol, ci.program, 16, 2, 0);
+	cpifaceSession->console->WriteNum    (buf, 4, tcol, ci.gvol, 16, 2, 0);
+	cpifaceSession->console->WriteString (buf, 7, tcol, &"L123456MM9ABCDER"[ci.pan>>3], 1);
+	cpifaceSession->console->WriteString (buf, 8, tcol, &" P"[ci.pedal], 1);
 
 	if (ci.notenum>8)
 		ci.notenum=8;
 	for (j=0; j<ci.notenum; j++)
-		cpifaceSession->conFunc->WriteString (buf, 10+4*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
+		cpifaceSession->console->WriteString (buf, 10+4*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
 }
 
 static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiChanWidth width, int i, int compoMode)

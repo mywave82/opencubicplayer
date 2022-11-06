@@ -45,7 +45,6 @@
 #include "filesel/mdb.h"
 #include "filesel/modlist.h"
 #include "filesel/pfilesel.h"
-#include "stuff/framelock.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poutput.h"
 
@@ -1192,16 +1191,16 @@ static void alsaClose(void)
 
 #define MIN(a,b) (((a)<(b))?a:b)
 
-static int mlDrawBox (int esel, int first, const char texts[2][DEVICE_NAME_MAX+1], unsigned int *curpos)
+static int mlDrawBox (int esel, int first, const char texts[2][DEVICE_NAME_MAX+1], unsigned int *curpos, const struct DevInterfaceAPI_t *API)
 {
-	int mlTop=plScrHeight/2-3;
-	const int maxwidth = plScrWidth - 10;
+	const int mlTop      = API->console->TextHeight / 2 - 3;
+	const int maxwidth   = API->console->TextWidth - 10;
 	const int fixedwidth = 1 + 7 + 1 + 1;
 	int textwidth = MIN (DEVICE_NAME_MAX + 1, maxwidth - fixedwidth);
 	int mlWidth = textwidth + fixedwidth;
 	int i;
 
-	const int mlLeft = (plScrWidth - mlWidth) / 2;
+	const int mlLeft = (API->console->TextWidth - mlWidth) / 2;
 
 	static int scrolled[2];
 
@@ -1218,19 +1217,19 @@ static int mlDrawBox (int esel, int first, const char texts[2][DEVICE_NAME_MAX+1
 			scrolled[i] -= 8;
 	}
 
-	display_nprintf (mlTop,     mlLeft, 0x04, mlWidth, "\xda" "%*C\xc4" "\xbf", mlWidth - 2);
-	display_nprintf (mlTop + 1, mlLeft, 0x04, mlWidth, "\xb3" "%.11o" "%*C " "Please provide PCM and mixer strings" "%*C " "%.4o" "\xb3", (mlWidth - 36 - 2) / 2, (mlWidth - 36 - 2 + 1) / 2);
+	API->console->DisplayPrintf (mlTop,     mlLeft, 0x04, mlWidth, "\xda" "%*C\xc4" "\xbf", mlWidth - 2);
+	API->console->DisplayPrintf (mlTop + 1, mlLeft, 0x04, mlWidth, "\xb3" "%.11o" "%*C " "Please provide PCM and mixer strings" "%*C " "%.4o" "\xb3", (mlWidth - 36 - 2) / 2, (mlWidth - 36 - 2 + 1) / 2);
 
-	display_nprintf (mlTop + 2, mlLeft, 0x04, mlWidth, "\xb3" "%.7o" "PCM:   " "%*.*o" "%.*s" "%0.7o" "%*C " "%.4o" "\xb3",
+	API->console->DisplayPrintf (mlTop + 2, mlLeft, 0x04, mlWidth, "\xb3" "%.7o" "PCM:   " "%*.*o" "%.*s" "%0.7o" "%*C " "%.4o" "\xb3",
 		(esel==0)?7:0, (esel==0)?0:7, textwidth, texts[0] + scrolled[0], mlWidth - 2 - 7 - textwidth);
 
-	display_nprintf (mlTop + 3, mlLeft, 0x04, mlWidth, "\xb3" "%.7o" "Mixer: " "%*.*o" "%.*s" "%0.7o" "%*C " "%.4o" "\xb3",
+	API->console->DisplayPrintf (mlTop + 3, mlLeft, 0x04, mlWidth, "\xb3" "%.7o" "Mixer: " "%*.*o" "%.*s" "%0.7o" "%*C " "%.4o" "\xb3",
 		(esel==1)?7:0, (esel==1)?0:7, textwidth, texts[1] + scrolled[1], mlWidth - 2 - 7 - textwidth);
 
-	display_nprintf (mlTop + 4, mlLeft, 0x04, mlWidth, "\xb3" "%.11o" "%*C " "-- Finish with enter, abort with escape --" "%*C " "%.4o" "\xb3", (mlWidth - 42 - 2) / 2, (mlWidth - 42 - 2 + 1) / 2);
-	display_nprintf (mlTop + 5, mlLeft, 0x04, mlWidth, "\xc0" "%*C\xc4" "\xd9", mlWidth - 2);
+	API->console->DisplayPrintf (mlTop + 4, mlLeft, 0x04, mlWidth, "\xb3" "%.11o" "%*C " "-- Finish with enter, abort with escape --" "%*C " "%.4o" "\xb3", (mlWidth - 42 - 2) / 2, (mlWidth - 42 - 2 + 1) / 2);
+	API->console->DisplayPrintf (mlTop + 5, mlLeft, 0x04, mlWidth, "\xc0" "%*C\xc4" "\xd9", mlWidth - 2);
 
-	setcur(mlTop + 2 + esel, mlLeft + 1 + 7 + curpos[esel] - scrolled[esel]);
+	API->console->Driver->SetCursorPosition (mlTop + 2 + esel, mlLeft + 1 + 7 + curpos[esel] - scrolled[esel]);
 
 	return mlTop;
 }
@@ -1253,7 +1252,7 @@ static void alsaSetCustomRun (void **token, const struct DevInterfaceAPI_t *API)
 	cmdlen[0]=strlen(str[0]);
 	cmdlen[1]=strlen(str[1]);
 
-	setcurshape(1);
+	API->console->Driver->SetCursorShape (1);
 
 	while (1)
 	{
@@ -1261,12 +1260,14 @@ static void alsaSetCustomRun (void **token, const struct DevInterfaceAPI_t *API)
 
 		fsDraw ();
 
-		mlDrawBox (esel, first, str, curpos);
+		mlDrawBox (esel, first, str, curpos, API);
 		first = 0;
 
-		while (!conFunc.KeyboardHit())
-			framelock();
-		key=conFunc.KeyboardGetChar();
+		while (!API->console->KeyboardHit())
+		{
+			API->console->FrameLock();
+		}
+		key = API->console->KeyboardGetChar();
 
 		if ((key>=0x20)&&(key<=0x7f))
 		{
@@ -1293,7 +1294,7 @@ static void alsaSetCustomRun (void **token, const struct DevInterfaceAPI_t *API)
 		{
 			case KEY_EXIT:
 			case KEY_ESC:
-				setcurshape (0);
+				API->console->Driver->SetCursorShape (0);
 				return;
 			case KEY_LEFT:
 				if (curpos[esel])
@@ -1309,11 +1310,11 @@ static void alsaSetCustomRun (void **token, const struct DevInterfaceAPI_t *API)
 				break;
 			case KEY_UP:
 				esel = 0;
-				setcurshape (insmode[esel] ? 1 : 2);
+				API->console->Driver->SetCursorShape (insmode[esel] ? 1 : 2);
 				break;
 			case KEY_DOWN:
 				esel = 1;
-				setcurshape (insmode[esel] ? 1 : 2);
+				API->console->Driver->SetCursorShape  (insmode[esel] ? 1 : 2);
 				break;
 			case KEY_HOME:
 				curpos[esel] = 0;
@@ -1324,7 +1325,7 @@ static void alsaSetCustomRun (void **token, const struct DevInterfaceAPI_t *API)
 			case KEY_INSERT:
 				{
 					insmode[esel] = !insmode[esel];
-					setcurshape(insmode[esel]?1:2);
+					API->console->Driver->SetCursorShape (insmode[esel]?1:2);
 				}
 				break;
 			case KEY_DELETE:
@@ -1345,7 +1346,7 @@ static void alsaSetCustomRun (void **token, const struct DevInterfaceAPI_t *API)
 			case _KEY_ENTER:
 				strcpy (alsaCardName, str[0]);
 				strcpy (alsaMixerName, str[1]);
-				setcurshape (0);
+				API->console->Driver->SetCursorShape (0);
 				goto out;
 		}
 	}

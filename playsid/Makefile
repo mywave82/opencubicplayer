@@ -361,7 +361,6 @@ sidconfig.o: sidconfig.c \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
 	../stuff/err.h \
-	../stuff/framelock.h \
 	../stuff/imsrtns.h \
 	../stuff/utf-8.h \
 	../stuff/poutput.h \

@@ -278,9 +278,9 @@ static void medialibAddRun (void **token, const struct DevInterfaceAPI_t *API)
 	{
 		fsDraw();
 		mlAddDraw("Add files to medialib", medialibAddPath ? medialibAddPath : "out of memory", dsel);
-		while (conFunc.KeyboardHit())
+		while (API->console->KeyboardHit())
 		{
-			int key = conFunc.KeyboardGetChar();
+			int key = API->console->KeyboardGetChar();
 			switch (key)
 			{
 				case KEY_HOME:
@@ -375,6 +375,6 @@ static void medialibAddRun (void **token, const struct DevInterfaceAPI_t *API)
 					break;
 			}
 		}
-		framelock();
+		API->console->FrameLock();
 	}
 }

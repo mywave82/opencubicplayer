@@ -335,9 +335,9 @@ int EditStringUTF8z (unsigned int y, unsigned int x, unsigned int w, int l, char
 	}
 	framelock();
 
-	while (conFunc.KeyboardHit())
+	while (Console.KeyboardHit())
 	{
-		uint16_t key = conFunc.KeyboardGetChar ();
+		uint16_t key = Console.KeyboardGetChar ();
 		if ((key>=0x20)&&(key<=0xFF))
 		{
 			uint32_t codepoint;
@@ -570,9 +570,9 @@ int EditStringUTF8(unsigned int y, unsigned int x, unsigned int w, char **s)
 	}
 	framelock();
 
-	while (conFunc.KeyboardHit())
+	while (Console.KeyboardHit())
 	{
-		uint16_t key = conFunc.KeyboardGetChar();
+		uint16_t key = Console.KeyboardGetChar();
 		if ((key>=0x20)&&(key<=0xFF))
 		{
 			uint32_t codepoint;

@@ -14,6 +14,8 @@ struct moduleinfostruct;
 struct DevInterfaceAPI_t
 {
 	struct configAPI_t *configAPI;
+	struct console_t   *console;
+
 	void (*KeyHelp) (uint16_t key, const char *shorthelp); /* Called on ALT-K to issue help about each keyboard shortcut */
 	void (*KeyHelpClear) (void); /* Clears the current keyboard shortcut list, only used by keyboard/display loops */
 	int  (*KeyHelpDisplay) (void); /* Draws the keyboard shortcut list and polls keyboard. Call for each draw-iteration until it returns zero */

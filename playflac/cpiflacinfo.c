@@ -72,7 +72,7 @@ static int FlacInfoGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cp
 		return 0;
 	}
 #endif
-	if ((FlacInfoActive==3)&&(plScrWidth<132))
+	if ((FlacInfoActive==3) && (cpifaceSession->console->TextWidth < 132))
 	{
 		FlacInfoActive=0;
 	}
@@ -124,7 +124,7 @@ static void FlacInfoDraw(struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		FlacInfoScroll--;
 	}
 
-	displaystr(FlacInfoFirstLine + (line++), FlacInfoFirstColumn, focus?COLTITLE1H:COLTITLE1, "Flac tag view - page up/dn to scroll", FlacInfoWidth);
+	cpifaceSession->console->Driver->DisplayStr(FlacInfoFirstLine + (line++), FlacInfoFirstColumn, focus?COLTITLE1H:COLTITLE1, "Flac tag view - page up/dn to scroll", FlacInfoWidth);
 
 	line -= FlacInfoScroll;
 
@@ -132,11 +132,11 @@ static void FlacInfoDraw(struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 	{
 		if (FlacInfoHeight > 2)
 		{
-			displayvoid (FlacInfoFirstLine + line, FlacInfoFirstColumn, FlacInfoWidth);
+			cpifaceSession->console->Driver->DisplayVoid (FlacInfoFirstLine + line, FlacInfoFirstColumn, FlacInfoWidth);
 			line++;
 		}
 
-		displaystr (FlacInfoFirstLine + line, FlacInfoFirstColumn, 0x07, "     No information to display", FlacInfoWidth);
+		cpifaceSession->console->Driver->DisplayStr (FlacInfoFirstLine + line, FlacInfoFirstColumn, 0x07, "     No information to display", FlacInfoWidth);
 		line++;
 	} else {
 		int i, j;
@@ -149,12 +149,12 @@ static void FlacInfoDraw(struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 				{
 					if (j == 0)
 					{
-						displaystr  (FlacInfoFirstLine + line, FlacInfoFirstColumn,                                   0x07, flac_comments[i]->title,                      strlen (flac_comments[i]->title));
-						displaystr  (FlacInfoFirstLine + line, FlacInfoFirstColumn + strlen (flac_comments[i]->title), 0x07,                    ":", FlacInfoWidestTitle - strlen (flac_comments[i]->title) + 2);
+						cpifaceSession->console->Driver->DisplayStr  (FlacInfoFirstLine + line, FlacInfoFirstColumn,                                   0x07, flac_comments[i]->title,                      strlen (flac_comments[i]->title));
+						cpifaceSession->console->Driver->DisplayStr  (FlacInfoFirstLine + line, FlacInfoFirstColumn + strlen (flac_comments[i]->title), 0x07,                    ":", FlacInfoWidestTitle - strlen (flac_comments[i]->title) + 2);
 					} else {
-						displayvoid (FlacInfoFirstLine + line, FlacInfoFirstColumn, FlacInfoWidestTitle + 2);
+						cpifaceSession->console->Driver->DisplayVoid (FlacInfoFirstLine + line, FlacInfoFirstColumn, FlacInfoWidestTitle + 2);
 					}
-					displaystr_utf8 (FlacInfoFirstLine + line, FlacInfoFirstColumn + FlacInfoWidestTitle + 2, 0x09, flac_comments[i]->value[j], FlacInfoWidth - FlacInfoWidestTitle - 2);
+					cpifaceSession->console->Driver->DisplayStr_utf8 (FlacInfoFirstLine + line, FlacInfoFirstColumn + FlacInfoWidestTitle + 2, 0x09, flac_comments[i]->value[j], FlacInfoWidth - FlacInfoWidestTitle - 2);
 				}
 				line++;
 			}
@@ -163,7 +163,7 @@ static void FlacInfoDraw(struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 
 	while (line < FlacInfoHeight)
 	{
-		displayvoid (FlacInfoFirstLine + line, FlacInfoFirstColumn, FlacInfoWidth);
+		cpifaceSession->console->Driver->DisplayVoid (FlacInfoFirstLine + line, FlacInfoFirstColumn, FlacInfoWidth);
 		line++;
 	}
 
@@ -201,7 +201,7 @@ static int FlacInfoAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 	{
 		case 'i': case 'I':
 			FlacInfoActive=(FlacInfoActive+1)%4;
-			if ((FlacInfoActive==3)&&(plScrWidth<132))
+			if ((FlacInfoActive==3)&& (cpifaceSession->console->TextWidth < 132))
 			{
 				FlacInfoActive=0;
 			}

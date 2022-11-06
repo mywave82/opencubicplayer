@@ -351,7 +351,7 @@ static void console_done(void)
 		console_clean();
 		console_clean=NULL;
 	}
-	conDriver = &dummyConsoleDriver;
+	Console.Driver = &dummyConsoleDriver;
 }
 
 DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "poutput", .desc = "OpenCP Output Routines (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 12, .Init = console_init, .Close = console_done};

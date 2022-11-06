@@ -119,7 +119,7 @@ static void SidInfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 	LineBuffer[SidInfoWidth-1] = ' ';
 	LineBuffer[SidInfoWidth] = 0;
 
-	displaystr(SidInfoFirstLine + (line++), 0, focus?COLTITLE1H:COLTITLE1, "libsidplayfp info view - page up/dn to scroll", SidInfoWidth);
+	cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + (line++), 0, focus?COLTITLE1H:COLTITLE1, "libsidplayfp info view - page up/dn to scroll", SidInfoWidth);
 
 	LineBuffer[1] = '\xda';
 	LineBuffer[SidInfoWidth-2] = '\xbf';
@@ -128,7 +128,7 @@ static void SidInfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
 	}
 	line++;
 
@@ -137,45 +137,45 @@ static void SidInfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line,  0, 0x07, " \xb3  ", 4);
-		displaystr(SidInfoFirstLine + line,  4, 0x03, "OpenCubicPlayer ", 16);
-		displaystr(SidInfoFirstLine + line, 20, 0x07,                 "+ ", 2);
-		displaystr(SidInfoFirstLine + line, 22, 0x0a,                   "LIB", 3);
-		displaystr(SidInfoFirstLine + line, 25, 0x0c,                      "SID", 3);
-		displaystr(SidInfoFirstLine + line, 28, 0x09,                         "PLAY ", 5);
-		displaystr(SidInfoFirstLine + line, 33, 0x07,                              "- Music Player and C64 SID Chip Emulator", SidInfoWidth - 33 - 2);
-		displaystr(SidInfoFirstLine + line, SidInfoWidth-2, 0x07, "\xb3", 1);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line,  0, 0x07, " \xb3  ", 4);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line,  4, 0x03, "OpenCubicPlayer ", 16);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 20, 0x07,                 "+ ", 2);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 22, 0x0a,                   "LIB", 3);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 25, 0x0c,                      "SID", 3);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 28, 0x09,                         "PLAY ", 5);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 33, 0x07,                              "- Music Player and C64 SID Chip Emulator", SidInfoWidth - 33 - 2);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth-2, 0x07, "\xb3", 1);
 	}
 	line++;
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line,  0, 0x07, " \xb3        Libsidplayfp V2.4.10 + OCP patches", SidInfoWidth-2);
-		displaystr(SidInfoFirstLine + line, SidInfoWidth-2, 0x07, "\xb3", 1);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line,  0, 0x07, " \xb3        Libsidplayfp V2.4.10 + OCP patches", SidInfoWidth-2);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth-2, 0x07, "\xb3", 1);
 	}
 	line++;
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
 	}
 
 	for (i=0; i < sidNumberOfInfos(); i++)
 	{
 		if ((line >= 1) && (line < SidInfoHeight))
 		{
-			displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
+			cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
 			switch (i)
 			{
-				case 0:  displaystr(SidInfoFirstLine + line, 3, 0x0b, "Title        : ", 15); break;
-				case 1:  displaystr(SidInfoFirstLine + line, 3, 0x0b, "Author       : ", 15); break;
-				case 2:  displaystr(SidInfoFirstLine + line, 3, 0x0b, "Released     : ", 15); break;
-				default: displaystr(SidInfoFirstLine + line, 3, 0x0b, "(info)       : ", 15); break;
+				case 0:  cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 3, 0x0b, "Title        : ", 15); break;
+				case 1:  cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 3, 0x0b, "Author       : ", 15); break;
+				case 2:  cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 3, 0x0b, "Released     : ", 15); break;
+				default: cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 3, 0x0b, "(info)       : ", 15); break;
 			}
 			tmp = sidInfoString(i);
 			latin1_f_to_utf8_z (tmp, strlen (tmp), SidUTF8Buffer, sizeof (SidUTF8Buffer));
-			displaystr_utf8(SidInfoFirstLine + line, 18, 0x05, SidUTF8Buffer, SidInfoWidth - 18 - 2);
-			displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
+			cpifaceSession->console->Driver->DisplayStr_utf8(SidInfoFirstLine + line, 18, 0x05, SidUTF8Buffer, SidInfoWidth - 18 - 2);
+			cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
 		}
 		line++;
 	}
@@ -184,131 +184,131 @@ static void SidInfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 	{
 		if ((line >= 1) && (line < SidInfoHeight))
 		{
-			displaystr              (SidInfoFirstLine + line,  0, 0x07, " \xb3 ", 3);
-			displaystr              (SidInfoFirstLine + line,  3, 0x0b, "Comment      : ", 15);
+			cpifaceSession->console->Driver->DisplayStr              (SidInfoFirstLine + line,  0, 0x07, " \xb3 ", 3);
+			cpifaceSession->console->Driver->DisplayStr              (SidInfoFirstLine + line,  3, 0x0b, "Comment      : ", 15);
 			tmp = sidCommentString(i);
 			latin1_f_to_utf8_z (tmp, strlen (tmp), SidUTF8Buffer, sizeof (SidUTF8Buffer));
-			displaystr_utf8(SidInfoFirstLine + line, 18, 0x05, SidUTF8Buffer, SidInfoWidth - 18 - 2);
-			displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
+			cpifaceSession->console->Driver->DisplayStr_utf8(SidInfoFirstLine + line, 18, 0x05, SidUTF8Buffer, SidInfoWidth - 18 - 2);
+			cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
 		}
 		line++;
 	}
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
 	}
 	line++;
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line,  0, 0x07, " \xb3 ", 3);
-		displaystr(SidInfoFirstLine + line,  3, 0x0a, "File format  : ", 15);
-		displaystr(SidInfoFirstLine + line, 18, 0x0f, sidFormatString(), SidInfoWidth - 18 - 2);
-		displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line,  0, 0x07, " \xb3 ", 3);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line,  3, 0x0a, "File format  : ", 15);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 18, 0x0f, sidFormatString(), SidInfoWidth - 18 - 2);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
 	}
 	line++;
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line,  0, 0x07, " \xb3 ", 3);
-		displaystr(SidInfoFirstLine + line,  3, 0x0a, "Condition    : ", 15);
-		displaystr(SidInfoFirstLine + line, 18, 0x0f, sidTuneStatusString(), SidInfoWidth - 18 - 2);
-		displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line,  0, 0x07, " \xb3 ", 3);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line,  3, 0x0a, "Condition    : ", 15);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 18, 0x0f, sidTuneStatusString(), SidInfoWidth - 18 - 2);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
 	}
 	line++;
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line,  0, 0x07, " \xb3 ", 3);
-		displaystr(SidInfoFirstLine + line,  3, 0x0a, "Song Speed   : ", 15);
-		displaystr(SidInfoFirstLine + line, 18, 0x0f, sidTuneInfoClockSpeedString(), SidInfoWidth - 18 - 2);
-		displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line,  0, 0x07, " \xb3 ", 3);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line,  3, 0x0a, "Song Speed   : ", 15);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 18, 0x0f, sidTuneInfoClockSpeedString(), SidInfoWidth - 18 - 2);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
 	}
 	line++;
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
 	}
 	line++;
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
-		displaystr(SidInfoFirstLine + line, 3, 0x05, "Kernal ROM   : ", 15);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 3, 0x05, "Kernal ROM   : ", 15);
 		temp = sidROMDescKernal();
 		if (temp[0])
 		{
-			displaystr(SidInfoFirstLine + line, 18, 0x07, temp, SidInfoWidth - 18 - 2);
+			cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 18, 0x07, temp, SidInfoWidth - 18 - 2);
 		} else {
-			displaystr(SidInfoFirstLine + line, 18, 0x04, "None - Some tunes may not play!", SidInfoWidth - 18 - 2);
+			cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 18, 0x04, "None - Some tunes may not play!", SidInfoWidth - 18 - 2);
 		}
-		displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
 	}
 	line++;
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
-		displaystr(SidInfoFirstLine + line, 3, 0x05, "BASIC ROM    : ", 15);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 3, 0x05, "BASIC ROM    : ", 15);
 		temp = sidROMDescBasic();
 		if (temp[0])
 		{
-			displaystr(SidInfoFirstLine + line, 18, 0x07, temp, SidInfoWidth - 18 - 2);
+			cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 18, 0x07, temp, SidInfoWidth - 18 - 2);
 		} else {
-			displaystr(SidInfoFirstLine + line, 18, 0x04, "None - Basic tunes will not play!", SidInfoWidth - 18 - 2);
+			cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 18, 0x04, "None - Basic tunes will not play!", SidInfoWidth - 18 - 2);
 		}
-		displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
 	}
 	line++;
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
-		displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
-		displaystr(SidInfoFirstLine + line, 3, 0x05, "Chargen ROM  : ", 15);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 3, 0x05, "Chargen ROM  : ", 15);
 		temp = sidROMDescChargen();
 		if (temp[0])
 		{
-			displaystr(SidInfoFirstLine + line, 18, 0x07, temp, SidInfoWidth - 18 - 2);
+			cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 18, 0x07, temp, SidInfoWidth - 18 - 2);
 		} else {
-			displaystr(SidInfoFirstLine + line, 18, 0x04, "None", SidInfoWidth - 18 - 2);
+			cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 18, 0x04, "None", SidInfoWidth - 18 - 2);
 		}
 	}
 	line++;
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
 	}
 	line++;
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
-		displaystr(SidInfoFirstLine + line, 3, 0x03, "CPU speed    : ", 15);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 3, 0x03, "CPU speed    : ", 15);
 		snprintf (StringBuffer, sizeof (StringBuffer), "%.3f MHz", sidGetCPUSpeed()/1000000.0f);
-		displaystr(SidInfoFirstLine + line, 18, 0x06, StringBuffer, SidInfoWidth - 18 - 2);
-		displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 18, 0x06, StringBuffer, SidInfoWidth - 18 - 2);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
 	}
 	line++;
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
-		displaystr(SidInfoFirstLine + line, 3, 0x03, "VIC-II Model : ", 15);
-		displaystr(SidInfoFirstLine + line, 18, 0x06, sidGetVICIIModelString(), SidInfoWidth - 18 - 2);
-		displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 3, 0x03, "VIC-II Model : ", 15);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 18, 0x06, sidGetVICIIModelString(), SidInfoWidth - 18 - 2);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
 	}
 	line++;
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
-		displaystr(SidInfoFirstLine + line, 3, 0x03, "CIA x2 Model : ", 15);
-		displaystr(SidInfoFirstLine + line, 18, 0x06, sidGetCIAModelString(), SidInfoWidth - 18 - 2);
-		displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 3, 0x03, "CIA x2 Model : ", 15);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 18, 0x06, sidGetCIAModelString(), SidInfoWidth - 18 - 2);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
 	}
 	line++;
 
@@ -316,12 +316,12 @@ static void SidInfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 	{
 		if ((line >= 1) && (line < SidInfoHeight))
 		{
-			displaystr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
+			cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 0, 0x07, " \xb3 ", 3);
 			snprintf (StringBuffer, sizeof (StringBuffer), "SID[%d] Model : ", i+1);
-			displaystr(SidInfoFirstLine + line, 3, 0x03, StringBuffer, 15);
+			cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 3, 0x03, StringBuffer, 15);
 			snprintf (StringBuffer, sizeof (StringBuffer), "%s $%04x", sidChipModel(i), sidChipAddr(i));
-			displaystr(SidInfoFirstLine + line, 18, 0x06, StringBuffer, SidInfoWidth - 18 - 2);
-			displaystr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
+			cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 18, 0x06, StringBuffer, SidInfoWidth - 18 - 2);
+			cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth - 2, 0x07, "\xb3", 1);
 		}
 		line++;
 	}
@@ -330,7 +330,7 @@ static void SidInfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 	{
 		LineBuffer[1] = '\xc0';
 		LineBuffer[SidInfoWidth-2] = '\xd9';
-		displaystr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, 0, 0x07, LineBuffer, SidInfoWidth);
 	}
 	line++;
 }

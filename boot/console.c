@@ -157,21 +157,6 @@ const struct consoleDriver_t dummyConsoleDriver =
 	dummyDosShell
 };
 
-const struct consoleDriver_t *conDriver = &dummyConsoleDriver;
-struct consoleStatus_t conStatus =
-{
-	80,
-	25,
-	0,
-	vidNorm,
-	0,
-	0,
-	0,
-	0,
-	0,
-	_8x16
-};
-
 unsigned int plScrHeight = 80;
 unsigned int plScrWidth = 25;
 enum vidType plVidType;
@@ -181,7 +166,7 @@ uint8_t *plVidMem;
 
 int plScrTextGUIOverlay;
 
-void display_nprintf (uint16_t y, uint16_t x, uint8_t color, uint16_t width, const char *fmt, ...)
+static void display_nprintf (uint16_t y, uint16_t x, uint8_t color, uint16_t width, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -212,7 +197,7 @@ void display_nprintf (uint16_t y, uint16_t x, uint8_t color, uint16_t width, con
 			{
 				len = width;
 			}
-			conDriver->DisplayStr (y, x, color, fmt, len);
+			Console.Driver->DisplayStr (y, x, color, fmt, len);
 			x += len;
 			width -= len;
 			fmt = next;
@@ -221,7 +206,7 @@ void display_nprintf (uint16_t y, uint16_t x, uint8_t color, uint16_t width, con
 		fmt++;
 		if ((*fmt) == '%')
 		{
-			conDriver->DisplayChr (y, x, color, '%', 1);
+			Console.Driver->DisplayChr (y, x, color, '%', 1);
 			x++;
 			width--;
 			fmt++;
@@ -336,14 +321,14 @@ after_dot:
 					}
 					if ((requested_width > requested_precision) && minusflag)
 					{
-						conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
+						Console.Driver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 						x += requested_width - requested_precision;
 					}
-					conDriver->DisplayChr (y, x, color, c, requested_precision);
+					Console.Driver->DisplayChr (y, x, color, c, requested_precision);
 					x += requested_precision;
 					if ((requested_width > requested_precision) && !minusflag)
 					{
-						conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
+						Console.Driver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 						x += requested_width - requested_precision;
 					}
 					width -= requested_width;
@@ -390,14 +375,14 @@ after_dot:
 					}
 					if ((requested_width > requested_precision) && minusflag)
 					{
-						conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
+						Console.Driver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 						x += requested_width - requested_precision;
 					}
-					conDriver->DisplayStr (y, x, color, src, requested_precision);
+					Console.Driver->DisplayStr (y, x, color, src, requested_precision);
 					x += requested_precision;
 					if ((requested_width > requested_precision) && !minusflag)
 					{
-						conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
+						Console.Driver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 						x += requested_width - requested_precision;
 					}
 					width -= requested_width;
@@ -407,7 +392,7 @@ after_dot:
 			case 'S':
 				{
 					const char *src = va_arg (ap, const char *);
-					int src_width = conDriver->MeasureStr_utf8 (src, strlen (src));
+					int src_width = Console.Driver->MeasureStr_utf8 (src, strlen (src));
 					if (requested_precision==INT_MAX)
 					{
 						requested_precision = src_width;
@@ -426,19 +411,19 @@ after_dot:
 					}
 					if ((requested_width > requested_precision) && minusflag)
 					{
-						conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
+						Console.Driver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 						x += requested_width - requested_precision;
 					}
 					if (spaceflag)
 					{
-						conDriver->DisplayStr_utf8 (y, x, color, src, requested_precision);
+						Console.Driver->DisplayStr_utf8 (y, x, color, src, requested_precision);
 					} else {
 						displaystr_utf8_overflowleft (y, x, color, src, requested_precision);
 					}
 					x += requested_precision;
 					if ((requested_width > requested_precision) && !minusflag)
 					{
-						conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
+						Console.Driver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 						x += requested_width - requested_precision;
 					}
 					width -= requested_width;
@@ -551,14 +536,14 @@ after_dot:
 								}
 								if ((requested_width > requested_precision) && minusflag)
 								{
-									conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
+									Console.Driver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 									x += requested_width - requested_precision;
 								}
-								conDriver->DisplayStr (y, x, color, buffer, requested_precision);
+								Console.Driver->DisplayStr (y, x, color, buffer, requested_precision);
 								x += requested_precision;
 								if ((requested_width > requested_precision) && !minusflag)
 								{
-									conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
+									Console.Driver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 									x += requested_width - requested_precision;
 								}
 								width -= requested_width;
@@ -624,14 +609,14 @@ after_dot:
 								}
 								if ((requested_width > requested_precision) && minusflag)
 								{
-									conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
+									Console.Driver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 									x += requested_width - requested_precision;
 								}
-								conDriver->DisplayStr (y, x, color, buffer, requested_precision);
+								Console.Driver->DisplayStr (y, x, color, buffer, requested_precision);
 								x += requested_precision;
 								if ((requested_width > requested_precision) && !minusflag)
 								{
-									conDriver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
+									Console.Driver->DisplayChr (y, x, color, ' ', requested_width - requested_precision);
 									x += requested_width - requested_precision;
 								}
 								width -= requested_width;
@@ -658,12 +643,12 @@ after_dot:
 	} // while
 	if (width)
 	{
-		conDriver->DisplayChr (y, x, color, ' ', width);
+		Console.Driver->DisplayChr (y, x, color, ' ', width);
 	}
 	va_end(ap);
 }
 
-void writenum (uint16_t *buf, uint16_t ofs, uint8_t attr, unsigned long num, uint8_t radix, uint16_t len, int clip0)
+static void writenum (uint16_t *buf, uint16_t ofs, uint8_t attr, unsigned long num, uint8_t radix, uint16_t len, int clip0)
 {
 	char convbuf[20];
 	uint16_t *p=buf+ofs;
@@ -687,7 +672,7 @@ void writenum (uint16_t *buf, uint16_t ofs, uint8_t attr, unsigned long num, uin
 	}
 }
 
-void writestring (uint16_t *buf, uint16_t ofs, uint8_t attr, const char *str, uint16_t len)
+static void writestring (uint16_t *buf, uint16_t ofs, uint8_t attr, const char *str, uint16_t len)
 {
 	uint16_t *p=buf+ofs;
 	int i;
@@ -699,13 +684,14 @@ void writestring (uint16_t *buf, uint16_t ofs, uint8_t attr, const char *str, ui
 	}
 }
 
-void writestringattr (uint16_t *buf, uint16_t ofs, const uint16_t *str, uint16_t len)
+static void writestringattr (uint16_t *buf, uint16_t ofs, const uint16_t *str, uint16_t len)
 {
 	memcpy (buf+ofs, (void *)str, len*2);
 }
 
-const struct consoleFunctions_t conFunc =
+struct console_t Console =
 {
+	&dummyConsoleDriver,
 	display_nprintf,
 	writenum,
 	writestring,
@@ -713,4 +699,14 @@ const struct consoleFunctions_t conFunc =
 	ekbhit,
 	egetch,
 	framelock,
+	80,      /* TextHeight */
+	25,      /* TextWidth */
+	0,       /* TextGUIOverlay */
+	vidNorm, /* VidType */
+	0,       /* LastTextMode */
+	0,       /* CurrentMode */
+	0,       /* VidMem */
+	0,       /* GraphBytesPerLine */
+	0,       /* GraphLines */
+	_8x16    /* CurrentFont */
 };

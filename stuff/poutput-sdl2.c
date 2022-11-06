@@ -299,7 +299,7 @@ static void set_state_textmode(int fullscreen, int width, int height)
 	if (virtual_framebuffer)
 	{
 		free (virtual_framebuffer);
-		conStatus.VidMem = virtual_framebuffer = 0;
+		Console.VidMem = virtual_framebuffer = 0;
 	}
 
 	if (fullscreen != do_fullscreen)
@@ -309,8 +309,8 @@ static void set_state_textmode(int fullscreen, int width, int height)
 #endif
 		if (fullscreen)
 		{
-			last_text_width  = conStatus.GraphBytesPerLine;
-			last_text_height = conStatus.GraphLines;
+			last_text_width  = Console.GraphBytesPerLine;
+			last_text_height = Console.GraphLines;
 #ifdef SDL2_DEBUG
 			fprintf (stderr, " store previous resolution into last_text_width and last_text_height\n");
 #endif
@@ -378,17 +378,17 @@ static void set_state_textmode(int fullscreen, int width, int height)
 #endif
 	}
 
-	while ( ((width/FontSizeInfo[conStatus.CurrentFont].w) < 80) || ((height/FontSizeInfo[conStatus.CurrentFont].h) < 25))
+	while ( ((width/FontSizeInfo[Console.CurrentFont].w) < 80) || ((height/FontSizeInfo[Console.CurrentFont].h) < 25))
 	{
 #ifdef SDL2_DEBUG
 		fprintf (stderr, "[SDL2-video] find a smaller font, since (%d/%d)=%d < 80   or   (%d/%d)=%d < 25\n",
-				width,  FontSizeInfo[conStatus.CurrentFont].w, width/FontSizeInfo[conStatus.CurrentFont].w,
-				height, FontSizeInfo[conStatus.CurrentFont].h, width/FontSizeInfo[conStatus.CurrentFont].h);
+				width,  FontSizeInfo[Console.CurrentFont].w, width/FontSizeInfo[Console.CurrentFont].w,
+				height, FontSizeInfo[Console.CurrentFont].h, width/FontSizeInfo[Console.CurrentFont].h);
 #endif
-		switch (conStatus.CurrentFont)
+		switch (Console.CurrentFont)
 		{
 			case _8x16:
-				conStatus.CurrentFont = _8x8;
+				Console.CurrentFont = _8x8;
 				break;
 			case _8x8:
 			default:
@@ -397,8 +397,8 @@ static void set_state_textmode(int fullscreen, int width, int height)
 #ifdef SDL2_DEBUG
 					fprintf(stderr, "[SDL2-video] unable to find a small enough font for %d x %d, increasing window size\n", width, height);
 #endif
-					width  = FontSizeInfo[conStatus.CurrentFont].w * 80;
-					height = FontSizeInfo[conStatus.CurrentFont].h * 25;
+					width  = FontSizeInfo[Console.CurrentFont].w * 80;
+					height = FontSizeInfo[Console.CurrentFont].h * 25;
 					SDL_SetWindowSize (current_window, width, height);
 				} else {
 					fprintf(stderr, "[SDL2-video] unable to find a small enough font for %d x %d\n", width, height);
@@ -408,12 +408,12 @@ static void set_state_textmode(int fullscreen, int width, int height)
 		}
 	}
 
-	conStatus.TextWidth         = width /FontSizeInfo[conStatus.CurrentFont].w;
-	conStatus.TextHeight        = height/FontSizeInfo[conStatus.CurrentFont].h;
-	conStatus.GraphBytesPerLine = width;
-	conStatus.GraphLines        = height;
+	Console.TextWidth         = width /FontSizeInfo[Console.CurrentFont].w;
+	Console.TextHeight        = height/FontSizeInfo[Console.CurrentFont].h;
+	Console.GraphBytesPerLine = width;
+	Console.GraphLines        = height;
 
-	plScrRowBytes = conStatus.TextWidth * 2;
+	plScrRowBytes = Console.TextWidth * 2;
 
 	if (!current_renderer)
 	{
@@ -451,7 +451,7 @@ static void set_state_textmode(int fullscreen, int width, int height)
 		}
 	}
 
-	conStatus.VidMem = virtual_framebuffer = calloc (conStatus.GraphBytesPerLine, conStatus.GraphLines);
+	Console.VidMem = virtual_framebuffer = calloc (Console.GraphBytesPerLine, Console.GraphLines);
 
 	sdl2_gFlushPal ();
 
@@ -465,9 +465,9 @@ static void sdl2_SetTextMode(unsigned char x)
 #endif
 	set_state = set_state_textmode;
 
-	if ((x == conStatus.CurrentMode) && (current_window))
+	if ((x == Console.CurrentMode) && (current_window))
 	{
-		bzero (virtual_framebuffer, conStatus.GraphBytesPerLine * conStatus.GraphLines);
+		bzero (virtual_framebuffer, Console.GraphBytesPerLine * Console.GraphLines);
 		return;
 	}
 
@@ -478,7 +478,7 @@ static void sdl2_SetTextMode(unsigned char x)
 #ifdef SDL2_DEBUG
 		fprintf (stderr, "gdb helper, plScrMode=255\n", x);
 #endif
-		conStatus.CurrentMode = 255;
+		Console.CurrentMode = 255;
 		return; /* gdb helper */
 	}
 
@@ -502,7 +502,7 @@ static void sdl2_SetTextMode(unsigned char x)
 		fprintf (stderr, "mode_gui_data[%d].height=%d", mode_tui_data[x].gui_mode, mode_gui_data[mode_tui_data[x].gui_mode].height);
 #endif
 
-		conStatus.CurrentFont = mode_tui_data[x].font;
+		Console.CurrentFont = mode_tui_data[x].font;
 
 		set_state_textmode(
 			do_fullscreen,
@@ -510,9 +510,9 @@ static void sdl2_SetTextMode(unsigned char x)
 			mode_gui_data[mode_tui_data[x].gui_mode].height);
 	}
 
-	conStatus.LastTextMode = conStatus.CurrentMode = x;
+	Console.LastTextMode = Console.CurrentMode = x;
 #ifdef SDL2_DEBUG
-	fprintf (stderr, "plScrType = plScrMode = %d\n", conStatus.LastTextMode );
+	fprintf (stderr, "plScrType = plScrMode = %d\n", Console.LastTextMode );
 #endif
 }
 
@@ -532,15 +532,15 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 	switch (cachemode)
 	{
 		case 13:
-			conStatus.CurrentMode = 13;
+			Console.CurrentMode = 13;
 			mode = MODE_320_200;
 			break;
 		case 0:
-			conStatus.CurrentMode = 100;
+			Console.CurrentMode = 100;
 			mode = MODE_640_480;
 			break;
 		case 1:
-			conStatus.CurrentMode = 101;
+			Console.CurrentMode = 101;
 			mode = MODE_1024_768;
 			break;
 		default:
@@ -605,12 +605,12 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 		}
 	}
 
-	conStatus.GraphBytesPerLine = width;
-	conStatus.GraphLines        = height;
-	conStatus.TextWidth         = conStatus.GraphBytesPerLine/8;
-	conStatus.TextHeight        = conStatus.GraphLines/16;
+	Console.GraphBytesPerLine = width;
+	Console.GraphLines        = height;
+	Console.TextWidth         = Console.GraphBytesPerLine/8;
+	Console.TextHeight        = Console.GraphLines/16;
 
-	plScrRowBytes = conStatus.TextWidth * 2;
+	plScrRowBytes = Console.TextWidth * 2;
 
 	sdl2_gFlushPal ();
 
@@ -630,7 +630,7 @@ static int sdl2_SetGraphMode (int high)
 	if (virtual_framebuffer)
 	{
 		free (virtual_framebuffer);
-		conStatus.VidMem = virtual_framebuffer = 0;
+		Console.VidMem = virtual_framebuffer = 0;
 	}
 	sdl2_close_window();
 
@@ -641,12 +641,12 @@ static int sdl2_SetGraphMode (int high)
 
 	set_state_graphmode(do_fullscreen, 0, 0);
 
-	conStatus.VidMem = virtual_framebuffer = malloc (conStatus.GraphBytesPerLine * conStatus.GraphLines);
+	Console.VidMem = virtual_framebuffer = malloc (Console.GraphBytesPerLine * Console.GraphLines);
 
 quick:
 	if (virtual_framebuffer)
 	{
-		bzero (virtual_framebuffer, conStatus.GraphBytesPerLine * conStatus.GraphLines);
+		bzero (virtual_framebuffer, Console.GraphBytesPerLine * Console.GraphLines);
 	}
 
 	sdl2_gFlushPal ();
@@ -672,16 +672,16 @@ static void sdl2_DisplaySetupTextMode(void)
 	while (1)
 	{
 		uint16_t c;
-		bzero (virtual_framebuffer, conStatus.GraphBytesPerLine * conStatus.GraphLines);
+		bzero (virtual_framebuffer, Console.GraphBytesPerLine * Console.GraphLines);
 		make_title("sdl2-driver setup", 0);
 		swtext_displaystr_cp437(1, 0, 0x07, "1:  font-size:", 14);
-		swtext_displaystr_cp437(1, 15, conStatus.CurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
-		swtext_displaystr_cp437(1, 19, conStatus.CurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
+		swtext_displaystr_cp437(1, 15, Console.CurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
+		swtext_displaystr_cp437(1, 19, Console.CurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
 /*
 		swtext_displaystr_cp437(2, 0, 0x07, "2:  fullscreen: ", 16);
 		swtext_displaystr_cp437(3, 0, 0x07, "3:  resolution in fullscreen:", 29);*/
 
-		swtext_displaystr_cp437(conStatus.TextHeight - 1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", conStatus.TextWidth);
+		swtext_displaystr_cp437(Console.TextHeight - 1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", Console.TextWidth);
 
 		while (!ekbhit())
 		{
@@ -693,9 +693,9 @@ static void sdl2_DisplaySetupTextMode(void)
 		{
 			case '1':
 				/* we can assume that we are in text-mode if we are here */
-				sdl2_CurrentFontWanted = conStatus.CurrentFont = (conStatus.CurrentFont == _8x8)?_8x16:_8x8;
-				set_state_textmode(do_fullscreen, conStatus.GraphBytesPerLine, conStatus.GraphLines);
-				cfSetProfileInt("x11", "font", conStatus.CurrentFont, 10);
+				sdl2_CurrentFontWanted = Console.CurrentFont = (Console.CurrentFont == _8x8)?_8x16:_8x8;
+				set_state_textmode(do_fullscreen, Console.GraphBytesPerLine, Console.GraphLines);
+				cfSetProfileInt("x11", "font", Console.CurrentFont, 10);
 				break;
 			case KEY_EXIT:
 			case KEY_ESC: return;
@@ -706,8 +706,8 @@ static void sdl2_DisplaySetupTextMode(void)
 static const char *sdl2_GetDisplayTextModeName(void)
 {
 	static char mode[48];
-	snprintf(mode, sizeof(mode), "res(%dx%d), font(%s)%s", conStatus.TextWidth, conStatus.TextHeight,
-		conStatus.CurrentFont == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
+	snprintf(mode, sizeof(mode), "res(%dx%d), font(%s)%s", Console.TextWidth, Console.TextHeight,
+		Console.CurrentFont == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
 	return mode;
 }
 
@@ -1172,11 +1172,11 @@ static void RefreshScreenGraph(void)
 			int j;
 
 			dst = (uint32_t *)dst_line;
-			for (j = 0; j < conStatus.GraphBytesPerLine; j++)
+			for (j = 0; j < Console.GraphBytesPerLine; j++)
 			{
 				*(dst++)=sdl2_palette[*(src++)];
 			}
-			if ((++Y) >= conStatus.GraphLines)
+			if ((++Y) >= Console.GraphLines)
 			{
 				break;
 			}
@@ -1193,7 +1193,7 @@ static void RefreshScreenGraph(void)
 				int tx, x;
 				uint8_t *src, *dst;
 
-				if (y >= conStatus.GraphLines) { break; }
+				if (y >= Console.GraphLines) { break; }
 
 				tx = SDL2ScrTextGUIOverlays[i]->x + SDL2ScrTextGUIOverlays[i]->width;
 				x = (SDL2ScrTextGUIOverlays[i]->x < 0) ? 0 : SDL2ScrTextGUIOverlays[i]->x;
@@ -1203,7 +1203,7 @@ static void RefreshScreenGraph(void)
 
 				for (; x < tx; x++)
 				{
-					if (x >= conStatus.GraphBytesPerLine) { break; }
+					if (x >= Console.GraphBytesPerLine) { break; }
 
 					if (src[3] == 0)
 					{
@@ -1238,10 +1238,10 @@ static void RefreshScreenGraph(void)
 	SDL_RenderCopy (current_renderer, current_texture, NULL, NULL);
 	SDL_RenderPresent (current_renderer);
 
-	if (conStatus.CurrentFont == _8x8)
+	if (Console.CurrentFont == _8x8)
 	{
 		fontengine_8x8_iterate ();
-	} else if (conStatus.CurrentFont == _8x16)
+	} else if (Console.CurrentFont == _8x16)
 	{
 		fontengine_8x16_iterate ();
 	}
@@ -1266,7 +1266,7 @@ static int ekbhit_sdl2dummy(void)
 {
 	SDL_Event event;
 
-	if (conStatus.CurrentMode <= 8)
+	if (Console.CurrentMode <= 8)
 	{
 		RefreshScreenText();
 	} else {
@@ -1311,8 +1311,8 @@ static int ekbhit_sdl2dummy(void)
 #endif
 						if (current_window && (SDL_GetWindowID(current_window) == event.window.windowID))
 						{
-							conStatus.CurrentFont = sdl2_CurrentFontWanted;
-							if (!do_fullscreen && (conStatus.CurrentMode == conStatus.LastTextMode ))
+							Console.CurrentFont = sdl2_CurrentFontWanted;
+							if (!do_fullscreen && (Console.CurrentMode == Console.LastTextMode ))
 							{
 								last_text_height = event.window.data2;
 								last_text_width = event.window.data1;
@@ -1320,12 +1320,12 @@ static int ekbhit_sdl2dummy(void)
 							set_state(do_fullscreen, event.window.data1, event.window.data2);
 							if (!do_fullscreen)
 							{
-								if (conStatus.LastTextMode == conStatus.CurrentMode) /* if we are in text-mode, make it a custom one */
+								if (Console.LastTextMode == Console.CurrentMode) /* if we are in text-mode, make it a custom one */
 								{
 #ifdef SDL2_DEBUG
 									fprintf (stderr, "CUSTOM MODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 #endif
-									conStatus.LastTextMode = conStatus.CurrentMode = 8;
+									Console.LastTextMode = Console.CurrentMode = 8;
 								}
 							}
 						} else {
@@ -1354,7 +1354,7 @@ static int ekbhit_sdl2dummy(void)
 						break;
 
 					case 3:
-						set_state (!do_fullscreen, conStatus.GraphBytesPerLine, conStatus.GraphLines);
+						set_state (!do_fullscreen, Console.GraphBytesPerLine, Console.GraphLines);
 						break;
 
 					case 4:
@@ -1498,7 +1498,7 @@ static int ekbhit_sdl2dummy(void)
 					/* TODO, handle ALT-ENTER */
 					if (event.key.keysym.sym==SDLK_RETURN)
 					{
-						set_state (!do_fullscreen, conStatus.GraphBytesPerLine, conStatus.GraphLines);
+						set_state (!do_fullscreen, Console.GraphBytesPerLine, Console.GraphLines);
 					} else {
 						for (index=0;translate_alt[index].OCP!=0xffff;index++)
 							if (translate_alt[index].SDL==event.key.keysym.sym)
@@ -1608,23 +1608,23 @@ int sdl2_init(void)
 	SDL_EventState (SDL_TEXTEDITING, SDL_ENABLE);
 
 	/* Fill some default font and window sizes */
-	sdl2_CurrentFontWanted = conStatus.CurrentFont = cfGetProfileInt("x11", "font", _8x16, 10);
-	if (conStatus.CurrentFont > _FONT_MAX)
+	sdl2_CurrentFontWanted = Console.CurrentFont = cfGetProfileInt("x11", "font", _8x16, 10);
+	if (Console.CurrentFont > _FONT_MAX)
 	{
-		conStatus.CurrentFont = _8x16;
+		Console.CurrentFont = _8x16;
 	}
-	last_text_width  = conStatus.GraphBytesPerLine = 640;
-	last_text_height = conStatus.GraphLines        = 480;
-	conStatus.LastTextMode = conStatus.CurrentMode = 8;
+	last_text_width  = Console.GraphBytesPerLine = 640;
+	last_text_height = Console.GraphLines        = 480;
+	Console.LastTextMode = Console.CurrentMode = 8;
 
 	need_quit = 1;
 
-	conDriver = &sdl2ConsoleDriver;
+	Console.Driver = &sdl2ConsoleDriver;
 	___setup_key(ekbhit_sdl2dummy, ekbhit_sdl2dummy);
 
-	conStatus.TextGUIOverlay = 1;
+	Console.TextGUIOverlay = 1;
 
-	conStatus.VidType = vidModern;
+	Console.VidType = vidModern;
 
 	return 0;
 error_out:
@@ -1649,7 +1649,7 @@ void sdl2_done(void)
 	if (virtual_framebuffer)
 	{
 		free (virtual_framebuffer);
-		conStatus.VidMem = virtual_framebuffer = 0;
+		Console.VidMem = virtual_framebuffer = 0;
 	}
 
 	need_quit = 0;

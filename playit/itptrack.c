@@ -101,29 +101,29 @@ static int it_getnote (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp,
 	{
 		case 0:
 			if (note>=cmdNNoteFade)
-				cpifaceSession->conFunc->WriteString (bp, 0, COLINS, (note==cmdNNoteOff)?"---":(note==cmdNNoteCut)?"^^^":"'''", 3);
+				cpifaceSession->console->WriteString (bp, 0, COLINS, (note==cmdNNoteOff)?"---":(note==cmdNNoteCut)?"^^^":"'''", 3);
 			else {
 				note-=cmdNNote;
-				cpifaceSession->conFunc->WriteString (bp, 0, porta?COLPTNOTE:COLNOTE, &"CCDDEFFGGAAB"[note%12], 1);
-				cpifaceSession->conFunc->WriteString (bp, 1, porta?COLPTNOTE:COLNOTE, &"-#-#--#-#-#-"[note%12], 1);
-				cpifaceSession->conFunc->WriteString (bp, 2, porta?COLPTNOTE:COLNOTE, &"0123456789"  [note/12], 1);
+				cpifaceSession->console->WriteString (bp, 0, porta?COLPTNOTE:COLNOTE, &"CCDDEFFGGAAB"[note%12], 1);
+				cpifaceSession->console->WriteString (bp, 1, porta?COLPTNOTE:COLNOTE, &"-#-#--#-#-#-"[note%12], 1);
+				cpifaceSession->console->WriteString (bp, 2, porta?COLPTNOTE:COLNOTE, &"0123456789"  [note/12], 1);
 			}
 			break;
 		case 1:
 			if (note>=cmdNNoteFade)
-				cpifaceSession->conFunc->WriteString (bp, 0, COLINS, (note==cmdNNoteOff)?"--":(note==cmdNNoteCut)?"^^":"''", 2);
+				cpifaceSession->console->WriteString (bp, 0, COLINS, (note==cmdNNoteOff)?"--":(note==cmdNNoteCut)?"^^":"''", 2);
 			else {
 				note-=cmdNNote;
-				cpifaceSession->conFunc->WriteString (bp, 0, porta?COLPTNOTE:COLNOTE, &"cCdDefFgGaAb"[note%12], 1);
-				cpifaceSession->conFunc->WriteString (bp, 1, porta?COLPTNOTE:COLNOTE, &"0123456789"  [note/12], 1);
+				cpifaceSession->console->WriteString (bp, 0, porta?COLPTNOTE:COLNOTE, &"cCdDefFgGaAb"[note%12], 1);
+				cpifaceSession->console->WriteString (bp, 1, porta?COLPTNOTE:COLNOTE, &"0123456789"  [note/12], 1);
 			}
 			break;
 		case 2:
 			if (note>=cmdNNoteFade)
-				cpifaceSession->conFunc->WriteString (bp, 0, COLINS, (note==cmdNNoteOff)?"-":(note==cmdNNoteCut)?"^":"'", 1);
+				cpifaceSession->console->WriteString (bp, 0, COLINS, (note==cmdNNoteOff)?"-":(note==cmdNNoteCut)?"^":"'", 1);
 			else {
 				note-=cmdNNote;
-				cpifaceSession->conFunc->WriteString (bp, 0, porta?COLPTNOTE:COLNOTE, &"cCdDefFgGaAb"[note%12], 1);
+				cpifaceSession->console->WriteString (bp, 0, porta?COLPTNOTE:COLNOTE, &"cCdDefFgGaAb"[note%12], 1);
 			}
 			break;
 	}
@@ -135,7 +135,7 @@ static int it_getins (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 	int ins=curdata[1];
 	if (!ins)
 		return 0;
-	cpifaceSession->conFunc->WriteNum (bp, 0, COLINS, ins, 16, 2, 0);
+	cpifaceSession->console->WriteNum (bp, 0, COLINS, ins, 16, 2, 0);
 	return 1;
 }
 
@@ -144,7 +144,7 @@ static int it_getvol (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 	int vol=curdata[2];
 	if ((vol>=cmdVVolume)&&(vol<=(cmdVVolume+64)))
 	{
-		cpifaceSession->conFunc->WriteNum (bp, 0, COLVOL, vol-cmdVVolume, 16, 2, 0);
+		cpifaceSession->console->WriteNum (bp, 0, COLVOL, vol-cmdVVolume, 16, 2, 0);
 		return 1;
 	}
 	return 0;
@@ -155,17 +155,17 @@ static int it_getpan (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 	int pan=curdata[2];
 	if ((pan>=cmdVPanning)&&(pan<=(cmdVPanning+64)))
 	{
-		cpifaceSession->conFunc->WriteNum (bp, 0, COLPAN, pan-cmdVPanning, 16, 2, 0);
+		cpifaceSession->console->WriteNum (bp, 0, COLPAN, pan-cmdVPanning, 16, 2, 0);
 		return 1;
 	}
 	if (curdata[3]==cmdPanning)
 	{
-		cpifaceSession->conFunc->WriteNum (bp, 0, COLPAN, (curdata[4]+1)>>2, 16, 2, 0);
+		cpifaceSession->console->WriteNum (bp, 0, COLPAN, (curdata[4]+1)>>2, 16, 2, 0);
 		return 1;
 	}
 	if ((curdata[3]==cmdSpecial)&&((curdata[4]>>4)==cmdSPanning))
 	{
-		cpifaceSession->conFunc->WriteNum (bp, 0, COLPAN, ((curdata[4]&0xF)*0x11+1)>>2, 16, 2, 0);
+		cpifaceSession->console->WriteNum (bp, 0, COLPAN, ((curdata[4]&0xF)*0x11+1)>>2, 16, 2, 0);
 		return 1;
 	}
 	return 0;
@@ -181,37 +181,37 @@ static void it_getfx (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp, 
 	int p=0;
 	if ((data>=cmdVFVolSlU)&&(data<(cmdVFVolSlU+10)))
 	{
-		cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "+", 1);
-		cpifaceSession->conFunc->WriteNum    (bp, 1, COLVOL, data-cmdVFVolSlU, 16, 2, 0);
+		cpifaceSession->console->WriteString (bp, 0, COLVOL, "+", 1);
+		cpifaceSession->console->WriteNum    (bp, 1, COLVOL, data-cmdVFVolSlU, 16, 2, 0);
 	} else if ((data>=cmdVFVolSlD)&&(data<(cmdVFVolSlD+10)))
 	{
-		cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "-", 1);
-		cpifaceSession->conFunc->WriteNum    (bp, 1, COLVOL, data-cmdVFVolSlD, 16, 2, 0);
+		cpifaceSession->console->WriteString (bp, 0, COLVOL, "-", 1);
+		cpifaceSession->console->WriteNum    (bp, 1, COLVOL, data-cmdVFVolSlD, 16, 2, 0);
 	}
 	else if ((data>=cmdVVolSlU)&&(data<(cmdVVolSlU+10)))
 	{
-		cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "\x18", 1);
-		cpifaceSession->conFunc->WriteNum    (bp, 1, COLVOL, data-cmdVVolSlU, 16, 2, 0);
+		cpifaceSession->console->WriteString (bp, 0, COLVOL, "\x18", 1);
+		cpifaceSession->console->WriteNum    (bp, 1, COLVOL, data-cmdVVolSlU, 16, 2, 0);
 	} else if ((data>=cmdVVolSlD)&&(data<(cmdVVolSlD+10)))
 	{
-		cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "\x19", 1);
-		cpifaceSession->conFunc->WriteNum    (bp, 1, COLVOL, data-cmdVVolSlD, 16, 2, 0);
+		cpifaceSession->console->WriteString (bp, 0, COLVOL, "\x19", 1);
+		cpifaceSession->console->WriteNum    (bp, 1, COLVOL, data-cmdVVolSlD, 16, 2, 0);
 	} else if ((data>=cmdVPortaNote)&&(data<(cmdVPortaNote+10)))
 	{
-		cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "\x0D", 1);
-		cpifaceSession->conFunc->WriteNum    (bp, 1, COLPITCH, "\x00\x01\x04\x08\x10\x20\x40\x60\x80\xFF"[data-cmdVPortaNote], 16, 2, 0);
+		cpifaceSession->console->WriteString (bp, 0, COLPITCH, "\x0D", 1);
+		cpifaceSession->console->WriteNum    (bp, 1, COLPITCH, "\x00\x01\x04\x08\x10\x20\x40\x60\x80\xFF"[data-cmdVPortaNote], 16, 2, 0);
 	} else if ((data>=cmdVPortaU)&&(data<(cmdVPortaU+10)))
 	{
-		cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "\x18", 1);
-		cpifaceSession->conFunc->WriteNum    (bp, 1, COLPITCH, (data-cmdVPortaU)*4, 16, 2, 0);
+		cpifaceSession->console->WriteString (bp, 0, COLPITCH, "\x18", 1);
+		cpifaceSession->console->WriteNum    (bp, 1, COLPITCH, (data-cmdVPortaU)*4, 16, 2, 0);
 	} else if ((data>=cmdVPortaD)&&(data<(cmdVPortaD+10)))
 	{
-		cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "\x19", 1);
-		cpifaceSession->conFunc->WriteNum    (bp, 1, COLPITCH, (data-cmdVPortaD)*4, 16, 2, 0);
+		cpifaceSession->console->WriteString (bp, 0, COLPITCH, "\x19", 1);
+		cpifaceSession->console->WriteNum    (bp, 1, COLPITCH, (data-cmdVPortaD)*4, 16, 2, 0);
 	} else if ((data>=cmdVVibrato)&&(data<(cmdVVibrato+10)))
 	{
-		cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "~", 1);
-		cpifaceSession->conFunc->WriteNum    (bp, 1, COLPITCH, data-cmdVVibrato, 16, 2, 0);
+		cpifaceSession->console->WriteString (bp, 0, COLPITCH, "~", 1);
+		cpifaceSession->console->WriteNum    (bp, 1, COLPITCH, data-cmdVVibrato, 16, 2, 0);
 	} else {
 		bp-=3;
 		p--;
@@ -226,161 +226,161 @@ static void it_getfx (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp, 
 	switch (curdata[3])
 	{
 		case cmdArpeggio:
-			cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "\xf0", 1);
-			cpifaceSession->conFunc->WriteNum    (bp, 1, COLPITCH, data, 16, 2, 0);
+			cpifaceSession->console->WriteString (bp, 0, COLPITCH, "\xf0", 1);
+			cpifaceSession->console->WriteNum    (bp, 1, COLPITCH, data, 16, 2, 0);
 			break;
 		case cmdVibrato:
 		case cmdFineVib:
-			cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "~", 1);
-			cpifaceSession->conFunc->WriteNum    (bp, 1, COLPITCH, data, 16, 2, 0);
+			cpifaceSession->console->WriteString (bp, 0, COLPITCH, "~", 1);
+			cpifaceSession->console->WriteNum    (bp, 1, COLPITCH, data, 16, 2, 0);
 			break;
 		case cmdPanbrello:
-			cpifaceSession->conFunc->WriteString (bp, 0, COLPAN, "~", 1);
-			cpifaceSession->conFunc->WriteNum    (bp, 1, COLPAN, data, 16, 2, 0);
+			cpifaceSession->console->WriteString (bp, 0, COLPAN, "~", 1);
+			cpifaceSession->console->WriteNum    (bp, 1, COLPAN, data, 16, 2, 0);
 			break;
 		case cmdChanVol:
-			cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "V", 1);
-			cpifaceSession->conFunc->WriteNum    (bp, 1, COLVOL, data, 16, 2, 0);
+			cpifaceSession->console->WriteString (bp, 0, COLVOL, "V", 1);
+			cpifaceSession->console->WriteNum    (bp, 1, COLVOL, data, 16, 2, 0);
 			break;
 		case cmdOffset:
-			cpifaceSession->conFunc->WriteString (bp, 0, COLACT, "\x1A", 1);
-			cpifaceSession->conFunc->WriteNum    (bp, 1, COLACT, data, 16, 2, 0);
+			cpifaceSession->console->WriteString (bp, 0, COLACT, "\x1A", 1);
+			cpifaceSession->console->WriteNum    (bp, 1, COLACT, data, 16, 2, 0);
 			break;
 		case cmdRetrigger:
-			cpifaceSession->conFunc->WriteString (bp, 0, COLACT, "\x13", 1);
-			cpifaceSession->conFunc->WriteNum    (bp, 1, COLACT, data, 16, 2, 0);
+			cpifaceSession->console->WriteString (bp, 0, COLACT, "\x13", 1);
+			cpifaceSession->console->WriteNum    (bp, 1, COLACT, data, 16, 2, 0);
 			break;
 		case cmdTremolo:
-			cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "~", 1);
-			cpifaceSession->conFunc->WriteNum    (bp, 1, COLVOL, data, 16, 2, 0);
+			cpifaceSession->console->WriteString (bp, 0, COLVOL, "~", 1);
+			cpifaceSession->console->WriteNum    (bp, 1, COLVOL, data, 16, 2, 0);
 			break;
 		case cmdTremor:
-			cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "\xA9", 1);
-			cpifaceSession->conFunc->WriteNum    (bp, 1, COLVOL, data, 16, 2, 0);
+			cpifaceSession->console->WriteString (bp, 0, COLVOL, "\xA9", 1);
+			cpifaceSession->console->WriteNum    (bp, 1, COLVOL, data, 16, 2, 0);
 			break;
 		case cmdVolSlide:
 		case cmdChanVolSlide:
 			if (!data)
-				cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "\x12""00", 3);
+				cpifaceSession->console->WriteString (bp, 0, COLVOL, "\x12""00", 3);
 			else if ((data&0x0F)==0x00)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "\x18", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 1, COLVOL, data>>4, 16, 2, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLVOL, "\x18", 1);
+				cpifaceSession->console->WriteNum    (bp, 1, COLVOL, data>>4, 16, 2, 0);
 			} else if ((data&0xF0)==0x00)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "\x19", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 1, COLVOL, data&0xF, 16, 2, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLVOL, "\x19", 1);
+				cpifaceSession->console->WriteNum    (bp, 1, COLVOL, data&0xF, 16, 2, 0);
 			} else if ((data&0x0F)==0x0F)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "+", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 1, COLVOL, data>>4, 16, 2, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLVOL, "+", 1);
+				cpifaceSession->console->WriteNum    (bp, 1, COLVOL, data>>4, 16, 2, 0);
 			} else if ((data&0xF0)==0xF0)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "-", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 1, COLVOL, data&0xF, 16, 2, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLVOL, "-", 1);
+				cpifaceSession->console->WriteNum    (bp, 1, COLVOL, data&0xF, 16, 2, 0);
 			}
 			break;
 		case cmdPanSlide:
 			if (!data)
-				cpifaceSession->conFunc->WriteString (bp, 0, COLPAN, "\x1D""00", 3);
+				cpifaceSession->console->WriteString (bp, 0, COLPAN, "\x1D""00", 3);
 			else if ((data&0x0F)==0x00)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 0, COLPAN, "\x1B", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 1, COLPAN, data>>4, 16, 2, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLPAN, "\x1B", 1);
+				cpifaceSession->console->WriteNum    (bp, 1, COLPAN, data>>4, 16, 2, 0);
 			} else if ((data&0xF0)==0x00)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 0, COLPAN, "\x1A", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 1, COLPAN, data&0xF, 16, 2, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLPAN, "\x1A", 1);
+				cpifaceSession->console->WriteNum    (bp, 1, COLPAN, data&0xF, 16, 2, 0);
 			} else if ((data&0x0F)==0x0F)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 0, COLPAN, "-", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 1, COLPAN, data>>4, 16, 2, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLPAN, "-", 1);
+				cpifaceSession->console->WriteNum    (bp, 1, COLPAN, data>>4, 16, 2, 0);
 			} else if ((data&0xF0)==0xF0)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 0, COLPAN, "+", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 1, COLPAN, data&0xF, 16, 2, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLPAN, "+", 1);
+				cpifaceSession->console->WriteNum    (bp, 1, COLPAN, data&0xF, 16, 2, 0);
 			}
 			break;
 		case cmdPortaVol:
-			cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "\x0D", 1);
+			cpifaceSession->console->WriteString (bp, 0, COLPITCH, "\x0D", 1);
 			if (!data)
-				cpifaceSession->conFunc->WriteString (bp, 1, COLVOL, "\x12""0", 2);
+				cpifaceSession->console->WriteString (bp, 1, COLVOL, "\x12""0", 2);
 			else if ((data&0x0F)==0x00)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 1, COLVOL, "\x18", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 2, COLVOL, data>>4, 16, 1, 0);
+				cpifaceSession->console->WriteString (bp, 1, COLVOL, "\x18", 1);
+				cpifaceSession->console->WriteNum    (bp, 2, COLVOL, data>>4, 16, 1, 0);
 			} else if ((data&0xF0)==0x00)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 1, COLVOL, "\x19", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 2, COLVOL, data&0xF, 16, 1, 0);
+				cpifaceSession->console->WriteString (bp, 1, COLVOL, "\x19", 1);
+				cpifaceSession->console->WriteNum    (bp, 2, COLVOL, data&0xF, 16, 1, 0);
 			} else if ((data&0x0F)==0x0F)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 1, COLVOL, "+", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 2, COLVOL, data>>4, 16, 1, 0);
+				cpifaceSession->console->WriteString (bp, 1, COLVOL, "+", 1);
+				cpifaceSession->console->WriteNum    (bp, 2, COLVOL, data>>4, 16, 1, 0);
 			} else if ((data&0xF0)==0xF0)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 1, COLVOL, "-", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 2, COLVOL, data&0xF, 16, 1, 0);
+				cpifaceSession->console->WriteString (bp, 1, COLVOL, "-", 1);
+				cpifaceSession->console->WriteNum    (bp, 2, COLVOL, data&0xF, 16, 1, 0);
 			}
 			break;
 		case cmdVibVol:
-			cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "~", 1);
+			cpifaceSession->console->WriteString (bp, 0, COLPITCH, "~", 1);
 			if (!data)
-				cpifaceSession->conFunc->WriteString (bp, 1, COLVOL, "\x12""0", 2);
+				cpifaceSession->console->WriteString (bp, 1, COLVOL, "\x12""0", 2);
 			else if ((data&0x0F)==0x00)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 1, COLVOL, "\x18", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 2, COLVOL, data>>4, 16, 1, 0);
+				cpifaceSession->console->WriteString (bp, 1, COLVOL, "\x18", 1);
+				cpifaceSession->console->WriteNum    (bp, 2, COLVOL, data>>4, 16, 1, 0);
 			} else if ((data&0xF0)==0x00)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 1, COLVOL, "\x19", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 2, COLVOL, data&0xF, 16, 1, 0);
+				cpifaceSession->console->WriteString (bp, 1, COLVOL, "\x19", 1);
+				cpifaceSession->console->WriteNum    (bp, 2, COLVOL, data&0xF, 16, 1, 0);
 			} else if ((data&0x0F)==0x0F)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 1, COLVOL, "+", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 2, COLVOL, data>>4, 16, 1, 0);
+				cpifaceSession->console->WriteString (bp, 1, COLVOL, "+", 1);
+				cpifaceSession->console->WriteNum    (bp, 2, COLVOL, data>>4, 16, 1, 0);
 			} else if ((data&0xF0)==0xF0)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 1, COLVOL, "-", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 2, COLVOL, data&0xF, 16, 1, 0);
+				cpifaceSession->console->WriteString (bp, 1, COLVOL, "-", 1);
+				cpifaceSession->console->WriteNum    (bp, 2, COLVOL, data&0xF, 16, 1, 0);
 			}
 			break;
 		case cmdPortaNote:
-			cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "\x0D", 1);
-			cpifaceSession->conFunc->WriteNum    (bp, 1, COLPITCH, data, 16, 2, 0);
+			cpifaceSession->console->WriteString (bp, 0, COLPITCH, "\x0D", 1);
+			cpifaceSession->console->WriteNum    (bp, 1, COLPITCH, data, 16, 2, 0);
 			break;
 		case cmdPortaU:
 			if (data>=0xF0)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "+0", 2);
-				cpifaceSession->conFunc->WriteNum    (bp, 2, COLPITCH, data&0xF, 16, 1, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLPITCH, "+0", 2);
+				cpifaceSession->console->WriteNum    (bp, 2, COLPITCH, data&0xF, 16, 1, 0);
 			} else if (data>=0xE0)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "+x", 2);
-				cpifaceSession->conFunc->WriteNum    (bp, 2, COLPITCH, data&0xF, 16, 1, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLPITCH, "+x", 2);
+				cpifaceSession->console->WriteNum    (bp, 2, COLPITCH, data&0xF, 16, 1, 0);
 			} else {
-				cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "\x18", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 1, COLPITCH, data, 16, 2, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLPITCH, "\x18", 1);
+				cpifaceSession->console->WriteNum    (bp, 1, COLPITCH, data, 16, 2, 0);
 			}
 			break;
 		case cmdPortaD:
 			if (data>=0xF0)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "-0", 2);
-				cpifaceSession->conFunc->WriteNum    (bp, 2, COLPITCH, data&0xF, 16, 1, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLPITCH, "-0", 2);
+				cpifaceSession->console->WriteNum    (bp, 2, COLPITCH, data&0xF, 16, 1, 0);
 			} else if (data>=0xE0)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "-x", 2);
-				cpifaceSession->conFunc->WriteNum    (bp, 2, COLPITCH, data&0xF, 16, 1, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLPITCH, "-x", 2);
+				cpifaceSession->console->WriteNum    (bp, 2, COLPITCH, data&0xF, 16, 1, 0);
 			} else {
-				cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "\x19", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 1, COLPITCH, data, 16, 2, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLPITCH, "\x19", 1);
+				cpifaceSession->console->WriteNum    (bp, 1, COLPITCH, data, 16, 2, 0);
 			}
 			break;
 		case cmdSpecial:
 			if (!data)
 			{
-				cpifaceSession->conFunc->WriteString (bp, 0, COLACT, "S00", 3);
+				cpifaceSession->console->WriteString (bp, 0, COLACT, "S00", 3);
 				break;
 			}
 			data&=0xF;
@@ -389,39 +389,39 @@ static void it_getfx (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp, 
 				case cmdSVibType:
 					if (data>=4)
 						break;
-					cpifaceSession->conFunc->WriteString (bp, 0, COLPITCH, "~=", 2);
-					cpifaceSession->conFunc->WriteString (bp, 2, COLPITCH, &"~\\\xA9?"[data], 1);
+					cpifaceSession->console->WriteString (bp, 0, COLPITCH, "~=", 2);
+					cpifaceSession->console->WriteString (bp, 2, COLPITCH, &"~\\\xA9?"[data], 1);
 					break;
 				case cmdSTremType:
 					if (data>=4)
 						break;
-					cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "~=", 2);
-					cpifaceSession->conFunc->WriteString (bp, 2, COLVOL, &"~\\\xA9?"[data], 1);
+					cpifaceSession->console->WriteString (bp, 0, COLVOL, "~=", 2);
+					cpifaceSession->console->WriteString (bp, 2, COLVOL, &"~\\\xA9?"[data], 1);
 					break;
 				case cmdSPanbrType:
 					if (data>=4)
 						break;
-					cpifaceSession->conFunc->WriteString (bp, 0, COLPAN, "~=", 2);
-					cpifaceSession->conFunc->WriteString (bp, 2, COLPAN, &"~\\\xA9?"[data], 1);
+					cpifaceSession->console->WriteString (bp, 0, COLPAN, "~=", 2);
+					cpifaceSession->console->WriteString (bp, 2, COLPAN, &"~\\\xA9?"[data], 1);
 					break;
 				case cmdSNoteCut:
-					cpifaceSession->conFunc->WriteString (bp, 0, COLACT, "^", 1);
-					cpifaceSession->conFunc->WriteNum    (bp, 1, COLACT, data, 16, 2, 0);
+					cpifaceSession->console->WriteString (bp, 0, COLACT, "^", 1);
+					cpifaceSession->console->WriteNum    (bp, 1, COLACT, data, 16, 2, 0);
 					break;
 				case cmdSNoteDelay:
-					cpifaceSession->conFunc->WriteString (bp, 0, COLACT, "d", 1);
-					cpifaceSession->conFunc->WriteNum    (bp, 1, COLACT, data, 16, 2, 0);
+					cpifaceSession->console->WriteString (bp, 0, COLACT, "d", 1);
+					cpifaceSession->console->WriteNum    (bp, 1, COLACT, data, 16, 2, 0);
 					break;
 				case cmdSSurround:
-					cpifaceSession->conFunc->WriteString (bp, 0, COLPAN, "srd", 3);
+					cpifaceSession->console->WriteString (bp, 0, COLPAN, "srd", 3);
 					break;
 				case cmdSInstFX:
-					cpifaceSession->conFunc->WriteString (bp, 0, COLINS, instfx[data], 3);
+					cpifaceSession->console->WriteString (bp, 0, COLINS, instfx[data], 3);
 					break;
 				case cmdSOffsetHigh:
-					cpifaceSession->conFunc->WriteString (bp, 0, COLACT, "\x1A", 1);
-					cpifaceSession->conFunc->WriteNum    (bp, 1, COLACT, data, 16, 1, 0);
-					cpifaceSession->conFunc->WriteString (bp, 2, COLACT, "x", 1);
+					cpifaceSession->console->WriteString (bp, 0, COLACT, "\x1A", 1);
+					cpifaceSession->console->WriteNum    (bp, 1, COLACT, data, 16, 1, 0);
+					cpifaceSession->console->WriteString (bp, 2, COLACT, "x", 1);
 					break;
 			}
 			break;
@@ -440,51 +440,51 @@ static void it_getgcmd (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp
 		switch (curdata[4])
 		{
 			case cmdSpeed:
-				cpifaceSession->conFunc->WriteString (bp, 0, COLSPEED, "s", 1);
-				cpifaceSession->conFunc->WriteNum    (bp, 1, COLSPEED, data, 16, 2, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLSPEED, "s", 1);
+				cpifaceSession->console->WriteNum    (bp, 1, COLSPEED, data, 16, 2, 0);
 				break;
 			case cmdTempo:
-				cpifaceSession->conFunc->WriteString (bp, 0, COLSPEED, "b", 1);
+				cpifaceSession->console->WriteString (bp, 0, COLSPEED, "b", 1);
 				if ((data>=0x20)||!data||(data==0x10))
 				{
-					cpifaceSession->conFunc->WriteNum (bp, 1, COLSPEED, data, 16, 2, 0);
+					cpifaceSession->console->WriteNum (bp, 1, COLSPEED, data, 16, 2, 0);
 				} else {
-					cpifaceSession->conFunc->WriteString (bp, 1, COLSPEED, &"-+"[data>>4], 1);
-					cpifaceSession->conFunc->WriteNum    (bp, 2, COLSPEED, data&0xF, 16, 1, 0);
+					cpifaceSession->console->WriteString (bp, 1, COLSPEED, &"-+"[data>>4], 1);
+					cpifaceSession->console->WriteNum    (bp, 2, COLSPEED, data&0xF, 16, 1, 0);
 				}
 				break;
 			case cmdJump:
-				cpifaceSession->conFunc->WriteString (bp, 0, COLACT, "\x1A", 1);
-				cpifaceSession->conFunc->WriteNum (bp, 1, COLACT, data, 16, 2, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLACT, "\x1A", 1);
+				cpifaceSession->console->WriteNum (bp, 1, COLACT, data, 16, 2, 0);
 				break;
 			case cmdBreak:
-				cpifaceSession->conFunc->WriteString (bp, 0, COLACT, "\x19", 1);
-				cpifaceSession->conFunc->WriteNum (bp, 1, COLACT, data, 16, 2, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLACT, "\x19", 1);
+				cpifaceSession->console->WriteNum (bp, 1, COLACT, data, 16, 2, 0);
 				break;
 			case cmdGVolume:
-				cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "v", 1);
-				cpifaceSession->conFunc->WriteNum (bp, 1, COLVOL, data, 16, 2, 0);
+				cpifaceSession->console->WriteString (bp, 0, COLVOL, "v", 1);
+				cpifaceSession->console->WriteNum (bp, 1, COLVOL, data, 16, 2, 0);
 				break;
 			case cmdGVolSlide:
 				if (!data)
 				{
-					cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "\x12""00", 3);
+					cpifaceSession->console->WriteString (bp, 0, COLVOL, "\x12""00", 3);
 				} else if ((data&0x0F)==0x00)
 				{
-					cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "\x18", 1);
-					cpifaceSession->conFunc->WriteNum    (bp, 1, COLVOL, data>>4, 16, 2, 0);
+					cpifaceSession->console->WriteString (bp, 0, COLVOL, "\x18", 1);
+					cpifaceSession->console->WriteNum    (bp, 1, COLVOL, data>>4, 16, 2, 0);
 				} else if ((data&0xF0)==0x00)
 				{
-					cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "\x19", 1);
-					cpifaceSession->conFunc->WriteNum    (bp, 1, COLVOL, data&0xF, 16, 2, 0);
+					cpifaceSession->console->WriteString (bp, 0, COLVOL, "\x19", 1);
+					cpifaceSession->console->WriteNum    (bp, 1, COLVOL, data&0xF, 16, 2, 0);
 				} else if ((data&0x0F)==0x0F)
 				{
-					cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "+", 1);
-					cpifaceSession->conFunc->WriteNum    (bp, 1, COLVOL, data>>4, 16, 2, 0);
+					cpifaceSession->console->WriteString (bp, 0, COLVOL, "+", 1);
+					cpifaceSession->console->WriteNum    (bp, 1, COLVOL, data>>4, 16, 2, 0);
 				} else if ((data&0xF0)==0xF0)
 				{
-					cpifaceSession->conFunc->WriteString (bp, 0, COLVOL, "-", 1);
-					cpifaceSession->conFunc->WriteNum    (bp, 1, COLVOL, data&0xF, 16, 2, 0);
+					cpifaceSession->console->WriteString (bp, 0, COLVOL, "-", 1);
+					cpifaceSession->console->WriteNum    (bp, 1, COLVOL, data&0xF, 16, 2, 0);
 				}
 				break;
 			case cmdSpecial:
@@ -492,16 +492,16 @@ static void it_getgcmd (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp
 				switch (curdata[5]>>4)
 				{
 					case cmdSPatLoop:
-						cpifaceSession->conFunc->WriteString (bp, 0, COLACT, "pl", 2);
-						cpifaceSession->conFunc->WriteNum    (bp, 2, COLACT, data, 16, 1, 0);
+						cpifaceSession->console->WriteString (bp, 0, COLACT, "pl", 2);
+						cpifaceSession->console->WriteNum    (bp, 2, COLACT, data, 16, 1, 0);
 						break;
 					case cmdSPatDelayRow:
-						cpifaceSession->conFunc->WriteString (bp, 0, COLACT, "dr", 2);
-						cpifaceSession->conFunc->WriteNum    (bp, 2, COLACT, data, 16, 1, 0);
+						cpifaceSession->console->WriteString (bp, 0, COLACT, "dr", 2);
+						cpifaceSession->console->WriteNum    (bp, 2, COLACT, data, 16, 1, 0);
 						break;
 					case cmdSPatDelayTick:
-						cpifaceSession->conFunc->WriteString (bp, 0, COLACT, "dt", 2);
-						cpifaceSession->conFunc->WriteNum    (bp, 2, COLACT, data, 16, 1, 0);
+						cpifaceSession->console->WriteString (bp, 0, COLACT, "dt", 2);
+						cpifaceSession->console->WriteNum    (bp, 2, COLACT, data, 16, 1, 0);
 						break;
 					default:
 						bp-=4;

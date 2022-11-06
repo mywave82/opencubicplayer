@@ -40,7 +40,7 @@ void swtext_displaycharattr_double8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8
 	int i, j;
 	uint8_t f, b;
 
-	target = conStatus.VidMem + y * 8 * conStatus.GraphBytesPerLine + x * 8;
+	target = Console.VidMem + y * 8 * Console.GraphBytesPerLine + x * 8;
 
 	f = attr & 0x0f;
 	b = attr >> 4;
@@ -60,7 +60,7 @@ void swtext_displaycharattr_double8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8
 			bitmap<<=1;
 		}
 		target -= 16;
-		target += conStatus.GraphBytesPerLine;
+		target += Console.GraphBytesPerLine;
 	}
 }
 
@@ -70,7 +70,7 @@ void swtext_displaycharattr_double8x16(uint16_t y, uint16_t x, uint8_t *cp, uint
 	int i, j;
 	uint8_t f, b;
 
-	target = conStatus.VidMem + y * 16 * conStatus.GraphBytesPerLine + x * 8;
+	target = Console.VidMem + y * 16 * Console.GraphBytesPerLine + x * 8;
 
 	f = attr & 0x0f;
 	b = attr >> 4;
@@ -90,7 +90,7 @@ void swtext_displaycharattr_double8x16(uint16_t y, uint16_t x, uint8_t *cp, uint
 			bitmap<<=1;
 		}
 		target -= 16;
-		target += conStatus.GraphBytesPerLine;
+		target += Console.GraphBytesPerLine;
 	}
 }
 
@@ -100,7 +100,7 @@ static void swtext_displaycharattr_doublefirsthalf8x8(uint16_t y, uint16_t x, ui
 	int i, j;
 	uint8_t f, b;
 
-	target = conStatus.VidMem + y * 8 * conStatus.GraphBytesPerLine + x * 8;
+	target = Console.VidMem + y * 8 * Console.GraphBytesPerLine + x * 8;
 
 	f = attr & 0x0f;
 	b = attr >> 4;
@@ -115,7 +115,7 @@ static void swtext_displaycharattr_doublefirsthalf8x8(uint16_t y, uint16_t x, ui
 			bitmap<<=1;
 		}
 		target -= 8;
-		target += conStatus.GraphBytesPerLine;
+		target += Console.GraphBytesPerLine;
 	}
 }
 
@@ -125,7 +125,7 @@ static void swtext_displaycharattr_doublefirsthalf8x16(uint16_t y, uint16_t x, u
 	int i, j;
 	uint8_t f, b;
 
-	target = conStatus.VidMem + y * 16 * conStatus.GraphBytesPerLine + x * 8;
+	target = Console.VidMem + y * 16 * Console.GraphBytesPerLine + x * 8;
 
 	f = attr & 0x0f;
 	b = attr >> 4;
@@ -140,7 +140,7 @@ static void swtext_displaycharattr_doublefirsthalf8x16(uint16_t y, uint16_t x, u
 			bitmap<<=1;
 		}
 		target -= 8;
-		target += conStatus.GraphBytesPerLine;
+		target += Console.GraphBytesPerLine;
 	}
 }
 
@@ -150,7 +150,7 @@ void swtext_displaycharattr_single8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8
 	int i, j;
 	uint8_t f, b;
 
-	target = conStatus.VidMem + y * 8 * conStatus.GraphBytesPerLine + x * 8;
+	target = Console.VidMem + y * 8 * Console.GraphBytesPerLine + x * 8;
 
 	f = attr & 0x0f;
 	b = attr >> 4;
@@ -164,7 +164,7 @@ void swtext_displaycharattr_single8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8
 			bitmap<<=1;
 		}
 		target -= 8;
-		target += conStatus.GraphBytesPerLine;
+		target += Console.GraphBytesPerLine;
 	}
 }
 
@@ -174,7 +174,7 @@ void swtext_displaycharattr_single8x16(uint16_t y, uint16_t x, uint8_t *cp, uint
 	int i, j;
 	uint8_t f, b;
 
-	target = conStatus.VidMem + y * 16 * conStatus.GraphBytesPerLine + x * 8;
+	target = Console.VidMem + y * 16 * Console.GraphBytesPerLine + x * 8;
 
 	f = attr & 0x0f;
 	b = attr >> 4;
@@ -188,7 +188,7 @@ void swtext_displaycharattr_single8x16(uint16_t y, uint16_t x, uint8_t *cp, uint
 			bitmap<<=1;
 		}
 		target -= 8;
-		target += conStatus.GraphBytesPerLine;
+		target += Console.GraphBytesPerLine;
 	}
 }
 
@@ -201,7 +201,7 @@ static void swtext_displaystrattr_unifont_8x8(uint16_t y, uint16_t x, const uint
 			uint8_t *cp;
 			int fontwidth;
 
-			if (x >= conStatus.TextWidth) return;
+			if (x >= Console.TextWidth) return;
 
 			cp = fontengine_8x8 (codepage[(*buf)&0x0ff], &fontwidth);
 			/* all these codepoints should always use only one CELL */
@@ -213,7 +213,7 @@ static void swtext_displaystrattr_unifont_8x8(uint16_t y, uint16_t x, const uint
 	} else { /* codepage == NULL => optimization, ocp-cp437 is in the start of the unifont cache */
 		while (len)
 		{
-			if (x >= conStatus.TextWidth) return;
+			if (x >= Console.TextWidth) return;
 			/* all these codepoints should always use only one CELL */
 			swtext_displaycharattr_single8x8 (y, x, cp437_8x8[(*buf)&0x0ff].data, plpalette[((*buf)>>8)]);
 			x += 1;
@@ -232,7 +232,7 @@ static void swtext_displaystrattr_unifont_8x16(uint16_t y, uint16_t x, const uin
 			uint8_t *cp;
 			int fontwidth;
 
-			if (x >= conStatus.TextWidth) return;
+			if (x >= Console.TextWidth) return;
 
 			cp = fontengine_8x16 (codepage[(*buf)&0x0ff], &fontwidth);
 			/* all these codepoints should always use only one CELL */
@@ -244,7 +244,7 @@ static void swtext_displaystrattr_unifont_8x16(uint16_t y, uint16_t x, const uin
 	} else { /* codepage == NULL => optimization, ocp-cp437 is in the start of the unifont cache */
 		while (len)
 		{
-			if (x >= conStatus.TextWidth) return;
+			if (x >= Console.TextWidth) return;
 			/* all these codepoints should always use only one CELL */
 			swtext_displaycharattr_single8x16 (y, x, cp437_8x16[(*buf)&0x0ff].data, plpalette[((*buf)>>8)]);
 			x += 1;
@@ -263,7 +263,7 @@ static void swtext_displaychr_unifont_8x8(uint16_t y, uint16_t x, uint8_t attr, 
 			uint8_t *cp;
 			int fontwidth;
 
-			if (x >= conStatus.TextWidth) return;
+			if (x >= Console.TextWidth) return;
 
 			/* all these codepoints should always use only one CELL */
 			cp = fontengine_8x8 (codepage[(uint8_t)chr], &fontwidth);
@@ -275,7 +275,7 @@ static void swtext_displaychr_unifont_8x8(uint16_t y, uint16_t x, uint8_t attr, 
 		while (len)
 		{
 
-			if (x >= conStatus.TextWidth) return;
+			if (x >= Console.TextWidth) return;
 
 			/* all these codepoints should always use only one CELL */
 			swtext_displaycharattr_single8x8 (y, x, cp437_8x8[(uint8_t)chr].data, attr);
@@ -294,7 +294,7 @@ static void swtext_displaystr_unifont_8x8(uint16_t y, uint16_t x, uint8_t attr, 
 			uint8_t *cp;
 			int fontwidth;
 
-			if (x >= conStatus.TextWidth) return;
+			if (x >= Console.TextWidth) return;
 
 			/* all these codepoints should always use only one CELL */
 			cp = fontengine_8x8 (codepage[*(uint8_t *)str], &fontwidth);
@@ -307,7 +307,7 @@ static void swtext_displaystr_unifont_8x8(uint16_t y, uint16_t x, uint8_t attr, 
 		while (len)
 		{
 
-			if (x >= conStatus.TextWidth) return;
+			if (x >= Console.TextWidth) return;
 
 			/* all these codepoints should always use only one CELL */
 			swtext_displaycharattr_single8x8 (y, x, cp437_8x8[*(uint8_t *)str].data, attr);
@@ -327,7 +327,7 @@ static void swtext_displaychr_unifont_8x16(uint16_t y, uint16_t x, uint8_t attr,
 			uint8_t *cp;
 			int fontwidth;
 
-			if (x >= conStatus.TextWidth) return;
+			if (x >= Console.TextWidth) return;
 
 			/* all these codepoints should always use only one CELL */
 			cp = fontengine_8x16 (codepage[(uint8_t)chr], &fontwidth);
@@ -339,7 +339,7 @@ static void swtext_displaychr_unifont_8x16(uint16_t y, uint16_t x, uint8_t attr,
 		while (len)
 		{
 
-			if (x >= conStatus.TextWidth) return;
+			if (x >= Console.TextWidth) return;
 
 			/* all these codepoints should always use only one CELL */
 			swtext_displaycharattr_single8x16 (y, x, cp437_8x16[(uint8_t)chr].data, attr);
@@ -358,7 +358,7 @@ static void swtext_displaystr_unifont_8x16(uint16_t y, uint16_t x, uint8_t attr,
 			uint8_t *cp;
 			int fontwidth;
 
-			if (x >= conStatus.TextWidth) return;
+			if (x >= Console.TextWidth) return;
 
 			/* all these codepoints should always use only one CELL */
 			cp = fontengine_8x16 (codepage[*(uint8_t *)str], &fontwidth);
@@ -371,7 +371,7 @@ static void swtext_displaystr_unifont_8x16(uint16_t y, uint16_t x, uint8_t attr,
 		while (len)
 		{
 
-			if (x >= conStatus.TextWidth) return;
+			if (x >= Console.TextWidth) return;
 
 			/* all these codepoints should always use only one CELL */
 			swtext_displaycharattr_single8x16 (y, x, cp437_8x16[*(uint8_t *)str].data, attr);
@@ -391,7 +391,7 @@ static void swtext_displaystr_unifont_utf8_8x8(uint16_t y, uint16_t x, uint8_t a
 		uint8_t *data;
 		int fontwidth;
 
-		if (x >= conStatus.TextWidth) return;
+		if (x >= Console.TextWidth) return;
 
 		cp = utf8_decode (str, _strlen, &inc);
 		str += inc;
@@ -429,7 +429,7 @@ static void swtext_displaystr_unifont_utf8_8x16(uint16_t y, uint16_t x, uint8_t 
 		uint8_t *data;
 		int fontwidth;
 
-		if (x >= conStatus.TextWidth) return;
+		if (x >= Console.TextWidth) return;
 
 		cp = utf8_decode (str, _strlen, &inc);
 		str += inc;
@@ -466,7 +466,7 @@ static void swtext_displaycharattr_cpfont_8x8(uint16_t y, uint16_t x, const uint
 	uint8_t *cp;
 	uint8_t f, b;
 
-	target = conStatus.VidMem + y * 8 * conStatus.GraphBytesPerLine + x * 8;
+	target = Console.VidMem + y * 8 * Console.GraphBytesPerLine + x * 8;
 
 	cp = plFont88[ch];
 	f = attr & 0x0f;
@@ -481,14 +481,14 @@ static void swtext_displaycharattr_cpfont_8x8(uint16_t y, uint16_t x, const uint
 			bitmap<<=1;
 		}
 		target -= 8;
-		target += conStatus.GraphBytesPerLine;
+		target += Console.GraphBytesPerLine;
 	}
 }
 
 /* codepage is optional, to translate...*/
 void swtext_displaystrattr_cpfont_8x8(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len, const uint8_t *codepage)
 {
-	if (!conStatus.VidMem)
+	if (!Console.VidMem)
 	{
 		return;
 	}
@@ -497,7 +497,7 @@ void swtext_displaystrattr_cpfont_8x8(uint16_t y, uint16_t x, const uint16_t *bu
 	{
 		uint8_t ch;
 
-		if (x >= conStatus.TextWidth) return;
+		if (x >= Console.TextWidth) return;
 
 		ch = (*buf)&0x0ff;
 		if (codepage)
@@ -513,7 +513,7 @@ void swtext_displaystrattr_cpfont_8x8(uint16_t y, uint16_t x, const uint16_t *bu
 
 void swtext_displaystr_cpfont_8x8(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len, const uint8_t *codepage)
 {
-	if (!conStatus.VidMem)
+	if (!Console.VidMem)
 	{
 		return;
 	}
@@ -522,7 +522,7 @@ void swtext_displaystr_cpfont_8x8(uint16_t y, uint16_t x, uint8_t attr, const ch
 	{
 		uint8_t ch;
 
-		if (x >= conStatus.TextWidth) return;
+		if (x >= Console.TextWidth) return;
 
 		ch = *str;
 		if (codepage)
@@ -546,21 +546,21 @@ void swtext_displayvoid(uint16_t y, uint16_t x, uint16_t len)
 	unsigned int count;
 	int i;
 
-	if (!conStatus.VidMem)
+	if (!Console.VidMem)
 	{
 		return;
 	}
 
-	switch (conStatus.CurrentFont)
+	switch (Console.CurrentFont)
 	{
 		default:
 		case _8x16:
-			target = conStatus.VidMem + y * 16 * conStatus.GraphBytesPerLine + x * 8;
+			target = Console.VidMem + y * 16 * Console.GraphBytesPerLine + x * 8;
 			length = len * 8;
 			count = 16;
 			break;
 		case _8x8:
-			target = conStatus.VidMem + y * 8 * conStatus.GraphBytesPerLine + x * 8;
+			target = Console.VidMem + y * 8 * Console.GraphBytesPerLine + x * 8;
 			length = len * 8;
 			count = 8;
 			break;
@@ -569,18 +569,18 @@ void swtext_displayvoid(uint16_t y, uint16_t x, uint16_t len)
 	for (i=0; i < count; i++)
 	{
 		memset (target, 0, length);
-		target += conStatus.GraphBytesPerLine;
+		target += Console.GraphBytesPerLine;
 	}
 }
 
 void swtext_displaystrattr_cp437(uint16_t y, uint16_t x, const uint16_t *buf, uint16_t len)
 {
-	if (!conStatus.VidMem)
+	if (!Console.VidMem)
 	{
 		return;
 	}
 
-	switch (conStatus.CurrentFont)
+	switch (Console.CurrentFont)
 	{
 		case _8x16:
 			swtext_displaystrattr_unifont_8x16 (y, x, buf, len, 0);
@@ -593,12 +593,12 @@ void swtext_displaystrattr_cp437(uint16_t y, uint16_t x, const uint16_t *buf, ui
 
 void swtext_displaychr_cp437(uint16_t y, uint16_t x, uint8_t attr, char chr, uint16_t len)
 {
-	if (!conStatus.VidMem)
+	if (!Console.VidMem)
 	{
 		return;
 	}
 
-	switch (conStatus.CurrentFont)
+	switch (Console.CurrentFont)
 	{
 		case _8x16:
 			swtext_displaychr_unifont_8x16 (y, x, attr, chr, len, 0);
@@ -611,12 +611,12 @@ void swtext_displaychr_cp437(uint16_t y, uint16_t x, uint8_t attr, char chr, uin
 
 void swtext_displaystr_cp437(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
 {
-	if (!conStatus.VidMem)
+	if (!Console.VidMem)
 	{
 		return;
 	}
 
-	switch (conStatus.CurrentFont)
+	switch (Console.CurrentFont)
 	{
 		case _8x16:
 			swtext_displaystr_unifont_8x16 (y, x, attr, str, len, 0);
@@ -629,12 +629,12 @@ void swtext_displaystr_cp437(uint16_t y, uint16_t x, uint8_t attr, const char *s
 
 void swtext_displaystr_utf8(uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
 {
-	if (!conStatus.VidMem)
+	if (!Console.VidMem)
 	{
 		return;
 	}
 
-	switch (conStatus.CurrentFont)
+	switch (Console.CurrentFont)
 	{
 		case _8x16:
 			swtext_displaystr_unifont_utf8_8x16 (y, x, attr, str, len);
@@ -680,7 +680,7 @@ void swtext_drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t
 	int font_width;
 	int font_height;
 
-	if (!conStatus.VidMem)
+	if (!Console.VidMem)
 	{
 		return;
 	}
@@ -692,7 +692,7 @@ void swtext_drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t
 	yh2=(yh+yh1+1)/2 - yh1;
 	yh3=yh-yh1-yh2;
 
-	switch (conStatus.CurrentFont)
+	switch (Console.CurrentFont)
 	{
 		default:
 		case _8x16:
@@ -705,7 +705,7 @@ void swtext_drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t
 			hgt >>= 1;
 			break;
 	}
-	target = conStatus.VidMem + ((yb + 1) * font_height - 1) * conStatus.GraphBytesPerLine + x * font_width;
+	target = Console.VidMem + ((yb + 1) * font_height - 1) * Console.GraphBytesPerLine + x * font_width;
 	f = c & 0x0f;
 	b = (c >> 4) & 0x0f;
 	for (i = yh1 * font_height; i > 0; i--)
@@ -718,7 +718,7 @@ void swtext_drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t
 		} else {
 			memset (target, b, font_width);
 		}
-		target -= conStatus.GraphBytesPerLine;
+		target -= Console.GraphBytesPerLine;
 	}
 	c>>=8;
 	f = c & 0x0f;
@@ -733,7 +733,7 @@ void swtext_drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t
 		} else {
 			memset (target, b, font_width);
 		}
-		target -= conStatus.GraphBytesPerLine;
+		target -= Console.GraphBytesPerLine;
 	}
 	c>>=8;
 	f = c & 0x0f;
@@ -748,7 +748,7 @@ void swtext_drawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t
 		} else {
 			memset (target, b, font_width);
 		}
-		target -= conStatus.GraphBytesPerLine;
+		target -= Console.GraphBytesPerLine;
 	}
 }
 
@@ -761,7 +761,7 @@ void swtext_idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 	int font_width;
 	int font_height;
 
-	if (!conStatus.VidMem)
+	if (!Console.VidMem)
 	{
 		return;
 	}
@@ -773,7 +773,7 @@ void swtext_idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 	yh2=(yh+yh1+1)/2 - yh1;
 	yh3=yh-yh1-yh2;
 
-	switch (conStatus.CurrentFont)
+	switch (Console.CurrentFont)
 	{
 		default:
 		case _8x16:
@@ -786,7 +786,7 @@ void swtext_idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 			hgt >>= 1;
 			break;
 	}
-	target = conStatus.VidMem + (yb - yh + 1) * font_height * conStatus.GraphBytesPerLine + x * font_width;
+	target = Console.VidMem + (yb - yh + 1) * font_height * Console.GraphBytesPerLine + x * font_width;
 	f = c & 0x0f;
 	b = (c >> 4) & 0x0f;
 	for (i = yh1 * font_height; i > 0; i--)
@@ -799,7 +799,7 @@ void swtext_idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 		} else {
 			memset (target, b, font_width);
 		}
-		target += conStatus.GraphBytesPerLine;
+		target += Console.GraphBytesPerLine;
 	}
 	c>>=8;
 	f = c & 0x0f;
@@ -814,7 +814,7 @@ void swtext_idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 		} else {
 			memset (target, b, font_width);
 		}
-		target += conStatus.GraphBytesPerLine;
+		target += Console.GraphBytesPerLine;
 	}
 	c>>=8;
 	f = c & 0x0f;
@@ -829,7 +829,7 @@ void swtext_idrawbar(uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_
 		} else {
 			memset (target, b, font_width);
 		}
-		target += conStatus.GraphBytesPerLine;
+		target += Console.GraphBytesPerLine;
 	}
 }
 
@@ -854,7 +854,7 @@ void swtext_cursor_inject (void)
 {
 	swtext_shapestatus = 0;
 
-	if (!conStatus.VidMem)
+	if (!Console.VidMem)
 	{
 		return;
 	}
@@ -877,37 +877,37 @@ void swtext_cursor_inject (void)
 #warning we need a swtext_curshapeattr API, instead of guessing the colors (we no longer have vgamem)
 	if (swtext_shapestatus == 1)
 	{ /* save original buffer, and add a color 15 _ marker */
-		switch (conStatus.CurrentFont)
+		switch (Console.CurrentFont)
 		{
 			case _8x16:
-				memcpy (swtext_cursor_buffer + 0, conStatus.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 13) * conStatus.GraphBytesPerLine, 8);
-				memcpy (swtext_cursor_buffer + 8, conStatus.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 14) * conStatus.GraphBytesPerLine, 8);
-				memset (conStatus.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 13) * conStatus.GraphBytesPerLine, 15, 8);
-				memset (conStatus.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 14) * conStatus.GraphBytesPerLine, 14, 8);
+				memcpy (swtext_cursor_buffer + 0, Console.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 13) * Console.GraphBytesPerLine, 8);
+				memcpy (swtext_cursor_buffer + 8, Console.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 14) * Console.GraphBytesPerLine, 8);
+				memset (Console.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 13) * Console.GraphBytesPerLine, 15, 8);
+				memset (Console.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 14) * Console.GraphBytesPerLine, 14, 8);
 				break;
 			case _8x8:
-				memcpy (swtext_cursor_buffer, conStatus.VidMem + swtext_curposx * 8 + (swtext_curposy * 8 + 7) * conStatus.GraphBytesPerLine, 8);
-				memset (conStatus.VidMem + swtext_curposx * 8 + (swtext_curposy * 8 + 7) * conStatus.GraphBytesPerLine, 15, 8);
+				memcpy (swtext_cursor_buffer, Console.VidMem + swtext_curposx * 8 + (swtext_curposy * 8 + 7) * Console.GraphBytesPerLine, 8);
+				memset (Console.VidMem + swtext_curposx * 8 + (swtext_curposy * 8 + 7) * Console.GraphBytesPerLine, 15, 8);
 				break;
 		}
 	} else if (swtext_shapestatus == 2)
 	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
 		int i;
 		uint8_t c = 0x0f;
-		switch (conStatus.CurrentFont)
+		switch (Console.CurrentFont)
 		{
 			case _8x16:
-				c |= conStatus.VidMem[swtext_curposx * 8 + 7 + swtext_curposy * 16 * conStatus.GraphBytesPerLine] << 4;
+				c |= Console.VidMem[swtext_curposx * 8 + 7 + swtext_curposy * 16 * Console.GraphBytesPerLine] << 4;
 				for (i=0;i<16;i++)
 				{
-					memcpy (swtext_cursor_buffer + i * 8, conStatus.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + i) * conStatus.GraphBytesPerLine, 8);
+					memcpy (swtext_cursor_buffer + i * 8, Console.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + i) * Console.GraphBytesPerLine, 8);
 				}
 				break;
 			case _8x8:
-				c |= conStatus.VidMem[swtext_curposx * 8 + 7 + swtext_curposy * 8 * conStatus.GraphBytesPerLine] << 4;
+				c |= Console.VidMem[swtext_curposx * 8 + 7 + swtext_curposy * 8 * Console.GraphBytesPerLine] << 4;
 				for (i=0;i<8;i++)
 				{
-					memcpy (swtext_cursor_buffer + i * 8, conStatus.VidMem + swtext_curposx * 8 + (swtext_curposy * 8 + i) * conStatus.GraphBytesPerLine, 8);
+					memcpy (swtext_cursor_buffer + i * 8, Console.VidMem + swtext_curposx * 8 + (swtext_curposy * 8 + i) * Console.GraphBytesPerLine, 8);
 				}
 				break;
 		}
@@ -917,7 +917,7 @@ void swtext_cursor_inject (void)
 
 void swtext_cursor_eject (void)
 {
-	if (!conStatus.VidMem)
+	if (!Console.VidMem)
 	{
 		return;
 	}
@@ -925,31 +925,31 @@ void swtext_cursor_eject (void)
 	/* restore original buffer */
 	if (swtext_shapestatus == 1)
 	{
-		switch (conStatus.CurrentFont)
+		switch (Console.CurrentFont)
 		{
 			case _8x16:
-				memcpy (conStatus.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 13) * conStatus.GraphBytesPerLine, swtext_cursor_buffer + 0, 8);
-				memcpy (conStatus.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 14) * conStatus.GraphBytesPerLine, swtext_cursor_buffer + 8, 8);
+				memcpy (Console.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 13) * Console.GraphBytesPerLine, swtext_cursor_buffer + 0, 8);
+				memcpy (Console.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + 14) * Console.GraphBytesPerLine, swtext_cursor_buffer + 8, 8);
 				break;
 			case _8x8:
-				memcpy (conStatus.VidMem + swtext_curposx * 8 + (swtext_curposy * 8 + 7) * conStatus.GraphBytesPerLine, swtext_cursor_buffer, 8);
+				memcpy (Console.VidMem + swtext_curposx * 8 + (swtext_curposy * 8 + 7) * Console.GraphBytesPerLine, swtext_cursor_buffer, 8);
 				break;
 		}
 	} else if (swtext_shapestatus == 2)
 	{ /* backup original memory, and rewrite with \xdb snoop background color, and use fixed white foreground */
 		int i;
-		switch (conStatus.CurrentFont)
+		switch (Console.CurrentFont)
 		{
 			case _8x16:
 				for (i=0;i<16;i++)
 				{
-					memcpy (conStatus.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + i) * conStatus.GraphBytesPerLine, swtext_cursor_buffer + i * 8, 8);
+					memcpy (Console.VidMem + swtext_curposx * 8 + (swtext_curposy * 16 + i) * Console.GraphBytesPerLine, swtext_cursor_buffer + i * 8, 8);
 				}
 				break;
 			case _8x8:
 				for (i=0;i<8;i++)
 				{
-					memcpy (conStatus.VidMem + swtext_curposx * 8 + (swtext_curposy * 8 + i) * conStatus.GraphBytesPerLine, swtext_cursor_buffer + i * 8, 8);
+					memcpy (Console.VidMem + swtext_curposx * 8 + (swtext_curposy * 8 + i) * Console.GraphBytesPerLine, swtext_cursor_buffer + i * 8, 8);
 				}
 				break;
 		}

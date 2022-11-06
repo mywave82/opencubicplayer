@@ -380,9 +380,9 @@ int cpiKeyHelpDisplay(void)
 		for (;j<height;j++)
 			gdrawstr(j+top, left, 0x00, "", width);
 
-	while (conFunc.KeyboardHit())
+	while (Console.KeyboardHit())
 	{
-		uint16_t c = conFunc.KeyboardGetChar();
+		uint16_t c = Console.KeyboardGetChar();
 
 		if ( ((c >= 'a') && (c <= 'z')) ||
 		     ((c >= 'A') && (c <= 'Z')) ||

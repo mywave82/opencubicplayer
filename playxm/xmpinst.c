@@ -49,39 +49,39 @@ static char plInstShowFreq;
 static void xmpDisplayIns40 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
-	cpifaceSession->conFunc->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
-	cpifaceSession->conFunc->WriteNum    (buf, 1, col, n+1, 16, 2, 0);
-	cpifaceSession->conFunc->WriteString (buf, 5, col, compoMode?"#":plInstr[n].name, 35);
+	cpifaceSession->console->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
+	cpifaceSession->console->WriteNum    (buf, 1, col, n+1, 16, 2, 0);
+	cpifaceSession->console->WriteString (buf, 5, col, compoMode?"#":plInstr[n].name, 35);
 }
 
 static void xmpDisplayIns33 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
-	cpifaceSession->conFunc->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
-	cpifaceSession->conFunc->WriteNum    (buf, 1, col, n+1, 16, 2, 0);
-	cpifaceSession->conFunc->WriteString (buf, 5, col, compoMode?"#":plInstr[n].name, 28);
+	cpifaceSession->console->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
+	cpifaceSession->console->WriteNum    (buf, 1, col, n+1, 16, 2, 0);
+	cpifaceSession->console->WriteString (buf, 5, col, compoMode?"#":plInstr[n].name, 28);
 }
 
 static void xmpDisplayIns52 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
-	cpifaceSession->conFunc->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[n])?"    \xfe##: ":"     ##: ", 9);
-	cpifaceSession->conFunc->WriteNum    (buf, 5, col, n+1, 16, 2, 0);
-	cpifaceSession->conFunc->WriteString (buf, 9, col, compoMode?"#":plInstr[n].name, 43);
+	cpifaceSession->console->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[n])?"    \xfe##: ":"     ##: ", 9);
+	cpifaceSession->console->WriteNum    (buf, 5, col, n+1, 16, 2, 0);
+	cpifaceSession->console->WriteString (buf, 9, col, compoMode?"#":plInstr[n].name, 43);
 }
 
 static void xmpDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col;
-	cpifaceSession->conFunc->WriteString (buf, 0, 0, "", 80);
+	cpifaceSession->console->WriteString (buf, 0, 0, "", 80);
 
 	if (plBigInstNum[n]!=0xFF)
 	{
 		const struct xmpinstrument *ins=&plInstr[plBigInstNum[n]];
 		col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[plBigInstNum[n]]];
-		cpifaceSession->conFunc->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[plBigInstNum[n]])?"\xfe##: ":" ##: ", 5);
-		cpifaceSession->conFunc->WriteNum    (buf, 1, col, plBigInstNum[n]+1, 16, 2, 0);
-		cpifaceSession->conFunc->WriteString (buf, 5, col, compoMode?"#":ins->name, 31);
+		cpifaceSession->console->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[plBigInstNum[n]])?"\xfe##: ":" ##: ", 5);
+		cpifaceSession->console->WriteNum    (buf, 1, col, plBigInstNum[n]+1, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 5, col, compoMode?"#":ins->name, 31);
 	}
 
 	if (plBigSampNum[n]!=0xFFFF)
@@ -90,62 +90,62 @@ static void xmpDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_
 		const struct sampleinfo *si=&plSamples[sm->handle];
 
 		col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plSampUsed[plBigSampNum[n]]];
-		cpifaceSession->conFunc->WriteString (buf, 34, col, (!plInstMode&&plSampUsed[plBigSampNum[n]])?"\xfe###: ":" ###: ", 6);
-		cpifaceSession->conFunc->WriteNum (buf, 35, col, plBigSampNum[n], 16, 3, 0);
+		cpifaceSession->console->WriteString (buf, 34, col, (!plInstMode&&plSampUsed[plBigSampNum[n]])?"\xfe###: ":" ###: ", 6);
+		cpifaceSession->console->WriteNum (buf, 35, col, plBigSampNum[n], 16, 3, 0);
 		if (si->type&mcpSampLoop)
 		{
-			cpifaceSession->conFunc->WriteNum (buf, 40, col, si->loopend, 10, 6, 1);
-			cpifaceSession->conFunc->WriteNum (buf, 47, col, si->loopend-si->loopstart, 10, 6, 1);
+			cpifaceSession->console->WriteNum (buf, 40, col, si->loopend, 10, 6, 1);
+			cpifaceSession->console->WriteNum (buf, 47, col, si->loopend-si->loopstart, 10, 6, 1);
 			if (si->type&mcpSampBiDi)
-				cpifaceSession->conFunc->WriteString (buf, 53, col, "\x1D", 1);
+				cpifaceSession->console->WriteString (buf, 53, col, "\x1D", 1);
 		} else {
-			cpifaceSession->conFunc->WriteNum    (buf, 40, col, si->length, 10, 6, 1);
-			cpifaceSession->conFunc->WriteString (buf, 52, col, "-", 1);
+			cpifaceSession->console->WriteNum    (buf, 40, col, si->length, 10, 6, 1);
+			cpifaceSession->console->WriteString (buf, 52, col, "-", 1);
 		}
-		cpifaceSession->conFunc->WriteString (buf, 55, col, (si->type&mcpSamp16Bit)?"16":" 8", 2);
-		cpifaceSession->conFunc->WriteString (buf, 57, col, (si->type&mcpSampRedRate4)?"\xac":(si->type&mcpSampRedRate2)?"\xab":(si->type&mcpSampRedBits)?"!":" ", 2);
+		cpifaceSession->console->WriteString (buf, 55, col, (si->type&mcpSamp16Bit)?"16":" 8", 2);
+		cpifaceSession->console->WriteString (buf, 57, col, (si->type&mcpSampRedRate4)?"\xac":(si->type&mcpSampRedRate2)?"\xab":(si->type&mcpSampRedBits)?"!":" ", 2);
 		if (!plInstShowFreq)
 		{
-			cpifaceSession->conFunc->WriteString (buf, 60, col, plNoteStr[(sm->normnote+60*256)>>8], 3);
-			cpifaceSession->conFunc->WriteNum    (buf, 64, col, sm->normnote&0xFF, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 60, col, plNoteStr[(sm->normnote+60*256)>>8], 3);
+			cpifaceSession->console->WriteNum    (buf, 64, col, sm->normnote&0xFF, 16, 2, 0);
 		} else {
 			if (plInstShowFreq==1)
-				cpifaceSession->conFunc->WriteNum (buf, 60, col, cpifaceSession->mcpAPI->GetFreq8363(-sm->normnote), 10, 6, 1);
+				cpifaceSession->console->WriteNum (buf, 60, col, cpifaceSession->mcpAPI->GetFreq8363(-sm->normnote), 10, 6, 1);
 			else
-				cpifaceSession->conFunc->WriteNum (buf, 60, col, si->samprate, 10, 6, 1);
+				cpifaceSession->console->WriteNum (buf, 60, col, si->samprate, 10, 6, 1);
 		}
 		if (sm->stdvol!=-1)
-			cpifaceSession->conFunc->WriteNum    (buf, 68, col, sm->stdvol, 16, 2, 0);
+			cpifaceSession->console->WriteNum    (buf, 68, col, sm->stdvol, 16, 2, 0);
 		else
-			cpifaceSession->conFunc->WriteString (buf, 68, col, " -", 2);
+			cpifaceSession->console->WriteString (buf, 68, col, " -", 2);
 		if (sm->stdpan!=-1)
-			cpifaceSession->conFunc->WriteNum    (buf, 72, col, sm->stdpan, 16, 2, 0);
+			cpifaceSession->console->WriteNum    (buf, 72, col, sm->stdpan, 16, 2, 0);
 		else
-			cpifaceSession->conFunc->WriteString (buf, 72, col, " -", 2);
+			cpifaceSession->console->WriteString (buf, 72, col, " -", 2);
 
 		if (sm->volenv!=0xFFFF)
-			cpifaceSession->conFunc->WriteString (buf, 76, col, "v", 1);
+			cpifaceSession->console->WriteString (buf, 76, col, "v", 1);
 		if (sm->panenv!=0xFFFF)
-			cpifaceSession->conFunc->WriteString (buf, 77, col, "p", 1);
+			cpifaceSession->console->WriteString (buf, 77, col, "p", 1);
 		if (sm->vibdepth&&sm->vibrate)
-			cpifaceSession->conFunc->WriteString (buf, 78, col, "~", 1);
+			cpifaceSession->console->WriteString (buf, 78, col, "~", 1);
 		if (sm->volfade&&(sm->volfade!=0xFFFF))
-			cpifaceSession->conFunc->WriteString (buf, 79, col, "\x19", 1);
+			cpifaceSession->console->WriteString (buf, 79, col, "\x19", 1);
 	}
 }
 
 static void xmpDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col;
-	cpifaceSession->conFunc->WriteString (buf, 0, 0, "", 132);
+	cpifaceSession->console->WriteString (buf, 0, 0, "", 132);
 
 	if (plBigInstNum[n]!=0xFF)
 	{
 		const struct xmpinstrument *ins=&plInstr[plBigInstNum[n]];
 		col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[plBigInstNum[n]]];
-		cpifaceSession->conFunc->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[plBigInstNum[n]])?"\xfe##: ":" ##: ", 5);
-		cpifaceSession->conFunc->WriteNum (buf, 1, col, plBigInstNum[n]+1, 16, 2, 0);
-		cpifaceSession->conFunc->WriteString (buf, 5, col, compoMode?"#":ins->name, 35);
+		cpifaceSession->console->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[plBigInstNum[n]])?"\xfe##: ":" ##: ", 5);
+		cpifaceSession->console->WriteNum (buf, 1, col, plBigInstNum[n]+1, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 5, col, compoMode?"#":ins->name, 35);
 	}
 
 	if (plBigSampNum[n]!=0xFFFF)
@@ -154,52 +154,52 @@ static void xmpDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 		const struct sampleinfo *si=&plSamples[sm->handle];
 
 		col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plSampUsed[plBigSampNum[n]]];
-		cpifaceSession->conFunc->WriteString (buf, 34, col, (!plInstMode&&plSampUsed[plBigSampNum[n]])?"\xfe###: ":" ###: ", 6);
-		cpifaceSession->conFunc->WriteNum (buf, 35, col, plBigSampNum[n], 16, 3, 0);
-		cpifaceSession->conFunc->WriteString (buf, 40, col, compoMode?"#":sm->name, 28);
+		cpifaceSession->console->WriteString (buf, 34, col, (!plInstMode&&plSampUsed[plBigSampNum[n]])?"\xfe###: ":" ###: ", 6);
+		cpifaceSession->console->WriteNum (buf, 35, col, plBigSampNum[n], 16, 3, 0);
+		cpifaceSession->console->WriteString (buf, 40, col, compoMode?"#":sm->name, 28);
 		if (si->type&mcpSampLoop)
 		{
-			cpifaceSession->conFunc->WriteNum (buf, 70, col, si->loopend, 10, 6, 1);
-			cpifaceSession->conFunc->WriteNum (buf, 77, col, si->loopend-si->loopstart, 10, 6, 1);
+			cpifaceSession->console->WriteNum (buf, 70, col, si->loopend, 10, 6, 1);
+			cpifaceSession->console->WriteNum (buf, 77, col, si->loopend-si->loopstart, 10, 6, 1);
 			if (si->type&mcpSampBiDi)
-				cpifaceSession->conFunc->WriteString (buf, 83, col, "\x1D", 1);
+				cpifaceSession->console->WriteString (buf, 83, col, "\x1D", 1);
 		} else {
-			cpifaceSession->conFunc->WriteNum    (buf, 70, col, si->length, 10, 6, 1);
-			cpifaceSession->conFunc->WriteString (buf, 82, col, "-", 1);
+			cpifaceSession->console->WriteNum    (buf, 70, col, si->length, 10, 6, 1);
+			cpifaceSession->console->WriteString (buf, 82, col, "-", 1);
 		}
-		cpifaceSession->conFunc->WriteString (buf, 85, col, (si->type&mcpSamp16Bit)?"16":" 8", 2);
-		cpifaceSession->conFunc->WriteString (buf, 87, col, (si->type&mcpSampRedRate4)?"\xac":(si->type&mcpSampRedRate2)?"\xab":(si->type&mcpSampRedBits)?"!":" ", 2);
+		cpifaceSession->console->WriteString (buf, 85, col, (si->type&mcpSamp16Bit)?"16":" 8", 2);
+		cpifaceSession->console->WriteString (buf, 87, col, (si->type&mcpSampRedRate4)?"\xac":(si->type&mcpSampRedRate2)?"\xab":(si->type&mcpSampRedBits)?"!":" ", 2);
 
 		if (!plInstShowFreq)
 		{
-			cpifaceSession->conFunc->WriteString (buf, 90, col, plNoteStr[(sm->normnote+60*256)>>8], 3);
-			cpifaceSession->conFunc->WriteNum    (buf, 94, col, sm->normnote&0xFF, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 90, col, plNoteStr[(sm->normnote+60*256)>>8], 3);
+			cpifaceSession->console->WriteNum    (buf, 94, col, sm->normnote&0xFF, 16, 2, 0);
 		} else
 			if (plInstShowFreq==1)
-				cpifaceSession->conFunc->WriteNum (buf, 90, col, cpifaceSession->mcpAPI->GetFreq8363(-sm->normnote), 10, 6, 1);
+				cpifaceSession->console->WriteNum (buf, 90, col, cpifaceSession->mcpAPI->GetFreq8363(-sm->normnote), 10, 6, 1);
 			else
-				cpifaceSession->conFunc->WriteNum (buf, 90, col, si->samprate, 10, 6, 1);
+				cpifaceSession->console->WriteNum (buf, 90, col, si->samprate, 10, 6, 1);
 
 		if (sm->stdvol!=-1)
-			cpifaceSession->conFunc->WriteNum    (buf, 98, col, sm->stdvol, 16, 2, 0);
+			cpifaceSession->console->WriteNum    (buf, 98, col, sm->stdvol, 16, 2, 0);
 		else
-			cpifaceSession->conFunc->WriteString (buf, 98, col, " -", 2);
+			cpifaceSession->console->WriteString (buf, 98, col, " -", 2);
 		if (sm->stdpan!=-1)
-			cpifaceSession->conFunc->WriteNum    (buf, 102, col, sm->stdpan, 16, 2, 0);
+			cpifaceSession->console->WriteNum    (buf, 102, col, sm->stdpan, 16, 2, 0);
 		else
-			cpifaceSession->conFunc->WriteString (buf, 102, col, " -", 2);
+			cpifaceSession->console->WriteString (buf, 102, col, " -", 2);
 
 		if (sm->volenv!=0xFFFF)
-			cpifaceSession->conFunc->WriteString (buf, 106, col, "v", 1);
+			cpifaceSession->console->WriteString (buf, 106, col, "v", 1);
 		if (sm->panenv!=0xFFFF)
-			cpifaceSession->conFunc->WriteString (buf, 107, col, "p", 1);
+			cpifaceSession->console->WriteString (buf, 107, col, "p", 1);
 		if (sm->vibdepth&&sm->vibrate)
-			cpifaceSession->conFunc->WriteString (buf, 108, col, "~", 1);
+			cpifaceSession->console->WriteString (buf, 108, col, "~", 1);
 
 		if (sm->volfade&&(sm->volfade!=0xFFFF))
-			cpifaceSession->conFunc->WriteNum    (buf, 110, col, sm->volfade, 16, 4, 1);
+			cpifaceSession->console->WriteNum    (buf, 110, col, sm->volfade, 16, 4, 1);
 		else
-			cpifaceSession->conFunc->WriteString (buf, 113, col, "-", 1);
+			cpifaceSession->console->WriteString (buf, 113, col, "-", 1);
 	}
 }
 

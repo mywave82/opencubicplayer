@@ -109,35 +109,35 @@ static void vcsa_setplScrType(void)
 
 	set_kernel_sizes(scrn.cols, scrn.lines);
 
-	conStatus.TextHeight = scrn.lines;
-	conStatus.TextWidth  = scrn.cols;
+	Console.TextHeight = scrn.lines;
+	Console.TextWidth  = scrn.cols;
 	plScrRowBytes = scrn.cols * 2;
 
 	/* first we set the VERY default value */
-	if (conStatus.TextHeight < 50)
+	if (Console.TextHeight < 50)
 	{
-		conStatus.LastTextMode = 0;
+		Console.LastTextMode = 0;
 	} else {
-		conStatus.LastTextMode = 2;
+		Console.LastTextMode = 2;
 	}
 
 	/* this code should cover most vga modes, and matches the old OCP code */
-	if (conStatus.TextWidth == 80)
+	if (Console.TextWidth == 80)
 	{
-		switch (conStatus.TextHeight)
+		switch (Console.TextHeight)
 		{
-			case 25: conStatus.LastTextMode = 0; break;
-			case 50: conStatus.LastTextMode = 2; break;
-			case 60: conStatus.LastTextMode = 3; break;
+			case 25: Console.LastTextMode = 0; break;
+			case 50: Console.LastTextMode = 2; break;
+			case 60: Console.LastTextMode = 3; break;
 		}
-	} else if((conStatus.TextWidth==132) || (conStatus.TextWidth==128))
+	} else if((Console.TextWidth==132) || (Console.TextWidth==128))
 	{
-		switch (conStatus.TextHeight)
+		switch (Console.TextHeight)
 		{
-			case 25: conStatus.LastTextMode = 4; break;
-			case 30: conStatus.LastTextMode = 5; break;
-			case 50: conStatus.LastTextMode = 6; break;
-			case 60: conStatus.LastTextMode = 7; break;
+			case 25: Console.LastTextMode = 4; break;
+			case 30: Console.LastTextMode = 5; break;
+			case 50: Console.LastTextMode = 6; break;
+			case 60: Console.LastTextMode = 7; break;
 		}
 	}
 }
@@ -521,7 +521,7 @@ static void vcsa_SetTextMode (uint8_t x)
 	{
 		vcsaConsoleDriver.SetGraphMode (-1);
 	}
-	conStatus.CurrentMode = 0;
+	Console.CurrentMode = 0;
 
 	if (font_replaced)
 	{
@@ -531,12 +531,12 @@ static void vcsa_SetTextMode (uint8_t x)
 			case 1: /* 80 * 25 */
 			case 4: /* 132 * 25 */
 			case 5: /* 132 * 30 */
-				/*if (((conStatus.TextHeight==50) || (conStatus.TextHeight==60)) && font_replaced==8)
+				/*if (((Console.TextHeight==50) || (Console.TextHeight==60)) && font_replaced==8)
 				{
 					if (!set_font(16, 0))
 					{
 						font_replaced=16;
-						conStatus.TextHeight /= 2;
+						Console.TextHeight /= 2;
 						vcsa_setplScrType();
 					}
 				}*/
@@ -546,12 +546,12 @@ static void vcsa_SetTextMode (uint8_t x)
 			case 3: /* 80 * 60 */
 			case 6: /* 132 * 50 */
 			case 7: /* 132 * 60 */
-				/*if (((conStatus.TextHeight==25) || (conStatus.TextHeight==30)) && font_replaced==16)
+				/*if (((Console.TextHeight==25) || (Console.TextHeight==30)) && font_replaced==16)
 				{
 					if (!set_font(8, 0))
 					{
 						font_replaced=8;
-						conStatus.TextHeight *= 2;
+						Console.TextHeight *= 2;
 						vcsa_setplScrType();
 					}
 				}*/
@@ -562,9 +562,9 @@ static void vcsa_SetTextMode (uint8_t x)
 
 	vcsa_setplScrType ();
 
-	for (i = 0; i < conStatus.TextHeight; i++)
+	for (i = 0; i < Console.TextHeight; i++)
 	{
-		vcsa_DisplayVoid (i, 0, conStatus.TextWidth);
+		vcsa_DisplayVoid (i, 0, Console.TextWidth);
 	}
 }
 
@@ -632,7 +632,7 @@ static int ekbhit_linux(void)
 {
 	struct pollfd set;
 
-	if (!conStatus.CurrentMode)
+	if (!Console.CurrentMode)
 	{
 		lseek(vgafd, 4, SEEK_SET);
 		while (write(vgafd, vgatextram, vgamemsize) < 0)
@@ -766,17 +766,17 @@ int vcsa_init(int minor)
 		exit(1);
 	}
 
-	conStatus.TextHeight = scrn.lines;
-	conStatus.TextWidth  = scrn.cols;
+	Console.TextHeight = scrn.lines;
+	Console.TextWidth  = scrn.cols;
 	plScrRowBytes = scrn.cols * 2;
 
-	vgamemsize = conStatus.TextHeight * conStatus.TextWidth * 2;
+	vgamemsize = Console.TextHeight * Console.TextWidth * 2;
 	vgamemsize *= 2;
 	vgatextram = calloc(vgamemsize, 1);
 	consoleram = calloc(vgamemsize+4, 1);
 
 #ifdef VCSA_VERBOSE
-	fprintf(stderr, "vcsa: %dx%d => %d bytes buffer\n", conStatus.TextWidth, conStatus.TextHeight, vgamemsize);
+	fprintf(stderr, "vcsa: %dx%d => %d bytes buffer\n", Console.TextWidth, Console.TextHeight, vgamemsize);
 #endif
 
 	{
@@ -828,7 +828,7 @@ int vcsa_init(int minor)
 #endif
 	}
 
-	conDriver = &vcsaConsoleDriver;
+	Console.Driver = &vcsaConsoleDriver;
 	___setup_key(ekbhit_linux, egetch_linux);
 
 	if (init_fonts())
@@ -841,7 +841,7 @@ int vcsa_init(int minor)
 #ifdef VCSA_VERBOSE
 	fprintf(stderr, "vcsa: driver is online\n");
 #endif
-	conStatus.VidType = vidNorm;
+	Console.VidType = vidNorm;
 
 	if (!fb_init (minor, &vcsaConsoleDriver))
 	{

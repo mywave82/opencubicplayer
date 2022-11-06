@@ -369,7 +369,6 @@ musicbrainz.o: musicbrainz.c \
 	../filesel/musicbrainz.h \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
-	../stuff/framelock.h \
 	../stuff/poutput.h \
 	../stuff/utf-8.h
 	$(CC) $< -o $@ -c $(LIBCJSON_CFLAGS)

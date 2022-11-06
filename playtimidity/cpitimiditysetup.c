@@ -85,13 +85,13 @@ static void TimiditySetupDrawItems (struct cpifaceSessionAPI_t *cpifaceSession, 
 		int l = strlen (list[i]);
 		if (selected == i)
 		{
-			display_nprintf (TimiditySetupFirstLine + lineno, xpos, (focus&&active)?0x09:0x01, l + 2, "[%.*o%s%.*o]", (focus&&active)?0x0f:0x07, list[i], (focus&&active)?0x09:0x01);
+			cpifaceSession->console->DisplayPrintf (TimiditySetupFirstLine + lineno, xpos, (focus&&active)?0x09:0x01, l + 2, "[%.*o%s%.*o]", (focus&&active)?0x0f:0x07, list[i], (focus&&active)?0x09:0x01);
 		} else {
-			display_nprintf (TimiditySetupFirstLine + lineno, xpos, 0x00, l + 2, " %.*o%s%.0o ", (focus&&active)?0x07:0x08, list[i]);
+			cpifaceSession->console->DisplayPrintf (TimiditySetupFirstLine + lineno, xpos, 0x00, l + 2, " %.*o%s%.0o ", (focus&&active)?0x07:0x08, list[i]);
 		}
 		xpos += l + 2;
 	}
-	displaystr (TimiditySetupFirstLine + lineno, xpos, 0x00, " ", TimiditySetupWidth - xpos);
+	cpifaceSession->console->Driver->DisplayStr (TimiditySetupFirstLine + lineno, xpos, 0x00, " ", TimiditySetupWidth - xpos);
 }
 
 static void TimiditySetupDrawBar (struct cpifaceSessionAPI_t *cpifaceSession, const int focus, const int lineno, const int skip, int level, int maxlevel, const int active)
@@ -132,17 +132,17 @@ static void TimiditySetupDrawBar (struct cpifaceSessionAPI_t *cpifaceSession, co
 			p3 -= p2;
 			p2 -= p1;
 		}
-		displaystr (TimiditySetupFirstLine + lineno, 16 + skip,                         (focus && active)?0x07:0x08, "[", 1);
-		displaychr (TimiditySetupFirstLine + lineno, 16 + 1 + skip,                     (focus && active)?0x01:0x08, '\xfe', p1);
-		displaychr (TimiditySetupFirstLine + lineno, 16 + 1 + skip + p1,                (focus && active)?0x09:0x08, '\xfe', p2);
-		displaychr (TimiditySetupFirstLine + lineno, 16 + 1 + skip + p1 + p2,           (focus && active)?0x0b:0x08, '\xfe', p3);
-		displaychr (TimiditySetupFirstLine + lineno, 16 + 1 + skip + p1 + p2 + p3,      (focus && active)?0x0f:0x08, '\xfe', p4);
-		displaychr (TimiditySetupFirstLine + lineno, 16 + 1 + skip + p1 + p2 + p3 + p4, (focus && active)?0x07:0x08, '\xfa', tw - p1 - p2 - p3 - p4);
+		cpifaceSession->console->Driver->DisplayStr (TimiditySetupFirstLine + lineno, 16 + skip,                         (focus && active)?0x07:0x08, "[", 1);
+		cpifaceSession->console->Driver->DisplayChr (TimiditySetupFirstLine + lineno, 16 + 1 + skip,                     (focus && active)?0x01:0x08, '\xfe', p1);
+		cpifaceSession->console->Driver->DisplayChr (TimiditySetupFirstLine + lineno, 16 + 1 + skip + p1,                (focus && active)?0x09:0x08, '\xfe', p2);
+		cpifaceSession->console->Driver->DisplayChr (TimiditySetupFirstLine + lineno, 16 + 1 + skip + p1 + p2,           (focus && active)?0x0b:0x08, '\xfe', p3);
+		cpifaceSession->console->Driver->DisplayChr (TimiditySetupFirstLine + lineno, 16 + 1 + skip + p1 + p2 + p3,      (focus && active)?0x0f:0x08, '\xfe', p4);
+		cpifaceSession->console->Driver->DisplayChr (TimiditySetupFirstLine + lineno, 16 + 1 + skip + p1 + p2 + p3 + p4, (focus && active)?0x07:0x08, '\xfa', tw - p1 - p2 - p3 - p4);
 
 		snprintf (temp, sizeof (temp), "]%5d", level);
-		displaystr (TimiditySetupFirstLine + lineno, TimiditySetupWidth - 6 - skip, (focus && active)?0x07:0x08, temp, 6 + skip);
+		cpifaceSession->console->Driver->DisplayStr (TimiditySetupFirstLine + lineno, TimiditySetupWidth - 6 - skip, (focus && active)?0x07:0x08, temp, 6 + skip);
 	} else {
-		displaystr (TimiditySetupFirstLine + lineno, 16 + skip, 0x08, "----", TimiditySetupWidth - 16 - skip);
+		cpifaceSession->console->Driver->DisplayStr (TimiditySetupFirstLine + lineno, 16 + skip, 0x08, "----", TimiditySetupWidth - 16 - skip);
 	}
 }
 
@@ -163,30 +163,30 @@ static void TimiditySetupDraw (struct cpifaceSessionAPI_t *cpifaceSession, int f
 		skip = 0;
 	}
 
-	displaystr (TimiditySetupFirstLine, 0, focus?COLTITLE1H:COLTITLE1, focus?"   Timidity Setup":"   Timidity Setup (press t to focus)", TimiditySetupWidth);
+	cpifaceSession->console->Driver->DisplayStr (TimiditySetupFirstLine, 0, focus?COLTITLE1H:COLTITLE1, focus?"   Timidity Setup":"   Timidity Setup (press t to focus)", TimiditySetupWidth);
 
-	displaystr (TimiditySetupFirstLine + 1, 0, (focus&&(TimiditySetupEditPos==1))?0x07:0x08, &"  Reverb:"[2 - skip], 16 + skip);
+	cpifaceSession->console->Driver->DisplayStr (TimiditySetupFirstLine + 1, 0, (focus&&(TimiditySetupEditPos==1))?0x07:0x08, &"  Reverb:"[2 - skip], 16 + skip);
 	TimiditySetupDrawItems (cpifaceSession, focus, 1, skip, reverbs, 5, TimiditySetupSelected, TimiditySetupEditPos==0);
 
-	displaystr (TimiditySetupFirstLine + 2, 0, (focus&&(TimiditySetupEditPos==1))?0x07:0x08, &"  Level:"[2 - skip], 16 + skip);
+	cpifaceSession->console->Driver->DisplayStr (TimiditySetupFirstLine + 2, 0, (focus&&(TimiditySetupEditPos==1))?0x07:0x08, &"  Level:"[2 - skip], 16 + skip);
 	TimiditySetupDrawBar (cpifaceSession, focus, 2, skip, (TimiditySetupSelected != 0) ? TimiditySetupLevel : -1, 127, TimiditySetupEditPos == 1);
 
-	displaystr (TimiditySetupFirstLine + 3, 0, (focus&&(TimiditySetupEditPos==2))?0x07:0x08, &"  ScaleRoom:"[2 - skip], 16 + skip);
+	cpifaceSession->console->Driver->DisplayStr (TimiditySetupFirstLine + 3, 0, (focus&&(TimiditySetupEditPos==2))?0x07:0x08, &"  ScaleRoom:"[2 - skip], 16 + skip);
 	TimiditySetupDrawBar (cpifaceSession, focus, 3, skip, (TimiditySetupSelected >= 3) ? TimiditySetupScaleRoom : -1, 1000, TimiditySetupEditPos == 2);
 
-	displaystr (TimiditySetupFirstLine + 4, 0, (focus&&(TimiditySetupEditPos==3))?0x07:0x08, &"  OffsetRoom:"[2 - skip], 16 + skip);
+	cpifaceSession->console->Driver->DisplayStr (TimiditySetupFirstLine + 4, 0, (focus&&(TimiditySetupEditPos==3))?0x07:0x08, &"  OffsetRoom:"[2 - skip], 16 + skip);
 	TimiditySetupDrawBar (cpifaceSession, focus, 4, skip, (TimiditySetupSelected >= 3) ? TimiditySetupOffsetRoom : -1, 1000, TimiditySetupEditPos == 3);
 
-	displaystr (TimiditySetupFirstLine + 5, 0, (focus&&(TimiditySetupEditPos==4))?0x07:0x08, &"  PreDelayFactor:"[2 - skip], 16 + skip);
+	cpifaceSession->console->Driver->DisplayStr (TimiditySetupFirstLine + 5, 0, (focus&&(TimiditySetupEditPos==4))?0x07:0x08, &"  PreDelayFactor:"[2 - skip], 16 + skip);
 	TimiditySetupDrawBar (cpifaceSession, focus, 5, skip, (TimiditySetupSelected >= 3) ? TimiditySetupPreDelayFactor : -1, 1000, TimiditySetupEditPos == 4);
 
-	displaystr (TimiditySetupFirstLine + 6, 0, (focus&&(TimiditySetupEditPos==5))?0x07:0x08, &"  Delay:"[2 - skip], 16 + skip);
+	cpifaceSession->console->Driver->DisplayStr (TimiditySetupFirstLine + 6, 0, (focus&&(TimiditySetupEditPos==5))?0x07:0x08, &"  Delay:"[2 - skip], 16 + skip);
 	TimiditySetupDrawItems (cpifaceSession, focus, 6, skip, effect_lr_modes, 4, tc.effect_lr_mode + 1, TimiditySetupEditPos==5);
 
-	displaystr (TimiditySetupFirstLine + 7, 0, (focus&&(TimiditySetupEditPos==6))?0x07:0x08, &"  Delay ms:"[2 - skip], 16 + skip);
+	cpifaceSession->console->Driver->DisplayStr (TimiditySetupFirstLine + 7, 0, (focus&&(TimiditySetupEditPos==6))?0x07:0x08, &"  Delay ms:"[2 - skip], 16 + skip);
 	TimiditySetupDrawBar (cpifaceSession, focus, 7, skip, (tc.effect_lr_mode >= 0) ? tc.effect_lr_delay_msec : -1, 1000, TimiditySetupEditPos == 6);
 
-	displaystr (TimiditySetupFirstLine + 8, 0, (focus&&(TimiditySetupEditPos==7))?0x07:0x08, &"  Chorus:"[2 - skip], 16 + skip);
+	cpifaceSession->console->Driver->DisplayStr (TimiditySetupFirstLine + 8, 0, (focus&&(TimiditySetupEditPos==7))?0x07:0x08, &"  Chorus:"[2 - skip], 16 + skip);
 	TimiditySetupDrawItems (cpifaceSession, focus, 8, skip, disable_enable, 2, tc.opt_chorus_control, TimiditySetupEditPos==7);
 }
 

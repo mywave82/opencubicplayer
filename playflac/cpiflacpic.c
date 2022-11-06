@@ -225,7 +225,7 @@ static void FlacPicSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos,
 
 	if (FlacPicHandle)
 	{
-		plScrTextGUIOverlayRemove (FlacPicHandle);
+		cpifaceSession->console->Driver->TextOverlayRemove (FlacPicHandle);
 		FlacPicHandle = 0;
 	}
 	FlacPicFirstLine=ypos;
@@ -242,7 +242,7 @@ static void FlacPicSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos,
 
 	if (flac_pictures[FlacPicCurrentIndex].scaled_data_bgra)
 	{
-		FlacPicHandle = plScrTextGUIOverlayAddBGRA
+		FlacPicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 		(
 			FlacPicFontSizeX * FlacPicFirstColumn,
 			FlacPicFontSizeY * (FlacPicFirstLine + 1),
@@ -252,7 +252,7 @@ static void FlacPicSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos,
 			flac_pictures[FlacPicCurrentIndex].scaled_data_bgra
 		);
 	} else {
-		FlacPicHandle = plScrTextGUIOverlayAddBGRA
+		FlacPicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 		(
 			FlacPicFontSizeX * FlacPicFirstColumn,
 			FlacPicFontSizeY * (FlacPicFirstLine + 1),
@@ -271,11 +271,11 @@ static int FlacPicGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpi
 	FlacPicVisible = 0;
 	if (FlacPicHandle)
 	{
-		plScrTextGUIOverlayRemove (FlacPicHandle);
+		cpifaceSession->console->Driver->TextOverlayRemove (FlacPicHandle);
 		FlacPicHandle = 0;
 	}
 
-	if ((FlacPicActive==3)&&(plScrWidth<132))
+	if ((FlacPicActive==3) && (cpifaceSession->console->TextWidth < 132))
 		FlacPicActive=2;
 
 	if ((FlacPicMaxHeight == 0) || (FlacPicMaxWidth == 0))
@@ -283,7 +283,7 @@ static int FlacPicGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpi
 		return 0;
 	}
 
-	switch (plCurrentFont)
+	switch (cpifaceSession->console->CurrentFont)
 	{
 		case _8x8:
 			q->hgtmax = 1 + (FlacPicMaxHeight +  7) /  8;
@@ -370,25 +370,25 @@ static void FlacPicDraw(struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 
 	if (left)
 	{
-		displaystr      (FlacPicFirstLine, FlacPicFirstColumn,                                 focus?0x09:0x01, "Flac PIC: ", MIN(9, left));
+		cpifaceSession->console->Driver->DisplayStr      (FlacPicFirstLine, FlacPicFirstColumn,                                 focus?0x09:0x01, "Flac PIC: ", MIN(9, left));
 		left -= 9;
 	}
 
 	if (left)
 	{
-		displaystr      (FlacPicFirstLine, FlacPicFirstColumn + 9,                             focus?0x0a:0x02, picture_type, MIN(strlen (picture_type), left));
+		cpifaceSession->console->Driver->DisplayStr      (FlacPicFirstLine, FlacPicFirstColumn + 9,                             focus?0x0a:0x02, picture_type, MIN(strlen (picture_type), left));
 		left -= strlen (picture_type);
 	}
 
 	if (left)
 	{
-		displaystr      (FlacPicFirstLine, FlacPicFirstColumn + 9 + strlen (picture_type),     focus?0x09:0x01, ", ", MIN(2, left));
+		cpifaceSession->console->Driver->DisplayStr      (FlacPicFirstLine, FlacPicFirstColumn + 9 + strlen (picture_type),     focus?0x09:0x01, ", ", MIN(2, left));
 		left -= 2;
 	}
 
 	if (left)
 	{
-		displaystr_utf8 (FlacPicFirstLine, FlacPicFirstColumn + 9 + strlen (picture_type) + 2, focus?0x0a:0x02, flac_pictures[FlacPicCurrentIndex].description, left);
+		cpifaceSession->console->Driver->DisplayStr_utf8 (FlacPicFirstLine, FlacPicFirstColumn + 9 + strlen (picture_type) + 2, focus?0x0a:0x02, flac_pictures[FlacPicCurrentIndex].description, left);
 	}
 
 	flacMetaDataUnlock();
@@ -396,7 +396,7 @@ static void FlacPicDraw(struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 
 static int FlacPicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
-	if (!plScrTextGUIOverlay)
+	if (!cpifaceSession->console->TextGUIOverlay)
 	{
 		return 0;
 	}
@@ -426,7 +426,7 @@ static int FlacPicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 
 static int FlacPicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
-	if (!plScrTextGUIOverlay)
+	if (!cpifaceSession->console->TextGUIOverlay)
 	{
 		return 0;
 	}
@@ -448,13 +448,13 @@ static int FlacPicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 
 			if (FlacPicHandle)
 			{
-				plScrTextGUIOverlayRemove (FlacPicHandle);
+				cpifaceSession->console->Driver->TextOverlayRemove (FlacPicHandle);
 				FlacPicHandle = 0;
 			}
 
 			if (flac_pictures[FlacPicCurrentIndex].scaled_data_bgra)
 			{
-				FlacPicHandle = plScrTextGUIOverlayAddBGRA
+				FlacPicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 				(
 					FlacPicFontSizeX * FlacPicFirstColumn,
 					FlacPicFontSizeY * (FlacPicFirstLine + 1),
@@ -464,7 +464,7 @@ static int FlacPicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 					flac_pictures[FlacPicCurrentIndex].scaled_data_bgra
 				);
 			} else {
-				FlacPicHandle = plScrTextGUIOverlayAddBGRA
+				FlacPicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 				(
 					FlacPicFontSizeX * FlacPicFirstColumn,
 					FlacPicFontSizeY * (FlacPicFirstLine + 1),
@@ -479,7 +479,7 @@ static int FlacPicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 			break;
 		case 'c': case 'C':
 			FlacPicActive=(FlacPicActive+1)%4;
-			if ((FlacPicActive==3)&&(plScrWidth<132))
+			if ((FlacPicActive==3) && (cpifaceSession->console->TextWidth < 132))
 			{
 				FlacPicActive=0;
 			}
@@ -496,7 +496,7 @@ static int FlacPicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 	switch (ev)
 	{
 		case cpievInit:
-			if (plScrTextGUIOverlay)
+			if (cpifaceSession->console->TextGUIOverlay)
 			{
 				flacMetaDataLock();
 				Refresh_FlacPictures();
@@ -507,17 +507,17 @@ static int FlacPicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 		case cpievClose:
 			if (FlacPicHandle)
 			{
-				plScrTextGUIOverlayRemove (FlacPicHandle);
+				cpifaceSession->console->Driver->TextOverlayRemove (FlacPicHandle);
 				FlacPicHandle = 0;
 			}
 			break;
 		case cpievOpen:
-			if (FlacPicVisible && (!FlacPicHandle) && plScrTextGUIOverlay)
+			if (FlacPicVisible && (!FlacPicHandle) && cpifaceSession->console->TextGUIOverlay)
 			{
 				flacMetaDataLock();
 				if (flac_pictures[FlacPicCurrentIndex].scaled_data_bgra)
 				{
-					FlacPicHandle = plScrTextGUIOverlayAddBGRA
+					FlacPicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 					(
 						FlacPicFontSizeX * FlacPicFirstColumn,
 						FlacPicFontSizeY * (FlacPicFirstLine + 1),
@@ -527,7 +527,7 @@ static int FlacPicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 						flac_pictures[FlacPicCurrentIndex].scaled_data_bgra
 					);
 				} else {
-					FlacPicHandle = plScrTextGUIOverlayAddBGRA
+					FlacPicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 					(
 						FlacPicFontSizeX * FlacPicFirstColumn,
 						FlacPicFontSizeY * (FlacPicFirstLine + 1),
@@ -543,7 +543,7 @@ static int FlacPicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 		case cpievDone:
 			if (FlacPicHandle)
 			{
-				plScrTextGUIOverlayRemove (FlacPicHandle);
+				cpifaceSession->console->Driver->TextOverlayRemove (FlacPicHandle);
 				FlacPicHandle = 0;
 			}
 			break;

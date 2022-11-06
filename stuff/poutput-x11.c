@@ -156,7 +156,7 @@ static void xvidmode_init(void)
 	XF86VidModeModeLine tmp;
 	XWindowAttributes xwa;
 
-	conStatus.CurrentFont = _8x8;
+	Console.CurrentFont = _8x8;
 
 	bzero (modelines, sizeof(modelines));
 	bzero (&default_modeline, sizeof(default_modeline));
@@ -400,30 +400,30 @@ static void WindowResized_Graphmode(unsigned int width, unsigned int height)
 
 static void WindowResized_Textmode(unsigned int width, unsigned int height)
 {
-	conStatus.GraphBytesPerLine = width;
-	conStatus.GraphLines = height;
+	Console.GraphBytesPerLine = width;
+	Console.GraphLines = height;
 
-	conStatus.CurrentFont = x11_CurrentFontWanted;
+	Console.CurrentFont = x11_CurrentFontWanted;
 
-	if (conStatus.CurrentFont >= _8x16)
+	if (Console.CurrentFont >= _8x16)
 	{
-		if ( ( conStatus.GraphBytesPerLine < ( 8 * 80 ) ) || ( conStatus.GraphLines < ( 16 * 25 ) ) )
-			conStatus.CurrentFont = _8x8;
+		if ( ( Console.GraphBytesPerLine < ( 8 * 80 ) ) || ( Console.GraphLines < ( 16 * 25 ) ) )
+			Console.CurrentFont = _8x8;
 	}
 
-	switch (conStatus.CurrentFont)
+	switch (Console.CurrentFont)
 	{
 		default:
 		case _8x8:
-			conStatus.TextWidth = conStatus.GraphBytesPerLine / 8;
-			conStatus.TextHeight = conStatus.GraphLines / 8;
+			Console.TextWidth = Console.GraphBytesPerLine / 8;
+			Console.TextHeight = Console.GraphLines / 8;
 			break;
 		case _8x16:
-			conStatus.TextWidth = conStatus.GraphBytesPerLine / 8;
-			conStatus.TextHeight = conStatus.GraphLines / 16;
+			Console.TextWidth = Console.GraphBytesPerLine / 8;
+			Console.TextHeight = Console.GraphLines / 16;
 			break;
 	}
-	plScrRowBytes = conStatus.TextWidth * 2;
+	plScrRowBytes = Console.TextWidth * 2;
 
 	destroy_image();
 	create_image();
@@ -432,15 +432,15 @@ static void WindowResized_Textmode(unsigned int width, unsigned int height)
 		free(virtual_framebuffer);
 		virtual_framebuffer=0;
 	}
-	if ((x11_depth!=8) || (conStatus.GraphBytesPerLine != image->bytes_per_line))
+	if ((x11_depth!=8) || (Console.GraphBytesPerLine != image->bytes_per_line))
 	{
-		virtual_framebuffer = malloc (conStatus.GraphBytesPerLine * conStatus.GraphLines);
-		conStatus.VidMem = virtual_framebuffer;
+		virtual_framebuffer = malloc (Console.GraphBytesPerLine * Console.GraphLines);
+		Console.VidMem = virtual_framebuffer;
 	} else {
 		virtual_framebuffer = 0;
-		conStatus.VidMem = (uint8_t *)image->data;
+		Console.VidMem = (uint8_t *)image->data;
 	}
-	bzero (conStatus.VidMem, conStatus.GraphBytesPerLine * conStatus.GraphLines);
+	bzero (Console.VidMem, Console.GraphBytesPerLine * Console.GraphLines);
 
 	if (!do_fullscreen)
 	{
@@ -477,13 +477,13 @@ static void set_state_graphmode(int FullScreen)
 
 	if (do_fullscreen)
 	{
-		SizeHints.min_width = conStatus.GraphBytesPerLine;
+		SizeHints.min_width = Console.GraphBytesPerLine;
 		SizeHints.max_width = Graphmode_modeline->hdisplay;
-		SizeHints.min_height = conStatus.GraphLines;
+		SizeHints.min_height = Console.GraphLines;
 		SizeHints.max_height = Graphmode_modeline->vdisplay;
 	} else {
-		SizeHints.min_width = SizeHints.max_width = conStatus.GraphBytesPerLine;
-		SizeHints.min_height = SizeHints.max_height = conStatus.GraphLines;
+		SizeHints.min_width = SizeHints.max_width = Console.GraphBytesPerLine;
+		SizeHints.min_height = SizeHints.max_height = Console.GraphLines;
 	}
 
 	XSetWMNormalHints(mDisplay, window, &SizeHints);
@@ -496,7 +496,7 @@ static void set_state_graphmode(int FullScreen)
 		XSync(mDisplay, FALSE);
 		//XClearWindow(mDisplay, window);
 	} else {
-		XResizeWindow(mDisplay, window, conStatus.GraphBytesPerLine, conStatus.GraphLines);
+		XResizeWindow(mDisplay, window, Console.GraphBytesPerLine, Console.GraphLines);
 		XSync(mDisplay, FALSE);
 	}
 	___push_key(VIRT_KEY_RESIZE);
@@ -541,14 +541,14 @@ static void set_state_graphmode(int FullScreen)
 		free(virtual_framebuffer);
 		virtual_framebuffer = 0;
 	}
-	if ((x11_depth != 8) || (conStatus.GraphBytesPerLine != image->bytes_per_line))
+	if ((x11_depth != 8) || (Console.GraphBytesPerLine != image->bytes_per_line))
 	{
-		virtual_framebuffer = calloc (conStatus.GraphBytesPerLine, conStatus.GraphLines);
-		conStatus.VidMem = virtual_framebuffer;
+		virtual_framebuffer = calloc (Console.GraphBytesPerLine, Console.GraphLines);
+		Console.VidMem = virtual_framebuffer;
 	} else {
 		virtual_framebuffer = 0;
-		conStatus.VidMem = (uint8_t *)image->data;
-		bzero (conStatus.VidMem, conStatus.GraphBytesPerLine * conStatus.GraphLines);
+		Console.VidMem = (uint8_t *)image->data;
+		bzero (Console.VidMem, Console.GraphBytesPerLine * Console.GraphLines);
 	}
 }
 
@@ -604,13 +604,13 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 	{
 		XResizeWindow (mDisplay, window, default_modeline.hdisplay, default_modeline.vdisplay);
 		XSync (mDisplay, FALSE);
-		conStatus.GraphLines = default_modeline.vdisplay;
-		conStatus.GraphBytesPerLine = default_modeline.hdisplay;
+		Console.GraphLines = default_modeline.vdisplay;
+		Console.GraphBytesPerLine = default_modeline.hdisplay;
 	} else {
 		XResizeWindow (mDisplay, window, Textmode_Window_Width, Textmode_Window_Height);
 		XSync (mDisplay, FALSE);
-		conStatus.GraphLines = Textmode_Window_Height;
-		conStatus.GraphBytesPerLine = Textmode_Window_Width;
+		Console.GraphLines = Textmode_Window_Height;
+		Console.GraphBytesPerLine = Textmode_Window_Width;
 	}
 	___push_key(VIRT_KEY_RESIZE);
 
@@ -640,20 +640,20 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 	}
 #endif
 
-	conStatus.CurrentFont = FontSize;
-	switch (conStatus.CurrentFont)
+	Console.CurrentFont = FontSize;
+	switch (Console.CurrentFont)
 	{
 		default:
 		case _8x8:
-			conStatus.TextWidth = conStatus.GraphBytesPerLine / 8;
-			conStatus.TextHeight = conStatus.GraphLines / 8;
+			Console.TextWidth = Console.GraphBytesPerLine / 8;
+			Console.TextHeight = Console.GraphLines / 8;
 			break;
 		case _8x16:
-			conStatus.TextWidth = conStatus.GraphBytesPerLine / 8;
-			conStatus.TextHeight = conStatus.GraphLines / 16;
+			Console.TextWidth = Console.GraphBytesPerLine / 8;
+			Console.TextHeight = Console.GraphLines / 16;
 			break;
 	}
-	plScrRowBytes = conStatus.TextWidth * 2;
+	plScrRowBytes = Console.TextWidth * 2;
 
 	destroy_image();
 	create_image();
@@ -663,15 +663,15 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 		free(virtual_framebuffer);
 		virtual_framebuffer=0;
 	}
-	if ((x11_depth != 8) || (conStatus.GraphBytesPerLine != image->bytes_per_line))
+	if ((x11_depth != 8) || (Console.GraphBytesPerLine != image->bytes_per_line))
 	{
-		virtual_framebuffer = malloc (conStatus.GraphBytesPerLine * conStatus.GraphLines);
-		conStatus.VidMem = virtual_framebuffer;
+		virtual_framebuffer = malloc (Console.GraphBytesPerLine * Console.GraphLines);
+		Console.VidMem = virtual_framebuffer;
 	} else {
 		virtual_framebuffer = 0;
-		conStatus.VidMem = (uint8_t *)image->data;
+		Console.VidMem = (uint8_t *)image->data;
 	}
-	bzero (conStatus.VidMem, conStatus.GraphBytesPerLine * conStatus.GraphLines);
+	bzero (Console.VidMem, Console.GraphBytesPerLine * Console.GraphLines);
 }
 
 static void x11_common_event_loop(void)
@@ -770,7 +770,7 @@ static void x11_common_event_loop(void)
 				break;
 			case ConfigureNotify:
 				//fprintf(stderr, "configure notify\n");
-				if ((conStatus.GraphBytesPerLine == event.xconfigure.width) && (conStatus.GraphLines == event.xconfigure.height))
+				if ((Console.GraphBytesPerLine == event.xconfigure.width) && (Console.GraphLines == event.xconfigure.height))
 				{
 					/* event was probably only a move */
 					break;
@@ -781,7 +781,7 @@ static void x11_common_event_loop(void)
 			#if 0
 			case ResizeRequest:
 				#warning TODO
-				if (conStatus.CurrentMode < 8)
+				if (Console.CurrentMode < 8)
 				{
 					int x, y;
 					fprintf(stderr, "Resize income pixels: %d %d\n", event.xresizerequest.width, event.xresizerequest.height);
@@ -1035,8 +1035,8 @@ static void create_window(void)
 	if (!(window = XCreateWindow (mDisplay,
 	                              DefaultRootWindow(mDisplay),
 	                              0, 0,
-	                              conStatus.GraphBytesPerLine,
-	                              conStatus.GraphLines,
+	                              Console.GraphBytesPerLine,
+	                              Console.GraphLines,
 	                              0,
 	                              x11_depth,
 	                              InputOutput,
@@ -1110,8 +1110,8 @@ static void create_image(void)
 		                               ZPixmap,
 		                               NULL,
 		                               &shminfo[0],
-		                               conStatus.GraphBytesPerLine,
-		                               conStatus.GraphLines)))
+		                               Console.GraphBytesPerLine,
+		                               Console.GraphLines)))
 		{
 			fprintf(stderr, "[x11/shm] Failed to create XShmImage object\n");
 			exit(-1);
@@ -1138,7 +1138,7 @@ static void create_image(void)
 		shmctl(shminfo[0].shmid, IPC_RMID, 0);
 	} else {
 		shm_completiontype = -1;
-		if (!(image = XGetImage (mDisplay, window, 0, 0, conStatus.GraphBytesPerLine, conStatus.GraphLines, AllPlanes, ZPixmap)))
+		if (!(image = XGetImage (mDisplay, window, 0, 0, Console.GraphBytesPerLine, Console.GraphLines, AllPlanes, ZPixmap)))
 		{
 			fprintf(stderr, "[x11] Failed to create XImage\n");
 			exit(-1);
@@ -1228,32 +1228,32 @@ static int x11_SetGraphMode (int high)
 
 	if (high==13)
 	{
-		conStatus.CurrentMode = 13;
-		conStatus.GraphBytesPerLine = 320;
-		conStatus.GraphLines = 200;
+		Console.CurrentMode = 13;
+		Console.GraphBytesPerLine = 320;
+		Console.GraphLines = 200;
 		if ((Graphmode_modeline=modelines[MODE_320x200]))
 		{
 			if (Graphmode_modeline->vdisplay>=240)
 			{
-				conStatus.GraphLines = 240;
+				Console.GraphLines = 240;
 			}
 		}
-		conStatus.TextWidth = conStatus.GraphBytesPerLine / 8;
-		conStatus.TextHeight = conStatus.GraphLines / 16;
+		Console.TextWidth = Console.GraphBytesPerLine / 8;
+		Console.TextHeight = Console.GraphLines / 16;
 	} else if (high)
 	{
-		conStatus.CurrentMode = 101;
-		conStatus.TextWidth = 128;
-		conStatus.TextHeight = 48;
-		conStatus.GraphBytesPerLine = 1024;
-		conStatus.GraphLines = 768;
+		Console.CurrentMode = 101;
+		Console.TextWidth = 128;
+		Console.TextHeight = 48;
+		Console.GraphBytesPerLine = 1024;
+		Console.GraphLines = 768;
 		Graphmode_modeline = modelines[MODE_1024x768];
 	} else {
-		conStatus.CurrentMode = 100;
-		conStatus.TextWidth = 80;
-		conStatus.TextHeight = 30;
-		conStatus.GraphBytesPerLine = 640;
-		conStatus.GraphLines = 480;
+		Console.CurrentMode = 100;
+		Console.TextWidth = 80;
+		Console.TextHeight = 30;
+		Console.GraphBytesPerLine = 640;
+		Console.GraphLines = 480;
 		Graphmode_modeline = modelines[MODE_640x480];
 	}
 	if (!Graphmode_modeline)
@@ -1264,26 +1264,26 @@ static int x11_SetGraphMode (int high)
 	}
 	___push_key(VIRT_KEY_RESIZE);
 
-	plScrRowBytes = conStatus.TextWidth * 2;
+	plScrRowBytes = Console.TextWidth * 2;
 
 	if (!window)
 		create_window();
 
 	set_state_graphmode (do_fullscreen);
 
-	if ((x11_depth != 8) || (conStatus.GraphBytesPerLine != image->bytes_per_line))
+	if ((x11_depth != 8) || (Console.GraphBytesPerLine != image->bytes_per_line))
 	{
-		virtual_framebuffer = malloc (conStatus.GraphBytesPerLine * conStatus.GraphLines);
-		conStatus.VidMem = virtual_framebuffer;
+		virtual_framebuffer = malloc (Console.GraphBytesPerLine * Console.GraphLines);
+		Console.VidMem = virtual_framebuffer;
 	} else {
 		virtual_framebuffer = 0;
-		conStatus.VidMem = (uint8_t *)image->data;
+		Console.VidMem = (uint8_t *)image->data;
 	}
 quick:
-	bzero (image->data, image->bytes_per_line * conStatus.GraphLines);
+	bzero (image->data, image->bytes_per_line * Console.GraphLines);
 	if (virtual_framebuffer)
 	{
-		bzero (virtual_framebuffer, conStatus.GraphBytesPerLine * conStatus.GraphLines);
+		bzero (virtual_framebuffer, Console.GraphBytesPerLine * Console.GraphLines);
 	}
 
 	x11_gFlushPal ();
@@ -1318,9 +1318,9 @@ static void x11_SetTextMode (unsigned char x)
 
 	//___setup_key(ekbhit_x11dummy, ekbhit_x11dummy);
 
-	if (x == conStatus.CurrentMode)
+	if (x == Console.CurrentMode)
 	{
-		bzero (conStatus.VidMem, conStatus.GraphBytesPerLine * conStatus.GraphLines);
+		bzero (Console.VidMem, Console.GraphBytesPerLine * Console.GraphLines);
 		return;
 	}
 
@@ -1347,7 +1347,7 @@ static void x11_SetTextMode (unsigned char x)
 		XUngrabPointer(mDisplay, CurrentTime);
 
 		XSync(mDisplay, False);
-		conStatus.CurrentMode = 255;
+		Console.CurrentMode = 255;
 
 		return; /* gdb helper */
 	}
@@ -1381,24 +1381,24 @@ static void x11_SetTextMode (unsigned char x)
 	}
 	modeline=modelines[modes[x].modeline];
 
-	conStatus.TextHeight = modes[x].chary;
-	conStatus.TextWidth = modes[x].charx;
-	plScrRowBytes = conStatus.TextWidth * 2;
-	conStatus.GraphBytesPerLine = modes[x].windowx;
-	conStatus.GraphLines = modes[x].windowy;
+	Console.TextHeight = modes[x].chary;
+	Console.TextWidth = modes[x].charx;
+	plScrRowBytes = Console.TextWidth * 2;
+	Console.GraphBytesPerLine = modes[x].windowx;
+	Console.GraphLines = modes[x].windowy;
 	___push_key (VIRT_KEY_RESIZE);
 
 #else
 	/* WindowResized_Textmode() will override these later when the final result is available */
-	conStatus.TextHeight = modes[x].chary;
-	conStatus.TextWidth = modes[x].charx;
-	plScrRowBytes = conStatus.TextWidth * 2;
-	conStatus.GraphBytesPerLine = modes[x].windowx;
-	conStatus.GraphLines = modes[x].windowy;
+	Console.TextHeight = modes[x].chary;
+	Console.TextWidth = modes[x].charx;
+	plScrRowBytes = Console.TextWidth * 2;
+	Console.GraphBytesPerLine = modes[x].windowx;
+	Console.GraphLines = modes[x].windowy;
 	___push_key(VIRT_KEY_RESIZE);
 #endif
 
-	conStatus.LastTextMode = conStatus.CurrentMode = x;
+	Console.LastTextMode = Console.CurrentMode = x;
 
 	x11_depth=XDefaultDepth(mDisplay, mScreen);
 	if (!window)
@@ -1481,11 +1481,11 @@ static void RefreshScreenGraph(void)
 			while (1)
 			{
 				dst = (uint32_t *)dst_line;
-				for (j = 0; j < conStatus.GraphBytesPerLine; j++)
+				for (j = 0; j < Console.GraphBytesPerLine; j++)
 				{
 					*(dst++)=x11_palette32[*(src++)];
 				}
-				if ((++Y) >= conStatus.GraphLines)
+				if ((++Y) >= Console.GraphLines)
 				{
 					break;
 				}
@@ -1497,13 +1497,13 @@ static void RefreshScreenGraph(void)
 			while (1)
 			{
 				dst = (uint8_t *)dst_line;
-				for (j = 0; j < conStatus.GraphBytesPerLine; j++)
+				for (j = 0; j < Console.GraphBytesPerLine; j++)
 				{
 					*(dst++)=x11_palette32[*src]&255;
 					*(dst++)=(x11_palette32[*src]>>8) & 255;
 					*(dst++)=(x11_palette32[*src++]>>16) & 255;
 				}
-				if ((++Y) >= conStatus.GraphLines)
+				if ((++Y) >= Console.GraphLines)
 				{
 					break;
 				}
@@ -1515,11 +1515,11 @@ static void RefreshScreenGraph(void)
 			while (1)
 			{
 				dst = (uint16_t *)dst_line;
-				for (j = 0; j < conStatus.GraphBytesPerLine; j++)
+				for (j = 0; j < Console.GraphBytesPerLine; j++)
 				{
 					*(dst++)=x11_palette16[*(src++)];
 				}
-				if ((++Y) >= conStatus.GraphLines)
+				if ((++Y) >= Console.GraphLines)
 				{
 					break;
 				}
@@ -1531,11 +1531,11 @@ static void RefreshScreenGraph(void)
 			while (1)
 			{
 				dst = (uint16_t *)dst_line;
-				for (j = 0; j < conStatus.GraphBytesPerLine; j++)
+				for (j = 0; j < Console.GraphBytesPerLine; j++)
 				{
 					*(dst++)=x11_palette15[*(src++)];
 				}
-				if ((++Y) >= conStatus.GraphLines)
+				if ((++Y) >= Console.GraphLines)
 				{
 					break;
 				}
@@ -1547,9 +1547,9 @@ static void RefreshScreenGraph(void)
 			while (1)
 			{
 				dst = dst_line;
-				memcpy(dst, src, conStatus.GraphBytesPerLine);
-				src += conStatus.GraphBytesPerLine;
-				if ((++Y) >= conStatus.GraphLines)
+				memcpy(dst, src, Console.GraphBytesPerLine);
+				src += Console.GraphBytesPerLine;
+				if ((++Y) >= Console.GraphLines)
 				{
 					break;
 				}
@@ -1573,7 +1573,7 @@ static void RefreshScreenGraph(void)
 					int tx, x;
 					uint8_t *src, *dst;
 
-					if (y >= conStatus.GraphLines) { break; }
+					if (y >= Console.GraphLines) { break; }
 
 					tx = X11ScrTextGUIOverlays[i]->x + X11ScrTextGUIOverlays[i]->width;
 					x = (X11ScrTextGUIOverlays[i]->x < 0) ? 0 : X11ScrTextGUIOverlays[i]->x;
@@ -1583,7 +1583,7 @@ static void RefreshScreenGraph(void)
 
 					for (; x < tx; x++)
 					{
-						if (x >= conStatus.GraphBytesPerLine) { break; }
+						if (x >= Console.GraphBytesPerLine) { break; }
 
 						if (src[3] == 0)
 						{
@@ -1623,7 +1623,7 @@ static void RefreshScreenGraph(void)
 					int tx, x;
 					uint8_t *src, *dst;
 
-					if (y >= conStatus.GraphLines) { break; }
+					if (y >= Console.GraphLines) { break; }
 
 					tx = X11ScrTextGUIOverlays[i]->x + X11ScrTextGUIOverlays[i]->width;
 					x = (X11ScrTextGUIOverlays[i]->x < 0) ? 0 : X11ScrTextGUIOverlays[i]->x;
@@ -1633,7 +1633,7 @@ static void RefreshScreenGraph(void)
 
 					for (; x < tx; x++)
 					{
-						if (x >= conStatus.GraphBytesPerLine) { break; }
+						if (x >= Console.GraphBytesPerLine) { break; }
 
 						if (src[3] == 0)
 						{
@@ -1671,7 +1671,7 @@ static void RefreshScreenGraph(void)
 					int tx, x;
 					uint8_t *src, *dst;
 
-					if (y >= conStatus.GraphLines) { break; }
+					if (y >= Console.GraphLines) { break; }
 
 					tx = X11ScrTextGUIOverlays[i]->x + X11ScrTextGUIOverlays[i]->width;
 					x = (X11ScrTextGUIOverlays[i]->x < 0) ? 0 : X11ScrTextGUIOverlays[i]->x;
@@ -1681,7 +1681,7 @@ static void RefreshScreenGraph(void)
 
 					for (; x < tx; x++)
 					{
-						if (x >= conStatus.GraphBytesPerLine) { break; }
+						if (x >= Console.GraphBytesPerLine) { break; }
 
 						if (src[3] == 0)
 						{
@@ -1729,7 +1729,7 @@ static void RefreshScreenGraph(void)
 					int tx, x;
 					uint8_t *src, *dst;
 
-					if (y >= conStatus.GraphLines) { break; }
+					if (y >= Console.GraphLines) { break; }
 
 					tx = X11ScrTextGUIOverlays[i]->x + X11ScrTextGUIOverlays[i]->width;
 					x = (X11ScrTextGUIOverlays[i]->x < 0) ? 0 : X11ScrTextGUIOverlays[i]->x;
@@ -1739,7 +1739,7 @@ static void RefreshScreenGraph(void)
 
 					for (; x < tx; x++)
 					{
-						if (x >= conStatus.GraphBytesPerLine) { break; }
+						if (x >= Console.GraphBytesPerLine) { break; }
 
 						if (src[3] == 0)
 						{
@@ -1779,14 +1779,14 @@ static void RefreshScreenGraph(void)
 	}
 
 	if (shm_completiontype>=0)
-		XShmPutImage(mDisplay, window, copyGC, image, 0, 0, 0, (conStatus.GraphLines == 240 ? 20 : 0), conStatus.GraphBytesPerLine, conStatus.GraphLines, True);
+		XShmPutImage(mDisplay, window, copyGC, image, 0, 0, 0, (Console.GraphLines == 240 ? 20 : 0), Console.GraphBytesPerLine, Console.GraphLines, True);
 	else
-		XPutImage(mDisplay, window, copyGC, image, 0, 0, 0, (conStatus.GraphLines == 240 ? 20 : 0), conStatus.GraphBytesPerLine, conStatus.GraphLines);
+		XPutImage(mDisplay, window, copyGC, image, 0, 0, 0, (Console.GraphLines == 240 ? 20 : 0), Console.GraphBytesPerLine, Console.GraphLines);
 
-	if (conStatus.CurrentFont == _8x8)
+	if (Console.CurrentFont == _8x8)
 	{
 		fontengine_8x8_iterate ();
-	} else if (conStatus.CurrentFont == _8x16)
+	} else if (Console.CurrentFont == _8x16)
 	{
 		fontengine_8x16_iterate ();
 	}
@@ -1798,7 +1798,7 @@ static void RefreshScreenText (void)
 		return;
 	if (!image)
 		return;
-	if (!conStatus.VidMem)
+	if (!Console.VidMem)
 		return;
 
 	swtext_cursor_inject ();
@@ -1810,7 +1810,7 @@ static void RefreshScreenText (void)
 
 static int ekbhit_x11dummy (void)
 {
-	if (conStatus.CurrentMode < 8)
+	if (Console.CurrentMode < 8)
 	{
 		RefreshScreenText();
 	} else {
@@ -2078,7 +2078,7 @@ static int x11_HasKey (uint16_t key)
 static const char *x11_GetDisplayTextModeName (void)
 {
 	static char mode[32];
-	snprintf(mode, sizeof(mode), "res(%dx%d), font(%s)%s", conStatus.TextWidth, conStatus.TextHeight,
+	snprintf(mode, sizeof(mode), "res(%dx%d), font(%s)%s", Console.TextWidth, Console.TextHeight,
 		x11_CurrentFontWanted == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
 	return mode;
 }
@@ -2089,18 +2089,18 @@ static void x11_DisplaySetupTextMode (void)
 	{
 		uint16_t c;
 
-		bzero (conStatus.VidMem, conStatus.GraphBytesPerLine * conStatus.GraphLines);
+		bzero (Console.VidMem, Console.GraphBytesPerLine * Console.GraphLines);
 
 		make_title("x11-driver setup", 0);
 		swtext_displaystr_cp437 (1, 0, 0x07, "1:  font-size:", 14);
-		swtext_displaystr_cp437 (1, 15, conStatus.CurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
-		swtext_displaystr_cp437 (1, 19, conStatus.CurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
+		swtext_displaystr_cp437 (1, 15, Console.CurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
+		swtext_displaystr_cp437 (1, 19, Console.CurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
 /*
 		swtext_displaystr_cp437 (2, 0, 0x07, "2:  fullscreen: ", 16);
 		swtext_displaystr_cp437 (3, 0, 0x07, "3:  resolution in fullscreen:", 29);
 */
 
-		swtext_displaystr_cp437 (conStatus.TextHeight - 1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", conStatus.TextWidth);
+		swtext_displaystr_cp437 (Console.TextHeight - 1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", Console.TextWidth);
 
 		while (! ekbhit())
 		{
@@ -2115,8 +2115,8 @@ static void x11_DisplaySetupTextMode (void)
 				/* we can assume that we are in text-mode if we are here */
 				x11_CurrentFontWanted = (x11_CurrentFontWanted == _8x8)?_8x16 : _8x8;
 				TextModeSetState (x11_CurrentFontWanted, do_fullscreen);
-				x11_CurrentFontWanted = conStatus.CurrentFont;
-				cfSetProfileInt("x11", "font", conStatus.CurrentFont, 10);
+				x11_CurrentFontWanted = Console.CurrentFont;
+				cfSetProfileInt("x11", "font", Console.CurrentFont, 10);
 				break;
 			case KEY_EXIT:
 			case KEY_ESC: return;
@@ -2199,7 +2199,7 @@ int x11_init(int use_explicit)
 		return 1;
 	}
 
-	conStatus.CurrentMode = 255;
+	Console.CurrentMode = 255;
 
 	x11_keyboard_init();
 
@@ -2207,14 +2207,14 @@ int x11_init(int use_explicit)
 
 	ewmh_init();
 
-	conStatus.VidType = vidVESA;
+	Console.VidType = vidVESA;
 
-	conDriver = &x11ConsoleDriver;
+	Console.Driver = &x11ConsoleDriver;
 	___setup_key(ekbhit_x11dummy, ekbhit_x11dummy); /* filters in more keys */
 
 	x11_SetTextMode (0);
 
-	conStatus.TextGUIOverlay = (x11_depth !=8);
+	Console.TextGUIOverlay = (x11_depth !=8);
 
 	return 0;
 }

@@ -133,9 +133,9 @@ static void medialibRefreshRun (void **token, const struct DevInterfaceAPI_t *AP
 	{
 		fsDraw();
 		mlRefreshDraw("Refresh files in medialib");
-		while (conFunc.KeyboardHit())
+		while (API->console->KeyboardHit())
 		{
-			int key = conFunc.KeyboardGetChar();
+			int key = API->console->KeyboardGetChar();
 			switch (key)
 			{
 				case KEY_HOME:
@@ -189,6 +189,6 @@ static void medialibRefreshRun (void **token, const struct DevInterfaceAPI_t *AP
 					break;
 			}
 		}
-		framelock();
+		API->console->FrameLock();
 	}
 }

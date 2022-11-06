@@ -177,7 +177,6 @@ timidityconfig.o: timidityconfig.c \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
 	../stuff/err.h \
-	../stuff/framelock.h \
 	../stuff/poutput.h \
 	timidityconfig.h
 	$(CC) $< -o $@ -c -DDEFAULT_PATH=TIMIDITY_DEFAULT_PATH -DPKGDATADIR=TIMIDITYPKGDATADIR

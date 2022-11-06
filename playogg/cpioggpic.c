@@ -225,7 +225,7 @@ static void OggPicSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, 
 
 	if (OggPicHandle)
 	{
-		plScrTextGUIOverlayRemove (OggPicHandle);
+		cpifaceSession->console->Driver->TextOverlayRemove (OggPicHandle);
 		OggPicHandle = 0;
 	}
 	OggPicFirstLine=ypos;
@@ -240,7 +240,7 @@ static void OggPicSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, 
 
 	if (ogg_pictures[OggPicCurrentIndex].scaled_data_bgra)
 	{
-		OggPicHandle = plScrTextGUIOverlayAddBGRA
+		OggPicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 		(
 			OggPicFontSizeX * OggPicFirstColumn,
 			OggPicFontSizeY * (OggPicFirstLine + 1),
@@ -250,7 +250,7 @@ static void OggPicSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, 
 			ogg_pictures[OggPicCurrentIndex].scaled_data_bgra
 		);
 	} else {
-		OggPicHandle = plScrTextGUIOverlayAddBGRA
+		OggPicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 		(
 			OggPicFontSizeX * OggPicFirstColumn,
 			OggPicFontSizeY * (OggPicFirstLine + 1),
@@ -267,11 +267,11 @@ static int OggPicGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpit
 	OggPicVisible = 0;
 	if (OggPicHandle)
 	{
-		plScrTextGUIOverlayRemove (OggPicHandle);
+		cpifaceSession->console->Driver->TextOverlayRemove (OggPicHandle);
 		OggPicHandle = 0;
 	}
 
-	if ((OggPicActive==3)&&(plScrWidth<132))
+	if ((OggPicActive==3) && (cpifaceSession->console->TextWidth < 132))
 		OggPicActive=2;
 
 	if ((OggPicMaxHeight == 0) || (OggPicMaxWidth == 0))
@@ -279,7 +279,7 @@ static int OggPicGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpit
 		return 0;
 	}
 
-	switch (plCurrentFont)
+	switch (cpifaceSession->console->CurrentFont)
 	{
 		case _8x8:
 			q->hgtmax = 1 + (OggPicMaxHeight +  7) /  8;
@@ -362,31 +362,31 @@ static void OggPicDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 
 	if (left)
 	{
-		displaystr      (OggPicFirstLine, OggPicFirstColumn,                                 focus?0x09:0x01, "Ogg PIC: ", MIN(9, left));
+		cpifaceSession->console->Driver->DisplayStr      (OggPicFirstLine, OggPicFirstColumn,                                 focus?0x09:0x01, "Ogg PIC: ", MIN(9, left));
 		left -= 9;
 	}
 
 	if (left)
 	{
-		displaystr      (OggPicFirstLine, OggPicFirstColumn + 9,                             focus?0x0a:0x02, picture_type, MIN(strlen (picture_type), left));
+		cpifaceSession->console->Driver->DisplayStr      (OggPicFirstLine, OggPicFirstColumn + 9,                             focus?0x0a:0x02, picture_type, MIN(strlen (picture_type), left));
 		left -= strlen (picture_type);
 	}
 
 	if (left)
 	{
-		displaystr      (OggPicFirstLine, OggPicFirstColumn + 9 + strlen (picture_type),     focus?0x09:0x01, ", ", MIN(2, left));
+		cpifaceSession->console->Driver->DisplayStr      (OggPicFirstLine, OggPicFirstColumn + 9 + strlen (picture_type),     focus?0x09:0x01, ", ", MIN(2, left));
 		left -= 2;
 	}
 
 	if (left)
 	{
-		displaystr_utf8 (OggPicFirstLine, OggPicFirstColumn + 9 + strlen (picture_type) + 2, focus?0x0a:0x02, ogg_pictures[OggPicCurrentIndex].description, left);
+		cpifaceSession->console->Driver->DisplayStr_utf8 (OggPicFirstLine, OggPicFirstColumn + 9 + strlen (picture_type) + 2, focus?0x0a:0x02, ogg_pictures[OggPicCurrentIndex].description, left);
 	}
 }
 
 static int OggPicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 
-{	if (!plScrTextGUIOverlay)
+{	if (!cpifaceSession->console->TextGUIOverlay)
 	{
 		return 0;
 	}
@@ -416,7 +416,7 @@ static int OggPicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 
 static int OggPicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
-	if (!plScrTextGUIOverlay)
+	if (!cpifaceSession->console->TextGUIOverlay)
 	{
 		return 0;
 	}
@@ -437,13 +437,13 @@ static int OggPicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 
 			if (OggPicHandle)
 			{
-				plScrTextGUIOverlayRemove (OggPicHandle);
+				cpifaceSession->console->Driver->TextOverlayRemove (OggPicHandle);
 				OggPicHandle = 0;
 			}
 
 			if (ogg_pictures[OggPicCurrentIndex].scaled_data_bgra)
 			{
-				OggPicHandle = plScrTextGUIOverlayAddBGRA
+				OggPicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 				(
 					OggPicFontSizeX * OggPicFirstColumn,
 					OggPicFontSizeY * (OggPicFirstLine + 1),
@@ -453,7 +453,7 @@ static int OggPicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 					ogg_pictures[OggPicCurrentIndex].scaled_data_bgra
 				);
 			} else {
-				OggPicHandle = plScrTextGUIOverlayAddBGRA
+				OggPicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 				(
 					OggPicFontSizeX * OggPicFirstColumn,
 					OggPicFontSizeY * (OggPicFirstLine + 1),
@@ -467,7 +467,7 @@ static int OggPicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 			break;
 		case 'c': case 'C':
 			OggPicActive=(OggPicActive+1)%4;
-			if ((OggPicActive==3)&&(plScrWidth<132))
+			if ((OggPicActive==3) && (cpifaceSession->console->TextWidth < 132))
 			{
 				OggPicActive=0;
 			}
@@ -484,7 +484,7 @@ static int OggPicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 	switch (ev)
 	{
 		case cpievInit:
-			if (plScrTextGUIOverlay)
+			if (cpifaceSession->console->TextGUIOverlay)
 			{
 				Refresh_OggPictures();
 				OggPicActive=3;
@@ -493,16 +493,16 @@ static int OggPicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 		case cpievClose:
 			if (OggPicHandle)
 			{
-				plScrTextGUIOverlayRemove (OggPicHandle);
+				cpifaceSession->console->Driver->TextOverlayRemove (OggPicHandle);
 				OggPicHandle = 0;
 			}
 			break;
 		case cpievOpen:
-			if (OggPicVisible && (!OggPicHandle) && plScrTextGUIOverlay)
+			if (OggPicVisible && (!OggPicHandle) && cpifaceSession->console->TextGUIOverlay)
 			{
 				if (ogg_pictures[OggPicCurrentIndex].scaled_data_bgra)
 				{
-					OggPicHandle = plScrTextGUIOverlayAddBGRA
+					OggPicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 					(
 						OggPicFontSizeX * OggPicFirstColumn,
 						OggPicFontSizeY * (OggPicFirstLine + 1),
@@ -512,7 +512,7 @@ static int OggPicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 						ogg_pictures[OggPicCurrentIndex].scaled_data_bgra
 					);
 				} else {
-					OggPicHandle = plScrTextGUIOverlayAddBGRA
+					OggPicHandle = cpifaceSession->console->Driver->TextOverlayAddBGRA
 					(
 						OggPicFontSizeX * OggPicFirstColumn,
 						OggPicFontSizeY * (OggPicFirstLine + 1),
@@ -527,7 +527,7 @@ static int OggPicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 		case cpievDone:
 			if (OggPicHandle)
 			{
-				plScrTextGUIOverlayRemove (OggPicHandle);
+				cpifaceSession->console->Driver->TextOverlayRemove (OggPicHandle);
 				OggPicHandle = 0;
 			}
 			break;

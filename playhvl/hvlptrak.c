@@ -114,16 +114,16 @@ static int hvl_getnote (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp
 	switch (small)
 	{
 		case 0:
-			cpifaceSession->conFunc->WriteString (bp, 0, color, &"CCDDEFFGGAAB"[(Note & 0x7f)%12], 1);
-			cpifaceSession->conFunc->WriteString (bp, 1, color, &"-#-#--#-#-#-"[(Note & 0x7f)%12], 1);
-			cpifaceSession->conFunc->WriteString (bp, 2, color, &"-0123456789" [(Note & 0x7f)/12], 1);
+			cpifaceSession->console->WriteString (bp, 0, color, &"CCDDEFFGGAAB"[(Note & 0x7f)%12], 1);
+			cpifaceSession->console->WriteString (bp, 1, color, &"-#-#--#-#-#-"[(Note & 0x7f)%12], 1);
+			cpifaceSession->console->WriteString (bp, 2, color, &"-0123456789" [(Note & 0x7f)/12], 1);
 			break;
 		case 1:
-			cpifaceSession->conFunc->WriteString (bp, 0, color, &"cCdDefFgGaAb"[(Note & 0x7f)%12], 1);
-			cpifaceSession->conFunc->WriteString (bp, 1, color, &"-0123456789" [(Note & 0x7f)/12], 1);
+			cpifaceSession->console->WriteString (bp, 0, color, &"cCdDefFgGaAb"[(Note & 0x7f)%12], 1);
+			cpifaceSession->console->WriteString (bp, 1, color, &"-0123456789" [(Note & 0x7f)/12], 1);
 			break;
 		case 2:
-			cpifaceSession->conFunc->WriteString (bp, 0, color, &"cCdDefFgGaAb"[(Note & 0x7f)%12], 1);
+			cpifaceSession->console->WriteString (bp, 0, color, &"cCdDefFgGaAb"[(Note & 0x7f)%12], 1);
 			break;
 	}
 	return 1;
@@ -137,12 +137,12 @@ static int hvl_getvol (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 
 	if ((Step->stp_FX == 0x0c) && (Step->stp_FXParam < 0x40))
 	{
-		cpifaceSession->conFunc->WriteNum (bp, 0, COLVOL, Step->stp_FXParam, 16, 2, 0);
+		cpifaceSession->console->WriteNum (bp, 0, COLVOL, Step->stp_FXParam, 16, 2, 0);
 		return 1;
 	}
 	if ((Step->stp_FXb == 0x0c) && (Step->stp_FXbParam < 0x40))
 	{
-		cpifaceSession->conFunc->WriteNum (bp, 0, COLVOL, Step->stp_FXbParam, 16, 2, 0);
+		cpifaceSession->console->WriteNum (bp, 0, COLVOL, Step->stp_FXbParam, 16, 2, 0);
 		return 1;
 	}
 
@@ -157,7 +157,7 @@ static int hvl_getins (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 
 	if (Step->stp_Instrument)
 	{
-		cpifaceSession->conFunc->WriteNum (bp, 0, COLINS, Step->stp_Instrument, 16, 2, 0);
+		cpifaceSession->console->WriteNum (bp, 0, COLINS, Step->stp_Instrument, 16, 2, 0);
 		return 1;
 	}
 	return 0;
@@ -171,12 +171,12 @@ static int hvl_getpan (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bp)
 
 	if (Step->stp_FX == 0x07)
 	{
-		cpifaceSession->conFunc->WriteNum (bp, 0, COLPAN, Step->stp_FXParam, 16, 2, 0);
+		cpifaceSession->console->WriteNum (bp, 0, COLPAN, Step->stp_FXParam, 16, 2, 0);
 		return 1;
 	}
 	if (Step->stp_FXb == 0x07)
 	{
-		cpifaceSession->conFunc->WriteNum (bp, 0, COLPAN, Step->stp_FXbParam, 16, 2, 0);
+		cpifaceSession->console->WriteNum (bp, 0, COLPAN, Step->stp_FXbParam, 16, 2, 0);
 		return 1;
 	}
 	return 0;
@@ -188,32 +188,32 @@ static void _hvl_getgcmd (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *
 	{
 		if (param != 0) /* avoid flooding */
 		{
-			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "H", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLACT, "H", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
 			*n = *n - 1;
 		}
 	} else if (fx == 0xb) /* Position Jump Lo */
 	{
-		cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x1A", 1);
-		cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 0, COLACT, "\x1A", 1);
+		cpifaceSession->console->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
 		*n = *n - 1;
 	} else if (fx == 0xC) /* Volume */
 	{
 		if ((param >= 0xA0) && (param < 0xE0))
 		{
-			cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "v", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, param - 0xA0, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLVOL, "v", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLVOL, param - 0xA0, 16, 2, 0);
 			*n = *n - 1;
 		}
 	} else if (fx == 0xd) /* Break */
 	{
-		cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x19", 1);
-		cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 0, COLACT, "\x19", 1);
+		cpifaceSession->console->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
 		*n = *n - 1;
 	} else if (fx == 0xf) /* Tempo */
 	{
-		cpifaceSession->conFunc->WriteString (buf, 0, COLSPEED, "t", 1);
-		cpifaceSession->conFunc->WriteNum    (buf, 1, COLSPEED, param, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 0, COLSPEED, "t", 1);
+		cpifaceSession->console->WriteNum    (buf, 1, COLSPEED, param, 16, 2, 0);
 		*n = *n - 1;
 	}
 }
@@ -238,120 +238,120 @@ static void _hvl_getfx (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bu
 {
 	if (fx == 0x1) /* Porta Up */
 	{
-		cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\x18", 1);
-		cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, param, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 0, COLPITCH, "\x18", 1);
+		cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, param, 16, 2, 0);
 		*n = *n - 1;
 	} else if (fx == 0x2) /* Porta Down */
 	{
-		cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\x19", 1);
-		cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, param, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 0, COLPITCH, "\x19", 1);
+		cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, param, 16, 2, 0);
 		*n = *n - 1;
 	} else if (fx == 0x2) /* Porta Down */
 	{
-		cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\x19", 1);
-		cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, param, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 0, COLPITCH, "\x19", 1);
+		cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, param, 16, 2, 0);
 		*n = *n - 1;
 	} else if (fx == 0x3) /* Porta to note */
 	{
-		cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\x0D", 1);
-		cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, param, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 0, COLPITCH, "\x0D", 1);
+		cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, param, 16, 2, 0);
 		*n = *n - 1;
 	} else if (fx == 0x4) /* Filter */
 	{
-		cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "F", 1);
-		cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 0, COLACT, "F", 1);
+		cpifaceSession->console->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
 		*n = *n - 1;
 	} else if (fx == 0x5) /* PortaTo+VolumeSlide */
 	{
-		cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x0D", 1);
+		cpifaceSession->console->WriteString (buf, 0, COLACT, "\x0D", 1);
 		if ((param & 0xF0)!=0x00)
 		{
-			cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x18", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 2, COLVOL, param >> 4, 16, 1, 0);
+			cpifaceSession->console->WriteString (buf, 1, COLVOL, "\x18", 1);
+			cpifaceSession->console->WriteNum    (buf, 2, COLVOL, param >> 4, 16, 1, 0);
 		} else if ((param & 0xF0)!=0x00)
 		{
-			cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x19", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 2, COLVOL, param & 0xF, 16, 1, 0);
+			cpifaceSession->console->WriteString (buf, 1, COLVOL, "\x19", 1);
+			cpifaceSession->console->WriteNum    (buf, 2, COLVOL, param & 0xF, 16, 1, 0);
 		} else {
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, param, 16, 2, 0);
+			cpifaceSession->console->WriteNum    (buf, 1, COLVOL, param, 16, 2, 0);
 		}
 		*n = *n - 1;
 #if 0
 	// done by getpan()
 	} else if (fx == 0x7) /* Pan */
 	{
-		cpifaceSession->conFunc->WriteString (buf, 0, COLPAN, ((int8_t)param>0)?"\x1A":((int8_t)param<0)?"\x1B":"\x1D", 1);
-		cpifaceSession->conFunc->WriteNum (buf, 1, COLPAN, param, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 0, COLPAN, ((int8_t)param>0)?"\x1A":((int8_t)param<0)?"\x1B":"\x1D", 1);
+		cpifaceSession->console->WriteNum (buf, 1, COLPAN, param, 16, 2, 0);
 		*n = *n - 1;
 #endif
 	} else if (fx == 0x9) /* Square-Relation */
 	{
-		cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "S", 1);
-		cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 0, COLACT, "S", 1);
+		cpifaceSession->console->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
 		*n = *n - 1;
 	} else if (fx == 0xA) /* VolumeSlide */
 	{
 		if ((param & 0xF0)!=0x00)
 		{
-			cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x18", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, param >> 4, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLVOL, "\x18", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLVOL, param >> 4, 16, 2, 0);
 		} else if ((param &0xF0)!=0x00)
 		{
-			cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x19", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, param & 0xF, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 1, COLVOL, "\x19", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLVOL, param & 0xF, 16, 2, 0);
 		} else {
-			cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "v", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, param, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 1, COLVOL, "v", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLVOL, param, 16, 2, 0);
 		}
 		*n = *n - 1;
 	} else if (fx == 0xC) /* Volume */
 	{
 		if ((param >= 0x50) && (param < 0x90))
 		{
-			cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "v", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, param - 0x50, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLVOL, "v", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLVOL, param - 0x50, 16, 2, 0);
 			*n = *n - 1;
 		}
 	} else if (fx == 0xE) // Multiple commands
 	{
 		if ((param & 0xF0) == 0x10) /* FinePortUp */
 		{
-			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "+", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, param & 0xf, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLPITCH, "+", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, param & 0xf, 16, 2, 0);
 			*n = *n - 1;
 		} else if ((param & 0xF0) == 0x20) /* FinePortDown */
 		{
-			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "-", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, param & 0xf, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLPITCH, "-", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, param & 0xf, 16, 2, 0);
 			*n = *n - 1;
 		} else if ((param & 0xF0) == 0x40) /* Vibrato Control */
 		{
-			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "~=", 2);
-			cpifaceSession->conFunc->WriteNum    (buf, 2, COLPITCH, param & 0xf, 16, 1, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLPITCH, "~=", 2);
+			cpifaceSession->console->WriteNum    (buf, 2, COLPITCH, param & 0xf, 16, 1, 0);
 			*n = *n - 1;
 		} else if ((param & 0xF0) == 0xA0) /* FineVolumeUp */
 		{
-			cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "+", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, param & 0xf, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLVOL, "+", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLVOL, param & 0xf, 16, 2, 0);
 			*n = *n - 1;
 		} else if ((param & 0xF0) == 0xB0) /* FineVolumeDown */
 		{
-			cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "-", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, param & 0xf, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLVOL, "-", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLVOL, param & 0xf, 16, 2, 0);
 			*n = *n - 1;
 		} else if ((param & 0xF0) == 0xC0) /* NoteCut */
 		{
-			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "^", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, param & 0xf, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLACT, "^", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLACT, param & 0xf, 16, 2, 0);
 			*n = *n - 1;
 		} else if ((param & 0xF0) == 0xD0) /* NoteDelay */
 		{
-			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "d", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, param & 0xf, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLACT, "d", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLACT, param & 0xf, 16, 2, 0);
 			*n = *n - 1;
 		} else if ((param & 0xF0) == 0xF0) /* Preserve Transpose */
 		{
-			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "pre", 3);
+			cpifaceSession->console->WriteString (buf, 0, COLACT, "pre", 3);
 			*n = *n - 1;
 		}
 	}

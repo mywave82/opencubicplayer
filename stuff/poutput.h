@@ -80,8 +80,20 @@ enum vidType
 	vidModern, /* text and graphical systems.. try to not override video-mode */
 };
 
-struct consoleStatus_t
+struct console_t
 {
+	const struct consoleDriver_t *       Driver;
+
+	void (*DisplayPrintf) (uint16_t y, uint16_t x, uint8_t color, uint16_t width, const char *fmt, ...); /* display_nprintf() */
+
+	void (*WriteNum)        (uint16_t *buf, uint16_t ofs, uint8_t attr, unsigned long num, uint8_t radix, uint16_t len, int clip0/*=1*/);
+	void (*WriteString)     (uint16_t *buf, uint16_t ofs, uint8_t attr, const char *str, uint16_t len);
+	void (*WriteStringAttr) (uint16_t *buf, uint16_t ofs, const uint16_t *str, uint16_t len);
+
+	int  (*KeyboardHit) (void); /* ekbhit */
+	int  (*KeyboardGetChar) (void); /* egetch */
+	void (*FrameLock) (void);
+
 	/* console resolutiom */
 	unsigned int TextHeight; /* range 25..inifinity */
 	unsigned int TextWidth;  /* range 80..CONSOLE_MAX_X  CONSOLE_MAX_X is 1024 */
@@ -99,20 +111,7 @@ struct consoleStatus_t
 
 	FontSizeEnum CurrentFont; /* Only drivers can change this, and their helper functions can use it. For end-users, its usage is only usefull in combination with plScrTextGUIOverlay API */
 };
-
-struct consoleFunctions_t
-{
-	void (*DisplayPrintf) (uint16_t y, uint16_t x, uint8_t color, uint16_t width, const char *fmt, ...); /* display_nprintf() */
-
-	void (*WriteNum)        (uint16_t *buf, uint16_t ofs, uint8_t attr, unsigned long num, uint8_t radix, uint16_t len, int clip0/*=1*/);
-	void (*WriteString)     (uint16_t *buf, uint16_t ofs, uint8_t attr, const char *str, uint16_t len);
-	void (*WriteStringAttr) (uint16_t *buf, uint16_t ofs, const uint16_t *str, uint16_t len);
-
-	int  (*KeyboardHit) (void); /* ekbhit */
-	int  (*KeyboardGetChar) (void); /* egetch */
-	void (*FrameLock) (void);
-};
-extern const struct consoleFunctions_t conFunc;
+extern struct console_t Console;
 
 /* display_nprintf() behaves a lot like printf(), with some exceptions and additions:
  *
@@ -131,59 +130,61 @@ extern const struct consoleFunctions_t conFunc;
  *
  *   * No support for %f %lf %llf %p %n
  */
-void display_nprintf (uint16_t y, uint16_t x, uint8_t color, uint16_t width, const char *fmt, ...);
 
 #ifndef _CONSOLE_DRIVER
 
-#define vga13                                   conDriver->vga13
-#define plSetTextMode(x)                        conDriver->SetTextMode(x)
-#define plDisplaySetupTextMode()                conDriver->DisplaySetupTextMode()
-#define plGetDisplayTextModeName()              conDriver->GetDisplayTextModeName()
-#define measurestr_utf8(s,l)                    conDriver->MeasureStr_utf8(s,l)
-#define displaystr_utf8(y,x,a,s,l)              conDriver->DisplayStr_utf8(y,x,a,s,l)
-#define displaychr(y,x,a,c,l)                   conDriver->DisplayChr(y,x,a,c,l)
-#define displaystr(y,x,a,s,l)                   conDriver->DisplayStr(y,x,a,s,l)
-#define displaystrattr(y,x,b,l)                 conDriver->DisplayStrAttr(y,x,b,l)
-#define displayvoid(y,x,l)                      conDriver->DisplayVoid(y,x,l)
-#define drawbar(x,yb,yh,hgt,c)                  conDriver->DrawBar(x,yb,yh,hgt,c)
-#define idrawbar(x,yb,yh,hgt,c)                 conDriver->iDrawBar(x,yb,yh,hgt,c)
-#define plScrTextGUIOverlayAddBGRA(x,y,w,h,p,d) conDriver->TextOverlayAddBGRA(x,y,w,h,p,d)
-#define plScrTextGUIOverlayRemove(h)            conDriver->TextOverlayRemove(h)
-#define plSetGraphMode(s)                       conDriver->SetGraphMode(s)
+#define vga13                                   Console.Driver->vga13
+#define plSetTextMode(x)                        Console.Driver->SetTextMode(x)
+#define plDisplaySetupTextMode()                Console.Driver->DisplaySetupTextMode()
+#define plGetDisplayTextModeName()              Console.Driver->GetDisplayTextModeName()
+#define measurestr_utf8(s,l)                    Console.Driver->MeasureStr_utf8(s,l)
+#define displaystr_utf8(y,x,a,s,l)              Console.Driver->DisplayStr_utf8(y,x,a,s,l)
+#define displaychr(y,x,a,c,l)                   Console.Driver->DisplayChr(y,x,a,c,l)
+#define displaystr(y,x,a,s,l)                   Console.Driver->DisplayStr(y,x,a,s,l)
+#define displaystrattr(y,x,b,l)                 Console.Driver->DisplayStrAttr(y,x,b,l)
+#define displayvoid(y,x,l)                      Console.Driver->DisplayVoid(y,x,l)
+#define drawbar(x,yb,yh,hgt,c)                  Console.Driver->DrawBar(x,yb,yh,hgt,c)
+#define idrawbar(x,yb,yh,hgt,c)                 Console.Driver->iDrawBar(x,yb,yh,hgt,c)
+#define plSetGraphMode(s)                       Console.Driver->SetGraphMode(s)
 
 /* 8x16 OCP font, front and back color */
-#define gdrawchar(x,y,c,f,b)                    conDriver->gDrawChar16(x,y,c,f,b)
+#define gdrawchar(x,y,c,f,b)                    Console.Driver->gDrawChar16(x,y,c,f,b)
 /* 8x16 OCP font, front color, picp for backgroud (or zero if no picture present) -  picp needs to be same format/size as plScrLineBytes */
-#define gdrawcharp(x,y,c,f,picp)                conDriver->gDrawChar16P(x,y,c,f,picp)
+#define gdrawcharp(x,y,c,f,picp)                Console.Driver->gDrawChar16P(x,y,c,f,picp)
 /* 8x8 OCP font, front and back color */
-#define gdrawchar8(x,y,c,f,b)                   conDriver->gDrawChar8(x,y,c,f,b)
+#define gdrawchar8(x,y,c,f,b)                   Console.Driver->gDrawChar8(x,y,c,f,b)
 /* 8x8 OCP font, front color, picp for background (or zero if no picture present) -  picp needs to be same format/size as plScrLineBytes */
-#define gdrawchar8p(x,y,c,f,picp)               conDriver->gDrawChar8P(x,y,c,f,picp)
-#define gdrawstr(y,x,a,s,l)                     conDriver->gDrawStr(y,x,a,s,l)
-#define gupdatestr(y,x,s,l,old)                 conDriver->gUpdateStr(y,x,s,l,old)
-#define gupdatepal(c,r,g,b)                     conDriver->gUpdatePal(c,r,g,b)
-#define gflushpal()                             conDriver->gFlushPal()
+#define gdrawchar8p(x,y,c,f,picp)               Console.Driver->gDrawChar8P(x,y,c,f,picp)
+#define gdrawstr(y,x,a,s,l)                     Console.Driver->gDrawStr(y,x,a,s,l)
+#define gupdatestr(y,x,s,l,old)                 Console.Driver->gUpdateStr(y,x,s,l,old)
+#define gupdatepal(c,r,g,b)                     Console.Driver->gUpdatePal(c,r,g,b)
+#define gflushpal()                             Console.Driver->gFlushPal()
 
-#define validkey(k)                             conDriver->HasKey(k)
+#define validkey(k)                             Console.Driver->HasKey(k)
 
-#define setcur(y,x)                             conDriver->SetCursorPosition(y, x)
-#define setcurshape(shape)                      conDriver->SetCursorShape(shape)
+#define setcur(y,x)                             Console.Driver->SetCursorPosition(y, x)
+#define setcurshape(shape)                      Console.Driver->SetCursorShape(shape)
 
-#define conRestore()                            conDriver->consoleRestore()
-#define conSave()                               conDriver->consoleSave()
+#define conRestore()                            Console.Driver->consoleRestore()
+#define conSave()                               Console.Driver->consoleSave()
 
-#define plDosShell()                            conDriver->DosShell()
+#define plDosShell()                            Console.Driver->DosShell()
 
-#define plScrHeight                             conStatus.TextHeight /* How many textlines can we currently fit. Undefined for wurfel-mode */
-#define plScrWidth                              conStatus.TextWidth  /* How many characters can we currently fir on a line */
-#define plScrTextGUIOverlay                     conStatus.TextGUIOverlay /* Is text rendered virtually into a framebuffer, AND supports overlays? */
-#define plVidType                               conStatus.VidType      /* do we support, text, GUI or GUI without real resolutions */
-#define plScrType                               conStatus.LastTextMode /* Last set textmode */
-#define plScrMode                               conStatus.CurrentMode  /* If we are in graphical mode, this value is set to either 13 (for wurfel), 100 for 640x480, 101 for 1024x768, 255 for custom */
-#define plVidMem                                conStatus.VidMem      /* This points to the current selected bank, and should atleast provide 64k of available bufferspace */
-#define plScrLineBytes                          conStatus.GraphBytesPerLine /* How many bytes does one line from plVidMem use (can be padded) */
-#define plScrLines                              conStatus.GraphLines   /* How many graphical lines do we have */
-#define plCurrentFont                           conStatus.CurrentFont
+#define plScrHeight                             Console.TextHeight /* How many textlines can we currently fit. Undefined for wurfel-mode */
+#define plScrWidth                              Console.TextWidth  /* How many characters can we currently fir on a line */
+#define plScrTextGUIOverlay                     Console.TextGUIOverlay /* Is text rendered virtually into a framebuffer, AND supports overlays? */
+#define plVidType                               Console.VidType      /* do we support, text, GUI or GUI without real resolutions */
+#define plScrType                               Console.LastTextMode /* Last set textmode */
+#define plScrMode                               Console.CurrentMode  /* If we are in graphical mode, this value is set to either 13 (for wurfel), 100 for 640x480, 101 for 1024x768, 255 for custom */
+#define plVidMem                                Console.VidMem      /* This points to the current selected bank, and should atleast provide 64k of available bufferspace */
+#define plScrLineBytes                          Console.GraphBytesPerLine /* How many bytes does one line from plVidMem use (can be padded) */
+#define plScrLines                              Console.GraphLines   /* How many graphical lines do we have */
+#define plCurrentFont                           Console.CurrentFont
+
+#define writenum                                Console.WriteNum
+#define writestring                             Console.WriteString
+#define writestringattr                         Console.WriteStringAttr
+#define display_nprintf                         Console.DisplayPrintf
 
 #else
 
@@ -197,9 +198,6 @@ void generic_gupdatestr (uint16_t y, uint16_t x, const uint16_t *str, uint16_t l
 #endif
 
 // TODO move us into API
-void writenum (uint16_t *buf, uint16_t ofs, uint8_t attr, unsigned long num, uint8_t radix, uint16_t len, int clip0/*=1*/);
-void writestring (uint16_t *buf, uint16_t ofs, uint8_t attr, const char *str, uint16_t len);
-void writestringattr (uint16_t *buf, uint16_t ofs, const uint16_t *str, uint16_t len);
 
 void make_title (const char *part, int escapewarning);
 

@@ -135,9 +135,9 @@ static void medialibRemoveRun (void **token, const struct DevInterfaceAPI_t *API
 	{
 		fsDraw();
 		mlRemoveDraw("Remove files from medialib");
-		while (conFunc.KeyboardHit())
+		while (API->console->KeyboardHit())
 		{
-			int key = conFunc.KeyboardGetChar();
+			int key = API->console->KeyboardGetChar();
 			switch (key)
 			{
 				case KEY_HOME:
@@ -194,6 +194,6 @@ static void medialibRemoveRun (void **token, const struct DevInterfaceAPI_t *API
 					break;
 			}
 		}
-		framelock();
+		API->console->FrameLock();
 	}
 }

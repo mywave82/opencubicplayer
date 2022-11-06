@@ -159,16 +159,16 @@ static int opl_getnote (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bu
 	switch (small)
 	{
 		case 0:
-			cpifaceSession->conFunc->WriteString (buf, 0, color, &"CCDDEFFGGAAB"[(cacheNote & 0x7f)%12], 1);
-			cpifaceSession->conFunc->WriteString (buf, 1, color, &"-#-#--#-#-#-"[(cacheNote & 0x7f)%12], 1);
-			cpifaceSession->conFunc->WriteString (buf, 2, color, &"-0123456789" [(cacheNote & 0x7f)/12], 1);
+			cpifaceSession->console->WriteString (buf, 0, color, &"CCDDEFFGGAAB"[(cacheNote & 0x7f)%12], 1);
+			cpifaceSession->console->WriteString (buf, 1, color, &"-#-#--#-#-#-"[(cacheNote & 0x7f)%12], 1);
+			cpifaceSession->console->WriteString (buf, 2, color, &"-0123456789" [(cacheNote & 0x7f)/12], 1);
 			break;
 		case 1:
-			cpifaceSession->conFunc->WriteString (buf, 0, color, &"cCdDefFgGaAb"[(cacheNote & 0x7f)%12], 1);
-			cpifaceSession->conFunc->WriteString (buf, 1, color, &"-0123456789" [(cacheNote & 0x7f)/12], 1);
+			cpifaceSession->console->WriteString (buf, 0, color, &"cCdDefFgGaAb"[(cacheNote & 0x7f)%12], 1);
+			cpifaceSession->console->WriteString (buf, 1, color, &"-0123456789" [(cacheNote & 0x7f)/12], 1);
 			break;
 		case 2:
-			cpifaceSession->conFunc->WriteString (buf, 0, color, &"cCdDefFgGaAb"[(cacheNote & 0x7f)%12], 1);
+			cpifaceSession->console->WriteString (buf, 0, color, &"cCdDefFgGaAb"[(cacheNote & 0x7f)%12], 1);
 			break;
 	}
 	return 1;
@@ -180,7 +180,7 @@ static int opl_getvol (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf
 
 	if (cacheVolume != 0xff)
 	{
-		cpifaceSession->conFunc->WriteNum (buf, 0, COLVOL, cacheVolume, 16, 2, 0);
+		cpifaceSession->console->WriteNum (buf, 0, COLVOL, cacheVolume, 16, 2, 0);
 		return 1;
 	}
 
@@ -193,7 +193,7 @@ static int opl_getins (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf
 
 	if (cacheInst)
 	{
-		cpifaceSession->conFunc->WriteNum (buf, 0, COLINS, cacheInst, 16, 2, 0);
+		cpifaceSession->console->WriteNum (buf, 0, COLINS, cacheInst, 16, 2, 0);
 		return 1;
 	}
 	return 0;
@@ -212,49 +212,49 @@ static void _opl_getgcmd (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *
 			break;
 
 		case CPlayer::TrackedCmdSpeed:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLSPEED, "s", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLSPEED, param, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLSPEED, "s", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLSPEED, param, 16, 2, 0);
 			*n = *n - 1;
 			break;
 
 		case CPlayer::TrackedCmdTempo:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLSPEED, "t", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLSPEED, param, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLSPEED, "t", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLSPEED, param, 16, 2, 0);
 			*n = *n - 1;
 			break;
 
 		case CPlayer::TrackedCmdPatternJumpTo:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x1A", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLACT, "\x1A", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
 			*n = *n - 1;
 			break;
 
 		case CPlayer::TrackedCmdPatternBreak:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x19", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLACT, "\x19", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLACT, param, 16, 2, 0);
 			*n = *n - 1;
 			break;
 
 		case CPlayer::TrackedCmdPatternSetLoop:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, (param==1)?"lp1":(param==2)?"lp2":"lp-", 3);
+			cpifaceSession->console->WriteString (buf, 0, COLACT, (param==1)?"lp1":(param==2)?"lp2":"lp-", 3);
 			*n = *n - 1;
 			break;
 
 		case CPlayer::TrackedCmdPatternDoLoop:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "pl", 2);
-			cpifaceSession->conFunc->WriteNum    (buf, 2, COLACT, param, 16, 1, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLACT, "pl", 2);
+			cpifaceSession->console->WriteNum    (buf, 2, COLACT, param, 16, 1, 0);
 			*n = *n - 1;
 			break;
 
 		case CPlayer::TrackedCmdPatternDelay:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "pd", 2);
-			cpifaceSession->conFunc->WriteNum    (buf, 2, COLACT, param & 15, 16, 1, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLACT, "pd", 2);
+			cpifaceSession->console->WriteNum    (buf, 2, COLACT, param & 15, 16, 1, 0);
 			*n = *n - 1;
 			break;
 
 		case CPlayer::TrackedCmdGlobalVolume:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "v", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 2, COLVOL, param, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLVOL, "v", 1);
+			cpifaceSession->console->WriteNum    (buf, 2, COLVOL, param, 16, 2, 0);
 			*n = *n - 1;
 			break;
 	}
@@ -293,189 +293,189 @@ static void opl_getfx (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf
 			return;
 
 		case CPlayer::TrackedCmdNoteCut:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLINS, "off", 3);
+			cpifaceSession->console->WriteString (buf, 0, COLINS, "off", 3);
 			return;
 
 		case CPlayer::TrackedCmdArpeggio:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\xf0", 1);
-			cpifaceSession->conFunc->WriteNum (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLPITCH, "\xf0", 1);
+			cpifaceSession->console->WriteNum (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdPitchSlideUp:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\x18", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLPITCH, "\x18", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdPitchSlideDown:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\x19", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLPITCH, "\x19", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdPitchSlideUpDown:
 			if (!cacheParam)
 			{
-				cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x12""00", 3);
+				cpifaceSession->console->WriteString (buf, 0, COLVOL, "\x12""00", 3);
 			} else {
 				if (cacheParam & 0xF0)
 				{
-					cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x18", 1);
-					cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam>>4, 16, 2, 0);
+					cpifaceSession->console->WriteString (buf, 0, COLVOL, "\x18", 1);
+					cpifaceSession->console->WriteNum    (buf, 1, COLVOL, cacheParam>>4, 16, 2, 0);
 				} else {
-					cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x19", 1);
-					cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam&0xF, 16, 2, 0);
+					cpifaceSession->console->WriteString (buf, 0, COLVOL, "\x19", 1);
+					cpifaceSession->console->WriteNum    (buf, 1, COLVOL, cacheParam&0xF, 16, 2, 0);
 				}
 			}
 			return;
 
 		case CPlayer::TrackedCmdPitchFineSlideUp:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "+", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLPITCH, "+", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdPitchFineSlideDown:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "-", 2);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLPITCH, "-", 2);
+			cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdTonePortamento:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "\x0D", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLPITCH, "\x0D", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdTonePortamentoVolumeSlide:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x0D", 1);
+			cpifaceSession->console->WriteString (buf, 0, COLACT, "\x0D", 1);
 			if ((cacheParam & 0xF0)!=0x00)
 			{
-				cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x18", 1);
-				cpifaceSession->conFunc->WriteNum    (buf, 2, COLVOL, cacheParam >> 4, 16, 1, 0);
+				cpifaceSession->console->WriteString (buf, 1, COLVOL, "\x18", 1);
+				cpifaceSession->console->WriteNum    (buf, 2, COLVOL, cacheParam >> 4, 16, 1, 0);
 			} else if ((cacheParam & 0xF0)!=0x00)
 			{
-				cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x19", 1);
-				cpifaceSession->conFunc->WriteNum    (buf, 2, COLVOL, cacheParam & 0xF, 16, 1, 0);
+				cpifaceSession->console->WriteString (buf, 1, COLVOL, "\x19", 1);
+				cpifaceSession->console->WriteNum    (buf, 2, COLVOL, cacheParam & 0xF, 16, 1, 0);
 			} else {
-				cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
+				cpifaceSession->console->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			}
 			return;
 
 		case CPlayer::TrackedCmdVibratoFine:
 		case CPlayer::TrackedCmdVibrato:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "~", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLPITCH, "~", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdVibratoVolumeSlide:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLPITCH, "~", 1);
+			cpifaceSession->console->WriteString (buf, 0, COLPITCH, "~", 1);
 			if (!cacheParam)
 			{
-				cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x12""0", 2);
+				cpifaceSession->console->WriteString (buf, 1, COLVOL, "\x12""0", 2);
 			} else {
 				if (cacheParam&0xF0)
 				{
-					cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x18", 1);
-					cpifaceSession->conFunc->WriteNum    (buf, 2, COLVOL, cacheParam>>4, 16, 1, 0);
+					cpifaceSession->console->WriteString (buf, 1, COLVOL, "\x18", 1);
+					cpifaceSession->console->WriteNum    (buf, 2, COLVOL, cacheParam>>4, 16, 1, 0);
 				} else {
-					cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x19", 1);
-					cpifaceSession->conFunc->WriteNum    (buf, 2, COLVOL, cacheParam&0xF, 16, 1, 0);
+					cpifaceSession->console->WriteString (buf, 1, COLVOL, "\x19", 1);
+					cpifaceSession->console->WriteNum    (buf, 2, COLVOL, cacheParam&0xF, 16, 1, 0);
 				}
 			}
 			return;
 
 		case CPlayer::TrackedCmdReleaseSustainedNotes:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "^", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLACT, "^", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLACT, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdVolumeSlideUpDown:
 			if ((cacheParam & 0xF0)!=0x00)
 			{
-				cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x18", 1);
-				cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam >> 4, 16, 2, 0);
+				cpifaceSession->console->WriteString (buf, 0, COLVOL, "\x18", 1);
+				cpifaceSession->console->WriteNum    (buf, 1, COLVOL, cacheParam >> 4, 16, 2, 0);
 			} else if ((cacheParam &0xF0)!=0x00)
 			{
-				cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x19", 1);
-				cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam & 0xF, 16, 2, 0);
+				cpifaceSession->console->WriteString (buf, 1, COLVOL, "\x19", 1);
+				cpifaceSession->console->WriteNum    (buf, 1, COLVOL, cacheParam & 0xF, 16, 2, 0);
 			} else {
-				cpifaceSession->conFunc->WriteString (buf, 1, COLVOL, "\x12", 1);
-				cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
+				cpifaceSession->console->WriteString (buf, 1, COLVOL, "\x12", 1);
+				cpifaceSession->console->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			}
 			return;
 
 		case CPlayer::TrackedCmdVolumeFineSlideUp:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "+", 1);
-			cpifaceSession->conFunc->WriteNum (buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLVOL, "+", 1);
+			cpifaceSession->console->WriteNum (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdVolumeFineSlideDown:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "-", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLVOL, "-", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdVolumeFadeIn:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLVOL, "\x1a", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLVOL, "\x1a", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLCarrierModulatorVolume:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "!", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLOPL, "!", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLCarrierVolume:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "c", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLOPL, "c", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLModulatorVolume:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "m", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLOPL, "m", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLCarrierModulatorWaveform:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "~", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLOPL, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLOPL, "~", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLOPL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLTremoloVibrato:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "!", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLOPL, "!", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLTremolo:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "~", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLOPL, "~", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLVibrato:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "~", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLOPL, "~", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPL3Multiplier:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "M", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLOPL, "M", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLFeedback:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "f", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLOPL, "f", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLPITCH, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPL3Volume:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "v", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLOPL, "v", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLVOL, cacheParam, 16, 2, 0);
 			return;
 
 		case CPlayer::TrackedCmdOPLVoiceMode:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "voc", 3);
+			cpifaceSession->console->WriteString (buf, 0, COLOPL, "voc", 3);
 			return;
 
 		case CPlayer::TrackedCmdOPLDrumMode:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLOPL, "drm", 3);
+			cpifaceSession->console->WriteString (buf, 0, COLOPL, "drm", 3);
 			return;
 
 		case CPlayer::TrackedCmdRetrigger:
-			cpifaceSession->conFunc->WriteString (buf, 0, COLACT, "\x13", 1);
-			cpifaceSession->conFunc->WriteNum    (buf, 1, COLACT, cacheParam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 0, COLACT, "\x13", 1);
+			cpifaceSession->console->WriteNum    (buf, 1, COLACT, cacheParam, 16, 2, 0);
 			return;
 	}
 }

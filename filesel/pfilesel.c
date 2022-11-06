@@ -205,9 +205,9 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 						{
 							if (poll_framelock())
 							{
-								while (conFunc.KeyboardHit())
+								while (Console.KeyboardHit())
 								{
-									int key = conFunc.KeyboardGetChar();
+									int key = Console.KeyboardGetChar();
 									if ((key == ' ') || (key == KEY_EXIT))
 									{
 										token->cancel_recursive = 1;
@@ -537,7 +537,7 @@ static int initRootDir(const char *sec)
 			{
 				if (poll_framelock())
 				{
-					conFunc.KeyboardHit();
+					Console.KeyboardHit();
 				}
 			}
 			playlist->head.readdir_cancel (dirhandle);
@@ -952,6 +952,7 @@ static struct ocpfilehandle_t *CurrentVirtualDeviceFile;
 static struct DevInterfaceAPI_t DevInterfaceAPI =
 {
 	&configAPI,
+	&Console,
 	cpiKeyHelp,
 	cpiKeyHelpClear,
 	cpiKeyHelpDisplay
@@ -2043,17 +2044,17 @@ superbreak:
 			framelock();
 			continue;
 		} else {
-			while ( !conFunc.KeyboardHit() && (LastCurrent==fsFPSCurrent) )
+			while ( !Console.KeyboardHit() && (LastCurrent==fsFPSCurrent) )
 			{
 				framelock();
 			}
-			if (!conFunc.KeyboardHit())
+			if (!Console.KeyboardHit())
 			{
 				continue;
 			}
 		}
 
-		c = conFunc.KeyboardGetChar();
+		c = Console.KeyboardGetChar();
 
 		switch (c)
 		{
@@ -2271,9 +2272,9 @@ static int fsEditModType (struct moduletype *oldtype, int _Bottom, int _Right)
 		state = 1;
 	}
 	framelock();
-	while (conFunc.KeyboardHit())
+	while (Console.KeyboardHit())
 	{
-		switch (conFunc.KeyboardGetChar())
+		switch (Console.KeyboardGetChar())
 		{
 			case KEY_RIGHT:
 				if (curindex != fsTypesCount)
@@ -2397,9 +2398,9 @@ static int fsEditChan(int y, int x, uint8_t *chan)
 	}
 	framelock();
 
-	while (conFunc.KeyboardHit())
+	while (Console.KeyboardHit())
 	{
-		int16_t key = conFunc.KeyboardGetChar();
+		int16_t key = Console.KeyboardGetChar();
 		switch (key)
 		{
 			case ' ':
@@ -2484,9 +2485,9 @@ static int fsEditPlayTime(int y, int x, uint16_t *playtime)
 	}
 	framelock();
 
-	while (conFunc.KeyboardHit())
+	while (Console.KeyboardHit())
 	{
-		uint16_t key = conFunc.KeyboardGetChar();
+		uint16_t key = Console.KeyboardGetChar();
 		switch (key)
 		{
 			case ':':
@@ -2578,9 +2579,9 @@ static int fsEditDate(int y, int x, uint32_t *date)
 	}
 	framelock();
 
-	while (conFunc.KeyboardHit())
+	while (Console.KeyboardHit())
 	{
-		uint16_t key = conFunc.KeyboardGetChar();
+		uint16_t key = Console.KeyboardGetChar();
 		switch (key)
 		{
 			case '.':
@@ -3119,7 +3120,7 @@ superbreak:
 			state = 0;
 		}
 
-		if (!conFunc.KeyboardHit() && fsScanNames)
+		if (!Console.KeyboardHit() && fsScanNames)
 		{
 			int poll = 1;
 			if ((m->file && (m->flags & MODLIST_FLAG_ISMOD)) && (!mdbInfoIsAvailable(m->mdb_ref)) && (!(m->flags&MODLIST_FLAG_SCANNED)))
@@ -3175,9 +3176,9 @@ superbreak:
 				framelock();
 			}
 			continue;
-		} else while (conFunc.KeyboardHit())
+		} else while (Console.KeyboardHit())
 		{
-			c = conFunc.KeyboardGetChar();
+			c = Console.KeyboardGetChar();
 
 			if (c == VIRT_KEY_RESIZE)
 			{

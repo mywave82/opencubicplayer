@@ -114,7 +114,7 @@ static int ID3InfoGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpi
 	if (!ID3InfoActive)
 		return 0;
 
-	if ((ID3InfoActive==3)&&(plScrWidth<132))
+	if ((ID3InfoActive==3) && (cpifaceSession->console->TextWidth < 132))
 	{
 		ID3InfoActive=0;
 	}
@@ -166,7 +166,7 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		ID3InfoScroll--;
 	}
 
-	displaystr(ID3InfoFirstLine + (line++), ID3InfoFirstColumn, focus?COLTITLE1H:COLTITLE1, "MPx ID3 tag view - page up/dn to scroll", ID3InfoWidth);
+	cpifaceSession->console->Driver->DisplayStr(ID3InfoFirstLine + (line++), ID3InfoFirstColumn, focus?COLTITLE1H:COLTITLE1, "MPx ID3 tag view - page up/dn to scroll", ID3InfoWidth);
 
 	line -= ID3InfoScroll;
 
@@ -174,19 +174,19 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 	{
 		if (ID3InfoHeight > 2)
 		{
-			displayvoid (ID3InfoFirstLine + line, ID3InfoFirstColumn, ID3InfoWidth);
+			cpifaceSession->console->Driver->DisplayVoid (ID3InfoFirstLine + line, ID3InfoFirstColumn, ID3InfoWidth);
 			line++;
 		}
 
-		displaystr (ID3InfoFirstLine + line, ID3InfoFirstColumn, 0x07, "     No ID3 information to display", ID3InfoWidth);
+		cpifaceSession->console->Driver->DisplayStr (ID3InfoFirstLine + line, ID3InfoFirstColumn, 0x07, "     No ID3 information to display", ID3InfoWidth);
 		line++;
 	} else {
 		if (ID3->TIT1)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Content Group: ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TIT1, ID3InfoWidth-15);
+				cpifaceSession->console->Driver->DisplayStr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Content Group: ", 15);
+				cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TIT1, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -195,8 +195,8 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Track Title:   ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TIT2, ID3InfoWidth-15);
+				cpifaceSession->console->Driver->DisplayStr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Track Title:   ", 15);
+				cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TIT2, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -205,8 +205,8 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Subtitle:      ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TIT3, ID3InfoWidth-15);
+				cpifaceSession->console->Driver->DisplayStr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Subtitle:      ", 15);
+				cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TIT3, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -215,8 +215,8 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Lead Artist:   ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TPE1, ID3InfoWidth-15);
+				cpifaceSession->console->Driver->DisplayStr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Lead Artist:   ", 15);
+				cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TPE1, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -225,8 +225,8 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Group:         ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TPE2, ID3InfoWidth-15);
+				cpifaceSession->console->Driver->DisplayStr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Group:         ", 15);
+				cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TPE2, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -235,8 +235,8 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Conductor:     ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TPE3, ID3InfoWidth-15);
+				cpifaceSession->console->Driver->DisplayStr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Conductor:     ", 15);
+				cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TPE3, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -245,8 +245,8 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Interpreted by:", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TPE4, ID3InfoWidth-15);
+				cpifaceSession->console->Driver->DisplayStr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Interpreted by:", 15);
+				cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TPE4, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -255,8 +255,8 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Album:         ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TALB, ID3InfoWidth-15);
+				cpifaceSession->console->Driver->DisplayStr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Album:         ", 15);
+				cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TALB, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -265,8 +265,8 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Composer:      ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TCOM, ID3InfoWidth-15);
+				cpifaceSession->console->Driver->DisplayStr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Composer:      ", 15);
+				cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TCOM, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -275,8 +275,8 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Track Number:  ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TRCK, ID3InfoWidth-15);
+				cpifaceSession->console->Driver->DisplayStr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Track Number:  ", 15);
+				cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TRCK, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -286,8 +286,8 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Content Type:  ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TCON, ID3InfoWidth-15);
+				cpifaceSession->console->Driver->DisplayStr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Content Type:  ", 15);
+				cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TCON, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -296,10 +296,10 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn, 0x07, "Recorded:      ", 15);
+				cpifaceSession->console->Driver->DisplayStr     (ID3InfoFirstLine + line, ID3InfoFirstColumn, 0x07, "Recorded:      ", 15);
 				if (ID3->TDRC)
 				{
-					displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TDRC, ID3InfoWidth-15);
+					cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TDRC, ID3InfoWidth-15);
 				} else {
 					if (ID3->TDAT)
 					{
@@ -309,9 +309,9 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 						} else {
 							snprintf (StringBuffer, sizeof (StringBuffer), "%s-%s", ID3->TYER, ID3->TDAT);
 						}
-						displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, StringBuffer, ID3InfoWidth-15);
+						cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, StringBuffer, ID3InfoWidth-15);
 					} else {
-						displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TYER, ID3InfoWidth-15);
+						cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TYER, ID3InfoWidth-15);
 					}
 				}
 			}
@@ -322,8 +322,8 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Released:      ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TDRL, ID3InfoWidth-15);
+				cpifaceSession->console->Driver->DisplayStr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Released:      ", 15);
+				cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->TDRL, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -332,8 +332,8 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		{
 			if ((line >= 0) && (line < ID3InfoHeight))
 			{
-				displaystr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Comment:       ", 15);
-				displaystr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->COMM, ID3InfoWidth-15);
+				cpifaceSession->console->Driver->DisplayStr     (ID3InfoFirstLine + line, ID3InfoFirstColumn,      0x07, "Comment:       ", 15);
+				cpifaceSession->console->Driver->DisplayStr_utf8(ID3InfoFirstLine + line, ID3InfoFirstColumn + 15, 0x09, (char *)ID3->COMM, ID3InfoWidth-15);
 			}
 			line++;
 		}
@@ -341,7 +341,7 @@ static void ID3InfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 
 	while (line < ID3InfoHeight)
 	{
-		displayvoid (ID3InfoFirstLine + line, ID3InfoFirstColumn, ID3InfoWidth);
+		cpifaceSession->console->Driver->DisplayVoid (ID3InfoFirstLine + line, ID3InfoFirstColumn, ID3InfoWidth);
 		line++;
 	}
 }
@@ -377,7 +377,7 @@ static int ID3InfoAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 	{
 		case 'i': case 'I':
 			ID3InfoActive=(ID3InfoActive+1)%4;
-			if ((ID3InfoActive==3)&&(plScrWidth<132))
+			if ((ID3InfoActive==3) && (cpifaceSession->console->TextWidth < 132))
 			{
 				ID3InfoActive=0;
 			}

@@ -207,7 +207,7 @@ static int fontdebugEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 	switch (ev)
 	{
 		case cpievOpen:
-			return (conDriver->DisplayStr_utf8 == swtext_displaystr_utf8);
+			return (Console.Driver->DisplayStr_utf8 == swtext_displaystr_utf8);
 		default:
 		case cpievClose:
 		case cpievInit:

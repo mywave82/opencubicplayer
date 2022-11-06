@@ -141,133 +141,133 @@ static void cdaDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 	}
 	trackno--;
 
-	if (plScrWidth<128)
+	if (cpifaceSession->console->TextWidth < 128)
 	{
-		displaystr (2,  0, 0x09, " mode: ", 7);
-		displaystr (2,  7, 0x0f, cdpPlayMode?"disk   ":"track  ", 7);
-		displaystr (2, 14, 0x09, " start: ", 8);
+		cpifaceSession->console->Driver->DisplayStr (2,  0, 0x09, " mode: ", 7);
+		cpifaceSession->console->Driver->DisplayStr (2,  7, 0x0f, cdpPlayMode?"disk   ":"track  ", 7);
+		cpifaceSession->console->Driver->DisplayStr (2, 14, 0x09, " start: ", 8);
 		if (cdpViewSectors)
 		{
 			snprintf (timestr, sizeof (timestr), "%8" PRId32, (uint32_t)TOC.track[TOC.starttrack].lba_addr);
 		} else {
 			gettimestr(TOC.track[TOC.starttrack].lba_addr, timestr);
 		}
-		displaystr (2, 22, 0x0f, timestr, 8);
-		displaystr (2, 30, 0x09, "  pos: ", 7);
+		cpifaceSession->console->Driver->DisplayStr (2, 22, 0x0f, timestr, 8);
+		cpifaceSession->console->Driver->DisplayStr (2, 30, 0x09, "  pos: ", 7);
 		if (cdpViewSectors)
 		{
 			snprintf (timestr, sizeof (timestr), "%8" PRId32, (uint32_t)(stat.position - TOC.track[TOC.starttrack].lba_addr));
 		} else {
 			gettimestr(stat.position - TOC.track[TOC.starttrack].lba_addr, timestr);
 		}
-		displaystr (2, 37, 0x0f, timestr, 8);
-		displaystr (2, 45, 0x09, "  length: ", 10);
+		cpifaceSession->console->Driver->DisplayStr (2, 37, 0x0f, timestr, 8);
+		cpifaceSession->console->Driver->DisplayStr (2, 45, 0x09, "  length: ", 10);
 		if (cdpViewSectors)
 		{
 			snprintf (timestr, sizeof (timestr), "%8" PRId32, (uint32_t)(TOC.track[TOC.lasttrack + 1].lba_addr - TOC.track[TOC.starttrack].lba_addr));
 		} else {
 			gettimestr(TOC.track[TOC.lasttrack + 1].lba_addr - TOC.track[TOC.starttrack].lba_addr, timestr);
 		}
-		displaystr (2, 55, 0x0f, timestr, 8);
-		displaystr (2, 63, 0x09, "  size: ", 8);
+		cpifaceSession->console->Driver->DisplayStr (2, 55, 0x0f, timestr, 8);
+		cpifaceSession->console->Driver->DisplayStr (2, 63, 0x09, "  size: ", 8);
 		snprintf (timestr, sizeof (timestr), "%6" PRId32, (uint32_t)((TOC.track[TOC.lasttrack+1].lba_addr-TOC.track[TOC.starttrack].lba_addr)*147/64));
-		displaystr (2, 71, 0x0f, timestr, 6);
-		displaystr (2, 77, 0x09, " kb", plScrWidth - 77);
+		cpifaceSession->console->Driver->DisplayStr (2, 71, 0x0f, timestr, 6);
+		cpifaceSession->console->Driver->DisplayStr (2, 77, 0x09, " kb", cpifaceSession->console->TextWidth - 77);
 
-		displaystr (3,  0, 0x09, "track: ", 7);
+		cpifaceSession->console->Driver->DisplayStr (3,  0, 0x09, "track: ", 7);
 		snprintf (timestr, sizeof (timestr), "%2d", trackno);
-		displaystr (3,  7, 0x0f, timestr, 2);
-		displaystr (3,  9, 0x09, "      start: ", 13);
+		cpifaceSession->console->Driver->DisplayStr (3,  7, 0x0f, timestr, 2);
+		cpifaceSession->console->Driver->DisplayStr (3,  9, 0x09, "      start: ", 13);
 		if (cdpViewSectors)
 		{
 			snprintf (timestr, sizeof (timestr), "%8" PRId32, (uint32_t)(TOC.track[trackno].lba_addr));
 		} else {
 			gettimestr(TOC.track[trackno].lba_addr, timestr);
 		}
-		displaystr (3, 22, 0x0f, timestr, 8);
-		displaystr (3, 30, 0x09, "  pos: ", 7);
+		cpifaceSession->console->Driver->DisplayStr (3, 22, 0x0f, timestr, 8);
+		cpifaceSession->console->Driver->DisplayStr (3, 30, 0x09, "  pos: ", 7);
 		if (cdpViewSectors)
 		{
 			snprintf (timestr, sizeof (timestr), "%8" PRId32, (uint32_t)(stat.position - TOC.track[trackno].lba_addr));
 		} else {
 			gettimestr(stat.position - TOC.track[trackno].lba_addr, timestr);
 		}
-		displaystr (3, 37, 0x0f, timestr, 8);
-		displaystr (3, 45, 0x09, "  length: ", 10);
+		cpifaceSession->console->Driver->DisplayStr (3, 37, 0x0f, timestr, 8);
+		cpifaceSession->console->Driver->DisplayStr (3, 45, 0x09, "  length: ", 10);
 		if (cdpViewSectors)
 		{
 			snprintf (timestr, sizeof (timestr), "%8" PRId32, (uint32_t)(TOC.track[trackno+1].lba_addr - TOC.track[trackno].lba_addr));
 		} else {
 			gettimestr(TOC.track[trackno+1].lba_addr - TOC.track[trackno].lba_addr, timestr);
 		}
-		displaystr (3, 55, 0x0f, timestr, 8);
-		displaystr (3, 63, 0x09, "  size: ", 8);
+		cpifaceSession->console->Driver->DisplayStr (3, 55, 0x0f, timestr, 8);
+		cpifaceSession->console->Driver->DisplayStr (3, 63, 0x09, "  size: ", 8);
 		snprintf (timestr, sizeof (timestr), "%6" PRId32, (uint32_t)((TOC.track[trackno+1].lba_addr - TOC.track[trackno].lba_addr)*147/64));
-		displaystr (3, 71, 0x0f, timestr, 6);
-		displaystr (3, 77, 0x09, " kb", plScrWidth - 77);
+		cpifaceSession->console->Driver->DisplayStr (3, 71, 0x0f, timestr, 6);
+		cpifaceSession->console->Driver->DisplayStr (3, 77, 0x09, " kb", cpifaceSession->console->TextWidth - 77);
 	} else {
-		displaystr (2,  0, 0x09, "      mode: ", 12);
-		displaystr (2, 12, 0x0f, cdpPlayMode?"disk   ":"track  ", 7);
-		displaystr (2, 19, 0x09, "    start: ", 11);
+		cpifaceSession->console->Driver->DisplayStr (2,  0, 0x09, "      mode: ", 12);
+		cpifaceSession->console->Driver->DisplayStr (2, 12, 0x0f, cdpPlayMode?"disk   ":"track  ", 7);
+		cpifaceSession->console->Driver->DisplayStr (2, 19, 0x09, "    start: ", 11);
 		if (cdpViewSectors)
 		{
 			snprintf (timestr, sizeof (timestr), "%8" PRId32, (uint32_t)TOC.track[TOC.starttrack].lba_addr);
 		} else {
 			gettimestr(TOC.track[TOC.starttrack].lba_addr, timestr);
 		}
-		displaystr (2, 30, 0x0f, timestr, 8);
-		displaystr (2, 38, 0x09, "     pos: ", 10);
+		cpifaceSession->console->Driver->DisplayStr (2, 30, 0x0f, timestr, 8);
+		cpifaceSession->console->Driver->DisplayStr (2, 38, 0x09, "     pos: ", 10);
 		if (cdpViewSectors)
 		{
 			snprintf (timestr, sizeof (timestr), "%8" PRId32, (uint32_t)(stat.position - TOC.track[TOC.starttrack].lba_addr));
 		} else {
 			gettimestr(stat.position - TOC.track[TOC.starttrack].lba_addr, timestr);
 		}
-		displaystr (2, 48, 0x0f, timestr, 8);
-		displaystr (2, 56, 0x09, "     length: ", 13);
+		cpifaceSession->console->Driver->DisplayStr (2, 48, 0x0f, timestr, 8);
+		cpifaceSession->console->Driver->DisplayStr (2, 56, 0x09, "     length: ", 13);
 		if (cdpViewSectors)
 		{
 			snprintf (timestr, sizeof (timestr), "%8" PRId32, (uint32_t)(TOC.track[TOC.lasttrack + 1].lba_addr - TOC.track[TOC.starttrack].lba_addr));
 		} else {
 			gettimestr(TOC.track[TOC.lasttrack + 1].lba_addr - TOC.track[TOC.starttrack].lba_addr, timestr);
 		}
-		displaystr (2, 69, 0x0f, timestr, 8);
-		displaystr (2, 77, 0x09, "     size: ", 11);
+		cpifaceSession->console->Driver->DisplayStr (2, 69, 0x0f, timestr, 8);
+		cpifaceSession->console->Driver->DisplayStr (2, 77, 0x09, "     size: ", 11);
 		snprintf (timestr, sizeof (timestr), "%6" PRId32, (uint32_t)((TOC.track[TOC.lasttrack+1].lba_addr-TOC.track[TOC.starttrack].lba_addr)*147/64));
-		displaystr (2, 88, 0x0f, timestr, 6);
-		displaystr (2, 94, 0x09, " kb", plScrWidth - 94);
+		cpifaceSession->console->Driver->DisplayStr (2, 88, 0x0f, timestr, 6);
+		cpifaceSession->console->Driver->DisplayStr (2, 94, 0x09, " kb", cpifaceSession->console->TextWidth - 94);
 
-		displaystr (3,  0, 0x09, "     track: ", 12);
+		cpifaceSession->console->Driver->DisplayStr (3,  0, 0x09, "     track: ", 12);
 		snprintf (timestr, sizeof (timestr), "%2d", trackno);
-		displaystr (3, 12, 0x0f, timestr, 2);
-		displaystr (3, 14, 0x09, "         start: ", 16);
+		cpifaceSession->console->Driver->DisplayStr (3, 12, 0x0f, timestr, 2);
+		cpifaceSession->console->Driver->DisplayStr (3, 14, 0x09, "         start: ", 16);
 		if (cdpViewSectors)
 		{
 			snprintf (timestr, sizeof (timestr), "%8" PRId32, (uint32_t)(TOC.track[trackno].lba_addr));
 		} else {
 			gettimestr(TOC.track[trackno].lba_addr, timestr);
 		}
-		displaystr (3, 30, 0x0f, timestr, 8);
-		displaystr (3, 38, 0x09, "     pos: ", 10);
+		cpifaceSession->console->Driver->DisplayStr (3, 30, 0x0f, timestr, 8);
+		cpifaceSession->console->Driver->DisplayStr (3, 38, 0x09, "     pos: ", 10);
 		if (cdpViewSectors)
 		{
 			snprintf (timestr, sizeof (timestr), "%8" PRId32, (uint32_t)(stat.position - TOC.track[trackno].lba_addr));
 		} else {
 			gettimestr(stat.position - TOC.track[trackno].lba_addr, timestr);
 		}
-		displaystr (3, 48, 0x0f, timestr, 8);
-		displaystr (3, 56, 0x09, "     length: ", 13);
+		cpifaceSession->console->Driver->DisplayStr (3, 48, 0x0f, timestr, 8);
+		cpifaceSession->console->Driver->DisplayStr (3, 56, 0x09, "     length: ", 13);
 		if (cdpViewSectors)
 		{
 			snprintf (timestr, sizeof (timestr), "%8" PRId32, (uint32_t)(TOC.track[trackno+1].lba_addr - TOC.track[trackno].lba_addr));
 		} else {
 			gettimestr(TOC.track[trackno+1].lba_addr - TOC.track[trackno].lba_addr, timestr);
 		}
-		displaystr (3, 69, 0x0f, timestr, 8);
-		displaystr (3, 77, 0x09, "     size: ", 11);
+		cpifaceSession->console->Driver->DisplayStr (3, 69, 0x0f, timestr, 8);
+		cpifaceSession->console->Driver->DisplayStr (3, 77, 0x09, "     size: ", 11);
 		snprintf (timestr, sizeof (timestr), "%6" PRId32, (uint32_t)((TOC.track[trackno+1].lba_addr - TOC.track[trackno].lba_addr)*147/64));
-		displaystr (3, 88, 0x0f, timestr, 6);
-		displaystr (3, 94, 0x09, " kb", plScrWidth - 94);
+		cpifaceSession->console->Driver->DisplayStr (3, 88, 0x0f, timestr, 6);
+		cpifaceSession->console->Driver->DisplayStr (3, 94, 0x09, " kb", cpifaceSession->console->TextWidth - 94);
 	}
 }
 

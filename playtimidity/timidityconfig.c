@@ -17,7 +17,6 @@
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
-#include "stuff/framelock.h"
 #include "stuff/poutput.h"
 #include "timidityconfig.h"
 #include "timidity-git/timidity/sysdep.h"
@@ -293,12 +292,12 @@ static void refresh_configfiles (void)
 	}
 }
 
-static void timidityConfigFileSelectDraw (int dsel)
+static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI_t *API)
 {
 	int mlWidth = 75;
-	int mlHeight = (plScrHeight >= 35) ? 33 : 23;
-	int mlTop = (plScrHeight - mlHeight) / 2 ;
-	int mlLeft = (plScrWidth - mlWidth) / 2;
+	int mlHeight = (API->console->TextHeight >= 35) ? 33 : 23;
+	int mlTop = (API->console->TextHeight - mlHeight) / 2 ;
+	int mlLeft = (API->console->TextWidth - mlWidth) / 2;
 	int mlLine;
 	int half;
 	int skip;
@@ -336,85 +335,85 @@ static void timidityConfigFileSelectDraw (int dsel)
 		dot = skip * (mlHeight - LINES_NOT_AVAILABLE) / (contentheight - (mlHeight - LINES_NOT_AVAILABLE));
 	}
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Please select a new configuration file using the arrow keys and press%*C %0.9o\xb3", mlWidth - 72);
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%0.15o <ENTER>%0.7o when done, or %0.15o<ESC>%0.7o to cancel.%*C %.9o\xb3", mlWidth - 41);
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Please select a new configuration file using the arrow keys and press%*C %0.9o\xb3", mlWidth - 72);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%0.15o <ENTER>%0.7o when done, or %0.15o<ESC>%0.7o to cancel.%*C %.9o\xb3", mlWidth - 41);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
 
 	for (mlLine = 4; (mlLine + 1) < mlHeight; mlLine++)
 	{
 		int masterindex = mlLine - 4 + skip;
 
-		displaychr  (mlTop, mlLeft,               0x09, '\xb3', 1);
-		displaychr  (mlTop, mlLeft + mlWidth - 1, 0x09, ((mlLine - 4) == dot) ? '\xdd' : '\xb3', 1);
+		API->console->Driver->DisplayChr  (mlTop, mlLeft,               0x09, '\xb3', 1);
+		API->console->Driver->DisplayChr  (mlTop, mlLeft + mlWidth - 1, 0x09, ((mlLine - 4) == dot) ? '\xdd' : '\xb3', 1);
 
 		if (masterindex == 0)
 		{
-			displaystr  (mlTop++, mlLeft + 1, 0x03, "System default", mlWidth - 2);
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft + 1, 0x03, "System default", mlWidth - 2);
 			continue;
 		}
 		if (masterindex == 1)
 		{
-			displaychr (mlTop, mlLeft + 1, (dsel==0)?0x8a:0x0a, ' ', 2);
+			API->console->Driver->DisplayChr (mlTop, mlLeft + 1, (dsel==0)?0x8a:0x0a, ' ', 2);
 			if (have_default_timidity)
 			{
 				int pos = strlen (default_timidity_path) + 3;
-				displaystr (mlTop, mlLeft + 3, (dsel==0)?0x8a:0x0a, default_timidity_path, strlen (default_timidity_path));
+				API->console->Driver->DisplayStr (mlTop, mlLeft + 3, (dsel==0)?0x8a:0x0a, default_timidity_path, strlen (default_timidity_path));
 				if (have_user_timidity)
 				{
 					int len = (mlWidth - pos - 1) < 26 ? (mlWidth - pos - 1) : 26;
-					displaystr (mlTop, mlLeft + pos, (dsel==0)?0x87:0x07, " with user overrides from ", len);
+					API->console->Driver->DisplayStr (mlTop, mlLeft + pos, (dsel==0)?0x87:0x07, " with user overrides from ", len);
 					pos += len;
 					if (pos < (mlWidth - 2))
 					{
-						displaystr_utf8 (mlTop, mlLeft + pos, (dsel==0)?0x8f:0x0f, user_timidity_path, mlWidth - pos - 1);
+						API->console->Driver->DisplayStr_utf8 (mlTop, mlLeft + pos, (dsel==0)?0x8f:0x0f, user_timidity_path, mlWidth - pos - 1);
 					}
 				} else {
-					displaystr (mlTop, mlLeft + pos, (dsel==0)?0x87:0x07, " (with no user overrides)", mlWidth - 1 - pos);
+					API->console->Driver->DisplayStr (mlTop, mlLeft + pos, (dsel==0)?0x87:0x07, " (with no user overrides)", mlWidth - 1 - pos);
 				}
 			} else {
-				displaystr (mlTop, mlLeft + 1, (dsel==0)?0x8c:0x0c, " No global configuration file found", mlWidth - 2);
+				API->console->Driver->DisplayStr (mlTop, mlLeft + 1, (dsel==0)?0x8c:0x0c, " No global configuration file found", mlWidth - 2);
 			}
 			mlTop++;
 			continue;
 		}
 		if (masterindex == 3)
 		{
-			displaystr  (mlTop++, mlLeft + 1, 0x03, "Global configuration files:", mlWidth - 2);
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft + 1, 0x03, "Global configuration files:", mlWidth - 2);
 			continue;
 		}
 		if ((masterindex == 4) && (!global_timidity_count))
 		{
-			displaystr  (mlTop++, mlLeft + 1, 0x0c, " No configuration files found", mlWidth - 2);
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft + 1, 0x0c, " No configuration files found", mlWidth - 2);
 			continue;
 		}
 		if ((masterindex >= 4) && (masterindex < (global_timidity_count + 4)))
 		{
-			display_nprintf (mlTop++, mlLeft + 1, (dsel==(masterindex - 4 + 1))?0x8f:0x0f, mlWidth - 2, " %.*S", mlWidth - 3, global_timidity_path[masterindex - 4]);
+			API->console->DisplayPrintf (mlTop++, mlLeft + 1, (dsel==(masterindex - 4 + 1))?0x8f:0x0f, mlWidth - 2, " %.*S", mlWidth - 3, global_timidity_path[masterindex - 4]);
 			continue;
 		}
 		if (masterindex == (global_timidity_count + 5))
 		{
-			displaystr  (mlTop++, mlLeft + 1,           0x03, "Global SF2 files:", mlWidth - 2);
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft + 1,           0x03, "Global SF2 files:", mlWidth - 2);
 			continue;
 		}
 		if ((masterindex == (global_timidity_count + 6)) && (!sf2_files_count))
 		{
-			displaystr  (mlTop++, mlLeft + 1,           0x0c, " No soundfonts found", mlWidth - 2);
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft + 1,           0x0c, " No soundfonts found", mlWidth - 2);
 			continue;
 		}
 		if ((masterindex >= (global_timidity_count + 6)) && (masterindex < (global_timidity_count + sf2_files_count + 6)))
 		{
-			display_nprintf (mlTop++, mlLeft + 1, (dsel==(masterindex - 6 + 1))?0x8f:0x0f, mlWidth - 2, " %.*S", mlWidth - 3, sf2_files_path[masterindex - global_timidity_count - 6]);
+			API->console->DisplayPrintf (mlTop++, mlLeft + 1, (dsel==(masterindex - 6 + 1))?0x8f:0x0f, mlWidth - 2, " %.*S", mlWidth - 3, sf2_files_path[masterindex - global_timidity_count - 6]);
 			continue;
 		}
-		displayvoid (mlTop++, mlLeft + 1, mlWidth - 2);
+		API->console->Driver->DisplayVoid (mlTop++, mlLeft + 1, mlWidth - 2);
 	}
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
 }
 
-static void ConfigDrawItems (const int lineno, int xpos, const int width, const char **list, const int listlength, const int selected, const int active)
+static void ConfigDrawItems (const int lineno, int xpos, const int width, const char **list, const int listlength, const int selected, const int active, const struct DevInterfaceAPI_t *API)
 {
 	int i;
 	int origxpos = xpos;
@@ -423,16 +422,16 @@ static void ConfigDrawItems (const int lineno, int xpos, const int width, const 
 		int l = strlen (list[i]);
 		if (selected == i)
 		{
-			display_nprintf (lineno, xpos, (active)?0x09:0x01, l + 2, "[%.*o%s%.*o]", (active)?0x0f:0x07, list[i], (active)?0x09:0x01);
+			API->console->DisplayPrintf (lineno, xpos, (active)?0x09:0x01, l + 2, "[%.*o%s%.*o]", (active)?0x0f:0x07, list[i], (active)?0x09:0x01);
 		} else {
-			display_nprintf (lineno, xpos, 0x00, l + 2, " %.*o%s%.0o ", (active)?0x07:0x08, list[i]);
+			API->console->DisplayPrintf (lineno, xpos, 0x00, l + 2, " %.*o%s%.0o ", (active)?0x07:0x08, list[i]);
 		}
 		xpos += l + 2;
 	}
-	displaychr (lineno, xpos, 0x07, ' ', width - xpos + origxpos);
+	API->console->Driver->DisplayChr (lineno, xpos, 0x07, ' ', width - xpos + origxpos);
 }
 
-static void ConfigDrawBar (const int lineno, int xpos, int width, int level, int maxlevel, const int active)
+static void ConfigDrawBar (const int lineno, int xpos, int width, int level, int maxlevel, const int active, const struct DevInterfaceAPI_t *API)
 {
 	char temp[7];
 	int tw = width - 8;
@@ -464,15 +463,15 @@ static void ConfigDrawBar (const int lineno, int xpos, int width, int level, int
 		p3 -= p2;
 		p2 -= p1;
 	}
-	displaystr (lineno, xpos,                         (active)?0x07:0x08, "[", 1);
-	displaychr (lineno, xpos + 1,                     (active)?0x01:0x08, '\xfe', p1);
-	displaychr (lineno, xpos + 1 + p1,                (active)?0x09:0x08, '\xfe', p2);
-	displaychr (lineno, xpos + 1 + p1 + p2,           (active)?0x0b:0x08, '\xfe', p3);
-	displaychr (lineno, xpos + 1 + p1 + p2 + p3,      (active)?0x0f:0x08, '\xfe', p4);
-	displaychr (lineno, xpos + 1 + p1 + p2 + p3 + p4, (active)?0x07:0x08, '\xfa', tw - p1 - p2 - p3 - p4);
+	API->console->Driver->DisplayStr (lineno, xpos,                         (active)?0x07:0x08, "[", 1);
+	API->console->Driver->DisplayChr (lineno, xpos + 1,                     (active)?0x01:0x08, '\xfe', p1);
+	API->console->Driver->DisplayChr (lineno, xpos + 1 + p1,                (active)?0x09:0x08, '\xfe', p2);
+	API->console->Driver->DisplayChr (lineno, xpos + 1 + p1 + p2,           (active)?0x0b:0x08, '\xfe', p3);
+	API->console->Driver->DisplayChr (lineno, xpos + 1 + p1 + p2 + p3,      (active)?0x0f:0x08, '\xfe', p4);
+	API->console->Driver->DisplayChr (lineno, xpos + 1 + p1 + p2 + p3 + p4, (active)?0x07:0x08, '\xfa', tw - p1 - p2 - p3 - p4);
 
 	snprintf (temp, sizeof (temp), "]%5d", level);
-	displaystr (lineno, xpos + width - 8, (active)?0x07:0x08, temp, 8);
+	API->console->Driver->DisplayStr (lineno, xpos + width - 8, (active)?0x07:0x08, temp, 8);
 }
 
 static int DefaultReverbMode;
@@ -492,11 +491,11 @@ static void timidityConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API
 	const char *effect_lr_modes[] = {"disable", "left", "right", "both"};
 	const char *disable_enable[] = {"disable", "enable"};
 
-	if (plScrHeight >= 43)
+	if (API->console->TextHeight >= 43)
 	{
 		large = 2;
 		mlHeight = 41;
-	} else if (plScrHeight >= 35)
+	} else if (API->console->TextHeight >= 35)
 	{
 		large = 1;
 		mlHeight = 33;
@@ -506,116 +505,116 @@ static void timidityConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API
 	}
 
 	mlWidth = 70;
-	mlTop = (plScrHeight - mlHeight) / 2;
-	mlLeft = (plScrWidth - mlWidth) / 2;
+	mlTop = (API->console->TextHeight - mlHeight) / 2;
+	mlLeft = (API->console->TextWidth - mlWidth) / 2;
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
 
-	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Navigate with arrows and hit %.15o<ESC>%.7o to save and exit.%*C %.9o\xb3", mlWidth - 55);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Navigate with arrows and hit %.15o<ESC>%.7o to save and exit.%*C %.9o\xb3", mlWidth - 55);
 
-	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 1. TiMdity+ Configfile/Soundfont: %.15o<ENTER>%.7o to change%*C %.9o\xb3", mlWidth - 53 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 1. TiMdity+ Configfile/Soundfont: %.15o<ENTER>%.7o to change%*C %.9o\xb3", mlWidth - 53 - 1);
 
 	if (!configfile[0])
 	{
-		display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    (Global default)%*C %.9o\xb3", mlWidth - 21 - 1);
-		display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    %*.7oSelect another file%0.7o%*C %.9o\xb3", (EditPos==0)?8:0, mlWidth - 23 - 2);
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    (Global default)%*C %.9o\xb3", mlWidth - 21 - 1);
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    %*.7oSelect another file%0.7o%*C %.9o\xb3", (EditPos==0)?8:0, mlWidth - 23 - 2);
 	} else {
 		if ((strlen(configfile) > 4) && !strcmp (configfile + strlen (configfile) - 4, ".sf2"))
 		{
-			display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    (SF2 sound font)%*C %.9o\xb3", mlWidth - 21 - 1);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    (SF2 sound font)%*C %.9o\xb3", mlWidth - 21 - 1);
 		} else {
-			display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    (Specific config file)%*C %0.9o\xb3", mlWidth - 27 - 1);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    (Specific config file)%*C %0.9o\xb3", mlWidth - 27 - 1);
 		}
-		display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o    %*o%*S%0.9o\xb3", (EditPos==0)?8:0, mlWidth - 6, configfile);
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o    %*o%*S%0.9o\xb3", (EditPos==0)?8:0, mlWidth - 6, configfile);
 	}
 
-	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 2. Default Reverb Mode:%*C %.9o\xb3", mlWidth - 25 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 2. Default Reverb Mode:%*C %.9o\xb3", mlWidth - 25 - 1);
 
-	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop, mlLeft, 0x09, mlWidth, "\xb3%.7o   ");
-	ConfigDrawItems (mlTop, mlLeft + 4, mlWidth - 4 - 1, reverbs, 5, DefaultReverbMode, EditPos==1);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, mlWidth, "\xb3%.7o   ");
+	ConfigDrawItems (mlTop, mlLeft + 4, mlWidth - 4 - 1, reverbs, 5, DefaultReverbMode, EditPos==1, API);
+	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
 
-	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 3. Default Reverb Level:%*C %.9o\xb3", mlWidth - 26 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 3. Default Reverb Level:%*C %.9o\xb3", mlWidth - 26 - 1);
 
-	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
-	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultReverbLevel, 127, EditPos==2);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
+	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultReverbLevel, 127, EditPos==2, API);
+	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
 
-	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 4. Default Scale Room:%*C %.9o\xb3", mlWidth - 24 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 4. Default Scale Room:%*C %.9o\xb3", mlWidth - 24 - 1);
 
-	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
-	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultScaleRoom, 1000, EditPos==3);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
+	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultScaleRoom, 1000, EditPos==3, API);
+	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
 
-	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 5. Default Offset Room:%*C %.9o\xb3", mlWidth - 25 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 5. Default Offset Room:%*C %.9o\xb3", mlWidth - 25 - 1);
 
-	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
-	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultOffsetRoom, 1000, EditPos==4);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
+	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultOffsetRoom, 1000, EditPos==4, API);
+	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
 
-	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 6. Default Predelay Factor:%*C %.9o\xb3", mlWidth - 29 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 6. Default Predelay Factor:%*C %.9o\xb3", mlWidth - 29 - 1);
 
-	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
-	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultPredelayFactor, 1000, EditPos==5);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
+	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultPredelayFactor, 1000, EditPos==5, API);
+	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
 
-	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 7. Default Delay Mode:%*C %.9o\xb3", mlWidth - 24 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 7. Default Delay Mode:%*C %.9o\xb3", mlWidth - 24 - 1);
 
-	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop, mlLeft, 0x09, mlWidth, "\xb3%.7o   ");
-	ConfigDrawItems (mlTop, mlLeft + 4, mlWidth - 4 - 1, effect_lr_modes, 4, DefaultDelayMode, EditPos==6);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, mlWidth, "\xb3%.7o   ");
+	ConfigDrawItems (mlTop, mlLeft + 4, mlWidth - 4 - 1, effect_lr_modes, 4, DefaultDelayMode, EditPos==6, API);
+	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
 
-	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 8. Default Delay (ms):%*C %.9o\xb3", mlWidth - 24 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 8. Default Delay (ms):%*C %.9o\xb3", mlWidth - 24 - 1);
 
-	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
-	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultDelay, 1000, EditPos==7);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
+	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultDelay, 1000, EditPos==7, API);
+	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
 
-	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 9. Default Chorus:%*C %.9o\xb3", mlWidth - 20 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 9. Default Chorus:%*C %.9o\xb3", mlWidth - 20 - 1);
 
-	if (large >= 2) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop, mlLeft, 0x09, mlWidth, "\xb3%.7o   ");
-	ConfigDrawItems (mlTop, mlLeft + 4, mlWidth - 4 - 1, disable_enable, 2, DefaultChorus, EditPos==8);
-	displaychr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, mlWidth, "\xb3%.7o   ");
+	ConfigDrawItems (mlTop, mlLeft + 4, mlWidth - 4 - 1, disable_enable, 2, DefaultChorus, EditPos==8, API);
+	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
 
-	if (large) display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
-	display_nprintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
 }
 
 static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API)
@@ -653,9 +652,9 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 	{
 		fsDraw();
 		timidityConfigDraw (esel, API);
-		while (conFunc.KeyboardHit())
+		while (API->console->KeyboardHit())
 		{
-			int key = conFunc.KeyboardGetChar();
+			int key = API->console->KeyboardGetChar();
 			static uint32_t lastpress = 0;
 			static int repeat;
 			if ((key != KEY_LEFT) && (key != KEY_RIGHT))
@@ -712,10 +711,10 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 						while (inner)
 						{
 							fsDraw();
-							timidityConfigFileSelectDraw (dsel);
-							while (inner && conFunc.KeyboardHit())
+							timidityConfigFileSelectDraw (dsel, API);
+							while (inner && API->console->KeyboardHit())
 							{
-								int key = conFunc.KeyboardGetChar();
+								int key = API->console->KeyboardGetChar();
 								switch (key)
 								{
 									case KEY_DOWN:
@@ -748,7 +747,7 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 										break;
 								}
 							}
-							framelock ();
+							API->console->FrameLock ();
 						}
 					}
 					break;
@@ -906,7 +905,7 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 					break;
 			}
 		}
-		framelock ();
+		API->console->FrameLock ();
 	}
 
 superexit:

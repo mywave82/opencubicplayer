@@ -63,8 +63,7 @@ static char *_cfDataDir;
 static char *_cfProgramDir;
 
 static int AllowSymlinked;
-static struct consoleStatus_t *_conStatus;
-static struct consoleDriver_t **_conDriver;
+static struct console_t *_Console;
 
 /* This has todo with video-mode rescue */
 static int crashmode;
@@ -113,8 +112,8 @@ static void stopstuff(struct itimerval *i)
 	setitimer(ITIMER_REAL, &z, &i[0]);
 	setitimer(ITIMER_VIRTUAL, &z, &i[1]);
 	setitimer(ITIMER_PROF, &z, &i[2]);
-	crashmode = (*_conStatus).CurrentMode;
-	(*_conDriver)->SetTextMode ((unsigned char)255);
+	crashmode = _Console->CurrentMode;
+	_Console->Driver->SetTextMode ((unsigned char)255);
 }
 static void restartstuff(struct itimerval *i)
 {
@@ -123,12 +122,12 @@ static void restartstuff(struct itimerval *i)
 	setitimer(ITIMER_PROF, &i[2], 0);
 	if (crashmode==101)
 	{
-		(*_conDriver)->SetGraphMode ((unsigned char)1);
+		_Console->Driver->SetGraphMode ((unsigned char)1);
 	} else if (crashmode==100)
 	{
-		(*_conDriver)->SetGraphMode ((unsigned char)0);
+		_Console->Driver->SetGraphMode ((unsigned char)0);
 	} else {
-		(*_conDriver)->SetTextMode ((unsigned char)crashmode);
+		_Console->Driver->SetTextMode ((unsigned char)crashmode);
 	}
 }
 
@@ -514,14 +513,9 @@ static int runocp(void *handle, int argc, char *argv[])
 		fprintf(stderr, "Failed to locate symbol bootup in libocp" LIB_SUFFIX ": %s\n", dlerror());
 		return -1;
 	}
-	if (!(_conStatus=dlsym(handle, "conStatus")))
+	if (!(_Console = dlsym(handle, "Console")))
 	{
-		fprintf(stderr, "Failed to locate symbol conStatus in libocp" LIB_SUFFIX ": %s\n", dlerror());
-		return -1;
-	}
-	if (!(_conDriver=dlsym(handle, "conDriver")))
-	{
-		fprintf(stderr, "Failed to locate symbol conDriver in libocp" LIB_SUFFIX ": %s\n", dlerror());
+		fprintf(stderr, "Failed to locate symbol Console in libocp" LIB_SUFFIX ": %s\n", dlerror());
 		return -1;
 	}
 

@@ -74,13 +74,13 @@ static void drawvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bu
 
 	if (st)
 	{
-		cpifaceSession->conFunc->WriteString (buf, 9-v, 0x08, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", v);
-//		cpifaceSession->conFunc->WriteString (buf, 9  , 0x08, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", r);
+		cpifaceSession->console->WriteString (buf, 9-v, 0x08, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", v);
+//		cpifaceSession->console->WriteString (buf, 9  , 0x08, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", r);
 	} else {
 		const uint16_t left[] =  {0x0ffe, 0x0bfe, 0x0bfe, 0x0bfe, 0x09fe, 0x09fe, 0x09fe, 0x01fe, 0x01fe, 0x01fe};
 //		const uint16_t right[] = {0x01fe, 0x01fe, 0x01fe, 0x09fe, 0x09fe, 0x09fe, 0x0bfe, 0x0bfe, 0x0bfe, 0x0ffe};
-		cpifaceSession->conFunc->WriteStringAttr (buf, 10-v, left+10-v, v);
-//		cpifaceSession->conFunc->WriteStringAttr (buf, 9   , right    , r);
+		cpifaceSession->console->WriteStringAttr (buf, 10-v, left+10-v, v);
+//		cpifaceSession->console->WriteStringAttr (buf, 9   , right    , r);
 	}
 }
 
@@ -98,13 +98,13 @@ static void drawlongvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 	}
 	if (st)
 	{
-		cpifaceSession->conFunc->WriteString (buf, 16-l, 0x08, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", l);
-		cpifaceSession->conFunc->WriteString (buf, 17, 0x08, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", r);
+		cpifaceSession->console->WriteString (buf, 16-l, 0x08, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", l);
+		cpifaceSession->console->WriteString (buf, 17, 0x08, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", r);
 	} else {
 		const uint16_t left[] =  {0x0ffe, 0x0ffe, 0x0bfe, 0x0bfe, 0x0bfe, 0x0bfe, 0x09fe, 0x09fe, 0x09fe, 0x09fe, 0x01fe, 0x01fe, 0x01fe, 0x01fe, 0x01fe, 0x01fe};
 		const uint16_t right[] = {0x01fe, 0x01fe, 0x01fe, 0x01fe, 0x01fe, 0x01fe, 0x09fe, 0x09fe, 0x09fe, 0x09fe, 0x0bfe, 0x0bfe, 0x0bfe, 0x0bfe, 0x0ffe, 0x0ffe};
-		cpifaceSession->conFunc->WriteStringAttr (buf, 16-l, left+16-l, l);
-		cpifaceSession->conFunc->WriteStringAttr (buf, 1  7, right    , r);
+		cpifaceSession->console->WriteStringAttr (buf, 16-l, left+16-l, l);
+		cpifaceSession->console->WriteStringAttr (buf, 1  7, right    , r);
 	}
 }
 #endif
@@ -362,7 +362,7 @@ static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	tcold=ci.muted?0x08:0x07;
 	tcolr=ci.muted?0x08:0x0B;
 
-	cpifaceSession->conFunc->WriteString (buf, 0, tcold, " -- --- -- ------ ------ \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 36);
+	cpifaceSession->console->WriteString (buf, 0, tcold, " -- --- -- ------ ------ \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 36);
 
 	if ((ci.ins>=0) || ci.vol)
 	{
@@ -370,16 +370,16 @@ static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 
 		if (ci.ins>=0)
 		{
-			cpifaceSession->conFunc->WriteNum (buf,  1, tcol, ci.ins + 1, 16, 2, 0);
+			cpifaceSession->console->WriteNum (buf,  1, tcol, ci.ins + 1, 16, 2, 0);
 		}
-		cpifaceSession->conFunc->WriteString (buf,  4, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
-		cpifaceSession->conFunc->WriteNum    (buf, 8, tcol, ci.vol, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf,  4, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
+		cpifaceSession->console->WriteNum    (buf, 8, tcol, ci.vol, 16, 2, 0);
 		fxstr=getfxstr6(ci.fx, ci.fxparam);
 		if (fxstr)
-			cpifaceSession->conFunc->WriteString (buf, 11, tcol, fxstr, 6);
+			cpifaceSession->console->WriteString (buf, 11, tcol, fxstr, 6);
 		fxstr=getfxstr6(ci.fxB, ci.fxBparam);
 		if (fxstr)
-			cpifaceSession->conFunc->WriteString (buf, 18, tcol, fxstr, 6);
+			cpifaceSession->console->WriteString (buf, 18, tcol, fxstr, 6);
 
 		drawvolbar (cpifaceSession, buf+25, i, ci.muted);
 	}
@@ -397,26 +397,26 @@ static void drawchannel44 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	tcold=ci.muted?0x08:0x07;
 	tcolr=ci.muted?0x08:0x0B;
 
-	cpifaceSession->conFunc->WriteString (buf, 0, tcold, " --  ---\xfa --\xfa - ------ ------    \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 44);
+	cpifaceSession->console->WriteString (buf, 0, tcold, " --  ---\xfa --\xfa - ------ ------    \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 44);
 	if ((ci.ins>=0) || ci.vol)
 	{
 		char *fxstr;
 		if (ci.ins>=0)
 		{
-			cpifaceSession->conFunc->WriteNum (buf,  1, tcol, ci.ins + 1, 16, 2, 0);
+			cpifaceSession->console->WriteNum (buf,  1, tcol, ci.ins + 1, 16, 2, 0);
 		}
-		cpifaceSession->conFunc->WriteString (buf,  5, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
-		cpifaceSession->conFunc->WriteString (buf,  8, tcol, ci.pitchslide ? &" \x18\x19\x0D"[ci.pitchslide] : " ", 1);
-		cpifaceSession->conFunc->WriteNum    (buf, 10, tcol, ci.vol, 16, 2, 0);
-		cpifaceSession->conFunc->WriteString (buf, 12, tcol, ci.volslide ? &" \x18\x19\x12"[ci.volslide] : " ", 1);
-		cpifaceSession->conFunc->WriteString (buf, 14, tcol, &"L123456MM9ABCDER"[ci.pan>>4], 1);
+		cpifaceSession->console->WriteString (buf,  5, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
+		cpifaceSession->console->WriteString (buf,  8, tcol, ci.pitchslide ? &" \x18\x19\x0D"[ci.pitchslide] : " ", 1);
+		cpifaceSession->console->WriteNum    (buf, 10, tcol, ci.vol, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 12, tcol, ci.volslide ? &" \x18\x19\x12"[ci.volslide] : " ", 1);
+		cpifaceSession->console->WriteString (buf, 14, tcol, &"L123456MM9ABCDER"[ci.pan>>4], 1);
 
 		fxstr=getfxstr6(ci.fx, ci.fxparam);
 		if (fxstr)
-			cpifaceSession->conFunc->WriteString (buf, 16, tcol, fxstr, 6);
+			cpifaceSession->console->WriteString (buf, 16, tcol, fxstr, 6);
 		fxstr=getfxstr6(ci.fxB, ci.fxBparam);
 		if (fxstr)
-			cpifaceSession->conFunc->WriteString (buf, 23, tcol, fxstr, 6);
+			cpifaceSession->console->WriteString (buf, 23, tcol, fxstr, 6);
 
 		drawvolbar (cpifaceSession, buf+33, i, ci.muted);
 	}
@@ -434,7 +434,7 @@ static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	tcold=ci.muted?0x08:0x07;
 	tcolr=ci.muted?0x08:0x0B;
 
-	cpifaceSession->conFunc->WriteString (buf, 0, tcold, "                        ---\xfa --\xfa - ------ ------   \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 66);
+	cpifaceSession->console->WriteString (buf, 0, tcold, "                        ---\xfa --\xfa - ------ ------   \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa ", 66);
 	if ((ci.ins>=0) || ci.vol)
 	{
 		char *fxstr;
@@ -442,24 +442,24 @@ static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 		{
 			if (ci.name && (!compoMode))
 			{
-				cpifaceSession->conFunc->WriteString (buf, 1, tcol, ci.name, 21);
+				cpifaceSession->console->WriteString (buf, 1, tcol, ci.name, 21);
 			} else {
-				cpifaceSession->conFunc->WriteString (buf, 1, 0x08, "(  )", 4);
-				cpifaceSession->conFunc->WriteNum    (buf, 2, 0x08, ci.ins + 1, 16, 2, 0);
+				cpifaceSession->console->WriteString (buf, 1, 0x08, "(  )", 4);
+				cpifaceSession->console->WriteNum    (buf, 2, 0x08, ci.ins + 1, 16, 2, 0);
 			}
 		}
-		cpifaceSession->conFunc->WriteString (buf, 24, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
-		cpifaceSession->conFunc->WriteString (buf, 27, tcol, ci.pitchslide ? &" \x18\x19\x0D"[ci.pitchslide] : " ", 1);
-		cpifaceSession->conFunc->WriteNum    (buf, 29, tcol, ci.vol, 16, 2, 0);
-		cpifaceSession->conFunc->WriteString (buf, 31, tcol, ci.volslide ? &" \x18\x19\x12"[ci.volslide] : " ", 1);
-		cpifaceSession->conFunc->WriteString (buf, 33, tcol, &"L123456MM9ABCDER"[ci.pan>>4], 1);
+		cpifaceSession->console->WriteString (buf, 24, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
+		cpifaceSession->console->WriteString (buf, 27, tcol, ci.pitchslide ? &" \x18\x19\x0D"[ci.pitchslide] : " ", 1);
+		cpifaceSession->console->WriteNum    (buf, 29, tcol, ci.vol, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 31, tcol, ci.volslide ? &" \x18\x19\x12"[ci.volslide] : " ", 1);
+		cpifaceSession->console->WriteString (buf, 33, tcol, &"L123456MM9ABCDER"[ci.pan>>4], 1);
 
 		fxstr=getfxstr6(ci.fx, ci.fxparam);
 		if (fxstr)
-			cpifaceSession->conFunc->WriteString (buf, 35, tcol, fxstr, 6);
+			cpifaceSession->console->WriteString (buf, 35, tcol, fxstr, 6);
 		fxstr=getfxstr6(ci.fxB, ci.fxBparam);
 		if (fxstr)
-			cpifaceSession->conFunc->WriteString (buf, 42, tcol, fxstr, 6);
+			cpifaceSession->console->WriteString (buf, 42, tcol, fxstr, 6);
 
 		drawvolbar (cpifaceSession, buf+51, i, ci.muted);
 	}
@@ -477,7 +477,7 @@ static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	tcold=ci.muted?0x08:0x07;
 	tcolr=ci.muted?0x08:0x0B;
 
-	cpifaceSession->conFunc->WriteString (buf,  0, tcold, "                             \xb3    \xb3   \xb3 \xb3          \xb3          \xb3  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa  ", 76);
+	cpifaceSession->console->WriteString (buf,  0, tcold, "                             \xb3    \xb3   \xb3 \xb3          \xb3          \xb3  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa  ", 76);
 	if ((ci.ins>=0) || ci.vol)
 	{
 		char *fxstr;
@@ -485,28 +485,28 @@ static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 		{
 			if (ci.name && (!compoMode))
 			{
-				cpifaceSession->conFunc->WriteString (buf, 1, tcol, ci.name, 28);
+				cpifaceSession->console->WriteString (buf, 1, tcol, ci.name, 28);
 			} else {
-				cpifaceSession->conFunc->WriteString (buf, 1, 0x08, "(  )", 4);
-				cpifaceSession->conFunc->WriteNum    (buf, 2, 0x08, ci.ins + 1, 16, 2, 0);
+				cpifaceSession->console->WriteString (buf, 1, 0x08, "(  )", 4);
+				cpifaceSession->console->WriteNum    (buf, 2, 0x08, ci.ins + 1, 16, 2, 0);
 			}
 		}
-		cpifaceSession->conFunc->WriteString (buf, 30, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
-		cpifaceSession->conFunc->WriteString (buf, 33, tcol, ci.pitchslide ? &" \x18\x19\x0D"[ci.pitchslide] : " ", 1);
-		cpifaceSession->conFunc->WriteNum    (buf, 35, tcol, ci.vol, 16, 2, 0);
-		cpifaceSession->conFunc->WriteString (buf, 37, tcol, ci.volslide ? &" \x18\x19\x12"[ci.volslide] : " ", 1);
-		cpifaceSession->conFunc->WriteString (buf, 39, tcol, &"L123456MM9ABCDER"[ci.pan>>4], 1);
+		cpifaceSession->console->WriteString (buf, 30, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
+		cpifaceSession->console->WriteString (buf, 33, tcol, ci.pitchslide ? &" \x18\x19\x0D"[ci.pitchslide] : " ", 1);
+		cpifaceSession->console->WriteNum    (buf, 35, tcol, ci.vol, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 37, tcol, ci.volslide ? &" \x18\x19\x12"[ci.volslide] : " ", 1);
+		cpifaceSession->console->WriteString (buf, 39, tcol, &"L123456MM9ABCDER"[ci.pan>>4], 1);
 
 		fxstr=getfxstr6(ci.fx, ci.fxparam);
 		if (fxstr)
-			cpifaceSession->conFunc->WriteString (buf, 41, tcol, fxstr, 6);
-		cpifaceSession->conFunc->WriteNum (buf, 48, tcol, ci.fx,       16, 1, 0);
-		cpifaceSession->conFunc->WriteNum (buf, 49, tcol, ci.fxparam,  16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 41, tcol, fxstr, 6);
+		cpifaceSession->console->WriteNum (buf, 48, tcol, ci.fx,       16, 1, 0);
+		cpifaceSession->console->WriteNum (buf, 49, tcol, ci.fxparam,  16, 2, 0);
 		fxstr=getfxstr6(ci.fxB, ci.fxBparam);
 		if (fxstr)
-			cpifaceSession->conFunc->WriteString (buf, 52, tcol, fxstr, 6);
-		cpifaceSession->conFunc->WriteNum (buf, 59, tcol, ci.fxB,      16, 1, 0);
-		cpifaceSession->conFunc->WriteNum (buf, 60, tcol, ci.fxBparam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 52, tcol, fxstr, 6);
+		cpifaceSession->console->WriteNum (buf, 59, tcol, ci.fxB,      16, 1, 0);
+		cpifaceSession->console->WriteNum (buf, 60, tcol, ci.fxBparam, 16, 2, 0);
 
 		drawvolbar (cpifaceSession, buf+65, i, ci.muted);
 	}
@@ -523,7 +523,7 @@ static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 	tcold=ci.muted?0x08:0x07;
 	tcolr=ci.muted?0x08:0x0B;
 
-	cpifaceSession->conFunc->WriteString (buf,  0, tcold, "                                      \xb3    \xb3   \xb3 \xb3          \xb3          \xb3          \xb3        \xb3          \xb3          \xb3  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa  ", 128);
+	cpifaceSession->console->WriteString (buf,  0, tcold, "                                      \xb3    \xb3   \xb3 \xb3          \xb3          \xb3          \xb3        \xb3          \xb3          \xb3  \xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa  ", 128);
 	if ((ci.ins>=0) || ci.vol)
 	{
 		char *fxstr;
@@ -531,62 +531,62 @@ static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 		{
 			if (ci.name && (!compoMode))
 			{
-				cpifaceSession->conFunc->WriteString (buf, 1, tcol, ci.name, 37);
+				cpifaceSession->console->WriteString (buf, 1, tcol, ci.name, 37);
 			} else {
-				cpifaceSession->conFunc->WriteString (buf, 1, 0x08, "(  )", 4);
-				cpifaceSession->conFunc->WriteNum    (buf, 2, 0x08, ci.ins + 1, 16, 2, 0);
+				cpifaceSession->console->WriteString (buf, 1, 0x08, "(  )", 4);
+				cpifaceSession->console->WriteNum    (buf, 2, 0x08, ci.ins + 1, 16, 2, 0);
 			}
 		}
-		cpifaceSession->conFunc->WriteString (buf, 39, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
-		cpifaceSession->conFunc->WriteString (buf, 42, tcol, ci.pitchslide ? &" \x18\x19\x0D"[ci.pitchslide] : " ", 1);
-		cpifaceSession->conFunc->WriteNum    (buf, 44, tcol, ci.vol, 16, 2, 0);
-		cpifaceSession->conFunc->WriteString (buf, 46, tcol, ci.volslide ? &" \x18\x19\x12"[ci.volslide] : " ", 1);
-		cpifaceSession->conFunc->WriteString (buf, 48, tcol, &"L123456MM9ABCDER"[ci.pan>>4], 1);
+		cpifaceSession->console->WriteString (buf, 39, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
+		cpifaceSession->console->WriteString (buf, 42, tcol, ci.pitchslide ? &" \x18\x19\x0D"[ci.pitchslide] : " ", 1);
+		cpifaceSession->console->WriteNum    (buf, 44, tcol, ci.vol, 16, 2, 0);
+		cpifaceSession->console->WriteString (buf, 46, tcol, ci.volslide ? &" \x18\x19\x12"[ci.volslide] : " ", 1);
+		cpifaceSession->console->WriteString (buf, 48, tcol, &"L123456MM9ABCDER"[ci.pan>>4], 1);
 
 		if (ci.filter)
 		{
 			if (ci.filter < 0x20)
 			{
-				cpifaceSession->conFunc->WriteString (buf, 50, tcol, "lowpass ", 8);
-				cpifaceSession->conFunc->WriteNum    (buf, 58, tcol, 0x20 - ci.filter, 10, 2, 0);
+				cpifaceSession->console->WriteString (buf, 50, tcol, "lowpass ", 8);
+				cpifaceSession->console->WriteNum    (buf, 58, tcol, 0x20 - ci.filter, 10, 2, 0);
 			} else if (ci.filter == 0x20)
 			{
-				cpifaceSession->conFunc->WriteString (buf, 50, tcol, "minimal   ", 10);
+				cpifaceSession->console->WriteString (buf, 50, tcol, "minimal   ", 10);
 			} else {
-				cpifaceSession->conFunc->WriteString (buf, 58, tcol, "highpass", 8);
-				cpifaceSession->conFunc->WriteNum    (buf, 58, tcol, ci.filter - 0x20, 10, 2, 0);
+				cpifaceSession->console->WriteString (buf, 58, tcol, "highpass", 8);
+				cpifaceSession->console->WriteNum    (buf, 58, tcol, ci.filter - 0x20, 10, 2, 0);
 			}
 		}
 
 		fxstr=getfxstr6(ci.fx, ci.fxparam);
 		if (fxstr)
-			cpifaceSession->conFunc->WriteString (buf, 61, tcol, fxstr, 6);
-		cpifaceSession->conFunc->WriteNum (buf, 68, tcol, ci.fx,       16, 1, 0);
-		cpifaceSession->conFunc->WriteNum (buf, 69, tcol, ci.fxparam,  16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 61, tcol, fxstr, 6);
+		cpifaceSession->console->WriteNum (buf, 68, tcol, ci.fx,       16, 1, 0);
+		cpifaceSession->console->WriteNum (buf, 69, tcol, ci.fxparam,  16, 2, 0);
 		fxstr=getfxstr6(ci.fxB, ci.fxBparam);
 		if (fxstr)
-			cpifaceSession->conFunc->WriteString (buf, 72, tcol, fxstr, 6);
-		cpifaceSession->conFunc->WriteNum (buf, 79, tcol, ci.fxB,      16, 1, 0);
-		cpifaceSession->conFunc->WriteNum (buf, 80, tcol, ci.fxBparam, 16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 72, tcol, fxstr, 6);
+		cpifaceSession->console->WriteNum (buf, 79, tcol, ci.fxB,      16, 1, 0);
+		cpifaceSession->console->WriteNum (buf, 80, tcol, ci.fxBparam, 16, 2, 0);
 
 		switch (ci.waveform)
 		{
-			case 0x00: cpifaceSession->conFunc->WriteString (buf, 83, tcol, "triangle", 8); break;
-			case 0x01: cpifaceSession->conFunc->WriteString (buf, 83, tcol, "sawtooth", 8); break;
-			case 0x02: cpifaceSession->conFunc->WriteString (buf, 83, tcol, "square  ", 8); break;
-			case 0x03: cpifaceSession->conFunc->WriteString (buf, 83, tcol, "whitenoi", 8); break;
+			case 0x00: cpifaceSession->console->WriteString (buf, 83, tcol, "triangle", 8); break;
+			case 0x01: cpifaceSession->console->WriteString (buf, 83, tcol, "sawtooth", 8); break;
+			case 0x02: cpifaceSession->console->WriteString (buf, 83, tcol, "square  ", 8); break;
+			case 0x03: cpifaceSession->console->WriteString (buf, 83, tcol, "whitenoi", 8); break;
 		}
 
 		fxstr=getpfxstr6(ci.pfx, ci.pfxparam);
 		if (fxstr)
-			cpifaceSession->conFunc->WriteString (buf,  92, tcol, fxstr, 6);
-		cpifaceSession->conFunc->WriteNum (buf,  99, tcol, ci.pfx,       16, 1, 0);
-		cpifaceSession->conFunc->WriteNum (buf, 100, tcol, ci.pfxparam,  16, 2, 0);
+			cpifaceSession->console->WriteString (buf,  92, tcol, fxstr, 6);
+		cpifaceSession->console->WriteNum (buf,  99, tcol, ci.pfx,       16, 1, 0);
+		cpifaceSession->console->WriteNum (buf, 100, tcol, ci.pfxparam,  16, 2, 0);
 		fxstr=getpfxstr6(ci.pfxB, ci.pfxBparam);
 		if (fxstr)
-			cpifaceSession->conFunc->WriteString (buf, 103, tcol, fxstr, 6);
-		cpifaceSession->conFunc->WriteNum (buf, 110, tcol, ci.pfxB,       16, 1, 0);
-		cpifaceSession->conFunc->WriteNum (buf, 111, tcol, ci.pfxBparam,  16, 2, 0);
+			cpifaceSession->console->WriteString (buf, 103, tcol, fxstr, 6);
+		cpifaceSession->console->WriteNum (buf, 110, tcol, ci.pfxB,       16, 1, 0);
+		cpifaceSession->console->WriteNum (buf, 111, tcol, ci.pfxBparam,  16, 2, 0);
 
 		drawvolbar (cpifaceSession, buf+116, i, ci.muted);
 	}

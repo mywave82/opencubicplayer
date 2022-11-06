@@ -697,17 +697,17 @@ static void ncurses_SetTextMode (uint8_t x)
 	unsigned int i;
 
 	// If we make a stackable curses driver, we will need this
-	//conDriver->SetGraphMode (-1);
+	//Console.Driver->SetGraphMode (-1);
 
 	___setup_key (ncurses_ekbhit, ncurses_egetch);
 
-	conStatus.TextHeight = Height;
-	conStatus.TextWidth = Width;
-	conStatus.CurrentMode = 0;
+	Console.TextHeight = Height;
+	Console.TextWidth = Width;
+	Console.CurrentMode = 0;
 
-	for (i = 0; i < conStatus.TextHeight; i++)
+	for (i = 0; i < Console.TextHeight; i++)
 	{
-		ncurses_DisplayVoid (i, 0, conStatus.TextWidth);
+		ncurses_DisplayVoid (i, 0, Console.TextWidth);
 	}
 }
 
@@ -769,13 +769,13 @@ static void do_resize (void)
 		resize_term(size.ws_row, size.ws_col);
 		wrefresh(curscr);
 
-		Height = conStatus.TextHeight = size.ws_row;
-		if ((Width = conStatus.TextWidth = size.ws_col) > CONSOLE_MAX_X)
+		Height = Console.TextHeight = size.ws_row;
+		if ((Width = Console.TextWidth = size.ws_col) > CONSOLE_MAX_X)
 		{
-			Width = conStatus.TextWidth = CONSOLE_MAX_X;
-		} else if (conStatus.TextWidth < 80)
+			Width = Console.TextWidth = CONSOLE_MAX_X;
+		} else if (Console.TextWidth < 80)
 		{
-			Width = conStatus.TextWidth = 80; /* If a console gets smaller than THIS, we are doomed */
+			Width = Console.TextWidth = 80; /* If a console gets smaller than THIS, we are doomed */
 		}
 		___push_key(VIRT_KEY_RESIZE);
 	}
@@ -1360,7 +1360,7 @@ no_translit:
 #endif
 	signal(SIGINT, ncurses_sigint); /* emulate ESC key on ctrl-c, but multiple presses + OCP deadlocked will make it quit by force */
 
-	conDriver = &ncursesConsoleDriver;
+	Console.Driver = &ncursesConsoleDriver;
 	___setup_key (ncurses_ekbhit, ncurses_egetch); /* filters in more keys */
 
 	start_color();
@@ -1396,18 +1396,18 @@ no_translit:
 			attr_table[i] |= A_STANDOUT;
 	}
 
-	conStatus.VidType = vidNorm;
-	conStatus.LastTextMode = 0;
-	conStatus.CurrentMode = 0;
+	Console.VidType = vidNorm;
+	Console.LastTextMode = 0;
+	Console.CurrentMode = 0;
 	ncurses_RefreshScreen();
 
-	Height = conStatus.TextHeight = LINES;
-	if ((Width = conStatus.TextWidth = COLS) > CONSOLE_MAX_X)
+	Height = Console.TextHeight = LINES;
+	if ((Width = Console.TextWidth = COLS) > CONSOLE_MAX_X)
 	{
-		Width = conStatus.TextWidth = CONSOLE_MAX_X;
-	} else if (conStatus.TextWidth < 80)
+		Width = Console.TextWidth = CONSOLE_MAX_X;
+	} else if (Console.TextWidth < 80)
 	{
-		Width = conStatus.TextWidth = 80; /* If a console gets smaller than THIS, the user-experience will be non-normal */
+		Width = Console.TextWidth = 80; /* If a console gets smaller than THIS, the user-experience will be non-normal */
 	}
 
 	ncurses_consoleRestore ();

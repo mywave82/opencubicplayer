@@ -151,7 +151,6 @@ devpalsa.o: devpalsa.c \
 	../filesel/mdb.h \
 	../filesel/modlist.h \
 	../filesel/pfilesel.h \
-	../stuff/framelock.h \
 	../stuff/imsrtns.h \
 	../stuff/poutput.h
 	$(CC) devpalsa.c -o $@ -c $(ALSA_CFLAGS)

@@ -46,7 +46,6 @@
 #include "musicbrainz.h"
 #include "pfilesel.h"
 #include "stuff/compat.h"
-#include "stuff/framelock.h"
 #include "stuff/poutput.h"
 #include "stuff/utf-8.h"
 
@@ -1305,9 +1304,9 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 		if (dialog)
 		{
 	                musicbrainzSetupDialogDraw (sorted + dsel, epos);
-			while (conFunc.KeyboardHit())
+			while (API->console->KeyboardHit())
 			{
-				int key = conFunc.KeyboardGetChar();
+				int key = API->console->KeyboardGetChar();
 				switch (key)
 				{
 					case KEY_DOWN:
@@ -1406,11 +1405,11 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 									display_nprintf (mlTop + 5, mlLeft, 0x1e, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 									display_nprintf (mlTop + 6, mlLeft, 0x1e, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
 
-									framelock ();
+									API->console->FrameLock ();
 
-									while (conFunc.KeyboardHit())
+									while (API->console->KeyboardHit())
 									{
-										int key = conFunc.KeyboardGetChar();
+										int key = API->console->KeyboardGetChar();
 										switch (key)
 										{
 											case KEY_EXIT:
@@ -1515,9 +1514,9 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 				}
 			}
 		} else {
-			while (conFunc.KeyboardHit())
+			while (API->console->KeyboardHit())
 			{
-				int key = conFunc.KeyboardGetChar();
+				int key = API->console->KeyboardGetChar();
 				switch (key)
 				{
 					case KEY_HOME:
@@ -1555,6 +1554,6 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 			}
 		}
 superexit:
-		framelock();
+		API->console->FrameLock();
 	}
 }

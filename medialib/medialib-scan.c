@@ -111,9 +111,9 @@ static void mlScanDraw(const char *title, struct scanlist_t *token)
 		displayvoid (mlTop + 4 + lineno, mlLeft + 1, mlWidth - 2);
 	}
 
-	while (conFunc.KeyboardHit())
+	while (Console.KeyboardHit())
 	{
-		int key = conFunc.KeyboardGetChar();
+		int key = Console.KeyboardGetChar();
 		switch (key)
 		{
 			case KEY_EXIT:

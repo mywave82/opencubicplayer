@@ -32,81 +32,81 @@
 static void hvlDisplayIns40 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
-	cpifaceSession->conFunc->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
-	cpifaceSession->conFunc->WriteNum    (buf, 1, col, n+1, 16, 2, 0);
-	cpifaceSession->conFunc->WriteString (buf, 5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name, 35);
+	cpifaceSession->console->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
+	cpifaceSession->console->WriteNum    (buf, 1, col, n+1, 16, 2, 0);
+	cpifaceSession->console->WriteString (buf, 5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name, 35);
 }
 
 static void hvlDisplayIns33 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 
-	cpifaceSession->conFunc->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
-	cpifaceSession->conFunc->WriteNum    (buf, 1, col, n+1, 16, 2, 0);
-	cpifaceSession->conFunc->WriteString (buf, 5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name, 28);
+	cpifaceSession->console->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
+	cpifaceSession->console->WriteNum    (buf, 1, col, n+1, 16, 2, 0);
+	cpifaceSession->console->WriteString (buf, 5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name, 28);
 }
 
 static void hvlDisplayIns52 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
-	cpifaceSession->conFunc->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[n])?"    \xfe##: ":"     ##: ", 9);
-	cpifaceSession->conFunc->WriteNum    (buf, 5, col, n+1, 16, 2, 0);
-	cpifaceSession->conFunc->WriteString (buf, 9, col, compoMode?"#":ht->ht_Instruments[n].ins_Name, 43);
+	cpifaceSession->console->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[n])?"    \xfe##: ":"     ##: ", 9);
+	cpifaceSession->console->WriteNum    (buf, 5, col, n+1, 16, 2, 0);
+	cpifaceSession->console->WriteString (buf, 9, col, compoMode?"#":ht->ht_Instruments[n].ins_Name, 43);
 }
 
 static void hvlDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col;
 
-	cpifaceSession->conFunc->WriteString (buf,  0, 0, "", 80);
+	cpifaceSession->console->WriteString (buf,  0, 0, "", 80);
 
 	col = plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
-	cpifaceSession->conFunc->WriteString (buf,  0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
-	cpifaceSession->conFunc->WriteNum    (buf,  1, col, n+1,                                        16, 2, 0);
-	cpifaceSession->conFunc->WriteString (buf,  5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name,     50);
-	cpifaceSession->conFunc->WriteNum    (buf, 56, col, ht->ht_Instruments[n].ins_Volume,           10, 3, 0);
-	cpifaceSession->conFunc->WriteNum    (buf, 63, col, ht->ht_Instruments[n].ins_WaveLength,       10, 3, 0);
-	cpifaceSession->conFunc->WriteNum    (buf, 73, col, ht->ht_Instruments[n].ins_PList.pls_Speed,  10, 3, 0);
-	cpifaceSession->conFunc->WriteString (buf, 76, 0x07, "/", 1);
-	cpifaceSession->conFunc->WriteNum    (buf, 77, col, ht->ht_Instruments[n].ins_PList.pls_Length, 10, 3, 0);
+	cpifaceSession->console->WriteString (buf,  0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
+	cpifaceSession->console->WriteNum    (buf,  1, col, n+1,                                        16, 2, 0);
+	cpifaceSession->console->WriteString (buf,  5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name,     50);
+	cpifaceSession->console->WriteNum    (buf, 56, col, ht->ht_Instruments[n].ins_Volume,           10, 3, 0);
+	cpifaceSession->console->WriteNum    (buf, 63, col, ht->ht_Instruments[n].ins_WaveLength,       10, 3, 0);
+	cpifaceSession->console->WriteNum    (buf, 73, col, ht->ht_Instruments[n].ins_PList.pls_Speed,  10, 3, 0);
+	cpifaceSession->console->WriteString (buf, 76, 0x07, "/", 1);
+	cpifaceSession->console->WriteNum    (buf, 77, col, ht->ht_Instruments[n].ins_PList.pls_Length, 10, 3, 0);
 }
 
 static void hvlDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
 	char col;
 
-	cpifaceSession->conFunc->WriteString (buf,  0, 0, "", 132);
+	cpifaceSession->console->WriteString (buf,  0, 0, "", 132);
 
 	col = plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 
-	cpifaceSession->conFunc->WriteString (buf,   0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
-	cpifaceSession->conFunc->WriteNum    (buf,   1, col, n+1, 16, 2, 0);
-	cpifaceSession->conFunc->WriteString (buf,   5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name,     58);
+	cpifaceSession->console->WriteString (buf,   0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
+	cpifaceSession->console->WriteNum    (buf,   1, col, n+1, 16, 2, 0);
+	cpifaceSession->console->WriteString (buf,   5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name,     58);
 
-	cpifaceSession->conFunc->WriteNum    (buf,  64, col, ht->ht_Instruments[n].ins_Volume,           10, 3, 0);
-	cpifaceSession->conFunc->WriteNum    (buf,  71, col, ht->ht_Instruments[n].ins_WaveLength,       10, 3, 0);
+	cpifaceSession->console->WriteNum    (buf,  64, col, ht->ht_Instruments[n].ins_Volume,           10, 3, 0);
+	cpifaceSession->console->WriteNum    (buf,  71, col, ht->ht_Instruments[n].ins_WaveLength,       10, 3, 0);
 
-	cpifaceSession->conFunc->WriteNum    (buf,  76, col, ht->ht_Instruments[n].ins_FilterLowerLimit, 10, 3, 0);
-	cpifaceSession->conFunc->WriteString (buf,  78, 0x07, "/", 1);
-	cpifaceSession->conFunc->WriteNum    (buf,  80, col, ht->ht_Instruments[n].ins_FilterUpperLimit, 10, 3, 0);
-	cpifaceSession->conFunc->WriteString (buf,  83, 0x07, "/", 1);
-	cpifaceSession->conFunc->WriteNum    (buf,  84, col, ht->ht_Instruments[n].ins_FilterSpeed,      10, 3, 0);
+	cpifaceSession->console->WriteNum    (buf,  76, col, ht->ht_Instruments[n].ins_FilterLowerLimit, 10, 3, 0);
+	cpifaceSession->console->WriteString (buf,  78, 0x07, "/", 1);
+	cpifaceSession->console->WriteNum    (buf,  80, col, ht->ht_Instruments[n].ins_FilterUpperLimit, 10, 3, 0);
+	cpifaceSession->console->WriteString (buf,  83, 0x07, "/", 1);
+	cpifaceSession->console->WriteNum    (buf,  84, col, ht->ht_Instruments[n].ins_FilterSpeed,      10, 3, 0);
 
-	cpifaceSession->conFunc->WriteNum    (buf,  89, col, ht->ht_Instruments[n].ins_SquareLowerLimit, 10, 3, 0);
-	cpifaceSession->conFunc->WriteString (buf,  92, 0x07, "/", 1);
-	cpifaceSession->conFunc->WriteNum    (buf,  93, col, ht->ht_Instruments[n].ins_SquareUpperLimit, 10, 3, 0);
-	cpifaceSession->conFunc->WriteString (buf,  96, 0x07, "/", 1);
-	cpifaceSession->conFunc->WriteNum    (buf,  97, col, ht->ht_Instruments[n].ins_SquareSpeed,      10, 3, 0);
+	cpifaceSession->console->WriteNum    (buf,  89, col, ht->ht_Instruments[n].ins_SquareLowerLimit, 10, 3, 0);
+	cpifaceSession->console->WriteString (buf,  92, 0x07, "/", 1);
+	cpifaceSession->console->WriteNum    (buf,  93, col, ht->ht_Instruments[n].ins_SquareUpperLimit, 10, 3, 0);
+	cpifaceSession->console->WriteString (buf,  96, 0x07, "/", 1);
+	cpifaceSession->console->WriteNum    (buf,  97, col, ht->ht_Instruments[n].ins_SquareSpeed,      10, 3, 0);
 
-	cpifaceSession->conFunc->WriteNum    (buf, 102, col, ht->ht_Instruments[n].ins_VibratoDelay,     10, 3, 0);
-	cpifaceSession->conFunc->WriteString (buf, 105, 0x07, "/", 1);
-	cpifaceSession->conFunc->WriteNum    (buf, 106, col, ht->ht_Instruments[n].ins_VibratoSpeed,     10, 3, 0);
-	cpifaceSession->conFunc->WriteString (buf, 109, 0x07, "/", 1);
-	cpifaceSession->conFunc->WriteNum    (buf, 110, col, ht->ht_Instruments[n].ins_VibratoDepth,     10, 3, 0);
+	cpifaceSession->console->WriteNum    (buf, 102, col, ht->ht_Instruments[n].ins_VibratoDelay,     10, 3, 0);
+	cpifaceSession->console->WriteString (buf, 105, 0x07, "/", 1);
+	cpifaceSession->console->WriteNum    (buf, 106, col, ht->ht_Instruments[n].ins_VibratoSpeed,     10, 3, 0);
+	cpifaceSession->console->WriteString (buf, 109, 0x07, "/", 1);
+	cpifaceSession->console->WriteNum    (buf, 110, col, ht->ht_Instruments[n].ins_VibratoDepth,     10, 3, 0);
 
-	cpifaceSession->conFunc->WriteNum    (buf, 120, col, ht->ht_Instruments[n].ins_PList.pls_Speed,  10, 3, 0);
-	cpifaceSession->conFunc->WriteString (buf, 123, 0x07, "/", 1);
-	cpifaceSession->conFunc->WriteNum    (buf, 124, col, ht->ht_Instruments[n].ins_PList.pls_Length, 10, 3, 0);
+	cpifaceSession->console->WriteNum    (buf, 120, col, ht->ht_Instruments[n].ins_PList.pls_Speed,  10, 3, 0);
+	cpifaceSession->console->WriteString (buf, 123, 0x07, "/", 1);
+	cpifaceSession->console->WriteNum    (buf, 124, col, ht->ht_Instruments[n].ins_PList.pls_Length, 10, 3, 0);
 }
 
 static void hvlDisplayIns (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiInstWidth width, int n, int plInstMode, int compoMode)

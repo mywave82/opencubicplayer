@@ -152,7 +152,7 @@ static int fb_SetGraphMode (int high)
 	if (high==-1)
 	{
 		show_cursor ();
-		conStatus.VidMem = 0;
+		Console.VidMem = 0;
 		ioctl(fd, FBIOPUT_VSCREENINFO, &orgmode);
 		return 0;
 	}
@@ -163,22 +163,22 @@ static int fb_SetGraphMode (int high)
 	{
 		if (!highres.xres)
 			return -1;
-		conStatus.CurrentMode = 101;
-		conStatus.TextWidth = 128;
-		conStatus.TextHeight = 60;
+		Console.CurrentMode = 101;
+		Console.TextWidth = 128;
+		Console.TextHeight = 60;
 		ioctl(fd, FBIOPUT_VSCREENINFO, &highres);
-		conStatus.GraphBytesPerLine = 1024; /* not good, but my framebuffer bugs too much */
+		Console.GraphBytesPerLine = 1024; /* not good, but my framebuffer bugs too much */
 	} else {
 		if (!lowres.xres)
 			return -1;
-		conStatus.CurrentMode = 100;
-		conStatus.TextWidth = 80;
-		conStatus.TextHeight = 60;
+		Console.CurrentMode = 100;
+		Console.TextWidth = 80;
+		Console.TextHeight = 60;
 		ioctl(fd, FBIOPUT_VSCREENINFO, &lowres);
-		conStatus.GraphBytesPerLine = 640; /* not good, but my framebuffer bugs too much */
+		Console.GraphBytesPerLine = 640; /* not good, but my framebuffer bugs too much */
 	}
 
-	conStatus.VidMem = fbmem;
+	Console.VidMem = fbmem;
 	bzero (fbmem, fix.smem_len);
 
 	colormap.start=0;
@@ -197,8 +197,8 @@ static int fb_SetGraphMode (int high)
 	if (ioctl(fd, FBIOGET_FSCREENINFO, &fix2))
 		perror("fb: ioctl(1, FBIOGET_FSCREENINFO, &fix)");
 	fix2.line_length=fix.line_length;
-	fprintf(stderr, "DEBUG LINES: current %d, org %d, new %d\n", conStatus.GraphBytesPerLine, fix.line_length, fix2.line_length);
-	conStatus.GraphBytesPerLine = fix2.line_length;
+	fprintf(stderr, "DEBUG LINES: current %d, org %d, new %d\n", Console.GraphBytesPerLine, fix.line_length, fix2.line_length);
+	Console.GraphBytesPerLine = fix2.line_length;
 	 */
 	return 0;
 }
@@ -235,7 +235,7 @@ int fb_init (int minor, struct consoleDriver_t *driver)
 		fd=-1;
 		return -1;
 	}
-	conStatus.GraphBytesPerLine = fix.line_length;
+	Console.GraphBytesPerLine = fix.line_length;
 #ifdef VERBOSE_FRAMEBUFFER
 	fprintf(stderr, "fb: FIX SCREEN INFO\n");
 	fprintf(stderr, "fb:  id=%s\n", fix.id);
@@ -459,7 +459,7 @@ int fb_init (int minor, struct consoleDriver_t *driver)
 	driver->gUpdatePal   = fb_gUpdatePal;
 	driver->gFlushPal    = fb_gFlushPal;
 
-	conStatus.VidType = vidVESA;
+	Console.VidType = vidVESA;
 
 	return 0;
 }
