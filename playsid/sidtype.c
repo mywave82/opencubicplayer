@@ -136,6 +136,7 @@ int __attribute__ ((visibility ("internal"))) sid_type_init (struct PluginInitAP
 
 	API->fsRegisterExt("SID");
 	API->fsRegisterExt("RSID");
+	API->fsRegisterExt("PSID");
 
 	mt.integer.i = MODULETYPE("SID");
 	API->fsTypeRegister (mt, SID_description, "plOpenCP", &sidPlayer);
