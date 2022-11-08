@@ -12,7 +12,20 @@ extern int splitpath_malloc(const char *src, char **drive, char **path, char **f
 extern int makepath_malloc(char **dst, const char *drive, const char *path, const char *file, const char *ext); /* returns non-zero on errors */
 
 #ifndef HAVE_STRUPR
-extern char *strupr(char *src);
+#include <ctype.h>
+static inline char *strupr(char *src)
+{
+	char *retval = src;
+	if (src)
+	{
+		while (*src)
+		{
+			*src=toupper(*src);
+			src++;
+		}
+	}
+	return retval;
+}
 #else
 #include <string.h>
 #endif

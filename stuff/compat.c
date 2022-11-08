@@ -489,24 +489,6 @@ int makepath_malloc(char **dst, const char *drive, const char *path, const char 
 	return 0;
 }
 
-#ifndef HAVE_STRUPR
-
-char *strupr(char *src)
-{
-	char *retval = src;
-	if (src)
-	{
-		while (*src)
-		{
-			*src=toupper(*src);
-			src++;
-		}
-	}
-	return retval;
-}
-
-#endif
-
 #ifndef HAVE_MEMMEM
 void *memmem(const void *haystack, size_t haystacklen,
              const void *needle, size_t needlelen)
