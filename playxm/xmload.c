@@ -384,13 +384,13 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 		} else {
 			if (file->read (file, &ins2, sizeof (ins2)) != sizeof (ins2))
 			{
-				fprintf(stderr, __FILE__ ": fread failed #6.2\n");
+				fprintf(stderr, __FILE__ ": fread failed #6.2 (Failed to read instrument %d/%d)\n", i + 1, m->ninst);
 				FreeResources (&r, head2.ninst);
 				return errFormStruc;
 			}
 			if (file->seek_cur (file, ins1.size - sizeof(ins1) - sizeof(ins2)) < 0)
 			{
-				fprintf(stderr, __FILE__ ": fseek failed #4\n");
+				fprintf(stderr, __FILE__ ": fseek failed #4 (Failed to seek past extra data in instrument %d/%d)\n", i + 1, m->ninst);
 				FreeResources (&r, head2.ninst);
 				return errFormStruc;
 			}

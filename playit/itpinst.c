@@ -41,8 +41,6 @@ static uint8_t *plSampUsed = NULL;
 static uint8_t *plBigInstNum = NULL;
 static uint16_t *plBigSampNum = NULL;
 
-/* extern uint8_t plNoteStr[132][4];  cpiface.h */
-
 static const struct it_instrument *plInstr;
 static const struct it_sampleinfo *plSamples;
 static const struct it_sample *plModSamples;
@@ -110,7 +108,7 @@ static void itDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 
 		if (!plInstShowFreq)
 		{
-			cpifaceSession->console->WriteString (buf, 60, col, plNoteStr[(sm->normnote+60*256)>>8], 3);
+			cpifaceSession->console->WriteString (buf, 60, col, cpifaceSession->plNoteStr((sm->normnote+60*256)>>8), 3);
 			cpifaceSession->console->WriteNum    (buf, 64, col, sm->normnote&0xFF, 16, 2, 0);
 		} else
 			if (plInstShowFreq==1)
@@ -174,7 +172,7 @@ static void itDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_
 
 		if (!plInstShowFreq)
 		{
-			cpifaceSession->console->WriteString (buf, 90, col, plNoteStr[(sm->normnote+60*256)>>8], 3);
+			cpifaceSession->console->WriteString (buf, 90, col, cpifaceSession->plNoteStr((sm->normnote+60*256)>>8), 3);
 			cpifaceSession->console->WriteNum    (buf, 94, col, sm->normnote&0xFF, 16, 2, 0);
 		} else if (plInstShowFreq==1)
 			cpifaceSession->console->WriteNum    (buf, 90, col, cpifaceSession->mcpAPI->GetFreq8363(-sm->normnote), 10, 6, 1);

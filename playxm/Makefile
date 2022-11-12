@@ -9,7 +9,7 @@ endif
 
 all: playxm$(LIB_SUFFIX) $(DUMPERS)
 
-playxm_so=xmlmod.o xmlmxm.o xmload.o xmload.o xmpinst.o xmplay.o xmpplay.o xmptrak.o xmrtns.o xmtime.o xmtype.o
+playxm_so=xmlmod.o xmlmxm.o xmload.o xmload.o xmchan.o xmpinst.o xmplay.o xmpplay.o xmptrak.o xmrtns.o xmtime.o xmtype.o
 playxm$(LIB_SUFFIX): $(playxm_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
@@ -33,19 +33,13 @@ dumpmod.o: \
 	dumpmod.c
 	$(CC) -o $@ $< -c
 
-
-xmtype.o: xmtype.c \
+xmchan.o: xmchan.c \
 	../config.h \
 	../types.h \
-	../boot/plinkman.h \
-	../filesel/filesystem.h \
-	../filesel/dirdb.h \
-	../filesel/pfilesel.h \
-	../filesel/mdb.h \
-	../stuff/cp437.h \
-	../stuff/err.h \
-	xmtype.h
-	$(CC) xmtype.c -o $@ -c
+	../playxm/xmchan.h \
+	../playxm/xmplay.h \
+	../stuff/poutput.h
+	$(CC) xmchan.c -o $@ -c
 
 xmlmod.o: xmlmod.c \
 	../config.h \
@@ -93,6 +87,7 @@ xmplay.o: xmplay.c \
 
 xmpplay.o: xmpplay.c \
 	../config.h \
+	xmchan.h \
 	xmplay.h \
 	xmtype.h \
 	../types.h \
@@ -132,3 +127,16 @@ xmtime.o: xmtime.c \
 	../types.h \
 	../stuff/err.h
 	$(CC) xmtime.c -o $@ -c
+
+xmtype.o: xmtype.c \
+	../config.h \
+	../types.h \
+	../boot/plinkman.h \
+	../filesel/filesystem.h \
+	../filesel/dirdb.h \
+	../filesel/pfilesel.h \
+	../filesel/mdb.h \
+	../stuff/cp437.h \
+	../stuff/err.h \
+	xmtype.h
+	$(CC) xmtype.c -o $@ -c

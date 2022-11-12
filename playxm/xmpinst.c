@@ -106,7 +106,7 @@ static void xmpDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_
 		cpifaceSession->console->WriteString (buf, 57, col, (si->type&mcpSampRedRate4)?"\xac":(si->type&mcpSampRedRate2)?"\xab":(si->type&mcpSampRedBits)?"!":" ", 2);
 		if (!plInstShowFreq)
 		{
-			cpifaceSession->console->WriteString (buf, 60, col, plNoteStr[(sm->normnote+60*256)>>8], 3);
+			cpifaceSession->console->WriteString (buf, 60, col, cpifaceSession->plNoteStr((sm->normnote+60*256)>>8), 3);
 			cpifaceSession->console->WriteNum    (buf, 64, col, sm->normnote&0xFF, 16, 2, 0);
 		} else {
 			if (plInstShowFreq==1)
@@ -172,7 +172,7 @@ static void xmpDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 
 		if (!plInstShowFreq)
 		{
-			cpifaceSession->console->WriteString (buf, 90, col, plNoteStr[(sm->normnote+60*256)>>8], 3);
+			cpifaceSession->console->WriteString (buf, 90, col, cpifaceSession->plNoteStr((sm->normnote+60*256)>>8), 3);
 			cpifaceSession->console->WriteNum    (buf, 94, col, sm->normnote&0xFF, 16, 2, 0);
 		} else
 			if (plInstShowFreq==1)

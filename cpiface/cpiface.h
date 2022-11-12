@@ -188,7 +188,6 @@ struct cpitrakdisplaystruct
 extern void cpiTrkSetup  (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpitrakdisplaystruct *c, int npat);
 extern void cpiTrkSetup2 (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpitrakdisplaystruct *c, int npat, int tracks);
 
-extern char plNoteStr[132][4];
 extern char plCompoMode;
 
 /* For the sliding pause effect, range 64 = normal speed, 1 = almost complete stop.
@@ -315,6 +314,7 @@ struct cpifaceSessionAPI_t
 	uint8_t SelectedChannel; /* Used by most viewers*/
 	uint8_t SelectedChannelChanged; /* Used to cache redraws of channels */
 
+	const char *(*plNoteStr)(signed int note); /* note 60 = C-4 */
 	void (*cpiTextRegisterMode) (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmoderegstruct *textmode);
 	void (*cpiTextUnregisterMode) (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmoderegstruct *textmode);
 	void (*cpiTextSetMode) (struct cpifaceSessionAPI_t *cpifaceSession, const char *name);

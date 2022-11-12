@@ -30,8 +30,6 @@
 #include "stuff/poutput.h"
 #include "cpiface/cpiface.h"
 
-/* extern char plNoteStr[132][4];    now defined in cpiface.h as it should be*/
-
 static const struct gmdinstrument *plChanInstr;
 static const struct gmdsample *plChanModSamples;
 
@@ -213,7 +211,7 @@ static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 		char *fxstr;
 
 		cpifaceSession->console->WriteNum    (buf, 1, tcol, ci.ins+1, 16, 2, 0);
-		cpifaceSession->console->WriteString (buf, 4, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
+		cpifaceSession->console->WriteString (buf, 4, ci.notehit?tcolr:tcol, cpifaceSession->plNoteStr(ci.note), 3);
 		cpifaceSession->console->WriteNum    (buf, 8, tcol, ci.vol, 16, 2, 0);
 		fxstr=getfxstr6(ci.fx);
 		if (fxstr)
@@ -247,7 +245,7 @@ static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 				cpifaceSession->console->WriteNum    (buf, 2, 0x08, ci.ins+1, 16, 2, 0);
 			}
 		}
-		cpifaceSession->console->WriteString (buf, 24, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
+		cpifaceSession->console->WriteString (buf, 24, ci.notehit?tcolr:tcol, cpifaceSession->plNoteStr(ci.note), 3);
 		cpifaceSession->console->WriteString (buf, 27, tcol, ci.pitchslide ? &" \x18\x19\x0D\x18\x19\x0D"[ci.pitchslide] : &" ~\xf0"[ci.pitchfx], 1);
 		cpifaceSession->console->WriteNum    (buf, 29, tcol, ci.vol, 16, 2, 0);
 		cpifaceSession->console->WriteString (buf, 31, tcol, ci.volslide ? &" \x18\x19\x18\x19"[ci.volslide] : &" ~"[ci.volfx], 1);
@@ -285,7 +283,7 @@ static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 				cpifaceSession->console->WriteNum    (buf, 2, 0x08, ci.ins+1, 16, 2, 0);
 			}
 		}
-		cpifaceSession->console->WriteString (buf, 30, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
+		cpifaceSession->console->WriteString (buf, 30, ci.notehit?tcolr:tcol, cpifaceSession->plNoteStr(ci.note), 3);
 		cpifaceSession->console->WriteString (buf, 33, tcol, ci.pitchslide ? &" \x18\x19\x0D\x18\x19\x0D"[ci.pitchslide] : &" ~\xf0"[ci.pitchfx], 1);
 		cpifaceSession->console->WriteNum    (buf, 35, tcol, ci.vol, 16, 2, 0);
 		cpifaceSession->console->WriteString (buf, 37, tcol, ci.volslide ? &" \x18\x19\x18\x19"[ci.volslide] : &" ~"[ci.volfx], 1);
@@ -336,7 +334,7 @@ static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 				cpifaceSession->console->WriteNum    (buf, 32, 0x08, ci.smp, 16, 4, 0);
 			}
 		}
-		cpifaceSession->console->WriteString (buf, 50, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
+		cpifaceSession->console->WriteString (buf, 50, ci.notehit?tcolr:tcol, cpifaceSession->plNoteStr(ci.note), 3);
 		cpifaceSession->console->WriteString (buf, 53, tcol, ci.pitchslide ? &" \x18\x19\x0D\x18\x19\x0D"[ci.pitchslide] : &" ~\xf0"[ci.pitchfx], 1);
 		cpifaceSession->console->WriteNum    (buf, 55, tcol, ci.vol, 16, 2, 0);
 		cpifaceSession->console->WriteString (buf, 57, tcol, ci.volslide ? &" \x18\x19\x18\x19"[ci.volslide] : &" ~"[ci.volfx], 1);
@@ -367,7 +365,7 @@ static void drawchannel44 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	{
 		char *fxstr;
 		cpifaceSession->console->WriteNum    (buf,  1, tcol, ci.ins+1, 16, 2, 0);
-		cpifaceSession->console->WriteString (buf,  5, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
+		cpifaceSession->console->WriteString (buf,  5, ci.notehit?tcolr:tcol, cpifaceSession->plNoteStr(ci.note), 3);
 		cpifaceSession->console->WriteString (buf,  8, tcol, ci.pitchslide ? &" \x18\x19\x0D\x18\x19\x0D"[ci.pitchslide] : &" ~\xf0"[ci.pitchfx], 1);
 		cpifaceSession->console->WriteNum    (buf, 10, tcol, ci.vol, 16, 2, 0);
 		cpifaceSession->console->WriteString (buf, 12, tcol, ci.volslide ? &" \x18\x19\x18\x19"[ci.volslide] : &" ~"[ci.volfx], 1);

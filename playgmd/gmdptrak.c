@@ -44,7 +44,6 @@
 static const struct gmdtrack *plTracks;
 static const struct gmdpattern *plPatterns;
 static const uint16_t *plOrders;
-/*extern char plNoteStr[132][4];      cpiface.h */
 static const uint8_t *curtrk;
 static const uint8_t *curtrkend;
 static const uint8_t *currow;

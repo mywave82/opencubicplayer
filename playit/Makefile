@@ -3,7 +3,7 @@ include $(TOPDIR)Rules.make
 
 all: playit$(LIB_SUFFIX)
 
-playit_so=itload.o itpinst.o itplay.o itpplay.o itptrack.o itrtns.o itsex.o ittime.o ittype.o
+playit_so=itload.o itchan.o itpinst.o itplay.o itpplay.o itptrack.o itrtns.o itsex.o ittime.o ittype.o
 playit$(LIB_SUFFIX): $(playit_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
@@ -39,6 +39,15 @@ itload.o: itload.c \
 	../stuff/err.h
 	$(CC) itload.c -o $@ -c
 
+itchan.o: itchan.c \
+	../config.h \
+	../types.h \
+	../cpiface/cpiface.h \
+	../playit/itchan.h \
+	../playit/itplay.h \
+	../stuff/poutput.h
+	$(CC) itchan.c -o $@ -c
+
 itpinst.o: itpinst.c \
 	../config.h \
 	../types.h \
@@ -69,6 +78,7 @@ itpplay.o: itpplay.c \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
+	itchan.h \
 	itplay.h \
 	ittype.h \
 	../stuff/compat.h \

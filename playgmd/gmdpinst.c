@@ -40,8 +40,6 @@ static uint8_t *plSampUsed;
 static unsigned char *plBigInstNum;
 static unsigned short *plBigSampNum;
 
-/*extern char plNoteStr[132][4]; */
-
 static const struct gmdinstrument *plInstr;
 static const struct sampleinfo *plSamples;
 static const struct gmdsample *plModSamples;
@@ -100,7 +98,7 @@ static void gmdDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_
 			if (si->type&mcpSampBiDi)
 				cpifaceSession->console->WriteString (buf, 53, col, "\x1D", 1);
 		} else {
-			cpifaceSession->console->WriteNum (buf, 40, col, si->length, 10, 6, 1);
+			cpifaceSession->console->WriteNum    (buf, 40, col, si->length, 10, 6, 1);
 			cpifaceSession->console->WriteString (buf, 52, col, "-", 1);
 		}
 		cpifaceSession->console->WriteString (buf, 55, col, (si->type&mcpSamp16Bit)?"16":" 8", 2);
@@ -108,7 +106,7 @@ static void gmdDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_
 
 		if (!plInstShowFreq)
 		{
-			cpifaceSession->console->WriteString (buf, 60, col, plNoteStr[(sm->normnote+60*256)>>8], 3);
+			cpifaceSession->console->WriteString (buf, 60, col, cpifaceSession->plNoteStr((sm->normnote+60*256)>>8), 3);
 			cpifaceSession->console->WriteNum    (buf, 64, col, sm->normnote&0xFF, 16, 2, 0);
 		} else {
 			if (plInstShowFreq==1)
@@ -175,7 +173,7 @@ static void gmdDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 
 		if (!plInstShowFreq)
 		{
-			cpifaceSession->console->WriteString (buf, 90, col, plNoteStr[(sm->normnote+60*256)>>8], 3);
+			cpifaceSession->console->WriteString (buf, 90, col, cpifaceSession->plNoteStr((sm->normnote+60*256)>>8), 3);
 			cpifaceSession->console->WriteNum    (buf, 94, col, sm->normnote&0xFF, 16, 2, 0);
 		} else if (plInstShowFreq==1)
 			cpifaceSession->console->WriteNum    (buf, 90, col, cpifaceSession->mcpAPI->GetFreq8363(-sm->normnote), 10, 6, 1);

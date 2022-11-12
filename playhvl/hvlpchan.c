@@ -372,7 +372,7 @@ static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 		{
 			cpifaceSession->console->WriteNum (buf,  1, tcol, ci.ins + 1, 16, 2, 0);
 		}
-		cpifaceSession->console->WriteString (buf,  4, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
+		cpifaceSession->console->WriteString (buf,  4, ci.notehit?tcolr:tcol, cpifaceSession->plNoteStr(ci.note), 3);
 		cpifaceSession->console->WriteNum    (buf, 8, tcol, ci.vol, 16, 2, 0);
 		fxstr=getfxstr6(ci.fx, ci.fxparam);
 		if (fxstr)
@@ -405,7 +405,7 @@ static void drawchannel44 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 		{
 			cpifaceSession->console->WriteNum (buf,  1, tcol, ci.ins + 1, 16, 2, 0);
 		}
-		cpifaceSession->console->WriteString (buf,  5, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
+		cpifaceSession->console->WriteString (buf,  5, ci.notehit?tcolr:tcol, cpifaceSession->plNoteStr(ci.note), 3);
 		cpifaceSession->console->WriteString (buf,  8, tcol, ci.pitchslide ? &" \x18\x19\x0D"[ci.pitchslide] : " ", 1);
 		cpifaceSession->console->WriteNum    (buf, 10, tcol, ci.vol, 16, 2, 0);
 		cpifaceSession->console->WriteString (buf, 12, tcol, ci.volslide ? &" \x18\x19\x12"[ci.volslide] : " ", 1);
@@ -448,7 +448,7 @@ static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 				cpifaceSession->console->WriteNum    (buf, 2, 0x08, ci.ins + 1, 16, 2, 0);
 			}
 		}
-		cpifaceSession->console->WriteString (buf, 24, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
+		cpifaceSession->console->WriteString (buf, 24, ci.notehit?tcolr:tcol, cpifaceSession->plNoteStr(ci.note), 3);
 		cpifaceSession->console->WriteString (buf, 27, tcol, ci.pitchslide ? &" \x18\x19\x0D"[ci.pitchslide] : " ", 1);
 		cpifaceSession->console->WriteNum    (buf, 29, tcol, ci.vol, 16, 2, 0);
 		cpifaceSession->console->WriteString (buf, 31, tcol, ci.volslide ? &" \x18\x19\x12"[ci.volslide] : " ", 1);
@@ -491,7 +491,7 @@ static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 				cpifaceSession->console->WriteNum    (buf, 2, 0x08, ci.ins + 1, 16, 2, 0);
 			}
 		}
-		cpifaceSession->console->WriteString (buf, 30, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
+		cpifaceSession->console->WriteString (buf, 30, ci.notehit?tcolr:tcol, cpifaceSession->plNoteStr(ci.note), 3);
 		cpifaceSession->console->WriteString (buf, 33, tcol, ci.pitchslide ? &" \x18\x19\x0D"[ci.pitchslide] : " ", 1);
 		cpifaceSession->console->WriteNum    (buf, 35, tcol, ci.vol, 16, 2, 0);
 		cpifaceSession->console->WriteString (buf, 37, tcol, ci.volslide ? &" \x18\x19\x12"[ci.volslide] : " ", 1);
@@ -537,7 +537,7 @@ static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 				cpifaceSession->console->WriteNum    (buf, 2, 0x08, ci.ins + 1, 16, 2, 0);
 			}
 		}
-		cpifaceSession->console->WriteString (buf, 39, ci.notehit?tcolr:tcol, plNoteStr[ci.note], 3);
+		cpifaceSession->console->WriteString (buf, 39, ci.notehit?tcolr:tcol, cpifaceSession->plNoteStr(ci.note), 3);
 		cpifaceSession->console->WriteString (buf, 42, tcol, ci.pitchslide ? &" \x18\x19\x0D"[ci.pitchslide] : " ", 1);
 		cpifaceSession->console->WriteNum    (buf, 44, tcol, ci.vol, 16, 2, 0);
 		cpifaceSession->console->WriteString (buf, 46, tcol, ci.volslide ? &" \x18\x19\x12"[ci.volslide] : " ", 1);

@@ -57,7 +57,7 @@ static void drawchannel36 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	if (ci.notenum>6)
 		ci.notenum=6;
 	for (j=0; j<ci.notenum; j++)
-		cpifaceSession->console->WriteString (buf, 10+4*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
+		cpifaceSession->console->WriteString (buf, 10+4*j, (ci.opt[j]&1)?tcol:0x08, cpifaceSession->plNoteStr(ci.note[j]+12), 3);
 }
 
 static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
@@ -85,7 +85,7 @@ static void drawchannel62 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	if (ci.notenum>9)
 		ci.notenum=9;
 	for (j=0; j<ci.notenum; j++)
-		cpifaceSession->console->WriteString (buf, 24+4*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
+		cpifaceSession->console->WriteString (buf, 24+4*j, (ci.opt[j]&1)?tcol:0x08, cpifaceSession->plNoteStr(ci.note[j]+12), 3);
 }
 
 static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int i)
@@ -113,7 +113,7 @@ static void drawchannel76 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 		ci.notenum=7;
 	for (j=0; j<ci.notenum; j++)
 	{
-		cpifaceSession->console->WriteString (buf, 22+8*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
+		cpifaceSession->console->WriteString (buf, 22+8*j, (ci.opt[j]&1)?tcol:0x08, cpifaceSession->plNoteStr(ci.note[j]+12), 3);
 		cpifaceSession->console->WriteNum    (buf, 26+8*j, (ci.opt[j]&1)?tcold:0x08, ci.vol[j], 16, 2, 0);
 	}
 }
@@ -152,7 +152,7 @@ static void drawchannel128 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 		ci.notenum=11;
 	for (j=0; j<ci.notenum; j++)
 	{
-		cpifaceSession->console->WriteString (buf, 38+8*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
+		cpifaceSession->console->WriteString (buf, 38+8*j, (ci.opt[j]&1)?tcol:0x08, cpifaceSession->plNoteStr(ci.note[j]+12), 3);
 		cpifaceSession->console->WriteNum    (buf, 42+8*j, (ci.opt[j]&1)?tcold:0x08, ci.vol[j], 16, 2, 0);
 	}
 }
@@ -184,7 +184,7 @@ static void drawchannel44 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	if (ci.notenum>8)
 		ci.notenum=8;
 	for (j=0; j<ci.notenum; j++)
-		cpifaceSession->console->WriteString (buf, 10+4*j, (ci.opt[j]&1)?tcol:0x08, plNoteStr[ci.note[j]+12], 3);
+		cpifaceSession->console->WriteString (buf, 10+4*j, (ci.opt[j]&1)?tcol:0x08, cpifaceSession->plNoteStr(ci.note[j]+12), 3);
 }
 
 static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiChanWidth width, int i, int compoMode)
