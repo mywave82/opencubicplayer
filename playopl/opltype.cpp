@@ -48,7 +48,7 @@ static int oplReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, co
 	CPlayers::const_iterator i;
 	int j;
 
-	dirdbGetName_internalstr (f->dirdb_ref, &filename);
+	API->dirdb->GetName_internalstr (f->dirdb_ref, &filename);
 
 	for(i = CAdPlug::players.begin(); i != CAdPlug::players.end(); i++)
 	{

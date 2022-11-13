@@ -21,6 +21,7 @@
 
 struct cpifaceSessionAPI_t;
 struct configAPI_t;
+struct dirdbAPI_t;
 #include "filesel/mdb.h" /* struct moduleinfostruct; */
 struct ocpfilehandle_t;
 struct ringbufferAPI_t;
@@ -266,6 +267,7 @@ struct cpifaceSessionAPI_t
 	const struct drawHelperAPI_t    *drawHelperAPI;
 	const struct configAPI_t        *configAPI;
 	const struct console_t          *console;
+	const struct dirdbAPI_t         *dirdb;
 
 	char utf8_8_dot_3  [12*4+1]; /* UTF-8 ready, filled in by cpiface */
 	char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready, filled in by cpiface */

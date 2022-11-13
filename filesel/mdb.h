@@ -49,10 +49,12 @@ struct moduleinfostruct
 	char album[MDB_COMPOSER_LEN];
 };
 
+struct dirdbAPI_t;
 struct mdbReadInfoAPI_t
 {
 	void (*cp437_f_to_utf8_z) (const char *src, size_t srclen, char *dst, size_t dstlen);
 	void (*latin1_f_to_utf8_z) (const char *src, size_t srclen, char *dst, size_t dstlen);
+	const struct dirdbAPI_t *dirdb;
 };
 
 

@@ -147,7 +147,7 @@ static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		return 0;
 	}
 
-	dirdbGetName_internalstr (fp->dirdb_ref, &filename);
+	API->dirdb->GetName_internalstr (fp->dirdb_ref, &filename);
 	type=xmpGetModuleType(buf, len, filename);
 	if (!type)
 	{

@@ -492,7 +492,7 @@ static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 {
 	const char *filename;
 
-	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "preloading %s...\n", filename);
 
 	cpifaceSession->IsEnd = ymLooped;

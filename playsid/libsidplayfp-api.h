@@ -3,6 +3,7 @@
 
 extern "C"
 {
+struct dirdbAPI_t;
 struct configAPI_t;
 }
 
@@ -30,7 +31,7 @@ namespace libsidplayfp
 			playerRunning,
 		} player_state_t;
 
-		ConsolePlayer (const unsigned int rate, const struct configAPI_t *configAPI);
+		ConsolePlayer (const unsigned int rate, const struct configAPI_t *configAPI, const struct dirdbAPI_t *dirdbAPI);
 		virtual ~ConsolePlayer (void);
 
 		bool load (const uint_least8_t* sourceBuffer, uint_least32_t bufferLen);
@@ -93,7 +94,7 @@ namespace libsidplayfp
 
 		bool open (void);
 
-		uint8_t* loadRom(uint32_t dirdb_ref, const int size);
+		uint8_t* loadRom(uint32_t dirdb_ref, const int size, const struct dirdbAPI_t *dirdbAPI);
 	};
 }
 

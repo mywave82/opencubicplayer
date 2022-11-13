@@ -217,7 +217,7 @@ static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 	if (!mpegfile)
 		return -1;
 
-	dirdbGetName_internalstr (mpegfile->dirdb_ref, &filename);
+	cpifaceSession->dirdb->GetName_internalstr (mpegfile->dirdb_ref, &filename);
 	fprintf(stderr, "preloading %s...\n", filename);
 
 	cpifaceSession->IsEnd = mpegLooped;

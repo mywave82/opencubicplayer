@@ -262,7 +262,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	patlock=0;
 
 	i = file->filesize (file);
-	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s... (%uk)\n", filename, (unsigned int)(i>>10));
 
 	bzero (info->composer, sizeof (info->composer));

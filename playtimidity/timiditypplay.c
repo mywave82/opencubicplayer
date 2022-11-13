@@ -191,7 +191,7 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 	if (!file)
 		return errGen;
 
-	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s...\n", filename);
 
 	cpifaceSession->IsEnd = timidityLooped;
@@ -204,14 +204,11 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 	timidityChanSetup (cpifaceSession);
 
 	{
-		const char *path;
 		size_t buffersize = 64*1024;
 		uint8_t *buffer = (uint8_t *)malloc (buffersize);
 		size_t bufferfill = 0;
 
 		int res;
-
-		dirdbGetName_internalstr (file->dirdb_ref, &path);
 
 		while (!file->eof (file))
 		{
@@ -219,7 +216,7 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 			{
 				if (buffersize >= 64*1024*1024)
 				{
-					fprintf (stderr, "timidityOpenFile: %s is bigger than 64 Mb - further loading blocked\n", path);
+					fprintf (stderr, "timidityOpenFile: %s is bigger than 64 Mb - further loading blocked\n", filename);
 					free (buffer);
 					return -1;
 				}
@@ -232,7 +229,7 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 			bufferfill += res;
 		}
 
-		err = timidityOpenPlayer(path, buffer, bufferfill, file, cpifaceSession); /* buffer will be owned by the player */
+		err = timidityOpenPlayer (filename, buffer, bufferfill, file, cpifaceSession); /* buffer will be owned by the player */
 		if (err)
 		{
 			free (buffer);

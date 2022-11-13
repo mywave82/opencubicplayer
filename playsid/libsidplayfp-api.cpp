@@ -129,7 +129,7 @@ namespace libsidplayfp
 		}
 	}
 
-	ConsolePlayer::ConsolePlayer (const unsigned int rate, const struct configAPI_t *configAPI) :
+	ConsolePlayer::ConsolePlayer (const unsigned int rate, const struct configAPI_t *configAPI, const struct dirdbAPI_t *dirdbAPI) :
 		m_tune(nullptr),
 		m_state(playerStopped),
 		selected_track(0),
@@ -261,26 +261,26 @@ namespace libsidplayfp
 		uint32_t chargen_ref;
 
 #ifdef __W32__
-		kernal_ref  = dirdbResolvePathWithBaseAndRef (dirdb_base, kernal_string,  DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH);
-		basic_ref   = dirdbResolvePathWithBaseAndRef (dirdb_base, basic_string,   DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH);
-		chargen_ref = dirdbResolvePathWithBaseAndRef (dirdb_base, chargen_string, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH);
+		kernal_ref  = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, kernal_string,  DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH);
+		basic_ref   = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, basic_string,   DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH);
+		chargen_ref = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, chargen_string, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH);
 
 #else
-		kernal_ref  = dirdbResolvePathWithBaseAndRef (dirdb_base, kernal_string,  DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
-		basic_ref   = dirdbResolvePathWithBaseAndRef (dirdb_base, basic_string,   DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
-		chargen_ref = dirdbResolvePathWithBaseAndRef (dirdb_base, chargen_string, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
+		kernal_ref  = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, kernal_string,  DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
+		basic_ref   = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, basic_string,   DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
+		chargen_ref = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, chargen_string, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
 
 #endif
-		uint8_t *kernalRom = loadRom(kernal_ref, 8192);
-		uint8_t *basicRom = loadRom(basic_ref, 8192);
-		uint8_t *chargenRom = loadRom(chargen_ref, 4096);
+		uint8_t *kernalRom  = loadRom ( kernal_ref, 8192, dirdbAPI);
+		uint8_t *basicRom   = loadRom (  basic_ref, 8192, dirdbAPI);
+		uint8_t *chargenRom = loadRom (chargen_ref, 4096, dirdbAPI);
 
-		dirdbUnref (kernal_ref, dirdb_use_file);
-		dirdbUnref (basic_ref, dirdb_use_file);
-		dirdbUnref (chargen_ref, dirdb_use_file);
+		dirdbAPI->Unref ( kernal_ref, dirdb_use_file);
+		dirdbAPI->Unref (  basic_ref, dirdb_use_file);
+		dirdbAPI->Unref (chargen_ref, dirdb_use_file);
 
-		sidplayer.setKernal(kernalRom);
-		sidplayer.setBasic(basicRom);
+		sidplayer.setKernal ( kernalRom);
+		sidplayer.setBasic  (  basicRom);
 		sidplayer.setChargen(chargenRom);
 
 		delete [] kernalRom;
@@ -294,14 +294,14 @@ namespace libsidplayfp
 		delete &sidplayer;
 	}
 
-	uint8_t* ConsolePlayer::loadRom(uint32_t dirdb_ref, const int size)
+	uint8_t* ConsolePlayer::loadRom(uint32_t dirdb_ref, const int size, const struct dirdbAPI_t *dirdbAPI)
 	{
 		char *romPath = 0;
 #ifdef __W32__
 		#error we need to make flags, so we can reverse the slashes
-		dirdbGetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_DRIVE);
+		dirdbAPI->GetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_DRIVE);
 #else
-		dirdbGetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_NODRIVE);
+		dirdbAPI->GetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_NODRIVE);
 #endif
 		std::ifstream is(romPath, std::ios::binary);
 

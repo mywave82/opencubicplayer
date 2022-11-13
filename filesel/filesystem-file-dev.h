@@ -6,6 +6,7 @@
 #include "filesel/pfilesel.h" // interfaceReturnEnum
 
 struct configAPI_t;
+struct dirdbAPI_t;
 struct ocpdir_t;
 struct ocpfile_t;
 struct ocpfilehandle_t;
@@ -14,6 +15,7 @@ struct moduleinfostruct;
 struct DevInterfaceAPI_t
 {
 	struct configAPI_t *configAPI;
+	struct dirdbAPI_t  *dirdb;
 	struct console_t   *console;
 
 	void (*KeyHelp) (uint16_t key, const char *shorthelp); /* Called on ALT-K to issue help about each keyboard shortcut */

@@ -213,7 +213,7 @@ static int flacOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 	if (!flacf)
 		return -1;
 
-	dirdbGetName_internalstr (flacf->dirdb_ref, &filename);
+	cpifaceSession->dirdb->GetName_internalstr (flacf->dirdb_ref, &filename);
 	fprintf(stderr, "preloading %s...\n", filename);
 
 	cpifaceSession->IsEnd = flacLooped;

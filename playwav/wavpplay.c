@@ -222,7 +222,7 @@ static int wavOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	if (!wavf)
 		return -1;
 
-	dirdbGetName_internalstr (wavf->dirdb_ref, &filename);
+	cpifaceSession->dirdb->GetName_internalstr (wavf->dirdb_ref, &filename);
 	fprintf(stderr, "preloading %s...\n", filename);
 
 	cpifaceSession->IsEnd = wavLooped;

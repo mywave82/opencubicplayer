@@ -222,7 +222,7 @@ static int oggOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	if (!oggf)
 		return -1;
 
-	dirdbGetName_internalstr (oggf->dirdb_ref, &filename);
+	cpifaceSession->dirdb->GetName_internalstr (oggf->dirdb_ref, &filename);
 	fprintf(stderr, "preloading %s...\n", filename);
 
 	cpifaceSession->IsEnd = oggIsLooped;

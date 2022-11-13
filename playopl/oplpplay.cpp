@@ -110,7 +110,7 @@ static char convnote(long freq)
 
 	float frfac=(float)freq/220.0;
 
-	float nte=12*(log(frfac)/log(2))+48;
+	float nte=12*(log(frfac)/log(2))+12;
 
 	if (nte<0 || nte>127) nte=0xff;
 	return (char)nte;
@@ -420,7 +420,7 @@ static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	uint8_t *buffer = (uint8_t *)malloc (buffersize);
 	size_t bufferfill = 0;
 
-	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
 	{
 		int res;
 		while (!file->eof(file))

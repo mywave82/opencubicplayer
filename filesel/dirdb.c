@@ -1569,3 +1569,16 @@ void utf8_XdotY_name (const int X, const int Y, char *shortname, const char *sou
 	}
 	free (temppath);
 }
+
+const struct dirdbAPI_t dirdbAPI =
+{
+	dirdbGetFullname_malloc,
+	dirdbGetName_internalstr,
+	dirdbGetName_malloc,
+	dirdbRef,
+	dirdbUnref,
+	dirdbGetParentAndRef,
+	dirdbResolvePathWithBaseAndRef,
+	dirdbFindAndRef,
+	dirdbDiffPath
+};

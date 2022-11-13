@@ -295,7 +295,7 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	if (!file)
 		return errFileOpen;
 
-	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s (%uk)...\n", filename, (unsigned int)(file->filesize (file) >> 10));
 
 	     if (info->modtype.integer.i == MODULETYPE("XM"))   loader=xmpLoadModule;

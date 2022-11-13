@@ -488,7 +488,7 @@ static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	name = file->filename_override (file);
 	if (!name)
 	{
-		dirdbGetName_internalstr (file->dirdb_ref, &name);
+		cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &name);
 	}
 
 	if (!strcmp (name, "DISC.CDA"))

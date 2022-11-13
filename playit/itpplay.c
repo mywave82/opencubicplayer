@@ -316,7 +316,7 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	if (!file)
 		return errFileOpen;
 
-	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s (%uk)...\n", filename, (unsigned int)(file->filesize(file)>>10));
 
 	if (!(retval=it_load(cpifaceSession, &mod, file)))

@@ -203,7 +203,7 @@ static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	filelen = file->filesize (file);
 
-	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s (%"PRIu64" bytes)...\n", filename, filelen);
 
 	if (filelen < 14)

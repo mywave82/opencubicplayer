@@ -194,7 +194,7 @@ static int ayOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	if (!file)
 		return -1;
 
-	dirdbGetName_internalstr (file->dirdb_ref, &filename);
+	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s...\n", filename);
 
 	cpifaceSession->IsEnd = ayLooped;

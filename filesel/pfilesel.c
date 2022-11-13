@@ -954,6 +954,7 @@ static struct ocpfilehandle_t *CurrentVirtualDeviceFile;
 static struct DevInterfaceAPI_t DevInterfaceAPI =
 {
 	&configAPI,
+	&dirdbAPI,
 	&Console,
 	cpiKeyHelp,
 	cpiKeyHelpClear,

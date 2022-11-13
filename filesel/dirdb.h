@@ -91,4 +91,18 @@ extern int dirdbGetMdb(uint32_t *dirdbnode, uint32_t *mdbnode, int *first);
 
 void utf8_XdotY_name (const int X, const int Y, char *shortname, const char *source);
 
+struct dirdbAPI_t
+{
+	void     (*GetFullname_malloc)        (uint32_t node, char **name, int flags);
+	void     (*GetName_internalstr)       (uint32_t node, const char **name);
+	void     (*GetName_malloc)            (uint32_t node, char **name);
+	uint32_t (*Ref)                       (uint32_t node, enum dirdb_use use);
+	void     (*Unref)                     (uint32_t node, enum dirdb_use use);
+	uint32_t (*GetParentAndRef)           (uint32_t node, enum dirdb_use use);
+	uint32_t (*ResolvePathWithBaseAndRef) (uint32_t base, const char *name, const int flags, enum dirdb_use use);
+	uint32_t (*FindAndRef) (uint32_t parent, const char *name, enum dirdb_use use);
+	char *   (*DiffPath)   (uint32_t base, uint32_t node, const int flags);
+};
+extern const struct dirdbAPI_t dirdbAPI;
+
 #endif

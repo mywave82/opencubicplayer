@@ -182,7 +182,8 @@ void mdbUnregisterReadInfo (struct mdbreadinforegstruct *r)
 static const struct mdbReadInfoAPI_t mdbReadInfoAPI =
 {
 	cp437_f_to_utf8_z,
-	latin1_f_to_utf8_z
+	latin1_f_to_utf8_z,
+	&dirdbAPI
 };
 int mdbReadInfo (struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 {

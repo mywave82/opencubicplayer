@@ -450,7 +450,7 @@ static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	if (!sidf)
 		return -1;
 
-	dirdbGetName_internalstr (sidf->dirdb_ref, &filename);
+	cpifaceSession->dirdb->GetName_internalstr (sidf->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s...\n", filename);
 
 	if (!sidOpenPlayer(sidf, cpifaceSession))

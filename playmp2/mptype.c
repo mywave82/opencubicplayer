@@ -140,7 +140,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 	const char *filename = 0;
 	int filenamelen;
 
-	dirdbGetName_internalstr(f->dirdb_ref, &filename);
+	API->dirdb->GetName_internalstr(f->dirdb_ref, &filename);
 	if (!filename)
 	{
 		return 0;
@@ -149,7 +149,6 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 	if (!((filenamelen >= 4) && ((!strcasecmp (filename + filenamelen - 4, ".mp1")) ||
 	                             (!strcasecmp (filename + filenamelen - 4, ".mp2")) ||
 	                             (!strcasecmp (filename + filenamelen - 4, ".mp3")) ||
-	                             (!strcasecmp (filename + filenamelen - 4, ".mpg")) ||
 	                             (!strcasecmp (filename + filenamelen - 4, ".mpg")))))
 	{ /* only test files that can be MP2/MP3 files since the routine often "steals" adplug, DMF files etc. */
 		return 0;
