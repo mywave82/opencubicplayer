@@ -248,9 +248,9 @@ static void medialibAddClear (void)
 static int medialibAddInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API)
 {
 #ifndef __W32__
-	if (dmFILE->cwd)
+	if (API->dmFile->cwd)
 	{
-		medialibAddCurDir = dmFILE->cwd;
+		medialibAddCurDir = API->dmFile->cwd;
 		medialibAddCurDir->ref (medialibAddCurDir);
 		medialibAddPath = 0;
 		dirdbGetFullname_malloc (medialibAddCurDir->dirdb_ref, &medialibAddPath, DIRDB_FULLNAME_ENDSLASH);

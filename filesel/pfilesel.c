@@ -611,7 +611,7 @@ static int initRootDir(const char *sec)
 
 		struct dmDrive *dmNewDrive=0;
 
-		newcurrentpath = dirdbResolvePathWithBaseAndRef(dmFILE->cwd->dirdb_ref, currentpath2, DIRDB_RESOLVE_DRIVE, dirdb_use_pfilesel);
+		newcurrentpath = dirdbResolvePathWithBaseAndRef(dmFile->cwd->dirdb_ref, currentpath2, DIRDB_RESOLVE_DRIVE, dirdb_use_pfilesel);
 
 		if (!filesystem_resolve_dirdb_dir (newcurrentpath, &dmNewDrive, &cwd))
 		{
@@ -905,7 +905,7 @@ int fsPreInit(void)
 	filesystem_drive_init ();
 
 	filesystem_unix_init ();
-	dmCurDrive=dmFILE;
+	dmCurDrive = dmFile;
 
 	filesystem_bzip2_register ();
 	filesystem_gzip_register ();
@@ -956,6 +956,7 @@ static struct DevInterfaceAPI_t DevInterfaceAPI =
 	&configAPI,
 	&dirdbAPI,
 	&Console,
+	0, /* dmFile */
 	cpiKeyHelp,
 	cpiKeyHelpClear,
 	cpiKeyHelpDisplay,
@@ -1007,6 +1008,7 @@ static struct interfacestruct VirtualInterface = {VirtualInterfaceInit, VirtualI
 
 int fsInit(void)
 {
+	DevInterfaceAPI.dmFile = dmFile;
 	plRegisterInterface (&VirtualInterface);
 
 	if (!fsScanDir(0))

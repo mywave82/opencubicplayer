@@ -36,9 +36,7 @@
 #include "filesystem-unix.h"
 #include "stuff/compat.h"
 
-struct dmDrive *dmFILE;
-
-uint32_t cfConfigDir_dirdbref = DIRDB_NOPARENT;
+struct dmDrive *dmFile;
 
 struct unix_ocpdirhandle_t
 {
@@ -708,34 +706,30 @@ void filesystem_unix_init (void)
 	char *currentpath;
 	uint32_t newcurrentpath;
 
-	dmFILE = RegisterDrive("file:", root, root);
+	dmFile = RegisterDrive("file:", root, root);
 
 	root->unref (root); root = 0;
 
 	currentpath = getcwd_malloc ();
-	newcurrentpath = dirdbResolvePathWithBaseAndRef(dmFILE->basedir->dirdb_ref, currentpath, DIRDB_RESOLVE_NODRIVE, dirdb_use_dir);
+	newcurrentpath = dirdbResolvePathWithBaseAndRef(dmFile->basedir->dirdb_ref, currentpath, DIRDB_RESOLVE_NODRIVE, dirdb_use_dir);
 	free (currentpath);
 	currentpath = 0;
 	if (!filesystem_resolve_dirdb_dir (newcurrentpath, &newdrive, &newcwd))
 	{
-		if (newdrive == dmFILE)
+		if (newdrive == dmFile)
 		{
-			if (dmFILE->cwd)
+			if (dmFile->cwd)
 			{
-				dmFILE->cwd->unref (dmFILE->cwd);
+				dmFile->cwd->unref (dmFile->cwd);
 			}
-			dmFILE->cwd = newcwd;
+			dmFile->cwd = newcwd;
 		} else {
 			newcwd->unref (newcwd);
 		}
 	}
 	dirdbUnref (newcurrentpath, dirdb_use_dir);
-
-	cfConfigDir_dirdbref = dirdbResolvePathWithBaseAndRef (dmFILE->basedir->dirdb_ref, cfConfigDir, 0, dirdb_use_dir);
 }
 
 void filesystem_unix_done (void)
 {
-	dirdbUnref (cfConfigDir_dirdbref, dirdb_use_dir);
-	cfConfigDir_dirdbref = DIRDB_NOPARENT;
 }

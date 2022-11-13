@@ -333,7 +333,8 @@ libsidplayfp-api.o: \
 	./libsidplayfp-git/src/builders/resid-builder/resid.h \
 	../boot/psetting.h \
 	../filesel/dirdb.h \
-	../filesel/filesystem-unix.h
+	../filesel/filesystem.h \
+	../filesel/filesystem-drive.h
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I.. -o $@ $< -c
 
 cpiinfo.o: \
@@ -357,7 +358,6 @@ sidconfig.o: sidconfig.c \
 	../filesel/filesystem-drive.h \
 	../filesel/filesystem-file-dev.h \
 	../filesel/filesystem-setup.h \
-	../filesel/filesystem-unix.h \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
 	../stuff/err.h \

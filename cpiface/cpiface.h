@@ -258,6 +258,8 @@ struct drawHelperAPI_t
 	                         const uint_fast16_t            seconds);
 };
 
+struct dmDrive;
+
 struct cpifaceSessionAPI_t
 {
 	const struct plrDevAPI_t        *plrDevAPI;
@@ -268,6 +270,7 @@ struct cpifaceSessionAPI_t
 	const struct configAPI_t        *configAPI;
 	const struct console_t          *console;
 	const struct dirdbAPI_t         *dirdb;
+	      struct dmDrive            *dmFile;
 
 	char utf8_8_dot_3  [12*4+1]; /* UTF-8 ready, filled in by cpiface */
 	char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready, filled in by cpiface */

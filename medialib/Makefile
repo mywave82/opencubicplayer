@@ -42,7 +42,6 @@ medialib.o: medialib.c \
 	../filesel/filesystem-dir-mem.h \
 	../filesel/filesystem-drive.h \
 	../filesel/filesystem-file-dev.h \
-	../filesel/filesystem-unix.h \
 	../filesel/modlist.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \

@@ -3,6 +3,7 @@
 
 extern "C"
 {
+struct dmDrive;
 struct dirdbAPI_t;
 struct configAPI_t;
 }
@@ -31,7 +32,7 @@ namespace libsidplayfp
 			playerRunning,
 		} player_state_t;
 
-		ConsolePlayer (const unsigned int rate, const struct configAPI_t *configAPI, const struct dirdbAPI_t *dirdbAPI);
+		ConsolePlayer (const unsigned int rate, const struct configAPI_t *configAPI, const struct dirdbAPI_t *dirdbAPI, struct dmDrive *dmFile);
 		virtual ~ConsolePlayer (void);
 
 		bool load (const uint_least8_t* sourceBuffer, uint_least32_t bufferLen);

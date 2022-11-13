@@ -253,6 +253,7 @@ cpiface.o: cpiface.c \
 	../dev/ringbuffer.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
+	../filesel/filesystem-unix.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \

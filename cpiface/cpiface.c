@@ -67,6 +67,7 @@
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
+#include "filesel/filesystem-unix.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/imsrtns.h"
@@ -2226,6 +2227,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.configAPI = &configAPI;
 	cpifaceSessionAPI.Public.console = &Console;
 	cpifaceSessionAPI.Public.dirdb = &dirdbAPI;
+	cpifaceSessionAPI.Public.dmFile = dmFile;
 
 	dirdbGetName_internalstr (fi->dirdb_ref, &filename);
 	utf8_XdotY_name ( 8, 3, cpifaceSessionAPI.Public.utf8_8_dot_3 , filename);

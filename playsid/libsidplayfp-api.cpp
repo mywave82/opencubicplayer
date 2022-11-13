@@ -36,7 +36,8 @@ extern "C"
 #include "types.h"
 #include "boot/psetting.h"
 #include "filesel/dirdb.h"
-#include "filesel/filesystem-unix.h"
+#include "filesel/filesystem-drive.h"
+#include "filesel/filesystem.h"
 #include <stdio.h>
 }
 
@@ -129,7 +130,7 @@ namespace libsidplayfp
 		}
 	}
 
-	ConsolePlayer::ConsolePlayer (const unsigned int rate, const struct configAPI_t *configAPI, const struct dirdbAPI_t *dirdbAPI) :
+	ConsolePlayer::ConsolePlayer (const unsigned int rate, const struct configAPI_t *configAPI, const struct dirdbAPI_t *dirdbAPI, struct dmDrive *dmFile) :
 		m_tune(nullptr),
 		m_state(playerStopped),
 		selected_track(0),
@@ -255,7 +256,7 @@ namespace libsidplayfp
 		const char *basic_string   = configAPI->GetProfileString("libsidplayfp", "basic",   "BASIC.ROM");
 		const char *chargen_string = configAPI->GetProfileString("libsidplayfp", "chargen", "CHARGEN.ROM");
 
-		uint32_t dirdb_base = cfConfigDir_dirdbref; /* should be the parent_dir of the file you want to load */
+		uint32_t dirdb_base = dirdbAPI->ResolvePathWithBaseAndRef (dmFile->basedir->dirdb_ref, configAPI->ConfigDir, 0, dirdb_use_dir); /* should be the parent_dir of the file you want to load */
 		uint32_t kernal_ref;
 		uint32_t basic_ref;
 		uint32_t chargen_ref;
@@ -278,6 +279,8 @@ namespace libsidplayfp
 		dirdbAPI->Unref ( kernal_ref, dirdb_use_file);
 		dirdbAPI->Unref (  basic_ref, dirdb_use_file);
 		dirdbAPI->Unref (chargen_ref, dirdb_use_file);
+
+		dirdbAPI->Unref ( dirdb_base, dirdb_use_dir);
 
 		sidplayer.setKernal ( kernalRom);
 		sidplayer.setBasic  (  basicRom);

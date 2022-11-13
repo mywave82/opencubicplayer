@@ -41,7 +41,6 @@
 #include "filesel/filesystem-dir-mem.h"
 #include "filesel/filesystem-drive.h"
 #include "filesel/filesystem-file-dev.h"
-#include "filesel/filesystem-unix.h"
 #include "filesel/modlist.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"

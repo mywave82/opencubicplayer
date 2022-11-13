@@ -38,7 +38,6 @@
 #include "filesel/filesystem-drive.h"
 #include "filesel/filesystem-file-dev.h"
 #include "filesel/filesystem-setup.h"
-#include "filesel/filesystem-unix.h"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
@@ -905,7 +904,7 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 {
 	int esel = 0;
 
-	uint32_t dirdb_base = cfConfigDir_dirdbref;
+	uint32_t dirdb_base = API->dirdb->ResolvePathWithBaseAndRef (API->dmFile->basedir->dirdb_ref, API->configAPI->ConfigDir, 0, dirdb_use_dir);
 
 	config_emulator = emulator_to_int         (API->configAPI->GetProfileString ("libsidplayfp", "emulator",        "residfp"));
 	config_defaultC64 = defaultC64_to_int     (API->configAPI->GetProfileString ("libsidplayfp", "defaultC64",      "PAL"));
@@ -1259,6 +1258,8 @@ superexit:
 	API->dirdb->Unref (entry_kernal.dirdb_ref, dirdb_use_file);
 	API->dirdb->Unref (entry_basic.dirdb_ref, dirdb_use_file);
 	API->dirdb->Unref (entry_chargen.dirdb_ref, dirdb_use_file);
+
+	API->dirdb->Unref (dirdb_base, dirdb_use_dir);
 }
 
 static struct ocpfile_t *sidconfig; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv

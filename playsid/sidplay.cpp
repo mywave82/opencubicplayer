@@ -897,7 +897,7 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 		goto error_out_buf;
 	}
 
-	mySidPlayer = new libsidplayfp::ConsolePlayer(sidRate, cpifaceSession->configAPI, cpifaceSession->dirdb);
+	mySidPlayer = new libsidplayfp::ConsolePlayer(sidRate, cpifaceSession->configAPI, cpifaceSession->dirdb, cpifaceSession->dmFile);
 	if (!mySidPlayer->load (buf, length))
 	{
 		fprintf (stderr, "[playsid]: loading file failed\n");

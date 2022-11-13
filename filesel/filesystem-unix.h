@@ -7,11 +7,9 @@ struct ocpdir_t;
 struct ocpfile_t;
 struct ocpfilehandle_t;
 
-extern uint32_t cfConfigDir_dirdbref;
-
 struct dmDrive;
 
-extern struct dmDrive *dmFILE;
+extern struct dmDrive *dmFile;
 
 struct ocpdir_t *file_unix_root (void);
 

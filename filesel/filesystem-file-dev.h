@@ -7,6 +7,7 @@
 
 struct configAPI_t;
 struct dirdbAPI_t;
+struct dmDrive;
 struct ocpdir_t;
 struct ocpfile_t;
 struct ocpfilehandle_t;
@@ -14,15 +15,16 @@ struct moduleinfostruct;
 
 struct DevInterfaceAPI_t
 {
-	struct configAPI_t *configAPI;
-	struct dirdbAPI_t  *dirdb;
-	struct console_t   *console;
+	const struct configAPI_t *configAPI;
+	const struct dirdbAPI_t  *dirdb;
+	      struct console_t   *console;
+	      struct dmDrive     *dmFile;
 
-	void (*KeyHelp) (uint16_t key, const char *shorthelp); /* Called on ALT-K to issue help about each keyboard shortcut */
-	void (*KeyHelpClear) (void); /* Clears the current keyboard shortcut list, only used by keyboard/display loops */
-	int  (*KeyHelpDisplay) (void); /* Draws the keyboard shortcut list and polls keyboard. Call for each draw-iteration until it returns zero */
+	const void (*KeyHelp) (uint16_t key, const char *shorthelp); /* Called on ALT-K to issue help about each keyboard shortcut */
+	const void (*KeyHelpClear) (void); /* Clears the current keyboard shortcut list, only used by keyboard/display loops */
+	const int  (*KeyHelpDisplay) (void); /* Draws the keyboard shortcut list and polls keyboard. Call for each draw-iteration until it returns zero */
 
-	void (*fsDraw) (void); /* Draws the filesystem browser, great for virtual devices that has a dialog */
+	const void (*fsDraw) (void); /* Draws the filesystem browser, great for virtual devices that has a dialog */
 };
 
 struct IOCTL_DevInterface
