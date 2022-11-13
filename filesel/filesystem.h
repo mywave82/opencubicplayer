@@ -192,15 +192,61 @@ static inline void ocpfilehandle_t_fill (
 	s->dirdb_ref         = dirdb_ref;
 }
 
-int ocpfilehandle_read_uint8     (struct ocpfilehandle_t *, uint8_t *dst); /* returns 0 for OK, and -1 on error */
-int ocpfilehandle_read_uint16_be (struct ocpfilehandle_t *, uint16_t *dst); /* returns 0 for OK, and -1 on error */
-int ocpfilehandle_read_uint16_le (struct ocpfilehandle_t *, uint16_t *dst); /* returns 0 for OK, and -1 on error */
-int ocpfilehandle_read_uint24_be (struct ocpfilehandle_t *, uint32_t *dst); /* returns 0 for OK, and -1 on error */
-int ocpfilehandle_read_uint24_le (struct ocpfilehandle_t *, uint32_t *dst); /* returns 0 for OK, and -1 on error */
-int ocpfilehandle_read_uint32_be (struct ocpfilehandle_t *, uint32_t *dst); /* returns 0 for OK, and -1 on error */
-int ocpfilehandle_read_uint32_le (struct ocpfilehandle_t *, uint32_t *dst); /* returns 0 for OK, and -1 on error */
-int ocpfilehandle_read_uint64_be (struct ocpfilehandle_t *, uint64_t *dst); /* returns 0 for OK, and -1 on error */
-int ocpfilehandle_read_uint64_le (struct ocpfilehandle_t *, uint64_t *dst); /* returns 0 for OK, and -1 on error */
+static inline int ocpfilehandle_read_uint8     (struct ocpfilehandle_t *s, uint8_t *dst) /* returns 0 for OK, and -1 on error */
+{
+	if (s->read (s, dst, 1) != 1) return -1;
+	return 0;
+}
+static inline int ocpfilehandle_read_uint16_be (struct ocpfilehandle_t *s, uint16_t *dst) /* returns 0 for OK, and -1 on error */
+{
+	if (s->read (s, dst, 2) != 2) return -1;
+	*dst = uint16_big (*dst);
+	return 0;
+}
+static inline int ocpfilehandle_read_uint16_le (struct ocpfilehandle_t *s, uint16_t *dst) /* returns 0 for OK, and -1 on error */
+{
+	if (s->read (s, dst, 2) != 2) return -1;
+	*dst = uint16_little (*dst);
+	return 0;
+}
+static inline int ocpfilehandle_read_uint24_be (struct ocpfilehandle_t *s, uint32_t *dst) /* returns 0 for OK, and -1 on error */
+{
+	uint8_t t[3];
+	if (s->read (s, t, 3) != 3) return -1;
+	*dst = (t[0] << 16) | (t[1]<<8) | t[2];
+	return 0;
+}
+static inline int ocpfilehandle_read_uint24_le (struct ocpfilehandle_t *s, uint32_t *dst) /* returns 0 for OK, and -1 on error */
+{
+	uint8_t t[3];
+	if (s->read (s, t, 3) != 3) return -1;
+	*dst = (t[2] << 16) | (t[1]<<8) | t[0];
+	return 0;
+}
+static inline int ocpfilehandle_read_uint32_be (struct ocpfilehandle_t *s, uint32_t *dst) /* returns 0 for OK, and -1 on error */
+{
+	if (s->read (s, dst, 4) != 4) return -1;
+	*dst = uint32_big (*dst);
+	return 0;
+}
+static inline int ocpfilehandle_read_uint32_le (struct ocpfilehandle_t *s, uint32_t *dst) /* returns 0 for OK, and -1 on error */
+{
+	if (s->read (s, dst, 4) != 4) return -1;
+	*dst = uint32_little (*dst);
+	return 0;
+}
+static inline int ocpfilehandle_read_uint64_be (struct ocpfilehandle_t *s, uint64_t *dst) /* returns 0 for OK, and -1 on error */
+{
+	if (s->read (s, dst, 8) != 8) return -1;
+	*dst = uint64_big (*dst);
+	return 0;
+}
+static inline int ocpfilehandle_read_uint64_le (struct ocpfilehandle_t *s, uint64_t *dst) /* returns 0 for OK, and -1 on error */
+{
+	if (s->read (s, dst, 8) != 8) return -1;
+	*dst = uint64_little (*dst);
+	return 0;
+}
 
 /* .tar .zip .. */
 struct ocpdirdecompressor_t
