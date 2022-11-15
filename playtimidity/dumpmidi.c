@@ -522,6 +522,7 @@ static int parse_RIFF(struct MIDI_Session *s, unsigned char *head, unsigned char
 				{
 					fprintf (stderr, " %02x", *(ptr++));
 				}
+				fprintf (stderr, "\n");
 			} else if (event == 0xf7)
 			{
 				uint32_t len = readvlnum (&ptr, endptr, &eof);
@@ -535,6 +536,7 @@ static int parse_RIFF(struct MIDI_Session *s, unsigned char *head, unsigned char
 				{
 					fprintf (stderr, " %02x", *(ptr++));
 				}
+				fprintf (stderr, "\n");
 			} else if (event == 0xff)
 			{
 				uint8_t type = readu8 (&ptr, endptr, &eof);
