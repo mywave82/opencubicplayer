@@ -325,6 +325,8 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	cpifaceSession->mcpGet = oplGet;
 	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
+	opl_inpause = 0;
+
 	active=1;
 
 	oplTrkSetup (cpifaceSession, p);
