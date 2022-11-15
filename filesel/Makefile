@@ -447,6 +447,8 @@ pfsmain.o: pfsmain.c \
 	../boot/psetting.h \
 	dirdb.h \
 	filesystem.h \
+	filesystem-file-dev.h \
+	filesystem-setup.h \
 	mdb.h \
 	pfilesel.h \
 	fsptype.h \

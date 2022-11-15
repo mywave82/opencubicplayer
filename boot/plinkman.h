@@ -5,18 +5,42 @@ struct mdbreadinforegstruct;
 struct moduletype;
 struct cpifaceplayerstruct;
 struct configAPI_t;
+struct ocpfile_t;
+struct ocpdir_t;
+struct ocpfilehandle_t;
+struct moduleinfostruct;
+struct DevInterfaceAPI_t;
+struct dmDrive;
+
 struct PluginInitAPI_t
 {
 	void (*mdbRegisterReadInfo)(struct mdbreadinforegstruct *r);
 	void (*fsTypeRegister) (struct moduletype modtype, const char **description, const char *interface, const struct cpifaceplayerstruct *cp);
 	void (*fsRegisterExt)(const char *ext);
 	const struct configAPI_t *configAPI;
+
+	void (*filesystem_setup_register_file) (struct ocpfile_t *file);
+	struct ocpfile_t *(*dev_file_create)
+	(
+		struct ocpdir_t *parent,
+		const char *devname,
+		const char *mdbtitle,
+		const char *mdbcomposer,
+		void *token,
+		int  (*Init)       (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API), // Client can change token for instance, it defaults to the provided one
+		void (*Run)        (void **token,                                                           const struct DevInterfaceAPI_t *API), // Client can change token for instance
+		void (*Close)      (void **token,                                                           const struct DevInterfaceAPI_t *API), // Client can change token for instance
+		void (*Destructor) (void  *token)
+	);
+	struct dmDrive *dmSetup;
 };
 
 struct PluginCloseAPI_t
 {
 	void (*mdbUnregisterReadInfo)(struct mdbreadinforegstruct *r);
 	void (*fsTypeUnregister) (struct moduletype modtype);
+
+	void (*filesystem_setup_unregister_file) (struct ocpfile_t *file);
 };
 
 struct __attribute__ ((aligned (64))) linkinfostruct

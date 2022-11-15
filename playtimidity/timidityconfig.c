@@ -925,10 +925,10 @@ superexit:
 static struct ocpfile_t *timidityconfig; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv
 static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API);
 
-int __attribute__ ((visibility ("internal"))) timidity_config_init (void)
+int __attribute__ ((visibility ("internal"))) timidity_config_init (struct PluginInitAPI_t *API)
 {
-	timidityconfig = dev_file_create (
-		dmSetup->basedir,
+	timidityconfig = API->dev_file_create (
+		API->dmSetup->basedir,
 		"timidityconfig.dev",
 		"TiMidity+ Configuration",
 		"",
@@ -939,16 +939,16 @@ int __attribute__ ((visibility ("internal"))) timidity_config_init (void)
 		0  /* Destructor */
 	);
 
-	filesystem_setup_register_file (timidityconfig);
+	API->filesystem_setup_register_file (timidityconfig);
 
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) timidity_config_done (void)
+void __attribute__ ((visibility ("internal"))) timidity_config_done (struct PluginCloseAPI_t *API)
 {
 	if (timidityconfig)
 	{
-		filesystem_setup_unregister_file (timidityconfig);
+		API->filesystem_setup_unregister_file (timidityconfig);
 		timidityconfig->unref (timidityconfig);
 		timidityconfig = 0;
 	}

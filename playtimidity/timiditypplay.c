@@ -256,15 +256,15 @@ static int timidityPluginInit (struct PluginInitAPI_t *API)
 {
 	int err;
 	if ((err = timidity_type_init (API))) return err;
-	if ((err = timidity_config_init ())) return err;
+	if ((err = timidity_config_init (API))) return err;
 
 	return err;
 }
 
 static void timidityPluginClose (struct PluginCloseAPI_t *API)
 {
-	timidity_config_done ();
 	timidity_type_done (API);
+	timidity_config_done (API);
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) timidityPlayer = {"[TiMidity++ MIDI plugin]", timidityOpenFile, timidityCloseFile};

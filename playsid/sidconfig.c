@@ -1266,10 +1266,10 @@ static struct ocpfile_t *sidconfig; // needs to overlay an dialog above filebrow
 
 static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API);
 
-int __attribute__ ((visibility ("internal"))) sid_config_init (void)
+int __attribute__ ((visibility ("internal"))) sid_config_init (struct PluginInitAPI_t *API)
 {
-	sidconfig = dev_file_create (
-		dmSetup->basedir,
+	sidconfig = API->dev_file_create (
+		API->dmSetup->basedir,
 		"sidconfig.dev",
 		"libsidplayfp Configuration",
 		"",
@@ -1280,16 +1280,16 @@ int __attribute__ ((visibility ("internal"))) sid_config_init (void)
 		0  /* Destructor */
 	);
 
-	filesystem_setup_register_file (sidconfig);
+	API->filesystem_setup_register_file (sidconfig);
 
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) sid_config_done (void)
+void __attribute__ ((visibility ("internal"))) sid_config_done (struct PluginCloseAPI_t *API)
 {
 	if (sidconfig)
 	{
-		filesystem_setup_unregister_file (sidconfig);
+		API->filesystem_setup_unregister_file (sidconfig);
 		sidconfig->unref (sidconfig);
 		sidconfig = 0;
 	}

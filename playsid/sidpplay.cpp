@@ -480,7 +480,7 @@ static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 static int sidPluginInit (PluginInitAPI_t *API)
 {
 	int err;
-	if ((err = sid_config_init ())) return err;
+	if ((err = sid_config_init (API))) return err;
 	if ((err = sid_type_init (API))) return err;
 	return err;
 }
@@ -488,7 +488,7 @@ static int sidPluginInit (PluginInitAPI_t *API)
 static void sidPluginClose (struct PluginCloseAPI_t *API)
 {
 	sid_type_done (API);
-	sid_config_done ();
+	sid_config_done (API);
 }
 
 extern "C"

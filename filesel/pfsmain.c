@@ -47,6 +47,8 @@
 #include "boot/psetting.h"
 #include "dirdb.h"
 #include "filesystem.h"
+#include "filesystem-file-dev.h"
+#include "filesystem-setup.h"
 #include "fsptype.h"
 #include "mdb.h"
 #include "pfilesel.h"
@@ -203,13 +205,18 @@ static int _fsMain(int argc, char *argv[])
 		mdbRegisterReadInfo,
 		fsTypeRegister,
 		fsRegisterExt,
-		&configAPI
+		&configAPI,
+		filesystem_setup_register_file,
+		dev_file_create,
+		dmSetup
 	};
 
 	struct PluginCloseAPI_t PluginCloseAPI =
 	{
 		mdbUnregisterReadInfo,
-		fsTypeUnregister
+		fsTypeUnregister,
+
+		filesystem_setup_unregister_file
 	};
 
 
