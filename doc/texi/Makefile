@@ -8,19 +8,20 @@ SOURCES=configuration.texi fileselector.texi player.texi starting.texi wap.texi 
 all: ocp.info.gz
 
 ocp.info.gz: $(SOURCES)
-	rm -Rf ocp ocp.html ocp.info ocp.info.gz
+	rm -Rf ocp ocp_html ocp.info ocp.info.gz
 	LC_ALL=POSIX makeinfo ocp.texi
 	mv ocp ocp.info
 	gzip -9 ocp.info
 	LC_ALL=POSIX makeinfo --html ocp.texi
-	mv ocp ocp.html
+	@# compensate for that texinfo version 7.0 creates a directory named "ocp_html", while prior versions uses just "ocp"
+	if [ ! -d ocp_html ]; then mv ocp ocp_html; fi
 
 install: all
 	mkdir -p "$(DESTDIR)$(INFODIR)"
 	$(CP) ocp.info.gz "$(DESTDIR)$(INFODIR)"
 	install-info --dir-file="$(DESTDIR)$(INFODIR)/dir" "$(DESTDIR)$(INFODIR)/ocp.info.gz" || true
 	mkdir -p "$(DESTDIR)$(DOCDIR)/html"
-	$(CP) -R ocp.html/* "$(DESTDIR)$(DOCDIR)/html"
+	$(CP) -R ocp_html/* "$(DESTDIR)$(DOCDIR)/html"
 uninstall:
 	install-info --delete --dir-file="$(DESTDIR)$(INFODIR)/dir" "$(DESTDIR)$(INFODIR)/ocp.info.gz" || true
 	rm -f "$(DESTDIR)$(INFODIR)/ocp.info.gz"
@@ -34,4 +35,4 @@ uninstall:
 endif
 
 clean:
-	rm -Rf ocp ocp.info ocp.info.gz html ocp.html
+	rm -Rf ocp ocp.info ocp.info.gz html ocp_html
