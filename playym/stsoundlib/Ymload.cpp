@@ -182,8 +182,8 @@ unsigned char	*CYmMusic::depackFile(ymu32 checkOriginalSize)
 
 		fileSize = (ymu32)-1;
 
-		if (pHeader->level != 0)					// NOTE: Endianness works because value is 0
-		{ // Compression LH5, header !=0 : Error.
+		if (pHeader->level > 1)					// NOTE: Endianness works because value is 0
+		{ // Compression LH5, header > 1 : Error.
 			free(pBigMalloc);
 			pBigMalloc = NULL;
 			setLastError("LHARC Header must be 0 !");
@@ -206,6 +206,22 @@ unsigned char	*CYmMusic::depackFile(ymu32 checkOriginalSize)
 		pSrc += 2;		// skip CRC16
 		ptr_left -= 2;
 
+		if (pHeader->level == 1) { // https://github.com/jca02266/lha/blob/master/header.doc.md
+        		pSrc++;   // skip os-type
+			ptr_left--;
+
+        		ymu16 nextHeaderSize;
+
+			do {
+			    nextHeaderSize = pSrc[0] << 0 | pSrc[1] << 8;
+			    pSrc += 2;
+			    ptr_left -= 2;
+
+			    pSrc += nextHeaderSize;
+			    ptr_left -= nextHeaderSize;
+			} while (nextHeaderSize != 0);
+		}
+	
 		ymu32		packedSize = ReadLittleEndian32((ymu8*)&pHeader->packed, 4);
 
 		checkOriginalSize -= ymu32(pSrc - pBigMalloc);
@@ -838,7 +854,7 @@ FILE	*in;
 		fclose(in);
 
 		//---------------------------------------------------
-		// Transforme les donn‚es en donn‚es valides.
+		// Transforme les donnÂ‚es en donnÂ‚es valides.
 		//---------------------------------------------------
 		pBigMalloc = depackFile(fileSize);
 		if (!pBigMalloc)
@@ -847,7 +863,7 @@ FILE	*in;
 		}
 
 		//---------------------------------------------------
-		// Lecture des donn‚es YM:
+		// Lecture des donnÂ‚es YM:
 		//---------------------------------------------------
 		if (!ymDecode())
 		{
@@ -889,7 +905,7 @@ ymbool	CYmMusic::loadMemory(void *pBlock,ymu32 size)
 		memcpy(pBigMalloc,pBlock,size);
 
 		//---------------------------------------------------
-		// Transforme les donn‚es en donn‚es valides.
+		// Transforme les donnÂ‚es en donnÂ‚es valides.
 		//---------------------------------------------------
 		pBigMalloc = depackFile(size);
 		if (!pBigMalloc)
@@ -898,7 +914,7 @@ ymbool	CYmMusic::loadMemory(void *pBlock,ymu32 size)
 		}
 
 		//---------------------------------------------------
-		// Lecture des donn‚es YM:
+		// Lecture des donnÂ‚es YM:
 		//---------------------------------------------------
 		if (!ymDecode())
 		{
