@@ -324,6 +324,8 @@ struct cpifaceSessionAPI_t
 	void (*cpiTextUnregisterMode) (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmoderegstruct *textmode);
 	void (*cpiTextSetMode) (struct cpifaceSessionAPI_t *cpifaceSession, const char *name);
 	void (*cpiTextRecalc) (struct cpifaceSessionAPI_t *cpifaceSession);
+	void (*latin1_f_to_utf8_z) (const char *src, size_t srclen, char *dst, size_t dstlen);
+
 };
 
 #endif

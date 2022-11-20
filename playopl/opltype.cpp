@@ -88,7 +88,7 @@ int __attribute__ ((visibility ("internal"))) opl_type_init (PluginInitAPI_t *AP
 	adplugdb_ocp = new CAdPlugDatabase();
 	if (adplugdb_ocp)
 	{
-		makepath_malloc (&path, 0, API->configAPI->DataDir, "adplug.db", 0);
+		API->makepath_malloc (&path, 0, API->configAPI->DataDir, "adplug.db", 0);
 		if (path)
 		{
 			adplugdb_ocp->load(path);

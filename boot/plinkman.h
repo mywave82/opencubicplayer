@@ -33,6 +33,8 @@ struct PluginInitAPI_t
 		void (*Destructor) (void  *token)
 	);
 	struct dmDrive *dmSetup;
+
+	int (*makepath_malloc) (char **dst, const char *drive, const char *path, const char *file, const char *ext);
 };
 
 struct PluginCloseAPI_t

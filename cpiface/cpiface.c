@@ -72,6 +72,7 @@
 #include "stuff/err.h"
 #include "stuff/imsrtns.h"
 #include "stuff/framelock.h"
+#include "stuff/latin1.h"
 #include "stuff/poll.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
@@ -2275,6 +2276,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.cpiTextUnregisterMode = cpiTextUnregisterMode;
 	cpifaceSessionAPI.Public.cpiTextSetMode = cpiTextSetMode;
 	cpifaceSessionAPI.Public.cpiTextRecalc = cpiTextRecalc;
+	cpifaceSessionAPI.Public.latin1_f_to_utf8_z = latin1_f_to_utf8_z;
 
 	curplayer=cp;
 

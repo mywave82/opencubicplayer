@@ -52,6 +52,7 @@
 #include "fsptype.h"
 #include "mdb.h"
 #include "pfilesel.h"
+#include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/poutput.h"
 
@@ -208,14 +209,14 @@ static int _fsMain(int argc, char *argv[])
 		&configAPI,
 		filesystem_setup_register_file,
 		dev_file_create,
-		dmSetup
+		dmSetup,
+		makepath_malloc
 	};
 
 	struct PluginCloseAPI_t PluginCloseAPI =
 	{
 		mdbUnregisterReadInfo,
 		fsTypeUnregister,
-
 		filesystem_setup_unregister_file
 	};
 

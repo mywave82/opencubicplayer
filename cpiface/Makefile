@@ -260,6 +260,7 @@ cpiface.o: cpiface.c \
 	../stuff/err.h \
 	../stuff/imsrtns.h \
 	../stuff/framelock.h \
+	../stuff/latin1.h \
 	../stuff/poutput.h \
 	../stuff/poll.h \
 	../stuff/sets.h

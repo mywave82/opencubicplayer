@@ -452,6 +452,7 @@ pfsmain.o: pfsmain.c \
 	mdb.h \
 	pfilesel.h \
 	fsptype.h \
+	../stuff/compat.h \
 	../stuff/err.h \
 	../stuff/poutput.h
 	$(CC) $< -o $@ -c
