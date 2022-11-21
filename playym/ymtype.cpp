@@ -103,7 +103,7 @@ struct __attribute__((packed)) lzhHeader
 	char id[5]; /* -lh5- */
 	uint32_t packed;
 	uint32_t original;
-	char reserved[5];
+	char reserved[5]; /* time, date, reserved data */
 	uint8_t level;
 	uint8_t name_length;
 };
@@ -322,25 +322,43 @@ static int ymReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, co
 	uint32_t packedSize;
 	char ex_buf[8192];
 	struct lzhHeader *h= (struct lzhHeader *)buf;
+	int skip = 2; /* CRC */
 
 	if (len<sizeof(lzhHeader))
 		return 0; /* no point testing for valid formats at all if we can't even fit this header in */
 
-	if ((h->size==0)||(strncmp(h->id, "-lh5-", 5))||(h->level!=0))
+	if ((h->size==0)||(strncmp(h->id, "-lh5-", 5))||(h->level>1))
 		return ymReadMemInfo2(m, buf, len);
+
+	if (h->level == 1)
+	{
+		uint16_t headersize;
+		skip += 1; /* OS-type */
+		do {
+			if (((sizeof (*h) + h->name_length + skip + 2)) > len)
+				return 0; /* running out of data */
+
+			headersize =  ((uint8_t *)buf)[sizeof (*h) + h->name_length + skip] |
+			             (((uint8_t *)buf)[sizeof (*h) + h->name_length + skip] << 8);
+			skip += 2 + headersize;
+		} while (headersize);
+	}
+
+	if (((sizeof (*h) + h->name_length + skip)) > len)
+		return 0; /* running out of data */
 
 	fileSize = uint32_little(h->original);
 	if (fileSize>sizeof(ex_buf))
 		fileSize=sizeof(ex_buf);
 
-	packedSize = uint32_little(h->packed)-2;
-	if (packedSize > (len+sizeof(*h)+h->name_length+2))
-		packedSize = len+sizeof(*h)+h->name_length+2;
+	packedSize = uint32_little(h->packed);
+	if (packedSize > (len - ( sizeof(*h) + h->name_length + skip)))
+		packedSize = len - ( sizeof(*h) + h->name_length + skip );
 
-	memset(ex_buf, 0, fileSize);
+	bzero (ex_buf, fileSize);
 	{
 		CLzhDepacker *pDepacker = new CLzhDepacker;
-		pDepacker->LzUnpack(buf+sizeof(*h)+h->name_length+2,packedSize,ex_buf,fileSize);
+		pDepacker->LzUnpack(buf + sizeof(*h) + h->name_length + skip, packedSize, ex_buf, fileSize);
 		delete pDepacker;
 	}
 	return ymReadMemInfo2(m, ex_buf, fileSize);
