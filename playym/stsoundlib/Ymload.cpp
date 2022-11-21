@@ -182,11 +182,11 @@ unsigned char	*CYmMusic::depackFile(ymu32 checkOriginalSize)
 
 		fileSize = (ymu32)-1;
 
-		if (pHeader->level > 1)					// NOTE: Endianness works because value is 0
+		if (pHeader->level > 1)
 		{ // Compression LH5, header > 1 : Error.
 			free(pBigMalloc);
 			pBigMalloc = NULL;
-			setLastError("LHARC Header must be 0 !");
+			setLastError("LHARC Header must be <= 1");
 			return NULL;
 		}
 
@@ -207,10 +207,10 @@ unsigned char	*CYmMusic::depackFile(ymu32 checkOriginalSize)
 		ptr_left -= 2;
 
 		if (pHeader->level == 1) { // https://github.com/jca02266/lha/blob/master/header.doc.md
-        		pSrc++;   // skip os-type
+			pSrc++;   // skip os-type
 			ptr_left--;
 
-        		ymu16 nextHeaderSize;
+			ymu16 nextHeaderSize;
 
 			do {
 			    nextHeaderSize = pSrc[0] << 0 | pSrc[1] << 8;
@@ -221,8 +221,8 @@ unsigned char	*CYmMusic::depackFile(ymu32 checkOriginalSize)
 			    ptr_left -= nextHeaderSize;
 			} while (nextHeaderSize != 0);
 		}
-	
-		ymu32		packedSize = ReadLittleEndian32((ymu8*)&pHeader->packed, 4);
+
+		ymu32 packedSize = ReadLittleEndian32((ymu8*)&pHeader->packed, 4);
 
 		checkOriginalSize -= ymu32(pSrc - pBigMalloc);
 
@@ -854,7 +854,7 @@ FILE	*in;
 		fclose(in);
 
 		//---------------------------------------------------
-		// Transforme les donnes en donnes valides.
+		// Transforme les données en données valides.
 		//---------------------------------------------------
 		pBigMalloc = depackFile(fileSize);
 		if (!pBigMalloc)
@@ -863,7 +863,7 @@ FILE	*in;
 		}
 
 		//---------------------------------------------------
-		// Lecture des donnes YM:
+		// Lecture des données YM:
 		//---------------------------------------------------
 		if (!ymDecode())
 		{
@@ -905,7 +905,7 @@ ymbool	CYmMusic::loadMemory(void *pBlock,ymu32 size)
 		memcpy(pBigMalloc,pBlock,size);
 
 		//---------------------------------------------------
-		// Transforme les donnes en donnes valides.
+		// Transforme les données en données valides.
 		//---------------------------------------------------
 		pBigMalloc = depackFile(size);
 		if (!pBigMalloc)
@@ -914,7 +914,7 @@ ymbool	CYmMusic::loadMemory(void *pBlock,ymu32 size)
 		}
 
 		//---------------------------------------------------
-		// Lecture des donnes YM:
+		// Lecture des données YM:
 		//---------------------------------------------------
 		if (!ymDecode())
 		{
