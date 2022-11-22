@@ -62,6 +62,13 @@
 # define PRINT(a, ...) do {} while(0)
 #endif
 
+struct emulate_play_midi_file_session
+{
+	MidiEvent *event;
+	int32 nsamples;
+	int first;
+};
+static struct emulate_play_midi_file_session timidity_main_session;
 struct timiditycontext_t tc;
 
 static int gmi_inpause;
@@ -1128,15 +1135,6 @@ static void emulate_timidity_play_main_end (struct timiditycontext_t *c)
 #endif /* SUPPORT_SOCKET */
 }
 
-struct emulate_play_midi_file_session
-{
-	MidiEvent *event;
-	int32 nsamples;
-	int first;
-};
-
-static struct emulate_play_midi_file_session timidity_main_session;
-
 static int emulate_play_midi_file_start(const char *fn, uint8_t *data, size_t datalen, struct emulate_play_midi_file_session *s)
 {
 	int i, j, rc;
@@ -1358,14 +1356,18 @@ static int emulate_play_midi_iterate(struct timiditycontext_t *c)
 			if ((cet > tc.current_sample) && (cet - tc.current_sample) > audio_buffer_size)
 			{ /* inject a dummy event to just push audio samples... */
 				MidiEvent *pushed_event = tc.current_event;
-				MidiEvent dummy;
-				dummy.time = (float)(tc.current_sample + (audio_buffer_size/2))/tc.midi_time_ratio;
-				dummy.type = ME_NONE;
-				dummy.channel = 0;
-				dummy.a = 0;
-				dummy.b = 0;
-				PRINT ("emulate_play_midi_iterate calling FAKED emulate_play_event (estimate samples  %d)\n", MIDI_EVENT_TIME (&dummy) - tc.current_sample);
-				rc = emulate_play_event (&tc, &dummy);
+				MidiEvent dummy[2];
+				dummy[0].time = (float)(tc.current_sample + (audio_buffer_size/2))/tc.midi_time_ratio;
+				dummy[0].type = ME_NONE;
+				dummy[0].channel = 0;
+				dummy[0].a = 0;
+				dummy[0].b = 0;
+				dummy[1].time = dummy[0].time; /* we need this second event, so check_midi_play_end is satisfied */
+				dummy[1].type = ME_LAST;
+				dummy[1].a = 0;
+				dummy[1].b = 0;
+				PRINT ("emulate_play_midi_iterate calling FAKED emulate_play_event (estimate samples  %d)\n", MIDI_EVENT_TIME (dummy) - tc.current_sample);
+				rc = emulate_play_event (&tc, dummy);
 				dump_rc (rc);
 				tc.current_event = pushed_event;
 				if (rc == RC_NONE)
@@ -2006,6 +2008,8 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	cpifaceSession->mcpGet = timidityGet;
 
 	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeNoFilter | mcpNormalizeCanSpeedPitchUnlock | mcpNormalizeCannotEcho | mcpNormalizeCannotAmplify);
+
+	timidityIdler (&tc); /* trigger the file to load as soon as possible */
 
 	return errOk;
 }
