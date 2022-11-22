@@ -1403,6 +1403,112 @@ static int emulate_play_midi_iterate(struct timiditycontext_t *c)
 	return rc;
 }
 
+static void debug_events(MidiEvent *events)
+{
+#ifdef PLAYTIMIDITY_DEBUG
+	while (events->type != ME_EOT)
+	{
+		switch (events->type)
+		{
+			case ME_NONE:                PRINT ("%.8d ME_NONE\n", events->time); break;
+			case ME_NOTEOFF:             PRINT ("%.8d ME_NOTEOFF             ch=%d note=%d\n", events->time, events->channel, (int)(events->a)); break;
+			case ME_NOTEON:              PRINT ("%.8d ME_NOTEON              ch=%d note=%d velocity=%d\n", events->time, events->channel, (int)(events->a), (uint8_t)(events->b)); break;
+			case ME_KEYPRESSURE:         PRINT ("%.8d ME_KEYPRESSURE         ch=%d note=%d pressure=%d\n", events->time, events->channel, (int)(events->a), (int16_t)(events->b)); break;
+			case ME_PROGRAM:             PRINT ("%.8d ME_PROGRAM             ch=%d program=%d\n", events->time, events->channel, (int)(events->a)); break;
+			case ME_CHANNEL_PRESSURE:    PRINT ("%.8d ME_CHANNEL_PRESSURE    ch=%d pressure=%d\n", events->time, events->channel, (int16_t)(events->a)); break;
+			case ME_PITCHWHEEL:          PRINT ("%.8d ME_PITCHWHEEL          ch=%d bend=%d\n", events->time, events->channel, (int)(events->a + events->b * 128)); break;
+			case ME_TONE_BANK_MSB:       PRINT ("%.8d ME_TONE_BANK_MSB       ch=%d bank.msb=%d\n", events->time, events->channel, (int8_t)(events->a)); break;
+			case ME_TONE_BANK_LSB:       PRINT ("%.8d ME_TONE_BANK_LSB       ch=%d bank.lsb=%d\n", events->time, events->channel, (int8_t)(events->a)); break;
+			case ME_MODULATION_WHEEL:    PRINT ("%.8d ME_MODULATION_WHEEL    ch=%d modulation.wheel=%d\n", events->time, events->channel, (int16_t)(events->a)); break;
+			case ME_BREATH:              PRINT ("%.8d ME_BREATH ?\n", events->time); break;
+			case ME_FOOT:                PRINT ("%.8d ME_FOOT ?\n", events->time); break;
+			case ME_MAINVOLUME:          PRINT ("%.8d ME_MAINVOLUME          volume=%d\n", events->time, (int)events->a); break;
+			case ME_BALANCE:             PRINT ("%.8d ME_BALANCE ?\n", events->time); break;
+			case ME_PAN:                 PRINT ("%.8d ME_PAN                 ch=%d pan=%d\n", events->time, events->channel, (int8_t)(events->a)); break;
+			case ME_EXPRESSION:          PRINT ("%.8d ME_EXPRESSION          ch=%d expression=%d\n", events->time, events->channel, (int8_t)(events->a)); break;
+			case ME_SUSTAIN:             PRINT ("%.8d ME_SUSTAIN             ch=%d sustain=%d\n", events->time, events->channel, (int8_t)(events->a)); break;
+			case ME_PORTAMENTO_TIME_MSB: PRINT ("%.8d ME_PORTAMENTO_TIME_MSB ch=%d portamento_time.msb=%d\n", events->time, events->channel, (uint8_t)(events->a)); break;
+			case ME_PORTAMENTO_TIME_LSB: PRINT ("%.8d ME_PORTAMENTO_TIME_LSB ch=%d portamento_time.lsb=%d\n", events->time, events->channel, (uint8_t)(events->a)); break;
+			case ME_PORTAMENTO:          PRINT ("%.8d ME_PORTAMENTO          ch=%d enabled=%d value=%d\n", events->time, events->channel, events->a >= 64, (int)events->a); break;
+			case ME_PORTAMENTO_CONTROL:  PRINT ("%.8d ME_PORTAMENTO_CONTROL ?\n", events->time); break;
+			case ME_DATA_ENTRY_MSB:      PRINT ("%.8d ME_DATA_ENTRY_MSB      ch=%d data_entry.msb=%d\n", events->time, events->channel, (uint8_t)(events->a)); break;
+			case ME_DATA_ENTRY_LSB:      PRINT ("%.8d ME_DATA_ENTRY_LSB      ch=%d data_entry.lsb=%d\n", events->time, events->channel, (uint8_t)(events->a)); break;
+			case ME_SOSTENUTO:           PRINT ("%.8d ME_SOSTENUTO           ch=%d enabled=%d\n", events->time, events->channel, events->a >= 64); break;
+			case ME_SOFT_PEDAL:          PRINT ("%.8d ME_SOFT_PEDAL          ch=%d soft_pedal=%d\n", events->time, events->channel, (int8_t)(events->a)); break;
+			case ME_LEGATO_FOOTSWITCH:   PRINT ("%.8d ME_LEGATO_FOOTSWITCH   ch=%d enabled=%d\n", events->time, events->channel, events->a >= 64); break;
+			case ME_HOLD2:               PRINT ("%.8d ME_HOLD2 ?\n", events->time);
+			case ME_HARMONIC_CONTENT:    PRINT ("%.8d ME_HARMONIC_CONTENT    ch=%d param_resonance=%d\n", events->time, events->channel, (int8_t)(events->a - 64)); break;
+			case ME_RELEASE_TIME:        PRINT ("%.8d ME_RELEASE_TIME        ch=%d release_time=%d\n", events->time, events->channel, (int32_t)(events->a)); break;
+			case ME_ATTACK_TIME:         PRINT ("%.8d ME_ATTACK_TIME         ch=%d attack_time=%d\n", events->time, events->channel, (int32_t)(events->a)); break;
+			case ME_BRIGHTNESS:          PRINT ("%.8d ME_BRIGHTNESS          ch=%d cutoff_freq=%d\n", events->time, events->channel, (int8_t)(events->a - 64)); break;
+			case ME_REVERB_EFFECT:       PRINT ("%.8d ME_REVERB_EFFECT       ch=%d reverb_level=%d\n", events->time, events->channel, (int)(events->a)); break;
+			case ME_TREMOLO_EFFECT:      PRINT ("%.8d ME_TREMOLO_EFFECT ?    ch=%d tremolo_level=%d\n", events->time, events->channel, (int)(events->a)); break;
+			case ME_CHORUS_EFFECT:       PRINT ("%.8d ME_CHORUS_EFFECT       ch=%d chorus_level=%d\n", events->time, events->channel, (int8_t)(events->a)); break;
+			case ME_CELESTE_EFFECT:      PRINT ("%.8d ME_CELESTE_EFFECT      ch=%d delay_level=%d\n", events->time, events->channel, (int8_t)(events->a)); break;
+			case ME_PHASER_EFFECT:       PRINT ("%.8d ME_PHASER_EFFECT ?     ch=%d phaser_level=%d\n", events->time, events->channel, (int)(events->a)); break;
+			case ME_RPN_INC:             PRINT ("%.8d ME_RPN_INC             ch=%d\n", events->time, events->channel); break;
+			case ME_RPN_DEC:             PRINT ("%.8d ME_RPN_DEC             ch=%d\n", events->time, events->channel); break;
+			case ME_NRPN_LSB:            PRINT ("%.8d ME_NRPN_LSB            ch=%d nrpn.lsb=%d\n", events->time, events->channel, (uint8_t)(events->a)); break;
+			case ME_NRPN_MSB:            PRINT ("%.8d ME_NRPN_MSB            ch=%d nrpn.msb=%d\n", events->time, events->channel, (uint8_t)(events->a)); break;
+			case ME_RPN_LSB:             PRINT ("%.8d ME_RPN_LSB             ch=%d rpn.lsb=%d\n", events->time, events->channel, (uint8_t)(events->a)); break;
+			case ME_RPN_MSB:             PRINT ("%.8d ME_RPN_MSB             ch=%d rpn.msb=%d\n", events->time, events->channel, (uint8_t)(events->a)); break;
+			case ME_ALL_SOUNDS_OFF:      PRINT ("%.8d ME_ALL_SOUNDS_OFF      ch=%d\n", events->time, events->channel); break;
+			case ME_RESET_CONTROLLERS:   PRINT ("%.8d ME_RESET_CONTROLLERS   ch=%d\n", events->time, events->channel); break;
+			case ME_ALL_NOTES_OFF:       PRINT ("%.8d ME_ALL_NOTES_OFF       ch=%d\n", events->time, events->channel); break;
+			case ME_MONO:                PRINT ("%.8d ME_MONO                ch=%d\n", events->time, events->channel); break;
+			case ME_POLY:                PRINT ("%.8d ME_POLY                ch=%d\n", events->time, events->channel); break;
+	/* TiMidity Extensionals */
+#if 0
+			case ME_VOLUME_ONOFF: /* Not supported */
+#endif
+			case ME_MASTER_TUNING:       PRINT ("%.8d ME_MASTER_TUNING       ch=%d tuning=%d\n", events->time, events->channel, (int)((events->b << 8) | events->a)); break;
+			case ME_SCALE_TUNING:        PRINT ("%.8d ME_SCALE_TUNING        ch=%d scale=%d tuning=%d\n", events->time, events->channel, (int)(events->a), (int8_t)(events->b)); break;
+			case ME_BULK_TUNING_DUMP:    PRINT ("%.8d ME_BULK_TUNING_DUMP    part=%d param1=%d param2=%d", events->time, events->channel, (int)(events->a), (int)(events->b)); break;
+			case ME_SINGLE_NOTE_TUNING:  PRINT ("%.8d ME_SINGLE_NOTE_TUNING  part=%d param1=%d param2=%d", events->time, events->channel, (int)(events->a), (int)(events->b)); break;
+			case ME_RANDOM_PAN:          PRINT ("%.8d ME_RANDOM_PAN          ch=%d\n", events->time, events->channel); break;
+			case ME_SET_PATCH:           PRINT ("%.8d ME_SET_PATCH           ch=%d special_sample=%d\n", events->time, events->channel, (uint8_t)(events->a)); break;
+			case ME_DRUMPART:            PRINT ("%.8d ME_DRUMPART            ch=%d isrdum=%d\n", events->time, events->channel, !!events->a); break;
+			case ME_KEYSHIFT:            PRINT ("%.8d ME_KEYSHIFT            ch=%d keyshift=%d\n", events->time, events->channel, (int)(events->a) - 0x40); break;
+			case ME_PATCH_OFFS:          PRINT ("%.8d ME_PATCH_OFFS          ch=%d offset=%d\n", events->time, events->channel, (events->a | 256 * events->b)); break;
+			case ME_TEMPO:               PRINT ("%.8d ME_TEMPO               tempo=%d\n", events->time, events->channel + 256 * events->b + 65536 * events->a); break;
+
+			case ME_CHORUS_TEXT:         PRINT ("%.8d ME_CHORUS_TEXT         ref=%d str=\"%s\"\n", events->time, events->a | (int)(events->b << 8), event2string(&tc, events->a | (int)(events->b << 8))); break;
+			case ME_LYRIC:               PRINT ("%.8d ME_LYRIC               ref=%d str=\"%s\"\n", events->time, events->a | (int)(events->b << 8), event2string(&tc, events->a | (int)(events->b << 8))); break;
+			case ME_MARKER:              PRINT ("%.8d ME_MARKER              ref=%d str=\"%s\"\n", events->time, events->a | (int)(events->b << 8), event2string(&tc, events->a | (int)(events->b << 8))); break;
+			case ME_INSERT_TEXT: /* SC */PRINT ("%.8d ME_INSERT_TEXT         ref=%d str=\"%s\"\n", events->time, events->a | (int)(events->b << 8), event2string(&tc, events->a | (int)(events->b << 8))); break;
+			case ME_TEXT:                PRINT ("%.8d ME_TEXT                ref=%d str=\"%s\"\n", events->time, events->a | (int)(events->b << 8), event2string(&tc, events->a | (int)(events->b << 8))); break;
+			case ME_KARAOKE_LYRIC:/*KAR*/PRINT ("%.8d ME_KARAOKE_LYRIC       ref=%d str=\"%s\"\n", events->time, events->a | (int)(events->b << 8), event2string(&tc, events->a | (int)(events->b << 8))); break;
+			case ME_GSLCD:/* GS L.C.D.*/ PRINT ("%.8d ME_GSLCD               ref=%d str=\"%s\"\n", events->time, events->a | (int)(events->b << 8), event2string(&tc, events->a | (int)(events->b << 8))); break;
+
+			case ME_MASTER_VOLUME:       PRINT ("%.8d ME_MASTER_VOLUME       master_volume=%d\n", events->time, (int32_t)events->a + 256 * (int32_t)events->b); break;
+			case ME_RESET:               PRINT ("%.8d ME_RESET               mode=%d\n", events->time, (int)(events->a)); break;
+			case ME_NOTE_STEP:           PRINT ("%.8d ME_NOTE_STEP           metronome=%d,%d\n", events->time, events->a + ((events->b & 0x0f) << 8), events->b >> 4); break;
+			case ME_CUEPOINT:            PRINT ("%.8d ME_CUEPOINT            part=%d param1=%d param2=%d\n", events->time, events->channel, (int)events->a, (int)events->b); break;
+			case ME_TIMESIG:             PRINT ("%.8d ME_TIMESIG             %s=%d %s=%d\n", events->time, events->channel==0?"numerator":"midi_clocks_per_metronome_click", events->a, events->channel==0?"denominator":"number_of_notated_32nd_notes_in_MIDI_quarter_note(24 MIDI clocks)", events->b); break;
+			case ME_KEYSIG:              PRINT ("%.8d ME_KEYSID              %d %s %s\n", events->time, events->a < 0 ? -events->a : events->a, events->a < 0 ? "flat(s)" : "sharp(s)", events->b ? "minor" : "major"); break;
+			case ME_TEMPER_KEYSIG:       PRINT ("%.8d ME_TEMPER_KEYSIG       keysig=%d adjust=%d upper=%d\n", events->time, (events->a + 8) % 32 - 8, (events->a + 8) & 0x20 ? 1 : 0, !!events->b); break;
+			case ME_TEMPER_TYPE:         PRINT ("%.8d ME_TEMPER_TYPE         ch=%d temper_type=%d upper=%d\n", events->time, events->channel, (int8_t)events->a, !!events->b); break;
+			case ME_MASTER_TEMPER_TYPE:  PRINT ("%.8d ME_MASTER_TEMPER_TYPE  temper_type=%d upper=%d\n", events->time, (int8_t)events->a, !!events->b); break;
+			case ME_USER_TEMPER_ENTRY:   PRINT ("%.8d ME_USER_TEMPER_ENTRY   part=%d param1=%d param2=%d\n", events->time, events->channel, events->a, events->b); break;
+			case ME_SYSEX_LSB:           PRINT ("%.8d ME_SYSEX_LSB           ch=%d value=%d controller=%d\n", events->time, events->channel, events->a, events->b); break;
+			case ME_SYSEX_MSB:           PRINT ("%.8d ME_SYSEX_MSB           ch=%d note=%d (msb=%d)\n", events->time, events->channel, events->a, events->b); break;
+			case ME_SYSEX_GS_LSB:        PRINT ("%.8d ME_SYSEX_GS_LSB        ch=%d value=%d controller=%d\n", events->time, events->channel, events->a, events->b); break;
+			case ME_SYSEX_GS_MSB:        PRINT ("%.8d ME_SYSEX_GS_MSB        ch=%d note=%d (msb=%d)\n", events->time, events->channel, events->a, events->b); break;
+			case ME_SYSEX_XG_LSB:        PRINT ("%.8d ME_SYSEX_XG_LSB        ch=%d value=%d controller=%d\n", events->time, events->channel, events->a, events->b); break;
+			case ME_SYSEX_XG_MSB:        PRINT ("%.8d ME_SYSEX_XG_MSB        ch=%d note=%d (msb=%d)\n", events->time, events->channel, events->a, events->b); break;
+			case ME_WRD:                 PRINT ("%.8d ME_WRD                 cmd=%d arg=%d\n", events->time, events->channel, events->a | (events->b<<8)); break;
+			case ME_SHERRY:              PRINT ("%.8d ME_SHERRY              addr=%d\n", events->time, events->channel | (events->a << 8) | (events->b<<16)); break;
+			case ME_BARMARKER:           PRINT ("%.8d ME_BARMARKER ?\n", events->time); break; /* not in use */
+			case ME_STEP:                PRINT ("%.8d ME_STEP ?\n", events->time); break; /* not in use */
+			case ME_LAST:                PRINT ("%.8d ME_LAST ?\n", events->time); break; /* not in use */
+			case ME_EOT:                 PRINT ("%.8d ME_EOT\n", events->time); break;
+			default:                     PRINT ("%.8d ?\n", events->time);
+		}
+		events++;
+	}
+#endif
+}
+
 static int emulate_play_midi_file_iterate(struct timiditycontext_t *c, const char *fn, struct emulate_play_midi_file_session *s)
 {
 	int i, rc;
@@ -1413,6 +1519,10 @@ play_reload: /* Come here to reload MIDI file */
 		PRINT ("RELOAD RELOAD RELOAD RC_TUNE_END perhaps?\n");
 		s->first = 0;
 		rc = play_midi_load_file(&tc, (char *)fn, &s->event, &s->nsamples);
+		if (s->event)
+		{
+			debug_events (s->event);
+		}
 
 		dump_rc (rc);
 		if (RC_IS_SKIP_FILE(rc))
