@@ -22,6 +22,11 @@ uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playtimidity$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpmidi"
 
+cpikaraoke.o: \
+	cpikaraoke.c \
+	cpikaraoke.h
+	$(CC) $< -o $@ -c
+
 cpitimiditysetup.o: \
 	cpitimiditysetup.c \
 	cpitimiditysetup.h \
@@ -197,6 +202,7 @@ timidityplay.o: timidityplay.c timidity-git/timidity/playmidi.c\
 	timidity-git/timidity/wrd.h \
 	../boot/psetting.h \
 	../cpiface/cpiface.h \
+	cpikaraoke.h \
 	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
@@ -246,6 +252,6 @@ timiditypdots.o: \
 	../cpiface/cpiface.h
 	$(CC) $< -o $@ -c
 
-playtimidity_so=$(interface_obj) $(libarc_obj) $(timidity_obj) $(utils_obj) cpitimiditysetup.o timiditypchan.o timidityconfig.o timidityplay.o timiditypplay.o timiditypdots.o timiditytype.o ocp-output.o
+playtimidity_so=$(interface_obj) $(libarc_obj) $(timidity_obj) $(utils_obj) cpikaraoke.o cpitimiditysetup.o timiditypchan.o timidityconfig.o timidityplay.o timiditypplay.o timiditypdots.o timiditytype.o ocp-output.o
 playtimidity$(LIB_SUFFIX): $(playtimidity_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ -lm

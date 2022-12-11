@@ -41,6 +41,7 @@
 #include "resample.h"
 #include "arc.h"
 #include "boot/psetting.h"
+#include "cpikaraoke.h"
 #include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/mcp.h"
@@ -186,7 +187,7 @@ void __attribute__ ((visibility ("internal"))) timidityGetChanInfo(uint8_t ch, s
 	*ci = channelstat[ch];
 }
 
-static void timidity_apply_EventDelayed (CtlEvent *event)
+static void timidity_apply_EventDelayed (struct cpifaceSessionAPI_t *cpifaceSession, CtlEvent *event)
 {
 	switch (event->type)
 	{
@@ -327,14 +328,18 @@ static void timidity_apply_EventDelayed (CtlEvent *event)
 			}
 			channelstat[event->v1].pedal = event->v2;
 			return;
+		case CTLE_LYRIC:
+			fprintf (stderr, "Lyric time=%u id=%u\n", (unsigned int)event->v2, (unsigned int)event->v1);
+			cpiKaraokeSetTimeCode (cpifaceSession, (uint32_t)event->v2);
+			return;
 	}
 }
 
-static void timidity_append_EventDelayed_PlrBuf (CtlEventDelayed *self, signed int delay_samples)
+static void timidity_append_EventDelayed_PlrBuf (struct cpifaceSessionAPI_t *cpifaceSession, CtlEventDelayed *self, signed int delay_samples)
 {
 	if (delay_samples <= 0)
 	{
-		timidity_apply_EventDelayed (&self->event);
+		timidity_apply_EventDelayed (cpifaceSession, &self->event);
 
 		free_EventDelayed (self);
 
@@ -361,7 +366,7 @@ static void timidity_append_EventDelayed_PlrBuf (CtlEventDelayed *self, signed i
 	EventDelayed_PlrBuf_tail = self;
 }
 
-static void timidity_play_target_EventDelayed_gmibuf (unsigned int delta)
+static void timidity_play_target_EventDelayed_gmibuf (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int delta)
 {
 	CtlEventDelayed *iter, *next;
 
@@ -386,7 +391,7 @@ static void timidity_play_target_EventDelayed_gmibuf (unsigned int delta)
 				EventDelayed_PlrBuf_tail = 0; /* we are always deleting the head entry if any.. so list is empty if no next */
 			}
 
-			timidity_apply_EventDelayed (&iter->event);
+			timidity_apply_EventDelayed (cpifaceSession, &iter->event);
 
 			free_EventDelayed (iter);
 		}
@@ -422,7 +427,7 @@ static void timidity_append_EventDelayed_gmibuf (CtlEvent *event)
 	}
 }
 
-static void timidity_play_source_EventDelayed_gmibuf (uint32_t samplesin, uint32_t samplesout)
+static void timidity_play_source_EventDelayed_gmibuf (struct cpifaceSessionAPI_t *cpifaceSession, uint32_t samplesin, uint32_t samplesout)
 {
 	CtlEventDelayed *iter, *next;
 
@@ -442,7 +447,7 @@ static void timidity_play_source_EventDelayed_gmibuf (uint32_t samplesin, uint32
 			} else {
 				iter->next = 0;
 			}
-			timidity_append_EventDelayed_PlrBuf (iter, (int)samples_lastdelay + samplesout - (samplesin - iter->delay_samples));
+			timidity_append_EventDelayed_PlrBuf (cpifaceSession, iter, (int)samples_lastdelay + samplesout - (samplesin - iter->delay_samples));
 		} else {
 			iter->delay_samples -= samplesin;
 		}
@@ -746,6 +751,7 @@ static void ocp_ctl_event(CtlEvent *event)
 		case CTLE_CHORUS_EFFECT:
 		case CTLE_REVERB_EFFECT:
 		case CTLE_SUSTAIN:
+		case CTLE_LYRIC:
 			timidity_append_EventDelayed_gmibuf (event);
 			break;
 
@@ -758,7 +764,7 @@ static ControlMode ocp_ctl =
 	.id_character      = '_',
 	.id_short_name     = "OCP",
 	.verbosity         = 0,
-	.trace_playing     = 0, /* ? */
+	.trace_playing     = 0,
 	.opened            = 1,
 	.flags             = 0,
 	.open              = ocp_ctl_open,
@@ -1509,7 +1515,82 @@ static void debug_events(MidiEvent *events)
 #endif
 }
 
-static int emulate_play_midi_file_iterate(struct timiditycontext_t *c, const char *fn, struct emulate_play_midi_file_session *s)
+struct lyric_t lyrics[2];
+
+static void scan_lyrics (struct cpifaceSessionAPI_t *cpifaceSession, const MidiEvent *events)
+{
+	const MidiEvent *event;
+
+	for (event = events; event->type != ME_EOT; event++)
+	{
+		if (event->type == ME_KARAOKE_LYRIC)
+		{
+			const char *t = event2string (&tc, event->a | (int)(event->b << 8));
+			if (t && t[0] && ((event->time != 0) || (t[1] != '@')))
+			{
+				const char *e;
+				for (t++; t[0]; t = e)
+				{
+					char *p, *n;
+					e = t + strlen(t);
+					if ((p = strchr (t, '/')) /* && (p < e) */)
+					{
+						e = p + 1;
+					}
+					if ((n = strchr (t, '\\')) && (n < e))
+					{
+						e = n + 1;
+					}
+					if (t[0] == '/')
+					{
+						karaoke_new_paragraph (&lyrics[0]);
+					} else if (t[0] == '\\')
+					{
+						karaoke_new_line (&lyrics[0]);
+					} else {
+						karaoke_new_syllable (cpifaceSession, &lyrics[0], event->time, t, e - t);
+					}
+				}
+			}
+		}
+	}
+
+	for (event = events; event->type != ME_EOT; event++)
+	{
+		if ((event->type == ME_LYRIC) || (event->type == ME_TEXT) || (event->type == ME_CHORUS_TEXT))
+		{
+			const char *t = event2string (&tc, event->a | (int)(event->b << 8));
+			if (t && t[0] && t[1] != '%' /* chords */)
+			{
+				const char *e;
+				for (t++; t[0]; t = e)
+				{
+					char *p, *n;
+					e = t + strlen(t);
+					if ((p = strchr (t, '\n')) /* && (p < e) */)
+					{
+						e = p + 1;
+					}
+					if ((n = strchr (t, '\r')) && (n < e))
+					{
+						e = n + 1;
+					}
+					if (t[0] == '\n')
+					{
+						karaoke_new_paragraph (&lyrics[1]);
+					} else if (t[0] == '\r')
+					{
+						karaoke_new_line (&lyrics[1]);
+					} else {
+						karaoke_new_syllable (cpifaceSession, &lyrics[1], event->time, t, e - t);
+					}
+				}
+			}
+		}
+	}
+}
+
+static int emulate_play_midi_file_iterate (struct cpifaceSessionAPI_t *cpifaceSession, struct timiditycontext_t *c, const char *fn, struct emulate_play_midi_file_session *s)
 {
 	int i, rc;
 
@@ -1522,6 +1603,15 @@ play_reload: /* Come here to reload MIDI file */
 		if (s->event)
 		{
 			debug_events (s->event);
+		}
+		scan_lyrics (cpifaceSession, s->event);
+
+		if (lyrics[0].lines && (lyrics[0].lines > lyrics[1].lines))
+		{
+			cpiKaraokeInit (cpifaceSession, lyrics + 0);
+		} else if (lyrics[1].lines)
+		{
+			cpiKaraokeInit (cpifaceSession, lyrics + 1);
 		}
 
 		dump_rc (rc);
@@ -1589,7 +1679,7 @@ play_end:
 	return rc;
 }
 
-static void timidityIdler(struct timiditycontext_t *c)
+static void timidityIdler(struct cpifaceSessionAPI_t *cpifaceSession, struct timiditycontext_t *c)
 {
 	int rc;
 
@@ -1600,7 +1690,7 @@ static void timidityIdler(struct timiditycontext_t *c)
 
 		if (gmibuffree > (audio_buffer_size*2))
 		{
-			rc = emulate_play_midi_file_iterate(&tc, current_path, &timidity_main_session);
+			rc = emulate_play_midi_file_iterate (cpifaceSession, &tc, current_path, &timidity_main_session);
 			if (rc == RC_ASYNC_HACK)
 				break;
 		} else {
@@ -1726,7 +1816,7 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(struct cpifaceSessio
 			unsigned int accumulated_source = 0;
 			int pos1, length1, pos2, length2;
 
-			timidityIdler(&tc);
+			timidityIdler (cpifaceSession, &tc);
 
 			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
 			cpifaceSession->ringbufferAPI->get_tail_samples (gmibufpos, &pos1, &length1, &pos2, &length2);
@@ -1874,7 +1964,7 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(struct cpifaceSessio
 				} /* while (targetlength && length1) */
 			} /* if (gmibufrate==0x10000) */
 			cpifaceSession->ringbufferAPI->tail_consume_samples (gmibufpos, accumulated_source);
-			timidity_play_source_EventDelayed_gmibuf (accumulated_source, accumulated_target);
+			timidity_play_source_EventDelayed_gmibuf (cpifaceSession, accumulated_source, accumulated_target);
 			cpifaceSession->plrDevAPI->CommitBuffer (accumulated_target);
 			samples_committed += accumulated_target;
 			gmibuffill-=accumulated_source;
@@ -1887,7 +1977,7 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(struct cpifaceSessio
 		uint64_t new_ui = samples_committed - delay;
 		if (new_ui > samples_lastui)
 		{
-			timidity_play_target_EventDelayed_gmibuf (new_ui - samples_lastui);
+			timidity_play_target_EventDelayed_gmibuf (cpifaceSession, new_ui - samples_lastui);
 			samples_lastui = new_ui;
 		}
 		samples_lastdelay = delay;
@@ -2119,8 +2209,8 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 
 	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeNoFilter | mcpNormalizeCanSpeedPitchUnlock | mcpNormalizeCannotEcho | mcpNormalizeCannotAmplify);
 
-	timidityIdler (&tc); /* trigger the file to load as soon as possible */
-
+	timidityIdler (cpifaceSession, &tc); /* trigger the file to load as soon as possible */
+#warning enable Lyrics API here..?
 	return errOk;
 }
 
@@ -2128,4 +2218,9 @@ void __attribute__ ((visibility ("internal"))) timidityClosePlayer(struct cpifac
 {
 #warning we need to break idle loop with EVENT set to quit, in order to make a clean exit..
 	doTimidityClosePlayer (cpifaceSession, 1);
+
+	cpiKaraokeDone (cpifaceSession);
+
+	karaoke_clear (&lyrics[0]);
+	karaoke_clear (&lyrics[1]);
 }

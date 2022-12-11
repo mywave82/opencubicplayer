@@ -25,7 +25,6 @@
 #include "cpiface/cpiface.h"
 #include "stuff/compat.h"
 #include "stuff/poutput.h"
-
 #include "timidity.h"
 #include "instrum.h"
 #include "reverb.h"
