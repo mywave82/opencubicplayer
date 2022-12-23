@@ -333,10 +333,10 @@ struct
  short wuerfelstframes;
  short flags;   // rle=1, dlt=2
  short junk2;
- short codelenslen;
+ short codelenslen; // frame-delay-counter
  short pallen;
  short framelens[wuerfelframes+wuerfelstframes];
- char  codelens[codelenslen];
+ char  codelens[codelenslen]; // frame-delay-data
  char  pal[pallen];
 
  ... wuerfel ...
