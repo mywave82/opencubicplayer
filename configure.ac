@@ -813,7 +813,7 @@ AC_CACHE_CHECK([for __builtin_expect], [resid_cv_builtin_expect],
     [resid_cv_builtin_expect=yes], [resid_cv_builtin_expect=no])]
 )
 AS_IF([test "$resid_cv_builtin_expect" = no], [HAVE_BUILTIN_EXPECT=0], [HAVE_BUILTIN_EXPECT=1])
-LIBSIDPLAYCXX="$CXX -DHAVE_CONFIG_H=1 -DSIDTUNE_NO_STDIN_LOADER=1 -DPACKAGE_NAME=\\\"sidplayfp\\\" -DVERSION=\\\"2.4.10\\\" -DPACKAGE_VERSION=\\\"2.4.10-1\\\" -DPACKAGE_URL=\\\"\\\""
+LIBSIDPLAYCXX="$CXX -DHAVE_CONFIG_H=1 -DSIDTUNE_NO_STDIN_LOADER=1 -DPACKAGE_NAME=\\\"sidplayfp\\\" -DVERSION=\\\"2.5.10\\\" -DPACKAGE_VERSION=\\\"2.5.10-1\\\" -DPACKAGE_URL=\\\"\\\""
 LIBSIDPLAYCXXFLAGS="$CXXFLAGS"
 AC_SUBST(LIBSIDPLAYCXX)
 AC_SUBST(LIBSIDPLAYCXXFLAGS)
