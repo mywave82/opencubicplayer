@@ -19,8 +19,8 @@ doc/opencp.dox
 doc/texi/faq.texi
 doc/texi/install.texi
 doc/texi/ocp.texi
-doc/texi/ocp.html
 doc/texi/ocp.info.gz
+doc/texi/ocp_html
 filesel/adbmeta-test
 filesel/dirdb-test
 filesel/filesystem-bzip2-test

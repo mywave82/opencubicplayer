@@ -1,3 +1,21 @@
+Version 0.2.101
+===============
+
+ * Update m4 macro files, configure.ac and Rules.make.in to latest versions.
+ * Update adplug from upstream
+ * Update libsidplayfp from upstream
+ * Update hivelytracker from upstream
+ * Add support for textinfo v7.0 (documentation)
+ * Add karaoke support for timidity playback plugin
+ * Update .ym file detection to include compression header type 1
+ * Playback plugins no longer need external symbols from OCP
+ * SDL2 and X11: Delete key stopped working after support for international characters was added.
+ * MacOS build fixes
+ * Parallel build fixes
+ * VU right peek-meter was noisy
+ * S3M files that was flooded with global commands causes buffer-overflow
+ * Ctrl + C when ran in curses or linux vcsa console now does the same as pressing ESC. It only does force kill if OCP is frozen and it is pressed multiple times.
+
 Version 0.2.100
 ===============
  * Former attempt at supporting plugins to be built-in ("static") has been revived and is enabled by default. By now playback-plugins and audio/wavetable drivers must be external still.
