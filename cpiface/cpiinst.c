@@ -373,8 +373,11 @@ static int InstEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 	switch (ev)
 	{
 		case cpievDone:
-			if(cpifaceSessionAPI.Inst.Done) cpifaceSessionAPI.Inst.Done (cpifaceSession);
-				return 0;
+			if(cpifaceSessionAPI.Inst.Done)
+			{
+				cpifaceSessionAPI.Inst.Done (cpifaceSession);
+			}
+			return 0;
 	}
 	return 1;
 }
