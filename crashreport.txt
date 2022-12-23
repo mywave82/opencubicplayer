@@ -5,13 +5,23 @@ and settings, just add --with-debug:
 
 ./configure --prefix=/usr/local --with-debug
 
+
+
 The force rebuild everything again and install (cflags changes isn't detected
 by make)
 
 make clean all install
 
-The run ocp again, and let it crash.. This time, ocp should automatically
-enter gdb. Now, run bt.. (and maybe other commands if you are in contact with
+
+
+The run ocp again within gdb, and give gdb command r for run (and hit enter)
+
+gdb ocp
+(gdb) r
+
+
+
+Next time ocp crashes, give gdb command bt (and maybe other commands if you are in contact with
 me). This is the stuff I want sent to me (along with config.log from the
 source tree).
 
@@ -21,6 +31,7 @@ source tree).
 #3 32131
 
 
-In order to make ocp quit, simply tell gdb to quit.
+
+In order to quit gdb and ocp, give gdb the command quit.
 
 (gdb) quit
