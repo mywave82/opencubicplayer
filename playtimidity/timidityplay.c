@@ -329,7 +329,9 @@ static void timidity_apply_EventDelayed (struct cpifaceSessionAPI_t *cpifaceSess
 			channelstat[event->v1].pedal = event->v2;
 			return;
 		case CTLE_LYRIC:
+#ifdef PLAYTIMIDITY_DEBUG
 			fprintf (stderr, "Lyric time=%u id=%u\n", (unsigned int)event->v2, (unsigned int)event->v1);
+#endif
 			cpiKaraokeSetTimeCode (cpifaceSession, (uint32_t)event->v2);
 			return;
 	}
