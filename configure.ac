@@ -290,7 +290,7 @@ AX_WITH_CURSES
 AS_IF([test "x$ax_cv_ncursesw" != xyes && test "x$ax_cv_ncurses" != xyes], [AC_MSG_ERROR([requires either NcursesW or Ncurses library])])
 AS_IF([test "x$ax_cv_curses_color" != xyes], [AC_MSG_ERROR([requires an X/Open-compatible Curses library with color])])
 push_LIBS=$LIBS
-LIBS=$CURSES_LIB
+LIBS=$CURSES_LIBS
 AC_CHECK_FUNCS([resize_term])
 LIBS=$push_LIBS
 
