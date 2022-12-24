@@ -1042,7 +1042,7 @@ static int mixfProcKey(uint16_t key)
 	return 0;
 }
 
-struct devaddstruct mcpFMixAdd = {mixfGetOpt, mixfInit, 0};
+struct devaddstruct mcpFMixAdd = {mixfGetOpt, mixfInit};
 struct sounddevice mcpFMixer={SS_WAVETABLE|SS_NEEDPLAYER, 0, "FPU Mixer", Detect, Init, Close, &mcpFMixAdd};
 const char *dllinfo="driver mcpFMixer";
 

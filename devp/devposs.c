@@ -682,7 +682,7 @@ static const struct plrDevAPI_t devpOSS = {
 };
 
 
-static struct devaddstruct plrOSSAdd = {ossGetOpt, 0, 0};
+static struct devaddstruct plrOSSAdd = {ossGetOpt, 0};
 struct sounddevice plrOSS = {SS_PLAYER, 0, "OSS player", ossDetect,  ossInit,  ossClose, &plrOSSAdd};
 
 const char *dllinfo = "driver plrOSS";

@@ -14,7 +14,6 @@ struct devaddstruct
 {
 	uint32_t (*GetOpt)(const char *devinfonode_handle);
 	void (*Init)(const char *devinfonode_handle);
-	void (*Close)();
 };
 
 struct deviceinfo

@@ -1117,7 +1117,7 @@ static int mixProcKey(uint16_t key)
 	return 0;
 }
 
-struct devaddstruct mcpMixAdd = {mixGetOpt, mixrInit, 0};
+struct devaddstruct mcpMixAdd = {mixGetOpt, mixrInit};
 struct sounddevice mcpMixer={SS_WAVETABLE|SS_NEEDPLAYER, 0, "Mixer", wmixDetect, wmixInit, wmixClose, &mcpMixAdd};
 const char *dllinfo="driver mcpMixer";
 

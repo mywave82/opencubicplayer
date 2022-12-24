@@ -69,9 +69,6 @@ static void setdevice(struct devinfonode **curdev, struct devinfonode *dev)
 		return;
 	if (*curdev)
 	{
-		if ((*curdev)->devinfo.devtype->addprocs)
-			if ((*curdev)->devinfo.devtype->addprocs->Close)
-				(*curdev)->devinfo.devtype->addprocs->Close();
 		(*curdev)->devinfo.devtype->Close();
 		if (!(*curdev)->keep)
 		{
