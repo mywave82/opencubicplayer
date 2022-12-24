@@ -972,7 +972,7 @@ error_out_sid_buffers:
 	delete[] sid_buf_4x3[1]; sid_buf_4x3[1] = NULL;
 	delete[] sid_buf_4x3[2]; sid_buf_4x3[2] = NULL;
 error_out_mySidPlay:
-	cpifaceSession->plrDevAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 	delete mySidPlayer; mySidPlayer = NULL;
 error_out_buf:
 	if (buf) delete [] buf;
@@ -981,7 +981,7 @@ error_out_buf:
 
 void __attribute__ ((visibility ("internal"))) sidClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpifaceSession->plrDevAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 
 	if (sid_buf_pos)
 	{

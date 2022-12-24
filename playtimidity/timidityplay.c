@@ -1992,7 +1992,7 @@ static void doTimidityClosePlayer(struct cpifaceSessionAPI_t *cpifaceSession, in
 {
 	if (CloseDriver)
 	{
-		cpifaceSession->plrDevAPI->Stop();
+		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 	}
 
 	free(gmibuf);

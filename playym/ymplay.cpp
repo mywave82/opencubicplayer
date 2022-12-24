@@ -119,7 +119,7 @@ void __attribute__ ((visibility ("internal"))) ymClosePlayer (struct cpifaceSess
 {
 	if (active)
 	{
-		cpifaceSession->plrDevAPI->Stop();
+		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 
 		ymMusicStop(pMusic);
 		ymMusicDestroy(pMusic);
@@ -268,7 +268,7 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	return 1;
 
 error_out_plrDevAPI_Play:
-	cpifaceSession->plrDevAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 
 error_out_buffer:
 	free (buffer); buffer = 0;

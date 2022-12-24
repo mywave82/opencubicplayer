@@ -1915,7 +1915,7 @@ int __attribute__ ((visibility ("internal"))) play (struct itplayer *this, const
 
 void __attribute__ ((visibility ("internal"))) stop (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)
 {
-	cpifaceSession->mcpDevAPI->ClosePlayer ();
+	cpifaceSession->mcpDevAPI->ClosePlayer (cpifaceSession);
 	if (this->channels)
 	{
 		free(this->channels);

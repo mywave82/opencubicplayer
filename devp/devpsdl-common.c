@@ -255,6 +255,7 @@ static int devpSDLPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 
 	cpifaceSession->GetMasterSample = plrGetMasterSample;
 	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->plrActive = 1;
 
 #warning This needs to delay until we have received the first commit
 	SDL_PauseAudio(0);
@@ -305,7 +306,7 @@ static void devpSDLPause (int pause)
 	devpSDLInPause = pause;
 }
 
-static void devpSDLStop (void)
+static void devpSDLStop (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	PRINT("%s()\n", __FUNCTION__);
 	/* TODO, forceflush */
@@ -321,6 +322,8 @@ static void devpSDLStop (void)
 		ringbuffer_free (devpSDLRingBuffer);
 		devpSDLRingBuffer = 0;
 	}
+
+	cpifaceSession->plrActive = 0;
 }
 
 static const struct plrDevAPI_t devpSDL = {
@@ -333,7 +336,8 @@ static const struct plrDevAPI_t devpSDL = {
 	devpSDLCommitBuffer,
 	devpSDLPause,
 	devpSDLStop,
-	0
+	0, /* VolRegs */
+	0 /* ProcessKey */
 };
 
 static void sdlClose(void)

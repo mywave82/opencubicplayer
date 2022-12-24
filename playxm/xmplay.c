@@ -1547,7 +1547,7 @@ int __attribute__ ((visibility ("internal"))) xmpPlayModule (struct xmodule *m, 
 
 	if (nchan != cpifaceSession->PhysicalChannelCount)
 	{
-		cpifaceSession->mcpDevAPI->ClosePlayer ();
+		cpifaceSession->mcpDevAPI->ClosePlayer (cpifaceSession);
 		return 0;
 	}
 
@@ -1556,7 +1556,7 @@ int __attribute__ ((visibility ("internal"))) xmpPlayModule (struct xmodule *m, 
 
 void __attribute__ ((visibility ("internal"))) xmpStopModule (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpifaceSession->mcpDevAPI->ClosePlayer ();
+	cpifaceSession->mcpDevAPI->ClosePlayer (cpifaceSession);
 	free(que);
 }
 

@@ -320,6 +320,7 @@ static int devpDiskPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 
 	cpifaceSession->GetMasterSample = plrGetMasterSample;
 	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->plrActive = 1;
 
 	return 1;
 
@@ -336,7 +337,7 @@ error_out:
 	return 0;
 }
 
-static void devpDiskStop(void)
+static void devpDiskStop (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	uint32_t wavlen;
 	struct __attribute__((packed))
@@ -432,6 +433,7 @@ reclose:
 	devpDiskShadowBuffer = 0;
 	devpDiskCache = 0;
 	devpDiskFileHandle = -1;
+	cpifaceSession->plrActive = 0;
 }
 
 static void devpDiskPeekBuffer (void **buf1, unsigned int *buf1length, void **buf2, unsigned int *buf2length)
@@ -473,7 +475,8 @@ static const struct plrDevAPI_t devpDisk = {
 	devpDiskCommitBuffer,
 	devpDiskPause,
 	devpDiskStop,
-	0
+	0, /* VolRegs */
+	0 /* ProcessKey */
 };
 
 static int dwInit(const struct deviceinfo *d)
@@ -502,7 +505,16 @@ static int dwDetect(struct deviceinfo *card)
 	return 1;
 }
 
-struct sounddevice plrDiskWriter={SS_PLAYER, 0, "Disk Writer", dwDetect, dwInit, dwClose, 0};
+struct sounddevice plrDiskWriter =
+{
+	SS_PLAYER,
+	0,
+	"Disk Writer",
+	dwDetect,
+	dwInit,
+	dwClose,
+	0
+};
 
 const char *dllinfo = "driver plrDiskWriter";
 DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpdisk", .desc = "OpenCP Player Device: Disk Writer (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};

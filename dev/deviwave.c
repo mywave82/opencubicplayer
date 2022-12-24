@@ -47,8 +47,6 @@
 #include "stuff/compat.h"
 #include "stuff/err.h"
 
-int (*mcpProcessKey)(uint16_t);
-
 static struct devinfonode *plWaveTableDevices;
 static struct devinfonode *curwavedev;
 static struct devinfonode *defwavedev;
@@ -74,7 +72,6 @@ static void setdevice(struct devinfonode **curdev, struct devinfonode *dev)
 		if ((*curdev)->devinfo.devtype->addprocs)
 			if ((*curdev)->devinfo.devtype->addprocs->Close)
 				(*curdev)->devinfo.devtype->addprocs->Close();
-		mcpProcessKey=0;
 		(*curdev)->devinfo.devtype->Close();
 		if (!(*curdev)->keep)
 		{
@@ -112,9 +109,6 @@ static void setdevice(struct devinfonode **curdev, struct devinfonode *dev)
 		if (dev->devinfo.devtype->addprocs)
 			if (dev->devinfo.devtype->addprocs->Init)
 				dev->devinfo.devtype->addprocs->Init(dev->handle);
-		if (dev->devinfo.devtype->addprocs)
-			if (dev->devinfo.devtype->addprocs->ProcessKey)
-				mcpProcessKey=dev->devinfo.devtype->addprocs->ProcessKey;
 		(*curdev)=dev;
 		return;
 	}

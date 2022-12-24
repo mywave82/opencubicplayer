@@ -2606,7 +2606,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 				if (cpifaceSessionAPI.Public.ProcessKey)
 				{
 #ifdef KEYBOARD_DEBUG
-					fprintf (stderr, "plmpDrawScreen: plProcessKey()\n");
+					fprintf (stderr, "plmpDrawScreen: cpifaceSessionAPI.Public.ProcessKey()\n");
 #endif
 					if (cpifaceSessionAPI.Public.ProcessKey (&cpifaceSessionAPI.Public, key))
 					{

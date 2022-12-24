@@ -1638,7 +1638,7 @@ void __attribute__ ((visibility ("internal"))) mpStopModule (struct cpifaceSessi
 	{
 		cpifaceSession->mcpSet (i, mcpCReset, 0);
 	}
-	cpifaceSession->mcpDevAPI->ClosePlayer ();
+	cpifaceSession->mcpDevAPI->ClosePlayer (cpifaceSession);
 	free(que);
 }
 

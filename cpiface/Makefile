@@ -206,6 +206,7 @@ mcpedit.o: mcpedit.c \
 	../dev/deviplay.h \
 	../dev/deviwave.h \
 	../dev/mcp.h \
+	../dev/player.h \
 	../boot/psetting.h \
 	../stuff/poutput.h \
 	../stuff/sets.h

@@ -962,7 +962,7 @@ errorout_aybuf:
 	free(aybuf);
 	aybuf = 0;
 errorout_plrDevAPI_Start:
-	cpifaceSession->plrDevAPI->Stop ();
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 errorout_aydata:
 	free(aydata.tracks);
 	aydata.tracks = 0;
@@ -975,7 +975,7 @@ void __attribute__ ((visibility ("internal"))) ayClosePlayer (struct cpifaceSess
 {
 	sound_end();
 
-	cpifaceSession->plrDevAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop(cpifaceSession);
 
 	if (aybufpos)
 	{

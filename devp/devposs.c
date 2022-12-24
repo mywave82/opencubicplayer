@@ -454,11 +454,12 @@ static int devpOSSPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 
 	cpifaceSession->GetMasterSample = plrGetMasterSample;
 	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->plrActive = 1;
 
 	return 1;
 }
 
-static void devpOSSStop(void)
+static void devpOSSStop (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (fd_dsp<0)
 	{
@@ -479,6 +480,8 @@ static void devpOSSStop(void)
 
 	close (fd_dsp);
 	fd_dsp=-1;
+
+	cpifaceSession->plrActive = 0;
 }
 
 static int ossDetect(struct deviceinfo *card)
@@ -674,12 +677,13 @@ static const struct plrDevAPI_t devpOSS = {
 	devpOSSCommitBuffer,
 	devpOSSPause,
 	devpOSSStop,
-	&voloss
+	&voloss,
+	0 /* ProcessKey */
 };
 
 
-static struct devaddstruct plrOSSAdd = {ossGetOpt, 0, 0, 0};
-struct sounddevice plrOSS={SS_PLAYER, 0, "OSS player", ossDetect,  ossInit,  ossClose, &plrOSSAdd};
+static struct devaddstruct plrOSSAdd = {ossGetOpt, 0, 0};
+struct sounddevice plrOSS = {SS_PLAYER, 0, "OSS player", ossDetect,  ossInit,  ossClose, &plrOSSAdd};
 
 const char *dllinfo = "driver plrOSS";
 DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devposs", .desc = "OpenCP Player Device: OSS (c) 2004-'22 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};

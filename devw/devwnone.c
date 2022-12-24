@@ -455,16 +455,18 @@ static int devwNoneOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t 
 
 	cpifaceSession->mcpSet = devwNoneSET;
 	cpifaceSession->mcpGet = devwNoneGET;
+	cpifaceSession->mcpActive = 1;
 
 	return 1;
 }
 
-static void devwNoneClosePlayer(void)
+static void devwNoneClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	channelnum=0;
 	mixClose();
 	free(channels);
 	channels=0;
+	cpifaceSession->mcpActive = 0;
 }
 
 static const struct mcpDevAPI_t devwNone =
@@ -472,10 +474,11 @@ static const struct mcpDevAPI_t devwNone =
 	devwNoneOpenPlayer,
 	devwNoneLoadSamples,
 	devwNoneIdle,
-	devwNoneClosePlayer
+	devwNoneClosePlayer,
+	0 /* ProcessKey */
 };
 
-static int Init(const struct deviceinfo *c)
+static int devwNoneInit(const struct deviceinfo *c)
 {
 	amplify=65535;
 	relspeed=256;
@@ -492,7 +495,7 @@ static int Init(const struct deviceinfo *c)
 	return 1;
 }
 
-static void Close(void)
+static void devwNoneClose (void)
 {
 	if (mcpDevAPI == &devwNone)
 	{
@@ -500,7 +503,7 @@ static void Close(void)
 	}
 }
 
-static int Detect(struct deviceinfo *c)
+static int devwNoneDetect(struct deviceinfo *c)
 {
 	c->devtype=&mcpNone;
 	c->port=-1;
@@ -517,7 +520,7 @@ static int Detect(struct deviceinfo *c)
 	return 1;
 }
 
-struct sounddevice mcpNone={SS_WAVETABLE, 0, "None", Detect, Init, Close, 0};
+struct sounddevice mcpNone={SS_WAVETABLE, 0, "None", devwNoneDetect, devwNoneInit, devwNoneClose, 0};
 const char *dllinfo = "driver mcpNone";
 
 DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devwnone", .desc = "OpenCP Wavetable Device: None (c) 1994-'22 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 99};

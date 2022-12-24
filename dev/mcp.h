@@ -70,7 +70,8 @@ struct mcpDevAPI_t
 	int (*OpenPlayer)(int, void (*p)(struct cpifaceSessionAPI_t *cpifaceSession), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession);
 	int (*LoadSamples)(struct sampleinfo* si, int n);
 	void (*Idle)(struct cpifaceSessionAPI_t *cpifaceSession);
-	void (*ClosePlayer)(void);
+	void (*ClosePlayer)(struct cpifaceSessionAPI_t *cpifaceSession);
+	int (*ProcessKey)(uint16_t);
 };
 
 extern const struct mcpDevAPI_t *mcpDevAPI;

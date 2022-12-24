@@ -469,7 +469,7 @@ void __attribute__ ((visibility ("internal"))) cdClose (struct cpifaceSessionAPI
 {
 	cda_inpause=1;
 
-	cpifaceSession->plrDevAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 
 	if (cdbufpos)
 	{
@@ -535,7 +535,7 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 	cdbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, sizeof (cdbufdata) / 4);
 	if (!cdbufpos)
 	{
-		cpifaceSession->plrDevAPI->Stop();
+		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 		return 0;
 	}
 	cdbuffpos = 0;

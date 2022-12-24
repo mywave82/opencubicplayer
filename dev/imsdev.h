@@ -15,7 +15,6 @@ struct devaddstruct
 	uint32_t (*GetOpt)(const char *devinfonode_handle);
 	void (*Init)(const char *devinfonode_handle);
 	void (*Close)();
-	int (*ProcessKey)(uint16_t);
 };
 
 struct deviceinfo

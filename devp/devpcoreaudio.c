@@ -362,7 +362,7 @@ static void devpCoreAudioPause (int pause)
 	devpCoreAudioInPause = pause;
 }
 
-static void devpCoreAudioStop(void)
+static void devpCoreAudioStop (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	OSErr status;
 
@@ -378,6 +378,7 @@ static void devpCoreAudioStop(void)
 	devpCoreAudioBuffer = 0;
 	ringbuffer_free (devpCoreAudioRingBuffer);
 	devpCoreAudioRingBuffer = 0;
+	cpifaceSession->plrActive = 0;
 }
 
 static void devpCoreAudioPeekBuffer (void **buf1, unsigned int *buf1length, void **buf2, unsigned int *buf2length)
@@ -468,6 +469,7 @@ static int devpCoreAudioPlay (uint32_t *rate, enum plrRequestFormat *format, str
 
 	cpifaceSession->GetMasterSample = plrGetMasterSample;
 	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->plrActive = 1;
 
 	return 1;
 }
@@ -482,7 +484,8 @@ static const struct plrDevAPI_t devpCoreAudio = {
 	devpCoreAudioCommitBuffer,
 	devpCoreAudioPause,
 	devpCoreAudioStop,
-	0
+	0, /* VolRegs */
+	0 /* ProcessKey */;
 };
 
 static int CoreAudioInit(const struct deviceinfo *c)
@@ -689,7 +692,16 @@ static void __attribute__((destructor))fini(void)
 	}
 }
 
-struct sounddevice plrCoreAudio={SS_PLAYER, 1, "CoreAudio player", CoreAudioDetect,  CoreAudioInit,  CoreAudioClose};
+struct sounddevice plrCoreAudio =
+{
+	SS_PLAYER,
+	1,
+	"CoreAudio player",
+	CoreAudioDetect,
+	CoreAudioInit,
+	CoreAudioClose,
+	0
+};
 
 const char *dllinfo="driver plrCoreAudio";
 DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpcoreaudio", .desc = "OpenCP Player Device: CoreAudio (c) 2006-'22 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};

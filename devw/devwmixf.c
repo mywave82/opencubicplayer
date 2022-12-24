@@ -86,6 +86,8 @@ static int declick;
 static int channelnum;
 static uint32_t IdleCache; /* To prevent devpDisk lockup */
 
+static int mixfProcKey(uint16_t key);
+
 struct channel
 {
 	void *samp;
@@ -878,22 +880,25 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t 
 		for (mode=dwmixfa_state.postprocs; mode; mode=mode->next)
 			if (mode->Init) mode->Init(dwmixfa_state.samprate);
 	}
+
+	cpifaceSession->mcpActive = 1;
+
 	return 1;
 
 	//mixClose();
 error_out_plrDevAPI_Play:
-	plrDevAPI->Stop();
+	plrDevAPI->Stop (cpifaceSession);
 error_out:
 	free (dwmixfa_state.tempbuf); dwmixfa_state.tempbuf = 0;
 	free (channels);              channels = 0;
 	return 0;
 }
 
-static void devwMixFClosePlayer()
+static void devwMixFClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct mixfpostprocregstruct *mode;
 
-	plrDevAPI->Stop();
+	plrDevAPI->Stop (cpifaceSession);
 
 	channelnum=0;
 
@@ -905,6 +910,8 @@ static void devwMixFClosePlayer()
 	free(channels);
 	free(dwmixfa_state.tempbuf);
 	dwmixfa_state.tempbuf = 0;
+
+	cpifaceSession->mcpActive = 0;
 }
 
 static const struct mcpDevAPI_t devwMixF =
@@ -912,7 +919,8 @@ static const struct mcpDevAPI_t devwMixF =
 	devwMixFOpenPlayer,
 	devwMixFLoadSamples,
 	devwMixFIdle,
-	devwMixFClosePlayer
+	devwMixFClosePlayer,
+	mixfProcKey
 };
 
 static int Init(const struct deviceinfo *dev)
@@ -1031,12 +1039,10 @@ static int mixfProcKey(uint16_t key)
 			return r;
 	}
 
-	if (plrProcessKey)
-		return plrProcessKey(key);
 	return 0;
 }
 
-struct devaddstruct mcpFMixAdd = {mixfGetOpt, mixfInit, 0, mixfProcKey};
+struct devaddstruct mcpFMixAdd = {mixfGetOpt, mixfInit, 0};
 struct sounddevice mcpFMixer={SS_WAVETABLE|SS_NEEDPLAYER, 0, "FPU Mixer", Detect, Init, Close, &mcpFMixAdd};
 const char *dllinfo="driver mcpFMixer";
 

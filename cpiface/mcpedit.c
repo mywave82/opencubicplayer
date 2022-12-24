@@ -31,6 +31,7 @@
 #include "types.h"
 #include "dev/deviplay.h"
 #include "dev/deviwave.h"
+#include "dev/player.h"
 #include "dev/mcp.h"
 #include "boot/psetting.h"
 #include "stuff/poutput.h"
@@ -113,10 +114,14 @@ int mcpSetProcessKey (struct cpifaceSessionPrivate_t *f, uint16_t key)
 			cpiKeyHelp(KEY_CTRL_SHIFT_F(3), "`Load` configuration");
 			cpiKeyHelp(KEY_CTRL_SHIFT_F(4), "`Reset` configuration");
 			cpiKeyHelp(KEY_BACKSPACE, "Cycle mixer-filters");
-			if (plrProcessKey)
-				plrProcessKey(key);
-			if (mcpProcessKey)
-				mcpProcessKey(key);
+			if (f->Public.plrActive && f->Public.plrDevAPI->ProcessKey)
+			{
+				f->Public.plrDevAPI->ProcessKey (key);
+			}
+			if (f->Public.mcpActive && f->Public.mcpDevAPI->ProcessKey)
+			{
+				f->Public.mcpDevAPI->ProcessKey (key);
+			}
 			return 0;
 		case '-':
 			if (f->mcpset.vol>=2)
@@ -335,21 +340,29 @@ int mcpSetProcessKey (struct cpifaceSessionPrivate_t *f, uint16_t key)
 			break;
 
 		default:
-			if (plrProcessKey)
+			if (f->Public.plrActive && f->Public.plrDevAPI->ProcessKey)
 			{
-				int ret=plrProcessKey(key);
-				if (ret==2)
+				int ret = f->Public.plrDevAPI->ProcessKey (key);
+				if (ret == 2)
+				{
 					cpiResetScreen();
+				}
 				if (ret)
+				{
 					return 1;
+				}
 			}
-			if (mcpProcessKey)
-			{ /* can be echo stuff, not used yet */
-				int ret=mcpProcessKey(key);
+			if (f->Public.mcpActive && f->Public.mcpDevAPI->ProcessKey)
+			{
+				int ret = f->Public.mcpDevAPI->ProcessKey (key);
 				if (ret==2)
-				cpiResetScreen();
+				{
+					cpiResetScreen();
+				}
 				if (ret)
+				{
 					return 1;
+				}
 			}
 
 			return 0;

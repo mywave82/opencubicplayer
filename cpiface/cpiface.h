@@ -272,6 +272,9 @@ struct cpifaceSessionAPI_t
 	const struct dirdbAPI_t         *dirdb;
 	      struct dmDrive            *dmFile;
 
+	int plrActive; /* currently used to detect if plrAPI->ProcessKey should be processed, later it will replaced by a handle instead */
+	int mcpActive; /* currently used to detect if mcpAPI->ProcessKey should be processed, later it will replaced by a handle instead */
+
 	char utf8_8_dot_3  [12*4+1]; /* UTF-8 ready, filled in by cpiface */
 	char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready, filled in by cpiface */
 	struct moduleinfostruct mdbdata; /* filled in by cpiface */
@@ -325,7 +328,6 @@ struct cpifaceSessionAPI_t
 	void (*cpiTextSetMode) (struct cpifaceSessionAPI_t *cpifaceSession, const char *name);
 	void (*cpiTextRecalc) (struct cpifaceSessionAPI_t *cpifaceSession);
 	void (*latin1_f_to_utf8_z) (const char *src, size_t srclen, char *dst, size_t dstlen);
-
 };
 
 #endif

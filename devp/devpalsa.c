@@ -915,11 +915,12 @@ static int devpALSAPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 
 	cpifaceSession->GetMasterSample = plrGetMasterSample;
 	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->plrActive = 1;
 
 	return 1;
 }
 
-static void devpALSAStop(void)
+static void devpALSAStop (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	free(devpALSABuffer); devpALSABuffer=0;
 	free(devpALSAShadowBuffer); devpALSAShadowBuffer=0;
@@ -935,6 +936,7 @@ static void devpALSAStop(void)
 	debug_output = -1;
 #endif
 
+	cpifaceSession->plrActive = 0;
 }
 
 /* plr API stop */
@@ -1462,7 +1464,8 @@ static const struct plrDevAPI_t devpALSA = {
 	devpALSACommitBuffer,
 	devpALSAPause,
 	devpALSAStop,
-	&volalsa
+	&volalsa,
+	0 /* ProcessKey */
 };
 
 struct sounddevice plrAlsa={SS_PLAYER, 1, "ALSA device driver", alsaDetect, alsaInit, alsaClose, NULL};

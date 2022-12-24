@@ -28,8 +28,9 @@ struct plrDevAPI_t
 	void (*OnBufferCallback) (int samplesuntil, void (*callback)(void *arg, int samples_ago), void *arg);
 	void (*CommitBuffer)(unsigned int samples);
 	void (*Pause)(int pause); // driver will insert dummy samples as needed
-	void (*Stop)(void);
+	void (*Stop) (struct cpifaceSessionAPI_t *cpifaceSession);
 	struct ocpvolregstruct *VolRegs; /* null if feature is not present */
+	int (*ProcessKey)(uint16_t);
 };
 
 extern const struct plrDevAPI_t *plrDevAPI;

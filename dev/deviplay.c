@@ -46,8 +46,6 @@
 #include "stuff/compat.h"
 #include "stuff/err.h"
 
-int (*plrProcessKey)(uint16_t);
-
 static struct devinfonode *plPlayerDevices;
 static struct devinfonode *curplaydev;
 static struct devinfonode *defplaydev;
@@ -75,7 +73,6 @@ static void setdevice(struct devinfonode **curdev, struct devinfonode *dev)
 		if ((*curdev)->devinfo.devtype->addprocs)
 			if ((*curdev)->devinfo.devtype->addprocs->Close)
 				(*curdev)->devinfo.devtype->addprocs->Close();
-		plrProcessKey=0;
 		(*curdev)->devinfo.devtype->Close();
 		if (!(*curdev)->keep)
 		{
@@ -113,9 +110,6 @@ static void setdevice(struct devinfonode **curdev, struct devinfonode *dev)
 		if (dev->devinfo.devtype->addprocs)
 			if (dev->devinfo.devtype->addprocs->Init)
 				dev->devinfo.devtype->addprocs->Init(dev->handle);
-		if (dev->devinfo.devtype->addprocs)
-			if (dev->devinfo.devtype->addprocs->ProcessKey)
-				plrProcessKey=dev->devinfo.devtype->addprocs->ProcessKey;
 		(*curdev)=dev;
 		return;
 	}

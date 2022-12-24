@@ -1085,7 +1085,7 @@ error_out_flacbuf:
 	free (flacbuf);
 	flacbuf = 0;
 error_out_plrDevAPI_Start:
-	cpifaceSession->plrDevAPI->Stop ();
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 error_out_decoder:
 #if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
 	FLAC__seekable_stream_decoder_finish(decoder);
@@ -1106,7 +1106,7 @@ error_out_flacfile:
 
 void __attribute__ ((visibility ("internal"))) flacClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpifaceSession->plrDevAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 
 	if (flacbuf)
 	{

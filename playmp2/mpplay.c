@@ -1157,7 +1157,7 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 	return 1;
 
 error_out_plrDevAPI_Play:
-	cpifaceSession->plrDevAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 error_out:
 	if (file)
 	{
@@ -1185,7 +1185,7 @@ void __attribute__ ((visibility ("internal"))) mpegClosePlayer (struct cpifaceSe
 
 	if (active)
 	{
-		cpifaceSession->plrDevAPI->Stop();
+		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 
 		mad_synth_finish(&synth);
 		mad_frame_finish(&frame);

@@ -984,7 +984,7 @@ error_out_oggbuf:
 	oggbuf = 0;
 
 error_out_plrDevAPI_Play:
-	cpifaceSession->plrDevAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 
 error_out_file:
 	ov_clear(&ov);
@@ -1003,7 +1003,7 @@ void __attribute__ ((visibility ("internal"))) oggClosePlayer (struct cpifaceSes
 {
 	if (active)
 	{
-		cpifaceSession->plrDevAPI->Stop();
+		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 	}
 	active=0;
 

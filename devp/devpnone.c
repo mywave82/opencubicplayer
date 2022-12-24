@@ -186,6 +186,7 @@ static int devpNonePlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 
 	cpifaceSession->GetMasterSample = plrGetMasterSample;
 	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->plrActive = 1;
 
 	return 1;
 }
@@ -224,7 +225,7 @@ static void devpNonePause(int pause)
 	devpNoneInPause = pause;
 }
 
-static void devpNoneStop(void)
+static void devpNoneStop (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	free(devpNoneBuffer); devpNoneBuffer=0;
 	if (devpNoneRingBuffer)
@@ -233,6 +234,7 @@ static void devpNoneStop(void)
 		ringbuffer_free (devpNoneRingBuffer);
 		devpNoneRingBuffer = 0;
 	}
+	cpifaceSession->plrActive = 0;
 }
 
 static const struct plrDevAPI_t devpNone = {
@@ -245,7 +247,8 @@ static const struct plrDevAPI_t devpNone = {
 	devpNoneCommitBuffer,
 	devpNonePause,
 	devpNoneStop,
-	0
+	0,
+	0 /* ProcessKey */
 };
 
 static int qpInit(const struct deviceinfo *c)
@@ -274,7 +277,16 @@ static int qpDetect(struct deviceinfo *card)
 	return 1;
 }
 
-struct sounddevice plrNone={SS_PLAYER, 0, "Super High Quality Quiet Player", qpDetect, qpInit, qpClose, 0};
+struct sounddevice plrNone =
+{
+	SS_PLAYER,
+	0,
+	"Super High Quality Quiet Player",
+	qpDetect,
+	qpInit,
+	qpClose,
+	0,
+};
 
 const char *dllinfo="driver plrNone";
 DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpnone", .desc = "OpenCP Player Device: None (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};

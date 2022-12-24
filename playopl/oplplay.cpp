@@ -111,7 +111,7 @@ void __attribute__ ((visibility ("internal"))) oplClosePlayer (struct cpifaceSes
 		cpifaceSession->ringbufferAPI->free (oplbufpos);
 		oplbufpos = 0;
 
-		cpifaceSession->plrDevAPI->Stop();
+		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 
 		delete(p);
 		delete(opl);
@@ -334,7 +334,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	return 1;
 
 error_out:
-	cpifaceSession->plrDevAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 	if (oplbufpos)
 	{
 		cpifaceSession->ringbufferAPI->free (oplbufpos);

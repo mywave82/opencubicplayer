@@ -766,8 +766,8 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	return 1;
 
-	//cpifaceSession->plrDevAPI->Stop();
 error_out_wavebuf:
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 	free (wavebuf);
 	wavebuf=0;
 error_out_wavefile:
@@ -783,7 +783,7 @@ void __attribute__ ((visibility ("internal"))) wpClosePlayer(struct cpifaceSessi
 
 	PRINT("Freeing resources\n");
 
-	cpifaceSession->plrDevAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 
 	if (wavebufpos)
 	{

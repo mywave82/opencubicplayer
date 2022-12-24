@@ -715,7 +715,7 @@ error_out_tune:
 		ht = 0;
 	}
 error_out_plrDevAPI_Play:
-	cpifaceSession->plrDevAPI->Stop();
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 
 	current_cpifaceSession = 0;
 
@@ -724,7 +724,7 @@ error_out_plrDevAPI_Play:
 
 void __attribute__ ((visibility ("internal"))) hvlClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpifaceSession->plrDevAPI->Stop ();
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 
 	if (hvl_buf_pos)
 	{
