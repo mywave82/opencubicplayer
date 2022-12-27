@@ -259,6 +259,7 @@ struct drawHelperAPI_t
 };
 
 struct dmDrive;
+struct ocpvolregstruct;
 
 struct cpifaceSessionAPI_t
 {
@@ -306,6 +307,7 @@ struct cpifaceSessionAPI_t
 
 	void (*mcpSet)(int ch, int opt, int val); /* Filled in by devw or playback plugin */
 	int (*mcpGet)(int ch, int opt); /* Filled in by devw or playback plugin */
+	void (*mcpGetVolRegs) (struct cpifaceSessionAPI_t *cpifaceSession, void (*Callback)(struct cpifaceSessionAPI_t *cpifaceSession, const struct ocpvolregstruct *vol)); /* Optionally filled in by devw plugin */
 
 	/* Callbacks and status from cpiface to plugin */
 	uint8_t MuteChannel[MAXLCHAN]; /* Reflects the status of channel muting used by channel visualizers. Should be controlled by the playback plugin */

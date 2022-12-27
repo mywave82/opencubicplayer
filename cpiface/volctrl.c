@@ -59,33 +59,42 @@ static int x0, y0, x1, y1, yoff;       /* origin x, origin y, width, height */
 static int vols;                       /* number of registered vols */
 static struct regvolstruct             /* the registered vols */
 {
-	struct ocpvolregstruct *volreg;
+	const struct ocpvolregstruct *volreg;
 	int id;
 } vol[100];                            /* TODO: dynamically? on the other hand: which display has more than 100 lines? :) */
 
+static void GetVolsCallback (struct cpifaceSessionAPI_t *cpifaceSession, const struct ocpvolregstruct *x)
+{
+	int num = x->GetVolumes();
+	int i;
+
+	for(i=0; i<num; i++)
+	{
+		struct ocpvolstruct y;
+		if(vols>=100)
+			return;
+		if(x->GetVolume(&y, i))
+		{
+			vol[vols].volreg=x;
+			vol[vols].id=i;
+			vols++;
+		}
+	}
+}
+
 static int GetVols(struct cpifaceSessionAPI_t *cpifaceSession)
 {
+	vols = 0;
+
 	if (plrDevAPI && plrDevAPI->VolRegs)
 	{
-		struct ocpvolregstruct *x = plrDevAPI->VolRegs;
-		int num = x->GetVolumes();
-		int i;
-
-		for(i=0; i<num; i++)
-		{
-			struct ocpvolstruct y;
-			if(vols>=100)
-				return 0;
-			if(x->GetVolume(&y, i))
-			{
-				vol[vols].volreg=x;
-				vol[vols].id=i;
-				vols++;
-			}
-		}
-		return 1;
+		GetVolsCallback (cpifaceSession, plrDevAPI->VolRegs);
 	}
-	return 0;
+	if (cpifaceSession->mcpGetVolRegs)
+	{
+		cpifaceSession->mcpGetVolRegs (cpifaceSession, GetVolsCallback);
+	}
+	return !!vols;
 }
 
 static int volctrlGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
@@ -210,33 +219,50 @@ static void volctrlDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 			 * hurts, but it works :)
 			 */
 
-			char   sbuf[CONSOLE_MAX_X], *ptr=&sbuf[0];
+			char   sbuf[CONSOLE_MAX_X], *ptr;
 			int    i;
 			unsigned int of;
 			unsigned int po;
 
-			strcpy(sbuf, x.name);
+			/* Dump the entire input string into sbuf */
+			snprintf (sbuf, sizeof (sbuf), "%s", x.name);
+
+			/* Try to locate the current selected string, if found ptr will point at it, if not it will point at the terminating \0 */
 			for (i=x.val+1, ptr=&sbuf[0]; i && *ptr; ptr++)
+			{
 				if (*ptr=='\t') i--;
+			}
 
-			memsetw(&buf[ll+3], (hc<<8)+0x20, barlen);
-
+			/* if selected item was found and was non-zero, replace text with (NULL) */
 			if (!*ptr || i)
 			{
 				strcpy(sbuf, "(NULL)");
 				ptr=&sbuf[0];
 			}
 
+			/* locate the next \t, and terminate the string if found */
 			if (strchr(ptr, '\t'))
-				*strchr(ptr, '\t')=0;
+			{
+				*strchr(ptr, '\t') = 0;
+			}
 
+			/* limit the selected item string-length */
 			if (strlen(ptr)>=barlen)
+			{
 				ptr[barlen]=0;
+			}
 
+			/* offset, so we can center the text */
 			of=(barlen-strlen(ptr))>>1;
 
+			/* clear the barlen part of the buffer, hc=highlight-color */
+			memsetw(&buf[ll+3], (hc<<8)+0x20, barlen);
+
+			/* insert the text */
 			for (po=of; po<strlen(ptr)+of; po++)
-				buf[po+ll+3]=ptr[po-of]/*|((hc-7)?0x800:0x900)*/;
+			{
+				buf[po+ll+3] = ptr[po-of] | ((hc-7)?0x800:0x900);
+			}
 		} else {
 			int p=((x.val-x.min)*(barlen))/(x.max-x.min);       /* range: 0..barlen */
 			int po;
