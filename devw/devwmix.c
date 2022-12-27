@@ -112,6 +112,7 @@ static int masterrvb;
 static uint32_t IdleCache; /* To prevent devpDisk lockup */
 
 static int mixProcKey(uint16_t key);
+static void mixrInit(const char *sec);
 
 static void calcinterpoltabr(void)
 	/* used by OpenPlayer */
@@ -998,7 +999,7 @@ static const struct mcpDevAPI_t devwMix =
 	mixProcKey
 };
 
-static int wmixInit(const struct deviceinfo *dev)
+static int wmixInit(const struct deviceinfo *dev, const char *handle)
 {
 	resample=!!(dev->opt&MIXRQ_RESAMPLE);
 	quality=!!dev->subtype;
@@ -1014,6 +1015,8 @@ static int wmixInit(const struct deviceinfo *dev)
 	channelnum=0;
 
 	mcpDevAPI = &devwMix;
+
+	mixrInit (handle);
 
 	return 1;
 }
@@ -1075,10 +1078,11 @@ static void mixrInit(const char *sec)
 	fprintf(stderr, "[devwmix] INIT, ");
 	if (!quality)
 	{
-		fprintf(stderr, "using dwmixa.c C version\n");
+		fprintf(stderr, "using dwmixa.c C version");
 	} else {
-		fprintf(stderr, "using dwmixaq.c C version\n");
+		fprintf(stderr, "using dwmixaq.c C version");
 	}
+	fprintf(stderr, " (handle=%s)\n", sec);
 
 	postprocs=0;
 	regs=cfGetProfileString(sec, "postprocs", "");
@@ -1117,7 +1121,7 @@ static int mixProcKey(uint16_t key)
 	return 0;
 }
 
-struct devaddstruct mcpMixAdd = {mixGetOpt, mixrInit};
+struct devaddstruct mcpMixAdd = {mixGetOpt};
 struct sounddevice mcpMixer={SS_WAVETABLE|SS_NEEDPLAYER, 0, "Mixer", wmixDetect, wmixInit, wmixClose, &mcpMixAdd};
 const char *dllinfo="driver mcpMixer";
 

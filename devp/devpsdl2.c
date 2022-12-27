@@ -47,7 +47,7 @@
 
 #include "devpsdl-common.c"
 
-static int sdlInit(const struct deviceinfo *c)
+static int sdlInit(const struct deviceinfo *c, const char *handle)
 {
 	PRINT("%s()\n", __FUNCTION__);
 	if (SDL_InitSubSystem(SDL_INIT_AUDIO))

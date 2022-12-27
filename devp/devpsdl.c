@@ -47,7 +47,7 @@
 
 #include "devpsdl-common.c"
 
-static int sdlInit(const struct deviceinfo *c)
+static int sdlInit(const struct deviceinfo *c, const char *handle)
 {
 	char drivername[FILENAME_MAX];
 	PRINT("%s()\n", __FUNCTION__);

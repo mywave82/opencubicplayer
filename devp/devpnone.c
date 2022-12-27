@@ -251,7 +251,7 @@ static const struct plrDevAPI_t devpNone = {
 	0 /* ProcessKey */
 };
 
-static int qpInit(const struct deviceinfo *c)
+static int qpInit(const struct deviceinfo *c, const char *handle)
 {
 	plrDevAPI = &devpNone;
 	return 1;

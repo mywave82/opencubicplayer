@@ -13,7 +13,6 @@ struct sounddevice;
 struct devaddstruct
 {
 	uint32_t (*GetOpt)(const char *devinfonode_handle);
-	void (*Init)(const char *devinfonode_handle);
 };
 
 struct deviceinfo
@@ -41,7 +40,7 @@ struct sounddevice
 	char keep;
 	char name[32];
 	int (*Detect)(struct deviceinfo *c);
-	int (*Init)(const struct deviceinfo *c);
+	int (*Init)(const struct deviceinfo *c, const char *handle);
 	void (*Close)(void);
 	struct devaddstruct *addprocs;
 };

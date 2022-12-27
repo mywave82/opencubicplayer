@@ -479,7 +479,7 @@ static const struct plrDevAPI_t devpDisk = {
 	0 /* ProcessKey */
 };
 
-static int dwInit(const struct deviceinfo *d)
+static int dwInit(const struct deviceinfo *d, const char *handle)
 {
 	plrDevAPI=&devpDisk;
 	return 1;

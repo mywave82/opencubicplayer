@@ -488,7 +488,7 @@ static const struct plrDevAPI_t devpCoreAudio = {
 	0 /* ProcessKey */;
 };
 
-static int CoreAudioInit(const struct deviceinfo *c)
+static int CoreAudioInit(const struct deviceinfo *c, const char *handle)
 {
 	plrDevAPI = &devpCoreAudio;
 	return 1;

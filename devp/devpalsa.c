@@ -1110,7 +1110,7 @@ static int volalsaSetVolume(struct ocpvolstruct *v, int n)
 
 static int alsasetupregistered = 0;
 static void alsaClose(void);
-static int alsaInit(const struct deviceinfo *c)
+static int alsaInit(const struct deviceinfo *c, const char *handle)
 {
 	alsasetupregistered = 1;
 	ocpdir_t_fill (&dir_alsa,
@@ -1468,7 +1468,16 @@ static const struct plrDevAPI_t devpALSA = {
 	0 /* ProcessKey */
 };
 
-struct sounddevice plrAlsa={SS_PLAYER, 1, "ALSA device driver", alsaDetect, alsaInit, alsaClose, NULL};
+struct sounddevice plrAlsa =
+{
+	SS_PLAYER,
+	1,
+	"ALSA device driver",
+	alsaDetect,
+	alsaInit,
+	alsaClose,
+	NULL
+};
 
 const char *dllinfo="driver plrAlsa";
 DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpalsa", .desc = "OpenCP Player Device: ALSA (c) 2005-'22 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};

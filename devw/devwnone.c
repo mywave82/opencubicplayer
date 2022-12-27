@@ -478,7 +478,7 @@ static const struct mcpDevAPI_t devwNone =
 	0 /* ProcessKey */
 };
 
-static int devwNoneInit(const struct deviceinfo *c)
+static int devwNoneInit(const struct deviceinfo *c, const char *handle)
 {
 	amplify=65535;
 	relspeed=256;

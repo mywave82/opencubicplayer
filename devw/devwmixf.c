@@ -87,6 +87,7 @@ static int channelnum;
 static uint32_t IdleCache; /* To prevent devpDisk lockup */
 
 static int mixfProcKey(uint16_t key);
+static void mixfInit(const char *sec);
 
 struct channel
 {
@@ -923,7 +924,7 @@ static const struct mcpDevAPI_t devwMixF =
 	mixfProcKey
 };
 
-static int Init(const struct deviceinfo *dev)
+static int Init(const struct deviceinfo *dev, const char *handle)
 {
 	volramp=!!(dev->opt&MIXF_VOLRAMP);
 	declick=!!(dev->opt&MIXF_DECLICK);
@@ -941,6 +942,8 @@ static int Init(const struct deviceinfo *dev)
 	channelnum=0;
 
 	mcpDevAPI = &devwMixF;
+
+	mixfInit (handle);
 
 	return 1;
 }
@@ -1004,7 +1007,7 @@ static void mixfInit(const char *sec)
 	const char *regs;
 
 	fprintf(stderr, "[devwmixf] INIT, ");
-	fprintf(stderr, "using dwmixfa.c C version\n");
+	fprintf(stderr, "using dwmixfa.c C version (handle=%s)\n", sec);
 
 	dwmixfa_state.postprocs=0;
 	regs=cfGetProfileString(sec, "postprocs", "");
@@ -1042,7 +1045,7 @@ static int mixfProcKey(uint16_t key)
 	return 0;
 }
 
-struct devaddstruct mcpFMixAdd = {mixfGetOpt, mixfInit};
+struct devaddstruct mcpFMixAdd = {mixfGetOpt};
 struct sounddevice mcpFMixer={SS_WAVETABLE|SS_NEEDPLAYER, 0, "FPU Mixer", Detect, Init, Close, &mcpFMixAdd};
 const char *dllinfo="driver mcpFMixer";
 

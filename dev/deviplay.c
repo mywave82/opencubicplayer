@@ -102,11 +102,8 @@ static void setdevice(struct devinfonode **curdev, struct devinfonode *dev)
 	}
 
 	fprintf(stderr, "%s selected...\n", dev->name);
-	if (dev->devinfo.devtype->Init(&dev->devinfo))
+	if (dev->devinfo.devtype->Init(&dev->devinfo, dev->handle))
 	{
-		if (dev->devinfo.devtype->addprocs)
-			if (dev->devinfo.devtype->addprocs->Init)
-				dev->devinfo.devtype->addprocs->Init(dev->handle);
 		(*curdev)=dev;
 		return;
 	}

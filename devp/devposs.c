@@ -550,7 +550,7 @@ static int ossDetect(struct deviceinfo *card)
 	return 1; /* device exists, so we are happy.. can do better tests later */
 }
 
-static int ossInit(const struct deviceinfo *card)
+static int ossInit(const struct deviceinfo *card, const char *handle)
 {
 	memcpy(&currentcard, card, sizeof(struct deviceinfo));
 
@@ -682,7 +682,7 @@ static const struct plrDevAPI_t devpOSS = {
 };
 
 
-static struct devaddstruct plrOSSAdd = {ossGetOpt, 0};
+static struct devaddstruct plrOSSAdd = {ossGetOpt};
 struct sounddevice plrOSS = {SS_PLAYER, 0, "OSS player", ossDetect,  ossInit,  ossClose, &plrOSSAdd};
 
 const char *dllinfo = "driver plrOSS";
