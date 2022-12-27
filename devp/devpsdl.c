@@ -70,7 +70,7 @@ struct sounddevice plrSDL =
 	sdlDetect,
 	sdlInit,
 	sdlClose,
-	0
+	0 /* GetOpt */
 };
 
 const char *dllinfo="driver plrSDL";

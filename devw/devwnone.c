@@ -520,7 +520,16 @@ static int devwNoneDetect(struct deviceinfo *c)
 	return 1;
 }
 
-struct sounddevice mcpNone={SS_WAVETABLE, 0, "None", devwNoneDetect, devwNoneInit, devwNoneClose, 0};
+struct sounddevice mcpNone =
+{
+	SS_WAVETABLE,
+	0,
+	"None",
+	devwNoneDetect,
+	devwNoneInit,
+	devwNoneClose,
+	0 /* GetOpt */
+};
 const char *dllinfo = "driver mcpNone";
 
 DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devwnone", .desc = "OpenCP Wavetable Device: None (c) 1994-'22 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 99};

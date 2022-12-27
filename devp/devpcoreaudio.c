@@ -700,7 +700,7 @@ struct sounddevice plrCoreAudio =
 	CoreAudioDetect,
 	CoreAudioInit,
 	CoreAudioClose,
-	0
+	0 /* GetOpt */
 };
 
 const char *dllinfo="driver plrCoreAudio";

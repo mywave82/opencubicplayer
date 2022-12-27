@@ -10,11 +10,6 @@ struct sounddevice;
 
 #define DEVICE_NAME_MAX 63
 
-struct devaddstruct
-{
-	uint32_t (*GetOpt)(const char *devinfonode_handle);
-};
-
 struct deviceinfo
 {
 	struct sounddevice *devtype;
@@ -42,7 +37,7 @@ struct sounddevice
 	int (*Detect)(struct deviceinfo *c);
 	int (*Init)(const struct deviceinfo *c, const char *handle);
 	void (*Close)(void);
-	struct devaddstruct *addprocs;
+	uint32_t (*GetOpt)(const char *devinfonode_handle);
 };
 
 #endif

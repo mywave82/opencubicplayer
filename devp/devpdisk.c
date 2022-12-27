@@ -513,7 +513,7 @@ struct sounddevice plrDiskWriter =
 	dwDetect,
 	dwInit,
 	dwClose,
-	0
+	0 /* GetOpt */
 };
 
 const char *dllinfo = "driver plrDiskWriter";

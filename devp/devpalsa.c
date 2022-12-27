@@ -1476,7 +1476,7 @@ struct sounddevice plrAlsa =
 	alsaDetect,
 	alsaInit,
 	alsaClose,
-	NULL
+	0 /* GetOpt */
 };
 
 const char *dllinfo="driver plrAlsa";

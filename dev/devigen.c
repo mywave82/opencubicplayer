@@ -117,9 +117,10 @@ int deviReadDevices(const char *list, struct devinfonode **devs)
 		n->devinfo.opt=0;
 
 		strcpy(n->name, dev->name);
-		if (dev->addprocs)
-			if (dev->addprocs->GetOpt)
-				n->devinfo.opt=dev->addprocs->GetOpt(drvhand);
+		if (dev->GetOpt)
+		{
+			n->devinfo.opt=dev->GetOpt(drvhand);
+		}
 		n->devinfo.opt|=cfGetProfileInt(drvhand, "options", 0, 16);
 
 		fprintf(stderr, "%s", n->name);

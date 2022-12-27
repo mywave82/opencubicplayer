@@ -681,9 +681,16 @@ static const struct plrDevAPI_t devpOSS = {
 	0 /* ProcessKey */
 };
 
-
-static struct devaddstruct plrOSSAdd = {ossGetOpt};
-struct sounddevice plrOSS = {SS_PLAYER, 0, "OSS player", ossDetect,  ossInit,  ossClose, &plrOSSAdd};
+struct sounddevice plrOSS =
+{
+	SS_PLAYER,
+	0,
+	"OSS player",
+	ossDetect,
+	ossInit,
+	ossClose,
+	ossGetOpt
+};
 
 const char *dllinfo = "driver plrOSS";
 DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devposs", .desc = "OpenCP Player Device: OSS (c) 2004-'22 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};

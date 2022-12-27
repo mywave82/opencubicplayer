@@ -285,7 +285,7 @@ struct sounddevice plrNone =
 	qpDetect,
 	qpInit,
 	qpClose,
-	0,
+	0 /* GetOpt */
 };
 
 const char *dllinfo="driver plrNone";

@@ -1121,8 +1121,16 @@ static int mixProcKey(uint16_t key)
 	return 0;
 }
 
-struct devaddstruct mcpMixAdd = {mixGetOpt};
-struct sounddevice mcpMixer={SS_WAVETABLE|SS_NEEDPLAYER, 0, "Mixer", wmixDetect, wmixInit, wmixClose, &mcpMixAdd};
+struct sounddevice mcpMixer =
+{
+	SS_WAVETABLE|SS_NEEDPLAYER,
+	0,
+	"Mixer",
+	wmixDetect,
+	wmixInit,
+	wmixClose,
+	mixGetOpt
+};
 const char *dllinfo="driver mcpMixer";
 
 DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devwmix", .desc = "OpenCP Wavetable Device: Mixer (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};
