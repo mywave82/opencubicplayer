@@ -110,6 +110,14 @@ int mcpSetProcessKey (struct cpifaceSessionPrivate_t *f, uint16_t key)
 				cpiKeyHelp (KEY_SHIFT_F(2), "Decrease amplification");
 				cpiKeyHelp (KEY_SHIFT_F(3), "Increase amplification");
 			}
+			if (f->mcpType & mcpNormalizeCanEcho)
+			{
+				cpiKeyHelp (KEY_SHIFT_F(4), "Toggle view volume vs echo");
+				cpiKeyHelp (KEY_SHIFT_F(5), "Decrease reverb");
+				cpiKeyHelp (KEY_SHIFT_F(6), "Increase reverb");
+				cpiKeyHelp (KEY_SHIFT_F(7), "Decrease chorus");
+				cpiKeyHelp (KEY_SHIFT_F(8), "Increase chorus");
+			}
 			cpiKeyHelp(KEY_CTRL_SHIFT_F(2), "`Save` the current configuration");
 			cpiKeyHelp(KEY_CTRL_SHIFT_F(3), "`Load` configuration");
 			cpiKeyHelp(KEY_CTRL_SHIFT_F(4), "`Reset` configuration");
@@ -242,48 +250,44 @@ int mcpSetProcessKey (struct cpifaceSessionPrivate_t *f, uint16_t key)
 				f->Public.mcpSet(-1, mcpMasterAmplify, 256*f->mcpset.amp);
 			}
 			break;
-
-#if 0 /* none of the software wavetables implements this - AWE32 hardware mixer in DOS probably was the main user */
 		case KEY_SHIFT_F(4):
-			if (mcpType & mcpNormalizeCanEcho)
+			if (f->mcpType & mcpNormalizeCanEcho)
 			{
 				f->mcpset.viewfx^=1;
 			}
 			break;
 		case KEY_SHIFT_F(5):
-			if (mcpType & mcpNormalizeCanEcho)
+			if (f->mcpType & mcpNormalizeCanEcho)
 			{
-				if ((f->mcpset.reverb-=8)<-64)
-					f->mcpset.reverb=-64;
+				if ((f->mcpset.reverb-=2)<0)
+					f->mcpset.reverb=0;
 				f->Public.mcpSet(-1, mcpMasterReverb, f->mcpset.reverb);
 			}
 			break;
 		case KEY_SHIFT_F(6):
-			if (mcpType & mcpNormalizeCanEcho)
+			if (f->mcpType & mcpNormalizeCanEcho)
 			{
-				if ((f->mcpset.reverb+=8)>64)
+				if ((f->mcpset.reverb+=2)>64)
 					f->mcpset.reverb=64;
 				f->Public.mcpSet(-1, mcpMasterReverb, f->mcpset.reverb);
 			}
 			break;
 		case KEY_SHIFT_F(7):
-			if (mcpType & mcpNormalizeCanEcho)
+			if (f->mcpType & mcpNormalizeCanEcho)
 			{
-				if ((f->mcpset.chorus-=8)<-64)
-					f->mcpset.chorus=-64;
+				if ((f->mcpset.chorus-=2)<0)
+					f->mcpset.chorus=0;
 				f->Public.mcpSet(-1, mcpMasterChorus, f->mcpset.chorus);
 			}
 			break;
 		case KEY_SHIFT_F(8):
-			if (mcpType & mcpNormalizeCanEcho)
+			if (f->mcpType & mcpNormalizeCanEcho)
 			{
-				if ((f->mcpset.chorus+=8)>64)
+				if ((f->mcpset.chorus+=2)>64)
 					f->mcpset.chorus=64;
 				f->Public.mcpSet(-1, mcpMasterChorus, f->mcpset.chorus);
 			}
 			break;
-#endif
-
 		case KEY_CTRL_F(11):
 			finespeed=(finespeed==8)?1:8;
 			break;
