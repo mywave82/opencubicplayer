@@ -245,6 +245,10 @@ static void cpiDrawG1String (struct cpifaceSessionPrivate_t *f)
 	int width;
 	int x;
 
+	int numspaces;
+	int showfx;
+	int showpan;
+
 	if (plScrWidth >= 90)
 	{
 		endspace = headspace = (plScrWidth - 60) / 30;
@@ -254,90 +258,87 @@ static void cpiDrawG1String (struct cpifaceSessionPrivate_t *f)
 
 	/* increase the view-mode of each component until we can't grow them anymore */
 #warning TODO, we can cache this as long a f->mcpset.viewfx and screenwidth has not changed!
-	if (f->mcpset.viewfx)
+	if ((f->mcpType & mcpNormalizeCanEcho) &&((
+		(int)volumesizes[volumemode] + surroundsizes[surroundmode] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode]
+		                             + echosizes[echomode] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode]
+		                             + speedpitchsizes[speedpitchmode] + headspace + endspace + 7
+		) <= plScrWidth))
+	{
+		width = (int)volumesizes[volumemode] + surroundsizes[surroundmode] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode]
+			                             + echosizes[echomode] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode]
+		                                     + speedpitchsizes[speedpitchmode] + headspace + endspace;
+		numspaces = 7;
+		showpan = 1;
+		showfx = 1;
+	} else if (f->mcpset.viewfx)
 	{
 		width = (int)volumesizes[volumemode] + echosizes[echomode] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[speedpitchmode] + headspace + endspace;
-
-		if (!echomode)
-		{
-			int n = volumesizes[volumemode] + echosizes[1] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[speedpitchmode] + headspace + endspace;
-			if ((n + 4) <= plScrWidth)
-			{
-				echomode = 1;
-				width = n;
-			}
-		}
-		if (!speedpitchmode)
-		{
-			int n = (int)volumesizes[volumemode] + echosizes[echomode] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[1] + headspace + endspace;
-			if ((n + 4) <= plScrWidth)
-			{
-				speedpitchmode = 1;
-				width = n;
-			}
-		}
-		while (changed)
-		{
-			changed = 0;
-			if (volumemode < 7)
-			{
-				int n = (int)volumesizes[volumemode+1] + echosizes[echomode] + reverbsizes[reverbchorusmode] + chorussizes[reverbchorusmode] + speedpitchsizes[speedpitchmode] + headspace + endspace;
-				if ((n + 4) <= plScrWidth)
-				{
-					volumemode++;
-					width = n;
-					changed = 1;
-				}
-			}
-			if (reverbchorusmode < 7)
-			{
-				int n = (int)volumesizes[volumemode] + echosizes[echomode] + reverbsizes[reverbchorusmode+1] + chorussizes[reverbchorusmode+1] + speedpitchsizes[speedpitchmode] + headspace + endspace;
-				if ((n + 4) <= plScrWidth)
-				{
-					reverbchorusmode++;
-					width = n;
-					changed = 1;
-				}
-			}
-		}
+		numspaces = 4;
+		showpan = 0;
+		showfx = 1;
 	} else {
 		width = (int)volumesizes[volumemode] + surroundsizes[surroundmode] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[speedpitchmode] + headspace + endspace;
+		numspaces = 4;
+		showpan = 1;
+		showfx = 0;
+	}
 
+	if (showpan)
+	{
 		if (!surroundmode)
 		{
-			int n = (int)volumesizes[volumemode] + surroundsizes[1] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[speedpitchmode] + headspace + endspace;
-			if ((n + 4) <= plScrWidth)
+			int n = width - surroundsizes[0] + surroundsizes[1];
+			if ((n + numspaces) <= plScrWidth)
 			{
 				surroundmode = 1;
 				width = n;
 			}
 		}
-		if (!speedpitchmode)
+	}
+
+	if (showfx)
+	{
+		if (!echomode)
 		{
-			int n = (int)volumesizes[volumemode] + surroundsizes[surroundmode] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[1] + headspace + endspace;
-			if ((n + 4) <= plScrWidth)
+			int n = width - echosizes[0] + echosizes[1];
+			if ((n + numspaces) <= plScrWidth)
 			{
-				speedpitchmode = 1;
+				echomode = 1;
 				width = n;
 			}
 		}
-		while (changed)
+	}
+
+	if (!speedpitchmode)
+	{
+		int n = width - speedpitchsizes[0] + speedpitchsizes[1];
+		if ((n + numspaces) <= plScrWidth)
 		{
-			changed = 0;
-			if (volumemode < 7)
+			speedpitchmode = 1;
+			width = n;
+		}
+	}
+
+	while (changed)
+	{
+		changed = 0;
+		if (volumemode < 7)
+		{
+			int n = width - volumesizes[volumemode] + volumesizes[volumemode+1];
+			if ((n + numspaces) <= plScrWidth)
 			{
-				int n = (int)volumesizes[volumemode+1] + surroundsizes[surroundmode] + panningsizes[panningbalancemode] + balancesizes[panningbalancemode] + speedpitchsizes[speedpitchmode] + headspace + endspace;
-				if ((n + 4) <= plScrWidth)
-				{
-					volumemode++;
-					width = n;
-					changed = 1;
-				}
+				volumemode++;
+				width = n;
+				changed = 1;
 			}
+		}
+
+		if (showpan)
+		{
 			if (panningbalancemode < 7)
 			{
-				int n = (int)volumesizes[volumemode] + surroundsizes[surroundmode] + panningsizes[panningbalancemode+1] + balancesizes[panningbalancemode+1] + speedpitchsizes[speedpitchmode] + headspace + endspace;
-				if ((n + 4) <= plScrWidth)
+				int n = width - panningsizes[panningbalancemode] - balancesizes[panningbalancemode] + panningsizes[panningbalancemode+1] + balancesizes[panningbalancemode+1];
+				if ((n + numspaces) <= plScrWidth)
 				{
 					panningbalancemode++;
 					width = n;
@@ -345,10 +346,24 @@ static void cpiDrawG1String (struct cpifaceSessionPrivate_t *f)
 				}
 			}
 		}
+
+		if (showfx)
+		{
+			if (reverbchorusmode < 7)
+			{
+				int n = width - reverbsizes[reverbchorusmode] - chorussizes[reverbchorusmode] + reverbsizes[reverbchorusmode+1] + chorussizes[reverbchorusmode+1];
+				if ((n + numspaces) <= plScrWidth)
+				{
+					reverbchorusmode++;
+					width = n;
+					changed = 1;
+				}
+			}
+		}
 	}
 
-	interspace1 = (plScrWidth - width) / 4;
-	interspace2 = (plScrWidth - width) % 4;
+	interspace1 = (plScrWidth - width) / numspaces;
+	interspace2 = (plScrWidth - width) % numspaces;
 
 	displayvoid (1, 0, headspace);
 	x=headspace;
@@ -374,73 +389,11 @@ static void cpiDrawG1String (struct cpifaceSessionPrivate_t *f)
 		displaychr (1, x, 0x09, '\xfa', vi); x += vi;
 	}
 
-	displayvoid (1, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2);
-	if (interspace2) interspace2--;
-
-	if (f->mcpset.viewfx)
+	if (showpan)
 	{
-		if (echomode)
-		{
-			displaystr (1, x, 0x09, "echoactive: ", 12); x += 12;
-		} else {
-			displaystr (1, x, 0x09, "echo: ",       5);  x +=  5;
-		}
-		displaystr (1, x, 0x0f, f->mcpset.useecho?"x":"o", 1); x += 1;
-
 		displayvoid (1, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2);
 		if (interspace2) interspace2--;
 
-		{
-			int l, w;
-			const char *temp;
-
-			if (reverbchorusmode & 1)
-			{
-				displaystr (1, x, 0x09, "reverb: ", 8); x += 8;
-			} else {
-				displaystr (1, x, 0x09, "rev: ",    5); x += 5;
-			}
-
-			switch (reverbchorusmode >> 1)
-			{
-				default:
-				case 0: l = ((f->mcpset.reverb+3)>>3); w =  8; temp = "-\xfa\xfa\xfam\xfa\xfa\xfa+"; break;
-				case 1: l = ((f->mcpset.reverb+2)>>2); w = 16; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
-				case 2: l = ((f->mcpset.reverb+1)>>1); w = 32; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
-				case 3: l = ((f->mcpset.reverb  )   ); w = 64; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
-			}
-			displaystr (1, x, 0x07, temp, l); x += l;
-			displaychr (1, x, 0x0f, 'I', 1); x += 1;
-			displaystr (1, x, 0x07, temp + l + 1, w - l); x += w - l;
-		}
-
-		displayvoid (1, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2);
-		if (interspace2) interspace2--;
-
-		{
-			int l, w;
-			const char *temp;
-
-			if (reverbchorusmode & 1)
-			{
-				displaystr (1, x, 0x09, "chorus: ", 8); x += 8;
-			} else {
-				displaystr (1, x, 0x09, "chr: ",    5); x += 5;
-			}
-
-			switch (reverbchorusmode >> 1)
-			{
-				default:
-				case 0: l = ((f->mcpset.chorus+3)>>3); w =  8; temp = "-\xfa\xfa\xfam\xfa\xfa\xfa+"; break;
-				case 1: l = ((f->mcpset.chorus+2)>>2); w = 16; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
-				case 2: l = ((f->mcpset.chorus+1)>>1); w = 32; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
-				case 3: l = ((f->mcpset.chorus  )   ); w = 64; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
-			}
-			displaystr (1, x, 0x07, temp, l); x += l;
-			displaychr (1, x, 0x0f, 'I', 1); x += 1;
-			displaystr (1, x, 0x07, temp + l + 1, w - l); x += w - l;
-		}
-	} else {
 		if (surroundmode)
 		{
 			displaystr (1, x, 0x09, "surround: ", 10); x += 10;
@@ -521,6 +474,74 @@ static void cpiDrawG1String (struct cpifaceSessionPrivate_t *f)
 			displaystr (1, x, 0x07, temp, l); x += l;
 			displaychr (1, x, 0x0f, 'I', 1); x += 1;
 			displaystr (1, x, 0x07, temp + l + 1, w - l); x += w-l;
+		}
+	}
+
+	if (showfx)
+	{
+		displayvoid (1, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2);
+		if (interspace2) interspace2--;
+
+		if (echomode)
+		{
+			displaystr (1, x, 0x09, "echoactive: ", 12); x += 12;
+		} else {
+			displaystr (1, x, 0x09, "echo: ",       5);  x +=  5;
+		}
+		displaystr (1, x, 0x0f, f->mcpset.useecho?"x":"o", 1); x += 1;
+
+		displayvoid (1, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2);
+		if (interspace2) interspace2--;
+
+		{
+			int l, w;
+			const char *temp;
+
+			if (reverbchorusmode & 1)
+			{
+				displaystr (1, x, 0x09, "reverb: ", 8); x += 8;
+			} else {
+				displaystr (1, x, 0x09, "rev: ",    5); x += 5;
+			}
+
+			switch (reverbchorusmode >> 1)
+			{
+				default:
+				case 0: l = ((f->mcpset.reverb+3)>>3); w =  8; temp = "-\xfa\xfa\xfam\xfa\xfa\xfa+"; break;
+				case 1: l = ((f->mcpset.reverb+2)>>2); w = 16; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+				case 2: l = ((f->mcpset.reverb+1)>>1); w = 32; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+				case 3: l = ((f->mcpset.reverb  )   ); w = 64; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+			}
+			displaystr (1, x, 0x07, temp, l); x += l;
+			displaychr (1, x, 0x0f, 'I', 1); x += 1;
+			displaystr (1, x, 0x07, temp + l + 1, w - l); x += w - l;
+		}
+
+		displayvoid (1, x, interspace1 + (!!interspace2)); x += interspace1 + (!!interspace2);
+		if (interspace2) interspace2--;
+
+		{
+			int l, w;
+			const char *temp;
+
+			if (reverbchorusmode & 1)
+			{
+				displaystr (1, x, 0x09, "chorus: ", 8); x += 8;
+			} else {
+				displaystr (1, x, 0x09, "chr: ",    5); x += 5;
+			}
+
+			switch (reverbchorusmode >> 1)
+			{
+				default:
+				case 0: l = ((f->mcpset.chorus+3)>>3); w =  8; temp = "-\xfa\xfa\xfam\xfa\xfa\xfa+"; break;
+				case 1: l = ((f->mcpset.chorus+2)>>2); w = 16; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+				case 2: l = ((f->mcpset.chorus+1)>>1); w = 32; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+				case 3: l = ((f->mcpset.chorus  )   ); w = 64; temp = "-\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfam\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa\xfa+"; break;
+			}
+			displaystr (1, x, 0x07, temp, l); x += l;
+			displaychr (1, x, 0x0f, 'I', 1); x += 1;
+			displaystr (1, x, 0x07, temp + l + 1, w - l); x += w - l;
 		}
 	}
 
