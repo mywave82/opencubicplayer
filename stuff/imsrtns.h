@@ -39,6 +39,18 @@ static inline int32_t imulshr16(int32_t a,int32_t b)
 	return temp>>16;
 }
 
+static inline int32_t imulshr24(int32_t a,int32_t b)
+{
+	int64_t temp = (int64_t)a*(int64_t)b;
+	return temp>>24;
+}
+
+static inline int32_t imulshr32(int32_t a,int32_t b)
+{
+	int64_t temp = (int64_t)a*(int64_t)b;
+	return temp>>32;
+}
+
 static inline uint32_t umulshr16(uint32_t a,uint32_t b)
 {
 	uint64_t temp = (uint64_t)a*(uint64_t)b;

@@ -869,9 +869,35 @@ static int init_modules(int argc, char *argv[])
 			cfRemoveEntry("defaultconfig", "link");
 		}
 
-		if (epoch < 20220919)
+		if (epoch < 20221228)
 		{
-			cfSetProfileInt("version", "epoch", 20220919, 10);
+			char *tmp, *iter;
+
+			fprintf(stderr, "ocp.ini update (0.2.102) removes postprocadds\n");
+			cfRemoveEntry("devwMix", "postprocadds");
+			cfRemoveEntry("devwMixQ", "postprocadds");
+			cfRemoveEntry("devwMixF", "postprocadds");
+
+			fprintf(stderr, "ocp.ini update (0.2.102) _iReverb and _fReverb should be named iReverb and fReverb\n");
+
+			if (!strcmp (cfGetProfileString ("devwMix", "postprocs", ""),  "_iReverb")) cfSetProfileString ("devwMix",  "postprocs", "iReverb");
+			if (!strcmp (cfGetProfileString ("devwMixQ", "postprocs", ""), "_iReverb")) cfSetProfileString ("devwMixQ", "postprocs", "iReverb");
+			if (!strcmp (cfGetProfileString ("devwMixF", "postprocs", ""), "_fReverb")) cfSetProfileString ("devwMixF", "postprocs", "fReverb");
+
+			/* We silently repair the case-error in devwmixQ, this has no effect other than looking more consistent */
+			tmp = strdup (cfGetProfileString ("sound", "wavetabledevices", ""));
+			iter = strstr (tmp, "devwmixQ");
+			if (iter)
+			{
+				iter[4] = 'M';
+				cfSetProfileString ("sound", "wavetabledevices", tmp);
+			}
+			free (tmp);
+		}
+
+		if (epoch < 20221228)
+		{
+			cfSetProfileInt("version", "epoch", 20221228, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -882,13 +908,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20220919)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20221228)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20220919\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20221228\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20220919\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20221228\n\n");
 		}
 		sleep(5);
 	}

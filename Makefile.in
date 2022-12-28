@@ -1,7 +1,7 @@
 TOPDIR=./
 include $(TOPDIR)Rules.make
 
-SUBDIRS=boot cpiface dev doc devp devw filesel goodies help medialib playay playcda playflac playgmd playtimidity playhvl playit playogg playopl
+SUBDIRS=boot cpiface dev doc devp devw filesel goodies help medialib playay playcda playflac playgmd playtimidity playhvl playit playogg playopl plugins
 ifeq ($(HAVE_MAD),1)
 SUBDIRS+=playmp2
 endif

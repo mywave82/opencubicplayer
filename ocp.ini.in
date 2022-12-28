@@ -1,5 +1,5 @@
 [version]
-  epoch=20220919
+  epoch=20221228
 
 [general]
 ;link=
@@ -30,7 +30,7 @@
 ; note: the first device found in each list will be uses as default
 
   playerdevices=devpALSA devpOSS devpCA devpSDL2 devpSDL devpNone devpDisk
-  wavetabledevices=devwMixF devwmixQ devwMix devwNone
+  wavetabledevices=devwMixF devwMixQ devwMix devwNone
   mixrate=44100           ; -sr44100
   mixprocrate=4096000     ; max channels*rate (for slow cpus) (4096000==64*64000)
   plrbufsize=200          ; milliseconds
@@ -192,23 +192,20 @@
   link=devwmix
   mixResample=off
   subtype=0
-  postprocs=_iReverb
-  postprocadds=
+  postprocs=iReverb
 
 [devwMixQ]
   link=devwmix
   subtype=1
   mixResample=off
-  postprocs=_iReverb
-  postprocadds=
+  postprocs=iReverb
 
 [devwMixF]
   link=devwmixf
   mixResample=off
   volramp=on       ; turn this off if the mixer sounds too "soft" for you
   declick=on
-  postprocs=_fReverb
-  postprocadds=
+  postprocs=fReverb
 
 [fscolors]
   669=2

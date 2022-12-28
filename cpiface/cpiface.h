@@ -210,7 +210,7 @@ enum mcpNormalizeType
 	mcpNormalizeCannotAmplify = 0,
 	mcpNormalizeCanAmplify = 16,
 
-	mcpNormalizeDefaultPlayW = 21,
+	mcpNormalizeDefaultPlayW = mcpNormalizeFilterAOIFOI | mcpNormalizeCanSpeedPitchUnlock | mcpNormalizeCanEcho | mcpNormalizeCanAmplify,
 	mcpNormalizeDefaultPlayP = 0,
 };
 
