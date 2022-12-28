@@ -276,7 +276,7 @@ static const mixercall mixers[8] = {
 #endif
 
 void
-mixer (void)
+mixer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int voice;
 	struct mixfpostprocregstruct *pp;
@@ -332,7 +332,7 @@ mixer (void)
 	}
 
 	for (pp = state.postprocs; pp; pp = pp->next)
-		pp->Process(state.tempbuf, state.nsamples, state.samprate);
+		pp->Process(cpifaceSession, state.tempbuf, state.nsamples, state.samprate);
 
 	clippers[0](state.tempbuf, state.outbuf, 2 /* stereo */ * state.nsamples);
 }

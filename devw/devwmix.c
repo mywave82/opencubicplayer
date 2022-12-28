@@ -400,7 +400,7 @@ static void devwMixIdle  (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	/* mixer */
 	int i;
-	struct mixqpostprocregstruct *mode;
+	struct mixqpostprocregstruct *iter;
 
 	if (!channelnum)
 		return;
@@ -448,8 +448,10 @@ static void devwMixIdle  (struct cpifaceSessionAPI_t *cpifaceSession)
 					playchannelq(i, targetlength);
 			}
 
-			for (mode=postprocs; mode; mode=mode->next)
-				mode->Process(buf32, targetlength, samprate);
+			for (iter=postprocs; iter; iter=iter->next)
+			{
+				iter->Process (cpifaceSession, buf32, targetlength, samprate);
+			}
 
 			mixrClip((char*)targetbuf, buf32, targetlength << 1 /* stereo */, amptab, clipmax);
 
@@ -757,6 +759,18 @@ static int devwMixGET(int ch, int opt)
 	return 0;
 }
 
+static void devwMixGetVolRegs (struct cpifaceSessionAPI_t *cpifaceSession, void (*Callback)(struct cpifaceSessionAPI_t *cpifaceSession, const struct ocpvolregstruct *x))
+{
+	struct mixqpostprocregstruct *iter;
+	for (iter=postprocs; iter; iter=iter->next)
+	{
+		if (iter->VolRegs)
+		{
+			Callback (cpifaceSession, iter->VolRegs);
+		}
+	}
+}
+
 static void GetMixChannel(unsigned int ch, struct mixchannel *chn, uint32_t rate)
 	/* Refered to by OpenPlayer to mixInit */
 {
@@ -920,6 +934,8 @@ static int devwMixOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *
 	channelnum=chan;
 	cpifaceSession->PhysicalChannelCount = chan;
 	cpifaceSession->mcpGet = devwMixGET;
+	cpifaceSession->mcpGetVolRegs = devwMixGetVolRegs;
+
 	cpifaceSession->mcpSet = devwMixSET;
 
 	calcamptab(amplify);
@@ -1048,7 +1064,7 @@ static int wmixDetect(struct deviceinfo *c)
 	return 1;
 }
 
-void mixrRegisterPostProc(struct mixqpostprocregstruct *mode)
+static void mixrRegisterPostProc(struct mixqpostprocregstruct *mode)
 {
 	mode->next=postprocs;
 	postprocs=mode;
@@ -1058,8 +1074,6 @@ void mixrRegisterPostProc(struct mixqpostprocregstruct *mode)
 #include "boot/psetting.h"
 #include "dev/deviplay.h"
 #include "boot/plinkman.h"
-
-static struct mixqpostprocaddregstruct *postprocadds;
 
 static uint32_t mixGetOpt(const char *sec)
 {
@@ -1090,32 +1104,23 @@ static void mixrInit(const char *sec)
 	while (cfGetSpaceListEntry(regname, &regs, 49))
 	{
 		void *reg=_lnkGetSymbol(regname);
-		fprintf(stderr, "[%s] registering %s: %p\n", sec, regname, reg);
+		fprintf(stderr, "[%s] registering post processing plugin %s\n", sec, regname);
 		if (reg)
 			mixrRegisterPostProc((struct mixqpostprocregstruct*)reg);
-	}
-
-	postprocadds=0;
-	regs=cfGetProfileString(sec, "postprocadds", "");
-	while (cfGetSpaceListEntry(regname, &regs, 49))
-	{
-		void *reg=_lnkGetSymbol(regname);
-		if (reg)
-		{
-			((struct mixqpostprocaddregstruct*)reg)->next=postprocadds;
-			postprocadds=(struct mixqpostprocaddregstruct*)reg;
-		}
 	}
 }
 
 static int mixProcKey(uint16_t key)
 {
-	struct mixqpostprocaddregstruct *mode;
-	for (mode=postprocadds; mode; mode=mode->next)
+	struct mixqpostprocregstruct *mode;
+	for (mode=postprocs; mode; mode=mode->next)
 	{
-		int r = mode->ProcessKey(key);
-		if (r)
-			return r;
+		if (mode->ProcessKey)
+		{
+			int r = mode->ProcessKey(key);
+			if (r)
+				return r;
+		}
 	}
 
 	return 0;

@@ -93,7 +93,7 @@ static void OpenPlayer(int chan)
 	outfmt=(bit16<<1)|(!signedout);*/
 	dwmixfa_state.nvoices=channelnum;
 
-	prepare_mixer();
+	prepare_mixer(0);
 
 	/*calcspeed();*/
 	   /*/  playerproc();*/  /* some timing is wrong here! */

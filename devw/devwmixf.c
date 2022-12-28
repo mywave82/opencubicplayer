@@ -415,7 +415,7 @@ static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 				fprintf(stderr, "\n");
 			}
 #endif
-			mixer();
+			mixer (cpifaceSession);
 
 			tickplayed+=targetlength<<8;
 			if (!((tickwidth-tickplayed)>>8))
@@ -748,6 +748,18 @@ static int devwMixFGET(int ch, int opt)
 	return 0;
 }
 
+static void devwMixFGetVolRegs (struct cpifaceSessionAPI_t *cpifaceSession, void (*Callback)(struct cpifaceSessionAPI_t *cpifaceSession, const struct ocpvolregstruct *x))
+{
+	struct mixfpostprocregstruct *iter;
+	for (iter=dwmixfa_state.postprocs; iter; iter=iter->next)
+	{
+		if (iter->VolRegs)
+		{
+			Callback (cpifaceSession, iter->VolRegs);
+		}
+	}
+}
+
 /* Houston, we've got a problem there... the display mixer isn't
  * able to handle floating point values at all. shit.
  * (kebby, irgendwann mal: "ich will das nicht")
@@ -866,6 +878,7 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t 
 	cpifaceSession->PhysicalChannelCount = chan;
 	cpifaceSession->mcpGet = devwMixFGET;
 	cpifaceSession->mcpSet = devwMixFSET;
+	cpifaceSession->mcpGetVolRegs = devwMixFGetVolRegs;
 
 	dwmixfa_state.nvoices=channelnum;
 	prepare_mixer();
@@ -983,8 +996,6 @@ static int Detect(struct deviceinfo *c)
 #include "dev/deviplay.h"
 #include "boot/plinkman.h"
 
-static struct mixfpostprocaddregstruct *postprocadds;
-
 static uint32_t mixfGetOpt(const char *sec)
 {
 	uint32_t opt=0;
@@ -995,7 +1006,7 @@ static uint32_t mixfGetOpt(const char *sec)
 	return opt;
 }
 
-void mixfRegisterPostProc(struct mixfpostprocregstruct *mode)
+static void mixfRegisterPostProc(struct mixfpostprocregstruct *mode)
 {
 	mode->next=dwmixfa_state.postprocs;
 	dwmixfa_state.postprocs=mode;
@@ -1016,30 +1027,24 @@ static void mixfInit(const char *sec)
 	{
 		void *reg=_lnkGetSymbol(regname);
 		if (reg)
-			mixfRegisterPostProc((struct mixfpostprocregstruct*)reg);
-	}
-
-	postprocadds=0;
-	regs=cfGetProfileString(sec, "postprocadds", "");
-	while (cfGetSpaceListEntry(regname, &regs, 49))
-	{
-		void *reg=_lnkGetSymbol(regname);
-		if (reg)
 		{
-			((struct mixfpostprocaddregstruct*)reg)->next=postprocadds;
-			postprocadds=(struct mixfpostprocaddregstruct*)reg;
+			fprintf(stderr, "[%s] registering post processing plugin %s\n", sec, regname);
+			mixfRegisterPostProc((struct mixfpostprocregstruct*)reg);
 		}
 	}
 }
 
 static int mixfProcKey(uint16_t key)
 {
-	struct mixfpostprocaddregstruct *mode;
-	for (mode=postprocadds; mode; mode=mode->next)
+	struct mixfpostprocregstruct *mode;
+	for (mode=dwmixfa_state.postprocs; mode; mode=mode->next)
 	{
-		int r=mode->ProcessKey(key);
-		if (r)
-			return r;
+		if (mode->ProcessKey(key))
+		{
+			int r = mode->ProcessKey(key);
+			if (r)
+				return r;
+		}
 	}
 
 	return 0;
