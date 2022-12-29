@@ -36,12 +36,11 @@ static struct ocpvolstruct irevvol[] =
 {
 	{16, 0, 50, 1, 0, "reverb time"},
 	{37, 0, 50, 1, 0, "reverb high cut"},
-#if 0 /* only implemented in the floating point version */
+	{24, 0, 50, 1, 0, "chorus delay"},
 	{12, 0, 50, 1, 0, "chorus speed"},
-	{25, 0, 50, 1, 0, "chorus depth"},
-	{25, 0, 50, 1, 0, "chorus phase"},
+	{10, 0, 50, 1, 0, "chorus depth"},
+	{10, 0, 50, 1, 0, "chorus phase"},
 	{ 5, 0, 50, 1, 0, "chorus feedback"},
-#endif
 #if 0 /* not implemented at all */
 	{ 0, 0, -2, 1, 0, "chorus mode select\tchorus\tflanger"},
 	{30, 0, 80, 1, 0, "level detector"},
@@ -58,14 +57,15 @@ static int32_t *leftl[6], *rightl[6];     // delay lines
 static int32_t  llen[6], lpos[6];         // dline length/pos left
 static int32_t  rlen[6], rpos[6];         // same right
 static int32_t  rlpf[6], llpf[6];         // left/right comb filter LPFs
-static uint32_t lpfval = 8388608;         // LPF freq value                       8.24
-static int32_t  lpconst;                  //                                       .32
+static uint32_t lpfval = 8388608;         // LPF freq value                        8.24
+static uint32_t lpconst;                  //                                        .32
 static int32_t  lpl, lpr;                 // reverb out hpf (1-lpf)
 
-static int32_t  chrminspeed, chrmaxspeed; // chorus speed limits (0.1-10Hz, 24:8)
-static int32_t  chrspeed;                 // chorus speed (24:8fp)
-static int32_t  chrpos;                   // chorus osc pos
+static uint32_t chrminspeed, chrmaxspeed; // chorus speed limits (0.1-10Hz)       24.8
+static uint32_t chrspeed;                 // chorus speed                         24.8
+static uint32_t chrpos;                   // chorus osc pos                       24.8
 static int32_t  chrphase;                 // chorus l/r phase shift
+static int32_t  chrdelay;                 // chorus delay
 static int32_t  chrdepth;                 // chorus depth
 static int32_t  chrfb;                    // chorus feedback
 static int32_t *lcline, *rcline;          // chorus delay lines
@@ -100,17 +100,20 @@ static void updatevol (int n)
 			v = ((irevvol[1].val+20) / 70.0f) * (44100.0f / srate);
 			lpfval = v * v * 16777216.0f;
 			break;
-		case 2:  // chr speed
-			chrspeed = chrminspeed + pow (irevvol[2].val / 50.0f, 3) * ( chrmaxspeed - chrminspeed );
+		case 2:  // chr delay
+			chrdelay = (cllen - 8) * irevvol[2].val * 655.36; /* upto half the cllen */
 			break;
-		case 3:  // chr depth
-			chrdepth = (cllen - 8) * (irevvol[3].val * 1310.72f);
+		case 3:  // chr speed
+			chrspeed = chrminspeed + pow (irevvol[3].val / 50.0f, 3) * ( chrmaxspeed - chrminspeed );
 			break;
-		case 4:  // chr phase shift
-			chrphase = irevvol[4].val * 1310.72f;
+		case 4:  // chr depth
+			chrdepth = (cllen - 8) * (irevvol[4].val * 655.36); /* upto half the cllen  */
 			break;
-		case 5:  // chr feedback
-			chrfb = irevvol[5].val * 1092.2666f;
+		case 5:  // chr phase shift
+			chrphase = irevvol[5].val * 1310.72f;
+			break;
+		case 6:  // chr feedback
+			chrfb = irevvol[6].val * 1092.2666f;
 			break;
 	}
 }
@@ -148,7 +151,7 @@ static void iReverb_init (int rate)
 
 	chrminspeed = 3355443 / srate;   // 0.1hz
 	chrmaxspeed = 335544320 / srate; // 10hz
-	cllen = (srate / 100) + 8;       // 10msec max depth
+	cllen = (srate / 20) + 8;        // 50msec max depth
 
 	lcline = calloc(sizeof (lcline[0]), cllen);
 	if (!lcline)
@@ -251,18 +254,84 @@ static int doreverb (int32_t inp, int32_t *pos, int32_t *lines[], int32_t lpf[])
 
 static void iReverb_process (struct cpifaceSessionAPI_t *cpifaceSession, int32_t *buf, int len, int rate)
 {
-	int32_t outgainreverb;
+	uint32_t outgainchorus;
+	uint32_t outgainreverb;
 
 	if (initfail)
 	{
 		return;
 	}
 
+	// THE CHORUS
+	if (!cpifaceSession->mcpGet)
+	{
+		outgainchorus = 0;
+	} else {
+		outgainchorus = cpifaceSession->mcpGet(0, mcpMasterChorus)<<10;
+	}
+
+	if (outgainchorus > 0)
+	{
+		int i;
+
+		for (i=0; i<len; i++)
+		{
+			uint32_t chrpos1, chrpos2;
+			uint32_t readpos1, readpos2;
+			int rpp1, rpp2;
+			int32_t lout, rout;
+
+			int32_t v1=buf[i*2  ];
+			int32_t v2=buf[i*2+1];
+
+			// update LFO and get l/r delays (0-1)
+			chrpos += chrspeed;
+			if (chrpos  >= 0x02000000) chrpos  -= 0x02000000;
+			chrpos1 = chrpos;
+			if (chrpos1 >  0x01000000) chrpos1  = 0x02000000 - chrpos1;
+			chrpos2 = chrpos + chrphase;
+			if (chrpos2 >= 0x02000000) chrpos2 -= 0x02000000;
+			if (chrpos2 >  0x01000000) chrpos2  = 0x02000000 - chrpos2;
+
+			// get integer+fractional part of left delay
+			chrpos1 = chrdelay + imulshr24(chrpos1, chrdepth);
+			readpos1 = (chrpos1 >> 16) + clpos;
+			if (readpos1 >= cllen) readpos1 -= cllen;
+			chrpos1 &= 0xffff; /* removes the integer part */
+			rpp1 = (readpos1 < cllen - 1) ? readpos1 + 1 : 0;
+
+			// get integer+fractional part of right delay
+			chrpos2 = chrdelay + imulshr24(chrpos2, chrdepth);
+			readpos2 = (chrpos2 >> 16) + clpos;
+			if (readpos2 >= cllen) readpos2 -= cllen;
+			chrpos2 &= 0xffff; /* removes the integer part */
+			rpp2 = (readpos2 < cllen - 1) ? readpos2 + 1 : 0;
+
+			// now: readposx: integer pos,
+			//      rppx:     integer pos+1,
+			//      chrposx:  fractional pos
+
+			// determine chorus output
+			lout = lcline[readpos1] + imulshr16 (chrpos1, ( lcline[rpp1] - lcline[readpos1] ));
+			rout = rcline[readpos2] + imulshr16 (chrpos2, ( rcline[rpp2] - rcline[readpos2] ));
+
+			// mix chorus with original buffer
+			buf[i*2  ] += imulshr16 ( outgainchorus, ( lout - v1 ) );
+			buf[i*2+1] += imulshr16 ( outgainchorus, ( rout - v2 ) );
+
+			// update delay lines and do negative feedback
+			lcline[clpos] = v1 - imulshr16 ( chrfb, lout );
+			rcline[clpos] = v2 - imulshr16 ( chrfb, rout );
+			clpos = clpos ? clpos - 1 : cllen - 1;
+		}
+	}
+
+	// THE REVERB
 	if (!cpifaceSession->mcpGet)
 	{
 		outgainreverb = 0;
 	} else {
-		outgainreverb = cpifaceSession->mcpGet(0, mcpMasterReverb)<<9;
+		outgainreverb = cpifaceSession->mcpGet(0, mcpMasterReverb)<<10;
 	}
 	if (outgainreverb > 0)
 	{

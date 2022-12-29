@@ -35,13 +35,16 @@ static struct ocpvolstruct revvol[] =
 {
 	{16, 0, 50, 1, 0, "reverb time"},
 	{37, 0, 50, 1, 0, "reverb high cut"},
+	{24, 0, 50, 1, 0, "chorus delay"},
 	{12, 0, 50, 1, 0, "chorus speed"},
-	{25, 0, 50, 1, 0, "chorus depth"},
-	{25, 0, 50, 1, 0, "chorus phase"},
+	{10, 0, 50, 1, 0, "chorus depth"},
+	{10, 0, 50, 1, 0, "chorus phase"},
 	{ 5, 0, 50, 1, 0, "chorus feedback"},
+#if 0 /* not implemented at all */
 	{ 0, 0, -2, 1, 0, "chorus mode select\tchorus\tflanger"},
 	{30, 0, 80, 1, 0, "level detector"},
 	{ 0, 0, 40, 1, 0, "db reduction"},
+#endif
 };
 
 static float srate;
@@ -60,12 +63,13 @@ static float  chrminspeed,chrmaxspeed; // chorus speed limits (0.1 - 10Hz)
 static float  chrspeed;                // chorus speed
 static float  chrpos;                  // chorus osc pos
 static float  chrphase;                // chorus l/r phase shift
+static float  chrdelay;                // chorus delay
 static float  chrdepth;                // chorus depth
 static float  chrfb;                   // chorus feedback
-static float *lcline, *rcline;        // chorus delay lines
+static float *lcline, *rcline;         // chorus delay lines
 static int    cllen,clpos;             // dlines write length/pos
 
-static float *co1dline;               // compr1 analyzer delay line
+static float *co1dline;                // compr1 analyzer delay line
 static int    co1dllen, co1dlpos;      // compr1 dl length/pos
 static int    co1amode;                // compr1 analyzer mode (0:rms, 1:peak)
 static float  co1mean,co1invlen;
@@ -94,17 +98,19 @@ static void updatevol (int n)
 			v = ((revvol[1].val+20)/70.0)*(44100.0/srate);
 			lpfval = v * v;
 			break;
-		case 2:  // chr speed
-			chrspeed = chrminspeed + pow (revvol[2].val / 50.0, 3) * (chrmaxspeed - chrminspeed);
+		case 2:  // chr delay
+			chrdelay = (float)(cllen - 8) * (revvol[2].val / 100.0f); /* upto half the cllen */
+		case 3:  // chr speed
+			chrspeed = chrminspeed + pow (revvol[3].val / 50.0, 3) * (chrmaxspeed - chrminspeed);
 			break;
-		case 3:  // chr depth
-			chrdepth = (float)(cllen - 8) * (revvol[3].val / 50.0f);
+		case 4:  // chr depth
+			chrdepth = (float)(cllen - 8) * (revvol[4].val / 100.0f); /* upto half the cllen */
 			break;
-		case 4:  // chr phase shift
-			chrphase=revvol[4].val/50.0;
+		case 5:  // chr phase shift
+			chrphase = revvol[5].val / 50.0;
 			break;
-		case 5:  // chr feedback
-			chrfb=revvol[5].val/60.0;
+		case 6:  // chr feedback
+			chrfb = revvol[6].val / 60.0;
 			break;
 	}
 }
@@ -141,7 +147,7 @@ static void fReverb_init (int rate)
 
 	chrminspeed = 0.2 / srate;  // 0.1hz
 	chrmaxspeed = 20 / srate;   // 10hz
-	cllen = (srate / 100) + 8;  // 10msec max depth
+	cllen = (srate / 20) + 8;   // 50msec max depth
 
 	lcline = calloc(sizeof (lcline[0]), cllen);
 	if (!lcline)
@@ -273,25 +279,25 @@ static void fReverb_process (struct cpifaceSessionAPI_t *cpifaceSession, float *
 
 			// update LFO and get l/r delays (0-1)
 			chrpos += chrspeed;
-			if (chrpos>=2) chrpos-=2;
-			chrpos1=chrpos;
-			if (chrpos1>1) chrpos1=2-chrpos1;
-			chrpos2=chrpos+chrphase;
-			if (chrpos2>=2) chrpos2-=2;
-			if (chrpos2>1) chrpos2=2-chrpos2;
+			if (chrpos >= 2) chrpos -= 2;
+			chrpos1 = chrpos;
+			if (chrpos1 > 1) chrpos1 = 2.0f - chrpos1;
+			chrpos2 = chrpos + chrphase;
+			if (chrpos2 >= 2) chrpos2 -= 2;
+			if (chrpos2 > 1) chrpos2 = 2.0f - chrpos2;
 
 			// get integer+fractional part of left delay
-			chrpos1*=chrdepth;
+			chrpos1 = chrdelay + chrpos1 * chrdepth;
 			readpos1=chrpos1+clpos;
 			if (readpos1>=cllen) readpos1-=cllen;
-			chrpos1-=(int)chrpos1;
+			chrpos1-=(int)chrpos1; /* remove the integer part */
 			rpp1=(readpos1<cllen-1)?readpos1+1:0;
 
 			// get integer+fractional part of right delay
-			chrpos2*=chrdepth;
+			chrpos2 = chrdelay + chrpos2 * chrdepth;
 			readpos2=chrpos2+clpos;
 			if (readpos2>=cllen) readpos2-=cllen;
-			chrpos2-=(int)chrpos2;
+			chrpos2-=(int)chrpos2; /* remove the integer part */
 			rpp2=(readpos2<cllen-1)?readpos2+1:0;
 
 			// now: readposx: integer pos,
@@ -314,7 +320,7 @@ static void fReverb_process (struct cpifaceSessionAPI_t *cpifaceSession, float *
 	}
 
 /*
-  float invlog2=6/log(2);
+  const float invlog2=6/log(2);
   // THE COMPRESSOR I
   if (co1amode)
   { // peak mode
@@ -331,7 +337,7 @@ static void fReverb_process (struct cpifaceSessionAPI_t *cpifaceSession, float *
         float co1db=log(co1out)*invlog2-co1thres;
         if (co1db<-40) co1db=-40;
         if (co1db>40) co1db=40;
-        revvol[6].val=co1db+40;
+        revvol[8].val=co1db+40;
 
         float dstatten=(co1db>0)?co1db*(1-co1cprv):0;
 
@@ -339,7 +345,7 @@ static void fReverb_process (struct cpifaceSessionAPI_t *cpifaceSession, float *
 
         //co1atten+=0.0002*(dstatten-co1atten);
 
-        revvol[7].val=co1atten;
+        revvol[9].val=co1atten;
 
         // ok, now apply the gain
         float gain=pow(0.5,co1atten/6.0);
@@ -357,7 +363,7 @@ static void fReverb_process (struct cpifaceSessionAPI_t *cpifaceSession, float *
 	{
 		outgainr = 0;
 	} else {
-		outgainr = cpifaceSession->mcpGet(0, mcpMasterReverb) / 128.0;
+		outgainr = cpifaceSession->mcpGet(0, mcpMasterReverb) / 64.0;
 	}
 
 	if (outgainr > 0)
