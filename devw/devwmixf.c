@@ -692,10 +692,10 @@ static void devwMixFSET(int ch, int opt, int val)
 			calcvols();
 			break;
 		case mcpMasterReverb:
-			masterrvb=(val>=64)?63:(val<-64)?-64:val;
+			masterrvb=(val>=64)?64:(val<0)?0:val;
 			break;
 		case mcpMasterChorus:
-			masterchr=(val>=64)?63:(val<-64)?-64:val;
+			masterchr=(val>=64)?64:(val<0)?0:val;
 			break;
 		case mcpMasterSpeed:
 			relspeed=(val<16)?16:val;

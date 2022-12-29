@@ -108,6 +108,7 @@ static int masterbal;
 static int masterpan;
 static int mastersrnd;
 static int masterrvb;
+static int masterchr;
 
 static uint32_t IdleCache; /* To prevent devpDisk lockup */
 
@@ -703,8 +704,11 @@ static void devwMixSET(int ch, int opt, int val)
 			mastersrnd=val?1:0;
 			calcvols();
 			break;
+		case mcpMasterChorus:
+			masterchr=(val>=64)?64:(val<0)?0:val;
+			break;
 		case mcpMasterReverb:
-			masterrvb=(val>=64)?63:(val<-64)?-64:val;
+			masterrvb=(val>=64)?64:(val<0)?0:val;
 			break;
 		case mcpMasterSpeed:
 			relspeed=(val<16)?16:val;
@@ -755,6 +759,8 @@ static int devwMixGET(int ch, int opt)
 			return umuldiv(cmdtimerpos, 256, samprate);
 		case mcpMasterReverb:
 			return masterrvb;
+		case mcpMasterChorus:
+			return masterchr;
 	}
 	return 0;
 }
