@@ -101,19 +101,9 @@ int deviReadDevices(const char *list, struct devinfonode **devs)
 		bypass=cfGetProfileBool(drvhand, "bypass", 0, 0);
 		n->ihandle=handlfn++;
 		n->keep=dev->keep;
-		n->devinfo.port=cfGetProfileInt(drvhand, "port", -1, 16);
-		n->devinfo.port2=cfGetProfileInt(drvhand, "port2", -1, 16);
-/*
-		n->dev.irq=cfGetProfileInt(drvhand, "irq", -1, 10);
-		n->dev.irq2=cfGetProfileInt(drvhand, "irq2", -1, 10);
-		n->dev.dma=cfGetProfileInt(drvhand, "dma", -1, 10);
-		n->dev.dma2=cfGetProfileInt(drvhand, "dma2", -1, 10);
-*/
 		n->devinfo.subtype=cfGetProfileInt(drvhand, "subtype", -1, 10);
 		snprintf (n->devinfo.path, sizeof (n->devinfo.path), "%s", cfGetProfileString(drvhand, "path", ""));
 		snprintf (n->devinfo.mixer, sizeof (n->devinfo.mixer), "%s", cfGetProfileString(drvhand, "mixer", ""));
-		n->devinfo.chan=0;
-		n->devinfo.mem=0;
 		n->devinfo.opt=0;
 
 		strcpy(n->name, dev->name);
@@ -147,12 +137,6 @@ int deviReadDevices(const char *list, struct devinfonode **devs)
 		fprintf(stderr, " (#%d", n->ihandle);
 		if (n->devinfo.subtype!=-1)
 			fprintf(stderr, " t%d", n->devinfo.subtype);
-		if (n->devinfo.port!=-1)
-			fprintf(stderr, " p%x", n->devinfo.port);
-		if (n->devinfo.port2!=-1)
-			fprintf(stderr, " q%x", n->devinfo.port2);
-		if (n->devinfo.mem)
-			fprintf(stderr, " m%d", (int)(n->devinfo.mem>>10));
 		fprintf(stderr, ")\n");
 
 /*
@@ -163,41 +147,6 @@ int deviReadDevices(const char *list, struct devinfonode **devs)
 		{
 			strcat(str, " t");
 			ltoa(n->dev.subtype, str+strlen(str), 10);
-		}
-		if (n->dev.port!=-1)
-		{
-			strcat(str, " p");
-			ltoa(n->dev.port, str+strlen(str), 16);
-		}
-		if (n->dev.port2!=-1)
-		{
-			strcat(str, " q");
-			ltoa(n->dev.port2, str+strlen(str), 16);
-		}
-		if (n->dev.irq!=-1)
-		{
-			strcat(str, " i");
-			ltoa(n->dev.irq, str+strlen(str), 10);
-		}
-		if (n->dev.irq2!=-1)
-		{
-			strcat(str, " j");
-			ltoa(n->dev.irq2, str+strlen(str), 10);
-		}
-		if (n->dev.dma!=-1)
-		{
-			strcat(str, " d");
-			ltoa(n->dev.dma, str+strlen(str), 10);
-		}
-		if (n->dev.dma2!=-1)
-		{
-			strcat(str, " e");
-			ltoa(n->dev.dma2, str+strlen(str), 10);
-		}
-		if (n->dev.mem)
-		{
-			strcat(str, " m");
-			ltoa(n->dev.mem>>10, str+strlen(str), 10);
 		}
 		printf("%s)\n", str);*/
 

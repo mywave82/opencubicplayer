@@ -101,12 +101,6 @@
 ;[handle]
 ;  link=...                                     (internal) link drivers
 ;  subtype=...                                  subtype
-;  port=...                                     primary port (hex)
-;  port2=...                                    secondary port (hex)
-;  irq=...                                      primary irq
-;  irq2=...                                     secondary irq
-;  dma=...                                      primary dma
-;  dma2=...                                     secondary dma
 ;  bypass=...                                   bypass detect on/off
 
 [libsidplayfp]
@@ -162,7 +156,6 @@
 
 [devpOSS]
   link=devposs
-  revstereo=off
   path=/dev/dsp
   mixer=/dev/mixer
 

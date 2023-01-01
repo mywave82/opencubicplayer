@@ -212,7 +212,7 @@ static int dir_devp_readdir_iterate (ocpdirhandle_pt _handle)
 				{
 					struct moduleinfostruct mi;
 					mdbGetModuleInfo(&mi, mdb_ref);
-					mi.channels = iter->devinfo.chan;
+					mi.channels = 2;
 					mdbWriteModuleInfo (mdb_ref, &mi);
 				}
 
@@ -289,7 +289,7 @@ static struct ocpfile_t *dir_devp_readdir_file (struct ocpdir_t *_self, uint32_t
 			{
 				struct moduleinfostruct mi;
 				mdbGetModuleInfo(&mi, mdb_ref);
-				mi.channels = iter->devinfo.chan;
+				mi.channels = 2;
 				mdbWriteModuleInfo (mdb_ref, &mi);
 			}
 

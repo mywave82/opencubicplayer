@@ -1159,15 +1159,8 @@ static int alsaDetect(struct deviceinfo *card)
 
 	snprintf (card->mixer, sizeof(card->mixer), "%s", cfGetProfileString("devpALSA", "mixer", "default"));
 	snprintf (alsaMixerName, sizeof(alsaMixerName), "%s", card->mixer);
-/*
-	card->irq     = -1;
-	card->irq2    = -1;
-	card->dma     = -1;
-	card->dma2    = -1;
-*/
+
 	card->subtype = -1;
-	card->mem     = 0;
-	card->chan    = 2;
 
 	return cards > 0;
 }

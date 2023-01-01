@@ -1055,18 +1055,8 @@ static void wmixClose(void)
 static int wmixDetect(struct deviceinfo *c)
 {
 	c->devtype=&mcpMixer;
-	c->port=-1;
-	c->port2=-1;
-/*
-	c->irq=-1;
-	c->irq2=-1;
-	c->dma=-1;
-	c->dma2=-1;
-*/
 	if (c->subtype==-1)
 		c->subtype=0;
-	c->chan=/*(MAXCHAN>99)?99:MAXCHAN;*/MAXCHAN;
-	c->mem=0;
 	return 1;
 }
 

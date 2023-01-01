@@ -13,18 +13,8 @@ struct sounddevice;
 struct deviceinfo
 {
 	struct sounddevice *devtype;
-	int16_t port;
-	int16_t port2;
-/*
-	signed char irq;
-	signed char irq2;
-	signed char dma;
-	signed char dma2;
-*/
 	uint32_t opt;
 	int8_t subtype;
-	uint8_t chan;
-	uint32_t mem;
 	char path[DEVICE_NAME_MAX+1]; /* can be like 127.0.0.1:32000, or stuff like /tmp/.esd .... or whatever you prefer or just empty for no force*/
 	char mixer[DEVICE_NAME_MAX+1];
 };

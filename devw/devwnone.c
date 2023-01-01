@@ -506,17 +506,7 @@ static void devwNoneClose (void)
 static int devwNoneDetect(struct deviceinfo *c)
 {
 	c->devtype=&mcpNone;
-	c->port=-1;
-	c->port2=-1;
-/*
-	c->irq=-1;
-	c->irq2=-1;
-	c->dma=-1;
-	c->dma2=-1;
-*/
 	c->subtype=-1;
-	c->chan=(MAXCHAN>99)?99:MAXCHAN;
-	c->mem=0;
 	return 1;
 }
 

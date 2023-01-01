@@ -493,12 +493,7 @@ static int ossDetect(struct deviceinfo *card)
 	char *temp;
 
 	card->devtype=&plrOSS;
-	card->port=-1;
-	card->port2=-1;
 	card->subtype=-1;
-	card->mem=0;
-	if ((card->chan<=0)||(card->chan>2))
-		card->chan=2;
 	if ((temp=getenv("DSP")))
 	{
 		debug_printf("devposs: $DSP found\n");

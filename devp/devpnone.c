@@ -268,11 +268,7 @@ static void qpClose(void)
 static int qpDetect(struct deviceinfo *card)
 {
 	card->devtype=&plrNone;
-	card->port=-1;
-	card->port2=-1;
 	card->subtype=-1;
-	card->mem=0;
-	card->chan=2;
 
 	return 1;
 }

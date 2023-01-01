@@ -496,11 +496,7 @@ static void dwClose(void)
 static int dwDetect(struct deviceinfo *card)
 {
 	card->devtype=&plrDiskWriter;
-	card->port=-1;
-	card->port2=-1;
 	card->subtype=-1;
-	card->mem=0;
-	card->chan=2;
 
 	return 1;
 }

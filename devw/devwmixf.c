@@ -973,18 +973,8 @@ static void Close()
 static int Detect(struct deviceinfo *c)
 {
 	c->devtype=&mcpFMixer;
-	c->port=-1;
-	c->port2=-1;
-/*
-	c->irq=-1;
-	c->irq2=-1;
-	c->dma=-1;
-	c->dma2=-1;
-*/
 	if (c->subtype==-1)
 		c->subtype=0;
-	c->chan=MIXF_MAXCHAN;
-	c->mem=0;
 	c->path[0]=0;
 	return 1;
 }

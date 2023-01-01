@@ -663,11 +663,7 @@ static int CoreAudioDetect(struct deviceinfo *card)
 
 	/* ao is now created, the above is needed only ONCE */
 	card->devtype=&plrCoreAudio;
-	card->port=0;
-	card->port2=0;
 	card->subtype=-1;
-	card->mem=0;
-	card->chan=2;
 
 	needfini=1;
 

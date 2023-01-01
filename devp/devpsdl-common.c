@@ -355,11 +355,7 @@ static int sdlDetect(struct deviceinfo *card)
 	PRINT("%s()\n", __FUNCTION__);
 
 	card->devtype=&plrSDL;
-	card->port=0;
-	card->port2=0;
 	card->subtype=-1;
-	card->mem=0;
-	card->chan=2;
 
 	return 1;
 }
