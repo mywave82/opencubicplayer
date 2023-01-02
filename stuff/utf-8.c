@@ -348,6 +348,7 @@ int EditStringUTF8z (unsigned int y, unsigned int x, unsigned int w, int l, char
 			input_buffer[input_buffer_fill] = 0x80; /* dummy follow... */
 
 			codepoint = utf8_decode ((char *)input_buffer, input_buffer_fill + 1, &incr);
+
 			if (incr > input_buffer_fill)
 			{ /* we need more data */
 				assert (input_buffer_fill < 6);
@@ -409,6 +410,7 @@ int EditStringUTF8z (unsigned int y, unsigned int x, unsigned int w, int l, char
 			case KEY_DELETE:
 				if (curpos != workstring_length)
 				{
+					data_length -= workstring_data[curpos].data_length;
 					memmove (workstring_data + curpos, workstring_data + curpos + 1, sizeof (workstring_data[0]) * (workstring_length - curpos - 1 /* 0 */));
 					workstring_length--;
 				}
@@ -416,6 +418,7 @@ int EditStringUTF8z (unsigned int y, unsigned int x, unsigned int w, int l, char
 			case KEY_BACKSPACE:
 				if (curpos)
 				{
+					data_length -= workstring_data[curpos-1].data_length;
 					memmove (workstring_data + curpos - 1, workstring_data + curpos, sizeof (workstring_data[0]) * (workstring_length - curpos /* + 1 */));
 					curpos--;
 					workstring_length--;

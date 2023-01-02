@@ -14,8 +14,15 @@ int utf8_encode (char *dst, uint32_t code);
 
 void displaystr_utf8_overflowleft (uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
 
+/* zero-terminated fixed buffer */
+/* return values:
+ *  -1 - cancelled
+ *   0 - finished
+ *   1 - call again
+ */
 int EditStringUTF8z(unsigned int y, unsigned int x, unsigned int w, int l, char *s);
 
+/* zero-terminated, forever long dynamic buffer */
 int EditStringUTF8(unsigned int y, unsigned int x, unsigned int w, char **s);
 
 #endif
