@@ -38,6 +38,7 @@ cdaplay.o: cdaplay.c cdaudio.h \
 	../dev/ringbuffer.h \
 	../filesel/cdrom.h \
 	../filesel/filesystem.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h
 	$(CC) cdaplay.c -o $@ -c
 

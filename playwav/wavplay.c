@@ -783,7 +783,10 @@ void __attribute__ ((visibility ("internal"))) wpClosePlayer(struct cpifaceSessi
 
 	PRINT("Freeing resources\n");
 
-	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
+	if (cpifaceSession->plrDevAPI)
+	{
+		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
+	}
 
 	if (wavebufpos)
 	{

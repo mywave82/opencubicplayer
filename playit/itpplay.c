@@ -321,24 +321,21 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	if (!(retval=it_load(cpifaceSession, &mod, file)))
 		if (!loadsamples (cpifaceSession, &mod))
-			retval=-1;
+			retval=errAllocMem;
 
 	if (retval)
 	{
 		it_free(&mod);
-		return -1;
+		return retval;
 	}
 
 	it_optimizepatlens(&mod);
 
 	nch = cpifaceSession->configAPI->GetProfileInt2 (cpifaceSession->configAPI->SoundSec, "sound", "itchan", 64, 10);
 	if (!play(&itplayer, &mod, nch, file, cpifaceSession))
-		retval=errPlay;
-
-	if (retval)
 	{
 		it_free(&mod);
-		return retval;
+		return errPlay;
 	}
 
 	insts=mod.instruments;

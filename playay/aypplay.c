@@ -204,8 +204,6 @@ static int ayOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	cpifaceSession->SetMuteChannel = aySetMute;
 	cpifaceSession->LogicalChannelCount = 6;
 
-	ayChanSetup (cpifaceSession);
-
 	if (!ayOpenPlayer(file, cpifaceSession))
 	{
 #ifdef INITCLOSE_DEBUG
@@ -213,6 +211,8 @@ static int ayOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 #endif
 		return -1;
 	}
+
+	ayChanSetup (cpifaceSession);
 
 	starttime = clock_ms(); /* initialize starttime */
 	cpifaceSession->InPause = 0;

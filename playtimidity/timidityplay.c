@@ -1990,7 +1990,7 @@ void __attribute__ ((visibility ("internal"))) timidityIdle(struct cpifaceSessio
 
 static void doTimidityClosePlayer(struct cpifaceSessionAPI_t *cpifaceSession, int CloseDriver)
 {
-	if (CloseDriver)
+	if (CloseDriver && cpifaceSession->plrDevAPI)
 	{
 		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 	}

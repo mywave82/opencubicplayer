@@ -37,6 +37,7 @@
 #include "filesel/filesystem.h"
 #include "id3.h"
 #include "mpplay.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 
 #ifdef PLAYMP2_DEBUG
@@ -1086,9 +1087,14 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 
 	debug_printf ("mpegOpenPlayer (%p)\n", mpegfile);
 
+	if (!cpifaceSession->plrDevAPI)
+	{
+		return errPlay;
+	}
+
 	if (!mpegOpenPlayer_FindRangeAndTags (mpegfile))
 	{
-		return 0;
+		return errFormStruc;
 	}
 
 	file = mpegfile;
@@ -1154,7 +1160,7 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 	opt25_50 = 0;
 	opt25[0] = 0;
 	opt50[0] = 0;
-	return 1;
+	return errOk;
 
 error_out_plrDevAPI_Play:
 	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
@@ -1174,7 +1180,7 @@ error_out:
 	mad_synth_finish(&synth);
 	mad_frame_finish(&frame);
 	mad_stream_finish(&stream);
-	return 0;
+	return errFormStruc;
 }
 
 void __attribute__ ((visibility ("internal"))) mpegClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)

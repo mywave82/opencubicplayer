@@ -823,4 +823,5 @@ void __attribute__ ((visibility ("internal"))) it_free(struct it_module *this)
 				free(this->midicmds[i]);
 		free(this->midicmds);
 	}
+	bzero (this, sizeof (*this));
 }

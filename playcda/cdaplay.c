@@ -41,6 +41,7 @@
 #include "dev/ringbuffer.h"
 #include "filesel/cdrom.h"
 #include "filesel/filesystem.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 
 static int cda_inpause;
@@ -469,7 +470,10 @@ void __attribute__ ((visibility ("internal"))) cdClose (struct cpifaceSessionAPI
 {
 	cda_inpause=1;
 
-	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
+	if (cpifaceSession->plrDevAPI)
+	{
+		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
+	}
 
 	if (cdbufpos)
 	{
@@ -508,6 +512,11 @@ void __attribute__ ((visibility ("internal"))) cdJump (struct cpifaceSessionAPI_
 int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsigned long len, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
+
+	if (!cpifaceSession->plrDevAPI)
+	{
+		return errPlay;
+	}
 
 	lba_next = lba_start = lba_current = start;
 	lba_stop = start + len;

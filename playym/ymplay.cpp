@@ -203,7 +203,10 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	enum plrRequestFormat format;
 	void *buffer = 0;
 	uint64_t length = file->filesize (file);
-
+	if (!cpifaceSession->plrDevAPI)
+	{
+		return 0;
+	}
 	if (length <= 0)
 	{
 		fprintf(stderr, "[ymplay]: Unable to determine file length\n");

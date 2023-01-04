@@ -268,34 +268,36 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	bzero (info->composer, sizeof (info->composer));
 	retval = loader (cpifaceSession, &mod, file);
 
-	if (!retval)
+	if (retval)
+	{
+		fprintf(stderr, "mpLoadGen failed\n");
+		mpFree(&mod);
+		return retval;
+	}
+
 	{
 		int sampsize=0;
 		fprintf(stderr, "preparing samples (");
 		for (i=0; i<mod.sampnum; i++)
 			sampsize+=(mod.samples[i].length)<<(!!(mod.samples[i].type&mcpSamp16Bit));
 		fprintf(stderr, "%ik)...\n", sampsize>>10);
-
-		if (!mpReduceSamples(&mod))
-			retval=errAllocMem;
-		else if (!mpLoadSamples (cpifaceSession, &mod))
-			retval=errAllocSamp;
-		else {
-			mpReduceMessage(&mod);
-			mpReduceInstruments(&mod);
-			mpOptimizePatLens(&mod);
-		}
-	} else {
-		fprintf(stderr, "mpLoadGen failed\n");
-		mpFree(&mod);
-		return retval;
 	}
+	if (!mpReduceSamples(&mod))
+	{
+		return errAllocMem;
+	}
+	if (!mpLoadSamples (cpifaceSession, &mod))
+	{
+		return errAllocSamp;
+	}
+	mpReduceMessage(&mod);
+	mpReduceInstruments(&mod);
+	mpOptimizePatLens(&mod);
 
-	if (retval)
-		mpFree(&mod);
-
-	if (retval)
-		return retval;
+	if (!mpPlayModule(&mod, file, cpifaceSession))
+	{
+		return errPlay;
+	}
 
 	cpifaceSession->PanType = !!(mod.options & MOD_MODPAN);
 
@@ -325,16 +327,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	gmdChanSetup (cpifaceSession, &mod);
 	gmdTrkSetup (cpifaceSession, &mod);
 
-	if (!mpPlayModule(&mod, file, cpifaceSession))
-		retval=errPlay;
-
 	cpifaceSession->GetPChanSample = cpifaceSession->mcpGetChanSample;
-
-	if (retval)
-	{
-		mpFree(&mod);
-		return retval;
-	}
 
 	starttime = clock_ms(); /* initialize starttime */
 	cpifaceSession->InPause = 0;

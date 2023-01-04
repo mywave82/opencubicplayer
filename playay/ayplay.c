@@ -975,7 +975,10 @@ void __attribute__ ((visibility ("internal"))) ayClosePlayer (struct cpifaceSess
 {
 	sound_end();
 
-	cpifaceSession->plrDevAPI->Stop(cpifaceSession);
+	if (cpifaceSession->plrDevAPI)
+	{
+		cpifaceSession->plrDevAPI->Stop(cpifaceSession);
+	}
 
 	if (aybufpos)
 	{

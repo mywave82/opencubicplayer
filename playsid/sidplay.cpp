@@ -981,7 +981,10 @@ error_out_buf:
 
 void __attribute__ ((visibility ("internal"))) sidClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
+	if (cpifaceSession->plrDevAPI)
+	{
+		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
+	}
 
 	if (sid_buf_pos)
 	{

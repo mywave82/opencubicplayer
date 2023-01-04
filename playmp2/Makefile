@@ -99,5 +99,6 @@ mpplay.o: mpplay.c \
 	../filesel/filesystem.h \
 	id3.h \
 	mpplay.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h
 	$(CC) mpplay.c -o $@ $(MAD_CFLAGS) -c

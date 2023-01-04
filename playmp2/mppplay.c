@@ -211,6 +211,7 @@ static void mpegCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *mpegfile)
 {
+	int retval;
 	const char *filename;
 	struct mpeginfo inf;
 
@@ -224,8 +225,8 @@ static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 	cpifaceSession->ProcessKey = mpegProcessKey;
 	cpifaceSession->DrawGStrings = mpegDrawGStrings;
 
-	if (!mpegOpenPlayer(mpegfile, cpifaceSession))
-		return errFileRead;
+	if (retval = mpegOpenPlayer(mpegfile, cpifaceSession))
+		return retval;
 
 	starttime = clock_ms();
 	cpifaceSession->InPause = 0;

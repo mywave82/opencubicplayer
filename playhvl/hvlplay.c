@@ -724,7 +724,10 @@ error_out_plrDevAPI_Play:
 
 void __attribute__ ((visibility ("internal"))) hvlClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
+	if (cpifaceSession->plrDevAPI)
+	{
+		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
+	}
 
 	if (hvl_buf_pos)
 	{

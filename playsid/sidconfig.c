@@ -314,7 +314,7 @@ static void sidConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 	API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
 
 	API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o                     libsidplayfp configuration%*C %.9o\xb3", mlWidth - 49);
-	API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%.15o  Navigate with  %.15o<\x18>%.7o,%.15o<\x19>%.7o,%.15o<\x1a>%.7o,%.15o<\x1b>%.7o and %.15o<ENTER>%.7o; hit %.15o<ESC>%.7o to save and exit.%*C %.9o\xb3", mlWidth - 75);
+	API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%.15o  Navigate with %.15o<\x18>%.7o,%.15o<\x19>%.7o,%.15o<\x1a>%.7o,%.15o<\x1b>%.7o and %.15o<ENTER>%.7o; hit %.15o<ESC>%.7o to save and exit.%*C %.9o\xb3", mlWidth - 74);
 
 	API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
 

@@ -294,6 +294,11 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 {
 	enum plrRequestFormat format;
 
+	if (!cpifaceSession->plrDevAPI)
+	{
+		return 0;
+	}
+
 	oplRate = 0;
 	format=PLR_STEREO_16BIT_SIGNED;
 	if (!cpifaceSession->plrDevAPI->Play (&oplRate, &format, file, cpifaceSession))

@@ -312,28 +312,23 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	if (!loader)
 		return errFormStruc;
 
-	if (!(retval=loader(&mod, file)))
-		if (!xmpLoadSamples (cpifaceSession, &mod))
-			retval=-1;
-
-/*
-	fclose(file);   Parent does this for us */
-
-	if (retval)
+	if (retval=loader(&mod, file))
 	{
 		xmpFreeModule(&mod);
-		return -1;
+		return retval;
+	}
+	if (!xmpLoadSamples (cpifaceSession, &mod))
+	{
+		xmpFreeModule(&mod);
+		return errAllocMem;
 	}
 
 	xmpOptimizePatLens(&mod);
 
 	if (!xmpPlayModule(&mod, file, cpifaceSession))
-		retval=errPlay;
-
-	if (retval)
 	{
 		xmpFreeModule(&mod);
-		return retval;
+		return errPlay;
 	}
 
 	insts=mod.instruments;

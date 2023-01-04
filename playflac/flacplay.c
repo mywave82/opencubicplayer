@@ -1106,7 +1106,10 @@ error_out_flacfile:
 
 void __attribute__ ((visibility ("internal"))) flacClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
+	if (cpifaceSession->plrDevAPI)
+	{
+		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
+	}
 
 	if (flacbuf)
 	{
