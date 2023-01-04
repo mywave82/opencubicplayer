@@ -325,7 +325,7 @@ static uint32_t tar_instance_add_create_dir (struct tar_instance_t *self,
 	uint32_t *prev, iter;
 	uint32_t dirdb_ref;
 
-	DEBUG_PRINT ("[TAR] create_dir: %s\n", Filename);
+	DEBUG_PRINT ("[TAR] create_dir: \"%s\" \"%s\"\n", Dirpath, Dirname);
 
 	{
 		char *temp = 0;
@@ -879,14 +879,15 @@ static int tar_dir_readdir_iterate (ocpdirhandle_pt _self)
 		}
 
 		self->dir->owner->archive_filehandle->seek_set (self->dir->owner->archive_filehandle, self->nextheader_offset);
-		if (self->dir->owner->archive_filehandle->read (self->dir->owner->archive_filehandle, header, 512) != 512)
+		if ((self->dir->owner->archive_filehandle->read (self->dir->owner->archive_filehandle, header, 512) != 512) ||
+		    (memcmp (header + 257, "ustar", 5)))
 		{
 			const char *filename;
 			uint8_t *metadata = 0;
 			size_t metadatasize = 0;
 
 			self->dir->owner->ready = 1;
-			// tar_translate_complete (iter); /* in theory, two instances might scan at the same time, so we only clean-up then in the destructor */
+			// tar_translate_complete (iter); /* in theory, two instances might scan at the same time, so we only clean-up then in the destructor
 			tar_instance_encode_blob (self->dir->owner, &metadata, &metadatasize);
 			if (metadata)
 			{
