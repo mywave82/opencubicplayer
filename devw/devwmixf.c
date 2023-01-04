@@ -912,7 +912,10 @@ static void devwMixFClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct mixfpostprocregstruct *mode;
 
-	plrDevAPI->Stop (cpifaceSession);
+	if (plrDevAPI)
+	{
+		plrDevAPI->Stop (cpifaceSession);
+	}
 
 	channelnum=0;
 
@@ -923,6 +926,7 @@ static void devwMixFClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	free(channels);
 	free(dwmixfa_state.tempbuf);
+	channels = 0;
 	dwmixfa_state.tempbuf = 0;
 
 	cpifaceSession->mcpActive = 0;

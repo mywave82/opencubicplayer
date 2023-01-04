@@ -980,7 +980,10 @@ static void devwMixClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct mixqpostprocregstruct *mode;
 
-	plrDevAPI->Stop (cpifaceSession);
+	if (plrDevAPI)
+	{
+		plrDevAPI->Stop (cpifaceSession);
+	}
 
 	channelnum=0;
 

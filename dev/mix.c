@@ -307,4 +307,10 @@ void mixClose(void)
 	free(amptab);
 	free(mixIntrpolTab);
 	free(mixIntrpolTab2);
+	channels = 0;
+	mixbuf = 0;
+	voltabs = 0;
+	amptab = 0;
+	mixIntrpolTab = 0;
+	mixIntrpolTab2 = 0;
 }
