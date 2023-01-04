@@ -400,6 +400,10 @@ after_dot:
 					{
 						requested_precision = src_width;
 					}
+					if (requested_precision > width)
+					{
+						requested_precision = width;
+					}
 					if (requested_width==INT_MAX)
 					{
 						requested_width = requested_precision;
