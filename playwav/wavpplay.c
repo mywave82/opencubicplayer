@@ -218,9 +218,10 @@ static int wavOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 {
 	const char *filename;
 	struct waveinfo inf;
+	int retval;
 
 	if (!wavf)
-		return -1;
+		return errFormStruc;
 
 	cpifaceSession->dirdb->GetName_internalstr (wavf->dirdb_ref, &filename);
 	fprintf(stderr, "preloading %s...\n", filename);
@@ -229,12 +230,12 @@ static int wavOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->ProcessKey = wavProcessKey;
 	cpifaceSession->DrawGStrings = wavDrawGStrings;
 
-	if (!wpOpenPlayer(wavf, cpifaceSession))
+	if ((retval = wpOpenPlayer(wavf, cpifaceSession)))
 	{
 #ifdef INITCLOSE_DEBUG
 		fprintf(stderr, "wpOpenPlayer FAILED\n");
 #endif
-		return -1;
+		return retval;
 	}
 
 	starttime = clock_ms();

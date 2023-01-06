@@ -332,10 +332,10 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	it_optimizepatlens(&mod);
 
 	nch = cpifaceSession->configAPI->GetProfileInt2 (cpifaceSession->configAPI->SoundSec, "sound", "itchan", 64, 10);
-	if (!play(&itplayer, &mod, nch, file, cpifaceSession))
+	if ((retval = play(&itplayer, &mod, nch, file, cpifaceSession)))
 	{
 		it_free(&mod);
-		return errPlay;
+		return retval;
 	}
 
 	insts=mod.instruments;

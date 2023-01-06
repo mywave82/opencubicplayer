@@ -63,6 +63,7 @@ extern "C"
 #include "dev/player.h"
 #include "dev/ringbuffer.h"
 #include "filesel/filesystem.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 }
 
@@ -853,13 +854,14 @@ int __attribute__ ((visibility ("internal"))) sidGetPChanSample (struct cpifaceS
 	return !!sidMuted[ch];
 }
 
-unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+int __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
+	int retval;
 	enum plrRequestFormat format=PLR_STEREO_16BIT_SIGNED;
 
 	if (!cpifaceSession->plrDevAPI)
 	{
-		return 0;
+		return errPlay;
 	}
 
 	samples_committed = 0;
@@ -869,24 +871,25 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 	if (!length)
 	{
 		fprintf (stderr, "[playsid]: FILE is way too small\n");
-		return 0;
+		return errFormStruc;
 	}
 	if (length > 1024*1024)
 	{
 		fprintf (stderr, "[playsid]: FILE is way too big\n");
-		return 0;
+		return errFormStruc;
 	}
 
 	unsigned char *buf=new unsigned char[length];
 	if (!buf)
 	{
 		fprintf (stderr, "[playsid]: new() #1 failed\n");
-		return 0;
+		return errAllocMem;
 	}
 
 	if (file->read (file, buf, length) != length)
 	{
 		fprintf(stderr, "[playsid]: fread failed #1\n");
+		retval = errFileRead;
 		goto error_out_buf;
 	}
 
@@ -894,6 +897,7 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 	if (!cpifaceSession->plrDevAPI->Play (&sidRate, &format, file, cpifaceSession))
 	{
 		fprintf (stderr, "[playsid]: plrDevAPI->Play failed\n");
+		retval = errPlay;
 		goto error_out_buf;
 	}
 
@@ -901,6 +905,7 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 	if (!mySidPlayer->load (buf, length))
 	{
 		fprintf (stderr, "[playsid]: loading file failed\n");
+		retval = errFormStruc;
 		goto error_out_mySidPlay;
 	}
 	delete [] buf; buf = 0;
@@ -910,6 +915,7 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 	if (!mySidTuneInfo)
 	{
 		fprintf (stderr, "[playsid]: retrieve info from file failed\n");
+		retval = errFormStruc;
 		goto error_out_mySidPlay;
 	}
 
@@ -925,12 +931,14 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 	sid_buf_4x3[2] = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 4 * sid_samples_per_row];
 	if ((!sid_buf_4x3[0]) || (!sid_buf_4x3[1]) || (!sid_buf_4x3[2]))
 	{
+		retval = errAllocMem;
 		goto error_out_sid_buffers;
 	}
 
 	sid_buf_pos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, ROW_BUFFERS * MAXIMUM_SLOW_DOWN * sid_samples_per_row);
 	if (!sid_buf_pos)
 	{
+		retval = errAllocMem;
 		goto error_out_sid_buffers;
 	}
 
@@ -963,7 +971,7 @@ unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocp
 	cpifaceSession->mcpGet = sidGet;
 	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
-	return 1;
+	return errOk;
 
 	//cpifaceSession->ringbufferAPI->free (sid_buf_pos); sid_buf_pos = 0;
 error_out_sid_buffers:
@@ -976,7 +984,7 @@ error_out_mySidPlay:
 	delete mySidPlayer; mySidPlayer = NULL;
 error_out_buf:
 	if (buf) delete [] buf;
-	return 0;
+	return retval;
 }
 
 void __attribute__ ((visibility ("internal"))) sidClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)

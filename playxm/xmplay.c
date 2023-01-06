@@ -1532,7 +1532,9 @@ int __attribute__ ((visibility ("internal"))) xmpPlayModule (struct xmodule *m, 
 	quelen=100;
 	que=malloc(sizeof(int)*quelen*4);
 	if (!que)
-		return 0;
+	{
+		return errAllocMem;
+	}
 	querpos=0;
 	quewpos=0;
 
@@ -1541,17 +1543,19 @@ int __attribute__ ((visibility ("internal"))) xmpPlayModule (struct xmodule *m, 
 	realspeed=m->initempo;
 	firstspeed=256*2*curbpm/5;
 	if (!cpifaceSession->mcpDevAPI->OpenPlayer(nchan, xmpPlayTick, file, cpifaceSession))
-		return 0;
+	{
+		return errPlay;
+	}
 
 	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayW);
 
 	if (nchan != cpifaceSession->PhysicalChannelCount)
 	{
 		cpifaceSession->mcpDevAPI->ClosePlayer (cpifaceSession);
-		return 0;
+		return errFormStruc;
 	}
 
-	return 1;
+	return errOk;
 }
 
 void __attribute__ ((visibility ("internal"))) xmpStopModule (struct cpifaceSessionAPI_t *cpifaceSession)

@@ -56,7 +56,8 @@ hvlplay.o: \
 	../types.h \
 	hvlplay.h \
 	loader.h \
-	player.h
+	player.h \
+	../stuff/err.h
 	$(CC) -c -o $@ $<
 
 hvlpchan.o: \

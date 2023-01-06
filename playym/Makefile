@@ -67,6 +67,7 @@ ympplay.o: ympplay.cpp \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
 	../stuff/poutput.h \
+	../stuff/err.h \
 	../stuff/sets.h \
 	stsoundlib/StSoundLibrary.h \
 	ymplay.h \
@@ -81,7 +82,8 @@ ymplay.o: ymplay.cpp \
 	../dev/mcp.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \
-	../filesel/filesystem.h \
+	../filesel/filesystem.h  \
+	../stuff/err.h \
 	../stuff/imsrtns.h \
 	ymplay.h \
 	stsoundlib/YmMusic.h

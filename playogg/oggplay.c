@@ -43,6 +43,7 @@
 #include "dev/ringbuffer.h"
 #include "filesel/filesystem.h"
 #include "oggplay.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poutput.h"
 
@@ -888,11 +889,12 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 {
 	enum plrRequestFormat format;
 	int result;
+	int retval;
 	struct vorbis_info *vi;
 
 	if (!cpifaceSession->plrDevAPI)
 	{
-		return 0;
+		return errPlay;
 	}
 
 	oggfile = oggf;
@@ -921,6 +923,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 	if (!cpifaceSession->plrDevAPI->Play (&oggRate, &format, oggfile, cpifaceSession))
 	{
 		fprintf(stderr, "playogg: plrOpenPlayer() failed\n");
+		retval = errPlay;
 		goto error_out_file;
 	}
 
@@ -930,17 +933,20 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 	ogglen=ov_pcm_total(&ov, -1);
 	if (!ogglen)
 	{
+		retval = errFormStruc;
 		goto error_out_plrDevAPI_Play;
 	}
 
 	oggbuf=malloc(1024 * 128);
 	if (!oggbuf)
 	{
+		retval = errAllocMem;
 		goto error_out_plrDevAPI_Play;
 	}
 	oggbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 1024*32);
 	if (!oggbufpos)
 	{
+		retval = errAllocMem;
 		goto error_out_oggbuf;
 	}
 	oggbuffpos=0;
@@ -974,7 +980,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 	opt25[0] = 0;
 	opt50[0] = 0;
 
-	return 1;
+	return errOk;
 
 	//cpifaceSession->ringbufferAPI->free (oggbufpos);
 	//oggbufpos = 0;
@@ -996,7 +1002,7 @@ error_out_file:
 		oggfile->unref (oggfile);
 		oggfile = 0;
 	}
-	return 0;
+	return retval;
 }
 
 void __attribute__ ((visibility ("internal"))) oggClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)

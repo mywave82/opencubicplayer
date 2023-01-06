@@ -63,6 +63,7 @@ itplay.o: itplay.c \
 	itplay.h \
 	../cpiface/cpiface.h \
 	../dev/mcp.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h
 	$(CC) itplay.c -o $@ -c
 

@@ -190,6 +190,7 @@ static int ayProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 static int ayOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 	const char *filename;
+	int retval;
 
 	if (!file)
 		return -1;
@@ -204,12 +205,12 @@ static int ayOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	cpifaceSession->SetMuteChannel = aySetMute;
 	cpifaceSession->LogicalChannelCount = 6;
 
-	if (!ayOpenPlayer(file, cpifaceSession))
+	if (retval = ayOpenPlayer(file, cpifaceSession))
 	{
 #ifdef INITCLOSE_DEBUG
 		fprintf(stderr, "ayOpenPlayer FAILED\n");
 #endif
-		return -1;
+		return retval;
 	}
 
 	ayChanSetup (cpifaceSession);

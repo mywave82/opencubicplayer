@@ -195,6 +195,7 @@ static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	const char *filename;
 	uint8_t *filebuf;
 	uint64_t filelen;
+	int retval;
 
 	if (!file)
 	{
@@ -209,12 +210,12 @@ static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	if (filelen < 14)
 	{
 		fprintf (stderr, "hvlOpenFile: file too small\n");
-		return errGen;
+		return errFormStruc;
 	}
 	if (filelen > (1024*1024))
 	{
 		fprintf (stderr, "hvlOpenFile: file too big\n");
-		return errGen;
+		return errFormStruc;
 	}
 
 	filebuf = malloc (filelen);
@@ -230,11 +231,11 @@ static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 		return errFileRead;
 	}
 
-	hvlOpenPlayer (filebuf, filelen, file, cpifaceSession);
+	retval = hvlOpenPlayer (filebuf, filelen, file, cpifaceSession);
 	free (filebuf);
-	if (!current_hvl_tune)
+	if (retval)
 	{
-		return errGen;
+		return retval;
 	}
 
 	cpifaceSession->IsEnd = hvlIsLooped;

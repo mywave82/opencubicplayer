@@ -15,7 +15,7 @@ struct sidChanInfo
 
 struct ocpfilehandle_t;
 struct cpifaceSessionAPI_t;
-extern unsigned char __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpifaceSession);
+extern int __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpifaceSession);
 extern int __attribute__ ((visibility ("internal"))) sidNumberOfChips(void);
 extern int __attribute__ ((visibility ("internal"))) sidNumberOfComments(void);
 extern int __attribute__ ((visibility ("internal"))) sidNumberOfInfos(void);

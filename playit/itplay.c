@@ -82,6 +82,7 @@
 #include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "itplay.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 
 
@@ -1814,8 +1815,13 @@ int __attribute__ ((visibility ("internal"))) loadsamples (struct cpifaceSession
 int __attribute__ ((visibility ("internal"))) play (struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i;
-	staticthis=this;
 
+	if (!cpifaceSession->mcpDevAPI)
+	{
+		return errPlay;
+	}
+
+	staticthis=this;
 	this->randseed=1;
 	this->patdelayrow=0;
 	this->patdelaytick=0;
@@ -1858,7 +1864,9 @@ int __attribute__ ((visibility ("internal"))) play (struct itplayer *this, const
 		this->curord++;
 
 	if (this->curord==this->nord)
-		return 0;
+	{
+		return errFormStruc;
+	}
 
 	this->channels=malloc(sizeof(struct it_logchan)*this->nchan);
 	this->pchannels=malloc(sizeof(struct it_physchan)*ch);
@@ -1881,7 +1889,7 @@ int __attribute__ ((visibility ("internal"))) play (struct itplayer *this, const
 			free(this->que);
 			this->que=NULL;
 		}
-		return 0;
+		return errFormStruc;
 	}
 	this->querpos=this->quewpos=0;
 	memset(this->channels, 0, sizeof(*this->channels)*this->nchan);
@@ -1904,13 +1912,15 @@ int __attribute__ ((visibility ("internal"))) play (struct itplayer *this, const
 	}
 
 	if (!cpifaceSession->mcpDevAPI->OpenPlayer(ch, playtickstatic, file, cpifaceSession))
-		return 0;
+	{
+		return errPlay;
+	}
 
 	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayW);
 
 	this->npchan = cpifaceSession->PhysicalChannelCount;
 
-	return 1;
+	return errOk;
 }
 
 void __attribute__ ((visibility ("internal"))) stop (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)

@@ -40,6 +40,7 @@ extern "C"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
 #include "stuff/poutput.h"
+#include "stuff/err.h"
 #include "stuff/sets.h"
 }
 #include "stsoundlib/StSoundLibrary.h"
@@ -491,6 +492,7 @@ static void ymCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 	const char *filename;
+	int retval;
 
 	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
 	fprintf(stderr, "preloading %s...\n", filename);
@@ -499,8 +501,10 @@ static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	cpifaceSession->ProcessKey = ymProcessKey;
 	cpifaceSession->DrawGStrings = ymDrawGStrings;
 
-	if (!ymOpenPlayer(file, cpifaceSession))
-		return -1;
+	if ((retval = ymOpenPlayer(file, cpifaceSession)))
+	{
+		return retval;
+	}
 
 	starttime = clock_ms();
 	cpifaceSession->InPause = 0;
@@ -512,7 +516,7 @@ static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	cpifaceSession->UseChannels (cpifaceSession, drawchannel);
 	cpifaceSession->SetMuteChannel = ymMute;
 
-	return 0;
+	return errOk;
 }
 
 static int ymPluginInit (PluginInitAPI_t *API)

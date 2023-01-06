@@ -254,7 +254,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	int retval;
 
 	if (!cpifaceSession->mcpDevAPI->OpenPlayer)
-		return errGen;
+		return errPlay;
 
 	if (!file)
 		return errFileOpen;
@@ -284,19 +284,22 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	}
 	if (!mpReduceSamples(&mod))
 	{
+		mpFree(&mod);
 		return errAllocMem;
 	}
 	if (!mpLoadSamples (cpifaceSession, &mod))
 	{
+		mpFree(&mod);
 		return errAllocSamp;
 	}
 	mpReduceMessage(&mod);
 	mpReduceInstruments(&mod);
 	mpOptimizePatLens(&mod);
 
-	if (!mpPlayModule(&mod, file, cpifaceSession))
+	if ((retval = mpPlayModule(&mod, file, cpifaceSession)))
 	{
-		return errPlay;
+		mpFree(&mod);
+		return retval;
 	}
 
 	cpifaceSession->PanType = !!(mod.options & MOD_MODPAN);

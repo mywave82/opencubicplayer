@@ -48,6 +48,7 @@ extern "C"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "stuff/compat.h"
+#include "stuff/err.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 #include "sidtype.h"
@@ -446,15 +447,20 @@ static int sidLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *sidf)
 {
 	const char *filename;
+	int retval;
 
 	if (!sidf)
-		return -1;
+	{
+		return errFormStruc;
+	}
 
 	cpifaceSession->dirdb->GetName_internalstr (sidf->dirdb_ref, &filename);
 	fprintf(stderr, "loading %s...\n", filename);
 
-	if (!sidOpenPlayer(sidf, cpifaceSession))
-		return -1;
+	if ((retval = sidOpenPlayer(sidf, cpifaceSession)))
+	{
+		return retval;
+	}
 
 	cpifaceSession->LogicalChannelCount = sidNumberOfChips() * 3;
 	cpifaceSession->PhysicalChannelCount = sidNumberOfChips() * 4;
@@ -474,7 +480,7 @@ static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	SidInfoInit (cpifaceSession);
 
-	return 0;
+	return errOk;
 }
 
 static int sidPluginInit (PluginInitAPI_t *API)

@@ -66,6 +66,7 @@
 #include "dev/player.h"
 #include "dev/ringbuffer.h"
 #include "filesel/filesystem.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 
 #include "ayplay.h"
@@ -355,23 +356,23 @@ static int read_ay_file (struct ocpfilehandle_t *in)
 	data_len = in->filesize(in);
 	if (data_len > 1024*1024)
 	{
-		return 0;
+		return errFormStruc;
 	}
 	data = malloc (data_len);
 	if (!data)
 	{
-		return 0;
+		return errAllocMem;
 	}
 	in->seek_set (in, 0);
 	if (in->read (in, data, data_len) != data_len)
 	{
-		return 0;
+		return errFileRead;
 	}
 
 	if(memcmp(data,"ZXAYEMUL",8)!=0)
 	{
 		free(data);
-		return 0;
+		return errFormSig;
 	}
 
 	/* for the rest, we don't parse that much; just make copies of the
@@ -388,7 +389,7 @@ static int read_ay_file (struct ocpfilehandle_t *in)
 		  { \
                   free(data); \
                   if(aydata.tracks) free(aydata.tracks); \
-		  return(0); \
+		  return errFormStruc; \
                   } \
 		(x)=ptr-2+tmp
 #define CHECK_ASCIIZ(x) \
@@ -396,7 +397,7 @@ static int read_ay_file (struct ocpfilehandle_t *in)
 		  { \
                   free(data); \
                   if(aydata.tracks) free(aydata.tracks); \
-		  return(0); \
+		  return errFormStruc; \
                   }
 
 	ptr=data+8;
@@ -417,7 +418,7 @@ static int read_ay_file (struct ocpfilehandle_t *in)
 	if((aydata.tracks=malloc(aydata.num_tracks*sizeof(struct ay_track_tag)))==NULL) /* can't happen under glibc */
 	{
 		free(data);
-		return 0;
+		return errAllocMem;
 	}
 
 	for(f=0;f<aydata.num_tracks;f++)
@@ -433,7 +434,7 @@ static int read_ay_file (struct ocpfilehandle_t *in)
 		{
 			free(aydata.tracks);
 			free(data);
-			return 0;
+			return errFormStruc;
 		}
 
 		ptr=aydata.tracks[f].data+10;
@@ -449,7 +450,7 @@ static int read_ay_file (struct ocpfilehandle_t *in)
 
 	aydata.filedata=data;
 	aydata.filelen=data_len;
-	return 1;
+	return errOk;
 }
 
 /* from main.c */
@@ -875,16 +876,21 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 {
 	uint32_t ayRate;
 	enum plrRequestFormat format;
+	int retval;
 
 	aydata.filedata = NULL;
 	aydata.tracks = NULL;
 	aydumpbuffer_n = 0;
 
 	if (!cpifaceSession->plrDevAPI)
-		return 0;
+	{
+		return errPlay;
+	}
 
-	if(!read_ay_file(file)) /* 0 meens error */
-		return 0;
+	if ((retval = read_ay_file(file)))
+	{
+		return retval;
+	}
 
 	bzero (aydumpbuffer_delayed_states, sizeof (aydumpbuffer_delayed_states));
 
@@ -892,6 +898,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 	format=PLR_STEREO_16BIT_SIGNED;
 	if (!cpifaceSession->plrDevAPI->Play (&ayRate, &format, file, cpifaceSession))
 	{
+		retval = errPlay;
 		goto errorout_aydata;
 	}
 	sound_freq = ayRate;
@@ -901,12 +908,14 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 	aybuf = malloc(16384 << 2 /* stereo + 16bit */);
 	if (!aybuf)
 	{
+		retval = errAllocMem;
 		goto errorout_plrDevAPI_Start;
 	}
 
 	aybufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 16384);
 	if (!aybufpos)
 	{
+		retval = errAllocMem;
 		goto errorout_aybuf;
 	}
 	aybuffpos=0;
@@ -923,6 +932,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 
 	if (!sound_init())
 	{
+		retval = errAllocMem;
 		goto errorout_ringbuffer_aybufpos;
 	}
 
@@ -952,7 +962,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 
 	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
-	return 1;
+	return errOk;
 
 	//sound_end();
 errorout_ringbuffer_aybufpos:
@@ -968,7 +978,7 @@ errorout_aydata:
 	aydata.tracks = 0;
 	free(aydata.filedata);
 	aydata.filedata = 0;
-	return 0;
+	return retval;
 }
 
 void __attribute__ ((visibility ("internal"))) ayClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)

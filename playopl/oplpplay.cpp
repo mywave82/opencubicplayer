@@ -419,6 +419,7 @@ static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	size_t buffersize = 16*1024;
 	uint8_t *buffer = (uint8_t *)malloc (buffersize);
 	size_t bufferfill = 0;
+	int retval;
 
 	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
 	{
@@ -448,9 +449,9 @@ static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->ProcessKey = oplProcessKey;
 	cpifaceSession->DrawGStrings = oplDrawGStrings;
 
-	if (!oplOpenPlayer(filename, buffer, bufferfill, file, cpifaceSession))
+	if ((retval = oplOpenPlayer(filename, buffer, bufferfill, file, cpifaceSession)))
 	{
-		return -1;
+		return retval;
 	}
 	buffer=0;
 

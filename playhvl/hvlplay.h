@@ -7,7 +7,7 @@ struct hvl_tune;
 #define current_hvl_tune ht
 struct cpifaceSessionAPI_t;
 extern struct hvl_tune __attribute__ ((visibility ("internal"))) *current_hvl_tune;
-extern struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
+extern int             __attribute__ ((visibility ("internal")))  hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
 extern void            __attribute__ ((visibility ("internal")))  hvlClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
 extern void            __attribute__ ((visibility ("internal")))  hvlIdle (struct cpifaceSessionAPI_t *cpifaceSession);
 extern void            __attribute__ ((visibility ("internal")))  hvlSetLoop (uint8_t s);

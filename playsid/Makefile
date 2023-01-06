@@ -393,6 +393,7 @@ sidplay.o: \
 	../dev/player.h \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h \
 	sidplay.h \
 	libsidplayfp-api.h
@@ -409,6 +410,7 @@ sidpplay.o: sidpplay.cpp \
 	../filesel/filesystem.h \
 	../filesel/mdb.h \
 	../stuff/compat.h \
+	../stuff/err.h \
 	../stuff/poutput.h \
 	../stuff/sets.h \
 	./libsidplayfp-git/src/sidplayfp/SidTuneInfo.h \

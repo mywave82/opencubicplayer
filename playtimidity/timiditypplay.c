@@ -218,7 +218,7 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 				{
 					fprintf (stderr, "timidityOpenFile: %s is bigger than 64 Mb - further loading blocked\n", filename);
 					free (buffer);
-					return -1;
+					return errAllocMem;
 				}
 				buffersize += 64*1024;
 				buffer = (uint8_t *)realloc (buffer, buffersize);

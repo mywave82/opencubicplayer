@@ -30,6 +30,7 @@ extern "C"
 #include "dev/player.h"
 #include "dev/ringbuffer.h"
 #include "filesel/filesystem.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 }
 #include "ymplay.h"
@@ -203,25 +204,27 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	enum plrRequestFormat format;
 	void *buffer = 0;
 	uint64_t length = file->filesize (file);
+	int retval;
+
 	if (!cpifaceSession->plrDevAPI)
 	{
-		return 0;
+		return errPlay;
 	}
 	if (length <= 0)
 	{
 		fprintf(stderr, "[ymplay]: Unable to determine file length\n");
-		return 0;
+		return errFormStruc;
 	}
 	if (length > (1024*1024))
 	{
 		fprintf(stderr, "[ymplay]: File too big\n");
-		return 0;
+		return errFormStruc;
 	}
 	buffer = malloc(length);
 	if (!buffer)
 	{
 		fprintf(stderr, "[ymplay]: Unable to malloc()\n");
-		return 0;
+		return errAllocMem;
 	}
 	if (file->read (file, buffer, length) != (int)length)
 	{
@@ -234,6 +237,7 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	if (!cpifaceSession->plrDevAPI->Play (&ymRate, &format, file, cpifaceSession))
 	{
 		fprintf(stderr, "[ymplay]: plrDevAPI->Play() failed\n");
+		retval = errPlay;
 		goto error_out_buffer;
 	}
 
@@ -249,11 +253,13 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	if (!pMusic)
 	{
 		fprintf(stderr, "[ymplay]: Unable to create stymulator object\n");
+		retval = errAllocMem;
 		goto error_out_plrDevAPI_Play;
 	}
 	if (!pMusic->loadMemory(buffer, length))
 	{
 		fprintf(stderr, "[ymplay]: Unable to load file: %s\n", pMusic->getLastError());
+		retval = errFormStruc;
 		goto error_out_plrDevAPI_Play;
 	}
 
@@ -263,12 +269,13 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	ymbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_MONO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, YMBUFLEN);
 	if (!ymbufpos)
 	{
+		retval = errAllocMem;
 		goto error_out_plrDevAPI_Play;
 	}
 	ymbuffpos=0;
 
 	active=1;
-	return 1;
+	return errOk;
 
 error_out_plrDevAPI_Play:
 	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
@@ -287,7 +294,7 @@ error_out_buffer:
 		delete(pMusic);
 		pMusic = 0;
 	}
-	return 0;
+	return retval;
 }
 
 void __attribute__ ((visibility ("internal"))) ymSetLoop(int loop)

@@ -25,6 +25,7 @@ wavplay.o: wavplay.c \
 	../dev/player.h \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h \
 	wave.h \
 	wavtype.h

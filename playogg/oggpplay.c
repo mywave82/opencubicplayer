@@ -218,9 +218,10 @@ static int oggOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 {
 	const char *filename;
 	struct ogginfo inf;
+	int retval;
 
 	if (!oggf)
-		return -1;
+		return errFormStruc;
 
 	cpifaceSession->dirdb->GetName_internalstr (oggf->dirdb_ref, &filename);
 	fprintf(stderr, "preloading %s...\n", filename);
@@ -229,8 +230,10 @@ static int oggOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->ProcessKey = oggProcessKey;
 	cpifaceSession->DrawGStrings = oggDrawGStrings;
 
-	if (!oggOpenPlayer(oggf, cpifaceSession))
-		return -1;
+	if ((retval = oggOpenPlayer(oggf, cpifaceSession)))
+	{
+		return retval;
+	}
 
 	starttime = clock_ms();
 	cpifaceSession->InPause = 0;

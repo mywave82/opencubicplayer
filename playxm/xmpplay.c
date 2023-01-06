@@ -289,8 +289,10 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	int (*loader)(struct xmodule *, struct ocpfilehandle_t *)=0;
 	int retval;
 
-	if (!cpifaceSession->mcpDevAPI->OpenPlayer)
-		return errGen;
+	if (!cpifaceSession->mcpDevAPI)
+	{
+		return errPlay;
+	}
 
 	if (!file)
 		return errFileOpen;
@@ -310,9 +312,11 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	else if (info->modtype.integer.i == MODULETYPE("MODf")) loader=xmpLoadMODf;
 
 	if (!loader)
-		return errFormStruc;
+	{
+		return errGen;
+	}
 
-	if (retval=loader(&mod, file))
+	if ((retval = loader (&mod, file)))
 	{
 		xmpFreeModule(&mod);
 		return retval;
@@ -320,15 +324,15 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	if (!xmpLoadSamples (cpifaceSession, &mod))
 	{
 		xmpFreeModule(&mod);
-		return errAllocMem;
+		return errAllocSamp;
 	}
 
 	xmpOptimizePatLens(&mod);
 
-	if (!xmpPlayModule(&mod, file, cpifaceSession))
+	if ((retval = xmpPlayModule (&mod, file, cpifaceSession)))
 	{
 		xmpFreeModule(&mod);
-		return errPlay;
+		return retval;
 	}
 
 	insts=mod.instruments;

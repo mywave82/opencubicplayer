@@ -1082,6 +1082,7 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 
 int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandle_t *mpegfile, struct cpifaceSessionAPI_t *cpifaceSession)
 {
+	int retval;
 	enum plrRequestFormat format;
 	ofs=0;
 
@@ -1124,6 +1125,7 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 	if (!stream_for_frame())
 	{
 		fprintf(stderr, "[MPx] stream_for_frame() failed\n");
+		retval = errFormStruc;
 		goto error_out;
 	}
 	mpegrate=frame.header.samplerate;
@@ -1133,6 +1135,7 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 	if (!cpifaceSession->plrDevAPI->Play (&mpegRate, &format, file, cpifaceSession))
 	{
 		fprintf(stderr, "[MPx]: plrDevAPI->Play() failed\n");
+		retval = errPlay;
 		goto error_out;
 	}
 	mpegbufrate=imuldiv(65536, mpegrate, mpegRate);
@@ -1140,12 +1143,14 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 	if (!(mpegbuf=malloc(32768)))
 	{
 		fprintf(stderr, "[MPx]: malloc failed\n");
+		retval = errAllocMem;
 		goto error_out_plrDevAPI_Play;
 	}
 	mpegbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 8192);
 	if (!mpegbufpos)
 	{
 		fprintf(stderr, "[MPx]: ringbuffer_new_samples() failed\n");
+		retval = errAllocMem;
 		goto error_out_plrDevAPI_Play;
 	}
 	mpegbuffpos=0;
@@ -1180,7 +1185,7 @@ error_out:
 	mad_synth_finish(&synth);
 	mad_frame_finish(&frame);
 	mad_stream_finish(&stream);
-	return errFormStruc;
+	return retval;
 }
 
 void __attribute__ ((visibility ("internal"))) mpegClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)

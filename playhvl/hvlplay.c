@@ -37,6 +37,7 @@
 #include "dev/ringbuffer.h"
 #include "loader.h"
 #include "player.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 
 #define MAXIMUM_SLOW_DOWN 32
@@ -626,12 +627,15 @@ void __attribute__ ((visibility ("internal"))) hvlGetStats (int *row, int *rows,
 	*speedmult = last_ht_SpeedMultiplier;
 }
 
-struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+int __attribute__ ((visibility ("internal"))) hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
+	int retval;
 
 	if (!cpifaceSession->plrDevAPI)
-		return 0;
+	{
+		return errPlay;
+	}
 
 	hvl_InitReplayer ();
 
@@ -639,7 +643,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 	format=PLR_STEREO_16BIT_SIGNED;
 	if (!cpifaceSession->plrDevAPI->Play (&hvlRate, &format, file, cpifaceSession))
 	{
-		return 0;
+		return errPlay;
 	}
 
 	current_cpifaceSession = cpifaceSession;
@@ -647,11 +651,13 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 	ht = hvl_LoadTune_memory (mem, memlen, 4, hvlRate);
 	if (!ht)
 	{
+		retval = errFormStruc;
 		goto error_out_plrDevAPI_Play;
 	}
 
 	if( !hvl_InitSubsong( ht, 0 ) )
 	{
+		retval = errFormStruc;
 		goto error_out_tune;
 	}
 
@@ -675,12 +681,14 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 
 	if ((!hvl_buf_stereo) && (!hvl_buf_16chan))
 	{
+		retval = errAllocMem;
 		goto error_out_mem;
 	}
 
 	hvl_buf_pos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, (ROW_BUFFERS + 1) * MAXIMUM_SLOW_DOWN * hvl_samples_per_row);
 	if (!hvl_buf_pos)
 	{
+		retval = errAllocMem;
 		goto error_out_mem;
 	}
 
@@ -696,7 +704,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvlOpenPlayer (const 
 
 	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP | mcpNormalizeCanSpeedPitchUnlock);
 
-	return ht;
+	return errOk;
 
 	//if (hvl_buf_pos)
 	//{
@@ -719,7 +727,7 @@ error_out_plrDevAPI_Play:
 
 	current_cpifaceSession = 0;
 
-	return 0;
+	return retval;
 }
 
 void __attribute__ ((visibility ("internal"))) hvlClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)

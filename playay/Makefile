@@ -86,6 +86,7 @@ ayplay.o: ayplay.c ayplay.h main.h sound.h z80.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h
 	$(CC) -o $@ ayplay.c -c
 

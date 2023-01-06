@@ -35,6 +35,7 @@ extern "C"
 #include "dev/ringbuffer.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 }
 #include "oplplay.h"
@@ -293,10 +294,11 @@ void CProvider_Mem::close(binistream *f) const
 int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filename /* needed for detection */, uint8_t *content, const size_t len, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
+	int retval;
 
 	if (!cpifaceSession->plrDevAPI)
 	{
-		return 0;
+		return errPlay;
 	}
 
 	oplRate = 0;
@@ -304,7 +306,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	if (!cpifaceSession->plrDevAPI->Play (&oplRate, &format, file, cpifaceSession))
 	{
 		free (content);
-		return 0;
+		return errPlay;
 	}
 
 	opl = new Cocpopl(oplRate);
@@ -313,7 +315,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	if (!(p = CAdPlug::factory(filename, opl, CAdPlug::players, prMem)))
 	{
 		delete (opl);
-		return 0;
+		return errFormStruc;
 	}
 
 	oplbufrate=0x10000; /* 1.0 */
@@ -322,6 +324,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	oplbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, sizeof (oplbuf) >> 2 /* stereo + bit16 */);
 	if (!oplbufpos)
 	{
+		retval = errAllocMem;
 		goto error_out;
 	}
 	opltowrite=0;
@@ -336,7 +339,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 
 	oplTrkSetup (cpifaceSession, p);
 
-	return 1;
+	return errOk;
 
 error_out:
 	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
@@ -348,7 +351,7 @@ error_out:
 	delete(p);
 	delete(opl);
 	free (content);
-	return 0;
+	return retval;
 }
 
 void __attribute__ ((visibility ("internal"))) oplSetLoop(int loop)

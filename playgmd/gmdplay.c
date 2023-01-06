@@ -35,6 +35,7 @@
 #include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "gmdplay.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 
 #define GMD_MAXPCHAN 32
@@ -1555,16 +1556,25 @@ static void PlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 	putque(cmdtime, -1, (currentrow<<8)|(currentpattern<<16), 0);
 }
 
-char __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+int __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i;
+
+	if (!cpifaceSession->mcpDevAPI)
+	{
+		return errPlay;
+	}
+
+
 	for (i=65; i<=128; i++)
 		sintab[i]=sintab[128-i];
 	for (i=129; i<256; i++)
 		sintab[i]=-sintab[256-i];
 
 	if (m->orders[0]==0xFFFF)
-		return 0;
+	{
+		return errFormStruc;
+	}
 
 	sampleinfos=m->samples;
 	modsampnum=m->modsampnum;
@@ -1617,18 +1627,22 @@ char __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodu
 	quelen=100;
 	que=malloc(sizeof(int)*quelen*4);
 	if (!que)
-		return 0;
+	{
+		return errAllocMem;
+	}
 	querpos=0;
 	quewpos=0;
 
 	if (!cpifaceSession->mcpDevAPI->OpenPlayer (channels, PlayTick, file, cpifaceSession))
-		return 0;
+	{
+		return errPlay;
+	}
 
 	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayW);
 
 	physchan = cpifaceSession->PhysicalChannelCount;
 
-	return 1;
+	return errOk;
 }
 
 void __attribute__ ((visibility ("internal"))) mpStopModule (struct cpifaceSessionAPI_t *cpifaceSession)

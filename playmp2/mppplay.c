@@ -216,7 +216,9 @@ static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 	struct mpeginfo inf;
 
 	if (!mpegfile)
-		return -1;
+	{
+		return errFormStruc;
+	}
 
 	cpifaceSession->dirdb->GetName_internalstr (mpegfile->dirdb_ref, &filename);
 	fprintf(stderr, "preloading %s...\n", filename);
@@ -226,7 +228,9 @@ static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 	cpifaceSession->DrawGStrings = mpegDrawGStrings;
 
 	if (retval = mpegOpenPlayer(mpegfile, cpifaceSession))
+	{
 		return retval;
+	}
 
 	starttime = clock_ms();
 	cpifaceSession->InPause = 0;

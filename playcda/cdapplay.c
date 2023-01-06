@@ -479,10 +479,11 @@ static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	const char *name = 0;
 	int32_t start = -1;
 	int32_t stop = -1;
+	int retval;
 
 	if (file->ioctl (file, IOCTL_CDROM_READTOC, &TOC))
 	{
-		return -1;
+		return errFormSig;
 	}
 
 	name = file->filename_override (file);
@@ -513,17 +514,17 @@ static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 		if ((cdpTrackNum < 1) || (cdpTrackNum > 99))
 		{
 
-			return -1;
+			return errFormSig;
 		}
 		if (TOC.track[cdpTrackNum].is_data)
 		{
-			return -1;
+			return errFormStruc;
 		}
 		start = TOC.track[cdpTrackNum].lba_addr;
 		stop = TOC.track[cdpTrackNum+1].lba_addr;
 		cdpPlayMode=0;
 	} else {
-		return -1;
+		return errFormStruc;
 	}
 
 	newpos = start;
@@ -534,8 +535,10 @@ static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->ProcessKey = cdaProcessKey;
 	cpifaceSession->DrawGStrings = cdaDrawGStrings;
 
-	if (cdOpen(start, stop - start, file, cpifaceSession))
-		return -1;
+	if ((retval = cdOpen(start, stop - start, file, cpifaceSession)))
+	{
+		return retval;
+	}
 
 	pausefadedirection = 0;
 

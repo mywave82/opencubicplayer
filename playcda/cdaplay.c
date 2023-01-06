@@ -523,6 +523,7 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 
 	if (fh)
 	{
+		/* should not happen that we already have a file */
 		cdClose (cpifaceSession);
 	}
 	fh = file;
@@ -534,7 +535,8 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 	format=PLR_STEREO_16BIT_SIGNED;
 	if (!cpifaceSession->plrDevAPI->Play (&cdRate, &format, file, cpifaceSession))
 	{
-		return -1;
+		cdClose (cpifaceSession);
+		return errPlay;
 	}
 
 	cda_inpause=0;
@@ -544,8 +546,8 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 	cdbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, sizeof (cdbufdata) / 4);
 	if (!cdbufpos)
 	{
-		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
-		return 0;
+		cdClose (cpifaceSession);
+		return errAllocMem;
 	}
 	cdbuffpos = 0;
 
@@ -556,7 +558,7 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 
 	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
-	return 0;
+	return errOk;
 }
 
 void __attribute__ ((visibility ("internal"))) cdGetStatus (struct cdStat *stat)

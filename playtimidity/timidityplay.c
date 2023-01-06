@@ -2148,7 +2148,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 
 	if (!cpifaceSession->plrDevAPI)
 	{
-		return errGen;
+		return errPlay;
 	}
 
 	loading = 1;
@@ -2161,7 +2161,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	format=PLR_STEREO_16BIT_SIGNED;
 	if (!cpifaceSession->plrDevAPI->Play (&gmiRate, &format, file, cpifaceSession))
 	{
-		return errGen;
+		return errPlay;
 	}
 	ocp_playmode.rate = gmiRate;
 
@@ -2212,7 +2212,6 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeNoFilter | mcpNormalizeCanSpeedPitchUnlock | mcpNormalizeCannotEcho | mcpNormalizeCannotAmplify);
 
 	timidityIdler (cpifaceSession, &tc); /* trigger the file to load as soon as possible */
-#warning enable Lyrics API here..?
 	return errOk;
 }
 

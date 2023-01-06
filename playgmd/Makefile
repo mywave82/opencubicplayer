@@ -200,10 +200,11 @@ gmdpinst.o: gmdpinst.c \
 gmdplay.o: gmdplay.c \
 	../config.h \
 	../types.h \
+	../cpiface/cpiface.h \
 	../dev/mcp.h \
 	gmdplay.h \
 	../stuff/imsrtns.h \
-	../cpiface/cpiface.h
+	../stuff/err.h
 	$(CC) gmdplay.c -o $@ -c
 
 gmdpplay.o: gmdpplay.c \
