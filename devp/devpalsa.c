@@ -45,8 +45,10 @@
 #include "filesel/mdb.h"
 #include "filesel/modlist.h"
 #include "filesel/pfilesel.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poutput.h"
+#include "stuff/utf-8.h"
 
 //#define ALSA_DEBUG_OUTPUT 1
 #ifdef ALSA_DEBUG_OUTPUT
@@ -78,11 +80,6 @@ static snd_pcm_hw_params_t *hwparams = NULL;
 static snd_pcm_sw_params_t *swparams = NULL;
 
 struct sounddevice plrAlsa;
-/*static struct deviceinfo currentcard;*/
-static struct ocpdir_t dir_alsa;
-static uint32_t dir_alsa_custom = 0xffffffff;
-static uint32_t custom_mdb_ref = 0xffffffff;
-
 static void alsaOpenDevice(void);
 
 static char alsaCardName[DEVICE_NAME_MAX+1];
@@ -99,21 +96,486 @@ static int bitsigned;
 
 static volatile int busy=0;
 
-static void alsaSetCustomRun (void **token, const struct DevInterfaceAPI_t *API);
-static int alsaSetPCMInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API);
-static int alsaSetMixerInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API);
+/****************************** setup/alsaconfig.dev ******************************/
 
-static void update_custom_dev (void)
+enum alsaConfigDraw_Mode_t
 {
-	if (custom_mdb_ref != 0xffffffff)
+	ACDM_AUDIO_DEVICE_SELECTED,
+	ACDM_AUDIO_DEVICE_OPEN,
+	ACDM_AUDIO_DEVICE_CUSTOM_SELECTED,
+	ACDM_AUDIO_DEVICE_CUSTOM_EDIT,
+	ACDM_MIXER_DEVICE_SELECTED,
+	ACDM_MIXER_DEVICE_OPEN,
+	ACDM_MIXER_DEVICE_CUSTOM_SELECTED,
+	ACDM_MIXER_DEVICE_CUSTOM_EDIT
+};
+
+struct AlsaConfigDeviceEntry_t
+{
+	char *name;
+	char *desc1;
+	char *desc2;
+};
+
+struct AlsaConfigDeviceList_t
+{
+	struct AlsaConfigDeviceEntry_t *entries;
+	int                             size;
+	int                             fill;
+	int                             preselected;
+	int                             selected;
+	char                            custom[DEVICE_NAME_MAX+1];
+};
+
+static struct ocpfile_t *alsasetup;
+
+static void alsaSetupRun  (void **token, const struct DevInterfaceAPI_t *API);
+
+static void alsaSetupAppendList (struct AlsaConfigDeviceList_t *list, char *name, char *desc)
+{
+	if (!name)
 	{
-		struct moduleinfostruct mi;
-		mdbGetModuleInfo(&mi, custom_mdb_ref);
-		snprintf(mi.title, sizeof(mi.title), "%s", alsaCardName);
-		snprintf(mi.composer, sizeof(mi.composer), "%s", alsaMixerName);
-		mdbWriteModuleInfo(custom_mdb_ref, &mi);
+		free (desc);
+		return;
+	}
+	if (list->fill >= list->size)
+	{
+		void *temp = realloc (list->entries, (list->size + 10) * sizeof (list->entries[0]));
+		if (!temp)
+		{
+			free (name);
+			free (desc);
+			return;
+		}
+		list->entries = temp;
+		list->size += 10;
+	}
+	if (!strcmp (name, list->custom))
+	{
+		list->selected = list->fill;
+	}
+	list->entries[list->fill].name = name;
+	list->entries[list->fill].desc1 = desc;
+	if (desc) /* desc can contain one \n, which we try to split up */
+	{
+		list->entries[list->fill].desc2 = strchr (desc, '\n');
+		if (list->entries[list->fill].desc2)
+		{
+			list->entries[list->fill].desc2[0] = 0;
+			list->entries[list->fill].desc2++;
+		}
+	} else {
+		list->entries[list->fill].desc2 = 0;
+	}
+	list->fill++;
+}
+
+static void alsaSetupClearList (struct AlsaConfigDeviceList_t *list)
+{
+	int i;
+	for (i=0; i < list->fill; i++)
+	{
+		free (list->entries[i].name);
+		free (list->entries[i].desc1); /* desc2 is from the same buffer, so should not be freed */
+	}
+	list->fill = 0;
+	free (list->entries);
+	list->size = 0;
+}
+
+static int alsaPluginInit (struct PluginInitAPI_t *API)
+{
+	alsasetup = dev_file_create (
+		dmSetup->basedir,
+		"alsaconfig.dev",
+		"ALSA configuration",
+		"",
+		0, /* token */
+		0, /* Init */
+		alsaSetupRun,
+		0, /* Close */
+		0  /* Destructor */
+	);
+
+	filesystem_setup_register_file (alsasetup);
+
+	return errOk;
+}
+
+static void alsaPluginClose (struct PluginCloseAPI_t *API)
+{
+	if (alsasetup)
+	{
+		filesystem_setup_unregister_file (alsasetup);
+		alsasetup->unref (alsasetup);
+		alsasetup = 0;
 	}
 }
+
+static void alsaSetupDrawList (const int mlLeft, const int mlTop, const int mlWidth, const int mlHeight, const char *title, struct AlsaConfigDeviceList_t *list, const struct DevInterfaceAPI_t *API)
+{
+	int i;
+	int scroll = 0;
+	int overflow = list->fill - 12;
+
+	if (overflow > 0)
+	{
+		if (list->preselected <= 6)
+		{
+		} else if (list->preselected > (list->fill - 6))
+		{
+			scroll = list->fill - 12;
+		} else {
+			scroll = list->preselected - 6;
+		}
+	}
+
+	API->console->DisplayPrintf (mlTop + 1, mlLeft, 0x09, mlWidth, "\xb3    \xda\xc4 %s %*C\xc4\xbf    \xb3", title, 63 - strlen (title));
+	for (i=0; i < 12; i++)
+	{
+		API->console->DisplayPrintf (mlTop + 2 + i, mlLeft, 0x09, mlWidth, "\xb3    \xb3%*.*o% 66s%0.9o\xb3    \xb3",
+				(i + scroll == list->preselected) ?  8 : 0,
+				(i + scroll == 0) ? 10 : 15,
+				((i + scroll) >= list->fill) ? "" : list->entries[i + scroll].name);
+	}
+	API->console->DisplayPrintf (mlTop + 14, mlLeft, 0x09, mlWidth, "\xb3    \xc0%8C\xc4 Use arrow keys and select with enter or cancel with ESC \xc4\xd9    \xb3");
+	API->console->DisplayPrintf (mlTop + 15, mlLeft, 0x09, mlWidth, "\xb3    %0.7o% 72s%0.9o\xb3", list->entries[list->preselected].desc1 ? list->entries[list->preselected].desc1 : "(no description)");
+	API->console->DisplayPrintf (mlTop + 16, mlLeft, 0x09, mlWidth, "\xb3    %0.7o% 72s%0.9o\xb3", list->entries[list->preselected].desc2 ? list->entries[list->preselected].desc2 : "");
+}
+
+static void alsaSetupDraw (const int mlLeft, const int mlTop, const int mlWidth, const int mlHeight, enum alsaConfigDraw_Mode_t *alsaConfigDraw_Mode, struct AlsaConfigDeviceList_t *pcmlist, struct AlsaConfigDeviceList_t *mixerlist, const struct DevInterfaceAPI_t *API)
+{
+	API->console->DisplayPrintf (mlTop +  0, mlLeft, 0x09, mlWidth, "\xda%28C\xc4 ALSA configuration %28C\xc4\xbf");
+
+	if (*alsaConfigDraw_Mode == ACDM_AUDIO_DEVICE_OPEN)
+	{
+		alsaSetupDrawList (mlLeft, mlTop, mlWidth, mlHeight, "Select audio device", pcmlist, API);
+
+	} else if (*alsaConfigDraw_Mode == ACDM_MIXER_DEVICE_OPEN)
+	{
+		alsaSetupDrawList (mlLeft, mlTop, mlWidth, mlHeight, "Select mixer device", mixerlist, API);
+	} else {
+		API->console->DisplayPrintf (mlTop + 1, mlLeft, 0x09, mlWidth, "\xb3%.7o%.15o  Navigate with %.15o<\x18>%.7o,%.15o<\x19>%.7o and %.15o<ENTER>%.7o; hit %.15o<ESC>%.7o to save and exit.            %.9o\xb3");
+		API->console->DisplayPrintf (mlTop + 2, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
+		//API->console->DisplayPrintf (mlTop +  2, mlLeft, 0x09, mlWidth, "\xb3%76C \xb3");
+		API->console->DisplayPrintf (mlTop +  3, mlLeft, 0x09, mlWidth, "\xb3%0.7o Audio device:%62C %0.9o\xb3");
+		/* TODO draw selected item */
+		API->console->DisplayPrintf (mlTop +  4, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %*.15o[% 66s]%0.9o    \xb3",
+			*alsaConfigDraw_Mode==ACDM_AUDIO_DEVICE_SELECTED ?  8 : 0,
+			pcmlist->entries[pcmlist->selected].name);
+		if (!pcmlist->selected) /* custom */
+		{
+			if (*alsaConfigDraw_Mode==ACDM_AUDIO_DEVICE_CUSTOM_EDIT)
+			{
+				API->console->DisplayPrintf (mlTop +  5, mlLeft,               0x09, 5, "\xb3    ");
+				API->console->DisplayPrintf (mlTop +  5, mlLeft + mlWidth - 5, 0x09, 5, "    \xb3");
+				/* we delay the EditStringUTF8z(), since it will trigger keyboard input + framelock */
+			} else {
+				API->console->DisplayPrintf (mlTop +  5, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %*.15o%.68S%0.9o    \xb3",
+					*alsaConfigDraw_Mode==ACDM_AUDIO_DEVICE_CUSTOM_SELECTED ?  8 : 0,
+					pcmlist->custom);
+			}
+		} else {
+			API->console->DisplayPrintf (mlTop +  5, mlLeft, 0x09, mlWidth, "\xb3    -%71C \xb3");
+		}
+		API->console->DisplayPrintf (mlTop +  6, mlLeft, 0x09, mlWidth, "\xb3%0.7o Description:%63C %0.9o\xb3");
+		API->console->DisplayPrintf (mlTop +  7, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %0.7o% 72s%0.9o\xb3", pcmlist->entries[pcmlist->selected].desc1 ? pcmlist->entries[pcmlist->selected].desc1 : "(no description)");
+		API->console->DisplayPrintf (mlTop +  8, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %0.7o% 72s%0.9o\xb3", pcmlist->entries[pcmlist->selected].desc2 ? pcmlist->entries[pcmlist->selected].desc2 : "");
+
+		API->console->DisplayPrintf (mlTop +  9, mlLeft, 0x09, mlWidth, "\xb3%76C \xb3");
+		API->console->DisplayPrintf (mlTop + 10, mlLeft, 0x09, mlWidth, "\xb3%76C \xb3");
+		API->console->DisplayPrintf (mlTop + 11, mlLeft, 0x09, mlWidth, "\xb3%0.7o Mixer device (volume control):%45C %0.9o\xb3");
+		API->console->DisplayPrintf (mlTop + 12, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %*.15o[% 66s]%0.9o    \xb3",
+			*alsaConfigDraw_Mode==ACDM_MIXER_DEVICE_SELECTED ?  8 : 0,
+			mixerlist->entries[mixerlist->selected].name);
+		if (!mixerlist->selected) /* custom */
+		{
+			if (*alsaConfigDraw_Mode==ACDM_MIXER_DEVICE_CUSTOM_EDIT)
+			{
+				API->console->DisplayPrintf (mlTop + 13, mlLeft,               0x09, 5, "\xb3    ");
+				API->console->DisplayPrintf (mlTop + 13, mlLeft + mlWidth - 5, 0x09, 5, "    \xb3");
+				/* we delay the EditStringUTF8z(), since it will trigger keyboard input + framelock */
+			} else {
+				API->console->DisplayPrintf (mlTop + 13, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %*.15o%.68S%0.9o    \xb3",
+					*alsaConfigDraw_Mode==ACDM_MIXER_DEVICE_CUSTOM_SELECTED ?  8 : 0,
+					mixerlist->custom);
+			}
+		} else {
+			API->console->DisplayPrintf (mlTop + 13, mlLeft, 0x09, mlWidth, "\xb3    -%71C \xb3");
+		}
+		API->console->DisplayPrintf (mlTop + 14, mlLeft, 0x09, mlWidth, "\xb3%0.7o Description:%63C %0.9o\xb3");
+		API->console->DisplayPrintf (mlTop + 15, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %0.7o% 72s%0.9o\xb3", mixerlist->entries[mixerlist->selected].desc1 ? mixerlist->entries[mixerlist->selected].desc1 : "(no description)");
+		API->console->DisplayPrintf (mlTop + 16, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %0.7o% 72s%0.9o\xb3", mixerlist->entries[mixerlist->selected].desc2 ? mixerlist->entries[mixerlist->selected].desc2 : "");
+		//API->console->DisplayPrintf (mlTop + 17, mlLeft, 0x09, mlWidth, "\xb3%76C \xb3");
+	}
+	API->console->DisplayPrintf (mlTop + 17, mlLeft, 0x09, mlWidth, "\xc0%76C\xc4\xd9");
+
+	if (*alsaConfigDraw_Mode==ACDM_AUDIO_DEVICE_CUSTOM_EDIT)
+	{
+#warning UTF-8 the way to go?
+		if (EditStringUTF8z (mlTop + 5, mlLeft + 5, 68, sizeof (pcmlist->custom), pcmlist->custom) <= 0)
+		{
+			*alsaConfigDraw_Mode = ACDM_AUDIO_DEVICE_CUSTOM_SELECTED;
+		}
+	}
+	if (*alsaConfigDraw_Mode==ACDM_MIXER_DEVICE_CUSTOM_EDIT)
+	{
+#warning UTF-8 the way to go?
+		if (EditStringUTF8z (mlTop + 13, mlLeft + 5, 68, sizeof (mixerlist->custom), mixerlist->custom) <= 0)
+		{
+			*alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_CUSTOM_SELECTED;
+		}
+	}
+}
+
+static void alsaSetupScan (struct AlsaConfigDeviceList_t *pcm, struct AlsaConfigDeviceList_t *mix)
+{
+	int result, i;
+	void **hints;
+
+	alsaSetupAppendList (pcm, strdup ("custom"), strdup ("User supplied value"));
+	alsaSetupAppendList (mix, strdup ("custom"), strdup ("User supplied value"));
+
+	result=snd_device_name_hint(-1, "pcm", &hints);
+	if (!result)
+	{
+		for (i=0; hints[i]; i++)
+		{
+			char *name = snd_device_name_get_hint (hints[i], "NAME");
+			char *desc = snd_device_name_get_hint (hints[i], "DESC");
+			char *io   = snd_device_name_get_hint (hints[i], "IOID");
+
+			if (name && ((!io) || strcmp (io, "Input")))
+			{
+				alsaSetupAppendList (pcm, name, desc);
+				free (io);
+			} else {
+				free (name);
+				free (desc);
+				free (io);
+			}
+		}
+		snd_device_name_free_hint (hints);
+	}
+
+	result=snd_device_name_hint(-1, "ctl", &hints);
+	if (!result)
+	{
+		for (i=0; hints[i]; i++)
+		{
+			char *name = snd_device_name_get_hint (hints[i], "NAME");
+			char *desc = snd_device_name_get_hint (hints[i], "DESC");
+
+			alsaSetupAppendList (mix, name, desc);
+		}
+
+		snd_device_name_free_hint (hints);
+	}
+}
+
+static void alsaSetupRun (void **token, const struct DevInterfaceAPI_t *API)
+{
+	enum alsaConfigDraw_Mode_t alsaConfigDraw_Mode = ACDM_AUDIO_DEVICE_SELECTED;
+	struct AlsaConfigDeviceList_t pcmlist = {0, 0, 0};
+	struct AlsaConfigDeviceList_t mixerlist = {0, 0, 0};
+	int doexit = 0;
+
+	snprintf (  pcmlist.custom, sizeof (  pcmlist.custom), "%s", alsaCardName);
+	snprintf (mixerlist.custom, sizeof (mixerlist.custom), "%s", alsaMixerName);
+
+	alsaSetupScan (&pcmlist, &mixerlist);
+
+	while (!doexit)
+	{
+		const int mlWidth = 78;
+		const int mlHeight = 18;
+		int mlTop = (plScrHeight - mlHeight) / 2;
+		int mlLeft = (plScrWidth - mlWidth) / 2;
+
+		API->fsDraw();
+		alsaSetupDraw (mlLeft, mlTop, mlWidth, mlHeight, &alsaConfigDraw_Mode, &pcmlist, &mixerlist, API);
+		if ((alsaConfigDraw_Mode == ACDM_AUDIO_DEVICE_CUSTOM_EDIT) ||
+		    (alsaConfigDraw_Mode == ACDM_MIXER_DEVICE_CUSTOM_EDIT))
+		{
+			continue;
+		}
+		while (API->console->KeyboardHit() && !doexit && (alsaConfigDraw_Mode != ACDM_AUDIO_DEVICE_CUSTOM_EDIT) && (alsaConfigDraw_Mode != ACDM_MIXER_DEVICE_CUSTOM_EDIT))
+		{
+			int key = API->console->KeyboardGetChar();
+			switch (key)
+			{
+				case KEY_DOWN:
+					switch (alsaConfigDraw_Mode)
+					{
+						case ACDM_AUDIO_DEVICE_SELECTED:
+							if (pcmlist.selected) /* !custom */
+							{
+								alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_SELECTED;
+							} else {
+								alsaConfigDraw_Mode = ACDM_AUDIO_DEVICE_CUSTOM_SELECTED;
+							}
+							break;
+						case ACDM_AUDIO_DEVICE_OPEN:
+							if (pcmlist.preselected + 1 < pcmlist.fill)
+							{
+								pcmlist.preselected++;
+							}
+							break;
+						case ACDM_AUDIO_DEVICE_CUSTOM_SELECTED:
+							alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_SELECTED;
+							break;
+						case ACDM_AUDIO_DEVICE_CUSTOM_EDIT:
+							break;
+						case ACDM_MIXER_DEVICE_SELECTED:
+							if (!mixerlist.selected) /* !custom */
+							{
+								alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_CUSTOM_SELECTED;
+							}
+							break;
+						case ACDM_MIXER_DEVICE_OPEN:
+							if (mixerlist.preselected + 1 < mixerlist.fill)
+							{
+								mixerlist.preselected++;
+							}
+							break;
+						case ACDM_MIXER_DEVICE_CUSTOM_SELECTED:
+							break;
+						case ACDM_MIXER_DEVICE_CUSTOM_EDIT:
+							break;
+					}
+					break;
+				case KEY_UP:
+					switch (alsaConfigDraw_Mode)
+					{
+						case ACDM_AUDIO_DEVICE_SELECTED:
+							break;
+						case ACDM_AUDIO_DEVICE_OPEN:
+							if (pcmlist.preselected > 0)
+							{
+								pcmlist.preselected--;
+							}
+							break;
+						case ACDM_AUDIO_DEVICE_CUSTOM_SELECTED:
+							alsaConfigDraw_Mode = ACDM_AUDIO_DEVICE_SELECTED;
+							break;
+						case ACDM_MIXER_DEVICE_SELECTED:
+							if (pcmlist.selected) /* !custom */
+							{
+									alsaConfigDraw_Mode = ACDM_AUDIO_DEVICE_SELECTED;
+							} else {
+									alsaConfigDraw_Mode = ACDM_AUDIO_DEVICE_CUSTOM_SELECTED;
+							}
+							break;
+						case ACDM_AUDIO_DEVICE_CUSTOM_EDIT:
+							break;
+						case ACDM_MIXER_DEVICE_OPEN:
+							if (mixerlist.preselected > 0)
+							{
+								mixerlist.preselected--;
+							}
+							break;
+						case ACDM_MIXER_DEVICE_CUSTOM_SELECTED:
+							alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_SELECTED;
+							break;
+						case ACDM_MIXER_DEVICE_CUSTOM_EDIT:
+							break;
+					}
+					break;
+				case KEY_EXIT:
+						doexit = 1;
+						break;
+				case KEY_ESC:
+					switch (alsaConfigDraw_Mode)
+					{
+						case ACDM_AUDIO_DEVICE_SELECTED:
+							doexit = 1;
+							break;
+						case ACDM_AUDIO_DEVICE_OPEN:
+							alsaConfigDraw_Mode = ACDM_AUDIO_DEVICE_SELECTED;
+							break;
+						case ACDM_AUDIO_DEVICE_CUSTOM_SELECTED:
+							doexit = 1;
+							break;
+						case ACDM_AUDIO_DEVICE_CUSTOM_EDIT:
+							alsaConfigDraw_Mode = ACDM_AUDIO_DEVICE_CUSTOM_SELECTED;
+							API->console->Driver->SetCursorShape (0);
+							break;
+						case ACDM_MIXER_DEVICE_SELECTED:
+							doexit = 1;
+							break;
+						case ACDM_MIXER_DEVICE_OPEN:
+							alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_SELECTED;
+							break;
+						case ACDM_MIXER_DEVICE_CUSTOM_SELECTED:
+							doexit = 1;
+							break;
+						case ACDM_MIXER_DEVICE_CUSTOM_EDIT:
+							alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_CUSTOM_SELECTED;
+							API->console->Driver->SetCursorShape (0);
+							break;
+					}
+					break;
+				case _KEY_ENTER:
+					switch (alsaConfigDraw_Mode)
+					{
+						case ACDM_AUDIO_DEVICE_SELECTED:
+							alsaConfigDraw_Mode = ACDM_AUDIO_DEVICE_OPEN;
+							pcmlist.preselected = pcmlist.selected;
+							break;
+						case ACDM_AUDIO_DEVICE_OPEN:
+							alsaConfigDraw_Mode = ACDM_AUDIO_DEVICE_SELECTED;
+							pcmlist.selected = pcmlist.preselected;
+							break;
+						case ACDM_AUDIO_DEVICE_CUSTOM_SELECTED:
+							alsaConfigDraw_Mode = ACDM_AUDIO_DEVICE_CUSTOM_EDIT;
+							break;
+						case ACDM_AUDIO_DEVICE_CUSTOM_EDIT:
+							break;
+						case ACDM_MIXER_DEVICE_SELECTED:
+							alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_OPEN;
+							mixerlist.preselected = mixerlist.selected;
+							break;
+						case ACDM_MIXER_DEVICE_OPEN:
+							alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_SELECTED;
+							mixerlist.selected = mixerlist.preselected;
+							break;
+						case ACDM_MIXER_DEVICE_CUSTOM_SELECTED:
+							alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_CUSTOM_EDIT;
+							break;
+						case ACDM_MIXER_DEVICE_CUSTOM_EDIT:
+							break;
+					}
+					break;
+			}
+		}
+		API->console->FrameLock();
+	}
+
+	if (pcmlist.selected)
+	{
+		snprintf (alsaCardName, sizeof (alsaCardName), "%.*s", (unsigned int)sizeof (alsaCardName) - 1, pcmlist.entries[pcmlist.selected].name);
+	} else {
+		snprintf (alsaCardName, sizeof (alsaCardName), "%.*s", (unsigned int)sizeof (alsaCardName) - 1, pcmlist.custom);
+	}
+	if (mixerlist.selected)
+	{
+		snprintf (alsaMixerName, sizeof (alsaMixerName), "%.*s", (unsigned int)sizeof (alsaMixerName) - 1, mixerlist.entries[mixerlist.selected].name);
+	} else {
+		snprintf (alsaMixerName, sizeof (alsaMixerName), "%.*s", (unsigned int)sizeof (alsaMixerName) - 1, mixerlist.custom);
+	}
+
+	debug_printf ("ALSA: Selected PCM %s\n", alsaCardName);
+	debug_printf ("ALSA: Selected Mixer %s\n", alsaMixerName);
+
+	alsaSetupClearList (&pcmlist);
+	alsaSetupClearList (&mixerlist);
+
+	API->configAPI->SetProfileString ("devpALSA", "path", alsaCardName);
+	API->configAPI->SetProfileString ("devpALSA", "mixer", alsaMixerName);
+	API->configAPI->StoreConfig ();
+}
+
+/****************************** devpALSA ******************************/
 
 static unsigned int devpALSAIdle(void)
 {
@@ -357,302 +819,6 @@ static void devpALSAPause (int pause)
 {
 	assert (devpALSABuffer);
 	devpALSAInPause = pause;
-}
-
-static void dir_alsa_ref (struct ocpdir_t *self)
-{
-	debug_printf ("dir_alsa_ref() (dummy)\n");
-}
-static void dir_alsa_unref (struct ocpdir_t *self)
-{
-	debug_printf ("dir_alsa_unref() (dummy)\n");
-}
-
-struct dirhandle_alsa_t
-{
-	struct ocpdir_t *owner;
-	void *token;
-	void(*callback_file)(void *token, struct ocpfile_t *);
-
-	int i;
-	int count;
-	void **hints_pcm;
-	void **hints_ctl;
-};
-
-static ocpdirhandle_pt dir_alsa_readdir_start (struct ocpdir_t *self, void(*callback_file)(void *token, struct ocpfile_t *),
-                                                                      void(*callback_dir )(void *token, struct ocpdir_t *), void *token)
-{
-	int result;
-	struct dirhandle_alsa_t *retval = calloc (1, sizeof *retval);
-
-	if (!retval)
-	{
-		return 0;
-	}
-
-	debug_printf ("dir_alsa_readdir_start()\n");
-
-	result=snd_device_name_hint(-1, "pcm", &retval->hints_pcm);
-	debug_printf ("      snd_device_name_hint() = %s\n", snd_strerror(-result));
-	if (result)
-	{
-		free (retval); /* zero cards found */
-		return 0;
-	}
-
-	retval->owner = self;
-	retval->callback_file = callback_file;
-	retval->token = token;
-	retval->count = 1;
-
-
-	{
-		struct ocpfile_t *child;
-
-		child = dev_file_create (
-			self,
-			"custom.dev",
-			alsaCardName,
-			alsaMixerName,
-			0, /* token */
-			0, /* Init */
-			alsaSetCustomRun,
-			0, /* Close */
-			0  /* Destructor */
-		);
-
-		if (child)
-		{
-			callback_file (token, child);
-			child->unref (child);
-		}
-	}
-
-	return retval;
-}
-
-static void dir_alsa_readdir_cancel (ocpdirhandle_pt _handle)
-{
-	struct dirhandle_alsa_t *handle = (struct dirhandle_alsa_t *)_handle;
-
-	debug_printf ("dir_alsa_readdir_cancel()\n");
-
-	if (handle->hints_pcm)
-	{
-		snd_device_name_free_hint (handle->hints_pcm);
-		handle->hints_pcm = 0;
-	}
-
-	if (handle->hints_ctl)
-	{
-		snd_device_name_free_hint (handle->hints_ctl);
-		handle->hints_ctl = 0;
-	}
-
-	free (handle);
-}
-
-static void dir_alsa_update_mdb (uint32_t dirdb_ref, const char *descr)
-{
-	uint32_t mdb_ref;
-	struct moduleinfostruct mi;
-
-	mdb_ref = mdbGetModuleReference2 (dirdb_ref, 0);
-	debug_printf (" mdbGetModuleReference2 (0x%08"PRIx32") => 0x%08"PRIx32"\n", dirdb_ref, mdb_ref);
-	if (mdb_ref == 0xffffffff)
-	{
-		return;
-	}
-
-	mdbGetModuleInfo (&mi, mdb_ref);
-	mi.channels=2;
-	mi.composer[0] = 0;
-	mi.comment[0] = 0;
-
-	if (descr)
-	{
-		const char *n = strchr (descr, '\n');
-		if (n)
-		{
-			int len = n - descr + 1;
-			if (len >= sizeof(mi.composer))
-			{
-				len = sizeof(mi.composer);
-			}
-			snprintf(mi.composer, len, "%s", descr);
-			snprintf(mi.comment, sizeof (mi.comment), "%s", n + 1);
-		} else {
-			if (strlen(descr) > sizeof (mi.composer))
-			{
-				n = descr+strlen(descr)-1;
-				while (n-descr > 0)
-				{
-					if ((*n) != ' ')
-					{
-						n--;
-						continue;
-					}
-					if (n-descr >= sizeof(mi.composer))
-					{
-						n--;
-						continue;
-					}
-					snprintf(mi.composer, n-descr+1, "%.*s", (int)sizeof (mi.composer) - 1, descr);
-					snprintf(mi.comment, sizeof (mi.comment), "%s", n + 1);
-					break;
-				}
-			} else {
-				snprintf(mi.composer, sizeof(mi.composer), "%.*s", (int)sizeof (mi.composer) - 1, descr);
-			}
-		}
-	}
-	mdbWriteModuleInfo(mdb_ref, &mi);
-}
-
-
-static int dir_alsa_readdir_iterate (ocpdirhandle_pt _handle)
-{
-	struct dirhandle_alsa_t *handle = (struct dirhandle_alsa_t *)_handle;
-
-	char *name, *descr, *io;
-	char namebuffer[128];
-	uint32_t dirdb_ref;
-	struct ocpfile_t *child;
-	int result;
-
-	debug_printf ("dir_alsa_readdir_iterate() i=%d handle->hints_pcm=%p handle->hints_ctl=%p\n", handle->i, handle->hints_pcm, handle->hints_ctl);
-
-	if (handle->hints_pcm && handle->hints_pcm[handle->i])
-	{
-		name = snd_device_name_get_hint(handle->hints_pcm[handle->i], "NAME");
-		descr = snd_device_name_get_hint(handle->hints_pcm[handle->i], "DESC");
-		io = snd_device_name_get_hint(handle->hints_pcm[handle->i], "IOID");
-
-		debug_printf ("snd_device_name_get_hint()\n");
-		debug_printf ("       [%d] name=%s\n", handle->i, name?name:"(NULL)");
-		debug_printf ("            desc=%s\n", descr?descr:"(NULL)");
-		debug_printf ("            io=%s\n", io?io:"(NULL)");
-
-		if (!name) /* should never happen */
-		{
-			goto pcm_end;
-		}
-		if (io && (!strcmp(io, "Input"))) /* ignore input only cards */
-		{
-			goto pcm_end;
-		}
-
-//		snprintf (namebuffer, sizeof (namebuffer), "ALSA-PCM-%s.dev", name);
-		snprintf (namebuffer, sizeof (namebuffer), "pcm-%03d.dev", handle->count);
-
-		dirdb_ref = dirdbFindAndRef (handle->owner->dirdb_ref,  namebuffer, dirdb_use_file);
-		dir_alsa_update_mdb (dirdb_ref, descr);
-		dirdbUnref (dirdb_ref, dirdb_use_file);
-
-		child = dev_file_create
-		(
-			handle->owner,
-			namebuffer,
-			name, /* mdb title */
-			0,  /* mdb composer */
-			0, /* token */
-			alsaSetPCMInit,
-			0, /* Run */
-			0, /* Close */
-			0  /* Destructor */
-		);
-
-		if (child)
-		{
-			handle->callback_file (handle->token, child);
-			child->unref (child);
-		}
-		handle->count++;
-pcm_end:
-		free (name);
-		free (descr);
-		free (io);
-
-		handle->i++;
-
-		if (!handle->hints_pcm[handle->i])
-		{
-			debug_printf ("PCM complete, MIX next\n");
-
-			snd_device_name_free_hint (handle->hints_pcm);
-			handle->hints_pcm = 0;
-			handle->i = 0;
-			handle->count = 1;
-
-			result=snd_device_name_hint(-1, "ctl", &handle->hints_ctl);
-			debug_printf ("      snd_device_name_hint() = %s\n", snd_strerror(-result));
-			if (result)
-			{
-				return 0;
-			}
-			return 1;
-		}
-		return 1;
-	} else if (handle->hints_ctl && handle->hints_ctl[handle->i])
-	{
-		name = snd_device_name_get_hint(handle->hints_ctl[handle->i], "NAME");
-		descr = snd_device_name_get_hint(handle->hints_ctl[handle->i], "DESC");
-		io = snd_device_name_get_hint(handle->hints_ctl[handle->i], "IOID");
-
-		debug_printf ("snd_device_name_get_hint()\n");
-		debug_printf ("       [%d] name=%s\n", handle->i, name?name:"(NULL)");
-		debug_printf ("            desc=%s\n", descr?descr:"(NULL)");
-		debug_printf ("            io=%s\n", io?io:"(NULL)");
-
-		if (!name) /* should never happen */
-		{
-			goto mix_end;
-		}
-
-//		snprintf (namebuffer, sizeof (namebuffer), "ALSA-MIX-%s.dev", name);
-		snprintf (namebuffer, sizeof (namebuffer), "mix-%03d.dev", handle->count);
-
-		dirdb_ref = dirdbFindAndRef (handle->owner->dirdb_ref,  namebuffer, dirdb_use_file);
-		dir_alsa_update_mdb (dirdb_ref, descr);
-		dirdbUnref (dirdb_ref, dirdb_use_file);
-
-		child = dev_file_create
-		(
-			handle->owner,
-			namebuffer,
-			name, /* mdb title */
-			0, /* mdb composer */
-			0, /* token */
-			alsaSetMixerInit,
-			0, /* Run */
-			0, /* Close */
-			0  /* Destructor */
-		);
-
-		if (child)
-		{
-			handle->callback_file (handle->token, child);
-			child->unref (child);
-		}
-		handle->count++;
-mix_end:
-		free (name);
-		free (descr);
-		free (io);
-
-		handle->i++;
-
-		return 1;
-	} else {
-		return 0;
-	}
-}
-
-static struct ocpdir_t *dir_alsa_readdir_dir (struct ocpdir_t *_self, uint32_t dirdb_ref)
-{
-	/* this can not succeed */
-	return 0;
 }
 
 static int detect_cards (void)
@@ -1108,34 +1274,9 @@ static int volalsaSetVolume(struct ocpvolstruct *v, int n)
 	return 0;
 }
 
-static int alsasetupregistered = 0;
 static void alsaClose(void);
 static int alsaInit(const struct deviceinfo *c, const char *handle)
 {
-	alsasetupregistered = 1;
-	ocpdir_t_fill (&dir_alsa,
-	                dir_alsa_ref,
-	                dir_alsa_unref,
-	                dmSetup->basedir,
-	                dir_alsa_readdir_start,
-	                0,
-	                dir_alsa_readdir_cancel,
-	                dir_alsa_readdir_iterate,
-	                dir_alsa_readdir_dir,
-	                0, /* no speed optimization in doing direct file, due to iterator being the same code logic as dir_alsa_readdir_iterate() */
-	                0,
-			dirdbFindAndRef (dmSetup->basedir->dirdb_ref, "alsa", dirdb_use_dir),
-	                0, /* refcount, ALSA ignores this */
-	                0, /* is_archive */
-	                0  /* is_playlist */);
-	filesystem_setup_register_dir (&dir_alsa);
-
-	dir_alsa_custom = dirdbFindAndRef (dir_alsa.dirdb_ref, "custom.dev", dirdb_use_file);
-
-	custom_mdb_ref = mdbGetModuleReference2 (dir_alsa_custom, 0);
-
-	update_custom_dev ();
-
 	plrDevAPI = &devpALSA;
 
 	alsaOpenDevice();
@@ -1167,213 +1308,10 @@ static int alsaDetect(struct deviceinfo *card)
 
 static void alsaClose(void)
 {
-	if (alsasetupregistered)
-	{
-		filesystem_setup_unregister_dir (&dir_alsa);
-		dirdbUnref (dir_alsa.dirdb_ref, dirdb_use_dir);
-
-		dirdbUnref (dir_alsa_custom, dirdb_use_file);
-		dir_alsa_custom = 0xffffffff;
-
-		alsasetupregistered = 0;
-	}
-
 	if (plrDevAPI  == &devpALSA)
 	{
 		plrDevAPI = 0;
 	}
-}
-
-#define MIN(a,b) (((a)<(b))?a:b)
-
-static int mlDrawBox (int esel, int first, const char texts[2][DEVICE_NAME_MAX+1], unsigned int *curpos, const struct DevInterfaceAPI_t *API)
-{
-	const int mlTop      = API->console->TextHeight / 2 - 3;
-	const int maxwidth   = API->console->TextWidth - 10;
-	const int fixedwidth = 1 + 7 + 1 + 1;
-	int textwidth = MIN (DEVICE_NAME_MAX + 1, maxwidth - fixedwidth);
-	int mlWidth = textwidth + fixedwidth;
-	int i;
-
-	const int mlLeft = (API->console->TextWidth - mlWidth) / 2;
-
-	static int scrolled[2];
-
-	for (i=0; i < 2; i++)
-	{
-		if (first)
-		{
-			scrolled[i] = 0;
-		}
-
-		while ((curpos[i]-scrolled[i]) >= textwidth)
-			scrolled[i] += 8;
-		while (scrolled[i] && (((int)curpos[i] - (int)scrolled[i]) < (textwidth - 8)))
-			scrolled[i] -= 8;
-	}
-
-	API->console->DisplayPrintf (mlTop,     mlLeft, 0x04, mlWidth, "\xda" "%*C\xc4" "\xbf", mlWidth - 2);
-	API->console->DisplayPrintf (mlTop + 1, mlLeft, 0x04, mlWidth, "\xb3" "%.11o" "%*C " "Please provide PCM and mixer strings" "%*C " "%.4o" "\xb3", (mlWidth - 36 - 2) / 2, (mlWidth - 36 - 2 + 1) / 2);
-
-	API->console->DisplayPrintf (mlTop + 2, mlLeft, 0x04, mlWidth, "\xb3" "%.7o" "PCM:   " "%*.*o" "%.*s" "%0.7o" "%*C " "%.4o" "\xb3",
-		(esel==0)?7:0, (esel==0)?0:7, textwidth, texts[0] + scrolled[0], mlWidth - 2 - 7 - textwidth);
-
-	API->console->DisplayPrintf (mlTop + 3, mlLeft, 0x04, mlWidth, "\xb3" "%.7o" "Mixer: " "%*.*o" "%.*s" "%0.7o" "%*C " "%.4o" "\xb3",
-		(esel==1)?7:0, (esel==1)?0:7, textwidth, texts[1] + scrolled[1], mlWidth - 2 - 7 - textwidth);
-
-	API->console->DisplayPrintf (mlTop + 4, mlLeft, 0x04, mlWidth, "\xb3" "%.11o" "%*C " "-- Finish with enter, abort with escape --" "%*C " "%.4o" "\xb3", (mlWidth - 42 - 2) / 2, (mlWidth - 42 - 2 + 1) / 2);
-	API->console->DisplayPrintf (mlTop + 5, mlLeft, 0x04, mlWidth, "\xc0" "%*C\xc4" "\xd9", mlWidth - 2);
-
-	API->console->Driver->SetCursorPosition (mlTop + 2 + esel, mlLeft + 1 + 7 + curpos[esel] - scrolled[esel]);
-
-	return mlTop;
-}
-
-static void alsaSetCustomRun (void **token, const struct DevInterfaceAPI_t *API)
-{
-	char str[2][DEVICE_NAME_MAX+1];
-	unsigned int curpos[2];
-	unsigned int cmdlen[2];
-	int insmode[2]={1,1};
-	int esel = 0;
-	int first = 1;
-
-	strcpy(str[0], alsaCardName);
-	strcpy(str[1], alsaMixerName);
-
-	curpos[0]=strlen(str[0]);
-	curpos[1]=strlen(str[1]);
-
-	cmdlen[0]=strlen(str[0]);
-	cmdlen[1]=strlen(str[1]);
-
-	API->console->Driver->SetCursorShape (1);
-
-	while (1)
-	{
-		uint16_t key;
-
-		API->fsDraw ();
-
-		mlDrawBox (esel, first, str, curpos, API);
-		first = 0;
-
-		while (!API->console->KeyboardHit())
-		{
-			API->console->FrameLock();
-		}
-		key = API->console->KeyboardGetChar();
-
-		if ((key>=0x20)&&(key<=0x7f))
-		{
-			if (insmode[esel])
-			{
-				if ((cmdlen[esel] + 1) < sizeof(str[esel]))
-				{
-					memmove (str[esel] + curpos[esel] + 1, str[esel] + curpos[esel], cmdlen[esel] - curpos[esel] + 1);
-					str[esel][curpos[esel]++] = key;
-					cmdlen[esel]++;
-				}
-			} else if (curpos[esel] == cmdlen[esel])
-			{
-				if ((cmdlen[esel] + 1) < sizeof(str[esel]))
-				{
-					str[esel][curpos[esel]++] = key;
-					str[esel][curpos[esel]]= 0 ;
-					cmdlen[esel]++;
-				}
-			} else {
-				str[esel][curpos[esel]++] = key;
-			}
-		} else switch (key)
-		{
-			case KEY_EXIT:
-			case KEY_ESC:
-				API->console->Driver->SetCursorShape (0);
-				return;
-			case KEY_LEFT:
-				if (curpos[esel])
-				{
-					curpos[esel]--;
-				}
-				break;
-			case KEY_RIGHT:
-				if (curpos[esel] < cmdlen[esel])
-				{
-					curpos[esel]++;
-				}
-				break;
-			case KEY_UP:
-				esel = 0;
-				API->console->Driver->SetCursorShape (insmode[esel] ? 1 : 2);
-				break;
-			case KEY_DOWN:
-				esel = 1;
-				API->console->Driver->SetCursorShape  (insmode[esel] ? 1 : 2);
-				break;
-			case KEY_HOME:
-				curpos[esel] = 0;
-				break;
-			case KEY_END:
-				curpos[esel] = cmdlen[esel];
-				break;
-			case KEY_INSERT:
-				{
-					insmode[esel] = !insmode[esel];
-					API->console->Driver->SetCursorShape (insmode[esel]?1:2);
-				}
-				break;
-			case KEY_DELETE:
-				if (curpos[esel] != cmdlen[esel])
-				{
-					memmove (str[esel] + curpos[esel], str[esel] + curpos[esel] + 1, cmdlen[esel] - curpos[esel]);
-					cmdlen[esel]--;
-				}
-				break;
-			case KEY_BACKSPACE:
-				if (curpos[esel])
-				{
-					memmove (str[esel] + curpos[esel] - 1, str[esel] + curpos[esel], cmdlen[esel] - curpos[esel] + 1);
-					curpos[esel]--;
-					cmdlen[esel]--;
-				}
-				break;
-			case _KEY_ENTER:
-				strcpy (alsaCardName, str[0]);
-				strcpy (alsaMixerName, str[1]);
-				API->console->Driver->SetCursorShape (0);
-				goto out;
-		}
-	}
-out:
-	debug_printf ("ALSA: Selected PCM %s\n", alsaCardName);
-	debug_printf ("ALSA: Selected Mixer %s\n", alsaMixerName);
-
-	update_custom_dev ();
-}
-
-static int alsaSetPCMInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API)
-{
-	snprintf (alsaCardName, sizeof (alsaCardName), "%.*s", (unsigned int)sizeof (alsaCardName) - 1, info->title);
-
-	debug_printf ("ALSA: Selected PCM %s\n", alsaCardName);
-	debug_printf ("ALSA: Selected Mixer %s\n", alsaMixerName);
-
-	update_custom_dev ();
-
-	return 1;
-}
-
-static int alsaSetMixerInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API)
-{
-	snprintf (alsaMixerName, sizeof (alsaMixerName), "%.*s", (unsigned int)sizeof (alsaMixerName) - 1, info->title);
-
-	debug_printf ("ALSA: Selected PCM %s\n", alsaCardName);
-	debug_printf ("ALSA: Selected Mixer %s\n", alsaMixerName);
-
-	update_custom_dev ();
-
-	return 1;
 }
 
 static void __attribute__((constructor))init(void)
@@ -1473,4 +1411,4 @@ struct sounddevice plrAlsa =
 };
 
 const char *dllinfo="driver plrAlsa";
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpalsa", .desc = "OpenCP Player Device: ALSA (c) 2005-'22 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpalsa", .desc = "OpenCP Player Device: ALSA (c) 2005-'22 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = alsaPluginInit, .PluginClose = alsaPluginClose};

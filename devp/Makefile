@@ -151,8 +151,10 @@ devpalsa.o: devpalsa.c \
 	../filesel/mdb.h \
 	../filesel/modlist.h \
 	../filesel/pfilesel.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h \
-	../stuff/poutput.h
+	../stuff/poutput.h \
+	../stuff/utf-8.h
 	$(CC) devpalsa.c -o $@ -c $(ALSA_CFLAGS)
 
 devpcoreaudio.o: devpcoreaudio.c \
