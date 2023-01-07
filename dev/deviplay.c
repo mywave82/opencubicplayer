@@ -364,7 +364,7 @@ static int playdevinit(void)
 	if (!curplaydev)
 	{
 		fprintf (stderr, "Output device not set\n");
-		return errGen;
+		return errOk; /* error is not fatal, device can still be changed in setup: file system */
 	}
 
 	return errOk;
