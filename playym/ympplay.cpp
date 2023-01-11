@@ -495,7 +495,7 @@ static int ymOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	int retval;
 
 	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
-	fprintf(stderr, "preloading %s...\n", filename);
+	cpifaceSession->cpiDebug (cpifaceSession, "[YM] preloading %s...\n", filename);
 
 	cpifaceSession->IsEnd = ymLooped;
 	cpifaceSession->ProcessKey = ymProcessKey;

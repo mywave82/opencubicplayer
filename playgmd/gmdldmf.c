@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "filesel/filesystem.h"
 #include "gmdplay.h"
@@ -38,7 +39,7 @@ static uint8_t *ibuf;
 static uint8_t bitnum;
 static uint32_t bitlen;
 
-static inline uint16_t readbitsdmf(uint8_t n)
+static inline uint16_t readbitsdmf (struct cpifaceSessionAPI_t *cpifaceSession, uint8_t n)
 {
 	uint16_t retval=0;
 	int offset = 0;
@@ -48,7 +49,7 @@ static inline uint16_t readbitsdmf(uint8_t n)
 
 		if (!bitlen)
 		{
-			fprintf(stderr, "readbitsdmf: ran out of buffer\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] readbitsdmf: ran out of buffer\n");
 			return 0;
 		}
 
@@ -71,34 +72,34 @@ static inline uint16_t readbitsdmf(uint8_t n)
 static uint16_t nodenum, lastnode;
 static int16_t huff[255][3];
 
-static void readtree(void)
+static void readtree (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int16_t (*node)[3];
 	uint8_t left;
 	uint8_t right;
 
-	huff[nodenum][2]=readbitsdmf(7);
+	huff[nodenum][2] = readbitsdmf (cpifaceSession, 7);
 	node=&huff[lastnode];
-	left=readbitsdmf(1);
-	right=readbitsdmf(1);
+	left = readbitsdmf (cpifaceSession, 1);
+	right = readbitsdmf (cpifaceSession, 1);
 
 	lastnode=++nodenum;
 	if (left)
 	{
 		(*node)[0]=lastnode;
-		readtree();
+		readtree (cpifaceSession);
 	} else
 		(*node)[0]=-1;
 	lastnode=nodenum;
 	if (right)
 	{
 		(*node)[1]=lastnode;
-		readtree();
+		readtree (cpifaceSession);
 	} else
 		(*node)[1]=-1;
 }
 
-static void unpack0(uint8_t *ob, uint8_t *ib, uint32_t len)
+static void unpack0 (struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *ob, uint8_t *ib, uint32_t len)
 {
 	uint32_t i;
 
@@ -107,14 +108,14 @@ static void unpack0(uint8_t *ob, uint8_t *ib, uint32_t len)
 	bitlen = len;
 
 	nodenum=lastnode=0;
-	readtree();
+	readtree (cpifaceSession);
 
 	for (i=0; i<len; i++)
 	{
-		uint8_t sign=readbitsdmf(1)?0xFF:0;
+		uint8_t sign = readbitsdmf (cpifaceSession, 1) ? 0xFF : 0;
 		uint16_t pos=0;
 		while ((huff[pos][0]!=-1)&&(huff[pos][1]!=-1))
-			pos=huff[pos][readbitsdmf(1)];
+			pos=huff[pos][readbitsdmf (cpifaceSession, 1)];
 		*ob++=huff[pos][2]^sign;
 	}
 }
@@ -180,13 +181,19 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 
 	if (file->read (file, &hdr, sizeof (hdr)) != sizeof (hdr))
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #1\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #1\n");
 	}
 	if (memcmp(hdr.sig, "DDMF", 4))
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] expected DDMF signature not found\n");
 		return errFormSig;
+	}
 
 	if (hdr.ver<5)
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] Version %u<5 not supported\n", hdr.ver);
 		return errFormOldVer;
+	}
 
 	m->options=MOD_TICK0|MOD_EXPOFREQ;
 
@@ -198,12 +205,12 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 
 	if (file->read (file, sig, sizeof (sig)) != sizeof (sig))
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #2\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #2\n");
 	}
 	if (ocpfilehandle_read_uint32_le (file, &next))
 	{
 		next = 0;
-		fprintf(stderr, __FILE__ ": warning, read failed #3\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #3\n");
 	}
 
 	if (!memcmp(sig, "INFO", 4))
@@ -211,12 +218,12 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 		file->seek_cur (file, next);
 		if (file->read (file, sig, sizeof (sig)) != sizeof (sig))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #4\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #4\n");
 		}
 		if (ocpfilehandle_read_uint32_le (file, &next))
 		{
 			next = 0;
-			fprintf(stderr, __FILE__ ": warning, read failed #5\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #5\n");
 		}
 	}
 
@@ -228,7 +235,7 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 		int16_t i;
 		if (ocpfilehandle_read_uint8 (file, &waste))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #6\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #6\n");
 		}
 		msglen=(next-1)/40;
 
@@ -246,7 +253,7 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 				m->message[t]=*m->message+t*41;
 				if (file->read (file, m->message[t], 40) != 40)
 				{
-					fprintf(stderr, __FILE__ ": warning, read failed #7\n");
+					cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #7\n");
 				}
 
 				for (i=0; i<40; i++)
@@ -259,17 +266,20 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 
 		if (file->read (file, sig, sizeof (sig)) != sizeof (sig))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #8\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #8\n");
 		}
 		if (ocpfilehandle_read_uint32_le (file, &next))
 		{
 			next = 0;
-			fprintf(stderr, __FILE__ ": warning, read failed #9\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #9\n");
 		}
 	}
 
 	if ((memcmp(sig, "SEQU", 4))||(next&1))
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] Section SEQU not found\n");
 		return errFormStruc;
+	}
 
 	orders=malloc(next-4);
 	if (!orders)
@@ -277,16 +287,16 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 	if (ocpfilehandle_read_uint16_le (file, &ordloop))
 	{
 		ordloop = 0;
-		fprintf(stderr, __FILE__ ": warning, read failed #10\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #10\n");
 	}
 	if (ocpfilehandle_read_uint16_le (file, &ordnum))
 	{
 		ordnum = 0;
-		fprintf(stderr, __FILE__ ": warning, read failed #11\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #11\n");
 	}
 	if (file->read (file, orders, next-4) != (next - 4))
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #12\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #12\n");
 	}
 
 	{
@@ -302,16 +312,17 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 
 	if (file->read (file, sig, sizeof (sig)) != sizeof (sig))
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #13\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #13\n");
 	}
 	if (ocpfilehandle_read_uint32_le (file, &next))
 	{
 		next = 0;
-		fprintf(stderr, __FILE__ ": warning, read failed #14\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #14\n");
 	}
 
 	if (memcmp(sig, "PATT", 4))
 	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] Section PATT not found\n");
 		retval = errFormStruc;
 		goto safeout;
 	}
@@ -319,12 +330,12 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 	if (ocpfilehandle_read_uint16_le (file, &patnum))
 	{
 		patnum = 0;
-		fprintf(stderr, __FILE__ ": warning, read failed #15\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #15\n");
 	}
 	if (ocpfilehandle_read_uint8 (file, &chnnum))
 	{
 		chnnum = 0;
-		fprintf(stderr, __FILE__ ": warning, read failed #16\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #16\n");
 	}
 	m->channum=chnnum;
 
@@ -338,7 +349,7 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 	}
 	if (file->read (file, patbuf, next-3) != (next - 3))
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #17\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #17\n");
 	}
 
 /* get the pattern start adresses */
@@ -444,7 +455,7 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 
 				if (!pp)
 				{
-					fprintf(stderr, "playgmd: gmdldmf.c: pp not set\n");
+					cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] internal parsing pointer not set\n");
 					retval = errFormStruc;
 					goto safeout;
 				}
@@ -704,17 +715,20 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 
 	if (file->read (file, sig, sizeof (sig)) != sizeof (sig))
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #17\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #17\n");
 	}
 	if (ocpfilehandle_read_uint32_le (file, &next))
 	{
 		next = 0;
-		fprintf(stderr, __FILE__ ": warning, read failed #18\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #18\n");
 	}
 /* inst!! */
 
 	if (memcmp(sig, "SMPI", 4))
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] Section SMPI not found\n");
 		return errFormStruc;
+	}
 
 	{
 		uint8_t instnum;
@@ -722,7 +736,7 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 		if (ocpfilehandle_read_uint8 (file, &instnum))
 		{
 			instnum = 0;
-			fprintf(stderr, __FILE__ ": warning, read failed #19\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #19\n");
 		}
 		m->instnum = instnum;
 		m->modsampnum=m->sampnum=m->instnum = instnum;
@@ -756,27 +770,27 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 		if (ocpfilehandle_read_uint8 (file, &namelen))
 		{
 			namelen = 0;
-			fprintf(stderr, __FILE__ ": warning, read failed #20\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #20\n");
 		}
 		if (namelen>31)
 		{
 			if (file->read (file, ip->name, 31) != 31)
 			{
-				fprintf(stderr, __FILE__ ": warning, read failed #21\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #21\n");
 				file->seek_cur (file, namelen - 31);
 				namelen=31;
 			}
 		} else {
 			if (file->read (file, ip->name, namelen) != namelen)
 			{
-				fprintf(stderr, __FILE__ ": warning, read failed #22\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #22\n");
 			}
 		}
 		ip->name[namelen]=0;
 
 		if (file->read (file, &smp, sizeof (smp)) != sizeof (smp))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #23\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #23\n");
 		}
 		smp.length = uint32_little (smp.length);
 		smp.loopstart = uint32_little (smp.loopstart);
@@ -786,10 +800,21 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 
 		smppack[i]=!!(smp.type&0x04);
 		bit16=!!(smp.type&0x02);
+		if (smp.type&0x08)
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] Compressed samples are not supported\n");
+		}
+		if (smp.type&0x80)
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] Sample data is stored in a library, not in this file\n");
+		}
 		if (smp.type&0x88)
 			return errFormSupp; /* can't do this */
 		if (bit16&&smppack[i])
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] 16bit packed samples are not supported\n");
 			return errFormSupp; /* don't want 16 bit packed samples.. */
+		}
 		sip->length=smp.length>>bit16;
 		sip->loopstart=smp.loopstart>>bit16;
 		sip->loopend=smp.loopend>>bit16;
@@ -811,16 +836,19 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 
 	if (file->read (file, sig, sizeof (sig)) != sizeof (sig))
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #24\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #24\n");
 	}
 	if (ocpfilehandle_read_uint32_le (file, &next))
 	{
 		next = 0;
-		fprintf(stderr, __FILE__ ": warning, read failed #25\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #25\n");
 	}
 
 	if (memcmp(sig, "SMPD", 4))
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] Section SMPD not found\n");
 		return errFormStruc;
+	}
 
 	for (i=0; i<m->instnum; i++)
 	{
@@ -835,7 +863,7 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 		if (ocpfilehandle_read_uint32_le (file, &len))
 		{
 			len = 0;
-			fprintf(stderr, __FILE__ ": warning, read failed #26\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #26\n");
 		}
 
 		if (sp->handle==0xFFFF)
@@ -849,7 +877,7 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 			return errAllocMem;
 		if (file->read (file, smpp, len) != len)
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #27\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #27\n");
 		}
 		if (smppack[i])
 		{
@@ -859,7 +887,7 @@ int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_
 				free(smpp);
 				return errAllocMem;
 			}
-			unpack0(dbuf, smpp, sip->length);
+			unpack0 (cpifaceSession, dbuf, smpp, sip->length);
 			free(smpp);
 			smpp=dbuf;
 		}

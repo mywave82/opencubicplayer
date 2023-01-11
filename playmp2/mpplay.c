@@ -41,7 +41,7 @@
 #include "stuff/imsrtns.h"
 
 #ifdef PLAYMP2_DEBUG
-#define debug_printf(...) fprintf (stderr, __VA_ARGS__)
+#define debug_printf(...) cpifaceSession->cpiDebug (cpifaceSession, __VA_ARGS__)
 #else
 #define debug_printf(format,args...) ((void)0)
 #endif
@@ -970,12 +970,12 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 					    (buffer[1] == 'X') &&
 					    (buffer[2] == 'T'))
 					{
-						debug_printf ("[MPx]: got ID3v1.x and ID3v1.2 at the file-end\n");
+						debug_printf ("[MPx] got ID3v1.x and ID3v1.2 at the file-end\n");
 						got_id3v12(buffer);
 						fl -= 256;
 						continue;
 					} else {
-						debug_printf ("[MPx]: got ID3v1.x at the file-end\n");
+						debug_printf ("[MPx] got ID3v1.x at the file-end\n");
 						got_id3v1x(buffer+128);
 						fl -= 128;
 						continue;
@@ -1004,7 +1004,7 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 					                (sbuffer[7] << 14) |
 					                (sbuffer[8] <<  7) |
 					                 sbuffer[9];
-					debug_printf ("[MPx]: got ID3V2.4 footer (size=%"PRIu32")\n", size);
+					debug_printf ("[MPx] got ID3V2.4 footer (size=%"PRIu32")\n", size);
 					if ((size + 20) <= fl)
 					{
 						if (size < 32*1024*1024)
@@ -1019,7 +1019,7 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 							    (buffer[1] == 'D') &&
 							    (buffer[2] == '3'))
 							{
-								debug_printf ("[MPx]: got ID3v2.x by using footer\n");
+								debug_printf ("[MPx] got ID3v2.x by using footer\n");
 								got_id3v2(buffer, size + 10);
 							}
 							free (buffer);
@@ -1124,7 +1124,7 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 
 	if (!stream_for_frame())
 	{
-		fprintf(stderr, "[MPx] stream_for_frame() failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[MPx] stream_for_frame() failed\n");
 		retval = errFormStruc;
 		goto error_out;
 	}
@@ -1134,7 +1134,6 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 	format=PLR_STEREO_16BIT_SIGNED;
 	if (!cpifaceSession->plrDevAPI->Play (&mpegRate, &format, file, cpifaceSession))
 	{
-		fprintf(stderr, "[MPx]: plrDevAPI->Play() failed\n");
 		retval = errPlay;
 		goto error_out;
 	}
@@ -1142,14 +1141,13 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 
 	if (!(mpegbuf=malloc(32768)))
 	{
-		fprintf(stderr, "[MPx]: malloc failed\n");
 		retval = errAllocMem;
 		goto error_out_plrDevAPI_Play;
 	}
 	mpegbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 8192);
 	if (!mpegbufpos)
 	{
-		fprintf(stderr, "[MPx]: ringbuffer_new_samples() failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[MPx] ringbuffer_new_samples() failed\n");
 		retval = errAllocMem;
 		goto error_out_plrDevAPI_Play;
 	}

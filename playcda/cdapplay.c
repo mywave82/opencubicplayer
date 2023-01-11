@@ -483,6 +483,7 @@ static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	if (file->ioctl (file, IOCTL_CDROM_READTOC, &TOC))
 	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[CDA] File is not backed by IOCTL CDROM\n");
 		return errFormSig;
 	}
 
@@ -524,6 +525,7 @@ static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 		stop = TOC.track[cdpTrackNum+1].lba_addr;
 		cdpPlayMode=0;
 	} else {
+		cpifaceSession->cpiDebug (cpifaceSession, "[CDA] Filename is not of expected format\n");
 		return errFormStruc;
 	}
 

@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "types.h"
+#include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "filesel/filesystem.h"
 #include "stuff/err.h"
@@ -73,7 +74,7 @@ static void FreeResources(struct LoadMXMResources *r, struct xmodule *m)
 	}
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadMXM (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	uint8_t deltasamps/*, modpanning*/;
 
@@ -125,7 +126,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 
 	if (file->read (file, &mxmhead, sizeof(mxmhead)) != sizeof(mxmhead))
 	{
-		fprintf(stderr, "xmlxmx.c: fread() header failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/MXM] read() header failed\n");
 		return errFileRead;
 	}
 	if (memcmp(&mxmhead.sig, "MXM\0", 4))
@@ -237,7 +238,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 
 		if (file->read (file, &mxmins, sizeof(mxmins)) != sizeof(mxmins))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #1\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/MXM] warning, read failed #1\n");
 		}
 		mxmins.sampnum = uint32_little (mxmins.sampnum);
 		mxmins.volfade = uint16_little (mxmins.volfade);
@@ -373,7 +374,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 
 			if (file->read (file, &mxmsamp, sizeof(mxmsamp)) != sizeof(mxmsamp))
 			{
-				fprintf(stderr, __FILE__ ": warning, read failed #2\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[XM/MXM] warning, read failed #2\n");
 			}
 
 			mxmsamp.gusloopstart = uint32_little (mxmsamp.gusloopstart);
@@ -483,7 +484,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 
 		if (ocpfilehandle_read_uint32_le (file, &patrows))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #3\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/MXM] warning, read failed #3\n");
 		}
 
 		m->patlens[i]=patrows;
@@ -498,7 +499,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 			uint8_t *currow=(uint8_t *)(m->patterns[i])+j*mxmhead.channum*5;
 			if (ocpfilehandle_read_uint8 (file, &pack))
 			{
-				fprintf(stderr, __FILE__ ": warning, read failed #4\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[XM/MXM] warning, read failed #4\n");
 			}
 			while (pack)
 			{
@@ -507,7 +508,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 				{
 					if (file->read (file, pd, 2) != 2)
 					{
-						fprintf(stderr, __FILE__ ": warning, read failed #5\n");
+						cpifaceSession->cpiDebug (cpifaceSession, "[XM/MXM] warning, read failed #5\n");
 					}
 					cur[0]=pd[0];
 					cur[1]=pd[1];
@@ -516,20 +517,20 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 				{
 					if (file->read (file, pd, 1) != 1)
 					{
-						fprintf(stderr, __FILE__ ": warning, read failed #6\n");
+						cpifaceSession->cpiDebug (cpifaceSession, "[XM/MXM] warning, read failed #6\n");
 					}
 					cur[2]=pd[0];
 				}
 				if (pack&0x80)
 				{
 					if (file->read (file, pd, 2) != 2)
-						fprintf(stderr, __FILE__ ": warning, read failed #7\n");
+						cpifaceSession->cpiDebug (cpifaceSession, "[XM/MXM] warning, read failed #7\n");
 					cur[3]=pd[0];
 					cur[4]=pd[1];
 				}
 				if (ocpfilehandle_read_uint8 (file, &pack))
 				{
-					fprintf(stderr, __FILE__ ": warning, read failed #8\n");
+					cpifaceSession->cpiDebug (cpifaceSession, "[XM/MXM] warning, read failed #8\n");
 				}
 			}
 		}
@@ -542,7 +543,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 		file->seek_set (file, mxmhead.sampstart);
 		if (file->read (file, gusmem, gsize) != gsize)
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #9\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/MXM] warning, read failed #9\n");
 		}
 		for (i=0; i<m->nsampi; i++)
 		{
@@ -555,13 +556,13 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM(struct xmodule *m, stru
 			}
 			if (actpos > gsize)
 			{
-				fprintf(stderr, "sample #%d has sample that starts outside GUS memorywindow, chopping\n", i);
+				cpifaceSession->cpiDebug (cpifaceSession, "sample #%d has sample that starts outside GUS memorywindow, chopping\n", i);
 				bzero (m->sampleinfos[i].ptr, len);
 			} else {
 				if ((len+actpos)>gsize)
 				{
 					bzero (m->sampleinfos[i].ptr, len);
-					fprintf(stderr, "sample #%d has sample that goes outside GUS memorywindow, chopping\n", i);
+					cpifaceSession->cpiDebug (cpifaceSession, "sample #%d has sample that goes outside GUS memorywindow, chopping\n", i);
 					len = gsize-actpos;
 				}
 				memcpy(m->sampleinfos[i].ptr, gusmem+actpos, len);

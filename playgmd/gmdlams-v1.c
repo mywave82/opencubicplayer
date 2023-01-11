@@ -22,7 +22,7 @@
  * ENVELOPES & SUSTAIN!!!
  */
 
-static int _mpLoadAMS_v1_Instruments (struct gmdmodule *m, struct ocpfilehandle_t *file, struct sampleinfo **smps, struct gmdsample **msmps)
+static int _mpLoadAMS_v1_Instruments (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file, struct sampleinfo **smps, struct gmdsample **msmps)
 {
 	int i;
 	/* one sample per instrument */
@@ -46,20 +46,20 @@ static int _mpLoadAMS_v1_Instruments (struct gmdmodule *m, struct ocpfilehandle_
 
 		if (file->read (file, &samplehdr, sizeof (samplehdr)) != sizeof (samplehdr))
 		{
-			fprintf (stderr, "AMSv1 loader: read sample %d header\n", i + 1);
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v1] read sample %d header\n", i + 1);
+			return errFileRead;
 		}
 		samplehdr.length = uint32_little (samplehdr.length);
 		samplehdr.loopstart = uint32_little (samplehdr.loopstart);
 		samplehdr.loopend = uint32_little (samplehdr.loopend);
 		samplehdr.samplerate = uint16_little (samplehdr.samplerate);
-		DEBUG_PRINTF (stderr, "sample[%d].length=0x%04"PRIx32"\n", i, samplehdr.length);
-		DEBUG_PRINTF (stderr, "sample[%d].loopstart=0x%04"PRIx32"\n", i, samplehdr.loopstart);
-		DEBUG_PRINTF (stderr, "sample[%d].loopend=0x%04"PRIx32"\n", i, samplehdr.loopend);
-		DEBUG_PRINTF (stderr, "sample[%d].finetune_and_pan=0x%02"PRIx8"\n", i, samplehdr.finetune_and_pan);
-		DEBUG_PRINTF (stderr, "sample[%d].samplerate=0x%04"PRIx16"\n", i, samplehdr.samplerate);
-		DEBUG_PRINTF (stderr, "sample[%d].volume=0x%02"PRIx8"\n", i, samplehdr.volume);
-		DEBUG_PRINTF (stderr, "sample[%d].infobyte=0x%02"PRIx8"\n", i, samplehdr.infobyte);
+		DEBUG_PRINTF ("[GMD/AMS v1] sample[%d].length=0x%04"PRIx32"\n", i, samplehdr.length);
+		DEBUG_PRINTF ("[GMD/AMS v1] sample[%d].loopstart=0x%04"PRIx32"\n", i, samplehdr.loopstart);
+		DEBUG_PRINTF ("[GMD/AMS v1] sample[%d].loopend=0x%04"PRIx32"\n", i, samplehdr.loopend);
+		DEBUG_PRINTF ("[GMD/AMS v1] sample[%d].finetune_and_pan=0x%02"PRIx8"\n", i, samplehdr.finetune_and_pan);
+		DEBUG_PRINTF ("[GMD/AMS v1] sample[%d].samplerate=0x%04"PRIx16"\n", i, samplehdr.samplerate);
+		DEBUG_PRINTF ("[GMD/AMS v1] sample[%d].volume=0x%02"PRIx8"\n", i, samplehdr.volume);
+		DEBUG_PRINTF ("[GMD/AMS v1] sample[%d].infobyte=0x%02"PRIx8"\n", i, samplehdr.infobyte);
 
 		for (k=0; k<116; k++)
 		{
@@ -93,7 +93,7 @@ static int _mpLoadAMS_v1_Instruments (struct gmdmodule *m, struct ocpfilehandle_
 	return errOk;
 }
 
-static int _mpLoadAMS_v12_v13_LoadPattern (struct gmdmodule *m, struct ocpfilehandle_t *file, struct AMSPattern *pattern, uint8_t **buffer, uint32_t *buflen, int patternindex, int nopatterns, int nteoffset, int nte1keyoff)
+static int _mpLoadAMS_v12_v13_LoadPattern (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file, struct AMSPattern *pattern, uint8_t **buffer, uint32_t *buflen, int patternindex, int nopatterns, int nteoffset, int nte1keyoff)
 {
 	uint32_t patlen;
 	uint32_t patpos;
@@ -101,7 +101,7 @@ static int _mpLoadAMS_v12_v13_LoadPattern (struct gmdmodule *m, struct ocpfileha
 
 	if (ocpfilehandle_read_uint32_le (file, &patlen))
 	{
-		fprintf (stderr, "AMSv1 loader: read pattern %d/%d length failed\n", patternindex + 1, nopatterns);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v1] read pattern %d/%d length failed\n", patternindex + 1, nopatterns);
 		patlen = 0;
 		return errFormStruc;
 	}
@@ -118,8 +118,8 @@ static int _mpLoadAMS_v12_v13_LoadPattern (struct gmdmodule *m, struct ocpfileha
 	}
 	if (file->read (file, *buffer, patlen) != patlen)
 	{
-		fprintf (stderr, "AMSv1 loader: read pattern %d/%d data (patlen=%d) failed\n", patternindex + 1, nopatterns, patlen);
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v1] read pattern %d/%d data (patlen=%d) failed\n", patternindex + 1, nopatterns, patlen);
+		return errFileRead;
 	}
 
 	/* first we unpack the pattern */
@@ -154,22 +154,22 @@ have to multiply the volume by 2 to get the proper value
 
 		b0 = (*buffer)[patpos++];
 
-		DEBUG_PRINTF (stderr, "pattern %02x rowpos %02x  %02x", patternindex, rowpos, b0);
+		DEBUG_PRINTF ("[GMD/AMS v1] pattern %02x rowpos %02x  %02x", patternindex, rowpos, b0);
 
 		if (b0 == 0xff)
 		{
-			DEBUG_PRINTF (stderr, "     no data on row\n");
+			DEBUG_PRINTF ("     no data on row\n");
 			rowpos++;
 			continue;
 		}
 
 		ch = b0 & 0x1f;
 		b1 = (*buffer)[patpos++];
-		DEBUG_PRINTF (stderr, " %02x", b1);
+		DEBUG_PRINTF (" %02x", b1);
 
 		if (!(b0 & 0x40)) /* 0=Only Read Period+SampleNr, 1=Only Read Command */
 		{
-			DEBUG_PRINTF (stderr, " ins+note");
+			DEBUG_PRINTF (" ins+note");
 			if (patpos >= patlen) break;
 			b2 = (*buffer)[patpos++];
 			if (!(b0 & 0x20)) /* 0=Sample Channel, 1=MIDI channel */
@@ -192,7 +192,7 @@ have to multiply the volume by 2 to get the proper value
 				if (patpos >= patlen) break;
 				b0 |= 0x40;
 				b1 = (*buffer)[patpos++];
-				DEBUG_PRINTF (stderr, " %02x", b1);
+				DEBUG_PRINTF (" %02x", b1);
 			}
 		}
 
@@ -201,7 +201,7 @@ have to multiply the volume by 2 to get the proper value
 anothercommand:
 			if (b1 & 0x40) /* 1=Low 6 bits are volume/2 */
 			{
-				DEBUG_PRINTF (stderr, " vol");
+				DEBUG_PRINTF (" vol");
 				if (!(b0 & 0x20)) /* 0=Sample Channel, 1=MIDI channel */
 				{
 					pattern->channel[ch].row[rowpos].volume = (b1 & 0x3f) << 1;
@@ -210,7 +210,7 @@ anothercommand:
 			} else {
 				if (patpos >= patlen) break;
 				b2 = (*buffer)[patpos++];
-				DEBUG_PRINTF (stderr, " %02x cmd", b2);
+				DEBUG_PRINTF (" %02x cmd", b2);
 
 				if (!(b0 & 0x20)) /* 0=Sample Channel, 1=MIDI channel */
 				{
@@ -246,7 +246,7 @@ anothercommand:
 			{
 				if (patpos >= patlen) break;
 				b1 = (*buffer)[patpos++];
-				DEBUG_PRINTF (stderr, " %02x", b1);
+				DEBUG_PRINTF (" %02x", b1);
 				goto anothercommand;
 			}
 		}
@@ -254,7 +254,7 @@ anothercommand:
 		{
 			rowpos++;
 		}
-		DEBUG_PRINTF (stderr, "\n");
+		DEBUG_PRINTF ("\n", b1);
 	}
 
 	return errOk;
@@ -263,7 +263,7 @@ anothercommand:
 
 /* Extreme Tracker */
 /* file should be 7 bytes in */
-static int _mpLoadAMS_v1 (struct gmdmodule *m, struct ocpfilehandle_t *file)
+static int _mpLoadAMS_v1 (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	struct __attribute__ ((packed))
 	{
@@ -293,8 +293,8 @@ static int _mpLoadAMS_v1 (struct gmdmodule *m, struct ocpfilehandle_t *file)
 
 	if (file->read (file, &hdr, sizeof (hdr)) != sizeof (hdr))
 	{
-		fprintf (stderr, "AMSv1 loader: read header failed\n");
-		return errFormSig;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v1] read header failed\n");
+		return errFileRead;
 	}
 
 	hdr.patterns = uint16_little (hdr.patterns);
@@ -302,14 +302,14 @@ static int _mpLoadAMS_v1 (struct gmdmodule *m, struct ocpfilehandle_t *file)
 	hdr.extra = uint16_little (hdr.extra);
 	m->channum = (hdr.chncfg & 0x1f) + 1;
 
-	DEBUG_PRINTF (stderr, "header.verlo=0x%02"PRIx8"\n", hdr.verlo);
-	DEBUG_PRINTF (stderr, "header.verhi=0x%02"PRIx8"\n", hdr.verhi);
-	DEBUG_PRINTF (stderr, "header.chncfg=0x%02"PRIx8"\n", hdr.chncfg);
-	DEBUG_PRINTF (stderr, "header.samples=0x%02"PRIx8"\n", hdr.samples);
-	DEBUG_PRINTF (stderr, "header.patterns=0x%04"PRIx16"\n", hdr.patterns);
-	DEBUG_PRINTF (stderr, "header.orders=0x%04"PRIx16"\n", hdr.orders);
-	DEBUG_PRINTF (stderr, "header.vmidi=0x%02"PRIx8"\n", hdr.vmidi);
-	DEBUG_PRINTF (stderr, "header.extra=0x%04"PRIx16"\n", hdr.extra);
+	DEBUG_PRINTF ("[GMD/AMS v1] header.verlo=0x%02"PRIx8"\n", hdr.verlo);
+	DEBUG_PRINTF ("[GMD/AMS v1] header.verhi=0x%02"PRIx8"\n", hdr.verhi);
+	DEBUG_PRINTF ("[GMD/AMS v1] header.chncfg=0x%02"PRIx8"\n", hdr.chncfg);
+	DEBUG_PRINTF ("[GMD/AMS v1] header.samples=0x%02"PRIx8"\n", hdr.samples);
+	DEBUG_PRINTF ("[GMD/AMS v1] header.patterns=0x%04"PRIx16"\n", hdr.patterns);
+	DEBUG_PRINTF ("[GMD/AMS v1] header.orders=0x%04"PRIx16"\n", hdr.orders);
+	DEBUG_PRINTF ("[GMD/AMS v1] header.vmidi=0x%02"PRIx8"\n", hdr.vmidi);
+	DEBUG_PRINTF ("[GMD/AMS v1] header.extra=0x%04"PRIx16"\n", hdr.extra);
 
 	if ((hdr.verhi != 0x01) || ((hdr.verlo != 0x20) && hdr.verlo != 0x30))
 	{
@@ -318,7 +318,7 @@ static int _mpLoadAMS_v1 (struct gmdmodule *m, struct ocpfilehandle_t *file)
 
 		   v01.20 and v01.30 files we can load
 		 */
-		fprintf (stderr, "AMSv1 loader: we can only load v1.2 and v1.3 files at the moement - please submit file at https://github.com/mywave82/opencubicplayer/issues\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v1] we can only load v1.2 and v1.3 files at the moement - please submit file at https://github.com/mywave82/opencubicplayer/issues\n");
 		return errFormOldVer;
 	}
 
@@ -382,64 +382,64 @@ static int _mpLoadAMS_v1 (struct gmdmodule *m, struct ocpfilehandle_t *file)
 		goto safeout;
 	}
 
-	retval = _mpLoadAMS_v1_Instruments (m, file, smps, msmps);
+	retval = _mpLoadAMS_v1_Instruments (cpifaceSession, m, file, smps, msmps);
 	if (retval) goto safeout;
 
 	// Read Song Name
-	if (readPascalString (file, m->name, sizeof (m->name), "module.name"))
+	if (readPascalString (cpifaceSession, file, m->name, sizeof (m->name), "module.name"))
 	{
-		fprintf (stderr, "AMSv1 loader: read module name failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v1] read module name failed\n");
 		retval=errFormStruc;
 		goto safeout;
 	}
-	DEBUG_PRINTF (stderr, "songname=\"%s\"\n", m->name);
+	DEBUG_PRINTF ("[GMD/AMS v1] songname=\"%s\"\n", m->name);
 
 	for (i = 0; i < m->instnum; i++)
 	{
 		struct gmdsample *sp=&msmps[i][0];
 		//struct sampleinfo *sip=&smps[i][0];
-		if (readPascalString (file, sp->name, sizeof (sp->name), "sample.name"))
+		if (readPascalString (cpifaceSession, file, sp->name, sizeof (sp->name), "sample.name"))
 		{
-			fprintf (stderr, "AMSv1 loader: read sample %d/%d name failed\n", i + 1, m->instnum);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v1] read sample %d/%d name failed\n", i + 1, m->instnum);
 			retval=errFormStruc;
 			goto safeout;
 		}
-		DEBUG_PRINTF (stderr, "sample[%d].name=\"%s\"\n", i, sp->name);
+		DEBUG_PRINTF ("[GMD/AMS v1] sample[%d].name=\"%s\"\n", i, sp->name);
 	}
 	// Skip Channel names
 	for (i = 0; i < m->channum; i++)
 	{
 		char channelname[33];
-		if (readPascalString (file, channelname, sizeof (channelname), ""))
+		if (readPascalString (cpifaceSession, file, channelname, sizeof (channelname), ""))
 		{
-			fprintf (stderr, "AMSv1 loader: read channel %d/%d name failed\n", i + 1, m->channum);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v1] read channel %d/%d name failed\n", i + 1, m->channum);
 			retval=errFormStruc;
 			goto safeout;
 		}
-		DEBUG_PRINTF (stderr, "channel[%d].name=\"%s\"\n", i, channelname);
+		DEBUG_PRINTF ("[GMD/AMS v1] channel[%d].name=\"%s\"\n", i, channelname);
 	}
 	// Read Pattern names
 	for (i = 0; i < hdr.patterns; i++)
 	{
 		struct gmdpattern *pp=&m->patterns[i];
-		if (readPascalString (file, pp->name, sizeof (pp->name), ""))
+		if (readPascalString (cpifaceSession, file, pp->name, sizeof (pp->name), ""))
 		{
-			fprintf (stderr, "AMSv1 loader: read pattern %d/%d name failed\n", i + 1, hdr.patterns);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v1] read pattern %d/%d name failed\n", i + 1, hdr.patterns);
 			retval=errFormStruc;
 			goto safeout;
 		}
-		DEBUG_PRINTF (stderr, "pattern[%d].name=\"%s\"\n", i, pp->name);
+		DEBUG_PRINTF ("[GMD/AMS v1] pattern[%d].name=\"%s\"\n", i, pp->name);
 	}
 
 	{ /* read song message */
 		uint16_t length;
 		if (ocpfilehandle_read_uint16_le (file, &length))
 		{
-			fprintf (stderr, "AMSv1 loader: read message length failed\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v1] read message length failed\n");
 			retval=errFormStruc;
 			goto safeout;
 		}
-		DEBUG_PRINTF (stderr, "message.length=%d\n", length);
+		DEBUG_PRINTF ("[GMD/AMS v1] message.length=%d\n", length);
 		if (length)
 		{
 			uint8_t *tmp = malloc (length + 1);
@@ -451,8 +451,8 @@ static int _mpLoadAMS_v1 (struct gmdmodule *m, struct ocpfilehandle_t *file)
 			}
 			if (file->read (file, tmp, length) != length)
 			{
-				fprintf (stderr, "AMSv1 loader: read message data failed\n");
-				retval=errFormStruc;
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v1] read message data failed\n");
+				retval = errFileRead;
 				goto safeout;
 			}
 			tmp[length]=0;
@@ -474,7 +474,7 @@ static int _mpLoadAMS_v1 (struct gmdmodule *m, struct ocpfilehandle_t *file)
 			{
 				if (ptr2) *(ptr2++)=0;
 				m->message[j++] = strdup((char *)ptr1);
-				DEBUG_PRINTF (stderr, "message[%d]=\"%s\"\n", j-1, m->message[j-1]);
+				DEBUG_PRINTF ("[GMD/AMS v1] message[%d]=\"%s\"\n", j-1, m->message[j-1]);
 				if (!m->message[j-1])
 				{
 					free (tmp);
@@ -493,8 +493,8 @@ static int _mpLoadAMS_v1 (struct gmdmodule *m, struct ocpfilehandle_t *file)
 
 	if (file->read (file, ordlist, 2 * hdr.orders) != 2 * hdr.orders)
 	{
-		fprintf (stderr, "AMSv1 loader: read order data failed\n");
-		retval=errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v1] read order data failed\n");
+		retval = errFileRead;
 		goto safeout;
 	}
 
@@ -520,7 +520,7 @@ static int _mpLoadAMS_v1 (struct gmdmodule *m, struct ocpfilehandle_t *file)
 	{
 		struct AMSPattern pattern;
 
-		retval = _mpLoadAMS_v12_v13_LoadPattern (m, file, &pattern, &buffer, &buflen, t, hdr.patterns, 24, 0);
+		retval = _mpLoadAMS_v12_v13_LoadPattern (cpifaceSession, m, file, &pattern, &buffer, &buflen, t, hdr.patterns, 24, 0);
 		if (retval) goto safeout;
 
 		retval = _mpLoadAMS_ConvertPattern (m, file, &pattern, t);
@@ -561,8 +561,8 @@ static int _mpLoadAMS_v1 (struct gmdmodule *m, struct ocpfilehandle_t *file)
 	/* There should be a 1:1 relationship between instruments and samples for v1 files */
 	for (i=0; i<m->instnum; i++)
 	{
-		DEBUG_PRINTF (stderr, "Instrument=%d/%d\n", i + 1, m->instnum);
-		retval = _mpLoadAMS_InstrumentSample (m, file, i, instsampnum, &sampnum);
+		DEBUG_PRINTF ("[GMD/AMS v1] Instrument=%d/%d\n", i + 1, m->instnum);
+		retval = _mpLoadAMS_InstrumentSample (cpifaceSession, m, file, i, instsampnum, &sampnum);
 		if (retval) goto safeout;
 	}
 

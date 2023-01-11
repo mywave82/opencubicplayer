@@ -19,7 +19,6 @@
  */
 
 #include "config.h"
-#include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -102,18 +101,18 @@ int __attribute__ ((visibility ("internal"))) LoadSTM (struct cpifaceSessionAPI_
 	mpReset(m);
 
 #ifdef STM_LOAD_DEBUG
-	fprintf(stderr, "Reading header: %d bytes\n", (int)sizeof(hdr));
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] Reading header: %u bytes\n", (unsigned int)sizeof(hdr));
 #endif
 
 	if (file->read (file, &hdr, sizeof (hdr)) != sizeof (hdr))
 	{
-		fprintf (stderr, "STM: reading header failed: %s\n", strerror (errno));
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] reading header failed\n");
+		return errFileRead;
 	}
 
 	if (hdr.type != 2)
 	{
-		fprintf (stderr, "STM: Not a module\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] Not a module\n");
 		return errFormStruc;
 	}
 
@@ -127,14 +126,14 @@ int __attribute__ ((visibility ("internal"))) LoadSTM (struct cpifaceSessionAPI_
 
 	if (hdr.pats>99)
 	{
-		fprintf(stderr, "STM: too many patterns\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] too many patterns\n");
 		return errFormStruc;
 	}
 
 	if (hdr.pats==0)
 	{
-		fprintf(stderr, "STM: no patterns\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] no patterns\n");
+		return errFormMiss;
 	}
 
 	m->patnum=hdr.pats;
@@ -159,7 +158,7 @@ int __attribute__ ((visibility ("internal"))) LoadSTM (struct cpifaceSessionAPI_
 
 	if (!mpAllocInstruments(m, m->instnum)||!mpAllocSamples(m, m->sampnum)||!mpAllocModSamples(m, m->modsampnum))
 	{
-		fprintf(stderr, "STM: Out of mem?\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] Out of mem #1\n");
 		return errAllocMem;
 	}
 
@@ -186,11 +185,11 @@ int __attribute__ ((visibility ("internal"))) LoadSTM (struct cpifaceSessionAPI_
 		} sins;
 
 #ifdef STM_LOAD_DEBUG
-		fprintf(stderr, "Reading %d bytes of instrument %02d header (@0x%08x)\n", (int)sizeof(sins), i + 1, (int)file->getpos (file));
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] Reading %u bytes of instrument %02d/31 header (@0x%08x)\n", (unsigned int)sizeof(sins), i + 1, (unsigned int)file->getpos (file));
 #endif
 		if (file->read (file, &sins, sizeof (sins)) != sizeof (sins))
 		{
-			fprintf (stderr, "STM: reading instrument %02d header failed: %s\n", i+1, strerror (errno));
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] Reading instrument %02d/31 header failed\n", i+1);
 			return errFileRead;
 		}
 
@@ -215,7 +214,7 @@ int __attribute__ ((visibility ("internal"))) LoadSTM (struct cpifaceSessionAPI_
 		}
 		if (sins.type!=0)
 		{
-			fprintf (stderr, "STM: warning, non-PCM type sample\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] warning, non-PCM type sample\n");
 		}
 
 		sp->handle=i;
@@ -251,11 +250,11 @@ int __attribute__ ((visibility ("internal"))) LoadSTM (struct cpifaceSessionAPI_
 
 
 #ifdef STM_LOAD_DEBUG
-	fprintf(stderr, "Reading pattern orders, %d bytes\n", (int)m->patnum);
+	cpifaceSession->cpiDebug (cpifaceSession,  "[GMD/STM] Reading pattern orders, %u bytes\n", (unsigned int)m->patnum);
 #endif
 	if (file->read (file, orders, ordersn) != ordersn)
 	{
-		fprintf (stderr, "STM: reading orders failed: %s\n", strerror (errno));
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] reading orders failed\n");
 		return errFileRead;
 	}
 
@@ -284,13 +283,13 @@ int __attribute__ ((visibility ("internal"))) LoadSTM (struct cpifaceSessionAPI_
 	m->endord = m->ordnum = t2;
 	if (!m->ordnum)
 	{
-		fprintf(stderr, "STM: No orders\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] No orders\n");
 		return errFormMiss;
 	}
 
 	if (!mpAllocTracks(m, m->tracknum)||!mpAllocPatterns(m, m->patnum)||!mpAllocOrders(m, m->ordnum))
 	{
-		fprintf(stderr, "STM: Out of mem?\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] Out of mem #2\n");
 		return errAllocMem;
 	}
 
@@ -332,7 +331,7 @@ int __attribute__ ((visibility ("internal"))) LoadSTM (struct cpifaceSessionAPI_
 			{
 				if (ocpfilehandle_read_uint8 (file, &pat[row][j].note))
 				{
-					fprintf (stderr, "STM: reading pattern data failed: %s\n", strerror (errno));
+					cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] reading pattern data failed\n");
 					return errFileRead;
 				}
 				switch (pat[row][j].note)
@@ -348,19 +347,19 @@ int __attribute__ ((visibility ("internal"))) LoadSTM (struct cpifaceSessionAPI_
 						uint8_t insvol, volcmd;
 						if (ocpfilehandle_read_uint8 (file, &insvol))
 						{
-							fprintf (stderr, "STM: reading pattern data failed: %s\n", strerror (errno));
+							cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] reading pattern data failed\n");
 							return errFileRead;
 						}
 
 						if (ocpfilehandle_read_uint8 (file, &volcmd))
 						{
-							fprintf (stderr, "STM: reading pattern data failed: %s\n", strerror (errno));
+							cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] reading pattern data failed\n");
 							return errFileRead;
 						}
 
 						if (ocpfilehandle_read_uint8 (file, &pat[row][j].parameters))
 						{
-							fprintf (stderr, "STM: reading pattern data failed: %s\n", strerror (errno));
+							cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] reading pattern data failed\n");
 							return errFileRead;
 						}
 
@@ -496,7 +495,7 @@ int __attribute__ ((visibility ("internal"))) LoadSTM (struct cpifaceSessionAPI_
 				trk->end=trk->ptr+len;
 				if (!trk->ptr)
 				{
-					fprintf(stderr, "STM: Out of mem (4) ?\n");
+					cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] Out of mem #3\n");
 					return errAllocMem;
 				}
 				memcpy(trk->ptr, temptrack, len);
@@ -603,7 +602,7 @@ int __attribute__ ((visibility ("internal"))) LoadSTM (struct cpifaceSessionAPI_
 				trk->end=trk->ptr+len;
 				if (!trk->ptr)
 				{
-					fprintf(stderr, "STM: Out of mem (6)?\n");
+					cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] Out of mem #4\n");
 					return errAllocMem;
 				}
 				memcpy(trk->ptr, temptrack, len);
@@ -621,19 +620,19 @@ int __attribute__ ((visibility ("internal"))) LoadSTM (struct cpifaceSessionAPI_
 
 		l=sip->length;
 #ifdef STM_LOAD_DEBUG
-		fprintf (stderr, "Instrument %d sample, seeking to 0x%08x\n", i+1, smppara[i]);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] Instrument %u/%u sample, seeking to 0x%08x\n", i+1, m->instnum, smppara[i]);
 #endif
 		file->seek_set (file, smppara[i]);
 
 		sip->ptr=malloc(sizeof(int8_t)*(l+16));
 		if (!sip->ptr)
 		{
-			fprintf(stderr, "STM: Out of mem (7)?\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] Out of mem #5\n");
 			return errAllocMem;
 		}
 		if (file->read (file, sip->ptr, l) != l)
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #8\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/STM] warning, read failed #8\n");
 		}
 	}
 

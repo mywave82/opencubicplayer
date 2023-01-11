@@ -205,28 +205,28 @@ static int hvlOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	filelen = file->filesize (file);
 
 	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
-	fprintf(stderr, "loading %s (%"PRIu64" bytes)...\n", filename, filelen);
+	cpifaceSession->cpiDebug (cpifaceSession, "[HVL] loading %s (%"PRIu64" bytes)...\n", filename, filelen);
 
 	if (filelen < 14)
 	{
-		fprintf (stderr, "hvlOpenFile: file too small\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[HVL] file too small\n");
 		return errFormStruc;
 	}
 	if (filelen > (1024*1024))
 	{
-		fprintf (stderr, "hvlOpenFile: file too big\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[HVL] file too big\n");
 		return errFormStruc;
 	}
 
 	filebuf = malloc (filelen);
 	if (!filebuf)
 	{
-		fprintf (stderr, "hvlOpenFile: malloc(%ld) failed\n", (long)filelen);
+		cpifaceSession->cpiDebug (cpifaceSession, "[HVL] malloc(%lu) failed\n", (unsigned long)filelen);
 		return errAllocMem;
 	}
 	if (file->read (file, filebuf, filelen) != filelen)
 	{
-		fprintf (stderr, "hvlOpenFile: error reading file: %s\n", strerror(errno));
+		cpifaceSession->cpiDebug (cpifaceSession, "[HVL] error reading file");
 		free (filebuf);
 		return errFileRead;
 	}

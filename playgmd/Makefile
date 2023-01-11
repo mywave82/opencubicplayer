@@ -59,6 +59,7 @@ gmdl669.o: gmdl669.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../cpiface/cpiface.h \
 	../dev/mcp.h \
 	../filesel/filesystem.h \
 	gmdplay.h \
@@ -72,6 +73,7 @@ gmdlams.o: gmdlams.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../cpiface/cpiface.h \
 	../dev/mcp.h \
 	../filesel/filesystem.h \
 	gmdplay.h \
@@ -83,6 +85,7 @@ gmdldmf.o: gmdldmf.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../cpiface/cpiface.h \
 	../dev/mcp.h \
 	../filesel/filesystem.h \
 	gmdplay.h \
@@ -94,6 +97,7 @@ gmdlmdl.o: gmdlmdl.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../cpiface/cpiface.h \
 	../dev/mcp.h \
 	../filesel/filesystem.h \
 	gmdplay.h \
@@ -105,6 +109,7 @@ gmdlmtm.o: gmdlmtm.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../cpiface/cpiface.h \
 	../dev/mcp.h \
 	../filesel/filesystem.h \
 	gmdplay.h \
@@ -116,6 +121,7 @@ gmdlokt.o: gmdlokt.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../cpiface/cpiface.h \
 	../dev/mcp.h \
 	../filesel/filesystem.h \
 	gmdplay.h \

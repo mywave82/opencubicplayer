@@ -347,7 +347,7 @@ static void mem_init(int track)
 }
 
 /* from main.c */
-static int read_ay_file (struct ocpfilehandle_t *in)
+static int read_ay_file (struct ocpfilehandle_t *in, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	unsigned char *data,*ptr,*ptr2;
 	int tmp,f;
@@ -356,6 +356,7 @@ static int read_ay_file (struct ocpfilehandle_t *in)
 	data_len = in->filesize(in);
 	if (data_len > 1024*1024)
 	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[AY] File too big\n");
 		return errFormStruc;
 	}
 	data = malloc (data_len);
@@ -371,6 +372,7 @@ static int read_ay_file (struct ocpfilehandle_t *in)
 
 	if(memcmp(data,"ZXAYEMUL",8)!=0)
 	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[AY] File signature is not ZXAYEMUL\n");
 		free(data);
 		return errFormSig;
 	}
@@ -382,24 +384,29 @@ static int read_ay_file (struct ocpfilehandle_t *in)
 
 	aydata.tracks=NULL;
 
-#define READWORD(x)     (x)=256*(*ptr++); (x)|=*ptr++
-#define READWORDPTR(x)  READWORD(tmp); \
-		if(tmp>=0x8000) tmp=-0x10000+tmp; \
-		if(ptr-data-2+tmp>=data_len || ptr-data-2+tmp<0) \
-		  { \
-                  free(data); \
-                  if(aydata.tracks) free(aydata.tracks); \
-		  return errFormStruc; \
-                  } \
-		(x)=ptr-2+tmp
-#define CHECK_ASCIIZ(x) \
-		if(!memchr((x),0,data+data_len-(x))) \
-		  { \
-                  free(data); \
-                  if(aydata.tracks) free(aydata.tracks); \
-		  return errFormStruc; \
-                  }
-
+#define READWORD(x)     do { (x)=256*(*ptr++); (x)|=*ptr++;} while (0)
+#define READWORDPTR(x) do { \
+	READWORD(tmp); \
+	if(tmp>=0x8000) \
+		tmp=-0x10000+tmp; \
+	if(ptr-data-2+tmp>=data_len || ptr-data-2+tmp<0) \
+	{ \
+		cpifaceSession->cpiDebug (cpifaceSession, "[AY] Ran out of data\n"); \
+		free(data); \
+		free(aydata.tracks); \
+		return errFormStruc; \
+	} \
+	(x)=ptr-2+tmp; \
+} while (0)
+#define CHECK_ASCIIZ(x) do { \
+	if(!memchr((x),0,data+data_len-(x))) \
+	{ \
+		cpifaceSession->cpiDebug (cpifaceSession, "[AY] Invalid ASCII string\n"); \
+		free(data); \
+		free(aydata.tracks); \
+		return errFormStruc; \
+	} \
+} while (0)
 	ptr=data+8;
 	aydata.filever=*ptr++;
 	aydata.playerver=*ptr++;
@@ -432,6 +439,7 @@ static int read_ay_file (struct ocpfilehandle_t *in)
 	{
 		if(aydata.tracks[f].data-data+10>data_len-4)
 		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[AY] Track %u/%u not complete\n", f + 1, aydata.num_tracks);
 			free(aydata.tracks);
 			free(data);
 			return errFormStruc;
@@ -887,7 +895,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 		return errPlay;
 	}
 
-	if ((retval = read_ay_file(file)))
+	if ((retval = read_ay_file (file, cpifaceSession)))
 	{
 		return retval;
 	}

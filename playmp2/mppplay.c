@@ -221,13 +221,13 @@ static int mpegOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 	}
 
 	cpifaceSession->dirdb->GetName_internalstr (mpegfile->dirdb_ref, &filename);
-	fprintf(stderr, "preloading %s...\n", filename);
+	cpifaceSession->cpiDebug (cpifaceSession, "[MPx] preloading %s...\n", filename);
 
 	cpifaceSession->IsEnd = mpegLooped;
 	cpifaceSession->ProcessKey = mpegProcessKey;
 	cpifaceSession->DrawGStrings = mpegDrawGStrings;
 
-	if (retval = mpegOpenPlayer(mpegfile, cpifaceSession))
+	if ((retval = mpegOpenPlayer(mpegfile, cpifaceSession)))
 	{
 		return retval;
 	}

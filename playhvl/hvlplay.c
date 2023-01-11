@@ -648,7 +648,7 @@ int __attribute__ ((visibility ("internal"))) hvlOpenPlayer (const uint8_t *mem,
 
 	current_cpifaceSession = cpifaceSession;
 
-	ht = hvl_LoadTune_memory (mem, memlen, 4, hvlRate);
+	ht = hvl_LoadTune_memory (cpifaceSession, mem, memlen, 4, hvlRate);
 	if (!ht)
 	{
 		retval = errFormStruc;

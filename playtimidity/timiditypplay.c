@@ -192,7 +192,7 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 		return errGen;
 
 	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
-	fprintf(stderr, "loading %s...\n", filename);
+	cpifaceSession->cpiDebug (cpifaceSession, "[TiMidity++ MID] loading %s...\n", filename);
 
 	cpifaceSession->IsEnd = timidityLooped;
 	cpifaceSession->ProcessKey = timidityProcessKey;
@@ -216,7 +216,7 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 			{
 				if (buffersize >= 64*1024*1024)
 				{
-					fprintf (stderr, "timidityOpenFile: %s is bigger than 64 Mb - further loading blocked\n", filename);
+					cpifaceSession->cpiDebug (cpifaceSession, "[TiMidity++ MID] %s is bigger than 64 Mb - further loading blocked\n", filename);
 					free (buffer);
 					return errAllocMem;
 				}

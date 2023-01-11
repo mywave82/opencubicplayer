@@ -44,7 +44,7 @@
 #include "wave.h"
 
 #ifdef PLAYWAVE_DEBUG
-# define PRINT(fmt, args...) fprintf(stderr, "%s %s: " fmt, __FILE__, __func__, ##args)
+# define PRINT(fmt, args...) fprintf(stderr, "[WAVE] %s %s: " fmt, __FILE__, __func__, ##args)
 #else
 # define PRINT(a, ...) do {} while(0)
 #endif
@@ -202,7 +202,7 @@ static void wpIdler(struct cpifaceSessionAPI_t *cpifaceSession)
 			result = wavefile->read (wavefile, wavebuf+(pos1<<1), read<<(wave16bit + wavestereo));
 			if (result<=0)
 			{
-				fprintf (stderr, "[playwav] fread() failed: %s\n", strerror (errno));
+				cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read() failed\n");
 				if (wave16bit)
 				{
 					memset (wavebuf+(pos1<<1), 0x00, read<<(1 + wavestereo));
@@ -571,21 +571,21 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	if (wavefile->read (wavefile, &temp, sizeof (temp)) != sizeof (temp))
 	{
-		fprintf(stderr, "[WAVE]: fread failed #1\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read failed #1\n");
 		retval = errFileRead;
 		goto error_out_wavefile;
 	}
 	PRINT("comparing header for RIFF: 0x%08x 0x%08x\n", temp, uint32_little(0x46464952));
 	if (temp!=uint32_little(0x46464952))
 	{
-		fprintf (stderr, "[WAVE]: file does not have a RIFF header\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] file does not have a RIFF header\n");
 		retval = errFormSig;
 		goto error_out_wavefile;
 	}
 
 	if (wavefile->read (wavefile, &temp, sizeof (temp)) != sizeof (temp))
 	{
-		fprintf(stderr, "[WAVE] fread failed #2\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read failed #2\n");
 		retval = errFileRead;
 		goto error_out_wavefile;
 	}
@@ -593,7 +593,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	if (wavefile->read (wavefile, &temp, sizeof (temp)) != sizeof (temp))
 	{
-		fprintf(stderr, "[WAVE]: fread failed #3\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read failed #3\n");
 		retval = errFileRead;
 		goto error_out_wavefile;
 	}
@@ -601,7 +601,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	if (temp!=uint32_little(0x45564157))
 	{
-		fprintf(stderr, "[WAVE]: file does not have a WAVE header\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] file does not have a WAVE header\n");
 		retval = errFormStruc;
 		goto error_out_wavefile;
 	}
@@ -611,7 +611,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 	{
 		if (wavefile->read (wavefile, &temp, sizeof (temp)) != sizeof (temp))
 		{
-			fprintf(stderr, "[WAVE]: fread failed #4\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read failed #4\n");
 			retval = errFileRead;
 			goto error_out_wavefile;
 		}
@@ -620,7 +620,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 			break;
 		if (ocpfilehandle_read_uint32_le (wavefile, &temp))
 		{
-			fprintf(stderr, "[WAVE]: fread failed #5\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read failed #5\n");
 			retval = errFileRead;
 			goto error_out_wavefile;
 		}
@@ -630,42 +630,42 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	if (ocpfilehandle_read_uint32_le (wavefile, &fmtlen))
 	{
-		fprintf(stderr, "[WAVE]: fread failed #6\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read failed #6\n");
 		retval = errFileRead;
 		goto error_out_wavefile;
 	}
 	PRINT("fmtlen=%d (must be bigger or equal to 16)\n", fmtlen);
 	if (fmtlen<16)
 	{
-		fprintf(stderr, "[WAVE]: format length %d < 16\n", fmtlen);
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] format length %d < 16\n", fmtlen);
 		retval = errFormSig;
 		goto error_out_wavefile;
 	}
 
 	if (ocpfilehandle_read_uint16_le (wavefile, &sh))
 	{
-		fprintf(stderr, "[WAVE]: fread failed #7\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read failed #7\n");
 		retval = errFileRead;
 		goto error_out_wavefile;
 	}
 	PRINT("compression code (only \"1 PCM\" is supported): \"%d %s\"\n", sh, compression_code_str(sh));
 	if ((sh!=1))
 	{
-		fprintf(stderr, "[WAVE]: not uncomressed raw pcm data\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] not uncomressed raw pcm data\n");
 		retval = errFormSupp;
 		goto error_out_wavefile;
 	}
 
 	if (ocpfilehandle_read_uint16_le (wavefile, &sh))
 	{
-		fprintf(stderr, "[WAVE]: fread failed #8\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read failed #8\n");
 		retval = errFileRead;
 		goto error_out_wavefile;
 	}
 	PRINT("number of channels: %u\n", sh);
 	if ((sh==0)||(sh>2))
 	{
-		fprintf(stderr, "[WAVE]: unsupported number of channels: %u (must be mono or stereo)\n", sh);
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] unsupported number of channels: %u (must be mono or stereo)\n", sh);
 		retval = errFormSupp;
 		goto error_out_wavefile;
 	}
@@ -673,7 +673,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	if (ocpfilehandle_read_uint32_le (wavefile, &waverate))
 	{
-		fprintf(stderr, "[WAVE]: fread failed #9\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read failed #9\n");
 		retval = errFileRead;
 		goto error_out_wavefile;
 	}
@@ -681,7 +681,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	if (ocpfilehandle_read_uint32_le (wavefile, &temp))
 	{
-		fprintf(stderr, "[WAVE]: fread failed #10\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read failed #10\n");
 		retval = errFileRead;
 		goto error_out_wavefile;
 	}
@@ -689,7 +689,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	if (wavefile->read (wavefile, &sh, sizeof (sh)) != sizeof (sh))
 	{
-		fprintf(stderr, "[WAVE]: fread failed #11\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read failed #11\n");
 		retval = errFileRead;
 		goto error_out_wavefile;
 	}
@@ -697,7 +697,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	if (ocpfilehandle_read_uint16_le (wavefile, &sh))
 	{
-		fprintf(stderr, "[WAVE]: fread failed #12\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read failed #12\n");
 		retval = errFileRead;
 		goto error_out_wavefile;
 	}
@@ -705,7 +705,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	if ((sh!=8)&&(sh!=16))
 	{
-		fprintf(stderr, "[WAVE]: unsupported bits per sample: %d\n", (int)sh);
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] unsupported bits per sample: %d\n", (int)sh);
 		retval = errFormSupp;
 		goto error_out_wavefile;
 	}
@@ -717,7 +717,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 	{
 		if (wavefile->read (wavefile, &temp, sizeof (temp)) != sizeof (temp))
 		{
-			fprintf(stderr, "[WAVE]: fread failed #13\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read failed #13\n");
 			retval = errFileRead;
 			goto error_out_wavefile;
 		}
@@ -726,7 +726,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 			break;
 		if (ocpfilehandle_read_uint32_le (wavefile, &temp))
 		{
-			fprintf(stderr, "[WAVE]: fread failed #14\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read failed #14\n");
 			retval = errFileRead;
 			goto error_out_wavefile;
 		}
@@ -736,7 +736,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	if (ocpfilehandle_read_uint32_le (wavefile, &wavelen))
 	{
-		fprintf(stderr, "[WAVE]: fread failed #15\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] read failed #15\n");
 		retval = errFileRead;
 		goto error_out_wavefile;
 	}
@@ -750,8 +750,8 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 
 	if (!wavelen)
 	{
-		fprintf(stderr, "[WAVE]: no audio data\n");
-		retval = errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] no audio data\n");
+		retval = errFormMiss;
 		goto error_out_wavefile;
 	}
 	wavelen >>= (wave16bit + wavestereo);
@@ -760,7 +760,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 	wavebuf=malloc(32*1024);
 	if (!wavebuf)
 	{
-		fprintf(stderr, "[WAVE]: malloc failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[WAVE] malloc failed\n");
 		retval = errAllocMem;
 		goto error_out_wavefile;
 	}
@@ -771,7 +771,6 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 	format=PLR_STEREO_16BIT_SIGNED;
 	if (!cpifaceSession->plrDevAPI->Play (&waveRate, &format, wavf, cpifaceSession))
 	{
-		fprintf(stderr, "playwav: plrOpenPlayer() failed\n");
 		retval = errPlay;
 		goto error_out_wavebuf;
 	}

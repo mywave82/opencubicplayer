@@ -138,7 +138,7 @@ void __attribute__ ((visibility ("internal"))) ymClosePlayer (struct cpifaceSess
 void __attribute__ ((visibility ("internal"))) ymMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
 {
 	cpifaceSession->MuteChannel[i] = m;
-	fprintf(stderr, "TODO, ymMute(i, m)\n");
+	fprintf(stderr, "[YM] TODO, ymMute(i, m)\n");
 }
 
 static void ymSetSpeed(uint16_t sp)
@@ -212,23 +212,23 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	}
 	if (length <= 0)
 	{
-		fprintf(stderr, "[ymplay]: Unable to determine file length\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[YM] Unable to determine file length\n");
 		return errFormStruc;
 	}
 	if (length > (1024*1024))
 	{
-		fprintf(stderr, "[ymplay]: File too big\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[YM] File too big\n");
 		return errFormStruc;
 	}
 	buffer = malloc(length);
 	if (!buffer)
 	{
-		fprintf(stderr, "[ymplay]: Unable to malloc()\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[YM] Unable to malloc()\n");
 		return errAllocMem;
 	}
 	if (file->read (file, buffer, length) != (int)length)
 	{
-		fprintf(stderr, "[ymplay]: Unable to read file\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[YM] Unable to read file\n");
 		goto error_out_buffer;
 	}
 
@@ -236,7 +236,7 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	format=PLR_STEREO_16BIT_SIGNED;
 	if (!cpifaceSession->plrDevAPI->Play (&ymRate, &format, file, cpifaceSession))
 	{
-		fprintf(stderr, "[ymplay]: plrDevAPI->Play() failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[YM] plrDevAPI->Play() failed\n");
 		retval = errPlay;
 		goto error_out_buffer;
 	}
@@ -252,13 +252,13 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	pMusic = new CYmMusic(ymRate);
 	if (!pMusic)
 	{
-		fprintf(stderr, "[ymplay]: Unable to create stymulator object\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[YM] Unable to create stymulator object\n");
 		retval = errAllocMem;
 		goto error_out_plrDevAPI_Play;
 	}
 	if (!pMusic->loadMemory(buffer, length))
 	{
-		fprintf(stderr, "[ymplay]: Unable to load file: %s\n", pMusic->getLastError());
+		cpifaceSession->cpiDebug (cpifaceSession, "[YM] Unable to load file: %s\n", pMusic->getLastError());
 		retval = errFormStruc;
 		goto error_out_plrDevAPI_Play;
 	}

@@ -83,6 +83,7 @@ flacplay.o: flacplay.c \
 	../dev/ringbuffer.h \
 	../filesel/filesystem.h \
 	flacplay.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h \
 	../stuff/poutput.h
 	$(CC) flacplay.c -o $@ $(FLAC_CFLAGS) -c

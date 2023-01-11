@@ -286,7 +286,7 @@ static int xmpGetDots (struct cpifaceSessionAPI_t *cpifaceSession, struct notedo
 static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
 {
 	const char *filename;
-	int (*loader)(struct xmodule *, struct ocpfilehandle_t *)=0;
+	int (*loader)(struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *, struct ocpfilehandle_t *)=0;
 	int retval;
 
 	if (!cpifaceSession->mcpDevAPI)
@@ -298,7 +298,7 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 		return errFileOpen;
 
 	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
-	fprintf(stderr, "loading %s (%uk)...\n", filename, (unsigned int)(file->filesize (file) >> 10));
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM] loading %s (%uk)...\n", filename, (unsigned int)(file->filesize (file) >> 10));
 
 	     if (info->modtype.integer.i == MODULETYPE("XM"))   loader=xmpLoadModule;
 	else if (info->modtype.integer.i == MODULETYPE("MOD"))  loader=xmpLoadMOD;
@@ -313,10 +313,11 @@ static int xmpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	if (!loader)
 	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM] no loader found\n");
 		return errGen;
 	}
 
-	if ((retval = loader (&mod, file)))
+	if ((retval = loader (cpifaceSession, &mod, file)))
 	{
 		xmpFreeModule(&mod);
 		return retval;

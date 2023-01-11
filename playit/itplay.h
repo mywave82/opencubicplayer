@@ -114,8 +114,8 @@ extern void __attribute__ ((visibility ("internal"))) it_free(struct it_module *
 extern void __attribute__ ((visibility ("internal"))) it_optimizepatlens(struct it_module *); /* done */
 extern int __attribute__ ((visibility ("internal"))) it_precalctime(struct it_module *, int startpos, int (*calctimer)[2], int calcn, int ite); /* done */
 
-extern int __attribute__ ((visibility ("internal"))) decompress8 (struct ocpfilehandle_t *, void *dst, int len, char it215); /* done */
-extern int __attribute__ ((visibility ("internal"))) decompress16(struct ocpfilehandle_t *, void *dst, int len, char it215); /* done */
+extern int __attribute__ ((visibility ("internal"))) decompress8 (struct cpifaceSessionAPI_t *cpifaceSession, struct ocpfilehandle_t *, void *dst, int len, char it215); /* done */
+extern int __attribute__ ((visibility ("internal"))) decompress16(struct cpifaceSessionAPI_t *cpifaceSession, struct ocpfilehandle_t *, void *dst, int len, char it215); /* done */
 
 enum
 {

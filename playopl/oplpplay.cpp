@@ -430,7 +430,7 @@ static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 			{
 				if (buffersize >= 16*1024*1024)
 				{
-					fprintf (stderr, "oplOpenFile: %s is bigger than 16 Mb - further loading blocked\n", filename);
+					cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] %s is bigger than 16 Mb - further loading blocked\n", filename);
 					free (buffer);
 					return -1;
 				}
@@ -443,7 +443,7 @@ static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 			bufferfill += res;
 		}
 	}
-	fprintf(stderr, "OPL/AdPlug: loading %s\n", filename);
+	cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] loading %s\n", filename);
 
 	cpifaceSession->IsEnd = oplLooped;
 	cpifaceSession->ProcessKey = oplProcessKey;

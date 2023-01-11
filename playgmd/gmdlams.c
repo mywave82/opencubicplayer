@@ -32,17 +32,18 @@
 #include <stdlib.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "filesel/filesystem.h"
 #include "gmdplay.h"
 #include "stuff/err.h"
 
 #ifndef AMS_DEBUG
-static void DEBUG_PRINTF (FILE *f, ...)
+static void DEBUG_PRINTF (const char *fmt, ...)
 {
 }
 #else
-#define DEBUG_PRINTF fprintf
+#define DEBUG_PRINTF cpifaceSession->cpiDebug
 #endif
 
 static inline void putcmd(unsigned char **p, unsigned char c, unsigned char d)
@@ -103,7 +104,7 @@ struct AMSPattern
 	struct AMSPatternC channel[32];
 	unsigned int rowcount;
 };
-static int readPascalString (struct ocpfilehandle_t *file, char *target, int targetsize, const char *name)
+static int readPascalString (struct cpifaceSessionAPI_t *cpifaceSession, struct ocpfilehandle_t *file, char *target, int targetsize, const char *name)
 {
 	uint8_t stringlen;
 	char buffer[256];
@@ -111,7 +112,7 @@ static int readPascalString (struct ocpfilehandle_t *file, char *target, int tar
 	target[0] = 0;
 	if (ocpfilehandle_read_uint8 (file, &stringlen))
 	{
-		fprintf(stderr, "AMS loader: reading length of %s failed\n", target);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] reading length of %s failed\n", target);
 		return -1;
 	}
 	if (!stringlen)
@@ -120,10 +121,10 @@ static int readPascalString (struct ocpfilehandle_t *file, char *target, int tar
 	}
 	if (stringlen >= targetsize)
 	{
-		fprintf(stderr, "AMS loader: (warning, string length of %s is too long: %d >= %d)\n", name, stringlen, targetsize);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] (warning, string length of %s is too long: %d >= %d)\n", name, stringlen, targetsize);
 		if (file->read (file, buffer, stringlen) != stringlen)
 		{
-			fprintf(stderr, "AMS loader: reading data of %s failed\n", name);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] reading data of %s failed\n", name);
 			return -1;
 		}
 		memcpy (target, buffer, targetsize - 1);
@@ -132,7 +133,7 @@ static int readPascalString (struct ocpfilehandle_t *file, char *target, int tar
 	} else {
 		if (file->read (file, target, stringlen) != stringlen)
 		{
-			fprintf(stderr, "AMS loader: reading data of %s failed\n", name);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] reading data of %s failed\n", name);
 			target[0] = 0;
 			return -1;
 		}
@@ -141,17 +142,17 @@ static int readPascalString (struct ocpfilehandle_t *file, char *target, int tar
 	}
 }
 
-static int _mpLoadAMS_InstrumentSample (struct gmdmodule *m, struct ocpfilehandle_t *file, int i, unsigned int *instsampnum, int *sampnum)
+static int _mpLoadAMS_InstrumentSample (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file, int i, unsigned int *instsampnum, int *sampnum)
 {
 	int j;
-	DEBUG_PRINTF (stderr, "Instrument=%d/%d\n", i + 1, m->instnum);
+	DEBUG_PRINTF ("[GMD/AMS] Instrument=%d/%d\n", i + 1, m->instnum);
 
 	for (j=0; j<instsampnum[i]; j++)
 	{
 		struct sampleinfo *sip=&m->samples[(*sampnum)++];
 		uint8_t *smpp;
 
-		DEBUG_PRINTF (stderr, "Instrument[%d].Sample[%d].Length=0x%08"PRIx32"\n", i, j, sip->length);
+		DEBUG_PRINTF ("[GMD/AMS] Instrument[%d].Sample[%d].Length=0x%08"PRIx32"\n", i, j, sip->length);
 
 		if (!sip->length)
 			continue;
@@ -166,7 +167,7 @@ static int _mpLoadAMS_InstrumentSample (struct gmdmodule *m, struct ocpfilehandl
 			}
 			if (file->read (file, smpp, length) != length)
 			{
-				fprintf (stderr, "AMS loader: warning instrument %d/%d sample %d/%d data failed\n", i + 1, m->instnum, j + 1, instsampnum[i]);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] warning instrument %d/%d sample %d/%d data failed\n", i + 1, m->instnum, j + 1, instsampnum[i]);
 				break;
 			}
 
@@ -189,41 +190,41 @@ static int _mpLoadAMS_InstrumentSample (struct gmdmodule *m, struct ocpfilehandl
 			if (ocpfilehandle_read_uint32_le (file, &packlena))
 			{
 				packlena = 0;
-				fprintf (stderr, "AMS loader: warning instrument %d/%d sample %d/%d compressedsize failed\n", i + 1, m->instnum, j + 1, instsampnum[i]);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] warning, instrument %d/%d sample %d/%d compressedsize failed\n", i + 1, m->instnum, j + 1, instsampnum[i]);
 				break;
 			}
 			if (ocpfilehandle_read_uint32_le (file, &packlenb))
 			{
 				packlenb = 0;
-				fprintf (stderr, "AMS loader: warning instrument %d/%d sample %d/%d decompressedsize failed\n", i + 1, m->instnum, j + 1, instsampnum[i]);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] warning, instrument %d/%d sample %d/%d decompressedsize failed\n", i + 1, m->instnum, j + 1, instsampnum[i]);
 				break;
 			}
 			if (ocpfilehandle_read_uint8 (file, &packbyte))
 			{
 				packbyte = 0;
-				fprintf (stderr, "AMS loader: warning instrument %d/%d sample %d/%d packbyte failed\n", i + 1, m->instnum, j + 1, instsampnum[i]);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] warning, instrument %d/%d sample %d/%d packbyte failed\n", i + 1, m->instnum, j + 1, instsampnum[i]);
 				break;
 			}
 
-			DEBUG_PRINTF (stderr, "Instrument[%d].Sample[%d].LengthA=0x%08"PRIx32"\n", i, j, packlena);
-			DEBUG_PRINTF (stderr, "Instrument[%d].Sample[%d].LengthB=0x%08"PRIx32"\n", i, j, packlenb);
-			DEBUG_PRINTF (stderr, "Instrument[%d].Sample[%d].PackByt=0x%02"PRIx8"\n", i, j, packbyte);
+			DEBUG_PRINTF ("[GMD/AMS] Instrument[%d].Sample[%d].LengthA=0x%08"PRIx32"\n", i, j, packlena);
+			DEBUG_PRINTF ("[GMD/AMS] Instrument[%d].Sample[%d].LengthB=0x%08"PRIx32"\n", i, j, packlenb);
+			DEBUG_PRINTF ("[GMD/AMS] Instrument[%d].Sample[%d].PackByt=0x%02"PRIx8"\n", i, j, packbyte);
 
 			if (packlena != sip->length)
 			{
-				fprintf (stderr, "AMS loader: warning instrument %d/%d sample %d/%d has unexpected length of 0x%04"PRIx32" vs 0x%04"PRIx32"\n", i + 1, m->instnum, j + 1, instsampnum[i], packlena, sip->length);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] warning instrument %d/%d sample %d/%d has unexpected length of 0x%04"PRIx32" vs 0x%04"PRIx32"\n", i + 1, m->instnum, j + 1, instsampnum[i], packlena, sip->length);
 
 				packlena = sip->length;
 			}
 			if ((uint64_t)packlenb > (file->filesize(file) - file->getpos(file)))
 			{
-				fprintf (stderr, "AMS loader: warning instrument %d/%d sample %d/%d has more compressed length than data available, shrinking\n", i + 1, m->instnum, j + 1, instsampnum[i]);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] warning, instrument %d/%d sample %d/%d has more compressed length than data available, shrinking\n", i + 1, m->instnum, j + 1, instsampnum[i]);
 				packlenb = file->filesize(file) - file->getpos(file);
 			}
 
 			if (((uint64_t)packlenb * 85) < packlena)
 			{
-				fprintf (stderr, "AMS loader: warning instrument %d/%d sample %d/%d has more compressed length smalled than maximum compression-rate, shrinking\n", i + 1, m->instnum, j + 1, instsampnum[i]);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] warning, instrument %d/%d sample %d/%d has more compressed length smalled than maximum compression-rate, shrinking\n", i + 1, m->instnum, j + 1, instsampnum[i]);
 				packlenb = (packlena / 85) + 1;
 			}
 
@@ -235,7 +236,7 @@ static int _mpLoadAMS_InstrumentSample (struct gmdmodule *m, struct ocpfilehandl
 			}
 			if (file->read (file, packb, packlenb) != packlenb)
 			{
-				fprintf (stderr, "AMS loader: warning instrument %d/%d sample %d/%d data failed\n", i + 1, m->instnum, j + 1, instsampnum[i]);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] warning, instrument %d/%d sample %d/%d data failed\n", i + 1, m->instnum, j + 1, instsampnum[i]);
 
 				break;
 			}
@@ -247,7 +248,7 @@ static int _mpLoadAMS_InstrumentSample (struct gmdmodule *m, struct ocpfilehandl
 				if (p1 >= packlenb)
 				{
 overflowa:
-					fprintf (stderr, "AMS loader: warning instrument %d/%d sample %d/%d, ran out of compressed data\n", i + 1, m->instnum, j + 1, instsampnum[i]);
+					cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] warning instrument %d/%d sample %d/%d, ran out of compressed data\n", i + 1, m->instnum, j + 1, instsampnum[i]);
 					bzero (smpp + p2, packlena - p2);
 					break;
 				}
@@ -263,7 +264,7 @@ overflowa:
 					else {
 						if (((uint32_t)p2 + packb[p1] > packlena))
 						{
-							fprintf (stderr, "AMS loader: warning instrument %d/%d sample %d/%d, ran out of target data\n", i + 1, m->instnum, j + 1, instsampnum[i]);
+							cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] warning instrument %d/%d sample %d/%d, ran out of target data\n", i + 1, m->instnum, j + 1, instsampnum[i]);
 
 							memset(smpp+p2, packb[p1+1], packlena - p2);
 							p2 = packlena;
@@ -278,7 +279,7 @@ overflowa:
 			}
 			if (p1 < packlenb)
 			{
-				fprintf (stderr, "AMS loader: warning instrument %d/%d sample %d/%d, compressed data left, rewinding buffer (%"PRId32" vs %"PRId32")\n", i + 1, m->instnum, j + 1, instsampnum[i], p1, packlenb);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] warning, instrument %d/%d sample %d/%d, compressed data left, rewinding buffer (%"PRId32" vs %"PRId32")\n", i + 1, m->instnum, j + 1, instsampnum[i], p1, packlenb);
 				file->seek_cur (file, (int64_t)p1 - (int64_t) packlenb);
 			}
 			bzero (packb, packlena);
@@ -812,15 +813,15 @@ int __attribute__ ((visibility ("internal"))) LoadAMS (struct cpifaceSessionAPI_
 
 	if (file->read (file, &sig, 7) != 7)
 	{
-		fprintf (stderr, "AMS loader: read failed #1 (signature)\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] read failed #1 (signature)\n");
 	}
 	if (!memcmp(sig, "Extreme", 7))
 	{
-		return _mpLoadAMS_v1 (m, file);
+		return _mpLoadAMS_v1 (cpifaceSession, m, file);
 	}
 	if (!memcmp(sig, "AMShdr\x1A", 7))
 	{
-		return _mpLoadAMS_v2 (m, file);
+		return _mpLoadAMS_v2 (cpifaceSession, m, file);
 	}
 
 	return errFormSig;

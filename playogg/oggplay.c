@@ -144,7 +144,7 @@ static void oggIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 		}
 		if (ov_pcm_tell(&ov)!=oggpos)
 		{
-			fprintf (stderr, "[playogg]: warning, frame position is broken in file (got=%" PRId64 ", expected= %" PRId64 ")\n", ov_pcm_tell(&ov), oggpos);
+			cpifaceSession->cpiDebug (cpifaceSession, "[OGG] warning, frame position is broken in file (got=%" PRId64 ", expected= %" PRId64 ")\n", ov_pcm_tell(&ov), oggpos);
 		}
 
 		cpifaceSession->ringbufferAPI->get_head_samples (oggbufpos, &pos1, &length1, &pos2, &length2);
@@ -172,7 +172,7 @@ static void oggIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 			if (result<=0) /* broken data... we can survive */
 			{
 				bzero (oggbuf+(pos1<<1), read<<2); /* always clear 16bit, stereo, signed */
-				fprintf (stderr, "[playogg] ov_read failed: %ld\n", result);
+				cpifaceSession->cpiDebug (cpifaceSession, "[OGG] ov_read failed: %ld\n", result);
 				result=read;
 			} else {
 				result>>=(1+oggstereo);
@@ -904,12 +904,12 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 	{
 		switch (result)
 		{
-			case OV_EREAD:      fprintf (stderr, "ov_open_callbacks(): A read from media returned an error.\n"); break;
-			case OV_ENOTVORBIS: fprintf (stderr, "ov_open_callbacks(): Bitstream does not contain any Vorbis data.\n"); break;
-			case OV_EVERSION:   fprintf (stderr, "ov_open_callbacks(): Vorbis version mismatch.\n"); break;
-			case OV_EBADHEADER: fprintf (stderr, "ov_open_callbacks(): Invalid Vorbis bitstream header.\n"); break;
-			case OV_EFAULT:     fprintf (stderr, "ov_open_callbacks(): Internal logic fault; indicates a bug or heap/stack corruption.\n"); break;
-			default:            fprintf (stderr, "ov_open_callbacks(): Unknown error %d\n", result); break;
+			case OV_EREAD:      cpifaceSession->cpiDebug (cpifaceSession, "[OGG] ov_open_callbacks(): A read from media returned an error.\n"); break;
+			case OV_ENOTVORBIS: cpifaceSession->cpiDebug (cpifaceSession, "[OGG] ov_open_callbacks(): Bitstream does not contain any Vorbis data.\n"); break;
+			case OV_EVERSION:   cpifaceSession->cpiDebug (cpifaceSession, "[OGG] ov_open_callbacks(): Vorbis version mismatch.\n"); break;
+			case OV_EBADHEADER: cpifaceSession->cpiDebug (cpifaceSession, "[OGG] ov_open_callbacks(): Invalid Vorbis bitstream header.\n"); break;
+			case OV_EFAULT:     cpifaceSession->cpiDebug (cpifaceSession, "[OGG] ov_open_callbacks(): Internal logic fault; indicates a bug or heap/stack corruption.\n"); break;
+			default:            cpifaceSession->cpiDebug (cpifaceSession, "[OGG] ov_open_callbacks(): Unknown error %d\n", result); break;
 		}
 		goto error_out_file;
 	}
@@ -922,7 +922,6 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 	format=PLR_STEREO_16BIT_SIGNED;
 	if (!cpifaceSession->plrDevAPI->Play (&oggRate, &format, oggfile, cpifaceSession))
 	{
-		fprintf(stderr, "playogg: plrOpenPlayer() failed\n");
 		retval = errPlay;
 		goto error_out_file;
 	}

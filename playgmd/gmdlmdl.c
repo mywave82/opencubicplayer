@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "filesel/filesystem.h"
 #include "gmdplay.h"
@@ -38,7 +39,7 @@ static uint8_t *ibuf;
 static uint8_t bitnum;
 static uint32_t bitlen;
 
-static inline uint16_t readbits(uint8_t n)
+static inline uint16_t readbits (struct cpifaceSessionAPI_t *cpifaceSession, uint8_t n)
 {
 	uint16_t retval=0;
 	int offset = 0;
@@ -48,7 +49,7 @@ static inline uint16_t readbits(uint8_t n)
 
 		if (!bitlen)
 		{
-			fprintf(stderr, "readbits: ran out of buffer\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] readbits: ran out of buffer\n");
 			return 0;
 		}
 
@@ -147,6 +148,7 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 	uint32_t blklen;
 	uint16_t blktype;
+	int retval; /* when using goto err */
 
 	struct __attribute__((packed))
 	{
@@ -187,42 +189,48 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 	if (ocpfilehandle_read_uint32_le (file, &waste32))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #1\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #1\n");
+		return errFileRead;
 	}
 	if (waste32!=0x4C444D44)
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid signature\n");
 		return errFormSig;
+	}
 
 	if (ocpfilehandle_read_uint8 (file, &waste8))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #2\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #2\n");
 		return errFormStruc;
 	}
 	if ((waste8&0x10)!=0x10)
 	{
-		fprintf(stderr, "Sorry, the file version is too old (load and resave it in DigiTrakker please)\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Sorry, the file version is too old (load and resave it in DigiTrakker please)\n");
 #warning TODO, version 0x11 / 1.1
-		return errFormSig;
+		return errFormOldVer;
 	}
 
 	if (ocpfilehandle_read_uint16_le (file, &waste16))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #3\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #3\n");
+		return errFileRead;
 	}
 	if (waste16!=0x4E49)
-		return errFormStruc;
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid sub-signature\n");
+		return errFormSig;
+	}
 
 	if (ocpfilehandle_read_uint32_le (file, &blklen))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #4\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #4\n");
+		return errFileRead;
 	}
 
 	if (file->read (file, &mdlhead, sizeof(mdlhead)) != sizeof(mdlhead))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #5\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #5\n");
+		return errFileRead;
 	}
 	mdlhead.ordnum = uint16_little (mdlhead.ordnum);
 	mdlhead.repstart = uint16_little (mdlhead.repstart);
@@ -241,25 +249,28 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 	m->options=MOD_EXPOFREQ|MP_OFFSETDIV2;
 
 	if (mdlhead.ordnum>256)
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Over 256 orders? (%u)\n", mdlhead.ordnum);
 		return errFormSupp;
+	}
 
 	if (file->read (file, ordtab, mdlhead.ordnum) != mdlhead.ordnum)
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #6\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #6\n");
+		return errFileRead;
 	}
 	file->seek_cur (file, 8*m->channum);
 	file->seek_cur (file, blklen - 8 * m->channum - 91 - mdlhead.ordnum);
 
 	if (ocpfilehandle_read_uint16_le (file, &blktype))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #7\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #7\n");
+		return errFileRead;
 	}
 	if (ocpfilehandle_read_uint32_le (file, &blklen))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #8\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #8\n");
+		return errFileRead;
 	}
 	blklen = uint32_little (blklen);
 
@@ -268,13 +279,13 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 		file->seek_cur (file, blklen);
 		if (ocpfilehandle_read_uint16_le (file, &blktype))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #9\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #9\n");
+			return errFileRead;
 		}
 		if (ocpfilehandle_read_uint32_le (file, &blklen))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #10\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #10\n");
+			return errFileRead;
 		}
 /* songmessage; every line is closed with the CR-char (13). A
  * 0-byte stands at the end of the whole text.
@@ -282,11 +293,14 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 	}
 
 	if (blktype!=0x4150)
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid block type %04x!=0x4150\n", blktype);
 		return errFormStruc;
+	}
 	if (ocpfilehandle_read_uint8 (file, &patnum))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #11\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #11\n");
+		return errFileRead;
 	}
 	m->patnum=patnum+1;
 	m->tracknum=patnum*(m->channum+1)+1;
@@ -300,28 +314,28 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 		int i;
 		if (ocpfilehandle_read_uint8 (file, &chnn))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #12\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #12\n");
+			return errFileRead;
 		}
 
 		if (ocpfilehandle_read_uint8 (file, &waste8))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #13\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #13\n");
+			return errFileRead;
 		}
 		m->patterns[j].patlen = waste8 + 1;
 
 		if (file->read (file, m->patterns[j].name, 16) != 16)
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #14\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #14\n");
+			return errFileRead;
 		}
 		m->patterns[j].name[16]=0;
 		memset(m->patterns[j].tracks, 0, 32*2);
 		if (file->read (file, m->patterns[j].tracks, 2 * chnn) != (2 * chnn))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #15\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #15\n");
+			return errFileRead;
 		}
 		for(i=0;i<chnn;i++)
 			m->patterns[j].tracks[i] = uint16_little (m->patterns[j].tracks[i]);
@@ -329,21 +343,24 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 	if (ocpfilehandle_read_uint16_le (file, &waste16))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #16\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #16\n");
+		return errFileRead;
 	}
 	if (waste16!=0x5254)
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid block type %04x!=0x5254\n", waste16);
 		return errFormStruc;
+	}
 	if (ocpfilehandle_read_uint32_le (file, &blklen))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #17\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #17\n");
+		return errFileRead;
 	}
 
 	if (ocpfilehandle_read_uint16_le (file, &ntracks))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #18\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #18\n");
+		return errFileRead;
 	}
 
 	trackends=malloc(sizeof(uint8_t *)*ntracks+1);
@@ -355,7 +372,8 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 	if (!trackends||!trackptrs||!trackbuf||!patdata||!temptrack)
 	{
-		goto errAllocMem_withmem;
+		retval = errAllocMem;
+		goto err;
 	}
 
 	trackptrs[0]=trackbuf;
@@ -366,14 +384,16 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 		uint16_t l;
 		if (ocpfilehandle_read_uint16_le (file, &l))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #19\n");
-			goto errFormStruc_withmem;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #19\n");
+			retval = errFileRead;
+			goto err;
 		}
 		trackptrs[1+i]=trackbuf+tpos;
 		if (file->read (file, trackbuf+tpos, l) != l)
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #20\n");
-			goto errFormStruc_withmem;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #20\n");
+			retval = errFileRead;
+			goto err;
 		}
 		tpos+=l;
 		trackends[1+i]=trackbuf+tpos;
@@ -655,7 +675,10 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 				trk->ptr=malloc(sizeof(uint8_t)*len);
 				trk->end=trk->ptr+len;
 				if (!trk->ptr)
-					goto errAllocMem_withmem;
+				{
+					retval = errAllocMem;
+					goto err;
+				}
 				memcpy(trk->ptr, temptrack, len);
 			}
 		}
@@ -783,7 +806,10 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 			trk->ptr=malloc(sizeof(uint8_t)*len);
 			trk->end=trk->ptr+len;
 			if (!trk->ptr)
-				goto errAllocMem_withmem;
+			{
+				retval = errAllocMem;
+				goto err;
+			}
 			memcpy(trk->ptr, temptrack, len);
 		}
 	}
@@ -795,22 +821,25 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 	if (ocpfilehandle_read_uint16_le (file, &waste16))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #21\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #21\n");
+		return errFileRead;
 	}
 	if (waste16!=0x4949)
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid block type %04x!=0x4949\n", waste16);
 		return errFormStruc;
+	}
 	if (ocpfilehandle_read_uint32_le (file, &blklen))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #22\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #22\n");
+		return errFileRead;
 	}
 
 	inssav=0;
 	if (ocpfilehandle_read_uint8 (file, &inssav))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #23\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #23\n");
+		return errFileRead;
 	}
 
 	m->instnum=255;
@@ -838,9 +867,9 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 		if (ocpfilehandle_read_uint8 (file, &insnum))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #24\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #24\n");
 			FreeResources(&r);
-			return errFormStruc;
+			return errFileRead;
 		}
 		insnum--;
 
@@ -848,16 +877,16 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 		if (ocpfilehandle_read_uint8 (file, &waste8))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #25\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #25\n");
 			FreeResources(&r);
-			return errFormStruc;
+			return errFileRead;
 		}
 		r.inssampnum[j] = waste8;
 		if (file->read (file, ip->name, 32) != 32)
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #26\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #26\n");
 			FreeResources(&r);
-			return errFormStruc;
+			return errFileRead;
 		}
 		ip->name[31]=0;
 		r.msmps[j]=malloc(sizeof(struct gmdsample)*r.inssampnum[j]);
@@ -893,9 +922,9 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 			if (file->read (file, &mdlmsmp, sizeof(mdlmsmp)) != sizeof(mdlmsmp))
 			{
-				fprintf(stderr, __FILE__ ": fread() failed #27\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #27\n");
 				FreeResources(&r);
-				return errFormStruc;
+				return errFileRead;
 			}
 			mdlmsmp.fadeout = uint16_little (mdlmsmp.fadeout);
 			if ((mdlmsmp.highnote+12)>128)
@@ -982,13 +1011,13 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 	if (ocpfilehandle_read_uint16_le (file, &blktype))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #28\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #28\n");
+		return errFileRead;
 	}
 	if (ocpfilehandle_read_uint32_le (file, &blklen))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #29\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #29\n");
+		return errFileRead;
 	}
 
 	if (blktype==0x4556)
@@ -997,8 +1026,8 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 		if (ocpfilehandle_read_uint8 (file, &envnum))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #30\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #30\n");
+			return errFileRead;
 		}
 		for (i=0; i<envnum; i++)
 		{
@@ -1014,8 +1043,8 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 			if (file->read (file, &env, sizeof (env)) != sizeof (env))
 			{
-				fprintf(stderr, __FILE__ ": fread() failed #31\n");
-				return errFormStruc;
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #31\n");
+				return errFileRead;
 			}
 			if (env.env[0][0]!=1)
 				continue;
@@ -1061,13 +1090,13 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 		if (ocpfilehandle_read_uint16_le (file, &blktype))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #32\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #32\n");
+			return errFileRead;
 		}
 		if (ocpfilehandle_read_uint32_le (file, &blklen))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #33\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #33\n");
+			return errFileRead;
 		}
 	}
 
@@ -1076,8 +1105,8 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 		uint8_t envnum;
 		if (ocpfilehandle_read_uint8 (file, &envnum))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #34\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #34\n");
+			return errFileRead;
 		}
 		for (i=0; i<envnum; i++)
 		{
@@ -1093,8 +1122,8 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 			if (file->read (file, &env, sizeof (env)) != sizeof (env))
 			{
-				fprintf(stderr, __FILE__ ": fread() failed #35\n");
-				return errFormStruc;
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #35\n");
+				return errFileRead;
 			}
 			if (env.env[0][0]!=1)
 				continue;
@@ -1140,13 +1169,13 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 		if (ocpfilehandle_read_uint16_le (file, &blktype))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #36\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #36\n");
+			return errFileRead;
 		}
 		if (ocpfilehandle_read_uint32_le (file, &blklen))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #37\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #37\n");
+			return errFileRead;
 		}
 	}
 
@@ -1155,8 +1184,8 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 		uint8_t envnum;
 		if (ocpfilehandle_read_uint8 (file, &envnum))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #38\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #38\n");
+			return errFileRead;
 		}
 
 		for (i=0; i<envnum; i++)
@@ -1174,8 +1203,8 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 			if (file->read (file, &env, sizeof (env)) != sizeof (env))
 			{
-				fprintf(stderr, __FILE__ ": fread() failed #39\n");
-				return errFormStruc;
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #39\n");
+				return errFileRead;
 			}
 
 			if (env.env[0][0]!=1)
@@ -1222,23 +1251,26 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 		if (ocpfilehandle_read_uint16_le (file, &blktype))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #40\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #40\n");
+			return errFileRead;
 		}
 		if (ocpfilehandle_read_uint32_le (file, &blklen))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #41\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #41\n");
+			return errFileRead;
 		}
 	}
 
 	if (blktype!=0x5349)
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid block type %04x!=0x5349\n", blktype);
 		return errFormStruc;
+	}
 
 	if (ocpfilehandle_read_uint8 (file, &smpsav))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #42\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #42\n");
+		return errFileRead;
 	}
 	memset(packtype, 0xFF, 255);
 
@@ -1261,8 +1293,8 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 		if (file->read (file, &mdlsmp, sizeof (mdlsmp)) != sizeof (mdlsmp))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #43\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #43\n");
+			return errFileRead;
 		}
 		mdlsmp.rate = uint32_little (mdlsmp.rate);
 		mdlsmp.len = uint32_little (mdlsmp.len);
@@ -1295,15 +1327,18 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 	if (ocpfilehandle_read_uint16_le (file, &waste16))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #44\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #44\n");
+		return errFileRead;
 	}
 	if (waste16!=0x4153)
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid block type %04x!=0x4153\n", waste16);
 		return errFormStruc;
+	}
 	if (ocpfilehandle_read_uint32_le (file, &blklen))
 	{
-		fprintf(stderr, __FILE__ ": fread() failed #45\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #45\n");
+		return errFileRead;
 	}
 
 	for (i=0; i<255; i++)
@@ -1328,16 +1363,16 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 		{
 			if (file->read (file, sip->ptr, sip->length<<bit16) != (sip->length<<bit16))
 			{
-				fprintf(stderr, __FILE__ ": fread() failed #46\n");
-				return errFormStruc;
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #46\n");
+				return errFileRead;
 			}
 			continue;
 		}
 
 		if (ocpfilehandle_read_uint32_le (file, &packlen))
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #47\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #47\n");
+			return errFileRead;
 		}
 		packbuf=malloc(sizeof(uint8_t)*(packlen+4));
 
@@ -1345,9 +1380,9 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 			return errAllocMem;
 		if (file->read (file, packbuf, packlen) != packlen)
 		{
-			fprintf(stderr, __FILE__ ": fread() failed #48\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #48\n");
 			free(packbuf);
-			return errFormStruc;
+			return errFileRead;
 		}
 		bitnum=8;
 		ibuf=packbuf;
@@ -1361,16 +1396,16 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 			uint8_t byte;
 			uint8_t sign;
 			if (bit16)
-				lowbyte=readbits(8);
+				lowbyte = readbits (cpifaceSession, 8);
 
-			sign=readbits(1);
-			if (readbits(1))
-				byte=readbits(3);
+			sign = readbits (cpifaceSession, 1);
+			if (readbits (cpifaceSession, 1))
+				byte = readbits (cpifaceSession, 3);
 			else {
 				byte=8;
-				while (!readbits(1))
+				while (!readbits (cpifaceSession, 1))
 					byte+=16;
-				byte+=readbits(4);
+				byte+=readbits (cpifaceSession, 4);
 			}
 			if (sign)
 				byte=~byte;
@@ -1385,19 +1420,11 @@ int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_
 
 	return errOk;
 
-errFormStruc_withmem:
+err:
 	free (trackends);
 	free (trackptrs);
 	free (trackbuf);
 	free (patdata);
 	free (temptrack);
-	return errFormStruc;
-
-errAllocMem_withmem:
-	free (trackends);
-	free (trackptrs);
-	free (trackbuf);
-	free (patdata);
-	free (temptrack);
-	return errAllocMem;
+	return retval;
 }

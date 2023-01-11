@@ -133,7 +133,8 @@ loader.o: \
 	loader.h \
 	player.h \
 	../config.h \
-	../types.h
+	../types.h \
+	../cpiface/cpiface.h
 	$(CC) -c -o $@ $<
 
 player.o: \

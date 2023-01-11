@@ -3,6 +3,13 @@
 
 #include "stuff/sets.h"
 
+struct cpiDebugPair_t
+{
+	uint16_t offset;
+	uint16_t length;
+	uint8_t  linebreak;
+};
+
 struct cpifaceSessionPrivate_t
 {
 	struct cpifaceSessionAPI_t Public;
@@ -22,6 +29,15 @@ struct cpifaceSessionPrivate_t
 	int   InstWidth;
 	char  InstType;
 	char  InstMode;
+
+	int   openStatus; // err.h
+
+	/* cpiDebug */
+	char                  cpiDebug_bufbase[2048];
+	unsigned int          cpiDebug_buffill;
+	unsigned int          cpiDebugLastWidth;
+	struct cpiDebugPair_t cpiDebug_line[100];
+	unsigned int          cpiDebug_lines;
 };
 
 extern __attribute__ ((visibility ("internal"))) struct cpifaceSessionPrivate_t cpifaceSessionAPI;

@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "filesel/filesystem.h"
 #include "gmdplay.h"
@@ -72,11 +73,13 @@ int __attribute__ ((visibility ("internal"))) Load669 (struct cpifaceSessionAPI_
 
 	if (file->read (file, &hdr, sizeof(hdr)) != sizeof(hdr))
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #1\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/669] read failed #1\n");
+		return errFileRead;
 	}
 
 	if ((hdr.sig!=*(uint16_t *)"if")&&(hdr.sig!=*(uint16_t *)"JN"))
 	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/669] invalid signature\n");
 		return errFormSig;
 	}
 
@@ -98,7 +101,10 @@ int __attribute__ ((visibility ("internal"))) Load669 (struct cpifaceSessionAPI_
 		m->patnum--;
 	}
 	if (!m->patnum)
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/669] no patterns\n");
 		return errFormMiss;
+	}
 	m->ordnum=m->patnum;
 	m->endord=m->patnum;
 
@@ -149,7 +155,7 @@ int __attribute__ ((visibility ("internal"))) Load669 (struct cpifaceSessionAPI_
 
 		if (file->read (file, &sins, sizeof(sins)) != sizeof(sins))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #2\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/669] warning, read failed #2\n");
 		}
 
 		sins.length = uint32_little (sins.length);
@@ -196,7 +202,7 @@ int __attribute__ ((visibility ("internal"))) Load669 (struct cpifaceSessionAPI_
 
 	if (file->read (file, buffer, 0x600 * hdr.patnum) != ( 0x600 * hdr.patnum) )
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #3\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/669] warning, read failed #3\n");
 	}
 
 	for (t=0; t<8; t++)
@@ -396,7 +402,7 @@ int __attribute__ ((visibility ("internal"))) Load669 (struct cpifaceSessionAPI_
 			return errAllocMem;
 		if (file->read (file, sip->ptr, sip->length) != sip->length)
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #5\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/669] warning, read failed #5\n");
 		}
 	}
 

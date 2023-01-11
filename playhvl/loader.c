@@ -23,12 +23,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
 #include "types.h"
+#include "cpiface/cpiface.h"
 #include "loader.h"
 #include "player.h"
 
-struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_ahx (const uint8_t *buf, uint32_t buflen, uint32_t defstereo, uint32_t freq )
+struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_ahx (struct cpifaceSessionAPI_t *cpifaceSession, const uint8_t *buf, uint32_t buflen, uint32_t defstereo, uint32_t freq )
 {
 	const uint8_t       *bptr;
 	const char          *nptr, *tptr;
@@ -39,7 +39,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_ahx (const u
 
 	if (buflen < 14)
 	{
-		fprintf (stderr, "AHX file truncated, header incomplete\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[AHX] file truncated, header incomplete\n");
 		return NULL;
 	}
 	posn = ((buf[6]&0x0f)<<8)|buf[7];
@@ -50,19 +50,19 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_ahx (const u
 
 	if (buflen < (14 + ssn*2))
 	{
-		fprintf (stderr, "AHX file truncated, sub-songs incomplete\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[HVL/AHX] file truncated, sub-songs incomplete\n");
 		return NULL;
 	}
 
 	if (buflen < (14 + ssn*2 + posn*4*2))
 	{
-		fprintf (stderr, "AHX file truncated, positions incomplete\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[AHX] file truncated, positions incomplete\n");
 		return NULL;
 	}
 
 	if (buflen < (14 + ssn*2 + posn*4*2 + (trkn+!!(buf[6]&0x80))*trkl*3))
 	{
-		fprintf (stderr, "AHX file truncated, tracks incomplete\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[AHX] file truncated, tracks incomplete\n");
 		return NULL;
 	}
 
@@ -86,14 +86,14 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_ahx (const u
 	{
 		if ((bptr+22-buf) > buflen)
 		{
-			fprintf (stderr, "AHX file incomplete, instrument incomplete\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[AHX] file incomplete, instrument incomplete\n");
 			return NULL;
 		}
 		hs += bptr[21] * sizeof( struct hvl_plsentry );
 		bptr += 22 + bptr[21]*4;
 		if ((bptr-buf) > buflen)
 		{
-			fprintf (stderr, "AHX file incomplete, instrument playlist incomplete\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[AHX] file incomplete, instrument playlist incomplete\n");
 			return NULL;
 		}
 	}
@@ -101,7 +101,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_ahx (const u
 	ht = malloc(hs); //AllocVec( hs, MEMF_ANY );
 	if ( !ht )
 	{
-		fprintf (stderr, "Out of memory!\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[AHX] Out of memory!\n");
 		return NULL;
 	}
 
@@ -141,7 +141,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_ahx (const u
 	     ( ht->ht_TrackLength > 64 ) ||
 	     ( ht->ht_InstrumentNr > 64 ) )
 	{
-		fprintf (stderr, "AHX headers out of range (%d,%d,%d)\n",
+		cpifaceSession->cpiDebug (cpifaceSession, "[AHX] headers out of range (%d,%d,%d)\n",
 			ht->ht_PositionNr,
 			ht->ht_TrackLength,
 			ht->ht_InstrumentNr );
@@ -273,7 +273,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_ahx (const u
 	{
 		if ((tptr-(char *)buf) > buflen)
 		{
-			fprintf (stderr, "AHX strings incomplete, no title\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[AHX] strings incomplete, no title\n");
 			ht->ht_Name[0] = 0;
 			nptr = 0;
 			break;
@@ -298,7 +298,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_ahx (const u
 		{
 			if ((tptr-(char *)buf) > buflen)
 			{
-				fprintf (stderr, "AHX strings incomplete, instruments\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[AHX] strings incomplete, instruments\n");
 				ht->ht_Instruments[i].ins_Name[0] = 0;
 				nptr = 0;
 				break;
@@ -316,7 +316,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_ahx (const u
 	return ht;
 }
 
-struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (const uint8_t *buf, uint32_t buflen, uint32_t defstereo, uint32_t freq )
+struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (struct cpifaceSessionAPI_t *cpifaceSession, const uint8_t *buf, uint32_t buflen, uint32_t defstereo, uint32_t freq )
 {
 	struct hvl_tune *ht;
 	const char      *nptr, *tptr;
@@ -326,7 +326,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (const u
 
 	if (buflen < 16)
 	{
-		fprintf (stderr, "HVL file truncated, header incomplete\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[HVL] file truncated, header incomplete\n");
 		return NULL;
 	}
 
@@ -339,13 +339,13 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (const u
 
 	if (buflen < (16 + ssn*2))
 	{
-		fprintf (stderr, "HVL file truncated, sub-songs incomplete\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[HVL] file truncated, sub-songs incomplete\n");
 		return NULL;
 	}
 
 	if (buflen < (16 + ssn*2 + posn*chnn*2))
 	{
-		fprintf (stderr, "HVL file truncated, positions incomplete\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[HVL] file truncated, positions incomplete\n");
 		return NULL;
 	}
 
@@ -369,7 +369,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (const u
 		{
 			if ((bptr-buf) >= buflen)
 			{
-				fprintf (stderr, "HVL file truncated, tracks incomplete #1\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[HVL] file truncated, tracks incomplete #1\n");
 				return NULL;
 			}
 			if( bptr[0] == 0x3f )
@@ -380,7 +380,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (const u
 			}
 			if ((bptr-buf) > buflen)
 			{
-				fprintf (stderr, "HVL file truncated, tracks incomplete #2\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[HVL] file truncated, tracks incomplete #2\n");
 				return NULL;
 			}
 		}
@@ -391,7 +391,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (const u
 	{
 		if ((bptr+22-buf) > buflen)
 		{
-			fprintf (stderr, "HVL file truncated, instrument incomplete\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[HVL] file truncated, instrument incomplete\n");
 			return NULL;
 		}
 
@@ -400,7 +400,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (const u
 
 		if ((bptr-buf) > buflen)
 		{
-			fprintf (stderr, "HVL file incomplete, instrument playlist incomplete\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[HVL] file incomplete, instrument playlist incomplete\n");
 			return NULL;
 		}
 	}
@@ -408,7 +408,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (const u
 	ht = malloc(hs); // AllocVec( hs, MEMF_ANY );
 	if ( !ht )
 	{
-		fprintf (stderr, "Out of memory!\n" );
+		cpifaceSession->cpiDebug (cpifaceSession, "[HVL] Out of memory!\n" );
 		return NULL;
 	}
 
@@ -448,7 +448,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (const u
 	    ( ht->ht_TrackLength > 64 ) ||
 	    ( ht->ht_InstrumentNr > 64 ) )
 	{
-		fprintf (stderr, "HVL headers out of range (%d,%d,%d)\n",
+		cpifaceSession->cpiDebug (cpifaceSession, "[HVL] headers out of range (%d,%d,%d)\n",
 
 			ht->ht_PositionNr,
 			ht->ht_TrackLength,
@@ -569,7 +569,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (const u
 	{
 		if ((tptr-(char *)buf) > buflen)
 		{
-			fprintf (stderr, "HVL strings incomplete, no title\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[HVL] strings incomplete, no title\n");
 			ht->ht_Name[0] = 0;
 			nptr = 0;
 			break;
@@ -594,7 +594,7 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (const u
 		{
 			if ((tptr-(char *)buf) > buflen)
 			{
-				fprintf (stderr, "HVL strings incomplete, instruments\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[HVL] strings incomplete, instruments\n");
 				ht->ht_Instruments[i].ins_Name[0] = 0;
 				nptr = 0;
 				break;
@@ -612,14 +612,14 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_load_hvl (const u
 	return ht;
 }
 
-struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_LoadTune_memory (const uint8_t *buf, uint32_t buflen, uint32_t defstereo, uint32_t freq)
+struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_LoadTune_memory (struct cpifaceSessionAPI_t *cpifaceSession, const uint8_t *buf, uint32_t buflen, uint32_t defstereo, uint32_t freq)
 {
 	if( ( buf[0] == 'T' ) &&
 	    ( buf[1] == 'H' ) &&
 	    ( buf[2] == 'X' ) &&
 	    ( buf[3] < 3 ) )
 	{
-		return hvl_load_ahx ( buf, buflen, defstereo, freq );
+		return hvl_load_ahx (cpifaceSession, buf, buflen, defstereo, freq);
 	}
 
 	if( ( buf[0] == 'H' ) &&
@@ -627,54 +627,12 @@ struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_LoadTune_memory (
 	    ( buf[2] == 'L' ) &&
 	    ( buf[3] < 2 ) )
 	{
-		return hvl_load_hvl ( buf, buflen, defstereo, freq );
+		return hvl_load_hvl (cpifaceSession, buf, buflen, defstereo, freq);
 	}
 
-	fprintf (stderr, "Invalid file.\n" );
+	cpifaceSession->cpiDebug (cpifaceSession, "[HVL] Invalid signature\n" );
 	return NULL;
 }
-
-#if 0
-struct hvl_tune __attribute__ ((visibility ("internal"))) *hvl_LoadTune_file (char *name, uint32_t freq, uint32_t defstereo )
-{
-	uint8_t  *buf;
-	uint32_t buflen;
-	FILE *f;
-	struct hvl_tune *retval;
-
-	f = fopen ( name, "rb" );
-	if ( !f )
-	{
-		fprintf (stderr, "Cannot open file\n" );
-		return NULL;
-	}
-	fseek ( f, 0, SEEK_END );
-	buflen = ftell ( f );
-	rewind ( f );
-	buf = malloc( buflen );
-	if( !buf )
-	{
-		fclose ( f );
-		fprintf (stderr, "Out of memory!\n" );
-		return NULL;
-	}
-
-	if ( fread( buf, 1, buflen, f ) != buflen )
-	{
-		free ( buf );
-		fclose ( f );
-		fprintf (stderr, "Unable to read from file!\n" );
-		return NULL;
-	}
-	fclose ( f );
-
-	retval = hvl_LoadTune_memory ( buf, buflen, defstereo, freq);
-
-	free (buf);
-
-	return retval;
-}
-#endif
 
 void hvl_FreeTune ( struct hvl_tune *ht )
 {

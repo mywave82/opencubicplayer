@@ -105,7 +105,7 @@ static uint32_t xmpGetModuleType(const char *buf, int len, const char *filename)
 			{
 				if ((20+i*30+j) >= len)
 				{
-					fprintf (stderr, "buffer too small");
+					//fprintf (stderr, "buffer too small");
 					return 0;
 				}
 				if (!(buf[20+i*30+j]))

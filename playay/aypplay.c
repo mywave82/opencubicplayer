@@ -196,7 +196,7 @@ static int ayOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 		return -1;
 
 	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
-	fprintf(stderr, "loading %s...\n", filename);
+	cpifaceSession->cpiDebug (cpifaceSession, "[AY] loading %s...\n", filename);
 
 	cpifaceSession->IsEnd = ayLooped;
 	cpifaceSession->ProcessKey = ayProcessKey;
@@ -205,11 +205,8 @@ static int ayOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct module
 	cpifaceSession->SetMuteChannel = aySetMute;
 	cpifaceSession->LogicalChannelCount = 6;
 
-	if (retval = ayOpenPlayer(file, cpifaceSession))
+	if ((retval = ayOpenPlayer(file, cpifaceSession)))
 	{
-#ifdef INITCLOSE_DEBUG
-		fprintf(stderr, "ayOpenPlayer FAILED\n");
-#endif
 		return retval;
 	}
 

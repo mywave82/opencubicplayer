@@ -263,24 +263,21 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	i = file->filesize (file);
 	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
-	fprintf(stderr, "loading %s... (%uk)\n", filename, (unsigned int)(i>>10));
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD] loading %s... (%uk)\n", filename, (unsigned int)(i>>10));
 
 	bzero (info->composer, sizeof (info->composer));
-	retval = loader (cpifaceSession, &mod, file);
-
-	if (retval)
+	if ((retval = loader (cpifaceSession, &mod, file)))
 	{
-		fprintf(stderr, "mpLoadGen failed\n");
 		mpFree(&mod);
 		return retval;
 	}
 
 	{
-		int sampsize=0;
-		fprintf(stderr, "preparing samples (");
+		unsigned int sampsize=0;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD] preparing samples (");
 		for (i=0; i<mod.sampnum; i++)
 			sampsize+=(mod.samples[i].length)<<(!!(mod.samples[i].type&mcpSamp16Bit));
-		fprintf(stderr, "%ik)...\n", sampsize>>10);
+		cpifaceSession->cpiDebug (cpifaceSession, "%uk)...\n", sampsize>>10);
 	}
 	if (!mpReduceSamples(&mod))
 	{

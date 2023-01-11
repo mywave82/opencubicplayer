@@ -154,6 +154,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "types.h"
+#include "cpiface/cpiface.h"
 #include "filesel/filesystem.h"
 #include "itplay.h"
 #include "stuff/imsrtns.h"
@@ -180,7 +181,7 @@ static uint8_t *ibuf         = NULL; /* actual reading position */
 static uint32_t bitlen;
 static uint8_t bitnum;
 
-static inline uint32_t readbits(uint8_t n)
+static inline uint32_t readbits (struct cpifaceSessionAPI_t *cpifaceSession, uint8_t n)
 {
 	uint32_t retval=0;
 	int offset = 0;
@@ -190,7 +191,7 @@ static inline uint32_t readbits(uint8_t n)
 
 		if (!bitlen)
 		{
-			fprintf(stderr, "readbits: ran out of buffer\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] readbits() ran out of buffer\n");
 			return 0;
 		}
 
@@ -252,7 +253,7 @@ static int freeblock(void)          /* frees that block again */
  *                            returns: status                     )
  */
 
-int __attribute__ ((visibility ("internal"))) decompress8 (struct ocpfilehandle_t *module, void *dst, int len, char it215)
+int __attribute__ ((visibility ("internal"))) decompress8 (struct cpifaceSessionAPI_t *cpifaceSession, struct ocpfilehandle_t *module, void *dst, int len, char it215)
 {
 	sbyte *destbuf;   /* the destination buffer which will be returned */
 
@@ -288,13 +289,13 @@ int __attribute__ ((visibility ("internal"))) decompress8 (struct ocpfilehandle_
 		{
 			sbyte v;
 
-			value = readbits(width); /* read bits */
+			value = readbits (cpifaceSession, width); /* read bits */
 
 			if (width<7) /* method 1 (1-6 bits) */
 			{
 				if (value==(1<<(width-1))) /* check for "100..." */
 				{
-					value = readbits(3)+1;                /* yes -> read new width; */
+					value = readbits (cpifaceSession, 3)+1;                /* yes -> read new width; */
 					width = (value<width)?value:value+1;  /* and expand it */
 					continue;                             /* ... next value */
 				}
@@ -356,7 +357,7 @@ int __attribute__ ((visibility ("internal"))) decompress8 (struct ocpfilehandle_
  *                                      compression flag
  *                             returns: status                     )
  */
-int __attribute__ ((visibility ("internal"))) decompress16(struct ocpfilehandle_t *module, void *dst, int len, char it215)
+int __attribute__ ((visibility ("internal"))) decompress16 (struct cpifaceSessionAPI_t *cpifaceSession, struct ocpfilehandle_t *module, void *dst, int len, char it215)
 {
 	sword *destbuf;   /* the destination buffer which will be returned */
 
@@ -393,13 +394,13 @@ int __attribute__ ((visibility ("internal"))) decompress16(struct ocpfilehandle_
 		{
 			sword v;
 
-			value = readbits(width); /* read bits */
+			value = readbits (cpifaceSession, width); /* read bits */
 
 			if (width<7) /* method 1 (1-6 bits) */
 			{
 				if (value==((unsigned)1<<(width-(unsigned)1))) /* check for "100..." */
 				{
-					value = readbits(4)+1;                /* yes -> read new width; */
+					value = readbits (cpifaceSession, 4)+1;                /* yes -> read new width; */
 					width = (value<width)?value:value+1;  /* and expand it */
 					continue;                             /* ... next value */
 				}

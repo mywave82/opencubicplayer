@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "types.h"
+#include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "filesel/filesystem.h"
 #include "stuff/err.h"
@@ -77,7 +78,7 @@ static inline uint32_t swapb2(uint16_t a)
  *      8 - Ignore "END OF TUNE" command (F00) "barbrian.MOD" - unsure which tracker it is made with
  */
 
-static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, int sig, int opt)
+static int loadmod (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file, int chan, int sig, int opt)
 {
 	uint32_t l;
 	unsigned int i;
@@ -87,8 +88,9 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 	uint16_t t;
 	uint8_t *temppat;
 
-/*
-	fprintf(stderr, "loadmod enter, chan=%d sig=%d opt=%d\n", chan, sig, opt);*/
+#ifdef XM_LOAD_DEBUG
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] chan=%d sig=%d opt=0x%x\n", chan, sig, opt);
+#endif
 
 	m->envelopes=0;
 	m->samples=0;
@@ -105,7 +107,7 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 	file->seek_set (file, 1080);
 	if (ocpfilehandle_read_uint32_le (file, &l))
 	{
-		fprintf(stderr, __FILE__ ": warning: fread() failed #1\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] warning: read() failed #1\n");
 		l=0;
 	}
 
@@ -113,8 +115,8 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 	m->nchan=0;
 
 #ifdef XM_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": CHECKING FILE SIGNATURE\n");
-	fprintf(stderr, __FILE__ ": signature: %c%c%c%c\n", (l>>24)&255, (l>>16)&255, (l>>8)&255, l&255);
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] CHECKING FILE SIGNATURE\n");
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] signature: %c%c%c%c\n", (l>>24)&255, (l>>16)&255, (l>>8)&255, l&255);
 #endif
 
 	switch (l)
@@ -193,8 +195,8 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 		return errFormSig;
 
 #ifdef XM_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": channels=%d\n", m->nchan);
-	fprintf(stderr, __FILE__ ": ninst=%d\n", m->ninst);
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] channels=%d\n", m->nchan);
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] ninst=%d\n", m->ninst);
 #endif
 
 	m->nsampi=m->ninst;
@@ -208,7 +210,7 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 	file->seek_set (file, 0);
 	if (file->read (file, m->name, 20) != 20)
 	{
-		fprintf(stderr, __FILE__ ": warning: fread() failed #2\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] warning: read() failed #2\n");
 	}
 	m->name[20]=0;
 
@@ -216,8 +218,8 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 		m->panpos[i]=((i*3)&2)?0xFF:0x00;
 
 #ifdef XM_LOAD_DEBUG
-	fprintf(stderr, __FILE__ "\n");
-	fprintf(stderr, __FILE__ ": LOADING INSTRUMENT INFORMATION\n");
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD]\n");
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] LOADING INSTRUMENT INFORMATION\n");
 #endif
 
 	for (i=0; i<m->ninst; i++)
@@ -238,16 +240,16 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 
 		if (file->read (file, &mi, sizeof (mi)) != sizeof (mi))
 		{
-			fprintf(stderr, __FILE__ ": warning: fread() failed #3\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] warning: read() failed #3\n");
 		}
 
 		length=swapb2(mi.length);
 		loopstart=swapb2(mi.loopstart);
 		looplength=swapb2(mi.looplength);
 #ifdef XM_LOAD_DEBUG
-		fprintf(stderr, __FILE__ ": [%d]\n", i);
-		fprintf(stderr, __FILE__ ": name: %s\n", mi.name);
-		fprintf(stderr, __FILE__ ": length: %d, finetune: %d, volume: %d, loopstart: %d, looplength: %d\n", (int)mi.length, (int)mi.finetune, (int)mi.volume, (int)mi.loopstart, (int)mi.looplength);
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] [%d]\n", i);
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] name: %s\n", mi.name);
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] length: %d, finetune: %d, volume: %d, loopstart: %d, looplength: %d\n", (int)mi.length, (int)mi.finetune, (int)mi.volume, (int)mi.loopstart, (int)mi.looplength);
 #endif
 		if (length<4)
 			length=0;
@@ -298,36 +300,36 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 	if (ocpfilehandle_read_uint8 (file, &ordn))
 	{
 		ordn = 0;
-		fprintf(stderr, "xmlmod.c: warning: fread() failed #4\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] warning: read() failed #4\n");
 		return errFileRead;
 	}
 
 	if (!ordn)
 	{
-		fprintf (stderr, "xmlmod.c: error, order count == 0\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] error, order count == 0\n");
 		return errFormSig;
 	}
 	if (ocpfilehandle_read_uint8 (file, &loopp))
 	{
 		loopp = 0;
-		fprintf(stderr, "xmlmod.c: warning: fread() failed #5\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] warning: read() failed #5\n");
 	}
 	if (file->read (file, orders, 128) != 128)
 	{
-		fprintf(stderr, "xmlmod.c: warning: fread() failed #6\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] warning: read() failed #6\n");
 	}
 
 #ifdef XM_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": \n");
-	fprintf(stderr, __FILE__ ": LOADING ORDER DATA\n");
-	fprintf(stderr, __FILE__ ": ordn: %d\n", (int)ordn);
-	fprintf(stderr, __FILE__ ": loopp: %d\n", (int)loopp);
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] \n");
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] LOADING ORDER DATA\n");
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] ordn: %d\n", (int)ordn);
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] loopp: %d\n", (int)loopp);
 	{
 		int i;
-		fprintf(stderr, "orders: {");
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] orders: {");
 		for (i=0;i<128;i++)
-			fprintf(stderr, "%s%d", i?", ":"", orders[i]);
-		fprintf(stderr, "}\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "%s%d", i?", ":"", orders[i]);
+		cpifaceSession->cpiDebug (cpifaceSession, "}\n");
 	}
 #endif
 
@@ -351,7 +353,7 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 
 
 #ifdef XM_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": Highest pattern found: %d\n", pn);
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] Highest pattern found: %d\n", pn);
 #endif
 	pn++;
 
@@ -364,8 +366,8 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 	m->inibpm=125;
 
 #ifdef XM_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": current file offset: %d\n", (int)file->getpos (file));
-	fprintf(stderr, __FILE__ ": skip signature? %d\n", sig);
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] current file offset: %d\n", (int)file->getpos (file));
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] skip signature? %d\n", sig);
 #endif
 	if (sig)
 	{
@@ -404,7 +406,7 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 
 		if (file->read (file, temppat, 256 * m->nchan) != (256 * m->nchan))
 		{
-			fprintf(stderr, "xmlmod.c: warning: fread() failed #7\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] warning: read() failed #7\n");
 		}
 
 		for (j=0; j<(64*m->nchan); j++)
@@ -448,7 +450,7 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 			if ((opt&8) && (dp[3]==15) && (dp[4]==0)) /* barbarian.mod and some few others has some broken "end" commands here and there */
 				dp[3]=0;
 /*
-			fprintf(stderr, "dp[3]=%d dp[4]=%d\n", dp[3], dp[4]); */
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] dp[3]=%d dp[4]=%d\n", dp[3], dp[4]); */
 
 			sp+=4;
 			dp+=5;
@@ -456,8 +458,8 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 	}
 	free(temppat);
 #ifdef XM_LOAD_DEBUG
-	fprintf(stderr, __FILE__ "\n");
-	fprintf(stderr, __FILE__ ": LOADING SAMPLE DATA\n");
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD]\n");
+	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] LOADING SAMPLE DATA\n");
 #endif
 	for (i=0; i<m->ninst; i++)
 	{
@@ -467,20 +469,20 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 		struct sampleinfo *sip=&m->sampleinfos[i];
 		size_t result;
 #ifdef XM_LOAD_DEBUG
-		fprintf(stderr, __FILE__ ": [%d]\n", i);
-		fprintf(stderr, __FILE__ ": sp->handle=%04x (0xffff implies not to load data)\n", sp->handle);
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] [%d]\n", i);
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] sp->handle=%04x (0xffff implies not to load data)\n", sp->handle);
 #endif
 		if (sp->handle==0xFFFF) /* TODO, can this EVER occure??.. It can now, but if it behaves correct is unknown */
 			continue;
 		sip->ptr=calloc(sizeof(uint8_t)*sip->length+8, 1);
 #ifdef XM_LOAD_DEBUG
-		fprintf(stderr, __FILE__ ": sip->ptr=%p\n", sip->ptr);
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] sip->ptr=%p\n", sip->ptr);
 #endif
 		if (!sip->ptr)
 			return errAllocMem;
 		if ((result = file->read (file, sip->ptr, sip->length)) != sip->length)
 		{
-			fprintf(stderr, "xmlmod.c: warning: fread() failed #8 (%d of %d)\n", (int)result, (unsigned int)sip->length);
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] warning: read() failed #8 (%d of %d)\n", (int)result, (unsigned int)sip->length);
 		}
 		sp->handle=i;
 	}
@@ -488,42 +490,42 @@ static int loadmod(struct xmodule *m, struct ocpfilehandle_t *file, int chan, in
 	return errOk;
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadMOD(struct xmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadMOD (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
-	return loadmod(m, file, 0, 1, 8);
+	return loadmod (cpifaceSession, m, file, 0, 1, 8);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadMODt(struct xmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadMODt (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
-	return loadmod(m, file, 0, 1, 2);
+	return loadmod (cpifaceSession, m, file, 0, 1, 2);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadMODd(struct xmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadMODd (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
-	return loadmod(m, file, 0, 1, 1);
+	return loadmod (cpifaceSession, m, file, 0, 1, 1);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadM31(struct xmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadM31 (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
-	return loadmod(m, file, 4, 2, 0);
+	return loadmod (cpifaceSession, m, file, 4, 2, 0);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadM15(struct xmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadM15 (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
-	return loadmod(m, file, 4, 0, 0);
+	return loadmod (cpifaceSession, m, file, 4, 0, 0);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadM15t(struct xmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadM15t (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
-	return loadmod(m, file, 4, 0, 2);
+	return loadmod (cpifaceSession, m, file, 4, 0, 2);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadWOW(struct xmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadWOW (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
-	return loadmod(m, file, 8, 1, 2);
+	return loadmod (cpifaceSession, m, file, 8, 1, 2);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadMODf(struct xmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadMODf (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
-	return loadmod(m, file, 0, 1, 4);
+	return loadmod (cpifaceSession, m, file, 0, 1, 4);
 }

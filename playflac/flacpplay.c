@@ -207,6 +207,7 @@ static void flacCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static int flacOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *flacf)
 {
+	int retval;
 	const char *filename;
 	struct flacinfo inf;
 
@@ -214,14 +215,14 @@ static int flacOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 		return -1;
 
 	cpifaceSession->dirdb->GetName_internalstr (flacf->dirdb_ref, &filename);
-	fprintf(stderr, "preloading %s...\n", filename);
+	cpifaceSession->cpiDebug (cpifaceSession, "[FLAC] preloading %s...\n", filename);
 
 	cpifaceSession->IsEnd = flacLooped;
 	cpifaceSession->ProcessKey = flacProcessKey;
 	cpifaceSession->DrawGStrings = flacDrawGStrings;
 
-	if (!flacOpenPlayer(flacf, cpifaceSession))
-		return -1;
+	if ((retval = flacOpenPlayer(flacf, cpifaceSession)))
+		return retval;
 
 	starttime = clock_ms();
 	cpifaceSession->InPause = 0;

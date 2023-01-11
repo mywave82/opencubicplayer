@@ -190,13 +190,13 @@ class CProvider_Mem: public CFileProvider
 	private:
 		char *filename;
 		struct ocpfilehandle_t *file;
-		const struct dirdbAPI_t *dirdbAPI;
+		struct cpifaceSessionAPI_t *cpifaceSession;
 		uint8_t *file_data;
 		int file_size;
 
 	public:
-		CProvider_Mem(const char *filename, struct ocpfilehandle_t *file, const struct dirdbAPI_t *dirdbAPI, uint8_t *file_data, int file_size) :
-			dirdbAPI(dirdbAPI),
+		CProvider_Mem(const char *filename, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *file_data, int file_size) :
+			cpifaceSession(cpifaceSession),
 			file_data(file_data),
 			file_size(file_size)
 		{
@@ -223,14 +223,14 @@ binistream *CProvider_Mem::open(std::string filename) const
 	{
 		retval = new binisstream(this->file_data, this->file_size);
 	} else {
-		uint32_t d = dirdbAPI->FindAndRef (file->origin->parent->dirdb_ref, filename.c_str(), dirdb_use_children);
+		uint32_t d = cpifaceSession->dirdb->FindAndRef (file->origin->parent->dirdb_ref, filename.c_str(), dirdb_use_children);
 
-		fprintf (stderr, "[OPL] Also need %s\n", filename.c_str());
+		cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] Also need file \"%s\"\n", filename.c_str());
 
 		if (d != UINT32_MAX)
 		{
 			struct ocpfile_t *f = file->origin->parent->readdir_file (file->origin->parent, d);
-			dirdbAPI->Unref (d, dirdb_use_children);
+			cpifaceSession->dirdb->Unref (d, dirdb_use_children);
 			if (f)
 			{
 				struct ocpfilehandle_t *file = f->open (f);
@@ -249,7 +249,7 @@ binistream *CProvider_Mem::open(std::string filename) const
 						{
 							if (buffersize >= 16*1024*1024)
 							{
-								fprintf (stderr, "CProvider_Mem: %s is bigger than 16 Mb - further loading blocked\n", filename.c_str());
+								cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] \"%s\" is bigger than 16 Mb - further loading blocked\n", filename.c_str());
 								break;
 							}
 							buffersize += 16*1024;
@@ -268,10 +268,10 @@ binistream *CProvider_Mem::open(std::string filename) const
 					}
 					file->unref (file);
 				} else {
-					fprintf (stderr, "[OPL] Unable to open %s\n", filename.c_str());
+					cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] Unable to open %s\n", filename.c_str());
 				}
 			} else {
-				fprintf (stderr, "[OPL] Unable to find %s\n", filename.c_str());
+				cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] Unable to find %s\n", filename.c_str());
 			}
 		}
 	}
@@ -311,10 +311,11 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 
 	opl = new Cocpopl(oplRate);
 
-	CProvider_Mem prMem (filename, file, cpifaceSession->dirdb, content, len);
+	CProvider_Mem prMem (filename, file, cpifaceSession, content, len);
 	if (!(p = CAdPlug::factory(filename, opl, CAdPlug::players, prMem)))
 	{
 		delete (opl);
+		cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] Failed to load file\n");
 		return errFormStruc;
 	}
 

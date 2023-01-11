@@ -22,7 +22,7 @@
  * ENVELOPES & SUSTAIN!!!
  */
 
-static int _mpLoadAMS_v2_Instruments(struct gmdmodule *m, struct ocpfilehandle_t *file, const uint16_t filever, uint8_t shadowedby[256], unsigned int *instsampnum, struct sampleinfo **smps, struct gmdsample **msmps)
+static int _mpLoadAMS_v2_Instruments (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file, const uint16_t filever, uint8_t shadowedby[256], unsigned int *instsampnum, struct sampleinfo **smps, struct gmdsample **msmps)
 {
 	int i, j;
 
@@ -53,20 +53,20 @@ static int _mpLoadAMS_v2_Instruments(struct gmdmodule *m, struct ocpfilehandle_t
 
 		shadowedby[i]=0;
 
-		if (readPascalString (file, ip->name, sizeof (ip->name), "instrument.name"))
+		if (readPascalString (cpifaceSession, file, ip->name, sizeof (ip->name), "instrument.name"))
 		{
-			fprintf (stderr, "AMSv2 loader: read instrument %d named failed\n", i + 1);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read instrument %d named failed\n", i + 1);
 			return errFormStruc;
 		}
-		DEBUG_PRINTF (stderr, "instrument[%d].name=\"%s\"\n", i, ip->name);
+		DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].name=\"%s\"\n", i, ip->name);
 
 		if (ocpfilehandle_read_uint8 (file, &smpnum))
 		{
-			fprintf (stderr, "AMSv2 loader: read instrument %d sample count failed\n", i + 1);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read instrument %d sample count failed\n", i + 1);
 			return errFormStruc;
 		}
 		instsampnum[i]=smpnum;
-		DEBUG_PRINTF (stderr, "instrument[%d].samples=0x%02"PRIx8"\n", i, smpnum);
+		DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].samples=0x%02"PRIx8"\n", i, smpnum);
 
 		if (!smpnum)
 			continue;
@@ -83,13 +83,13 @@ static int _mpLoadAMS_v2_Instruments(struct gmdmodule *m, struct ocpfilehandle_t
 			bzero (samptab, sizeof (samptab));
 			if (file->read (file, samptab+12, 96) != 96)
 			{
-				fprintf (stderr, "AMSv2 loader: read instrument %d (old style) sample tab failed\n", i + 1);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read instrument %d (old style) sample tab failed\n", i + 1);
 				return errFormStruc;
 			}
 		} else {
 			if (file->read (file, samptab, sizeof (samptab)) != sizeof (samptab))
 			{
-				fprintf (stderr, "AMSv2 loader: read instrument %d (new style) sample tab failed\n", i + 1);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read instrument %d (new style) sample tab failed\n", i + 1);
 				return errFormStruc;
 			}
 		}
@@ -101,23 +101,23 @@ static int _mpLoadAMS_v2_Instruments(struct gmdmodule *m, struct ocpfilehandle_t
 			 */
 			if (file->read (file, &envs[j], 5) != 5)
 			{
-				fprintf (stderr, "AMSv2 loader: read instrument %d envelope %d main data failed\n", i + 1, j + 1);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read instrument %d envelope %d main data failed\n", i + 1, j + 1);
 				return errFormStruc;
 			}
-			DEBUG_PRINTF (stderr, "instrument[%d].env[%d].speed=0x%02x\n", i, j, envs[j].speed);
-			DEBUG_PRINTF (stderr, "instrument[%d].env[%d].sustain=0x%02x\n", i, j, envs[j].sustain);
-			DEBUG_PRINTF (stderr, "instrument[%d].env[%d].loopstart=0x%02x\n", i, j, envs[j].loopstart);
-			DEBUG_PRINTF (stderr, "instrument[%d].env[%d].loopend=0x%02x\n", i, j, envs[j].loopend);
-			DEBUG_PRINTF (stderr, "instrument[%d].env[%d].points=0x%02x\n", i, j, envs[j].points);
+			DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].env[%d].speed=0x%02x\n", i, j, envs[j].speed);
+			DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].env[%d].sustain=0x%02x\n", i, j, envs[j].sustain);
+			DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].env[%d].loopstart=0x%02x\n", i, j, envs[j].loopstart);
+			DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].env[%d].loopend=0x%02x\n", i, j, envs[j].loopend);
+			DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].env[%d].points=0x%02x\n", i, j, envs[j].points);
 
 			if (envs[j].points>64)
 			{
-				fprintf (stderr, "AMSv2 loader: instrument %d envelope %d has too many points\n", i + 1, j + 1);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] instrument %d envelope %d has too many points\n", i + 1, j + 1);
 				return errFormStruc;
 			}
 			if (file->read (file, envs[j].data, envs[j].points*3) != envs[j].points*3)
 			{
-				fprintf (stderr, "AMSv2 loader: read instrument %d envelope %d points failed\n", i + 1, j + 1);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read instrument %d envelope %d points failed\n", i + 1, j + 1);
 				return errFormStruc;
 			}
 		}
@@ -126,10 +126,10 @@ static int _mpLoadAMS_v2_Instruments(struct gmdmodule *m, struct ocpfilehandle_t
 
 		if (ocpfilehandle_read_uint8 (file, &shadowinst))
 		{
-			fprintf (stderr, "AMSv2 loader: read instrument %d shadow instrument / (vibration sweep) failed\n", i + 1);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read instrument %d shadow instrument / (vibration sweep) failed\n", i + 1);
 			return errFormStruc;
 		}
-		DEBUG_PRINTF (stderr, "instrument[%d].shadowinst=0x%02"PRIx8"\n", i, shadowinst);
+		DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].shadowinst=0x%02"PRIx8"\n", i, shadowinst);
 
 		if (filever==0x201)
 		{
@@ -141,17 +141,17 @@ static int _mpLoadAMS_v2_Instruments(struct gmdmodule *m, struct ocpfilehandle_t
 
 		if (ocpfilehandle_read_uint16_le (file, &volfade))
 		{
-			fprintf (stderr, "AMSv2 loader: read instrument %d volume fade failed\n", i + 1);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read instrument %d volume fade failed\n", i + 1);
 			return errFormStruc;
 		}
-		DEBUG_PRINTF (stderr, "instrument[%d].volfade=0x%04"PRIx16"\n", i, volfade);
+		DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].volfade=0x%04"PRIx16"\n", i, volfade);
 
 		if (ocpfilehandle_read_uint16_le (file, &envflags))
 		{
-			fprintf (stderr, "AMSv2 loader: read instrument %d envelope flags failed\n", i + 1);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read instrument %d envelope flags failed\n", i + 1);
 			return errFormStruc;
 		}
-		DEBUG_PRINTF (stderr, "instrument[%d].envflags=0x%04"PRIx16"\n", i, envflags);
+		DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].envflags=0x%04"PRIx16"\n", i, envflags);
 
 		pchint=(volfade>>12)&3;
 		volfade&=0xFFF;
@@ -177,7 +177,7 @@ static int _mpLoadAMS_v2_Instruments(struct gmdmodule *m, struct ocpfilehandle_t
 
 				int t;
 
-				DEBUG_PRINTF (stderr, "instrument[%d].envflags %d => engage\n", i, j);
+				DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].envflags %d => engage\n", i, j);
 
 				for (t=1; t<envs[j].points; t++)
 					envlen+=((envs[j].data[t][1]&1)<<8)|envs[j].data[t][0];
@@ -293,29 +293,29 @@ static int _mpLoadAMS_v2_Instruments(struct gmdmodule *m, struct ocpfilehandle_t
 			sp->pchenv=0xFFFF;
 			sp->volfade=0xFFFF;
 
-			if (readPascalString (file, sp->name, sizeof (sp->name), "sample.name"))
+			if (readPascalString (cpifaceSession, file, sp->name, sizeof (sp->name), "sample.name"))
 			{
-				fprintf (stderr, "AMSv2 loader: read instrument %d sample %d name failed\n", i + 1, j + 1);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read instrument %d sample %d name failed\n", i + 1, j + 1);
 				return errFormStruc;
 
 			}
-			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].name=\"%s\"\n", i, j, sp->name);
+			DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].sample[%d].name=\"%s\"\n", i, j, sp->name);
 
 			if (ocpfilehandle_read_uint32_le (file, &sip->length))
 			{
 				sip->length = 0;
-				fprintf (stderr, "AMSv2 loader: read instrument %d sample %d length failed\n", i + 1, j + 1);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read instrument %d sample %d length failed\n", i + 1, j + 1);
 				return errFormStruc;
 
 			}
-			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].length=0x%08"PRIx32"\n", i, j, sip->length);
+			DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].sample[%d].length=0x%08"PRIx32"\n", i, j, sip->length);
 
 			if (!sip->length)
 				continue;
 
 			if (file->read (file, &amssmp, sizeof(amssmp)) != sizeof(amssmp))
 			{
-				fprintf (stderr, "AMSv2 loader: read instrument %d sample %d header failed\n", i + 1, j + 1);
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read instrument %d sample %d header failed\n", i + 1, j + 1);
 				return errFormStruc;
 			}
 			amssmp.loopstart = uint32_little (amssmp.loopstart);
@@ -323,14 +323,14 @@ static int _mpLoadAMS_v2_Instruments(struct gmdmodule *m, struct ocpfilehandle_t
 			amssmp.samprate  = uint16_little (amssmp.samprate);
 			amssmp.rate      = uint16_little (amssmp.rate);
 
-			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].loopstart=0x%08"PRIx32"\n", i, j, amssmp.loopstart);
-			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].loopend=0x%08"PRIx32"\n", i, j, amssmp.loopend);
-			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].samprate=0x%04"PRIx16"\n", i, j, amssmp.samprate);
-			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].panfine=0x%02"PRIx8"\n", i, j, amssmp.panfine);
-			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].rate=0x%04"PRIx16"\n", i, j, amssmp.rate);
-			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].relnote=0x%02"PRIx8"\n", i, j, (uint8_t)amssmp.relnote);
-			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].vol=0x%02"PRIx8"\n", i, j, amssmp.vol);
-			DEBUG_PRINTF (stderr, "instrument[%d].sample[%d].flags=0x%02"PRIx8"\n", i, j, amssmp.flags);
+			DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].sample[%d].loopstart=0x%08"PRIx32"\n", i, j, amssmp.loopstart);
+			DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].sample[%d].loopend=0x%08"PRIx32"\n", i, j, amssmp.loopend);
+			DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].sample[%d].samprate=0x%04"PRIx16"\n", i, j, amssmp.samprate);
+			DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].sample[%d].panfine=0x%02"PRIx8"\n", i, j, amssmp.panfine);
+			DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].sample[%d].rate=0x%04"PRIx16"\n", i, j, amssmp.rate);
+			DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].sample[%d].relnote=0x%02"PRIx8"\n", i, j, (uint8_t)amssmp.relnote);
+			DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].sample[%d].vol=0x%02"PRIx8"\n", i, j, amssmp.vol);
+			DEBUG_PRINTF ("[GMD/AMS v2] instrument[%d].sample[%d].flags=0x%02"PRIx8"\n", i, j, amssmp.flags);
 
 			sp->stdpan=(amssmp.panfine&0xF0)?((amssmp.panfine>>4)*0x11):-1;
 			sp->stdvol=amssmp.vol*2;
@@ -356,7 +356,7 @@ static int _mpLoadAMS_v2_Instruments(struct gmdmodule *m, struct ocpfilehandle_t
 	return errOk;
 }
 
-static int _mpLoadAMS_v2_LoadPattern (struct gmdmodule *m, struct ocpfilehandle_t *file, struct AMSPattern *pattern, uint8_t **buffer, uint32_t *buflen, int patternindex, int nopatterns, int nteoffset, int nte1keyoff)
+static int _mpLoadAMS_v2_LoadPattern (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file, struct AMSPattern *pattern, uint8_t **buffer, uint32_t *buflen, int patternindex, int nopatterns, int nteoffset, int nte1keyoff)
 {
 	uint32_t patlen;
 	uint32_t patpos;
@@ -364,7 +364,7 @@ static int _mpLoadAMS_v2_LoadPattern (struct gmdmodule *m, struct ocpfilehandle_
 
 	if (ocpfilehandle_read_uint32_le (file, &patlen))
 	{
-		fprintf (stderr, "AMS loader: read pattern %d/%d length failed\n", patternindex + 1, nopatterns);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read pattern %d/%d length failed\n", patternindex + 1, nopatterns);
 		patlen = 0;
 		return errFormStruc;
 	}
@@ -383,13 +383,13 @@ static int _mpLoadAMS_v2_LoadPattern (struct gmdmodule *m, struct ocpfilehandle_
 
 		if (file->read (file, &rowcount, 1) != 1)
 		{
-			fprintf (stderr, "AMSv2 loader: read pattern %d/%d row count failed\n", patternindex + 1, nopatterns);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read pattern %d/%d row count failed\n", patternindex + 1, nopatterns);
 			return errFormStruc;
 		}
 #if 0
 		if (rowcount > 127)
 		{
-			fprintf (stderr, "AMSv2 loader: read pattern %d/%d rowcount %d  > 128\n", patternindex + 1, nopatterns, (int)rowcount + 1);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read pattern %d/%d rowcount %d  > 128\n", patternindex + 1, nopatterns, (int)rowcount + 1);
 				return errFormStruc;
 		}
 #endif
@@ -397,7 +397,7 @@ static int _mpLoadAMS_v2_LoadPattern (struct gmdmodule *m, struct ocpfilehandle_
 
 		if (file->read (file, &cmdschns, 1) != 1)
 		{
-			fprintf (stderr, "AMSv2 loader: read pattern %d/%d reserved (cmds/chns) byte failed\n", patternindex + 1, nopatterns);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read pattern %d/%d reserved (cmds/chns) byte failed\n", patternindex + 1, nopatterns);
 			return errFormStruc;
 		}
 
@@ -407,17 +407,17 @@ static int _mpLoadAMS_v2_LoadPattern (struct gmdmodule *m, struct ocpfilehandle_
 		}
 
 
-		if (readPascalString (file, pp->name, sizeof (pp->name), ""))
+		if (readPascalString (cpifaceSession, file, pp->name, sizeof (pp->name), ""))
 		{
-			fprintf (stderr, "AMSv2 loader: read pattern %d/%d name failed\n", patternindex + 1, nopatterns);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read pattern %d/%d name failed\n", patternindex + 1, nopatterns);
 			return errFormStruc;
 		}
-		DEBUG_PRINTF (stderr, "pattern[%d].name=\"%s\"\n", patternindex, pp->name);
+		DEBUG_PRINTF ("[GMD/AMS v2] pattern[%d].name=\"%s\"\n", patternindex, pp->name);
 
 		oldpos = file->getpos (file) - oldpos;
 		if (oldpos > patlen)
 		{
-			fprintf (stderr, "AMSv2 loader: pattern %d/%d header crossed pattern buffer boundary\n", patternindex + 1, nopatterns);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] pattern %d/%d header crossed pattern buffer boundary\n", patternindex + 1, nopatterns);
 			return errFormStruc;
 		}
 		patlen -= oldpos;
@@ -435,7 +435,7 @@ static int _mpLoadAMS_v2_LoadPattern (struct gmdmodule *m, struct ocpfilehandle_
 	}
 	if (file->read (file, *buffer, patlen) != patlen)
 	{
-		fprintf (stderr, "AMS loader: read pattern %d/%d data (patlen=%d) failed\n", patternindex + 1, nopatterns, patlen);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read pattern %d/%d data (patlen=%d) failed\n", patternindex + 1, nopatterns, patlen);
 		return errFormStruc;
 	}
 
@@ -489,11 +489,11 @@ command:
 		uint8_t b1;
 		uint8_t ch = b0 & 0x1f;
 
-		DEBUG_PRINTF (stderr, "pattern %d row %02x  %02x", patternindex, rowpos, b0);
+		DEBUG_PRINTF ("[GMD/AMS v2] pattern %d row %02x  %02x", patternindex, rowpos, b0);
 
 		if (b0 == 0xff) /* This is not in libmodplug per 20th March 2022 */
 		{
-			DEBUG_PRINTF (stderr, "     no data on row\n");
+			DEBUG_PRINTF ("     no data on row\n");
 			rowpos++;
 			continue;
 		}
@@ -502,12 +502,12 @@ command:
 		{
 			if (patpos >= patlen)
 			{
-				fprintf (stderr, "PATv2 warning buffer overflow attempted #1\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] warning, buffer overflow attempted #1\n");
 				break;
 			}
 			b1 = (*buffer)[patpos++];
 
-			DEBUG_PRINTF (stderr, " %02x NOTE", b1);
+			DEBUG_PRINTF (" %02x NOTE", b1);
 
 			/* note */
 			if (b1 & 0x7f)
@@ -526,7 +526,7 @@ command:
 			pattern->channel[ch].row[rowpos].instrument = (*buffer)[patpos++];
 #else
 			pattern->channel[ch].row[rowpos].instrument = (*buffer)[patpos++];
-			DEBUG_PRINTF (stderr, " %02x INSTRUMENT", pattern->channel[ch].row[rowpos].instrument);
+			DEBUG_PRINTF (" %02x INSTRUMENT", pattern->channel[ch].row[rowpos].instrument);
 			if (pattern->channel[ch].row[rowpos].instrument)
 			{
 				pattern->channel[ch].row[rowpos].instrument--;
@@ -542,15 +542,16 @@ command:
 		{
 			if (patpos >= patlen)
 			{
-				fprintf (stderr, "PATv2 warning buffer overflow attempted #2\n");
+				DEBUG_PRINTF ("\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] warning, buffer overflow attempted #2\n");
 				break;
 			}
 			b1 = (*buffer)[patpos++];
-			DEBUG_PRINTF (stderr, " %02x", b1);
+			DEBUG_PRINTF (" %02x", b1);
 
 			if (b1 & 0x40) /* 1=Low 6 bits are volume/2 */
 			{
-				DEBUG_PRINTF (stderr, " VOL/2");
+				DEBUG_PRINTF (" VOL/2");
 				pattern->channel[ch].row[rowpos].volume = (b1 & 0x3f) << 1;
 				pattern->channel[ch].row[rowpos].fill |= FILL_VOLUME;
 			} else {
@@ -558,11 +559,12 @@ command:
 
 				if (patpos >= patlen)
 				{
-					fprintf (stderr, "PATv2 warning buffer overflow attempted #3\n");
+					DEBUG_PRINTF ("\n");
+					cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] warning, buffer overflow attempted #3\n");
 					break;
 				}
 				b2 = (*buffer)[patpos++];
-				DEBUG_PRINTF (stderr, " %02x CMD+PARAM", b2);
+				DEBUG_PRINTF (" %02x CMD+PARAM", b2);
 
 				cmd = b1 & 0x3f;
 
@@ -596,13 +598,13 @@ command:
 		{
 			rowpos++;
 		}
-		DEBUG_PRINTF (stderr, "\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "\n");
 	}
 
 	return errOk;
 }
 
-static int _mpLoadAMS_v2(struct gmdmodule *m, struct ocpfilehandle_t *file)
+static int _mpLoadAMS_v2 (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	struct __attribute__((packed))
 	{
@@ -640,15 +642,15 @@ static int _mpLoadAMS_v2(struct gmdmodule *m, struct ocpfilehandle_t *file)
 
 	mpReset(m);
 
-	if (readPascalString (file, m->name, sizeof (m->name), "module.name"))
+	if (readPascalString (cpifaceSession, file, m->name, sizeof (m->name), "module.name"))
 	{
-		fprintf (stderr, "AMSv2 loader: read module name failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read module name failed\n");
 		return errFormSig;
 	}
 
 	if (ocpfilehandle_read_uint16_le (file, &filever))
 	{
-		fprintf (stderr, "AMSv2 loader: read module version failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read module version failed\n");
 		return errFormSig;
 	}
 
@@ -657,7 +659,7 @@ static int _mpLoadAMS_v2(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		return errFormOldVer;
 	}
 
-	DEBUG_PRINTF (stderr, "filever=0x%04x\n", filever);
+	DEBUG_PRINTF ("[GMD/AMS v2] filever=0x%04x\n", filever);
 
 	if (filever<=0x0201)
 	{
@@ -678,7 +680,7 @@ static int _mpLoadAMS_v2(struct gmdmodule *m, struct ocpfilehandle_t *file)
 
 		if (file->read (file, &oldhdr, sizeof (oldhdr)) != sizeof (oldhdr))
 		{
-			fprintf (stderr, "AMSv2 loader: read old style header failed\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read old style header failed\n");
 			return errFormSig;
 		}
 		hdr.ins = oldhdr.ins;
@@ -688,16 +690,16 @@ static int _mpLoadAMS_v2(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		hdr.speed = oldhdr.speed;
 		hdr.flags = (oldhdr.flags&0xC0)|0x20;
 
-		DEBUG_PRINTF (stderr, "header.ins=0x%02x\n", oldhdr.ins);
-		DEBUG_PRINTF (stderr, "header.pat=0x%04x\n", hdr.pat);
-		DEBUG_PRINTF (stderr, "header.pos=0x%04x\n", hdr.pos);
-		DEBUG_PRINTF (stderr, "header.bpm=0x%02x\n", oldhdr.bpm);
-		DEBUG_PRINTF (stderr, "header.speed=0x%02x\n", oldhdr.speed);
-		DEBUG_PRINTF (stderr, "header.flags=0x%02x\n", oldhdr.flags);
+		DEBUG_PRINTF ("[GMD/AMS v2] header.ins=0x%02x\n", oldhdr.ins);
+		DEBUG_PRINTF ("[GMD/AMS v2] header.pat=0x%04x\n", hdr.pat);
+		DEBUG_PRINTF ("[GMD/AMS v2] header.pos=0x%04x\n", hdr.pos);
+		DEBUG_PRINTF ("[GMD/AMS v2] header.bpm=0x%02x\n", oldhdr.bpm);
+		DEBUG_PRINTF ("[GMD/AMS v2] header.speed=0x%02x\n", oldhdr.speed);
+		DEBUG_PRINTF ("[GMD/AMS v2] header.flags=0x%02x\n", oldhdr.flags);
 	} else {
 		if (file->read (file, &hdr, sizeof (hdr)) != sizeof (hdr))
 		{
-			fprintf (stderr, "AMSv2 loader: read new style header failed\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read new style header failed\n");
 			return errFormSig;
 		}
 
@@ -706,12 +708,12 @@ static int _mpLoadAMS_v2(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		hdr.bpm = uint16_little (hdr.bpm);
 		hdr.flags = uint16_little (hdr.flags);
 
-		DEBUG_PRINTF (stderr, "header.ins=0x%02x\n", hdr.ins);
-		DEBUG_PRINTF (stderr, "header.pat=0x%04x\n", hdr.pat);
-		DEBUG_PRINTF (stderr, "header.pos=0x%04x\n", hdr.pos);
-		DEBUG_PRINTF (stderr, "header.bpm=0x%02x.%02x\n", hdr.bpm >> 8, hdr.bpm & 0xff);
-		DEBUG_PRINTF (stderr, "header.speed=0x%02x\n", hdr.speed);
-		DEBUG_PRINTF (stderr, "header.flags=0x%04x\n", hdr.flags);
+		DEBUG_PRINTF ("[GMD/AMS v2] header.ins=0x%02x\n", hdr.ins);
+		DEBUG_PRINTF ("[GMD/AMS v2] header.pat=0x%04x\n", hdr.pat);
+		DEBUG_PRINTF ("[GMD/AMS v2] header.pos=0x%04x\n", hdr.pos);
+		DEBUG_PRINTF ("[GMD/AMS v2] header.bpm=0x%02x.%02x\n", hdr.bpm >> 8, hdr.bpm & 0xff);
+		DEBUG_PRINTF ("[GMD/AMS v2] header.speed=0x%02x\n", hdr.speed);
+		DEBUG_PRINTF ("[GMD/AMS v2] header.flags=0x%04x\n", hdr.flags);
 	}
 
 	m->options=((hdr.flags&0x40)?MOD_EXPOFREQ:0)|MOD_EXPOPITCHENV;
@@ -751,42 +753,42 @@ static int _mpLoadAMS_v2(struct gmdmodule *m, struct ocpfilehandle_t *file)
 		goto safeout;
 	}
 
-	retval = _mpLoadAMS_v2_Instruments (m, file, filever, shadowedby, instsampnum, smps, msmps);
+	retval = _mpLoadAMS_v2_Instruments (cpifaceSession, m, file, filever, shadowedby, instsampnum, smps, msmps);
 	if (retval) goto safeout;
 
-	if (readPascalString (file, m->composer, sizeof (m->composer), "composer"))
+	if (readPascalString (cpifaceSession, file, m->composer, sizeof (m->composer), "composer"))
 	{
 		retval=errFormStruc;
 		goto safeout;
 	}
-	DEBUG_PRINTF (stderr, "composer=\"%s\"\n", m->composer);
+	DEBUG_PRINTF ("[GMD/AMS v2] composer=\"%s\"\n", m->composer);
 
 	for (i=0; i<32; i++)
 	{
 		char channelname[12];
-		if (readPascalString (file, channelname, sizeof (channelname), "channelname"))
+		if (readPascalString (cpifaceSession, file, channelname, sizeof (channelname), "channelname"))
 		{
 			retval=errFormStruc;
 			goto safeout;
 		}
-		DEBUG_PRINTF (stderr, "channel[%d].name=\"%s\"\n", i, channelname);
+		DEBUG_PRINTF ("[GMD/AMS v2] channel[%d].name=\"%s\"\n", i, channelname);
 	}
 
 	if (ocpfilehandle_read_uint32_le (file, &packlen))
 	{
 		packlen = 0;
-		fprintf (stderr, "AMSv2 loader: read description total length failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read description total length failed\n");
 		retval=errFormStruc;
 		goto safeout;
 	}
-	DEBUG_PRINTF (stderr, "description.length(packed)=0x%04"PRIx32"\n", packlen);
+	DEBUG_PRINTF ("[GMD/AMS v2] description.length(packed)=0x%04"PRIx32"\n", packlen);
 #warning Implement description... same format as v1 files after decompression?
 
 	file->seek_cur (file, packlen - 4); /* we currently ignore description */
 
 	if (file->read (file, ordlist, 2 * hdr.pos) != 2 * hdr.pos)
 	{
-		fprintf (stderr, "AMSv2 loader: read order list failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read order list failed\n");
 		goto safeout;
 	}
 
@@ -804,574 +806,21 @@ static int _mpLoadAMS_v2(struct gmdmodule *m, struct ocpfilehandle_t *file)
 	m->patterns[hdr.pat].gtrack=m->tracknum-1;
 	m->patterns[hdr.pat].patlen=64;
 
-#if 0
-	temptrack=malloc(sizeof(unsigned char)*4000);
-	if (!temptrack)
-	{
-		retval=errAllocMem;
-		goto safeout;
-	}
-#endif
-
 	m->channum=1; /* files are "fixed" at 32 channels, so we must rely on LoadPattern to detect this */
 
 	for (t=0; t<hdr.pat; t++)
 	{
-#if  1
 		struct AMSPattern pattern;
 
-		retval = _mpLoadAMS_v2_LoadPattern (m, file, &pattern, &buffer, &buflen, t, hdr.pat, (filever == 0x200)?24:10, 1);
+		retval = _mpLoadAMS_v2_LoadPattern (cpifaceSession, m, file, &pattern, &buffer, &buflen, t, hdr.pat, (filever == 0x200)?24:10, 1);
 		if (retval) goto safeout;
 
 		retval = _mpLoadAMS_ConvertPattern (m, file, &pattern, t);
 		if (retval) goto safeout;
-#else
-		uint32_t patlen;
-		uint8_t maxrow;
-		uint8_t chan;
-		/* uint8_t maxcmd; */
-		char patname[11];
-		struct gmdpattern *pp;
-
-		uint8_t *tp;
-		uint8_t *buf;
-		uint8_t *cp;
-		uint16_t row=0;
-		uint8_t another=1;
-
-		struct gmdtrack *trk;
-		uint16_t len;
-
-		DEBUG_PRINTF (stderr, "Pattern=%d/%d\n", t + 1, hdr.pat);
-
-		if (ocpfilehandle_read_uint32_le (file, &patlen))
-		{
-			patlen = 0;
-			fprintf (stderr, "AMSv2 loader: read pattern %d/%d length failed #24\n", t + 1, hdr.pat);
-			retval=errFormStruc;
-			goto safeout;
-		}
-		if (ocpfilehandle_read_uint8 (file, &maxrow))
-		{
-			maxrow = 0;
-			fprintf (stderr, "AMSv2 loader: read pattern %d/%d data failed\n", t + 1, hdr.pat);
-			retval=errFormStruc;
-			goto safeout;
-		}
-		if (ocpfilehandle_read_uint8 (file, &chan))
-		{
-			chan = 0;
-			fprintf (stderr, "AMSv2 loader: read pattern %d/%d PatternLength (#channels) failed\n", t + 1, hdr.pat);
-			retval=errFormStruc;
-			goto safeout;
-		}
-		if (readPascalString (file, patname, sizeof (patname), "pattern"))
-		{
-			fprintf (stderr, "AMSv2 loader: read pattern %d/%d name failed\n", t + 1, hdr.pat);
-			retval=errFormStruc;
-			goto safeout;
-		}
-		patlen-=3+strlen (patname);
-		DEBUG_PRINTF (stderr, "Pattern[%d].name=\"%s\"\n", t, patname);
-		/* maxcmd=chan>>5; */
-		chan&=0x1F;
-		chan++;
-		if (chan>m->channum)
-			m->channum=chan;
-
-		pp=&m->patterns[t];
-		for (i=0; i<32; i++)
-			pp->tracks[i]=t*33+i;
-		pp->gtrack=t*33+32;
-		pp->patlen=maxrow+1;
-		strcpy(pp->name, patname);
-
-		if (patlen>buflen)
-		{
-			buflen=patlen;
-			free(buffer);
-			buffer=malloc(sizeof(unsigned char)*buflen);
-			if (!buffer)
-			{
-				retval=errAllocMem;
-				goto safeout;
-			}
-		}
-		if (file->read (file, buffer, patlen) != patlen)
-		{
-			fprintf (stderr, "AMSv2 loader: read pattern %d/%d data failed\n", t + 1, hdr.pat);
-			retval=errFormStruc;
-			goto safeout;
-		}
-
-		for (i=0; i<chan; i++)
-		{
-			uint8_t *tp=temptrack;
-			uint8_t *buf=buffer;
-
-			unsigned int row=0;
-			uint8_t another=1;
-
-			uint8_t curchan;
-			uint8_t anothercmd;
-			uint8_t nte;
-			uint8_t ins;
-			uint8_t noteporta;
-			int16_t delaynote;
-			uint8_t cmds[7][2];
-			uint8_t cmdnum;
-			int16_t vol;
-			int16_t pan;
-			struct gmdtrack *trk;
-			uint16_t len;
-
-			while (row<=maxrow)
-			{
-				unsigned char *cp;
-
-				if (!another||(*buf==0xFF))
-				{
-					if (another)
-						buf++;
-					row++;
-					another=1;
-					continue;
-				}
-				another=!(*buf&0x80);
-				curchan=*buf&0x1F;
-				anothercmd=1;
-				nte=0;
-				ins=0;
-				noteporta=0;
-				delaynote=-1;
-				cmdnum=0;
-				vol=-1;
-				pan=-1;
-/*
-				if ((ordlist[0]==t)&&!row)
-					pan=(i&1)?0xC0:0x40;
-*/
-				if (!(*buf++&0x40))
-				{
-					anothercmd=*buf&0x80;
-					nte=*buf++&0x7F;
-					ins=*buf++;
-
-					/* taken from Velvet Studio source code, "AMS_Load.asm", Construct20: */
-					if ((nte >= 1) && (filever == 0x200))
-					{
-						nte += 14;
-					}
-				}
-				while (anothercmd)
-				{
-					anothercmd=*buf&0x80;
-					cmds[cmdnum][0]=*buf++&0x7F;
-					if (!(cmds[cmdnum][0]&0x40))
-						switch (cmds[cmdnum][0])
-						{
-							case 0x08:
-								pan=(*buf++&0x0F)*0x11;
-								break;
-							case 0x0C:
-								vol=*buf++*2;
-								break;
-							case 0x03: case 0x05: case 0x15:
-								noteporta=1;
-								cmds[cmdnum++][1]=*buf++;
-								break;
-							case 0x0E:
-								if ((*buf&0xF0)==0xD0)
-									delaynote=*buf&0x0F;
-								cmds[cmdnum++][1]=*buf++;
-								break;
-							default:
-								cmds[cmdnum++][1]=*buf++;
-						} else
-							vol=(cmds[cmdnum][0]&0x3f)*4;
-				}
-				if (curchan!=i)
-					continue;
-
-				cp=tp+2;
-
-				if ((ordlist[0]==t)&&!row)
-					putcmd(&cp, cmdPlayNote|cmdPlayPan, (i&1)?0xC0:0x40);
-
-				if (ins||nte||(vol!=-1)||(pan!=-1))
-				{
-					uint8_t *act=cp;
-
-					*cp++=cmdPlayNote;
-					if (ins)
-					{
-						*act|=cmdPlayIns;
-						*cp++=ins-1;
-					}
-					if (nte>=2)
-					{
-						*act|=cmdPlayNte;
-						*cp++=(nte+10)|(noteporta?0x80:0);
-					}
-					if (vol!=-1)
-					{
-						*act|=cmdPlayVol;
-						*cp++=vol;
-					}
-					if (pan!=-1)
-					{
-						*act|=cmdPlayPan;
-						*cp++=pan;
-					}
-					if (delaynote!=-1)
-					{
-						*act|=cmdPlayDelay;
-						*cp++=delaynote;
-					}
-					if (nte==1)
-						putcmd(&cp, cmdKeyOff, 0);
-				}
-
-				for (j=0; j<cmdnum; j++)
-				{
-					uint8_t data=cmds[j][1];
-					switch (cmds[j][0])
-					{
-						case 0x0:
-							if (data)
-								putcmd(&cp, cmdArpeggio, data);
-							break;
-						case 0x1:
-							putcmd(&cp, cmdPitchSlideUp, data);
-							break;
-						case 0x2:
-							putcmd(&cp, cmdPitchSlideDown, data);
-							break;
-						case 0x3:
-							putcmd(&cp, cmdPitchSlideToNote, data);
-							break;
-						case 0x4:
-							putcmd(&cp, cmdPitchVibrato, data);
-							break;
-						case 0x5:
-							putcmd(&cp, cmdPitchSlideToNote, 0);
-							if (!data)
-								putcmd(&cp, cmdSpecial, cmdContVolSlide);
-							else if (data&0xF0)
-								putcmd(&cp, cmdVolSlideUp, (data>>4)<<2);
-							else
-								putcmd(&cp, cmdVolSlideDown, (data&0xF)<<2);
-							break;
-						case 0x6:
-							putcmd(&cp, cmdPitchVibrato, 0);
-							if (!data)
-								putcmd(&cp, cmdSpecial, cmdContVolSlide);
-							else if (data&0xF0)
-								putcmd(&cp, cmdVolSlideUp, (data>>4)<<2);
-							else
-								putcmd(&cp, cmdVolSlideDown, (data&0xF)<<2);
-							break;
-						case 0x7:
-							putcmd(&cp, cmdVolVibrato, data);
-							break;
-						case 0x9:
-							putcmd(&cp, cmdOffset, data);
-							break;
-						case 0xA:
-							if (!data)
-								putcmd(&cp, cmdSpecial, cmdContVolSlide);
-							else if (data&0xF0)
-								putcmd(&cp, cmdVolSlideUp, (data>>4)<<2);
-							else
-								putcmd(&cp, cmdVolSlideDown, (data&0xF)<<2);
-							break;
-						case 0xE:
-							cmds[j][0]=data>>4;
-							data&=0x0F;
-							switch (cmds[j][0])
-							{
-								case 0x1:
-									putcmd(&cp, cmdRowPitchSlideUp, data<<4);
-									break;
-								case 0x2:
-									putcmd(&cp, cmdRowPitchSlideDown, data<<4);
-									break;
-								case 0x3:
-									putcmd(&cp, cmdSpecial, data?cmdGlissOn:cmdGlissOff);
-									break;
-								case 0x4:
-									if (data<4)
-										putcmd(&cp, cmdPitchVibratoSetWave, data);
-									break;
-								case 0x7:
-									if (data<4)
-										putcmd(&cp, cmdVolVibratoSetWave, data);
-									break;
-								case 0x8:
-									if (!(data&0x0F))
-										putcmd(&cp, cmdSetLoop, 0);
-									break;
-								case 0x9:
-									if (data)
-										putcmd(&cp, cmdRetrig, data);
-									break;
-								case 0xA:
-									putcmd(&cp, cmdRowVolSlideUp, data<<2);
-									break;
-								case 0xB:
-									putcmd(&cp, cmdRowVolSlideDown, data<<2);
-									break;
-								case 0xC:
-									putcmd(&cp, cmdNoteCut, data);
-									break;
-							}
-							break;
-
-						case 0x11:
-							putcmd(&cp, cmdRowPitchSlideUp, data<<2);
-							break;
-						case 0x12:
-							putcmd(&cp, cmdRowPitchSlideDown, data<<2);
-							break;
-						case 0x13:
-							putcmd(&cp, cmdRetrig, data);
-							break;
-						case 0x15:
-							putcmd(&cp, cmdPitchSlideToNote, 0);
-							if (!data)
-								putcmd(&cp, cmdSpecial, cmdContVolSlide);
-							else if (data&0xF0)
-								putcmd(&cp, cmdVolSlideUp, (data>>4)<<1);
-							else
-								putcmd(&cp, cmdVolSlideDown, (data&0xF)<<1);
-							break;
-						case 0x16:
-							putcmd(&cp, cmdPitchVibrato, 0);
-							if (!data)
-								putcmd(&cp, cmdSpecial, cmdContVolSlide);
-							else if (data&0xF0)
-								putcmd(&cp, cmdVolSlideUp, (data>>4)<<1);
-							else
-								putcmd(&cp, cmdVolSlideDown, (data&0xF)<<1);
-							break;
-						case 0x18:
-							if (!data)
-								putcmd(&cp, cmdPanSlide, 0);
-							else if (data&0xF0)
-								putcmd(&cp, cmdPanSlide, data>>4);
-							else
-								putcmd(&cp, cmdPanSlide, -(data&0xF));
-							/*
-							if ((data&0x0F)&&(data&0xF0))
-								break;
-							if (data&0xF0)
-								data=-(data>>4)*4;
-							else
-								data=data*4;
-							putcmd(cp, cmdPanSlide, data);
-							*/
-							break;
-						case 0x1A:
-							if (!data)
-								putcmd(&cp, cmdSpecial, cmdContVolSlide);
-							else
-								if (data&0xF0)
-									putcmd(&cp, cmdVolSlideUp, (data>>4)<<1);
-								else
-									putcmd(&cp, cmdVolSlideDown, (data&0xF)<<1);
-							break;
-						case 0x1E:
-							cmds[j][0]=data>>4;
-							data&=0x0F;
-							switch (cmds[j][0])
-							{
-								case 0x1:
-									putcmd(&cp, cmdRowPitchSlideUp, data<<4);
-									break;
-								case 0x2:
-									putcmd(&cp, cmdRowPitchSlideDown, data<<4);
-									break;
-								case 0xA:
-									putcmd(&cp, cmdRowVolSlideUp, data<<1);
-									break;
-								case 0xB:
-									putcmd(&cp, cmdRowVolSlideDown, data<<1);
-									break;
-							}
-							break;
-						case 0x1C:
-							putcmd(&cp, cmdChannelVol, (data<=0x7F)?(data<<1):0xFF);
-							break;
-						case 0x20:
-							putcmd(&cp, cmdKeyOff, data);
-							break;
-					}
-				}
-
-				if (cp!=(tp+2))
-				{
-					tp[0]=row;
-					tp[1]=cp-tp-2;
-					tp=cp;
-				}
-			}
-
-			trk=&m->tracks[t*33+i];
-			len=tp-temptrack;
-
-			if (!len)
-				trk->ptr=trk->end=0;
-			else {
-				trk->ptr=malloc(sizeof(unsigned char)*len);
-				trk->end=trk->ptr+len;
-				if (!trk->ptr)
-				{
-					retval=errAllocMem;
-					goto safeout;
-				}
-				memcpy(trk->ptr, temptrack, len);
-			}
-		}
-
-		tp=temptrack;
-		buf=buffer;
-
-		cp=tp+2;
-
-		if (ordlist[0]==t)
-		{
-			if (hdr.bpm&0xFF00)
-				putcmd(&cp, cmdTempo, hdr.bpm>>8);
-			if (hdr.bpm&0xFF)
-				putcmd(&cp, cmdFineSpeed, hdr.bpm);
-			putcmd(&cp, cmdTempo, hdr.speed);
-		}
-
-		row=0;
-		another=1;
-		while (row<=maxrow)
-		{
-			uint8_t curchan;
-			uint8_t anothercmd;
-			uint8_t cmds[7][2];
-			uint8_t cmdnum;
-
-			if (!another||(*buf==0xFF))
-			{
-				if (another)
-					buf++;
-				if (cp!=(tp+2))
-				{
-					tp[0]=row;
-					tp[1]=cp-tp-2;
-					tp=cp;
-					cp=tp+2;
-				}
-				row++;
-				another=1;
-				continue;
-			}
-			another=!(*buf&0x80);
-
-			curchan=*buf&0x1F;
-			anothercmd=1;
-			cmdnum=0;
-			if (!(*buf++&0x40))
-			{
-				anothercmd=*buf&0x80;
-				buf+=2;
-			}
-			while (anothercmd)
-			{
-				anothercmd=*buf&0x80;
-				cmds[cmdnum][0]=*buf++&0x7F;
-				if (!(cmds[cmdnum][0]&0x40))
-					cmds[cmdnum++][1]=*buf++;
-			}
-
-			if (curchan>=chan)
-				continue;
-
-			for (j=0; j<cmdnum; j++)
-			{
-				uint8_t data=cmds[j][1];
-				switch (cmds[j][0])
-				{
-					case 0xB:
-						putcmd(&cp, cmdGoto, data);
-						break;
-					case 0xD:
-						putcmd(&cp, cmdBreak, (data&0x0F)+(data>>4)*10);
-						break;
-					case 0x1D:
-						putcmd(&cp, cmdBreak, data);
-						break;
-					case 0xE:
-						switch (data>>4)
-						{
-							case 0x6:
-								putcmd(&cp, cmdSetChan, curchan);
-								putcmd(&cp, cmdPatLoop, data&0xF);
-								break;
-							case 0xE:
-								putcmd(&cp, cmdPatDelay, data&0xF);
-								break;
-						}
-						break;
-					case 0xF:
-						if (data)
-						{
-							if (data<0x20)
-								putcmd(&cp, cmdTempo, data);
-							else
-								putcmd(&cp, cmdSpeed, data);
-						}
-						break;
-					case 0x1F:
-						if (data<10)
-							putcmd(&cp, cmdFineSpeed, data);
-						break;
-					case 0x2A:
-						if ((data&0x0F)&&(data&0xF0))
-							break;
-						putcmd(&cp, cmdSetChan, curchan);
-						if (data&0xF0)
-							putcmd(&cp, cmdGlobVolSlide, (data>>4)<<2);
-						else
-							putcmd(&cp, cmdGlobVolSlide, -(data<<2));
-					case 0x2C:
-						putcmd(&cp, cmdGlobVol, data*2);
-						break;
-				}
-			}
-		}
-
-		trk=&m->tracks[t*33+32];
-		len=tp-temptrack;
-
-		if (!len)
-			trk->ptr=trk->end=0;
-		else {
-			trk->ptr=malloc(sizeof(unsigned char)*len);
-			trk->end=trk->ptr+len;
-			if (!trk->ptr)
-			{
-				retval=errAllocMem;
-				goto safeout;
-			}
-			memcpy(trk->ptr, temptrack, len);
-		}
-#endif
 	}
 	free(ordlist);
-#if 0
-	free(temptrack);
-#endif
 	free(buffer);
 	ordlist=0;
-#if 0
-	temptrack=0;
-#endif
 	buffer=0;
 
 	if (!mpAllocSamples(m, m->sampnum)||!mpAllocModSamples(m, m->modsampnum))
@@ -1405,13 +854,13 @@ static int _mpLoadAMS_v2(struct gmdmodule *m, struct ocpfilehandle_t *file)
 
 	for (i=0; i<m->instnum; i++)
 	{
-		DEBUG_PRINTF (stderr, "Instrument=%d/%d (shadowdby=%d)\n", i + 1, m->instnum, shadowedby[i]);
+		DEBUG_PRINTF ("[GMD/AMS v2] Instrument=%d/%d (shadowdby=%d)\n", i + 1, m->instnum, shadowedby[i]);
 		if (shadowedby[i])
 		{
 			sampnum+=instsampnum[i];
 			continue;
 		}
-		retval = _mpLoadAMS_InstrumentSample (m, file, i, instsampnum, &sampnum);
+		retval = _mpLoadAMS_InstrumentSample (cpifaceSession, m, file, i, instsampnum, &sampnum);
 		if (retval) goto safeout;
 	}
 

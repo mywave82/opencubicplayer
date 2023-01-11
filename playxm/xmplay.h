@@ -108,16 +108,16 @@ enum
 struct ocpfilehandle_t;
 struct cpifaceSessionAPI_t;
 extern int __attribute__ ((visibility ("internal"))) xmpLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMOD  (struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMODt (struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMODd (struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMODf (struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadM31  (struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadM15  (struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadM15t (struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadWOW  (struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMXM  (struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadMOD  (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadMODt (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadMODd (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadMODf (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadM31  (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadM15  (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadM15t (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadWOW  (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+extern int __attribute__ ((visibility ("internal"))) xmpLoadMXM  (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
 extern void __attribute__ ((visibility ("internal"))) xmpFreeModule (struct xmodule *m);
 
 extern int __attribute__ ((visibility ("internal"))) xmpPlayModule (struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);

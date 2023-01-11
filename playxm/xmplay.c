@@ -848,8 +848,9 @@ static void xmpPlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 						if (ch->cursamp->panenv<nenv)
 							if (ch->chPanEnvPos>envelopes[ch->cursamp->panenv].len)
 								ch->chPanEnvPos=envelopes[ch->cursamp->panenv].len;
-					} else
+					} else {
 						fprintf(stderr, __FILE__ " CmdEnvPos ch->cursamp not set\n");
+					}
 					break;
 				case xmpCmdPanSlide:
 					if (procdat)

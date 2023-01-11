@@ -107,6 +107,7 @@ itrtns.o: itrtns.c \
 itsex.o: itsex.c \
 	../config.h \
 	../types.h \
+	../cpiface/cpiface.h \
 	../filesel/filesystem.h \
 	itplay.h \
 	../stuff/imsrtns.h

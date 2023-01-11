@@ -870,25 +870,25 @@ int __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle
 	const int length = file->filesize (file);
 	if (!length)
 	{
-		fprintf (stderr, "[playsid]: FILE is way too small\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[SID] File is way too small\n");
 		return errFormStruc;
 	}
 	if (length > 1024*1024)
 	{
-		fprintf (stderr, "[playsid]: FILE is way too big\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[SID] File is way too big\n");
 		return errFormStruc;
 	}
 
 	unsigned char *buf=new unsigned char[length];
 	if (!buf)
 	{
-		fprintf (stderr, "[playsid]: new() #1 failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[SID] new() #1 failed\n");
 		return errAllocMem;
 	}
 
 	if (file->read (file, buf, length) != length)
 	{
-		fprintf(stderr, "[playsid]: fread failed #1\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[SID] read failed #1\n");
 		retval = errFileRead;
 		goto error_out_buf;
 	}
@@ -896,7 +896,6 @@ int __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle
 	sidRate=0;
 	if (!cpifaceSession->plrDevAPI->Play (&sidRate, &format, file, cpifaceSession))
 	{
-		fprintf (stderr, "[playsid]: plrDevAPI->Play failed\n");
 		retval = errPlay;
 		goto error_out_buf;
 	}
@@ -904,7 +903,7 @@ int __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle
 	mySidPlayer = new libsidplayfp::ConsolePlayer(sidRate, cpifaceSession->configAPI, cpifaceSession->dirdb, cpifaceSession->dmFile);
 	if (!mySidPlayer->load (buf, length))
 	{
-		fprintf (stderr, "[playsid]: loading file failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[SID] loading file failed\n");
 		retval = errFormStruc;
 		goto error_out_mySidPlay;
 	}
@@ -914,7 +913,7 @@ int __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle
 	SidCount = mySidPlayer->getSidCount();
 	if (!mySidTuneInfo)
 	{
-		fprintf (stderr, "[playsid]: retrieve info from file failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[SID] retrieve info from file failed\n");
 		retval = errFormStruc;
 		goto error_out_mySidPlay;
 	}

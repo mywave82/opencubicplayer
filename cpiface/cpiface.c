@@ -48,6 +48,7 @@
 
 #include "config.h"
 #include <fcntl.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -80,6 +81,9 @@
 #include <time.h>
 
 __attribute__ ((visibility ("internal"))) struct cpifaceSessionPrivate_t cpifaceSessionAPI;
+
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define MAX(x, y) (((x) < (y)) ? (x) : (y))
 
 static void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t *cpifaceSession,
                                               const uint64_t                 pos,
@@ -2235,12 +2239,31 @@ static const char *plNoteStr(signed int note)
 	return NoteStr[note];
 };
 
+static void cpiDebug (struct cpifaceSessionAPI_t *cpifaceSession, const char *fmt, ...)
+{
+	va_list va;
+	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
+
+#warning we need to sort out ncurses, since stderr is sacred then later
+	va_start (va, fmt);
+	vfprintf (stderr, fmt, va);
+	va_end (va);
+
+	if (f->cpiDebug_buffill + 1 < sizeof (f->cpiDebug_bufbase))
+	{
+		va_start (va, fmt);
+		vsnprintf (f->cpiDebug_bufbase + f->cpiDebug_buffill, sizeof (f->cpiDebug_bufbase) - 1 - f->cpiDebug_buffill, fmt, va);
+		f->cpiDebug_buffill += strlen (f->cpiDebug_bufbase + f->cpiDebug_buffill);
+		va_end (va);
+	}
+}
+
 static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *fi, const struct cpifaceplayerstruct *cp)
 {
 	struct cpimoderegstruct *mod;
-	int retval;
 	const char *filename;
 
+	bzero (&cpifaceSessionAPI, sizeof (cpifaceSessionAPI));
 	cpifaceSessionAPI.Public.plrDevAPI = plrDevAPI;
 	cpifaceSessionAPI.Public.ringbufferAPI = &ringbufferAPI;
 	cpifaceSessionAPI.Public.mcpAPI = &mcpAPI;
@@ -2256,13 +2279,14 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	utf8_XdotY_name (16, 3, cpifaceSessionAPI.Public.utf8_16_dot_3, filename);
 	cpifaceSessionAPI.Public.mdbdata = *info;
 
+	/*
 	cpifaceSessionAPI.Public.GetRealMasterVolume = 0;
 	cpifaceSessionAPI.Public.GetMasterSample = 0;
 	cpifaceSessionAPI.Public.InPause = 0;
 	cpifaceSessionAPI.Public.LogicalChannelCount = 0;
 	cpifaceSessionAPI.Public.PhysicalChannelCount = 0;
 	cpifaceSessionAPI.Public.DrawGStrings = 0;
-
+	*/
 	cpifaceSessionAPI.Public.UseChannels = plUseChannels;
 	cpifaceSessionAPI.Public.UseDots = plUseDots;
 	cpifaceSessionAPI.Public.UseInstruments = plUseInstruments;
@@ -2274,15 +2298,17 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.KeyHelpClear   = cpiKeyHelpClear;
 	cpifaceSessionAPI.Public.KeyHelpDisplay = cpiKeyHelpDisplay;
 
+	/*
 	cpifaceSessionAPI.Public.SetMuteChannel = 0;
 	bzero (cpifaceSessionAPI.Public.MuteChannel, sizeof(cpifaceSessionAPI.Public.MuteChannel));
 
 	cpifaceSessionAPI.Public.PanType=0;
-
+	*/
 	cpiModes=0;
 
 	plEscTick = 0;
 
+	/*
 	cpifaceSessionAPI.Public.IsEnd = 0;
 	cpifaceSessionAPI.Public.GetLChanSample = 0;
 	cpifaceSessionAPI.Public.GetPChanSample = 0;
@@ -2291,23 +2317,28 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.mcpSet = 0;
 	cpifaceSessionAPI.Public.mcpGet = 0;
 	cpifaceSessionAPI.Public.mcpGetRealVolume = 0;
-
+	*/
 	cpifaceSessionAPI.Public.plNoteStr = plNoteStr;
 	cpifaceSessionAPI.Public.cpiTextRegisterMode = cpiTextRegisterMode;
 	cpifaceSessionAPI.Public.cpiTextUnregisterMode = cpiTextUnregisterMode;
 	cpifaceSessionAPI.Public.cpiTextSetMode = cpiTextSetMode;
 	cpifaceSessionAPI.Public.cpiTextRecalc = cpiTextRecalc;
 	cpifaceSessionAPI.Public.latin1_f_to_utf8_z = latin1_f_to_utf8_z;
+	cpifaceSessionAPI.Public.cpiDebug = cpiDebug;
 
 	curplayer=cp;
 
-	retval=curplayer->OpenFile (&cpifaceSessionAPI.Public, info, fi);
-
-	if (retval)
+	cpifaceSessionAPI.openStatus = curplayer->OpenFile (&cpifaceSessionAPI.Public, info, fi);
+	if (cpifaceSessionAPI.openStatus)
 	{
-		fprintf(stderr, "error: %s\n", errGetShortString(retval));
-		sleep(1);
-		return 0;
+		cpifaceSessionAPI.Public.cpiDebug (&cpifaceSessionAPI.Public, "error: %s\n", errGetShortString(cpifaceSessionAPI.openStatus));
+		if (cpifaceSessionAPI.openStatus == errPlay)
+		{
+			cpifaceSessionAPI.Public.cpiDebug (&cpifaceSessionAPI.Public, "Configuration of playback device driver is accessible in the setup: drive.\n");
+		}
+		curplayer->CloseFile (&cpifaceSessionAPI.Public);
+		curplayer = 0;
+		return 1;
 	}
 
 	pollInit (cpifaceIdle);
@@ -2325,20 +2356,24 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	return 1;
 }
 
-static void plmpCloseFile()
+static void plmpCloseFile (void)
 {
 	pollClose ();
 
-	cpiGetMode(curmodehandle);
-	curplayer->CloseFile (&cpifaceSessionAPI.Public);
-	while (cpiModes)
+	if (curplayer)
 	{
-		cpiModes->Event (&cpifaceSessionAPI.Public, cpievDone);
-		cpiModes=cpiModes->next;
+		cpiGetMode (curmodehandle);
+		curplayer->CloseFile (&cpifaceSessionAPI.Public);
+		while (cpiModes)
+		{
+			cpiModes->Event (&cpifaceSessionAPI.Public, cpievDone);
+			cpiModes = cpiModes->next;
+		}
+		curplayer = 0;
 	}
 }
 
-static void plmpOpenScreen()
+static void plmpOpenScreen (void)
 {
 	cpifaceSessionAPI.Public.SelectedChannelChanged = 0; /* force redraw of selected channel */
 
@@ -2350,7 +2385,7 @@ static void plmpOpenScreen()
 }
 
 
-static void plmpCloseScreen()
+static void plmpCloseScreen (void)
 {
 	curmode->Event (&cpifaceSessionAPI.Public, cpievClose);
 }
@@ -2667,16 +2702,159 @@ superbreak:
 	return interfaceReturnContinue;
 }
 
+static void cpiDebugRecalcLines (const int TargetWidth)
+{
+	char *iter = cpifaceSessionAPI.cpiDebug_bufbase;
+	char *next = 0;
+	int length;
+	int linebreak = 0, linebreakold=0;
+	cpifaceSessionAPI.cpiDebugLastWidth = TargetWidth - 2;
+	cpifaceSessionAPI.cpiDebug_lines = 0;
+	while ((*iter) && (cpifaceSessionAPI.cpiDebug_lines < (sizeof (cpifaceSessionAPI.cpiDebug_line) / sizeof (cpifaceSessionAPI.cpiDebug_line[0]))))
+	{
+		next = strchr (iter, '\n');
+		if (next)
+		{
+			length = next - iter;
+			if (length > cpifaceSessionAPI.cpiDebugLastWidth)
+			{
+				linebreak    = 1;
+				linebreakold = 1;
+				next = iter + cpifaceSessionAPI.cpiDebugLastWidth;
+				length = cpifaceSessionAPI.cpiDebugLastWidth;
+			} else {
+				linebreak    = linebreakold;
+				linebreakold = 0;
+				next++;
+			}
+		} else {
+			length = strlen (iter);
+			next = iter + length;
+		}
+
+		cpifaceSessionAPI.cpiDebug_line[cpifaceSessionAPI.cpiDebug_lines].linebreak = linebreak;
+		cpifaceSessionAPI.cpiDebug_line[cpifaceSessionAPI.cpiDebug_lines].offset    = iter - cpifaceSessionAPI.cpiDebug_bufbase;
+		cpifaceSessionAPI.cpiDebug_line[cpifaceSessionAPI.cpiDebug_lines].length    = length;
+		cpifaceSessionAPI.cpiDebug_lines++;
+		iter = next;
+	}
+}
+
+static void cpiDebugRun (void)
+{
+	int noexit = 1;
+	int mlScroll = 0;
+
+	plSetTextMode(fsScrType);
+
+	while (noexit)
+	{
+		int i;
+		int mlWidth, mlHeight, mlLeft, mlTop;
+
+		mlWidth = MIN (cpifaceSessionAPI.Public.console->TextWidth - 2, 122);
+
+		/* We need to know the number of lines before we calculate mlHeight */
+		if (cpifaceSessionAPI.cpiDebugLastWidth != (mlWidth - 2))
+		{
+			cpiDebugRecalcLines(mlWidth - 2);
+		}
+
+		mlHeight = MAX ( MIN ( cpifaceSessionAPI.Public.console->TextHeight - 2,
+				       cpifaceSessionAPI.cpiDebug_lines + 2 ), 10);
+
+		while (((mlScroll + mlHeight - 2) > cpifaceSessionAPI.cpiDebug_lines) && mlScroll)
+		{
+			mlScroll--;
+		}
+
+		mlLeft = (cpifaceSessionAPI.Public.console->TextWidth - mlWidth) / 2;
+
+		mlTop = (cpifaceSessionAPI.Public.console->TextHeight - mlHeight) / 2;
+
+		for (i=0; i < cpifaceSessionAPI.Public.console->TextHeight; i++)
+		{
+			if ((i < mlTop) || (i >= mlTop + mlHeight))
+			{
+				cpifaceSessionAPI.Public.console->Driver->DisplayVoid (i, 0, cpifaceSessionAPI.Public.console->TextWidth);
+			} else {
+				if (i == mlTop)
+				{
+					cpifaceSessionAPI.Public.console->DisplayPrintf (i, 0, 0x01, cpifaceSessionAPI.Public.console->TextWidth, "%*C \xc9%*C\xcd\xbb", mlLeft, mlWidth - 2);
+				} else if (i == (mlTop + mlHeight - 1))
+				{
+					cpifaceSessionAPI.Public.console->DisplayPrintf (i, 0, 0x01, cpifaceSessionAPI.Public.console->TextWidth, "%*C \xc8%*C\xcd\xbc", mlLeft, mlWidth - 2);
+				} else if ((i - mlTop + mlScroll - 1) >= cpifaceSessionAPI.cpiDebug_lines)
+				{
+					cpifaceSessionAPI.Public.console->DisplayPrintf (i, 0, 0x01, cpifaceSessionAPI.Public.console->TextWidth, "%*C \xba%*C \xba", mlLeft, mlWidth - 2);
+				} else {
+					cpifaceSessionAPI.Public.console->DisplayPrintf (i, 0, 0x01, cpifaceSessionAPI.Public.console->TextWidth, "%*C \xba%0.*o%*.*s%0.1o\xba",
+							/* how many spaces to insert */
+							mlLeft,
+							/* color to use on the text */
+							(((cpifaceSessionAPI.cpiDebug_bufbase + cpifaceSessionAPI.cpiDebug_line[i - mlTop + mlScroll - 1].offset)[0] == '[') ||
+							 cpifaceSessionAPI.cpiDebug_line[i - mlTop + mlScroll - 1].linebreak ) ? 3 : 12,
+							/* target text width */
+							mlWidth - 2,
+							/* source text width */
+							cpifaceSessionAPI.cpiDebug_line[i - mlTop + mlScroll - 1].length,
+							/* source text data */
+							cpifaceSessionAPI.cpiDebug_bufbase + cpifaceSessionAPI.cpiDebug_line[i - mlTop + mlScroll - 1].offset
+					);
+				}
+			}
+		}
+		framelock();
+		while (Console.KeyboardHit())
+		{
+			uint16_t key = Console.KeyboardGetChar();
+			if (key == KEY_UP)
+			{
+				if (mlScroll)
+				{
+					mlScroll--;
+				}
+			} else if (key == KEY_DOWN)
+			{
+				if (((mlScroll + 1 + mlHeight - 2) <= cpifaceSessionAPI.cpiDebug_lines))
+				{
+					mlScroll++;
+				}
+			} else if (
+			    ((key >= 'A') && (key <= 'Z')) ||
+			    ((key >= 'a') && (key <= 'z')) ||
+			    ((key >= '0') && (key <= '9')) ||
+			    (key == _KEY_ENTER)            ||
+			    (key == ' ')                   ||
+			    (key == KEY_ESC) )
+			{
+				noexit = 0;
+			} else if (key == KEY_EXIT)
+			{
+				noexit = 0;
+				break; /* KEY_EXIT is flooded into Console.KeyboardHit(), so we need to break the while() */
+			}
+		}
+	}
+}
+
 static interfaceReturnEnum plmpCallBack(void)
 {
-	interfaceReturnEnum stop;
-
-	plmpOpenScreen();
-	stop=interfaceReturnContinue;
-	while (!stop)
-		stop=plmpDrawScreen();
-	plmpCloseScreen();
-	return stop;
+	if (curplayer)
+	{
+		interfaceReturnEnum stop;
+		plmpOpenScreen ();
+		stop = interfaceReturnContinue;
+		while (!stop)
+		{
+			stop = plmpDrawScreen ();
+		}
+		plmpCloseScreen ();
+		return stop;
+	} else {
+		cpiDebugRun ();
+		return interfaceReturnNextAuto;
+	}
 }
 
 static struct interfacestruct plOpenCP = {plmpOpenFile, plmpCallBack, plmpCloseFile, "plOpenCP", NULL};

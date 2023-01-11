@@ -54,6 +54,7 @@ xmlmxm.o: xmlmxm.c \
 	../config.h \
 	xmplay.h \
 	../types.h \
+	../cpiface/cpiface.h \
 	../dev/mcp.h \
 	../filesel/filesystem.h \
 	../stuff/err.h
@@ -63,6 +64,7 @@ xmload.o: xmload.c \
 	../config.h \
 	xmplay.h \
 	../types.h \
+	../cpiface/cpiface.h \
 	../dev/mcp.h \
 	../filesel/filesystem.h \
 	../stuff/err.h

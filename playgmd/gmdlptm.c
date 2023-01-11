@@ -93,11 +93,14 @@ int __attribute__ ((visibility ("internal"))) LoadPTM (struct cpifaceSessionAPI_
 
 	if (file->read (file, &hdr, sizeof(hdr)) != sizeof (hdr))
 	{
-		fprintf(stderr, __FILE__ ": error, read failed #1\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/PTM] error, read failed #1\n");
 		return errFileRead;
 	}
 	if (memcmp(hdr.magic, "PTMF", 4))
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/PTM] invalid signature\n");
 		return errFormSig;
+	}
 	hdr.type = uint16_little(hdr.type);
 	hdr.orders = uint16_little(hdr.orders);
 	hdr.ins = uint16_little(hdr.ins);
@@ -120,16 +123,19 @@ int __attribute__ ((visibility ("internal"))) LoadPTM (struct cpifaceSessionAPI_
 
 	if (file->read (file, orders, 256) != 256)
 	{
-		fprintf(stderr, __FILE__ ": error, read failed #2\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/PTM] error, read failed #2\n");
 		return errFileRead;
 	}
 
 	if (!m->patnum)
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/PTM] no patterns\n");
 		return errFormMiss;
+	}
 
 	if (file->read (file, patpara, 256) != 256)
 	{
-		fprintf(stderr, __FILE__ ": error, read failed #3\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/PTM] error, read failed #3\n");
 		return errFileRead;
 	}
 	for (i=0;i<128;i++)
@@ -185,7 +191,7 @@ int __attribute__ ((visibility ("internal"))) LoadPTM (struct cpifaceSessionAPI_
 
 		if (file->read (file, &sins, sizeof (sins)) != sizeof (sins))
 		{
-			fprintf(stderr, __FILE__ ": error, read failed #4\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/PTM] error, read failed #4\n");
 			return errFileRead;
 		}
 		sins.samprate  = uint16_little (sins.samprate);
@@ -199,7 +205,10 @@ int __attribute__ ((visibility ("internal"))) LoadPTM (struct cpifaceSessionAPI_
 		sins.d4        = uint32_little (sins.d4);
 		sins.magic     = uint32_little (sins.magic);
 		if ((sins.magic!=0x534D5450)&&(sins.magic!=0))
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/PTM] invalid sample signature\n");
 			return errFormStruc;
+		}
 		if (!i)
 			patpara[hdr.pats]=sins.offset>>4;
 		inspos[i]=sins.offset;
@@ -274,7 +283,7 @@ int __attribute__ ((visibility ("internal"))) LoadPTM (struct cpifaceSessionAPI_
 		}
 		if (file->read (file, r.buffer, patSize) != patSize)
 		{
-			fprintf(stderr, __FILE__ ": error, read failed #5\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/PTM] error, read failed #5\n");
 			return errFileRead;
 		}
 
@@ -683,7 +692,7 @@ int __attribute__ ((visibility ("internal"))) LoadPTM (struct cpifaceSessionAPI_
 			return errAllocMem;
 		if (file->read (file, sip->ptr, slen) != slen)
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #6\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/PTM] warning, read failed #6\n");
 		}
 		x=0;
 		for (j=0; j<slen; j++)

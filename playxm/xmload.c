@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "types.h"
+#include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "filesel/filesystem.h"
 #include "stuff/err.h"
@@ -70,7 +71,7 @@ static void FreeResources(struct LoadModuleResources *r, uint_fast16_t ninst)
 }
 
 
-int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, struct ocpfilehandle_t *file)
+int __attribute__ ((visibility ("internal"))) xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	struct __attribute__((packed))
 	{
@@ -115,7 +116,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 
 	if (file->read (file, &head1, sizeof(head1)) != sizeof (head1))
 	{
-		fprintf(stderr, __FILE__ ": fread failed #1\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] read failed #1\n");
 		FreeResources (&r, head2.ninst);
 		return errFileRead;
 	}
@@ -123,13 +124,13 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 	head1.hdrsize = uint32_little (head1.hdrsize);
 	if (memcmp(head1.sig, "Extended Module: ", 17))
 	{
-		fprintf(stderr, __FILE__ ": Malformed header (\"Extended Module: \" string missing)\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] Malformed header (\"Extended Module: \" string missing)\n");
 		FreeResources (&r, head2.ninst);
 		return errFormStruc;
 	}
 	if (head1.eof!=26)
 	{
-		fprintf(stderr, __FILE__ ": Malformed header (head1.eof!=26), trying to ignore\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] Malformed header (head1.eof!=26), trying to ignore\n");
 		/*
 		FreeResources (&r, head2.ninst);
 		return errFormStruc;
@@ -137,14 +138,14 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 	}
 	if (head1.ver<0x104)
 	{
-		fprintf(stderr, __FILE__ ": File too old\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] File too old\n");
 		FreeResources (&r, head2.ninst);
 		return errFormOldVer;
 	}
 
 	if (file->read (file, &head2, sizeof(head2)) != sizeof (head2))
 	{
-		fprintf(stderr, __FILE__ ": fread failed #2\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] read failed #2\n");
 		FreeResources (&r, head2.ninst);
 		return errFileRead;
 	}
@@ -158,14 +159,14 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 	head2.bpm     = uint16_little (head2.bpm);
 	if (file->seek_cur (file, head1.hdrsize - 4 - sizeof(head2)) < 0)
 	{
-		fprintf(stderr, __FILE__ ": fseek failed #1\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] seek failed #1\n");
 		FreeResources (&r, head2.ninst);
 		return errFormStruc;
 	}
 
 	if (!head2.ninst)
 	{
-		fprintf(stderr, __FILE__ ": No instruments\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] No instruments\n");
 		FreeResources (&r, head2.ninst);
 		return errFormMiss;
 	}
@@ -194,7 +195,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 
 	if (!r.smps||!r.msmps||!r.instsmpnum||!m->instruments||!m->envelopes||!m->patterns||!m->orders||!m->patlens)
 	{
-		fprintf(stderr, __FILE__ ": malloc failed #1 (debug %p %p %p %p %p %p %p %p)\n", r.smps, r.msmps, r.instsmpnum, m->instruments, m->envelopes, m->patterns, m->orders, m->patlens);
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] malloc failed #1 (debug %p %p %p %p %p %p %p %p)\n", r.smps, r.msmps, r.instsmpnum, m->instruments, m->envelopes, m->patterns, m->orders, m->patlens);
 		FreeResources (&r, head2.ninst);
 		return errAllocMem;
 	}
@@ -209,7 +210,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 	m->patterns[head2.npat]=calloc(sizeof(uint8_t), 64*head2.nchan*5);
 	if (!m->patterns[head2.npat])
 	{
-		fprintf(stderr, __FILE__ ": malloc failed #1 (size=%d)\n", (int)sizeof(uint8_t)*64*head2.nchan*5);
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] malloc failed #1 (size=%d)\n", (int)sizeof(uint8_t)*64*head2.nchan*5);
 		FreeResources (&r, head2.ninst);
 		return errAllocMem;
 	}
@@ -227,7 +228,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 
 		if (file->read (file, &pathead, sizeof (pathead)) != sizeof (pathead))
 		{
-			fprintf(stderr, __FILE__ ": fread failed #3\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] read failed #3\n");
 			FreeResources (&r, head2.ninst);
 			return errFileRead;
 		}
@@ -236,7 +237,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 		pathead.patdata = uint16_little (pathead.patdata);
 		if (file->seek_cur (file, pathead.len - sizeof(pathead)))
 		{
-			fprintf(stderr, __FILE__ ": fseek failed #2\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] seek failed #2\n");
 			FreeResources (&r, head2.ninst);
 			return errFormStruc;
 		}
@@ -244,7 +245,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 		m->patterns[i]=calloc(sizeof(uint8_t), pathead.rows*head2.nchan*5);
 		if (!m->patterns[i])
 		{
-			fprintf(stderr, __FILE__ ": malloc failed #3 (i=%d/%d, size=%d)\n", i, head2.npat, (int)sizeof(uint8_t)*pathead.rows*head2.nchan*5);
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] malloc failed #3 (i=%d/%d, size=%d)\n", i, head2.npat, (int)sizeof(uint8_t)*pathead.rows*head2.nchan*5);
 			FreeResources (&r, head2.ninst);
 			return errAllocMem;
 		}
@@ -253,13 +254,13 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 		pbp=pbuf=malloc(sizeof(uint8_t)*pathead.patdata);
 		if (!pbuf)
 		{
-			fprintf(stderr, __FILE__ ": malloc failed #4 (i=%d/%d, size=%d)\n", i, head2.npat, (int)sizeof(uint8_t)*pathead.patdata);
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] malloc failed #4 (i=%d/%d, size=%d)\n", i, head2.npat, (int)sizeof(uint8_t)*pathead.patdata);
 			FreeResources (&r, head2.ninst);
 			return errAllocMem;
 		}
 		if (file->read (file, pbuf, pathead.patdata) != pathead.patdata)
 		{
-			fprintf(stderr, __FILE__ ": fread failed #4\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] read failed #4\n");
 			FreeResources (&r, head2.ninst);
 			return errFileRead;
 		}
@@ -313,25 +314,25 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 		if (file->read (file, &ins1, sizeof (ins1.size)) != sizeof (ins1.size))
 		{
 			/*
-			fprintf(stderr, __FILE__ ": fread failed #5.1 (%d/%d)\n", i, m->ninst);
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] read failed #5.1 (%d/%d)\n", i, m->ninst);
 			FreeResources (&r, head2.ninst);
 			return errFormStruc;
 			*/
-			fprintf(stderr, __FILE__ ": warning, fread failed #5.1\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] warning, read failed #5.1\n");
 			ins1.size=0;
 		}
 		ins1.size = uint32_little (ins1.size);
 		/* this next block is a fucking hack to support SMALL files */
 		if (ins1.size<4)
 		{
-			fprintf(stderr, __FILE__ ": Warning, ins1.size<4\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] Warning, ins1.size<4\n");
 			memset(&ins1, 0, sizeof(ins1));
 		} else if (ins1.size < sizeof(ins1))
 		{
-			fprintf(stderr, __FILE__ ": Warning, ins1.size<=sizeof(ins1), reading %d more bytes and zeroing last %d bytes\n", (int)(ins1.size-(int)sizeof(ins1.size)), (int)(sizeof(ins1)-(ins1.size-sizeof(ins1.size))));
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] Warning, ins1.size<=sizeof(ins1), reading %d more bytes and zeroing last %d bytes\n", (int)(ins1.size-(int)sizeof(ins1.size)), (int)(sizeof(ins1)-(ins1.size-sizeof(ins1.size))));
 			if (file->read (file, ins1.name, ins1.size - sizeof (ins1.size)) != (ins1.size - sizeof (ins1.size)))
 			{
-				fprintf(stderr, __FILE__ ": fread failed #5.2\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] read failed #5.2\n");
 				FreeResources (&r, head2.ninst);
 				return errFileRead;
 			}
@@ -339,7 +340,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 		} else {
 			if (file->read (file, ins1.name, sizeof (ins1) - sizeof (ins1.size)) != (sizeof (ins1) - sizeof (ins1.size)))
 			{
-				fprintf(stderr, __FILE__ ": fread failed #5.2\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] read failed #5.2\n");
 				FreeResources (&r, head2.ninst);
 				return errFormStruc;
 			}
@@ -358,7 +359,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 			{
 				if (file->seek_cur (file, ins1.size - sizeof(ins1)) < 0)
 				{
-					fprintf(stderr, __FILE__ ": fseek failed #3\n");
+					cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] seek failed #3\n");
 					FreeResources (&r, head2.ninst);
 					return errFormStruc;
 				}
@@ -369,14 +370,14 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 		/* this next block is a fucking hack to support SMALL files*/
 		if (ins1.size<=sizeof(ins1))
 		{
-			fprintf(stderr, __FILE__ ": Warning, ins1.size<=sizeof(ins1), zeroing ins2\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] Warning, ins1.size<=sizeof(ins1), zeroing ins2\n");
 			memset(&ins2, 0, sizeof(ins2));
 		} else if (ins1.size<=(sizeof(ins1)+sizeof(ins2)))
 		{
-			fprintf(stderr, __FILE__ ": Warning, ins2.size<=(sizeof(ins1)+sizeof(ins2)), reading %d bytes and zeroing last %d bytes\n", (int)(ins1.size-(int)sizeof(ins1)), (int)(sizeof(ins2)-(ins1.size-sizeof(ins1))));
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] Warning, ins2.size<=(sizeof(ins1)+sizeof(ins2)), reading %d bytes and zeroing last %d bytes\n", (int)(ins1.size-(int)sizeof(ins1)), (int)(sizeof(ins2)-(ins1.size-sizeof(ins1))));
 			if (file->read (file, &ins2, ins1.size - sizeof (ins1)) != (ins1.size - sizeof (ins1)))
 			{
-				fprintf(stderr, __FILE__ ": fread failed #6.1\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] read failed #6.1\n");
 				FreeResources (&r, head2.ninst);
 				return errFormStruc;
 			}
@@ -384,13 +385,13 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 		} else {
 			if (file->read (file, &ins2, sizeof (ins2)) != sizeof (ins2))
 			{
-				fprintf(stderr, __FILE__ ": fread failed #6.2 (Failed to read instrument %d/%d)\n", i + 1, m->ninst);
+				cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] read failed #6.2 (Failed to read instrument %d/%d)\n", i + 1, m->ninst);
 				FreeResources (&r, head2.ninst);
 				return errFormStruc;
 			}
 			if (file->seek_cur (file, ins1.size - sizeof(ins1) - sizeof(ins2)) < 0)
 			{
-				fprintf(stderr, __FILE__ ": fseek failed #4 (Failed to seek past extra data in instrument %d/%d)\n", i + 1, m->ninst);
+				cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] seek failed #4 (Failed to seek past extra data in instrument %d/%d)\n", i + 1, m->ninst);
 				FreeResources (&r, head2.ninst);
 				return errFormStruc;
 			}
@@ -399,57 +400,57 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 		ins2.shsize = uint32_little (ins2.shsize);
 		if (ins2.shsize==0)
 		{
-			fprintf(stderr, __FILE__ ": warning, ins2 header size is zero, setting to 0x28\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] warning, ins2 header size is zero, setting to 0x28\n");
 			ins2.shsize=0x28;
 		}
 		if (ins2.vnum>12)
 		{
-			fprintf(stderr, __FILE__ ": warning, Number of volume points %d > 12, truncating\n", ins2.vnum);
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] warning, Number of volume points %d > 12, truncating\n", ins2.vnum);
 			ins2.vnum=12;
 		}
 		if (ins2.pnum>12)
 		{
-			fprintf(stderr, __FILE__ ": warning, Number of panning points %d > 12, truncating\n", ins2.pnum);
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] warning, Number of panning points %d > 12, truncating\n", ins2.pnum);
 			ins2.pnum=12;
 		}
 		if ((ins2.vtype&1)&&!ins2.vnum)
 		{
-			fprintf(stderr, __FILE__ ": warning, No volume envelopes!\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] warning, No volume envelopes!\n");
 			ins2.vnum=1;
 		}
 		if ((ins2.ptype&1)&&!ins2.pnum)
 		{
-			fprintf(stderr, __FILE__ ": warning, No volume envelopes!\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] warning, No volume envelopes!\n");
 			ins2.pnum=1;
 		}
 		if (ins2.vsustain&&(ins2.vsustain>=ins2.vnum))
 		{
-			fprintf(stderr, __FILE__ ": warning, Volume sustain point (%d) >= Number of volume point (%d), truncating\n", ins2.vsustain, ins2.vnum);
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] warning, Volume sustain point (%d) >= Number of volume point (%d), truncating\n", ins2.vsustain, ins2.vnum);
 			ins2.vsustain=ins2.vnum-1;
 		}
 		if (ins2.vloops&&(ins2.vloops>=ins2.vnum))
 		{
-			fprintf(stderr, __FILE__ ": warning, Volume loop start point (%d) >= Number of volume point (%d), truncating\n", ins2.vloops, ins2.vnum);
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] warning, Volume loop start point (%d) >= Number of volume point (%d), truncating\n", ins2.vloops, ins2.vnum);
 			ins2.vloops=ins2.vnum-1;
 		}
 		if (ins2.vloope&&(ins2.vloope>=ins2.vnum))
 		{
-			fprintf(stderr, __FILE__ ": warning, Volume loop end point (%d) >= Number of volume point (%d), truncating\n", ins2.vloope, ins2.vnum);
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] warning, Volume loop end point (%d) >= Number of volume point (%d), truncating\n", ins2.vloope, ins2.vnum);
 			ins2.vloope=ins2.vnum-1;
 		}
 		if (ins2.psustain&&(ins2.psustain>=ins2.pnum))
 		{
-			fprintf(stderr, __FILE__ ": warning, Panning sustain point (%d) >= Number of panning points (%d), truncating\n", ins2.psustain, ins2.pnum);
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] warning, Panning sustain point (%d) >= Number of panning points (%d), truncating\n", ins2.psustain, ins2.pnum);
 			ins2.psustain=ins2.pnum-1;
 		}
 		if (ins2.ploops&&(ins2.ploops>=ins2.pnum))
 		{
-			fprintf(stderr, __FILE__ ": warning, Panning loop start point (%d) >= Number of panning points (%d), truncating\n", ins2.ploops, ins2.pnum);
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] warning, Panning loop start point (%d) >= Number of panning points (%d), truncating\n", ins2.ploops, ins2.pnum);
 			ins2.ploops=ins2.pnum-1;
 		}
 		if (ins2.ploope&&(ins2.ploope>=ins2.pnum))
 		{
-			fprintf(stderr, __FILE__ ": warning, Panning loop end point (%d) >= Number of panning points (%d), truncating\n", ins2.ploope, ins2.pnum);
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] warning, Panning loop end point (%d) >= Number of panning points (%d), truncating\n", ins2.ploope, ins2.pnum);
 			ins2.ploope=ins2.pnum-1;
 		}
 		for (k=0;k<12;k++)
@@ -464,7 +465,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 		r.msmps[i]=calloc(sizeof(struct xmpsample), ins1.samp);
 		if (!r.smps[i]||!r.msmps[i])
 		{
-			fprintf(stderr, __FILE__ ": malloc failed #5 (i=%d/%d, %p(%d) %p(%d))\n", i, m->ninst, r.smps[i], (int)sizeof(struct sampleinfo)*ins1.samp, r.msmps[i], (int)sizeof(struct xmpsample)*ins1.samp);
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] malloc failed #5 (i=%d/%d, %p(%d) %p(%d))\n", i, m->ninst, r.smps[i], (int)sizeof(struct sampleinfo)*ins1.samp, r.msmps[i], (int)sizeof(struct xmpsample)*ins1.samp);
 			FreeResources (&r, head2.ninst);
 			return errAllocMem;
 		}
@@ -483,7 +484,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 			env[0].env=malloc(sizeof(uint8_t)*(ins2.venv[ins2.vnum-1][0]+1));
 			if (!env[0].env)
 			{
-				fprintf(stderr, __FILE__ ": malloc failed #6 (size=%d)\n", (int)sizeof(uint8_t)*(ins2.venv[ins2.vnum-1][0]+1));
+				cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] malloc failed #6 (size=%d)\n", (int)sizeof(uint8_t)*(ins2.venv[ins2.vnum-1][0]+1));
 				FreeResources (&r, head2.ninst);
 				return errAllocMem;
 			}
@@ -498,7 +499,7 @@ int __attribute__ ((visibility ("internal"))) xmpLoadModule(struct xmodule *m, s
 					int16_t cv=h+dh*k/l;
 					if ((p+1)>=(ins2.venv[ins2.vnum-1][0]+1))
 					{
-						fprintf(stderr, __FILE__ ": sanity-check in volume envelopes failed, bailing out, sample will contain errors\n");
+						cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] sanity-check in volume envelopes failed, bailing out, sample will contain errors\n");
 						goto bail1;
 					}
 					env[0].env[p++]=(cv>255)?255:cv;
@@ -530,7 +531,7 @@ bail1:
 			env[1].env=malloc(sizeof(uint8_t)*(ins2.penv[ins2.pnum-1][0]+1));
 			if (!env[1].env)
 			{
-				fprintf(stderr, __FILE__ ": malloc failed #7 (size=%d)\n", (int)sizeof(uint8_t)*(ins2.penv[ins2.pnum-1][0]+1));
+				cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] malloc failed #7 (size=%d)\n", (int)sizeof(uint8_t)*(ins2.penv[ins2.pnum-1][0]+1));
 				FreeResources (&r, head2.ninst);
 				return errAllocMem;
 			}
@@ -545,7 +546,7 @@ bail1:
 					int16_t cv=h+dh*k/l;
 					if ((p+1)>=(ins2.penv[ins2.pnum-1][0]+1))
 					{
-						fprintf(stderr, __FILE__ ": sanity-check in panning envelopes failed, bailing out, sample will contain errors\n");
+						cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] sanity-check in panning envelopes failed, bailing out, sample will contain errors\n");
 						goto bail2;
 					}
 					env[1].env[p++]=(cv>255)?255:cv;
@@ -587,7 +588,7 @@ bail2:
 
 			if (file->read (file, &samp, sizeof (samp)) != sizeof (samp))
 			{
-				fprintf(stderr, __FILE__ ": fread() failed #7\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] read() failed #7\n");
 				FreeResources (&r, head2.ninst);
 				return errFormStruc;
 			}
@@ -597,7 +598,7 @@ bail2:
 
 			if (file->seek_cur (file, ins2.shsize - sizeof (samp)) < 0)
 			{
-				fprintf(stderr, __FILE__ ": fseek failed #5\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] seek failed #5\n");
 				FreeResources (&r, head2.ninst);
 				return errFormStruc;
 			}
@@ -643,13 +644,13 @@ bail2:
 			sip->ptr=malloc(sizeof(uint8_t)*(l+528));
 			if (!sip->ptr)
 			{
-				fprintf(stderr, __FILE__ ": malloc failed #8 (i=%d, j=%d/%d size=%d)\n", i, j, ins1.samp, (int)sizeof(uint8_t)*(l+528));
+				cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] malloc failed #8 (i=%d, j=%d/%d size=%d)\n", i, j, ins1.samp, (int)sizeof(uint8_t)*(l+528));
 				FreeResources (&r, head2.ninst);
 				return errAllocMem;
 			}
 			if (file->read (file, sip->ptr, l) != l)
 			{
-				fprintf(stderr, __FILE__ ": fread failed #8\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] read failed #8\n");
 				FreeResources (&r, head2.ninst);
 				return errFileRead;
 			}
@@ -662,7 +663,7 @@ bail2:
 	m->sampleinfos=malloc(sizeof(struct sampleinfo)*m->nsampi);
 	if (!m->samples||!m->sampleinfos)
 	{
-		fprintf(stderr, __FILE__ ": malloc failed #9 (%p(%d) %p(%d))\n", m->samples, (int)sizeof(struct xmpsample)*m->nsamp, m->sampleinfos, (int)sizeof(struct sampleinfo)*m->nsampi);
+		cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] malloc failed #9 (%p(%d) %p(%d))\n", m->samples, (int)sizeof(struct xmpsample)*m->nsamp, m->sampleinfos, (int)sizeof(struct sampleinfo)*m->nsampi);
 		FreeResources (&r, head2.ninst);
 		return errAllocMem;
 	}

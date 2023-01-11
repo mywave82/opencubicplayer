@@ -30,6 +30,7 @@
 #include <string.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "filesel/filesystem.h"
 #include "gmdplay.h"
@@ -87,15 +88,15 @@ int __attribute__ ((visibility ("internal"))) LoadOKT (struct cpifaceSessionAPI_
 
 	if (file->read (file, hsig, 8) != 8)
 	{
-		fprintf(stderr, __FILE__ ": read failed #1\n");
-		return errFormSig;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] read failed #1\n");
+		return errFileRead;
 	}
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": comparing sig \"%c%c%c%c%c%c%c%c\" against \"OKTASONG\"\n", hsig[0], hsig[1], hsig[2], hsig[3], hsig[4], hsig[5], hsig[6], hsig[7]);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] comparing sig \"%c%c%c%c%c%c%c%c\" against \"OKTASONG\"\n", hsig[0], hsig[1], hsig[2], hsig[3], hsig[4], hsig[5], hsig[6], hsig[7]);
 #endif
 	if (memcmp(hsig, "OKTASONG", 8))
 	{
-		fprintf(stderr, __FILE__ ": invalid header\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] invalid signature\n");
 		return errFormSig;
 	}
 
@@ -106,30 +107,30 @@ int __attribute__ ((visibility ("internal"))) LoadOKT (struct cpifaceSessionAPI_
 
 	if (file->read (file, &chunk, sizeof(chunk)) != sizeof(chunk))
 	{
-		fprintf(stderr, __FILE__ ": read failed #3\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] read failed #3\n");
+		return errFileRead;
 	}
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": comparing header \"%c%c%c%c\" against \"CMOD\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] comparing header \"%c%c%c%c\" against \"CMOD\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
 #endif
 	if (memcmp(chunk.sig, "CMOD", 4))
 	{
-		fprintf(stderr, __FILE__ ": invalid \"SAMP\" header\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] invalid \"SAMP\" signature\n");
 		return errFormStruc;
 	}
 	chunk.blen=uint32_big(chunk.blen);
 	if (chunk.blen!=8)
 	{
-		fprintf(stderr, __FILE__ ": invalid blen %d, should had been 8\n", (int)chunk.blen);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] invalid blen %d, should had been 8\n", (int)chunk.blen);
 		return errFormStruc;
 	}
 	if (file->read (file, cflags, 8) != 8)
 	{
-		fprintf(stderr, __FILE__ ": read failed #4\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] read failed #4\n");
+		return errFileRead;
 	}
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": chan_flags[4]: 0x%04x 0x%04x 0x%04x 0x%04x\n", uint16_big(cflags[0]), uint16_big(cflags[1]), uint16_big(cflags[2]), uint16_big(cflags[3]));
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] chan_flags[4]: 0x%04x 0x%04x 0x%04x 0x%04x\n", uint16_big(cflags[0]), uint16_big(cflags[1]), uint16_big(cflags[2]), uint16_big(cflags[3]));
 #endif
 	t=0;
 	for (i=0; i<4; i++)
@@ -140,30 +141,30 @@ int __attribute__ ((visibility ("internal"))) LoadOKT (struct cpifaceSessionAPI_
 	}
 	m->channum=t;
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": channels: %d\n", (int)t);
-	fprintf(stderr, __FILE__ ": %d %d %d %d %d %d %d %d\n", (int)cflag2[0], (int)cflag2[1], (int)cflag2[2], (int)cflag2[3], (int)cflag2[4], (int)cflag2[5], (int)cflag2[6], (int)cflag2[7]);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] channels: %d\n", (int)t);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] %d %d %d %d %d %d %d %d\n", (int)cflag2[0], (int)cflag2[1], (int)cflag2[2], (int)cflag2[3], (int)cflag2[4], (int)cflag2[5], (int)cflag2[6], (int)cflag2[7]);
 #endif
 
 	if (file->read (file, &chunk, sizeof(chunk)) != sizeof (chunk))
 	{
-		fprintf(stderr, __FILE__ ": read failed #5\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] read failed #5\n");
+		return errFileRead;
 	}
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": comparing header \"%c%c%c%c\" against \"SAMP\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] comparing header \"%c%c%c%c\" against \"SAMP\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
 #endif
 	if (memcmp(chunk.sig, "SAMP", 4))
 	{
-		fprintf(stderr, __FILE__ ": invalid \"SAMP\" header\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] invalid \"SAMP\" header\n");
 		return errFormStruc;
 	}
 	chunk.blen=uint32_big(chunk.blen);
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": checking chunk length.. samples=%d module=%d (last should be zero)\n", (int)chunk.blen/32, (int)chunk.blen%32);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] checking chunk length.. samples=%d module=%d (last should be zero)\n", (int)chunk.blen/32, (int)chunk.blen%32);
 #endif
 	if (chunk.blen&31)
 	{
-		fprintf(stderr, __FILE__ ": invalid SAMP chunk length (modulo 32 test failed)\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] invalid SAMP chunk length (modulo 32 test failed)\n");
 		return errFormStruc;
 	}
 	m->modsampnum=m->sampnum=m->instnum=(chunk.blen)>>5;
@@ -189,20 +190,20 @@ int __attribute__ ((visibility ("internal"))) LoadOKT (struct cpifaceSessionAPI_
 		} mi;
 		if (file->read(file, &mi, sizeof (mi)) != sizeof (mi))
 		{
-			fprintf(stderr, __FILE__ ": read failed #7\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] read failed #7\n");
+			return errFileRead;
 		}
 		mi.length=uint32_big(mi.length);
 		mi.repstart=uint16_big(mi.repstart);
 		mi.replen=uint16_big(mi.replen);
 #ifdef OKT_LOAD_DEBUG
-		fprintf(stderr, __FILE__ ": sample[%d]\n", i);
-		fprintf(stderr, __FILE__ ": length=%d\n", (int)mi.length);
-		fprintf(stderr, __FILE__ ": repstart=%d\n", (int)mi.repstart);
-		fprintf(stderr, __FILE__ ": replen=%d\n", (int)mi.replen);
-		fprintf(stderr, __FILE__ ": pad1=%d\n", (int)mi.pad1);
-		fprintf(stderr, __FILE__ ": vol=%d\n", (int)mi.vol);
-		fprintf(stderr, __FILE__ ": pad2=%d\n", (int)mi.pad2);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] sample[%d]\n", i);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] length=%d\n", (int)mi.length);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] repstart=%d\n", (int)mi.repstart);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] replen=%d\n", (int)mi.replen);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] pad1=%d\n", (int)mi.pad1);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] vol=%d\n", (int)mi.vol);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] pad2=%d\n", (int)mi.pad2);
 #endif
 		if (mi.length<4)
 			mi.length=0;
@@ -242,124 +243,124 @@ int __attribute__ ((visibility ("internal"))) LoadOKT (struct cpifaceSessionAPI_
 
 	if (file->read (file, &chunk, sizeof(chunk)) != sizeof(chunk))
 	{
-		fprintf(stderr, __FILE__ ": read failed #8\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] read failed #8\n");
+		return errFileRead;
 	}
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": comparing header \"%c%c%c%c\" against \"SPEE\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] comparing header \"%c%c%c%c\" against \"SPEE\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
 #endif
 	if (memcmp(chunk.sig, "SPEE", 4))
 	{
-		fprintf(stderr, __FILE__ ": header \"SPEE\" failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] expected sub-header \"SPEE\" not found\n");
 		return errFormStruc;
 	}
 	chunk.blen=uint32_big(chunk.blen);
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": chunk length should be 2, checking (%d)\n", (int)chunk.blen);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] chunk length should be 2, checking (%d)\n", (int)chunk.blen);
 #endif
 	if (chunk.blen!=2)
 	{
-		fprintf(stderr, __FILE__ ": invalid length of sub chunk \"SPEE\": %d\n", (int)chunk.blen);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] invalid length of sub chunk \"SPEE\": %d\n", (int)chunk.blen);
 		return errFormStruc;
 	}
 
 	if (ocpfilehandle_read_uint16_be (file, &orgticks))
 	{
-		fprintf(stderr, __FILE__ ": read failed #10\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] read failed #10\n");
+		return errFileRead;
 	}
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": orgticks: %d\n", (int)orgticks);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] orgticks: %d\n", (int)orgticks);
 #endif
 
 	if (file->read (file, &chunk, sizeof(chunk)) != sizeof (chunk))
 	{
-		fprintf(stderr, __FILE__ ": read failed #11\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] read failed #11\n");
+		return errFileRead;
 	}
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": comparing header \"%c%c%c%c\" against \"SLEN\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] comparing header \"%c%c%c%c\" against \"SLEN\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
 #endif
 	if (memcmp(chunk.sig, "SLEN", 4))
 	{
-		fprintf(stderr, __FILE__ ": header \"SLEN\" failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] expected sub-header \"SLEN\" not found\n");
 		return errFormStruc;
 	}
 	chunk.blen=uint32_big(chunk.blen);
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": chunk length should be 2, checking (%d)\n", (int)chunk.blen);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] chunk length should be 2, checking (%d)\n", (int)chunk.blen);
 #endif
 	if (chunk.blen!=2)
 	{
-		fprintf(stderr, __FILE__ ": invalid length of sub chunk \"SPEE\": %d\n", (int)chunk.blen);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] invalid length of sub chunk \"SPEE\": %d\n", (int)chunk.blen);
 		return errFormStruc;
 	}
 	if (ocpfilehandle_read_uint16_be (file, &pn))
 	{
-		fprintf(stderr, __FILE__ ": read failed #13\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] read failed #13\n");
+		return errFileRead;
 	}
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ":  song length (patterns): %d\n", (int)pn);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] song length (patterns): %d\n", (int)pn);
 #endif
 
 	if (file->read (file, &chunk, sizeof(chunk)) != sizeof (chunk))
 	{
-		fprintf(stderr, __FILE__ ": read failed #14\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] read failed #14\n");
+		return errFileRead;
 	}
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": comparing header \"%c%c%c%c\" against \"PLEN\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] comparing header \"%c%c%c%c\" against \"PLEN\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
 #endif
 	if (memcmp(chunk.sig, "PLEN", 4))
 	{
-		fprintf(stderr, __FILE__ ": header \"PLEN\" failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] Expected sub-header \"PLEN\" not found\n");
 		return errFormStruc;
 	}
 	chunk.blen = uint32_big(chunk.blen);
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": chunk length should be 2, checking (%d)\n", (int)chunk.blen);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] chunk length should be 2, checking (%d)\n", (int)chunk.blen);
 #endif
 	if (chunk.blen!=2)
 	{
-		fprintf(stderr, __FILE__ ": invalid length of sub chunk \"PLEN\": %d\n", (int)chunk.blen);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] invalid length of sub chunk \"PLEN\": %d\n", (int)chunk.blen);
 		return errFormStruc;
 	}
 	if (ocpfilehandle_read_uint16_be (file, &ordn))
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #16\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] warning, read failed #16\n");
 	}
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": orders: %d\n", (int)ordn);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] orders: %d\n", (int)ordn);
 #endif
 
 	if (file->read (file, &chunk, sizeof(chunk)) != sizeof (chunk))
 	{
-		fprintf(stderr, __FILE__ ": read failed #17\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] read failed #17\n");
+		return errFileRead;
 	}
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": comparing header \"%c%c%c%c\" against \"PATT\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] comparing header \"%c%c%c%c\" against \"PATT\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
 #endif
 	if (memcmp(chunk.sig, "PATT", 4))
 	{
-		fprintf(stderr, __FILE__ ": header \"PATT\" failed\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] Expected sub-header \"PATT\" not found\n");
 		return errFormStruc;
 	}
 	chunk.blen=uint32_big(chunk.blen);
 #ifdef OKT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": checking chunk length (should less than or equal to 128): %d\n", (int)chunk.blen);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] checking chunk length (should less than or equal to 128): %d\n", (int)chunk.blen);
 #endif
 	if (chunk.blen>128)
 	{
-		fprintf(stderr, __FILE__ ": invalid length of sub chunk \"PATT\": %d\n", (int)chunk.blen);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] invalid length of sub chunk \"PATT\": %d\n", (int)chunk.blen);
 		return errFormStruc;
 	}
 
 	if (file->read (file, orders, chunk.blen) != chunk.blen)
 	{
-		fprintf(stderr, __FILE__ ": read failed #19\n");
-		return errFormStruc;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] read failed #19\n");
+		return errFileRead;
 	}
 	if (chunk.blen<ordn)
 		ordn=chunk.blen;
@@ -403,30 +404,30 @@ int __attribute__ ((visibility ("internal"))) LoadOKT (struct cpifaceSessionAPI_
 
 		if (file->read (file, &chunk, sizeof(chunk)) != sizeof (chunk))
 		{
-			fprintf(stderr, __FILE__ ": read failed #20\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] read failed #20\n");
 			FreeResources (&r);
-			return errFormStruc;
+			return errFileRead;
 		}
 #ifdef OKT_LOAD_DEBUG
-		fprintf(stderr, __FILE__ ": comparing header \"%c%c%c%c\" against \"PBOD\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] comparing header \"%c%c%c%c\" against \"PBOD\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
 #endif
 		if (memcmp(chunk.sig, "PBOD", 4))
 		{
-			fprintf(stderr, __FILE__ ": header \"PBOD\" failed\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] Expected sub-header \"PBOD\" not found\n");
 			FreeResources (&r);
 			return errFormStruc;
 		}
 		chunk.blen=uint32_big(chunk.blen);
 		if (ocpfilehandle_read_uint16_be (file, &patlen))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #22\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] warning, read failed #22\n");
 		}
 #ifdef OKT_LOAD_DEBUG
-		fprintf(stderr, __FILE__ ": patlen red is %d. It should not be bigger than 256, and this should match:\n (blen!=(2+4*m->channum*patlen)\n %d!=2+4*%d*%d\n %d!=%d\n", (int)patlen, (int)chunk.blen, (int)m->channum, (int)patlen, (int)chunk.blen, (int)(2+4*m->channum*patlen));
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] patlen red is %d. It should not be bigger than 256, and this should match:\n (blen!=(2+4*m->channum*patlen)\n %d!=2+4*%d*%d\n %d!=%d\n", (int)patlen, (int)chunk.blen, (int)m->channum, (int)patlen, (int)chunk.blen, (int)(2+4*m->channum*patlen));
 #endif
 		if ((chunk.blen!=(2+4*m->channum*patlen))||(patlen>256))
 		{
-			fprintf(stderr, __FILE__ ": invalid patlen: %d\n", (int)patlen);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] invalid patlen: %d\n", (int)patlen);
 			FreeResources (&r);
 			return errFormStruc;
 		}
@@ -437,9 +438,9 @@ int __attribute__ ((visibility ("internal"))) LoadOKT (struct cpifaceSessionAPI_
 
 		if (file->read (file, r.buffer, 4 * m->channum * patlen) != (4 * m->channum * patlen))
 		{
-			fprintf(stderr, __FILE__ ": read failed #23\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] read failed #23\n");
 			FreeResources (&r);
-			return errFormStruc;
+			return errFileRead;
 		}
 		for (q=0; q<m->channum; q++)
 		{
@@ -616,14 +617,17 @@ int __attribute__ ((visibility ("internal"))) LoadOKT (struct cpifaceSessionAPI_
 
 		if (file->read (file, &chunk, sizeof(chunk)) != sizeof (chunk))
 		{
-			fprintf(stderr, __FILE__ ": read failed #24\n");
-			return errFormStruc;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] read failed #24\n");
+			return errFileRead;
 		}
 #ifdef OKT_LOAD_DEBUG
-		fprintf(stderr, __FILE__ ": comparing header \"%c%c%c%c\" against \"SBOD\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] comparing header \"%c%c%c%c\" against \"SBOD\"\n", chunk.sig[0], chunk.sig[1], chunk.sig[2], chunk.sig[3]);
 #endif
 		if (memcmp(chunk.sig, "SBOD", 4))
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] Expected sub-header \"SBOD\" not found\n");
 			return errFormStruc;
+		}
 		chunk.blen=uint32_big(chunk.blen);
 
 		sip->ptr=malloc(sizeof(char)*(chunk.blen+8));
@@ -632,7 +636,7 @@ int __attribute__ ((visibility ("internal"))) LoadOKT (struct cpifaceSessionAPI_
 
 		if (file->read (file, sip->ptr, chunk.blen) != chunk.blen)
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #26\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/OKT] warning, read failed #26\n");
 		}
 		if (sip->length>chunk.blen)
 			sip->length=chunk.blen;

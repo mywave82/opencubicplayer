@@ -91,35 +91,35 @@ int __attribute__ ((visibility ("internal"))) LoadULT (struct cpifaceSessionAPI_
 
 	if (file->read (file, id, 15) != 15)
 	{
-		fprintf(stderr, __FILE__ ": error, read failed #1\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] error, read failed #1\n");
 		return errFileRead;
 	}
 	if (memcmp(id, "MAS_UTrack_V00", 14))
 	{
-		fprintf (stderr, __FILE__": file too old\n");
-		return errFormMiss;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] file too old? (Invalid signature)\n");
+		return errFormSig;
 	}
 
 	ver=id[14]-'0';
 
 	if (ver>4)
 	{
-		fprintf (stderr, __FILE__": file too new\n");
-		return errFormOldVer;
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] file too new (%d > 4)\n", ver);
+		return errFormNewVer;
 	}
 
 	m->options=(ver<2)?MOD_GUSVOL:0;
 
 	if (file->read (file, m->name, 32) != 32)
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #2\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] warning, read failed #2\n");
 		return errFileRead;
 	}
 	m->name[31]=0;
 
 	if (ocpfilehandle_read_uint8 (file, &msglen))
 	{
-		fprintf(stderr, __FILE__ ": error, read failed #2.1\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] error, read failed #2.1\n");
 		return errFileRead;
 	}
 
@@ -139,7 +139,7 @@ int __attribute__ ((visibility ("internal"))) LoadULT (struct cpifaceSessionAPI_
 			m->message[t]=*m->message+t*33;
 			if (file->read (file, m->message[t], 32) != 32)
 			{
-				fprintf(stderr, __FILE__ ": error, read failed #3\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] error, read failed #3\n");
 				return errFileRead;
 			}
 			m->message[t][32]=0;
@@ -149,7 +149,7 @@ int __attribute__ ((visibility ("internal"))) LoadULT (struct cpifaceSessionAPI_
 
 	if (ocpfilehandle_read_uint8 (file, &insn))
 	{
-		fprintf(stderr, __FILE__ ": error, read failed #3.1\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] error, read failed #3.1\n");
 		return errFileRead;
 	}
 
@@ -185,14 +185,14 @@ int __attribute__ ((visibility ("internal"))) LoadULT (struct cpifaceSessionAPI_
 		{
 			if (file->read (file, &mi, sizeof (mi) - sizeof (uint16_t)) != (sizeof (mi) - sizeof (uint16_t)))
 			{
-				fprintf(stderr, __FILE__ ": warning, read failed #3\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] warning, read failed #3\n");
 			}
 			mi.finetune=mi.c2spd;
 			mi.c2spd=8363;
 		} else {
 			if (file->read (file, &mi, sizeof (mi)) != sizeof (mi))
 			{
-				fprintf(stderr, __FILE__ ": warning, read failed #3\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] warning, read failed #3\n");
 			}
 		}
 
@@ -247,24 +247,24 @@ int __attribute__ ((visibility ("internal"))) LoadULT (struct cpifaceSessionAPI_
 
 	if (file->read (file, orders, 256) != 256)
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #4\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] warning, read failed #4\n");
 	}
 
 	if (ocpfilehandle_read_uint8 (file, &chnn))
 	{
 		chnn = 0;
-		fprintf(stderr, __FILE__ ": warning, read failed #4.1\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] warning, read failed #4.1\n");
 	}
 
 	if (ocpfilehandle_read_uint8 (file, &patn))
 	{
 		patn = 0;
-		fprintf(stderr, __FILE__ ": warning, read failed #4.2\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] warning, read failed #4.2\n");
 	}
 
 	if (chnn>31)
 	{
-		fprintf(stderr, "ULT: Too many channels\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] Too many channels (%d > 32)\n", 1 + chnn);
 		return errFormStruc;
 	}
 
@@ -274,7 +274,7 @@ int __attribute__ ((visibility ("internal"))) LoadULT (struct cpifaceSessionAPI_
 	{
 		if (file->read (file, panpos, m->channum) != m->channum)
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #5\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] warning, read failed #5\n");
 		}
 	} else
 		memcpy(panpos, "\x0\xF\x0\xF\x0\xF\x0\xF\x0\xF\x0\xF\x0\xF\x0\xF\x0\xF\x0\xF\x0\xF\x0\xF\x0\xF\x0\xF\x0\xF\x0\xF", 32);
@@ -316,7 +316,7 @@ int __attribute__ ((visibility ("internal"))) LoadULT (struct cpifaceSessionAPI_
 
 	if (file->read (file, r.buffer, patlength) != patlength)
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #6\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] warning, read failed #6\n");
 	}
 
 	bp=r.buffer;
@@ -367,7 +367,7 @@ int __attribute__ ((visibility ("internal"))) LoadULT (struct cpifaceSessionAPI_
 
 				if (!curcmd)
 				{
-					fprintf(stderr, "playgmd: gmdlult.c: curcmd==NULL\n");
+					cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] curcmd==NULL\n");
 					FreeResources (&r);
 					return errFormStruc;
 				}
@@ -622,7 +622,7 @@ int __attribute__ ((visibility ("internal"))) LoadULT (struct cpifaceSessionAPI_
 			return errAllocMem;
 		if (file->read (file, sip->ptr, l) != l)
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #6\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/ULT] warning, read failed #6\n");
 		}
 	}
 

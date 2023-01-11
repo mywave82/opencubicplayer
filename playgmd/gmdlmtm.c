@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "filesel/filesystem.h"
 #include "gmdplay.h"
@@ -97,14 +98,23 @@ int __attribute__ ((visibility ("internal"))) LoadMTM (struct cpifaceSessionAPI_
 
 	if (file->read (file, &header, 66) != 66)
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #1\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MTM] warning, read failed #1\n");
 	}
 
+	header.sig = uint32_little (header.sig);
+	header.trknum = uint16_little (header.trknum);
+	header.comlen = uint16_little (header.comlen);
 	if ((header.sig&0xFFFFFF)!=0x4D544D)
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MTM] invalid signature\n");
 		return errFormSig;
+	}
 
 	if ((header.sig&0xFF000000)!=0x10000000)
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MTM] File signature version %u=!1\n", header.sig >> 24);
 		return errFormOldVer;
+	}
 
 	memcpy(m->name, header.name, 20);
 	m->name[20]=0;
@@ -142,9 +152,12 @@ int __attribute__ ((visibility ("internal"))) LoadMTM (struct cpifaceSessionAPI_
 		} mi;
 		if (file->read (file, &mi, sizeof (mi)) != sizeof (mi))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #2\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MTM] warning, read failed #2\n");
 		}
 
+		mi.length = uint32_little (mi.length);
+		mi.loopstart = uint32_little (mi.loopstart);
+		mi.loopend = uint32_little (mi.loopend);
 		if (mi.length<4)
 			mi.length=0;
 		if (mi.loopend<4)
@@ -184,7 +197,7 @@ int __attribute__ ((visibility ("internal"))) LoadMTM (struct cpifaceSessionAPI_
 
 	if (file->read (file, orders, 128) != 128)
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #3\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MTM] warning, read failed #3\n");
 	}
 
 	for (pp=m->patterns, t=0; t<m->patnum; pp++, t++)
@@ -207,11 +220,11 @@ int __attribute__ ((visibility ("internal"))) LoadMTM (struct cpifaceSessionAPI_
 	memset(r.tbuffer, 0, 192);
 	if (file->read (file, r.tbuffer+192, 192*header.trknum) != 192*header.trknum)
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #4\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MTM] warning, read failed #4\n");
 	}
 	if (file->read (file, r.trackseq, 64*(header.patnum+1)) != 64*(header.patnum+1))
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #5\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MTM] warning, read failed #5\n");
 	}
 
 	for (t=0; t<=header.patnum; t++)
@@ -523,7 +536,7 @@ int __attribute__ ((visibility ("internal"))) LoadMTM (struct cpifaceSessionAPI_
 			m->message[t]=m->message[0]+t*41;
 			if (file->read (file, m->message[t], 40) != 40)
 			{
-				fprintf(stderr, __FILE__ ": warning, read failed #6\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MTM] warning, read failed #6\n");
 			}
 			for (xxx=0; xxx<40; xxx++)
 				if (!m->message[t][xxx])
@@ -551,7 +564,7 @@ int __attribute__ ((visibility ("internal"))) LoadMTM (struct cpifaceSessionAPI_
 			return errAllocMem;
 		if (file->read (file, sip->ptr, l) != l)
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #7\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MTM] warning, read failed #7\n");
 		}
 	}
 

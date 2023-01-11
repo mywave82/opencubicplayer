@@ -78,12 +78,12 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 	mpReset(m);
 
 #ifdef S3M_LOAD_DEBUG
-	fprintf(stderr, "Reading header: %d bytes\n", (int)sizeof(hdr));
+	cpifaceSession->cpiDebug (cpifaceSession, "Reading header: %d bytes\n", (int)sizeof(hdr));
 #endif
 
 	if (file->read (file, &hdr, sizeof(hdr)) != sizeof (hdr))
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #1\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] warning, read failed #1\n");
 	}
 	hdr.d1      = uint16_little (hdr.d1);
 	hdr.orders  = uint16_little (hdr.orders);
@@ -97,14 +97,12 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 	hdr.special = uint16_little (hdr.special);
 	if (memcmp(hdr.magic, "SCRM", 4))
 	{
-#ifdef S3M_LOAD_DEBUG
-		fprintf(stderr, "S3M: Header error\n");
-#endif
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Invalid signature\n");
 		return errFormSig;
 	}
 	if ((hdr.orders>255)||(hdr.pats>=254))
 	{
-		fprintf(stderr, "S3M: too many orders and/or patterns\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] too many orders and/or patterns\n");
 		return errFormStruc;
 	}
 
@@ -128,11 +126,11 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 		m->options|=MOD_MODPAN;
 
 #ifdef S3M_LOAD_DEBUG
-	fprintf(stderr, "Reading pattern orders, %d bytes\n", (int)m->patnum);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Reading pattern orders, %d bytes\n", (int)m->patnum);
 #endif
 	if (file->read (file, orders, m->patnum) != m->patnum)
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #2\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] warning, read failed #2\n");
 	}
 	for (t=m->patnum-1; (signed)t>=0; t--)
 	{
@@ -142,9 +140,7 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 	}
 	if (!m->patnum)
 	{
-#ifdef S3M_LOAD_DEBUG
-		fprintf(stderr, "S3M: No patterns\n");
-#endif
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] No patterns\n");
 		return errFormMiss;
 	}
 
@@ -165,20 +161,20 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 	m->endord=t;
 
 #ifdef S3M_LOAD_DEBUG
-	fprintf(stderr, "Reading instruments-parameters, %d bytes\n", (int)m->instnum*2);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Reading instruments-parameters, %d bytes\n", (int)m->instnum*2);
 #endif
 	if (file->read (file, inspara, m->instnum*2) != (m->instnum * 2))
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #2\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] warning, read failed #2\n");
 	}
 	for (i=0;i<(m->instnum*2);i++)
 		inspara[i] = uint16_little (inspara[i]);
 #ifdef S3M_LOAD_DEBUG
-	fprintf(stderr, "Reading pattern-parameters, %d bytes\n", (int)hdr.pats*2);
+	cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Reading pattern-parameters, %d bytes\n", (int)hdr.pats*2);
 #endif
 	if (file->read (file, patpara, hdr.pats*2) != (hdr.pats * 2))
 	{
-		fprintf(stderr, __FILE__ ": warning, read failed #3\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] warning, read failed #3\n");
 	}
 	for (i=0;i<(hdr.pats*(unsigned)2);i++)
 		patpara[i] = uint16_little (patpara[i]);
@@ -189,11 +185,11 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 	if (hdr.dp==0xFC)
 	{
 #ifdef S3M_LOAD_DEBUG
-		fprintf(stderr, "Reading default panning, 32 bytes\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Reading default panning, 32 bytes\n");
 #endif
 		if (file->read (file, defpan, 32) != 32)
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #4\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] warning, read failed #4\n");
 		}
 	}
 	for (i=0; i<32; i++)
@@ -202,7 +198,7 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 	if (!mpAllocInstruments(m, m->instnum)||!mpAllocTracks(m, m->tracknum)||!mpAllocPatterns(m, m->patnum)||!mpAllocSamples(m, m->sampnum)||!mpAllocModSamples(m, m->modsampnum)||!mpAllocOrders(m, m->ordnum))
 	{
 #ifdef S3M_LOAD_DEBUG
-		fprintf(stderr, "S3M: Out of mem?\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Out of mem #1\n");
 #endif
 		return errAllocMem;
 	}
@@ -254,15 +250,15 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 		} sins;
 
 #ifdef S3M_LOAD_DEBUG
-		fprintf(stderr, "Seeking to (%d/%d)  %d\n", i, (int)m->instnum, (int)((int32_t)inspara[i])*16);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Seeking to (%d/%d)  %d\n", i, (int)m->instnum, (int)((int32_t)inspara[i])*16);
 #endif
 		file->seek_set (file, ((int32_t)inspara[i])*16);
 #ifdef S3M_LOAD_DEBUG
-		fprintf(stderr, "Reading %d bytes of instrument header\n", (int)sizeof(sins));
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Reading %d bytes of instrument header\n", (int)sizeof(sins));
 #endif
 		if (file->read (file, &sins, sizeof (sins)) != sizeof (sins))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #5\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] warning, read failed #5\n");
 		}
 		sins.sampptr   = uint16_little (sins.sampptr);
 		sins.length    = uint32_little (sins.length);
@@ -272,12 +268,12 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 		sins.magic     = uint32_little (sins.magic);
 		if (sins.magic==0x49524353)
 		{
-			fprintf (stderr, "S3M: adlib sample detected, use OPL driver instead of GMD\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] adlib sample detected, use OPL playback plugin instead\n");
 			return errFormStruc;
 		}
 		if ((sins.magic!=0x53524353)&&(sins.magic!=0))
 		{
-			fprintf(stderr, "S3M: Invalid magic on sample (%08x)\n", (int)sins.magic);
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Invalid magic on sample (0x%08lx)\n", (unsigned long int)sins.magic);
 			return errFormStruc;
 		}
 		smppara[i]=sins.sampptr+(sins.sampptrh<<16);
@@ -302,7 +298,7 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 			/* type 0 = message / empty sample, 2-7 are different adlib types */
 			if (sins.type)
 			{
-				fprintf (stderr, "S3M: non-PCM type sample, try to use OPL driver instead of GMD\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] non-PCM type sample, try to use OPL playback plugin instead\n");
 				return errFormStruc;
 			}
 			continue;
@@ -333,14 +329,14 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 	if (!(buffer=malloc(sizeof(uint8_t)*bufsize)))
 	{
 #ifdef S3M_LOAD_DEBUG
-		fprintf(stderr, "S3M: Out of mem (2.1)\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Out of mem #2\n");
 #endif
 		return errAllocMem;
 	}
 	if (!(temptrack=malloc(sizeof(uint8_t)*5000))) /* a full-blown pattern with maxed out channels and globals can fill 4224 bytes */
 	{
 #ifdef S3M_LOAD_DEBUG
-		fprintf(stderr, "S3M: Out of mem (2)\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Out of mem #3\n");
 #endif
 		free(buffer);
 		return errAllocMem;
@@ -362,7 +358,7 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 		file->seek_set (file, patpara[t]*16);
 		if (ocpfilehandle_read_uint16_le (file, &patsize))
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #6\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] warning, read failed #6\n");
 		}
 		if (patsize>bufsize)
 		{
@@ -371,7 +367,7 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 			if (!(new=realloc(buffer, sizeof(uint8_t)*bufsize)))
 			{
 #ifdef S3M_LOAD_DEBUG
-				fprintf(stderr, "S3M: Out of mem (3)\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Out of mem #4\n");
 #endif
 				free(buffer);
 				free(temptrack);
@@ -381,7 +377,7 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 		}
 		if (file->read (file, buffer, patsize) != patsize)
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #7\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] warning, read failed #7\n");
 		}
 
 		for (j=0; j<m->channum; j++)
@@ -659,7 +655,7 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 				if (!trk->ptr)
 				{
 #ifdef S3M_LOAD_DEBUG
-					fprintf(stderr, "S3M: Out of mem (4) ?\n");
+					cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Out of mem #5\n");
 #endif
 					free(buffer);
 					free(temptrack);
@@ -771,7 +767,7 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 			if (!trk->ptr)
 			{
 #ifdef S3M_LOAD_DEBUG
-				fprintf(stderr, "S3M: Out of mem (6)?\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Out of mem #6\n");
 #endif
 				free(buffer);
 				free(temptrack);
@@ -799,13 +795,13 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 		if (!sip->ptr)
 		{
 #ifdef S3M_LOAD_DEBUG
-			fprintf(stderr, "S3M: Out of mem (7)?\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Out of mem #7\n");
 #endif
 			return errAllocMem;
 		}
 		if (file->read (file, sip->ptr, l) != l)
 		{
-			fprintf(stderr, __FILE__ ": warning, read failed #8\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] warning, read failed #8\n");
 		}
 	}
 
@@ -818,9 +814,7 @@ int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_
 
 	if (!m->channum)
 	{
-#ifdef S3M_LOAD_DEBUG
-		fprintf(stderr, "S3M: No channels left after optimize\n");
-#endif
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] No channels left after optimize\n");
 		return errFormMiss;
 	}
 

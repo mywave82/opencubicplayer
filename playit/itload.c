@@ -110,7 +110,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 
 	if (file->read (file, &hdr, sizeof (hdr)) != sizeof (hdr))
 	{
-		fprintf(stderr, "[IT]: fread() failed #1\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #1\n");
 		return errFileRead;
 	}
 	hdr.sig     = uint32_little (hdr.sig);
@@ -127,48 +127,48 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 	hdr.msgoff  = uint32_little (hdr.msgoff);
 	hdr._d3     = uint32_little (hdr._d3);
 #ifdef IT_LOAD_DEBUG
-	fprintf(stderr, __FILE__ ": hdr.sig %d\n", (int)hdr.sig);
-	fprintf(stderr, __FILE__ ": hdr.philite %d\n", (int)hdr.philite);
-	fprintf(stderr, __FILE__ ": hdr.nords %d\n", (int)hdr.nords);
-	fprintf(stderr, __FILE__ ": hdr.nins %d\n", (int)hdr.nins);
-	fprintf(stderr, __FILE__ ": hdr.nsmps %d\n", (int)hdr.nsmps);
-	fprintf(stderr, __FILE__ ": hdr.npats %d\n", (int)hdr.npats);
-	fprintf(stderr, __FILE__ ": hdr.cwtv %d\n", (int)hdr.cwtv);
-	fprintf(stderr, __FILE__ ": hdr.cmwt %d\n", (int)hdr.cmwt);
-	fprintf(stderr, __FILE__ ": hdr.flags %d\n", (int)hdr.flags);
-	fprintf(stderr, __FILE__ ": hdr.special %d\n", (int)hdr.special);
-	fprintf(stderr, __FILE__ ": hdr.msglen %d\n", (int)hdr.msglen);
-	fprintf(stderr, __FILE__ ": hdr.msgoff %d\n", (int)hdr.msgoff);
-	fprintf(stderr, __FILE__ ": hdr._d3 %d\n", (int)hdr._d3);
+	cpifaceSession->cpiDebug (cpifaceSession, "[IT] hdr.sig %d\n", (int)hdr.sig);
+	cpifaceSession->cpiDebug (cpifaceSession, "[IT] hdr.philite %d\n", (int)hdr.philite);
+	cpifaceSession->cpiDebug (cpifaceSession, "[IT] hdr.nords %d\n", (int)hdr.nords);
+	cpifaceSession->cpiDebug (cpifaceSession, "[IT] hdr.nins %d\n", (int)hdr.nins);
+	cpifaceSession->cpiDebug (cpifaceSession, "[IT] hdr.nsmps %d\n", (int)hdr.nsmps);
+	cpifaceSession->cpiDebug (cpifaceSession, "[IT] hdr.npats %d\n", (int)hdr.npats);
+	cpifaceSession->cpiDebug (cpifaceSession, "[IT] hdr.cwtv %d\n", (int)hdr.cwtv);
+	cpifaceSession->cpiDebug (cpifaceSession, "[IT] hdr.cmwt %d\n", (int)hdr.cmwt);
+	cpifaceSession->cpiDebug (cpifaceSession, "[IT] hdr.flags %d\n", (int)hdr.flags);
+	cpifaceSession->cpiDebug (cpifaceSession, "[IT] hdr.special %d\n", (int)hdr.special);
+	cpifaceSession->cpiDebug (cpifaceSession, "[IT] hdr.msglen %d\n", (int)hdr.msglen);
+	cpifaceSession->cpiDebug (cpifaceSession, "[IT] hdr.msgoff %d\n", (int)hdr.msgoff);
+	cpifaceSession->cpiDebug (cpifaceSession, "[IT] hdr._d3 %d\n", (int)hdr._d3);
 #endif
 	if (hdr.sig!=0x4D504D49) // "IMPM
 	{
-		fprintf(stderr, "IT: Invalid header\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] Invalid signature\n");
 		return errFormSig;
 	}
 	if ((hdr.flags&4)&&(hdr.cmwt<0x200))
 	{
-		fprintf(stderr, "IT: Too old format\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] File format too old\n");
 		return errFormOldVer;
 	}
 	if (hdr.nords>MAX_ORDERS)
 	{
-		fprintf(stderr, "IT: Too many orders\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] Too many orders\n");
 		return errFormStruc;
 	}
 	if (hdr.nins>MAX_INSTRUMENTS)
 	{
-		fprintf(stderr, "IT: Too many instruments\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] Too many instruments\n");
 		return errFormStruc;
 	}
 	if (hdr.nsmps>MAX_SAMPLES)
 	{
-		fprintf(stderr, "IT: Too many samples\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] Too many samples\n");
 		return errFormStruc;
 	}
 	if (hdr.npats>MAX_PATTERNS)
 	{
-		fprintf(stderr, "IT: Too many patterns\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] Too many patterns\n");
 		return errFormStruc;
 	}
 
@@ -177,25 +177,25 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 
 	if (file->read (file, ords, hdr.nords * sizeof(uint8_t)) != (hdr.nords * sizeof(uint8_t)))
 	{
-		fprintf(stderr, "[IT]: fread() failed #2\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #2\n");
 		return errFileRead;
 	}
 	if (hdr.nins)
 	{
 		if (file->read (file, insoff, hdr.nins * sizeof(uint32_t)) != (hdr.nins * sizeof(uint32_t)))
 		{
-			fprintf(stderr, "[IT]: fread() failed #3 (hdr.nins=%d)\n", hdr.nins);
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #3 (hdr.nins=%d)\n", hdr.nins);
 			return errFileRead;
 		}
 	}
 	if (file->read (file, sampoff, hdr.nsmps * sizeof(uint32_t)) != (hdr.nsmps * sizeof(uint32_t)))
 	{
-		fprintf(stderr, "[IT]: fread() failed #4\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #4\n");
 		return errFileRead;
 	}
 	if (file->read (file, patoff, hdr.npats * sizeof(uint32_t)) != (hdr.npats * sizeof(uint32_t)))
 	{
-		fprintf(stderr, "[IT]: fread() failed #5\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #5\n");
 		return errFileRead;
 	}
 	for (i=0;i<hdr.nins;i++)
@@ -232,14 +232,14 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 		char dummy[8];
 		if (ocpfilehandle_read_uint16_le (file, &usage))
 		{
-			fprintf(stderr, "[IT]: fread() failed #6\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #6\n");
 			return errFileRead;
 		}
 		for (i=0; i<usage; i++)
 		{
 			if (file->read (file, dummy, 8) != 8)
 			{
-				fprintf(stderr, "[IT]: fread() failed #7\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #7\n");
 				return errFileRead;
 			}
 		}
@@ -252,7 +252,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 
 		if (!(this->midicmds=malloc(sizeof(char *)*(9+16+128))))
 		{
-			fprintf(stderr, __FILE__ ": malloc(%d) failed #1\n", (int)(sizeof(char *)*(9+16+128)));
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #1\n", (int)(sizeof(char *)*(9+16+128)));
 			return errAllocMem;
 		}
 
@@ -262,7 +262,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 		{
 			if (file->read (file, cmd, 32) != 32)
 			{
-				fprintf(stderr, "[IT]: fread() failed #8\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #8\n");
 				return errFileRead;
 			}
 			for ( n=0; n<32; n++ )
@@ -270,7 +270,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 					cmd[n]=32;
 			if (!(this->midicmds[i]=malloc(sizeof(char)*(strlen(cmd)+1))))
 			{
-				fprintf(stderr, __FILE__ ": malloc(%d) failed #2\n", (int)(sizeof(char)*(strlen(cmd)+1)));
+				cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #2\n", (int)(sizeof(char)*(strlen(cmd)+1)));
 				return errAllocMem;
 			}
 			strcpy(this->midicmds[i], cmd);
@@ -285,14 +285,14 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 
 		if (!(msg=malloc(sizeof(char)*(hdr.msglen+1))))
 		{
-			fprintf(stderr, __FILE__ ": malloc(%d) failed #3\n", (int)(sizeof(char)*(hdr.msglen+1)));
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #3\n", (int)(sizeof(char)*(hdr.msglen+1)));
 			return errAllocMem;
 		}
 		linect=1;
 		file->seek_set (file, hdr.msgoff);
 		if (file->read (file, msg, hdr.msglen) != hdr.msglen)
 		{
-			fprintf(stderr, "[IT]: fread() failed #9\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #9\n");
 			free(msg);
 			return errFileRead;
 		}
@@ -306,7 +306,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 		}
 		if (!(this->message=calloc(sizeof(char *), linect+1)))
 		{
-			fprintf(stderr, __FILE__ ": calloc(%d) failed #4\n", (int)(sizeof(char *)*linect+1));
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] calloc(%d) failed #4\n", (int)(sizeof(char *)*linect+1));
 			free(msg);
 			return errAllocMem;
 		}
@@ -336,7 +336,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 	}
 	if (this->nord<=0)
 	{
-		fprintf(stderr, "IT: No orders\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] No orders\n");
 		return errFormMiss;
 	}
 
@@ -350,7 +350,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 
 	if (!(this->orders=malloc(sizeof(uint16_t)*this->nord)))
 	{
-		fprintf(stderr, __FILE__ ": malloc(%d) failed #5\n", (int)(sizeof(uint16_t)*this->nord));
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #5\n", (int)(sizeof(uint16_t)*this->nord));
 		return errAllocMem;
 	}
 
@@ -359,12 +359,12 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 
 	if (!(this->patlens=malloc(sizeof(uint16_t)*this->npat)))
 	{
-		fprintf(stderr, __FILE__ ": malloc(%d) failed #6\n", (int)(sizeof(uint16_t)*this->npat));
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #6\n", (int)(sizeof(uint16_t)*this->npat));
 		return errAllocMem;
 	}
 	if (!(this->patterns=calloc(sizeof(uint8_t*), this->npat)))
 	{
-		fprintf(stderr, __FILE__ ": malloc(%d) failed #7\n", (int)(sizeof(uint8_t*)*this->npat));
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #7\n", (int)(sizeof(uint8_t*)*this->npat));
 		return errAllocMem;
 	}
 
@@ -373,7 +373,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 
 	if (!this->patterns[this->npat-1])
 	{
-		fprintf(stderr, __FILE__ ": malloc(%d) failed #8\n", (int)(sizeof(uint8_t)*64));
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #8\n", (int)(sizeof(uint8_t)*64));
 		return errAllocMem;
 	}
 
@@ -399,7 +399,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 			this->patlens[k]=64;
 			if (!(this->patterns[k]=malloc(sizeof(uint8_t)*this->patlens[k])))
 			{
-				fprintf(stderr, __FILE__ ": malloc(%d) failed #9\n", (int)(sizeof(uint8_t)*this->patlens[k]));
+				cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #9\n", (int)(sizeof(uint8_t)*this->patlens[k]));
 				return errAllocMem;
 			}
 			memset(this->patterns[k], 0, this->patlens[k]);
@@ -409,12 +409,12 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 
 		if (ocpfilehandle_read_uint16_le (file, &patlen))
 		{
-			fprintf(stderr, "[IT]: fread() failed #10\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #10\n");
 			return errFileRead;
 		}
 		if (ocpfilehandle_read_uint16_le (file, &patrows))
 		{
-			fprintf(stderr, "[IT]: fread() failed #11\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #11\n");
 			return errFileRead;
 		}
 
@@ -422,13 +422,13 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 
 		if (!(patbuf=malloc(sizeof(uint8_t)*patlen)))
 		{
-			fprintf(stderr, __FILE__ ": malloc(%d) failed #10\n", (int)(sizeof(uint8_t)*patlen));
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #10\n", (int)(sizeof(uint8_t)*patlen));
 			return errAllocMem;
 		}
 
 		if (file->read (file, patbuf, patlen) != patlen)
 		{
-			fprintf(stderr, "[IT]: fread() failed #12\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #12\n");
 			free(patbuf);
 			return errFileRead;
 		}
@@ -436,7 +436,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 		if (!(this->patterns[k]=malloc(sizeof(uint8_t)*((6*64+1)*this->patlens[k]))))
 		{
 			free(patbuf);
-			fprintf(stderr, __FILE__ ": malloc(%d) failed #11\n", (int)(sizeof(uint8_t)*((6*64+1)*this->patlens[k])));
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #11\n", (int)(sizeof(uint8_t)*((6*64+1)*this->patlens[k])));
 			return errAllocMem;
 		}
 
@@ -491,7 +491,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 			if (!(new=realloc(this->patterns[k], wp-this->patterns[k])))
 			{
 				/* we loose the pointer for-ever here */
-				fprintf(stderr, __FILE__ ": realloc(%d) failed #12\n", (int)(wp-this->patterns[k]));
+				cpifaceSession->cpiDebug (cpifaceSession, "[IT] realloc(%d) failed #12\n", (int)(wp-this->patterns[k]));
 				return errAllocMem;
 			}
 			this->patterns[k]=(uint8_t *)new;
@@ -500,8 +500,8 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 
 	if (!maxchan)
 	{
-		fprintf(stderr, "IT: No channels used?\n");
-		return errFormSupp;
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] No channels used?\n");
+		return errFormMiss;
 	}
 	this->nchan=maxchan;
 
@@ -510,12 +510,12 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 
 	if (!(this->sampleinfos=malloc(sizeof(struct it_sampleinfo)*this->nsampi)))
 	{
-		fprintf(stderr, __FILE__ ": malloc(%d) failed #13\n", (int)(sizeof(struct it_sampleinfo)*this->nsampi));
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #13\n", (int)(sizeof(struct it_sampleinfo)*this->nsampi));
 		return errAllocMem;
 	}
 	if (!(this->samples=malloc(sizeof(struct it_sample)*this->nsamp)))
 	{
-		fprintf(stderr, __FILE__ ": malloc(%d) failed #14\n", (int)(sizeof(struct it_sample)*this->nsamp));
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #14\n", (int)(sizeof(struct it_sample)*this->nsamp));
 		return errAllocMem;
 	}
 	memset(this->sampleinfos, 0, this->nsampi*sizeof(struct it_sampleinfo));
@@ -555,7 +555,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 		file->seek_set (file, sampoff[i]);
 		if (file->read (file, &shdr, sizeof(shdr)) != sizeof(shdr))
 		{
-			fprintf(stderr, "[IT]: fread() failed #13\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #13\n");
 			return errFileRead;
 		}
 		shdr.sig        = uint32_little (shdr.sig);
@@ -578,13 +578,13 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 
 		if (!(shdr.flags&1))
 		{
-			fprintf(stderr, "itload.c: A sample with flag 0x01 set, skipped\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] A sample with flag 0x01 set, skipped\n");
 			continue;
 		}
 
 		if (!(shdr.length))
 		{
-			fprintf(stderr, "itload.c: A sample with length=0, skipped\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] A sample with length=0, skipped\n");
 			continue;
 		}
 
@@ -613,7 +613,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 
 		if (!(sip->ptr=malloc((sip->length+512)<<((sip->type&mcpSamp16Bit)?1:0))))
 		{
-			fprintf(stderr, __FILE__ ": malloc(%d) failed #15\n", (sip->length+512)<<((sip->type&mcpSamp16Bit)?1:0));
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #15\n", (sip->length+512)<<((sip->type&mcpSamp16Bit)?1:0));
 			return errAllocMem;
 		}
 	}
@@ -629,14 +629,14 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 
 		if (sp->packed) {
 			if (sip->type & mcpSamp16Bit)
-				decompress16(file, sip->ptr, sip->length, sp->packed&2);
+				decompress16 (cpifaceSession, file, sip->ptr, sip->length, sp->packed&2);
 			else
-				decompress8(file, sip->ptr, sip->length, sp->packed&2);
+				decompress8 (cpifaceSession, file, sip->ptr, sip->length, sp->packed&2);
 		} else {
 			uint64_t len = sip->length<<((sip->type&mcpSamp16Bit)?1:0);
 			if (file->read (file, sip->ptr, len) != len)
 			{
-				fprintf(stderr, "[IT]: fread() failed #14 (sip-ptr=%p sip->length=%d 16bit=%d)\n", sip->ptr, (int)sip->length, !!(sip->type&mcpSamp16Bit));
+				cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #14 (sip-ptr=%p sip->length=%d 16bit=%d)\n", sip->ptr, (int)sip->length, !!(sip->type&mcpSamp16Bit));
 				return errFileRead;
 			}
 		}
@@ -645,7 +645,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 	this->ninst=(hdr.flags&4)?hdr.nins:hdr.nsmps;
 	if (!(this->instruments=malloc(sizeof(struct it_instrument)*this->ninst)))
 	{
-		fprintf(stderr, __FILE__ ": malloc(%d) failed #16\n", (int)(sizeof(struct it_instrument)*this->ninst));
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #16\n", (int)(sizeof(struct it_instrument)*this->ninst));
 		return errAllocMem;
 	}
 	memset(this->instruments, 0, this->ninst*sizeof(*this->instruments));
@@ -704,7 +704,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 			file->seek_set (file, insoff[k]);
 			if (file->read (file, &ihdr, sizeof(ihdr)) != sizeof (ihdr))
 			{
-				fprintf(stderr, "[IT]: fread() failed #15\n");
+				cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #15\n");
 				return errFileRead;
 			}
 			ihdr.sig     = uint32_little (ihdr.sig);
