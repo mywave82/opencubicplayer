@@ -19,7 +19,6 @@
  */
 
 #include "config.h"
-#include <errno.h>
 #include <fcntl.h>
 #include <FLAC/all.h>
 #include <stdio.h>
