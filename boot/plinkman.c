@@ -472,11 +472,6 @@ int lnkInitAll (void)
 		if (loadlist[i].info->Init)
 			if (loadlist[i].info->Init()<0)
 				return 1;
-	for (i=0;i<loadlist_n;i++)
-		if (loadlist[i].info->LateInit)
-			if (loadlist[i].info->LateInit()<0)
-				return 1;
-
 	return 0;
 }
 
@@ -489,12 +484,21 @@ int lnkPluginInitAll (struct PluginInitAPI_t *API)
 			if (loadlist[i].info->PluginInit(API)<0)
 				return 1;
 
+	for (i=0;i<loadlist_n;i++)
+		if (loadlist[i].info->LateInit)
+			if (loadlist[i].info->LateInit()<0)
+				return 1;
+
 	return 0;
 }
 
 void lnkPluginCloseAll (struct PluginCloseAPI_t *API)
 {
 	int i;
+
+	for (i=0;i<loadlist_n;i++)
+		if (loadlist[i].info->PreClose)
+			loadlist[i].info->PreClose();
 
 	for (i=0;i<loadlist_n;i++)
 		if (loadlist[i].info->PluginClose)
@@ -504,10 +508,6 @@ void lnkPluginCloseAll (struct PluginCloseAPI_t *API)
 void lnkCloseAll (void)
 {
 	int i;
-
-	for (i=0;i<loadlist_n;i++)
-		if (loadlist[i].info->PreClose)
-			loadlist[i].info->PreClose();
 
 	for (i=0;i<loadlist_n;i++)
 		if (loadlist[i].info->Close)
