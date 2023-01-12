@@ -365,15 +365,20 @@ static int cp(const char *src, const char *dst)
 
 int validate_home(void)
 {
-	const char *home=getenv("HOME");
+	const char *xdg = getenv("XDG_CONFIG_HOME");
+	const char *homeEnv = getenv("HOME");
+	const char *home = xdg ? xdg : homeEnv;
 	char *temp;
 	const char *temp2;
 	struct stat st;
 
 	if (!home)
 		home="/root";
-	else if (!strlen(home))
-		home="/root";
+	else if (!strlen(home)) 
+	{
+		fprintf(stderr, "Either $HOME or $XDG_CONFIG_HOME is defined with a zero length variable. Please correctly define the specified path or unset the erroronous variable.\n");
+		return -1;
+	}
 	else if ((*home)!='/')
 	{
 		fprintf(stderr, "$HOME does not start with a /\n");
@@ -383,7 +388,7 @@ int validate_home(void)
 	strcpy(temp, home);
 	if (temp[strlen(temp)-1]!='/')
 		strcat(temp, "/");
-	strcat(temp, ".ocp/");
+	strcat(temp, xdg ? "ocp/" : ".ocp/");
 
 #ifdef __HAIKU__
 	{
