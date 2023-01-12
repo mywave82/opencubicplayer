@@ -19,7 +19,6 @@
  */
 
 #include "config.h"
-#include <fcntl.h>
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
