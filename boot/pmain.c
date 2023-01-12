@@ -785,9 +785,9 @@ static int init_modules(int argc, char *argv[])
 		{
 			char *kernal, *basic, *chargen, *iter;
 			printf("ocp.ini update (0.2.95) libsidplayfp ROM paths changed into UNIX syntax\n");
-			kernal  = strdup (cfGetProfileString ("libsidplay", "kernal",  "KERNAL.ROM"));
-			basic   = strdup (cfGetProfileString ("libsidplay", "basic",   "BASIC.ROM"));
-			chargen = strdup (cfGetProfileString ("libsidplay", "chargen", "CHARGEN.ROM"));
+			kernal  = strdup (cfGetProfileString ("libsidplayfp", "kernal",  "KERNAL.ROM"));
+			basic   = strdup (cfGetProfileString ("libsidplayfp", "basic",   "BASIC.ROM"));
+			chargen = strdup (cfGetProfileString ("libsidplayfp", "chargen", "CHARGEN.ROM"));
 			for (iter = kernal; *iter; iter++)
 			{
 				if (*iter == '/')
@@ -818,9 +818,9 @@ static int init_modules(int argc, char *argv[])
 					*iter = '/';
 				}
 			}
-			cfSetProfileString ("libsidplay", "kernal",  kernal);
-			cfSetProfileString ("libsidplay", "basic",   basic);
-			cfSetProfileString ("libsidplay", "chargen", chargen);
+			cfSetProfileString ("libsidplayfp", "kernal",  kernal);
+			cfSetProfileString ("libsidplayfp", "basic",   basic);
+			cfSetProfileString ("libsidplayfp", "chargen", chargen);
 			free (kernal);
 			free (basic);
 			free (chargen);
