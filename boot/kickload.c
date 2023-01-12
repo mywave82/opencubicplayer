@@ -376,7 +376,7 @@ int validate_home(void)
 		home="/root";
 	else if (!strlen(home)) 
 	{
-		fprintf(stderr, "Either $HOME or $XDG_CONFIG_HOME is defined with a zero length variable. Please correctly define the specified path or unset the erroronous variable.\n");
+		fprintf(stderr, "Either $HOME or $XDG_CONFIG_HOME is defined with a zero length variable. Please correctly define the specified path or unset the erroneous variable.\n");
 		return -1;
 	}
 	else if ((*home)!='/')
