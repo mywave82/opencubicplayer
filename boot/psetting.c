@@ -644,7 +644,7 @@ int cfGetConfig(int argc, char *argv[])
 		return -1; /* no config at all pigs! */
 	if (cfReadINIFile(argc, argv))
 	{
-		fprintf(stderr, "Failed to read ocp.ini\nPlease put it in ~/.ocp/\n");
+		fprintf(stderr, "Failed to read ocp.ini\nPlease put it in ~/.ocp/ or $XDG_CONFIG_HOME/ocp/\n");
 		return -1;
 	}
 
