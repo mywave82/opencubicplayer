@@ -162,18 +162,18 @@ int dirdbInit(void)
 	dirdbRootChild = DIRDB_NOPARENT;
 	dirdbFreeChild = DIRDB_NOPARENT;
 
-	path = malloc(strlen(cfConfigDir)+11+1);
+	path = malloc(strlen(cfDataHomeDir)+11+1);
 	if (!path)
 	{
 		fprintf(stderr, "dirdbInit: malloc() failed\n");
 		return 1;
 	}
-	strcpy(path, cfConfigDir);
+	strcpy(path, cfDataHomeDir);
 	strcat(path, "CPDIRDB.DAT");
 
 	if ((f=open(path, O_RDONLY))<0)
 	{
-		perror("open(cfConfigDir/CPDIRDB.DAT)");
+		perror("open(cfDataHomeDir/CPDIRDB.DAT)");
 		free (path);
 		return 1;
 	}
@@ -1192,18 +1192,18 @@ void dirdbFlush(void)
 		}
 	}
 
-	path = malloc(strlen(cfConfigDir)+11+1);
+	path = malloc(strlen(cfDataHomeDir)+11+1);
 	if (!path)
 	{
 		fprintf(stderr, "dirdbFlush: malloc() failed\n");
 		return;
 	}
-	strcpy(path, cfConfigDir);
+	strcpy(path, cfDataHomeDir);
 	strcat(path, "CPDIRDB.DAT");
 
 	if ((f=open(path, O_WRONLY|O_CREAT|O_TRUNC, S_IREAD|S_IWRITE))<0)
 	{
-		perror("open(cfConfigDir/CPDIRDB.DAT)");
+		perror("open(cfDataHomeDir/CPDIRDB.DAT)");
 		free (path);
 		return;
 	}

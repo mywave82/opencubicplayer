@@ -13,7 +13,7 @@ int adbmeta_silene_open_errors = 0;
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
-char *cfConfigDir = "/tmp/";
+char *cfDataHomeDir = "/tmp/";
 
 const char test_blob[] = {
 	/* header */

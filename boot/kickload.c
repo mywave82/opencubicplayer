@@ -37,6 +37,7 @@
  */
 
 #include "config.h"
+#include <dirent.h>
 #include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -58,7 +59,8 @@
 #include "boot/console.h"
 #include "stuff/poutput.h"
 
-static char *_cfConfigDir;
+static char *_cfConfigHomeDir;
+static char *_cfDataHomeDir;
 static char *_cfDataDir;
 static char *_cfProgramDir;
 
@@ -133,11 +135,9 @@ static void restartstuff(struct itimerval *i)
 
 static const char *locate_ocp_ini_try(const char *base)
 {
-	static char buffer[256];
 	struct stat st;
-	snprintf(buffer, sizeof(buffer), "%s%s", base, "ocp.ini");
-	if (!stat(buffer, &st))
-		return buffer;
+	if (!stat(base, &st))
+		return base;
 	return NULL;
 }
 
@@ -145,6 +145,7 @@ static const char *locate_ocp_ini(void)
 {
 	const char *retval;
 	const char *temp;
+#warning need to search XDG_DATA_DIRS too ?
 	if ((temp=getenv("CPDIR")))
 	{
 /*
@@ -154,21 +155,21 @@ static const char *locate_ocp_ini(void)
 		} else*/if ((retval=locate_ocp_ini_try(temp)))
 				return retval;
 	}
-	if ((retval=locate_ocp_ini_try(DATADIR "/ocp" DIR_SUFFIX "/etc/")))
+	if ((retval=locate_ocp_ini_try(DATADIR "/ocp" DIR_SUFFIX "/etc/" "ocp.ini")))
 		return retval;
-	if ((retval=locate_ocp_ini_try(DATADIR "/share/ocp/" DIR_SUFFIX)))
+	if ((retval=locate_ocp_ini_try(DATADIR "/share/ocp/" DIR_SUFFIX "/ocp.ini")))
 		return retval;
-	if ((retval=locate_ocp_ini_try(PREFIX "/etc/ocp/" DIR_SUFFIX)))
+	if ((retval=locate_ocp_ini_try(PREFIX "/etc/ocp/" DIR_SUFFIX    "/ocp.ini")))
 		return retval;
-	if ((retval=locate_ocp_ini_try(PREFIX "/etc/ocp/" )))
+	if ((retval=locate_ocp_ini_try(PREFIX "/etc/ocp/"                "ocp.ini")))
 		return retval;
-	if ((retval=locate_ocp_ini_try(PREFIX "/etc/" )))
+	if ((retval=locate_ocp_ini_try(PREFIX "/etc/"                    "ocp.ini")))
 		return retval;
-	if ((retval=locate_ocp_ini_try("/etc/ocp" DIR_SUFFIX "/")))
+	if ((retval=locate_ocp_ini_try("/etc/ocp" DIR_SUFFIX            "/ocp.ini")))
 		return retval;
-	if ((retval=locate_ocp_ini_try("/etc/ocp/")))
+	if ((retval=locate_ocp_ini_try("/etc/ocp"                       "/ocp.ini")))
 		return retval;
-	if ((retval=locate_ocp_ini_try("/etc/")))
+	if ((retval=locate_ocp_ini_try("/etc"                            "ocp.ini")))
 		return retval;
 	return NULL;
 }
@@ -363,90 +364,493 @@ static int cp(const char *src, const char *dst)
 	return 0;
 }
 
-int validate_home(void)
+static char *validate_xdg_dir_absolute (const char *name, const char *def)
 {
-	const char *xdg = getenv("XDG_CONFIG_HOME");
-	const char *homeEnv = getenv("HOME");
-	const char *home = xdg ? xdg : homeEnv;
-	char *temp;
-	const char *temp2;
-	struct stat st;
-
-	if (!home)
-		home="/root";
-	else if (!strlen(home)) 
+	char *xdg = getenv (name);
+	char *home = getenv ("HOME");
+	if (xdg)
 	{
-		fprintf(stderr, "$HOME or $XDG_CONFIG_HOME is defined with a zero-length value.\nUnset the erroneous variable or define a valid path.\n");
-		return -1;
-	}
-	else if ((*home)!='/')
-	{
-		fprintf(stderr, "$HOME does not start with a /\n");
-		return -1;
-	}
-	temp=malloc(strlen(home)+1+5+1);
-	strcpy(temp, home);
-	if (temp[strlen(temp)-1]!='/')
-		strcat(temp, "/");
-	strcat(temp, xdg ? "ocp/" : ".ocp/");
-
-#ifdef __HAIKU__
-	{
-		char settingsPath[PATH_MAX];
-		if (find_directory(B_USER_SETTINGS_DIRECTORY, -1, false, settingsPath, sizeof(settingsPath)) == B_OK)
+		if (xdg[0] == 0) /* it is an empty string */
 		{
-			free(temp);
-			temp=malloc(strlen(settingsPath)+1+4+1);
-			strcpy(temp, settingsPath);
-			strcat(temp, "/ocp/");
+			xdg = 0; /* silent ignore */
+		} else if ((xdg[0] != '/') ||      /* not absolute, must start with '/' */
+		           strstr(xdg, "/../") ||  /* not absolute, contains "/../" */
+		           ((strlen (xdg) >= 3) && (!strcmp (xdg + strlen(xdg) - 3, "/.."))) ) /* not absolute, ends with "/.." */
+		{
+			fprintf (stderr, "Warning, $%s is not an absolute path, ignoring value\n", name);
+			xdg = 0;
 		}
 	}
-#endif
-
-	_cfConfigDir=temp;
-
-	if (stat(temp, &st)<0)
+	if (xdg)
 	{
-		if (errno==ENOENT)
+		char *retval = malloc (strlen (xdg) + 5);
+		if (retval)
 		{
-			fprintf(stderr, "Creating %s\n", temp);
-			if (mkdir(temp, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)<0)
+			sprintf (retval, "%s%socp/",
+				xdg,
+				( xdg [ strlen(xdg) - 1 ] != '/' ) ? "/" : "" /* ensure that path ends with '/', but at the same that we only have one */
+			);
+		}
+		return retval;
+	}
+	if (!home)
+	{
+		fprintf (stderr, "Error, $%s and $HOME are not set\n", name);
+		return 0;
+	}
+
+	if (home[0] == 0) /* it is an empty string */
+	{
+		fprintf (stderr, "Error, $HOME is empty\n");
+		return 0;
+	}
+	if ((home[0] != '/') ||      /* not absolute, must start with '/' */
+	    strstr(home, "/../") ||  /* not absolute, contains "/../" */
+	    ((strlen (home) >= 3) && (!strcmp (home + strlen(home) - 3, "/.."))) ) /* not absolute, ends with "/.." */
+	{
+		fprintf (stderr, "Error, $HOME is not an absolute path, ignoring value\n");
+		return 0;
+	}
+	xdg = malloc (strlen(home) + 1 + strlen (def) + 5 + 1);
+	sprintf (xdg, "%s%s%s/ocp/",
+		home,
+		( home [ strlen(home) - 1 ] != '/') ? "/" : "", /* ensure that path ends with '/', but at the same that we only have one */
+		def
+	);
+	return xdg;
+}
+
+static int mkdir_r (char *path)
+{
+	char *next;
+	next = strchr (path + 1, '/');
+	while (1)
+	{
+		struct stat st;
+		if (next)
+		{
+			*next = 0;
+		}
+
+		if (stat (path, &st))
+		{
+			if (errno == ENOENT)
 			{
-				perror("mkdir()");
+				if (mkdir (path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)) /* 755 */
+				{
+					fprintf (stderr, "Failed to create %s\n", path);
+					goto failout;
+				}
+			} else {
+				fprintf (stderr, "Failed to stat %s: %s\n", path, strerror (errno));
+				goto failout;
+			}
+		} else {
+			if ((st.st_mode & S_IFMT) != S_IFDIR)
+			{
+				fprintf (stderr, "%s is not a directory\n", path);
+				goto failout;
+			}
+		}
+		if (next)
+		{
+			*next = '/';
+			next = strchr (next + 1, '/');
+		} else {
+			break;
+		}
+	}
+	return 0;
+failout:
+	if (next)
+	{
+		*next = '/';
+	}
+	return -1;
+}
+
+static int rename_exdev (const char *oldpath, const char *newpath)
+{
+	struct stat st;
+	if (lstat (oldpath, &st))
+	{
+		fprintf (stderr, "stat(%s) failed: %s\n", oldpath, strerror (errno));
+		return -1;
+	}
+	switch (st.st_mode & S_IFMT)
+	{
+		case S_IFBLK:
+		case S_IFCHR:
+		case S_IFIFO:
+		case S_IFSOCK:
+		default:
+			break; /* silenty this special file will be deleted */
+		case S_IFDIR:
+		{
+			DIR *d;
+			mkdir (newpath, st.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO));
+			fprintf (stderr, " mkdir %s\n", newpath);
+			if ((d = opendir (oldpath)))
+			{
+				struct dirent *de;
+				while ((de = readdir (d)))
+				{
+					char *tempold;
+					char *tempnew;
+
+					if (!strcmp (de->d_name, ".")) continue;
+					if (!strcmp (de->d_name, "..")) continue;
+
+					tempold = malloc (strlen (oldpath) + 1 + strlen (de->d_name) + 1);
+					tempnew = malloc (strlen (newpath) + 1 + strlen (de->d_name) + 1);
+					if ((!tempold) || (!tempnew))
+					{
+						fprintf (stderr, "malloc() failed\n");
+						free (tempold);
+						free (tempnew);
+						closedir (d);
+						return -1;
+					}
+					sprintf (tempold, "%s/%s", oldpath, de->d_name);
+					sprintf (tempnew, "%s/%s", newpath, de->d_name);
+					if (rename_exdev (tempold, tempnew))
+					{
+						free (tempold);
+						free (tempnew);
+						closedir (d);
+						return -1;
+					}
+					free (tempold);
+					free (tempnew);
+				}
+				closedir (d);
+			}
+			rmdir (oldpath);
+			return 0; /* do not use the common unlink path */
+		}
+		case S_IFLNK:
+		{
+			char linkdata[4096];
+			bzero (linkdata, sizeof (linkdata));
+			if (readlink (oldpath, linkdata, sizeof (linkdata) - 1) >= 0)
+			{
+				symlink (newpath, linkdata);
+				fprintf (stderr, " symlink %s %s", newpath, linkdata);
+				if (strstr (linkdata, ".."))
+				{
+					fprintf(stderr, "%s (warning, relative symlinks will likely break)%s", isatty (2) ? "\033[1m\033[31m" : "", isatty (2) ? "\033[0m" : "");
+				}
+				fprintf (stderr, "\n");
+			}
+			unlink (linkdata);
+			break;
+		}
+		case S_IFREG:
+		{
+			int oldfd = -1;
+			int newfd = -1;
+			char data[4096];
+			int fill;
+			if ((oldfd = open (oldpath, O_RDONLY)) < 0)
+			{
+				fprintf (stderr, "Failed to open %s: %s\n", oldpath, strerror (errno));
+				return -1;
+			}
+			if ((newfd = creat (newpath, st.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO))) < 0)
+			{
+				fprintf (stderr, "Failed to create %s: %s\n", newpath, strerror (errno));
+				close (oldfd);
+				return -1;
+			}
+			while (1)
+			{
+				fill = read (oldfd, data, sizeof (data));
+				if (fill == 0)
+				{
+					break;
+				}
+				if (fill < 0)
+				{
+					if (errno == EINTR) continue;
+					if (errno == EAGAIN) continue;
+					fprintf (stderr, "Failed to read %s: %s\n", oldpath, strerror (errno));
+					close (oldfd);
+					close (newfd);
+					return -1;
+				}
+again:
+				if (write (newfd, data, fill) < 0)
+				{
+					if (errno == EINTR) goto again;
+					if (errno == EAGAIN) goto again;
+					fprintf (stderr, "Failed to write %s: %s\n", newpath, strerror (errno));
+					close (oldfd);
+					close (newfd);
+					return -1;
+				}
+			}
+			fprintf (stderr, " copy %s %s\n", oldpath, newpath);
+			close (oldfd);
+			close (newfd);
+			unlink (oldpath);
+			break;
+		}
+	}
+	unlink (oldpath);
+	return 0;
+}
+
+static int move_exdev (const char *olddir, const char *filename, const char *newdir)
+{
+	char *tempold;
+	char *tempnew;
+
+	tempold = malloc (strlen (olddir) + 1 + strlen (filename) + 1);
+	tempnew = malloc (strlen (newdir) + 1 + strlen (filename) + 1);
+	if ((!tempold) || (!tempnew))
+	{
+		fprintf (stderr, "malloc() failed\n");
+		free (tempold);
+		free (tempnew);
+		return -1;
+	}
+	sprintf (tempold, "%s%s%s",
+		olddir,
+		(olddir[strlen(olddir)-1]!='/') ? "/" : "",
+		filename
+	);
+	sprintf (tempnew, "%s%s%s",
+		newdir,
+		(newdir[strlen(newdir)-1]!='/') ? "/" : "",
+		filename
+	);
+
+	if (rename (tempold, tempnew))
+	{
+		if (errno == EXDEV)
+		{ /* crossing file-systems requires manual work */
+			if (rename_exdev (tempold, tempnew))
+			{
 				return -1;
 			}
 		} else {
-			fprintf (stderr, "stat(%s): %s\n", temp, strerror(errno));
+			fprintf (stderr, "rename %s %s failed: %s\n", tempold, tempnew, strerror (errno));
+			free (tempold);
+			free (tempnew);
 			return -1;
 		}
+	} else {
+		fprintf (stderr, " renamed %s, %s\n", tempold, tempnew);
 	}
 
-	temp=malloc(strlen(_cfConfigDir)+12);
-	strcpy(temp, _cfConfigDir);
-	strcat(temp, "ocp.ini");
-	if (stat(temp, &st)<0)
+	free (tempold);
+	free (tempnew);
+	return 0;
+}
+
+/* returns true if ocp.ini has been located and moved */
+static int migrate_old_ocp_ini (void)
+{
+	char *home = getenv ("HOME");
+	char *oldpath;
+	DIR *d;
+	int retval = 0;
+
+	if (!home)
 	{
-		if (errno!=ENOENT)
-		{
-			fprintf (stderr, "stat(%s): %s\n", temp, strerror(errno));
-			free(temp);
-			return -1;
-		}
-		if (!(temp2=locate_ocp_ini()))
-		{
-			fprintf(stderr, "Global ocp.ini not found\n");
-			free(temp);
-			return -1;
-		}
-		if (cp(temp2, temp))
-		{
-			fprintf(stderr, "cp(%s, %s): %s\n", temp2, temp, strerror(errno));
-			free(temp);
-			return -1;
-		}
-		fprintf(stderr, "%s created\n", temp);
+		return 0; /* no ocp.ini provided */
 	}
-	free(temp);
+
+	if (home[0] == 0) /* it is an empty string */
+	{
+		return 0; /* no ocp.ini provided */
+	}
+
+	if ((home[0] != '/') ||      /* not absolute, must start with '/' */
+	    strstr(home, "/../") ||  /* not absolute, contains "/../" */
+	    ((strlen (home) >= 3) && (!strcmp (home + strlen(home) - 3, "/.."))) ) /* not absolute, ends with "/.." */
+	{
+		return 0; /* not a fatal error */
+	}
+	oldpath = malloc (strlen (home) + 6 + 1);
+	if (!oldpath)
+	{
+		fprintf (stderr, "malloc() failed\n");
+		return -1;
+	}
+	sprintf (oldpath, "%s%s.ocp/",
+		home,
+		home [strlen(home) - 1] != '/' ? "/" : "");
+	if ((d = opendir (oldpath)))
+	{
+		struct dirent *de;
+		fprintf (stderr, "Going to migrate %s into %s and %s in order to comply with XDG Base Directory Specification\n", oldpath, _cfConfigHomeDir, _cfDataHomeDir);
+		while ((de = readdir (d)))
+		{
+			if (!strcmp (de->d_name, ".")) continue;
+			if (!strcmp (de->d_name, "..")) continue;
+
+			if (!strcmp (de->d_name, "ocp.ini"))
+			{
+				if (!move_exdev (oldpath, de->d_name, _cfConfigHomeDir))
+				{
+					retval = 1;
+				}
+			} else {
+				move_exdev (oldpath, de->d_name, _cfDataHomeDir);
+			}
+		}
+		closedir (d);
+	}
+	if (rmdir (oldpath))
+	{
+		fprintf (stderr, "Warning, failed to rmdir %s: %s\n", oldpath, strerror (errno));
+	}
+	free (oldpath);
+	return retval;
+}
+
+#ifdef __HAIKU__
+static int haiku_migrate_old_ocp_init(void)
+{
+	DIR *d;
+	if (mkdir_r (_cfConfigHomeDir))
+	{
+		return -1;
+	}
+	if ((d = opendir (_cfConfigHomeDir)))
+	{
+		struct dirent *de;
+		while ((de = readdir (d)))
+		{
+			if (!strcmp (de->d_name, ".")) continue;
+			if (!strcmp (de->d_name, "..")) continue;
+
+			if (!strcmp (de->d_name, "ocp.ini"))
+			{
+				/* leave this file where it is */
+			} else {
+				/* move all others */
+				if (move_exdev (_cfConfigHomeDir, de->d_name, _cfDataHomeDir))
+				{
+					closedir (d);
+					return -1;
+				}
+			}
+		}
+		closedir (d);
+	}
+	return 0;
+}
+#endif
+
+int validate_home(void)
+{
+	_cfConfigHomeDir = 0;
+	_cfDataHomeDir   = 0;
+#ifdef __HAIKU__
+	{
+		struct stat st;
+		char settingsPath[PATH_MAX];
+		if (find_directory(B_USER_SETTINGS_DIRECTORY, -1, false, settingsPath, sizeof(settingsPath)) == B_OK)
+		{
+			_cfConfigHomeDir = malloc (strlen (settingsPath) + 5);
+			if (!_cfConfigHomeDir)
+			{
+				fprintf (stderr, "malloc() failed\n");
+				return -1;
+			}
+			sprintf (_cfConfigHomeDir, "%s/ocp/", settingsPath);
+		}
+		if (find_directory(B_USER_DATA_DIRECTORY, -1, false, settingsPath, sizeof(settingsPath)) == B_OK)
+		{
+			_cfDataHomeDir = malloc (strlen (xdg_data_home) + 5);
+			if (!_cfDataHomeDir)
+			{
+				fprintf (stderr, "malloc() failed\n");
+				free (_cfConfigHomeDir);
+				return -1;
+			}
+			sprintf (_cfConfigHomeDir, "%s/ocp/", settingsPath);
+		}
+		if (_cfConfigHomeDir && _cfConfigHomeDir &&
+		    !stat (_cfConfigHomeDir, &st) && stat (_cfConfigHomeDir, st))
+		{
+			if (haiku_migrate_old_ocp_ini())
+			{
+				return -1;
+			}
+		}
+	}
+#endif
+#warning verify HAIKU migration!
+
+	/* Ensure that we have _cfConfigHomeDir and _cfDataHomeDir */
+	if (!_cfConfigHomeDir)
+	{
+		_cfConfigHomeDir = validate_xdg_dir_absolute("XDG_CONFIG_HOME", ".config");
+		if (!_cfConfigHomeDir)
+		{
+			return -1;
+		}
+	}
+	if (!_cfDataHomeDir)
+	{
+		_cfDataHomeDir = validate_xdg_dir_absolute("XDG_DATA_HOME", ".local/share");
+		if (!_cfDataHomeDir)
+		{
+			return -1;
+		}
+	}
+	if (mkdir_r (_cfConfigHomeDir) ||
+	    mkdir_r (_cfDataHomeDir))
+	{
+		return -1;
+	}
+
+	/* validate ocp.ini */
+	{
+		char *temp = malloc (strlen (_cfConfigHomeDir) + 7 + 1);
+		struct stat st;
+		if (!temp)
+		{
+			fprintf (stderr, "malloc() failed\n");
+			return -1;
+		}
+		sprintf (temp, "%socp.ini", _cfConfigHomeDir);
+		if (stat(temp, &st)<0)
+		{ /* failed to stat ocp.ini */
+			const char *temp2;
+			if (errno != ENOENT)
+			{ /* error is fatal */
+				fprintf (stderr, "stat(%s): %s\n", temp, strerror(errno));
+				free(temp);
+				return -1;
+			}
+			/* to to migrate old ocp.ini, if successfull stop further actions */
+			if (migrate_old_ocp_ini())
+			{
+				free (temp);
+				return 0;
+			}
+			/* Try to locate system default ocp.ini, if not found, fail hard */
+			if (!(temp2=locate_ocp_ini()))
+			{
+				fprintf(stderr, "Global ocp.ini not found\n");
+				free(temp);
+				return -1;
+			} /* copy the system default ocp.ini */
+			if (cp(temp2, temp))
+			{
+				fprintf(stderr, "cp(%s, %s): %s\n", temp2, temp, strerror(errno));
+				free(temp);
+				return -1;
+			}
+			fprintf(stderr, "%s created\n", temp);
+		}
+		free(temp);
+	}
+	/* we are good to go */
 	return 0;
 }
 
@@ -524,11 +928,12 @@ static int runocp(void *handle, int argc, char *argv[])
 		return -1;
 	}
 
-	fprintf(stderr, "Setting to cfConfigDir to %s\n", _cfConfigDir);
+	fprintf(stderr, "Setting to cfConfigHomeDir to %s\n", _cfConfigHomeDir);
+	fprintf(stderr, "Setting to cfDataHomeDir to %s\n", _cfDataHomeDir);
 	fprintf(stderr, "Setting to cfDataDir to %s\n", _cfDataDir);
 	fprintf(stderr, "Setting to cfProgramDir to %s\n", _cfProgramDir);
 
-	return bootup->main(argc, argv, _cfConfigDir, _cfDataDir, _cfProgramDir);
+	return bootup->main(argc, argv, _cfConfigHomeDir, _cfDataHomeDir, _cfDataDir, _cfProgramDir);
 }
 
 int main(int argc, char *argv[])
@@ -572,13 +977,10 @@ int main(int argc, char *argv[])
 	}
 
 	retval = runocp(handle, argc, argv);
-
-	if (_cfConfigDir)
-		free(_cfConfigDir);
-	if (_cfDataDir)
-		free (_cfDataDir);
-	if (_cfProgramDir)
-		free(_cfProgramDir);
+	free (_cfConfigHomeDir);
+	free (_cfDataHomeDir);
+	free (_cfDataDir);
+	free (_cfProgramDir);
 
 #ifdef HAVE_DUMA
 	DUMA_delFrame();

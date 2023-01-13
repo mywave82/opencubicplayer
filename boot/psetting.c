@@ -159,7 +159,7 @@ static int cfReadINIFile(int argc, char *argv[])
 	char linebuffer[1024];
 	/*  int curapp=-1;*/
 
-	makepath_malloc (&path, 0, cfConfigDir, "ocp.ini", 0);
+	makepath_malloc (&path, 0, cfConfigHomeDir, "ocp.ini", 0);
 
 	strcpy(keybuf, "");
 
@@ -718,7 +718,7 @@ static int _cfStoreConfig(void)
 	int i, j;
 	char buffer[2+KEYBUF_LEN+1+STRBUF_LEN+COMMENTBUF_LEN+32+1+1];
 
-	makepath_malloc (&path, 0, cfConfigDir, "ocp.ini", 0);
+	makepath_malloc (&path, 0, cfConfigHomeDir, "ocp.ini", 0);
 
 	if (!(f=fopen(path, "w")))
 	{

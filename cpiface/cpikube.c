@@ -603,10 +603,10 @@ void __attribute__ ((visibility ("internal"))) cpiWurfel2Init (void)
 		closedir (d);
 	}
 
-	d = opendir (cfConfigDir);
+	d = opendir (cfDataHomeDir);
 	if (d)
 	{
-		parse_wurfel_directory (cfConfigDir, d);
+		parse_wurfel_directory (cfDataHomeDir, d);
 		closedir (d);
 	}
 }

@@ -272,20 +272,20 @@ int adbMetaInit (void)
 	int f, retval;
 	struct adbMetaHeader header;
 
-	adbMetaPath = malloc(strlen(cfConfigDir)+13+1);
+	adbMetaPath = malloc(strlen(cfDataHomeDir)+13+1);
 	if (!adbMetaPath)
 	{
 		fprintf (stderr, "adbMetaInit: malloc() failed\n");
 		return 1;
 	}
-	strcpy(adbMetaPath, cfConfigDir);
+	strcpy(adbMetaPath, cfDataHomeDir);
 	strcat(adbMetaPath, "CPARCMETA.DAT");
 
 	if ((f=open(adbMetaPath, O_RDONLY))<0)
 	{
 		if (!ADBMETA_SILENCE_OPEN_ERRORS)
 		{
-			perror ("adbMetaInit: open(cfConfigDir/CPARCMETA.DAT)");
+			perror ("adbMetaInit: open(cfDataHomeDir/CPARCMETA.DAT)");
 		}
 		return 1;
 	}
@@ -345,7 +345,7 @@ void adbMetaCommit (void)
 	f = open(adbMetaPath, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 	if (!f)
 	{
-		perror ("adbMetaCommit: open(cfConfigDir/CPARCMETA.DAT)");
+		perror ("adbMetaCommit: open(cfDataHomeDir/CPARCMETA.DAT)");
 		return;
 	}
 

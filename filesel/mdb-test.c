@@ -42,7 +42,7 @@ static int mdb_test_flock (int fd, int operation);
 #include "../stuff/compat.c"
 
 int fsWriteModInfo = 1;
-char *cfConfigDir = "/foo/home/ocp/.ocp/";
+char *cfDataHomeDir = "/foo/home/ocp/.ocp/";
 
 static ssize_t (*mdb_test_read_hook) (int fd, void *buf, size_t size) = 0;
 static ssize_t (*mdb_test_write_hook) (int fd, void *buf, size_t size) = 0;

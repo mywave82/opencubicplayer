@@ -976,7 +976,7 @@ int failcheck(signed int source, signed int filter)
 }
 #endif
 
-static int _bootup(int argc, char *argv[], const char *ConfigDir, const char *DataDir, const char *ProgramDir)
+static int _bootup(int argc, char *argv[], const char *ConfigHomeDir, const char *ConfigDataDir, const char *DataDir, const char *ProgramDir)
 {
 	int result;
 	if (isatty(2))
@@ -1006,7 +1006,8 @@ static int _bootup(int argc, char *argv[], const char *ConfigDir, const char *Da
 	fprintf(stderr, "pass\n");
 #endif
 
-	cfConfigDir = (char *)ConfigDir;
+	cfConfigHomeDir = (char *)ConfigHomeDir;
+	cfDataHomeDir = (char*)ConfigDataDir;
 	cfDataDir = strdup (DataDir);
 	cfProgramDir = (char *)ProgramDir;
 	cfProgramDirAutoload = malloc (strlen (cfProgramDir) + 9 + 1);
@@ -1014,7 +1015,8 @@ static int _bootup(int argc, char *argv[], const char *ConfigDir, const char *Da
 
 	if (cfGetConfig(argc, argv))
 	{
-		cfConfigDir = 0;
+		cfConfigHomeDir = 0;
+		cfDataHomeDir = 0;
 		free (cfDataDir); cfDataDir = 0;
 		cfProgramDir = 0;
 		free (cfTempDir); cfTempDir = 0;
@@ -1031,7 +1033,8 @@ static int _bootup(int argc, char *argv[], const char *ConfigDir, const char *Da
 
 	cfCloseConfig();
 
-	cfConfigDir = 0;
+	cfConfigHomeDir = 0;
+	cfDataHomeDir = 0;
 	free (cfDataDir); cfDataDir = 0;
 	cfProgramDir = 0;
 	free (cfTempDir); cfTempDir = 0;
