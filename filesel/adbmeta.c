@@ -290,7 +290,7 @@ int adbMetaInit (void)
 		return 1;
 	}
 
-	fprintf(stderr, "Loading %s ..\n", adbMetaPath);
+	fprintf(stderr, "Loading %s .. ", adbMetaPath);
 
 	if (read(f, &header, sizeof (header)) != sizeof (header))
 	{
@@ -323,6 +323,8 @@ int adbMetaInit (void)
 	retval = adbMetaInit_ParseFd (f);
 
 	close (f);
+
+	fprintf (stderr, "Done\n");
 
 	return retval;
 }
