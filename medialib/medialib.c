@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2005-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * MEDIALIBRARY filebrowser
  *
@@ -335,4 +335,4 @@ static void mlclose(void)
 	}
 }
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "medialib", .desc = "OpenCP medialib (c) 2005-'22 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 90, .Init = mlint, .Close = mlclose};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "medialib", .desc = "OpenCP medialib (c) 2005-'23 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 90, .Init = mlint, .Close = mlclose};

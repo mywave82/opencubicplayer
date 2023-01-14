@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2011-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2011-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * CPIface text track/pattern display
  *
@@ -897,4 +897,3 @@ void __attribute__ ((visibility ("internal"))) cpiTrackInit (void)
 {
 	plTrackActive=cfGetProfileBool2(cfScreenSec, "screen", "pattern", 1, 1);
 }
-

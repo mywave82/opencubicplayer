@@ -1,6 +1,6 @@
 /* OpenCP Module Player
- * copyright (c) '94-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
+ * copyright (c) 2004-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * OGGPlay interface routines
  *
@@ -260,4 +260,4 @@ static void oggPluginClose (struct PluginCloseAPI_t *API)
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) oggPlayer = {"[OGG Vorbis plugin]", oggOpenFile, oggCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playogg", .desc = "OpenCP Ogg Vorbis Player (c) 1994-'22 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 95, .PluginInit = oggPluginInit, .PluginClose = oggPluginClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playogg", .desc = "OpenCP Ogg Vorbis Player (c) 1994-'23 Stian Skjelstad, Niklas Beisert & Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 95, .PluginInit = oggPluginInit, .PluginClose = oggPluginClose};

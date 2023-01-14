@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2004-'122 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'2023 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Unit-test for "dwmixqa.c"
  *

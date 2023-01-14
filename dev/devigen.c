@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * DevIGen - devices system overhead
  *
@@ -156,4 +156,4 @@ int deviReadDevices(const char *list, struct devinfonode **devs)
 	return 1;
 }
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "devi", .desc = "OpenCP Devices Auxiliary Routines (c) 1994-'22 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 10};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "devi", .desc = "OpenCP Devices Auxiliary Routines (c) 1994-'23 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 10};

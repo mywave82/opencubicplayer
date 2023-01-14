@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2011-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2011-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * /dev/vcsa* console driver
  *

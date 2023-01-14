@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2007-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2007-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * FLACPlay file type detection routines for the fileselector
  *

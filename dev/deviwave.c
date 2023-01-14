@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Wavetable devices system
  *
@@ -408,4 +408,4 @@ static void mcpPrep(struct moduleinfostruct *info, struct ocpfilehandle_t **bp)
 }
 
 static struct preprocregstruct mcpPreprocess = {mcpPrep PREPROCREGSTRUCT_TAIL};
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "mcpbase", .desc = "OpenCP Wavetable Devices System (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .Init = wavedevinit, .Close = wavedevclose, .sortindex = 30};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "mcpbase", .desc = "OpenCP Wavetable Devices System (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .Init = wavedevinit, .Close = wavedevclose, .sortindex = 30};

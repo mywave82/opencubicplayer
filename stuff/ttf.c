@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 2001-'20 Sam Lantinga <slouken@libsdl.org>
- * copyright (c) 2020-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2020-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * TrueType (tm) support - using FreeType library.
  *

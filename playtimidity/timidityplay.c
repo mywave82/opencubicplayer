@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2005-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Timidity glue logic
  *
@@ -18,6 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+
 #include "config.h"
 #include <assert.h>
 #include <sys/stat.h>

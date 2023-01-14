@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2005-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * OPLPlay interface routines
  *
@@ -534,7 +534,7 @@ extern "C"
 	DLLEXTINFO_PLAYBACK_PREFIX_CPP struct linkinfostruct dllextinfo =
 	{ /* c++ historically does not support named initializers, and size needs to be writable... */
 		/* .name = */ "playym",
-		/* .desc = */ "OpenCP STYMulator Player (c) 2010-'22 Stian Skjelstad",
+		/* .desc = */ "OpenCP STYMulator Player (c) 2010-'23 Stian Skjelstad",
 		/* .ver  = */ DLLVERSION,
 		/* .sortindex = */ 95,
 		/* .PreInit = */ 0,

@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'20 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * ITPlayer interface routines
  *
@@ -376,4 +376,4 @@ static void itPluginClose (struct PluginCloseAPI_t *API)
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) itPlayer = {"[ImpulseTracker plugin]", itpOpenFile, itpCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playit", .desc = "OpenCP IT Player (c) 1997-'22 Tammo Hinrichs, Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = itPluginInit, .PluginClose = itPluginClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playit", .desc = "OpenCP IT Player (c) 1997-'23 Tammo Hinrichs, Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = itPluginInit, .PluginClose = itPluginClose};

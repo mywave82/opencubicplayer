@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2020-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2020-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Display information about the current SID/C64 emulation setup.
  *

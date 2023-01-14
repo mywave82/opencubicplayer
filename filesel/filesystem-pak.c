@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2022 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2022-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Code to decode PAK (Westwood and Quake) file archives
  *

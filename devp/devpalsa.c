@@ -1,5 +1,5 @@
 /** OpenCP Module Player
- * copyright (c) 2005-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * ALSA (Advanced Linux Sound Architecture) Player device
  *
@@ -1411,4 +1411,4 @@ struct sounddevice plrAlsa =
 };
 
 const char *dllinfo="driver plrAlsa";
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpalsa", .desc = "OpenCP Player Device: ALSA (c) 2005-'22 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = alsaPluginInit, .PluginClose = alsaPluginClose};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpalsa", .desc = "OpenCP Player Device: ALSA (c) 2005-'23 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = alsaPluginInit, .PluginClose = alsaPluginClose};

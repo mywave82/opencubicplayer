@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2005-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * AYPlay interface routines
  *
@@ -231,4 +231,4 @@ static void ayPluginClose (struct PluginCloseAPI_t *API)
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) ayPlayer = {"[Aylet plugin]", ayOpenFile, ayCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playay", .desc = "OpenCP aylet Player (c) 2005-'22 Russell Marks, Ian Collier & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = ayPluginInit, .PluginClose = ayPluginClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playay", .desc = "OpenCP aylet Player (c) 2005-'23 Russell Marks, Ian Collier & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = ayPluginInit, .PluginClose = ayPluginClose};

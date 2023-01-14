@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2022 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2022-'23 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
  *
  * libsidplay setup config dialog
  *
@@ -17,7 +17,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-
 
 #include "config.h"
 #include <assert.h>

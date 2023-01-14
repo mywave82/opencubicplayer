@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2021-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2021-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Timidity audio setup/viewer
  *

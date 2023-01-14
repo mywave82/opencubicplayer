@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * CP hypertext help viewer
  *
@@ -959,4 +959,4 @@ static void hlpGlobalClose(void)
 	hlpFreePages();
 }
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "cphelper", .desc = "OpenCP help browser (c) 1998-'22 Fabian Giesen", .ver = DLLVERSION, .sortindex = 20, .Init = hlpGlobalInit, .Close = hlpGlobalClose};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "cphelper", .desc = "OpenCP help browser (c) 1998-'23 Fabian Giesen", .ver = DLLVERSION, .sortindex = 20, .Init = hlpGlobalInit, .Close = hlpGlobalClose};

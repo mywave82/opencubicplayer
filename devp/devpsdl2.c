@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2011-'22 François Revol <revol@free.fr>
+ * copyright (c) 2011-'23 François Revol <revol@free.fr>
  *
  * SDL Player device
  *
@@ -101,4 +101,4 @@ struct sounddevice plrSDL =
 };
 
 const char *dllinfo="driver plrSDL";
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpsdl2", .desc = "OpenCP Player Device: SDL2 (c) 2011-'22 François Revol & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpsdl2", .desc = "OpenCP Player Device: SDL2 (c) 2011-'23 François Revol & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};

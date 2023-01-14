@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * GMDPlay interface routines
  *
@@ -411,4 +411,4 @@ const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPl
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerSTM = {"[General module plugin: STM]", gmdOpenFileSTM, gmdCloseFile};
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerULT = {"[General module plugin: ULT]", gmdOpenFileULT, gmdCloseFile};
 
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playgmd", .desc = "OpenCP General Module Player (c) 1994-'22 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = gmdPluginInit, .PluginClose = gmdPluginClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playgmd", .desc = "OpenCP General Module Player (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = gmdPluginInit, .PluginClose = gmdPluginClose};

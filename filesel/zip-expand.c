@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2020-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2020-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Code to decompress ZIP reducing method. No test files found, so code
  * is still incomplete and untested

@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2010-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2010-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * YM file type detection routines for the fileselector
  *

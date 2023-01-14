@@ -13,7 +13,7 @@ struct sounddevice;
 struct deviceinfo
 {
 	struct sounddevice *devtype;
-	uint32_t opt;
+	uint32_t opt; /* device specific flags parsed by GetOpt() */
 	int8_t subtype;
 	char path[DEVICE_NAME_MAX+1]; /* can be like 127.0.0.1:32000, or stuff like /tmp/.esd .... or whatever you prefer or just empty for no force*/
 	char mixer[DEVICE_NAME_MAX+1];

@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2020-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2020-'2x Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Utility: Dumping the ID3 tags from MP3 files
  *

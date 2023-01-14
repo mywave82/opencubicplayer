@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) '05-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * OPL-compatible file type detection routines for the file selector
  *

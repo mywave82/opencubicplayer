@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2007-'22 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2007-'232323an Skjelstad <stian.skjelstad@gmail.com>
  *
  * FLACPlay interface routines
  *
@@ -250,4 +250,4 @@ static void flacPluginClose (struct PluginCloseAPI_t *API)
 }
 
 const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) flacPlayer = {"[FLAC plugin]", flacOpenFile, flacCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playflac", .desc = "OpenCP FLAC Player (c) 2007-'22 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = flacPluginInit, .PluginClose = flacPluginClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playflac", .desc = "OpenCP FLAC Player (c) 2007-'23 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = flacPluginInit, .PluginClose = flacPluginClose};
