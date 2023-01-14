@@ -1392,7 +1392,9 @@ static int ekbhit_sdl2dummy(void)
 #endif
 				if (skipone)
 				{
-					fprintf (stderr, "skipone hit..\n");
+#ifdef SDL2_DEBIG
+					fprintf (stderr, "              skipone hit..\n");
+#endif
 					skipone=0;
 				} else {
 					int i;
