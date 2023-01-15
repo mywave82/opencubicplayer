@@ -603,7 +603,7 @@ int mdbInit (void)
 
 		qsort(mdbSearchIndexData, mdbSearchIndexCount, sizeof(*mdbSearchIndexData), miecmp);
 
-		for (i=0; i<mdbSearchIndexSize; i++)
+		for (i=0; i<mdbSearchIndexCount; i++)
 		{
 			DEBUG_PRINT("%5d => 0x%08"PRIx32" %"PRIu64" 0x%02x%02x%02x%02x%02x%02x%02x%02x\n",
 				i, mdbSearchIndexData[i], mdbData[mdbSearchIndexData[i]].mie.general.size,
