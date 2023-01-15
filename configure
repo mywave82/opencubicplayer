@@ -763,7 +763,9 @@ HAIKU
 PTHREAD_LIBS
 LIB_SUFFIX
 SHARED_FLAGS
+UPDATE_DESKTOP_DATABASE
 DESKTOP_FILE_INSTALL
+UPDATE_MIME_DATABASE
 SET_MAKE
 CXXCPP
 ac_ct_CXX
@@ -847,7 +849,9 @@ with_coreaudio
 with_flac
 with_sdl
 with_sdl2
+with_update_mime_database
 with_desktop_file_install
+with_update_desktop_database
 with_dumptools
 with_unifontdir_ttf
 with_unifont_ttf
@@ -1569,8 +1573,14 @@ Optional Packages:
                           default)
   --with-sdl2             force/disable SDL2 video support (autodetect by
                           default)
+  --without-update-mime-database
+                          Do not update mime database after file copy (SDL and
+                          X11 normally does this)
   --without-desktop_file_install
                           Do not install .desktop file (SDL and X11 normally
+                          does this)
+  --without-update-desktop-database
+                          Do not update desktop database (SDL and X11 normally
                           does this)
   --with-dumptools        enable building the different fileformat dump
                           utilities
@@ -7454,6 +7464,8 @@ fi
 
 
 
+
+
  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether byte ordering is bigendian" >&5
 printf %s "checking whether byte ordering is bigendian... " >&6; }
 if test ${ac_cv_c_bigendian+y}
@@ -7708,6 +7720,8 @@ case $target in #(
 		LIB_SUFFIX=.so
 		PTHREAD_LIBS=
 		with_desktop_file_install=no
+		with_update_mime_database=no
+		with_update_desktop_database=no
 		HAIKU=1
 	 ;; #(
   *) :
@@ -7731,7 +7745,6 @@ else $as_nop
 fi
 
 
-
 # Check whether --with-x11 was given.
 if test ${with_x11+y}
 then :
@@ -7740,7 +7753,7 @@ else $as_nop
   with_x11=auto
 fi
 
-#AC_ARG_WITH([adplug],               [AS_HELP_STRING([--with-adplug],                 [force/disable adplug support])],                                            [], [with_adplug=auto])
+#AC_ARG_WITH([adplug],                 [AS_HELP_STRING([--with-adplug],                    [force/disable adplug support])],                                                [], [with_adplug=auto])
 
 # Check whether --with-mad was given.
 if test ${with_mad+y}
@@ -7823,12 +7836,30 @@ else $as_nop
 fi
 
 
+# Check whether --with-update_mime_database was given.
+if test ${with_update_mime_database+y}
+then :
+  withval=$with_update_mime_database;
+else $as_nop
+  with_update_mime_database=auto
+fi
+
+
 # Check whether --with-desktop_file_install was given.
 if test ${with_desktop_file_install+y}
 then :
   withval=$with_desktop_file_install;
 else $as_nop
   with_desktop_file_install=auto
+fi
+
+
+# Check whether --with-update_desktop_database was given.
+if test ${with_update_desktop_database+y}
+then :
+  withval=$with_update_desktop_database;
+else $as_nop
+  with_update_desktop_database=auto
 fi
 
 
@@ -7911,7 +7942,6 @@ then :
 else $as_nop
   with_unifont_upper_otf="${with_unifontdir_otf}/unifont_upper.otf"
 fi
-
 
 
 # normally, this is done automatically first when running AC_OUTPUT, but we need them expanded now
@@ -16402,6 +16432,66 @@ printf "%s\n" "#define USE_LIBICONV_NATIVE 1" >>confdefs.h
 		;;
 esac
 
+if test "x$with_update_mime_database" != "xno"
+then :
+
+	if test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"
+then :
+
+		# Extract the first word of "update-mime-database", so it can be a program name with args.
+set dummy update-mime-database; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_prog_UPDATE_MIME_DATABASE+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  if test -n "$UPDATE_MIME_DATABASE"; then
+  ac_cv_prog_UPDATE_MIME_DATABASE="$UPDATE_MIME_DATABASE" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_prog_UPDATE_MIME_DATABASE="update-mime-database"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_UPDATE_MIME_DATABASE" && ac_cv_prog_UPDATE_MIME_DATABASE="failed"
+fi
+fi
+UPDATE_MIME_DATABASE=$ac_cv_prog_UPDATE_MIME_DATABASE
+if test -n "$UPDATE_MIME_DATABASE"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $UPDATE_MIME_DATABASE" >&5
+printf "%s\n" "$UPDATE_MIME_DATABASE" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
+		if test "x$UPDATE_MIME_DATBASE" = "xfailed"
+then :
+
+			as_fn_error $? "Cannot find update-mime-database (required by x11 and SDL driver)." "$LINENO" 5
+
+fi
+
+fi
+
+fi
+
 if test "x$with_desktop_file_install" != "xno"
 then :
 
@@ -16455,6 +16545,66 @@ fi
 then :
 
 			as_fn_error $? "Cannot find desktop-file-install (required by x11 and SDL driver)." "$LINENO" 5
+
+fi
+
+fi
+
+fi
+
+if test "x$with_update_desktop_database" != "xno"
+then :
+
+	if test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"
+then :
+
+		# Extract the first word of "update-desktop-database", so it can be a program name with args.
+set dummy update-desktop-database; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_prog_UPDATE_DESKTOP_DATABASE+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  if test -n "$UPDATE_DESKTOP_DATABASE"; then
+  ac_cv_prog_UPDATE_DESKTOP_DATABASE="$UPDATE_DESKTOP_DATABASE" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_prog_UPDATE_DESKTOP_DATABASE="update-desktop-database"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_UPDATE_DESKTOP_DATABASE" && ac_cv_prog_UPDATE_DESKTOP_DATABASE="failed"
+fi
+fi
+UPDATE_DESKTOP_DATABASE=$ac_cv_prog_UPDATE_DESKTOP_DATABASE
+if test -n "$UPDATE_DESKTOP_DATABASE"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $UPDATE_DESKTOP_DATABASE" >&5
+printf "%s\n" "$UPDATE_DESKTOP_DATABASE" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
+		if test "x$UPDATE_DESKTOP_DATBASE" = "xfailed"
+then :
+
+			as_fn_error $? "Cannot find update-desktop-database (required by x11 and SDL driver)." "$LINENO" 5
 
 fi
 

@@ -9,5 +9,5 @@ Exec=@BINDIR@/ocp %F
 Icon=opencubicplayer
 Terminal=false
 Type=Application
-Categories=Application;AudioVideo;Audio;
-MimeType=audio/mod;audio/s3m;audio/it;audio/xm;audio/sa2;audio/mid;audio/wav;audio/rad;audio/ay;
+Categories=AudioVideo;Audio;Player;Music;
+MimeType=audio/flac;audio/mp2;audio/mpeg;audio/ogg;audio/prs.sid;audio/x-ams;audio/x-ay;audio/x-dmf;audio/x-flac;audio/x-flac+ogg;audio/x-it;audio/x-stm;audio/x-mdl;audio/x-midi;audio/x-mod;audio/x-oggflac;audio/x-okt;audio/x-ptm;audio/x-s3m;audio/x-vorbis+ogg;audio/x-wav;audio/x-xm;

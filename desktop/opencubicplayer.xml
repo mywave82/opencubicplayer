@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+ <mime-type type="audio/x-ay">
+   <comment>ZX Spectrum audio file (Z80 executable code + AY-3-8910 PSG)</comment>
+   <magic priority="50">
+    <match type="string" value="ZXAYEMUL" offset="0"/>
+   </magic>
+   <glob pattern="*.ay"/> 
+ </mime-type>
+
+ <mime-type type="audio/x-ams">
+  <comment>Extreme Tracker / Velvet Studio</comment>
+  <magic priority="50">
+   <match type="string" value="Extreme" offset="0"/>
+   <match type="string" value="AMShdr\032" offset="0"/>
+  </magic>
+  <glob pattern="*.ams"/> 
+ </mime-type>
+
+ <mime-type type="audio/x-dmf">
+  <comment>Delusion/XTracker Digital Music File</comment>
+  <magic priority="40">
+   <match type="string" value="DDMF" offset="0"/>
+  </magic>
+  <glob pattern="*.dmf"/> 
+ </mime-type>
+
+ <mime-type type="audio/x-mdl">
+  <comment>DigiTrakker tracker by Prodatron</comment>
+  <magic priority="40">
+   <match type="string" value="DMDL" offset="0"/>
+  </magic>
+  <glob pattern="*.mdl"/> 
+ </mime-type>
+
+ <mime-type type="audio/x-mdl">
+  <comment>Oktalyzer tracker by Armin Sander</comment>
+  <magic priority="50">
+   <match type="string" value="OKTASONG" offset="0"/>
+  </magic>
+  <glob pattern="*.okt"/> 
+ </mime-type>
+
+ <mime-type type="audio/x-ptm">
+  <comment>PolyTracker by Lone Ranger of AcmE</comment>
+  <magic priority="40">
+   <match type="string" value="PTMF" offset="0"/>
+  </magic>
+  <glob pattern="*.ptm"/> 
+ </mime-type>
+
+ <mime-type type="audio/x-hvl">
+  <comment>Hively Tracker</comment>
+  <magic priority="40">
+   <match type="string" value="THX\000" offset="0"/>
+   <match type="string" value="THX\001" offset="0"/>
+   <match type="string" value="THX\002" offset="0"/>
+   <match type="string" value="HVL\000" offset="0"/>
+   <match type="string" value="HVL\001" offset="0"/>
+  </magic>
+  <glob pattern="*.ahx"/> 
+  <glob pattern="*.hvl"/> 
+ </mime-type>
+
+ <mime-type type="audio/x-ym">
+  <comment>YM2149 register dumps, PSG audio</comment>
+  <glob pattern="*.ym"/> 
+ </mime-type>
+</mime-info>

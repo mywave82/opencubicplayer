@@ -38,7 +38,9 @@ AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_CXXCPP
 AC_PROG_MAKE_SET
+AC_SUBST(UPDATE_MIME_DATABASE)
 AC_SUBST(DESKTOP_FILE_INSTALL)
+AC_SUBST(UPDATE_DESKTOP_DATABASE)
 
 AC_C_BIGENDIAN
 
@@ -60,6 +62,8 @@ AS_CASE([$target],
 		LIB_SUFFIX=.so
 		PTHREAD_LIBS=
 		with_desktop_file_install=no
+		with_update_mime_database=no
+		with_update_desktop_database=no
 		HAIKU=1
 	],[
 		SHARED_FLAGS=-shared
@@ -69,38 +73,35 @@ AS_CASE([$target],
 )
 AC_DEFINE_UNQUOTED(LIB_SUFFIX, "$LIB_SUFFIX")
 
-AC_ARG_WITH([builtin],              [AS_HELP_STRING([--with-builtin=core,auto,none],
-                                                                                     [force/disable builtin plugins support. For now playback plugins, audio mixers and audio drivers are always modules])],
-                                                                                                                                                                  [], [with_builtin=auto])
-
-AC_ARG_WITH([x11],                  [AS_HELP_STRING([--with-x11],                    [force/disable x11 support])],                                               [], [with_x11=auto])
-#AC_ARG_WITH([adplug],               [AS_HELP_STRING([--with-adplug],                 [force/disable adplug support])],                                            [], [with_adplug=auto])
-AC_ARG_WITH([mad],                  [AS_HELP_STRING([--with-mad],                    [force/disable mad mpeg audio support])],                                    [], [with_mad=auto])
-AC_ARG_WITH([alsa],                 [AS_HELP_STRING([--with-alsa],                   [force/disable alsa support])],                                              [], [with_alsa=auto])
-AC_ARG_WITH([oss],                  [AS_HELP_STRING([--with-oss],                    [force/disable oss support])],                                               [], [with_oss=auto])
-AC_ARG_WITH([lzw],                  [AS_HELP_STRING([--with-lzw],                    [force/disable lzw support (enabled by default)])],                          [], [with_lzw=yes])
-AC_ARG_WITH([lzh],                  [AS_HELP_STRING([--with-lzh],                    [force/disable lzh support in .ym files(enabled by default)])],              [], [with_lzh=yes])
-AC_ARG_WITH([coreaudio],            [AS_HELP_STRING([--with-coreaudio],              [force/disable osx coreaudio support (autodetect by default)])],             [], [with_coreaudio=auto])
-AC_ARG_WITH([flac],                 [AS_HELP_STRING([--with-flac],                   [force/disable FLAC support (autodetect by default)])],                      [], [with_flac=auto])
-AC_ARG_WITH([sdl],                  [AS_HELP_STRING([--with-sdl],                    [force/disable SDL video support (autodetect by default)])],                 [], [with_sdl=auto])
-AC_ARG_WITH([sdl2],                 [AS_HELP_STRING([--with-sdl2],                   [force/disable SDL2 video support (autodetect by default)])],                [], [with_sdl2=auto])
-AC_ARG_WITH([desktop_file_install], [AS_HELP_STRING([--without-desktop_file_install],[Do not install .desktop file (SDL and X11 normally does this)])],           [], [with_desktop_file_install=auto])
-AC_ARG_WITH([dumptools],            [AS_HELP_STRING([--with-dumptools],              [enable building the different fileformat dump utilities])],                 [], [with_dumptools=no])
-AC_ARG_WITH([unifontdir-ttf],       [AS_HELP_STRING([--with-unifontdir-ttf=/path],   [the path to where ttf-unifont is located (used by X11, SDL1.x and SDL2)])], [], [with_unifontdir_ttf="${datarootdir}/fonts/truetype/unifont"])
-AC_ARG_WITH([unifont_ttf],          [AS_HELP_STRING([--with-unifont-ttf=/path],      [the full path to unifont.ttf (default is UNIFONTDIR/unifont.ttf); use this option if the unifont.ttf is named UniFont.ttf or similiar. If the filename contains version number it is recommended that this is fixed in unifont installation with non-version symlinks])],
-                                                                                                                                                                  [], [with_unifont_ttf="${with_unifontdir_ttf}/unifont.ttf"])
-AC_ARG_WITH([unifont_csur_ttf],     [AS_HELP_STRING([--with-unifont-csur-ttf=/path], [the full path to unifont_csur.ttf (default is UNIFONTDIR/unifont_csur.ttf) or disable by using --without-unifont-csur-ttf])],
-                                                                                                                                                                  [], [with_unifont_csur_ttf="${with_unifontdir_ttf}/unifont_csur.ttf"])
-AC_ARG_WITH([unifont_upper_ttf],    [AS_HELP_STRING([--with-unifont-upper-ttf=/path],[the full path to unifont_upper.ttf (default is UNIFONTDIR/unifont_upper.ttf)])],
-                                                                                                                                                                  [], [with_unifont_upper_ttf="${with_unifontdir_ttf}/unifont_upper.ttf"])
-AC_ARG_WITH([unifontdir-otf],       [AS_HELP_STRING([--with-unifontdir-otf=/path],   [the path to where otf-unifont is located (used by X11, SDL1.x and SDL2)])], [], [with_unifontdir_otf="${datarootdir}/fonts/opentype/unifont"])
-AC_ARG_WITH([unifont_otf],          [AS_HELP_STRING([--with-unifont-otf=/path],      [the full path to unifont.otf (default is UNIFONTDIR/unifont.otf); use this option if the unifont.otf is named UniFont.otf or similiar. If the filename contains version number it is recommended that this is fixed in unifont installation with non-version symlinks])],
-                                                                                                                                                                  [], [with_unifont_otf="${with_unifontdir_otf}/unifont.otf"])
-AC_ARG_WITH([unifont_csur_otf],     [AS_HELP_STRING([--with-unifont-csur-otf=/path], [the full path to unifont_csur.otf (default is UNIFONTDIR/unifont_csur.otf) or disable by using --without-unifont-csur-otf])],
-                                                                                                                                                                  [], [with_unifont_csur_otf="${with_unifontdir_otf}/unifont_csur.otf"])
-AC_ARG_WITH([unifont_upper_otf],    [AS_HELP_STRING([--with-unifont-upper-otf=/path],[the full path to unifont_upper.otf (default is UNIFONTDIR/unifont_upper.otf)])],
-                                                                                                                                                                  [], [with_unifont_upper_otf="${with_unifontdir_otf}/unifont_upper.otf"])
-
+AC_ARG_WITH([builtin],                 [AS_HELP_STRING([--with-builtin=core,auto,none],    [force/disable builtin plugins support. For now playback plugins, audio mixers and audio drivers are always modules])],
+                                                                                                                                                                            [], [with_builtin=auto])
+AC_ARG_WITH([x11],                     [AS_HELP_STRING([--with-x11],                       [force/disable x11 support])],                                                   [], [with_x11=auto])
+#AC_ARG_WITH([adplug],                 [AS_HELP_STRING([--with-adplug],                    [force/disable adplug support])],                                                [], [with_adplug=auto])
+AC_ARG_WITH([mad],                     [AS_HELP_STRING([--with-mad],                       [force/disable mad mpeg audio support])],                                        [], [with_mad=auto])
+AC_ARG_WITH([alsa],                    [AS_HELP_STRING([--with-alsa],                      [force/disable alsa support])],                                                  [], [with_alsa=auto])
+AC_ARG_WITH([oss],                     [AS_HELP_STRING([--with-oss],                       [force/disable oss support])],                                                   [], [with_oss=auto])
+AC_ARG_WITH([lzw],                     [AS_HELP_STRING([--with-lzw],                       [force/disable lzw support (enabled by default)])],                              [], [with_lzw=yes])
+AC_ARG_WITH([lzh],                     [AS_HELP_STRING([--with-lzh],                       [force/disable lzh support in .ym files(enabled by default)])],                  [], [with_lzh=yes])
+AC_ARG_WITH([coreaudio],               [AS_HELP_STRING([--with-coreaudio],                 [force/disable osx coreaudio support (autodetect by default)])],                 [], [with_coreaudio=auto])
+AC_ARG_WITH([flac],                    [AS_HELP_STRING([--with-flac],                      [force/disable FLAC support (autodetect by default)])],                          [], [with_flac=auto])
+AC_ARG_WITH([sdl],                     [AS_HELP_STRING([--with-sdl],                       [force/disable SDL video support (autodetect by default)])],                     [], [with_sdl=auto])
+AC_ARG_WITH([sdl2],                    [AS_HELP_STRING([--with-sdl2],                      [force/disable SDL2 video support (autodetect by default)])],                    [], [with_sdl2=auto])
+AC_ARG_WITH([update_mime_database],    [AS_HELP_STRING([--without-update-mime-database],   [Do not update mime database after file copy (SDL and X11 normally does this)])],[], [with_update_mime_database=auto])
+AC_ARG_WITH([desktop_file_install],    [AS_HELP_STRING([--without-desktop_file_install],   [Do not install .desktop file (SDL and X11 normally does this)])],               [], [with_desktop_file_install=auto])
+AC_ARG_WITH([update_desktop_database], [AS_HELP_STRING([--without-update-desktop-database],[Do not update desktop database (SDL and X11 normally does this)])],             [], [with_update_desktop_database=auto])
+AC_ARG_WITH([dumptools],               [AS_HELP_STRING([--with-dumptools],                 [enable building the different fileformat dump utilities])],                     [], [with_dumptools=no])
+AC_ARG_WITH([unifontdir-ttf],          [AS_HELP_STRING([--with-unifontdir-ttf=/path],      [the path to where ttf-unifont is located (used by X11, SDL1.x and SDL2)])],     [], [with_unifontdir_ttf="${datarootdir}/fonts/truetype/unifont"])
+AC_ARG_WITH([unifont_ttf],             [AS_HELP_STRING([--with-unifont-ttf=/path],         [the full path to unifont.ttf (default is UNIFONTDIR/unifont.ttf); use this option if the unifont.ttf is named UniFont.ttf or similiar. If the filename contains version number it is recommended that this is fixed in unifont installation with non-version symlinks])],
+                                                                                                                                                                            [], [with_unifont_ttf="${with_unifontdir_ttf}/unifont.ttf"])
+AC_ARG_WITH([unifont_csur_ttf],        [AS_HELP_STRING([--with-unifont-csur-ttf=/path],    [the full path to unifont_csur.ttf (default is UNIFONTDIR/unifont_csur.ttf) or disable by using --without-unifont-csur-ttf])],
+                                                                                                                                                                            [], [with_unifont_csur_ttf="${with_unifontdir_ttf}/unifont_csur.ttf"])
+AC_ARG_WITH([unifont_upper_ttf],       [AS_HELP_STRING([--with-unifont-upper-ttf=/path],   [the full path to unifont_upper.ttf (default is UNIFONTDIR/unifont_upper.ttf)])],[], [with_unifont_upper_ttf="${with_unifontdir_ttf}/unifont_upper.ttf"])
+AC_ARG_WITH([unifontdir-otf],          [AS_HELP_STRING([--with-unifontdir-otf=/path],      [the path to where otf-unifont is located (used by X11, SDL1.x and SDL2)])],     [], [with_unifontdir_otf="${datarootdir}/fonts/opentype/unifont"])
+AC_ARG_WITH([unifont_otf],             [AS_HELP_STRING([--with-unifont-otf=/path],         [the full path to unifont.otf (default is UNIFONTDIR/unifont.otf); use this option if the unifont.otf is named UniFont.otf or similiar. If the filename contains version number it is recommended that this is fixed in unifont installation with non-version symlinks])],
+                                                                                                                                                                            [], [with_unifont_otf="${with_unifontdir_otf}/unifont.otf"])
+AC_ARG_WITH([unifont_csur_otf],        [AS_HELP_STRING([--with-unifont-csur-otf=/path],    [the full path to unifont_csur.otf (default is UNIFONTDIR/unifont_csur.otf) or disable by using --without-unifont-csur-otf])],
+                                                                                                                                                                            [], [with_unifont_csur_otf="${with_unifontdir_otf}/unifont_csur.otf"])
+AC_ARG_WITH([unifont_upper_otf],       [AS_HELP_STRING([--with-unifont-upper-otf=/path],   [the full path to unifont_upper.otf (default is UNIFONTDIR/unifont_upper.otf)])],[], [with_unifont_upper_otf="${with_unifontdir_otf}/unifont_upper.otf"])
 
 # normally, this is done automatically first when running AC_OUTPUT, but we need them expanded now
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -985,11 +986,29 @@ case $with_libiconv in
 		;;
 esac
 
+AS_IF([test "x$with_update_mime_database" != "xno"],[
+	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"], [
+		AC_CHECK_PROG([UPDATE_MIME_DATABASE], [update-mime-database], [update-mime-database], [failed])
+		AS_IF([test "x$UPDATE_MIME_DATBASE" = "xfailed"],[
+			AC_MSG_ERROR([Cannot find update-mime-database (required by x11 and SDL driver).])
+		])
+	])
+])
+
 AS_IF([test "x$with_desktop_file_install" != "xno"],[
 	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"], [
 		AC_CHECK_PROG([DESKTOP_FILE_INSTALL], [desktop-file-install], [desktop-file-install], [failed])
 		AS_IF([test "x$DESKTOP_FILE_INSTALL" = "xfailed"],[
 			AC_MSG_ERROR([Cannot find desktop-file-install (required by x11 and SDL driver).])
+		])
+	])
+])
+
+AS_IF([test "x$with_update_desktop_database" != "xno"],[
+	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"], [
+		AC_CHECK_PROG([UPDATE_DESKTOP_DATABASE], [update-desktop-database], [update-desktop-database], [failed])
+		AS_IF([test "x$UPDATE_DESKTOP_DATBASE" = "xfailed"],[
+			AC_MSG_ERROR([Cannot find update-desktop-database (required by x11 and SDL driver).])
 		])
 	])
 ])

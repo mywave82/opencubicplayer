@@ -67,6 +67,7 @@ ifeq (1,$(firstword $(filter 1,$(HAVE_X11) $(HAVE_SDL) $(HAVE_SDL2))))
 	mkdir -p "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/64x64/apps/"
 	mkdir -p "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/128x128/apps/"
 	mkdir -p "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/scalable/apps/"
+	mkdir -p "$(DESTDIR)$(DATAROOTDIR)/mime/packages"
 	$(CP) desktop/opencubicplayer-16x16.png "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/16x16/apps/opencubicplayer.png"
 	$(CP) desktop/opencubicplayer-22x22.png "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/22x22/apps/opencubicplayer.png"
 	$(CP) desktop/opencubicplayer-24x24.png "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/24x24/apps/opencubicplayer.png"
@@ -75,11 +76,17 @@ ifeq (1,$(firstword $(filter 1,$(HAVE_X11) $(HAVE_SDL) $(HAVE_SDL2))))
 	$(CP) desktop/opencubicplayer-64x64.png "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/64x64/apps/opencubicplayer.png"
 	$(CP) desktop/opencubicplayer-128x128.png "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/128x128/apps/opencubicplayer.png"
 	$(CP) desktop/opencubicplayer.svg "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/scalable/apps/opencubicplayer.svg"
+	$(CP) desktop/opencubicplayer.xml "$(DESTDIR)$(DATAROOTDIR)/mime/packages/opencubicplayer.xml"
+ifneq ($(UPDATE_MIME_DATABASE),)
+	$(UPDATE_MIME_DATABASE) "$(DESTDIR)$(DATAROOTDIR)/mime"
 endif
-
 ifneq ($(DESKTOP_FILE_INSTALL),)
 	mkdir -p "$(DESTDIR)$(DATAROOTDIR)/applications"
 	$(DESKTOP_FILE_INSTALL) --vendor="cubic.org" --dir="$(DESTDIR)$(DATAROOTDIR)/applications" desktop/opencubicplayer.desktop
+endif
+ifneq ($(UPDATE_DESKTOP_DATABASE),)
+	$(UPDATE_DESKTOP_DATABASE)
+endif
 endif
 	for i in $(SUBDIRS) ; do \
 	       $(MAKE) -C $$i TOPDIR=../$(TOPDIR) install || exit 1 ;\
@@ -90,7 +97,23 @@ uninstall:
 	       $(MAKE) -C $$i TOPDIR=../$(TOPDIR) uninstall || exit 1 ;\
 	done
 	rm -Rf "$(DESTDIR)$(DOCDIR)" "$(DESTDIR)$(DATADIR)/ocp$(DIR_SUFFIX)" "$(DESTDIR)$(LIBDIR)" "$(DESTDIR)$(BINDIR)/ocp$(DIR_SUFFIX)" "$(DESTDIR)$(BINDIR)/ocp" "$(DESTDIR)$(BINDIR)/ocp-curses" "$(DESTDIR)$(BINDIR)/ocp-sdl" "$(DESTDIR)$(BINDIR)/ocp-sdl2" "$(DESTDIR)$(BINDIR)/ocp-vcsa" "$(DESTDIR)$(BINDIR)/ocp-x11"
-	rm -f "$(DESTDIR)$(DATAROOTDIR)/applications/opencubicplayer.desktop" "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/16x16/apps/opencubicplayer.xpm" "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/48x48/apps/opencubicplayer.xpm"
+	rm -f "$(DESTDIR)$(DATAROOTDIR)/applications/opencubicplayer.desktop"
+	rm -f "$(DESTDIR)$(DATAROOTDIR)/applications/cubic.org-opencubicplayer.desktop"
+	rm -f "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/16x16/apps/opencubicplayer.png"
+	rm -f "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/22x22/apps/opencubicplayer.png"
+	rm -f "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/24x24/apps/opencubicplayer.png"
+	rm -f "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/32x32/apps/opencubicplayer.png"
+	rm -f "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/48x48/apps/opencubicplayer.png"
+	rm -f "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/64x64/apps/opencubicplayer.png"
+	rm -f "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/128x128/apps/opencubicplayer.png"
+	rm -f "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/scalable/apps/opencubicplayer.svg"
+	rm -f "$(DESTDIR)$(DATAROOTDIR)/mime/packages/opencubicplayer.xml"
+ifneq ($(UPDATE_MIME_DATABASE),)
+	$(UPDATE_MIME_DATABASE) "$(DESTDIR)$(DATAROOTDIR)/mime" || true
+endif
+ifneq ($(UPDATE_DESKTOP_DATABASE),)
+	$(UPDATE_DESKTOP_DATABASE) || true
+endif
 
 clean:
 	for i in $(SUBDIRS) ; do \
