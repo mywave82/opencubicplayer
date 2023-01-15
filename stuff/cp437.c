@@ -166,27 +166,50 @@ void  __attribute__((constructor)) cp437_charset_init(void)
 	to_cp437_from_utf8 = iconv_open(OCP_FONT "//TRANSLIT", "UTF-8");
 	if (to_cp437_from_utf8==(iconv_t)(-1))
 	{
-		fprintf(stderr, "iconv_open(%s, \"UTF-8\") failed: %s - retrying \"%s\"\n", OCP_FONT "//TRANSLIT", strerror(errno), OCP_FONT);
+		fprintf(stderr, "iconv_open(\"%s\", \"UTF-8\") failed: %s - retrying \"%s\"\n", OCP_FONT "//TRANSLIT", strerror(errno), OCP_FONT);
 
 		to_cp437_from_utf8 = iconv_open(OCP_FONT, "UTF-8");
 		if (to_cp437_from_utf8==(iconv_t)(-1))
 		{
-			fprintf(stderr, "iconv_open(%s, \"UTF-8\") failed: %s\n", OCP_FONT, strerror(errno));
+			fprintf(stderr, "iconv_open(\"%s\", \"UTF-8\") failed: %s\n", OCP_FONT, strerror(errno));
+
+			to_cp437_from_utf8 = iconv_open("CP850", "UTF-8");
+			if (to_cp437_from_utf8==(iconv_t)(-1))
+			{
+				fprintf(stderr, "iconv_open(\"CP850\", \"UTF-8\") failed: %s\n", strerror(errno));
+
+				to_cp437_from_utf8 = iconv_open("ASCII", "UTF-8");
+				if (to_cp437_from_utf8==(iconv_t)(-1))
+				{
+					fprintf(stderr, "iconv_open(\"ASCII\", \"UTF-8\") failed: %s\n", strerror(errno));
+				}
+			}
 		}
 	}
 
 	from_cp437_to_utf8 = iconv_open("UTF-8//TRANSLIT", OCP_FONT);
 	if (from_cp437_to_utf8==(iconv_t)(-1))
 	{
-		fprintf(stderr, "iconv_open(\"UTF-8//TRANSLIT\", %s) failed: %s - retrying \"UTF-8\"\n", OCP_FONT, strerror(errno));
+		fprintf(stderr, "iconv_open(\"UTF-8//TRANSLIT\", \"%s\") failed: %s - retrying \"UTF-8\"\n", OCP_FONT, strerror(errno));
 
 		from_cp437_to_utf8 = iconv_open("UTF-8", OCP_FONT);
 		if (from_cp437_to_utf8==(iconv_t)(-1))
 		{
-			fprintf(stderr, "iconv_open(\"UTF-8\", %s) failed: %s\n", OCP_FONT, strerror(errno));
+			fprintf(stderr, "iconv_open(\"UTF-8\", \"%s\") failed: %s\n", OCP_FONT, strerror(errno));
+
+			from_cp437_to_utf8 = iconv_open("UTF-8", "CP850");
+			if (from_cp437_to_utf8==(iconv_t)(-1))
+			{
+				fprintf(stderr, "iconv_open(\"UTF-8\", \"CP850\") failed: %s\n", strerror(errno));
+
+				from_cp437_to_utf8 = iconv_open("UTF-8", "ASCII");
+				if (from_cp437_to_utf8==(iconv_t)(-1))
+				{
+					fprintf(stderr, "iconv_open(\"UTF-8\", \"ASCII\") failed: %s\n", strerror(errno));
+				}
+			}
 		}
 	}
-
 }
 
 void  __attribute__((destructor)) cp437_charset_done(void)
