@@ -76,6 +76,10 @@ Note: if letters are capital, press them with <kbd>shift</kbd>
 
 <kbd>f</kbd>: File-browser
 
+<kbd><</kbd>: Rewind
+
+<kbd>></kbd>: Fast Forward
+
 <kbd>a</kbd>: Text FFT analyzer, <kbd>A</kbd>: toggle FFT analyzer, <kbd>tab</kbd>, toggle colors
 
 <kbd>c</kbd>: Text Channel viewer
