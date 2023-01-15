@@ -110,7 +110,10 @@ void utf8_to_cp437(const char *src, size_t srclen, char *dst, size_t dstlen)
 	{
 		*dst = 0;
 	}
-	iconv (to_cp437_from_utf8, 0, 0, 0, 0);
+	if (to_cp437_from_utf8 != (iconv_t)(-1))
+	{
+		iconv (to_cp437_from_utf8, 0, 0, 0, 0);
+	}
 }
 
 void cp437_f_to_utf8_z(const char *src, size_t srclen, char *dst, size_t dstlen)
@@ -151,7 +154,10 @@ void cp437_f_to_utf8_z(const char *src, size_t srclen, char *dst, size_t dstlen)
 	}
 	dstlen++;
 	*dst = 0;
-	iconv (from_cp437_to_utf8, 0, 0, 0, 0);
+	if (from_cp437_to_utf8 != (iconv_t)(-1))
+	{
+		iconv (from_cp437_to_utf8, 0, 0, 0, 0);
+	}
 }
 
 
@@ -196,5 +202,4 @@ void  __attribute__((destructor)) cp437_charset_done(void)
 		iconv_close(from_cp437_to_utf8);
 		from_cp437_to_utf8 = (iconv_t)(-1);
 	}
-
 }
