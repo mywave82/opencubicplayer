@@ -97,4 +97,10 @@ int clock_gettime(clockid_t clk_id, struct timespec *tp);
 # endif
 #endif
 
+# ifdef __HAIKU__
+#  ifdef ioctl
+#   undef ioctl
+#  endif
+# endif
+
 #endif

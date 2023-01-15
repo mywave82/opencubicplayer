@@ -12,15 +12,36 @@ resource app_version {
        internal = 0,
 
        short_info = "Open Cubic Player",
-       long_info = "Open Cubic Player ©1994-2022 Niklas Beisert, Stian Skjelstad and others."
+       long_info = "Open Cubic Player ©1994-'23 Niklas Beisert, Stian Skjelstad and others."
 };
 
 resource app_flags B_MULTIPLE_LAUNCH | B_ARGV_ONLY;
 
 resource file_types message {
-       "types" = "application/ogg",
        "types" = "application/x-ogg",
-       "types" = "audio"
+       "types" = "audio",
+       "types" = "audio/flac",
+       "types" = "audio/mp2",
+       "types" = "audio/mpeg",
+       "types" = "audio/ogg",
+       "types" = "audio/prs.sid",
+       "types" = "audio/x-ams",
+       "types" = "audio/x-ay",
+       "types" = "audio/x-dmf",
+       "types" = "audio/x-flac",
+       "types" = "audio/x-flac+ogg",
+       "types" = "audio/x-it",
+       "types" = "audio/x-mdl",
+       "types" = "audio/x-midi",
+       "types" = "audio/x-mod",
+       "types" = "audio/x-oggflac",
+       "types" = "audio/x-okt",
+       "types" = "audio/x-ptm",
+       "types" = "audio/x-s3m",
+       "types" = "audio/x-stm",
+       "types" = "audio/x-vorbis+ogg",
+       "types" = "audio/x-wav",
+       "types" = "audio/x-xm"
 };
 
 resource("BEOS:ICON") #'VICN' array {

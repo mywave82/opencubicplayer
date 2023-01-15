@@ -57,12 +57,11 @@ AS_CASE([$target],
 		LIB_SUFFIX=.dylib
 		PTHREAD_LIBS=-pthread
 	],
-	[-haiku*],[
+	[*-haiku*],[
 		SHARED_FLAGS=-shared
 		LIB_SUFFIX=.so
 		PTHREAD_LIBS=
 		with_desktop_file_install=no
-		with_update_mime_database=no
 		with_update_desktop_database=no
 		HAIKU=1
 	],[
