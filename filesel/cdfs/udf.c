@@ -82,6 +82,7 @@ static void N(int n)
 	}
 }
 
+#ifdef CDFS_DEBUG
 static const char *TagIdentifierName(const uint16_t TagIdentifier)
 {
 	switch (TagIdentifier)
@@ -110,6 +111,7 @@ static const char *TagIdentifierName(const uint16_t TagIdentifier)
 		default: return "Unknown";
 	}
 }
+#endif
 
 static void print_1_7_2_1 (uint8_t buffer[64]) //Character Set Type (RBP 0)
 {
@@ -561,6 +563,7 @@ static void print_1_7_3 (uint8_t buffer[12]) // Time Stamp
 	}
 }
 
+#ifdef CDFS_DEBUG
 static const char *GetOSClass(uint8_t Class)
 {
 	switch (Class)
@@ -578,7 +581,9 @@ static const char *GetOSClass(uint8_t Class)
 		default: return "Reserved";
 	}
 }
+#endif
 
+#ifdef CDFS_DEBUG
 static const char *GetOSIdentifier(uint8_t Class, uint8_t Identifier)
 {
 	if (Class == 0)
@@ -651,6 +656,7 @@ static const char *GetOSIdentifier(uint8_t Class, uint8_t Identifier)
 
 	return "Reserved";
 }
+#endif
 
 static void print_1_7_4 (uint8_t buffer[32], const int IsImplementation) // regid
 {
@@ -1958,7 +1964,9 @@ static void ExtendedAttributesCommon (int n, uint8_t *b, uint32_t l, uint32_t Ta
 				}
 				{
 					uint32_t ES_L = (b[15]<<24) | (b[14]<<16) | (b[13]<<8) | b[12];
+#ifdef CDFS_DEBUG
 					uint8_t CharacterSetType = b[16];
+#endif
 					int j;
 					N(n+4); debug_printf ("EscapeSequencesLength: %"PRIu32"\n", ES_L);
 					N(n+4); debug_printf ("CharacterSetType:      CS%"PRIu8"\n", CharacterSetType);
