@@ -229,6 +229,7 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 	if (file->read (file, buffer, length) != (int)length)
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[YM] Unable to read file\n");
+		retval = errFileRead;
 		goto error_out_buffer;
 	}
 

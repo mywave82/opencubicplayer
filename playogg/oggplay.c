@@ -911,6 +911,7 @@ int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle
 			case OV_EFAULT:     cpifaceSession->cpiDebug (cpifaceSession, "[OGG] ov_open_callbacks(): Internal logic fault; indicates a bug or heap/stack corruption.\n"); break;
 			default:            cpifaceSession->cpiDebug (cpifaceSession, "[OGG] ov_open_callbacks(): Unknown error %d\n", result); break;
 		}
+		retval = errFormStruc;
 		goto error_out_file;
 	}
 
