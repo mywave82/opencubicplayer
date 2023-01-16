@@ -886,7 +886,7 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 				{
 					snprintf (mi.album, sizeof (mi.album), "%s", dh->owner->cdrom->musicbrainzdata->album);
 				}
-				if (dh->owner->cdrom->musicbrainzdata && dh->owner->cdrom->musicbrainzdata->title[dh->i])
+				if (dh->owner->cdrom->musicbrainzdata && dh->owner->cdrom->musicbrainzdata->title[dh->i][0])
 				{
 					snprintf (mi.title, sizeof (mi.title), "%s", dh->owner->cdrom->musicbrainzdata->title[dh->i]);
 				} else if (!mi.title[0])
