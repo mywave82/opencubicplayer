@@ -121,31 +121,42 @@ static void ConfigDrawBar (const int lineno, int xpos, int width, int scale, con
 	{
 		level    = saturate (level,    -99999, 99999);
 		minlevel = saturate (minlevel, -99999, 99999);
-		maxlevel = saturate (maxlevel, -99999, 99999);
+		maxlevel = saturate (maxlevel,      0, 99999);
+		abslevel = abs(level);
+		absmin   = abs(minlevel);
+
+		snprintf (prefix, sizeof (prefix), "%3d.%02d%s",
+			level / scale,
+			abslevel % scale,
+			suffix);
+
+		snprintf (min, sizeof (min), "%3d.%02d",
+			minlevel / scale,
+			absmin % scale);
+
+		snprintf (max, sizeof (max), "%3d.%02d",
+			maxlevel / scale,
+			maxlevel % scale);
 	} else {
 		level    = saturate (level,    -9999, 9999);
 		minlevel = saturate (minlevel, -9999, 9999);
-		maxlevel = saturate (maxlevel, -9999, 9999);
+		maxlevel = saturate (maxlevel,     0, 9999);
+		abslevel = abs(level);
+		absmin   = abs(minlevel);
+
+		snprintf (prefix, sizeof (prefix), "%4d.%01d%s",
+			level / scale,
+			abslevel % scale,
+			suffix);
+
+		snprintf (min, sizeof (min), "%4d.%01d",
+			minlevel / scale,
+			absmin % scale);
+
+		snprintf (max, sizeof (max), "%4d.%01d",
+			maxlevel / scale,
+			maxlevel % scale);
 	}
-
-	abslevel = abs(level);
-	absmin   = abs(minlevel);
-
-
-	snprintf (prefix, sizeof (prefix), "%4d.%0*d%s",
-		level / scale,
-		(scale == 100) ? 2 : 1,
-		abslevel % scale,
-		suffix);
-
-	snprintf (min, sizeof (min), "%4d.%0*d",
-		minlevel / scale,
-		(scale == 100) ? 2 : 1,
-		absmin % scale);
-	snprintf (max, sizeof (max), "%3d.%0*d",
-		maxlevel / scale,
-		(scale == 100) ? 2 : 1,
-		maxlevel % scale);
 
 	pos = (/*(maxlevel - minlevel / 46) - 1 +*/ (level - minlevel) * 22) / (maxlevel - minlevel);
 
@@ -333,7 +344,7 @@ static void sidConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 
 	ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, " 8: filterbias", 10, "mv", -5000, 5000, config_filterbias, EditPos==7, API);
 
-	ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, " 9: filtercurve6581", 100, "", -0, 100, config_filtercurve6581, EditPos==8, API);
+	ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, " 9: filtercurve6581", 100, "", 0, 100, config_filtercurve6581, EditPos==8, API);
 
 	ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, "10: filtercurve8580", 100, "", 0, 100, config_filtercurve8580, EditPos==9, API);
 
