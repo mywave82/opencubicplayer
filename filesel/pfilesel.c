@@ -2385,7 +2385,7 @@ static int fsEditChan(int y, int x, uint8_t *chan)
 	if (state == 0)
 	{
 		curpos = 0;
-		snprintf (str, sizeof (str), "%02d", *chan);
+		snprintf (str, sizeof (str), "%02d", saturate(*chan,0, 99));
 		setcurshape(1);
 		state = 1;
 	}
