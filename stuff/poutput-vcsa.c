@@ -868,7 +868,7 @@ void vcsa_done(void)
 	close(vgafd);
 	vgafd=-1;
 
-	if ((iconv_t)(-1)==activecharset_cd)
+	if (activecharset_cd != (iconv_t)(-1))
 	{
 		iconv_close (activecharset_cd);
 		activecharset_cd = (iconv_t)(-1);
