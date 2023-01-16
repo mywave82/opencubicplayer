@@ -401,17 +401,19 @@ static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 #ifdef MIXER_DEBUG
 			{
 				int i;
-				fprintf(stderr, "nsamples=%d\n", nsamples);
-				for (i=0;i<nvoices;i++)
-					if (voiceflags[i])
+				fprintf(stderr, "nsamples=%d\n", targetlength);
+				for (i=0;i<channelnum;i++)
+				{
+					if (!(dwmixfa_state.voiceflags[i] & MIXF_QUIET))
 					{
 						fprintf(stderr, "voice #%d\n", i);
 						fprintf(stderr, "  samp: %p (%p)\n", channels[i].samp, channels[i].sbpos);
-						fprintf(stderr, "  looplen: %08x\n", looplen[i]);
-						fprintf(stderr, "  voiceflags: 0x%08x\n", voiceflags[i]);
-						fprintf(stderr, "  freq: 0x%08x:0x%08x\n", freqw[i], freqf[i]);
-						fprintf(stderr, "  vol %lf %lf\n", volleft[i], volright[i]);
+						fprintf(stderr, "  looplen: %08x\n", dwmixfa_state.looplen[i]);
+						fprintf(stderr, "  voiceflags: 0x%08x\n", dwmixfa_state.voiceflags[i]);
+						fprintf(stderr, "  freq: 0x%08x:0x%08x\n", dwmixfa_state.freqw[i], dwmixfa_state.freqf[i]);
+						fprintf(stderr, "  vol %lf %lf\n", dwmixfa_state.volleft[i], dwmixfa_state.volright[i]);
 					}
+				}
 				fprintf(stderr, "\n");
 			}
 #endif

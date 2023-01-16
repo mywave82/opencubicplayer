@@ -34,9 +34,13 @@
 
 #define CACHE_LINES 4
 
+#if defined(FILEHANDLE_CACHE_DEBUG)
+static int do_filehandle_debug_print=1;
+#endif
+
 #ifdef FILEHANDLE_CACHE_DEBUG
-#define DEBUG_PRINT(...) do { if (do_debug_print) { fprintf(stderr, __VA_ARGS__); } } while (0)
-#define DUMP_SELF(S) do { if (do_debug_print) { dump_self(s); } } while (0)
+#define DEBUG_PRINT(...) do { if (do_filehandle_debug_print) { fprintf(stderr, __VA_ARGS__); } } while (0)
+#define DUMP_SELF(S) do { if (do_filehandle_debug_print) { dump_self(s); } } while (0)
 #else
 #define DEBUG_PRINT(...) do {} while (0)
 #define DUMP_SELF(S) do {} while (0)

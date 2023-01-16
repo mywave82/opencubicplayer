@@ -541,7 +541,7 @@ static uint32_t zip_instance_add_create_dir (struct zip_instance_t *self,
 {
 	uint32_t *prev, iter;
 	uint32_t dirdb_ref;
-	DEBUG_PRINT ("[ZIP] create_dir: %s %d\n", Filename, Filename_FlaggedUTF8);
+	DEBUG_PRINT ("[ZIP] create_dir: \"%s\" \"%s\" %d\n", Dirpath, Dirname, Filename_FlaggedUTF8);
 
 	if (!Filename_FlaggedUTF8)
 	{

@@ -43,7 +43,7 @@ static void DEBUG_PRINTF (const char *fmt, ...)
 {
 }
 #else
-#define DEBUG_PRINTF cpifaceSession->cpiDebug
+#define DEBUG_PRINTF(...) cpifaceSession->cpiDebug(cpifaceSession, __VA_ARGS__)
 #endif
 
 static inline void putcmd(unsigned char **p, unsigned char c, unsigned char d)

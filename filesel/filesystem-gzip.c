@@ -40,7 +40,7 @@
 
 #define LARGEST_THEORETICALLY_32BIT_SIZE 0x3f80fe // based on TAIL-32bit original size information is wrapping for LARGE objects, and theoretically largest compression ratio is 1032:1 =>  0xffffffff / 1032
 
-#if defined(GZIP2_DEBUG) || defined(GZIP_VERBOSE)
+#if defined(GZIP_DEBUG) || defined(GZIP_VERBOSE)
 static int do_gzip_debug_print=1;
 #endif
 

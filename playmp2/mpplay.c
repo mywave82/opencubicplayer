@@ -40,9 +40,11 @@
 #include "stuff/imsrtns.h"
 
 #ifdef PLAYMP2_DEBUG
-#define debug_printf(...) cpifaceSession->cpiDebug (cpifaceSession, __VA_ARGS__)
+#define debug_printf_load(...) cpifaceSession->cpiDebug (cpifaceSession, __VA_ARGS__)
+#define debug_printf_stream(...) fprintf (stderr, __VA_ARGS__)
 #else
-#define debug_printf(format,args...) ((void)0)
+#define debug_printf_load(format,args...) ((void)0)
+#define debug_printf_stream(format,args...) ((void)0)
 #endif
 
 /* options */
@@ -221,14 +223,14 @@ static inline uint_fast32_t id3_tag_query(const unsigned char *data, uint_fast32
 		    (data[1]=='A')&&
 		    (data[2]=='G'))
 		{
-			debug_printf ("[MPx] we probably have a TAG\n");
+			debug_printf_stream ("[MPx] we probably have a TAG\n");
 			return 128;
 		}
 		if ((data[0]=='E')&&
 		    (data[1]=='X')&&
 		    (data[2]=='T'))
 		{
-			debug_printf ("[MPx] we probably have a EXT\n");
+			debug_printf_stream ("[MPx] we probably have a EXT\n");
 			return 128;
 		}
 	}
@@ -241,7 +243,7 @@ static inline uint_fast32_t id3_tag_query(const unsigned char *data, uint_fast32
 		    (data[4]!=0xff))
 		{
 			uint_fast32_t size = (data[6]<<21)|(data[7]<<14)|(data[8]<<7)|(data[9]);
-			debug_printf ("[MPx] we probably have a ID3\n");
+			debug_printf_stream ("[MPx] we probably have a ID3\n");
 			return size+10; /* size of header */
 		}
 		if ((data[0]=='3')&&
@@ -250,14 +252,14 @@ static inline uint_fast32_t id3_tag_query(const unsigned char *data, uint_fast32
 		    (data[3]!=0xff)&&
 		    (data[4]!=0xff))
 		{
-			debug_printf ("[MPx] we probably have a FOOTER\n");
+			debug_printf_stream ("[MPx] we probably have a FOOTER\n");
 			return 10;
 		}
 	}
 
 	for (i=0; (data[i] == 0x00) && (i < length); i++); /* all zero bytes we can skip, they are probably padding */
 
-	debug_printf ("[MPx] We have %d bytes of zero (%02x len=%d)\n", (int)i, data[0], (int)length);
+	debug_printf_stream ("[MPx] We have %d bytes of zero (%02x len=%d)\n", (int)i, data[0], (int)length);
 
 	return i; /* if no zero bytes were found, we can not tell */
 }
@@ -283,7 +285,7 @@ static void id3_tag_init (uint32_t len)
 
 static void apply_id3 (struct ID3_t *ID3)
 {
-	debug_printf ("[MPx] Got a tag to apply\n");
+	debug_printf_stream ("[MPx] Got a tag to apply\n");
 	if (mpeg_inSIGINT)
 	{
 		ID3_clear (&HoldingTag);
@@ -300,12 +302,12 @@ static void got_id3v1x(uint8_t *buffer)
 	struct ID3v1data_t data;
 	struct ID3_t ID3 = {0};
 
-	debug_printf ("[MPx] Trying to parse ID3v1.x\n");
+	debug_printf_stream ("[MPx] Trying to parse ID3v1.x\n");
 
 	if (parse_ID3v1x(&data, buffer, 128)) return;
 	if (finalize_ID3v1(&ID3, &data)) return;
 
-	debug_printf ("[MPx] Parsing successfull\n");
+	debug_printf_stream ("[MPx] Parsing successfull\n");
 
 	apply_id3 (&ID3);
 }
@@ -315,13 +317,13 @@ static void got_id3v12(uint8_t *buffer)
 	struct ID3v1data_t data;
 	struct ID3_t ID3 = {0};
 
-	debug_printf ("[MPx] Trying to parse ID3v1.x + ID3v1.2\n");
+	debug_printf_stream ("[MPx] Trying to parse ID3v1.x + ID3v1.2\n");
 
 	if (parse_ID3v1x(&data, buffer+128, 128)) return;
 	if (parse_ID3v12(&data, buffer, 128)) return;
 	if (finalize_ID3v1(&ID3, &data)) return;
 
-	debug_printf ("[MPx] Parsing successfull\n");
+	debug_printf_stream ("[MPx] Parsing successfull\n");
 
 	apply_id3 (&ID3);
 }
@@ -330,11 +332,11 @@ static void got_id3v2(uint8_t *buffer, uint32_t length)
 {
 	struct ID3_t ID3 = {0};
 
-	debug_printf ("[MPx] Trying to parse ID3v2.x\n");
+	debug_printf_stream ("[MPx] Trying to parse ID3v2.x\n");
 
 	if (parse_ID3v2x (&ID3, buffer, length)) return;
 
-	debug_printf ("[MPx] Parsing successfull\n");
+	debug_printf_stream ("[MPx] Parsing successfull\n");
 
 	apply_id3 (&ID3);
 }
@@ -370,15 +372,15 @@ static void id3_feed_null (void)
 
 static void id3_feed (const uint8_t *data, uint32_t len)
 {
-	debug_printf ("[MPx] id3_feed id3_tag_target=%"PRId32" len=%"PRId32"\n", id3_tag_target, len);
+	debug_printf_stream ("[MPx] id3_feed id3_tag_target=%"PRId32" len=%"PRId32"\n", id3_tag_target, len);
 	if (id3_tag_target)
 	{
-		debug_printf ("[MPx] id3_tag_target=%d id3_tag_position=%d len=%d\n", id3_tag_target, id3_tag_position, len);
+		debug_printf_stream ("[MPx] id3_tag_target=%d id3_tag_position=%d len=%d\n", id3_tag_target, id3_tag_position, len);
 		if (len > (id3_tag_target - id3_tag_position))
 		{
 			len = id3_tag_target - id3_tag_position;
 		}
-		debug_printf ("[MPx]   memcpy len=%d\n", len);
+		debug_printf_stream ("[MPx]   memcpy len=%d\n", len);
 		memcpy (id3_tag_buffer + id3_tag_position, data, len);
 		id3_tag_position += len;
 		if (id3_tag_position == id3_tag_target)
@@ -394,7 +396,7 @@ static int stream_for_frame(void)
 		return 1;
 	if (datapos!=newpos) /* force buffer flush */
 	{
-		debug_printf ("[MPx] forcing buffer flush\n");
+		debug_printf_stream ("[MPx] forcing buffer flush\n");
 		datapos=newpos;
 		file->seek_set (file, datapos + ofs);
 		data_length=0;
@@ -405,7 +407,7 @@ static int stream_for_frame(void)
 
 	if (GuardPtr&&(stream.this_frame==GuardPtr)) /* last frame is incomplete */
 	{
-		debug_printf ("[MPx] EOF-KNOCKED\n");
+		debug_printf_stream ("[MPx] EOF-KNOCKED\n");
 		if (donotloop)
 		{
 			return 0;
@@ -417,11 +419,11 @@ static int stream_for_frame(void)
 		{
 			uint32_t len, target;
 
-			debug_printf ("[MPx] buffer==NULL || stream.error==MAD_ERROR_BUFLEN  (%p==NULL || %d==%d)\n", stream.buffer, stream.error, MAD_ERROR_BUFLEN);
+			debug_printf_stream ("[MPx] buffer==NULL || stream.error==MAD_ERROR_BUFLEN  (%p==NULL || %d==%d)\n", stream.buffer, stream.error, MAD_ERROR_BUFLEN);
 
 			if (stream.next_frame)
 			{
-				debug_printf ("[MPx] stream.next_frame!=NULL (%p, remove %ld of bytes from buffer and GuardPtr)\n", stream.next_frame, stream.next_frame - data);
+				debug_printf_stream ("[MPx] stream.next_frame!=NULL (%p, remove %ld of bytes from buffer and GuardPtr)\n", stream.next_frame, stream.next_frame - data);
 
 				if (GuardPtr)
 				{
@@ -429,7 +431,7 @@ static int stream_for_frame(void)
 				}
 				memmove(data, stream.next_frame, data_length = ((data + data_length) - stream.next_frame));
 				stream.next_frame=0;
-				debug_printf ("[MPx]   keeped some data   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64"\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
+				debug_printf_stream ("[MPx]   keeped some data   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64"\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
 			}
 			target = MPEG_BUFSZ - data_length;
 			if (target>65536)
@@ -441,7 +443,7 @@ static int stream_for_frame(void)
 				len = file->read (file, data + data_length, target);
 			} else
 				len = 0;
-			debug_printf ("[MPx] wanted to read %"PRIu32" bytes, and got %"PRIu32" bytes\n", target, len);
+			debug_printf_stream ("[MPx] wanted to read %"PRIu32" bytes, and got %"PRIu32" bytes\n", target, len);
 
 			if (!len)
 			{
@@ -450,17 +452,17 @@ static int stream_for_frame(void)
 				{
 					if (donotloop||target) /* if target was set, we must have had an error */
 					{
-						debug_printf ("[MPx] eof found, and we are not looping\n");
+						debug_printf_stream ("[MPx] eof found, and we are not looping\n");
 						eof=1;
 						GuardPtr=data + data_length;
 						assert(MPEG_BUFSZ - data_length >= MAD_BUFFER_GUARD);
 						while (len < MAD_BUFFER_GUARD)
 						{
-							debug_printf ("[MPx]    adding NIL byte, len < MAD_BUFFER_GUARD\n");
+							debug_printf_stream ("[MPx]    adding NIL byte, len < MAD_BUFFER_GUARD\n");
 							data[data_length + len++] = 0;
 						}
 
-						debug_printf ("[MPx]   this is the new data   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64" (ofs=%"PRIu64" len=%d target=%ld)\n", data, data_length, data + data_length, GuardPtr, datapos, fl, ofs, len, (long int)target);
+						debug_printf_stream ("[MPx]   this is the new data   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64" (ofs=%"PRIu64" len=%d target=%ld)\n", data, data_length, data + data_length, GuardPtr, datapos, fl, ofs, len, (long int)target);
 					} else {
 						eof=0;
 						datapos = newpos = 0;
@@ -471,7 +473,7 @@ static int stream_for_frame(void)
 							stream.skiplen = 0;
 						}
 
-						debug_printf ("[MPx] eof found, and we are looping   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64"\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
+						debug_printf_stream ("[MPx] eof found, and we are looping   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64"\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
 						return 0;
 					}
 				}
@@ -480,12 +482,12 @@ static int stream_for_frame(void)
 				datapos += len;
 				newpos += len;
 
-				debug_printf ("[MPx]   some data is prepared   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64"\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
+				debug_printf_stream ("[MPx]   some data is prepared   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64"\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
 			}
 			if (len)
 			{
 				mad_stream_buffer(&stream, data, data_length += len);
-				debug_printf ("[MPx] POST mad_stream_buffer   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64"\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
+				debug_printf_stream ("[MPx] POST mad_stream_buffer   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64"\n", data, data_length, data + data_length, GuardPtr, datapos, fl);
 			}
 		}
 		stream.error=0;
@@ -516,18 +518,18 @@ static int stream_for_frame(void)
 				continue;
 			}
 		}
-		debug_printf ("[MPx] about to call mad_header_decode()\n");
+		debug_printf_stream ("[MPx] about to call mad_header_decode()\n");
 		if (mad_header_decode(&frame.header, &stream) == -1)
 		{
-			debug_printf ("[MPx] mad_header_decode() failed: %s\n", mad_stream_errorstr(&stream));
+			debug_printf_stream ("[MPx] mad_header_decode() failed: %s\n", mad_stream_errorstr(&stream));
 			goto error;
 		}
-		debug_printf ("[MPx] header samplerate=%d bitrate=%ld\n", frame.header.samplerate, frame.header.bitrate);
-		debug_printf ("[MPx] about to call mad_frame_decode()\n");
+		debug_printf_stream ("[MPx] header samplerate=%d bitrate=%ld\n", frame.header.samplerate, frame.header.bitrate);
+		debug_printf_stream ("[MPx] about to call mad_frame_decode()\n");
 
 		if (mad_frame_decode(&frame, &stream) == -1)
 		{
-			debug_printf ("[MPx] mad_frame_decode() failed: %s\n", mad_stream_errorstr(&stream));
+			debug_printf_stream ("[MPx] mad_frame_decode() failed: %s\n", mad_stream_errorstr(&stream));
 error:
 			if (stream.error==MAD_ERROR_BUFLEN)
 			{
@@ -547,7 +549,7 @@ error:
 			} else if (stream.error==MAD_ERROR_LOSTSYNC)
 			{
 				int tagsize;
-				debug_printf ("[MPx] this_frame=%p buffer=%p bufend=%p, GuardPtr=%p\n", stream.this_frame, stream.buffer, stream.bufend, GuardPtr);
+				debug_printf_stream ("[MPx] this_frame=%p buffer=%p bufend=%p, GuardPtr=%p\n", stream.this_frame, stream.buffer, stream.bufend, GuardPtr);
 				if (stream.this_frame==GuardPtr)
 					return 0;
 				tagsize = id3_tag_query(stream.this_frame, stream.bufend - stream.this_frame);
@@ -573,7 +575,7 @@ error:
 		}
 		if (!opt25_50)
 		{
-			debug_printf ("[MPx] MPEG 2 layer %s, %s%s\n",
+			debug_printf_stream ("[MPx] MPEG 2 layer %s, %s%s\n",
 				(frame.header.layer==MAD_LAYER_I)?"I":(frame.header.layer==MAD_LAYER_I)?"II":"III",
 				(frame.header.mode==MAD_MODE_SINGLE_CHANNEL)?"mono":(frame.header.mode==MAD_MODE_DUAL_CHANNEL)?"Dual Channel":(frame.header.mode==MAD_MODE_JOINT_STEREO)?"Joint Stereo":"Stereo",
 				(frame.header.emphasis==MAD_EMPHASIS_NONE)?"":(frame.header.emphasis==MAD_EMPHASIS_50_15_US)?", 50/15us emphasis":(frame.header.emphasis==MAD_EMPHASIS_CCITT_J_17)?", CCITT J.17 emph":", unknown emphasis");
@@ -588,7 +590,7 @@ error:
 				(frame.header.emphasis==MAD_EMPHASIS_NONE)?"":(frame.header.emphasis==MAD_EMPHASIS_50_15_US)?", 50/15us emphasis":(frame.header.emphasis==MAD_EMPHASIS_CCITT_J_17)?", CCITT J.17 emph":", unknown emphasis");
 		}
 		mad_synth_frame(&synth, &frame);
-		debug_printf ("[MPx] synth pcm.length=%d pcm.samplerate=%d pcm.channels=%d\n", synth.pcm.length, synth.pcm.samplerate, synth.pcm.channels);
+		debug_printf_stream ("[MPx] synth pcm.length=%d pcm.samplerate=%d pcm.channels=%d\n", synth.pcm.length, synth.pcm.samplerate, synth.pcm.channels);
 		data_in_synth=synth.pcm.length;
 		mpeg_Bitrate=frame.header.bitrate;
 		mpegstereo=synth.pcm.channels==2;
@@ -921,7 +923,7 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 		mpegfile->seek_set (mpegfile, 0);
 		if (!memcmp(sig, "RIFF", 4))
 		{
-			debug_printf ("[mppplay.c]: container RIFF (mpeg3, layer 2 probably AKA mp2)\n");
+			debug_printf_stream ("[mppplay.c]: container RIFF (mpeg3, layer 2 probably AKA mp2)\n");
 
 			mpegfile->seek_set (mpegfile, 12);
 			fl=0;
@@ -932,13 +934,13 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 				{
 					return 0;
 				}
-				debug_printf ("[mppplay.c]: chunk: %c%c%c%c\n", sig[0], sig[1], sig[2], sig[3]);
+				debug_printf_stream ("[mppplay.c]: chunk: %c%c%c%c\n", sig[0], sig[1], sig[2], sig[3]);
 				if (ocpfilehandle_read_uint32_le (mpegfile, &t))
 				{
 					return 0;
 				}
 				fl = t;
-				debug_printf ("[mppplay.c]: length: %d\n", (int)fl);
+				debug_printf_stream ("[mppplay.c]: length: %d\n", (int)fl);
 				if (!memcmp(sig, "data", 4))
 				{
 					ofs = mpegfile->getpos (mpegfile);
@@ -969,12 +971,12 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 					    (buffer[1] == 'X') &&
 					    (buffer[2] == 'T'))
 					{
-						debug_printf ("[MPx] got ID3v1.x and ID3v1.2 at the file-end\n");
+						debug_printf_stream ("[MPx] got ID3v1.x and ID3v1.2 at the file-end\n");
 						got_id3v12(buffer);
 						fl -= 256;
 						continue;
 					} else {
-						debug_printf ("[MPx] got ID3v1.x at the file-end\n");
+						debug_printf_stream ("[MPx] got ID3v1.x at the file-end\n");
 						got_id3v1x(buffer+128);
 						fl -= 128;
 						continue;
@@ -1003,7 +1005,7 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 					                (sbuffer[7] << 14) |
 					                (sbuffer[8] <<  7) |
 					                 sbuffer[9];
-					debug_printf ("[MPx] got ID3V2.4 footer (size=%"PRIu32")\n", size);
+					debug_printf_stream ("[MPx] got ID3V2.4 footer (size=%"PRIu32")\n", size);
 					if ((size + 20) <= fl)
 					{
 						if (size < 32*1024*1024)
@@ -1018,7 +1020,7 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 							    (buffer[1] == 'D') &&
 							    (buffer[2] == '3'))
 							{
-								debug_printf ("[MPx] got ID3v2.x by using footer\n");
+								debug_printf_stream ("[MPx] got ID3v2.x by using footer\n");
 								got_id3v2(buffer, size + 10);
 							}
 							free (buffer);
@@ -1033,15 +1035,15 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 				int32_t s;
 				uint32_t fetch_size = (fl > 512 * 1024)?512*1024:fl;
 				uint8_t *bbuffer = malloc (fetch_size);
-				debug_printf("[MPx] seek to %d\n", (int)(ofs+fl - fetch_size));
+				debug_printf_stream("[MPx] seek to %d\n", (int)(ofs+fl - fetch_size));
 				mpegfile->seek_set (mpegfile, ofs + fl - fetch_size);
-				debug_printf("[MPx] read %d bytes\n", fetch_size);
+				debug_printf_stream("[MPx] read %d bytes\n", fetch_size);
 				if (mpegfile->read (mpegfile, bbuffer, fetch_size) != fetch_size)
 				{
 					free (bbuffer);
 					return 0;
 				}
-				debug_printf ("[MPx] search for ID3v.2x\n");
+				debug_printf_stream ("[MPx] search for ID3v.2x\n");
 				for (s = fetch_size - 15; s >= 0; s--)
 				{
 					if ((bbuffer[s+0] == 'I') &&
@@ -1061,7 +1063,7 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 						                 bbuffer[s+9];
 						if (size >= (fetch_size - s))
 						{
-							debug_printf ("[MPx] got ID3v2.x by searching backwards: size=%d\n", (int)(fetch_size - s));
+							debug_printf_stream ("[MPx] got ID3v2.x by searching backwards: size=%d\n", (int)(fetch_size - s));
 							got_id3v2(bbuffer + s, (fetch_size - s));
 							fl -= (fetch_size - s);
 							continue;
@@ -1085,7 +1087,7 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 	enum plrRequestFormat format;
 	ofs=0;
 
-	debug_printf ("mpegOpenPlayer (%p)\n", mpegfile);
+	debug_printf_load ("mpegOpenPlayer (%p)\n", mpegfile);
 
 	if (!cpifaceSession->plrDevAPI)
 	{
@@ -1100,8 +1102,8 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 	file = mpegfile;
 	file->ref (file);
 
-	debug_printf ("  mpegOpenPlayer file=%p\n", file);
-	debug_printf ("  mpegOpenPlayer ofs=0x%08"PRIx64" fl=0x%08"PRIx64"\n", ofs, fl);
+	debug_printf_load ("  mpegOpenPlayer file=%p\n", file);
+	debug_printf_load ("  mpegOpenPlayer ofs=0x%08"PRIx64" fl=0x%08"PRIx64"\n", ofs, fl);
 
 	newpos=datapos=0;
 	data_length=0;

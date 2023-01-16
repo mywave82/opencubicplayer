@@ -176,14 +176,12 @@
 /* #define FILEHANDLE_CACHE_DEBUG */
 /* #define INITCLOSE_DEBUG 1*/
 /* #define LD_DEBUG 1 */
-/* #define TIMER_DEBUG 1 */
 /* #define OSS_DEBUG 1 */
 /* #define ALSA_DEBUG 1 */
 /* #define OSS_LOCK_DEBUG 1 */
 /* #define STM_LOAD_DEBUG 1 */
 /* #define S3M_LOAD_DEBUG 1 */
 /* #define MIXER_DEBUG 1 */
-/* #define CONSOLE_DEBUG 1 */
 /* #define KEYBOARD_DEBUG 1 */
 /* #define KEYBOARDTEXT_DEBUG 1 */
 /* #define VCSA_DEBUG 1*/
@@ -194,7 +192,6 @@
 /* #define PLAYWAVE_DEBUG 1 */
 /* #define XM_LOAD_DEBUG 1 */
 /* #define IT_LOAD_DEBUG 1 */
-/* #define MIDI_LOAD_DEBUG 1 */
 /* #define OKT_LOAD_DEBUG 1 */
 /* #define MCP_DEBUG 1 */
 /* #define COREAUDIO_DEBUG 1 */

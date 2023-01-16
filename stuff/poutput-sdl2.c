@@ -476,7 +476,7 @@ static void sdl2_SetTextMode(unsigned char x)
 	if (x==255)
 	{
 #ifdef SDL2_DEBUG
-		fprintf (stderr, "gdb helper, plScrMode=255\n", x);
+		fprintf (stderr, "gdb helper, plScrMode=255\n");
 #endif
 		Console.CurrentMode = 255;
 		return; /* gdb helper */
@@ -486,7 +486,7 @@ static void sdl2_SetTextMode(unsigned char x)
 	if (x>7)
 	{
 #ifdef SDL2_DEBUG
-		fprintf (stderr, "custom request\n", x);
+		fprintf (stderr, "custom request\n");
 #endif
 		x=8;
 
