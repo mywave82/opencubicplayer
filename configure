@@ -679,6 +679,8 @@ X11_LIBS
 CDROM_SUPPORT
 LINUX
 HAVE_ALSA
+LIBANCIENT_LIBS
+LIBANCIENT_CFLAGS
 ALSA_LIBS
 ALSA_CFLAGS
 LIBCJSON_LIBS
@@ -921,6 +923,8 @@ LIBCJSON_CFLAGS
 LIBCJSON_LIBS
 ALSA_CFLAGS
 ALSA_LIBS
+LIBANCIENT_CFLAGS
+LIBANCIENT_LIBS
 OSS_CFLAGS
 OSS_LIBS'
 
@@ -1690,6 +1694,10 @@ Some influential environment variables:
               linker flags for LIBCJSON, overriding pkg-config
   ALSA_CFLAGS C compiler flags for ALSA, overriding pkg-config
   ALSA_LIBS   linker flags for ALSA, overriding pkg-config
+  LIBANCIENT_CFLAGS
+              C compiler flags for LIBANCIENT, overriding pkg-config
+  LIBANCIENT_LIBS
+              linker flags for LIBANCIENT, overriding pkg-config
   OSS_CFLAGS  C compiler flags for OSS, overriding pkg-config
   OSS_LIBS    linker flags for OSS, overriding pkg-config
 
@@ -15636,6 +15644,78 @@ else
 printf "%s\n" "yes" >&6; }
 
 fi
+
+fi
+
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libancient" >&5
+printf %s "checking for libancient... " >&6; }
+
+if test -n "$LIBANCIENT_CFLAGS"; then
+    pkg_cv_LIBANCIENT_CFLAGS="$LIBANCIENT_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libancient\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libancient") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBANCIENT_CFLAGS=`$PKG_CONFIG --cflags "libancient" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBANCIENT_LIBS"; then
+    pkg_cv_LIBANCIENT_LIBS="$LIBANCIENT_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libancient\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libancient") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBANCIENT_LIBS=`$PKG_CONFIG --libs "libancient" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBANCIENT_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libancient" 2>&1`
+        else
+	        LIBANCIENT_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libancient" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBANCIENT_PKG_ERRORS" >&5
+
+	as_fn_error $? "libancient not found" "$LINENO" 5
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+	as_fn_error $? "libancient not found" "$LINENO" 5
+else
+	LIBANCIENT_CFLAGS=$pkg_cv_LIBANCIENT_CFLAGS
+	LIBANCIENT_LIBS=$pkg_cv_LIBANCIENT_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
 
 fi
 

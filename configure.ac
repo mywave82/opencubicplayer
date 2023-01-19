@@ -841,6 +841,8 @@ AS_IF([test "x$with_alsa" != "xno"],[
 	])
 ])
 
+PKG_CHECK_MODULES([LIBANCIENT],[libancient],[],[AC_MSG_ERROR([libancient not found])])
+
 AC_SUBST(HAVE_ALSA)
 AS_IF([test "x$with_alsa" = "xno"],[HAVE_ALSA=],[HAVE_ALSA=1])
 

@@ -73,6 +73,7 @@
 #include "cpiface/cpiface.h"
 #include "dirdb.h"
 #include "filesystem.h"
+#include "filesystem-ancient.h"
 #include "filesystem-drive.h"
 #include "filesystem-file-dev.h"
 #include "filesystem-bzip2.h"
@@ -743,7 +744,13 @@ int fsGetPrevFile (struct moduleinfostruct *info, struct ocpfilehandle_t **fileh
 	{
 		if (m->file)
 		{
+			struct ocpfilehandle_t *ancient;
 			*filehandle = m->file->open (m->file);
+			if ((ancient = ancient_filehandle (0, 0, *filehandle)))
+			{
+				(*filehandle)->unref (*filehandle);
+				*filehandle = ancient;
+			}
 		}
 
 		if (*filehandle)
@@ -815,7 +822,13 @@ int fsGetNextFile (struct moduleinfostruct *info, struct ocpfilehandle_t **fileh
 
 	if (m->file)
 	{
+		struct ocpfilehandle_t *ancient;
 		*filehandle = m->file->open (m->file);
+		if ((ancient = ancient_filehandle (0, 0, *filehandle)))
+		{
+			(*filehandle)->unref (*filehandle);
+			*filehandle = ancient;
+		}
 	}
 
 	if (*filehandle)

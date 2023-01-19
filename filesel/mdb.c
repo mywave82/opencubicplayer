@@ -39,6 +39,7 @@
 #include "boot/psetting.h"
 #include "dirdb.h"
 #include "filesystem.h"
+#include "filesystem-ancient.h"
 #include "mdb.h"
 #include "pfilesel.h"
 #include "stuff/cp437.h"
@@ -199,6 +200,7 @@ int mdbReadInfo (struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 	}
 	memset (mdbScanBuf, 0, sizeof (mdbScanBuf));
 	maxl = f->read (f, mdbScanBuf, sizeof (mdbScanBuf));
+	f->seek_set (f, 0);
 
 	{
 		const char *path;
@@ -208,9 +210,42 @@ int mdbReadInfo (struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 
 	/* slow version that also allows more I/O */
 	for (rinfos=mdbReadInfos; rinfos; rinfos=rinfos->next)
+	{
 		if (rinfos->ReadInfo)
+		{
 			if (rinfos->ReadInfo(m, f, mdbScanBuf, maxl, &mdbReadInfoAPI))
+			{
 				return 1;
+			}
+		}
+	}
+
+	{
+		struct ocpfilehandle_t *ancient;
+		char compressionmethod[256];
+
+		if ((ancient = ancient_filehandle (compressionmethod, sizeof (compressionmethod), f)))
+		{
+			snprintf (m->comment, sizeof (m->comment), "Compressed with: %.*s", (int)(sizeof (m->comment) - 17 - 1), compressionmethod);
+
+			maxl = ancient->read (ancient, mdbScanBuf, sizeof (mdbScanBuf));
+			ancient->seek_set (ancient, 0);
+
+			for (rinfos=mdbReadInfos; rinfos; rinfos=rinfos->next)
+			{
+				if (rinfos->ReadInfo)
+				{
+					if (rinfos->ReadInfo(m, ancient, mdbScanBuf, maxl, &mdbReadInfoAPI))
+					{
+						ancient->unref (ancient);
+						return 1;
+					}
+				}
+			}
+
+			ancient->unref (ancient);
+		}
+	}
 
 	return m->modtype.integer.i != 0;
 }

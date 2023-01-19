@@ -23,7 +23,7 @@ cdrom$(LIB_SUFFIX): $(cdrom_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ $(PTHREAD_LIBS) $(LIBDISCID_LIBS)
 
 pfilesel$(LIB_SUFFIX): $(pfilesel_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^ -lbz2 -lz $(MATH_LIBS) $(ICONV_LIBS) $(LIBCJSON_LIBS)
+	$(CC) $(SHARED_FLAGS) -o $@ $^ -lbz2 -lz $(MATH_LIBS) $(ICONV_LIBS) $(LIBCJSON_LIBS) $(LIBANCIENT_LIBS)
 
 clean:
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR) clean
@@ -107,6 +107,15 @@ filesystem.o: filesystem.c \
 	../types.h \
 	filesystem.h
 	$(CC) $< -o $@ -c
+
+filesystem-ancient.o: filesystem-ancient.cpp \
+	../config.h \
+	../types.h \
+	../cpiface/cpiface.h \
+	filesystem.h \
+	filesystem-ancient.h \
+	filesystem-file-mem.h
+	$(CXX) $< -o $@ -c $(LIBANCIENT_CXXFLAGS)
 
 filesystem-bzip2.o: filesystem-bzip2.c \
 	../config.h \
@@ -335,6 +344,7 @@ mdb.o: mdb.c \
 	../boot/psetting.h \
 	dirdb.h \
 	filesystem.h \
+	filesystem-ancient.h \
 	mdb.h \
 	pfilesel.h \
 	../stuff/cp437.h \
@@ -415,6 +425,7 @@ pfilesel.o: pfilesel.c \
 	../cpiface/cpiface.h \
 	dirdb.h \
 	filesystem.h \
+	filesystem-ancient.h \
 	filesystem-bzip2.h \
 	filesystem-drive.h \
 	filesystem-file-dev.h \

@@ -9,6 +9,7 @@ charsets.o                    \
 cphlpfs.o                     \
 dirdb.o                       \
 filesystem.o                  \
+filesystem-ancient.o          \
 filesystem-bzip2.o            \
 filesystem-dir-mem.o          \
 filesystem-drive.o            \
@@ -35,5 +36,5 @@ pfsmain.o
 ifeq ($(STATIC_CORE),1)
  STATIC_OBJECTS += $(patsubst %.o,filesel/%.o,$(cdrom_so))
  STATIC_OBJECTS += $(patsubst %.o,filesel/%.o,$(pfilesel_so))
- STATIC_LIBS += -lz -lbz2 $(MATH_LIBS) $(PTHREAD_LIBS) $(LIBDISCID_LIBS) $(ICONV_LIBS) $(LIBCJSON_LIBS)
+ STATIC_LIBS += -lz -lbz2 $(MATH_LIBS) $(PTHREAD_LIBS) $(LIBDISCID_LIBS) $(ICONV_LIBS) $(LIBCJSON_LIBS) $(LIBANCIENT_LIBS)
 endif
