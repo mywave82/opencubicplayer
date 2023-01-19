@@ -6,7 +6,7 @@ UNIX port of Open Cubic Player, which is a text-based player with some few graph
 
 # What can it play?
 
-Amiga style [modules](https://en.wikipedia.org/wiki/Module_file) files with more: <!-- http://fileformats.archiveteam.org/wiki/Amiga_Module -->
+Amiga style [modules](https://en.wikipedia.org/wiki/Module_file) files with more (Amiga compressed files will be decompressed using [ancient](https://github.com/temisu/ancient)): <!-- http://fileformats.archiveteam.org/wiki/Amiga_Module -->
 - \*.AMS, [Velvet Studio](http://www.pouet.net/prod.php?which=64890) and [Extreme's Tracker](https://www.pouet.net/prod.php?which=88711)
 - \*.DMF, [X-Tracker](http://www.pouet.net/prod.php?which=55233)
 - \*.IT, [Impulse Tracker](https://en.wikipedia.org/wiki/Impulse_Tracker) or use the modern [Schism Tracker](http://schismtracker.org/)
