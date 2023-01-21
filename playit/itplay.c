@@ -1712,6 +1712,10 @@ static void playtick (struct cpifaceSessionAPI_t *cpifaceSession, struct itplaye
 					c->tremoroffcounter=0;
 				}
 			}
+			if (this->gotoord < this->curord && !this->manualgoto)
+			{
+				this->looped=1;
+			}
 			while (this->orders[this->gotoord]==0xFFFF)
 				this->gotoord++;
 			if (this->gotoord==this->endord)

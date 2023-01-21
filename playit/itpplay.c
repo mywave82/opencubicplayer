@@ -51,8 +51,8 @@
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 
-__attribute__ ((visibility ("internal"))) struct itplayer itplayer = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-static struct it_module mod = {{0},0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,{0},{0},0,0,0,0,0};
+__attribute__ ((visibility ("internal"))) struct itplayer itplayer;
+static struct it_module mod;
 
 static struct it_instrument *insts;
 static struct it_sample *samps;
@@ -318,6 +318,9 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
 	cpifaceSession->cpiDebug (cpifaceSession, "[IT] loading %s (%uk)...\n", filename, (unsigned int)(file->filesize(file)>>10));
+
+	bzero (&itplayer, sizeof (itplayer));
+	bzero (&mod, sizeof (mod));
 
 	if (!(retval=it_load(cpifaceSession, &mod, file)))
 		if (!loadsamples (cpifaceSession, &mod))
