@@ -710,11 +710,16 @@ static int migrate_old_ocp_ini (void)
 	return retval;
 }
 
+#if 0
 #ifdef __HAIKU__
 static int haiku_migrate_old_ocp_init(void)
 {
 	DIR *d;
 	if (mkdir_r (_cfConfigHomeDir))
+	{
+		return -1;
+	}
+	if (mkdir_r (_cfDataHomeDir))
 	{
 		return -1;
 	}
@@ -743,6 +748,7 @@ static int haiku_migrate_old_ocp_init(void)
 	return 0;
 }
 #endif
+#endif
 
 int validate_home(void)
 {
@@ -750,7 +756,6 @@ int validate_home(void)
 	_cfDataHomeDir   = 0;
 #ifdef __HAIKU__
 	{
-		struct stat st;
 		char settingsPath[PATH_MAX];
 		if (find_directory(B_USER_SETTINGS_DIRECTORY, -1, false, settingsPath, sizeof(settingsPath)) == B_OK)
 		{
@@ -762,28 +767,44 @@ int validate_home(void)
 			}
 			sprintf (_cfConfigHomeDir, "%s/ocp/", settingsPath);
 		}
+#if 1
+#warning Atleast until HAIKU R1Beta4, B_USER_DATA_DIRECTORY refers to a non-existing directory with a read-only parent, maintaing configuration and data in the same directory for now
+		_cfDataHomeDir = strdup (_cfConfigHomeDir);
+		if (!_cfDataHomeDir)
+		{
+			fprintf (stderr, "malloc() failed\n");
+			free (_cfConfigHomeDir);
+			_cfConfigHomeDir = 0;
+			return -1;
+		}
+#else
 		if (find_directory(B_USER_DATA_DIRECTORY, -1, false, settingsPath, sizeof(settingsPath)) == B_OK)
 		{
-			_cfDataHomeDir = malloc (strlen (xdg_data_home) + 5);
+			_cfDataHomeDir = malloc (strlen (settingsPath) + 5);
 			if (!_cfDataHomeDir)
 			{
 				fprintf (stderr, "malloc() failed\n");
 				free (_cfConfigHomeDir);
+				_cfConfigHomeDir = 0;
 				return -1;
 			}
-			sprintf (_cfConfigHomeDir, "%s/ocp/", settingsPath);
+			sprintf (_cfDataHomeDir, "%s/ocp/", settingsPath);
 		}
-		if (_cfConfigHomeDir && _cfConfigHomeDir &&
-		    !stat (_cfConfigHomeDir, &st) && stat (_cfConfigHomeDir, st))
-		{
-			if (haiku_migrate_old_ocp_ini())
+
+		do {
+			struct stat st;
+			if (_cfConfigHomeDir && _cfDataHomeDir &&
+			    !stat (_cfConfigHomeDir, &st) && stat (_cfDataHomeDir, &st))
 			{
-				return -1;
+				if (haiku_migrate_old_ocp_init())
+				{
+					return -1;
+				}
 			}
-		}
+		} while (0);
+#endif
 	}
 #endif
-#warning verify HAIKU migration!
 
 	/* Ensure that we have _cfConfigHomeDir and _cfDataHomeDir */
 	if (!_cfConfigHomeDir)
