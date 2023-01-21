@@ -805,7 +805,7 @@ int musicbrainz_init (void)
 	}
 	musicbrainz_setup_init ();
 
-	makepath_malloc (&path, 0, cfConfigDir, "CPMUSBRN.DAT", 0);
+	makepath_malloc (&path, 0, cfDataHomeDir, "CPMUSBRN.DAT", 0);
 	fprintf (stderr, "Loading %s .. ", path);
 	musicbrainz.fddb = open (path, O_RDWR | O_CREAT, S_IREAD|S_IWRITE);
 	if (musicbrainz.fddb < 0)
@@ -1016,7 +1016,7 @@ static void musicbrainzSetupDialogDraw (struct musicbrainz_cacheline_sort_t *ent
 {
 	int mlWidth = 55;
 	int mlHeight = 7;
-	int mlTop = (plScrHeight - mlHeight) / 2 ;
+	int mlTop = (plScrHeight - mlHeight) / 2;
 	int mlLeft = (plScrWidth - mlWidth) / 2;
 
 	display_nprintf (mlTop + 0, mlLeft, 0x17, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2); /* +---------+ */
@@ -1303,7 +1303,7 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 		musicbrainzSetupDraw("MusicBrain Cache DataBase", dsel, sorted);
 		if (dialog)
 		{
-	                musicbrainzSetupDialogDraw (sorted + dsel, epos);
+			musicbrainzSetupDialogDraw (sorted + dsel, epos);
 			while (API->console->KeyboardHit())
 			{
 				int key = API->console->KeyboardGetChar();

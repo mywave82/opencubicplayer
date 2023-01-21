@@ -151,7 +151,7 @@ void plReadOpenCPPic(void)
 					}
 					closedir(dir);
 				}
-				dir=opendir(cfConfigDir);
+				dir=opendir(cfDataHomeDir);
 				if(dir)
 				{
 					struct dirent *dp;
@@ -160,7 +160,7 @@ void plReadOpenCPPic(void)
 						if(match(dp->d_name))
 						{
 							nd=calloc(1, sizeof(struct node_t));
-							makepath_malloc(&nd->name, 0, cfConfigDir, dp->d_name, 0);
+							makepath_malloc(&nd->name, 0, cfDataHomeDir, dp->d_name, 0);
 							nd->next=0;
 							*current=nd;
 							current=&nd->next;

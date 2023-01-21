@@ -914,7 +914,7 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 {
 	int esel = 0;
 
-	uint32_t dirdb_base = API->dirdb->ResolvePathWithBaseAndRef (API->dmFile->basedir->dirdb_ref, API->configAPI->ConfigDir, 0, dirdb_use_dir);
+	uint32_t dirdb_base = API->dirdb->ResolvePathWithBaseAndRef (API->dmFile->basedir->dirdb_ref, API->configAPI->DataHomeDir, 0, dirdb_use_dir);
 
 	config_emulator = emulator_to_int         (API->configAPI->GetProfileString ("libsidplayfp", "emulator",        "residfp"));
 	config_defaultC64 = defaultC64_to_int     (API->configAPI->GetProfileString ("libsidplayfp", "defaultC64",      "PAL"));

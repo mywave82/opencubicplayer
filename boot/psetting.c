@@ -159,7 +159,7 @@ static int cfReadINIFile(int argc, char *argv[])
 	char linebuffer[1024];
 	/*  int curapp=-1;*/
 
-	makepath_malloc (&path, 0, cfConfigDir, "ocp.ini", 0);
+	makepath_malloc (&path, 0, cfConfigHomeDir, "ocp.ini", 0);
 
 	strcpy(keybuf, "");
 
@@ -644,7 +644,7 @@ int cfGetConfig(int argc, char *argv[])
 		return -1; /* no config at all pigs! */
 	if (cfReadINIFile(argc, argv))
 	{
-		fprintf(stderr, "Failed to read ocp.ini\nPlease put it in ~/.ocp/\n");
+		fprintf(stderr, "Failed to read ocp.ini\nPlease put it in ~/.ocp/ or $XDG_CONFIG_HOME/ocp/\n");
 		return -1;
 	}
 
@@ -718,7 +718,7 @@ static int _cfStoreConfig(void)
 	int i, j;
 	char buffer[2+KEYBUF_LEN+1+STRBUF_LEN+COMMENTBUF_LEN+32+1+1];
 
-	makepath_malloc (&path, 0, cfConfigDir, "ocp.ini", 0);
+	makepath_malloc (&path, 0, cfConfigHomeDir, "ocp.ini", 0);
 
 	if (!(f=fopen(path, "w")))
 	{

@@ -901,9 +901,9 @@ static int init_modules(int argc, char *argv[])
 			cfStoreConfig();
 			if (isatty(2))
 			{
-				fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini has changed, have tried my best to update it. If OCP failes to start, please try to remove by doing this:\033[0m\nrm -f ~/.ocp/ocp.ini\n\n");
+				fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini has changed, have tried my best to update it. If OCP failes to start, please try to remove by doing either:\033[0m\nrm -f ~/.ocp/ocp.ini\033[1m\033[31m or \033[0m\nrm -f $XDG_CONFIG_HOME/ocp/ocp.ini\n\n");
 			} else {
-				fprintf(stderr,"\nWARNING, ocp.ini has changed, have tried my best to update it. If OCP failes to start, please try to remove by doing this:\nrm -f ~/.ocp/ocp.ini\n\n");
+				fprintf(stderr,"\nWARNING, ocp.ini has changed, have tried my best to update it. If OCP failes to start, please try to remove by doing either:\nrm -f ~/.ocp/ocp.ini or rm -f $XDG_CONFIG_HOME/ocp/ocp.ini\n\n");
 			}
 			sleep(5);
 		}
@@ -976,7 +976,7 @@ int failcheck(signed int source, signed int filter)
 }
 #endif
 
-static int _bootup(int argc, char *argv[], const char *ConfigDir, const char *DataDir, const char *ProgramDir)
+static int _bootup(int argc, char *argv[], const char *ConfigHomeDir, const char *ConfigDataDir, const char *DataDir, const char *ProgramDir)
 {
 	int result;
 	if (isatty(2))
@@ -1006,7 +1006,8 @@ static int _bootup(int argc, char *argv[], const char *ConfigDir, const char *Da
 	fprintf(stderr, "pass\n");
 #endif
 
-	cfConfigDir = (char *)ConfigDir;
+	cfConfigHomeDir = (char *)ConfigHomeDir;
+	cfDataHomeDir = (char*)ConfigDataDir;
 	cfDataDir = strdup (DataDir);
 	cfProgramDir = (char *)ProgramDir;
 	cfProgramDirAutoload = malloc (strlen (cfProgramDir) + 9 + 1);
@@ -1014,7 +1015,8 @@ static int _bootup(int argc, char *argv[], const char *ConfigDir, const char *Da
 
 	if (cfGetConfig(argc, argv))
 	{
-		cfConfigDir = 0;
+		cfConfigHomeDir = 0;
+		cfDataHomeDir = 0;
 		free (cfDataDir); cfDataDir = 0;
 		cfProgramDir = 0;
 		free (cfTempDir); cfTempDir = 0;
@@ -1031,7 +1033,8 @@ static int _bootup(int argc, char *argv[], const char *ConfigDir, const char *Da
 
 	cfCloseConfig();
 
-	cfConfigDir = 0;
+	cfConfigHomeDir = 0;
+	cfDataHomeDir = 0;
 	free (cfDataDir); cfDataDir = 0;
 	cfProgramDir = 0;
 	free (cfTempDir); cfTempDir = 0;

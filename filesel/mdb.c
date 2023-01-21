@@ -528,7 +528,7 @@ int mdbInit (void)
 	mdbSearchIndexCount = 0;
 	mdbSearchIndexSize = 0;
 
-	makepath_malloc (&path, 0, cfConfigDir, "CPMODNFO.DAT", 0);
+	makepath_malloc (&path, 0, cfDataHomeDir, "CPMODNFO.DAT", 0);
 	fprintf(stderr, "Loading %s .. ", path);
 
 	if (mdbFd >= 0)
