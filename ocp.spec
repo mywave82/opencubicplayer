@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 0.2.101
+%define version 0.2.102
 
 # Default to _with_libmad if neither _with_libmad or _without_libmad is defined
 %{!?_with_libmad: %{!?_without_libmad: %define _with_libmad --with-libmad}}
@@ -24,12 +24,12 @@ License: GPL-2, Creative Commons Attribution 3.0
 # The extra data provided is Creative Commons Attribute 3.0
 
 %if 0%{?suse_version}
-BuildRequires: ncurses-devel zlib-devel bzip2-devel libSDL2-devel libogg-devel libvorbis-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme unzip texinfo update-desktop-files libjpeg62-turbo-devel libpng16-devel xa libdiscid-devel cjson-devel alsa-devel libfreetype2-devel gnu-unifont-bitmap-fonts
+BuildRequires: ncurses-devel zlib-devel bzip2-devel libSDL2-devel libogg-devel libvorbis-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme unzip texinfo update-desktop-files libjpeg62-turbo-devel libpng16-devel xa libdiscid-devel cjson-devel alsa-devel libfreetype2-devel gnu-unifont-bitmap-fonts ancient
 %else
 %if 0%{?fedora} || 0%{?rhel_version} || 0%{?centos_version}
-BuildRequires: ncurses-devel zlib-devel bzip2-devel SDL2-devel libogg-devel libvorbis-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme unzip texinfo libjpeg-turbo-devel libpng-devel xa libdiscid-devel cjson-devel alsa-lib-devel libfreetype-devel unifont-fonts
+BuildRequires: ncurses-devel zlib-devel bzip2-devel SDL2-devel libogg-devel libvorbis-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme unzip texinfo libjpeg-turbo-devel libpng-devel xa libdiscid-devel cjson-devel alsa-lib-devel libfreetype-devel unifont-fonts ancient
 %else
-BuildRequires: ncurses-devel zlib-devel bzip2-devel libSDL2-devel libogg-devel libvorbis-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme unzip texinfo libjpeg-turbo-devel libpng-devel xa libdiscid-devel cjson-devel alsa-lib-devel libfreetype-devel unifont-fonts
+BuildRequires: ncurses-devel zlib-devel bzip2-devel libSDL2-devel libogg-devel libvorbis-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme unzip texinfo libjpeg-turbo-devel libpng-devel xa libdiscid-devel cjson-devel alsa-lib-devel libfreetype-devel unifont-fonts ancient
 %endif
 %endif
 
@@ -42,21 +42,34 @@ frontend, with some few optional features in graphical. Plays modules, sids,
 wave and mp3
 
 %changelog
- Changes from version 0.2.100 to 0.2.101:
- * Update m4 macro files, configure.ac and Rules.make.in to latest versions.
- * Update adplug from upstream
- * Update libsidplayfp from upstream
- * Update hivelytracker from upstream
- * Add support for textinfo v7.0 (documentation)
- * Add karaoke support for timidity playback plugin
- * Update .ym file detection to include compression header type 1
- * Playback plugins no longer need external symbols from OCP
- * SDL2 and X11: Delete key stopped working after support for international characters was added.
- * MacOS build fixes
- * Parallel build fixes
- * VU right peek-meter was noisy
- * S3M files that was flooded with global commands causes buffer-overflow
- * Ctrl + C when ran in curses or linux vcsa console now does the same as pressing ESC. It only does force kill if OCP is frozen and it is pressed multiple times.
+ Changes from version 0.2.101 to 0.2.102:
+ * IT files did not detect reverse jumps are song being looped
+ * IT playback plugin did not reset all state variables on load
+ * XDG Base Directory compliance
+   * Comply with both $XDG_CONFIG_HOME and $XDG_DATA_HOME
+   * Migrate $HOME/.ocp/
+ * Add support for files compressed on Amiga systems with the system built-in
+   compression routines using the library known as 'ancient'
+ * Updates for building on Haiku
+ * If iconv CP437 fails to load, fall back to CP850 and then ASCII
+ * Some few calls to iconv() were not protected against "NULL"
+ * Add MIME for entries missing in the freedesktop MIME database
+ * Update desktop file with additional MIME types
+ * Call update_mime_database and update_desktop_database
+ * Starting ocp with files as arguments stopped no loger was working
+ * If a file fails to load, display error message in the fileselector
+ * Replace setup:/alsa/*.dev files with a single setup:/alsaconfig.dev dialog
+ * nprintf() didn't limit UTF-8 strings correctly
+ * Only accept .TAR files that contains the ustar magic
+ * If playback plugin are not operational, multiple corner-case issues has now
+   been fixed
+ * When editing fixed UTF-8 text-fields, backspace / delete-key would not
+   unreserve the buffer-space, artificailly shrinking the available text until
+   a new edit was initialized
+ * Add the rReverb and iReverb plugins from the original DOS project, with some
+   additional fixes
+ * Show both panning/balance and chorus/reverb at the same time if they both can
+   be active and can fit on screen
 
 %prep
 %setup -q -n %{name}-%{version}

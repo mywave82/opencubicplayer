@@ -1,7 +1,38 @@
+Version 0.2.102
+===============
+
+ * IT files did not detect reverse jumps are song being looped
+ * IT playback plugin did not reset all state variables on load
+ * XDG Base Directory compliance
+   * Comply with both $XDG_CONFIG_HOME and $XDG_DATA_HOME
+   * Migrate $HOME/.ocp/
+ * Add support for files compressed on Amiga systems with the system built-in
+   compression routines using the library known as 'ancient'
+ * Updates for building on Haiku
+ * If iconv CP437 fails to load, fall back to CP850 and then ASCII
+ * Some few calls to iconv() were not protected against "NULL"
+ * Add MIME for entries missing in the freedesktop MIME database
+ * Update desktop file with additional MIME types
+ * Call update_mime_database and update_desktop_database
+ * Starting ocp with files as arguments stopped no loger was working
+ * If a file fails to load, display error message in the fileselector
+ * Replace setup:/alsa/*.dev files with a single setup:/alsaconfig.dev dialog
+ * nprintf() didn't limit UTF-8 strings correctly
+ * Only accept .TAR files that contains the ustar magic
+ * If playback plugin are not operational, multiple corner-case issues has now
+   been fixed
+ * When editing fixed UTF-8 text-fields, backspace / delete-key would not
+   unreserve the buffer-space, artificailly shrinking the available text until
+   a new edit was initialized
+ * Add the rReverb and iReverb plugins from the original DOS project, with some
+   additional fixes
+ * Show both panning/balance and chorus/reverb at the same time if they both can
+   be active and can fit on screen
+
 Version 0.2.101
 ===============
 
- * Update m4 macro files, configure.ac and Rules.make.in to latest versions.
+ * Update m4 macro files, configure.ac and Rules.make.in to latest versions
  * Update adplug from upstream
  * Update libsidplayfp from upstream
  * Update hivelytracker from upstream
@@ -9,17 +40,23 @@ Version 0.2.101
  * Add karaoke support for timidity playback plugin
  * Update .ym file detection to include compression header type 1
  * Playback plugins no longer need external symbols from OCP
- * SDL2 and X11: Delete key stopped working after support for international characters was added.
+ * SDL2 and X11: Delete key stopped working after support for international
+   characters was added
  * MacOS build fixes
  * Parallel build fixes
  * VU right peek-meter was noisy
  * S3M files that was flooded with global commands causes buffer-overflow
- * Ctrl + C when ran in curses or linux vcsa console now does the same as pressing ESC. It only does force kill if OCP is frozen and it is pressed multiple times.
+ * Ctrl + C when ran in curses or linux vcsa console now does the same as
+   pressing ESC. It only does force kill if OCP is frozen and it is pressed
+   multiple times
 
 Version 0.2.100
 ===============
- * Former attempt at supporting plugins to be built-in ("static") has been revived and is enabled by default. By now playback-plugins and audio/wavetable drivers must be external still.
- * Unifont is transitioning from truetype to opentype and OCP is adapting the change.
+ * Former attempt at supporting plugins to be built-in ("static") has been
+   revived and is enabled by default. By now playback-plugins and
+   audio/wavetable drivers must be external still
+ * Unifont is transitioning from truetype to opentype and OCP is adapting the
+   change
     ./configure syntax has been changed to accomodate the changes:
     If specify by directory, the options available are
       --with-unifontdir-ttf=/path
@@ -31,22 +68,28 @@ Version 0.2.100
       --with-unifont-otf=/path
       --with-unifont-csur-otf=/path
       --with-unifont-upper-otf=/path
- * Many internal functions used by playback-plugins are now being forwarded from core to plugins by API-tables.
- * Double-free in playopl (adplug playback) if file failed to load.
- * Move all file-type detection and type registration into each playback plugin, and autoload all playback plugins.
- * In fileselector file-type-editor, selecting a blank file type (redetect file-type), buffer overflowed and relied on that being blank.
+ * Many internal functions used by playback-plugins are now being forwarded from
+   core to plugins by API-tables
+ * Double-free in playopl (adplug playback) if file failed to load
+ * Move all file-type detection and type registration into each playback plugin,
+   and autoload all playback plugins
+ * In fileselector file-type-editor, selecting a blank file type (redetect
+   file-type), buffer overflowed and relied on that being blank
  * Avoid crashing when opening a midi file due to missing parameter
  * 16bit WAV files were probably not able to play on big-endian systems
  * FLAC: avoid divide by zero error at end of tracks
- * Timidity/MIDI: isolate all library globals into a session and partially fixing channel muting.
+ * Timidity/MIDI: isolate all library globals into a session and partially
+   fixing channel muting
  * Internal API changes
- * ALSA: Make it possible to custom select with text input both PCM output device and Mixer, and bring volume mixer back to life
- * Information about selected channel disappeared from the screen when in scope, phase and note dots view if you visited the file browser.
+ * ALSA: Make it possible to custom select with text input both PCM output
+   device and Mixer, and bring volume mixer back to life
+ * Information about selected channel disappeared from the screen when in scope,
+   phase and note dots view if you visited the file browser
  * Add international keyboard support for SDL 1.x
- * Add international keyboard support for X11.
- * quickfind now supports international characters.
- * cpiinst overshot memory when clearing unused space.
- * Quicksearch .. and other overriden filenames in filebrowser where not working.
+ * Add international keyboard support for X11
+ * quickfind now supports international characters
+ * cpiinst overshot memory when clearing unused space
+ * Quicksearch .. and other overriden filenames in filebrowser where not working
  * Update libsidplayfp to lastest upstream master
 
 Version 0.2.99
@@ -123,47 +166,52 @@ Version 0.2.95
 Version 0.2.94
 ==============
 
- * Fix compiler-warnings.
+ * Fix compiler-warnings
  * Fileselector:
    * make it possible to list all files, even if they are not audio/music files
-   * Add support for CUE/TOC/BIN/WAVE virtual CDROM support. Both CD-Audio,ISO9660,Juliet,RockRidge and UDF parsing. Also includes libdiscid/musicbrainz information lookup.
+   * Add support for CUE/TOC/BIN/WAVE virtual CDROM support. Both CD-Audio,
+     ISO9660,Juliet,RockRidge and UDF parsing. Also includes
+     libdiscid/musicbrainz information lookup
    * Add support for PAK files (Westwood and Quake style)
- * Remove old i386 assembler code.
- * Remove old i386 asssembler emulator code.
+ * Remove old i386 assembler code
+ * Remove old i386 asssembler emulator code
  * SDL2: keyboard composition support (international characters etc)
  * SDL1/SDL2: Interpolate the play position
  * CDROM Audio Playback: Skipping previous tracks didn't work as expected
  * ocp.ini fps=X variable was not honored
  * Update libsidplayfp to latest upstream
- * Finish keyboard update regarding CTRL+Fx and friends.
- * If libmad support is not detected, linker error occured at runtime - since we still referenced the meta information from the plugin.
- * Some systems have different variations in the actual filenames for the unifont ttf files. ./configure can now be instructed about these alternative filenames.
+ * Finish keyboard update regarding CTRL+Fx and friends
+ * If libmad support is not detected, linker error occured at runtime - since we
+   still referenced the meta information from the plugin
+ * Some systems have different variations in the actual filenames for the
+   unifont ttf files. ./configure can now be instructed about these alternative
+   filenames
  * Adplug playback now support subsongs using < and > keys
 
 Version 0.2.93
 ==============
 
- * Update the desktop icon.
- * Changing font-size from the ALT+C menu didn't work as expected.
- * SDL2 now sets the minimum window size for its text-mode operations.
- * Add Timidity configuration dialog.
- * Fix some spelling errors reported by Debian Lintian.
+ * Update the desktop icon
+ * Changing font-size from the ALT+C menu didn't work as expected
+ * SDL2 now sets the minimum window size for its text-mode operations
+ * Add Timidity configuration dialog
+ * Fix some spelling errors reported by Debian Lintian
  * FileBrowser:
-   * Add editing of artist and album.
+   * Add editing of artist and album
    * Add a 3rd width layout for the file-display (we now have >=80,
-     >=132 & >=180).
+     >=132 & >=180)
    * Escape-button when editing UTF-8 text didn't work as expected
    * Added special case for '00 being year 2000
  * If cross-compiling, ./configure needs to blindly trust that the adplug
-   libraries are correct and that unifont files are present.
+   libraries are correct and that unifont files are present
  * Starting OCP from a directory with compressed files could crash
  * CDROM:
    * include /dev/sr[0-9] when search from cdrom-drives
    * readlink, if the link points to known devices, ignore the entry (this
-     resolves issues where /dev/cdrom is removed when no CDROM-disc is present).
+     resolves issues where /dev/cdrom is removed when no CDROM-disc is present)
    * MusicBrainz:
      * Used for lookup of CDROM track metadata (can be used in future .toc/.bin
-       support).
+       support)
      * Add cache-browser
      * Make it possible to submit unknown discs
      * Make it possible to refresh given entries
@@ -182,7 +230,7 @@ Version 0.2.92
  * Fix some common spelling mistakes
  * Fix some minor resource-leaks found in an old static analysis report, and
    unsafe use of strncpy
- * In the fileselector, use right/left as alternative keys for insert/delete.
+ * In the fileselector, use right/left as alternative keys for insert/delete
    These keys are for inserting/deleting songs from the playlist, and these keys
    are lacking on some Macs
  * OCP was unable to compile at big-endian systems
