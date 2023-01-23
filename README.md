@@ -82,26 +82,44 @@ Note: if letters are capital, press them with <kbd>shift</kbd>
 
 <kbd>a</kbd>: Text FFT analyzer, <kbd>A</kbd>: toggle FFT analyzer, <kbd>tab</kbd>, toggle colors
 
+<kbd>b</kbd>: Phase viewer
+
 <kbd>c</kbd>: Text Channel viewer
+
+<kbd>d</kbd>: Start a shell (only works if using the console/curses version)
+
+<kbd>s</kbd>: un/Silence channel
+
+<kbd>q</kbd>: un/Quiet other channels (solo/unsolo)
 
 <kbd>t</kbd>: Text Track viewer
 
 <kbd>g</kbd>: Lo-Res FFT analyzer + history
 <kbd>G</kbd>: High-Res FFT analyzer + history
 
-<kbd>b</kbd>: Phase viewer
-
 <kbd>o</kbd>: Oscilloscope
 
 <kbd>v</kbd>: Peak power level
 
+<kbd>w</kbd>: Wurfel mode (requires animation files to be present)
+
 <kbd>m</kbd>: Volume control
+
+<kbd>n</kbd>: Note dots
 
 <kbd>x</kbd> / <kbd>alt</kbd> + <kbd>x</kbd>: Extended mode / normal mode toggle
 
+<kbd>'</kbd>: Link view
+
+<kbd>,</kbd> / <kbd>.</kbd>: Fine panning
+
+<kbd>+</kbd> / <kbd>-</kbd>: Fine volume
+
+<kbd>*</kbd> / <kbd>/</kbd>: Fine balance
+
 <kbd>Backspace</kbd>: Toggle filter
 
-<kbd>f1</kbd>: Online Help
+<kbd>f1</kbd> / <kbd>?</kbd> / <kbd>h</kbd>: Online Help
 
 <kbd>f2</kbd>: Lower Volume
 
