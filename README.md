@@ -86,7 +86,7 @@ Note: if letters are capital, press them with <kbd>shift</kbd>
 
 <kbd>c</kbd>: Text Channel viewer
 
-<kbd>d</kbd>: Start a shell
+<kbd>d</kbd>: Start a shell (only works if using the console/curses version)
 
 <kbd>s</kbd>: un/Silence channel
 
@@ -101,7 +101,7 @@ Note: if letters are capital, press them with <kbd>shift</kbd>
 
 <kbd>v</kbd>: Peak power level
 
-<kbd>w</kbd>: Wurfel mode
+<kbd>w</kbd>: Wurfel mode (requires animation files to be present)
 
 <kbd>m</kbd>: Volume control
 
