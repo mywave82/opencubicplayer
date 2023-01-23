@@ -1,6 +1,8 @@
 /* unit test for dirdb.c */
 
 //#define DIRDB_DEBUG 1
+#define CFDATAHOMEDIR_OVERRIDE "/foo/home/ocp/.ocp/"
+#define MEASURESTR_UTF8_OVERRIDE
 
 #include "dirdb.c"
 #include "../stuff/compat.c"
@@ -35,7 +37,6 @@ static void clear_dirdb()
 	dirdbFreeChild = DIRDB_NOPARENT;
 }
 
-char *cfDataHomeDir = "/foo/home/ocp/.ocp/";
 uint8_t mdbCleanSlate = 0;
 
 static int dirdb_basic_test1(void)

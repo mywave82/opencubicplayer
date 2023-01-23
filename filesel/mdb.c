@@ -53,6 +53,11 @@
 #define DEBUG_PRINT(...) {}
 #endif
 
+#ifdef CFDATAHOMEDIR_OVERRIDE
+# undef cfDataHomeDir
+# define cfDataHomeDir CFDATAHOMEDIR_OVERRIDE
+#endif
+
 #define MDB_USED 1
 #define MDB_STRING_MORE 6        /* STRING, and more data follows in the next node */
 #define MDB_STRING_TERMINATION 2 /* STRING, last (or only) node */

@@ -38,11 +38,11 @@ static off_t mdb_test_lseek (int fd, off_t offset, int whence);
 static int mdb_test_close (int fd);
 static int mdb_test_flock (int fd, int operation);
 
+#define CFDATAHOMEDIR_OVERRIDE "/foo/home/ocp/.ocp/"
 #include "mdb.c"
 #include "../stuff/compat.c"
 
 int fsWriteModInfo = 1;
-char *cfDataHomeDir = "/foo/home/ocp/.ocp/";
 
 static ssize_t (*mdb_test_read_hook) (int fd, void *buf, size_t size) = 0;
 static ssize_t (*mdb_test_write_hook) (int fd, void *buf, size_t size) = 0;
@@ -58,6 +58,23 @@ static int (*mdb_test_flock_hook) (int fd, int operation) = 0;
 #define ANSI_COLOR_MAGENTA "\x1b[35m"
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
+
+struct ocpfilehandle_t *ancient_filehandle (char *compressionmethod, int compressionmethod_len, struct ocpfilehandle_t *s)
+{
+	return 0;
+}
+
+void latin1_f_to_utf8_z (const char *src, size_t srclen, char *dst, size_t dstlen)
+{
+	snprintf (dst, dstlen, "%*s", (int)(MIN(dstlen - 1, srclen-1)), src);
+}
+
+void cp437_f_to_utf8_z(const char *src, size_t srclen, char *dst, size_t dstlen)
+{
+	snprintf (dst, dstlen, "%*s", (int)(MIN(dstlen - 1, srclen-1)), src);
+}
+
+const struct dirdbAPI_t dirdbAPI;
 
 static ssize_t mdb_test_read (int fd, void *buf, size_t size)
 {

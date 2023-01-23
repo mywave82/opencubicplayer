@@ -17,6 +17,7 @@
 #define MIXF_VOLRAMP  256
 #define MIXF_DECLICK  512
 
+struct cpifaceSessionAPI_t;
 extern void mixer (struct cpifaceSessionAPI_t *);
 extern void prepare_mixer (void);
 extern void getchanvol (int n, int len);

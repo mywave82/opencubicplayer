@@ -2,6 +2,7 @@
 
 int adbmeta_silene_open_errors = 0;
 #define ADBMETA_SILENCE_OPEN_ERRORS adbmeta_silene_open_errors
+#define CFDATAHOMEDIR_OVERRIDE "/tmp/"
 
 #include "adbmeta.c"
 
@@ -12,8 +13,6 @@ int adbmeta_silene_open_errors = 0;
 #define ANSI_COLOR_MAGENTA "\x1b[35m"
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
-
-char *cfDataHomeDir = "/tmp/";
 
 const char test_blob[] = {
 	/* header */

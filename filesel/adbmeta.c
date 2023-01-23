@@ -36,6 +36,11 @@
  #define ADBMETA_SILENCE_OPEN_ERRORS 0
 #endif
 
+#ifdef CFDATAHOMEDIR_OVERRIDE
+# undef cfDataHomeDir
+# define cfDataHomeDir CFDATAHOMEDIR_OVERRIDE
+#endif
+
 const char adbMetaTag[16] = "OCPArchiveMeta\x1b\x00";
 /*
  16 bytes header

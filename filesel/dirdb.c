@@ -39,6 +39,15 @@
 #include "stuff/poutput.h"
 #include "stuff/utf-8.h"
 
+#ifdef CFDATAHOMEDIR_OVERRIDE
+# undef cfDataHomeDir
+# define cfDataHomeDir CFDATAHOMEDIR_OVERRIDE
+#endif
+#ifdef MEASURESTR_UTF8_OVERRIDE
+# undef measurestr_utf8
+# define measurestr_utf8(x,y) (y)
+#endif
+
 struct dirdbEntry
 {
 	uint32_t parent;
