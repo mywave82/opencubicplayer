@@ -16560,7 +16560,7 @@ printf "%s\n" "no" >&6; }
 fi
 
 
-		if test "x$UPDATE_MIME_DATBASE" = "xfailed"
+		if test "x$UPDATE_MIME_DATABASE" = "xfailed"
 then :
 
 			as_fn_error $? "Cannot find update-mime-database (required by x11 and SDL driver)." "$LINENO" 5

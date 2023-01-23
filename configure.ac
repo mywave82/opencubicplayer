@@ -990,7 +990,7 @@ esac
 AS_IF([test "x$with_update_mime_database" != "xno"],[
 	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"], [
 		AC_CHECK_PROG([UPDATE_MIME_DATABASE], [update-mime-database], [update-mime-database], [failed])
-		AS_IF([test "x$UPDATE_MIME_DATBASE" = "xfailed"],[
+		AS_IF([test "x$UPDATE_MIME_DATABASE" = "xfailed"],[
 			AC_MSG_ERROR([Cannot find update-mime-database (required by x11 and SDL driver).])
 		])
 	])
