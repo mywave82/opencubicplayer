@@ -36,7 +36,6 @@
 #include <vorbis/vorbisfile.h>
 #include "types.h"
 #include "cpiface/cpiface.h"
-#include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"

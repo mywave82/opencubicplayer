@@ -108,7 +108,6 @@ devwmixf.o: devwmixf.c \
 	dwmixfa.h \
 	../dev/devigen.h \
 	../boot/psetting.h \
-	../dev/deviplay.h \
 	../boot/plinkman.h
 	$(CC) devwmixf.c -o $@ -c
 

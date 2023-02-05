@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "types.h"
-#include "dev/deviplay.h"
 #include "dev/deviwave.h"
 #include "dev/player.h"
 #include "dev/mcp.h"

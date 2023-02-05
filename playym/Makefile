@@ -78,7 +78,6 @@ ymplay.o: ymplay.cpp \
 	../config.h \
 	../types.h \
 	../cpiface/cpiface.h \
-	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \

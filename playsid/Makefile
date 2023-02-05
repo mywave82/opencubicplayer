@@ -387,7 +387,6 @@ sidplay.o: \
 	../types.h \
 	../boot/psetting.h\
 	../cpiface/cpiface.h \
-	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/mixclip.h \
 	../dev/player.h \

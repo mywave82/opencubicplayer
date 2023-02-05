@@ -95,7 +95,6 @@ oplplay.o: oplplay.cpp \
 	../types.h \
 	../cpiface/cpiface.h \
 	../dev/mcp.h \
-	../dev/deviplay.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \
 	../filesel/dirdb.h \

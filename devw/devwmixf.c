@@ -989,7 +989,6 @@ static int Detect(struct deviceinfo *c)
 
 #include "dev/devigen.h"
 #include "boot/psetting.h"
-#include "dev/deviplay.h"
 #include "boot/plinkman.h"
 
 static uint32_t mixfGetOpt(const char *sec)

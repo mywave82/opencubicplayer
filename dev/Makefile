@@ -66,13 +66,12 @@ devigen.o: devigen.c devigen.h \
 	../boot/plinkman.h
 	$(CC) devigen.c -o $@ -c
 
-deviplay.o: deviplay.c deviplay.h \
+deviplay.o: deviplay.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
 	../boot/psetting.h \
 	devigen.h \
-	deviplay.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/filesystem-drive.h \

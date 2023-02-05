@@ -203,7 +203,6 @@ timidityplay.o: timidityplay.c timidity-git/timidity/playmidi.c\
 	../boot/psetting.h \
 	../cpiface/cpiface.h \
 	cpikaraoke.h \
-	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \

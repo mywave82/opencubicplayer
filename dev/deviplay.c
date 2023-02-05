@@ -33,7 +33,6 @@
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "devigen.h"
-#include "deviplay.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/filesystem-drive.h"
@@ -50,8 +49,6 @@ static struct devinfonode *plPlayerDevices;
 static struct devinfonode *curplaydev;
 static struct devinfonode *defplaydev;
 static struct preprocregstruct plrPreprocess;
-
-int plrBufSize;
 
 static struct devinfonode *getdevstr(struct devinfonode *n, const char *hnd)
 {
@@ -350,16 +347,6 @@ static int playdevinit(void)
 			plrSetDevice(plPlayerDevices->handle, 1);
 
 	fprintf(stderr, "\n");
-
-	plrBufSize=cfGetProfileInt2(cfSoundSec, "sound", "plrbufsize", 100, 10);
-	if (plrBufSize <= 0)
-	{
-		plrBufSize = 1;
-	}
-	if (plrBufSize >= 5000)
-	{
-		plrBufSize = 5000;
-	}
 
 	if (!curplaydev)
 	{

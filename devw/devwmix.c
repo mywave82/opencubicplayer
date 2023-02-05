@@ -1071,7 +1071,6 @@ static void mixrRegisterPostProc(struct mixqpostprocregstruct *mode)
 
 #include "dev/devigen.h"
 #include "boot/psetting.h"
-#include "dev/deviplay.h"
 #include "boot/plinkman.h"
 
 static uint32_t mixGetOpt(const char *sec)

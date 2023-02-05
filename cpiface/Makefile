@@ -203,7 +203,6 @@ mcpedit.o: mcpedit.c \
 	../types.h \
 	cpiface.h \
 	cpiface-private.h \
-	../dev/deviplay.h \
 	../dev/deviwave.h \
 	../dev/mcp.h \
 	../dev/player.h \

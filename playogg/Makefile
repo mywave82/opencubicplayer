@@ -48,7 +48,6 @@ oggplay.o: oggplay.c \
 	../config.h \
 	../types.h \
 	../cpiface/cpiface.h \
-	../dev/deviplay.h \
 	../dev/mcp.h \
 	../dev/player.h \
 	../dev/plrasm.h \

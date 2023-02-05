@@ -30,7 +30,6 @@
 #include "types.h"
 #include "hvlplay.h"
 #include "cpiface/cpiface.h" /* merge in from hvlpinst.c, to compensate for buffer-delay */
-#include "dev/deviplay.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
 #include "dev/ringbuffer.h"
