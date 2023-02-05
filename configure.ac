@@ -842,6 +842,11 @@ AS_IF([test "x$with_alsa" != "xno"],[
 ])
 
 PKG_CHECK_MODULES([LIBANCIENT],[libancient],[],[AC_MSG_ERROR([libancient not found])])
+origCXX="$CXX"
+AX_CXX_COMPILE_STDCXX_17([noext], [mandatory])
+AC_SUBST(LIBANCIENT_CXX)
+LIBANCIENT_CXX="$CXX"
+CXX="$origCXX"
 
 AC_SUBST(HAVE_ALSA)
 AS_IF([test "x$with_alsa" = "xno"],[HAVE_ALSA=],[HAVE_ALSA=1])
@@ -1054,5 +1059,5 @@ AS_IF([test "$LINUX+set"      != "+set"], [echo "linux cdrom:       ON"
 AS_IF([test "x$with_lzw"       = "xno" ], [echo "include LZW:       OFF"], [echo "include LZW:       ON"])
 AS_IF([test "x$with_lzh"       = "xno" ], [echo "include LZH:       OFF"], [echo "include LZH:       ON"])
 AS_IF([test "x$with_dumptools" = "xyes"], [echo "include DumpTools: ON" ], [echo "include DumpTools: OFF"])
-                                           echo "unifont truetype:  "$UNIFONT_TTF $UNIFONT_CSUR_TTF $UNIFONT_UPPER_TTF")"
-                                           echo "unifont opentype:  "$UNIFONT_OTF $UNIFONT_CSUR_OTF $UNIFONT_UPPER_OTF")"
+                                           echo "unifont truetype:  "$UNIFONT_TTF $UNIFONT_CSUR_TTF $UNIFONT_UPPER_TTF
+                                           echo "unifont opentype:  "$UNIFONT_OTF $UNIFONT_CSUR_OTF $UNIFONT_UPPER_OTF

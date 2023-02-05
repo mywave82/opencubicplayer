@@ -35,8 +35,6 @@ extern "C"
 #include "filesystem-file-mem.h"
 }
 
-#warning we need to save a comment in the ocpfilehandle that can be retrieved by gmdtype
-
 #if defined(ANCIENT_DEBUG)
 static int do_ancient_debug_print=1;
 #endif

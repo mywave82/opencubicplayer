@@ -115,7 +115,7 @@ filesystem-ancient.o: filesystem-ancient.cpp \
 	filesystem.h \
 	filesystem-ancient.h \
 	filesystem-file-mem.h
-	$(CXX) $< -o $@ -c $(LIBANCIENT_CXXFLAGS)
+	$(LIBANCIENT_CXX) $< -o $@ -c $(LIBANCIENT_CXXFLAGS)
 
 filesystem-bzip2.o: filesystem-bzip2.c \
 	../config.h \
