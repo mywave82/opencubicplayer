@@ -1631,19 +1631,22 @@ appearance.
   ~analyzer~         if the player starts in textmode show the analyzer (or not)
   ~mvoltype~         the appearance of the peak power levels:
 
+                     ~0~  none
                      ~1~  big
                      ~2~  small
   ~pattern~          show the tracklist when starting OCP in textmode
   ~insttype~         the appearance of the instrument function:
 
-                     ~0~  short
-                     ~1~  long
-                     ~2~  side (only in 132 column modes)
+                     ~0~  none
+                     ~1~  short
+                     ~2~  long
+                     ~3~  side (only in 132 column modes)
   ~channeltype~      the appearance of the channels in textmode:
 
-                     ~0~  short
-                     ~1~  long
-                     ~2~  side (only in 132 column modes)
+                     ~0~  none
+                     ~1~  short
+                     ~2~  long
+                     ~3~  side (only in 132 column modes)
   ~palette~          with this option you can redefine the default colours used
                      in textmode. The first entry defines which colour to use
                      for the original colour with number 0. Leave things as they

@@ -303,6 +303,7 @@ if the player starts in textmode show the analyzer (or not)
 @item mvoltype @tab
 the appearance of the peak power levels:
 @itemize
+@item 0 - none
 @item 1 - big
 @item 2 - small
 @end itemize
@@ -311,16 +312,18 @@ show the tracklist when starting OCP in textmode
 @item insttype @tab
 the appearance of the instrument function:
 @itemize
-@item 0 - short
-@item 1 - long
-@item 2 - side (only in 132 column modes)
+@item 0 - none
+@item 1 - short
+@item 2 - long
+@item 3 - side (only in 132 column modes)
 @end itemize
 @item channeltype @tab
 the appearance of the channels in textmode:
 @itemize
-@item 0 - short
-@item 1 - long
-@item 2 - side (only in 132 column mode)
+@item 0 - none
+@item 1 - short
+@item 2 - long
+@item 3 - side (only in 132 column mode)
 @end itemize
 @item palette @tab
 with this options you can redefine the default colors used in
