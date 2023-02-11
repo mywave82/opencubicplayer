@@ -55,39 +55,41 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) devpnone$(LIB_SUFFIX) devpdisk$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+	$(CP) devpnone$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-devpnone$(LIB_SUFFIX)"
+	$(CP) devpdisk$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-devpdisk$(LIB_SUFFIX)"
 ifeq ($(HAVE_ALSA),1)
-	$(CP) $(ALSA_SO) "$(DESTDIR)$(LIBDIR)"
+	$(CP) $(ALSA_SO) "$(DESTDIR)$(LIBDIR)/autoload/10-$(ALSA_SO)"
 endif
 ifeq ($(HAVE_OSS),1)
-	$(CP) $(OSS_SO) "$(DESTDIR)$(LIBDIR)"
+	$(CP) $(OSS_SO) "$(DESTDIR)$(LIBDIR)/autoload/10-$(OSS_SO)"
 endif
 ifeq ($(HAVE_COREAUDIO),1)
-	$(CP) $(COREAUDIO_SO) "$(DESTDIR)$(LIBDIR)"
+	$(CP) $(COREAUDIO_SO) "$(DESTDIR)$(LIBDIR)/autoload/10-$(COREAUDIO_SO)"
 endif
 ifeq ($(HAVE_SDL),1)
-	$(CP) $(SDL_SO) "$(DESTDIR)$(LIBDIR)"
+	$(CP) $(SDL_SO) "$(DESTDIR)$(LIBDIR)/autoload/10-$(SDL_SO)"
 endif
 ifeq ($(HAVE_SDL2),1)
-	$(CP) $(SDL2_SO) "$(DESTDIR)$(LIBDIR)"
+	$(CP) $(SDL2_SO) "$(DESTDIR)$(LIBDIR)/autoload/10-$(SDL2_SO)"
 endif
 
 uninstall:
-	rm -f  "$(DESTDIR)$(LIBDIR)/devpnone$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/devpdisk$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-devpnone$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-devpdisk$(LIB_SUFFIX)"
 ifeq ($(HAVE_ALSA),1)
-	rm -f "$(DESTDIR)$(LIBDIR)/$(ALSA_SO)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-$(ALSA_SO)"
 endif
 ifeq ($(HAVE_OSS),1)
-	rm -f "$(DESTDIR)$(LIBDIR)/$(OSS_SO)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-$(OSS_SO)"
 endif
 ifeq ($(HAVE_COREAUDIO),1)
-	rm -f "$(DESTDIR)$(LIBDIR)/$(COREAUDIO_SO)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-$(COREAUDIO_SO)"
 endif
 ifeq ($(HAVE_SDL),1)
-	rm -f "$(DESTDIR)$(LIBDIR)/$(SDL_SO)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-$(SDL_SO)"
 endif
 ifeq ($(HAVE_SDL2),1)
-	rm -f "$(DESTDIR)$(LIBDIR)/$(SDL2_SO)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-$(SDL2_SO)"
 endif
 
 devposs.o: devposs.c \
@@ -96,12 +98,12 @@ devposs.o: devposs.c \
 	../boot/plinkman.h \
 	../cpiface/cpiface.h \
 	../cpiface/vol.h \
-	../dev/imsdev.h \
-	../dev/devigen.h \
+	../dev/deviplay.h \
 	../dev/player.h \
 	../dev/plrasm.h \
 	../dev/ringbuffer.h \
 	../boot/psetting.h  \
+	../stuff/err.h \
 	../stuff/imsrtns.h
 	$(CC) devposs.c $(OSS_CFLAGS) -o $@ -c
 
@@ -110,9 +112,10 @@ devpnone.o: devpnone.c \
 	../types.h \
 	../boot/plinkman.h \
 	../cpiface/cpiface.h \
-	../dev/imsdev.h \
+	../dev/deviplay.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h
 	$(CC) devpnone.c -o $@ -c
 
@@ -122,13 +125,13 @@ devpdisk.o: devpdisk.c \
 	../boot/plinkman.h \
 	../boot/psetting.h \
 	../cpiface/cpiface.h \
-	../dev/devigen.h \
-	../dev/imsdev.h \
+	../dev/deviplay.h \
 	../dev/player.h \
 	../dev/plrasm.h \
 	../dev/ringbuffer.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h
 	$(CC) devpdisk.c -o $@ -c
 
@@ -139,7 +142,7 @@ devpalsa.o: devpalsa.c \
 	../boot/psetting.h \
 	../cpiface/cpiface.h \
 	../cpiface/vol.h \
-	../dev/imsdev.h \
+	../dev/deviplay.h \
 	../dev/player.h \
 	../dev/plrasm.h \
 	../dev/ringbuffer.h \
@@ -163,9 +166,10 @@ devpcoreaudio.o: devpcoreaudio.c \
 	../boot/plinkman.h \
 	../boot/psetting.h \
 	../cpiface/cpiface.h \
-	../dev/imsdev.h \
+	../dev/deviplay.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h
 	$(CC) devpcoreaudio.c -o $@ -c $(DEVPCOREAUDIO_CFLAGS)
 
@@ -176,9 +180,10 @@ devpsdl.o: devpsdl.c \
 	../boot/plinkman.h \
 	../boot/psetting.h \
 	../cpiface/cpiface.h \
-	../dev/imsdev.h \
+	../dev/deviplay.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h
 	$(CC) devpsdl.c -o $@ -c $(SDL_CFLAGS)
 
@@ -189,8 +194,9 @@ devpsdl2.o: devpsdl2.c \
 	../boot/plinkman.h \
 	../boot/psetting.h \
 	../cpiface/cpiface.h \
-	../dev/imsdev.h \
+	../dev/deviplay.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h
 	$(CC) devpsdl2.c -o $@ -c $(SDL2_CFLAGS)

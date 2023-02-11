@@ -539,10 +539,10 @@ extern "C"
 		/* .sortindex = */ 95,
 		/* .PreInit = */ 0,
 		/* .Init = */ 0,
-		/* .LateInit = */ 0,
 		/* .PluginInit = */ ymPluginInit,
-		/* .PluginClose = */ ymPluginClose,
+		/* .LateInit = */ 0,
 		/* .PreClose = */ 0,
+		/* .PluginClose = */ ymPluginClose,
 		/* .Close = */ 0,
 		/* .LateClose = */ 0
 	};

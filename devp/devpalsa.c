@@ -33,7 +33,7 @@
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"
 #include "cpiface/vol.h"
-#include "dev/imsdev.h"
+#include "dev/deviplay.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
@@ -79,11 +79,12 @@ static snd_pcm_status_t *alsa_pcm_status=NULL;
 static snd_pcm_hw_params_t *hwparams = NULL;
 static snd_pcm_sw_params_t *swparams = NULL;
 
-struct sounddevice plrAlsa;
+static const struct plrDriver_t plrALSA;
 static void alsaOpenDevice(void);
 
-static char alsaCardName[DEVICE_NAME_MAX+1];
-static char alsaMixerName[DEVICE_NAME_MAX+1];
+#define ALSA_DEVICE_NAME_MAX 63
+static char alsaCardName[ALSA_DEVICE_NAME_MAX+1];
+static char alsaMixerName[ALSA_DEVICE_NAME_MAX+1];
 
 /* stolen from devposs */
 #define MAX_ALSA_MIXER 256
@@ -124,7 +125,7 @@ struct AlsaConfigDeviceList_t
 	int                             fill;
 	int                             preselected;
 	int                             selected;
-	char                            custom[DEVICE_NAME_MAX+1];
+	char                            custom[ALSA_DEVICE_NAME_MAX+1];
 };
 
 static struct ocpfile_t *alsasetup;
@@ -185,8 +186,8 @@ static void alsaSetupClearList (struct AlsaConfigDeviceList_t *list)
 
 static int alsaPluginInit (struct PluginInitAPI_t *API)
 {
-	alsasetup = dev_file_create (
-		dmSetup->basedir,
+	alsasetup = API->dev_file_create (
+		API->dmSetup->basedir,
 		"alsaconfig.dev",
 		"ALSA configuration",
 		"",
@@ -197,7 +198,9 @@ static int alsaPluginInit (struct PluginInitAPI_t *API)
 		0  /* Destructor */
 	);
 
-	filesystem_setup_register_file (alsasetup);
+	API->filesystem_setup_register_file (alsasetup);
+
+	API->plrRegisterDriver (&plrALSA);
 
 	return errOk;
 }
@@ -206,10 +209,11 @@ static void alsaPluginClose (struct PluginCloseAPI_t *API)
 {
 	if (alsasetup)
 	{
-		filesystem_setup_unregister_file (alsasetup);
+		API->filesystem_setup_unregister_file (alsasetup);
 		alsasetup->unref (alsasetup);
 		alsasetup = 0;
 	}
+	API->plrUnregisterDriver (&plrALSA);
 }
 
 static void alsaSetupDrawList (const int mlLeft, const int mlTop, const int mlWidth, const int mlHeight, const char *title, struct AlsaConfigDeviceList_t *list, const struct DevInterfaceAPI_t *API)
@@ -570,7 +574,7 @@ static void alsaSetupRun (void **token, const struct DevInterfaceAPI_t *API)
 	alsaSetupClearList (&pcmlist);
 	alsaSetupClearList (&mixerlist);
 
-	API->configAPI->SetProfileString ("devpALSA", "path", alsaCardName);
+	API->configAPI->SetProfileString ("devpALSA", "card", alsaCardName);
 	API->configAPI->SetProfileString ("devpALSA", "mixer", alsaMixerName);
 	API->configAPI->StoreConfig ();
 }
@@ -1030,7 +1034,7 @@ static int devpALSAPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 		return 0;
 	}
 
-	plrbufsize = cfGetProfileInt2(cfSoundSec, "sound", "plrbufsize", 200, 10);
+	plrbufsize = cpifaceSession->configAPI->GetProfileInt2 (cpifaceSession->configAPI->SoundSec, "sound", "plrbufsize", 200, 10);
 	/* clamp the plrbufsize to be atleast 150ms and below 1000 ms */
 	if (plrbufsize < 150)
 	{
@@ -1274,45 +1278,34 @@ static int volalsaSetVolume(struct ocpvolstruct *v, int n)
 	return 0;
 }
 
-static void alsaClose(void);
-static int alsaInit(const struct deviceinfo *c, const char *handle)
+static void alsaClose (const struct plrDriver_t *driver);
+static const struct plrDevAPI_t *alsaInit (const struct plrDriver_t *driver)
 {
-	plrDevAPI = &devpALSA;
-
 	alsaOpenDevice();
 	if (!alsa_pcm)
 	{
-		alsaClose();
+		alsaClose (driver);
 		return 0;
 	}
 
-	return 1;
+	return &devpALSA;
 }
 
-static int alsaDetect(struct deviceinfo *card)
+static int alsaDetect (const struct plrDriver_t *driver)
 {
 	int cards = detect_cards ();
 
-	card->devtype=&plrAlsa;
+	snprintf (alsaCardName, sizeof(alsaCardName), "%s", cfGetProfileString("devpALSA", "card", "default"));
 
-	snprintf (card->path, sizeof(card->path), "%s", cfGetProfileString("devpALSA", "path", "default"));
-	snprintf (alsaCardName, sizeof(alsaCardName), "%s", card->path);
-
-	snprintf (card->mixer, sizeof(card->mixer), "%s", cfGetProfileString("devpALSA", "mixer", "default"));
-	snprintf (alsaMixerName, sizeof(alsaMixerName), "%s", card->mixer);
-
-	card->subtype = -1;
+	snprintf (alsaMixerName, sizeof(alsaMixerName), "%s", cfGetProfileString("devpALSA", "mixer", "default"));
 
 	return cards > 0;
 }
 
-static void alsaClose(void)
+static void alsaClose (const struct plrDriver_t *driver)
 {
-	if (plrDevAPI  == &devpALSA)
-	{
-		plrDevAPI = 0;
-	}
 }
+
 
 static void __attribute__((constructor))init(void)
 {
@@ -1399,16 +1392,13 @@ static const struct plrDevAPI_t devpALSA = {
 	0 /* ProcessKey */
 };
 
-struct sounddevice plrAlsa =
+static const struct plrDriver_t plrALSA =
 {
-	SS_PLAYER,
-	1,
+	"devpALSA",
 	"ALSA device driver",
 	alsaDetect,
 	alsaInit,
-	alsaClose,
-	0 /* GetOpt */
+	alsaClose
 };
 
-const char *dllinfo="driver plrAlsa";
 DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpalsa", .desc = "OpenCP Player Device: ALSA (c) 2005-'23 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = alsaPluginInit, .PluginClose = alsaPluginClose};

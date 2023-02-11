@@ -127,7 +127,6 @@ this section.
   mixprocrate=4096000
   plrbufsize=200
   samprate=44100
-  defplayer=
   defwavetable=
   itchan=64
   cdsamplelinein=off
@@ -187,12 +186,6 @@ stream OCP will calculate in advance. This option sets the buffer lenth in
 miliseconds.
 @item samprate @tab
 When using diskwriter, this value will be used.
-@item defplayer @tab
-with this option you can override the default
-@emph{playerdevice}. Normally you don't need to set this option, as the
-default device can also be set by the order in the @emph{playerdevice}
-option.  This option can also be specified by using the @emph{-sp}
-options from command line.
 @item defwavetable @tab
 this option sets the default @emph{wavetabledevice}. Can
 also be set with @emph{-sw} command.
@@ -419,26 +412,13 @@ personal @file{ocp.ini} file for details.
 The general form of a device looks like:
 @example
 [handle]
-  link=...
-  subtype=...
-  bypass=...
-  keep=...
+  path=...
+  mixer=...
 @end example
 
-@multitable @columnfractions .3 .7
-@item handle @tab
 The internal name to use within the player. The @file{ocp.ini}
 file must contain all @emph{handles} listed in the devices options of
 the @emph{devices} section.
-@item link @tab
-the name of the dll function this device will be linked to.
-@item bypass @tab
-skip the autodetection if it may encounter problems
-@item keep @item
-keep the driver resident in memory, even it is not currently
-needed.
-@tab
-@end multitable
 
 The next subsections will look at the special features the different
 sound cards and drivers support. The original order of the
@@ -446,6 +426,16 @@ sound cards and drivers support. The original order of the
 documentation.
 
 @subsection ALSA
+ALSA is the modern sound architecture in Linux that can give direct access to
+sound hardware. For many modern systems, the default output driver might be a
+virtual sound card like PulseAudio making it possible for the desktop volume
+applet to adjust volume per application.
+@example
+[devpALSA]
+  card=default
+  mixer=default
+@end example
+
 
 @subsection CA
 CoreAudio is the sound arcitecture for MacOS / OSX. The current state of this
@@ -454,21 +444,24 @@ given hardware. Testing/patching are welcome.
 
 @example
 [devpCA]
-  link=devpcoreaudio
 @end example
 
 @subsection OSS
-Open Sound Sysstem is the common legacy sound API for most unix systems. This
+Open Sound System is the common legacy sound API for most unix systems. This
 driver should work on most unix-like operating systems like different variants
 of BSD, old versions of Linux, etc.
 
 @example
 [devpOSS]
-  link=devposs
   revstereo=on
   path=/dev/dsp
   mixer=/dev/mixer
 @end example
+
+@subsection SDL / SDL2
+SDL/SDL2 is a cross-platform library that gives a common simple API for
+playing audio, hiding the underlaying operating system. This library will work
+on almost all systems.
 
 @multitable @columnfractions .3 .7
 @item path @tab
@@ -485,10 +478,8 @@ on almost all systems.
 
 @example
 [devpSDL]
-  link=devpsdl
 
 [devpSDL2]
-  link=devpsdl2
 @end example
 
 @subsection diskwriter
@@ -519,7 +510,6 @@ necessaryly the directory where the module is located) subsequent
 
 @example
 [devpDisk]
-  link=devpdisk
   stereo=on
   16bit=on
 @end example

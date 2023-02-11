@@ -29,7 +29,6 @@ freverb.o: freverb.c \
 	../boot/plinkman.h \
 	../cpiface/cpiface.h \
 	../cpiface/vol.h \
-	../dev/imsdev.h \
 	../dev/mcp.h \
 	../devw/devwmixf.h \
 	../stuff/imsrtns.h
@@ -41,7 +40,6 @@ ireverb.o: ireverb.c \
 	../boot/plinkman.h \
 	../cpiface/cpiface.h \
 	../cpiface/vol.h \
-	../dev/imsdev.h \
 	../dev/mcp.h \
 	../devw/devwmix.h \
 	../stuff/imsrtns.h

@@ -1,5 +1,5 @@
 [version]
-  epoch=20221228
+  epoch=20230211
 
 [general]
 ;link=
@@ -35,7 +35,6 @@
   mixprocrate=4096000     ; max channels*rate (for slow cpus) (4096000==64*64000)
   plrbufsize=200          ; milliseconds
   samprate=44100          ; -sr44100
-  defplayer=              ; -sp
   defwavetable=           ; -sw
   midichan=64             ; number of channels used for midi playback
   itchan=64               ; number of channels used for .it playback
@@ -149,53 +148,26 @@
   chargen=CHARGEN.ROM
 
 [devpALSA]
-  link=devpalsa
-
-[devpCA]
-  link=devpcoreaudio
+  path=default
+  mixer=default
 
 [devpOSS]
-  link=devposs
   path=/dev/dsp
   mixer=/dev/mixer
 
 [devpDisk]
-  link=devpdisk
   stereo=on            ; -sm-
   16bit=on             ; -s8-
 
-[devpMPx]
-  link=devpmpx
-  bitrate=128000
-  vbr=off
-
-[devpNone]
-  link=devpnone
-
-[devpSDL]
-  link=devpsdl
-
-[devpSDL2]
-  link=devpsdl2
-
-[devwNone]
-  link=devwnone
-
 [devwMix]
-  link=devwmix
   mixResample=off
-  subtype=0
   postprocs=iReverb
 
 [devwMixQ]
-  link=devwmix
-  subtype=1
   mixResample=off
   postprocs=iReverb
 
 [devwMixF]
-  link=devwmixf
-  mixResample=off
   volramp=on       ; turn this off if the mixer sounds too "soft" for you
   declick=on
   postprocs=fReverb

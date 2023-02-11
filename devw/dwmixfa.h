@@ -11,12 +11,6 @@
 #define MIXF_PLAYING 256
 #define MIXF_MUTE 512
 
-#define MIXF_UNSIGNED 1
-#define MIXF_16BITOUT 2
-
-#define MIXF_VOLRAMP  256
-#define MIXF_DECLICK  512
-
 struct cpifaceSessionAPI_t;
 extern void mixer (struct cpifaceSessionAPI_t *);
 extern void prepare_mixer (void);

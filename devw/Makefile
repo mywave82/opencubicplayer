@@ -42,19 +42,24 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX) test-dwmixqa test-dwmixa test-dwmixfa
 
 install:
-	$(CP) devwnone$(LIB_SUFFIX) devwmix$(LIB_SUFFIX) devwmixf$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
+	$(CP) devwnone$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-devwnone$(LIB_SUFFIX)"
+	$(CP) devwmix$(LIB_SUFFIX)  "$(DESTDIR)$(LIBDIR)/autoload/10-devwmix$(LIB_SUFFIX)"
+	$(CP) devwmixf$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-devwmixf$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/devwnone$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/devwmix$(LIB_SUFFIX)" "$(DESTDIR)$(LIBDIR)/devwmixf$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-devwnone$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-devwmix$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-devwmixf$(LIB_SUFFIX)"
 
 devwnone.o: devwnone.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
 	../cpiface/cpiface.h \
-	../dev/imsdev.h \
+	../dev/deviwave.h \
 	../dev/mcp.h \
 	../dev/mix.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h \
 	dwnone_asminc.c
 	$(CC) -O devwnone.c -o $@ -c
@@ -63,13 +68,15 @@ devwmix.o: devwmix.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../boot/psetting.h \
 	../cpiface/cpiface.h \
-	../dev/devigen.h \
+	../dev/deviwave.h \
 	../dev/mcp.h \
 	../dev/mix.h \
 	../dev/player.h \
 	../dev/plrasm.h \
 	devwmix.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h \
 	../stuff/pagesize.inc.c \
 	dwmix.h \
@@ -96,19 +103,18 @@ devwmixf.o: devwmixf.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
+	../boot/psetting.h \
 	../cpiface/cpiface.h \
-	../dev/imsdev.h \
+	../dev/deviwave.h \
 	../dev/mcp.h \
 	../dev/mix.h \
 	../dev/player.h \
 	../dev/plrasm.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h \
 	../stuff/pagesize.inc.c \
 	devwmixf.h \
-	dwmixfa.h \
-	../dev/devigen.h \
-	../boot/psetting.h \
-	../boot/plinkman.h
+	dwmixfa.h
 	$(CC) devwmixf.c -o $@ -c
 
 dwmixfa.o: dwmixfa.c \

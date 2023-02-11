@@ -40,13 +40,15 @@
 #include <unistd.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "boot/psetting.h"
 #include "cpiface/cpiface.h"
-#include "dev/imsdev.h"
+#include "dev/deviwave.h"
 #include "dev/mcp.h"
 #include "dev/mix.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
 #include "devwmix.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 #include "dwmix.h"
 #include "dwmixa.h"
@@ -55,7 +57,8 @@
 #define MIXBUFLEN 4096
 #define MAXCHAN 255
 
-extern struct sounddevice mcpMixer;
+static const struct mcpDriver_t mcpMixer;
+static const struct mcpDriver_t mcpMixerQ;
 
 static struct mixqpostprocregstruct *postprocs;
 
@@ -113,7 +116,6 @@ static int masterchr;
 static uint32_t IdleCache; /* To prevent devpDisk lockup */
 
 static int mixProcKey(uint16_t key);
-static void mixrInit(const char *sec);
 
 static void calcinterpoltabr(void)
 	/* used by OpenPlayer */
@@ -486,33 +488,11 @@ static void devwMixIdle  (struct cpifaceSessionAPI_t *cpifaceSession)
 	clipbusy--;
 }
 
-#ifdef __STRANGE_BUG__
-void *GetReturnAddress12();
-#pragma aux GetReturnAddress12="mov eax, [esp+12]" value [eax];
-
-void sbDumpRetAddr(void *ptr)
-{
-  linkaddressinfostruct a;
-  lnkGetAddressInfo(a, ptr);
-  printf("--> called from %s.%s+0x%x, %s.%d+0x%x\n", a.module, a.sym,
-	 a.symoff, a.source, a.line, a.lineoff);
-  fflush(stdout);
-}
-#endif
-
 static void devwMixSET(int ch, int opt, int val)
 {
 	/* Refered by OpenPlayer
 	 */
 	struct channel *chn;
-
-#ifdef __STRANGE_BUG__
-  if ((opt==mcpMasterBalance)&&(val<-64 || val>64))  /* got that damn bug. */
-    {
-      sbDumpRetAddr(GetReturnAddress12());
-      printf("mcpSet(%d, %d, %d);\n", ch, opt, val);
-    }
-#endif
 
 	if (ch>=channelnum)
 		ch=channelnum-1;
@@ -689,9 +669,7 @@ static void devwMixSET(int ch, int opt, int val)
 			break;
 
 		case mcpMasterPanning:
-#ifndef __STRANGE_BUG__
 			if (val>=-64 && val<=64)
-#endif
 				masterpan=(val<-64)?-64:(val>64)?64:val;
 			calcvols();
 			break;
@@ -1024,10 +1002,16 @@ static const struct mcpDevAPI_t devwMix =
 	mixProcKey
 };
 
-static int wmixInit(const struct deviceinfo *dev, const char *handle)
+static void mixrRegisterPostProc(struct mixqpostprocregstruct *mode)
 {
-	resample=!!(dev->opt&MIXRQ_RESAMPLE);
-	quality=!!dev->subtype;
+	mode->next=postprocs;
+	postprocs=mode;
+}
+
+static const struct mcpDevAPI_t *wmixInit (const struct mcpDriver_t *driver)
+{
+	char regname[50];
+	const char *regs;
 
 	amplify=65535;
 	relspeed=256;
@@ -1039,73 +1023,32 @@ static int wmixInit(const struct deviceinfo *dev, const char *handle)
 	mastersrnd=0;
 	channelnum=0;
 
-	mcpDevAPI = &devwMix;
+	quality = (driver == &mcpMixerQ);
+	resample = cfGetProfileBool(driver->name, "mixresample", 0, 0);
 
-	mixrInit (handle);
+	fprintf(stderr, "[%s] %s C version (resample=%d)\n", driver->name, quality?"dwmixaq.c":"dwmixa.c", resample);
 
-	return 1;
-}
-
-static void wmixClose(void)
-{
-	if (mcpDevAPI == &devwMix)
-	{
-		mcpDevAPI = 0;
-	}
-}
-
-
-static int wmixDetect(struct deviceinfo *c)
-{
-	c->devtype=&mcpMixer;
-	if (c->subtype==-1)
-		c->subtype=0;
-	return 1;
-}
-
-static void mixrRegisterPostProc(struct mixqpostprocregstruct *mode)
-{
-	mode->next=postprocs;
-	postprocs=mode;
-}
-
-#include "dev/devigen.h"
-#include "boot/psetting.h"
-#include "boot/plinkman.h"
-
-static uint32_t mixGetOpt(const char *sec)
-{
-	uint32_t opt=0;
-	if (cfGetProfileBool(sec, "mixresample", 0, 0))
-		opt|=MIXRQ_RESAMPLE;
-	return opt;
-}
-
-static void mixrInit(const char *sec)
-{
-	char regname[50];
-	const char *regs;
-
-
-	fprintf(stderr, "[devwmix] INIT, ");
-	if (!quality)
-	{
-		fprintf(stderr, "using dwmixa.c C version");
-	} else {
-		fprintf(stderr, "using dwmixaq.c C version");
-	}
-	fprintf(stderr, " (handle=%s)\n", sec);
-
-	postprocs=0;
-	regs=cfGetProfileString(sec, "postprocs", "");
-
+	regs = cfGetProfileString(driver->name, "postprocs", "");
 	while (cfGetSpaceListEntry(regname, &regs, 49))
 	{
 		void *reg=_lnkGetSymbol(regname);
-		fprintf(stderr, "[%s] registering post processing plugin %s\n", sec, regname);
+		fprintf(stderr, "[%s] registering post processing plugin %s\n", driver->name, regname);
 		if (reg)
 			mixrRegisterPostProc((struct mixqpostprocregstruct*)reg);
 	}
+
+	return &devwMix;
+}
+
+static void wmixClose (const struct mcpDriver_t *driver)
+{
+	postprocs=0;
+}
+
+
+static int wmixDetect (const struct mcpDriver_t *driver)
+{
+	return 1;
 }
 
 static int mixProcKey(uint16_t key)
@@ -1124,16 +1067,36 @@ static int mixProcKey(uint16_t key)
 	return 0;
 }
 
-struct sounddevice mcpMixer =
+static int devwMixFPluginInit (struct PluginInitAPI_t *API)
 {
-	SS_WAVETABLE|SS_NEEDPLAYER,
-	0,
-	"Mixer",
+	API->mcpRegisterDriver (&mcpMixer);
+	API->mcpRegisterDriver (&mcpMixerQ);
+
+	return errOk;
+}
+
+static void devwMixFPluginClose (struct PluginCloseAPI_t *API)
+{
+	API->mcpUnregisterDriver (&mcpMixer);
+	API->mcpUnregisterDriver (&mcpMixerQ);
+}
+
+static const struct mcpDriver_t mcpMixer =
+{
+	"devwMix",
+	"Integer Mixer",
 	wmixDetect,
 	wmixInit,
-	wmixClose,
-	mixGetOpt
+	wmixClose
 };
-const char *dllinfo="driver mcpMixer";
 
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devwmix", .desc = "OpenCP Wavetable Device: Mixer (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};
+static const struct mcpDriver_t mcpMixerQ =
+{
+	"devwMixQ",
+	"Integer Quality Mixer",
+	wmixDetect,
+	wmixInit,
+	wmixClose
+};
+
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devwmix", .desc = "OpenCP Wavetable Device: Mixer (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = devwMixFPluginInit, .PluginClose = devwMixFPluginClose};

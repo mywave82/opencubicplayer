@@ -43,16 +43,14 @@
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"
-#include "dev/devigen.h"
-#include "dev/imsdev.h"
+#include "dev/deviplay.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
-
-extern struct sounddevice plrDiskWriter;
 
 static void *devpDiskBuffer;
 static struct ringbuffer_t *devpDiskRingBuffer;
@@ -66,6 +64,8 @@ static uint32_t devpDiskRate;
 static unsigned char stereo;
 static unsigned char bit16;
 static unsigned char writeerr;
+
+static const struct plrDriver_t plrDiskWriter;
 
 static void devpDiskConsume(int flush)
 {
@@ -206,8 +206,8 @@ static int devpDiskPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 	int plrbufsize; /* given in ms */
 	int buflength;
 
-	stereo = !cfGetProfileBool("commandline_s", "m", !cfGetProfileBool("devpDisk", "stereo", 1, 1), 1);
-	bit16 =  !cfGetProfileBool("commandline_s", "8", !cfGetProfileBool("devpDisk", "16bit", 1, 1), 1);
+	stereo = !cpifaceSession->configAPI->GetProfileBool("commandline_s", "m", !cpifaceSession->configAPI->GetProfileBool("devpDisk", "stereo", 1, 1), 1);
+	bit16 =  !cpifaceSession->configAPI->GetProfileBool("commandline_s", "8", !cpifaceSession->configAPI->GetProfileBool("devpDisk", "16bit", 1, 1), 1);
 
 	if (*rate == 0)
 	{
@@ -224,7 +224,7 @@ static int devpDiskPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 	devpDiskRate = *rate;
 	*format=PLR_STEREO_16BIT_SIGNED; // Fixed
 
-	plrbufsize = cfGetProfileInt2(cfSoundSec, "sound", "plrbufsize", 1000, 10);
+	plrbufsize = cpifaceSession->configAPI->GetProfileInt2(cpifaceSession->configAPI->SoundSec, "sound", "plrbufsize", 1000, 10);
 	/* clamp the plrbufsize to be atleast 1000ms and below 2000 ms */
 	if (plrbufsize < 1000)
 	{
@@ -479,38 +479,39 @@ static const struct plrDevAPI_t devpDisk = {
 	0 /* ProcessKey */
 };
 
-static int dwInit(const struct deviceinfo *d, const char *handle)
+static const struct plrDevAPI_t *dwInit (const struct plrDriver_t *driver)
 {
-	plrDevAPI=&devpDisk;
+	return &devpDisk;
+}
+
+static void dwClose (const struct plrDriver_t *driver)
+{
+}
+
+static int dwDetect (const struct plrDriver_t *driver)
+{
 	return 1;
 }
 
-static void dwClose(void)
+static int diskWriterPluginInit (struct PluginInitAPI_t *API)
 {
-	if (plrDevAPI  == &devpDisk)
-	{
-		plrDevAPI = 0;
-	}
+	API->plrRegisterDriver (&plrDiskWriter);
+
+	return errOk;
 }
 
-static int dwDetect(struct deviceinfo *card)
+static void diskWriterPluginClose (struct PluginCloseAPI_t *API)
 {
-	card->devtype=&plrDiskWriter;
-	card->subtype=-1;
-
-	return 1;
+	API->plrUnregisterDriver (&plrDiskWriter);
 }
 
-struct sounddevice plrDiskWriter =
+static const struct plrDriver_t plrDiskWriter =
 {
-	SS_PLAYER,
-	0,
+	"devpDisk",
 	"Disk Writer",
 	dwDetect,
 	dwInit,
-	dwClose,
-	0 /* GetOpt */
+	dwClose
 };
 
-const char *dllinfo = "driver plrDiskWriter";
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpdisk", .desc = "OpenCP Player Device: Disk Writer (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpdisk", .desc = "OpenCP Player Device: Disk Writer (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = diskWriterPluginInit, .PluginClose = diskWriterPluginClose};

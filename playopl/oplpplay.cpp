@@ -468,7 +468,7 @@ static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	return errOk;
 }
 
-static int oplPluginInit (PluginInitAPI_t *API)
+static int oplPluginInit (struct PluginInitAPI_t *API)
 {
 	return opl_type_init (API);
 }
@@ -477,7 +477,6 @@ static void oplPluginClose (struct PluginCloseAPI_t *API)
 {
 	opl_type_done (API);
 }
-
 
 extern "C"
 {
@@ -490,10 +489,10 @@ extern "C"
 		/* .sortindex = */ 95,
 		/* .PreInit = */ 0,
 		/* .Init = */ 0,
-		/* .LateInit = */ 0,
 		/* .PluginInit = */ oplPluginInit,
-		/* .PluginClose = */ oplPluginClose,
+		/* .LateInit = */ 0,
 		/* .PreClose = */ 0,
+		/* .PluginClose = */ oplPluginClose,
 		/* .Close = */ 0,
 		/* .LateClose = */ 0,
 	};

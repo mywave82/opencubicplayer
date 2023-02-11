@@ -3,7 +3,7 @@ include $(TOPDIR)Rules.make
 include Makefile-static
 
 ifeq ($(STATIC_CORE),1)
-all: $(plrbase_so) $(devi_so) $(mcpbase_so) $(mchasm_so) #$(mixclip_so)
+all: $(plrbase_so) $(mcpbase_so) $(mchasm_so) #$(mixclip_so)
 else
 all: devi$(LIB_SUFFIX) mcpbase$(LIB_SUFFIX) plrbase$(LIB_SUFFIX) mchasm$(LIB_SUFFIX) #mixclip$(LIB_SUFFIX)
 endif
@@ -12,9 +12,6 @@ endif
 #	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 plrbase$(LIB_SUFFIX): $(plrbase_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
-
-devi$(LIB_SUFFIX): $(devi_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 mcpbase$(LIB_SUFFIX): $(mcpbase_so)
@@ -57,21 +54,12 @@ ringbuffer-unit-test: \
 	../types.h
 	$(CC) ringbuffer.c -o $@ -DUNIT_TEST
 
-devigen.o: devigen.c devigen.h \
-	../config.h \
-	../types.h \
-	imsdev.h \
-	devigen.h \
-	../boot/psetting.h \
-	../boot/plinkman.h
-	$(CC) devigen.c -o $@ -c
-
 deviplay.o: deviplay.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
 	../boot/psetting.h \
-	devigen.h \
+	deviplay.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/filesystem-drive.h \
@@ -79,10 +67,10 @@ deviplay.o: deviplay.c \
 	../filesel/filesystem-setup.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
-	imsdev.h \
 	player.h \
 	../stuff/compat.h \
-	../stuff/err.h
+	../stuff/err.h \
+	../stuff/poutput.h
 	$(CC) deviplay.c -o $@ -c
 
 deviwave.o: deviwave.c deviwave.h \
@@ -90,7 +78,6 @@ deviwave.o: deviwave.c deviwave.h \
 	../types.h \
 	../boot/plinkman.h \
 	../boot/psetting.h \
-	devigen.h \
 	deviwave.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
@@ -99,11 +86,11 @@ deviwave.o: deviwave.c deviwave.h \
 	../filesel/filesystem-setup.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
-	imsdev.h \
 	mcp.h \
 	player.h \
 	../stuff/compat.h \
-	../stuff/err.h
+	../stuff/err.h \
+	../stuff/poutput.h
 	$(CC) deviwave.c -c -o $@ -c
 
 mchasm.o: mchasm.c mchasm.h \

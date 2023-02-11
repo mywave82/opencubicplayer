@@ -45,6 +45,8 @@
 #include "boot/plinkman.h"
 #include "boot/pmain.h"
 #include "boot/psetting.h"
+#include "dev/deviplay.h"
+#include "dev/deviwave.h"
 #include "dirdb.h"
 #include "filesystem.h"
 #include "filesystem-file-dev.h"
@@ -206,6 +208,8 @@ static int _fsMain(int argc, char *argv[])
 		mdbRegisterReadInfo,
 		fsTypeRegister,
 		fsRegisterExt,
+		plrRegisterDriver,
+		mcpRegisterDriver,
 		&configAPI,
 		filesystem_setup_register_file,
 		dev_file_create,
@@ -217,6 +221,8 @@ static int _fsMain(int argc, char *argv[])
 	{
 		mdbUnregisterReadInfo,
 		fsTypeUnregister,
+		plrUnregisterDriver,
+		mcpUnregisterDriver,
 		filesystem_setup_unregister_file
 	};
 

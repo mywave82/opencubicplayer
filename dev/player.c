@@ -34,8 +34,6 @@
 #include "player.h"
 #include "stuff/imsrtns.h"
 
-const struct plrDevAPI_t *plrDevAPI;
-
 void plrGetRealMasterVolume(int *l, int *r)
 {
 	unsigned long v;

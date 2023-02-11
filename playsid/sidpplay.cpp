@@ -508,10 +508,10 @@ extern "C"
 		/* .sortindex = */ 95,
 		/* .PreInit = */ 0,
 		/* .Init = */ 0,
-		/* .LateInit = */ 0,
 		/* .PluginInit = */ sidPluginInit,
-		/* .PluginClose = */ sidPluginClose,
+		/* .LateInit = */ 0,
 		/* .PreClose = */ 0,
+		/* .PluginClose = */ sidPluginClose,
 		/* .Close = */ 0,
 		/* .LateClose = */ 0
 	};

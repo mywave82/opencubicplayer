@@ -1,4 +1,4 @@
-extern struct sounddevice plrSDL;
+static const struct plrDriver_t plrSDL;
 
 static void *devpSDLBuffer;
 static struct ringbuffer_t *devpSDLRingBuffer;
@@ -224,7 +224,7 @@ static int devpSDLPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 	}
 	devpSDLRate = *rate = obtained.freq;
 
-	plrbufsize = cfGetProfileInt2(cfSoundSec, "sound", "plrbufsize", 200, 10);
+	plrbufsize = cpifaceSession->configAPI->GetProfileInt2 (cpifaceSession->configAPI->SoundSec, "sound", "plrbufsize", 200, 10);
 	/* clamp the plrbufsize to be atleast 150ms and below 1000 ms */
 	if (plrbufsize < 150)
 	{
@@ -340,22 +340,27 @@ static const struct plrDevAPI_t devpSDL = {
 	0 /* ProcessKey */
 };
 
-static void sdlClose(void)
+static void sdlClose (const struct plrDriver_t *driver)
 {
 	PRINT("%s()\n", __FUNCTION__);
 	SDL_QuitSubSystem(SDL_INIT_AUDIO);
-	if (plrDevAPI  == &devpSDL)
-	{
-		plrDevAPI = 0;
-	}
 }
 
-static int sdlDetect(struct deviceinfo *card)
+static int sdlDetect (const struct plrDriver_t *driver)
 {
 	PRINT("%s()\n", __FUNCTION__);
 
-	card->devtype=&plrSDL;
-	card->subtype=-1;
-
 	return 1;
+}
+
+static int sdlPluginInit (struct PluginInitAPI_t *API)
+{
+	API->plrRegisterDriver (&plrSDL);
+
+	return errOk;
+}
+
+static void sdlPluginClose (struct PluginCloseAPI_t *API)
+{
+	API->plrUnregisterDriver (&plrSDL);
 }

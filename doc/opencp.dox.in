@@ -1489,7 +1489,6 @@ the configuration permanently you have to modify the entries of this section.
     mixprocrate=4096000
     plrbufsize=500
     samprate=44100
-    defplayer=
     defwavetable=
     midichan=64
     itchan=64
@@ -1538,11 +1537,6 @@ the configuration permanently you have to modify the entries of this section.
                    sample stream. This option sets the DMA buffer length in
                    milliseconds.
   ~samprate~         When using a diskwriter, this value will be used.
-  ~defplayer~        with this option you can override the default ~playerdevice~.
-                   Normally you don't need to set this option, as the default
-                   device can also be set by order in the ~playerdevice~ option.
-                   This option can also be specified by using the ~-sp~ options
-                   from command line.
   ~defwavetable~     this option sets the default ~wavetabledevice~. Can also be set
                    with ~-sw~ command.
   ~midichan~         unlike the module file types the MIDI file format does not
@@ -1729,24 +1723,12 @@ complete reference have a look at your personal ~OCP.INI~ file for details.
   The general form of a device looks like:
 
   \[handle\]
-    link=...
-    subtype=...
-    bypass=...
-    keep=...
+    path=...
+    mixer=...
 
   ~handle~           The internal name to use within the player. The ~OCP.INI~ file
                    must contain all ~handles~ listed in the devices options of the
                    ~devices~ section.
-  ~link~             the name of the DLL function this device will be linked to.
-  ~bypass~           skip the autodetection if it may encounter problems
-  ~keep~             keep the driver resident in memory, even it is not currently
-                   needed. This will save some time by needing some memory.
-
-  Most device functions of the standard DLL contain autodetection routines for
-the supported sound cards, so there is normally no need to specify any of the
-port, IRQ or DMA options. However if OCP is not able to detect your sound
-cards settings you can try to insert the appropriate values in the configuration
-file.
 
   The next subsections will look at the special features the different sound
 cards and drivers support. The original order of the ~OCP.INI~ has been slightly
@@ -1767,7 +1749,8 @@ modified for the purpose of documentation.
 [Configuration: ALSA - Advanced Linux Sound Architecture]
 
   \[devpALSA\]
-    link=devpalsa
+    card=default
+    mixer=default
 
   ALSA is the modern sound architecture in Linux that can give direct access to
 sound hardware. For many modern systems, the default output driver might be a
@@ -1783,7 +1766,6 @@ applet to adjust volume per application.
 [Configuration: CA - CoreAudio]
 
   \[devpCA\]
-    link=devpcoreaudio
 
   CoreAudio is the sound arcitecture for MacOS / OSX. The current state of this
 driver might be non-working, as the main developer do not have access to the
@@ -1799,7 +1781,6 @@ given hardware. Testing/patching are welcome.
 [Configuration: OSS - Open Sound System]
 
   \[devpOSS\]
-    link=devposs
     revstereo=off
     path=/dev/dsp
     mixer=/dev/mixer
@@ -1818,10 +1799,8 @@ versions of Linux, etc.
 [Configuration: SDL/SDL2]
 
   \[devpSDL\]
-    link=devpsdl
 
   \[devpSDL2\]
-    link=devpsdl2
 
   SDL/SDL2 is a cross-platform library that gives a common simple API for
 playing audio, hiding the underlaying operating system. This library will work
@@ -1838,7 +1817,6 @@ on almost all systems.
 [Configuration: DiskWriter]
 
   \[devpDisk\]
-    link=devpDisk
     16bit=on
     stereo=on
 

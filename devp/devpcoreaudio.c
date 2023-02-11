@@ -34,9 +34,10 @@
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"
-#include "dev/imsdev.h"
+#include "dev/deviplay.h"
 #include "dev/player.h"
 #include "dev/ringbuffer.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 
 #ifdef COREAUDIO_DEBUG
@@ -48,7 +49,7 @@
 static AudioUnit theOutputUnit;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutexattr_t mta;
-struct sounddevice plrCoreAudio;
+static const struct plrDriver_t plrCoreAudio;
 static int needfini=0;
 
 static void *devpCoreAudioBuffer;
@@ -434,7 +435,7 @@ static int devpCoreAudioPlay (uint32_t *rate, enum plrRequestFormat *format, str
 	*rate = devpCoreAudioRate; /* fixed */
 	*format = PLR_STEREO_16BIT_SIGNED; /* fixed */
 
-	plrbufsize = cfGetProfileInt2(cfSoundSec, "sound", "plrbufsize", 200, 10);
+	plrbufsize = cpifaceSession->configAPI->GetProfileInt2 (cpifaceSession->configAPI->SoundSec, "sound", "plrbufsize", 200, 10);
 	/* clamp the plrbufsize to be atleast 150ms and below 1000 ms */
 	if (plrbufsize < 150)
 	{
@@ -485,24 +486,19 @@ static const struct plrDevAPI_t devpCoreAudio = {
 	devpCoreAudioPause,
 	devpCoreAudioStop,
 	0, /* VolRegs */
-	0 /* ProcessKey */;
+	0 /* ProcessKey */
 };
 
-static int CoreAudioInit(const struct deviceinfo *c, const char *handle)
+static const struct plrDevAPI_t *CoreAudioInit (const struct plrDriver_t *driver)
 {
-	plrDevAPI = &devpCoreAudio;
-	return 1;
+	return &devpCoreAudio;
 }
 
-static void CoreAudioClose(void)
+static void CoreAudioClose (const struct plrDriver_t *driver)
 {
-	if (plrDevAPI == &devpCoreAudio)
-	{
-		plrDevAPI = 0;
-	}
 }
 
-static int CoreAudioDetect(struct deviceinfo *card)
+static int CoreAudioDetect (const struct plrDriver_t *driver)
 {
 	AudioStreamBasicDescription inDesc;
 	const int channels=2;
@@ -662,8 +658,6 @@ static int CoreAudioDetect(struct deviceinfo *card)
 	}
 
 	/* ao is now created, the above is needed only ONCE */
-	card->devtype=&plrCoreAudio;
-	card->subtype=-1;
 
 	needfini=1;
 
@@ -688,16 +682,25 @@ static void __attribute__((destructor))fini(void)
 	}
 }
 
-struct sounddevice plrCoreAudio =
+static int CoreAudioPluginInit (struct PluginInitAPI_t *API)
 {
-	SS_PLAYER,
-	1,
+	API->plrRegisterDriver (&plrCoreAudio);
+
+	return errOk;
+}
+
+static void CoreAudioWriterPluginClose (struct PluginCloseAPI_t *API)
+{
+	API->plrUnregisterDriver (&plrCoreAudio);
+}
+
+static const struct plrDriver_t  plrCoreAudio =
+{
+	"devpCoreaudio",
 	"CoreAudio player",
 	CoreAudioDetect,
 	CoreAudioInit,
-	CoreAudioClose,
-	0 /* GetOpt */
+	CoreAudioClose
 };
 
-const char *dllinfo="driver plrCoreAudio";
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpcoreaudio", .desc = "OpenCP Player Device: CoreAudio (c) 2006-'23 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpcoreaudio", .desc = "OpenCP Player Device: CoreAudio (c) 2006-'23 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = CoreAudioPluginInit, .PluginClose = CoreAudioWriterPluginClose};

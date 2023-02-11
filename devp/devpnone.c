@@ -27,9 +27,10 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "cpiface/cpiface.h"
-#include "dev/imsdev.h"
+#include "dev/deviplay.h"
 #include "dev/player.h"
 #include "dev/ringbuffer.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 
 #define DEVPNONE_BUFRATE 44100
@@ -42,7 +43,7 @@ static struct timespec devpNoneBasetime;
 static int devpNonePauseSamples;
 static int devpNoneInPause;
 
-extern struct sounddevice plrNone;
+static const struct plrDriver_t plrNone;
 
 unsigned int devpNoneIdle (void)
 {
@@ -251,38 +252,39 @@ static const struct plrDevAPI_t devpNone = {
 	0 /* ProcessKey */
 };
 
-static int qpInit(const struct deviceinfo *c, const char *handle)
+static const struct plrDevAPI_t *qpInit (const struct plrDriver_t *driver)
 {
-	plrDevAPI = &devpNone;
+	return &devpNone;
+}
+
+static void qpClose (const struct plrDriver_t *driver)
+{
+}
+
+static int qpDetect (const struct plrDriver_t *driver)
+{
 	return 1;
 }
 
-static void qpClose(void)
+static int devpNonePluginInit (struct PluginInitAPI_t *API)
 {
-	if (plrDevAPI  == &devpNone)
-	{
-		plrDevAPI = 0;
-	}
+	API->plrRegisterDriver (&plrNone);
+
+	return errOk;
 }
 
-static int qpDetect(struct deviceinfo *card)
+static void devpNonePluginClose (struct PluginCloseAPI_t *API)
 {
-	card->devtype=&plrNone;
-	card->subtype=-1;
-
-	return 1;
+	API->plrUnregisterDriver (&plrNone);
 }
 
-struct sounddevice plrNone =
+static const struct plrDriver_t plrNone =
 {
-	SS_PLAYER,
-	0,
+	"devpNone",
 	"Super High Quality Quiet Player",
 	qpDetect,
 	qpInit,
-	qpClose,
-	0 /* GetOpt */
+	qpClose
 };
 
-const char *dllinfo="driver plrNone";
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpnone", .desc = "OpenCP Player Device: None (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpnone", .desc = "OpenCP Player Device: None (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = devpNonePluginInit, .PluginClose = devpNonePluginClose};

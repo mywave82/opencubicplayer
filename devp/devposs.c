@@ -46,14 +46,12 @@
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"
 #include "cpiface/vol.h"
-#include "dev/devigen.h"
-#include "dev/imsdev.h"
+#include "dev/deviplay.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
-
-#define REVSTEREO 1
 
 #ifdef OSS_DEBUG
 #define debug_printf(...) fprintf (stderr, __VA_ARGS__)
@@ -69,14 +67,16 @@ static int devpOSSInPause;
 static uint32_t devpOSSRate;
 static const struct plrDevAPI_t devpOSS;
 
-struct sounddevice plrOSS;
-
-static struct deviceinfo currentcard;
+static const struct plrDriver_t plrOSS;
+#define OSS_DEVICE_NAME_MAX 63
+static char ossCardName[OSS_DEVICE_NAME_MAX+1];
+static char ossMixerName[OSS_DEVICE_NAME_MAX+1];
 
 static int fd_dsp=-1;
 static int fd_mixer=-1;
 static int stereo;
 static int bit16;
+static int revstereo;
 
 static volatile int busy=0;
 
@@ -323,9 +323,9 @@ static int devpOSSPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 
 	*format = PLR_STEREO_16BIT_SIGNED;
 
-	if ((fd_dsp=open(currentcard.path, O_WRONLY|O_NONBLOCK))<0)
+	if ((fd_dsp=open(ossCardName, O_WRONLY|O_NONBLOCK))<0)
 	{
-		fprintf(stderr, "devposs: open(%s, O_WRONLY|O_NONBLOCK): %s\n", currentcard.path, strerror(errno));
+		fprintf(stderr, "devposs: open(%s, O_WRONLY|O_NONBLOCK): %s\n", ossCardName, strerror(errno));
 #ifdef OSS_DEBUG
 		sleep(3);
 #endif
@@ -398,7 +398,7 @@ static int devpOSSPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 	*rate = tmp;
 	devpOSSRate = *rate;
 
-	plrbufsize = cfGetProfileInt2(cfSoundSec, "sound", "plrbufsize", 200, 10);
+	plrbufsize = cpifaceSession->configAPI->GetProfileInt2 (cpifaceSession->configAPI->SoundSec, "sound", "plrbufsize", 200, 10);
 	/* clamp the plrbufsize to be atleast 150ms and below 1000 ms */
 	if (plrbufsize < 150)
 	{
@@ -427,7 +427,7 @@ static int devpOSSPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 		return 0;
 	}
 
-	if ((!bit16) || (!stereo) || (currentcard.opt&REVSTEREO))
+	if ((!bit16) || (!stereo) || (revstereo))
 	{ /* we need to convert the signal format... */
 		devpOSSShadowBuffer = malloc ( buflength << ((!!bit16) + (!!stereo)));
 		if (!devpOSSShadowBuffer)
@@ -484,7 +484,7 @@ static void devpOSSStop (struct cpifaceSessionAPI_t *cpifaceSession)
 	cpifaceSession->plrActive = 0;
 }
 
-static int ossDetect(struct deviceinfo *card)
+static int ossDetect (const struct plrDriver_t *driver)
 {
 #ifdef HAVE_SYS_SOUNDCARD_H
 	struct stat st;
@@ -492,42 +492,37 @@ static int ossDetect(struct deviceinfo *card)
 	int tmp;
 	char *temp;
 
-	card->devtype=&plrOSS;
-	card->subtype=-1;
+	snprintf (ossCardName, sizeof(ossCardName), "%s", cfGetProfileString("devpOSS", "path", "/dev/dsp"));
+	snprintf (ossMixerName, sizeof(ossMixerName), "%s", cfGetProfileString("devpOSS", "mixer", "/dev/mixer"));
+
 	if ((temp=getenv("DSP")))
 	{
 		debug_printf("devposs: $DSP found\n");
-		strncpy(card->path, temp, DEVICE_NAME_MAX);
-		card->path[DEVICE_NAME_MAX-1]=0;
-	} else if (!card->path[0])
-	{
-		debug_printf("devposs: path not set, using /dev/dsp\n");
-		strcpy(card->path, "/dev/dsp");
+		snprintf (ossCardName, sizeof (ossCardName), "%s", temp);
 	}
 	if ((temp=getenv("MIXER")))
 	{
 		debug_printf("devposs: $MIXER found\n");
-		strncpy(card->mixer, temp, DEVICE_NAME_MAX);
-		card->mixer[DEVICE_NAME_MAX-1]=0;
+		snprintf (ossMixerName, sizeof (ossMixerName), "%s", temp);
 	}
 #ifdef HAVE_SYS_SOUNDCARD_H
 /* this test will fail with liboss */
-	if (stat(card->path, &st))
+	if (stat(ossCardName, &st))
 	{
-		debug_printf ("devposs: stat(%s, &st): %s\n", card->path, strerror(errno));
+		debug_printf ("devposs: stat(%s, &st): %s\n", ossCardName, strerror(errno));
 		return 0;
 	}
 #endif
 
 	/* test if basic OSS functions exists */
-	if ((fd_dsp=open(card->path, O_WRONLY|O_NONBLOCK))<0) /* no need to FD_SETFD, since it will be closed soon */
+	if ((fd_dsp=open(ossCardName, O_WRONLY|O_NONBLOCK))<0) /* no need to FD_SETFD, since it will be closed soon */
 	{
 		if ((errno==EAGAIN)||(errno==EINTR))
 		{
 			debug_printf ("devposs: OSS detected (EAGAIN/EINTR)\n");
 			return 1;
 		}
-		debug_printf ("devposs: open(%s, O_WRONLY|O_NONBLOCK): %s\n", card->path, strerror(errno));
+		debug_printf ("devposs: open(%s, O_WRONLY|O_NONBLOCK): %s\n", ossCardName, strerror(errno));
 		return 0;
 	}
 
@@ -545,18 +540,16 @@ static int ossDetect(struct deviceinfo *card)
 	return 1; /* device exists, so we are happy.. can do better tests later */
 }
 
-static int ossInit(const struct deviceinfo *card, const char *handle)
+static const struct plrDevAPI_t *ossInit (const struct plrDriver_t *driver)
 {
-	memcpy(&currentcard, card, sizeof(struct deviceinfo));
-
 	mixer_devmask=0;
 
-	if (!card->mixer[0])
+	if (!ossMixerName[0])
 	{
 		fd_mixer=-1;
-	} else if ((fd_mixer=open(card->mixer, O_RDWR|O_NONBLOCK))<0)
+	} else if ((fd_mixer=open(ossMixerName, O_RDWR|O_NONBLOCK))<0)
 	{
-		debug_printf ("devposs: open(%s, O_RDWR|O_NONBLOCK): %s\n", card->mixer, strerror(errno));
+		debug_printf ("devposs: open(%s, O_RDWR|O_NONBLOCK): %s\n", ossMixerName, strerror(errno));
 #ifdef OSS_DEBUG
 		sleep(3);
 #endif
@@ -596,12 +589,12 @@ static int ossInit(const struct deviceinfo *card, const char *handle)
 		}
 	}
 
-	plrDevAPI = &devpOSS;
+	revstereo = cfGetProfileBool("devpOSS", "revstereo", 0, 0);
 
-	return 1;
+	return &devpOSS;
 }
 
-static void ossClose(void)
+static void ossClose (const struct plrDriver_t *driver)
 {
 	if (fd_dsp>=0)
 		close(fd_dsp);
@@ -609,21 +602,6 @@ static void ossClose(void)
 	if (fd_mixer>=0)
 		close(fd_mixer);
 	fd_mixer=-1;
-	if (plrDevAPI  == &devpOSS)
-	{
-		plrDevAPI = 0;
-	}
-
-}
-
-static uint32_t ossGetOpt(const char *sec)
-{
-	uint32_t opt=0;
-
-	if (cfGetProfileBool(sec, "revstereo", 0, 0))
-		opt|=REVSTEREO;
-
-	return opt;
 }
 
 static int volossGetNumVolume(void)
@@ -660,6 +638,18 @@ static int volossSetVolume(struct ocpvolstruct *v, int n)
 	return 0;
 }
 
+static int ossPluginInit (struct PluginInitAPI_t *API)
+{
+	API->plrRegisterDriver (&plrOSS);
+
+	return errOk;
+}
+
+static void ossPluginClose (struct PluginCloseAPI_t *API)
+{
+	API->plrUnregisterDriver (&plrOSS);
+}
+
 static struct ocpvolregstruct voloss={volossGetNumVolume, volossGetVolume, volossSetVolume};
 
 static const struct plrDevAPI_t devpOSS = {
@@ -676,16 +666,13 @@ static const struct plrDevAPI_t devpOSS = {
 	0 /* ProcessKey */
 };
 
-struct sounddevice plrOSS =
+static const struct plrDriver_t plrOSS =
 {
-	SS_PLAYER,
-	0,
+	"devpOSS",
 	"OSS player",
 	ossDetect,
 	ossInit,
-	ossClose,
-	ossGetOpt
+	ossClose
 };
 
-const char *dllinfo = "driver plrOSS";
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devposs", .desc = "OpenCP Player Device: OSS (c) 2004-'23 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devposs", .desc = "OpenCP Player Device: OSS (c) 2004-'23 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = ossPluginInit, .PluginClose = ossPluginClose};

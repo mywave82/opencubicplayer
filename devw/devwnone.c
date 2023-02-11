@@ -32,9 +32,10 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "cpiface/cpiface.h"
-#include "dev/imsdev.h"
+#include "dev/deviwave.h"
 #include "dev/mcp.h"
 #include "dev/mix.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 
 #define TIMERRATE 17100
@@ -48,7 +49,7 @@
 
 static const unsigned long samprate=44100;
 
-extern struct sounddevice mcpNone;
+static const struct mcpDriver_t mcpNone;
 
 struct channel
 {
@@ -478,7 +479,7 @@ static const struct mcpDevAPI_t devwNone =
 	0 /* ProcessKey */
 };
 
-static int devwNoneInit(const struct deviceinfo *c, const char *handle)
+static const struct mcpDevAPI_t *devwNoneInit (const struct mcpDriver_t *driver)
 {
 	amplify=65535;
 	relspeed=256;
@@ -490,36 +491,37 @@ static int devwNoneInit(const struct deviceinfo *c, const char *handle)
 
 	channelnum=0;
 
-	mcpDevAPI = &devwNone;
+	return &devwNone;
+}
 
+static void devwNoneClose (const struct mcpDriver_t *)
+{
+}
+
+static int devwNoneDetect (const struct mcpDriver_t *driver)
+{
 	return 1;
 }
 
-static void devwNoneClose (void)
+static int devwNonePluginInit (struct PluginInitAPI_t *API)
 {
-	if (mcpDevAPI == &devwNone)
-	{
-		mcpDevAPI = 0;
-	}
+	API->mcpRegisterDriver (&mcpNone);
+
+	return errOk;
 }
 
-static int devwNoneDetect(struct deviceinfo *c)
+static void devwNonePluginClose (struct PluginCloseAPI_t *API)
 {
-	c->devtype=&mcpNone;
-	c->subtype=-1;
-	return 1;
+	API->mcpUnregisterDriver (&mcpNone);
 }
 
-struct sounddevice mcpNone =
+static const struct mcpDriver_t mcpNone =
 {
-	SS_WAVETABLE,
-	0,
+	"devwNone",
 	"None",
 	devwNoneDetect,
 	devwNoneInit,
-	devwNoneClose,
-	0 /* GetOpt */
+	devwNoneClose
 };
-const char *dllinfo = "driver mcpNone";
 
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devwnone", .desc = "OpenCP Wavetable Device: None (c) 1994-'23 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 99};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devwnone", .desc = "OpenCP Wavetable Device: None (c) 1994-'23 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 99, .PluginInit = devwNonePluginInit, .PluginClose = devwNonePluginClose};

@@ -55,6 +55,5 @@ wavpplay.o: wavpplay.c \
 	../stuff/err.h \
 	../stuff/poutput.h \
 	../stuff/sets.h \
-	../dev/devigen.h \
 	wave.h
 	$(CC) wavpplay.c -o $@ -c

@@ -463,6 +463,7 @@ static void _cfSetProfileString(const char *app, const char *key, const char *st
 				if (cfINIApps[i].keys[j].key)
 					if (!strcasecmp(cfINIApps[i].keys[j].key, key))
 					{
+						if (cfINIApps[i].keys[j].str == str) return;
 						free(cfINIApps[i].keys[j].str);
 						cfINIApps[i].keys[j].str = strdup (str);
 						return;

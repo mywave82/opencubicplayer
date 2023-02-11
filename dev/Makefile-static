@@ -2,8 +2,6 @@
 
 plrbase_so=deviplay.o plrasm.o player.o
 
-devi_so=devigen.o
-
 mcpbase_so=deviwave.o mcp.o mix.o mixasm.o ringbuffer.o smpman.o
 
 mchasm_so=mchasm.o
@@ -11,7 +9,6 @@ mchasm_so=mchasm.o
 ifeq ($(STATIC_CORE),1)
 #STATIC_OBJECTS += $(patsubst %.o,dev/%.o,$(mixclip_so))
  STATIC_OBJECTS += $(patsubst %.o,dev/%.o,$(plrbase_so))
- STATIC_OBJECTS += $(patsubst %.o,dev/%.o,$(devi_so))
  STATIC_OBJECTS += $(patsubst %.o,dev/%.o,$(mcpbase_so))
  STATIC_OBJECTS += $(patsubst %.o,dev/%.o,$(mchasm_so))
 endif

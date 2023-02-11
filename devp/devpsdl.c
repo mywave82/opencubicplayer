@@ -34,9 +34,10 @@
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"
-#include "dev/imsdev.h"
+#include "dev/deviplay.h"
 #include "dev/player.h"
 #include "dev/ringbuffer.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 
 #ifdef SDL_DEBUG
@@ -47,7 +48,7 @@
 
 #include "devpsdl-common.c"
 
-static int sdlInit(const struct deviceinfo *c, const char *handle)
+static const struct plrDevAPI_t *sdlInit (const struct plrDriver_t *driver)
 {
 	char drivername[FILENAME_MAX];
 	PRINT("%s()\n", __FUNCTION__);
@@ -58,20 +59,16 @@ static int sdlInit(const struct deviceinfo *c, const char *handle)
 	}
 
 	fprintf(stderr, "[SDL] Using driver %s\n", SDL_AudioDriverName(drivername, sizeof(drivername)));
-	plrDevAPI = &devpSDL;
-	return 1;
+	return &devpSDL;
 }
 
-struct sounddevice plrSDL =
+static const struct plrDriver_t plrSDL =
 {
-	SS_PLAYER,
-	0,
-	"SDL Player",
+	"devpSDL2",
+	"SDL 1.x Player",
 	sdlDetect,
 	sdlInit,
-	sdlClose,
-	0 /* GetOpt */
+	sdlClose
 };
 
-const char *dllinfo="driver plrSDL";
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpsdl", .desc = "OpenCP Player Device: SDL (c) 2011-'23 François Revol & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpsdl", .desc = "OpenCP Player Device: SDL (c) 2011-'23 François Revol & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = sdlPluginInit, .PluginClose = sdlPluginClose};

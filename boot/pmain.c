@@ -895,9 +895,49 @@ static int init_modules(int argc, char *argv[])
 			free (tmp);
 		}
 
-		if (epoch < 20221228)
+		if (epoch < 20230211)
 		{
-			cfSetProfileInt("version", "epoch", 20221228, 10);
+			fprintf(stderr, "ocp.ini update (0.2.103) removes [devpALSA] link=\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) removes [devpCA]\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) removes [devpDisk] link=\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) removes [devpMPx]\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) removes [devpNone]\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) removes [devpOSS] link=\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) removes [devpSDL]\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) removes [devpSDL2]\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) removes [devwNone]\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) removes [devwMix] link=\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) removes [devwMix] subtype=\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) removes [devwMixQ] link=\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) removes [devwMixQ] subtype=\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) removes [devwMixF] link=\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) removes [devwMixF] mixResample=\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) defaults [devpALSA] card=default (former name was path=)\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) defaults [devpALSA] mixer=default\n");
+
+			cfRemoveEntry  ("devpALSA", "link");
+			cfRemoveProfile("devpCA"  );
+			cfRemoveEntry  ("devpDisk", "link");
+			cfRemoveProfile("devpMPx" );
+			cfRemoveProfile("devpNone");
+			cfRemoveEntry  ("devpOSS" , "link");
+			cfRemoveProfile("devpSDL" );
+			cfRemoveProfile("devpSDL2");
+			cfRemoveProfile("devwNone");
+			cfRemoveEntry  ("devwMix" , "link");
+			cfRemoveEntry  ("devwMix" , "subtype");
+			cfRemoveEntry  ("devwMixQ", "link");
+			cfRemoveEntry  ("devwMixQ", "subtype");
+			cfRemoveEntry  ("devwMixF", "link");
+			cfRemoveEntry  ("devwMixF", "mixResample");
+			cfSetProfileString ("devpALSA", "card", cfGetProfileString ("devpALSA", "path", "default"));
+			cfRemoveEntry  ("devpALSA", "path");
+			cfSetProfileString ("devpALSA", "mixer", cfGetProfileString ("devpALSA", "mixer", "default"));
+		}
+
+		if (epoch < 20230211)
+		{
+			cfSetProfileInt("version", "epoch", 20230211, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -908,13 +948,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20221228)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20230211)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20221228\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20230211\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20221228\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20230211\n\n");
 		}
 		sleep(5);
 	}

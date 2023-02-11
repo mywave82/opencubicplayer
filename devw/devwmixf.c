@@ -52,19 +52,19 @@
 #include <unistd.h>
 #include "types.h"
 #include "boot/plinkman.h"
+#include "boot/psetting.h"
 #include "cpiface/cpiface.h"
-#include "dev/imsdev.h"
+#include "dev/deviwave.h"
 #include "dev/mcp.h"
 #include "dev/mix.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 #include "devwmixf.h"
 #include "dwmixfa.h"
 
-/* NB NB   more includes further down in the file */
-
-extern struct sounddevice mcpFMixer;
+static const struct mcpDriver_t mcpFMixer;
 
 static int dopause;
 static uint32_t playsamps;
@@ -85,9 +85,6 @@ static int declick;
 
 static int channelnum;
 static uint32_t IdleCache; /* To prevent devpDisk lockup */
-
-static int mixfProcKey(uint16_t key);
-static void mixfInit(const char *sec);
 
 struct channel
 {
@@ -128,6 +125,7 @@ struct channel
 static struct channel *channels;
 
 static void (*playerproc)(struct cpifaceSessionAPI_t *cpifaceSession);
+static int devwMixFProcKey(uint16_t key);
 
 static uint32_t tickwidth;
 static uint32_t tickplayed;
@@ -940,13 +938,19 @@ static const struct mcpDevAPI_t devwMixF =
 	devwMixFLoadSamples,
 	devwMixFIdle,
 	devwMixFClosePlayer,
-	mixfProcKey
+	devwMixFProcKey
 };
 
-static int Init(const struct deviceinfo *dev, const char *handle)
+static void mixfRegisterPostProc(struct mixfpostprocregstruct *mode)
 {
-	volramp=!!(dev->opt&MIXF_VOLRAMP);
-	declick=!!(dev->opt&MIXF_DECLICK);
+	mode->next=dwmixfa_state.postprocs;
+	dwmixfa_state.postprocs=mode;
+}
+
+static const struct mcpDevAPI_t *devwMixFInit (const struct mcpDriver_t *driver)
+{
+	char regname[50];
+	const char *regs;
 
 	calcinterpoltab();
 
@@ -960,76 +964,37 @@ static int Init(const struct deviceinfo *dev, const char *handle)
 	mastersrnd=0;
 	channelnum=0;
 
-	mcpDevAPI = &devwMixF;
+	volramp = cfGetProfileBool("devwMixF", "volramp", 1, 1);
+	declick = cfGetProfileBool("devwMixF", "declick", 1, 1);
 
-	mixfInit (handle);
+	fprintf(stderr, "[devwMixF] C version, (volramp=%d, declick=%d)\n", volramp, declick);
 
-	return 1;
-}
-
-static void Close()
-{
-	if (mcpDevAPI == &devwMixF)
-	{
-		mcpDevAPI = 0;
-	}
-}
-
-
-static int Detect(struct deviceinfo *c)
-{
-	c->devtype=&mcpFMixer;
-	if (c->subtype==-1)
-		c->subtype=0;
-	c->path[0]=0;
-	return 1;
-}
-
-
-
-#include "dev/devigen.h"
-#include "boot/psetting.h"
-#include "boot/plinkman.h"
-
-static uint32_t mixfGetOpt(const char *sec)
-{
-	uint32_t opt=0;
-	if (cfGetProfileBool(sec, "volramp", 1, 1))
-		opt|=MIXF_VOLRAMP;
-	if (cfGetProfileBool(sec, "declick", 1, 1))
-		opt|=MIXF_DECLICK;
-	return opt;
-}
-
-static void mixfRegisterPostProc(struct mixfpostprocregstruct *mode)
-{
-	mode->next=dwmixfa_state.postprocs;
-	dwmixfa_state.postprocs=mode;
-}
-
-static void mixfInit(const char *sec)
-{
-	char regname[50];
-	const char *regs;
-
-	fprintf(stderr, "[devwmixf] INIT, ");
-	fprintf(stderr, "using dwmixfa.c C version (handle=%s)\n", sec);
-
-	dwmixfa_state.postprocs=0;
-	regs=cfGetProfileString(sec, "postprocs", "");
-
+	regs=cfGetProfileString("devwMixF", "postprocs", "");
 	while (cfGetSpaceListEntry(regname, &regs, 49))
 	{
 		void *reg=_lnkGetSymbol(regname);
 		if (reg)
 		{
-			fprintf(stderr, "[%s] registering post processing plugin %s\n", sec, regname);
+			fprintf(stderr, "[devwMixF] registering post processing plugin %s\n", regname);
 			mixfRegisterPostProc((struct mixfpostprocregstruct*)reg);
 		}
 	}
+
+	return &devwMixF;
 }
 
-static int mixfProcKey(uint16_t key)
+static void devwMixFClose (const struct mcpDriver_t *driver)
+{
+	dwmixfa_state.postprocs=0;
+}
+
+
+static int devwMixFDetect (const struct mcpDriver_t *driver)
+{
+	return 1;
+}
+
+static int devwMixFProcKey(uint16_t key)
 {
 	struct mixfpostprocregstruct *mode;
 	for (mode=dwmixfa_state.postprocs; mode; mode=mode->next)
@@ -1045,16 +1010,25 @@ static int mixfProcKey(uint16_t key)
 	return 0;
 }
 
-struct sounddevice mcpFMixer =
+static int devwMixFPluginInit (struct PluginInitAPI_t *API)
 {
-	SS_WAVETABLE|SS_NEEDPLAYER,
-	0,
-	"FPU Mixer",
-	Detect,
-	Init,
-	Close,
-	mixfGetOpt
-};
-const char *dllinfo="driver mcpFMixer";
+	API->mcpRegisterDriver (&mcpFMixer);
 
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devwmixf", .desc = "OpenCP Wavetable Device: FPU HighQuality Mixer (c) 1999-'23 Hammo Hinrichs, Fabian Giesen, Stian Skjelstad, Jindřich Makovička", .ver = DLLVERSION, .sortindex = 99};
+	return errOk;
+}
+
+static void devwMixFPluginClose (struct PluginCloseAPI_t *API)
+{
+	API->mcpUnregisterDriver (&mcpFMixer);
+}
+
+static const struct mcpDriver_t mcpFMixer =
+{
+	"devwMixF",
+	"FPU Mixer",
+	devwMixFDetect,
+	devwMixFInit,
+	devwMixFClose,
+};
+
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devwmixf", .desc = "OpenCP Wavetable Device: FPU HighQuality Mixer (c) 1999-'23 Hammo Hinrichs, Fabian Giesen, Stian Skjelstad, Jindřich Makovička", .ver = DLLVERSION, .sortindex = 99, .PluginInit = devwMixFPluginInit, .PluginClose = devwMixFPluginClose};
