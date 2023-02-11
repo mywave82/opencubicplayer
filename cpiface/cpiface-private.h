@@ -27,8 +27,6 @@ struct cpifaceSessionPrivate_t
 	int   InstLength;
 	int   InstHeight;
 	int   InstWidth;
-	char  InstType;
-	char  InstMode;
 
 	int   openStatus; // err.h
 

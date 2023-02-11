@@ -38,6 +38,9 @@
 #include "cpiface.h"
 #include "cpiface-private.h"
 
+static int InstType;
+static int InstMode;
+
 static void displayshortins (struct cpifaceSessionAPI_t *cpifaceSession, int sel)
 {
 	int y,x,i;
@@ -66,7 +69,7 @@ static void displayshortins (struct cpifaceSessionAPI_t *cpifaceSession, int sel
 				displayvoid ( y + cpifaceSessionAPI.InstFirstLine, x*40, 40);
 				continue;
 			}
-			cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpiInstWidth_40, i, cpifaceSessionAPI.InstMode, plCompoMode);
+			cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpiInstWidth_40, i, InstMode, plCompoMode);
 			displaystrattr (y + cpifaceSessionAPI.InstFirstLine, x*40 + cpifaceSessionAPI.InstStartCol, buf, 40);
 		}
 		displayvoid (y + cpifaceSessionAPI.InstFirstLine, 40*cols, left);
@@ -100,7 +103,7 @@ static void displayxshortins (struct cpifaceSessionAPI_t *cpifaceSession, int se
 				displayvoid (y + cpifaceSessionAPI.InstFirstLine, x*33, 33);
 				continue;
 			}
-			cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpiInstWidth_33, i, cpifaceSessionAPI.InstMode, plCompoMode);
+			cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpiInstWidth_33, i, InstMode, plCompoMode);
 			displaystrattr (y + cpifaceSessionAPI.InstFirstLine, x * 33 + cpifaceSessionAPI.InstStartCol, buf, 33);
 		}
 		displayvoid (y + cpifaceSessionAPI.InstFirstLine, 33*cols, left);
@@ -125,7 +128,7 @@ static void displaysideins (struct cpifaceSessionAPI_t *cpifaceSession, int sel)
 			displayvoid (y + cpifaceSessionAPI.InstFirstLine, cpifaceSessionAPI.InstStartCol /* 80 */, cpifaceSessionAPI.InstWidth /* 52 */);
 			continue;
 		}
-		cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpiInstWidth_52, y + cpifaceSessionAPI.InstScroll, cpifaceSessionAPI.InstMode, plCompoMode);
+		cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpiInstWidth_52, y + cpifaceSessionAPI.InstScroll, InstMode, plCompoMode);
 		displaystrattr (y + cpifaceSessionAPI.InstFirstLine, cpifaceSessionAPI.InstStartCol /* 80 */, buf, 52);
 		displayvoid (y + cpifaceSessionAPI.InstFirstLine, 52, left);
 	}
@@ -150,7 +153,7 @@ static void displaylongins (struct cpifaceSessionAPI_t *cpifaceSession, int sel)
 			displayvoid (y + cpifaceSessionAPI.InstFirstLine, cpifaceSessionAPI.InstStartCol /* 0 */, 80);
 			continue;
 		}
-		cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpiInstWidth_80, y + cpifaceSessionAPI.InstScroll, cpifaceSessionAPI.InstMode, plCompoMode);
+		cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpiInstWidth_80, y + cpifaceSessionAPI.InstScroll, InstMode, plCompoMode);
 		displaystrattr (y + cpifaceSessionAPI.InstFirstLine, cpifaceSessionAPI.InstStartCol /* 0 */, buf, 80);
 		displayvoid (y + cpifaceSessionAPI.InstFirstLine, 80, left);
 	}
@@ -175,7 +178,7 @@ static void displayxlongins (struct cpifaceSessionAPI_t *cpifaceSession, int sel
 			displayvoid (y + cpifaceSessionAPI.InstFirstLine, cpifaceSessionAPI.InstStartCol /* 0 */, 132);
 			continue;
 		}
-		cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpiInstWidth_132, y + cpifaceSessionAPI.InstScroll, cpifaceSessionAPI.InstMode, plCompoMode);
+		cpifaceSessionAPI.Inst.Display (cpifaceSession, buf, cpiInstWidth_132, y + cpifaceSessionAPI.InstScroll, InstMode, plCompoMode);
 		displaystrattr (y + cpifaceSessionAPI.InstFirstLine, cpifaceSessionAPI.InstStartCol /* 0 */, buf, 132);
 		displayvoid (y + cpifaceSessionAPI.InstFirstLine, 132, left);
 	}
@@ -183,7 +186,7 @@ static void displayxlongins (struct cpifaceSessionAPI_t *cpifaceSession, int sel
 
 static void InstDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 {
-	if (!cpifaceSessionAPI.InstType)
+	if (!InstType)
 		return;
 
 	if ((cpifaceSessionAPI.InstScroll + cpifaceSessionAPI.InstHeight) > cpifaceSessionAPI.InstLength)
@@ -197,7 +200,7 @@ static void InstDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 
 	cpifaceSessionAPI.Inst.Mark (cpifaceSession);
 
-	switch (cpifaceSessionAPI.InstType)
+	switch (InstType)
 	{
 		case 1:
 			if (cpifaceSessionAPI.InstWidth >= 132)
@@ -219,13 +222,13 @@ static void InstDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 
 static void InstSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, int wid, int ypos, int hgt)
 {
-	int titlehgt = (cpifaceSessionAPI.InstType == 2) ? 2 : 1;
+	int titlehgt = (InstType == 2) ? 2 : 1;
 	cpifaceSessionAPI.InstFirstLine = ypos + titlehgt;
 	cpifaceSessionAPI.InstHeight = hgt - titlehgt;
 	cpifaceSessionAPI.InstWidth = wid;
 	cpifaceSessionAPI.InstStartCol = xpos;
 
-	if (cpifaceSessionAPI.InstType == 1)
+	if (InstType == 1)
 	{
 		if (cpifaceSessionAPI.InstWidth >= 132)
 		{
@@ -235,7 +238,7 @@ static void InstSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, in
 			int cols = plScrWidth/40;
 			cpifaceSessionAPI.InstLength = (cpifaceSessionAPI.Inst.height + cols - 1) / cols;
 		}
-	} else if (cpifaceSessionAPI.InstType == 2)
+	} else if (InstType == 2)
 	{
 		cpifaceSessionAPI.InstLength = cpifaceSessionAPI.Inst.bigheight;
 	} else {
@@ -245,10 +248,12 @@ static void InstSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, in
 
 static int InstGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpitextmodequerystruct *q)
 {
-	if ((cpifaceSessionAPI.InstType == 3) && (plScrWidth<132))
-		cpifaceSessionAPI.InstType = 0;
+	if ((InstType == 3) && (plScrWidth<132))
+	{
+		InstType = 0;
+	}
 
-	switch (cpifaceSessionAPI.InstType)
+	switch (InstType)
 	{
 		case 0:
 			return 0;
@@ -295,15 +300,17 @@ static int InstIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 			cpiKeyHelp('I', "Enable instrument viewer");
 			break;
 		case 'i': case 'I':
-			if (!cpifaceSessionAPI.InstType)
-				cpifaceSessionAPI.InstType = (cpifaceSessionAPI.InstType + 1) % 4;
+			if (!InstType)
+			{
+				InstType = (InstType + 1) % 4;
+			}
 			cpiTextSetMode (cpifaceSession, "inst");
 			return 1;
 		case 'x': case 'X':
-			cpifaceSessionAPI.InstType = 3;
+			InstType = 3;
 			break;
 		case KEY_ALT_X:
-			cpifaceSessionAPI.InstType = 1;
+			InstType = 1;
 			break;
 	}
 	return 0;
@@ -327,7 +334,7 @@ static int InstAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 			cpiKeyHelp(KEY_CTRL_PGDN, "Scroll down a page in the instrument viewer");
 			return 0;
 		case 'i': case 'I':
-			cpifaceSessionAPI.InstType = (cpifaceSessionAPI.InstType + 1) % 4;
+			InstType = (InstType + 1) % 4;
 			cpiTextRecalc (cpifaceSession);
 			break;
 		/*case 0x4900: //pgup*/
@@ -360,7 +367,7 @@ static int InstAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 		case KEY_TAB: /* tab */
 		case KEY_SHIFT_TAB: /* 0x0f00 */
 /* TODO-keys    case 0xA500:  alt-tab */
-			cpifaceSessionAPI.InstMode = !cpifaceSessionAPI.InstMode;
+			InstMode = !InstMode;
 			break;
 		default:
 		return 0;
@@ -386,7 +393,7 @@ static struct cpitextmoderegstruct cpiTModeInst = {"inst", InstGetWin, InstSetWi
 
 void __attribute__ ((visibility ("internal"))) cpiInstInit (void)
 {
-	cpifaceSessionAPI.InstType = cfGetProfileInt2(cfScreenSec, "screen", "insttype", 3, 10) & 3;
+	InstType = cfGetProfileInt2(cfScreenSec, "screen", "insttype", 3, 10) & 3;
 }
 
 void plUseInstruments (struct cpifaceSessionAPI_t *cpifaceSession, struct insdisplaystruct *x)
