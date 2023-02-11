@@ -336,9 +336,9 @@ static void fadechanq(int *fade, struct channel *c)
 {
 	int s;
 	if (c->status&MIXRQ_PLAY16BIT)
-		s=((short*)((unsigned long)c->samp*2))[c->pos];
+		s=c->realsamp.bit16[c->pos];
 	else
-		s=(((signed char*)c->samp)[c->pos])<<8;
+		s=(c->realsamp.bit8[c->pos])<<8;
 	fade[0]+=(c->curvols[0]*s)>>8;
 	fade[1]+=(c->curvols[1]*s)>>8;
 	c->curvols[0]=c->curvols[1]=0;
@@ -531,12 +531,10 @@ static void devwMixSET(int ch, int opt, int val)
 			if (chn->samptype&mcpSamp16Bit)
 			{
 				chn->status|=MIXRQ_PLAY16BIT;
-				chn->samp=(void*)((unsigned long)chn->samp>>1);
 			}
 			if (chn->samptype&mcpSampStereo)
 			{
 				chn->status|=MIXRQ_PLAYSTEREO;
-				chn->samp=(void*)((unsigned long)chn->samp>>1);
 			}
 			if (chn->samptype&mcpSampSLoop)
 			{
@@ -760,11 +758,7 @@ static void GetMixChannel(unsigned int ch, struct mixchannel *chn, uint32_t rate
 {
 	struct channel *c=&channels[ch];
 
-	if (c->status&MIXRQ_PLAY16BIT)
-		chn->samp=(void*)((unsigned long)c->samp<<1);
-	else
-		chn->samp=c->samp;
-	chn->realsamp.fmt=chn->samp; /* at this point, they match */
+	chn->realsamp.fmt=c->samp;
 	chn->length=c->length;
 	chn->loopstart=c->loopstart;
 	chn->loopend=c->loopend;

@@ -621,7 +621,7 @@ static void test_mixrPlayChannel_fill(int bit16, struct channel *c, int status)
 	memset(c, 0, sizeof(*c));
 	if (bit16)
 	{
-		c->samp=(void*)((unsigned long)test_mixrPlayChannel_fill16>>1);
+		c->samp=test_mixrPlayChannel_fill16;
 		c->realsamp.bit16 = test_mixrPlayChannel_fill16;
 		c->length=10;
 		status|=MIXRQ_PLAY16BIT;

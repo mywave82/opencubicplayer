@@ -3,7 +3,6 @@
 
 struct mixchannel
 {
-	void *samp;
 	union
 	{
 		int8_t *fmt8;

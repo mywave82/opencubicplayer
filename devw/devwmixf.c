@@ -771,7 +771,6 @@ static void GetMixChannel(unsigned int ch, struct mixchannel *chn, uint32_t rate
 {
 	struct channel *c=&channels[ch];
 
-	chn->samp=c->samp;
 	chn->realsamp.fmt=c->samp;
 	chn->length=c->length;
 	chn->loopstart=c->loopstart;

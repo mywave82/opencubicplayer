@@ -102,10 +102,6 @@ static void mixgetmixch(int ch, struct mixchannel *chn, int rate)
 		chn->status&=~MIX_PLAYING;
 		return;
 	}
-	if (chn->status&MIX_PLAY16BIT)
-		chn->samp=(void*)((unsigned long)chn->samp>>1);
-	if (chn->status&MIX_PLAYFLOAT)
-		chn->samp=(void*)((unsigned long)chn->samp>>2);
 	chn->replen=(chn->status&MIX_LOOPED)?(chn->loopend-chn->loopstart):0;
 }
 
