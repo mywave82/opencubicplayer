@@ -393,8 +393,8 @@ static void alsaSetupRun (void **token, const struct DevInterfaceAPI_t *API)
 	{
 		const int mlWidth = 78;
 		const int mlHeight = 18;
-		int mlTop = (plScrHeight - mlHeight) / 2;
-		int mlLeft = (plScrWidth - mlWidth) / 2;
+		int mlTop = (API->console->TextHeight - mlHeight) / 2;
+		int mlLeft = (API->console->TextWidth - mlWidth) / 2;
 
 		API->fsDraw();
 		alsaSetupDraw (mlLeft, mlTop, mlWidth, mlHeight, &alsaConfigDraw_Mode, &pcmlist, &mixerlist, API);
