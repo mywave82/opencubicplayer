@@ -1633,7 +1633,7 @@ appearance.
 
                      ~0~  none
                      ~1~  big
-                     ~2~  small
+                     ~2~  side (only in 132 column modes)
   ~pattern~          show the tracklist when starting OCP in textmode
   ~insttype~         the appearance of the instrument function:
 

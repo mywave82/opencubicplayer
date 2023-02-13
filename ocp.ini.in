@@ -1,5 +1,5 @@
 [version]
-  epoch=20230211
+  epoch=20230213
 
 [general]
 ;link=
@@ -53,16 +53,16 @@
   compomode=off           ; compomode will remove all texts and display
 ; fileselector comment as the name (put compo # there!)
   startupmode=text        ; any of: coolhelp, dots, graph, links, msg, phase, scope, text, wuerfel2
-  screentype=7            ; screenmode
+  screentype=7            ; 0=80x25, 1=80x30, 2=80x50, 3=80x60, 4=132x25, 5=132x30, 6=132x50, 7=132x60, 8=custom
 ; palette=0 4 1 5 2 6 3 7 8 c 9 d a e b f   ; text mode color mapping
 ; palette=0 6 6 6 6 6 6 e 6 6 e e e e e e
 ; palette=0 2 2 2 2 2 2 a 2 2 a a a a a a
 ; palette=1 2 4 7 5 3 6 7 9 a c f d b e f
   analyser=on
-  mvoltype=1
+  mvoltype=1              ; 0=none, 1=big, 2=side (only in >132 column modes)
   pattern=on
-  insttype=2
-  channeltype=2
+  insttype=2              ; 0=none, 1=short, 2=long, 3=side (only in >132 column modes)
+  channeltype=2           ; 0=none, 1=short, 2=long, 3=side (only in >132 column modes)
   uselfb=yes              ; disable use of VESA 2.0
   fps=20
 

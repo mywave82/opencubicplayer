@@ -305,7 +305,7 @@ the appearance of the peak power levels:
 @itemize
 @item 0 - none
 @item 1 - big
-@item 2 - small
+@item 2 - side (only in 132 column modes)
 @end itemize
 @item pattern @tab
 show the tracklist when starting OCP in textmode

@@ -23,6 +23,9 @@ int cfGetSpaceListEntry(char *buf, const char **str, int maxlen);
 #define cfGetProfileInt2    configAPI.GetProfileInt2
 #define cfSetProfileInt     configAPI.SetProfileInt
 
+#define cfGetProfileComment configAPI.GetProfileComment
+#define cfSetProfileComment configAPI.SetProfileComment
+
 #define cfRemoveEntry       configAPI.RemoveEntry
 #define cfRemoveProfile     configAPI.RemoveProfile
 #define cfConfigHomeDir     configAPI.ConfigHomeDir
@@ -51,6 +54,9 @@ struct configAPI_t
 	int  (*GetProfileInt) (const char *app, const char *key, int def, int radix);
 	int  (*GetProfileInt2)(const char *app, const char *app2, const char *key, int def, int radix);
 	void (*SetProfileInt) (const char *app, const char *key, int str, int radix);
+
+	const char *(*GetProfileComment) (const char *app, const char *key, const char *def);
+	void        (*SetProfileComment) (const char *app, const char *key, const char *comment);
 
 	void (*RemoveEntry)(const char *app, const char *key);
 

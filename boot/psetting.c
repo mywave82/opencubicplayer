@@ -544,6 +544,42 @@ static void _cfSetProfileBool(const char *app, const char *key, const int str)
 	_cfSetProfileString(app, key, (str?"on":"off"));
 }
 
+static const char *_cfGetProfileComment(const char *app, const char *key, const char *def)
+{
+	int i,j;
+	for (i=0; i<cfINInApps; i++)
+		if (!strcasecmp(cfINIApps[i].app, app))
+			for (j=0; j<cfINIApps[i].nkeys; j++)
+				if (cfINIApps[i].keys[j].key)
+					if (!strcasecmp(cfINIApps[i].keys[j].key, key))
+						return cfINIApps[i].keys[j].comment ? cfINIApps[i].keys[j].comment : def;
+	return def;
+}
+
+static void _cfSetProfileComment(const char *app, const char *key, const char *comment)
+{
+	int i, j;
+	for (i=0; i<cfINInApps; i++)
+	{
+		if (!strcasecmp(cfINIApps[i].app, app))
+		{
+			for (j=0; j<cfINIApps[i].nkeys; j++)
+			{
+				if (cfINIApps[i].keys[j].key)
+				{
+					if (!strcasecmp(cfINIApps[i].keys[j].key, key))
+					{
+						if (cfINIApps[i].keys[j].comment == comment) return;
+						free(cfINIApps[i].keys[j].comment);
+						cfINIApps[i].keys[j].comment = strdup (comment);
+						return;
+					}
+				}
+			}
+		}
+	}
+}
+
 static void _cfRemoveEntry(const char *app, const char *key)
 {
 	int i, j;
@@ -790,6 +826,8 @@ struct configAPI_t configAPI =
 	_cfGetProfileInt,
 	_cfGetProfileInt2,
 	_cfSetProfileInt,
+	_cfGetProfileComment,
+	_cfSetProfileComment,
 	_cfRemoveEntry,
 	_cfRemoveProfile
 };

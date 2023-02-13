@@ -935,9 +935,22 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileString ("devpALSA", "mixer", cfGetProfileString ("devpALSA", "mixer", "default"));
 		}
 
-		if (epoch < 20230211)
+		if (epoch < 20230213)
 		{
-			cfSetProfileInt("version", "epoch", 20230211, 10);
+			fprintf(stderr, "ocp.ini update (0.2.103) adds comment on [screen] mvoltype=\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) adds comment on [screen] insttype=\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) adds comment on [screen] channeltype=\n");
+			fprintf(stderr, "ocp.ini update (0.2.103) replaces comment on [screen] screentype=\n");
+
+			cfSetProfileComment ("screen", "mvoltype", cfGetProfileComment ("screen", "mvoltype", "; 0=none, 1=big, 2=side (only in >132 column modes)"));
+			cfSetProfileComment ("screen", "insttype", cfGetProfileComment ("screen", "insttype", "; 0=none, 1=short, 2=long, 3=side (only in >132 column modes)"));
+			cfSetProfileComment ("screen", "channeltype", cfGetProfileComment ("screen", "channeltype", "; 0=none, 1=short, 2=long, 3=side (only in >132 column modes)"));
+			cfSetProfileComment ("screen", "screentype", "; 0=80x25, 1=80x30, 2=80x50, 3=80x60, 4=132x25, 5=132x30, 6=132x50, 7=132x60, 8=custom");
+		}
+
+		if (epoch < 20230213)
+		{
+			cfSetProfileInt("version", "epoch", 20230213, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -948,13 +961,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20230211)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20230213)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20230211\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20230213\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20230211\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20230213\n\n");
 		}
 		sleep(5);
 	}
