@@ -58,7 +58,7 @@ void make_title (const char *part, int escapewarning)
 	char prebuf[32];
 	char buf[CONSOLE_MAX_X];
 	const char *title = "Open Cubic Player v" VERSION;
-	const char *copyright = "(c) 1994-'22 Stian Skjelstad";
+	const char *copyright = "(c) 1994-'23 Stian Skjelstad";
 
 	int spacem = plScrWidth - 2 - strlen (title) - strlen (copyright) - 2 - strlen (part);
 	int space1 = spacem / 2;
