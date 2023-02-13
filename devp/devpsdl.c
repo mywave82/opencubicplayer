@@ -64,7 +64,7 @@ static const struct plrDevAPI_t *sdlInit (const struct plrDriver_t *driver)
 
 static const struct plrDriver_t plrSDL =
 {
-	"devpSDL2",
+	"devpSDL",
 	"SDL 1.x Player",
 	sdlDetect,
 	sdlInit,
