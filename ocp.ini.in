@@ -8,8 +8,7 @@
 ;  datapath=     ; path to opencp's pictures and animations.
 ;  tempdir=
 
-
-[defaultconfig] ; default configuration
+[defaultconfig]           ; default configuration
 ;  link=
 ;  prelink= ; preloaded dlls
 
@@ -20,7 +19,7 @@
 ;[altsound]                ; options here will override [sound] if given
 ;  playerdevices=devpALSA  ; override playerdevices
 
-[sound] ; default sound section
+[sound]                   ; default sound section
 ; these drivers will be loaded at startup. change parameters at the
 ; sections for the devices.
 ; take those drivers out of the list, you will not need, because it
@@ -28,7 +27,6 @@
 ; you can also add new devices by copying the section and renaming it.
 ; (8 chars only)
 ; note: the first device found in each list will be uses as default
-
   playerdevices=devpALSA devpOSS devpCA devpSDL2 devpSDL devpNone devpDisk
   wavetabledevices=devwMixF devwMixQ devwMix devwNone
   mixrate=44100           ; -sr44100
@@ -39,8 +37,8 @@
   midichan=64             ; number of channels used for midi playback
   itchan=64               ; number of channels used for .it playback
   bigmodules=devwMixF     ; this wavetable device will be used if a module
-                          ; was tagged "big" with alt-b in the fileselector.
-                          ; (use if wavetable ram is not enough by far)
+; was tagged "big" with alt-b in the fileselector.
+; (use if wavetable ram is not enough by far)
   amplify=100             ; -va100
   panning=100             ; -vp100
   volume=100              ; -vv100
@@ -50,39 +48,37 @@
   surround=off            ; -vs-
   filter=2                ; -vf2   (FOI)
 
-[screen] ; default screen section
+[screen]                  ; default screen section
   usepics=*.gif *.tga
-  compomode=off      ; compomode will remove all texts and display
-                     ; fileselector comment as the name (put compo # there!)
-  startupmode=text   ; any of: coolhelp, dots, graph, links, msg, phase, scope, text, wuerfel2
-  screentype=7       ; screenmode
-
+  compomode=off           ; compomode will remove all texts and display
+; fileselector comment as the name (put compo # there!)
+  startupmode=text        ; any of: coolhelp, dots, graph, links, msg, phase, scope, text, wuerfel2
+  screentype=7            ; screenmode
 ; palette=0 4 1 5 2 6 3 7 8 c 9 d a e b f   ; text mode color mapping
 ; palette=0 6 6 6 6 6 6 e 6 6 e e e e e e
 ; palette=0 2 2 2 2 2 2 a 2 2 a a a a a a
 ; palette=1 2 4 7 5 3 6 7 9 a c f d b e f
-
   analyser=on
   mvoltype=1
   pattern=on
   insttype=2
   channeltype=2
-  uselfb=yes          ; disable use of VESA 2.0
+  uselfb=yes              ; disable use of VESA 2.0
   fps=20
 
 [x11]
-  autodetect=on   ; Use X instead of curses when possible
-  font=1	  ; 0 => 8x8, 1 => 16x8
-  xvidmode=on     ; Change resolution on fullscreen
+  autodetect=on           ; Use X instead of curses when possible
+  font=1                  ; 0 => 8x8, 1 => 16x8
+  xvidmode=on             ; Change resolution on fullscreen
 
 [curses]
   fixbadgraphic=off       ; ncurses on redhat 7.3 atleast is known to fail sometime to blank some cells of text
 
-[fileselector] ; default fileselector section
+[fileselector]            ; default fileselector section
 ; files with these extensions will be scanned by the fileselector
 ; you might add 001 002 003 004 if you are a fan of imphobia :)
   modextensions=
-  movepath=  ; default path to move files
+  movepath=               ; default path to move files
   typecolors=on
   editwin=on
   writeinfo=on
@@ -94,13 +90,7 @@
   randomplay=off
   loop=off
   path=.
-  showallfiles=off  ; Show all files in the filebrowser, or just audio/music files
-
-;device configuration:
-;[handle]
-;  link=...                                     (internal) link drivers
-;  subtype=...                                  subtype
-;  bypass=...                                   bypass detect on/off
+  showallfiles=off        ; Show all files in the filebrowser, or just audio/music files
 
 [libsidplayfp]
 ; emulator=residfp  to use the floating point version (CPU heavy)
@@ -156,8 +146,8 @@
   mixer=/dev/mixer
 
 [devpDisk]
-  stereo=on            ; -sm-
-  16bit=on             ; -s8-
+  stereo=on               ; -sm-
+  16bit=on                ; -s8-
 
 [devwMix]
   mixResample=off
@@ -168,7 +158,7 @@
   postprocs=iReverb
 
 [devwMixF]
-  volramp=on       ; turn this off if the mixer sounds too "soft" for you
+  volramp=on              ; turn this off if the mixer sounds too "soft" for you
   declick=on
   postprocs=fReverb
 
@@ -207,12 +197,12 @@
   YM=6
 
 [timidity]
-  configfile=        ; leave empty to use system default, or it can specify a specific config file or sound font ending with a .sf2 extension
-  reverbmode=3       ; 0=disable, 1=original, 2=global-original 3=freeverb 4=global-freeverb
-  reverblevel=40     ; a number between 0 and 127
-  scaleroom=28       ; a number between 0 and 1000 - The MIDI commands for room size are multiplied with this value and divided by 100
-  offsetroom=70      ; a number between 0 and 1000 - The MIDI commands for room size have this value divided by 100 and added to it
-  predelayfactor=100 ; a number between 0 and 1000 - The MIDI commands for predelay are multiplied with this value and divided by 100
-  delaymode=-1       ; -1=disable 0=left 1=right 2=both
-  delay=25           ; a number between 0 and 1000 - How much delay in ms, if delaymode is enabled
-  chorusenabled=1    ; 0=disable 1=enable
+  configfile=             ; leave empty to use system default, or it can specify a specific config file or sound font ending with a .sf2 extension
+  reverbmode=3            ; 0=disable, 1=original, 2=global-original 3=freeverb 4=global-freeverb
+  reverblevel=40          ; a number between 0 and 127
+  scaleroom=28            ; a number between 0 and 1000 - The MIDI commands for room size are multiplied with this value and divided by 100
+  offsetroom=70           ; a number between 0 and 1000 - The MIDI commands for room size have this value divided by 100 and added to it
+  predelayfactor=100      ; a number between 0 and 1000 - The MIDI commands for predelay are multiplied with this value and divided by 100
+  delaymode=-1            ; -1=disable 0=left 1=right 2=both
+  delay=25                ; a number between 0 and 1000 - How much delay in ms, if delaymode is enabled
+  chorusenabled=1         ; 0=disable 1=enable

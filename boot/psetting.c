@@ -52,6 +52,11 @@ char *cfProgramDirAutoload;
 #define KEYBUF_LEN 105
 #define STRBUF_LEN 405
 #define COMMENTBUF_LEN 256
+#define COMMENT_INDENT 26
+
+#ifndef MAX
+# define MAX(x,y) ((x)>(y)?(x):(y))
+#endif
 
 struct profilekey
 {
@@ -717,7 +722,6 @@ static int _cfStoreConfig(void)
 	char *path;
 	FILE *f;
 	int i, j;
-	char buffer[2+KEYBUF_LEN+1+STRBUF_LEN+COMMENTBUF_LEN+32+1+1];
 
 	makepath_malloc (&path, 0, cfConfigHomeDir, "ocp.ini", 0);
 
@@ -730,42 +734,46 @@ static int _cfStoreConfig(void)
 	free (path); path=0;
 
 	for (i=0;i<cfINInApps;i++)
+	{
 		if (cfINIApps[i].linenum>=0)
 		{
-			strcpy(buffer, "[");
-			strcat(buffer, cfINIApps[i].app);
-			strcat(buffer, "]");
+			if (i)
+			{
+				fprintf (f, "\n");
+			}
+			fprintf (f, "[%.*s]", KEYBUF_LEN, cfINIApps[i].app);
 			if (cfINIApps[i].comment)
 			{
-				int n=strlen(buffer)-32;
-				if (n>0)
-					strncat(buffer, "                                ", n);
-				strcat(buffer, cfINIApps[i].comment);
+				fprintf (f, "%*s%.*s",
+			                MAX (0, COMMENT_INDENT - 2 - (int)strlen(cfINIApps[i].app)), "",
+					COMMENTBUF_LEN, cfINIApps[i].comment);
 			}
-			strcat(buffer, "\n");
+			fprintf (f, "\n");
 
-			fprintf(f, "%s", buffer);
 			for (j=0;j<cfINIApps[i].nkeys;j++)
+			{
 				if (cfINIApps[i].keys[j].linenum>=0)
 				{
 					if (cfINIApps[i].keys[j].key)
 					{
-						strcpy(buffer, "  ");
-						strcat(buffer, cfINIApps[i].keys[j].key);
-						strcat(buffer, "=");
-						strcat(buffer, cfINIApps[i].keys[j].str);
+						fprintf (f, "  %.*s=%.*s",
+							KEYBUF_LEN, cfINIApps[i].keys[j].key,
+							STRBUF_LEN, cfINIApps[i].keys[j].str);
 						if (cfINIApps[i].keys[j].comment)
 						{
-							while (strlen(buffer)<32)
-								strcat(buffer, " ");
-							strcat(buffer, cfINIApps[i].keys[j].comment);
+							fprintf (f, "%*s%.*s",
+								MAX (0, COMMENT_INDENT - 3 - (int)strlen(cfINIApps[i].keys[j].key) - (int)strlen(cfINIApps[i].keys[j].str)), "",
+								COMMENTBUF_LEN, cfINIApps[i].keys[j].comment);
 						}
-					} else
-						strcpy(buffer, cfINIApps[i].keys[j].comment);
-					strcat(buffer, "\n");
-					fprintf(f, "%s", buffer);
+						fprintf (f, "\n");
+					} else if (cfINIApps[i].keys[j].comment)
+					{
+						fprintf (f, "%.*s\n", COMMENTBUF_LEN, cfINIApps[i].keys[j].comment);
+					}
 				}
+			}
 		}
+	}
 	fclose(f);
 	return 0;
 }
