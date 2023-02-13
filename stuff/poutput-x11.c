@@ -51,14 +51,15 @@
 #include "boot/console.h"
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"
-#include "framelock.h"
-#include "poutput.h"
-#include "poutput-fontengine.h"
-#include "poutput-keyboard.h"
-#include "poutput-swtext.h"
-#include "poutput-x11.h"
-#include "poll.h"
-#include "x11-common.h"
+#include "stuff/framelock.h"
+#include "stuff/imsrtns.h"
+#include "stuff/poutput.h"
+#include "stuff/poutput-fontengine.h"
+#include "stuff/poutput-keyboard.h"
+#include "stuff/poutput-swtext.h"
+#include "stuff/poutput-x11.h"
+#include "stuff/poll.h"
+#include "stuff/x11-common.h"
 #include "desktop/opencubicplayer-48x48.xpm"
 
 /* TEXT-MODE DRIVER */
@@ -71,8 +72,8 @@ static void create_image(void);
 static void destroy_image(void);
 
 static XSizeHints Textmode_SizeHints;
-static unsigned long Textmode_Window_Width = 0;
-static unsigned long Textmode_Window_Height = 0;
+static unsigned long Textmode_Window_Width;
+static unsigned long Textmode_Window_Height;
 
 static void *x11_TextOverlayAddBGRA (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra);
 static void x11_TextOverlayRemove(void *handle);
@@ -564,6 +565,8 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 	do_fullscreen = FullScreen;
 
 	Textmode_SizeHints.flags=PMinSize|PMaxSize|USSize|PSize;
+	Textmode_SizeHints.width=Textmode_Window_Width;
+	Textmode_SizeHints.height=Textmode_Window_Height;
 	Textmode_SizeHints.max_width=default_modeline.hdisplay;
 	Textmode_SizeHints.max_height=default_modeline.vdisplay;
 
@@ -1352,10 +1355,13 @@ static void x11_SetTextMode (unsigned char x)
 		return; /* gdb helper */
 	}
 
+#if 0 // We have disabled textmode from being able to change active resolution of physical display - Modern systems do not change resolution away from native the native resolution
 	/* if invalid mode, set it to zero */
 	if (x>7)
+	{
 		x=0;
-#if 0 // We have disabled textmode being able to change resolution of Screen - Modern systems do not change resolution away from native from the monitor
+	}
+
 	if (do_fullscreen)
 	{
 		if (!modelines[modes[x].modeline])
@@ -1389,15 +1395,27 @@ static void x11_SetTextMode (unsigned char x)
 	___push_key (VIRT_KEY_RESIZE);
 
 #else
-	/* WindowResized_Textmode() will override these later when the final result is available */
-	Console.TextHeight = modes[x].chary;
-	Console.TextWidth = modes[x].charx;
-	plScrRowBytes = Console.TextWidth * 2;
-	Console.GraphBytesPerLine = modes[x].windowx;
-	Console.GraphLines = modes[x].windowy;
-	___push_key(VIRT_KEY_RESIZE);
-#endif
+	/* if invalid mode, set it to zero */
+	if (x>=8)
+	{
+		x=8;
+		Console.TextHeight = Textmode_Window_Height / (x11_CurrentFontWanted == _8x16 ? 16 : 8);
+		Console.TextWidth = Textmode_Window_Width / 8;
+		Console.GraphBytesPerLine = Textmode_Window_Width;
+		Console.GraphLines = Textmode_Window_Height;
+	} else {
+		/* WindowResized_Textmode() will override these later when the final result is available */
+		Console.TextHeight = modes[x].chary;
+		Console.TextWidth = modes[x].charx;
+		Console.GraphBytesPerLine = modes[x].windowx;
+		Console.GraphLines = modes[x].windowy;
 
+		x11_CurrentFontWanted = modes[x].bigfont ? _8x16 : _8x8;
+		Textmode_Window_Width = Console.TextWidth * 8;
+		Textmode_Window_Height = Console.TextHeight * (modes[x].bigfont ? 16 : 8);
+	}
+	plScrRowBytes = Console.TextWidth * 2;
+#endif
 	Console.LastTextMode = Console.CurrentMode = x;
 
 	x11_depth=XDefaultDepth(mDisplay, mScreen);
@@ -1407,6 +1425,8 @@ static void x11_SetTextMode (unsigned char x)
 	}
 
 	TextModeSetState(x11_CurrentFontWanted /* modes[x].bigfont ? _8x16 : _8x8 */, do_fullscreen);
+
+	___push_key(VIRT_KEY_RESIZE);
 
 	x11_gFlushPal ();
 }
@@ -2116,7 +2136,7 @@ static void x11_DisplaySetupTextMode (void)
 				x11_CurrentFontWanted = (x11_CurrentFontWanted == _8x8)?_8x16 : _8x8;
 				TextModeSetState (x11_CurrentFontWanted, do_fullscreen);
 				x11_CurrentFontWanted = Console.CurrentFont;
-				cfSetProfileInt("x11", "font", Console.CurrentFont, 10);
+				cfSetProfileInt(cfScreenSec, "fontsize", Console.CurrentFont, 10);
 				break;
 			case KEY_EXIT:
 			case KEY_ESC: return;
@@ -2179,7 +2199,10 @@ int x11_init(int use_explicit)
 	if ( (!use_explicit) && (!cfGetProfileBool("x11", "autodetect", 1, 0)) )
 		return -1;
 
-	x11_CurrentFontWanted = cfGetProfileInt("x11", "font", _8x8, 10);
+	x11_CurrentFontWanted = cfGetProfileInt(cfScreenSec, "fontsize", _8x8, 10);
+	Textmode_Window_Width  = saturate (cfGetProfileInt(cfScreenSec, "winwidth",  1280, 10), 640, 65535);
+	Textmode_Window_Height = saturate (cfGetProfileInt(cfScreenSec, "winheight", 1024, 10), 400, 65535);
+
 	switch (x11_CurrentFontWanted)
 	{
 		default:
@@ -2212,7 +2235,7 @@ int x11_init(int use_explicit)
 	Console.Driver = &x11ConsoleDriver;
 	___setup_key(ekbhit_x11dummy, ekbhit_x11dummy); /* filters in more keys */
 
-	x11_SetTextMode (0);
+	x11_SetTextMode (saturate(cfGetProfileInt(cfScreenSec, "screentype", 7, 10), 0, 8));
 
 	Console.TextGUIOverlay = (x11_depth !=8);
 

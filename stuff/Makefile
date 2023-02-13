@@ -130,6 +130,7 @@ poutput-sdl.o: poutput-sdl.c \
 	../boot/console.h \
 	../boot/psetting.h \
 	../stuff/framelock.h \
+	../stuff/imsrtns.h \
 	../stuff/poutput.h \
 	../stuff/poutput-fontengine.h \
 	../stuff/poutput-keyboard.h \
@@ -144,6 +145,7 @@ poutput-sdl2.o: poutput-sdl2.c \
 	../boot/console.h \
 	../boot/psetting.h \
 	../stuff/framelock.h \
+	../stuff/imsrtns.h \
 	../stuff/poutput.h \
 	../stuff/poutput-fontengine.h \
 	../stuff/poutput-keyboard.h \
@@ -169,6 +171,7 @@ poutput-x11.o: poutput-x11.c \
 	../boot/psetting.h \
 	../desktop/opencubicplayer-48x48.xpm \
 	../stuff/framelock.h \
+	../stuff/imsrtns.h \
 	../stuff/poutput.h \
 	../stuff/poutput-keyboard.h \
 	../stuff/poutput-swtext.h \

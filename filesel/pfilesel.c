@@ -898,7 +898,8 @@ int fsPreInit(void)
 	mt.integer.i = MODULETYPE("DEVv");
 	fsTypeRegister (mt, DEVv_description, "VirtualInterface", 0);
 
-	fsScrType=cfGetProfileInt2(cfScreenSec, "screen", "screentype", 7, 10)&7;
+	fsScrType=cfGetProfileInt2(cfScreenSec, "screen", "screentype", 7, 10);
+	if ((fsScrType < 0) || (fsScrType > 8)) fsScrType = 8;
 	fsColorTypes=cfGetProfileBool2(sec, "fileselector", "typecolors", 1, 1);
 	fsEditWin=cfGetProfileBool2(sec, "fileselector", "editwin", 1, 1);
 	fsWriteModInfo=cfGetProfileBool2(sec, "fileselector", "writeinfo", 1, 1);
@@ -950,11 +951,6 @@ void fsLateClose(void)
 int fsLateInit(void)
 {
 	const char *sec=cfGetProfileString(cfConfigSec, "fileselsec", "fileselector");
-
-	if (plVidType == vidModern)
-	{
-		fsScrType=8;
-	}
 
 	if (!initRootDir(sec))
 		return 0;

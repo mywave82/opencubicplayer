@@ -523,13 +523,13 @@ static int txtAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('x', "Set screen text mode (set mode 7)");
-			cpiKeyHelp('X', "Set screen text mode (set mode 7)");
-			cpiKeyHelp('z', "Set screen text mode (toggle bit 1)");
-			cpiKeyHelp('Z', "Set screen text mode (toggle bit 1)");
-			cpiKeyHelp(KEY_ALT_X, "Set screen text screen mode (set mode 0)");
-			cpiKeyHelp(KEY_ALT_Z, "Set screen text screen mode (toggle bit 2)");
-			cpiKeyHelp(KEY_CTRL_Z, "Set screen text screen mode (toggle bit 1)");
+			cpiKeyHelp('x', "Set screen text mode 160x128 (font 8x8)");
+			cpiKeyHelp('X', "Set screen text mode 160x128 (font 8x8)");
+			cpiKeyHelp('z', "Adjust screen text mode (toggle minor size)");
+			cpiKeyHelp('Z', "Adjust screen text mode (toggle minor size)");
+			cpiKeyHelp(KEY_ALT_X, "Set screen text screen mode 80x25 (font 8x16)");
+			cpiKeyHelp(KEY_ALT_Z, "Adjust screen text screen mode (toggle major size)");
+			cpiKeyHelp(KEY_CTRL_Z, "Adjust screen text screen mode (toggle font 8x8/8x16)");
 			return 0;
 		case 'x': case 'X':
 			fsScrType=7;
@@ -542,16 +542,28 @@ static int txtAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 			cpiResetScreen();
 			return 1;
 		case 'z': case 'Z':
+			if (fsScrType == 8)
+			{
+				fsScrType = 7;
+			}
 			fsScrType^=2;
 			cpiForwardIProcessKey (cpifaceSession, key);
 			cpiResetScreen();
 			break;
 		case KEY_ALT_Z:
+			if (fsScrType == 8)
+			{
+				fsScrType = 7;
+			}
 			fsScrType^=4;
 			cpiForwardIProcessKey (cpifaceSession, key);
 			cpiResetScreen();
 			break;
 		case KEY_CTRL_Z:
+			if (fsScrType == 8)
+			{
+				fsScrType = 7;
+			}
 			fsScrType^=1;
 			cpiForwardIProcessKey (cpifaceSession, key);
 			cpiResetScreen();

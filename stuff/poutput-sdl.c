@@ -31,12 +31,13 @@
 #include "boot/console.h"
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"
-#include "framelock.h"
-#include "poutput.h"
-#include "poutput-fontengine.h"
-#include "poutput-keyboard.h"
-#include "poutput-sdl.h"
-#include "poutput-swtext.h"
+#include "stuff/framelock.h"
+#include "stuff/imsrtns.h"
+#include "stuff/poutput.h"
+#include "stuff/poutput-fontengine.h"
+#include "stuff/poutput-keyboard.h"
+#include "stuff/poutput-sdl.h"
+#include "stuff/poutput-swtext.h"
 
 typedef enum
 {
@@ -212,7 +213,7 @@ static void sdl_SetTextMode (unsigned char x)
 {
 	set_state = set_state_textmode;
 
-	if (x == Console.CurrentMode)
+	if ((x == Console.CurrentMode) && (virtual_framebuffer))
 	{
 		bzero (virtual_framebuffer, Console.GraphBytesPerLine * Console.GraphLines);
 		return;
@@ -455,7 +456,7 @@ static void sdl_DisplaySetupTextMode(void)
 				/* we can assume that we are in text-mode if we are here */
 				sdl_CurrentFontWanted = Console.CurrentFont = (Console.CurrentFont == _8x8)?_8x16:_8x8;
 				set_state_textmode(do_fullscreen, Console.GraphBytesPerLine, Console.GraphLines);
-				cfSetProfileInt("x11", "font", Console.CurrentFont, 10);
+				cfSetProfileInt(cfScreenSec, "fontsize", Console.CurrentFont, 10);
 				break;
 			case KEY_EXIT:
 			case KEY_ESC: return;
@@ -1442,13 +1443,13 @@ int sdl_init(void)
 	if (!fullscreen_info[MODE_BIGGEST].is_possible)
 		fprintf(stderr, "[SDL video] Unable to find a fullscreen mode\n");
 
-	sdl_CurrentFontWanted = Console.CurrentFont = cfGetProfileInt("x11", "font", _8x16, 10);
+	sdl_CurrentFontWanted = Console.CurrentFont = cfGetProfileInt(cfScreenSec, "fontsize", _8x16, 10);
 	if (Console.CurrentFont > _FONT_MAX)
 	{
 		Console.CurrentFont = _8x16;
 	}
-	last_text_width  = Console.GraphBytesPerLine = 640;
-	last_text_height = Console.GraphLines        = 480;
+	last_text_width  = Console.GraphBytesPerLine = saturate(cfGetProfileInt(cfScreenSec, "winwidth",  1280, 10), 640, 16384);
+	last_text_height = Console.GraphLines        = saturate(cfGetProfileInt(cfScreenSec, "winheight", 1024, 10), 400, 16384);
 
 	Console.LastTextMode = Console.CurrentMode = 8;
 
