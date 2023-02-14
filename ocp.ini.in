@@ -1,5 +1,5 @@
 [version]
-  epoch=20230213
+  epoch=20230214
 
 [general]
 ;link=
@@ -197,6 +197,7 @@
   WAV=14
   WOW=4
   YM=6
+  XM=3
 
 [timidity]
   configfile=             ; leave empty to use system default, or it can specify a specific config file or sound font ending with a .sf2 extension

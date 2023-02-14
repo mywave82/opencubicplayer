@@ -960,9 +960,16 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileComment ("screen", "winheight", "; if screentype=8");
 		}
 
-		if (epoch < 20230213)
+		if (epoch < 20230214)
 		{
-			cfSetProfileInt("version", "epoch", 20230213, 10);
+			fprintf(stderr, "ocp.ini update (0.2.103), 0.2.91 update missed setting the color for XM files.\n");
+
+			cfSetProfileInt ("fscolors", "XM", cfGetProfileInt ("fscolors", "XM", 3, 10), 10);
+		}
+
+		if (epoch < 20230214)
+		{
+			cfSetProfileInt("version", "epoch", 20230214, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -973,13 +980,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20230213)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20230214)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20230213\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20230214\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20230213\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20230214\n\n");
 		}
 		sleep(5);
 	}
