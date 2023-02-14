@@ -949,14 +949,14 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileComment ("screen", "mvoltype", cfGetProfileComment ("screen", "mvoltype", "; 0=none, 1=big, 2=side (only in >132 column modes)"));
 			cfSetProfileComment ("screen", "insttype", cfGetProfileComment ("screen", "insttype", "; 0=none, 1=short, 2=long, 3=side (only in >132 column modes)"));
 			cfSetProfileComment ("screen", "channeltype", cfGetProfileComment ("screen", "channeltype", "; 0=none, 1=short, 2=long, 3=side (only in >132 column modes)"));
-			cfSetProfileString  ("screen", "screentype", 5);
+			cfSetProfileInt     ("screen", "screentype", 5, 10);
 			cfSetProfileComment ("screen", "screentype", "; 0=80x25, 1=80x30, 2=80x50, 3=80x60, 4=132x25, 5=132x30, 6=132x50, 7=132x60, 8=custom");
-			cfSetProfileString ("screen", "fontsize", cfGetProfileString ("x11", "font", "1"));
+			cfSetProfileString  ("screen", "fontsize", cfGetProfileString ("x11", "font", "1"));
 			cfSetProfileComment ("screen", "fontsize", "; if screentype=8: 0=8x8, 1=8x16");
-			cfRemoveEntry ("x11", "font");
-			cfSetProfileString ("screen", "winwidth", "1280");
+			cfRemoveEntry       ("x11", "font");
+			cfSetProfileInt     ("screen", "winwidth", 1280, 10);
 			cfSetProfileComment ("screen", "winwidth", "; if screentype=8");
-			cfSetProfileString ("screen", "winheight", "1024");
+			cfSetProfileInt     ("screen", "winheight", 1024, 10);
 			cfSetProfileComment ("screen", "winheight", "; if screentype=8");
 		}
 
