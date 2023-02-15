@@ -60,6 +60,8 @@ static int debug_output = -1;
 #define debug_printf(format, args...) ((void)0)
 #endif
 
+static const struct ringbufferAPI_t *ringbuffer;
+
 static void *devpALSABuffer;
 static char *devpALSAShadowBuffer;
 static struct ringbuffer_t *devpALSARingBuffer;
@@ -653,14 +655,14 @@ static unsigned int devpALSAIdle(void)
 		}
 	}
 
-	kernlen = ringbuffer_get_tail_available_samples (devpALSARingBuffer);
+	kernlen = ringbuffer->get_tail_available_samples (devpALSARingBuffer);
 
 	if (odelay>kernlen)
 	{
 		odelay=kernlen;
 	} else if (odelay<kernlen)
 	{
-		ringbuffer_tail_consume_samples (devpALSARingBuffer, kernlen - odelay);
+		ringbuffer->tail_consume_samples (devpALSARingBuffer, kernlen - odelay);
 		if (devpALSAPauseSamples)
 		{
 			if ((kernlen - odelay) > devpALSAPauseSamples)
@@ -676,13 +678,13 @@ static unsigned int devpALSAIdle(void)
 /* do we need to insert pause-samples? START */
 	if (devpALSAInPause)
 	{
-		ringbuffer_get_head_bytes (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
+		ringbuffer->get_head_bytes (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
 		bzero ((char *)devpALSABuffer+pos1, length1);
 		if (length2)
 		{
 			bzero ((char *)devpALSABuffer+pos2, length2);
 		}
-		ringbuffer_head_add_bytes (devpALSARingBuffer, length1 + length2);
+		ringbuffer->head_add_bytes (devpALSARingBuffer, length1 + length2);
 		devpALSAPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
 	}
 /* do we need to insert pause-samples? DONE */
@@ -691,7 +693,7 @@ static unsigned int devpALSAIdle(void)
 	tmp = snd_pcm_status_get_avail(alsa_pcm_status);
 	debug_printf ("      snd_pcm_status_get_avail() = %d\n", tmp);
 
-	ringbuffer_get_processing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
+	ringbuffer->get_processing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
 	if (tmp < length1)
 	{
 		length1 = tmp;
@@ -714,7 +716,7 @@ static unsigned int devpALSAIdle(void)
 		debug_printf ("      snd_pcm_writei (%d) = %d\n", length1, result);
 		if (result > 0)
 		{
-			ringbuffer_processing_consume_samples (devpALSARingBuffer, result);
+			ringbuffer->processing_consume_samples (devpALSARingBuffer, result);
 		}
 	}
 
@@ -730,7 +732,7 @@ static unsigned int devpALSAIdle(void)
 		debug_printf ("      snd_pcm_writei (%d) = %d\n", length2, result);
 		if (result > 0)
 		{
-			ringbuffer_processing_consume_samples (devpALSARingBuffer, result);
+			ringbuffer->processing_consume_samples (devpALSARingBuffer, result);
 		}
 	}
 
@@ -750,7 +752,7 @@ static unsigned int devpALSAIdle(void)
 /* Move data from ringbuffer-head into processing/kernel STOP */
 
 error_out:
-	ringbuffer_get_tailandprocessing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
+	ringbuffer->get_tailandprocessing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
 
 	busy--;
 
@@ -766,7 +768,7 @@ static void devpALSAPeekBuffer (void **buf1, unsigned int *buf1length, void **bu
 {
 	int pos1, length1, pos2, length2;
 
-	ringbuffer_get_tailandprocessing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
+	ringbuffer->get_tailandprocessing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
 
 	if (length1)
 	{
@@ -795,7 +797,7 @@ static void devpALSAGetBuffer (void **buf, unsigned int *samples)
 
 	debug_printf("%s()\n", __FUNCTION__);
 
-	ringbuffer_get_head_samples (devpALSARingBuffer, &pos1, &length1, 0, 0);
+	ringbuffer->get_head_samples (devpALSARingBuffer, &pos1, &length1, 0, 0);
 
 	*samples = length1;
 	*buf = (uint8_t *)devpALSABuffer + (pos1<<2); /* stereo + bit16 */
@@ -809,14 +811,14 @@ static uint32_t devpALSAGetRate (void)
 static void devpALSAOnBufferCallback (int samplesuntil, void (*callback)(void *arg, int samples_ago), void *arg)
 {
 	assert (devpALSARingBuffer);
-	ringbuffer_add_tail_callback_samples (devpALSARingBuffer, samplesuntil, callback, arg);
+	ringbuffer->add_tail_callback_samples (devpALSARingBuffer, samplesuntil, callback, arg);
 }
 
 static void devpALSACommitBuffer (unsigned int samples)
 {
 	debug_printf ("%s(%u)\n", __FUNCTION__, samples);
 
-	ringbuffer_head_add_samples (devpALSARingBuffer, samples);
+	ringbuffer->head_add_samples (devpALSARingBuffer, samples);
 }
 
 static void devpALSAPause (int pause)
@@ -1070,7 +1072,7 @@ static int devpALSAPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 		}
 	}
 
-	if (!(devpALSARingBuffer = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, buflength)))
+	if (!(devpALSARingBuffer = ringbuffer->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, buflength)))
 	{
 		free (devpALSABuffer);
 		devpALSABuffer = 0;
@@ -1096,8 +1098,8 @@ static void devpALSAStop (struct cpifaceSessionAPI_t *cpifaceSession)
 	free(devpALSAShadowBuffer); devpALSAShadowBuffer=0;
 	if (devpALSARingBuffer)
 	{
-		ringbuffer_reset (devpALSARingBuffer);
-		ringbuffer_free (devpALSARingBuffer);
+		ringbuffer->reset (devpALSARingBuffer);
+		ringbuffer->free (devpALSARingBuffer);
 		devpALSARingBuffer = 0;
 	}
 
@@ -1279,8 +1281,9 @@ static int volalsaSetVolume(struct ocpvolstruct *v, int n)
 }
 
 static void alsaClose (const struct plrDriver_t *driver);
-static const struct plrDevAPI_t *alsaInit (const struct plrDriver_t *driver)
+static const struct plrDevAPI_t *alsaInit (const struct plrDriver_t *driver, const struct ringbufferAPI_t *ringbufferAPI)
 {
+	ringbuffer = ringbufferAPI;
 	alsaOpenDevice();
 	if (!alsa_pcm)
 	{

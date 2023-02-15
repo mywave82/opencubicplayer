@@ -52,6 +52,8 @@
 #include "stuff/err.h"
 #include "stuff/imsrtns.h"
 
+static const struct ringbufferAPI_t *ringbuffer;
+
 static void *devpDiskBuffer;
 static struct ringbuffer_t *devpDiskRingBuffer;
 static char *devpDiskShadowBuffer;
@@ -71,7 +73,7 @@ static void devpDiskConsume(int flush)
 {
 	int pos1, length1, pos2, length2;
 
-	ringbuffer_get_tail_samples (devpDiskRingBuffer, &pos1, &length1, &pos2, &length2);
+	ringbuffer->get_tail_samples (devpDiskRingBuffer, &pos1, &length1, &pos2, &length2);
 
 #define BUFFER_TO_KEEP 2048  // for visuals
 
@@ -114,7 +116,7 @@ static void devpDiskConsume(int flush)
 		}
 	}
 
-	ringbuffer_tail_consume_samples (devpDiskRingBuffer, length1 + length2);
+	ringbuffer->tail_consume_samples (devpDiskRingBuffer, length1 + length2);
 
 	assert (devpDiskCachePos <= devpDiskCachelen);
 }
@@ -158,7 +160,7 @@ rewrite:
 		devpDiskCachePos = 0;
 	}
 
-	retval = ringbuffer_get_tail_available_samples (devpDiskRingBuffer);
+	retval = ringbuffer->get_tail_available_samples (devpDiskRingBuffer);
 
 	busy--;
 
@@ -174,7 +176,7 @@ static void devpDiskCommitBuffer (unsigned int samples)
 		return;
 	}
 
-	ringbuffer_head_add_samples (devpDiskRingBuffer, samples);
+	ringbuffer->head_add_samples (devpDiskRingBuffer, samples);
 
 	busy--;
 }
@@ -184,7 +186,7 @@ static void devpDiskGetBuffer (void **buf, unsigned int *samples)
 	int pos1, length1;
 	assert (devpDiskRingBuffer);
 
-	ringbuffer_get_head_samples (devpDiskRingBuffer, &pos1, &length1, 0, 0);
+	ringbuffer->get_head_samples (devpDiskRingBuffer, &pos1, &length1, 0, 0);
 
 	*samples = length1;
 	*buf = (uint8_t *)devpDiskBuffer + (pos1<<2); /* stereo + bit16 */
@@ -198,7 +200,7 @@ static uint32_t devpDiskGetRate (void)
 static void devpDiskOnBufferCallback (int samplesuntil, void (*callback)(void *arg, int samples_ago), void *arg)
 {
 	assert (devpDiskRingBuffer);
-	ringbuffer_add_tail_callback_samples (devpDiskRingBuffer, samplesuntil, callback, arg);
+	ringbuffer->add_tail_callback_samples (devpDiskRingBuffer, samplesuntil, callback, arg);
 }
 
 static int devpDiskPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
@@ -242,7 +244,7 @@ static int devpDiskPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 		fprintf (stderr, "[devpDisk]: malloc() failed #1\n");
 		goto error_out;
 	}
-	devpDiskRingBuffer = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, buflength);
+	devpDiskRingBuffer = ringbuffer->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, buflength);
 	if (!devpDiskRingBuffer)
 	{
 		fprintf (stderr, "[devpDisk]: ringbuffer_new_samples() failed\n");
@@ -330,7 +332,7 @@ error_out:
 	free (devpDiskCache);        devpDiskCache = 0;
 	if (devpDiskRingBuffer)
 	{
-		ringbuffer_free (devpDiskRingBuffer);
+		ringbuffer->free (devpDiskRingBuffer);
 		devpDiskRingBuffer = 0;
 	}
 
@@ -424,8 +426,8 @@ reclose:
 
 	if (devpDiskRingBuffer)
 	{
-		ringbuffer_reset (devpDiskRingBuffer);
-		ringbuffer_free (devpDiskRingBuffer);
+		ringbuffer->reset (devpDiskRingBuffer);
+		ringbuffer->free (devpDiskRingBuffer);
 		devpDiskRingBuffer = 0;
 	}
 
@@ -440,7 +442,7 @@ static void devpDiskPeekBuffer (void **buf1, unsigned int *buf1length, void **bu
 {
 	int pos1, length1, pos2, length2;
 
-	ringbuffer_get_tail_samples (devpDiskRingBuffer, &pos1, &length1, &pos2, &length2);
+	ringbuffer->get_tail_samples (devpDiskRingBuffer, &pos1, &length1, &pos2, &length2);
 
 	if (length1)
 	{
@@ -479,8 +481,10 @@ static const struct plrDevAPI_t devpDisk = {
 	0 /* ProcessKey */
 };
 
-static const struct plrDevAPI_t *dwInit (const struct plrDriver_t *driver)
+static const struct plrDevAPI_t *dwInit (const struct plrDriver_t *driver, const struct ringbufferAPI_t *ringbufferAPI)
 {
+	ringbuffer = ringbufferAPI;
+
 	return &devpDisk;
 }
 

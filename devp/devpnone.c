@@ -37,6 +37,8 @@
 #define DEVPNONE_BUFLEN (DEVPNONE_BUFRATE/4) /* 250 ms */
 #define DEVPNONE_BUFSIZE (DEVPNONE_BUFLEN<<2) /* stereo + 16bit */
 
+static const struct ringbufferAPI_t *ringbuffer;
+
 static void *devpNoneBuffer;
 static struct ringbuffer_t *devpNoneRingBuffer;
 static struct timespec devpNoneBasetime;
@@ -76,7 +78,7 @@ unsigned int devpNoneIdle (void)
 		int pos1, length1, pos2, length2;
 		int eat;
 
-		ringbuffer_get_tail_samples (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
+		ringbuffer->get_tail_samples (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
 
 		if (length2 == 0) /* no wrap available */
 		{
@@ -106,7 +108,7 @@ unsigned int devpNoneIdle (void)
 			}
 		}
 
-		ringbuffer_tail_consume_samples (devpNoneRingBuffer, eat);
+		ringbuffer->tail_consume_samples (devpNoneRingBuffer, eat);
 		if (eat > devpNonePauseSamples)
 		{
 			devpNonePauseSamples = 0;
@@ -119,13 +121,13 @@ unsigned int devpNoneIdle (void)
 	if (devpNoneInPause)
 	{
 		int pos1, length1, pos2, length2;
-		ringbuffer_get_head_bytes (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
+		ringbuffer->get_head_bytes (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
 		bzero ((char *)devpNoneBuffer+pos1, length1);
 		if (length2)
 		{
 			bzero ((char *)devpNoneBuffer+pos2, length2);
 		}
-		ringbuffer_head_add_bytes (devpNoneRingBuffer, length1 + length2);
+		ringbuffer->head_add_bytes (devpNoneRingBuffer, length1 + length2);
 		devpNonePauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
 	}
 
@@ -133,7 +135,7 @@ unsigned int devpNoneIdle (void)
 	{
 		int pos1, length1, pos2, length2;
 
-		ringbuffer_get_tail_samples (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
+		ringbuffer->get_tail_samples (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
 
 		return length1 + length2 - devpNonePauseSamples;
 	}
@@ -143,7 +145,7 @@ static void devpNonePeekBuffer (void **buf1, unsigned int *buf1length, void **bu
 {
 	int pos1, length1, pos2, length2;
 
-	ringbuffer_get_tail_samples (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
+	ringbuffer->get_tail_samples (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
 
 	if (length1)
 	{
@@ -177,7 +179,7 @@ static int devpNonePlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 	{
 		return 0;
 	}
-	if (!(devpNoneRingBuffer = ringbuffer_new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, DEVPNONE_BUFLEN)))
+	if (!(devpNoneRingBuffer = ringbuffer->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, DEVPNONE_BUFLEN)))
 	{
 		free (devpNoneBuffer); devpNoneBuffer = 0;
 		return 0;
@@ -197,7 +199,7 @@ static void devpNoneGetBuffer (void **buf, unsigned int *samples)
 	int pos1, length1;
 	assert (devpNoneRingBuffer);
 	
-	ringbuffer_get_head_samples (devpNoneRingBuffer, &pos1, &length1, 0, 0);
+	ringbuffer->get_head_samples (devpNoneRingBuffer, &pos1, &length1, 0, 0);
 
 	*samples = length1;
 	*buf = devpNoneBuffer + (pos1<<2); /* stereo + bit16 */
@@ -211,13 +213,13 @@ static uint32_t devpNoneGetRate (void)
 static void devpNoneOnBufferCallback (int samplesuntil, void (*callback)(void *arg, int samples_ago), void *arg)
 {
 	assert (devpNoneRingBuffer);
-	ringbuffer_add_tail_callback_samples (devpNoneRingBuffer, samplesuntil, callback, arg);
+	ringbuffer->add_tail_callback_samples (devpNoneRingBuffer, samplesuntil, callback, arg);
 }
 
 static void  devpNoneCommitBuffer (unsigned int samples)
 {
 	assert (devpNoneRingBuffer);
-	ringbuffer_head_add_samples (devpNoneRingBuffer, samples);
+	ringbuffer->head_add_samples (devpNoneRingBuffer, samples);
 }
 
 static void devpNonePause(int pause)
@@ -231,8 +233,8 @@ static void devpNoneStop (struct cpifaceSessionAPI_t *cpifaceSession)
 	free(devpNoneBuffer); devpNoneBuffer=0;
 	if (devpNoneRingBuffer)
 	{
-		ringbuffer_reset (devpNoneRingBuffer);
-		ringbuffer_free (devpNoneRingBuffer);
+		ringbuffer->reset (devpNoneRingBuffer);
+		ringbuffer->free (devpNoneRingBuffer);
 		devpNoneRingBuffer = 0;
 	}
 	cpifaceSession->plrActive = 0;
@@ -252,8 +254,10 @@ static const struct plrDevAPI_t devpNone = {
 	0 /* ProcessKey */
 };
 
-static const struct plrDevAPI_t *qpInit (const struct plrDriver_t *driver)
+static const struct plrDevAPI_t *qpInit (const struct plrDriver_t *driver, const struct ringbufferAPI_t *ringbufferAPI)
 {
+	ringbuffer = ringbufferAPI;
+
 	return &devpNone;
 }
 

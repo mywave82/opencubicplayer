@@ -59,7 +59,9 @@ deviplay.o: deviplay.c \
 	../types.h \
 	../boot/plinkman.h \
 	../boot/psetting.h \
-	deviplay.h \
+	../dev/deviplay.h \
+	../dev/player.h \
+	../dev/ringbuffer.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/filesystem-drive.h \
@@ -67,7 +69,6 @@ deviplay.o: deviplay.c \
 	../filesel/filesystem-setup.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
-	player.h \
 	../stuff/compat.h \
 	../stuff/err.h \
 	../stuff/poutput.h
@@ -78,7 +79,9 @@ deviwave.o: deviwave.c deviwave.h \
 	../types.h \
 	../boot/plinkman.h \
 	../boot/psetting.h \
-	deviwave.h \
+	../dev/deviwave.h \
+	../dev/mcp.h \
+	../dev/player.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/filesystem-drive.h \
@@ -86,8 +89,6 @@ deviwave.o: deviwave.c deviwave.h \
 	../filesel/filesystem-setup.h \
 	../filesel/mdb.h \
 	../filesel/pfilesel.h \
-	mcp.h \
-	player.h \
 	../stuff/compat.h \
 	../stuff/err.h \
 	../stuff/poutput.h

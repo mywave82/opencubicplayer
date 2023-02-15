@@ -48,9 +48,12 @@
 
 #include "devpsdl-common.c"
 
-static const struct plrDevAPI_t *sdlInit (const struct plrDriver_t *driver)
+static const struct plrDevAPI_t *sdlInit (const struct plrDriver_t *driver, const struct ringbufferAPI_t *ringbufferAPI)
 {
 	char drivername[FILENAME_MAX];
+
+	ringbuffer = ringbufferAPI;
+
 	PRINT("%s()\n", __FUNCTION__);
 	if (SDL_InitSubSystem(SDL_INIT_AUDIO))
 	{

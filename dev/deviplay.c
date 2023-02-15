@@ -33,7 +33,9 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
-#include "deviplay.h"
+#include "dev/deviplay.h"
+#include "dev/player.h"
+#include "dev/ringbuffer.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/filesystem-drive.h"
@@ -41,7 +43,6 @@
 #include "filesel/filesystem-setup.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
-#include "player.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/poutput.h"
@@ -245,7 +246,7 @@ static int deviplayLateInit (void)
 					plrDriverList[i].probed = 1;
 					if (plrDriverList[i].detected)
 					{
-						plrDevAPI = plrDriverList[i].driver->Open (plrDriverList[i].driver);
+						plrDevAPI = plrDriverList[i].driver->Open (plrDriverList[i].driver, &ringbufferAPI);
 						if (plrDevAPI)
 						{
 							fprintf (stderr, " %-8s: %s (selected due to -sp commandline)\n", plrDriverList[i].name, dots(""));
@@ -278,7 +279,7 @@ static int deviplayLateInit (void)
 		plrDriverList[i].probed = 1;
 		if (plrDriverList[i].detected)
 		{
-			plrDevAPI = plrDriverList[i].driver->Open (plrDriverList[i].driver);
+			plrDevAPI = plrDriverList[i].driver->Open (plrDriverList[i].driver, &ringbufferAPI);
 			if (plrDevAPI)
 			{
 				fprintf (stderr, " %-8s: %s (detected)\n", plrDriverList[i].name, dots(plrDriverList[i].driver->description));
@@ -595,7 +596,7 @@ static void setup_devp_run (void **token, const struct DevInterfaceAPI_t *API)
 						}
 						if (plrDriverList[dsel].detected)
 						{
-							plrDevAPI = plrDriverList[dsel].driver->Open (plrDriverList[dsel].driver);
+							plrDevAPI = plrDriverList[dsel].driver->Open (plrDriverList[dsel].driver, &ringbufferAPI);
 							if (plrDevAPI)
 							{
 								plrDriver = plrDriverList[dsel].driver;
