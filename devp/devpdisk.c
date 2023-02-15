@@ -277,7 +277,7 @@ static int devpDiskPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 		int i;
 		if (source_file)
 		{
-			dirdbGetName_internalstr (source_file->dirdb_ref, &orig);
+			cpifaceSession->dirdb->GetName_internalstr (source_file->dirdb_ref, &orig);
 			i = 0;
 		} else {
 			orig = "CPOUT";

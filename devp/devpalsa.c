@@ -188,6 +188,10 @@ static void alsaSetupClearList (struct AlsaConfigDeviceList_t *list)
 
 static int alsaPluginInit (struct PluginInitAPI_t *API)
 {
+	snprintf (alsaCardName, sizeof(alsaCardName), "%s", API->configAPI->GetProfileString ("devpALSA", "card", "default"));
+
+	snprintf (alsaMixerName, sizeof(alsaMixerName), "%s", API->configAPI->GetProfileString ("devpALSA", "mixer", "default"));
+
 	alsasetup = API->dev_file_create (
 		API->dmSetup->basedir,
 		"alsaconfig.dev",
@@ -319,7 +323,7 @@ static void alsaSetupDraw (const int mlLeft, const int mlTop, const int mlWidth,
 	if (*alsaConfigDraw_Mode==ACDM_AUDIO_DEVICE_CUSTOM_EDIT)
 	{
 #warning UTF-8 the way to go?
-		if (EditStringUTF8z (mlTop + 5, mlLeft + 5, 68, sizeof (pcmlist->custom), pcmlist->custom) <= 0)
+		if (API->console->EditStringUTF8z (mlTop + 5, mlLeft + 5, 68, sizeof (pcmlist->custom), pcmlist->custom) <= 0)
 		{
 			*alsaConfigDraw_Mode = ACDM_AUDIO_DEVICE_CUSTOM_SELECTED;
 		}
@@ -327,7 +331,7 @@ static void alsaSetupDraw (const int mlLeft, const int mlTop, const int mlWidth,
 	if (*alsaConfigDraw_Mode==ACDM_MIXER_DEVICE_CUSTOM_EDIT)
 	{
 #warning UTF-8 the way to go?
-		if (EditStringUTF8z (mlTop + 13, mlLeft + 5, 68, sizeof (mixerlist->custom), mixerlist->custom) <= 0)
+		if (API->console->EditStringUTF8z (mlTop + 13, mlLeft + 5, 68, sizeof (mixerlist->custom), mixerlist->custom) <= 0)
 		{
 			*alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_CUSTOM_SELECTED;
 		}
@@ -1297,10 +1301,6 @@ static const struct plrDevAPI_t *alsaInit (const struct plrDriver_t *driver, con
 static int alsaDetect (const struct plrDriver_t *driver)
 {
 	int cards = detect_cards ();
-
-	snprintf (alsaCardName, sizeof(alsaCardName), "%s", cfGetProfileString("devpALSA", "card", "default"));
-
-	snprintf (alsaMixerName, sizeof(alsaMixerName), "%s", cfGetProfileString("devpALSA", "mixer", "default"));
 
 	return cards > 0;
 }

@@ -98,6 +98,16 @@ struct console_t
 	int (*try_open_jpeg) (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const uint8_t *src, uint_fast32_t srclen);
 	int (*try_open_png)  (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const uint8_t *src, uint_fast32_t srclen);
 
+	/* zero-terminated fixed buffer */
+	/* return values:
+	 *  -1 - cancelled
+	 *   0 - finished
+	 *   1 - call again
+	 */
+	int (*EditStringUTF8z)(unsigned int y, unsigned int x, unsigned int w, int l, char *s);
+	/* zero-terminated, forever long dynamic buffer */
+	int (*EditStringUTF8)(unsigned int y, unsigned int x, unsigned int w, char **s);
+
 	/* console resolution */
 	unsigned int TextHeight; /* range 25..inifinity */
 	unsigned int TextWidth;  /* range 80..CONSOLE_MAX_X  CONSOLE_MAX_X is 1024 */

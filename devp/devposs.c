@@ -493,9 +493,6 @@ static int ossDetect (const struct plrDriver_t *driver)
 	int tmp;
 	char *temp;
 
-	snprintf (ossCardName, sizeof(ossCardName), "%s", cfGetProfileString("devpOSS", "path", "/dev/dsp"));
-	snprintf (ossMixerName, sizeof(ossMixerName), "%s", cfGetProfileString("devpOSS", "mixer", "/dev/mixer"));
-
 	if ((temp=getenv("DSP")))
 	{
 		debug_printf("devposs: $DSP found\n");
@@ -592,8 +589,6 @@ static const struct plrDevAPI_t *ossInit (const struct plrDriver_t *driver, cons
 		}
 	}
 
-	revstereo = cfGetProfileBool("devpOSS", "revstereo", 0, 0);
-
 	return &devpOSS;
 }
 
@@ -643,6 +638,10 @@ static int volossSetVolume(struct ocpvolstruct *v, int n)
 
 static int ossPluginInit (struct PluginInitAPI_t *API)
 {
+	snprintf (ossCardName, sizeof(ossCardName), "%s", API->configAPI->GetProfileString("devpOSS", "path", "/dev/dsp"));
+	snprintf (ossMixerName, sizeof(ossMixerName), "%s", API->configAPI->GetProfileString("devpOSS", "mixer", "/dev/mixer"));
+	revstereo = API->configAPI->GetProfileBool("devpOSS", "revstereo", 0, 0);
+
 	API->plrRegisterDriver (&plrOSS);
 
 	return errOk;
