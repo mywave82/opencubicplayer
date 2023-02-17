@@ -323,9 +323,11 @@ int lnkLinkDir(const char *dir)
 		makepath_malloc (&buffer, 0, dir, filenames[n], 0);
 		if (_lnkDoLoad(buffer)<0) // steals the string
 		{
+#ifndef STATIC_CORE /* if we have a static core, the plugins in the autoload are not all critical */
 			for (;n<files;n++)
 				free(filenames[n]);
 			return -1;
+#endif
 		}
 		free (filenames[n]);
 	}
