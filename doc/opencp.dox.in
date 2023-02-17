@@ -768,7 +768,7 @@ You can use all these keys throughout the player except in special modes.
 ^0fm^07 : song message                                     ^0f\\^07 : lock pitch+speed
 ^0fh^07 : help                                        alt-^0fF2^07 : save settings (session
 ^0ff^07 : file-selector                               alt-^0fF3^07 : reset settings    only)
-^0fe^07 : echo menu / editor                          alt-^0fF4^07 : "factory defaults"
+                                                      alt-^0fF4^07 : "factory defaults"
                                               ^0fbackspace^07: toggle interpolation
   ^0f-^07 ^0fModule^07 ^0fKeys^07 ^0f-^07                              ctrl-^0f<-^07 : change filter
      ^0f>^07   : next pattern
@@ -783,7 +783,6 @@ ctrl-^0fhome^07: restart module                       ^0f1^07..^0f0^07 : goto an
   (ctrl-)^0fd^07 : dos-shell (no reminder)               ^0fc^07 : toggle channel mode
    ^0fesc^07 ^0fesc^07 : e-s-c-a-p-e                               (none/short/long/side)
     ^0fins^07, ^0ff^07 : file-selector
-         ^0fe^07 : echo menu / editor
          ^0fz^07 : tog. scr. hgt. (25/50)
     ctrl-^0fz^07 : tog. scr. hgt. (25/30)
      alt-^0fz^07 : tog. scr. wid. (80/132)
