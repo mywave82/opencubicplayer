@@ -3,9 +3,9 @@ include $(TOPDIR)Rules.make
 include Makefile-static
 
 ifeq ($(STATIC_CORE),1)
-all: $(plrbase_so) $(mcpbase_so) $(mchasm_so) #$(mixclip_so)
+all: $(plrbase_so) $(mcpbase_so) $(mchasm_so)
 else
-all: devi$(LIB_SUFFIX) mcpbase$(LIB_SUFFIX) plrbase$(LIB_SUFFIX) mchasm$(LIB_SUFFIX) #mixclip$(LIB_SUFFIX)
+all: plrbase$(LIB_SUFFIX) mcpbase$(LIB_SUFFIX) mchasm$(LIB_SUFFIX)
 endif
 
 #mixclip$(LIB_SUFFIX): $(mixclip_so)
@@ -28,19 +28,15 @@ install:
 uninstall:
 else
 install:
-	$(CP) mcpbase$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-mcpbase$(LIB_SUFFIX)"
-	$(CP) plrbase$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/30-plrbase$(LIB_SUFFIX)"
-#	$(CP) mixclip$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-mixclip$(LIB_SUFFIX)"
+	$(CP) mcpbase$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/20-mcpbase$(LIB_SUFFIX)"
+	$(CP) plrbase$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/20-plrbase$(LIB_SUFFIX)"
 	$(CP) mchasm$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-mchasm$(LIB_SUFFIX)"
-	$(CP) devi$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-devi$(LIB_SUFFIX)"
 
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-mcpbase$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-plrbase$(LIB_SUFFIX)"
-#	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-mixclip$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/20-mcpbase$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/20-plrbase$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-mchasm$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-devi$(LIB_SUFFIX)"
 endif
 
 test: ringbuffer-unit-test mchasm_test smpman_asminctest
@@ -160,9 +156,3 @@ smpman_asminctest.o: smpman_asminctest.c smpman_asminc.c ../config.h
 
 smpman_asminctest: smpman_asminctest.o
 	$(CC) -o $@ $^
-
-#mixclip.o: mixclip.c mixclip.h \
-#	../config.h \
-#	../types.h \
-#	../boot/plinkman.h
-#	$(CC) mixclip.c -o $@ -c

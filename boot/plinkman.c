@@ -488,7 +488,7 @@ int lnkPluginInitAll (struct PluginInitAPI_t *API)
 
 	for (i=0;i<loadlist_n;i++)
 		if (loadlist[i].info->LateInit)
-			if (loadlist[i].info->LateInit()<0)
+			if (loadlist[i].info->LateInit(API)<0)
 				return 1;
 
 	return 0;
@@ -500,7 +500,7 @@ void lnkPluginCloseAll (struct PluginCloseAPI_t *API)
 
 	for (i=0;i<loadlist_n;i++)
 		if (loadlist[i].info->PreClose)
-			loadlist[i].info->PreClose();
+			loadlist[i].info->PreClose(API);
 
 	for (i=0;i<loadlist_n;i++)
 		if (loadlist[i].info->PluginClose)

@@ -42,14 +42,14 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX) test-dwmixqa test-dwmixa test-dwmixfa
 
 install:
-	$(CP) devwnone$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-devwnone$(LIB_SUFFIX)"
-	$(CP) devwmix$(LIB_SUFFIX)  "$(DESTDIR)$(LIBDIR)/autoload/10-devwmix$(LIB_SUFFIX)"
-	$(CP) devwmixf$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-devwmixf$(LIB_SUFFIX)"
+	$(CP) devwnone$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/35-devwnone$(LIB_SUFFIX)"
+	$(CP) devwmix$(LIB_SUFFIX)  "$(DESTDIR)$(LIBDIR)/autoload/35-devwmix$(LIB_SUFFIX)"
+	$(CP) devwmixf$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/35-devwmixf$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-devwnone$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-devwmix$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-devwmixf$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/35-devwnone$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/35-devwmix$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIR)/autoload/35-devwmixf$(LIB_SUFFIX)"
 
 devwnone.o: devwnone.c \
 	../config.h \

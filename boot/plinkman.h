@@ -61,8 +61,8 @@ struct __attribute__ ((aligned (64))) linkinfostruct
 	int (*PreInit)(void); /* high priority init */
 	int (*Init)(void);
 	int (*PluginInit)(struct PluginInitAPI_t *API);
-	int (*LateInit)(void);
-	void (*PreClose)(void);
+	int (*LateInit)(struct PluginInitAPI_t *API);
+	void (*PreClose)(struct PluginCloseAPI_t *API);
 	void (*PluginClose)(struct PluginCloseAPI_t *API);
 	void (*Close)(void);
 	void (*LateClose)(void); /* low priority Close */

@@ -240,13 +240,13 @@ static int fontdebugEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 struct cpimoderegstruct cpiModeFontDebug = {"FontDebug", fontdebugSetMode, fontdebugDraw, fontdebugIProcessKey, fontdebugAProcessKey, fontdebugEvent CPIMODEREGSTRUCT_TAIL};
 
-static int FontDebugInit(void)
+static int FontDebugInit(struct PluginInitAPI_t *API)
 {
 	cpiRegisterDefMode(&cpiModeFontDebug);
 	return errOk;
 }
 
-static void FontDebugClose(void)
+static void FontDebugClose(struct PluginCloseAPI_t *API)
 {
 	cpiUnregisterDefMode(&cpiModeFontDebug);
 }

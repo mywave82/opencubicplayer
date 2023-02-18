@@ -2165,10 +2165,10 @@ static void plmpClose (void)
 }
 
 static int plmpInited = 0;
-static int plmpLateInit(void)
+static int plmpLateInit(struct PluginInitAPI_t *API)
 {
-	plCompoMode=cfGetProfileBool2(cfScreenSec, "screen", "compomode", 0, 0);
-	strncpy(curmodehandle, cfGetProfileString2(cfScreenSec, "screen", "startupmode", "text"), 8);
+	plCompoMode=API->configAPI->GetProfileBool2(cfScreenSec, "screen", "compomode", 0, 0);
+	strncpy(curmodehandle, API->configAPI->GetProfileString2(cfScreenSec, "screen", "startupmode", "text"), 8);
 	curmodehandle[8]=0;
 
 	mdbRegisterReadInfo(&cpiReadInfoReg);
@@ -2186,7 +2186,7 @@ static int plmpLateInit(void)
 	return errOk;
 }
 
-static void plmpPreClose(void)
+static void plmpPreClose(struct PluginCloseAPI_t *API)
 {
 	if (plmpInited)
 	{

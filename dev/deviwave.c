@@ -207,13 +207,13 @@ static const char *dots (const char *src)
 static struct ocpfile_t *setup_devw;
 static void setup_devw_run (void **token, const struct DevInterfaceAPI_t *API);
 
-static int deviwaveLateInit (void)
+static int deviwaveLateInit (struct PluginInitAPI_t *API)
 {
 	const char *def;
 	int i, playrate;
 
-	setup_devw = dev_file_create (
-		dmSetup->basedir,
+	setup_devw = API->dev_file_create (
+		API->dmSetup->basedir,
 		"devw.dev",
 		"Select audio playback driver",
 		"",
@@ -223,9 +223,9 @@ static int deviwaveLateInit (void)
 		0, /* Close */
 		0  /* Destructor */
 	);
-	filesystem_setup_register_file (setup_devw);
+	API->filesystem_setup_register_file (setup_devw);
 
-	playrate=cfGetProfileInt("commandline_s", "r", cfGetProfileInt2(cfSoundSec, "sound", "mixrate", 44100, 10), 10);
+	playrate=API->configAPI->GetProfileInt("commandline_s", "r", API->configAPI->GetProfileInt2(cfSoundSec, "sound", "mixrate", 44100, 10), 10);
 	if (playrate<66)
 	{
 		if (playrate%11)
@@ -234,12 +234,12 @@ static int deviwaveLateInit (void)
 			playrate=playrate*11025/11;
 	}
 	mcpMixMaxRate=playrate;
-	mcpMixProcRate=cfGetProfileInt2(cfSoundSec, "sound", "mixprocrate", 1536000, 10);
+	mcpMixProcRate=API->configAPI->GetProfileInt2(API->configAPI->SoundSec, "sound", "mixprocrate", 1536000, 10);
 
 	fprintf (stderr, "wavetabledevices:\n");
 
 	/* Do we have a specific device specified on the command-line ? */
-	def=cfGetProfileString("commandline_s", "w", "");
+	def=API->configAPI->GetProfileString("commandline_s", "w", "");
 	if (strlen(def))
 	{
 		for (i=0; i < mcpDriverListEntries; i++)
@@ -309,13 +309,13 @@ static int deviwaveLateInit (void)
 	return errOk;
 }
 
-static void deviwavePreClose (void)
+static void deviwavePreClose (struct PluginCloseAPI_t *API)
 {
 	int i;
 
 	if (setup_devw)
 	{
-		filesystem_setup_unregister_file (setup_devw);
+		API->filesystem_setup_unregister_file (setup_devw);
 		setup_devw->unref (setup_devw);
 		setup_devw = 0;
 	}
@@ -543,7 +543,7 @@ static void devw_save_devices (const struct DevInterfaceAPI_t *API)
 		if (mcpDriverList[i].disabled) strcat (tmp, "-");
 		strcat (tmp, mcpDriverList[i].name);
 	}
-	cfSetProfileString (cfSoundSec, "wavetabledevices", tmp);
+	API->configAPI->SetProfileString (API->configAPI->SoundSec, "wavetabledevices", tmp);
 	free (tmp);
 }
 
@@ -670,4 +670,14 @@ static void setup_devw_run (void **token, const struct DevInterfaceAPI_t *API)
 	}
 }
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "mcpbase", .desc = "OpenCP Wavetable Devices System (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .PreInit = deviwavePreInit, .LateInit = deviwaveLateInit, .PreClose = deviwavePreClose, .LateClose = deviwaveLateClose, .sortindex = 30};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo =
+{
+	.name = "mcpbase",
+	.desc = "OpenCP Wavetable Devices System (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad",
+	.ver = DLLVERSION,
+	.PreInit = deviwavePreInit,
+	.LateInit = deviwaveLateInit,
+	.PreClose = deviwavePreClose,
+	.LateClose = deviwaveLateClose,
+	.sortindex = 30
+};

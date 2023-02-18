@@ -207,13 +207,13 @@ static const char *dots (const char *src)
 static struct ocpfile_t *setup_devp;
 static void setup_devp_run (void **token, const struct DevInterfaceAPI_t *API);
 
-static int deviplayLateInit (void)
+static int deviplayLateInit (struct PluginInitAPI_t *API)
 {
 	const char *def;
 	int i;
 
-	setup_devp = dev_file_create (
-		dmSetup->basedir,
+	setup_devp = API->dev_file_create (
+		API->dmSetup->basedir,
 		"devp.dev",
 		"Select audio playback driver",
 		"",
@@ -223,13 +223,13 @@ static int deviplayLateInit (void)
 		0, /* Close */
 		0  /* Destructor */
 	);
-	filesystem_setup_register_file (setup_devp);
+	API->filesystem_setup_register_file (setup_devp);
 
 
 	fprintf (stderr, "playbackdevices:\n");
 
 	/* Do we have a specific device specified on the command-line ? */
-	def=cfGetProfileString("commandline_s", "p", "");
+	def=API->configAPI->GetProfileString("commandline_s", "p", "");
 	if (strlen(def))
 	{
 		for (i=0; i < plrDriverListEntries; i++)
@@ -299,13 +299,13 @@ static int deviplayLateInit (void)
 	return errOk;
 }
 
-static void deviplayPreClose (void)
+static void deviplayPreClose (struct PluginCloseAPI_t *API)
 {
 	int i;
 
 	if (setup_devp)
 	{
-		filesystem_setup_unregister_file (setup_devp);
+		API->filesystem_setup_unregister_file (setup_devp);
 		setup_devp->unref (setup_devp);
 		setup_devp = 0;
 	}
@@ -533,7 +533,7 @@ static void devp_save_devices (const struct DevInterfaceAPI_t *API)
 		if (plrDriverList[i].disabled) strcat (tmp, "-");
 		strcat (tmp, plrDriverList[i].name);
 	}
-	cfSetProfileString (cfSoundSec, "playerdevices", tmp);
+	API->configAPI->SetProfileString (API->configAPI->SoundSec, "playerdevices", tmp);
 	free (tmp);
 }
 
@@ -660,4 +660,14 @@ static void setup_devp_run (void **token, const struct DevInterfaceAPI_t *API)
 	}
 }
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "plrbase", .desc = "OpenCP Player Devices System (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .PreInit = deviplayPreInit, .LateInit = deviplayLateInit, .PreClose = deviplayPreClose, .LateClose = deviplayLateClose, .sortindex = 30};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo =
+{
+	.name = "plrbase",
+	.desc = "OpenCP Player Devices System (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad",
+	.ver = DLLVERSION,
+	.PreInit = deviplayPreInit,
+	.LateInit = deviplayLateInit,
+	.PreClose = deviplayPreClose,
+	.LateClose = deviplayLateClose,
+	.sortindex = 30
+};
