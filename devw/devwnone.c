@@ -493,7 +493,7 @@ static const struct mcpDevAPI_t *devwNoneInit (const struct mcpDriver_t *driver)
 	return &devwNone;
 }
 
-static void devwNoneClose (const struct mcpDriver_t *)
+static void devwNoneClose (const struct mcpDriver_t *driver)
 {
 }
 
