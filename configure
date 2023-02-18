@@ -17552,7 +17552,7 @@ printf "%s\n" "no" >&6; }
 fi
 
 
-		if test "x$UPDATE_DESKTOP_DATBASE" = "xfailed"
+		if test "x$UPDATE_DESKTOP_DATABASE" = "xfailed"
 then :
 
 			as_fn_error $? "Cannot find update-desktop-database (required by x11 and SDL driver)." "$LINENO" 5

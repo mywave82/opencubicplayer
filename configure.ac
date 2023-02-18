@@ -1013,7 +1013,7 @@ AS_IF([test "x$with_desktop_file_install" != "xno"],[
 AS_IF([test "x$with_update_desktop_database" != "xno"],[
 	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"], [
 		AC_CHECK_PROG([UPDATE_DESKTOP_DATABASE], [update-desktop-database], [update-desktop-database], [failed])
-		AS_IF([test "x$UPDATE_DESKTOP_DATBASE" = "xfailed"],[
+		AS_IF([test "x$UPDATE_DESKTOP_DATABASE" = "xfailed"],[
 			AC_MSG_ERROR([Cannot find update-desktop-database (required by x11 and SDL driver).])
 		])
 	])
