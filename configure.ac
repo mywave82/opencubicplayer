@@ -996,7 +996,7 @@ AS_IF([test "x$with_update_mime_database" != "xno"],[
 	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"], [
 		AC_CHECK_PROG([UPDATE_MIME_DATABASE], [update-mime-database], [update-mime-database], [failed])
 		AS_IF([test "x$UPDATE_MIME_DATABASE" = "xfailed"],[
-			AC_MSG_ERROR([Cannot find update-mime-database (required by x11 and SDL driver).])
+			AC_MSG_ERROR([Cannot find update-mime-database (required by x11 and SDL driver). Use --without-update-mime-database to forcefully disable.])
 		])
 	])
 ])
@@ -1005,7 +1005,7 @@ AS_IF([test "x$with_desktop_file_install" != "xno"],[
 	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"], [
 		AC_CHECK_PROG([DESKTOP_FILE_INSTALL], [desktop-file-install], [desktop-file-install], [failed])
 		AS_IF([test "x$DESKTOP_FILE_INSTALL" = "xfailed"],[
-			AC_MSG_ERROR([Cannot find desktop-file-install (required by x11 and SDL driver).])
+			AC_MSG_ERROR([Cannot find desktop-file-install (required by x11 and SDL driver). Use --without-desktop_file_install to forcefully disable.])
 		])
 	])
 ])
@@ -1014,7 +1014,7 @@ AS_IF([test "x$with_update_desktop_database" != "xno"],[
 	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"], [
 		AC_CHECK_PROG([UPDATE_DESKTOP_DATABASE], [update-desktop-database], [update-desktop-database], [failed])
 		AS_IF([test "x$UPDATE_DESKTOP_DATABASE" = "xfailed"],[
-			AC_MSG_ERROR([Cannot find update-desktop-database (required by x11 and SDL driver).])
+			AC_MSG_ERROR([Cannot find update-desktop-database (required by x11 and SDL driver). Use --without-update-desktop-database to forcefully disable.])
 		])
 	])
 ])
