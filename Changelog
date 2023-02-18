@@ -1,3 +1,20 @@
+Version 0.2.103
+===============
+
+ * If an autoload plugin fails to load, do not hard fail if all the core plugins are statically linked in
+ * version 0.2.91 update missed setting the color for XM files in ocp.ini
+ * Fix logic for setting screenmode vs ocp.ini. This is now the scheme and default values that SDL, SDL2 and X11 drivers use:
+   [screen]
+     screentype=5            ; 0=80x25, 1=80x30, 2=80x50, 3=80x60, 4=132x25, 5=132x30, 6=132x50, 7=132x60, 8=custom
+     fontsize=1              ; if screentype=8: 0=8x8, 1=8x16
+     winwidth=1024           ; if screentype=8
+     winheight=768           ; if screentype=8
+ * insttype= setting in ocp.ini was no longer working and it was not maintained between songs.
+ * Remove more external symbols from the devp*.so and devw*.so files, and API updates
+ * setup:/devp/ and setup:/devw/ directories has been replaced with dialogs
+ * Detect that C++17 is available, needed due to libancient
+ * Failed detection of `update-mime-database` did not halt ./configure causing errors later during make instead
+
 Version 0.2.102
 ===============
 
