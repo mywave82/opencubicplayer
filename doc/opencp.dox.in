@@ -838,7 +838,7 @@ in manual mode:
 =================================
 
          ^0ftab^07 - toggle analyser's colors
-           ^0fa^07 - toggle channel mode (mixed output / single channel)
+       alt-^0fa^07 - toggle channel mode (stereo / mono / single channel)
         ^0fhome^07 - set maximum frequency range to appoximately 2500Hz
      ^0fpgup^07/^0fdn^07 - change visible frequency range
 ctrl-^0fpgup^07/^0fdn^07 - change analyser gain
