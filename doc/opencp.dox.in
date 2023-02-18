@@ -802,7 +802,6 @@ ctrl-^0fhome^07: restart module                       ^0f1^07..^0f0^07 : goto an
 ==================
 
           ^0fspace^07 - toggle track mode (follow / manual)
-   ctrl-^0fpgup^07/^0fdn^07 - scroll instruments (for multiview)
            ^0fhome^07 - optimum channel number for current module
 
 in follow mode:
