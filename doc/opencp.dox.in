@@ -770,7 +770,7 @@ You can use all these keys throughout the player except in special modes.
 ^0ff^07 : file-selector                               alt-^0fF3^07 : reset settings    only)
                                                       alt-^0fF4^07 : "factory defaults"
                                               ^0fbackspace^07: toggle interpolation
-  ^0f-^07 ^0fModule^07 ^0fKeys^07 ^0f-^07                              ctrl-^0f<-^07 : change filter
+  ^0f-^07 ^0fModule^07 ^0fKeys^07 ^0f-^07
      ^0f>^07   : next pattern
      ^0f<^07   : previous pattern                        ^0f-^07 ^0fChannel^07 ^0fKeys^07 ^0f-^07
 ctrl-^0f^07   : go 8 rows up                         ^0f^07, ^0f^07 : select previous channel
