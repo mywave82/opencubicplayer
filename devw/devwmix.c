@@ -1002,7 +1002,7 @@ static void mixrRegisterPostProc(struct mixqpostprocregstruct *mode)
 	postprocs=mode;
 }
 
-static const struct mcpDevAPI_t *wmixInit (const struct mcpDriver_t *driver)
+static const struct mcpDevAPI_t *wmixInit (const struct mcpDriver_t *driver, const struct configAPI_t *config)
 {
 	char regname[50];
 	const char *regs;
@@ -1018,12 +1018,12 @@ static const struct mcpDevAPI_t *wmixInit (const struct mcpDriver_t *driver)
 	channelnum=0;
 
 	quality = (driver == &mcpMixerQ);
-	resample = cfGetProfileBool(driver->name, "mixresample", 0, 0);
+	resample = config->GetProfileBool(driver->name, "mixresample", 0, 0);
 
 	fprintf(stderr, "[%s] %s C version (resample=%d)\n", driver->name, quality?"dwmixaq.c":"dwmixa.c", resample);
 
-	regs = cfGetProfileString(driver->name, "postprocs", "");
-	while (cfGetSpaceListEntry(regname, &regs, 49))
+	regs = config->GetProfileString(driver->name, "postprocs", "");
+	while (config->GetSpaceListEntry(regname, &regs, 49))
 	{
 		void *reg=_lnkGetSymbol(regname);
 		fprintf(stderr, "[%s] registering post processing plugin %s\n", driver->name, regname);

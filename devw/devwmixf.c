@@ -946,7 +946,7 @@ static void mixfRegisterPostProc(struct mixfpostprocregstruct *mode)
 	dwmixfa_state.postprocs=mode;
 }
 
-static const struct mcpDevAPI_t *devwMixFInit (const struct mcpDriver_t *driver)
+static const struct mcpDevAPI_t *devwMixFInit (const struct mcpDriver_t *driver, const struct configAPI_t *config)
 {
 	char regname[50];
 	const char *regs;
@@ -963,13 +963,13 @@ static const struct mcpDevAPI_t *devwMixFInit (const struct mcpDriver_t *driver)
 	mastersrnd=0;
 	channelnum=0;
 
-	volramp = cfGetProfileBool("devwMixF", "volramp", 1, 1);
-	declick = cfGetProfileBool("devwMixF", "declick", 1, 1);
+	volramp = config->GetProfileBool("devwMixF", "volramp", 1, 1);
+	declick = config->GetProfileBool("devwMixF", "declick", 1, 1);
 
 	fprintf(stderr, "[devwMixF] C version, (volramp=%d, declick=%d)\n", volramp, declick);
 
-	regs=cfGetProfileString("devwMixF", "postprocs", "");
-	while (cfGetSpaceListEntry(regname, &regs, 49))
+	regs=config->GetProfileString("devwMixF", "postprocs", "");
+	while (config->GetSpaceListEntry(regname, &regs, 49))
 	{
 		void *reg=_lnkGetSymbol(regname);
 		if (reg)

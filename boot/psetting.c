@@ -638,7 +638,7 @@ static void _cfRemoveProfile(const char *app)
 	}
 }
 
-int cfCountSpaceList(const char *str, int maxlen)
+static int _cfCountSpaceList(const char *str, int maxlen)
 {
 	int i=0;
 	while (1)
@@ -657,7 +657,7 @@ int cfCountSpaceList(const char *str, int maxlen)
 	}
 }
 
-int cfGetSpaceListEntry(char *buf, const char **str, int maxlen)
+static int _cfGetSpaceListEntry(char *buf, const char **str, int maxlen)
 {
 	while (1)
 	{
@@ -829,5 +829,14 @@ struct configAPI_t configAPI =
 	_cfGetProfileComment,
 	_cfSetProfileComment,
 	_cfRemoveEntry,
-	_cfRemoveProfile
+	_cfRemoveProfile,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	_cfCountSpaceList,
+	_cfGetSpaceListEntry
 };

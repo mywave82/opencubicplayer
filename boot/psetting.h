@@ -7,10 +7,6 @@ int cfGetConfig (int argc, char *argv[]);
 
 void cfCloseConfig (void);
 
-int cfCountSpaceList(const char *str, int maxlen);
-
-int cfGetSpaceListEntry(char *buf, const char **str, int maxlen);
-
 #define cfGetProfileString  configAPI.GetProfileString
 #define cfGetProfileString2 configAPI.GetProfileString2
 #define cfSetProfileString  configAPI.SetProfileString
@@ -35,6 +31,9 @@ int cfGetSpaceListEntry(char *buf, const char **str, int maxlen);
 #define cfConfigSec         configAPI.ConfigSec
 #define cfSoundSec          configAPI.SoundSec
 #define cfScreenSec         configAPI.ScreenSec
+
+#define cfCountSpaceList    configAPI.CountSpaceList
+#define cfGetSpaceListEntry configAPI.GetSpaceListEntry
 
 extern char *cfProgramDir;
 extern char *cfProgramDirAutoload;
@@ -69,6 +68,9 @@ struct configAPI_t
 	const char *ConfigSec;
 	const char *SoundSec;
 	const char *ScreenSec;
+
+	int (*CountSpaceList)(const char *str, int maxlen);
+	int (*GetSpaceListEntry)(char *buf, const char **str, int maxlen);
 };
 
 extern struct configAPI_t configAPI;

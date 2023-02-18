@@ -225,7 +225,7 @@ static int deviwaveLateInit (struct PluginInitAPI_t *API)
 	);
 	API->filesystem_setup_register_file (setup_devw);
 
-	playrate=API->configAPI->GetProfileInt("commandline_s", "r", API->configAPI->GetProfileInt2(cfSoundSec, "sound", "mixrate", 44100, 10), 10);
+	playrate=API->configAPI->GetProfileInt("commandline_s", "r", API->configAPI->GetProfileInt2(API->configAPI->SoundSec, "sound", "mixrate", 44100, 10), 10);
 	if (playrate<66)
 	{
 		if (playrate%11)
@@ -252,7 +252,7 @@ static int deviwaveLateInit (struct PluginInitAPI_t *API)
 					mcpDriverList[i].probed = 1;
 					if (mcpDriverList[i].detected)
 					{
-						mcpDevAPI = mcpDriverList[i].driver->Open (mcpDriverList[i].driver);
+						mcpDevAPI = mcpDriverList[i].driver->Open (mcpDriverList[i].driver, &configAPI);
 						if (mcpDevAPI)
 						{
 							fprintf (stderr, " %-8s: %s (selected due to -sw commandline)\n", mcpDriverList[i].name, dots(""));
@@ -285,7 +285,7 @@ static int deviwaveLateInit (struct PluginInitAPI_t *API)
 		mcpDriverList[i].probed = 1;
 		if (mcpDriverList[i].detected)
 		{
-			mcpDevAPI = mcpDriverList[i].driver->Open (mcpDriverList[i].driver);
+			mcpDevAPI = mcpDriverList[i].driver->Open (mcpDriverList[i].driver, &configAPI);
 			if (mcpDevAPI)
 			{
 				fprintf (stderr, " %-8s: %s (detected)\n", mcpDriverList[i].name, dots(mcpDriverList[i].driver->description));
@@ -602,7 +602,7 @@ static void setup_devw_run (void **token, const struct DevInterfaceAPI_t *API)
 						}
 						if (mcpDriverList[dsel].detected)
 						{
-							mcpDevAPI = mcpDriverList[dsel].driver->Open (mcpDriverList[dsel].driver);
+							mcpDevAPI = mcpDriverList[dsel].driver->Open (mcpDriverList[dsel].driver, &configAPI);
 							if (mcpDevAPI)
 							{
 								mcpDriver = mcpDriverList[dsel].driver;
