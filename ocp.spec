@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 0.2.102
+%define version 0.2.103
 
 # Default to _with_libmad if neither _with_libmad or _without_libmad is defined
 %{!?_with_libmad: %{!?_without_libmad: %define _with_libmad --with-libmad}}
@@ -42,34 +42,27 @@ frontend, with some few optional features in graphical. Plays modules, sids,
 wave and mp3
 
 %changelog
- Changes from version 0.2.101 to 0.2.102:
- * IT files did not detect reverse jumps are song being looped
- * IT playback plugin did not reset all state variables on load
- * XDG Base Directory compliance
-   * Comply with both $XDG_CONFIG_HOME and $XDG_DATA_HOME
-   * Migrate $HOME/.ocp/
- * Add support for files compressed on Amiga systems with the system built-in
-   compression routines using the library known as 'ancient'
- * Updates for building on Haiku
- * If iconv CP437 fails to load, fall back to CP850 and then ASCII
- * Some few calls to iconv() were not protected against "NULL"
- * Add MIME for entries missing in the freedesktop MIME database
- * Update desktop file with additional MIME types
- * Call update_mime_database and update_desktop_database
- * Starting ocp with files as arguments stopped no loger was working
- * If a file fails to load, display error message in the fileselector
- * Replace setup:/alsa/*.dev files with a single setup:/alsaconfig.dev dialog
- * nprintf() didn't limit UTF-8 strings correctly
- * Only accept .TAR files that contains the ustar magic
- * If playback plugin are not operational, multiple corner-case issues has now
-   been fixed
- * When editing fixed UTF-8 text-fields, backspace / delete-key would not
-   unreserve the buffer-space, artificailly shrinking the available text until
-   a new edit was initialized
- * Add the rReverb and iReverb plugins from the original DOS project, with some
-   additional fixes
- * Show both panning/balance and chorus/reverb at the same time if they both can
-   be active and can fit on screen
+ Changes from version 0.2.102 to 0.2.103:
+
+ * If an autoload plugin fails to load, do not hard fail if all the core plugins
+   are statically linked in.
+ * version 0.2.91 update missed setting the color for XM files in ocp.ini
+ * Fix logic for setting screenmode vs ocp.ini. This is now the scheme and
+   default values that SDL, SDL2 and X11 drivers use:
+   [screen]
+     screentype=5            ; 0=80x25, 1=80x30, 2=80x50, 3=80x60, 4=132x25, 5=132x30, 6=132x50, 7=132x60, 8=custom
+     fontsize=1              ; if screentype=8: 0=8x8, 1=8x16
+     winwidth=1024           ; if screentype=8
+     winheight=768           ; if screentype=8
+ * insttype= setting in ocp.ini was no longer working and it was not maintained
+   between songs.
+ * Remove more external symbols from the devp*.so and devw*.so files, and API
+   updates.
+ * setup:/devp/ and setup:/devw/ directories has been replaced with dialogs
+ * Detect that C++17 is available, needed due to libancient.
+ * Failed detection of `update-mime-database` did not halt ./configure causing
+   errors later during make instead.
+ * Update libsidplayfp to the latest version.
 
 %prep
 %setup -q -n %{name}-%{version}
