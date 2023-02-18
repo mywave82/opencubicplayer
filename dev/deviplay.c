@@ -63,8 +63,6 @@ static int                          plrDriverListNone;
 const struct plrDriver_t *plrDriver;
 const struct plrDevAPI_t *plrDevAPI;
 
-static struct preprocregstruct plrPreprocess;
-
 static int deviplayDriverListInsert (int insertat, const char *name, int length)
 {
 	int i;
@@ -213,8 +211,6 @@ static int deviplayLateInit (void)
 {
 	const char *def;
 	int i;
-
-	plRegisterPreprocess (&plrPreprocess);
 
 	setup_devp = dev_file_create (
 		dmSetup->basedir,
@@ -664,10 +660,4 @@ static void setup_devp_run (void **token, const struct DevInterfaceAPI_t *API)
 	}
 }
 
-static void plrPrep(struct moduleinfostruct *m, struct ocpfilehandle_t **bp)
-{
-	// plrResetDevice ();
-}
-
-static struct preprocregstruct plrPreprocess = {plrPrep PREPROCREGSTRUCT_TAIL};
 DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "plrbase", .desc = "OpenCP Player Devices System (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .PreInit = deviplayPreInit, .LateInit = deviplayLateInit, .PreClose = deviplayPreClose, .LateClose = deviplayLateClose, .sortindex = 30};

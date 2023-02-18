@@ -63,8 +63,6 @@ static int                          mcpDriverListNone;
 const struct mcpDriver_t *mcpDriver;
 const struct mcpDevAPI_t *mcpDevAPI;
 
-static struct preprocregstruct mcpPreprocess;
-
 static int deviwaveDriverListInsert (int insertat, const char *name, int length)
 {
 	int i;
@@ -213,8 +211,6 @@ static int deviwaveLateInit (void)
 {
 	const char *def;
 	int i, playrate;
-
-	plRegisterPreprocess (&mcpPreprocess);
 
 	setup_devw = dev_file_create (
 		dmSetup->basedir,
@@ -674,14 +670,4 @@ static void setup_devw_run (void **token, const struct DevInterfaceAPI_t *API)
 	}
 }
 
-static void mcpPrep(struct moduleinfostruct *info, struct ocpfilehandle_t **bp)
-{
-	// mcpResetDevice();
-/*
-	if (info->gen.moduleflags&MDB_BIGMODULE)           TODO
-		mcpSetDevice(cfGetProfileString2(cfSoundSec, "sound", "bigmodules", ""), 0);
-*/
-}
-
-static struct preprocregstruct mcpPreprocess = {mcpPrep PREPROCREGSTRUCT_TAIL};
 DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "mcpbase", .desc = "OpenCP Wavetable Devices System (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .PreInit = deviwavePreInit, .LateInit = deviwaveLateInit, .PreClose = deviwavePreClose, .LateClose = deviwaveLateClose, .sortindex = 30};

@@ -108,8 +108,6 @@ static char *curmask;
 
 struct dmDrive *dmCurDrive=0;
 
-struct preprocregstruct *plPreprocess = 0;
-
 static int fsSavePlayList(const struct modlist *ml);
 
 static void fsDraw(void);
@@ -3963,33 +3961,4 @@ void plFindInterface(struct moduletype modtype, const struct interfacestruct **i
 	*in = 0;
 	*cp = 0;
 	return;
-}
-
-void plRegisterPreprocess(struct preprocregstruct *r)
-{
-	r->next=plPreprocess;
-	plPreprocess=r;
-}
-
-void plUnregisterPreprocess(struct preprocregstruct *r)
-{
-	struct preprocregstruct *curr = plPreprocess;
-
-	if (curr == r)
-	{
-		plPreprocess = r->next;
-		return;
-	}
-
-	while (curr)
-	{
-		if (curr->next == r)
-		{
-			curr->next = curr->next->next;
-			return;
-		}
-		curr = curr->next;
-	}
-
-	fprintf(stderr, __FILE__ ": Failed to unregister a preprocregstruct %p\n", r);
 }

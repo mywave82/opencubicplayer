@@ -48,14 +48,6 @@ uint8_t fsModTypeColor(struct moduletype modtype); /* replaces fsTypeCols[] */
 extern void fsRegisterExt(const char *ext);
 extern int fsIsModule(const char *ext);
 
-struct preprocregstruct
-{
-	void (*Preprocess)(struct moduleinfostruct *info, struct ocpfilehandle_t **f);
-	struct preprocregstruct *next;
-};
-
-#define PREPROCREGSTRUCT_TAIL ,0
-
 typedef enum {
 	interfaceReturnContinue=0,
 	interfaceReturnNextAuto=1,
@@ -86,10 +78,6 @@ struct DevInterface
 void plRegisterInterface(struct interfacestruct *interface);
 void plUnregisterInterface(struct interfacestruct *interface);
 void plFindInterface(struct moduletype modtype, const struct interfacestruct **i, const struct cpifaceplayerstruct **cp);
-
-extern struct preprocregstruct *plPreprocess;
-extern void plRegisterPreprocess(struct preprocregstruct *r);
-extern void plUnregisterPreprocess(struct preprocregstruct *r);
 
 #define RD_PUTSUBS 1
 #define RD_ARCSCAN 2

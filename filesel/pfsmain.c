@@ -247,8 +247,6 @@ static int _fsMain(int argc, char *argv[])
 
 	while (1)
 	{
-		struct preprocregstruct *prep;
-
 /*
 		while (ekbhit())
 		{
@@ -304,11 +302,6 @@ static int _fsMain(int argc, char *argv[])
 			nextintrparam = 0;
 
 			stop=interfaceReturnContinue;
-
-			for (prep=plPreprocess; prep; prep=prep->next)
-			{
-				prep->Preprocess(&plModuleInfo, &thisf);
-			}
 
 			if (!plintr->Init(&plModuleInfo, thisf, plintrparam))
 			{
