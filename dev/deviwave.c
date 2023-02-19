@@ -35,6 +35,7 @@
 #include "boot/psetting.h"
 #include "dev/deviwave.h"
 #include "dev/mcp.h"
+#include "dev/mix.h"
 #include "dev/player.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
@@ -269,7 +270,7 @@ static int deviwaveLateInit (struct PluginInitAPI_t *API)
 					mcpDriverList[i].probed = 1;
 					if (mcpDriverList[i].detected)
 					{
-						mcpDevAPI = mcpDriverList[i].driver->Open (mcpDriverList[i].driver, &configAPI);
+						mcpDevAPI = mcpDriverList[i].driver->Open (mcpDriverList[i].driver, &configAPI, mixAPI);
 						if (mcpDevAPI)
 						{
 							fprintf (stderr, " %-8s: %s (selected due to -sw commandline)\n", mcpDriverList[i].name, dots(""));
@@ -302,7 +303,7 @@ static int deviwaveLateInit (struct PluginInitAPI_t *API)
 		mcpDriverList[i].probed = 1;
 		if (mcpDriverList[i].detected)
 		{
-			mcpDevAPI = mcpDriverList[i].driver->Open (mcpDriverList[i].driver, &configAPI);
+			mcpDevAPI = mcpDriverList[i].driver->Open (mcpDriverList[i].driver, &configAPI, mixAPI);
 			if (mcpDevAPI)
 			{
 				fprintf (stderr, " %-8s: %s (detected)\n", mcpDriverList[i].name, dots(mcpDriverList[i].driver->description));
@@ -619,7 +620,7 @@ static void setup_devw_run (void **token, const struct DevInterfaceAPI_t *API)
 						}
 						if (mcpDriverList[dsel].detected)
 						{
-							mcpDevAPI = mcpDriverList[dsel].driver->Open (mcpDriverList[dsel].driver, &configAPI);
+							mcpDevAPI = mcpDriverList[dsel].driver->Open (mcpDriverList[dsel].driver, &configAPI, mixAPI);
 							if (mcpDevAPI)
 							{
 								mcpDriver = mcpDriverList[dsel].driver;

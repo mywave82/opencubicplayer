@@ -245,13 +245,13 @@ static void mixGetRealMasterVolume(int *l, int *r)
 	*r=(*r>255)?255:*r;
 }
 
-void mixSetAmplify(int amp)
+static void mixSetAmplify (struct cpifaceSessionAPI_t *cpifaceSession, int amp)
 {
 	amplify=amp*8;
 	calcamptab((amplify*channum)>>11);
 }
 
-int mixInit(void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t rate), int masterchan, unsigned int chn, int amp, struct cpifaceSessionAPI_t *cpifaceSession)
+static int mixInit (struct cpifaceSessionAPI_t *cpifaceSession, void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t rate), int masterchan, unsigned int chn, int amp)
 {
 	int i,j;
 
@@ -295,7 +295,7 @@ int mixInit(void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t ra
 	return 1;
 }
 
-void mixClose(void)
+static void mixClose (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	free(channels);
 	free(mixbuf);
@@ -310,3 +310,11 @@ void mixClose(void)
 	mixIntrpolTab = 0;
 	mixIntrpolTab2 = 0;
 }
+
+static const struct mixAPI_t _mixAPI =
+{
+	mixInit,
+	mixClose,
+	mixSetAmplify,
+};
+const struct mixAPI_t *mixAPI = &_mixAPI;

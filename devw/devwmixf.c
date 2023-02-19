@@ -66,6 +66,8 @@
 
 static const struct mcpDriver_t mcpFMixer;
 
+static const struct mixAPI_t *mix;
+
 static int dopause;
 static uint32_t playsamps;
 static uint32_t pausesamps;
@@ -711,7 +713,7 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 		case mcpMasterAmplify:
 			amplify=val;
 			if (channelnum)
-				mixSetAmplify(amplify);
+				mix->mixSetAmplify (cpifaceSession, amplify);
 			calcvols();
 			break;
 		case mcpMasterPause:
@@ -856,7 +858,7 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t 
 		goto error_out;
 	}
 
-	if (!mixInit(GetMixChannel, 0, chan, amplify, cpifaceSession))
+	if (!mix->mixInit (cpifaceSession, GetMixChannel, 0, chan, amplify))
 	{
 		goto error_out_plrDevAPI_Play;
 	}
@@ -898,7 +900,7 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t 
 
 	return 1;
 
-	//mixClose();
+	// mix->mixClose (cpifaceSession);
 error_out_plrDevAPI_Play:
 	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 error_out:
@@ -918,7 +920,7 @@ static void devwMixFClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	channelnum=0;
 
-	mixClose();
+	mix->mixClose (cpifaceSession);
 
 	for (mode=dwmixfa_state.postprocs; mode; mode=mode->next)
 		if (mode->Close) mode->Close();
@@ -946,10 +948,12 @@ static void mixfRegisterPostProc(struct mixfpostprocregstruct *mode)
 	dwmixfa_state.postprocs=mode;
 }
 
-static const struct mcpDevAPI_t *devwMixFInit (const struct mcpDriver_t *driver, const struct configAPI_t *config)
+static const struct mcpDevAPI_t *devwMixFInit (const struct mcpDriver_t *driver, const struct configAPI_t *config, const struct mixAPI_t *mixAPI)
 {
 	char regname[50];
 	const char *regs;
+
+	mix = mixAPI;
 
 	calcinterpoltab();
 

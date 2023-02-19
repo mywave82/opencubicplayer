@@ -60,6 +60,8 @@
 static const struct mcpDriver_t mcpMixer;
 static const struct mcpDriver_t mcpMixerQ;
 
+static const struct mixAPI_t *mix;
+
 static struct mixqpostprocregstruct *postprocs;
 
 static int quality;
@@ -115,7 +117,7 @@ static int masterchr;
 
 static uint32_t IdleCache; /* To prevent devpDisk lockup */
 
-static int mixProcKey(uint16_t key);
+static int devwMixProcKey (uint16_t key);
 
 static void calcinterpoltabr(void)
 	/* used by OpenPlayer */
@@ -702,7 +704,7 @@ static void devwMixSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int 
 			if (channelnum)
 			{
 				calcamptab(amplify);
-				mixSetAmplify(amplify);
+				mix->mixSetAmplify (cpifaceSession, amplify);
 			}
 			break;
 		case mcpMasterPause:
@@ -888,7 +890,7 @@ static int devwMixOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *
 		goto error_out;
 	}
 
-	if (!mixInit(GetMixChannel, resample, chan, amplify, cpifaceSession))
+	if (!mix->mixInit (cpifaceSession, GetMixChannel, resample, chan, amplify))
 	{
 		goto error_out_plrDevAPI_Play;
 	}
@@ -931,7 +933,7 @@ static int devwMixOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *
 
 	return 1;
 
-	// mixClose();
+	// mix->mixClose (cpifaceSession);
 error_out_plrDevAPI_Play:
 	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 error_out:
@@ -959,7 +961,7 @@ static void devwMixClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	channelnum=0;
 
-	mixClose();
+	mix->mixClose (cpifaceSession);
 
 	for (mode=postprocs; mode; mode=mode->next)
 		if (mode->Close)
@@ -993,7 +995,7 @@ static const struct mcpDevAPI_t devwMix =
 	devwMixLoadSamples,
 	devwMixIdle,
 	devwMixClosePlayer,
-	mixProcKey
+	devwMixProcKey
 };
 
 static void mixrRegisterPostProc(struct mixqpostprocregstruct *mode)
@@ -1002,10 +1004,12 @@ static void mixrRegisterPostProc(struct mixqpostprocregstruct *mode)
 	postprocs=mode;
 }
 
-static const struct mcpDevAPI_t *wmixInit (const struct mcpDriver_t *driver, const struct configAPI_t *config)
+static const struct mcpDevAPI_t *wmixInit (const struct mcpDriver_t *driver, const struct configAPI_t *config, const struct mixAPI_t *mixAPI)
 {
 	char regname[50];
 	const char *regs;
+
+	mix = mixAPI;
 
 	amplify=65535;
 	relspeed=256;
@@ -1045,7 +1049,7 @@ static int wmixDetect (const struct mcpDriver_t *driver)
 	return 1;
 }
 
-static int mixProcKey(uint16_t key)
+static int devwMixProcKey (uint16_t key)
 {
 	struct mixqpostprocregstruct *mode;
 	for (mode=postprocs; mode; mode=mode->next)

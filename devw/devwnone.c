@@ -51,6 +51,8 @@ static const unsigned long samprate=44100;
 
 static const struct mcpDriver_t mcpNone;
 
+static const struct mixAPI_t *mix;
+
 struct channel
 {
 	void *samp;
@@ -295,7 +297,7 @@ static void devwNoneSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 		case mcpMasterAmplify:
 			amplify=val;
 			if (channelnum)
-				mixSetAmplify(amplify);
+				mix->mixSetAmplify (cpifaceSession, amplify);
 			break;
 		case mcpMasterPause:
 			pause=val;
@@ -427,7 +429,7 @@ static int devwNoneOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t 
 
 	playerproc=proc;
 
-	if (!mixInit(GetMixChannel, 1, chan, amplify, cpifaceSession))
+	if (!mix->mixInit(cpifaceSession, GetMixChannel, 1, chan, amplify))
 	{
 		free(channels);
 		channels=0;
@@ -463,7 +465,7 @@ static int devwNoneOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t 
 static void devwNoneClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	channelnum=0;
-	mixClose();
+	mix->mixClose (cpifaceSession);
 	free(channels);
 	channels=0;
 	cpifaceSession->mcpActive = 0;
@@ -478,8 +480,10 @@ static const struct mcpDevAPI_t devwNone =
 	0 /* ProcessKey */
 };
 
-static const struct mcpDevAPI_t *devwNoneInit (const struct mcpDriver_t *driver, const struct configAPI_t *config)
+static const struct mcpDevAPI_t *devwNoneInit (const struct mcpDriver_t *driver, const struct configAPI_t *config, const struct mixAPI_t *mixAPI)
 {
+	mix = mixAPI;
+
 	amplify=65535;
 	relspeed=256;
 	relpitch=256;

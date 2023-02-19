@@ -27,10 +27,13 @@ struct mixchannel
 };
 
 struct cpifaceSessionAPI_t; /* cpiface.h */
-
-extern int mixInit(void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t rate), int resamp, unsigned int chan, int amp, struct cpifaceSessionAPI_t *cpifaceSession);
-extern void mixClose(void);
-extern void mixSetAmplify(int amp);
+struct mixAPI_t
+{
+	int  (*mixInit)      (struct cpifaceSessionAPI_t *cpifaceSession, void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t rate), int resamp, unsigned int chan, int amp);
+	void (*mixClose)     (struct cpifaceSessionAPI_t *cpifaceSession);
+	void (*mixSetAmplify)(struct cpifaceSessionAPI_t *cpifaceSession, int amp);
+};
+extern const struct mixAPI_t *mixAPI;
 
 #define MIX_PLAYING 1
 #define MIX_MUTE 2

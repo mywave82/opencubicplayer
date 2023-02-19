@@ -77,6 +77,7 @@ deviwave.o: deviwave.c \
 	../boot/psetting.h \
 	../dev/deviwave.h \
 	../dev/mcp.h \
+	../dev/mix.h \
 	../dev/player.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
