@@ -776,12 +776,12 @@ You can use all these keys throughout the player except in special modes.
 ctrl-^0f^07   : go 8 rows up                         ^0f^07, ^0f^07 : select previous channel
 ctrl-^0f^07   : go 8 rows down                       ^0f^07, ^0f^07 : select next channel
 ctrl-^0fhome^07: restart module                       ^0f1^07..^0f0^07 : goto and toggle channel
-
-  ^0f-^07 ^0fPlayer^07 ^0fKeys^07 ^0f-^07                                  ^0fq^07 : toggle selected channel
-    ^0freturn^07 : play next module                      ^0fs^07 : solo selected channel
-  (ctrl-)^0fp^07 : pause module (immediate)       ctrl-^0fq^07/^0fs^07 : turn on all channels
-         ^0fd^07 : open a shell                          ^0fc^07 : toggle channel mode
-   ^0fesc^07 ^0fesc^07 : e-s-c-a-p-e                               (none/short/long/side)
+                                                   ^0fq^07 : toggle selected channel
+  ^0f-^07 ^0fPlayer^07 ^0fKeys^07 ^0f-^07                                  ^0fs^07 : solo selected channel
+    ^0freturn^07 : play next module               ctrl-^0fq^07/^0fs^07 : turn on all channels
+  (ctrl-)^0fp^07 : pause module (immediate)              ^0fc^07 : toggle channel mode
+         ^0fd^07 : open a shell                              (none/short/long/side)
+   ^0fesc^07 ^0fesc^07 : e-s-c-a-p-e
     ^0fins^07, ^0ff^07 : file selector
          ^0fz^07 : tog. font (8x8/8x16)
     ctrl-^0fz^07 : tog. scr. minor
