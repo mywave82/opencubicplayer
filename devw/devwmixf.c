@@ -331,14 +331,14 @@ static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	if (dopause)
 	{
-		plrDevAPI->Pause (1);
+		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
 		void *targetbuf;
 		unsigned int targetlength; /* in samples */
 
-		plrDevAPI->Pause (0);
+		cpifaceSession->plrDevAPI->Pause (0);
 
-		plrDevAPI->GetBuffer (&targetbuf, &targetlength);
+		cpifaceSession->plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 		while (targetlength)
 		{
@@ -455,9 +455,9 @@ static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 
 			playsamps += targetlength;
 
-			plrDevAPI->CommitBuffer (targetlength);
+			cpifaceSession->plrDevAPI->CommitBuffer (targetlength);
 
-			plrDevAPI->GetBuffer (&targetbuf, &targetlength);
+			cpifaceSession->plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 			if (dopause)
 			{
@@ -466,12 +466,12 @@ static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 		}
 	}
 
-	IdleCache = plrDevAPI->Idle();
+	IdleCache = cpifaceSession->plrDevAPI->Idle();
 
 	clipbusy--;
 }
 
-static void devwMixFSET(int ch, int opt, int val)
+static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val)
 {
 	struct channel *chn;
 	if (ch>=channelnum)
@@ -628,7 +628,7 @@ static void devwMixFSET(int ch, int opt, int val)
 			break;
 		case mcpCPitch:
 			chn->orgfrq=8363;
-			chn->orgdiv=mcpGetFreq8363(-val);
+			chn->orgdiv=cpifaceSession->mcpAPI->GetFreq8363(-val);
 			calcstep(chn);
 			break;
 		case mcpCPitchFix:
@@ -803,9 +803,9 @@ static void getrealvol(int ch, int *l, int *r)
 	*r=(dwmixfa_state.volr>16319)?255:(dwmixfa_state.volr/64.0);
 }
 
-static int devwMixFLoadSamples(struct sampleinfo *sil, int n)
+static int devwMixFLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct sampleinfo *sil, int n)
 {
-	if (!mcpReduceSamples(sil, n, 0x40000000, mcpRedToMono|mcpRedToFloat|mcpRedNoPingPong))
+	if (!cpifaceSession->mcpAPI->ReduceSamples(sil, n, 0x40000000, mcpRedToMono|mcpRedToFloat|mcpRedNoPingPong))
 		return 0;
 
 #ifdef MIXER_DEBUG
@@ -832,7 +832,7 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t 
 	if (chan>MIXF_MAXCHAN)
 		chan=MIXF_MAXCHAN;
 
-	if (!plrDevAPI)
+	if (!cpifaceSession->plrDevAPI)
 	{
 		return 0;
 	}
@@ -851,7 +851,7 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t 
 	currentrate=mcpMixProcRate/chan;
 	dwmixfa_state.samprate=(currentrate>mcpMixMaxRate)?mcpMixMaxRate:currentrate;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrDevAPI->Play (&dwmixfa_state.samprate, &format, source_file, cpifaceSession))
+	if (!cpifaceSession->plrDevAPI->Play (&dwmixfa_state.samprate, &format, source_file, cpifaceSession))
 	{
 		goto error_out;
 	}
@@ -900,7 +900,7 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t 
 
 	//mixClose();
 error_out_plrDevAPI_Play:
-	plrDevAPI->Stop (cpifaceSession);
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 error_out:
 	free (dwmixfa_state.tempbuf); dwmixfa_state.tempbuf = 0;
 	free (channels);              channels = 0;
@@ -911,9 +911,9 @@ static void devwMixFClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct mixfpostprocregstruct *mode;
 
-	if (plrDevAPI)
+	if (cpifaceSession->plrDevAPI)
 	{
-		plrDevAPI->Stop (cpifaceSession);
+		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 	}
 
 	channelnum=0;

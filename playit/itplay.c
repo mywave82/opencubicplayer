@@ -1433,35 +1433,35 @@ static void putchandata (struct cpifaceSessionAPI_t *cpifaceSession, struct itpl
 {
 	if (p->newsamp!=-1)
 	{
-		cpifaceSession->mcpSet (p->no, mcpCReset, 0);
-		cpifaceSession->mcpSet (p->no, mcpCInstrument, p->newsamp);
+		cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCReset, 0);
+		cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCInstrument, p->newsamp);
 		p->newsamp=-1;
 	}
 	if (p->newpos!=-1)
 	{
-		cpifaceSession->mcpSet (p->no, mcpCPosition, p->newpos);
-		cpifaceSession->mcpSet (p->no, mcpCLoop, 1);
-		cpifaceSession->mcpSet (p->no, mcpCDirect, 0);
-		cpifaceSession->mcpSet (p->no, mcpCStatus, 1);
+		cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCPosition, p->newpos);
+		cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCLoop, 1);
+		cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCDirect, 0);
+		cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCStatus, 1);
 		p->newpos=-1;
 		p->dead=0;
 	}
 	if (p->noteoff&&!p->looptype)
 	{
-		cpifaceSession->mcpSet (p->no, mcpCLoop, 2);
+		cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCLoop, 2);
 		p->looptype=1;
 	}
 	if (this->linear)
-		cpifaceSession->mcpSet (p->no, mcpCPitch, p->fpitch);
+		cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCPitch, p->fpitch);
 	else
-		cpifaceSession->mcpSet (p->no, mcpCPitch6848, -p->fpitch);
+		cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCPitch6848, -p->fpitch);
 
-	cpifaceSession->mcpSet (p->no, mcpCVolume, p->fvol);
-	cpifaceSession->mcpSet (p->no, mcpCPanning, p->fpan);
-	cpifaceSession->mcpSet (p->no, mcpCSurround, p->srnd);
-	cpifaceSession->mcpSet (p->no, mcpCMute, this->channels[p->lch].mute);
-	cpifaceSession->mcpSet (p->no, mcpCFilterFreq, p->fcutoff);
-	cpifaceSession->mcpSet (p->no, mcpCFilterRez, p->reso);
+	cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCVolume, p->fvol);
+	cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCPanning, p->fpan);
+	cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCSurround, p->srnd);
+	cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCMute, this->channels[p->lch].mute);
+	cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCFilterFreq, p->fcutoff);
+	cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCFilterRez, p->reso);
 }
 
 void __attribute__ ((visibility ("internal"))) mutechan(struct itplayer *this, int c, int m)
@@ -1539,7 +1539,7 @@ static void getproctime (struct cpifaceSessionAPI_t *cpifaceSession, struct itpl
 
 static void putglobdata (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)
 {
-	cpifaceSession->mcpSet (-1, mcpGSpeed, 256*2*this->tempo/5);
+	cpifaceSession->mcpSet (cpifaceSession, -1, mcpGSpeed, 256*2*this->tempo/5);
 }
 
 static void putque(struct itplayer *this, int type, int val1, int val2)
@@ -1635,7 +1635,7 @@ static void checkchan (struct cpifaceSessionAPI_t *cpifaceSession, struct itplay
 		if (this->channels[p->lch].pch==p)
 			this->channels[p->lch].pch=0;
 		p->lch=-1;
-		cpifaceSession->mcpSet(p->no, mcpCReset, 0);
+		cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCReset, 0);
 		return;
 	}
 }
@@ -1646,7 +1646,7 @@ static void playtick (struct cpifaceSessionAPI_t *cpifaceSession, struct itplaye
 
 	if (this->looped&&this->noloop)
 	{
-		cpifaceSession->mcpSet (-1, mcpMasterPause, 1);
+		cpifaceSession->mcpSet (cpifaceSession, -1, mcpMasterPause, 1);
 		return;
 	}
 
@@ -1813,7 +1813,7 @@ static void playtick (struct cpifaceSessionAPI_t *cpifaceSession, struct itplaye
 
 int __attribute__ ((visibility ("internal"))) loadsamples (struct cpifaceSessionAPI_t *cpifaceSession, struct it_module *m)
 {
-	return cpifaceSession->mcpDevAPI->LoadSamples(m->sampleinfos, m->nsampi);
+	return cpifaceSession->mcpDevAPI->LoadSamples (cpifaceSession, m->sampleinfos, m->nsampi);
 }
 
 int __attribute__ ((visibility ("internal"))) play (struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)

@@ -845,7 +845,7 @@ static void aySetVolume(void)
 		volr=(volr*(64-bal))>>6;
 }
 
-static void aySet (int ch, int opt, int val)
+static void aySet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val)
 {
 	switch (opt)
 	{

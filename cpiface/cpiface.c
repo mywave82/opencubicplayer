@@ -71,7 +71,6 @@
 #include "filesel/filesystem-unix.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
-#include "stuff/freq.h"
 #include "stuff/imsrtns.h"
 #include "stuff/framelock.h"
 #include "stuff/latin1.h"
@@ -114,14 +113,6 @@ static void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t *cpifaceSession,
                                     const uint8_t                  chanX,
                                     const uint8_t                  chanY, /* set to zero to disable */
                                     const uint_fast16_t            seconds);
-
-static struct mcpAPI_t mcpAPI =
-{
-	mcpGetFreq6848,
-	mcpGetFreq8363,
-	mcpGetNote6848,
-	mcpGetNote8363
-};
 
 static struct drawHelperAPI_t drawHelperAPI =
 {
@@ -2265,7 +2256,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	bzero (&cpifaceSessionAPI, sizeof (cpifaceSessionAPI));
 	cpifaceSessionAPI.Public.plrDevAPI = plrDevAPI;
 	cpifaceSessionAPI.Public.ringbufferAPI = &ringbufferAPI;
-	cpifaceSessionAPI.Public.mcpAPI = &mcpAPI;
+	cpifaceSessionAPI.Public.mcpAPI = mcpAPI;
 	cpifaceSessionAPI.Public.mcpDevAPI = mcpDevAPI;
 	cpifaceSessionAPI.Public.drawHelperAPI = &drawHelperAPI;
 	cpifaceSessionAPI.Public.configAPI = &configAPI;

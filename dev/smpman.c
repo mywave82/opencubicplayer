@@ -41,7 +41,7 @@
 
 #define SAMPEND 8
 
-static unsigned short abstab[0x200];
+static uint16_t abstab[0x200];
 
 static int sampsizefac(int type)
 {
@@ -782,7 +782,7 @@ static int convertsample(struct sampleinfo *s)
 	return 1;
 }
 
-int mcpReduceSamples(struct sampleinfo *si, int n, long mem, int opt)
+int mcpReduceSamples(struct sampleinfo *si, int n, long mem, enum mcpRed opt)
 {
 	struct sampleinfo *samples=si;
 	int32_t memmax=mem;

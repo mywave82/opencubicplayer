@@ -857,7 +857,7 @@ static void flacSetVolume(void)
 		voll=(voll*(64-bal))>>6;
 }
 
-static void flacSet (int ch, int opt, int val)
+static void flacSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val)
 {
 	switch (opt)
 	{

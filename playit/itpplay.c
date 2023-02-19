@@ -72,7 +72,7 @@ static void togglepausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 	{ /* we are in full pause already */
 		pausefadestart = clock_ms();
 		starttime = starttime + pausefadestart - pausetime; /* we are unpausing, so push starttime the amount we have been paused */
-		cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = 0);
+		cpifaceSession->mcpSet (cpifaceSession, -1, mcpMasterPause, cpifaceSession->InPause = 0);
 		pausefadedirection = 1;
 	} else { /* we were not in pause, start the pause fade */
 		pausefadestart = clock_ms();
@@ -105,7 +105,7 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 		{ /* we reached the end of the slide, finish the pause command */
 			pausefadedirection = 0;
 			pausetime = clock_ms();
-			cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = 1);
+			cpifaceSession->mcpSet (cpifaceSession, -1, mcpMasterPause, cpifaceSession->InPause = 1);
 			return;
 		}
 	}
@@ -145,7 +145,7 @@ static int itpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			} else {
 				pausetime = clock_ms();
 			}
-			cpifaceSession->mcpSet (-1, mcpMasterPause, cpifaceSession->InPause = !cpifaceSession->InPause);
+			cpifaceSession->mcpSet (cpifaceSession, -1, mcpMasterPause, cpifaceSession->InPause = !cpifaceSession->InPause);
 			break;
 		case KEY_CTRL_HOME:
 			itpInstClear (cpifaceSession);
@@ -362,7 +362,7 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 	starttime = clock_ms();
 	cpifaceSession->InPause = 0;
-	cpifaceSession->mcpSet (-1, mcpMasterPause, 0);
+	cpifaceSession->mcpSet (cpifaceSession, -1, mcpMasterPause, 0);
 	pausefadedirection = 0;
 
 	return errOk;

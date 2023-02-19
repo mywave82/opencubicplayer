@@ -156,7 +156,7 @@ static void ymSetVolume(void)
 		voll=(voll*(64-bal))>>6;
 }
 
-static void ymSet (int ch, int opt, int val)
+static void ymSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val)
 {
 	switch (opt)
 	{

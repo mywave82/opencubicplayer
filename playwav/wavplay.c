@@ -489,7 +489,7 @@ static void wpSetVolume (void)
 		voll=(voll*(64-bal))>>6;
 }
 
-static void wpSet(int ch, int opt, int val)
+static void wpSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val)
 {
 	switch (opt)
 	{

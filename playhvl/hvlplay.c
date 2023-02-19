@@ -502,7 +502,7 @@ static void hvlSetVolume (void)
 		volr=(volr*(64-bal))>>6;
 }
 
-static void hvlSet (int ch, int opt, int val)
+static void hvlSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val)
 {
 	switch (opt)
 	{

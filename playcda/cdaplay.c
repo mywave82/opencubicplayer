@@ -428,7 +428,7 @@ static void cdSetVolume()
 		volr=(volr*(64-bal))>>6;
 }
 
-static void cdSet (int ch, int opt, int val)
+static void cdSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val)
 {
 	switch (opt)
 	{

@@ -257,7 +257,7 @@ static void SetInstr(struct channel *chn, unsigned short samp)
 	chn->vol[1]=0;
 }
 
-static void devwNoneSET(int ch, int opt, int val)
+static void devwNoneSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val)
 {
 	int tmp;
 	switch (opt)
@@ -319,7 +319,7 @@ static void devwNoneSET(int ch, int opt, int val)
 			break;
 		case mcpCPitch:
 			channels[ch].orgfrq=8363;
-			channels[ch].orgdiv=mcpGetFreq8363(-val);calcstep(&channels[ch]);
+			channels[ch].orgdiv=cpifaceSession->mcpAPI->GetFreq8363(-val);calcstep(&channels[ch]);
 			break;
 		case mcpCPitchFix:
 			channels[ch].orgfrq=val;
@@ -403,9 +403,9 @@ static void GetMixChannel(unsigned int ch, struct mixchannel *chn, uint32_t rate
 
 
 
-static int devwNoneLoadSamples(struct sampleinfo *sil, int n)
+static int devwNoneLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct sampleinfo *sil, int n)
 {
-	if (!mcpReduceSamples(sil, n, 0x40000000, mcpRedToMono))
+	if (!cpifaceSession->mcpAPI->ReduceSamples (sil, n, 0x40000000, mcpRedToMono))
 		return 0;
 
 	samples=sil;
@@ -478,7 +478,7 @@ static const struct mcpDevAPI_t devwNone =
 	0 /* ProcessKey */
 };
 
-static const struct mcpDevAPI_t *devwNoneInit (const struct mcpDriver_t *driver)
+static const struct mcpDevAPI_t *devwNoneInit (const struct mcpDriver_t *driver, const struct configAPI_t *config)
 {
 	amplify=65535;
 	relspeed=256;

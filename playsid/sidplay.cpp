@@ -549,7 +549,7 @@ static void sidSetVolume (void)
 		voll=(voll*(64-bal))>>6;
 }
 
-static void sidSet(int ch, int opt, int val)
+static void sidSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val)
 {
 	switch (opt)
 	{

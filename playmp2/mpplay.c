@@ -855,7 +855,7 @@ static void mpegSetVolume (void)
 	else
 		volr=(volr*(64-bal))>>6;
 }
-static void mpegSet(int ch, int opt, int val)
+static void mpegSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val)
 {
 	switch (opt)
 	{

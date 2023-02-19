@@ -216,14 +216,6 @@ enum mcpNormalizeType
 
 void mcpNormalize (struct cpifaceSessionAPI_t *cpifaceSession, enum mcpNormalizeType Type);
 
-struct mcpAPI_t
-{
-	int (*GetFreq6848) (int note);
-	int (*GetFreq8363) (int note);
-	int (*GetNote6848) (unsigned int freq);
-	int (*GetNote8363) (unsigned int freq);
-};
-
 struct drawHelperAPI_t
 {
 	void (*GStringsFixedLengthStream) (struct cpifaceSessionAPI_t *cpifaceSession,
@@ -306,7 +298,7 @@ struct cpifaceSessionAPI_t
 	void (*KeyHelpClear) (void); /* Clears the current keyboard shortcut list, only used by keyboard/display loops */
 	int  (*KeyHelpDisplay) (void); /* Draws the keyboard shortcut list and polls keyboard. Call for each draw-iteration until it returns zero */
 
-	void (*mcpSet)(int ch, int opt, int val); /* Filled in by devw or playback plugin */
+	void (*mcpSet)(struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val); /* Filled in by devw or playback plugin */
 	int (*mcpGet)(int ch, int opt); /* Filled in by devw or playback plugin */
 	void (*mcpGetVolRegs) (struct cpifaceSessionAPI_t *cpifaceSession, void (*Callback)(struct cpifaceSessionAPI_t *cpifaceSession, const struct ocpvolregstruct *vol)); /* Optionally filled in by devw plugin */
 

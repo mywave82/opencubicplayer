@@ -777,7 +777,7 @@ static void oggSetVolume (void)
 		volr=(volr*(64-bal))>>6;
 }
 
-static void oggSet(int ch, int opt, int val)
+static void oggSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val)
 {
 	switch (opt)
 	{

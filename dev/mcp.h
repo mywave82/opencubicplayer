@@ -4,19 +4,7 @@
 struct ocpfilehandle_t;
 struct cpifaceSessionAPI_t;
 
-struct sampleinfo
-{
-	int type;
-	void *ptr;
-	uint32_t length;
-	uint32_t samprate;
-	uint32_t loopstart;
-	uint32_t loopend;
-	uint32_t sloopstart;
-	uint32_t sloopend;
-};
-
-enum
+enum mcpSamp
 {
 	mcpSampUnsigned=1,
 	mcpSampDelta=2,
@@ -28,10 +16,22 @@ enum
 	mcpSampSBiDi=128,
 	mcpSampStereo=256,
 	mcpSampFloat=512,
-	mcpSampRedBits=(int)0x80000000,
-	mcpSampRedRate2=0x40000000,
-	mcpSampRedRate4=0x20000000,
-	mcpSampRedStereo=0x10000000
+	mcpSampRedBits=(uint32_t)0x80000000,
+	mcpSampRedRate2=(uint32_t)0x40000000,
+	mcpSampRedRate4=(uint32_t)0x20000000,
+	mcpSampRedStereo=(uint32_t)0x10000000
+};
+
+struct sampleinfo
+{
+	enum mcpSamp type;
+	void *ptr;
+	uint32_t length;
+	uint32_t samprate;
+	uint32_t loopstart;
+	uint32_t loopend;
+	uint32_t sloopstart;
+	uint32_t sloopend;
 };
 
 enum
@@ -48,8 +48,7 @@ enum
 	mcpGTimer, mcpGCmdTimer,
 };
 
-extern int mcpReduceSamples(struct sampleinfo *s, int n, long m, int o);
-enum
+enum mcpRed
 {
 	mcpRedAlways16Bit=1,
 	mcpRedNoPingPong=2,
@@ -59,7 +58,6 @@ enum
 	mcpRedToFloat=32
 };
 
-
 enum
 {
 	mcpGetSampleMono=0, mcpGetSampleStereo=1, mcpGetSampleHQ=2
@@ -68,12 +66,24 @@ enum
 struct mcpDevAPI_t
 {
 	int (*OpenPlayer)(int, void (*p)(struct cpifaceSessionAPI_t *cpifaceSession), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession);
-	int (*LoadSamples)(struct sampleinfo* si, int n);
+	int (*LoadSamples)(struct cpifaceSessionAPI_t *cpifaceSession, struct sampleinfo* si, int n);
 	void (*Idle)(struct cpifaceSessionAPI_t *cpifaceSession);
 	void (*ClosePlayer)(struct cpifaceSessionAPI_t *cpifaceSession);
 	int (*ProcessKey)(uint16_t);
 };
 extern const struct mcpDevAPI_t *mcpDevAPI;
+
+struct mcpAPI_t
+{
+	int (*GetFreq6848) (int note);
+	int (*GetFreq8363) (int note);
+	int (*GetNote6848) (unsigned int freq);
+	int (*GetNote8363) (unsigned int freq);
+	int (*ReduceSamples) (struct sampleinfo *s, int n, long m, enum mcpRed);
+};
+extern const struct mcpAPI_t *mcpAPI;
+
+int mcpReduceSamples(struct sampleinfo *s, int n, long m, enum mcpRed);
 
 extern unsigned int mcpMixMaxRate;
 extern unsigned int mcpMixProcRate;

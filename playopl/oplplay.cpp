@@ -141,7 +141,7 @@ void __attribute__ ((visibility ("internal"))) oplMute (struct cpifaceSessionAPI
 	cpifaceSession->MuteChannel[i] = m;
 	opl->setmute(i, m);
 }
-static void oplSet(int ch, int opt, int val)
+static void oplSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val)
 {
 	switch (opt)
 	{

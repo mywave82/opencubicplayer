@@ -420,15 +420,15 @@ static void devwMixIdle  (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	if (_pause)
 	{
-		plrDevAPI->Pause (1);
+		cpifaceSession->plrDevAPI->Pause (1);
 
 	} else {
 		void *targetbuf;
 		unsigned int targetlength; /* in samples */
 
-		plrDevAPI->Pause (0);
+		cpifaceSession->plrDevAPI->Pause (0);
 
-		plrDevAPI->GetBuffer (&targetbuf, &targetlength);
+		cpifaceSession->plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 		while (targetlength)
 		{
@@ -470,9 +470,9 @@ static void devwMixIdle  (struct cpifaceSessionAPI_t *cpifaceSession)
 
 			playsamps+=targetlength;
 
-			plrDevAPI->CommitBuffer (targetlength);
+			cpifaceSession->plrDevAPI->CommitBuffer (targetlength);
 
-			plrDevAPI->GetBuffer (&targetbuf, &targetlength);
+			cpifaceSession->plrDevAPI->GetBuffer (&targetbuf, &targetlength);
 
 			if (_pause)
 			{
@@ -481,14 +481,14 @@ static void devwMixIdle  (struct cpifaceSessionAPI_t *cpifaceSession)
 		}
 	}
 
-	plrDevAPI->Idle();
+	cpifaceSession->plrDevAPI->Idle();
 
 	BARRIER
 
 	clipbusy--;
 }
 
-static void devwMixSET(int ch, int opt, int val)
+static void devwMixSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val)
 {
 	/* Refered by OpenPlayer
 	 */
@@ -641,7 +641,7 @@ static void devwMixSET(int ch, int opt, int val)
 			}
 		case mcpCPitch:
 			chn->orgfrq=8363;
-			chn->orgdiv=mcpGetFreq8363(-val);
+			chn->orgdiv=cpifaceSession->mcpAPI->GetFreq8363(-val);
 			calcstep(chn);
 			break;
 		case mcpCPitchFix:
@@ -782,11 +782,11 @@ static void GetMixChannel(unsigned int ch, struct mixchannel *chn, uint32_t rate
 		chn->status|=MIX_INTERPOLATE;
 }
 
-static int devwMixLoadSamples(struct sampleinfo *sil, int n)
+static int devwMixLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct sampleinfo *sil, int n)
 {
 #if 0
 	int i;
-	if (!mcpReduceSamples(sil, n, 0x40000000, mcpRedToMono))
+	if (!cpifaceSession->mcpAPI->ReduceSamples(sil, n, 0x40000000, mcpRedToMono))
 		return 0;
 
 	samples=malloc(sizeof(*sil)*n);
@@ -802,7 +802,7 @@ static int devwMixLoadSamples(struct sampleinfo *sil, int n)
 	samplenum=n;
 
 #else
-	if (!mcpReduceSamples(sil, n, 0x40000000, mcpRedToMono))
+	if (!cpifaceSession->mcpAPI->ReduceSamples(sil, n, 0x40000000, mcpRedToMono))
 		return 0;
 
 	samples=sil;
@@ -824,7 +824,7 @@ static int devwMixOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *
 		chan=MAXCHAN;
 	}
 
-	if (!plrDevAPI)
+	if (!cpifaceSession->plrDevAPI)
 	{
 		return 0;
 	}
@@ -883,7 +883,7 @@ static int devwMixOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *
 	currentrate=mcpMixProcRate/chan;
 	samprate=(currentrate>mcpMixMaxRate)?mcpMixMaxRate:currentrate;
 	format=PLR_STEREO_16BIT_SIGNED;
-	if (!plrDevAPI->Play (&samprate, &format, source_file, cpifaceSession))
+	if (!cpifaceSession->plrDevAPI->Play (&samprate, &format, source_file, cpifaceSession))
 	{
 		goto error_out;
 	}
@@ -933,7 +933,7 @@ static int devwMixOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *
 
 	// mixClose();
 error_out_plrDevAPI_Play:
-	plrDevAPI->Stop (cpifaceSession);
+	cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 error_out:
 	free (amptab);        amptab = 0;
 	free (voltabsr);      voltabsr = 0;
@@ -952,9 +952,9 @@ static void devwMixClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct mixqpostprocregstruct *mode;
 
-	if (plrDevAPI)
+	if (cpifaceSession->plrDevAPI)
 	{
-		plrDevAPI->Stop (cpifaceSession);
+		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 	}
 
 	channelnum=0;

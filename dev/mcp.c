@@ -24,8 +24,22 @@
  */
 
 #include "config.h"
+#include <stdlib.h>
+#include <stdio.h>
 #include "types.h"
-#include "mcp.h"
+#include "dev/mcp.h"
+#include "stuff/freq.h"
 
 unsigned int mcpMixMaxRate;
 unsigned int mcpMixProcRate;
+
+static struct mcpAPI_t _mcpAPI =
+{
+	mcpGetFreq6848,
+	mcpGetFreq8363,
+	mcpGetNote6848,
+	mcpGetNote8363,
+	mcpReduceSamples,
+};
+
+const struct mcpAPI_t *mcpAPI = &_mcpAPI;
