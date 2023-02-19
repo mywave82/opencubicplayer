@@ -30,16 +30,27 @@
 
 extern "C"
 {
-#include "config.h"
+#ifdef DPACKAGE_NAME
+#undef DPACKAGE_NAME
+#endif
+
+#ifdef VERSION
+#undef VERSION
+#endif
+
+#ifdef PACKAGE_VERSION
+#undef PACKAGE_VERSION
+#endif
+
+#include "../config.h"
+#include <stdio.h>
+#include <unistd.h>
 #include "types.h"
 #include "boot/psetting.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem-drive.h"
 #include "filesel/filesystem.h"
-#include <stdio.h>
 }
-
-#include <unistd.h>
 
 namespace libsidplayfp
 {

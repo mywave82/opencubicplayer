@@ -45,15 +45,12 @@ extern "C"
 #endif
 
 #include "../config.h"
-}
 
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-extern "C"
-{
 #include "../types.h"
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"

@@ -29,8 +29,7 @@
 
 extern "C"
 {
-#include "config.h"
-}
+#include "../config.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,8 +37,6 @@ extern "C"
 #include <time.h>
 #include <math.h>
 #include "types.h"
-extern "C"
-{
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "cpiface/cpiface.h"
