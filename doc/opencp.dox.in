@@ -759,40 +759,40 @@ You can use all these keys throughout the player except in special modes.
   ^0f-^07 ^0fMode^07 ^0fKeys^07 ^0f-^07                                 ^0f-^07 ^0fVolume^07 ^0fKeys^07 ^0f-^07
 ^0fi^07 : instruments                                     ^0fF1^07 : help
 ^0ft^07 : track view                                 ^0fF2^07 , ^0fF3^07 : change volume (^0f+^07,^0f-^07)
-^0fa^07 : textmode analyser                         c^0fF2^07 ,c^0fF3^07 : change amplification
+^0fa^07 : textmode analyser                         s^0fF2^07 ,s^0fF3^07 : change amplification
 ^0fx^07 : xtended mode (i,t,a&c)                          ^0fF4^07 : surround sound
 ^0fo^07 : scopes                                     ^0fF5^07 , ^0fF6^07 : change panning (^0f,^07;^0f.^07)
 ^0fg^07 : graphic analyser (shift-^0fg^07 for big gsa)     ^0fF7^07 , ^0fF8^07 : change balance (^0f/^07,^0f*^07)
 ^0fn^07 : note dots                                  ^0fF9^07 , ^0fF10^07: change speed
 ^0fw^07 : wuerfel mode                               ^0fF11^07, ^0fF12^07: change pitch
-^0fm^07 : song message                                     ^0f\\^07 : lock pitch+speed
-^0fh^07 : help                                        alt-^0fF2^07 : save settings (session
-^0ff^07 : file-selector                               alt-^0fF3^07 : reset settings    only)
-                                                      alt-^0fF4^07 : "factory defaults"
-                                              ^0fbackspace^07: toggle interpolation
+^0f|^07 : song message                                     ^0f\\^07 : lock pitch+speed
+^0fh^07 : help                                 ctrl-shift-^0fF2^07 : save settings (session
+^0ff^07 : file selector                        ctrl-shift-^0fF3^07 : reset settings    only)
+                                         ctrl-shift-^0fF4^07 : "factory defaults"
+                                             ^0fbackspace^07 : toggle interpolation
   ^0f-^07 ^0fModule^07 ^0fKeys^07 ^0f-^07
      ^0f>^07   : next pattern
      ^0f<^07   : previous pattern                        ^0f-^07 ^0fChannel^07 ^0fKeys^07 ^0f-^07
 ctrl-^0f^07   : go 8 rows up                         ^0f^07, ^0f^07 : select previous channel
-ctrl-^0f^07   : go 8 rows down                       ^0f\d^07, ^0f^07 : select next channel
+ctrl-^0f^07   : go 8 rows down                       ^0f^07, ^0f^07 : select next channel
 ctrl-^0fhome^07: restart module                       ^0f1^07..^0f0^07 : goto and toggle channel
-                                           ctrl-^0f1^07..^0f0^07 : goto and solo channel
+
   ^0f-^07 ^0fPlayer^07 ^0fKeys^07 ^0f-^07                                  ^0fq^07 : toggle selected channel
-    ^0freturn^07 : play next module                      ^0fs^07 : solo selected channl
+    ^0freturn^07 : play next module                      ^0fs^07 : solo selected channel
   (ctrl-)^0fp^07 : pause module (immediate)       ctrl-^0fq^07/^0fs^07 : turn on all channels
-  (ctrl-)^0fd^07 : dos-shell (no reminder)               ^0fc^07 : toggle channel mode
+         ^0fd^07 : open a shell                          ^0fc^07 : toggle channel mode
    ^0fesc^07 ^0fesc^07 : e-s-c-a-p-e                               (none/short/long/side)
-    ^0fins^07, ^0ff^07 : file-selector
-         ^0fz^07 : tog. scr. hgt. (25/50)
-    ctrl-^0fz^07 : tog. scr. hgt. (25/30)
-     alt-^0fz^07 : tog. scr. wid. (80/132)
-     alt-^0fx^07 : norm. scr. mode (80*25)
-         ^0fx^07 : xtended scr. mode (132*60)
+    ^0fins^07, ^0ff^07 : file selector
+         ^0fz^07 : tog. font (8x8/8x16)
+    ctrl-^0fz^07 : tog. scr. minor
+     alt-^0fz^07 : tog. scr. major
+     alt-^0fx^07 : norm. scr. mode (80x25)
+         ^0fx^07 : xtended scr. mode (160x128)
 
 ^0bInstrument^07 ^0bMode:^07  ^0b<i>^07
 =====================
 
-     ^0fi^07 - toggle instrument mode  (none / short / full / \[side\])
+     ^0fi^07 - toggle instrument mode  (none / short / long / \[side\])
   ^0fpgup^07 - scroll up                         ctrl-^0fpgup^07 - scroll up fast
   ^0fpgdn^07 - scroll down                       ctrl-^0fpgdn^07 - scroll down fast
   ^0fhome^07 - go to the top                         alt-^0fi^07 - clear instrument flags
@@ -857,7 +857,7 @@ ctrl-^0fpgup^07/^0fdn^07 - change analyser gain
 ^0bScopes:^07  ^0b<o>^07
 ============
 
-           ^0fo^07 - toggle mode (all / single scope)
+           ^0fo^07 - toggle mode (logical / physical / stereo / single channel)
   ^0ftab^07, alt-^0fo^07 - toggle triggered scopes
      ^0fpgup^07/^0fdn^07 - stretch / squeeze scope output
 
