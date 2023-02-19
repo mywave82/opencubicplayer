@@ -33,11 +33,7 @@
  *     perfect (It is currently not hit, but I like it to be there still)
  */
 
-#include "config.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include "types.h"
-#include "mcp.h"
+/* included from deviwave.c */
 
 #define SAMPEND 8
 
@@ -782,7 +778,7 @@ static int convertsample(struct sampleinfo *s)
 	return 1;
 }
 
-int mcpReduceSamples(struct sampleinfo *si, int n, long mem, enum mcpRed opt)
+static int mcpReduceSamples(struct sampleinfo *si, int n, long mem, enum mcpRed opt)
 {
 	struct sampleinfo *samples=si;
 	int32_t memmax=mem;

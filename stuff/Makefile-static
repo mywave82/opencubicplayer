@@ -1,5 +1,4 @@
 
-hardware_so=hardware.o freq.o
 sets_so=sets.o
 poutput_so=console.o cp437.o latin1.o poutput-curses.o pfonts.o poutput.o
 poutput_so_libs=$(NCURSES_LIBS) $(ICONV_LIBS)
@@ -35,7 +34,6 @@ endif
 stuff_libocp_so:=compat.o err.o framelock.o poll.o poutput-keyboard.o utf-8.o
 
 ifeq ($(STATIC_CORE),1)
- STATIC_OBJECTS += $(patsubst %.o,stuff/%.o,$(hardware_so))
  STATIC_OBJECTS += $(patsubst %.o,stuff/%.o,$(sets_so))
  STATIC_OBJECTS += $(patsubst %.o,stuff/%.o,$(poutput_so))
  STATIC_LIBS += $(poutput_so_libs)

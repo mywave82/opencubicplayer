@@ -22,9 +22,8 @@
  *  -nb980510   Niklas Beisert <nbeisert@physik.tu-muenchen.de>
  *    -first release
  */
-#include "config.h"
-#include "types.h"
-#include "imsrtns.h"
+
+/* included from deviwave.c */
 
 static uint32_t hnotetab6848[16]={11131415,4417505,1753088,695713,276094,109568,43482,17256,6848,2718,1078,428,170,67,27,11};
 static uint32_t hnotetab8363[16]={13594045,5394801,2140928,849628,337175,133808,53102,21073,8363,3319,1317,523,207,82,33,13};
@@ -113,7 +112,7 @@ static uint16_t xfinetab[16]={32768,32761,32753,32746,32738,32731,32724,32716,32
  *  signed integer note input - given 256 cents per note, centered on middle a C
  */
 
-int mcpGetFreq8363(int note)
+static int mcpGetFreq8363(int note)
 {
   note=-note;
   return umulshr16(umulshr16(umulshr16(hnotetab8363[((note+0x8000)>>12)&0xF],notetab[(note>>8)&0xF]*2),finetab[(note>>4)&0xF]*2),xfinetab[note&0xF]*2);
@@ -124,13 +123,13 @@ int mcpGetFreq8363(int note)
  * input:
  *  signed integer note input - given 256 cents per note, centered on middle a C
  */
-int mcpGetFreq6848(int note)
+static int mcpGetFreq6848(int note)
 {
   note=-note;
   return umulshr16(umulshr16(umulshr16(hnotetab6848[((note+0x8000)>>12)&0xF],notetab[(note>>8)&0xF]*2),finetab[(note>>4)&0xF]*2),xfinetab[note&0xF]*2);
 }
 
-int mcpGetNote8363(unsigned int frq)
+static int mcpGetNote8363(unsigned int frq)
 {
   int16_t x;
   unsigned int i;
@@ -155,7 +154,7 @@ int mcpGetNote8363(unsigned int frq)
   return -x-i;
 }
 
-int mcpGetNote6848(unsigned int frq)
+static int mcpGetNote6848(unsigned int frq)
 {
   int16_t x;
   unsigned int i;

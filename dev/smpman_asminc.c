@@ -27,6 +27,8 @@
  *    -made assembler optimitize safe
  */
 
+/* included from smpman.c */
+
 static uint32_t getpitch16(const void *ptr, unsigned long len)
 {
 	uint32_t retval=0;

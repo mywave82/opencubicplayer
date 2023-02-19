@@ -1,8 +1,6 @@
-#mixclip_so=mixclip.o
-
 plrbase_so=deviplay.o plrasm.o player.o
 
-mcpbase_so=deviwave.o mcp.o mix.o mixasm.o ringbuffer.o smpman.o
+mcpbase_so=deviwave.o mix.o mixasm.o ringbuffer.o
 
 mchasm_so=mchasm.o
 

@@ -45,7 +45,11 @@
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
+#include "stuff/imsrtns.h"
 #include "stuff/poutput.h"
+
+#include "freq.c"
+#include "smpman.c"
 
 struct mcpDriverListEntry_t
 {
@@ -669,6 +673,20 @@ static void setup_devw_run (void **token, const struct DevInterfaceAPI_t *API)
 		API->console->FrameLock();
 	}
 }
+
+unsigned int mcpMixMaxRate;
+unsigned int mcpMixProcRate;
+
+static struct mcpAPI_t _mcpAPI =
+{
+	mcpGetFreq6848,
+	mcpGetFreq8363,
+	mcpGetNote6848,
+	mcpGetNote8363,
+	mcpReduceSamples,
+};
+
+const struct mcpAPI_t *mcpAPI = &_mcpAPI;
 
 DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo =
 {

@@ -3,9 +3,9 @@ include $(TOPDIR)Rules.make
 include Makefile-static
 
 ifeq ($(STATIC_CORE),1)
-all: $(stuff_libocp_so) $(hardware_so) $(sets_so) $(poutput_so)
+all: $(stuff_libocp_so) $(sets_so) $(poutput_so)
 else
-all: $(stuff_libocp_so) hardware$(LIB_SUFFIX) sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX) poutput-keyboard.o
+all: $(stuff_libocp_so) sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX) poutput-keyboard.o
 endif
 
 test: compat-test
@@ -13,9 +13,6 @@ test: compat-test
 
 poutput$(LIB_SUFFIX): $(poutput_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ $(poutput_so_libs)
-
-hardware$(LIB_SUFFIX): $(hardware_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 sets$(LIB_SUFFIX): $(sets_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
@@ -30,12 +27,10 @@ else
 install:
 	$(CP) poutput$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/12-poutput$(LIB_SUFFIX)"
 	$(CP) sets$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-sets$(LIB_SUFFIX)"
-	$(CP) hardware$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-hardware$(LIB_SUFFIX)"
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/12-poutput$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-sets$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-hardware$(LIB_SUFFIX)"
 endif
 
 cp437.o: cp437.c cp437.h \
@@ -187,11 +182,6 @@ x11-common.o: x11-common.c x11-common.h \
 	poutput.h
 	$(CC) x11-common.c -o $@ -c
 
-freq.o: freq.c freq.h imsrtns.h \
-	../config.h \
-	../types.h
-	$(CC) freq.c -o $@ -c
-
 err.o: err.c err.h \
 	../config.h \
 	../types.h
@@ -204,12 +194,6 @@ sets.o: sets.c sets.h \
 	../boot/psetting.h \
 	err.h
 	$(CC) sets.c -o $@ -c
-
-hardware.o: hardware.c \
-	../config.h \
-	../types.h \
-	../boot/plinkman.h
-	$(CC) hardware.c -o $@ -c
 
 console.o: console.c \
 	../boot/console.h \

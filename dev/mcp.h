@@ -83,8 +83,6 @@ struct mcpAPI_t
 };
 extern const struct mcpAPI_t *mcpAPI;
 
-int mcpReduceSamples(struct sampleinfo *s, int n, long m, enum mcpRed);
-
 extern unsigned int mcpMixMaxRate;
 extern unsigned int mcpMixProcRate;
 

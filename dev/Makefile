@@ -8,9 +8,6 @@ else
 all: plrbase$(LIB_SUFFIX) mcpbase$(LIB_SUFFIX) mchasm$(LIB_SUFFIX)
 endif
 
-#mixclip$(LIB_SUFFIX): $(mixclip_so)
-#	$(CC) $(SHARED_FLAGS) -o $@ $^
-
 plrbase$(LIB_SUFFIX): $(plrbase_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
@@ -70,7 +67,10 @@ deviplay.o: deviplay.c \
 	../stuff/poutput.h
 	$(CC) deviplay.c -o $@ -c
 
-deviwave.o: deviwave.c deviwave.h \
+deviwave.o: deviwave.c \
+	freq.c \
+	smpman.c \
+	smpman_asminc.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
@@ -87,6 +87,7 @@ deviwave.o: deviwave.c deviwave.h \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
 	../stuff/err.h \
+	../stuff/imsrtns.h \
 	../stuff/poutput.h
 	$(CC) deviwave.c -c -o $@ -c
 
@@ -103,11 +104,6 @@ mchasm_test.o: mchasm_test.c mchasm.h \
 
 mchasm_test: mchasm.o mchasm_test.o
 	$(CC) -o $@ $^
-
-mcp.o: mcp.c mcp.h \
-	../config.h \
-	../types.h
-	$(CC) mcp.c -o $@ -c
 
 mix.o: mix.c mix.h \
 	../config.h \
@@ -143,13 +139,6 @@ ringbuffer.o: ringbuffer.c ringbuffer.h \
 	../config.h \
 	../types.h
 	$(CC) ringbuffer.c -o $@ -c
-
-smpman.o: smpman.c \
-	../config.h \
-	../types.h \
-	smpman_asminc.c \
-	mcp.h
-	$(CC) smpman.c -o $@ -c
 
 smpman_asminctest.o: smpman_asminctest.c smpman_asminc.c ../config.h
 	$(CC) smpman_asminctest.c -o $@ -c
