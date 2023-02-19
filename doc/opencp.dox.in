@@ -852,7 +852,6 @@ ctrl-^0fpgup^07/^0fdn^07 - change analyser gain
      ^0fpgup^07/^0fdn^07 - change visible frequency range
         ^0fhome^07 - set maximum frequency to approximately 3000Hz
          ^0ftab^07 - set next palette
-     alt-^0ftab^07 - set previous palette
    shift-^0ftab^07 - set normal analysers palette
 
 ^0bScopes:^07  ^0b<o>^07
