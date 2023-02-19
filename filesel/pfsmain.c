@@ -428,7 +428,7 @@ static int fsint(void)
 	return errOk;
 }
 
-static int fslateint(void)
+static int fslateint (struct PluginInitAPI_t *API)
 {
 	if (!fsLateInit())
 	{
