@@ -67,6 +67,19 @@ static int                          mcpDriverListNone;
 const struct mcpDriver_t *mcpDriver;
 const struct mcpDevAPI_t *mcpDevAPI;
 
+static struct mcpAPI_t _mcpAPI =
+{
+	0, /* MixMaxRate */
+	0, /* MixProcRate */
+	mcpGetFreq6848,
+	mcpGetFreq8363,
+	mcpGetNote6848,
+	mcpGetNote8363,
+	mcpReduceSamples,
+};
+
+const struct mcpAPI_t *mcpAPI = &_mcpAPI;
+
 static int deviwaveDriverListInsert (int insertat, const char *name, int length)
 {
 	int i;
@@ -237,8 +250,8 @@ static int deviwaveLateInit (struct PluginInitAPI_t *API)
 		else
 			playrate=playrate*11025/11;
 	}
-	mcpMixMaxRate=playrate;
-	mcpMixProcRate=API->configAPI->GetProfileInt2(API->configAPI->SoundSec, "sound", "mixprocrate", 1536000, 10);
+	_mcpAPI.MixMaxRate  = playrate;
+	_mcpAPI.MixProcRate = API->configAPI->GetProfileInt2(API->configAPI->SoundSec, "sound", "mixprocrate", 1536000, 10);
 
 	fprintf (stderr, "wavetabledevices:\n");
 
@@ -673,20 +686,6 @@ static void setup_devw_run (void **token, const struct DevInterfaceAPI_t *API)
 		API->console->FrameLock();
 	}
 }
-
-unsigned int mcpMixMaxRate;
-unsigned int mcpMixProcRate;
-
-static struct mcpAPI_t _mcpAPI =
-{
-	mcpGetFreq6848,
-	mcpGetFreq8363,
-	mcpGetNote6848,
-	mcpGetNote8363,
-	mcpReduceSamples,
-};
-
-const struct mcpAPI_t *mcpAPI = &_mcpAPI;
 
 DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo =
 {

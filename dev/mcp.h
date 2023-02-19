@@ -75,6 +75,9 @@ extern const struct mcpDevAPI_t *mcpDevAPI;
 
 struct mcpAPI_t
 {
+	unsigned int MixMaxRate;
+	unsigned int MixProcRate;
+
 	int (*GetFreq6848) (int note);
 	int (*GetFreq8363) (int note);
 	int (*GetNote6848) (unsigned int freq);
@@ -82,8 +85,5 @@ struct mcpAPI_t
 	int (*ReduceSamples) (struct sampleinfo *s, int n, long m, enum mcpRed);
 };
 extern const struct mcpAPI_t *mcpAPI;
-
-extern unsigned int mcpMixMaxRate;
-extern unsigned int mcpMixProcRate;
 
 #endif

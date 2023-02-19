@@ -880,8 +880,8 @@ static int devwMixOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *
 		goto error_out;
 	}
 
-	currentrate=mcpMixProcRate/chan;
-	samprate=(currentrate>mcpMixMaxRate)?mcpMixMaxRate:currentrate;
+	currentrate = cpifaceSession->mcpAPI->MixProcRate / chan;
+	samprate = (currentrate > cpifaceSession->mcpAPI->MixMaxRate) ? cpifaceSession->mcpAPI->MixMaxRate : currentrate;
 	format=PLR_STEREO_16BIT_SIGNED;
 	if (!cpifaceSession->plrDevAPI->Play (&samprate, &format, source_file, cpifaceSession))
 	{
