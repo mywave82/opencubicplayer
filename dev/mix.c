@@ -136,7 +136,7 @@ static void putchn(struct mixchannel *chn, unsigned int len, int opt)
 	mixPlayChannel(mixbuf, len, chn, opt&mcpGetSampleStereo);
 }
 
-void mixGetMasterSample(int16_t *s, unsigned int len, uint32_t rate, int opt)
+static void mixGetMasterSample(int16_t *s, unsigned int len, uint32_t rate, int opt)
 {
 	int stereo=(opt&mcpGetSampleStereo)?1:0;
 	int i;
@@ -194,12 +194,12 @@ static int mixMixChanSamples (struct cpifaceSessionAPI_t *cpifaceSession, unsign
 	return ret;
 }
 
-int mixGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt)
+static int mixGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt)
 {
 	return mixMixChanSamples (cpifaceSession, &ch, 1, s, len, rate, opt);
 }
 
-void mixGetRealVolume(int ch, int *l, int *r)
+static void mixGetRealVolume(int ch, int *l, int *r)
 {
 	struct mixchannel chn;
 	mixgetmixch(ch, &chn, 44100);
@@ -224,7 +224,7 @@ void mixGetRealVolume(int ch, int *l, int *r)
 		*l=*r=0;
 }
 
-void mixGetRealMasterVolume(int *l, int *r)
+static void mixGetRealMasterVolume(int *l, int *r)
 {
 	int i;
 

@@ -31,11 +31,6 @@ struct cpifaceSessionAPI_t; /* cpiface.h */
 extern int mixInit(void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t rate), int resamp, unsigned int chan, int amp, struct cpifaceSessionAPI_t *cpifaceSession);
 extern void mixClose(void);
 extern void mixSetAmplify(int amp);
-extern void mixGetRealVolume(int ch, int *l, int *r);
-extern void mixGetMasterSample(int16_t *s, unsigned int len, uint32_t rate, int opt);
-extern int mixGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
-extern int mixAddChanSample(unsigned int ch, int16_t *s, unsigned int len, uint32_t rate);
-extern void mixGetRealMasterVolume(int *l, int *r);
 
 #define MIX_PLAYING 1
 #define MIX_MUTE 2
