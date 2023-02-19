@@ -258,6 +258,7 @@ cpiface.o: cpiface.c \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
 	../stuff/err.h \
+	../stuff/freq.h \
 	../stuff/imsrtns.h \
 	../stuff/framelock.h \
 	../stuff/latin1.h \

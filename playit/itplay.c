@@ -1920,7 +1920,7 @@ int __attribute__ ((visibility ("internal"))) play (struct itplayer *this, const
 		return errPlay;
 	}
 
-	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayW);
+	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeDefaultPlayW);
 
 	this->npchan = cpifaceSession->PhysicalChannelCount;
 

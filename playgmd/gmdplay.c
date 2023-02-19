@@ -1638,7 +1638,7 @@ int __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodul
 		return errPlay;
 	}
 
-	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayW);
+	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeDefaultPlayW);
 
 	physchan = cpifaceSession->PhysicalChannelCount;
 

@@ -785,7 +785,7 @@ uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehan
 	cpifaceSession->mcpSet = wpSet;
 	cpifaceSession->mcpGet = wpGet;
 
-	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
+	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	return errOk;
 

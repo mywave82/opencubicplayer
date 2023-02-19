@@ -1548,7 +1548,7 @@ int __attribute__ ((visibility ("internal"))) xmpPlayModule (struct xmodule *m, 
 		return errPlay;
 	}
 
-	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayW);
+	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeDefaultPlayW);
 
 	if (nchan != cpifaceSession->PhysicalChannelCount)
 	{

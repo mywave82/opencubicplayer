@@ -29,14 +29,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include "types.h"
+#include "cpiface/cpiface.h"
+#include "cpiface/cpiface-private.h"
 #include "dev/deviwave.h"
 #include "dev/player.h"
 #include "dev/mcp.h"
 #include "boot/psetting.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
-#include "cpiface.h"
-#include "cpiface-private.h"
 
 static int finespeed=8;
 

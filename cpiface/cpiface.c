@@ -62,8 +62,8 @@
 #include "cpipic.h"
 #include "cpiptype.h"
 #include "dev/mcp.h"
-#include "dev/ringbuffer.h"
 #include "dev/player.h"
+#include "dev/ringbuffer.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
@@ -71,6 +71,7 @@
 #include "filesel/filesystem-unix.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
+#include "stuff/freq.h"
 #include "stuff/imsrtns.h"
 #include "stuff/framelock.h"
 #include "stuff/latin1.h"
@@ -116,8 +117,6 @@ static void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t *cpifaceSession,
 
 static struct mcpAPI_t mcpAPI =
 {
-	mcpNormalize,
-	mcpSetMasterPauseFadeParameters,
 	mcpGetFreq6848,
 	mcpGetFreq8363,
 	mcpGetNote6848,
@@ -2278,6 +2277,9 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	utf8_XdotY_name ( 8, 3, cpifaceSessionAPI.Public.utf8_8_dot_3 , filename);
 	utf8_XdotY_name (16, 3, cpifaceSessionAPI.Public.utf8_16_dot_3, filename);
 	cpifaceSessionAPI.Public.mdbdata = *info;
+
+	cpifaceSessionAPI.Public.Normalize = mcpNormalize;
+	cpifaceSessionAPI.Public.SetMasterPauseFadeParameters = mcpSetMasterPauseFadeParameters;
 
 	/*
 	cpifaceSessionAPI.Public.GetRealMasterVolume = 0;

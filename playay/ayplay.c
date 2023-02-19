@@ -965,7 +965,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 	cpifaceSession->mcpSet=aySet;
 	cpifaceSession->mcpGet=ayGet;
 
-	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
+	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	return errOk;
 

@@ -73,15 +73,9 @@ struct mcpDevAPI_t
 	void (*ClosePlayer)(struct cpifaceSessionAPI_t *cpifaceSession);
 	int (*ProcessKey)(uint16_t);
 };
-
 extern const struct mcpDevAPI_t *mcpDevAPI;
 
 extern unsigned int mcpMixMaxRate;
 extern unsigned int mcpMixProcRate;
-
-extern int mcpGetFreq6848(int note);
-extern int mcpGetFreq8363(int note);
-extern int mcpGetNote6848(int freq);
-extern int mcpGetNote8363(int freq);
 
 #endif

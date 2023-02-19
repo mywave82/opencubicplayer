@@ -555,7 +555,7 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 	cpifaceSession->mcpSet=cdSet;
 	cpifaceSession->mcpGet=cdGet;
 
-	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
+	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	return errOk;
 }

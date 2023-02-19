@@ -967,7 +967,7 @@ int __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle
 
 	cpifaceSession->mcpSet = sidSet;
 	cpifaceSession->mcpGet = sidGet;
-	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
+	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	return errOk;
 

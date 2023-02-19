@@ -112,7 +112,7 @@ static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
 			return;
 		}
 	}
-	cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, i);
+	cpifaceSession->SetMasterPauseFadeParameters (cpifaceSession, i);
 }
 
 
@@ -141,7 +141,7 @@ static int xmpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 		case KEY_CTRL_P:
 			/* cancel any pause-fade that might be in progress */
 			pausefadedirection = 0;
-			cpifaceSession->mcpAPI->SetMasterPauseFadeParameters (cpifaceSession, 64);
+			cpifaceSession->SetMasterPauseFadeParameters (cpifaceSession, 64);
 
 			if (cpifaceSession->InPause)
 			{

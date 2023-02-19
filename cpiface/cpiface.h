@@ -218,12 +218,10 @@ void mcpNormalize (struct cpifaceSessionAPI_t *cpifaceSession, enum mcpNormalize
 
 struct mcpAPI_t
 {
-	void (*Normalize) (struct cpifaceSessionAPI_t *cpifaceSession, enum mcpNormalizeType Type);
-	void (*SetMasterPauseFadeParameters) (struct cpifaceSessionAPI_t *cpifaceSession, int i);
 	int (*GetFreq6848) (int note);
 	int (*GetFreq8363) (int note);
-	int (*GetNote6848) (int freq);
-	int (*GetNote8363) (int freq);
+	int (*GetNote6848) (unsigned int freq);
+	int (*GetNote8363) (unsigned int freq);
 };
 
 struct drawHelperAPI_t
@@ -279,6 +277,9 @@ struct cpifaceSessionAPI_t
 	char utf8_8_dot_3  [12*4+1]; /* UTF-8 ready, filled in by cpiface */
 	char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready, filled in by cpiface */
 	struct moduleinfostruct mdbdata; /* filled in by cpiface */
+
+	void (*Normalize) (struct cpifaceSessionAPI_t *cpifaceSession, enum mcpNormalizeType Type); /* mcpedit.c, global control of pan, bal, volume, etc */
+	void (*SetMasterPauseFadeParameters) (struct cpifaceSessionAPI_t *cpifaceSession, int i);   /* mcpedit.c, global control of pan, bal, volume, etc */
 
 	/* configured by devp/devw */
 	void (*GetRealMasterVolume)(int *l, int *r); /* filled in by devp/devw driver */

@@ -243,7 +243,7 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 
 	cpifaceSession->mcpSet = ymSet;
 	cpifaceSession->mcpGet = ymGet;
-	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
+	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	ym_looped = 0;
 

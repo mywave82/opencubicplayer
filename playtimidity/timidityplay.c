@@ -2207,7 +2207,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	cpifaceSession->mcpSet = timiditySet;
 	cpifaceSession->mcpGet = timidityGet;
 
-	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeNoFilter | mcpNormalizeCanSpeedPitchUnlock | mcpNormalizeCannotEcho | mcpNormalizeCannotAmplify);
+	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeNoFilter | mcpNormalizeCanSpeedPitchUnlock | mcpNormalizeCannotEcho | mcpNormalizeCannotAmplify);
 
 	timidityIdler (cpifaceSession, &tc); /* trigger the file to load as soon as possible */
 	return errOk;

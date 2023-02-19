@@ -700,7 +700,7 @@ int __attribute__ ((visibility ("internal"))) hvlOpenPlayer (const uint8_t *mem,
 	cpifaceSession->mcpSet = hvlSet;
 	cpifaceSession->mcpGet = hvlGet;
 
-	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP | mcpNormalizeCanSpeedPitchUnlock);
+	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP | mcpNormalizeCanSpeedPitchUnlock);
 
 	return errOk;
 

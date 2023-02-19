@@ -1083,7 +1083,7 @@ int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandl
 	cpifaceSession->mcpSet=flacSet;
 	cpifaceSession->mcpGet=flacGet;
 
-	cpifaceSession->mcpAPI->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
+	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
 	return errOk;
 
