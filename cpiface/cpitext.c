@@ -525,11 +525,11 @@ static int txtAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 		case KEY_ALT_K:
 			cpiKeyHelp('x', "Set screen text mode 160x128 (font 8x8)");
 			cpiKeyHelp('X', "Set screen text mode 160x128 (font 8x8)");
-			cpiKeyHelp('z', "Adjust screen text mode (toggle minor size)");
-			cpiKeyHelp('Z', "Adjust screen text mode (toggle minor size)");
+			cpiKeyHelp('z', "Adjust screen text mode (toggle font 8x8/8x16)");
+			cpiKeyHelp('Z', "Adjust screen text mode (toggle font 8x8/8x16)");
 			cpiKeyHelp(KEY_ALT_X, "Set screen text screen mode 80x25 (font 8x16)");
 			cpiKeyHelp(KEY_ALT_Z, "Adjust screen text screen mode (toggle major size)");
-			cpiKeyHelp(KEY_CTRL_Z, "Adjust screen text screen mode (toggle font 8x8/8x16)");
+			cpiKeyHelp(KEY_CTRL_Z, "Adjust screen text screen mode (toggle minor size)");
 			return 0;
 		case 'x': case 'X':
 			fsScrType=7;
