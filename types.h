@@ -87,7 +87,9 @@
 extern "C" {
 #  endif
 
+# if (__MAC_OS_X_VERSION_MAX_ALLOWED < 101200)
 typedef int clockid_t;
+# endif
 int clock_gettime(clockid_t clk_id, struct timespec *tp);
 
 #  ifdef __cplusplus
