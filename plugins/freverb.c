@@ -261,7 +261,7 @@ static void fReverb_process (struct cpifaceSessionAPI_t *cpifaceSession, float *
 	{
 		outgainc = 0;
 	} else {
-		outgainc = cpifaceSession->mcpGet(0, mcpMasterChorus)/64.0;
+		outgainc = cpifaceSession->mcpGet (cpifaceSession, 0, mcpMasterChorus)/64.0;
 	}
 
 	if (outgainc > 0)
@@ -364,7 +364,7 @@ static void fReverb_process (struct cpifaceSessionAPI_t *cpifaceSession, float *
 	{
 		outgainr = 0;
 	} else {
-		outgainr = cpifaceSession->mcpGet(0, mcpMasterReverb) / 64.0;
+		outgainr = cpifaceSession->mcpGet (cpifaceSession, 0, mcpMasterReverb) / 64.0;
 	}
 
 	if (outgainr > 0)

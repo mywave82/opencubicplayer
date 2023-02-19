@@ -1772,7 +1772,7 @@ static void timiditySet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 	}
 }
 
-static int timidityGet (int ch, int opt)
+static int timidityGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 {
 	return 0;
 }

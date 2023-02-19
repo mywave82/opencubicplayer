@@ -872,7 +872,7 @@ static void aySet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, 
 	}
 }
 
-static int ayGet (int ch, int opt)
+static int ayGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 {
 	return 0;
 }

@@ -516,7 +516,7 @@ static void wpSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, 
 	}
 }
 
-static int wpGet(int ch, int opt)
+static int wpGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 {
 	return 0;
 }

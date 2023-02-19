@@ -1534,7 +1534,7 @@ static void allocatechan(struct itplayer *this, struct it_logchan *c)
 
 static void getproctime (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)
 {
-	this->proctime = cpifaceSession->mcpGet (-1, mcpGCmdTimer);
+	this->proctime = cpifaceSession->mcpGet (cpifaceSession, -1, mcpGCmdTimer);
 }
 
 static void putglobdata (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)
@@ -1555,7 +1555,7 @@ static void putque(struct itplayer *this, int type, int val1, int val2)
 
 static int gettime (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	return cpifaceSession->mcpGet (-1, mcpGTimer);
+	return cpifaceSession->mcpGet (cpifaceSession, -1, mcpGTimer);
 }
 
 static void readque (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)
@@ -1626,7 +1626,7 @@ static void readque (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer
 
 static void checkchan (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, struct it_physchan *p)
 {
-	if (!cpifaceSession->mcpGet (p->no, mcpCStatus))
+	if (!cpifaceSession->mcpGet (cpifaceSession, p->no, mcpCStatus))
 		p->dead=1;
 	if (p->dead&&(this->channels[p->lch].pch!=p))
 		p->notecut=1;
@@ -2122,7 +2122,7 @@ int __attribute__ ((visibility ("internal"))) chanactive (struct cpifaceSessionA
 	*lc=p->lch;
 	if (!(*lc>-1)&&p->smp&&p->fvol)
 		return 0; /* force mcpGet to be checked last - stian */
-	return cpifaceSession->mcpGet(ch, mcpCStatus);
+	return cpifaceSession->mcpGet(cpifaceSession, ch, mcpCStatus);
 }
 
 int __attribute__ ((visibility ("internal"))) lchanactive (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int lc)
@@ -2132,7 +2132,7 @@ int __attribute__ ((visibility ("internal"))) lchanactive (struct cpifaceSession
 		return 0; /* avoid strange crashes on some archs - stian */
 	if (!(p->smp&&p->fvol))
 		return 0; /* force mcpGet to be checked last - stian */
-	return cpifaceSession->mcpGet (p->no, mcpCStatus);
+	return cpifaceSession->mcpGet (cpifaceSession, p->no, mcpCStatus);
 }
 
 int __attribute__ ((visibility ("internal"))) getchanins(struct itplayer *this, int ch)

@@ -530,7 +530,7 @@ static void hvlSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt,
 	}
 }
 
-static int hvlGet (int ch, int opt)
+static int hvlGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 {
 	return 0;
 }

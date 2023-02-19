@@ -882,7 +882,7 @@ static void mpegSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt
 	}
 }
 
-static int mpegGet(int ch, int opt)
+static int mpegGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 {
 	return 0;
 }

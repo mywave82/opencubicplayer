@@ -215,7 +215,7 @@ static int quelen;
 static void readque (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int type,val1/*,val2*/;
-	int time = cpifaceSession->mcpGet (-1, mcpGTimer);
+	int time = cpifaceSession->mcpGet (cpifaceSession, -1, mcpGTimer);
 	while (1)
 	{
 		if (querpos==quewpos)
@@ -1140,7 +1140,7 @@ static void PlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 		return;
 
 	for (i=0; i<physchan; i++)
-		if (!cpifaceSession->mcpGet (i, mcpCStatus))
+		if (!cpifaceSession->mcpGet (cpifaceSession, i, mcpCStatus))
 			if (pchan[i]!=-1)
 			{
 				cpifaceSession->mcpSet (cpifaceSession, i, mcpCReset, 0);
@@ -1552,7 +1552,7 @@ static void PlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 		}
 	}
 	readque (cpifaceSession);
-	cmdtime = cpifaceSession->mcpGet (-1, mcpGCmdTimer);
+	cmdtime = cpifaceSession->mcpGet (cpifaceSession, -1, mcpGCmdTimer);
 	putque(cmdtime, -1, (currentrow<<8)|(currentpattern<<16), 0);
 }
 
@@ -1822,7 +1822,7 @@ int __attribute__ ((visibility ("internal"))) mpGetChanStatus (struct cpifaceSes
 {
 	if (tdata[ch].phys==-1)
 		return 0;
-	return cpifaceSession->mcpGet (tdata[ch].phys, mcpCStatus);
+	return cpifaceSession->mcpGet (cpifaceSession, tdata[ch].phys, mcpCStatus);
 }
 
 void __attribute__ ((visibility ("internal"))) mpGetRealVolume (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *l, int *r)

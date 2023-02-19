@@ -276,7 +276,7 @@ static void ReadQue (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int type,val1,val2,t;
 	int i;
-	int time = cpifaceSession->mcpGet(-1, mcpGTimer);
+	int time = cpifaceSession->mcpGet (cpifaceSession, -1, mcpGTimer);
 	while (1)
 	{
 		if (querpos==quewpos)
@@ -523,7 +523,7 @@ static void xmpPlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 		firstspeed=0;
 	}
 
-	cmdtime = cpifaceSession->mcpGet (-1, mcpGCmdTimer);
+	cmdtime = cpifaceSession->mcpGet (cpifaceSession, -1, mcpGCmdTimer);
 	ReadQue (cpifaceSession);
 
 	tick0=0;
@@ -1385,7 +1385,7 @@ int __attribute__ ((visibility ("internal"))) xmpGetRealPos (struct cpifaceSessi
 
 int __attribute__ ((visibility ("internal"))) xmpChanActive (struct cpifaceSessionAPI_t *cpifaceSession, int ch)
 {
-	return cpifaceSession->mcpGet(ch, mcpCStatus)&&channels[ch].cursamp&&channels[ch].chVol&&channels[ch].chFadeVol;
+	return cpifaceSession->mcpGet (cpifaceSession, ch, mcpCStatus)&&channels[ch].cursamp&&channels[ch].chVol&&channels[ch].chFadeVol;
 }
 
 int __attribute__ ((visibility ("internal"))) xmpGetChanIns(int ch)
@@ -1404,7 +1404,7 @@ int __attribute__ ((visibility ("internal"))) xmpGetDotsData (struct cpifaceSess
 {
 	struct channel *c;
 
-	if (!cpifaceSession->mcpGet (ch, mcpCStatus))
+	if (!cpifaceSession->mcpGet (cpifaceSession, ch, mcpCStatus))
 		return 0;
 	c=&channels[ch];
 	if (!c->cursamp||!c->chVol||!c->chFadeVol)

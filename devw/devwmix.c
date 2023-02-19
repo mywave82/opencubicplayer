@@ -712,7 +712,7 @@ static void devwMixSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int 
 	}
 }
 
-static int devwMixGET(int ch, int opt)
+static int devwMixGET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 {
 	/* Refered by OpenPlayer
 	 */

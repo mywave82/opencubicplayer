@@ -268,7 +268,7 @@ static void iReverb_process (struct cpifaceSessionAPI_t *cpifaceSession, int32_t
 	{
 		outgainchorus = 0;
 	} else {
-		outgainchorus = cpifaceSession->mcpGet(0, mcpMasterChorus)<<10;
+		outgainchorus = cpifaceSession->mcpGet (cpifaceSession, 0, mcpMasterChorus)<<10;
 	}
 
 	if (outgainchorus > 0)
@@ -332,7 +332,7 @@ static void iReverb_process (struct cpifaceSessionAPI_t *cpifaceSession, int32_t
 	{
 		outgainreverb = 0;
 	} else {
-		outgainreverb = cpifaceSession->mcpGet(0, mcpMasterReverb)<<10;
+		outgainreverb = cpifaceSession->mcpGet (cpifaceSession, 0, mcpMasterReverb)<<10;
 	}
 	if (outgainreverb > 0)
 	{

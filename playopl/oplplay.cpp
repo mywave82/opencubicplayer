@@ -167,7 +167,7 @@ static void oplSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt,
 	}
 }
 
-static int oplGet(int ch, int opt)
+static int oplGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 {
 	return 0;
 }

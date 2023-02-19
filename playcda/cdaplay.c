@@ -455,7 +455,7 @@ static void cdSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, 
 	}
 }
 
-static int cdGet (int ch, int opt)
+static int cdGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 {
 	return 0;
 }

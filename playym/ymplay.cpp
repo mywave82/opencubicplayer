@@ -182,7 +182,7 @@ static void ymSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, 
 	}
 }
 
-static int ymGet (int ch, int opt)
+static int ymGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 {
 	return 0;
 }

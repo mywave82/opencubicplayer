@@ -209,7 +209,7 @@ static void itpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	for (i=0; i < cpifaceSession->PhysicalChannelCount; i++)
 	{
-		if (cpifaceSession->mcpGet(i, mcpCStatus))
+		if (cpifaceSession->mcpGet (cpifaceSession, i, mcpCStatus))
 		{
 			nch++;
 		}

@@ -720,7 +720,7 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 	}
 }
 
-static int devwMixFGET(int ch, int opt)
+static int devwMixFGET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 {
 /*
 	struct channel *chn;*/

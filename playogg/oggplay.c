@@ -804,7 +804,7 @@ static void oggSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt,
 	}
 }
 
-static int oggGet(int ch, int opt)
+static int oggGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 {
 	return 0;
 }

@@ -884,7 +884,7 @@ static void flacSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt
 	}
 }
 
-static int flacGet (int ch, int opt)
+static int flacGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 {
 	return 0;
 }

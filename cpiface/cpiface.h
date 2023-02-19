@@ -299,7 +299,7 @@ struct cpifaceSessionAPI_t
 	int  (*KeyHelpDisplay) (void); /* Draws the keyboard shortcut list and polls keyboard. Call for each draw-iteration until it returns zero */
 
 	void (*mcpSet)(struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val); /* Filled in by devw or playback plugin */
-	int (*mcpGet)(int ch, int opt); /* Filled in by devw or playback plugin */
+	int (*mcpGet)(struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt); /* Filled in by devw or playback plugin */
 	void (*mcpGetVolRegs) (struct cpifaceSessionAPI_t *cpifaceSession, void (*Callback)(struct cpifaceSessionAPI_t *cpifaceSession, const struct ocpvolregstruct *vol)); /* Optionally filled in by devw plugin */
 
 	/* Callbacks and status from cpiface to plugin */

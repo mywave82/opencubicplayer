@@ -357,7 +357,7 @@ static void devwNoneSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 	}
 }
 
-static int devwNoneGET(int ch, int opt)
+static int devwNoneGET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 {
 	switch (opt)
 	{

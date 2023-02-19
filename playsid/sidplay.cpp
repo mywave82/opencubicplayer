@@ -579,7 +579,7 @@ static void sidSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt,
 	}
 }
 
-static int sidGet(int ch, int opt)
+static int sidGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 {
 	return 0;
 }
