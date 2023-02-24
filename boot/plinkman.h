@@ -85,7 +85,6 @@ extern void lnkFree(const int id);
 extern void lnkInit(void);
 #define _lnkGetSymbol(name) lnkGetSymbol(0, name)
 extern void *lnkGetSymbol(const int id, const char *name);
-extern char *lnkReadInfoReg(const int id, const char *key);
 extern int lnkCountLinks(void);
 extern int lnkGetLinkInfo(struct linkinfostruct *l, uint32_t *size, int index);
 

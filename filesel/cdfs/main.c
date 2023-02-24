@@ -439,9 +439,4 @@ static void cdfsclose(void)
 	//unregister_dirdecompressor (&cdfsdecompressor);
 }
 
-
-#ifndef SUPPORT_STATIC_PLUGINS
-const char *dllinfo = "";
-#endif
-
 DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "cdfs", .desc = "OpenCP virtual CDFS filebrowser (c) 2022-'23 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 60, .Init = cdfsint, .Close = cdfsclose};
