@@ -3987,11 +3987,11 @@ void __attribute__ ((visibility ("internal"))) UDF_Descriptor (struct cdfs_disc_
 		debug_printf ("SearchEnd=%" PRId32 "\n", SearchEnd);
 		if (SearchEnd > 256)
 		{
-			if (cdfs_fetch_absolute_sector_2048 (disc, SearchEnd - 1, buffer))
+			if (cdfs_fetch_absolute_sector_2048 (disc, SearchEnd, buffer))
 			{
 				debug_printf ("Failed to fetch sector N");
 			} else {
-				invalid_N = AnchorVolumeDescriptorPointer (n, buffer, SearchEnd - 1, &MainVolumeDescriptorSequenceExtent_N, &ReserveVolumeDescriptorSequenceExtent_N);
+				invalid_N = AnchorVolumeDescriptorPointer (n, buffer, SearchEnd, &MainVolumeDescriptorSequenceExtent_N, &ReserveVolumeDescriptorSequenceExtent_N);
 			}
 
 			if (cdfs_fetch_absolute_sector_2048 (disc, SearchEnd - 256, buffer))
