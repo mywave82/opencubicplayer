@@ -540,7 +540,7 @@ more than 4 channels.
 @section Key Reference
 @multitable @columnfractions .3 .7
 @item
-@key{ESC}
+@key{ESC} @key{ESC}
 @tab
 quit the player
 @item
@@ -552,15 +552,15 @@ help
 @tab
 volume up/down
 @item
-@key{CTRL}+@{@key{F2}, @key{F3}@}
+@key{SHIFT}+@{@key{F2}, @key{F3}@}
 @tab
 change amplification
 @item
-@key{ALT}+@key{F2}
+@key{CTRL}+@key{SHIFT}+@key{F2}
 @tab
 @emph{save} current configuration
 @item
-@key{ALT}+@key{F3}
+@key{CTRL}+@key{SHIFT}+@key{F3}
 @tab
 load previously saved configuration
 @item
@@ -568,7 +568,7 @@ load previously saved configuration
 @tab
 surround on/off
 @item
-@key{ALT}+@key{F4}
+@key{CTRL}+@key{SHIFT}+@key{F4}
 @tab
 load default configuration
 @item
@@ -576,7 +576,7 @@ load default configuration
 @tab
 change panning
 @item
-@key{CTRL}+@{@key{F5}, @key{F6}@}
+@key{SHIFT}+@{@key{F5}, @key{F6}@}
 @tab
 adjust reverb
 @item
@@ -584,7 +584,7 @@ adjust reverb
 @tab
 change balance
 @item
-@key{CTRL}+@{@key{F7}, @key{F8}@}
+@key{SHIFT}+@{@key{F7}, @key{F8}@}
 @tab
 adjust chorus
 @item
@@ -592,7 +592,7 @@ adjust chorus
 @tab
 change speed
 @item
-@key{ALT}+@key{F9}
+@key{|}
 @tab
 song message
 @item
@@ -600,29 +600,13 @@ song message
 @tab
 change pitch
 @item
-@key{F11}
-@tab
-toggle between 6581 and 8580 (sidplayer only)
-@item
-@key{F12}
-@tab
-toggle between PAL and NTSC (sidplayer only)
-@item
 @key{CTRL}+@key{F12}
 @tab
 (un)lock speed and pitch
 @item
 @key{1}..@key{0}
 @tab
-solo channel 1..10
-@item
-@key{ALT}+@key{1}..@key{0}
-@tab
-solo channel 11..20
-@item
-@key{CTRL}+@key{1}..@key{0}
-@tab
-solo channel 21..30
+select and toggle channel 1..10
 @item
 @key{a}
 @tab
@@ -642,11 +626,11 @@ channel mode
 @item
 @key{d}
 @tab
-goto DOS
+open a shell
 @item
 @key{f}
 @tab
-goto fileselector
+open fileselector
 @item
 @key{g}
 @tab
@@ -658,7 +642,7 @@ graphic spectrum analyzer in 1024x768
 @item
 @key{ALT}+@key{g}
 @tab
-toggle fast/fine algorithm
+toggle fast/fine algorithm in graphic spectrum analyzer
 @item
 @key{h}
 @tab
@@ -692,10 +676,6 @@ pattern looping on/off
 @tab
 volume control
 @item
-@key{CTRL}+@key{m}
-@tab
-same as @key{Enter}
-@item
 @key{n}
 @tab
 note dots
@@ -711,10 +691,6 @@ behaves like @key{Tab} in this mode
 @key{p}
 @tab
 pause
-@item
-@key{ALT}+@key{p}
-@tab
-pause screen
 @item
 @key{q}
 @tab
@@ -806,7 +782,7 @@ scroll in current window
 @item
 @key{CTRL}+@{@key{Pgup}, @key{Pgdown}@}
 @tab
-scroll in instruments window (eXtended mode)
+scroll a page in instruments window
 @item
 @key{Home}, @key{End}
 @tab
