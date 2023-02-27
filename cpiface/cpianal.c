@@ -67,8 +67,9 @@ static uint16_t ana[1024];
 
 static void AnalDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 {
-	char str[80]; /* contains the title string */
+	char str[83]; /* contains the title string */
 	char s2[20];
+	char s3[4];
 	char *s; /* pointer to temp string */
 	unsigned int wid;
 	unsigned int ofs;
@@ -95,6 +96,19 @@ static void AnalDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 			s="master channel, stereo";
 	}
 
+	/* generate the string for gain value, for values less than 1.0, write .99 */
+	if (plAnalScale < 2048)
+	{
+		snprintf (s3, sizeof (s3), ".%02u", (plAnalScale * 100 + 10) / 2048);
+	} else {
+		unsigned g = (plAnalScale * 10 + 1) / 2048;
+		if (g > 99)
+		{
+			g = 99;
+		}
+		snprintf (s3, sizeof (s3), "%u.%u", g / 10, g % 10);
+	}
+
 	/* 7 bits 64+8 => 72
 	 * 8 bits 128+8 => 136
 	 * 9 bits 256+8 => 304
@@ -113,9 +127,11 @@ static void AnalDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 		bits=11;
 
 	/* print the title string */
-	snprintf (str, sizeof (str), "  spectrum analyser, step: %3iHz, max: %5iHz, %s",
+	snprintf (str, sizeof (str), "%sspectrum analyser, step: %3iHz, max: %5iHz, gain: %sx, %s",
+	          (plAnalWidth >= 84) ? "  " : (plAnalWidth >= 82) ? " " : "",
 		  (int)(plAnalRate>>bits),
 		  (int)(plAnalRate>>1),
+	          s3,
 		  s
 	);
 
@@ -243,12 +259,12 @@ static int AnalAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t
 		case KEY_CTRL_PGUP:
 		/*case 0x7600: //ctrl-pgdn*/
 			plAnalScale=(plAnalScale+1)*32/31;
-			plAnalScale=(plAnalScale>=4096)?4096:(plAnalScale<256)?256:plAnalScale;
+			plAnalScale=(plAnalScale>=8192)?8192:(plAnalScale<256)?256:plAnalScale;
 			break;
 		case KEY_CTRL_PGDN:
 		/*case 0x7600: //ctrl-pgdn*/
 			plAnalScale=plAnalScale*31/32;
-			plAnalScale=(plAnalScale>=4096)?4096:(plAnalScale<256)?256:plAnalScale;
+			plAnalScale=(plAnalScale>=8192)?4096:(plAnalScale<256)?256:plAnalScale;
 			break;
 		/* case 0x4900: //pgup*/
 		case KEY_PPAGE:
