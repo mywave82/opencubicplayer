@@ -369,7 +369,9 @@ static void preparepatgen (struct cpifaceSessionAPI_t *cpifaceSession, int pat, 
 		}
 		lastprow=curlen;
 		if ((firstrow+curlen-firstprow)>=plPatBufH)
+		{
 			lastprow=plPatBufH-firstrow-firstprow-1;
+		}
 
 		for (i=firstprow; i<lastprow; i++)
 		{
@@ -421,8 +423,10 @@ static void preparepatgen (struct cpifaceSessionAPI_t *cpifaceSession, int pat, 
 		firstprow=0;
 		firstpat++;
 
-		if (firstrow>=plPatBufH)
+		if (firstrow >= (plPatBufH-1))
+		{
 			break;
+		}
 	}
 	for (i=firstrow; i<plPatBufH; i++)
 		writestring(plPatBuf[i], 0, COLBACK, "", CONSOLE_MAX_X);
