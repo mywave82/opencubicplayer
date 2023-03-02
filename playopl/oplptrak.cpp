@@ -60,30 +60,30 @@ struct pattern_t
   uint8_t volume;
 };
 static struct pattern_t *pattern;
-static int patterndim;
+static int patterndim = 0;
 
 static void preparepattern (int rows, int channels)
 {
- if (rows * channels > patterndim)
- {
-    int i;
-    patterndim = rows * channels;
-    free (pattern);
-    pattern = (struct pattern_t *)malloc (sizeof (pattern[0]) * patterndim);
-    if (!pattern)
-    {
-      patterndim = 0;
-      return;
-    }
-    for (i=0; i < patterndim; i++)
-    {
-      pattern[i].note = 0;
-      pattern[i].inst = 0;
-      pattern[i].command = CPlayer::TrackedCmdNone;
-      pattern[i].param = 0;
-      pattern[i].volume = 255;
-    }
-  }
+	int i;
+	if (rows * channels > patterndim)
+	{
+		patterndim = rows * channels;
+		free (pattern);
+		pattern = (struct pattern_t *)malloc (sizeof (pattern[0]) * patterndim);
+		if (!pattern)
+		{
+			patterndim = 0;
+			return;
+		}
+	}
+	for (i=0; i < patterndim; i++)
+	{
+		pattern[i].note = 0;
+		pattern[i].inst = 0;
+		pattern[i].command = CPlayer::TrackedCmdNone;
+		pattern[i].param = 0;
+		pattern[i].volume = 255;
+	}
 }
 
 static int opl_startrow (struct cpifaceSessionAPI_t *cpifaceSession)
