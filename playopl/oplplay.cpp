@@ -604,7 +604,7 @@ void __attribute__ ((visibility ("internal"))) oplIdle (struct cpifaceSessionAPI
 
 void __attribute__ ((visibility ("internal"))) oplpGetChanInfo(int i, oplChanInfo &ci)
 {
-	OPL_CH *ch = &opl->opl->P_CH[i/2];
+	OPL_CH *ch = &opl->opl[i/18]->P_CH[(i%18)/2];
 	OPL_SLOT *slot = &ch->SLOT[i&1];
 
 	if (slot->Incr)

@@ -45,18 +45,19 @@ public:
 	void write(int reg, int val);
 	void init();
 
-	unsigned char wavesel[18];
+	unsigned char wavesel[36];
 
-        char hardvols[18][2];                   // volume cache
+        char hardvols[36][2];                   // volume cache
 
-	FM_OPL  *opl;                           // holds emulator data
+	FM_OPL  *opl[2];                        // holds emulator data
 
 	void setmute(int chan, int val);
 	int vol(int cell);
 
 private:
-	char mute[18];
-
+	char   mute[36];
+	short *mixbuf0, *mixbuf1;
+	int    mixbufSamples;
 };
 
 #endif

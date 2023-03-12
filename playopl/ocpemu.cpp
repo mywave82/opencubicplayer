@@ -41,29 +41,54 @@ static const int slot_array[32]=
 
 Cocpopl::Cocpopl(int rate)
 {
-  opl = OPLCreate(OPL_TYPE_YM3812, 3579545, rate);
+	opl[0] = OPLCreate(OPL_TYPE_YM3812, 3579545, rate);
+	opl[1] = OPLCreate(OPL_TYPE_YM3812, 3579545, rate);
+
+	currType = TYPE_DUAL_OPL2;
+
+	init();
 }
 
 Cocpopl::~Cocpopl()
 {
-  OPLDestroy(opl);
+	OPLDestroy(opl[0]);
+	OPLDestroy(opl[1]);
+	if(mixbufSamples)
+	{
+		delete[] mixbuf0;
+		delete[] mixbuf1;
+	}
 }
 
 void Cocpopl::update(short *buf, int samples)
 {
 	int i;
 
-	YM3812UpdateOne(opl,buf,samples);
+	if(mixbufSamples < samples)
+	{
+		if(mixbufSamples)
+		{
+			delete[] mixbuf0;
+			delete[] mixbuf1;
+		}
+		mixbufSamples = samples;
+		mixbuf0 = new short[samples];
+		mixbuf1 = new short[samples];
+	}
 
-	for(i=samples-1;i>=0;i--) {
-		buf[i*2] = buf[i];
-		buf[i*2+1] = buf[i];
+	YM3812UpdateOne(opl[0], mixbuf0, samples);
+	YM3812UpdateOne(opl[1], mixbuf1, samples);
+
+	for(i=0;i<samples;i++)
+	{
+		buf[i*2]   = mixbuf0[i];
+		buf[i*2+1] = mixbuf1[i];
 	}
 }
 
 void Cocpopl::write(int reg, int val)
 {
-	int slot = slot_array[reg&0x1f];
+	int slot = slot_array[reg&0x1f] + (currChip?18:0);
 
 	switch(reg&0xe0)
 	{
@@ -84,16 +109,17 @@ void Cocpopl::write(int reg, int val)
 				goto done;
 			if (reg<=0xc8)
 			{
-		                hardvols[reg-0xc0][1] = val;
-				if (mute[reg-0xc0]&&mute[reg-0xc0+9])
+		                hardvols[(reg&0x07) +     (currChip?18:0)][1] = val;
+				if (mute[(reg&0x07) +     (currChip?18:0)] &&
+				    mute[(reg&0x07) + 9 + (currChip?18:0)])
 					return;
 			}
 			break;
 	}
 
 done:
-	OPLWrite(opl,0,reg);
-	OPLWrite(opl,1,val);
+	OPLWrite(opl[currChip],0,reg);
+	OPLWrite(opl[currChip],1,val);
 }
 
 /* envelope counter lower bits */
@@ -109,7 +135,7 @@ static INT32 ENV_CURVE[2*EG_ENT+1];
 
 int Cocpopl::vol(int i)
 {
-	OPL_CH *CH = &opl->P_CH[i/2];
+	OPL_CH *CH = &opl[i/18]->P_CH[i/2];
 	OPL_SLOT *SLOT = &CH->SLOT[i&1];
 	unsigned int ofs;
 	ofs=SLOT->evc>>ENV_BITS;
@@ -120,7 +146,8 @@ int Cocpopl::vol(int i)
 
 void Cocpopl::init()
 {
-	OPLResetChip(opl);
+	OPLResetChip(opl[0]);
+	OPLResetChip(opl[1]);
 	memset(wavesel, 0, sizeof(wavesel));
 	memset(hardvols, 0, sizeof(hardvols));
 	memset(mute, 0, sizeof(mute));
@@ -148,18 +175,18 @@ void Cocpopl::setmute(int chan, int val)
 		int slot = slot_array[i];
 		if (slot<0)
 			continue;
-		OPLWrite(opl, 0, i+0x40);
+		OPLWrite(opl[chan/18], 0, i+0x40);
 		if ((mute[slot]))
-			OPLWrite(opl, 1, 63);
+			OPLWrite(opl[chan/18], 1, 63);
 		else
-			OPLWrite(opl, 1, hardvols[slot][0]);
+			OPLWrite(opl[chan/18], 1, hardvols[slot+((chan/18)?18:0)][0]);
 	}
 	for (i=0;i<9;i++)
 	{
-		OPLWrite(opl, 0, i+0xc0);
+		OPLWrite(opl[chan/18], 0, i+0xc0);
 		if ((mute[i]&&mute[i+9]))
-			OPLWrite(opl, 1, 0);
+			OPLWrite(opl[chan/18], 1, 0);
 		else
-			OPLWrite(opl, 1, hardvols[i][1]);
+			OPLWrite(opl[chan/18], 1, hardvols[i+((chan/18)?18:0)][1]);
 	}
 }
