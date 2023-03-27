@@ -540,6 +540,7 @@ after_dot:
 										memmove (buffer + 1, buffer, strlen (buffer) + 1);
 										buffer[0] = '0';
 									}
+									requested_precision++;
 								}
 								if ((requested_width > requested_precision) && minusflag)
 								{
