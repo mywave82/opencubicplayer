@@ -193,6 +193,7 @@ isancient:
 
 		struct ocpfilehandle_t *retval = ancient_filehandle_srcbuffer (compressionmethod, compressionmethod_len, s, buffer, fill);
 		free (buffer);
+		s->seek_set (s, 0);
 		return retval;
 	}
 
