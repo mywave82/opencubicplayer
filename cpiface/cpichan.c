@@ -104,7 +104,7 @@ static void ChanDraw (struct cpifaceSessionAPI_t *cpifaceSession, int ignore)
 				writestring(buf, 0, cpifaceSession->MuteChannel[i]?0x08:0x07, " ##:", 4);
 				writestring(buf, 0, 0x0F, sign, 1);
 				writenum(buf, 1, cpifaceSession->MuteChannel[i]?0x08:0x07, i+1, 10, 2, 1);
-				ChanDisplay (cpifaceSession, buf+4, (plChanWidth<128)?cpiChanWidth_76:cpiChanWidth_128, y+first, plCompoMode);
+				ChanDisplay (cpifaceSession, buf+4, (plChanWidth<132)?cpiChanWidth_76:cpiChanWidth_128, y+first, plCompoMode);
 			} else {
 				writestring(buf, 0, cpifaceSession->MuteChannel[i]?0x08:0x07, "     ##:", 8);
 				writestring(buf, 4, 0x0F, sign, 1);
