@@ -99,6 +99,11 @@ static int opl_startrow (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static void opl_trackdata (void *arg, unsigned char row, unsigned char channel, unsigned char note, CPlayer::TrackedCmds command, unsigned char inst, unsigned char volume, unsigned char param)
 {
+	if (row >= cacheRows)
+	{
+		fprintf (stderr, "Warning, ignoring event for row=%d, channel=%d, due to row>=%d\n", row, channel, cacheRows);
+		return;
+	}
 	pattern[row * cacheChannels + channel].note = note;
 	pattern[row * cacheChannels + channel].command = command;
 	pattern[row * cacheChannels + channel].inst = inst;

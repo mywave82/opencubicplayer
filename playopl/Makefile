@@ -23,14 +23,14 @@ ifeq (HAVE_SYS_TYPES_H,1)
 LIBADPLUG_CXXFLAGS+=" -DHAVE_SYS_TYPES_H=1"
 endif
 LIBADPLUG_TARGETS=\
-	adplug_a2m.o      adplug_adl.o    adplug_adplug.o   adplug_adtrack.o     adplug_amd.o     adplug_analopl.o  adplug_bam.o      adplug_bmf.o      adplug_cff.o     \
-	adplug_cmf.o      adplug_coktel.o adplug_composer.o adplug_cmfmcsop.o    adplug_d00.o     adplug_database.o adplug_dfm.o      adplug_diskopl.o  adplug_dmo.o     \
-	adplug_dro2.o     adplug_dro.o    adplug_dtm.o      adplug_emuopl.o      adplug_flash.o   adplug_fmc.o      adplug_fprovide.o adplug_got.o      adplug_herad.o   \
-	adplug_hsc.o      adplug_hsp.o    adplug_hybrid.o   adplug_hyp.o         adplug_imf.o     adplug_jbm.o      adplug_ksm.o      adplug_lds.o      adplug_mad.o     \
-	adplug_mdi.o      adplug_mid.o    adplug_mkj.o      adplug_msc.o         adplug_mtk.o     adplug_mus.o      adplug_nemuopl.o  adplug_player.o   adplug_players.o \
-	adplug_protrack.o adplug_psi.o    adplug_rad2.o     adplug_rat.o         adplug_raw.o     adplug_realopl.o  adplug_rix.o      adplug_rol.o      adplug_s3m.o     \
-	adplug_sa2.o      adplug_sng.o    adplug_sop.o      adplug_surroundopl.o adplug_temuopl.o adplug_u6m.o      adplug_vgm.o      adplug_woodyopl.o adplug_xad.o     \
-	adplug_xsm.o      adplug_debug.o  adplug_fmopl.o    adplug_nukedopl.o
+	adplug_a2m.o      adplug_adl.o      adplug_adlibemu.o adplug_adplug.o   adplug_adtrack.o     adplug_amd.o      adplug_analopl.o  adplug_bam.o      adplug_bmf.o      \
+	adplug_cff.o      adplug_cmf.o      adplug_coktel.o   adplug_composer.o adplug_cmfmcsop.o    adplug_d00.o      adplug_database.o adplug_dfm.o      adplug_diskopl.o  \
+	adplug_dmo.o      adplug_dro2.o     adplug_dro.o      adplug_dtm.o      adplug_emuopl.o      adplug_flash.o    adplug_fmc.o      adplug_fprovide.o adplug_got.o      \
+	adplug_herad.o    adplug_hsc.o      adplug_hsp.o      adplug_hybrid.o   adplug_hyp.o         adplug_imf.o      adplug_jbm.o      adplug_ksm.o      adplug_lds.o      \
+	adplug_mad.o      adplug_mdi.o      adplug_mid.o      adplug_mkj.o      adplug_msc.o         adplug_mtk.o      adplug_mus.o      adplug_nemuopl.o  adplug_player.o   \
+	adplug_players.o  adplug_protrack.o adplug_psi.o      adplug_rad2.o     adplug_rat.o         adplug_raw.o      adplug_realopl.o  adplug_rix.o      adplug_rol.o      \
+	adplug_s3m.o      adplug_sa2.o      adplug_sng.o      adplug_sop.o      adplug_surroundopl.o adplug_temuopl.o  adplug_u6m.o      adplug_vgm.o      adplug_woodyopl.o \
+	adplug_xad.o      adplug_xsm.o      adplug_debug.o    adplug_fmopl.o    adplug_nukedopl.o
 #adplugdb_adplugdb.o
 
 LIBBINIO_CXXFLAGS=$(ADPLUG_CXXFLAGS)
@@ -52,6 +52,34 @@ uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playopl$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(DATADIR)/ocp$(DIR_SUFFIX)/data/adplug.db"
 
+oplKen.o: oplKen.cpp \
+	oplKen.h \
+	adplug-git/src/opl.h \
+	adplug-git/src/adlibemu.h \
+	ocpemu.h
+	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $< -o $@ -c
+
+oplNuked.o: oplNuked.cpp \
+	oplNuked.h \
+	adplug-git/src/opl.h \
+	adplug-git/src/fmopl.h \
+	ocpemu.h
+	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $< -o $@ -c
+
+oplSatoh.o: oplSatoh.cpp \
+	oplSatoh.h \
+	adplug-git/src/opl.h \
+	adplug-git/src/nukedopl.h \
+	ocpemu.h
+	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $< -o $@ -c
+
+oplWoody.o: oplWoody.cpp \
+	oplWoody.h \
+	adplug-git/src/opl.h \
+	adplug-git/src/fmopl.h \
+	ocpemu.h
+	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $< -o $@ -c
+
 opltype.o: opltype.cpp \
 	../config.h \
 	../types.h \
@@ -67,9 +95,20 @@ opltype.o: opltype.cpp \
 	opltype.h
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) opltype.cpp -o $@ -c
 
-playopl_so=oplpplay.o oplplay.o oplptrak.o ocpemu.o opltype.o $(LIBBINIO_TARGETS) $(LIBADPLUG_TARGETS)
+playopl_so=oplchan.o oplpplay.o oplplay.o oplptrak.o ocpemu.o oplKen.o oplNuked.o oplSatoh.o oplWoody.o opltype.o $(LIBBINIO_TARGETS) $(LIBADPLUG_TARGETS)
 playopl$(LIB_SUFFIX): $(playopl_so)
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(ADPLUG_LIBS) $(MATH_LIBS)
+
+oplchan.o: oplchan.cpp \
+	../config.h \
+	../types.h \
+	../boot/psetting.h \
+	../cpiface/cpiface.h \
+	../playopl/ocpemu.h \
+	../playopl/oplplay.h \
+	../stuff/poutput.h
+	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $< -o $@ -c
+
 
 oplpplay.o: oplpplay.cpp \
 	../config.h \
@@ -100,7 +139,13 @@ oplplay.o: oplplay.cpp \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../stuff/imsrtns.h \
-	oplplay.h ocpemu.h oplptrak.h
+	oplplay.h \
+	ocpemu.h \
+	oplKen.h \
+	oplNuked.h \
+	oplSatoh.h \
+	oplWoody.h \
+	oplptrak.h
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) oplplay.cpp -o $@ -c
 
 oplptrak.o: oplptrak.cpp \
@@ -126,6 +171,10 @@ adplug_a2m.o: \
 adplug_adl.o: \
 	adplug-git/src/adl.cpp
 	$(ADPLUG_CXX) $(LIBADPLUG_CXXFLAGS) $^ -o $@ -c
+
+adplug_adlibemu.o: \
+	adplug-git/src/adlibemu.c
+	$(CC) $(LIBADPLUG_CXXFLAGS) $^ -o $@ -c
 
 adplug_adplug.o: \
 	adplug-git/src/adplug.cpp

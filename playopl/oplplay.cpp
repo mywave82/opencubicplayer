@@ -40,6 +40,23 @@ extern "C"
 #include "oplplay.h"
 #include "oplptrak.h"
 #include "ocpemu.h"
+#include "oplKen.h"
+#include "oplNuked.h"
+#include "oplSatoh.h"
+#include "oplWoody.h"
+
+#define ROW_BUFFERS 100
+
+struct oplStatusBuffer_t
+{
+	int in_use;
+	struct oplStatus data;
+	int pos;
+};
+static struct oplStatusBuffer_t oplStatusBuffers[ROW_BUFFERS] = {{0}};
+
+struct oplStatus oplLastStatus; /* current register status */
+int oplLastPos;
 
 /* options */
 static int opl_inpause;
@@ -62,11 +79,15 @@ static int16_t oplbuf[8*1024]; /* the buffer */
 static struct ringbuffer_t *oplbufpos = 0;
 static uint32_t oplbuffpos; /* read fine-pos.. when oplbufrate has a fraction */
 static uint32_t oplbufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
+static signed int oplbufrate_compensate;
 static uint32_t oplRate; /* devp rate */
+
+static uint64_t samples_committed;
+static uint64_t samples_lastui;
 
 static int opltowrite; /* this is adplug interface */
 
-static Cocpopl *opl;
+static Cocpemu *opl;
 static CPlayer *p;
 
 /* clipper threadlock since we use a timer-signal */
@@ -199,6 +220,7 @@ class CProvider_Mem: public CFileProvider
 			file_data(file_data),
 			file_size(file_size)
 		{
+			fprintf (stderr, "filesize = %d\n", file_size);
 			this->filename = strdup (filename);
 			this->file = file;
 			this->file->ref (this->file);
@@ -300,6 +322,12 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 		return errPlay;
 	}
 
+	samples_committed = 0;
+	samples_lastui = 0;
+	bzero (oplStatusBuffers, sizeof (oplStatusBuffers));
+	bzero (&oplLastStatus, sizeof (oplLastStatus));
+	oplLastPos = 0;
+
 	oplRate = 0;
 	format=PLR_STEREO_16BIT_SIGNED;
 	if (!cpifaceSession->plrDevAPI->Play (&oplRate, &format, file, cpifaceSession))
@@ -308,7 +336,11 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 		return errPlay;
 	}
 
-	opl = new Cocpopl(oplRate);
+#warning make this a ocp.ini option
+	//opl = new Cocpemu(new oplKen(oplRate), oplRate);
+	opl = new Cocpemu(new oplNuked(oplRate), oplRate);
+	//opl = new Cocpemu(new oplSatoh(oplRate), oplRate);
+	//opl = new Cocpemu(new oplWoody(oplRate), oplRate);
 
 	CProvider_Mem prMem (filename, file, cpifaceSession, content, len);
 	if (!(p = CAdPlug::factory(filename, opl, CAdPlug::players, prMem)))
@@ -321,7 +353,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	oplbufrate=0x10000; /* 1.0 */
 	oplbuffpos = 0;
 	//opl_looped = 0;
-	oplbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, sizeof (oplbuf) >> 2 /* stereo + bit16 */);
+	oplbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, sizeof (oplbuf) >> 2 /* stereo + bit16 */);
 	if (!oplbufpos)
 	{
 		retval = errAllocMem;
@@ -333,6 +365,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	cpifaceSession->mcpGet = oplGet;
 	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
+	oplbufrate_compensate = 0;
 	opl_inpause = 0;
 
 	active=1;
@@ -386,6 +419,15 @@ static void oplSetVolume(void)
 		voll=(voll*(64-bal))>>6;
 }
 
+static void oplStatBuffers_callback_from_oplbuf (void *arg, int samples_ago)
+{
+	oplStatusBuffer_t *state = (oplStatusBuffer_t *)arg;
+
+	oplLastStatus = state->data;
+	oplLastPos = state->pos;
+	state->in_use = 0;
+}
+
 static void oplIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int pos1, pos2;
@@ -412,6 +454,20 @@ static void oplIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 		opl->update(oplbuf+(pos1<<1) /* stereo */, length1); /* given in samples */
 
 		opltowrite-=length1;
+
+		for (int i=0; i < ROW_BUFFERS; i++)
+		{
+			if (oplStatusBuffers[i].in_use)
+			{
+				continue;
+			}
+
+			oplStatusBuffers[i].in_use = 1;
+			oplStatusBuffers[i].data = opl->s;
+			oplStatusBuffers[i].pos = p->getorder() << 8 | p->getrow();
+			cpifaceSession->ringbufferAPI->add_tail_callback_samples (oplbufpos, 0, oplStatBuffers_callback_from_oplbuf, oplStatusBuffers + i);
+			break;
+		}
 
 		cpifaceSession->ringbufferAPI->head_add_samples (oplbufpos, length1);
 		cpifaceSession->ringbufferAPI->get_head_samples (oplbufpos, &pos1, &length1, &pos2, &length2);
@@ -447,7 +503,7 @@ void __attribute__ ((visibility ("internal"))) oplIdle (struct cpifaceSessionAPI
 			oplIdler (cpifaceSession);
 
 			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-			cpifaceSession->ringbufferAPI->get_tail_samples (oplbufpos, &pos1, &length1, &pos2, &length2);
+			cpifaceSession->ringbufferAPI->get_processing_samples (oplbufpos, &pos1, &length1, &pos2, &length2);
 
 			if (oplbufrate==0x10000)
 			{
@@ -592,32 +648,43 @@ void __attribute__ ((visibility ("internal"))) oplIdle (struct cpifaceSessionAPI
 					pos2 = 0;
 				} /* while (targetlength && length1) */
 			} /* if (oplbufrate==0x10000) */
-			cpifaceSession->ringbufferAPI->tail_consume_samples (oplbufpos, accumulated_source);
+			cpifaceSession->ringbufferAPI->processing_consume_samples (oplbufpos, accumulated_source);
 			cpifaceSession->plrDevAPI->CommitBuffer (accumulated_target);
+			samples_committed += accumulated_target;
+			oplbufrate_compensate += accumulated_target - accumulated_source;
 		} /* if (targetlength) */
 	}
 
-	cpifaceSession->plrDevAPI->Idle();
+	{
+		uint64_t delay = cpifaceSession->plrDevAPI->Idle();
+		uint64_t new_ui = samples_committed - delay;
+		if (new_ui > samples_lastui)
+		{
+			int delta = new_ui - samples_lastui;
+
+#warning use the new API instead of this wierd hack ???
+			if (oplbufrate_compensate > 0) /* we have been slowing down */
+			{
+				if (delta >= oplbufrate_compensate)
+				{
+					delta -= oplbufrate_compensate;
+					oplbufrate_compensate = 0;
+				} else {
+					oplbufrate_compensate -= delta;
+					delta = 0;
+				}
+			} else if ((oplbufrate_compensate < 0) && delta) /* we have been speeding up... */
+			{
+				delta -= oplbufrate_compensate; /* double negative, makes delta grow */
+				oplbufrate_compensate = 0;
+			}
+
+			cpifaceSession->ringbufferAPI->tail_consume_samples (oplbufpos, delta);
+			samples_lastui = new_ui;
+		}
+	}
 
 	clipbusy--;
-}
-
-void __attribute__ ((visibility ("internal"))) oplpGetChanInfo(int i, oplChanInfo &ci)
-{
-	OPL_CH *ch = &opl->opl[i/18]->P_CH[(i%18)/2];
-	OPL_SLOT *slot = &ch->SLOT[i&1];
-
-	if (slot->Incr)
-	{
-		ci.freq = slot->Incr / 0x100;
-	} else
-		ci.freq = 0;
-	ci.wave=opl->wavesel[i];
-	if (!slot->Incr)
-		ci.vol=0;
-	else
-		if ((ci.vol=opl->vol(i)>>7)>63)
-			ci.vol=63;
 }
 
 void __attribute__ ((visibility ("internal"))) oplpGetGlobInfo(oplTuneInfo &si)
