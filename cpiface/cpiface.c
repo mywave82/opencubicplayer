@@ -2437,7 +2437,6 @@ static int cpiChanProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 			cpifaceSession->SelectedChannelChanged = 1;
 			break;
 
-
 		case '1': case '2': case '3': case '4': case '5':
 		case '6': case '7': case '8': case '9': case '0':
 			if (key=='0')
