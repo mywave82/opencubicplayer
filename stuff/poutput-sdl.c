@@ -219,10 +219,10 @@ static void sdl_SetTextMode (unsigned char x)
 		return;
 	}
 
-	sdl_SetGraphMode (-1);
-
 	if (x==255)
 	{
+		sdl_SetGraphMode (-1);
+
 		if (current_surface)
 		{
 			/* This surface belongs to SDL internals */
@@ -975,6 +975,27 @@ static void RefreshScreenGraph(void)
 					for (j = 0; j < Console.GraphBytesPerLine; j++)
 					{
 						*(dst++)=sdl_palette[*(src++)];
+					}
+					if ((++Y) >= Console.GraphLines)
+					{
+						break;
+					}
+					dst_line += current_surface->pitch;
+				}
+				break;
+			}
+			case 3:
+			{
+				uint8_t *dst;
+				while (1)
+				{
+					dst = (uint8_t *)dst_line;
+					for (j = 0; j < Console.GraphBytesPerLine; j++)
+					{
+						*(dst++)=sdl_palette[*src];
+						*(dst++)=sdl_palette[*src] >> 8;
+						*(dst++)=sdl_palette[*src] >> 16;
+						src++;
 					}
 					if ((++Y) >= Console.GraphLines)
 					{
