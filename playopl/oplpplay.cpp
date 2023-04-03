@@ -37,13 +37,14 @@ extern "C"
 #include "filesel/filesystem.h"
 #include "filesel/pfilesel.h"
 #include "filesel/mdb.h"
+#include "playopl/oplconfig.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 }
-#include "oplplay.h"
-#include "opltype.h"
+#include "playopl/oplplay.h"
+#include "playopl/opltype.h"
 
 static time_t starttime;      /* when did the song start, if paused, this is slided if unpaused */
 static time_t pausetime;      /* when did the pause start (fully paused) */
@@ -267,11 +268,13 @@ static int oplOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 
 static int oplPluginInit (struct PluginInitAPI_t *API)
 {
+	opl_config_init (API);
 	return opl_type_init (API);
 }
 
 static void oplPluginClose (struct PluginCloseAPI_t *API)
 {
+	opl_config_done (API);
 	opl_type_done (API);
 }
 

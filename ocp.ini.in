@@ -1,5 +1,5 @@
 [version]
-  epoch=20230214
+  epoch=20230403
 
 [general]
 ;link=
@@ -138,6 +138,13 @@
   kernal=KERNAL.ROM
   basic=BASIC.ROM
   chargen=CHARGEN.ROM
+
+[adplug]
+  emulator=nuked          ; Possible values are ken, nuked, satoh and woody.
+                          ; Ken is a dual OPL2 emulator based on Ken Silverman OPL2 emulator
+                          ; Nuked is a bit-perfect OPL3 emulator made by Nuke.YKT based on die shots.
+                          ; Satoh is a dual OPL2 emulator based on code by Tatsuyuki Satoh by the MAME Team.
+                          ; Woody is an OPL3 emulator by the DOSBox Team. It is a further development of Ken Silverman OPL2 emulator.
 
 [devpALSA]
   card=default

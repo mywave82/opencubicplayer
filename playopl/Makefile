@@ -52,6 +52,21 @@ uninstall:
 	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playopl$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(DATADIR)/ocp$(DIR_SUFFIX)/data/adplug.db"
 
+oplconfig.o: oplconfig.c \
+	../config.h \
+	../types.h \
+	../boot/plinkman.h \
+	../boot/psetting.h \
+	../filesel/filesystem.h \
+	../filesel/filesystem-drive.h \
+	../filesel/filesystem-file-dev.h \
+	../filesel/filesystem-setup.h \
+	../filesel/pfilesel.h \
+	../playopl/oplconfig.h \
+	../stuff/err.h \
+	../stuff/poutput.h
+	$(CC) $(CFLAGS) $< -o $@ -c
+
 oplKen.o: oplKen.cpp \
 	oplKen.h \
 	adplug-git/src/opl.h \
@@ -95,7 +110,7 @@ opltype.o: opltype.cpp \
 	opltype.h
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) opltype.cpp -o $@ -c
 
-playopl_so=oplchan.o oplpplay.o oplplay.o oplptrak.o ocpemu.o oplKen.o oplNuked.o oplSatoh.o oplWoody.o opltype.o $(LIBBINIO_TARGETS) $(LIBADPLUG_TARGETS)
+playopl_so=oplconfig.o oplchan.o oplpplay.o oplplay.o oplptrak.o ocpemu.o oplKen.o oplNuked.o oplSatoh.o oplWoody.o opltype.o $(LIBBINIO_TARGETS) $(LIBADPLUG_TARGETS)
 playopl$(LIB_SUFFIX): $(playopl_so)
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(ADPLUG_LIBS) $(MATH_LIBS)
 
@@ -125,13 +140,15 @@ oplpplay.o: oplpplay.cpp \
 	../stuff/err.h \
 	../stuff/poutput.h \
 	../stuff/sets.h \
-	oplplay.h \
-	opltype.h
+	../playopl/oplconfig.h \
+	../playopl/oplplay.h \
+	../playopl/opltype.h
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) oplpplay.cpp -o $@ -c
 
 oplplay.o: oplplay.cpp \
 	../config.h \
 	../types.h \
+	../boot/psetting.h \
 	../cpiface/cpiface.h \
 	../dev/mcp.h \
 	../dev/player.h \

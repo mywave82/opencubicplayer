@@ -725,7 +725,7 @@ static void OPLChanDisplay128 (struct cpifaceSessionAPI_t *cpifaceSession, const
 			"%3s %4s " ADSR_fmt " " Vi_fmt " " Tr_fmt " %.7o%c %c %c "
 			"%3s %4s " ADSR_fmt " " Vi_fmt " " Tr_fmt " %.7o%c %c %c "
 			"%3s %4s " ADSR_fmt " " Vi_fmt " " Tr_fmt " %.7o%c %c "
-			"%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.7o\xb3%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe %.7o"
+			"%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.7o\xb3%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe%.*o\xfe"
 			" %.7o%2s-%2s",
 
 			nte[0], shap4[s->channel[ch].op[0].waveform_select],

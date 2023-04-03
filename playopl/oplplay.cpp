@@ -28,6 +28,7 @@
 #include "types.h"
 extern "C"
 {
+#include "boot/psetting.h"
 #include "cpiface/cpiface.h"
 #include "dev/player.h"
 #include "dev/mcp.h"
@@ -316,6 +317,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 {
 	enum plrRequestFormat format;
 	int retval;
+	const char *str;
 
 	if (!cpifaceSession->plrDevAPI)
 	{
@@ -336,11 +338,21 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 		return errPlay;
 	}
 
-#warning make this a ocp.ini option
-	//opl = new Cocpemu(new oplKen(oplRate), oplRate);
-	opl = new Cocpemu(new oplNuked(oplRate), oplRate);
-	//opl = new Cocpemu(new oplSatoh(oplRate), oplRate);
-	//opl = new Cocpemu(new oplWoody(oplRate), oplRate);
+#warning do we need surround support?
+	str = cpifaceSession->configAPI->GetProfileString ("adplug", "emulator", "nuked");
+	if (!strcasecmp (str, "ken"))
+	{
+		opl = new Cocpemu(new oplKen(oplRate), oplRate);
+	} else if (!strcasecmp (str, "satoh"))
+	{
+		opl = new Cocpemu(new oplSatoh(oplRate), oplRate);
+	} else if (!strcasecmp (str, "woody"))
+	{
+		opl = new Cocpemu(new oplWoody(oplRate), oplRate);
+	} else /* nuked */
+	{
+		opl = new Cocpemu(new oplNuked(oplRate), oplRate);
+	}
 
 	CProvider_Mem prMem (filename, file, cpifaceSession, content, len);
 	if (!(p = CAdPlug::factory(filename, opl, CAdPlug::players, prMem)))

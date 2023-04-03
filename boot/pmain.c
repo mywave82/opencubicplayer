@@ -967,9 +967,17 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileInt ("fscolors", "XM", cfGetProfileInt ("fscolors", "XM", 3, 10), 10);
 		}
 
-		if (epoch < 20230214)
+		if (epoch < 20230403)
 		{
-			cfSetProfileInt("version", "epoch", 20230214, 10);
+			fprintf(stderr, "ocp.ini update (0.2.104), added [adplug] emulator=nuked\n");
+
+			cfSetProfileString  ("adplug", "emulator", "nuked");
+			cfSetProfileComment ("adplug", "emulator", "; Possible values are ken, nuked, satoh and woody.");
+		}
+
+		if (epoch < 20230403)
+		{
+			cfSetProfileInt("version", "epoch", 20230403, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -980,13 +988,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20230214)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20230403)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20230214\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20230403\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20230214\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20230403\n\n");
 		}
 		sleep(5);
 	}
