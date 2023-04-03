@@ -81,6 +81,22 @@ static void x11_TextOverlayRemove(void *handle);
 static XIM im;
 static XIC ic;
 
+struct modes_t
+{
+	int charx, chary, windowx, windowy, bigfont/*, modeline*/;
+};
+static const struct modes_t modes[8]=
+{
+	{  80,  25,  640,  400, 1/*, MODE_640x400*/},
+	{  80,  30,  640,  480, 1/*, MODE_640x480*/},
+	{  80,  50,  640,  400, 0/*, MODE_640x400*/},
+	{  80,  60,  640,  480, 0/*, MODE_640x480*/},
+	{ 128,  48, 1024,  768, 1/*, MODE_1024x768*/},
+	{ 160,  64, 1280, 1024, 1/*, MODE_1280x1024*/},
+	{ 128,  96, 1024,  768, 0/*, MODE_1024x768*/},
+	{ 160, 128, 1280, 1024, 0/*, MODE_1280x1024*/}
+};
+
 static const struct consoleDriver_t x11ConsoleDriver;
 
 /* "stolen" from Mplayer START */
@@ -445,6 +461,12 @@ static void WindowResized_Textmode(unsigned int width, unsigned int height)
 
 	if (!do_fullscreen)
 	{
+		if ((Console.CurrentMode != 8) &&
+		    ((modes[Console.CurrentMode].windowy != height) ||
+		     (modes[Console.CurrentMode].windowx != width)))
+		{
+			Console.LastTextMode = Console.CurrentMode = 8;
+		}
 		Textmode_Window_Height = height;
 		Textmode_Window_Width = width;
 	}
@@ -1300,22 +1322,6 @@ static void x11_vga13(void)
 
 static void x11_SetTextMode (unsigned char x)
 {
-	struct modes_t
-	{
-		int charx, chary, windowx, windowy, bigfont/*, modeline*/;
-	};
-	const struct modes_t modes[8]=
-	{
-		{  80,  25,  640,  400, 1/*, MODE_640x400*/},
-		{  80,  30,  640,  480, 1/*, MODE_640x480*/},
-		{  80,  50,  640,  400, 0/*, MODE_640x400*/},
-		{  80,  60,  640,  480, 0/*, MODE_640x480*/},
-		{ 128,  48, 1024,  768, 1/*, MODE_1024x768*/},
-		{ 160,  64, 1280, 1024, 1/*, MODE_1280x1024*/},
-		{ 128,  96, 1024,  768, 0/*, MODE_1024x768*/},
-		{ 160, 128, 1280, 1024, 0/*, MODE_1280x1024*/}
-	};
-
 	set_state = set_state_textmode;
 	WindowResized = WindowResized_Textmode;
 
@@ -1327,12 +1333,16 @@ static void x11_SetTextMode (unsigned char x)
 		return;
 	}
 
-	x11_SetGraphMode (-1);
-
-	destroy_image();
+	if (cachemode != -1)
+	{
+		x11_SetGraphMode (-1);
+		destroy_image();
+	}
 
 	if (x==255)
 	{
+		destroy_image();
+
 		if (window)
 		{
 			vo_showcursor(mDisplay, window);
@@ -1830,7 +1840,7 @@ static void RefreshScreenText (void)
 
 static int ekbhit_x11dummy (void)
 {
-	if (Console.CurrentMode < 8)
+	if (Console.CurrentMode < 9)
 	{
 		RefreshScreenText();
 	} else {
