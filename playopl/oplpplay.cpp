@@ -149,15 +149,15 @@ static int oplProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			break;
 		case KEY_CTRL_HOME:
 			oplpGetGlobInfo (ti);
-			oplSetSong (ti.currentSong);
+			oplSetSong (cpifaceSession, ti.currentSong);
 			break;
 		case '<':
 			oplpGetGlobInfo (ti);
-			oplSetSong (ti.currentSong - 1);
+			oplSetSong (cpifaceSession, ti.currentSong - 1);
 			break;
 		case '>':
 			oplpGetGlobInfo (ti);
-			oplSetSong (ti.currentSong + 1);
+			oplSetSong (cpifaceSession, ti.currentSong + 1);
 			break;
 #if 0
 		case KEY_CTRL_UP:

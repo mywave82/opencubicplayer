@@ -50,6 +50,7 @@ extern "C"
 
 struct oplStatusBuffer_t
 {
+	const struct plrDevAPI_t *plrDevAPI;
 	int in_use;
 	struct oplStatus data;
 	int pos;
@@ -80,11 +81,7 @@ static int16_t oplbuf[8*1024]; /* the buffer */
 static struct ringbuffer_t *oplbufpos = 0;
 static uint32_t oplbuffpos; /* read fine-pos.. when oplbufrate has a fraction */
 static uint32_t oplbufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
-static signed int oplbufrate_compensate;
 static uint32_t oplRate; /* devp rate */
-
-static uint64_t samples_committed;
-static uint64_t samples_lastui;
 
 static int opltowrite; /* this is adplug interface */
 
@@ -144,8 +141,9 @@ void __attribute__ ((visibility ("internal"))) oplClosePlayer (struct cpifaceSes
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) oplSetSong (int song)
+void __attribute__ ((visibility ("internal"))) oplSetSong (struct cpifaceSessionAPI_t *cpifaceSession, int song)
 {
+	int pos1, length1, pos2, length2;
 	int songs = p->getsubsongs();
 	if (song < 1)
 	{
@@ -156,6 +154,10 @@ void __attribute__ ((visibility ("internal"))) oplSetSong (int song)
 	}
 	song--;
 	p->rewind (song);
+
+	cpifaceSession->ringbufferAPI->get_tail_bytes (oplbufpos, &pos1, &length1, &pos2, &length2);
+	cpifaceSession->ringbufferAPI->tail_consume_bytes (oplbufpos, length1 + length2);
+	oplbuffpos = 0;
 }
 
 void __attribute__ ((visibility ("internal"))) oplMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
@@ -221,7 +223,6 @@ class CProvider_Mem: public CFileProvider
 			file_data(file_data),
 			file_size(file_size)
 		{
-			fprintf (stderr, "filesize = %d\n", file_size);
 			this->filename = strdup (filename);
 			this->file = file;
 			this->file->ref (this->file);
@@ -324,8 +325,6 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 		return errPlay;
 	}
 
-	samples_committed = 0;
-	samples_lastui = 0;
 	bzero (oplStatusBuffers, sizeof (oplStatusBuffers));
 	bzero (&oplLastStatus, sizeof (oplLastStatus));
 	oplLastPos = 0;
@@ -365,7 +364,7 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	oplbufrate=0x10000; /* 1.0 */
 	oplbuffpos = 0;
 	//opl_looped = 0;
-	oplbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, sizeof (oplbuf) >> 2 /* stereo + bit16 */);
+	oplbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, sizeof (oplbuf) >> 2 /* stereo + bit16 */);
 	if (!oplbufpos)
 	{
 		retval = errAllocMem;
@@ -377,7 +376,6 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 	cpifaceSession->mcpGet = oplGet;
 	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
-	oplbufrate_compensate = 0;
 	opl_inpause = 0;
 
 	active=1;
@@ -431,13 +429,20 @@ static void oplSetVolume(void)
 		voll=(voll*(64-bal))>>6;
 }
 
+static void delay_callback_from_devp (void *arg, int samples_ago)
+{
+	oplStatusBuffer_t *state = (oplStatusBuffer_t *)arg;
+	oplLastStatus = state->data;
+	oplLastPos = state->pos;
+	state->plrDevAPI = 0;
+	state->in_use = 0;
+}
+
 static void oplStatBuffers_callback_from_oplbuf (void *arg, int samples_ago)
 {
 	oplStatusBuffer_t *state = (oplStatusBuffer_t *)arg;
-
-	oplLastStatus = state->data;
-	oplLastPos = state->pos;
-	state->in_use = 0;
+	int samples_until = samples_ago * oplbufrate / 65536;
+	state->plrDevAPI->OnBufferCallback (-samples_until, delay_callback_from_devp, arg);
 }
 
 static void oplIdler (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -474,6 +479,7 @@ static void oplIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 				continue;
 			}
 
+			oplStatusBuffers[i].plrDevAPI = cpifaceSession->plrDevAPI;
 			oplStatusBuffers[i].in_use = 1;
 			oplStatusBuffers[i].data = opl->s;
 			oplStatusBuffers[i].pos = p->getorder() << 8 | p->getrow();
@@ -515,7 +521,7 @@ void __attribute__ ((visibility ("internal"))) oplIdle (struct cpifaceSessionAPI
 			oplIdler (cpifaceSession);
 
 			/* how much data is available.. we are using a ringbuffer, so we might receive two fragments */
-			cpifaceSession->ringbufferAPI->get_processing_samples (oplbufpos, &pos1, &length1, &pos2, &length2);
+			cpifaceSession->ringbufferAPI->get_tail_samples (oplbufpos, &pos1, &length1, &pos2, &length2);
 
 			if (oplbufrate==0x10000)
 			{
@@ -660,41 +666,12 @@ void __attribute__ ((visibility ("internal"))) oplIdle (struct cpifaceSessionAPI
 					pos2 = 0;
 				} /* while (targetlength && length1) */
 			} /* if (oplbufrate==0x10000) */
-			cpifaceSession->ringbufferAPI->processing_consume_samples (oplbufpos, accumulated_source);
+			cpifaceSession->ringbufferAPI->tail_consume_samples (oplbufpos, accumulated_source);
 			cpifaceSession->plrDevAPI->CommitBuffer (accumulated_target);
-			samples_committed += accumulated_target;
-			oplbufrate_compensate += accumulated_target - accumulated_source;
 		} /* if (targetlength) */
 	}
 
-	{
-		uint64_t delay = cpifaceSession->plrDevAPI->Idle();
-		uint64_t new_ui = samples_committed - delay;
-		if (new_ui > samples_lastui)
-		{
-			int delta = new_ui - samples_lastui;
-
-#warning use the new API instead of this wierd hack ???
-			if (oplbufrate_compensate > 0) /* we have been slowing down */
-			{
-				if (delta >= oplbufrate_compensate)
-				{
-					delta -= oplbufrate_compensate;
-					oplbufrate_compensate = 0;
-				} else {
-					oplbufrate_compensate -= delta;
-					delta = 0;
-				}
-			} else if ((oplbufrate_compensate < 0) && delta) /* we have been speeding up... */
-			{
-				delta -= oplbufrate_compensate; /* double negative, makes delta grow */
-				oplbufrate_compensate = 0;
-			}
-
-			cpifaceSession->ringbufferAPI->tail_consume_samples (oplbufpos, delta);
-			samples_lastui = new_ui;
-		}
-	}
+	cpifaceSession->plrDevAPI->Idle();
 
 	clipbusy--;
 }
