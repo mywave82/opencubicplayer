@@ -22,6 +22,7 @@
 #include "config.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 #include <SDL.h>
 #include "types.h"
@@ -93,8 +94,11 @@ static SDL_Texture *current_texture = NULL;
 static int last_text_height;
 static int last_text_width;
 
+static int cachemode = -1;
+static int no_window_resize = 0;
+
 static void (*set_state)(int fullscreen, int width, int height) = 0;
-static int do_fullscreen = 0;
+static int current_fullsceen = 0;
 static int plScrRowBytes = 0;
 static int ekbhit_sdl2dummy(void);
 static int sdl2_SetGraphMode (int high);
@@ -130,6 +134,9 @@ static uint8_t *virtual_framebuffer = 0;
 
 static void sdl2_close_window(void)
 {
+#ifdef SDL2_DEBUG
+	fprintf (stderr, "[SDL2-video] sdl_close_window()");
+#endif
 	if (current_texture)
 	{
 		SDL_DestroyTexture (current_texture);
@@ -303,10 +310,10 @@ static void set_state_textmode(int fullscreen, int width, int height)
 		Console.VidMem = virtual_framebuffer = 0;
 	}
 
-	if (fullscreen != do_fullscreen)
+	if (fullscreen != current_fullsceen)
 	{
 #ifdef SDL2_DEBUG
-		fprintf (stderr, " fullscreen =! do_fullscreen\n");
+		fprintf (stderr, " fullscreen =! current_fullsceen\n");
 #endif
 		if (fullscreen)
 		{
@@ -324,60 +331,65 @@ static void set_state_textmode(int fullscreen, int width, int height)
 		}
 	}
 
-	if ((fullscreen != do_fullscreen) || (!current_window))
+	if (!width)
 	{
 #ifdef SDL2_DEBUG
-		fprintf (stderr, " destroy and recreate window\n");
+		fprintf (stderr, "[SDL2-video] set_state_textmode() width==0 ???\n");
 #endif
-		sdl2_close_window();
+		width = 640;
+	}
 
-		do_fullscreen = fullscreen;
+	if (!height)
+	{
+#ifdef SDL2_DEBUG
+		fprintf (stderr, "[SDL2-video] set_state_textmode() height==0 ???\n");
+#endif
+		height = 480;
+	}
+
+	if (!no_window_resize)
+	{
+
+		current_fullsceen = fullscreen;
 
 		if (fullscreen)
 		{
-			current_window = SDL_CreateWindow ("Open Cubic Player",
-			                                   SDL_WINDOWPOS_UNDEFINED,
-			                                   SDL_WINDOWPOS_UNDEFINED,
-			                                   0, 0,
-		                                           SDL_WINDOW_FULLSCREEN_DESKTOP);
-			if (current_window)
+			if (!current_window)
 			{
-				SDL_GetWindowSize (current_window, &width, &height);
+				current_window = SDL_CreateWindow ("Open Cubic Player",
+				                                   SDL_WINDOWPOS_UNDEFINED,
+				                                   SDL_WINDOWPOS_UNDEFINED,
+				                                   0, 0,
+				                                   SDL_WINDOW_FULLSCREEN_DESKTOP);
+			} else {
+				SDL_SetWindowFullscreen (current_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
 			}
 		} else {
-			if (!width)
+			if (!current_window)
 			{
-#ifdef SDL2_DEBUG
-				fprintf (stderr, "[SDL2-video] set_state_textmode() width==0 ???\n");
-#endif
-				width = 640;
+				current_window = SDL_CreateWindow ("Open Cubic Player",
+				                                   SDL_WINDOWPOS_UNDEFINED,
+				                                   SDL_WINDOWPOS_UNDEFINED,
+				                                   width, height,
+				                                   SDL_WINDOW_RESIZABLE);
+			} else {
+				SDL_SetWindowFullscreen (current_window, 0);
+				SDL_SetWindowResizable (current_window, SDL_TRUE);
+				SDL_SetWindowSize (current_window, width, height);
 			}
-			if (!height)
-			{
-#ifdef SDL2_DEBUG
-				fprintf (stderr, "[SDL2-video] set_state_textmode() height==0 ???\n");
-#endif
-				height = 480;
-			}
-			current_window = SDL_CreateWindow ("Open Cubic Player",
-			                                   SDL_WINDOWPOS_UNDEFINED,
-			                                   SDL_WINDOWPOS_UNDEFINED,
-		                                           width, height,
-		                                           SDL_WINDOW_RESIZABLE);
-		}
-
-		if (!current_window)
-		{
-#ifdef SDL2_DEBUG
-			fprintf (stderr, "[SDL2-video]: SDL_CreateWindow: %s (fullscreen=%d %dx%d)\n", SDL_GetError(), fullscreen, width, height);
-#endif
-			SDL_ClearError();
 		}
 	} else {
-#ifdef SDL2_DEBUG
-		fprintf (stderr, "Leave window\n");
-#endif
+		no_window_resize = 0;
 	}
+
+	if (!current_window)
+	{
+		fprintf (stderr, "[SDL2-video]: SDL_CreateWindow: %s (fullscreen=%d %dx%d)\n", SDL_GetError(), fullscreen, width, height);
+		SDL_ClearError();
+		exit(1);
+	}
+
+	SDL_GetWindowSize (current_window, &width, &height);
 
 	while ( ((width/FontSizeInfo[Console.CurrentFont].w) < 80) || ((height/FontSizeInfo[Console.CurrentFont].h) < 25))
 	{
@@ -472,15 +484,20 @@ static void sdl2_SetTextMode(unsigned char x)
 		return;
 	}
 
-	sdl2_SetGraphMode (-1); /* closes the window, so gdb helper below will have a clear screen */
-
 	if (x==255)
 	{
 #ifdef SDL2_DEBUG
 		fprintf (stderr, "gdb helper, plScrMode=255\n");
 #endif
+		sdl2_SetGraphMode (-1); /* closes the window, so gdb helper below will have a clear screen */
+
 		Console.CurrentMode = 255;
 		return; /* gdb helper */
+	}
+
+	if (cachemode >= 0)
+	{
+		sdl2_SetGraphMode (-1); /* closes the window */
 	}
 
 	/* if invalid mode, set it to custom */
@@ -492,7 +509,7 @@ static void sdl2_SetTextMode(unsigned char x)
 		x=8;
 
 		set_state_textmode(
-			do_fullscreen,
+			current_fullsceen,
 			last_text_width,
 			last_text_height);
 	} else {
@@ -506,22 +523,24 @@ static void sdl2_SetTextMode(unsigned char x)
 		Console.CurrentFont = mode_tui_data[x].font;
 
 		set_state_textmode(
-			do_fullscreen,
+			current_fullsceen,
 			mode_gui_data[mode_tui_data[x].gui_mode].width,
 			mode_gui_data[mode_tui_data[x].gui_mode].height);
 	}
 
 	Console.LastTextMode = Console.CurrentMode = x;
 #ifdef SDL2_DEBUG
-	fprintf (stderr, "plScrType = plScrMode = %d\n", Console.LastTextMode );
+	fprintf (stderr, "[SDL2-video] plScrType = plScrMode = %d\n", Console.LastTextMode );
 #endif
 }
-
-static int cachemode = -1;
 
 static void set_state_graphmode(int fullscreen, int width, int height)
 {
 	mode_gui_t mode;
+
+#ifdef SDL2_DEBUG
+	fprintf (stderr, "[SDL2-video] set_state_graphmode(fullscreen=%d, width=%d, height=%d)", fullscreen, width, height);
+#endif
 
 	/* texture WILL for sure resize, so just get rid of it! */
 	if (current_texture)
@@ -551,26 +570,43 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 	width = mode_gui_data[mode].width;
 	height = mode_gui_data[mode].height;
 
-	if ((fullscreen != do_fullscreen) || (!current_window))
+	if (!no_window_resize)
 	{
-		sdl2_close_window();
-
-		do_fullscreen = fullscreen;
+		current_fullsceen = fullscreen;
 
 		if (fullscreen)
 		{
-			current_window = SDL_CreateWindow ("Open Cubic Player",
-			                                   SDL_WINDOWPOS_UNDEFINED,
-			                                   SDL_WINDOWPOS_UNDEFINED,
-		                                           0, 0,
-		                                           SDL_WINDOW_FULLSCREEN_DESKTOP);
+			if (!current_window)
+			{
+				current_window = SDL_CreateWindow ("Open Cubic Player",
+				                                   SDL_WINDOWPOS_UNDEFINED,
+				                                   SDL_WINDOWPOS_UNDEFINED,
+			                                           0, 0,
+			                                           SDL_WINDOW_FULLSCREEN_DESKTOP);
+			} else {
+				SDL_SetWindowFullscreen (current_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+			}
 		} else {
-			current_window = SDL_CreateWindow ("Open Cubic Player",
-		                                           SDL_WINDOWPOS_UNDEFINED,
-		                                           SDL_WINDOWPOS_UNDEFINED,
-		                                           width, height,
-		                                           0);
+			if (!current_window)
+			{
+				current_window = SDL_CreateWindow ("Open Cubic Player",
+			                                           SDL_WINDOWPOS_UNDEFINED,
+			                                           SDL_WINDOWPOS_UNDEFINED,
+			                                           width, height,
+			                                           0);
+			} else {
+				SDL_SetWindowFullscreen (current_window, 0);
+				SDL_SetWindowResizable (current_window, SDL_FALSE);
+				SDL_SetWindowSize (current_window, width, height);
+			}
 		}
+	}
+
+	if (!current_window)
+	{
+		fprintf (stderr, "[SDL2-video]: SDL_CreateWindow: %s (fullscreen=%d %dx%d)\n", SDL_GetError(), fullscreen, width, height);
+		SDL_ClearError();
+		exit(1);
 	}
 
 	if (!current_renderer)
@@ -621,6 +657,10 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 
 static int sdl2_SetGraphMode (int high)
 {
+#ifdef SDL2_DEBUG
+	fprintf (stderr, "[SDL2-video] sdl2_SetGraphMode(high=%d)", high);
+#endif
+
 	if (high>=0)
 		set_state = set_state_graphmode;
 
@@ -633,14 +673,13 @@ static int sdl2_SetGraphMode (int high)
 		free (virtual_framebuffer);
 		Console.VidMem = virtual_framebuffer = 0;
 	}
-	sdl2_close_window();
 
 	if (high<0)
 	{
 		return 0;
 	}
 
-	set_state_graphmode(do_fullscreen, 0, 0);
+	set_state_graphmode(current_fullsceen, 0, 0);
 
 	Console.VidMem = virtual_framebuffer = malloc (Console.GraphBytesPerLine * Console.GraphLines);
 
@@ -695,7 +734,7 @@ static void sdl2_DisplaySetupTextMode(void)
 			case '1':
 				/* we can assume that we are in text-mode if we are here */
 				sdl2_CurrentFontWanted = Console.CurrentFont = (Console.CurrentFont == _8x8)?_8x16:_8x8;
-				set_state_textmode(do_fullscreen, Console.GraphBytesPerLine, Console.GraphLines);
+				set_state_textmode(current_fullsceen, Console.GraphBytesPerLine, Console.GraphLines);
 				cfSetProfileInt(cfScreenSec, "fontsize", Console.CurrentFont, 10);
 				break;
 			case KEY_EXIT:
@@ -708,7 +747,7 @@ static const char *sdl2_GetDisplayTextModeName(void)
 {
 	static char mode[48];
 	snprintf(mode, sizeof(mode), "res(%dx%d), font(%s)%s", Console.TextWidth, Console.TextHeight,
-		Console.CurrentFont == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
+		Console.CurrentFont == _8x8 ? "8x8" : "8x16", current_fullsceen?" fullscreen":"");
 	return mode;
 }
 
@@ -1313,18 +1352,19 @@ static int ekbhit_sdl2dummy(void)
 						if (current_window && (SDL_GetWindowID(current_window) == event.window.windowID))
 						{
 							Console.CurrentFont = sdl2_CurrentFontWanted;
-							if (!do_fullscreen && (Console.CurrentMode == Console.LastTextMode ))
+							if (!current_fullsceen && (Console.CurrentMode == Console.LastTextMode ))
 							{
 								last_text_height = event.window.data2;
 								last_text_width = event.window.data1;
 							}
-							set_state(do_fullscreen, event.window.data1, event.window.data2);
-							if (!do_fullscreen)
+							no_window_resize = 1;
+							set_state(current_fullsceen, event.window.data1, event.window.data2);
+							if (!current_fullsceen)
 							{
 								if (Console.LastTextMode == Console.CurrentMode) /* if we are in text-mode, make it a custom one */
 								{
 #ifdef SDL2_DEBUG
-									fprintf (stderr, "CUSTOM MODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+									fprintf (stderr, "[SDL2-video] CUSTOM MODE plScrType = plScrMode = 8\n");
 #endif
 									Console.LastTextMode = Console.CurrentMode = 8;
 								}
@@ -1355,7 +1395,7 @@ static int ekbhit_sdl2dummy(void)
 						break;
 
 					case 3:
-						set_state (!do_fullscreen, Console.GraphBytesPerLine, Console.GraphLines);
+						set_state (!current_fullsceen, Console.GraphBytesPerLine, Console.GraphLines);
 						break;
 
 					case 4:
@@ -1501,7 +1541,7 @@ static int ekbhit_sdl2dummy(void)
 					/* TODO, handle ALT-ENTER */
 					if (event.key.keysym.sym==SDLK_RETURN)
 					{
-						set_state (!do_fullscreen, Console.GraphBytesPerLine, Console.GraphLines);
+						set_state (!current_fullsceen, Console.GraphBytesPerLine, Console.GraphLines);
 					} else {
 						for (index=0;translate_alt[index].OCP!=0xffff;index++)
 							if (translate_alt[index].SDL==event.key.keysym.sym)
