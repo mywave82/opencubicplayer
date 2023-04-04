@@ -1,3 +1,5 @@
+*.swp
+*~
 *.o
 *.so
 *.dylib
@@ -21,6 +23,7 @@ doc/texi/install.texi
 doc/texi/ocp.texi
 doc/texi/ocp.info.gz
 doc/texi/ocp_html
+doc/texi/ocp.html
 filesel/adbmeta-test
 filesel/dirdb-test
 filesel/filesystem-bzip2-test
