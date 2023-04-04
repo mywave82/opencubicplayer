@@ -213,6 +213,11 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 									{
 										token->cancel_recursive = 1;
 									}
+									if (key == VIRT_KEY_RESIZE)
+									{
+										fsScrType = plScrType;
+										continue;
+									}
 								}
 							}
 						}
@@ -2110,6 +2115,9 @@ superbreak:
 				stored = 1;
 				break;
 			}
+			case VIRT_KEY_RESIZE:
+				fsScrType = plScrType;
+				break;
 			case KEY_EXIT:
 			case KEY_ESC:
 				    return;
@@ -2289,6 +2297,9 @@ static int fsEditModType (struct moduletype *oldtype, int _Bottom, int _Right)
 	{
 		switch (Console.KeyboardGetChar())
 		{
+			case VIRT_KEY_RESIZE:
+				fsScrType = plScrType;
+				break;
 			case KEY_RIGHT:
 				if (curindex != fsTypesCount)
 				{
@@ -2413,7 +2424,7 @@ static int fsEditChan(int y, int x, uint8_t *chan)
 
 	while (Console.KeyboardHit())
 	{
-		int16_t key = Console.KeyboardGetChar();
+		uint16_t key = Console.KeyboardGetChar();
 		switch (key)
 		{
 			case ' ':
@@ -2437,6 +2448,9 @@ static int fsEditChan(int y, int x, uint8_t *chan)
 				curpos="\x00\x00\x01"[curpos];
 				if (key==KEY_BACKSPACE)
 					str[curpos]='0';
+				break;
+			case VIRT_KEY_RESIZE:
+				fsScrType = plScrType;
 				break;
 			case KEY_EXIT:
 			case KEY_ESC:
@@ -2524,6 +2538,9 @@ static int fsEditPlayTime(int y, int x, uint16_t *playtime)
 				curpos="\x00\x00\x01\xff\x02\x04"[curpos];
 				if (key==KEY_BACKSPACE)
 					str[curpos]='0';
+				break;
+			case VIRT_KEY_RESIZE:
+				fsScrType = plScrType;
 				break;
 			case KEY_EXIT:
 			case KEY_ESC:
@@ -2646,6 +2663,9 @@ static int fsEditDate(int y, int x, uint32_t *date)
 				curpos="\x00\x00\xff\x01\x03\xff\x04\x06\x07\x08"[curpos];
 				if (key==KEY_BACKSPACE)
 					str[curpos]='0';
+				break;
+			case VIRT_KEY_RESIZE:
+				fsScrType = plScrType;
 				break;
 			case KEY_EXIT:
 			case KEY_ESC:
@@ -3195,6 +3215,7 @@ superbreak:
 
 			if (c == VIRT_KEY_RESIZE)
 			{
+				fsScrType = plScrType;
 				continue;
 			}
 

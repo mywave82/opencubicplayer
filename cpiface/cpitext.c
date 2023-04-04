@@ -568,6 +568,9 @@ static int txtAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 			cpiForwardIProcessKey (cpifaceSession, key);
 			cpiResetScreen();
 			break;
+		case VIRT_KEY_RESIZE:
+			fsScrType = plScrType;
+			break;
 		default:
 			return 0;
 	}
