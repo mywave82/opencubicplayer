@@ -167,7 +167,7 @@ static int KaraokeGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpi
 			return 0;
 		case 1: /* if right-columns, then we do the wide left - otherwice we are full width, not priorized for height... multi-columned mode */
 			q->hgtmin = 3;
-			KaraokeColumns = 1; // This is calculated in KaraokeSetWin 
+			KaraokeColumns = 1; // This is calculated in KaraokeSetWin
 			q->xmode=1;
 			break;
 		case 2: /* we are always full width priority! */
@@ -297,13 +297,13 @@ static int KaraokeIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('k', "Enable karaoke viewer");
-			cpiKeyHelp('K', "Enable karaoke viewer");
+			cpifaceSession->KeyHelp('k', "Enable karaoke viewer");
+			cpifaceSession->KeyHelp('K', "Enable karaoke viewer");
 			break;
 		case 'k': case 'K':
 			if (!KaraokeType)
 				KaraokeType = (KaraokeType + 1) % 4;
-			cpiTextSetMode (cpifaceSession, "karaoke");
+			cpifaceSession->cpiTextSetMode (cpifaceSession, "karaoke");
 			return 1;
 		case 'x': case 'X':
 			KaraokeType = 3;
@@ -317,25 +317,25 @@ static int KaraokeIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 
 static int KaraokeAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
-// In the future, we might add support for scrolling on user-demands if they hit space (same style navigation as global tracker viewer) */
+/* In the future, we might add support for scrolling on user-demands if they hit space (same style navigation as global tracker viewer) */
 	switch (key)
 	{
 		case KEY_ALT_K:
-			cpiKeyHelp('k', "Toggle karaoke viewer types");
-			cpiKeyHelp('K', "Toggle karaoke viewer types");
+			cpifaceSession->KeyHelp('k', "Toggle karaoke viewer types");
+			cpifaceSession->KeyHelp('K', "Toggle karaoke viewer types");
 #if 0
-			cpiKeyHelp(' ', "Enable lyric manual scroller");
-			cpiKeyHelp(KEY_PPAGE, "Scroll up in lyric viewer");
-			cpiKeyHelp(KEY_NPAGE, "Scroll down in lyric viewer");
-			cpiKeyHelp(KEY_HOME, "Scroll to to the first line in lyric viewer");
-			cpiKeyHelp(KEY_END, "Scroll to to the last line in lyric viewer");
-			cpiKeyHelp(KEY_CTRL_PGUP, "Scroll up a page in the lyric viewer");
-			cpiKeyHelp(KEY_CTRL_PGDN, "Scroll down a page in the lyric viewer");
+			cpifaceSession->KeyHelp(' ', "Enable lyric manual scroller");
+			cpifaceSession->KeyHelp(KEY_PPAGE, "Scroll up in lyric viewer");
+			cpifaceSession->KeyHelp(KEY_NPAGE, "Scroll down in lyric viewer");
+			cpifaceSession->KeyHelp(KEY_HOME, "Scroll to to the first line in lyric viewer");
+			cpifaceSession->KeyHelp(KEY_END, "Scroll to to the last line in lyric viewer");
+			cpifaceSession->KeyHelp(KEY_CTRL_PGUP, "Scroll up a page in the lyric viewer");
+			cpifaceSession->KeyHelp(KEY_CTRL_PGDN, "Scroll down a page in the lyric viewer");
 #endif
 			return 0;
 		case 'k': case 'K':
 			KaraokeType = (KaraokeType + 1) % 4;
-			cpiTextRecalc (cpifaceSession);
+			cpifaceSession->cpiTextRecalc (cpifaceSession);
 			break;
 #if 0
 		case ' ':
@@ -364,14 +364,14 @@ void cpiKaraokeInit (struct cpifaceSessionAPI_t *cpifaceSession, struct lyric_t 
 	KaraokeTargetSyllable = 0;
 	KaraokeTargetLine = 0;
 	KaraokeLyric = lyric;
-	cpiTextRegisterMode (cpifaceSession, &cpiTKaraoke);
+	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiTKaraoke);
 }
 
 void cpiKaraokeDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (KaraokeLyric)
 	{
-		cpiTextUnregisterMode (cpifaceSession, &cpiTKaraoke);
+		cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiTKaraoke);
 		KaraokeLyric = 0;
 	}
 }
