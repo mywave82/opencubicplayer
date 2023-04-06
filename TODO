@@ -1,13 +1,4 @@
-* Move freq.c into mcpbase.so
-
 * http://www.zophar.net/tech/files/psf_format15.txt
-
-* Embedd error-messages and such alike.
-
-* Update help files with all keyboard stuff that needs to be changed due to
-  compat with vt100 consoles
 
 * make adb.c and mdb.c use mmap instead of malloc+fread.. makes swapping better
   for the host if the files grows like.. BIG
-
-* mmcmp compressed files - I need a mmcmp-compressed file
