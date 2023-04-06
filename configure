@@ -12928,9 +12928,14 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
     if test x$ac_success = xno; then
-                for alternative in ${ax_cxx_compile_alternatives}; do
-      for switch in -std=c++${alternative} +std=c++${alternative} "-h std=c++${alternative}"; do
-        cachevar=`printf "%s\n" "ax_cv_cxx_compile_cxx14_$switch" | $as_tr_sh`
+                    for alternative in ${ax_cxx_compile_alternatives}; do
+      for switch in -std=c++${alternative} +std=c++${alternative} "-h std=c++${alternative}" MSVC; do
+        if test x"$switch" = xMSVC; then
+                                        switch=-std:c++${alternative}
+          cachevar=`printf "%s\n" "ax_cv_cxx_compile_cxx14_${switch}_MSVC" | $as_tr_sh`
+        else
+          cachevar=`printf "%s\n" "ax_cv_cxx_compile_cxx14_$switch" | $as_tr_sh`
+        fi
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports C++14 features with $switch" >&5
 printf %s "checking whether $CXX supports C++14 features with $switch... " >&6; }
 if eval test \${$cachevar+y}
@@ -13418,9 +13423,14 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
     if test x$ac_success = xno; then
-                for alternative in ${ax_cxx_compile_alternatives}; do
-      for switch in -std=c++${alternative} +std=c++${alternative} "-h std=c++${alternative}"; do
-        cachevar=`printf "%s\n" "ax_cv_cxx_compile_cxx11_$switch" | $as_tr_sh`
+                    for alternative in ${ax_cxx_compile_alternatives}; do
+      for switch in -std=c++${alternative} +std=c++${alternative} "-h std=c++${alternative}" MSVC; do
+        if test x"$switch" = xMSVC; then
+                                        switch=-std:c++${alternative}
+          cachevar=`printf "%s\n" "ax_cv_cxx_compile_cxx11_${switch}_MSVC" | $as_tr_sh`
+        else
+          cachevar=`printf "%s\n" "ax_cv_cxx_compile_cxx11_$switch" | $as_tr_sh`
+        fi
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports C++11 features with $switch" >&5
 printf %s "checking whether $CXX supports C++11 features with $switch... " >&6; }
 if eval test \${$cachevar+y}
@@ -14038,9 +14048,14 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
     if test x$ac_success = xno; then
-                for alternative in ${ax_cxx_compile_alternatives}; do
-      for switch in -std=c++${alternative} +std=c++${alternative} "-h std=c++${alternative}"; do
-        cachevar=`printf "%s\n" "ax_cv_cxx_compile_cxx14_$switch" | $as_tr_sh`
+                    for alternative in ${ax_cxx_compile_alternatives}; do
+      for switch in -std=c++${alternative} +std=c++${alternative} "-h std=c++${alternative}" MSVC; do
+        if test x"$switch" = xMSVC; then
+                                        switch=-std:c++${alternative}
+          cachevar=`printf "%s\n" "ax_cv_cxx_compile_cxx14_${switch}_MSVC" | $as_tr_sh`
+        else
+          cachevar=`printf "%s\n" "ax_cv_cxx_compile_cxx14_$switch" | $as_tr_sh`
+        fi
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports C++14 features with $switch" >&5
 printf %s "checking whether $CXX supports C++14 features with $switch... " >&6; }
 if eval test \${$cachevar+y}
@@ -14528,9 +14543,14 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
     if test x$ac_success = xno; then
-                for alternative in ${ax_cxx_compile_alternatives}; do
-      for switch in -std=c++${alternative} +std=c++${alternative} "-h std=c++${alternative}"; do
-        cachevar=`printf "%s\n" "ax_cv_cxx_compile_cxx11_$switch" | $as_tr_sh`
+                    for alternative in ${ax_cxx_compile_alternatives}; do
+      for switch in -std=c++${alternative} +std=c++${alternative} "-h std=c++${alternative}" MSVC; do
+        if test x"$switch" = xMSVC; then
+                                        switch=-std:c++${alternative}
+          cachevar=`printf "%s\n" "ax_cv_cxx_compile_cxx11_${switch}_MSVC" | $as_tr_sh`
+        else
+          cachevar=`printf "%s\n" "ax_cv_cxx_compile_cxx11_$switch" | $as_tr_sh`
+        fi
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports C++11 features with $switch" >&5
 printf %s "checking whether $CXX supports C++11 features with $switch... " >&6; }
 if eval test \${$cachevar+y}
@@ -15734,9 +15754,14 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
     if test x$ac_success = xno; then
-                for alternative in ${ax_cxx_compile_alternatives}; do
-      for switch in -std=c++${alternative} +std=c++${alternative} "-h std=c++${alternative}"; do
-        cachevar=`printf "%s\n" "ax_cv_cxx_compile_cxx17_$switch" | $as_tr_sh`
+                    for alternative in ${ax_cxx_compile_alternatives}; do
+      for switch in -std=c++${alternative} +std=c++${alternative} "-h std=c++${alternative}" MSVC; do
+        if test x"$switch" = xMSVC; then
+                                        switch=-std:c++${alternative}
+          cachevar=`printf "%s\n" "ax_cv_cxx_compile_cxx17_${switch}_MSVC" | $as_tr_sh`
+        else
+          cachevar=`printf "%s\n" "ax_cv_cxx_compile_cxx17_$switch" | $as_tr_sh`
+        fi
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports C++17 features with $switch" >&5
 printf %s "checking whether $CXX supports C++17 features with $switch... " >&6; }
 if eval test \${$cachevar+y}
