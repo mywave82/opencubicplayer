@@ -120,11 +120,11 @@ struct _TTF_Font {
 };
 
 
-#ifdef _WIN32
-typedef TTF_Font::PosBuf PosBuf_t;
-#else
+//#ifdef _WIN32
+//typedef TTF_Font::PosBuf PosBuf_t;
+//#else
 typedef void PosBuf_t;
-#endif
+//#endif
 
 /* The FreeType font engine/library */
 static FT_Library library;
@@ -801,7 +801,7 @@ static FT_Error Load_Glyph(TTF_Font *font, FT_ULong char_code, c_glyph *cached)
 			}
 
 /* FT_RENDER_MODE_MONO and src->pixel_mode MONO */
-#ifdef _WIN32
+#if defined(_WIN32) && defined(_MSC_VER)
 #pragma warning(push, 1)
 #pragma warning(disable:4127)
 #endif
@@ -878,7 +878,7 @@ static FT_Error Load_Glyph(TTF_Font *font, FT_ULong char_code, c_glyph *cached)
 			}
 		}
 	}
-#ifdef _WIN32
+#if defined(_WIN32) && defined(_MSC_VER)
 #pragma warning(pop)
 #endif
 

@@ -214,7 +214,7 @@ int __attribute__ ((visibility ("internal"))) hvl_InitSubsong ( struct hvl_tune 
 
 	if ( nr > ht->ht_SubsongNr )
 	{
-		return FALSE;
+		return 0;
 	}
 
 	ht->ht_SongNum = nr;
@@ -258,7 +258,7 @@ int __attribute__ ((visibility ("internal"))) hvl_InitSubsong ( struct hvl_tune 
 
 	hvl_reset_some_stuff ( ht );
 
-	return TRUE;
+	return 1;
 }
 
 static void hvl_process_stepfx_1 ( struct hvl_tune *ht, struct hvl_voice *voice, int32_t FX, int32_t FXParam )

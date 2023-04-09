@@ -25,9 +25,7 @@
 
 #define _CONSOLE_DRIVER 1
 #include "config.h"
-#ifdef KEYBOARD_DEBUG
 #include <stdio.h>
-#endif
 #include "types.h"
 #include "poutput.h"
 #include "poutput-keyboard.h"

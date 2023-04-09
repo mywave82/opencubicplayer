@@ -20,9 +20,10 @@
 
 
 #include "config.h"
-#include <jpeglib.h>
 #include <setjmp.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <jpeglib.h>
 #include "types.h"
 #include "jpeg.h"
 

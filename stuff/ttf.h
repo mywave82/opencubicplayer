@@ -3,6 +3,8 @@
 #ifndef _STUFF_TTF_H_
 #define _STUFF_TTF_H_
 
+#include <stdio.h>
+
 typedef struct
 {
 	int w, h, pitch;

@@ -39,8 +39,8 @@
 #include "stuff/err.h"
 #include "stuff/poutput.h"
 #include "timidityconfig.h"
-#include "timidity-git/timidity/sysdep.h"
 #include "timidity-git/timidity/timidity.h"
+#include "timidity-git/timidity/sysdep.h"
 
 #ifdef PLAYTIMIDITY_DEBUG
 # define PRINT(fmt, args...) fprintf(stderr, "%s %s: " fmt, __FILE__, __func__, ##args)

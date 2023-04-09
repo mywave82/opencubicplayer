@@ -20,8 +20,10 @@
 
 #include "config.h"
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "types.h"
 #include "ringbuffer.h"
 
 struct ringbuffer_callback_hook_t

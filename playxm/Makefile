@@ -126,8 +126,7 @@ xmrtns.o: xmrtns.c \
 xmtime.o: xmtime.c \
 	../config.h \
 	xmplay.h \
-	../types.h \
-	../stuff/err.h
+	../types.h
 	$(CC) xmtime.c -o $@ -c
 
 xmtype.o: xmtype.c \

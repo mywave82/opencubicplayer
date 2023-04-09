@@ -28,7 +28,6 @@
 #include "config.h"
 #include "types.h"
 #include "xmplay.h"
-#include "err.h"
 
 static uint8_t chPatLoopCount[256];
 static uint8_t chPatLoopStart[256];
