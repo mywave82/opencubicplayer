@@ -2388,7 +2388,7 @@ static void zip_translate (struct zip_instance_t *self, char *src, char **buffer
 
 	DEBUG_PRINT ("zip_translate %s =>", src);
 
-	temp = rindex (src, '/');
+	temp = strrchr (src, '/');
 	if (temp)
 	{
 		src = temp + 1;

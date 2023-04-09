@@ -1311,7 +1311,7 @@ static void tar_translate (struct tar_instance_t *self, char *src, char **buffer
 
 	DEBUG_PRINT ("tar_translate %s =>", src);
 
-	temp = rindex (src, '/');
+	temp = strrchr (src, '/');
 	if (temp)
 	{
 		src = temp + 1;

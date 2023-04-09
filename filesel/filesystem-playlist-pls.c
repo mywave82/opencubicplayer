@@ -90,7 +90,7 @@ static int get_pls_dirdb_flags (char *buftail, int buftail_n)
 		{
 			goto newline;
 		}
-		if (!(s2=index(buftail, '=')))
+		if (!(s2=strchr(buftail, '=')))
 		{
 			goto newline;
 		}
@@ -203,7 +203,7 @@ struct ocpdir_t *pls_check (const struct ocpdirdecompressor_t *self, struct ocpf
 		{
 			goto newline;
 		}
-		if (!(s2=index(buftail, '=')))
+		if (!(s2=strchr(buftail, '=')))
 		{
 			goto newline;
 		}

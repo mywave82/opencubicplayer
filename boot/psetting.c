@@ -275,7 +275,7 @@ static int cfReadINIFile(int argc, char *argv[])
 				argvstat=argv[c]+2;
 				while (*argvstat)
 				{
-					char *temp=index(argvstat, ',');
+					char *temp=strchr(argvstat, ',');
 					int index=cfINIApps[cfINInApps-1].nkeys;
 
 					if (!temp)

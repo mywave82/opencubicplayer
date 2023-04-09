@@ -80,14 +80,14 @@ void getext_malloc(const char *src, char **ext)
 	/* clear the target points, for now */
 	if (ext) *ext = 0;
 
-	if ((ref1 = rindex (src, '/')))
+	if ((ref1 = strrchr (src, '/')))
 	{
 		src = ref1+1;
 	}
 
 	len = strlen(src);
 
-	ref1 = rindex (src, '.');
+	ref1 = strrchr (src, '.');
 	if (!ref1)
 	{
 		ref1 = src + len;
@@ -161,7 +161,7 @@ int splitpath4_malloc(const char *src, char **drive, char **path, char **file, c
 		goto error_out;
 	}
 
-	if ((ref1=rindex(src, '/')))
+	if ((ref1=strrchr(src, '/')))
 	{
 		if (path)
 		{
@@ -190,7 +190,7 @@ int splitpath4_malloc(const char *src, char **drive, char **path, char **file, c
 
 	len = strlen(src);
 
-	ref1 = rindex (src, '.');
+	ref1 = strrchr (src, '.');
 	if (!ref1)
 	{
 		ref1 = src + len;
@@ -300,7 +300,7 @@ int splitpath_malloc(const char *src, char **drive, char **path, char **filename
 		goto error_out;
 	}
 
-	if ((ref1=rindex(src, '/')))
+	if ((ref1=strrchr(src, '/')))
 	{
 		if (path)
 		{
@@ -387,8 +387,8 @@ int makepath_malloc(char **dst, const char *drive, const char *path, const char 
 			fprintf (stderr, "makepath_malloc(): drive starts with :\n");
 			return -1;
 		}
-		pos1 = index (drive, ':');
-		pos2 = rindex (drive, ':');
+		pos1 = strchr (drive, ':');
+		pos2 = strrchr (drive, ':');
 		if (!pos1)
 		{
 			fprintf (stderr, "makepath_malloc(): drive does not contain:\n");
@@ -428,7 +428,7 @@ int makepath_malloc(char **dst, const char *drive, const char *path, const char 
 	if (file)
 	{
 		/* Assertion test */
-		if (index (file, '/'))
+		if (strchr (file, '/'))
 		{
 			fprintf (stderr, "makepath_malloc(): file contains /\n");
 			return -1;
@@ -439,7 +439,7 @@ int makepath_malloc(char **dst, const char *drive, const char *path, const char 
 	if (ext)
 	{
 		/* Assertion tests */
-		if (index (ext, '/'))
+		if (strchr (ext, '/'))
 		{
 			fprintf (stderr, "makepath_malloc(): ext contains /\n");
 			return -1;

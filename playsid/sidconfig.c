@@ -524,7 +524,7 @@ static const char *int_to_float100x(int src)
 static int float10x_to_int(const char *src)
 {
 	int retval = atoi (src) * 10;
-	char *r = index (src, '.');
+	char *r = strchr (src, '.');
 	if (r)
 	{
 		if (r[1] >= '0' && (r[1] <= '9'))
@@ -538,7 +538,7 @@ static int float10x_to_int(const char *src)
 static int float100x_to_int(const char *src)
 {
 	int retval = atoi (src) * 100;
-	char *r = index (src, '.');
+	char *r = strchr (src, '.');
 	if (r)
 	{
 		if (r[1] >= '0' && (r[1] <= '9'))

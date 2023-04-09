@@ -1543,7 +1543,7 @@ void utf8_XdotY_name (const int X, const int Y, char *shortname, const char *sou
 
 	temppath = strdup (source);
 
-	if ((lastdot = rindex(temppath + 1, '.'))) /* we allow files to start with . */
+	if ((lastdot = strrchr(temppath + 1, '.'))) /* we allow files to start with . */
 	{
 		*lastdot = 0; /* modify the source - most easy way around the problem */
 

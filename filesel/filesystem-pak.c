@@ -1229,7 +1229,7 @@ static void pak_translate (struct pak_instance_t *self, char *src, char **buffer
 
 	DEBUG_PRINT ("pak_translate %s =>", src);
 
-	temp = rindex (src, '/');
+	temp = strrchr (src, '/');
 	if (temp)
 	{
 		src = temp + 1;
