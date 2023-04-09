@@ -74,7 +74,7 @@ static int active=0;
 #define MPEG_BUFSZ    40000   /* 2.5 s at 128 kbps; 1 s at 320 kbps */
 static unsigned char data[MPEG_BUFSZ];
 static int data_length;
-static int eof;
+static int mpeg_eof;
 static int opt25_50;
 static char opt25[26];
 static char opt50[51];
@@ -452,7 +452,7 @@ static int stream_for_frame(void)
 					if (donotloop||target) /* if target was set, we must have had an error */
 					{
 						debug_printf_stream ("[MPx] eof found, and we are not looping\n");
-						eof=1;
+						mpeg_eof=1;
 						GuardPtr=data + data_length;
 						assert(MPEG_BUFSZ - data_length >= MAD_BUFFER_GUARD);
 						while (len < MAD_BUFFER_GUARD)
@@ -463,7 +463,7 @@ static int stream_for_frame(void)
 
 						debug_printf_stream ("[MPx]   this is the new data   data=%p datalen=0x%08x (%p) GuardPtr=%p 0x%08"PRIx64"/0x%08"PRIx64" (ofs=%"PRIu64" len=%d target=%ld)\n", data, data_length, data + data_length, GuardPtr, datapos, fl, ofs, len, (long int)target);
 					} else {
-						eof=0;
+						mpeg_eof=0;
 						datapos = newpos = 0;
 						file->seek_set (file, ofs);
 						if (stream.skiplen)
@@ -532,7 +532,7 @@ static int stream_for_frame(void)
 error:
 			if (stream.error==MAD_ERROR_BUFLEN)
 			{
-				if (eof)
+				if (mpeg_eof)
 					return 0;
 				else
 					continue;
@@ -561,7 +561,7 @@ error:
 				{
 					mad_stream_skip(&stream, tagsize);
 					continue;
-				} else if (eof)
+				} else if (mpeg_eof)
 				{
 					return 0;
 				} else {
@@ -627,7 +627,7 @@ static void mpegIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 			}
 		}
 
-		if (!eof)
+		if (!mpeg_eof)
 		{
 			mpeg_looped &= ~1;
 		}
@@ -1107,7 +1107,7 @@ int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandl
 	newpos=datapos=0;
 	data_length=0;
 	data_in_synth=0;
-	eof=0;
+	mpeg_eof=0;
 	mpeg_inpause=0;
 	mpeg_looped=0;
 
