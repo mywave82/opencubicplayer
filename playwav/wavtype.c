@@ -84,7 +84,7 @@ static int wavReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		return 0;
 	}
 
-	bzero (m, sizeof (*m));
+	memset (m, 0, sizeof (*m));
 
 	m->modtype.integer.i = MODULETYPE("WAV");
 

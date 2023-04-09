@@ -319,8 +319,8 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
 	cpifaceSession->cpiDebug (cpifaceSession, "[IT] loading %s (%uk)...\n", filename, (unsigned int)(file->filesize(file)>>10));
 
-	bzero (&itplayer, sizeof (itplayer));
-	bzero (&mod, sizeof (mod));
+	memset (&itplayer, 0, sizeof (itplayer));
+	memset (&mod, 0, sizeof (mod));
 
 	if (!(retval=it_load(cpifaceSession, &mod, file)))
 		if (!loadsamples (cpifaceSession, &mod))

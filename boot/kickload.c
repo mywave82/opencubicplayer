@@ -110,7 +110,7 @@ static void stopstuff(struct itimerval *i)
 {
 	struct itimerval z;
 
-	bzero (&z, sizeof(z));
+	memset (&z, 0, sizeof(z));
 	setitimer(ITIMER_REAL, &z, &i[0]);
 	setitimer(ITIMER_VIRTUAL, &z, &i[1]);
 	setitimer(ITIMER_PROF, &z, &i[2]);
@@ -531,7 +531,7 @@ static int rename_exdev (const char *oldpath, const char *newpath)
 		case S_IFLNK:
 		{
 			char linkdata[4096];
-			bzero (linkdata, sizeof (linkdata));
+			memset (linkdata, 0, sizeof (linkdata));
 			if (readlink (oldpath, linkdata, sizeof (linkdata) - 1) >= 0)
 			{
 				symlink (newpath, linkdata);

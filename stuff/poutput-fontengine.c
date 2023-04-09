@@ -390,7 +390,7 @@ int fontengine_8x8_forceunifont (uint32_t codepoint, int *width, uint8_t data[16
 		return 0;
 	} else {
 		*width = 8;
-		bzero (data, 16);
+		memset (data, 0, 16);
 		return 1;
 	}
 }
@@ -505,7 +505,7 @@ int fontengine_8x16_forceunifont (uint32_t codepoint, int *width, uint8_t data[3
 		return 0;
 	} else {
 		*width = 8;
-		bzero (data, 32);
+		memset (data, 0, 32);
 		return 1;
 	}
 }

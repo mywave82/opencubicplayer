@@ -790,7 +790,7 @@ int __attribute__ ((visibility ("internal"))) sidGetLChanSample (struct cpifaceS
 			}
 			if (!length1)
 			{
-				bzero (s, (len<<stereo)<<2);
+				memset (s, 0, (len<<stereo)<<2);
 				return !!sidMuted[ch];
 			}
 		}
@@ -842,7 +842,7 @@ int __attribute__ ((visibility ("internal"))) sidGetPChanSample (struct cpifaceS
 			}
 			if (!length1)
 			{
-				bzero (s, (len<<stereo)<<2);
+				memset (s, 0, (len<<stereo)<<2);
 				return !!sidMuted[ch];
 			}
 		}
@@ -937,7 +937,7 @@ int __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle
 		goto error_out_sid_buffers;
 	}
 
-	bzero (SidStatBuffers, sizeof (SidStatBuffers));
+	memset (SidStatBuffers, 0, sizeof (SidStatBuffers));
 	SidStatBuffers_available = ROW_BUFFERS;
 
 	sidbuffpos = 0x00000000;

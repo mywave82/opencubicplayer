@@ -52,7 +52,7 @@ void __attribute__ ((visibility ("internal"))) xmpFreeModule(struct xmodule *m)
 	free(m->patterns);
 	free(m->patlens);
 	free(m->orders);
-	bzero (m, sizeof (*m));
+	memset (m, 0, sizeof (*m));
 }
 
 void __attribute__ ((visibility ("internal"))) xmpOptimizePatLens(struct xmodule *m)

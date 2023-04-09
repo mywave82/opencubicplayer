@@ -683,10 +683,10 @@ static unsigned int devpALSAIdle(void)
 	if (devpALSAInPause)
 	{
 		ringbuffer->get_head_bytes (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
-		bzero ((char *)devpALSABuffer+pos1, length1);
+		memset ((char *)devpALSABuffer+pos1, 0, length1);
 		if (length2)
 		{
-			bzero ((char *)devpALSABuffer+pos2, length2);
+			memset ((char *)devpALSABuffer+pos2, 0, length2);
 		}
 		ringbuffer->head_add_bytes (devpALSARingBuffer, length1 + length2);
 		devpALSAPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */

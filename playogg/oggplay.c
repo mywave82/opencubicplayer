@@ -170,7 +170,7 @@ static void oggIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 
 			if (result<=0) /* broken data... we can survive */
 			{
-				bzero (oggbuf+(pos1<<1), read<<2); /* always clear 16bit, stereo, signed */
+				memset (oggbuf+(pos1<<1), 0, read<<2); /* always clear 16bit, stereo, signed */
 				cpifaceSession->cpiDebug (cpifaceSession, "[OGG] ov_read failed: %ld\n", result);
 				result=read;
 			} else {

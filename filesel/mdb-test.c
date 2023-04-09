@@ -479,7 +479,7 @@ int mdb_basic_mdbFree (void)
 
 	mdb_basic_mdbFree_prepare ();
 	r = mdbNew (1);
-	bzero (mdbDirtyMap, mdbDirtyMapSize / 8);
+	memset (mdbDirtyMap, 0, mdbDirtyMapSize / 8);
 	mdbFree (r, 1);
 	e = 0,
 	fprintf (stderr, "mdbFree(1):");
@@ -498,7 +498,7 @@ int mdb_basic_mdbFree (void)
 
 	mdb_basic_mdbFree_prepare ();
 	r = mdbNew (2);
-	bzero (mdbDirtyMap, mdbDirtyMapSize / 8);
+	memset (mdbDirtyMap, 0, mdbDirtyMapSize / 8);
 	mdbFree (r, 2);
 	e = 0,
 	fprintf (stderr, "mdbFree(2):");
@@ -1029,8 +1029,8 @@ int mdb_basic_mdbWriteModuleInfo_mdbGetModuleInfo (void)
 	struct moduleinfostruct src;
 	struct moduleinfostruct dst;
 
-	bzero (&src, sizeof (src));
-	bzero (&dst, sizeof (dst));
+	memset (&src, 0, sizeof (src));
+	memset (&dst, 0, sizeof (dst));
 
 	fprintf (stderr, ANSI_COLOR_CYAN "MDB mdbWriteModuleInfo mdbGetModuleInfo\n" ANSI_COLOR_RESET);
 
@@ -1052,12 +1052,12 @@ int mdb_basic_mdbWriteModuleInfo_mdbGetModuleInfo (void)
 	src.channels = 2;
 	src.playtime = 0x0450;
 	src.date = 0x12345678;
-	bzero (src.title, sizeof (src.title));
-	bzero (src.composer, sizeof (src.composer));
-	bzero (src.artist, sizeof (src.artist));
-	bzero (src.style, sizeof (src.style));
-	bzero (src.comment, sizeof (src.comment));
-	bzero (src.album, sizeof (src.album));
+	memset (src.title, 0, sizeof (src.title));
+	memset (src.composer, 0, sizeof (src.composer));
+	memset (src.artist, 0, sizeof (src.artist));
+	memset (src.style, 0, sizeof (src.style));
+	memset (src.comment, 0, sizeof (src.comment));
+	memset (src.album, 0, sizeof (src.album));
 
 	e=0;
 	fprintf (stderr, "NULL-strings mdbWriteModuleInfo() mdbGetModuleInfo() sequence:");
@@ -1150,12 +1150,12 @@ int mdb_basic_mdbWriteModuleInfo_mdbGetModuleInfo (void)
 	fprintf (stderr, "%s\n" ANSI_COLOR_RESET, e ? "" : ANSI_COLOR_GREEN " OK");
 
 	/* remove garbage, after zero-terminations */
-	bzero (src.title, sizeof (src.title));
-	bzero (src.composer, sizeof (src.composer));
-	bzero (src.artist, sizeof (src.artist));
-	bzero (src.style, sizeof (src.style));
-	bzero (src.comment, sizeof (src.comment));
-	bzero (src.album, sizeof (src.album));
+	memset (src.title, 0, sizeof (src.title));
+	memset (src.composer, 0, sizeof (src.composer));
+	memset (src.artist, 0, sizeof (src.artist));
+	memset (src.style, 0, sizeof (src.style));
+	memset (src.comment, 0, sizeof (src.comment));
+	memset (src.album, 0, sizeof (src.album));
 	snprintf (src.title, sizeof(src.title), "%s", "a short standard title");
 	snprintf (src.composer, sizeof (src.composer), "%s", "a short composer name");
 	snprintf (src.artist, sizeof (src.artist), "%s", "a short artist name");

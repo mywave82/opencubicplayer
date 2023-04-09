@@ -325,8 +325,8 @@ int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filenam
 		return errPlay;
 	}
 
-	bzero (oplStatusBuffers, sizeof (oplStatusBuffers));
-	bzero (&oplLastStatus, sizeof (oplLastStatus));
+	memset (oplStatusBuffers, 0, sizeof (oplStatusBuffers));
+	memset (&oplLastStatus, 0, sizeof (oplLastStatus));
 	oplLastPos = 0;
 
 	oplRate = 0;

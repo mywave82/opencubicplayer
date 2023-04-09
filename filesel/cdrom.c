@@ -121,7 +121,7 @@ static void try(const char *dev, const char *vdev)
 #ifdef CDROM_VERBOSE
 	fprintf(stderr, "Testing %s\n", dev);
 #endif
-	bzero (temppath, sizeof (temppath));
+	memset (temppath, 0, sizeof (temppath));
 	if (readlink (dev, temppath, sizeof (temppath) - 1) > 0)
 	{
 		if (strncmp (temppath, "/dev/sr", 7)) return;
@@ -589,7 +589,7 @@ static ocpdirhandle_pt cdrom_drive_readdir_start (struct ocpdir_t *_self, void(*
 	dh->owner = self;
 	dh->initlba = -1;
 
-	bzero (&self->cdrom->lasttoc, sizeof (self->cdrom->lasttoc));
+	memset (&self->cdrom->lasttoc, 0, sizeof (self->cdrom->lasttoc));
 	free (dh->owner->cdrom->lastdiscid);
 	free (dh->owner->cdrom->lasttocstr);
 	dh->owner->cdrom->lastdiscid = 0;
@@ -684,7 +684,7 @@ leadout:
 			goto failout;
 		}
 
-		bzero (offsets, sizeof (offsets));
+		memset (offsets, 0, sizeof (offsets));
 		for (i=first; i <= last; i++)
 		{
 			offsets[i] = dh->owner->cdrom->lasttoc.track[i].lba_addr + 150;

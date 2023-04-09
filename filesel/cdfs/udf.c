@@ -3933,7 +3933,7 @@ static void UDF_CompleteDiskIO_Free (void *self)
 
 static void UDF_CompleteDiskIO_DefaultSession (struct cdfs_disc_t *disc, struct UDF_Partition_Common *self, uint32_t *LocationIterator, uint8_t TimeStamp[12])
 {
-	bzero (TimeStamp, 12);
+	memset (TimeStamp, 0, 12);
 }
 
 static int UDF_CompleteDiskIO_SelectSession (struct cdfs_disc_t *disc, struct UDF_Partition_Common *self, uint32_t LocationIterator/*, uint8_t TimeStamp[12]*/)
@@ -4538,7 +4538,7 @@ static void Type1_DefaultSession (struct cdfs_disc_t *disc, struct UDF_Partition
 	}
 
 	*LocationIterator = t->PhysicalPartition->Start;
-	bzero (TimeStamp, 12);
+	memset (TimeStamp, 0, 12);
 }
 
 static int Type1_SelectSession (struct cdfs_disc_t *disc, struct UDF_Partition_Common *self, uint32_t LocationIterator/*, uint8_t TimeStamp[12]*/)
@@ -4554,7 +4554,7 @@ static int Type1_SelectSession (struct cdfs_disc_t *disc, struct UDF_Partition_C
 	{
 		return -1;
 	}
-	/* bzero (TimeStamp, sizeof (TimeStamp)); */
+	/* memset (TimeStamp, 0, sizeof (TimeStamp)); */
 	return 0;
 }
 
@@ -5337,7 +5337,7 @@ static void Type2_Metadata_PushAbsoluteLocations (struct cdfs_disc_t *disc, stru
 
 static void Type2_Metadata_DefaultSession (struct cdfs_disc_t *disc, struct UDF_Partition_Common *self, uint32_t *LocationIterator, uint8_t TimeStamp[12])
 {
-	bzero (TimeStamp, 12);
+	memset (TimeStamp, 0, 12);
 }
 
 static int Type2_Metadata_SelectSession (struct cdfs_disc_t *disc, struct UDF_Partition_Common *self, uint32_t LocationIterator/*, uint8_t TimeStamp[12]*/)
@@ -5562,7 +5562,7 @@ static int Type2_SparingPartition_Initialize (struct cdfs_disc_t *disc, struct U
 
 static void Type2_SparingPartition_DefaultSession (struct cdfs_disc_t *disc, struct UDF_Partition_Common *self, uint32_t *LocationIterator, uint8_t TimeStamp[12])
 {
-	bzero (TimeStamp, 12);
+	memset (TimeStamp, 0, 12);
 }
 
 static int Type2_SparingPartition_SelectSession (struct cdfs_disc_t *disc, struct UDF_Partition_Common *self, uint32_t LocationIterator/*, uint8_t TimeStamp[12]*/)

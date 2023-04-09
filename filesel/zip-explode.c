@@ -99,7 +99,7 @@ struct zip_explode_t
 
 static void zip_explode_init (struct zip_explode_t *self, int trees, int K) /* 2 or 3,  4 or 8 */
 {
-	bzero (self, sizeof (*self));
+	memset (self, 0, sizeof (*self));
 
 	self->K = K;
 

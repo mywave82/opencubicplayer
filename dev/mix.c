@@ -148,7 +148,7 @@ static void mixGetMasterSample(int16_t *s, unsigned int len, uint32_t rate, int 
 		memset(s+MIXBUFLEN, 0, ((len<<stereo)-MIXBUFLEN)<<1);
 		len=MIXBUFLEN>>stereo;
 	}
-	bzero (mixbuf, (len<<stereo)<<2);
+	memset (mixbuf, 0, (len<<stereo)<<2);
 	for (i=0; i<channum; i++)
 		putchn(&channels[i], len, opt);
 	mixClip(s, mixbuf, len<<stereo, amptab, clipmax);
@@ -174,7 +174,7 @@ static int mixMixChanSamples (struct cpifaceSessionAPI_t *cpifaceSession, unsign
 	ret=3;
 	for (i=0; i<n; i++)
 		mixgetmixch(ch[i], &channels[i], rate);
-	bzero (mixbuf, (len<<stereo)<<2);
+	memset (mixbuf, 0, (len<<stereo)<<2);
 	for (i=0; i<n; i++)
 	{
 		if (!(channels[i].status&MIX_PLAYING))

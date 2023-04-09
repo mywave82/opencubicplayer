@@ -557,11 +557,11 @@ int __attribute__ ((visibility ("internal"))) xmpLoadMXM (struct cpifaceSessionA
 			if (actpos > gsize)
 			{
 				cpifaceSession->cpiDebug (cpifaceSession, "sample #%d has sample that starts outside GUS memorywindow, chopping\n", i);
-				bzero (m->sampleinfos[i].ptr, len);
+				memset (m->sampleinfos[i].ptr, 0, len);
 			} else {
 				if ((len+actpos)>gsize)
 				{
-					bzero (m->sampleinfos[i].ptr, len);
+					memset (m->sampleinfos[i].ptr, 0, len);
 					cpifaceSession->cpiDebug (cpifaceSession, "sample #%d has sample that goes outside GUS memorywindow, chopping\n", i);
 					len = gsize-actpos;
 				}

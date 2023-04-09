@@ -122,10 +122,10 @@ unsigned int devpNoneIdle (void)
 	{
 		int pos1, length1, pos2, length2;
 		ringbuffer->get_head_bytes (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
-		bzero ((char *)devpNoneBuffer+pos1, length1);
+		memset ((char *)devpNoneBuffer+pos1, 0, length1);
 		if (length2)
 		{
-			bzero ((char *)devpNoneBuffer+pos2, length2);
+			memset ((char *)devpNoneBuffer+pos2, 0, length2);
 		}
 		ringbuffer->head_add_bytes (devpNoneRingBuffer, length1 + length2);
 		devpNonePauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */

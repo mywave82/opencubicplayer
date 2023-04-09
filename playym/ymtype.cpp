@@ -355,7 +355,7 @@ static int ymReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, co
 	if (packedSize > (len - ( sizeof(*h) + h->name_length + skip)))
 		packedSize = len - ( sizeof(*h) + h->name_length + skip );
 
-	bzero (ex_buf, fileSize);
+	memset (ex_buf, 0, fileSize);
 	{
 		CLzhDepacker *pDepacker = new CLzhDepacker;
 		pDepacker->LzUnpack(buf + sizeof(*h) + h->name_length + skip, packedSize, ex_buf, fileSize);

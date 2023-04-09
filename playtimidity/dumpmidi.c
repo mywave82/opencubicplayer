@@ -756,7 +756,7 @@ int main(int argc, char *argv[])
 	struct stat st;
 	size_t ps = sysconf(_SC_PAGE_SIZE);
 
-	bzero (&s, sizeof (s));
+	memset (&s, 0, sizeof (s));
 
 	if (argc != 2)
 	{

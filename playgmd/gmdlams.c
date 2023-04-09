@@ -249,7 +249,7 @@ static int _mpLoadAMS_InstrumentSample (struct cpifaceSessionAPI_t *cpifaceSessi
 				{
 overflowa:
 					cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] warning instrument %d/%d sample %d/%d, ran out of compressed data\n", i + 1, m->instnum, j + 1, instsampnum[i]);
-					bzero (smpp + p2, packlena - p2);
+					memset (smpp + p2, 0, packlena - p2);
 					break;
 				}
 				if (packb[p1]!=packbyte)
@@ -282,7 +282,7 @@ overflowa:
 				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] warning, instrument %d/%d sample %d/%d, compressed data left, rewinding buffer (%"PRId32" vs %"PRId32")\n", i + 1, m->instnum, j + 1, instsampnum[i], p1, packlenb);
 				file->seek_cur (file, (int64_t)p1 - (int64_t) packlenb);
 			}
-			bzero (packb, packlena);
+			memset (packb, 0, packlena);
 
 			p1=0;
 			bitsel=0x80;

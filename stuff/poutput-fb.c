@@ -179,7 +179,7 @@ static int fb_SetGraphMode (int high)
 	}
 
 	Console.VidMem = fbmem;
-	bzero (fbmem, fix.smem_len);
+	memset (fbmem, 0, fix.smem_len);
 
 	colormap.start=0;
 	colormap.len=256;
@@ -208,8 +208,8 @@ int fb_init (int minor, struct consoleDriver_t *driver)
 	struct fb_var_screeninfo var2;
 	char *temp;
 
-	bzero (&lowres, sizeof(lowres));
-	bzero (&lowres, sizeof(highres));
+	memset (&lowres, 0, sizeof(lowres));
+	memset (&lowres, 0, sizeof(highres));
 
 	if ((temp=getenv("FRAMEBUFFER")))
 	{

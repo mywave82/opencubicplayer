@@ -163,7 +163,7 @@ static void pre_disassemble(uint16_t load, uint16_t init, uint16_t play)
 	int      todo_n = 0;
 	int      todo_size = 16;
 
-	//bzero (MOS65xx_flags, sizeof (MOS65xx_flags));
+	//memset (MOS65xx_flags, 0, sizeof (MOS65xx_flags));
 
 	if (!load)
 	{

@@ -123,7 +123,7 @@ static int _mpLoadAMS_v12_v13_LoadPattern (struct cpifaceSessionAPI_t *cpifaceSe
 	}
 
 	/* first we unpack the pattern */
-	bzero (pattern, sizeof (*pattern));
+	memset (pattern, 0, sizeof (*pattern));
 	patpos = 0;
 	rowpos = 0;
 	pattern->rowcount = 64;

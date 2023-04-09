@@ -311,7 +311,7 @@ static void tryprint_addresses (const unsigned char *buffer, int length, uint16_
 			int from_source = length - mem_ptr;
 			int fill = mem_length - from_source;
 			memcpy (session_a.z80_memory + mem_ptr, buffer + ptr, length - mem_ptr);
-			bzero (session_a.z80_memory + mem_ptr + from_source, fill);
+			memset (session_a.z80_memory + mem_ptr + from_source, 0, fill);
 		} else {
 			memcpy (session_a.z80_memory + mem_ptr, buffer + ptr, mem_length);
 		}
@@ -376,7 +376,7 @@ int      todo_size = 0;
 
 static void predisassemble_session_start(struct z80_session_t *s)
 {
-	bzero (s->z80_flags, sizeof (s->z80_flags));
+	memset (s->z80_flags, 0, sizeof (s->z80_flags));
 }
 
 static void predisassemble_session_add(struct z80_session_t *s, uint16_t alt_ptr)

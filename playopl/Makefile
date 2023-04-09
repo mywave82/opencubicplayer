@@ -68,6 +68,8 @@ oplconfig.o: oplconfig.c \
 	$(CC) $(CFLAGS) $< -o $@ -c
 
 oplKen.o: oplKen.cpp \
+	../config.h \
+	../types.h \
 	oplKen.h \
 	adplug-git/src/opl.h \
 	adplug-git/src/adlibemu.h \
@@ -174,6 +176,8 @@ oplptrak.o: oplptrak.cpp \
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) oplptrak.cpp -o $@ -c
 
 ocpemu.o: ocpemu.cpp \
+	../config.h \
+	../types.h \
 	ocpemu.h
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) ocpemu.cpp -o $@ -c
 

@@ -71,7 +71,7 @@ void theRenderProc(void *userdata, Uint8 *stream, int len)
 
 	if (len)
 	{
-		bzero (stream, len);
+		memset (stream, 0, len);
 		PRINT("%s: buffer overrun - %d left\n", __FUNCTION__, len);
 	}
 }
@@ -124,10 +124,10 @@ static unsigned int devpSDLIdle (void)
 	{
 		int pos1, length1, pos2, length2;
 		ringbuffer->get_head_bytes (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
-		bzero ((char *)devpSDLBuffer+pos1, length1);
+		memset ((char *)devpSDLBuffer+pos1, 0, length1);
 		if (length2)
 		{
-			bzero ((char *)devpSDLBuffer+pos2, length2);
+			memset ((char *)devpSDLBuffer+pos2, 0, length2);
 		}
 		ringbuffer->head_add_bytes (devpSDLRingBuffer, length1 + length2);
 		devpSDLPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */

@@ -26,6 +26,8 @@
  */
 
 #include <assert.h>
+#include "config.h"
+#include "types.h"
 #include "ocpemu.h"
 #include <stdint.h>
 #include <string.h>
@@ -607,8 +609,8 @@ complete:
 
 void Cocpemu::init()
 {
-	bzero (regcache, sizeof (regcache));
-	bzero (&s, sizeof (s));
+	memset (regcache, 0, sizeof (regcache));
+	memset (&s, 0, sizeof (s));
 
 	realopl->init();
 	for (int i=0; i < 18; i++)

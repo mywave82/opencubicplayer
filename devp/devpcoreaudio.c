@@ -224,7 +224,7 @@ static OSStatus theRenderProc(void *inRefCon, AudioUnitRenderActionFlags *inActi
 
 	if (len)
 	{
-		bzero (stream, len);
+		memset (stream, 0, len);
 		debug_printf ("theRenderProc: buffer overrun - %d left\n", len);
 	}
 
@@ -297,10 +297,10 @@ static unsigned int devpCoreAudioIdle(void)
 	{
 		int pos1, length1, pos2, length2;
 		ringbuffer->get_head_bytes (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
-		bzero ((char *)devpCoreAudioBuffer+pos1, length1);
+		memset ((char *)devpCoreAudioBuffer+pos1, 0, length1);
 		if (length2)
 		{
-			bzero ((char *)devpCoreAudioBuffer+pos2, length2);
+			memset ((char *)devpCoreAudioBuffer+pos2, 0, length2);
 		}
 		ringbuffer->head_add_bytes (devpCoreAudioRingBuffer, length1 + length2);
 		devpCoreAudioPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */

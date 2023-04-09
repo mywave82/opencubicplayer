@@ -297,7 +297,7 @@ static uint32_t mdbNew (int size)
 				return UINT32_MAX;
 			}
 			mdbDirtyMap = (uint8_t *)t;
-			bzero (mdbDirtyMap + mdbDirtyMapSize / 8, (M - mdbDirtyMapSize) / 8);
+			memset (mdbDirtyMap + mdbDirtyMapSize / 8, 0, (M - mdbDirtyMapSize) / 8);
 			mdbDirtyMapSize = M;
 		}
 
@@ -309,7 +309,7 @@ static uint32_t mdbNew (int size)
 			return UINT32_MAX;
 		}
 		mdbData=(struct modinfoentry *)t;
-		bzero(mdbData + mdbDataSize, (N - mdbDataSize) * sizeof(mdbData[0]));
+		memset (mdbData + mdbDataSize, 0, (N - mdbDataSize) * sizeof(mdbData[0]));
 		mdbDataSize = N;
 		for (j=i; j<mdbDataSize; j++) /* all appended entries are dirty */
 		{
@@ -345,7 +345,7 @@ static void mdbFree (uint32_t ref, int size)
 
 	for (j = 0; j < size; j++)
 	{
-		bzero (mdbData + ref + j, sizeof (mdbData[0]));
+		memset (mdbData + ref + j, 0, sizeof (mdbData[0]));
 		mdbDirty=1;
 		mdbDirtyMap[(ref + j)>>3] |= 1 << ((ref + j) & 0x07);
 	}
@@ -884,7 +884,7 @@ static uint32_t mdbGetModuleReference (const char *name, uint64_t size)
 	m->mie.general.style_ref = UINT32_MAX;
 	m->mie.general.comment_ref = UINT32_MAX;
 	m->mie.general.album_ref = UINT32_MAX;
-	bzero (m->mie.general.reserved, sizeof (m->mie.general.reserved));
+	memset (m->mie.general.reserved, 0, sizeof (m->mie.general.reserved));
 	DEBUG_PRINT("mdbGetModuleReference(\"%s\" %"PRIu64") => new => 0x%08"PRIx32"\n", name, size, i);
 	return i;
 }
@@ -909,7 +909,7 @@ static void mdbGetString (char *dst, int dstlen, uint32_t mdb_ref)
 	while (1)
 	{
 		int l;
-		*dst = 0; /* parent is bzero() already, but does not hurt to ensure */
+		*dst = 0; /* parent is memset() already, but does not hurt to ensure */
 		if ((mdb_ref == 0) || (mdb_ref >= mdbDataSize) || (!dstlen))
 		{
 			return;
@@ -938,7 +938,7 @@ static void mdbGetString (char *dst, int dstlen, uint32_t mdb_ref)
 /* Partially unit test in mdbInit */
 int mdbGetModuleInfo (struct moduleinfostruct *m, uint32_t mdb_ref)
 {
-	bzero(m, sizeof(struct moduleinfostruct));
+	memset (m, 0, sizeof(*m));
 	assert (mdb_ref > 0);
 	assert (mdb_ref < mdbDataSize);
 	assert (mdbData[mdb_ref].mie.general.record_flags == MDB_USED);

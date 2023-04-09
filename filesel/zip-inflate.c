@@ -36,7 +36,7 @@ struct zip_inflate_t
 
 static int zip_inflate_init (struct zip_inflate_t *self)
 {
-	bzero (&self->strm, sizeof (self->strm));
+	memset (&self->strm, 0, sizeof (self->strm));
 	if (inflateInit2 (&self->strm, -15))
 	{
 		self->eof_hit = 1;

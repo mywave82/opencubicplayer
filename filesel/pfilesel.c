@@ -1096,11 +1096,11 @@ static void displayfile(const unsigned int y, unsigned int x, unsigned int width
 		{
 			mdbGetModuleInfo(&mi, m->mdb_ref);
 		} else {
-			bzero (&mi, sizeof (mi));
+			memset (&mi, 0, sizeof (mi));
 			mi.size = m->file->filesize (m->file);
 		}
 	} else {
-		bzero (&mi, sizeof (mi));
+		memset (&mi, 0, sizeof (mi));
 		col=0x0f;
 	}
 	if (sel==1)
@@ -1935,7 +1935,7 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 			{
 				mdbGetModuleInfo(&mi, mle->mdb_ref);
 			} else {
-				bzero (&mi, sizeof (mi));
+				memset (&mi, 0, sizeof (mi));
 				mi.size = mle->file->filesize (mle->file);
 			}
 

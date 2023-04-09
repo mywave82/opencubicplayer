@@ -219,7 +219,7 @@ static int mlScan(struct ocpdir_t *dir)
 	int i;
 	ocpdirhandle_pt *handle;
 
-	bzero (&token, sizeof (token));
+	memset (&token, 0, sizeof (token));
 
 	dirdbGetFullname_malloc (dir->dirdb_ref, &token.path, DIRDB_FULLNAME_ENDSLASH);
 	if (!token.path)

@@ -346,7 +346,7 @@ int __attribute__ ((visibility ("internal"))) cdfs_fetch_absolute_sector_2048 (s
 			uint32_t relsector = sector - disc->datasources_data[i].sectoroffset;
 			if (!disc->datasources_data[i].fh)
 			{
-				bzero (buffer, 2048);
+				memset (buffer, 0, 2048);
 				return 0;
 			}
 
@@ -528,7 +528,7 @@ int __attribute__ ((visibility ("internal"))) cdfs_fetch_absolute_sector_2352 (s
 
 			if (!disc->datasources_data[i].fh)
 			{
-				bzero (buffer, 2352);
+				memset (buffer, 0, 2352);
 				return 0;
 			}
 
@@ -1556,7 +1556,7 @@ again:
 		/* fill the buffer */
 		if (self->file->extent[self->curextent].location == UINT32_MAX)
 		{
-			bzero (self->buffer, sizeof (self->buffer));
+			memset (self->buffer, 0, sizeof (self->buffer));
 		} else {
 			debug_printf ("CDFS FileHandle about to request physical sector %"PRIu32"\n", self->file->extent[self->curextent].location + self->cursector);
 			if (cdfs_fetch_absolute_sector_2048 (self->file->owner, self->file->extent[self->curextent].location + self->cursector, self->buffer))

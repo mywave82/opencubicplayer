@@ -265,7 +265,7 @@ static int gmdOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
 	cpifaceSession->cpiDebug (cpifaceSession, "[GMD] loading %s... (%uk)\n", filename, (unsigned int)(i>>10));
 
-	bzero (info->composer, sizeof (info->composer));
+	memset (info->composer, 0, sizeof (info->composer));
 	if ((retval = loader (cpifaceSession, &mod, file)))
 	{
 		mpFree(&mod);

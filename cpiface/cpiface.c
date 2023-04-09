@@ -1572,7 +1572,7 @@ void GStrings_render (int lineno, int count, const struct GStringElement **Eleme
 		headspace = 0;
 	}
 
-	bzero (sizes, sizeof (int) * count);
+	memset (sizes, 0, sizeof (int) * count);
 
 	width = headspace * 2;
 
@@ -2253,7 +2253,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	struct cpimoderegstruct *mod;
 	const char *filename;
 
-	bzero (&cpifaceSessionAPI, sizeof (cpifaceSessionAPI));
+	memset (&cpifaceSessionAPI, 0, sizeof (cpifaceSessionAPI));
 	cpifaceSessionAPI.Public.plrDevAPI = plrDevAPI;
 	cpifaceSessionAPI.Public.ringbufferAPI = &ringbufferAPI;
 	cpifaceSessionAPI.Public.mcpAPI = mcpAPI;
@@ -2293,7 +2293,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 
 	/*
 	cpifaceSessionAPI.Public.SetMuteChannel = 0;
-	bzero (cpifaceSessionAPI.Public.MuteChannel, sizeof(cpifaceSessionAPI.Public.MuteChannel));
+	memset (cpifaceSessionAPI.Public.MuteChannel, 0, sizeof(cpifaceSessionAPI.Public.MuteChannel));
 
 	cpifaceSessionAPI.Public.PanType=0;
 	*/

@@ -605,7 +605,7 @@ int __attribute__ ((visibility ("internal"))) hvlGetChanSample (struct cpifaceSe
 			}
 			if (!length1)
 			{
-				bzero(s, (len<<stereo)<<2);
+				memset (s, 0, (len<<stereo)<<2);
 				return !!hvl_muted[ch];
 			}
 		}
@@ -690,12 +690,12 @@ int __attribute__ ((visibility ("internal"))) hvlOpenPlayer (const uint8_t *mem,
 		goto error_out_mem;
 	}
 
-	bzero (hvl_muted, sizeof (hvl_muted));
+	memset (hvl_muted, 0, sizeof (hvl_muted));
 
-	bzero (hvl_statbuffer, sizeof (hvl_statbuffer));
+	memset (hvl_statbuffer, 0, sizeof (hvl_statbuffer));
 	hvl_statbuffers_available = ROW_BUFFERS;
 
-	bzero (plInstUsed, sizeof (plInstUsed));
+	memset (plInstUsed, 0, sizeof (plInstUsed));
 
 	cpifaceSession->mcpSet = hvlSet;
 	cpifaceSession->mcpGet = hvlGet;

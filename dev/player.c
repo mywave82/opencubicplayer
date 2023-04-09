@@ -92,7 +92,7 @@ void plrGetMasterSample(int16_t *buf, uint32_t len, uint32_t rate, int opt)
 	maxlen = imuldiv((length1 + length2), 0x10000, step); /* step goes with twice the speed on stereo */
 	if (len > maxlen) /* not enough data? zero-fill and limit */
 	{
-		bzero(buf + maxlen, (len - maxlen) << (1 /* bit16 */ + stereoout));
+		memset (buf + maxlen, 0, (len - maxlen) << (1 /* bit16 */ + stereoout));
 		len = maxlen;
 	}
 	pass2 = (signed int)len - (imuldiv (length1, 0x10000, step)); /* pass2 goes negative if length1 can provide more than 256 samples... and maxlen protects both passes */

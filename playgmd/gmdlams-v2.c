@@ -80,7 +80,7 @@ static int _mpLoadAMS_v2_Instruments (struct cpifaceSessionAPI_t *cpifaceSession
 
 		if (filever==0x200)
 		{
-			bzero (samptab, sizeof (samptab));
+			memset (samptab, 0, sizeof (samptab));
 			if (file->read (file, samptab+12, 96) != 96)
 			{
 				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS v2] read instrument %d (old style) sample tab failed\n", i + 1);
@@ -369,7 +369,7 @@ static int _mpLoadAMS_v2_LoadPattern (struct cpifaceSessionAPI_t *cpifaceSession
 		return errFormStruc;
 	}
 
-	bzero (pattern, sizeof (*pattern));
+	memset (pattern, 0, sizeof (*pattern));
 	patpos = 0;
 	rowpos = 0;
 

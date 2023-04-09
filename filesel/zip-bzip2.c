@@ -36,7 +36,7 @@ struct zip_bzip2_t
 
 static int zip_bzip2_init (struct zip_bzip2_t *self)
 {
-	bzero (&self->strm, sizeof (self->strm));
+	memset (&self->strm, 0, sizeof (self->strm));
 	if (BZ2_bzDecompressInit (&self->strm, 0 /* no verbosity */, 0 /* do not use the small decompression routine */))
 	{
 		self->eof_hit = 1;

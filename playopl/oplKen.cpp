@@ -1,4 +1,5 @@
 /*
+
  * Adplug - Replayer for many OPL2/OPL3 audio file formats.
  * Copyright (C) 1999 - 2006 Simon Peter, <dn.tlp@gmx.net>, et al.
  *
@@ -23,7 +24,9 @@
 #include "ocpemu.h"
 #include "oplKen.h"
 
+#include "config.h"
 #include <string.h>
+#include "types.h"
 
 extern "C" {
 #include "adplug-git/src/adlibemu.h"
@@ -31,7 +34,7 @@ extern "C" {
 
 oplKen::oplKen(int rate) : samplerate(rate), mixbufSamples(0)
 {
-	bzero (ctx, sizeof (ctx));
+	memset (ctx, 0, sizeof (ctx));
 	currType = TYPE_DUAL_OPL2;
 	init();
 }

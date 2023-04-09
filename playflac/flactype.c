@@ -136,7 +136,7 @@ static int flacReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, 
 							{
 								copy = sizeof (m->artist)-1;
 							}
-							bzero (m->artist, sizeof (m->artist));
+							memset (m->artist, 0, sizeof (m->artist));
 							memcpy (m->artist, mymybuf + 7, copy);
 						} else if ((l >= 6) && (!strncasecmp((char *)mymybuf, "title=", 6)))
 						{
@@ -145,7 +145,7 @@ static int flacReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, 
 							{
 								copy = sizeof (m->title)-1;
 							}
-							bzero (m->title, sizeof (m->title));
+							memset (m->title, 0, sizeof (m->title));
 							memcpy (m->title, mymybuf + 6, copy);
 						} else if ((l>= 6) && (!strncasecmp((char *)mymybuf, "album=", 6)))
 						{
@@ -154,7 +154,7 @@ static int flacReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, 
 							{
 								copy = sizeof (m->album)-1;
 							}
-							bzero (m->album, sizeof (m->album));
+							memset (m->album, 0, sizeof (m->album));
 							memcpy (m->album, mymybuf + 6, copy);
 						} else if ((l >= 6) &&(!strncasecmp((char *)mymybuf, "genre=", 6)))
 						{
@@ -163,7 +163,7 @@ static int flacReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, 
 							{
 								copy = sizeof (m->style)-1;
 							}
-							bzero (m->style, sizeof (m->style));
+							memset (m->style, 0, sizeof (m->style));
 							memcpy (m->style, mymybuf + 6, copy);
 						} else if ((l >= 9) &&(!strncasecmp((char *)mymybuf, "composer=", 9)))
 						{
@@ -172,7 +172,7 @@ static int flacReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, 
 							{
 								copy = sizeof (m->composer)-1;
 							}
-							bzero (m->composer, sizeof (m->composer));
+							memset (m->composer, 0, sizeof (m->composer));
 							memcpy (m->composer, mymybuf + 9, copy);
 						}
 /*

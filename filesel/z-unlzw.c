@@ -118,7 +118,7 @@ static signed int unlzw_feed (struct lzw_handle_t *h, uint8_t input)
 
 			h->free_ent = h->block_mode ? FIRST : 256;
 
-			bzero (h->tab_prefix, 256*sizeof (h->tab_prefix[0]));
+			memset (h->tab_prefix, 0, 256*sizeof (h->tab_prefix[0]));
 			for (code = 0 ; code < 256 ; code++)
 			{
 				h->tab_suffix[code] = (uint8_t)code;
@@ -196,7 +196,7 @@ again:
 	{
 		h->readcodes = 8; /* discard remaining codes in the buffer */
 
-		bzero (h->tab_prefix, 256*sizeof (h->tab_prefix[0]));
+		memset (h->tab_prefix, 0, 256*sizeof (h->tab_prefix[0]));
 		h->free_ent = FIRST - 1;
 
 		h->n_bits = INIT_BITS;

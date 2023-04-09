@@ -78,7 +78,7 @@ struct zip_expand_t
 
 void expand_init (struct zip_expand_t *self, int compression_factor /* 1 - 4 */)
 {
-	bzero (self, sizeof (*self));
+	memset (self, 0, sizeof (*self));
 
 	if ((compression_factor < 0) || (compression_factor > 4))
 	{

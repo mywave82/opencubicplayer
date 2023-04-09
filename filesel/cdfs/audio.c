@@ -104,7 +104,7 @@ void __attribute__ ((visibility ("internal"))) Check_Audio (struct cdfs_disc_t *
 			goto postfailout;
 		}
 
-		bzero (offsets, sizeof (offsets));
+		memset (offsets, 0, sizeof (offsets));
 		for (i=1; i <= last; i++)
 		{
 			offsets[i] = disc->tracks_data[i].start + 150;

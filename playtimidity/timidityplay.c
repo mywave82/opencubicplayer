@@ -2036,7 +2036,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	uint32_t gmibuflen;
 	enum plrRequestFormat format;
 
-	bzero (&tc, sizeof (tc));
+	memset (&tc, 0, sizeof (tc));
 	tc.contextowner = cpifaceSession;
 #ifdef ALWAYS_TRACE_TEXT_META_EVENT
 	tc.opt_trace_text_meta_event = 1;

@@ -175,8 +175,8 @@ static void xvidmode_init(void)
 
 	Console.CurrentFont = _8x8;
 
-	bzero (modelines, sizeof(modelines));
-	bzero (&default_modeline, sizeof(default_modeline));
+	memset (modelines, 0, sizeof(modelines));
+	memset (&default_modeline, 0, sizeof(default_modeline));
 
 	XGetWindowAttributes(mDisplay, DefaultRootWindow(mDisplay), &xwa);
 	fprintf(stderr, "[x11] rootwindow: width:%d height:%d\n", xwa.width, xwa.height);
@@ -392,7 +392,7 @@ static void motif_decoration(Window window, int action)
 	{
 		MotifWmHints vo_MotifWmHints;
 
-		bzero (&vo_MotifWmHints, sizeof(MotifWmHints));
+		memset (&vo_MotifWmHints, 0, sizeof(MotifWmHints));
 		vo_MotifWmHints.flags=MWM_HINTS_FUNCTIONS | MWM_HINTS_DECORATIONS;
 		if (action)
 		{
@@ -457,7 +457,7 @@ static void WindowResized_Textmode(unsigned int width, unsigned int height)
 		virtual_framebuffer = 0;
 		Console.VidMem = (uint8_t *)image->data;
 	}
-	bzero (Console.VidMem, Console.GraphBytesPerLine * Console.GraphLines);
+	memset (Console.VidMem, 0, Console.GraphBytesPerLine * Console.GraphLines);
 
 	if (!do_fullscreen)
 	{
@@ -571,7 +571,7 @@ static void set_state_graphmode(int FullScreen)
 	} else {
 		virtual_framebuffer = 0;
 		Console.VidMem = (uint8_t *)image->data;
-		bzero (Console.VidMem, Console.GraphBytesPerLine * Console.GraphLines);
+		memset (Console.VidMem, 0, Console.GraphBytesPerLine * Console.GraphLines);
 	}
 }
 
@@ -696,7 +696,7 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 		virtual_framebuffer = 0;
 		Console.VidMem = (uint8_t *)image->data;
 	}
-	bzero (Console.VidMem, Console.GraphBytesPerLine * Console.GraphLines);
+	memset (Console.VidMem, 0, Console.GraphBytesPerLine * Console.GraphLines);
 }
 
 static void x11_common_event_loop(void)
@@ -1305,10 +1305,10 @@ static int x11_SetGraphMode (int high)
 		Console.VidMem = (uint8_t *)image->data;
 	}
 quick:
-	bzero (image->data, image->bytes_per_line * Console.GraphLines);
+	memset (image->data, 0, image->bytes_per_line * Console.GraphLines);
 	if (virtual_framebuffer)
 	{
-		bzero (virtual_framebuffer, Console.GraphBytesPerLine * Console.GraphLines);
+		memset (virtual_framebuffer, 0, Console.GraphBytesPerLine * Console.GraphLines);
 	}
 
 	x11_gFlushPal ();
@@ -1329,7 +1329,7 @@ static void x11_SetTextMode (unsigned char x)
 
 	if (x == Console.CurrentMode)
 	{
-		bzero (Console.VidMem, Console.GraphBytesPerLine * Console.GraphLines);
+		memset (Console.VidMem, 0, Console.GraphBytesPerLine * Console.GraphLines);
 		return;
 	}
 
@@ -2119,7 +2119,7 @@ static void x11_DisplaySetupTextMode (void)
 	{
 		uint16_t c;
 
-		bzero (Console.VidMem, Console.GraphBytesPerLine * Console.GraphLines);
+		memset (Console.VidMem, 0, Console.GraphBytesPerLine * Console.GraphLines);
 
 		make_title("x11-driver setup", 0);
 		swtext_displaystr_cp437 (1, 0, 0x07, "1:  font-size:", 14);

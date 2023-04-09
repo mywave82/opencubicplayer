@@ -897,7 +897,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 		return retval;
 	}
 
-	bzero (aydumpbuffer_delayed_states, sizeof (aydumpbuffer_delayed_states));
+	memset (aydumpbuffer_delayed_states, 0, sizeof (aydumpbuffer_delayed_states));
 
 	ayRate=0;
 	format=PLR_STEREO_16BIT_SIGNED;
@@ -933,7 +933,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 		ay_track=aydata.num_tracks-1;
 	}
 */
-	bzero (ayMute, sizeof(ayMute));
+	memset (ayMute, 0, sizeof(ayMute));
 
 	if (!sound_init())
 	{
@@ -941,7 +941,7 @@ int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_
 		goto errorout_ringbuffer_aybufpos;
 	}
 
-	bzero (&aydumpbuffer_state_current, sizeof (aydumpbuffer_state_current));
+	memset (&aydumpbuffer_state_current, 0, sizeof (aydumpbuffer_state_current));
 	aydumpbuffer_state_current.aydumpbuffer_states.clockrate = 1000000;;
 	aydumpbuffer_state_current.aydumpbuffer_states.channel_a_period = 1;
 	aydumpbuffer_state_current.aydumpbuffer_states.channel_b_period = 1;

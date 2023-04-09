@@ -159,10 +159,10 @@ static unsigned int devpOSSIdle(void)
 	if (devpOSSInPause)
 	{
 		ringbuffer->get_head_bytes (devpOSSRingBuffer, &pos1, &length1, &pos2, &length2);
-		bzero ((char *)devpOSSBuffer+pos1, length1);
+		memset ((char *)devpOSSBuffer+pos1, 0, length1);
 		if (length2)
 		{
-			bzero ((char *)devpOSSBuffer+pos2, length2);
+			memset ((char *)devpOSSBuffer+pos2, 0, length2);
 		}
 		ringbuffer->head_add_bytes (devpOSSRingBuffer, length1 + length2);
 		devpOSSPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */

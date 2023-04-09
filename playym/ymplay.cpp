@@ -247,7 +247,7 @@ int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_
 
 	ym_looped = 0;
 
-	bzero (timeslots, sizeof (timeslots));
+	memset (timeslots, 0, sizeof (timeslots));
 
 	pMusic = new CYmMusic(ymRate);
 	if (!pMusic)

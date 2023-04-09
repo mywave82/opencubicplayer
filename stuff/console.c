@@ -124,7 +124,7 @@ static int console_init(void)
 			} else if (!strcmp(driver, "vcsa"))
 			{
 #ifdef HAVE_FRAMEBUFFER
-				bzero(_stdin, sizeof(_stdin));
+				memset (_stdin, 0, sizeof(_stdin));
 				if (readlink("/proc/self/fd/0", _stdin, sizeof(_stdin)-1)<0)
 				if (readlink("/dev/fd/0", _stdin, sizeof(_stdin)-1)<0)
 				{
@@ -180,8 +180,8 @@ static int console_init(void)
 		}
 	}
 #ifdef __linux
-	bzero(_stdin, sizeof(_stdin));
-	bzero(_stdout, sizeof(_stdout));
+	memset (_stdin, 0, sizeof(_stdin));
+	memset (_stdout, 0, sizeof(_stdout));
 
 	if (readlink("/proc/self/fd/0", _stdin, sizeof(_stdin)-1)<0)
 	if (readlink("/dev/fd/0", _stdin, sizeof(_stdin)-1)<0)

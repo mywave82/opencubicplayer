@@ -480,7 +480,7 @@ static void sdl2_SetTextMode(unsigned char x)
 
 	if ((x == Console.CurrentMode) && (current_window))
 	{
-		bzero (virtual_framebuffer, Console.GraphBytesPerLine * Console.GraphLines);
+		memset (virtual_framebuffer, 0, Console.GraphBytesPerLine * Console.GraphLines);
 		return;
 	}
 
@@ -686,7 +686,7 @@ static int sdl2_SetGraphMode (int high)
 quick:
 	if (virtual_framebuffer)
 	{
-		bzero (virtual_framebuffer, Console.GraphBytesPerLine * Console.GraphLines);
+		memset (virtual_framebuffer, 0, Console.GraphBytesPerLine * Console.GraphLines);
 	}
 
 	sdl2_gFlushPal ();
@@ -712,7 +712,7 @@ static void sdl2_DisplaySetupTextMode(void)
 	while (1)
 	{
 		uint16_t c;
-		bzero (virtual_framebuffer, Console.GraphBytesPerLine * Console.GraphLines);
+		memset (virtual_framebuffer, 0, Console.GraphBytesPerLine * Console.GraphLines);
 		make_title("sdl2-driver setup", 0);
 		swtext_displaystr_cp437(1, 0, 0x07, "1:  font-size:", 14);
 		swtext_displaystr_cp437(1, 15, Console.CurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);

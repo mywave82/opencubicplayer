@@ -101,7 +101,7 @@ Rotation is separate from addition to prevent recomputation.
 
 static void MD5Init (MD5_CTX *context)
 {
-	bzero (context, sizeof (*context));
+	memset (context, 0, sizeof (*context));
 	context->state[0] = 0x67452301;
 	context->state[1] = 0xefcdab89;
 	context->state[2] = 0x98badcfe;
@@ -206,7 +206,7 @@ static void MD5Transform (uint32_t state[4], unsigned char block[64])
 	state[2] += c;
 	state[3] += d;
 
-	bzero (x, sizeof (x));
+	memset (x, 0, sizeof (x));
 }
 
 static void MD5Update (MD5_CTX *context, uint8_t *input, unsigned int inputLen)

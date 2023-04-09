@@ -58,7 +58,7 @@ int karaoke_new_line (struct lyric_t *lyric)
 			return -1;
 		}
 		lyric->line = temp;
-		bzero (&lyric->line[lyric->lines], sizeof (lyric->line[0]));
+		memset (&lyric->line[lyric->lines], 0, sizeof (lyric->line[0]));
 		lyric->lines++;
 		return 0;
 	}
