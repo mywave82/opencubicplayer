@@ -129,7 +129,6 @@ int __attribute__ ((visibility ("internal"))) it_precalctime(struct it_module *t
 			if (!patptr)
 			{
 				fprintf(stderr, "playit: ittime.c: patptr not set\n");
-				kill(getpid(), SIGTERM);
 				abort();
 			}
 			while (*patptr)
