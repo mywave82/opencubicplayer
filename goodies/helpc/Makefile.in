@@ -10,10 +10,8 @@ install:
 
 uninstall:
 
-ocphhc.o: ocphhc.c \
-	../../config.h \
-	../../types.h
-	$(CC) -I../../ ocphhc.c -o $@ -c
+ocphhc.o: ocphhc.c
+	$(CC_FOR_BUILD) -I../../ ocphhc.c -o $@ -c
 
 ocphhc: ocphhc.o
-	$(CC) -o $@ $^ -lz @EFENCE_LIBS@ @DUMA_LIBS@
+	$(CC_FOR_BUILD) -o $@ $^ -lz @EFENCE_LIBS@ @DUMA_LIBS@

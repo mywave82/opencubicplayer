@@ -41,12 +41,13 @@
  * ask me why).
  */
 
-#include "config.h"
+//#include "config.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "types.h"
+#include <stdint.h>
+//#include "types.h"
 #include "zlib.h"
 
 #pragma pack (1)                       /* this is essential */
@@ -89,6 +90,52 @@ int      verbose=0,
 
 int      totdatasize,
          totcompdatasize;
+
+#ifdef HAVE_BYTESWAP_H
+#include <byteswap.h>
+#else
+#define __bswap_16(x) \
+     ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
+#define __bswap_32(x) \
+     ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) |               \
+      (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
+#define __bswap_64(x) \
+     ((((x) & 0xff00000000000000ull) >> 56)                                   \
+      | (((x) & 0x00ff000000000000ull) >> 40)                                 \
+      | (((x) & 0x0000ff0000000000ull) >> 24)                                 \
+      | (((x) & 0x000000ff00000000ull) >> 8)                                  \
+      | (((x) & 0x00000000ff000000ull) << 8)                                  \
+      | (((x) & 0x0000000000ff0000ull) << 24)                                 \
+      | (((x) & 0x000000000000ff00ull) << 40)                                 \
+      | (((x) & 0x00000000000000ffull) << 56))
+#endif
+
+static const int is_big_endian(void)
+{
+	union
+	{
+		uint32_t i;
+		char c[4];
+	} bint = {0x01020304};
+
+	return bint.c[0] == 1;
+}
+
+static uint32_t uint32_little (uint32_t x)
+{
+	static int detected = 0;
+	static int isbig = 0;
+	if (!detected)
+	{
+		isbig = is_big_endian();
+		detected = 1;
+	}
+	if (isbig)
+	{
+		return __bswap_32(x);
+	}
+	return x;
+}
 
 void putfstr(char *what, FILE *to)
 {
