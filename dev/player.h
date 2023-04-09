@@ -31,6 +31,8 @@ struct plrDevAPI_t
 	void (*Stop) (struct cpifaceSessionAPI_t *cpifaceSession);
 	struct ocpvolregstruct *VolRegs; /* null if feature is not present */
 	int (*ProcessKey)(uint16_t);
+
+	void (*GetStats)(uint64_t *processed);
 };
 
 extern const struct plrDevAPI_t *plrDevAPI;

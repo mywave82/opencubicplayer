@@ -122,8 +122,7 @@ static void hvlDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		-1,         /* gvol */
 		0,          /* gvol slide direction */
 		0,          /* chan X */
-		0,          /* chan Y */
-		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000)
+		0           /* chan Y */
 	);
 #warning we are missing the current tune title
 //cpifaceSession->conFunc->WriteString (buf[2], 22, 0x0F, current_hvl_tune?current_hvl_tune->ht_Name:"", 44);

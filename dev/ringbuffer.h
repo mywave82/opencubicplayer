@@ -20,22 +20,18 @@ struct ringbuffer_t;
 void ringbuffer_reset (struct ringbuffer_t *self);
 
 void ringbuffer_tail_consume_bytes (struct ringbuffer_t *self, int bytes);
-void ringbuffer_tail_set_bytes (struct ringbuffer_t *self, int pos);
 
 void ringbuffer_processing_consume_bytes (struct ringbuffer_t *self, int bytes);
-void ringbuffer_processing_set_bytes (struct ringbuffer_t *self, int pos);
 
 void ringbuffer_head_add_bytes (struct ringbuffer_t *self, int bytes);
-void ringbuffer_head_set_bytes (struct ringbuffer_t *self, int pos);
+void ringbuffer_head_add_pause_bytes (struct ringbuffer_t *self, int bytes);
 
 void ringbuffer_tail_consume_samples (struct ringbuffer_t *self, int samples);
-void ringbuffer_tail_set_samples (struct ringbuffer_t *self, int pos);
 
 void ringbuffer_processing_consume_samples (struct ringbuffer_t *self, int samples);
-void ringbuffer_processing_set_samples (struct ringbuffer_t *self, int pos);
 
 void ringbuffer_head_add_samples (struct ringbuffer_t *self, int samples);
-void ringbuffer_head_set_samples (struct ringbuffer_t *self, int pos);
+void ringbuffer_head_add_pause_samples (struct ringbuffer_t *self, int samples);
 
 void ringbuffer_get_tail_bytes (struct ringbuffer_t *self, int *pos1, int *length1, int *pos2, int *length2);
 void ringbuffer_get_processing_bytes (struct ringbuffer_t *self, int *pos1, int *length1, int *pos2, int *length2);
@@ -65,21 +61,19 @@ void ringbuffer_free (struct ringbuffer_t *self);
 void ringbuffer_add_tail_callback_samples (struct ringbuffer_t *self, int samples, void (*callback)(void *arg, int samples_ago), const void *arg);
 void ringbuffer_add_processing_callback_samples (struct ringbuffer_t *self, int samples, void (*callback)(void *arg, int samples_ago), const void *arg);
 
+void ringbuffer_get_stats (struct ringbuffer_t *self, uint64_t *total_tail);
+
 struct ringbufferAPI_t
 {
 	void (*reset) (struct ringbuffer_t *self);
 	void (*tail_consume_bytes) (struct ringbuffer_t *self, int bytes);
-	void (*tail_set_bytes) (struct ringbuffer_t *self, int pos);
 	void (*processing_consume_bytes) (struct ringbuffer_t *self, int bytes);
-	void (*processing_set_bytes) (struct ringbuffer_t *self, int pos);
 	void (*head_add_bytes) (struct ringbuffer_t *self, int bytes);
-	void (*head_set_bytes) (struct ringbuffer_t *self, int pos);
+	void (*head_add_pause_bytes) (struct ringbuffer_t *self, int bytes);
 	void (*tail_consume_samples) (struct ringbuffer_t *self, int samples);
-	void (*tail_set_samples) (struct ringbuffer_t *self, int pos);
 	void (*processing_consume_samples) (struct ringbuffer_t *self, int samples);
-	void (*processing_set_samples) (struct ringbuffer_t *self, int pos);
 	void (*head_add_samples) (struct ringbuffer_t *self, int samples);
-	void (*head_set_samples) (struct ringbuffer_t *self, int pos);
+	void (*head_add_pause_samples) (struct ringbuffer_t *self, int samples);
 	void (*get_tail_bytes) (struct ringbuffer_t *self, int *pos1, int *length1, int *pos2, int *length2);
 	void (*get_processing_bytes) (struct ringbuffer_t *self, int *pos1, int *length1, int *pos2, int *length2);
 	void (*get_head_bytes) (struct ringbuffer_t *self, int *pos1, int *length1, int *pos2, int *length2);
@@ -97,6 +91,7 @@ struct ringbufferAPI_t
 	void (*free) (struct ringbuffer_t *self);
 	void (*add_tail_callback_samples) (struct ringbuffer_t *self, int samples, void (*callback)(void *arg, int samples_ago), const void *arg);
 	void (*add_processing_callback_samples) (struct ringbuffer_t *self, int samples, void (*callback)(void *arg, int samples_ago), const void *arg);
+	void (*get_stats) (struct ringbuffer_t *self, uint64_t *total_tail);
 };
 
 extern const struct ringbufferAPI_t ringbufferAPI;

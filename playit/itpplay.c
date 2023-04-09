@@ -229,8 +229,7 @@ static void itpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		gvol,
 		(gs==ifxGVSUp)?1:(gs==ifxGVSDown)?-1:0,
 		nch,
-		cpifaceSession->PhysicalChannelCount,
-		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000)
+		cpifaceSession->PhysicalChannelCount
 	);
 }
 

@@ -113,8 +113,7 @@ static void mpegDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		1, /* KB */
 		inf.opt25,
 		inf.opt50,
-		inf.rate / 1000,
-		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000)
+		inf.rate / 1000
 	);
 }
 

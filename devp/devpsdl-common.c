@@ -129,7 +129,7 @@ static unsigned int devpSDLIdle (void)
 		{
 			memset ((char *)devpSDLBuffer+pos2, 0, length2);
 		}
-		ringbuffer->head_add_bytes (devpSDLRingBuffer, length1 + length2);
+		ringbuffer->head_add_pause_bytes (devpSDLRingBuffer, length1 + length2);
 		devpSDLPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
 	}
 
@@ -328,6 +328,11 @@ static void devpSDLStop (struct cpifaceSessionAPI_t *cpifaceSession)
 	cpifaceSession->plrActive = 0;
 }
 
+static void devpSDLGetStats (uint64_t *processed)
+{
+	ringbuffer->get_stats (devpSDLRingBuffer, processed);
+}
+
 static const struct plrDevAPI_t devpSDL = {
 	devpSDLIdle,
 	devpSDLPeekBuffer,
@@ -339,7 +344,8 @@ static const struct plrDevAPI_t devpSDL = {
 	devpSDLPause,
 	devpSDLStop,
 	0, /* VolRegs */
-	0 /* ProcessKey */
+	0, /* ProcessKey */
+	devpSDLGetStats
 };
 
 static void sdlClose (const struct plrDriver_t *driver)

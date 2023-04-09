@@ -164,7 +164,7 @@ static unsigned int devpOSSIdle(void)
 		{
 			memset ((char *)devpOSSBuffer+pos2, 0, length2);
 		}
-		ringbuffer->head_add_bytes (devpOSSRingBuffer, length1 + length2);
+		ringbuffer->head_add_pause_bytes (devpOSSRingBuffer, length1 + length2);
 		devpOSSPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
 	}
 /* do we need to insert pause-samples? DONE */
@@ -654,6 +654,11 @@ static void ossPluginClose (struct PluginCloseAPI_t *API)
 
 static struct ocpvolregstruct voloss={volossGetNumVolume, volossGetVolume, volossSetVolume};
 
+static void devpOSSGetStats (uint64_t *processed)
+{
+	ringbuffer->get_stats (devpOSSRingBuffer, processed);
+}
+
 static const struct plrDevAPI_t devpOSS = {
 	devpOSSIdle,
 	devpOSSPeekBuffer,
@@ -665,7 +670,8 @@ static const struct plrDevAPI_t devpOSS = {
 	devpOSSPause,
 	devpOSSStop,
 	&voloss,
-	0 /* ProcessKey */
+	0, /* ProcessKey */
+	devpOSSGetStats
 };
 
 static const struct plrDriver_t plrOSS =

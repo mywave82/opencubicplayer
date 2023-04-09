@@ -121,8 +121,7 @@ static void timidityDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		0, /* events */
 		"",//gi.opt25,
 		"",//gi.opt50,
-		-1,
-		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000)
+		-1
 	);
 }
 

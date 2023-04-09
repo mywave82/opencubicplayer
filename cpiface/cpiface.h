@@ -224,28 +224,25 @@ struct drawHelperAPI_t
 	                                   const char                     sizesuffix, /* 0 = "" (MIDI), 1 = KB */
 	                                   const char                    *opt25,
 	                                   const char                    *opt50,
-	                                   const int_fast16_t             kbs,  /* kilo-bit-per-second */
-	                                   const uint_fast16_t            seconds);
+	                                   const int_fast16_t             kbs); /* kilo-bit-per-second */
 
 	void (*GStringsSongXofY) (struct cpifaceSessionAPI_t *cpifaceSession,
 	                          const int                      songX,
-	                          const int                      songY,
-	                          const uint_fast16_t            seconds);
+	                          const int                      songY);
 
 	void (*GStringsTracked) (struct cpifaceSessionAPI_t *cpifaceSession,
 	                         const int                      songX,
-	                         const int                      songY, /* 0 or smaller, disables this, else 2 digits.. */
+	                         const int                      songY,  /* 0 or smaller, disables this, else 2 digits.. */
 	                         const uint8_t                  rowX,
-	                         const uint8_t                  rowY, /* displayed as 2 hex digits */
+	                         const uint8_t                  rowY,   /* displayed as 2 hex digits */
 	                         const uint16_t                 orderX,
 	                         const uint16_t                 orderY, /* displayed as 1,2,3 or 4 hex digits, depending on this size */
-	                         const uint8_t                  speed, /* displayed as %3 (with no space prefix) decimal digits */
-	                         const uint8_t                  tempo, /* displayed as %3 decimal digits */
-	                         const int16_t                  gvol, /* -1 for disable, else 0x00..0xff */
+	                         const uint8_t                  speed,  /* displayed as %3 (with no space prefix) decimal digits */
+	                         const uint8_t                  tempo,  /* displayed as %3 decimal digits */
+	                         const int16_t                  gvol,   /* -1 for disable, else 0x00..0xff */
 	                         const int                      gvol_slide_direction,
 	                         const uint8_t                  chanX,
-	                         const uint8_t                  chanY, /* set to zero to disable */
-	                         const uint_fast16_t            seconds);
+	                         const uint8_t                  chanY); /* set to zero to disable */
 };
 
 struct dmDrive;

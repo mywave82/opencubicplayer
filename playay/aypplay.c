@@ -122,8 +122,7 @@ static void ayDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 	(
 		cpifaceSession,
 		globinfo.track,
-		globinfo.numtracks,
-		cpifaceSession->InPause?((pausetime - starttime) / 1000):((clock_ms() - starttime) / 1000)
+		globinfo.numtracks
 	);
 #warning TODO: globinfo.trackname, each track can have unique names.....
 }

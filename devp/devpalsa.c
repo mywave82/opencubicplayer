@@ -688,7 +688,7 @@ static unsigned int devpALSAIdle(void)
 		{
 			memset ((char *)devpALSABuffer+pos2, 0, length2);
 		}
-		ringbuffer->head_add_bytes (devpALSARingBuffer, length1 + length2);
+		ringbuffer->head_add_pause_bytes (devpALSARingBuffer, length1 + length2);
 		devpALSAPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
 	}
 /* do we need to insert pause-samples? DONE */
@@ -1380,6 +1380,11 @@ static void __attribute__((destructor))fini(void)
 	alsa_mixers_n=0;
 }
 
+static void devpALSAGetStats (uint64_t *processed)
+{
+	ringbuffer->get_stats (devpALSARingBuffer, processed);
+}
+
 static struct ocpvolregstruct volalsa={volalsaGetNumVolume, volalsaGetVolume, volalsaSetVolume};
 static const struct plrDevAPI_t devpALSA = {
 	devpALSAIdle,
@@ -1392,7 +1397,8 @@ static const struct plrDevAPI_t devpALSA = {
 	devpALSAPause,
 	devpALSAStop,
 	&volalsa,
-	0 /* ProcessKey */
+	0, /* ProcessKey */
+	devpALSAGetStats
 };
 
 static const struct plrDriver_t plrALSA =

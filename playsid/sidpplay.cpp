@@ -116,8 +116,7 @@ static void sidDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 	(
 		cpifaceSession,
 		sidGetSong(),
-		sidGetSongs(),
-		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000)
+		sidGetSongs()
 	);
 }
 

@@ -55,6 +55,13 @@ struct ringbuffer_t
 	struct ringbuffer_callback_hook_t *processing_callbacks;
 	int processing_callbacks_size;
 	int processing_callbacks_fill;
+
+	/*     |TAIL      |PROC            |HEAD
+         *     |----nonpause---|pause--|
+	 *     we first eat up the nonpause data, and then eat up pause-data. pause data causes the total tail NOT to count */
+	int      pause_fill;
+	int      nonpause_fill;
+	uint64_t total_tail; /* total of non-pause samples we have played so far in the current session */
 };
 
 void ringbuffer_reset (struct ringbuffer_t *self)
@@ -80,6 +87,10 @@ void ringbuffer_reset (struct ringbuffer_t *self)
 		self->tail_callbacks[i].callback (self->tail_callbacks[i].arg, 1 - self->tail_callbacks[i].samples);
 	}
 	self->tail_callbacks_fill = 0;
+
+	self->total_tail = 0;
+	self->pause_fill = 0;
+	self->nonpause_fill = 0;
 }
 
 static void ringbuffer_static_initialize (struct ringbuffer_t *self, int flags, int buffersize_samples)
@@ -141,6 +152,31 @@ void ringbuffer_free(struct ringbuffer_t *self)
 void ringbuffer_tail_consume_samples(struct ringbuffer_t *self, int samples)
 {
 	assert (samples <= self->cache_read_available);
+
+	if (self->pause_fill)
+	{
+		int samples2 = samples;
+		if (self->nonpause_fill >= samples2)
+		{
+			self->nonpause_fill -= samples2;
+			self->total_tail += samples2;
+		} else {
+			self->total_tail += self->nonpause_fill;
+			samples2 -= self->nonpause_fill;
+			self->nonpause_fill = 0;
+
+			if (self->pause_fill >= samples2)
+			{
+				self->pause_fill -= samples2;
+			} else {
+				samples2 -= self->pause_fill;
+				self->total_tail += samples2;
+			}
+		}
+	} else {
+		self->total_tail += samples;
+	}
+
 	self->tail = (self->tail + samples) % self->buffersize;
 
 	self->cache_read_available -= samples;
@@ -168,14 +204,6 @@ void ringbuffer_tail_consume_samples(struct ringbuffer_t *self, int samples)
 
 	assert ((self->cache_read_available + self->cache_write_available + self->cache_processing_available + 1) == self->buffersize);
 }
-
-void ringbuffer_tail_set_samples(struct ringbuffer_t *self, int pos)
-{
-	int samples = (self->buffersize + pos - self->tail) % self->buffersize;
-
-	ringbuffer_tail_consume_samples (self, samples);
-}
-
 
 void ringbuffer_processing_consume_samples(struct ringbuffer_t *self, int samples)
 {
@@ -210,14 +238,7 @@ void ringbuffer_processing_consume_samples(struct ringbuffer_t *self, int sample
 	assert ((self->cache_read_available + self->cache_write_available + self->cache_processing_available + 1) == self->buffersize);
 }
 
-void ringbuffer_processing_set_samples(struct ringbuffer_t *self, int pos)
-{
-	int samples = (self->buffersize + pos - self->processing) % self->buffersize;
-
-	ringbuffer_processing_consume_samples (self, samples);
-}
-
-void ringbuffer_head_add_samples(struct ringbuffer_t *self, int samples)
+static void ringbuffer_head_add_samples_common (struct ringbuffer_t *self, int samples)
 {
 	assert (samples <= self->cache_write_available);
 
@@ -235,11 +256,21 @@ void ringbuffer_head_add_samples(struct ringbuffer_t *self, int samples)
 	assert ((self->cache_read_available + self->cache_write_available + self->cache_processing_available + 1) == self->buffersize);
 }
 
-void ringbuffer_head_set_samples(struct ringbuffer_t *self, int pos)
+void ringbuffer_head_add_samples(struct ringbuffer_t *self, int samples)
 {
-	int samples = (self->buffersize + pos - self->head) % self->buffersize;
+	ringbuffer_head_add_samples_common (self, samples);
+}
 
-	ringbuffer_head_add_samples (self, samples);
+void ringbuffer_head_add_pause_samples(struct ringbuffer_t *self, int samples)
+{
+	ringbuffer_head_add_samples_common (self, samples);
+
+	/* move the pause head up until HEAD, so if there were any earlier samples, they now join up into one chunk
+ */
+	self->pause_fill += samples;
+	self->nonpause_fill = self->cache_read_available + self->cache_processing_available - self->pause_fill;
+
+	assert ((self->pause_fill + self->nonpause_fill) <= self->buffersize);
 }
 
 int ringbuffer_get_tail_available_samples (struct ringbuffer_t *self)
@@ -431,19 +462,9 @@ void ringbuffer_tail_consume_bytes(struct ringbuffer_t *self, int bytes)
 	ringbuffer_tail_consume_samples (self, bytes >> self->cache_sample_shift);
 }
 
-void ringbuffer_tail_set_bytes(struct ringbuffer_t *self, int pos)
-{
-	ringbuffer_tail_set_samples (self, pos >> self->cache_sample_shift);
-}
-
 void ringbuffer_processing_consume_bytes(struct ringbuffer_t *self, int bytes)
 {
 	ringbuffer_processing_consume_samples (self, bytes >> self->cache_sample_shift);
-}
-
-void ringbuffer_processing_set_bytes(struct ringbuffer_t *self, int pos)
-{
-	ringbuffer_processing_set_samples (self, pos >> self->cache_sample_shift);
 }
 
 void ringbuffer_head_add_bytes(struct ringbuffer_t *self, int bytes)
@@ -451,10 +472,11 @@ void ringbuffer_head_add_bytes(struct ringbuffer_t *self, int bytes)
 	ringbuffer_head_add_samples (self, bytes >> self->cache_sample_shift);
 }
 
-void ringbuffer_head_set_bytes(struct ringbuffer_t *self, int pos)
+void ringbuffer_head_add_pause_bytes(struct ringbuffer_t *self, int bytes)
 {
-	ringbuffer_head_set_samples (self, pos>>self->cache_sample_shift);
+	ringbuffer_head_add_pause_samples (self, bytes >> self->cache_sample_shift);
 }
+
 
 void ringbuffer_get_tail_bytes (struct ringbuffer_t *self, int *pos1, int *length1, int *pos2, int *length2)
 {
@@ -599,21 +621,22 @@ void ringbuffer_add_processing_callback_samples (struct ringbuffer_t *self, int 
 	self->processing_callbacks_fill++;
 }
 
+void ringbuffer_get_stats (struct ringbuffer_t *self, uint64_t *total_tail)
+{
+	*total_tail = self->total_tail;
+}
+
 const struct ringbufferAPI_t ringbufferAPI =
 {
 	ringbuffer_reset,
 	ringbuffer_tail_consume_bytes,
-	ringbuffer_tail_set_bytes,
 	ringbuffer_processing_consume_bytes,
-	ringbuffer_processing_set_bytes,
 	ringbuffer_head_add_bytes,
-	ringbuffer_head_set_bytes,
+	ringbuffer_head_add_pause_bytes,
 	ringbuffer_tail_consume_samples,
-	ringbuffer_tail_set_samples,
 	ringbuffer_processing_consume_samples,
-	ringbuffer_processing_set_samples,
 	ringbuffer_head_add_samples,
-	ringbuffer_head_set_samples,
+	ringbuffer_head_add_pause_samples,
 	ringbuffer_get_tail_bytes,
 	ringbuffer_get_processing_bytes,
 	ringbuffer_get_head_bytes,
@@ -631,6 +654,7 @@ const struct ringbufferAPI_t ringbufferAPI =
 	ringbuffer_free,
 	ringbuffer_add_tail_callback_samples,
 	ringbuffer_add_processing_callback_samples,
+	ringbuffer_get_stats
 };
 
 
@@ -1080,49 +1104,6 @@ int main(int argc, char *argv[])
 	ringbuffer_free (instance);
 	retval += testval;
 
-	printf ("NO PROCESSING, SAMPLES (set)\n");
-	testval = 0;
-	instance = ringbuffer_new_samples(RINGBUFFER_FLAGS_FLOAT | RINGBUFFER_FLAGS_STEREO, 16);
-	testval += ringbuffer_result_nonproc_samples (instance, -1,  0, -1,  0,  /* tail */
-	                                                         0, 15, -1,  0); /* head */
-	/* add 1 sample, into buffer */
-	printf ("Adding 1 sample\n");
-	ringbuffer_head_set_samples(instance, 1);
-	testval += ringbuffer_result_nonproc_samples (instance,  0,  1, -1,  0,  /* tail */
-	                                                         1, 14, -1,  0); /* head */
-	/* add 14 sample, into buffer */
-	printf ("Adding 14 samples\n");
-	ringbuffer_head_set_samples(instance, 15);
-	testval += ringbuffer_result_nonproc_samples (instance,  0, 15, -1,  0,  /* tail */
-	                                                        -1,  0, -1,  0); /* head */
-	/* Remove 10 samples */
-	printf ("Consuming 10 samples\n");
-	ringbuffer_tail_set_samples(instance, 10);
-	testval += ringbuffer_result_nonproc_samples (instance, 10,  5, -1,  0,  /* tail */
-	                                                        15,  1,  0,  9); /* head */
-	/* add 10 sample, into buffer */
-	printf ("Adding 10 samples (head mid-buffer wraps)\n");
-	ringbuffer_head_set_samples(instance, 9);
-	testval += ringbuffer_result_nonproc_samples (instance, 10,  6,  0,  9,  /* tail */
-	                                                        -1,  0, -1,  0); /* head */
-	/* Remove 15 samples */
-	printf ("Consuming 15 samples (remove all, with mid-wrap)\n");
-	ringbuffer_tail_set_samples(instance, 9);
-	testval += ringbuffer_result_nonproc_samples (instance, -1,  0, -1,  0,  /* tail */
-	                                                         9,  7,  0,  8); /* head */
-	/* add 7 samples, into buffer */
-	printf ("Adding 7 samples (head lands on just after wrap)\n");
-	ringbuffer_head_set_samples(instance, 0);
-	testval += ringbuffer_result_nonproc_samples (instance,  9,  7, -1,  0,  /* tail */
-	                                                         0,  8, -1,  0); /* head */
-	/* Remove 7 samples */
-	printf ("Consuming 7 samples (remove all, tail lands just after wrap)\n");
-	ringbuffer_tail_set_samples(instance, 0);
-	testval += ringbuffer_result_nonproc_samples (instance, -1,  0, -1,  0,  /* tail */
-	                                                         0, 15, -1,  0); /* head */
-	ringbuffer_free (instance);
-	retval += testval;
-
 	printf ("PROCESSING, SAMPLES (progressive)\n");
 	testval = 0;
 	instance = ringbuffer_new_samples(RINGBUFFER_FLAGS_FLOAT | RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_PROCESS, 16);
@@ -1186,75 +1167,6 @@ int main(int argc, char *argv[])
 	/* Remove 7 samples */
 	printf ("Consuming 7 samples (remove all, tail lands just after wrap)\n");
 	ringbuffer_tail_consume_samples(instance, 7);
-	testval += ringbuffer_result_proc_samples (instance, -1,  0, -1,  0,  /* tail */
-	                                                     -1,  0, -1,  0,  /* proc */
-	                                                      0, 15, -1,  0); /* head */
-	ringbuffer_free (instance);
-	retval += testval;
-
-	printf ("PROCESSING, SAMPLES (set)\n");
-	testval = 0;
-	instance = ringbuffer_new_samples(RINGBUFFER_FLAGS_FLOAT | RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_PROCESS, 16);
-	testval += ringbuffer_result_proc_samples (instance, -1,  0, -1,  0,  /* tail */
-	                                                     -1,  0, -1,  0,  /* proc */
-	                                                      0, 15, -1,  0); /* head */
-	/* add 1 sample, into buffer */
-	printf ("Adding 1 sample\n");
-	ringbuffer_head_set_samples(instance, 1);
-	testval += ringbuffer_result_proc_samples (instance, -1,  0, -1,  0,  /* tail */
-                                                              0,  1, -1,  0,  /* proc */
-	                                                      1, 14, -1,  0); /* head */
-	/* add 14 sample, into buffer */
-	printf ("Adding 14 samples\n");
-	ringbuffer_head_set_samples(instance, 15);
-	testval += ringbuffer_result_proc_samples (instance, -1,  0, -1,  0,  /* tail */
-                                                              0, 15, -1,  0,  /* proc */
-	                                                     -1,  0, -1,  0); /* head */
-	/* Process 14 samples */
-	printf ("Process 14 samples\n");
-	ringbuffer_processing_set_samples(instance, 14);
-	testval += ringbuffer_result_proc_samples (instance,  0, 14, -1,  0,  /* tail */
-	                                                     14,  1, -1,  0,  /* proc */
-	                                                     -1,  0, -1,  0); /* head */
-	/* Remove 10 samples */
-	printf ("Consuming 10 samples\n");
-	ringbuffer_tail_set_samples(instance, 10);
-	testval += ringbuffer_result_proc_samples (instance, 10,  4, -1,  0,  /* tail */
-	                                                     14,  1, -1,  0,  /* proc */
-	                                                     15,  1,  0,  9); /* head */
-	/* add 10 sample, into buffer */
-	printf ("Adding 10 samples (head mid-buffer wraps)\n");
-	ringbuffer_head_set_samples(instance, 9);
-	testval += ringbuffer_result_proc_samples (instance, 10,  4, -1,  0,  /* tail */
-	                                                     14,  2,  0,  9,  /* proc */
-	                                                     -1,  0, -1,  0); /* head */
-	/* Process 11 samples */
-	printf ("Process 11 samples (head mid-buffer wraps)\n");
-	ringbuffer_processing_set_samples(instance, 9);
-	testval += ringbuffer_result_proc_samples (instance, 10,  6,  0,  9,  /* tail */
-	                                                     -1,  0, -1,  0,  /* proc */
-	                                                     -1,  0, -1,  0); /* head */
-	/* Remove 15 samples */
-	printf ("Consuming 15 samples (remove all, with mid-wrap)\n");
-	ringbuffer_tail_set_samples(instance, 9);
-	testval += ringbuffer_result_proc_samples (instance, -1,  0, -1,  0,  /* tail */
-	                                                     -1,  0, -1,  0,  /* proc */
-	                                                      9,  7,  0,  8); /* head */
-	/* add 7 samples, into buffer */
-	printf ("Adding 7 samples (head lands on just after wrap)\n");
-	ringbuffer_head_set_samples(instance, 0);
-	testval += ringbuffer_result_proc_samples (instance, -1,  0, -1,  0, /* tail */
-	                                                      9,  7, -1,  0,  /* tail */
-	                                                      0,  8, -1,  0); /* head */
-	/* Process 7 samples */
-	printf ("Process 7 samples (head lands on just after wrap)\n");
-	ringbuffer_processing_set_samples(instance, 0);
-	testval += ringbuffer_result_proc_samples (instance,  9,  7, -1,  0,  /* tail */
-	                                                     -1,  0, -1,  0,  /* proc */
-	                                                      0,  8, -1,  0); /* head */
-	/* Remove 7 samples */
-	printf ("Consuming 7 samples (remove all, tail lands just after wrap)\n");
-	ringbuffer_tail_set_samples(instance, 0);
 	testval += ringbuffer_result_proc_samples (instance, -1,  0, -1,  0,  /* tail */
 	                                                     -1,  0, -1,  0,  /* proc */
 	                                                      0, 15, -1,  0); /* head */

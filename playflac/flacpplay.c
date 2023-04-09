@@ -109,8 +109,7 @@ static void flacDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		1, /* KB */
 		inf.opt25,
 		inf.opt50,
-		inf.bitrate / 1000,
-		cpifaceSession->InPause?((pausetime - starttime) / 1000):((clock_ms() - starttime) / 1000)
+		inf.bitrate / 1000
 	);
 }
 

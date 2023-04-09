@@ -119,8 +119,7 @@ static void wavDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		1, /* KB */
 		inf.opt25,
 		inf.opt50,
-		(inf.rate << (3 + (!!inf.stereo) + (!!inf.bit16))) / 1000,
-		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000)
+		(inf.rate << (3 + (!!inf.stereo) + (!!inf.bit16))) / 1000
 	);
 }
 

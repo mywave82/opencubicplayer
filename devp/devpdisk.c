@@ -467,6 +467,11 @@ static void devpDiskPause (int pause)
 { /* a no-op on devpDisk */
 }
 
+static void devpDiskGetStats (uint64_t *processed)
+{
+	ringbuffer->get_stats (devpDiskBuffer, processed);
+}
+
 static const struct plrDevAPI_t devpDisk = {
 	devpDiskIdle,
 	devpDiskPeekBuffer,
@@ -478,7 +483,8 @@ static const struct plrDevAPI_t devpDisk = {
 	devpDiskPause,
 	devpDiskStop,
 	0, /* VolRegs */
-	0 /* ProcessKey */
+	0, /* ProcessKey */
+	devpDiskGetStats
 };
 
 static const struct plrDevAPI_t *dwInit (const struct plrDriver_t *driver, const struct ringbufferAPI_t *ringbufferAPI)

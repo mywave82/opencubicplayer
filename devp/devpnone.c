@@ -127,7 +127,7 @@ unsigned int devpNoneIdle (void)
 		{
 			memset ((char *)devpNoneBuffer+pos2, 0, length2);
 		}
-		ringbuffer->head_add_bytes (devpNoneRingBuffer, length1 + length2);
+		ringbuffer->head_add_pause_bytes (devpNoneRingBuffer, length1 + length2);
 		devpNonePauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
 	}
 
@@ -240,6 +240,11 @@ static void devpNoneStop (struct cpifaceSessionAPI_t *cpifaceSession)
 	cpifaceSession->plrActive = 0;
 }
 
+static void devpNoneGetStats (uint64_t *processed)
+{
+	ringbuffer->get_stats (devpNoneRingBuffer, processed);
+}
+
 static const struct plrDevAPI_t devpNone = {
 	devpNoneIdle,
 	devpNonePeekBuffer,
@@ -251,7 +256,8 @@ static const struct plrDevAPI_t devpNone = {
 	devpNonePause,
 	devpNoneStop,
 	0,
-	0 /* ProcessKey */
+	0, /* ProcessKey */
+	devpNoneGetStats
 };
 
 static const struct plrDevAPI_t *qpInit (const struct plrDriver_t *driver, const struct ringbufferAPI_t *ringbufferAPI)

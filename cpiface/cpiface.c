@@ -91,28 +91,25 @@ static void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t *cpifac
                                               const char                     sizesuffix, /* 0 = "" (MIDI), 1 = KB */
                                               const char                    *opt25,
                                               const char                    *opt50,
-                                              const int_fast16_t             kbs,  /* kilo-bit-per-second */
-                                              const uint_fast16_t            seconds);
+                                              const int_fast16_t             kbs); /* kilo-bit-per-second */
 
 static void mcpDrawGStringsSongXofY (struct cpifaceSessionAPI_t *cpifaceSession,
                                      const int                      songX,
-                                     const int                      songY,
-                                     const uint_fast16_t            seconds);
+                                     const int                      songY);
 
 static void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t *cpifaceSession,
                                     const int                      songX,
-                                    const int                      songY, /* 0 or smaller, disables this, else 2 digits.. */
+                                    const int                      songY,  /* 0 or smaller, disables this, else 2 digits.. */
                                     const uint8_t                  rowX,
-                                    const uint8_t                  rowY, /* displayed as 2 hex digits */
+                                    const uint8_t                  rowY,   /* displayed as 2 hex digits */
                                     const uint16_t                 orderX,
                                     const uint16_t                 orderY, /* displayed as 1,2,3 or 4 hex digits, depending on this size */
-                                    const uint8_t                  speed, /* displayed as %3 (with no space prefix) decimal digits */
-                                    const uint8_t                  tempo, /* displayed as %3 decimal digits */
-                                    const int16_t                  gvol, /* -1 for disable, else 0x00..0xff */
+                                    const uint8_t                  speed,  /* displayed as %3 (with no space prefix) decimal digits */
+                                    const uint8_t                  tempo,  /* displayed as %3 decimal digits */
+                                    const int16_t                  gvol,   /* -1 for disable, else 0x00..0xff */
                                     const int                      gvol_slide_direction,
                                     const uint8_t                  chanX,
-                                    const uint8_t                  chanY, /* set to zero to disable */
-                                    const uint_fast16_t            seconds);
+                                    const uint8_t                  chanY); /* set to zero to disable */
 
 static struct drawHelperAPI_t drawHelperAPI =
 {
@@ -1629,14 +1626,23 @@ void GStrings_render (int lineno, int count, const struct GStringElement **Eleme
 	displayvoid (lineno, x, endspace);
 }
 
+static uint_fast16_t getSeconds (struct cpifaceSessionAPI_t *cpifaceSession)
+{
+	uint64_t tail;
+	uint32_t rate;
+
+	cpifaceSession->plrDevAPI->GetStats (&tail);
+	rate = cpifaceSession->plrDevAPI->GetRate();
+	return tail / rate;
+}
+
 static void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t    *cpifaceSession,
                                               const uint64_t                 pos,
                                               const uint64_t                 size, /* can be smaller than the file-size due to meta-data */
                                               const char                     sizesuffix, /* 0 = "" (MIDI), 1 = KB */
                                               const char                    *opt25,
                                               const char                    *opt50,
-                                              const int_fast16_t             kbs,  /* kilo-bit-per-second */
-                                              const uint_fast16_t            seconds
+                                              const int_fast16_t             kbs   /* kilo-bit-per-second */
 )
 {
 	const struct GStringElement *Elements1[7] = {&GString_pos, &GString_bitrate, &GString_title, &GString_comment, &GString_album, &GString_date, &GString_playtime};
@@ -1651,6 +1657,8 @@ static void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t    *cpi
 	const void *sizeinputa2[6];
 	const void *sizeinputb2[6];
 	const void *sizeinputc2[6];
+
+	uint_fast16_t seconds = getSeconds (cpifaceSession);
 
 	sizeinputa1[0] = &pos;
 	sizeinputb1[0] = &size;
@@ -1710,8 +1718,7 @@ static void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t    *cpi
 
 static void mcpDrawGStringsSongXofY (struct cpifaceSessionAPI_t    *cpifaceSession,
                                      const int                      songX,
-                                     const int                      songY,
-                                     const uint_fast16_t            seconds
+                                     const int                      songY
 )
 {
 	const struct GStringElement *Elements1[6] = {&GString_song_x_y, &GString_title, &GString_comment, &GString_album, &GString_date, &GString_playtime};
@@ -1726,6 +1733,8 @@ static void mcpDrawGStringsSongXofY (struct cpifaceSessionAPI_t    *cpifaceSessi
 	const void *sizeinputa2[5];
 	const void *sizeinputb2[5];
 	const void *sizeinputc2[5];
+
+	uint_fast16_t seconds = getSeconds (cpifaceSession);
 
 	sizeinputa1[0] = &songX;
 	sizeinputb1[0] = &songY;
@@ -1777,18 +1786,17 @@ static void mcpDrawGStringsSongXofY (struct cpifaceSessionAPI_t    *cpifaceSessi
 
 static void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t    *cpifaceSession,
                                     const int                      songX,
-                                    const int                      songY, /* 0 or smaller, disables this, else 2 digits.. */
+                                    const int                      songY,  /* 0 or smaller, disables this, else 2 digits.. */
                                     const uint8_t                  rowX,
-                                    const uint8_t                  rowY, /* displayed as 2 hex digits */
+                                    const uint8_t                  rowY,   /* displayed as 2 hex digits */
                                     const uint16_t                 orderX,
                                     const uint16_t                 orderY, /* displayed as 1,2,3 or 4 hex digits, depending on this size */
-                                    const uint8_t                  speed, /* displayed as %3 (with no space prefix) decimal digits */
-                                    const uint8_t                  tempo, /* displayed as %3 decimal digits */
-                                    const int16_t                  gvol, /* -1 for disable, else 0x00..0xff */
+                                    const uint8_t                  speed,  /* displayed as %3 (with no space prefix) decimal digits */
+                                    const uint8_t                  tempo,  /* displayed as %3 decimal digits */
+                                    const int16_t                  gvol,   /* -1 for disable, else 0x00..0xff */
                                     const int                      gvol_slide_direction,
                                     const uint8_t                  chanX,
-                                    const uint8_t                  chanY, /* set to zero to disable */
-                                    const uint_fast16_t            seconds
+                                    const uint8_t                  chanY   /* set to zero to disable */
 )
 {
 	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
@@ -1807,6 +1815,8 @@ static void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t    *cpifaceSessio
 
 	int amplification = -1;
 	char *filter = 0;
+
+	uint_fast16_t seconds = getSeconds (cpifaceSession);
 
 	if (f->mcpType & mcpNormalizeCanAmplify)
 	{

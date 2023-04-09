@@ -302,7 +302,7 @@ static unsigned int devpCoreAudioIdle(void)
 		{
 			memset ((char *)devpCoreAudioBuffer+pos2, 0, length2);
 		}
-		ringbuffer->head_add_bytes (devpCoreAudioRingBuffer, length1 + length2);
+		ringbuffer->head_add_pause_bytes (devpCoreAudioRingBuffer, length1 + length2);
 		devpCoreAudioPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
 	}
 
@@ -477,6 +477,11 @@ static int devpCoreAudioPlay (uint32_t *rate, enum plrRequestFormat *format, str
 	return 1;
 }
 
+static void devpCoreAudioGetStats (uint64_t *processed);
+{
+	ringbuffer->get_stats (devpCoreAudioRingBuffer, processed);
+}
+
 static const struct plrDevAPI_t devpCoreAudio = {
 	devpCoreAudioIdle,
 	devpCoreAudioPeekBuffer,
@@ -488,7 +493,8 @@ static const struct plrDevAPI_t devpCoreAudio = {
 	devpCoreAudioPause,
 	devpCoreAudioStop,
 	0, /* VolRegs */
-	0 /* ProcessKey */
+	0, /* ProcessKey */
+	devpCoreAudioGetStats
 };
 
 static const struct plrDevAPI_t *CoreAudioInit (const struct plrDriver_t *driver, const struct ringbufferAPI_t *ringbufferAPI)

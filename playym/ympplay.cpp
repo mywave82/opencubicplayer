@@ -193,8 +193,7 @@ static void ymDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		0, /* miliseconds... */
 		globinfo.pSongType?globinfo.pSongType:"", /* opt25 */
 		globinfo.pSongType?globinfo.pSongType:"", /* opt50 */
-		-1,
-		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000)
+		-1
 	);
 	/* globinfo.pSongAuthor should be in mdbdata
 	 * globinfo.pSongComment should be in mdbdata

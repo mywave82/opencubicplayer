@@ -111,8 +111,7 @@ static void oplDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 	(
 		cpifaceSession,
 		globinfo.currentSong,
-		globinfo.songs,
-		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000)
+		globinfo.songs
 	);
 }
 

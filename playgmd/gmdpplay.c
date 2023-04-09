@@ -149,8 +149,7 @@ static void gmdDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 		gi.globvol, /* gvol */
 		(gi.globvolslide==fxGVSUp)?1:(gi.globvolslide==fxGVSDown)?-1:0,
 		0,          /* chan X */
-		0,          /* chan Y */
-		cpifaceSession->InPause ? ((pausetime - starttime) / 1000) : ((clock_ms() - starttime) / 1000)
+		0           /* chan Y */
 	);
 }
 
