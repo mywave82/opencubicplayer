@@ -1151,12 +1151,15 @@ static void musicbrainzSetupDraw (const char *title, int dsel, struct musicbrain
 			}
 		} else {
 			char timebuffer[28];
-			struct tm *thetime;
+			struct tm thetime;
 			time_t inputtime;
 
 			inputtime = musicbrainz.cache[sorted[index].pointsat].lastscan;
-			thetime = localtime (&inputtime);
-			strftime(timebuffer, sizeof (timebuffer), "%d.%m.%Y %H:%M %z(%Z)", thetime);
+			if (!localtime_r (&inputtime, &thetime))
+			{
+				memset (&thetime, 0, sizeof (thetime));
+			}
+			strftime(timebuffer, sizeof (timebuffer), "%d.%m.%Y %H:%M %z(%Z)", &thetime);
 
 			displaychr (mlTop + i, mlLeft + 1, (dsel==index)?0x87:0x07, ' ', 1);
 			displaystr (mlTop + i, mlLeft + 2, (dsel==index)?0x87:0x07, timebuffer, 29); /* includes two exrta space */

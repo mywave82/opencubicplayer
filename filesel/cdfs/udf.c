@@ -223,7 +223,7 @@ static void print_1_7_2_12_VolumeSetIdentifier2 (uint8_t *buffer, int len)
 	{
 		uint32_t Stamp;
 		time_t t1;
-		struct tm *t2;
+		struct tm t2;
 
 
 		Stamp  = unhex(buffer[7]) << 28;
@@ -236,7 +236,10 @@ static void print_1_7_2_12_VolumeSetIdentifier2 (uint8_t *buffer, int len)
 		Stamp |= unhex(buffer[0]);
 		t1 = Stamp;
 
-		t2 = localtime (&t1);
+		if (!localtime_r (&t1, &t2))
+		{
+			memset (&t2, 0, sizeof (t2));
+		}
 
 		debug_printf ("unique_timestamp=%04d-%02d-%02d_%02d:%02d:%02d",
 			t2->tm_year + 1900,
