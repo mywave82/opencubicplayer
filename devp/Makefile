@@ -100,7 +100,6 @@ devposs.o: devposs.c \
 	../cpiface/vol.h \
 	../dev/deviplay.h \
 	../dev/player.h \
-	../dev/plrasm.h \
 	../dev/ringbuffer.h \
 	../boot/psetting.h  \
 	../stuff/err.h \
@@ -127,7 +126,6 @@ devpdisk.o: devpdisk.c \
 	../cpiface/cpiface.h \
 	../dev/deviplay.h \
 	../dev/player.h \
-	../dev/plrasm.h \
 	../dev/ringbuffer.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
@@ -144,7 +142,6 @@ devpalsa.o: devpalsa.c \
 	../cpiface/vol.h \
 	../dev/deviplay.h \
 	../dev/player.h \
-	../dev/plrasm.h \
 	../dev/ringbuffer.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \

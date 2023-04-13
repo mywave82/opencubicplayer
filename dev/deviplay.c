@@ -35,6 +35,7 @@
 #include "boot/psetting.h"
 #include "dev/deviplay.h"
 #include "dev/player.h"
+#include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
@@ -60,8 +61,15 @@ static struct plrDriverListEntry_t *plrDriverList;
 static int                          plrDriverListEntries;
 static int                          plrDriverListNone;
 
-const struct plrDriver_t *plrDriver;
-const struct plrDevAPI_t *plrDevAPI;
+const struct plrDevAPI_t *plrDevAPI; /* handle from the selected driver */
+static const struct plrDriver_t *plrDriver; /* current selected driver */
+static const struct plrDriverAPI_t plrDriverAPI = /* API provided from OCP to the driver */
+{
+	&ringbufferAPI,
+	plrGetRealMasterVolume,
+	plrGetMasterSample,
+	plrConvertBufferFromStereo16BitSigned
+};
 
 static int deviplayDriverListInsert (int insertat, const char *name, int length)
 {
@@ -242,7 +250,7 @@ static int deviplayLateInit (struct PluginInitAPI_t *API)
 					plrDriverList[i].probed = 1;
 					if (plrDriverList[i].detected)
 					{
-						plrDevAPI = plrDriverList[i].driver->Open (plrDriverList[i].driver, &ringbufferAPI);
+						plrDevAPI = plrDriverList[i].driver->Open (plrDriverList[i].driver, &plrDriverAPI);
 						if (plrDevAPI)
 						{
 							fprintf (stderr, " %-8s: %s (selected due to -sp commandline)\n", plrDriverList[i].name, dots(""));
@@ -275,7 +283,7 @@ static int deviplayLateInit (struct PluginInitAPI_t *API)
 		plrDriverList[i].probed = 1;
 		if (plrDriverList[i].detected)
 		{
-			plrDevAPI = plrDriverList[i].driver->Open (plrDriverList[i].driver, &ringbufferAPI);
+			plrDevAPI = plrDriverList[i].driver->Open (plrDriverList[i].driver, &plrDriverAPI);
 			if (plrDevAPI)
 			{
 				fprintf (stderr, " %-8s: %s (detected)\n", plrDriverList[i].name, dots(plrDriverList[i].driver->description));
@@ -592,7 +600,7 @@ static void setup_devp_run (void **token, const struct DevInterfaceAPI_t *API)
 						}
 						if (plrDriverList[dsel].detected)
 						{
-							plrDevAPI = plrDriverList[dsel].driver->Open (plrDriverList[dsel].driver, &ringbufferAPI);
+							plrDevAPI = plrDriverList[dsel].driver->Open (plrDriverList[dsel].driver, &plrDriverAPI);
 							if (plrDevAPI)
 							{
 								plrDriver = plrDriverList[dsel].driver;

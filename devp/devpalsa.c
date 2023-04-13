@@ -35,7 +35,6 @@
 #include "cpiface/vol.h"
 #include "dev/deviplay.h"
 #include "dev/player.h"
-#include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
@@ -60,7 +59,7 @@ static int debug_output = -1;
 #define debug_printf(format, args...) ((void)0)
 #endif
 
-static const struct ringbufferAPI_t *ringbuffer;
+static const struct plrDriverAPI_t *plrDriverAPI;
 
 static void *devpALSABuffer;
 static char *devpALSAShadowBuffer;
@@ -659,14 +658,14 @@ static unsigned int devpALSAIdle(void)
 		}
 	}
 
-	kernlen = ringbuffer->get_tail_available_samples (devpALSARingBuffer);
+	kernlen = plrDriverAPI->ringbufferAPI->get_tail_available_samples (devpALSARingBuffer);
 
 	if (odelay>kernlen)
 	{
 		odelay=kernlen;
 	} else if (odelay<kernlen)
 	{
-		ringbuffer->tail_consume_samples (devpALSARingBuffer, kernlen - odelay);
+		plrDriverAPI->ringbufferAPI->tail_consume_samples (devpALSARingBuffer, kernlen - odelay);
 		if (devpALSAPauseSamples)
 		{
 			if ((kernlen - odelay) > devpALSAPauseSamples)
@@ -682,13 +681,13 @@ static unsigned int devpALSAIdle(void)
 /* do we need to insert pause-samples? START */
 	if (devpALSAInPause)
 	{
-		ringbuffer->get_head_bytes (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
+		plrDriverAPI->ringbufferAPI->get_head_bytes (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
 		memset ((char *)devpALSABuffer+pos1, 0, length1);
 		if (length2)
 		{
 			memset ((char *)devpALSABuffer+pos2, 0, length2);
 		}
-		ringbuffer->head_add_pause_bytes (devpALSARingBuffer, length1 + length2);
+		plrDriverAPI->ringbufferAPI->head_add_pause_bytes (devpALSARingBuffer, length1 + length2);
 		devpALSAPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
 	}
 /* do we need to insert pause-samples? DONE */
@@ -697,7 +696,7 @@ static unsigned int devpALSAIdle(void)
 	tmp = snd_pcm_status_get_avail(alsa_pcm_status);
 	debug_printf ("      snd_pcm_status_get_avail() = %d\n", tmp);
 
-	ringbuffer->get_processing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_processing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
 	if (tmp < length1)
 	{
 		length1 = tmp;
@@ -712,7 +711,7 @@ static unsigned int devpALSAIdle(void)
 	{
 		if (devpALSAShadowBuffer)
 		{
-			plrConvertBufferFromStereo16BitSigned (devpALSAShadowBuffer, (int16_t *)devpALSABuffer + (pos1<<1), length1, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
+			plrDriverAPI->ConvertBufferFromStereo16BitSigned (devpALSAShadowBuffer, (int16_t *)devpALSABuffer + (pos1<<1), length1, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
 			result=snd_pcm_writei(alsa_pcm, devpALSAShadowBuffer, length1);
 		} else {
 			result=snd_pcm_writei(alsa_pcm, (uint8_t *)devpALSABuffer + (pos1<<2), length1);
@@ -720,7 +719,7 @@ static unsigned int devpALSAIdle(void)
 		debug_printf ("      snd_pcm_writei (%d) = %d\n", length1, result);
 		if (result > 0)
 		{
-			ringbuffer->processing_consume_samples (devpALSARingBuffer, result);
+			plrDriverAPI->ringbufferAPI->processing_consume_samples (devpALSARingBuffer, result);
 		}
 	}
 
@@ -728,7 +727,7 @@ static unsigned int devpALSAIdle(void)
 	{
 		if (devpALSAShadowBuffer)
 		{
-			plrConvertBufferFromStereo16BitSigned (devpALSAShadowBuffer, (int16_t *)devpALSABuffer + (pos2<<1), length2, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
+			plrDriverAPI->ConvertBufferFromStereo16BitSigned (devpALSAShadowBuffer, (int16_t *)devpALSABuffer + (pos2<<1), length2, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
 			result=snd_pcm_writei(alsa_pcm, devpALSAShadowBuffer, length2);
 		} else {
 			result=snd_pcm_writei(alsa_pcm, (uint8_t *)devpALSABuffer + (pos2<<2), length2);
@@ -736,7 +735,7 @@ static unsigned int devpALSAIdle(void)
 		debug_printf ("      snd_pcm_writei (%d) = %d\n", length2, result);
 		if (result > 0)
 		{
-			ringbuffer->processing_consume_samples (devpALSARingBuffer, result);
+			plrDriverAPI->ringbufferAPI->processing_consume_samples (devpALSARingBuffer, result);
 		}
 	}
 
@@ -756,7 +755,7 @@ static unsigned int devpALSAIdle(void)
 /* Move data from ringbuffer-head into processing/kernel STOP */
 
 error_out:
-	ringbuffer->get_tailandprocessing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_tailandprocessing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
 
 	busy--;
 
@@ -772,7 +771,7 @@ static void devpALSAPeekBuffer (void **buf1, unsigned int *buf1length, void **bu
 {
 	int pos1, length1, pos2, length2;
 
-	ringbuffer->get_tailandprocessing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_tailandprocessing_samples (devpALSARingBuffer, &pos1, &length1, &pos2, &length2);
 
 	if (length1)
 	{
@@ -801,7 +800,7 @@ static void devpALSAGetBuffer (void **buf, unsigned int *samples)
 
 	debug_printf("%s()\n", __FUNCTION__);
 
-	ringbuffer->get_head_samples (devpALSARingBuffer, &pos1, &length1, 0, 0);
+	plrDriverAPI->ringbufferAPI->get_head_samples (devpALSARingBuffer, &pos1, &length1, 0, 0);
 
 	*samples = length1;
 	*buf = (uint8_t *)devpALSABuffer + (pos1<<2); /* stereo + bit16 */
@@ -815,14 +814,14 @@ static uint32_t devpALSAGetRate (void)
 static void devpALSAOnBufferCallback (int samplesuntil, void (*callback)(void *arg, int samples_ago), void *arg)
 {
 	assert (devpALSARingBuffer);
-	ringbuffer->add_tail_callback_samples (devpALSARingBuffer, samplesuntil, callback, arg);
+	plrDriverAPI->ringbufferAPI->add_tail_callback_samples (devpALSARingBuffer, samplesuntil, callback, arg);
 }
 
 static void devpALSACommitBuffer (unsigned int samples)
 {
 	debug_printf ("%s(%u)\n", __FUNCTION__, samples);
 
-	ringbuffer->head_add_samples (devpALSARingBuffer, samples);
+	plrDriverAPI->ringbufferAPI->head_add_samples (devpALSARingBuffer, samples);
 }
 
 static void devpALSAPause (int pause)
@@ -1076,7 +1075,7 @@ static int devpALSAPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 		}
 	}
 
-	if (!(devpALSARingBuffer = ringbuffer->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, buflength)))
+	if (!(devpALSARingBuffer = plrDriverAPI->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, buflength)))
 	{
 		free (devpALSABuffer);
 		devpALSABuffer = 0;
@@ -1089,8 +1088,8 @@ static int devpALSAPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 	debug_output = open ("test-alsa.raw", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
 #endif
 
-	cpifaceSession->GetMasterSample = plrGetMasterSample;
-	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->GetMasterSample = plrDriverAPI->GetMasterSample;
+	cpifaceSession->GetRealMasterVolume = plrDriverAPI->GetRealMasterVolume;
 	cpifaceSession->plrActive = 1;
 
 	return 1;
@@ -1102,8 +1101,8 @@ static void devpALSAStop (struct cpifaceSessionAPI_t *cpifaceSession)
 	free(devpALSAShadowBuffer); devpALSAShadowBuffer=0;
 	if (devpALSARingBuffer)
 	{
-		ringbuffer->reset (devpALSARingBuffer);
-		ringbuffer->free (devpALSARingBuffer);
+		plrDriverAPI->ringbufferAPI->reset (devpALSARingBuffer);
+		plrDriverAPI->ringbufferAPI->free (devpALSARingBuffer);
 		devpALSARingBuffer = 0;
 	}
 
@@ -1285,9 +1284,10 @@ static int volalsaSetVolume(struct ocpvolstruct *v, int n)
 }
 
 static void alsaClose (const struct plrDriver_t *driver);
-static const struct plrDevAPI_t *alsaInit (const struct plrDriver_t *driver, const struct ringbufferAPI_t *ringbufferAPI)
+static const struct plrDevAPI_t *alsaInit (const struct plrDriver_t *driver, const struct plrDriverAPI_t *DriverAPI)
 {
-	ringbuffer = ringbufferAPI;
+	plrDriverAPI = DriverAPI;
+
 	alsaOpenDevice();
 	if (!alsa_pcm)
 	{
@@ -1382,7 +1382,7 @@ static void __attribute__((destructor))fini(void)
 
 static void devpALSAGetStats (uint64_t *processed)
 {
-	ringbuffer->get_stats (devpALSARingBuffer, processed);
+	plrDriverAPI->ringbufferAPI->get_stats (devpALSARingBuffer, processed);
 }
 
 static struct ocpvolregstruct volalsa={volalsaGetNumVolume, volalsaGetVolume, volalsaSetVolume};

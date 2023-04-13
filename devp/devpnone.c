@@ -37,7 +37,7 @@
 #define DEVPNONE_BUFLEN (DEVPNONE_BUFRATE/4) /* 250 ms */
 #define DEVPNONE_BUFSIZE (DEVPNONE_BUFLEN<<2) /* stereo + 16bit */
 
-static const struct ringbufferAPI_t *ringbuffer;
+static const struct plrDriverAPI_t *plrDriverAPI;
 
 static void *devpNoneBuffer;
 static struct ringbuffer_t *devpNoneRingBuffer;
@@ -78,7 +78,7 @@ unsigned int devpNoneIdle (void)
 		int pos1, length1, pos2, length2;
 		int eat;
 
-		ringbuffer->get_tail_samples (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
+		plrDriverAPI->ringbufferAPI->get_tail_samples (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
 
 		if (length2 == 0) /* no wrap available */
 		{
@@ -108,7 +108,7 @@ unsigned int devpNoneIdle (void)
 			}
 		}
 
-		ringbuffer->tail_consume_samples (devpNoneRingBuffer, eat);
+		plrDriverAPI->ringbufferAPI->tail_consume_samples (devpNoneRingBuffer, eat);
 		if (eat > devpNonePauseSamples)
 		{
 			devpNonePauseSamples = 0;
@@ -121,13 +121,13 @@ unsigned int devpNoneIdle (void)
 	if (devpNoneInPause)
 	{
 		int pos1, length1, pos2, length2;
-		ringbuffer->get_head_bytes (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
+		plrDriverAPI->ringbufferAPI->get_head_bytes (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
 		memset ((char *)devpNoneBuffer+pos1, 0, length1);
 		if (length2)
 		{
 			memset ((char *)devpNoneBuffer+pos2, 0, length2);
 		}
-		ringbuffer->head_add_pause_bytes (devpNoneRingBuffer, length1 + length2);
+		plrDriverAPI->ringbufferAPI->head_add_pause_bytes (devpNoneRingBuffer, length1 + length2);
 		devpNonePauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
 	}
 
@@ -135,7 +135,7 @@ unsigned int devpNoneIdle (void)
 	{
 		int pos1, length1, pos2, length2;
 
-		ringbuffer->get_tail_samples (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
+		plrDriverAPI->ringbufferAPI->get_tail_samples (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
 
 		return length1 + length2 - devpNonePauseSamples;
 	}
@@ -145,7 +145,7 @@ static void devpNonePeekBuffer (void **buf1, unsigned int *buf1length, void **bu
 {
 	int pos1, length1, pos2, length2;
 
-	ringbuffer->get_tail_samples (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_tail_samples (devpNoneRingBuffer, &pos1, &length1, &pos2, &length2);
 
 	if (length1)
 	{
@@ -179,7 +179,7 @@ static int devpNonePlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 	{
 		return 0;
 	}
-	if (!(devpNoneRingBuffer = ringbuffer->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, DEVPNONE_BUFLEN)))
+	if (!(devpNoneRingBuffer = plrDriverAPI->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, DEVPNONE_BUFLEN)))
 	{
 		free (devpNoneBuffer); devpNoneBuffer = 0;
 		return 0;
@@ -187,8 +187,8 @@ static int devpNonePlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 
 	clock_gettime (CLOCK_MONOTONIC, &devpNoneBasetime);
 
-	cpifaceSession->GetMasterSample = plrGetMasterSample;
-	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->GetMasterSample = plrDriverAPI->GetMasterSample;
+	cpifaceSession->GetRealMasterVolume = plrDriverAPI->GetRealMasterVolume;
 	cpifaceSession->plrActive = 1;
 
 	return 1;
@@ -199,7 +199,7 @@ static void devpNoneGetBuffer (void **buf, unsigned int *samples)
 	int pos1, length1;
 	assert (devpNoneRingBuffer);
 	
-	ringbuffer->get_head_samples (devpNoneRingBuffer, &pos1, &length1, 0, 0);
+	plrDriverAPI->ringbufferAPI->get_head_samples (devpNoneRingBuffer, &pos1, &length1, 0, 0);
 
 	*samples = length1;
 	*buf = devpNoneBuffer + (pos1<<2); /* stereo + bit16 */
@@ -213,13 +213,13 @@ static uint32_t devpNoneGetRate (void)
 static void devpNoneOnBufferCallback (int samplesuntil, void (*callback)(void *arg, int samples_ago), void *arg)
 {
 	assert (devpNoneRingBuffer);
-	ringbuffer->add_tail_callback_samples (devpNoneRingBuffer, samplesuntil, callback, arg);
+	plrDriverAPI->ringbufferAPI->add_tail_callback_samples (devpNoneRingBuffer, samplesuntil, callback, arg);
 }
 
 static void  devpNoneCommitBuffer (unsigned int samples)
 {
 	assert (devpNoneRingBuffer);
-	ringbuffer->head_add_samples (devpNoneRingBuffer, samples);
+	plrDriverAPI->ringbufferAPI->head_add_samples (devpNoneRingBuffer, samples);
 }
 
 static void devpNonePause(int pause)
@@ -233,8 +233,8 @@ static void devpNoneStop (struct cpifaceSessionAPI_t *cpifaceSession)
 	free(devpNoneBuffer); devpNoneBuffer=0;
 	if (devpNoneRingBuffer)
 	{
-		ringbuffer->reset (devpNoneRingBuffer);
-		ringbuffer->free (devpNoneRingBuffer);
+		plrDriverAPI->ringbufferAPI->reset (devpNoneRingBuffer);
+		plrDriverAPI->ringbufferAPI->free (devpNoneRingBuffer);
 		devpNoneRingBuffer = 0;
 	}
 	cpifaceSession->plrActive = 0;
@@ -242,7 +242,7 @@ static void devpNoneStop (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static void devpNoneGetStats (uint64_t *processed)
 {
-	ringbuffer->get_stats (devpNoneRingBuffer, processed);
+	plrDriverAPI->ringbufferAPI->get_stats (devpNoneRingBuffer, processed);
 }
 
 static const struct plrDevAPI_t devpNone = {
@@ -260,9 +260,9 @@ static const struct plrDevAPI_t devpNone = {
 	devpNoneGetStats
 };
 
-static const struct plrDevAPI_t *qpInit (const struct plrDriver_t *driver, const struct ringbufferAPI_t *ringbufferAPI)
+static const struct plrDevAPI_t *qpInit (const struct plrDriver_t *driver, const struct plrDriverAPI_t *DriverAPI)
 {
-	ringbuffer = ringbufferAPI;
+	plrDriverAPI = DriverAPI;
 
 	return &devpNone;
 }

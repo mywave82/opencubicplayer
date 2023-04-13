@@ -45,14 +45,13 @@
 #include "cpiface/cpiface.h"
 #include "dev/deviplay.h"
 #include "dev/player.h"
-#include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "stuff/err.h"
 #include "stuff/imsrtns.h"
 
-static const struct ringbufferAPI_t *ringbuffer;
+static const struct plrDriverAPI_t *plrDriverAPI;
 
 static void *devpDiskBuffer;
 static struct ringbuffer_t *devpDiskRingBuffer;
@@ -73,7 +72,7 @@ static void devpDiskConsume(int flush)
 {
 	int pos1, length1, pos2, length2;
 
-	ringbuffer->get_tail_samples (devpDiskRingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_tail_samples (devpDiskRingBuffer, &pos1, &length1, &pos2, &length2);
 
 #define BUFFER_TO_KEEP 2048  // for visuals
 
@@ -99,11 +98,11 @@ static void devpDiskConsume(int flush)
 
 	if (devpDiskShadowBuffer)
 	{
-		plrConvertBufferFromStereo16BitSigned (devpDiskCache + devpDiskCachePos, (int16_t *)devpDiskBuffer + (pos1 << 1), length1, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
+		plrDriverAPI->ConvertBufferFromStereo16BitSigned (devpDiskCache + devpDiskCachePos, (int16_t *)devpDiskBuffer + (pos1 << 1), length1, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
 		devpDiskCachePos += length1 << ((!!bit16) + (!!stereo));
 		if (length2)
 		{
-			plrConvertBufferFromStereo16BitSigned (devpDiskCache + devpDiskCachePos, (int16_t *)devpDiskBuffer + (pos2 << 1), length2, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
+			plrDriverAPI->ConvertBufferFromStereo16BitSigned (devpDiskCache + devpDiskCachePos, (int16_t *)devpDiskBuffer + (pos2 << 1), length2, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
 			devpDiskCachePos += length2 << ((!!bit16) + (!!stereo));
 		}
 	} else {
@@ -116,7 +115,7 @@ static void devpDiskConsume(int flush)
 		}
 	}
 
-	ringbuffer->tail_consume_samples (devpDiskRingBuffer, length1 + length2);
+	plrDriverAPI->ringbufferAPI->tail_consume_samples (devpDiskRingBuffer, length1 + length2);
 
 	assert (devpDiskCachePos <= devpDiskCachelen);
 }
@@ -160,7 +159,7 @@ rewrite:
 		devpDiskCachePos = 0;
 	}
 
-	retval = ringbuffer->get_tail_available_samples (devpDiskRingBuffer);
+	retval = plrDriverAPI->ringbufferAPI->get_tail_available_samples (devpDiskRingBuffer);
 
 	busy--;
 
@@ -176,7 +175,7 @@ static void devpDiskCommitBuffer (unsigned int samples)
 		return;
 	}
 
-	ringbuffer->head_add_samples (devpDiskRingBuffer, samples);
+	plrDriverAPI->ringbufferAPI->head_add_samples (devpDiskRingBuffer, samples);
 
 	busy--;
 }
@@ -186,7 +185,7 @@ static void devpDiskGetBuffer (void **buf, unsigned int *samples)
 	int pos1, length1;
 	assert (devpDiskRingBuffer);
 
-	ringbuffer->get_head_samples (devpDiskRingBuffer, &pos1, &length1, 0, 0);
+	plrDriverAPI->ringbufferAPI->get_head_samples (devpDiskRingBuffer, &pos1, &length1, 0, 0);
 
 	*samples = length1;
 	*buf = (uint8_t *)devpDiskBuffer + (pos1<<2); /* stereo + bit16 */
@@ -200,7 +199,7 @@ static uint32_t devpDiskGetRate (void)
 static void devpDiskOnBufferCallback (int samplesuntil, void (*callback)(void *arg, int samples_ago), void *arg)
 {
 	assert (devpDiskRingBuffer);
-	ringbuffer->add_tail_callback_samples (devpDiskRingBuffer, samplesuntil, callback, arg);
+	plrDriverAPI->ringbufferAPI->add_tail_callback_samples (devpDiskRingBuffer, samplesuntil, callback, arg);
 }
 
 static int devpDiskPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
@@ -244,7 +243,7 @@ static int devpDiskPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 		fprintf (stderr, "[devpDisk]: malloc() failed #1\n");
 		goto error_out;
 	}
-	devpDiskRingBuffer = ringbuffer->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, buflength);
+	devpDiskRingBuffer = plrDriverAPI->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, buflength);
 	if (!devpDiskRingBuffer)
 	{
 		fprintf (stderr, "[devpDisk]: ringbuffer_new_samples() failed\n");
@@ -320,8 +319,8 @@ static int devpDiskPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 
 	busy=0;
 
-	cpifaceSession->GetMasterSample = plrGetMasterSample;
-	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->GetMasterSample = plrDriverAPI->GetMasterSample;
+	cpifaceSession->GetRealMasterVolume = plrDriverAPI->GetRealMasterVolume;
 	cpifaceSession->plrActive = 1;
 
 	return 1;
@@ -332,7 +331,7 @@ error_out:
 	free (devpDiskCache);        devpDiskCache = 0;
 	if (devpDiskRingBuffer)
 	{
-		ringbuffer->free (devpDiskRingBuffer);
+		plrDriverAPI->ringbufferAPI->free (devpDiskRingBuffer);
 		devpDiskRingBuffer = 0;
 	}
 
@@ -426,8 +425,8 @@ reclose:
 
 	if (devpDiskRingBuffer)
 	{
-		ringbuffer->reset (devpDiskRingBuffer);
-		ringbuffer->free (devpDiskRingBuffer);
+		plrDriverAPI->ringbufferAPI->reset (devpDiskRingBuffer);
+		plrDriverAPI->ringbufferAPI->free (devpDiskRingBuffer);
 		devpDiskRingBuffer = 0;
 	}
 
@@ -442,7 +441,7 @@ static void devpDiskPeekBuffer (void **buf1, unsigned int *buf1length, void **bu
 {
 	int pos1, length1, pos2, length2;
 
-	ringbuffer->get_tail_samples (devpDiskRingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_tail_samples (devpDiskRingBuffer, &pos1, &length1, &pos2, &length2);
 
 	if (length1)
 	{
@@ -469,7 +468,7 @@ static void devpDiskPause (int pause)
 
 static void devpDiskGetStats (uint64_t *processed)
 {
-	ringbuffer->get_stats (devpDiskBuffer, processed);
+	plrDriverAPI->ringbufferAPI->get_stats (devpDiskBuffer, processed);
 }
 
 static const struct plrDevAPI_t devpDisk = {
@@ -487,9 +486,9 @@ static const struct plrDevAPI_t devpDisk = {
 	devpDiskGetStats
 };
 
-static const struct plrDevAPI_t *dwInit (const struct plrDriver_t *driver, const struct ringbufferAPI_t *ringbufferAPI)
+static const struct plrDevAPI_t *dwInit (const struct plrDriver_t *driver, const struct plrDriverAPI_t *DriverAPI)
 {
-	ringbuffer = ringbufferAPI;
+	plrDriverAPI = DriverAPI;
 
 	return &devpDisk;
 }

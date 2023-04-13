@@ -46,7 +46,7 @@
 # define debug_printf(...) do {} while(0)
 #endif
 
-static const struct ringbufferAPI_t *ringbuffer;
+static const struct plrDriverAPI_t *plrDriverAPI;
 
 static AudioUnit theOutputUnit;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -175,8 +175,8 @@ static OSStatus theRenderProc(void *inRefCon, AudioUnitRenderActionFlags *inActi
 		lastCallbackTime += tp.tv_nsec / 1000;
 	}
 
-	ringbuffer->get_tail_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
-	ringbuffer->tail_consume_samples (devpCoreAudioRingBuffer, length1 + length2);
+	plrDriverAPI->ringbufferAPI->get_tail_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->tail_consume_samples (devpCoreAudioRingBuffer, length1 + length2);
 
 	debug_printf ("theRenderProc: consumed %d + %d (paused=%d)\n", length1, length2, devpCoreAudioPauseSamples);
 
@@ -190,7 +190,7 @@ static OSStatus theRenderProc(void *inRefCon, AudioUnitRenderActionFlags *inActi
 		}
 	}
 
-	ringbuffer->get_processing_bytes (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_processing_bytes (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
 
 	debug_printf ("theRenderProc: processing available %d + %d, len %d => %d\n", length1, length2, len, (length1 > len) ? len : length1);
 
@@ -200,7 +200,7 @@ static OSStatus theRenderProc(void *inRefCon, AudioUnitRenderActionFlags *inActi
 	}
 
 	memcpy(stream, (uint8_t *)devpCoreAudioBuffer + pos1, length1);
-	ringbuffer->processing_consume_bytes (devpCoreAudioRingBuffer, length1);
+	plrDriverAPI->ringbufferAPI->processing_consume_bytes (devpCoreAudioRingBuffer, length1);
 	len -= length1;
 	stream += length1;
 	lastLength = length1 >> 2 /* stereo + bit16 */;
@@ -212,7 +212,7 @@ static OSStatus theRenderProc(void *inRefCon, AudioUnitRenderActionFlags *inActi
 			length2 = len;
 		}
 		memcpy (stream, (uint8_t *)devpCoreAudioBuffer + pos2, length2);
-		ringbuffer->processing_consume_bytes (devpCoreAudioRingBuffer, length2);
+		plrDriverAPI->ringbufferAPI->processing_consume_bytes (devpCoreAudioRingBuffer, length2);
 		len -= length2;
 		stream += length2;
 		lastLength += length2 >> 2 /* stereo + bit16 */;
@@ -240,7 +240,7 @@ static void devpCoreAudioGetBuffer (void **buf, unsigned int *samples)
 
 	pthread_mutex_lock(&mutex);
 
-	ringbuffer->get_head_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_head_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
 
 	debug_printf ("devpCoreAudioGetBuffer: %d + %d\n", length1, length2);
 
@@ -269,7 +269,7 @@ static unsigned int devpCoreAudioIdle(void)
 		signed int expect_left;
 		signed int consume;
 
-		ringbuffer->get_tail_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
+		plrDriverAPI->ringbufferAPI->get_tail_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
 
 		clock_gettime (CLOCK_MONOTONIC, &tp);
 		curTime = tp.tv_sec * 1000000;
@@ -284,25 +284,25 @@ static unsigned int devpCoreAudioIdle(void)
 		consume = (signed int)(length1 + length2) - expect_left;
 		if (consume > 0)
 		{
-			ringbuffer->tail_consume_samples (devpCoreAudioRingBuffer, consume);
+			plrDriverAPI->ringbufferAPI->tail_consume_samples (devpCoreAudioRingBuffer, consume);
 			debug_printf ("devpCoreAudioIdle: time %" PRIu32" - %" PRIu32" => preconsume %d\n", lastCallbackTime, curTime, consume);
 		}
 	}
 /* STOP */
 
-	ringbuffer->get_tailandprocessing_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_tailandprocessing_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
 
 	/* do we need to insert pause-samples? */
 	if (devpCoreAudioInPause)
 	{
 		int pos1, length1, pos2, length2;
-		ringbuffer->get_head_bytes (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
+		plrDriverAPI->ringbufferAPI->get_head_bytes (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
 		memset ((char *)devpCoreAudioBuffer+pos1, 0, length1);
 		if (length2)
 		{
 			memset ((char *)devpCoreAudioBuffer+pos2, 0, length2);
 		}
-		ringbuffer->head_add_pause_bytes (devpCoreAudioRingBuffer, length1 + length2);
+		plrDriverAPI->ringbufferAPI->head_add_pause_bytes (devpCoreAudioRingBuffer, length1 + length2);
 		devpCoreAudioPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
 	}
 
@@ -336,7 +336,7 @@ static void devpCoreAudioOnBufferCallback (int samplesuntil, void (*callback)(vo
 
 	pthread_mutex_lock(&mutex);
 
-	ringbuffer->add_tail_callback_samples (devpCoreAudioRingBuffer, samplesuntil, callback, arg);
+	plrDriverAPI->ringbufferAPI->add_tail_callback_samples (devpCoreAudioRingBuffer, samplesuntil, callback, arg);
 
 	pthread_mutex_unlock(&mutex);
 
@@ -352,7 +352,7 @@ static void devpCoreAudioCommitBuffer (unsigned int samples)
 
 	debug_printf ("devpCoreAudioCommitBuffer: %u\n", samples);
 
-	ringbuffer->head_add_samples (devpCoreAudioRingBuffer, samples);
+	plrDriverAPI->ringbufferAPI->head_add_samples (devpCoreAudioRingBuffer, samples);
 
 	pthread_mutex_unlock(&mutex);
 
@@ -379,7 +379,7 @@ static void devpCoreAudioStop (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	free (devpCoreAudioBuffer);
 	devpCoreAudioBuffer = 0;
-	ringbuffer->free (devpCoreAudioRingBuffer);
+	plrDriverAPI->ringbufferAPI->free (devpCoreAudioRingBuffer);
 	devpCoreAudioRingBuffer = 0;
 	cpifaceSession->plrActive = 0;
 }
@@ -393,7 +393,7 @@ static void devpCoreAudioPeekBuffer (void **buf1, unsigned int *buf1length, void
 	debug_printf ("devpCoreAudioPeekBuffer: ENTER\n");
 
 	pthread_mutex_lock(&mutex);
-	ringbuffer->get_tailandprocessing_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_tailandprocessing_samples (devpCoreAudioRingBuffer, &pos1, &length1, &pos2, &length2);
 	pthread_mutex_unlock(&mutex);
 
 	debug_printf ("devpCoreAudioPeekBuffer: EXIT\n");
@@ -454,7 +454,7 @@ static int devpCoreAudioPlay (uint32_t *rate, enum plrRequestFormat *format, str
 		return 0;
 	}
 
-	if (!(devpCoreAudioRingBuffer = ringbuffer->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, buflength)))
+	if (!(devpCoreAudioRingBuffer = plrDriverAPI->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, buflength)))
 	{
 		free (devpCoreAudioBuffer); devpCoreAudioBuffer = 0;
 		return 0;
@@ -466,12 +466,12 @@ static int devpCoreAudioPlay (uint32_t *rate, enum plrRequestFormat *format, str
 	{
 		fprintf(stderr, "[CoreAudio] AudioOutputUnitStart returned %d (%s)\n", (int)status, OSStatus_to_string(status));
 		free (devpCoreAudioBuffer); devpCoreAudioBuffer = 0;
-		ringbuffer->free (devpCoreAudioRingBuffer); devpCoreAudioRingBuffer = 0;
+		plrDriverAPI->ringbufferAPI->free (devpCoreAudioRingBuffer); devpCoreAudioRingBuffer = 0;
 		return 0;
 	}
 
-	cpifaceSession->GetMasterSample = plrGetMasterSample;
-	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->GetMasterSample = plrDriverAPI->GetMasterSample;
+	cpifaceSession->GetRealMasterVolume = plrDriverAPI->GetRealMasterVolume;
 	cpifaceSession->plrActive = 1;
 
 	return 1;
@@ -479,7 +479,7 @@ static int devpCoreAudioPlay (uint32_t *rate, enum plrRequestFormat *format, str
 
 static void devpCoreAudioGetStats (uint64_t *processed);
 {
-	ringbuffer->get_stats (devpCoreAudioRingBuffer, processed);
+	plrDriverAPI->ringbufferAPI->get_stats (devpCoreAudioRingBuffer, processed);
 }
 
 static const struct plrDevAPI_t devpCoreAudio = {
@@ -497,9 +497,9 @@ static const struct plrDevAPI_t devpCoreAudio = {
 	devpCoreAudioGetStats
 };
 
-static const struct plrDevAPI_t *CoreAudioInit (const struct plrDriver_t *driver, const struct ringbufferAPI_t *ringbufferAPI)
+static const struct plrDevAPI_t *CoreAudioInit (const struct plrDriver_t *driver, const struct plrDriverAPI_t *DriverAPI)
 {
-	ringbuffer = ringbufferAPI;
+	plrDriverAPI = DriverAPI;
 
 	return &devpCoreAudio;
 }

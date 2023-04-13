@@ -1,4 +1,4 @@
-static const struct ringbufferAPI_t *ringbuffer;
+static const struct plrDriverAPI_t *plrDriverAPI;
 
 static const struct plrDriver_t plrSDL;
 
@@ -29,8 +29,8 @@ void theRenderProc(void *userdata, Uint8 *stream, int len)
 	lastCallbackTime = SDL_GetTicks();
 #endif
 
-	ringbuffer->get_tail_samples (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
-	ringbuffer->tail_consume_samples (devpSDLRingBuffer, length1 + length2);
+	plrDriverAPI->ringbufferAPI->get_tail_samples (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->tail_consume_samples (devpSDLRingBuffer, length1 + length2);
 
 	if (devpSDLPauseSamples)
 	{
@@ -42,14 +42,14 @@ void theRenderProc(void *userdata, Uint8 *stream, int len)
 		}
 	}
 
-	ringbuffer->get_processing_bytes (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_processing_bytes (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
 
 	if (length1 > len)
 	{
 		length1 = len;
 	}
 	memcpy (stream, (uint8_t *)devpSDLBuffer + pos1, length1);
-	ringbuffer->processing_consume_bytes (devpSDLRingBuffer, length1);
+	plrDriverAPI->ringbufferAPI->processing_consume_bytes (devpSDLRingBuffer, length1);
 	len -= length1;
 	stream += length1;
 	lastLength = length1 >> 2 /* stereo + bit16 */;
@@ -61,7 +61,7 @@ void theRenderProc(void *userdata, Uint8 *stream, int len)
 			length2 = len;
 		}
 		memcpy (stream, (uint8_t *)devpSDLBuffer + pos2, length2);
-		ringbuffer->processing_consume_bytes (devpSDLRingBuffer, length2);
+		plrDriverAPI->ringbufferAPI->processing_consume_bytes (devpSDLRingBuffer, length2);
 		len -= length2;
 		stream += length2;
 		lastLength += length2 >> 2 /* stereo + bit16 */;
@@ -96,7 +96,7 @@ static unsigned int devpSDLIdle (void)
 		signed int expect_left;
 		signed int consume;
 
-		ringbuffer->get_tail_samples (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
+		plrDriverAPI->ringbufferAPI->get_tail_samples (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
 
 #if SDL_VERSION_ATLEAST(2,0,18)
 		curTime = SDL_GetTicks64();
@@ -112,24 +112,24 @@ static unsigned int devpSDLIdle (void)
 		consume = (signed int)(length1 + length2) - expect_left;
 		if (consume > 0)
 		{
-			ringbuffer->tail_consume_samples (devpSDLRingBuffer, consume);
+			plrDriverAPI->ringbufferAPI->tail_consume_samples (devpSDLRingBuffer, consume);
 		}
 	}
 /* STOP */
 
-	ringbuffer->get_tailandprocessing_samples (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_tailandprocessing_samples (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
 
 	/* do we need to insert pause-samples? */
 	if (devpSDLInPause)
 	{
 		int pos1, length1, pos2, length2;
-		ringbuffer->get_head_bytes (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
+		plrDriverAPI->ringbufferAPI->get_head_bytes (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
 		memset ((char *)devpSDLBuffer+pos1, 0, length1);
 		if (length2)
 		{
 			memset ((char *)devpSDLBuffer+pos2, 0, length2);
 		}
-		ringbuffer->head_add_pause_bytes (devpSDLRingBuffer, length1 + length2);
+		plrDriverAPI->ringbufferAPI->head_add_pause_bytes (devpSDLRingBuffer, length1 + length2);
 		devpSDLPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
 	}
 
@@ -151,7 +151,7 @@ static void devpSDLPeekBuffer (void **buf1, unsigned int *buf1length, void **buf
 	devpSDLIdle (); /* update the tail */
 
 	SDL_LockAudio();
-	ringbuffer->get_tailandprocessing_samples (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_tailandprocessing_samples (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
 	SDL_UnlockAudio();
 
 	if (length1)
@@ -221,7 +221,7 @@ static int devpSDLPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 	{
 		fprintf (stderr, "[SDL] SDL_OpenAudio returned %d (%s)\n", (int)status, SDL_GetError());
 		free (devpSDLBuffer); devpSDLBuffer = 0;
-		ringbuffer->free (devpSDLRingBuffer); devpSDLRingBuffer = 0;
+		plrDriverAPI->ringbufferAPI->free (devpSDLRingBuffer); devpSDLRingBuffer = 0;
 		return 0;
 	}
 	devpSDLRate = *rate = obtained.freq;
@@ -248,15 +248,15 @@ static int devpSDLPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 		return 0;
 	}
 
-	if (!(devpSDLRingBuffer = ringbuffer->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, buflength)))
+	if (!(devpSDLRingBuffer = plrDriverAPI->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, buflength)))
 	{
 		SDL_CloseAudio();
 		free (devpSDLBuffer); devpSDLBuffer = 0;
 		return 0;
 	}
 
-	cpifaceSession->GetMasterSample = plrGetMasterSample;
-	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->GetMasterSample = plrDriverAPI->GetMasterSample;
+	cpifaceSession->GetRealMasterVolume = plrDriverAPI->GetRealMasterVolume;
 	cpifaceSession->plrActive = 1;
 
 #warning This needs to delay until we have received the first commit
@@ -273,7 +273,7 @@ static void devpSDLGetBuffer (void **buf, unsigned int *samples)
 
 	SDL_LockAudio();
 
-	ringbuffer->get_head_samples (devpSDLRingBuffer, &pos1, &length1, 0, 0);
+	plrDriverAPI->ringbufferAPI->get_head_samples (devpSDLRingBuffer, &pos1, &length1, 0, 0);
 
 	SDL_UnlockAudio();
 
@@ -289,7 +289,7 @@ static uint32_t devpSDLGetRate (void)
 static void devpSDLOnBufferCallback (int samplesuntil, void (*callback)(void *arg, int samples_ago), void *arg)
 {
 	assert (devpSDLRingBuffer);
-	ringbuffer->add_tail_callback_samples (devpSDLRingBuffer, samplesuntil, callback, arg);
+	plrDriverAPI->ringbufferAPI->add_tail_callback_samples (devpSDLRingBuffer, samplesuntil, callback, arg);
 }
 
 static void devpSDLCommitBuffer (unsigned int samples)
@@ -297,7 +297,7 @@ static void devpSDLCommitBuffer (unsigned int samples)
 	PRINT("%s(%u)\n", __FUNCTION__, samples);
 	SDL_LockAudio();
 
-	ringbuffer->head_add_samples (devpSDLRingBuffer, samples);
+	plrDriverAPI->ringbufferAPI->head_add_samples (devpSDLRingBuffer, samples);
 
 	SDL_UnlockAudio();
 }
@@ -320,8 +320,8 @@ static void devpSDLStop (struct cpifaceSessionAPI_t *cpifaceSession)
 	free(devpSDLBuffer); devpSDLBuffer=0;
 	if (devpSDLRingBuffer)
 	{
-		ringbuffer->reset (devpSDLRingBuffer);
-		ringbuffer->free (devpSDLRingBuffer);
+		plrDriverAPI->ringbufferAPI->reset (devpSDLRingBuffer);
+		plrDriverAPI->ringbufferAPI->free (devpSDLRingBuffer);
 		devpSDLRingBuffer = 0;
 	}
 
@@ -330,7 +330,7 @@ static void devpSDLStop (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static void devpSDLGetStats (uint64_t *processed)
 {
-	ringbuffer->get_stats (devpSDLRingBuffer, processed);
+	plrDriverAPI->ringbufferAPI->get_stats (devpSDLRingBuffer, processed);
 }
 
 static const struct plrDevAPI_t devpSDL = {

@@ -48,7 +48,6 @@
 #include "cpiface/vol.h"
 #include "dev/deviplay.h"
 #include "dev/player.h"
-#include "dev/plrasm.h"
 #include "dev/ringbuffer.h"
 #include "stuff/err.h"
 #include "stuff/imsrtns.h"
@@ -59,7 +58,8 @@
 #define debug_printf(format, args...) ((void)0)
 #endif
 
-static const struct ringbufferAPI_t *ringbuffer;
+static const struct plrDriverAPI_t *plrDriverAPI;
+
 static void *devpOSSBuffer;
 static char *devpOSSShadowBuffer;
 static struct ringbuffer_t *devpOSSRingBuffer;
@@ -102,7 +102,7 @@ static unsigned int devpOSSIdle(void)
 		return 0;
 	}
 
-	debug_printf ("devpOSSIdle PRE: tail:%d processing:%d head:%d\n", ringbuffer->get_tail_available_samples (devpOSSRingBuffer), ringbuffer->get_processing_available_samples(devpOSSRingBuffer), ringbuffer->get_head_available_samples(devpOSSRingBuffer));
+	debug_printf ("devpOSSIdle PRE: tail:%d processing:%d head:%d\n", plrDriverAPI->ringbufferAPI->get_tail_available_samples (devpOSSRingBuffer), plrDriverAPI->ringbufferAPI->get_processing_available_samples(devpOSSRingBuffer), plrDriverAPI->ringbufferAPI->get_head_available_samples(devpOSSRingBuffer));
 
 /* Update the ringbuffer-tail START */
 #ifdef SNDCTL_DSP_GETODELAY
@@ -135,14 +135,14 @@ static unsigned int devpOSSIdle(void)
 	odelay=abs(odelay); /* This is because of old nvidia sound-drivers and probably others too */
 	odelay >>= (!!bit16) + (!!stereo);
 
-	kernlen = ringbuffer->get_tail_available_samples (devpOSSRingBuffer);
+	kernlen = plrDriverAPI->ringbufferAPI->get_tail_available_samples (devpOSSRingBuffer);
 	if (odelay>kernlen)
 	{
 		debug_printf ("devposs: flush() kernelbug found!\n");
 		odelay=kernlen;
 	} else if ((odelay<kernlen))
 	{
-		ringbuffer->tail_consume_samples (devpOSSRingBuffer, kernlen - odelay);
+		plrDriverAPI->ringbufferAPI->tail_consume_samples (devpOSSRingBuffer, kernlen - odelay);
 		if (devpOSSPauseSamples)
 		{
 			if ((kernlen - odelay) > devpOSSPauseSamples)
@@ -158,13 +158,13 @@ static unsigned int devpOSSIdle(void)
 /* do we need to insert pause-samples? START */
 	if (devpOSSInPause)
 	{
-		ringbuffer->get_head_bytes (devpOSSRingBuffer, &pos1, &length1, &pos2, &length2);
+		plrDriverAPI->ringbufferAPI->get_head_bytes (devpOSSRingBuffer, &pos1, &length1, &pos2, &length2);
 		memset ((char *)devpOSSBuffer+pos1, 0, length1);
 		if (length2)
 		{
 			memset ((char *)devpOSSBuffer+pos2, 0, length2);
 		}
-		ringbuffer->head_add_pause_bytes (devpOSSRingBuffer, length1 + length2);
+		plrDriverAPI->ringbufferAPI->head_add_pause_bytes (devpOSSRingBuffer, length1 + length2);
 		devpOSSPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
 	}
 /* do we need to insert pause-samples? DONE */
@@ -184,7 +184,7 @@ static unsigned int devpOSSIdle(void)
 	}
 	tmp = info.bytes >> ((!bit16) + (!stereo));
 
-	ringbuffer->get_processing_samples (devpOSSRingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_processing_samples (devpOSSRingBuffer, &pos1, &length1, &pos2, &length2);
 	if (tmp < length1)
 	{
 		length1 = tmp;
@@ -198,7 +198,7 @@ static unsigned int devpOSSIdle(void)
 	{
 		if (devpOSSShadowBuffer)
 		{
-			plrConvertBufferFromStereo16BitSigned (devpOSSShadowBuffer, (int16_t *)devpOSSBuffer + (pos1<<1), length1, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
+			plrDriverAPI->ConvertBufferFromStereo16BitSigned (devpOSSShadowBuffer, (int16_t *)devpOSSBuffer + (pos1<<1), length1, bit16 /* 16bit */, bit16 /* signed follows 16bit */, stereo, 0 /* revstereo */);
 			result=write(fd_dsp, devpOSSShadowBuffer, length1<<((!!stereo)+(!!bit16)));
 			if (result > 0)
 			{
@@ -213,7 +213,7 @@ static unsigned int devpOSSIdle(void)
 		}
 		if (result > 0)
 		{
-			ringbuffer->processing_consume_samples (devpOSSRingBuffer, result);
+			plrDriverAPI->ringbufferAPI->processing_consume_samples (devpOSSRingBuffer, result);
 		}
 		if (result < 0)
 		{
@@ -231,9 +231,9 @@ static unsigned int devpOSSIdle(void)
 	}
 /* Move data from ringbuffer-head into processing/kernel STOP */
 
-	debug_printf ("devpOSSIdle POST: tail:%d processing:%d head:%d\n", ringbuffer->get_tail_available_samples (devpOSSRingBuffer), ringbuffer->get_processing_available_samples(devpOSSRingBuffer), ringbuffer->get_head_available_samples(devpOSSRingBuffer));
+	debug_printf ("devpOSSIdle POST: tail:%d processing:%d head:%d\n", plrDriverAPI->ringbufferAPI->get_tail_available_samples (devpOSSRingBuffer), plrDriverAPI->ringbufferAPI->get_processing_available_samples(devpOSSRingBuffer), plrDriverAPI->ringbufferAPI->get_head_available_samples(devpOSSRingBuffer));
 
-	ringbuffer->get_tailandprocessing_samples (devpOSSRingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_tailandprocessing_samples (devpOSSRingBuffer, &pos1, &length1, &pos2, &length2);
 
 	busy--;
 
@@ -250,7 +250,7 @@ static void devpOSSPeekBuffer (void **buf1, unsigned int *buf1length, void **buf
 {
 	int pos1, length1, pos2, length2;
 
-	ringbuffer->get_tailandprocessing_samples (devpOSSRingBuffer, &pos1, &length1, &pos2, &length2);
+	plrDriverAPI->ringbufferAPI->get_tailandprocessing_samples (devpOSSRingBuffer, &pos1, &length1, &pos2, &length2);
 
 	if (length1)
 	{
@@ -279,7 +279,7 @@ static void devpOSSGetBuffer (void **buf, unsigned int *samples)
 
 	debug_printf("%s()\n", __FUNCTION__);
 
-	ringbuffer->get_head_samples (devpOSSRingBuffer, &pos1, &length1, 0, 0);
+	plrDriverAPI->ringbufferAPI->get_head_samples (devpOSSRingBuffer, &pos1, &length1, 0, 0);
 
 	*samples = length1;
 	*buf = (uint8_t *)devpOSSBuffer + (pos1<<2); /* stereo + bit16 */
@@ -293,18 +293,18 @@ static uint32_t devpOSSGetRate (void)
 static void devpOSSOnBufferCallback (int samplesuntil, void (*callback)(void *arg, int samples_ago), void *arg)
 {
 	assert (devpOSSRingBuffer);
-	ringbuffer->add_tail_callback_samples (devpOSSRingBuffer, samplesuntil, callback, arg);
+	plrDriverAPI->ringbufferAPI->add_tail_callback_samples (devpOSSRingBuffer, samplesuntil, callback, arg);
 }
 
 static void devpOSSCommitBuffer (unsigned int samples)
 {
 	debug_printf ("%s(%u)\n", __FUNCTION__, samples);
 
-	debug_printf ("devpOSSCommitBuffer PRE: tail:%d processing:%d head:%d\n", ringbuffer->get_tail_available_samples (devpOSSRingBuffer), ringbuffer->get_processing_available_samples(devpOSSRingBuffer), ringbuffer->get_head_available_samples(devpOSSRingBuffer));
+	debug_printf ("devpOSSCommitBuffer PRE: tail:%d processing:%d head:%d\n", plrDriverAPI->ringbufferAPI->get_tail_available_samples (devpOSSRingBuffer), plrDriverAPI->ringbufferAPI->get_processing_available_samples(devpOSSRingBuffer), plrDriverAPI->ringbufferAPI->get_head_available_samples(devpOSSRingBuffer));
 
-	ringbuffer->head_add_samples (devpOSSRingBuffer, samples);
+	plrDriverAPI->ringbufferAPI->head_add_samples (devpOSSRingBuffer, samples);
 
-	debug_printf ("devpOSSCommitBuffer POST: tail:%d processing:%d head:%d\n", ringbuffer->get_tail_available_samples (devpOSSRingBuffer), ringbuffer->get_processing_available_samples(devpOSSRingBuffer), ringbuffer->get_head_available_samples(devpOSSRingBuffer));
+	debug_printf ("devpOSSCommitBuffer POST: tail:%d processing:%d head:%d\n", plrDriverAPI->ringbufferAPI->get_tail_available_samples (devpOSSRingBuffer), plrDriverAPI->ringbufferAPI->get_processing_available_samples(devpOSSRingBuffer), plrDriverAPI->ringbufferAPI->get_head_available_samples(devpOSSRingBuffer));
 }
 
 static void devpOSSPause (int pause)
@@ -442,7 +442,7 @@ static int devpOSSPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 		}
 	}
 
-	if (!(devpOSSRingBuffer = ringbuffer->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, buflength)))
+	if (!(devpOSSRingBuffer = plrDriverAPI->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, buflength)))
 	{
 		free (devpOSSBuffer);
 		devpOSSBuffer = 0;
@@ -453,8 +453,8 @@ static int devpOSSPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 		return 0;
 	}
 
-	cpifaceSession->GetMasterSample = plrGetMasterSample;
-	cpifaceSession->GetRealMasterVolume = plrGetRealMasterVolume;
+	cpifaceSession->GetMasterSample = plrDriverAPI->GetMasterSample;
+	cpifaceSession->GetRealMasterVolume = plrDriverAPI->GetRealMasterVolume;
 	cpifaceSession->plrActive = 1;
 
 	return 1;
@@ -474,8 +474,8 @@ static void devpOSSStop (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	if (devpOSSRingBuffer)
 	{
-		ringbuffer->reset (devpOSSRingBuffer);
-		ringbuffer->free (devpOSSRingBuffer);
+		plrDriverAPI->ringbufferAPI->reset (devpOSSRingBuffer);
+		plrDriverAPI->ringbufferAPI->free (devpOSSRingBuffer);
 		devpOSSRingBuffer = 0;
 	}
 
@@ -538,9 +538,9 @@ static int ossDetect (const struct plrDriver_t *driver)
 	return 1; /* device exists, so we are happy.. can do better tests later */
 }
 
-static const struct plrDevAPI_t *ossInit (const struct plrDriver_t *driver, const struct ringbufferAPI_t *ringbufferAPI)
+static const struct plrDevAPI_t *ossInit (const struct plrDriver_t *driver, const struct plrDriverAPI_t *DriverAPI)
 {
-	ringbuffer = ringbufferAPI;
+	plrDriverAPI = DriverAPI;
 
 	mixer_devmask=0;
 
@@ -656,7 +656,7 @@ static struct ocpvolregstruct voloss={volossGetNumVolume, volossGetVolume, volos
 
 static void devpOSSGetStats (uint64_t *processed)
 {
-	ringbuffer->get_stats (devpOSSRingBuffer, processed);
+	plrDriverAPI->ringbufferAPI->get_stats (devpOSSRingBuffer, processed);
 }
 
 static const struct plrDevAPI_t devpOSS = {
