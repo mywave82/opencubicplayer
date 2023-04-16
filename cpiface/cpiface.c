@@ -767,7 +767,7 @@ static struct GStringElement GString_bitrate =
 
 static int GString_head5_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
 {
-	const long len = (const long)inputb;
+	const uintptr_t len = (const uintptr_t)inputb;
 
 	if (!len) return 0;
 	if (plCompoMode) return 0;
@@ -787,7 +787,7 @@ static int GString_head5_allowgrow (const void *inputa, const void *inputb, cons
 
 static int GString_head6_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
 {
-	const long len = (const long)inputb;
+	const uintptr_t len = (const uintptr_t)inputb;
 
 	if (!len) return 0;
 	if (plCompoMode) return 0;
@@ -807,7 +807,7 @@ static int GString_head6_allowgrow (const void *inputa, const void *inputb, cons
 
 static int GString_head7_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
 {
-	const long len = (const long)inputb;
+	const uintptr_t len = (const uintptr_t)inputb;
 
 	if (!len) return 0;
 	if (plCompoMode) return 0;
@@ -827,7 +827,7 @@ static int GString_head7_allowgrow (const void *inputa, const void *inputb, cons
 
 static int GString_head8_allowgrow (const void *inputa, const void *inputb, const void *inputc, int nextsize)
 {
-	const long len = (const long)inputb;
+	const uintptr_t len = (const uintptr_t)inputb;
 
 	if (!len) return 0;
 	if (plCompoMode) return 0;
@@ -1669,15 +1669,15 @@ static void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t    *cpi
 	sizeinputc1[1] = 0;
 
 	sizeinputa1[2] = cpifaceSession->mdbdata.title;
-	sizeinputb1[2] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.title, strlen (cpifaceSession->mdbdata.title));
+	sizeinputb1[2] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.title, strlen (cpifaceSession->mdbdata.title));
 	sizeinputc1[2] = 0;
 
 	sizeinputa1[3] = cpifaceSession->mdbdata.comment;
-	sizeinputb1[3] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.comment, strlen (cpifaceSession->mdbdata.comment));
+	sizeinputb1[3] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.comment, strlen (cpifaceSession->mdbdata.comment));
 	sizeinputc1[3] = 0;
 
 	sizeinputa1[4] = cpifaceSession->mdbdata.album;
-	sizeinputb1[4] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.album, strlen (cpifaceSession->mdbdata.album));
+	sizeinputb1[4] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.album, strlen (cpifaceSession->mdbdata.album));
 	sizeinputc1[4] = 0;
 
 	sizeinputa1[5] = &cpifaceSession->mdbdata.date;
@@ -1693,15 +1693,15 @@ static void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t    *cpi
 	sizeinputc2[0] = 0;
 
 	sizeinputa2[1] = cpifaceSession->mdbdata.composer;
-	sizeinputb2[1] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.composer, strlen (cpifaceSession->mdbdata.composer));
+	sizeinputb2[1] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.composer, strlen (cpifaceSession->mdbdata.composer));
 	sizeinputc2[1] = 0;
 
 	sizeinputa2[2] = cpifaceSession->mdbdata.artist;
-	sizeinputb2[2] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.artist, strlen (cpifaceSession->mdbdata.artist));
+	sizeinputb2[2] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.artist, strlen (cpifaceSession->mdbdata.artist));
 	sizeinputc2[2] = 0;
 
 	sizeinputa2[3] = cpifaceSession->mdbdata.style;
-	sizeinputb2[3] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.style, strlen (cpifaceSession->mdbdata.style));
+	sizeinputb2[3] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.style, strlen (cpifaceSession->mdbdata.style));
 	sizeinputc2[3] = 0;
 
 	sizeinputa2[4] = opt25;
@@ -1741,15 +1741,15 @@ static void mcpDrawGStringsSongXofY (struct cpifaceSessionAPI_t    *cpifaceSessi
 	sizeinputc1[0] = 0;
 
 	sizeinputa1[1] = cpifaceSession->mdbdata.title;
-	sizeinputb1[1] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.title, strlen (cpifaceSession->mdbdata.title));
+	sizeinputb1[1] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.title, strlen (cpifaceSession->mdbdata.title));
 	sizeinputc1[1] = 0;
 
 	sizeinputa1[2] = cpifaceSession->mdbdata.comment;
-	sizeinputb1[2] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.comment, strlen (cpifaceSession->mdbdata.comment));
+	sizeinputb1[2] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.comment, strlen (cpifaceSession->mdbdata.comment));
 	sizeinputc1[2] = 0;
 
 	sizeinputa1[3] = cpifaceSession->mdbdata.album;
-	sizeinputb1[3] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.album, strlen (cpifaceSession->mdbdata.album));
+	sizeinputb1[3] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.album, strlen (cpifaceSession->mdbdata.album));
 	sizeinputc1[3] = 0;
 
 	sizeinputa1[4] = &cpifaceSession->mdbdata.date;
@@ -1765,15 +1765,15 @@ static void mcpDrawGStringsSongXofY (struct cpifaceSessionAPI_t    *cpifaceSessi
 	sizeinputc2[0] = 0;
 
 	sizeinputa2[1] = cpifaceSession->mdbdata.composer;
-	sizeinputb2[1] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.composer, strlen (cpifaceSession->mdbdata.composer));
+	sizeinputb2[1] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.composer, strlen (cpifaceSession->mdbdata.composer));
 	sizeinputc2[1] = 0;
 
 	sizeinputa2[2] = cpifaceSession->mdbdata.artist;
-	sizeinputb2[2] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.artist, strlen (cpifaceSession->mdbdata.artist));
+	sizeinputb2[2] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.artist, strlen (cpifaceSession->mdbdata.artist));
 	sizeinputc2[2] = 0;
 
 	sizeinputa2[3] = cpifaceSession->mdbdata.style;
-	sizeinputb2[3] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.style, strlen (cpifaceSession->mdbdata.style));
+	sizeinputb2[3] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.style, strlen (cpifaceSession->mdbdata.style));
 	sizeinputc2[3] = 0;
 
 	sizeinputa2[4] = &cpifaceSession->InPause;
@@ -1857,7 +1857,7 @@ static void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t    *cpifaceSessio
 	sizeinputc1[6] = 0;
 
 	sizeinputa1[7] = cpifaceSession->mdbdata.comment;
-	sizeinputb1[7] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.comment, strlen (cpifaceSession->mdbdata.comment));
+	sizeinputb1[7] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.comment, strlen (cpifaceSession->mdbdata.comment));
 	sizeinputc1[7] = 0;
 
 	sizeinputa1[8] = &amplification;
@@ -1873,19 +1873,19 @@ static void mcpDrawGStringsTracked (struct cpifaceSessionAPI_t    *cpifaceSessio
 	sizeinputc2[0] = 0;
 
 	sizeinputa2[1] = cpifaceSession->mdbdata.title;
-	sizeinputb2[1] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.title, strlen (cpifaceSession->mdbdata.title));
+	sizeinputb2[1] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.title, strlen (cpifaceSession->mdbdata.title));
 	sizeinputc2[1] = 0;
 
 	sizeinputa2[2] = cpifaceSession->mdbdata.composer;
-	sizeinputb2[2] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.composer, strlen (cpifaceSession->mdbdata.composer));
+	sizeinputb2[2] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.composer, strlen (cpifaceSession->mdbdata.composer));
 	sizeinputc2[2] = 0;
 
 	sizeinputa2[3] = cpifaceSession->mdbdata.artist;
-	sizeinputb2[3] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.artist, strlen (cpifaceSession->mdbdata.artist));
+	sizeinputb2[3] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.artist, strlen (cpifaceSession->mdbdata.artist));
 	sizeinputc2[3] = 0;
 
 	sizeinputa2[4] = cpifaceSession->mdbdata.style;
-	sizeinputb2[4] = (void *)(long)measurestr_utf8 (cpifaceSession->mdbdata.style, strlen (cpifaceSession->mdbdata.style));
+	sizeinputb2[4] = (void *)(uintptr_t)measurestr_utf8 (cpifaceSession->mdbdata.style, strlen (cpifaceSession->mdbdata.style));
 	sizeinputc2[4] = 0;
 
 	sizeinputa2[5] = &cpifaceSession->InPause;
