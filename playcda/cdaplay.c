@@ -226,7 +226,7 @@ static void cdIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) cdIdle (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void cdIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -460,12 +460,12 @@ static int cdGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) cdPause (int p)
+OCP_INTERNAL void cdPause (int p)
 {
 	cda_inpause = p;
 }
 
-void __attribute__ ((visibility ("internal"))) cdClose (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void cdClose (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cda_inpause=1;
 
@@ -495,7 +495,7 @@ void __attribute__ ((visibility ("internal"))) cdClose (struct cpifaceSessionAPI
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) cdJump (struct cpifaceSessionAPI_t *cpifaceSession, unsigned long start)
+OCP_INTERNAL void cdJump (struct cpifaceSessionAPI_t *cpifaceSession, unsigned long start)
 {
 	int pos1, length1, pos2, length2;
 	if (start < lba_start) start = lba_start;
@@ -508,7 +508,7 @@ void __attribute__ ((visibility ("internal"))) cdJump (struct cpifaceSessionAPI_
 	cdbuffpos = 0;
 }
 
-int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsigned long len, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL int cdOpen (unsigned long start, unsigned long len, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
 
@@ -560,7 +560,7 @@ int __attribute__ ((visibility ("internal"))) cdOpen (unsigned long start, unsig
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) cdGetStatus (struct cdStat *stat)
+OCP_INTERNAL void cdGetStatus (struct cdStat *stat)
 {
 	stat->error=0;
 	stat->paused=cda_inpause;
@@ -569,7 +569,7 @@ void __attribute__ ((visibility ("internal"))) cdGetStatus (struct cdStat *stat)
 	stat->looped=(lba_next==lba_stop)&&(cda_looped==3);
 }
 
-void __attribute__ ((visibility ("internal"))) cdSetLoop (int loop)
+OCP_INTERNAL void cdSetLoop (int loop)
 {
 	donotloop=!loop;
 }

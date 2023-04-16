@@ -534,7 +534,7 @@ static struct cpitrakdisplaystruct xmtrakdisplay=
 	it_getins, it_getvol, it_getpan, it_getfx, it_getgcmd
 };
 
-void __attribute__ ((visibility ("internal"))) itTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct it_module *mod)
+OCP_INTERNAL void itTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct it_module *mod)
 {
 	plPatterns=mod->patterns;
 	plOrders=mod->orders;

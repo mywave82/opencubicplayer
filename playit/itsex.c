@@ -253,7 +253,7 @@ static int freeblock(void)          /* frees that block again */
  *                            returns: status                     )
  */
 
-int __attribute__ ((visibility ("internal"))) decompress8 (struct cpifaceSessionAPI_t *cpifaceSession, struct ocpfilehandle_t *module, void *dst, int len, char it215)
+OCP_INTERNAL int decompress8 (struct cpifaceSessionAPI_t *cpifaceSession, struct ocpfilehandle_t *module, void *dst, int len, char it215)
 {
 	sbyte *destbuf;   /* the destination buffer which will be returned */
 
@@ -357,7 +357,7 @@ int __attribute__ ((visibility ("internal"))) decompress8 (struct cpifaceSession
  *                                      compression flag
  *                             returns: status                     )
  */
-int __attribute__ ((visibility ("internal"))) decompress16 (struct cpifaceSessionAPI_t *cpifaceSession, struct ocpfilehandle_t *module, void *dst, int len, char it215)
+OCP_INTERNAL int decompress16 (struct cpifaceSessionAPI_t *cpifaceSession, struct ocpfilehandle_t *module, void *dst, int len, char it215)
 {
 	sword *destbuf;   /* the destination buffer which will be returned */
 

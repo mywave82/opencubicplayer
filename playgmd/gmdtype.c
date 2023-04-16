@@ -544,7 +544,7 @@ static const char *ULT_description[] =
 
 static struct mdbreadinforegstruct gmdReadInfoReg = {"MOD", gmdReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__ ((visibility ("internal"))) gmd_type_init (struct PluginInitAPI_t *API)
+OCP_INTERNAL int gmd_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
@@ -594,7 +594,7 @@ int __attribute__ ((visibility ("internal"))) gmd_type_init (struct PluginInitAP
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) gmd_type_done (struct PluginCloseAPI_t *API)
+OCP_INTERNAL void gmd_type_done (struct PluginCloseAPI_t *API)
 {
 	struct moduletype mt;
 

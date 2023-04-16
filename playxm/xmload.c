@@ -71,7 +71,7 @@ static void FreeResources(struct LoadModuleResources *r, uint_fast16_t ninst)
 }
 
 
-int __attribute__ ((visibility ("internal"))) xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
+OCP_INTERNAL int xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	struct __attribute__((packed))
 	{

@@ -57,7 +57,7 @@ static time_t pausetime;      /* when did the pause start (fully paused) */
 static time_t pausefadestart; /* when did the pause fade start, used to make the slide */
 static int8_t pausefadedirection; /* 0 = no slide, +1 = sliding from pause to normal, -1 = sliding from normal to pause */
 
-__attribute__ ((visibility ("internal"))) struct gmdmodule mod;
+OCP_INTERNAL struct gmdmodule mod;
 static char patlock;
 
 static void togglepausefade (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -399,15 +399,15 @@ static void gmdPluginClose (struct PluginCloseAPI_t *API)
 	gmd_type_done (API);
 }
 
-const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayer669 = {"[General module plugin: 669]", gmdOpenFile669, gmdCloseFile};
-const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerAMS = {"[General module plugin: AMS]", gmdOpenFileAMS, gmdCloseFile};
-const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerDMF = {"[General module plugin: DMF]", gmdOpenFileDMF, gmdCloseFile};
-const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerMDL = {"[General module plugin: MDL]", gmdOpenFileMDL, gmdCloseFile};
-const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerMTM = {"[General module plugin: MTM]", gmdOpenFileMTM, gmdCloseFile};
-const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerOKT = {"[General module plugin: OKT]", gmdOpenFileOKT, gmdCloseFile};
-const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerPTM = {"[General module plugin: PTM]", gmdOpenFilePTM, gmdCloseFile};
-const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerS3M = {"[General module plugin: S3M]", gmdOpenFileS3M, gmdCloseFile};
-const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerSTM = {"[General module plugin: STM]", gmdOpenFileSTM, gmdCloseFile};
-const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) gmdPlayerULT = {"[General module plugin: ULT]", gmdOpenFileULT, gmdCloseFile};
+OCP_INTERNAL const struct cpifaceplayerstruct gmdPlayer669 = {"[General module plugin: 669]", gmdOpenFile669, gmdCloseFile};
+OCP_INTERNAL const struct cpifaceplayerstruct gmdPlayerAMS = {"[General module plugin: AMS]", gmdOpenFileAMS, gmdCloseFile};
+OCP_INTERNAL const struct cpifaceplayerstruct gmdPlayerDMF = {"[General module plugin: DMF]", gmdOpenFileDMF, gmdCloseFile};
+OCP_INTERNAL const struct cpifaceplayerstruct gmdPlayerMDL = {"[General module plugin: MDL]", gmdOpenFileMDL, gmdCloseFile};
+OCP_INTERNAL const struct cpifaceplayerstruct gmdPlayerMTM = {"[General module plugin: MTM]", gmdOpenFileMTM, gmdCloseFile};
+OCP_INTERNAL const struct cpifaceplayerstruct gmdPlayerOKT = {"[General module plugin: OKT]", gmdOpenFileOKT, gmdCloseFile};
+OCP_INTERNAL const struct cpifaceplayerstruct gmdPlayerPTM = {"[General module plugin: PTM]", gmdOpenFilePTM, gmdCloseFile};
+OCP_INTERNAL const struct cpifaceplayerstruct gmdPlayerS3M = {"[General module plugin: S3M]", gmdOpenFileS3M, gmdCloseFile};
+OCP_INTERNAL const struct cpifaceplayerstruct gmdPlayerSTM = {"[General module plugin: STM]", gmdOpenFileSTM, gmdCloseFile};
+OCP_INTERNAL const struct cpifaceplayerstruct gmdPlayerULT = {"[General module plugin: ULT]", gmdOpenFileULT, gmdCloseFile};
 
 DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playgmd", .desc = "OpenCP General Module Player (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = gmdPluginInit, .PluginClose = gmdPluginClose};

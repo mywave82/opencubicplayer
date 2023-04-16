@@ -553,12 +553,12 @@ static int FlacPicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpitextmoderegstruct cpiFlacPic = {"flacpic", FlacPicGetWin, FlacPicSetWin, FlacPicDraw, FlacPicIProcessKey, FlacPicAProcessKey, FlacPicEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) FlacPicInit (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void FlacPicInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiFlacPic);
 }
 
-void __attribute__ ((visibility ("internal"))) FlacPicDone (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void FlacPicDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiFlacPic);
 }

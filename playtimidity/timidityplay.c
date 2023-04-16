@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "types.h"
 #include "timidity.h"
 #include "controls.h"
 #include "instrum.h"
@@ -182,7 +183,7 @@ static void free_EventDelayed (CtlEventDelayed *self)
 
 struct mchaninfo channelstat[16] = {{{0}}};
 
-void __attribute__ ((visibility ("internal"))) timidityGetChanInfo(uint8_t ch, struct mchaninfo *ci)
+OCP_INTERNAL void timidityGetChanInfo (uint8_t ch, struct mchaninfo *ci)
 {
 	assert (ch < 16);
 	*ci = channelstat[ch];
@@ -499,29 +500,29 @@ static int read_user_config_file(void)
 
 /* Killing Module 2 MIDI support with dummy calls */
 
-int __attribute__ ((visibility ("internal"))) get_module_type (char *fn)
+OCP_INTERNAL int get_module_type (char *fn)
 {
 	return IS_OTHER_FILE; /* Open Cubic Player will provide module support */
 }
 
-int __attribute__ ((visibility ("internal"))) convert_mod_to_midi_file(struct timiditycontext_t *c, MidiEvent * ev)
+OCP_INTERNAL int convert_mod_to_midi_file(struct timiditycontext_t *c, MidiEvent * ev)
 {
 	ctl->cmsg(CMSG_INFO, VERB_NORMAL,
 	          "Aborting!  timidity attempted to convert module to midi file\n");
 	return 1;
 }
 
-char __attribute__ ((visibility ("internal"))) *get_module_title (struct timidity_file *tf, int mod_type)
+OCP_INTERNAL char *get_module_title (struct timidity_file *tf, int mod_type)
 {
 	return NULL;
 }
 
-int __attribute__ ((visibility ("internal"))) load_module_file (struct timiditycontext_t *c, struct timidity_file *tf, int mod_type)
+OCP_INTERNAL int load_module_file (struct timiditycontext_t *c, struct timidity_file *tf, int mod_type)
 {
 	return 1; /* Fail to load */
 }
 
-void __attribute__ ((visibility ("internal"))) ML_RegisterAllLoaders ()
+OCP_INTERNAL void ML_RegisterAllLoaders ()
 {
 }
 
@@ -542,13 +543,13 @@ static int ocp_ctl_pass_playing_list (int number_of_files, char *list_of_files[]
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) timidityRestart (void)
+OCP_INTERNAL void timidityRestart (void)
 {
 	ctl_next_value = 0;
 	ctl_next_result = RC_RESTART;
 }
 
-void __attribute__ ((visibility ("internal"))) timiditySetRelPos(int pos)
+OCP_INTERNAL void timiditySetRelPos (int pos)
 {
 	if (pos > 0)
 	{ /* async, so set the value, before result */
@@ -1699,22 +1700,22 @@ static void timidityIdler(struct cpifaceSessionAPI_t *cpifaceSession, struct tim
 	}
 }
 
-int __attribute__ ((visibility ("internal"))) timidityIsLooped(void)
+OCP_INTERNAL int timidityIsLooped (void)
 {
 	return gmi_looped && gmi_eof;
 }
 
-void __attribute__ ((visibility ("internal"))) timiditySetLoop(unsigned char s)
+OCP_INTERNAL void timiditySetLoop (unsigned char s)
 {
 	donotloop=!s;
 }
 
-void __attribute__ ((visibility ("internal"))) timidityPause(unsigned char p)
+OCP_INTERNAL void timidityPause (unsigned char p)
 {
 	gmi_inpause=p;
 }
 
-void __attribute__ ((visibility ("internal"))) timidityMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m)
+OCP_INTERNAL void timidityMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m)
 {
 	//sync_restart (&tc, 0);
 	cpifaceSession->MuteChannel[ch] = m;
@@ -1777,7 +1778,7 @@ static int timidityGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int 
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct mglobinfo *gi)
+OCP_INTERNAL void timidityGetGlobInfo (struct mglobinfo *gi)
 {
 	int32_t curtick = tc.current_sample
 			- aq_soft_filled(&tc)
@@ -1790,7 +1791,7 @@ void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct mglobi
 	gi->ticknum = timidity_main_session.nsamples;
 }
 
-void __attribute__ ((visibility ("internal"))) timidityIdle(struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void timidityIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -2031,7 +2032,7 @@ static void doTimidityClosePlayer(struct cpifaceSessionAPI_t *cpifaceSession, in
 	free_all_midi_file_info (&tc);
 }
 
-int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t bufferlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	uint32_t gmibuflen;
 	enum plrRequestFormat format;
@@ -2213,7 +2214,7 @@ int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *pat
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) timidityClosePlayer(struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void timidityClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 #warning we need to break idle loop with EVENT set to quit, in order to make a clean exit..
 	doTimidityClosePlayer (cpifaceSession, 1);

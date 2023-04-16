@@ -373,7 +373,7 @@ static struct cpitrakdisplaystruct hvlptrkdisplay=
 	hvl_getins, hvl_getvol, hvl_getpan, hvl_getfx, hvl_getgcmd
 };
 
-void __attribute__ ((visibility ("internal"))) hvlTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void hvlTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->TrackSetup(cpifaceSession, &hvlptrkdisplay, ht->ht_PositionNr);
 }

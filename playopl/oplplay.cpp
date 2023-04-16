@@ -123,7 +123,7 @@ do { \
 static void oplSetVolume(void);
 static void oplSetSpeed(uint16_t sp);
 
-void __attribute__ ((visibility ("internal"))) oplClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void oplClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (active)
 	{
@@ -141,7 +141,7 @@ void __attribute__ ((visibility ("internal"))) oplClosePlayer (struct cpifaceSes
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) oplSetSong (struct cpifaceSessionAPI_t *cpifaceSession, int song)
+OCP_INTERNAL void oplSetSong (struct cpifaceSessionAPI_t *cpifaceSession, int song)
 {
 	int pos1, length1, pos2, length2;
 	int songs = p->getsubsongs();
@@ -160,7 +160,7 @@ void __attribute__ ((visibility ("internal"))) oplSetSong (struct cpifaceSession
 	oplbuffpos = 0;
 }
 
-void __attribute__ ((visibility ("internal"))) oplMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
+OCP_INTERNAL void oplMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
 {
 	cpifaceSession->MuteChannel[i] = m;
 	opl->setmute(i, m);
@@ -314,7 +314,7 @@ void CProvider_Mem::close(binistream *f) const
 	delete f;
 }
 
-int __attribute__ ((visibility ("internal"))) oplOpenPlayer (const char *filename /* needed for detection */, uint8_t *content, const size_t len, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL int oplOpenPlayer (const char *filename /* needed for detection */, uint8_t *content, const size_t len, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
 	int retval;
@@ -397,17 +397,17 @@ error_out:
 	return retval;
 }
 
-void __attribute__ ((visibility ("internal"))) oplSetLoop(int loop)
+OCP_INTERNAL void oplSetLoop (int loop)
 {
 	donotloop=!loop;
 }
 
-int __attribute__ ((visibility ("internal"))) oplIsLooped(void)
+OCP_INTERNAL int oplIsLooped (void)
 {
 	return 0; // opl_looped == 3;
 }
 
-void __attribute__ ((visibility ("internal"))) oplPause(uint8_t p)
+OCP_INTERNAL void oplPause (uint8_t p)
 {
 	opl_inpause=p;
 }
@@ -492,7 +492,7 @@ static void oplIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) oplIdle (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void oplIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -676,7 +676,7 @@ void __attribute__ ((visibility ("internal"))) oplIdle (struct cpifaceSessionAPI
 	clipbusy--;
 }
 
-void __attribute__ ((visibility ("internal"))) oplpGetGlobInfo(oplTuneInfo &si)
+OCP_INTERNAL void oplpGetGlobInfo (oplTuneInfo &si)
 {
 	std::string author = p->getauthor(); /* we need to keep a reference, else c_str() data will die before we get to use it */
 	std::string title = p->gettitle();  /* same here */

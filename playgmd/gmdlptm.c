@@ -61,7 +61,7 @@ static void FreeResources (struct LoadPTMResources *r)
 	}
 }
 
-int __attribute__ ((visibility ("internal"))) LoadPTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
+OCP_INTERNAL int LoadPTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 
 	uint16_t t;

@@ -910,7 +910,7 @@ instring:
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) cue_parser_free (struct cue_parser_t *cue_parser)
+OCP_INTERNAL void cue_parser_free (struct cue_parser_t *cue_parser)
 {
 	int i;
 	for (i = 0; i < 100; i++)
@@ -933,7 +933,7 @@ void __attribute__ ((visibility ("internal"))) cue_parser_free (struct cue_parse
 	free (cue_parser);
 }
 
-struct cue_parser_t __attribute__ ((visibility ("internal"))) *cue_parser_from_data (const char *input)
+OCP_INTERNAL struct cue_parser_t *cue_parser_from_data (const char *input)
 {
 	struct cue_parser_t *retval;
 	const char *eof = input + strlen (input);
@@ -973,7 +973,7 @@ struct cue_parser_t __attribute__ ((visibility ("internal"))) *cue_parser_from_d
 	return retval;
 }
 
-struct cdfs_disc_t __attribute__ ((visibility ("internal"))) *cue_parser_to_cdfs_disc (struct ocpfile_t *parentfile, struct cue_parser_t *cue_parser)
+OCP_INTERNAL struct cdfs_disc_t *cue_parser_to_cdfs_disc (struct ocpfile_t *parentfile, struct cue_parser_t *cue_parser)
 {
 	struct cdfs_disc_t *retval = cdfs_disc_new (parentfile);
 	int i;

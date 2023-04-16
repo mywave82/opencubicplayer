@@ -30,7 +30,7 @@
 #include "filesel/filesystem.h"
 #include "wave.h"
 
-int __attribute__ ((visibility ("internal"))) wave_filename(const char *filename)
+OCP_INTERNAL int wave_filename(const char *filename)
 {
 	int len = strlen (filename);
 	if (len < 4)
@@ -272,7 +272,7 @@ static void wave_openfile_dir (void *token, struct ocpdir_t *dir)
 {
 }
 
-int __attribute__ ((visibility ("internal"))) wave_openfile (struct ocpdir_t *dir, const char *filename, struct ocpfile_t **file, struct ocpfilehandle_t **handle, uint64_t *offset, uint64_t *length)
+OCP_INTERNAL int wave_openfile (struct ocpdir_t *dir, const char *filename, struct ocpfile_t **file, struct ocpfilehandle_t **handle, uint64_t *offset, uint64_t *length)
 {
 	struct wave_openfile_result_t result;
 	ocpdirhandle_pt dh;
@@ -334,7 +334,7 @@ int __attribute__ ((visibility ("internal"))) wave_openfile (struct ocpdir_t *di
 	return 0;
 }
 
-int __attribute__ ((visibility ("internal"))) data_openfile (struct ocpdir_t *dir, const char *filename, struct ocpfile_t **file, struct ocpfilehandle_t **handle, uint64_t *length)
+OCP_INTERNAL int data_openfile (struct ocpdir_t *dir, const char *filename, struct ocpfile_t **file, struct ocpfilehandle_t **handle, uint64_t *length)
 {
 	struct wave_openfile_result_t result;
 	ocpdirhandle_pt dh;

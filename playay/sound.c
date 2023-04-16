@@ -51,7 +51,7 @@
 #define AY_CHANGE_MAX		8000
 
 static int sound_framesiz;
-unsigned int sound_freq __attribute__ ((visibility ("hidden")));
+OCP_INTERNAL unsigned int sound_freq;
 
 static uint32_t ay_tone_levels[16];
 
@@ -121,7 +121,7 @@ ay_change_count=0;
 }
 
 
-int __attribute__ ((visibility ("internal"))) sound_init(void)
+OCP_INTERNAL int sound_init (void)
 {
 /*
 	if(!ay_driver_init(&sound_freq,&sound_stereo))
@@ -144,7 +144,7 @@ int __attribute__ ((visibility ("internal"))) sound_init(void)
 }
 
 
-void __attribute__ ((visibility ("internal"))) sound_end(void)
+OCP_INTERNAL void sound_end (void)
 {
 	if(sound_buf)
 	{
@@ -456,7 +456,7 @@ static void sound_ay_overlay(struct ay_driver_frame_state_t *states)
 /* don't make the change immediately; record it for later,
  * to be made by sound_frame() (via sound_ay_overlay()).
  */
-void __attribute__ ((visibility ("internal"))) sound_ay_write(int reg,int val,unsigned long tstates)
+OCP_INTERNAL void sound_ay_write (int reg, int val, unsigned long tstates)
 {
 	if(reg>=15) return;
 
@@ -473,7 +473,7 @@ void __attribute__ ((visibility ("internal"))) sound_ay_write(int reg,int val,un
 /* no need to call this initially, but should be called
  * on reset otherwise.
  */
-void __attribute__ ((visibility ("internal"))) sound_ay_reset(void)
+OCP_INTERNAL void sound_ay_reset (void)
 {
 int f;
 
@@ -490,7 +490,7 @@ CLOCK_RESET(AY_CLOCK);	/* in case it was CPC before */
 }
 
 
-void __attribute__ ((visibility ("internal"))) sound_ay_reset_cpc(void)
+OCP_INTERNAL void sound_ay_reset_cpc (void)
 {
 sound_ay_reset();
 
@@ -499,7 +499,7 @@ CLOCK_RESET(AY_CLOCK_CPC);
 
 
 /* returns zero if this frame was completely silent */
-int __attribute__ ((visibility ("internal"))) sound_frame(struct ay_driver_frame_state_t *states)
+OCP_INTERNAL int sound_frame (struct ay_driver_frame_state_t *states)
 {
 int16_t *ptr;
 int f,silent;
@@ -587,7 +587,7 @@ return(!silent);
 
 #if 0
 /* don't do a real frame, just play silence to keep things sane. */
-void __attribute__ ((visibility ("internal"))) sound_frame_blank(void)
+OCP_INTERNAL void sound_frame_blank (void)
 {
 static int first=1;
 static signed short buf[2048];		/* should be plenty */
@@ -609,13 +609,13 @@ if(sizeof(buf)<fulllen)
 ay_driver_frame(buf,fulllen);
 }
 #endif
-void __attribute__ ((visibility ("internal"))) sound_start_fade(int fadetime_in_sec)
+OCP_INTERNAL void sound_start_fade (int fadetime_in_sec)
 {
 fading=1;
 sfadetime=fadetotal=fadetime_in_sec*sound_freq;
 }
 
-void __attribute__ ((visibility ("internal"))) sound_beeper(int on, unsigned long tstates)
+OCP_INTERNAL void sound_beeper (int on, unsigned long tstates)
 {
 	if(ay_change_count<AY_CHANGE_MAX)
 	{

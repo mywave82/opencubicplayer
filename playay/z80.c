@@ -57,7 +57,7 @@ static uint32_t intsample;
 static uint8_t op;
 static int interrupted;
 
-void __attribute__ ((visibility ("internal"))) ay_z80_init(const unsigned char *data,const unsigned char *stacketc)
+OCP_INTERNAL void ay_z80_init (const unsigned char *data, const unsigned char *stacketc)
 {
 a=f=b=c=d=e=h=l=a1=f1=b1=c1=d1=e1=h1=l1=i=r=iff1=iff2=im=0;
 ixoriy=new_ixoriy=0;
@@ -73,7 +73,7 @@ interrupted=0;
 sp=stacketc[0]*256+stacketc[1];
 }
 
-void __attribute__ ((visibility ("internal"))) ay_z80loop (const struct plrDevAPI_t *plrDevAPI)
+OCP_INTERNAL void ay_z80loop (const struct plrDevAPI_t *plrDevAPI)
 {
   while (ay_tstates<ay_tsmax)
   {

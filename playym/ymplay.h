@@ -3,18 +3,19 @@
 
 struct ocpfilehandle_t;
 struct cpifaceSessionAPI_t;
-extern void __attribute__ ((visibility ("internal"))) ymClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) ymMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m);
-extern int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) ymSetLoop(int loop);
-extern int __attribute__ ((visibility ("internal"))) ymIsLooped(void);
-
-extern void __attribute__ ((visibility ("internal"))) ymPause(uint8_t p);
-
-extern void __attribute__ ((visibility ("internal"))) ymIdle(struct cpifaceSessionAPI_t *cpifaceSession);
-
 class CYmMusic;
-extern __attribute__ ((visibility ("internal"))) CYmMusic *pMusic;
+
+OCP_INTERNAL void ymClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void ymMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m);
+OCP_INTERNAL int ymOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void ymSetLoop (int loop);
+OCP_INTERNAL int ymIsLooped (void);
+
+OCP_INTERNAL void ymPause (uint8_t p);
+
+OCP_INTERNAL void ymIdle (struct cpifaceSessionAPI_t *cpifaceSession);
+
+extern OCP_INTERNAL CYmMusic *pMusic;
 
 struct channel_info_t
 {
@@ -29,8 +30,9 @@ struct channel_info_t
 	int level_b;
 	int level_c;
 };
-extern __attribute__ ((visibility ("internal"))) struct channel_info_t *ymRegisters();
-extern uint32_t __attribute__ ((visibility ("internal"))) ymGetPos(void);
-extern void __attribute__ ((visibility ("internal"))) ymSetPos(uint32_t pos);
+
+OCP_INTERNAL struct channel_info_t *ymRegisters (void);
+OCP_INTERNAL uint32_t ymGetPos (void);
+OCP_INTERNAL void ymSetPos (uint32_t pos);
 
 #endif

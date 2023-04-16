@@ -22,17 +22,17 @@ struct lyric_t
 	struct line_t *line;
 };
 
-int __attribute__ ((visibility ("internal"))) karaoke_new_line (struct lyric_t *lyric);
+OCP_INTERNAL int karaoke_new_line (struct lyric_t *lyric);
 
-int __attribute__ ((visibility ("internal"))) karaoke_new_paragraph (struct lyric_t *lyric);
+OCP_INTERNAL int karaoke_new_paragraph (struct lyric_t *lyric);
 
-int __attribute__ ((visibility ("internal"))) karaoke_new_syllable (struct cpifaceSessionAPI_t *cpifaceSession, struct lyric_t *lyric, uint32_t timecode, const char *src, int length);
+OCP_INTERNAL int karaoke_new_syllable (struct cpifaceSessionAPI_t *cpifaceSession, struct lyric_t *lyric, uint32_t timecode, const char *src, int length);
 
-void __attribute__ ((visibility ("internal"))) karaoke_clear (struct lyric_t *lyric);
+OCP_INTERNAL void karaoke_clear (struct lyric_t *lyric);
 
-void __attribute__ ((visibility ("internal"))) cpiKaraokeInit (struct cpifaceSessionAPI_t *cpifaceSession, struct lyric_t *lyric);
-void __attribute__ ((visibility ("internal"))) cpiKaraokeDone (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void cpiKaraokeInit (struct cpifaceSessionAPI_t *cpifaceSession, struct lyric_t *lyric);
+OCP_INTERNAL void cpiKaraokeDone (struct cpifaceSessionAPI_t *cpifaceSession);
 
-void __attribute__ ((visibility ("internal"))) cpiKaraokeSetTimeCode (struct cpifaceSessionAPI_t *cpifaceSession, uint32_t timecode);
+OCP_INTERNAL void cpiKaraokeSetTimeCode (struct cpifaceSessionAPI_t *cpifaceSession, uint32_t timecode);
 
 #endif

@@ -67,9 +67,9 @@ static struct timeslot register_current_state;
 static ymsample ymbuf[YMBUFLEN]; /* the buffer, mono */
 static struct ringbuffer_t *ymbufpos = 0;
 static uint32_t ymbuffpos; /* read fine-pos.. when ymbufrate has a fraction */
-__attribute__ ((visibility ("internal"))) uint32_t ymbufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
+OCP_INTERNAL uint32_t ymbufrate; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
 
-__attribute__ ((visibility ("internal"))) CYmMusic *pMusic;
+OCP_INTERNAL CYmMusic *pMusic;
 
 /* clipper threadlock since we use a timer-signal */
 static volatile int clipbusy=0;
@@ -115,7 +115,7 @@ do { \
 	} \
 } while(0)
 
-void __attribute__ ((visibility ("internal"))) ymClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void ymClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (active)
 	{
@@ -134,7 +134,7 @@ void __attribute__ ((visibility ("internal"))) ymClosePlayer (struct cpifaceSess
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) ymMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
+OCP_INTERNAL void ymMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
 {
 	cpifaceSession->MuteChannel[i] = m;
 	fprintf(stderr, "[YM] TODO, ymMute(i, m)\n");
@@ -187,18 +187,18 @@ static int ymGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 	return 0;
 }
 
-uint32_t __attribute__ ((visibility ("internal"))) ymGetPos(void)
+OCP_INTERNAL uint32_t ymGetPos (void)
 {
 	return ymMusicGetPos(pMusic);
 }
-void __attribute__ ((visibility ("internal"))) ymSetPos(uint32_t pos)
+OCP_INTERNAL void ymSetPos (uint32_t pos)
 {
 	if (pos>=0x80000000)
 		pos=0;
 	ymMusicSeek(pMusic, pos);
 }
 
-int __attribute__ ((visibility ("internal"))) ymOpenPlayer(struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL int ymOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
 	void *buffer = 0;
@@ -297,18 +297,18 @@ error_out_buffer:
 	return retval;
 }
 
-void __attribute__ ((visibility ("internal"))) ymSetLoop(int loop)
+OCP_INTERNAL void ymSetLoop (int loop)
 {
 	pMusic->setLoopMode(loop);
 	donotloop=!loop;
 }
 
-int __attribute__ ((visibility ("internal"))) ymIsLooped(void)
+OCP_INTERNAL int ymIsLooped (void)
 {
 	return ym_looped==3;
 }
 
-void __attribute__ ((visibility ("internal"))) ymPause(uint8_t p)
+OCP_INTERNAL void ymPause (uint8_t p)
 {
 	ym_inpause=p;
 }
@@ -412,12 +412,12 @@ static void ymIdler(struct cpifaceSessionAPI_t *cpifaceSession)
 	}
 }
 
-__attribute__ ((visibility ("internal"))) struct channel_info_t *ymRegisters()
+OCP_INTERNAL struct channel_info_t *ymRegisters()
 {
 	return &Registers;
 }
 
-void __attribute__ ((visibility ("internal"))) ymIdle(struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void ymIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{

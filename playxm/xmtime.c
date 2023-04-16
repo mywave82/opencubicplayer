@@ -208,7 +208,7 @@ static int xmpFindTick(void)
 	return 1;
 }
 
-int __attribute__ ((visibility ("internal"))) xmpPrecalcTime(struct xmodule *m, int startpos, int (*calc)[2], int n, int ite)
+OCP_INTERNAL int xmpPrecalcTime (struct xmodule *m, int startpos, int (*calc)[2], int n, int ite)
 {
 	int i;
 

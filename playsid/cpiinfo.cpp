@@ -416,12 +416,12 @@ static int SidInfoEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpitextmoderegstruct cpiSidInfo = {"sidinfo", SidInfoGetWin, SidInfoSetWin, SidInfoDraw, SidInfoIProcessKey, SidInfoAProcessKey, SidInfoEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) SidInfoInit (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void SidInfoInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiSidInfo);
 }
 
-void __attribute__ ((visibility ("internal"))) SidInfoDone (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void SidInfoDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiSidInfo);
 }

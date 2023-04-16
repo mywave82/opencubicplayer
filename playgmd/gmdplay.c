@@ -1556,7 +1556,7 @@ static void PlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 	putque(cmdtime, -1, (currentrow<<8)|(currentpattern<<16), 0);
 }
 
-int __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL int mpPlayModule (const struct gmdmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i;
 
@@ -1645,7 +1645,7 @@ int __attribute__ ((visibility ("internal"))) mpPlayModule(const struct gmdmodul
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) mpStopModule (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void mpStopModule (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i;
 	for (i=0; i<physchan; i++)
@@ -1656,7 +1656,7 @@ void __attribute__ ((visibility ("internal"))) mpStopModule (struct cpifaceSessi
 	free(que);
 }
 
-void __attribute__ ((visibility ("internal"))) mpGetChanInfo(uint8_t ch, struct chaninfo *ci)
+OCP_INTERNAL void mpGetChanInfo (uint8_t ch, struct chaninfo *ci)
 {
 	const struct trackdata *t=&tdata[ch];
 	ci->ins=0xFF;
@@ -1684,7 +1684,7 @@ void __attribute__ ((visibility ("internal"))) mpGetChanInfo(uint8_t ch, struct 
 
 
 
-uint16_t __attribute__ ((visibility ("internal"))) mpGetRealNote(struct cpifaceSessionAPI_t *cpifaceSession, uint8_t ch)
+OCP_INTERNAL uint16_t mpGetRealNote (struct cpifaceSessionAPI_t *cpifaceSession, uint8_t ch)
 {
 	struct trackdata *td=&tdata[ch];
 	if (exponential)
@@ -1694,7 +1694,7 @@ uint16_t __attribute__ ((visibility ("internal"))) mpGetRealNote(struct cpifaceS
   /*    return td.nteval<<8; */
 }
 
-void __attribute__ ((visibility ("internal"))) mpGetGlobInfo(struct globinfo *gi)
+OCP_INTERNAL void mpGetGlobInfo (struct globinfo *gi)
 {
 	int i;
 
@@ -1712,19 +1712,19 @@ void __attribute__ ((visibility ("internal"))) mpGetGlobInfo(struct globinfo *gi
 			gi->globvolslide=globalvolslide[i];
 }
 
-void __attribute__ ((visibility ("internal"))) mpGetPosition(uint16_t *pat, uint8_t *row)
+OCP_INTERNAL void mpGetPosition (uint16_t *pat, uint8_t *row)
 {
 	*pat=currentpattern;
 	*row=currentrow;
 }
 
-int __attribute__ ((visibility ("internal"))) mpGetRealPos (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL int mpGetRealPos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	readque (cpifaceSession);
 	return realpos;
 }
 
-void __attribute__ ((visibility ("internal"))) mpSetPosition (struct cpifaceSessionAPI_t *cpifaceSession, int16_t pat, int16_t row)
+OCP_INTERNAL void mpSetPosition (struct cpifaceSessionAPI_t *cpifaceSession, int16_t pat, int16_t row)
 {
 	unsigned int i;
 	if (row<0)
@@ -1782,17 +1782,17 @@ void __attribute__ ((visibility ("internal"))) mpSetPosition (struct cpifaceSess
 	currenttick=tempo;
 }
 
-char __attribute__ ((visibility ("internal"))) mpLooped(void)
+OCP_INTERNAL char mpLooped (void)
 {
 	return looped;
 }
 
-void __attribute__ ((visibility ("internal"))) mpSetLoop(uint8_t s)
+OCP_INTERNAL void mpSetLoop (uint8_t s)
 {
 	donotloopmodule=!s;
 }
 
-void __attribute__ ((visibility ("internal"))) mpLockPat(int st)
+OCP_INTERNAL void mpLockPat (int st)
 {
 	if (st)
 		lockpattern=currentpattern;
@@ -1800,7 +1800,7 @@ void __attribute__ ((visibility ("internal"))) mpLockPat(int st)
 		lockpattern=-1;
 }
 
-int __attribute__ ((visibility ("internal"))) mpGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *buf, unsigned int len, uint32_t rate, int opt)
+OCP_INTERNAL int mpGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *buf, unsigned int len, uint32_t rate, int opt)
 {
 	if (tdata[ch].phys==-1)
 	{
@@ -1810,7 +1810,7 @@ int __attribute__ ((visibility ("internal"))) mpGetChanSample (struct cpifaceSes
 	return cpifaceSession->mcpGetChanSample (cpifaceSession, tdata[ch].phys, buf, len, rate, opt);
 }
 
-void __attribute__ ((visibility ("internal"))) mpMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int mute)
+OCP_INTERNAL void mpMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int mute)
 {
 	cpifaceSession->MuteChannel[ch] = mute;
 	tdata[ch].mute=mute;
@@ -1818,14 +1818,14 @@ void __attribute__ ((visibility ("internal"))) mpMute (struct cpifaceSessionAPI_
 		cpifaceSession->mcpSet (cpifaceSession, tdata[ch].phys, mcpCMute, mute);
 }
 
-int __attribute__ ((visibility ("internal"))) mpGetChanStatus (struct cpifaceSessionAPI_t *cpifaceSession, int ch)
+OCP_INTERNAL int mpGetChanStatus (struct cpifaceSessionAPI_t *cpifaceSession, int ch)
 {
 	if (tdata[ch].phys==-1)
 		return 0;
 	return cpifaceSession->mcpGet (cpifaceSession, tdata[ch].phys, mcpCStatus);
 }
 
-void __attribute__ ((visibility ("internal"))) mpGetRealVolume (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *l, int *r)
+OCP_INTERNAL void mpGetRealVolume (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *l, int *r)
 {
 	if (tdata[ch].phys==-1)
 	{
@@ -1835,7 +1835,7 @@ void __attribute__ ((visibility ("internal"))) mpGetRealVolume (struct cpifaceSe
 	cpifaceSession->mcpGetRealVolume (tdata[ch].phys, l, r);
 }
 
-int __attribute__ ((visibility ("internal"))) mpLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m)
+OCP_INTERNAL int mpLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m)
 {
 	return cpifaceSession->mcpDevAPI->LoadSamples (cpifaceSession, m->samples, m->sampnum);
 }

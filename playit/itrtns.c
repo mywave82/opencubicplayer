@@ -30,7 +30,7 @@
 #include "types.h"
 #include "itplay.h"
 
-void __attribute__ ((visibility ("internal"))) it_optimizepatlens(struct it_module *this)
+OCP_INTERNAL void it_optimizepatlens (struct it_module *this)
 {
 	uint8_t *lastrows;
 	int i;

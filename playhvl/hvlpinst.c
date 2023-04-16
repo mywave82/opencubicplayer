@@ -144,7 +144,7 @@ static void hvlDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 }
 
-void __attribute__ ((visibility ("internal"))) hvlInstSetup (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void hvlInstSetup (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct insdisplaystruct plInsDisplay;
 

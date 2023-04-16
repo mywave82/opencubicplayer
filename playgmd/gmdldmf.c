@@ -134,7 +134,7 @@ static void calctempo(uint16_t rpm, uint8_t *tempo, uint8_t *bpm)
 	(*bpm)=rpm*(*tempo)/24;
 }
 
-int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
+OCP_INTERNAL int LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	struct __attribute__((packed)) {
 		uint8_t sig[4];

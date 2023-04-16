@@ -27,7 +27,7 @@
 #include "cdfs.h"
 #include "filesel/musicbrainz.h"
 
-void __attribute__ ((visibility ("internal"))) Check_Audio (struct cdfs_disc_t *disc)
+OCP_INTERNAL void Check_Audio (struct cdfs_disc_t *disc)
 {
 	int first = 0;
 	int last = 0;

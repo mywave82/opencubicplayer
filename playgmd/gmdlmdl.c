@@ -140,7 +140,7 @@ static void FreeResources (struct LoadMDLResources *r)
 	}
 }
 
-int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
+OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	uint32_t waste32;
 	uint16_t waste16;

@@ -4,7 +4,7 @@
 struct PluginInitAPI_t;
 struct PluginCloseAPI_t;
 
-int __attribute__ ((visibility ("internal"))) opl_config_init (struct PluginInitAPI_t *API);
-void __attribute__ ((visibility ("internal"))) opl_config_done (struct PluginCloseAPI_t *API);
+OCP_INTERNAL int opl_config_init (struct PluginInitAPI_t *API);
+OCP_INTERNAL void opl_config_done (struct PluginCloseAPI_t *API);
 
 #endif

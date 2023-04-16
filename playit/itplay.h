@@ -109,13 +109,13 @@ struct it_module
 
 struct cpifaceSessionAPI_t;
 struct ocpfilehandle_t;
-extern int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t *cpifaceSession, struct it_module *, struct ocpfilehandle_t *); /* done */
-extern void __attribute__ ((visibility ("internal"))) it_free(struct it_module *); /* done */
-extern void __attribute__ ((visibility ("internal"))) it_optimizepatlens(struct it_module *); /* done */
-extern int __attribute__ ((visibility ("internal"))) it_precalctime(struct it_module *, int startpos, int (*calctimer)[2], int calcn, int ite); /* done */
+OCP_INTERNAL int  it_load (struct cpifaceSessionAPI_t *cpifaceSession, struct it_module *, struct ocpfilehandle_t *); /* done */
+OCP_INTERNAL void it_free (struct it_module *); /* done */
+OCP_INTERNAL void it_optimizepatlens (struct it_module *); /* done */
+OCP_INTERNAL int  it_precalctime (struct it_module *, int startpos, int (*calctimer)[2], int calcn, int ite); /* done */
 
-extern int __attribute__ ((visibility ("internal"))) decompress8 (struct cpifaceSessionAPI_t *cpifaceSession, struct ocpfilehandle_t *, void *dst, int len, char it215); /* done */
-extern int __attribute__ ((visibility ("internal"))) decompress16(struct cpifaceSessionAPI_t *cpifaceSession, struct ocpfilehandle_t *, void *dst, int len, char it215); /* done */
+OCP_INTERNAL int decompress8 (struct cpifaceSessionAPI_t *cpifaceSession, struct ocpfilehandle_t *, void *dst, int len, char it215); /* done */
+OCP_INTERNAL int decompress16(struct cpifaceSessionAPI_t *cpifaceSession, struct ocpfilehandle_t *, void *dst, int len, char it215); /* done */
 
 enum
 {
@@ -365,80 +365,38 @@ struct itplayer
 };
 
 struct cpifaceSessionAPI_t;
-extern int __attribute__ ((visibility ("internal"))) loadsamples (struct cpifaceSessionAPI_t *cpifaceSession, struct it_module *m);/* - done */
-extern int __attribute__ ((visibility ("internal"))) play(struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession); /* - done */
-extern void __attribute__ ((visibility ("internal"))) stop (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this); /* - done */
+OCP_INTERNAL int loadsamples (struct cpifaceSessionAPI_t *cpifaceSession, struct it_module *m);
+OCP_INTERNAL int itplay (struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void itstop (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this);
 
-extern int __attribute__ ((visibility ("internal"))) getsync (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *time); /* - done */
-extern int __attribute__ ((visibility ("internal"))) getpos(struct itplayer *this); /* - done */
-extern int __attribute__ ((visibility ("internal"))) getrealpos (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this); /* - done */
-/* extern int __attribute__ ((visibility ("internal"))) getticktime(struct itplayer *this); */ /* - done */
-/* extern int __attribute__ ((visibility ("internal"))) getrowtime(struct itplayer *this); */ /* - done */
-/* extern void __attribute__ ((visibility ("internal"))) setevpos(struct itplayer *this, int ch, int pos, int modtype, int mod); */ /* - done */
-/* extern int __attribute__ ((visibility ("internal"))) getevpos(struct itplayer *this, int ch, int *time); */ /* - done */
-/* extern int __attribute__ ((visibility ("internal"))) findevpos(struct itplayer *this, int pos, int *time); */ /* - done */
-extern void __attribute__ ((visibility ("internal"))) setpos(struct itplayer *this, int ord, int row); /* - done */
-extern void __attribute__ ((visibility ("internal"))) mutechan(struct itplayer *this, int c, int m); /* - done */
-extern void __attribute__ ((visibility ("internal"))) getglobinfo (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int *speed, int *bpm, int *gvol, int *gs); /* - done */
-extern int __attribute__ ((visibility ("internal"))) getchansample (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int16_t *buf, int len, uint32_t rate, int opt); /* - done */
-extern int __attribute__ ((visibility ("internal"))) getdotsdata (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int pch, int *smp, int *note, int *voll, int *volr, int *sus); /* - done */
-extern void __attribute__ ((visibility ("internal"))) itplayer_getrealvol(struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *l, int *r); /* - done */
-extern void __attribute__ ((visibility ("internal"))) setloop(struct itplayer *this, int s); /* - done */
-extern int __attribute__ ((visibility ("internal"))) getloop(struct itplayer *this); /* - done */
-extern int __attribute__ ((visibility ("internal"))) chanactive (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *lc); /* - done */
-extern int __attribute__ ((visibility ("internal"))) getchanins(struct itplayer *this, int ch); /* - done */
-extern int __attribute__ ((visibility ("internal"))) getchansamp(struct itplayer *this, int ch); /* - done */
-extern int __attribute__ ((visibility ("internal"))) lchanactive (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *, int lc); /* - done */
-extern void __attribute__ ((visibility ("internal"))) getchaninfo(struct itplayer *this, uint8_t ch, struct it_chaninfo *ci); /* - done */
-extern int __attribute__ ((visibility ("internal"))) getchanalloc(struct itplayer *this, uint8_t ch); /* - done */
+OCP_INTERNAL int getsync (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *time);
+OCP_INTERNAL int getpos (struct itplayer *this);
+OCP_INTERNAL int getrealpos (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this);
+/* OCP_INTERNAL int getticktime (struct itplayer *this); */
+/* OCP_INTERNAL int getrowtime (struct itplayer *this); */
+/* OCP_INTERNAL void setevpos (struct itplayer *this, int ch, int pos, int modtype, int mod); */
+/* OCP_INTERNAL int getevpos (struct itplayer *this, int ch, int *time); */
+/* OCP_INTERNAL int findevpos (struct itplayer *this, int pos, int *time); */
+OCP_INTERNAL void setpos (struct itplayer *this, int ord, int row);
+OCP_INTERNAL void mutechan (struct itplayer *this, int c, int m);
+OCP_INTERNAL void getglobinfo (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int *speed, int *bpm, int *gvol, int *gs);
+OCP_INTERNAL int getchansample (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int16_t *buf, int len, uint32_t rate, int opt);
+OCP_INTERNAL int getdotsdata (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int pch, int *smp, int *note, int *voll, int *volr, int *sus);
+OCP_INTERNAL void itplayer_getrealvol (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *l, int *r);
+OCP_INTERNAL void setloop (struct itplayer *this, int s);
+OCP_INTERNAL int getloop (struct itplayer *this);
+OCP_INTERNAL int chanactive (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *lc);
+OCP_INTERNAL int getchanins (struct itplayer *this, int ch);
+OCP_INTERNAL int getchansamp (struct itplayer *this, int ch);
+OCP_INTERNAL int lchanactive (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *, int lc);
+OCP_INTERNAL void getchaninfo (struct itplayer *this, uint8_t ch, struct it_chaninfo *ci);
+OCP_INTERNAL int getchanalloc (struct itplayer *this, uint8_t ch);
 
-/*
-#####static void playtickstatic(struct itplayer *); - done
-#####static itplayerclass *staticthis; #            - done
-static void playtick(struct itplayer *this); - done
+OCP_INTERNAL void itpInstClear (struct cpifaceSessionAPI_t *cpifaceSession);
 
-static void readque(struct itplayer *this); - done
-static void putque(struct itplayer *this, int type, int val1, int val2); - done
+OCP_INTERNAL void itpInstSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct it_instrument *ins, int nins, const struct it_sample *smp, int nsmp, const struct it_sampleinfo *smpi, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *, uint8_t *));
 
-static void playnote(struct itplayer *, it_logchan *c, const uint8_t *cmd); - done
-static void playvcmd(struct itplayer *, struct it_logchan *c, int vcmd); - done
-static void playcmd(struct itplayer *this, struct it_logchan *c, int cmd, int data);
-static void inittickchan(struct it_physchan *p); - done
-static void inittick(struct it_logchan *c); - done
-static void initrow(struct it_logchan *c); - done
-static void updatechan(struct logchan *c); - done
-static void processfx(struct itplayer *this, struct it_logchan *c); - done
-static void processchan(struct itplayer *this, struct it_physchan *p); - done
-static void allocatechan(struct itplayer *this, struct it_logchan *c); - done
-static void putchandata(struct itplayer *this, struct it_physchan *p); - done
-static void putglobdata(struct itplayer *this); - done
-static void getproctime(struct itplayer *this); - done
-static void checkchan(struct itplayer *this, struct it_physchan *p); - done
-static int range64(int v); - done
-static int range128(int v); - done
-static int rangepitch(struct itplayer *this, int p); - done
-static int rowslide(int data); - done
-static int rowvolslide(int data); - done
-static int tickslide(int data); - done
-static int rowudslide(int data); - done
-static void dovibrato(struct itplayer *this, struct it_logchan *c); - done
-static void dotremolo(struct itplayer *this, struct it_logchan *c); - done
-static void dopanbrello(struct itplayer *this, struct it_logchan *c); - done
-static void doportanote(struct itplayer *this, struct it_logchan *c); - done
-static void doretrigger(struct it_logchan *c); - done
-static void dotremor(struct it_logchan *c); - done
-static void dodelay(struct itplayer *this, struct it_logchan *c); - done
-static int  ishex(char c); - done
-static void parsemidicmd(struct it_logchan *c, char *cmd, int z); - done
-static int random(struct itplayer *this); - done
-static int processenvelope(const struct it_envelope *env, int *pos, int noteoff, int active); - done
-*/
+OCP_INTERNAL void itTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct it_module *mod);
 
-extern void __attribute__ ((visibility ("internal"))) itpInstClear (struct cpifaceSessionAPI_t *cpifaceSession);
-
-extern void __attribute__ ((visibility ("internal"))) itpInstSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct it_instrument *ins, int nins, const struct it_sample *smp, int nsmp, const struct it_sampleinfo *smpi,/* int unused,*/ int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *, uint8_t *)); /* private, done */
-
-extern void __attribute__ ((visibility ("internal"))) itTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct it_module *mod); /* private, done */
-
-extern __attribute__ ((visibility ("internal"))) struct itplayer itplayer;
+extern OCP_INTERNAL struct itplayer itplayer;
 #endif

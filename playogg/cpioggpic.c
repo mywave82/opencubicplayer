@@ -537,12 +537,12 @@ static int OggPicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpitextmoderegstruct cpiOggPic = {"oggpic", OggPicGetWin, OggPicSetWin, OggPicDraw, OggPicIProcessKey, OggPicAProcessKey, OggPicEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) OggPicInit (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void OggPicInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiOggPic);
 }
 
-void __attribute__ ((visibility ("internal"))) OggPicDone (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void OggPicDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	OggPicVisible = 0;
 	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiOggPic);

@@ -1048,7 +1048,7 @@ static int toc_parse_line (struct toc_parser_t *toc_parser, const char *input, c
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) toc_parser_free (struct toc_parser_t *toc_parser)
+OCP_INTERNAL void toc_parser_free (struct toc_parser_t *toc_parser)
 {
 	int i, j;
 	for (i = 0; i < 100; i++)
@@ -1068,7 +1068,7 @@ void __attribute__ ((visibility ("internal"))) toc_parser_free (struct toc_parse
 	free (toc_parser);
 }
 
-struct toc_parser_t __attribute__ ((visibility ("internal"))) *toc_parser_from_data (const char *input)
+OCP_INTERNAL struct toc_parser_t *toc_parser_from_data (const char *input)
 {
 	struct toc_parser_t *retval;
 	const char *eof = input + strlen (input);
@@ -1108,7 +1108,7 @@ struct toc_parser_t __attribute__ ((visibility ("internal"))) *toc_parser_from_d
 	return retval;
 }
 
-struct cdfs_disc_t __attribute__ ((visibility ("internal"))) *toc_parser_to_cdfs_disc (struct ocpfile_t *parentfile, struct toc_parser_t *toc_parser)
+OCP_INTERNAL struct cdfs_disc_t *toc_parser_to_cdfs_disc (struct ocpfile_t *parentfile, struct toc_parser_t *toc_parser)
 {
 	struct cdfs_disc_t *retval = cdfs_disc_new (parentfile);
 	int i;

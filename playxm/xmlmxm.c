@@ -74,7 +74,7 @@ static void FreeResources(struct LoadMXMResources *r, struct xmodule *m)
 	}
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadMXM (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
+OCP_INTERNAL int xmpLoadMXM (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	uint8_t deltasamps/*, modpanning*/;
 

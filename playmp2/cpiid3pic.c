@@ -555,12 +555,12 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpitextmoderegstruct cpiID3Pic = {"id3pic", ID3PicGetWin, ID3PicSetWin, ID3PicDraw, ID3PicIProcessKey, ID3PicAProcessKey, ID3PicEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) ID3PicInit (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void ID3PicInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiID3Pic);
 }
 
-void __attribute__ ((visibility ("internal"))) ID3PicDone (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void ID3PicDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiID3Pic);
 }

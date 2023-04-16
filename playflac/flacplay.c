@@ -79,10 +79,10 @@ static volatile int clipbusy=0;
 static int flacPendingSeek = 0;
 static uint64_t flacPendingSeekPos;
 
-struct flac_comment_t __attribute__ ((visibility ("internal"))) **flac_comments;
-int                   __attribute__ ((visibility ("internal")))   flac_comments_count;
-struct flac_picture_t __attribute__ ((visibility ("internal")))  *flac_pictures;
-int                   __attribute__ ((visibility ("internal")))   flac_pictures_count;
+OCP_INTERNAL struct flac_comment_t **flac_comments;
+OCP_INTERNAL int                     flac_comments_count;
+OCP_INTERNAL struct flac_picture_t  *flac_pictures;
+OCP_INTERNAL int                     flac_pictures_count;
 
 static void add_comment2(const char *title, const char *value, const uint32_t valuelen)
 {
@@ -634,17 +634,17 @@ static void flacIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) flacMetaDataLock(void)
+OCP_INTERNAL void flacMetaDataLock (void)
 {
 	clipbusy++;
 }
 
-void __attribute__ ((visibility ("internal"))) flacMetaDataUnlock(void)
+OCP_INTERNAL void flacMetaDataUnlock (void)
 {
 	clipbusy--;
 }
 
-void __attribute__ ((visibility ("internal"))) flacIdle (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void flacIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -828,15 +828,15 @@ void __attribute__ ((visibility ("internal"))) flacIdle (struct cpifaceSessionAP
 	clipbusy--;
 }
 
-void __attribute__ ((visibility ("internal"))) flacSetLoop(uint8_t s)
+OCP_INTERNAL void flacSetLoop (uint8_t s)
 {
 	donotloop=!s;
 }
-int __attribute__ ((visibility ("internal"))) flacIsLooped(void)
+OCP_INTERNAL int flacIsLooped (void)
 {
 	return eof_buffer&&eof_flacfile;
 }
-void __attribute__ ((visibility ("internal"))) flacPause(int p)
+OCP_INTERNAL void flacPause (int p)
 {
 	flac_inpause=p;
 }
@@ -889,7 +889,7 @@ static int flacGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) flacGetInfo(struct flacinfo *info)
+OCP_INTERNAL void flacGetInfo (struct flacinfo *info)
 {
 	info->pos=flaclastpos;
 	info->len=samples;
@@ -901,11 +901,11 @@ void __attribute__ ((visibility ("internal"))) flacGetInfo(struct flacinfo *info
 	snprintf (info->opt50, sizeof (info->opt50), "%s - %s", FLAC__VERSION_STRING, FLAC__VENDOR_STRING);
 	info->bitrate=bitrate;
 }
-uint64_t __attribute__ ((visibility ("internal"))) flacGetPos (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL uint64_t flacGetPos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	return (flaclastpos + samples - cpifaceSession->ringbufferAPI->get_tail_available_samples (flacbufpos)) % samples;
 }
-void __attribute__ ((visibility ("internal"))) flacSetPos(uint64_t pos)
+OCP_INTERNAL void flacSetPos (uint64_t pos)
 {
 	if (pos>=samples)
 	{
@@ -948,7 +948,7 @@ static void flacFreeComments (void)
 	flac_pictures_count = 0;
 }
 
-int __attribute__ ((visibility ("internal"))) flacOpenPlayer(struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL int flacOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
 	int temp;
@@ -1112,7 +1112,7 @@ error_out_flacfile:
 	return retval;
 }
 
-void __attribute__ ((visibility ("internal"))) flacClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void flacClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (cpifaceSession->plrDevAPI)
 	{

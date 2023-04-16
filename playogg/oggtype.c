@@ -144,7 +144,7 @@ static const char *OGG_description[] =
 
 static struct mdbreadinforegstruct oggReadInfoReg = {"OGG", oggReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__ ((visibility ("internal"))) ogg_type_init (struct PluginInitAPI_t *API)
+OCP_INTERNAL int ogg_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
@@ -158,7 +158,7 @@ int __attribute__ ((visibility ("internal"))) ogg_type_init (struct PluginInitAP
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) ogg_type_done (struct PluginCloseAPI_t *API)
+OCP_INTERNAL void ogg_type_done (struct PluginCloseAPI_t *API)
 {
 	struct moduletype mt;
 

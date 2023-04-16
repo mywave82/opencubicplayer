@@ -247,12 +247,12 @@ static int MVolEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpitextmoderegstruct cpiTModeMVol = {"mvol", MVolGetWin, MVolSetWin, MVolDraw, MVolIProcessKey, MVolAProcessKey, MVolEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) cpiMVolInit (void)
+OCP_INTERNAL void cpiMVolInit (void)
 {
 	cpiTextRegisterDefMode(&cpiTModeMVol);
 }
 
-void __attribute__ ((visibility ("internal"))) cpiMVolDone (void)
+OCP_INTERNAL void cpiMVolDone (void)
 {
 	cpiTextUnregisterDefMode(&cpiTModeMVol);
 }

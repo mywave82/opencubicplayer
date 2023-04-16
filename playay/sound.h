@@ -25,13 +25,13 @@ struct ay_driver_frame_state_t
 	uint8_t envelope_shape; /* ___ssss */
 };
 
-extern int __attribute__ ((visibility ("internal"))) sound_init(void);
-extern void __attribute__ ((visibility ("internal"))) sound_end(void);
-extern int __attribute__ ((visibility ("internal"))) sound_frame(struct ay_driver_frame_state_t *states);
-extern void __attribute__ ((visibility ("internal"))) sound_frame_blank(void);
-extern void __attribute__ ((visibility ("internal"))) sound_start_fade(int fadetime_in_sec);
-extern void __attribute__ ((visibility ("internal"))) sound_ay_write(int reg,int val,unsigned long tstates);
-extern void __attribute__ ((visibility ("internal"))) sound_ay_reset(void);
-extern void __attribute__ ((visibility ("internal"))) sound_ay_reset_cpc(void);
-extern void __attribute__ ((visibility ("internal"))) sound_beeper(int on, unsigned long tstates);
-extern unsigned int sound_freq;
+OCP_INTERNAL int sound_init (void);
+OCP_INTERNAL void sound_end (void);
+OCP_INTERNAL int sound_frame (struct ay_driver_frame_state_t *states);
+OCP_INTERNAL void sound_frame_blank (void);
+OCP_INTERNAL void sound_start_fade (int fadetime_in_sec);
+OCP_INTERNAL void sound_ay_write (int reg, int val, unsigned long tstates);
+OCP_INTERNAL void sound_ay_reset (void);
+OCP_INTERNAL void sound_ay_reset_cpc (void);
+OCP_INTERNAL void sound_beeper (int on, unsigned long tstates);
+extern OCP_INTERNAL unsigned int sound_freq;

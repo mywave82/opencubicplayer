@@ -30,21 +30,21 @@ struct mchaninfo
 };
 
 struct cpifaceSessionAPI_t;
-extern int __attribute__ ((visibility ("internal"))) timidityOpenPlayer(const char *path, uint8_t *buffer, size_t bufferlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) timidityClosePlayer(struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) timidityIdle(struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) timiditySetLoop(uint8_t s);
-extern int __attribute__ ((visibility ("internal"))) timidityIsLooped(void);
-extern void __attribute__ ((visibility ("internal"))) timidityPause(uint8_t p);
-extern void __attribute__ ((visibility ("internal"))) timiditySetRelPos(int pos);
-extern void __attribute__ ((visibility ("internal"))) timidityRestart (void);
-extern void __attribute__ ((visibility ("internal"))) timidityGetGlobInfo(struct mglobinfo *);
+OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t bufferlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void timidityClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void timidityIdle (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void timiditySetLoop (uint8_t s);
+OCP_INTERNAL int timidityIsLooped (void);
+OCP_INTERNAL void timidityPause (uint8_t p);
+OCP_INTERNAL void timiditySetRelPos (int pos);
+OCP_INTERNAL void timidityRestart (void);
+OCP_INTERNAL void timidityGetGlobInfo (struct mglobinfo *);
 
-extern void __attribute__ ((visibility ("internal"))) timidityGetChanInfo(uint8_t ch, struct mchaninfo *ci);
+OCP_INTERNAL void timidityGetChanInfo (uint8_t ch, struct mchaninfo *ci);
 
-extern void __attribute__ ((visibility ("internal"))) timidityChanSetup(struct cpifaceSessionAPI_t *cpifaceSession/*const struct midifile *mid*/);
-extern int __attribute__ ((visibility ("internal"))) timidityGetDots (struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *d, int max);
-extern void __attribute__ ((visibility ("internal"))) timidityMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m);
+OCP_INTERNAL void timidityChanSetup (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL int timidityGetDots (struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *d, int max);
+OCP_INTERNAL void timidityMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m);
 
 
 #endif

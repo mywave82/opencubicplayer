@@ -897,7 +897,7 @@ void cpiTrkSetup2 (struct cpifaceSessionAPI_t *cpifaceSession, const struct cpit
 	cpiTextRegisterMode (cpifaceSession, &cpiTModeTrack);
 }
 
-void __attribute__ ((visibility ("internal"))) cpiTrackInit (void)
+OCP_INTERNAL void cpiTrackInit (void)
 {
 	plTrackActive=cfGetProfileBool2(cfScreenSec, "screen", "pattern", 1, 1);
 }

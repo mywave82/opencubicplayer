@@ -51,7 +51,7 @@
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
 
-__attribute__ ((visibility ("internal"))) struct itplayer itplayer;
+OCP_INTERNAL struct itplayer itplayer;
 static struct it_module mod;
 
 static struct it_instrument *insts;
@@ -235,7 +235,7 @@ static void itpDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static void itpCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	stop (cpifaceSession, &itplayer);
+	itstop (cpifaceSession, &itplayer);
 	it_free(&mod);
 }
 
@@ -334,7 +334,7 @@ static int itpOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	it_optimizepatlens(&mod);
 
 	nch = cpifaceSession->configAPI->GetProfileInt2 (cpifaceSession->configAPI->SoundSec, "sound", "itchan", 64, 10);
-	if ((retval = play(&itplayer, &mod, nch, file, cpifaceSession)))
+	if ((retval = itplay(&itplayer, &mod, nch, file, cpifaceSession)))
 	{
 		it_free(&mod);
 		return retval;
@@ -377,5 +377,5 @@ static void itPluginClose (struct PluginCloseAPI_t *API)
 	it_type_done (API);
 }
 
-const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) itPlayer = {"[ImpulseTracker plugin]", itpOpenFile, itpCloseFile};
+OCP_INTERNAL const struct cpifaceplayerstruct itPlayer = {"[ImpulseTracker plugin]", itpOpenFile, itpCloseFile};
 DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playit", .desc = "OpenCP IT Player (c) 1997-'23 Tammo Hinrichs, Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = itPluginInit, .PluginClose = itPluginClose};

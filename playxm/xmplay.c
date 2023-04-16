@@ -1377,30 +1377,30 @@ static void xmpPlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 	putque(quePos, -1, curtick|(curord<<16)|(currow<<8));
 }
 
-int __attribute__ ((visibility ("internal"))) xmpGetRealPos (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL int xmpGetRealPos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	ReadQue (cpifaceSession);
 	return realpos;
 }
 
-int __attribute__ ((visibility ("internal"))) xmpChanActive (struct cpifaceSessionAPI_t *cpifaceSession, int ch)
+OCP_INTERNAL int xmpChanActive (struct cpifaceSessionAPI_t *cpifaceSession, int ch)
 {
 	return cpifaceSession->mcpGet (cpifaceSession, ch, mcpCStatus)&&channels[ch].cursamp&&channels[ch].chVol&&channels[ch].chFadeVol;
 }
 
-int __attribute__ ((visibility ("internal"))) xmpGetChanIns(int ch)
+OCP_INTERNAL int xmpGetChanIns (int ch)
 {
 	return channels[ch].chCurIns;
 }
 
-int __attribute__ ((visibility ("internal"))) xmpGetChanSamp(int ch)
+OCP_INTERNAL int xmpGetChanSamp (int ch)
 {
 	if (!channels[ch].cursamp)
 		return 0xFFFF;
 	return channels[ch].cursamp-samples;
 }
 
-int __attribute__ ((visibility ("internal"))) xmpGetDotsData (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *smp, int *frq, int *voll, int *volr, int *sus)
+OCP_INTERNAL int xmpGetDotsData (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *smp, int *frq, int *voll, int *volr, int *sus)
 {
 	struct channel *c;
 
@@ -1419,17 +1419,17 @@ int __attribute__ ((visibility ("internal"))) xmpGetDotsData (struct cpifaceSess
 	return 1;
 }
 
-void __attribute__ ((visibility ("internal"))) xmpGetRealVolume (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *voll, int *volr)
+OCP_INTERNAL void xmpGetRealVolume (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *voll, int *volr)
 {
 	cpifaceSession->mcpGetRealVolume (ch, voll, volr);
 }
 
-uint16_t __attribute__ ((visibility ("internal"))) xmpGetPos(void)
+OCP_INTERNAL uint16_t xmpGetPos (void)
 {
 	return (curord<<8)|currow;
 }
 
-void __attribute__ ((visibility ("internal"))) xmpSetPos (struct cpifaceSessionAPI_t *cpifaceSession, int ord, int row)
+OCP_INTERNAL void xmpSetPos (struct cpifaceSessionAPI_t *cpifaceSession, int ord, int row)
 {
 	int i;
 
@@ -1468,28 +1468,28 @@ void __attribute__ ((visibility ("internal"))) xmpSetPos (struct cpifaceSessionA
 	realpos=(curord<<16)|(currow<<8);
 }
 
-void __attribute__ ((visibility ("internal"))) xmpMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
+OCP_INTERNAL void xmpMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
 {
 	cpifaceSession->MuteChannel[i] = m;
 	mutech[i]=m;
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoop(void)
+OCP_INTERNAL int xmpLoop (void)
 {
 	return looped;
 }
 
-void __attribute__ ((visibility ("internal"))) xmpSetLoop(int x)
+OCP_INTERNAL void xmpSetLoop (int x)
 {
 	looping=x;
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m)
+OCP_INTERNAL int xmpLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m)
 {
 	return cpifaceSession->mcpDevAPI->LoadSamples (cpifaceSession, m->sampleinfos, m->nsampi);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpPlayModule (struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL int xmpPlayModule (struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i;
 
@@ -1559,20 +1559,20 @@ int __attribute__ ((visibility ("internal"))) xmpPlayModule (struct xmodule *m, 
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) xmpStopModule (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void xmpStopModule (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->mcpDevAPI->ClosePlayer (cpifaceSession);
 	free(que);
 }
 
-void __attribute__ ((visibility ("internal"))) xmpGetGlobInfo(int *tmp, int *bpm, int *gvol)
+OCP_INTERNAL void xmpGetGlobInfo (int *tmp, int *bpm, int *gvol)
 {
 	*tmp=realspeed;
 	*bpm=realtempo;
 	*gvol=realgvol;
 }
 
-void __attribute__ ((visibility ("internal"))) xmpGetChanInfo(unsigned char ch, struct xmpchaninfo *ci)
+OCP_INTERNAL void xmpGetChanInfo (unsigned char ch, struct xmpchaninfo *ci)
 {
 	const struct channel *t=&channels[ch];
 	ci->note=t->curnote+11;
@@ -1590,7 +1590,7 @@ void __attribute__ ((visibility ("internal"))) xmpGetChanInfo(unsigned char ch, 
 	ci->fx=t->fx;
 }
 
-void __attribute__ ((visibility ("internal"))) xmpGetGlobInfo2(struct xmpglobinfo *gi)
+OCP_INTERNAL void xmpGetGlobInfo2 (struct xmpglobinfo *gi)
 {
 	gi->globvol=globalvol;
 	gi->globvolslide=globalfx;

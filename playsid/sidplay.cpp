@@ -156,7 +156,7 @@ static void SidStatBuffers_callback_from_sidbuf (void *arg, int samples_ago)
 	SidStatBuffers_available++;
 }
 
-extern void __attribute__ ((visibility ("internal"))) sidIdler (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void sidIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	while (SidStatBuffers_available) /* we only prepare more data if SidStatBuffers_available is non-zero. This gives about 0.5 seconds worth of sample-data */
 	{
@@ -220,7 +220,7 @@ extern void __attribute__ ((visibility ("internal"))) sidIdler (struct cpifaceSe
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) sidIdle(struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void sidIdle(struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -444,87 +444,87 @@ static void updateconf()
 #endif
 
 
-int __attribute__ ((visibility ("internal"))) sidNumberOfChips(void)
+OCP_INTERNAL int sidNumberOfChips (void)
 {
 	return SidCount;
 }
 
-int __attribute__ ((visibility ("internal"))) sidNumberOfComments(void)
+OCP_INTERNAL int sidNumberOfComments (void)
 {
 	return mySidTuneInfo->numberOfCommentStrings();
 }
 
-int __attribute__ ((visibility ("internal"))) sidNumberOfInfos(void)
+OCP_INTERNAL int sidNumberOfInfos(void)
 {
 	return mySidTuneInfo->numberOfInfoStrings();
 }
 
-const char __attribute__ ((visibility ("internal"))) *sidInfoString(int i)
+OCP_INTERNAL const char *sidInfoString (int i)
 {
 	return mySidTuneInfo->infoString(i);
 }
 
-const char __attribute__ ((visibility ("internal"))) *sidCommentString(int i)
+OCP_INTERNAL const char *sidCommentString (int i)
 {
 	return mySidTuneInfo->commentString(i);
 }
 
-const char __attribute__ ((visibility ("internal"))) *sidFormatString(void)
+OCP_INTERNAL const char *sidFormatString (void)
 {
 	return mySidTuneInfo->formatString();
 }
 
-const char __attribute__ ((visibility ("internal"))) *sidROMDescKernal(void)
+OCP_INTERNAL const char *sidROMDescKernal (void)
 {
 	return mySidPlayer->kernalDesc();
 }
 
-const char __attribute__ ((visibility ("internal"))) *sidROMDescBasic(void)
+OCP_INTERNAL const char *sidROMDescBasic (void)
 {
 	return mySidPlayer->basicDesc();
 }
 
-const char __attribute__ ((visibility ("internal"))) *sidROMDescChargen(void)
+OCP_INTERNAL const char *sidROMDescChargen (void)
 {
 	return mySidPlayer->chargenDesc();
 }
 
-const float __attribute__ ((visibility ("internal"))) sidGetCPUSpeed(void)
+OCP_INTERNAL const float sidGetCPUSpeed (void)
 {
 	return mySidPlayer->getMainCpuSpeed();
 }
 
-const char __attribute__ ((visibility ("internal"))) *sidGetVICIIModelString(void)
+OCP_INTERNAL const char *sidGetVICIIModelString (void)
 {
 	return libsidplayfp::VICIImodel_ToString(mySidPlayer->getVICIImodel());
 }
 
-const char __attribute__ ((visibility ("internal"))) *sidGetCIAModelString(void)
+OCP_INTERNAL const char *sidGetCIAModelString (void)
 {
 	return mySidPlayer->getCIAmodel();
 }
 
-const char __attribute__ ((visibility ("internal"))) *sidChipModel(int i)
+OCP_INTERNAL const char *sidChipModel (int i)
 {
 	return libsidplayfp::sidModel_ToString(mySidPlayer->getSIDmodel(i));
 }
 
-uint16_t __attribute__ ((visibility ("internal"))) sidChipAddr(int i)
+OCP_INTERNAL uint16_t sidChipAddr (int i)
 {
 	return mySidPlayer->getSIDaddr(i);
 }
 
-const char __attribute__ ((visibility ("internal"))) *sidTuneStatusString(void)
+OCP_INTERNAL const char *sidTuneStatusString (void)
 {
 	return mySidPlayer->getTuneStatusString();
 }
 
-const char __attribute__ ((visibility ("internal"))) *sidTuneInfoClockSpeedString(void)
+OCP_INTERNAL const char *sidTuneInfoClockSpeedString (void)
 {
 	return libsidplayfp::tuneInfo_clockSpeed_toString(mySidPlayer->getTuneInfoClockSpeed());
 }
 
-void __attribute__ ((visibility ("internal"))) sidPause(unsigned char p)
+OCP_INTERNAL void sidPause (unsigned char p)
 {
 	sid_inpause=p;
 }
@@ -581,7 +581,7 @@ static int sidGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) sidStartSong(uint8_t sng)
+OCP_INTERNAL void sidStartSong (uint8_t sng)
 {
 	if (!mySidPlayer)
 	{
@@ -596,7 +596,7 @@ void __attribute__ ((visibility ("internal"))) sidStartSong(uint8_t sng)
 	clipbusy--;
 }
 
-extern uint8_t __attribute__ ((visibility ("internal"))) sidGetSong()
+OCP_INTERNAL uint8_t sidGetSong ()
 {
 	if (!mySidPlayer)
 	{
@@ -605,7 +605,7 @@ extern uint8_t __attribute__ ((visibility ("internal"))) sidGetSong()
 	return mySidTuneInfo->currentSong();
 }
 
-uint8_t __attribute__ ((visibility ("internal"))) sidGetSongs(void)
+OCP_INTERNAL uint8_t sidGetSongs (void)
 {
 	if (!mySidPlayer)
 	{
@@ -614,7 +614,7 @@ uint8_t __attribute__ ((visibility ("internal"))) sidGetSongs(void)
 	return mySidTuneInfo->songs();
 }
 
-char __attribute__ ((visibility ("internal"))) sidGetVideo(void)
+OCP_INTERNAL char sidGetVideo (void)
 {
 	if (!mySidPlayer)
 	{
@@ -634,20 +634,19 @@ char __attribute__ ((visibility ("internal"))) sidGetVideo(void)
 }
 
 #if 0
-char __attribute__ ((visibility ("internal"))) sidGetFilter(void)
+OCP_INTERNAL char sidGetFilter (void)
 {
 	return myEmuConfig->emulateFilter;
 }
 
-
-void __attribute__ ((visibility ("internal"))) sidToggleFilter(void)
+OCP_INTERNAL void sidToggleFilter (void)
 {
 	myEmuConfig->emulateFilter^=1;
 	updateconf();
 }
 #endif
 
-void __attribute__ ((visibility ("internal"))) sidMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
+OCP_INTERNAL void sidMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
 {
 	cpifaceSession->MuteChannel[i] = m;
 	sidMuted[i] = m;
@@ -655,7 +654,7 @@ void __attribute__ ((visibility ("internal"))) sidMute (struct cpifaceSessionAPI
 }
 
 /*extern ubyte filterType;*/
-void __attribute__ ((visibility ("internal"))) sidGetChanInfo(int i, sidChanInfo &ci)
+OCP_INTERNAL void sidGetChanInfo (int i, sidChanInfo &ci)
 {
 	int sid = i / 3;
 	int ch = i % 3;
@@ -746,7 +745,7 @@ void __attribute__ ((visibility ("internal"))) sidGetChanInfo(int i, sidChanInfo
 	ci.rightvol=rightvol>>8;
 }
 
-int __attribute__ ((visibility ("internal"))) sidGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int i, int16_t *s, unsigned int len, uint32_t rate, int opt)
+OCP_INTERNAL int sidGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int i, int16_t *s, unsigned int len, uint32_t rate, int opt)
 {
 	int sid = i / 3;
 	int ch = (i % 3) + 1;
@@ -798,7 +797,7 @@ int __attribute__ ((visibility ("internal"))) sidGetLChanSample (struct cpifaceS
 	return !!sidMuted[ch];
 }
 
-int __attribute__ ((visibility ("internal"))) sidGetPChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int i, int16_t *s, unsigned int len, uint32_t rate, int opt)
+OCP_INTERNAL int sidGetPChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int i, int16_t *s, unsigned int len, uint32_t rate, int opt)
 {
 	int sid = i / 4;
 	int ch = i % 4;
@@ -850,7 +849,7 @@ int __attribute__ ((visibility ("internal"))) sidGetPChanSample (struct cpifaceS
 	return !!sidMuted[ch];
 }
 
-int __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL int sidOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int retval;
 	enum plrRequestFormat format=PLR_STEREO_16BIT_SIGNED;
@@ -982,7 +981,7 @@ error_out_buf:
 	return retval;
 }
 
-void __attribute__ ((visibility ("internal"))) sidClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void sidClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (cpifaceSession->plrDevAPI)
 	{

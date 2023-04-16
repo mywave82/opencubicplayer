@@ -55,7 +55,7 @@
 #include "xmplay.h"
 #include "xmtype.h"
 
-__attribute__ ((visibility ("internal"))) struct xmodule mod;
+OCP_INTERNAL struct xmodule mod;
 
 static time_t starttime;      /* when did the song start, if paused, this is slided if unpaused */
 static time_t pausetime;      /* when did the pause start (fully paused) */
@@ -372,5 +372,5 @@ static void xmPluginClose (struct PluginCloseAPI_t *API)
 	xm_type_done (API);
 }
 
-const struct cpifaceplayerstruct __attribute__((visibility ("internal"))) xmpPlayer = {"[FastTracker II plugin]", xmpOpenFile, xmpCloseFile};
+OCP_INTERNAL const struct cpifaceplayerstruct xmpPlayer = {"[FastTracker II plugin]", xmpOpenFile, xmpCloseFile};
 DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playxm", .desc = "OpenCP XM/MOD Player (c) 1995-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = xmPluginInit, .PluginClose = xmPluginClose};

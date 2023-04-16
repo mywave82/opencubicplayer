@@ -42,7 +42,7 @@ int fsFPSCurrent=0;
 static struct timeval targetFPS = {0, 0};
 static struct timeval targetAudioPoll = {0, 0};
 
-void __attribute__ ((visibility ("internal"))) framelock_init (void)
+OCP_INTERNAL void framelock_init (void)
 {
 	fsFPS=cfGetProfileInt("screen", "fps", 20, 0);
 	if (fsFPS<=0)

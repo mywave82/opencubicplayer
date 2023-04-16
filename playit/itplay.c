@@ -1464,7 +1464,7 @@ static void putchandata (struct cpifaceSessionAPI_t *cpifaceSession, struct itpl
 	cpifaceSession->mcpSet (cpifaceSession, p->no, mcpCFilterRez, p->reso);
 }
 
-void __attribute__ ((visibility ("internal"))) mutechan(struct itplayer *this, int c, int m)
+OCP_INTERNAL void mutechan (struct itplayer *this, int c, int m)
 {
 	if ((c>=0)||(c<this->nchan))
 		this->channels[c].mute=m;
@@ -1811,12 +1811,12 @@ static void playtick (struct cpifaceSessionAPI_t *cpifaceSession, struct itplaye
 	putque(this, quePos, -1, (this->curtick&0xFF)|(this->currow<<8)|(this->curord<<16));
 }
 
-int __attribute__ ((visibility ("internal"))) loadsamples (struct cpifaceSessionAPI_t *cpifaceSession, struct it_module *m)
+OCP_INTERNAL int loadsamples (struct cpifaceSessionAPI_t *cpifaceSession, struct it_module *m)
 {
 	return cpifaceSession->mcpDevAPI->LoadSamples (cpifaceSession, m->sampleinfos, m->nsampi);
 }
 
-int __attribute__ ((visibility ("internal"))) play (struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL int itplay (struct itplayer *this, const struct it_module *m, int ch, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int i;
 
@@ -1927,7 +1927,7 @@ int __attribute__ ((visibility ("internal"))) play (struct itplayer *this, const
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) stop (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)
+OCP_INTERNAL void itstop (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)
 {
 	cpifaceSession->mcpDevAPI->ClosePlayer (cpifaceSession);
 	if (this->channels)
@@ -1947,20 +1947,20 @@ void __attribute__ ((visibility ("internal"))) stop (struct cpifaceSessionAPI_t 
 	}
 }
 
-int __attribute__ ((visibility ("internal"))) getpos(struct itplayer *this)
+OCP_INTERNAL int getpos (struct itplayer *this)
 {
 	if (this->manualgoto)
 		return (this->gotorow<<8)|(this->gotoord<<16);
 	return (this->curtick&0xFF)|(this->currow<<8)|(this->curord<<16);
 }
 
-int __attribute__ ((visibility ("internal"))) getrealpos (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)
+OCP_INTERNAL int getrealpos (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this)
 {
 	readque (cpifaceSession, this);
 	return this->realpos;
 }
 
-int __attribute__ ((visibility ("internal"))) getchansample (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int16_t *buf, int len, uint32_t rate, int opt)
+OCP_INTERNAL int getchansample (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int16_t *buf, int len, uint32_t rate, int opt)
 {
 	int i,n;
 	unsigned int chn[64];
@@ -1972,7 +1972,7 @@ int __attribute__ ((visibility ("internal"))) getchansample (struct cpifaceSessi
 	return 1;
 }
 
-void __attribute__ ((visibility ("internal"))) itplayer_getrealvol (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *l, int *r)
+OCP_INTERNAL void itplayer_getrealvol (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *l, int *r)
 {
 	int i, voll, volr;
 
@@ -1987,7 +1987,7 @@ void __attribute__ ((visibility ("internal"))) itplayer_getrealvol (struct cpifa
 		}
 }
 
-void __attribute__ ((visibility ("internal"))) setpos(struct itplayer *this, int ord, int row)
+OCP_INTERNAL void setpos (struct itplayer *this, int ord, int row)
 {
 	int i;
 	if (this->curord!=ord)
@@ -2008,7 +2008,7 @@ void __attribute__ ((visibility ("internal"))) setpos(struct itplayer *this, int
 	this->realpos=(this->gotorow<<8)|(this->gotoord<<16);
 }
 
-int __attribute__ ((visibility ("internal"))) getdotsdata (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int pch, int *smp, int *note, int *voll, int *volr, int *sus)
+OCP_INTERNAL int getdotsdata (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int pch, int *smp, int *note, int *voll, int *volr, int *sus)
 {
 	struct it_physchan *p;
 	for (; pch<this->npchan; pch++)
@@ -2032,7 +2032,7 @@ int __attribute__ ((visibility ("internal"))) getdotsdata (struct cpifaceSession
 	return pch+1;
 }
 
-void __attribute__ ((visibility ("internal"))) getglobinfo (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int *tmp, int *bp, int *gv, int *gs)
+OCP_INTERNAL void getglobinfo (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int *tmp, int *bp, int *gv, int *gs)
 {
 	readque (cpifaceSession, this);
 	*tmp=this->realspeed;
@@ -2041,7 +2041,7 @@ void __attribute__ ((visibility ("internal"))) getglobinfo (struct cpifaceSessio
 	*gs=this->gvolslide?(this->gvolslide>0?ifxGVSUp:ifxGVSDown):0;
 }
 
-int __attribute__ ((visibility ("internal"))) getsync (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *time)
+OCP_INTERNAL int getsync (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *time)
 {
 	readque (cpifaceSession, this);
 	if ((ch<0)||(ch>=this->nchan))
@@ -2054,19 +2054,19 @@ int __attribute__ ((visibility ("internal"))) getsync (struct cpifaceSessionAPI_
 	}
 }
 /*
-int __attribute__ ((visibility ("internal"))) getticktime(struct itplayer *this)
+OCP_INTERNAL int getticktime (struct itplayer *this)
 {
 	readque(this);
 	return 65536*5/(2*this->realtempo);
 }
 
-int __attribute__ ((visibility ("internal"))) getrowtime(struct itplayer *this)
+OCP_INTERNAL int getrowtime (struct itplayer *this)
 {
 	readque(this);
 	return 65536*5*this->realspeed/(2*this->realtempo);
 }*/
 /*
-void __attribute__ ((visibility ("internal"))) setevpos(struct itplayer *this, int ch, int pos, int modtype, int mod)
+OCP_INTERNAL void setevpos (struct itplayer *this, int ch, int pos, int modtype, int mod)
 {
 	struct it_logchan *c;
 	if ((ch<0)||(ch>=this->nchan))
@@ -2081,7 +2081,7 @@ void __attribute__ ((visibility ("internal"))) setevpos(struct itplayer *this, i
 }
 */
 /*
-int __attribute__ ((visibility ("internal"))) getevpos(struct itplayer *this, int ch, int *time)
+OCP_INTERNAL int getevpos (struct itplayer *this, int ch, int *time)
 {
 	readque(this);
 	if ((ch<0)||(ch>=this->nchan))
@@ -2094,7 +2094,7 @@ int __attribute__ ((visibility ("internal"))) getevpos(struct itplayer *this, in
 }
 */
 /*
-int __attribute__ ((visibility ("internal"))) findevpos(struct itplayer *this, int pos, int *time)
+OCP_INTERNAL int findevpos (struct itplayer *this, int pos, int *time)
 {
 	int i;
 	readque(this);
@@ -2106,17 +2106,17 @@ int __attribute__ ((visibility ("internal"))) findevpos(struct itplayer *this, i
 }
 */
 
-void __attribute__ ((visibility ("internal"))) setloop(struct itplayer *this, int s)
+OCP_INTERNAL void setloop (struct itplayer *this, int s)
 {
 	this->noloop=!s;
 }
 
-int __attribute__ ((visibility ("internal"))) getloop(struct itplayer *this)
+OCP_INTERNAL int getloop (struct itplayer *this)
 {
 	return this->looped;
 }
 
-int __attribute__ ((visibility ("internal"))) chanactive (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *lc)
+OCP_INTERNAL int chanactive (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int ch, int *lc)
 {
 	struct it_physchan *p=&this->pchannels[ch];
 	*lc=p->lch;
@@ -2125,7 +2125,7 @@ int __attribute__ ((visibility ("internal"))) chanactive (struct cpifaceSessionA
 	return cpifaceSession->mcpGet(cpifaceSession, ch, mcpCStatus);
 }
 
-int __attribute__ ((visibility ("internal"))) lchanactive (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int lc)
+OCP_INTERNAL int lchanactive (struct cpifaceSessionAPI_t *cpifaceSession, struct itplayer *this, int lc)
 {
 	struct it_physchan *p=this->channels[lc].pch;
 	if (!p)
@@ -2135,13 +2135,13 @@ int __attribute__ ((visibility ("internal"))) lchanactive (struct cpifaceSession
 	return cpifaceSession->mcpGet (cpifaceSession, p->no, mcpCStatus);
 }
 
-int __attribute__ ((visibility ("internal"))) getchanins(struct itplayer *this, int ch)
+OCP_INTERNAL int getchanins (struct itplayer *this, int ch)
 {
 	struct it_physchan *p=&this->pchannels[ch];
 	return p->inst->handle+1;
 }
 
-int __attribute__ ((visibility ("internal"))) getchansamp(struct itplayer *this, int ch)
+OCP_INTERNAL int getchansamp (struct itplayer *this, int ch)
 {
 	struct it_physchan *p=&this->pchannels[ch];
 	if (!p->smp)
@@ -2150,7 +2150,7 @@ int __attribute__ ((visibility ("internal"))) getchansamp(struct itplayer *this,
 }
 
 
-void __attribute__ ((visibility ("internal"))) getchaninfo(struct itplayer *this, uint8_t ch, struct it_chaninfo *ci)
+OCP_INTERNAL void getchaninfo (struct itplayer *this, uint8_t ch, struct it_chaninfo *ci)
 {
 	const struct it_logchan *t=&this->channels[ch];
 	if (t->pch)
@@ -2174,7 +2174,7 @@ void __attribute__ ((visibility ("internal"))) getchaninfo(struct itplayer *this
 		memset(ci, 0, sizeof(*ci));
 }
 
-int __attribute__ ((visibility ("internal"))) getchanalloc(struct itplayer *this, uint8_t ch)
+OCP_INTERNAL int getchanalloc (struct itplayer *this, uint8_t ch)
 {
 	int num=0;
 	int i;

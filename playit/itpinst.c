@@ -237,7 +237,7 @@ static void itMark (struct cpifaceSessionAPI_t *cpifaceSession)
 	Mark (cpifaceSession, plInstUsed, plSampUsed);
 }
 
-void __attribute__ ((visibility ("internal"))) itpInstClear (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void itpInstClear (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	memset(plInstUsed, 0, instnum);
 	memset(plSampUsed, 0, sampnum);
@@ -267,7 +267,7 @@ static void Done (struct cpifaceSessionAPI_t *cpifaceSession)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) itpInstSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct it_instrument *ins, int nins, const struct it_sample *smp, int nsmp, const struct it_sampleinfo *smpi, /*int unused,*/ int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *, uint8_t *))
+OCP_INTERNAL void itpInstSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct it_instrument *ins, int nins, const struct it_sample *smp, int nsmp, const struct it_sampleinfo *smpi, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *, uint8_t *))
 {
 	int i,j;
 	int biginstlen=0;

@@ -103,4 +103,6 @@ int clock_gettime(clockid_t clk_id, struct timespec *tp);
 #  endif
 # endif
 
+#define OCP_INTERNAL __attribute__ ((visibility ("internal")))
+
 #endif

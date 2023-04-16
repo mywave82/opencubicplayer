@@ -203,7 +203,7 @@ static void oggIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) oggIdle (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void oggIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -431,10 +431,10 @@ static long tell_func (void *token)
 }
 
 
-struct ogg_comment_t __attribute__ ((visibility ("internal"))) **ogg_comments;
-int                  __attribute__ ((visibility ("internal")))   ogg_comments_count;
-struct ogg_picture_t __attribute__ ((visibility ("internal")))  *ogg_pictures;
-int                  __attribute__ ((visibility ("internal")))   ogg_pictures_count;
+OCP_INTERNAL struct ogg_comment_t **ogg_comments;
+OCP_INTERNAL int                    ogg_comments_count;
+OCP_INTERNAL struct ogg_picture_t  *ogg_pictures;
+OCP_INTERNAL int                    ogg_pictures_count;
 
 static void add_comment2(const char *title, const char *value)
 {
@@ -746,17 +746,17 @@ static void add_comment (struct cpifaceSessionAPI_t *cpifaceSession, const char 
 	free (tmp);
 }
 
-char __attribute__ ((visibility ("internal"))) oggLooped(void)
+OCP_INTERNAL char oggLooped (void)
 {
 	return ogg_looped == 3;
 }
 
-void __attribute__ ((visibility ("internal"))) oggSetLoop(uint8_t s)
+OCP_INTERNAL void oggSetLoop (uint8_t s)
 {
 	donotloop=!s;
 }
 
-void __attribute__ ((visibility ("internal"))) oggPause(uint8_t p)
+OCP_INTERNAL void oggPause (uint8_t p)
 {
 	ogg_inpause=p;
 }
@@ -809,12 +809,12 @@ static int oggGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 	return 0;
 }
 
-ogg_int64_t __attribute__ ((visibility ("internal"))) oggGetPos (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL ogg_int64_t oggGetPos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	return (ogglen + ogglen + oggpos - cpifaceSession->ringbufferAPI->get_tail_available_samples(oggbufpos) - cpifaceSession->plrDevAPI->Idle())%ogglen;
 }
 
-void __attribute__ ((visibility ("internal"))) oggGetInfo (struct cpifaceSessionAPI_t *cpifaceSession, struct ogginfo *info)
+OCP_INTERNAL void oggGetInfo (struct cpifaceSessionAPI_t *cpifaceSession, struct ogginfo *info)
 {
 	static int lastsafe=0;
 	info->pos = oggGetPos (cpifaceSession);
@@ -840,7 +840,7 @@ void __attribute__ ((visibility ("internal"))) oggGetInfo (struct cpifaceSession
 	info->opt50=opt50;
 }
 
-void __attribute__ ((visibility ("internal"))) oggSetPos (struct cpifaceSessionAPI_t *cpifaceSession, ogg_int64_t pos)
+OCP_INTERNAL void oggSetPos (struct cpifaceSessionAPI_t *cpifaceSession, ogg_int64_t pos)
 {
 	pos=(pos+ogglen)%ogglen;
 
@@ -884,7 +884,7 @@ static ov_callbacks callbacks =
 	close_func,
 	tell_func
 };
-int __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle_t *oggf, struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL int oggOpenPlayer (struct ocpfilehandle_t *oggf, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
 	int result;
@@ -1004,7 +1004,7 @@ error_out_file:
 	return retval;
 }
 
-void __attribute__ ((visibility ("internal"))) oggClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void oggClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (active)
 	{

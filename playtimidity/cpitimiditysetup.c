@@ -487,7 +487,7 @@ static int TimiditySetupEvent (struct cpifaceSessionAPI_t *cpifaceSession, int e
 
 static struct cpitextmoderegstruct cpiTimiditySetup = {"TimSetup", TimiditySetupGetWin, TimiditySetupSetWin, TimiditySetupDraw, TimiditySetupIProcessKey, TimiditySetupAProcessKey, TimiditySetupEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) cpiTimiditySetupInit (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void cpiTimiditySetupInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 #if 0
 	if (tc.opt_reverb_control >= 0)
@@ -538,7 +538,7 @@ void __attribute__ ((visibility ("internal"))) cpiTimiditySetupInit (struct cpif
 	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiTimiditySetup);
 }
 
-void __attribute__ ((visibility ("internal"))) cpiTimiditySetupDone (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void cpiTimiditySetupDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiTimiditySetup);
 }

@@ -391,7 +391,7 @@ static int InstEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpitextmoderegstruct cpiTModeInst = {"inst", InstGetWin, InstSetWin, InstDraw, InstIProcessKey, InstAProcessKey, InstEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) cpiInstInit (void)
+OCP_INTERNAL void cpiInstInit (void)
 {
 	InstType = cfGetProfileInt2(cfScreenSec, "screen", "insttype", 3, 10) & 3;
 }

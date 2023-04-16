@@ -248,7 +248,7 @@ static const char *MIDI_description[] =
 
 static struct mdbreadinforegstruct timidityReadInfoReg = {"MIDI", timidityReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__ ((visibility ("internal"))) timidity_type_init (struct PluginInitAPI_t *API)
+OCP_INTERNAL int timidity_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
@@ -265,7 +265,7 @@ int __attribute__ ((visibility ("internal"))) timidity_type_init (struct PluginI
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) timidity_type_done (struct PluginCloseAPI_t *API)
+OCP_INTERNAL void timidity_type_done (struct PluginCloseAPI_t *API)
 {
 	struct moduletype mt;
 

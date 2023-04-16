@@ -945,7 +945,7 @@ superexit:
 static struct ocpfile_t *timidityconfig; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv
 static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API);
 
-int __attribute__ ((visibility ("internal"))) timidity_config_init (struct PluginInitAPI_t *API)
+OCP_INTERNAL int timidity_config_init (struct PluginInitAPI_t *API)
 {
 	timidityconfig = API->dev_file_create (
 		API->dmSetup->basedir,
@@ -964,7 +964,7 @@ int __attribute__ ((visibility ("internal"))) timidity_config_init (struct Plugi
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) timidity_config_done (struct PluginCloseAPI_t *API)
+OCP_INTERNAL void timidity_config_done (struct PluginCloseAPI_t *API)
 {
 	if (timidityconfig)
 	{

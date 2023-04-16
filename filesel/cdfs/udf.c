@@ -3322,7 +3322,7 @@ static void LogicalVolumeIntegritySequence (int n, struct cdfs_disc_t *disc, str
 	debug_printf ("\n");
 }
 
-int __attribute__ ((visibility ("internal"))) AnchorVolumeDescriptorPointer (int n, uint8_t buffer[SECTORSIZE], uint32_t sector, struct UDF_extent_ad *MainVolumeDescriptorSequenceExtent, struct UDF_extent_ad *ReserveVolumeDescriptorSequenceExtent)
+OCP_INTERNAL int AnchorVolumeDescriptorPointer (int n, uint8_t buffer[SECTORSIZE], uint32_t sector, struct UDF_extent_ad *MainVolumeDescriptorSequenceExtent, struct UDF_extent_ad *ReserveVolumeDescriptorSequenceExtent)
 {
 	uint16_t TagIdentifier;
 
@@ -3949,7 +3949,7 @@ static int UDF_CompleteDiskIO_NextSession (struct cdfs_disc_t *disc, struct UDF_
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) UDF_Descriptor (struct cdfs_disc_t *disc)
+OCP_INTERNAL void UDF_Descriptor (struct cdfs_disc_t *disc)
 {
 	const int n = 0;
 	uint8_t buffer[SECTORSIZE];
@@ -4193,7 +4193,7 @@ static void SequenceRawdisk (int n, struct cdfs_disc_t *disc, struct UDF_extent_
 	free (buffer);
 }
 
-void __attribute__ ((visibility ("internal"))) UDF_Session_Free (struct cdfs_disc_t *disc)
+OCP_INTERNAL void UDF_Session_Free (struct cdfs_disc_t *disc)
 {
 	if (!disc)
 	{
@@ -5850,7 +5850,7 @@ static void DumpFS_UDF2 (struct cdfs_disc_t *disc, struct UDF_RootDirectory_t *r
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) DumpFS_UDF (struct cdfs_disc_t *disc)
+OCP_INTERNAL void DumpFS_UDF (struct cdfs_disc_t *disc)
 {
 	int i;
 
@@ -5930,7 +5930,7 @@ static void CDFS_Render_UDF2 (struct cdfs_disc_t *disc, struct UDF_RootDirectory
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) CDFS_Render_UDF (struct cdfs_disc_t *disc, uint32_t parent_directory) /* parent_directory should point to "UDF" */
+OCP_INTERNAL void CDFS_Render_UDF (struct cdfs_disc_t *disc, uint32_t parent_directory) /* parent_directory should point to "UDF" */
 {
 	int i;
 	if (!disc->udf_session->LogicalVolumes) return;

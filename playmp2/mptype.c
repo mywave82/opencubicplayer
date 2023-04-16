@@ -641,7 +641,7 @@ static const char *MPx_description[] =
 
 static struct mdbreadinforegstruct ampegpReadInfoReg = {"MPx", ampegpReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__ ((visibility ("internal"))) ampeg_type_init (struct PluginInitAPI_t *API)
+OCP_INTERNAL int ampeg_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
@@ -657,7 +657,7 @@ int __attribute__ ((visibility ("internal"))) ampeg_type_init (struct PluginInit
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) ampeg_type_done (struct PluginCloseAPI_t *API)
+OCP_INTERNAL void ampeg_type_done (struct PluginCloseAPI_t *API)
 {
 	struct moduletype mt;
 

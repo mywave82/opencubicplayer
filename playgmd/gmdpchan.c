@@ -401,7 +401,7 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) gmdChanSetup(struct cpifaceSessionAPI_t *cpifaceSession, const struct gmdmodule *mod)
+OCP_INTERNAL void gmdChanSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct gmdmodule *mod)
 {
 	plChanInstr=mod->instruments;
 	plChanModSamples=mod->modsamples;

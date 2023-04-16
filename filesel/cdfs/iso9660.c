@@ -263,7 +263,7 @@ static void _DumpFS_dir_ISO9660 (struct Volume_Description_t *vd, const char *na
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) DumpFS_dir_ISO9660 (struct Volume_Description_t *vd, const char *name, uint32_t Location)
+OCP_INTERNAL void DumpFS_dir_ISO9660 (struct Volume_Description_t *vd, const char *name, uint32_t Location)
 {
 	int j;
 	for (j=0; j < vd->directories_count; j++)
@@ -334,7 +334,7 @@ static void _DumpFS_dir_Joliet (struct Volume_Description_t *vd, const char *nam
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) DumpFS_dir_Joliet (struct Volume_Description_t *vd, const char *name, uint32_t Location)
+OCP_INTERNAL void DumpFS_dir_Joliet (struct Volume_Description_t *vd, const char *name, uint32_t Location)
 {
 	int j;
 	for (j=0; j < vd->directories_count; j++)
@@ -487,7 +487,7 @@ static void _DumpFS_dir_RockRidge (struct Volume_Description_t *vd, const char *
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) DumpFS_dir_RockRidge (struct Volume_Description_t *vd, const char *name, uint32_t Location)
+OCP_INTERNAL void DumpFS_dir_RockRidge (struct Volume_Description_t *vd, const char *name, uint32_t Location)
 {
 	int j;
 	for (j=0; j < vd->directories_count; j++)
@@ -554,7 +554,7 @@ static void iso_dir_clear (struct iso_dir_t *iso_dir)
 	iso_dir->dirents_data = 0;
 }
 
-void __attribute__ ((visibility ("internal"))) Volume_Description_Free (struct Volume_Description_t *volume_desc)
+OCP_INTERNAL void Volume_Description_Free (struct Volume_Description_t *volume_desc)
 {
 	int i;
 
@@ -1027,7 +1027,7 @@ static void CDFS_Render_ISO9660_directory (struct cdfs_disc_t *disc, struct Volu
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) CDFS_Render_ISO9660 (struct cdfs_disc_t *disc, uint32_t parent_directory) /* parent_directory should point to "ISO9660" */
+OCP_INTERNAL void CDFS_Render_ISO9660 (struct cdfs_disc_t *disc, uint32_t parent_directory) /* parent_directory should point to "ISO9660" */
 {
 	struct Volume_Description_t *vd = disc->iso9660_session->Primary_Volume_Description;
 	uint32_t Location = disc->iso9660_session->Primary_Volume_Description->root_dirent.Absolute_Location;
@@ -1089,7 +1089,7 @@ static void CDFS_Render_Joliet_directory (struct cdfs_disc_t *disc, struct Volum
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) CDFS_Render_Joliet (struct cdfs_disc_t *disc, uint32_t parent_directory) /* parent_directory should point to "Joliet" */
+OCP_INTERNAL void CDFS_Render_Joliet (struct cdfs_disc_t *disc, uint32_t parent_directory) /* parent_directory should point to "Joliet" */
 {
 	struct Volume_Description_t *vd = disc->iso9660_session->Supplementary_Volume_Description;
 	uint32_t Location = disc->iso9660_session->Supplementary_Volume_Description->root_dirent.Absolute_Location;
@@ -1174,7 +1174,7 @@ next:
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) CDFS_Render_RockRidge (struct cdfs_disc_t *disc, uint32_t parent_directory) /* parent_directory should point to "RockRidge" */
+OCP_INTERNAL void CDFS_Render_RockRidge (struct cdfs_disc_t *disc, uint32_t parent_directory) /* parent_directory should point to "RockRidge" */
 {
 	struct Volume_Description_t *vd = disc->iso9660_session->Primary_Volume_Description;
 	uint32_t Location = disc->iso9660_session->Primary_Volume_Description->root_dirent.Absolute_Location;
@@ -1806,7 +1806,7 @@ static struct Volume_Description_t *Primary_Volume_Descriptor (struct cdfs_disc_
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) ISO9660_Descriptor (struct cdfs_disc_t *disc, uint8_t buffer[SECTORSIZE], const int sector, const int descriptor, int *descriptorend)
+OCP_INTERNAL void ISO9660_Descriptor (struct cdfs_disc_t *disc, uint8_t buffer[SECTORSIZE], const int sector, const int descriptor, int *descriptorend)
 {
 	if (buffer[0] != 2)
 	{
@@ -1923,7 +1923,7 @@ void __attribute__ ((visibility ("internal"))) ISO9660_Descriptor (struct cdfs_d
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) ISO9660_Session_Free (struct ISO9660_session_t **s)
+OCP_INTERNAL void ISO9660_Session_Free (struct ISO9660_session_t **s)
 {
 	if (!s) return;
 	if (!(*s)) return;

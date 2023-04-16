@@ -80,7 +80,7 @@ static struct mdbreadinforegstruct oplReadInfoReg = {"adplug", oplReadInfo MDBRE
 
 static class CAdPlugDatabase *adplugdb_ocp;
 
-int __attribute__ ((visibility ("internal"))) opl_type_init (PluginInitAPI_t *API)
+OCP_INTERNAL int opl_type_init (PluginInitAPI_t *API)
 {
 	char *path=0;
 	const char *home = getenv ("HOME");
@@ -136,7 +136,7 @@ int __attribute__ ((visibility ("internal"))) opl_type_init (PluginInitAPI_t *AP
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) opl_type_done (PluginCloseAPI_t *API)
+OCP_INTERNAL void opl_type_done (PluginCloseAPI_t *API)
 {
 	if (adplugdb_ocp)
 	{

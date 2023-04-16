@@ -475,7 +475,7 @@ static struct cpitrakdisplaystruct gmdptrkdisplay=
 };
 
 
-void __attribute__ ((visibility ("internal"))) gmdTrkSetup(struct cpifaceSessionAPI_t *cpifaceSession, const struct gmdmodule *mod)
+OCP_INTERNAL void gmdTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct gmdmodule *mod)
 {
 	plPatterns=mod->patterns;
 	plOrders=mod->orders;

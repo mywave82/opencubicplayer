@@ -250,12 +250,12 @@ static int OggInfoEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpitextmoderegstruct cpiOggInfo = {"ogginfo", OggInfoGetWin, OggInfoSetWin, OggInfoDraw, OggInfoIProcessKey, OggInfoAProcessKey, OggInfoEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) OggInfoInit (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void OggInfoInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiOggInfo);
 }
 
-void __attribute__ ((visibility ("internal"))) OggInfoDone (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void OggInfoDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiOggInfo);
 }

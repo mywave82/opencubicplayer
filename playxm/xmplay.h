@@ -107,39 +107,40 @@ enum
 
 struct ocpfilehandle_t;
 struct cpifaceSessionAPI_t;
-extern int __attribute__ ((visibility ("internal"))) xmpLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMOD  (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMODt (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMODd (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMODf (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadM31  (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadM15  (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadM15t (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadWOW  (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
-extern int __attribute__ ((visibility ("internal"))) xmpLoadMXM  (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
-extern void __attribute__ ((visibility ("internal"))) xmpFreeModule (struct xmodule *m);
 
-extern int __attribute__ ((visibility ("internal"))) xmpPlayModule (struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) xmpStopModule (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) xmpSetPos (struct cpifaceSessionAPI_t *cpifaceSession, int ord, int row);
+OCP_INTERNAL int xmpLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m);
+OCP_INTERNAL int xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+OCP_INTERNAL int xmpLoadMOD  (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+OCP_INTERNAL int xmpLoadMODt (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+OCP_INTERNAL int xmpLoadMODd (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+OCP_INTERNAL int xmpLoadMODf (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+OCP_INTERNAL int xmpLoadM31  (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+OCP_INTERNAL int xmpLoadM15  (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+OCP_INTERNAL int xmpLoadM15t (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+OCP_INTERNAL int xmpLoadWOW  (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+OCP_INTERNAL int xmpLoadMXM  (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *f);
+OCP_INTERNAL void xmpFreeModule (struct xmodule *m);
 
-extern void __attribute__ ((visibility ("internal"))) xmpGetRealVolume (struct cpifaceSessionAPI_t *cpifaceSession, int i, int *l, int *r);
-extern void __attribute__ ((visibility ("internal"))) xmpMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m);
-extern uint16_t __attribute__ ((visibility ("internal"))) xmpGetPos (void);
-extern int __attribute__ ((visibility ("internal"))) xmpGetRealPos (struct cpifaceSessionAPI_t *cpifaceSession);
-extern int __attribute__ ((visibility ("internal"))) xmpGetDotsData (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *smp, int *frq, int *l, int *r, int *sus);
-extern int __attribute__ ((visibility ("internal"))) xmpPrecalcTime (struct xmodule *m, int startpos, int (*calc)[2], int n, int ite);
-extern int __attribute__ ((visibility ("internal"))) xmpLoop (void);
-extern void __attribute__ ((visibility ("internal"))) xmpSetLoop (int);
-extern int __attribute__ ((visibility ("internal"))) xmpGetChanIns (int);
-extern int __attribute__ ((visibility ("internal"))) xmpGetChanSamp (int);
-extern int __attribute__ ((visibility ("internal"))) xmpChanActive (struct cpifaceSessionAPI_t *cpifaceSession, int ch);
-extern void __attribute__ ((visibility ("internal"))) xmpGetGlobInfo (int *tmp, int *bpm, int *gvol);
-extern void __attribute__ ((visibility ("internal"))) xmpOptimizePatLens (struct xmodule *m);
+OCP_INTERNAL int xmpPlayModule (struct xmodule *m, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void xmpStopModule (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void xmpSetPos (struct cpifaceSessionAPI_t *cpifaceSession, int ord, int row);
 
-extern void __attribute__ ((visibility ("internal"))) xmpGetChanInfo (uint8_t ch, struct xmpchaninfo *ci);
-extern void __attribute__ ((visibility ("internal"))) xmpGetGlobInfo2 (struct xmpglobinfo *gi);
+OCP_INTERNAL void xmpGetRealVolume (struct cpifaceSessionAPI_t *cpifaceSession, int i, int *l, int *r);
+OCP_INTERNAL void xmpMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m);
+OCP_INTERNAL uint16_t xmpGetPos (void);
+OCP_INTERNAL int xmpGetRealPos (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL int xmpGetDotsData (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *smp, int *frq, int *l, int *r, int *sus);
+OCP_INTERNAL int xmpPrecalcTime (struct xmodule *m, int startpos, int (*calc)[2], int n, int ite);
+OCP_INTERNAL int xmpLoop (void);
+OCP_INTERNAL void xmpSetLoop (int);
+OCP_INTERNAL int xmpGetChanIns (int);
+OCP_INTERNAL int xmpGetChanSamp (int);
+OCP_INTERNAL int xmpChanActive (struct cpifaceSessionAPI_t *cpifaceSession, int ch);
+OCP_INTERNAL void xmpGetGlobInfo (int *tmp, int *bpm, int *gvol);
+OCP_INTERNAL void xmpOptimizePatLens (struct xmodule *m);
+
+OCP_INTERNAL void xmpGetChanInfo (uint8_t ch, struct xmpchaninfo *ci);
+OCP_INTERNAL void xmpGetGlobInfo2 (struct xmpglobinfo *gi);
 
 enum
 {
@@ -186,10 +187,10 @@ enum
 
 struct cpifaceSessionAPI_t;
 
-extern void __attribute__ ((visibility ("internal"))) xmpInstSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct xmpinstrument *ins, int nins, const struct xmpsample *smp, int nsmp, const struct sampleinfo *smpi, int nsmpi, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpifaceSession, char *, char *));
-extern void __attribute__ ((visibility ("internal"))) xmTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct xmodule *mod);
-extern void __attribute__ ((visibility ("internal"))) xmpInstClear (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void xmpInstSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct xmpinstrument *ins, int nins, const struct xmpsample *smp, int nsmp, const struct sampleinfo *smpi, int nsmpi, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpifaceSession, char *, char *));
+OCP_INTERNAL void xmTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct xmodule *mod);
+OCP_INTERNAL void xmpInstClear (struct cpifaceSessionAPI_t *cpifaceSession);
 
-extern __attribute__ ((visibility ("internal"))) struct xmodule mod;
+extern OCP_INTERNAL struct xmodule mod;
 
 #endif

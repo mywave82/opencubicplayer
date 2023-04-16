@@ -67,7 +67,7 @@ static uint8_t  last_ht_SpeedMultiplier; /* These are delayed, so should be corr
 static struct hvl_statbuffer_t hvl_statbuffer[ROW_BUFFERS] = {{0}}; // half a second */
 static int hvl_statbuffers_available = 0;
 
-struct hvl_chaninfo __attribute__ ((visibility ("internal"))) ChanInfo[MAX_CHANNELS];
+OCP_INTERNAL struct hvl_chaninfo ChanInfo[MAX_CHANNELS];
 
 struct hvl_tune *ht = 0;
 #warning current_cpifaceSession is temporary
@@ -129,13 +129,13 @@ do { \
 	} \
 } while(0)
 
-void __attribute__ ((visibility ("internal"))) hvlGetChanInfo (int chan, struct hvl_chaninfo *ci)
+OCP_INTERNAL void hvlGetChanInfo (int chan, struct hvl_chaninfo *ci)
 {
 	memcpy (ci, ChanInfo + chan, sizeof (*ci));
 	ci->muted = hvl_muted[chan];
 }
 
-void __attribute__ ((visibility ("internal"))) hvlGetChanVolume (struct cpifaceSessionAPI_t *cpifaceSession, int chan, int *l, int *r)
+OCP_INTERNAL void hvlGetChanVolume (struct cpifaceSessionAPI_t *cpifaceSession, int chan, int *l, int *r)
 {
 	int16_t *src;
 	int pos1, pos2;
@@ -212,7 +212,7 @@ static void hvl_statbuffer_callback_from_hvlbuf (void *arg, int samples_ago)
 	hvl_statbuffers_available++;
 }
 
-void __attribute__ ((visibility ("internal"))) hvlIdler (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void hvlIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	while (hvl_statbuffers_available) /* we only prepare more data if hvl_statbuffers_available is non-zero. This gives about 0.5 seconds worth of sample-data */
 	{
@@ -351,7 +351,7 @@ void __attribute__ ((visibility ("internal"))) hvlIdler (struct cpifaceSessionAP
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) hvlIdle (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void hvlIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	static volatile int clipbusy=0;
 
@@ -457,17 +457,17 @@ void __attribute__ ((visibility ("internal"))) hvlIdle (struct cpifaceSessionAPI
 	clipbusy--;
 }
 
-void __attribute__ ((visibility ("internal"))) hvlSetLoop (uint8_t s)
+OCP_INTERNAL void hvlSetLoop (uint8_t s)
 {
 	hvl_doloop = s;
 }
 
-char __attribute__ ((visibility ("internal"))) hvlLooped (void)
+OCP_INTERNAL char hvlLooped (void)
 {
 	return hvl_looped == 3;
 }
 
-void __attribute__ ((visibility ("internal"))) hvlPause (uint8_t p)
+OCP_INTERNAL void hvlPause (uint8_t p)
 {
 	hvl_inpause = p;
 }
@@ -535,12 +535,12 @@ static int hvlGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) hvlRestartSong ()
+OCP_INTERNAL void hvlRestartSong ()
 {
 	hvl_InitSubsong (ht, ht->ht_SongNum);
 }
 
-void __attribute__ ((visibility ("internal"))) hvlPrevSubSong ()
+OCP_INTERNAL void hvlPrevSubSong ()
 {
 	if (ht->ht_SongNum)
 	{
@@ -549,7 +549,7 @@ void __attribute__ ((visibility ("internal"))) hvlPrevSubSong ()
 	hvl_InitSubsong (ht, ht->ht_SongNum);
 }
 
-void __attribute__ ((visibility ("internal"))) hvlNextSubSong ()
+OCP_INTERNAL void hvlNextSubSong ()
 {
 	if (ht->ht_SongNum+1 <= ht->ht_SubsongNr)
 	{
@@ -558,13 +558,13 @@ void __attribute__ ((visibility ("internal"))) hvlNextSubSong ()
 	hvl_InitSubsong (ht, ht->ht_SongNum);
 }
 
-void __attribute__ ((visibility ("internal")))  hvlMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m)
+OCP_INTERNAL void hvlMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m)
 {
 	cpifaceSession->MuteChannel[ch] = m;
 	hvl_muted[ch] = m;
 }
 
-int __attribute__ ((visibility ("internal"))) hvlGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt)
+OCP_INTERNAL int hvlGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt)
 {
 	int stereo = (opt&mcpGetSampleStereo)?1:0;
 	uint32_t step = imuldiv(0x00010000, hvlRate, (signed)rate);
@@ -613,7 +613,7 @@ int __attribute__ ((visibility ("internal"))) hvlGetChanSample (struct cpifaceSe
 	return !!hvl_muted[ch];
 }
 
-void __attribute__ ((visibility ("internal"))) hvlGetStats (int *row, int *rows, int *order, int *orders, int *subsong, int *subsongs, int *tempo, int *speedmult)
+OCP_INTERNAL void hvlGetStats (int *row, int *rows, int *order, int *orders, int *subsong, int *subsongs, int *tempo, int *speedmult)
 {
 	*row       = last_ht_NoteNr;
 	*order     = last_ht_PosNr;
@@ -625,7 +625,7 @@ void __attribute__ ((visibility ("internal"))) hvlGetStats (int *row, int *rows,
 	*speedmult = last_ht_SpeedMultiplier;
 }
 
-int __attribute__ ((visibility ("internal"))) hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL int hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
 	int retval;
@@ -728,7 +728,7 @@ error_out_plrDevAPI_Play:
 	return retval;
 }
 
-void __attribute__ ((visibility ("internal"))) hvlClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void hvlClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (cpifaceSession->plrDevAPI)
 	{

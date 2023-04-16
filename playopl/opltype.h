@@ -7,12 +7,12 @@ extern "C"
 	struct PluginCloseAPI_t;
 }
 
-int __attribute__ ((visibility ("internal"))) opl_type_init (PluginInitAPI_t *API);
-void __attribute__ ((visibility ("internal"))) opl_type_done (PluginCloseAPI_t *API);
+OCP_INTERNAL int opl_type_init (PluginInitAPI_t *API);
+OCP_INTERNAL void opl_type_done (PluginCloseAPI_t *API);
 
 extern "C"
 {
-	extern const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) oplPlayer;
+	extern OCP_INTERNAL const struct cpifaceplayerstruct oplPlayer;
 }
 
 #endif

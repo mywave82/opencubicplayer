@@ -265,5 +265,5 @@ static void hvlPluginClose (struct PluginCloseAPI_t *API)
 	hvl_type_done (API);
 }
 
-const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) hvlPlayer = {"[HivelyTracker plugin]", hvlOpenFile, hvlCloseFile};
+OCP_INTERNAL const struct cpifaceplayerstruct hvlPlayer = {"[HivelyTracker plugin]", hvlOpenFile, hvlCloseFile};
 DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playhvl", .desc = "OpenCP HVL Player (c) 2019-'23 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = hvlPluginInit, .PluginClose = hvlPluginClose};

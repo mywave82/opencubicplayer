@@ -37,27 +37,27 @@ struct ogg_picture_t
 	uint8_t  *scaled_data_bgra;
 };
 
-extern struct ogg_comment_t __attribute__ ((visibility ("internal"))) **ogg_comments;
-extern int                  __attribute__ ((visibility ("internal")))   ogg_comments_count;
-extern struct ogg_picture_t __attribute__ ((visibility ("internal")))  *ogg_pictures;
-extern int                  __attribute__ ((visibility ("internal")))   ogg_pictures_count;
+extern OCP_INTERNAL struct ogg_comment_t  **ogg_comments;
+extern OCP_INTERNAL int                     ogg_comments_count;
+extern OCP_INTERNAL struct ogg_picture_t   *ogg_pictures;
+extern OCP_INTERNAL int                     ogg_pictures_count;
 
 struct ocpfilehandle_t;
 struct cpifaceSessionAPI_t;
-extern int  __attribute__ ((visibility ("internal"))) oggOpenPlayer(struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) oggClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) oggIdle (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) oggSetLoop(uint8_t s);
-extern char __attribute__ ((visibility ("internal"))) oggLooped(void);
-extern void __attribute__ ((visibility ("internal"))) oggPause(uint8_t p);
-extern void __attribute__ ((visibility ("internal"))) oggGetInfo (struct cpifaceSessionAPI_t *cpifaceSession, struct ogginfo *);
-extern ogg_int64_t __attribute__ ((visibility ("internal"))) oggGetPos (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) oggSetPos (struct cpifaceSessionAPI_t *cpifaceSession, ogg_int64_t pos);
+OCP_INTERNAL int oggOpenPlayer (struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void oggClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void oggIdle (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void oggSetLoop (uint8_t s);
+OCP_INTERNAL char oggLooped (void);
+OCP_INTERNAL void oggPause (uint8_t p);
+OCP_INTERNAL void oggGetInfo (struct cpifaceSessionAPI_t *cpifaceSession, struct ogginfo *);
+OCP_INTERNAL ogg_int64_t oggGetPos (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void oggSetPos (struct cpifaceSessionAPI_t *cpifaceSession, ogg_int64_t pos);
 
-extern void __attribute__ ((visibility ("internal"))) OggInfoInit (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) OggInfoDone (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void OggInfoInit (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void OggInfoDone (struct cpifaceSessionAPI_t *cpifaceSession);
 
-extern void __attribute__ ((visibility ("internal"))) OggPicInit (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) OggPicDone (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void OggPicInit (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void OggPicDone (struct cpifaceSessionAPI_t *cpifaceSession);
 
 #endif

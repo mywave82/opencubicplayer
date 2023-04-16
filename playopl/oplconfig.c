@@ -149,7 +149,7 @@ superexit:
 static struct ocpfile_t *oplconfig;
 static void oplConfigRun (void **token, const struct DevInterfaceAPI_t *API);
 
-int __attribute__ ((visibility ("internal"))) opl_config_init (struct PluginInitAPI_t *API)
+OCP_INTERNAL int opl_config_init (struct PluginInitAPI_t *API)
 {
 	oplconfig = API->dev_file_create (
 		API->dmSetup->basedir,
@@ -168,7 +168,7 @@ int __attribute__ ((visibility ("internal"))) opl_config_init (struct PluginInit
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) opl_config_done (struct PluginCloseAPI_t *API)
+OCP_INTERNAL void opl_config_done (struct PluginCloseAPI_t *API)
 {
 	if (oplconfig)
 	{

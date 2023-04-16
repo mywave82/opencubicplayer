@@ -36,7 +36,7 @@ static const char *CDA_description[] =
 	NULL
 };
 
-int __attribute__ ((visibility ("internal"))) cda_type_init (struct PluginInitAPI_t *API)
+OCP_INTERNAL int cda_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
@@ -48,7 +48,7 @@ int __attribute__ ((visibility ("internal"))) cda_type_init (struct PluginInitAP
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) cda_type_done (struct PluginCloseAPI_t *API)
+OCP_INTERNAL void cda_type_done (struct PluginCloseAPI_t *API)
 {
 	struct moduletype mt;
 

@@ -280,7 +280,7 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) itChanSetup(struct cpifaceSessionAPI_t *cpifaceSession, struct it_instrument *_insts, struct it_sample *_samps)
+OCP_INTERNAL void itChanSetup (struct cpifaceSessionAPI_t *cpifaceSession, struct it_instrument *_insts, struct it_sample *_samps)
 {
 	insts = _insts;
 	samps = _samps;

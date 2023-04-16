@@ -451,12 +451,12 @@ static int scoEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpimoderegstruct cpiModePhase = {"phase", scoSetMode, scoDraw, scoIProcessKey, plScopesKey, scoEvent CPIMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) cpiPhaseInit (void)
+OCP_INTERNAL void cpiPhaseInit (void)
 {
 	cpiRegisterDefMode(&cpiModePhase);
 }
 
-void __attribute__ ((visibility ("internal"))) cpiPhaseDone (void)
+OCP_INTERNAL void cpiPhaseDone (void)
 {
 	cpiUnregisterDefMode(&cpiModePhase);
 }

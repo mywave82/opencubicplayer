@@ -380,7 +380,7 @@ static const char *YM_description[] =
 
 static struct mdbreadinforegstruct ymReadInfoReg = {"YM", ymReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__((visibility ("internal"))) ym_type_init (PluginInitAPI_t *API)
+OCP_INTERNAL int ym_type_init (PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
@@ -394,7 +394,7 @@ int __attribute__((visibility ("internal"))) ym_type_init (PluginInitAPI_t *API)
 	return errOk;
 }
 
-void __attribute__((visibility ("internal"))) ym_type_done (PluginCloseAPI_t *API)
+OCP_INTERNAL void ym_type_done (PluginCloseAPI_t *API)
 {
 	struct moduletype mt;
 

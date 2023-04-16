@@ -266,5 +266,5 @@ static void timidityPluginClose (struct PluginCloseAPI_t *API)
 	timidity_config_done (API);
 }
 
-const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) timidityPlayer = {"[TiMidity++ MIDI plugin]", timidityOpenFile, timidityCloseFile};
+OCP_INTERNAL const struct cpifaceplayerstruct timidityPlayer = {"[TiMidity++ MIDI plugin]", timidityOpenFile, timidityCloseFile};
 DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playtimidity", .desc = "OpenCP TiMidity++ Player (c) 2016-'23 TiMidity++ team & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit=timidityPluginInit, .PluginClose=timidityPluginClose};

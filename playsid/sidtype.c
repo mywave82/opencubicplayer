@@ -130,7 +130,7 @@ static const char *SID_description[] =
 	NULL
 };
 
-int __attribute__ ((visibility ("internal"))) sid_type_init (struct PluginInitAPI_t *API)
+OCP_INTERNAL int sid_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
@@ -146,7 +146,7 @@ int __attribute__ ((visibility ("internal"))) sid_type_init (struct PluginInitAP
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) sid_type_done (struct PluginCloseAPI_t *API)
+OCP_INTERNAL void sid_type_done (struct PluginCloseAPI_t *API)
 {
 	struct moduletype mt;
 

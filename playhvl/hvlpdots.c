@@ -25,7 +25,7 @@
 #include "hvlpdots.h"
 #include "player.h"
 
-int __attribute__ ((visibility ("internal"))) hvlGetDots (struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *d, int max)
+OCP_INTERNAL int hvlGetDots (struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *d, int max)
 {
 	int pos=0;
 	int i;

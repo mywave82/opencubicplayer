@@ -260,7 +260,7 @@ static const char *HVL_description[] =
 
 static struct mdbreadinforegstruct hvlReadInfoReg = {"HVL/AHX", hvlReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__ ((visibility ("internal"))) hvl_type_init (struct PluginInitAPI_t *API)
+OCP_INTERNAL int hvl_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
@@ -275,7 +275,7 @@ int __attribute__ ((visibility ("internal"))) hvl_type_init (struct PluginInitAP
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) hvl_type_done (struct PluginCloseAPI_t *API)
+OCP_INTERNAL void hvl_type_done (struct PluginCloseAPI_t *API)
 {
 	struct moduletype mt;
 

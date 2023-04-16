@@ -491,7 +491,7 @@ static struct cpitrakdisplaystruct oplptrkdisplay =
 	opl_getins, opl_getvol, opl_getpan, opl_getfx, opl_getgcmd
 };
 
-void __attribute__ ((visibility ("internal"))) oplTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, CPlayer *p)
+OCP_INTERNAL void oplTrkSetup (struct cpifaceSessionAPI_t *cpifaceSession, CPlayer *p)
 {
 	curPosition = 0xffff;
 	trkP = p;
@@ -504,7 +504,7 @@ void __attribute__ ((visibility ("internal"))) oplTrkSetup (struct cpifaceSessio
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) oplTrkDone (void)
+OCP_INTERNAL void oplTrkDone (void)
 {
 	free (pattern); pattern = 0;
 	patterndim = 0;

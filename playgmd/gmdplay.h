@@ -89,37 +89,37 @@ struct chaninfo
 	uint8_t fx;
 };
 
-extern void mpReset(struct gmdmodule *m);
-extern void mpFree(struct gmdmodule *m);
-extern int mpAllocInstruments(struct gmdmodule *m, int n);
-extern int mpAllocSamples(struct gmdmodule *m, int n);
-extern int mpAllocModSamples(struct gmdmodule *m, int n);
-extern int mpAllocTracks(struct gmdmodule *m, int n);
-extern int mpAllocPatterns(struct gmdmodule *m, int n);
-extern int mpAllocEnvelopes(struct gmdmodule *m, int n);
-extern int mpAllocOrders(struct gmdmodule *m, int n);
-extern void __attribute__ ((visibility ("internal"))) mpOptimizePatLens (struct gmdmodule *m);
-extern void __attribute__ ((visibility ("internal"))) mpReduceInstruments (struct gmdmodule *m);
-extern void __attribute__ ((visibility ("internal"))) mpReduceMessage( struct gmdmodule *m);
-extern int __attribute__ ((visibility ("internal"))) mpReduceSamples (struct gmdmodule *m);
-extern int __attribute__ ((visibility ("internal"))) mpLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m);
+OCP_INTERNAL void mpReset (struct gmdmodule *m);
+OCP_INTERNAL void mpFree (struct gmdmodule *m);
+OCP_INTERNAL int mpAllocInstruments (struct gmdmodule *m, int n);
+OCP_INTERNAL int mpAllocSamples (struct gmdmodule *m, int n);
+OCP_INTERNAL int mpAllocModSamples (struct gmdmodule *m, int n);
+OCP_INTERNAL int mpAllocTracks (struct gmdmodule *m, int n);
+OCP_INTERNAL int mpAllocPatterns (struct gmdmodule *m, int n);
+OCP_INTERNAL int mpAllocEnvelopes (struct gmdmodule *m, int n);
+OCP_INTERNAL int mpAllocOrders (struct gmdmodule *m, int n);
+OCP_INTERNAL void mpOptimizePatLens (struct gmdmodule *m);
+OCP_INTERNAL void mpReduceInstruments (struct gmdmodule *m);
+OCP_INTERNAL void mpReduceMessage (struct gmdmodule *m);
+OCP_INTERNAL int mpReduceSamples (struct gmdmodule *m);
+OCP_INTERNAL int mpLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m);
 
 struct cpifaceSessionAPI_t;
-extern int __attribute__ ((visibility ("internal"))) mpPlayModule (const struct gmdmodule *, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) mpStopModule (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) mpSetPosition (struct cpifaceSessionAPI_t *cpifaceSession, int16_t pat, int16_t row);
-extern void __attribute__ ((visibility ("internal"))) mpGetPosition(uint16_t *pat, uint8_t *row);
-extern int __attribute__ ((visibility ("internal"))) mpGetRealPos (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) mpGetChanInfo (uint8_t ch, struct chaninfo *ci);
-extern uint16_t __attribute__ ((visibility ("internal"))) mpGetRealNote (struct cpifaceSessionAPI_t *cpifaceSession, uint8_t ch);
-extern void __attribute__ ((visibility ("internal"))) mpGetGlobInfo (struct globinfo *gi);
-extern char __attribute__ ((visibility ("internal"))) mpLooped (void);
-extern void __attribute__ ((visibility ("internal"))) mpSetLoop (unsigned char s);
-extern void __attribute__ ((visibility ("internal"))) mpLockPat (int st);
-extern int __attribute__ ((visibility ("internal"))) mpGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *buf, unsigned int len, uint32_t rate, int opt);
-extern void __attribute__ ((visibility ("internal"))) mpMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m);
-extern void __attribute__ ((visibility ("internal"))) mpGetRealVolume (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *l, int *r);
-extern int __attribute__ ((visibility ("internal"))) mpGetChanStatus (struct cpifaceSessionAPI_t *cpifaceSession, int ch);
+OCP_INTERNAL int mpPlayModule (const struct gmdmodule *, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void mpStopModule (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void mpSetPosition (struct cpifaceSessionAPI_t *cpifaceSession, int16_t pat, int16_t row);
+OCP_INTERNAL void mpGetPosition (uint16_t *pat, uint8_t *row);
+OCP_INTERNAL int mpGetRealPos (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void mpGetChanInfo (uint8_t ch, struct chaninfo *ci);
+OCP_INTERNAL uint16_t mpGetRealNote (struct cpifaceSessionAPI_t *cpifaceSession, uint8_t ch);
+OCP_INTERNAL void mpGetGlobInfo (struct globinfo *gi);
+OCP_INTERNAL char mpLooped (void);
+OCP_INTERNAL void mpSetLoop (unsigned char s);
+OCP_INTERNAL void mpLockPat (int st);
+OCP_INTERNAL int mpGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *buf, unsigned int len, uint32_t rate, int opt);
+OCP_INTERNAL void mpMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m);
+OCP_INTERNAL void mpGetRealVolume (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int *l, int *r);
+OCP_INTERNAL int mpGetChanStatus (struct cpifaceSessionAPI_t *cpifaceSession, int ch);
 
 enum
 {
@@ -201,17 +201,17 @@ enum
 	fxPanVibrato
 };
 
-int __attribute__ ((visibility ("internal"))) Load669 (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
-int __attribute__ ((visibility ("internal"))) LoadAMS (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
-int __attribute__ ((visibility ("internal"))) LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
-int __attribute__ ((visibility ("internal"))) LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
-int __attribute__ ((visibility ("internal"))) LoadMTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
-int __attribute__ ((visibility ("internal"))) LoadOKT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
-int __attribute__ ((visibility ("internal"))) LoadPTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
-int __attribute__ ((visibility ("internal"))) LoadS3M (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
-int __attribute__ ((visibility ("internal"))) LoadSTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
-int __attribute__ ((visibility ("internal"))) LoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+OCP_INTERNAL int Load669 (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+OCP_INTERNAL int LoadAMS (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+OCP_INTERNAL int LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+OCP_INTERNAL int LoadMTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+OCP_INTERNAL int LoadOKT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+OCP_INTERNAL int LoadPTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+OCP_INTERNAL int LoadS3M (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+OCP_INTERNAL int LoadSTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
+OCP_INTERNAL int LoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file);
 
-extern __attribute__ ((visibility ("internal"))) struct gmdmodule mod;
+extern OCP_INTERNAL struct gmdmodule mod;
 
 #endif

@@ -32,7 +32,7 @@
 #include "dev/mcp.h"
 #include "gmdplay.h"
 
-void __attribute__ ((visibility ("internal"))) mpOptimizePatLens(struct gmdmodule *m)
+OCP_INTERNAL void mpOptimizePatLens (struct gmdmodule *m)
 {
 	uint8_t *lastrows=calloc(sizeof(uint8_t), m->patnum);
 	unsigned int i;
@@ -103,7 +103,7 @@ void __attribute__ ((visibility ("internal"))) mpOptimizePatLens(struct gmdmodul
 	free(lastrows);
 }
 
-void __attribute__ ((visibility ("internal"))) mpReduceInstruments(struct gmdmodule *m)
+OCP_INTERNAL void mpReduceInstruments (struct gmdmodule *m)
 {
 	unsigned int i,j;
 	char *inptr;
@@ -137,7 +137,7 @@ void __attribute__ ((visibility ("internal"))) mpReduceInstruments(struct gmdmod
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) mpReduceMessage(struct gmdmodule *m)
+OCP_INTERNAL void mpReduceMessage (struct gmdmodule *m)
 {
 	char *mptr;
 	int len,i;
@@ -171,7 +171,7 @@ void __attribute__ ((visibility ("internal"))) mpReduceMessage(struct gmdmodule 
 	}
 }
 
-int __attribute__ ((visibility ("internal"))) mpReduceSamples(struct gmdmodule *m)
+OCP_INTERNAL int mpReduceSamples (struct gmdmodule *m)
 {
 	uint16_t *rellist=malloc(sizeof(uint16_t)*m->sampnum);
 	unsigned int i,n;
@@ -200,7 +200,7 @@ int __attribute__ ((visibility ("internal"))) mpReduceSamples(struct gmdmodule *
 	return 1;
 }
 
-void mpReset(struct gmdmodule *m)
+OCP_INTERNAL void mpReset (struct gmdmodule *m)
 {
 	m->instruments=0;
 	m->tracks=0;
@@ -214,7 +214,7 @@ void mpReset(struct gmdmodule *m)
 	*m->name=0;
 }
 
-void mpFree(struct gmdmodule *m)
+OCP_INTERNAL void mpFree (struct gmdmodule *m)
 {
 	unsigned int i;
 
@@ -242,7 +242,7 @@ void mpFree(struct gmdmodule *m)
 	mpReset(m);
 }
 
-int mpAllocInstruments(struct gmdmodule *m, int n)
+OCP_INTERNAL int mpAllocInstruments (struct gmdmodule *m, int n)
 {
 	unsigned int i;
 
@@ -255,7 +255,7 @@ int mpAllocInstruments(struct gmdmodule *m, int n)
 	return 1;
 }
 
-int mpAllocTracks(struct gmdmodule *m, int n)
+OCP_INTERNAL int mpAllocTracks (struct gmdmodule *m, int n)
 {
 	m->tracknum=n;
 	m->tracks=calloc(sizeof(struct gmdtrack), m->tracknum);
@@ -264,7 +264,7 @@ int mpAllocTracks(struct gmdmodule *m, int n)
 	return 1;
 }
 
-int mpAllocPatterns(struct gmdmodule *m, int n)
+OCP_INTERNAL int mpAllocPatterns (struct gmdmodule *m, int n)
 {
 	m->patnum=n;
 	m->patterns=calloc(sizeof(struct gmdpattern), m->patnum);
@@ -273,7 +273,7 @@ int mpAllocPatterns(struct gmdmodule *m, int n)
 	return 1;
 }
 
-int mpAllocSamples(struct gmdmodule *m, int n)
+OCP_INTERNAL int mpAllocSamples (struct gmdmodule *m, int n)
 {
 	m->sampnum=n;
 	m->samples=calloc(sizeof(struct sampleinfo), m->sampnum);
@@ -282,7 +282,7 @@ int mpAllocSamples(struct gmdmodule *m, int n)
 	return 1;
 }
 
-int mpAllocEnvelopes(struct gmdmodule *m, int n)
+OCP_INTERNAL int mpAllocEnvelopes (struct gmdmodule *m, int n)
 {
 	m->envnum=n;
 	m->envelopes=calloc(sizeof(struct gmdenvelope), m->envnum);
@@ -291,7 +291,7 @@ int mpAllocEnvelopes(struct gmdmodule *m, int n)
 	return 1;
 }
 
-int mpAllocOrders(struct gmdmodule *m, int n)
+OCP_INTERNAL int mpAllocOrders (struct gmdmodule *m, int n)
 {
 	m->ordnum=n;
 	m->orders=calloc(sizeof(uint16_t), m->ordnum);
@@ -300,7 +300,7 @@ int mpAllocOrders(struct gmdmodule *m, int n)
 	return 1;
 }
 
-int mpAllocModSamples(struct gmdmodule *m, int n)
+OCP_INTERNAL int mpAllocModSamples (struct gmdmodule *m, int n)
 {
 	unsigned int i;
 

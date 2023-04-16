@@ -212,7 +212,7 @@ static const char *FLAC_description[] =
 	NULL
 };
 
-int __attribute__ ((visibility ("internal"))) flac_type_init (struct PluginInitAPI_t *API)
+OCP_INTERNAL int flac_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
@@ -228,7 +228,7 @@ int __attribute__ ((visibility ("internal"))) flac_type_init (struct PluginInitA
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) flac_type_done (struct PluginCloseAPI_t *API)
+OCP_INTERNAL void flac_type_done (struct PluginCloseAPI_t *API)
 {
 	struct moduletype mt;
 

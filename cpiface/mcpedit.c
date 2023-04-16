@@ -76,7 +76,7 @@ void mcpNormalize (struct cpifaceSessionAPI_t *cpifaceSession, enum mcpNormalize
 	}
 }
 
-int mcpSetProcessKey (struct cpifaceSessionPrivate_t *f, uint16_t key)
+OCP_INTERNAL int mcpSetProcessKey (struct cpifaceSessionPrivate_t *f, uint16_t key)
 {
 	switch (key)
 	{

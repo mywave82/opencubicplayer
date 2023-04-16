@@ -87,7 +87,7 @@ static int itpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		epoch_sec = mktime(&epoch);
 		version_sec = (ver - 0x050) * 86400 + epoch_sec;
 
-		if (localtime_r(&version_sec, &version))
+		if (localtime_r(&version_sec, &version) != 0)
 		{
 			snprintf(m->comment, sizeof (m->comment), "Schism Tracker v%04d-%02d-%02d",
 				version.tm_year + 1900, version.tm_mon + 1, version.tm_mday);
@@ -99,7 +99,7 @@ static int itpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		epoch_sec = mktime(&epoch);
 		version_sec = (*(uint32_t *)(buf + 0x3c)) * 86400 + epoch_sec;
 
-		if (localtime_r(&version_sec, &version))
+		if (localtime_r(&version_sec, &version) != 0)
 		{
 			snprintf(m->comment, sizeof (m->comment), "Schism Tracker v%04d-%02d-%02d",
 				version.tm_year + 1900, version.tm_mon + 1, version.tm_mday);
@@ -119,7 +119,7 @@ static const char *IT_description[] =
 
 static struct mdbreadinforegstruct itpReadInfoReg = {"IT", itpReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__ ((visibility ("internal"))) it_type_init (struct PluginInitAPI_t *API)
+OCP_INTERNAL int it_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
@@ -133,7 +133,7 @@ int __attribute__ ((visibility ("internal"))) it_type_init (struct PluginInitAPI
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) it_type_done (struct PluginCloseAPI_t *API)
+OCP_INTERNAL void it_type_done (struct PluginCloseAPI_t *API)
 {
 	struct moduletype mt;
 

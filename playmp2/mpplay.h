@@ -17,20 +17,20 @@ struct ID3_t;
 struct ocpfilehandle_t;
 
 struct cpifaceSessionAPI_t;
-extern int __attribute__ ((visibility ("internal"))) mpeg_Bitrate; /* bitrate of the last decoded frame */
-extern int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) mpegClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) mpegIdle (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) mpegSetLoop(uint8_t s);
-extern char __attribute__ ((visibility ("internal"))) mpegIsLooped(void);
-extern void __attribute__ ((visibility ("internal"))) mpegPause(uint8_t p);
-extern void __attribute__ ((visibility ("internal"))) mpegGetInfo(struct mpeginfo *);
-extern uint32_t __attribute__ ((visibility ("internal"))) mpegGetPos(void);
-extern void __attribute__ ((visibility ("internal"))) mpegSetPos(uint32_t pos);
-extern void __attribute__ ((visibility ("internal"))) mpegGetID3(struct ID3_t **ID3);
-extern void __attribute__ ((visibility ("internal"))) ID3InfoInit (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) ID3InfoDone (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) ID3PicInit (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) ID3PicDone (struct cpifaceSessionAPI_t *cpifaceSession);
+extern OCP_INTERNAL int mpeg_Bitrate; /* bitrate of the last decoded frame */
+OCP_INTERNAL int mpegOpenPlayer (struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void mpegClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void mpegIdle (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void mpegSetLoop (uint8_t s);
+OCP_INTERNAL char mpegIsLooped (void);
+OCP_INTERNAL void mpegPause (uint8_t p);
+OCP_INTERNAL void mpegGetInfo (struct mpeginfo *);
+OCP_INTERNAL uint32_t mpegGetPos (void);
+OCP_INTERNAL void mpegSetPos (uint32_t pos);
+OCP_INTERNAL void mpegGetID3 (struct ID3_t **ID3);
+OCP_INTERNAL void ID3InfoInit (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void ID3InfoDone (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void ID3PicInit (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void ID3PicDone (struct cpifaceSessionAPI_t *cpifaceSession);
 
 #endif

@@ -6,21 +6,21 @@ struct hvl_tune;
 
 #define current_hvl_tune ht
 struct cpifaceSessionAPI_t;
-extern struct hvl_tune __attribute__ ((visibility ("internal"))) *current_hvl_tune;
-extern int             __attribute__ ((visibility ("internal")))  hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
-extern void            __attribute__ ((visibility ("internal")))  hvlClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void            __attribute__ ((visibility ("internal")))  hvlIdle (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void            __attribute__ ((visibility ("internal")))  hvlSetLoop (uint8_t s);
-extern char            __attribute__ ((visibility ("internal")))  hvlLooped (void);
-extern void            __attribute__ ((visibility ("internal")))  hvlPause (uint8_t p);
-extern void            __attribute__ ((visibility ("internal")))  hvlPrevSubSong ();
-extern void            __attribute__ ((visibility ("internal")))  hvlRestartSong ();
-extern void            __attribute__ ((visibility ("internal")))  hvlNextSubSong ();
-extern void            __attribute__ ((visibility ("internal")))  hvlGetStats (int *row, int *rows, int *order, int *orders, int *subsong, int *subsongs, int *tempo, int *speedmult);
-extern void            __attribute__ ((visibility ("internal")))  hvlMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m);
+extern OCP_INTERNAL struct hvl_tune *current_hvl_tune;
+int  OCP_INTERNAL hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession);
+void OCP_INTERNAL hvlClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
+void OCP_INTERNAL hvlIdle (struct cpifaceSessionAPI_t *cpifaceSession);
+void OCP_INTERNAL hvlSetLoop (uint8_t s);
+char OCP_INTERNAL hvlLooped (void);
+void OCP_INTERNAL hvlPause (uint8_t p);
+void OCP_INTERNAL hvlPrevSubSong ();
+void OCP_INTERNAL hvlRestartSong ();
+void OCP_INTERNAL hvlNextSubSong ();
+void OCP_INTERNAL hvlGetStats (int *row, int *rows, int *order, int *orders, int *subsong, int *subsongs, int *tempo, int *speedmult);
+void OCP_INTERNAL hvlMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m);
 
 /* This is for hvlpinst.c */
-extern __attribute__ ((visibility ("internal"))) uint8_t plInstUsed[256];
+extern OCP_INTERNAL uint8_t plInstUsed[256];
 
 
 /* This is for hvlpchan.c */
@@ -44,9 +44,9 @@ struct hvl_chaninfo
 
 	int muted; /* force-muted - TODO */
 };
-void hvlGetChanInfo (int chan, struct hvl_chaninfo *ci);
-void hvlGetChanVolume (struct cpifaceSessionAPI_t *cpifaceSession, int chan, int *l, int *r);
+OCP_INTERNAL void hvlGetChanInfo (int chan, struct hvl_chaninfo *ci);
+OCP_INTERNAL void hvlGetChanVolume (struct cpifaceSessionAPI_t *cpifaceSession, int chan, int *l, int *r);
 
-int __attribute__ ((visibility ("internal"))) hvlGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
+OCP_INTERNAL int hvlGetChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
 
 #endif

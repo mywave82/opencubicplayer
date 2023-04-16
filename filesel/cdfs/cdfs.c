@@ -94,12 +94,12 @@ struct cdfs_instance_filehandle_t
 	int cursectorsize;   /* the data-size of the current sector (sectorskip is taken into account) */
 };
 
-int __attribute__ ((visibility ("internal")))
-    detect_isofile_sectorformat (struct ocpfilehandle_t *isofile_fh,
-                                 const char *filename,
-                                 off_t st_size,
-                                 enum cdfs_format_t *isofile_format,
-                                 uint32_t *isofile_sectorcount)
+OCP_INTERNAL int
+detect_isofile_sectorformat (struct ocpfilehandle_t *isofile_fh,
+                             const char *filename,
+                             off_t st_size,
+                             enum cdfs_format_t *isofile_format,
+                             uint32_t *isofile_sectorcount)
 {
 	uint8_t buffer[6+8+4+12];
 
@@ -332,7 +332,7 @@ int __attribute__ ((visibility ("internal")))
 	return 1;
 }
 
-int __attribute__ ((visibility ("internal"))) cdfs_fetch_absolute_sector_2048 (struct cdfs_disc_t *disc, uint32_t sector, uint8_t *buffer) /* 2048 byte modes */
+OCP_INTERNAL int cdfs_fetch_absolute_sector_2048 (struct cdfs_disc_t *disc, uint32_t sector, uint8_t *buffer) /* 2048 byte modes */
 {
 	int i;
 	uint8_t xbuffer[16];
@@ -514,7 +514,7 @@ int __attribute__ ((visibility ("internal"))) cdfs_fetch_absolute_sector_2048 (s
 	return 1;
 }
 
-int __attribute__ ((visibility ("internal"))) cdfs_fetch_absolute_sector_2352 (struct cdfs_disc_t *disc, uint32_t sector, uint8_t *buffer)
+OCP_INTERNAL int cdfs_fetch_absolute_sector_2352 (struct cdfs_disc_t *disc, uint32_t sector, uint8_t *buffer)
 {
 	int i;
 	int subchannel = 0;
@@ -641,15 +641,15 @@ int __attribute__ ((visibility ("internal"))) cdfs_fetch_absolute_sector_2352 (s
 
 }
 
-void __attribute__ ((visibility ("internal")))
-     cdfs_disc_datasource_append (struct cdfs_disc_t     *disc,
-                                  uint32_t                sectoroffset,
-                                  uint32_t                sectorcount,
-                                  struct ocpfile_t       *file,
-                                  struct ocpfilehandle_t *fh,
-                                  enum cdfs_format_t      format,
-                                  uint64_t                offset,
-                                  uint64_t                length)
+OCP_INTERNAL void
+cdfs_disc_datasource_append (struct cdfs_disc_t     *disc,
+                             uint32_t                sectoroffset,
+                             uint32_t                sectorcount,
+                             struct ocpfile_t       *file,
+                             struct ocpfilehandle_t *fh,
+                             enum cdfs_format_t      format,
+                             uint64_t                offset,
+                             uint64_t                length)
 {
 	struct cdfs_datasource_t *temp;
 
@@ -691,17 +691,17 @@ void __attribute__ ((visibility ("internal")))
 	disc->datasources_count++;
 }
 
-void __attribute__ ((visibility ("internal")))
-     cdfs_disc_track_append (struct cdfs_disc_t *disc,
-                             uint32_t            pregap,
-                             uint32_t            start,
-                             uint32_t            length,
-                             const char         *title,
-                             const char         *performer,
-                             const char         *songwriter,
-                             const char         *composer,
-                             const char         *arranger,
-                             const char         *message)
+OCP_INTERNAL void
+cdfs_disc_track_append (struct cdfs_disc_t *disc,
+                        uint32_t            pregap,
+                        uint32_t            start,
+                        uint32_t            length,
+                        const char         *title,
+                        const char         *performer,
+                        const char         *songwriter,
+                        const char         *composer,
+                        const char         *arranger,
+                        const char         *message)
 {
 	if (disc->tracks_count >= 100)
 	{
@@ -722,7 +722,7 @@ void __attribute__ ((visibility ("internal")))
 	disc->tracks_count++;
 }
 
-enum cdfs_format_t __attribute__ ((visibility ("internal"))) cdfs_get_sector_format (struct cdfs_disc_t *disc, uint32_t sector)
+OCP_INTERNAL enum cdfs_format_t cdfs_get_sector_format (struct cdfs_disc_t *disc, uint32_t sector)
 {
 	int i;
 	for (i=0; i < disc->datasources_count; i++)
@@ -736,7 +736,7 @@ enum cdfs_format_t __attribute__ ((visibility ("internal"))) cdfs_get_sector_for
 	return FORMAT_ERROR;
 }
 
-struct cdfs_disc_t __attribute__ ((visibility ("internal"))) *cdfs_disc_new (struct ocpfile_t *file)
+OCP_INTERNAL struct cdfs_disc_t *cdfs_disc_new (struct ocpfile_t *file)
 {
 	struct cdfs_disc_t *disc;
 
@@ -866,8 +866,8 @@ static void cdfs_disc_free (struct cdfs_disc_t *disc)
 }
 
 /* returns 0 on errors */
-uint32_t __attribute__ ((visibility ("internal")))
-         CDFS_Directory_add (struct cdfs_disc_t *self, const uint32_t dir_parent_handle, const char *Dirname)
+OCP_INTERNAL uint32_t
+CDFS_Directory_add (struct cdfs_disc_t *self, const uint32_t dir_parent_handle, const char *Dirname)
 {
 	uint32_t *prev, iter;
 	uint32_t dirdb_ref;
@@ -934,11 +934,11 @@ uint32_t __attribute__ ((visibility ("internal")))
 }
 
 /* returns UINT32_MAX on errors */
-uint32_t __attribute__ ((visibility ("internal")))
-         CDFS_File_add (struct cdfs_disc_t *self,
-                        const uint32_t      dir_parent_handle,
-                        /*char             *Filepath,*/
-                        char               *Filename)
+OCP_INTERNAL uint32_t
+CDFS_File_add (struct cdfs_disc_t *self,
+               const uint32_t      dir_parent_handle,
+               /*char             *Filepath,*/
+               char               *Filename)
 {
 	uint32_t *prev, iter;
 	uint32_t dirdb_ref;
@@ -1002,8 +1002,8 @@ uint32_t __attribute__ ((visibility ("internal")))
 	return *prev;
 }
 
-void __attribute__ ((visibility ("internal")))
-     CDFS_File_zeroextent (struct cdfs_disc_t *disc, uint32_t handle, uint64_t length)
+OCP_INTERNAL void
+CDFS_File_zeroextent (struct cdfs_disc_t *disc, uint32_t handle, uint64_t length)
 {
 	void *temp;
 	struct cdfs_instance_file_t *f;
@@ -1035,7 +1035,8 @@ append:
 	f->extents++;
 }
 
-void __attribute__ ((visibility ("internal"))) CDFS_File_extent (struct cdfs_disc_t *disc, uint32_t handle, uint32_t location, uint64_t length, int sector_skip)
+OCP_INTERNAL void
+CDFS_File_extent (struct cdfs_disc_t *disc, uint32_t handle, uint32_t location, uint64_t length, int sector_skip)
 {
 	void *temp;
 	struct cdfs_instance_file_t *f;
@@ -1071,8 +1072,8 @@ append:
 	f->extents++;
 }
 
-uint32_t __attribute__ ((visibility ("internal")))
-         CDFS_File_add_audio (struct cdfs_disc_t *self, const uint32_t dir_parent_handle, char *FilenameShort, char *FilenameLong, uint_fast32_t filesize, int audiotrack)
+OCP_INTERNAL uint32_t
+CDFS_File_add_audio (struct cdfs_disc_t *self, const uint32_t dir_parent_handle, char *FilenameShort, char *FilenameLong, uint_fast32_t filesize, int audiotrack)
 {
 	uint32_t *prev, iter;
 
@@ -1826,7 +1827,7 @@ static int cdfs_filehandle_audio_ioctl (struct ocpfilehandle_t *_self, const cha
 	return -1;
 }
 
-void __attribute__ ((visibility ("internal"))) cdfs_disc_ref (struct cdfs_disc_t *self)
+OCP_INTERNAL void cdfs_disc_ref (struct cdfs_disc_t *self)
 {
 
 	debug_printf ( " cdfs_disc_ref (old count = %d)\n", self->refcount);
@@ -1838,7 +1839,7 @@ void __attribute__ ((visibility ("internal"))) cdfs_disc_ref (struct cdfs_disc_t
 
 }
 
-void __attribute__ ((visibility ("internal"))) cdfs_disc_unref (struct cdfs_disc_t *self)
+OCP_INTERNAL void cdfs_disc_unref (struct cdfs_disc_t *self)
 {
 	debug_printf ( " cdfs_disc_unref (old count = %d)\n", self->refcount);
 

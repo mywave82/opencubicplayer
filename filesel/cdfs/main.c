@@ -45,7 +45,7 @@
 #define debug_printf(format,args...) ((void)0)
 #endif
 
-iconv_t __attribute__ ((visibility ("internal"))) UTF16BE_cd = ((iconv_t) -1);
+OCP_INTERNAL iconv_t UTF16BE_cd = ((iconv_t) -1);
 
 static struct ocpdir_t *cdfs_disc_to_dir (struct cdfs_disc_t *disc)
 {

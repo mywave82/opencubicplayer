@@ -511,12 +511,12 @@ static int scoEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpimoderegstruct cpiModeScope = {"scope", scoSetMode, scoDraw, scoIProcessKey, plScopesKey, scoEvent CPIMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) cpiScopeInit (void)
+OCP_INTERNAL void cpiScopeInit (void)
 {
 	cpiRegisterDefMode(&cpiModeScope);
 }
 
-void __attribute__ ((visibility ("internal"))) cpiScopeDone (void)
+OCP_INTERNAL void cpiScopeDone (void)
 {
 	cpiUnregisterDefMode(&cpiModeScope);
 }

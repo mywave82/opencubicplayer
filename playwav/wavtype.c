@@ -199,7 +199,7 @@ static const char *WAV_description[] =
 
 static struct mdbreadinforegstruct wavReadInfoReg = {"WAVE", wavReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__ ((visibility ("internal"))) wav_type_init (struct PluginInitAPI_t *API)
+OCP_INTERNAL int wav_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
@@ -214,7 +214,7 @@ int __attribute__ ((visibility ("internal"))) wav_type_init (struct PluginInitAP
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) wav_type_done (struct PluginCloseAPI_t *API)
+OCP_INTERNAL void wav_type_done (struct PluginCloseAPI_t *API)
 {
 	struct moduletype mt;
 

@@ -239,7 +239,7 @@ static void xmpMark (struct cpifaceSessionAPI_t *cpifaceSession)
 	Mark(cpifaceSession, plInstUsed, plSampUsed);
 }
 
-void __attribute__ ((visibility ("internal"))) xmpInstClear (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void xmpInstClear (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	memset(plInstUsed, 0, instnum);
 	memset(plSampUsed, 0, sampnum);
@@ -253,7 +253,7 @@ static void Done (struct cpifaceSessionAPI_t *cpifaceSession)
 	free(plBigSampNum);
 }
 
-void __attribute__ ((visibility ("internal"))) xmpInstSetup(struct cpifaceSessionAPI_t *cpifaceSession, const struct xmpinstrument *ins, int nins, const struct xmpsample *smp, int nsmp, const struct sampleinfo *smpi, int dummy, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpifaceSession, char *, char *))
+OCP_INTERNAL void xmpInstSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct xmpinstrument *ins, int nins, const struct xmpsample *smp, int nsmp, const struct sampleinfo *smpi, int dummy, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpifaceSession, char *, char *))
 {
 	int i,j;
 	int biginstlen=0;

@@ -135,9 +135,7 @@ static int32_t cossintab86[SAMPLES2][2]=
 };
 static uint16_t permtab[SAMPLES];
 
-void
-__attribute__ ((visibility ("internal")))
-fftInit(void)
+OCP_INTERNAL void fftInit(void)
 {
 	int i,j,k;
 	j=0;

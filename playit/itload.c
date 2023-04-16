@@ -47,7 +47,7 @@
 #include "stuff/compat.h"
 #include "stuff/err.h"
 
-int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t *cpifaceSession, struct it_module *this, struct ocpfilehandle_t *file)
+OCP_INTERNAL int it_load (struct cpifaceSessionAPI_t *cpifaceSession, struct it_module *this, struct ocpfilehandle_t *file)
 {
 	int i,j,k,n;
 
@@ -785,7 +785,7 @@ int __attribute__ ((visibility ("internal"))) it_load(struct cpifaceSessionAPI_t
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) it_free(struct it_module *this)
+OCP_INTERNAL void it_free (struct it_module *this)
 {
 	int i;
 

@@ -61,7 +61,7 @@ static void FreeResources(struct LoadULTResources *r)
 	}
 }
 
-int __attribute__ ((visibility ("internal"))) LoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
+OCP_INTERNAL int LoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	char id[15];
 	uint8_t ver;

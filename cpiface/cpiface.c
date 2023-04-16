@@ -80,7 +80,7 @@
 #include <unistd.h>
 #include <time.h>
 
-__attribute__ ((visibility ("internal"))) struct cpifaceSessionPrivate_t cpifaceSessionAPI;
+OCP_INTERNAL struct cpifaceSessionPrivate_t cpifaceSessionAPI;
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) < (y)) ? (x) : (y))

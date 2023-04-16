@@ -614,7 +614,7 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) hvlChanSetup (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void hvlChanSetup (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->UseChannels (cpifaceSession, drawchannel);
 }

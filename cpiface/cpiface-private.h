@@ -38,30 +38,30 @@ struct cpifaceSessionPrivate_t
 	unsigned int          cpiDebug_lines;
 };
 
-extern __attribute__ ((visibility ("internal"))) struct cpifaceSessionPrivate_t cpifaceSessionAPI;
+extern OCP_INTERNAL struct cpifaceSessionPrivate_t cpifaceSessionAPI;
 
-void __attribute__ ((visibility ("internal"))) fftInit(void);
+OCP_INTERNAL void fftInit(void);
 
-void __attribute__ ((visibility ("internal"))) cpiAnalInit (void);
-void __attribute__ ((visibility ("internal"))) cpiAnalDone (void);
-void __attribute__ ((visibility ("internal"))) cpiChanInit (void);
-void __attribute__ ((visibility ("internal"))) cpiGraphInit (void);
-void __attribute__ ((visibility ("internal"))) cpiGraphDone (void);
-void __attribute__ ((visibility ("internal"))) cpiInstInit (void);
-void __attribute__ ((visibility ("internal"))) cpiWurfel2Init (void);
-void __attribute__ ((visibility ("internal"))) cpiWurfel2Done (void);
-void __attribute__ ((visibility ("internal"))) cpiLinksInit (void);
-void __attribute__ ((visibility ("internal"))) cpiLinksDone (void);
-void __attribute__ ((visibility ("internal"))) cpiMVolInit (void);
-void __attribute__ ((visibility ("internal"))) cpiMVolDone (void);
-void __attribute__ ((visibility ("internal"))) cpiPhaseInit (void);
-void __attribute__ ((visibility ("internal"))) cpiPhaseDone (void);
-void __attribute__ ((visibility ("internal"))) cpiScopeInit (void);
-void __attribute__ ((visibility ("internal"))) cpiScopeDone (void);
-void __attribute__ ((visibility ("internal"))) cpiTrackInit (void);
-void __attribute__ ((visibility ("internal"))) cpiVolCtrlInit (void);
-void __attribute__ ((visibility ("internal"))) cpiVolCtrlDone (void);
+OCP_INTERNAL void cpiAnalInit (void);
+OCP_INTERNAL void cpiAnalDone (void);
+OCP_INTERNAL void cpiChanInit (void);
+OCP_INTERNAL void cpiGraphInit (void);
+OCP_INTERNAL void cpiGraphDone (void);
+OCP_INTERNAL void cpiInstInit (void);
+OCP_INTERNAL void cpiWurfel2Init (void);
+OCP_INTERNAL void cpiWurfel2Done (void);
+OCP_INTERNAL void cpiLinksInit (void);
+OCP_INTERNAL void cpiLinksDone (void);
+OCP_INTERNAL void cpiMVolInit (void);
+OCP_INTERNAL void cpiMVolDone (void);
+OCP_INTERNAL void cpiPhaseInit (void);
+OCP_INTERNAL void cpiPhaseDone (void);
+OCP_INTERNAL void cpiScopeInit (void);
+OCP_INTERNAL void cpiScopeDone (void);
+OCP_INTERNAL void cpiTrackInit (void);
+OCP_INTERNAL void cpiVolCtrlInit (void);
+OCP_INTERNAL void cpiVolCtrlDone (void);
 
-int mcpSetProcessKey (struct cpifaceSessionPrivate_t *f, uint16_t key);
+OCP_INTERNAL int mcpSetProcessKey (struct cpifaceSessionPrivate_t *f, uint16_t key);
 
 #endif

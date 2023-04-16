@@ -62,7 +62,7 @@ static void FreeResources(struct LoadOKTResources *r)
 	}
 }
 
-int __attribute__ ((visibility ("internal"))) LoadOKT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
+OCP_INTERNAL int LoadOKT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 
 	uint8_t hsig[8];

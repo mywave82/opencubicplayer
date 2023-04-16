@@ -33,7 +33,7 @@
 #include "xmplay.h"
 #include "stuff/err.h"
 
-void __attribute__ ((visibility ("internal"))) xmpFreeModule(struct xmodule *m)
+OCP_INTERNAL void xmpFreeModule (struct xmodule *m)
 {
 	unsigned int i;
 	if (m->sampleinfos)
@@ -55,7 +55,7 @@ void __attribute__ ((visibility ("internal"))) xmpFreeModule(struct xmodule *m)
 	memset (m, 0, sizeof (*m));
 }
 
-void __attribute__ ((visibility ("internal"))) xmpOptimizePatLens(struct xmodule *m)
+OCP_INTERNAL void xmpOptimizePatLens (struct xmodule *m)
 {
 	unsigned int i;
 	uint8_t **detection=calloc(sizeof(uint8_t *), sizeof(uint8_t)*m->nord);

@@ -3,6 +3,6 @@
 
 struct gmdmodule;
 struct cpifaceSessionAPI_t;
-void __attribute__ ((visibility ("internal"))) gmdChanSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct gmdmodule *);
+OCP_INTERNAL void gmdChanSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct gmdmodule *);
 
 #endif

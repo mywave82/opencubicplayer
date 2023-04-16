@@ -24,13 +24,13 @@
 #include "types.h"
 #include "player.h"
 
-int32_t __attribute__ ((visibility ("internal"))) stereopan_left[5]  = { 128,  96,  64,  32,   0 };
-int32_t __attribute__ ((visibility ("internal"))) stereopan_right[5] = { 128, 160, 193, 225, 255 };
+OCP_INTERNAL int32_t stereopan_left[5]  = { 128,  96,  64,  32,   0 };
+OCP_INTERNAL int32_t stereopan_right[5] = { 128, 160, 193, 225, 255 };
 
 /*
 ** Waves
 */
-int8_t __attribute__ ((visibility ("internal"))) waves[WAVES_SIZE];
+OCP_INTERNAL int8_t waves[WAVES_SIZE];
 //static int16 waves2[WAVES_SIZE];
 
 static const int16_t vib_tab[] =
@@ -187,7 +187,7 @@ static void hvl_reset_some_stuff( struct hvl_tune *ht )
 }
 
 /* half-public */
-void __attribute__ ((visibility ("internal"))) hvl_InitReplayer( void )
+OCP_INTERNAL void hvl_InitReplayer( void )
 {
 	hvl_GenPanningTables ();
 	hvl_GenSawtooth ( &waves[WO_SAWTOOTH_04], 0x04 );
@@ -208,7 +208,7 @@ void __attribute__ ((visibility ("internal"))) hvl_InitReplayer( void )
 }
 
 /* half-public */
-int __attribute__ ((visibility ("internal"))) hvl_InitSubsong ( struct hvl_tune *ht, uint32_t nr )
+OCP_INTERNAL int hvl_InitSubsong ( struct hvl_tune *ht, uint32_t nr )
 {
 	uint32_t PosNr, i;
 
@@ -1634,7 +1634,7 @@ hvl_mixchunk (struct hvl_tune *ht, int16_t *buf, size_t samples)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) hvl_DecodeFrame (struct hvl_tune *ht, int16_t *buf, size_t buflen)
+OCP_INTERNAL void hvl_DecodeFrame (struct hvl_tune *ht, int16_t *buf, size_t buflen)
 {
 	uint32_t pos = 0;
 	uint32_t newpos;
@@ -1657,7 +1657,7 @@ void __attribute__ ((visibility ("internal"))) hvl_DecodeFrame (struct hvl_tune 
 }
 
 #if 0
-int32_t __attribute__ ((visibility ("internal"))) hvl_mix_findloudest ( struct hvl_tune *ht, uint32_ samples )
+OCP_INTERNAL int32_t hvl_mix_findloudest ( struct hvl_tune *ht, uint32_ samples )
 {
 	int8_t   *src[MAX_CHANNELS];
 	int8_t   *rsrc[MAX_CHANNELS];
@@ -1768,7 +1768,7 @@ int32_t __attribute__ ((visibility ("internal"))) hvl_mix_findloudest ( struct h
 	return loud;
 }
 
-int32_t __attribute__ ((visibility ("internal"))) hvl_FindLoudest ( struct hvl_tune *ht, int32_t maxframes, BOOL usesongend )
+OCP_INTERNAL int32_t hvl_FindLoudest ( struct hvl_tune *ht, int32_t maxframes, BOOL usesongend )
 {
 	uint32_t rsamp, rloop;
 	uint32_t samples, loops, loud, n;

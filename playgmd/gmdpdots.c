@@ -30,7 +30,7 @@
 #include "gmdplay.h"
 #include "gmdpdots.h"
 
-int __attribute__ ((visibility ("internal"))) gmdGetDots (struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *d, int max)
+OCP_INTERNAL int gmdGetDots (struct cpifaceSessionAPI_t *cpifaceSession, struct notedotsdata *d, int max)
 {
 	int pos=0;
 	int i;

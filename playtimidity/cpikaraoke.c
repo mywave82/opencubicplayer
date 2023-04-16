@@ -376,7 +376,7 @@ void cpiKaraokeDone (struct cpifaceSessionAPI_t *cpifaceSession)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) cpiKaraokeSetTimeCode (struct cpifaceSessionAPI_t *cpifaceSession, uint32_t timecode)
+OCP_INTERNAL void cpiKaraokeSetTimeCode (struct cpifaceSessionAPI_t *cpifaceSession, uint32_t timecode)
 {
 	unsigned int u;
 	if (!KaraokeLyric)

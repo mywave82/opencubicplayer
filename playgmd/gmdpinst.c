@@ -239,7 +239,7 @@ static void gmdMark (struct cpifaceSessionAPI_t *cpifaceSession)
 	Mark (cpifaceSession, plInstUsed, plSampUsed);
 }
 
-void __attribute__ ((visibility ("internal"))) gmdInstClear (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void gmdInstClear (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	memset(plInstUsed, 0, instnum);
 	memset(plSampUsed, 0, sampnum);
@@ -253,7 +253,7 @@ static void Done (struct cpifaceSessionAPI_t *cpifaceSession)
 	free(plBigSampNum);
 }
 
-void __attribute__ ((visibility ("internal"))) gmdInstSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct gmdinstrument *ins, int nins, const struct gmdsample *smp, int nsmp, const struct sampleinfo *smpi, int _notused, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *, uint8_t *))
+OCP_INTERNAL void gmdInstSetup (struct cpifaceSessionAPI_t *cpifaceSession, const struct gmdinstrument *ins, int nins, const struct gmdsample *smp, int nsmp, const struct sampleinfo *smpi, int _notused, int type, void (*MarkyBoy)(struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *, uint8_t *))
 {
 	int i,j;
 	int biginstlen;

@@ -61,7 +61,7 @@ static struct mad_stream stream;
 static struct mad_frame frame;
 static struct mad_synth synth;
 static unsigned int data_in_synth;
-int __attribute__ ((visibility ("internal"))) mpeg_Bitrate; /* bitrate of the last decoded frame */
+OCP_INTERNAL int mpeg_Bitrate; /* bitrate of the last decoded frame */
 static int mpegrate; /* samp-rate in the mpeg */
 static int mpegstereo;
 static unsigned char *GuardPtr;
@@ -191,7 +191,7 @@ static void audio_pcm_s16(int16_t *data, unsigned int nsamples, mad_fixed_t cons
 		}
 }
 
-void __attribute__ ((visibility ("internal"))) mpegGetID3(struct ID3_t **ID3)
+OCP_INTERNAL void mpegGetID3 (struct ID3_t **ID3)
 {
 	clipbusy++;
 
@@ -646,7 +646,7 @@ static void mpegIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) mpegIdle (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void mpegIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -829,15 +829,15 @@ void __attribute__ ((visibility ("internal"))) mpegIdle (struct cpifaceSessionAP
 	clipbusy--;
 }
 
-void __attribute__ ((visibility ("internal"))) mpegSetLoop(uint8_t s)
+OCP_INTERNAL void mpegSetLoop (uint8_t s)
 {
 	donotloop=!s;
 }
-char __attribute__ ((visibility ("internal"))) mpegIsLooped(void)
+OCP_INTERNAL char mpegIsLooped (void)
 {
 	return mpeg_looped == 3;
 }
-void __attribute__ ((visibility ("internal"))) mpegPause(uint8_t p)
+OCP_INTERNAL void mpegPause (uint8_t p)
 {
 	mpeg_inpause=p;
 }
@@ -887,7 +887,7 @@ static int mpegGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) mpegGetInfo(struct mpeginfo *info)
+OCP_INTERNAL void mpegGetInfo (struct mpeginfo *info)
 {
 	info->pos=datapos;
 	info->len=fl;
@@ -897,11 +897,11 @@ void __attribute__ ((visibility ("internal"))) mpegGetInfo(struct mpeginfo *info
 	info->opt25=opt25;
 	info->opt50=opt50;
 }
-uint32_t __attribute__ ((visibility ("internal"))) mpegGetPos(void)
+OCP_INTERNAL uint32_t mpegGetPos (void)
 {
 	return datapos;
 }
-void __attribute__ ((visibility ("internal"))) mpegSetPos(uint32_t pos)
+OCP_INTERNAL void mpegSetPos (uint32_t pos)
 {
 	/*if (pos<0)
 		pos=0;*/
@@ -1080,7 +1080,7 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 	return 1;
 }
 
-int __attribute__ ((visibility ("internal"))) mpegOpenPlayer(struct ocpfilehandle_t *mpegfile, struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL int mpegOpenPlayer (struct ocpfilehandle_t *mpegfile, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int retval;
 	enum plrRequestFormat format;
@@ -1186,7 +1186,7 @@ error_out:
 	return retval;
 }
 
-void __attribute__ ((visibility ("internal"))) mpegClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void mpegClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	free (id3_tag_buffer); id3_tag_buffer = 0;
 	id3_tag_target = 0;

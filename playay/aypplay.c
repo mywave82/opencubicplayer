@@ -229,5 +229,5 @@ static void ayPluginClose (struct PluginCloseAPI_t *API)
 	ay_type_done (API);
 }
 
-const struct cpifaceplayerstruct __attribute__ ((visibility ("internal"))) ayPlayer = {"[Aylet plugin]", ayOpenFile, ayCloseFile};
+OCP_INTERNAL const struct cpifaceplayerstruct ayPlayer = {"[Aylet plugin]", ayOpenFile, ayCloseFile};
 DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playay", .desc = "OpenCP aylet Player (c) 2005-'23 Russell Marks, Ian Collier & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = ayPluginInit, .PluginClose = ayPluginClose};

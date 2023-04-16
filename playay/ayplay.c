@@ -82,11 +82,11 @@ static int debug_output = -1;
 #endif
 
 /* from main.c */
-__attribute__ ((visibility ("internal"))) struct aydata_tag aydata;
-__attribute__ ((visibility ("internal"))) struct time_tag ay_tunetime;
-__attribute__ ((visibility ("internal"))) int ay_track=0;
+OCP_INTERNAL struct aydata_tag aydata;
+OCP_INTERNAL struct time_tag ay_tunetime;
+OCP_INTERNAL int ay_track=0;
 static int new_ay_track=0;
-__attribute__ ((visibility ("internal"))) unsigned long ay_tstates,ay_tsmax;
+OCP_INTERNAL unsigned long ay_tstates, ay_tsmax;
 static int ay_current_reg=0;
 static int done_fade=0;
 static int fadetime=10;     /* fadeout time *after* that in sec, 0=none */
@@ -95,7 +95,7 @@ static int silent_max=4*50; /* max frames of silence before skipping */
 static int ay_looped;
 
 /* the memory is a flat all-RAM 64k */
-__attribute__ ((visibility ("internal"))) unsigned char ay_mem[64*1024];
+OCP_INTERNAL unsigned char ay_mem[64*1024];
 #define AYLET_VER               "0.3"
 #define FRAME_STATES_48         (3500000/50)
 #define FRAME_STATES_128        (3546900/50)
@@ -150,7 +150,7 @@ static struct aydumpbuffer_delayed_states_t *aydumpbuffer_delayed_states_slot_ge
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) ayGetChans(struct ay_driver_frame_state_t *dst)
+OCP_INTERNAL void ayGetChans (struct ay_driver_frame_state_t *dst)
 {
 	*dst = aydumpbuffer_state_current.aydumpbuffer_states;
 }
@@ -185,14 +185,14 @@ do { \
 } while(0)
 
 /* from main.c */
-unsigned int __attribute__ ((visibility ("internal"))) ay_in(int h,int l)
+OCP_INTERNAL unsigned int ay_in (int h,int l)
 {
 	/* presumably nothing? XXX */
 	return 255;
 }
 
 /* from main.c */
-unsigned int __attribute__ ((visibility ("internal"))) ay_out(int h,int l,int a)
+OCP_INTERNAL unsigned int ay_out (int h,int l,int a)
 {
 	static int cpc_f4=0;
 
@@ -467,7 +467,7 @@ static void tunetime_reset(void)
 
 /* returns zero if we want to exit the emulation (i.e. exit track) */
 static int silent_for=0;
-int __attribute__ ((visibility ("internal"))) ay_do_interrupt (const struct plrDevAPI_t *plrDevAPI)
+OCP_INTERNAL int  ay_do_interrupt (const struct plrDevAPI_t *plrDevAPI)
 {
 	/* check for fade needed */
 	if(!done_fade && stopafter && ay_tunetime.min*60+ay_tunetime.sec>=stopafter)
@@ -521,7 +521,7 @@ int __attribute__ ((visibility ("internal"))) ay_do_interrupt (const struct plrD
 	return 0;
 }
 
-void __attribute__ ((visibility ("internal"))) ay_driver_frame(int16_t *quad_samples, size_t bytes)
+OCP_INTERNAL void ay_driver_frame (int16_t *quad_samples, size_t bytes)
 {
 	int i;
 
@@ -562,7 +562,7 @@ void __attribute__ ((visibility ("internal"))) ay_driver_frame(int16_t *quad_sam
 	aydumpbuffer_n=bytes / 12;
 }
 
-void __attribute__ ((visibility ("internal"))) aySetMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int mute)
+OCP_INTERNAL void aySetMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int mute)
 {
 	cpifaceSession->MuteChannel[ch] = mute;
 	switch (ch)
@@ -645,7 +645,7 @@ static void ayIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) ayIdle (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void ayIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -877,7 +877,7 @@ static int ayGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 	return 0;
 }
 
-int __attribute__ ((visibility ("internal"))) ayOpenPlayer(struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL int ayOpenPlayer(struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	uint32_t ayRate;
 	enum plrRequestFormat format;
@@ -986,7 +986,7 @@ errorout_aydata:
 	return retval;
 }
 
-void __attribute__ ((visibility ("internal"))) ayClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void ayClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	sound_end();
 
@@ -1015,22 +1015,22 @@ void __attribute__ ((visibility ("internal"))) ayClosePlayer (struct cpifaceSess
 #endif
 }
 
-int __attribute__ ((visibility ("internal"))) ayIsLooped(void)
+OCP_INTERNAL int ayIsLooped (void)
 {
 	return ay_looped == 3;
 }
 
-void __attribute__ ((visibility ("internal"))) aySetLoop(unsigned char s)
+OCP_INTERNAL void aySetLoop (unsigned char s)
 {
 	donotloop=!s;
 }
 
-void __attribute__ ((visibility ("internal"))) ayPause(unsigned char p)
+OCP_INTERNAL void ayPause (unsigned char p)
 {
 	ay_inpause=p;
 }
 
-void __attribute__ ((visibility ("internal"))) ayGetInfo(struct ayinfo *info)
+OCP_INTERNAL void ayGetInfo (struct ayinfo *info)
 {
 	info->track=ay_track+1;
 	info->numtracks=aydata.num_tracks;
@@ -1040,7 +1040,7 @@ void __attribute__ ((visibility ("internal"))) ayGetInfo(struct ayinfo *info)
 }
 
 
-void __attribute__ ((visibility ("internal"))) ayStartSong (struct cpifaceSessionAPI_t *cpifaceSession, int song)
+OCP_INTERNAL void ayStartSong (struct cpifaceSessionAPI_t *cpifaceSession, int song)
 {
 	new_ay_track=song-1;
 	cpifaceSession->ringbufferAPI->reset(aybufpos);

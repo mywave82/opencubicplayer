@@ -343,7 +343,7 @@ static const char *XM_description[] =
 
 static struct mdbreadinforegstruct xmpReadInfoReg = {"MOD/XM", xmpReadInfo MDBREADINFOREGSTRUCT_TAIL};
 
-int __attribute__((visibility ("internal"))) xm_type_init (struct PluginInitAPI_t *API)
+OCP_INTERNAL int xm_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
@@ -388,7 +388,7 @@ int __attribute__((visibility ("internal"))) xm_type_init (struct PluginInitAPI_
 	return errOk;
 }
 
-void __attribute__((visibility ("internal"))) xm_type_done (struct PluginCloseAPI_t *API)
+OCP_INTERNAL void xm_type_done (struct PluginCloseAPI_t *API)
 {
 	struct moduletype mt;
 

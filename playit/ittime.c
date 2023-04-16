@@ -33,7 +33,7 @@
 #include "types.h"
 #include "itplay.h"
 
-int __attribute__ ((visibility ("internal"))) it_precalctime(struct it_module *this, int startpos, int (*calctimer)[2], int calcn, int ite)
+OCP_INTERNAL int it_precalctime (struct it_module *this, int startpos, int (*calctimer)[2], int calcn, int ite)
 {
 	uint8_t *patptr=0;
 

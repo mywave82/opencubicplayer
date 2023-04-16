@@ -490,42 +490,42 @@ static int loadmod (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *
 	return errOk;
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadMOD (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
+OCP_INTERNAL int xmpLoadMOD (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod (cpifaceSession, m, file, 0, 1, 8);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadMODt (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
+OCP_INTERNAL int xmpLoadMODt (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod (cpifaceSession, m, file, 0, 1, 2);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadMODd (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
+OCP_INTERNAL int xmpLoadMODd (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod (cpifaceSession, m, file, 0, 1, 1);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadM31 (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
+OCP_INTERNAL int xmpLoadM31 (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod (cpifaceSession, m, file, 4, 2, 0);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadM15 (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
+OCP_INTERNAL int xmpLoadM15 (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod (cpifaceSession, m, file, 4, 0, 0);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadM15t (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
+OCP_INTERNAL int xmpLoadM15t (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod (cpifaceSession, m, file, 4, 0, 2);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadWOW (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
+OCP_INTERNAL int xmpLoadWOW (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod (cpifaceSession, m, file, 8, 1, 2);
 }
 
-int __attribute__ ((visibility ("internal"))) xmpLoadMODf (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
+OCP_INTERNAL int xmpLoadMODf (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *m, struct ocpfilehandle_t *file)
 {
 	return loadmod (cpifaceSession, m, file, 0, 1, 4);
 }

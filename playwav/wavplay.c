@@ -274,7 +274,7 @@ static void wpIdler(struct cpifaceSessionAPI_t *cpifaceSession)
 	}
 }
 
-void  __attribute__ ((visibility ("internal"))) wpIdle (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void wpIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	if (clipbusy++)
 	{
@@ -458,22 +458,22 @@ void  __attribute__ ((visibility ("internal"))) wpIdle (struct cpifaceSessionAPI
 	clipbusy--;
 }
 
-char __attribute__ ((visibility ("internal"))) wpLooped(void)
+OCP_INTERNAL char wpLooped (void)
 {
 	return wav_looped == 3;
 }
 
-void __attribute__ ((visibility ("internal"))) wpSetLoop(uint8_t s)
+OCP_INTERNAL void wpSetLoop (uint8_t s)
 {
 	donotloop=!s;
 }
 
-void __attribute__ ((visibility ("internal"))) wpPause(uint8_t p)
+OCP_INTERNAL void wpPause (uint8_t p)
 {
 	wav_inpause=p;
 }
 
-static void wpSetSpeed(uint16_t sp)
+static void wpSetSpeed (uint16_t sp)
 {
 	if (sp < 4)
 		sp = 4;
@@ -522,12 +522,12 @@ static int wpGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 }
 
 
-uint32_t __attribute__ ((visibility ("internal"))) wpGetPos (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL uint32_t wpGetPos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	return (wavepos + wavelen - cpifaceSession->ringbufferAPI->get_tail_available_samples (wavebufpos))%wavelen;
 }
 
-void __attribute__ ((visibility ("internal"))) wpGetInfo (struct cpifaceSessionAPI_t *cpifaceSession, struct waveinfo *info)
+OCP_INTERNAL void wpGetInfo (struct cpifaceSessionAPI_t *cpifaceSession, struct waveinfo *info)
 {
 	info->pos=wpGetPos(cpifaceSession);
 	info->len=wavelen;
@@ -538,7 +538,7 @@ void __attribute__ ((visibility ("internal"))) wpGetInfo (struct cpifaceSessionA
 	info->opt50=opt50;
 }
 
-void __attribute__ ((visibility ("internal"))) wpSetPos (struct cpifaceSessionAPI_t *cpifaceSession, uint32_t pos)
+OCP_INTERNAL void wpSetPos (struct cpifaceSessionAPI_t *cpifaceSession, uint32_t pos)
 {
 	PRINT("wpSetPos called for pos %lu", (unsigned long)pos);
 
@@ -549,7 +549,7 @@ void __attribute__ ((visibility ("internal"))) wpSetPos (struct cpifaceSessionAP
 	cpifaceSession->ringbufferAPI->reset (wavebufpos);
 }
 
-uint8_t __attribute__ ((visibility ("internal"))) wpOpenPlayer(struct ocpfilehandle_t *wavf, struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL uint8_t wpOpenPlayer(struct ocpfilehandle_t *wavf, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	enum plrRequestFormat format;
 	uint32_t temp;
@@ -800,7 +800,7 @@ error_out_wavefile:
 	return retval;
 }
 
-void __attribute__ ((visibility ("internal"))) wpClosePlayer(struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void wpClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	active=0;
 

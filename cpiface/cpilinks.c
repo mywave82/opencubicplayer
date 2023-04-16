@@ -192,12 +192,12 @@ static int hlpEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ignore)
 
 static struct cpimoderegstruct cpiModeLinks = {"links", hlpSetMode, hlpDraw, hlpIProcessKey, plHelpKey, hlpEvent CPIMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) cpiLinksInit (void)
+OCP_INTERNAL void cpiLinksInit (void)
 {
 	cpiRegisterDefMode(&cpiModeLinks);
 }
 
-void __attribute__ ((visibility ("internal"))) cpiLinksDone (void)
+OCP_INTERNAL void cpiLinksDone (void)
 {
 	cpiUnregisterDefMode(&cpiModeLinks);
 }

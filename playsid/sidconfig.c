@@ -1276,7 +1276,7 @@ static struct ocpfile_t *sidconfig; // needs to overlay an dialog above filebrow
 
 static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API);
 
-int __attribute__ ((visibility ("internal"))) sid_config_init (struct PluginInitAPI_t *API)
+OCP_INTERNAL int sid_config_init (struct PluginInitAPI_t *API)
 {
 	sidconfig = API->dev_file_create (
 		API->dmSetup->basedir,
@@ -1295,7 +1295,7 @@ int __attribute__ ((visibility ("internal"))) sid_config_init (struct PluginInit
 	return errOk;
 }
 
-void __attribute__ ((visibility ("internal"))) sid_config_done (struct PluginCloseAPI_t *API)
+OCP_INTERNAL void sid_config_done (struct PluginCloseAPI_t *API)
 {
 	if (sidconfig)
 	{

@@ -444,12 +444,12 @@ static int ID3InfoEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpitextmoderegstruct cpiID3Info = {"id3info", ID3InfoGetWin, ID3InfoSetWin, ID3InfoDraw, ID3InfoIProcessKey, ID3InfoAProcessKey, ID3InfoEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) ID3InfoInit (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void ID3InfoInit (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiID3Info);
 }
 
-void __attribute__ ((visibility ("internal"))) ID3InfoDone (struct cpifaceSessionAPI_t *cpifaceSession)
+OCP_INTERNAL void ID3InfoDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiID3Info);
 }

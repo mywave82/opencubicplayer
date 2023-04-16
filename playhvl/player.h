@@ -16,8 +16,8 @@
 
 #define Period2Freq(period) ((AMIGA_PAULA_PAL_CLK * 65536.f) / (period))
 
-extern int32_t __attribute__ ((visibility ("internal"))) stereopan_left[5];
-extern int32_t __attribute__ ((visibility ("internal"))) stereopan_right[5];
+extern OCP_INTERNAL int32_t stereopan_left[5];
+extern OCP_INTERNAL int32_t stereopan_right[5];
 
 
 #define WHITENOISELEN (0x280*3)
@@ -38,7 +38,7 @@ extern int32_t __attribute__ ((visibility ("internal"))) stereopan_right[5];
 #define WO_WHITENOISE  (WO_SQUARES+(0x80*0x20))
 #define WO_HIGHPASSES  (WO_WHITENOISE+WHITENOISELEN)
 #define WAVES_SIZE     (WO_HIGHPASSES+((0xfc+0xfc+0x80*0x1f+0x80+3*0x280)*31))
-extern int8_t __attribute__ ((visibility ("internal"))) waves[WAVES_SIZE];
+extern OCP_INTERNAL int8_t waves[WAVES_SIZE];
 
 struct hvl_envelope
 {
@@ -240,11 +240,11 @@ struct hvl_tune
 
 /* buflen is expected to be ht->ht_Frequency/50, but can be scaled to adjust pitch.... */
 /* buf is expected to be malloc (MAX_CHANNELS * sizeof(int16) * STEREO_IS_2 * buflen */
-void __attribute__ ((visibility ("internal"))) hvl_DecodeFrame (struct hvl_tune *ht, int16_t *buf, size_t buflen);
-void __attribute__ ((visibility ("internal"))) hvl_InitReplayer (void);
-int __attribute__ ((visibility ("internal"))) hvl_InitSubsong (struct hvl_tune *ht, uint32_t nr);
+OCP_INTERNAL void hvl_DecodeFrame (struct hvl_tune *ht, int16_t *buf, size_t buflen);
+OCP_INTERNAL void hvl_InitReplayer (void);
+OCP_INTERNAL int hvl_InitSubsong (struct hvl_tune *ht, uint32_t nr);
 #if 0
-int32_t __attribute__ ((visibility ("internal"))) hvl_FindLoudest (struct hvl_tune *ht, int32_t maxframes, int usesongend);
+OCP_INTERNAL int32_t hvl_FindLoudest (struct hvl_tune *ht, int32_t maxframes, int usesongend);
 #endif
 
 #endif

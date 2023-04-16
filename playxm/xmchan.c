@@ -299,7 +299,7 @@ static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 	}
 }
 
-void __attribute__ ((visibility ("internal"))) xmChanSetup(struct cpifaceSessionAPI_t *cpifaceSession, struct xmpinstrument *_insts, struct xmpsample *_samps)
+OCP_INTERNAL void xmChanSetup (struct cpifaceSessionAPI_t *cpifaceSession, struct xmpinstrument *_insts, struct xmpsample *_samps)
 {
 	insts = _insts;
 	samps = _samps;

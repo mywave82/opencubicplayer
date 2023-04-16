@@ -432,12 +432,12 @@ static int volctrlEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 
 static struct cpitextmoderegstruct cpiVolCtrl={"volctrl", volctrlGetWin, volctrlSetWin, volctrlDraw, volctrlIProcessKey, volctrlAProcessKey, volctrlEvent CPITEXTMODEREGSTRUCT_TAIL};
 
-void __attribute__ ((visibility ("internal"))) cpiVolCtrlInit (void)
+OCP_INTERNAL void cpiVolCtrlInit (void)
 {
 	cpiTextRegisterDefMode(&cpiVolCtrl);
 }
 
-void __attribute__ ((visibility ("internal"))) cpiVolCtrlDone (void)
+OCP_INTERNAL void cpiVolCtrlDone (void)
 {
 	cpiTextUnregisterDefMode(&cpiVolCtrl);
 }

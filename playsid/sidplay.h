@@ -15,34 +15,35 @@ struct sidChanInfo
 
 struct ocpfilehandle_t;
 struct cpifaceSessionAPI_t;
-extern int __attribute__ ((visibility ("internal"))) sidOpenPlayer(struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpifaceSession);
-extern int __attribute__ ((visibility ("internal"))) sidNumberOfChips(void);
-extern int __attribute__ ((visibility ("internal"))) sidNumberOfComments(void);
-extern int __attribute__ ((visibility ("internal"))) sidNumberOfInfos(void);
-extern const char __attribute__ ((visibility ("internal"))) *sidInfoString(int i);
-extern const char __attribute__ ((visibility ("internal"))) *sidCommentString(int i);
-extern const char __attribute__ ((visibility ("internal"))) *sidFormatString(void);
-extern const char __attribute__ ((visibility ("internal"))) *sidROMDescKernal(void);
-extern const char __attribute__ ((visibility ("internal"))) *sidROMDescBasic(void);
-extern const char __attribute__ ((visibility ("internal"))) *sidROMDescChargen(void);
-extern const float __attribute__ ((visibility ("internal"))) sidGetCPUSpeed(void);
-extern const char __attribute__ ((visibility ("internal"))) *sidGetVICIIModelString(void);
-extern const char __attribute__ ((visibility ("internal"))) *sidGetCIAModelString(void);
-extern const char __attribute__ ((visibility ("internal"))) *sidChipModel(int i);
-extern const char __attribute__ ((visibility ("internal"))) *sidTuneStatusString(void);
-extern const char __attribute__ ((visibility ("internal"))) *sidTuneInfoClockSpeedString(void);
-extern uint16_t __attribute__ ((visibility ("internal"))) sidChipAddr(int i);
-extern void __attribute__ ((visibility ("internal"))) sidClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) sidIdle (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void __attribute__ ((visibility ("internal"))) sidPause(unsigned char p);
-extern void __attribute__ ((visibility ("internal"))) sidStartSong(uint8_t sng);
-extern uint8_t __attribute__ ((visibility ("internal"))) sidGetSong(void);
-extern uint8_t __attribute__ ((visibility ("internal"))) sidGetSongs(void);
-extern char __attribute__ ((visibility ("internal"))) sidGetVideo(void);
-extern void __attribute__ ((visibility ("internal"))) sidMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m);
-extern void __attribute__ ((visibility ("internal"))) sidGetChanInfo(int i, sidChanInfo &ci);
 
-int __attribute__ ((visibility ("internal"))) sidGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
-int __attribute__ ((visibility ("internal"))) sidGetPChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
+OCP_INTERNAL int sidOpenPlayer (struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL int sidNumberOfChips (void);
+OCP_INTERNAL int sidNumberOfComments (void);
+OCP_INTERNAL int sidNumberOfInfos (void);
+OCP_INTERNAL const char *sidInfoString (int i);
+OCP_INTERNAL const char *sidCommentString (int i);
+OCP_INTERNAL const char *sidFormatString (void);
+OCP_INTERNAL const char *sidROMDescKernal (void);
+OCP_INTERNAL const char *sidROMDescBasic (void);
+OCP_INTERNAL const char *sidROMDescChargen (void);
+OCP_INTERNAL const float sidGetCPUSpeed (void);
+OCP_INTERNAL const char *sidGetVICIIModelString (void);
+OCP_INTERNAL const char *sidGetCIAModelString (void);
+OCP_INTERNAL const char *sidChipModel (int i);
+OCP_INTERNAL const char *sidTuneStatusString (void);
+OCP_INTERNAL const char *sidTuneInfoClockSpeedString (void);
+OCP_INTERNAL uint16_t sidChipAddr (int i);
+OCP_INTERNAL void sidClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void sidIdle (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void sidPause (unsigned char p);
+OCP_INTERNAL void sidStartSong (uint8_t sng);
+OCP_INTERNAL uint8_t sidGetSong (void);
+OCP_INTERNAL uint8_t sidGetSongs (void);
+OCP_INTERNAL char sidGetVideo (void);
+OCP_INTERNAL void sidMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m);
+OCP_INTERNAL void sidGetChanInfo (int i, sidChanInfo &ci);
+
+OCP_INTERNAL int sidGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
+OCP_INTERNAL int sidGetPChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
 
 #endif
