@@ -30,8 +30,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "types.h"
-#include "mcp.h"
 #include "cpiface/cpiface.h"
+#include "dev/mcp.h"
+#include "dev/postproc.h"
 #include "stuff/imsrtns.h"
 #include "mix.h"
 #include "mixasm.h"
@@ -315,5 +316,7 @@ static const struct mixAPI_t _mixAPI =
 	mixInit,
 	mixClose,
 	mixSetAmplify,
+	mcpFindPostProcFP,
+	mcpFindPostProcInteger
 };
 const struct mixAPI_t *mixAPI = &_mixAPI;

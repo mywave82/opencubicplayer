@@ -14,7 +14,7 @@ struct mcpDriver_t
 	const struct mcpDevAPI_t *(*Open)   (const struct mcpDriver_t *driver, const struct configAPI_t *config, const struct mixAPI_t *mixAPI);
 	void                      (*Close)  (const struct mcpDriver_t *driver);
 };
-extern void mcpRegisterDriver (const struct mcpDriver_t *driver);
-extern void mcpUnregisterDriver(const struct mcpDriver_t *driver);
+void mcpRegisterDriver (const struct mcpDriver_t *driver);
+void mcpUnregisterDriver(const struct mcpDriver_t *driver);
 
 #endif

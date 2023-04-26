@@ -29,7 +29,8 @@
 #include "cpiface/cpiface.h"
 #include "cpiface/vol.h"
 #include "dev/mcp.h"
-#include "devw/devwmixf.h"
+#include "dev/postproc.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 
 static struct ocpvolstruct revvol[] =
@@ -431,8 +432,9 @@ static const struct ocpvolregstruct volrev =
 	fReverb_SetVolume
 };
 
-struct mixfpostprocregstruct fReverb =
+static struct PostProcFPRegStruct fReverb =
 {
+	"fReverb",
 	fReverb_process,
 	fReverb_init,
 	fReverb_close,
@@ -440,7 +442,19 @@ struct mixfpostprocregstruct fReverb =
 	fReverb_processkey
 };
 
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "freverb", .desc = "OpenCP floating point reverb (c) 1994-'23 Fabian Giesen, Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 99};
+static int fReverbPluginInit (struct PluginInitAPI_t *API)
+{
+	API->mcpRegisterPostProcFP (&fReverb);
+
+	return errOk;
+}
+
+static void fReverbPluginClose (struct PluginCloseAPI_t *API)
+{
+	API->mcpUnregisterPostProcFP (&fReverb);
+}
+
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "freverb", .desc = "OpenCP floating point reverb (c) 1994-'23 Fabian Giesen, Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 99, .PluginInit = fReverbPluginInit, .PluginClose = fReverbPluginClose};
 
 /*
 

@@ -13,6 +13,8 @@ struct DevInterfaceAPI_t;
 struct dmDrive;
 struct plrDriver_t;
 struct mcpDriver_t;
+struct PostProcFPRegStruct;
+struct PostProcIntegerRegStruct;
 
 struct PluginInitAPI_t
 {
@@ -21,6 +23,9 @@ struct PluginInitAPI_t
 	void (*fsRegisterExt)(const char *ext);
 	void (*plrRegisterDriver) (const struct plrDriver_t *driver);
 	void (*mcpRegisterDriver) (const struct mcpDriver_t *driver);
+	int  (*mcpRegisterPostProcFP) (const struct PostProcFPRegStruct *plugin);
+	int  (*mcpRegisterPostProcInteger) (const struct PostProcIntegerRegStruct *plugin);
+
 	const struct configAPI_t *configAPI;
 
 	void (*filesystem_setup_register_file) (struct ocpfile_t *file);
@@ -47,6 +52,8 @@ struct PluginCloseAPI_t
 	void (*fsTypeUnregister) (struct moduletype modtype);
 	void (*plrUnregisterDriver) (const struct plrDriver_t *driver);
 	void (*mcpUnregisterDriver) (const struct mcpDriver_t *driver);
+	void (*mcpUnregisterPostProcFP) (const struct PostProcFPRegStruct *plugin);
+	void (*mcpUnregisterPostProcInteger) (const struct PostProcIntegerRegStruct *plugin);
 
 	void (*filesystem_setup_unregister_file) (struct ocpfile_t *file);
 };

@@ -513,7 +513,7 @@ static void setup_devp_draw (const char *title, int dsel)
 			"\xb3%0.7o "
 			"%0.15o<ENTER>%0.7o: activate driver  "
 			"%0.15o<d>%0.7o: disable driver  "
-			"%0.9o                       \xb3"
+			"%0.9o                    \xb3"
 		);
 	}
 

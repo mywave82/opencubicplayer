@@ -27,11 +27,16 @@ struct mixchannel
 };
 
 struct cpifaceSessionAPI_t; /* cpiface.h */
+struct PostProcFPRegStruct;
+struct PostProcIntegerRegStruct;
+
 struct mixAPI_t
 {
 	int  (*mixInit)      (struct cpifaceSessionAPI_t *cpifaceSession, void (*getchan)(unsigned int ch, struct mixchannel *chn, uint32_t rate), int resamp, unsigned int chan, int amp);
 	void (*mixClose)     (struct cpifaceSessionAPI_t *cpifaceSession);
 	void (*mixSetAmplify)(struct cpifaceSessionAPI_t *cpifaceSession, int amp);
+	const struct PostProcFPRegStruct *(*mcpFindPostProcFP) (const char *name);
+	const struct PostProcIntegerRegStruct *(*mcpFindPostProcInteger) (const char *name);
 };
 extern const struct mixAPI_t *mixAPI;
 

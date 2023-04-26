@@ -47,6 +47,7 @@
 #include "boot/psetting.h"
 #include "dev/deviplay.h"
 #include "dev/deviwave.h"
+#include "dev/postproc.h"
 #include "dirdb.h"
 #include "filesystem.h"
 #include "filesystem-file-dev.h"
@@ -210,6 +211,8 @@ static int _fsMain(int argc, char *argv[])
 		fsRegisterExt,
 		plrRegisterDriver,
 		mcpRegisterDriver,
+		mcpRegisterPostProcFP,
+		mcpRegisterPostProcInteger,
 		&configAPI,
 		filesystem_setup_register_file,
 		dev_file_create,
@@ -223,6 +226,8 @@ static int _fsMain(int argc, char *argv[])
 		fsTypeUnregister,
 		plrUnregisterDriver,
 		mcpUnregisterDriver,
+		mcpUnregisterPostProcFP,
+		mcpUnregisterPostProcInteger,
 		filesystem_setup_unregister_file
 	};
 

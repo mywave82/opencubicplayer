@@ -47,7 +47,7 @@
 #include "dev/mix.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
-#include "devwmix.h"
+#include "dev/postproc.h"
 #include "stuff/err.h"
 #include "stuff/imsrtns.h"
 #include "dwmix.h"
@@ -62,7 +62,9 @@ static const struct mcpDriver_t mcpMixerQ;
 
 static const struct mixAPI_t *mix;
 
-static struct mixqpostprocregstruct *postprocs;
+#define MIX_MAX_POSTPROC 10
+static const struct PostProcIntegerRegStruct *postproc[MIX_MAX_POSTPROC];
+static int                                    postprocs;
 
 static int quality;
 static int resample;
@@ -405,7 +407,6 @@ static void devwMixIdle  (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	/* mixer */
 	int i;
-	struct mixqpostprocregstruct *iter;
 
 	if (!channelnum)
 		return;
@@ -453,9 +454,9 @@ static void devwMixIdle  (struct cpifaceSessionAPI_t *cpifaceSession)
 					playchannelq(i, targetlength);
 			}
 
-			for (iter=postprocs; iter; iter=iter->next)
+			for (i=0; i < postprocs; i++)
 			{
-				iter->Process (cpifaceSession, buf32, targetlength, samprate);
+				postproc[i]->Process (cpifaceSession, buf32, targetlength, samprate);
 			}
 
 			mixrClip((char*)targetbuf, buf32, targetlength << 1 /* stereo */, amptab, clipmax);
@@ -745,12 +746,12 @@ static int devwMixGET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int o
 
 static void devwMixGetVolRegs (struct cpifaceSessionAPI_t *cpifaceSession, void (*Callback)(struct cpifaceSessionAPI_t *cpifaceSession, const struct ocpvolregstruct *x))
 {
-	struct mixqpostprocregstruct *iter;
-	for (iter=postprocs; iter; iter=iter->next)
+	int i;
+	for (i=0; i < postprocs; i++)
 	{
-		if (iter->VolRegs)
+		if (postproc[i]->VolRegs)
 		{
-			Callback (cpifaceSession, iter->VolRegs);
+			Callback (cpifaceSession, postproc[i]->VolRegs);
 		}
 	}
 }
@@ -816,8 +817,8 @@ static int devwMixLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struc
 static int devwMixOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *cpifaceSession), struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	uint32_t currentrate;
-	struct mixqpostprocregstruct *mode;
 	enum plrRequestFormat format;
+	int i;
 
 	fadedown[0]=fadedown[1]=0;
 	IdleCache=playsamps=0;
@@ -925,9 +926,10 @@ static int devwMixOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *
 	tickplayed=0;
 	cmdtimerpos=0;
 
-	for (mode=postprocs; mode; mode=mode->next)
-		if (mode->Init)
-			mode->Init(samprate);
+	for (i=0; i < postprocs; i++)
+	{
+		postproc[i]->Init(samprate);
+	}
 
 	cpifaceSession->mcpActive = 1;
 
@@ -952,7 +954,7 @@ error_out:
 
 static void devwMixClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	struct mixqpostprocregstruct *mode;
+	int i;
 
 	if (cpifaceSession->plrDevAPI)
 	{
@@ -963,9 +965,10 @@ static void devwMixClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	mix->mixClose (cpifaceSession);
 
-	for (mode=postprocs; mode; mode=mode->next)
-		if (mode->Close)
-			mode->Close();
+	for (i=0; i < postprocs; i++)
+	{
+		postproc[i]->Close();
+	}
 
 	if (voltabsr) free(voltabsr);
 	if (interpoltabr) free(interpoltabr);
@@ -998,10 +1001,14 @@ static const struct mcpDevAPI_t devwMix =
 	devwMixProcKey
 };
 
-static void mixrRegisterPostProc(struct mixqpostprocregstruct *mode)
+static void mixrRegisterPostProc (const struct PostProcIntegerRegStruct *post)
 {
-	mode->next=postprocs;
-	postprocs=mode;
+	if (postprocs >= MIX_MAX_POSTPROC)
+	{
+		return;
+	}
+	postproc[postprocs] = post;
+	postprocs++;
 }
 
 static const struct mcpDevAPI_t *wmixInit (const struct mcpDriver_t *driver, const struct configAPI_t *config, const struct mixAPI_t *mixAPI)
@@ -1029,10 +1036,12 @@ static const struct mcpDevAPI_t *wmixInit (const struct mcpDriver_t *driver, con
 	regs = config->GetProfileString(driver->name, "postprocs", "");
 	while (config->GetSpaceListEntry(regname, &regs, 49))
 	{
-		void *reg=_lnkGetSymbol(regname);
-		fprintf(stderr, "[%s] registering post processing plugin %s\n", driver->name, regname);
-		if (reg)
-			mixrRegisterPostProc((struct mixqpostprocregstruct*)reg);
+		const struct PostProcIntegerRegStruct *postproc = mixAPI->mcpFindPostProcInteger (regname);
+		if (postproc)
+		{
+			fprintf(stderr, "[%s] registering post processing plugin %s\n", driver->name, regname);
+			mixrRegisterPostProc (postproc);
+		}
 	}
 
 	return &devwMix;
@@ -1040,7 +1049,7 @@ static const struct mcpDevAPI_t *wmixInit (const struct mcpDriver_t *driver, con
 
 static void wmixClose (const struct mcpDriver_t *driver)
 {
-	postprocs=0;
+	postprocs = 0;
 }
 
 
@@ -1051,17 +1060,15 @@ static int wmixDetect (const struct mcpDriver_t *driver)
 
 static int devwMixProcKey (uint16_t key)
 {
-	struct mixqpostprocregstruct *mode;
-	for (mode=postprocs; mode; mode=mode->next)
+	int i;
+	for (i=0; i < postprocs; i++)
 	{
-		if (mode->ProcessKey)
+		int r = postproc[i]->ProcessKey (key);
+		if (r)
 		{
-			int r = mode->ProcessKey(key);
-			if (r)
-				return r;
+			return r;
 		}
 	}
-
 	return 0;
 }
 

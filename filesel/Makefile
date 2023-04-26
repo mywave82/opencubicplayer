@@ -458,6 +458,7 @@ pfsmain.o: pfsmain.c \
 	../boot/psetting.h \
 	../dev/deviplay.h \
 	../dev/deviwave.h \
+	../dev/postproc.h \
 	dirdb.h \
 	filesystem.h \
 	filesystem-file-dev.h \

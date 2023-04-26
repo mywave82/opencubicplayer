@@ -14,7 +14,7 @@ test-dwmixa.o: test-dwmixa.c ../config.h dwmix.h dwmixa.h ../stuff/pagesize.inc.
 test-dwmixa: test-dwmixa.o dwmixa.o
 	$(CC) -o $@ $^
 
-test-dwmixqa.o: test-dwmixqa.c ../config.h ../dev/mix.h devwmix.h dwmix.h dwmixqa.h ../stuff/pagesize.inc.c
+test-dwmixqa.o: test-dwmixqa.c ../config.h ../dev/mix.h dwmix.h dwmixqa.h ../stuff/pagesize.inc.c
 	$(CC) -c -o $@ test-dwmixqa.c
 
 test-dwmixqa: test-dwmixqa.o dwmixqa.o
@@ -75,7 +75,7 @@ devwmix.o: devwmix.c \
 	../dev/mix.h \
 	../dev/player.h \
 	../dev/plrasm.h \
-	devwmix.h \
+	../dev/postproc.h \
 	../stuff/err.h \
 	../stuff/imsrtns.h \
 	../stuff/pagesize.inc.c \
@@ -110,10 +110,10 @@ devwmixf.o: devwmixf.c \
 	../dev/mix.h \
 	../dev/player.h \
 	../dev/plrasm.h \
+	../dev/postproc.h \
 	../stuff/err.h \
 	../stuff/imsrtns.h \
 	../stuff/pagesize.inc.c \
-	devwmixf.h \
 	dwmixfa.h
 	$(CC) devwmixf.c -o $@ -c
 
@@ -121,5 +121,6 @@ dwmixfa.o: dwmixfa.c \
 	dwmixfa_c.c \
 	../config.h \
 	../types.h \
+	../dev/postproc.h \
 	dwmixfa.h
 	$(CC) dwmixfa.c -o $@ -c

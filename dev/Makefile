@@ -109,7 +109,8 @@ mchasm_test: mchasm.o mchasm_test.o
 mix.o: mix.c mix.h \
 	../config.h \
 	../types.h \
-	mcp.h \
+	../dev/mcp.h \
+	../dev/postproc.h \
 	../cpiface/cpiface.h \
 	../stuff/imsrtns.h \
 	../stuff/pagesize.inc.c \
@@ -130,6 +131,12 @@ player.o: player.c player.h \
 	mcp.h \
 	../stuff/imsrtns.h
 	$(CC) player.c -o $@ -c
+
+postproc.o: postproc.c postproc.h \
+	../config.h \
+	../types.h \
+	../stuff/err.h
+	$(CC) $< -o $@ -c
 
 plrasm.o: plrasm.c plrasm.h \
 	../config.h \

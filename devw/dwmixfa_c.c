@@ -55,7 +55,7 @@ float    ct0[256];              /* interpolation tab for s[-1] */
 float    ct1[256];              /* interpolation tab for s[0] */
 float    ct2[256];              /* interpolation tab for s[1] */
 float    ct3[256];              /* interpolation tab for s[2] */
-struct mixfpostprocregstruct *postprocs;
+struct PostProcFPRegStruct *postprocs;
                                 /* pointer to postproc list */
 uint32_t samprate;              /* sampling rate */
 
@@ -278,8 +278,8 @@ static const mixercall mixers[8] = {
 void
 mixer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
+	int i;
 	int voice;
-	struct mixfpostprocregstruct *pp;
 
 	if (fabsf(state.fadeleft) < minampl)
 		state.fadeleft = 0.0;
@@ -331,8 +331,10 @@ mixer (struct cpifaceSessionAPI_t *cpifaceSession)
 		state.fb1[voice] = state.__fb1;
 	}
 
-	for (pp = state.postprocs; pp; pp = pp->next)
-		pp->Process(cpifaceSession, state.tempbuf, state.nsamples, state.samprate);
+	for (i=0; i < state.postprocs; i++)
+	{
+		state.postproc[i]->Process(cpifaceSession, state.tempbuf, state.nsamples, state.samprate);
+	}
 
 	clippers[0](state.tempbuf, state.outbuf, 2 /* stereo */ * state.nsamples);
 }

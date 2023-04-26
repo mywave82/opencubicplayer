@@ -58,7 +58,9 @@ typedef struct
 
 	uint32_t samprate;
 
-	struct mixfpostprocregstruct *postprocs; /* TODO */
+#define MIXF_MAX_POSTPROC 10
+	const struct PostProcFPRegStruct *postproc[MIXF_MAX_POSTPROC];
+	int                               postprocs;
 
 	/* private to mixer, used be dwmixfa_8087.c */
 	float volrl; /* volume current left */

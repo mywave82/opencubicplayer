@@ -30,7 +30,8 @@
 #include "cpiface/cpiface.h"
 #include "cpiface/vol.h"
 #include "dev/mcp.h"
-#include "devw/devwmix.h"
+#include "dev/postproc.h"
+#include "stuff/err.h"
 #include "stuff/imsrtns.h"
 
 static struct ocpvolstruct irevvol[] = 
@@ -399,8 +400,9 @@ static const struct ocpvolregstruct ivolrev =
 	iReverb_SetVolume
 };
 
-struct mixqpostprocregstruct iReverb =
+static struct PostProcIntegerRegStruct iReverb =
 {
+	"iReverb",
 	iReverb_process,
 	iReverb_init,
 	iReverb_close,
@@ -408,7 +410,19 @@ struct mixqpostprocregstruct iReverb =
 	iReverb_processkey
 };
 
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "ireverb", .desc = "OpenCP integer reverb (c) 1994-'23 Fabian Giesen, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99};
+static int iReverbPluginInit (struct PluginInitAPI_t *API)
+{
+	API->mcpRegisterPostProcInteger (&iReverb);
+
+	return errOk;
+}
+
+static void iReverbPluginClose (struct PluginCloseAPI_t *API)
+{
+	API->mcpUnregisterPostProcInteger (&iReverb);
+}
+
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "ireverb", .desc = "OpenCP integer reverb (c) 1994-'23 Fabian Giesen, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = iReverbPluginInit, .PluginClose = iReverbPluginClose};
 
 /*
   notizen dazu (von ryg):

@@ -30,7 +30,8 @@ freverb.o: freverb.c \
 	../cpiface/cpiface.h \
 	../cpiface/vol.h \
 	../dev/mcp.h \
-	../devw/devwmixf.h \
+	../dev/postproc.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h
 	$(CC) -O $< -o $@ -c
 
@@ -41,6 +42,7 @@ ireverb.o: ireverb.c \
 	../cpiface/cpiface.h \
 	../cpiface/vol.h \
 	../dev/mcp.h \
-	../devw/devwmix.h \
+	../dev/postproc.h \
+	../stuff/err.h \
 	../stuff/imsrtns.h
 	$(CC) -O $< -o $@ -c

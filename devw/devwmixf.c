@@ -59,9 +59,9 @@
 #include "dev/mix.h"
 #include "dev/player.h"
 #include "dev/plrasm.h"
+#include "dev/postproc.h"
 #include "stuff/err.h"
 #include "stuff/imsrtns.h"
-#include "devwmixf.h"
 #include "dwmixfa.h"
 
 static const struct mcpDriver_t mcpFMixer;
@@ -752,12 +752,12 @@ static int devwMixFGET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int 
 
 static void devwMixFGetVolRegs (struct cpifaceSessionAPI_t *cpifaceSession, void (*Callback)(struct cpifaceSessionAPI_t *cpifaceSession, const struct ocpvolregstruct *x))
 {
-	struct mixfpostprocregstruct *iter;
-	for (iter=dwmixfa_state.postprocs; iter; iter=iter->next)
+	int i;
+	for (i=0; i < dwmixfa_state.postprocs; i++)
 	{
-		if (iter->VolRegs)
+		if (dwmixfa_state.postproc[i]->VolRegs)
 		{
-			Callback (cpifaceSession, iter->VolRegs);
+			Callback (cpifaceSession, dwmixfa_state.postproc[i]->VolRegs);
 		}
 	}
 }
@@ -889,11 +889,9 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t 
 	tickplayed=0;
 	cmdtimerpos=0;
 
+	for (i=0; i < dwmixfa_state.postprocs; i++)
 	{
-		struct mixfpostprocregstruct *mode;
-
-		for (mode=dwmixfa_state.postprocs; mode; mode=mode->next)
-			if (mode->Init) mode->Init(dwmixfa_state.samprate);
+		dwmixfa_state.postproc[i]->Init (dwmixfa_state.samprate);
 	}
 
 	cpifaceSession->mcpActive = 1;
@@ -911,7 +909,7 @@ error_out:
 
 static void devwMixFClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	struct mixfpostprocregstruct *mode;
+	int i;
 
 	if (cpifaceSession->plrDevAPI)
 	{
@@ -922,8 +920,10 @@ static void devwMixFClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	mix->mixClose (cpifaceSession);
 
-	for (mode=dwmixfa_state.postprocs; mode; mode=mode->next)
-		if (mode->Close) mode->Close();
+	for (i=0; i < dwmixfa_state.postprocs; i++)
+	{
+		dwmixfa_state.postproc[i]->Close ();
+	}
 
 	free(channels);
 	free(dwmixfa_state.tempbuf);
@@ -942,10 +942,14 @@ static const struct mcpDevAPI_t devwMixF =
 	devwMixFProcKey
 };
 
-static void mixfRegisterPostProc(struct mixfpostprocregstruct *mode)
+static void mixfRegisterPostProc (const struct PostProcFPRegStruct *postproc)
 {
-	mode->next=dwmixfa_state.postprocs;
-	dwmixfa_state.postprocs=mode;
+	if (dwmixfa_state.postprocs >= MIXF_MAX_POSTPROC)
+	{
+		return;
+	}
+	dwmixfa_state.postproc[dwmixfa_state.postprocs] = postproc;
+	dwmixfa_state.postprocs++;
 }
 
 static const struct mcpDevAPI_t *devwMixFInit (const struct mcpDriver_t *driver, const struct configAPI_t *config, const struct mixAPI_t *mixAPI)
@@ -966,6 +970,7 @@ static const struct mcpDevAPI_t *devwMixFInit (const struct mcpDriver_t *driver,
 	masterpan=0;
 	mastersrnd=0;
 	channelnum=0;
+	dwmixfa_state.postprocs = 0;
 
 	volramp = config->GetProfileBool("devwMixF", "volramp", 1, 1);
 	declick = config->GetProfileBool("devwMixF", "declick", 1, 1);
@@ -975,11 +980,11 @@ static const struct mcpDevAPI_t *devwMixFInit (const struct mcpDriver_t *driver,
 	regs=config->GetProfileString("devwMixF", "postprocs", "");
 	while (config->GetSpaceListEntry(regname, &regs, 49))
 	{
-		void *reg=_lnkGetSymbol(regname);
-		if (reg)
+		const struct PostProcFPRegStruct *postproc = mixAPI->mcpFindPostProcFP (regname);
+		if (postproc)
 		{
-			fprintf(stderr, "[devwMixF] registering post processing plugin %s\n", regname);
-			mixfRegisterPostProc((struct mixfpostprocregstruct*)reg);
+			fprintf(stderr, "[devwMixF] registering post processing plugin %s\n", postproc->name);
+			mixfRegisterPostProc(postproc);
 		}
 	}
 
@@ -988,7 +993,7 @@ static const struct mcpDevAPI_t *devwMixFInit (const struct mcpDriver_t *driver,
 
 static void devwMixFClose (const struct mcpDriver_t *driver)
 {
-	dwmixfa_state.postprocs=0;
+	dwmixfa_state.postprocs = 0;
 }
 
 
@@ -999,17 +1004,15 @@ static int devwMixFDetect (const struct mcpDriver_t *driver)
 
 static int devwMixFProcKey(uint16_t key)
 {
-	struct mixfpostprocregstruct *mode;
-	for (mode=dwmixfa_state.postprocs; mode; mode=mode->next)
+	int i;
+	for (i=0; i < dwmixfa_state.postprocs; i++)
 	{
-		if (mode->ProcessKey(key))
+		int r = dwmixfa_state.postproc[i]->ProcessKey (key);
+		if (r)
 		{
-			int r = mode->ProcessKey(key);
-			if (r)
-				return r;
+			return r;
 		}
 	}
-
 	return 0;
 }
 

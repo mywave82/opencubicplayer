@@ -1,6 +1,6 @@
 plrbase_so=deviplay.o plrasm.o player.o
 
-mcpbase_so=deviwave.o mix.o mixasm.o ringbuffer.o
+mcpbase_so=deviwave.o mix.o mixasm.o ringbuffer.o postproc.o
 
 mchasm_so=mchasm.o
 

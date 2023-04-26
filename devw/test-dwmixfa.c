@@ -102,10 +102,10 @@ static void OpenPlayer(int chan)
 	/* cmdtimerpos=0; */
 /*
 	{
-		struct mixfpostprocregstruct *mode;
-
-		for (mode=postprocs; mode; mode=mode->next)
-			if (mode->Init) mode->Init(samprate, stereo);
+		for (i=0; i < postprocs; i++)
+		{
+			postproc[i]->Init (samprate, stereo);
+		}
 	}
 */
 }
@@ -113,20 +113,20 @@ static void OpenPlayer(int chan)
 static void ClosePlayer()
 {
 /*
-	  struct mixfpostprocregstruct *mode;
+	int i;
 
-	  mcpNChan=0;
+	mcpNChan=0;
 
-	  plrClosePlayer();
+	plrClosePlayer();
 
-	  channelnum=0;
+	channelnum=0;
 
-	  mixClose();
+	mixClose();
 
-	  for (mode=postprocs; mode; mode=mode->next)
-		  if (mode->Close) mode->Close();
+	for (i=0; i < postprocs; i++)
+		postproc[i]->Close ();
 */
-	  free(dwmixfa_state.tempbuf);
+	free(dwmixfa_state.tempbuf);
 }
 
 int main(int argc, char *argv[])

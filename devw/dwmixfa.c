@@ -42,7 +42,7 @@
 
 #include "config.h"
 #include "types.h"
-#include "devwmixf.h"
+#include "dev/postproc.h"
 #include "dwmixfa.h"
 
 #include "dwmixfa_c.c"

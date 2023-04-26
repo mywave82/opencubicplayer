@@ -25,7 +25,6 @@
 #include <unistd.h>
 #include "types.h"
 #include "dev/mix.h"
-#include "devwmix.h"
 #include "dwmix.h"
 #include "dwmixqa.h"
 
