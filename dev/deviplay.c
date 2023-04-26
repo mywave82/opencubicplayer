@@ -483,7 +483,7 @@ static void setup_devp_draw (const char *title, int dsel)
 
 	if ((dsel >= plrDriverListEntries) || (plrDriver && (plrDriverList[dsel].driver == plrDriver)))
 	{
-		display_nprintf (mlTop + mlHeight - 2,  mlLeft, 0x09, mlWidth, "\xc3%*C \xb4", mlWidth - 2); /* |            | */
+		display_nprintf (mlTop + mlHeight - 2,  mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2); /* |            | */
 	} else if ((!plrDriverList[dsel].driver) && (!plrDriverList[dsel].disabled))
 	{
 		display_nprintf (mlTop + mlHeight - 2, mlLeft, 0x09, mlWidth,

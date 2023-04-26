@@ -233,7 +233,7 @@ static int deviwaveLateInit (struct PluginInitAPI_t *API)
 	setup_devw = API->dev_file_create (
 		API->dmSetup->basedir,
 		"devw.dev",
-		"Select audio playback driver",
+		"Select wavetable driver",
 		"",
 		0, /* token */
 		0, /* Init */
@@ -503,7 +503,7 @@ static void setup_devw_draw (const char *title, int dsel)
 
 	if ((dsel >= mcpDriverListEntries) || (mcpDriver && (mcpDriverList[dsel].driver == mcpDriver)))
 	{
-		display_nprintf (mlTop + mlHeight - 2,  mlLeft, 0x09, mlWidth, "\xc3%*C \xb4", mlWidth - 2); /* |            | */
+		display_nprintf (mlTop + mlHeight - 2,  mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2); /* |            | */
 	} else if ((!mcpDriverList[dsel].driver) && (!mcpDriverList[dsel].disabled))
 	{
 		display_nprintf (mlTop + mlHeight - 2, mlLeft, 0x09, mlWidth,
@@ -526,7 +526,7 @@ static void setup_devw_draw (const char *title, int dsel)
 			"\xb3%0.7o "
 			"%0.15o<e>%0.7o: enable driver"
 			"                       "
-			"%0.9o                          \xb3"
+			"%0.9o                         \xb3"
 		);
 	} else {
 		display_nprintf (mlTop + mlHeight - 2, mlLeft, 0x09, mlWidth,
