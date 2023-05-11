@@ -1,3 +1,27 @@
+Version 0.2.104
+===============
+
+ * Update libsidplayfp
+ * Update adplug
+   * Latest version of the upstream version
+     * Adds support for *.PIS and *.MTR
+   * Reimplemented the OPL2/3 status viewer
+   * Buffer for compositing tracker data for music that supports this, was not
+     cleared between pattern loads. Causing visual data to be accumulated.
+   * OCP now supports multiple of the emulator implementations
+   * Default emulator to use has been changed
+   * Configuration dialog added into setup:
+ * Elapsed time is now based on played samples and not counting seconds passed
+ * Screen resizing should be more consistent on remembering settings
+ * Add support for 3-bytes-per-pixel in SDL 1.x
+ * Files that are detected as valid for libancient but fails decompression,
+   OCP failed to reset the filehandler read-position back to 0.
+ * Track viewer had some excessive CPU usage
+ * Analyzer viewer has the scale gain range increased, and the current gain is
+   visible in the header.
+ * Quick help documentation has been updated, with special focus on the keyboard
+   shortcuts.
+
 Version 0.2.103
 ===============
 
