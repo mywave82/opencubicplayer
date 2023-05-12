@@ -447,6 +447,15 @@ static void dotSetMode(void)
 	plPrepareDotsScr();
 }
 
+static int dotCan (struct cpifaceSessionAPI_t *cpifaceSession)
+{
+	if (cpifaceSession->console->VidType == vidNorm)
+	{
+		return 0;
+	}
+	return 1;
+}
+
 static int dotIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
@@ -464,8 +473,13 @@ static int dotIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	return 1;
 }
 
-static int plDotsEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ignore)
+static int plDotsEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 {
+	switch (ev)
+	{
+		case cpievInit:
+			return dotCan (cpifaceSession);
+	}
 	return 1;
 }
 

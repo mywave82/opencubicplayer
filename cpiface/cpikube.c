@@ -533,6 +533,10 @@ static int wuerfelEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 				/* fprintf(stderr, __FILE__ ": no wuerfel animations found\n"); */
 				return 0;
 			}
+			if (!vga13)
+			{
+				return 0;
+			}
 			return 1;
 		case cpievDoneAll:
 			plCloseWuerfel();

@@ -623,8 +623,14 @@ static void strDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static int strCan (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if ((!cpifaceSession->GetLChanSample) && (!cpifaceSession->GetMasterSample))
+	if (cpifaceSession->console->VidType == vidNorm)
+	{
 		return 0;
+	}
+	if ((!cpifaceSession->GetLChanSample) && (!cpifaceSession->GetMasterSample))
+	{
+		return 0;
+	}
 	return 1;
 }
 

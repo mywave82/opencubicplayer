@@ -475,8 +475,14 @@ static void scoSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static int scoCan (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	if ((!cpifaceSession->GetLChanSample) && (!cpifaceSession->GetPChanSample) && (!cpifaceSession->GetMasterSample))
+	if (cpifaceSession->console->VidType == vidNorm)
+	{
 		return 0;
+	}
+	if ((!cpifaceSession->GetLChanSample) && (!cpifaceSession->GetPChanSample) && (!cpifaceSession->GetMasterSample))
+	{
+		return 0;
+	}
 	return 1;
 }
 
