@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 0.2.104
+%define version 0.2.105
 
 # Default to _with_libmad if neither _with_libmad or _without_libmad is defined
 %{!?_with_libmad: %{!?_without_libmad: %define _with_libmad --with-libmad}}
@@ -42,7 +42,7 @@ frontend, with some few optional features in graphical. Plays modules, sids,
 wave and mp3
 
 %changelog
- Changes from version 0.2.103 to 0.2.104:
+ Changes from version 0.2.103 to 0.2.105:
 
  * Update libsidplayfp
  * Update adplug
@@ -64,6 +64,8 @@ wave and mp3
    visible in the header.
  * Quick help documentation has been updated, with special focus on the keyboard
    shortcuts.
+ * Avoid crash if attempting to access graphical viewer moder when running in
+   curses (text only).
 
 %prep
 %setup -q -n %{name}-%{version}

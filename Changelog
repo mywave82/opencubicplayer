@@ -1,3 +1,9 @@
+Version 0.2.105
+===============
+
+ * Avoid crash if attempting to access graphical viewer moder when running in
+   curses (text only).
+
 Version 0.2.104
 ===============
 
