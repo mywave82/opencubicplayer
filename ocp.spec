@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 0.2.103
+%define version 0.2.104
 
 # Default to _with_libmad if neither _with_libmad or _without_libmad is defined
 %{!?_with_libmad: %{!?_without_libmad: %define _with_libmad --with-libmad}}
@@ -42,27 +42,28 @@ frontend, with some few optional features in graphical. Plays modules, sids,
 wave and mp3
 
 %changelog
- Changes from version 0.2.102 to 0.2.103:
+ Changes from version 0.2.103 to 0.2.104:
 
- * If an autoload plugin fails to load, do not hard fail if all the core plugins
-   are statically linked in.
- * version 0.2.91 update missed setting the color for XM files in ocp.ini
- * Fix logic for setting screenmode vs ocp.ini. This is now the scheme and
-   default values that SDL, SDL2 and X11 drivers use:
-   [screen]
-     screentype=5            ; 0=80x25, 1=80x30, 2=80x50, 3=80x60, 4=132x25, 5=132x30, 6=132x50, 7=132x60, 8=custom
-     fontsize=1              ; if screentype=8: 0=8x8, 1=8x16
-     winwidth=1024           ; if screentype=8
-     winheight=768           ; if screentype=8
- * insttype= setting in ocp.ini was no longer working and it was not maintained
-   between songs.
- * Remove more external symbols from the devp*.so and devw*.so files, and API
-   updates.
- * setup:/devp/ and setup:/devw/ directories has been replaced with dialogs
- * Detect that C++17 is available, needed due to libancient.
- * Failed detection of `update-mime-database` did not halt ./configure causing
-   errors later during make instead.
- * Update libsidplayfp to the latest version.
+ * Update libsidplayfp
+ * Update adplug
+   * Latest version of the upstream version
+     * Adds support for *.PIS and *.MTR
+   * Reimplemented the OPL2/3 status viewer
+   * Buffer for compositing tracker data for music that supports this, was not
+     cleared between pattern loads. Causing visual data to be accumulated.
+   * OCP now supports multiple of the emulator implementations
+   * Default emulator to use has been changed
+   * Configuration dialog added into setup:
+ * Elapsed time is now based on played samples and not counting seconds passed
+ * Screen resizing should be more consistent on remembering settings
+ * Add support for 3-bytes-per-pixel in SDL 1.x
+ * Files that are detected as valid for libancient but fails decompression,
+   OCP failed to reset the filehandler read-position back to 0.
+ * Track viewer had some excessive CPU usage
+ * Analyzer viewer has the scale gain range increased, and the current gain is
+   visible in the header.
+ * Quick help documentation has been updated, with special focus on the keyboard
+   shortcuts.
 
 %prep
 %setup -q -n %{name}-%{version}
