@@ -500,7 +500,7 @@ static void addfiles_dir (void *token, struct ocpdir_t *dir)
 {
 }
 
-static int initRootDir(const char *sec)
+static int initRootDir(const struct configAPI_t *configAPI, const char *sec)
 {
 	int count;
 	const char *currentpath2 = 0;
@@ -514,7 +514,7 @@ static int initRootDir(const char *sec)
 			char buffer[32];
 			const char *filename;
 			sprintf(buffer, "file%d", count);
-			if (!(filename=cfGetProfileString2(sec, "CommandLine_Files", buffer, NULL)))
+			if (!(filename = configAPI->GetProfileString2(sec, "CommandLine_Files", buffer, NULL)))
 			{
 				break;
 			}
@@ -559,7 +559,7 @@ static int initRootDir(const char *sec)
 		uint32_t dirdb_ref;
 
 		sprintf(buffer, "playlist%d", count);
-		if (!(filename=cfGetProfileString2(sec, "CommandLine_Files", buffer, NULL)))
+		if (!(filename = configAPI->GetProfileString2(sec, "CommandLine_Files", buffer, NULL)))
 		{
 			break;
 		}
@@ -607,7 +607,7 @@ static int initRootDir(const char *sec)
 	}
 
 	/* change dir, if a path= is given in [fileselector], we default to . */
-	currentpath2 = cfGetProfileString2(sec, "fileselector", "path", ".");
+	currentpath2 = configAPI->GetProfileString2(sec, "fileselector", "path", ".");
 	if (strlen (currentpath2) && strcmp (currentpath2, "."))
 	{
 		uint32_t newcurrentpath;
@@ -881,43 +881,43 @@ static const char *DEVv_description[] =
 	NULL
 };
 
-int fsPreInit(void)
+int fsPreInit (const struct configAPI_t *configAPI)
 {
-	const char *sec=cfGetProfileString(cfConfigSec, "fileselsec", "fileselector");
+	const char *sec = configAPI->GetProfileString (configAPI->ConfigSec, "fileselsec", "fileselector");
 
 	struct moduletype mt;
 
 	curmask = strdup ("*");
 
-	adbMetaInit(); /* archive database cache - ignore failures */
+	adbMetaInit (configAPI); /* archive database cache - ignore failures */
 
-	if (!mdbInit())
+	if (!mdbInit (configAPI))
 		return 0;
 
-	if (!dirdbInit())
+	if (!dirdbInit (configAPI))
 		return 0;
 
 	fsRegisterExt("DEV");
 	mt.integer.i = MODULETYPE("DEVv");
 	fsTypeRegister (mt, DEVv_description, "VirtualInterface", 0);
 
-	fsScrType=cfGetProfileInt2(cfScreenSec, "screen", "screentype", 7, 10);
+	fsScrType      =  configAPI->GetProfileInt2   (configAPI->ScreenSec, "screen",        "screentype",   7, 10);
 	if ((fsScrType < 0) || (fsScrType > 8)) fsScrType = 8;
-	fsColorTypes=cfGetProfileBool2(sec, "fileselector", "typecolors", 1, 1);
-	fsEditWin=cfGetProfileBool2(sec, "fileselector", "editwin", 1, 1);
-	fsWriteModInfo=cfGetProfileBool2(sec, "fileselector", "writeinfo", 1, 1);
-	fsScanInArc=cfGetProfileBool2(sec, "fileselector", "scaninarcs", 1, 1);
-	fsScanNames=cfGetProfileBool2(sec, "fileselector", "scanmodinfo", 1, 1);
-	fsScanArcs=cfGetProfileBool2(sec, "fileselector", "scanarchives", 1, 1);
-	fsListRemove=cfGetProfileBool2(sec, "fileselector", "playonce", 1, 1);
-	fsListScramble=cfGetProfileBool2(sec, "fileselector", "randomplay", 1, 1);
-	fsPutArcs=cfGetProfileBool2(sec, "fileselector", "putarchives", 1, 1);
-	fsLoopMods=cfGetProfileBool2(sec, "fileselector", "loop", 1, 1);
-	fsListRemove=cfGetProfileBool("commandline_f", "r", fsListRemove, 0);
-	fsListScramble=!cfGetProfileBool("commandline_f", "o", !fsListScramble, 1);
-	fsLoopMods=cfGetProfileBool("commandline_f", "l", fsLoopMods, 0);
-	fsPlaylistOnly=!!cfGetProfileString("commandline", "p", 0);
-	fsShowAllFiles=cfGetProfileBool2(sec, "fileselector", "showallfiles", 0, 0);
+	fsColorTypes   =  configAPI->GetProfileBool2  (sec,                  "fileselector",  "typecolors",   1, 1);
+	fsEditWin      =  configAPI->GetProfileBool2  (sec,                  "fileselector",  "editwin",      1, 1);
+	fsWriteModInfo =  configAPI->GetProfileBool2  (sec,                  "fileselector",  "writeinfo",    1, 1);
+	fsScanInArc    =  configAPI->GetProfileBool2  (sec,                  "fileselector",  "scaninarcs",   1, 1);
+	fsScanNames    =  configAPI->GetProfileBool2  (sec,                  "fileselector",  "scanmodinfo",  1, 1);
+	fsScanArcs     =  configAPI->GetProfileBool2  (sec,                  "fileselector",  "scanarchives", 1, 1);
+	fsListRemove   =  configAPI->GetProfileBool2  (sec,                  "fileselector",  "playonce",     1, 1);
+	fsListScramble =  configAPI->GetProfileBool2  (sec,                  "fileselector",  "randomplay",   1, 1);
+	fsPutArcs      =  configAPI->GetProfileBool2  (sec,                  "fileselector",  "putarchives",  1, 1);
+	fsLoopMods     =  configAPI->GetProfileBool2  (sec,                  "fileselector",  "loop",         1, 1);
+	fsListRemove   =  configAPI->GetProfileBool   (                      "commandline_f", "r",            fsListRemove, 0);
+	fsListScramble = !configAPI->GetProfileBool   (                      "commandline_f", "o",           !fsListScramble, 1);
+	fsLoopMods     =  configAPI->GetProfileBool   (                      "commandline_f", "l",            fsLoopMods, 0);
+	fsPlaylistOnly =!!configAPI->GetProfileString (                      "commandline",   "p",            0);
+	fsShowAllFiles =  configAPI->GetProfileBool2  (sec,                  "fileselector",  "showallfiles", 0, 0);
 
 	filesystem_drive_init ();
 
@@ -934,7 +934,7 @@ int fsPreInit(void)
 	filesystem_Z_register ();
 	filesystem_zip_register ();
 
-	if (!musicbrainz_init()) /* needs setup */
+	if (!musicbrainz_init (configAPI)) /* needs setup */
 		return 0;
 
 	currentdir=modlist_create();
@@ -951,11 +951,11 @@ void fsLateClose(void)
 	fsTypeUnregister (mt);
 }
 
-int fsLateInit(void)
+int fsLateInit (const struct configAPI_t *configAPI)
 {
-	const char *sec=cfGetProfileString(cfConfigSec, "fileselsec", "fileselector");
+	const char *sec=configAPI->GetProfileString (configAPI->ConfigSec, "fileselsec", "fileselector");
 
-	if (!initRootDir(sec))
+	if (!initRootDir(configAPI, sec))
 		return 0;
 
 	return 1;

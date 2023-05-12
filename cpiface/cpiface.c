@@ -2134,7 +2134,7 @@ void cpiUnregisterDefMode(struct cpimoderegstruct *m)
 	}
 }
 
-static int plmpInit (void)
+static int plmpInit (const struct configAPI_t *configAPI)
 {
 	fftInit ();
 	cpiAnalInit ();

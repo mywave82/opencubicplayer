@@ -75,7 +75,7 @@ int mdbInfoIsAvailable (uint32_t fileref); // used to be mdbInfoRead
 int mdbReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f);
 int mdbWriteModuleInfo(uint32_t fileref, struct moduleinfostruct *m); // returns zero on error
 void mdbScan(struct ocpfile_t *file, uint32_t mdb_ref);
-int mdbInit(void); // returns zero on error
+int mdbInit (const struct configAPI_t *configAPI); // returns zero on error
 void mdbUpdate(void);
 void mdbClose(void);
 uint32_t mdbGetModuleReference2(const uint32_t dirdb_ref, uint64_t size);

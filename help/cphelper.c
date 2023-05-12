@@ -339,7 +339,7 @@ static int doReadHelpFile(FILE *file)
 	};
 }
 
-static char plReadHelpExternal(void)
+static char plReadHelpExternal (const struct configAPI_t *configAPI)
 {
 	char   *helpname;
 	FILE   *bf;
@@ -347,7 +347,7 @@ static char plReadHelpExternal(void)
 	if (Page && (HelpfileErr==hlpErrOk))
 		return 1;
 
-	makepath_malloc (&helpname, 0, cfDataDir, "ocp.hlp", 0);
+	makepath_malloc (&helpname, 0, configAPI->DataDir, "ocp.hlp", 0);
 	if ((bf=fopen(helpname, "r")))
 	{
 		free (helpname);
@@ -896,13 +896,13 @@ int brHelpKey(uint16_t key)
 	return 1;
 }
 
-static int hlpGlobalInit(void)
+static int hlpGlobalInit (const struct configAPI_t *configAPI)
 {
 	helppage *pg;
 
 	plHelpHeight=plHelpScroll=0;
 
-	if (!plReadHelpExternal())
+	if (!plReadHelpExternal (configAPI))
 	{
 		fprintf(stderr, "Warning. Failed to read help files\n");
 		return errOk; /* this error is not fatal to rest of the player */

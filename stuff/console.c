@@ -58,7 +58,7 @@
 
 static void (*console_clean)(void)=NULL;
 
-static void vgaMakePal(void)
+static void vgaMakePal (const struct configAPI_t *configAPI)
 {
 	int pal[16];
 	char palstr[1024];
@@ -66,21 +66,22 @@ static void vgaMakePal(void)
 	char scol[4];
 	char const *ps2=NULL;
 
-	strcpy(palstr,cfGetProfileString2(cfScreenSec, "screen", "palette", "0 1 2 3 4 5 6 7 8 9 A B C D E F"));
+	strcpy (palstr, configAPI->GetProfileString2 (configAPI->ScreenSec, "screen", "palette", "0 1 2 3 4 5 6 7 8 9 A B C D E F"));
 
 	for (bg=0; bg<16; bg++)
 		pal[bg]=bg;
 
 	bg=0;
 	ps2=palstr;
-	while (cfGetSpaceListEntry(scol, &ps2, 2) && bg<16)
+	while (configAPI->GetSpaceListEntry (scol, &ps2, 2) && bg<16)
 		pal[bg++]=strtol(scol,0,16)&0x0f;
 
 	for (bg=0; bg<16; bg++)
 		for (fg=0; fg<16; fg++)
 			plpalette[16*bg+fg]=16*pal[bg]+pal[fg];
 }
-static int console_init(void)
+
+static int console_init(const struct configAPI_t *configAPI)
 {
 #ifdef __linux
 	struct stat st;
@@ -91,12 +92,12 @@ static int console_init(void)
 # endif
 #endif
 
-	vgaMakePal();
+	vgaMakePal (configAPI);
 
 	fprintf(stderr, "Initing console... \n");
 	fflush(stderr);
 	{
-		const char *driver = cfGetProfileString("CommandLine", "d", NULL);
+		const char *driver = configAPI->GetProfileString ("CommandLine", "d", NULL);
 		if (driver)
 		{
 			if (!strcmp(driver, "curses"))

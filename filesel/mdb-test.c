@@ -1387,7 +1387,7 @@ int mdb_basic_mdbInit (void)
 
 	mdb_basic_mdbInit_prepare ();
 
-	fprintf (stderr, "mdbInit(): %s\n" ANSI_COLOR_RESET, mdbInit() ? ANSI_COLOR_GREEN "OK" : ANSI_COLOR_RED "Failed");
+	fprintf (stderr, "mdbInit(): %s\n" ANSI_COLOR_RESET, mdbInit (0) ? ANSI_COLOR_GREEN "OK" : ANSI_COLOR_RED "Failed");
 
 	fprintf (stderr, "mdbDataSize: ");
 	if (mdbDataSize < 25) /* we do allow possible future pre-allocation of free units */
@@ -1674,7 +1674,7 @@ int mdb_basic_mdbUpdate (void)
 
 	mdb_basic_mdbUpdate_prepare ();
 
-	if (!mdbInit())
+	if (!mdbInit (0))
 	{
 		fprintf (stderr, ANSI_COLOR_RED "mdbInit() failed...\n" ANSI_COLOR_RESET);
 		retval |= 1;

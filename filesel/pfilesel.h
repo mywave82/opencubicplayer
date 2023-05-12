@@ -7,14 +7,15 @@
 struct ocpfilehandle_t;
 struct moduleinfostruct;
 struct cpifaceplayerstruct;
+struct configAPI_t;
 extern int fsGetNextFile (struct moduleinfostruct *info, struct ocpfilehandle_t **filehandle); /* info comes from external buffer */
 extern int fsGetPrevFile (struct moduleinfostruct *info, struct ocpfilehandle_t **filehandle); /* info comes from external buffer */
 extern int fsFilesLeft(void);
 extern signed int fsFileSelect(void);
 /* extern char fsAddFiles(const char *);      use the playlist instead..*/
-extern int fsPreInit(void);
+extern int fsPreInit (const struct configAPI_t *configAPI);
 extern int fsInit(void);
-extern int fsLateInit(void);
+extern int fsLateInit (const struct configAPI_t *configAPI);
 extern void fsClose(void);
 extern void fsLateClose(void);
 

@@ -20,7 +20,8 @@ void musicbrainz_lookup_discid_cancel (void *token);
 
 void musicbrainz_database_h_free (struct musicbrainz_database_h *);
 
-int musicbrainz_init (void);
+struct configAPI_t;
+int musicbrainz_init (const struct configAPI_t *configAPI);
 
 void musicbrainz_done (void);
 

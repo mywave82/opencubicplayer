@@ -81,7 +81,7 @@ static int adbmeta_basic_test1 (void)
 
 	adbmeta_silene_open_errors = 0;
 
-	if (adbMetaInit())
+	if (adbMetaInit (0))
 	{
 		retval |= 1;
 		fprintf (stderr, "adbmeta_basic_test1: " ANSI_COLOR_RED "adbMetaInit() failed " ANSI_COLOR_RESET "\n");
@@ -169,7 +169,7 @@ static int adbmeta_basic_test2 (void)
 
 	adbmeta_silene_open_errors = 0;
 
-	if (adbMetaInit())
+	if (adbMetaInit (0))
 	{
 		retval |= 1;
 		fprintf (stderr, "adbmeta_basic_test2: " ANSI_COLOR_RED "adbMetaInit() failed " ANSI_COLOR_RESET "\n");
@@ -237,7 +237,7 @@ static int adbmeta_basic_test3 (void)
 
 	adbmeta_silene_open_errors = 1;
 
-	adbMetaInit();
+	adbMetaInit (0);
 
 	adbMetaAdd (test_expect[1].filename, test_expect[1].filesize, test_expect[1].SIG, test_expect[1].data, test_expect[1].datasize);
 
@@ -362,7 +362,7 @@ const struct adbMetaEntry_t test_many_expect[32] = {
 
 	adbmeta_silene_open_errors = 1;
 
-	adbMetaInit();
+	adbMetaInit (0);
 
 	for (i=0; i < 32; i++)
 	{
@@ -488,7 +488,7 @@ const struct adbMetaEntry_t test_many_expect[32] = {
 
 	adbmeta_silene_open_errors = 1;
 
-	adbMetaInit();
+	adbMetaInit (0);
 
 	for (i=0; i < 32; i++)
 	{
@@ -569,7 +569,7 @@ const struct adbMetaEntry_t test_many_insert[14] = {
 
 	adbmeta_silene_open_errors = 1;
 
-	adbMetaInit();
+	adbMetaInit (0);
 
 	for (i=0; i < 14; i++)
 	{
@@ -646,7 +646,7 @@ const struct adbMetaEntry_t test_many_remove[3] = {
 
 	adbmeta_silene_open_errors = 1;
 
-	adbMetaInit();
+	adbMetaInit (0);
 
 	for (i=0; i < 7; i++)
 	{
@@ -719,7 +719,7 @@ const struct adbMetaEntry_t test_many_insert[7] = {
 
 	adbmeta_silene_open_errors = 1;
 
-	adbMetaInit();
+	adbMetaInit (0);
 
 	for (i=0; i < 7; i++)
 	{

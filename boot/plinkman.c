@@ -403,11 +403,11 @@ int lnkInitAll (void)
 
 	for (i=0;i<loadlist_n;i++)
 		if (loadlist[i].info->PreInit)
-			if (loadlist[i].info->PreInit()<0)
+			if (loadlist[i].info->PreInit(&configAPI)<0)
 				return 1;
 	for (i=0;i<loadlist_n;i++)
 		if (loadlist[i].info->Init)
-			if (loadlist[i].info->Init()<0)
+			if (loadlist[i].info->Init(&configAPI)<0)
 				return 1;
 	return 0;
 }

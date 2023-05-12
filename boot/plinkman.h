@@ -65,8 +65,8 @@ struct __attribute__ ((aligned (64))) linkinfostruct
 	uint32_t ver;
 	uint32_t sortindex;
 
-	int (*PreInit)(void); /* high priority init */
-	int (*Init)(void);
+	int (*PreInit)(const struct configAPI_t *configAPI); /* high priority init */
+	int (*Init)(const struct configAPI_t *configAPI);
 	int (*PluginInit)(struct PluginInitAPI_t *API);
 	int (*LateInit)(struct PluginInitAPI_t *API);
 	void (*PreClose)(struct PluginCloseAPI_t *API);

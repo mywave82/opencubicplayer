@@ -282,7 +282,7 @@ static void *cdrom_thread (void *_self)
 	}
 }
 
-static int cdint(void)
+static int cdint (const struct configAPI_t *configAPI)
 {
 	char dev[32], vdev[12];
 	char a;

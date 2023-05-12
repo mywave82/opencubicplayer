@@ -182,7 +182,7 @@ static void mlFlushBlob (void)
 
 #include "medialib-search.c"
 
-static int mlint(void)
+static int mlint (const struct configAPI_t *configAPI)
 {
 	struct ocpdir_t *r;
 	unsigned char *data = 0;

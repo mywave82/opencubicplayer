@@ -33,33 +33,42 @@
 
 struct settings set;
 
-static int ssInit(void)
+static int ssInit (const struct configAPI_t *configAPI)
 {
   int per;
-  per=cfGetProfileInt2(cfSoundSec, "sound", "amplify", 100, 10);
-  per=cfGetProfileInt("commandline_v", "a", per, 10);
-  set.amp=(per>=800)?511:(per*64/100);
-  per=cfGetProfileInt2(cfSoundSec, "sound", "volume", 100, 10);
-  per=cfGetProfileInt("commandline_v", "v", per, 10);
-  set.vol=(per>=100)?64:(per*64/100);
-  per=cfGetProfileInt2(cfSoundSec, "sound", "balance", 0, 10);
-  per=cfGetProfileInt("commandline_v", "b", per, 10);
-  set.bal=(per>=100)?64:(per<=-100)?-64:(per*64/100);
-  per=cfGetProfileInt2(cfSoundSec, "sound", "panning", 100, 10);
-  per=cfGetProfileInt("commandline_v", "p", per, 10);
-  set.pan=(per>=100)?64:(per<=-100)?-64:(per*64/100);
-  set.srnd=cfGetProfileBool2(cfSoundSec, "sound", "surround", 0, 0);
-  set.srnd=cfGetProfileBool("commandline_v", "s", set.srnd, 1);
-  set.filter=cfGetProfileInt2(cfSoundSec, "sound", "filter", 1, 10)%3;
-  set.filter=cfGetProfileInt("commandline_v", "f", set.filter, 10)%3;
-  per=cfGetProfileInt2(cfSoundSec, "sound", "reverb", 0, 10);
-  per=cfGetProfileInt("commandline_v", "r", per, 10);
-  set.reverb=(per>=100)?64:(per<=-100)?-64:(per*64/100);
-  per=cfGetProfileInt2(cfSoundSec, "sound", "chorus", 0, 10);
-  per=cfGetProfileInt("commandline_v", "c", per, 10);
-  set.chorus=(per>=100)?64:(per<=-100)?-64:(per*64/100);
-  set.speed=256;
-  set.pitch=256;
+
+  per        = configAPI->GetProfileInt2  (configAPI->SoundSec, "sound",         "amplify",  100, 10);
+  per        = configAPI->GetProfileInt   (                     "commandline_v", "a",        per, 10);
+  set.amp    = (per>=800) ? 511 : (per*64/100);
+
+  per        = configAPI->GetProfileInt2  (configAPI->SoundSec, "sound",         "volume",   100, 10);
+  per        = configAPI->GetProfileInt   (                     "commandline_v", "v",        per, 10);
+  set.vol    = (per>=100) ? 64 : (per*64/100);
+
+  per        = configAPI->GetProfileInt2  (configAPI->SoundSec, "sound",         "balance",  0, 10);
+  per        = configAPI->GetProfileInt   (                     "commandline_v", "b",        per, 10);
+  set.bal    = (per>=100) ? 64 : (per<=-100) ? -64 : (per*64/100);
+
+  per        = configAPI->GetProfileInt2  (configAPI->SoundSec, "sound",         "panning",  100, 10);
+  per        = configAPI->GetProfileInt   (                     "commandline_v", "p",        per, 10);
+  set.pan    = (per>=100) ? 64 : (per<=-100) ? -64 : (per*64/100);
+
+  set.srnd   = configAPI->GetProfileBool2 (configAPI->SoundSec, "sound",         "surround", 0, 0);
+  set.srnd   = configAPI->GetProfileBool  (                     "commandline_v", "s",        set.srnd, 1);
+
+  set.filter = configAPI->GetProfileInt2  (configAPI->SoundSec, "sound",         "filter",   1, 10)%3;
+  set.filter = configAPI->GetProfileInt   (                     "commandline_v", "f",        set.filter, 10)%3;
+
+  per        = configAPI->GetProfileInt2  (configAPI->SoundSec, "sound",         "reverb",   0, 10);
+  per        = configAPI->GetProfileInt   (                     "commandline_v", "r",        per, 10);
+  set.reverb = (per>=100) ? 64 : (per<=-100) ? -64 : (per*64/100);
+
+  per        = configAPI->GetProfileInt2  (configAPI->SoundSec, "sound",         "chorus",   0, 10);
+  per        = configAPI->GetProfileInt   (                     "commandline_v", "c",        per, 10);
+  set.chorus = (per>=100) ? 64 : (per<=-100) ? -64 : (per*64/100);
+
+  set.speed = 256;
+  set.pitch = 256;
 
   return errOk;
 }

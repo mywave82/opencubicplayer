@@ -36,7 +36,7 @@
 
 static char beforehelp[9] = {0};
 
-static int plHelpInit(void)
+static int plHelpInit (void)
 {
 	*beforehelp=0;
 	return 1;
@@ -114,14 +114,14 @@ static int hlpEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 		case cpievOpen:
 			return hlpOpen();
 		case cpievInitAll:
-			return plHelpInit();
+			return plHelpInit ();
 	}
 	return 1;
 }
 
 static struct cpimoderegstruct hlpHelpBrowser = {"coolhelp", hlpSetMode, hlpDraw, hlpIProcessKey, plHelpKey, hlpEvent CPIMODEREGSTRUCT_TAIL};
 
-static int HelpInit (void)
+static int HelpInit (const struct configAPI_t *configAPI)
 {
 	cpiRegisterDefMode(&hlpHelpBrowser);
 	return errOk;

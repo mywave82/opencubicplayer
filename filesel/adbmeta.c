@@ -38,8 +38,9 @@
 #endif
 
 #ifdef CFDATAHOMEDIR_OVERRIDE
-# undef cfDataHomeDir
-# define cfDataHomeDir CFDATAHOMEDIR_OVERRIDE
+# define CFDATAHOMEDIR CFDATAHOMEDIR_OVERRIDE
+#else
+# define CFDATAHOMEDIR configAPI->DataHomeDir
 #endif
 
 const char adbMetaTag[16] = "OCPArchiveMeta\x1b\x00";
@@ -273,25 +274,24 @@ fillmore:
 	return 0;
 }
 
-int adbMetaInit (void)
+int adbMetaInit (const struct configAPI_t *configAPI)
 {
 	int f, retval;
 	struct adbMetaHeader header;
 
-	adbMetaPath = malloc(strlen(cfDataHomeDir)+13+1);
+	adbMetaPath = malloc ( strlen(CFDATAHOMEDIR) + 13 + 1);
 	if (!adbMetaPath)
 	{
 		fprintf (stderr, "adbMetaInit: malloc() failed\n");
 		return 1;
 	}
-	strcpy(adbMetaPath, cfDataHomeDir);
-	strcat(adbMetaPath, "CPARCMETA.DAT");
+	sprintf (adbMetaPath, "%sCPARCMETA.DAT", CFDATAHOMEDIR);
 
 	if ((f=open(adbMetaPath, O_RDONLY))<0)
 	{
 		if (!ADBMETA_SILENCE_OPEN_ERRORS)
 		{
-			perror ("adbMetaInit: open(cfDataHomeDir/CPARCMETA.DAT)");
+			perror ("adbMetaInit: open(DataHomeDir/CPARCMETA.DAT)");
 		}
 		return 1;
 	}
@@ -353,7 +353,7 @@ void adbMetaCommit (void)
 	f = open(adbMetaPath, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 	if (!f)
 	{
-		perror ("adbMetaCommit: open(cfDataHomeDir/CPARCMETA.DAT)");
+		perror ("adbMetaCommit: open(DataHomeDir/CPARCMETA.DAT)");
 		return;
 	}
 

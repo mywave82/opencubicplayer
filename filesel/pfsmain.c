@@ -401,7 +401,7 @@ static int _fsMain(int argc, char *argv[])
 
 static struct mainstruct fsmain = { _fsMain };
 
-static int fspreint(void)
+static int fspreint (const struct configAPI_t *configAPI)
 {
 	if (ocpmain)
 	{
@@ -413,7 +413,7 @@ static int fspreint(void)
 	mdbRegisterReadInfo(&fsReadInfoReg);
 
 	fprintf(stderr, "initializing fileselector...\n");
-	if (!fsPreInit())
+	if (!fsPreInit (configAPI))
 	{
 		fprintf(stderr, "fileselector pre-init failed!\n");
 		return errGen;
@@ -422,7 +422,7 @@ static int fspreint(void)
 	return errOk;
 }
 
-static int fsint(void)
+static int fsint (const struct configAPI_t *configAPI)
 {
 	if (!fsInit())
 	{
@@ -435,7 +435,7 @@ static int fsint(void)
 
 static int fslateint (struct PluginInitAPI_t *API)
 {
-	if (!fsLateInit())
+	if (!fsLateInit (API->configAPI))
 	{
 		fprintf(stderr, "fileselector post-init failed!\n");
 		return errGen;

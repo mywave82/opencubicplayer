@@ -794,7 +794,7 @@ void musicbrainz_lookup_discid_cancel (void *token)
 	}
 }
 
-int musicbrainz_init (void)
+int musicbrainz_init (const struct configAPI_t *configAPI)
 {
 	char *path;
 	char header[64];
@@ -805,7 +805,7 @@ int musicbrainz_init (void)
 	}
 	musicbrainz_setup_init ();
 
-	makepath_malloc (&path, 0, cfDataHomeDir, "CPMUSBRN.DAT", 0);
+	makepath_malloc (&path, 0, configAPI->DataHomeDir, "CPMUSBRN.DAT", 0);
 	fprintf (stderr, "Loading %s .. ", path);
 	musicbrainz.fddb = open (path, O_RDWR | O_CREAT, S_IREAD|S_IWRITE);
 	if (musicbrainz.fddb < 0)

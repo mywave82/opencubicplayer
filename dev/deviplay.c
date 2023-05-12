@@ -131,14 +131,14 @@ static int deviplayDriverListInsert (int insertat, const char *name, int length)
 	return errOk;
 }
 
-static int deviplayPreInit (void)
+static int deviplayPreInit (const struct configAPI_t *configAPI)
 {
 	const char *str, *next;
 	/* this is ran before plugins are initialized */
 
 	plrDriverListNone = -1;
 
-	str = cfGetProfileString2 (cfSoundSec, "sound", "playerdevices", "devpNone");
+	str = configAPI->GetProfileString2 (configAPI->SoundSec, "sound", "playerdevices", "devpNone");
 	if (!strlen(str))
 	{
 		return errOk;

@@ -65,9 +65,10 @@ extern uint32_t dirdbResolvePathAndRef(const char *name); /* does not allow / in
 #define dirdbResolvePathAndRef(name, use) dirdbResolvePathWithBaseAndRef (DIRDB_NOPARENT, name, 0, use)
 #endif
 
-extern int dirdbInit(void);
-extern void dirdbClose(void);
-extern uint32_t dirdbGetParentAndRef(uint32_t node, enum dirdb_use use);
+struct configAPI_t;
+int dirdbInit (const struct configAPI_t *configAPI);
+void dirdbClose (void);
+uint32_t dirdbGetParentAndRef(uint32_t node, enum dirdb_use use);
 
 /* Temporary marks a node in the tree. Used by media-database, to detect removed nodes during a directory scan.
  *

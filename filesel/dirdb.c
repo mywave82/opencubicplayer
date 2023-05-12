@@ -40,8 +40,9 @@
 #include "stuff/utf-8.h"
 
 #ifdef CFDATAHOMEDIR_OVERRIDE
-# undef cfDataHomeDir
-# define cfDataHomeDir CFDATAHOMEDIR_OVERRIDE
+# define CFDATAHOMEDIR CFDATAHOMEDIR_OVERRIDE
+#else
+# define CFDATAHOMEDIR configAPI->DataHomeDir
 #endif
 #ifdef MEASURESTR_UTF8_OVERRIDE
 # undef measurestr_utf8
@@ -81,9 +82,11 @@ struct __attribute__((packed)) dirdbheader
 const char dirdbsigv1[60] = "Cubic Player Directory Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 const char dirdbsigv2[60] = "Cubic Player Directory Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01";
 
-static struct dirdbEntry *dirdbData=0;
-static uint32_t dirdbNum=0;
-static int dirdbDirty=0;
+static struct dirdbEntry *dirdbData = 0;
+static uint32_t dirdbNum = 0;
+static int dirdbDirty = 0;
+
+static char *dirdbPath = 0;
 
 static uint32_t dirdbRootChild = DIRDB_NOPARENT;
 static uint32_t dirdbFreeChild = DIRDB_NOPARENT;
@@ -159,9 +162,8 @@ static void dumpdirdb(void)
 }
 #endif
 
-int dirdbInit(void)
+int dirdbInit (const struct configAPI_t *configAPI)
 {
-	char *path;
 	struct dirdbheader header;
 	int f;
 	uint32_t i;
@@ -171,26 +173,21 @@ int dirdbInit(void)
 	dirdbRootChild = DIRDB_NOPARENT;
 	dirdbFreeChild = DIRDB_NOPARENT;
 
-	path = malloc(strlen(cfDataHomeDir)+11+1);
-	if (!path)
+	dirdbPath = malloc ( strlen(CFDATAHOMEDIR) + 11 + 1);
+	if (!dirdbPath)
 	{
 		fprintf(stderr, "dirdbInit: malloc() failed\n");
 		return 1;
 	}
-	strcpy(path, cfDataHomeDir);
-	strcat(path, "CPDIRDB.DAT");
+	sprintf (dirdbPath, "%sCPDIRDB.DAT", CFDATAHOMEDIR);
 
-	if ((f=open(path, O_RDONLY))<0)
+	if ((f=open(dirdbPath, O_RDONLY))<0)
 	{
-		perror("open(cfDataHomeDir/CPDIRDB.DAT)");
-		free (path);
+		perror("open(DataHomeDir/CPDIRDB.DAT)");
 		return 1;
 	}
 
-	fprintf(stderr, "Loading %s .. ", path);
-
-	free (path);
-	path = 0;
+	fprintf(stderr, "Loading %s .. ", dirdbPath);
 
 	if (read(f, &header, sizeof(header))!=sizeof(header))
 	{
@@ -346,14 +343,16 @@ unload:
 void dirdbClose(void)
 {
 	uint32_t i;
-	if (!dirdbNum)
+	if ((!dirdbNum)||(!dirdbPath))
 		return;
 	for (i=0; i<dirdbNum; i++)
 	{
-		free(dirdbData[i].name);
+		free (dirdbData[i].name);
 	}
-	free(dirdbData);
+	free (dirdbData);
+	free (dirdbPath);
 	dirdbData = 0;
+	dirdbPath = 0;
 	dirdbNum = 0;
 	dirdbRootChild = DIRDB_NOPARENT;
 	dirdbFreeChild = DIRDB_NOPARENT;
@@ -1174,7 +1173,6 @@ void dirdbGetFullname_malloc(uint32_t node, char **name, int flags)
 
 void dirdbFlush(void)
 {
-	char *path;
 	int f;
 	uint32_t i;
 	uint32_t max;
@@ -1182,7 +1180,7 @@ void dirdbFlush(void)
 	uint32_t buf32;
 	struct dirdbheader header;
 
-	if (!dirdbDirty)
+	if ((!dirdbDirty) || (!dirdbPath))
 		return;
 
 	for (i=0;i<dirdbNum;i++)
@@ -1201,23 +1199,11 @@ void dirdbFlush(void)
 		}
 	}
 
-	path = malloc(strlen(cfDataHomeDir)+11+1);
-	if (!path)
+	if ((f = open (dirdbPath, O_WRONLY|O_CREAT|O_TRUNC, S_IREAD|S_IWRITE))<0)
 	{
-		fprintf(stderr, "dirdbFlush: malloc() failed\n");
+		perror("open(DataHomeDir/CPDIRDB.DAT)");
 		return;
 	}
-	strcpy(path, cfDataHomeDir);
-	strcat(path, "CPDIRDB.DAT");
-
-	if ((f=open(path, O_WRONLY|O_CREAT|O_TRUNC, S_IREAD|S_IWRITE))<0)
-	{
-		perror("open(cfDataHomeDir/CPDIRDB.DAT)");
-		free (path);
-		return;
-	}
-	free (path);
-	path=0;
 
 	max=0;
 	for (i=0;i<dirdbNum;i++)
