@@ -69,6 +69,7 @@ struct mdbreadinforegstruct /* this is to test a file, and give it a tag..*/
 #define MDBREADINFOREGSTRUCT_TAIL ,0
 
 struct ocpfile_t;
+struct configAPI_t;
 
 int mdbGetModuleType (uint32_t fileref, struct moduletype *dst);
 int mdbInfoIsAvailable (uint32_t fileref); // used to be mdbInfoRead

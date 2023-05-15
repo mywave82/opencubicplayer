@@ -414,7 +414,7 @@ static struct ocpdirdecompressor_t cdfsdecompressor =
 	cdfs_check
 };
 
-static int cdfsint(void)
+static int cdfsint(const struct configAPI_t *configAPI)
 {
 	UTF16BE_cd = iconv_open ("UTF-8", "UTF-16BE");
 	if (UTF16BE_cd == ((iconv_t) -1))
