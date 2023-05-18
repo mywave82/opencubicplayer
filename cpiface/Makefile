@@ -201,8 +201,9 @@ cpitrack.o: cpitrack.c \
 mcpedit.o: mcpedit.c \
 	../config.h \
 	../types.h \
-	cpiface.h \
-	cpiface-private.h \
+	../cpiface/cpiface.h \
+	../cpiface/cpiface-private.h \
+	../cpiface/mcpedit.h \
 	../dev/deviwave.h \
 	../dev/mcp.h \
 	../dev/player.h \
@@ -244,10 +245,11 @@ cpiface.o: cpiface.c \
 	../types.h \
 	../boot/plinkman.h \
 	../boot/psetting.h \
-	cpiface.h \
-	cpiface-private.h \
-	cpipic.h \
-	cpiptype.h \
+	../cpiface/cpiface.h \
+	../cpiface/cpiface-private.h \
+	../cpiface/cpipic.h \
+	../cpiface/cpiptype.h \
+	../cpiface/mcpedit.h \
 	../dev/mcp.h \
 	../dev/player.h \
 	../dev/ringbuffer.h \

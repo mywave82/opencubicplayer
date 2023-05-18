@@ -47,7 +47,6 @@
 #endif
 
 /* options */
-static int mpeg_inpause;
 static int mpeg_looped;
 
 static unsigned int voll,volr;
@@ -654,7 +653,7 @@ OCP_INTERNAL void mpegIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 		return;
 	}
 
-	if (mpeg_inpause || (mpeg_looped == 3))
+	if (cpifaceSession->InPause || (mpeg_looped == 3))
 	{
 		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
@@ -836,10 +835,6 @@ OCP_INTERNAL void mpegSetLoop (uint8_t s)
 OCP_INTERNAL char mpegIsLooped (void)
 {
 	return mpeg_looped == 3;
-}
-OCP_INTERNAL void mpegPause (uint8_t p)
-{
-	mpeg_inpause=p;
 }
 static void mpegSetSpeed (uint16_t sp)
 {
@@ -1108,7 +1103,6 @@ OCP_INTERNAL int mpegOpenPlayer (struct ocpfilehandle_t *mpegfile, struct cpifac
 	data_length=0;
 	data_in_synth=0;
 	mpeg_eof=0;
-	mpeg_inpause=0;
 	mpeg_looped=0;
 
 	mad_stream_init(&stream);

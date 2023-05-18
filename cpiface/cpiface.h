@@ -1,7 +1,7 @@
 /* OpenCP Module Player
  * copyright (c) '94-'05 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
  *
- * CPIface note dots mode
+ * CPIface main interface code
  *
  * revision history: (please note changes here)
  *  -nb980510   Niklas Beisert <nbeisert@physik.tu-muenchen.de>
@@ -191,11 +191,6 @@ extern void cpiTrkSetup2 (struct cpifaceSessionAPI_t *cpifaceSession, const stru
 
 extern char plCompoMode;
 
-/* For the sliding pause effect, range 64 = normal speed, 1 = almost complete stop.
- * For complete stop with wavetable use mcpSet (-1, mcpMasterPause, 1) and for stream playback the stream has to send zero-data
- */
-void mcpSetMasterPauseFadeParameters (struct cpifaceSessionAPI_t *cpifaceSession, int i);
-
 enum mcpNormalizeType
 {
 	mcpNormalizeNoFilter = 0,
@@ -213,8 +208,6 @@ enum mcpNormalizeType
 	mcpNormalizeDefaultPlayW = mcpNormalizeFilterAOIFOI | mcpNormalizeCanSpeedPitchUnlock | mcpNormalizeCanEcho | mcpNormalizeCanAmplify,
 	mcpNormalizeDefaultPlayP = 0,
 };
-
-void mcpNormalize (struct cpifaceSessionAPI_t *cpifaceSession, enum mcpNormalizeType Type);
 
 struct drawHelperAPI_t
 {
@@ -268,7 +261,9 @@ struct cpifaceSessionAPI_t
 	struct moduleinfostruct mdbdata; /* filled in by cpiface */
 
 	void (*Normalize) (struct cpifaceSessionAPI_t *cpifaceSession, enum mcpNormalizeType Type); /* mcpedit.c, global control of pan, bal, volume, etc */
-	void (*SetMasterPauseFadeParameters) (struct cpifaceSessionAPI_t *cpifaceSession, int i);   /* mcpedit.c, global control of pan, bal, volume, etc */
+	void (*SetMasterPauseFadeParameters) (struct cpifaceSessionAPI_t *cpifaceSession, int i);   /* mcpedit.c, i=0 full pause (going all the way down to 0 should not be needed), 64 = normal speed */
+	void (*TogglePauseFade) (struct cpifaceSessionAPI_t *cpifaceSession); /* manipulates SetMasterPauseFadeParameters() and InPause */
+	void (*TogglePause) (struct cpifaceSessionAPI_t *cpifaceSession);     /* anipulates SetMasterPauseFadeParameters() and InPause */
 
 	/* configured by devp/devw */
 	void (*GetRealMasterVolume)(int *l, int *r); /* filled in by devp/devw driver */

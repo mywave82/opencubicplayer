@@ -35,7 +35,6 @@ OCP_INTERNAL void timidityClosePlayer (struct cpifaceSessionAPI_t *cpifaceSessio
 OCP_INTERNAL void timidityIdle (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void timiditySetLoop (uint8_t s);
 OCP_INTERNAL int timidityIsLooped (void);
-OCP_INTERNAL void timidityPause (uint8_t p);
 OCP_INTERNAL void timiditySetRelPos (int pos);
 OCP_INTERNAL void timidityRestart (void);
 OCP_INTERNAL void timidityGetGlobInfo (struct mglobinfo *);

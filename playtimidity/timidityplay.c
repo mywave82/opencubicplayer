@@ -74,8 +74,6 @@ struct emulate_play_midi_file_session
 static struct emulate_play_midi_file_session timidity_main_session;
 struct timiditycontext_t tc;
 
-static int gmi_inpause;
-
 static uint64_t samples_committed;
 static uint64_t samples_lastui;
 static uint64_t samples_lastdelay;
@@ -1710,11 +1708,6 @@ OCP_INTERNAL void timiditySetLoop (unsigned char s)
 	donotloop=!s;
 }
 
-OCP_INTERNAL void timidityPause (unsigned char p)
-{
-	gmi_inpause=p;
-}
-
 OCP_INTERNAL void timidityMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int m)
 {
 	//sync_restart (&tc, 0);
@@ -1799,7 +1792,7 @@ OCP_INTERNAL void timidityIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 		return;
 	}
 
-	if (gmi_inpause || (gmi_looped && gmi_eof))
+	if (cpifaceSession->InPause || (gmi_looped && gmi_eof))
 	{
 		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
@@ -2165,7 +2158,6 @@ OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t b
 	ocp_playmode.rate = gmiRate;
 
 	emulate_main_start(&tc, cpifaceSession);
-	gmi_inpause=0;
 	voll=256;
 	volr=256;
 	pan=64;

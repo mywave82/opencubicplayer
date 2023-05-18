@@ -60,10 +60,6 @@ static struct oplStatusBuffer_t oplStatusBuffers[ROW_BUFFERS] = {{0}};
 struct oplStatus oplLastStatus; /* current register status */
 int oplLastPos;
 
-/* options */
-static int opl_inpause;
-//static int opl_looped;
-
 static unsigned long voll,volr;
 static int pan;
 static int srnd;
@@ -376,8 +372,6 @@ OCP_INTERNAL int oplOpenPlayer (const char *filename /* needed for detection */,
 	cpifaceSession->mcpGet = oplGet;
 	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeDefaultPlayP);
 
-	opl_inpause = 0;
-
 	active=1;
 
 	oplTrkSetup (cpifaceSession, p);
@@ -405,11 +399,6 @@ OCP_INTERNAL void oplSetLoop (int loop)
 OCP_INTERNAL int oplIsLooped (void)
 {
 	return 0; // opl_looped == 3;
-}
-
-OCP_INTERNAL void oplPause (uint8_t p)
-{
-	opl_inpause=p;
 }
 
 static void oplSetSpeed(uint16_t sp)
@@ -500,7 +489,7 @@ OCP_INTERNAL void oplIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 		return;
 	}
 
-	if (opl_inpause /*|| (opl_looped == 3)*/)
+	if (cpifaceSession->InPause /*|| (opl_looped == 3)*/)
 	{
 		cpifaceSession->plrDevAPI->Pause (1);
 	} else {

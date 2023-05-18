@@ -55,56 +55,6 @@ static int cdpViewSectors; /* view-option */
 static signed long newpos; /* skip to */
 static unsigned char setnewpos; /* and the fact we should skip */
 
-static time_t pausefadestart; /* when did the pause fade start, used to make the slide */
-static int8_t pausefadedirection; /* 0 = no slide, +1 = sliding from pause to normal, -1 = sliding from normal to pause */
-
-static void togglepausefade (struct cpifaceSessionAPI_t *cpifaceSession)
-{
-	if (pausefadedirection)
-	{ /* we are already in a pause-fade, reset the fade-start point */
-		pausefadestart = clock_ms() - 1000 + (clock_ms() - pausefadestart);
-		pausefadedirection *= -1; /* inverse the direction */
-	} else if (cpifaceSession->InPause)
-	{ /* we are in full pause already */
-		pausefadestart = clock_ms();
-		cdPause (cpifaceSession->InPause = 0);
-		pausefadedirection = 1;
-	} else { /* we were not in pause, start the pause fade */
-		pausefadestart = clock_ms();
-		pausefadedirection = -1;
-	}
-}
-
-static void dopausefade (struct cpifaceSessionAPI_t *cpifaceSession)
-{
-	int16_t i;
-	if (pausefadedirection > 0)
-	{ /* unpause fade */
-		i = ((int_fast32_t)(clock_ms() - pausefadestart)) * 64 / 1000;
-		if (i < 1)
-		{
-			i = 1;
-		}
-		if (i >= 64)
-		{
-			i = 64;
-			pausefadedirection = 0; /* we reached the end of the slide */
-		}
-	} else { /* pause fade */
-		i = 64 - ((int_fast32_t)(clock_ms() - pausefadestart)) * 64 / 1000;
-		if (i >= 64)
-		{
-			i = 64;
-		}
-		if (i <= 0)
-		{ /* we reached the end of the slide, finish the pause command */
-			pausefadedirection = 0;
-			cdPause (cpifaceSession->InPause = 1);
-			return;
-		}
-	}
-	cpifaceSession->SetMasterPauseFadeParameters (cpifaceSession, i);
-}
 static char *gettimestr(unsigned long s, char *time)
 {
 	unsigned char csec, sec, min;
@@ -303,20 +253,10 @@ static int cdaProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			}
 			return 0;
 		case 'p': case 'P':
-			togglepausefade (cpifaceSession);
+			cpifaceSession->TogglePauseFade (cpifaceSession);
 			break;
 		case KEY_CTRL_P:
-			/* cancel any pause-fade that might be in progress */
-			pausefadedirection = 0;
-			cpifaceSession->SetMasterPauseFadeParameters (cpifaceSession, 64);
-
-			if (cpifaceSession->InPause)
-			{
-				cdPause (cpifaceSession->InPause = 0);
-			} else {
-				cdPause (cpifaceSession->InPause = 1);
-			}
-
+			cpifaceSession->TogglePause (cpifaceSession);
 			break;
 		case 't':
 			cdpViewSectors=!cdpViewSectors;
@@ -440,11 +380,6 @@ static int cdaLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
 {
 	struct cdStat stat;
 
-	if (pausefadedirection)
-	{
-		dopausefade (cpifaceSession);
-	}
-
 	cdSetLoop (LoopMod);
 
 	cdIdle (cpifaceSession);
@@ -541,8 +476,6 @@ static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	{
 		return retval;
 	}
-
-	pausefadedirection = 0;
 
 	return errOk;
 }

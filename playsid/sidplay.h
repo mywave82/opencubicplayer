@@ -35,7 +35,6 @@ OCP_INTERNAL const char *sidTuneInfoClockSpeedString (void);
 OCP_INTERNAL uint16_t sidChipAddr (int i);
 OCP_INTERNAL void sidClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void sidIdle (struct cpifaceSessionAPI_t *cpifaceSession);
-OCP_INTERNAL void sidPause (unsigned char p);
 OCP_INTERNAL void sidStartSong (uint8_t sng);
 OCP_INTERNAL uint8_t sidGetSong (void);
 OCP_INTERNAL uint8_t sidGetSongs (void);

@@ -35,7 +35,6 @@ extern "C"
 #include "ymplay.h"
 #include "stsoundlib/YmMusic.h"
 
-static int ym_inpause;
 static int ym_looped;
 
 static uint32_t ymRate;
@@ -308,11 +307,6 @@ OCP_INTERNAL int ymIsLooped (void)
 	return ym_looped==3;
 }
 
-OCP_INTERNAL void ymPause (uint8_t p)
-{
-	ym_inpause=p;
-}
-
 static struct channel_info_t Registers;
 
 static void register_delay_callback_from_devp (void *arg, int samples_ago)
@@ -425,7 +419,7 @@ OCP_INTERNAL void ymIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 		return;
 	}
 
-	if (ym_inpause || (ym_looped == 3))
+	if (cpifaceSession->InPause || (ym_looped == 3))
 	{
 		cpifaceSession->plrDevAPI->Pause (1);
 	} else {

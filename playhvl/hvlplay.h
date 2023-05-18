@@ -12,7 +12,6 @@ void OCP_INTERNAL hvlClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
 void OCP_INTERNAL hvlIdle (struct cpifaceSessionAPI_t *cpifaceSession);
 void OCP_INTERNAL hvlSetLoop (uint8_t s);
 char OCP_INTERNAL hvlLooped (void);
-void OCP_INTERNAL hvlPause (uint8_t p);
 void OCP_INTERNAL hvlPrevSubSong ();
 void OCP_INTERNAL hvlRestartSong ();
 void OCP_INTERNAL hvlNextSubSong ();

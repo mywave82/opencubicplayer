@@ -477,9 +477,9 @@ static int devpCoreAudioPlay (uint32_t *rate, enum plrRequestFormat *format, str
 	return 1;
 }
 
-static void devpCoreAudioGetStats (uint64_t *processed)
+static void devpCoreAudioGetStats (uint64_t *committed, uint64_t *processed)
 {
-	plrDriverAPI->ringbufferAPI->get_stats (devpCoreAudioRingBuffer, processed);
+	plrDriverAPI->ringbufferAPI->get_stats (devpCoreAudioRingBuffer, committed, processed);
 }
 
 static const struct plrDevAPI_t devpCoreAudio = {

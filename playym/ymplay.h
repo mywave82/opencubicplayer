@@ -11,8 +11,6 @@ OCP_INTERNAL int ymOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSessi
 OCP_INTERNAL void ymSetLoop (int loop);
 OCP_INTERNAL int ymIsLooped (void);
 
-OCP_INTERNAL void ymPause (uint8_t p);
-
 OCP_INTERNAL void ymIdle (struct cpifaceSessionAPI_t *cpifaceSession);
 
 extern OCP_INTERNAL CYmMusic *pMusic;

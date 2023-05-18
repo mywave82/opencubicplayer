@@ -1380,9 +1380,9 @@ static void __attribute__((destructor))fini(void)
 	alsa_mixers_n=0;
 }
 
-static void devpALSAGetStats (uint64_t *processed)
+static void devpALSAGetStats (uint64_t *committed, uint64_t *processed)
 {
-	plrDriverAPI->ringbufferAPI->get_stats (devpALSARingBuffer, processed);
+	plrDriverAPI->ringbufferAPI->get_stats (devpALSARingBuffer, committed, processed);
 }
 
 static struct ocpvolregstruct volalsa={volalsaGetNumVolume, volalsaGetVolume, volalsaSetVolume};

@@ -61,7 +61,8 @@ void ringbuffer_free (struct ringbuffer_t *self);
 void ringbuffer_add_tail_callback_samples (struct ringbuffer_t *self, int samples, void (*callback)(void *arg, int samples_ago), const void *arg);
 void ringbuffer_add_processing_callback_samples (struct ringbuffer_t *self, int samples, void (*callback)(void *arg, int samples_ago), const void *arg);
 
-void ringbuffer_get_stats (struct ringbuffer_t *self, uint64_t *total_tail);
+/* returns number of non-pause samples */
+void ringbuffer_get_stats (struct ringbuffer_t *self, uint64_t *total_head, uint64_t *total_tail);
 
 struct ringbufferAPI_t
 {
@@ -91,7 +92,7 @@ struct ringbufferAPI_t
 	void (*free) (struct ringbuffer_t *self);
 	void (*add_tail_callback_samples) (struct ringbuffer_t *self, int samples, void (*callback)(void *arg, int samples_ago), const void *arg);
 	void (*add_processing_callback_samples) (struct ringbuffer_t *self, int samples, void (*callback)(void *arg, int samples_ago), const void *arg);
-	void (*get_stats) (struct ringbuffer_t *self, uint64_t *total_tail);
+	void (*get_stats) (struct ringbuffer_t *self, uint64_t *total_head, uint64_t *total_tail); /* given in non-pause samples */
 };
 
 extern const struct ringbufferAPI_t ringbufferAPI;

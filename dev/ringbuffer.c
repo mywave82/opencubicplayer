@@ -62,6 +62,7 @@ struct ringbuffer_t
 	int      pause_fill;
 	int      nonpause_fill;
 	uint64_t total_tail; /* total of non-pause samples we have played so far in the current session */
+	uint64_t total_head; /* total number of samples of commited */
 };
 
 void ringbuffer_reset (struct ringbuffer_t *self)
@@ -258,6 +259,7 @@ static void ringbuffer_head_add_samples_common (struct ringbuffer_t *self, int s
 
 void ringbuffer_head_add_samples(struct ringbuffer_t *self, int samples)
 {
+	self->total_head += samples;
 	ringbuffer_head_add_samples_common (self, samples);
 }
 
@@ -621,9 +623,16 @@ void ringbuffer_add_processing_callback_samples (struct ringbuffer_t *self, int 
 	self->processing_callbacks_fill++;
 }
 
-void ringbuffer_get_stats (struct ringbuffer_t *self, uint64_t *total_tail)
+void ringbuffer_get_stats (struct ringbuffer_t *self, uint64_t *total_head, uint64_t *total_tail)
 {
-	*total_tail = self->total_tail;
+	if (total_head)
+	{
+		*total_head = self->total_head;
+	}
+	if (total_tail)
+	{
+		*total_tail = self->total_tail;
+	}
 }
 
 const struct ringbufferAPI_t ringbufferAPI =

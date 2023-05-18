@@ -48,7 +48,6 @@
 #endif
 
 /* options */
-static int wav_inpause;
 static int wav_looped;
 
 static uint32_t voll,volr;
@@ -282,7 +281,7 @@ OCP_INTERNAL void wpIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 		return;
 	}
 
-	if (wav_inpause || (wav_looped == 3))
+	if (cpifaceSession->InPause || (wav_looped == 3))
 	{
 		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
@@ -466,11 +465,6 @@ OCP_INTERNAL char wpLooped (void)
 OCP_INTERNAL void wpSetLoop (uint8_t s)
 {
 	donotloop=!s;
-}
-
-OCP_INTERNAL void wpPause (uint8_t p)
-{
-	wav_inpause=p;
 }
 
 static void wpSetSpeed (uint16_t sp)
@@ -777,7 +771,6 @@ OCP_INTERNAL uint8_t wpOpenPlayer(struct ocpfilehandle_t *wavf, struct cpifaceSe
 	wavebuffpos = 0;
 	waveneedseek = 0;
 
-	wav_inpause=0;
 	wav_looped=0;
 
 	active=1;

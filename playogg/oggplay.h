@@ -49,7 +49,6 @@ OCP_INTERNAL void oggClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void oggIdle (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void oggSetLoop (uint8_t s);
 OCP_INTERNAL char oggLooped (void);
-OCP_INTERNAL void oggPause (uint8_t p);
 OCP_INTERNAL void oggGetInfo (struct cpifaceSessionAPI_t *cpifaceSession, struct ogginfo *);
 OCP_INTERNAL ogg_int64_t oggGetPos (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void oggSetPos (struct cpifaceSessionAPI_t *cpifaceSession, ogg_int64_t pos);

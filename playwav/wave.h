@@ -20,7 +20,6 @@ OCP_INTERNAL void wpClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void wpIdle (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void wpSetLoop (unsigned char s);
 OCP_INTERNAL char wpLooped (void);
-OCP_INTERNAL void wpPause (unsigned char p);
 OCP_INTERNAL void wpGetInfo (struct cpifaceSessionAPI_t *cpifaceSession, struct waveinfo *);
 OCP_INTERNAL uint32_t wpGetPos (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void wpSetPos (struct cpifaceSessionAPI_t *cpifaceSession, uint32_t pos);

@@ -23,7 +23,6 @@ OCP_INTERNAL void mpegClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void mpegIdle (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void mpegSetLoop (uint8_t s);
 OCP_INTERNAL char mpegIsLooped (void);
-OCP_INTERNAL void mpegPause (uint8_t p);
 OCP_INTERNAL void mpegGetInfo (struct mpeginfo *);
 OCP_INTERNAL uint32_t mpegGetPos (void);
 OCP_INTERNAL void mpegSetPos (uint32_t pos);

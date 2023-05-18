@@ -75,8 +75,6 @@ static volatile int active;
 static int ogg_looped;
 static int donotloop;
 
-static int ogg_inpause;
-
 static volatile int clipbusy=0;
 
 static struct ocpfilehandle_t *oggfile;
@@ -211,7 +209,7 @@ OCP_INTERNAL void oggIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 		return;
 	}
 
-	if (ogg_inpause || (ogg_looped == 3))
+	if (cpifaceSession->InPause || (ogg_looped == 3))
 	{
 		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
@@ -756,11 +754,6 @@ OCP_INTERNAL void oggSetLoop (uint8_t s)
 	donotloop=!s;
 }
 
-OCP_INTERNAL void oggPause (uint8_t p)
-{
-	ogg_inpause=p;
-}
-
 static void oggSetSpeed (uint16_t sp)
 {
 	if (sp < 4)
@@ -966,7 +959,6 @@ OCP_INTERNAL int oggOpenPlayer (struct ocpfilehandle_t *oggf, struct cpifaceSess
 		}
 	}
 
-	ogg_inpause=0;
 	ogg_looped=0;
 
 	cpifaceSession->mcpSet = oggSet;

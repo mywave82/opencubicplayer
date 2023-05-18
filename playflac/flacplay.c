@@ -35,9 +35,6 @@
 #include "stuff/imsrtns.h"
 #include "stuff/poutput.h"
 
-/* options */
-static int flac_inpause;
-
 static uint32_t voll,volr;
 static int vol;
 static int bal;
@@ -652,7 +649,7 @@ OCP_INTERNAL void flacIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 		return;
 	}
 
-	if (flac_inpause || (eof_buffer && eof_flacfile))
+	if (cpifaceSession->InPause || (eof_buffer && eof_flacfile))
 	{
 		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
@@ -836,10 +833,6 @@ OCP_INTERNAL int flacIsLooped (void)
 {
 	return eof_buffer&&eof_flacfile;
 }
-OCP_INTERNAL void flacPause (int p)
-{
-	flac_inpause=p;
-}
 
 static void flacSetSpeed(uint16_t sp)
 {
@@ -963,7 +956,6 @@ OCP_INTERNAL int flacOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSes
 	flacfile = file;
 	flacfile->ref (flacfile);
 
-	flac_inpause=0;
 	voll=256;
 	volr=256;
 	bal=0;

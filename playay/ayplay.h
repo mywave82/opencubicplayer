@@ -17,7 +17,6 @@ OCP_INTERNAL void ayClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void ayIdle (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void aySetLoop (uint8_t s);
 OCP_INTERNAL int ayIsLooped (void);
-OCP_INTERNAL void ayPause (uint8_t p);
 OCP_INTERNAL void aySetMute (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int mute);
 OCP_INTERNAL void ayGetInfo (struct ayinfo *);
 OCP_INTERNAL void ayGetChans (struct ay_driver_frame_state_t *);

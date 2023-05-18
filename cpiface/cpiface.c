@@ -57,10 +57,11 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
-#include "cpiface.h"
-#include "cpiface-private.h"
-#include "cpipic.h"
-#include "cpiptype.h"
+#include "cpiface/cpiface.h"
+#include "cpiface/cpiface-private.h"
+#include "cpiface/cpipic.h"
+#include "cpiface/cpiptype.h"
+#include "cpiface/mcpedit.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
 #include "dev/ringbuffer.h"
@@ -1631,7 +1632,7 @@ static uint_fast16_t getSeconds (struct cpifaceSessionAPI_t *cpifaceSession)
 	uint64_t tail;
 	uint32_t rate;
 
-	cpifaceSession->plrDevAPI->GetStats (&tail);
+	cpifaceSession->plrDevAPI->GetStats (0, &tail);
 	rate = cpifaceSession->plrDevAPI->GetRate();
 	return tail / rate;
 }
@@ -2210,6 +2211,10 @@ static void plmpPreClose(struct PluginCloseAPI_t *API)
 
 static void cpifaceIdle (void)
 {
+	if (cpifaceSessionAPI.mcpPauseFadeDirection)
+	{
+		mcpDoPauseFade (&cpifaceSessionAPI.Public);
+	}
 	if (cpifaceSessionAPI.Public.IsEnd)
 	{
 		cpifaceSessionAPI.Public.IsEnd (&cpifaceSessionAPI.Public, fsLoopMods);
@@ -2281,6 +2286,8 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 
 	cpifaceSessionAPI.Public.Normalize = mcpNormalize;
 	cpifaceSessionAPI.Public.SetMasterPauseFadeParameters = mcpSetMasterPauseFadeParameters;
+	cpifaceSessionAPI.Public.TogglePauseFade = mcpTogglePauseFade;
+	cpifaceSessionAPI.Public.TogglePause = mcpTogglePause;
 
 	/*
 	cpifaceSessionAPI.Public.GetRealMasterVolume = 0;

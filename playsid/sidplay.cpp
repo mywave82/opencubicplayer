@@ -109,8 +109,6 @@ static int vol, bal;
 static int pan;
 static int srnd;
 
-static char sid_inpause;
-
 static int SidCount;
 
 static volatile int clipbusy=0;
@@ -228,7 +226,7 @@ OCP_INTERNAL void sidIdle(struct cpifaceSessionAPI_t *cpifaceSession)
 		return;
 	}
 
-	if (sid_inpause /*|| (sid_looped == 3)*/)
+	if (cpifaceSession->InPause /*|| (sid_looped == 3)*/)
 	{
 		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
@@ -522,11 +520,6 @@ OCP_INTERNAL const char *sidTuneStatusString (void)
 OCP_INTERNAL const char *sidTuneInfoClockSpeedString (void)
 {
 	return libsidplayfp::tuneInfo_clockSpeed_toString(mySidPlayer->getTuneInfoClockSpeed());
-}
-
-OCP_INTERNAL void sidPause (unsigned char p)
-{
-	sid_inpause=p;
 }
 
 static void sidSetPitch (uint32_t sp)
@@ -914,7 +907,6 @@ OCP_INTERNAL int sidOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSess
 	}
 
 	memset(sidMuted, 0, sizeof (sidMuted));
-	sid_inpause=0;
 
 #warning FIX ME, rate is fixed to 50 at this line!!!
 	sid_samples_per_row = sidRate / 50;
@@ -941,7 +933,6 @@ OCP_INTERNAL int sidOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSess
 
 	sidbuffpos = 0x00000000;
 	sidbufrate_compensate = 0;
-	sid_inpause = 0;
 	sidbufrate = 0x00010000;
 
 	// construct song message

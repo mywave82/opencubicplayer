@@ -102,9 +102,6 @@ OCP_INTERNAL unsigned char ay_mem[64*1024];
 #define FRAME_STATES_CPC        (4000000/50)
 static int do_cpc=0;
 
-/* options */
-static int ay_inpause;
-
 static unsigned long voll,volr;
 static int bal;
 static int vol;
@@ -653,7 +650,7 @@ OCP_INTERNAL void ayIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 		return;
 	}
 
-	if (ay_inpause || (ay_looped == 3))
+	if (cpifaceSession->InPause || (ay_looped == 3))
 	{
 		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
@@ -908,7 +905,6 @@ OCP_INTERNAL int ayOpenPlayer(struct ocpfilehandle_t *file, struct cpifaceSessio
 	}
 	sound_freq = ayRate;
 
-	ay_inpause = 0;
 	ay_looped = 0;
 	aybuf = malloc(16384 << 2 /* stereo + 16bit */);
 	if (!aybuf)
@@ -1023,11 +1019,6 @@ OCP_INTERNAL int ayIsLooped (void)
 OCP_INTERNAL void aySetLoop (unsigned char s)
 {
 	donotloop=!s;
-}
-
-OCP_INTERNAL void ayPause (unsigned char p)
-{
-	ay_inpause=p;
 }
 
 OCP_INTERNAL void ayGetInfo (struct ayinfo *info)

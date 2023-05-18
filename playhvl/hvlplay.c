@@ -88,7 +88,6 @@ static struct ringbuffer_t *hvl_buf_pos;
 static uint32_t hvlbuffpos;
 static int hvl_doloop;
 static int hvl_looped;
-static int hvl_inpause;
 
 static uint64_t samples_committed;
 static uint64_t samples_lastui;
@@ -363,7 +362,7 @@ OCP_INTERNAL void hvlIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 
 	cpifaceSession->plrDevAPI->Idle();
 
-	if (hvl_inpause || (hvl_looped == 3))
+	if (cpifaceSession->InPause || (hvl_looped == 3))
 	{
 		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
@@ -465,11 +464,6 @@ OCP_INTERNAL void hvlSetLoop (uint8_t s)
 OCP_INTERNAL char hvlLooped (void)
 {
 	return hvl_looped == 3;
-}
-
-OCP_INTERNAL void hvlPause (uint8_t p)
-{
-	hvl_inpause = p;
 }
 
 static void hvlSetSpeed (uint16_t sp)
@@ -666,7 +660,6 @@ OCP_INTERNAL int hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfil
 	last_ht_SpeedMultiplier = 1;
 
 	hvlbuffpos = 0x00000000;
-	hvl_inpause = 0;
 	hvl_doloop = 0;
 	hvl_looped = 0;
 	samples_committed=0;

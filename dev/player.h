@@ -32,7 +32,7 @@ struct plrDevAPI_t
 	struct ocpvolregstruct *VolRegs; /* null if feature is not present */
 	int (*ProcessKey)(uint16_t);
 
-	void (*GetStats)(uint64_t *processed);
+	void (*GetStats)(uint64_t *committed, uint64_t *processed);
 };
 
 extern const struct plrDevAPI_t *plrDevAPI;

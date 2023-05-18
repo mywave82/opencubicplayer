@@ -654,9 +654,9 @@ static void ossPluginClose (struct PluginCloseAPI_t *API)
 
 static struct ocpvolregstruct voloss={volossGetNumVolume, volossGetVolume, volossSetVolume};
 
-static void devpOSSGetStats (uint64_t *processed)
+static void devpOSSGetStats (uint64_t *committed, uint64_t *processed)
 {
-	plrDriverAPI->ringbufferAPI->get_stats (devpOSSRingBuffer, processed);
+	plrDriverAPI->ringbufferAPI->get_stats (devpOSSRingBuffer, committed, processed);
 }
 
 static const struct plrDevAPI_t devpOSS = {

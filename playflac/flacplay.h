@@ -50,7 +50,6 @@ OCP_INTERNAL void flacClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void flacIdle (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void flacSetLoop (uint8_t s);
 OCP_INTERNAL int flacIsLooped (void);
-OCP_INTERNAL void flacPause (int p);
 OCP_INTERNAL void flacGetInfo (struct flacinfo *);
 OCP_INTERNAL uint64_t flacGetPos (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void flacSetPos (uint64_t pos);

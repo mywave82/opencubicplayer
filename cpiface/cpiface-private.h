@@ -36,6 +36,9 @@ struct cpifaceSessionPrivate_t
 	unsigned int          cpiDebugLastWidth;
 	struct cpiDebugPair_t cpiDebug_line[100];
 	unsigned int          cpiDebug_lines;
+
+	int_fast8_t           mcpPauseFadeDirection;
+	uint64_t              mcpPauseTarget;
 };
 
 extern OCP_INTERNAL struct cpifaceSessionPrivate_t cpifaceSessionAPI;

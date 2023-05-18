@@ -328,9 +328,9 @@ static void devpSDLStop (struct cpifaceSessionAPI_t *cpifaceSession)
 	cpifaceSession->plrActive = 0;
 }
 
-static void devpSDLGetStats (uint64_t *processed)
+static void devpSDLGetStats (uint64_t *committed, uint64_t *processed)
 {
-	plrDriverAPI->ringbufferAPI->get_stats (devpSDLRingBuffer, processed);
+	plrDriverAPI->ringbufferAPI->get_stats (devpSDLRingBuffer, committed, processed);
 }
 
 static const struct plrDevAPI_t devpSDL = {

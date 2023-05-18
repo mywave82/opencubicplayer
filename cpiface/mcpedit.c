@@ -31,6 +31,7 @@
 #include "types.h"
 #include "cpiface/cpiface.h"
 #include "cpiface/cpiface-private.h"
+#include "cpiface/mcpedit.h"
 #include "dev/deviwave.h"
 #include "dev/player.h"
 #include "dev/mcp.h"
@@ -40,7 +41,7 @@
 
 static int finespeed=8;
 
-void mcpNormalize (struct cpifaceSessionAPI_t *cpifaceSession, enum mcpNormalizeType Type)
+OCP_INTERNAL void mcpNormalize (struct cpifaceSessionAPI_t *cpifaceSession, enum mcpNormalizeType Type)
 {
 	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
 
@@ -373,7 +374,7 @@ OCP_INTERNAL int mcpSetProcessKey (struct cpifaceSessionPrivate_t *f, uint16_t k
 	return 1;
 }
 
-void mcpSetMasterPauseFadeParameters (struct cpifaceSessionAPI_t *cpifaceSession, int i)
+OCP_INTERNAL void mcpSetMasterPauseFadeParameters (struct cpifaceSessionAPI_t *cpifaceSession, int i)
 {
 	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
 
@@ -381,4 +382,95 @@ void mcpSetMasterPauseFadeParameters (struct cpifaceSessionAPI_t *cpifaceSession
 	cpifaceSession->mcpSet (cpifaceSession, -1, mcpMasterPitch, f->mcpset.pitch*i/64);
 	cpifaceSession->mcpSet (cpifaceSession, -1, mcpMasterSpeed, f->mcpset.speed*i/64);
 	cpifaceSession->mcpSet (cpifaceSession, -1, mcpMasterVolume, f->mcpset.vol*i/64);
+}
+
+OCP_INTERNAL void mcpDoPauseFade (struct cpifaceSessionAPI_t *cpifaceSession)
+{
+	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
+	int_fast16_t i;
+	uint64_t pos;
+	uint32_t PAUSELENGTH = 1 * cpifaceSession->plrDevAPI->GetRate(); /* 1 seconds */
+
+	cpifaceSession->plrDevAPI->GetStats (&pos, 0);
+	if (pos > f->mcpPauseTarget)
+	{
+		pos = f->mcpPauseTarget;
+	}
+
+	if (f->mcpPauseFadeDirection > 0)
+	{ /* unpause fade */
+		i = 64 - (f->mcpPauseTarget - pos) * 64 / PAUSELENGTH;
+		if (i < 1)
+		{
+			i = 1;
+		}
+		if (i >= 64)
+		{ /* we reached the end of the slide */
+			i = 64;
+			f->mcpPauseFadeDirection = 0;
+		}
+	} else { /* pause fade */
+		i = (f->mcpPauseTarget - pos) * 64 / PAUSELENGTH;
+		if (i >= 64)
+		{
+			i = 64;
+		}
+		if (i <= 0)
+		{ /* we reached the end of the slide, finish the pause command */
+			f->mcpPauseFadeDirection = 0;
+			cpifaceSession->InPause = 1;
+			if (cpifaceSession->mcpSet)
+			{
+				cpifaceSession->mcpSet (cpifaceSession, -1, mcpMasterPause, cpifaceSession->InPause);
+			}
+			return;
+		}
+	}
+	cpifaceSession->SetMasterPauseFadeParameters (cpifaceSession, i);
+}
+
+OCP_INTERNAL void mcpTogglePauseFade (struct cpifaceSessionAPI_t *cpifaceSession)
+{
+	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
+
+	uint64_t realpos, virtualpos;
+	uint32_t PAUSELENGTH = 1 * cpifaceSession->plrDevAPI->GetRate(); /* 1 second */
+
+	cpifaceSession->plrDevAPI->GetStats (&realpos, 0);
+	if (realpos > f->mcpPauseTarget)
+	{
+		virtualpos = f->mcpPauseTarget;
+	} else {
+		virtualpos = realpos;
+	}
+
+	if (f->mcpPauseFadeDirection)
+	{
+		f->mcpPauseTarget = realpos + PAUSELENGTH - (f->mcpPauseTarget - virtualpos);
+		f->mcpPauseFadeDirection *= -1; /* inverse the direction */
+	} else if (cpifaceSession->InPause)
+	{ /* we are in full pause already, unpause */
+		f->mcpPauseTarget = realpos + PAUSELENGTH;
+		f->mcpPauseFadeDirection = 1;
+		cpifaceSession->InPause = 0;
+		if (cpifaceSession->mcpSet)
+		{
+			cpifaceSession->mcpSet (cpifaceSession, -1, mcpMasterPause, cpifaceSession->InPause);
+		}
+	} else { /* we were not in pause, start the pause fade */
+		f->mcpPauseTarget = realpos + PAUSELENGTH;
+		f->mcpPauseFadeDirection = -1;
+	}
+}
+
+OCP_INTERNAL void mcpTogglePause (struct cpifaceSessionAPI_t *cpifaceSession)
+{
+	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
+	f->mcpPauseFadeDirection = 0;
+	cpifaceSession->InPause = !cpifaceSession->InPause;
+	cpifaceSession->SetMasterPauseFadeParameters (cpifaceSession, 64);
+	if (cpifaceSession->mcpSet)
+	{
+		cpifaceSession->mcpSet (cpifaceSession, -1, mcpMasterPause, cpifaceSession->InPause);
+	}
 }

@@ -240,9 +240,9 @@ static void devpNoneStop (struct cpifaceSessionAPI_t *cpifaceSession)
 	cpifaceSession->plrActive = 0;
 }
 
-static void devpNoneGetStats (uint64_t *processed)
+static void devpNoneGetStats (uint64_t *committed, uint64_t *processed)
 {
-	plrDriverAPI->ringbufferAPI->get_stats (devpNoneRingBuffer, processed);
+	plrDriverAPI->ringbufferAPI->get_stats (devpNoneRingBuffer, committed, processed);
 }
 
 static const struct plrDevAPI_t devpNone = {

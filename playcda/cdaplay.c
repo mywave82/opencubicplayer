@@ -43,8 +43,6 @@
 #include "stuff/err.h"
 #include "stuff/imsrtns.h"
 
-static int cda_inpause;
-
 static int lba_start;   // start of track
 static int lba_stop;    // end of track
 static int lba_next;    // next sector to fetch
@@ -73,7 +71,6 @@ static struct rip_sector_t rip_sectors[BUFFER_SLOTS]; /* replace me */
 static struct rip_sector_t rip_sectors2[BUFFER_SLOTS]; /* devp space */
 static uint32_t cdRate; /* the devp output rate */
 static volatile int clipbusy;
-static int speed;
 static int cda_looped;
 static int donotloop;
 
@@ -234,7 +231,7 @@ OCP_INTERNAL void cdIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 		return;
 	}
 
-	if (cda_inpause || (cda_looped == 3))
+	if (cpifaceSession->InPause || (cda_looped == 3))
 	{
 		cpifaceSession->plrDevAPI->Pause (1);
 	} else {
@@ -415,7 +412,6 @@ static void cdSetSpeed (unsigned short sp)
 {
 	if (sp < 4)
 		sp = 4;
-	speed=sp;
 	cdbufrate=imuldiv(256*sp, 44100, cdRate);
 }
 
@@ -460,15 +456,8 @@ static int cdGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 	return 0;
 }
 
-OCP_INTERNAL void cdPause (int p)
-{
-	cda_inpause = p;
-}
-
 OCP_INTERNAL void cdClose (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cda_inpause=1;
-
 	if (cpifaceSession->plrDevAPI)
 	{
 		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
@@ -538,7 +527,6 @@ OCP_INTERNAL int cdOpen (unsigned long start, unsigned long len, struct ocpfileh
 		return errPlay;
 	}
 
-	cda_inpause=0;
 	cda_looped=0;
 	donotloop = 1;
 
@@ -563,9 +551,7 @@ OCP_INTERNAL int cdOpen (unsigned long start, unsigned long len, struct ocpfileh
 OCP_INTERNAL void cdGetStatus (struct cdStat *stat)
 {
 	stat->error=0;
-	stat->paused=cda_inpause;
 	stat->position=lba_current;
-	stat->speed=(cda_inpause?0:speed);
 	stat->looped=(lba_next==lba_stop)&&(cda_looped==3);
 }
 
