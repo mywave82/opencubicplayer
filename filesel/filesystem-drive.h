@@ -14,6 +14,7 @@ struct dmDrive
 extern struct dmDrive *dmDrives;
 
 struct dmDrive *RegisterDrive(const char *dmDrive, struct ocpdir_t *basedir, struct ocpdir_t *cwd);
+void UnregisterDrive(struct dmDrive *drive);
 struct dmDrive *dmFindDrive(const char *dmDrive); /* to get the correct drive from a given string */
 
 void filesystem_drive_init (void);

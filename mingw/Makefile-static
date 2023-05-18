@@ -1,0 +1,3 @@
+ifeq ($(WINDOWS),1)
+OCP_OBJECTS+=mingw/ocp.res
+endif

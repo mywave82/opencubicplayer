@@ -33,6 +33,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#ifdef _WIN32
+# include <windows.h>
+# include <fileapi.h>
+# include <windows.h>
+#endif
 #include "types.h"
 #include "boot/console.h"
 #include "dirdb.h"
@@ -172,10 +177,35 @@ static void dumpdirdb(void)
 }
 #endif
 
+#ifdef _WIN32
+static int dirdb_read (HANDLE f, void *b, int l)
+{
+	DWORD NumberOfBytesRead = 0;
+	BOOL Result;
+	Result = ReadFile (f, b, l, &NumberOfBytesRead, 0);
+	if ((!Result) || (NumberOfBytesRead != l))
+	{
+		return 1;
+	}
+	return 0;
+}
+#else
+static int dirdb_read (int f, void *b, int l)
+{
+	return read (f, b, l) != l;
+}
+#endif
+
 int dirdbInit (const struct configAPI_t *configAPI)
 {
 	struct dirdbheader header;
+#ifdef _WIN32
+	HANDLE f;
+	DWORD NumberOfBytesRead;
+	BOOL Result;
+#else
 	int f;
+#endif
 	uint32_t i;
 	int retval;
 	int version;
@@ -191,26 +221,72 @@ int dirdbInit (const struct configAPI_t *configAPI)
 	}
 	sprintf (dirdbPath, "%sCPDIRDB.DAT", CFDATAHOMEDIR);
 
+#ifdef _WIN32
+	f = CreateFile (dirdbPath,             /* lpFileName */
+	                GENERIC_READ,          /* dwDesiredAccess */
+	                FILE_SHARE_READ,       /* dwShareMode */
+	                0,                     /* lpSecurityAttributes */
+	                OPEN_EXISTING,         /* dwCreationDisposition */
+	                FILE_ATTRIBUTE_NORMAL, /* dwFlagsAndAttributes */
+	                0);                    /* hTemplateFile */
+	if (f == INVALID_HANDLE_VALUE)
+	{
+		char *lpMsgBuf = NULL;
+		if (FormatMessage (
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_FROM_SYSTEM     |
+			FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+			NULL,                                      /* lpSource */
+			GetLastError(),                            /* dwMessageId */
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+			(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+			0,                                         /* nSize */
+			NULL                                       /* Arguments */
+		))
+		{
+			fprintf (stderr, "[dirdbInit] CreateFile(\"%s\"): %s\n", dirdbPath, lpMsgBuf);
+			LocalFree (lpMsgBuf);
+		}
+		return 1;
+	}
+#else
 	if ((f=open(dirdbPath, O_RDONLY))<0)
 	{
 		perror("open(DataHomeDir/CPDIRDB.DAT)");
 		return 1;
 	}
+#endif
 
 	fprintf(stderr, "Loading %s .. ", dirdbPath);
 
-	if (read(f, &header, sizeof(header))!=sizeof(header))
+
+#ifdef _WIN32
+	Result = ReadFile (f, &header, sizeof(header), &NumberOfBytesRead, 0);
+	if ((!Result) || (NumberOfBytesRead != sizeof (header)))
 	{
-		fprintf(stderr, "No header\n");
-		close(f);
+		fprintf (stderr, "No header\n");
+		CloseHandle (f);
 		return 1;
 	}
+#else
+	if (read(f, &header, sizeof(header))!=sizeof(header))
+	{
+		fprintf (stderr, "No header\n");
+		close (f);
+		return 1;
+	}
+#endif
+
 	if (memcmp(header.sig, dirdbsigv1, 60))
 	{
 		if (memcmp(header.sig, dirdbsigv2, 60))
 		{
 			fprintf(stderr, "Invalid header\n");
+#ifdef _WIN32
+			CloseHandle (f);
+#else
 			close(f);
+#endif
 			return 1;
 		} else {
 			version = 2;
@@ -231,7 +307,7 @@ int dirdbInit (const struct configAPI_t *configAPI)
 	for (i=0; i<dirdbNum; i++)
 	{
 		uint16_t len;
-		if (read(f, &len, sizeof(uint16_t))!=sizeof(uint16_t))
+		if (dirdb_read(f, &len, sizeof(uint16_t)))
 		{
 			goto endoffile;
 		}
@@ -239,11 +315,11 @@ int dirdbInit (const struct configAPI_t *configAPI)
 		{
 			len = uint16_little(len);
 
-			if (read(f, &dirdbData[i].parent, sizeof(uint32_t))!=sizeof(uint32_t))
+			if (dirdb_read(f, &dirdbData[i].parent, sizeof(uint32_t)))
 				goto endoffile;
 			dirdbData[i].parent = uint32_little(dirdbData[i].parent);
 
-			if (read(f, &dirdbData[i].mdb_ref, sizeof(uint32_t))!=sizeof(uint32_t))
+			if (dirdb_read(f, &dirdbData[i].mdb_ref, sizeof(uint32_t)))
 				goto endoffile;
 			/* If mdb has been reset, we need to clear all references */
 			dirdbData[i].mdb_ref = mdbCleanSlate ? DIRDB_NO_MDBREF : uint32_little(dirdbData[i].mdb_ref);
@@ -252,14 +328,14 @@ int dirdbInit (const struct configAPI_t *configAPI)
 			if (version == 2)
 			{
 				uint32_t discard_adb_ref;
-				if (read(f, &discard_adb_ref, sizeof(uint32_t))!=sizeof(uint32_t))
+				if (dirdb_read(f, &discard_adb_ref, sizeof(uint32_t)))
 					goto endoffile;
 			}
 
 			dirdbData[i].name=malloc(len+1);
 			if (!dirdbData[i].name)
 				goto outofmemory;
-			if (read(f, dirdbData[i].name, len)!=len)
+			if (dirdb_read(f, dirdbData[i].name, len))
 			{
 				free(dirdbData[i].name);
 				goto endoffile;
@@ -279,7 +355,11 @@ int dirdbInit (const struct configAPI_t *configAPI)
 			/* name is already NULL due to calloc() */
 		}
 	}
+#ifdef _WIN32
+	CloseHandle (f);
+#else
 	close(f);
+#endif
 	for (i=0; i<dirdbNum; i++)
 	{
 		if (dirdbData[i].parent != DIRDB_NOPARENT)
@@ -332,12 +412,20 @@ int dirdbInit (const struct configAPI_t *configAPI)
 	return 1;
 endoffile:
 	fprintf(stderr, "EOF\n");
+#ifdef _WIN32
+	CloseHandle (f);
+#else
 	close(f);
+#endif
 	retval=1;
 	goto unload;
 outofmemory:
 	fprintf(stderr, "out of memory\n");
+#ifdef _WIN32
+	CloseHandle (f);
+#else
 	close(f);
+#endif
 	retval=0;
 unload:
 	for (i=0; i<dirdbNum; i++)
@@ -650,7 +738,7 @@ nodrive:
 		/* test for ~/ */
 		if ((flags & DIRDB_RESOLVE_TILDE_HOME) && (next[0] == '~') && (next[1] == dirsplit))
 		{
-#ifndef __W32__
+#ifndef _WIN32
 			newretval = dirdbFindAndRef (DIRDB_NOPARENT, "file:", TEMP_SPACE);
 			dirdbUnref (retval, TEMP_SPACE);
 			retval = newretval;
@@ -659,8 +747,8 @@ nodrive:
 			dirdbUnref (retval, TEMP_SPACE);
 			retval = newretval;
 #else
-			#warning This is untested code
 			newretval = dirdbResolvePathWithBaseAndRef (DIRDB_NOPARENT, CFHOMEDIR, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_WINDOWS_SLASH, TEMP_SPACE);
+
 			dirdbUnref (retval, TEMP_SPACE);
 			retval = newretval;
 #endif
@@ -671,7 +759,7 @@ nodrive:
 		/* test for ~username */
 		if ((flags & DIRDB_RESOLVE_TILDE_USER) && (next[0] == '~'))
 		{
-#if defined(HAVE_GETPWNAM) && (!defined (__W32__))
+#if defined(HAVE_GETPWNAM) && (!defined (_WIN32))
 			struct passwd *e;
 
 			split = strchr (next, dirsplit);
@@ -1125,7 +1213,7 @@ extern void dirdbGetName_malloc(uint32_t node, char **name)
 	}
 }
 
-static void dirdbGetFullname_malloc_R(uint32_t node, char *name, int nobase)
+static void dirdbGetFullname_malloc_R(uint32_t node, char *name, int nobase, int backslash)
 {
 	if (node == DIRDB_NOPARENT)
 	{
@@ -1138,8 +1226,8 @@ static void dirdbGetFullname_malloc_R(uint32_t node, char *name, int nobase)
 			return;
 		}
 	} else {
-		dirdbGetFullname_malloc_R(dirdbData[node].parent, name, nobase);
-		strcat(name, "/");
+		dirdbGetFullname_malloc_R(dirdbData[node].parent, name, nobase, backslash);
+		strcat(name, backslash ? "\\" : "/");
 	}
 	strcat(name, dirdbData[node].name);
 }
@@ -1182,11 +1270,11 @@ void dirdbGetFullname_malloc(uint32_t node, char **name, int flags)
 	}
 	(*name)[0] = 0;
 
-	dirdbGetFullname_malloc_R (node, *name, flags&DIRDB_FULLNAME_NODRIVE);
+	dirdbGetFullname_malloc_R (node, *name, flags&DIRDB_FULLNAME_NODRIVE, flags&DIRDB_FULLNAME_BACKSLASH);
 
 	if (flags&DIRDB_FULLNAME_ENDSLASH)
 	{
-		strcat(*name, "/");
+		strcat(*name, (flags&DIRDB_FULLNAME_BACKSLASH) ? "\\" : "/");
 	}
 
 	if (strlen(*name) != length)
@@ -1195,10 +1283,32 @@ void dirdbGetFullname_malloc(uint32_t node, char **name, int flags)
 	}
 }
 
+#ifdef _WIN32
+static int dirdb_write (HANDLE f, void *b, int l)
+{
+	DWORD NumberOfBytesWritten = 0;
+	BOOL Result;
+	Result = WriteFile (f, b, l, &NumberOfBytesWritten, 0);
+	if ((!Result) || (NumberOfBytesWritten != l))
+	{
+		return 1;
+	}
+	return 0;
+}
+#else
+static int dirdb_write (int f, void *b, int l)
+{
+	return write (f, b, l) != l;
+}
+#endif
 
 void dirdbFlush(void)
 {
+#ifdef _WIN32
+	HANDLE f;
+#else
 	int f;
+#endif
 	uint32_t i;
 	uint32_t max;
 	uint16_t buf16;
@@ -1224,11 +1334,41 @@ void dirdbFlush(void)
 		}
 	}
 
-	if ((f = open (dirdbPath, O_WRONLY|O_CREAT|O_TRUNC, S_IREAD|S_IWRITE))<0)
+#ifdef _WIN32
+	f = CreateFile (dirdbPath,             /* lpFileName */
+	                GENERIC_WRITE,         /* dwDesiredAccess */
+	                0,                     /* dwShareMode (exclusive access) */
+	                0,                     /* lpSecurityAttributes */
+	                OPEN_ALWAYS,           /* dwCreationDisposition */
+	                FILE_ATTRIBUTE_NORMAL, /* dwFlagsAndAttributes */
+	                0);                    /* hTemplateFile */
+	if (f == INVALID_HANDLE_VALUE)
 	{
-		perror("open(DataHomeDir/CPDIRDB.DAT)");
+		char *lpMsgBuf = NULL;
+		if (FormatMessage (
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_FROM_SYSTEM     |
+			FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+			NULL,                                      /* lpSource */
+			GetLastError(),                            /* dwMessageId */
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+			(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+			0,                                         /* nSize */
+			NULL                                       /* Arguments */
+		))
+		{
+			fprintf(stderr, "[dirdbFlush] CreateFile(%s): %s\n", dirdbPath, lpMsgBuf);
+			LocalFree (lpMsgBuf);
+		}
 		return;
 	}
+#else
+	if ((f = open (dirdbPath, O_WRONLY|O_CREAT|O_TRUNC, S_IREAD|S_IWRITE))<0)
+	{
+		perror("[dirdbFlush] open(DataHomeDir/CPDIRDB.DAT)");
+		return;
+	}
+#endif
 
 	max=0;
 	for (i=0;i<dirdbNum;i++)
@@ -1238,37 +1378,63 @@ void dirdbFlush(void)
 	memcpy(header.sig, dirdbsigv2, sizeof(dirdbsigv2));
 	header.entries=uint32_little(max);
 
-	if (write(f, &header, sizeof(header))!=sizeof(header))
+	if (dirdb_write(f, &header, sizeof(header)))
 		goto writeerror;
 
 	for (i=0;i<max;i++)
 	{
 		int len=(dirdbData[i].name?strlen(dirdbData[i].name):0);
 		buf16=uint16_little(len);
-		if (write(f, &buf16, sizeof(uint16_t))!=sizeof(uint16_t))
+		if (dirdb_write(f, &buf16, sizeof(uint16_t)))
 			goto writeerror;
 		if (len)
 		{
 			buf32=uint32_little(dirdbData[i].parent);
-			if (write(f, &buf32, sizeof(uint32_t))!=sizeof(uint32_t))
+			if (dirdb_write(f, &buf32, sizeof(uint32_t)))
 				goto writeerror;
 			buf32=uint32_little(dirdbData[i].mdb_ref);
-			if (write(f, &buf32, sizeof(uint32_t))!=sizeof(uint32_t))
+			if (dirdb_write(f, &buf32, sizeof(uint32_t)))
 				goto writeerror;
 #warning remove-me this used to be ADB_REF
 			buf32=0xffffffff; //ADB_REF
-			if (write(f, &buf32, sizeof(uint32_t))!=sizeof(uint32_t))
+			if (dirdb_write(f, &buf32, sizeof(uint32_t)))
 				goto writeerror;
-			if (write(f, dirdbData[i].name, len)!=len)
+			if (dirdb_write(f, dirdbData[i].name, len))
 				goto writeerror;
 		}
 	}
+#ifdef _WIN32
+	CloseHandle (f);
+#else
 	close(f);
+#endif
 	dirdbDirty=0;
 	return;
 writeerror:
+#ifdef _WIN32
+	{
+		char *lpMsgBuf = NULL;
+		if (FormatMessage (
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_FROM_SYSTEM     |
+			FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+			NULL,                                      /* lpSource */
+			GetLastError(),                            /* dwMessageId */
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+			(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+			0,                                         /* nSize */
+			NULL                                       /* Arguments */
+		))
+		{
+			fprintf(stderr, "[dirdbFlush] WriteFile(%s) %s\n", dirdbPath, lpMsgBuf);
+			LocalFree (lpMsgBuf);
+		}
+	}
+	CloseHandle (f);
+#else
 	perror("dirdb write()");
 	close(f);
+#endif
 }
 
 uint32_t dirdbGetParentAndRef (uint32_t node, enum dirdb_use use)

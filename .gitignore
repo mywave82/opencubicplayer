@@ -2,8 +2,16 @@
 *~
 *.o
 *.so
+*.dll
 *.dylib
 *.a
+*.exe
+x86_64-w64-mingw32-install/
+x86_64-w64-mingw32-prefix/
+x86_64-w64-mingw32-src/
+i686-w64-mingw32-install/
+i686-w64-mingw32-prefix/
+i686-w64-mingw32-src/
 asm_emu/test-x86
 autom4te.cache/
 config.h
@@ -43,6 +51,8 @@ ocp.hlp
 ocp.ini
 playgmi/calcnewt
 Rules.make
+mingw/ocp.rc
+mingw/ocp.res
 playay/dumpay
 playgmd/dumps3m
 playgmd/dumpstm

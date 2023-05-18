@@ -38,6 +38,9 @@ extern int fsShowAllFiles;
 extern const char *fsTypeNames[256]; /* type description */
 #endif
 
+extern struct dmDrive *dmCurDrive;
+
+
 /* description: is NULL terminating string array of up to 6 lines of 76 characters
  *
  * interfacename: Usually "plOpenCP" or "VirtualInterface" - last is not user-editable

@@ -8,7 +8,7 @@ else
 all: $(stuff_libocp_so) sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX) poutput-keyboard.o
 endif
 
-test: compat-test
+test: compat-test$(EXE_SUFFIX)
 	./compat-test.sh
 
 poutput$(LIB_SUFFIX): $(poutput_so)
@@ -18,7 +18,7 @@ sets$(LIB_SUFFIX): $(sets_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) compat-test
+	rm -f *.o *$(LIB_SUFFIX) compat-test$(EXE_SUFFIX)
 
 ifeq ($(STATIC_CORE),1)
 install:
@@ -39,7 +39,7 @@ cp437.o: cp437.c cp437.h \
 	utf-8.h
 	$(CC) $< -o $@ -c
 
-compat-test: compat-test.c \
+compat-test$(EXE_SUFFIX): compat-test.c \
 	compat.c \
 	compat.h \
 	../config.h \
@@ -48,6 +48,12 @@ compat-test: compat-test.c \
 	$(CC) $< -o $@
 
 piperun-unix.o: piperun-unix.c \
+	../config.h \
+	../types.h \
+	piperun.h
+	$(CC) $< -o $@ -c
+
+piperun-windows.o: piperun-windows.c \
 	../config.h \
 	../types.h \
 	piperun.h

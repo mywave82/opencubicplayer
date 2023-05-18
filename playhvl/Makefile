@@ -2,7 +2,7 @@ TOPDIR=../
 include $(TOPDIR)Rules.make
 
 ifeq ($(BUILD_DUMPTOOLS),1)
-	DUMPAHX=dumpahx
+	DUMPAHX=dumpahx$(EXE_SUFFIX)
 else
 	DUMPAHX=
 endif
@@ -14,19 +14,19 @@ playhvl$(LIB_SUFFIX): $(playhvl_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ $(MATH_LIBS)
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) dumpahx
+	rm -f *.o *$(LIB_SUFFIX) dumpahx$(EXE_SUFFIX)
 
 install:
 	$(CP) playhvl$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playhvl$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
-	$(CP) dumpahx "$(DESTDIR)$(BINDIR)/dumpahx"
+	$(CP) dumpahx$(EXE_SUFFIX) "$(DESTDIR)$(BINDIR)/dumpahx$(EXE_SUFFIX)"
 endif
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playhvl$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(BINDIR)/dumpahx"
+	rm -f "$(DESTDIR)$(BINDIR)/dumpahx$(EXE_SUFFIX)"
 
-dumpahx: dumpahx.o
+dumpahx$(EXE_SUFFIX): dumpahx.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 dumpahx.o: \

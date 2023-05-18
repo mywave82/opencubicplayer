@@ -34,6 +34,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#ifdef _WIN32
+# include <windows.h>
+# include <fileapi.h>
+# include <windows.h>
+#endif
 #include "types.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
@@ -111,7 +116,11 @@ static void  *mdbRawData;
 static size_t mdbRawMapSize;
 */
 
+#ifdef _WIN32
+static HANDLE mdbHandle = INVALID_HANDLE_VALUE;
+#else
 static int mdbFd = -1;
+#endif
 
 static struct modinfoentry *mdbData;
 static uint32_t             mdbDataSize;
@@ -519,6 +528,10 @@ int mdbInit (const struct configAPI_t *configAPI)
 	struct mdbheader header;
 	uint32_t i;
 	int retval = 1;
+#ifdef _WIN32
+	DWORD NumberOfBytesRead;
+	BOOL Result;
+#endif
 
 	mdbData = 0;
 	mdbDataSize = 0;
@@ -538,28 +551,69 @@ int mdbInit (const struct configAPI_t *configAPI)
 	sprintf (path, "%sCPMODNFO.DAT", CFDATAHOMEDIR);
 	fprintf(stderr, "Loading %s .. ", path);
 
+#ifdef _WIN32
+	if (mdbHandle != INVALID_HANDLE_VALUE)
+#else
 	if (mdbFd >= 0)
+#endif
 	{
 		fprintf (stderr, "Already loaded\n");
 		goto errorout;
 	}
 
-	if ((mdbFd=open(path, O_RDWR | O_CREAT, S_IREAD|S_IWRITE)) < 0 )
+#ifdef _WIN32
+	mdbHandle = CreateFile (path,                         /* lpFileName */
+	                        GENERIC_READ | GENERIC_WRITE, /* dwDesiredAccess */
+	                        0,                            /* dwShareMode (exclusive access) */
+	                        0,                            /* lpSecurityAttributes */
+	                        OPEN_ALWAYS,                  /* dwCreationDisposition */
+	                        FILE_ATTRIBUTE_NORMAL,        /* dwFlagsAndAttributes */
+	                        0);                           /* hTemplateFile */
+	if (mdbHandle == INVALID_HANDLE_VALUE)
 	{
-		fprintf (stderr, "open(%s): %s\n", path, strerror (errno));
+		char *lpMsgBuf = NULL;
+		if (FormatMessage (
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_FROM_SYSTEM     |
+			FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+			NULL,                                      /* lpSource */
+			GetLastError(),                            /* dwMessageId */
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+			(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+			0,                                         /* nSize */
+			NULL                                       /* Arguments */
+		))
+		{
+			fprintf(stderr, "[mdb] CreateFile(%s): %s\n", path, lpMsgBuf);
+			LocalFree (lpMsgBuf);
+		}
+#else
+	mdbFd = open(path, O_RDWR | O_CREAT, S_IREAD|S_IWRITE);
+	if (mdbFd < 0)
+	{
+		fprintf (stderr, "[mdb] open(%s): %s\n", path, strerror (errno));
+#endif
 		retval = 0; /* fatal error */
 		goto errorout;
 	}
 	free (path); path = 0;
 
+#ifndef _WIN32
 	if (flock (mdbFd, LOCK_EX | LOCK_NB))
 	{
 		fprintf (stderr, "Failed to lock the file (more than one instance?)\n");
 		retval = 0; /* fatal error */
 		goto errorout;
 	}
+#endif
 
-	if (read(mdbFd, &header, sizeof(header))!=sizeof(header))
+#ifdef _WIN32
+	NumberOfBytesRead = 0;
+	Result = ReadFile (mdbHandle, &header, sizeof(header), &NumberOfBytesRead, 0);
+	if ((!Result) || (NumberOfBytesRead != sizeof (header)))
+#else
+	if (read(mdbFd, &header, sizeof(header)) != sizeof(header))
+#endif
 	{
 		fprintf(stderr, "No header\n");
 		goto errorout;
@@ -592,7 +646,13 @@ int mdbInit (const struct configAPI_t *configAPI)
 	}
 	memcpy (mdbData, &header, 64);
 
+#ifdef _WIN32
+	NumberOfBytesRead = 0;
+	Result = ReadFile (mdbHandle, &mdbData[1], (mdbDataSize - 1) * sizeof (*mdbData), &NumberOfBytesRead, 0);
+	if ((!Result) || (NumberOfBytesRead != ((mdbDataSize - 1) * sizeof (*mdbData))))
+#else
 	if (read(mdbFd, &mdbData[1], (mdbDataSize-1)*sizeof(*mdbData))!=(signed)((mdbDataSize-1)*sizeof(*mdbData)))
+#endif
 	{
 		fprintf(stderr, "Failed to read records\n");
 		goto errorout;
@@ -615,7 +675,6 @@ int mdbInit (const struct configAPI_t *configAPI)
 			break;
 		}
 	}
-
 
 	for (i=0; i<mdbDataSize; i++)
 	{
@@ -667,11 +726,19 @@ int mdbInit (const struct configAPI_t *configAPI)
 errorout:
 	if (!retval)
 	{
+#ifdef _WIN32
+		if (mdbHandle != INVALID_HANDLE_VALUE)
+		{
+			CloseHandle (mdbHandle);
+			mdbHandle = INVALID_HANDLE_VALUE;
+		}
+#else
 		if (mdbFd >= 0)
 		{
 			close (mdbFd);
 		}
 		mdbFd = -1;
+#endif
 	}
 
 	free (path);
@@ -694,10 +761,17 @@ void mdbUpdate (void)
 {
 	uint32_t i;
 	struct mdbheader *header = (struct mdbheader *)mdbData;
+#ifdef _WIN32
+	LARGE_INTEGER newpos;
+#endif
 
 	DEBUG_PRINT("mdbUpdate: mdbDirty=%d fsWriteModInfo=%d\n", mdbDirty, fsWriteModInfo);
 
+#ifdef _WIN32
+	if ((!mdbDirty)||(!fsWriteModInfo)||(mdbHandle==INVALID_HANDLE_VALUE))
+#else
 	if ((!mdbDirty)||(!fsWriteModInfo)||(mdbFd<0))
+#endif
 	{
 		return;
 	}
@@ -708,7 +782,12 @@ void mdbUpdate (void)
 		return;
 	}
 
+#ifdef _WIN32
+	newpos.QuadPart = 0;
+	SetFilePointerEx (mdbHandle, newpos, 0, FILE_BEGIN);
+#else
 	lseek(mdbFd, 0, SEEK_SET);
+#endif
 	memcpy(header->sig, mdbsigv2, sizeof(mdbsigv2));
 	header->entries = mdbDataSize;
 	mdbDirtyMap[0] |= 1;
@@ -721,12 +800,47 @@ void mdbUpdate (void)
 			continue;
 		}
 
+#ifdef _WIN32
+		newpos.QuadPart = (uint64_t)i*sizeof(*mdbData);
+		SetFilePointerEx (mdbHandle, newpos, 0, FILE_BEGIN);
+#else
 		lseek(mdbFd, (uint64_t)i*sizeof(*mdbData), SEEK_SET);
+#endif
+
 		while (1)
 		{
+#ifdef _WIN32
+			DWORD NumberOfBytesWritten = 0;
+			BOOL Result;
+#else
 			ssize_t res;
+#endif
 
 			DEBUG_PRINT("  [0x%08"PRIx32" -> 0x%08"PRIx32"] DIRTY\n", i, i+7);
+#ifdef _WIN32
+			Result = WriteFile (mdbHandle, mdbData + i, 8 * sizeof(*mdbData), &NumberOfBytesWritten, 0);
+			if ((!Result) || (NumberOfBytesWritten != (8 * sizeof(*mdbData))))
+			{
+				char *lpMsgBuf = NULL;
+				if (FormatMessage (
+					FORMAT_MESSAGE_ALLOCATE_BUFFER |
+					FORMAT_MESSAGE_FROM_SYSTEM     |
+					FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+					NULL,                                      /* lpSource */
+					GetLastError(),                            /* dwMessageId */
+					MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+					(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+					0,                                         /* nSize */
+					NULL                                       /* Arguments */
+				))
+				{
+					fprintf(stderr, "[mdb] WriteFile(CPMODNFO.DAT): %s\n", lpMsgBuf);
+					LocalFree (lpMsgBuf);
+				}
+				exit (1);
+			}
+			break;
+#else
 			res = write(mdbFd, mdbData + i, 8 * sizeof(*mdbData));
 			if (res < 0)
 			{
@@ -742,6 +856,7 @@ void mdbUpdate (void)
 				exit(1);
 			} else
 				break;
+#endif
 		}
 		mdbDirtyMap[i / 8] = 0;
 	}
@@ -750,11 +865,19 @@ void mdbUpdate (void)
 void mdbClose (void)
 {
 	mdbUpdate();
+#ifdef _WIN32
+	if (mdbHandle != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle (mdbHandle);
+		mdbHandle = INVALID_HANDLE_VALUE;
+	}
+#else
 	if (mdbFd >= 0)
 	{
 		close(mdbFd);
 		mdbFd = -1;
 	}
+#endif
 	free(mdbData);
 	free(mdbDirtyMap);
 	free(mdbSearchIndexData);

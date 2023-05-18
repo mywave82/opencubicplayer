@@ -30,17 +30,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "types.h"
-#include "timidity.h"
-#include "controls.h"
-#include "instrum.h"
-#include "output.h"
-#include "playmidi.h"
-#include "readmidi.h"
-#include "wrd.h"
-#include "aq.h"
-#include "recache.h"
-#include "resample.h"
-#include "arc.h"
 #include "boot/psetting.h"
 #include "cpikaraoke.h"
 #include "cpiface/cpiface.h"
@@ -54,6 +43,21 @@
 #include "timidityplay.h"
 
 #include "timidity-git/timidity/playmidi.c"
+
+// must be included AFTER playmidi.c, since it includes windows.h that screws up RC_NONE definition
+
+#include "timidity.h"
+#include "controls.h"
+#include "instrum.h"
+#include "output.h"
+#include "playmidi.h"
+#include "readmidi.h"
+#include "wrd.h"
+#include "aq.h"
+#include "recache.h"
+#include "resample.h"
+#include "arc.h"
+
 
 #define RC_ASYNC_HACK 0x31337
 
@@ -140,12 +144,7 @@ static int gmi_looped;
 static int ctl_next_result = RC_NONE;
 static int ctl_next_value = 0;
 
-/* main interfaces (To be used another main) */
-#if defined(main) || defined(ANOTHER_MAIN) || defined ( IA_W32GUI ) || defined ( IA_W32G_SYN )
-#define MAIN_INTERFACE
-#else
-#define MAIN_INTERFACE static
-#endif /* main */
+#define MAIN_INTERFACE OCP_INTERNAL
 MAIN_INTERFACE void timidity_start_initialize(struct timiditycontext_t *c);
 MAIN_INTERFACE int read_config_file(struct timiditycontext_t *c, char *name, int self, int allow_missing_file);
 MAIN_INTERFACE int timidity_post_load_configuration(struct timiditycontext_t *c);
@@ -413,7 +412,7 @@ static void timidity_append_EventDelayed_gmibuf (CtlEvent *event)
 
 	if (self->event.type == CTLE_PROGRAM)
 	{
-		self->event.v3 = (long)strdup(self->event.v3?(char *)self->event.v3:"");
+		self->event.v3 = (uintptr_t)strdup(self->event.v3?(char *)self->event.v3:"");
 	}
 
 	if (EventDelayed_gmibuf_head)
@@ -459,18 +458,16 @@ static int read_user_config_file(struct cpifaceSessionAPI_t *cpifaceSession)
     char path[BUFSIZ];
     int status;
 
-#ifdef __W32__
 /* timidity.cfg or _timidity.cfg or .timidity.cfg*/
     snprintf(path, sizeof (path), "%s" PATH_STRING "timidity.cfg", cpifaceSession->configAPI->HomePath);
     status = read_config_file(&tc, path, 0, 1);
-    if (status != READ_CONFIG_FILE_NOT_FOUND)
+    if (status != 3 /* READ_CONFIG_FILE_NOT_FOUND */ )
         return status;
 
     snprintf(path, sizeof (path), "%s" PATH_STRING "_timidity.cfg", cpifaceSession->configAPI->HomePath);
     status = read_config_file(&tc, path, 0, 1);
-    if (status != READ_CONFIG_FILE_NOT_FOUND)
+    if (status != 3 /* READ_CONFIG_FILE_NOT_FOUND */)
         return status;
-#endif
 
     snprintf(path, sizeof (path), "%s" PATH_STRING ".timidity.cfg", cpifaceSession->configAPI->HomePath);
     status = read_config_file(&tc, path, 0, 1);

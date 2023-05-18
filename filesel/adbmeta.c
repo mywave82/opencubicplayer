@@ -29,6 +29,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#ifdef _WIN32
+# include <windows.h>
+# include <fileapi.h>
+# include <windows.h>
+#endif
 #include "types.h"
 #include "adbmeta.h"
 #include "boot/psetting.h"
@@ -120,7 +125,11 @@ static struct adbMetaEntry_t *adbMetaInit_CreateBlob (const char          *filen
 	return retval;
 }
 
+#ifdef _WIN32
+static int adbMetaInit_ParseFd (const HANDLE f)
+#else
 static int adbMetaInit_ParseFd (const int f)
+#endif
 {
 	/* record counter */
 	uint_fast32_t counter;
@@ -152,6 +161,10 @@ static int adbMetaInit_ParseFd (const int f)
 #endif
 		if (fill < 16)
 		{
+#ifdef _WIN32
+			DWORD NumberOfBytesRead;
+			BOOL Result;
+#endif
 			int result;
 fillmore:
 			if (fill == size)
@@ -173,6 +186,39 @@ fillmore:
 			}
 			result = size - fill;
 			if (result > 65536) result = 65536;
+#ifdef _WIN32
+			Result = ReadFile (f, data + fill, result, &NumberOfBytesRead, 0);
+			if (!Result)
+			{
+				char *lpMsgBuf = NULL;
+				if (FormatMessage (
+					FORMAT_MESSAGE_ALLOCATE_BUFFER |
+					FORMAT_MESSAGE_FROM_SYSTEM     |
+					FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+					NULL,                                      /* lpSource */
+					GetLastError(),                            /* dwMessageId */
+					MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+					(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+					0,                                         /* nSize */
+					NULL                                       /* Arguments */
+				))
+				{
+					fprintf (stderr, "[adbMetaInit] read: %s\n", lpMsgBuf);
+					LocalFree (lpMsgBuf);
+				}
+				adbMetaCount = counter;
+				free (data);
+				return 1;
+			}
+			if (NumberOfBytesRead == 0)
+			{
+				fprintf (stderr, "ran out of data\n");
+				adbMetaCount = counter;
+				free (data);
+				return 1;
+			}
+			fill += NumberOfBytesRead;
+#else
 			result = read (f, data + fill, result);
 			if (result < 0)
 			{
@@ -189,6 +235,8 @@ fillmore:
 				return 1;
 			}
 			fill += result;
+#endif
+
 #ifdef ADBMETA_DEBUG
 			fprintf (stderr, "adbMeta: input buffer is filled with %d (of %d possible)\n", (int)fill, (int)size);
 #endif
@@ -276,7 +324,14 @@ fillmore:
 
 int adbMetaInit (const struct configAPI_t *configAPI)
 {
-	int f, retval;
+#ifdef _WIN32
+	HANDLE f;
+	DWORD NumberOfBytesRead;
+	BOOL Result;
+#else
+	int f;
+#endif
+	int retval;
 	struct adbMetaHeader header;
 
 	adbMetaPath = malloc ( strlen(CFDATAHOMEDIR) + 13 + 1);
@@ -287,6 +342,38 @@ int adbMetaInit (const struct configAPI_t *configAPI)
 	}
 	sprintf (adbMetaPath, "%sCPARCMETA.DAT", CFDATAHOMEDIR);
 
+#ifdef _WIN32
+	f = CreateFile (adbMetaPath,           /* lpFileName */
+	                GENERIC_READ,          /* dwDesiredAccess */
+	                FILE_SHARE_READ,       /* dwShareMode */
+	                0,                     /* lpSecurityAttributes */
+	                OPEN_EXISTING,         /* dwCreationDisposition */
+	                FILE_ATTRIBUTE_NORMAL, /* dwFlagsAndAttributes */
+	                0);                    /* hTemplateFile */
+	if (f == INVALID_HANDLE_VALUE)
+	{
+		if (!ADBMETA_SILENCE_OPEN_ERRORS)
+		{
+			char *lpMsgBuf = NULL;
+			if (FormatMessage (
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				FORMAT_MESSAGE_FROM_SYSTEM     |
+				FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+				NULL,                                      /* lpSource */
+				GetLastError(),                            /* dwMessageId */
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+				(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+				0,                                         /* nSize */
+				NULL                                       /* Arguments */
+			))
+			{
+				fprintf (stderr, "[adbMetaInit] CreateFile(\"%s\"): %s\n", adbMetaPath, lpMsgBuf);
+				LocalFree (lpMsgBuf);
+			}
+		}
+		return 1;
+	}
+#else
 	if ((f=open(adbMetaPath, O_RDONLY))<0)
 	{
 		if (!ADBMETA_SILENCE_OPEN_ERRORS)
@@ -295,40 +382,68 @@ int adbMetaInit (const struct configAPI_t *configAPI)
 		}
 		return 1;
 	}
+#endif
 
 	fprintf(stderr, "Loading %s .. ", adbMetaPath);
 
+#ifdef _WIN32
+	Result = ReadFile (f, &header, sizeof(header), &NumberOfBytesRead, 0);
+	if ((!Result) || (NumberOfBytesRead != sizeof (header)))
+	{
+		fprintf (stderr, "No header\n");
+		CloseHandle (f);
+		return 1;
+	}
+#else
 	if (read(f, &header, sizeof (header)) != sizeof (header))
 	{
 		fprintf (stderr, "No header\n");
 		close (f);
 		return 1;
 	}
+#endif
 
 	if (memcmp (header.Signature, adbMetaTag, 16))
 	{
 		fprintf (stderr, "Invalid header\n");
+#ifdef _WIN32
+		CloseHandle (f);
+#else
 		close (f);
+#endif
 		return 1;
 	}
 
 	adbMetaSize = uint32_big (header.entries);
 	if (!adbMetaSize)
 	{
+#ifdef _WIN32
+		CloseHandle (f);
+#else
 		close (f);
+#endif
 		return 0;
 	}
+
 	adbMetaEntries = malloc (sizeof (adbMetaEntries[0]) * adbMetaSize);
 	if (!adbMetaEntries)
 	{
 		fprintf (stderr, "malloc() failed\n");
+#ifdef _WIN32
+		CloseHandle (f);
+#else
 		close (f);
+#endif
 		return 1;
 	}
 
 	retval = adbMetaInit_ParseFd (f);
 
+#ifdef _WIN32
+	CloseHandle (f);
+#else
 	close (f);
+#endif
 
 	fprintf (stderr, "Done\n");
 
@@ -337,7 +452,13 @@ int adbMetaInit (const struct configAPI_t *configAPI)
 
 void adbMetaCommit (void)
 {
+#ifdef _WIN32
+	HANDLE f;
+	DWORD NumberOfBytesWritten = 0;
+	BOOL Result;
+#else
 	int f;
+#endif
 	struct adbMetaHeader header;
 	/* record counter */
 	uint_fast32_t counter;
@@ -350,6 +471,57 @@ void adbMetaCommit (void)
 		return;
 	}
 
+#ifdef _WIN32
+	f = CreateFile (adbMetaPath,           /* lpFileName */
+	                GENERIC_WRITE,         /* dwDesiredAccess */
+	                0,                     /* dwShareMode (exclusive access) */
+	                0,                     /* lpSecurityAttributes */
+	                OPEN_ALWAYS,           /* dwCreationDisposition */
+	                FILE_ATTRIBUTE_NORMAL, /* dwFlagsAndAttributes */
+	                0);                    /* hTemplateFile */
+	if (f == INVALID_HANDLE_VALUE)
+	{
+		char *lpMsgBuf = NULL;
+		if (FormatMessage (
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_FROM_SYSTEM     |
+			FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+			NULL,                                      /* lpSource */
+			GetLastError(),                            /* dwMessageId */
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+			(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+			0,                                         /* nSize */
+			NULL                                       /* Arguments */
+		))
+		{
+			fprintf(stderr, "[adbMetaCommit] CreateFile(%s): %s\n", adbMetaPath, lpMsgBuf);
+			LocalFree (lpMsgBuf);
+		}
+		return;
+	}
+
+	Result = WriteFile (f, &header, sizeof (header), &NumberOfBytesWritten, 0);
+	if ((!Result) || (NumberOfBytesWritten != (sizeof (header))))
+	{
+		char *lpMsgBuf = NULL;
+		if (FormatMessage (
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_FROM_SYSTEM     |
+			FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+			NULL,                                      /* lpSource */
+			GetLastError(),                            /* dwMessageId */
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+			(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+			0,                                         /* nSize */
+			NULL                                       /* Arguments */
+		))
+		{
+			fprintf(stderr, "[adbMetaCommit] WriteFile(%s) header: %s\n", adbMetaPath, lpMsgBuf);
+			LocalFree (lpMsgBuf);
+		}
+		return;
+	}
+#else
 	f = open(adbMetaPath, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 	if (!f)
 	{
@@ -358,12 +530,56 @@ void adbMetaCommit (void)
 	}
 
 	if (write (f, &header, sizeof (header)) != sizeof (header)) { perror ("adbMetaCommit write #1"); };
+#endif
 
 	for (counter = 0; counter < adbMetaCount; counter++)
 	{
 		uint8_t buffer[12];
+#ifdef _WIN32
+		Result = WriteFile (f, adbMetaEntries[counter]->filename, strlen (adbMetaEntries[counter]->filename) + 1, &NumberOfBytesWritten, 0);
+		if ((!Result) || (NumberOfBytesWritten != (strlen (adbMetaEntries[counter]->filename) + 1)))
+		{
+			char *lpMsgBuf = NULL;
+			if (FormatMessage (
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				FORMAT_MESSAGE_FROM_SYSTEM     |
+				FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+				NULL,                                      /* lpSource */
+				GetLastError(),                            /* dwMessageId */
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+				(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+				0,                                         /* nSize */
+				NULL                                       /* Arguments */
+			))
+			{
+				fprintf(stderr, "[adbMetaCommit] WriteFile(%s) record %u.1: %s\n", adbMetaPath, (unsigned int)counter, lpMsgBuf);
+				LocalFree (lpMsgBuf);
+			}
+		}
+		Result = WriteFile (f, adbMetaEntries[counter]->SIG, strlen (adbMetaEntries[counter]->SIG) + 1, &NumberOfBytesWritten, 0);
+		if ((!Result) || (NumberOfBytesWritten != (strlen (adbMetaEntries[counter]->SIG) + 1)))
+		{
+			char *lpMsgBuf = NULL;
+			if (FormatMessage (
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				FORMAT_MESSAGE_FROM_SYSTEM     |
+				FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+				NULL,                                      /* lpSource */
+				GetLastError(),                            /* dwMessageId */
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+				(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+				0,                                         /* nSize */
+				NULL                                       /* Arguments */
+			))
+			{
+				fprintf(stderr, "[adbMetaCommit] WriteFile(%s) record %u.2: %s\n", adbMetaPath, (unsigned int)counter, lpMsgBuf);
+				LocalFree (lpMsgBuf);
+			}
+		}
+#else
 		if (write (f, adbMetaEntries[counter]->filename, strlen (adbMetaEntries[counter]->filename) + 1) < 0) { perror ("adbMetaCommit write #2"); };
 		if (write (f, adbMetaEntries[counter]->SIG, strlen (adbMetaEntries[counter]->SIG) + 1) < 0) { perror ("adbMetaCommit write #3"); };
+#endif
 		buffer[ 0] = adbMetaEntries[counter]->filesize >> 56;
 		buffer[ 1] = adbMetaEntries[counter]->filesize >> 48;
 		buffer[ 2] = adbMetaEntries[counter]->filesize >> 40;
@@ -376,11 +592,58 @@ void adbMetaCommit (void)
 		buffer[ 9] = adbMetaEntries[counter]->datasize >> 16;
 		buffer[10] = adbMetaEntries[counter]->datasize >> 8;
 		buffer[11] = adbMetaEntries[counter]->datasize;
+#ifdef _WIN32
+		Result = WriteFile (f, buffer, 12, &NumberOfBytesWritten, 0);
+		if ((!Result) || (NumberOfBytesWritten != 12))
+		{
+			char *lpMsgBuf = NULL;
+			if (FormatMessage (
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				FORMAT_MESSAGE_FROM_SYSTEM     |
+				FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+				NULL,                                      /* lpSource */
+				GetLastError(),                            /* dwMessageId */
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+				(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+				0,                                         /* nSize */
+				NULL                                       /* Arguments */
+			))
+			{
+				fprintf(stderr, "[adbMetaCommit] WriteFile(%s) record %u.3: %s\n", adbMetaPath, (unsigned int)counter, lpMsgBuf);
+				LocalFree (lpMsgBuf);
+			}
+		}
+		Result = WriteFile (f, adbMetaEntries[counter]->data, adbMetaEntries[counter]->datasize, &NumberOfBytesWritten, 0);
+		if ((!Result) || (NumberOfBytesWritten != adbMetaEntries[counter]->datasize))
+		{
+			char *lpMsgBuf = NULL;
+			if (FormatMessage (
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				FORMAT_MESSAGE_FROM_SYSTEM     |
+				FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+				NULL,                                      /* lpSource */
+				GetLastError(),                            /* dwMessageId */
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+				(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+				0,                                         /* nSize */
+				NULL                                       /* Arguments */
+			))
+			{
+				fprintf(stderr, "[adbMetaCommit] WriteFile(%s) record %u.4: %s\n", adbMetaPath, (unsigned int)counter, lpMsgBuf);
+				LocalFree (lpMsgBuf);
+			}
+		}
+#else
 		if (write (f, buffer, 12) != 12) { perror ("adbMetaCommit write #4"); };
 		if (write (f, adbMetaEntries[counter]->data, adbMetaEntries[counter]->datasize) != adbMetaEntries[counter]->datasize) { perror ("adbMetaCommit write #5"); };
+#endif
 	}
 
+#ifdef _WIN32
+	CloseHandle (f);
+#else
 	close (f);
+#endif
 	adbMetaDirty = 0;
 }
 

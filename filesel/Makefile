@@ -10,7 +10,7 @@ all: $(CDROM_SO) pfilesel$(LIB_SUFFIX)
 endif
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR)
 
-test: adbmeta-test dirdb-test filesystem-bzip2-test filesystem-filehandle-cache-test filesystem-gzip-test filesystem-tar-test mdb-test
+test: adbmeta-test$(EXE_SUFFIX) dirdb-test$(EXE_SUFFIX) filesystem-bzip2-test$(EXE_SUFFIX) filesystem-filehandle-cache-test$(EXE_SUFFIX) filesystem-gzip-test$(EXE_SUFFIX) filesystem-tar-test$(EXE_SUFFIX) mdb-test$(EXE_SUFFIX)
 	@echo "" && echo "adbmeta-test:"                       && ./adbmeta-test
 	@echo "" && echo "dirdb-test:"                         && ./dirdb-test
 	@echo "" && echo "filesystem-bzip2-test:"              && ./filesystem-bzip2-test
@@ -27,7 +27,7 @@ pfilesel$(LIB_SUFFIX): $(pfilesel_so)
 
 clean:
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR) clean
-	rm -f *.o *$(LIB_SUFFIX) adbmeta-test dirdb-test filesystem-bzip2-test filesystem-filehandle-cache-test filesystem-gzip-test filesystem-tar-test mdb-test
+	rm -f *.o *$(LIB_SUFFIX) adbmeta-test$(EXE_SUFFIX) dirdb-test$(EXE_SUFFIX) filesystem-bzip2-test$(EXE_SUFFIX) filesystem-filehandle-cache-test$(EXE_SUFFIX) filesystem-gzip-test$(EXE_SUFFIX) filesystem-tar-test$(EXE_SUFFIX) mdb-test$(EXE_SUFFIX)
 
 ifeq ($(STATIC_CORE),1)
 install:
@@ -52,7 +52,7 @@ adbmeta.o: adbmeta.c adbmeta.h \
 	../boot/psetting.h
 	$(CC) $< -o $@ -c
 
-adbmeta-test: adbmeta-test.c adbmeta.c adbmeta.h \
+adbmeta-test$(EXE_SUFFIX): adbmeta-test.c adbmeta.c adbmeta.h \
 	../config.h \
 	../types.h \
 	dirdb.h \
@@ -77,7 +77,7 @@ dirdb.o: dirdb.c \
 	mdb.h
 	$(CC) $< -o $@ -c
 
-dirdb-test: dirdb-test.c \
+dirdb-test$(EXE_SUFFIX): dirdb-test.c \
 	dirdb.c \
 	dirdb.h \
 	../stuff/compat.c \
@@ -127,7 +127,7 @@ filesystem-bzip2.o: filesystem-bzip2.c \
 	../stuff/framelock.h
 	$(CC) $< -o $@ -c
 
-filesystem-bzip2-test: filesystem-bzip2-test.c \
+filesystem-bzip2-test$(EXE_SUFFIX): filesystem-bzip2-test.c \
 	filesystem-bzip2.c \
 	filesystem-file-mem.h \
 	filesystem-dir-mem.h \
@@ -185,7 +185,7 @@ filesystem-gzip.o: filesystem-gzip.c \
 	../stuff/framelock.h
 	$(CC) $< -o $@ -c
 
-filesystem-gzip-test: filesystem-gzip-test.c \
+filesystem-gzip-test$(EXE_SUFFIX): filesystem-gzip-test.c \
 	filesystem-gzip.c \
 	../config.h \
 	../types.h \
@@ -206,7 +206,7 @@ filesystem-filehandle-cache.o: filesystem-filehandle-cache.c \
 	filesystem-filehandle-cache.h
 	$(CC) $< -o $@ -c
 
-filesystem-filehandle-cache-test: filesystem-filehandle-cache-test.c \
+filesystem-filehandle-cache-test$(EXE_SUFFIX): filesystem-filehandle-cache-test.c \
 	filesystem-filehandle-cache.c \
 	filesystem-filehandle-cache.h \
 	../config.h \
@@ -286,7 +286,7 @@ filesystem-tar.o: filesystem-tar.c \
 	filesystem-tar.h
 	$(CC) $< -o $@ -c
 
-filesystem-tar-test: filesystem-tar-test.c \
+filesystem-tar-test$(EXE_SUFFIX): filesystem-tar-test.c \
 	filesystem-tar.c \
 	../config.h \
 	../types.h \
@@ -308,6 +308,19 @@ filesystem-unix.o: filesystem-unix.c \
 	filesystem.h \
 	filesystem-drive.h \
 	filesystem-unix.h \
+	../stuff/compat.h
+	$(CC) $< -o $@ -c
+
+filesystem-windows.o: filesystem-windows.c \
+	../config.h \
+	../types.h \
+	../boot/psetting.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
+	../filesel/filesystem-drive.h \
+	../filesel/filesystem-setup.h \
+	../filesel/filesystem-windows.h \
+	../filesel/pfilesel.h \
 	../stuff/compat.h
 	$(CC) $< -o $@ -c
 
@@ -353,7 +366,7 @@ mdb.o: mdb.c \
 	../stuff/latin1.h
 	$(CC) $< -o $@ -c
 
-mdb-test: mdb-test.c \
+mdb-test$(EXE_SUFFIX): mdb-test.c \
 	mdb.c \
 	../config.h \
 	../types.h \
@@ -438,6 +451,7 @@ pfilesel.o: pfilesel.c \
 	filesystem-setup.h \
 	filesystem-tar.h \
 	filesystem-unix.h \
+	filesystem-windows.h \
 	filesystem-z.h \
 	filesystem-zip.h \
 	mdb.h \

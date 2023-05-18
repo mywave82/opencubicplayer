@@ -1,0 +1,25 @@
+1 VERSIONINFO
+FILEVERSION     @MAJOR_VERSION@,@MINOR_VERSION@,@PATCH_VERSION@,0
+PRODUCTVERSION  @MAJOR_VERSION@,@MINOR_VERSION@,@PATCH_VERSION@,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "080904E4"
+    BEGIN
+      VALUE "CompanyName", "Cubic Team and Stian Skjelstad"
+      VALUE "FileDescription", "Audio Media Player"
+      VALUE "FileVersion", "@PACKAGE_VERSION@"
+      VALUE "InternalName", "ocp"
+      VALUE "LegalCopyright", "© 2023 Stian Skjelstad"
+      VALUE "OriginalFilename", "ocp.exe"
+      VALUE "ProductName", "Open Cubic Player"
+      VALUE "ProductVersion", "@PACKAGE_VERSION@"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x809, 1252
+  END
+END
+
+iconresourceid ICON "ocp.ico"

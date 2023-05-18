@@ -100,6 +100,7 @@ static int console_init(const struct configAPI_t *configAPI)
 		const char *driver = configAPI->GetProfileString ("CommandLine", "d", NULL);
 		if (driver)
 		{
+#ifndef _WIN32
 			if (!strcmp(driver, "curses"))
 			{
 				if (!curses_init())
@@ -109,7 +110,9 @@ static int console_init(const struct configAPI_t *configAPI)
 				}
 				fprintf(stderr, "curses init failed\n");
 				return -1;
-			} else if (!strcmp(driver, "x11"))
+			} else
+#endif
+			if (!strcmp(driver, "x11"))
 			{
 #ifdef HAVE_X11
 				if (!x11_init(1))
@@ -336,11 +339,13 @@ static int console_init(const struct configAPI_t *configAPI)
 	}
 #endif
 
+#ifndef _WIN32
 	if (!curses_init())
 	{
 		console_clean=curses_done;
 		return 0;
 	}
+#endif
 
 	return -1;
 }

@@ -103,6 +103,14 @@ int clock_gettime(clockid_t clk_id, struct timespec *tp);
 #  endif
 # endif
 
+#ifdef _WIN32
+# define localtime_r(a,b) (localtime_s(b,a)?0:b)
+#endif
+
+#ifdef _WIN32
+#define OCP_INTERNAL
+#else
 #define OCP_INTERNAL __attribute__ ((visibility ("internal")))
+#endif
 
 #endif

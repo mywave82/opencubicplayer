@@ -30,10 +30,17 @@
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 #include <cJSON.h>
+#ifdef _WIN32
+# include <windows.h>
+# include <fileapi.h>
+# include <winbase.h>
+# include <shellapi.h>
+#else
+# include <sys/wait.h>
+#endif
 #include "types.h"
 #include "boot/psetting.h"
 #include "dirdb.h"
@@ -69,7 +76,11 @@ struct musicbrainz_cacheline_t
 struct musicbrainz_t
 {
 	void *pipehandle;
+#ifdef _WIN32
+	HANDLE fdb;
+#else
 	int fddb;
+#endif
 	struct timespec lastactive;
 	struct musicbrainz_cacheline_t *cache;
 	int                             cachecount;
@@ -95,7 +106,11 @@ struct musicbrainz_cacheline_sort_t
 
 struct musicbrainz_t musicbrainz = {
 	0,      /* pipehandle */
+#ifdef _WIN32
+	INVALID_HANDLE_VALUE, /* fdb */
+#else
 	-1,     /* fddb */
+#endif
 	{0, 0}, /* lastactive */
 	0,      /* cache */
 	0,      /* cachecount */
@@ -133,7 +148,11 @@ static int musicbrainz_spawn (struct musicbrainz_queue_t *t)
 	{
 		const char *command_line[] =
 		{
+#ifdef _WIN32
+			"curl.exe",
+#else
 			"curl"
+#endif
 			"--max-redirs", "10",
 			"--user-agent", "opencubicplayer/" PACKAGE_VERSION " ( stian.skjelstad@gmail.com )",
 			"--header", "Accept: application/json",
@@ -692,7 +711,11 @@ int musicbrainz_init (const struct configAPI_t *configAPI)
 	char *path;
 	char header[64];
 
+#ifdef _WIN32
+	if (musicbrainz.fdb != INVALID_HANDLE_VALUE)
+#else
 	if (musicbrainz.fddb >= 0)
+#endif
 	{
 		fprintf (stderr, "musicbrainz already initialzied\n");
 		return 0;
@@ -702,6 +725,37 @@ int musicbrainz_init (const struct configAPI_t *configAPI)
 	path = malloc (strlen (configAPI->DataHomePath) + strlen ("CPMUSBRN.DAT") + 1);
 	sprintf (path, "%sCPMUSBRN.DAT", configAPI->DataHomePath);
 	fprintf (stderr, "Loading %s .. ", path);
+
+#ifdef _WIN32
+	musicbrainz.fdb = CreateFile (path,                         /* lpFileName */
+	                              GENERIC_READ | GENERIC_WRITE, /* dwDesiredAccess */
+	                              0,                            /* dwShareMode (exclusive access) */
+	                              0,                            /* lpSecurityAttributes */
+	                              OPEN_ALWAYS,                  /* dwCreationDisposition */
+	                              FILE_ATTRIBUTE_NORMAL,        /* dwFlagsAndAttributes */
+	                              0);                           /* hTemplateFile */
+	if (musicbrainz.fdb == INVALID_HANDLE_VALUE)
+	{
+		char *lpMsgBuf = NULL;
+		if (FormatMessage (
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_FROM_SYSTEM     |
+			FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+			NULL,                                      /* lpSource */
+			GetLastError(),                            /* dwMessageId */
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+			(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+			0,                                         /* nSize */
+			NULL                                       /* Arguments */
+		))
+		{
+			fprintf (stderr, "CreateFile(%s): %s\n", path, lpMsgBuf);
+			LocalFree (lpMsgBuf);
+		}
+		free (path);
+		return 0;
+	}
+#else
 	musicbrainz.fddb = open (path, O_RDWR | O_CREAT, S_IREAD|S_IWRITE);
 	if (musicbrainz.fddb < 0)
 	{
@@ -709,19 +763,36 @@ int musicbrainz_init (const struct configAPI_t *configAPI)
 		free (path);
 		return 0;
 	}
+#endif
 	free (path); path = 0;
 
+#ifndef _WIN32
 	if (flock (musicbrainz.fddb, LOCK_EX | LOCK_NB))
 	{
 		fprintf (stderr, "Failed to lock the file (more than one instance?)\n");
 		return 0;
 	}
+#endif
 
+#ifdef _WIN32
+	{
+		DWORD NumberOfBytesRead = 0;
+		BOOL Result;
+		Result = ReadFile (musicbrainz.fdb, &header, sizeof (header), &NumberOfBytesRead, 0);
+		if ((!Result) || (NumberOfBytesRead != sizeof (header)))
+		{
+			fprintf (stderr, "Empty database\n");
+			return 1;
+		}
+	}
+
+#else
 	if (read (musicbrainz.fddb, &header, sizeof (header)) != sizeof (header))
 	{
 		fprintf (stderr, "Empty database\n");
 		return 1;
 	}
+#endif
 
 	if (memcmp (header, musicbrainzsigv1, sizeof (musicbrainzsigv1)))
 	{
@@ -732,7 +803,14 @@ int musicbrainz_init (const struct configAPI_t *configAPI)
 	while (1)
 	{
 		char temp[28+8+4];
+#ifdef _WIN32
+		DWORD NumberOfBytesRead = 0;
+		BOOL Result;
+		Result = ReadFile (musicbrainz.fdb, temp, 28 + 8 + 4, &NumberOfBytesRead, 0);
+		if ((!Result) || (NumberOfBytesRead != (28 + 8 + 4)))
+#else
 		if (read (musicbrainz.fddb, temp, (28 + 8 + 4)) != (28 + 8 + 4))
+#endif
 		{
 			break;
 		}
@@ -761,7 +839,13 @@ int musicbrainz_init (const struct configAPI_t *configAPI)
 				fprintf (stderr, "musicbrainz_init: malloc() failed\n");
 				break;
 			}
+#ifdef _WIN32
+			NumberOfBytesRead = 0;
+			Result = ReadFile (musicbrainz.fdb, musicbrainz.cache[musicbrainz.cachecount].data, musicbrainz.cache[musicbrainz.cachecount].size & SIZE_MASK, &NumberOfBytesRead, 0);
+			if ((!Result) || (NumberOfBytesRead != (musicbrainz.cache[musicbrainz.cachecount].size & SIZE_MASK)))
+#else
 			if (read (musicbrainz.fddb, musicbrainz.cache[musicbrainz.cachecount].data, (musicbrainz.cache[musicbrainz.cachecount].size & SIZE_MASK)) != (musicbrainz.cache[musicbrainz.cachecount].size & SIZE_MASK))
+#endif
 			{
 				free (musicbrainz.cache[musicbrainz.cachecount].data);
 				musicbrainz.cache[musicbrainz.cachecount].data = 0;
@@ -779,7 +863,12 @@ void musicbrainz_done (void)
 {
 	uint64_t pos;
 	int i;
+#ifdef _WIN32
+	LARGE_INTEGER newpos;
+	if (musicbrainz.fdb != INVALID_HANDLE_VALUE)
+#else
 	if (musicbrainz.fddb < 0)
+#endif
 	{
 		goto done;
 	}
@@ -792,7 +881,22 @@ void musicbrainz_done (void)
 	}
 	if (!musicbrainz.cachedirtyfrom)
 	{
+#ifdef _WIN32
+		DWORD NumberOfBytesWritten = 0;
+		BOOL Result;
+
+		newpos.QuadPart = 0;
+		SetFilePointerEx (musicbrainz.fdb, newpos, 0, FILE_BEGIN);
+
+		Result = WriteFile (musicbrainz.fdb, musicbrainzsigv1, 64, &NumberOfBytesWritten, 0);
+		if ((!Result) || (NumberOfBytesWritten != 64))
+		{
+			fprintf (stderr, "musicbrainz_done: write #1 failed\n");
+			goto done;
+		}
+#else
 		lseek (musicbrainz.fddb, 0, SEEK_SET);
+
 		while (1)
 		{
 			if (write (musicbrainz.fddb, musicbrainzsigv1, 64) != 64)
@@ -806,6 +910,7 @@ void musicbrainz_done (void)
 				break;
 			}
 		}
+#endif
 	}
 	pos = 64;
 	for (i=0; i < musicbrainz.cachedirtyfrom; i++)
@@ -813,7 +918,12 @@ void musicbrainz_done (void)
 		pos += 28 + 8 + 4;
 		pos += musicbrainz.cache[i].size & SIZE_MASK;
 	}
+#ifdef _WIN32
+	newpos.QuadPart = pos;
+	SetFilePointerEx (musicbrainz.fdb, newpos, 0, FILE_BEGIN);
+#else
 	lseek (musicbrainz.fddb, pos, SEEK_SET);
+#endif
 	for (; i < musicbrainz.cachecount; i++)
 	{
 		char temp[28+8+4];
@@ -824,6 +934,17 @@ void musicbrainz_done (void)
 		memcpy (temp + 28 + 8, &size, 4);
 		while (1)
 		{
+#ifdef _WIN32
+			DWORD NumberOfBytesWritten = 0;
+			BOOL Result;
+			Result = WriteFile (musicbrainz.fdb, temp, 28 + 8 + 4, &NumberOfBytesWritten, 0);
+			if ((!Result) || (NumberOfBytesWritten != (28 + 8 + 4)))
+			{
+				fprintf (stderr, "musicbrainz_done: write #2 failed\n");
+				goto done;
+			}
+			break;
+#else
 			if (write (musicbrainz.fddb, temp, 28 + 8 + 4) != (28 + 8 + 4))
 			{
 				if ((errno != EAGAIN) && (errno != EINTR))
@@ -834,9 +955,21 @@ void musicbrainz_done (void)
 			} else {
 				break;
 			}
+#endif
 		}
 		while (1)
 		{
+#ifdef _WIN32
+			DWORD NumberOfBytesWritten = 0;
+			BOOL Result;
+			Result = WriteFile (musicbrainz.fdb, musicbrainz.cache[i].data, (musicbrainz.cache[i].size & SIZE_MASK), &NumberOfBytesWritten, 0);
+			if ((!Result) || (NumberOfBytesWritten != (musicbrainz.cache[i].size & SIZE_MASK)))
+			{
+				fprintf (stderr, "musicbrainz_done: write 32 failed\n");
+				goto done;
+			}
+			break;
+#else
 			if (write (musicbrainz.fddb, musicbrainz.cache[i].data, (musicbrainz.cache[i].size & SIZE_MASK)) != (musicbrainz.cache[i].size & SIZE_MASK))
 			{
 				if ((errno != EAGAIN) && (errno != EINTR))
@@ -847,22 +980,32 @@ void musicbrainz_done (void)
 			} else {
 				break;
 			}
+#endif
 		}
 		pos += 28 + 8 + 4;
 		pos += (musicbrainz.cache[i].size & SIZE_MASK);
 	}
+#ifdef _WIN32
+	SetEndOfFile (musicbrainz.fdb);
+#else
 	if (ftruncate (musicbrainz.fddb, pos))
 	{
 		perror ("ftruncate() failed");
 	}
+#endif
 done:
 	for (i=0; i < musicbrainz.cachecount; i++)
 	{
 		free (musicbrainz.cache[i].data);
 	}
 	free (musicbrainz.cache);
+#ifdef _WIN32
+	CloseHandle (musicbrainz.fdb);
+	musicbrainz.fdb = INVALID_HANDLE_VALUE;
+#else
 	close (musicbrainz.fddb);
 	musicbrainz.fddb = -1;
+#endif
 	musicbrainz.cache = 0;
 	musicbrainz.cachesize = 0;
 	musicbrainz.cachecount = 0;
@@ -1369,7 +1512,9 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 							char *b = memchr (musicbrainz.cache[sorted[dsel].pointsat].data, ' ', datalen);
 							int tracks = 0;
 							int i;
+#ifndef _WIN32
 							pid_t pid;
+#endif
 							if (b)
 							{
 								char *c = memchr (b + 1, ' ', datalen - (b - musicbrainz.cache[sorted[dsel].pointsat].data) - 1);
@@ -1386,6 +1531,9 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 									url[i] = '+';
 								}
 							}
+#ifdef _WIN32
+							ShellExecute (0, 0, url, 0, 0, SW_SHOW);
+#else
 							pid = fork();
 							if (pid == 0)
 							{
@@ -1407,6 +1555,7 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 								{
 								}
 							}
+#endif
 						}
 						epos = 0;
 						dialog = 0;

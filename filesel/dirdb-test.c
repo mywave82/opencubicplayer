@@ -804,6 +804,9 @@ static int dirdb_basic_test6(void)
 	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbGetFullname_malloc(DIRDB_FULLNAME_ENDSLASH)\n" ANSI_COLOR_RESET);
 	retval |= dirdbGetFullname_malloc_subtest (node1, "file:/", DIRDB_FULLNAME_ENDSLASH);
 
+	fprintf (stderr, ANSI_COLOR_CYAN "Testing dirdbGetFullname_malloc(DIRDB_FULLNAME_ENDSLASH | DIRDB_FULLNAME_BACKSLASH)\n" ANSI_COLOR_RESET);
+	retval |= dirdbGetFullname_malloc_subtest (node4, "file:\\tmp\\foo\\moo\\", DIRDB_FULLNAME_ENDSLASH | DIRDB_FULLNAME_BACKSLASH);
+
 	clear_dirdb();
 
 	fprintf (stderr, "\n");
