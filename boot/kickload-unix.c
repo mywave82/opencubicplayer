@@ -177,10 +177,10 @@ static const char *locate_ocp_ini(void)
 static char *locate_ocp_hlp_try(const char *base)
 {
 	char *buffer;
-	int size = strlen (base) + 8;
+	int size = strlen (base) + 1 + 8;
 	struct stat st;
 	buffer = malloc (size);
-	snprintf(buffer, size, "%s%s", base, "ocp.hlp");
+	snprintf(buffer, size, "%s%s%s", base, (base[strlen(base)-1] == '/') ? "" : "/", "ocp.hlp");
 	if (!stat(buffer, &st))
 	{
 		free (buffer);
@@ -286,9 +286,9 @@ static void dumpcontext(int signal)
 }
 
 #if defined(__linux)
-void sigsegv(int signal, struct sigcontext r)
+static void sigsegv(int signal, struct sigcontext r)
 #else
-void sigsegv(int signal)
+static void sigsegv(int signal)
 #endif
 {
 	struct itimerval i[3];
@@ -715,16 +715,6 @@ int validate_home(void)
 {
 /* configure _cfHomeDir */
 	_cfHomeDir = getenv("HOME");
-#ifdef __WIN32
-	if(!_cfHomeDir)
-	{
-		_cfHomeDir = getenv("HOMEPATH");
-	}
-	if(!_cfHomeDir)
-	{
-		_cfHomeDir = getenv("home");
-	}
-#endif
 	if (_cfHomeDir)
 	{
 		_cfHomeDir = strdup (_cfHomeDir);

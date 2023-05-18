@@ -653,7 +653,7 @@ nodrive:
 		/* test for ~/ */
 		if ((flags & DIRDB_RESOLVE_TILDE_HOME) && (next[0] == '~') && (next[1] == dirsplit))
 		{
-#ifndef __W32__
+#ifndef _WIN32
 			newretval = dirdbFindAndRef (DIRDB_NOPARENT, "file:", TEMP_SPACE);
 			dirdbUnref (retval, TEMP_SPACE);
 			retval = newretval;
@@ -662,8 +662,8 @@ nodrive:
 			dirdbUnref (retval, TEMP_SPACE);
 			retval = newretval;
 #else
-			#warning This is untested code
 			newretval = dirdbResolvePathWithBaseAndRef (DIRDB_NOPARENT, CFHOMEDIR, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_WINDOWS_SLASH, TEMP_SPACE);
+
 			dirdbUnref (retval, TEMP_SPACE);
 			retval = newretval;
 #endif
@@ -674,7 +674,7 @@ nodrive:
 		/* test for ~username */
 		if ((flags & DIRDB_RESOLVE_TILDE_USER) && (next[0] == '~'))
 		{
-#if defined(HAVE_GETPWNAM) && (!defined (__W32__))
+#if defined(HAVE_GETPWNAM) && (!defined (_WIN32))
 			struct passwd *e;
 
 			split = strchr (next, dirsplit);
@@ -1128,7 +1128,7 @@ extern void dirdbGetName_malloc(uint32_t node, char **name)
 	}
 }
 
-static void dirdbGetFullname_malloc_R(uint32_t node, char *name, int nobase)
+static void dirdbGetFullname_malloc_R(uint32_t node, char *name, int nobase, int backslash)
 {
 	if (node == DIRDB_NOPARENT)
 	{
@@ -1141,8 +1141,8 @@ static void dirdbGetFullname_malloc_R(uint32_t node, char *name, int nobase)
 			return;
 		}
 	} else {
-		dirdbGetFullname_malloc_R(dirdbData[node].parent, name, nobase);
-		strcat(name, "/");
+		dirdbGetFullname_malloc_R(dirdbData[node].parent, name, nobase, backslash);
+		strcat(name, backslash ? "\\" : "/");
 	}
 	strcat(name, dirdbData[node].name);
 }
@@ -1185,11 +1185,11 @@ void dirdbGetFullname_malloc(uint32_t node, char **name, int flags)
 	}
 	(*name)[0] = 0;
 
-	dirdbGetFullname_malloc_R (node, *name, flags&DIRDB_FULLNAME_NODRIVE);
+	dirdbGetFullname_malloc_R (node, *name, flags&DIRDB_FULLNAME_NODRIVE, flags&DIRDB_FULLNAME_BACKSLASH);
 
 	if (flags&DIRDB_FULLNAME_ENDSLASH)
 	{
-		strcat(*name, "/");
+		strcat(*name, (flags&DIRDB_FULLNAME_BACKSLASH) ? "\\" : "/");
 	}
 
 	if (strlen(*name) != length)
@@ -1197,7 +1197,6 @@ void dirdbGetFullname_malloc(uint32_t node, char **name, int flags)
 		fprintf (stderr, "dirdbGetFullname_malloc: WARNING, length calculation was off. Expected %d, but got %d\n", length, (int)strlen (*name));
 	}
 }
-
 
 void dirdbFlush(void)
 {

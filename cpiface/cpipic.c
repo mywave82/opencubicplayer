@@ -39,7 +39,6 @@
  */
 
 #include "config.h"
-#include <sys/types.h>
 #include <unistd.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -229,7 +228,7 @@ void plReadOpenCPPic (const struct configAPI_t *configAPI, const struct dirdbAPI
 		return ;
 	}
 	filecache=calloc(sizeof(unsigned char), filesize);
-	if(filecache==0)
+	if(!filecache)
 	{
 		f->unref (f);
 		return ;

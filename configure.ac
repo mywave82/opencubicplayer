@@ -51,8 +51,11 @@ AC_C_BIGENDIAN
 
 AC_SUBST(SHARED_FLAGS)
 AC_SUBST(LIB_SUFFIX)
+AC_SUBST(EXE_SUFFIX)
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(HAIKU)
+AC_SUBST(WINDOWS)
+AC_SUBST(WINDRES)
 target=`$CC -dumpmachine`
 AS_CASE([$target],
 	[*-darwin*],[
@@ -69,6 +72,20 @@ AS_CASE([$target],
 		with_desktop_file_install=no
 		with_update_desktop_database=no
 		HAIKU=1
+	],
+	[*-mingw*],[
+		WINDOWS=1
+		SHARED_FLAGS="-shared -pthread" # clock_gettime() is provided via -pthread when using mingw
+		LIB_SUFFIX=.dll
+		EXE_SUFFIX=.exe
+		PTHREAD_LIBS=-pthread
+		WINDRES="${WINDRES:-$host-windres}"
+
+		DATADIROCP=$prefix
+		ac_cv_env_DATADIROCP_set=set
+
+		LIBDIROCP=$prefix
+		ac_cv_env_LIBDIROCP_set=set
 	],[
 		SHARED_FLAGS=-shared
 		LIB_SUFFIX=.so
@@ -91,6 +108,7 @@ AC_ARG_WITH([coreaudio],               [AS_HELP_STRING([--with-coreaudio],      
 AC_ARG_WITH([flac],                    [AS_HELP_STRING([--with-flac],                      [force/disable FLAC support (autodetect by default)])],                          [], [with_flac=auto])
 AC_ARG_WITH([sdl],                     [AS_HELP_STRING([--with-sdl],                       [force/disable SDL video support (autodetect by default)])],                     [], [with_sdl=auto])
 AC_ARG_WITH([sdl2],                    [AS_HELP_STRING([--with-sdl2],                      [force/disable SDL2 video support (autodetect by default)])],                    [], [with_sdl2=auto])
+AC_ARG_WITH([info],                    [AS_HELP_STRING([--without-info],                   [Do not install info manual pages])],                                            [], [with_info=auto])
 AC_ARG_WITH([update_mime_database],    [AS_HELP_STRING([--without-update-mime-database],   [Do not update mime database after file copy (SDL and X11 normally does this)])],[], [with_update_mime_database=auto])
 AC_ARG_WITH([desktop_file_install],    [AS_HELP_STRING([--without-desktop_file_install],   [Do not install .desktop file (SDL and X11 normally does this)])],               [], [with_desktop_file_install=auto])
 AC_ARG_WITH([update_desktop_database], [AS_HELP_STRING([--without-update-desktop-database],[Do not update desktop database (SDL and X11 normally does this)])],             [], [with_update_desktop_database=auto])
@@ -292,13 +310,19 @@ AC_DEFINE_UNQUOTED(TIMIDITY_DEFAULT_PATH,"$tmpdefpath",place to install patches)
 AC_DEFINE(TIMIDITYPKGDATADIR,TIMIDITY_DEFAULT_PATH,a compatibility matter. ignore it.)
 
 dnl We first check for ncursesw, if that fails we revert back to ncurses
-AX_WITH_CURSES
-AS_IF([test "x$ax_cv_ncursesw" != xyes && test "x$ax_cv_ncurses" != xyes], [AC_MSG_ERROR([requires either NcursesW or Ncurses library])])
-AS_IF([test "x$ax_cv_curses_color" != xyes], [AC_MSG_ERROR([requires an X/Open-compatible Curses library with color])])
-push_LIBS=$LIBS
-LIBS=$CURSES_LIBS
-AC_CHECK_FUNCS([resize_term])
-LIBS=$push_LIBS
+AC_SUBST(HAVE_CURSES)
+AS_IF([test "x$WINDOWS" == x],
+  [
+    AX_WITH_CURSES
+    AS_IF([test "x$ax_cv_ncursesw" != xyes && test "x$ax_cv_ncurses" != xyes], [AC_MSG_ERROR([requires either NcursesW or Ncurses library])])
+    AS_IF([test "x$ax_cv_curses_color" != xyes], [AC_MSG_ERROR([requires an X/Open-compatible Curses library with color])])
+    HAVE_CURSES=1
+    push_LIBS=$LIBS
+    LIBS=$CURSES_LIBS
+    AC_CHECK_FUNCS([resize_term])
+    LIBS=$push_LIBS
+  ]
+)
 
 AC_CHECK_LIB([z], [zlibVersion], [], [AC_MSG_ERROR("zlib not found")])
 AC_CHECK_HEADER([zlib.h], [], [AC_MSG_ERROR("zlib header files was not found")])
@@ -306,6 +330,8 @@ AC_CHECK_HEADER([zlib.h], [], [AC_MSG_ERROR("zlib header files was not found")])
 AC_CHECK_LIB([bz2], [BZ2_bzDecompress], [], [AC_MSG_ERROR([bzip2 library not found (libbz2-dev)])])
 AC_CHECK_HEADER([bzlib.h], [], [AC_MSG_ERROR("bzip2 header file not found (libbz2-dev)")])
 
+AS_IF([test "x$WINDOWS" == x],
+  [
 AC_SUBST(DL_LIBS)
 dnl -lc is dirty hack here
 push_LIBS=$LIBS
@@ -315,6 +341,8 @@ AC_LANG_PUSH(C)
 AC_CHECK_FUNC([dlopen], [DL_LIBS=""],[AC_CHECK_LIB([dl], [dlopen], [DL_LIBS="-ldl"], [AC_MSG_ERROR("dlopen not found")])])
 LIBS=$push_LIBS
 AC_LANG_POP
+  ]
+)
 
 AC_SUBST(MAD_CFLAGS)
 AC_SUBST(MAD_LIBS)
@@ -943,6 +971,8 @@ AC_ARG_WITH([duma], [AS_HELP_STRING([--with-duma],[Enable usage of duma])], [DUM
 AC_SUBST(DUMA_LIBS)
 
 
+AC_SUBST(INSTALL_INFO)
+AS_IF([test "x$with_info" != "xno"],[INSTALL_INFO=1])
 AC_SUBST(HAVE_MAKEINFO)
 AC_CHECK_PROG([HAVE_MAKEINFO], [makeinfo], [yes], [])
 
@@ -1076,6 +1106,8 @@ AC_CONFIG_FILES(playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/si
 AC_CONFIG_FILES(playopl/libbinio-git/src/binio.h)
 AC_CONFIG_FILES(playopl/adplug-git/src/version.h)
 AC_CONFIG_FILES(haiku/ocp.rdef)
+
+AC_CONFIG_FILES(mingw/ocp.rc)
 
 AC_OUTPUT
 

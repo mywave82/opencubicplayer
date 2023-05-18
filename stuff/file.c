@@ -63,7 +63,7 @@ struct osfile_t *osfile_open_readwrite (const char *pathname, int dolock, int mu
 	}
 
 #ifdef _WIN32
-	f->h = CreateFile (path,                                        /* lpFileName */
+	f->h = CreateFile (pathname,                                    /* lpFileName */
 	                   GENERIC_READ | GENERIC_WRITE,                /* dwDesiredAccess */
 	                   dolock?0:(FILE_SHARE_READ|FILE_SHARE_WRITE), /* dwShareMode (exclusive access) */
 	                   0,                                           /* lpSecurityAttributes */
@@ -87,7 +87,7 @@ struct osfile_t *osfile_open_readwrite (const char *pathname, int dolock, int mu
 				NULL                                       /* Arguments */
 			))
 			{
-				fprintf(stderr, "CreateFile(%s): %s", path, lpMsgBuf);
+				fprintf(stderr, "CreateFile(%s): %s", pathname, lpMsgBuf);
 				LocalFree (lpMsgBuf);
 			}
 			free (f);
@@ -155,7 +155,7 @@ void osfile_truncate_at (struct osfile_t *f, uint64_t pos)
 #ifdef _WIN32
 	LARGE_INTEGER newpos;
 	newpos.QuadPart = (uint64_t)pos;
-	if (!SetFilePointerEx (mdbHandle, newpos, 0, FILE_BEGIN))
+	if (!SetFilePointerEx (f->h, newpos, 0, FILE_BEGIN))
 	{
 		char *lpMsgBuf = NULL;
 		if (FormatMessage (
@@ -221,7 +221,6 @@ int64_t osfile_write (struct osfile_t *f, const void *data, uint64_t size)
 {
 #ifdef _WIN32
 	int64_t retval = 0;
-	ssize_t res;
 	if (!f)
 	{
 		return -1;
@@ -230,11 +229,11 @@ int64_t osfile_write (struct osfile_t *f, const void *data, uint64_t size)
 	{
 		osfile_purge_readaheadcache (f);
 	}
-	if (f->realpos != targetpos)
+	if (f->realpos != f->pos)
 	{
 		LARGE_INTEGER newpos;
 		newpos.QuadPart = (uint64_t)f->pos;
-		if (!SetFilePointerEx (mdbHandle, newpos, 0, FILE_BEGIN))
+		if (!SetFilePointerEx (f->h, newpos, 0, FILE_BEGIN))
 		{
 			char *lpMsgBuf = NULL;
 			if (FormatMessage (
@@ -366,7 +365,7 @@ static int osfile_fill_cache (struct osfile_t *f)
 	{
 		LARGE_INTEGER newpos;
 		newpos.QuadPart = (uint64_t)targetpos;
-		if (!SetFilePointerEx (mdbHandle, newpos, 0, FILE_BEGIN))
+		if (!SetFilePointerEx (f->h, newpos, 0, FILE_BEGIN))
 		{
 			char *lpMsgBuf = NULL;
 			if (FormatMessage (
@@ -391,7 +390,7 @@ static int osfile_fill_cache (struct osfile_t *f)
 
 	{
 		DWORD NumberOfBytesRead = 0;
-		if (!ReadFile (f->handle, f->cache.data + f->cache.fill, need, &NumberOfBytesRead, 0))
+		if (!ReadFile (f->h, f->cache.data + f->cache.fill, need, &NumberOfBytesRead, 0))
 		{
 			char *lpMsgBuf = NULL;
 			if (FormatMessage (

@@ -26,10 +26,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 #include <cJSON.h>
+#ifdef _WIN32
+# include <windows.h>
+# include <fileapi.h>
+# include <winbase.h>
+# include <shellapi.h>
+#else
+# include <sys/wait.h>
+#endif
 #include "types.h"
 #include "boot/psetting.h"
 #include "dirdb.h"
@@ -130,7 +137,11 @@ static int musicbrainz_spawn (struct musicbrainz_queue_t *t)
 	{
 		const char *command_line[] =
 		{
+#ifdef _WIN32
+			"curl.exe",
+#else
 			"curl",
+#endif
 			"--max-redirs", "10",
 			"--user-agent", "opencubicplayer/" PACKAGE_VERSION " ( stian.skjelstad@gmail.com )",
 			"--header", "Accept: application/json",
@@ -1335,7 +1346,9 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 							char *b = memchr (musicbrainz.cache[sorted[dsel].pointsat].data, ' ', datalen);
 							int tracks = 0;
 							int i;
+#ifndef _WIN32
 							pid_t pid;
+#endif
 							if (b)
 							{
 								char *c = memchr (b + 1, ' ', datalen - (b - musicbrainz.cache[sorted[dsel].pointsat].data) - 1);
@@ -1352,6 +1365,9 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 									url[i] = '+';
 								}
 							}
+#ifdef _WIN32
+							ShellExecute (0, 0, url, 0, 0, SW_SHOW);
+#else
 							pid = fork();
 							if (pid == 0)
 							{
@@ -1373,6 +1389,7 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 								{
 								}
 							}
+#endif
 						}
 						epos = 0;
 						dialog = 0;

@@ -9,11 +9,11 @@ CFLAGS+=-fPIC
 
 all: $(TARGETS)
 
-flactest: flactest.c
-	$(CC) -o $@ flactest.c -lFLAC
+flactest$(EXE_SUFFIX): flactest.c
+	$(CC) -o $@ flactest.c $(FLAC_CFLAGS) $(FLAC_LIBS)
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) flactest
+	rm -f *.o *$(LIB_SUFFIX) flactest$(EXE_SUFFIX)
 
 install:
 ifeq ($(HAVE_FLAC),1)

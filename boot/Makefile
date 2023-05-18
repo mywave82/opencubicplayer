@@ -42,15 +42,20 @@ plinkman_end.o: plinkman_end.c plinkman.h \
 	../types.h
 	$(CC) plinkman_end.c -o $@ -c
 
+ifeq ($(WINDOWS),1)
+KICKLOAD_C=kickload-windows.c
+else
+KICKLOAD_C=kickload-unix.c
+endif
 
-kickload.o: kickload.c \
+kickload.o: $(KICKLOAD_C) \
 	../config.h \
 	../types.h \
 	../boot/pmain.h \
 	../boot/console.h \
 	../stuff/poutput.h \
 	../Rules.make
-	$(CC) kickload.c -o $@ -c
+	$(CC) $< -o $@ -c
 
 console.o: console.c console.h \
 	../config.h \

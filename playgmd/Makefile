@@ -2,7 +2,7 @@ TOPDIR=../
 include $(TOPDIR)Rules.make
 
 ifeq ($(BUILD_DUMPTOOLS),1)
-	DUMPERS=dumpstm dumps3m
+	DUMPERS=dumpstm$(EXE_SUFFIX) dumps3m$(EXE_SUFFIX)
 else
 	DUMPERS=
 endif
@@ -14,29 +14,29 @@ playgmd$(LIB_SUFFIX): $(playgmd_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) dumpstm dumps3m
+	rm -f *.o *$(LIB_SUFFIX) dumpstm$(EXE_SUFFIX) dumps3m$(EXE_SUFFIX)
 
 install:
 	$(CP) playgmd$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playgmd$(LIB_SUFFIX)"
 
 ifeq ($(BUILD_DUMPTOOLS),1)
-	$(CP) dumpstm "$(DESTDIR)$(BINDIR)/dumpstm"
-	$(CP) dumps3m "$(DESTDIR)$(BINDIR)/dumps3m"
+	$(CP) dumpstm$(EXE_SUFFIX) "$(DESTDIR)$(BINDIR)/dumpstm$(EXE_SUFFIX)"
+	$(CP) dumps3m$(EXE_SUFFIX) "$(DESTDIR)$(BINDIR)/dumps3m$(EXE_SUFFIX)"
 endif
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playgmd$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(BINDIR)/dumpstm"
-	rm -f "$(DESTDIR)$(BINDIR)/dumps3m"
+	rm -f "$(DESTDIR)$(BINDIR)/dumpstm$(EXE_SUFFIX)"
+	rm -f "$(DESTDIR)$(BINDIR)/dumps3m$(EXE_SUFFIX)"
 
-dumpstm: dumpstm.o
+dumpstm$(EXE_SUFFIX): dumpstm.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 dumpstm.o: \
 	dumpstm.c
 	$(CC) -o $@ $< -c
 
-dumps3m: dumps3m.o
+dumps3m$(EXE_SUFFIX): dumps3m.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 dumps3m.o: \

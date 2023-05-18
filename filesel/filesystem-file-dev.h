@@ -20,7 +20,12 @@ struct DevInterfaceAPI_t
 	const struct dirdbAPI_t       *dirdb;
 	      struct console_t        *console;
 	const struct PipeProcessAPI_t *PipeProcess;
-	const struct dmDrive          *dmFile;
+#ifdef _WIN32
+        const char *           const  dmLastActiveDriveLetter;
+              struct dmDrive * const *dmDriveLetters;
+#else
+	const struct dmDrive         *dmFile;
+#endif
 
 	const void (*KeyHelp) (uint16_t key, const char *shorthelp); /* Called on ALT-K to issue help about each keyboard shortcut */
 	const void (*KeyHelpClear) (void); /* Clears the current keyboard shortcut list, only used by keyboard/display loops */

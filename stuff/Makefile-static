@@ -1,10 +1,16 @@
 
 sets_so=sets.o
-poutput_so=console.o cp437.o latin1.o poutput-curses.o pfonts.o poutput.o
-poutput_so_libs=$(NCURSES_LIBS) $(ICONV_LIBS)
+poutput_so=console.o cp437.o latin1.o pfonts.o poutput.o
+poutput_so_libs=$(ICONV_LIBS)
 
 ifeq ($(LINUX),1)
 poutput_so+=poutput-vcsa.o poutput-fb.o
+endif
+
+ifeq ($(HAVE_CURSES),1)
+poutput_so+=poutput-curses.o
+poutput_so_libs+=$(NCURSES_LIBS)
+NEED_TTF=1
 endif
 
 ifeq ($(HAVE_X11),1)
@@ -33,7 +39,11 @@ endif
 # libocp_so is linked by parent
 stuff_libocp_so:=compat.o err.o framelock.o poll.o poutput-keyboard.o utf-8.o file.o
 
+ifeq ($(WINDOWS),1)
+stuff_libocp_so+=piperun-windows.o
+else
 stuff_libocp_so+=piperun-unix.o
+endif
 
 ifeq ($(STATIC_CORE),1)
  STATIC_OBJECTS += $(patsubst %.o,stuff/%.o,$(sets_so))

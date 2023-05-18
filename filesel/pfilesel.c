@@ -55,7 +55,11 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#ifdef _WIN32
+# include <shlwapi.h>
+#else
 #include <fnmatch.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -83,6 +87,7 @@
 #include "filesystem-setup.h"
 #include "filesystem-tar.h"
 #include "filesystem-unix.h"
+#include "filesystem-windows.h"
 #include "filesystem-z.h"
 #include "filesystem-zip.h"
 #include "mdb.h"
@@ -113,13 +118,15 @@ static void fsDraw(void);
 
 static struct interfacestruct *plInterfaces;
 
+static struct DevInterfaceAPI_t DevInterfaceAPI;
+
 struct fsReadDir_token_t
 {
 #if 0
 	struct dmDrive *drive;
 #endif
 	struct modlist *ml;
-	const char     *mask;
+	char           *mask;
 
 	unsigned long   opt;
 
@@ -134,7 +141,6 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 	const char *childpath = 0;
 #ifndef FNM_CASEFOLD
 	char *childpath_upper;
-	char *iterate;
 #endif
 	int ismod = 0;
 
@@ -239,6 +245,20 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 		}
 	}
 
+#ifdef _WIN32
+	childpath_upper = strupr(strdup(childpath));
+	if (!childpath_upper)
+	{
+		perror("pfilesel.c: strdup() failed");
+		goto out;
+	}
+	if (!PathMatchSpec (childpath_upper, token->mask))
+	{
+		free (childpath_upper);
+		goto out;
+	}
+	free (childpath_upper);
+#else
 #ifndef FNM_CASEFOLD
 	childpath_upper = strupr(strdup(childpath));
 	if (!childpath_upper)
@@ -257,6 +277,7 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 	{
 		goto out;
 	}
+#endif
 #endif
 	ismod = fsIsModule(curext);
 	if (ismod ||   // always include if file is an actual module
@@ -286,10 +307,6 @@ static void fsReadDir_dir  (void *_token, struct ocpdir_t *dir)
 
 int fsReadDir (struct modlist *ml, struct ocpdir_t *dir, const char *mask, unsigned long opt)
 {
-#ifndef FNM_CASEFOLD
-	char *mask_upper;
-	int i;
-#endif
 	struct fsReadDir_token_t token;
 	ocpdirhandle_pt dh;
 
@@ -528,7 +545,7 @@ static int initRootDir(const struct configAPI_t *configAPI, const char *sec)
 				}
 			}
 
-#ifdef __W32__
+#ifdef _WIN32
 			playlist_add_string (playlist, strdup (filename), DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH);
 #else
 			playlist_add_string (playlist, strdup (filename), DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_TILDE_USER);
@@ -563,7 +580,7 @@ static int initRootDir(const struct configAPI_t *configAPI, const char *sec)
 			break;
 		}
 
-#ifdef __W32__
+#ifdef _WIN32
 		dirdb_ref = dirdbResolvePathWithBaseAndRef (dmCurDrive->cwd->dirdb_ref, filename, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_pfilesel);
 #else
 		dirdb_ref = dirdbResolvePathWithBaseAndRef (dmCurDrive->cwd->dirdb_ref, filename, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_TILDE_USER, dirdb_use_pfilesel);
@@ -609,22 +626,38 @@ static int initRootDir(const struct configAPI_t *configAPI, const char *sec)
 	currentpath2 = configAPI->GetProfileString2(sec, "fileselector", "path", ".");
 	if (strlen (currentpath2) && strcmp (currentpath2, "."))
 	{
-		uint32_t newcurrentpath;
+		uint32_t newcurrentpath = DIRDB_CLEAR;
 		struct ocpdir_t *cwd = 0;
 
 		struct dmDrive *dmNewDrive=0;
-
-		newcurrentpath = dirdbResolvePathWithBaseAndRef(dmFile->cwd->dirdb_ref, currentpath2, DIRDB_RESOLVE_DRIVE, dirdb_use_pfilesel);
-
-		if (!filesystem_resolve_dirdb_dir (newcurrentpath, &dmNewDrive, &cwd))
+#ifdef _WIN32
+		int driveindex = toupper(currentpath2[0]) - 'A';
+		if ((driveindex >= 0) && (driveindex < 26) && dmDriveLetters[driveindex])
 		{
-			dmCurDrive = dmNewDrive;
-			assert (dmCurDrive->cwd);
-			dmCurDrive->cwd->unref (dmCurDrive->cwd);
-			dmCurDrive->cwd = cwd;
+			newcurrentpath = dirdbResolvePathWithBaseAndRef(dmDriveLetters[driveindex]->cwd->dirdb_ref, currentpath2, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_pfilesel);
 		}
+#else
+		newcurrentpath = dirdbResolvePathWithBaseAndRef(dmFile->cwd->dirdb_ref, currentpath2, DIRDB_RESOLVE_DRIVE, dirdb_use_pfilesel);
+#endif
 
-		dirdbUnref (newcurrentpath, dirdb_use_pfilesel);
+		if (newcurrentpath != DIRDB_CLEAR)
+		{
+			if (!filesystem_resolve_dirdb_dir (newcurrentpath, &dmNewDrive, &cwd))
+			{
+				dmCurDrive = dmNewDrive;
+				assert (dmCurDrive->cwd);
+				dmCurDrive->cwd->unref (dmCurDrive->cwd);
+				dmCurDrive->cwd = cwd;
+#ifdef _WIN32
+				if (dmCurDrive->drivename[1] == ':')
+				{
+					dmLastActiveDriveLetter = dmCurDrive->drivename[0];
+				}
+#endif
+			}
+
+			dirdbUnref (newcurrentpath, dirdb_use_pfilesel);
+		}
 	}
 
 	return 1;
@@ -664,40 +697,81 @@ int fsFilesLeft(void)
 }
 
 /* returns zero if fsReadDir() fails */
-/* pos = 0, move cursor to the top
- * pos = 1, maintain current cursor position
- * pos = 2, move cursor one up
+/* op = 0, move cursor to the top
+ * op = 1, maintain current cursor position
  */
-static char fsScanDir (int pos)
+static char fsScanDir (int op)
 {
-	unsigned int op=0;
-	switch (pos)
+	uint32_t dirdb_ref = DIRDB_CLEAR;
+	int pos;
+
+	 /* if we are to maintain the old position, store both the dirdb reference and the position as fall-back */
+	if (op == 1)
 	{
-		case 0:
-			op=0;
-			break;
-		case 1:
-			op=currentdir->pos;
-			break;
-		case 2:
-			op=currentdir->pos?(currentdir->pos-1):0;
-			break;
+		pos = currentdir->pos;
+		if (currentdir->pos < currentdir->num)
+		{
+			if (currentdir->files[currentdir->sortindex[pos]].file)
+			{
+				dirdb_ref = currentdir->files[currentdir->sortindex[pos]].file->dirdb_ref;
+			} else if (currentdir->files[currentdir->sortindex[pos]].dir)
+			{
+				dirdb_ref = currentdir->files[currentdir->sortindex[pos]].dir->dirdb_ref;
+			}
+		}
+		if (dirdb_ref != DIRDB_CLEAR)
+		{
+			dirdbRef (dirdb_ref, dirdb_use_pfilesel);
+		}
 	}
+
 	modlist_clear (currentdir);
 	nextplay=0;
 
+#ifdef _WIN32
+	filesystem_windows_refresh_drives();
+#endif
+
 	if (!fsReadDir (currentdir, dmCurDrive->cwd, curmask, RD_PUTDRIVES | RD_PUTSUBS | (fsScanArcs?RD_ARCSCAN:0)))
 	{
+		if (dirdb_ref != DIRDB_CLEAR)
+		{
+			dirdbUnref (dirdb_ref, dirdb_use_pfilesel);
+		}
 		return 0;
 	}
 
 	modlist_sort(currentdir);
-	currentdir->pos=(op>=currentdir->num)?(currentdir->num-1):op;
+
+	/* if we are to maintain position, attempt one is to find the previous dirdb reference */
+	if (op == 1)
+	{
+		int newpos = modlist_find (currentdir, dirdb_ref);
+		/* if unable to find, fallback to the same position */
+		if (newpos < 0)
+		{
+			newpos = pos;
+			/* if position is out of range, adjust it */
+			if (newpos >= currentdir->num)
+			{
+				newpos = currentdir->num ? currentdir->num - 1 : 0;
+			}
+		}
+		currentdir->pos = newpos;
+	} else {
+		currentdir->pos = 0;
+	}
+
 	quickfind[0] = 0;
 	quickfindlen = 0;
 	scanposf=fsScanNames?0:~0;
 
 	adbMetaCommit ();
+
+	if (dirdb_ref != DIRDB_CLEAR)
+	{
+		dirdbUnref (dirdb_ref, dirdb_use_pfilesel);
+	}
 
 	return 1;
 }
@@ -885,10 +959,16 @@ int fsPreInit (const struct configAPI_t *configAPI)
 	adbMetaInit (configAPI); /* archive database cache - ignore failures */
 
 	if (!mdbInit (configAPI))
+	{
+		fprintf (stderr, "mdb failed to initialize\n");
 		return 0;
+	}
 
 	if (!dirdbInit (configAPI))
+	{
+		fprintf (stderr, "dirdb failed to initialize\n");
 		return 0;
+	}
 
 	fsRegisterExt("DEV");
 	mt.integer.i = MODULETYPE("DEVv");
@@ -914,9 +994,6 @@ int fsPreInit (const struct configAPI_t *configAPI)
 
 	filesystem_drive_init ();
 
-	if (filesystem_unix_init ()) return 0;
-	dmCurDrive = dmFile;
-
 	filesystem_bzip2_register ();
 	filesystem_gzip_register ();
 	filesystem_m3u_register ();
@@ -927,8 +1004,26 @@ int fsPreInit (const struct configAPI_t *configAPI)
 	filesystem_Z_register ();
 	filesystem_zip_register ();
 
-	if (!musicbrainz_init (configAPI)) /* needs setup */
+#ifdef _WIN32
+	dmCurDrive = filesystem_windows_init ();
+	if (!dmCurDrive)
+	{
+		dmCurDrive = dmSetup;
+	}
+#else
+	if (filesystem_unix_init ())
+	{
+		fprintf (stderr, "Failed to initialize unix filesystem\n");
 		return 0;
+	}
+	dmCurDrive = dmFile;
+#endif
+
+	if (!musicbrainz_init (configAPI)) /* needs setup */
+	{
+		fprintf (stderr, "musicbrainz failed to initialize\n");
+		return 0;
+	}
 
 	currentdir=modlist_create();
 	playlist=modlist_create();
@@ -962,7 +1057,12 @@ static struct DevInterfaceAPI_t DevInterfaceAPI =
 	&dirdbAPI,
 	&Console,
 	&PipeProcess,
+#ifdef _WIN32
+	&dmLastActiveDriveLetter,
+	dmDriveLetters,
+#else
 	0, /* dmFile */
+#endif
 	cpiKeyHelp,
 	cpiKeyHelpClear,
 	cpiKeyHelpDisplay,
@@ -1014,7 +1114,9 @@ static struct interfacestruct VirtualInterface = {VirtualInterfaceInit, VirtualI
 
 int fsInit(void)
 {
+#ifndef _WIN32
 	DevInterfaceAPI.dmFile = dmFile;
+#endif
 	plRegisterInterface (&VirtualInterface);
 
 	return 1;
@@ -1035,7 +1137,11 @@ void fsClose(void)
 
 	musicbrainz_done();
 
+#ifdef _WIN32
+	filesystem_windows_done ();
+#else
 	filesystem_unix_done ();
+#endif
 	filesystem_drive_done ();
 	dmCurDrive = 0;
 
@@ -2967,6 +3073,13 @@ static int fsEditViewPath(void)
 		assert (dmCurDrive->cwd);
 		dmCurDrive->cwd->unref (dmCurDrive->cwd);
 		dmCurDrive->cwd = newdir;
+
+#ifdef _WIN32
+		if (dmCurDrive->drivename[1] == ':')
+		{
+			dmLastActiveDriveLetter = dmCurDrive->drivename[0];
+		}
+#endif
 	}
 
 	fsScanDir(0);
@@ -3403,14 +3516,17 @@ superbreak:
 
 							dirdbRef (olddirpath, dirdb_use_pfilesel);
 
-#if 0
-							dmCurDrive = m->drive;
-#else
 							dmCurDrive = ocpdir_get_drive (m->dir);
-#endif
 							m->dir->ref (m->dir);
 							dmCurDrive->cwd->unref (dmCurDrive->cwd);
 							dmCurDrive->cwd = m->dir;
+
+#ifdef _WIN32
+							if (dmCurDrive->drivename[1] == ':')
+							{
+								dmLastActiveDriveLetter = dmCurDrive->drivename[0];
+							}
+#endif
 
 							fsScanDir(0);
 							i = modlist_find (currentdir, olddirpath);
@@ -3705,27 +3821,6 @@ superbreak:
 					modlist_clear (playlist);
 					break;
 /*
-    case 0x2500:  // alt-k TODO keys.... alt-k is now in use by key-helper
-      if (editmode||win)
-	break;
-      if (m.mdb_ref<=0xFFFC)
-	if (fsQueryKill(m))
-	  if (!fsScanDir(2))
-	    return -1;
-      break;
-
-
-#ifndef WIN32
-    case 0x3200:  // alt-m TODO keys !!!!!!!! STRANGE THINGS HAPPENS IF YOU ENABLE HIS UNDER W32!!
-      if (editmode||win)
-	break;
-      if (m.mdb_ref<=0xFFFC)
-	if (fsQueryMove(m))
-	  if (!fsScanDir(1))
-	    return -1;
-      break;
-#endif
-
     case 0x3000: // alt-b TODO keys
       if (m.mdb_ref<=0xFFFC)
       {
@@ -3897,7 +3992,7 @@ static int fsSavePlayList(const struct modlist *ml)
 		m=modlist_get(ml, i);
 		if (m->file)
 		{
-#ifdef __W32__
+#ifdef _WIN32
 			npath = dirdbDiffPath (dirdbcurdirpath, m->file->dirdb_ref, DIRDB_DIFF_WINDOWS_SLASH);
 #else
 			npath = dirdbDiffPath (dirdbcurdirpath, m->file->dirdb_ref, 0);

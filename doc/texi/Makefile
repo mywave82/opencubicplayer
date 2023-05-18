@@ -18,8 +18,10 @@ ocp.info.gz: $(SOURCES)
 
 install: all
 	mkdir -p "$(DESTDIR)$(INFODIR)"
+ifeq ($(INSTALL_INFO),1)
 	$(CP) ocp.info.gz "$(DESTDIR)$(INFODIR)"
 	install-info --dir-file="$(DESTDIR)$(INFODIR)/dir" "$(DESTDIR)$(INFODIR)/ocp.info.gz" || true
+endif
 	mkdir -p "$(DESTDIR)$(DOCDIR)/html"
 	$(CP) -R ocp_html/* "$(DESTDIR)$(DOCDIR)/html"
 uninstall:

@@ -2,7 +2,7 @@ TOPDIR=../
 include $(TOPDIR)Rules.make
 
 ifeq ($(BUILD_DUMPTOOLS),1)
-	DUMPID3=dumpid3
+	DUMPID3=dumpid3$(EXE_SUFFIX)
 else
 	DUMPID3=
 endif
@@ -15,7 +15,7 @@ playmp2$(LIB_SUFFIX): $(playmp2_so)
 	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(MAD_LIBS) $(MATH_LIBS) $(LIBJPEG_LIBS) $(LIBPNG_LIBS) -lz
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX)
+	rm -f *.o *$(LIB_SUFFIX) dumpid3$(EXE_SUFFIX)
 
 install:
 	$(CP) playmp2$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playmp2$(LIB_SUFFIX)"
@@ -23,7 +23,7 @@ install:
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playmp2$(LIB_SUFFIX)"
 
-dumpid3: dumpid3.o
+dumpid3$(EXE_SUFFIX): dumpid3.o
 	$(CC) $(LDFLAGS) -o $@ $^ -lz
 
 dumpid3.o: dumpid3.c

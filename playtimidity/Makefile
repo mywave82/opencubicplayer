@@ -2,7 +2,7 @@ TOPDIR=../
 include $(TOPDIR)Rules.make
 
 ifeq ($(BUILD_DUMPTOOLS),1)
-	DUMPMIDI=dumpmidi
+	DUMPMIDI=dumpmidi$(EXE_SUFFIX)
 else
 	DUMPMIDI=
 endif
@@ -10,17 +10,17 @@ endif
 all: playtimidity$(LIB_SUFFIX) $(DUMPMIDI)
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) calcnewt dumpmidi timidity-git/timidity/newton_table.c timidity-git/interface/*.o timidity-git/libarc/*.o timidity-git/timidity/*.o timidity-git/utils/*.o
+	rm -f *.o *$(LIB_SUFFIX) calcnewt dumpmidi$(EXE_SUFFIX) timidity-git/timidity/newton_table.c timidity-git/interface/*.o timidity-git/libarc/*.o timidity-git/timidity/*.o timidity-git/utils/*.o
 
 install:
 	$(CP) playtimidity$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playtimidity$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
-	$(CP) dumpmidi "$(DESTDIR)$(BINDIR)/dumpmidi"
+	$(CP) dumpmidi$(EXE_SUFFIX) "$(DESTDIR)$(BINDIR)/dumpmidi$(EXE_SUFFIX)"
 endif
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playtimidity$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(BINDIR)/dumpmidi"
+	rm -f "$(DESTDIR)$(BINDIR)/dumpmidi$(EXE_SUFFIX)"
 
 cpikaraoke.o: \
 	cpikaraoke.c \
@@ -64,7 +64,7 @@ dumpmidi.o: dumpmidi.c \
 	../types.h
 	$(CC) -o $@ $< -c
 
-dumpmidi: dumpmidi.o
+dumpmidi$(EXE_SUFFIX): dumpmidi.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 CFLAGS+= -Itimidity-git/interface -Itimidity-git/libarc -Itimidity-git/libunimod -Itimidity-git/timidity -Itimidity-git/utils -I. -DHAVE_CONFIG_H
@@ -169,7 +169,7 @@ timidity-git/timidity/wrdt.o: \
 	timidity-git/timidity/wrdt.c \
 	../config.h \
 	../types.h
-	$(CC) $< -o $@ -c -Dtty_wrdt_mode=dumb_wrdt_mode -DDEFAULT_PATH=TIMIDITY_DEFAULT_PATH -DPKGDATADIR=TIMIDITYPKGDATADIR
+	$(CC) $< -o $@ -c -Dtty_wrdt_mode=dumb_wrdt_mode -DDEFAULT_PATH=TIMIDITY_DEFAULT_PATH -DPKGDATADIR=TIMIDITYPKGDATADIR -DDISABLE_WRDT
 
 timidityconfig.o: timidityconfig.c \
 	../config.h \

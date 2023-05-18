@@ -1,3 +1,6 @@
+#ifndef _OCP_CONFIG_H
+#define _OCP_CONFIG_H 1
+
 #define _GNU_SOURCE 1
 #define _XOPEN_SOURCE_EXTENDED 1 // needed for ncurses wide
 #define _FILE_OFFSET_BITS 64
@@ -11,7 +14,6 @@
 #  define __func__ "<unknown>"
 # endif
 #endif
-
 
 #undef HAVE_CURSES
 #undef HAVE_CURSES_ENHANCED
@@ -36,7 +38,7 @@
 #  elif defined HAVE_CURSES_H
 #    include <curses.h>
 #  else
-#    error "SysV or X/Open-compatible Curses header file required"
+#    include "no-curses.h"
 #  endif
 #endif
 
@@ -157,6 +159,7 @@
 
 #undef HAVE_RESIZE_TERM
 
+/* #define KICKSTART_DEBUG */
 /* #define ADBMETA_DEBUG */
 /* #define CDFS_DEBUG */
 /* #define PLAYTIMIDITY_DEBUG */
@@ -366,11 +369,13 @@
 #define NO_DLCLOSE
 #endif
 
+#ifndef _WIN32
 #define PREFIX "/usr/local"
 #define LIBDIR "/usr/lib"
 #define LIBDIROCP "/usr/lib/ocp"
 #define DATADIR "/usr/share"
 #define DATADIROCP "/usr/share/ocp"
+#endif
 #undef UNIFONT_RELATIVE
 #undef UNIFONT_TTF
 #undef UNIFONT_CSUR_TTF
@@ -387,14 +392,28 @@
 extern "C" {
 # endif
 
-extern void *memmem(const void *haystack, size_t haystacklen,
-                    const void *needle, size_t needlelen);
+static inline void *memmem(const void *_haystack, size_t haystacklen,
+                           const void *needle, size_t needlelen)
+{
+	const char *haystack = (const char *)_haystack;
+	while (haystacklen>=needlelen)
+	{
+		if (!memcmp(haystack, needle, needlelen))
+			return (void *)haystack;
+		haystack++;
+		haystacklen--;
+	}
+	return NULL;
+}
+
 
 # ifdef __cplusplus
 }
 # endif
 #endif
 
+#undef HAVE_FNMATCH
+#undef HAVE_PATHMATCHSPECA
 
 #include <limits.h>
 /* A lot of structures etc. uses PATH_MAX, NAME_MAX and friends, so we
@@ -410,3 +429,5 @@ extern void *memmem(const void *haystack, size_t haystacklen,
 #undef HAVE_SYSCONF
 
 #undef HAVE_STRUCT_DIRENT_D_TYPE
+
+#endif
