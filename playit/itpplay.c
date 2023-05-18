@@ -85,10 +85,7 @@ static int itpProcessKey(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 		case KEY_CTRL_HOME:
 			itpInstClear (cpifaceSession);
 			setpos (&itplayer, 0, 0);
-			if (cpifaceSession->InPause)
-			{
-#warning reset song display time
-			}
+			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
 		case '<':
 		case KEY_CTRL_LEFT:

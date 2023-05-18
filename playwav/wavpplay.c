@@ -123,6 +123,7 @@ static int wavProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			break;
 		case KEY_CTRL_HOME:
 			wpSetPos (cpifaceSession, 0);
+			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
 		default:
 			return 0;

@@ -104,6 +104,7 @@ static int timidityProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 			break;
 		case KEY_CTRL_HOME:
 			timidityRestart ();
+			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
 		default:
 			return 0;

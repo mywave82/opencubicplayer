@@ -1629,12 +1629,19 @@ void GStrings_render (int lineno, int count, const struct GStringElement **Eleme
 
 static uint_fast16_t getSeconds (struct cpifaceSessionAPI_t *cpifaceSession)
 {
+	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
 	uint64_t tail;
 	uint32_t rate;
 
 	cpifaceSession->plrDevAPI->GetStats (0, &tail);
 	rate = cpifaceSession->plrDevAPI->GetRate();
-	return tail / rate;
+	return (tail - f->SongStart) / rate;
+}
+
+static void cpiResetSongTimer (struct cpifaceSessionAPI_t *cpifaceSession)
+{
+	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
+	cpifaceSession->plrDevAPI->GetStats (0, &f->SongStart);
 }
 
 static void mcpDrawGStringsFixedLengthStream (struct cpifaceSessionAPI_t    *cpifaceSession,
@@ -2288,6 +2295,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.SetMasterPauseFadeParameters = mcpSetMasterPauseFadeParameters;
 	cpifaceSessionAPI.Public.TogglePauseFade = mcpTogglePauseFade;
 	cpifaceSessionAPI.Public.TogglePause = mcpTogglePause;
+	cpifaceSessionAPI.Public.ResetSongTimer = cpiResetSongTimer;
 
 	/*
 	cpifaceSessionAPI.Public.GetRealMasterVolume = 0;

@@ -116,6 +116,7 @@ static int mpegProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 			break;
 		case KEY_CTRL_HOME:
 			mpegSetPos(0);
+			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
 		default:
 			return 0;

@@ -398,6 +398,7 @@ static int ymProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			break;
 		case KEY_CTRL_HOME:
 			ymSetPos(0);
+			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
 		default:
 			return 0;

@@ -71,7 +71,9 @@ static int oplProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			cpifaceSession->KeyHelp ('P', "Start/stop pause with fade");
 			cpifaceSession->KeyHelp (KEY_CTRL_HOME, "Restart Song");
 			cpifaceSession->KeyHelp ('<', "Previous Song");
+			cpifaceSession->KeyHelp (KEY_CTRL_LEFT, "Previous Song");
 			cpifaceSession->KeyHelp ('>', "Next song");
+			cpifaceSession->KeyHelp (KEY_CTRL_RIGHT, "Next song");
 			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
 			return 0;
 		case 'p': case 'P':
@@ -83,14 +85,19 @@ static int oplProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 		case KEY_CTRL_HOME:
 			oplpGetGlobInfo (ti);
 			oplSetSong (cpifaceSession, ti.currentSong);
+			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
 		case '<':
+		case KEY_CTRL_LEFT: /* curses.h can't do these */
 			oplpGetGlobInfo (ti);
 			oplSetSong (cpifaceSession, ti.currentSong - 1);
+			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
 		case '>':
+		case KEY_CTRL_RIGHT: /* curses.h can't do these */
 			oplpGetGlobInfo (ti);
 			oplSetSong (cpifaceSession, ti.currentSong + 1);
+			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
 #if 0
 		case KEY_CTRL_UP:

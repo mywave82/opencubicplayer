@@ -124,10 +124,7 @@ static int gmdProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 		case KEY_CTRL_HOME:
 			gmdInstClear (cpifaceSession);
 			mpSetPosition (cpifaceSession, 0, 0);
-			if (cpifaceSession->InPause)
-			{
-#warning reset display time
-			}
+			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
 		case '<':
 		case KEY_CTRL_LEFT:

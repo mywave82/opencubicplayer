@@ -342,7 +342,7 @@ static int sidProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			if (csg)
 			{
 				sidStartSong(csg);
-#warning Reset song start time
+				cpifaceSession->ResetSongTimer (cpifaceSession);
 			}
 			break;
 		case '>':
@@ -351,12 +351,12 @@ static int sidProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			if (csg<=sidGetSongs())
 			{
 				sidStartSong(csg);
-#warning Reset song start time
+				cpifaceSession->ResetSongTimer (cpifaceSession);
 			}
 			break;
 		case KEY_CTRL_HOME:
 			sidStartSong(csg=sidGetSong());
-#warning Reset song start time
+			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
 		default:
 			return 0;

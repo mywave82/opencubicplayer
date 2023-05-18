@@ -93,12 +93,15 @@ static int hvlProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			break;
 		case KEY_CTRL_HOME:
 			hvlRestartSong();
+			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
 		case '<':
 			hvlPrevSubSong();
+			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
 		case '>':
 			hvlNextSubSong();
+			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
 		default:
 			return 0;

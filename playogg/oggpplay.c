@@ -120,6 +120,7 @@ static int oggProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			break;
 		case KEY_CTRL_HOME:
 			oggSetPos (cpifaceSession, 0);
+			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
 		default:
 			return 0;

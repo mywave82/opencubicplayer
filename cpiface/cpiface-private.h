@@ -39,6 +39,8 @@ struct cpifaceSessionPrivate_t
 
 	int_fast8_t           mcpPauseFadeDirection;
 	uint64_t              mcpPauseTarget;
+
+	uint64_t              SongStart;
 };
 
 extern OCP_INTERNAL struct cpifaceSessionPrivate_t cpifaceSessionAPI;

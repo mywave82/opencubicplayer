@@ -262,8 +262,9 @@ struct cpifaceSessionAPI_t
 
 	void (*Normalize) (struct cpifaceSessionAPI_t *cpifaceSession, enum mcpNormalizeType Type); /* mcpedit.c, global control of pan, bal, volume, etc */
 	void (*SetMasterPauseFadeParameters) (struct cpifaceSessionAPI_t *cpifaceSession, int i);   /* mcpedit.c, i=0 full pause (going all the way down to 0 should not be needed), 64 = normal speed */
-	void (*TogglePauseFade) (struct cpifaceSessionAPI_t *cpifaceSession); /* manipulates SetMasterPauseFadeParameters() and InPause */
-	void (*TogglePause) (struct cpifaceSessionAPI_t *cpifaceSession);     /* anipulates SetMasterPauseFadeParameters() and InPause */
+	void (*TogglePauseFade) (struct cpifaceSessionAPI_t *cpifaceSession); /* Manipulates SetMasterPauseFadeParameters() and InPause */
+	void (*TogglePause) (struct cpifaceSessionAPI_t *cpifaceSession);     /* Manipulates SetMasterPauseFadeParameters() and InPause */
+	void (*ResetSongTimer) (struct cpifaceSessionAPI_t *cpifaceSession);  /* Resets the timer in the top-right corner */
 
 	/* configured by devp/devw */
 	void (*GetRealMasterVolume)(int *l, int *r); /* filled in by devp/devw driver */
