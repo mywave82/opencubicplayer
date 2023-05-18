@@ -24,7 +24,7 @@
 
 struct medialibAddDirEntry
 {
-	const char *override_string; /* can only be ".." at the moment, in the future maybe a strdup of drive names for Windows */
+	const char *override_string; /* can be ".." or "C:" .... */
 	struct ocpdir_t *dir;
 };
 static struct ocpdir_t            *medialibAddCurDir;
@@ -167,17 +167,26 @@ static void medialibAddRefresh_file (void *token, struct ocpfile_t *file)
 	return;
 }
 
-static void medialibAddRefresh_dir (void *token, struct ocpdir_t *dir)
+static int medialibAddSize (void)
 {
 	if (medialibAddDirEntries >= medialibAddDirSize)
 	{
 		struct medialibAddDirEntry *temp = realloc (medialibAddDirEntry, (medialibAddDirSize + 32) * sizeof (medialibAddDirEntry[0]));
 		if (!temp)
 		{
-			return; /* out of memory */
+			return 1; /* out of memory */
 		}
 		medialibAddDirEntry = temp;
 		medialibAddDirSize += 32;
+	}
+	return 0;
+}
+
+static void medialibAddRefresh_dir (void *token, struct ocpdir_t *dir)
+{
+	if (medialibAddSize())
+	{
+		return;
 	}
 
 	medialibAddDirEntry[medialibAddDirEntries].override_string = 0;
@@ -188,7 +197,24 @@ static void medialibAddRefresh_dir (void *token, struct ocpdir_t *dir)
 	medialibAddDirEntries++;
 }
 
-static void medialibAddRefresh (void)
+#ifdef _WIN32
+static void medialibAddRefresh_drive (struct dmDrive *drive)
+{
+	if (medialibAddSize())
+	{
+		return;
+	}
+
+	medialibAddDirEntry[medialibAddDirEntries].override_string = drive->drivename;
+
+	drive->cwd->ref (drive->cwd);
+	medialibAddDirEntry[medialibAddDirEntries].dir = drive->cwd;
+
+	medialibAddDirEntries++;
+}
+#endif
+
+static void medialibAddRefresh (const struct DevInterfaceAPI_t *API)
 {
 	int i;
 	for (i=0; i < medialibAddDirEntries; i++)
@@ -215,6 +241,15 @@ static void medialibAddRefresh (void)
 			}
 			medialibAddCurDir->readdir_cancel (handle);
 		}
+#ifdef _WIN32
+		for (i=0; i < 26; i++)
+		{
+			if (API->dmDriveLetters[i])
+			{
+				medialibAddRefresh_drive (API->dmDriveLetters[i]);
+			}
+		}
+#endif
 	}
 
 	if (medialibAddDirEntries > 1)
@@ -247,20 +282,50 @@ static void medialibAddClear (void)
 
 static int medialibAddInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API)
 {
-#ifndef __W32__
+#ifndef _WIN32
 	if (API->dmFile->cwd)
 	{
 		medialibAddCurDir = API->dmFile->cwd;
 		medialibAddCurDir->ref (medialibAddCurDir);
 		medialibAddPath = 0;
 		dirdbGetFullname_malloc (medialibAddCurDir->dirdb_ref, &medialibAddPath, DIRDB_FULLNAME_ENDSLASH);
-		medialibAddRefresh ();
+		medialibAddRefresh (API);
 		return 1;
 	} else {
 		return 0; /* should never happen */
 	}
 #else
-	#error need API to detect last active drive
+	medialibAddCurDir = 0;
+	if (*(API->dmLastActiveDriveLetter))
+	{
+		if (API->dmDriveLetters[*(API->dmLastActiveDriveLetter) - 'A'])
+		{
+			medialibAddCurDir = API->dmDriveLetters[*(API->dmLastActiveDriveLetter) - 'A']->cwd;
+		}
+	}
+
+	if (!medialibAddCurDir)
+	{
+		int i;
+		for (i=0; (i < 26) && !medialibAddCurDir; i++)
+		{
+			int j = (i + 2) % 26;
+			if (API->dmDriveLetters[j])
+			{
+				medialibAddCurDir = API->dmDriveLetters[j]->cwd;
+			}
+		}
+	}
+
+	if (!medialibAddCurDir)
+	{
+		return 0;
+	}
+
+	medialibAddCurDir->ref (medialibAddCurDir);
+	dirdbGetFullname_malloc (medialibAddCurDir->dirdb_ref, &medialibAddPath, DIRDB_FULLNAME_ENDSLASH);
+	medialibAddRefresh (API);
+	return 1;
 #endif
 }
 
@@ -317,7 +382,7 @@ static void medialibAddRun (void **token, const struct DevInterfaceAPI_t *API)
 						free (medialibAddPath);
 						      medialibAddPath = 0;
 						dirdbGetFullname_malloc (medialibAddCurDir->dirdb_ref, &medialibAddPath, DIRDB_FULLNAME_ENDSLASH);
-						medialibAddRefresh ();
+						medialibAddRefresh (API);
 						dsel = 0;
 						for (i=0; i < medialibAddDirEntries; i++)
 						{

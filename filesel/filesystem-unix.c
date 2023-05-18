@@ -30,10 +30,10 @@
 #include <unistd.h>
 #include "types.h"
 #include "boot/psetting.h"
-#include "dirdb.h"
-#include "filesystem.h"
-#include "filesystem-drive.h"
-#include "filesystem-unix.h"
+#include "filesel/dirdb.h"
+#include "filesel/filesystem.h"
+#include "filesel/filesystem-drive.h"
+#include "filesel/filesystem-unix.h"
 #include "stuff/compat.h"
 
 struct dmDrive *dmFile;

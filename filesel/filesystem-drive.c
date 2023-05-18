@@ -57,6 +57,29 @@ struct dmDrive *RegisterDrive(const char *dmDrive, struct ocpdir_t *basedir, str
 	return ref;
 }
 
+void UnregisterDrive(struct dmDrive *drive)
+{
+	struct dmDrive *iter, **prev;
+
+	prev = &dmDrives;
+	for (iter = dmDrives; iter; iter = iter->next)
+	{
+		if (iter != drive)
+		{
+			prev = &iter->next;
+			continue;
+		}
+		*prev = iter->next;
+
+		iter->basedir->unref (iter->basedir);
+		iter->cwd->unref (iter->cwd);
+
+		free (iter);
+
+		return;
+	}
+}
+
 struct dmDrive *dmFindDrive(const char *drivename) /* to get the correct drive from a given string */
 {
 	struct dmDrive *cur=dmDrives;

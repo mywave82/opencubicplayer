@@ -121,7 +121,9 @@ static int init_modules(int argc, char *argv[])
 	if ((ret=cmdhlp()))
 		return ret;
 
+#ifndef _WIN32
 	if (!geteuid())
+	{
 		if (getuid())
 		{
 			fprintf(stderr, "Changing user to non-root\n");
@@ -131,7 +133,9 @@ static int init_modules(int argc, char *argv[])
 				return errGen;
 			}
 		}
+	}
 	if (!getegid())
+	{
 		if (getgid())
 		{
 			fprintf(stderr, "Changing group to non-root\n");
@@ -141,6 +145,8 @@ static int init_modules(int argc, char *argv[])
 				return errGen;
 			}
 		}
+	}
+#endif
 
 	framelock_init ();
 
@@ -1074,6 +1080,7 @@ int failcheck(signed int source, signed int filter)
 static int _bootup(int argc, char *argv[], const char *HomePath, const char *ConfigHomePath, const char *ConfigDataPath, const char *DataPath, const char *ProgramPath)
 {
 	int result;
+#ifndef _WIN32
 	if (isatty(2))
 	{
 		fprintf(stderr, "\033[33m\033[1mOpen Cubic Player for Unix \033[32mv" VERSION "\033[33m, compiled on %s, %s\n", compiledate, compiletime);
@@ -1100,6 +1107,10 @@ static int _bootup(int argc, char *argv[], const char *HomePath, const char *Con
 	}
 	fprintf(stderr, "pass\n");
 #endif
+#else
+	fprintf(stderr, "Open Cubic Player for mingw v" VERSION ", compiled on %s, %s\n", compiledate, compiletime);
+	fprintf(stderr, "Ported to Unix and mingw by Stian Skjelstad\n");
+#endif
 
 	cfHomePath = (char *)HomePath;
 	cfConfigHomePath = (char *)ConfigHomePath;
@@ -1107,7 +1118,11 @@ static int _bootup(int argc, char *argv[], const char *HomePath, const char *Con
 	cfDataPath = strdup (DataPath);
 	cfProgramPath = (char *)ProgramPath;
 	cfProgramPathAutoload = malloc (strlen (cfProgramPath) + 9 + 1);
+#ifdef _WIN32
+	sprintf(cfProgramPathAutoload, "%sautoload\\", cfProgramPath);
+#else
 	sprintf(cfProgramPathAutoload, "%sautoload/", cfProgramPath);
+#endif
 
 	if (cfGetConfig(argc, argv))
 	{

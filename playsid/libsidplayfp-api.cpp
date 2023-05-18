@@ -270,16 +270,14 @@ namespace libsidplayfp
 		uint32_t basic_ref;
 		uint32_t chargen_ref;
 
-#ifdef __W32__
-		kernal_ref  = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, kernal_string,  DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH);
-		basic_ref   = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, basic_string,   DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH);
-		chargen_ref = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, chargen_string, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH);
-
+#ifdef _WIN32
+		kernal_ref  = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, kernal_string,  DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_file);
+		basic_ref   = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, basic_string,   DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_file);
+		chargen_ref = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, chargen_string, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_file);
 #else
 		kernal_ref  = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, kernal_string,  DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
 		basic_ref   = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, basic_string,   DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
 		chargen_ref = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, chargen_string, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
-
 #endif
 		uint8_t *kernalRom  = loadRom ( kernal_ref, 8192, dirdbAPI);
 		uint8_t *basicRom   = loadRom (  basic_ref, 8192, dirdbAPI);
@@ -309,9 +307,8 @@ namespace libsidplayfp
 	uint8_t* ConsolePlayer::loadRom(uint32_t dirdb_ref, const int size, const struct dirdbAPI_t *dirdbAPI)
 	{
 		char *romPath = 0;
-#ifdef __W32__
-		#error we need to make flags, so we can reverse the slashes
-		dirdbAPI->GetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_DRIVE);
+#ifdef _WIN32
+		dirdbAPI->GetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_DRIVE | DIRDB_FULLNAME_BACKSLASH);
 #else
 		dirdbAPI->GetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_NODRIVE);
 #endif

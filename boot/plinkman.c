@@ -40,7 +40,13 @@
 
 #include "config.h"
 #include <dirent.h>
-#include <dlfcn.h>
+#ifdef _WIN32
+# include <errhandlingapi.h>
+# include <libloaderapi.h>
+# include <windows.h>
+#else
+# include <dlfcn.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,7 +68,11 @@ int loadlist_n;
 DLLEXTINFO_BEGIN_PREFIX struct linkinfostruct staticdlls = {.name = "static", .desc = "Compiled in plugins (c) 2009-'23 Stian Skjelstad", .ver = DLLVERSION};
 #endif
 
+#ifdef _WIN32
+static int lnkAppend (char *file, HMODULE handle, uint32_t size, const struct linkinfostruct *info)
+#else
 static int lnkAppend (char *file, void *handle, uint32_t size, const struct linkinfostruct *info)
+#endif
 {
 	int i;
 
@@ -116,7 +126,11 @@ static int lnkAppend (char *file, void *handle, uint32_t size, const struct link
 static int _lnkDoLoad(char *file)
 {
 	int i;
+#ifdef _WIN32
+	HMODULE handle;
+#else
 	void *handle;
+#endif
 	uint32_t size = 0;
 	const struct linkinfostruct *info;
 
@@ -137,7 +151,53 @@ static int _lnkDoLoad(char *file)
 		return -1;
 	}
 
-	if (!(handle=dlopen(file, RTLD_NOW|RTLD_GLOBAL)))
+#ifdef _WIN32
+	if (!(handle=LoadLibrary(file)))
+	{
+		char *lpMsgBuf = NULL;
+		if (FormatMessage (
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_FROM_SYSTEM     |
+			FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+			NULL,                                      /* lpSource */
+			GetLastError(),                            /* dwMessageId */
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+			(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+			0,                                         /* nSize */
+			NULL                                       /* Arguments */
+		))
+		{
+			fprintf(stderr, "Failed to load library %s: %s\n", file, lpMsgBuf);
+			LocalFree (lpMsgBuf);
+		}
+		free (file);
+		return -1;
+	}
+
+	if (!(info=(const struct linkinfostruct *)GetProcAddress(handle, "dllextinfo")))
+	{
+		char *lpMsgBuf = NULL;
+		if (FormatMessage (
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_FROM_SYSTEM     |
+			FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+			NULL,                                      /* lpSource */
+			GetLastError(),                            /* dwMessageId */
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+			(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+			0,                                         /* nSize */
+			NULL                                       /* Arguments */
+		))
+		{
+			fprintf(stderr, "Failed to locate dllextinfo in library %s: %s\n", file, lpMsgBuf);
+			LocalFree (lpMsgBuf);
+		}
+		free (file);
+		FreeLibrary (handle);
+		return -1;
+	}
+#else
+	if (!(handle=dlopen (file, RTLD_NOW|RTLD_GLOBAL)))
 	{
 		fprintf(stderr, "%s\n", dlerror());
 		free (file);
@@ -151,6 +211,7 @@ static int _lnkDoLoad(char *file)
 		dlclose (handle);
 		return -1;
 	}
+#endif
 
 	{
 		struct stat st;
@@ -213,13 +274,14 @@ static void bsort(char **files, int n)
 }
 #endif
 
-int lnkLinkDir(const char *dir)
+static int _lnkLinkDir(const char *dir)
 {
 	DIR *d;
 	struct dirent *de;
 	char *filenames[1024];
 	int files=0;
 	int n;
+
 	if (!(d=opendir(dir)))
 	{
 		perror("opendir()");
@@ -238,8 +300,12 @@ int lnkLinkDir(const char *dir)
 			closedir(d);
 			return -1;
 		}
+#ifdef _WIN32
+		filenames[files] = strdup (de->d_name);
+#else
 		filenames[files] = malloc (strlen(dir) + strlen(de->d_name) + 1);
 		sprintf (filenames[files], "%s%s", dir, de->d_name);
+#endif
 		files++;
 	}
 	closedir(d);
@@ -262,6 +328,19 @@ int lnkLinkDir(const char *dir)
 		}
 	}
 	return 0; /* all okey */
+}
+
+int lnkLinkDir(const char *dir)
+{
+	int retval;
+#ifdef _WIN32
+	SetDllDirectory (dir);
+#endif
+	retval = _lnkLinkDir (dir);
+#ifdef _WIN32
+	SetDllDirectory ("");
+#endif
+	return retval;
 }
 
 int lnkLink(const char *files)
@@ -294,7 +373,13 @@ void lnkFree(const int id)
 		{
 #ifndef NO_DLCLOSE
 			if (loadlist[i].handle) /* this happens for static plugins */
-				dlclose(loadlist[i].handle);
+			{
+# ifdef _WIN32
+				FreeLibrary (loadlist[i].handle);
+# else
+				dlclose (loadlist[i].handle);
+# endif
+			}
 #endif
 			free (loadlist[i].file);
 		}
@@ -310,7 +395,13 @@ void lnkFree(const int id)
 				}
 #ifndef NO_DLCLOSE
 				if (loadlist[i].handle) /* this happens for static plugins */
-					dlclose(loadlist[i].handle);
+				{
+# ifdef _WIN32
+					FreeLibrary (loadlist[i].handle);
+# else
+					dlclose (loadlist[i].handle);
+# endif
+				}
 #endif
 				free (loadlist[i].file);
 				memmove(&loadlist[i], &loadlist[i+1], (MAXDLLLIST-i-1)*sizeof(loadlist[0]));
@@ -364,12 +455,21 @@ void *lnkGetSymbol(const int id, const char *name)
 	{
 		void *retval;
 		for (i=loadlist_n-1;i>=0;i--)
-			if ((retval=dlsym(loadlist[i].handle, name)))
+#ifdef _WIN32
+			if ((retval = GetProcAddress (loadlist[i].handle, name)))
+#else
+			if ((retval = dlsym (loadlist[i].handle, name)))
+#endif
+
 				return retval;
 	} else
 		for (i=loadlist_n-1;i>=0;i--)
 			if (loadlist[i].id==id)
-				return dlsym(loadlist[i].handle, name);
+#ifdef _WIN32
+				return GetProcAddress (loadlist[i].handle, name);
+#else
+				return dlsym (loadlist[i].handle, name);
+#endif
 	return NULL;
 }
 

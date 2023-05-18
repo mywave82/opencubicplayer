@@ -1,7 +1,7 @@
 #ifndef _FILESEL_FILESYSTEM_UNIX_H
 #define _FILESEL_FILESYSTEM_UNIX_H 1
 
-#ifndef __W32__
+#ifndef _WIN32
 
 struct ocpdir_t;
 struct ocpfile_t;

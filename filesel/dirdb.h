@@ -27,8 +27,10 @@ extern const char dirdbsigv2[60];
 
 extern void dirdbFlush(void); /* removes all nodes that hasn't been ref'ed yet aswell */
 
+#define DIRDB_FULLNAME_DRIVE    0
 #define DIRDB_FULLNAME_NODRIVE  1 /* without the drive: prefix */
 #define DIRDB_FULLNAME_ENDSLASH 2
+#define DIRDB_FULLNAME_BACKSLASH 4
 extern void dirdbGetFullname_malloc(uint32_t node, char **name, int flags);
 
 extern void dirdbGetName_internalstr(uint32_t node, const char **name); /* gives a pointer that is valid as long as you do not call dirdbUnref(). The buffer MUST NOT be sent to free() */

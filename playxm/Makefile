@@ -2,7 +2,7 @@ TOPDIR=../
 include $(TOPDIR)Rules.make
 
 ifeq ($(BUILD_DUMPTOOLS),1)
-	DUMPERS=dumpmod
+	DUMPERS=dumpmod$(EXE_SUFFIX)
 else
 	DUMPERS=
 endif
@@ -14,19 +14,19 @@ playxm$(LIB_SUFFIX): $(playxm_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) dumpmod
+	rm -f *.o *$(LIB_SUFFIX) dumpmod$(EXE_SUFFIX)
 
 install:
 	$(CP) playxm$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playxm$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
-	$(CP) dumpmod "$(DESTDIR)$(BINDIR)/dumpmod"
+	$(CP) dumpmod$(EXE_SUFFIX) "$(DESTDIR)$(BINDIR)/dumpmod$(EXE_SUFFIX)"
 endif
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playxm$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(BINDIR)/dumpmod"
+	rm -f "$(DESTDIR)$(BINDIR)/dumpmod$(EXE_SUFFIX)"
 
-dumpmod: dumpmod.o
+dumpmod$(EXE_SUFFIX): dumpmod.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 dumpmod.o: \

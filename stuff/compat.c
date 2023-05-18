@@ -59,9 +59,9 @@
 #else
 #include <strings.h>
 #endif
-#ifdef __W32__
+#ifdef _WIN32
 #include <windows.h>
-#endif /* __W32__ */
+#endif /* _WIN32 */
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -358,21 +358,6 @@ error_out:
 	}
 	return -1;
 }
-
-#ifndef HAVE_MEMMEM
-void *memmem(const void *haystack, size_t haystacklen,
-             const void *needle, size_t needlelen)
-{
-	while (haystacklen>=needlelen)
-	{
-		if (!memcmp(haystack, needle, needlelen))
-			return (void *)haystack;
-		haystack++;
-		haystacklen--;
-	}
-	return NULL;
-}
-#endif
 
 #ifndef HAVE_VSNPRINTF
 /* From glib-1.1.13:gstrfuncs.c
@@ -939,7 +924,7 @@ char *strerror(int errnum)
 #endif /* HAVE_STRERROR */
 
 #ifndef HAVE_USLEEP
-#ifdef __W32__
+#ifdef _WIN32
 int usleep(unsigned int usec)
 {
     Sleep(usec / 1000);
@@ -960,7 +945,7 @@ int usleep(unsigned int usec)
     select(0, NULL, NULL, NULL, &tv);
     return 0;
 }
-#endif /* __W32__ */
+#endif /* _WIN32 */
 #endif /* HAVE_USLEEP */
 
 #ifndef HAVE_STRDUP

@@ -1,4 +1,6 @@
 #include "config.h"
+#include "types.h"
+
 #include "compat.h"
 
 #include "compat.c"

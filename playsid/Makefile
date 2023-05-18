@@ -2,7 +2,7 @@ TOPDIR=../
 include $(TOPDIR)Rules.make
 
 ifeq ($(BUILD_DUMPTOOLS),1)
-	DUMPSID=dumpsid
+	DUMPSID=dumpsid$(EXE_SUFFIX)
 else
 	DUMPSID=
 endif
@@ -74,7 +74,7 @@ LIBSIDPLAYOBJECTS=libsidplayfp-builders-resid-builder-resid-builder.o \
 all: $(TARGETS) $(DUMPSID)
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) libsidplayfp-git/src/sidtune/sidplayer1.bin sidplayfp-git/libsidplayfp/src/sidtune/sidplayer2.bin dumpsid \
+	rm -f *.o *$(LIB_SUFFIX) libsidplayfp-git/src/sidtune/sidplayer1.bin sidplayfp-git/libsidplayfp/src/sidtune/sidplayer2.bin dumpsid$(EXE_SUFFIX) \
 	libsidplayfp-git/src/builders/resid-builder/resid/wave6581__ST.h \
 	libsidplayfp-git/src/builders/resid-builder/resid/wave6581_P_T.h \
 	libsidplayfp-git/src/builders/resid-builder/resid/wave6581_PS_.h \
@@ -87,12 +87,12 @@ clean:
 install:
 	$(CP) playsid$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playsid$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
-	$(CP) dumpsid "$(DESTDIR)$(BINDIR)/dumpsid"
+	$(CP) dumpsid$(EXE_SUFFIX) "$(DESTDIR)$(BINDIR)/dumpsid$(EXE_SUFFIX)"
 endif
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-sidplay$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(BINDIR)/dumpsid"
+	rm -f "$(DESTDIR)$(BINDIR)/dumpsid$(EXE_SUFFIX)"
 
 playsid_so=cpiinfo.o sidplay.o sidpplay.o sidconfig.o sidtype.o $(LIBSIDPLAYOBJECTS)
 playsid$(LIB_SUFFIX): $(playsid_so)
@@ -419,7 +419,7 @@ sidpplay.o: sidpplay.cpp \
 	sidconfig.h
 	$(CXX) $(LIBSIDPLAYCXXFLAGS) $< -o $@ -c
 
-dumpsid: dumpsid.o
+dumpsid$(EXE_SUFFIX): dumpsid.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 dumpsid.o: \

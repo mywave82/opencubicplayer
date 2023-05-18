@@ -22,7 +22,7 @@
 
 #include <stdio.h>
 
-#include <FLAC/seekable_stream_decoder.h>
+#include <FLAC/all.h>
 
 static FILE *myfile = NULL;
 

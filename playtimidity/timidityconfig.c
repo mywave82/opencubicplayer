@@ -24,7 +24,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/stat.h>
+#ifdef _WIN32
+# include <handleapi.h>
+# include <fileapi.h>
+#else
+# include <sys/stat.h>
+#endif
 #include <unistd.h>
 #include "types.h"
 #include "boot/plinkman.h"
@@ -122,6 +127,20 @@ static void try_user (const struct DevInterfaceAPI_t *API, const char *filename)
 
 static void try_global (const char *path)
 {
+#ifdef _WIN32
+	DWORD st;
+
+	st = GetFileAttributes (path);
+
+	if (st == INVALID_FILE_ATTRIBUTES)
+	{
+		return;
+	}
+	if (st & FILE_ATTRIBUTE_DIRECTORY)
+	{
+		return;
+	}
+#else
 	struct stat st;
 	if (lstat (path, &st))
 	{
@@ -141,6 +160,7 @@ static void try_global (const char *path)
 		PRINT ("Unable to use global config %s, not a regular file\n", path);
 		return;
 	}
+#endif
 	PRINT ("Found global config %s%s", path, have_user_timidity?", with possible user overrides":" (no user overrides found earlier)\n");
 	if (!have_default_timidity)
 	{
@@ -151,6 +171,42 @@ static void try_global (const char *path)
 
 static void scan_config_directory (const char *dpath)
 {
+#ifdef _WIN32
+	HANDLE FindHandle;
+	WIN32_FIND_DATAA FindData;
+	char path[BUFSIZ];
+
+	FindHandle = FindFirstFile (dpath, &FindData);
+	if (FindHandle == INVALID_HANDLE_VALUE)
+	{
+		PRINT ("Unable to scan directory %s for global configuration files\n", dpath);
+		return;
+	}
+
+	do
+	{
+		snprintf (path, sizeof (path), "%s%s%s", dpath, PATH_STRING, FindData.cFileName);
+
+		if (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		{
+			PRINT ("Ignoring %s, since it is a directory\n", path);
+			continue;
+		}
+		if (strlen (FindData.cFileName) < 4)
+		{
+			PRINT ("Ignoring %s, since it does not end with .cfg (too short)\n", path);
+			continue;
+		}
+		if (strcasecmp (FindData.cFileName + strlen (FindData.cFileName) - 4, ".cfg"))
+		{
+			PRINT ("Ignoring %s, since it does not end with .cfg\n", path);
+			continue;
+		}
+		PRINT ("Found global config %s\n", path);
+		append_global (path);
+	} while (FindNextFile (FindHandle, &FindData));
+	FindClose (FindHandle);
+#else
 	DIR *d = opendir (dpath);
 	struct dirent *de;
 	if (!d)
@@ -196,10 +252,47 @@ static void scan_config_directory (const char *dpath)
 		append_global (path);
 	}
 	closedir (d);
+#endif
 }
 
 static void scan_sf2_directory (const char *dpath)
 {
+#ifdef _WIN32
+	HANDLE FindHandle;
+	WIN32_FIND_DATAA FindData;
+	char path[BUFSIZ];
+
+	FindHandle = FindFirstFile (dpath, &FindData);
+	if (FindHandle == INVALID_HANDLE_VALUE)
+	{
+		PRINT ("Unable to scan directory %s for global sf2 fonts\n", dpath);
+		return;
+	}
+
+	do
+	{
+		snprintf (path, sizeof (path), "%s%s%s", dpath, PATH_STRING, FindData.cFileName);
+
+		if (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		{
+			PRINT ("Ignoring %s, since it is a directory\n", path);
+			continue;
+		}
+		if (strlen (FindData.cFileName) < 4)
+		{
+			PRINT ("Ignoring %s, since it does not end with .sf2 (too short)\n", path);
+			continue;
+		}
+		if (strcasecmp (FindData.cFileName + strlen (FindData.cFileName) - 4, ".sf2"))
+		{
+			PRINT ("Ignoring %s, since it does not end with .sf2\n", path);
+			continue;
+		}
+		PRINT ("Found sf2 %s\n", path);
+		append_sf2 (path);
+	} while (FindNextFile (FindHandle, &FindData));
+	FindClose (FindHandle);
+#else
 	DIR *d = opendir (dpath);
 	struct dirent *de;
 	if (!d)
@@ -245,6 +338,7 @@ static void scan_sf2_directory (const char *dpath)
 		append_sf2 (path);
 	}
 	closedir (d);
+#endif
 }
 
 static int mystrcmp(const void *a, const void *b)
@@ -256,12 +350,27 @@ static void refresh_configfiles (const struct DevInterfaceAPI_t *API)
 {
 	reset_configfiles ();
 
-#ifdef __WIN32
+#ifdef _WIN32
 	try_user (API, "timidity.cfg");
 	try_user (API, "_timidity.cfg");
 #endif
-	try_user (API, "_timidity.cfg");
+	try_user (API, "timidity.cfg");
 
+#ifdef __W32
+	try_global ("C:\\WINDOWS\\timidity.cfg");
+	try_global ("C:\\timidity\\timidity.cfg");
+	try_global ("C:\\TiMidity++\\timidity.cfg");
+	scan_config_directory ("C:\\timidity\\*");
+	scan_config_directory ("C:\\TiMidity++\\*");
+	scan_config_directory ("C:\\timidity\\soundfonts\\*");
+	scan_config_directory ("C:\\TiMidity++\\soundfonts\\*");
+	scan_config_directory ("C:\\timidity\\musix\\*");
+	scan_config_directory ("C:\\TiMidity++\\musix\\*");
+	scan_sf2_directory ("C:\\timidity\\soundfonts\\*");
+	scan_sf2_directory ("C:\\TiMidity++\\soundfonts\\*");
+	scan_sf2_directory ("C:\\timidity\\musix\\*");
+	scan_sf2_directory ("C:\\TiMidity++\\musix\\*");
+#else
 	if (strcmp(CONFIG_FILE, "/etc/timidity/timidity.cfg") &&
 	    strcmp(CONFIG_FILE, "/etc/timidity.cfg") &&
 	    strcmp(CONFIG_FILE, "/usr/local/share/timidity/timidity.cfg") &&
@@ -277,6 +386,7 @@ static void refresh_configfiles (const struct DevInterfaceAPI_t *API)
 	scan_config_directory ("/usr/share/timidity");
 	scan_sf2_directory ("/usr/local/share/sounds/sf2");
 	scan_sf2_directory ("/usr/share/sounds/sf2");
+#endif
 
 	if (global_timidity_count >= 2)
 	{

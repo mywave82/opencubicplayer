@@ -47,7 +47,7 @@ extern char *strerror(int errnum);
 extern int usleep(unsigned int usec);
 #endif
 
-#ifdef __W32__
+#ifdef _WIN32
 #define sleep(time) Sleep(time)
 #else
 #ifndef HAVE_SLEEP
@@ -74,7 +74,7 @@ extern int mkstemp(char *template);
 #endif /* HAVE_MKSTEMP */
 
 #ifndef HAVE_SYS_STAT_H
-#ifdef __W32__
+#ifdef _WIN32
 #include <sys/stat.h>          /* they have. */
 #elif defined(__MACOS__)
 #define S_IFDIR 1
@@ -87,7 +87,7 @@ struct stat {
 	unsigned long st_mtime, st_ctime, st_btime;
 };
 int stat(const char *filename, struct stat *st);
-#endif /* __W32__ */
+#endif /* _WIN32 */
 #else
 #include <sys/stat.h>
 #endif /* HAVE_SYS_STAT_H*/

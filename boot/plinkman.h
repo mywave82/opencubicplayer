@@ -1,6 +1,10 @@
 #ifndef _PLINKMAN_H
 #define _PLINKMAN_H 1
 
+#ifdef _WIN32
+# include <libloaderapi.h>
+#endif
+
 struct mdbreadinforegstruct;
 struct moduletype;
 struct cpifaceplayerstruct;
@@ -77,7 +81,11 @@ struct __attribute__ ((aligned (64))) linkinfostruct
 
 struct dll_handle
 {
+#ifdef _WIN32
+	HMODULE handle;
+#else
 	void *handle;
+#endif
 	char *file;
 	int id;
 	int refcount;

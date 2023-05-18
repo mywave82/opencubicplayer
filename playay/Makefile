@@ -2,7 +2,7 @@ TOPDIR=../
 include $(TOPDIR)Rules.make
 
 ifeq ($(BUILD_DUMPTOOLS),1)
-	DUMPAY=dumpay
+	DUMPAY=dumpay$(EXE_SUFFIX)
 else
 	DUMPAY=
 endif
@@ -14,18 +14,17 @@ CFLAGS+=-fPIC
 all: $(TARGETS)
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) dumpay
+	rm -f *.o *$(LIB_SUFFIX) dumpay$(EXE_SUFFIX)
 
 install:
 	$(CP) playay$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playay$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
-	$(CP) dumpay "$(DESTDIR)$(BINDIR)/dumpay"
+	$(CP) dumpay$(EXE_SUFFIX) "$(DESTDIR)$(BINDIR)/dumpay$(EXE_SUFFIX)"
 endif
-
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playay$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(BINDIR)/dumpay"
+	rm -f "$(DESTDIR)$(BINDIR)/dumpay$(EXE_SUFFIX)"
 
 aytype.o: aytype.c \
 	../config.h \
@@ -89,7 +88,7 @@ ayplay.o: ayplay.c ayplay.h main.h sound.h z80.h \
 	../stuff/imsrtns.h
 	$(CC) -o $@ ayplay.c -c
 
-dumpay: dumpay.o
+dumpay$(EXE_SUFFIX): dumpay.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 dumpay.o: \

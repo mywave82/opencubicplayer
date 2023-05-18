@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include <assert.h>
+#include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -29,6 +30,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#ifdef _WIN32
+# include <windows.h>
+# include <fileapi.h>
+# include <windows.h>
+#endif
 #include "types.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
@@ -55,6 +61,9 @@ struct browser_t
 {
 	int isdir;
 	int isparent;
+#ifdef _WIN32
+	int isdrive;
+#endif
 	uint32_t dirdb_ref;
 	char hash_4096[33];
 	char hash_8192[33];
@@ -559,7 +568,11 @@ static int float100x_to_int(const char *src)
 static void rom_md5 (char md5[33], uint32_t dirdb_ref, int size, const struct DevInterfaceAPI_t *API)
 {
 	char *romPath = 0;
+#ifdef _WIN32
+	HANDLE f;
+#else
 	int fd;
+#endif
 	uint8_t buffer[4096];
 	MD5_CTX ctx;
 
@@ -567,24 +580,47 @@ static void rom_md5 (char md5[33], uint32_t dirdb_ref, int size, const struct De
 	md5[1] = 0;
 	md5[32] = 0;
 
-#ifdef __W32__
-	#error we need to make flags, so we can reverse the slashes
-	API->dirdb->GetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_DRIVE);
+#ifdef _WIN32
+	API->dirdb->GetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_DRIVE | DIRDB_FULLNAME_BACKSLASH);
+
+	f = CreateFile (romPath,             /* lpFileName */
+	                GENERIC_READ,          /* dwDesiredAccess */
+	                FILE_SHARE_READ,       /* dwShareMode */
+	                0,                     /* lpSecurityAttributes */
+	                OPEN_EXISTING,         /* dwCreationDisposition */
+	                FILE_ATTRIBUTE_NORMAL, /* dwFlagsAndAttributes */
+	                0);                    /* hTemplateFile */
+	free (romPath);
+	if (f == INVALID_HANDLE_VALUE)
+	{
+		return;
+	}
 #else
 	API->dirdb->GetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_NODRIVE);
-#endif
-
 	fd = open (romPath, O_RDONLY);
 	free (romPath);
 	if (fd < 0)
 	{
 		return;
 	}
+#endif
 
 	MD5Init (&ctx);
 
 	while (size)
 	{
+#ifdef _WIN32
+		DWORD NumberOfBytesRead = 0;
+		BOOL Result;
+		Result = ReadFile (f, buffer, 4096, &NumberOfBytesRead, 0);
+		if ((!Result) || (NumberOfBytesRead != 4096))
+		{
+			CloseHandle (f);
+			return;
+		}
+		MD5Update (&ctx, buffer, 4096);
+		size -= 4096;
+#else
 		int result = read (fd, buffer, 4096);
 		if (result < 0)
 		{
@@ -602,8 +638,14 @@ static void rom_md5 (char md5[33], uint32_t dirdb_ref, int size, const struct De
 		}
 		MD5Update (&ctx, buffer, 4096);
 		size -= result;
+#endif
 	}
+
+#ifdef _WIN32
+	CloseHandle (f);
+#else
 	close (fd);
+#endif
 	MD5Final (md5, &ctx);
 }
 
@@ -613,6 +655,9 @@ static void sidDrawDir (const int esel, const int expect, const struct DevInterf
 	int i;
 	int files = 0;
 	int dirs = 0;
+#ifdef _WIN32
+	int drives = 0;
+#endif
 
 	int half;
 	int skip;
@@ -638,11 +683,19 @@ static void sidDrawDir (const int esel, const int expect, const struct DevInterf
 		if (entries_data[i].isdir)
 		{
 			dirs++;
+#ifdef _WIN32
+		} else if (entries_data[i].isdrive)
+		{
+			drives++;
+#endif
 		} else {
 			files++;
 		}
 	}
 	contentheight = dirs + files;
+#ifdef _WIN32
+	contentheight += drives;
+#endif
 
 	half = (mlHeight - LINES_NOT_AVAILABLE) / 2;
 
@@ -737,6 +790,16 @@ static int cmp(const void *a, const void *b)
 	{
 		return 1;
 	}
+#ifdef _WIN32
+	if ((p1->isdrive) && (!p2->isdrive))
+	{
+		return -1;
+	}
+	if (p2->isdrive && (!p1->isdrive))
+	{
+		return 1;
+	}
+#endif
 
 	cmp_API->dirdb->GetName_internalstr (p1->dirdb_ref, &n1);
 	cmp_API->dirdb->GetName_internalstr (p2->dirdb_ref, &n2);
@@ -776,6 +839,9 @@ static void entries_append_parent (uint32_t ref, const struct DevInterfaceAPI_t 
 	}
 	entries_data[entries_count].isdir = 1;
 	entries_data[entries_count].isparent = 1;
+#ifdef _WIN32
+	entries_data[entries_count].isdrive = 0;
+#endif
 	entries_data[entries_count].dirdb_ref = ref;
 	entries_data[entries_count].hash_4096[0] = 0;
 	entries_data[entries_count].hash_8192[0] = 0;
@@ -791,6 +857,9 @@ static void entries_append_dir (uint32_t ref, const struct DevInterfaceAPI_t *AP
 	}
 	entries_data[entries_count].isdir = 1;
 	entries_data[entries_count].isparent = 0;
+#ifdef _WIN32
+	entries_data[entries_count].isdrive = 0;
+#endif
 	entries_data[entries_count].dirdb_ref = ref;
 	entries_data[entries_count].hash_4096[0] = 0;
 	entries_data[entries_count].hash_8192[0] = 0;
@@ -812,6 +881,28 @@ static void entries_append_file (uint32_t ref, const char *hash_4096, const char
 	entries_count++;
 }
 
+#ifdef _WIN32
+static void entries_append_drive (uint32_t ref, const struct DevInterfaceAPI_t *API)
+{
+	if (ref == DIRDB_CLEAR)
+	{
+		return;
+	}
+	if (entries_append())
+	{
+		return;
+	}
+	entries_data[entries_count].isdir = 0;
+	entries_data[entries_count].isparent = 0;
+	entries_data[entries_count].isdrive = 1;
+	API->dirdb->Unref(ref, dirdb_use_file);
+	entries_data[entries_count].dirdb_ref = ref;
+	entries_data[entries_count].hash_4096[0] = 0;
+	entries_data[entries_count].hash_8192[0] = 0;
+	entries_count++;
+}
+#endif
+
 static void refresh_dir (uint32_t ref, uint32_t old, int *esel, const struct DevInterfaceAPI_t *API)
 {
 	DIR *d;
@@ -821,9 +912,8 @@ static void refresh_dir (uint32_t ref, uint32_t old, int *esel, const struct Dev
 
 	entries_clear (API);
 
-#ifdef __W32__
-	#error we need to make flags, so we can reverse the slashes
-	API->dirdb->GetFullname_malloc (ref, &entries_location, DIRDB_FULLNAME_DRIVE);
+#ifdef _WIN32
+	API->dirdb->GetFullname_malloc (ref, &entries_location, DIRDB_FULLNAME_DRIVE | DIRDB_FULLNAME_BACKSLASH);
 #else
 	API->dirdb->GetFullname_malloc (ref, &entries_location, DIRDB_FULLNAME_NODRIVE);
 #endif
@@ -893,6 +983,15 @@ static void refresh_dir (uint32_t ref, uint32_t old, int *esel, const struct Dev
 		}
 		closedir (d);
 	}
+#ifdef _WIN32
+	for (i=0; i < 26; i++)
+	{
+		if (API->dmDriveLetters[i])
+		{
+			entries_append_drive (API->dmDriveLetters[i]->cwd->dirdb_ref, API);
+		}
+	}
+#endif
 	entries_sort (API);
 	for (i=0; i < entries_count; i++)
 	{
@@ -907,7 +1006,6 @@ static void refresh_dir (uint32_t ref, uint32_t old, int *esel, const struct Dev
 static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 {
 	int esel = 0;
-
 	uint32_t dirdb_base = API->configAPI->DataHomeDir->dirdb_ref;
 
 	config_emulator = emulator_to_int         (API->configAPI->GetProfileString ("libsidplayfp", "emulator",        "residfp"));
@@ -1057,7 +1155,12 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 										break;
 
 									case _KEY_ENTER:
-										if (entries_data[dsel].isdir)
+										if (
+											entries_data[dsel].isdir
+#ifdef _WIN32
+											|| entries_data[dsel].isdrive
+#endif
+										)
 										{
 											uint32_t dir = entries_data[dsel].dirdb_ref;
 											API->dirdb->Ref (dir, dirdb_use_file);
@@ -1077,7 +1180,7 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 												{
 													sprintf (newpath, "%s", path + strlen (config));
 												}
-#ifdef __WIN32
+#ifdef _WIN32
 											} else if (!strncasecmp (path, API->configAPI->HomePath, strlen (API->configAPI->HomePath)))
 #else
 											} else if (!strncmp (path, API->configAPI->HomePath, strlen (API->configAPI->HomePath)))

@@ -23,7 +23,6 @@ filesystem-playlist-m3u.o     \
 filesystem-playlist-pls.o     \
 filesystem-setup.o            \
 filesystem-tar.o              \
-filesystem-unix.o             \
 filesystem-z.o                \
 filesystem-zip.o              \
 fsptype.o                     \
@@ -33,8 +32,17 @@ musicbrainz.o                 \
 pfilesel.o                    \
 pfsmain.o
 
+ifeq ($(WINDOWS),1)
+pfilesel_so += filesystem-windows.o
+else
+pfilesel_so += filesystem-unix.o
+endif
+
 ifeq ($(STATIC_CORE),1)
  STATIC_OBJECTS += $(patsubst %.o,filesel/%.o,$(cdrom_so))
  STATIC_OBJECTS += $(patsubst %.o,filesel/%.o,$(pfilesel_so))
  STATIC_LIBS += -lz -lbz2 $(MATH_LIBS) $(PTHREAD_LIBS) $(LIBDISCID_LIBS) $(ICONV_LIBS) $(LIBCJSON_LIBS) $(LIBANCIENT_LIBS)
+ ifeq ($(WINDOWS),1)
+  STATIC_LIBS += -lshlwapi # due to PathMatchSpec()
+ endif
 endif

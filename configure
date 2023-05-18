@@ -659,6 +659,7 @@ CP
 HAVE_LZH
 HAVE_LZW
 HAVE_MAKEINFO
+INSTALL_INFO
 DUMA_LIBS
 EFENCE_LIBS
 SYSCONFDIR
@@ -760,6 +761,7 @@ PKG_CONFIG_PATH
 PKG_CONFIG
 CURSES_CFLAGS
 CURSES_LIBS
+HAVE_CURSES
 HAVE_SYS_TYPES_H
 HAVE_SYS_STAT_H
 HAVE_SYS_IO_H
@@ -767,8 +769,11 @@ HAVE_GETOPT_H
 MATH_LIBS
 STATIC_CORE
 STATIC_BUILD
+WINDRES
+WINDOWS
 HAIKU
 PTHREAD_LIBS
+EXE_SUFFIX
 LIB_SUFFIX
 SHARED_FLAGS
 UPDATE_DESKTOP_DATABASE
@@ -861,6 +866,7 @@ with_coreaudio
 with_flac
 with_sdl
 with_sdl2
+with_info
 with_update_mime_database
 with_desktop_file_install
 with_update_desktop_database
@@ -1592,6 +1598,7 @@ Optional Packages:
                           default)
   --with-sdl2             force/disable SDL2 video support (autodetect by
                           default)
+  --without-info          Do not install info manual pages
   --without-update-mime-database
                           Do not update mime database after file copy (SDL and
                           X11 normally does this)
@@ -7740,6 +7747,9 @@ printf "%s\n" "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
 
 
 
+
+
+
 target=`$CC -dumpmachine`
 case $target in #(
   *-darwin*) :
@@ -7758,6 +7768,21 @@ case $target in #(
 		with_desktop_file_install=no
 		with_update_desktop_database=no
 		HAIKU=1
+	 ;; #(
+  *-mingw*) :
+
+		WINDOWS=1
+		SHARED_FLAGS="-shared -pthread" # clock_gettime() is provided via -pthread when using mingw
+		LIB_SUFFIX=.dll
+		EXE_SUFFIX=.exe
+		PTHREAD_LIBS=-pthread
+		WINDRES="${WINDRES:-$host-windres}"
+
+		DATADIROCP=$prefix
+		ac_cv_env_DATADIROCP_set=set
+
+		LIBDIROCP=$prefix
+		ac_cv_env_LIBDIROCP_set=set
 	 ;; #(
   *) :
 
@@ -7877,6 +7902,15 @@ then :
   withval=$with_sdl2;
 else $as_nop
   with_sdl2=auto
+fi
+
+
+# Check whether --with-info was given.
+if test ${with_info+y}
+then :
+  withval=$with_info;
+else $as_nop
+  with_info=auto
 fi
 
 
@@ -8780,6 +8814,7 @@ printf "%s\n" "#define TIMIDITYPKGDATADIR TIMIDITY_DEFAULT_PATH" >>confdefs.h
 
 
 
+
 if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
 	if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
@@ -8903,6 +8938,9 @@ printf "%s\n" "no" >&6; }
 		PKG_CONFIG=""
 	fi
 fi
+if test "x$WINDOWS" == x
+then :
+
 
 
 
@@ -9981,24 +10019,28 @@ fi
     unset ax_saved_LIBS
     unset ax_saved_CPPFLAGS
 
-if test "x$ax_cv_ncursesw" != xyes && test "x$ax_cv_ncurses" != xyes
+    if test "x$ax_cv_ncursesw" != xyes && test "x$ax_cv_ncurses" != xyes
 then :
   as_fn_error $? "requires either NcursesW or Ncurses library" "$LINENO" 5
 fi
-if test "x$ax_cv_curses_color" != xyes
+    if test "x$ax_cv_curses_color" != xyes
 then :
   as_fn_error $? "requires an X/Open-compatible Curses library with color" "$LINENO" 5
 fi
-push_LIBS=$LIBS
-LIBS=$CURSES_LIBS
-ac_fn_c_check_func "$LINENO" "resize_term" "ac_cv_func_resize_term"
+    HAVE_CURSES=1
+    push_LIBS=$LIBS
+    LIBS=$CURSES_LIBS
+    ac_fn_c_check_func "$LINENO" "resize_term" "ac_cv_func_resize_term"
 if test "x$ac_cv_func_resize_term" = xyes
 then :
   printf "%s\n" "#define HAVE_RESIZE_TERM 1" >>confdefs.h
 
 fi
 
-LIBS=$push_LIBS
+    LIBS=$push_LIBS
+
+
+fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zlibVersion in -lz" >&5
 printf %s "checking for zlibVersion in -lz... " >&6; }
@@ -10108,6 +10150,9 @@ else $as_nop
 fi
 
 
+if test "x$WINDOWS" == x
+then :
+
 
 push_LIBS=$LIBS
 LIBS=
@@ -10173,6 +10218,9 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+
+fi
 
 
 
@@ -17183,6 +17231,11 @@ fi
 
 
 
+if test "x$with_info" != "xno"
+then :
+  INSTALL_INFO=1
+fi
+
 # Extract the first word of "makeinfo", so it can be a program name with args.
 set dummy makeinfo; ac_word=$2
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -17827,6 +17880,9 @@ ac_config_files="$ac_config_files playopl/libbinio-git/src/binio.h"
 ac_config_files="$ac_config_files playopl/adplug-git/src/version.h"
 
 ac_config_files="$ac_config_files haiku/ocp.rdef"
+
+
+ac_config_files="$ac_config_files mingw/ocp.rc"
 
 
 cat >confcache <<\_ACEOF
@@ -18531,6 +18587,7 @@ do
     "playopl/libbinio-git/src/binio.h") CONFIG_FILES="$CONFIG_FILES playopl/libbinio-git/src/binio.h" ;;
     "playopl/adplug-git/src/version.h") CONFIG_FILES="$CONFIG_FILES playopl/adplug-git/src/version.h" ;;
     "haiku/ocp.rdef") CONFIG_FILES="$CONFIG_FILES haiku/ocp.rdef" ;;
+    "mingw/ocp.rc") CONFIG_FILES="$CONFIG_FILES mingw/ocp.rc" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
