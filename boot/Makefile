@@ -2,7 +2,7 @@ TOPDIR=../
 include $(TOPDIR)Rules.make
 include Makefile-static
 
-all: $(boot_libocp_start_so) $(boot_libocp_so) $(boot_libocp_end_so)
+all: $(boot_libocp_start_so) $(boot_libocp_so) $(boot_libocp_end_so) kickload.o
 
 clean:
 	rm -f *.o *.a *$(LIB_SUFFIX)
