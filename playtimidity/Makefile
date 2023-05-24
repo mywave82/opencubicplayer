@@ -24,6 +24,10 @@ uninstall:
 
 cpikaraoke.o: \
 	cpikaraoke.c \
+	../config.h \
+	../cpiface/cpiface.h \
+	../stuff/poutput.h \
+	../types.h \
 	cpikaraoke.h
 	$(CC) $< -o $@ -c
 
