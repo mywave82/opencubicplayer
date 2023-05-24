@@ -454,41 +454,25 @@ static void timidity_play_source_EventDelayed_gmibuf (struct cpifaceSessionAPI_t
 	}
 }
 
-static int read_user_config_file(void)
+static int read_user_config_file(struct cpifaceSessionAPI_t *cpifaceSession)
 {
-    char *home;
     char path[BUFSIZ];
     int status;
 
-    home = getenv("HOME");
-#ifdef __W32__
-/* HOME or home */
-    if(home == NULL)
-	home = getenv("HOMEPATH");
-    if(home == NULL)
-	home = getenv("home");
-#endif
-    if(home == NULL)
-    {
-	ctl->cmsg(CMSG_INFO, VERB_NOISY,
-		  "Warning: HOME environment is not defined.");
-	return 0;
-    }
-
 #ifdef __W32__
 /* timidity.cfg or _timidity.cfg or .timidity.cfg*/
-    snprintf(path, sizeof (path), "%s" PATH_STRING "timidity.cfg", home);
+    snprintf(path, sizeof (path), "%s" PATH_STRING "timidity.cfg", cpifaceSession->configAPI->HomeDir);
     status = read_config_file(&tc, path, 0, 1);
     if (status != READ_CONFIG_FILE_NOT_FOUND)
         return status;
 
-    snprintf(path, sizeof (path), "%s" PATH_STRING "_timidity.cfg", home);
+    snprintf(path, sizeof (path), "%s" PATH_STRING "_timidity.cfg", cpifaceSession->configAPI->HomeDir);
     status = read_config_file(&tc, path, 0, 1);
     if (status != READ_CONFIG_FILE_NOT_FOUND)
         return status;
 #endif
 
-    snprintf(path, sizeof (path), "%s" PATH_STRING ".timidity.cfg", home);
+    snprintf(path, sizeof (path), "%s" PATH_STRING ".timidity.cfg", cpifaceSession->configAPI->HomeDir);
     status = read_config_file(&tc, path, 0, 1);
     if (status != 3 /*READ_CONFIG_FILE_NOT_FOUND*/)
         return status;
@@ -1005,7 +989,7 @@ static void emulate_main_start(struct timiditycontext_t *c, struct cpifaceSessio
 			cpifaceSession->cpiDebug (cpifaceSession, "[TiMidity++ MID] Warning: Unable to find global timidity.cfg file");
 		}
 
-		if (read_user_config_file())
+		if (read_user_config_file(cpifaceSession))
 		{
 			cpifaceSession->cpiDebug (cpifaceSession, "[TiMidity++ MID] Error: Syntax error in ~/.timidity.cfg");
 		}

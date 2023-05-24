@@ -24,6 +24,9 @@
 #include "config.h"
 #include <assert.h>
 #include <fcntl.h>
+#ifdef HAVE_PWD_H
+# include <pwd.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,11 +42,18 @@
 #include "stuff/poutput.h"
 #include "stuff/utf-8.h"
 
+#ifdef CFHOMEDIR_OVERRIDE
+# define CFHOMEDIR CFHOMEDIR_OVERRIDE
+#else
+# define CFHOMEDIR configAPI.HomeDir
+#endif
+
 #ifdef CFDATAHOMEDIR_OVERRIDE
 # define CFDATAHOMEDIR CFDATAHOMEDIR_OVERRIDE
 #else
 # define CFDATAHOMEDIR configAPI->DataHomeDir
 #endif
+
 #ifdef MEASURESTR_UTF8_OVERRIDE
 # undef measurestr_utf8
 # define measurestr_utf8(x,y) (y)
@@ -314,6 +324,10 @@ int dirdbInit (const struct configAPI_t *configAPI)
 		}
 	}
 
+#ifdef DIRDB_DEBUG
+	dumpdirdb();
+#endif
+
 	fprintf(stderr, "Done\n");
 	return 1;
 endoffile:
@@ -364,7 +378,7 @@ uint32_t dirdbFindAndRef(uint32_t parent, char const *name, enum dirdb_use use)
 	struct dirdbEntry *new;
 
 #ifdef DIRDB_DEBUG
-	fprintf(stderr, "dirdbFindAndRef(0x%08x, %s%40s%s, use=%d)\n", parent, name?"\"":"", name?name:"NULL", name?"\"":"", use);
+	fprintf(stderr, "dirdbFindAndRef(0x%08x, %s%40s%s, use=%d) ", parent, name?"\"":"", name?name:"NULL", name?"\"":"", use);
 #endif
 
 	if (!name)
@@ -426,6 +440,7 @@ uint32_t dirdbFindAndRef(uint32_t parent, char const *name, enum dirdb_use use)
 				case dirdb_use_medialib:      dirdbData[i].refcount_medialib++;      break;
 				case dirdb_use_mdb_medialib:  dirdbData[i].refcount_mdb_medialib++;  break;
 			}
+			fprintf (stderr, "=>0x%08x\n", i);
 #endif
 			return i;
 		}
@@ -493,6 +508,7 @@ uint32_t dirdbFindAndRef(uint32_t parent, char const *name, enum dirdb_use use)
 		case dirdb_use_medialib:      dirdbData[i].refcount_medialib++;      break;
 		case dirdb_use_mdb_medialib:  dirdbData[i].refcount_mdb_medialib++;  break;
 	}
+	fprintf (stderr, "=> new 0x%08x (add reference parent)\n", i);
 #endif
 	if (parent!=DIRDB_NOPARENT)
 	{
@@ -508,7 +524,19 @@ uint32_t dirdbFindAndRef(uint32_t parent, char const *name, enum dirdb_use use)
 uint32_t dirdbRef(uint32_t node, enum dirdb_use use)
 {
 #ifdef DIRDB_DEBUG
-	fprintf(stderr, "dirdbRef(0x%08x)\n", node);
+	fprintf(stderr, "dirdbRef(0x%08x) ", node);
+	switch (use)
+	{
+		case dirdb_use_children:      fprintf (stderr, "children");      break;
+		case dirdb_use_dir:           fprintf (stderr, "directories");   break;
+		case dirdb_use_file:          fprintf (stderr, "files");         break;
+		case dirdb_use_filehandle:    fprintf (stderr, "filehandles");   break;
+		case dirdb_use_drive_resolve: fprintf (stderr, "drive_resolve"); break;
+		case dirdb_use_pfilesel:      fprintf (stderr, "pfilesel");      break;
+		case dirdb_use_medialib:      fprintf (stderr, "medialib");      break;
+		case dirdb_use_mdb_medialib:  fprintf (stderr, "mdb_medialib");  break;
+	}
+	fprintf (stderr, "\n");
 #endif
 	if (node == DIRDB_NOPARENT)
 	{
@@ -623,34 +651,16 @@ nodrive:
 		if ((flags & DIRDB_RESOLVE_TILDE_HOME) && (next[0] == '~') && (next[1] == dirsplit))
 		{
 #ifndef __W32__
-			char *home;
-
 			newretval = dirdbFindAndRef (DIRDB_NOPARENT, "file:", TEMP_SPACE);
 			dirdbUnref (retval, TEMP_SPACE);
 			retval = newretval;
 
-			home = getenv("HOME");
-			if (!home)
-			{
-				dirdbUnref (retval, TEMP_SPACE);
-				free (segment);
-				return DIRDB_NOPARENT;
-			}
-			newretval = dirdbResolvePathWithBaseAndRef (retval, home, 0, TEMP_SPACE); /* we are already at the root */
+			newretval = dirdbResolvePathWithBaseAndRef (retval, CFHOMEDIR, 0, TEMP_SPACE); /* we are already at the root */
 			dirdbUnref (retval, TEMP_SPACE);
 			retval = newretval;
 #else
 			#warning This is untested code
-			char *home;
-
-			home = getenv("HOMEPATH"); /* home is expected to contain DRIVE: */
-			if (home = NULL)
-			{
-				dirdbUnref (retval, TEMP_SPACE);
-				free (segment);
-				return DIRDB_NOPARENT;
-			}
-			newretval = dirdbResolvePathWithBaseAndRef (DIRDB_NOPARENT, home, DIRDB_RESOLVE_DRIVE, TEMP_SPACE);
+			newretval = dirdbResolvePathWithBaseAndRef (DIRDB_NOPARENT, CFHOMEDIR, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_WINDOWS_SLASH, TEMP_SPACE);
 			dirdbUnref (retval, TEMP_SPACE);
 			retval = newretval;
 #endif
@@ -961,7 +971,19 @@ void dirdbUnref(uint32_t node, enum dirdb_use use)
 {
 	uint32_t parent, *prev;
 #ifdef DIRDB_DEBUG
-	fprintf(stderr, "dirdbUnref(0x%08x)\n", node);
+	fprintf(stderr, "dirdbUnref(0x%08x) ", node);
+	switch (use)
+	{
+		case dirdb_use_children:      fprintf (stderr, "children");      break;
+		case dirdb_use_dir:           fprintf (stderr, "directories");   break;
+		case dirdb_use_file:          fprintf (stderr, "files");         break;
+		case dirdb_use_filehandle:    fprintf (stderr, "filehandles");   break;
+		case dirdb_use_drive_resolve: fprintf (stderr, "drive_resolve"); break;
+		case dirdb_use_pfilesel:      fprintf (stderr, "pfilesel");      break;
+		case dirdb_use_medialib:      fprintf (stderr, "medialib");      break;
+		case dirdb_use_mdb_medialib:  fprintf (stderr, "mdb_medialib");  break;
+	}
+	fprintf (stderr, "\n");
 #endif
 
 	if (node == DIRDB_NOPARENT)
@@ -1059,6 +1081,9 @@ void dirdbUnref(uint32_t node, enum dirdb_use use)
 
 	if (parent!=DIRDB_NOPARENT)
 	{
+#ifdef DIRDB_DEBUG
+		fprintf (stderr, " unref => remove from parent\n");
+#endif
 		dirdbUnref (parent, dirdb_use_children);
 	}
 }

@@ -837,6 +837,7 @@ struct configAPI_t configAPI =
 	0,
 	0,
 	0,
+	0,
 	_cfCountSpaceList,
 	_cfGetSpaceListEntry
 };

@@ -5,10 +5,6 @@
 #include <stdint.h>
 #endif
 
-#ifdef HAVE_PWD_H
-#include <pwd.h>
-#endif
-
 #define DIRDB_NOPARENT 0xffffffff /* also is the magicial node of / */
 #define DIRDB_CLEAR     0xffffffff
 #define DIRDB_NO_MDBREF 0xffffffff

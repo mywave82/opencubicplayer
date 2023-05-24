@@ -1072,22 +1072,10 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 											dir_ref = dir;
 										} else {
 											char *newpath = 0;
-											char *home = 0;
 											char *config = 0;
 											char *path = 0;
 											API->dirdb->GetFullname_malloc (entries_data[dsel].dirdb_ref, &path, DIRDB_FULLNAME_NODRIVE);
 											API->dirdb->GetFullname_malloc (dirdb_base, &config, DIRDB_FULLNAME_NODRIVE | DIRDB_FULLNAME_ENDSLASH);
-											{
-												char *_home = getenv("HOME");
-												if (_home && strlen (_home))
-												{
-													home = malloc (strlen (_home) + 2);
-													if (home)
-													{
-														sprintf(home, "%s%s", _home, (_home[strlen(_home)-1]=='/')?"":"/");
-													}
-												}
-											}
 											if (!strncmp (path, config, strlen (config)))
 											{
 												newpath = malloc (1 + strlen (path) - strlen (config));
@@ -1095,12 +1083,16 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 												{
 													sprintf (newpath, "%s", path + strlen (config));
 												}
-											} else if (home && (!strncmp (path, home, strlen (home))))
+#ifdef __WIN32
+											} else if (!strncasecmp (path, API->configAPI->HomeDir, strlen (API->configAPI->HomeDir)))
+#else
+											} else if (!strncmp (path, API->configAPI->HomeDir, strlen (API->configAPI->HomeDir)))
+#endif
 											{
-												newpath = malloc (3 + strlen (path) - strlen (home));
+												newpath = malloc (3 + strlen (path) - strlen (API->configAPI->HomeDir));
 												if (newpath)
 												{
-													sprintf (newpath, "~/%s", path + strlen (home));
+													sprintf (newpath, "~/%s", path + strlen (API->configAPI->HomeDir));
 												}
 											} else {
 												newpath = path;
@@ -1131,7 +1123,6 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 												}
 											}
 											free (path);
-											free (home);
 											free (config);
 											inner = 0;
 										}

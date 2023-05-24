@@ -8150,6 +8150,13 @@ then :
 
 fi
 
+ac_fn_c_check_func "$LINENO" "getpwuid" "ac_cv_func_getpwuid"
+if test "x$ac_cv_func_getpwuid" = xyes
+then :
+  printf "%s\n" "#define HAVE_GETPWUID 1" >>confdefs.h
+
+fi
+
 ac_fn_c_check_func "$LINENO" "popen" "ac_cv_func_popen"
 if test "x$ac_cv_func_popen" = xyes
 then :

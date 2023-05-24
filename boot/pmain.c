@@ -1056,7 +1056,7 @@ int failcheck(signed int source, signed int filter)
 }
 #endif
 
-static int _bootup(int argc, char *argv[], const char *ConfigHomeDir, const char *ConfigDataDir, const char *DataDir, const char *ProgramDir)
+static int _bootup(int argc, char *argv[], const char *HomeDir, const char *ConfigHomeDir, const char *ConfigDataDir, const char *DataDir, const char *ProgramDir)
 {
 	int result;
 	if (isatty(2))
@@ -1086,6 +1086,7 @@ static int _bootup(int argc, char *argv[], const char *ConfigHomeDir, const char
 	fprintf(stderr, "pass\n");
 #endif
 
+	cfHomeDir = (char *)HomeDir;
 	cfConfigHomeDir = (char *)ConfigHomeDir;
 	cfDataHomeDir = (char*)ConfigDataDir;
 	cfDataDir = strdup (DataDir);

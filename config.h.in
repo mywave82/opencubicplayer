@@ -233,6 +233,8 @@
 
 #undef HAVE_GETOPT
 
+#undef HAVE_GETPWUID
+
 #undef HAVE_MEMMEM
 
 #undef HAVE_QSORT

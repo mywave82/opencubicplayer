@@ -262,29 +262,17 @@ static int mystrcmp(const void *a, const void *b)
 	return strcmp (*(char **)a, *(char **)b);
 }
 
-static void refresh_configfiles (void)
+static void refresh_configfiles (const struct configAPI_t *configAPI)
 {
-	char *home;
 	char path[BUFSIZ];
 
 	reset_configfiles ();
 
-	home = getenv("HOME");
-#ifdef __W32__
-/* HOME or home */
-	if(home == NULL)
-		home = getenv("HOMEPATH");
-	if(home == NULL)
-		home = getenv("home");
+#ifdef __WIN32
+	snprintf (path, sizeof (path), "%s" PATH_STRING "timidity.cfg", configAPI->HomeDir); try_user (path);
+	snprintf (path, sizeof (path), "%s" PATH_STRING "_timidity.cfg", configAPI->HomeDir); try_user (path);
 #endif
-	if (home)
-	{
-#ifdef __W32__
-		snprintf (path, sizeof (path), "%s" PATH_STRING "timidity.cfg", home); try_user (path);
-		snprintf (path, sizeof (path), "%s" PATH_STRING "_timidity.cfg", home); try_user (path);
-#endif
-		snprintf (path, sizeof (path), "%s" PATH_STRING ".timidity.cfg", home); try_user (path);
-	}
+	snprintf (path, sizeof (path), "%s" PATH_STRING ".timidity.cfg", configAPI->HomeDir); try_user (path);
 
 	if (strcmp(CONFIG_FILE, "/etc/timidity/timidity.cfg") &&
 	    strcmp(CONFIG_FILE, "/etc/timidity.cfg") &&
@@ -641,7 +629,7 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 {
 	int esel = 0;
 
-	refresh_configfiles ();
+	refresh_configfiles (API->configAPI);
 
 	DefaultReverbMode     = API->configAPI->GetProfileInt ("timidity", "reverbmode",       2, 10);
 	DefaultReverbLevel    = API->configAPI->GetProfileInt ("timidity", "reverblevel",     40, 10);

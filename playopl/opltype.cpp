@@ -83,7 +83,6 @@ static class CAdPlugDatabase *adplugdb_ocp;
 OCP_INTERNAL int opl_type_init (PluginInitAPI_t *API)
 {
 	char *path=0;
-	const char *home = getenv ("HOME");
 
 	adplugdb_ocp = new CAdPlugDatabase();
 	if (adplugdb_ocp)
@@ -96,16 +95,15 @@ OCP_INTERNAL int opl_type_init (PluginInitAPI_t *API)
 		}
 		adplugdb_ocp->load("/usr/com/adplug/adplug.db");
 		adplugdb_ocp->load("/usr/share/adplug/adplug.db");
-		if (home && home[0])
+
+		path = (char *)malloc (strlen(API->configAPI->HomeDir) + 18);
+		if (path)
 		{
-			path = (char *)malloc (strlen(home) + 19);
-			if (path)
-			{
-				sprintf (path, "%s%s.adplug/adplug.db", home, home[strlen(home)]-1=='/'?"":"/");
-				adplugdb_ocp->load(path);
-				free (path); path=0;
-			}
+			sprintf (path, "%s.adplug/adplug.db", API->configAPI->HomeDir);
+			adplugdb_ocp->load(path);
+			free (path); path=0;
 		}
+
 		CAdPlug::set_database (adplugdb_ocp);
 	}
 

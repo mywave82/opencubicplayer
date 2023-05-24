@@ -3,7 +3,7 @@
 
 struct bootupstruct
 {
-	int (*main)(int argc, char *argv[], const char *ConfigHomeDir, const char *ConfigDataDir, const char *DataDir, const char *ProgramDir);
+	int (*main)(int argc, char *argv[], const char *ConfigHome, const char *ConfigHomeDir, const char *ConfigDataDir, const char *DataDir, const char *ProgramDir);
 };
 struct mainstruct
 {

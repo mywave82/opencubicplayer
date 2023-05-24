@@ -41,6 +41,9 @@
 #include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifdef HAVE_PWD_H
+#include <pwd.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -63,6 +66,7 @@ static char *_cfConfigHomeDir;
 static char *_cfDataHomeDir;
 static char *_cfDataDir;
 static char *_cfProgramDir;
+static char *_cfHomeDir;
 
 static int AllowSymlinked;
 static struct console_t *_Console;
@@ -367,7 +371,6 @@ static int cp(const char *src, const char *dst)
 static char *validate_xdg_dir_absolute (const char *name, const char *def)
 {
 	char *xdg = getenv (name);
-	char *home = getenv ("HOME");
 	if (xdg)
 	{
 		if (xdg[0] == 0) /* it is an empty string */
@@ -393,28 +396,9 @@ static char *validate_xdg_dir_absolute (const char *name, const char *def)
 		}
 		return retval;
 	}
-	if (!home)
-	{
-		fprintf (stderr, "Error, $%s and $HOME are not set\n", name);
-		return 0;
-	}
-
-	if (home[0] == 0) /* it is an empty string */
-	{
-		fprintf (stderr, "Error, $HOME is empty\n");
-		return 0;
-	}
-	if ((home[0] != '/') ||      /* not absolute, must start with '/' */
-	    strstr(home, "/../") ||  /* not absolute, contains "/../" */
-	    ((strlen (home) >= 3) && (!strcmp (home + strlen(home) - 3, "/.."))) ) /* not absolute, ends with "/.." */
-	{
-		fprintf (stderr, "Error, $HOME is not an absolute path, ignoring value\n");
-		return 0;
-	}
-	xdg = malloc (strlen(home) + 1 + strlen (def) + 5 + 1);
-	sprintf (xdg, "%s%s%s/ocp/",
-		home,
-		( home [ strlen(home) - 1 ] != '/') ? "/" : "", /* ensure that path ends with '/', but at the same that we only have one */
+	xdg = malloc (strlen(_cfHomeDir) + strlen (def) + 5 + 1);
+	sprintf (xdg, "%s%s/ocp/",
+		_cfHomeDir,
 		def
 	);
 	return xdg;
@@ -651,36 +635,17 @@ static int move_exdev (const char *olddir, const char *filename, const char *new
 /* returns true if ocp.ini has been located and moved */
 static int migrate_old_ocp_ini (void)
 {
-	char *home = getenv ("HOME");
 	char *oldpath;
 	DIR *d;
 	int retval = 0;
 
-	if (!home)
-	{
-		return 0; /* no ocp.ini provided */
-	}
-
-	if (home[0] == 0) /* it is an empty string */
-	{
-		return 0; /* no ocp.ini provided */
-	}
-
-	if ((home[0] != '/') ||      /* not absolute, must start with '/' */
-	    strstr(home, "/../") ||  /* not absolute, contains "/../" */
-	    ((strlen (home) >= 3) && (!strcmp (home + strlen(home) - 3, "/.."))) ) /* not absolute, ends with "/.." */
-	{
-		return 0; /* not a fatal error */
-	}
-	oldpath = malloc (strlen (home) + 6 + 1);
+	oldpath = malloc (strlen (_cfHomeDir) + 5 + 1);
 	if (!oldpath)
 	{
 		fprintf (stderr, "malloc() failed\n");
 		return -1;
 	}
-	sprintf (oldpath, "%s%s.ocp/",
-		home,
-		home [strlen(home) - 1] != '/' ? "/" : "");
+	sprintf (oldpath, "%s.ocp/", _cfHomeDir);
 	if ((d = opendir (oldpath)))
 	{
 		struct dirent *de;
@@ -752,6 +717,83 @@ static int haiku_migrate_old_ocp_init(void)
 
 int validate_home(void)
 {
+/* configure _cfHomeDir */
+	_cfHomeDir = getenv("HOME");
+#ifdef __WIN32
+	if(!_cfHomeDir)
+	{
+		_cfHomeDir = getenv("HOMEPATH");
+	}
+	if(!_cfHomeDir)
+	{
+		_cfHomeDir = getenv("home");
+	}
+#endif
+	if (_cfHomeDir)
+	{
+		_cfHomeDir = strdup (_cfHomeDir);
+	}
+
+#ifdef __HAIKU__
+	{
+		char homePath[PATH_MAX];
+		if (find_directory(B_USER_DIRECTORY, -1, false, homePath, sizeof(homePath)) == B_OK)
+		{
+			_cfHomeDir = malloc (strlen (settingsPath) + 2);
+			if (_cfHomeDir)
+			{
+				sprintf (_cfHomeDir, "%s/ocp/", homePath);
+			}
+		}
+	}
+#endif
+
+#ifdef HAVE_GETPWUID
+	if (!_cfHomeDir)
+	{
+		struct passwd *p = getpwuid (getuid());
+		if (p && p->pw_dir)
+		{
+			_cfHomeDir = strdup (p->pw_dir);
+		}
+		endpwent();
+	}
+#endif
+	if (!_cfHomeDir)
+	{
+		fprintf (stderr, "Unable to locate $HOME\n");
+		return -1;
+	}
+
+	if (_cfHomeDir[0] == 0) /* it is an empty string */
+	{
+		fprintf (stderr, "Error, $HOME is empty\n");
+		return -1;
+	}
+
+	if ((_cfHomeDir[0] != '/') ||      /* not absolute, must start with '/' */
+	    strstr(_cfHomeDir, "/../") ||  /* not absolute, contains "/../" */
+	    ((strlen (_cfHomeDir) >= 3) && (!strcmp (_cfHomeDir + strlen(_cfHomeDir) - 3, "/.."))) ) /* not absolute, ends with "/.." */
+	{
+		fprintf (stderr, "Error, $HOME is not an absolute path, ignoring value\n");
+		return -1;
+	}
+
+	/* ensure that _cfHomeDir ends with / */
+	if (_cfHomeDir[strlen(_cfHomeDir)-1] != '/')
+	{
+		char *tmp = malloc (strlen (_cfHomeDir) + 2);
+		if (!tmp)
+		{
+			fprintf (stderr, "validate_home: malloc() failed\n");
+			return -1;
+		}
+		sprintf (tmp, "%s/", _cfHomeDir);
+		free (_cfHomeDir);
+		_cfHomeDir = tmp;
+	}
+
+/* configure _cfConfigHomeDir and _cfDataHomeDir */
 	_cfConfigHomeDir = 0;
 	_cfDataHomeDir   = 0;
 #ifdef __HAIKU__
@@ -949,12 +991,13 @@ static int runocp(void *handle, int argc, char *argv[])
 		return -1;
 	}
 
+	fprintf(stderr, "Setting to cfHomeDir to %s\n", _cfHomeDir);
 	fprintf(stderr, "Setting to cfConfigHomeDir to %s\n", _cfConfigHomeDir);
 	fprintf(stderr, "Setting to cfDataHomeDir to %s\n", _cfDataHomeDir);
 	fprintf(stderr, "Setting to cfDataDir to %s\n", _cfDataDir);
 	fprintf(stderr, "Setting to cfProgramDir to %s\n", _cfProgramDir);
 
-	return bootup->main(argc, argv, _cfConfigHomeDir, _cfDataHomeDir, _cfDataDir, _cfProgramDir);
+	return bootup->main(argc, argv, _cfHomeDir, _cfConfigHomeDir, _cfDataHomeDir, _cfDataDir, _cfProgramDir);
 }
 
 int main(int argc, char *argv[])

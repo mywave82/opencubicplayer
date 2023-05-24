@@ -24,6 +24,7 @@ void cfCloseConfig (void);
 
 #define cfRemoveEntry       configAPI.RemoveEntry
 #define cfRemoveProfile     configAPI.RemoveProfile
+#define cfHomeDir           configAPI.HomeDir
 #define cfConfigHomeDir     configAPI.ConfigHomeDir
 #define cfDataHomeDir       configAPI.DataHomeDir
 #define cfDataDir           configAPI.DataDir
@@ -61,6 +62,7 @@ struct configAPI_t
 
 	void (*RemoveProfile)(const char *app);
 
+	char *HomeDir;
 	char *ConfigHomeDir;
 	char *DataHomeDir;
 	char *DataDir;

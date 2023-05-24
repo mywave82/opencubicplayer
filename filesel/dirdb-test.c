@@ -2,6 +2,7 @@
 
 //#define DIRDB_DEBUG 1
 #define CFDATAHOMEDIR_OVERRIDE "/foo/home/ocp/.ocp/"
+#define CFHOMEDIR_OVERRIDE "/foo/home/ocp/"
 #define MEASURESTR_UTF8_OVERRIDE
 
 #include "dirdb.c"
@@ -538,6 +539,54 @@ static int dirdb_basic_test3(void)
 	dirdbUnref(node15, dirdb_use_filehandle);
 	dirdbUnref(node16, dirdb_use_filehandle);
 	dirdbUnref(node17, dirdb_use_filehandle);
+
+
+	node1  = dirdbResolvePathAndRef ("file:/",                              dirdb_use_filehandle);
+	node2  = dirdbResolvePathAndRef ("file:/foo",                           dirdb_use_filehandle);
+	node3  = dirdbResolvePathAndRef ("file:/foo/home",                      dirdb_use_filehandle);
+	node4  = dirdbResolvePathAndRef ("file:/foo/home/ocp",                  dirdb_use_filehandle);
+	node5  = dirdbResolvePathAndRef ("file:/foo/home/ocp/test",             dirdb_use_filehandle);
+	node6  = dirdbResolvePathAndRef ("file:/foo/home/bar",                  dirdb_use_filehandle);
+
+	fprintf (stderr, ANSI_COLOR_BLUE "19 - " ANSI_COLOR_RESET);
+	node7 = dirdbResolvePathWithBaseAndRef (node1, "~/", DIRDB_RESOLVE_TILDE_HOME, dirdb_use_filehandle);
+	if (node7 != node4)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "file:/ ~/" ANSI_COLOR_RESET " did not give file:/foo/home/ocp\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "file:/ ~/" ANSI_COLOR_RESET " did give file:/foo/home/ocp\n");
+	}
+	dirdbUnref (node7, dirdb_use_filehandle);
+
+	fprintf (stderr, ANSI_COLOR_BLUE "20 - " ANSI_COLOR_RESET);
+	node7 = dirdbResolvePathWithBaseAndRef (node5, "~/", DIRDB_RESOLVE_TILDE_HOME, dirdb_use_filehandle);
+	if (node7 != node4)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "file:/foo/home/ocp/test ~/" ANSI_COLOR_RESET " did not give file:/foo/home/ocp\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "file:/foo/home/ocp/test ~/" ANSI_COLOR_RESET " did give file:/foo/home/ocp\n");
+	}
+	dirdbUnref (node7, dirdb_use_filehandle);
+
+	fprintf (stderr, ANSI_COLOR_BLUE "21 - " ANSI_COLOR_RESET);
+	node7 = dirdbResolvePathWithBaseAndRef (node6, "~/test", DIRDB_RESOLVE_TILDE_HOME, dirdb_use_filehandle);
+	if (node7 != node5)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "file:/foo/home/bar/ ~/test" ANSI_COLOR_RESET " did not give file:/foo/home/ocp/test\n");
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_GREEN "file:/foo/home/bar/ ~/test" ANSI_COLOR_RESET " did give file:/foo/home/ocp/test\n");
+	}
+	dirdbUnref (node7, dirdb_use_filehandle);
+
+	dirdbUnref (node1, dirdb_use_filehandle);
+	dirdbUnref (node2, dirdb_use_filehandle);
+	dirdbUnref (node3, dirdb_use_filehandle);
+	dirdbUnref (node4, dirdb_use_filehandle);
+	dirdbUnref (node5, dirdb_use_filehandle);
+	dirdbUnref (node6, dirdb_use_filehandle);
 
 	for (i=0; i < dirdbNum; i++)
 	{

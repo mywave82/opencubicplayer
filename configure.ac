@@ -214,6 +214,7 @@ AC_LINK_IFELSE(
 
 AC_CHECK_FUNCS([memmem])
 AC_CHECK_FUNCS([getopt])
+AC_CHECK_FUNCS([getpwuid])
 AC_CHECK_FUNCS([popen])
 AC_CHECK_FUNCS([qsort])
 AC_CHECK_FUNCS([gettimeofday])
