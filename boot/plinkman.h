@@ -19,7 +19,7 @@ struct PostProcIntegerRegStruct;
 struct PluginInitAPI_t
 {
 	void (*mdbRegisterReadInfo)(struct mdbreadinforegstruct *r);
-	void (*fsTypeRegister) (struct moduletype modtype, const char **description, const char *interface, const struct cpifaceplayerstruct *cp);
+	void (*fsTypeRegister) (struct moduletype modtype, const char **description, const char *interfacename, const struct cpifaceplayerstruct *cp);
 	void (*fsRegisterExt)(const char *ext);
 	void (*plrRegisterDriver) (const struct plrDriver_t *driver);
 	void (*mcpRegisterDriver) (const struct mcpDriver_t *driver);

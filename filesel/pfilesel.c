@@ -362,13 +362,13 @@ struct fsType
 	struct moduletype modtype;
 	uint8_t color; /* for the file-selector */
 	const char **description;
-	const char *interface;
+	const char *interfacename;
 	const struct cpifaceplayerstruct *cp;
 };
 struct fsType *fsTypes;
 int fsTypesCount;
 
-void fsTypeRegister (struct moduletype modtype, const char **description, const char *interface, const struct cpifaceplayerstruct *cp)
+void fsTypeRegister (struct moduletype modtype, const char **description, const char *interfacename, const struct cpifaceplayerstruct *cp)
 {
 	int i;
 	char m[5];
@@ -401,7 +401,7 @@ void fsTypeRegister (struct moduletype modtype, const char **description, const 
 	fsTypes[i].modtype = modtype;
 	fsTypes[i].color = cfGetProfileInt ("fscolors", m, 7, 10);
 	fsTypes[i].description = description;
-	fsTypes[i].interface = interface;
+	fsTypes[i].interfacename = interfacename;
 	fsTypes[i].cp = cp;
 	fsTypesCount++;
 }
@@ -3930,19 +3930,19 @@ int fsMatchFileName12(const char *a, const char *b)
 }
 
 static struct interfacestruct *plInterfaces = 0;
-void plRegisterInterface(struct interfacestruct *interface)
+void plRegisterInterface(struct interfacestruct *_interface)
 {
-	interface->next = plInterfaces;
-	plInterfaces = interface;
+	_interface->next = plInterfaces;
+	plInterfaces = _interface;
 }
 
-void plUnregisterInterface(struct interfacestruct *interface)
+void plUnregisterInterface(struct interfacestruct *_interface)
 {
 	struct interfacestruct **curr = &plInterfaces;
 
 	while (*curr)
 	{
-		if (*curr == interface)
+		if (*curr == _interface)
 		{
 			*curr = (*curr)->next;
 			return;
@@ -3950,7 +3950,7 @@ void plUnregisterInterface(struct interfacestruct *interface)
 		curr = &((*curr)->next);
 	}
 
-	fprintf(stderr, __FILE__ ": Failed to unregister interface %s\n", interface->name);
+	fprintf(stderr, __FILE__ ": Failed to unregister interface %s\n", _interface->name);
 }
 
 void plFindInterface(struct moduletype modtype, const struct interfacestruct **in, const struct cpifaceplayerstruct **cp)
@@ -3964,7 +3964,7 @@ void plFindInterface(struct moduletype modtype, const struct interfacestruct **i
 
 			while (curr)
 			{
-				if (!strcmp(curr->name, fsTypes[i].interface))
+				if (!strcmp(curr->name, fsTypes[i].interfacename))
 				{
 					*in = curr;
 					*cp = fsTypes[i].cp;

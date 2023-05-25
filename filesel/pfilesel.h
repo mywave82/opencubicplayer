@@ -40,9 +40,9 @@ extern const char *fsTypeNames[256]; /* type description */
 
 /* description: is NULL terminating string array of up to 6 lines of 76 characters
  *
- * interface: Usually "plOpenCP" or "VirtualInterface" - last is not user-editable
+ * interfacename: Usually "plOpenCP" or "VirtualInterface" - last is not user-editable
  */
-void fsTypeRegister (struct moduletype modtype, const char **description, const char *interface, const struct cpifaceplayerstruct *cp);
+void fsTypeRegister (struct moduletype modtype, const char **description, const char *interfacename, const struct cpifaceplayerstruct *cp);
 void fsTypeUnregister (struct moduletype modtype);
 uint8_t fsModTypeColor(struct moduletype modtype); /* replaces fsTypeCols[] */
 
@@ -76,8 +76,8 @@ struct DevInterface
 	void (*Close)(const struct cpifaceplayerstruct *cp);
 };
 
-void plRegisterInterface(struct interfacestruct *interface);
-void plUnregisterInterface(struct interfacestruct *interface);
+void plRegisterInterface(struct interfacestruct *_interface);
+void plUnregisterInterface(struct interfacestruct *_interface);
 void plFindInterface(struct moduletype modtype, const struct interfacestruct **i, const struct cpifaceplayerstruct **cp);
 
 #define RD_PUTSUBS 1
