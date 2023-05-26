@@ -47,6 +47,10 @@
 #include "sidconfig.h"
 #include "md5.inc.c"
 
+#ifndef MIN
+# define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+
 struct browser_t
 {
 	int isdir;
@@ -56,6 +60,7 @@ struct browser_t
 	char hash_8192[33];
 };
 
+static char             *entries_location;
 static struct browser_t *entries_data;
 static int               entries_count;
 static int               entries_size;
@@ -278,8 +283,7 @@ static void ConfigDrawHashMenuInfo (const int lineno, int xpos, int width, const
 }
 
 #if 0
- +----------------------------------------------------------------------------\
- |                     libsidplayfp configuration                             |
+ +--------------------- libsidplayfp configuration ---------------------------\
  |  Navigate with <U>,<D>,<L>,<R> and <ENTER>; hit <ESC> to save and exit.    |
  +----------------------------------------------------------------------------+
  |  1: emulator:        [resid] [residfp]                                     | fp=floating point - better but slower
@@ -309,22 +313,21 @@ static void ConfigDrawHashMenuInfo (const int lineno, int xpos, int width, const
 
 static void sidConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 {
-	const int mlHeight = 25;
+	const int mlHeight = 24;
 	int mlTop, mlLeft, mlWidth;
 	const char *offon[] = {"off", "on"};
 	const char *emulators[] = {"resid", "residfp"};
 	const char *C64models[] = {"PAL", "NTSC", "OLD-NTSC", "DREAN", "PAL-M"};
 	const char *SIDmodels[] = {"MOS6581", "MOS8580"};
 	const char *CIAmodels[] = {"MOS6526", "MOS6526W4485", "MOS8521"};
+	int s;
 
-	mlWidth = 78 + (API->console->TextWidth - 80) * 2 / 3;
+	mlWidth = MIN (78 + (API->console->TextWidth - 80) * 2 / 3, 120);
 	mlTop = (API->console->TextHeight - mlHeight) / 2;
 	mlLeft = (API->console->TextWidth - mlWidth) / 2;
 
-	API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
-
-	API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o                     libsidplayfp configuration%*C %.9o\xb3", mlWidth - 49);
-	API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%.15o  Navigate with %.15o<\x18>%.7o,%.15o<\x19>%.7o,%.15o<\x1a>%.7o,%.15o<\x1b>%.7o and %.15o<ENTER>%.7o; hit %.15o<ESC>%.7o to save and exit.%*C %.9o\xb3", mlWidth - 74);
+	s = (mlWidth - 2 - 28) / 2; API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4 libsidplayfp configuration %*C\xc4\xbf", s, mlWidth - 2 - 28 - s);
+	s = (mlWidth - 2 - 70) / 2; API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%.15o%*C Navigate with %.15o<\x18>%.7o,%.15o<\x19>%.7o,%.15o<\x1a>%.7o,%.15o<\x1b>%.7o and %.15o<ENTER>%.7o; hit %.15o<ESC>%.7o to save and exit.%*C %.9o\xb3", s, mlWidth - 2 - 70 - s);
 
 	API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
 
@@ -610,17 +613,25 @@ static void sidDrawDir (const int esel, const int expect, const struct DevInterf
 	int i;
 	int files = 0;
 	int dirs = 0;
-	int contentsel;
 
 	int half;
 	int skip;
 	int dot;
+	int s;
+	const char *title;
 
 	const int mlHeight = 24;
-	const int LINES_NOT_AVAILABLE = 2;
+	const int LINES_NOT_AVAILABLE = 4;
 	int mlTop = (API->console->TextHeight - mlHeight) / 2;
-	int mlWidth = 78 + (API->console->TextWidth - 80) * 2 / 3;
+	int mlWidth = MIN (78 + (API->console->TextWidth - 80) * 2 / 3, 120);
 	int mlLeft = (API->console->TextWidth - mlWidth) / 2;
+
+	switch (expect)
+	{
+		case 0:  title = "Select a KERNEL ROM";  break;
+		case 1:  title = "Select a BASIC ROM";   break;
+		default: title = "Select a CHARGEN ROM"; break;
+	}
 
 	for (i=0; i < entries_count; i++)
 	{
@@ -631,14 +642,7 @@ static void sidDrawDir (const int esel, const int expect, const struct DevInterf
 			files++;
 		}
 	}
-	contentheight = dirs + files * 2;
-
-	if (esel >= dirs)
-	{
-		contentsel = dirs + (esel - dirs - 1) * 2;
-	} else {
-		contentsel = esel;
-	}
+	contentheight = dirs + files;
 
 	half = (mlHeight - LINES_NOT_AVAILABLE) / 2;
 
@@ -646,33 +650,28 @@ static void sidDrawDir (const int esel, const int expect, const struct DevInterf
 	{ /* all entries can fit */
 		skip = 0;
 		dot = -1;
-	} else if (contentsel < half)
+	} else if (esel < half)
 	{ /* we are in the top part */
 		skip = 0;
 		dot = 0;
-	} else if (contentsel >= (contentheight - half))
+	} else if (esel >= (contentheight - half))
 	{ /* we are at the bottom part */
 		skip = contentheight - (mlHeight - LINES_NOT_AVAILABLE);
 		dot = mlHeight - LINES_NOT_AVAILABLE - 1;
 	} else {
-		skip = contentsel - half;
+		skip = esel - half;
 		dot = skip * (mlHeight - LINES_NOT_AVAILABLE) / (contentheight - (mlHeight - LINES_NOT_AVAILABLE));
 	}
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
+	s = (mlWidth - 2 - strlen (title) - 2) / 2; API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4 %s %*C\xc4\xbf", s, title, mlWidth - 2 - strlen (title) - 2 - s);
+
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%*S%.9o\xb3", mlWidth - 2, entries_location ? entries_location : "");
+
+	API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
 
 	for (i = 0; i < (mlHeight-LINES_NOT_AVAILABLE); i++)
 	{
-		int line = skip + i;
-		int masterindex;
-		int subindex = 0;
-		if (line < dirs)
-		{
-			masterindex = line;
-		} else {
-			masterindex = dirs + (line - dirs) / 2;
-			subindex = (line - dirs) % 2;
-		}
+		int masterindex = skip + i;
 		if (masterindex >= entries_count)
 		{
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C %c", mlWidth - 2, (i==dot)?'\xdd':'\xb3');
@@ -687,16 +686,11 @@ static void sidDrawDir (const int esel, const int expect, const struct DevInterf
 				API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*.*o%*S%0.9o%c", (masterindex==esel)?0x6:0x0, (masterindex==esel)?0x1:0x1, mlWidth - 2, dirname, (i==dot)?'\xdd':'\xb3');
 			}
 		} else {
-			if (subindex)
-			{
-				API->console->Driver->DisplayChr (mlTop, mlLeft, 0x09, '\xb3', 1);
-				ConfigDrawHashInfo (mlTop, mlLeft + 1, mlWidth - 2, entries_data[masterindex].hash_8192, entries_data[masterindex].hash_4096, expect, API);
-				API->console->Driver->DisplayChr (mlTop++, mlLeft+mlWidth-1, 0x09, (i==dot)?'\xdd':'\xb3', 1);
-			} else {
-				const char *filename;
-				API->dirdb->GetName_internalstr (entries_data[masterindex].dirdb_ref, &filename);
-				API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*.*o%*S%0.9o%c", (masterindex==esel)?0x6:0x0, (masterindex==esel)?0x0:0x7, mlWidth - 2, filename, (i==dot)?'\xdd':'\xb3');
-			}
+			const char *filename;
+			API->dirdb->GetName_internalstr (entries_data[masterindex].dirdb_ref, &filename);
+			API->console->DisplayPrintf (mlTop,   mlLeft,                0x09, mlWidth - 43, "\xb3%*.*o%*S%0.9o%c", (masterindex==esel)?0x6:0x0, (masterindex==esel)?0x0:0x7, mlWidth - 2 - 42, filename);
+			ConfigDrawHashInfo          (mlTop,   mlLeft + mlWidth - 43,                 42, entries_data[masterindex].hash_8192, entries_data[masterindex].hash_4096, expect, API);
+			API->console->DisplayPrintf (mlTop++, mlLeft + mlWidth -  1, 0x09,            1, "%c", (i==dot)?'\xdd':'\xb3');
 		}
 	}
 
@@ -706,11 +700,13 @@ static void sidDrawDir (const int esel, const int expect, const struct DevInterf
 static void entries_clear (const struct DevInterfaceAPI_t *API)
 {
 	int i;
+	free (entries_location);
 	for (i=0; i < entries_count; i++)
 	{
 		API->dirdb->Unref (entries_data[i].dirdb_ref, dirdb_use_file);
 	}
 	free (entries_data);
+	entries_location = 0;
 	entries_count = 0;
 	entries_size = 0;
 	entries_data = 0;
@@ -818,20 +814,19 @@ static void entries_append_file (uint32_t ref, const char *hash_4096, const char
 
 static void refresh_dir (uint32_t ref, uint32_t old, int *esel, const struct DevInterfaceAPI_t *API)
 {
-	char *romPath = 0;
 	DIR *d;
 	int i;
 
 	*esel = 0;
 
+	entries_clear (API);
+
 #ifdef __W32__
 	#error we need to make flags, so we can reverse the slashes
-	API->dirdb->GetFullname_malloc (ref, &romPath, DIRDB_FULLNAME_DRIVE);
+	API->dirdb->GetFullname_malloc (ref, &entries_location, DIRDB_FULLNAME_DRIVE);
 #else
-	API->dirdb->GetFullname_malloc (ref, &romPath, DIRDB_FULLNAME_NODRIVE);
+	API->dirdb->GetFullname_malloc (ref, &entries_location, DIRDB_FULLNAME_NODRIVE);
 #endif
-
-	entries_clear (API);
 
 	{
 		uint32_t dir_ref = API->dirdb->GetParentAndRef (ref, dirdb_use_file);
@@ -841,7 +836,7 @@ static void refresh_dir (uint32_t ref, uint32_t old, int *esel, const struct Dev
 		}
 	}
 
-	d = opendir (romPath);
+	d = opendir (entries_location);
 	if (d)
 	{
 		struct dirent *de;
@@ -857,13 +852,13 @@ static void refresh_dir (uint32_t ref, uint32_t old, int *esel, const struct Dev
 				continue;
 			}
 			{
-				char *temp = malloc (strlen (romPath) + 1 + strlen (de->d_name) + 1);
+				char *temp = malloc (strlen (entries_location) + 1 + strlen (de->d_name) + 1);
 				int res;
 				if (!temp)
 				{
 					continue;
 				}
-				sprintf (temp, "%s/%s", romPath, de->d_name);
+				sprintf (temp, "%s/%s", entries_location, de->d_name);
 				res = stat (temp, &st);
 				free (temp);
 				if (res < 0)
@@ -898,7 +893,6 @@ static void refresh_dir (uint32_t ref, uint32_t old, int *esel, const struct Dev
 		}
 		closedir (d);
 	}
-	free (romPath);
 	entries_sort (API);
 	for (i=0; i < entries_count; i++)
 	{
