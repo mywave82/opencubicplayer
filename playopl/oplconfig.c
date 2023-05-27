@@ -41,7 +41,7 @@ static void oplConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 	mlTop = (API->console->TextHeight - mlHeight) / 2;
 	mlLeft = (API->console->TextWidth - mlWidth) / 2;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%18C\xc4 AdPlug configuration %18C\xc4\xbf", mlWidth);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%18C\xc4 AdPlug configuration %18C\xc4\xbf");
 
 	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
