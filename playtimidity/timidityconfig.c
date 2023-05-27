@@ -312,6 +312,7 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 	int dot;
 	int contentsel;
 	int contentheight = 6 + global_timidity_count + sf2_files_count + (!global_timidity_count) + (!sf2_files_count);
+	int s;
 #define LINES_NOT_AVAILABLE 5
 
 	half = (mlHeight - LINES_NOT_AVAILABLE) / 2;
@@ -343,7 +344,7 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 		dot = skip * (mlHeight - LINES_NOT_AVAILABLE) / (contentheight - (mlHeight - LINES_NOT_AVAILABLE));
 	}
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
+	s = (mlWidth - 2 - 38) / 2; API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4 Select TiMidity++ configuration file %*C\xc4\xbf", s, mlWidth - 2 - 38 - s);
 	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Please select a new configuration file using the arrow keys and press%*C %0.9o\xb3", mlWidth - 72);
 	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%0.15o <ENTER>%0.7o when done, or %0.15o<ESC>%0.7o to cancel.%*C %.9o\xb3", mlWidth - 41);
 	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
@@ -492,35 +493,39 @@ static int DefaultDelay;
 static int DefaultChorus;
 static void timidityConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 {
-	int large;
+	int large, s;
 	int mlWidth, mlHeight, mlTop, mlLeft;
 	const char *configfile = API->configAPI->GetProfileString ("timidity", "configfile", "");
 	const char *reverbs[] = {"disable", "original", "global-original", "freeverb", "global-freeverb"};
 	const char *effect_lr_modes[] = {"disable", "left", "right", "both"};
 	const char *disable_enable[] = {"disable", "enable"};
 
-	if (API->console->TextHeight >= 43)
+	if (API->console->TextHeight >= 45)
 	{
 		large = 2;
-		mlHeight = 41;
-	} else if (API->console->TextHeight >= 35)
+		mlHeight = 43;
+	} else if (API->console->TextHeight >= 37)
 	{
 		large = 1;
-		mlHeight = 33;
+		mlHeight = 35;
 	} else {
 		large = 0;
-		mlHeight = 23;
+		mlHeight = 24;
 	}
 
 	mlWidth = 70;
 	mlTop = (API->console->TextHeight - mlHeight) / 2;
 	mlLeft = (API->console->TextWidth - mlWidth) / 2;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
+	s = (mlWidth - 2 - 26) / 2; API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4 TiMidity++ configuration %*C\xc4\xbf", s, mlWidth - 2 - 26 - s);
 
 	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
 	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Navigate with arrows and hit %.15o<ESC>%.7o to save and exit.%*C %.9o\xb3", mlWidth - 55);
+
+	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
 
 	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
 
