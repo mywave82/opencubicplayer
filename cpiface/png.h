@@ -1,3 +1,9 @@
+/* OpenCP Module Player
+ * copyright (c) 2020-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
+ *
+ * PNG decoder using libpng
+ */
+
 #ifndef _CPIFACE_PNG_H
 #define _CPIFACE_PNG_H 1
 
