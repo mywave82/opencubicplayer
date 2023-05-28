@@ -158,4 +158,4 @@ distclean: clean
 		playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h
 
 libocp$(LIB_SUFFIX): subdirs
-	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $(libocp_start_so) $(libocp_so) $(libocp_end_so) $(STATIC_LIBS)
+	$(CXX) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $(libocp_start_so) $(libocp_so) $(libocp_end_so) $(STATIC_LIBS)
