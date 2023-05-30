@@ -24,11 +24,11 @@ void cfCloseConfig (void);
 
 #define cfRemoveEntry       configAPI.RemoveEntry
 #define cfRemoveProfile     configAPI.RemoveProfile
-#define cfHomeDir           configAPI.HomeDir
-#define cfConfigHomeDir     configAPI.ConfigHomeDir
-#define cfDataHomeDir       configAPI.DataHomeDir
-#define cfDataDir           configAPI.DataDir
-#define cfTempDir           configAPI.TempDir
+#define cfHomePath          configAPI.HomePath
+#define cfConfigHomePath    configAPI.ConfigHomePath
+#define cfDataHomePath      configAPI.DataHomePath
+#define cfDataPath          configAPI.DataPath
+#define cfTempPath          configAPI.TempPath
 #define cfConfigSec         configAPI.ConfigSec
 #define cfSoundSec          configAPI.SoundSec
 #define cfScreenSec         configAPI.ScreenSec
@@ -36,8 +36,10 @@ void cfCloseConfig (void);
 #define cfCountSpaceList    configAPI.CountSpaceList
 #define cfGetSpaceListEntry configAPI.GetSpaceListEntry
 
-extern char *cfProgramDir;
-extern char *cfProgramDirAutoload;
+extern char *cfProgramPath;
+extern char *cfProgramPathAutoload;
+
+struct ocpdir_t;
 
 struct configAPI_t
 {
@@ -62,11 +64,17 @@ struct configAPI_t
 
 	void (*RemoveProfile)(const char *app);
 
-	char *HomeDir;
-	char *ConfigHomeDir;
-	char *DataHomeDir;
-	char *DataDir;
-	char *TempDir;
+	struct ocpdir_t *      HomeDir;
+	struct ocpdir_t *ConfigHomeDir;
+	struct ocpdir_t *  DataHomeDir;
+	struct ocpdir_t *      DataDir;
+	struct ocpdir_t *      TempDir;
+
+	char *HomePath;
+	char *ConfigHomePath;
+	char *DataHomePath;
+	char *DataPath;
+	char *TempPath;
 	const char *ConfigSec;
 	const char *SoundSec;
 	const char *ScreenSec;

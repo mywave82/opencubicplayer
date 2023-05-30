@@ -5,6 +5,7 @@ struct mdbreadinforegstruct;
 struct moduletype;
 struct cpifaceplayerstruct;
 struct configAPI_t;
+struct dirdbAPI_t;
 struct ocpfile_t;
 struct ocpdir_t;
 struct ocpfilehandle_t;
@@ -27,6 +28,7 @@ struct PluginInitAPI_t
 	int  (*mcpRegisterPostProcInteger) (const struct PostProcIntegerRegStruct *plugin);
 
 	const struct configAPI_t *configAPI;
+	const struct dirdbAPI_t  *dirdb;
 
 	void (*filesystem_setup_register_file) (struct ocpfile_t *file);
 	struct ocpfile_t *(*dev_file_create)
@@ -42,8 +44,6 @@ struct PluginInitAPI_t
 		void (*Destructor) (void  *token)
 	);
 	struct dmDrive *dmSetup;
-
-	int (*makepath_malloc) (char **dst, const char *drive, const char *path, const char *file, const char *ext);
 };
 
 struct PluginCloseAPI_t

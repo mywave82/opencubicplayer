@@ -20,7 +20,6 @@ struct ocpdir_charset_override_API_t
 	char **(*get_test_strings)(struct ocpdir_t *self); /* zero-terminated list of strings, should be freed, together will all the nodes when done */
 };
 
-
 struct ocpdir_t /* can be an archive */
 {
 	void (*ref)(struct ocpdir_t *);
@@ -83,6 +82,42 @@ static inline void ocpdir_t_fill (
 	s->is_archive           = is_archive;
 	s->is_playlist          = is_playlist;
 }
+
+#ifdef _DIRDB_H
+static inline struct ocpdir_t *ocpdir_readdir_dir (struct ocpdir_t *s, const char *name, const struct dirdbAPI_t *dirdb)
+{
+	uint32_t dirdb_ref;
+	struct ocpdir_t *retval = 0;
+
+	if (!s) return 0;
+
+	dirdb_ref = dirdb->FindAndRef (s->dirdb_ref, name, dirdb_use_file);
+	if (dirdb_ref == DIRDB_CLEAR) return 0;
+
+	retval = s->readdir_dir (s, dirdb_ref);
+
+	dirdb->Unref (dirdb_ref, dirdb_use_file);
+
+	return retval;
+}
+
+static inline struct ocpfile_t *ocpdir_readdir_file (struct ocpdir_t *s, const char *name, const struct dirdbAPI_t *dirdb)
+{
+	uint32_t dirdb_ref;
+	struct ocpfile_t *retval = 0;
+
+	if (!s) return 0;
+
+	dirdb_ref = dirdb->FindAndRef (s->dirdb_ref, name, dirdb_use_file);
+	if (dirdb_ref == DIRDB_CLEAR) return 0;
+
+	retval = s->readdir_file (s, dirdb_ref);
+
+	dirdb->Unref (dirdb_ref, dirdb_use_file);
+
+	return retval;
+}
+#endif
 
 struct ocpfile_t /* can be virtual */
 {

@@ -48,9 +48,9 @@
 # define PRINT(a, ...) do {} while(0)
 #endif
 
-static int have_user_timidity = 0;
-static char user_timidity_path[BUFSIZ];
-static int  have_default_timidity = 0;
+static char *user_timidity_path = 0;
+static int   have_user_timidity = 0;
+static int   have_default_timidity = 0;
 static char default_timidity_path[BUFSIZ];
 static int    global_timidity_count = 0;
 static char **global_timidity_path = 0;
@@ -89,45 +89,35 @@ static void reset_configfiles (void)
 	}
 	free (global_timidity_path);
 	free (sf2_files_path);
+	free (user_timidity_path);
 	global_timidity_count = 0;
 	global_timidity_path = 0;
 	sf2_files_count = 0;
 	sf2_files_path = 0;
 	have_user_timidity = 0;
-	user_timidity_path[0] = 0;
+	user_timidity_path = 0;
 	have_default_timidity = 0;
 	default_timidity_path[0] = 0;
 }
 
-static void try_user (const char *path)
+static void try_user (const struct DevInterfaceAPI_t *API, const char *filename)
 {
-	struct stat st;
-	if (lstat (path, &st))
+	struct ocpfile_t *f;
+
+	f = ocpdir_readdir_file (API->configAPI->HomeDir, filename, API->dirdb);
+	if (!f)
 	{
-		PRINT ("Unable to lstat() user config via $HOME %s\n", path);
-		return;
-	}
-	if ((st.st_mode & S_IFMT) == S_IFLNK)
-	{
-		if (stat (path, &st))
-		{
-			PRINT ("Unable to stat() user config via $HOME %s, broken symlink\n", path);
-			return;
-		}
-	}
-	if ((st.st_mode & S_IFMT) != S_IFREG)
-	{
-		PRINT ("Unable to use user config via $HOME %s, not a regular file\n", path);
+		PRINT ("Unable to use user config via cfHOME %s\n", filename);
 		return;
 	}
 	if (have_user_timidity)
 	{
-		PRINT ("Unable to use user config via $HOME %s, already have one\n", path);
-		return;
+		PRINT ("Already have a user config\n");
+	} else {
+		PRINT ("Found user config via $HOME %s\n", filename);
+		API->dirdb->GetFullname_malloc (f->dirdb_ref, &user_timidity_path, 0);
 	}
-	PRINT ("Found user config via $HOME %s\n", path);
-	have_user_timidity = 1;
-	snprintf (user_timidity_path, sizeof (user_timidity_path), "%s", path);
+	f->unref (f);
 }
 
 static void try_global (const char *path)
@@ -262,17 +252,15 @@ static int mystrcmp(const void *a, const void *b)
 	return strcmp (*(char **)a, *(char **)b);
 }
 
-static void refresh_configfiles (const struct configAPI_t *configAPI)
+static void refresh_configfiles (const struct DevInterfaceAPI_t *API)
 {
-	char path[BUFSIZ];
-
 	reset_configfiles ();
 
 #ifdef __WIN32
-	snprintf (path, sizeof (path), "%s" PATH_STRING "timidity.cfg", configAPI->HomeDir); try_user (path);
-	snprintf (path, sizeof (path), "%s" PATH_STRING "_timidity.cfg", configAPI->HomeDir); try_user (path);
+	try_user (API, "timidity.cfg");
+	try_user (API, "_timidity.cfg");
 #endif
-	snprintf (path, sizeof (path), "%s" PATH_STRING ".timidity.cfg", configAPI->HomeDir); try_user (path);
+	try_user (API, "_timidity.cfg");
 
 	if (strcmp(CONFIG_FILE, "/etc/timidity/timidity.cfg") &&
 	    strcmp(CONFIG_FILE, "/etc/timidity.cfg") &&
@@ -634,7 +622,7 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 {
 	int esel = 0;
 
-	refresh_configfiles (API->configAPI);
+	refresh_configfiles (API);
 
 	DefaultReverbMode     = API->configAPI->GetProfileInt ("timidity", "reverbmode",       2, 10);
 	DefaultReverbLevel    = API->configAPI->GetProfileInt ("timidity", "reverblevel",     40, 10);

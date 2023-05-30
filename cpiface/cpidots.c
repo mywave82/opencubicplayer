@@ -35,10 +35,11 @@
 #include <string.h>
 #include <math.h>
 #include "types.h"
+#include "boot/psetting.h"
+#include "cpiface/cpiface.h"
+#include "cpiface/cpiface-private.h"
+#include "cpiface/cpipic.h"
 #include "stuff/poutput.h"
-#include "cpiface.h"
-#include "cpiface-private.h"
-#include "cpipic.h"
 
 #define MAXPCHAN 64
 #define MAXVIEWCHAN 32
@@ -439,9 +440,9 @@ static void dotDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 	plDrawDots (cpifaceSession);
 }
 
-static void dotSetMode(void)
+static void dotSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	plReadOpenCPPic();
+	plReadOpenCPPic (cpifaceSession->configAPI, cpifaceSession->dirdb);
 	cpiSetGraphMode(0);
 	plPrepareDots();
 	plPrepareDotsScr();

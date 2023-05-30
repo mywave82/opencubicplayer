@@ -461,18 +461,18 @@ static int read_user_config_file(struct cpifaceSessionAPI_t *cpifaceSession)
 
 #ifdef __W32__
 /* timidity.cfg or _timidity.cfg or .timidity.cfg*/
-    snprintf(path, sizeof (path), "%s" PATH_STRING "timidity.cfg", cpifaceSession->configAPI->HomeDir);
+    snprintf(path, sizeof (path), "%s" PATH_STRING "timidity.cfg", cpifaceSession->configAPI->HomePath);
     status = read_config_file(&tc, path, 0, 1);
     if (status != READ_CONFIG_FILE_NOT_FOUND)
         return status;
 
-    snprintf(path, sizeof (path), "%s" PATH_STRING "_timidity.cfg", cpifaceSession->configAPI->HomeDir);
+    snprintf(path, sizeof (path), "%s" PATH_STRING "_timidity.cfg", cpifaceSession->configAPI->HomePath);
     status = read_config_file(&tc, path, 0, 1);
     if (status != READ_CONFIG_FILE_NOT_FOUND)
         return status;
 #endif
 
-    snprintf(path, sizeof (path), "%s" PATH_STRING ".timidity.cfg", cpifaceSession->configAPI->HomeDir);
+    snprintf(path, sizeof (path), "%s" PATH_STRING ".timidity.cfg", cpifaceSession->configAPI->HomePath);
     status = read_config_file(&tc, path, 0, 1);
     if (status != 3 /*READ_CONFIG_FILE_NOT_FOUND*/)
         return status;

@@ -53,7 +53,7 @@ OCP_INTERNAL void cpiChanInit (void);
 OCP_INTERNAL void cpiGraphInit (void);
 OCP_INTERNAL void cpiGraphDone (void);
 OCP_INTERNAL void cpiInstInit (void);
-OCP_INTERNAL void cpiWurfel2Init (void);
+OCP_INTERNAL void cpiWurfel2Init (const struct configAPI_t *configAPI);
 OCP_INTERNAL void cpiWurfel2Done (void);
 OCP_INTERNAL void cpiLinksInit (void);
 OCP_INTERNAL void cpiLinksDone (void);

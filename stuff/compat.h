@@ -9,7 +9,6 @@
 void getext_malloc (const char *src, char **ext);
 extern int splitpath4_malloc(const char *src, char **drive, char **path, char **file, char **ext); /* returns non-zero on errors */
 extern int splitpath_malloc(const char *src, char **drive, char **path, char **filename); /* returns non-zero on errors */
-extern int makepath_malloc(char **dst, const char *drive, const char *path, const char *file, const char *ext); /* returns non-zero on errors */
 
 #ifndef HAVE_STRUPR
 #include <ctype.h>

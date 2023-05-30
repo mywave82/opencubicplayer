@@ -242,56 +242,50 @@ binistream *CProvider_Mem::open(std::string filename) const
 	{
 		retval = new binisstream(this->file_data, this->file_size);
 	} else {
-		uint32_t d = cpifaceSession->dirdb->FindAndRef (file->origin->parent->dirdb_ref, filename.c_str(), dirdb_use_children);
-
 		cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] Also need file \"%s\"\n", filename.c_str());
 
-		if (d != UINT32_MAX)
+		struct ocpfile_t *f = ocpdir_readdir_file (file->origin->parent, filename.c_str(), cpifaceSession->dirdb);
+		if (f)
 		{
-			struct ocpfile_t *f = file->origin->parent->readdir_file (file->origin->parent, d);
-			cpifaceSession->dirdb->Unref (d, dirdb_use_children);
-			if (f)
+			struct ocpfilehandle_t *file = f->open (f);
+			f->unref (f);
+
+			if (file)
 			{
-				struct ocpfilehandle_t *file = f->open (f);
-				f->unref (f);
+				size_t buffersize = 16*1024;
+				uint8_t *buffer = (uint8_t *)malloc (buffersize);
+				size_t bufferfill = 0;
 
-				if (file)
+				int res;
+				while (!file->eof(file))
 				{
-					size_t buffersize = 16*1024;
-					uint8_t *buffer = (uint8_t *)malloc (buffersize);
-					size_t bufferfill = 0;
-
-					int res;
-					while (!file->eof(file))
+					if (buffersize == bufferfill)
 					{
-						if (buffersize == bufferfill)
+						if (buffersize >= 16*1024*1024)
 						{
-							if (buffersize >= 16*1024*1024)
-							{
-								cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] \"%s\" is bigger than 16 Mb - further loading blocked\n", filename.c_str());
-								break;
-							}
-							buffersize += 16*1024;
-							buffer = (uint8_t *)realloc (buffer, buffersize);
-						}
-						res = file->read (file, buffer + bufferfill, buffersize - bufferfill);
-						if (res<=0)
+							cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] \"%s\" is bigger than 16 Mb - further loading blocked\n", filename.c_str());
 							break;
-						bufferfill += res;
+						}
+						buffersize += 16*1024;
+						buffer = (uint8_t *)realloc (buffer, buffersize);
 					}
-					if (bufferfill)
-					{
-						retval = new binisstreamfree(buffer, bufferfill);
-					} else {
-						free (buffer);
-					}
-					file->unref (file);
-				} else {
-					cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] Unable to open %s\n", filename.c_str());
+					res = file->read (file, buffer + bufferfill, buffersize - bufferfill);
+					if (res<=0)
+						break;
+					bufferfill += res;
 				}
+				if (bufferfill)
+				{
+					retval = new binisstreamfree(buffer, bufferfill);
+				} else {
+					free (buffer);
+				}
+				file->unref (file);
 			} else {
-				cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] Unable to find %s\n", filename.c_str());
+				cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] Unable to open %s\n", filename.c_str());
 			}
+		} else {
+			cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] Unable to find %s\n", filename.c_str());
 		}
 	}
 

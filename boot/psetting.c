@@ -46,8 +46,8 @@
 #include "psetting.h"
 #include "stuff/compat.h"
 
-char *cfProgramDir;
-char *cfProgramDirAutoload;
+char *cfProgramPath;
+char *cfProgramPathAutoload;
 
 #define KEYBUF_LEN 105
 #define STRBUF_LEN 405
@@ -164,7 +164,8 @@ static int cfReadINIFile(int argc, char *argv[])
 	char linebuffer[1024];
 	/*  int curapp=-1;*/
 
-	makepath_malloc (&path, 0, cfConfigHomeDir, "ocp.ini", 0);
+	path = malloc (strlen (configAPI.ConfigHomePath) + strlen ("ocp.ini") + 1);
+	sprintf (path, "%socp.ini", configAPI.ConfigHomePath);
 
 	strcpy(keybuf, "");
 
@@ -693,21 +694,21 @@ int cfGetConfig(int argc, char *argv[])
 	t=_cfGetProfileString("general", "datadir", NULL);
 	if (t)
 	{
-		free (cfDataDir);
-		cfDataDir = strdup (t);
+		free (cfDataPath);
+		cfDataPath = strdup (t);
 	}
 
 	if ((t=_cfGetProfileString("general", "tempdir", t)))
 	{
-		cfTempDir = strdup (t);
+		cfTempPath = strdup (t);
 	} else if ((t=getenv("TEMP")))
 	{
-		cfTempDir = strdup (t);
+		cfTempPath = strdup (t);
 	} else if ((t=getenv("TMP")))
 	{
-		cfTempDir = strdup (t);
+		cfTempPath = strdup (t);
 	} else {
-		cfTempDir = strdup ("/tmp/");
+		cfTempPath = strdup ("/tmp/");
 	}
 
 #ifdef PSETTING_DEBUG
@@ -759,7 +760,8 @@ static int _cfStoreConfig(void)
 	FILE *f;
 	int i, j;
 
-	makepath_malloc (&path, 0, cfConfigHomeDir, "ocp.ini", 0);
+	path = malloc (strlen (configAPI.ConfigHomePath) + strlen ("ocp.ini") + 1);
+	sprintf (path, "%socp.ini", configAPI.ConfigHomePath);
 
 	if (!(f=fopen(path, "w")))
 	{
@@ -830,14 +832,19 @@ struct configAPI_t configAPI =
 	_cfSetProfileComment,
 	_cfRemoveEntry,
 	_cfRemoveProfile,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
+	0,           /*       HomeDir */
+	0,           /* ConfigHomeDir */
+	0,           /*   DataHomeDir */
+	0,           /*       DataDir */
+	0,           /*       TempDir */
+	0,           /*       HomePath */
+	0,           /* ConfigHomePath */
+	0,           /*   DataHomePath */
+	0,           /*       DataPath */
+	0,           /*       TempPath */
+	0,           /* ConfigSec */
+	0,           /*  SoundSec */
+	0,           /* ScreenSec */
 	_cfCountSpaceList,
 	_cfGetSpaceListEntry
 };

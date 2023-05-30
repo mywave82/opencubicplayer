@@ -265,7 +265,7 @@ namespace libsidplayfp
 		const char *basic_string   = configAPI->GetProfileString("libsidplayfp", "basic",   "BASIC.ROM");
 		const char *chargen_string = configAPI->GetProfileString("libsidplayfp", "chargen", "CHARGEN.ROM");
 
-		uint32_t dirdb_base = dirdbAPI->ResolvePathWithBaseAndRef (dmFile->basedir->dirdb_ref, configAPI->DataHomeDir, 0, dirdb_use_dir); /* should be the parent_dir of the file you want to load */
+		uint32_t dirdb_base = configAPI->DataHomeDir->dirdb_ref; /* should be the parent_dir of the file you want to load */
 		uint32_t kernal_ref;
 		uint32_t basic_ref;
 		uint32_t chargen_ref;

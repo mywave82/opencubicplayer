@@ -1005,9 +1005,9 @@ static int init_modules(int argc, char *argv[])
 	lnkLink(cfGetProfileString2(cfConfigSec, "defaultconfig", "prelink", ""));
 	lnkLink(cfGetProfileString("general", "prelink", ""));
 
-	if (lnkLinkDir(cfProgramDirAutoload)<0)
+	if (lnkLinkDir(cfProgramPathAutoload)<0)
 	{
-		fprintf(stderr, "could not autoload directory: %s\n", cfProgramDirAutoload);
+		fprintf(stderr, "could not autoload directory: %s\n", cfProgramPathAutoload);
 		return -1;
 	}
 
@@ -1056,7 +1056,7 @@ int failcheck(signed int source, signed int filter)
 }
 #endif
 
-static int _bootup(int argc, char *argv[], const char *HomeDir, const char *ConfigHomeDir, const char *ConfigDataDir, const char *DataDir, const char *ProgramDir)
+static int _bootup(int argc, char *argv[], const char *HomePath, const char *ConfigHomePath, const char *ConfigDataPath, const char *DataPath, const char *ProgramPath)
 {
 	int result;
 	if (isatty(2))
@@ -1086,22 +1086,22 @@ static int _bootup(int argc, char *argv[], const char *HomeDir, const char *Conf
 	fprintf(stderr, "pass\n");
 #endif
 
-	cfHomeDir = (char *)HomeDir;
-	cfConfigHomeDir = (char *)ConfigHomeDir;
-	cfDataHomeDir = (char*)ConfigDataDir;
-	cfDataDir = strdup (DataDir);
-	cfProgramDir = (char *)ProgramDir;
-	cfProgramDirAutoload = malloc (strlen (cfProgramDir) + 9 + 1);
-	sprintf(cfProgramDirAutoload, "%sautoload/", cfProgramDir);
+	cfHomePath = (char *)HomePath;
+	cfConfigHomePath = (char *)ConfigHomePath;
+	cfDataHomePath = (char*)ConfigDataPath;
+	cfDataPath = strdup (DataPath);
+	cfProgramPath = (char *)ProgramPath;
+	cfProgramPathAutoload = malloc (strlen (cfProgramPath) + 9 + 1);
+	sprintf(cfProgramPathAutoload, "%sautoload/", cfProgramPath);
 
 	if (cfGetConfig(argc, argv))
 	{
-		cfConfigHomeDir = 0;
-		cfDataHomeDir = 0;
-		free (cfDataDir); cfDataDir = 0;
-		cfProgramDir = 0;
-		free (cfTempDir); cfTempDir = 0;
-		free (cfProgramDirAutoload); cfProgramDirAutoload = 0;
+		cfConfigHomePath = 0;
+		cfDataHomePath = 0;
+		free (cfDataPath); cfDataPath = 0;
+		free (cfTempPath); cfTempPath = 0;
+		cfProgramPath = 0;
+		free (cfProgramPathAutoload); cfProgramPathAutoload = 0;
 		return -1;
 	}
 
@@ -1114,12 +1114,12 @@ static int _bootup(int argc, char *argv[], const char *HomeDir, const char *Conf
 
 	cfCloseConfig();
 
-	cfConfigHomeDir = 0;
-	cfDataHomeDir = 0;
-	free (cfDataDir); cfDataDir = 0;
-	cfProgramDir = 0;
-	free (cfTempDir); cfTempDir = 0;
-	free (cfProgramDirAutoload); cfProgramDirAutoload = 0;
+	cfConfigHomePath = 0;
+	cfDataHomePath = 0;
+	free (cfDataPath); cfDataPath = 0;
+	free (cfTempPath); cfTempPath = 0;
+	cfProgramPath = 0;
+	free (cfProgramPathAutoload); cfProgramPathAutoload = 0;
 
 
 	return 0;

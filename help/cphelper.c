@@ -102,6 +102,8 @@
 #include "boot/psetting.h"
 #include "boot/plinkman.h"
 #include "cpiface/cpiface.h"
+#include "filesel/dirdb.h"
+#include "filesel/filesystem.h"
 #include "help/cphelper.h"
 #include "stuff/compat.h"
 #include "stuff/err.h"
@@ -136,12 +138,13 @@ static int        link_ind;
 
 /* ---------------------------- here starts the viewer */
 
-static int doReadVersion100Helpfile(FILE *file)
+static int doReadVersion100Helpfile (struct ocpfilehandle_t *file)
 {
 	unsigned int i;
-	if (fread(&Helppages, sizeof(Helppages), 1, file) != 1)
+
+	if (ocpfilehandle_read_uint32_le (file, &Helppages))
 	{
-		perror(__FILE__ ": fread failed #1: ");
+		fprintf (stderr, __FILE__ ": fread failed #1\n");
 		return hlpErrBadFile;
 	}
 	Page=calloc(Helppages, sizeof(Page[0]));
@@ -150,56 +153,52 @@ static int doReadVersion100Helpfile(FILE *file)
 	{
 		unsigned char len;
 
-		memset(Page[i].name, 0, 128);
-		if (fread(&len, sizeof(len), 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &len))
 		{
-			perror(__FILE__ ": fread failed #2: ");
+			fprintf (stderr, __FILE__ ": fread failed #2\n");
 			return hlpErrBadFile;
 		}
-		if (fread(Page[i].name, len, 1, file) != 1)
+		if (len >= sizeof (Page[i].name))
 		{
-			perror(__FILE__ ": fread failed #3: ");
+			fprintf (stderr, __FILE__ ": len >= sizeof (Page[%d].name)\n", i);
 			return hlpErrBadFile;
 		}
-
-		memset(Page[i].desc, 0, 128);
-		if (fread(&len, sizeof(len), 1, file) != 1)
+		if (file->read (file, Page[i].name, len) != len)
 		{
-			perror(__FILE__ ": fread failed #4: ");
+			fprintf (stderr, __FILE__ ": fread failed #3\n");
 			return hlpErrBadFile;
 		}
 
-		if (fread(Page[i].desc, len, 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &len))
 		{
-			perror(__FILE__ ": fread failed #5: ");
+			fprintf (stderr, __FILE__ ": fread failed #4\n");
+			return hlpErrBadFile;
+		}
+		if (len >= sizeof (Page[i].desc))
+		{
+			fprintf (stderr, __FILE__ ": len >= sizeof (Page[%d].desc)\n", i);
+			return hlpErrBadFile;
+		}
+		if (file->read (file, Page[i].desc, len) != len)
+		{
+			fprintf (stderr, __FILE__ ": fread failed #5\n");
 			return hlpErrBadFile;
 		}
 
-		if (fread(&Page[i].size, sizeof(Page[i].size), 1, file) != 1)
+		if (ocpfilehandle_read_uint32_le (file, &Page[i].size) ||
+		    ocpfilehandle_read_uint32_le (file, &Page[i].lines))
 		{
-			perror(__FILE__ ": fread failed #6: ");
+			fprintf (stderr, __FILE__ ": fread failed #6 / #7\n");
 			return hlpErrBadFile;
 		}
-
-		Page[i].size = uint32_little (Page[i].size);
-		if (fread(&Page[i].lines, sizeof(Page[i].lines), 1, file) != 1)
-		{
-			perror(__FILE__ ": fread failed #7: ");
-			return hlpErrBadFile;
-		}
-
-		Page[i].lines = uint32_little (Page[i].lines);
-
-		Page[i].links=NULL;
-		Page[i].rendered=NULL;
 	};
 
 	for (i=0; i<Helppages; i++)
 	{
 		Page[i].data=calloc(Page[i].size, 1);
-		if (fread(Page[i].data, Page[i].size, 1, file) != 1)
+		if (file->read (file, Page[i].data, Page[i].size) != Page[i].size)
 		{
-			perror(__FILE__ ": fread failed #8: ");
+			fprintf (stderr, __FILE__ ": fread failed #8\n");
 			return hlpErrBadFile;
 		}
 	};
@@ -207,18 +206,17 @@ static int doReadVersion100Helpfile(FILE *file)
 	return hlpErrOk;
 }
 
-static int doReadVersion110Helpfile(FILE *file)
+static int doReadVersion110Helpfile (struct ocpfilehandle_t *file)
 {
-	int  *compdatasize;
+	uint32_t *compdatasize;
 	char *inbuf;
 	unsigned int i;
 
-	if (fread(&Helppages, sizeof(Helppages), 1, file) != 1)
+	if (ocpfilehandle_read_uint32_le (file, &Helppages))
 	{
-		perror(__FILE__ ": fread failed #9: ");
+		fprintf (stderr, __FILE__ ": fread failed #9\n");
 		return hlpErrBadFile;
 	}
-	Helppages = uint32_little (Helppages);
 	Page = calloc(Helppages, sizeof(Page[0]));
 
 	compdatasize=calloc(Helppages, sizeof(int));
@@ -227,58 +225,50 @@ static int doReadVersion110Helpfile(FILE *file)
 	{
 		unsigned char len;
 
-		memset(Page[i].name, 0, 128);
-		if (fread(&len, sizeof(len), 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &len))
 		{
-			perror(__FILE__ ": fread failed #10: ");
+			fprintf (stderr, __FILE__ ": fread failed #10\n");
 			free(compdatasize);
 			return hlpErrBadFile;
 		}
-		if (fread(Page[i].name, len, 1, file) != 1)
+		if (len >= sizeof (Page[i].name))
 		{
-			perror(__FILE__ ": fread failed #11: ");
-			free(compdatasize);
+			fprintf (stderr, __FILE__ ": len >= sizeof (Page[%d].name)\n", i);
 			return hlpErrBadFile;
 		}
-
-		memset(Page[i].desc, 0, 128);
-		if (fread(&len, sizeof(len), 1, file) != 1)
+		if (file->read (file, Page[i].name, len) != len)
 		{
-			perror(__FILE__ ": fread failed #12: ");
-			free(compdatasize);
-			return hlpErrBadFile;
-		}
-		if (fread(Page[i].desc, len, 1, file) != 1)
-		{
-			perror(__FILE__ ": fread failed #13: ");
+			fprintf (stderr, __FILE__ ": fread failed #11\n");
 			free(compdatasize);
 			return hlpErrBadFile;
 		}
 
-		if (fread(&Page[i].size, sizeof(Page[i].size), 1, file) != 1)
+		if (ocpfilehandle_read_uint8 (file, &len))
 		{
-			perror(__FILE__ ": fread failed #14: ");
+			fprintf (stderr, __FILE__ ": fread failed #12\n");
 			free(compdatasize);
 			return hlpErrBadFile;
 		}
-		Page[i].size = uint32_little (Page[i].size);
-		if (fread(&Page[i].lines, sizeof(Page[i].lines), 1, file) != 1)
+		if (len >= sizeof (Page[i].desc))
 		{
-			perror(__FILE__ ": fread failed #15: ");
+			fprintf (stderr, __FILE__ ": len >= sizeof (Page[%d].desc)\n", i);
+			return hlpErrBadFile;
+		}
+		if (file->read (file, Page[i].desc, len) != len)
+		{
+			fprintf (stderr, __FILE__ ": fread failed #13\n");
 			free(compdatasize);
 			return hlpErrBadFile;
 		}
-		Page[i].lines = uint32_little (Page[i].lines);
 
-		if (fread(&compdatasize[i], sizeof(compdatasize[i]), 1, file) != 1)
+		if (ocpfilehandle_read_uint32_le (file, &Page[i].size) ||
+		    ocpfilehandle_read_uint32_le (file, &Page[i].lines) ||
+		    ocpfilehandle_read_uint32_le (file, &compdatasize[i]))
 		{
-			perror(__FILE__ ": fread failed #16: ");
+			fprintf (stderr, ": fread failed #14 / #15 / #16\n");
 			free(compdatasize);
 			return hlpErrBadFile;
 		}
-		compdatasize[i]=uint32_little(compdatasize[i]);
-		Page[i].links=NULL;
-		Page[i].rendered=NULL;
 	};
 
 	for (i=0; i<Helppages; i++)
@@ -286,9 +276,9 @@ static int doReadVersion110Helpfile(FILE *file)
 		uLongf temp=Page[i].size;
 		Page[i].data=calloc(Page[i].size, 1);
 		inbuf=calloc(compdatasize[i], 1);
-		if (fread(inbuf, compdatasize[i], 1, file) != 1)
+		if (file->read (file, inbuf, compdatasize[i]) != compdatasize[i])
 		{
-			perror(__FILE__ ": fread failed #17: ");
+			fprintf (stderr, ": fread failed #17\n");
 			free(compdatasize);
 			free(inbuf);
 			return hlpErrBadFile;
@@ -302,26 +292,26 @@ static int doReadVersion110Helpfile(FILE *file)
 	return hlpErrOk;
 }
 
-static int doReadHelpFile(FILE *file)
+static int doReadHelpFile (struct ocpfilehandle_t *file)
 {
 	uint32_t version;
 	uint32_t temp;
 
-	if (fread(&temp, sizeof(temp), 1, file) != 1)
+	if (ocpfilehandle_read_uint32_le (file, &temp))
 	{
-		perror(__FILE__ ": fread failed #18: ");
+		fprintf (stderr, __FILE__ ": fread failed #18\n");
 		return hlpErrBadFile;
 	}
-	temp = uint32_little (temp);
 	if (temp!=Helpfile_ID)
-		return hlpErrBadFile;
-
-	if (fread(&version, sizeof(version), 1, file) != 1)
 	{
-		perror(__FILE__ ": fread failed #19: ");
 		return hlpErrBadFile;
 	}
-	version = uint32_little (version);
+
+	if (ocpfilehandle_read_uint32_le (file, &version))
+	{
+		fprintf (stderr, __FILE__ ": fread failed #19\n");
+		return hlpErrBadFile;
+	}
 
 	if (version>Helpfile_Ver)
 		return hlpErrTooNew;
@@ -339,26 +329,29 @@ static int doReadHelpFile(FILE *file)
 	};
 }
 
-static char plReadHelpExternal (const struct configAPI_t *configAPI)
+static char plReadHelpExternal (struct PluginInitAPI_t *API)
 {
-	char   *helpname;
-	FILE   *bf;
+	struct ocpfile_t *f;
+	struct ocpfilehandle_t *bf = 0;
 
 	if (Page && (HelpfileErr==hlpErrOk))
 		return 1;
 
-	makepath_malloc (&helpname, 0, configAPI->DataDir, "ocp.hlp", 0);
-	if ((bf=fopen(helpname, "r")))
+	f = ocpdir_readdir_file (API->configAPI->DataDir, "ocp.hlp", API->dirdb);
+	if (f) {
+		bf = f->open (f);
+		f->unref (f);
+		f = 0;
+	}
+	if (!bf)
 	{
-		free (helpname);
-		HelpfileErr=doReadHelpFile(bf);
-		fclose(bf);
-	} else {
-		fprintf (stderr, "Failed to open(%s): %s\n", helpname, strerror (errno));
-		free (helpname);
+		fprintf (stderr, "Failed to open(cfData/ocp.hlp)\n");
 		HelpfileErr=hlpErrNoFile;
 		return 0;
 	};
+
+	HelpfileErr=doReadHelpFile(bf);
+	bf->unref (bf);
 
 	return (HelpfileErr==hlpErrOk);
 }
@@ -896,13 +889,13 @@ int brHelpKey(uint16_t key)
 	return 1;
 }
 
-static int hlpGlobalInit (const struct configAPI_t *configAPI)
+static int hlpGlobalInit (struct PluginInitAPI_t *API)
 {
 	helppage *pg;
 
 	plHelpHeight=plHelpScroll=0;
 
-	if (!plReadHelpExternal (configAPI))
+	if (!plReadHelpExternal (API))
 	{
 		fprintf(stderr, "Warning. Failed to read help files\n");
 		return errOk; /* this error is not fatal to rest of the player */
@@ -954,9 +947,9 @@ void hlpFreePages(void)
 	HelpfileErr=hlpErrNoFile;
 }
 
-static void hlpGlobalClose(void)
+static void hlpGlobalClose (struct PluginCloseAPI_t *API)
 {
 	hlpFreePages();
 }
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "cphelper", .desc = "OpenCP help browser (c) 1998-'23 Fabian Giesen", .ver = DLLVERSION, .sortindex = 20, .Init = hlpGlobalInit, .Close = hlpGlobalClose};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "cphelper", .desc = "OpenCP help browser (c) 1998-'23 Fabian Giesen", .ver = DLLVERSION, .sortindex = 20, .PluginInit = hlpGlobalInit, .PluginClose = hlpGlobalClose};

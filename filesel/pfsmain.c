@@ -214,10 +214,10 @@ static int _fsMain(int argc, char *argv[])
 		mcpRegisterPostProcFP,
 		mcpRegisterPostProcInteger,
 		&configAPI,
+		&dirdbAPI,
 		filesystem_setup_register_file,
 		dev_file_create,
-		dmSetup,
-		makepath_malloc
+		dmSetup
 	};
 
 	struct PluginCloseAPI_t PluginCloseAPI =
@@ -458,4 +458,4 @@ static void fsclose()
 	fsLateClose();
 }
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "pfilesel", .desc = "OpenCP Fileselector (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 25, .PreInit = fspreint, .Init = fsint, .LateInit = fslateint, .LateClose = fsclose};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "pfilesel", .desc = "OpenCP Fileselector (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 2, .PreInit = fspreint, .Init = fsint, .LateInit = fslateint, .LateClose = fsclose};

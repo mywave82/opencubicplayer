@@ -2149,7 +2149,7 @@ static int plmpInit (const struct configAPI_t *configAPI)
 	cpiChanInit ();
 	cpiGraphInit ();
 	cpiInstInit ();
-	cpiWurfel2Init ();
+	cpiWurfel2Init (configAPI);
 	cpiLinksInit ();
 	cpiMVolInit ();
 	cpiPhaseInit ();
@@ -2170,6 +2170,7 @@ static void plmpClose (void)
 	cpiPhaseDone ();
 	cpiScopeDone ();
 	cpiVolCtrlDone ();
+	plOpenCPPicDone ();
 }
 
 static int plmpInited = 0;

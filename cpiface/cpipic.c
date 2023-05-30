@@ -40,17 +40,18 @@
 
 #include "config.h"
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
-#include <dirent.h>
 #include <ctype.h>
-#include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "types.h"
 #include "boot/psetting.h"
-#include "cpiface.h"
+#include "cpiface/cpiface.h"
+#include "cpiface/cpipic.h"
+#include "filesel/dirdb.h"
+#include "filesel/filesystem.h"
+#include "filesel/filesystem-drive.h"
 #include "stuff/compat.h"
 
 #ifdef HAVE_LZW
@@ -66,12 +67,12 @@ static const int picHeight=384;
 
 struct node_t
 {
-	char *name;
+	struct ocpfile_t *file;
 	struct node_t *next;
 };
 
 static struct node_t *files=0;
-static int filesSize=0;
+static int filesCount=0;
 
 static int match(const char *name)
 {
@@ -90,14 +91,36 @@ static int match(const char *name)
 	return 0;
 }
 
-void plReadOpenCPPic(void)
+static void wildcard_file (void *token, struct ocpfile_t *file)
+{
+	const struct dirdbAPI_t *dirdb = token;
+	const char *name;
+
+	dirdb->GetName_internalstr (file->dirdb_ref, &name);
+
+	if(match(name))
+	{
+		struct node_t *nd = calloc(1, sizeof(struct node_t));
+		file->ref (file);
+		nd->file = file;
+		nd->next = files;
+		files = nd;
+		filesCount++;
+	}
+}
+
+static void wildcard_dir (void *token, struct ocpdir_t *dir)
+{
+}
+
+void plReadOpenCPPic (const struct configAPI_t *configAPI, const struct dirdbAPI_t *dirdb)
 {
 	int i;
 	int n;
-	struct node_t* nd;
 
 	static int lastN=-1;
-	int file, filesize;
+	struct ocpfilehandle_t *f;
+	uint64_t filesize;
 	unsigned char *filecache;
 
 	int low;
@@ -108,18 +131,15 @@ void plReadOpenCPPic(void)
 
 	if(lastN==-1)
 	{
-		struct node_t* *current=&files;
-		/* get the resource containing background pictures */
-		const char *picstr=cfGetProfileString2(cfScreenSec, "screen", "usepics", "");
-
 		int wildcardflag=0;
+		const char *picstr = configAPI->GetProfileString2 (configAPI->ScreenSec, "screen", "usepics", "");
 
 		/* n contains the number of background pictures */
-		n=cfCountSpaceList(picstr, 12);
+		n=configAPI->CountSpaceList (picstr, 12);
 		for(i=0; i<n; i++)
 		{
 			char name[128];
-			if(cfGetSpaceListEntry(name, &picstr, sizeof(name)) == 0)
+			if(configAPI->GetSpaceListEntry (name, &picstr, sizeof(name)) == 0)
 				break;
 			if(!match(name))
 				continue;
@@ -130,100 +150,98 @@ void plReadOpenCPPic(void)
 			if(!strncasecmp(name, "*.tga", 5))
 #endif
 			{
-				DIR *dir;
+				ocpdirhandle_pt h;
+
 				if(wildcardflag)
 					continue;
-				dir=opendir(cfDataDir);
-				if(dir)
+
+				h = configAPI->DataDir->readdir_start (configAPI->DataDir, wildcard_file, wildcard_dir, (void *)dirdb);
+				if (h)
 				{
-					struct dirent *dp;
-					while((dp=readdir(dir)))
-					{
-						if(match(dp->d_name))
-						{
-							nd=calloc(1, sizeof(struct node_t));
-							makepath_malloc(&nd->name, 0, cfDataDir, dp->d_name, 0);
-							nd->next=0;
-							*current=nd;
-							current=&nd->next;
-							filesSize++;
-						}
-					}
-					closedir(dir);
+					while (configAPI->DataDir->readdir_iterate (h));
+					configAPI->DataDir->readdir_cancel (h);
 				}
-				dir=opendir(cfDataHomeDir);
-				if(dir)
+
+				h = configAPI->DataHomeDir->readdir_start (configAPI->DataHomeDir, wildcard_file, wildcard_dir, (void *)dirdb);
+				if (h)
 				{
-					struct dirent *dp;
-					while((dp=readdir(dir)))
-					{
-						if(match(dp->d_name))
-						{
-							nd=calloc(1, sizeof(struct node_t));
-							makepath_malloc(&nd->name, 0, cfDataHomeDir, dp->d_name, 0);
-							nd->next=0;
-							*current=nd;
-							current=&nd->next;
-							filesSize++;
-						}
-					}
-					closedir(dir);
+					while (configAPI->DataHomeDir->readdir_iterate (h));
+					configAPI->DataHomeDir->readdir_cancel (h);
 				}
+
 				wildcardflag=1;
 			} else {
-				nd=calloc(1, sizeof(struct node_t));
-				nd->name=strdup(name);
-				nd->next=0;
-				*current=nd;
-				current=&nd->next;
-				filesSize++;
+				uint32_t dirdb_ref;
+				struct ocpfile_t *f = 0;
+
+				if (!f)
+				{
+					dirdb_ref = dirdb->ResolvePathWithBaseAndRef (configAPI->DataDir->dirdb_ref, name, DIRDB_RESOLVE_NODRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_TILDE_USER, dirdb_use_file);
+					filesystem_resolve_dirdb_file (dirdb_ref, 0, &f);
+					dirdb->Unref (dirdb_ref, dirdb_use_file);
+				}
+
+				if (!f)
+				{
+					dirdb_ref = dirdb->ResolvePathWithBaseAndRef (configAPI->DataHomeDir->dirdb_ref, name, DIRDB_RESOLVE_NODRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_TILDE_USER, dirdb_use_file);
+					filesystem_resolve_dirdb_file (dirdb_ref, 0, &f);
+					dirdb->Unref (dirdb_ref, dirdb_use_file);
+				}
+
+				if (f)
+				{
+					struct node_t *nd = calloc (1, sizeof(struct node_t));
+					nd->file = f;
+					nd->next = files;
+					files = nd;
+					filesCount++;
+				}
 			}
 		}
 	}
 
 	/* if there are no background pictures we can skip the rest */
-	if (filesSize<=0)
+	if (filesCount<=0)
 		return;
 	/* choose a new picture */
-	n=rand()%filesSize;
+	n=rand()%filesCount;
 	/* we have loaded that picture already */
 	if(n==lastN)
 		return;
 	lastN=n;
 
-	/* get filename */
-	nd=files;
-	for(i=0; i<n; i++)
-		nd=files->next;
+	{
+		struct node_t *nd=files;
+		for(i=0; i<n; i++)
+			nd=files->next;
 
-	/* read the file into a filecache */
-	file=open(nd->name, O_RDONLY);
-	if(file<0)
-		return;
-	filesize=lseek(file, 0, SEEK_END);
-	if(filesize<0)
-	{
-		close(file);
-		return ;
+		/* read the file into a filecache */
+		f = nd->file->open (nd->file);
+		if(!f)
+		{
+			return;
+		}
 	}
-	if(lseek(file, 0, SEEK_SET)<0)
+	filesize=f->filesize (f);
+	if (!filesize)
 	{
-		close(file);
+		f->unref (f);
 		return ;
 	}
 	filecache=calloc(sizeof(unsigned char), filesize);
 	if(filecache==0)
 	{
-		close(file);
-			return ;
-	}
-	if(read(file, filecache, filesize)!=filesize)
-	{
-		free(filecache);
-		close(file);
+		f->unref (f);
 		return ;
 	}
-	close(file);
+	if (f->read (f, filecache, filesize) != filesize)
+	{
+		free(filecache);
+		f->unref (f);
+		return ;
+	}
+	f->unref (f);
+	f = 0;
 
 	/* allocate memory for a new picture */
 	if(plOpenCPPict==0)
@@ -232,7 +250,6 @@ void plReadOpenCPPic(void)
 		if(plOpenCPPict==0)
 		{
 			free (filecache);
-			close (file);
 			return;
 		}
 		memset(plOpenCPPict, 0, picWidth*picHeight);
@@ -267,4 +284,21 @@ void plReadOpenCPPic(void)
 	/* adjust the RGB palette to 6bit, because standard VGA is limited */
 	for (i=0x2FD; i>=0x90; i--)
 		plOpenCPPal[i]=plOpenCPPal[i-move]>>2;
+}
+
+void plOpenCPPicDone (void)
+{
+	struct node_t *curr, *next;
+
+	free (plOpenCPPict);
+	plOpenCPPict = 0;
+
+	for (curr = files; curr; curr = next)
+	{
+		next = curr->next;
+		curr->file->unref (curr->file);
+		free (curr);
+	}
+	files = 0;
+	filesCount = 0;
 }

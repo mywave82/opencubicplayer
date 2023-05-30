@@ -14,8 +14,11 @@
 extern unsigned char *plOpenCPPict; /* an array containing the raw picture */
 extern unsigned char plOpenCPPal[]; /* the palette for the picture */
 
-extern void plReadOpenCPPic(void); /* load a new background picture into *plOpenCPPict
-                                    * and *plOpenCPPal
-                                    */
+struct configAPI_t;
+struct dirdbAPI_t;
+
+void plReadOpenCPPic (const struct configAPI_t *configAPI, const struct dirdbAPI_t *dirdb); /* load a new background picture into *plOpenCPPict and *plOpenCPPal */
+
+void plOpenCPPicDone (void);
 
 #endif

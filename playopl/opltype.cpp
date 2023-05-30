@@ -87,19 +87,20 @@ OCP_INTERNAL int opl_type_init (PluginInitAPI_t *API)
 	adplugdb_ocp = new CAdPlugDatabase();
 	if (adplugdb_ocp)
 	{
-		API->makepath_malloc (&path, 0, API->configAPI->DataDir, "adplug.db", 0);
+		path = (char *)malloc (strlen (API->configAPI->DataPath) + strlen ("adplug.db") + 1);
 		if (path)
 		{
+			sprintf (path, "%sadplug.db", API->configAPI->DataPath);
 			adplugdb_ocp->load(path);
 			free (path); path=0;
 		}
 		adplugdb_ocp->load("/usr/com/adplug/adplug.db");
 		adplugdb_ocp->load("/usr/share/adplug/adplug.db");
 
-		path = (char *)malloc (strlen(API->configAPI->HomeDir) + 18);
+		path = (char *)malloc (strlen (API->configAPI->HomePath) + strlen (".adplug/adplug.db") + 1);
 		if (path)
 		{
-			sprintf (path, "%s.adplug/adplug.db", API->configAPI->HomeDir);
+			sprintf (path, "%s.adplug/adplug.db", API->configAPI->HomePath);
 			adplugdb_ocp->load(path);
 			free (path); path=0;
 		}
@@ -139,6 +140,7 @@ OCP_INTERNAL void opl_type_done (PluginCloseAPI_t *API)
 	if (adplugdb_ocp)
 	{
 		CAdPlug::set_database (0);
+		adplugdb_ocp->wipe();
 		delete (adplugdb_ocp);
 		adplugdb_ocp = 0;
 	}

@@ -56,7 +56,7 @@
 #ifdef CFDATAHOMEDIR_OVERRIDE
 # define CFDATAHOMEDIR CFDATAHOMEDIR_OVERRIDE
 #else
-# define CFDATAHOMEDIR configAPI->DataHomeDir
+# define CFDATAHOMEDIR configAPI->DataHomePath
 #endif
 
 #define MDB_USED 1
@@ -534,7 +534,8 @@ int mdbInit (const struct configAPI_t *configAPI)
 	mdbSearchIndexCount = 0;
 	mdbSearchIndexSize = 0;
 
-	makepath_malloc (&path, 0, CFDATAHOMEDIR, "CPMODNFO.DAT", 0);
+	path = malloc (strlen (CFDATAHOMEDIR) + strlen ("CPMODNFO.DAT") + 1);
+	sprintf (path, "%sCPMODNFO.DAT", CFDATAHOMEDIR);
 	fprintf(stderr, "Loading %s .. ", path);
 
 	if (mdbFd >= 0)

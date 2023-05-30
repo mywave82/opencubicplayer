@@ -28,19 +28,19 @@
  */
 
 #include "config.h"
-#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
 #include <sys/types.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
 #include "types.h"
-#include "stuff/poutput.h"
-#include "cpiface.h"
-#include "stuff/compat.h"
 #include "boot/psetting.h"
+#include "cpiface/cpiface.h"
+#include "filesel/dirdb.h"
+#include "filesel/filesystem.h"
+#include "stuff/compat.h"
+#include "stuff/poutput.h"
 
 static unsigned char *plWuerfel=NULL;
 static int plWuerfelDirect;
@@ -59,11 +59,11 @@ static uint16_t *wuerfelcodelens;
 static uint32_t wuerfelframe0pos;
 static uint32_t wuerfelframesize;
 static uint32_t wuerfelscanlines, wuerfellinelength, wuerfelversion;
-static FILE *wuerfelfile = 0;
+static struct ocpfilehandle_t *wuerfelfile = 0;
 static uint8_t *wuerfelframebuf;
 static uint32_t cfUseAnis=0xFFFFFFFF;
 static uint32_t wuerfelFilesCount=0;
-static char **wuerfelFiles=0;
+static struct ocpfile_t **wuerfelFiles=0;
 
 static struct timespec wurfelTicker;
 static uint32_t wurfelTicks;
@@ -109,7 +109,7 @@ static int plCloseWuerfel(void)
 		wuerfelloadedframes=NULL;
 		if (wuerfelfile)
 		{
-			fclose(wuerfelfile);
+			wuerfelfile->unref (wuerfelfile);
 			wuerfelfile=0;
 		}
 		return 1;
@@ -124,6 +124,7 @@ static char plLoadWuerfel(void)
 	int i;
 	uint16_t maxframe;
 	uint32_t framemem;
+	const char *fname = 0;
 
 	if (plWuerfel)
 		plCloseWuerfel();
@@ -138,54 +139,55 @@ static char plLoadWuerfel(void)
 	if (cfUseAnis >= wuerfelFilesCount)
 		cfUseAnis = wuerfelFilesCount-1;
 
-	wuerfelfile=fopen(wuerfelFiles[cfUseAnis], "r");
+	dirdbGetName_internalstr (wuerfelFiles[cfUseAnis]->dirdb_ref, &fname);
+
+	wuerfelfile = wuerfelFiles[cfUseAnis]->open(wuerfelFiles[cfUseAnis]);
 	if (!wuerfelfile)
 	{
-		perror(__FILE__" fopen:");
+		fprintf (stderr, __FILE__ ": Failed to open %s\n", fname);
 		return 0;
 	}
 
-	if (fread(sig, 8, 1, wuerfelfile)!=1)
+	if (wuerfelfile->read (wuerfelfile, sig, 8) != 8)
 	{
-		perror(__FILE__ " fread #1:");
+		fprintf (stderr, __FILE__ ": Failed to read #1: %s\n", fname);
 		plCloseWuerfel();
 		return 0;
 	}
 	if (memcmp(sig, "CPANI\x1A\x00\x00", 8))
 	{
-		fprintf(stderr, __FILE__ ": invalid signature\n");
+		fprintf (stderr, __FILE__ ": Invalid signature: %s\n", fname);
 		plCloseWuerfel();
 		return 0;
 	}
-	if (fseek(wuerfelfile, 32, SEEK_CUR))
+	if (wuerfelfile->seek_cur (wuerfelfile, 32))
 	{
-		perror(__FILE__ " fseek #1:");
+		fprintf (stderr, __FILE__ ": Failed to seek #1: %s\n", fname);
 		plCloseWuerfel();
 		return 0;
 	}
 
-	if (fread(&wuerfelframes, 2, 1, wuerfelfile)!=1)
+	if (ocpfilehandle_read_uint16_le (wuerfelfile, &wuerfelframes))
 	{
-		perror(__FILE__ " fread #2:");
+		fprintf (stderr, __FILE__ ": Failed to read #2: %s\n", fname);
 		plCloseWuerfel();
 		return 0;
 	}
-	wuerfelframes=uint16_little(wuerfelframes);
-	if (fread(&wuerfelstframes, 2, 1, wuerfelfile)!=1)
-	{
-		perror(__FILE__ " fread #3:");
-		plCloseWuerfel();
-		return 0;
-	}
-	wuerfelstframes=uint16_little(wuerfelstframes);
 
-	if (fread(&opt, 2, 1, wuerfelfile)!=1)
+	if (ocpfilehandle_read_uint16_le (wuerfelfile, &wuerfelstframes))
 	{
-		perror(__FILE__ " fread #4:");
+		fprintf (stderr, __FILE__ ": Failed to read #3: %s\n", fname);
 		plCloseWuerfel();
 		return 0;
 	}
-	opt=uint16_little(opt);
+
+	if (ocpfilehandle_read_uint16_le (wuerfelfile, &opt))
+	{
+		fprintf (stderr, __FILE__ ": Failed to read #4: %s\n", fname);
+		plCloseWuerfel();
+		return 0;
+	}
+
 	wuerfelrle=opt&1;
 	wuerfeldlt=!!(opt&2);
 	wuerfelframesize=(opt&4)?64000:16000;
@@ -205,19 +207,19 @@ static char plLoadWuerfel(void)
 		return 0;
 	}
 
-	if (fseek(wuerfelfile, 2, SEEK_CUR))
+	if (wuerfelfile->seek_cur (wuerfelfile, 2))
 	{
-		perror(__FILE__ " fseek #2:");
+		fprintf (stderr, __FILE__ ": Failed to seek #2: %s\n", fname);
 		plCloseWuerfel();
 		return 0;
 	}
-	if (fread(&codelenslen, 2, 1, wuerfelfile)!=1)
+
+	if (ocpfilehandle_read_uint16_le (wuerfelfile, &codelenslen))
 	{
-		perror(__FILE__ " fread #5:");
+		fprintf (stderr, __FILE__ ": Failed to read #5: %s\n", fname);
 		plCloseWuerfel();
 		return 0;
 	}
-	codelenslen=uint16_little(codelenslen);
 	wuerfelcodelens=calloc(sizeof(uint16_t), codelenslen);
 	if (!wuerfelcodelens)
 	{
@@ -225,40 +227,44 @@ static char plLoadWuerfel(void)
 		plCloseWuerfel();
 		return 0;
 	}
-	if (fread(&pallen, 2, 1, wuerfelfile)!=1)
+	if (ocpfilehandle_read_uint16_le (wuerfelfile, &pallen))
 	{
-		perror(__FILE__ " fread #6:");
+		fprintf (stderr, __FILE__ ": Failed to read #6: %s\n", fname);
 		plCloseWuerfel();
 		return 0;
 	}
-	pallen=uint16_little(pallen);
-	if (fread(wuerfelframelens, 2*(wuerfelframes+wuerfelstframes), 1, wuerfelfile)!=1)
+
+	if (wuerfelfile->read (wuerfelfile, wuerfelframelens, 2*(wuerfelframes+wuerfelstframes)) != (2*(wuerfelframes+wuerfelstframes)))
 	{
-		perror(__FILE__ " fread #7:");
+		fprintf (stderr, __FILE__ ": Failed to read #7: %s\n", fname);
 		plCloseWuerfel();
 		return 0;
+	}
+	for (i = 0; i < (wuerfelframes+wuerfelstframes); i++)
+	{
+		wuerfelframelens[i] = uint16_little (wuerfelframelens[i]);
 	}
 
 	if(wuerfelversion)
 	{
-		if (fread(wuerfelcodelens, codelenslen, 1, wuerfelfile)!=1)
+		if (wuerfelfile->read (wuerfelfile, wuerfelcodelens, codelenslen) != codelenslen)
 		{
-			perror(__FILE__ " fread #8:");
+			fprintf (stderr, __FILE__ ": Failed to read #8: %s\n", fname);
 			plCloseWuerfel();
 			return 0;
 		}
 	} else {
-		if (fseek(wuerfelfile, codelenslen, SEEK_CUR))
+		if (wuerfelfile->seek_cur (wuerfelfile, codelenslen))
 		{
-			perror(__FILE__ " fseek #3");
+			fprintf (stderr, __FILE__ ": Failed to seek #3: %s\n", fname);
 			plCloseWuerfel();
 			return 0;
 		}
 	}
 
-	if (fread(wuerfelpal, pallen, 1, wuerfelfile)!=1)
+	if (wuerfelfile->read (wuerfelfile, wuerfelpal, pallen) != pallen)
 	{
-		perror(__FILE__ " fread #9:");
+		fprintf (stderr, __FILE__ ": Failed to read #9: %s\n", fname);
 		plCloseWuerfel();
 		return 0;
 	}
@@ -278,9 +284,9 @@ static char plLoadWuerfel(void)
 
 	framemem=wuerfelframepos[i-1]+wuerfelframelens[i-1];
 
-	plWuerfel=calloc(sizeof(uint8_t),  framemem);
+	plWuerfel=calloc(sizeof(uint8_t), framemem);
 
-	wuerfelframe0pos=ftell(wuerfelfile);
+	wuerfelframe0pos = wuerfelfile->getpos (wuerfelfile);
 
 	if (plWuerfel)
 	{
@@ -426,27 +432,27 @@ static void wuerfelDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 	framelen=wuerfelframelens[wuerfelpos];
 	if (wuerfellowmem==2)
 	{
-		if (fseek(wuerfelfile, wuerfelframe0pos+wuerfelframepos[wuerfelpos], SEEK_SET))
+		if (wuerfelfile->seek_set (wuerfelfile, wuerfelframe0pos+wuerfelframepos[wuerfelpos]))
 			fprintf(stderr, __FILE__ ": warning, fseek failed() #1\n");
-		if (fread(plWuerfel, framelen, 1, wuerfelfile)!=1)
-			fprintf(stderr, __FILE__ ": warning, fseek failed() #1\n");
+		if (wuerfelfile->read (wuerfelfile, plWuerfel, framelen) != framelen)
+			fprintf(stderr, __FILE__ ": warning, fread failed() #1\n");
 		curframe=plWuerfel;
 	} else if (wuerfellowmem==1)
 	{
 		if (wuerfelpos<wuerfelstframes)
 		{
-			if (fseek(wuerfelfile, wuerfelframe0pos+wuerfelframepos[wuerfelpos], SEEK_SET))
+			if (wuerfelfile->seek_set (wuerfelfile, wuerfelframe0pos+wuerfelframepos[wuerfelpos]))
 				fprintf(stderr, __FILE__ ": warning, fseek failed() #2\n");
-			if (fread(plWuerfel, framelen, 1, wuerfelfile)!=1)
+			if (wuerfelfile->read (wuerfelfile, plWuerfel, framelen) != framelen)
 				fprintf(stderr, __FILE__ ": warning, fseek failed() #2\n");
 			curframe=plWuerfel;
 		} else {
 			curframe=plWuerfel+wuerfelframepos[wuerfelpos];
 			if (!wuerfelloadedframes[wuerfelpos])
 			{
-				if (fseek(wuerfelfile, wuerfelframe0pos+wuerfelframepos[wuerfelpos], SEEK_SET))
+				if (wuerfelfile->seek_set (wuerfelfile, wuerfelframe0pos+wuerfelframepos[wuerfelpos]))
 					fprintf(stderr, __FILE__ ": warning, fseek failed() #3\n");
-			        if (fread(curframe, framelen, 1, wuerfelfile)!=1)
+				if (wuerfelfile->read (wuerfelfile, curframe, framelen) != framelen)
 					fprintf(stderr, __FILE__ ": warning, fseek failed() #3\n");
 			        wuerfelloadedframes[wuerfelpos]=1;
 			}
@@ -455,9 +461,9 @@ static void wuerfelDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 		curframe=plWuerfel+wuerfelframepos[wuerfelpos];
 		if (!wuerfelloadedframes[wuerfelpos])
 		{
-			if (fseek(wuerfelfile, wuerfelframe0pos+wuerfelframepos[wuerfelpos], SEEK_SET))
+			if (wuerfelfile->seek_set (wuerfelfile, wuerfelframe0pos+wuerfelframepos[wuerfelpos]))
 				fprintf(stderr, __FILE__ ": warning, fseek failed() #4\n");
-			if (fread(curframe, framelen, 1, wuerfelfile)!=1)
+			if (wuerfelfile->read (wuerfelfile, curframe, framelen) != framelen)
 				fprintf(stderr, __FILE__ ": warning, fseek failed() #4\n");
 			wuerfelloadedframes[wuerfelpos]=1;
 		}
@@ -562,56 +568,54 @@ static int wuerfelIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint1
 
 static struct cpimoderegstruct cpiModeWuerfel = {"wuerfel2", wuerfelSetMode, wuerfelDraw, wuerfelIProcessKey, wuerfelKey, wuerfelEvent CPIMODEREGSTRUCT_TAIL};
 
-static void parse_wurfel_directory (const char *src, DIR *d)
+static void parse_wurfel_file (void *token, struct ocpfile_t *file)
 {
-	struct dirent *de;
+	struct ocpfile_t **new;
+	const char *name;
+	int len;
 
-	while ( ( de = readdir(d) ) )
+	dirdbGetName_internalstr (file->dirdb_ref, &name);
+
+	if ( strncasecmp ("CPANI", name, 5) )
+		return;
+
+	len = strlen (name);
+	/* Don't bother to check for len > 4 here, since above strncasecmp() will catch that */
+	if ( strcasecmp ( name + len - 4, ".DAT") )
+		return;
+
+	fprintf(stderr, "wuerfel mode: discovered %s%s\n", (const char *)token, name);
+	new = realloc (wuerfelFiles, (wuerfelFilesCount + 1) * sizeof (wuerfelFiles[0]) );
+	if (!new)
 	{
-		size_t len;
-		char **new;
-		if ( strncasecmp ("CPANI", de->d_name, 5) )
-			continue;
-		len = strlen(de->d_name);
-		/* Don't bother to check for len > 4 here, since above strncasecmp() will catch that */
-		if ( strcasecmp ( de->d_name + len - 4, ".DAT") )
-			continue;
-		fprintf(stderr, "wuerfel mode: discovered %s%s\n", src, de->d_name);
-		new = realloc (wuerfelFiles, (wuerfelFilesCount + 1) * sizeof (char *) );
-		if (!new)
-		{
-			perror(__FILE__ ", realloc() of filelist\n");
-			break;
-		} else {
-			wuerfelFiles = new;
-			if (!(wuerfelFiles[wuerfelFilesCount] = malloc (strlen (src) + strlen (de->d_name) + 1)))
-			{
-				perror(__FILE__ ", strdup() failed\n");
-				break;
-			}
-			sprintf (wuerfelFiles[wuerfelFilesCount], "%s%s", src, de->d_name);
-			wuerfelFilesCount++;
-		}
+		perror(__FILE__ ", realloc() of filelist\n");
+		return;
 	}
+	wuerfelFiles = new;
+	wuerfelFiles[wuerfelFilesCount] = file;
+	file->ref (file);
+	wuerfelFilesCount++;
 }
 
-OCP_INTERNAL void cpiWurfel2Init (void)
+static void parse_wurfel_directory (void *token, struct ocpdir_t *dir)
 {
-	DIR *d;
+}
+
+OCP_INTERNAL void cpiWurfel2Init (const struct configAPI_t *configAPI)
+{
+	ocpdirhandle_pt *d;
 	cpiRegisterDefMode(&cpiModeWuerfel);
 
-	d = opendir (cfDataDir);
-	if (d)
+	if ((d = configAPI->DataDir->readdir_start (configAPI->DataDir, parse_wurfel_file, parse_wurfel_directory, configAPI->DataPath)))
 	{
-		parse_wurfel_directory (cfDataDir, d);
-		closedir (d);
+		while ( configAPI->DataDir->readdir_iterate (d));
+		configAPI->DataDir->readdir_cancel (d);
 	}
 
-	d = opendir (cfDataHomeDir);
-	if (d)
+	if ((d = configAPI->DataHomeDir->readdir_start (configAPI->DataHomeDir, parse_wurfel_file, parse_wurfel_directory, configAPI->DataHomePath)))
 	{
-		parse_wurfel_directory (cfDataHomeDir, d);
-		closedir (d);
+		while ( configAPI->DataHomeDir->readdir_iterate (d));
+		configAPI->DataHomeDir->readdir_cancel (d);
 	}
 }
 
@@ -619,8 +623,14 @@ OCP_INTERNAL void cpiWurfel2Done (void)
 {
 	unsigned int i;
 	for (i=0;i<wuerfelFilesCount;i++)
-		free(wuerfelFiles[i]);
+	{
+		wuerfelFiles[i]->unref (wuerfelFiles[i]);
+	}
 	if (wuerfelFiles)
+	{
 		free(wuerfelFiles);
+	}
+	wuerfelFilesCount = 0;
+	wuerfelFiles = 0;
 	cpiUnregisterDefMode(&cpiModeWuerfel);
 }

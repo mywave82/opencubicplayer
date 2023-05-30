@@ -40,7 +40,7 @@
 #ifdef CFDATAHOMEDIR_OVERRIDE
 # define CFDATAHOMEDIR CFDATAHOMEDIR_OVERRIDE
 #else
-# define CFDATAHOMEDIR configAPI->DataHomeDir
+# define CFDATAHOMEDIR configAPI->DataHomePath
 #endif
 
 const char adbMetaTag[16] = "OCPArchiveMeta\x1b\x00";

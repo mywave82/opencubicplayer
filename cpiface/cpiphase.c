@@ -36,9 +36,10 @@
 #include <string.h>
 #include <math.h>
 #include "types.h"
-#include "cpiface.h"
-#include "cpiface-private.h"
-#include "cpipic.h"
+#include "boot/psetting.h"
+#include "cpiface/cpiface.h"
+#include "cpiface/cpiface-private.h"
+#include "cpiface/cpipic.h"
 #include "dev/mcp.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poutput.h"
@@ -407,7 +408,7 @@ static void scoDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static void scoSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	plReadOpenCPPic();
+	plReadOpenCPPic (cpifaceSession->configAPI, cpifaceSession->dirdb);
 	cpiSetGraphMode(0);
 	plPrepareScopes();
 	plPrepareScopeScr (cpifaceSession);

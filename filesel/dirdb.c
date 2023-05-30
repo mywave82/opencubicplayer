@@ -45,13 +45,13 @@
 #ifdef CFHOMEDIR_OVERRIDE
 # define CFHOMEDIR CFHOMEDIR_OVERRIDE
 #else
-# define CFHOMEDIR configAPI.HomeDir
+# define CFHOMEDIR configAPI.HomePath
 #endif
 
 #ifdef CFDATAHOMEDIR_OVERRIDE
 # define CFDATAHOMEDIR CFDATAHOMEDIR_OVERRIDE
 #else
-# define CFDATAHOMEDIR configAPI->DataHomeDir
+# define CFDATAHOMEDIR configAPI->DataHomePath
 #endif
 
 #ifdef MEASURESTR_UTF8_OVERRIDE

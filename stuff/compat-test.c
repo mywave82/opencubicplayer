@@ -274,106 +274,6 @@ static int test_splitpath42 (void)
 	return failed;
 }
 
-static int test_makepath_sub (const char *dst, const char *drive, const char *path, const char *file, const char *ext)
-{
-	char *tmp = 0;
-	int result = makepath_malloc (&tmp, drive, path, file, ext);
-	int failed = 0;
-
-	printf ("Testing drive:%s%s%s path:%s%s%s file:%s%s%s ext:%s%s%s ==> %s%s%s\n",
-	        ANSI_COLOR_GREEN, drive?drive:"(null)", ANSI_COLOR_RESET,
-	        ANSI_COLOR_GREEN, path?path:"(null)", ANSI_COLOR_RESET,
-	        ANSI_COLOR_GREEN, file?file:"(null)", ANSI_COLOR_RESET,
-	        ANSI_COLOR_GREEN, ext?ext:"(null)", ANSI_COLOR_RESET,
-	        ANSI_COLOR_GREEN, dst?dst:"(null) - should fail", ANSI_COLOR_RESET);
-
-	if (result && tmp)
-	{
-		printf ("%sFailed, but returned a string?%s\n", ANSI_COLOR_RED, ANSI_COLOR_RESET);
-		failed = 1;
-		free (tmp);
-		return 1;
-	} else if ((!result) && (!tmp))
-	{
-		printf ("%sDid not fail, but returned no string?%s\n", ANSI_COLOR_RED, ANSI_COLOR_RESET);
-		return 1;
-	}
-
-	if (!dst)
-	{
-		if (!result)
-		{
-			printf ("%sShould have failed, but didn't%s\n", ANSI_COLOR_RED, ANSI_COLOR_RESET);
-			free (tmp);
-			return 1;
-		}
-		return 0;
-	} else {
-		if (result)
-		{
-			printf ("%sShould not have failed, but did%s\n", ANSI_COLOR_RED, ANSI_COLOR_RESET);
-			return 1;
-		}
-	}
-
-	if (strcmp (dst, tmp))
-	{
-		printf ("%sfailed: ->%s<- vs ->%s<-%s\n", ANSI_COLOR_RED, dst, tmp, ANSI_COLOR_RESET);
-		failed = 1;
-	}
-	free (tmp);
-
-	return failed;
-}
-
-static int test_makepath (void)
-{
-	int failed = 0;
-
-	fprintf (stderr, ANSI_COLOR_MAGENTA "Going to test makepath_malloc() combination and assertions" ANSI_COLOR_RESET "\n");
-
-	failed |= test_makepath_sub ("file:/tmp/test.s3m", "file:" , "/tmp/", "test", ".s3m"); /* normal */
-
-	failed |= test_makepath_sub ("file:/tmp/test.s3m", "file:" , "/tmp", "test", ".s3m"); /* imply / at the end of path */
-
-	failed |= test_makepath_sub ("file:/test.s3m", "file:" , "/", "test", ".s3m"); /* root */
-
-	failed |= test_makepath_sub ("file:/test.s3m", "file:" , "", "test", ".s3m"); /* imply root, when empty string */
-
-	failed |= test_makepath_sub ("file:/tmp/test.s3m", "file:" , "/tmp/", "test.s3m", 0); /* full filename should just magically work */
-
-	failed |= test_makepath_sub ("file:/tmp/test.s3m.gz", "file:" , "/tmp/", "test.s3m", ".gz"); /* combine file-extensions should work */
-
-	failed |= test_makepath_sub ("file:test.s3m", "file:" , 0, "test", ".s3m"); /* no PATH should work */
-
-	failed |= test_makepath_sub ("file:/tmp/.s3m", "file:" , "/tmp/", 0, ".s3m"); /* no FILE should work */
-
-	failed |= test_makepath_sub ("/tmp/test.s3m", 0 , "/tmp/", "test", ".s3m"); /* no DRIVE should work */
-
-	failed |= test_makepath_sub (0, "file:" , "/tmp/", "test.", "s3m"); /* lacking . leading in extension */
-	failed |= test_makepath_sub (0, "file:" , "/tmp/", "test", "s3m"); /* lacking . leading in extension */
-	failed |= test_makepath_sub (0, "file:" , "/tmp/", "test", "mod.s3m"); /* lacking . leading in extension */
-
-	failed |= test_makepath_sub (0, "file:" , "/tmp/", "test", ".s3m/foo"); /* / in extension */
-	failed |= test_makepath_sub (0, "file:" , "/tmp/", "test", ".s3m/"); /* / in extension */
-	failed |= test_makepath_sub (0, "file:" , "/tmp/", "test", ""); /* extension should have been NULL */
-
-	failed |= test_makepath_sub (0, "file:" , "/tmp/", "/test", ".s3m"); /* / in file */
-	failed |= test_makepath_sub (0, "file:" , "/tmp/", "foo/test", ".s3m"); /* / in file */
-	failed |= test_makepath_sub (0, "file:" , "/tmp/", "test/", ".s3m"); /* / in file */
-
-	failed |= test_makepath_sub (0, "file:http:" , "/tmp/", "test", ".s3m"); /* drive broken */
-
-	failed |= test_makepath_sub (0, "file:/" , "/tmp/", "test", ".s3m"); /* / in drive */
-	failed |= test_makepath_sub (0, "file:/foo" , "/tmp/", "test", ".s3m"); /* / in drive */
-
-	failed |= test_makepath_sub (0, "file::" , "/tmp/", "test", ".s3m"); /* double : */
-
-	failed |= test_makepath_sub (0, "file" , "/tmp/", "test", ".s3m"); /* misssing : */
-
-	return failed;
-}
-
 int main(int argc, char *argv[])
 {
 	int retval = 0;
@@ -381,8 +281,6 @@ int main(int argc, char *argv[])
 	retval |= test_splitpath41 ();
 
 	retval |= test_splitpath42 ();
-
-	retval |= test_makepath ();
 
 	if (retval)
 	{

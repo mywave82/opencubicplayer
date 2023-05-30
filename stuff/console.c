@@ -355,4 +355,4 @@ static void console_done(void)
 	Console.Driver = &dummyConsoleDriver;
 }
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "poutput", .desc = "OpenCP Output Routines (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 12, .Init = console_init, .Close = console_done};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "poutput", .desc = "OpenCP Output Routines (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 1, .Init = console_init, .Close = console_done};

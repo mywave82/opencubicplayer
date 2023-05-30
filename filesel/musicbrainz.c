@@ -805,7 +805,8 @@ int musicbrainz_init (const struct configAPI_t *configAPI)
 	}
 	musicbrainz_setup_init ();
 
-	makepath_malloc (&path, 0, configAPI->DataHomeDir, "CPMUSBRN.DAT", 0);
+	path = malloc (strlen (configAPI->DataHomePath) + strlen ("CPMUSBRN.DAT") + 1);
+	sprintf (path, "%sCPMUSBRN.DAT", configAPI->DataHomePath);
 	fprintf (stderr, "Loading %s .. ", path);
 	musicbrainz.fddb = open (path, O_RDWR | O_CREAT, S_IREAD|S_IWRITE);
 	if (musicbrainz.fddb < 0)

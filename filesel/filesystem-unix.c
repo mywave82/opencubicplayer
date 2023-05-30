@@ -29,7 +29,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "types.h"
-#include "../boot/psetting.h"
+#include "boot/psetting.h"
 #include "dirdb.h"
 #include "filesystem.h"
 #include "filesystem-drive.h"
@@ -698,38 +698,62 @@ struct ocpdir_t *file_unix_root (void)
 	return unix_dir_steal (0, dirdb_node);
 }
 
-void filesystem_unix_init (void)
+static struct ocpdir_t *filesystem_unix_resolve_dir (const char *path)
+{
+	uint32_t dirdb_ref;
+	struct dmDrive *drive = 0;
+	struct ocpdir_t *dir = 0;
+
+	dirdb_ref = dirdbResolvePathWithBaseAndRef(dmFile->basedir->dirdb_ref, path, DIRDB_RESOLVE_NODRIVE, dirdb_use_dir);
+	if (!filesystem_resolve_dirdb_dir (dirdb_ref, &drive, &dir))
+	{
+		if (drive != dmFile)
+		{
+			dir->unref (dir);
+			dir = 0;
+		}
+	}
+	dirdbUnref (dirdb_ref, dirdb_use_dir);
+	return dir;
+}
+
+int filesystem_unix_init (void)
 {
 	struct ocpdir_t *root = file_unix_root();
 	struct ocpdir_t *newcwd;
-	struct dmDrive *newdrive;
 	char *currentpath;
-	uint32_t newcurrentpath;
 
 	dmFile = RegisterDrive("file:", root, root);
 
 	root->unref (root); root = 0;
 
 	currentpath = getcwd_malloc ();
-	newcurrentpath = dirdbResolvePathWithBaseAndRef(dmFile->basedir->dirdb_ref, currentpath, DIRDB_RESOLVE_NODRIVE, dirdb_use_dir);
-	free (currentpath);
-	currentpath = 0;
-	if (!filesystem_resolve_dirdb_dir (newcurrentpath, &newdrive, &newcwd))
+	newcwd = filesystem_unix_resolve_dir (currentpath);
+	free (currentpath); currentpath = 0;
+	if (newcwd)
 	{
-		if (newdrive == dmFile)
+		if (dmFile->cwd)
 		{
-			if (dmFile->cwd)
-			{
-				dmFile->cwd->unref (dmFile->cwd);
-			}
-			dmFile->cwd = newcwd;
-		} else {
-			newcwd->unref (newcwd);
+			dmFile->cwd->unref (dmFile->cwd);
+			dmFile->cwd = 0;
 		}
+		dmFile->cwd = newcwd;
 	}
-	dirdbUnref (newcurrentpath, dirdb_use_dir);
+
+	if (!(configAPI.HomeDir       = filesystem_unix_resolve_dir    (configAPI.HomePath       ))) { fprintf (stderr, "Unable to resolve cfHome=%s\n",       configAPI.HomePath);       return -1; }
+	if (!(configAPI.ConfigHomeDir = filesystem_unix_resolve_dir    (configAPI.ConfigHomePath ))) { fprintf (stderr, "Unable to resolve cfConfigHome=%s\n", configAPI.ConfigHomePath); return -1; }
+	if (!(configAPI.DataHomeDir   = filesystem_unix_resolve_dir    (configAPI.DataHomePath   ))) { fprintf (stderr, "Unable to resolve cfDataHome=%s\n",   configAPI.DataHomePath);   return -1; }
+	if (!(configAPI.DataDir       = filesystem_unix_resolve_dir    (configAPI.DataPath       ))) { fprintf (stderr, "Unable to resolve cfData=%s\n",       configAPI.DataPath);       return -1; }
+	if (!(configAPI.TempDir       = filesystem_unix_resolve_dir    (configAPI.TempPath       ))) { fprintf (stderr, "Unable to resolve cfTemp=%s\n",       configAPI.TempPath);       return -1; }
+
+	return 0;
 }
 
 void filesystem_unix_done (void)
 {
+	if (configAPI.HomeDir)       { configAPI.HomeDir      ->unref (configAPI.HomeDir      ); configAPI.HomeDir       = 0; }
+	if (configAPI.ConfigHomeDir) { configAPI.ConfigHomeDir->unref (configAPI.ConfigHomeDir); configAPI.ConfigHomeDir = 0; }
+	if (configAPI.DataHomeDir)   { configAPI.DataHomeDir  ->unref (configAPI.DataHomeDir  ); configAPI.DataHomeDir   = 0; }
+	if (configAPI.DataDir)       { configAPI.DataDir      ->unref (configAPI.DataDir      ); configAPI.DataDir       = 0; }
+	if (configAPI.TempDir)       { configAPI.TempDir      ->unref (configAPI.TempDir      ); configAPI.TempDir       = 0; }
 }

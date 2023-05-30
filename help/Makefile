@@ -29,6 +29,8 @@ cphelper.o: cphelper.c cphelper.h \
 	../boot/plinkman.h \
 	../boot/psetting.h \
 	../cpiface/cpiface.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
 	../stuff/err.h \
 	../stuff/compat.h \
 	../stuff/poutput.h \

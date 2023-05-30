@@ -54,9 +54,7 @@
 #include "config.h"
 #include <assert.h>
 #include <ctype.h>
-#include <dirent.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <fnmatch.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -921,7 +919,7 @@ int fsPreInit (const struct configAPI_t *configAPI)
 
 	filesystem_drive_init ();
 
-	filesystem_unix_init ();
+	if (filesystem_unix_init ()) return 0;
 	dmCurDrive = dmFile;
 
 	filesystem_bzip2_register ();
@@ -3868,7 +3866,7 @@ static int fsSavePlayList(const struct modlist *ml)
 
 	if (strcmp(dr, "file:"))
 	{
-		fprintf(stderr, "[filesel] file: is the only supported transport currently\n");
+		fprintf(stderr, "[filesel] file: is the only supported drive currently\n");
 		free (dr);
 		free (di);
 		free (fn);
@@ -3877,7 +3875,8 @@ static int fsSavePlayList(const struct modlist *ml)
 	}
 
 	free (dr); dr = 0;
-	makepath_malloc (&newpath, NULL, di, fn, ext);
+	newpath = malloc (strlen (di) + strlen (fn) + strlen (ext) + 1);
+	sprintf (newpath, "%s%s%s", di, fn, ext);
 	free (fn); fn = 0;
 	free (ext); ext = 0;
 	free (di); di = 0;

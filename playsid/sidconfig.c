@@ -908,7 +908,7 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 {
 	int esel = 0;
 
-	uint32_t dirdb_base = API->dirdb->ResolvePathWithBaseAndRef (API->dmFile->basedir->dirdb_ref, API->configAPI->DataHomeDir, 0, dirdb_use_dir);
+	uint32_t dirdb_base = API->configAPI->DataHomeDir->dirdb_ref;
 
 	config_emulator = emulator_to_int         (API->configAPI->GetProfileString ("libsidplayfp", "emulator",        "residfp"));
 	config_defaultC64 = defaultC64_to_int     (API->configAPI->GetProfileString ("libsidplayfp", "defaultC64",      "PAL"));
@@ -1078,15 +1078,15 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 													sprintf (newpath, "%s", path + strlen (config));
 												}
 #ifdef __WIN32
-											} else if (!strncasecmp (path, API->configAPI->HomeDir, strlen (API->configAPI->HomeDir)))
+											} else if (!strncasecmp (path, API->configAPI->HomePath, strlen (API->configAPI->HomePath)))
 #else
-											} else if (!strncmp (path, API->configAPI->HomeDir, strlen (API->configAPI->HomeDir)))
+											} else if (!strncmp (path, API->configAPI->HomePath, strlen (API->configAPI->HomePath)))
 #endif
 											{
-												newpath = malloc (3 + strlen (path) - strlen (API->configAPI->HomeDir));
+												newpath = malloc (3 + strlen (path) - strlen (API->configAPI->HomePath));
 												if (newpath)
 												{
-													sprintf (newpath, "~/%s", path + strlen (API->configAPI->HomeDir));
+													sprintf (newpath, "~/%s", path + strlen (API->configAPI->HomePath));
 												}
 											} else {
 												newpath = path;
@@ -1253,8 +1253,6 @@ superexit:
 	API->dirdb->Unref (entry_kernal.dirdb_ref, dirdb_use_file);
 	API->dirdb->Unref (entry_basic.dirdb_ref, dirdb_use_file);
 	API->dirdb->Unref (entry_chargen.dirdb_ref, dirdb_use_file);
-
-	API->dirdb->Unref (dirdb_base, dirdb_use_dir);
 }
 
 static struct ocpfile_t *sidconfig; // needs to overlay an dialog above filebrowser, and after that the file is "finished"   Special case of DEVv

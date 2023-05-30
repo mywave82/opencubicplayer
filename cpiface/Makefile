@@ -65,11 +65,12 @@ cpichan.o: cpichan.c \
 	$(CC) cpichan.c -o $@ -c
 
 cpidots.o: cpidots.c \
-	cpiface.h \
-	cpiface-private.h \
-	cpipic.h \
 	../config.h \
 	../types.h \
+	../boot/psetting.h \
+	../cpiface/cpiface.h \
+	../cpiface/cpiface-private.h \
+	../cpiface/cpipic.h \
 	../stuff/poutput.h
 	$(CC) cpidots.c -o $@ -c
 
@@ -108,9 +109,11 @@ cpiinst.o: cpiinst.c \
 
 cpikube.o: cpikube.c \
 	../config.h \
-	cpiface.h \
 	../types.h \
 	../boot/psetting.h \
+	../cpiface/cpiface.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
 	../stuff/compat.h \
 	../stuff/poutput.h
 	$(CC) cpikube.c -o $@ -c
@@ -143,9 +146,10 @@ cpimvol.o: cpimvol.c \
 cpiphase.o: cpiphase.c \
 	../config.h \
 	../types.h \
-	cpiface.h \
-	cpiface-private.h \
-	cpipic.h \
+	../boot/psetting.h \
+	../cpiface/cpiface.h \
+	../cpiface/cpiface-private.h \
+	../cpiface/cpipic.h \
 	../dev/mcp.h \
 	../stuff/imsrtns.h \
 	../stuff/poutput.h
@@ -155,9 +159,13 @@ cpipic.o: cpipic.c \
 	../config.h \
 	../types.h \
 	../boot/psetting.h \
-	cpiface.h \
-	gif.h \
-	tga.h \
+	../cpiface/cpiface.h \
+	../cpiface/cpipic.h \
+	../cpiface/gif.h \
+	../cpiface/tga.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
+	../filesel/filesystem-drive.h \
 	../stuff/compat.h
 	$(CC) cpipic.c -o $@ -c
 
@@ -171,9 +179,10 @@ cpiptype.o: cpiptype.c \
 cpiscope.o: cpiscope.c \
 	../config.h \
 	../types.h \
-	cpiface.h \
-	cpiface-private.h \
-	cpipic.h \
+	../boot/psetting.h \
+	../cpiface/cpiface.h \
+	../cpiface/cpiface-private.h \
+	../cpiface/cpipic.h \
 	../dev/mcp.h \
 	../stuff/poutput.h
 	$(CC) cpiscope.c -o $@ -c

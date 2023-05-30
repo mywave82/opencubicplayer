@@ -13,7 +13,7 @@ extern struct dmDrive *dmFile;
 
 struct ocpdir_t *file_unix_root (void);
 
-void filesystem_unix_init (void);
+int filesystem_unix_init (void);
 void filesystem_unix_done (void);
 
 #endif

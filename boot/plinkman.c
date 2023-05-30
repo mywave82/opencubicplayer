@@ -171,12 +171,8 @@ static int lnkDoLoad(const char *file)
 #ifdef LD_DEBUG
 	fprintf(stderr, "Request to load %s\n", file);
 #endif
-	if (!strncmp (file, "autoload/", 9))
-	{
-		makepath_malloc (&buffer, 0, cfProgramDirAutoload, file + 9, LIB_SUFFIX);
-	} else {
-		makepath_malloc (&buffer, 0, cfProgramDir, file, LIB_SUFFIX);
-	}
+	buffer = malloc (strlen (cfProgramPath) + strlen (file + 9) + strlen (LIB_SUFFIX) + 1);
+	sprintf (buffer, "%s%s" LIB_SUFFIX, cfProgramPath, file + 9);
 #ifdef LD_DEBUG
 	fprintf(stderr, "Attempting to load %s\n", buffer);
 #endif
@@ -222,7 +218,6 @@ int lnkLinkDir(const char *dir)
 	DIR *d;
 	struct dirent *de;
 	char *filenames[1024];
-	char *buffer;
 	int files=0;
 	int n;
 	if (!(d=opendir(dir)))
@@ -243,7 +238,9 @@ int lnkLinkDir(const char *dir)
 			closedir(d);
 			return -1;
 		}
-		filenames[files++]=strdup(de->d_name);
+		filenames[files] = malloc (strlen(dir) + strlen(de->d_name) + 1);
+		sprintf (filenames[files], "%s%s", dir, de->d_name);
+		files++;
 	}
 	closedir(d);
 	if (!files)
@@ -255,16 +252,14 @@ int lnkLinkDir(const char *dir)
 #endif
 	for (n=0;n<files;n++)
 	{
-		makepath_malloc (&buffer, 0, dir, filenames[n], 0);
-		if (_lnkDoLoad(buffer)<0) // steals the string
+		if (_lnkDoLoad(filenames[n])<0) // steals the string
 		{
 #ifndef STATIC_CORE /* if we have a static core, the plugins in the autoload are not all critical */
-			for (;n<files;n++)
+			for (n++;n<files;n++)
 				free(filenames[n]);
 			return -1;
 #endif
 		}
-		free (filenames[n]);
 	}
 	return 0; /* all okey */
 }
