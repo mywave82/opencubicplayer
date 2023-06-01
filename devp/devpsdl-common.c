@@ -15,6 +15,12 @@ volatile static uint32_t lastCallbackTime;
 #endif
 static volatile unsigned int lastLength;
 
+#if SDL_VERSION_ATLEAST(2,0,0)
+static SDL_AudioDeviceID status;
+#else
+static int status;
+#endif
+
 void theRenderProc(void *userdata, Uint8 *stream, int len)
 {
 	int pos1, length1, pos2, length2;
@@ -177,7 +183,6 @@ static void devpSDLPeekBuffer (void **buf1, unsigned int *buf1length, void **buf
 static int devpSDLPlay (uint32_t *rate, enum plrRequestFormat *format, struct ocpfilehandle_t *source_file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	SDL_AudioSpec desired, obtained;
-	int status;
 	int plrbufsize; /* given in ms */
 	int buflength;
 
@@ -216,7 +221,11 @@ static int devpSDLPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 #endif
 	lastLength = 0;
 
+#if SDL_VERSION_ATLEAST(2,0,0)
+	status=SDL_OpenAudioDevice(NULL, 0, &desired, &obtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_SAMPLES_CHANGE);
+#else
 	status=SDL_OpenAudio(&desired, &obtained);
+#endif
 	if (status < 0)
 	{
 		fprintf (stderr, "[SDL] SDL_OpenAudio returned %d (%s)\n", (int)status, SDL_GetError());
@@ -260,7 +269,11 @@ static int devpSDLPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 	cpifaceSession->plrActive = 1;
 
 #warning This needs to delay until we have received the first commit
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_PauseAudioDevice(status, 0);
+#else
 	SDL_PauseAudio(0);
+#endif
 	return 1;
 }
 
@@ -313,7 +326,11 @@ static void devpSDLStop (struct cpifaceSessionAPI_t *cpifaceSession)
 	PRINT("%s()\n", __FUNCTION__);
 	/* TODO, forceflush */
 
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_PauseAudioDevice(status, 1);
+#else
 	SDL_PauseAudio(1);
+#endif
 
 	SDL_CloseAudio();
 
