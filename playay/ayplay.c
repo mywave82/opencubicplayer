@@ -361,6 +361,7 @@ static int read_ay_file (struct ocpfilehandle_t *in, struct cpifaceSessionAPI_t 
 	in->seek_set (in, 0);
 	if (in->read (in, data, data_len) != data_len)
 	{
+		free (data);
 		return errFileRead;
 	}
 

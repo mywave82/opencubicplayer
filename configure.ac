@@ -77,6 +77,7 @@ AC_ARG_WITH([builtin],                 [AS_HELP_STRING([--with-builtin=core,auto
 AC_ARG_WITH([x11],                     [AS_HELP_STRING([--with-x11],                       [force/disable x11 support])],                                                   [], [with_x11=auto])
 #AC_ARG_WITH([adplug],                 [AS_HELP_STRING([--with-adplug],                    [force/disable adplug support])],                                                [], [with_adplug=auto])
 AC_ARG_WITH([mad],                     [AS_HELP_STRING([--with-mad],                       [force/disable mad mpeg audio support])],                                        [], [with_mad=auto])
+AC_ARG_WITH([libgme],                  [AS_HELP_STRING([--with-libgme],                    [force/disable libgme (Game Music Emulator support)])],                          [], [with_libgme=auto])
 AC_ARG_WITH([alsa],                    [AS_HELP_STRING([--with-alsa],                      [force/disable alsa support])],                                                  [], [with_alsa=auto])
 AC_ARG_WITH([oss],                     [AS_HELP_STRING([--with-oss],                       [force/disable oss support])],                                                   [], [with_oss=auto])
 AC_ARG_WITH([lzw],                     [AS_HELP_STRING([--with-lzw],                       [force/disable lzw support (enabled by default)])],                              [], [with_lzw=yes])
@@ -993,6 +994,19 @@ case $with_libiconv in
 		;;
 esac
 
+AC_SUBST(HAVE_LIBGME)
+AS_IF([test "x$with_libgme" != "xno"],[
+	PKG_CHECK_MODULES([LIBGME],[libgme],[],[
+		AS_IF([test "x$with_libgme" = "xyes"], [AC_MSG_ERROR("libgme not found")], [with_libgme="no"])
+	])
+])
+AS_IF([test "x$with_libgme" = "xno"], [
+	HAVE_LIBGME=
+],[
+	HAVE_LIBGME=1
+	AC_DEFINE(HAVE_LIBGME)
+])
+
 AS_IF([test "x$with_update_mime_database" != "xno"],[
 	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"], [
 		AC_CHECK_PROG([UPDATE_MIME_DATABASE], [update-mime-database], [update-mime-database], [failed])
@@ -1048,6 +1062,7 @@ dnl AS_IF([test "x$with_adplug"    = "xno" ], [echo "adplug:            OFF"], [
 AS_IF([test "x$with_mad"       = "xno" ], [echo "mad:               OFF"], [echo "mad:               ON"])
                                            echo "sidplayfp:         GIT/builtin"
 AS_IF([test "x$with_flac"      = "xno" ], [echo "FLAC:              OFF"], [echo "FLAC:              ON"])
+AS_IF([test "x$with_libgme"    = "xno" ], [echo "GME:               OFF"], [echo "GME:               ON"])
 AS_IF([test "x$with_x11"       = "xno" ], [echo "x11:               OFF"], [echo "x11:               ON"])
 AS_IF([test "x$with_sdl"       = "xno" ], [echo "SDL:               OFF"], [echo "SDL:               ON"])
 AS_IF([test "x$with_sdl2"      = "xno" ], [echo "SDL2:              OFF"], [echo "SDL2:              ON"])

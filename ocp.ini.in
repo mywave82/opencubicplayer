@@ -1,5 +1,5 @@
 [version]
-  epoch=20230403
+  epoch=20230607
 
 [general]
 ;link=
@@ -205,6 +205,16 @@
   WOW=4
   YM=6
   XM=3
+  AY2=13
+  GBS=13
+  GYM=13
+  HES=13
+  KSS=13
+  NSF=13
+  NSFe=13
+  SAP=13
+  SPC=13
+  VGM=13
 
 [timidity]
   configfile=             ; leave empty to use system default, or it can specify a specific config file or sound font ending with a .sf2 extension

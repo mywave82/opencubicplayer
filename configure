@@ -651,6 +651,9 @@ ac_header_c_list=
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 BUILD_DUMPTOOLS
+LIBGME_LIBS
+LIBGME_CFLAGS
+HAVE_LIBGME
 ICONV_LIBS
 CP
 HAVE_LZH
@@ -845,6 +848,7 @@ with_debug
 with_builtin
 with_x11
 with_mad
+with_libgme
 with_alsa
 with_oss
 with_lzw
@@ -928,7 +932,9 @@ ALSA_LIBS
 LIBANCIENT_CFLAGS
 LIBANCIENT_LIBS
 OSS_CFLAGS
-OSS_LIBS'
+OSS_LIBS
+LIBGME_CFLAGS
+LIBGME_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1567,6 +1573,7 @@ Optional Packages:
                           always modules
   --with-x11              force/disable x11 support
   --with-mad              force/disable mad mpeg audio support
+  --with-libgme           force/disable libgme (Game Music Emulator support)
   --with-alsa             force/disable alsa support
   --with-oss              force/disable oss support
   --with-lzw              force/disable lzw support (enabled by default)
@@ -1702,6 +1709,9 @@ Some influential environment variables:
               linker flags for LIBANCIENT, overriding pkg-config
   OSS_CFLAGS  C compiler flags for OSS, overriding pkg-config
   OSS_LIBS    linker flags for OSS, overriding pkg-config
+  LIBGME_CFLAGS
+              C compiler flags for LIBGME, overriding pkg-config
+  LIBGME_LIBS linker flags for LIBGME, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -7770,6 +7780,15 @@ then :
   withval=$with_mad;
 else $as_nop
   with_mad=auto
+fi
+
+
+# Check whether --with-libgme was given.
+if test ${with_libgme+y}
+then :
+  withval=$with_libgme;
+else $as_nop
+  with_libgme=auto
 fi
 
 
@@ -17415,6 +17434,110 @@ printf "%s\n" "#define USE_LIBICONV_NATIVE 1" >>confdefs.h
 		;;
 esac
 
+
+if test "x$with_libgme" != "xno"
+then :
+
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libgme" >&5
+printf %s "checking for libgme... " >&6; }
+
+if test -n "$LIBGME_CFLAGS"; then
+    pkg_cv_LIBGME_CFLAGS="$LIBGME_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libgme\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libgme") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBGME_CFLAGS=`$PKG_CONFIG --cflags "libgme" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBGME_LIBS"; then
+    pkg_cv_LIBGME_LIBS="$LIBGME_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libgme\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libgme") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBGME_LIBS=`$PKG_CONFIG --libs "libgme" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBGME_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libgme" 2>&1`
+        else
+	        LIBGME_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libgme" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBGME_PKG_ERRORS" >&5
+
+
+		if test "x$with_libgme" = "xyes"
+then :
+  as_fn_error $? "\"libgme not found\"" "$LINENO" 5
+else $as_nop
+  with_libgme="no"
+fi
+
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+		if test "x$with_libgme" = "xyes"
+then :
+  as_fn_error $? "\"libgme not found\"" "$LINENO" 5
+else $as_nop
+  with_libgme="no"
+fi
+
+else
+	LIBGME_CFLAGS=$pkg_cv_LIBGME_CFLAGS
+	LIBGME_LIBS=$pkg_cv_LIBGME_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+fi
+
+fi
+if test "x$with_libgme" = "xno"
+then :
+
+	HAVE_LIBGME=
+
+else $as_nop
+
+	HAVE_LIBGME=1
+	printf "%s\n" "#define HAVE_LIBGME 1" >>confdefs.h
+
+
+fi
+
 if test "x$with_update_mime_database" != "xno"
 then :
 
@@ -18934,6 +19057,12 @@ then :
   echo "FLAC:              OFF"
 else $as_nop
   echo "FLAC:              ON"
+fi
+if test "x$with_libgme"    = "xno"
+then :
+  echo "GME:               OFF"
+else $as_nop
+  echo "GME:               ON"
 fi
 if test "x$with_x11"       = "xno"
 then :

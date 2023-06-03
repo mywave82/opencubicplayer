@@ -58,6 +58,16 @@ Fork of [TiMidity++](http://timidity.sourceforge.net/) is used to play [MIDI](ht
 - \*.HVL [Hively Tracker](https://github.com/pete-gordon/hivelytracker)
 - \*.AHX [AHX](http://amigascne.org/abyss/ahx/) or use the not yet existant modern [AHX Clone](https://github.com/8bitbubsy/ahx-clone)
 
+[Game Music Emulator](https://bitbucket.org/mpyne/game-music-emu/wiki/Home) Support for various retro game consoles:
+- \*.GBS, [GameBoy Sound System](https://en.wikipedia.org/wiki/Game_Boy_Sound_System)
+- \*.GYM, [Genesis YM2612](https://vgmrips.net/wiki/GYM_File_Format)
+- \*.HES, [Hudson Entertainment Sound](http://www.purose.net/befis/download/nezplug/hesspec.txt)
+- \*.KSS, [onami Sound System?](http://www.vgmpf.com/Wiki/index.php?title=KSS)
+- \*.NSF \*.NSFe, [Nintendo Sound Format](https://www.nesdev.org/wiki/NSF)
+- \*.SAP, [Slight Atari Player](https://asap.sourceforge.net/sap-format.html)
+- \*.SPC, [Super Nintendo / Super Famicom SPC-700 co-processor](http://vspcplay.raphnet.net/spc_file_format.txt)
+- \*.VGM \*.VGZ, [Video Game Music](https://vgmrips.net/wiki/VGM_File_Format)
+
 # Manual Page
 
 https://manpages.debian.org/testing/opencubicplayer/ocp.1.en.html

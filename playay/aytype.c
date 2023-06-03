@@ -110,7 +110,8 @@ static const char *AY_description[] =
 	//                                                                          |
 	"AY files are executable code that runs a virtual Z80 machine with a virtual",
 	"AY-3-8910 sound IC. This IC a 3 channel programmable sound generator (PSG)",
-	"that can generate sawtooth and pulse-wave (square) sounds.",
+	"that can generate sawtooth and pulse-wave (square) sounds. Playback using",
+	"Open Cubic Player internal playay with registery inspection",
 	NULL
 };
 

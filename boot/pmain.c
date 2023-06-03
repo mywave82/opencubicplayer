@@ -975,9 +975,24 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileComment ("adplug", "emulator", "; Possible values are ken, nuked, satoh and woody.");
 		}
 
-		if (epoch < 20230403)
+		if (epoch < 20230607)
 		{
-			cfSetProfileInt("version", "epoch", 20230403, 10);
+			fprintf(stderr, "ocp.ini update (0.2.106), added playgme plugin\n");
+			cfSetProfileInt ("fscolors", "AY2", 13, 10);
+			cfSetProfileInt ("fscolors", "GBS", 13, 10);
+			cfSetProfileInt ("fscolors", "GYM", 13, 10);
+			cfSetProfileInt ("fscolors", "HES", 13, 10);
+			cfSetProfileInt ("fscolors", "KSS", 13, 10);
+			cfSetProfileInt ("fscolors", "NSF", 13, 10);
+			cfSetProfileInt ("fscolors", "NSFe", 13, 10);
+			cfSetProfileInt ("fscolors", "SAP", 13, 10);
+			cfSetProfileInt ("fscolors", "SPC", 13, 10);
+			cfSetProfileInt ("fscolors", "VGM", 13, 10);
+		}
+
+		if (epoch < 20230607)
+		{
+			cfSetProfileInt("version", "epoch", 20230607, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -988,13 +1003,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20230403)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20230607)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20230403\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20230607\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20230403\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20230607\n\n");
 		}
 		sleep(5);
 	}

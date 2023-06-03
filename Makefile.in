@@ -5,6 +5,9 @@ SUBDIRS=boot cpiface dev doc devp devw filesel goodies help medialib playay play
 ifeq ($(HAVE_MAD),1)
 SUBDIRS+=playmp2
 endif
+ifeq ($(HAVE_LIBGME),1)
+SUBDIRS+=playgme
+endif
 SUBDIRS+=playsid playwav playxm playym stuff
 
 .PHONY: all clean subdirs $(SUBDIRS)
