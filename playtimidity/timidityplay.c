@@ -1933,6 +1933,12 @@ OCP_INTERNAL void timidityIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 						length1-=progress;
 						targetlength--;
 
+						if (length1 < 0)
+						{
+							length2 += length1;
+							length1 = 0;
+						}
+
 						accumulated_target++;
 					} /* while (targetlength && length1) */
 					length1 = length2;
