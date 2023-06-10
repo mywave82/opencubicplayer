@@ -979,6 +979,16 @@ static struct ocpdir_t *gzip_check (const struct ocpdirdecompressor_t *ref, stru
 		return retval;
 	}
 
+	if (!strcasecmp (filetype, ".vgz"))
+	{
+		dirdbGetName_malloc (s->dirdb_ref, &newname);
+		l = strlen (newname);
+		strcpy (newname + l - 4, ".vgm");
+		retval = gzip_check_steal (s, dirdbFindAndRef (s->dirdb_ref, newname, dirdb_use_file));
+		free (newname);
+		return retval;
+	}
+
 	return 0;
 }
 
