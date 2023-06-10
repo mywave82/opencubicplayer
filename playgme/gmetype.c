@@ -594,6 +594,7 @@ static int gmeReadInfoVGM (struct moduleinfostruct *m, struct ocpfilehandle_t *f
 				   (((uint_fast32_t)(h->gd3_offset[1])) << 8 ) |
 				   (((uint_fast32_t)(h->gd3_offset[2])) << 16) |
 				   (((uint_fast32_t)(h->gd3_offset[3])) << 24);
+
 		gd3_pos -= 0x14;
 		if (gd3_pos > 0x40)
 		{
@@ -630,8 +631,21 @@ static int gmeReadInfoVGM (struct moduleinfostruct *m, struct ocpfilehandle_t *f
 			}
 			fp->seek_set (fp, 0);
 		}
-		m->modtype.integer.i = MODULETYPE("VGM");
-		return 1;
+		if (h->psg_rate[0]    || h->psg_rate[1]    || h->psg_rate[2]    || h->psg_rate[3]    ||
+		    h->ym2413_rate[0] || h->ym2413_rate[1] || h->ym2413_rate[2] || h->ym2413_rate[3] ||
+		    h->ym2612_rate[0] || h->ym2612_rate[1] || h->ym2612_rate[2] || h->ym2612_rate[3] ||
+		    h->ym2151_rate[0] || h->ym2151_rate[1] || h->ym2151_rate[2] || h->ym2151_rate[3])
+		{
+			m->modtype.integer.i = MODULETYPE("VGM");
+			return 1;
+		}
+		if ((len > 256) && (
+		    buf[0x50] || buf[0x51] || buf[0x52] || buf[0x53] || // OPL2
+		    buf[0x5c] || buf[0x5d] || buf[0x5e] || buf[0x5f])) // OPL3
+		{
+			m->modtype.integer.i = MODULETYPE("OPL");
+			return 1;
+		}
 	}
 	return 0;
 }
@@ -677,7 +691,7 @@ static int gmeReadInfo (struct moduleinfostruct *m, struct ocpfilehandle_t *fp, 
 	{
 		return gmeReadInfoSPC (m, fp, buf, len, API);
 	}
-	if (memcmp (buf, "Vgm ", 4))
+	if (!memcmp (buf, "Vgm ", 4))
 	{
 		return gmeReadInfoVGM (m, fp, buf, len, API);
 
