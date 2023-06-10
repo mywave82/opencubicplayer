@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "types.h"
+#include "boot/psetting.h"
 #include "cp437.h"
 #include "pfonts.h"
 #include "poutput-fontengine.h"
@@ -44,7 +45,7 @@ static int font_entries_8x16_fill;
 static int font_entries_8x16_allocated;
 
 static TTF_Font *unifont_bmp;
-#if defined(UNIFONT_CSUR_TTF) || defined(UNIFONT_CSUR_OTF)
+#if defined(UNIFONT_CSUR_TTF) || defined(UNIFONT_CSUR_OTF) || defined (UNIFONT_RELATIVE)
 static TTF_Font *unifont_csur;
 #endif
 static TTF_Font *unifont_upper;
@@ -547,7 +548,32 @@ uint8_t *fontengine_8x16(uint32_t codepoint, int *width)
 int fontengine_init (void)
 {
 	int i;
-
+#ifdef UNIFONT_RELATIVE
+# ifdef UNIFONT_TTF
+#  undef UNIFONT_TTF
+# endif
+# ifdef UNIFONT_CSUR_TTF
+#  undef UNIFONT_CSUR_TTF
+# endif
+# ifdef UNIFONT_UPPER_TTF
+#  undef UNIFONT_UPPER_TTF
+# endif
+# ifdef UNIFONT_OTF
+#  undef UNIFONT_OTF
+# endif
+# ifdef UNIFONT_CSUR_OTF
+#  undef UNIFONT_CSUR_OTF
+# endif
+# ifdef UNIFONT_UPPER_OTF
+#  undef UNIFONT_UPPER_OTF
+# endif
+	char *UNIFONT_TTF;
+	char *UNIFONT_CSUR_TTF;
+	char *UNIFONT_UPPER_TTF;
+	char *UNIFONT_OTF;
+	char *UNIFONT_CSUR_OTF;
+	char *UNIFONT_UPPER_OTF;
+#endif
 	char error_ttf[256];
 	char error_otf[256];
 
@@ -559,66 +585,84 @@ int fontengine_init (void)
 		return 1;
 	}
 
-	unifont_bmp = TTF_OpenFontFilename(UNIFONT_TTF, 16, 0, 0, 0);
+#ifdef UNIFONT_RELATIVE
+	UNIFONT_TTF       = malloc (strlen (configAPI.DataPath) + strlen ("unifont.ttf"      ) + 1);
+	UNIFONT_CSUR_TTF  = malloc (strlen (configAPI.DataPath) + strlen ("unifont_csur.ttf" ) + 1);
+	UNIFONT_UPPER_TTF = malloc (strlen (configAPI.DataPath) + strlen ("unifont_upper.ttf") + 1);
+	UNIFONT_OTF       = malloc (strlen (configAPI.DataPath) + strlen ("unifont.otf"      ) + 1);
+	UNIFONT_CSUR_OTF  = malloc (strlen (configAPI.DataPath) + strlen ("unifont_csur.otf" ) + 1);
+	UNIFONT_UPPER_OTF = malloc (strlen (configAPI.DataPath) + strlen ("unifont_upper.otf") + 1);
+	sprintf (UNIFONT_TTF,       "%s%s", configAPI.DataPath, "unifont.ttf"      );
+	sprintf (UNIFONT_CSUR_TTF,  "%s%s", configAPI.DataPath, "unifont_csur.ttf" );
+	sprintf (UNIFONT_UPPER_TTF, "%s%s", configAPI.DataPath, "unifont_upper.ttf");
+	sprintf (UNIFONT_OTF,       "%s%s", configAPI.DataPath, "unifont.otf"      );
+	sprintf (UNIFONT_CSUR_OTF,  "%s%s", configAPI.DataPath, "unifont_csur.otf" );
+	sprintf (UNIFONT_UPPER_OTF, "%s%s", configAPI.DataPath, "unifont_upper.otf");
+#endif
+
+	unifont_bmp = TTF_OpenFontFilename(UNIFONT_OTF, 16, 0, 0, 0);
 	if (!unifont_bmp)
 	{
-		snprintf (error_ttf, sizeof (error_ttf), "TTF_OpenFont(\"" UNIFONT_TTF "\") failed: %s\n", TTF_GetError());
+		snprintf (error_otf, sizeof (error_otf), "TTF_OpenFont(\"%s\") failed: %s\n", UNIFONT_OTF, TTF_GetError());
 		TTF_ClearError();
 
-		unifont_bmp = TTF_OpenFontFilename(UNIFONT_OTF, 16, 0, 0, 0);
+		unifont_bmp = TTF_OpenFontFilename(UNIFONT_TTF, 16, 0, 0, 0);
 		if (!unifont_bmp)
 		{
-			snprintf (error_otf, sizeof (error_otf), "TTF_OpenFont(\"" UNIFONT_OTF "\") failed: %s\n", TTF_GetError());
+			snprintf (error_ttf, sizeof (error_ttf), "TTF_OpenFont(\"%s\") failed: %s\n", UNIFONT_TTF, TTF_GetError());
 			TTF_ClearError();
 
-			fputs (error_ttf, stderr);
 			fputs (error_otf, stderr);
+			fputs (error_ttf, stderr);
 		}
 	}
 
-#ifdef UNIFONT_CSUR_TTF
-	unifont_csur = TTF_OpenFontFilename(UNIFONT_CSUR_TTF, 16, 0, 0, 0);
+#if defined(UNIFONT_CSUR_OTF) || defined (UNIFONT_RELATIVE)
+	unifont_csur = TTF_OpenFontFilename(UNIFONT_CSUR_OTF, 16, 0, 0, 0);
 	if (!unifont_csur)
 	{
-		snprintf (error_ttf, sizeof (error_ttf), "TTF_OpenFont(\"" UNIFONT_CSUR_TTF "\") failed: %s\n", TTF_GetError());
+		snprintf (error_otf, sizeof (error_otf), "TTF_OpenFont(\"%s\") failed: %s\n", UNIFONT_CSUR_OTF, TTF_GetError());
 		TTF_ClearError();
 	}
 #endif
-#ifdef UNIFONT_CSUR_OTF
+#if defined(UNIFONT_CSUR_TTF) || defined (UNIFONT_RELATIVE)
 	if (!unifont_csur)
 	{
-		unifont_csur = TTF_OpenFontFilename(UNIFONT_CSUR_OTF, 16, 0, 0, 0);
+		unifont_csur = TTF_OpenFontFilename(UNIFONT_CSUR_TTF, 16, 0, 0, 0);
 		if (!unifont_csur)
 		{
-			snprintf (error_otf, sizeof (error_otf), "TTF_OpenFont(\"" UNIFONT_CSUR_OTF "\") failed: %s\n", TTF_GetError());
+			snprintf (error_ttf, sizeof (error_ttf), "TTF_OpenFont(\"%s\") failed: %s\n", UNIFONT_CSUR_TTF, TTF_GetError());
 			TTF_ClearError();
 		}
 	}
 #endif
+
+# if defined(UNIFONT_CSUR_TTF) || defined(UNIFONT_CSUR_OTF) || defined (UNIFONT_RELATIVE)
 	if (!unifont_csur)
 	{
-#ifdef UNIFONT_CSUR_TTF
-		fputs (error_ttf, stderr);
-#endif
-#ifdef UNIFONT_CSUR_OTF
+# if defined(UNIFONT_CSUR_OTF) || defined (UNIFONT_RELATIVE)
 		fputs (error_otf, stderr);
-#endif
+# endif
+# if defined(UNIFONT_CSUR_TTF) || defined (UNIFONT_RELATIVE)
+		fputs (error_ttf, stderr);
+# endif
 	}
+#endif
 
-	unifont_upper = TTF_OpenFontFilename(UNIFONT_UPPER_TTF , 16, 0, 0, 0);
+	unifont_upper = TTF_OpenFontFilename(UNIFONT_UPPER_OTF , 16, 0, 0, 0);
 	if (!unifont_upper)
 	{
-		snprintf (error_ttf, sizeof (error_ttf), "TTF_OpenFont(\"" UNIFONT_UPPER_TTF "\") failed: %s\n", TTF_GetError());
+		snprintf (error_otf, sizeof (error_ttf), "TTF_OpenFont(\"%s\") failed: %s\n", UNIFONT_UPPER_OTF, TTF_GetError());
 		TTF_ClearError();
 
-		unifont_upper = TTF_OpenFontFilename(UNIFONT_UPPER_OTF , 16, 0, 0, 0);
+		unifont_upper = TTF_OpenFontFilename(UNIFONT_UPPER_TTF , 16, 0, 0, 0);
 		if (!unifont_upper)
 		{
-			snprintf (error_otf, sizeof (error_otf), "TTF_OpenFont(\"" UNIFONT_UPPER_OTF "\") failed: %s\n", TTF_GetError());
+			snprintf (error_ttf, sizeof (error_otf), "TTF_OpenFont(\"%s\") failed: %s\n", UNIFONT_UPPER_TTF, TTF_GetError());
 			TTF_ClearError();
 
-			fputs (error_ttf, stderr);
 			fputs (error_otf, stderr);
+			fputs (error_ttf, stderr);
 		}
 	}
 
@@ -675,6 +719,15 @@ do_not_add:
 do_not_add2:
 		latin1_8x16[i].score = 255;
 	}
+
+#ifdef UNIFONT_RELATIVE
+	free (UNIFONT_TTF);
+	free (UNIFONT_CSUR_TTF);
+	free (UNIFONT_UPPER_TTF);
+	free (UNIFONT_OTF);
+	free (UNIFONT_CSUR_OTF);
+	free (UNIFONT_UPPER_OTF);
+#endif
 
 	return 0;
 }

@@ -112,6 +112,7 @@ poutput-fb.o: poutput-fb.c poutput-fb.h \
 poutput-fontengine.o: poutput-fontengine.c poutput-fontengine.h \
 	../config.h \
 	../types.h \
+	../boot/psetting.h \
 	pfonts.h \
 	cp437.h \
 	ttf.h \
