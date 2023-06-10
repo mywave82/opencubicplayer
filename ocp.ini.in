@@ -86,7 +86,7 @@
   writeinfo=on
   scaninarcs=on
   scanmodinfo=on
-  scanarchives=off
+  scanarchives=on
   putarchives=on
   playonce=on
   randomplay=off
