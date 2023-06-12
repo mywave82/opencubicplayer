@@ -576,15 +576,19 @@ OCP_INTERNAL int it_load (struct cpifaceSessionAPI_t *cpifaceSession, struct it_
 				sp->name[n]=32;
 		sp->name[26]=0;
 
-		if (!(shdr.flags&1))
+		if (!(shdr.flags&1)) /* is format header available? */
 		{
-			cpifaceSession->cpiDebug (cpifaceSession, "[IT] A sample with flag 0x01 set, skipped\n");
+#ifdef IT_LOAD_DEBUG
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] A sample with flag 0x01 cleared, skipped\n");
+#endif
 			continue;
 		}
 
 		if (!(shdr.length))
 		{
+#ifdef IT_LOAD_DEBUG
 			cpifaceSession->cpiDebug (cpifaceSession, "[IT] A sample with length=0, skipped\n");
+#endif
 			continue;
 		}
 
