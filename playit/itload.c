@@ -81,9 +81,9 @@ OCP_INTERNAL int it_load (struct cpifaceSessionAPI_t *cpifaceSession, struct it_
 	int maxchan;
 
 #define MAX_ORDERS 256
-#define MAX_SAMPLES 100
-#define MAX_INSTRUMENTS 100
-#define MAX_PATTERNS 200
+#define MAX_SAMPLES 236
+#define MAX_INSTRUMENTS MAX_SAMPLES
+#define MAX_PATTERNS 240
 
 	uint8_t ords[MAX_ORDERS];
 	uint32_t sampoff[MAX_SAMPLES];
