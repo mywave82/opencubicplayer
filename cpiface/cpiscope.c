@@ -246,6 +246,10 @@ static int plScopesKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key
 {
 	switch (key)
 	{
+		case VIRT_KEY_RESIZE:
+			plPrepareScopes();
+			break;
+
 		case KEY_ALT_K:
 			cpiKeyHelp('o', "Toggle scope viewer types");
 			cpiKeyHelp('O', "Toggle scope viewer types");

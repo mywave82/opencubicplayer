@@ -163,6 +163,10 @@ static int plScopesKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key
 {
 	switch (key)
 	{
+		case VIRT_KEY_RESIZE:
+			plPrepareScopes();
+			break;
+
 		case KEY_ALT_K:
 			cpiKeyHelp('b', "Toggle phase viewer types");
 			cpiKeyHelp('B', "Toggle phase viewer types");

@@ -388,6 +388,10 @@ static int plDotsKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 {
 	switch (key)
 	{
+		case VIRT_KEY_RESIZE:
+			plPrepareDots();
+			break;
+
 		case KEY_ALT_K:
 			cpiKeyHelp('n', "Change note dots type");
 			cpiKeyHelp('N', "Change note dots type");
