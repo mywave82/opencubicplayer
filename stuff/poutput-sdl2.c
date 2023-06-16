@@ -95,9 +95,8 @@ static int last_text_height;
 static int last_text_width;
 
 static int cachemode = -1;
-static int no_window_resize = 0;
 
-static void (*set_state)(int fullscreen, int width, int height) = 0;
+static void (*set_state)(const int fullscreen, int width, int height, const int window_resized) = 0;
 static int current_fullsceen = 0;
 static int plScrRowBytes = 0;
 static int ekbhit_sdl2dummy(void);
@@ -292,10 +291,10 @@ static void sdl2_dump_renderer (void)
 #endif
 }
 
-static void set_state_textmode(int fullscreen, int width, int height)
+static void set_state_textmode (const int fullscreen, int width, int height, const int window_resized)
 {
 #ifdef SDL2_DEBUG
-	fprintf (stderr, " set_state_textmode(fullscreen=%d, width=%d, height=%d\n", fullscreen, width, height);
+	fprintf (stderr, " set_state_textmode(fullscreen=%d, width=%d, height=%d, window_resized=%d)\n", fullscreen, width, height, window_resized);
 #endif
 	/* texture WILL for sure resize, so just get rid of it! */
 	if (current_texture)
@@ -347,9 +346,9 @@ static void set_state_textmode(int fullscreen, int width, int height)
 		height = 480;
 	}
 
-	if (!no_window_resize)
+	/* if the call is due to window resized, do not do any changes to the window */
+	if (!window_resized)
 	{
-
 		current_fullsceen = fullscreen;
 
 		if (fullscreen)
@@ -378,8 +377,6 @@ static void set_state_textmode(int fullscreen, int width, int height)
 				SDL_SetWindowSize (current_window, width, height);
 			}
 		}
-	} else {
-		no_window_resize = 0;
 	}
 
 	if (!current_window)
@@ -508,10 +505,11 @@ static void sdl2_SetTextMode(unsigned char x)
 #endif
 		x=8;
 
-		set_state_textmode(
+		set_state_textmode (
 			current_fullsceen,
 			last_text_width,
-			last_text_height);
+			last_text_height,
+		        0);
 	} else {
 #ifdef SDL2_DEBUG
 		fprintf (stderr, "plCurrentFont=%d (mode_tui_data[%d].font))\n", mode_tui_data[x].font, x);
@@ -522,10 +520,11 @@ static void sdl2_SetTextMode(unsigned char x)
 
 		Console.CurrentFont = mode_tui_data[x].font;
 
-		set_state_textmode(
+		set_state_textmode (
 			current_fullsceen,
 			mode_gui_data[mode_tui_data[x].gui_mode].width,
-			mode_gui_data[mode_tui_data[x].gui_mode].height);
+			mode_gui_data[mode_tui_data[x].gui_mode].height,
+		        0);
 	}
 
 	Console.LastTextMode = Console.CurrentMode = x;
@@ -534,12 +533,12 @@ static void sdl2_SetTextMode(unsigned char x)
 #endif
 }
 
-static void set_state_graphmode(int fullscreen, int width, int height)
+static void set_state_graphmode (const int fullscreen, int width, int height, const int window_resized)
 {
 	mode_gui_t mode;
 
 #ifdef SDL2_DEBUG
-	fprintf (stderr, "[SDL2-video] set_state_graphmode(fullscreen=%d, width=%d, height=%d)", fullscreen, width, height);
+	fprintf (stderr, "[SDL2-video] set_state_graphmode(fullscreen=%d, width=%d, height=%d, window_resized=%d)", fullscreen, width, height, window_resized);
 #endif
 
 	/* texture WILL for sure resize, so just get rid of it! */
@@ -570,7 +569,8 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 	width = mode_gui_data[mode].width;
 	height = mode_gui_data[mode].height;
 
-	if (!no_window_resize)
+	/* if the call is due to window resized, do not do any changes to the window */
+	if (!window_resized)
 	{
 		current_fullsceen = fullscreen;
 
@@ -679,7 +679,7 @@ static int sdl2_SetGraphMode (int high)
 		return 0;
 	}
 
-	set_state_graphmode(current_fullsceen, 0, 0);
+	set_state_graphmode (current_fullsceen, 0, 0, 0);
 
 	Console.VidMem = virtual_framebuffer = malloc (Console.GraphBytesPerLine * Console.GraphLines);
 
@@ -734,7 +734,7 @@ static void sdl2_DisplaySetupTextMode(void)
 			case '1':
 				/* we can assume that we are in text-mode if we are here */
 				sdl2_CurrentFontWanted = Console.CurrentFont = (Console.CurrentFont == _8x8)?_8x16:_8x8;
-				set_state_textmode(current_fullsceen, Console.GraphBytesPerLine, Console.GraphLines);
+				set_state_textmode (current_fullsceen, Console.GraphBytesPerLine, Console.GraphLines, 0);
 				cfSetProfileInt(cfScreenSec, "fontsize", Console.CurrentFont, 10);
 				break;
 			case KEY_EXIT:
@@ -1357,8 +1357,7 @@ static int ekbhit_sdl2dummy(void)
 								last_text_height = event.window.data2;
 								last_text_width = event.window.data1;
 							}
-							no_window_resize = 1;
-							set_state(current_fullsceen, event.window.data1, event.window.data2);
+							set_state (current_fullsceen, event.window.data1, event.window.data2, 1);
 							if (!current_fullsceen)
 							{
 								if (Console.LastTextMode == Console.CurrentMode) /* if we are in text-mode, make it a custom one */
@@ -1395,7 +1394,7 @@ static int ekbhit_sdl2dummy(void)
 						break;
 
 					case 3:
-						set_state (!current_fullsceen, Console.GraphBytesPerLine, Console.GraphLines);
+						set_state (!current_fullsceen, Console.GraphBytesPerLine, Console.GraphLines, 0);
 						break;
 
 					case 4:
@@ -1541,7 +1540,7 @@ static int ekbhit_sdl2dummy(void)
 					/* TODO, handle ALT-ENTER */
 					if (event.key.keysym.sym==SDLK_RETURN)
 					{
-						set_state (!current_fullsceen, Console.GraphBytesPerLine, Console.GraphLines);
+						set_state (!current_fullsceen, Console.GraphBytesPerLine, Console.GraphLines, 0);
 					} else {
 						for (index=0;translate_alt[index].OCP!=0xffff;index++)
 							if (translate_alt[index].SDL==event.key.keysym.sym)
