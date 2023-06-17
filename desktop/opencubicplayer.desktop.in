@@ -10,4 +10,4 @@ Icon=opencubicplayer
 Terminal=false
 Type=Application
 Categories=AudioVideo;Audio;Player;Music;
-MimeType=audio/flac;audio/mp2;audio/mpeg;audio/ogg;audio/prs.sid;audio/x-ams;audio/x-ay;audio/x-dmf;audio/x-flac;audio/x-flac+ogg;audio/x-it;audio/x-stm;audio/x-mdl;audio/x-midi;audio/x-mod;audio/x-oggflac;audio/x-okt;audio/x-ptm;audio/x-s3m;audio/x-vorbis+ogg;audio/x-wav;audio/x-xm;
+MimeType=audio/flac;audio/mp2;audio/mpeg;audio/ogg;audio/prs.sid;audio/x-ams;audio/x-ay;audio/x-dmf;audio/x-flac;audio/x-flac+ogg;audio/x-gbs;audio/x-gym;audio/x-hes;audio/x-it;audio/x-kss;audio/x-nsf;audio/x-nsfe;audio/x-sap;audio/x-spc;audio/x-stm;audio/x-mdl;audio/x-midi;audio/x-mod;audio/x-oggflac;audio/x-okt;audio/x-ptm;audio/x-s3m;audio/x-vgm;audio/x-vgz;audio/x-vorbis+ogg;audio/x-wav;audio/x-xm;

@@ -5,7 +5,7 @@
    <magic priority="50">
     <match type="string" value="ZXAYEMUL" offset="0"/>
    </magic>
-   <glob pattern="*.ay"/> 
+   <glob pattern="*.ay"/>
  </mime-type>
 
  <mime-type type="audio/x-ams">
@@ -14,7 +14,7 @@
    <match type="string" value="Extreme" offset="0"/>
    <match type="string" value="AMShdr\032" offset="0"/>
   </magic>
-  <glob pattern="*.ams"/> 
+  <glob pattern="*.ams"/>
  </mime-type>
 
  <mime-type type="audio/x-dmf">
@@ -22,7 +22,40 @@
   <magic priority="40">
    <match type="string" value="DDMF" offset="0"/>
   </magic>
-  <glob pattern="*.dmf"/> 
+  <glob pattern="*.dmf"/>
+ </mime-type>
+
+ <mime-type type="audio/x-gbs">
+  <comment>GameBoy Sound System</comment>
+  <magic priority="50">
+   <match type="string" value="GBS" offset="0"/>
+  </magic>
+  <glob pattern="*.gbs"/>
+ </mime-type>
+
+ <mime-type type="audio/x-gym">
+  <comment>Genesis YM2612</comment>
+  <magic priority="50">
+   <match type="string" value="GYMX" offset="0"/>
+  </magic>
+  <glob pattern="*.gym"/>
+ </mime-type>
+
+ <mime-type type="audio/x-hes">
+  <comment>Hudson Entertainment Sound</comment>
+  <magic priority="50">
+   <match type="string" value="HESM" offset="0"/>
+  </magic>
+  <glob pattern="*.hes"/>
+ </mime-type>
+
+ <mime-type type="audio/x-kss">
+  <comment>Konami Sound System</comment>
+  <magic priority="50">
+   <match type="string" value="KSCC" offset="0"/>
+   <match type="string" value="KSSX" offset="0"/>
+  </magic>
+  <glob pattern="*.kss"/>
  </mime-type>
 
  <mime-type type="audio/x-mdl">
@@ -30,7 +63,7 @@
   <magic priority="40">
    <match type="string" value="DMDL" offset="0"/>
   </magic>
-  <glob pattern="*.mdl"/> 
+  <glob pattern="*.mdl"/>
  </mime-type>
 
  <mime-type type="audio/x-mdl">
@@ -38,7 +71,52 @@
   <magic priority="50">
    <match type="string" value="OKTASONG" offset="0"/>
   </magic>
-  <glob pattern="*.okt"/> 
+  <glob pattern="*.okt"/>
+ </mime-type>
+
+ <mime-type type="audio/x-nsf">
+  <comment>Nintendo Sound Format</comment>
+  <magic priority="50">
+   <match type="string" value="NESM\032" offset="0"/>
+  </magic>
+  <glob pattern="*.nsf"/>
+ </mime-type>
+
+ <mime-type type="audio/x-nsfe">
+  <comment>Nintendo Sound Format Extended</comment>
+  <magic priority="50">
+   <match type="string" value="NSFE" offset="0"/>
+  </magic>
+  <glob pattern="*.nsfe"/>
+ </mime-type>
+
+ <mime-type type="audio/x-sap">
+  <comment>Slight Atari Player</comment>
+  <magic priority="50">
+   <match type="string" value="SAP\015\012" offset="0"/>
+  </magic>
+  <glob pattern="*.sap"/>
+ </mime-type>
+
+ <mime-type type="audio/x-spc">
+  <comment>SNES-SPC700 Sound File</comment>
+  <magic priority="50">
+   <match type="string" value="SNES-SPC700 Sound File Data" offset="0"/>
+  </magic>
+  <glob pattern="*.spc"/>
+ </mime-type>
+
+ <mime-type type="audio/x-vgm">
+  <comment>Video Game Music</comment>
+  <magic priority="50">
+   <match type="string" value="Vgm" offset="0"/>
+  </magic>
+  <glob pattern="*.vgm"/>
+ </mime-type>
+
+ <mime-type type="audio/x-vgz">
+  <comment>Video Game Music, compressed</comment>
+  <glob pattern="*.vgz"/>
  </mime-type>
 
  <mime-type type="audio/x-ptm">
@@ -46,7 +124,7 @@
   <magic priority="40">
    <match type="string" value="PTMF" offset="0"/>
   </magic>
-  <glob pattern="*.ptm"/> 
+  <glob pattern="*.ptm"/>
  </mime-type>
 
  <mime-type type="audio/x-hvl">
@@ -58,12 +136,12 @@
    <match type="string" value="HVL\000" offset="0"/>
    <match type="string" value="HVL\001" offset="0"/>
   </magic>
-  <glob pattern="*.ahx"/> 
-  <glob pattern="*.hvl"/> 
+  <glob pattern="*.ahx"/>
+  <glob pattern="*.hvl"/>
  </mime-type>
 
  <mime-type type="audio/x-ym">
   <comment>YM2149 register dumps, PSG audio</comment>
-  <glob pattern="*.ym"/> 
+  <glob pattern="*.ym"/>
  </mime-type>
 </mime-info>
