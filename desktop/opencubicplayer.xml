@@ -1,11 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+
+ <mime-type type="audio/x-a2m">
+   <comment>AdLib Tracker 2</comment>
+   <magic priority="50">
+    <match type="string" value="_A2module_" offset="0"/>
+   </magic>
+   <glob pattern="*.a2m"/>
+ </mime-type>
+
+ <mime-type type="audio/x-adl">
+   <comment>AdLib game music</comment>
+   <glob pattern="*.adl"/>
+ </mime-type>
+
+ <mime-type type="audio/x-adtrack">
+  <comment>Adlib Tracker 1.0</comment>
+  <glob pattern="*.sng"/>
+ </mime-type>
+
  <mime-type type="audio/x-ay">
    <comment>ZX Spectrum audio file (Z80 executable code + AY-3-8910 PSG)</comment>
    <magic priority="50">
     <match type="string" value="ZXAYEMUL" offset="0"/>
    </magic>
    <glob pattern="*.ay"/>
+ </mime-type>
+
+ <mime-type type="audio/x-amd">
+   <comment>AMUSiC</comment>
+   <magic priority="50">
+    <match type="string" value="&lt;o\357QU\356RoR" offset="0"/>
+    <match type="string" value="MaDoKaN96" offset="0"/>
+   </magic>
+   <glob pattern="*.amd"/>
  </mime-type>
 
  <mime-type type="audio/x-ams">
@@ -17,12 +45,108 @@
   <glob pattern="*.ams"/>
  </mime-type>
 
+ <mime-type type="audio/x-as3m">
+   <comment>Scream Tracker 3 (renamed file)</comment>
+   <magic priority="50">
+    <match type="string" value="SCRM" offset="44"/>
+   </magic>
+   <glob pattern="*.as3m"/>
+ </mime-type>
+
+ <mime-type type="audio/x-bam">
+  <comment>Bob's Adlib Music</comment>
+  <magic priority="50">
+   <match type="string" value="CBMF" offset="0"/>
+  </magic>
+  <glob pattern="*.bam"/>
+ </mime-type>
+
+ <mime-type type="audio/x-bmf">
+  <comment>Easy AdLib 1.0</comment>
+  <magic priority="50">
+   <match type="string" value="CBMF" offset="0"/>
+  </magic>
+  <glob pattern="*.bmf"/>
+ </mime-type>
+
+ <mime-type type="audio/x-cff">
+  <comment>Boom Tracker</comment>
+  <magic priority="50">
+   <match type="string" value="&lt;CUD-FM-File&gt;" offset="0"/>
+  </magic>
+  <glob pattern="*.cff"/>
+ </mime-type>
+
+ <mime-type type="audio/x-cmf">
+  <comment>SoundFX Macs Opera CMF</comment>
+  <magic priority="50">
+   <match type="string" value="CTMF" offset="0"/>
+  </magic>
+  <glob pattern="*.cmf"/>
+ </mime-type>
+
+ <mime-type type="audio/x-coktel">
+  <comment>SoundFX Macs Opera CMF</comment>
+  <magic priority="50">
+   <match type="string" value="\000\377\000" offset="0"/>
+  </magic>
+  <glob pattern="*.adl"/>
+ </mime-type>
+
+ <mime-type type="audio/x-d00">
+  <comment>Packed Edlib</comment>
+  <magic priority="50">
+   <match type="string" value="JCH\045\002\146" offset="0"/>
+  </magic>
+  <glob pattern="*.d00"/>
+ </mime-type>
+
+ <mime-type type="audio/x-dfm">
+  <comment>Digital-FM</comment>
+  <magic priority="50">
+   <match type="string" value="DFM\032" offset="0"/>
+  </magic>
+  <glob pattern="*.dfm"/>
+ </mime-type>
+
  <mime-type type="audio/x-dmf">
   <comment>Delusion/XTracker Digital Music File</comment>
   <magic priority="40">
    <match type="string" value="DDMF" offset="0"/>
   </magic>
   <glob pattern="*.dmf"/>
+ </mime-type>
+
+ <mime-type type="audio/x-dmo">
+  <comment>TwinTeam Module File</comment>
+  <magic priority="50">
+   <match type="string" value="TwinTeam Module File\015\012" offset="0"/>
+  </magic>
+  <glob pattern="*.dmo"/>
+ </mime-type>
+
+ <mime-type type="audio/x-dro">
+  <comment>DOSBox Raw OPL</comment>
+  <magic priority="50">
+   <match type="string" value="DBRAWOPL" offset="0"/>
+  </magic>
+  <glob pattern="*.dro"/>
+ </mime-type>
+
+ <mime-type type="audio/x-dtm">
+  <comment>DeFy Adlib Tracker</comment>
+  <magic priority="50">
+   <match type="string" value="DeFy DTM " offset="0"/>
+  </magic>
+  <glob pattern="*.dtm"/>
+ </mime-type>
+
+ <mime-type type="audio/x-fmc">
+  <comment>Faust Music Creator</comment>
+  <magic priority="50">
+   <match type="string" value="FMC!" offset="0"/>
+  </magic>
+  <glob pattern="*.sng"/>
  </mime-type>
 
  <mime-type type="audio/x-gbs">
@@ -33,12 +157,26 @@
   <glob pattern="*.gbs"/>
  </mime-type>
 
+ <mime-type type="audio/x-got">
+  <comment>God of Thunder Music</comment>
+  <glob pattern="*.got"/>
+ </mime-type>
+
  <mime-type type="audio/x-gym">
   <comment>Genesis YM2612</comment>
   <magic priority="50">
    <match type="string" value="GYMX" offset="0"/>
   </magic>
   <glob pattern="*.gym"/>
+ </mime-type>
+
+ <mime-type type="audio/x-herad">
+  <comment>Herbulot AdLib System</comment>
+  <glob pattern="*.hsq"/>
+  <glob pattern="*.sqx"/>
+  <glob pattern="*.sdb"/>
+  <glob pattern="*.agd"/>
+  <glob pattern="*.ha2"/>
  </mime-type>
 
  <mime-type type="audio/x-hes">
@@ -49,6 +187,34 @@
   <glob pattern="*.hes"/>
  </mime-type>
 
+ <mime-type type="audio/x-hsc">
+  <comment>HSC-Tracker</comment>
+  <glob pattern="*.hsc"/>
+ </mime-type>
+
+ <mime-type type="audio/x-hsp">
+  <comment>HSC-Tracker Packed</comment>
+  <glob pattern="*.hsp"/>
+ </mime-type>
+
+ <mime-type type="audio/x-imf">
+  <comment>Apogee IMF</comment>
+  <!-- not all IMF files have header -->
+  <glob pattern="*.imf"/>
+  <glob pattern="*.wlf"/>
+  <glob pattern="*.adlib"/>
+ </mime-type>
+
+ <mime-type type="audio/x-jbm">
+  <comment>JBM Adlib Music</comment>
+  <glob pattern="*.jbm"/>
+ </mime-type>
+
+ <mime-type type="audio/x-ksm">
+  <comment>Ken Silverman Music</comment>
+  <glob pattern="*.ksm"/>
+ </mime-type>
+
  <mime-type type="audio/x-kss">
   <comment>Konami Sound System</comment>
   <magic priority="50">
@@ -56,6 +222,33 @@
    <match type="string" value="KSSX" offset="0"/>
   </magic>
   <glob pattern="*.kss"/>
+ </mime-type>
+
+ <mime-type type="audio/x-lds">
+  <comment>LOUDNESS Sound System</comment>
+  <magic priority="50">
+   <match type="string" value="\000" offset="0"/>
+   <match type="string" value="\001" offset="0"/>
+  </magic>
+  <glob pattern="*.lds"/>
+ </mime-type>
+
+ <mime-type type="audio/x-mad">
+  <comment>Mlat Adlib Tracker</comment>
+  <magic priority="40">
+   <match type="string" value="MAD+" offset="0"/>
+  </magic>
+  <glob pattern="*.mad"/>
+ </mime-type>
+
+ <mime-type type="audio/x-adlib-midi">
+  <comment>AdLib MIDI</comment>
+  <magic priority="40">
+   <match type="string" value="MThd" offset="0"/>
+  </magic>
+  <glob pattern="*.laa"/>
+  <glob pattern="*.mdi"/>
+  <glob pattern="*.sci"/>
  </mime-type>
 
  <mime-type type="audio/x-mdl">
@@ -74,6 +267,49 @@
   <glob pattern="*.okt"/>
  </mime-type>
 
+ <mime-type type="audio/x-mkj">
+  <comment>MKJamz</comment>
+  <magic priority="50">
+   <match type="string" value="MKJamz" offset="0"/>
+  </magic>
+  <glob pattern="*.mkj"/>
+ </mime-type>
+
+ <mime-type type="audio/x-msc">
+  <comment>Adlib MSC Player</comment>
+  <magic priority="50">
+   <match type="string" value="Ceres \023 MSCplay " offset="0"/>
+  </magic>
+  <glob pattern="*.msc"/>
+ </mime-type>
+
+ <mime-type type="audio/x-mtk">
+  <comment>MPU-401 Trakker</comment>
+  <magic priority="50">
+   <match type="string" value="mpu401tr\221kk\356r@data" offset="0"/>
+  </magic>
+  <glob pattern="*.mtk"/>
+ </mime-type>
+
+ <mime-type type="audio/x-mtr">
+  <comment>Master Tracker</comment>
+  <magic priority="50">
+   <match type="string" value="MTRAC " offset="0"/>
+   <match type="string" value="MTRACK NC" offset="0"/>
+  </magic>
+  <glob pattern="*.mtr"/>
+ </mime-type>
+
+ <mime-type type="audio/x-mus">
+  <comment>Master Tracker</comment>
+  <magic priority="50">
+   <match type="string" value="\001\000\000\000\000\000" offset="0"/>
+  </magic>
+  <glob pattern="*.mus"/>
+  <glob pattern="*.mdy"/>
+  <glob pattern="*.ims"/>
+ </mime-type>
+
  <mime-type type="audio/x-nsf">
   <comment>Nintendo Sound Format</comment>
   <magic priority="50">
@@ -90,6 +326,53 @@
   <glob pattern="*.nsfe"/>
  </mime-type>
 
+ <mime-type type="audio/x-rac">
+  <comment>Raw AdLib Capture</comment>
+  <magic priority="50">
+   <match type="string" value="RAWADATA" offset="0"/>
+  </magic>
+  <glob pattern="*.rac"/>
+  <glob pattern="*.raw"/>
+ </mime-type>
+
+ <mime-type type="audio/x-rad">
+  <comment>Reality Adlib Tracker</comment>
+  <magic priority="50">
+   <match type="string" value="RAD by REALiTY!!" offset="0"/>
+  </magic>
+  <glob pattern="*.rad"/>
+ </mime-type>
+
+ <mime-type type="audio/x-rix">
+  <comment>Softstar RIX OPL Music</comment>
+  <magic priority="50">
+   <match type="string" value="\125\252" offset="0"/>
+  </magic>
+  <glob pattern="*.rix"/>
+ </mime-type>
+
+ <mime-type type="audio/x-rol">
+  <comment>Adlib Visual Composer</comment>
+  <magic priority="50">
+   <match type="string" value="\000\000\004\000" offset="0"/>
+  </magic>
+  <glob pattern="*.rol"/>
+ </mime-type>
+
+ <mime-type type="audio/x-pis">
+  <comment>Beni Tracker PIS Player</comment>
+  <glob pattern="*.pis"/>
+ </mime-type>
+
+ <mime-type type="audio/x-sa2">
+  <comment>Surprise! Adlib Tracker</comment>
+  <magic priority="50">
+   <match type="string" value="SAdT" offset="0"/>
+  </magic>
+  <glob pattern="*.sa2"/>
+  <glob pattern="*.sat"/>
+ </mime-type>
+
  <mime-type type="audio/x-sap">
   <comment>Slight Atari Player</comment>
   <magic priority="50">
@@ -98,12 +381,28 @@
   <glob pattern="*.sap"/>
  </mime-type>
 
+ <mime-type type="audio/x-sop">
+  <comment>Note Sequencer by sopepos</comment>
+  <magic priority="50">
+   <match type="string" value="sopepos" offset="0"/>
+  </magic>
+  <glob pattern="*.sop"/>
+ </mime-type>
+
  <mime-type type="audio/x-spc">
   <comment>SNES-SPC700 Sound File</comment>
   <magic priority="50">
    <match type="string" value="SNES-SPC700 Sound File Data" offset="0"/>
   </magic>
   <glob pattern="*.spc"/>
+ </mime-type>
+
+ <mime-type type="audio/x-u6m">
+  <comment>Ultima 6 Music</comment>
+  <magic priority="50">
+   <match type="string" value="\000\000\000\001" offset="2"/>
+  </magic>
+  <glob pattern="*.m"/>
  </mime-type>
 
  <mime-type type="audio/x-vgm">
@@ -116,6 +415,9 @@
 
  <mime-type type="audio/x-vgz">
   <comment>Video Game Music, compressed</comment>
+  <magic priority="50">
+   <match type="string" value="\037\213" offset="0"/>
+  </magic>
   <glob pattern="*.vgz"/>
  </mime-type>
 
@@ -138,6 +440,64 @@
   </magic>
   <glob pattern="*.ahx"/>
   <glob pattern="*.hvl"/>
+ </mime-type>
+
+ <mime-type type="audio/x-xad-bmf">
+  <comment>BMF Adlib Tracker</comment>
+  <magic priority="50">
+   <match type="string" value="BMF" offset="0"/>
+   <match type="string" value="\004\000" offset="76"/>
+  </magic>
+  <glob pattern="*.bmf"/>
+  <glob pattern="*.xad"/>
+ </mime-type>
+
+ <mime-type type="audio/x-xad-flash">
+  <comment>Adlib Flash</comment>
+  <magic priority="50">
+   <match type="string" value="\003\000" offset="76"/>
+  </magic>
+  <glob pattern="*.xad"/>
+ </mime-type>
+
+ <mime-type type="audio/x-xad-hybrid">
+  <comment>Adlib Flash</comment>
+  <magic priority="50">
+   <match type="string" value="\006\000" offset="76"/>
+  </magic>
+  <glob pattern="*.xad"/>
+ </mime-type>
+
+ <mime-type type="audio/x-xad-hyp">
+  <comment>Adlib Hypnosis</comment>
+  <magic priority="50">
+   <match type="string" value="\001\000" offset="76"/>
+  </magic>
+  <glob pattern="*.xad"/>
+ </mime-type>
+
+ <mime-type type="audio/x-xad-psi">
+  <comment>Adlib Hypnosis</comment>
+  <magic priority="50">
+   <match type="string" value="\002\000" offset="76"/>
+  </magic>
+  <glob pattern="*.xad"/>
+ </mime-type>
+
+ <mime-type type="audio/x-xad-rat">
+  <comment>Adlib rat</comment>
+  <magic priority="50">
+   <match type="string" value="\005\000" offset="76"/>
+  </magic>
+  <glob pattern="*.xad"/>
+ </mime-type>
+
+ <mime-type type="audio/x-xsm">
+  <comment>eXtra Simple Music</comment>
+  <magic priority="40">
+   <match type="string" value="ofTAZ!" offset="0"/>
+  </magic>
+  <glob pattern="*.xsm"/>
  </mime-type>
 
  <mime-type type="audio/x-ym">
