@@ -1,8 +1,13 @@
-AC_INIT([ocp],[0.2.105],[stian.skjelstad@gmail.com])
-AC_DEFINE(DLLVERSION, [0x00000269])
+m4_define([MAJOR_VERSION], [0])
+m4_define([MINOR_VERSION], [2])
+m4_define([PATCH_VERSION], [105])
+AC_INIT([ocp],[MAJOR_VERSION.MINOR_VERSION.PATCH_VERSION],[stian.skjelstad@gmail.com])
+AC_DEFINE_UNQUOTED(DLLVERSION, `printf 0x%04x%02x%02x MAJOR_VERSION MINOR_VERSION PATCH_VERSION`)
+AC_SUBST([MAJOR_VERSION], [MAJOR_VERSION])
+AC_SUBST([MINOR_VERSION], [MINOR_VERSION])
+AC_SUBST([PATCH_VERSION], [PATCH_VERSION])
 
 AC_CANONICAL_HOST
-
 
 AC_MSG_CHECKING([GIT submodules are checked out])
 AS_IF([test -f playtimidity/timidity-git/Makefile.am], [AC_MSG_RESULT([ok])],
@@ -1060,6 +1065,7 @@ AC_CONFIG_FILES(playsid/libsidplayfp-git/src/builders/resid-builder/resid/siddef
 AC_CONFIG_FILES(playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h)
 AC_CONFIG_FILES(playopl/libbinio-git/src/binio.h)
 AC_CONFIG_FILES(playopl/adplug-git/src/version.h)
+AC_CONFIG_FILES(haiku/ocp.rdef)
 
 AC_OUTPUT
 

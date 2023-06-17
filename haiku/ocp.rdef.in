@@ -3,9 +3,9 @@
 resource app_signature "application/x-vnd.OpenCubicPlayer";
 
 resource app_version {
-       major  = 0,
-       middle = 2,
-       minor  = 101,
+       major  = @MAJOR_VERSION@,
+       middle = @MINOR_VERSION@,
+       minor  = @PATCH_VERSION@,
 
        variety = B_APPV_BETA,
 

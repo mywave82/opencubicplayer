@@ -802,6 +802,9 @@ build_os
 build_vendor
 build_cpu
 build
+PATCH_VERSION
+MINOR_VERSION
+MAJOR_VERSION
 target_alias
 host_alias
 build_alias
@@ -3641,7 +3644,15 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-printf "%s\n" "#define DLLVERSION 0x00000269" >>confdefs.h
+cat >>confdefs.h <<_ACEOF
+#define DLLVERSION `printf 0x%04x%02x%02x 0 2 105`
+_ACEOF
+
+MAJOR_VERSION=0
+
+MINOR_VERSION=2
+
+PATCH_VERSION=105
 
 
 
@@ -3718,7 +3729,6 @@ shift; shift
 host_os=$*
 IFS=$ac_save_IFS
 case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
-
 
 
 
@@ -17777,6 +17787,8 @@ ac_config_files="$ac_config_files playopl/libbinio-git/src/binio.h"
 
 ac_config_files="$ac_config_files playopl/adplug-git/src/version.h"
 
+ac_config_files="$ac_config_files haiku/ocp.rdef"
+
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -18479,6 +18491,7 @@ do
     "playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h") CONFIG_FILES="$CONFIG_FILES playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h" ;;
     "playopl/libbinio-git/src/binio.h") CONFIG_FILES="$CONFIG_FILES playopl/libbinio-git/src/binio.h" ;;
     "playopl/adplug-git/src/version.h") CONFIG_FILES="$CONFIG_FILES playopl/adplug-git/src/version.h" ;;
+    "haiku/ocp.rdef") CONFIG_FILES="$CONFIG_FILES haiku/ocp.rdef" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

@@ -35,6 +35,7 @@ goodies/helpc/ocphhc
 goodies/helpc/Makefile
 goodies/pack/Makefile
 goodies/pack/pack
+haiku/ocp.rdef
 /Makefile
 ocp
 ocp.hlp
