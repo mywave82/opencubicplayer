@@ -370,7 +370,7 @@ static int cue_parse_token (struct cue_parser_t *cue_parser, enum CUE_tokens tok
 		{
 			return -1;
 		}
-		if (index <= cue_parser->track_data[cue_parser->track].index)
+		if (index < cue_parser->track_data[cue_parser->track].index)
 		{
 			return -1;
 		}
@@ -460,7 +460,7 @@ static int cue_parse_token (struct cue_parser_t *cue_parser, enum CUE_tokens tok
 				cue_parser_modify_source_LITTLEENDIAN (cue_parser);
 				break;
 			case CUE_TOKEN_BINARY:
-				cue_parser_modify_source_LITTLEENDIAN (cue_parser);
+				cue_parser_modify_source_BIGENDIAN (cue_parser);
 				break;
 			case CUE_TOKEN_MOTOROLA:
 				cue_parser_modify_source_BIGENDIAN (cue_parser);
@@ -519,7 +519,7 @@ static int cue_parse_token (struct cue_parser_t *cue_parser, enum CUE_tokens tok
 			default:
 			case CUE_TOKEN_string:
 			case CUE_TOKEN_number:
-				fprintf (stderr, "REM with unknonwn token: %s\n", src);
+				fprintf (stderr, "REM with unknown token: %s\n", src);
 				/* fall-through */
 			case CUE_TOKEN_COMMENT:
 				return 1;
@@ -1025,6 +1025,7 @@ OCP_INTERNAL struct cdfs_disc_t *cue_parser_to_cdfs_disc (struct ocpfile_t *pare
 
 		ms = medium_sector_size (mode);
 		sectorcount = (length + ms - 1) / ms;
+
 		cdfs_disc_datasource_append (retval,
 		                             discoffset,
 		                             sectorcount,
@@ -1052,13 +1053,21 @@ OCP_INTERNAL struct cdfs_disc_t *cue_parser_to_cdfs_disc (struct ocpfile_t *pare
 		/* second iteration, add referenced tracks */ 
 		for (; trackcounter <= cue_parser->track; trackcounter++)
 		{
+			uint32_t pregap = 0;
 			if (cue_parser->track_data[trackcounter].datasource > i) break;
 
-#warning REMOVE-ME
-			fprintf (stderr, "Adding track %d, LASTRACK? (trackcounter + 1 >= cue_parser->track) %d, datasource matches next track (cue_parser->track_data[j].datasource != cue_parser->track_data[j+1].datasource=%d\n", trackcounter, (trackcounter + 1 > cue_parser->track), (cue_parser->track_data[trackcounter].datasource != cue_parser->track_data[trackcounter+1].datasource));
-			
+			if (trackcounter == 1)
+			{
+				pregap = cue_parser->track_data[trackcounter].index_data[1].offset;
+			} else {
+				if (cue_parser->track_data[trackcounter].index_data[0].offset && cue_parser->track_data[trackcounter].index_data[1].offset)
+				{
+					pregap = cue_parser->track_data[trackcounter].index_data[1].offset - cue_parser->track_data[trackcounter].index_data[0].offset;
+				}
+			}
+
 			cdfs_disc_track_append (retval,
-			                        0, /* we ignore pregaps, since they require zero insertions in CUE files */
+			                        pregap,
 			                        cue_parser->track_data[trackcounter].index_data[1].offset + discoffset,
 			                        ((trackcounter + 1 > cue_parser->track) ||
 						(cue_parser->track_data[trackcounter].datasource != cue_parser->track_data[trackcounter+1].datasource)) ?
@@ -1071,7 +1080,6 @@ OCP_INTERNAL struct cdfs_disc_t *cue_parser_to_cdfs_disc (struct ocpfile_t *pare
 			                        0, /* arranger */
 			                        0); /* message */
 		}
-
 
 		discoffset += sectorcount;
 	}

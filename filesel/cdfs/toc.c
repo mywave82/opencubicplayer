@@ -227,6 +227,7 @@ struct toc_parser_track_t
 	char *message;
 
 	int four_channel_audio;
+	int32_t offset; /* given in sectors */
 	int32_t pregap; /* given in sectors */
 /*
 	char *genre;
@@ -262,6 +263,7 @@ static int toc_parser_append_source (struct toc_parser_t *toc_parser, const char
 	toc_parser->track_data[toc_parser->track].datasource[toc_parser->track_data[toc_parser->track].datasourceN].offset = 0;
 	toc_parser->track_data[toc_parser->track].datasource[toc_parser->track_data[toc_parser->track].datasourceN].swap = 0;
 	toc_parser->track_data[toc_parser->track].datasourceN++;
+
 	return 0;
 }
 
@@ -274,6 +276,11 @@ static void toc_parser_modify_offset (struct toc_parser_t *toc_parser, const cha
 {
 	unsigned long long length = strtoull (src + 1, 0, 10);
 	toc_parser->track_data[toc_parser->track].datasource[toc_parser->track_data[toc_parser->track].datasourceN - 1].offset = length;
+}
+
+static void toc_parser_modify_offset_sector (struct toc_parser_t *toc_parser, const int offset)
+{
+	toc_parser->track_data[toc_parser->track].datasource[toc_parser->track_data[toc_parser->track].datasourceN - 1].offset = (long unsigned int)offset * SECTORSIZE_XA2;
 }
 
 static void toc_parser_modify_SWAP (struct toc_parser_t *toc_parser)
@@ -597,16 +604,16 @@ static int toc_parse_token (struct toc_parser_t *toc_parser, enum TOC_tokens tok
 				toc_parser_modify_offset (toc_parser, src);
 				return 0;
 			case TOC_TOKEN_number:
-				toc_parser_modify_pregap (toc_parser, atoi(src));
+				toc_parser_modify_offset_sector (toc_parser, (uint64_t)atoi(src));
 				toc_parser->state = TOC_PARSER_STATE_audiofile_2;
 				return 0;
 			case TOC_TOKEN_msf:
-				toc_parser_modify_pregap (toc_parser, (src[0]-'0') * 75*60*10 +
-			                                              (src[1]-'0') * 75*60    +
-			                                              (src[3]-'0') * 75   *10 +
-			                                              (src[4]-'0') * 75       +
-			                                              (src[6]-'0')        *10 +
-			                                              (src[7]-'0'));
+				toc_parser_modify_offset_sector (toc_parser, (src[0]-'0') * 75*60*10 +
+			                                                     (src[1]-'0') * 75*60    +
+			                                                     (src[3]-'0') * 75   *10 +
+			                                                     (src[4]-'0') * 75       +
+			                                                     (src[6]-'0')        *10 +
+			                                                     (src[7]-'0'));
 				toc_parser->state = TOC_PARSER_STATE_audiofile_2;
 				return 0;
 			default:
@@ -1182,6 +1189,11 @@ OCP_INTERNAL struct cdfs_disc_t *toc_parser_to_cdfs_disc (struct ocpfile_t *pare
 				}
 
 				lengthsectors = (length + 2352 - 1) / 2352; /* round up to nearest sector */
+				if (lengthsectors > toc_parser->track_data[i].datasource[j].length)
+				{
+					lengthsectors = toc_parser->track_data[i].datasource[j].length;
+				}
+
 				cdfs_disc_datasource_append (retval,
 				                             trackoffset + tracklength,                       /* medium sector offset */
 				                             lengthsectors,                                   /* medium sector count */
@@ -1222,6 +1234,11 @@ OCP_INTERNAL struct cdfs_disc_t *toc_parser_to_cdfs_disc (struct ocpfile_t *pare
 				                         toc_parser->track_data[i].storage_mode_subchannel);
 
 				lengthsectors = (length + ss - 1) / ss; /* round up to nearest sector */
+				if (lengthsectors > toc_parser->track_data[i].datasource[j].length)
+				{
+					lengthsectors = toc_parser->track_data[i].datasource[j].length;
+				}
+
 				cdfs_disc_datasource_append (retval,
 				                             trackoffset + tracklength,                       /* medium sector offset */
 				                             lengthsectors,                                   /* medium sector count */
@@ -1241,8 +1258,8 @@ OCP_INTERNAL struct cdfs_disc_t *toc_parser_to_cdfs_disc (struct ocpfile_t *pare
 
 		cdfs_disc_track_append (retval,
 		                        toc_parser->track_data[i].pregap,
-		                        trackoffset,
-		                        tracklength,
+		                        trackoffset + toc_parser->track_data[i].pregap,
+		                        tracklength - toc_parser->track_data[i].pregap,
 		                        toc_parser->track_data[i].title,
 		                        toc_parser->track_data[i].performer,
 		                        toc_parser->track_data[i].songwriter,
