@@ -81,8 +81,8 @@ struct musicbrainz_t
 	int fdout;
 	int fderr;
 	pid_t pid;
-	char out[65536];
-	char err[65536];
+	char out[256*1024];
+	char err[  2*1024];
 	int outs;
 	int errs;
 };
@@ -228,6 +228,7 @@ void *musicbrainz_lookup_discid_init (const char *discid, const char *toc, struc
 			}
 
 			{
+
 				cJSON *root = cJSON_ParseWithLength (musicbrainz.cache[i].data, size);
 				{
 					cJSON *releases;
@@ -292,6 +293,7 @@ void *musicbrainz_lookup_discid_init (const char *discid, const char *toc, struc
 		return 0;
 	}
 	musicbrainz.active = t;
+
 	return t;
 }
 
@@ -602,6 +604,7 @@ static void musicbrainz_finalize (int retval, struct musicbrainz_database_h **re
 		cJSON *releases;
 		if (!root)
 		{
+			fprintf (stderr, "cJSON_ParseWithLength() failed to parse. Data not valid or truncated\n");
 			return;
 		}
 
@@ -636,7 +639,6 @@ int musicbrainz_lookup_discid_iterate (void *token, struct musicbrainz_database_
 	{
 		struct timespec now;
 		struct musicbrainz_queue_t *t;
-
 
 		if (musicbrainz.active)
 		{
