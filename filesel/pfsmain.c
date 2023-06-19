@@ -248,8 +248,6 @@ static int _fsMain(int argc, char *argv[])
 	setwintitle("OpenCP");
 #endif
 
-	fsRescanDir();
-
 	while (1)
 	{
 /*

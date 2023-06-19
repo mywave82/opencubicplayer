@@ -90,7 +90,6 @@ void plFindInterface(struct moduletype modtype, const struct interfacestruct **i
 int fsMatchFileName12(const char *a, const char *b);
 
 extern void fsSetup(void);
-extern void fsRescanDir(void);
 
 struct modlist;
 struct ocpdir_t;

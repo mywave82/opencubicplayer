@@ -701,12 +701,6 @@ static char fsScanDir (int pos)
 	return 1;
 }
 
-void fsRescanDir(void)
-{
-	fsScanDir(1);
-	conSave();
-}
-
 int fsGetPrevFile (struct moduleinfostruct *info, struct ocpfilehandle_t **filehandle)
 {
 	struct modlistentry *m;
