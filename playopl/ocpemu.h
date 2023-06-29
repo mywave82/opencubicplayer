@@ -28,6 +28,7 @@
 #define H_ADPLUG_OCPOPL
 
 #include "adplug-git/src/opl.h"
+#include <stdio.h>
 #include <stdint.h>
 
 struct op_status
@@ -96,11 +97,16 @@ struct oplStatus
 class Cocpemu : public Copl
 {
 	Copl *realopl;
+	int isRetroWave;
 public:
-	Cocpemu(Copl *realopl, int rate);    // rate = sample rate
+	Cocpemu(Copl *realopl, int rate, int isRetroWave);    // rate = sample rate
 	virtual ~Cocpemu();
 
-	void update(short *buf, int samples);   // fill buffer
+	void update(short *buf, int samples)
+	{
+		fprintf (stderr, "Warning, OCP should use update with 3 parameters\n");
+	}
+	virtual void update(short *buf, int samples, uint32_t ratescale);   // fill buffer
 	void setchip(int n);
 
 	// template methods

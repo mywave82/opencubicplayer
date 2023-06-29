@@ -37,12 +37,14 @@ extern "C"
 #include "filesel/filesystem.h"
 #include "stuff/err.h"
 #include "stuff/imsrtns.h"
+#include "oplconfig.h"
 }
 #include "oplplay.h"
 #include "oplptrak.h"
 #include "ocpemu.h"
 #include "oplKen.h"
 #include "oplNuked.h"
+#include "oplRetroWave.h"
 #include "oplSatoh.h"
 #include "oplWoody.h"
 
@@ -331,21 +333,42 @@ OCP_INTERNAL int oplOpenPlayer (const char *filename /* needed for detection */,
 	str = cpifaceSession->configAPI->GetProfileString ("adplug", "emulator", "nuked");
 	if (!strcasecmp (str, "ken"))
 	{
-		opl = new Cocpemu(new oplKen(oplRate), oplRate);
+		opl = new Cocpemu(new oplKen(oplRate), oplRate, 0);
+	} else if (!strcasecmp (str, "retrowave"))
+	{
+		char *device = opl_config_retrowave_device (cpifaceSession->PipeProcess, cpifaceSession->configAPI);
+		if (!device)
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] Failed to retrieve RetroWave device name\n");
+			cpifaceSession->plrDevAPI->Stop (cpifaceSession);
+			free (content);
+			return errFileMiss;
+		}
+		oplRetroWave *o = new oplRetroWave (cpifaceSession->cpiDebug, cpifaceSession, device, oplRate);
+		free (device);
+		if (o->FailedToOpen)
+		{
+			cpifaceSession->plrDevAPI->Stop (cpifaceSession);
+			delete(o);
+			free (content);
+			return errFileOpen;
+		}
+		opl = new Cocpemu(o, oplRate, 1);
 	} else if (!strcasecmp (str, "satoh"))
 	{
-		opl = new Cocpemu(new oplSatoh(oplRate), oplRate);
+		opl = new Cocpemu(new oplSatoh(oplRate), oplRate, 0);
 	} else if (!strcasecmp (str, "woody"))
 	{
-		opl = new Cocpemu(new oplWoody(oplRate), oplRate);
+		opl = new Cocpemu(new oplWoody(oplRate), oplRate, 0);
 	} else /* nuked */
 	{
-		opl = new Cocpemu(new oplNuked(oplRate), oplRate);
+		opl = new Cocpemu(new oplNuked(oplRate), oplRate, 0);
 	}
 
 	CProvider_Mem prMem (filename, file, cpifaceSession, content, len);
 	if (!(p = CAdPlug::factory(filename, opl, CAdPlug::players, prMem)))
 	{
+		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 		delete (opl);
 		cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] Failed to load file\n");
 		return errFormStruc;
@@ -451,7 +474,7 @@ static void oplIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 		{
 			length1=opltowrite;
 		}
-		opl->update(oplbuf+(pos1<<1) /* stereo */, length1); /* given in samples */
+		opl->update(oplbuf+(pos1<<1) /* stereo */, length1, oplbufrate); /* given in samples */
 
 		opltowrite-=length1;
 

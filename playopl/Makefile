@@ -57,7 +57,7 @@ uninstall:
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playopl$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(DATADIROCP)/data/adplug.db"
 
-oplconfig.o: oplconfig.c \
+oplconfig.o: oplconfig.cpp \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
@@ -68,9 +68,12 @@ oplconfig.o: oplconfig.c \
 	../filesel/filesystem-setup.h \
 	../filesel/pfilesel.h \
 	../playopl/oplconfig.h \
+	../playopl/oplplay.h \
+	../playopl/oplRetroWave.h \
 	../stuff/err.h \
+	../stuff/piperun.h \
 	../stuff/poutput.h
-	$(CC) $(CFLAGS) $< -o $@ -c
+	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $< -o $@ -c
 
 oplKen.o: oplKen.cpp \
 	../config.h \
@@ -86,6 +89,16 @@ oplNuked.o: oplNuked.cpp \
 	adplug-git/src/opl.h \
 	adplug-git/src/fmopl.h \
 	ocpemu.h
+	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $< -o $@ -c
+
+oplRetroWave.o: \
+	oplRetroWave.cpp \
+	oplRetroWave-serialization.cpp \
+	oplRetroWave-helperthread.cpp \
+	oplRetroWave.h \
+	../config.h \
+	../types.h \
+	../cpiface/cpiface.h
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $< -o $@ -c
 
 oplSatoh.o: oplSatoh.cpp \
@@ -117,7 +130,7 @@ opltype.o: opltype.cpp \
 	opltype.h
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) opltype.cpp -o $@ -c
 
-playopl_so=oplconfig.o oplchan.o oplpplay.o oplplay.o oplptrak.o ocpemu.o oplKen.o oplNuked.o oplSatoh.o oplWoody.o opltype.o $(LIBBINIO_TARGETS) $(LIBADPLUG_TARGETS)
+playopl_so=oplconfig.o oplchan.o oplpplay.o oplplay.o oplptrak.o ocpemu.o oplKen.o oplNuked.o oplRetroWave.o oplSatoh.o oplWoody.o opltype.o $(LIBBINIO_TARGETS) $(LIBADPLUG_TARGETS)
 playopl$(LIB_SUFFIX): $(playopl_so)
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(ADPLUG_LIBS) $(MATH_LIBS)
 
@@ -163,10 +176,12 @@ oplplay.o: oplplay.cpp \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../stuff/imsrtns.h \
+	oplconfig.h \
 	oplplay.h \
 	ocpemu.h \
 	oplKen.h \
 	oplNuked.h \
+	oplRetroWave.h \
 	oplSatoh.h \
 	oplWoody.h \
 	oplptrak.h
@@ -183,7 +198,8 @@ oplptrak.o: oplptrak.cpp \
 ocpemu.o: ocpemu.cpp \
 	../config.h \
 	../types.h \
-	ocpemu.h
+	ocpemu.h \
+	oplRetroWave.h
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) ocpemu.cpp -o $@ -c
 
 adplugdb_adplugdb.o: \

@@ -29,6 +29,7 @@
 #include "config.h"
 #include "types.h"
 #include "ocpemu.h"
+#include "oplRetroWave.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -125,7 +126,7 @@ static const int8_t channel_to_operator_four_operator[18][4]
 };
 #endif
 
-Cocpemu::Cocpemu(Copl *realopl, int rate) : realopl(realopl)
+Cocpemu::Cocpemu(Copl *realopl, int rate, int isRetroWave) : realopl(realopl), isRetroWave(isRetroWave)
 { /* these rates does not take KSR (Envelope Scaling) into the processing, but works well enough for channel statuses */
 	steprate[ 0] = 0; // fixed for-ever
 	steprate[ 1] = (((uint_fast32_t)65536) * 64000) / (rate * 1132) + 1;
@@ -230,7 +231,7 @@ void Cocpemu::update_op (const int ch, const int o, unsigned int samples)
 
 }
 
-void Cocpemu::update(short *buf, int samples)
+void Cocpemu::update(short *buf, int samples, uint32_t ratescale)
 {
 	int ch, o;
 	for (ch=0; ch < 18; ch++)
@@ -241,6 +242,10 @@ void Cocpemu::update(short *buf, int samples)
 		}
 	}
 
+	if (isRetroWave)
+	{
+		((oplRetroWave *)realopl)->ratescale = ratescale;
+	}
 	realopl->update(buf, samples);
 }
 
