@@ -83,6 +83,15 @@ oplNuked.o: oplNuked.cpp \
 	ocpemu.h
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $< -o $@ -c
 
+oplRetroWave.o: \
+	oplRetroWave.cpp \
+	oplRetroWave-serialization.cpp \
+	oplRetroWave-helperthread.cpp \
+	oplRetroWave.h \
+	../config.h \
+	../types.h
+	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $< -o $@ -c
+
 oplSatoh.o: oplSatoh.cpp \
 	oplSatoh.h \
 	adplug-git/src/opl.h \
@@ -112,7 +121,7 @@ opltype.o: opltype.cpp \
 	opltype.h
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) opltype.cpp -o $@ -c
 
-playopl_so=oplconfig.o oplchan.o oplpplay.o oplplay.o oplptrak.o ocpemu.o oplKen.o oplNuked.o oplSatoh.o oplWoody.o opltype.o $(LIBBINIO_TARGETS) $(LIBADPLUG_TARGETS)
+playopl_so=oplconfig.o oplchan.o oplpplay.o oplplay.o oplptrak.o ocpemu.o oplKen.o oplNuked.o oplRetroWave.o oplSatoh.o oplWoody.o opltype.o $(LIBBINIO_TARGETS) $(LIBADPLUG_TARGETS)
 playopl$(LIB_SUFFIX): $(playopl_so)
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ $(ADPLUG_LIBS) $(MATH_LIBS)
 
@@ -162,6 +171,7 @@ oplplay.o: oplplay.cpp \
 	ocpemu.h \
 	oplKen.h \
 	oplNuked.h \
+	oplRetroWave.h \
 	oplSatoh.h \
 	oplWoody.h \
 	oplptrak.h

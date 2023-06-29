@@ -43,6 +43,7 @@ extern "C"
 #include "ocpemu.h"
 #include "oplKen.h"
 #include "oplNuked.h"
+#include "oplRetroWave.h"
 #include "oplSatoh.h"
 #include "oplWoody.h"
 
@@ -332,6 +333,9 @@ OCP_INTERNAL int oplOpenPlayer (const char *filename /* needed for detection */,
 	if (!strcasecmp (str, "ken"))
 	{
 		opl = new Cocpemu(new oplKen(oplRate), oplRate);
+	} else if (!strcasecmp (str, "retrowave"))
+	{
+		opl = new Cocpemu(new oplRetroWave("/dev/ttyACM0", oplRate), oplRate);
 	} else if (!strcasecmp (str, "satoh"))
 	{
 		opl = new Cocpemu(new oplSatoh(oplRate), oplRate);
