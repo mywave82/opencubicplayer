@@ -549,7 +549,7 @@ complete:
 	} else if ((reg >= 0xc0) && (reg <= 0xc8))
 	{
 		int ch = reg & 0x0f;
-		if ((!(regcache[1][5] & 0x1)) && (currType == TYPE_OPL3))
+		if (!((regcache[1][5] & 0x1) && (currType == TYPE_OPL3)))
 		{
 			s.channel[ch + (currChip?9:0)].right = 1;
 			s.channel[ch + (currChip?9:0)].left = 1;
