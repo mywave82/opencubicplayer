@@ -1,5 +1,5 @@
 [version]
-  epoch=20230607
+  epoch=20230630
 
 [general]
 ;link=
@@ -140,11 +140,13 @@
   chargen=CHARGEN.ROM
 
 [adplug]
-  emulator=nuked          ; Possible values are ken, nuked, satoh and woody.
+  emulator=nuked          ; Possible values are ken, nuked, satoh woody and retrowave.
                           ; Ken is a dual OPL2 emulator based on Ken Silverman OPL2 emulator
                           ; Nuked is a bit-perfect OPL3 emulator made by Nuke.YKT based on die shots.
                           ; Satoh is a dual OPL2 emulator based on code by Tatsuyuki Satoh by the MAME Team.
                           ; Woody is an OPL3 emulator by the DOSBox Team. It is a further development of Ken Silverman OPL2 emulator.
+                          ; RetroWave OPL3 [Express] is an external USB device with real OPL3 hardware made by SudoMaker.
+  retrowave=auto          ; Device to use, e.g. /dev/ttyACM0 /dev/cuaU0 /dev/dtyU0 /dev/cu.usbmodem0000001 COM1
 
 [devpALSA]
   card=default
