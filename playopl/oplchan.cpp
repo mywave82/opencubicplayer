@@ -104,13 +104,70 @@ static const char *getnote (struct cpifaceSessionAPI_t *cpifaceSession, int freq
 	return cpifaceSession->plNoteStr(n);
 }
 
-static void getvol (struct oplStatus *s, const int ch, const int o, unsigned int *left, unsigned int *right)
+static void getvolsub (struct oplStatus *s, const int ch, const int o, unsigned int *left, unsigned int *right)
 {
 	uint32_t t = s->channel[ch].op[o].EnvelopePosition * (64-s->channel[ch].op[o].output_level);
 	t >>= 20;
-	if (t > 256) t = 256;
 	*left = s->channel[ch].left ? t : 0;
 	*right = s->channel[ch].right ? t : 0;
+}
+
+static void getvol (struct oplStatus *s, const int ch, unsigned int *left, unsigned int *right)
+{
+	*left = 0;
+	*right = 0;
+
+	switch (s->channel[ch].CM)
+	{
+		unsigned int l0, l1, l2, r0, r1, r2;
+		default:
+			break;
+		case CM_PERCUSSION:
+		case CM_2OP_AM:
+			getvolsub (s, ch, 0, &l0, &r0);
+			getvolsub (s, ch, 1, &l1, &r1);
+			*left = l0 + l1;
+			*right = r0 + r1;
+			break;
+		case CM_2OP_FM:
+			getvolsub (s, ch, 1, left, right);
+			break;
+		case CM_4OP_FM_FM:
+			if ((ch < 3) || ((ch >= 9) && (ch < 12)))
+			{
+				getvolsub (s, ch+3, 1, left, right);
+			}
+			break;
+		case CM_4OP_AM_FM:
+			if ((ch < 3) || ((ch >= 9) && (ch < 12)))
+			{
+				getvolsub (s, ch  , 0, &l0, &r0);
+				getvolsub (s, ch+3, 1, &l1, &r1);
+				*left = l0 + l1;
+				*right = r0 + r1;
+			}
+		case CM_4OP_FM_AM:
+			if ((ch < 3) || ((ch >= 9) && (ch < 12)))
+			{
+				getvolsub (s, ch  , 1, &l0, &r0);
+				getvolsub (s, ch+3, 1, &l1, &r1);
+				*left = l0 + l1;
+				*right = r0 + r1;
+			}
+			break;
+		case CM_4OP_AM_AM:
+			if ((ch < 3) || ((ch >= 9) && (ch < 12)))
+			{
+				getvolsub (s, ch  , 0, &l0, &r0);
+				getvolsub (s, ch+3, 0, &l1, &r1);
+				getvolsub (s, ch+3, 1, &l2, &r2);
+				*left = l0 + l1 + l2;
+				*right = r0 + r1 + r2;
+			}
+			break;
+	}
+	if (*left  > 256) *left  = 256;
+	if (*right > 256) *right = 256;
 }
 
 static const char *shap3[16] =
@@ -229,9 +286,9 @@ static void OPLChanDisplay36 (struct cpifaceSessionAPI_t *cpifaceSession, const 
 	const char *nte[4];
 	PrepareNte (cpifaceSession, nte, s, ch);
 
-	unsigned int vleft;
-	unsigned int vright;
-	getvol (s, ch, 0, &vleft, &vright);
+	unsigned int vleft = 0;
+	unsigned int vright = 0;
+	getvol (s, ch, &vleft, &vright);
 	vleft = (vleft + 127) / 128;
 	vright = (vright + 127) / 128;
 
@@ -312,7 +369,7 @@ static void OPLChanDisplay44 (struct cpifaceSessionAPI_t *cpifaceSession, const 
 
 	unsigned int vleft;
 	unsigned int vright;
-	getvol (s, ch, 0, &vleft, &vright);
+	getvol (s, ch, &vleft, &vright);
 	vleft = (vleft + 63) / 64;
 	vright = (vright + 63) / 64;
 
@@ -410,7 +467,7 @@ static void OPLChanDisplay62 (struct cpifaceSessionAPI_t *cpifaceSession, const 
 
 	unsigned int vleft;
 	unsigned int vright;
-	getvol (s, ch, 0, &vleft, &vright);
+	getvol (s, ch, &vleft, &vright);
 	vleft = (vleft + 37) / 42;
 	vright = (vright + 37) / 42;
 
@@ -529,7 +586,7 @@ static void OPLChanDisplay76 (struct cpifaceSessionAPI_t *cpifaceSession, const 
 
 	unsigned int vleft;
 	unsigned int vright;
-	getvol (s, ch, 0, &vleft, &vright);
+	getvol (s, ch, &vleft, &vright);
 	vleft = (vleft + 31) / 32;
 	vright = (vright + 31) / 32;
 
@@ -666,7 +723,7 @@ static void OPLChanDisplay128 (struct cpifaceSessionAPI_t *cpifaceSession, const
 
 	unsigned int vleft;
 	unsigned int vright;
-	getvol (s, ch, 0, &vleft, &vright);
+	getvol (s, ch, &vleft, &vright);
 	vleft = (vleft + 23) / 28;
 	vright = (vright + 23) / 28;
 
