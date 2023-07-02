@@ -175,7 +175,7 @@ quit:
 	return NULL;
 }
 
-static int oplRetroWave_Open (struct cpifaceSessionAPI_t *cpifaceSession, const char *filename)
+static int oplRetroWave_Open (void(*cpiDebug)(struct cpifaceSessionAPI_t *cpifaceSession, const char *fmt, ...), struct cpifaceSessionAPI_t *cpifaceSession, const char *filename)
 {
 	struct termios tio;
 
@@ -192,20 +192,20 @@ static int oplRetroWave_Open (struct cpifaceSessionAPI_t *cpifaceSession, const 
 
 	if (fd < 0)
 	{
-		cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL, RetroWave OPL3] Failed to open tty/serial device %s: %s\n", filename, strerror(errno));
+		cpiDebug (cpifaceSession, "[Adplug OPL, RetroWave OPL3] Failed to open tty/serial device %s: %s\n", filename, strerror(errno));
 		pthread_mutex_unlock (&m);
 		return -1;
 	}
 
 	if (flock (fd, LOCK_EX))
 	{
-		cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL, RetroWave OPL3] Failed to lock tty/serial device: %s: %s\n", filename, strerror(errno));
+		cpiDebug (cpifaceSession, "[Adplug OPL, RetroWave OPL3] Failed to lock tty/serial device: %s: %s\n", filename, strerror(errno));
 		goto error_out;
 	}
 
 	if (tcgetattr (fd, &tio))
 	{
-		cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL, RetroWave OPL3] Failed to perform tcgetattr() on device %s, not a tty/serial device?: %s\n", filename, strerror (errno));
+		cpiDebug (cpifaceSession, "[Adplug OPL, RetroWave OPL3] Failed to perform tcgetattr() on device %s, not a tty/serial device?: %s\n", filename, strerror (errno));
 		goto error_out;
 	}
 	cfmakeraw (&tio);
@@ -217,7 +217,7 @@ static int oplRetroWave_Open (struct cpifaceSessionAPI_t *cpifaceSession, const 
 
 	if (tcgetattr (fd, &tio))
 	{
-		cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL, RetroWave OPL3] Failed to perform tcsetattr() on device %s, not a tty/serial device?: %s\n", filename, strerror(errno));
+		cpiDebug (cpifaceSession, "[Adplug OPL, RetroWave OPL3] Failed to perform tcsetattr() on device %s, not a tty/serial device?: %s\n", filename, strerror(errno));
 		goto error_out;
 	}
 
@@ -226,7 +226,7 @@ static int oplRetroWave_Open (struct cpifaceSessionAPI_t *cpifaceSession, const 
 
 	if (ioctl (fd, IOSSIOSPEED, &speed) == -1)
 	{
-		cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL, RetroWave OPL3] Failed to set baudrate on device %s: %s", filename, strerror(errno));
+		cpiDebug (cpifaceSession, "[Adplug OPL, RetroWave OPL3] Failed to set baudrate on device %s: %s", filename, strerror(errno));
 		goto error_out;
 	}
 #endif
@@ -264,7 +264,7 @@ static int oplRetroWave_Open (struct cpifaceSessionAPI_t *cpifaceSession, const 
 
 	if (pthread_create (&t, NULL, oplRetroWave_ThreadHelper, NULL))
 	{
-		cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL, RetroWave OPL3] Failed to spawn thread: %s\n", strerror(errno));
+		cpiDebug (cpifaceSession, "[Adplug OPL, RetroWave OPL3] Failed to spawn thread: %s\n", strerror(errno));
 		goto error_out;
 	}
 

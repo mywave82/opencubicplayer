@@ -52,7 +52,7 @@ uninstall:
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playopl$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(DATADIROCP)/data/adplug.db"
 
-oplconfig.o: oplconfig.c \
+oplconfig.o: oplconfig.cpp \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
@@ -63,9 +63,11 @@ oplconfig.o: oplconfig.c \
 	../filesel/filesystem-setup.h \
 	../filesel/pfilesel.h \
 	../playopl/oplconfig.h \
+	../playopl/oplplay.h \
+	../playopl/oplRetroWave.h \
 	../stuff/err.h \
 	../stuff/poutput.h
-	$(CC) $(CFLAGS) $< -o $@ -c
+	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $< -o $@ -c
 
 oplKen.o: oplKen.cpp \
 	../config.h \

@@ -42,9 +42,10 @@ static int fd = -1;
 
 #include "oplRetroWave-helperthread.cpp"
 
-oplRetroWave::oplRetroWave (struct cpifaceSessionAPI_t *cpifaceSession, const char *device, int rate)
+oplRetroWave::oplRetroWave (void(*cpiDebug)(struct cpifaceSessionAPI_t *cpifaceSession, const char *fmt, ...), struct cpifaceSessionAPI_t *cpifaceSession, const char *device, int rate)
+
 {
-	FailedToOpen = oplRetroWave_Open (cpifaceSession, device);
+	FailedToOpen = oplRetroWave_Open (cpiDebug, cpifaceSession, device);
 	currType = TYPE_OPL3;
 	this->rate = rate;
 }

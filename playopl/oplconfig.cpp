@@ -55,6 +55,8 @@
 #endif
 
 #include "types.h"
+extern "C"
+{
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
 #include "filesel/filesystem.h"
@@ -63,8 +65,12 @@
 #include "filesel/filesystem-setup.h"
 #include "filesel/pfilesel.h"
 #include "playopl/oplconfig.h"
+#include "playopl/oplplay.h"
 #include "stuff/err.h"
 #include "stuff/poutput.h"
+}
+
+#include "oplRetroWave.h"
 
 #define MAX(a,b) ((a)>=(b)?(a):(b))
 
@@ -154,8 +160,55 @@ static void oplConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 ************************************************************
 #endif
 
+#warning FIX-ME, we need a real draw
+static void oplRetroTestDebug (struct cpifaceSessionAPI_t *cpifaceSession, const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	vfprintf (stderr, fmt, ap);
+	va_end (ap);
+}
 
+static class oplRetroWave *oplRetroTest;
+static void oplRetroTestStart (const struct DevInterfaceAPI_t *API, const char *device)
+{
+	oplRetroTest = new oplRetroWave (oplRetroTestDebug, 0, device, 10000);
 
+	oplRetroTest->write (0x20, 0x23);
+	oplRetroTest->write (0x23, 0x20);
+	oplRetroTest->write (0x40, 0x2f);
+	oplRetroTest->write (0x43, 0x00);
+	oplRetroTest->write (0x60, 0x11);
+	oplRetroTest->write (0x63, 0x11);
+	oplRetroTest->write (0x80, 0x21);
+	oplRetroTest->write (0x83, 0x21);
+	oplRetroTest->write (0xa0, 0x44);
+	oplRetroTest->write (0xc0, 0xff);
+	oplRetroTest->write (0xb0, 0x32);
+	oplRetroTest->write (0xb3, 0x31);
+}
+
+static int oplRetroTestRun (const struct DevInterfaceAPI_t *API)
+{
+	while (API->console->KeyboardHit())
+	{
+		int key = API->console->KeyboardGetChar();
+
+		switch (key)
+		{
+			case KEY_ESC:
+				oplRetroTest->write(0xb0, 0x02);
+				oplRetroTest->write(0xb3, 0x03);
+				usleep(100000); /* 100 ms */
+				delete (oplRetroTest);
+				oplRetroTest = 0;
+				return 0;
+		}
+	}
+
+	return 1;
+
+}
 
 #define RETRODEVICE_MAXLEN 64
 struct oplRetroDeviceEntry_t
@@ -327,6 +380,13 @@ static void oplRetroDraw (const struct DevInterfaceAPI_t *API, int esel, int *st
 			*state = 1; // normal
 		}
 	}
+	if (*state == 3) // do test
+	{
+		if (oplRetroTestRun (API) <= 0)
+		{
+			*state = 1; // normal
+		}
+	}
 }
 
 static struct oplRetroDeviceEntry_t *oplRetroRefreshChar (const char *devname)
@@ -335,7 +395,7 @@ static struct oplRetroDeviceEntry_t *oplRetroRefreshChar (const char *devname)
 	struct stat st;
 
 	/* allocate one more entry */
-	e = realloc (oplRetroDeviceEntry, sizeof (oplRetroDeviceEntry[0]) * (oplRetroDeviceEntries + 1));
+	e = (struct oplRetroDeviceEntry_t *) realloc (oplRetroDeviceEntry, sizeof (oplRetroDeviceEntry[0]) * (oplRetroDeviceEntries + 1));
 	if (!e)
 	{
 		return 0;
@@ -475,6 +535,8 @@ static void oplRetroRefresh (void)
 			}
 			if (!strncmp (de->d_name, "cu.usbmodem", 11)) // MacOS / OSX
 			{
+#warning Need to implement Win32
+#warning Need to test HAIKU
 #warning MacOS probably has some special checks we can do
 				oplRetroRefreshChar (de->d_name);
 				continue;
@@ -487,6 +549,7 @@ static void oplRetroRefresh (void)
 	qsort (oplRetroDeviceEntry, oplRetroDeviceEntries, sizeof (oplRetroDeviceEntry[0]), cmpoplRetroDeviceEntry);
 }
 
+static char *opl_config_retrowave_device_auto (void);
 static int oplRetroConfigRun (const struct DevInterfaceAPI_t *API)
 {
 	static int inActive = 0;
@@ -523,6 +586,21 @@ static int oplRetroConfigRun (const struct DevInterfaceAPI_t *API)
 
 		switch (key)
 		{
+			case 't':
+			case 'T':
+				if (esel == 0)
+				{
+					char *temp = opl_config_retrowave_device_auto (); /* warning, this will refresh the device list, but we have selected the very first node, so should be safe */
+					oplRetroTestStart (API, temp ? temp : "NULL");
+					free (temp);
+				} else if (esel == 1)
+				{
+					oplRetroTestStart (API, oplRetroCustomDevice);
+				} else {
+					oplRetroTestStart (API, oplRetroDeviceEntry[esel - 2].device);
+				}
+				inActive = 3;
+				break;
 			case _KEY_ENTER:
 				if (esel == 1) // custom
 				{
@@ -669,6 +747,9 @@ out:
 	return retval;
 }
 
+extern "C"
+{
+
 OCP_INTERNAL char *opl_config_retrowave_device (const struct configAPI_t *configAPI)
 {
 	const char *temp = configAPI->GetProfileString ("adplug", "retrowave", "auto");
@@ -706,4 +787,6 @@ OCP_INTERNAL void opl_config_done (struct PluginCloseAPI_t *API)
 		oplconfig->unref (oplconfig);
 		oplconfig = 0;
 	}
+}
+
 }

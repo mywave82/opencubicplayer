@@ -344,7 +344,7 @@ OCP_INTERNAL int oplOpenPlayer (const char *filename /* needed for detection */,
 			free (content);
 			return errFileMiss;
 		}
-		oplRetroWave *o = new oplRetroWave (cpifaceSession, device, oplRate);
+		oplRetroWave *o = new oplRetroWave (cpifaceSession->cpiDebug, cpifaceSession, device, oplRate);
 		free (device);
 		if (o->FailedToOpen)
 		{

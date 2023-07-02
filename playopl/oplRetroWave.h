@@ -26,7 +26,11 @@ struct cpifaceSessionAPI_t;
 class oplRetroWave: public Copl
 {
 public:
-	oplRetroWave (struct cpifaceSessionAPI_t *cpifaceSession, const char *device, int rate);
+	oplRetroWave ( /* cpiDebug is splitted out, since we need to create this from oplconfig.c for testing */
+		void(*cpiDebug)(struct cpifaceSessionAPI_t *cpifaceSession, const char *fmt, ...),
+		struct cpifaceSessionAPI_t *cpifaceSession,
+		const char *device,
+		int rate);
 	virtual ~oplRetroWave();
 	int FailedToOpen;
 
