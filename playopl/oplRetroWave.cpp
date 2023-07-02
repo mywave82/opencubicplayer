@@ -17,6 +17,10 @@
  */
 
 #include "config.h"
+extern "C"
+{
+#include "cpiface/cpiface.h"
+}
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -38,10 +42,9 @@ static int fd = -1;
 
 #include "oplRetroWave-helperthread.cpp"
 
-oplRetroWave::oplRetroWave(const char *device, int rate)
+oplRetroWave::oplRetroWave (struct cpifaceSessionAPI_t *cpifaceSession, const char *device, int rate)
 {
-#warning what to do if it fails?
-	oplRetroWave_Open(device);
+	FailedToOpen = oplRetroWave_Open (cpifaceSession, device);
 	currType = TYPE_OPL3;
 	this->rate = rate;
 }

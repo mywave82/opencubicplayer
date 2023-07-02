@@ -89,7 +89,8 @@ oplRetroWave.o: \
 	oplRetroWave-helperthread.cpp \
 	oplRetroWave.h \
 	../config.h \
-	../types.h
+	../types.h \
+	../cpiface/cpiface.h
 	$(ADPLUG_CXX) $(ADPLUG_CXXFLAGS) $< -o $@ -c
 
 oplSatoh.o: oplSatoh.cpp \
@@ -167,6 +168,7 @@ oplplay.o: oplplay.cpp \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../stuff/imsrtns.h \
+	oplconfig.h \
 	oplplay.h \
 	ocpemu.h \
 	oplKen.h \

@@ -37,6 +37,7 @@ extern "C"
 #include "filesel/filesystem.h"
 #include "stuff/err.h"
 #include "stuff/imsrtns.h"
+#include "oplconfig.h"
 }
 #include "oplplay.h"
 #include "oplptrak.h"
@@ -335,7 +336,24 @@ OCP_INTERNAL int oplOpenPlayer (const char *filename /* needed for detection */,
 		opl = new Cocpemu(new oplKen(oplRate), oplRate);
 	} else if (!strcasecmp (str, "retrowave"))
 	{
-		opl = new Cocpemu(new oplRetroWave("/dev/ttyACM0", oplRate), oplRate);
+		char *device = opl_config_retrowave_device (cpifaceSession->configAPI);
+		if (!device)
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] Failed to retrieve RetroWave device name\n");
+			cpifaceSession->plrDevAPI->Stop (cpifaceSession);
+			free (content);
+			return errFileMiss;
+		}
+		oplRetroWave *o = new oplRetroWave (cpifaceSession, device, oplRate);
+		free (device);
+		if (o->FailedToOpen)
+		{
+			cpifaceSession->plrDevAPI->Stop (cpifaceSession);
+			delete(o);
+			free (content);
+			return errFileOpen;
+		}
+		opl = new Cocpemu(o, oplRate);
 	} else if (!strcasecmp (str, "satoh"))
 	{
 		opl = new Cocpemu(new oplSatoh(oplRate), oplRate);
@@ -350,6 +368,7 @@ OCP_INTERNAL int oplOpenPlayer (const char *filename /* needed for detection */,
 	CProvider_Mem prMem (filename, file, cpifaceSession, content, len);
 	if (!(p = CAdPlug::factory(filename, opl, CAdPlug::players, prMem)))
 	{
+		cpifaceSession->plrDevAPI->Stop (cpifaceSession);
 		delete (opl);
 		cpifaceSession->cpiDebug (cpifaceSession, "[Adplug OPL] Failed to load file\n");
 		return errFormStruc;

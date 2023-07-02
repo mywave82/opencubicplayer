@@ -302,6 +302,8 @@
 
 #undef HAVE_FCNTL_H
 
+#undef HAVE_GRP_H
+
 #undef HAVE_NDIR_H
 
 #undef HAVE_SYS_NDIR_H

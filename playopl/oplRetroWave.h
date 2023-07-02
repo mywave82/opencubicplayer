@@ -21,11 +21,14 @@
 
 #include <adplug/opl.h>
 
+struct cpifaceSessionAPI_t;
+
 class oplRetroWave: public Copl
 {
 public:
-	oplRetroWave(const char *device, int rate);
+	oplRetroWave (struct cpifaceSessionAPI_t *cpifaceSession, const char *device, int rate);
 	virtual ~oplRetroWave();
+	int FailedToOpen;
 
 	void update(short *buf, int samples);
 	void write(int reg, int val);

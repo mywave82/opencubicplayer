@@ -990,9 +990,17 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileInt ("fscolors", "VGM", 13, 10);
 		}
 
-		if (epoch < 20230607)
+		if (epoch < 20230630)
 		{
-			cfSetProfileInt("version", "epoch", 20230607, 10);
+			fprintf(stderr, "ocp.ini update (0.2.107), added [adplug] retrowave support\n");
+			cfSetProfileComment ("adplug", "emulator", "; Possible values are ken, nuked, satoh, woody and retrowave.");
+			cfSetProfileString  ("adplug", "retrowave", "auto");
+			cfSetProfileComment ("adplug", "retrowave", "; Device to use, e.g. /dev/ttyACM0 /dev/cuaU0 /dev/dtyU0 /dev/cu.usbmodem0000001 COM1");
+		}
+
+		if (epoch < 20230630)
+		{
+			cfSetProfileInt("version", "epoch", 20230630, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -1003,13 +1011,13 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20230607)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20230630)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20230607\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20230630\033[0m\n\n");
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20230607\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20230630\n\n");
 		}
 		sleep(5);
 	}
