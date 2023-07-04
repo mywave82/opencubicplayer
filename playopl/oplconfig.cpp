@@ -405,7 +405,11 @@ static struct oplRetroDeviceEntry_t *oplRetroRefreshChar (const char *devname)
 
 	/* fill it up */
 	memset (e, 0, sizeof (*e));
+#ifdef __HAIKU__
+	snprintf (e->device, sizeof (e->device), "/dev/ports/%s", devname);
+#else
 	snprintf (e->device, sizeof (e->device), "/dev/%s", devname);
+#endif
 	if (stat (e->device, &st))
 	{ /* abort */
 		oplRetroDeviceEntries--;
@@ -489,11 +493,38 @@ static int cmpoplRetroDeviceEntry (const void *p1, const void *p2)
 	return strcmp (e1->device, e2->device);
 }
 
-static void oplRetroRefresh (void)
-{
 #ifdef _WIN32
 	#error implement me
+#elif defined(__HAIKU__)
+static void oplRetroRefresh (void)
+{
+	DIR *d = opendir ("/dev/ports");
+
+	oplRetroRefreshPrepare ();
+
+	if (d)
+	{
+		struct dirent *de;
+		while ((de = readdir(d)))
+		{
+			if ((strlen (de->d_name) + 11 + 1 ) > RETRODEVICE_MAXLEN)
+			{
+				continue;
+			}
+
+			if (!strncmp (de->d_name, "usb", 3)) // Haiku: /dev/ports/usb0
+			{
+				oplRetroRefreshChar (de->d_name);
+				continue;
+			}
+		}
+		closedir (d);
+	}
+	qsort (oplRetroDeviceEntry, oplRetroDeviceEntries, sizeof (oplRetroDeviceEntry[0]), cmpoplRetroDeviceEntry);
+}
 #else
+static void oplRetroRefresh (void)
+{
 	DIR *d = opendir ("/dev/");
 
 	oplRetroRefreshPrepare ();
@@ -509,20 +540,20 @@ static void oplRetroRefresh (void)
 				continue;
 			}
 #endif
+
 			if ((strlen (de->d_name) + 5 + 1 ) > RETRODEVICE_MAXLEN)
 			{
 				continue;
 			}
 
+#if defined(__linux)
 			if (!strncmp (de->d_name, "ttyACM", 6)) // Linux
 			{
-#ifdef __linux
 				oplRetroRefreshLinux (de->d_name);
-#else
 				oplRetroRefreshChar (de->d_name);
-#endif
 				continue;
 			}
+#else
 			if (!strncmp (de->d_name, "cuaU", 4)) // DragonFly, FreeBSD, OpenBSD
 			{
 				oplRetroRefreshChar (de->d_name);
@@ -535,19 +566,17 @@ static void oplRetroRefresh (void)
 			}
 			if (!strncmp (de->d_name, "cu.usbmodem", 11)) // MacOS / OSX
 			{
-#warning Need to implement Win32
-#warning Need to test HAIKU
 #warning MacOS probably has some special checks we can do
 				oplRetroRefreshChar (de->d_name);
 				continue;
 			}
+#endif
 		}
 		closedir (d);
 	}
-#endif
-
 	qsort (oplRetroDeviceEntry, oplRetroDeviceEntries, sizeof (oplRetroDeviceEntry[0]), cmpoplRetroDeviceEntry);
 }
+#endif
 
 static char *opl_config_retrowave_device_auto (void);
 static int oplRetroConfigRun (const struct DevInterfaceAPI_t *API)
