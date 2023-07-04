@@ -113,7 +113,6 @@ static void *oplRetroWave_ThreadHelper (void *context)
 
 			case CMD_SLEEP:
 				{
-
 					int tosleep = Commands[CommandTail].Sleep.us;
 					if (tosleep > 10000)
 					{
@@ -129,11 +128,11 @@ static void *oplRetroWave_ThreadHelper (void *context)
 
 					struct timespec now;
 					clock_gettime(RETROWAVE_PLAYER_TIME_REF, &now);
-					nexttick.tv_nsec += tosleep;
-					while (nexttick.tv_nsec > 1000000000)
+					nexttick.tv_nsec += tosleep * 1000;
+					while (nexttick.tv_nsec > 1000000000l)
 					{
 						nexttick.tv_sec++;
-						nexttick.tv_nsec-= 1000000000;
+						nexttick.tv_nsec-= 1000000000l;
 					}
 
 					if (nexttick.tv_sec < now.tv_sec)

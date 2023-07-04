@@ -19,7 +19,7 @@
 #ifndef H_ADPLUG_RETROWAVE_H
 #define H_ADPLUG_RETROWAVE_H
 
-#include <adplug/opl.h>
+#include "adplug-git/src/opl.h"
 
 struct cpifaceSessionAPI_t;
 

@@ -32,6 +32,7 @@ static void flush(void)
 {
 	uint_fast16_t data = 0;
 	uint8_t fill = 0;
+	int res;
 	io_buffer_used = 0;
 	io_buffer[io_buffer_used++] = 0x00;
 
@@ -60,7 +61,10 @@ static void flush(void)
 
 	cmd_buffer_used = 0;
 
-	write(fd, io_buffer, io_buffer_used);
+	if ((res = write(fd, io_buffer, io_buffer_used)) != io_buffer_used)
+	{
+		fprintf (stderr, "warning, write %d of %d bytes", res, io_buffer_used);
+	}
 	io_buffer_used = 0;
 }
 
