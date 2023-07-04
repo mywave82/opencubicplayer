@@ -739,11 +739,7 @@ int validate_home(void)
 		char homePath[PATH_MAX];
 		if (find_directory(B_USER_DIRECTORY, -1, false, homePath, sizeof(homePath)) == B_OK)
 		{
-			_cfHomeDir = malloc (strlen (homePath) + 2);
-			if (_cfHomeDir)
-			{
-				sprintf (_cfHomeDir, "%s/ocp/", homePath);
-			}
+			_cfHomeDir = strdup (homePath);
 		}
 	}
 #endif

@@ -132,8 +132,8 @@ $(SUBDIRS):
 ocp: boot
 	$(CC) $(LDFLAGS) -o $@ boot/kickload.o @DL_LIBS@ @EFENCE_LIBS@ @DUMA_LIBS@
 ifeq ($(HAIKU),1)
-	rc -o ocp.rsrc ocp.rdef
-	xres -o $@ ocp.rsrc
+	rc -o haiku/ocp.rsrc haiku/ocp.rdef
+	xres -o $@ haiku/ocp.rsrc
 	mimeset $@
 endif
 
