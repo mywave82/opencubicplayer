@@ -61,9 +61,9 @@ static void flush(void)
 
 	cmd_buffer_used = 0;
 
-	if ((res = write(fd, io_buffer, io_buffer_used)) != io_buffer_used)
+	if ((res = write(fd, io_buffer, io_buffer_used)) != (ssize_t)io_buffer_used)
 	{
-		fprintf (stderr, "warning, write %d of %d bytes", res, io_buffer_used);
+		fprintf (stderr, "warning, write %d of %d bytes", res, (int)io_buffer_used);
 	}
 	io_buffer_used = 0;
 }

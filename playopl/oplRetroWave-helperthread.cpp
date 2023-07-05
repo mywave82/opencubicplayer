@@ -269,6 +269,8 @@ static int oplRetroWave_Open (void(*cpiDebug)(struct cpifaceSessionAPI_t *cpifac
 
 	pthread_mutex_unlock (&m);
 
+	cpiDebug (cpifaceSession, "[Adplug OPL, RetroWave OPL3] Successfull opened tty/serial device %s\n", filename);
+
 	return 0;
 
 error_out:

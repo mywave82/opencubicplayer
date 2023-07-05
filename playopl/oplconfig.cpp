@@ -73,6 +73,8 @@ extern "C"
 #include "oplRetroWave.h"
 
 #define MAX(a,b) ((a)>=(b)?(a):(b))
+#define MIN(a,b) ((a)<=(b)?(a):(b))
+
 
 static void oplConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 {
@@ -160,18 +162,49 @@ static void oplConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 ************************************************************
 #endif
 
-#warning FIX-ME, we need a real draw
-static void oplRetroTestDebug (struct cpifaceSessionAPI_t *cpifaceSession, const char *fmt, ...)
+#define TESTLINES 10
+static class oplRetroWave *oplRetroTest;
+static char oplRetroTestLineBuffers[TESTLINES][59];
+static int oplRetroTestNextLine;
+
+static void oplRetroTestDebugAppend (const char *line)
 {
-	va_list ap;
-	va_start(ap, fmt);
-	vfprintf (stderr, fmt, ap);
-	va_end (ap);
+	if (oplRetroTestNextLine >= TESTLINES)
+	{
+		return;
+	}
+
+	snprintf (oplRetroTestLineBuffers[oplRetroTestNextLine++], sizeof (oplRetroTestLineBuffers[0]), "%s", line);
 }
 
-static class oplRetroWave *oplRetroTest;
+// We assume each call is a single line
+static void oplRetroTestDebug (struct cpifaceSessionAPI_t *cpifaceSession, const char *fmt, ...)
+{
+	char *line;
+	char temp[128];
+
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf (temp, sizeof (temp), fmt, ap);
+	va_end (ap);
+
+	if (!temp[0])
+	{
+		return;
+	}
+	if (temp[strlen(temp)-1] == '\n') temp[strlen(temp)-1] = 0;
+
+	for (line = temp; strlen (line); line += MIN (strlen (line), 58))
+	{
+		 oplRetroTestDebugAppend (line);
+	}
+}
+
 static void oplRetroTestStart (const struct DevInterfaceAPI_t *API, const char *device)
 {
+	memset (oplRetroTestLineBuffers, 0, sizeof (oplRetroTestLineBuffers));
+	oplRetroTestNextLine = 0;
+
 	oplRetroTest = new oplRetroWave (oplRetroTestDebug, 0, device, 10000);
 
 	oplRetroTest->write (0x20, 0x23);
@@ -188,18 +221,54 @@ static void oplRetroTestStart (const struct DevInterfaceAPI_t *API, const char *
 	oplRetroTest->write (0xb3, 0x31);
 }
 
+static void oplRetroTestDraw (const struct DevInterfaceAPI_t *API)
+{
+	int mlWidth, mlHeight, mlTop, mlLeft, i;
+
+	mlHeight = 19;
+	mlWidth = 60;
+	mlTop = (API->console->TextHeight - mlHeight) / 2;
+	mlLeft = (API->console->TextWidth - mlWidth) / 2;
+
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%8C\xc4 AdPlug => RetroWave configuration => Test %7C\xc4\xbf");
+
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Attempting to make a test sound on the RetroWave         %.9o\xb3");
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o [OPL3 Express] device.                                   %.9o\xb3");
+
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Stop test by pressing %.15o<t>%.7o, %.15o<ENTER>%.7o or %.15o<ESC>%.7o.             %.9o\xb3");
+
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth-2);
+
+	for (i = 0; i < TESTLINES; i++)
+	{
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%.*S%.9o\xb3", mlWidth - 2, oplRetroTestLineBuffers[i]);
+	}
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
+}
+
 static int oplRetroTestRun (const struct DevInterfaceAPI_t *API)
 {
+	oplRetroTestDraw (API);
+
 	while (API->console->KeyboardHit())
 	{
 		int key = API->console->KeyboardGetChar();
 
 		switch (key)
 		{
+			case 't':
+			case 'T':
+			case _KEY_ENTER:
 			case KEY_ESC:
 				oplRetroTest->write(0xb0, 0x02);
 				oplRetroTest->write(0xb3, 0x03);
 				usleep(100000); /* 100 ms */
+				oplRetroTest->init();
 				delete (oplRetroTest);
 				oplRetroTest = 0;
 				return 0;
@@ -276,6 +345,16 @@ static void oplRetroDraw (const struct DevInterfaceAPI_t *API, int esel, int *st
 	int half;
 	int contentheight;
 	int d;
+
+	if (*state == 3) // do test
+	{
+		if (oplRetroTestRun (API) <= 0)
+		{
+			*state = 1; // normal
+		} else {
+			return;
+		}
+	}
 
 	mlHeight = 19;
 	mlWidth = 60;
@@ -376,13 +455,6 @@ static void oplRetroDraw (const struct DevInterfaceAPI_t *API, int esel, int *st
 	if (*state == 2) // edit custom
 	{
 		if (API->console->EditStringUTF8z (mlTop - 12, mlLeft + 10, mlWidth - 12, sizeof (oplRetroCustomDevice), oplRetroCustomDevice) <= 0)
-		{
-			*state = 1; // normal
-		}
-	}
-	if (*state == 3) // do test
-	{
-		if (oplRetroTestRun (API) <= 0)
 		{
 			*state = 1; // normal
 		}
@@ -550,7 +622,6 @@ static void oplRetroRefresh (void)
 			if (!strncmp (de->d_name, "ttyACM", 6)) // Linux
 			{
 				oplRetroRefreshLinux (de->d_name);
-				oplRetroRefreshChar (de->d_name);
 				continue;
 			}
 #else
@@ -607,6 +678,16 @@ static int oplRetroConfigRun (const struct DevInterfaceAPI_t *API)
 		inActive = 1;
 	}
 
+	if (inActive == 3) // do test
+	{
+		if (oplRetroTestRun (API) > 0)
+		{
+			return 1;
+		} else  {
+			inActive = 1; // normal
+		}
+	}
+
 	oplRetroDraw (API, esel, &inActive);
 
 	while (API->console->KeyboardHit() && inActive == 1) // = 0 exit, 1 = normal, 2 = edit custom
@@ -617,9 +698,11 @@ static int oplRetroConfigRun (const struct DevInterfaceAPI_t *API)
 		{
 			case 't':
 			case 'T':
-				if (esel == 0)
+				if ( (esel == 0) ||
+				     ((esel == 1) && !strcasecmp (oplRetroCustomDevice, "auto")) )
 				{
 					char *temp = opl_config_retrowave_device_auto (); /* warning, this will refresh the device list, but we have selected the very first node, so should be safe */
+					oplRetroRefresh();
 					oplRetroTestStart (API, temp ? temp : "NULL");
 					free (temp);
 				} else if (esel == 1)
@@ -756,8 +839,8 @@ static void oplConfigRun (void **token, const struct DevInterfaceAPI_t *API);
 
 static char *opl_config_retrowave_device_auto (void)
 {
-  int i;
-  char *retval = 0;
+	int i;
+	char *retval = 0;
 	oplRetroRefresh();
   for (i=0; i < oplRetroDeviceEntries; i++)
 	{
