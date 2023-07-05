@@ -159,7 +159,7 @@ static const char *locate_ocp_ini(void)
 		} else*/if ((retval=locate_ocp_ini_try(temp)))
 				return retval;
 	}
-	if ((retval=locate_ocp_ini_try(DATADIR "/ocp/etc/"    "ocp.ini")))
+	if ((retval=locate_ocp_ini_try(DATADIROCP "/etc/"     "ocp.ini")))
 		return retval;
 	if ((retval=locate_ocp_ini_try(DATADIR "/share/ocp/"  "ocp.ini")))
 		return retval;
@@ -197,9 +197,9 @@ static char *locate_ocp_hlp(void)
 	if ((temp=getenv("OCPDIR")))
 		if ((retval=locate_ocp_hlp_try(temp)))
 			return retval;
-	if ((retval=locate_ocp_hlp_try(DATADIR "/ocp/")))
+	if ((retval=locate_ocp_hlp_try(DATADIROCP "/")))
 		return retval;
-	if ((retval=locate_ocp_hlp_try(DATADIR "/ocp/data/")))
+	if ((retval=locate_ocp_hlp_try(DATADIROCP "/data/")))
 		return retval;
 	if ((retval=locate_ocp_hlp_try(LIBDIR)))
 		return retval;

@@ -33,10 +33,10 @@ all: subdirs ocp ocp.hlp libocp$(LIB_SUFFIX)
 install:
 	mkdir -p "$(DESTDIR)$(DOCDIR)"
 	$(CP) AUTHORS BUGS COPYING CREDITS KEYBOARD_REMAPS SUID "$(DESTDIR)$(DOCDIR)"
-	mkdir -p "$(DESTDIR)$(DATADIR)/ocp/data"
-	$(CP) ocp.hlp "$(DESTDIR)$(DATADIR)/ocp/data"
-	mkdir -p "$(DESTDIR)$(DATADIR)/ocp/etc"
-	$(CP) ocp.ini "$(DESTDIR)$(DATADIR)/ocp/etc"
+	mkdir -p "$(DESTDIR)$(DATADIROCP)/data"
+	$(CP) ocp.hlp "$(DESTDIR)$(DATADIROCP)/data"
+	mkdir -p "$(DESTDIR)$(DATADIROCP)/etc"
+	$(CP) ocp.ini "$(DESTDIR)$(DATADIROCP)/etc"
 	mkdir -p "$(DESTDIR)$(LIBDIR)"
 	$(CP) libocp$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
 	mkdir -p "$(DESTDIR)$(LIBDIR)/autoload"
@@ -96,7 +96,7 @@ uninstall:
 	for i in $(SUBDIRS) ; do \
 	       $(MAKE) -C $$i TOPDIR=../$(TOPDIR) uninstall || exit 1 ;\
 	done
-	rm -Rf "$(DESTDIR)$(DOCDIR)" "$(DESTDIR)$(DATADIR)/ocp" "$(DESTDIR)$(LIBDIR)" "$(DESTDIR)$(BINDIR)/ocp" "$(DESTDIR)$(BINDIR)/ocp" "$(DESTDIR)$(BINDIR)/ocp-curses" "$(DESTDIR)$(BINDIR)/ocp-sdl" "$(DESTDIR)$(BINDIR)/ocp-sdl2" "$(DESTDIR)$(BINDIR)/ocp-vcsa" "$(DESTDIR)$(BINDIR)/ocp-x11"
+	rm -Rf "$(DESTDIR)$(DOCDIR)" "$(DESTDIR)$(DATADIROCP)" "$(DESTDIR)$(LIBDIR)" "$(DESTDIR)$(BINDIR)/ocp" "$(DESTDIR)$(BINDIR)/ocp" "$(DESTDIR)$(BINDIR)/ocp-curses" "$(DESTDIR)$(BINDIR)/ocp-sdl" "$(DESTDIR)$(BINDIR)/ocp-sdl2" "$(DESTDIR)$(BINDIR)/ocp-vcsa" "$(DESTDIR)$(BINDIR)/ocp-x11"
 	rm -f "$(DESTDIR)$(DATAROOTDIR)/applications/opencubicplayer.desktop"
 	rm -f "$(DESTDIR)$(DATAROOTDIR)/applications/cubic.org-opencubicplayer.desktop"
 	rm -f "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/16x16/apps/opencubicplayer.png"

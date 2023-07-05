@@ -369,6 +369,7 @@
 #define PREFIX "/usr/local"
 #define LIBDIR "/usr/lib/ocp"
 #define DATADIR "/usr/share"
+#define DATADIROCP "/usr/share/ocp"
 #undef UNIFONT_RELATIVE
 #undef UNIFONT_TTF
 #undef UNIFONT_CSUR_TTF

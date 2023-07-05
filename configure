@@ -668,6 +668,7 @@ SYSCONFDIR
 INFODIR
 DOCDIR
 PREFIX
+DATADIROCP
 BINDIR
 LIBDIR
 COREAUDIO_LIBS
@@ -935,6 +936,7 @@ LIBANCIENT_CFLAGS
 LIBANCIENT_LIBS
 OSS_CFLAGS
 OSS_LIBS
+DATADIROCP
 LIBGME_CFLAGS
 LIBGME_LIBS'
 
@@ -1712,6 +1714,7 @@ Some influential environment variables:
               linker flags for LIBANCIENT, overriding pkg-config
   OSS_CFLAGS  C compiler flags for OSS, overriding pkg-config
   OSS_LIBS    linker flags for OSS, overriding pkg-config
+  DATADIROCP  Path to OpenCubicPlayer data files, defaults to ${datadir}/ocp
   LIBGME_CFLAGS
               C compiler flags for LIBGME, overriding pkg-config
   LIBGME_LIBS linker flags for LIBGME, overriding pkg-config
@@ -16943,6 +16946,34 @@ fi
 
 
 
+if test "x$ac_cv_env_DATADIROCP_set" != "xset"
+then :
+
+	DATADIROCP=$datadir/ocp
+
+fi
+
+  EXP_VAR=DATADIROCP
+  FROM_VAR="$DATADIROCP"
+  prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+  full_var="$FROM_VAR"
+  while true; do
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var" = "x$full_var"
+then :
+  break
+fi
+    full_var=$new_full_var
+  done
+  full_var=$new_full_var
+  DATADIROCP="$full_var"
+
+  prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+
+
+
   EXP_VAR=PREFIX
   FROM_VAR=$prefix
   prefix_save=$prefix
@@ -17083,6 +17114,8 @@ fi
   exec_prefix=$exec_prefix_save
 
 printf "%s\n" "#define DATADIR \"$DATADIR\"" >>confdefs.h
+
+printf "%s\n" "#define DATADIROCP \"$DATADIROCP\"" >>confdefs.h
 
 printf "%s\n" "#define PREFIX \"$PREFIX\"" >>confdefs.h
 

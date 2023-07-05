@@ -910,6 +910,13 @@ AC_DEFINE_UNQUOTED(LIBDIR, "$LIBDIR")
 
 AS_AC_EXPAND(BINDIR, $exec_prefix/bin)
 
+AC_ARG_VAR(DATADIROCP, [Path to OpenCubicPlayer data files, defaults to ${datadir}/ocp])
+AS_IF([test "x$ac_cv_env_DATADIROCP_set" != "xset"],[
+	DATADIROCP=$datadir/ocp
+])
+AS_AC_EXPAND(DATADIROCP, "$DATADIROCP")
+AC_DEFINE_UNQUOTED(DATADIROCP, "$DATADIROCP")
+
 AS_AC_EXPAND(PREFIX, $prefix)
 AS_AC_EXPAND(DOCDIR, $docdir)
 AS_AC_EXPAND(INFODIR, $infodir)
