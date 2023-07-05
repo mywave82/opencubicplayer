@@ -690,6 +690,13 @@ static int cue_parse_line (struct cue_parser_t *cue_parser, const char *input, c
 	while (l)
 	{
 		const char *current = input;
+
+		if (cue_parser->state == CUE_PARSER_STATE_rem)
+		{
+			cue_parser->state = CUE_PARSER_STATE_ready;
+			return 0;
+		}
+
 		bufferfill = 0;
 		if ((input[0] == ' ') || (input[0] == '\t'))
 		{
