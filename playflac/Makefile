@@ -17,11 +17,11 @@ clean:
 
 install:
 ifeq ($(HAVE_FLAC),1)
-	$(CP) playflac$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playflac$(LIB_SUFFIX)"
+	$(CP) playflac$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playflac$(LIB_SUFFIX)"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playflac$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playflac$(LIB_SUFFIX)"
 
 cpiflacinfo.o: cpiflacinfo.c \
 	../config.h \

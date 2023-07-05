@@ -25,10 +25,10 @@ stsoundlib/libym.a: stsoundlib_dir
 
 
 install:
-	$(CP) playym$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playym$(LIB_SUFFIX)"
+	$(CP) playym$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playym$(LIB_SUFFIX)"
 
 uninstall:
-	$(RM) -f "$(DESTDIR)$(LIBDIR)/autoload/95-playym$(LIB_SUFFIX)"
+	$(RM) -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playym$(LIB_SUFFIX)"
 
 clean:
 	$(MAKE) -C lzh clean TOPDIR="../$(TOPDIR)"

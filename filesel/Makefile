@@ -34,14 +34,14 @@ install:
 uninstall:
 else
 install:
-	$(CP) pfilesel$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/25-pfilesel$(LIB_SUFFIX)"
+	$(CP) pfilesel$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/25-pfilesel$(LIB_SUFFIX)"
 ifeq ($(CDROM_SUPPORT),1)
-	$(CP) $(CDROM_SO) "$(DESTDIR)$(LIBDIR)/autoload/30-cdrom$(LIB_SUFFIX)"
+	$(CP) $(CDROM_SO) "$(DESTDIR)$(LIBDIROCP)/autoload/30-cdrom$(LIB_SUFFIX)"
 endif
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR) install
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/25-pfilesel$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/30-cdrom$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/25-pfilesel$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/30-cdrom$(LIB_SUFFIX)"
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR) uninstall
 endif
 

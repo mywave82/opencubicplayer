@@ -9,10 +9,10 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) playgme$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playgme$(LIB_SUFFIX)"
+	$(CP) playgme$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playgme$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playgme$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playgme$(LIB_SUFFIX)"
 
 cpiinfo.o: cpiinfo.c \
 	../config.h \

@@ -22,14 +22,14 @@ install:
 uninstall:
 else
 install:
-	$(CP) cpiface$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/35-cpiface$(LIB_SUFFIX)"
+	$(CP) cpiface$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/35-cpiface$(LIB_SUFFIX)"
 ifeq ($(NEED_CPIFONTDEBUG),1)
-	$(CP) cpifontdebug$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/40-cpifontdebug$(LIB_SUFFIX)"
+	$(CP) cpifontdebug$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/40-cpifontdebug$(LIB_SUFFIX)"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/35-cpiface$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-cpifacefontdebug$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/35-cpiface$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/40-cpifacefontdebug$(LIB_SUFFIX)"
 endif
 
 cpikeyhelp.o: cpikeyhelp.c cpiface.h \

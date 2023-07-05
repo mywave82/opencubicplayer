@@ -15,13 +15,13 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	mkdir -p "$(DESTDIR)$(LIBDIR)/autoload"
-	$(CP) freverb$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload"
-	$(CP) ireverb$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload"
+	mkdir -p "$(DESTDIR)$(LIBDIROCP)/autoload"
+	$(CP) freverb$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload"
+	$(CP) ireverb$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/freverb$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/ireverb$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/freverb$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/ireverb$(LIB_SUFFIX)"
 
 freverb.o: freverb.c \
 	../config.h \

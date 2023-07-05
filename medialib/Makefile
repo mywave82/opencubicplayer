@@ -19,10 +19,10 @@ install:
 uninstall:
 else
 install:
-	$(CP) medialib$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/90-medialib$(LIB_SUFFIX)"
+	$(CP) medialib$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/90-medialib$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/90-medialib$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/90-medialib$(LIB_SUFFIX)"
 endif
 
 medialib.o: medialib.c \

@@ -11,10 +11,10 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) playcda$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playcda$(LIB_SUFFIX)"
+	$(CP) playcda$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playcda$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playcda$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playcda$(LIB_SUFFIX)"
 
 cdatype.o: cdatype.c cdatype.h \
 	../config.h \

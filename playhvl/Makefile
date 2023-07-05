@@ -17,13 +17,13 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX) dumpahx
 
 install:
-	$(CP) playhvl$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playhvl$(LIB_SUFFIX)"
+	$(CP) playhvl$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playhvl$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpahx "$(DESTDIR)$(BINDIR)/dumpahx"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playhvl$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playhvl$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpahx"
 
 dumpahx: dumpahx.o

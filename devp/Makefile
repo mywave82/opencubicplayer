@@ -55,41 +55,41 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) devpnone$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/35-devpnone$(LIB_SUFFIX)"
-	$(CP) devpdisk$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/35-devpdisk$(LIB_SUFFIX)"
+	$(CP) devpnone$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/35-devpnone$(LIB_SUFFIX)"
+	$(CP) devpdisk$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/35-devpdisk$(LIB_SUFFIX)"
 ifeq ($(HAVE_ALSA),1)
-	$(CP) $(ALSA_SO) "$(DESTDIR)$(LIBDIR)/autoload/35-$(ALSA_SO)"
+	$(CP) $(ALSA_SO) "$(DESTDIR)$(LIBDIROCP)/autoload/35-$(ALSA_SO)"
 endif
 ifeq ($(HAVE_OSS),1)
-	$(CP) $(OSS_SO) "$(DESTDIR)$(LIBDIR)/autoload/35-$(OSS_SO)"
+	$(CP) $(OSS_SO) "$(DESTDIR)$(LIBDIROCP)/autoload/35-$(OSS_SO)"
 endif
 ifeq ($(HAVE_COREAUDIO),1)
-	$(CP) $(COREAUDIO_SO) "$(DESTDIR)$(LIBDIR)/autoload/35-$(COREAUDIO_SO)"
+	$(CP) $(COREAUDIO_SO) "$(DESTDIR)$(LIBDIROCP)/autoload/35-$(COREAUDIO_SO)"
 endif
 ifeq ($(HAVE_SDL),1)
-	$(CP) $(SDL_SO) "$(DESTDIR)$(LIBDIR)/autoload/35-$(SDL_SO)"
+	$(CP) $(SDL_SO) "$(DESTDIR)$(LIBDIROCP)/autoload/35-$(SDL_SO)"
 endif
 ifeq ($(HAVE_SDL2),1)
-	$(CP) $(SDL2_SO) "$(DESTDIR)$(LIBDIR)/autoload/35-$(SDL2_SO)"
+	$(CP) $(SDL2_SO) "$(DESTDIR)$(LIBDIROCP)/autoload/35-$(SDL2_SO)"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/35-devpnone$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/35-devpdisk$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/35-devpnone$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/35-devpdisk$(LIB_SUFFIX)"
 ifeq ($(HAVE_ALSA),1)
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/35-$(ALSA_SO)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/35-$(ALSA_SO)"
 endif
 ifeq ($(HAVE_OSS),1)
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/35-$(OSS_SO)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/35-$(OSS_SO)"
 endif
 ifeq ($(HAVE_COREAUDIO),1)
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/35-$(COREAUDIO_SO)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/35-$(COREAUDIO_SO)"
 endif
 ifeq ($(HAVE_SDL),1)
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/35-$(SDL_SO)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/35-$(SDL_SO)"
 endif
 ifeq ($(HAVE_SDL2),1)
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/35-$(SDL2_SO)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/35-$(SDL2_SO)"
 endif
 
 devposs.o: devposs.c \

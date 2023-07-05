@@ -17,7 +17,7 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX) dumpstm dumps3m
 
 install:
-	$(CP) playgmd$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playgmd$(LIB_SUFFIX)"
+	$(CP) playgmd$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playgmd$(LIB_SUFFIX)"
 
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpstm "$(DESTDIR)$(BINDIR)/dumpstm"
@@ -25,7 +25,7 @@ ifeq ($(BUILD_DUMPTOOLS),1)
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playgmd$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playgmd$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpstm"
 	rm -f "$(DESTDIR)$(BINDIR)/dumps3m"
 

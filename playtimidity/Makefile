@@ -13,13 +13,13 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX) calcnewt dumpmidi timidity-git/timidity/newton_table.c timidity-git/interface/*.o timidity-git/libarc/*.o timidity-git/timidity/*.o timidity-git/utils/*.o
 
 install:
-	$(CP) playtimidity$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playtimidity$(LIB_SUFFIX)"
+	$(CP) playtimidity$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playtimidity$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpmidi "$(DESTDIR)$(BINDIR)/dumpmidi"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playtimidity$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playtimidity$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpmidi"
 
 cpikaraoke.o: \

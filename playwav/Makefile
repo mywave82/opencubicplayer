@@ -7,10 +7,10 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) playwav$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playwav$(LIB_SUFFIX)"
+	$(CP) playwav$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playwav$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playwav$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playwav$(LIB_SUFFIX)"
 
 playwav_so=wavplay.o wavpplay.o wavtype.o
 playwav$(LIB_SUFFIX): $(playwav_so)

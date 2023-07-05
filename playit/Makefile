@@ -11,10 +11,10 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) playit$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playit$(LIB_SUFFIX)"
+	$(CP) playit$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playit$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playit$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playit$(LIB_SUFFIX)"
 
 ittype.o: ittype.c \
 	../config.h \

@@ -25,12 +25,12 @@ install:
 uninstall:
 else
 install:
-	$(CP) poutput$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/12-poutput$(LIB_SUFFIX)"
-	$(CP) sets$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-sets$(LIB_SUFFIX)"
+	$(CP) poutput$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/12-poutput$(LIB_SUFFIX)"
+	$(CP) sets$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/10-sets$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/12-poutput$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-sets$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/12-poutput$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/10-sets$(LIB_SUFFIX)"
 endif
 
 cp437.o: cp437.c cp437.h \

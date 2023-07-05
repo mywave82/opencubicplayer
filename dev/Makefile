@@ -25,15 +25,15 @@ install:
 uninstall:
 else
 install:
-	$(CP) mcpbase$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/20-mcpbase$(LIB_SUFFIX)"
-	$(CP) plrbase$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/20-plrbase$(LIB_SUFFIX)"
-	$(CP) mchasm$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/10-mchasm$(LIB_SUFFIX)"
+	$(CP) mcpbase$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/20-mcpbase$(LIB_SUFFIX)"
+	$(CP) plrbase$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/20-plrbase$(LIB_SUFFIX)"
+	$(CP) mchasm$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/10-mchasm$(LIB_SUFFIX)"
 
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/20-mcpbase$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/20-plrbase$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/10-mchasm$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/20-mcpbase$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/20-plrbase$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/10-mchasm$(LIB_SUFFIX)"
 endif
 
 test: ringbuffer-unit-test mchasm_test smpman_asminctest

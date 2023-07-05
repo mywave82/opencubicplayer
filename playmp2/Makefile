@@ -18,10 +18,10 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) playmp2$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playmp2$(LIB_SUFFIX)"
+	$(CP) playmp2$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playmp2$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playmp2$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playmp2$(LIB_SUFFIX)"
 
 dumpid3: dumpid3.o
 	$(CC) $(LDFLAGS) -o $@ $^ -lz

@@ -201,7 +201,7 @@ static char *locate_ocp_hlp(void)
 		return retval;
 	if ((retval=locate_ocp_hlp_try(DATADIROCP "/data/")))
 		return retval;
-	if ((retval=locate_ocp_hlp_try(LIBDIR)))
+	if ((retval=locate_ocp_hlp_try(LIBDIROCP)))
 		return retval;
 	return NULL;
 }
@@ -960,7 +960,7 @@ static char *locate_libocp(void)
 		if ((retval=locate_libocp_try(dir, 0)))
 			return retval;
 */
-	if ((retval=locate_libocp_try(LIBDIR, 1)))
+	if ((retval=locate_libocp_try(LIBDIROCP, 1)))
 		return retval;
 	if ((retval=locate_libocp_try(PREFIX "/lib", 1)))
 		return retval;

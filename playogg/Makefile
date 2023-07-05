@@ -7,10 +7,10 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX)
 
 install:
-	$(CP) playogg$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playogg$(LIB_SUFFIX)"
+	$(CP) playogg$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playogg$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playogg$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playogg$(LIB_SUFFIX)"
 
 playogg_so=cpiogginfo.o cpioggpic.o oggplay.o oggpplay.o oggtype.o
 playogg$(LIB_SUFFIX): $(playogg_so)

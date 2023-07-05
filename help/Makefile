@@ -16,12 +16,12 @@ install:
 uninstall:
 else
 install:
-	$(CP) cphlpif$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/40-cphlpif$(LIB_SUFFIX)"
-	$(CP) cphelper$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/20-cphelper$(LIB_SUFFIX)"
+	$(CP) cphlpif$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/40-cphlpif$(LIB_SUFFIX)"
+	$(CP) cphelper$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/20-cphelper$(LIB_SUFFIX)"
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/40-cphlpif$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/20-cphelper$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/40-cphlpif$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/20-cphelper$(LIB_SUFFIX)"
 endif
 
 cphelper.o: cphelper.c cphelper.h \

@@ -367,7 +367,8 @@
 #endif
 
 #define PREFIX "/usr/local"
-#define LIBDIR "/usr/lib/ocp"
+#define LIBDIR "/usr/lib"
+#define LIBDIROCP "/usr/lib/ocp"
 #define DATADIR "/usr/share"
 #define DATADIROCP "/usr/share/ocp"
 #undef UNIFONT_RELATIVE

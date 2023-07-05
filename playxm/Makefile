@@ -17,13 +17,13 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX) dumpmod
 
 install:
-	$(CP) playxm$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playxm$(LIB_SUFFIX)"
+	$(CP) playxm$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playxm$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpmod "$(DESTDIR)$(BINDIR)/dumpmod"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playxm$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playxm$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpmod"
 
 dumpmod: dumpmod.o

@@ -16,9 +16,9 @@ install:
 uninstall:
 else
 install:
-	$(CP) cdfs$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/60-cdfs$(LIB_SUFFIX)"
+	$(CP) cdfs$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/60-cdfs$(LIB_SUFFIX)"
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/60-cdfs$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/60-cdfs$(LIB_SUFFIX)"
 endif
 
 .PHONY: all clean install uninstall

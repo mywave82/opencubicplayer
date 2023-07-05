@@ -17,14 +17,14 @@ clean:
 	rm -f *.o *$(LIB_SUFFIX) dumpay
 
 install:
-	$(CP) playay$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playay$(LIB_SUFFIX)"
+	$(CP) playay$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playay$(LIB_SUFFIX)"
 ifeq ($(BUILD_DUMPTOOLS),1)
 	$(CP) dumpay "$(DESTDIR)$(BINDIR)/dumpay"
 endif
 
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playay$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playay$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpay"
 
 aytype.o: aytype.c \

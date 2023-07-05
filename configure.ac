@@ -905,8 +905,12 @@ AS_IF([test "x$with_coreaudio" != "xno"],[
 	COREAUDIO_LIBS="-framework CoreAudio -framework Carbon -framework AudioUnit"
 ])
 
-AS_AC_EXPAND(LIBDIR, $libdir/$PACKAGE_NAME)
-AC_DEFINE_UNQUOTED(LIBDIR, "$LIBDIR")
+AC_ARG_VAR(LIBDIROCP, [Path to OpenCubicPlayer lib files, defaults to ${libdir}/ocp])
+AS_IF([test "x$ac_cv_env_LIBDIROCP_set" != "xset"],[
+	LIBDIROCP=$libdir/ocp
+])
+AS_AC_EXPAND(LIBDIROCP, "$LIBDIROCP")
+AC_DEFINE_UNQUOTED(LIBDIROCP, "$LIBDIROCP")
 
 AS_AC_EXPAND(BINDIR, $exec_prefix/bin)
 
@@ -923,8 +927,10 @@ AS_AC_EXPAND(INFODIR, $infodir)
 AS_AC_EXPAND(SYSCONFDIR, $sysconfdir)
 AS_AC_EXPAND(DATADIR, $datadir)
 AS_AC_EXPAND(DATAROOTDIR, $datarootdir)
+AS_AC_EXPAND(LIBDIR, $libdir)
 AS_AC_EXPAND(MANDIR, $mandir)
 AC_DEFINE_UNQUOTED(DATADIR, "$DATADIR")
+AC_DEFINE_UNQUOTED(LIBDIR, "$LIBDIR")
 AC_DEFINE_UNQUOTED(PREFIX, "$PREFIX")
 
 AC_ARG_WITH([efence], [AS_HELP_STRING([--with-efence],[Enable usage of efence])], [EFENCE_LIBS="-lefence"; AC_DEFINE(HAVE_EFENCE, 1)])

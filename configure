@@ -662,6 +662,7 @@ HAVE_MAKEINFO
 DUMA_LIBS
 EFENCE_LIBS
 MANDIR
+LIBDIR
 DATAROOTDIR
 DATADIR
 SYSCONFDIR
@@ -670,7 +671,7 @@ DOCDIR
 PREFIX
 DATADIROCP
 BINDIR
-LIBDIR
+LIBDIROCP
 COREAUDIO_LIBS
 COREAUDIO_CFLAGS
 HAVE_COREAUDIO
@@ -936,6 +937,7 @@ LIBANCIENT_CFLAGS
 LIBANCIENT_LIBS
 OSS_CFLAGS
 OSS_LIBS
+LIBDIROCP
 DATADIROCP
 LIBGME_CFLAGS
 LIBGME_LIBS'
@@ -1714,6 +1716,7 @@ Some influential environment variables:
               linker flags for LIBANCIENT, overriding pkg-config
   OSS_CFLAGS  C compiler flags for OSS, overriding pkg-config
   OSS_LIBS    linker flags for OSS, overriding pkg-config
+  LIBDIROCP   Path to OpenCubicPlayer lib files, defaults to ${libdir}/ocp
   DATADIROCP  Path to OpenCubicPlayer data files, defaults to ${datadir}/ocp
   LIBGME_CFLAGS
               C compiler flags for LIBGME, overriding pkg-config
@@ -16902,8 +16905,15 @@ then :
 fi
 
 
-  EXP_VAR=LIBDIR
-  FROM_VAR=$libdir/$PACKAGE_NAME
+if test "x$ac_cv_env_LIBDIROCP_set" != "xset"
+then :
+
+	LIBDIROCP=$libdir/ocp
+
+fi
+
+  EXP_VAR=LIBDIROCP
+  FROM_VAR="$LIBDIROCP"
   prefix_save=$prefix
   exec_prefix_save=$exec_prefix
   full_var="$FROM_VAR"
@@ -16916,12 +16926,12 @@ fi
     full_var=$new_full_var
   done
   full_var=$new_full_var
-  LIBDIR="$full_var"
+  LIBDIROCP="$full_var"
 
   prefix=$prefix_save
   exec_prefix=$exec_prefix_save
 
-printf "%s\n" "#define LIBDIR \"$LIBDIR\"" >>confdefs.h
+printf "%s\n" "#define LIBDIROCP \"$LIBDIROCP\"" >>confdefs.h
 
 
 
@@ -16971,6 +16981,8 @@ fi
 
   prefix=$prefix_save
   exec_prefix=$exec_prefix_save
+
+printf "%s\n" "#define DATADIROCP \"$DATADIROCP\"" >>confdefs.h
 
 
 
@@ -17094,6 +17106,26 @@ fi
   exec_prefix=$exec_prefix_save
 
 
+  EXP_VAR=LIBDIR
+  FROM_VAR=$libdir
+  prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+  full_var="$FROM_VAR"
+  while true; do
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var" = "x$full_var"
+then :
+  break
+fi
+    full_var=$new_full_var
+  done
+  full_var=$new_full_var
+  LIBDIR="$full_var"
+
+  prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+
+
   EXP_VAR=MANDIR
   FROM_VAR=$mandir
   prefix_save=$prefix
@@ -17115,7 +17147,7 @@ fi
 
 printf "%s\n" "#define DATADIR \"$DATADIR\"" >>confdefs.h
 
-printf "%s\n" "#define DATADIROCP \"$DATADIROCP\"" >>confdefs.h
+printf "%s\n" "#define LIBDIR \"$LIBDIR\"" >>confdefs.h
 
 printf "%s\n" "#define PREFIX \"$PREFIX\"" >>confdefs.h
 

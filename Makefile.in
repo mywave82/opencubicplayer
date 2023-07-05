@@ -37,9 +37,9 @@ install:
 	$(CP) ocp.hlp "$(DESTDIR)$(DATADIROCP)/data"
 	mkdir -p "$(DESTDIR)$(DATADIROCP)/etc"
 	$(CP) ocp.ini "$(DESTDIR)$(DATADIROCP)/etc"
-	mkdir -p "$(DESTDIR)$(LIBDIR)"
-	$(CP) libocp$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
-	mkdir -p "$(DESTDIR)$(LIBDIR)/autoload"
+	mkdir -p "$(DESTDIR)$(LIBDIROCP)"
+	$(CP) libocp$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)"
+	mkdir -p "$(DESTDIR)$(LIBDIROCP)/autoload"
 	mkdir -p "$(DESTDIR)$(BINDIR)"
 	$(CP) ocp "$(DESTDIR)$(BINDIR)/ocp"
 	$(CP) ocp-curses "$(DESTDIR)$(BINDIR)/ocp-curses"
@@ -96,7 +96,7 @@ uninstall:
 	for i in $(SUBDIRS) ; do \
 	       $(MAKE) -C $$i TOPDIR=../$(TOPDIR) uninstall || exit 1 ;\
 	done
-	rm -Rf "$(DESTDIR)$(DOCDIR)" "$(DESTDIR)$(DATADIROCP)" "$(DESTDIR)$(LIBDIR)" "$(DESTDIR)$(BINDIR)/ocp" "$(DESTDIR)$(BINDIR)/ocp" "$(DESTDIR)$(BINDIR)/ocp-curses" "$(DESTDIR)$(BINDIR)/ocp-sdl" "$(DESTDIR)$(BINDIR)/ocp-sdl2" "$(DESTDIR)$(BINDIR)/ocp-vcsa" "$(DESTDIR)$(BINDIR)/ocp-x11"
+	rm -Rf "$(DESTDIR)$(DOCDIR)" "$(DESTDIR)$(DATADIROCP)" "$(DESTDIR)$(LIBDIROCP)" "$(DESTDIR)$(BINDIR)/ocp" "$(DESTDIR)$(BINDIR)/ocp" "$(DESTDIR)$(BINDIR)/ocp-curses" "$(DESTDIR)$(BINDIR)/ocp-sdl" "$(DESTDIR)$(BINDIR)/ocp-sdl2" "$(DESTDIR)$(BINDIR)/ocp-vcsa" "$(DESTDIR)$(BINDIR)/ocp-x11"
 	rm -f "$(DESTDIR)$(DATAROOTDIR)/applications/opencubicplayer.desktop"
 	rm -f "$(DESTDIR)$(DATAROOTDIR)/applications/cubic.org-opencubicplayer.desktop"
 	rm -f "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/16x16/apps/opencubicplayer.png"

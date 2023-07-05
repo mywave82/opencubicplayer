@@ -43,13 +43,13 @@ clean:
 
 install:
 ifeq ($(HAVE_ADPLUG),1)
-	$(CP) playopl$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)/autoload/95-playopl$(LIB_SUFFIX)"
+	$(CP) playopl$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playopl$(LIB_SUFFIX)"
 	mkdir -p "$(DESTDIR)$(DATADIROCP)/data"
 	$(CP) adplugdb-git/adplug.db "$(DESTDIR)$(DATADIROCP)/data"
 endif
 
 uninstall:
-	rm -f "$(DESTDIR)$(LIBDIR)/autoload/95-playopl$(LIB_SUFFIX)"
+	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-playopl$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(DATADIROCP)/data/adplug.db"
 
 oplconfig.o: oplconfig.c \
