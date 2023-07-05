@@ -661,16 +661,16 @@ HAVE_LZW
 HAVE_MAKEINFO
 DUMA_LIBS
 EFENCE_LIBS
+SYSCONFDIR
+PREFIX
 MANDIR
 LIBDIR
-DATAROOTDIR
-DATADIR
-SYSCONFDIR
 INFODIR
 DOCDIR
-PREFIX
-DATADIROCP
+DATAROOTDIR
+DATADIR
 BINDIR
+DATADIROCP
 LIBDIROCP
 COREAUDIO_LIBS
 COREAUDIO_CFLAGS
@@ -16935,27 +16935,6 @@ printf "%s\n" "#define LIBDIROCP \"$LIBDIROCP\"" >>confdefs.h
 
 
 
-  EXP_VAR=BINDIR
-  FROM_VAR=$exec_prefix/bin
-  prefix_save=$prefix
-  exec_prefix_save=$exec_prefix
-  full_var="$FROM_VAR"
-  while true; do
-    new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"
-then :
-  break
-fi
-    full_var=$new_full_var
-  done
-  full_var=$new_full_var
-  BINDIR="$full_var"
-
-  prefix=$prefix_save
-  exec_prefix=$exec_prefix_save
-
-
-
 if test "x$ac_cv_env_DATADIROCP_set" != "xset"
 then :
 
@@ -16986,8 +16965,8 @@ printf "%s\n" "#define DATADIROCP \"$DATADIROCP\"" >>confdefs.h
 
 
 
-  EXP_VAR=PREFIX
-  FROM_VAR=$prefix
+  EXP_VAR=BINDIR
+  FROM_VAR=$bindir
   prefix_save=$prefix
   exec_prefix_save=$exec_prefix
   full_var="$FROM_VAR"
@@ -17000,67 +16979,7 @@ fi
     full_var=$new_full_var
   done
   full_var=$new_full_var
-  PREFIX="$full_var"
-
-  prefix=$prefix_save
-  exec_prefix=$exec_prefix_save
-
-
-  EXP_VAR=DOCDIR
-  FROM_VAR=$docdir
-  prefix_save=$prefix
-  exec_prefix_save=$exec_prefix
-  full_var="$FROM_VAR"
-  while true; do
-    new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"
-then :
-  break
-fi
-    full_var=$new_full_var
-  done
-  full_var=$new_full_var
-  DOCDIR="$full_var"
-
-  prefix=$prefix_save
-  exec_prefix=$exec_prefix_save
-
-
-  EXP_VAR=INFODIR
-  FROM_VAR=$infodir
-  prefix_save=$prefix
-  exec_prefix_save=$exec_prefix
-  full_var="$FROM_VAR"
-  while true; do
-    new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"
-then :
-  break
-fi
-    full_var=$new_full_var
-  done
-  full_var=$new_full_var
-  INFODIR="$full_var"
-
-  prefix=$prefix_save
-  exec_prefix=$exec_prefix_save
-
-
-  EXP_VAR=SYSCONFDIR
-  FROM_VAR=$sysconfdir
-  prefix_save=$prefix
-  exec_prefix_save=$exec_prefix
-  full_var="$FROM_VAR"
-  while true; do
-    new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"
-then :
-  break
-fi
-    full_var=$new_full_var
-  done
-  full_var=$new_full_var
-  SYSCONFDIR="$full_var"
+  BINDIR="$full_var"
 
   prefix=$prefix_save
   exec_prefix=$exec_prefix_save
@@ -17106,6 +17025,46 @@ fi
   exec_prefix=$exec_prefix_save
 
 
+  EXP_VAR=DOCDIR
+  FROM_VAR=$docdir
+  prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+  full_var="$FROM_VAR"
+  while true; do
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var" = "x$full_var"
+then :
+  break
+fi
+    full_var=$new_full_var
+  done
+  full_var=$new_full_var
+  DOCDIR="$full_var"
+
+  prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+
+
+  EXP_VAR=INFODIR
+  FROM_VAR=$infodir
+  prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+  full_var="$FROM_VAR"
+  while true; do
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var" = "x$full_var"
+then :
+  break
+fi
+    full_var=$new_full_var
+  done
+  full_var=$new_full_var
+  INFODIR="$full_var"
+
+  prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+
+
   EXP_VAR=LIBDIR
   FROM_VAR=$libdir
   prefix_save=$prefix
@@ -17141,6 +17100,46 @@ fi
   done
   full_var=$new_full_var
   MANDIR="$full_var"
+
+  prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+
+
+  EXP_VAR=PREFIX
+  FROM_VAR=$prefix
+  prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+  full_var="$FROM_VAR"
+  while true; do
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var" = "x$full_var"
+then :
+  break
+fi
+    full_var=$new_full_var
+  done
+  full_var=$new_full_var
+  PREFIX="$full_var"
+
+  prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+
+
+  EXP_VAR=SYSCONFDIR
+  FROM_VAR=$sysconfdir
+  prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+  full_var="$FROM_VAR"
+  while true; do
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var" = "x$full_var"
+then :
+  break
+fi
+    full_var=$new_full_var
+  done
+  full_var=$new_full_var
+  SYSCONFDIR="$full_var"
 
   prefix=$prefix_save
   exec_prefix=$exec_prefix_save

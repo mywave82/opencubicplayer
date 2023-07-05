@@ -912,8 +912,6 @@ AS_IF([test "x$ac_cv_env_LIBDIROCP_set" != "xset"],[
 AS_AC_EXPAND(LIBDIROCP, "$LIBDIROCP")
 AC_DEFINE_UNQUOTED(LIBDIROCP, "$LIBDIROCP")
 
-AS_AC_EXPAND(BINDIR, $exec_prefix/bin)
-
 AC_ARG_VAR(DATADIROCP, [Path to OpenCubicPlayer data files, defaults to ${datadir}/ocp])
 AS_IF([test "x$ac_cv_env_DATADIROCP_set" != "xset"],[
 	DATADIROCP=$datadir/ocp
@@ -921,14 +919,15 @@ AS_IF([test "x$ac_cv_env_DATADIROCP_set" != "xset"],[
 AS_AC_EXPAND(DATADIROCP, "$DATADIROCP")
 AC_DEFINE_UNQUOTED(DATADIROCP, "$DATADIROCP")
 
-AS_AC_EXPAND(PREFIX, $prefix)
-AS_AC_EXPAND(DOCDIR, $docdir)
-AS_AC_EXPAND(INFODIR, $infodir)
-AS_AC_EXPAND(SYSCONFDIR, $sysconfdir)
+AS_AC_EXPAND(BINDIR, $bindir)
 AS_AC_EXPAND(DATADIR, $datadir)
 AS_AC_EXPAND(DATAROOTDIR, $datarootdir)
+AS_AC_EXPAND(DOCDIR, $docdir)
+AS_AC_EXPAND(INFODIR, $infodir)
 AS_AC_EXPAND(LIBDIR, $libdir)
 AS_AC_EXPAND(MANDIR, $mandir)
+AS_AC_EXPAND(PREFIX, $prefix)
+AS_AC_EXPAND(SYSCONFDIR, $sysconfdir)
 AC_DEFINE_UNQUOTED(DATADIR, "$DATADIR")
 AC_DEFINE_UNQUOTED(LIBDIR, "$LIBDIR")
 AC_DEFINE_UNQUOTED(PREFIX, "$PREFIX")
