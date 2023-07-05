@@ -154,12 +154,6 @@ AS_CASE([$with_builtin],
 		]
 );
 
-
-AC_SUBST(DIR_SUFFIX)
-AC_ARG_WITH([dir_suffix], [AS_HELP_STRING([--with-dir-suffix=],[append this on all paths and executables])], [], [])
-AS_AC_EXPAND(DIR_SUFFIX, $with_dir_suffix)
-AC_DEFINE_UNQUOTED(DIR_SUFFIX, "$DIR_SUFFIX")
-
 AC_MSG_CHECKING([gcc version])
 cc_version=`( $CC -dumpversion ) 2>&1`
 AS_IF([test "$?" -gt 0 || test x$cc_version = x], [AC_MSG_ERROR([not found])], [
@@ -911,7 +905,7 @@ AS_IF([test "x$with_coreaudio" != "xno"],[
 	COREAUDIO_LIBS="-framework CoreAudio -framework Carbon -framework AudioUnit"
 ])
 
-AS_AC_EXPAND(LIBDIR, $libdir/$PACKAGE_NAME$DIR_SUFFIX)
+AS_AC_EXPAND(LIBDIR, $libdir/$PACKAGE_NAME)
 AC_DEFINE_UNQUOTED(LIBDIR, "$LIBDIR")
 
 AS_AC_EXPAND(BINDIR, $exec_prefix/bin)

@@ -33,17 +33,15 @@ all: subdirs ocp ocp.hlp libocp$(LIB_SUFFIX)
 install:
 	mkdir -p "$(DESTDIR)$(DOCDIR)"
 	$(CP) AUTHORS BUGS COPYING CREDITS KEYBOARD_REMAPS SUID "$(DESTDIR)$(DOCDIR)"
-	mkdir -p "$(DESTDIR)$(DATADIR)/ocp$(DIR_SUFFIX)/data"
-	$(CP) ocp.hlp "$(DESTDIR)$(DATADIR)/ocp$(DIR_SUFFIX)/data"
-	mkdir -p "$(DESTDIR)$(DATADIR)/ocp$(DIR_SUFFIX)/etc"
-	$(CP) ocp.ini "$(DESTDIR)$(DATADIR)/ocp$(DIR_SUFFIX)/etc"
+	mkdir -p "$(DESTDIR)$(DATADIR)/ocp/data"
+	$(CP) ocp.hlp "$(DESTDIR)$(DATADIR)/ocp/data"
+	mkdir -p "$(DESTDIR)$(DATADIR)/ocp/etc"
+	$(CP) ocp.ini "$(DESTDIR)$(DATADIR)/ocp/etc"
 	mkdir -p "$(DESTDIR)$(LIBDIR)"
 	$(CP) libocp$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIR)"
 	mkdir -p "$(DESTDIR)$(LIBDIR)/autoload"
 	mkdir -p "$(DESTDIR)$(BINDIR)"
-	$(CP) ocp "$(DESTDIR)$(BINDIR)/ocp$(DIR_SUFFIX)"
-	if ! test -z $(DIR_SUFFIX); then ln -sf "ocp$(DIR_SUFFIX)" "$(DESTDIR)$(BINDIR)/ocp"; fi
-ifeq ($(DIR_SUFFIX),)
+	$(CP) ocp "$(DESTDIR)$(BINDIR)/ocp"
 	$(CP) ocp-curses "$(DESTDIR)$(BINDIR)/ocp-curses"
 ifeq ($(LINUX),1)
 	$(CP) ocp-vcsa "$(DESTDIR)$(BINDIR)/ocp-vcsa"
@@ -56,7 +54,6 @@ ifeq ($(HAVE_SDL2),1)
 endif
 ifeq ($(HAVE_X11),1)
 	$(CP) ocp-x11 "$(DESTDIR)$(BINDIR)/ocp-x11"
-endif
 endif
 	$(MAKE) -C doc DESTDIR="$(DESTDIR)" install TOPDIR="../$(TOPDIR)"
 
@@ -99,7 +96,7 @@ uninstall:
 	for i in $(SUBDIRS) ; do \
 	       $(MAKE) -C $$i TOPDIR=../$(TOPDIR) uninstall || exit 1 ;\
 	done
-	rm -Rf "$(DESTDIR)$(DOCDIR)" "$(DESTDIR)$(DATADIR)/ocp$(DIR_SUFFIX)" "$(DESTDIR)$(LIBDIR)" "$(DESTDIR)$(BINDIR)/ocp$(DIR_SUFFIX)" "$(DESTDIR)$(BINDIR)/ocp" "$(DESTDIR)$(BINDIR)/ocp-curses" "$(DESTDIR)$(BINDIR)/ocp-sdl" "$(DESTDIR)$(BINDIR)/ocp-sdl2" "$(DESTDIR)$(BINDIR)/ocp-vcsa" "$(DESTDIR)$(BINDIR)/ocp-x11"
+	rm -Rf "$(DESTDIR)$(DOCDIR)" "$(DESTDIR)$(DATADIR)/ocp" "$(DESTDIR)$(LIBDIR)" "$(DESTDIR)$(BINDIR)/ocp" "$(DESTDIR)$(BINDIR)/ocp" "$(DESTDIR)$(BINDIR)/ocp-curses" "$(DESTDIR)$(BINDIR)/ocp-sdl" "$(DESTDIR)$(BINDIR)/ocp-sdl2" "$(DESTDIR)$(BINDIR)/ocp-vcsa" "$(DESTDIR)$(BINDIR)/ocp-x11"
 	rm -f "$(DESTDIR)$(DATAROOTDIR)/applications/opencubicplayer.desktop"
 	rm -f "$(DESTDIR)$(DATAROOTDIR)/applications/cubic.org-opencubicplayer.desktop"
 	rm -f "$(DESTDIR)$(DATAROOTDIR)/icons/hicolor/16x16/apps/opencubicplayer.png"

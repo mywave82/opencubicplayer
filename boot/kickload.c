@@ -159,21 +159,17 @@ static const char *locate_ocp_ini(void)
 		} else*/if ((retval=locate_ocp_ini_try(temp)))
 				return retval;
 	}
-	if ((retval=locate_ocp_ini_try(DATADIR "/ocp" DIR_SUFFIX "/etc/" "ocp.ini")))
+	if ((retval=locate_ocp_ini_try(DATADIR "/ocp/etc/"    "ocp.ini")))
 		return retval;
-	if ((retval=locate_ocp_ini_try(DATADIR "/share/ocp/" DIR_SUFFIX "/ocp.ini")))
+	if ((retval=locate_ocp_ini_try(DATADIR "/share/ocp/"  "ocp.ini")))
 		return retval;
-	if ((retval=locate_ocp_ini_try(PREFIX "/etc/ocp/" DIR_SUFFIX    "/ocp.ini")))
+	if ((retval=locate_ocp_ini_try(PREFIX "/etc/ocp/"     "ocp.ini")))
 		return retval;
-	if ((retval=locate_ocp_ini_try(PREFIX "/etc/ocp/"                "ocp.ini")))
+	if ((retval=locate_ocp_ini_try(PREFIX "/etc/"         "ocp.ini")))
 		return retval;
-	if ((retval=locate_ocp_ini_try(PREFIX "/etc/"                    "ocp.ini")))
+	if ((retval=locate_ocp_ini_try("/etc/ocp/"            "ocp.ini")))
 		return retval;
-	if ((retval=locate_ocp_ini_try("/etc/ocp" DIR_SUFFIX            "/ocp.ini")))
-		return retval;
-	if ((retval=locate_ocp_ini_try("/etc/ocp"                       "/ocp.ini")))
-		return retval;
-	if ((retval=locate_ocp_ini_try("/etc"                            "ocp.ini")))
+	if ((retval=locate_ocp_ini_try("/etc/"                "ocp.ini")))
 		return retval;
 	return NULL;
 }
@@ -201,9 +197,9 @@ static char *locate_ocp_hlp(void)
 	if ((temp=getenv("OCPDIR")))
 		if ((retval=locate_ocp_hlp_try(temp)))
 			return retval;
-	if ((retval=locate_ocp_hlp_try(DATADIR "/ocp" DIR_SUFFIX "/")))
+	if ((retval=locate_ocp_hlp_try(DATADIR "/ocp/")))
 		return retval;
-	if ((retval=locate_ocp_hlp_try(DATADIR "/ocp" DIR_SUFFIX "/data/")))
+	if ((retval=locate_ocp_hlp_try(DATADIR "/ocp/data/")))
 		return retval;
 	if ((retval=locate_ocp_hlp_try(LIBDIR)))
 		return retval;

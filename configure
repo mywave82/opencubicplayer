@@ -763,7 +763,6 @@ HAVE_SYS_STAT_H
 HAVE_SYS_IO_H
 HAVE_GETOPT_H
 MATH_LIBS
-DIR_SUFFIX
 STATIC_CORE
 STATIC_BUILD
 HAIKU
@@ -873,7 +872,6 @@ with_unifontdir_otf
 with_unifont_otf
 with_unifont_csur_otf
 with_unifont_upper_otf
-with_dir_suffix
 with_timidity_default_path
 with_ncurses
 with_ncursesw
@@ -1637,7 +1635,6 @@ Optional Packages:
   --with-unifont-upper-otf=/path
                           the full path to unifont_upper.otf (default is
                           UNIFONTDIR/unifont_upper.otf)
-  --with-dir-suffix=      append this on all paths and executables
   --with-timidity-default-path=DIR
                           Where timidity.cfg is (PREFIX/share/timidity)
   --with-ncurses          force the use of Ncurses or NcursesW
@@ -8024,38 +8021,6 @@ case $with_builtin in #(
 
  ;;
 esac;
-
-
-
-
-# Check whether --with-dir_suffix was given.
-if test ${with_dir_suffix+y}
-then :
-  withval=$with_dir_suffix;
-fi
-
-
-  EXP_VAR=DIR_SUFFIX
-  FROM_VAR=$with_dir_suffix
-  prefix_save=$prefix
-  exec_prefix_save=$exec_prefix
-  full_var="$FROM_VAR"
-  while true; do
-    new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"
-then :
-  break
-fi
-    full_var=$new_full_var
-  done
-  full_var=$new_full_var
-  DIR_SUFFIX="$full_var"
-
-  prefix=$prefix_save
-  exec_prefix=$exec_prefix_save
-
-printf "%s\n" "#define DIR_SUFFIX \"$DIR_SUFFIX\"" >>confdefs.h
-
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking gcc version" >&5
 printf %s "checking gcc version... " >&6; }
@@ -16935,7 +16900,7 @@ fi
 
 
   EXP_VAR=LIBDIR
-  FROM_VAR=$libdir/$PACKAGE_NAME$DIR_SUFFIX
+  FROM_VAR=$libdir/$PACKAGE_NAME
   prefix_save=$prefix
   exec_prefix_save=$exec_prefix
   full_var="$FROM_VAR"
