@@ -33,6 +33,8 @@ endif
 # libocp_so is linked by parent
 stuff_libocp_so:=compat.o err.o framelock.o poll.o poutput-keyboard.o utf-8.o
 
+stuff_libocp_so+=piperun-unix.o
+
 ifeq ($(STATIC_CORE),1)
  STATIC_OBJECTS += $(patsubst %.o,stuff/%.o,$(sets_so))
  STATIC_OBJECTS += $(patsubst %.o,stuff/%.o,$(poutput_so))

@@ -92,6 +92,7 @@
 #include "stuff/compat.h"
 #include "stuff/framelock.h"
 #include "stuff/imsrtns.h"
+#include "stuff/piperun.h"
 #include "stuff/poutput.h"
 #include "stuff/utf-8.h"
 
@@ -960,6 +961,7 @@ static struct DevInterfaceAPI_t DevInterfaceAPI =
 	&configAPI,
 	&dirdbAPI,
 	&Console,
+	&PipeProcess,
 	0, /* dmFile */
 	cpiKeyHelp,
 	cpiKeyHelpClear,

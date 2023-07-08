@@ -75,6 +75,7 @@
 #include "stuff/imsrtns.h"
 #include "stuff/framelock.h"
 #include "stuff/latin1.h"
+#include "stuff/piperun.h"
 #include "stuff/poll.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
@@ -2285,6 +2286,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.configAPI = &configAPI;
 	cpifaceSessionAPI.Public.console = &Console;
 	cpifaceSessionAPI.Public.dirdb = &dirdbAPI;
+	cpifaceSessionAPI.Public.PipeProcess = &PipeProcess;
 	cpifaceSessionAPI.Public.dmFile = dmFile;
 
 	dirdbGetName_internalstr (fi->dirdb_ref, &filename);

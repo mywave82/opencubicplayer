@@ -24,8 +24,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <poll.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,6 +44,7 @@
 #include "musicbrainz.h"
 #include "pfilesel.h"
 #include "stuff/compat.h"
+#include "stuff/piperun.h"
 #include "stuff/poutput.h"
 #include "stuff/utf-8.h"
 
@@ -69,6 +68,7 @@ struct musicbrainz_cacheline_t
 
 struct musicbrainz_t
 {
+	void *pipehandle;
 	int fddb;
 	struct timespec lastactive;
 	struct musicbrainz_cacheline_t *cache;
@@ -78,11 +78,10 @@ struct musicbrainz_t
 	int                             cachedirtyfrom;
 	struct musicbrainz_queue_t *active;
 	struct musicbrainz_queue_t *head, *tail;
-	int fdout;
-	int fderr;
-	pid_t pid;
-	char out[256*1024];
-	char err[  2*1024];
+	char out [256*1024];
+	char outo[      16];
+	char err [  2*1024];
+	char erro[      16];
 	int outs;
 	int errs;
 };
@@ -94,7 +93,25 @@ struct musicbrainz_cacheline_sort_t
 	char album[MDB_COMPOSER_LEN];
 }; // used by musicbrainzSetup
 
-struct musicbrainz_t musicbrainz = {-1, {0, 0}, 0, 0, 0, 0, 0, NULL, NULL, NULL, -1, -1, 0};
+struct musicbrainz_t musicbrainz = {
+	0,      /* pipehandle */
+	-1,     /* fddb */
+	{0, 0}, /* lastactive */
+	0,      /* cache */
+	0,      /* cachecount */
+	0,      /* cachesize */
+	0,      /* cachedirty */
+	0,      /* cachedirtyfrom */
+	NULL,   /* active */
+	NULL,   /* head */
+	NULL,   /* tail */
+	{0},    /* out  - stdout buffer */
+	{0},    /* outo - stdout-overflow buffer */
+	{0},    /* err  - stderr buffer */
+	{0},    /* erro - stderr-overflow buffer */
+	0,      /* outs - stdout buffer fill */
+	0       /* errs - stderr buffer fill */
+};
 
 static void musicbrainz_parse_release (cJSON *release, struct musicbrainz_database_h **result);
 static const uint32_t SIZE_PRIVATE      = 0x80000000UL;
@@ -108,79 +125,28 @@ static void musicbrainz_setup_done (void);
 
 static int musicbrainz_spawn (struct musicbrainz_queue_t *t)
 {
-	int fdout[2];
-	int fderr[2];
 	char temp[4096];
-
-	if (pipe (fdout) < 0)
-	{
-		return -1;
-	}
-	if (pipe (fderr) < 0)
-	{
-		close (fdout[0]);
-		close (fdout[1]);
-		return -1;
-	}
-
-	musicbrainz.pid = fork ();
-	if (musicbrainz.pid < 0)
-	{
-		close (fdout[0]);
-		close (fdout[1]);
-		close (fderr[0]);
-		close (fderr[1]);
-		return -1;
-	}
-
-	if (musicbrainz.pid > 0)
-	{
-		close (fdout[1]);
-		close (fderr[1]);
-		fcntl (fdout[0], F_SETFD, FD_CLOEXEC);
-		fcntl (fderr[0], F_SETFD, FD_CLOEXEC);
-		musicbrainz.fdout = fdout[0];
-		musicbrainz.fderr = fderr[0];
-		musicbrainz.outs=0;
-		musicbrainz.errs=0;
-		return 0;
-	}
-
-	close (0); /* stdin */
-	open ("/dev/null", O_RDONLY);
-
-	close (1); /* stdout */
-	if (dup (fdout[1]) != 1)
-	{
-		perror ("dup() failed");
-	}
-
-	close (2); /* stderr */
-	if (dup (fderr[1]) != 2)
-	{
-		perror ("dup() failed");
-	}
-
-	close (fdout[0]);
-	close (fdout[1]);
-	close (fderr[0]);
-	close (fderr[1]);
 
 	snprintf (temp, sizeof (temp), "https://musicbrainz.org/ws/2/discid/%s?inc=recordings+artist-credits&cdstubs=no", t->discid);
 
-	execlp ("curl", "curl",
-		"--max-redirs", "10",
-		"--user-agent", "opencubicplayer/" PACKAGE_VERSION " ( stian.skjelstad@gmail.com )",
-		"--header", "Accept: application/json",
-		"--max-time", "10",
-		"-L", temp,
-		NULL);
-
-	perror ("execve(curl)");
-
-	_exit (1);
+	do
+	{
+		const char *command_line[] =
+		{
+			"curl",
+			"--max-redirs", "10",
+			"--user-agent", "opencubicplayer/" PACKAGE_VERSION " ( stian.skjelstad@gmail.com )",
+			"--header", "Accept: application/json",
+			"--max-time", "10",
+			"-L", temp,
+			0
+		};
+		musicbrainz.outs = 0;
+		musicbrainz.errs = 0;
+		musicbrainz.pipehandle = ocpPipeProcess_create (command_line);
+		return 0;
+	} while (0);
 }
-
 
 void *musicbrainz_lookup_discid_init (const char *discid, const char *toc, struct musicbrainz_database_h **result)
 {
@@ -295,72 +261,6 @@ void *musicbrainz_lookup_discid_init (const char *discid, const char *toc, struc
 	musicbrainz.active = t;
 
 	return t;
-}
-
-static void musicbrainz_handlestdout (void)
-{
-	if (musicbrainz.outs == sizeof (musicbrainz.out))
-	{
-		char temp[256];
-		int res;
-		res = read (musicbrainz.fdout, temp, 256);
-		if (res < 0)
-		{
-			return;
-		}
-		if (res == 0)
-		{
-			close (musicbrainz.fdout);
-			musicbrainz.fdout = -1;
-		}
-	} else {
-		int res;
-		res = read (musicbrainz.fdout, musicbrainz.out + musicbrainz.outs, sizeof (musicbrainz.out) - musicbrainz.outs);
-		if (res < 0)
-		{
-			return;
-		}
-		if (res == 0)
-		{
-			close (musicbrainz.fdout);
-			musicbrainz.fdout = -1;
-		} else {
-			musicbrainz.outs += res;
-		}
-	}
-}
-
-static void musicbrainz_handlestderr (void)
-{
-	if (musicbrainz.errs == sizeof (musicbrainz.err))
-	{
-		char temp[256];
-		int res;
-		res = read (musicbrainz.fderr, temp, 256);
-		if (res < 0)
-		{
-			return;
-		}
-		if (res == 0)
-		{
-			close (musicbrainz.fderr);
-			musicbrainz.fderr = -1;
-		}
-	} else {
-		int res;
-		res = read (musicbrainz.fderr, musicbrainz.err + musicbrainz.errs, sizeof (musicbrainz.err) - musicbrainz.errs);
-		if (res < 0)
-		{
-			return;
-		}
-		if (res == 0)
-		{
-			close (musicbrainz.fderr);
-			musicbrainz.fderr = -1;
-		} else {
-			musicbrainz.errs += res;
-		}
-	}
 }
 
 static uint32_t musicbrainz_parse_date (const char *src)
@@ -674,53 +574,44 @@ int musicbrainz_lookup_discid_iterate (void *token, struct musicbrainz_database_
 		return 1;
 	}
 
-	if ((musicbrainz.fdout >= 0) || (musicbrainz.fderr >= 0))
+	if (musicbrainz.pipehandle)
 	{
-		int count = 0;
-		struct pollfd fds[2];
-		if ((musicbrainz.fdout >= 0))
-		{
-			fds[count].fd = musicbrainz.fdout;
-			fds[count].events = POLLIN | POLLHUP;
-			fds[count].revents = 0;
-			count++;
-		}
-		if ((musicbrainz.fderr >= 0))
-		{
-			fds[count].fd = musicbrainz.fderr;
-			fds[count].events = POLLIN | POLLHUP;
-			fds[count].revents = 0;
-			count++;
-		}
-		if (poll (fds, count, 0) >= 0)
-		{
-			if ((musicbrainz.fdout >= 0) && (fds[0].revents))
-			{
-				musicbrainz_handlestdout ();
-			}
-			if ((musicbrainz.fderr >= 0) && (fds[count-1].revents))
-			{
-				musicbrainz_handlestderr ();
-			}
-		}
-	}
+		int a, b, retval;
 
-	if ((musicbrainz.fdout < 0) && (musicbrainz.fderr < 0) && (musicbrainz.pid > 0))
-	{
-		int retval = 0;
-		if (waitpid (musicbrainz.pid, &retval, WNOHANG) != musicbrainz.pid)
+		if (musicbrainz.outs != sizeof (musicbrainz.out))
+		{
+			a = ocpPipeProcess_read_stdout (musicbrainz.pipehandle, musicbrainz.out + musicbrainz.outs, sizeof (musicbrainz.out) - musicbrainz.outs);
+			if (a > 0) musicbrainz.outs += a;
+		} else {
+			a = ocpPipeProcess_read_stdout (musicbrainz.pipehandle, musicbrainz.outo, sizeof (musicbrainz.outo));
+		}
+
+		if (musicbrainz.errs != sizeof (musicbrainz.err))
+		{
+			b = ocpPipeProcess_read_stderr (musicbrainz.pipehandle, musicbrainz.err + musicbrainz.errs, sizeof (musicbrainz.err) - musicbrainz.errs);
+			if (b > 0) musicbrainz.errs += b;
+		} else {
+			b = ocpPipeProcess_read_stderr (musicbrainz.pipehandle, musicbrainz.erro, sizeof (musicbrainz.erro));
+		}
+
+		if ((a >= 0) || (b >= 0))
 		{
 			return 1;
 		}
+
+		retval = ocpPipeProcess_destroy (musicbrainz.pipehandle);
+		musicbrainz.pipehandle = 0;
+
 		clock_gettime (CLOCK_MONOTONIC, &musicbrainz.lastactive);
-		musicbrainz.pid = -1;
+
 		musicbrainz_finalize (retval, result);
+
 		free (musicbrainz.active);
 		musicbrainz.active = 0;
 		return 0;
-	} else {
-		return 1;
 	}
+	fprintf (stderr, "musicbrainz_lookup_discid_iterate() called without a pipe active\n");
+	return 0;
 }
 
 void musicbrainz_lookup_discid_cancel (void *token)
@@ -733,45 +624,45 @@ void musicbrainz_lookup_discid_cancel (void *token)
 	}
 	if (musicbrainz.active == token)
 	{
-		char temp[256];
-		kill (musicbrainz.pid, SIGQUIT);
-		while ((musicbrainz.fdout >= 0) || (musicbrainz.fderr >= 0))
+		assert (musicbrainz.pipehandle);
+
+		ocpPipeProcess_terminate (musicbrainz.pipehandle);
+
+		do
 		{
-			if (musicbrainz.fdout >= 0)
+			int a, b;
+
+			if (musicbrainz.outs != sizeof (musicbrainz.out))
 			{
-				int res;
-				res = read (musicbrainz.fdout, temp, 256);
-				if (res == 0)
-				{
-					close (musicbrainz.fdout);
-					musicbrainz.fdout = -1;
-				}
+				a = ocpPipeProcess_read_stdout (musicbrainz.pipehandle, musicbrainz.out, sizeof (musicbrainz.out) - musicbrainz.outs);
+				if (a > 0) musicbrainz.outs += a;
+			} else {
+				a = ocpPipeProcess_read_stdout (musicbrainz.pipehandle, musicbrainz.outo, sizeof (musicbrainz.outo));
 			}
-			if (musicbrainz.fderr >= 0)
+
+			if (musicbrainz.errs != sizeof (musicbrainz.err))
 			{
-				int res;
-				res = read (musicbrainz.fderr, temp, 256);
-				if (res == 0)
-				{
-					close (musicbrainz.fderr);
-					musicbrainz.fderr = -1;
-				}
+				b = ocpPipeProcess_read_stderr (musicbrainz.pipehandle, musicbrainz.err, sizeof (musicbrainz.err) - musicbrainz.errs);
+				if (b > 0) musicbrainz.errs += b;
+			} else {
+				b = ocpPipeProcess_read_stderr (musicbrainz.pipehandle, musicbrainz.erro, sizeof (musicbrainz.erro));
 			}
-		}
-		while (musicbrainz.pid >= 0)
-		{
-			int retval = 0;
-			if (waitpid (musicbrainz.pid, &retval, WNOHANG) != musicbrainz.pid)
+
+			if ((a >= 0) || (b >= 0))
 			{
 				usleep(10000);
 				continue;
 			}
-			clock_gettime (CLOCK_MONOTONIC, &musicbrainz.lastactive);
-			musicbrainz.pid = -1;
-		}
+		} while (0);
+
+		ocpPipeProcess_destroy (musicbrainz.pipehandle);
+		musicbrainz.pipehandle = 0;
+
+		clock_gettime (CLOCK_MONOTONIC, &musicbrainz.lastactive);
 
 		free (musicbrainz.active);
 		musicbrainz.active = 0;
+
 		return;
 	}
 
@@ -803,6 +694,7 @@ int musicbrainz_init (const struct configAPI_t *configAPI)
 
 	if (musicbrainz.fddb >= 0)
 	{
+		fprintf (stderr, "musicbrainz already initialzied\n");
 		return 0;
 	}
 	musicbrainz_setup_init ();
@@ -814,6 +706,7 @@ int musicbrainz_init (const struct configAPI_t *configAPI)
 	if (musicbrainz.fddb < 0)
 	{
 		fprintf (stderr, "open(%s): %s\n", path, strerror (errno));
+		free (path);
 		return 0;
 	}
 	free (path); path = 0;
@@ -931,7 +824,7 @@ void musicbrainz_done (void)
 		memcpy (temp + 28 + 8, &size, 4);
 		while (1)
 		{
-			if (write (musicbrainz.fddb, temp, 28 + 8 + 4) !=(28 + 8 +4))
+			if (write (musicbrainz.fddb, temp, 28 + 8 + 4) != (28 + 8 + 4))
 			{
 				if ((errno != EAGAIN) && (errno != EINTR))
 				{
@@ -1471,30 +1364,31 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 							}
 						} else if (epos == 3)
 						{ /* submit */
-							pid_t pid = fork();
+							char url[1024];
+							int datalen = musicbrainz.cache[sorted[dsel].pointsat].size & SIZE_MASK;
+							char *b = memchr (musicbrainz.cache[sorted[dsel].pointsat].data, ' ', datalen);
+							int tracks = 0;
+							int i;
+							pid_t pid;
+							if (b)
+							{
+								char *c = memchr (b + 1, ' ', datalen - (b - musicbrainz.cache[sorted[dsel].pointsat].data) - 1);
+								if (c)
+								{
+									tracks = atoi (b + 1);
+								}
+							}
+							snprintf (url, sizeof (url), "https://musicbrainz.org/cdtoc/attach?id=%s&tracks=%d&toc=%.*s", musicbrainz.cache[sorted[dsel].pointsat].discid, tracks, datalen, musicbrainz.cache[sorted[dsel].pointsat].data);
+							for (i=0; url[i]; i++)
+							{
+								if (url[i] == ' ')
+								{
+									url[i] = '+';
+								}
+							}
+							pid = fork();
 							if (pid == 0)
 							{
-								int i;
-								char url[1024];
-								int datalen = musicbrainz.cache[sorted[dsel].pointsat].size & SIZE_MASK;
-								char *b = memchr (musicbrainz.cache[sorted[dsel].pointsat].data, ' ', datalen);
-								int tracks = 0;
-								if (b)
-								{
-									char *c = memchr (b + 1, ' ', datalen - (b - musicbrainz.cache[sorted[dsel].pointsat].data) - 1);
-									if (c)
-									{
-										tracks = atoi (b + 1);
-									}
-								}
-								snprintf (url, sizeof (url), "https://musicbrainz.org/cdtoc/attach?id=%s&tracks=%d&toc=%.*s", musicbrainz.cache[sorted[dsel].pointsat].discid, tracks, datalen, musicbrainz.cache[sorted[dsel].pointsat].data);
-								for (i=0; url[i]; i++)
-								{
-									if (url[i] == ' ')
-									{
-										url[i] = '+';
-									}
-								}
 								for (i=3; i < 1024; i++)
 								{
 									close (i);
