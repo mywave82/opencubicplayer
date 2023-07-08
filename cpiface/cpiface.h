@@ -32,6 +32,7 @@ struct drawHelperAPI_t;
 struct notedotsdata;
 struct insdisplaystruct;
 struct cpitrakdisplaystruct;
+struct PipeProcessAPI_t;
 
 struct cpifaceplayerstruct
 {
@@ -251,6 +252,7 @@ struct cpifaceSessionAPI_t
 	const struct configAPI_t        *configAPI;
 	const struct console_t          *console;
 	const struct dirdbAPI_t         *dirdb;
+	const struct PipeProcessAPI_t   *PipeProcess;
 	      struct dmDrive            *dmFile;
 
 	int plrActive; /* currently used to detect if plrAPI->ProcessKey should be processed, later it will replaced by a handle instead */

@@ -272,6 +272,7 @@ cpiface.o: cpiface.c \
 	../stuff/imsrtns.h \
 	../stuff/framelock.h \
 	../stuff/latin1.h \
+	../stuff/piperun.h \
 	../stuff/poutput.h \
 	../stuff/poll.h \
 	../stuff/sets.h

@@ -12,13 +12,15 @@ struct ocpdir_t;
 struct ocpfile_t;
 struct ocpfilehandle_t;
 struct moduleinfostruct;
+struct PipeProcessAPI_t;
 
 struct DevInterfaceAPI_t
 {
-	const struct configAPI_t *configAPI;
-	const struct dirdbAPI_t  *dirdb;
-	      struct console_t   *console;
-	      struct dmDrive     *dmFile;
+	const struct configAPI_t      *configAPI;
+	const struct dirdbAPI_t       *dirdb;
+	      struct console_t        *console;
+	const struct PipeProcessAPI_t *PipeProcess;
+	const struct dmDrive          *dmFile;
 
 	const void (*KeyHelp) (uint16_t key, const char *shorthelp); /* Called on ALT-K to issue help about each keyboard shortcut */
 	const void (*KeyHelpClear) (void); /* Clears the current keyboard shortcut list, only used by keyboard/display loops */
