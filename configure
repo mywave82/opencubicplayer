@@ -8028,25 +8028,35 @@ case $with_builtin in #(
  ;;
 esac;
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking gcc version" >&5
-printf %s "checking gcc version... " >&6; }
-cc_version=`( $CC -dumpversion ) 2>&1`
-if test "$?" -gt 0 || test x$cc_version = x
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for known broken gcc versions" >&5
+printf %s "checking for known broken gcc versions... " >&6; }
+if $CC --version|head -n 1|grep '^gcc' > /dev/null
+then :
+
+	cc_version=`( $CC -dumpversion ) 2>&1`
+	if test "$?" -gt 0 || test x$cc_version = x
 then :
   as_fn_error $? "not found" "$LINENO" 5
 else $as_nop
 
-	case $cc_version in #(
+		case $cc_version in #(
   '') :
     as_fn_error $? "not found" "$LINENO" 5 ;; #(
   # old GCC versions in the 2.95.xx family are known to produce bad crashing binaries (it is still out there on some old systems. In general the all versions before 3.0 is risky
-		2.95.[2-9]|2.95.[2-9][-].*) :
+			2.95.[2-9]|2.95.[2-9][-].*) :
     as_fn_error $? "$cc_version, bad" "$LINENO" 5 ;; #(
   *) :
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $cc_version, ok" >&5
 printf "%s\n" "$cc_version, ok" >&6; }
-	 ;;
+		 ;;
 esac
+
+fi
+
+else $as_nop
+
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not gcc, ok" >&5
+printf "%s\n" "not gcc, ok" >&6; }
 
 fi
 

@@ -154,15 +154,19 @@ AS_CASE([$with_builtin],
 		]
 );
 
-AC_MSG_CHECKING([gcc version])
-cc_version=`( $CC -dumpversion ) 2>&1`
-AS_IF([test "$?" -gt 0 || test x$cc_version = x], [AC_MSG_ERROR([not found])], [
-	AS_CASE([$cc_version],
-		[''],                              [AC_MSG_ERROR([not found])],
+AC_MSG_CHECKING([for known broken gcc versions])
+AS_IF([$CC --version|head -n 1|grep '^gcc' > /dev/null], [
+	cc_version=`( $CC -dumpversion ) 2>&1`
+	AS_IF([test "$?" -gt 0 || test x$cc_version = x], [AC_MSG_ERROR([not found])], [
+		AS_CASE([$cc_version],
+			[''],                              [AC_MSG_ERROR([not found])],
 # old GCC versions in the 2.95.xx family are known to produce bad crashing binaries (it is still out there on some old systems. In general the all versions before 3.0 is risky
-		[2.95.[[2-9]]|2.95.[[2-9]][[-]].*],[AC_MSG_ERROR([$cc_version, bad])],
-		                                   [AC_MSG_RESULT([$cc_version, ok])]
-	)
+			[2.95.[[2-9]]|2.95.[[2-9]][[-]].*],[AC_MSG_ERROR([$cc_version, bad])],
+			                                   [AC_MSG_RESULT([$cc_version, ok])]
+		)
+	])
+],[
+	AC_MSG_RESULT([not gcc, ok])
 ])
 
 AC_MSG_CHECKING([for broken signed char to signed int in loops (gcc version 4.1.1)])
