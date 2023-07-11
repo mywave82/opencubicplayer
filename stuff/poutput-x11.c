@@ -23,6 +23,8 @@
  *    -first release
  */
 
+#define ENABLE_SHM 1 /* makes it possible to disable XShmImage API, to test the classic non-shm path */
+
 #define _CONSOLE_DRIVER
 #include "config.h"
 #include <ctype.h>
@@ -35,9 +37,13 @@
 #include <X11/xpm.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/xf86vmode.h>
+#ifdef ENABLE_SHM
 #include <X11/extensions/XShm.h>
+#endif
 #include <sys/ipc.h>
+#ifdef ENABLE_SHM
 #include <sys/shm.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -151,8 +157,10 @@ static Atom WM_DELETE_WINDOW;
 static int we_have_fullscreen;
 static int do_fullscreen=0;
 
+#ifdef ENABLE_SHM
 static XShmSegmentInfo shminfo[1];
 static int shm_completiontype = -1;
+#endif
 
 static Window window=0;
 static XImage *image=0;
@@ -729,8 +737,10 @@ static void x11_common_event_loop(void)
 
 		XNextEvent(mDisplay, &event);
 
+#ifdef ENABLE_SHM
 		if (event.type==shm_completiontype)
 			continue;
+#endif
 
 		switch (event.type)
 		{
@@ -1122,6 +1132,7 @@ static void create_window(void)
 
 static void create_image(void)
 {
+#ifdef ENABLE_SHM
 	if (mLocalDisplay && XShmQueryExtension(mDisplay) )
 	{
 		if (image)
@@ -1163,17 +1174,74 @@ static void create_image(void)
 		shmctl(shminfo[0].shmid, IPC_RMID, 0);
 	} else {
 		shm_completiontype = -1;
+#else
+	{
+#endif
+#if 0 /* XGetImage can fail, typically if window has been just resized into a smaller size */
+		fprintf (stderr, "XGetImage (mDisplay=%p, window=%p, x=0, y=0, width=%d, lines=%d, AllPlanes, ZPixmap)\n", mDisplay, window, Console.GraphBytesPerLine, Console.GraphLines);
 		if (!(image = XGetImage (mDisplay, window, 0, 0, Console.GraphBytesPerLine, Console.GraphLines, AllPlanes, ZPixmap)))
 		{
 			fprintf(stderr, "[x11] Failed to create XImage\n");
 			exit(-1);
 		}
+#else
+
+		int depth = XDefaultDepth(mDisplay, XDefaultScreen(mDisplay));
+		int bpp;
+		void *data;
+		int pad;
+		int bytes_per_line;
+		pad = BitmapPad(mDisplay);
+		switch (depth)
+		{
+			case 1:
+			case 2:
+			case 4:
+			case 8:
+				bpp = 1;
+				break;
+			case 15:
+			case 16:
+				bpp = 2;
+				break;
+			default:
+			case 24:
+			case 32:
+				bpp = 4;
+				break;
+		}
+		bytes_per_line = ((Console.GraphLines + pad - 1) & ~(pad-1)) * bpp;
+		data = calloc (Console.GraphBytesPerLine, bytes_per_line);
+		if (!data)
+		{
+			fprintf (stderr, "calloc() before XCreateImage() failed\n");
+			exit(-1);
+		}
+		if (!(image = XCreateImage (
+			mDisplay,
+			XDefaultVisual(mDisplay, mScreen),
+			depth,
+			ZPixmap,
+			0,
+			data,
+			Console.GraphBytesPerLine,
+			Console.GraphLines,
+			pad,
+			0)))
+		{
+			fprintf(stderr, "[x11] XCreateImage failed\n");
+			exit(-1);
+		}
+
+
+#endif
 	}
 	x11_depth = image->bits_per_pixel;
 }
 
 static void destroy_image(void)
 {
+#ifdef ENABLE_SHM
 	if (shm_completiontype>=0)
 	{
 		if (image)
@@ -1182,7 +1250,9 @@ static void destroy_image(void)
 			XDestroyImage(image);
 			shmdt(shminfo[0].shmaddr);
 		}
-	} else {
+	} else
+#endif
+	{
 		if (image)
 			XDestroyImage(image);
 	}
@@ -1808,9 +1878,11 @@ static void RefreshScreenGraph(void)
 		}
 	}
 
+#ifdef ENABLE_SHM
 	if (shm_completiontype>=0)
 		XShmPutImage(mDisplay, window, copyGC, image, 0, 0, 0, (Console.GraphLines == 240 ? 20 : 0), Console.GraphBytesPerLine, Console.GraphLines, True);
 	else
+#endif
 		XPutImage(mDisplay, window, copyGC, image, 0, 0, 0, (Console.GraphLines == 240 ? 20 : 0), Console.GraphBytesPerLine, Console.GraphLines);
 
 	if (Console.CurrentFont == _8x8)
