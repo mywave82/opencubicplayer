@@ -1015,9 +1015,6 @@ int fsInit(void)
 	DevInterfaceAPI.dmFile = dmFile;
 	plRegisterInterface (&VirtualInterface);
 
-	if (!fsScanDir(0))
-		return 0;
-
 	return 1;
 }
 
@@ -3033,6 +3030,11 @@ signed int fsFileSelect(void)
 	 * state = 5 - fsEditDirInfo()
 	 */
 	unsigned long i;
+
+	if (!currentdir->num)
+	{ /* this is true the very first time we execute */
+		fsScanDir(0);
+	}
 
 	plSetTextMode(fsScrType);
 	fsScrType=plScrType;
