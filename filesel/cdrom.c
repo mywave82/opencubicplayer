@@ -257,11 +257,6 @@ static void *cdrom_thread (void *_self)
 	pthread_mutex_lock (&self->mutex);
 	while (1)
 	{
-		if (self->shutdown)
-		{
-			pthread_mutex_unlock (&self->mutex);
-			return 0;
-		}
 		if (self->request)
 		{
 			struct cdrom_read_audio rip_ioctl;
@@ -277,6 +272,11 @@ static void *cdrom_thread (void *_self)
 
 			pthread_mutex_lock (&self->mutex);
 			self->request_complete = 1;
+		}
+		if (self->shutdown) /* check this before entering cond_wait */
+		{
+			pthread_mutex_unlock (&self->mutex);
+			return 0;
 		}
 		pthread_cond_wait (&self->cond, &self->mutex);
 	}
@@ -375,8 +375,8 @@ static void cdclose(void)
 
 		pthread_mutex_lock (&cdroms[i].mutex);
 		cdroms[i].shutdown = 1;
-		pthread_mutex_unlock (&cdroms[i].mutex);
 		pthread_cond_signal (&cdroms[i].cond);
+		pthread_mutex_unlock (&cdroms[i].mutex);
 		pthread_join (cdroms[i].thread, &retval);
 
 		close (cdroms[i].fd);
@@ -1011,8 +1011,8 @@ static int ocpfilehandle_cdrom_track_ioctl (struct ocpfilehandle_t *_handle, con
 		self->request_returnvalue = 0;
 		self->request_complete = 0;
 
-		pthread_mutex_unlock (&self->mutex);
 		pthread_cond_signal (&self->cond);
+		pthread_mutex_unlock (&self->mutex);
 		return 1; /* not ready */
 	}
 	if (!strcmp (cmd, IOCTL_CDROM_READAUDIO_ASYNC_PULL))
