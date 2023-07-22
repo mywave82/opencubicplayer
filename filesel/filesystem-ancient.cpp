@@ -154,7 +154,19 @@ struct ocpfilehandle_t *ancient_filehandle (char *compressionmethod, int compres
 	    (magic == FourCC("S403")) ||
 	    (magic == FourCC("S404")) ||
 	    (magic == FourCC("TPWM")) ||
-	    (magic == FourCC("XPKF"))
+	    (magic == FourCC("XPKF")) ||
+	    ((magic >> 16) == 0x1fff) ||    /* Compact,     added in v2.1.0 src/CompactDecompressor.cpp */
+	    ((magic >> 16) == 0x1f9d) ||    /* Compress,    added in v2.1.0 src/CompressDecompressor.cpp */
+	    ((magic >> 16) == 0x1f9e) ||    /* Freeze,      added in v2.1.0 src/FreezeDecompressor.cpp */
+	    ((magic >> 16) == 0x1f9f) ||    /* Freeze,      added in v2.1.0 src/FreezeDecompressor.cpp */
+	    (magic == FourCC("\001LOB")) || /* LOB,         added in v2.1.0 src/LOBDecompressor.cpp */
+	    (magic == FourCC("\002LOB")) || /* LOB,         added in v2.1.0 src/LOBDecompressor.cpp */
+	    (magic == FourCC("\003LOB")) || /* LOB,         added in v2.1.0 src/LOBDecompressor.cpp */
+	    (magic == FourCC("PX20")) ||    /* PP varient,  added in v2.1.0 src/PPDecompressor.cpp */
+	    (magic == FourCC("PPMQ")) ||    /* PPMQ,        added in v2.1.0 src/PPMQDecompressor.cpp */
+	    ((magic >> 16) == 0x1f1e) ||    /* Pack,        added in v2.1.0 src/PackDecompressor.cpp */
+	    ((magic >> 16) == 0x1f1f) ||    /* Pack,        added in v2.1.0 src/PackDecompressor.cpp */
+	    ((magic >> 16) == 0x1fa0)       /* SCOCompress, added in v2.1.0 src/SCOCompressDecompressor.cpp */
 	   )
 	{
 isancient:
