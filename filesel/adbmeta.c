@@ -20,18 +20,16 @@
 
 #include "config.h"
 #include <assert.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include "types.h"
 #include "adbmeta.h"
 #include "boot/psetting.h"
+#include "stuff/file.h"
 
 #ifndef ADBMETA_SILENCE_OPEN_ERRORS
  #define ADBMETA_SILENCE_OPEN_ERRORS 0
@@ -71,10 +69,10 @@ struct adbMetaEntry_t
 	unsigned char *data;
 };
 
+static osfile                 *adbMetaFile;
 static struct adbMetaEntry_t **adbMetaEntries;
 static uint_fast32_t           adbMetaCount;
 static uint_fast32_t           adbMetaSize; /* slots allocated */
-static char                   *adbMetaPath;
 static uint8_t                 adbMetaDirty;
 
 static struct adbMetaEntry_t *adbMetaInit_CreateBlob (const char          *filename,
@@ -120,7 +118,7 @@ static struct adbMetaEntry_t *adbMetaInit_CreateBlob (const char          *filen
 	return retval;
 }
 
-static int adbMetaInit_ParseFd (const int f)
+static int adbMetaInit_ParseFd (osfile *f)
 {
 	/* record counter */
 	uint_fast32_t counter;
@@ -173,10 +171,9 @@ fillmore:
 			}
 			result = size - fill;
 			if (result > 65536) result = 65536;
-			result = read (f, data + fill, result);
+			result = osfile_read (f, data + fill, result);
 			if (result < 0)
 			{
-				perror ("adbMetaInit: read");
 				adbMetaCount = counter;
 				free (data);
 				return 1;
@@ -276,8 +273,15 @@ fillmore:
 
 int adbMetaInit (const struct configAPI_t *configAPI)
 {
-	int f, retval;
+	int retval;
 	struct adbMetaHeader header;
+	char *adbMetaPath;
+
+	if (adbMetaFile)
+	{
+		fprintf (stderr, "adbMetaInit: Already loaded\n");
+		return 1;
+	}
 
 	adbMetaPath = malloc ( strlen(CFDATAHOMEDIR) + 13 + 1);
 	if (!adbMetaPath)
@@ -287,48 +291,48 @@ int adbMetaInit (const struct configAPI_t *configAPI)
 	}
 	sprintf (adbMetaPath, "%sCPARCMETA.DAT", CFDATAHOMEDIR);
 
-	if ((f=open(adbMetaPath, O_RDONLY))<0)
+	fprintf(stderr, "Loading %s .. ", adbMetaPath);
+
+	adbMetaFile = osfile_open_readwrite (adbMetaPath, 1, 0);
+	free (adbMetaPath);
+	adbMetaPath = 0;
+	if (!adbMetaFile)
 	{
 		if (!ADBMETA_SILENCE_OPEN_ERRORS)
 		{
-			perror ("adbMetaInit: open(DataHomeDir/CPARCMETA.DAT)");
+			fprintf(stderr, "adbMetaInit: open(DataHomeDir/CPARCMETA.DAT) failed\n");
 		}
 		return 1;
 	}
 
-	fprintf(stderr, "Loading %s .. ", adbMetaPath);
-
-	if (read(f, &header, sizeof (header)) != sizeof (header))
+	if (osfile_read (adbMetaFile, &header, sizeof (header)) != sizeof (header))
 	{
-		fprintf (stderr, "No header\n");
-		close (f);
+		fprintf (stderr, "No header - empty file\n");
 		return 1;
 	}
 
 	if (memcmp (header.Signature, adbMetaTag, 16))
 	{
 		fprintf (stderr, "Invalid header\n");
-		close (f);
 		return 1;
 	}
 
 	adbMetaSize = uint32_big (header.entries);
 	if (!adbMetaSize)
 	{
-		close (f);
+		fprintf (stderr, "Empty - no entries\n");
 		return 0;
 	}
 	adbMetaEntries = malloc (sizeof (adbMetaEntries[0]) * adbMetaSize);
 	if (!adbMetaEntries)
 	{
 		fprintf (stderr, "malloc() failed\n");
-		close (f);
 		return 1;
 	}
 
-	retval = adbMetaInit_ParseFd (f);
+	retval = adbMetaInit_ParseFd (adbMetaFile);
 
-	close (f);
+	osfile_purge_readaheadcache (adbMetaFile);
 
 	fprintf (stderr, "Done\n");
 
@@ -337,7 +341,6 @@ int adbMetaInit (const struct configAPI_t *configAPI)
 
 void adbMetaCommit (void)
 {
-	int f;
 	struct adbMetaHeader header;
 	/* record counter */
 	uint_fast32_t counter;
@@ -345,25 +348,19 @@ void adbMetaCommit (void)
 	memcpy (header.Signature, adbMetaTag, sizeof (adbMetaTag));
 	header.entries = uint32_big (adbMetaCount);
 
-	if ((!adbMetaPath) || (!adbMetaDirty))
+	if ((!adbMetaDirty) || (!adbMetaFile))
 	{
 		return;
 	}
 
-	f = open(adbMetaPath, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-	if (!f)
-	{
-		perror ("adbMetaCommit: open(DataHomeDir/CPARCMETA.DAT)");
-		return;
-	}
-
-	if (write (f, &header, sizeof (header)) != sizeof (header)) { perror ("adbMetaCommit write #1"); };
+	osfile_setpos (adbMetaFile, 0);
+	if (osfile_write (adbMetaFile, &header, sizeof (header)) < 0) { fprintf (stderr, "adbMetaCommit write failed #1\n"); return; };
 
 	for (counter = 0; counter < adbMetaCount; counter++)
 	{
 		uint8_t buffer[12];
-		if (write (f, adbMetaEntries[counter]->filename, strlen (adbMetaEntries[counter]->filename) + 1) < 0) { perror ("adbMetaCommit write #2"); };
-		if (write (f, adbMetaEntries[counter]->SIG, strlen (adbMetaEntries[counter]->SIG) + 1) < 0) { perror ("adbMetaCommit write #3"); };
+		if (osfile_write (adbMetaFile, adbMetaEntries[counter]->filename, strlen (adbMetaEntries[counter]->filename) + 1) < 0) { fprintf (stderr, "adbMetaCommit write failed #2\n"); return; };
+		if (osfile_write (adbMetaFile, adbMetaEntries[counter]->SIG,      strlen (adbMetaEntries[counter]->SIG)      + 1) < 0) { fprintf (stderr, "adbMetaCommit write failed #3\n"); return; };
 		buffer[ 0] = adbMetaEntries[counter]->filesize >> 56;
 		buffer[ 1] = adbMetaEntries[counter]->filesize >> 48;
 		buffer[ 2] = adbMetaEntries[counter]->filesize >> 40;
@@ -376,11 +373,10 @@ void adbMetaCommit (void)
 		buffer[ 9] = adbMetaEntries[counter]->datasize >> 16;
 		buffer[10] = adbMetaEntries[counter]->datasize >> 8;
 		buffer[11] = adbMetaEntries[counter]->datasize;
-		if (write (f, buffer, 12) != 12) { perror ("adbMetaCommit write #4"); };
-		if (write (f, adbMetaEntries[counter]->data, adbMetaEntries[counter]->datasize) != adbMetaEntries[counter]->datasize) { perror ("adbMetaCommit write #5"); };
+		if (osfile_write (adbMetaFile, buffer, 12) < 0) { fprintf (stderr, "adbMetaCommit write failed #4\n"); return; };
+		if (osfile_write (adbMetaFile, adbMetaEntries[counter]->data, adbMetaEntries[counter]->datasize) < 0) { fprintf (stderr, "adbMetaCommit write failed #5\n"); return; };
 	}
 
-	close (f);
 	adbMetaDirty = 0;
 }
 
@@ -396,9 +392,12 @@ void adbMetaClose (void)
 	free (adbMetaEntries);
 	adbMetaEntries = 0;
 	adbMetaCount = adbMetaSize = 0;
-	free (adbMetaPath);
-	adbMetaPath = 0;
 	adbMetaDirty = 0;
+	if (adbMetaFile)
+	{
+		osfile_close (adbMetaFile);
+		adbMetaFile = 0;
+	}
 }
 
 static uint32_t adbMetaBinarySearchFilesize (const size_t filesize)

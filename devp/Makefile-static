@@ -1,0 +1,1 @@
+LIBOCP_OBJECTS += devp/devpdisk.o

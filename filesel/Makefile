@@ -48,15 +48,18 @@ endif
 adbmeta.o: adbmeta.c adbmeta.h \
 	../config.h \
 	../types.h \
-	dirdb.h \
-	../boot/psetting.h
+	../boot/psetting.h \
+	../filesel/dirdb.h \
+	../stuff/file.h
 	$(CC) $< -o $@ -c
 
 adbmeta-test: adbmeta-test.c adbmeta.c adbmeta.h \
 	../config.h \
 	../types.h \
-	dirdb.h \
-	../boot/psetting.h
+	../boot/psetting.h \
+	../filesel/dirdb.h \
+	../stuff/file.c \
+	../stuff/file.h
 	$(CC) $< -o $@
 
 charsets.o: charsets.c \
@@ -71,6 +74,7 @@ dirdb.o: dirdb.c \
 	../boot/console.h \
 	../boot/psetting.h \
 	../stuff/compat.h \
+	../stuff/file.h \
 	../stuff/poutput.h \
 	../stuff/utf-8.h \
 	dirdb.h \
@@ -84,7 +88,9 @@ dirdb-test: dirdb-test.c \
 	../config.h \
 	../types.h \
 	../boot/psetting.h \
-	../stuff/compat.h
+	../stuff/compat.h \
+	../stuff/file.h \
+	../stuff/file.h
 	$(CC) $< -o $@
 
 cdrom.o: cdrom.c \
@@ -342,13 +348,14 @@ mdb.o: mdb.c \
 	../types.h \
 	../boot/plinkman.h \
 	../boot/psetting.h \
-	dirdb.h \
-	filesystem.h \
-	filesystem-ancient.h \
-	mdb.h \
-	pfilesel.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
+	../filesel/filesystem-ancient.h \
+	../filesel/mdb.h \
+	../filesel/pfilesel.h \
 	../stuff/cp437.h \
 	../stuff/compat.h \
+	../stuff/file.h \
 	../stuff/imsrtns.h \
 	../stuff/latin1.h
 	$(CC) $< -o $@ -c
@@ -359,11 +366,13 @@ mdb-test: mdb-test.c \
 	../types.h \
 	../boot/plinkman.h \
 	../boot/psetting.h \
-	dirdb.h \
-	filesystem.h \
-	mdb.h \
-	pfilesel.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
+	../filesel/mdb.h \
+	../filesel/pfilesel.h \
 	../stuff/compat.h \
+	../stuff/file.h \
+	../stuff/file.c \
 	../stuff/imsrtns.h
 	$(CC) $< -o $@
 
@@ -379,6 +388,7 @@ musicbrainz.o: musicbrainz.c \
 	../filesel/musicbrainz.h \
 	../filesel/pfilesel.h \
 	../stuff/compat.h \
+	../stuff/file.h \
 	../stuff/piperun.h \
 	../stuff/poutput.h \
 	../stuff/utf-8.h

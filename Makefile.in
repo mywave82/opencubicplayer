@@ -14,6 +14,7 @@ SUBDIRS+=playsid playwav playxm playym stuff
 
 include boot/Makefile-static
 include cpiface/Makefile-static
+include devp/Makefile-static
 include filesel/Makefile-static
 include filesel/cdfs/Makefile-static
 include stuff/Makefile-static

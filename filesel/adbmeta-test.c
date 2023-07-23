@@ -5,6 +5,7 @@ int adbmeta_silene_open_errors = 0;
 #define CFDATAHOMEDIR_OVERRIDE "/tmp/"
 
 #include "adbmeta.c"
+#include "../stuff/file.c"
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -165,7 +166,6 @@ static int adbmeta_basic_test2 (void)
 		unlink ("/tmp/CPARCMETA.DAT");
 		return -1;
 	}
-	close (f);
 
 	adbmeta_silene_open_errors = 0;
 
@@ -175,7 +175,8 @@ static int adbmeta_basic_test2 (void)
 		fprintf (stderr, "adbmeta_basic_test2: " ANSI_COLOR_RED "adbMetaInit() failed " ANSI_COLOR_RESET "\n");
 	}
 
-	unlink ("/tmp/CPARCMETA.DAT");
+	ftruncate (f, 0);
+	close (f);
 
 	adbMetaDirty = 1;
 

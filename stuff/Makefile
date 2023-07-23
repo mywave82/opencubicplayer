@@ -47,6 +47,12 @@ compat-test: compat-test.c \
 	../boot/plinkman.h
 	$(CC) $< -o $@
 
+file.o: file.c \
+	../config.h \
+	../types.h \
+	file.h
+	$(CC) $< -o $@ -c
+
 piperun-unix.o: piperun-unix.c \
 	../config.h \
 	../types.h \

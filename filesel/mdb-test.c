@@ -32,7 +32,7 @@
 #define flock mdb_test_flock
 
 static ssize_t mdb_test_read (int fd, void *buf, size_t size);
-static ssize_t mdb_test_write (int fd, void *buf, size_t size);
+static ssize_t mdb_test_write (int fd, const void *buf, size_t size);
 static int mdb_test_open(const char *pathname, int flags, ...);
 static off_t mdb_test_lseek (int fd, off_t offset, int whence);
 static int mdb_test_close (int fd);
@@ -41,11 +41,12 @@ static int mdb_test_flock (int fd, int operation);
 #define CFDATAHOMEDIR_OVERRIDE "/foo/home/ocp/.ocp/"
 #include "mdb.c"
 #include "../stuff/compat.c"
+#include "../stuff/file.c"
 
 int fsWriteModInfo = 1;
 
 static ssize_t (*mdb_test_read_hook) (int fd, void *buf, size_t size) = 0;
-static ssize_t (*mdb_test_write_hook) (int fd, void *buf, size_t size) = 0;
+static ssize_t (*mdb_test_write_hook) (int fd, const void *buf, size_t size) = 0;
 static int (*mdb_test_open_hook) (const char *pathname, int flags, mode_t mode) = 0;
 static off_t (*mdb_test_lseek_hook) (int fd, off_t offset, int whence) = 0;
 static int (*mdb_test_close_hook) (int fd) = 0;
@@ -83,7 +84,7 @@ static ssize_t mdb_test_read (int fd, void *buf, size_t size)
 	_exit(1);
 }
 
-static ssize_t mdb_test_write (int fd, void *buf, size_t size)
+static ssize_t mdb_test_write (int fd, const void *buf, size_t size)
 {
 	if (mdb_test_write_hook) return mdb_test_write_hook (fd, buf, size);
 	fprintf (stderr, ANSI_COLOR_RED "Unexepected write() call\n" ANSI_COLOR_RESET);
@@ -1500,7 +1501,7 @@ ssize_t mdb_basic_mdbUpdate_read (int fd, void *buf, size_t size)
 	return res;
 }
 
-ssize_t mdb_basic_mdbUpdate_write (int fd, void *buf, size_t size)
+ssize_t mdb_basic_mdbUpdate_write (int fd, const void *buf, size_t size)
 {
 	if (!mdb_basic_mdbUpdate_isopen || (fd != 3))
 	{
