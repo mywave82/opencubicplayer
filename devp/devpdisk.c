@@ -32,12 +32,9 @@
 
 #include "config.h"
 #include <assert.h>
-#include <errno.h>
-#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include "types.h"
 #include "boot/plinkman.h"
@@ -49,6 +46,7 @@
 #include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "stuff/err.h"
+#include "stuff/file.h"
 #include "stuff/imsrtns.h"
 
 static const struct plrDriverAPI_t *plrDriverAPI;
@@ -56,7 +54,7 @@ static const struct plrDriverAPI_t *plrDriverAPI;
 static void *devpDiskBuffer;
 static struct ringbuffer_t *devpDiskRingBuffer;
 static char *devpDiskShadowBuffer;
-static int devpDiskFileHandle = -1;
+static osfile *devpDiskFileHandle;
 static unsigned char *devpDiskCache;
 static unsigned long devpDiskCachelen;
 static unsigned long devpDiskCachePos;
@@ -146,13 +144,8 @@ static unsigned int devpDiskIdle(void)
 					d[i]=uint16_little(d[i]);
 				}
 			}
-rewrite:
-			if ((unsigned)write(devpDiskFileHandle, devpDiskCache, devpDiskCachePos) != devpDiskCachePos)
+			if ((unsigned)osfile_write(devpDiskFileHandle, devpDiskCache, devpDiskCachePos) != devpDiskCachePos)
 			{
-				if (errno==EAGAIN)
-					goto rewrite;
-				if (errno==EINTR)
-					goto rewrite;
 				writeerr=1;
 			}
 		}
@@ -291,30 +284,23 @@ static int devpDiskPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 			} else {
 				sprintf (fn, "%s.wav", orig);
 			}
-			if ((devpDiskFileHandle=open(fn, O_WRONLY|O_CREAT|O_EXCL, S_IREAD|S_IWRITE))>=0)
+			if ((devpDiskFileHandle=osfile_open_readwrite(fn, 0, 1)))
 				break;
 		}
 		free (fn);
 	}
 
-	if (devpDiskFileHandle<0)
+	if (!devpDiskFileHandle)
 	{
 		fprintf (stderr, "[devpDisk]: Failed to open output file\n");
 		goto error_out;
 	}
 
-	while (1)
 	{
 		unsigned char hdr[0x2C];
 		memset(&hdr, 0, sizeof(hdr));
 
-		if (write(devpDiskFileHandle, hdr, 0x2C)>=0)
-			break;
-		if (errno==EAGAIN)
-			continue;
-		if (errno==EINTR)
-			continue;
-		break;
+		osfile_write(devpDiskFileHandle, hdr, 0x2C);
 	}
 
 	busy=0;
@@ -358,7 +344,7 @@ static void devpDiskStop (struct cpifaceSessionAPI_t *cpifaceSession)
 		uint32_t wavlen;
 	} wavhdr;
 
-	if (devpDiskFileHandle < 0)
+	if (!devpDiskFileHandle)
 	{
 		return;
 	}
@@ -376,19 +362,11 @@ static void devpDiskStop (struct cpifaceSessionAPI_t *cpifaceSession)
 				d[i]=uint16_little(d[i]);
 			}
 		}
-rewrite:
-		if (write (devpDiskFileHandle, devpDiskCache, devpDiskCachePos)<0)
-		{
-			if (errno==EINTR)
-				goto rewrite;
-			if (errno==EAGAIN)
-				goto rewrite;
-		}
+		osfile_write (devpDiskFileHandle, devpDiskCache, devpDiskCachePos);
 	}
 
-	wavlen = lseek (devpDiskFileHandle, 0, SEEK_CUR)-0x2C;
-
-	lseek (devpDiskFileHandle, 0, SEEK_SET);
+	wavlen = osfile_getpos (devpDiskFileHandle) - 0x2C;
+	osfile_setpos (devpDiskFileHandle, 0);
 
 	memcpy(wavhdr.riff, "RIFF", 4);
 	memcpy(wavhdr.wave, "WAVE", 4);
@@ -403,22 +381,10 @@ rewrite:
 	wavhdr.datarate=uint32_little(((1<<stereo)*(8<<bit16)/8)*devpDiskRate);
 	wavhdr.wavlen=uint32_little(wavlen);
 	wavhdr.len24=uint32_little(wavlen+0x24);
-rewrite2:
-	if (write (devpDiskFileHandle, &wavhdr, 0x2C)<0)
-	{
-		if (errno==EINTR)
-			goto rewrite2;
-		if (errno==EAGAIN)
-			goto rewrite2;
-	}
+	osfile_write (devpDiskFileHandle, &wavhdr, 0x2C);
 
-	lseek (devpDiskFileHandle, 0, SEEK_END);
-reclose:
-	if (close (devpDiskFileHandle) < 0)
-	{
-		if (errno==EINTR)
-			goto reclose;
-	}
+	osfile_close (devpDiskFileHandle);
+	devpDiskFileHandle = 0;
 	free(devpDiskBuffer);
 	free(devpDiskShadowBuffer);
 	free(devpDiskCache);
@@ -433,7 +399,6 @@ reclose:
 	devpDiskBuffer = 0;
 	devpDiskShadowBuffer = 0;
 	devpDiskCache = 0;
-	devpDiskFileHandle = -1;
 	cpifaceSession->plrActive = 0;
 }
 
@@ -523,4 +488,4 @@ static const struct plrDriver_t plrDiskWriter =
 	dwClose
 };
 
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpdisk", .desc = "OpenCP Player Device: Disk Writer (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = diskWriterPluginInit, .PluginClose = diskWriterPluginClose};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "devpdisk", .desc = "OpenCP Player Device: Disk Writer (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = diskWriterPluginInit, .PluginClose = diskWriterPluginClose};

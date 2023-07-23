@@ -31,7 +31,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include "types.h"
 #include "boot/console.h"
@@ -39,6 +38,7 @@
 #include "mdb.h"
 #include "boot/psetting.h"
 #include "stuff/compat.h"
+#include "stuff/file.h"
 #include "stuff/poutput.h"
 #include "stuff/utf-8.h"
 
@@ -92,11 +92,10 @@ struct __attribute__((packed)) dirdbheader
 const char dirdbsigv1[60] = "Cubic Player Directory Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 const char dirdbsigv2[60] = "Cubic Player Directory Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01";
 
+static osfile            *dirdbFile;
 static struct dirdbEntry *dirdbData = 0;
 static uint32_t dirdbNum = 0;
 static int dirdbDirty = 0;
-
-static char *dirdbPath = 0;
 
 static uint32_t dirdbRootChild = DIRDB_NOPARENT;
 static uint32_t dirdbFreeChild = DIRDB_NOPARENT;
@@ -175,10 +174,10 @@ static void dumpdirdb(void)
 int dirdbInit (const struct configAPI_t *configAPI)
 {
 	struct dirdbheader header;
-	int f;
 	uint32_t i;
 	int retval;
 	int version;
+	char *dirdbPath;
 
 	dirdbRootChild = DIRDB_NOPARENT;
 	dirdbFreeChild = DIRDB_NOPARENT;
@@ -190,19 +189,19 @@ int dirdbInit (const struct configAPI_t *configAPI)
 		return 1;
 	}
 	sprintf (dirdbPath, "%sCPDIRDB.DAT", CFDATAHOMEDIR);
+	fprintf(stderr, "Loading %s .. ", dirdbPath);
 
-	if ((f=open(dirdbPath, O_RDONLY))<0)
+	dirdbFile = osfile_open_readwrite (dirdbPath, 1, 0);
+	free (dirdbPath);
+	dirdbPath = 0;
+	if (!dirdbFile)
 	{
-		perror("open(DataHomeDir/CPDIRDB.DAT)");
 		return 1;
 	}
 
-	fprintf(stderr, "Loading %s .. ", dirdbPath);
-
-	if (read(f, &header, sizeof(header))!=sizeof(header))
+	if ( osfile_read (dirdbFile, &header, sizeof(header)) != sizeof(header) )
 	{
 		fprintf(stderr, "No header\n");
-		close(f);
 		return 1;
 	}
 	if (memcmp(header.sig, dirdbsigv1, 60))
@@ -210,7 +209,6 @@ int dirdbInit (const struct configAPI_t *configAPI)
 		if (memcmp(header.sig, dirdbsigv2, 60))
 		{
 			fprintf(stderr, "Invalid header\n");
-			close(f);
 			return 1;
 		} else {
 			version = 2;
@@ -231,7 +229,7 @@ int dirdbInit (const struct configAPI_t *configAPI)
 	for (i=0; i<dirdbNum; i++)
 	{
 		uint16_t len;
-		if (read(f, &len, sizeof(uint16_t))!=sizeof(uint16_t))
+		if ( osfile_read(dirdbFile, &len, sizeof(uint16_t)) != sizeof(uint16_t) )
 		{
 			goto endoffile;
 		}
@@ -239,11 +237,11 @@ int dirdbInit (const struct configAPI_t *configAPI)
 		{
 			len = uint16_little(len);
 
-			if (read(f, &dirdbData[i].parent, sizeof(uint32_t))!=sizeof(uint32_t))
+			if ( osfile_read (dirdbFile, &dirdbData[i].parent, sizeof(uint32_t)) != sizeof(uint32_t) )
 				goto endoffile;
 			dirdbData[i].parent = uint32_little(dirdbData[i].parent);
 
-			if (read(f, &dirdbData[i].mdb_ref, sizeof(uint32_t))!=sizeof(uint32_t))
+			if ( osfile_read (dirdbFile, &dirdbData[i].mdb_ref, sizeof(uint32_t)) != sizeof(uint32_t) )
 				goto endoffile;
 			/* If mdb has been reset, we need to clear all references */
 			dirdbData[i].mdb_ref = mdbCleanSlate ? DIRDB_NO_MDBREF : uint32_little(dirdbData[i].mdb_ref);
@@ -252,14 +250,14 @@ int dirdbInit (const struct configAPI_t *configAPI)
 			if (version == 2)
 			{
 				uint32_t discard_adb_ref;
-				if (read(f, &discard_adb_ref, sizeof(uint32_t))!=sizeof(uint32_t))
+				if ( osfile_read (dirdbFile, &discard_adb_ref, sizeof(uint32_t)) != sizeof(uint32_t) )
 					goto endoffile;
 			}
 
 			dirdbData[i].name=malloc(len+1);
 			if (!dirdbData[i].name)
 				goto outofmemory;
-			if (read(f, dirdbData[i].name, len)!=len)
+			if ( osfile_read (dirdbFile, dirdbData[i].name, len) != len)
 			{
 				free(dirdbData[i].name);
 				goto endoffile;
@@ -279,7 +277,6 @@ int dirdbInit (const struct configAPI_t *configAPI)
 			/* name is already NULL due to calloc() */
 		}
 	}
-	close(f);
 	for (i=0; i<dirdbNum; i++)
 	{
 		if (dirdbData[i].parent != DIRDB_NOPARENT)
@@ -328,16 +325,16 @@ int dirdbInit (const struct configAPI_t *configAPI)
 	dumpdirdb();
 #endif
 
+	osfile_purge_readaheadcache (dirdbFile);
+
 	fprintf(stderr, "Done\n");
 	return 1;
 endoffile:
 	fprintf(stderr, "EOF\n");
-	close(f);
 	retval=1;
 	goto unload;
 outofmemory:
 	fprintf(stderr, "out of memory\n");
-	close(f);
 	retval=0;
 unload:
 	for (i=0; i<dirdbNum; i++)
@@ -351,22 +348,28 @@ unload:
 		dirdbData[i].next = dirdbFreeChild;
 		dirdbFreeChild = i;
 	}
+	osfile_purge_readaheadcache (dirdbFile);
 	return retval;
 }
 
 void dirdbClose(void)
 {
 	uint32_t i;
-	if ((!dirdbNum)||(!dirdbPath))
+	if (dirdbFile)
+	{
+		osfile_close (dirdbFile);
+		dirdbFile = 0;
+	}
+	if (!dirdbNum)
+	{
 		return;
+	}
 	for (i=0; i<dirdbNum; i++)
 	{
 		free (dirdbData[i].name);
 	}
 	free (dirdbData);
-	free (dirdbPath);
 	dirdbData = 0;
-	dirdbPath = 0;
 	dirdbNum = 0;
 	dirdbRootChild = DIRDB_NOPARENT;
 	dirdbFreeChild = DIRDB_NOPARENT;
@@ -1198,15 +1201,16 @@ void dirdbGetFullname_malloc(uint32_t node, char **name, int flags)
 
 void dirdbFlush(void)
 {
-	int f;
 	uint32_t i;
 	uint32_t max;
 	uint16_t buf16;
 	uint32_t buf32;
 	struct dirdbheader header;
 
-	if ((!dirdbDirty) || (!dirdbPath))
+	if ((!dirdbDirty) || (!dirdbFile))
 		return;
+
+	osfile_setpos (dirdbFile, 0);
 
 	for (i=0;i<dirdbNum;i++)
 	{
@@ -1224,12 +1228,6 @@ void dirdbFlush(void)
 		}
 	}
 
-	if ((f = open (dirdbPath, O_WRONLY|O_CREAT|O_TRUNC, S_IREAD|S_IWRITE))<0)
-	{
-		perror("open(DataHomeDir/CPDIRDB.DAT)");
-		return;
-	}
-
 	max=0;
 	for (i=0;i<dirdbNum;i++)
 		if (dirdbData[i].name)
@@ -1238,37 +1236,35 @@ void dirdbFlush(void)
 	memcpy(header.sig, dirdbsigv2, sizeof(dirdbsigv2));
 	header.entries=uint32_little(max);
 
-	if (write(f, &header, sizeof(header))!=sizeof(header))
+	if (osfile_write (dirdbFile, &header, sizeof(header)) != sizeof(header) )
 		goto writeerror;
 
 	for (i=0;i<max;i++)
 	{
 		int len=(dirdbData[i].name?strlen(dirdbData[i].name):0);
 		buf16=uint16_little(len);
-		if (write(f, &buf16, sizeof(uint16_t))!=sizeof(uint16_t))
+		if ( osfile_write (dirdbFile, &buf16, sizeof(uint16_t)) != sizeof(uint16_t) )
 			goto writeerror;
 		if (len)
 		{
 			buf32=uint32_little(dirdbData[i].parent);
-			if (write(f, &buf32, sizeof(uint32_t))!=sizeof(uint32_t))
+			if ( osfile_write (dirdbFile, &buf32, sizeof(uint32_t)) != sizeof(uint32_t) )
 				goto writeerror;
 			buf32=uint32_little(dirdbData[i].mdb_ref);
-			if (write(f, &buf32, sizeof(uint32_t))!=sizeof(uint32_t))
+			if ( osfile_write (dirdbFile, &buf32, sizeof(uint32_t)) != sizeof(uint32_t) )
 				goto writeerror;
 #warning remove-me this used to be ADB_REF
 			buf32=0xffffffff; //ADB_REF
-			if (write(f, &buf32, sizeof(uint32_t))!=sizeof(uint32_t))
+			if ( osfile_write (dirdbFile, &buf32, sizeof(uint32_t)) != sizeof(uint32_t) )
 				goto writeerror;
-			if (write(f, dirdbData[i].name, len)!=len)
+			if ( osfile_write (dirdbFile, dirdbData[i].name, len) != len )
 				goto writeerror;
 		}
 	}
-	close(f);
 	dirdbDirty=0;
 	return;
 writeerror:
-	perror("dirdb write()");
-	close(f);
+	{}
 }
 
 uint32_t dirdbGetParentAndRef (uint32_t node, enum dirdb_use use)

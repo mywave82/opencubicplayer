@@ -21,7 +21,7 @@ ifeq ($(HAVE_SDL2),1)
 SDL2_SO=devpsdl2$(LIB_SUFFIX)
 endif
 
-all: devpnone$(LIB_SUFFIX) devpdisk$(LIB_SUFFIX) $(OSS_SO) $(ALSA_SO) $(COREAUDIO_SO) $(SDL_SO) $(SDL2_SO)
+all: devpnone$(LIB_SUFFIX) devpdisk.o $(OSS_SO) $(ALSA_SO) $(COREAUDIO_SO) $(SDL_SO) $(SDL2_SO)
 
 devpnone_so=devpnone.o
 devpnone$(LIB_SUFFIX): $(devpnone_so)
@@ -30,10 +30,6 @@ devpnone$(LIB_SUFFIX): $(devpnone_so)
 devposs_so=devposs.o
 devposs$(LIB_SUFFIX):$(devposs_so)
 	$(CC) $(SHARED_FLAGS) $(LDFLAGS) $(OSS_LIBS) -o $@ $^
-
-devpdisk_so=devpdisk.o
-devpdisk$(LIB_SUFFIX):$(devpdisk_so)
-	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 devpalsa_so=devpalsa.o
 devpalsa$(LIB_SUFFIX):$(devpalsa_so)
@@ -56,7 +52,6 @@ clean:
 
 install:
 	$(CP) devpnone$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/35-devpnone$(LIB_SUFFIX)"
-	$(CP) devpdisk$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/35-devpdisk$(LIB_SUFFIX)"
 ifeq ($(HAVE_ALSA),1)
 	$(CP) $(ALSA_SO) "$(DESTDIR)$(LIBDIROCP)/autoload/35-$(ALSA_SO)"
 endif
@@ -75,7 +70,6 @@ endif
 
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/35-devpnone$(LIB_SUFFIX)"
-	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/35-devpdisk$(LIB_SUFFIX)"
 ifeq ($(HAVE_ALSA),1)
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/35-$(ALSA_SO)"
 endif
@@ -130,6 +124,7 @@ devpdisk.o: devpdisk.c \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../stuff/err.h \
+	../stuff/file.h \
 	../stuff/imsrtns.h
 	$(CC) devpdisk.c -o $@ -c
 

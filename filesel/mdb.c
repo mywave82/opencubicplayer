@@ -25,13 +25,10 @@
 
 #include "config.h"
 #include <assert.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/file.h>
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include "types.h"
@@ -44,6 +41,7 @@
 #include "pfilesel.h"
 #include "stuff/cp437.h"
 #include "stuff/compat.h"
+#include "stuff/file.h"
 #include "stuff/imsrtns.h"
 #include "stuff/latin1.h"
 
@@ -111,7 +109,7 @@ static void  *mdbRawData;
 static size_t mdbRawMapSize;
 */
 
-static int mdbFd = -1;
+static osfile              *mdbFile;
 
 static struct modinfoentry *mdbData;
 static uint32_t             mdbDataSize;
@@ -534,32 +532,31 @@ int mdbInit (const struct configAPI_t *configAPI)
 	mdbSearchIndexCount = 0;
 	mdbSearchIndexSize = 0;
 
+	if (mdbFile)
+	{
+		fprintf (stderr, "mdbInit: Already loaded\n");
+		return 1;
+	}
+
 	path = malloc (strlen (CFDATAHOMEDIR) + strlen ("CPMODNFO.DAT") + 1);
+	if (!path)
+	{
+		fprintf (stderr, "mdbInit: malloc() failed\n");
+		return 0;
+	}
 	sprintf (path, "%sCPMODNFO.DAT", CFDATAHOMEDIR);
 	fprintf(stderr, "Loading %s .. ", path);
 
-	if (mdbFd >= 0)
+	mdbFile = osfile_open_readwrite (path, 1, 0);
+	free (path);
+	path = 0;
+	if (!mdbFile)
 	{
-		fprintf (stderr, "Already loaded\n");
-		goto errorout;
-	}
-
-	if ((mdbFd=open(path, O_RDWR | O_CREAT, S_IREAD|S_IWRITE)) < 0 )
-	{
-		fprintf (stderr, "open(%s): %s\n", path, strerror (errno));
-		retval = 0; /* fatal error */
-		goto errorout;
-	}
-	free (path); path = 0;
-
-	if (flock (mdbFd, LOCK_EX | LOCK_NB))
-	{
-		fprintf (stderr, "Failed to lock the file (more than one instance?)\n");
 		retval = 0; /* fatal error */
 		goto errorout;
 	}
 
-	if (read(mdbFd, &header, sizeof(header))!=sizeof(header))
+	if (osfile_read(mdbFile, &header, sizeof(header)) != sizeof(header))
 	{
 		fprintf(stderr, "No header\n");
 		goto errorout;
@@ -592,7 +589,7 @@ int mdbInit (const struct configAPI_t *configAPI)
 	}
 	memcpy (mdbData, &header, 64);
 
-	if (read(mdbFd, &mdbData[1], (mdbDataSize-1)*sizeof(*mdbData))!=(signed)((mdbDataSize-1)*sizeof(*mdbData)))
+	if (osfile_read(mdbFile, &mdbData[1], (mdbDataSize-1)*sizeof(*mdbData)) != (signed)((mdbDataSize-1)*sizeof(*mdbData)))
 	{
 		fprintf(stderr, "Failed to read records\n");
 		goto errorout;
@@ -615,7 +612,6 @@ int mdbInit (const struct configAPI_t *configAPI)
 			break;
 		}
 	}
-
 
 	for (i=0; i<mdbDataSize; i++)
 	{
@@ -662,19 +658,20 @@ int mdbInit (const struct configAPI_t *configAPI)
 
 	mdbCleanSlate = 0;
 
+	osfile_purge_readaheadcache (mdbFile);
+
 	fprintf(stderr, "Done\n");
 	return 1;
 errorout:
 	if (!retval)
 	{
-		if (mdbFd >= 0)
+		if (mdbFile)
 		{
-			close (mdbFd);
+			osfile_close (mdbFile);
+			mdbFile = 0;
 		}
-		mdbFd = -1;
 	}
 
-	free (path);
 	free (mdbData);
 	free (mdbDirtyMap);
 	free (mdbSearchIndexData);
@@ -697,7 +694,7 @@ void mdbUpdate (void)
 
 	DEBUG_PRINT("mdbUpdate: mdbDirty=%d fsWriteModInfo=%d\n", mdbDirty, fsWriteModInfo);
 
-	if ((!mdbDirty)||(!fsWriteModInfo)||(mdbFd<0))
+	if ((!mdbDirty)||(!fsWriteModInfo)||(!mdbFile))
 	{
 		return;
 	}
@@ -708,41 +705,29 @@ void mdbUpdate (void)
 		return;
 	}
 
-	lseek(mdbFd, 0, SEEK_SET);
+	osfile_setpos (mdbFile, 0);
 	memcpy(header->sig, mdbsigv2, sizeof(mdbsigv2));
 	header->entries = mdbDataSize;
 	mdbDirtyMap[0] |= 1;
 
 	for (i = 0; i < mdbDataSize; i += 8)
 	{
+		int64_t res;
 		/* we write in 512 byte chunks - fits old hard-drives sector size */
 		if (!mdbDirtyMap[i / 8])
 		{
 			continue;
 		}
 
-		lseek(mdbFd, (uint64_t)i*sizeof(*mdbData), SEEK_SET);
-		while (1)
+		osfile_setpos(mdbFile, (uint64_t)i*sizeof(*mdbData));
+		DEBUG_PRINT("  [0x%08"PRIx32" -> 0x%08"PRIx32"] DIRTY\n", i, i+7);
+		res = osfile_write(mdbFile, mdbData + i, 8 * sizeof(*mdbData));
+		if (res < 0)
 		{
-			ssize_t res;
-
-			DEBUG_PRINT("  [0x%08"PRIx32" -> 0x%08"PRIx32"] DIRTY\n", i, i+7);
-			res = write(mdbFd, mdbData + i, 8 * sizeof(*mdbData));
-			if (res < 0)
-			{
-				if (errno==EAGAIN)
-					continue;
-				if (errno==EINTR)
-					continue;
-				fprintf(stderr, __FILE__ " write() to \"CPMODNFO.DAT\" failed: %s\n", strerror(errno));
-				exit(1);
-			} else if (res != (signed)((8)*sizeof(*mdbData)))
-			{
-				fprintf(stderr, __FILE__ " write() to \"CPMODNFO.DAT\" returned only partial data\n");
-				exit(1);
-			} else
-				break;
+			fprintf(stderr, __FILE__ " write() to \"CPMODNFO.DAT\" failed\n");
+			exit(1);
 		}
+
 		mdbDirtyMap[i / 8] = 0;
 	}
 }
@@ -750,10 +735,10 @@ void mdbUpdate (void)
 void mdbClose (void)
 {
 	mdbUpdate();
-	if (mdbFd >= 0)
+	if (mdbFile)
 	{
-		close(mdbFd);
-		mdbFd = -1;
+		osfile_close (mdbFile);
+		mdbFile = 0;
 	}
 	free(mdbData);
 	free(mdbDirtyMap);
