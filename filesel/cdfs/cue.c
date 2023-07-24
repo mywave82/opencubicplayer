@@ -292,6 +292,11 @@ static void cue_parser_modify_source_LITTLEENDIAN (struct cue_parser_t *cue_pars
 	cue_parser->datasource[cue_parser->datasourceN - 1].swap = 0;
 }
 
+static void cue_parser_modify_source_BINARY (struct cue_parser_t *cue_parser)
+{
+	cue_parser->datasource[cue_parser->datasourceN - 1].swap = 2; // we need to detect
+}
+
 static void cue_parser_modify_source_BIGENDIAN (struct cue_parser_t *cue_parser)
 {
 	cue_parser->datasource[cue_parser->datasourceN - 1].swap = 1;
@@ -460,7 +465,7 @@ static int cue_parse_token (struct cue_parser_t *cue_parser, enum CUE_tokens tok
 				cue_parser_modify_source_LITTLEENDIAN (cue_parser);
 				break;
 			case CUE_TOKEN_BINARY:
-				cue_parser_modify_source_BIGENDIAN (cue_parser);
+				cue_parser_modify_source_BINARY (cue_parser); // should be little, but we need to detect
 				break;
 			case CUE_TOKEN_MOTOROLA:
 				cue_parser_modify_source_BIGENDIAN (cue_parser);
@@ -980,6 +985,39 @@ OCP_INTERNAL struct cue_parser_t *cue_parser_from_data (const char *input)
 	return retval;
 }
 
+OCP_INTERNAL void detect_endian (const uint8_t *buffer, int *little, int *big)
+{
+	int16_t prev_big_left = 0;
+	int16_t prev_big_right = 0;
+	int16_t prev_little_left = 0;
+	int16_t prev_little_right = 0;
+	uint_fast32_t big_accumulated = 0;
+	uint_fast32_t little_accumulated = 0;
+	int i;
+	for (i=0; i < 588; i++)
+	{
+		int16_t big_left     = buffer[(i<<2)+1] | (buffer[(i<<2)+0] << 8);
+		int16_t big_right    = buffer[(i<<2)+3] | (buffer[(i<<2)+2] << 8);
+		int16_t little_left  = buffer[(i<<2)+0] | (buffer[(i<<2)+1] << 8);
+		int16_t little_right = buffer[(i<<2)+2] | (buffer[(i<<2)+3] << 8);
+		big_accumulated += abs((int32_t)prev_big_left  - big_left);
+		big_accumulated += abs((int32_t)prev_big_right - big_right);
+		little_accumulated += abs((int32_t)prev_little_left  - little_left);
+		little_accumulated += abs((int32_t)prev_little_right - little_right);
+		prev_big_left     = big_left;
+		prev_big_right    = big_right;
+		prev_little_left  = little_left;
+		prev_little_right = little_right;
+	}
+	if (big_accumulated < little_accumulated)
+	{
+		(*big) += 1;
+	} else if (little_accumulated < big_accumulated)
+	{
+		(*little) += 1;
+	}
+}
+
 OCP_INTERNAL struct cdfs_disc_t *cue_parser_to_cdfs_disc (struct ocpfile_t *parentfile, struct cue_parser_t *cue_parser)
 {
 	struct cdfs_disc_t *retval = cdfs_disc_new (parentfile);
@@ -1032,6 +1070,58 @@ OCP_INTERNAL struct cdfs_disc_t *cue_parser_to_cdfs_disc (struct ocpfile_t *pare
 
 		ms = medium_sector_size (mode);
 		sectorcount = (length + ms - 1) / ms;
+
+		if (cue_parser->datasource[i].swap == 2) // we need to detect endian, broken images out in the wild
+		{
+			int datatracks = 0;
+			int audiotracks_big = 0;
+			int audiotracks_little = 0;
+			int copytrackcounter = trackcounter;
+			uint8_t buffer[2352];
+
+			for (; copytrackcounter <= cue_parser->track; copytrackcounter++)
+			{
+				fprintf (stderr, "track %d(%d) %d\n", copytrackcounter, cue_parser->track_data[copytrackcounter].track_mode);
+				if (cue_parser->track_data[copytrackcounter].datasource > i) break;
+
+				if (cue_parser->track_data[copytrackcounter].track_mode == AUDIO)
+				{
+					int offset = cue_parser->track_data[copytrackcounter].index_data[1].offset;
+					int length = ((copytrackcounter + 1 > cue_parser->track) ||
+					              (cue_parser->track_data[copytrackcounter].datasource != cue_parser->track_data[copytrackcounter+1].datasource)) ?
+					                      sectorcount - cue_parser->track_data[copytrackcounter].index_data[1].offset :
+					                      cue_parser->track_data[copytrackcounter+1].index_data[1].offset - cue_parser->track_data[copytrackcounter].index_data[1].offset;
+					int i;
+					for (i=0; i < 5; i++)
+					{
+						if (i * 75 >= length)
+						{
+							break;
+						}
+						fh->seek_set (fh, (offset + i) * 2352);
+						if (fh->read (fh, buffer, 2352) == 2352)
+						{
+							detect_endian (buffer, &audiotracks_little, &audiotracks_big);
+						}
+					}
+				} else if ((cue_parser->track_data[copytrackcounter].track_mode == MODE1_2352) ||
+				           (cue_parser->track_data[copytrackcounter].track_mode == MODE2_2352))
+				{
+					datatracks++; // safe bet
+					break;
+				}
+			}
+
+			if (datatracks) /* DATA => little endian, no swap needed */
+			{
+				cue_parser->datasource[i].swap = 0;
+			} else if (audiotracks_big > audiotracks_little)
+			{
+				cue_parser->datasource[i].swap = 1;
+			} else {
+				cue_parser->datasource[i].swap = 0;
+			}
+		}
 
 		cdfs_disc_datasource_append (retval,
 		                             discoffset,
