@@ -394,6 +394,13 @@
 extern "C" {
 # endif
 
+/* We experienced that some combination of Haiku + nCurses ends up with header
+ * files that defines memmem (as non-static), but no memmem implementation in
+ * the provided libc (libgnu might provide it) so redirect memmem to ocp_memmem
+ */
+#undef memmem
+#define memmem ocp_memmem
+
 static inline void *memmem(const void *_haystack, size_t haystacklen,
                            const void *needle, size_t needlelen)
 {
