@@ -81,8 +81,8 @@ OCP_INTERNAL int it_load (struct cpifaceSessionAPI_t *cpifaceSession, struct it_
 	int maxchan;
 
 #define MAX_ORDERS 256
-#define MAX_SAMPLES 236
-#define MAX_INSTRUMENTS MAX_SAMPLES
+#define MAX_SAMPLES 4000    /* Schism: 236, OpenMPT sample mode: 256 OpenMPT instrument mode 4000 */
+#define MAX_INSTRUMENTS 256 /* Schism: 236, OpenMPT 256 */
 #define MAX_PATTERNS 240
 
 	uint8_t ords[MAX_ORDERS];
@@ -163,7 +163,7 @@ OCP_INTERNAL int it_load (struct cpifaceSessionAPI_t *cpifaceSession, struct it_
 	}
 	if (hdr.nsmps>MAX_SAMPLES)
 	{
-		cpifaceSession->cpiDebug (cpifaceSession, "[IT] Too many samples\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[IT] Too many samples (%u > %u)\n", hdr.nsmps, MAX_SAMPLES);
 		return errFormStruc;
 	}
 	if (hdr.npats>MAX_PATTERNS)
