@@ -433,7 +433,7 @@ static void devpDiskPause (int pause)
 
 static void devpDiskGetStats (uint64_t *committed, uint64_t *processed)
 {
-	plrDriverAPI->ringbufferAPI->get_stats (devpDiskBuffer, committed, processed);
+	plrDriverAPI->ringbufferAPI->get_stats (devpDiskRingBuffer, committed, processed);
 }
 
 static const struct plrDevAPI_t devpDisk = {
