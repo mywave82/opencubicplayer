@@ -1,3 +1,33 @@
+Version 0.2.106
+===============
+Highlights are support for libgme, newer version of libancient, unifont files can now be bundled using --with-unifont-relative and beta support for Windows.
+
+ * [IT] Increase the number of max-samples to match openMPT (it can export files with more samples that original tracker and Schism supports)
+ * [devpdisk] Reported time during playback was random
+ * [adplug] Add support for SudoMakers RetroWave OPL3 Express, please configure it in setup:/adplugconfig.dev
+ * [adplug] Make channel tracker aware of AM/FM modes so it more correctly can display visualization
+ * [adplug] Left/Right OPL3 logic was incorrect in the register-tracker
+ * [mingw] Initial support (BETA) for mingw, enables Windows support
+ * [libancient] Add more fingerprints for compression formats that v2.1.0 can decompress
+ * [Linux CDROM] Fix deadlock
+ * [configure] cleanup --bindir --libdir and --datadir, and new syntax to override post ocp suffixes: ./configure LIBDIROCP=/usr/lib/ocp DATADIROCP=/usr/data/ocp
+ * [configure] removed --with-dir-suffix
+ * [CDROM *.CUE] REM didn't work as expected
+ * [CDROM *.CUE] files didn't work if containing INDEX 00 (pregap)
+ * [CDROM *.CUE] BINARY keyword should be little endian, but there are tools that produce big-endian files without marking them correctly. So we need to detect the endian used.
+ * [CDROM *.CUE] files didn't include pregaps in the track table
+ * [CDROM *.TOC] files didn't split the logic for pregap and offset into the raw file
+ * [musicbrainz] Increase the buffersize, some data retrivals failed
+ * [global MIME database] Add adplug fileformats
+ * [global MIME database] Add Game Music Emulator fileformats
+ * [SDL2] if entering fullscreen while in graphical effect mode, it could not be exited without visiting a textmode resolution.
+ * [SDL2] Use SDL_OpenAudioDevice(), else the expected audio format between SDL2 and OCP might not be what we expect causing random noise to be played.
+ * [X11] non-Shm usage could fail to successfully create butter on window resize
+ * [X11] If background picture is loaded in GUI modes, it was not repainted on window-resize
+ * [unifont] Allow for unifont ttf/otf files to be placed in the datadir by using ./configure --with-unifont-relative (you still need to copy the files in)
+ * [*.VGZ] Silently convert them to *.VGM
+ * [GME] Add support for Game Music Emulator library (libgme) for playback of various retro console systems
+
 Version 0.2.105
 ===============
 
