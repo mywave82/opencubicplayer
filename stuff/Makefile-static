@@ -10,7 +10,6 @@ endif
 ifeq ($(HAVE_CURSES),1)
 poutput_so+=poutput-curses.o
 poutput_so_libs+=$(NCURSES_LIBS)
-NEED_TTF=1
 endif
 
 ifeq ($(HAVE_X11),1)
