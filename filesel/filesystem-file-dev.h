@@ -27,11 +27,11 @@ struct DevInterfaceAPI_t
 	const struct dmDrive         *dmFile;
 #endif
 
-	const void (*KeyHelp) (uint16_t key, const char *shorthelp); /* Called on ALT-K to issue help about each keyboard shortcut */
-	const void (*KeyHelpClear) (void); /* Clears the current keyboard shortcut list, only used by keyboard/display loops */
-	const int  (*KeyHelpDisplay) (void); /* Draws the keyboard shortcut list and polls keyboard. Call for each draw-iteration until it returns zero */
+	void (*KeyHelp) (uint16_t key, const char *shorthelp); /* Called on ALT-K to issue help about each keyboard shortcut */
+	void (*KeyHelpClear) (void); /* Clears the current keyboard shortcut list, only used by keyboard/display loops */
+	int  (*KeyHelpDisplay) (void); /* Draws the keyboard shortcut list and polls keyboard. Call for each draw-iteration until it returns zero */
 
-	const void (*fsDraw) (void); /* Draws the filesystem browser, great for virtual devices that has a dialog */
+	void (*fsDraw) (void); /* Draws the filesystem browser, great for virtual devices that has a dialog */
 };
 
 struct IOCTL_DevInterface
