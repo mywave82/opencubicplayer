@@ -332,7 +332,7 @@ int fsReadDir (struct modlist *ml, struct ocpdir_t *dir, const char *mask, unsig
 #ifndef FNM_CASEFOLD
 	token.mask = strupr(strdup (mask));
 #else
-	token.mask = mask;
+	token.mask = (char *)mask;
 #endif
 	token.opt = opt;
 

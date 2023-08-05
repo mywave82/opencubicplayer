@@ -77,7 +77,7 @@ static int32_t *co1dline;                 // compr1 analyzer delay line
 static int      co1dllen, co1dlpos;       // compr1 dl length/pos
 static int      co1amode;                 // compr1 analyzer mode (0:rms, 1:peak)
 static int32_t  co1mean, co1invlen;
-static int32_t  co1atten, co1attack, co1decay, co1thres, co1cprv;
+static int32_t  co1atten, /*co1attack, co1decay,*/ co1thres, co1cprv;
 
 static       int32_t  gainsf[6] = {63333, 62796, 62507, 62320, 65160, 65408}; /* s15.16 */
 static const float   ldelays[6] = {29.68253968,  37.07482993,  41.06575964,  43.67346939,   4.98866213,   1.67800453};
@@ -208,8 +208,10 @@ static void iReverb_init (int rate)
 	co1mean = 0;
 
 	co1atten = 0;
+/*
 	co1attack = 0.0001;
 	co1decay = 0.0001;
+*/
 	co1thres = 0;
 	co1cprv = 1;
 

@@ -75,7 +75,7 @@ static float *co1dline;                // compr1 analyzer delay line
 static int    co1dllen, co1dlpos;      // compr1 dl length/pos
 static int    co1amode;                // compr1 analyzer mode (0:rms, 1:peak)
 static float  co1mean,co1invlen;
-static float  co1atten, co1attack, co1decay, co1thres, co1cprv;
+static float  co1atten, /*co1attack, co1decay,*/ co1thres, co1cprv;
 
 static       float gainsf[6]  = { 0.966384599,  0.958186359,  0.953783929,  0.950933178, 0.994260075, 0.998044717};
 static const float ldelays[6] = {29.68253968,  37.07482993,  41.06575964,  43.67346939,  4.98866213,  1.67800453 };
@@ -201,8 +201,10 @@ static void fReverb_init (int rate)
 	co1mean = 0;
 
 	co1atten=0;
+/*
 	co1attack=0.0001;
 	co1decay=0.0001;
+*/
 	co1thres=0;
 	co1cprv=1;
 
