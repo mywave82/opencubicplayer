@@ -84,8 +84,16 @@ static char *locate_ocp_ini(void)
 {
 	char *temp;
 
+	temp = malloc (strlen (_cfProgramPath) + 4 + strlen ("ocp.ini") + 1);
+	sprintf (temp, "%setc\\ocp.ini", _cfProgramPath);
+	if (verify_file(temp))
+	{
+		return temp;
+	}
+	free (temp);
+
 	temp = malloc (strlen (_cfDataPath) + 4 + strlen ("ocp.ini") + 1);
-	sprintf (temp, "%setc/ocp.ini", _cfDataPath);
+	sprintf (temp, "%setc\\ocp.ini", _cfDataPath);
 	if (verify_file(temp))
 	{
 		return temp;
