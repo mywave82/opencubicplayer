@@ -2947,7 +2947,7 @@ static void LogicalVolumeDescriptor (int n, struct cdfs_disc_t *disc, uint8_t *b
 		{
 			default:
 				debug_printf ("     ");
-				for (j=2; i < PM_L; j++)
+				for (j=2; j < PM_L; j++)
 				{
 					debug_printf ("\\x%02x", b[j]);
 				}
