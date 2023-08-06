@@ -22,6 +22,7 @@ filesystem-playlist.o         \
 filesystem-playlist-m3u.o     \
 filesystem-playlist-pls.o     \
 filesystem-setup.o            \
+filesystem-rpg.o              \
 filesystem-tar.o              \
 filesystem-z.o                \
 filesystem-zip.o              \

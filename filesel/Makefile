@@ -272,6 +272,16 @@ filesystem-playlist-pls.o: filesystem-playlist-pls.c \
 	../stuff/compat.h
 	$(CC) $< -o $@ -c
 
+filesystem-rpg.o: filesystem-rpg.c \
+	../config.h \
+	../types.h \
+	adbmeta.h \
+	dirdb.h \
+	filesystem.h \
+	filesystem-rpg.h \
+	../stuff/cp437.h
+	$(CC) $< -o $@ -c
+
 filesystem-setup.o: filesystem-setup.c \
 	../config.h \
 	../types.h \
@@ -459,6 +469,7 @@ pfilesel.o: pfilesel.c \
 	filesystem-playlist-m3u.h \
 	filesystem-playlist-pls.h \
 	filesystem-setup.h \
+	filesystem-rpg.h \
 	filesystem-tar.h \
 	filesystem-unix.h \
 	filesystem-windows.h \

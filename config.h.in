@@ -176,6 +176,8 @@
 /* #define TAR_VERBOSE */
 /* #define PAK_DEBUG */
 /* #define PAK_VERBOSE */
+/* #define RPG_DEBUG */
+/* #define RPG_VERBOSE */
 /* #define FILEHANDLE_CACHE_DEBUG */
 /* #define INITCLOSE_DEBUG 1*/
 /* #define LD_DEBUG 1 */

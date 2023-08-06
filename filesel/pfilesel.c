@@ -85,6 +85,7 @@
 #include "filesystem-playlist-m3u.h"
 #include "filesystem-playlist-pls.h"
 #include "filesystem-setup.h"
+#include "filesystem-rpg.h"
 #include "filesystem-tar.h"
 #include "filesystem-unix.h"
 #include "filesystem-windows.h"
@@ -1000,6 +1001,7 @@ int fsPreInit (const struct configAPI_t *configAPI)
 	filesystem_pak_register ();
 	filesystem_pls_register ();
 	filesystem_setup_register ();
+	filesystem_rpg_register ();
 	filesystem_tar_register ();
 	filesystem_Z_register ();
 	filesystem_zip_register ();

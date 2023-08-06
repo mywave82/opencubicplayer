@@ -45,10 +45,25 @@ extern "C" {
 static int oplReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
 	const char *filename = 0;
+	unsigned int filenamelen;
 	CPlayers::const_iterator i;
 	int j;
 
 	API->dirdb->GetName_internalstr (f->dirdb_ref, &filename);
+	filenamelen = strlen (filename);
+
+	/* Bob's Adlib Music */
+	if (((filenamelen > 4) && (!strcasecmp (filename - 4, ".bam"))) ||                                                                        /* adplug default to match *.bam */
+	    ((filenamelen > 2) && (filename[filenamelen - 2] == '.') && isdigit (filename[filenamelen-1])) ||                                     /* also match *.[0-9] */
+	    ((filenamelen > 3) && (filename[filenamelen - 3] == '.') && isdigit (filename[filenamelen-2]) && isdigit (filename[filenamelen-1])) ) /* also match *.[0-9][0-9] */
+	{
+		if ((len > 4) && (!memcmp (buf, "CBMF", 4)))
+		{
+			snprintf(m->comment, sizeof(m->comment), "Bob's Adlib Music");
+			m->modtype.integer.i=MODULETYPE("OPL");
+			return 1;
+		}
+	}
 
 	for(i = CAdPlug::players.begin(); i != CAdPlug::players.end(); i++)
 	{
@@ -124,6 +139,12 @@ OCP_INTERNAL int opl_type_init (PluginInitAPI_t *API)
 				strupr(_s);
 				API->fsRegisterExt(_s);
 			}
+		}
+
+		for (j=0; j <= 99; j++)
+		{
+			sprintf (_s, "%d", j);
+			API->fsRegisterExt(_s); /* BAM files are in the RPG game files stored as .1 .2 .3 etc */
 		}
 
 		mt.integer.i = MODULETYPE("OPL");
