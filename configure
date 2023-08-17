@@ -722,10 +722,10 @@ ADPLUG_CXXFLAGS
 ADPLUG_CXX
 HAVE_CXX11
 HAVE_CXX14
-UNIFONT_UPPER_OTF
-UNIFONT_UPPER_TTF
 UNIFONT_CSUR_OTF
 UNIFONT_CSUR_TTF
+UNIFONT_UPPER_OTF
+UNIFONT_UPPER_TTF
 UNIFONT_OTF
 UNIFONT_TTF
 FREETYPE2_CFLAGS
@@ -7964,7 +7964,7 @@ if test ${with_unifontdir_ttf+y}
 then :
   withval=$with_unifontdir_ttf;
 else $as_nop
-  with_unifontdir_ttf="${datarootdir}/fonts/truetype/unifont"
+  with_unifontdir_ttf='${datarootdir}/fonts/truetype/unifont'
 fi
 
 
@@ -7973,7 +7973,7 @@ if test ${with_unifont_ttf+y}
 then :
   withval=$with_unifont_ttf;
 else $as_nop
-  with_unifont_ttf="${with_unifontdir_ttf}/unifont.ttf"
+  with_unifont_ttf='${with_unifontdir_ttf}/unifont.ttf'
 fi
 
 
@@ -7982,7 +7982,7 @@ if test ${with_unifont_csur_ttf+y}
 then :
   withval=$with_unifont_csur_ttf;
 else $as_nop
-  with_unifont_csur_ttf="${with_unifontdir_ttf}/unifont_csur.ttf"
+  with_unifont_csur_ttf='${with_unifontdir_ttf}/unifont_csur.ttf'
 fi
 
 
@@ -7991,7 +7991,7 @@ if test ${with_unifont_upper_ttf+y}
 then :
   withval=$with_unifont_upper_ttf;
 else $as_nop
-  with_unifont_upper_ttf="${with_unifontdir_ttf}/unifont_upper.ttf"
+  with_unifont_upper_ttf='${with_unifontdir_ttf}/unifont_upper.ttf'
 fi
 
 
@@ -8000,7 +8000,7 @@ if test ${with_unifontdir_otf+y}
 then :
   withval=$with_unifontdir_otf;
 else $as_nop
-  with_unifontdir_otf="${datarootdir}/fonts/opentype/unifont"
+  with_unifontdir_otf='${datarootdir}/fonts/opentype/unifont'
 fi
 
 
@@ -8009,7 +8009,7 @@ if test ${with_unifont_otf+y}
 then :
   withval=$with_unifont_otf;
 else $as_nop
-  with_unifont_otf="${with_unifontdir_otf}/unifont.otf"
+  with_unifont_otf='${with_unifontdir_otf}/unifont.otf'
 fi
 
 
@@ -8018,7 +8018,7 @@ if test ${with_unifont_csur_otf+y}
 then :
   withval=$with_unifont_csur_otf;
 else $as_nop
-  with_unifont_csur_otf="${with_unifontdir_otf}/unifont_csur.otf"
+  with_unifont_csur_otf='${with_unifontdir_otf}/unifont_csur.otf'
 fi
 
 
@@ -8027,7 +8027,7 @@ if test ${with_unifont_upper_otf+y}
 then :
   withval=$with_unifont_upper_otf;
 else $as_nop
-  with_unifont_upper_otf="${with_unifontdir_otf}/unifont_upper.otf"
+  with_unifont_upper_otf='${with_unifontdir_otf}/unifont_upper.otf'
 fi
 
 
@@ -8035,6 +8035,8 @@ fi
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
 # Let make expand exec_prefix.
 test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+
+
 
 
 
@@ -12624,16 +12626,19 @@ then :
 
   EXP_VAR=UNIFONT_TTF
   FROM_VAR=$with_unifont_ttf
+  UNIFONT_TTF_DEBUG=""
   prefix_save=$prefix
   exec_prefix_save=$exec_prefix
   full_var="$FROM_VAR"
   while true; do
+    UNIFONT_TTF_DEBUG="$UNIFONT_TTF_DEBUG""$full_var"
     new_full_var="`eval echo $full_var`"
     if test "x$new_full_var" = "x$full_var"
 then :
   break
 fi
     full_var=$new_full_var
+    UNIFONT_TTF_DEBUG="$UNIFONT_TTF_DEBUG => "
   done
   full_var=$new_full_var
   UNIFONT_TTF="$full_var"
@@ -12641,7 +12646,149 @@ fi
   prefix=$prefix_save
   exec_prefix=$exec_prefix_save
 
+
+  EXP_VAR=UNIFONT_OTF
+  FROM_VAR=$with_unifont_otf
+  UNIFONT_OTF_DEBUG=""
+  prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+  full_var="$FROM_VAR"
+  while true; do
+    UNIFONT_OTF_DEBUG="$UNIFONT_OTF_DEBUG""$full_var"
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var" = "x$full_var"
+then :
+  break
+fi
+    full_var=$new_full_var
+    UNIFONT_OTF_DEBUG="$UNIFONT_OTF_DEBUG => "
+  done
+  full_var=$new_full_var
+  UNIFONT_OTF="$full_var"
+
+  prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+
+
+  EXP_VAR=UNIFONT_UPPER_TTF
+  FROM_VAR=$with_unifont_upper_ttf
+  UNIFONT_UPPER_TTF_DEBUG=""
+  prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+  full_var="$FROM_VAR"
+  while true; do
+    UNIFONT_UPPER_TTF_DEBUG="$UNIFONT_UPPER_TTF_DEBUG""$full_var"
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var" = "x$full_var"
+then :
+  break
+fi
+    full_var=$new_full_var
+    UNIFONT_UPPER_TTF_DEBUG="$UNIFONT_UPPER_TTF_DEBUG => "
+  done
+  full_var=$new_full_var
+  UNIFONT_UPPER_TTF="$full_var"
+
+  prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+
+
+  EXP_VAR=UNIFONT_UPPER_OTF
+  FROM_VAR=$with_unifont_upper_otf
+  UNIFONT_UPPER_OTF_DEBUG=""
+  prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+  full_var="$FROM_VAR"
+  while true; do
+    UNIFONT_UPPER_OTF_DEBUG="$UNIFONT_UPPER_OTF_DEBUG""$full_var"
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var" = "x$full_var"
+then :
+  break
+fi
+    full_var=$new_full_var
+    UNIFONT_UPPER_OTF_DEBUG="$UNIFONT_UPPER_OTF_DEBUG => "
+  done
+  full_var=$new_full_var
+  UNIFONT_UPPER_OTF="$full_var"
+
+  prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+
+				if test "x$with_unifont_csur_ttf" != "xno"
+then :
+
+
+  EXP_VAR=UNIFONT_CSUR_TTF
+  FROM_VAR=$with_unifont_csur_ttf
+  UNIFONT_CSUR_TTF_DEBUG=""
+  prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+  full_var="$FROM_VAR"
+  while true; do
+    UNIFONT_CSUR_TTF_DEBUG="$UNIFONT_CSUR_TTF_DEBUG""$full_var"
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var" = "x$full_var"
+then :
+  break
+fi
+    full_var=$new_full_var
+    UNIFONT_CSUR_TTF_DEBUG="$UNIFONT_CSUR_TTF_DEBUG => "
+  done
+  full_var=$new_full_var
+  UNIFONT_CSUR_TTF="$full_var"
+
+  prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+
+
+fi
+		if test "x$with_unifont_csur_otf" != "xno"
+then :
+
+
+  EXP_VAR=UNIFONT_CSUR_OTF
+  FROM_VAR=$with_unifont_csur_otf
+  UNIFONT_CSUR_OTF_DEBUG=""
+  prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+  full_var="$FROM_VAR"
+  while true; do
+    UNIFONT_CSUR_OTF_DEBUG="$UNIFONT_CSUR_OTF_DEBUG""$full_var"
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var" = "x$full_var"
+then :
+  break
+fi
+    full_var=$new_full_var
+    UNIFONT_CSUR_OTF_DEBUG="$UNIFONT_CSUR_OTF_DEBUG => "
+  done
+  full_var=$new_full_var
+  UNIFONT_CSUR_OTF="$full_var"
+
+  prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+
+
+fi
+
 				UNIFONT_TTF=`echo "$UNIFONT_TTF" | sed 's/\(\)\/\/*/\1\//g'`
+		UNIFONT_OTF=`echo "$UNIFONT_OTF" | sed 's/\(\)\/\/*/\1\//g'`
+		UNIFONT_UPPER_TTF=`echo "$UNIFONT_UPPER_TTF" | sed 's/\(\)\/\/*/\1\//g'`
+		UNIFONT_UPPER_OTF=`echo "$UNIFONT_UPPER_OTF" | sed 's/\(\)\/\/*/\1\//g'`
+		if test "x$with_unifont_csur_ttf" != "xno"
+then :
+
+			UNIFONT_CSUR_TTF=`echo "$UNIFONT_CSUR_TTF" | sed 's/\(\)\/\/*/\1\//g'`
+
+fi
+		if test "x$with_unifont_csur_otf" != "xno"
+then :
+
+			UNIFONT_CSUR_OTF=`echo "$UNIFONT_CSUR_OTF" | sed 's/\(\)\/\/*/\1\//g'`
+
+fi
+
 		if test "x$cross_compiling" = "xyes"
 then :
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Unable to verify unifont files due to cross-compilation" >&5
@@ -12673,38 +12820,6 @@ else $as_nop
   got_unifont_ttf=no
 fi
 
-
-fi
-		printf "%s\n" "#define UNIFONT_TTF \"$UNIFONT_TTF\"" >>confdefs.h
-
-
-
-  EXP_VAR=UNIFONT_OTF
-  FROM_VAR=$with_unifont_otf
-  prefix_save=$prefix
-  exec_prefix_save=$exec_prefix
-  full_var="$FROM_VAR"
-  while true; do
-    new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"
-then :
-  break
-fi
-    full_var=$new_full_var
-  done
-  full_var=$new_full_var
-  UNIFONT_OTF="$full_var"
-
-  prefix=$prefix_save
-  exec_prefix=$exec_prefix_save
-
-				UNIFONT_OTF=`echo "$UNIFONT_OTF" | sed 's/\(\)\/\/*/\1\//g'`
-		if test "x$cross_compiling" = "xyes"
-then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Unable to verify unifont files due to cross-compilation" >&5
-printf "%s\n" "$as_me: Unable to verify unifont files due to cross-compilation" >&6;}
-else $as_nop
-
 			as_ac_File=`printf "%s\n" "ac_cv_file_$UNIFONT_OTF" | $as_tr_sh`
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $UNIFONT_OTF" >&5
 printf %s "checking for $UNIFONT_OTF... " >&6; }
@@ -12730,44 +12845,58 @@ else $as_nop
   got_unifont_otf=no
 fi
 
-
-fi
-		printf "%s\n" "#define UNIFONT_OTF \"$UNIFONT_OTF\"" >>confdefs.h
-
-		if test "x$cross_compiling" != "xyes" && test "x$got_unifont_ttf" = "xno" && test "x$got_unifont_otf" = "xno"
+			as_ac_File=`printf "%s\n" "ac_cv_file_$UNIFONT_UPPER_TTF" | $as_tr_sh`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $UNIFONT_UPPER_TTF" >&5
+printf %s "checking for $UNIFONT_UPPER_TTF... " >&6; }
+if eval test \${$as_ac_File+y}
 then :
-  as_fn_error $? "$UNIFONT_TTF and $UNIFONT_OTF (unifont.ttf and unifont.otf) not found - please use --with-unifontdir-ttf=/dir/ or --with-unifontdir-otf or --with-unifont-ttf=/dir/file or --with-unifont-otf=/dir/file (needed by X11, SDL1.x and SDL2)" "$LINENO" 5
-fi
-
-				if test x$with_unifont_csur_ttf != "xno"
-then :
-
-
-  EXP_VAR=UNIFONT_CSUR_TTF
-  FROM_VAR=$with_unifont_csur_ttf
-  prefix_save=$prefix
-  exec_prefix_save=$exec_prefix
-  full_var="$FROM_VAR"
-  while true; do
-    new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"
-then :
-  break
-fi
-    full_var=$new_full_var
-  done
-  full_var=$new_full_var
-  UNIFONT_CSUR_TTF="$full_var"
-
-  prefix=$prefix_save
-  exec_prefix=$exec_prefix_save
-
-						UNIFONT_CSUR_TTF=`echo "$UNIFONT_CSUR_TTF" | sed 's/\(\)\/\/*/\1\//g'`
-			if test "x$cross_compiling" = "xyes"
-then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Unable to verify unifont files due to cross-compilation" >&5
-printf "%s\n" "$as_me: Unable to verify unifont files due to cross-compilation" >&6;}
+  printf %s "(cached) " >&6
 else $as_nop
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$UNIFONT_UPPER_TTF"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"
+then :
+  got_unifont_upper_ttf=yes
+else $as_nop
+  got_unifont_upper_ttf=no
+fi
+
+			as_ac_File=`printf "%s\n" "ac_cv_file_$UNIFONT_UPPER_OTF" | $as_tr_sh`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $UNIFONT_UPPER_OTF" >&5
+printf %s "checking for $UNIFONT_UPPER_OTF... " >&6; }
+if eval test \${$as_ac_File+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$UNIFONT_UPPER_OTF"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"
+then :
+  got_unifont_upper_otf=yes
+else $as_nop
+  got_unifont_upper_otf=no
+fi
+
+			if test "x$with_unifont_csur_ttf" != "xno"
+then :
 
 				as_ac_File=`printf "%s\n" "ac_cv_file_$UNIFONT_CSUR_TTF" | $as_tr_sh`
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $UNIFONT_CSUR_TTF" >&5
@@ -12796,39 +12925,8 @@ fi
 
 
 fi
-			printf "%s\n" "#define UNIFONT_CSUR_TTF \"$UNIFONT_CSUR_TTF\"" >>confdefs.h
-
-
-fi
-		if test x$with_unifont_csur_otf != "xno"
+			if test "x$with_unifont_csur_otf" != "xno"
 then :
-
-
-  EXP_VAR=UNIFONT_CSUR_OTF
-  FROM_VAR=$with_unifont_csur_otf
-  prefix_save=$prefix
-  exec_prefix_save=$exec_prefix
-  full_var="$FROM_VAR"
-  while true; do
-    new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"
-then :
-  break
-fi
-    full_var=$new_full_var
-  done
-  full_var=$new_full_var
-  UNIFONT_CSUR_OTF="$full_var"
-
-  prefix=$prefix_save
-  exec_prefix=$exec_prefix_save
-
-						UNIFONT_CSUR_OTF=`echo "$UNIFONT_CSUR_OTF" | sed 's/\(\)\/\/*/\1\//g'`
-			if test "x$cross_compiling" = "xyes"
-then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Unable to verify unifont files due to cross-compilation" >&5
-printf "%s\n" "$as_me: Unable to verify unifont files due to cross-compilation" >&6;}
-else $as_nop
 
 				as_ac_File=`printf "%s\n" "ac_cv_file_$UNIFONT_CSUR_OTF" | $as_tr_sh`
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $UNIFONT_CSUR_OTF" >&5
@@ -12857,147 +12955,99 @@ fi
 
 
 fi
+
+fi
+
+		printf "%s\n" "#define UNIFONT_TTF \"$UNIFONT_TTF\"" >>confdefs.h
+
+		printf "%s\n" "#define UNIFONT_OTF \"$UNIFONT_OTF\"" >>confdefs.h
+
+		printf "%s\n" "#define UNIFONT_UPPER_TTF \"$UNIFONT_UPPER_TTF\"" >>confdefs.h
+
+		printf "%s\n" "#define UNIFONT_UPPER_OTF \"$UNIFONT_UPPER_OTF\"" >>confdefs.h
+
+		if test x$with_unifont_csur_ttf != "xno"
+then :
+
+			printf "%s\n" "#define UNIFONT_CSUR_TTF \"$UNIFONT_CSUR_TTF\"" >>confdefs.h
+
+
+fi
+		if test x$with_unifont_csur_otf != "xno"
+then :
+
 			printf "%s\n" "#define UNIFONT_CSUR_OTF \"$UNIFONT_CSUR_OTF\"" >>confdefs.h
 
 
 fi
-		if test "x$cross_compiling" != "xyes" && test "x$got_unifont_csur_ttf" = "xno" && test "x$got_unifont_csur_otf" = "xno"
+
+		if test "x$cross_compiling" != "xyes"
 then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: $UNIFONT_CSUR_TTF and $UNIFONT_CSUR_OTF (unifont_csur.ttf and unifont_csur.otf) not found - please use --with-unifontdir-ttf=/dir/ or --with-unifontdir-otf=/dir/ --with-unifont-csur-ttf=/dir/file or -with-unifont-csur-otf=/dir/file or disable by using --without-unifont-csur-ttf and --without-unifont-csur-otf" >&5
-printf "%s\n" "$as_me: WARNING: $UNIFONT_CSUR_TTF and $UNIFONT_CSUR_OTF (unifont_csur.ttf and unifont_csur.otf) not found - please use --with-unifontdir-ttf=/dir/ or --with-unifontdir-otf=/dir/ --with-unifont-csur-ttf=/dir/file or -with-unifont-csur-otf=/dir/file or disable by using --without-unifont-csur-ttf and --without-unifont-csur-otf" >&2;}
-fi
 
-
-  EXP_VAR=UNIFONT_UPPER_TTF
-  FROM_VAR=$with_unifont_upper_ttf
-  prefix_save=$prefix
-  exec_prefix_save=$exec_prefix
-  full_var="$FROM_VAR"
-  while true; do
-    new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"
+			if test "x$got_unifont_ttf" = "xno" &&
+			       test "x$got_unifont_otf" = "xno"
 then :
-  break
+
+as_fn_error $? "Unable to locate unifont.ttf/unifont.otf (needed by X11, SDL1.x and SDL2). Following paths were tested:
+$UNIFONT_TTF_DEBUG
+$UNIFONT_OTF_DEBUG
+Please use --with-unifontdir-ttf=/dir/ or
+           --with-unifontdir-otf=/dir/ or
+           --with-unifont-ttf=/dir/file or
+           --with-unifont-otf=/dir/file or
+           maybe adjust --prefix or --datarootdir" "$LINENO" 5
 fi
-    full_var=$new_full_var
-  done
-  full_var=$new_full_var
-  UNIFONT_UPPER_TTF="$full_var"
-
-  prefix=$prefix_save
-  exec_prefix=$exec_prefix_save
-
-				UNIFONT_UPPER_TTF=`echo "$UNIFONT_UPPER_TTF" | sed 's/\(\)\/\/*/\1\//g'`
-		if test "x$cross_compiling" = "xyes"
+			if test "x$with_unifont_csur_ttf" != "xno" &&
+			       test "x$with_unifont_csur_otf" != "xno" &&
+			       test "x$got_unifont_csur_ttf" = "xno" &&
+			       test "x$got_unifont_csur_otf" = "xno"
 then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Unable to verify unifont files due to cross-compilation" >&5
-printf "%s\n" "$as_me: Unable to verify unifont files due to cross-compilation" >&6;}
-else $as_nop
-
-			as_ac_File=`printf "%s\n" "ac_cv_file_$UNIFONT_UPPER_TTF" | $as_tr_sh`
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $UNIFONT_UPPER_TTF" >&5
-printf %s "checking for $UNIFONT_UPPER_TTF... " >&6; }
-if eval test \${$as_ac_File+y}
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Unable to locate unifont_csur.ttf/unifont_csur.otf (optionally needed by X11, SDL1.x and SDL2). Following paths were tested:
+$UNIFONT_CSUR_TTF_DEBUG
+$UNIFONT_CSUR_OTF_DEBUG
+Please use --with-unifontdir-ttf=/dir/ or
+           --with-unifontdir-otf=/dir/ or
+           --with-unifont-csur-ttf=/dir/file or
+           --with-unifont-csur-otf=/dir/file or
+           disable the optional CSUR by using --without-unifont-csur-ttf and --without-unifont-csur-otf" >&5
+printf "%s\n" "$as_me: WARNING: Unable to locate unifont_csur.ttf/unifont_csur.otf (optionally needed by X11, SDL1.x and SDL2). Following paths were tested:
+$UNIFONT_CSUR_TTF_DEBUG
+$UNIFONT_CSUR_OTF_DEBUG
+Please use --with-unifontdir-ttf=/dir/ or
+           --with-unifontdir-otf=/dir/ or
+           --with-unifont-csur-ttf=/dir/file or
+           --with-unifont-csur-otf=/dir/file or
+           disable the optional CSUR by using --without-unifont-csur-ttf and --without-unifont-csur-otf" >&2;}
+fi
+			if test "x$got_unifont_upper_ttf" = "xno" &&
+			       test "x$got_unifont_upper_otf" = "xno"
 then :
-  printf %s "(cached) " >&6
-else $as_nop
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$UNIFONT_UPPER_TTF"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-printf "%s\n" "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"
-then :
-  got_unifont_upper_ttf=yes
-else $as_nop
-  got_unifont_upper_ttf=no
+  as_fn_error $? "Unable to locate unifont_upper.ttf/unifont_upper.otf (needed by X11, SDL1.x and SDL2). Following paths were tested:
+$UNIFONT_UPPER_TTF_DEBUG
+$UNIFONT_UPPER_OTF_DEBUG
+Please use --with-unifontdir-ttf=/dir/ or
+           --with-unifontdir-otf=/dir/ or
+           --with-unifont-upper-ttf=/dir/file or
+           --with-unifont-upper-otf=/dir/file or
+           maybe adjust --prefix or --datarootdir" "$LINENO" 5
 fi
 
-
-fi
-		printf "%s\n" "#define UNIFONT_UPPER_TTF \"$UNIFONT_UPPER_TTF\"" >>confdefs.h
-
-
-
-  EXP_VAR=UNIFONT_UPPER_OTF
-  FROM_VAR=$with_unifont_upper_otf
-  prefix_save=$prefix
-  exec_prefix_save=$exec_prefix
-  full_var="$FROM_VAR"
-  while true; do
-    new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var" = "x$full_var"
-then :
-  break
-fi
-    full_var=$new_full_var
-  done
-  full_var=$new_full_var
-  UNIFONT_UPPER_OTF="$full_var"
-
-  prefix=$prefix_save
-  exec_prefix=$exec_prefix_save
-
-				UNIFONT_UPPER_OTF=`echo "$UNIFONT_UPPER_OTF" | sed 's/\(\)\/\/*/\1\//g'`
-		if test "x$cross_compiling" = "xyes"
-then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Unable to verify unifont files due to cross-compilation" >&5
-printf "%s\n" "$as_me: Unable to verify unifont files due to cross-compilation" >&6;}
-else $as_nop
-
-			as_ac_File=`printf "%s\n" "ac_cv_file_$UNIFONT_UPPER_OTF" | $as_tr_sh`
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $UNIFONT_UPPER_OTF" >&5
-printf %s "checking for $UNIFONT_UPPER_OTF... " >&6; }
-if eval test \${$as_ac_File+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$UNIFONT_UPPER_OTF"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-printf "%s\n" "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"
-then :
-  got_unifont_upper_otf=yes
-else $as_nop
-  got_unifont_upper_otf=no
-fi
-
-
-fi
-		printf "%s\n" "#define UNIFONT_UPPER_OTF \"$UNIFONT_UPPER_OTF\"" >>confdefs.h
-
-
-		if test "x$cross_compiling" != "xyes" && test "x$got_unifont_upper_ttf" = "xno" && test "x$got_unifont_upper_otf" = "xno"
-then :
-  as_fn_error $? "$UNIFONT_UPPER_TTF and $UNIFONT_UPPER_OTF (unifont_upper.ttf and unifont_upper.otf) not found - please use --with-unifontdir-ttf=/dir/ or --with-unifontdir-otf or --with-unifont-ttf=/dir/file or --with-unifont-otf=/dir/file (needed by X11, SDL1.x and SDL2)" "$LINENO" 5
 fi
 
 else $as_nop
 
 		printf "%s\n" "#define UNIFONT_RELATIVE 1" >>confdefs.h
 
-		UNIFONT_TTF="relative path"
-		UNIFONT_OTF="relative path"
+		UNIFONT_TTF="relative to ocp executable"
+		UNIFONT_CSUR_TTF="relative to ocp executable"
+		UNIFONT_UPPER_TTF="relative to ocp executable"
+		UNIFONT_OTF="relative to ocp executable"
+		UNIFONT_CSUR_OTF="relative to ocp executable"
+		UNIFONT_UPPER_OTF="relative to ocp executable"
 
 fi
 
 fi
-
-
 
 # Conditionally build iostream wrappers
 
@@ -19266,6 +19316,10 @@ then :
 else $as_nop
   echo "include DumpTools: OFF"
 fi
-                                           echo "unifont truetype:  "$UNIFONT_TTF $UNIFONT_CSUR_TTF $UNIFONT_UPPER_TTF
-                                           echo "unifont opentype:  "$UNIFONT_OTF $UNIFONT_CSUR_OTF $UNIFONT_UPPER_OTF
+                                           echo "unifont truetype:       "$UNIFONT_TTF
+                                           echo "unifont truetype CSUR:  "$UNIFONT_CSUR_TTF
+                                           echo "unifont truetype Upper: "$UNIFONT_UPPER_TTF
+                                           echo "unifont opentype:       "$UNIFONT_OTF
+                                           echo "unifont opentype CSUR:  "$UNIFONT_CSUR_OTF
+                                           echo "unifont opentype Upper: "$UNIFONT_UPPER_OTF
 
