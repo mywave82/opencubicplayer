@@ -350,6 +350,11 @@ void Cocpemu::unregister_channel_2_op (const int chan, const int chip)
 
 void Cocpemu::write(int reg, int val)
 {
+	int OPL3_enabled = 0;
+	int OPL3_disabled = 0;
+	int OP4_chan_enabled = 0;
+	int OP4_chan_disabled = 0;
+
 	/* detect ALL channel key-on/key-off */
 	if ((reg >= 0xb0) && (reg <= 0xb8)) /* key-on, either banks */
 	{
@@ -383,7 +388,7 @@ void Cocpemu::write(int reg, int val)
 				{
 					int chan = (currChip?3:0) + ((reg & 0x0f)%3);
 
-					if (regcache[1][0x05] & (0x01 << chan))
+					if (regcache[1][0x04] & (0x01 << chan))
 					{
 						if (reg <= 0xb2) /* ignore operation on the second half of the channel */
 						{
@@ -401,7 +406,7 @@ void Cocpemu::write(int reg, int val)
 				{
 					int chan = (currChip?3:0) + ((reg & 0x0f)%3);
 
-					if (regcache[1][0x05] & (0x01 << chan))
+					if (regcache[1][0x04] & (0x01 << chan))
 					{
 						if (reg <= 0xb2) /* ignore operation on the second half of the channel */
 						{
@@ -495,6 +500,21 @@ void Cocpemu::write(int reg, int val)
 
 complete:
 	/* store the value into the cache */
+	if ((currType == TYPE_OPL3) && (currChip == 1))
+	{
+		if (reg == 0x05)
+		{ /* Did we enable OPL3 mode? */
+			uint_fast8_t temp = (regcache[1][0x05] ^ val) & 0x01;
+			OPL3_enabled = temp & val;
+			OPL3_disabled = temp & (val ^ 0x01);
+		}
+		if ((reg == 0x04) && (regcache[1][0x05] & 0x01))
+		{ /* Did we enable/disable 4-operator mode on any channels ? */
+			uint_fast8_t temp = (regcache[1][0x04] ^ val) & 0x3f;
+			OP4_chan_enabled = temp & val;
+			OP4_chan_disabled = temp & (val ^ 0x3f);
+		}
+	}
 	regcache[currChip][reg] = val;
 
 /* update channels and operators */
@@ -586,9 +606,10 @@ complete:
 			if (regcache[1][0x05] & 0x01)
 			{ /* OPL3-mode */
 				int ch2 = op4_to_channel[op];
-				if (ch2 >= 0)
+				/* Which channel is operator part if in op4 mode, and is that channel in op4 mode? */
+				if ((ch2 >= 0) && (((currChip?8:1) << ch2) & regcache[1][0x04]))
 				{
-								ch = ch + (currChip?9:0);
+					ch = ch2 + (currChip?9:0);
 				}
 			}
 			if (s.mute[ch])
@@ -599,15 +620,35 @@ complete:
 	}
 	realopl->write (reg, val);
 
-/* re-evaluate mute if needed - going in/out of OPL3 mode and 4op channel mode */
-	if ((currChip == 1) && ((reg == 0x04) || (reg == 0x05)))
+	/* re-evaluate mute if needed - going in/out of OPL3 mode and 4op channel mode */
+	if (OPL3_enabled)
 	{
 		for (int i=0; i < 3; i++)
-		{
-			setmute (i    , s.mute[i    ]);
-			setmute (i+3  , s.mute[i+3  ]);
-			setmute (i  +9, s.mute[i  +9]);
-			setmute (i+3+9, s.mute[i+3+9]);
+		{ /* if OP4 mode already enabled, ensure that mute for both channels matches, else reset by first channel */
+			if ((regcache[1][0x04] & (0x01 << i)) && (s.mute[  i] != s.mute[3+  i])) { s.mute[  i] = !s.mute[  i]; setmute (  i, !s.mute[  i]); }
+			if ((regcache[1][0x04] & (0x08 << i)) && (s.mute[9+i] != s.mute[3+9+i])) { s.mute[9+i] = !s.mute[9+i]; setmute (9+i, !s.mute[9+i]); }
+		}
+	} else if (OPL3_disabled)
+	{
+		for (int i=0; i < 3; i++)
+		{ /* if OP4 was enabled, ensure that mutes no longer are connected, reset second channel if needed */
+			if ((regcache[1][0x04] & (0x01 << i)) && (s.mute[  i] != s.mute[3+  i])) { s.mute[3+  i] = !s.mute[3+  i]; setmute (3+  i, !s.mute[3+  i]); }
+			if ((regcache[1][0x04] & (0x08 << i)) && (s.mute[9+i] != s.mute[3+9+i])) { s.mute[3+9+i] = !s.mute[3+9+i]; setmute (3+9+i, !s.mute[3+9+i]); }
+		}
+	} else if (OP4_chan_enabled)
+	{
+		/* ensure that mute for both channels matches, else reset by first channel */
+		for (int i=0; i < 3; i++)
+		{ /* if OP4 mode already enabled, ensure that mute for both channels matches, else reset by first channel */
+			if ((OP4_chan_enabled  & (0x01 << i)) && (s.mute[  i] != s.mute[3+  i])) { s.mute[  i] = !s.mute[  i]; setmute (  i, !s.mute[  i]); }
+			if ((OP4_chan_enabled  & (0x08 << i)) && (s.mute[9+i] != s.mute[3+9+i])) { s.mute[9+i] = !s.mute[9+i]; setmute (9+i, !s.mute[9+i]); }
+		}
+	} else if (OP4_chan_disabled)
+	{
+		for (int i=0; i < 3; i++)
+		{ /* if OP4 was enabled, ensure that mutes no longer are connected, reset second channel if needed */
+			if ((OP4_chan_disabled & (0x01 << i)) && (s.mute[  i] != s.mute[3+  i])) { s.mute[3+  i] = !s.mute[3+  i]; setmute (3+  i, !s.mute[3+  i]); }
+			if ((OP4_chan_disabled & (0x08 << i)) && (s.mute[9+i] != s.mute[3+9+i])) { s.mute[3+9+i] = !s.mute[3+9+i]; setmute (3+9+i, !s.mute[3+9+i]); }
 		}
 	}
 }
@@ -631,6 +672,7 @@ void Cocpemu::setmute(int chan, int val)
 {
 	assert (chan >= 0);
 	assert (chan < 18);
+	val = !!val;
 	if (s.mute[chan] == val)
 	{
 		return;
@@ -659,8 +701,8 @@ void Cocpemu::setmute(int chan, int val)
 				realopl->write (reg3, regcache[chan / 9][reg3] | mask);
 				return;
 			}
-			if ((((chan + 3    ) == i) && (regcache[1][0x04] & (1<<i))) ||
-			    (((chan + 3 + 9) == i) && (regcache[1][0x04] & (8<<i)))) // this works, since we set the setchip above
+			if ((((chan    ) == (i + 3)) && (regcache[1][0x04] & (1<<i))) ||
+			    (((chan + 9) == (i + 3)) && (regcache[1][0x04] & (8<<i)))) // this works, since we set the setchip above
 			{
 				return; /* ignore for the second half */
 			}
