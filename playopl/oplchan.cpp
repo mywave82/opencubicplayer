@@ -918,9 +918,9 @@ static int OPLChanGetWin(struct cpifaceSessionAPI_t *cpifaceSession, struct cpit
 static void OPLChanDraw (struct cpifaceSessionAPI_t *cpifaceSession, int sel)
 {
 	unsigned int x,y;
-	unsigned int h =(OPLChannelType==1) ? 9 : 18;
-	unsigned int sh=(OPLChannelType==1) ? (OPLSelectedChannel / 2) : OPLSelectedChannel;
-	int first = 0;
+	unsigned int h =(OPLChannelType==1) ? 9 : 18; // height of data
+	unsigned int sh=(OPLChannelType==1) ? (OPLSelectedChannel / 2) : OPLSelectedChannel; // selected line of data
+	int first = 0; // which line within the data to start the display
 	struct oplStatus *s;
 
 	s = &oplLastStatus;
@@ -965,11 +965,12 @@ static void OPLChanDraw (struct cpifaceSessionAPI_t *cpifaceSession, int sel)
 			break;
 	}
 
-	if (((h+2) > OPLChanHeight) && ((sh+2) >= (OPLChanHeight/2)))
+	// is data bigger than our view? Is our target-data line more than half-way down the view?
+	if (((h+2) > OPLChanHeight) && ((sh+2) > (OPLChanHeight/2)))
 	{
 		if (sh >= (h - (OPLChanHeight - 2)/2) )
-		{
-			first = h - OPLChanHeight - 2;
+		{ // we are close to the bottom
+			first = h - (OPLChanHeight - 2);
 		} else {
 			first = sh - (OPLChanHeight-2) / 2;
 		}
