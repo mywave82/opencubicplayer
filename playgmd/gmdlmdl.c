@@ -143,7 +143,6 @@ static void FreeResources (struct LoadMDLResources *r)
 OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmdmodule *m, struct ocpfilehandle_t *file)
 {
 	uint32_t waste32;
-	uint16_t waste16;
 	uint8_t waste8;
 
 	uint32_t blklen;
@@ -206,16 +205,15 @@ OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 	if ((waste8&0x10)!=0x10)
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Sorry, the file version is too old (load and resave it in DigiTrakker please)\n");
-#warning TODO, version 0x11 / 1.1
 		return errFormOldVer;
 	}
 
-	if (ocpfilehandle_read_uint16_le (file, &waste16))
+	if (ocpfilehandle_read_uint16_le (file, &blktype))
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #3\n");
 		return errFileRead;
 	}
-	if (waste16!=0x4E49)
+	if (blktype!=0x4E49)
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid sub-signature\n");
 		return errFormSig;
@@ -225,6 +223,12 @@ OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #4\n");
 		return errFileRead;
+	}
+
+	if (blklen < sizeof (mdlhead))
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] info chunk too small to contain header\n");
+		return errFormStruc;
 	}
 
 	if (file->read (file, &mdlhead, sizeof(mdlhead)) != sizeof(mdlhead))
@@ -254,14 +258,25 @@ OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		return errFormSupp;
 	}
 
+	if (blklen < (sizeof (mdlhead) + mdlhead.ordnum))
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] info chunk too small to contain song orders\n");
+		return errFormStruc;
+	}
+
 	if (file->read (file, ordtab, mdlhead.ordnum) != mdlhead.ordnum)
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #6\n");
 		return errFileRead;
 	}
-	file->seek_cur (file, 8*m->channum);
-	file->seek_cur (file, blklen - 8 * m->channum - 91 - mdlhead.ordnum);
 
+	/* Skip Channel names (8 bytes per channel, and potentially other data */
+
+	if (file->seek_set (file, 5 + 6 + blklen))
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] seek failed #1\n");
+		return errFileRead;
+	}
 	if (ocpfilehandle_read_uint16_le (file, &blktype))
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #7\n");
@@ -274,9 +289,13 @@ OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 	}
 	blklen = uint32_little (blklen);
 
-	if (blktype==0x454D)
+	if (blktype==0x454D) /* ME - Song Message */
 	{
-		file->seek_cur (file, blklen);
+		if (file->seek_set (file, file->getpos(file) + blklen))
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] seek failed #2\n");
+			return errFileRead;
+		}
 		if (ocpfilehandle_read_uint16_le (file, &blktype))
 		{
 			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #9\n");
@@ -292,7 +311,7 @@ OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
  */
 	}
 
-	if (blktype!=0x4150)
+	if (blktype!=0x4150) /* PA - Pattern */
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid block type %04x!=0x4150\n", blktype);
 		return errFormStruc;
@@ -341,14 +360,14 @@ OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 			m->patterns[j].tracks[i] = uint16_little (m->patterns[j].tracks[i]);
 	}
 
-	if (ocpfilehandle_read_uint16_le (file, &waste16))
+	if (ocpfilehandle_read_uint16_le (file, &blktype))
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #16\n");
 		return errFileRead;
 	}
-	if (waste16!=0x5254)
+	if (blktype!=0x5254) /* TR - Tracks */
 	{
-		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid block type %04x!=0x5254\n", waste16);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid block type %04x!=0x5254\n", blktype);
 		return errFormStruc;
 	}
 	if (ocpfilehandle_read_uint32_le (file, &blklen))
@@ -819,14 +838,14 @@ OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 	free(trackbuf);
 	free(patdata);
 
-	if (ocpfilehandle_read_uint16_le (file, &waste16))
+	if (ocpfilehandle_read_uint16_le (file, &blktype))
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #21\n");
 		return errFileRead;
 	}
-	if (waste16!=0x4949)
+	if (blktype!=0x4949) /* II - Instruments */
 	{
-		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid block type %04x!=0x4949\n", waste16);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid block type %04x!=0x4949\n", blktype);
 		return errFormStruc;
 	}
 	if (ocpfilehandle_read_uint32_le (file, &blklen))
@@ -1020,7 +1039,7 @@ OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		return errFileRead;
 	}
 
-	if (blktype==0x4556)
+	if (blktype==0x4556) /* VE - Volume Envelopes */
 	{
 		uint8_t envnum;
 
@@ -1100,7 +1119,7 @@ OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		}
 	}
 
-	if (blktype==0x4550)
+	if (blktype==0x4550) /* PE - Panning Envelopes */
 	{
 		uint8_t envnum;
 		if (ocpfilehandle_read_uint8 (file, &envnum))
@@ -1179,7 +1198,7 @@ OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		}
 	}
 
-	if (blktype==0x4546)
+	if (blktype==0x4546) /* FE - Frequency Envelopes (version 1.1 files) */
 	{
 		uint8_t envnum;
 		if (ocpfilehandle_read_uint8 (file, &envnum))
@@ -1261,7 +1280,7 @@ OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		}
 	}
 
-	if (blktype!=0x5349)
+	if (blktype!=0x5349) /* IS - Sample infos */
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid block type %04x!=0x5349\n", blktype);
 		return errFormStruc;
@@ -1325,14 +1344,14 @@ OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		packtype[mdlsmp.num-1]=(mdlsmp.opt>>2)&3;
 	}
 
-	if (ocpfilehandle_read_uint16_le (file, &waste16))
+	if (ocpfilehandle_read_uint16_le (file, &blktype))
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] read() failed #44\n");
 		return errFileRead;
 	}
-	if (waste16!=0x4153)
+	if (blktype!=0x4153) /* SA - Samples */
 	{
-		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid block type %04x!=0x4153\n", waste16);
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MDL] Invalid block type %04x!=0x4153\n", blktype);
 		return errFormStruc;
 	}
 	if (ocpfilehandle_read_uint32_le (file, &blklen))

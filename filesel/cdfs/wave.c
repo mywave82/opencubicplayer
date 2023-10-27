@@ -142,7 +142,7 @@ static int wave_openfile2 (struct ocpfilehandle_t *handle, uint64_t *offset, uin
 		    (b16[2] != 't') ||
 		    (b16[3] != ' '))
 		{
-			if (handle->seek_cur (handle, sublen) < 0)
+			if (handle->seek_set (handle, handle->getpos (handle) + sublen))
 			{
 				fprintf (stderr, "wave_openfile() lseek caused EOF when skipping chunk while searching for fmt subheader\n");
 				return -1;
@@ -162,7 +162,7 @@ static int wave_openfile2 (struct ocpfilehandle_t *handle, uint64_t *offset, uin
 		}
 		if (sublen > 16)
 		{
-			if (handle->seek_cur (handle, sublen - 16) < 0)
+			if (handle->seek_set (handle, handle->getpos (handle) + sublen - 16))
 			{
 				fprintf (stderr, "wave_openfile() lseek caused EOF when skipping end of fmt chunk\n");
 				return -1;
@@ -224,7 +224,7 @@ static int wave_openfile2 (struct ocpfilehandle_t *handle, uint64_t *offset, uin
 		    (b16[2] != 't') ||
 		    (b16[3] != 'a'))
 		{
-			if (handle->seek_cur (handle, sublen) < 0)
+			if (handle->seek_set (handle, handle->getpos (handle) + sublen))
 			{
 				fprintf (stderr, "wave_openfile() lseek caused EOF when skipping chunk while searching for fmt subheader\n");
 				return -1;

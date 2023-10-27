@@ -205,64 +205,6 @@ static int gzip_ocpfilehandle_seek_set (struct ocpfilehandle_t *_s, int64_t pos)
 	return 0;
 }
 
-static int gzip_ocpfilehandle_seek_cur (struct ocpfilehandle_t *_s, int64_t pos)
-{
-	struct gzip_ocpfilehandle_t *s = (struct gzip_ocpfilehandle_t *)_s;
-
-	if (pos <= 0)
-	{
-		if (pos == INT64_MIN) return -1; /* we never have files this size */
-		if ((-pos) > s->pos) return -1;
-		s->pos += pos;
-	} else {
-		/* check for overflow */
-		if ((int64_t)(pos + s->pos) < 0) return -1;
-
-		if (s->owner->filesize_pending)
-		{
-			if (_s->filesize (_s) == FILESIZE_ERROR) /* force the size to be calculated */
-			{
-				s->error = 1;
-				return -1;
-			}
-		}
-
-		if ((pos + s->pos) > s->owner->uncompressed_filesize) return -1;
-		s->pos += pos;
-	}
-
-	s->error = 0;
-
-	return 0;
-}
-
-static int gzip_ocpfilehandle_seek_end (struct ocpfilehandle_t *_s, int64_t pos)
-{
-	struct gzip_ocpfilehandle_t *s = (struct gzip_ocpfilehandle_t *)_s;
-
-	if (pos > 0) return -1;
-
-	if (pos == INT64_MIN) return -1; /* we never have files this size */
-
-	if (s->owner->filesize_pending)
-	{
-		if (_s->filesize (_s) == FILESIZE_ERROR) /* force the size to be calculated */
-		{
-			s->error = 1;
-			return -1;
-		}
-	}
-
-	if (pos < -(int64_t)(s->owner->uncompressed_filesize)) return -1;
-
-	s->pos = s->owner->uncompressed_filesize + pos;
-
-	s->error = 0;
-
-	return 0;
-}
-
-
 static uint64_t gzip_ocpfilehandle_getpos (struct ocpfilehandle_t *_s)
 {
 	struct gzip_ocpfilehandle_t *s = (struct gzip_ocpfilehandle_t *)_s;
@@ -521,8 +463,6 @@ static struct ocpfilehandle_t *gzip_ocpfile_open (struct ocpfile_t *_s)
 	                       gzip_ocpfilehandle_unref,
 	                      &s->head,
 	                       gzip_ocpfilehandle_seek_set,
-	                       gzip_ocpfilehandle_seek_cur,
-	                       gzip_ocpfilehandle_seek_end,
 	                       gzip_ocpfilehandle_getpos,
 	                       gzip_ocpfilehandle_eof,
 	                       gzip_ocpfilehandle_error,
@@ -643,7 +583,7 @@ static uint64_t gzip_ocpfile_filesize (struct ocpfile_t *_s)
 		}
 
 		/* If so, the original size (for the last member....) is stored at the end of the file... as 32bit, hence the test for LARGEST_THEORETICALLY_32BIT_SIZE */
-		if (h->seek_end (h, -4) < 0)
+		if (h->seek_set (h, h->filesize(h) - 4) < 0)
 		{
 			h->unref (h); h = 0;
 			return FILESIZE_ERROR;

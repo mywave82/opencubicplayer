@@ -86,35 +86,6 @@ static int mem_filehandle_seek_set (struct ocpfilehandle_t *_s, int64_t pos)
 	return 0;
 }
 
-/* returns 0 for OK, and -1 on error */
-static int mem_filehandle_seek_cur (struct ocpfilehandle_t *_s, int64_t pos)
-{
-	struct mem_ocpfilehandle_t *s = (struct mem_ocpfilehandle_t *)_s;
-
-	if ((s->pos + pos) > (uint64_t)s->filesize) return -1;
-	if ((s->pos + pos) < 0) return -1;
-
-	s->pos += pos;
-	s->error = 0;
-
-	return 0;
-}
-
-/* returns 0 for OK, and -1 on error, should use negative numbers */
-static int mem_filehandle_seek_end (struct ocpfilehandle_t *_s, int64_t pos)
-{
-	struct mem_ocpfilehandle_t *s = (struct mem_ocpfilehandle_t *)_s;
-
-	if (pos > 0) return -1;
-	if (pos == INT64_MIN) return -1; /* we never have files this size */
-	if (pos < -(int64_t)(s->filesize)) return -1;
-
-	s->pos = s->filesize + pos;
-	s->error = 0;
-
-	return 0;
-}
-
 static uint64_t mem_filehandle_getpos (struct ocpfilehandle_t *_s)
 {
 	struct mem_ocpfilehandle_t *s = (struct mem_ocpfilehandle_t *)_s;
@@ -189,8 +160,6 @@ static struct ocpfilehandle_t *mem_filehandle_open_real (struct mem_ocpfile_t *o
 		mem_filehandle_unref,
 		&owner->head,
 		mem_filehandle_seek_set,
-		mem_filehandle_seek_cur,
-		mem_filehandle_seek_end,
 		mem_filehandle_getpos,
 		mem_filehandle_eof,
 		mem_filehandle_error,

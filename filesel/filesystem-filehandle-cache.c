@@ -81,10 +81,6 @@ static void cache_filehandle_unref (struct ocpfilehandle_t *_s);
 
 static int cache_filehandle_seek_set (struct ocpfilehandle_t *_s, int64_t pos);
 
-static int cache_filehandle_seek_cur (struct ocpfilehandle_t *_s, int64_t pos);
-
-static int cache_filehandle_seek_end (struct ocpfilehandle_t *_s, int64_t pos);
-
 static uint64_t cache_filehandle_getpos (struct ocpfilehandle_t *_s);
 
 static int cache_filehandle_eof (struct ocpfilehandle_t *_s);
@@ -109,8 +105,6 @@ struct ocpfilehandle_t *cache_filehandle_open_pre (struct ocpfile_t *owner, char
 		cache_filehandle_unref,
 	        owner,
 		cache_filehandle_seek_set,
-		cache_filehandle_seek_cur,
-		cache_filehandle_seek_end,
 		cache_filehandle_getpos,
 		cache_filehandle_eof,
 		cache_filehandle_error,
@@ -149,8 +143,6 @@ struct ocpfilehandle_t *cache_filehandle_open (struct ocpfilehandle_t *parent)
 		cache_filehandle_unref,
 	        parent->origin,
 		cache_filehandle_seek_set,
-		cache_filehandle_seek_cur,
-		cache_filehandle_seek_end,
 		cache_filehandle_getpos,
 		cache_filehandle_eof,
 		cache_filehandle_error,
@@ -262,60 +254,6 @@ static int cache_filehandle_seek_set (struct ocpfilehandle_t *_s, int64_t pos)
 	if (pos > s->filesize) return -1;
 
 	s->pos = pos;
-	s->error = 0;
-
-	return 0;
-}
-
-static int cache_filehandle_seek_cur (struct ocpfilehandle_t *_s, int64_t pos)
-{
-	struct cache_ocpfilehandle_t *s = (struct cache_ocpfilehandle_t *)_s;
-
-	if (pos < 0)
-	{
-		if (pos == INT64_MIN) return -1; /* we never have files this size */
-		if ((-pos) > s->pos) return -1;
-		s->pos += pos;
-	} else {
-		/* check for overflow */
-		if ((int64_t)(pos + s->pos) < 0) return -1;
-
-		if ((s->filesize_pending) && ((pos + s->pos) > s->filesize))
-		{
-			if (cache_filehandle_filesize_unpend (s))
-			{
-				return -1;
-			}
-		}
-
-		if ((pos + s->pos) > s->filesize) return -1;
-		s->pos += pos;
-	}
-
-	s->error = 0;
-
-	return 0;
-}
-
-static int cache_filehandle_seek_end (struct ocpfilehandle_t *_s, int64_t pos)
-{
-	struct cache_ocpfilehandle_t *s = (struct cache_ocpfilehandle_t *)_s;
-
-	if (pos > 0) return -1;
-
-	if (pos == INT64_MIN) return -1; /* we never have files this size */
-
-	if (s->filesize_pending)
-	{
-		if (cache_filehandle_filesize_unpend (s))
-		{
-			return -1;
-		}
-	}
-
-	if (pos < -(int64_t)(s->filesize)) return -1;
-	s->pos = s->filesize + pos;
-
 	s->error = 0;
 
 	return 0;

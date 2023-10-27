@@ -106,10 +106,6 @@ static void unix_filehandle_unref (struct ocpfilehandle_t *_s);
 
 static int unix_filehandle_seek_set (struct ocpfilehandle_t *_s, int64_t pos);
 
-static int unix_filehandle_seek_cur (struct ocpfilehandle_t *_s, int64_t pos);
-
-static int unix_filehandle_seek_end (struct ocpfilehandle_t *_s, int64_t pos);
-
 static uint64_t unix_filehandle_getpos (struct ocpfilehandle_t *_s);
 
 static int unix_filehandle_eof (struct ocpfilehandle_t *_s);
@@ -433,8 +429,6 @@ static struct ocpfilehandle_t *unix_file_open (struct ocpfile_t *_s)
 		unix_filehandle_unref,
 		_s,
 		unix_filehandle_seek_set,
-		unix_filehandle_seek_cur,
-		unix_filehandle_seek_end,
 		unix_filehandle_getpos,
 		unix_filehandle_eof,
 		unix_filehandle_error,
@@ -493,48 +487,6 @@ static int unix_filehandle_seek_set (struct ocpfilehandle_t *_s, int64_t pos)
 	off_t r;
 
 	r = lseek (s->fd, pos, SEEK_SET);
-	if (r == (off_t) -1)
-	{
-		s->error = 1;
-		s->eof = 1;
-		return -1;
-	} else {
-		s->pos = r;
-	}
-
-	s->error = 0;
-	s->eof = (r >= s->owner->filesize);
-
-	return 0;
-}
-
-static int unix_filehandle_seek_cur (struct ocpfilehandle_t *_s, int64_t pos)
-{
-	struct unix_ocpfilehandle_t *s = (struct unix_ocpfilehandle_t *)_s;
-	off_t r;
-
-	r = lseek (s->fd, pos, SEEK_CUR);
-	if (r == (off_t) -1)
-	{
-		s->error = 1;
-		s->eof = 1;
-		return -1;
-	} else {
-		s->pos = r;
-	}
-
-	s->error = 0;
-	s->eof = (r >= s->owner->filesize);
-
-	return 0;
-}
-
-static int unix_filehandle_seek_end (struct ocpfilehandle_t *_s, int64_t pos)
-{
-	struct unix_ocpfilehandle_t *s = (struct unix_ocpfilehandle_t *)_s;
-	off_t r;
-
-	r = lseek (s->fd, pos, SEEK_END);
 	if (r == (off_t) -1)
 	{
 		s->error = 1;

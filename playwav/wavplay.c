@@ -623,7 +623,7 @@ OCP_INTERNAL uint8_t wpOpenPlayer(struct ocpfilehandle_t *wavf, struct cpifaceSe
 			goto error_out_wavefile;
 		}
 		PRINT("failed, skiping next %d bytes\n", temp);
-		wavefile->seek_cur (wavefile, temp);
+		wavefile->seek_set (wavefile, wavefile->getpos(wavefile) + temp);
 	}
 
 	if (ocpfilehandle_read_uint32_le (wavefile, &fmtlen))
@@ -708,7 +708,7 @@ OCP_INTERNAL uint8_t wpOpenPlayer(struct ocpfilehandle_t *wavf, struct cpifaceSe
 		goto error_out_wavefile;
 	}
 	wave16bit=(sh==16);
-	wavefile->seek_cur (wavefile, fmtlen - 16);
+	wavefile->seek_set (wavefile, wavefile->getpos(wavefile) + fmtlen - 16);
 
 	PRINT("going to locate \"data\" header\n");
 	while (1)
@@ -729,7 +729,7 @@ OCP_INTERNAL uint8_t wpOpenPlayer(struct ocpfilehandle_t *wavf, struct cpifaceSe
 			goto error_out_wavefile;
 		}
 		PRINT("failed, skiping next %d bytes\n", temp);
-		wavefile->seek_cur (wavefile, temp);
+		wavefile->seek_set (wavefile, wavefile->getpos(wavefile) + temp);
 	}
 
 	if (ocpfilehandle_read_uint32_le (wavefile, &wavelen))

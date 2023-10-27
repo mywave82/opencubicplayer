@@ -157,7 +157,7 @@ OCP_INTERNAL int xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, stru
 	head2.freqtab = uint16_little (head2.freqtab);
 	head2.tempo   = uint16_little (head2.tempo);
 	head2.bpm     = uint16_little (head2.bpm);
-	if (file->seek_cur (file, head1.hdrsize - 4 - sizeof(head2)) < 0)
+	if (file->seek_set (file, file->getpos (file) + head1.hdrsize - 4 - sizeof(head2)))
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] seek failed #1\n");
 		FreeResources (&r, head2.ninst);
@@ -235,7 +235,7 @@ OCP_INTERNAL int xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, stru
 		pathead.len     = uint32_little (pathead.len);
 		pathead.rows    = uint16_little (pathead.rows);
 		pathead.patdata = uint16_little (pathead.patdata);
-		if (file->seek_cur (file, pathead.len - sizeof(pathead)))
+		if (file->seek_set (file, file->getpos (file) + pathead.len - sizeof(pathead)))
 		{
 			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] seek failed #2\n");
 			FreeResources (&r, head2.ninst);
@@ -357,7 +357,7 @@ OCP_INTERNAL int xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, stru
 		{
 			if (ins1.size > sizeof(ins1))
 			{
-				if (file->seek_cur (file, ins1.size - sizeof(ins1)) < 0)
+				if (file->seek_set (file, file->getpos (file) + ins1.size - sizeof(ins1)) < 0)
 				{
 					cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] seek failed #3\n");
 					FreeResources (&r, head2.ninst);
@@ -389,7 +389,7 @@ OCP_INTERNAL int xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, stru
 				FreeResources (&r, head2.ninst);
 				return errFormStruc;
 			}
-			if (file->seek_cur (file, ins1.size - sizeof(ins1) - sizeof(ins2)) < 0)
+			if (file->seek_set (file, file->getpos (file) + ins1.size - sizeof(ins1) - sizeof(ins2)) < 0)
 			{
 				cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] seek failed #4 (Failed to seek past extra data in instrument %d/%d)\n", i + 1, m->ninst);
 				FreeResources (&r, head2.ninst);
@@ -596,7 +596,7 @@ bail2:
 			samp.loopstart = uint32_little (samp.loopstart);
 			samp.looplen   = uint32_little (samp.looplen);
 
-			if (file->seek_cur (file, ins2.shsize - sizeof (samp)) < 0)
+			if (file->seek_set (file, file->getpos (file) + ins2.shsize - sizeof (samp)) < 0)
 			{
 				cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] seek failed #5\n");
 				FreeResources (&r, head2.ninst);

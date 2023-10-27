@@ -215,12 +215,13 @@ OCP_INTERNAL int LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 
 	if (!memcmp(sig, "INFO", 4))
 	{
-		file->seek_cur (file, next);
-		if (file->read (file, sig, sizeof (sig)) != sizeof (sig))
+		if (file->seek_set (file, file->getpos(file) + next))
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, seek failed #1\n");
+		} else if (file->read (file, sig, sizeof (sig)) != sizeof (sig))
 		{
 			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #4\n");
-		}
-		if (ocpfilehandle_read_uint32_le (file, &next))
+		} else if (ocpfilehandle_read_uint32_le (file, &next))
 		{
 			next = 0;
 			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #5\n");
@@ -777,7 +778,10 @@ OCP_INTERNAL int LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 			if (file->read (file, ip->name, 31) != 31)
 			{
 				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #21\n");
-				file->seek_cur (file, namelen - 31);
+				if (file->seek_set (file, file->getpos (file) + namelen - 31))
+				{
+					cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, seek failed #2\n");
+				}
 				namelen=31;
 			}
 		} else {
@@ -868,7 +872,7 @@ OCP_INTERNAL int LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 
 		if (sp->handle==0xFFFF)
 		{
-			file->seek_cur (file, len);
+			file->seek_set (file, file->getpos (file) + len);
 			continue;
 		}
 

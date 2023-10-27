@@ -940,13 +940,17 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 					return 0;
 				}
 				fl = t;
-				debug_printf_stream ("[mppplay.c]: length: %d\n", (int)fl);
+				debug_printf_stream ("[mppplay.c]: length: %u\n", (unsigned int)fl);
 				if (!memcmp(sig, "data", 4))
 				{
 					ofs = mpegfile->getpos (mpegfile);
 					break;
 				}
-				mpegfile->seek_cur (mpegfile, fl);
+				if (mpegfile->seek_set (mpegfile, mpegfile->getpos(mpegfile) + fl))
+				{
+					debug_printf_stream ("[mppplay.c]: run out of data searching for DATA\n");
+					return 0;
+				}
 			}
 		} else {
 			fl = mpegfile->filesize (mpegfile);

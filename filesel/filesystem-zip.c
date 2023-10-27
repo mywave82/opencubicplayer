@@ -176,8 +176,6 @@ static int zip_file_filesize_ready (struct ocpfile_t *);
 static void zip_filehandle_ref (struct ocpfilehandle_t *);
 static void zip_filehandle_unref (struct ocpfilehandle_t *);
 static int zip_filehandle_seek_set (struct ocpfilehandle_t *, int64_t pos);
-static int zip_filehandle_seek_cur (struct ocpfilehandle_t *, int64_t pos);
-static int zip_filehandle_seek_end (struct ocpfilehandle_t *, int64_t pos);
 static uint64_t zip_filehandle_getpos (struct ocpfilehandle_t *);
 static int zip_filehandle_eof (struct ocpfilehandle_t *);
 static int zip_filehandle_error (struct ocpfilehandle_t *);
@@ -2146,8 +2144,6 @@ static struct ocpfilehandle_t *zip_file_open (struct ocpfile_t *_self)
 	                       zip_filehandle_unref,
 	                       _self,
 	                       zip_filehandle_seek_set,
-	                       zip_filehandle_seek_cur,
-	                       zip_filehandle_seek_end,
 	                       zip_filehandle_getpos,
 	                       zip_filehandle_eof,
 	                       zip_filehandle_error,
@@ -2253,45 +2249,6 @@ static int zip_filehandle_seek_set (struct ocpfilehandle_t *_self, int64_t pos)
 	if (pos > self->file->uncompressed_filesize) return -1;
 
 	self->filepos = pos;
-	self->error = 0;
-
-	return 0;
-}
-
-static int zip_filehandle_seek_cur (struct ocpfilehandle_t *_self, int64_t pos)
-{
-	struct zip_instance_filehandle_t *self = (struct zip_instance_filehandle_t *)_self;
-
-	if (pos <= 0)
-	{
-		if (pos == INT64_MIN) return -1; /* we never have files this size */
-		if ((-pos) > self->filepos) return -1;
-		self->filepos += pos;
-	} else {
-		/* check for overflow */
-		if ((int64_t)(pos + self->filepos) < 0) return -1;
-
-		if ((pos + self->filepos) > self->file->uncompressed_filesize) return -1;
-		self->filepos += pos;
-	}
-
-	self->error = 0;
-
-	return 0;
-}
-
-static int zip_filehandle_seek_end (struct ocpfilehandle_t *_self, int64_t pos)
-{
-	struct zip_instance_filehandle_t *self = (struct zip_instance_filehandle_t *)_self;
-
-	if (pos > 0) return -1;
-
-	if (pos == INT64_MIN) return -1; /* we never have files this size */
-
-	if (pos < -(int64_t)(self->file->uncompressed_filesize)) return -1;
-
-	self->filepos = self->file->uncompressed_filesize + pos;
-
 	self->error = 0;
 
 	return 0;

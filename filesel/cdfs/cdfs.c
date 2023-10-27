@@ -67,8 +67,6 @@ static struct ocpfilehandle_t *cdfs_audio_open (struct ocpfile_t *);
 static void cdfs_filehandle_ref (struct ocpfilehandle_t *);
 static void cdfs_filehandle_unref (struct ocpfilehandle_t *);
 static int cdfs_filehandle_seek_set (struct ocpfilehandle_t *, int64_t pos);
-static int cdfs_filehandle_seek_cur (struct ocpfilehandle_t *, int64_t pos);
-static int cdfs_filehandle_seek_end (struct ocpfilehandle_t *, int64_t pos);
 static uint64_t cdfs_filehandle_getpos (struct ocpfilehandle_t *);
 static int cdfs_filehandle_eof (struct ocpfilehandle_t *);
 static int cdfs_filehandle_error (struct ocpfilehandle_t *);
@@ -1407,8 +1405,6 @@ static struct ocpfilehandle_t *cdfs_file_open (struct ocpfile_t *_self)
 	                       cdfs_filehandle_unref,
 	                       _self,
 	                       cdfs_filehandle_seek_set,
-	                       cdfs_filehandle_seek_cur,
-	                       cdfs_filehandle_seek_end,
 	                       cdfs_filehandle_getpos,
 	                       cdfs_filehandle_eof,
 	                       cdfs_filehandle_error,
@@ -1441,8 +1437,6 @@ static struct ocpfilehandle_t *cdfs_audio_open (struct ocpfile_t *_self)
 	                       cdfs_filehandle_unref,
 	                       _self,
 	                       cdfs_filehandle_seek_set,
-	                       cdfs_filehandle_seek_cur,
-	                       cdfs_filehandle_seek_end,
 	                       cdfs_filehandle_getpos,
 	                       cdfs_filehandle_eof,
 	                       cdfs_filehandle_error,
@@ -1655,45 +1649,6 @@ static int cdfs_filehandle_seek_set (struct ocpfilehandle_t *_self, int64_t pos)
 	if (pos > self->file->filesize) return -1;
 
 	self->filepos = pos;
-	self->error = 0;
-
-	return 0;
-}
-
-static int cdfs_filehandle_seek_cur (struct ocpfilehandle_t *_self, int64_t pos)
-{
-	struct cdfs_instance_filehandle_t *self = (struct cdfs_instance_filehandle_t *)_self;
-
-	if (pos <= 0)
-	{
-		if (pos == INT64_MIN) return -1; /* we never have files this size */
-		if ((-pos) > self->filepos) return -1;
-		self->filepos += pos;
-	} else {
-		/* check for overflow */
-		if ((int64_t)(pos + self->filepos) < 0) return -1;
-
-		if ((pos + self->filepos) > self->file->filesize) return -1;
-		self->filepos += pos;
-	}
-
-	self->error = 0;
-
-	return 0;
-}
-
-static int cdfs_filehandle_seek_end (struct ocpfilehandle_t *_self, int64_t pos)
-{
-	struct cdfs_instance_filehandle_t *self = (struct cdfs_instance_filehandle_t *)_self;
-
-	if (pos > 0) return -1;
-
-	if (pos == INT64_MIN) return -1; /* we never have files this size */
-
-	if (pos < -(int64_t)(self->file->filesize)) return -1;
-
-	self->filepos = self->file->filesize + pos;
-
 	self->error = 0;
 
 	return 0;

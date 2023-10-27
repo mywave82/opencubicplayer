@@ -405,7 +405,7 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 					if (sig == 0x54544150)
 					{
 						m->channels = 0;
-						if (fp->seek_cur (fp, 1024) == 0)
+						if (!fp->seek_set (fp, fp->getpos(fp) + 1024))
 						{
 							uint8_t t;
 							if (fp->read (fp, &t, 1) == 1)
@@ -415,7 +415,7 @@ static int gmdReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 						}
 						break;
 					}
-					if (fp->seek_cur (fp, len) < 0)
+					if (fp->seek_set (fp, fp->getpos(fp) + len) < 0)
 					{
 						break;
 					}

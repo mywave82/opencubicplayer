@@ -65,7 +65,7 @@ static int RIFF_INFO (struct ocpfilehandle_t *fp, uint32_t len, char *dst, int d
 	dst[toread] = 0;
 	if (toskip)
 	{
-		if (fp->seek_cur (fp, toskip))
+		if (fp->seek_set (fp, fp->getpos (fp) + toskip))
 		{
 			return -1;
 		}
@@ -173,7 +173,7 @@ static int wavReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 					}
 					break;
 				default:
-					if (fp->seek_cur (fp, CHUNKlen))
+					if (fp->seek_set (fp, fp->getpos(fp) + CHUNKlen))
 					{
 						goto out;
 					}

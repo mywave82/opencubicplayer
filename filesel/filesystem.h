@@ -170,8 +170,6 @@ struct ocpfilehandle_t
 	struct ocpfile_t *origin;
 
 	int (*seek_set)(struct ocpfilehandle_t *, int64_t pos); /* returns 0 for OK, and -1 on error, should use positive numbers */
-	int (*seek_cur)(struct ocpfilehandle_t *, int64_t pos); /* returns 0 for OK, and -1 on error */
-	int (*seek_end)(struct ocpfilehandle_t *, int64_t pos); /* returns 0 for OK, and -1 on error, should use negative numbers */
 	uint64_t (*getpos)(struct ocpfilehandle_t *);
 
 	int (*eof)(struct ocpfilehandle_t *);   /* 0 = more data, 1 = EOF, -1 = error - probably tried to read beyond EOF */
@@ -198,8 +196,6 @@ static inline void ocpfilehandle_t_fill (
 	void (*unref)(struct ocpfilehandle_t *),
 	struct ocpfile_t *origin,
 	int (*seek_set)(struct ocpfilehandle_t *, int64_t pos),
-	int (*seek_cur)(struct ocpfilehandle_t *, int64_t pos),
-	int (*seek_end)(struct ocpfilehandle_t *, int64_t pos),
 	uint64_t (*getpos)(struct ocpfilehandle_t *),
 	int (*eof)(struct ocpfilehandle_t *),
 	int (*error)(struct ocpfilehandle_t *),
@@ -214,8 +210,6 @@ static inline void ocpfilehandle_t_fill (
 	s->unref             = unref;
 	s->origin            = origin;
 	s->seek_set          = seek_set;
-	s->seek_cur          = seek_cur;
-	s->seek_end          = seek_end;
 	s->getpos            = getpos;
 	s->eof               = eof;
 	s->error             = error;

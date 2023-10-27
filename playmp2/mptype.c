@@ -270,14 +270,14 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 			break;
 	}
 
-	f->seek_end (f, 0);
+	f->seek_set (f, f->filesize(f));
 	m->title[0] = 0;
 	while (1)
 	{
 		/* test for ID3v1.0/ID3v1.1 and ID3v1.2 */
 		{
 			uint8_t id3v1[256];
-			f->seek_cur (f, -256);
+			f->seek_set (f, f->getpos(f) - 256);
 			if (f->read (f, id3v1, 256) != 256)
 			{
 				f->seek_set (f, 0);
@@ -288,10 +288,10 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 				m->modtype.integer.i=MODULETYPE("MPx");
 				if ((id3v1[0]=='E')&&(id3v1[1]=='X')&&(id3v1[2]=='T'))
 				{
-					f->seek_cur (f, -256);
+					f->seek_set (f, f->getpos(f) - 256);
 					parseid3v12(m, id3v1);
 				} else {
-					f->seek_cur (f, -128);
+					f->seek_set (f, f->getpos(f) - 128);
 					parseid3v1(m, id3v1+128);
 				}
 				/*gottag++;*/
@@ -301,7 +301,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 		/* test for ID3v2.x */
 		{
 			uint8_t id3v2header[10];
-			f->seek_cur (f, -10);
+			f->seek_set (f, f->getpos(f) - 10);
 			if (f->read (f, id3v2header, 10) != 10)
 			{
 				f->seek_set (f, 0);
@@ -315,7 +315,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 
 				m->modtype.integer.i=MODULETYPE("MPx");
 
-				f->seek_cur (f, -(size+20));
+				f->seek_set (f, f->getpos(f) - (size+20));
 
 				id3v2data = malloc(size+10);
 				if (f->read (f, id3v2data, size+10) == (size + 10))
@@ -333,7 +333,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 			/* search for ID3v2.x */
 			{
 				uint8_t *buffer = calloc(65536+4096, 1); /* 4k for for miss-designed tag paddings */
-				f->seek_cur (f, -65536);
+				f->seek_set (f, f->getpos(f) - 65536);
 				if (f->read (f, buffer, 65536) == 65536)
 				{
 					uint8_t *curr = buffer;

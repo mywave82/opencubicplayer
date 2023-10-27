@@ -407,13 +407,13 @@ static int seek_func (void *token, ogg_int64_t offset, int whence)
 			}
 			break;
 		case SEEK_END:
-			if (oggfile->seek_end (oggfile, offset) < 0)
+			if (oggfile->seek_set (oggfile, oggfile->filesize(oggfile) + offset) < 0)
 			{
 				return -1;
 			}
 			break;
 		case SEEK_CUR:
-			if (oggfile->seek_cur (oggfile, offset) < 0)
+			if (oggfile->seek_set (oggfile, oggfile->getpos(oggfile) + offset) < 0)
 			{
 				return -1;
 			}

@@ -275,52 +275,6 @@ static int windows_filehandle_seek_set (struct ocpfilehandle_t *_s, int64_t pos)
 	return 0;
 }
 
-static int windows_filehandle_seek_cur (struct ocpfilehandle_t *_s, int64_t pos)
-{
-	struct windows_ocpfilehandle_t *s = (struct windows_ocpfilehandle_t *)_s;
-	LARGE_INTEGER request, reply;
-
-	request.QuadPart = pos;
-	reply.QuadPart = 0;
-
-	if (!SetFilePointerEx (s->fd, request, &reply, 1 /* FILE_CURRENT */))
-	{
-		s->error = 1;
-		s->eof = 1;
-		return -1;
-	} else {
-		s->pos = reply.QuadPart;
-	}
-
-	s->error = 0;
-	s->eof = (reply.QuadPart >= s->owner->filesize);
-
-	return 0;
-}
-
-static int windows_filehandle_seek_end (struct ocpfilehandle_t *_s, int64_t pos)
-{
-	struct windows_ocpfilehandle_t *s = (struct windows_ocpfilehandle_t *)_s;
-	LARGE_INTEGER request, reply;
-
-	request.QuadPart = pos;
-	reply.QuadPart = 0;
-
-	if (!SetFilePointerEx (s->fd, request, &reply, 2 /* FILE_END */))
-	{
-		s->error = 1;
-		s->eof = 1;
-		return -1;
-	} else {
-		s->pos = reply.QuadPart;
-	}
-
-	s->error = 0;
-	s->eof = (reply.QuadPart >= s->owner->filesize);
-
-	return 0;
-}
-
 static uint64_t windows_filehandle_getpos (struct ocpfilehandle_t *_s)
 {
 	struct windows_ocpfilehandle_t *s = (struct windows_ocpfilehandle_t *)_s;
@@ -447,8 +401,6 @@ static struct ocpfilehandle_t *windows_file_open (struct ocpfile_t *_s)
 		windows_filehandle_unref,
 		_s,
 		windows_filehandle_seek_set,
-		windows_filehandle_seek_cur,
-		windows_filehandle_seek_end,
 		windows_filehandle_getpos,
 		windows_filehandle_eof,
 		windows_filehandle_error,

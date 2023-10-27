@@ -384,6 +384,7 @@ OCP_INTERNAL int it_load (struct cpifaceSessionAPI_t *cpifaceSession, struct it_
 	for (k=0; k<hdr.npats; k++)
 	{
 		uint16_t patlen, patrows;
+		uint32_t ignore;
 		uint8_t *patbuf;
 		uint8_t lastmask[64]={0}; /* init values */
 		uint8_t lastnote[64]={0}; /* init values */
@@ -407,18 +408,13 @@ OCP_INTERNAL int it_load (struct cpifaceSessionAPI_t *cpifaceSession, struct it_
 		}
 		file->seek_set (file, patoff[k]);
 
-		if (ocpfilehandle_read_uint16_le (file, &patlen))
+		if (ocpfilehandle_read_uint16_le (file, &patlen) ||
+		    ocpfilehandle_read_uint16_le (file, &patrows) ||
+		    ocpfilehandle_read_uint32_le (file, &ignore))
 		{
-			cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #10\n");
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #9,#10 or #11\n");
 			return errFileRead;
 		}
-		if (ocpfilehandle_read_uint16_le (file, &patrows))
-		{
-			cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #11\n");
-			return errFileRead;
-		}
-
-		file->seek_cur (file, 4);
 
 		if (!(patbuf=malloc(sizeof(uint8_t)*patlen)))
 		{

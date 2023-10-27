@@ -371,7 +371,12 @@ static int loadmod (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *
 #endif
 	if (sig)
 	{
-		file->seek_cur (file, 4);
+		uint32_t ignore;
+		if (file->read (file, &ignore, 4) != 4)
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] error: read() signature failed\n");
+			return errFileRead;
+		}
 	}
 
 	m->orders=malloc(sizeof(uint16_t)*m->nord);

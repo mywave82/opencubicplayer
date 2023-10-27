@@ -784,7 +784,7 @@ static int _mpLoadAMS_v2 (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 	DEBUG_PRINTF ("[GMD/AMS v2] description.length(packed)=0x%04"PRIx32"\n", packlen);
 #warning Implement description... same format as v1 files after decompression?
 
-	file->seek_cur (file, packlen - 4); /* we currently ignore description */
+	file->seek_set (file, file->getpos (file) + packlen - 4); /* we currently ignore description */
 
 	if (file->read (file, ordlist, 2 * hdr.pos) != 2 * hdr.pos)
 	{

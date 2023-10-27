@@ -178,8 +178,6 @@ static struct ocpfilehandle_t *dev_file_open (struct ocpfile_t *_owner)
 		dev_filehandle_unref,
 		_owner,
 		dev_filehandle_seek,
-		dev_filehandle_seek,
-		dev_filehandle_seek,
 		dev_filehandle_getpos,
 		dev_filehandle_eof,
 		dev_filehandle_error,

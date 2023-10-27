@@ -280,7 +280,7 @@ overflowa:
 			if (p1 < packlenb)
 			{
 				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/AMS] warning, instrument %d/%d sample %d/%d, compressed data left, rewinding buffer (%"PRId32" vs %"PRId32")\n", i + 1, m->instnum, j + 1, instsampnum[i], p1, packlenb);
-				file->seek_cur (file, (int64_t)p1 - (int64_t) packlenb);
+				file->seek_set (file, file->getpos(file) + (int64_t)p1 - (int64_t) packlenb);
 			}
 			memset (packb, 0, packlena);
 

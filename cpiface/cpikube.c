@@ -120,6 +120,7 @@ static int plCloseWuerfel(void)
 static char plLoadWuerfel(void)
 {
 	uint8_t sig[8];
+	uint8_t ignore[32];
 	uint16_t opt, pallen, codelenslen;
 	int i;
 	uint16_t maxframe;
@@ -150,7 +151,7 @@ static char plLoadWuerfel(void)
 
 	if (wuerfelfile->read (wuerfelfile, sig, 8) != 8)
 	{
-		fprintf (stderr, __FILE__ ": Failed to read #1: %s\n", fname);
+		fprintf (stderr, __FILE__ ": Failed to read #1.1: %s\n", fname);
 		plCloseWuerfel();
 		return 0;
 	}
@@ -160,9 +161,9 @@ static char plLoadWuerfel(void)
 		plCloseWuerfel();
 		return 0;
 	}
-	if (wuerfelfile->seek_cur (wuerfelfile, 32))
+	if (wuerfelfile->read (wuerfelfile, ignore, 32) != 32)
 	{
-		fprintf (stderr, __FILE__ ": Failed to seek #1: %s\n", fname);
+		fprintf (stderr, __FILE__ ": Failed to read #1.2: %s\n", fname);
 		plCloseWuerfel();
 		return 0;
 	}
@@ -183,7 +184,7 @@ static char plLoadWuerfel(void)
 
 	if (ocpfilehandle_read_uint16_le (wuerfelfile, &opt))
 	{
-		fprintf (stderr, __FILE__ ": Failed to read #4: %s\n", fname);
+		fprintf (stderr, __FILE__ ": Failed to read #4.1: %s\n", fname);
 		plCloseWuerfel();
 		return 0;
 	}
@@ -206,10 +207,9 @@ static char plLoadWuerfel(void)
 		plCloseWuerfel();
 		return 0;
 	}
-
-	if (wuerfelfile->seek_cur (wuerfelfile, 2))
+	if (wuerfelfile->read (wuerfelfile, ignore, 2) != 2)
 	{
-		fprintf (stderr, __FILE__ ": Failed to seek #2: %s\n", fname);
+		fprintf (stderr, __FILE__ ": Failed to seek #4.2: %s\n", fname);
 		plCloseWuerfel();
 		return 0;
 	}
@@ -254,7 +254,7 @@ static char plLoadWuerfel(void)
 			return 0;
 		}
 	} else {
-		if (wuerfelfile->seek_cur (wuerfelfile, codelenslen))
+		if (wuerfelfile->seek_set (wuerfelfile, wuerfelfile->getpos(wuerfelfile) + codelenslen))
 		{
 			fprintf (stderr, __FILE__ ": Failed to seek #3: %s\n", fname);
 			plCloseWuerfel();

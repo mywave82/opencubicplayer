@@ -322,7 +322,7 @@ static int _mpLoadAMS_v1 (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		return errFormOldVer;
 	}
 
-	file->seek_cur (file, hdr.extra);
+	file->seek_set (file, file->getpos(file) + hdr.extra);
 
 	if ((!hdr.patterns) || (!hdr.orders))
 	{

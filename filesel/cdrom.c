@@ -1074,8 +1074,6 @@ static struct ocpfilehandle_t *cdrom_track_open (struct ocpfile_t *_self)
 	                      ocpfilehandle_cdrom_track_unref,
 	                      &self->head,
 	                      ocpfilehandle_cdrom_track_seek,
-	                      ocpfilehandle_cdrom_track_seek,
-	                      ocpfilehandle_cdrom_track_seek,
 	                      ocpfilehandle_cdrom_track_getpos,
 	                      ocpfilehandle_cdrom_track_eof,
 	                      ocpfilehandle_cdrom_track_error,

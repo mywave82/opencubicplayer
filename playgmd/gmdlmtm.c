@@ -545,7 +545,10 @@ OCP_INTERNAL int LoadMTM (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		}
 		m->message[header.comlen]=0;
 	} else {
-		file->seek_cur (file, header.comlen);
+		if (file->seek_set (file, file->getpos (file) + header.comlen))
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/MTM] warning, seek failed #1\n");
+		}
 	}
 
 	for (i=0; i<m->instnum; i++)
