@@ -1081,7 +1081,6 @@ OCP_INTERNAL struct cdfs_disc_t *cue_parser_to_cdfs_disc (struct ocpfile_t *pare
 
 			for (; copytrackcounter <= cue_parser->track; copytrackcounter++)
 			{
-				fprintf (stderr, "track %d(%d) %d\n", copytrackcounter, cue_parser->track_data[copytrackcounter].track_mode);
 				if (cue_parser->track_data[copytrackcounter].datasource > i) break;
 
 				if (cue_parser->track_data[copytrackcounter].track_mode == AUDIO)
