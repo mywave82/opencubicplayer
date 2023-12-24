@@ -766,7 +766,8 @@ OCP_INTERNAL struct cdfs_disc_t *cdfs_disc_new (struct ocpfile_t *file)
 	                file->dirdb_ref,
 	                0, /* refcount */
 	                1, /* is_archive */
-	                0  /* is_playlist */);
+	                0, /* is_playlist */
+	                file->compression);
 
 	file->parent->ref (file->parent);
 	disc->dirs[0]->owner = disc;
@@ -910,7 +911,8 @@ CDFS_Directory_add (struct cdfs_disc_t *self, const uint32_t dir_parent_handle, 
 	                dirdb_ref,
 	                0, /* refcount */
 	                1, /* is_archive */
-	                0  /* is_playlist */);
+	                0, /* is_playlist */
+	                self->dirs[0]->head.compression);
 
 	self->dirs[self->dir_fill]->owner = self;
 	self->dirs[self->dir_fill]->dir_parent = dir_parent_handle;
@@ -976,7 +978,8 @@ CDFS_File_add (struct cdfs_disc_t *self,
 	                 0, /* filename_override */
 	                 dirdb_ref,
 	                 0, /* refcount */
-	                 0  /* is_nodetect */);
+	                 0, /* is_nodetect */
+	                 COMPRESSION_ADD_STORE(self->dirs[0]->head.compression));
 
 	self->files[self->file_fill]->owner      = self;
 	self->files[self->file_fill]->dir_parent = dir_parent_handle;
@@ -1112,7 +1115,8 @@ CDFS_File_add_audio (struct cdfs_disc_t *self, const uint32_t dir_parent_handle,
 	                 cdfs_file_filename_override,
 	                 dirdb_ref,
 	                 0, /* refcount */
-	                 0  /* is_nodetect */);
+	                 0, /* is_nodetect */
+	                 COMPRESSION_ADD_STORE(self->dirs[0]->head.compression));
 
 	self->files[self->file_fill]->owner      = self;
 	self->files[self->file_fill]->dir_parent = dir_parent_handle;

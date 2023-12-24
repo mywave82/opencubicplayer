@@ -278,7 +278,8 @@ struct ocpfile_t *dev_file_create
 		0, /* filename_override */
 		dirdb_ref, /* we already own this reference */
 		1, /* refcount */
-		1  /* is_nodetect */
+		1, /* is_nodetect */
+	        COMPRESSION_NONE
 	);
 
 	parent->ref (parent);

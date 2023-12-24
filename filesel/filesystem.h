@@ -12,6 +12,43 @@ typedef void *ocpdirhandle_pt;
 #define FILESIZE_STREAM  UINT64_C(0xffffffffffffffff) /* STREAM - so we recommend to open and analyze the file asap */
 #define FILESIZE_ERROR   UINT64_C(0xfffffffffffffffe)
 
+#define COMPRESSION_NONE   0 /* available directly on the file-system */
+#define COMPRESSION_STORE  1 /* .tar, .zip(STORE)                     */
+#define COMPRESSION_STREAM 2 /* .gz .bzip2 .zip                       */
+#define COMPRESSION_SOLID  3 /* solid .tar.gz .tar.bz2                */
+#define COMPRESSION_SOLID1 4 /* .gz.tar.gz ....                       */
+#define COMPRESSION_SOLID2 5 /* ... */
+#define COMPRESSION_SOLID3 6 /* ... */
+#define COMPRESSION_SOLID4 7 /* ... */
+
+static inline uint8_t COMPRESSION_ADD_STORE (uint8_t parent)
+{
+	uint8_t retval = (parent >= COMPRESSION_STREAM) ? parent+1 : parent | 1;
+	if (retval > COMPRESSION_SOLID4)
+	{
+		retval = COMPRESSION_SOLID4;
+	}
+	return retval;
+}
+static inline uint8_t COMPRESSION_ADD_STREAM (uint8_t parent)
+{
+	uint8_t retval =  parent + 2;
+	if (retval > COMPRESSION_SOLID4)
+	{
+		retval = COMPRESSION_SOLID4;
+	}
+	return retval;
+}
+static inline uint8_t COMPRESSION_ADD_SOLID (uint8_t parent)
+{
+	uint8_t retval =  parent + 3;
+	if (retval > COMPRESSION_SOLID4)
+	{
+		retval = COMPRESSION_SOLID4;
+	}
+	return retval;
+}
+
 struct ocpdir_charset_override_API_t
 {
 	void (*get_default_string)(struct ocpdir_t *self, const char **label, const char **charset);
@@ -43,6 +80,7 @@ struct ocpdir_t /* can be an archive */
 	int refcount; /* internal use by all object variants */
 	uint8_t is_archive;
 	uint8_t is_playlist;
+	uint8_t compression;
 };
 
 struct ocpdir_t  *ocpdir_t_fill_default_readdir_dir  (struct ocpdir_t *, uint32_t dirdb_ref);
@@ -65,7 +103,8 @@ static inline void ocpdir_t_fill (
 	int dirdb_ref,
 	int refcount,
 	uint8_t is_archive,
-	uint8_t is_playlist)
+	uint8_t is_playlist,
+	uint8_t compression)
 {
 	s->ref                  = ref;
 	s->unref                = unref;
@@ -81,6 +120,7 @@ static inline void ocpdir_t_fill (
 	s->refcount             = refcount;
 	s->is_archive           = is_archive;
 	s->is_playlist          = is_playlist;
+	s->compression          = compression;
 }
 
 #ifdef _DIRDB_H
@@ -133,6 +173,7 @@ struct ocpfile_t /* can be virtual */
 	int dirdb_ref;
 	int refcount; /* internal use by all object variants */
 	uint8_t is_nodetect; /* do not use mdbReadInfo on this file please */
+	uint8_t compression;
 };
 
 const char *ocpfile_t_fill_default_filename_override (struct ocpfile_t *);
@@ -148,7 +189,8 @@ static inline void ocpfile_t_fill (
 	const char *(*filename_override) (struct ocpfile_t *),
 	int dirdb_ref,
 	int refcount,
-	uint8_t is_nodetect)
+	uint8_t is_nodetect,
+	uint8_t compression)
 {
 	s->ref            = ref;
 	s->unref          = unref;
@@ -160,6 +202,7 @@ static inline void ocpfile_t_fill (
 	s->dirdb_ref      = dirdb_ref;
 	s->refcount       = refcount;
 	s->is_nodetect    = is_nodetect;
+	s->compression    = compression;
 }
 
 struct ocpfilehandle_t

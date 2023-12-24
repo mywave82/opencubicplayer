@@ -304,7 +304,8 @@ static int cdint (const struct configAPI_t *configAPI)
 		dirdbFindAndRef (DIRDB_NOPARENT, "cdrom:", dirdb_use_dir),
 		0, /* we ignore refcounting */
 		0, /* not an archive */
-		0  /* not a playlist */);
+		0, /* not a playlist */
+		COMPRESSION_NONE);
 
 	dmCDROM=RegisterDrive("cdrom:", &cdrom_root, &cdrom_root);
 
@@ -464,7 +465,8 @@ static int cdrom_root_readdir_iterate (ocpdirhandle_pt _dh)
 		dirdbFindAndRef (dh->owner->dirdb_ref, cdroms[dh->n].vdev, dirdb_use_dir),
 		1,
 		0, /* not an archive */
-		0  /* not a playlist */);
+		0, /* not a playlist */
+		COMPRESSION_NONE);
 
 	dir->cdrom = cdroms + dh->n;
 	dh->owner->ref (dh->owner);
@@ -529,7 +531,8 @@ static struct ocpdir_t *cdrom_root_readdir_dir (struct ocpdir_t *_self, uint32_t
 			dirdbRef (dirdb_ref, dirdb_use_dir),
 			1,
 			0, /* not an archive */
-			0  /* not a playlist */);
+			0, /* not a playlist */
+		        COMPRESSION_NONE);
 
 		return &dir->head;
 	}
@@ -790,7 +793,8 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 			                 cdrom_track_filename_override_disc,
 			                 dirdbFindAndRef (dh->owner->head.dirdb_ref, filename, dirdb_use_file),
 			                 1, /* refcount */
-			                 1  /* is_nodetect */);
+			                 1  /* is_nodetect */,
+			                 COMPRESSION_NONE);
 
 			dh->owner->head.ref (&dh->owner->head);
 			file->cdrom = dh->owner->cdrom;
@@ -864,7 +868,8 @@ static int cdrom_drive_readdir_iterate (ocpdirhandle_pt _dh)
 		                 cdrom_track_filename_override_track,
 		                 dirdbFindAndRef (dh->owner->head.dirdb_ref, filename, dirdb_use_file),
 		                 1, /* refcount */
-		                 1  /* is_nodetect */);
+		                 1, /* is_nodetect */
+		                 COMPRESSION_NONE);
 
 		dh->owner->head.ref (&dh->owner->head);
 		file->cdrom = dh->owner->cdrom;

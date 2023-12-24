@@ -837,7 +837,8 @@ static struct ocpdir_t *gzip_check_steal (struct ocpfile_t *s, const uint32_t di
 	                s->dirdb_ref,
 	                1, /* refcount */
 	                1, /* is_archive */
-	                0  /* is_playlist */);
+	                0, /* is_playlist */
+	                s->compression);
 
 	s->parent->ref (s->parent);
 	dirdbRef (s->dirdb_ref, dirdb_use_dir);
@@ -852,7 +853,8 @@ static struct ocpdir_t *gzip_check_steal (struct ocpfile_t *s, const uint32_t di
 	                 0, /* filename_override */
 	                 dirdb_ref,
 	                 1, /* refcount */
-	                 0  /* is_nodetect */);
+	                 0, /* is_nodetect */
+	                 COMPRESSION_ADD_STREAM(s->compression));
 
 	retval->child.filesize_pending = 1;
 	retval->child.uncompressed_filesize = 0;

@@ -181,7 +181,8 @@ struct ocpdir_mem_t *ocpdir_mem_alloc (struct ocpdir_t *parent, const char *name
 		dirdbFindAndRef (parent?parent->dirdb_ref:DIRDB_NOPARENT, name, dirdb_use_dir),
 		1, /* refcount */
 		0, /* is_archive */
-		0  /* is_playlist */);
+		0, /* is_playlist */
+	        COMPRESSION_NONE);
 
 	if (parent)
 	{

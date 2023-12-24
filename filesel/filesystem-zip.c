@@ -589,7 +589,8 @@ static uint32_t zip_instance_add_create_dir (struct zip_instance_t *self,
 	                dirdb_ref,
 	                0, /* refcount */
 	                1, /* is_archive */
-	                0  /* is_playlist */);
+	                0, /* is_playlist */
+	                self->archive_file->compression);
 
 	self->dirs[self->dir_fill]->owner = self;
 	self->dirs[self->dir_fill]->dir_parent = dir_parent;
@@ -662,7 +663,10 @@ static uint32_t zip_instance_add_file (struct zip_instance_t *self,
 	                 0, /* filename_override */
 	                 dirdb_ref,
 	                 0, /* refcount */
-	                 0  /* is_nodetect */);
+	                 0, /* is_nodetect */
+	                 (CompressedSize == UncompressedSize) ?
+	                     COMPRESSION_ADD_STORE  (self->archive_file->compression) :
+	                     COMPRESSION_ADD_STREAM (self->archive_file->compression) );
 
 	self->files[self->file_fill].owner      = self;
 	self->files[self->file_fill].head.refcount   = 0;
@@ -1083,7 +1087,8 @@ static struct ocpdir_t *zip_check (const struct ocpdirdecompressor_t *self, stru
 	                dirdbRef (file->dirdb_ref, dirdb_use_dir),
 	                0, /* refcount */
 	                1, /* is_archive */
-	                0  /* is_playlist */);
+	                0  /* is_playlist */,
+			file->compression);
 
 	file->parent->ref (file->parent);
 	iter->dirs[0]->owner = iter;

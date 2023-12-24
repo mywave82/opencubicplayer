@@ -371,7 +371,8 @@ static uint32_t tar_instance_add_create_dir (struct tar_instance_t *self,
 	                dirdb_ref,
 	                0, /* refcount */
 	                1, /* is_archive */
-	                0  /* is_playlist */);
+	                0, /* is_playlist */
+	                self->archive_file->compression);
 
 	self->dirs[self->dir_fill]->owner = self;
 	self->dirs[self->dir_fill]->dir_parent = dir_parent;
@@ -402,7 +403,7 @@ static uint32_t tar_instance_add_file (struct tar_instance_t *self,
 	uint32_t *prev, iter;
 	uint32_t dirdb_ref;
 
-	DEBUG_PRINT ("[TAR] add_file: %s %s\n", Filepath, Filename);
+	DEBUG_PRINT ("[TAR] add_file: %s %s (offset=%llu size=%llu)\n", Filepath, Filename, (long long unsigned)fileoffset, (long long unsigned)filesize);
 
 	if (self->file_fill == self->file_size)
 	{
@@ -444,7 +445,8 @@ static uint32_t tar_instance_add_file (struct tar_instance_t *self,
 	                 0, /* filename_override */
 	                 dirdb_ref,
 	                 0, /* refcount */
-	                 0  /* is_nodetect */);
+	                 0, /* is_nodetect */
+	                 COMPRESSION_ADD_STORE (self->archive_file->compression));
 
 	self->files[self->file_fill]->owner      = self;
 	self->files[self->file_fill]->dir_parent = dir_parent;
@@ -570,7 +572,8 @@ struct ocpdir_t *tar_check (const struct ocpdirdecompressor_t *self, struct ocpf
 	                file->dirdb_ref,
 	                0, /* refcount */
 	                1, /* is_archive */
-	                0  /* is_playlist */);
+	                0, /* is_playlist */
+	                file->compression);
 
 	file->parent->ref (file->parent);
 	iter->dirs[0]->owner = iter;
@@ -1054,6 +1057,7 @@ static int tar_filehandle_read (struct ocpfilehandle_t *_self, void *dst, int le
 		self->error = 1;
 		return 0;
 	}
+	DEBUG_PRINT ("TAR seek_set %llu\n", (long long unsigned)(self->file->fileoffset + self->filepos));
 	if (filehandle->seek_set (filehandle, self->file->fileoffset + self->filepos) < 0)
 	{
 		self->error = 1;

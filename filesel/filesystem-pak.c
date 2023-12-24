@@ -374,7 +374,8 @@ static uint32_t pak_instance_add_create_dir (struct pak_instance_t *self,
 	                dirdb_ref,
 	                0, /* refcount */
 	                1, /* is_archive */
-	                0  /* is_playlist */);
+	                0, /* is_playlist */
+	                self->archive_file->compression);
 
 	self->dirs[self->dir_fill]->owner = self;
 	self->dirs[self->dir_fill]->dir_parent = dir_parent;
@@ -451,7 +452,8 @@ static uint32_t pak_instance_add_file (struct pak_instance_t *self,
 	                 0, /* filename_override */
 	                 dirdb_ref,
 	                 0, /* refcount */
-	                 0  /* is_nodetect */);
+	                 0, /* is_nodetect */
+	                 COMPRESSION_ADD_STORE (self->archive_file->compression));
 
 	self->files[self->file_fill]->owner      = self;
 	self->files[self->file_fill]->dir_parent = dir_parent;
@@ -580,7 +582,8 @@ struct ocpdir_t *pak_check (const struct ocpdirdecompressor_t *self, struct ocpf
 	                file->dirdb_ref,
 	                0, /* refcount */
 	                1, /* is_archive */
-	                0  /* is_playlist */);
+	                0, /* is_playlist */
+	                file->compression);
 
 	file->parent->ref (file->parent);
 	iter->dirs[0]->owner = iter;

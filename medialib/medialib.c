@@ -256,7 +256,8 @@ static int mlint (const struct configAPI_t *configAPI)
 	                dirdbFindAndRef (r->dirdb_ref, "listall", dirdb_use_dir),
 	                0,
 	                0,
-	                0);
+	                0,
+	                COMPRESSION_NONE);
 	ocpdir_mem_add_dir (medialib_root, &listall);
 
 	ocpdir_t_fill (&search,
@@ -273,7 +274,8 @@ static int mlint (const struct configAPI_t *configAPI)
 	                dirdbFindAndRef (r->dirdb_ref, "search", dirdb_use_dir),
 	                0,
 	                0,
-	                0);
+	                0,
+	                COMPRESSION_NONE);
 	ocpdir_mem_add_dir (medialib_root, &search);
 
 	return errOk;

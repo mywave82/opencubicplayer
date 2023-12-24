@@ -244,7 +244,8 @@ struct ocpfile_t *mem_file_open (struct ocpdir_t *parent, int dirdb_ref, char *p
 		0, /* filename_override */
 		dirdbRef (dirdb_ref, dirdb_use_file),
 		1, /* refcount */
-		0  /* is_nodetect */
+		0, /* is_nodetect */
+		COMPRESSION_NONE
 	);
 
 	parent->ref (parent);

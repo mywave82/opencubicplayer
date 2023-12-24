@@ -530,7 +530,8 @@ static struct ocpfile_t *windows_file_steal (struct ocpdir_t *parent, const uint
 		0, /* filename_override */
 		dirdb_node,
 		1, /* refcount */
-	        0  /* is_nodetect */
+	        0, /* is_nodetect */
+		COMPRESSION_NONE
 	);
 
 	parent->ref (parent);
@@ -566,7 +567,8 @@ static struct ocpdir_t *windows_dir_steal (struct ocpdir_t *parent, const uint32
 	               dirdb_node,
 	               1, /* refcount */
 	               0, /* is_archive */
-	               0  /* is_playlist */);
+	               0, /* is_playlist */
+	               COMPRESSION_NONE);
 
 	if (parent)
 	{

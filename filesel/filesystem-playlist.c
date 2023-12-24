@@ -277,7 +277,8 @@ struct playlist_instance_t *playlist_instance_allocate (struct ocpdir_t *parent,
 			dirdbRef (dirdb_ref, dirdb_use_dir),
 	                1, /* refcount */
 	                0, /* is_arhive */
-	                1 /* playlist */);
+	                1, /* playlist */
+	                parent->compression);
 
 	if (parent)
 	{

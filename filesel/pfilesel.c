@@ -284,7 +284,7 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 	if (ismod ||   // always include if file is an actual module
 	    (fsShowAllFiles && (!(token->opt & RD_ISMODONLY)))) // force include if  fsShowAllFiles  is true, except if RD_ISMODONLY
 	{
-		modlist_append_file (token->ml, file, ismod); /* modlist_append() will do refcount on the file */
+		modlist_append_file (token->ml, file, ismod, file->compression >= COMPRESSION_SOLID); /* modlist_append() will do refcount on the file */
 	}
 out:
 	free (curext);
@@ -508,7 +508,7 @@ static void addfiles_file (void *token, struct ocpfile_t *file)
 	}
 	if (fsIsModule(curext))
 	{
-		modlist_append_file (playlist, file, 1); /* modlist_append calls file->ref (file); for us */
+		modlist_append_file (playlist, file, 1, 0); /* modlist_append calls file->ref (file); for us */
 	}
 	free (curext);
 }
