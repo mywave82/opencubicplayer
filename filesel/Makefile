@@ -218,12 +218,8 @@ filesystem-filehandle-cache-test$(EXE_SUFFIX): filesystem-filehandle-cache-test.
 	../config.h \
 	../types.h \
 	dirdb.h \
-	filesystem.h \
-	filesystem-dir-mem.h \
-	filesystem-file-mem.h \
-	filesystem-dir-mem.o \
-	filesystem-file-mem.o
-	$(CC) $< filesystem-file-mem.o filesystem-dir-mem.o -o $@
+	filesystem.h
+	$(CC) $< -o $@
 
 filesystem-pak.o: filesystem-pak.c \
 	../config.h \

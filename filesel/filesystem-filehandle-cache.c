@@ -19,10 +19,11 @@
  */
 
 #include "config.h"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef HAVE_STRING_H
-#include <string.h>
+# include <string.h>
 #endif
 #include "types.h"
 #include "filesystem.h"
@@ -32,46 +33,37 @@
 # define CACHE_LINE_SIZE 65536 /* default size */
 #endif
 
-#define CACHE_LINES 4
-
-#if defined(FILEHANDLE_CACHE_DEBUG)
-static int do_filehandle_debug_print=1;
+#ifndef CACHE_LINES
+# define CACHE_LINES 8
 #endif
 
-#ifdef FILEHANDLE_CACHE_DEBUG
-#define DEBUG_PRINT(...) do { if (do_filehandle_debug_print) { fprintf(stderr, __VA_ARGS__); } } while (0)
-#define DUMP_SELF(S) do { if (do_filehandle_debug_print) { dump_self(s); } } while (0)
-#else
-#define DEBUG_PRINT(...) do {} while (0)
-#define DUMP_SELF(S) do {} while (0)
+#if CACHE_LINES < 4
+# error CACHE_LINES must be atleast 4 (start, end, and two runners)
 #endif
 
 struct cache_line_t
 {
+	uint64_t offset;
+	uint_fast32_t points;
+	uint_fast32_t fill;
 	char *data;
-	size_t offset;
-	size_t fill;
-	size_t size;
 };
 
 struct cache_ocpfilehandle_t
 {
 	struct ocpfilehandle_t  head;
-	struct ocpfile_t       *owner;
 	struct ocpfilehandle_t *parent;
 
-	int      filesize_pending;
-	uint64_t filesize;
-
-	uint64_t handle_pos;
 	uint64_t pos;
-	int error;
+	uint64_t maxpos; /* max position seen on the origin at any given time */
+	uint64_t lastpage; /* last known page */
+
+	uint64_t filesize_cache;
+	int filesize_ready_cache;
 
 	struct cache_line_t cache_line[CACHE_LINES];
 /* 0 = head
-   1 = moving window
-   2 = tail
-   3 = post-tail, when trying read past the current known EOF
+   1..n = floating windows
  */
 };
 
@@ -95,50 +87,14 @@ static int cache_filehandle_filesize_ready (struct ocpfilehandle_t *);
 
 static int cache_filehandle_ioctl (struct ocpfilehandle_t *, const char *cmd, void *ptr);
 
-struct ocpfilehandle_t *cache_filehandle_open_pre (struct ocpfile_t *owner, char *headptr, uint32_t headlen, char *tailptr, uint32_t taillen)
-{
-	struct cache_ocpfilehandle_t *retval = calloc (1, sizeof (*retval));
-	ocpfilehandle_t_fill
-	(
-		&retval->head,
-		cache_filehandle_ref,
-		cache_filehandle_unref,
-	        owner,
-		cache_filehandle_seek_set,
-		cache_filehandle_getpos,
-		cache_filehandle_eof,
-		cache_filehandle_error,
-		cache_filehandle_read,
-		cache_filehandle_ioctl,
-		cache_filehandle_filesize,
-		cache_filehandle_filesize_ready,
-	        0, /* filename_override */
-		owner->dirdb_ref // we do not dirdb_ref()/dirdb_unref(), since we ref the owner instead
-	);
-	retval->owner = owner;
-	retval->owner->ref (retval->owner);
-
-	retval->head.refcount = 1;
-	retval->filesize_pending = 0;
-	retval->filesize = owner->filesize(owner); // if calling open_pre, size tailbuf is the tail, so the filesize should be known directly
-	retval->cache_line[0].data = headptr;
-	retval->cache_line[0].fill = retval->cache_line[0].size = headlen;
-
-	retval->cache_line[2].data = tailptr;
-	retval->cache_line[2].fill = retval->cache_line[2].size = taillen;
-
-	retval->head.origin->ref (retval->head.origin);
-
-	return &retval->head;
-}
-
 /* for general cached version, we go directly for an open handle */
 struct ocpfilehandle_t *cache_filehandle_open (struct ocpfilehandle_t *parent)
 {
-	struct cache_ocpfilehandle_t *retval = calloc (1, sizeof (*retval));
+	uint_fast32_t fill;
+	struct cache_ocpfilehandle_t *s = calloc (1, sizeof (*s));
 	ocpfilehandle_t_fill
 	(
-		&retval->head,
+		&s->head,
 		cache_filehandle_ref,
 		cache_filehandle_unref,
 	        parent->origin,
@@ -151,25 +107,33 @@ struct ocpfilehandle_t *cache_filehandle_open (struct ocpfilehandle_t *parent)
 		cache_filehandle_filesize,
 		cache_filehandle_filesize_ready,
 	        0, /* filename_override */
-		parent->dirdb_ref // we do not dirdb_ref()/dirdb_unref(), since we ref the owner instead
+		parent->dirdb_ref // we do not dirdb_ref()/dirdb_unref(), since we ref the origin instead
 	);
 
-	retval->parent = parent;
-	retval->parent->ref (retval->parent);
-	if (parent->filesize_ready (parent))
+	s->cache_line[0].data = calloc (1, CACHE_LINE_SIZE);
+	if (!s->cache_line[0].data)
 	{
-		retval->filesize_pending = 0;
-		retval->filesize = parent->filesize (parent);
-	} else {
-		retval->filesize_pending = 1;
-		retval->filesize = 0;//UINT64_C(0xffffffffffffffff);
+		fprintf (stderr, "cache_filehandle_open, failed to allocate cache line 0\n");
+		free (s);
+		return 0;
 	}
 
-	retval->head.origin->ref (retval->head.origin);
+	s->parent = parent;
+	s->parent->ref (s->parent);
 
-	retval->head.refcount = 1;
+	s->head.origin->ref (s->head.origin);
 
-	return &retval->head;
+	s->head.refcount = 1;
+
+	/* prefill cache-line 0 which is dedicated for the start of the file */
+
+	parent->seek_set (parent, 0);
+	fill = parent->read (parent, s->cache_line[0].data, CACHE_LINE_SIZE);
+	s->cache_line[0].fill   = fill;
+	s->cache_line[0].points = CACHE_LINE_SIZE;
+	s->maxpos               = fill;
+
+	return &s->head;
 }
 
 static void cache_filehandle_ref (struct ocpfilehandle_t *_s)
@@ -196,10 +160,10 @@ static void cache_filehandle_unref (struct ocpfilehandle_t *_s)
 		s->cache_line[i].data = 0;
 	}
 
-	if (s->owner)
+	if (s->head.origin)
 	{
-		s->owner->unref (s->owner);
-		s->owner = 0;
+		s->head.origin->unref (s->head.origin);
+		s->head.origin = 0;
 	}
 
 	if (s->parent)
@@ -217,24 +181,161 @@ static void cache_filehandle_unref (struct ocpfilehandle_t *_s)
 	free (s);
 }
 
-static int cache_filehandle_filesize_unpend (struct cache_ocpfilehandle_t *s)
+static int cache_filehandle_fill_pagedata (struct cache_ocpfilehandle_t *s, uint64_t pageaddr)
 {
-	uint64_t filesize = FILESIZE_ERROR;
-	if (s->parent)
-	{
-		filesize = s->parent->filesize (s->parent);
-	} else if (s->owner)
-	{
-		filesize = s->owner->filesize (s->owner);
-	}
-	if (filesize == FILESIZE_ERROR)
-	{
-		return -1;
-	}
-	s->filesize = filesize;
-	s->filesize_pending = 0;
+	int i;
+	int worstpage_i = -1;
+	uint_fast32_t worstscore = 0xffffffff;
 
-	return 0;
+#ifdef FILEHANDLE_CACHE_DEBUG
+	fprintf (stderr, "  cache_filehandle_fill_pagedata pageaddr=0x%08" PRIx64 " pageaddr_segment=0x%08" PRIx64 "\n", pageaddr, pageaddr & (CACHE_LINE_SIZE-1));
+#endif
+	assert (!(pageaddr & (CACHE_LINE_SIZE-1)));
+
+	/* search cache for our data, and find a potential page to kill */
+
+	for (i=0; i < CACHE_LINES; i++)
+	{
+		if (s->cache_line[i].offset == pageaddr)
+		{
+			s->cache_line[i].points++;
+#ifdef FILEHANDLE_CACHE_DEBUG
+			fprintf (stderr, "   hit in cache-line %d\n", i);
+#endif
+			return i;
+		}
+		if (!s->cache_line[i].offset && i)
+		{
+			worstpage_i = i;
+#ifdef FILEHANDLE_CACHE_DEBUG
+			fprintf (stderr, "   cache not full, first empty is cache-line %d\n", i);
+#endif
+			goto fillpage; /* no hits, and we found a free-page, use it for fresh-data collection */
+		}
+		if (!i)
+		{ /* first page is sacred */
+#ifdef FILEHANDLE_CACHE_DEBUG
+			fprintf (stderr, "Do not sacriface page 0, it is special\n");
+#endif
+			continue;
+		}
+		if (s->cache_line[i].offset == s->lastpage)
+		{ /* last known page is sacred */
+#ifdef FILEHANDLE_CACHE_DEBUG
+			fprintf (stderr, "Do not sacriface page %d, it is currently the last page\n", i);
+#endif
+			continue;
+		}
+		if (worstscore > s->cache_line[i].points)
+		{
+			worstscore = s->cache_line[i].points;
+			worstpage_i = i;
+		}
+	}
+
+	for (i=0; i < CACHE_LINES; i++)
+	{
+		s->cache_line[i].points >>= 1;
+	}
+
+fillpage:
+#ifdef FILEHANDLE_CACHE_DEBUG
+	fprintf (stderr, "   fill cache-line %d\n", worstpage_i);
+#endif
+	assert (worstpage_i >= 0);
+	i = worstpage_i;
+	s->cache_line[i].offset = pageaddr;
+	if (!s->cache_line[i].data)
+	{
+		s->cache_line[i].data = malloc (CACHE_LINE_SIZE);
+		if (!s->cache_line[i].data)
+		{
+			fprintf (stderr, "cache_filehandle_fill_pagedata: malloc() failed\n");
+			goto errorout;
+		}
+	}
+
+	if (s->parent->seek_set (s->parent, pageaddr))
+	{ /* we probably hit EOF earlier */
+		goto errorout;
+	}
+
+	s->cache_line[i].fill = s->parent->read (s->parent, s->cache_line[i].data, CACHE_LINE_SIZE);
+	if (!s->cache_line[i].fill)
+	{ /* we probably hit EOF in the previous read (page-exact hit */
+		goto errorout;
+	}
+
+	if (pageaddr > s->lastpage)
+	{
+		s->lastpage = pageaddr;
+	}
+	if (pageaddr + s->cache_line[i].fill > s->maxpos)
+	{
+		s->maxpos = pageaddr + s->cache_line[i].fill;
+	}
+	s->cache_line[i].points = CACHE_LINE_SIZE;
+
+	return i;
+
+errorout:
+	s->cache_line[i].points = 0;
+	s->cache_line[i].offset = 0;
+	s->cache_line[i].fill = 0;
+	if (!pageaddr)
+	{
+		return 0; /* special case, zero-length file */
+	}
+	return -1;
+}
+
+/* we use spool for files that have unknown size, that we want to keep in the cache */
+static void cache_filehandle_spool_from_and_upto (struct cache_ocpfilehandle_t *s, uint64_t frompos, uint64_t topos)
+{
+	frompos = frompos                       & ~(CACHE_LINE_SIZE-1); /* round down to nearest page */
+	topos   = (topos + CACHE_LINE_SIZE - 1) & ~(CACHE_LINE_SIZE-1); /* round up to nearest page */
+
+	while (frompos < topos)
+	{
+		if (cache_filehandle_fill_pagedata (s, frompos) < 0)
+		{
+			return;
+		}
+		frompos += CACHE_LINE_SIZE;
+	}
+}
+
+static int cache_filehandle_filesize_ready (struct ocpfilehandle_t *_s)
+{
+	struct cache_ocpfilehandle_t *s = (struct cache_ocpfilehandle_t *)_s;
+
+	if (!s->filesize_ready_cache)
+	{
+		s->filesize_ready_cache = s->head.origin->filesize_ready (s->head.origin);
+		if (s->filesize_ready_cache)
+		{
+			s->filesize_cache = s->head.origin->filesize (s->head.origin);
+		}
+	}
+
+	return s->filesize_ready_cache;
+}
+
+static uint64_t cache_filehandle_filesize (struct ocpfilehandle_t * _s)
+{
+	struct cache_ocpfilehandle_t *s = (struct cache_ocpfilehandle_t *)_s;
+
+	if ((!cache_filehandle_filesize_ready (_s)) || (_s->origin->compression >= COMPRESSION_STREAM))
+	{
+		if (!(s->maxpos & (CACHE_LINE_SIZE - 1)))
+		{
+			cache_filehandle_spool_from_and_upto (s, s->maxpos, 0x4000000000000000ll);
+		}
+	}
+
+	s->filesize_ready_cache = 1;
+	s->filesize_cache = s->head.origin->filesize (s->head.origin);
+	return s->filesize_cache;
 }
 
 static int cache_filehandle_seek_set (struct ocpfilehandle_t *_s, int64_t pos)
@@ -243,19 +344,28 @@ static int cache_filehandle_seek_set (struct ocpfilehandle_t *_s, int64_t pos)
 
 	if (pos < 0) return -1;
 
-	if ((s->filesize_pending) && (pos > s->filesize))
+	if (pos <= s->maxpos)
 	{
-		if (cache_filehandle_filesize_unpend (s))
+		s->pos = pos;
+		return 0; /* this is valid range */
+	}
+
+	/* is filesize known yet or not? */
+	if (cache_filehandle_filesize_ready (_s))
+	{
+		if (pos > s->filesize_cache)
 		{
 			return -1;
 		}
+	} else {
+		cache_filehandle_spool_from_and_upto (s, s->maxpos, pos);
+		if (pos > s->maxpos)
+		{
+			return -1;
+		};
 	}
 
-	if (pos > s->filesize) return -1;
-
 	s->pos = pos;
-	s->error = 0;
-
 	return 0;
 }
 
@@ -270,690 +380,14 @@ static int cache_filehandle_eof (struct ocpfilehandle_t *_s)
 {
 	struct cache_ocpfilehandle_t *s = (struct cache_ocpfilehandle_t *)_s;
 
-	if (!s->filesize_pending)
-	{
-		return s->pos == s->filesize;
-	}
-	return 0;
+	return s->pos == cache_filehandle_filesize (_s);
 }
 
 static int cache_filehandle_error (struct ocpfilehandle_t *_s)
 {
 	struct cache_ocpfilehandle_t *s = (struct cache_ocpfilehandle_t *)_s;
 
-	return s->error;
-}
-
-/* try to fill data from the middle buffers out to the HEAD and TAIL buffers */
-static void cache_steal_buffers (struct cache_ocpfilehandle_t *s)
-{
-	/* Do we have a POST tail buffer ? */
-	if ( (!s->cache_line[3].fill) )
-	{
-		/* if TAIL is empty, or TAIL is smaller than we want, swap TAIL and POST-tail */
-		if ((!s->cache_line[2].fill) || (s->cache_line[2].size < CACHE_LINE_SIZE))
-		{
-			struct cache_line_t temp = s->cache_line[2];
-			s->cache_line[2] = s->cache_line[3];
-			s->cache_line[3] = temp;
-			/* free POST-tail is size is smaller than we want */
-			if (s->cache_line[3].size < CACHE_LINE_SIZE)
-			{
-				free (s->cache_line[3].data);
-				s->cache_line[3].data = 0;
-				s->cache_line[3].size = 0;
-				s->cache_line[3].fill = 0;
-			}
-		/* if MOVING-WINDOW is empty, rotate buffers MOVING-WINDOW, TAIL and POST-TAIL  left */
-		} else if (!s->cache_line[1].fill)
-		{
-			struct cache_line_t temp = s->cache_line[1];
-			s->cache_line[1] = s->cache_line[2];
-			s->cache_line[2] = s->cache_line[3];
-			s->cache_line[3] = temp;
-			/* free POST-tail is size is smaller than we want */
-			if (s->cache_line[3].size < CACHE_LINE_SIZE)
-			{
-				free (s->cache_line[3].data);
-				s->cache_line[3].data = 0;
-				s->cache_line[3].size = 0;
-			}
-		} else { /* (s->cache_line[2].size >= CACHE_LINE_SIZE) */
-			/* Merge POST-TAIL into TAIL, keep as much as possibly */
-
-			/* any free space in TAIL? */
-			int tail_fit = s->cache_line[2].size - s->cache_line[2].fill;
-
-			/* how many bytes will we stuff into that free space in TAIL */
-			int request_underflow = (s->cache_line[3].fill > tail_fit) ? tail_fit : s->cache_line[3].fill;
-
-			/* how many bytes extra do we need to push out */
-			int request_overflow = s->cache_line[3].fill - request_underflow;
-
-			memmove (s->cache_line[2].data, s->cache_line[2].data + request_overflow, s->cache_line[2].fill - request_overflow);
-			s->cache_line[2].offset += request_overflow;
-			s->cache_line[2].fill -= request_overflow;
-
-			memcpy (s->cache_line[2].data + s->cache_line[2].fill, s->cache_line[3].data, request_overflow);
-			s->cache_line[2].fill += request_overflow;
-
-			memcpy (s->cache_line[2].data + s->cache_line[2].fill, s->cache_line[3].data + request_overflow, request_underflow);
-			s->cache_line[2].fill += request_underflow;
-
-			s->cache_line[3].fill = 0;
-		}
-	}
-
-	// is the head missing, but middle buffer can be used instead?
-	if ( (!s->cache_line[0].fill) &&
-	      (s->cache_line[1].fill) &&
-	      (s->cache_line[1].offset == 0))
-	{
-		DEBUG_PRINT ("(MIDDLE BECOMES HEAD)\n");
-
-		free (s->cache_line[0].data);
-		s->cache_line[0] = s->cache_line[1];
-
-		s->cache_line[1].fill = 0;
-		s->cache_line[1].size = 0;
-		s->cache_line[1].data = 0;
-
-		DUMP_SELF (s);
-	}
-
-	// could we steal from the middle buffer and use it in the head?
-	if ((s->cache_line[0].fill < CACHE_LINE_SIZE) &&
-	    (s->cache_line[1].fill) &&
-	    (s->cache_line[1].offset == s->cache_line[0].fill))
-	{
-		int hitlen = CACHE_LINE_SIZE - s->cache_line[0].fill;
-		if (hitlen >= s->cache_line[1].fill)
-		{
-			hitlen = s->cache_line[1].fill;
-		}
-
-		if ((s->cache_line[0].fill + hitlen) > s->cache_line[0].size)
-		{ /* grow the head if needed */
-			void *data;
-			data = realloc (s->cache_line[0].data, s->cache_line[0].fill + hitlen);
-			if (!data)
-			{
-				return;
-			}
-			s->cache_line[0].data = data;
-			s->cache_line[0].size = s->cache_line[0].fill + hitlen;
-		}
-
-		DEBUG_PRINT ("(HEAD IS STEALING FROM MIDDLE: HITLEN=%d)\n", (int)hitlen);
-
-		memcpy  (s->cache_line[0].data + s->cache_line[0].fill, s->cache_line[1].data, hitlen);
-		memmove (s->cache_line[1].data, s->cache_line[1].data + hitlen, s->cache_line[1].fill - hitlen);
-		s->cache_line[0].fill += hitlen;
-		s->cache_line[1].fill -= hitlen;
-		if (!s->cache_line[1].fill)
-		{
-			free (s->cache_line[1].data);
-			s->cache_line[1].fill = 0;
-			s->cache_line[1].size = 0;
-			s->cache_line[1].data = 0;
-		}
-
-		DUMP_SELF (s);
-	}
-
-	// if the last data-read caused us to read EOF, move middle-buffer into last-buffer
-	if ( (!s->cache_line[2].fill) &&
-	      (s->cache_line[1].fill) &&
-	     ((s->cache_line[1].offset + s->cache_line[1].fill) == s->filesize) )
-	{
-
-		DEBUG_PRINT ("(MIDDLE BECOMES TAIL)\n");
-
-		free (s->cache_line[2].data); // just in case it is pre-allocated
-		s->cache_line[2] = s->cache_line[1];
-		s->cache_line[1].fill = 0;
-		s->cache_line[1].size = 0;
-		s->cache_line[1].data = 0;
-
-		DUMP_SELF (s);
-	}
-
-	// if middle data has space in the last-buffer, move it
-	if ( s->cache_line[1].fill &&
-	     (CACHE_LINE_SIZE > s->cache_line[2].fill) &&
-	     ((s->cache_line[1].offset + s->cache_line[1].fill) == s->cache_line[2].offset) )
-	{
-		int hitlen = CACHE_LINE_SIZE - s->cache_line[2].fill;
-		if (hitlen >= s->cache_line[1].fill)
-		{
-			hitlen = s->cache_line[1].fill;
-		}
-
-		if ((s->cache_line[2].fill + hitlen) < s->cache_line[2].size)
-		{
-			void *data = realloc (s->cache_line[2].data, s->cache_line[2].fill + hitlen);
-			if (!data)
-			{
-				return;
-			}
-			s->cache_line[2].data = data;
-			s->cache_line[2].size = s->cache_line[2].fill + hitlen;
-		}
-
-		DEBUG_PRINT ("(TAIL IS STEALING FROM MIDDLE: HITLEN=%d)\n", (int)hitlen);
-
-		memmove (s->cache_line[2].data + hitlen, s->cache_line[2].data, s->cache_line[2].fill);
-		memcpy  (s->cache_line[2].data, s->cache_line[1].data + s->cache_line[1].fill - hitlen, hitlen);
-		s->cache_line[2].offset -= hitlen;
-		s->cache_line[2].fill += hitlen;
-		s->cache_line[1].fill -= hitlen;
-		if (!s->cache_line[1].fill)
-		{
-			free (s->cache_line[1].data);
-			s->cache_line[1].fill = 0;
-			s->cache_line[1].size = 0;
-			s->cache_line[1].data = 0;
-		}
-
-		DUMP_SELF (s);
-	}
-}
-
-static int cache_filehandle_seek_and_read (struct cache_ocpfilehandle_t *s, uint64_t pos, void *dst, int len)
-{
-	int readresult;
-
-	if (s->handle_pos != pos)
-	{
-		if (s->parent->seek_set (s->parent, pos))
-		{
-			s->error = 1;
-			memset (dst, 0, len);
-			return 0;
-		}
-		s->handle_pos = pos;
-	}
-
-	readresult = s->parent->read (s->parent, dst, len);
-	s->handle_pos += readresult;
-
-#if 0
-	if (s->filesize_pending)
-	{
-		uint64_t temp2 = s->pos + readresult;
-		if (temp2 > s->filesize)
-		{
-			s->filesize = temp2;
-		}
-		if (s->parent->eof (s->parent))
-		{
-			s->filesize_pending = 0;
-		}
-	}
-#else
-	{
-		uint64_t temp2 = s->pos + readresult;
-		if (temp2 > s->filesize)
-		{ /* should never happen if s->filesize_pending, but does not hurt performing this task */
-			s->filesize = temp2;
-		}
-		if (s->parent->eof (s->parent))
-		{
-			s->filesize_pending = 0;
-		}
-	}
-#endif
-
-	if (readresult != len)
-	{
-		s->error = s->parent->error (s->parent);
-	}
-
-	return readresult;
-}
-
-static int cache_filehandle_read (struct ocpfilehandle_t *_s, void *dst, int len)
-{
-	struct cache_ocpfilehandle_t *s = (struct cache_ocpfilehandle_t *)_s;
-	int readresult;
-
-	int returnvalue = 0;
-
-	if (s->error)
-	{
-		return 0;
-	}
-
-	if (len < 0)
-	{
-		return 0;
-	}
-
-	if (s->error)
-	{
-		//memset (dst, 0, len);
-		return 0;
-	}
-
-	if (!s->filesize_pending)
-	{
-		if ((s->pos + len) > s->filesize)
-		{
-			len = s->filesize - len;
-		}
-	}
-
-	if (!len)
-	{
-		return 0;
-	}
-
-	/* do we have data-hit in the HEAD-buffer that starts from position zero?
-	 *
-	 * |----FILE-DATA-ON-DISK------------------------------------|
-	 * |                                                         |
-	 * |-HEAD-CACHE-]   [-MOVING-WINDOW-CACHE-]     [-TAIL-CACHE-|
-	 *
-	 *       ^
-	 *       | (is this start point within HEAD-CACHE ?
-	 *       |
-	 *       [-READ-REQUEST-]
-	 *
-	 * If so, we can partially and/or fully complete the request
-	 **/
-
-	if (s->pos < s->cache_line[0].fill)
-	{
-		int hitlen = (s->cache_line[0].fill - s->pos);
-
-		if (hitlen >= len)
-		{
-			hitlen = len;
-		}
-
-		DEBUG_PRINT ("CACHE HEAD: POS=%d LEN=%d\n", (int)s->pos, hitlen);
-
-		memcpy (dst, s->cache_line[0].data + s->pos, hitlen);
-		returnvalue += hitlen;
-		dst = ((char *)dst) + hitlen;
-		len -= hitlen;
-		s->pos += hitlen;
-
-		DUMP_SELF (s);
-	}
-
-	/* Is the request fully replied yet? */
-	while (len)
-	{
-		int iterlen = len; /* we temporary store len into a variable, since we might temporary adjust the size to avoid the MOVING-WINDOW-CACHE to grow into TAIL-CACHE */
-
-		/* do we have data-hit in the TAIL-buffer?
-		 *
-		 * |----FILE-DATA-ON-DISK------------------------------------|
-		 * |                                                         |
-		 * |-HEAD-CACHE-]   [-MOVING-WINDOW-CACHE-]     [-TAIL-CACHE-|
-		 *
-		 *                                                       ^
-		 *     is the end of the request within the TAIL-CACHE ? |
-		 *                                                       |
-		 *                                        [-READ-REQUEST-]
-		 *
-		 * If the entire read-request is withing the TAIL-CACHE we can complete the request now
-		 *
-		 * If only parts of the read-request is within the TAIL-CACHE, we temporary make it look smaller, so MOVING-WINDOW-CACHE do not cross into TAIL-CACHE
-		 **/
-
-		if ( s->cache_line[2].fill &&
-		     ((s->pos + iterlen) > s->cache_line[2].offset) )
-		{
-			/* maybe the entire thing is in this BUFFER */
-			if (s->pos >= s->cache_line[2].offset)
-			{
-				if (s->pos < (s->cache_line[2].offset + s->cache_line[2].fill))
-				{
-					if (s->pos + iterlen > s->filesize)
-					{
-						iterlen = s->filesize - s->pos;
-					}
-
-					DEBUG_PRINT ("CACHE TAIL: POS=%d LEN=%d\n", (int)s->pos, (int)iterlen);
-
-					memcpy (dst, s->cache_line[2].data + s->pos - s->cache_line[2].offset, iterlen);
-					returnvalue += iterlen;
-					len -= iterlen;
-					dst = (char *)dst + iterlen;
-					s->pos = s->pos + iterlen;
-					DUMP_SELF (s);
-
-					if (!len)
-					{
-						return returnvalue;
-					}
-				}
-
-				/* we want to read past EOF...
-				 *
-				 * |----FILE-DATA-ON-DISK------------------------------------|
-				 * |                                                         |
-				 * |-HEAD-CACHE-]   [-MOVING-WINDOW-CACHE-]     [-TAIL-CACHE-]
-				 *                                                            [-POST-TAIL-CACHE-]
-				 */
-				/* make sure that the POST TAIL buffer is initialized */
-				if (!s->cache_line[3].size)
-				{
-					s->cache_line[3].data = calloc (1, CACHE_LINE_SIZE);
-					if (!s->cache_line[3].data)
-					{
-						s->error = 1;
-						//memset (dst, 0, len);
-						return returnvalue;
-					}
-					s->cache_line[3].size = CACHE_LINE_SIZE;
-				}
-				s->cache_line[3].offset = s->pos;
-				s->cache_line[3].fill = 0;
-				if (iterlen > s->cache_line[3].size)
-				{
-					iterlen = s->cache_line[3].size;
-				}
-				readresult = cache_filehandle_seek_and_read (s, s->pos, s->cache_line[3].data, iterlen);
-				s->cache_line[3].fill = readresult;
-				DEBUG_PRINT ("CACHE POST TAIL: POS=%d LEN=%d RESULT=%d\n", (int)s->pos, (int)iterlen, readresult);
-
-				if (readresult)
-				{
-					memcpy (dst, s->cache_line[3].data, readresult);
-
-					returnvalue += readresult;
-					len -= readresult;
-					dst = (char *)dst + readresult;
-					s->pos = s->pos + readresult;
-
-					cache_steal_buffers (s);
-
-					DUMP_SELF (s);
-
-					if (len)
-					{
-						continue;
-					}
-				}
-				return returnvalue;
-			} else {
-				/* limit the length of this iteration to run up to the TAIL buffer */
-				if (s->pos + len >= s->cache_line[2].offset)
-				{
-					iterlen = s->cache_line[2].offset - s->pos;
-				}
-			}
-		}
-
-		/* At this point, we need I/O to be available for sure, since we are going to play with the middle buffer */
-		if (!s->parent)
-		{
-			s->parent = s->owner->open (s->owner);
-			if (!s->parent)
-			{
-				s->error = 1;
-				//memset (dst, 0, len);
-				return returnvalue;
-			}
-		}
-
-		/* make sure that the middle buffer is initialized */
-		if (!s->cache_line[1].size)
-		{
-			s->cache_line[1].data = calloc (1, CACHE_LINE_SIZE);
-			if (!s->cache_line[1].data)
-			{
-				s->error = 1;
-				//memset (dst, 0, len);
-				return returnvalue;
-			}
-			s->cache_line[1].offset = s->cache_line[0].fill;
-			s->cache_line[1].fill = 0;
-			s->cache_line[1].size = CACHE_LINE_SIZE;
-		}
-
-
-		/* Is the head-data needed missing?
-		 *
-		 * |----FILE-DATA-ON-DISK------------------------------------|
-		 * |                                                         |
-		 * |-HEAD-CACHE-]    .  [-MOVING-WINDOW-CACHE-] [-TAIL-CACHE-|
-		 *
-		 *                   ^
-		 *                   | Is the start of the request infront of the MOVING-WINDOW-CACHE
-		 *                   |
-		 *                   [-READ-REQUEST-]
-		 *
-		 * If the entire read-request is withing the TAIL-CACHE we can complete the request now
-		 *
-		 * If only parts of the read-request is within the TAIL-CACHE, we temporary make it look smaller, so MOVING-WINDOW-CACHE do not cross into TAIL-CACHE
-		 **/
-		if (s->pos < s->cache_line[1].offset)
-		{
-			size_t premiss = s->cache_line[1].offset - s->pos;
-			if (premiss < s->cache_line[1].size)
-			{
-				/* can we actually keep any data? */
-				size_t keep = s->cache_line[1].size - premiss;
-				if (keep > s->cache_line[1].fill)
-				{
-					keep = s->cache_line[1].fill;
-				}
-
-				DEBUG_PRINT ("CACHE MIDDLE PARTIALLY KEEP=%d RESTART POS=%d PREMISSLEN=%d\n", (int)keep, (int)s->pos, (int)premiss);
-
-				memmove (s->cache_line[1].data + premiss,
-				         s->cache_line[1].data,
-				         keep);
-				s->cache_line[1].fill = keep + premiss;
-
-				s->cache_line[1].offset = s->pos;
-
-				readresult = cache_filehandle_seek_and_read (s, s->pos, s->cache_line[1].data, premiss);
-				if (readresult != premiss)
-				{
-					s->error = 1; /* this should not happen */
-					s->cache_line[1].fill = 0;
-					return returnvalue;
-				}
-				DUMP_SELF (s);
-			} else {
-				/* no data can be kept */
-				s->cache_line[1].offset = s->pos;
-				if (iterlen > s->cache_line[1].size)
-				{
-					iterlen = s->cache_line[1].size;
-				}
-				s->cache_line[1].fill = iterlen;
-
-				DEBUG_PRINT ("CACHE MIDDLE RESTART POS=%d LEN=%d\n", (int)s->pos, (int)s->cache_line[1].fill);
-
-				readresult = cache_filehandle_seek_and_read (s, s->pos, s->cache_line[1].data, s->cache_line[1].fill);
-				if (readresult != s->cache_line[1].fill)
-				{
-					s->error = 1; /* this should not happen */
-					s->cache_line[1].fill = 0;
-					return returnvalue;
-				}
-				DUMP_SELF (s);
-			}
-#if 0 //This will be caught by the next test
-
-			if (iterlen > s->cache_line[1].fill)
-			{
-				iterlen = s->cache_line[1].fill;
-			}
-			s->pos += iterlen;
-			memcpy (dst, s->cache_line[1].data, iterlen);
-			returnvalue += iterlen;
-			dst = (char *)dst + iterlen;
-			len -= iterlen;
-
-			cache_steal_buffers (s);
-
-			continue;
-#endif
-		}
-
-		/* is there any data in the cache-line that can be used? Due to the block above, we know that pos must be equal to or bigger than MOVING-WINDOW-CACHE
-		 *
-		 * |----FILE-DATA-ON-DISK------------------------------------|
-		 * |                                                         |
-		 * |-HEAD-CACHE-]    [-MOVING-WINDOW-CACHE-]    [-TAIL-CACHE-|
-		 *
-		 *                     ^
-		 *                     | Is the start of the request inside the MOVING-WINDOW-CACHE. We know it can not be infront of it!
-		 *                     |
-		 *                     [-READ-REQUEST-]
-		 **/
-redo_middle_cache:
-		if (/*(s->cache_line[1].fill) &&*/
-		    ((s->cache_line[1].offset + s->cache_line[1].fill) > s->pos) )
-		{
-			int hitlen = s->cache_line[1].offset + s->cache_line[1].fill - s->pos;
-			if (iterlen > hitlen)
-			{
-				iterlen = hitlen;
-			}
-
-			DEBUG_PRINT ("CACHE MIDDLE REUSE POS=%d LEN=%d\n", (int)s->pos, iterlen);
-
-			memcpy (dst, s->cache_line[1].data + (s->pos - s->cache_line[1].offset), iterlen);
-			s->pos += iterlen;
-			returnvalue += iterlen;
-			dst = (char *)dst + iterlen;
-			len -= iterlen;
-
-			DUMP_SELF (s);
-
-			cache_steal_buffers (s);
-
-			continue;
-		}
-
-		/* is there more space in the cache-line that can be utilized
-		 * due to "Is the head-data needed missing?", we know that
-		 * s->pos >= s->cache_line[1].offset
-		 *
-		 * |----FILE-DATA-ON-DISK------------------------------------|
-		 * |                                                         |
-		 * |-HEAD-CACHE-] [-MOVING-WINDOW-CACHE-|---]   [-TAIL-CACHE-|
-		 *
-		 *                                        ^
-		 *                                        | Is the start of the request inside the unused space of MOVING-WINDOW-CACHE ?
-		 *                                        |
-		 *                                        [-READ-REQUEST-]
-		 **/
-redo_topup:
-		if ( (s->cache_line[1].fill < s->cache_line[1].size) /* do we have free space */ &&
-		     ((s->cache_line[1].offset + s->cache_line[1].size) > s->pos) )
-		{
-			size_t middle_end_pos = s->cache_line[1].offset + s->cache_line[1].fill;
-			size_t available_len = s->cache_line[1].size - s->cache_line[1].fill;
-			size_t needed_len = (s->pos + iterlen) - middle_end_pos;
-			size_t add_len;
-			if (available_len > needed_len)
-			{
-				add_len = needed_len;
-			} else {
-				add_len = available_len;
-			}
-
-			DEBUG_PRINT ("CACHE MIDDLE TOPUP LEN=%d\n", (int)add_len);
-
-			readresult = cache_filehandle_seek_and_read (s, middle_end_pos, s->cache_line[1].data + s->cache_line[1].fill, add_len);
-
-			if (readresult != add_len)
-			{
-				s->error = 1;
-				return returnvalue;
-			}
-
-			s->cache_line[1].fill += add_len;
-
-			DUMP_SELF (s);
-
-			goto redo_middle_cache; // continue
-		}
-
-
-		/* can we keep anything in the middle buffer.....the read request is behind it
-		 *
-		 * |----FILE-DATA-ON-DISK------------------------------------|
-		 * |                                                         |
-		 * |-HEAD-CACHE-] [-MOVING-WINDOW-CACHE-]       [-TAIL-CACHE-|
-                 *                       [-WINDOW-CACHE-|------]
-		 *
-		 *                                         ^
-		 *                                         |
-		 *                                         |
-		 *                                         [-READ-REQUEST-]
-		 **/
-		if ((s->pos + iterlen) < (s->cache_line[1].offset + s->cache_line[1].fill + s->cache_line[1].size))
-		{
-			size_t keep = (s->cache_line[1].offset + s->cache_line[1].fill + s->cache_line[1].size) - (s->pos + iterlen);
-
-			DEBUG_PRINT ("CACHE MIDDLE, ONLY KEEP LAST LEN=%d\n", (int)keep);
-
-			memmove (s->cache_line[1].data,
-			         s->cache_line[1].data + s->cache_line[1].fill - keep,
-			         keep);
-			s->cache_line[1].offset += s->cache_line[1].fill - keep;
-			s->cache_line[1].fill = keep;
-
-			DUMP_SELF (s);
-
-			goto redo_topup;
-		}
-
-
-		/* our read-request is totally missing MOVING-WINDOW-CACHE, so reset it
-		 *
-		 * |----FILE-DATA-ON-DISK----------------------------------------------------------|
-		 * |                                                                               |
-		 * |-HEAD-CACHE-] [-MOVING-WINDOW-CACHE-]                             [-TAIL-CACHE-|
-                 *
-		 *
-		 *                                                              ^
-		 *                                                              |
-		 *                                                              |
-		 *                                                              [-READ-REQUEST-]
-		 **/
-		if (1)
-		{
-			if (iterlen > s->cache_line[1].size)
-			{
-				iterlen = s->cache_line[1].size;
-			}
-			s->cache_line[1].fill = iterlen;
-			s->cache_line[1].offset = s->pos;
-
-			DEBUG_PRINT ("CACHE MIDDLE, RESET POS=%d LEN=%d\n", (int)s->pos, (int)iterlen);
-
-			readresult = cache_filehandle_seek_and_read (s, s->pos, s->cache_line[1].data, iterlen);
-			if (readresult != iterlen)
-			{
-				s->error = 1;
-				return returnvalue;
-			}
-			memcpy (dst, s->cache_line[1].data, iterlen);
-			returnvalue += iterlen;
-			s->pos += iterlen;
-			dst = (char *)dst + iterlen;
-			len -= iterlen;
-
-			DUMP_SELF (s);
-
-			cache_steal_buffers (s);
-
-			continue;
-		}
-	}
-
-	return returnvalue;
+	return s->parent->error (s->parent);
 }
 
 static int cache_filehandle_ioctl (struct ocpfilehandle_t *_s, const char *cmd, void *ptr)
@@ -963,16 +397,70 @@ static int cache_filehandle_ioctl (struct ocpfilehandle_t *_s, const char *cmd, 
 	return s->parent->ioctl (s->parent, cmd, ptr);
 }
 
-static uint64_t cache_filehandle_filesize (struct ocpfilehandle_t * _s)
+static int cache_filehandle_read (struct ocpfilehandle_t *_s, void *dst, int len)
 {
 	struct cache_ocpfilehandle_t *s = (struct cache_ocpfilehandle_t *)_s;
+	int returnvalue = 0;
+	cache_filehandle_filesize_ready (_s);
 
-	return s->filesize;
-}
+	if ((s->pos >= s->maxpos) &&
+	    s->filesize_ready_cache &&
+	    (s->filesize_cache <= (CACHE_LINES * CACHE_LINE_SIZE))) /* read in the entire file at once, it can fit */
+	{
+		uint64_t frompos =  s->maxpos                     & ~(CACHE_LINE_SIZE-1); /* round down to nearest page */
+		uint64_t topos   = (s->pos + CACHE_LINE_SIZE - 1) & ~(CACHE_LINE_SIZE-1); /* round up to nearest page */
+		cache_filehandle_spool_from_and_upto (s, frompos, topos);
+	}
 
-static int cache_filehandle_filesize_ready (struct ocpfilehandle_t *_s)
-{
-	struct cache_ocpfilehandle_t *s = (struct cache_ocpfilehandle_t *)_s;
+	while (len)
+	{
+		uint64_t pageaddr;
+		uint32_t offset;
+		uint32_t runlen;
+		int i;
 
-	return !s->filesize_pending;
+		if (s->filesize_ready_cache && (s->pos >= s->filesize_cache))
+		{
+			break;
+		}
+
+		pageaddr = s->pos & ~(CACHE_LINE_SIZE-1);
+		offset = s->pos & (CACHE_LINE_SIZE-1);
+
+#ifdef FILEHANDLE_CACHE_DEBUG
+		fprintf (stderr, "  cache_filehandle_read.len=%d pos=0x%08" PRIx64 " pageaddr=0x%08" PRIx64 " offset=0x%08" PRIx32 " mask_down=0x%08x mask_offset=0x%08x\n", len, s->pos, pageaddr, offset, ~(CACHE_LINE_SIZE-1), CACHE_LINE_SIZE-1);
+#endif
+
+		i = cache_filehandle_fill_pagedata (s, pageaddr);
+		if (i < 0)
+		{
+			break;
+		}
+
+		if (offset >= s->cache_line[i].fill)
+		{
+			return returnvalue;
+		}
+
+		if ((offset + len) > (s->cache_line[i].fill))
+		{
+			runlen = s->cache_line[i].fill - offset;
+		} else {
+			runlen = len;
+		}
+
+		memcpy (dst, s->cache_line[i].data + offset, runlen);
+		s->cache_line[i].points += runlen;
+
+		len -= runlen;
+		dst += runlen;
+		s->pos += runlen;
+		returnvalue += runlen;
+
+		if (s->cache_line[i].fill != CACHE_LINE_SIZE)
+		{ /* not more data is available if the current cache page is incomplete */
+			break;
+		}
+	}
+	return returnvalue;
 }
