@@ -9,6 +9,8 @@ struct ocpdirdecompressor_t;
 
 typedef void *ocpdirhandle_pt;
 
+#include "filesystem-filehandle-cache.h"
+
 #define FILESIZE_STREAM  UINT64_C(0xffffffffffffffff) /* STREAM - so we recommend to open and analyze the file asap */
 #define FILESIZE_ERROR   UINT64_C(0xfffffffffffffffe)
 
@@ -165,6 +167,9 @@ struct ocpfile_t /* can be virtual */
 	void (*unref)(struct ocpfile_t *);
 	struct ocpdir_t *parent;
 	struct ocpfilehandle_t *(*open)(struct ocpfile_t *);
+#ifndef FILEHANDLE_CACHE_DISABLE
+	struct ocpfilehandle_t *(*real_open)(struct ocpfile_t *);
+#endif
 
 	uint64_t (*filesize)(struct ocpfile_t *); // can return FILESIZE_STREAM FILESIZE_ERROR
 	int (*filesize_ready)(struct ocpfile_t *); // if this is false, asking for filesize might be very slow
@@ -177,6 +182,10 @@ struct ocpfile_t /* can be virtual */
 };
 
 const char *ocpfile_t_fill_default_filename_override (struct ocpfile_t *);
+
+#ifndef FILEHANDLE_CACHE_DISABLE
+static struct ocpfilehandle_t *ocpfilehandle_cache_open_wrap (struct ocpfile_t *f);
+#endif
 
 static inline void ocpfile_t_fill (
 	struct ocpfile_t *s,
@@ -195,7 +204,12 @@ static inline void ocpfile_t_fill (
 	s->ref            = ref;
 	s->unref          = unref;
 	s->parent         = parent;
+#ifndef FILEHANDLE_CACHE_DISABLE
+	s->open           = ocpfilehandle_cache_open_wrap;
+	s->real_open      = open;
+#else
 	s->open           = open;
+#endif
 	s->filesize       = filesize;
 	s->filesize_ready = filesize_ready;
 	s->filename_override = filename_override ? filename_override : ocpfile_t_fill_default_filename_override;
@@ -229,6 +243,25 @@ struct ocpfilehandle_t
 	int dirdb_ref;
 	int refcount; /* internal use by all object variants */
 };
+
+#ifndef FILEHANDLE_CACHE_DISABLE
+static struct ocpfilehandle_t *ocpfilehandle_cache_open_wrap (struct ocpfile_t *f)
+{
+	struct ocpfilehandle_t *retval1, *retval2;
+	retval1 = f->real_open (f);
+	if (!retval1)
+	{
+		return 0;
+	}
+	retval2 = cache_filehandle_open (retval1);
+	if (!retval2)
+	{
+		return retval1;
+	}
+	retval1->unref (retval1);
+	return retval2;
+}
+#endif
 
 int ocpfilehandle_t_fill_default_ioctl (struct ocpfilehandle_t *, const char *cmd, void *ptr);
 const char *ocpfilehandle_t_fill_default_filename_override (struct ocpfilehandle_t *);

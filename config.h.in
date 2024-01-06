@@ -179,6 +179,7 @@
 /* #define RPG_DEBUG */
 /* #define RPG_VERBOSE */
 /* #define FILEHANDLE_CACHE_DEBUG */
+/* #define FILEHANDLE_CACHE_DISABLE */
 /* #define INITCLOSE_DEBUG 1*/
 /* #define LD_DEBUG 1 */
 /* #define OSS_DEBUG 1 */
