@@ -3278,7 +3278,7 @@ superbreak:
 				struct modlistentry *scanm;
 				if ((scanm=modlist_get(currentdir, scanposf++)))
 				{
-					if (scanm->file && (scanm->flags & MODLIST_FLAG_ISMOD))
+					if (scanm->file && (scanm->flags & MODLIST_FLAG_ISMOD) && (!(scanm->flags & MODLIST_FLAG_SCANNED)))
 					{
 						if (!mdbInfoIsAvailable(scanm->mdb_ref))
 						{
