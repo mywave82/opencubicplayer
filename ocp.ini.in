@@ -1,5 +1,5 @@
 [version]
-  epoch=20230630
+  epoch=20240107
 
 [general]
 ;link=
@@ -217,6 +217,7 @@
   SAP=13
   SPC=13
   VGM=13
+  UNKN=7
 
 [timidity]
   configfile=             ; leave empty to use system default, or it can specify a specific config file or sound font ending with a .sf2 extension

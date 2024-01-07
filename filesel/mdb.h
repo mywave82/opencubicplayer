@@ -16,6 +16,10 @@ struct ocpfilehandle_t;
 
 #define MODULETYPE(str) ((uint32_t)(((uint8_t)str[0]) | (((uint8_t)(str[0]?str[1]:0))<<8) | (((uint8_t)((str[0]&&str[1])?str[2]:0))<<16) | (((uint8_t)((str[0]&&str[1]&&str[2])?str[3]:0))<<24)) )
 
+#define mtUnRead 0
+#define mtUnknownStr "UNKN"
+#define mtUnknown    MODULETYPE(mtUnknownStr)
+
 struct __attribute__((packed)) moduletype
 {
 	union

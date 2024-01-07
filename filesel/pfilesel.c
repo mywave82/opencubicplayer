@@ -949,6 +949,12 @@ static const char *DEVv_description[] =
 	NULL
 };
 
+static const char *UNKN_description[] =
+{
+	"The format of the given file is unknown",
+	NULL
+};
+
 int fsPreInit (const struct configAPI_t *configAPI)
 {
 	const char *sec = configAPI->GetProfileString (configAPI->ConfigSec, "fileselsec", "fileselector");
@@ -970,6 +976,9 @@ int fsPreInit (const struct configAPI_t *configAPI)
 		fprintf (stderr, "dirdb failed to initialize\n");
 		return 0;
 	}
+
+	mt.integer.i = mtUnknown;
+	fsTypeRegister (mt, UNKN_description, 0, 0);
 
 	fsRegisterExt("DEV");
 	mt.integer.i = MODULETYPE("DEVv");
@@ -1036,6 +1045,9 @@ int fsPreInit (const struct configAPI_t *configAPI)
 void fsLateClose(void)
 {
 	struct moduletype mt;
+
+	mt.integer.i = mtUnknown;
+	fsTypeUnregister (mt);
 
 	mt.integer.i = MODULETYPE("DEVv");
 	fsTypeUnregister (mt);
@@ -1223,7 +1235,7 @@ static void displayfile(const unsigned int y, unsigned int x, unsigned int width
 	{
 		if (m->file)
 		{
-			if (mi.modtype.integer.i==0)
+			if (mi.modtype.integer.i == mtUnRead)
 				col&=~0x08;
 			else if (fsColorTypes)
 			{
@@ -1296,7 +1308,7 @@ static void displayfile(const unsigned int y, unsigned int x, unsigned int width
 			}
 		} else { /* m->file */
 			char temp[16];
-			if (mi.modtype.integer.i==0)
+			if (mi.modtype.integer.i == mtUnRead)
 			{
 				col&=~0x08;
 			} else if (fsColorTypes)
@@ -2959,7 +2971,7 @@ static int fsEditFileInfo(struct modlistentry *me)
 		{
 			return -1;
 		}
-		if (mdbEditBuf.modtype.integer.i == 0)
+		if (mdbEditBuf.modtype.integer.i == mtUnRead)
 		{
 			me->flags &= ~MODLIST_FLAG_SCANNED;
 		}
@@ -3437,9 +3449,10 @@ superbreak:
 					{
 						if (!mdbGetModuleInfo(&mdbEditBuf, m->mdb_ref))
 							return -1;
-						mdbEditBuf.modtype.integer.i = 0;
+						mdbEditBuf.modtype.integer.i = mtUnRead;
 						if (!mdbWriteModuleInfo(m->mdb_ref, &mdbEditBuf))
 							return -1;
+						m->flags &= ~MODLIST_FLAG_SCANNED;
 					}
 					break;
 				case KEY_CTRL_BS:
@@ -4050,11 +4063,19 @@ void plUnregisterInterface(struct interfacestruct *_interface)
 void plFindInterface(struct moduletype modtype, const struct interfacestruct **in, const struct cpifaceplayerstruct **cp)
 {
 	int i;
+	*in = 0;
+	*cp = 0;
+
 	for (i=0; i < fsTypesCount; i++)
 	{
 		if (fsTypes[i].modtype.integer.i == modtype.integer.i)
 		{
 			struct interfacestruct *curr = plInterfaces;
+
+			if (!fsTypes[i].interfacename)
+			{
+				return;
+			}
 
 			while (curr)
 			{
@@ -4067,13 +4088,9 @@ void plFindInterface(struct moduletype modtype, const struct interfacestruct **i
 				curr = curr->next;
 			}
 			fprintf(stderr, __FILE__ ": Unable to find interface for filetype %s\n", modtype.string.c);
-			*in = 0;
-			*cp = 0;
 			return;
 		}
 	}
 	fprintf(stderr, __FILE__ ": Unable to find moduletype: %4s\n", modtype.string.c);
-	*in = 0;
-	*cp = 0;
 	return;
 }

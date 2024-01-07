@@ -83,7 +83,8 @@ struct modinfoentry
 			uint32_t style_ref;        /* 40 */
 			uint32_t comment_ref;      /* 44 */
 			uint32_t album_ref;        /* 48 */
-			uint8_t reserved[12];      /* 52-63*/
+			uint8_t lastscanversion[3];/* 52-54*/
+			uint8_t reserved[8];       /* 55-63*/
 		} general;
 		struct __attribute__((packed))
 		{
@@ -149,7 +150,19 @@ int mdbInfoIsAvailable (uint32_t mdb_ref)
 		DEBUG_PRINT ("mdbInfoIsAvailable(0x%08"PRIx32") => 1 due to modtype != mtUnRead\n", mdb_ref);
 	}
 
-	return mdbData[mdb_ref].mie.general.modtype.integer.i != 0;
+	if (mdbData[mdb_ref].mie.general.modtype.integer.i == mtUnknown)
+	{ /* Avoid rescan, if file is already scanned by this version or newer */
+		if (mdbData[mdb_ref].mie.general.lastscanversion[0] < OCP_MAJOR_VERSION) return 0;
+		if (mdbData[mdb_ref].mie.general.lastscanversion[0] > OCP_MAJOR_VERSION) return 1;
+
+		if (mdbData[mdb_ref].mie.general.lastscanversion[1] < OCP_MINOR_VERSION) return 0;
+		if (mdbData[mdb_ref].mie.general.lastscanversion[1] > OCP_MINOR_VERSION) return 1;
+
+		if (mdbData[mdb_ref].mie.general.lastscanversion[2] < OCP_PATCH_VERSION) return 0;
+		return 1; /* >= is always true here */
+	}
+
+	return mdbData[mdb_ref].mie.general.modtype.integer.i != mtUnRead;
 }
 
 /* This thing will end up with a register of all valid pre-interprators for modules and friends
@@ -206,11 +219,16 @@ int mdbReadInfo (struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 	maxl = f->read (f, mdbScanBuf, sizeof (mdbScanBuf));
 	f->seek_set (f, 0);
 
+#ifdef MDB_DEBUG
 	{
-		const char *path;
-		dirdbGetName_internalstr (f->dirdb_ref, &path);
-		DEBUG_PRINT ("   mdbReadInfo(%s %p %d)\n", path, mdbScanBuf, maxl);
+		char *fp = 0;
+		dirdbGetFullname_malloc (f->dirdb_ref, &fp, DIRDB_FULLNAME_DRIVE);
+		DEBUG_PRINT ("   mdbReadInfo(%s %p %d) # %s\n", fp ? fp : "", mdbScanBuf, maxl);
+		free (fp);
 	}
+#endif
+
+	m->modtype.integer.i = mtUnRead;
 
 	/* slow version that also allows more I/O */
 	for (rinfos=mdbReadInfos; rinfos; rinfos=rinfos->next)
@@ -251,7 +269,12 @@ int mdbReadInfo (struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 		}
 	}
 
-	return m->modtype.integer.i != 0;
+	if (m->modtype.integer.i == mtUnRead)
+	{ /* If no file-detection worked out, mark the file as unknown, the mdbWriteModuleInfo will tag the version to disk */
+		m->modtype.integer.i = mtUnknown;
+	}
+
+	return m->modtype.integer.i != mtUnknown;
 }
 
 /* Unit test available */
@@ -457,6 +480,13 @@ int mdbWriteModuleInfo (uint32_t mdb_ref, struct moduleinfostruct *m)
 	temp = mdbData[mdb_ref].mie.general.comment_ref;  retval |= mdbWriteString (m->comment,  &temp); mdbData[mdb_ref].mie.general.comment_ref  = temp;
 	temp = mdbData[mdb_ref].mie.general.album_ref;    retval |= mdbWriteString (m->album,    &temp); mdbData[mdb_ref].mie.general.album_ref    = temp;
 
+	if (m->modtype.integer.i == mtUnknown)
+	{ /* tag the version number to disk */
+		mdbData[mdb_ref].mie.general.lastscanversion[0] = OCP_MAJOR_VERSION;
+		mdbData[mdb_ref].mie.general.lastscanversion[1] = OCP_MINOR_VERSION;
+		mdbData[mdb_ref].mie.general.lastscanversion[2] = OCP_PATCH_VERSION;
+	}
+
 	mdbDirty=1;
 	mdbDirtyMap[mdb_ref>>3] |= 1 << (mdb_ref & 0x07);
 
@@ -643,7 +673,7 @@ int mdbInit (const struct configAPI_t *configAPI)
 
 		for (i=0; i<mdbSearchIndexCount; i++)
 		{
-			DEBUG_PRINT("%5d => 0x%08"PRIx32" %"PRIu64" 0x%02x%02x%02x%02x%02x%02x%02x%02x\n",
+			DEBUG_PRINT("%5d => 0x%08"PRIx32" %"PRIu64" 0x%02x%02x%02x%02x%02x%02x%02x\n",
 				i, mdbSearchIndexData[i], mdbData[mdbSearchIndexData[i]].mie.general.size,
 				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[0],
 				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[1],
@@ -651,8 +681,7 @@ int mdbInit (const struct configAPI_t *configAPI)
 				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[3],
 				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[4],
 				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[5],
-				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[6],
-				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[7]);
+				mdbData[mdbSearchIndexData[i]].mie.general.filename_hash[6]);
 		}
 	}
 
@@ -790,6 +819,7 @@ static uint32_t mdbGetModuleReference (const char *name, uint64_t size)
 		struct modinfoentry *m=&mdbData[min[num>>1]];
 		int ret;
 #ifdef MDB_DEBUG
+#if MDB_DEBUG > 1
 		{
 			uint32_t x;
 			for (x = 0; x < num; x++)
@@ -807,6 +837,7 @@ static uint32_t mdbGetModuleReference (const char *name, uint64_t size)
 			}
 			DEBUG_PRINT("  ----------\n");
 		}
+#endif
 #endif
 		if (size==m->mie.general.size)
 		{
@@ -860,7 +891,7 @@ static uint32_t mdbGetModuleReference (const char *name, uint64_t size)
 	m = &mdbData[i];
 	memcpy (m->mie.general.filename_hash, hash + 1, 7);
 	m->mie.general.size = size;
-	m->mie.general.modtype.integer.i = 0;
+	m->mie.general.modtype.integer.i = mtUnRead;
 	m->mie.general.module_flags = 0;
 	m->mie.general.channels = 0;
 	m->mie.general.playtime = 0;

@@ -1004,9 +1004,15 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileComment ("adplug", "retrowave", "; Device to use, e.g. /dev/ttyACM0 /dev/cuaU0 /dev/dtyU0 /dev/cu.usbmodem0000001 COM1");
 		}
 
-		if (epoch < 20230630)
+		if (epoch < 20240107)
 		{
-			cfSetProfileInt("version", "epoch", 20230630, 10);
+			fprintf(stderr, "ocp.ini update (0.2.107) add [fscolors] UNKN=7\n");
+			cfSetProfileInt     ("fscolors", "UNKN", 7, 10);
+		}
+
+		if (epoch < 20240107)
+		{
+			cfSetProfileInt("version", "epoch", 20240107, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -1017,15 +1023,15 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20230630)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20240107)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20230630\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20240107\033[0m\n\n");
+			sleep(5);
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20230630\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20240107\n\n");
 		}
-		sleep(5);
 	}
 
 	cfScreenSec=cfGetProfileString(cfConfigSec, "screensec", "screen");

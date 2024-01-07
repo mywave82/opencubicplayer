@@ -3664,6 +3664,12 @@ MINOR_VERSION=2
 
 PATCH_VERSION=106
 
+printf "%s\n" "#define OCP_MAJOR_VERSION 0" >>confdefs.h
+
+printf "%s\n" "#define OCP_MINOR_VERSION 2" >>confdefs.h
+
+printf "%s\n" "#define OCP_PATCH_VERSION 106" >>confdefs.h
+
 
 
 
