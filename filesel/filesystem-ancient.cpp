@@ -166,7 +166,28 @@ struct ocpfilehandle_t *ancient_filehandle (char *compressionmethod, int compres
 	    (magic == FourCC("PPMQ")) ||    /* PPMQ,        added in v2.1.0 src/PPMQDecompressor.cpp */
 	    ((magic >> 16) == 0x1f1e) ||    /* Pack,        added in v2.1.0 src/PackDecompressor.cpp */
 	    ((magic >> 16) == 0x1f1f) ||    /* Pack,        added in v2.1.0 src/PackDecompressor.cpp */
-	    ((magic >> 16) == 0x1fa0)       /* SCOCompress, added in v2.1.0 src/SCOCompressDecompressor.cpp */
+	    ((magic >> 16) == 0x1fa0) ||    /* SCOCompress, added in v2.1.0 src/SCOCompressDecompressor.cpp */
+	    (magic == FourCC("SHR3")) ||                   /*                                   will be added in v2.2.0 src/SHR3Decompressor.cpp */
+	    (magic == FourCC("SHRI")) ||                   /*                                   will be added in v2.2.0 src/src/SHRXDecompressor.cpp */
+	    ((magic & 0xffffff00) == FourCC("1AM\000")) || /* Reunion,                          will be added in v2.2.0 src/StoneCrackerDecompressor.cpp */
+	    ((magic & 0xffffff00) == FourCC("2AM\000")) || /* Reunion,                          will be added in v2.2.0 src/StoneCrackerDecompressor.cpp */
+	    (magic == FourCC("Z&G!")) ||                   /* Switchback / Rebels,              will be added in v2.2.0 src/StoneCrackerDecompressor.cpp */
+	    (magic == FourCC("ZULU")) ||                   /* Whammer Slammer / Rebels,         will be added in v2.2.0 src/StoneCrackerDecompressor.cpp */
+	    (magic == FourCC("AYS!")) ||                   /* High Anxiety / Abyss,             will be added in v2.2.0 src/StoneCrackerDecompressor.cpp */
+	    (magic == 0x18051973) ||                       /* Fears,                            will be added in v2.2.0 src/CRMDecompressor.cpp */
+	    (magic == FourCC("CD\xb3\xb9")) ||             /* BiFi 2,                           will be added in v2.2.0 src/CRMDecompressor.cpp */
+	    (magic == FourCC("DCS!")) ||                   /* Sonic Attack/DualCrew-Shining,    will be added in v2.2.0 src/CRMDecompressor.cpp */
+	    (magic == FourCC("Iron")) ||                   /* Sun / TRSI,                       will be added in v2.2.0 src/CRMDecompressor.cpp */
+	    (magic == FourCC("MSS!")) ||                   /* Infection / Mystic,               will be added in v2.2.0 src/CRMDecompressor.cpp */
+	    (magic == FourCC("mss!")) ||                   /*                                   will be added in v2.2.0 src/CRMDecompressor.cpp */
+	    (magic == FourCC("CHFC")) ||                   /* Sky High Stuntman,                will be added in v2.2.0 src/PPDecompressor.cpp */
+	    (magic == FourCC("DEN!")) ||                   /* Jewels - Crossroads,              will be added in v2.2.0 src/PPDecompressor.cpp */
+	    (magic == FourCC("DXS9")) ||                   /* Hopp oder Top, Punkt Punkt Punkt, will be added in v2.2.0 src/PPDecompressor.cpp */
+	    (magic == FourCC("H.D.")) ||                   /* F1 Challenge,                     will be added in v2.2.0 src/PPDecompressor.cpp */
+	    (magic == FourCC("RVV!")) ||                   /* Hoi AGA Remix,                    will be added in v2.2.0 src/PPDecompressor.cpp */
+	    (magic == FourCC("...\001")) ||                /* Total Carnage,                    will be added in v2.2.0 src/RNCDecompressor.cpp */
+	    (magic == FourCC("Vice")) ||                   /*                                   will be added in v2.2.0 src/VicXDecompressor.cpp */
+	    (magic == FourCC("Vic2"))                      /*                                   will be added in v2.2.0 src/VicXDecompressor.cpp */
 	   )
 	{
 isancient:
