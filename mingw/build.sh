@@ -188,10 +188,10 @@ make all install
 cd ..
 
 ########## LIBJPEG-TURBO ##########
-wget https://sourceforge.net/projects/libjpeg-turbo/files/3.0.0/libjpeg-turbo-3.0.0.tar.gz/download -O libjpeg-turbo-3.0.0.tar.gz
-rm -Rf libjpeg-turbo-3.0.0
-tar xfz libjpeg-turbo-3.0.0.tar.gz
-cd libjpeg-turbo-3.0.0
+wget https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.0.1/libjpeg-turbo-3.0.1.tar.gz -O libjpeg-turbo-3.0.1.tar.gz
+rm -Rf libjpeg-turbo-3.0.1
+tar xfz libjpeg-turbo-3.0.1.tar.gz
+cd libjpeg-turbo-3.0.1
 do_cmake -DENABLE_SHARED=TRUE
 cd ..
 
@@ -269,10 +269,10 @@ do_cmake -D_OGG_LIBRARY_DIRS=$prefix/lib
 cd ..
 
 ########## SDL2 ##########
-wget https://github.com/libsdl-org/SDL/releases/download/release-2.28.1/SDL2-devel-2.28.1-mingw.tar.gz -O SDL2-devel-2.28.1-mingw.tar.gz
-rm -Rf SDL2-2.28.1
-tar xfz SDL2-devel-2.28.1-mingw.tar.gz
-cd SDL2-2.28.1
+wget https://github.com/libsdl-org/SDL/releases/download/release-2.28.5/SDL2-devel-2.28.5-mingw.tar.gz -O SDL2-devel-2.28.5-mingw.tar.gz
+rm -Rf SDL2-2.28.5
+tar xfz SDL2-devel-2.28.5-mingw.tar.gz
+cd SDL2-2.28.5
 cp $host/* $prefix -R
 prefix2=`echo $prefix|sed -e 's/\//\\\\\//'g`
 sed -e "s/^prefix=.*/prefix=$prefix2/" -i $prefix/lib/pkgconfig/sdl2.pc
@@ -280,27 +280,27 @@ cd ..
 
 if test "$host" == "i686-w64-mingw32"; then
 ########## BROTLI ##########, only needed for 32bit, unsure why
-  wget https://github.com/google/brotli/archive/refs/tags/v1.0.9.tar.gz -O brotli-1.0.9.tar.gz
-  rm -Rf brotli-1.0.9
-  tar xfz brotli-1.0.9.tar.gz
-  cd brotli-1.0.9
+  wget https://github.com/google/brotli/archive/refs/tags/v1.1.0.tar.gz -O brotli-1.1.0.tar.gz
+  rm -Rf brotli-1.1.0
+  tar xfz brotli-1.1.0.tar.gz
+  cd brotli-1.1.0
   do_cmake -DCMAKE_CXX_FLAGS=-Wa,-mbig-obj
   cd ..
 fi
 
 ########## HARFBUZZ #########
-wget https://github.com/harfbuzz/harfbuzz/releases/download/8.0.1/harfbuzz-8.0.1.tar.xz -O harfbuzz-8.0.1.tar.xz
-rm -Rf harfbuzz-8.0.1
-tar xfJ harfbuzz-8.0.1.tar.xz
-cd harfbuzz-8.0.1
+wget https://github.com/harfbuzz/harfbuzz/releases/download/8.3.0/harfbuzz-8.3.0.tar.xz -O harfbuzz-8.3.0.tar.xz
+rm -Rf harfbuzz-8.3.0
+tar xfJ harfbuzz-8.3.0.tar.xz
+cd harfbuzz-8.3.0
 do_cmake -DCMAKE_CXX_FLAGS=-Wa,-mbig-obj
 cd ..
 
 ########## FREETYPE2 ##########
-wget https://sourceforge.net/projects/freetype/files/freetype2/2.13.1/freetype-2.13.1.tar.gz/download -O freetype-2.13.1.tar.gz
-rm -Rf freetype-2.13.1
-tar xfz freetype-2.13.1.tar.gz
-cd freetype-2.13.1
+wget https://sourceforge.net/projects/freetype/files/freetype2/2.13.2/freetype-2.13.2.tar.gz/download -O freetype-2.13.2.tar.gz
+rm -Rf freetype-2.13.2
+tar xfz freetype-2.13.2.tar.gz
+cd freetype-2.13.2
 do_cmake -DZLIB_ROOT=/usr/$host/ \
          -DFT_DISABLE_BZIP2=TRUE
 cd ..
@@ -331,10 +331,10 @@ Cflags:
 EOF
 
 ########## cJSON ##########
-wget https://github.com/DaveGamble/cJSON/archive/refs/tags/v1.7.16.tar.gz -O cJSON-1.7.16.tar.gz
-rm -Rf cJSON-1.7.16
-tar xfz cJSON-1.7.16.tar.gz
-cd cJSON-1.7.16
+wget https://github.com/DaveGamble/cJSON/archive/refs/tags/v1.7.17.tar.gz -O cJSON-1.7.17.tar.gz
+rm -Rf cJSON-1.7.17
+tar xfz cJSON-1.7.17.tar.gz
+cd cJSON-1.7.17
 patch -p 1 <<EOF
 diff -u cJSON-1.7.15-orig/cJSON.c cJSON-1.7.15/cJSON.c
 --- cJSON-1.7.15-orig/cJSON.c	2021-08-25 13:15:09.000000000 +0200
@@ -410,6 +410,7 @@ cd ..
 
 ########## game-music-emulator ##########
 wget https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-0.6.3.tar.gz -O game-music-emu-0.6.3.tar.gz
+# Future releases will be here https://github.com/libgme/game-music-emu/tags
 rm -Rf game-music-emu-0.6.3
 tar xfz game-music-emu-0.6.3.tar.gz
 cd game-music-emu-0.6.3
@@ -417,14 +418,15 @@ do_cmake -DENABLE_UBSAN=off
 cd ..
 
 ######### unifont ##########
-wget https://unifoundry.com/pub/unifont/unifont-15.0.06/font-builds/unifont-15.0.06.otf       -O unifont-15.0.06.otf
-wget https://unifoundry.com/pub/unifont/unifont-15.0.06/font-builds/unifont_csur-15.0.06.otf  -O unifont_csur-15.0.06.otf
-wget https://unifoundry.com/pub/unifont/unifont-15.0.06/font-builds/unifont_upper-15.0.06.otf -O unifont_upper-15.0.06.otf
+wget https://unifoundry.com/pub/unifont/unifont-15.1.04/font-builds/unifont-15.1.04.otf       -O unifont-15.1.04.otf
+wget https://unifoundry.com/pub/unifont/unifont-15.1.04/font-builds/unifont_csur-15.1.04.otf  -O unifont_csur-15.1.04.otf
+wget https://unifoundry.com/pub/unifont/unifont-15.1.04/font-builds/unifont_upper-15.1.04.otf -O unifont_upper-15.1.04.otf
 
 cd ..
 ./configure \
   --host $host \
-  CFLAGS=-I$prefix/include/ \
+  CFLAGS="-I$prefix/include/ -O2" \
+  CXXFLAGS="-I$prefix/include/ -O2" \
   LDFLAGS=-L$prefix/lib/ \
   PKG_CONFIG_PATH=$prefix/lib/pkgconfig/ \
   --prefix="$install" \
@@ -476,7 +478,7 @@ else
      $install
 fi
 mkdir -p $install/data
-cp $host-src/unifont-15.0.06.otf       $install/data/unifont.otf
-cp $host-src/unifont_csur-15.0.06.otf  $install/data/unifont_csur.otf
-cp $host-src/unifont_upper-15.0.06.otf $install/data/unifont_upper.otf
+cp $host-src/unifont-15.1.04.otf       $install/data/unifont.otf
+cp $host-src/unifont_csur-15.1.04.otf  $install/data/unifont_csur.otf
+cp $host-src/unifont_upper-15.1.04.otf $install/data/unifont_upper.otf
 $host-strip $install/*.dll $install/*.exe $install/autoload/*.dll
