@@ -1,5 +1,7 @@
 /* unit test for filesystem-tar.c */
 
+#define FILEHANDLE_CACHE_DISABLE
+
 #include "filesystem-tar.c"
 #include <unistd.h>
 #include "filesystem-dir-mem.h"
@@ -2042,7 +2044,7 @@ void dirdbUnref (uint32_t ref, enum dirdb_use use)
 		dirdbPrint();
 	} else {
 		dirdb_failures++;
-		printf (ANSI_COLOR_RED "dirdbRef (%d) called on an invalid node" ANSI_COLOR_RESET "\n", ref);
+		printf (ANSI_COLOR_RED "dirdbUnref (%d) called on an invalid node" ANSI_COLOR_RESET "\n", ref);
 	}
 
 }
@@ -2064,7 +2066,6 @@ void dirdbGetName_internalstr (uint32_t ref, const char **retval)
 		dirdb_failures++;
 		printf (ANSI_COLOR_RED "dirdbGetName_internalstr (%d) called on an invalid node" ANSI_COLOR_RESET "\n", ref);
 	}
-	dirdbPrint();
 }
 
 void dirdbGetName_malloc (uint32_t ref, char **retval)

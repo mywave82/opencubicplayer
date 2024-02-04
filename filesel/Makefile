@@ -142,9 +142,17 @@ filesystem-bzip2-test$(EXE_SUFFIX): filesystem-bzip2-test.c \
 	adbmeta.h \
 	dirdb.h \
 	filesystem-bzip2.h \
-	filesystem-file-mem.o \
-	filesystem-dir-mem.o
-	$(CC) $< -o $@ filesystem-file-mem.o filesystem-dir-mem.o -lbz2
+	filesystem-file-mem-nocache.o \
+	filesystem-dir-mem-nocache.o
+	$(CC) $< -o $@ filesystem-file-mem-nocache.o filesystem-dir-mem-nocache.o -lbz2
+
+filesystem-dir-mem-nocache.o: filesystem-dir-mem.c \
+	../config.h \
+	../types.h \
+	dirdb.h \
+	filesystem.h \
+	filesystem-dir-mem.h
+	$(CC) $< -o $@ -c -DFILEHANDLE_CACHE_DISABLE
 
 filesystem-dir-mem.o: filesystem-dir-mem.c \
 	../config.h \
@@ -173,6 +181,14 @@ filesystem-file-dev.o: filesystem-file-dev.c \
 	../filesel/pfilesel.h
 	$(CC) $< -o $@ -c
 
+filesystem-file-mem-nocache.o: filesystem-file-mem.c \
+	../config.h \
+	../types.h \
+	dirdb.h \
+	filesystem.h \
+	filesystem-file-mem.h
+	$(CC) $< -o $@ -c -DFILEHANDLE_CACHE_DISABLE
+
 filesystem-file-mem.o: filesystem-file-mem.c \
 	../config.h \
 	../types.h \
@@ -200,9 +216,9 @@ filesystem-gzip-test$(EXE_SUFFIX): filesystem-gzip-test.c \
 	filesystem-file-mem.h \
 	filesystem-dir-mem.h \
 	filesystem-gzip.h \
-	filesystem-dir-mem.o \
-	filesystem-file-mem.o
-	$(CC) $< -o $@ filesystem-file-mem.o filesystem-dir-mem.o -lz
+	filesystem-dir-mem-nocache.o \
+	filesystem-file-mem-nocache.o
+	$(CC) $< -o $@ filesystem-file-mem-nocache.o filesystem-dir-mem-nocache.o -lz
 
 filesystem-filehandle-cache.o: filesystem-filehandle-cache.c \
 	../config.h \
@@ -308,9 +324,9 @@ filesystem-tar-test$(EXE_SUFFIX): filesystem-tar-test.c \
 	filesystem-tar.h \
 	filesystem-dir-mem.h \
 	filesystem-file-mem.h \
-	filesystem-dir-mem.o \
-	filesystem-file-mem.o
-	$(CC) $< filesystem-dir-mem.o filesystem-file-mem.o -o $@
+	filesystem-dir-mem-nocache.o \
+	filesystem-file-mem-nocache.o
+	$(CC) $< filesystem-dir-mem-nocache.o filesystem-file-mem-nocache.o -o $@
 
 filesystem-unix.o: filesystem-unix.c \
 	../config.h \

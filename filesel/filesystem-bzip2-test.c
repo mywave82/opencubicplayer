@@ -2,6 +2,7 @@
 
 #define INPUTBUFFERSIZE 128
 #define OUTPUTBUFFERSIZE 64
+#define FILEHANDLE_CACHE_DISABLE
 
 #include "filesystem-bzip2.c"
 #include "filesystem-dir-mem.h"
