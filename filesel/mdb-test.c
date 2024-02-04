@@ -175,10 +175,10 @@ int mdb_basic_sizeof (void)
 		offsetof (struct modinfoentry, mie.general.size),
 		(offsetof (struct modinfoentry, mie.general.size) == 8) ? ANSI_COLOR_GREEN "OK" : ANSI_COLOR_RED "FAILED");
 
-	retval |= (offsetof (struct modinfoentry, mie.general.reserved) != 52);
-	fprintf (stderr, "offsetof(struct modinfoentry.mie.general.reserved) == 52: %ld %s\n" ANSI_COLOR_RESET,
+	retval |= (offsetof (struct modinfoentry, mie.general.reserved) != 55);
+	fprintf (stderr, "offsetof(struct modinfoentry.mie.general.reserved) == 55: %ld %s\n" ANSI_COLOR_RESET,
 		offsetof (struct modinfoentry, mie.general.reserved),
-		(offsetof (struct modinfoentry, mie.general.reserved) == 52) ? ANSI_COLOR_GREEN "OK" : ANSI_COLOR_RED "FAILED");
+		(offsetof (struct modinfoentry, mie.general.reserved) == 55) ? ANSI_COLOR_GREEN "OK" : ANSI_COLOR_RED "FAILED");
 
 	return retval;
 }
