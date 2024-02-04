@@ -70,6 +70,10 @@ const char *ocpfile_t_fill_default_filename_override (struct ocpfile_t *file)
 
 const char *ocpfilehandle_t_fill_default_filename_override (struct ocpfilehandle_t *fh)
 {
+	if (fh->origin)
+	{
+		return fh->origin->filename_override (fh->origin);
+	}
 	return 0;
 }
 
