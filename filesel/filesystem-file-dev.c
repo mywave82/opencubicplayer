@@ -46,21 +46,20 @@ struct dev_ocpfilehandle_t
 	struct dev_ocpfile_t   *owner;
 
 	void *token;
-	uint32_t refcount;
 };
 
 static void dev_filehandle_ref (struct ocpfilehandle_t *_s)
 {
 	struct dev_ocpfilehandle_t *s = (struct dev_ocpfilehandle_t *)_s;
-	s->refcount++;
+	s->head.refcount++;
 }
 
 static void dev_filehandle_unref (struct ocpfilehandle_t *_s)
 {
 	struct dev_ocpfilehandle_t *s = (struct dev_ocpfilehandle_t *)_s;
-	s->refcount--;
+	s->head.refcount--;
 
-	if (!s->refcount)
+	if (!s->head.refcount)
 	{
 		dirdbUnref (s->head.dirdb_ref, dirdb_use_filehandle);
 		s->owner->head.unref (&s->owner->head);
@@ -182,16 +181,16 @@ static struct ocpfilehandle_t *dev_file_open (struct ocpfile_t *_owner)
 		dev_filehandle_eof,
 		dev_filehandle_error,
 		dev_filehandle_read,
-	        dev_filehandle_ioctl, /* ioctl */
+		dev_filehandle_ioctl, /* ioctl */
 		dev_filehandle_filesize,
 		dev_filehandle_filesize_ready,
-	        0, /* filename_override */
-		dirdbRef (owner->head.dirdb_ref, dirdb_use_filehandle)
+		0, /* filename_override */
+		dirdbRef (owner->head.dirdb_ref, dirdb_use_filehandle),
+		1 /* refcount */
 	);
 
 	s->owner = owner;
 	_owner->ref (_owner);
-	s->refcount = 1;
 	s->token = owner->token;
 
 	return &s->head;

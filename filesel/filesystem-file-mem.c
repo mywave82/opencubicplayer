@@ -40,7 +40,6 @@ struct mem_ocpfilehandle_t
 	struct ocpfilehandle_t  head;
 	struct mem_ocpfile_t   *owner; // can be NULL for standalone
 
-	uint32_t refcount;
 	uint32_t filesize;
 	uint64_t pos;
 	int error;
@@ -51,15 +50,15 @@ struct mem_ocpfilehandle_t
 static void mem_filehandle_ref (struct ocpfilehandle_t *_s)
 {
 	struct mem_ocpfilehandle_t *s = (struct mem_ocpfilehandle_t *)_s;
-	s->refcount++;
+	s->head.refcount++;
 }
 
 static void mem_filehandle_unref (struct ocpfilehandle_t *_s)
 {
 	struct mem_ocpfilehandle_t *s = (struct mem_ocpfilehandle_t *)_s;
-	s->refcount--;
+	s->head.refcount--;
 
-	if (!s->refcount)
+	if (!s->head.refcount)
 	{
 		dirdbUnref (s->head.dirdb_ref, dirdb_use_filehandle);
 		if (s->owner)
@@ -164,11 +163,12 @@ static struct ocpfilehandle_t *mem_filehandle_open_real (struct mem_ocpfile_t *o
 		mem_filehandle_eof,
 		mem_filehandle_error,
 		mem_filehandle_read,
-	        0, /* ioctl */
+		0, /* ioctl */
 		mem_filehandle_filesize,
 		mem_filehandle_filesize_ready,
-	        0, /* filename_override */
-		dirdbRef (dirdb_ref, dirdb_use_filehandle)
+		0, /* filename_override */
+		dirdbRef (dirdb_ref, dirdb_use_filehandle),
+		1 /* refcount */
 	);
 
 	s->owner = owner;
@@ -176,7 +176,6 @@ static struct ocpfilehandle_t *mem_filehandle_open_real (struct mem_ocpfile_t *o
 	{
 		s->owner->head.ref (&s->owner->head);
 	}
-	s->refcount = 1;
 	s->filesize = len;
 	s->ptr = ptr;
 

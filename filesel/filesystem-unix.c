@@ -418,7 +418,6 @@ static struct ocpfilehandle_t *unix_file_open (struct ocpfile_t *_s)
 		close (fd);
 		return 0;
 	}
-	r->head.refcount = 1;
 	r->fd = fd;
 	r->owner = s;
 	s->head.ref(&s->head);
@@ -433,11 +432,12 @@ static struct ocpfilehandle_t *unix_file_open (struct ocpfile_t *_s)
 		unix_filehandle_eof,
 		unix_filehandle_error,
 		unix_filehandle_read,
-	        0, /* ioctl */
+		0, /* ioctl */
 		unix_filehandle_filesize,
 		unix_filehandle_filesize_ready,
-	        0, /* filename_override */
-		dirdbRef (s->head.dirdb_ref, dirdb_use_filehandle)
+		0, /* filename_override */
+		dirdbRef (s->head.dirdb_ref, dirdb_use_filehandle),
+		1
 	);
 
 	return &r->head;

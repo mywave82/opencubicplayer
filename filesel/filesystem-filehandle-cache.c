@@ -97,7 +97,7 @@ struct ocpfilehandle_t *cache_filehandle_open (struct ocpfilehandle_t *parent)
 		&s->head,
 		cache_filehandle_ref,
 		cache_filehandle_unref,
-	        parent->origin,
+		parent->origin,
 		cache_filehandle_seek_set,
 		cache_filehandle_getpos,
 		cache_filehandle_eof,
@@ -106,9 +106,12 @@ struct ocpfilehandle_t *cache_filehandle_open (struct ocpfilehandle_t *parent)
 		cache_filehandle_ioctl,
 		cache_filehandle_filesize,
 		cache_filehandle_filesize_ready,
-	        0, /* filename_override */
-		parent->dirdb_ref // we do not dirdb_ref()/dirdb_unref(), since we ref the origin instead
+		0, /* filename_override */
+		parent->dirdb_ref, /* we do not dirdb_ref()/dirdb_unref(), since we ref the origin instead */
+		1 /* refcount */
 	);
+
+	parent->origin->ref (parent->origin);
 
 	s->cache_line[0].data = calloc (1, CACHE_LINE_SIZE);
 	if (!s->cache_line[0].data)
@@ -120,10 +123,6 @@ struct ocpfilehandle_t *cache_filehandle_open (struct ocpfilehandle_t *parent)
 
 	s->parent = parent;
 	s->parent->ref (s->parent);
-
-	s->head.origin->ref (s->head.origin);
-
-	s->head.refcount = 1;
 
 	/* prefill cache-line 0 which is dedicated for the start of the file */
 
@@ -158,12 +157,6 @@ static void cache_filehandle_unref (struct ocpfilehandle_t *_s)
 	{
 		free (s->cache_line[i].data);
 		s->cache_line[i].data = 0;
-	}
-
-	if (s->head.origin)
-	{
-		s->head.origin->unref (s->head.origin);
-		s->head.origin = 0;
 	}
 
 	if (s->parent)

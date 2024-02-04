@@ -298,9 +298,9 @@ static int dotest (const uint64_t filesize,
 		filehandle_test_filesize,
 		filehandle_test_filesize_ready,
 		0, /* filename_override() */
-		2  /* dirdb_ref */
+		2, /* dirdb_ref */
+		1 /* refcount */
 	);
-	filehandle_test.head.refcount = 1;
 	filehandle_test.pos = 0;
 	filehandle_test.data_accesses = filesize ? calloc (filesize, sizeof (uint32_t)) : 0;
 	filehandle_test.reads = 0;

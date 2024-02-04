@@ -280,7 +280,8 @@ static inline void ocpfilehandle_t_fill (
 	uint64_t (*filesize)(struct ocpfilehandle_t *),
 	int (*filesize_ready)(struct ocpfilehandle_t *),
 	const char *(*filename_override) (struct ocpfilehandle_t *),
-	int dirdb_ref)
+	int dirdb_ref,
+	int refcount)
 {
 	s->ref               = ref;
 	s->unref             = unref;
@@ -295,6 +296,7 @@ static inline void ocpfilehandle_t_fill (
 	s->filesize_ready    = filesize_ready;
 	s->filename_override = filename_override ? filename_override : ocpfilehandle_t_fill_default_filename_override;
 	s->dirdb_ref         = dirdb_ref;
+	s->refcount          = refcount;
 }
 
 static inline int ocpfilehandle_read_uint8     (struct ocpfilehandle_t *s, uint8_t *dst) /* returns 0 for OK, and -1 on error */

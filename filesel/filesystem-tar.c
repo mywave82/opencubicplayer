@@ -1114,14 +1114,14 @@ static struct ocpfilehandle_t *tar_file_open (struct ocpfile_t *_self)
 	                       tar_filehandle_filesize,
 	                       tar_filehandle_filesize_ready,
 	                       0, /* filename_override */
-	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle));
+	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle),
+	                       1 /* refcount */
+	);
 
 	retval->file = self;
 
-	DEBUG_PRINT ("We just created a TAR handle, REF it\n");
-	retval->head.ref (&retval->head);
-	DEBUG_PRINT ("\n");
-
+	DEBUG_PRINT ("We just created a TAR handle, REF the source\n");
+	tar_instance_ref (self->owner);
 	tar_io_ref (self->owner);
 
 	return &retval->head;
@@ -1143,12 +1143,7 @@ static void tar_filehandle_ref (struct ocpfilehandle_t *_self)
 	struct tar_instance_filehandle_t *self = (struct tar_instance_filehandle_t *)_self;
 
 	DEBUG_PRINT ("tar_filehandle_ref (old count = %d)\n", self->head.refcount);
-	if (!self->head.refcount)
-	{
-		tar_instance_ref (self->file->owner);
-	}
 	self->head.refcount++;
-	DEBUG_PRINT ("\n");
 }
 
 static void tar_filehandle_unref (struct ocpfilehandle_t *_self)
@@ -1160,7 +1155,6 @@ static void tar_filehandle_unref (struct ocpfilehandle_t *_self)
 	self->head.refcount--;
 	if (!self->head.refcount)
 	{
-		dirdbUnref (self->head.dirdb_ref, dirdb_use_filehandle);
 		tar_io_unref (self->file->owner);
 		tar_instance_unref (self->file->owner);
 		free (self);

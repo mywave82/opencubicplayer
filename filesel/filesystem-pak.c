@@ -1029,14 +1029,14 @@ static struct ocpfilehandle_t *pak_file_open (struct ocpfile_t *_self)
 	                       pak_filehandle_filesize,
 	                       pak_filehandle_filesize_ready,
 	                       0, /* filename_override */
-	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle));
+	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle),
+	                       1 /* refcount */
+	);
 
 	retval->file = self;
 
-	DEBUG_PRINT ("We just created a PAK handle, REF it\n");
-	retval->head.ref (&retval->head);
-	DEBUG_PRINT ("\n");
-
+	DEBUG_PRINT ("We just created a PAK handle, ref the source\n");
+	pak_instance_ref (self->owner);
 	pak_io_ref (self->owner);
 
 	return &retval->head;
@@ -1058,12 +1058,7 @@ static void pak_filehandle_ref (struct ocpfilehandle_t *_self)
 	struct pak_instance_filehandle_t *self = (struct pak_instance_filehandle_t *)_self;
 
 	DEBUG_PRINT ("pak_filehandle_ref (old count = %d)\n", self->head.refcount);
-	if (!self->head.refcount)
-	{
-		pak_instance_ref (self->file->owner);
-	}
 	self->head.refcount++;
-	DEBUG_PRINT ("\n");
 }
 
 static void pak_filehandle_unref (struct ocpfilehandle_t *_self)

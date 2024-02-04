@@ -1417,15 +1417,18 @@ static struct ocpfilehandle_t *cdfs_file_open (struct ocpfile_t *_self)
 	                       cdfs_filehandle_filesize,
 	                       cdfs_filehandle_filesize_ready,
 	                       0, /* filename_override */
-	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle));
+	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle),
+	                       1 /* refcount */
+	);
+
+	cdfs_disc_ref (self->owner);
 
 	retval->file = self;
 	retval->curextent = 0;
 	retval->cursector = 0;
 	retval->curoffset = UINT64_MAX;
 
-	debug_printf ("We just created a CDFS handle, REF it\n");
-	retval->head.ref (&retval->head);
+	debug_printf ("We just created a CDFS handle\n");
 
 	return &retval->head;
 }
@@ -1449,15 +1452,18 @@ static struct ocpfilehandle_t *cdfs_audio_open (struct ocpfile_t *_self)
 	                       cdfs_filehandle_filesize,
 	                       cdfs_filehandle_filesize_ready,
 	                       cdfs_filehandle_filename_override,
-	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle));
+	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle),
+	                       1 /* refcount */
+	);
+
+	cdfs_disc_ref (self->owner);
 
 	retval->file = self;
 	retval->curextent = 0;
 	retval->cursector = 0;
 	retval->curoffset = UINT64_MAX;
 
-	debug_printf ("We just created a CDFS audio handle, REF it\n");
-	retval->head.ref (&retval->head);
+	debug_printf ("We just created a CDFS audio handle\n");
 
 	return &retval->head;
 }
@@ -1621,10 +1627,6 @@ static void cdfs_filehandle_ref (struct ocpfilehandle_t *_self)
 	struct cdfs_instance_filehandle_t *self = (struct cdfs_instance_filehandle_t *)_self;
 
 	debug_printf ("cdfs_filehandle_ref (old count = %d)\n", self->head.refcount);
-	if (!self->head.refcount)
-	{
-		cdfs_disc_ref (self->file->owner);
-	}
 	self->head.refcount++;
 }
 

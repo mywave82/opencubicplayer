@@ -471,7 +471,9 @@ static struct ocpfilehandle_t *gzip_ocpfile_open (struct ocpfile_t *_s)
 	                       gzip_ocpfilehandle_filesize,
 	                       gzip_ocpfilehandle_filesize_ready,
 	                       0, /* filename_override */
-	                       dirdbRef (s->head.dirdb_ref, dirdb_use_filehandle));
+	                       dirdbRef (s->head.dirdb_ref, dirdb_use_filehandle),
+	                       1
+	);
 
 	retval->owner = s;
 	s->head.ref (&s->head);
@@ -484,8 +486,6 @@ static struct ocpfilehandle_t *gzip_ocpfile_open (struct ocpfile_t *_s)
 		free (retval);
 		return 0;
 	}
-
-	retval->head.refcount = 1;
 
 	return &retval->head;
 }

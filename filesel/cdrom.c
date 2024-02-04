@@ -946,20 +946,18 @@ struct ocpfilehandle_cdrom_track_t
 {
 	struct ocpfilehandle_t head;
 	struct cdrom_track_ocpfile_t *owner;
-	int refcount;
 };
 
 static void ocpfilehandle_cdrom_track_ref (struct ocpfilehandle_t *_handle)
 {
-	struct ocpfilehandle_cdrom_track_t *handle = (struct ocpfilehandle_cdrom_track_t *)_handle;
-	handle->refcount++;
+	_handle->refcount++;
 }
 
 static void ocpfilehandle_cdrom_track_unref (struct ocpfilehandle_t *_handle)
 {
 	struct ocpfilehandle_cdrom_track_t *handle = (struct ocpfilehandle_cdrom_track_t *)_handle;
-	handle->refcount--;
-	if (!handle->refcount)
+	handle->head.refcount--;
+	if (!handle->head.refcount)
 	{
 		handle->owner->head.unref (&handle->owner->head);
 		dirdbUnref (handle->head.dirdb_ref, dirdb_use_filehandle);
@@ -1087,13 +1085,12 @@ static struct ocpfilehandle_t *cdrom_track_open (struct ocpfile_t *_self)
 	                      ocpfilehandle_cdrom_track_filesize,
 	                      ocpfilehandle_cdrom_track_filesize_ready,
 	                      ocpfilehandle_cdrom_track_filename_override_disc,
-	                      _self->dirdb_ref);
+	                      _self->dirdb_ref,
+	                      1 /* refcount */);
 	dirdbRef (_self->dirdb_ref, dirdb_use_filehandle);
 
 	retval->owner = self;
 	retval->owner->head.ref (&retval->owner->head);
-
-	retval->refcount = 1;
 
 	return &retval->head;
 }

@@ -2157,7 +2157,12 @@ static struct ocpfilehandle_t *zip_file_open (struct ocpfile_t *_self)
 	                       zip_filehandle_filesize,
 	                       zip_filehandle_filesize_ready,
 	                       0, /* filename_override */
-	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle));
+	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle),
+	                       1 /* refcount */
+	);
+
+	zip_io_ref (self->owner);
+	zip_instance_ref (self->owner);
 
 	retval->file = self;
 	retval->owner = self->owner;
@@ -2169,9 +2174,7 @@ static struct ocpfilehandle_t *zip_file_open (struct ocpfile_t *_self)
 	retval->CurrentDisk       = self->compressed_startdisk;
 	retval->CurrentDiskOffset = self->compressed_fileoffset_startdisk + bufferfill;
 
-	DEBUG_PRINT ("We just created a ZIP handle, REF it\n");
-	retval->head.ref (&retval->head);
-	DEBUG_PRINT ("\n");
+	DEBUG_PRINT ("We just created a ZIP handle\n");
 
 	return &retval->head;
 }
@@ -2190,15 +2193,8 @@ static int zip_file_filesize_ready (struct ocpfile_t *_self)
 static void zip_filehandle_ref (struct ocpfilehandle_t *_self)
 {
 	struct zip_instance_filehandle_t *self = (struct zip_instance_filehandle_t *)_self;
-
 	DEBUG_PRINT ("zip_filehandle_ref (old count = %d)\n", self->head.refcount);
-	if (!self->head.refcount)
-	{
-		zip_io_ref (self->owner);
-		zip_instance_ref (self->owner);
-	}
 	self->head.refcount++;
-	DEBUG_PRINT ("\n");
 }
 
 static void zip_filehandle_unref (struct ocpfilehandle_t *_self)

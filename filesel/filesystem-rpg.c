@@ -773,14 +773,14 @@ static struct ocpfilehandle_t *rpg_file_open (struct ocpfile_t *_self)
 	                       rpg_filehandle_filesize,
 	                       rpg_filehandle_filesize_ready,
 	                       0, /* filename_override */
-	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle));
+	                       dirdbRef (self->head.dirdb_ref, dirdb_use_filehandle),
+	                       1
+	);
 
 	retval->file = self;
 
-	DEBUG_PRINT ("We just created a RPG handle, REF it\n");
-	retval->head.ref (&retval->head);
-	DEBUG_PRINT ("\n");
-
+	DEBUG_PRINT ("We just created a RPG handle, REF the source\n");
+	rpg_instance_ref (self->owner);
 	rpg_io_ref (self->owner);
 
 	return &retval->head;
@@ -802,12 +802,7 @@ static void rpg_filehandle_ref (struct ocpfilehandle_t *_self)
 	struct rpg_instance_filehandle_t *self = (struct rpg_instance_filehandle_t *)_self;
 
 	DEBUG_PRINT ("rpg_filehandle_ref (old count = %d)\n", self->head.refcount);
-	if (!self->head.refcount)
-	{
-		rpg_instance_ref (self->file->owner);
-	}
 	self->head.refcount++;
-	DEBUG_PRINT ("\n");
 }
 
 static void rpg_filehandle_unref (struct ocpfilehandle_t *_self)
