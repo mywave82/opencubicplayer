@@ -372,8 +372,24 @@ static uint64_t cache_filehandle_getpos (struct ocpfilehandle_t *_s)
 static int cache_filehandle_eof (struct ocpfilehandle_t *_s)
 {
 	struct cache_ocpfilehandle_t *s = (struct cache_ocpfilehandle_t *)_s;
+	uint64_t oldpos;
 
-	return s->pos == cache_filehandle_filesize (_s);
+	if (s->pos < s->maxpos)
+	{
+		return 0;
+	}
+
+	oldpos = s->pos;
+	/* attempt to pull in more data */
+	cache_filehandle_seek_set (_s, s->maxpos + 1);
+	cache_filehandle_seek_set (_s, oldpos);
+
+	if (s->pos < s->maxpos)
+	{
+		return 0;
+	}
+
+	return 1;
 }
 
 static int cache_filehandle_error (struct ocpfilehandle_t *_s)
