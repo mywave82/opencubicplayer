@@ -42,9 +42,9 @@ struct PluginInitAPI_t
 		const char *mdbtitle,
 		const char *mdbcomposer,
 		void *token,
-		int  (*Init)       (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API), // Client can change token for instance, it defaults to the provided one
-		void (*Run)        (void **token,                                                           const struct DevInterfaceAPI_t *API), // Client can change token for instance
-		void (*Close)      (void **token,                                                           const struct DevInterfaceAPI_t *API), // Client can change token for instance
+		int  (*Init)       (void **token, struct moduleinfostruct *info, const struct DevInterfaceAPI_t *API), // Client can change token for instance, it defaults to the provided one
+		void (*Run)        (void **token,                                const struct DevInterfaceAPI_t *API), // Client can change token for instance
+		void (*Close)      (void **token,                                const struct DevInterfaceAPI_t *API), // Client can change token for instance
 		void (*Destructor) (void  *token)
 	);
 	struct dmDrive *dmSetup;

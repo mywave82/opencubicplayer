@@ -69,13 +69,13 @@ static struct ocpfile_t    *removefiles;  // needs to overlay an dialog above fi
 static struct ocpdir_t      listall;  // complete query
 static struct ocpdir_t      search;   // needs to throttle a dialog, before it can complete!! upon listing
 
-static int  medialibAddInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API);
+static int  medialibAddInit (void **token, struct moduleinfostruct *info, const struct DevInterfaceAPI_t *API);
 static void medialibAddRun  (void **token, const struct DevInterfaceAPI_t *API);
 
-static int  medialibRefreshInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API);
+static int  medialibRefreshInit (void **token, struct moduleinfostruct *info, const struct DevInterfaceAPI_t *API);
 static void medialibRefreshRun  (void **token, const struct DevInterfaceAPI_t *API);
 
-static int  medialibRemoveInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API);
+static int  medialibRemoveInit (void **token, struct moduleinfostruct *info, const struct DevInterfaceAPI_t *API);
 static void medialibRemoveRun  (void **token, const struct DevInterfaceAPI_t *API);
 
 static void              ocpdir_listall_ref (struct ocpdir_t *self);

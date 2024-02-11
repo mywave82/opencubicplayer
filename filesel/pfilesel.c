@@ -1093,7 +1093,7 @@ static int VirtualInterfaceInit (struct moduleinfostruct *info, struct ocpfileha
 	}
 	if (CurrentVirtualDevice)
 	{
-		if (!CurrentVirtualDevice->Init (info, fi, &DevInterfaceAPI))
+		if (!CurrentVirtualDevice->Init (CurrentVirtualDevice, info, &DevInterfaceAPI))
 		{
 			CurrentVirtualDevice = 0;
 			return 0;
@@ -1108,7 +1108,7 @@ static interfaceReturnEnum VirtualInterfaceRun (void)
 {
 	if (CurrentVirtualDevice)
 	{
-		return CurrentVirtualDevice->Run (CurrentVirtualDeviceFile, &DevInterfaceAPI);
+		return CurrentVirtualDevice->Run (CurrentVirtualDevice, &DevInterfaceAPI);
 	}
 	return interfaceReturnNextAuto;
 }
@@ -1117,7 +1117,7 @@ static void VirtualInterfaceClose (void)
 {
 	if (CurrentVirtualDevice)
 	{
-		CurrentVirtualDevice->Close (CurrentVirtualDeviceFile, &DevInterfaceAPI);
+		CurrentVirtualDevice->Close (CurrentVirtualDevice, &DevInterfaceAPI);
 		CurrentVirtualDeviceFile->unref (CurrentVirtualDeviceFile);
 		CurrentVirtualDeviceFile = 0;
 		CurrentVirtualDevice = 0;

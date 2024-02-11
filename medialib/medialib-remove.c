@@ -118,7 +118,7 @@ static void mlRemoveDraw(const char *title)
 	}
 }
 
-static int medialibRemoveInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API)
+static int medialibRemoveInit (void **token, struct moduleinfostruct *info, const struct DevInterfaceAPI_t *API)
 {
 	if (medialib_sources_count)
 	{

@@ -280,7 +280,7 @@ static void medialibAddClear (void)
 	      medialibAddPath = 0;
 }
 
-static int medialibAddInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API)
+static int medialibAddInit (void **token, struct moduleinfostruct *info, const struct DevInterfaceAPI_t *API)
 {
 #ifndef _WIN32
 	if (API->dmFile->cwd)

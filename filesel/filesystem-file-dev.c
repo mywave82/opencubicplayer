@@ -19,6 +19,7 @@
  */
 
 #include "config.h"
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include "types.h"
@@ -34,9 +35,9 @@ struct dev_ocpfile_t
 
 	void *token;
 
-	int  (*Init)       (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API); // Client can change token
-	void (*Run)        (void **token,                                                           const struct DevInterfaceAPI_t *API); // Client can change token
-	void (*Close)      (void **token,                                                           const struct DevInterfaceAPI_t *API); // Client can change token
+	int  (*Init)       (void **token, struct moduleinfostruct *info, const struct DevInterfaceAPI_t *API); // Client can change token
+	void (*Run)        (void **token,                                const struct DevInterfaceAPI_t *API); // Client can change token
+	void (*Close)      (void **token,                                const struct DevInterfaceAPI_t *API); // Client can change token
 	void (*Destructor) (void  *token);
 };
 
@@ -44,6 +45,7 @@ struct dev_ocpfilehandle_t
 {
 	struct ocpfilehandle_t  head;
 	struct dev_ocpfile_t   *owner;
+	struct IOCTL_DevInterface devinterface;
 
 	void *token;
 };
@@ -119,19 +121,19 @@ static int dev_filehandle_filesize_ready (struct ocpfilehandle_t *_s)
 	return 1;
 }
 
-static int DevInterface_Init (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API)
+static int DevInterface_Init (struct IOCTL_DevInterface *self, struct moduleinfostruct *info, const struct DevInterfaceAPI_t *API)
 {
-	struct dev_ocpfilehandle_t *s = (struct dev_ocpfilehandle_t *)f;
+	struct dev_ocpfilehandle_t *s = (struct dev_ocpfilehandle_t *)((char *)self - offsetof(struct dev_ocpfilehandle_t, devinterface));
 	if (s->owner->Init)
 	{
-		return s->owner->Init (&s->token, info, f, API);
+		return s->owner->Init (&s->token, info, API);
 	}
 	return 1;
 }
 
-static interfaceReturnEnum DevInterface_Run (struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API)
+static interfaceReturnEnum DevInterface_Run (struct IOCTL_DevInterface *self, const struct DevInterfaceAPI_t *API)
 {
-	struct dev_ocpfilehandle_t *s = (struct dev_ocpfilehandle_t *)f;
+	struct dev_ocpfilehandle_t *s = (struct dev_ocpfilehandle_t *)((char *)self - offsetof(struct dev_ocpfilehandle_t, devinterface));
 	if (s->owner->Run)
 	{
 		s->owner->Run (&s->token, API);
@@ -139,27 +141,22 @@ static interfaceReturnEnum DevInterface_Run (struct ocpfilehandle_t *f, const st
 	return interfaceReturnNextAuto;
 }
 
-static void DevInterface_Close (struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API)
+static void DevInterface_Close (struct IOCTL_DevInterface *self, const struct DevInterfaceAPI_t *API)
 {
-	struct dev_ocpfilehandle_t *s = (struct dev_ocpfilehandle_t *)f;
+	struct dev_ocpfilehandle_t *s = (struct dev_ocpfilehandle_t *)((char *)self - offsetof(struct dev_ocpfilehandle_t, devinterface));
 	if (s->owner->Close)
 	{
 		return s->owner->Close (&s->token, API);
 	}
 }
 
-static const struct IOCTL_DevInterface DevInterface =
-{
-	DevInterface_Init,
-	DevInterface_Run,
-	DevInterface_Close
-};
-
 static int dev_filehandle_ioctl (struct ocpfilehandle_t *_handle, const char *cmd, void *ptr)
 {
+	struct dev_ocpfilehandle_t *s = (struct dev_ocpfilehandle_t *)_handle;
+
 	if (!strcmp (cmd, IOCTL_DEVINTERFACE))
 	{
-		*(const struct IOCTL_DevInterface **)ptr = &DevInterface;
+		*(const struct IOCTL_DevInterface **)ptr = &s->devinterface;
 		return 0;
 	}
 	return -1;
@@ -188,6 +185,10 @@ static struct ocpfilehandle_t *dev_file_open (struct ocpfile_t *_owner)
 		dirdbRef (owner->head.dirdb_ref, dirdb_use_filehandle),
 		1 /* refcount */
 	);
+
+	s->devinterface.Init  = DevInterface_Init;
+	s->devinterface.Run   = DevInterface_Run;
+	s->devinterface.Close = DevInterface_Close;
 
 	s->owner = owner;
 	_owner->ref (_owner);
@@ -241,9 +242,9 @@ struct ocpfile_t *dev_file_create
 	const char *mdbtitle,
 	const char *mdbcomposer,
 	void *token,
-	int  (*Init)       (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API),
-	void (*Run)        (void **token,                                                           const struct DevInterfaceAPI_t *API),
-	void (*Close)      (void **token,                                                           const struct DevInterfaceAPI_t *API),
+	int  (*Init)       (void **token, struct moduleinfostruct *info, const struct DevInterfaceAPI_t *API),
+	void (*Run)        (void **token,                                const struct DevInterfaceAPI_t *API),
+	void (*Close)      (void **token,                                const struct DevInterfaceAPI_t *API),
 	void (*Destructor) (void  *token)
 )
 {

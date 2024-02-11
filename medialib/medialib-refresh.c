@@ -116,7 +116,7 @@ static void mlRefreshDraw(const char *title)
 	}
 }
 
-static int medialibRefreshInit (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API)
+static int medialibRefreshInit (void **token, struct moduleinfostruct *info, const struct DevInterfaceAPI_t *API)
 {
 	if (medialib_sources_count)
 	{

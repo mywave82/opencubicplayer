@@ -36,9 +36,9 @@ struct DevInterfaceAPI_t
 
 struct IOCTL_DevInterface
 {
-	int                 (*Init)  (struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API);
-	interfaceReturnEnum (*Run)   (                               struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API);
-	void                (*Close) (                               struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API);
+	int                 (*Init)  (struct IOCTL_DevInterface *self, struct moduleinfostruct *info, const struct DevInterfaceAPI_t *API);
+	interfaceReturnEnum (*Run)   (struct IOCTL_DevInterface *self,                                const struct DevInterfaceAPI_t *API);
+	void                (*Close) (struct IOCTL_DevInterface *self,                                const struct DevInterfaceAPI_t *API);
 };
 
 struct ocpfile_t *dev_file_create
@@ -48,9 +48,9 @@ struct ocpfile_t *dev_file_create
 	const char *mdbtitle,
 	const char *mdbcomposer,
 	void *token,
-	int  (*Init)       (void **token, struct moduleinfostruct *info, struct ocpfilehandle_t *f, const struct DevInterfaceAPI_t *API), // Client can change token for instance, it defaults to the provided one
-	void (*Run)        (void **token,                                                           const struct DevInterfaceAPI_t *API), // Client can change token for instance
-	void (*Close)      (void **token,                                                           const struct DevInterfaceAPI_t *API), // Client can change token for instance
+	int  (*Init)       (void **token, struct moduleinfostruct *info, const struct DevInterfaceAPI_t *API), // Client can change token for instance, it defaults to the provided one
+	void (*Run)        (void **token,                                const struct DevInterfaceAPI_t *API), // Client can change token for instance
+	void (*Close)      (void **token,                                const struct DevInterfaceAPI_t *API), // Client can change token for instance
 	void (*Destructor) (void  *token)
 );
 
