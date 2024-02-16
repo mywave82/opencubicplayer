@@ -287,8 +287,6 @@ namespace libsidplayfp
 		dirdbAPI->Unref (  basic_ref, dirdb_use_file);
 		dirdbAPI->Unref (chargen_ref, dirdb_use_file);
 
-		dirdbAPI->Unref ( dirdb_base, dirdb_use_dir);
-
 		sidplayer.setKernal ( kernalRom);
 		sidplayer.setBasic  (  basicRom);
 		sidplayer.setChargen(chargenRom);
