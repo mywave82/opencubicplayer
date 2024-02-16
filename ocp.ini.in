@@ -1,5 +1,5 @@
 [version]
-  epoch=20240107
+  epoch=20240211
 
 [general]
 ;link=
@@ -123,10 +123,17 @@
   filterbias=0.0
 ; filtercurve6581=0.5  Controls the filter curve for the MOS6581 SID model if emulator=residfp.
 ;                      Ranges from 0.0 (light) to 1.0 (dark), the default value is 0.5.
+  filterrange6581=0.5
+; filterrange6581=0.5  Controls the filter range for the MOS6581 SID model if emulator=residfp.
+;                      Ranges from 0.0 (dark) to 1.0 (bright), the default value is 0.5.
   filtercurve6581=0.5
+
 ; filtercurve8580=0.5  Controls the filter curve for the MOS8580 SID model if emulator=residfp.
 ;                      Ranges from 0.0 (light) to 1.0 (dark), the default value is 0.5.
   filtercurve8580=0.5
+; combinedwaveforms=Average  Controls the strength of the combined waveforms. Options are
+;                            Average, Weak and Strong, default value is Average
+  combinedwaveforms=Average
 ; digiboost=on/off  Enable digiboost for MOS8580 SID model.
   digiboost=off
 ; kernal, basic and chargen makes it possible to specify path to ROM images, that the C64

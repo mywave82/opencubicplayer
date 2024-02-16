@@ -85,7 +85,9 @@ namespace libsidplayfp
 			double         bias;
 			// Filter parameters for reSIDfp
 			double         filterCurve6581;
+			double         filterRange6581;
 			double         filterCurve8580;
+			SidConfig::sid_cw_t combinedWaveforms;
 
 			bool           enabled;
 		} m_filter;

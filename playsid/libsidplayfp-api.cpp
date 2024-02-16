@@ -245,6 +245,16 @@ namespace libsidplayfp
 			//fprintf (stderr, "filtercurve6581=%lf\n", m_filter.filterCurve6581);
 		}
 
+		const char *range6581 = configAPI->GetProfileString("libsidplayfp", "filterrange6581", "0.5");
+		m_filter.filterRange6581 = strtod(range6581, &endptr);
+		if ((*endptr != 0) || (range6581 == endptr))
+		{
+			fprintf (stderr, "[libsidplayfp]\n  filterrange6581=invalid... defaulting to 0.5\n");
+			m_filter.filterRange6581=0.5;
+		} else {
+			//fprintf (stderr, "filterrange6581=%lf\n", m_filter.filterRange6581);
+		}
+
 		const char *curve8580 = configAPI->GetProfileString("libsidplayfp", "filtercurve8580", "0.5");
 		m_filter.filterCurve8580 = strtod(curve8580, &endptr);
 		if ((*endptr != 0) || (curve8580 == endptr))
@@ -253,6 +263,21 @@ namespace libsidplayfp
 			m_filter.filterCurve8580=0.5;
 		} else {
 			//fprintf (stderr, "filtercurve8580=%lf\n", m_filter.filterCurve8580);
+		}
+
+		const char *CWS = configAPI->GetProfileString("libsidplayfp", "combinedwaveforms", "Average");
+		if (!strcasecmp(CWS, "Weak"))
+		{
+			m_filter.combinedWaveforms = SidConfig::WEAK;
+		} else if (!strcasecmp(CWS, "Strong"))
+		{
+			m_filter.combinedWaveforms = SidConfig::STRONG;
+		} else if (!strcasecmp(CWS, "Average"))
+		{
+			m_filter.combinedWaveforms = SidConfig::AVERAGE;
+		} else {
+			fprintf (stderr, "[libsidplayfp]\n  combinedwaveforms=invalid... defaulting to Average\n");
+			m_filter.combinedWaveforms = SidConfig::AVERAGE;
 		}
 
 		m_engCfg.digiBoost = configAPI->GetProfileBool("libsidplayfp", "digiboost", 0, 0);
@@ -374,14 +399,10 @@ namespace libsidplayfp
 					goto createSidEmu_error;
 				}
 
-				if (m_filter.filterCurve6581)
-				{
-					rs->filter6581Curve(m_filter.filterCurve6581);
-				}
-				if (m_filter.filterCurve8580)
-				{
-					rs->filter8580Curve(m_filter.filterCurve8580);
-				}
+				rs->filter6581Curve(m_filter.filterCurve6581);
+				rs->filter6581Range(m_filter.filterRange6581);
+				rs->filter8580Curve(m_filter.filterCurve8580);
+				rs->combinedWaveformsStrength(m_filter.combinedWaveforms);
 			} else {
 				ReSIDBuilder *rs = new ReSIDBuilder( "ReSID" );
 

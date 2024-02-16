@@ -33,6 +33,8 @@ LIBSIDPLAYOBJECTS=libsidplayfp-builders-resid-builder-resid-builder.o \
 	libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig.o \
 	libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig6581.o \
 	libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig8580.o \
+	libsidplayfp-builders-residfp-builder-residfp-Integrator6581.o\
+	libsidplayfp-builders-residfp-builder-residfp-Integrator8580.o\
 	libsidplayfp-builders-residfp-builder-residfp-OpAmp.o \
 	libsidplayfp-builders-residfp-builder-residfp-SID.o \
 	libsidplayfp-builders-residfp-builder-residfp-SincResampler.o \
@@ -203,6 +205,12 @@ libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig6581.o: \
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig8580.o: \
 	libsidplayfp-git/src/builders/residfp-builder/residfp/FilterModelConfig8580.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
+libsidplayfp-builders-residfp-builder-residfp-Integrator6581.o: \
+	libsidplayfp-git/src/builders/residfp-builder/residfp/Integrator6581.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
+libsidplayfp-builders-residfp-builder-residfp-Integrator8580.o: \
+	libsidplayfp-git/src/builders/residfp-builder/residfp/Integrator8580.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-OpAmp.o: \
 	libsidplayfp-git/src/builders/residfp-builder/residfp/OpAmp.cpp
