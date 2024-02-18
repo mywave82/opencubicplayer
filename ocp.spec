@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 0.2.106
+%define version 0.2.107
 
 Name: %{name}
 Version: %{version}
@@ -33,33 +33,30 @@ frontend, with some few optional features in graphical. Plays modules, sids,
 wave and mp3
 
 %changelog
- Changes from version 0.2.105 to 0.2.106:
+ Changes from version 0.2.106 to 0.2.107:
 
- * [IT] Increase the number of max-samples to match openMPT (it can export files with more samples that original tracker and Schism supports)
- * [devpdisk] Reported time during playback was random
- * [adplug] Add support for SudoMakers RetroWave OPL3 Express, please configure it in setup:/adplugconfig.dev
- * [adplug] Make channel tracker aware of AM/FM modes so it more correctly can display visualization
- * [adplug] Left/Right OPL3 logic was incorrect in the register-tracker
- * [mingw] Initial support (BETA) for mingw, enables Windows support
- * [libancient] Add more fingerprints for compression formats that v2.1.0 can decompress
- * [Linux CDROM] Fix deadlock
- * [configure] cleanup --bindir --libdir and --datadir, and new syntax to override post ocp suffixes: ./configure LIBDIROCP=/usr/lib/ocp DATADIROCP=/usr/data/ocp
- * [configure] removed --with-dir-suffix
- * [CDROM *.CUE] REM didn't work as expected
- * [CDROM *.CUE] files didn't work if containing INDEX 00 (pregap)
- * [CDROM *.CUE] BINARY keyword should be little endian, but there are tools that produce big-endian files without marking them correctly. So we need to detect the endian used.
- * [CDROM *.CUE] files didn't include pregaps in the track table
- * [CDROM *.TOC] files didn't split the logic for pregap and offset into the raw file
- * [musicbrainz] Increase the buffersize, some data retrivals failed
- * [global MIME database] Add adplug fileformats
- * [global MIME database] Add Game Music Emulator fileformats
- * [SDL2] if entering fullscreen while in graphical effect mode, it could not be exited without visiting a textmode resolution.
- * [SDL2] Use SDL_OpenAudioDevice(), else the expected audio format between SDL2 and OCP might not be what we expect causing random noise to be played.
- * [X11] non-Shm usage could fail to successfully create butter on window resize
- * [X11] If background picture is loaded in GUI modes, it was not repainted on window-resize
- * [unifont] Allow for unifont ttf/otf files to be placed in the datadir by using ./configure --with-unifont-relative (you still need to copy the files in)
- * [*.VGZ] Silently convert them to *.VGM
- * [GME] Add support for Game Music Emulator library (libgme) for playback of various retro console systems
+ * libsidplayfp:
+   * Make it possible to tune parameters in real-time.
+   * Update libsidplayfp to the latest master.
+   * Plugin had an extra dirdbUnref() that should not be there.
+ * adplug:
+   * Update adplug to latest master.
+   * Scrolling the channel viewer could crash the player due to read of out-of-bound memory.
+   * The wrapper OPL class OCP uses had some minor problems:
+     * In OPL3 mode, if a channel was in 4-OP mode, the second half would always muted.
+     * In OPL3 mode, if a channel was in 4-OP mode, you could mute the second half of the channel (in addition to the problem mentioned above).
+     * When a channel is going in/out of 4-OP mode, mute was not consistent.
+ * Refactor and use file-caching.
+ * Add compression hint to the fie API, solid files should be scanned directly.
+ * Differentiate unread (files not scanned) and files were the file content turned out to be unknown. Speeds up the file browser, especially if there are archives present.
+ * mingw:
+   * Latest version of packages OCP depends on.
+   * Enable optimization (needed for static inline functions to work as expected).
+   * Location of ocp.ini did not match the actual install.
+ * ISO/TOC - Audio CDs could be unable to play after being looked up in the online discid-database.
+ * Update libancient filter to match upto libancient master (needs matching support from host operating system for them to work).
+ * Add support for *.RPG archive file from "Official Hamster Republic Role Playing Game Construction Engine", and *.BAM that in game data files as stored as *.1 *.2 *.3 etc.
+ * Potential hang-bug in UDF (CDROM DVD image files) parser.
 
 %prep
 %setup -q -n %{name}-%{version}
