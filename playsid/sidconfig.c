@@ -398,7 +398,7 @@ if (skip)                   \
 	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, dot, " 5: force SID", offon, 2, config_forceSID, EditPos==4, API);                      _B
 	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, dot, " 6: CIA", CIAmodels, 3, config_CIA, EditPos==5, API);                             _B
 	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, dot, " 7: filter", offon, 2, config_filter, EditPos==6, API);                           _B
-	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, dot, " 8: filterbias", 10, "mv", -5000, 5000, config_filterbias, EditPos==7, API);      _B
+	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, dot, " 8: filterbias", 10, "mV", -5000, 5000, config_filterbias, EditPos==7, API);      _B
 	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, dot, " 9: filtercurve6581", 100, "", 0, 100, config_filtercurve6581, EditPos==8, API);  _B
 	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, dot, "10: filterrange6581", 100, "", 0, 100, config_filterrange6581, EditPos==9, API);  _B
 	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, dot, "11: filtercurve8580", 100, "", 0, 100, config_filtercurve8580, EditPos==10, API); _B
@@ -446,23 +446,23 @@ if (skip)                   \
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%*C %.9o\xb3", mlWidth - 2);
 			break;
 		case 7:
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Only used by \"resid\".%*C %.9o\xb3", mlWidth - 24);
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Default is 0.0mV%*C %.9o\xb3", mlWidth - 19);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%*C %.9o\xb3", mlWidth - 2);
 			break;
 		case 8:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Value to use if SID is MOS6581.%*C %.9o\xb3", mlWidth - 34);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Only used by \"residfp\". Value to use if SID is MOS6581.%*C %.9o\xb3", mlWidth - 58);
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Default is 0.5%*C %.9o\xb3", mlWidth - 17);
 			break;
 		case 9:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o MOS6581 only: 0=\"bright\", 1=\"dark\".%*C %.9o\xb3", mlWidth - 38);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Only used by \"residfp\". MOS6581 only: 0=\"bright\", 1=\"dark\".%*C %.9o\xb3", mlWidth - 62);
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Default is 0.5%*C %.9o\xb3", mlWidth - 17);
 			break;
 		case 10:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Value to use if SID is MOS8580.%*C %.9o\xb3", mlWidth - 34);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Only used by \"residfp\". Value to use if SID is MOS8580.%*C %.9o\xb3", mlWidth - 58);
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Default is 0.5%*C %.9o\xb3", mlWidth - 17);
 			break;
 		case 11:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Combined waveforms strength.%*C %.9o\xb3", mlWidth - 31);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Only used by \"residfp\". Combined waveforms strength.%*C %.9o\xb3", mlWidth - 55);
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Default is average.%*C %.9o\xb3", mlWidth - 22);
 			break;
 		case 12:
@@ -1135,12 +1135,12 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 				} else {
 					if (esel == 7)
 					{
-						if (repeat < 100)
+						if (repeat < 20)
 						{
 							repeat += 1;
 						}
 					} else {
-						if (repeat < 10)
+						if (repeat < 5)
 						{
 							repeat += 1;
 						}

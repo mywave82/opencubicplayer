@@ -72,6 +72,13 @@ namespace libsidplayfp
 		c64::model_t c64Model (void) { return sidplayer.getModel(); }
 		void mute(int chan, bool mute);
 
+		void SetFilter(bool enable);
+		void SetBias(double bias);
+		void SetFilterCurve6581 (double v);
+		void SetFilterRange6581 (double v);
+		void SetFilterCurve8580 (double v);
+		void SetCombinedWaveformsStrength (int CWS);
+
 	private:
 		SidConfig          m_engCfg;
 		SidTune            m_tune;

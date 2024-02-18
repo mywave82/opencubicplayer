@@ -53,6 +53,7 @@ extern "C"
 }
 #include "sidplayfp/SidTuneInfo.h"
 #include "cpiinfo.h"
+#include "cpisidsetup.h"
 #include "sidplay.h"
 
 static void sidDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -403,6 +404,7 @@ static int sidOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 	cpifaceSession->InPause = 0;
 
 	SidInfoInit (cpifaceSession);
+	cpiSidSetupInit (cpifaceSession);
 
 	return errOk;
 }

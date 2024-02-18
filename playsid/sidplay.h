@@ -45,4 +45,11 @@ OCP_INTERNAL void sidGetChanInfo (int i, sidChanInfo &ci);
 OCP_INTERNAL int sidGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
 OCP_INTERNAL int sidGetPChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
 
+OCP_INTERNAL void sidSetFilter (bool enable);
+OCP_INTERNAL void sidSetBias (double bias);
+OCP_INTERNAL void sidSetFilterCurve6581 (double v);
+OCP_INTERNAL void sidSetFilterRange6581 (double v);
+OCP_INTERNAL void sidSetFilterCurve8580 (double v);
+OCP_INTERNAL void sidSetCombinedWaveformsStrength (int CWF);
+
 #endif

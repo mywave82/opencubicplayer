@@ -96,7 +96,7 @@ uninstall:
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/95-sidplay$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(BINDIR)/dumpsid$(EXE_SUFFIX)"
 
-playsid_so=cpiinfo.o sidplay.o sidpplay.o sidconfig.o sidtype.o $(LIBSIDPLAYOBJECTS)
+playsid_so=cpiinfo.o cpisidsetup.o sidplay.o sidpplay.o sidconfig.o sidtype.o $(LIBSIDPLAYOBJECTS)
 playsid$(LIB_SUFFIX): $(playsid_so)
 	$(CXX) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^
 
@@ -353,7 +353,20 @@ cpiinfo.o: \
 	../types.h \
 	../cpiface/cpiface.h \
 	../stuff/poutput.h
-	$(CXX) $< -o $@ -c 
+	$(CXX) $< -o $@ -c
+
+cpisidsetup.o: \
+	cpisidsetup.cpp \
+	cpisidsetup.h \
+	sidplay.h \
+	../config.h \
+	../types.h \
+	../boot/psetting.h \
+	../cpiface/cpiface.h \
+	../stuff/compat.h \
+	../stuff/imsrtns.h \
+	../stuff/poutput.h
+	$(CXX) $< -o $@ -c
 
 sidconfig.o: sidconfig.c \
 	md5.inc.c \
@@ -422,6 +435,7 @@ sidpplay.o: sidpplay.cpp \
 	../stuff/sets.h \
 	./libsidplayfp-git/src/sidplayfp/SidTuneInfo.h \
 	cpiinfo.h \
+	cpisidsetup.h \
 	sidplay.h \
 	sidtype.h \
 	sidconfig.h

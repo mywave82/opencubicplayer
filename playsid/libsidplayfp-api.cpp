@@ -538,6 +538,73 @@ namespace libsidplayfp
 		sidplayer.mute (chan / 3, chan % 3, mute);
 	}
 
+	void ConsolePlayer::SetFilter(bool enable)
+	{
+		const SidConfig &config = sidplayer.config ();
+		config.sidEmulation->filter (enable);
+	}
+
+	void ConsolePlayer::SetBias(double bias)
+	{
+		if (bias >  500.0) bias =  500.0;
+		if (bias < -500.0) bias = -500.0;
+
+		ReSIDBuilder *rs = dynamic_cast<ReSIDBuilder *>(m_engCfg.sidEmulation);
+		if (rs)
+		{
+			rs->bias (bias);
+		}
+	}
+
+	void ConsolePlayer::SetFilterCurve6581 (double v)
+	{
+		if (v > 1.0) v = 1.0;
+		if (v < 0.0) v = 0.0;
+
+		ReSIDfpBuilder *rs = dynamic_cast<ReSIDfpBuilder *>(m_engCfg.sidEmulation);
+		if (rs)
+		{
+			rs->filter6581Curve (v);
+		}
+	}
+
+	void ConsolePlayer::SetFilterRange6581 (double v)
+	{
+		if (v > 1.0) v = 1.0;
+		if (v < 0.0) v = 0.0;
+
+		ReSIDfpBuilder *rs = dynamic_cast<ReSIDfpBuilder *>(m_engCfg.sidEmulation);
+		if (rs)
+		{
+			rs->filter6581Range (v);
+		}
+	}
+
+	void ConsolePlayer::SetFilterCurve8580 (double v)
+	{
+		if (v > 1.0) v = 1.0;
+		if (v < 0.0) v = 0.0;
+
+		ReSIDfpBuilder *rs = dynamic_cast<ReSIDfpBuilder *>(m_engCfg.sidEmulation);
+		if (rs)
+		{
+			rs->filter8580Curve (v);
+		}
+	}
+
+	void ConsolePlayer::SetCombinedWaveformsStrength (int CWS)
+	{
+		if (CWS < 0) CWS = 0;
+		if (CWS > 2) CWS = 2;
+		ReSIDfpBuilder *rs = dynamic_cast<ReSIDfpBuilder *>(m_engCfg.sidEmulation);
+		if (rs)
+		{
+			if (CWS == 0) rs->combinedWaveformsStrength (SidConfig::AVERAGE);
+			if (CWS == 1) rs->combinedWaveformsStrength (SidConfig::WEAK);
+			if (CWS == 2) rs->combinedWaveformsStrength (SidConfig::STRONG);
+		}
+	}
+
 	const SidTuneInfo::clock_t ConsolePlayer::getTuneInfoClockSpeed(void)
 	{
 		const SidTuneInfo *tuneInfo = m_tune.getInfo();

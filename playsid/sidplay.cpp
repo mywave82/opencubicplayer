@@ -848,6 +848,60 @@ OCP_INTERNAL int sidGetPChanSample (struct cpifaceSessionAPI_t *cpifaceSession, 
 	return !!sidMuted[ch];
 }
 
+OCP_INTERNAL void sidSetFilter(bool enable)
+{
+	if (!mySidPlayer)
+	{
+		return;
+	}
+	mySidPlayer->SetFilter (enable);
+}
+
+OCP_INTERNAL void sidSetBias(double bias)
+{
+	if (!mySidPlayer)
+	{
+		return;
+	}
+	mySidPlayer->SetBias (bias);
+}
+
+OCP_INTERNAL void sidSetFilterCurve6581 (double v)
+{
+	if (!mySidPlayer)
+	{
+		return;
+	}
+	mySidPlayer->SetFilterCurve6581 (v);
+}
+
+OCP_INTERNAL void sidSetFilterRange6581 (double v)
+{
+	if (!mySidPlayer)
+	{
+		return;
+	}
+	mySidPlayer->SetFilterRange6581 (v);
+}
+
+OCP_INTERNAL void sidSetFilterCurve8580 (double v)
+{
+	if (!mySidPlayer)
+	{
+		return;
+	}
+	mySidPlayer->SetFilterCurve8580 (v);
+}
+
+OCP_INTERNAL void sidSetCombinedWaveformsStrength (int CWF)
+{
+	if (!mySidPlayer)
+	{
+		return;
+	}
+	mySidPlayer->SetCombinedWaveformsStrength (CWF);
+}
+
 OCP_INTERNAL int sidOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int retval;
