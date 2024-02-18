@@ -1,5 +1,5 @@
 /** OpenCP Module Player
- * copyright (c) 2006-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2006-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * CoreAudio (Darwin/Mac OS/OSX) Player device
  *
@@ -713,4 +713,4 @@ static const struct plrDriver_t  plrCoreAudio =
 	CoreAudioClose
 };
 
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpcoreaudio", .desc = "OpenCP Player Device: CoreAudio (c) 2006-'23 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = CoreAudioPluginInit, .PluginClose = CoreAudioWriterPluginClose};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpcoreaudio", .desc = "OpenCP Player Device: CoreAudio (c) 2006-'24 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = CoreAudioPluginInit, .PluginClose = CoreAudioWriterPluginClose};

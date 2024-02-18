@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2023 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2023-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Code to decode RPG file archives (ohrrpgce)
  *

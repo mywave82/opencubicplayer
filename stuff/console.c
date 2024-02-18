@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2011-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2011-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Basic glue for the different console implementations for unix
  *
@@ -360,4 +360,4 @@ static void console_done(void)
 	Console.Driver = &dummyConsoleDriver;
 }
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "poutput", .desc = "OpenCP Output Routines (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 1, .Init = console_init, .Close = console_done};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "poutput", .desc = "OpenCP Output Routines (c) 1994-'24 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 1, .Init = console_init, .Close = console_done};

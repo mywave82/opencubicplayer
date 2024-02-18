@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'23 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'24 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
  *
  * CP hypertext help viewer (Fileselector wrapper)
  *

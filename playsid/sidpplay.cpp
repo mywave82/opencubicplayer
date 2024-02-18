@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2011-'23 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2011-'24 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
  *
  * SIDPlay interface routines
  *
@@ -429,7 +429,7 @@ extern "C"
 	DLLEXTINFO_PLAYBACK_PREFIX_CPP struct linkinfostruct dllextinfo =
 	{ /* c++ historically does not support named initializers, and size needs to be writable... */
 		/* .name = */ "playsid",
-		/* .desc = */ "OpenCP SID Player (c) 1993-'23 Michael Schwendt, Tammo Hinrichs, Stian Skjelstad",
+		/* .desc = */ "OpenCP SID Player (c) 1993-'24 Michael Schwendt, Tammo Hinrichs, Stian Skjelstad",
 		/* .ver  = */ DLLVERSION,
 		/* .sortindex = */ 95,
 		/* .PreInit = */ 0,

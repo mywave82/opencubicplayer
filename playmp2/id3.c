@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2020-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2020-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * ID3 tag decoding. For version ID3 1.0/1.1 + optional 1.2, 2.2, 2.3 and 2.4
  *

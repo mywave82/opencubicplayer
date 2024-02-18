@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Wavetable Device: Software Mixer for sample stream output via devp
  *
@@ -1104,4 +1104,4 @@ static const struct mcpDriver_t mcpMixerQ =
 	wmixClose
 };
 
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devwmix", .desc = "OpenCP Wavetable Device: Mixer (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = devwMixFPluginInit, .PluginClose = devwMixFPluginClose};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devwmix", .desc = "OpenCP Wavetable Device: Mixer (c) 1994-'24 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = devwMixFPluginInit, .PluginClose = devwMixFPluginClose};

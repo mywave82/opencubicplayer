@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2022-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2022-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Font debugger
  *
@@ -251,5 +251,5 @@ static void FontDebugClose(struct PluginCloseAPI_t *API)
 	cpiUnregisterDefMode(&cpiModeFontDebug);
 }
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "cpifontdebug", .desc = "OpenCP Font Debugger (c) 2022-'23 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 40, .LateInit = FontDebugInit, .PreClose = FontDebugClose};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "cpifontdebug", .desc = "OpenCP Font Debugger (c) 2022-'24 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 40, .LateInit = FontDebugInit, .PreClose = FontDebugClose};
 /* OpenCP Module Player */

@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2019-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2019-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Renderer routine. Heavily based on https://github.com/pete-gordon/hivelytracker/tree/master/hvl2wav
  *

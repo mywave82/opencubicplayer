@@ -1,6 +1,6 @@
 /** OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * NoSound Player device
  *
@@ -297,4 +297,4 @@ static const struct plrDriver_t plrNone =
 	qpClose
 };
 
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpnone", .desc = "OpenCP Player Device: None (c) 1994-'23 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = devpNonePluginInit, .PluginClose = devpNonePluginClose};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpnone", .desc = "OpenCP Player Device: None (c) 1994-'24 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = devpNonePluginInit, .PluginClose = devpNonePluginClose};

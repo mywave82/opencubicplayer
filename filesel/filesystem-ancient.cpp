@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2021-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2021-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Code to decompress via libancient (C++ library)
  *

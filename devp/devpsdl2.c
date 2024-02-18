@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2011-'23 François Revol <revol@free.fr>
+ * copyright (c) 2011-'24 François Revol <revol@free.fr>
  *
  * SDL Player device
  *
@@ -100,4 +100,4 @@ static const struct plrDriver_t plrSDL =
 	sdlClose
 };
 
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpsdl2", .desc = "OpenCP Player Device: SDL2 (c) 2011-'23 François Revol & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = sdlPluginInit, .PluginClose = sdlPluginClose};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devpsdl2", .desc = "OpenCP Player Device: SDL2 (c) 2011-'24 François Revol & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = sdlPluginInit, .PluginClose = sdlPluginClose};

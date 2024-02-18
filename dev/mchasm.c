@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Mixer asm routines for display etc
  *
@@ -103,4 +103,4 @@ void mixGetMasterSampleSS16S(int16_t *_dst, const void *_src, uint32_t len, uint
 	} while(len);
 }
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "mchasm", .desc = "OpenCP Player Auxiliary Routines (c) 1994-'23 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 10};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "mchasm", .desc = "OpenCP Player Auxiliary Routines (c) 1994-'24 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 10};

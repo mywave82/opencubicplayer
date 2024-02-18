@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2022-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2022-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Detection of Audio-Tracks in CDFS image
  *

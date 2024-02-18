@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2022-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2022-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * The most toplevel part of CDFS
  *
@@ -439,4 +439,4 @@ static void cdfsclose(void)
 	//unregister_dirdecompressor (&cdfsdecompressor);
 }
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "cdfs", .desc = "OpenCP virtual CDFS filebrowser (c) 2022-'23 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 60, .Init = cdfsint, .Close = cdfsclose};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "cdfs", .desc = "OpenCP virtual CDFS filebrowser (c) 2022-'24 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 60, .Init = cdfsint, .Close = cdfsclose};

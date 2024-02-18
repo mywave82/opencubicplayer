@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Player device for OSS output
  *
@@ -683,4 +683,4 @@ static const struct plrDriver_t plrOSS =
 	ossClose
 };
 
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devposs", .desc = "OpenCP Player Device: OSS (c) 2004-'23 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = ossPluginInit, .PluginClose = ossPluginClose};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "devposs", .desc = "OpenCP Player Device: OSS (c) 2004-'24 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = ossPluginInit, .PluginClose = ossPluginClose};

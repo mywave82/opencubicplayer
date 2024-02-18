@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2020-'23 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2020-'24 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Archive Meta DataBase (replaces previous adb.c Archive DataBase)
  *

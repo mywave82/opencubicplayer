@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2005-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * MEDIALIBRARY search dialog
  *

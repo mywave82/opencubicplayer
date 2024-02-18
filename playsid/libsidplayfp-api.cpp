@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2020-'23 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2020-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Glue logic for using libsidplayfp playback engine
  *
