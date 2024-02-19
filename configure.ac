@@ -849,10 +849,17 @@ HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H=1
 HAVE_SIDPLAYFP_BUILDERS_RESID_H=1
 RESID_INLINING=1
 RESID_INLINE=inline
-AX_CXX_COMPILE_STDCXX_14([noext], [optional])
-AS_IF([test $ax_cv_cxx_compile_cxx14__std_cpp14 != "yes"],
-    AX_CXX_COMPILE_STDCXX_11([noext], [optional]),
-    AC_DEFINE([HAVE_CXX11])
+AX_CXX_COMPILE_STDCXX_17([noext], [optional])
+AS_IF([test $ax_cv_cxx_compile_cxx17__std_cpp17 == "yes"],
+    [AC_DEFINE([HAVE_CXX17])],
+    [AX_CXX_COMPILE_STDCXX_14([noext], [optional])
+    AS_IF([test $ax_cv_cxx_compile_cxx14__std_cpp14 == "yes"],
+        [AC_DEFINE([HAVE_CXX14])],
+        [AX_CXX_COMPILE_STDCXX_11([noext], [optional])
+        AS_IF([test $ax_cv_cxx_compile_cxx11__std_cpp11 == "yes"],
+            [AC_DEFINE([HAVE_CXX11])]
+        ])
+    ])
 )
 AC_ARG_VAR([XA], [6502 assembler - must be full path])
 AC_PATH_PROG([XA],[xa])

@@ -1,5 +1,10 @@
+#ifndef _SIDPLAY_CONFIG_H
+#define _SIDPLAY_CONFIG_H
+
 /* define if the compiler supports basic C++11 syntax */
 #undef HAVE_CXX11
+#undef HAVE_CXX14
+#undef HAVE_CXX17
 
 /* Define to 1 if you have the <sidplayfp/builders/exsid.h> header file. */
 #undef HAVE_SIDPLAYFP_BUILDERS_EXSID_H
@@ -23,3 +28,5 @@
 #undef HAVE_UNISTD_H
 
 #undef WORDS_BIGENDIAN
+
+#endif
