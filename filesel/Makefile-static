@@ -24,6 +24,7 @@ filesystem-playlist-pls.o     \
 filesystem-setup.o            \
 filesystem-rpg.o              \
 filesystem-tar.o              \
+filesystem-textfile.o         \
 filesystem-z.o                \
 filesystem-zip.o              \
 fsptype.o                     \

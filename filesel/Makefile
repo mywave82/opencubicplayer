@@ -2,7 +2,6 @@ TOPDIR=../
 include $(TOPDIR)Rules.make
 include Makefile-static
 
-
 ifeq ($(STATIC_CORE),1)
 all: $(cdrom_so) $(pfilesel_so)
 else
@@ -10,13 +9,14 @@ all: $(CDROM_SO) pfilesel$(LIB_SUFFIX)
 endif
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR)
 
-test: adbmeta-test$(EXE_SUFFIX) dirdb-test$(EXE_SUFFIX) filesystem-bzip2-test$(EXE_SUFFIX) filesystem-filehandle-cache-test$(EXE_SUFFIX) filesystem-gzip-test$(EXE_SUFFIX) filesystem-tar-test$(EXE_SUFFIX) mdb-test$(EXE_SUFFIX)
+test: adbmeta-test$(EXE_SUFFIX) dirdb-test$(EXE_SUFFIX) filesystem-bzip2-test$(EXE_SUFFIX) filesystem-filehandle-cache-test$(EXE_SUFFIX) filesystem-gzip-test$(EXE_SUFFIX) filesystem-tar-test$(EXE_SUFFIX) filesystem-textfile-test$(EXE_SUFFIX) mdb-test$(EXE_SUFFIX)
 	@echo "" && echo "adbmeta-test:"                       && ./adbmeta-test
 	@echo "" && echo "dirdb-test:"                         && ./dirdb-test
 	@echo "" && echo "filesystem-bzip2-test:"              && ./filesystem-bzip2-test
 	@echo "" && echo "filesystem-filehandle-cache-test:"   && ./filesystem-filehandle-cache-test
 	@echo "" && echo "filesystem-gzip-test:"               && ./filesystem-gzip-test
 	@echo "" && echo "filesystem-tar-test:"                && ./filesystem-tar-test
+	@echo "" && echo "filesystem-textfile-test:"           && ./filesystem-textfile-test
 	@echo "" && echo "mdb-test:"                           && ./mdb-test
 
 cdrom$(LIB_SUFFIX): $(cdrom_so)
@@ -27,7 +27,7 @@ pfilesel$(LIB_SUFFIX): $(pfilesel_so)
 
 clean:
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR) clean
-	rm -f *.o *$(LIB_SUFFIX) adbmeta-test$(EXE_SUFFIX) dirdb-test$(EXE_SUFFIX) filesystem-bzip2-test$(EXE_SUFFIX) filesystem-filehandle-cache-test$(EXE_SUFFIX) filesystem-gzip-test$(EXE_SUFFIX) filesystem-tar-test$(EXE_SUFFIX) mdb-test$(EXE_SUFFIX)
+	rm -f *.o *$(LIB_SUFFIX) adbmeta-test$(EXE_SUFFIX) dirdb-test$(EXE_SUFFIX) filesystem-bzip2-test$(EXE_SUFFIX) filesystem-filehandle-cache-test$(EXE_SUFFIX) filesystem-gzip-test$(EXE_SUFFIX) filesystem-tar-test$(EXE_SUFFIX) filesystem-textfile-test$(EXE_SUFFIX) mdb-test$(EXE_SUFFIX)
 
 ifeq ($(STATIC_CORE),1)
 install:
@@ -322,6 +322,27 @@ filesystem-tar-test$(EXE_SUFFIX): filesystem-tar-test.c \
 	dirdb.h \
 	filesystem.h \
 	filesystem-tar.h \
+	filesystem-dir-mem.h \
+	filesystem-file-mem.h \
+	filesystem-dir-mem-nocache.o \
+	filesystem-file-mem-nocache.o
+	$(CC) $< filesystem-dir-mem-nocache.o filesystem-file-mem-nocache.o -o $@
+
+filesystem-textfile.o: filesystem-textfile.c \
+	../config.h \
+	../types.h \
+	dirdb.h \
+	filesystem.h \
+	filesystem-textfile.h
+	$(CC) $< -o $@ -c
+
+filesystem-textfile-test$(EXE_SUFFIX): filesystem-textfile-test.c \
+	filesystem-textfile.c \
+	../config.h \
+	../types.h \
+	dirdb.h \
+	filesystem.h \
+	filesystem-textfile.h \
 	filesystem-dir-mem.h \
 	filesystem-file-mem.h \
 	filesystem-dir-mem-nocache.o \
