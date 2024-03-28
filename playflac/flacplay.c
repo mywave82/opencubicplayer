@@ -279,7 +279,12 @@ static FLAC__StreamDecoderWriteStatus write_callback (
 	{
 		/* append to buffer */
 		flacbuf[pos1*2+0] = make_16bit(buffer[0][i], frame->header.bits_per_sample);
-		flacbuf[pos1*2+1] = make_16bit(buffer[1][i], frame->header.bits_per_sample);
+		if (frame->header.channels < 2)
+		{
+			flacbuf[pos1*2+1] = flacbuf[pos1*2];
+		} else {
+			flacbuf[pos1*2+1] = make_16bit(buffer[1][i], frame->header.bits_per_sample);
+		}
 		pos1++;
 		if (!--length1)
 		{
