@@ -308,6 +308,7 @@ static int cache_filehandle_filesize_ready (struct ocpfilehandle_t *_s)
 		if (s->filesize_ready_cache)
 		{
 			s->filesize_cache = s->head.origin->filesize (s->head.origin);
+			s->maxpos = s->filesize_cache;
 		}
 	}
 
@@ -328,6 +329,7 @@ static uint64_t cache_filehandle_filesize (struct ocpfilehandle_t * _s)
 
 	s->filesize_ready_cache = 1;
 	s->filesize_cache = s->head.origin->filesize (s->head.origin);
+	s->maxpos = s->filesize_cache;
 	return s->filesize_cache;
 }
 
@@ -381,7 +383,7 @@ static int cache_filehandle_eof (struct ocpfilehandle_t *_s)
 
 	oldpos = s->pos;
 	/* attempt to pull in more data */
-	cache_filehandle_seek_set (_s, s->maxpos + 1);
+	cache_filehandle_seek_set (_s, s->pos + 1);
 	cache_filehandle_seek_set (_s, oldpos);
 
 	if (s->pos < s->maxpos)
