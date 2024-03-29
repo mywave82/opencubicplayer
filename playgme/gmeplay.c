@@ -40,6 +40,7 @@
 static Music_Emu *gmesession;
 
 static int gmelooped;
+static int doloop;
 
 static unsigned long voll,volr;
 static int bal;
@@ -97,7 +98,12 @@ static void gmeIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 		{
 			if (gmeactivetrack + 1 >= gme_track_count (gmesession))
 			{
-				gmelooped |= 1;
+				if (doloop)
+				{
+					gme_start_track (gmesession, gmeactivetrack = 0);
+				} else {
+					gmelooped |= 1;
+				}
 				return;
 			} else {
 				if ((result = gme_start_track (gmesession, ++gmeactivetrack)))
@@ -527,10 +533,7 @@ void gmeClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 
 OCP_INTERNAL void gmeSetLoop (int s)
 {
-	if (gmesession)
-	{
-		gme_set_autoload_playback_limit (gmesession, !s);
-	}
+	doloop = s;
 }
 
 OCP_INTERNAL void gmeStartSong (struct cpifaceSessionAPI_t *cpifaceSession, int song)
