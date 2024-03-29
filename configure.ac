@@ -857,10 +857,9 @@ AS_IF([test $ax_cv_cxx_compile_cxx17__std_cpp17 == "yes"],
         [AC_DEFINE([HAVE_CXX14])],
         [AX_CXX_COMPILE_STDCXX_11([noext], [optional])
         AS_IF([test $ax_cv_cxx_compile_cxx11__std_cpp11 == "yes"],
-            [AC_DEFINE([HAVE_CXX11])]
+            [AC_DEFINE([HAVE_CXX11])])
         ])
     ])
-)
 AC_ARG_VAR([XA], [6502 assembler - must be full path])
 AC_PATH_PROG([XA],[xa])
 AS_IF([test -z "$XA"], [AC_MSG_ERROR([xa is needed for compiling 6502 assembler used by libsidplayfp])])
