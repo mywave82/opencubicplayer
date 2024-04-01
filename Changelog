@@ -1,3 +1,13 @@
+Version 0.2.108
+===============
+This is a bugfix release
+
+ * When detecting C++ version, ] and ) was out of order in configure.ac. This only became problematic in autoconf 2.72.
+ * Playback via Game-Music-Emulator, the global loop module setting was not honored.
+ * Mono FLAC files would crash, buffer retrieval expected (atleast) two channels to be present.
+ * EOF detection got false positives in file-cache, FLAC files could fail to play
+ * Labels should not appear in front of variables, clang can be strict on this.
+
 Version 0.2.107
 ===============
 Highlights are increased speed in the filebrowser, and update of libsidplayfp and adplug.
