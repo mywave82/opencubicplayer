@@ -44,13 +44,8 @@ clean:
 install:
 ifeq ($(HAVE_ADPLUG),1)
 	$(CP) playopl$(LIB_SUFFIX) "$(DESTDIR)$(LIBDIROCP)/autoload/95-playopl$(LIB_SUFFIX)"
-ifneq ($(WINDOWS),1)
 	mkdir -p "$(DESTDIR)$(DATADIROCP)/data"
 	$(CP) adplugdb-git/adplug.db "$(DESTDIR)$(DATADIROCP)/data"
-else
-	mkdir -p "$(DESTDIR)$(DATADIROCP)"
-	$(CP) adplugdb-git/adplug.db "$(DESTDIR)$(DATADIROCP)"
-endif
 endif
 
 uninstall:
