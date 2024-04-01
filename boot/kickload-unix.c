@@ -382,7 +382,7 @@ static char *validate_xdg_dir_absolute (const char *name, const char *def)
 	}
 	if (xdg)
 	{
-		char *retval = malloc (strlen (xdg) + 5);
+		char *retval = malloc (strlen (xdg) + 5 + 1);
 		if (retval)
 		{
 			sprintf (retval, "%s%socp/",
@@ -783,7 +783,7 @@ int validate_home(void)
 		char settingsPath[PATH_MAX];
 		if (find_directory(B_USER_SETTINGS_DIRECTORY, -1, false, settingsPath, sizeof(settingsPath)) == B_OK)
 		{
-			_cfConfigHomeDir = malloc (strlen (settingsPath) + 5);
+			_cfConfigHomeDir = malloc (strlen (settingsPath) + 5 + 1);
 			if (!_cfConfigHomeDir)
 			{
 				fprintf (stderr, "malloc() failed\n");
