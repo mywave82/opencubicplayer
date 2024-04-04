@@ -103,7 +103,7 @@ static int readiniline(char *key, char *str, char *comment, const char *line)
 		eol++;
 	if ((eol[0]==';')||(eol[0]=='#'))
 	{
-		strncpy(comment, eol, COMMENTBUF_LEN);
+		strncpy(comment, eol, COMMENTBUF_LEN-1);
 		comment[COMMENTBUF_LEN-1]=0;
 	}
 	while (isspace(eol[-1]))
