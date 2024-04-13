@@ -6,7 +6,11 @@ typedef struct osfile_t osfile;
 
 struct osfile_t *osfile_open_readwrite (const char *pathname, int dolock, int mustcreate); /* returns NULL on error */
 
+struct osfile_t *osfile_open_readonly (const char *pathname, int dolock); /* returns NULL on error */
+
 void osfile_close (struct osfile_t *f);
+
+uint64_t osfile_getfilesize (struct osfile_t *f);
 
 uint64_t osfile_getpos (struct osfile_t *f);
 
