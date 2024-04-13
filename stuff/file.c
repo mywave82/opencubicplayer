@@ -94,7 +94,7 @@ struct osfile_t *osfile_open_readwrite (const char *pathname, int dolock, int mu
 		}
 		return 0;
 	}
-#else	
+#else
 	if ((f->fd = open(pathname,
 	                  O_RDWR | O_CREAT | (mustcreate?O_EXCL:0)
 # ifdef O_CLOEXEC
@@ -125,6 +125,123 @@ struct osfile_t *osfile_open_readwrite (const char *pathname, int dolock, int mu
 	return f;
 }
 
+struct osfile_t *osfile_open_readonly (const char *pathname, int dolock)
+{
+	struct osfile_t *f;
+
+	if (!pathname)
+	{
+		fprintf (stderr, "osfile_open_readonly called with null\n");
+		return 0;
+	}
+
+	f = calloc (1, sizeof (*f));
+	if (!f)
+	{
+		fprintf (stderr, "osfile_open_readonly (%s): Failed to allocate memory #1\n", pathname);
+		return 0;
+	}
+	f->pathname = strdup (pathname);
+	if (!f->pathname)
+	{
+		fprintf (stderr, "osfile_open_readonly (%s): Failed to allocate memory #2\n", pathname);
+		free (f);
+		return 0;
+	}
+
+#ifdef _WIN32
+	f->h = CreateFile (pathname,                                    /* lpFileName */
+	                   GENERIC_READ,                                /* dwDesiredAccess */
+	                   dolock?0:(FILE_SHARE_READ),                  /* dwShareMode (exclusive access) */
+	                   0,                                           /* lpSecurityAttributes */
+	                   OPEN_EXISTING,                               /* dwCreationDisposition */
+	                   FILE_ATTRIBUTE_NORMAL,                       /* dwFlagsAndAttributes */
+	                   0);                                          /* hTemplateFile */
+	if (f->h == INVALID_HANDLE_VALUE)
+	{
+		if (GetLastError() != ERROR_FILE_NOT_FOUND)
+		{
+			char *lpMsgBuf = NULL;
+			if (FormatMessage (
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				FORMAT_MESSAGE_FROM_SYSTEM     |
+				FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+				NULL,                                      /* lpSource */
+				GetLastError(),                            /* dwMessageId */
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+				(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+				0,                                         /* nSize */
+				NULL                                       /* Arguments */
+			))
+			{
+				fprintf(stderr, "CreateFile(%s): %s", pathname, lpMsgBuf);
+				LocalFree (lpMsgBuf);
+			}
+			free (f->pathname);
+			free (f);
+		}
+		return 0;
+	}
+#else
+	if ((f->fd = open(pathname,
+	                  O_RDONLY
+# ifdef O_CLOEXEC
+	                                                           | O_CLOEXEC
+# endif
+	                                                                      , S_IREAD|S_IWRITE)) < 0 )
+	{
+		if (errno != ENOENT)
+		{
+			fprintf (stderr, "open(%s): %s\n", pathname, strerror (errno));
+		}
+		free (f->pathname);
+		free (f);
+		return 0;
+	}
+
+	if (dolock)
+	{
+		if (flock (f->fd, LOCK_EX | LOCK_NB))
+		{
+			fprintf (stderr, "Failed to lock %s (more than one instance?)\n", pathname);
+			close (f->fd);
+			free (f->pathname);
+			free (f);
+			return 0;
+		}
+	}
+#endif
+
+	return f;
+}
+
+uint64_t osfile_getfilesize (struct osfile_t *f)
+{
+#ifndef _WIN32
+	struct stat st;
+#else
+	LARGE_INTEGER Size;
+#endif
+	if (!f)
+	{
+		return 0;
+	}
+#ifndef _WIN32
+	if (fstat (f->fd, &st))
+	{
+		return 0;
+	}
+	return st.st_size;
+#else
+	if (!GetFileSizeEx (f->h, &Size))
+	{
+		return 0;
+	} else {
+		return Size.QuadPart;
+	}
+#endif
+}
+
 void osfile_close (struct osfile_t *f)
 {
 	if (!f)
@@ -136,6 +253,7 @@ void osfile_close (struct osfile_t *f)
 #else
 	close (f->fd);
 #endif
+	free (f->pathname);
 	free (f->cache.data);
 	free (f);
 }
