@@ -53,7 +53,7 @@ static int oplReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, co
 	filenamelen = strlen (filename);
 
 	/* Bob's Adlib Music */
-	if (((filenamelen > 4) && (!strcasecmp (filename - 4, ".bam"))) ||                                                                        /* adplug default to match *.bam */
+	if (((filenamelen > 4) && (!strcasecmp (filename + filenamelen - 4, ".bam"))) ||                                                                        /* adplug default to match *.bam */
 	    ((filenamelen > 2) && (filename[filenamelen - 2] == '.') && isdigit (filename[filenamelen-1])) ||                                     /* also match *.[0-9] */
 	    ((filenamelen > 3) && (filename[filenamelen - 3] == '.') && isdigit (filename[filenamelen-2]) && isdigit (filename[filenamelen-1])) ) /* also match *.[0-9][0-9] */
 	{
@@ -161,7 +161,6 @@ OCP_INTERNAL void opl_type_done (PluginCloseAPI_t *API)
 	if (adplugdb_ocp)
 	{
 		CAdPlug::set_database (0);
-		adplugdb_ocp->wipe();
 		delete (adplugdb_ocp);
 		adplugdb_ocp = 0;
 	}
