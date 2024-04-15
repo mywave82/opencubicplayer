@@ -698,18 +698,31 @@ int cfGetConfig(int argc, char *argv[])
 		cfDataPath = strdup (t);
 	}
 
-	if ((t=_cfGetProfileString("general", "tempdir", t)))
+	t=_cfGetProfileString("general", "tempdir", 0);
+	if (!t || !strlen (t))
 	{
-		cfTempPath = strdup (t);
-	} else if ((t=getenv("TEMP")))
-	{
-		cfTempPath = strdup (t);
-	} else if ((t=getenv("TMP")))
-	{
-		cfTempPath = strdup (t);
-	} else {
-		cfTempPath = strdup ("/tmp/");
+		t=getenv("TEMP");
 	}
+	if (!t || !strlen (t))
+	{
+		t=getenv("TMP");
+	}
+	if (!t || !strlen (t))
+	{
+#ifdef _WIN32
+		t = "c:\\TEMP\\";
+#else
+		t = "/tmp/";
+#endif
+	}
+	cfTempPath = malloc (strlen (t) + 2);
+#ifdef _WIN32
+# define c "\\"
+#else
+# define c "/"
+#endif
+	sprintf (cfTempPath, "%s%s", t, (t[strlen(t) - 1] != c[0]) ? c : "");
+#undef c
 
 #ifdef PSETTING_DEBUG
 	{
