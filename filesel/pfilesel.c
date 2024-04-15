@@ -284,7 +284,7 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 	if (ismod ||   // always include if file is an actual module
 	    (fsShowAllFiles && (!(token->opt & RD_ISMODONLY)))) // force include if  fsShowAllFiles  is true, except if RD_ISMODONLY
 	{
-		modlist_append_file (token->ml, file, ismod, file->compression >= COMPRESSION_SOLID); /* modlist_append() will do refcount on the file */
+		modlist_append_file (token->ml, file, ismod, file->compression >= COMPRESSION_SOLID && (file->compression < COMPRESSION_REMOTE)); /* modlist_append() will do refcount on the file */
 	}
 out:
 	free (curext);
@@ -3297,7 +3297,7 @@ superbreak:
 		if (!Console.KeyboardHit() && fsScanNames)
 		{
 			int poll = 1;
-			if ((m->file && (m->flags & MODLIST_FLAG_ISMOD)) && (!mdbInfoIsAvailable(m->mdb_ref)) && (!(m->flags&MODLIST_FLAG_SCANNED)))
+			if ((m->file && (m->file->compression < COMPRESSION_REMOTE) && (m->flags & MODLIST_FLAG_ISMOD)) && (!mdbInfoIsAvailable(m->mdb_ref)) && (!(m->flags&MODLIST_FLAG_SCANNED)))
 			{
 				mdbScan(m->file, m->mdb_ref);
 				m->flags |= MODLIST_FLAG_SCANNED;
@@ -3308,7 +3308,7 @@ superbreak:
 				struct modlistentry *scanm;
 				if ((scanm=modlist_get(currentdir, scanposf++)))
 				{
-					if (scanm->file && (scanm->flags & MODLIST_FLAG_ISMOD) && (!(scanm->flags & MODLIST_FLAG_SCANNED)))
+					if (scanm->file && (scanm->file->compression < COMPRESSION_REMOTE) && (scanm->flags & MODLIST_FLAG_ISMOD) && (!(scanm->flags & MODLIST_FLAG_SCANNED)))
 					{
 						if (!mdbInfoIsAvailable(scanm->mdb_ref))
 						{
@@ -3329,7 +3329,7 @@ superbreak:
 				struct modlistentry *scanm;
 				if ((scanm=modlist_get(playlist, scanposp++)))
 				{
-					if (scanm->file && (scanm->flags & MODLIST_FLAG_ISMOD))
+					if (scanm->file && (scanm->file->compression < COMPRESSION_REMOTE) && (scanm->flags & MODLIST_FLAG_ISMOD))
 					{
 						if (!mdbInfoIsAvailable(scanm->mdb_ref))
 						{
@@ -3470,7 +3470,8 @@ superbreak:
 						mdbEditBuf.modtype.integer.i = mtUnRead;
 						if (!mdbWriteModuleInfo(m->mdb_ref, &mdbEditBuf))
 							return -1;
-						m->flags &= ~MODLIST_FLAG_SCANNED;
+						mdbScan(m->file, m->mdb_ref);
+						m->flags |= MODLIST_FLAG_SCANNED;
 					}
 					break;
 				case KEY_CTRL_BS:
@@ -3534,6 +3535,12 @@ superbreak:
 							}
 							break;
 						}
+					}
+					/* We delay mdbScan for remote files until this stage */
+					if (m && m->file && (m->file->compression >= COMPRESSION_REMOTE) && !(m->flags & MODLIST_FLAG_SCANNED))
+					{
+						mdbScan (m->file, m->mdb_ref);
+						m->flags |= MODLIST_FLAG_SCANNED;
 					}
 					if (win)
 					{

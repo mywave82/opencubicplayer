@@ -22,10 +22,15 @@ typedef void *ocpdirhandle_pt;
 #define COMPRESSION_SOLID2 5 /* ... */
 #define COMPRESSION_SOLID3 6 /* ... */
 #define COMPRESSION_SOLID4 7 /* ... */
+#define COMPRESSION_REMOTE 127
 
 static inline uint8_t COMPRESSION_ADD_STORE (uint8_t parent)
 {
 	uint8_t retval = (parent >= COMPRESSION_STREAM) ? parent+1 : parent | 1;
+	if (parent == COMPRESSION_REMOTE)
+	{
+		return COMPRESSION_REMOTE;
+	}
 	if (retval > COMPRESSION_SOLID4)
 	{
 		retval = COMPRESSION_SOLID4;
@@ -35,6 +40,10 @@ static inline uint8_t COMPRESSION_ADD_STORE (uint8_t parent)
 static inline uint8_t COMPRESSION_ADD_STREAM (uint8_t parent)
 {
 	uint8_t retval =  parent + 2;
+	if (parent == COMPRESSION_REMOTE)
+	{
+		return COMPRESSION_REMOTE;
+	}
 	if (retval > COMPRESSION_SOLID4)
 	{
 		retval = COMPRESSION_SOLID4;
@@ -44,6 +53,10 @@ static inline uint8_t COMPRESSION_ADD_STREAM (uint8_t parent)
 static inline uint8_t COMPRESSION_ADD_SOLID (uint8_t parent)
 {
 	uint8_t retval =  parent + 3;
+	if (parent == COMPRESSION_REMOTE)
+	{
+		return COMPRESSION_REMOTE;
+	}
 	if (retval > COMPRESSION_SOLID4)
 	{
 		retval = COMPRESSION_SOLID4;
