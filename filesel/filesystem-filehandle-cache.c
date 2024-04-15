@@ -111,8 +111,6 @@ struct ocpfilehandle_t *cache_filehandle_open (struct ocpfilehandle_t *parent)
 		1 /* refcount */
 	);
 
-	parent->origin->ref (parent->origin);
-
 	s->cache_line[0].data = calloc (1, CACHE_LINE_SIZE);
 	if (!s->cache_line[0].data)
 	{
@@ -122,7 +120,8 @@ struct ocpfilehandle_t *cache_filehandle_open (struct ocpfilehandle_t *parent)
 	}
 
 	s->parent = parent;
-	s->parent->ref (s->parent);
+	parent->ref (s->parent);
+	parent->origin->ref (parent->origin);
 
 	/* prefill cache-line 0 which is dedicated for the start of the file */
 
