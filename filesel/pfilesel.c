@@ -815,12 +815,15 @@ int fsGetPrevFile (struct moduleinfostruct *info, struct ocpfilehandle_t **fileh
 	{
 		if (m->file)
 		{
-			struct ocpfilehandle_t *ancient;
 			*filehandle = m->file->open (m->file);
-			if ((ancient = ancient_filehandle (0, 0, *filehandle)))
+			if (*filehandle)
 			{
-				(*filehandle)->unref (*filehandle);
-				*filehandle = ancient;
+				struct ocpfilehandle_t *ancient;
+				if ((ancient = ancient_filehandle (0, 0, *filehandle)))
+				{
+					(*filehandle)->unref (*filehandle);
+					*filehandle = ancient;
+				}
 			}
 		}
 
@@ -893,12 +896,15 @@ int fsGetNextFile (struct moduleinfostruct *info, struct ocpfilehandle_t **fileh
 
 	if (m->file)
 	{
-		struct ocpfilehandle_t *ancient;
 		*filehandle = m->file->open (m->file);
-		if ((ancient = ancient_filehandle (0, 0, *filehandle)))
+		if (*filehandle)
 		{
-			(*filehandle)->unref (*filehandle);
-			*filehandle = ancient;
+			struct ocpfilehandle_t *ancient;
+			if ((ancient = ancient_filehandle (0, 0, *filehandle)))
+			{
+				(*filehandle)->unref (*filehandle);
+				*filehandle = ancient;
+			}
 		}
 	}
 
