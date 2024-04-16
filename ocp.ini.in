@@ -1,5 +1,5 @@
 [version]
-  epoch=20240211
+  epoch=20240510
 
 [general]
 ;link=
@@ -236,3 +236,8 @@
   delaymode=-1            ; -1=disable 0=left 1=right 2=both
   delay=25                ; a number between 0 and 1000 - How much delay in ms, if delaymode is enabled
   chorusenabled=1         ; 0=disable 1=enable
+
+[modland.com]
+  mirror=https://ftp.modland.com
+  cachedir=$OCPDATAHOME@DIRSEPARATOR@modland.com@DIRSEPARATOR@ ; Can be prefixed with ~ $OCPDATAHOME $OCPDATA or $TEMP
+  showrelevantdirectoriesonly=1

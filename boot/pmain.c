@@ -1010,7 +1010,26 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileInt     ("fscolors", "UNKN", 7, 10);
 		}
 
-		if (epoch < 20240211)
+		if (epoch < 20240510)
+		{
+			fprintf (stderr, "ocp.ini update (0.2.110) add [modland.com] mirror=https://ftp.modland.com\n");
+#ifdef _WIN32
+			fprintf (stderr, "ocp.ini update (0.2.110) add [modland.com] cachedir=$OCPDATAHOME\\modland.com\\\n");
+#else
+			fprintf (stderr, "ocp.ini update (0.2.110) add [modland.com] cachedir=$OCPDATAHOME/modland.com/\n");
+#endif
+			fprintf (stderr, "ocp.ini update (0.2.110) add [modland.com] showrelevantdirectoriesonly=1\n");
+
+			cfSetProfileString ("modland.com", "mirror", "https://ftp.modland.com");
+#ifdef _WIN32
+			cfSetProfileString ("modland.com", "cachedir", "$OCPDATAHOME\\modland.com\\");
+#else
+			cfSetProfileString ("modland.com", "cachedir", "$OCPDATAHOME/modland.com/");
+#endif
+			cfSetProfileBool ("modland.com", "showrelevantdirectoriesonly", 1);
+		}
+
+		if (epoch < 20240510)
 		{
 			fprintf(stderr, "ocp.ini update (0.2.107) add [libsidplayfp] filterrange6581=0.5\n");
 			cfSetProfileString  ("libsidplayfp", "filterrange6581", "0.5");
@@ -1018,9 +1037,9 @@ static int init_modules(int argc, char *argv[])
 			cfSetProfileString  ("libsidplayfp", "combinedwaveforms", "Average");
 		}
 
-		if (epoch < 20240211)
+		if (epoch < 20240510)
 		{
-			cfSetProfileInt("version", "epoch", 20240211, 10);
+			cfSetProfileInt("version", "epoch", 20240510, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -1031,14 +1050,14 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20240211)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20240510)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20240211\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20240510\033[0m\n\n");
 			sleep(5);
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20240211\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20240510\n\n");
 		}
 	}
 

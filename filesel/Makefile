@@ -8,6 +8,7 @@ else
 all: $(CDROM_SO) pfilesel$(LIB_SUFFIX)
 endif
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR)
+	$(MAKE) -C modland.com TOPDIR=../$(TOPDIR)
 
 test: adbmeta-test$(EXE_SUFFIX) dirdb-test$(EXE_SUFFIX) filesystem-bzip2-test$(EXE_SUFFIX) filesystem-filehandle-cache-test$(EXE_SUFFIX) filesystem-gzip-test$(EXE_SUFFIX) filesystem-tar-test$(EXE_SUFFIX) filesystem-textfile-test$(EXE_SUFFIX) mdb-test$(EXE_SUFFIX)
 	@echo "" && echo "adbmeta-test:"                       && ./adbmeta-test
@@ -27,6 +28,7 @@ pfilesel$(LIB_SUFFIX): $(pfilesel_so)
 
 clean:
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR) clean
+	$(MAKE) -C modland.com TOPDIR=../$(TOPDIR) clean
 	rm -f *.o *$(LIB_SUFFIX) adbmeta-test$(EXE_SUFFIX) dirdb-test$(EXE_SUFFIX) filesystem-bzip2-test$(EXE_SUFFIX) filesystem-filehandle-cache-test$(EXE_SUFFIX) filesystem-gzip-test$(EXE_SUFFIX) filesystem-tar-test$(EXE_SUFFIX) filesystem-textfile-test$(EXE_SUFFIX) mdb-test$(EXE_SUFFIX)
 
 ifeq ($(STATIC_CORE),1)
@@ -39,10 +41,12 @@ ifeq ($(CDROM_SUPPORT),1)
 	$(CP) $(CDROM_SO) "$(DESTDIR)$(LIBDIROCP)/autoload/30-cdrom$(LIB_SUFFIX)"
 endif
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR) install
+	$(MAKE) -C modland.com TOPDIR=../$(TOPDIR) install
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/25-pfilesel$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/30-cdrom$(LIB_SUFFIX)"
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR) uninstall
+	$(MAKE) -C modland.com TOPDIR=../$(TOPDIR) uninstall
 endif
 
 adbmeta.o: adbmeta.c adbmeta.h \

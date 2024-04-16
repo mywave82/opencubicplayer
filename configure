@@ -776,6 +776,7 @@ PTHREAD_LIBS
 EXE_SUFFIX
 LIB_SUFFIX
 SHARED_FLAGS
+DIRSEPARATOR
 UPDATE_DESKTOP_DATABASE
 DESKTOP_FILE_INSTALL
 UPDATE_MIME_DATABASE
@@ -7756,6 +7757,7 @@ printf "%s\n" "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
 
 
 
+DIRSEPARATOR="/"
 target=`$CC -dumpmachine`
 case $target in #(
   *-darwin*) :
@@ -7778,6 +7780,7 @@ case $target in #(
   *-mingw*) :
 
 		WINDOWS=1
+		DIRSEPARATOR=\\
 		SHARED_FLAGS="-shared -pthread" # clock_gettime() is provided via -pthread when using mingw
 		LIB_SUFFIX=.dll
 		EXE_SUFFIX=.exe
