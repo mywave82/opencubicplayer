@@ -1,0 +1,5 @@
+modland_com_so=modland-com.o
+
+ifeq ($(STATIC_CORE),1)
+ STATIC_OBJECTS += $(patsubst %.o,filesel/modland.com/%.o,$(modland_com_so))
+endif
