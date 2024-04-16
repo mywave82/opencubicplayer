@@ -18,6 +18,7 @@ include cpiface/Makefile-static
 include devp/Makefile-static
 include filesel/Makefile-static
 include filesel/cdfs/Makefile-static
+include filesel/modland.com/Makefile-static
 include stuff/Makefile-static
 include dev/Makefile-static
 include help/Makefile-static
