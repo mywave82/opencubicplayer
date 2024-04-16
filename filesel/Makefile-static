@@ -8,6 +8,7 @@ adbmeta.o                     \
 charsets.o                    \
 cphlpfs.o                     \
 dirdb.o                       \
+download.o                    \
 filesystem.o                  \
 filesystem-ancient.o          \
 filesystem-bzip2.o            \
