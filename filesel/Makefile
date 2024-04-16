@@ -62,6 +62,21 @@ adbmeta-test$(EXE_SUFFIX): adbmeta-test.c adbmeta.c adbmeta.h \
 	../stuff/file.h
 	$(CC) $< -o $@
 
+cdrom.o: cdrom.c \
+	../config.h \
+	../types.h \
+	../boot/plinkman.h \
+	cdrom.h \
+	dirdb.h \
+	filesystem.h \
+	filesystem-drive.h \
+	filesystem-file-mem.h \
+	mdb.h \
+	musicbrainz.h \
+	pfilesel.h \
+	../stuff/err.h
+	$(CC) $< -o $@ -c $(LIBDISCID_CFLAGS)
+
 charsets.o: charsets.c \
 	../config.h \
 	../types.h \
@@ -93,20 +108,18 @@ dirdb-test$(EXE_SUFFIX): dirdb-test.c \
 	../stuff/file.h
 	$(CC) $< -o $@
 
-cdrom.o: cdrom.c \
+download.o: \
+	download.c \
+	download.h \
 	../config.h \
 	../types.h \
-	../boot/plinkman.h \
-	cdrom.h \
-	dirdb.h \
-	filesystem.h \
-	filesystem-drive.h \
-	filesystem-file-mem.h \
-	mdb.h \
-	musicbrainz.h \
-	pfilesel.h \
-	../stuff/err.h
-	$(CC) $< -o $@ -c $(LIBDISCID_CFLAGS)
+	../boot/psetting.h \
+	../filesel/dirdb.h \
+	../filesel/filesystem.h \
+	../filesel/filesystem-drive.h \
+	../filesel/filesystem-textfile.h \
+	../stuff/piperun.h
+	$(CC) $< -o $@ -c
 
 filesystem.o: filesystem.c \
 	../config.h \
