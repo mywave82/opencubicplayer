@@ -226,10 +226,6 @@
 
  <mime-type type="audio/x-lds">
   <comment>LOUDNESS Sound System</comment>
-  <magic priority="50">
-   <match type="string" value="\000" offset="0"/>
-   <match type="string" value="\001" offset="0"/>
-  </magic>
   <glob pattern="*.lds"/>
  </mime-type>
 
@@ -345,7 +341,7 @@
 
  <mime-type type="audio/x-rix">
   <comment>Softstar RIX OPL Music</comment>
-  <magic priority="50">
+  <magic priority="5">
    <match type="string" value="\125\252" offset="0"/>
   </magic>
   <glob pattern="*.rix"/>
@@ -353,7 +349,7 @@
 
  <mime-type type="audio/x-rol">
   <comment>Adlib Visual Composer</comment>
-  <magic priority="50">
+  <magic priority="40">
    <match type="string" value="\000\000\004\000" offset="0"/>
   </magic>
   <glob pattern="*.rol"/>
@@ -399,7 +395,7 @@
 
  <mime-type type="audio/x-u6m">
   <comment>Ultima 6 Music</comment>
-  <magic priority="50">
+  <magic priority="40">
    <match type="string" value="\000\000\000\001" offset="2"/>
   </magic>
   <glob pattern="*.m"/>
@@ -415,9 +411,6 @@
 
  <mime-type type="audio/x-vgz">
   <comment>Video Game Music, compressed</comment>
-  <magic priority="50">
-   <match type="string" value="\037\213" offset="0"/>
-  </magic>
   <glob pattern="*.vgz"/>
  </mime-type>
 
@@ -444,7 +437,7 @@
 
  <mime-type type="audio/x-xad-bmf">
   <comment>BMF Adlib Tracker</comment>
-  <magic priority="50">
+  <magic priority="5">
    <match type="string" value="BMF" offset="0"/>
    <match type="string" value="\004\000" offset="76"/>
   </magic>
@@ -454,7 +447,7 @@
 
  <mime-type type="audio/x-xad-flash">
   <comment>Adlib Flash</comment>
-  <magic priority="50">
+  <magic priority="5">
    <match type="string" value="\003\000" offset="76"/>
   </magic>
   <glob pattern="*.xad"/>
@@ -462,7 +455,7 @@
 
  <mime-type type="audio/x-xad-hybrid">
   <comment>Adlib Flash</comment>
-  <magic priority="50">
+  <magic priority="5">
    <match type="string" value="\006\000" offset="76"/>
   </magic>
   <glob pattern="*.xad"/>
@@ -470,7 +463,7 @@
 
  <mime-type type="audio/x-xad-hyp">
   <comment>Adlib Hypnosis</comment>
-  <magic priority="50">
+  <magic priority="5">
    <match type="string" value="\001\000" offset="76"/>
   </magic>
   <glob pattern="*.xad"/>
@@ -478,7 +471,7 @@
 
  <mime-type type="audio/x-xad-psi">
   <comment>Adlib Hypnosis</comment>
-  <magic priority="50">
+  <magic priority="5">
    <match type="string" value="\002\000" offset="76"/>
   </magic>
   <glob pattern="*.xad"/>
@@ -486,7 +479,7 @@
 
  <mime-type type="audio/x-xad-rat">
   <comment>Adlib rat</comment>
-  <magic priority="50">
+  <magic priority="5">
    <match type="string" value="\005\000" offset="76"/>
   </magic>
   <glob pattern="*.xad"/>
@@ -494,7 +487,7 @@
 
  <mime-type type="audio/x-xsm">
   <comment>eXtra Simple Music</comment>
-  <magic priority="40">
+  <magic priority="50">
    <match type="string" value="ofTAZ!" offset="0"/>
   </magic>
   <glob pattern="*.xsm"/>
