@@ -1563,6 +1563,7 @@ OCP_INTERNAL void xmpStopModule (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpifaceSession->mcpDevAPI->ClosePlayer (cpifaceSession);
 	free(que);
+	que=0;
 }
 
 OCP_INTERNAL void xmpGetGlobInfo (int *tmp, int *bpm, int *gvol)
