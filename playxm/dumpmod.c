@@ -732,6 +732,7 @@ int preParseMOD31 (unsigned char *mem, int len, int *channels31instruments)
 		}
 	} else if (!memcmp(&mem[20+31*30+2+128], "FLT4", 4)) { printf ("%sNOTE: got FLT4 - probably StarTrekker 4-channel MOD%s\n",   FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 4;
 	} else if (!memcmp(&mem[20+31*30+2+128], "FLT8", 4)) { printf ("%sNOTE: got FLT8 - probably StarTrekker 8-channel MOD%s\n",   FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;
+	} else if (!memcmp(&mem[20+31*30+2+128], "CD61", 4)) { printf ("%sNOTE: got CD61 - probably Oktalyzer for Atari ST?%s\n",     FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 6;
 	} else if (!memcmp(&mem[20+31*30+2+128], "CD81", 4)) { printf ("%sNOTE: got CD81 - probably Oktalyzer for Atari ST?%s\n",     FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;
 	} else if (!memcmp(&mem[20+31*30+2+128], "OKTA", 4)) { printf ("%sNOTE: got OKTA - probably Oktalyzer for Atari ST?%s\n",     FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;
 	} else if (!memcmp(&mem[20+31*30+2+128], "OCTA", 4)) { printf ("%sNOTE: got OKTA - probably OctaMED%s\n",                     FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;

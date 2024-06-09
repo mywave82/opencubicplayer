@@ -133,6 +133,7 @@ static int loadmod (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *
 			m->nchan=4;
 			m->ninst=15;
 			break;
+		case 0x31364443: m->nchan=6; break; /* CD61 */
 		case 0x31384443: m->nchan=8; break; /* CD81 */
 
 		case 0x315A4454: m->nchan=1; break; /* TDZ1 */
