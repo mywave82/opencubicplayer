@@ -171,13 +171,13 @@ static int curl_download_magic (const char *targetfilename, const char *sourcepa
 	{
 		return -1;
 	}
-	url = malloc (32 + strlen (escaped) + 1);
+	url = malloc (strlen (modland_com.mirror ? modland_com.mirror : "") + 13 + strlen (escaped) + 1);
 	if (!url)
 	{
 		free (escaped);
 		return -1;
 	}
-	sprintf (url, "https://modland.com/pub/modules/%s", escaped);
+	sprintf (url, "%s/pub/modules/%s", modland_com.mirror ? modland_com.mirror : "", escaped);
 	free (escaped);
 	escaped = 0;
 
@@ -230,17 +230,17 @@ static struct ocpfilehandle_t *modland_com_ocpfile_open (struct ocpfile_t *_f)
 	struct modland_com_ocpfilehandle_t *h;
 	char *cachefilename;
 
-	cachefilename = malloc (strlen (modland_com.cachedir) + 3 + 1 + 7 + 1 + strlen (f->filename) + 1);
+	cachefilename = malloc (strlen (modland_com.cachepath) + 3 + 1 + 7 + 1 + strlen (f->filename) + 1);
 	if (!cachefilename)
 	{
 		return 0;
 	}
-	sprintf (cachefilename, "%spub/modules/%s", modland_com.cachedir, f->filename);
+	sprintf (cachefilename, "%spub/modules/%s", modland_com.cachepath, f->filename);
 
 #ifdef _WIN32
 	{
 		char *tmp;
-		while ((tmp = strchr (cachefilename + strlen (modland_com.cachedir), '/')))
+		while ((tmp = strchr (cachefilename + strlen (modland_com.cachepath), '/')))
 		{
 			*tmp = '\\';
 		}
@@ -248,7 +248,7 @@ static struct ocpfilehandle_t *modland_com_ocpfile_open (struct ocpfile_t *_f)
 #else
 	{
 		char *tmp;
-		while ((tmp = strchr (cachefilename + strlen (modland_com.cachedir), '\\')))
+		while ((tmp = strchr (cachefilename + strlen (modland_com.cachepath), '\\')))
 		{
 			*tmp = '/';
 		}

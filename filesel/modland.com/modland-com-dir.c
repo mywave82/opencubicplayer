@@ -1,3 +1,95 @@
+static const char *known_adlib_directories[] =
+{
+	"ADL",
+	"AMusic",
+	"AdLib Tracker",
+	"AdLib Tracker 2",
+	"Apogee",
+	"Beni Tracker",
+	"Bob's AdLib Music",
+	"Boom Tracker",
+	"Creative Music File",
+	/* "DOSBox" should have worked, 2 of 2 fails to load */
+	"DeFy AdLib Tracker",
+	"Digital FM",
+	"EdLib D00",
+	/* "Edlib D01", includes PCM audio */
+	/* "EdLib Packed", includes PCM audio */
+	"Exotic AdLib",
+	"Extra Simple Music",
+	"Faust Music Creator",
+	"HSC AdLib Composer",
+	"Herad Music System",
+	"Johannes Bjerregard Module",
+	"Ken's AdLib Music",
+	"Loudness Sound System",
+	"LucasArts",
+	"MK-Jamz",
+	"MPU-401 Trakker",
+	/* "MUS", detected as IMS, fails to load */
+	"Martin Fernandez", /* These are actually Apogee IMF files */
+	"Master Tracker",
+	"Mlat Adlib Tracker",
+	"Raw OPL Capture",
+	"Reality AdLib Tracker",
+	"SNG Player",
+	"Screamtracker 3 AdLib",
+	"Sierra",
+	"Surprise! AdLib Tracker",
+	"Surprise! AdLib Tracker 2.0",
+	"Twin TrackPlayer",
+	"Ultima 6",
+	"Visual Composer",
+};
+
+static const char *known_root_directories[] =
+{
+	"AHX",                   /* HVL */
+	"AY Emul",               /* AY */
+        /* "AY STRC", different format, only one file present at the moment */
+	"Ad Lib",
+	"Composer 669",          /* 669 */
+#error fix-me
+	"Cubic Tiny XM",         /* MXM     1 of 2 files is a BROKEN FILE?????????? */
+	"Digital Tracker MOD",   /* MOD */
+	"Digitrakker",           /* MDL */
+	"Extreme Tracker",       /* AMS */
+	"Fasttracker",           /* MOD */
+	"Fasttracker 2",         /* XM */
+	"Gameboy Sound System",  /* GBS (Blaarg's game music emulator) */
+	"HES",                   /* HES (Blaarg's game music emulator) */
+	"HVSC",                  /* SID, mirror of "The High Voltage SID Collection" */
+	"His Master's Noise",    /* MOD/MODt */
+	"HivelyTracker",         /* HVL */
+	"Impulsetracker",        /* IT */
+	// "KSS",                /* KSS (Blaarg's game music emulator) <- only supports SEGA, and MSX that uses the internal AY chip. No support for ram-module, stereo, FM-PAC, MSX-AUDIO, etc. Only some few tunes inside "- unknown" works */
+	"Megadrive GYM",         /* GYM (Blaarg's game music emulator) */
+	"Multitracker",          /* MTM */
+	"Nintendo SPC",          /* SPC (Blaarg's game music emulator) */
+	"Nintendo Sound Format", /* NSF (Blaarg's game music emulator) */
+	"Octalyser",             /* M31 ? should be MOD !!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+	"Oktalyzer",             /* OKT */
+	"PlaySID",               /* SID */
+	"Polytracker",           /* PTM */
+	"Protracker",            /* MOD */
+	"RealSID",               /* SID */
+	"Screamtracker 2",       /* STM */
+	"Screamtracker 3",       /* S3M */
+	"Slight Atari Player",   /* SAP (Blaarg's game music emulator) */
+	"Soundtracker",          /* M15 */
+	// "Soundtracker 2.6",   /* <- different file format, just looks similiar to .MOD */
+	// "Startrekker AM",     /* <- Contains (potential) AM (OPL3) instruments via external mod.nt file. Has normal FLT4 signature */
+	// "Startrekker FLT8",   /* <- Could be loaded as regular MOD files, but contains a hack: two and two 4-channels patterns should be merged into a 8-channel pattern */
+	"Ultratracker",          /* ULT */
+	"Unis 669",              /* 669 */
+	"Velvet Studio",         /* AMS */
+	"Video Game Music",      /* VGM (can be OPL too) */
+	"X-Tracker",             /* DMF */
+	"YM",                    /* YM */
+#error check me out
+(YMST, should be supported?)
+};
+
 struct modland_com_ocpdir_t
 {
 	struct ocpdir_t head;
