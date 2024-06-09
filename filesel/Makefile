@@ -8,7 +8,7 @@ else
 all: $(CDROM_SO) pfilesel$(LIB_SUFFIX)
 endif
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR)
-	$(MAKE) -C modland.com TOPDIR=../$(TOPDIR)
+#	$(MAKE) -C modland.com TOPDIR=../$(TOPDIR)
 
 test: adbmeta-test$(EXE_SUFFIX) dirdb-test$(EXE_SUFFIX) filesystem-bzip2-test$(EXE_SUFFIX) filesystem-filehandle-cache-test$(EXE_SUFFIX) filesystem-gzip-test$(EXE_SUFFIX) filesystem-tar-test$(EXE_SUFFIX) filesystem-textfile-test$(EXE_SUFFIX) mdb-test$(EXE_SUFFIX)
 	@echo "" && echo "adbmeta-test:"                       && ./adbmeta-test
@@ -41,7 +41,7 @@ ifeq ($(CDROM_SUPPORT),1)
 	$(CP) $(CDROM_SO) "$(DESTDIR)$(LIBDIROCP)/autoload/30-cdrom$(LIB_SUFFIX)"
 endif
 	$(MAKE) -C cdfs TOPDIR=../$(TOPDIR) install
-	$(MAKE) -C modland.com TOPDIR=../$(TOPDIR) install
+#	$(MAKE) -C modland.com TOPDIR=../$(TOPDIR) install
 uninstall:
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/25-pfilesel$(LIB_SUFFIX)"
 	rm -f "$(DESTDIR)$(LIBDIROCP)/autoload/30-cdrom$(LIB_SUFFIX)"
