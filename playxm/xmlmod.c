@@ -87,6 +87,7 @@ static int loadmod (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *
 	uint16_t pn=0;
 	uint16_t t;
 	uint8_t *temppat;
+	int sig2=0;
 
 #ifdef XM_LOAD_DEBUG
 	cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] chan=%d sig=%d opt=0x%x\n", chan, sig, opt);
@@ -179,6 +180,10 @@ static int loadmod (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *
 				 return errFormSupp;
 				 /*    m->nchan=8; */
 				 /*    break; */
+		case 0x34304146: m->nchan=4; sig2=1; break; /* FA04 */
+		case 0x36304146: m->nchan=6; sig2=1; break; /* FA06 */
+		case 0x38304146: m->nchan=8; sig2=1; break; /* FA08 */
+
 		default:
 				 if (sig==1)
 					 return errFormSig;
@@ -186,6 +191,15 @@ static int loadmod (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *
 #warning this needs to be manually by MODt M15t etc
 //				 opt|=2;
 				 break;
+	}
+
+	if (sig2)
+	{
+		if (ocpfilehandle_read_uint32_le (file, &l))
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] warning: read() failed #1.2\n");
+			l=0;
+		}
 	}
 
 	if (chan)
@@ -375,6 +389,15 @@ static int loadmod (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *
 		if (file->read (file, &ignore, 4) != 4)
 		{
 			cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] error: read() signature failed\n");
+			return errFileRead;
+		}
+	}
+	if (sig2)
+	{
+		uint32_t ignore;
+		if (file->read (file, &ignore, 4) != 4)
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[XM/MOD] error: read() signature2 failed\n");
 			return errFileRead;
 		}
 	}

@@ -64,6 +64,7 @@ static uint32_t xmpGetModuleType(const char *buf, int len, const char *filename)
 			case 0x48433132: case 0x48433232: case 0x48433332: case 0x48433432: /* "21CH" "22CH" "23CH" "24CH" */
 			case 0x48433532: case 0x48433632: case 0x48433732: case 0x48433832: /* "25CH" "26CH" "27CH" "28CH" */
 			case 0x48433932: case 0x48433033: case 0x48433133: case 0x48433233: /* "29CH" "30CH" "31CH" "32CH" */
+			case 0x38301446: case 0x36304146: case 0x38304146:                  /* "FA04" "FA06" "FA08" */
 			{
 				return MODULETYPE("MOD");
 			}
@@ -215,6 +216,9 @@ static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 				case 0x48433033: m->channels=30; break; /* 30CH */
 				case 0x48433133: m->channels=31; break; /* 31CH */
 				case 0x48433233: m->channels=32; break; /* 32CH */
+				case 0x34304146: m->channels=4; snprintf (m->comment, sizeof (m->comment), "Atari Falcon, Digital Tracker (MOD), 4 channels"); break; /* FA04 */
+				case 0x36304146: m->channels=6; snprintf (m->comment, sizeof (m->comment), "Atari Falcon, Digital Tracker (MOD), 6 channels"); break; /* FA06 */
+				case 0x38304146: m->channels=8; snprintf (m->comment, sizeof (m->comment), "Atari Falcon, Digital Tracker (MOD), 8 channels"); break; /* FA08 */
 			}
 		}
 
