@@ -32,6 +32,7 @@ modland-com.o: \
 	modland-com-dir.c \
 	modland-com-file.c \
 	modland-com-filehandle.c \
+	modland-com-setup.c \
 	../download.h \
 	../../config.h \
 	../../types.h \

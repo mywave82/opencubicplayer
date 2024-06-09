@@ -120,6 +120,7 @@ OCP_INTERNAL int ay_type_init (struct PluginInitAPI_t *API)
 	struct moduletype mt;
 
 	API->fsRegisterExt("ay");
+	API->fsRegisterExt("emul"); /* modland.com */
 
 	mt.integer.i = MODULETYPE("AY");
 	API->fsTypeRegister (mt, AY_description, "plOpenCP", &ayPlayer);
