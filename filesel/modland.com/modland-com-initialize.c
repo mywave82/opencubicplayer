@@ -132,6 +132,42 @@ static void modland_com_initialize_Draw (
 	display_nprintf (mlTop + 14, mlLeft, 0x17, mlWidth, "\xc0" "%72C\xc4" "\xd9");
 }
 
+static void modland_com_initialize_Draw_Until_Enter_Or_Exit (
+	const struct DevInterfaceAPI_t *API,
+	int download, /* 1 = in process, 2 = OK, 3 = Failed, see message */
+	const char *download_message,
+	int download_size,
+	int year, int month, int day,
+	int parsing, /* 1 = in process, 2 = OK, 3 = Failed, see message */
+	const char *parsing_message,
+	int parsing_files,
+	int parsing_directories,
+	int parsing_invalid,
+	int save,
+	const char *save_message
+)
+{
+	while (1)
+	{
+		API->console->FrameLock();
+		API->fsDraw();
+		modland_com_initialize_Draw (API->console, download, download_message, download_size, year, month, day,
+		                                           parsing, parsing_message, parsing_files, parsing_directories, parsing_invalid,
+		                                           save, save_message,
+		                                           0, 2);
+		while (API->console->KeyboardHit())
+		{
+			int key = API->console->KeyboardGetChar();
+			switch (key)
+			{
+				case KEY_EXIT:
+				case _KEY_ENTER:
+					return;
+			}
+		}
+	}
+}
+
 static void modland_com_initialize_Run (void **token, const struct DevInterfaceAPI_t *API)
 {
 	struct download_request_t *download_allmods_zip; /* do not free until done parsing, due to file being open locks the file in Windows */
@@ -148,28 +184,25 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 
 	/* create request */
 
-	download_allmods_zip = download_request_spawn (API->configAPI, 0, "https://stian.cubic.org/allmods.zip"); //"https://modland.com/allmods.zip");
+	{
+		char *url = malloc (strlen (modland_com.mirror ? modland_com.mirror : "") + 12 + 1);
+		if (!url)
+		{
+			modland_com_initialize_Draw_Until_Enter_Or_Exit (API, 3, "malloc() URL failed", 0, 0, 0, 0,
+			                                                 0, 0, 0, 0, 0,
+			                                                 0, 0);
+			return;
+		}
+		sprintf (url, "%s/allmods.zip", modland_com.mirror ? modland_com.mirror : ""); // https://stian.cubic.org/allmods.zip
+		download_allmods_zip = download_request_spawn (API->configAPI, 0, url);
+		free (url);
+	}
 	if (!download_allmods_zip)
 	{
-		while (1)
-		{
-			API->console->FrameLock();
-			API->fsDraw();
-			modland_com_initialize_Draw (API->console, 3, "Failed to create process", 0, 0, 0, 0,
-			                                           0, 0, 0, 0, 0,
-			                                           0, 0,
-			                                           0, 2);
-			while (API->console->KeyboardHit())
-			{
-				int key = API->console->KeyboardGetChar();
-				switch (key)
-				{
-					case KEY_EXIT:
-					case _KEY_ENTER:
-						return;
-				}
-			}
-		}
+		modland_com_initialize_Draw_Until_Enter_Or_Exit (API, 3, "Failed to create process", 0, 0, 0, 0,
+		                                                 0, 0, 0, 0, 0,
+		                                                 0, 0);
+		return;
 	}
 
 	/* wait for request to finish */
@@ -205,56 +238,24 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 	/* did the request fail? */
 	if (download_allmods_zip->errmsg)
 	{
-		while (1)
-		{
-			API->console->FrameLock();
-			API->fsDraw();
-			modland_com_initialize_Draw (API->console, 3, download_allmods_zip->errmsg, 0, 0, 0, 0,
-			                                           0, 0, 0, 0, 0,
-			                                           0, 0,
-			                                           0, 2);
-			while (API->console->KeyboardHit())
-			{
-				int key = API->console->KeyboardGetChar();
-
-				switch (key)
-				{
-					case KEY_EXIT:
-					case _KEY_ENTER:
-						download_request_free (download_allmods_zip);
-						download_allmods_zip = 0;
-						return;
-				}
-			}
-		}
+		modland_com_initialize_Draw_Until_Enter_Or_Exit (API, 3, download_allmods_zip->errmsg, 0, 0, 0, 0,
+		                                                 0, 0, 0, 0, 0,
+		                                                 0, 0);
+		download_request_free (download_allmods_zip);
+		download_allmods_zip = 0;
+		return;
 	}
 
 	/* get the file */
 	allmods_zip_filehandle = download_request_getfilehandle (download_allmods_zip);
 	if (!allmods_zip_filehandle)
 	{
-		while (1)
-		{
-			API->console->FrameLock();
-			API->fsDraw();
-			modland_com_initialize_Draw (API->console, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
-			                                           3, "Unable to open the .ZIP file", 0, 0, 0,
-			                                           0, 0,
-			                                           0, 2);
-			while (API->console->KeyboardHit())
-			{
-				int key = API->console->KeyboardGetChar();
-
-				switch (key)
-				{
-					case KEY_EXIT:
-					case _KEY_ENTER:
-						download_request_free (download_allmods_zip);
-						download_allmods_zip = 0;
-						return;
-				}
-			}
-		}
+		modland_com_initialize_Draw_Until_Enter_Or_Exit (API, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
+		                                                 3, "Unable to open the .ZIP file", 0, 0, 0,
+		                                                 0, 0);
+		download_request_free (download_allmods_zip);
+		download_allmods_zip = 0;
+		return;
 	}
 
 	/* open the ZIP file */
@@ -265,28 +266,12 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 
 	if (!allmods_zip_dir)
 	{
-		while (1)
-		{
-			API->console->FrameLock();
-			API->fsDraw();
-			modland_com_initialize_Draw (API->console, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
-			                                           3, "File is not a valid .ZIP file", 0, 0, 0,
-			                                           0, 0,
-			                                           0, 2);
-			while (API->console->KeyboardHit())
-			{
-				int key = API->console->KeyboardGetChar();
-
-				switch (key)
-				{
-					case KEY_EXIT:
-					case _KEY_ENTER:
-						download_request_free (download_allmods_zip);
-						download_allmods_zip = 0;
-						return;	
-				}
-			}
-		}
+		modland_com_initialize_Draw_Until_Enter_Or_Exit (API, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
+		                                                 3, "File is not a valid .ZIP file", 0, 0, 0,
+		                                                 0, 0);
+		download_request_free (download_allmods_zip);
+		download_allmods_zip = 0;
+		return;
 	}
 
 	/* locate allmods.txt inside ZIP file */
@@ -298,28 +283,12 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 	dirdbUnref (allmods_txt_dirdb_ref, dirdb_use_file);
 	if (!allmods_txt_file)
 	{
-		while (1)
-		{
-			API->console->FrameLock();
-			API->fsDraw();
-			modland_com_initialize_Draw (API->console, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
-			                                           3, "Failed to locate allmods.txt inside allmods.zip", 0, 0, 0,
-			                                           0, 0,
-			                                           0, 2);
-			while (API->console->KeyboardHit())
-			{
-				int key = API->console->KeyboardGetChar();
-
-				switch (key)
-				{
-					case KEY_EXIT:
-					case _KEY_ENTER:
-						download_request_free (download_allmods_zip);
-						download_allmods_zip = 0;
-						return;	
-				}
-			}
-		}
+		modland_com_initialize_Draw_Until_Enter_Or_Exit (API, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
+		                                                 3, "Failed to locate allmods.txt inside allmods.zip", 0, 0, 0,
+		                                                 0, 0);
+		download_request_free (download_allmods_zip);
+		download_allmods_zip = 0;
+		return;
 	}
 
 	/* open allmods.txt */
@@ -329,32 +298,16 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 	allmods_txt_file = 0;
 	if (!allmods_txt)
 	{
-		while (1)
-		{
-			API->console->FrameLock();
-			API->fsDraw();
-			modland_com_initialize_Draw (API->console, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
-			                                           3, "Failed to open allmods.txt inside allmods.zip", 0, 0, 0,
-			                                           0, 0,
-			                                           0, 2);
-			while (API->console->KeyboardHit())
-			{
-				int key = API->console->KeyboardGetChar();
-
-				switch (key)
-				{
-					case KEY_EXIT:
-					case _KEY_ENTER:
-						download_request_free (download_allmods_zip);
-						download_allmods_zip = 0;
-						return;	
-				}
-			}
-		}
+		modland_com_initialize_Draw_Until_Enter_Or_Exit (API, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
+		                                                 3, "Failed to open allmods.txt inside allmods.zip", 0, 0, 0,
+		                                                 0, 0);
+		download_request_free (download_allmods_zip);
+		download_allmods_zip = 0;
+		return;
 	}
 
 	modland_com_database_clear();
-	
+
 	/* and start to parse it as lines of text */
 
 	allmods_txt_textfile = textfile_start (allmods_txt);
@@ -362,28 +315,12 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 	allmods_txt = 0;
 	if (!allmods_txt_textfile)
 	{
-		while (1)
-		{
-			API->console->FrameLock();
-			API->fsDraw();
-			modland_com_initialize_Draw (API->console, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
-			                                           3, "Failed to open allmods.txt inside allmods.zip as textfile", 0, 0, 0,
-			                                           0, 0,
-			                                           0, 2);
-			while (API->console->KeyboardHit())
-			{
-				int key = API->console->KeyboardGetChar();
-
-				switch (key)
-				{
-					case KEY_EXIT:
-					case _KEY_ENTER:
-						download_request_free (download_allmods_zip);
-						download_allmods_zip = 0;
-						return;	
-				}
-			}
-		}
+		modland_com_initialize_Draw_Until_Enter_Or_Exit (API, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
+		                                                 3, "Failed to open allmods.txt inside allmods.zip as textfile", 0, 0, 0,
+		                                                 0, 0);
+		download_request_free (download_allmods_zip);
+		download_allmods_zip = 0;
+		return;
 	}
 
 
@@ -468,29 +405,13 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 
 	if (modland_com_sort ())
 	{
-		while (1)
-		{
-			API->console->FrameLock();
-			API->fsDraw();
-			modland_com_initialize_Draw (API->console, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
-			                                           2, 0, 0, 0, 0,
-			                                           3, "Out of memory",
-			                                           0, 2);
-			while (API->console->KeyboardHit())
-			{
-				int key = API->console->KeyboardGetChar();
-
-				switch (key)
-				{
-					case KEY_EXIT:
-					case _KEY_ENTER:
+		modland_com_initialize_Draw_Until_Enter_Or_Exit (API, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
+		                                                 2, 0, 0, 0, 0,
+		                                                 3, "Out of memory");
 #warning remove database
-						download_request_free (download_allmods_zip);
-						download_allmods_zip = 0;
-						return;	
-				}
-			}
-		}
+		download_request_free (download_allmods_zip);
+		download_allmods_zip = 0;
+		return;
 
 	}
 
@@ -501,27 +422,9 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 
 	/* we are finished */
 
-	while (1)
-	{
-		API->console->FrameLock();
-		API->fsDraw();
-		modland_com_initialize_Draw (API->console, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
-		                                           2, 0, modland_com.database.fileentries_n, modland_com.database.direntries_n, s.invalid_entries,
-		                                           2, 0,
-		                                           0, 2);
-		while (API->console->KeyboardHit())
-		{
-			int key = API->console->KeyboardGetChar();
-
-			switch (key)
-			{
-				case KEY_EXIT:
-				case _KEY_ENTER:
-					download_request_free (download_allmods_zip);
-					download_allmods_zip = 0;
-
-					return;	
-			}
-		}
-	}
+	modland_com_initialize_Draw_Until_Enter_Or_Exit (API, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
+	                                                 2, 0, modland_com.database.fileentries_n, modland_com.database.direntries_n, s.invalid_entries,
+	                                                 2, 0);
+	download_request_free (download_allmods_zip);
+	download_allmods_zip = 0;
 }

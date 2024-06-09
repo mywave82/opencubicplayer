@@ -53,7 +53,9 @@ struct modland_com_initialize_t
 
 struct modland_com_t
 {
-	char *cachedir;
+	char *cachepath;
+	char *cacheconfig;
+	char *mirror;
 	struct dmDrive *drive;
 #if 0
 	struct ocpdir_mem_t *root;
@@ -480,22 +482,89 @@ static int modland_com_add_data_line (struct modland_com_initialize_t *s, const 
 #include "modland-com-file.c"
 #include "modland-com-dir.c"
 #include "modland-com-initialize.c"
+#include "modland-com-setup.c"
+
+static char *modland_com_resolve_cachedir3 (const char *src)
+{
+	char *retval = malloc (strlen (src) + 2);
+	char *iter;
+	if (!retval)
+	{
+		return 0;
+	}
+	sprintf (retval, "%s/", src);
+
+	for (iter = retval; *iter;)
+	{
+		if ((!strncmp (iter, "//", 2)) ||
+		    (!strncmp (iter, "\\\\", 2)) ||
+		    (!strncmp (iter, "/\\", 2)) ||
+		    (!strncmp (iter, "\\/", 2)))
+		{
+			memmove (iter, iter+1, strlen (iter + 1));
+		} else {
+#ifdef _WIN32
+			if (*iter == '/')
+			{
+				*iter = '\\';
+			}
+#else
+			if (*iter == '\\')
+			{
+				*iter = '/';
+			}
+#endif
+			iter++;
+		}
+	}
+	return retval;
+}
+
+static char *modland_com_resolve_cachedir2 (const char *src1, const char *src2)
+{
+	char *temp = malloc (strlen (src1) + strlen (src2) + 1);
+	char *retval;
+	if (!temp)
+	{
+		return 0;
+	}
+	sprintf (temp, src1, src2);
+	retval = modland_com_resolve_cachedir3 (temp);
+	free (temp);
+	return retval;
+}
+
+static char *modland_com_resolve_cachedir (const struct configAPI_t *configAPI, const char *src)
+{
+	if ((!strncmp (src, "~\\", 2)) ||
+	    (!strncmp (src, "~/", 2)))
+	{
+		return modland_com_resolve_cachedir2 (configAPI->HomePath, src+2);
+	} else if ((!strncmp (src, "$OCPDATAHOME\\", 13)) ||
+	           (!strncmp (src, "$OCPDATAHOME/", 13)))
+	{
+		return modland_com_resolve_cachedir2 (configAPI->DataHomePath, src+13);
+	} else if ((!strncmp (src, "$OCPDATA\\", 9)) ||
+	           (!strncmp (src, "$OCPDATA/", 9)))
+	{
+		return modland_com_resolve_cachedir2 (configAPI->DataPath, src+9);
+	} else if ((!strncmp (src, "$TEMP\\", 6)) ||
+	           (!strncmp (src, "$TEMP/", 6)))
+	{
+		return modland_com_resolve_cachedir2 (configAPI->TempPath, src+6);
+	} else {
+		return modland_com_resolve_cachedir3 (src);
+	}
+}
 
 static int modland_com_init (const struct configAPI_t *configAPI)
 {
-#warning modland_com cachedir is currently FIXED, should be in ocp.ini + configuration dialog
-	modland_com.cachedir = malloc (strlen (configAPI->DataHomePath) + 12 + 1);
-	if (!modland_com.cachedir)
+	modland_com.cacheconfig = strdup (configAPI->GetProfileString ("modland.com", "cachedir", "$OCPHOMEDATA/modland.com/"));
+	if (!modland_com.cacheconfig)
 	{
 		return errAllocMem;
 	}
-	sprintf (modland_com.cachedir,
-#ifdef _WIN32
-	         "%smodland.com\\",
-#else
-	         "%smodland.com/",
-#endif
-	         configAPI->DataHomePath);
+	modland_com.cachepath = modland_com_resolve_cachedir (configAPI, modland_com.cacheconfig);
 
 	modland_com.root = modland_com_init_root ();
 	modland_com.drive = RegisterDrive("modland.com:", modland_com.root, modland_com.root);
@@ -517,6 +586,15 @@ static int modland_com_init (const struct configAPI_t *configAPI)
 		0, /* Close */
 		0  /* Destructor */
 	);
+
+	{
+		const char *temp = configAPI->GetProfileString ("modland.com", "mirror", "https://modland.com/");
+		modland_com.mirror = strdup (temp);
+		if (!modland_com.cachepath)
+		{
+			return errAllocMem;
+		}
+	}
 
 	return errOk;
 }
@@ -543,11 +621,14 @@ static void modland_com_done (void)
 		modland_com.drive = 0;
 	}
 
-	if (modland_com.cachedir)
-	{
-		free (modland_com.cachedir);
-		modland_com.cachedir = 0;
-	}
+	free (modland_com.cacheconfig);
+	modland_com.cacheconfig = 0;
+
+	free (modland_com.cachepath);
+	modland_com.cachepath = 0;
+
+	free (modland_com.mirror);
+	modland_com.mirror = 0;
 }
 
 DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "modland-com", .desc = "OpenCP virtual modland.com filebrowser (c) 2024 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 60, .Init = modland_com_init, .Close = modland_com_done};
