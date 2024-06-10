@@ -52,6 +52,7 @@ static uint32_t xmpGetModuleType(const char *buf, int len, const char *filename)
 	{
 		switch (int32_little(*(uint32_t *)(buf+1080)))
 		{
+			case 0x54534546: /* FEST */
 			case 0x2E542E4E: /* N.T. */
 				return MODULETYPE("MODt");
 
@@ -181,6 +182,7 @@ static int xmpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		{
 			switch (int32_little(*(uint32_t *)(buf+1080)))
 			{
+				case 0x54534546: /* FEST */
 				case 0x2E4B2E4D: /* M.K. */
 				case 0x214B214D: /* M!K! */
 				case 0x2E542E4E: /* N.T. */

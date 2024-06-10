@@ -122,6 +122,7 @@ static int loadmod (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *
 
 	switch (l)
 	{
+		case 0x54534546: /* FEST */
 		case 0x2E4B2E4D: /* M.K. */
 		case 0x214B214D: /* M!K! */
 		case 0x214B264D: /* M&K! */
