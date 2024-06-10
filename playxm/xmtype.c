@@ -55,7 +55,7 @@ static uint32_t xmpGetModuleType(const char *buf, int len, const char *filename)
 			case 0x2E542E4E: /* N.T. */
 				return MODULETYPE("MODt");
 
-			case 0x2E4B2E4D: case 0x214B214D: case 0x34544C46:                  /* "M.K." "M!K!" "FLT4" */
+			case 0x2E4B2E4D: case 0x214B214D: case 0x214B264D: case 0x34544C46: /* "M.K." "M!K!" "M&K!" "FLT4" */
 			case 0x4E484331: case 0x4E484332: case 0x4E484333: case 0x4E484334: /* "1CHN" "2CHN" "3CHN" "4CHN" */
 			case 0x4E484335: case 0x4E484336: case 0x4E484337: case 0x4E484338: /* "5CHN" "6CHN" "7CHN" "8CHN" */
 			case 0x4E484339: case 0x48433031: case 0x48433131: case 0x48433231: /* "9CHN" "10CH" "11CH" "12CH" */

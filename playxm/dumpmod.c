@@ -721,6 +721,15 @@ int preParseMOD31 (unsigned char *mem, int len, int *channels31instruments)
 			printf ("%sWARNING: Order < 64 not possible in M!K! format - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, FONT_RESET);
 			return -1;
 		}
+	} else if (!memcmp(&mem[20+31*30+2+128], "M&K!", 4))
+	{
+		printf ("%sNOTE: got M&K! signature in 31 instrument format (His Master's Noise)%s\n", FONT_BRIGHT_GREEN, FONT_RESET);
+		canbe31instruments = 4;
+		if (highestorder >= 64)
+		{
+			printf ("%sWARNING: Order > 63 not possible in M&K! format - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, FONT_RESET);
+			return -1;
+		}
 	} else if (!memcmp(&mem[20+31*30+2+128], "FLT4", 4)) { printf ("%sNOTE: got FLT4 - probably StarTrekker 4-channel MOD%s\n",   FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 4;
 	} else if (!memcmp(&mem[20+31*30+2+128], "FLT8", 4)) { printf ("%sNOTE: got FLT8 - probably StarTrekker 8-channel MOD%s\n",   FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;
 	} else if (!memcmp(&mem[20+31*30+2+128], "CD81", 4)) { printf ("%sNOTE: got CD81 - probably Oktalyzer for Atari ST?%s\n",     FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;
