@@ -385,6 +385,7 @@ OCP_INTERNAL int ym_type_init (PluginInitAPI_t *API)
 	struct moduletype mt;
 
 	API->fsRegisterExt("YM");
+	API->fsRegisterExt("MIX");
 
 	mt.integer.i = MODULETYPE("YM");
 	API->fsTypeRegister (mt, YM_description, "plOpenCP", &ymPlayer);
