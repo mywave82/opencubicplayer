@@ -496,5 +496,6 @@
  <mime-type type="audio/x-ym">
   <comment>YM2149 register dumps, PSG audio</comment>
   <glob pattern="*.ym"/>
+  <glob pattern="*.mix"/>
  </mime-type>
 </mime-info>
