@@ -44,50 +44,275 @@ static const char *known_adlib_directories[] =
 
 static const char *known_root_directories[] =
 {
-	"AHX",                   /* HVL */
-	"AY Emul",               /* AY */
-        /* "AY STRC", different format, only one file present at the moment */
+	"AHX",                                /* HVL */
+	// "AM Composer",
+	// "AND XSynth",
+	// "AProSys",
+	// "AXS",
+	// "AY Amadeus",
+	"AY Emul",                            /* AY */
+        // "AY STRC",
+	// "Ace Tracker",
+	// "Actionamics",
+	// "Activision Pro",
 	"Ad Lib",
-	"Composer 669",          /* 669 */
-#error fix-me
-	"Cubic Tiny XM",         /* MXM     1 of 2 files is a BROKEN FILE?????????? */
-	"Digital Tracker MOD",   /* MOD */
-	"Digitrakker",           /* MDL */
-	"Extreme Tracker",       /* AMS */
-	"Fasttracker",           /* MOD */
-	"Fasttracker 2",         /* XM */
-	"Gameboy Sound System",  /* GBS (Blaarg's game music emulator) */
-	"HES",                   /* HES (Blaarg's game music emulator) */
-	"HVSC",                  /* SID, mirror of "The High Voltage SID Collection" */
-	"His Master's Noise",    /* MOD/MODt */
-	"HivelyTracker",         /* HVL */
-	"Impulsetracker",        /* IT */
-	// "KSS",                /* KSS (Blaarg's game music emulator) <- only supports SEGA, and MSX that uses the internal AY chip. No support for ram-module, stereo, FM-PAC, MSX-AUDIO, etc. Only some few tunes inside "- unknown" works */
-	"Megadrive GYM",         /* GYM (Blaarg's game music emulator) */
-	"Multitracker",          /* MTM */
-	"Nintendo SPC",          /* SPC (Blaarg's game music emulator) */
-	"Nintendo Sound Format", /* NSF (Blaarg's game music emulator) */
-	"Octalyser",             /* M31 ? should be MOD !!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-	"Oktalyzer",             /* OKT */
-	"PlaySID",               /* SID */
-	"Polytracker",           /* PTM */
-	"Protracker",            /* MOD */
-	"RealSID",               /* SID */
-	"Screamtracker 2",       /* STM */
-	"Screamtracker 3",       /* S3M */
-	"Slight Atari Player",   /* SAP (Blaarg's game music emulator) */
-	"Soundtracker",          /* M15 */
-	// "Soundtracker 2.6",   /* <- different file format, just looks similiar to .MOD */
-	// "Startrekker AM",     /* <- Contains (potential) AM (OPL3) instruments via external mod.nt file. Has normal FLT4 signature */
-	// "Startrekker FLT8",   /* <- Could be loaded as regular MOD files, but contains a hack: two and two 4-channels patterns should be merged into a 8-channel pattern */
-	"Ultratracker",          /* ULT */
-	"Unis 669",              /* 669 */
-	"Velvet Studio",         /* AMS */
-	"Video Game Music",      /* VGM (can be OPL too) */
-	"X-Tracker",             /* DMF */
-	"YM",                    /* YM */
-#error check me out
-(YMST, should be supported?)
+	// "Aero Studio",
+	// "All Sound Tracker",
+	// "Anders Oland",
+	// "ArkosTracker",
+	// "Arpeggiator",
+	// "Art And Magic",
+	// "Art Of Noise",
+	// "Astroidea XMF",
+	// "Asylum",
+	"Atari Digi-Mix",                     /* YM*/
+	// "Athtune",
+	// "Audio Sculpture",
+	// "BP SoundMon 2",
+	// "BP SoundMon 3",
+	// "BeRoTracker",
+	// "Beathoven Synthesizer",
+	// "Beaver Sweeper",
+	// "Beepola",
+	// "Ben Daglish",
+	// "Ben Daglish SID",
+	// "BoyScout",
+	// "Buzz",
+	// "Buzzic",
+	// "Buzzic 2",
+	// "CBA",
+	// "Capcom Q-Sound Format",
+	// "Composer 667",
+	"Composer 669",                       /* 669 */
+	// "Composer 670 (CDFM)",
+	// "Compoz",
+	// "Core Design",
+	"Cubic Tiny XM",                      /* MXM     1 of 2 files are a broken, perhaps version 1.0 had different sample headers than laters versions? */
+	// "CustomMade",
+	// "Cybertracker",
+	// "Cybertracker C64",
+	// "DSMI Compact",
+	// "Darius Zendeh",
+	// "DarkWave Studio",
+	// "Dave Lowe",
+	// "Dave Lowe New",
+	// "David Hanney",
+	// "David Whittaker",
+	// "Deflemask",
+	// "Delitracker Custom",
+	// "Delta Music",
+	// "Delta Music 2",
+	// "Delta Packer",
+	// "Desire",
+	// "Digibooster",
+	// "Digibooster Pro",
+	// "Digital Mugician",
+	// "Digital Mugician 2",
+	// "Digital Sonix And Chrome",
+	// "Digital Sound And Music Interface",
+	// "Digital Sound Interface Kit",
+	// "Digital Sound Interface Kit RIFF",
+	// "Digital Sound Studio",
+	// "Digital Symphony",
+	// "Digital Tracker DTM",
+	"Digital Tracker MOD",                /* MOD */
+	"Digitrakker",                        /* MDL */
+	// "Digitrekker",
+	// "Dirk Bialluch",
+	// "Disorder Tracker 2",
+	// "DreamStation",
+	// "Dreamcast Sound Format",
+	// "Dynamic Studio Professional",
+	// "Dynamic Synthesizer",
+	// "EarAche",
+	// "Electronic Music System",
+	// "Electronic Music System v6",
+	// "Epic Megagames MASI",
+	// "Euphony",
+	"Extreme Tracker",                   /* AMS */
+	// "FAC SoundTracker",
+	// "FM Tracker",
+	// "Face The Music",
+	// "FamiTracker",
+	// "Farandole Composer",
+	// "Fashion Tracker",
+	"Fasttracker",                       /* MOD */
+	"Fasttracker 2",                     /* XM */
+	// "Follin Player II",
+	// "Forgotten Worlds",
+	// "Fred Gray",
+	// "FredMon",
+	// "FuchsTracker",
+	// "Funktracker",
+	// "Future Composer 1.3",
+	// "Future Composer 1.4",
+	// "Future Composer BSI",
+	// "Future Player",
+	// "GT Game Systems",
+	// "Game Music Creator",
+	// "Gameboy Sound Format",
+	"Gameboy Sound System",              /* GBS (Blaarg's game music emulator) */
+	// "Gameboy Sound System GBR",
+	// "Gameboy Tracker",
+	// "General DigiMusic",
+	// "GlueMon",
+	// "GoatTracker",
+	// "GoatTracker 2",
+	// "Graoumf Tracker",
+	// "Graoumf Tracker 2",
+	"HES",                               /* HES (Blaarg's game music emulator) */
+	"HVSC",                              /* SID, mirror of "The High Voltage SID Collection" */
+	// "Hippel",
+	// "Hippel 7V",
+	// "Hippel COSO",
+	// "Hippel ST",
+	// "Hippel ST COSO",
+	"His Master's Noise",                /* MOD/MODt */
+	"HivelyTracker",                     /* HVL */
+	// "Howie Davies",
+	// "IFF-SMUS",
+	// "Images Music System",
+	// "Imago Orpheus",
+	"Impulsetracker",                    /* IT */
+	// "InStereo!",
+	// "InStereo! 2.0",
+	// "Infogrames",
+	// "Ixalance",
+	// "JamCracker",
+	// "Janko Mrsic-Flogel",
+	// "Jason Brooke",
+	// "Jason Page",
+	// "Jason Page Old",
+	// "JayTrax",
+	// "Jeroen Tel",
+	// "Jesper Olsen",
+	// "KSS",                            /* KSS (Blaarg's game music emulator) <- only supports SEGA, and MSX that uses the internal AY chip. No support for ram-module, stereo, FM-PAC, MSX-AUDIO, etc. Only some few tunes inside "- unknown" works */
+	// "Ken's Digital Music";
+	// "Klystrack",
+	// "Kris Hatlelid",
+	// "Leggless Music Editor",
+	// "Lionheart",
+	// "Liquid Tracker",
+	// "MCMD",
+	// "MDX",
+	// "MO3",
+	// "MVS Tracker",
+	// "MVX Module",
+	// "Mad Tracker 2",
+	// "Magnetic Fields Packer",
+	// "Maniacs Of Noise",
+	// "Mark Cooksey",
+	// "Mark Cooksey Old",
+	// "Mark II",
+	// "MaxTrax",
+	// "Medley",
+	// "MegaStation",
+	// "MegaStation MIDI",
+	// "Megadrive CYM",
+	"Megadrive GYM",                     /* GYM (Blaarg's game music emulator) */
+	"Multitracker",                      /* MTM */
+	// "MikMod UNITRK",
+	// "Mike Davies",
+	// "Monotone",
+	// "MoonBlaster",
+	// "MoonBlaster (edit mode)",
+	// "MultiMedia Sound",
+	// "Multitracker",
+	// "Music Assembler",
+	// "Music Editor",
+	// "MusicMaker V8",
+	// "MusicMaker V8 Old",
+	// "Musicline Editor",
+	// "NerdTracker 2",
+	// "Nintendo DS Sound Format",
+	"Nintendo SPC",                      /* SPC (Blaarg's game music emulator) */
+	"Nintendo Sound Format",             /* NSF (Blaarg's game music emulator) */
+	// "NoiseTrekker",
+	// "NoiseTrekker 2",
+	// "NovoTrade Packer",
+	// "OctaMED MMD0",
+	// "OctaMED MMD1",
+	// "OctaMED MMD2",
+	// "OctaMED MMD3",
+	// "OctaMED MMDC",
+	"Octalyser",                         /* MOD */
+	"Oktalyzer",                         /* OKT */
+	// "Onyx Music File",
+	// "OpenMPT MPTM",
+	// "Organya",
+	// "Organya 2",
+	// "PMD",
+	// "Paul Robotham",
+	// "Paul Shields",
+	// "Paul Summers",
+	// "Peter Verswyvelen",
+	// "Picatune",
+	// "Picatune2",
+	// "Pierre Adane Packer",
+	// "Piston Collage",
+	// "Piston Collage Protected",
+	"PlaySID",                           /* SID */
+	// "PlayerPro",
+	// "Playstation 2 Sound Format",
+	// "Playstation Sound Format",
+	// "PokeyNoise",
+	// "Pollytracker",
+	"Polytracker",                       /* PTM */
+	// "Powertracker",
+	// "Pretracker",
+	// "ProTrekkr",
+	// "ProTrekkr 2.0",
+	// "Professional Sound Artists",
+	"Protracker",                        /* MOD */
+	// "Protracker IFF",
+	// "Psycle",
+	// "Pumatracker",
+	// "Quadra Composer",
+	// "Quartet PSG",
+	// "Quartet ST",
+	// "RamTracker",
+	// "Real Tracker",
+	"RealSID",                           /* SID */
+	// "Renoise",
+	// "Renoise Old",
+	// "Richard Joseph",
+	// "Riff Raff",
+	// "Rob Hubbard",
+	// "Rob Hubbard ST",
+	// "Ron Klaren",
+	// "S98",
+	// "SBStudio",
+	// "SC68",
+	// "SCC-Musixx",
+	// "SCUMM",
+	// "SNDH",
+	// "SPU",
+	// "SVAr Tracker",
+	// "Sam Coupe COP";
+	// "Sam Coupe SNG",
+	// "Saturn Sound Format",
+	"Screamtracker 2",                   /* STM */
+	"Screamtracker 3",                   /* S3M */
+Sean Connolly/	-	2007-Mar-03 21:36
+Sean Conran/	-	2007-Mar-03 21:36
+Shroom/	-	2014-Feb-02 21:35
+SidMon 1/	-	2024-Apr-28 11:10
+SidMon 2/	-	2021-Mar-29 04:25
+Sidplayer/	-	2014-Mar-06 00:21
+Silmarils/	-	2007-Mar-03 21:36
+Skale Tracker/
+	"Slight Atari Player",               /* SAP (Blaarg's game music emulator) */
+	"Soundtracker",                      /* M15 */
+	// "Soundtracker 2.6",               /* <- different file format, just looks similiar to .MOD */
+	// "Startrekker AM",                 /* <- Contains (potential) AM (OPL3) instruments via external mod.nt file. Has normal FLT4 signature */
+	// "Startrekker FLT8",               /* <- Could be loaded as regular MOD files, but contains a hack: two and two 4-channels patterns should be merged into a 8-channel pattern */
+	"Ultratracker",                      /* ULT */
+	"Unis 669",                          /* 669 */
+	"Velvet Studio",                     /* AMS */
+	"Video Game Music",                  /* VGM (can be OPL too) */
+	"X-Tracker",                         /* DMF */
+	"YM",                                /* YM */
+	// "YMST",                           /* <- Furher development of YM fileformat, unable to find documentation. UADE can play these via YM-2149 / MYST */
 };
 
 struct modland_com_ocpdir_t
