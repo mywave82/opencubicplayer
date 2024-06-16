@@ -28,6 +28,7 @@
 #include "types.h"
 #include "boot/plinkman.h"
 #include "cpiface/cpiface.h"
+#include "filesel/dirdb.h"
 #include "filesel/filesystem.h"
 #include "filesel/mdb.h"
 #include "filesel/pfilesel.h"
@@ -60,6 +61,8 @@ static int sidReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 {
 	int i;
 	struct psidHeader *ph;
+	const char *filename = 0;
+	unsigned int filenamelen;
 
 	if (len<sizeof(struct psidHeader)+2)
 		return 0;
@@ -116,6 +119,52 @@ static int sidReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		return 1;
 	}
 
+	API->dirdb->GetName_internalstr (fp->dirdb_ref, &filename);
+	filenamelen = strlen (filename);
+
+	if ((filenamelen > 4) && (
+	     (!strcasecmp(filename + filenamelen - 4, ".mus")) ||
+	     (!strcasecmp(filename + filenamelen - 4, ".sid"))) &&
+	    (len >= 8))
+	{
+		uint_least32_t voice1Index, voice2Index, voice3Index;
+		const uint_least16_t SIDTUNE_MUS_HLT_CMD = 0x14F;
+		const unsigned char *buf2 = (const unsigned char *)buf;
+
+		// Skip load address and 3x length entry.
+		voice1Index = 2 + 3 * 2;
+		// Add length of voice 1 data.
+		voice1Index += buf2[2] | (buf2[3] << 8);
+		// Add length of voice 2 data.
+		voice2Index = voice1Index + (buf2[4] | (buf2[5] << 8));
+		// Add length of voice 3 data.
+		voice3Index = voice2Index + (buf2[6] | (buf2[7] << 8));
+
+		if (
+		/* only scan voice1Index if we have enough data available */
+		     (((voice1Index <= len) &&
+		       ((buf2[voice1Index - 1] | (buf2[voice1Index - 2] << 8)) == SIDTUNE_MUS_HLT_CMD)) ||
+		      ((voice1Index > len) &&
+		       (voice1Index <= fp->filesize(fp)))) &&
+		/* only scan voice2Index if we have enough data available */
+		     (((voice2Index <= len) &&
+		       ((buf2[voice2Index - 1] | (buf2[voice2Index - 2] << 8)) == SIDTUNE_MUS_HLT_CMD)) ||
+		      ((voice2Index > len) &&
+		       (voice2Index <= fp->filesize(fp)))) &&
+		/* only scan voice3Index if we have enough data available */
+		     (((voice3Index <= len) &&
+		       ((buf2[voice3Index - 1] | (buf2[voice3Index - 2] << 8)) == SIDTUNE_MUS_HLT_CMD)) ||
+		      ((voice3Index > len) &&
+		       (voice3Index <= fp->filesize(fp))))
+		)
+		{
+			m->modtype.integer.i=MODULETYPE("SID");
+			m->channels=1;
+			strcpy(m->comment, "Sidplayer MUS file");
+			return 1;
+		}
+	}
+
 	return 0;
 }
 
@@ -134,6 +183,7 @@ OCP_INTERNAL int sid_type_init (struct PluginInitAPI_t *API)
 {
 	struct moduletype mt;
 
+	API->fsRegisterExt("MUS");
 	API->fsRegisterExt("SID");
 	API->fsRegisterExt("RSID");
 	API->fsRegisterExt("PSID");

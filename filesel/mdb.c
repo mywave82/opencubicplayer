@@ -205,7 +205,7 @@ static const struct mdbReadInfoAPI_t mdbReadInfoAPI =
 };
 int mdbReadInfo (struct moduleinfostruct *m, struct ocpfilehandle_t *f)
 {
-	char mdbScanBuf[1084];
+	char mdbScanBuf[4096];
 	struct mdbreadinforegstruct *rinfos;
 	int maxl;
 
