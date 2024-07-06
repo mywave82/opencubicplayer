@@ -89,6 +89,7 @@ void plFindInterface(struct moduletype modtype, const struct interfacestruct **i
 #define RD_PUTDRIVES 8
 #define RD_PUTRSUBS 16
 #define RD_ISMODONLY 32
+#define RD_SUBSORT 64
 
 int fsMatchFileName12(const char *a, const char *b);
 

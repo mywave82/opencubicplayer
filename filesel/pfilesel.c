@@ -310,6 +310,12 @@ int fsReadDir (struct modlist *ml, struct ocpdir_t *dir, const char *mask, unsig
 {
 	struct fsReadDir_token_t token;
 	ocpdirhandle_pt dh;
+	unsigned int prenum = 0;
+
+	if (opt & RD_SUBSORT)
+	{
+		prenum = ml->num;
+	}
 
 	if (opt & RD_PUTDRIVES)
 	{
@@ -335,7 +341,7 @@ int fsReadDir (struct modlist *ml, struct ocpdir_t *dir, const char *mask, unsig
 #else
 	token.mask = (char *)mask;
 #endif
-	token.opt = opt;
+	token.opt = opt & ~(RD_SUBSORT);
 
 	if ((opt & RD_PUTRSUBS) && dir->readflatdir_start)
 	{
@@ -371,6 +377,12 @@ int fsReadDir (struct modlist *ml, struct ocpdir_t *dir, const char *mask, unsig
 #ifndef FNM_CASEFOLD
 	free (token.mask);
 #endif
+
+	if (opt & RD_SUBSORT)
+	{
+		modlist_subsort_filesonly_groupdir (ml, prenum, ml->num - prenum);
+	}
+
 	return 1;
 }
 
@@ -3726,7 +3738,7 @@ superbreak:
 					} else {
 						if (m->dir)
 						{
-							if (!(fsReadDir (playlist, m->dir, curmask, RD_PUTRSUBS | RD_ISMODONLY)))
+							if (!(fsReadDir (playlist, m->dir, curmask, RD_PUTRSUBS | RD_ISMODONLY | RD_SUBSORT)))
 							{
 								return -1;
 							}

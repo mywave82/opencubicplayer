@@ -456,10 +456,63 @@ static int mlecmp (const void *a, const void *b)
 	return strcasecmp(n1, n2);
 }
 
+static int mlecmp_filesonly_groupdir (const void *a, const void *b)
+{
+	int _1 = *(int *)a;
+	int _2 = *(int *)b;
+	const struct modlistentry *e1 = &sorting->files[_1];
+	const struct modlistentry *e2 = &sorting->files[_2];
+
+	int i1 = mlecmp_score (e1);
+	int i2 = mlecmp_score (e2);
+
+	const char *n1, *n2;
+
+	int retval;
+
+	if (i1 != i2)
+	{
+		return i2 - i1;
+	}
+
+	if (e1->flags & MODLIST_FLAG_DRV)
+	{
+		return 0;
+	}
+	if (!e1->file->parent)
+	{
+		return 0;
+	}
+
+	retval = (int)((int32_t)e1->file->parent->dirdb_ref - (int32_t)e2->file->parent->dirdb_ref);
+	if (retval)
+	{
+		return retval;
+	}
+
+	dirdbGetName_internalstr (e1->file->dirdb_ref, &n1);
+	dirdbGetName_internalstr (e2->file->dirdb_ref, &n2);
+
+	return strcasecmp(n1, n2);
+}
+
 void modlist_sort (struct modlist *modlist)
 {
 	sorting = modlist; /* dirty HACK that is not thread-safe / reentrant what so ever */
 	qsort(modlist->sortindex, modlist->num, sizeof(modlist->sortindex[0]), mlecmp);
+	sorting = 0;
+}
+
+void modlist_subsort_filesonly_groupdir (struct modlist *modlist, unsigned int pos, unsigned int length)
+{
+	if ((pos >= modlist->num) ||
+	    (length > modlist->num) ||
+	    ((pos + length) > modlist->num))
+	{
+		return;
+	}
+	sorting = modlist; /* dirty HACK that is not thread-safe / reentrant what so ever */
+	qsort(modlist->sortindex + pos, length, sizeof(modlist->sortindex[0]), mlecmp_filesonly_groupdir);
 	sorting = 0;
 }
 

@@ -37,6 +37,7 @@ struct dmDrive;
 struct modlist *modlist_create(void);
 void modlist_free(struct modlist *modlist);
 void modlist_sort(struct modlist *modlist);
+void modlist_subsort_filesonly_groupdir (struct modlist *modlist, unsigned int pos, unsigned int length); /* sorts a slice of the list */
 void modlist_append(struct modlist *modlist, struct modlistentry *entry);
 void modlist_append_dir (struct modlist *modlist, struct ocpdir_t *dir);
 void modlist_append_dotdot (struct modlist *modlist, struct ocpdir_t *dir);
