@@ -63,8 +63,11 @@ struct modland_com_t
 	struct ocpdir_t *root;
 #endif
 	struct ocpfile_t *initialize;
+	struct ocpfile_t *setup;
 
 	struct modland_com_database_t database;
+
+	int showrelevantdirectoriesonly;
 };
 struct modland_com_t modland_com;
 
@@ -492,17 +495,17 @@ static char *modland_com_resolve_cachedir3 (const char *src)
 	{
 		return 0;
 	}
-	sprintf (retval, "%s/", src);
+	sprintf (retval, "%s/", src); /* ensure that it ends with a slash */
 
 	for (iter = retval; *iter;)
-	{
+	{ /* check for double slash */
 		if ((!strncmp (iter, "//", 2)) ||
 		    (!strncmp (iter, "\\\\", 2)) ||
 		    (!strncmp (iter, "/\\", 2)) ||
 		    (!strncmp (iter, "\\/", 2)))
 		{
-			memmove (iter, iter+1, strlen (iter + 1));
-		} else {
+			memmove (iter, iter+1, strlen (iter + 1) + 1);
+		} else { /* flip slashes if they are the wrong direction */
 #ifdef _WIN32
 			if (*iter == '/')
 			{
@@ -528,6 +531,7 @@ static char *modland_com_resolve_cachedir2 (const char *src1, const char *src2)
 	{
 		return 0;
 	}
+
 	sprintf (temp, src1, src2);
 	retval = modland_com_resolve_cachedir3 (temp);
 	free (temp);
@@ -560,6 +564,7 @@ static char *modland_com_resolve_cachedir (const struct configAPI_t *configAPI, 
 static int modland_com_init (const struct configAPI_t *configAPI)
 {
 	modland_com.cacheconfig = strdup (configAPI->GetProfileString ("modland.com", "cachedir", "$OCPHOMEDATA/modland.com/"));
+	modland_com.showrelevantdirectoriesonly = configAPI->GetProfileBool ("modland.com", "showrelevantdirectoriesonly", 1, 1);
 	if (!modland_com.cacheconfig)
 	{
 		return errAllocMem;
@@ -587,6 +592,20 @@ static int modland_com_init (const struct configAPI_t *configAPI)
 		0  /* Destructor */
 	);
 
+#warning make a copy in setup: too
+	modland_com.setup = dev_file_create (
+		modland_com.root, /* parent-dir */
+		"setup.dev",
+		"setup modland.com: drive",
+		"",
+		0, /* token */
+		0, /* Init */
+		modland_com_setup_Run,
+		0, /* Close */
+		0  /* Destructor */
+	);
+
+
 	{
 		const char *temp = configAPI->GetProfileString ("modland.com", "mirror", "https://modland.com/");
 		modland_com.mirror = strdup (temp);
@@ -607,6 +626,12 @@ static void modland_com_done (void)
 	{
 		modland_com.initialize->unref (modland_com.initialize);
 		modland_com.initialize = 0;
+	}
+
+	if (modland_com.setup)
+	{
+		modland_com.setup->unref (modland_com.setup);
+		modland_com.setup = 0;
 	}
 
 	if (modland_com.root)

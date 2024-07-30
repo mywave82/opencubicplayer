@@ -168,6 +168,7 @@ static void modland_com_initialize_Draw_Until_Enter_Or_Exit (
 	}
 }
 
+#warning merge into setup dialog
 static void modland_com_initialize_Run (void **token, const struct DevInterfaceAPI_t *API)
 {
 	struct download_request_t *download_allmods_zip; /* do not free until done parsing, due to file being open locks the file in Windows */
@@ -193,7 +194,7 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 			                                                 0, 0);
 			return;
 		}
-		sprintf (url, "%s/allmods.zip", modland_com.mirror ? modland_com.mirror : ""); // https://stian.cubic.org/allmods.zip
+		sprintf (url, "%s/allmods.zip", modland_com.mirror ? modland_com.mirror : "");
 		download_allmods_zip = download_request_spawn (API->configAPI, 0, url);
 		free (url);
 	}

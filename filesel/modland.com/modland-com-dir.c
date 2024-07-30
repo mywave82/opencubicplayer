@@ -2,6 +2,7 @@ static const char *known_adlib_directories[] =
 {
 	"ADL",
 	"AMusic",
+	"AMusic XMS",
 	"AdLib Tracker",
 	"AdLib Tracker 2",
 	"Apogee",
@@ -9,7 +10,7 @@ static const char *known_adlib_directories[] =
 	"Bob's AdLib Music",
 	"Boom Tracker",
 	"Creative Music File",
-	/* "DOSBox" should have worked, 2 of 2 fails to load */
+	/* "DOSBox", should have worked, 2 of 2 fails to load */
 	"DeFy AdLib Tracker",
 	"Digital FM",
 	"EdLib D00",
@@ -17,7 +18,9 @@ static const char *known_adlib_directories[] =
 	/* "EdLib Packed", includes PCM audio */
 	"Exotic AdLib",
 	"Extra Simple Music",
-	"Faust Music Creator",
+	// "FM Tracker",
+	// "FM-Kingtracker",
+	"Faust Music Creator"
 	"HSC AdLib Composer",
 	"Herad Music System",
 	"Johannes Bjerregard Module",
@@ -26,19 +29,26 @@ static const char *known_adlib_directories[] =
 	"LucasArts",
 	"MK-Jamz",
 	"MPU-401 Trakker",
-	/* "MUS", detected as IMS, fails to load */
+	// "MUS", detected as IMS, fails to load
 	"Martin Fernandez", /* These are actually Apogee IMF files */
 	"Master Tracker",
 	"Mlat Adlib Tracker",
+	// "Palladix",
+	// "Pixel Painters FMF",
+	// "Pixel Painters FTF",
 	"Raw OPL Capture",
 	"Reality AdLib Tracker",
 	"SNG Player",
 	"Screamtracker 3 AdLib",
+	// "Shadowlands",
 	"Sierra",
+	// "Sound Images Generation 2",
+	// "Sound Interface System",
 	"Surprise! AdLib Tracker",
 	"Surprise! AdLib Tracker 2.0",
 	"Twin TrackPlayer",
 	"Ultima 6",
+	// "Vibrants",
 	"Visual Composer",
 };
 
@@ -150,7 +160,7 @@ static const char *known_root_directories[] =
 	// "Future Player",
 	// "GT Game Systems",
 	// "Game Music Creator",
-	// "Gameboy Sound Format",
+	// "Gameboy Sound Format",           /* <-- Should have been blaarg ? */
 	"Gameboy Sound System",              /* GBS (Blaarg's game music emulator) */
 	// "Gameboy Sound System GBR",
 	// "Gameboy Tracker",
@@ -282,7 +292,7 @@ static const char *known_root_directories[] =
 	// "Ron Klaren",
 	// "S98",
 	// "SBStudio",
-	// "SC68",
+	// "SC68",                           /* <-- https://github.com/Zeinok/sc68 */
 	// "SCC-Musixx",
 	// "SCUMM",
 	// "SNDH",
@@ -293,26 +303,78 @@ static const char *known_root_directories[] =
 	// "Saturn Sound Format",
 	"Screamtracker 2",                   /* STM */
 	"Screamtracker 3",                   /* S3M */
-Sean Connolly/	-	2007-Mar-03 21:36
-Sean Conran/	-	2007-Mar-03 21:36
-Shroom/	-	2014-Feb-02 21:35
-SidMon 1/	-	2024-Apr-28 11:10
-SidMon 2/	-	2021-Mar-29 04:25
-Sidplayer/	-	2014-Mar-06 00:21
-Silmarils/	-	2007-Mar-03 21:36
-Skale Tracker/
+	// "Sean Connolly",
+	// "Sean Conran",
+	// "Shroom",
+	// "SidMon 1",                       /* <-- should have been SID */
+	// "SidMon 2",                       /* <-- should have been SID? */
+	"Sidplayer",                         /* SID */
+	// "Silmarils",
+	// "Skale Tracker",
 	"Slight Atari Player",               /* SAP (Blaarg's game music emulator) */
+	// "Sonic Arranger",
+	// "Sound Club",
+	// "Sound Club 2",
+	// "Sound Images",
+	// "Sound Master",
+	// "Sound Master II v1",
+	// "Sound Master II v3",
+	// "Sound Programming Language",
+	// "SoundControl",
+	// "SoundFX",
+	// "SoundFactory",
+	// "SoundPlayer",
 	"Soundtracker",                      /* M15 */
 	// "Soundtracker 2.6",               /* <- different file format, just looks similiar to .MOD */
+	// "Soundtracker Pro II",            /* <- different file format, just looks similiar to .MOD */
+	// "Special FX",
+	// "Special FX ST",
+	// "Spectrum",                       /* This is bucket, just like Adlib */
+	// "Speedy A1 System",
+	// "Speedy System",
+	// "Starkos",
 	// "Startrekker AM",                 /* <- Contains (potential) AM (OPL3) instruments via external mod.nt file. Has normal FLT4 signature */
 	// "Startrekker FLT8",               /* <- Could be loaded as regular MOD files, but contains a hack: two and two 4-channels patterns should be merged into a 8-channel pattern */
+	"Stereo Sidplayer",                  /* SID, unsure if they actually contain stereo files */
+	// "Steve Barrett",
+	// "Stonetracker",
+	// "SunTronic",
+	// "SunVox",
+	// "Super Nintendo Sound Format",    /* <-- not in blaargh ? */
+	// "Symphonie",
+	// "SynTracker",
+	// "Synder SNG-Player",
+	// "Synder SNG-Player Stereo",
+	// "Synder Tracker",
+	// "Synth Dream",
+	// "Synth Pack",
+	// "Synthesis",
+	// "TCB Tracker",
+	// "TFM Music Maker",
+	// "TFMX",
+	// "TFMX ST",
+	// "TSS",
+	// "The 0ok Amazing Synth Tracker",
+	// "The Musical Enlightenment",
+	// "Thomas Hermann",
+	// "Tomy Tracker",
+	// "Tunefish",
+	// "Ultra64 Sound Format",
 	"Ultratracker",                      /* ULT */
 	"Unis 669",                          /* 669 */
+	// "V2",
+	// "VGM Music Maker",
 	"Velvet Studio",                     /* AMS */
+	// "Vic-Tracker",
 	"Video Game Music",                  /* VGM (can be OPL too) */
+	// "Voodoo Supreme Synthesizer",
+	// "Wally Beben",
+	// "Westwood SND",
+	// " WonderSwan",
 	"X-Tracker",                         /* DMF */
 	"YM",                                /* YM */
 	// "YMST",                           /* <- Furher development of YM fileformat, unable to find documentation. UADE can play these via YM-2149 / MYST */
+	// "Zoundmonitor",
 };
 
 struct modland_com_ocpdir_t
@@ -346,6 +408,8 @@ static void modland_com_ocpdir_unref (struct ocpdir_t *d)
 struct modland_com_readdir_t
 {
 	struct modland_com_ocpdir_t *dir;
+	int isroot;
+	int isadlib;
 	unsigned int fileoffset;
 	unsigned int diroffset;
 	unsigned int dirmax; // used by flatdir
@@ -383,6 +447,9 @@ static ocpdirhandle_pt modland_com_ocpdir_readdir_start_common (struct ocpdir_t 
 	{
 		unsigned long start = 0;
 		unsigned long stop = modland_com.database.direntries_n;
+
+		iter->isroot = !strcasecmp (self->dirname, "");
+		iter->isadlib = !strcasecmp (self->dirname, "Ad Lib");
 
 		while (1)
 		{
@@ -513,6 +580,7 @@ static int modland_com_ocpdir_readdir_iterate (ocpdirhandle_pt v)
 	    (!iter->dirnamelength))
 	{
 		iter->callback_file (iter->token, modland_com.initialize);
+		iter->callback_file (iter->token, modland_com.setup);
 		iter->sentdevs = 1;
 	}
 
@@ -560,6 +628,37 @@ static int modland_com_ocpdir_readdir_iterate (ocpdirhandle_pt v)
 				return 1;
 			}
 			len = strlen (modland_com.database.direntries[iter->diroffset]);
+			if (iter->isroot)
+			{
+				const int max = sizeof (known_root_directories) / sizeof (known_root_directories[0]);
+				int i;
+				for (i=0; i < max; i++)
+				{
+					if (!strcasecmp (known_root_directories[i], modland_com.database.direntries[iter->diroffset]))
+					{
+						break;
+					}
+				}
+				if (i == max)
+				{
+					goto skipdir;
+				}
+			} else if (iter->isadlib)
+			{
+				const int max = sizeof (known_adlib_directories) / sizeof (known_adlib_directories[0]);
+				int i;
+				for (i=0; i < max; i++)
+				{
+					if (!strcasecmp (known_adlib_directories[i], modland_com.database.direntries[iter->diroffset] + 7 /* strlen("Ad Lib/") */))
+					{
+						break;
+					}
+				}
+				if (i == max)
+				{
+					goto skipdir;
+				}
+			}
 			{
 				struct modland_com_ocpdir_t *d = calloc (sizeof (*d), 1);
 				if (d)
@@ -592,6 +691,7 @@ static int modland_com_ocpdir_readdir_iterate (ocpdirhandle_pt v)
 				}
 			}
 
+skipdir:
 			next = iter->diroffset;
 			while (1)
 			{
