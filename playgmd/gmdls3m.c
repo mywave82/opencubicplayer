@@ -100,9 +100,14 @@ OCP_INTERNAL int LoadS3M (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] Invalid signature\n");
 		return errFormSig;
 	}
-	if ((hdr.orders>255)||(hdr.pats>=254))
+	if (hdr.orders>255)
 	{
-		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] too many orders and/or patterns\n");
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] too many orders (0x%04x > 0x00ff)\n", hdr.orders);
+		return errFormStruc;
+	}
+	if (hdr.pats>=254)
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[GMD/S3M] too many patterns (0x%04x >= 0x00fe)\n", hdr.pats);
 		return errFormStruc;
 	}
 

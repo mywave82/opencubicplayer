@@ -1647,13 +1647,9 @@ OCP_INTERNAL int mpPlayModule (const struct gmdmodule *m, struct ocpfilehandle_t
 
 OCP_INTERNAL void mpStopModule (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	int i;
-	for (i=0; i<physchan; i++)
-	{
-		cpifaceSession->mcpSet (cpifaceSession, i, mcpCReset, 0);
-	}
 	cpifaceSession->mcpDevAPI->ClosePlayer (cpifaceSession);
 	free(que);
+	que=0;
 }
 
 OCP_INTERNAL void mpGetChanInfo (uint8_t ch, struct chaninfo *ci)
