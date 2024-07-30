@@ -1014,9 +1014,12 @@ static int init_modules(int argc, char *argv[])
 		{
 			fprintf (stderr, "ocp.ini update (0.2.110) add [modland.com] mirror=https://ftp.modland.com\n");
 			fprintf (stderr, "ocp.ini update (0.2.110) add [modland.com] cachedir=$OCPDATAHOME/modland.com/\n");
+			fprintf (stderr, "ocp.ini update (0.2.110) add [modland.com] showrelevantdirectoriesonly=1\n");
+
 			cfSetProfileString ("modland.com", "mirror", "https://ftp.modland.com");
 
 			cfSetProfileString ("modland.com", "cachedir", "$OCPDATAHOME/modland.com/");
+			cfSetProfileBool ("modland.com", "showrelevantdirectoriesonly", 1);
 		}
 
 		if (epoch < 20240510)
