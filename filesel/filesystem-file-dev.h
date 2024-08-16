@@ -32,6 +32,7 @@ struct DevInterfaceAPI_t
 	int  (*KeyHelpDisplay) (void); /* Draws the keyboard shortcut list and polls keyboard. Call for each draw-iteration until it returns zero */
 
 	void (*fsDraw) (void); /* Draws the filesystem browser, great for virtual devices that has a dialog */
+	void (*fsForceNextRescan) (void); /* Next time fsFileSelect() is oalled, enforce a rescan */
 };
 
 struct IOCTL_DevInterface
