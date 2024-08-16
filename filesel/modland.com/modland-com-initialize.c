@@ -180,6 +180,8 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 
 	struct modland_com_initialize_t s;
 
+	API->fsForceNextRescan();
+
 	memset (&s, 0, sizeof (s));
 
 	/* create request */
