@@ -121,6 +121,8 @@ static struct interfacestruct *plInterfaces;
 
 static struct DevInterfaceAPI_t DevInterfaceAPI;
 
+static void fsForceNextRescan(void); /* Next time fsFileSelect() is called, force a rescan */
+
 struct fsReadDir_token_t
 {
 #if 0
@@ -732,10 +734,19 @@ int fsFilesLeft(void)
 /* op = 0, move cursor to the top
  * op = 1, maintain current cursor position
  */
+
+static int fsFileSelect_ForceRescan = 0;
+static void fsForceNextRescan(void) /* Next time fsFileSelect() is called, force a rescan */
+{
+	fsFileSelect_ForceRescan = 1;
+}
+
 static char fsScanDir (int op)
 {
 	uint32_t dirdb_ref = DIRDB_CLEAR;
 	int pos;
+
+	fsFileSelect_ForceRescan = 0;
 
 	 /* if we are to maintain the old position, store both the dirdb reference and the position as fall-back */
 	if (op == 1)
@@ -1117,7 +1128,8 @@ static struct DevInterfaceAPI_t DevInterfaceAPI =
 	cpiKeyHelp,
 	cpiKeyHelpClear,
 	cpiKeyHelpDisplay,
-	fsDraw
+	fsDraw,
+	fsForceNextRescan
 };
 
 static int VirtualInterfaceInit (struct moduleinfostruct *info, struct ocpfilehandle_t *fi, const struct cpifaceplayerstruct *cp)
@@ -3200,6 +3212,9 @@ signed int fsFileSelect(void)
 	if (!currentdir->num)
 	{ /* this is true the very first time we execute */
 		fsScanDir(0);
+	} else if (fsFileSelect_ForceRescan)
+	{
+		fsScanDir(1);
 	}
 
 	plSetTextMode(fsScrType);
