@@ -112,6 +112,7 @@ struct console_t
 	int (*EditStringUTF8z)(unsigned int y, unsigned int x, unsigned int w, int l, char *s);
 	/* zero-terminated, forever long dynamic buffer */
 	int (*EditStringUTF8)(unsigned int y, unsigned int x, unsigned int w, char **s);
+	int (*EditStringASCII)(unsigned int y, unsigned int x, unsigned int w, char **s);
 
 	/* console resolution */
 	unsigned int TextHeight; /* range 25..inifinity */

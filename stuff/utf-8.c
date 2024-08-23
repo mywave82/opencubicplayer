@@ -463,7 +463,7 @@ int EditStringUTF8z (unsigned int y, unsigned int x, unsigned int w, int l, char
 }
 
 
-int EditStringUTF8(unsigned int y, unsigned int x, unsigned int w, char **s)
+static int _EditStringUTF8(unsigned int y, unsigned int x, unsigned int w, char **s, int ASCIIonly)
 {
 /* problems:
    each UTF-8 noun might be 1-4 bytes per character   <- use utf8_decode in a loop to cycle positions
@@ -592,6 +592,13 @@ int EditStringUTF8(unsigned int y, unsigned int x, unsigned int w, char **s)
 				continue;
 			}
 			input_buffer_fill = 0;
+			if (ASCIIonly)
+			{
+				if (codepoint > 127)
+				{
+					continue;
+				}
+			}
 
 			if ( insmode || ( curpos == workstring_length ) ) /* insert / append */
 			{
@@ -702,6 +709,15 @@ int EditStringUTF8(unsigned int y, unsigned int x, unsigned int w, char **s)
 	return 1;
 }
 
+int EditStringUTF8(unsigned int y, unsigned int x, unsigned int w, char **s)
+{
+	return _EditStringUTF8 (y, x, w, s, 0);
+}
+
+int EditStringASCII(unsigned int y, unsigned int x, unsigned int w, char **s)
+{
+	return _EditStringUTF8 (y, x, w, s, 1);
+}
 
 #if 0
 
