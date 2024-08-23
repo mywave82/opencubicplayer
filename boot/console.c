@@ -781,6 +781,7 @@ struct console_t Console =
 	try_open_png,
 	EditStringUTF8z,
 	EditStringUTF8,
+	EditStringASCII,
 	80,      /* TextHeight */
 	25,      /* TextWidth */
 	0,       /* TextGUIOverlay */
