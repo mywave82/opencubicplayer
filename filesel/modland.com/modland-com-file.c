@@ -165,19 +165,21 @@ static int curl_download_magic (const char *targetfilename, const char *sourcepa
 	struct osfile_t *target;
 	char buffer[65536];
 	int fill;
+	size_t len;
 
 	escaped = urlencode (sourcepath);
 	if (!escaped)
 	{
 		return -1;
 	}
-	url = malloc (strlen (modland_com.mirror ? modland_com.mirror : "") + 13 + strlen (escaped) + 1);
+	len = strlen (modland_com.mirror ? modland_com.mirror : "") + 12 + strlen (escaped) + 1;
+	url = malloc (len);
 	if (!url)
 	{
 		free (escaped);
 		return -1;
 	}
-	sprintf (url, "%s/pub/modules/%s", modland_com.mirror ? modland_com.mirror : "", escaped);
+	snprintf (url, len, "%spub/modules/%s", modland_com.mirror ? modland_com.mirror : "", escaped);
 	free (escaped);
 	escaped = 0;
 
