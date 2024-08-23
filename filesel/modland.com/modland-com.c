@@ -56,6 +56,7 @@ struct modland_com_t
 	char *cachepath;
 	char *cacheconfig;
 	char *mirror;
+	char *mirrorcustom;
 	struct dmDrive *drive;
 #if 0
 	struct ocpdir_mem_t *root;
@@ -485,6 +486,7 @@ static int modland_com_add_data_line (struct modland_com_initialize_t *s, const 
 #include "modland-com-file.c"
 #include "modland-com-dir.c"
 #include "modland-com-initialize.c"
+#include "modland-com-mirrors.c"
 #include "modland-com-setup.c"
 
 static char *modland_com_resolve_cachedir3 (const char *src)
@@ -609,7 +611,14 @@ static int modland_com_init (const struct configAPI_t *configAPI)
 	{
 		const char *temp = configAPI->GetProfileString ("modland.com", "mirror", "https://modland.com/");
 		modland_com.mirror = strdup (temp);
-		if (!modland_com.cachepath)
+		if (!modland_com.mirror)
+		{
+			return errAllocMem;
+		}
+
+		temp = configAPI->GetProfileString ("modland.com", "mirrorcustom", modland_com.mirror);
+		modland_com.mirrorcustom = strdup (temp);
+		if (!modland_com.mirrorcustom)
 		{
 			return errAllocMem;
 		}
