@@ -160,10 +160,13 @@ static void modland_com_mirror_Run (const struct DevInterfaceAPI_t *API)
 	if (selected < NUM_MIRRORS)
 	{
 		free (modland_com.mirror);
-		modland_com.mirror = strdup (modland_com_official_mirror[selected]);
+		modland_com.mirror = modland_com_strdup_slash (modland_com_official_mirror[selected]);
 	} else {
+		char *t = modland_com.mirrorcustom;
 		free (modland_com.mirror);
-		modland_com.mirror = strdup (modland_com.mirrorcustom);
+		modland_com.mirror = modland_com_strdup_slash (t);
+		modland_com.mirrorcustom = modland_com_strdup_slash (t);
+		free (t);
 	}
 
 	API->configAPI->SetProfileString ("modland.com", "mirror", modland_com.mirror);

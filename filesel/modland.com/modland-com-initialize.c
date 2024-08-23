@@ -1,3 +1,39 @@
+/******************************************************************************** 1
+                                                                                * 2
+                                                                                * 3
+                                                                                * 4
+                                                                                * 5
+   ######################### modland.com: intialize #########################   * 6
+   #                                                                        #   * 7
+   # [ ] Download allmods.zip metafile.                                     #   * 8
+   #     HTTP/2 error. A problem was detected in the HTTP2 framing layer.   #   * 9
+   #     This is somewhat generic and can be one out of several problems,   #   * 10
+   #     see the error message for details.                                 #   * 11
+
+   #     Successfully downloaded 10000KB of data, datestamped 2024-03-04    #   * 9
+   #                                                                        #   * 10
+   #                                                                        #   * 11
+   # [ ] Parsing allmods.txt inside allmods.zip.                            #   * 12
+   #     Failed to locate allmods.txt                                       #   * 13
+   #                                                                        #   * 14
+
+   #     Located 123456 files-entries in 12345 directories.                 #   * 13
+   #     0 invalid entries                                                  #   * 14
+
+   # [ ] Save cache to disk                                                 #   * 15
+   #                                                                        #   * 16
+   #                                                                        #   * 17
+   #                    < CANCEL >                < OK >                    #   * 18
+   #                                                                        #   * 19
+   ##########################################################################   * 20
+                                                                                * 21
+                                                                                * 22
+                                                                                * 23
+                                                                                * 24
+*********************************************************************************/
+
+
+
 static void modland_com_initialize_Draw (
 	struct console_t *console,
 	int download, /* 1 = in process, 2 = OK, 3 = Failed, see message */
@@ -187,7 +223,8 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 	/* create request */
 
 	{
-		char *url = malloc (strlen (modland_com.mirror ? modland_com.mirror : "") + 12 + 1);
+		int len = strlen (modland_com.mirror ? modland_com.mirror : "") + 11 + 1;
+		char *url = malloc (len);
 		if (!url)
 		{
 			modland_com_initialize_Draw_Until_Enter_Or_Exit (API, 3, "malloc() URL failed", 0, 0, 0, 0,
@@ -195,7 +232,7 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 			                                                 0, 0);
 			return;
 		}
-		sprintf (url, "%s/allmods.zip", modland_com.mirror ? modland_com.mirror : "");
+		snprintf (url, len, "%sallmods.zip", modland_com.mirror ? modland_com.mirror : "");
 		download_allmods_zip = download_request_spawn (API->configAPI, 0, url);
 		free (url);
 	}

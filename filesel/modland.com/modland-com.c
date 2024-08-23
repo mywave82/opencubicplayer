@@ -448,39 +448,31 @@ static int modland_com_add_data_line (struct modland_com_initialize_t *s, const 
 	return modland_com_add_data_fileentry (s, dir, last + 1, filesize);
 }
 
-/******************************************************************************** 1
-                                                                                * 2
-                                                                                * 3
-                                                                                * 4
-                                                                                * 5
-   ######################### modland.com: intialize #########################   * 6
-   #                                                                        #   * 7
-   # [ ] Download allmods.zip metafile.                                     #   * 8
-   #     HTTP/2 error. A problem was detected in the HTTP2 framing layer.   #   * 9
-   #     This is somewhat generic and can be one out of several problems,   #   * 10
-   #     see the error message for details.                                 #   * 11
+static char *modland_com_strdup_slash(const char *src)
+{
+	char *retval;
+	char *e;
+	size_t len;
 
-   #     Successfully downloaded 10000KB of data, datestamped 2024-03-04    #   * 9
-   #                                                                        #   * 10
-   #                                                                        #   * 11
-   # [ ] Parsing allmods.txt inside allmods.zip.                            #   * 12
-   #     Failed to locate allmods.txt                                       #   * 13
-   #                                                                        #   * 14
-
-   #     Located 123456 files-entries in 12345 directories.                 #   * 13
-   #     0 invalid entries                                                  #   * 14
-
-   # [ ] Save cache to disk                                                 #   * 15
-   #                                                                        #   * 16
-   #                                                                        #   * 17
-   #                    < CANCEL >                < OK >                    #   * 18
-   #                                                                        #   * 19
-   ##########################################################################   * 20
-                                                                                * 21
-                                                                                * 22
-                                                                                * 23
-                                                                                * 24
-*********************************************************************************/
+	if (!src)
+	{
+		fprintf (stderr, "modland_com_strdup_slash(src): src is NULL\n");
+		return 0;
+	}
+	e = strrchr (src, '/');
+	if (e && e[1])
+	{
+		e = 0;
+	}
+	len = strlen(src) + !e + 1;
+	retval = malloc (len);
+	if (!retval)
+	{
+		fprintf (stderr, "modland_com_strdup_slash(): malloc() failed\n");
+	}
+	snprintf (retval, len, "%s%s", src, !e ? "/" : "");
+	return retval;
+}
 
 #include "modland-com-filehandle.c"
 #include "modland-com-file.c"
@@ -610,14 +602,14 @@ static int modland_com_init (const struct configAPI_t *configAPI)
 
 	{
 		const char *temp = configAPI->GetProfileString ("modland.com", "mirror", "https://modland.com/");
-		modland_com.mirror = strdup (temp);
+		modland_com.mirror = modland_com_strdup_slash (temp);
 		if (!modland_com.mirror)
 		{
 			return errAllocMem;
 		}
 
 		temp = configAPI->GetProfileString ("modland.com", "mirrorcustom", modland_com.mirror);
-		modland_com.mirrorcustom = strdup (temp);
+		modland_com.mirrorcustom = modland_com_strdup_slash (temp);
 		if (!modland_com.mirrorcustom)
 		{
 			return errAllocMem;
@@ -663,6 +655,9 @@ static void modland_com_done (void)
 
 	free (modland_com.mirror);
 	modland_com.mirror = 0;
+
+	free (modland_com.mirrorcustom);
+	modland_com.mirrorcustom = 0;
 }
 
 DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "modland-com", .desc = "OpenCP virtual modland.com filebrowser (c) 2024 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 60, .Init = modland_com_init, .Close = modland_com_done};
