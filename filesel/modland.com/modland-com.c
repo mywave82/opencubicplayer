@@ -476,6 +476,7 @@ static char *modland_com_strdup_slash(const char *src)
 
 #include "modland-com-filehandle.c"
 #include "modland-com-file.c"
+#include "modland-com-filedb.c"
 #include "modland-com-dir.c"
 #include "modland-com-initialize.c"
 #include "modland-com-mirrors.c"
@@ -573,7 +574,10 @@ static int modland_com_init (const struct configAPI_t *configAPI)
 		return errAllocMem;
 	}
 
-#warning load archive, if that fails create this
+	modland_com_filedb_load (configAPI);
+	modland_com_sort ();
+
+#warning if modland_com_filedb_load() fails, fails create this, and remove if download is successfull
 	modland_com.initialize = dev_file_create (
 		modland_com.root, /* parent-dir */
 		"initialize.dev",
@@ -599,7 +603,6 @@ static int modland_com_init (const struct configAPI_t *configAPI)
 		0  /* Destructor */
 	);
 
-
 	{
 		const char *temp = configAPI->GetProfileString ("modland.com", "mirror", "https://modland.com/");
 		modland_com.mirror = modland_com_strdup_slash (temp);
@@ -621,6 +624,8 @@ static int modland_com_init (const struct configAPI_t *configAPI)
 
 static void modland_com_done (void)
 {
+	modland_com_filedb_close ();
+
 	modland_com_database_clear();
 
 	if (modland_com.initialize)

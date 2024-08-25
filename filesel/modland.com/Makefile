@@ -31,6 +31,7 @@ modland-com.o: \
 	modland-com-initialize.c \
 	modland-com-dir.c \
 	modland-com-file.c \
+	modland-com-filedb.c \
 	modland-com-filehandle.c \
 	modland-com-mirrors.c \
 	modland-com-setup.c \
