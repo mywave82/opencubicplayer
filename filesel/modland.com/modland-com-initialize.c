@@ -203,7 +203,6 @@ static void modland_com_initialize_Draw_Until_Enter_Or_Exit (
 	}
 }
 
-#warning merge into setup dialog
 static void modland_com_initialize_Run (void **token, const struct DevInterfaceAPI_t *API)
 {
 	struct download_request_t *download_allmods_zip; /* do not free until done parsing, due to file being open locks the file in Windows */
@@ -346,6 +345,9 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 	}
 
 	modland_com_database_clear();
+	modland_com.database.year  = download_allmods_zip->Year;
+	modland_com.database.month = download_allmods_zip->Month;
+	modland_com.database.day   = download_allmods_zip->Day;
 
 	/* and start to parse it as lines of text */
 
@@ -361,7 +363,6 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 		download_allmods_zip = 0;
 		return;
 	}
-
 
 	/* parse the text */
 
@@ -426,7 +427,9 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 
 								download_request_free (download_allmods_zip);
 								download_allmods_zip = 0;
-#warning remove database
+
+								modland_com_database_clear ();
+
 								return;
 						}
 					}
@@ -447,17 +450,15 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 		modland_com_initialize_Draw_Until_Enter_Or_Exit (API, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
 		                                                 2, 0, 0, 0, 0,
 		                                                 3, "Out of memory");
-#warning remove database
+		modland_com_database_clear ();
+
 		download_request_free (download_allmods_zip);
 		download_allmods_zip = 0;
 		return;
 
 	}
 
-#warning implement me!!!
-/*
-	session_save();
-*/
+	modland_com_filedb_save();
 
 	/* we are finished */
 
