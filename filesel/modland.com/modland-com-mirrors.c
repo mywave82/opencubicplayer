@@ -25,21 +25,23 @@ static void modland_com_mirror_Draw (
 	int *editmirrorquit
 )
 {
-/******** modland.com select mirror *************
- *                                              *
- * Please select a mirror and finish with <ESC> *
- *                                              *
- ************************************************
- *                                              *
- * (*) https://ftp.modland.com/                 *
- *      http://ftp.modland.com/                 *
- *       ftp://ftp.modland.com/                 *
- *                                              *
- *    custom:                                   *
- *     --------------------------------------   *
- *                                              *
- ************************************************/
-	const int mlHeight = 11 + NUM_MIRRORS;
+/*
+********************** modland.com select mirror *************************
+*                                                                        *
+* Select a mirror with <UP>, <DOWN> and <SPACE>.                         *
+* Edit custom with <ENTER>. Exit dialog with <ESC>.                      *
+*                                                                        *
+**************************************************************************
+*                                                                        *
+* (*) https://ftp.modland.com/                                           *
+* ( )  http://ftp.modland.com/                                           *
+* ( )   ftp://ftp.modland.com/                                           *
+*                                                                        *
+* ( ) custom:                                                            *
+*     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX      *
+*                                                                        *
+**************************************************************************/
+	const int mlHeight = 12 + NUM_MIRRORS;
 	const int mlWidth = 74;
 
 	int mlTop = (plScrHeight - mlHeight) / 2;
@@ -48,7 +50,8 @@ static void modland_com_mirror_Draw (
 
 	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda" "%22C\xc4" " modland.com: select mirror " "%22C\xc4" "\xbf");
 	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%0.7o" " Please select a mirror and finish with %.15o<ESC>%.9o" "%*C " "\xb3", mlWidth - 47);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%0.7o" " Select a mirror with %.15o<UP>%.7o, %.15o<DOWN>%.7o and %.15o<SPACE>%.7o.%.9o" "%*C " "\xb3", mlWidth - 49);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%0.7o" " Edit custom with %.15o<ENTER>%.7o. Exit dialog with %.15o<ESC>%.7o.%.9o" "%*C " "\xb3", mlWidth - 52);
 	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
 	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
 	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
@@ -58,8 +61,8 @@ static void modland_com_mirror_Draw (
 		snprintf (mirror_padded, sizeof (mirror_padded), "%s%s",
 			(!strncasecmp(modland_com_official_mirror[i], "ftp:", 4)) ? "  " : (!strncasecmp(modland_com_official_mirror[i], "http:", 5)) ? " " : "",
 			modland_com_official_mirror[i]);
-		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "%.2o%s " "%*.*o" "%*s" "%0.9o     \xb3",
-			(i==origselected) ? "(*)" : "   ",
+		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "(%.2o%c%.9o) " "%*.*o" "%*s" "%0.9o     \xb3",
+			(i==origselected) ? '*' : ' ',
 			(i==selected) ? 7 : 0,
 			(i==selected) ? 1 : 3,
 			62, mirror_padded);
@@ -69,8 +72,8 @@ static void modland_com_mirror_Draw (
 
 	if (editmirrorquit)
 	{
-		console->DisplayPrintf (mlTop, mlLeft, 0x09, 6, "\xb3 " "%.2o%s ",
-			(origselected==NUM_MIRRORS) ? "(*)" : "   ");
+		console->DisplayPrintf (mlTop, mlLeft, 0x09, 6, "\xb3 " "(%.2o%c%.9o) ",
+			(origselected==NUM_MIRRORS) ? '*' : ' ');
 		console->DisplayPrintf (mlTop, mlLeft+mlWidth-6, 0x09, 6, "     \xb3");
 		switch (console->EditStringASCII(mlTop++, mlLeft + 6, mlWidth - 12, mirrorcustom))
 		{
@@ -83,8 +86,8 @@ static void modland_com_mirror_Draw (
 				break;
 		}
 	} else {
-		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "%.2o%s " "%*.*o" "%*s" "%0.9o     " "\xb3",
-			(origselected==NUM_MIRRORS) ? "(*)" : "   ",
+		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "(%.2o%c%.9o) " "%*.*o" "%*s" "%0.9o     " "\xb3",
+			(origselected==NUM_MIRRORS) ? '*' : ' ',
 			(selected == NUM_MIRRORS) ? 7 : 0,
 			(selected == NUM_MIRRORS) ? 1 : 3,
 			mlWidth - 12,
@@ -93,6 +96,27 @@ static void modland_com_mirror_Draw (
 
 	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
 	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
+}
+
+static void modland_com_mirror_Save (const struct DevInterfaceAPI_t *API, int selected)
+{
+	if (selected < NUM_MIRRORS)
+	{
+		free (modland_com.mirror);
+		modland_com.mirror = modland_com_strdup_slash (modland_com_official_mirror[selected]);
+	} else {
+		char *t = modland_com.mirrorcustom;
+		free (modland_com.mirror);
+		modland_com.mirror = modland_com_strdup_slash (t);
+		modland_com.mirrorcustom = modland_com_strdup_slash (t);
+		free (t);
+	}
+
+	API->configAPI->SetProfileString ("modland.com", "mirror", modland_com.mirror);
+	API->configAPI->SetProfileString ("modland.com", "mirrorcustom", modland_com.mirrorcustom);
+	API->configAPI->SetProfileComment ("modland.com", "mirrorcustom", "; If a non-standard mirror has been used in the past, it is stored here");
+
+	API->configAPI->StoreConfig();
 }
 
 static void modland_com_mirror_Run (const struct DevInterfaceAPI_t *API)
@@ -141,7 +165,12 @@ static void modland_com_mirror_Run (const struct DevInterfaceAPI_t *API)
 						selected++;
 					}
 					break;
+				case ' ':
+					origselected = selected;
+					modland_com_mirror_Save (API, selected);
+					break;
 				case _KEY_ENTER:
+					origselected = selected;
 					if (selected == NUM_MIRRORS)
 					{
 						int innerquit = 0;
@@ -151,27 +180,10 @@ static void modland_com_mirror_Run (const struct DevInterfaceAPI_t *API)
 							API->console->FrameLock();
 						}
 					}
+					modland_com_mirror_Save (API, selected);
 					break;
 			}
 		}
 		API->console->FrameLock();
 	}
-
-	if (selected < NUM_MIRRORS)
-	{
-		free (modland_com.mirror);
-		modland_com.mirror = modland_com_strdup_slash (modland_com_official_mirror[selected]);
-	} else {
-		char *t = modland_com.mirrorcustom;
-		free (modland_com.mirror);
-		modland_com.mirror = modland_com_strdup_slash (t);
-		modland_com.mirrorcustom = modland_com_strdup_slash (t);
-		free (t);
-	}
-
-	API->configAPI->SetProfileString ("modland.com", "mirror", modland_com.mirror);
-	API->configAPI->SetProfileString ("modland.com", "mirrorcustom", modland_com.mirrorcustom);
-	API->configAPI->SetProfileComment ("modland.com", "mirrorcustom", "; If a non-standard mirror has been used in the past, it is stored here");
-
-	API->configAPI->StoreConfig();
 }

@@ -54,7 +54,9 @@ struct modland_com_initialize_t
 struct modland_com_t
 {
 	char *cachepath;
+	char *cachepathcustom;
 	char *cacheconfig;
+	char *cacheconfigcustom;
 	char *mirror;
 	char *mirrorcustom;
 	struct dmDrive *drive;
@@ -102,6 +104,7 @@ static int modland_com_dir_grow (void)
 	return 0;
 }
 
+#if 0
 static int modland_com_find_or_add_dir (const char *dir)
 {
 	int i;
@@ -127,6 +130,7 @@ static int modland_com_find_or_add_dir (const char *dir)
 
 	return modland_com.database.direntries_n++;
 }
+#endif
 
 /* optimization, assume list is appended somewhat-sorted */
 static int modland_com_last_or_new_dir (const char *dir)
@@ -473,7 +477,7 @@ static char *modland_com_strdup_slash(const char *src)
 	snprintf (retval, len, "%s%s", src, !e ? "/" : "");
 	return retval;
 }
-
+#include "modland-com-cachedir.c"
 #include "modland-com-filehandle.c"
 #include "modland-com-file.c"
 #include "modland-com-filedb.c"
@@ -482,89 +486,34 @@ static char *modland_com_strdup_slash(const char *src)
 #include "modland-com-mirrors.c"
 #include "modland-com-setup.c"
 
-static char *modland_com_resolve_cachedir3 (const char *src)
-{
-	char *retval = malloc (strlen (src) + 2);
-	char *iter;
-	if (!retval)
-	{
-		return 0;
-	}
-	sprintf (retval, "%s/", src); /* ensure that it ends with a slash */
-
-	for (iter = retval; *iter;)
-	{ /* check for double slash */
-		if ((!strncmp (iter, "//", 2)) ||
-		    (!strncmp (iter, "\\\\", 2)) ||
-		    (!strncmp (iter, "/\\", 2)) ||
-		    (!strncmp (iter, "\\/", 2)))
-		{
-			memmove (iter, iter+1, strlen (iter + 1) + 1);
-		} else { /* flip slashes if they are the wrong direction */
-#ifdef _WIN32
-			if (*iter == '/')
-			{
-				*iter = '\\';
-			}
-#else
-			if (*iter == '\\')
-			{
-				*iter = '/';
-			}
-#endif
-			iter++;
-		}
-	}
-	return retval;
-}
-
-static char *modland_com_resolve_cachedir2 (const char *src1, const char *src2)
-{
-	char *temp = malloc (strlen (src1) + strlen (src2) + 1);
-	char *retval;
-	if (!temp)
-	{
-		return 0;
-	}
-
-	sprintf (temp, src1, src2);
-	retval = modland_com_resolve_cachedir3 (temp);
-	free (temp);
-	return retval;
-}
-
-static char *modland_com_resolve_cachedir (const struct configAPI_t *configAPI, const char *src)
-{
-	if ((!strncmp (src, "~\\", 2)) ||
-	    (!strncmp (src, "~/", 2)))
-	{
-		return modland_com_resolve_cachedir2 (configAPI->HomePath, src+2);
-	} else if ((!strncmp (src, "$OCPDATAHOME\\", 13)) ||
-	           (!strncmp (src, "$OCPDATAHOME/", 13)))
-	{
-		return modland_com_resolve_cachedir2 (configAPI->DataHomePath, src+13);
-	} else if ((!strncmp (src, "$OCPDATA\\", 9)) ||
-	           (!strncmp (src, "$OCPDATA/", 9)))
-	{
-		return modland_com_resolve_cachedir2 (configAPI->DataPath, src+9);
-	} else if ((!strncmp (src, "$TEMP\\", 6)) ||
-	           (!strncmp (src, "$TEMP/", 6)))
-	{
-		return modland_com_resolve_cachedir2 (configAPI->TempPath, src+6);
-	} else {
-		return modland_com_resolve_cachedir3 (src);
-	}
-}
 
 static int modland_com_init (const struct configAPI_t *configAPI)
 {
 	modland_com.cacheconfig = strdup (configAPI->GetProfileString ("modland.com", "cachedir", "$OCPHOMEDATA/modland.com/"));
-	modland_com.showrelevantdirectoriesonly = configAPI->GetProfileBool ("modland.com", "showrelevantdirectoriesonly", 1, 1);
 	if (!modland_com.cacheconfig)
 	{
 		return errAllocMem;
 	}
+
 	modland_com.cachepath = modland_com_resolve_cachedir (configAPI, modland_com.cacheconfig);
+	if (!modland_com.cachepath)
+	{
+		return errAllocMem;
+	}
+
+	modland_com.cacheconfigcustom = strdup (configAPI->GetProfileString ("modland.com", "cachedircustom", modland_com.cacheconfig));
+	if (!modland_com.cacheconfigcustom)
+	{
+		return errAllocMem;
+	}
+
+	modland_com.cachepathcustom = modland_com_resolve_cachedir (configAPI, modland_com.cacheconfigcustom);
+	if (!modland_com.cachepathcustom)
+	{
+		return errAllocMem;
+	}
+
+	modland_com.showrelevantdirectoriesonly = configAPI->GetProfileBool ("modland.com", "showrelevantdirectoriesonly", 1, 1);
 
 	modland_com.root = modland_com_init_root ();
 	modland_com.drive = RegisterDrive("modland.com:", modland_com.root, modland_com.root);
@@ -657,6 +606,12 @@ static void modland_com_done (void)
 
 	free (modland_com.cachepath);
 	modland_com.cachepath = 0;
+
+	free (modland_com.cacheconfigcustom);
+	modland_com.cacheconfigcustom = 0;
+
+	free (modland_com.cachepathcustom);
+	modland_com.cachepathcustom = 0;
 
 	free (modland_com.mirror);
 	modland_com.mirror = 0;
