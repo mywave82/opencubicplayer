@@ -28,11 +28,12 @@ modland_com$(LIB_SUFFIX): $(modland_com_so)
 
 modland-com.o: \
 	modland-com.c \
-	modland-com-initialize.c \
+	modland-com-cachedir.c \
 	modland-com-dir.c \
 	modland-com-file.c \
 	modland-com-filedb.c \
 	modland-com-filehandle.c \
+	modland-com-initialize.c \
 	modland-com-mirrors.c \
 	modland-com-setup.c \
 	../download.h \
