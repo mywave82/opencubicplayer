@@ -368,6 +368,14 @@ after_dot:
 					{
 						requested_width = requested_precision;
 					}
+					if (requested_precision > width)
+					{
+						requested_precision = width;
+					}
+					if (requested_width > width)
+					{
+						requested_width = width;
+					}
 					if (requested_precision > requested_width)
 					{
 						requested_precision = requested_width;
@@ -407,6 +415,14 @@ after_dot:
 					if (requested_width==INT_MAX)
 					{
 						requested_width = requested_precision;
+					}
+					if (requested_precision > width)
+					{
+						requested_precision = width;
+					}
+					if (requested_width > width)
+					{
+						requested_width = width;
 					}
 					if (requested_precision > requested_width)
 					{
@@ -508,6 +524,14 @@ after_dot:
 								{
 									requested_width = requested_precision;
 								}
+								if (requested_precision > width)
+								{
+									requested_precision = width;
+								}
+								if (requested_width > width)
+								{
+									requested_width = width;
+								}
 								if (requested_precision > requested_width)
 								{
 									requested_precision = requested_width;
@@ -581,6 +605,14 @@ after_dot:
 								if (requested_width==INT_MAX)
 								{
 									requested_width = requested_precision;
+								}
+								if (requested_precision > width)
+								{
+									requested_precision = width;
+								}
+								if (requested_width > width)
+								{
+									requested_width = width;
 								}
 								if (requested_precision > requested_width)
 								{
