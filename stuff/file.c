@@ -7,14 +7,19 @@
 #include <string.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 #ifdef _WIN32
 # include <windows.h>
 # include <fileapi.h>
 # include <windows.h>
+#else
+# include <dirent.h>
+# include <time.h>
 #endif
 #include "types.h"
 
+#include "boot/psetting.h"
 #include "stuff/file.h"
 
 struct osfile_cacheline_t
@@ -618,3 +623,707 @@ int64_t osfile_read (struct osfile_t *f, void *data, uint64_t size) /* returns n
 	}
 	return retval;
 }
+
+#ifdef _WIN32
+
+struct osdir_iterate_internal_t
+{
+	HANDLE *d;
+	WIN32_FIND_DATAA data;
+	char *path; /* no need to free, concatted after this "parent" struct */
+	struct osdir_iterate_internal_t *child;
+	int opened; /* used by delete, to delay the RemoveDirectory call */
+};
+
+static struct osdir_iterate_internal_t * osdir_iterate_opendir (const char *path)
+{
+	struct osdir_iterate_internal_t *i = calloc (sizeof (*i) + strlen (path) + 1, 1);
+	size_t len = strlen (path) + 2 + 1;
+	char *search = malloc (len);
+	if ((!i) || (!search))
+	{
+		free (i);
+		free (search);
+		return 0;
+	}
+	i->path = (char *)&(i[1]);
+	strcpy (i->path, path);
+
+	snprintf (search, len, "%s%s", path, path[strlen(path)-1] == '\\' ? "*" : "\\*");
+	i->d = FindFirstFile (search, &i->data);
+	free (search);
+
+	if (i->d == INVALID_HANDLE_VALUE)
+	{
+		free (i);
+		return 0;
+	}
+	return i;
+}
+
+int osdir_size_start (struct osdir_size_t *r, const char *path)
+{
+	/* returns -1 on error, otherwize 0 */
+	memset (r, 0, sizeof (*r));
+	r->internal = osdir_iterate_opendir (path);
+	if (!r->internal)
+	{
+		return -1;
+	}
+	return 0;
+}
+
+int osdir_size_iterate (struct osdir_size_t *r)
+{
+	/* returns 1 if more iterations are needed, otherwize 0 */
+	int count = 0;
+	struct osdir_iterate_internal_t *i, **p;
+
+	if ((!r) || (!r->internal))
+	{
+		return 0;
+	}
+
+	p = (struct osdir_iterate_internal_t **)(&r->internal);
+	i = r->internal;
+
+	if ((i->d == INVALID_HANDLE_VALUE) && (!i->child))
+	{
+		free (i);
+		r->internal = 0;
+		return 0;
+	}
+
+	do
+	{
+		while (i->child)
+		{
+			p = &i->child;
+			i = i->child;
+		}
+
+		if (i->d != INVALID_HANDLE_VALUE)
+		{
+			if (!strcmp (i->data.cFileName, ".")) goto next;
+			if (!strcmp (i->data.cFileName, "..")) goto next;
+
+			if (i->data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+			{
+				size_t len = strlen(i->path) + 1 + strlen (i->data.cFileName) + 1;
+				char *temp = malloc (len);
+
+				r->directories_n++;
+				if (temp)
+				{
+					snprintf (temp, len, "%s%s%s", i->path, (i->path[strlen(i->path) - 1] == '\\') ? "" : "\\", i->data.cFileName);
+					i->child = osdir_iterate_opendir (temp);
+					free (temp);
+				}
+			} else {
+				r->files_n++;
+				r->files_size += (((uint_fast64_t)i->data.nFileSizeHigh) << 32) | i->data.nFileSizeLow;
+				count++;
+			}
+
+next:
+			if (!FindNextFile (i->d, &i->data))
+			{
+				FindClose (i->d);
+				i->d = INVALID_HANDLE_VALUE;
+			}
+		}
+
+		if ((i->d == INVALID_HANDLE_VALUE) && (!i->child))
+		{
+			free (i);
+			*p = 0;
+			return 1;
+		}
+
+		count++;
+	} while (count < 1024);
+
+	return 1;
+}
+
+void osdir_size_cancel (struct osdir_size_t *r)
+{
+	struct osdir_iterate_internal_t *i, *n;
+
+	if (!r || !r->internal)
+	{
+		return;
+	}
+
+	i = (struct osdir_iterate_internal_t *)(r->internal);
+	n = i->child;
+	while (i)
+	{
+		n = i->child;
+
+		if (i->d != INVALID_HANDLE_VALUE)
+		{
+			FindClose (i->d);
+			i->d = INVALID_HANDLE_VALUE;
+		}
+		free (i);
+
+		i = n;
+	}
+	r->internal = 0;
+}
+
+int osdir_trash_available (const char *path)
+{
+#warning Windows does support Recycle Bin, but API is windows version dependent and not straight forward
+	return 0;
+}
+int osdir_trash_perform (const char *path)
+{
+	return -1;
+}
+
+int osdir_delete_start   (struct osdir_delete_t *r, const char *path)
+{
+	/* returns -1 on error, otherwize 0 */
+	memset (r, 0, sizeof (*r));
+	r->internal = osdir_iterate_opendir (path);
+	if (!r->internal)
+	{
+		return -1;
+	}
+	return 0;
+}
+
+int osdir_delete_iterate (struct osdir_delete_t *r)
+{
+	/* returns 1 if more iterations are needed, otherwize 0 */
+	int count = 0;
+	struct osdir_iterate_internal_t *i, **p;
+
+	if ((!r) || (!r->internal))
+	{
+		return 0;
+	}
+
+	p = (struct osdir_iterate_internal_t **)(&r->internal);
+	i = r->internal;
+
+	if ((i->d == INVALID_HANDLE_VALUE) && (!i->child))
+	{
+		free (i);
+		r->internal = 0;
+		return 0;
+	}
+
+	do
+	{
+		while (i->child)
+		{
+			p = &i->child;
+			i = i->child;
+		}
+
+		if (i->d != INVALID_HANDLE_VALUE)
+		{
+			if (!strcmp (i->data.cFileName, ".")) goto next;
+			if (!strcmp (i->data.cFileName, "..")) goto next;
+
+			{
+				size_t len = strlen(i->path) + 1 + strlen (i->data.cFileName) + 1;
+				char *temp = malloc (len);
+
+				if (!temp) goto next;
+
+				snprintf (temp, len, "%s%s%s", i->path, (i->path[strlen(i->path) - 1] == '\\') ? "" : "\\", i->data.cFileName);
+
+				if (i->data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				{
+					if (!i->opened)
+					{
+						i->opened = 1; /* delay the loop */
+						i->child = osdir_iterate_opendir (temp);
+						free (temp);
+						count++;
+						continue;
+					} else {
+						i->opened = 0;
+						if (RemoveDirectory (temp))
+						{
+							r->removed_directories_n++;
+						} else {
+							r->failed_directories_n++;
+						}
+					}
+				} else {
+					if (DeleteFile(temp))
+					{
+						r->removed_files_n++;
+					} else {
+						r->failed_files_n++;
+					}
+				}
+				count++;
+				free (temp);
+			}
+
+next:
+			if (!FindNextFile (i->d, &i->data))
+			{
+				FindClose (i->d);
+				i->d = INVALID_HANDLE_VALUE;
+			}
+		}
+
+		if ((i->d == INVALID_HANDLE_VALUE) && (!i->child))
+		{
+			free (i);
+			*p = 0;
+			return 1;
+		}
+
+		count++;
+	} while (count < 64);
+
+	return 1;
+
+}
+
+void osdir_delete_cancel (struct osdir_delete_t *r)
+{
+	struct osdir_iterate_internal_t *i, *n;
+
+	if (!r || !r->internal)
+	{
+		return;
+	}
+
+	i = (struct osdir_iterate_internal_t *)(r->internal);
+	n = i->child;
+	while (i)
+	{
+		n = i->child;
+
+		if (i->d != INVALID_HANDLE_VALUE)
+		{
+			FindClose (i->d);
+			i->d = INVALID_HANDLE_VALUE;
+		}
+		free (i);
+
+		i = n;
+	}
+	r->internal = 0;
+}
+
+#else
+
+struct osdir_iterate_internal_t
+{
+	DIR *d;
+	char *path; /* no need to free, concatted after this "parent" struct */
+	struct osdir_iterate_internal_t *child;
+};
+
+static struct osdir_iterate_internal_t * osdir_iterate_opendir (const char *path)
+{
+	struct osdir_iterate_internal_t *i = calloc (sizeof (*i) + strlen (path) + 1, 1);
+	if (!i)
+	{
+		return 0;
+	}
+	i->path = (char *)&(i[1]);
+	strcpy (i->path, path);
+	i->d = opendir (path);
+	if (!i->d)
+	{
+		free (i);
+		return 0;
+	}
+	return i;
+}
+
+int osdir_size_start (struct osdir_size_t *r, const char *path)
+{
+	memset (r, 0, sizeof (*r));
+	r->internal = osdir_iterate_opendir (path);
+	if (!r->internal)
+	{
+		return -1;
+	}
+	return 0;
+}
+
+int osdir_size_iterate (struct osdir_size_t *r)
+{
+	int count = 0;
+	struct osdir_iterate_internal_t *i, **p;
+	struct dirent *de;
+
+	if (!r || !r->internal)
+	{
+		return 0;
+	}
+
+	p = (struct osdir_iterate_internal_t **)(&r->internal);
+	i = r->internal;
+	while (i->child)
+	{
+		p = &i->child;
+		i = i->child;
+	}
+
+	while ((de = readdir (i->d)))
+	{
+		size_t len = strlen(i->path) + 1 + strlen (de->d_name) + 1;
+		char *temp = malloc (len);
+		struct stat st;
+
+		if (!temp)
+		{
+			return 0;
+		}
+		snprintf (temp, len, "%s%s%s", i->path, (i->path[strlen(i->path) - 1] == '/') ? "" : "/", de->d_name);
+		if (!lstat (temp, &st))
+		{
+			if ((st.st_mode & S_IFMT) == S_IFDIR)
+			{
+				if ((strcmp (de->d_name, ".")) &&(strcmp (de->d_name, "..")))
+				{
+					i->child = osdir_iterate_opendir (temp);
+					r->directories_n++;
+				}
+				free (temp);
+				temp = 0;
+				return 1;
+			} else {
+				r->files_n++;
+				if ((st.st_mode & S_IFMT) == S_IFREG)
+				{
+					r->files_size += st.st_size;
+				}
+				count++;
+			}
+		}
+		free (temp);
+		temp = 0;
+
+		count++;
+		if (count >= 1024)
+		{
+			return 1; /* we might need to repaint the screen */
+		}
+	}
+	closedir (i->d);
+	i->d = 0;
+
+	free (i);
+	*p = 0;
+
+	return 1; /* back to parent, via possible repaint of the screen */
+}
+
+void osdir_size_cancel (struct osdir_size_t *r)
+{
+	struct osdir_iterate_internal_t *i, *n;
+
+	if (!r || !r->internal)
+	{
+		return;
+	}
+
+	i = (struct osdir_iterate_internal_t *)(r->internal);
+	n = i->child;
+	while (i)
+	{
+		n = i->child;
+
+		closedir (i->d);
+		i->d = 0;
+
+		free (i);
+
+		i = n;
+	}
+	r->internal = 0;
+}
+
+int osdir_trash_available (const char *path)
+{
+	struct stat st1, st2;
+	size_t len = strlen (configAPI.HomePath) + strlen (".local/share/Trash/") + 1;
+	char *p = malloc (len);
+	if (!p)
+	{
+		return 0;
+	}
+	snprintf (p, len, "%s.local/share/Trash/", configAPI.HomePath);
+	if (stat (p, &st1))
+	{
+		free (p); p = 0;
+		return 0;
+	}
+	free (p); p = 0;
+	if (stat (path, &st2))
+	{
+		return 0;
+	}
+	if (st1.st_dev == st2.st_dev)
+	{
+		return 1;
+	}
+	return 0;
+}
+
+/* attempt to follow https://specifications.freedesktop.org/trash-spec/1.0/ */
+int osdir_trash_perform (const char *path)
+{
+	const char *name;
+	int namelen;
+	size_t len;
+	char *trash;
+	char *tempinfo;
+	char *tempfiles;
+	int i;
+	int fd;
+
+	char *xdg_data_home;
+	xdg_data_home = getenv("XDG_DATA_HOME");
+	if (xdg_data_home)
+	{
+		len = strlen (xdg_data_home) + 6 + 1;
+		trash = malloc (len);
+		if (!trash)
+		{
+			return -1;
+		}
+		snprintf (trash, len, "%s/Trash", xdg_data_home);
+	} else {
+		len = strlen (configAPI.HomePath) + 19;
+		trash = malloc (len);
+		if (!trash)
+		{
+			return -1;
+		}
+		snprintf (trash, len, "%s.local/share/Trash", configAPI.HomePath);
+	}
+
+	len = strlen (path);
+	if (len && (path[len-1] == '/'))
+	{
+		name = memrchr (path, '/', strlen(path) - 1);
+		if (!name)
+		{
+			name = path;
+		} else {
+			name++;
+		}
+		namelen = strlen (name) - 1;
+	} else {
+		name = strrchr (path, '/');
+		if (!name)
+		{
+			name = path;
+		} else {
+			name++;
+		}
+		namelen = strlen (name);
+	}
+
+	len = strlen (trash) + strlen ("/info/") + namelen + 32 + 1;
+	tempinfo = malloc (len);
+	tempfiles = malloc (len);
+	if ((!tempinfo) || (!tempfiles))
+	{
+		free (trash);
+		free (tempinfo);
+		free (tempfiles);
+		return -1;
+	}
+	snprintf (tempinfo,  len, "%s/info/%.*s",  trash, namelen, name);
+	snprintf (tempfiles, len, "%s/files/%.*s", trash, namelen, name);
+	i = 0;
+	while (1)
+	{
+		fd = open (tempinfo, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+		if (fd >= 0)
+		{
+			break;
+		}
+		if (errno == EINTR)
+		{
+			continue;
+		}
+		if (errno != EEXIST)
+		{
+			free (trash);
+			free (tempinfo);
+			free (tempfiles);
+			return -1;
+		}
+		snprintf (tempinfo,  len, "%s/info/%.*s-%d",  trash, namelen, name, ++i);
+		snprintf (tempfiles, len, "%s/files/%.*s-%d", trash, namelen, name, i);
+	}
+	write (fd, "[Trash Info]\nPath=", 18);
+	{
+		const char *c;
+		for (c=path; *c && !((c[0] == '/') && (c[1] == 0)); c++) /* do not add final slash if present */
+		{
+			if ( ((*c >= '0') && (*c <= '9')) ||
+			     ((*c >= 'A') && (*c <= 'Z')) ||
+			     ((*c >= 'a') && (*c <= 'z')) )
+			{
+				write (fd, c, 1);
+			} else {
+				char c4[4];
+				snprintf (c4, 4, "%%%02x", *(unsigned char *)c);
+				write (fd, c4, 3);
+			}
+		}
+	}
+	write (fd, "\nDeletionDate=", 14);
+	{
+		char c32[32];
+		struct tm *t;
+		time_t T;
+
+		time(&T);
+		t = localtime (&T);
+
+		snprintf (c32, 32, "%04u%02u%02uT%02u:%02u:%02u\n",
+			t->tm_year + 1900, t->tm_mon + 1, t->tm_mday,
+			t->tm_hour, t->tm_min, t->tm_sec);
+		write (fd, c32, strlen (c32));
+	}
+	close (fd);
+
+	if (rename (path, tempfiles))
+	{
+		unlink (tempinfo);
+		free (trash);
+		free (tempinfo);
+		free (tempfiles);
+		return -1;
+	}
+
+	free (trash);
+	free (tempinfo);
+	free (tempfiles);
+
+	return 0;
+}
+
+int osdir_delete_start   (struct osdir_delete_t *r, const char *path)
+{
+	memset (r, 0, sizeof (*r));
+	r->internal = osdir_iterate_opendir (path);
+	if (!r->internal)
+	{
+		return -1;
+	}
+	return 0;
+}
+
+int osdir_delete_iterate (struct osdir_delete_t *r)
+{
+	/* returns 1 if more iterations are needed, otherwize 0 */
+	int count = 0;
+	struct osdir_iterate_internal_t *i, **p;
+	struct dirent *de;
+
+	if (!r || !r->internal)
+	{
+		return 0;
+	}
+
+	p = (struct osdir_iterate_internal_t **)(&r->internal);
+	i = r->internal;
+	while (i->child)
+	{
+		p = &i->child;
+		i = i->child;
+	}
+
+	while ((de = readdir (i->d)))
+	{
+		size_t len = strlen(i->path) + 1 + strlen (de->d_name) + 1;
+		char *temp = malloc (len);
+		struct stat st;
+
+		if (!temp)
+		{
+			return 0;
+		}
+		snprintf (temp, len, "%s%s%s", i->path, (i->path[strlen(i->path) - 1] == '/') ? "" : "/", de->d_name);
+		if (!lstat (temp, &st))
+		{
+			if ((st.st_mode & S_IFMT) == S_IFDIR)
+			{
+				if ((strcmp (de->d_name, ".")) &&(strcmp (de->d_name, "..")))
+				{
+					i->child = osdir_iterate_opendir (temp);
+				}
+				free (temp);
+				temp = 0;
+				return 1;
+			} else {
+				if (unlink (temp))
+				{
+					r->failed_files_n++;
+				} else {
+					r->removed_files_n++;
+				}
+				count++;
+			}
+		}
+		free (temp);
+		temp = 0;
+
+		count++;
+		if (count >= 64)
+		{
+			return 1; /* we might need to repaint the screen */
+		}
+	}
+	closedir (i->d);
+	i->d = 0;
+
+	if (rmdir (i->path))
+	{
+		r->failed_directories_n++;
+	} else {
+		r->removed_directories_n++;
+	}
+
+	free (i);
+	*p = 0;
+
+	return 1; /* back to parent, via possible repaint of the screen */
+}
+
+void osdir_delete_cancel (struct osdir_delete_t *r)
+{
+	struct osdir_iterate_internal_t *i, *n;
+
+	if (!r || !r->internal)
+	{
+		return;
+	}
+
+	i = (struct osdir_iterate_internal_t *)(r->internal);
+	n = i->child;
+	while (i)
+	{
+		n = i->child;
+
+		closedir (i->d);
+		i->d = 0;
+
+		free (i);
+
+		i = n;
+	}
+	r->internal = 0;
+}
+
+#endif

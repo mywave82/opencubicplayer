@@ -50,7 +50,8 @@ compat-test$(EXE_SUFFIX): compat-test.c \
 file.o: file.c \
 	../config.h \
 	../types.h \
-	file.h
+	../boot/psetting.h \
+	../stuff/file.h
 	$(CC) $< -o $@ -c
 
 piperun-unix.o: piperun-unix.c \
