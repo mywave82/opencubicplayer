@@ -88,7 +88,7 @@ static void modland_com_initialize_Draw (
 
 		/* Split the download message up into 3 lines (or less) */
 
-		for (i = 0; i < 2; i++)
+		for (i = 0; i < 3; i++)
 		{
 			if (strlen (temp) <= 66)
 			{
@@ -196,6 +196,7 @@ static void modland_com_initialize_Draw_Until_Enter_Or_Exit (
 			switch (key)
 			{
 				case KEY_EXIT:
+				case KEY_ESC:
 				case _KEY_ENTER:
 					return;
 			}
@@ -264,6 +265,7 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 			switch (key)
 			{
 				case KEY_EXIT:
+				case KEY_ESC:
 				case _KEY_ENTER:
 					download_request_cancel (download_allmods_zip);
 					download_request_free (download_allmods_zip);
@@ -421,6 +423,7 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 						switch (key)
 						{
 							case KEY_EXIT:
+							case KEY_ESC:
 							case _KEY_ENTER:
 								textfile_stop (allmods_txt_textfile);
 								allmods_txt_textfile = 0;
