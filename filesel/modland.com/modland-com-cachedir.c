@@ -53,7 +53,7 @@ static void modland_com_cachedir_Draw (
 		(0==origselected) ? '*' : ' ',
 		(0==selected) ? 7 : 0,
 		(0==selected) ? 1 : 3);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "    %.7o=> %64s" "%.9o\xb3", ocpdatahome_modland_com);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "    %.7o=> %64S" "%.9o\xb3", ocpdatahome_modland_com);
 
 	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
 
@@ -61,7 +61,7 @@ static void modland_com_cachedir_Draw (
 		(1==origselected) ? '*' : ' ',
 		(1==selected) ? 7 : 0,
 		(1==selected) ? 1 : 3);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "    %.7o=> %64s" "%.9o\xb3", home_modland_com);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "    %.7o=> %64S" "%.9o\xb3", home_modland_com);
 
 	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
 
@@ -69,7 +69,7 @@ static void modland_com_cachedir_Draw (
 		(2==origselected) ? '*' : ' ',
 		(2==selected) ? 7 : 0,
 		(2==selected) ? 1 : 3);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "    %.7o=> %64s" "%.9o\xb3", home_modland_com);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "    %.7o=> %64S" "%.9o\xb3", home_modland_com);
 
 	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
 
@@ -77,7 +77,7 @@ static void modland_com_cachedir_Draw (
 		(3==origselected) ? '*' : ' ',
 		(3==selected) ? 7 : 0,
 		(3==selected) ? 1 : 3);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "    %.7o=> %64s" "%.9o\xb3", temp_modland_com);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "    %.7o=> %64S" "%.9o\xb3", temp_modland_com);
 
 	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
 
@@ -89,7 +89,7 @@ static void modland_com_cachedir_Draw (
 		console->DisplayPrintf (mlTop, mlLeft, 0x09, 6, "\xb3 " "(%.2o%c%.9o) ",
 			(4==origselected) ? '*' : ' ');
 		console->DisplayPrintf (mlTop, mlLeft+mlWidth-6, 0x09, 6, "     \xb3");
-		switch (console->EditStringASCII(mlTop++, mlLeft + 6, mlWidth - 12, cacheconfigcustom))
+		switch (console->EditStringUTF8(mlTop++, mlLeft + 6, mlWidth - 12, cacheconfigcustom))
 		{
 			case -1:
 			case 0:
@@ -100,7 +100,7 @@ static void modland_com_cachedir_Draw (
 				break;
 		}
 	} else {
-		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "(%.2o%c%.9o) " "%*.*o" "%*s" "%0.9o     " "\xb3",
+		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "(%.2o%c%.9o) " "%*.*o" "%*S" "%0.9o     " "\xb3",
 			(4==origselected) ? '*' : ' ',
 			(4==selected) ? 7 : 0,
 			(4==selected) ? 1 : 3,
@@ -220,6 +220,14 @@ static void modland_com_cachedir_Save (const struct DevInterfaceAPI_t *API, int 
 	API->configAPI->SetProfileComment ("modland.com", "cachedircustom", "; If a non-standard cachedir has been used in the past, it is stored here");
 
 	API->configAPI->StoreConfig();
+
+	free (modland_com.cachepath);
+	modland_com.cachepath = 0;
+	modland_com.cachepath = modland_com_resolve_cachedir (API->configAPI, modland_com.cacheconfig);
+
+	free (modland_com.cachepathcustom);
+	modland_com.cachepathcustom = 0;
+	modland_com.cachepathcustom = modland_com_resolve_cachedir (API->configAPI, modland_com.cacheconfigcustom);
 }
 
 static void modland_com_cachedir_Run (const struct DevInterfaceAPI_t *API)

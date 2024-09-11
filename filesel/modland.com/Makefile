@@ -35,6 +35,7 @@ modland-com.o: \
 	modland-com-filehandle.c \
 	modland-com-initialize.c \
 	modland-com-mirrors.c \
+	modland-com-removecache.c \
 	modland-com-setup.c \
 	../download.h \
 	../../config.h \

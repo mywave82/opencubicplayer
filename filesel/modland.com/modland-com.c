@@ -33,6 +33,11 @@ struct modland_com_fileentry_t
 
 struct modland_com_database_t
 {
+	char *namestrings;
+	unsigned int namestrings_c;
+	unsigned int namestrings_n;
+	unsigned int namestrings_size;
+
 	uint16_t year;
 	uint8_t  month;
 	uint8_t  day;
@@ -76,30 +81,76 @@ struct modland_com_t modland_com;
 
 #define MODLAND_COM_MAXDIRLENGTH 256 /* 146 is the actual need per 1st of march 2024 */
 
+static char *modland_filename_strdup (const char *src)
+{
+	size_t srclen = strlen (src);
+	char *retval;
+
+	if (srclen >= 4096)
+	{
+		return 0;
+	}
+
+	if ((modland_com.database.namestrings_n + srclen + 1) >= modland_com.database.namestrings_size)
+	{
+		unsigned int i;
+		char *temp = realloc (modland_com.database.namestrings, modland_com.database.namestrings_size + 65536);
+		if (!temp)
+		{
+			return 0;
+		}
+		modland_com.database.namestrings_size += 65536;
+		for (i = 0; i < modland_com.database.fileentries_n; i++)
+		{
+			modland_com.database.fileentries[i].name = temp + (modland_com.database.fileentries[i].name - modland_com.database.namestrings);
+		}
+		for (i = 0; i < modland_com.database.direntries_n; i++)
+		{
+			modland_com.database.direntries[i] = temp + (modland_com.database.direntries[i] - modland_com.database.namestrings);
+		}
+		modland_com.database.namestrings = temp;
+	}
+	retval = modland_com.database.namestrings + modland_com.database.namestrings_n;
+	modland_com.database.namestrings_n += srclen + 1;
+	modland_com.database.namestrings_c++;
+	strcpy (retval, src);
+	return retval;
+}
+
 static void modland_com_database_clear (void)
 {
 	unsigned int i;
+#if 1
+	free (modland_com.database.namestrings);
+	modland_com.database.namestrings = 0;
+	modland_com.database.namestrings_c = 0;
+	modland_com.database.namestrings_n = 0;
+	modland_com.database.namestrings_size = 0;
+#else
 	for (i=0; i < modland_com.database.fileentries_n; i++)
 	{
 		free (modland_com.database.fileentries[i].name);
 	}
+#endif
 	free (modland_com.database.fileentries);
+#if 0
 	for (i=0; i < modland_com.database.direntries_n; i++)
 	{
 		free (modland_com.database.direntries[i]);
 	}
+#endif
 	free (modland_com.database.direntries);
 	memset (&modland_com.database, 0, sizeof (modland_com.database));
 }
 
 static int modland_com_dir_grow (void)
 {
-	char **tmp = realloc (modland_com.database.direntries, (modland_com.database.direntries_size + 32) * sizeof (char *));
+	char **tmp = realloc (modland_com.database.direntries, (modland_com.database.direntries_size + 1024) * sizeof (char *));
 	if (!tmp)
 	{
 		return -1;
 	}
-	modland_com.database.direntries_size += 32;
+	modland_com.database.direntries_size += 1024;
 	modland_com.database.direntries = tmp;
 	return 0;
 }
@@ -149,7 +200,7 @@ static int modland_com_last_or_new_dir (const char *dir)
 		return -1;
 	}
 
-	modland_com.database.direntries [ modland_com.database.direntries_n ] = strdup (dir);
+	modland_com.database.direntries [ modland_com.database.direntries_n ] = modland_filename_strdup (dir);
 	if (!modland_com.database.direntries [ modland_com.database.direntries_n ])
 	{
 		return -1;
@@ -283,7 +334,12 @@ static int modland_com_addparent (unsigned int offset, const int length)
 	}
 
 	memmove (&modland_com.database.direntries[offset+1], &modland_com.database.direntries[offset], (modland_com.database.direntries_n - offset) * sizeof (modland_com.database.direntries[0]));
+#if 1
+	modland_com.database.direntries[offset] = modland_filename_strdup (str);
+	free (str);
+#else
 	modland_com.database.direntries[offset] = str;
+#endif
 	modland_com.database.direntries_n++;
 
 	for (i=modland_com.database.fileentries_n; i; i--)
@@ -410,16 +466,16 @@ static int modland_com_add_data_fileentry (struct modland_com_initialize_t *s, c
 
 	if (modland_com.database.fileentries_n <= modland_com.database.fileentries_size)
 	{
-		struct modland_com_fileentry_t *tmp = realloc (modland_com.database.fileentries, (modland_com.database.fileentries_size + 1024) * sizeof (struct modland_com_fileentry_t));
+		struct modland_com_fileentry_t *tmp = realloc (modland_com.database.fileentries, (modland_com.database.fileentries_size + 4096) * sizeof (struct modland_com_fileentry_t));
 		if (!tmp)
 		{
 			return -1;
 		}
-		modland_com.database.fileentries_size += 1024;
+		modland_com.database.fileentries_size += 4096;
 		modland_com.database.fileentries = tmp;
 	}
 
-	modland_com.database.fileentries[modland_com.database.fileentries_n].name = strdup (filename);
+	modland_com.database.fileentries[modland_com.database.fileentries_n].name = modland_filename_strdup (filename);
 	if (!modland_com.database.fileentries[modland_com.database.fileentries_n].name)
 	{
 		return -1;
@@ -484,6 +540,7 @@ static char *modland_com_strdup_slash(const char *src)
 #include "modland-com-dir.c"
 #include "modland-com-initialize.c"
 #include "modland-com-mirrors.c"
+#include "modland-com-removecache.c"
 #include "modland-com-setup.c"
 
 
@@ -524,7 +581,9 @@ static int modland_com_init (const struct configAPI_t *configAPI)
 	}
 
 	modland_com_filedb_load (configAPI);
+	fprintf (stderr, "Sort CPMDLAND.DAT data ..");
 	modland_com_sort ();
+	fprintf (stderr, "Done\n");
 
 #warning if modland_com_filedb_load() fails, fails create this, and remove if download is successfull
 	modland_com.initialize = dev_file_create (
