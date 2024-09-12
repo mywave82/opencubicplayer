@@ -20,6 +20,7 @@ fi
 
 install=`pwd`/$host-install
 prefix=`pwd`/$host-prefix
+gccversion=`$host-gcc --version|head -n 1|sed -e 's/.*\ //'`
 mkdir -p $host-src
 mkdir -p $host-prefix/lib
 mkdir -p $host-prefix/include
@@ -195,18 +196,18 @@ make all install
 cd ..
 
 ########## LIBJPEG-TURBO ##########
-wget https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.0.1/libjpeg-turbo-3.0.1.tar.gz -O libjpeg-turbo-3.0.1.tar.gz
-rm -Rf libjpeg-turbo-3.0.1
-tar xfz libjpeg-turbo-3.0.1.tar.gz
-cd libjpeg-turbo-3.0.1
+wget https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.0.3/libjpeg-turbo-3.0.3.tar.gz -O libjpeg-turbo-3.0.3.tar.gz
+rm -Rf libjpeg-turbo-3.0.3
+tar xfz libjpeg-turbo-3.0.3.tar.gz
+cd libjpeg-turbo-3.0.3
 do_cmake -DENABLE_SHARED=TRUE
 cd ..
 
 ########## LIBPNG ##########
-wget https://download.sourceforge.net/libpng/libpng-1.6.40.tar.gz -O libpng-1.6.40.tar.gz
-rm -Rf libpng-1.6.40
-tar xfz libpng-1.6.40.tar.gz
-cd libpng-1.6.40
+wget https://download.sourceforge.net/libpng/libpng-1.6.43.tar.gz -O libpng-1.6.43.tar.gz
+rm -Rf libpng-1.6.43
+tar xfz libpng-1.6.43.tar.gz
+cd libpng-1.6.43
 #cmake does not use pkg-config for zlib?????
 do_cmake -DZLIB_ROOT=/usr/$host/
 cd ..
@@ -276,10 +277,10 @@ do_cmake -D_OGG_LIBRARY_DIRS=$prefix/lib
 cd ..
 
 ########## SDL2 ##########
-wget https://github.com/libsdl-org/SDL/releases/download/release-2.28.5/SDL2-devel-2.28.5-mingw.tar.gz -O SDL2-devel-2.28.5-mingw.tar.gz
-rm -Rf SDL2-2.28.5
-tar xfz SDL2-devel-2.28.5-mingw.tar.gz
-cd SDL2-2.28.5
+wget https://github.com/libsdl-org/SDL/releases/download/release-2.30.7/SDL2-devel-2.30.7-mingw.tar.gz -O SDL2-devel-2.30.7-mingw.tar.gz
+rm -Rf SDL2-2.30.7
+tar xfz SDL2-devel-2.30.7-mingw.tar.gz
+cd SDL2-2.30.7
 cp $host/* $prefix -R
 prefix2=`echo $prefix|sed -e 's/\//\\\\\//'g`
 sed -e "s/^prefix=.*/prefix=$prefix2/" -i $prefix/lib/pkgconfig/sdl2.pc
@@ -296,18 +297,18 @@ if test "$host" == "i686-w64-mingw32"; then
 fi
 
 ########## HARFBUZZ #########
-wget https://github.com/harfbuzz/harfbuzz/releases/download/8.3.0/harfbuzz-8.3.0.tar.xz -O harfbuzz-8.3.0.tar.xz
-rm -Rf harfbuzz-8.3.0
-tar xfJ harfbuzz-8.3.0.tar.xz
-cd harfbuzz-8.3.0
+wget https://github.com/harfbuzz/harfbuzz/releases/download/9.0.0/harfbuzz-9.0.0.tar.xz -O harfbuzz-9.0.0.tar.xz
+rm -Rf harfbuzz-9.0.0
+tar xfJ harfbuzz-9.0.0.tar.xz
+cd harfbuzz-9.0.0
 do_cmake -DCMAKE_CXX_FLAGS=-Wa,-mbig-obj
 cd ..
 
 ########## FREETYPE2 ##########
-wget https://sourceforge.net/projects/freetype/files/freetype2/2.13.2/freetype-2.13.2.tar.gz/download -O freetype-2.13.2.tar.gz
-rm -Rf freetype-2.13.2
-tar xfz freetype-2.13.2.tar.gz
-cd freetype-2.13.2
+wget https://sourceforge.net/projects/freetype/files/freetype2/2.13.3/freetype-2.13.3.tar.gz/download -O freetype-2.13.3.tar.gz
+rm -Rf freetype-2.13.3
+tar xfz freetype-2.13.3.tar.gz
+cd freetype-2.13.3
 do_cmake -DZLIB_ROOT=/usr/$host/ \
          -DFT_DISABLE_BZIP2=TRUE
 cd ..
@@ -338,10 +339,10 @@ Cflags:
 EOF
 
 ########## cJSON ##########
-wget https://github.com/DaveGamble/cJSON/archive/refs/tags/v1.7.17.tar.gz -O cJSON-1.7.17.tar.gz
-rm -Rf cJSON-1.7.17
-tar xfz cJSON-1.7.17.tar.gz
-cd cJSON-1.7.17
+wget https://github.com/DaveGamble/cJSON/archive/refs/tags/v1.7.18.tar.gz -O cJSON-1.7.18.tar.gz
+rm -Rf cJSON-1.7.18
+tar xfz cJSON-1.7.18.tar.gz
+cd cJSON-1.7.18
 patch -p 1 <<EOF
 diff -u cJSON-1.7.15-orig/cJSON.c cJSON-1.7.15/cJSON.c
 --- cJSON-1.7.15-orig/cJSON.c	2021-08-25 13:15:09.000000000 +0200
@@ -389,10 +390,10 @@ do_cmake
 cd ..
 
 ########## ancient ##########
-wget https://github.com/temisu/ancient/archive/refs/tags/v2.1.1.tar.gz -O ancient-2.1.1.tar.gz
-rm -Rf ancient-2.1.1
-tar xfz ancient-2.1.1.tar.gz
-cd ancient-2.1.1
+wget https://github.com/temisu/ancient/archive/refs/tags/v2.2.0.tar.gz -O ancient-2.2.0.tar.gz
+rm -Rf ancient-2.2.0
+tar xfz ancient-2.2.0.tar.gz
+cd ancient-2.2.0
 mkdir -p m4
 wget 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_cxx_compile_stdcxx.m4' -O m4/ax_cxx_compile_stdcxx.m4
 wget 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_check_compile_flag.m4' -O m4/ax_check_compile_flag.m4
@@ -425,9 +426,9 @@ do_cmake -DENABLE_UBSAN=off
 cd ..
 
 ######### unifont ##########
-wget https://unifoundry.com/pub/unifont/unifont-15.1.04/font-builds/unifont-15.1.04.otf       -O unifont-15.1.04.otf
-wget https://unifoundry.com/pub/unifont/unifont-15.1.04/font-builds/unifont_csur-15.1.04.otf  -O unifont_csur-15.1.04.otf
-wget https://unifoundry.com/pub/unifont/unifont-15.1.04/font-builds/unifont_upper-15.1.04.otf -O unifont_upper-15.1.04.otf
+wget https://unifoundry.com/pub/unifont/unifont-16.0.01/font-builds/unifont-16.0.01.otf       -O unifont-16.0.01.otf
+wget https://unifoundry.com/pub/unifont/unifont-16.0.01/font-builds/unifont_csur-16.0.01.otf  -O unifont_csur-16.0.01.otf
+wget https://unifoundry.com/pub/unifont/unifont-16.0.01/font-builds/unifont_upper-16.0.01.otf -O unifont_upper-16.0.01.otf
 
 cd ..
 ./configure \
@@ -470,22 +471,22 @@ cp $prefix/lib/bz2.dll              \
    $prefix/bin/SDL2.dll             \
    $prefix/bin/vorbis.dll           \
    $prefix/bin/vorbisfile.dll       \
-   /usr/lib/gcc/$host/12-posix/libssp-0.dll       \
-   /usr/lib/gcc/$host/12-posix/libstdc++-6.dll    \
+   /usr/lib/gcc/$host/$gccversion/libssp-0.dll       \
+   /usr/lib/gcc/$host/$gccversion/libstdc++-6.dll    \
    /usr/$host/lib/libwinpthread-1.dll             \
    /usr/$host/lib/zlib1.dll                       \
    $install
 if test "$host" == "i686-w64-mingw32"; then
   cp $prefix/bin/libbrotlicommon.dll  \
      $prefix/bin/libbrotlidec.dll     \
-     /usr/lib/gcc/$host/12-posix/libgcc_s_dw2-1.dll \
+     /usr/lib/gcc/$host/$gccversion/libgcc_s_dw2-1.dll \
    $install
 else
-  cp /usr/lib/gcc/$host/12-posix/libgcc_s_seh-1.dll \
+  cp /usr/lib/gcc/$host/$gccversion/libgcc_s_seh-1.dll \
      $install
 fi
 mkdir -p $install/data
-cp $host-src/unifont-15.1.04.otf       $install/data/unifont.otf
-cp $host-src/unifont_csur-15.1.04.otf  $install/data/unifont_csur.otf
-cp $host-src/unifont_upper-15.1.04.otf $install/data/unifont_upper.otf
+cp $host-src/unifont-16.0.01.otf       $install/data/unifont.otf
+cp $host-src/unifont_csur-16.0.01.otf  $install/data/unifont_csur.otf
+cp $host-src/unifont_upper-16.0.01.otf $install/data/unifont_upper.otf
 $host-strip $install/*.dll $install/*.exe $install/autoload/*.dll
