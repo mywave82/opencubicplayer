@@ -210,8 +210,7 @@ static void modland_com_dowipecache_Run (const struct DevInterfaceAPI_t *API, ui
 					quit = 1;
 					break;
 				}
-#warning add API->console->PollFrameLock() and use it below
-			} while (!poll_framelock());
+			} while (!API->console->PollFrameLock());
 		}
 	}
 
@@ -318,8 +317,7 @@ static void modland_com_wipecache_Run (const struct DevInterfaceAPI_t *API)
 					quit = 1;
 					break;
 				}
-#warning add API->console->PollFrameLock() and use it below
-			} while (!poll_framelock());
+			} while (!API->console->PollFrameLock());
 		}
 	}
 
