@@ -739,6 +739,7 @@ struct console_t Console =
 	ekbhit,
 	egetch,
 	framelock,
+	poll_framelock,
 #ifdef HAVE_LZW
 	GIF87_try_open_bgra,
 #else

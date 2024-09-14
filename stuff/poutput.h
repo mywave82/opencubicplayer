@@ -92,7 +92,8 @@ struct console_t
 
 	int  (*KeyboardHit) (void); /* ekbhit */
 	int  (*KeyboardGetChar) (void); /* egetch */
-	void (*FrameLock) (void);
+	void (*FrameLock) (void); /* framelock */
+	int  (*PollFrameLock) (void); /* poll_framelock */
 
 	int (*try_open_gif)  (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const uint8_t *src, int           srclen);
 	int (*try_open_jpeg) (uint16_t *width, uint16_t *height, uint8_t **data_bgra, const uint8_t *src, uint_fast32_t srclen);
