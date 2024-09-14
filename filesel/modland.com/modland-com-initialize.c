@@ -403,7 +403,7 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 			if (n >= maxcount)
 			{
 				n = 0;
-				if (poll_framelock())
+				if (API->console->PollFrameLock())
 				{
 					if ((maxcount >= 200) && (!nodec))
 					{

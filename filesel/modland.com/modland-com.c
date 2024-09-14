@@ -119,27 +119,18 @@ static char *modland_filename_strdup (const char *src)
 
 static void modland_com_database_clear (void)
 {
-	unsigned int i;
-#if 1
 	free (modland_com.database.namestrings);
 	modland_com.database.namestrings = 0;
 	modland_com.database.namestrings_c = 0;
 	modland_com.database.namestrings_n = 0;
 	modland_com.database.namestrings_size = 0;
-#else
-	for (i=0; i < modland_com.database.fileentries_n; i++)
-	{
-		free (modland_com.database.fileentries[i].name);
-	}
-#endif
+
 	free (modland_com.database.fileentries);
-#if 0
-	for (i=0; i < modland_com.database.direntries_n; i++)
-	{
-		free (modland_com.database.direntries[i]);
-	}
-#endif
+	modland_com.database.fileentries = 0;
+
 	free (modland_com.database.direntries);
+	modland_com.database.direntries = 0;
+
 	memset (&modland_com.database, 0, sizeof (modland_com.database));
 }
 
@@ -334,12 +325,8 @@ static int modland_com_addparent (unsigned int offset, const int length)
 	}
 
 	memmove (&modland_com.database.direntries[offset+1], &modland_com.database.direntries[offset], (modland_com.database.direntries_n - offset) * sizeof (modland_com.database.direntries[0]));
-#if 1
 	modland_com.database.direntries[offset] = modland_filename_strdup (str);
 	free (str);
-#else
-	modland_com.database.direntries[offset] = str;
-#endif
 	modland_com.database.direntries_n++;
 
 	for (i=modland_com.database.fileentries_n; i; i--)
