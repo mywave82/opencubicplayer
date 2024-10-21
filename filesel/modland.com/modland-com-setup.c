@@ -37,63 +37,60 @@ static void modland_com_setup_Draw
 	const int showrelevantdirectoriesonly
 )
 {
-	const int mlHeight = 20;
-	const int mlWidth = 74;
+	int mlHeight = 20;
+	int mlWidth = 74;
 
 	int mlTop = (plScrHeight - mlHeight) / 2;
 	int mlLeft = (plScrWidth - mlWidth) / 2;
 
-	console->DisplayPrintf (mlTop + 0, mlLeft, 0x09, mlWidth, "\xda" "%26C\xc4" " modland.com: setup " "%26C\xc4" "\xbf");
+	console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "modland.com: setup", 0, 0, 0);
+	mlWidth -= 2;
+	mlHeight -= 2;
 
-	console->DisplayPrintf (mlTop + 1, mlLeft, 0x09, mlWidth, "\xb3%.7o Use arrow keys and %.15o<ENTER>%.7o to navigate. %.15o<ESC>%.7o to close.%*C %.9o\xb3", mlWidth - 58);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Use arrow keys and %.15o<ENTER>%.7o to navigate. %.15o<ESC>%.7o to close.");
 
-	console->DisplayPrintf (mlTop + 2, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	mlTop++;
 
-	console->DisplayPrintf (mlTop + 3, mlLeft, 0x09, mlWidth, "\xb3" " %.7oCurrent mirror: %.2o%55S" "%.9o\xb3", currentmirror);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Current mirror: %.2o%55S", currentmirror);
 
-	console->DisplayPrintf (mlTop + 4, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	mlTop++;
 
 	if (numfileentries)
 	{
-		console->DisplayPrintf (mlTop + 5, mlLeft, 0x09, mlWidth - 1, "\xb3 " "%.7o" "Database datestamp is %0.2o%04d-%02d-%02d.", year, month, day);
-		console->DisplayPrintf (mlTop + 5, mlLeft + mlWidth - 1, 0x09, 1, "\xb3");
-
-		console->DisplayPrintf (mlTop + 6, mlLeft, 0x09, mlWidth - 1, "\xb3 " "%.2o" "%d" "%.7o" " file-entries stored in the database.", numfileentries);
-		console->DisplayPrintf (mlTop + 6, mlLeft + mlWidth - 1, 0x09, 1, "\xb3");
+		console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Database datestamp is %0.2o%04d-%02d-%02d.", year, month, day);
+		console->DisplayPrintf (mlTop++, mlLeft, 0x02, mlWidth, " %d" "%.7o" " file-entries stored in the database.", numfileentries);
 	} else {
-		console->DisplayPrintf (mlTop + 5, mlLeft, 0x09, mlWidth, "\xb3 " "%.7o" "No database loaded" "%53C " "\xb3");
-		console->DisplayPrintf (mlTop + 6, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+		console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " No database loaded");
+		mlTop++;
 	}
 
-	console->DisplayPrintf (mlTop + 7, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	mlTop++;
 
-	console->DisplayPrintf (mlTop + 8, mlLeft, 0x09, mlWidth - 1, "\xb3" " %.7oFile cache is stored in %.2o%S%.7o =>", symbolicstore);
-	console->DisplayPrintf (mlTop + 8, mlLeft + mlWidth - 1, 0x09, 1, "\xb3");
-	console->DisplayPrintf (mlTop + 9, mlLeft, 0x09, mlWidth, "\xb3" " %.2o%71S%.9o\xb3", resolvedstore);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " File cache is stored in %.2o%S%.7o =>", symbolicstore);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x02, mlWidth, " %71S", resolvedstore);
 
-	console->DisplayPrintf (mlTop + 10, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	mlTop++;
 
 	if (showrelevantdirectoriesonly)
 	{
-		console->DisplayPrintf (mlTop + 11, mlLeft, 0x09, mlWidth, "\xb3" " %.7oOCP currently %.2oonly shows relevant%.7o directories%26C %.9o\xb3");
+		console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " OCP currently %.2oonly shows relevant%.7o directories");
 	} else {
-		console->DisplayPrintf (mlTop + 11, mlLeft, 0x09, mlWidth, "\xb3" " %.7oOCP currently %.2oshows all%.7o directories%36C %.9o\xb3");
+		console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " OCP currently %.2oshows all%.7o directories");
 	}
 
-	console->DisplayPrintf (mlTop + 12, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	mlTop++;
 
-	console->DisplayPrintf (mlTop + 13, mlLeft, 0x09, mlWidth, "\xb3" " %*.*o1.%.*o Select mirror                        %30C %0.9o \xb3", (selected == 0) ? 7 : 0, (selected == 0) ? 1 : 7, (selected == 0) ? 1 : 3);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " %*.*o1.%.*o Select mirror                        %30C %0.7o ", (selected == 0) ? 7 : 0, (selected == 0) ? 1 : 7, (selected == 0) ? 1 : 3);
 	if (!numfileentries)
 	{
-		console->DisplayPrintf (mlTop + 14, mlLeft, 0x09, mlWidth, "\xb3" " %*.*o2.%.*o Fetch database                       %30C %0.9o \xb3", (selected == 1) ? 7 : 0, (selected == 1) ? 1 : 7, (selected == 1) ? 1 : 3);
+		console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " %*.*o2.%.*o Fetch database                       %30C %0.7o ", (selected == 1) ? 7 : 0, (selected == 1) ? 1 : 7, (selected == 1) ? 1 : 3);
 	} else {
-		console->DisplayPrintf (mlTop + 14, mlLeft, 0x09, mlWidth, "\xb3" " %*.*o2.%.*o Refresh database                     %30C %0.9o \xb3", (selected == 1) ? 7 : 0, (selected == 1) ? 1 : 7, (selected == 1) ? 1 : 3);
+		console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " %*.*o2.%.*o Refresh database                     %30C %0.7o ", (selected == 1) ? 7 : 0, (selected == 1) ? 1 : 7, (selected == 1) ? 1 : 3);
 	}
-	console->DisplayPrintf (mlTop + 15, mlLeft, 0x09, mlWidth, "\xb3" " %*.*o3.%.*o Remove database                      %30C %0.9o \xb3", (selected == 2) ? 7 : 0, (selected == 2) ? 1 : 7, (selected == 2) ? 1 : 3);
-	console->DisplayPrintf (mlTop + 16, mlLeft, 0x09, mlWidth, "\xb3" " %*.*o4.%.*o Select cache directory               %30C %0.9o \xb3", (selected == 3) ? 7 : 0, (selected == 3) ? 1 : 7, (selected == 3) ? 1 : 3);
-	console->DisplayPrintf (mlTop + 17, mlLeft, 0x09, mlWidth, "\xb3" " %*.*o5.%.*o Wipe cache directory                 %30C %0.9o \xb3", (selected == 4) ? 7 : 0, (selected == 4) ? 1 : 7, (selected == 4) ? 1 : 3);
-	console->DisplayPrintf (mlTop + 18, mlLeft, 0x09, mlWidth, "\xb3" " %*.*o6.%.*o Toggle only show relevant directories%30C %0.9o \xb3", (selected == 5) ? 7 : 0, (selected == 5) ? 1 : 7, (selected == 5) ? 1 : 3);
-	console->DisplayPrintf (mlTop + 19, mlLeft, 0x09, mlWidth, "\xc0" "%72C\xc4" "\xd9");
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " %*.*o3.%.*o Remove database                      %30C %0.7o ", (selected == 2) ? 7 : 0, (selected == 2) ? 1 : 7, (selected == 2) ? 1 : 3);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " %*.*o4.%.*o Select cache directory               %30C %0.7o ", (selected == 3) ? 7 : 0, (selected == 3) ? 1 : 7, (selected == 3) ? 1 : 3);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " %*.*o5.%.*o Wipe cache directory                 %30C %0.7o ", (selected == 4) ? 7 : 0, (selected == 4) ? 1 : 7, (selected == 4) ? 1 : 3);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " %*.*o6.%.*o Toggle only show relevant directories%30C %0.7o ", (selected == 5) ? 7 : 0, (selected == 5) ? 1 : 7, (selected == 5) ? 1 : 3);
 }
 
 static void modland_com_setup_Run (void **token, const struct DevInterfaceAPI_t *API)
