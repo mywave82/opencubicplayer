@@ -885,55 +885,43 @@ static void musicbrainz_setup_done (void)
 	}
 }
 
-static void musicbrainzSetupDialogDraw (struct musicbrainz_cacheline_sort_t *entry, int epos)
+static void musicbrainzSetupDialogDraw (struct console_t *console, struct musicbrainz_cacheline_sort_t *entry, int epos)
 {
 	int mlWidth = 55;
 	int mlHeight = 7;
 	int mlTop = (plScrHeight - mlHeight) / 2;
 	int mlLeft = (plScrWidth - mlWidth) / 2;
 
-	display_nprintf (mlTop + 0, mlLeft, 0x17, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2); /* +---------+ */
-	display_nprintf (mlTop + 1, mlLeft, 0x17, mlWidth, "\xb3%*C \xb3", mlWidth - 2);    /* |         | */
+	console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "MusicBrainz Cache DataBase", 0, 0, 0);
+	mlWidth -= 2;
+	mlHeight -= 2;
 
-	displaystr  (mlTop + 2, mlLeft,               0x17, "\xb3  ", 3);
+	mlTop++;
+
 	if (musicbrainz.cache[entry->pointsat].size & SIZE_PRIVATE)
 	{
-		displaystr  (mlTop + 2, mlLeft +  3, (epos==0)?0x2e:0x17, "[Unmark as private]", 19);
+		console->Driver->DisplayStr (mlTop, mlLeft +  2, (epos==0)?0x2e:0x07, "[Unmark as private]", 19);
 	} else {
-		displaystr  (mlTop + 2, mlLeft +  3, (epos==0)?0x2e:0x17, "[Mark as private]",   17);
-		displaychr  (mlTop + 2, mlLeft + 20, 0x17, ' ',                   2);
+		console->Driver->DisplayStr (mlTop, mlLeft +  2, (epos==0)?0x2e:0x07, "[Mark as private]",   17);
 	}
-	displaychr  (mlTop + 2, mlLeft + 22,         0x17, ' ',                   7);
 	if (musicbrainz.cache[entry->pointsat].size & SIZE_PRIVATE)
 	{
-		displaychr  (mlTop + 2, mlLeft + 29, 0x17, ' ',                   23);
 	} else {//(musicbrainz.cache[entry->pointsat].size & SIZE_UNKNOWN)
-		displaystr  (mlTop + 2, mlLeft + 29, (epos==1)?0x2e:0x17, "[Refresh]",  9);
-		displaychr  (mlTop + 2, mlLeft + 38, 0x17, ' ',         14);
+		console->Driver->DisplayStr (mlTop, mlLeft + 28, (epos==1)?0x2e:0x07, "[Refresh]",  9);
 	}
-	displaychr  (mlTop + 2, mlLeft + 52,          0x17, ' ',    mlWidth - 52 - 1);
-	displaychr  (mlTop + 2, mlLeft + mlWidth - 1, 0x17, '\xb3', 1);
+	mlTop++;
 
-	display_nprintf (mlTop + 3, mlLeft, 0x17, mlWidth, "\xb3%*C \xb3", mlWidth - 2);    /* |         | */
+	mlTop++;
 
-	displaychr  (mlTop + 4, mlLeft,               0x17, '\xb3', 1);
-	displaychr  (mlTop + 4, mlLeft + 1,           0x17, ' ',    2);
-	displaystr  (mlTop + 4, mlLeft + 3,           (epos==2)?0x2e:0x17, "[Delete entry]", 14);
-	displaychr  (mlTop + 4, mlLeft + 17,          0x17, ' ',    12);
+	console->Driver->DisplayStr (mlTop, mlLeft + 2, (epos==2)?0x2e:0x07, "[Delete entry]", 14);
 	if ((!(musicbrainz.cache[entry->pointsat].size & SIZE_PRIVATE)) && (!(musicbrainz.cache[entry->pointsat].size & SIZE_VALID)))
 	{
-		displaystr  (mlTop + 4, mlLeft + 29,  (epos==3)?0x2e:0x17, "[Submit to MusicBrainz]", 23);
-		displaychr  (mlTop + 4, mlLeft + 52,  0x17, ' ',    mlWidth - 1 - 52);
-	} else {
-		displaychr  (mlTop + 4, mlLeft + 29,  0x17, ' ',    mlWidth - 1 - 29);
+		console->Driver->DisplayStr (mlTop, mlLeft + 28, (epos==3)?0x2e:0x07, "[Submit to MusicBrainz]", 23);
 	}
-	displaychr  (mlTop + 4, mlLeft + mlWidth - 1, 0x17, '\xb3', 1);
-
-	display_nprintf (mlTop + 5, mlLeft, 0x17, mlWidth, "\xb3%*C \xb3",     mlWidth - 2); /* |         | */
-	display_nprintf (mlTop + 6, mlLeft, 0x17, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2); /* +---------+ */
+	mlTop++;
 }
 
-static void musicbrainzSetupDraw (const char *title, int dsel, struct musicbrainz_cacheline_sort_t *sorted)
+static void musicbrainzSetupDraw (struct console_t *console, const char *title, int dsel, struct musicbrainz_cacheline_sort_t *sorted)
 {
 	unsigned int mlHeight;
 	unsigned int mlTop;
@@ -969,48 +957,44 @@ static void musicbrainzSetupDraw (const char *title, int dsel, struct musicbrain
 	if (musicbrainz.cachecount <= mlHeight - LINES_NOT_AVAILABLE)
 	{ /* all entries can fit */
 		skip = 0;
-		dot = -1;
+		dot = 0;
 	} else if (dsel < half)
 	{ /* we are in the top part */
 		skip = 0;
-		dot = 0;
+		dot = 3;
 	} else if (dsel >= (musicbrainz.cachecount - half))
 	{ /* we are at the bottom part */
 		skip = musicbrainz.cachecount - (mlHeight - LINES_NOT_AVAILABLE);
-		dot = mlHeight - LINES_NOT_AVAILABLE;
+		dot = mlHeight - 6;
 	} else {
 		skip = dsel - half;
-		dot = skip * (mlHeight - LINES_NOT_AVAILABLE) / (musicbrainz.cachecount - (mlHeight - LINES_NOT_AVAILABLE));
+		dot = skip * (mlHeight - LINES_NOT_AVAILABLE) / (musicbrainz.cachecount - (mlHeight - LINES_NOT_AVAILABLE)) + 3;
 	}
 
+	console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, title, dot, 2, mlHeight - 5);
+	mlWidth -= 2;
+	mlHeight -= 2;
+
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Use arrow keys and %0.15o<ENTER>%0.7o to navigate. %0.15o<ESC>%0.7o to close.");
+
+	mlTop++; // 2: horizontal bar
+
+	if (mlWidth < (1 + 28 + 2 + 10 + 32 + 2 + 32 + 1)) /* date + "private" + album32 + artist32 */
 	{
-			int CacheLen = strlen (title);
-			int Skip = (mlWidth - CacheLen - 2) / 2;
-		display_nprintf (mlTop, mlLeft, 0x09, mlWidth, "\xda%*C\xc4 %s %*C\xc4\xbf", Skip - 1, title, mlWidth - Skip - 3 - CacheLen); /* +----- title ------+ */
-	}
-
-	display_nprintf (mlTop + 1, mlLeft, 0x09, mlWidth, "\xb3%0.7o Use arrow keys and %0.15o<ENTER>%0.7o to navigate. %0.15o<ESC>%0.7o to close.%*C %0.9o\xb3", mlWidth - 58);
-
-	display_nprintf (mlTop + 2,  mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2); /* |            | */
-
-	if (mlWidth < (1 + 1 + 27 + 2 + 10 + 32 + 2 + 32 + 1 + 1)) /* borders + date + "private" + album32 + artist32 */
-	{
-		albumwidth = mlWidth - (1 + 1 + 27 + 2 /* + albumwidth */ + 1 + 1);
+		albumwidth = mlWidth - (1 + 28 + 2 /* + albumwidth */ + 1);
 		artistwidth = 0;
 	} else {
-		albumwidth = ((mlWidth - (1 + 1 + 27 + 2 + 9 + 1 /* + albumwidth */+ 1 + 1)) / 2) + 10;
+		albumwidth = ((mlWidth - (1 + 28 + 2 + 9 + 1 /* + albumwidth */+ 1)) / 2) + 10;
 		if (albumwidth > (9 + 1 + 64))
 		{
 			albumwidth = 9 + 1 + 64;
 		}
-		artistwidth = mlWidth - (1 + 1 + 27 + 2 + albumwidth + 2 /*+ artistwidth*/ + 1 + 1);
+		artistwidth = mlWidth - (1 + 27 + 2 + albumwidth + 2 /*+ artistwidth*/ + 1);
 	}
 
-	for (i = 3; i < (mlHeight-5); i++)
+	for (i = 0; i < (mlHeight - 6); i++)
 	{
-		int index = i - 3 + skip;
-
-		displaychr  (mlTop + i, mlLeft, 0x09, '\xb3', 1);
+		int index = i + skip;
 
 		assert (index >= 0);
 
@@ -1018,12 +1002,12 @@ static void musicbrainzSetupDraw (const char *title, int dsel, struct musicbrain
 		{
 			if (index == 0)
 			{
-				displaystr (mlTop + i, mlLeft + 1, 0x03, " No entries in the database", mlWidth - 2);
+				displaystr (mlTop++, mlLeft, 0x03, " No entries in the database", mlWidth);
 			} else {
-				displayvoid (mlTop + i, mlLeft + 1, mlWidth - 2);
+				mlTop++;
 			}
 		} else {
-			char timebuffer[28];
+			char timebuffer[29];
 			struct tm thetime;
 			time_t inputtime;
 
@@ -1034,44 +1018,27 @@ static void musicbrainzSetupDraw (const char *title, int dsel, struct musicbrain
 			}
 			strftime(timebuffer, sizeof (timebuffer), "%d.%m.%Y %H:%M %z(%Z)", &thetime);
 
-			displaychr (mlTop + i, mlLeft + 1, (dsel==index)?0x87:0x07, ' ', 1);
-			displaystr (mlTop + i, mlLeft + 2, (dsel==index)?0x87:0x07, timebuffer, 29); /* includes two exrta space */
-			if (musicbrainz.cache[sorted[index].pointsat].size & SIZE_VALID)
-			{
-				if (musicbrainz.cache[sorted[index].pointsat].size & SIZE_PRIVATE)
-				{
-					displaystr (mlTop + i, mlLeft + 31, (dsel==index)?0x84:0x04, "(private)", 9);
-					displaychr (mlTop + i, mlLeft + 40, (dsel==index)?0x8f:0x07, ' ', 1);
-					displaystr (mlTop + i, mlLeft + 41, (dsel==index)?0x8f:0x07, sorted[index].album, albumwidth - 10);
-				} else {
-					displaystr_utf8 (mlTop + i, mlLeft + 31, (dsel==index)?0x8f:0x07, sorted[index].album, albumwidth);
-				}
-			} else {
-				if (musicbrainz.cache[sorted[index].pointsat].size & SIZE_PRIVATE)
-				{
-					displaystr (mlTop + i, mlLeft + 31, (dsel==index)?0x84:0x04, "(private)", 9);
-					displaychr (mlTop + i, mlLeft + 40, (dsel==index)?0x8f:0x07, ' ', 1);
-					displaystr (mlTop + i, mlLeft + 41, (dsel==index)?0x8a:0x0a, "Unknown disc", albumwidth - 10);
-				} else {
-					displaystr (mlTop + i, mlLeft + 31, (dsel==index)?0x8a:0x0a, "Unknown disc", albumwidth);
-				}
-			}
+			console->DisplayPrintf (mlTop, mlLeft, (dsel==index)?0x87:0x07, 31, " %28s", timebuffer);
+
+			console->DisplayPrintf (mlTop, mlLeft + 31, (dsel==index)?0x84:0x04, albumwidth + 1, "%s%.*o%S",
+				(musicbrainz.cache[sorted[index].pointsat].size & SIZE_PRIVATE)?"(private) ":"",
+				(dsel==index)?0x0f:0x07,
+				(musicbrainz.cache[sorted[index].pointsat].size & SIZE_VALID) ? sorted[index].album : "Unknown disc");
+
 			if (artistwidth)
 			{
-				displaychr (mlTop + i, mlLeft + 31 + albumwidth, (dsel==index)?0x8f:0x0f, ' ', 2);
-				displaystr_utf8 (mlTop + i, mlLeft + 33 + albumwidth, (dsel==index)?0x8f:0x07, sorted[index].artist, artistwidth);
+				console->DisplayPrintf (mlTop, mlLeft + 31 + albumwidth, (dsel==index)?0x8f:0x07, artistwidth + 2, " %S",
+					sorted[index].artist);
 			}
+			mlTop++;
 		}
-		displaychr (mlTop + i, mlLeft + mlWidth - 2, (dsel==index)?0x8f:0x07, ' ', 1);
-		displaychr (mlTop + i, mlLeft + mlWidth - 1, 0x09, ((i-3) == dot) ? '\xdd':'\xb3', 1);
 	}
 
-	display_nprintf (mlTop + mlHeight - 5,  mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2); /* +---------------+ */
+	mlTop++; // Horizontal bar
 
-	display_nprintf (mlTop + mlHeight - 4, mlLeft, 0x09, mlWidth, "\xb3%0.7o %.*s%0.9o \xb3", mlWidth - 4, musicbrainz.cachecount ? musicbrainz.cache[sorted[dsel].pointsat].discid : "");
-	display_nprintf (mlTop + mlHeight - 3, mlLeft, 0x09, mlWidth, "\xb3%0.7o %.*S%0.9o \xb3", mlWidth - 4, musicbrainz.cachecount ? sorted[dsel].album : "");
-	display_nprintf (mlTop + mlHeight - 2, mlLeft, 0x09, mlWidth, "\xb3%0.7o %.*S%0.9o \xb3", mlWidth - 4, musicbrainz.cachecount ? sorted[dsel].artist : "");
-	display_nprintf (mlTop + mlHeight - 1,  mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2); /* +---------------+ */
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " %.*S ", mlWidth - 2, musicbrainz.cachecount ? musicbrainz.cache[sorted[dsel].pointsat].discid : "");
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " %.*S ", mlWidth - 2, musicbrainz.cachecount ? sorted[dsel].album : "");
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " %.*S ", mlWidth - 2, musicbrainz.cachecount ? sorted[dsel].artist : "");
 }
 
 static int sortedcompare (const void *a, const void *b)
@@ -1176,10 +1143,10 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 	while (1)
 	{
 		API->fsDraw();
-		musicbrainzSetupDraw("MusicBrain Cache DataBase", dsel, sorted);
+		musicbrainzSetupDraw(API->console, "MusicBrainz Cache DataBase", dsel, sorted);
 		if (dialog)
 		{
-			musicbrainzSetupDialogDraw (sorted + dsel, epos);
+			musicbrainzSetupDialogDraw (API->console, sorted + dsel, epos);
 			while (API->console->KeyboardHit())
 			{
 				int key = API->console->KeyboardGetChar();
@@ -1273,13 +1240,12 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 
 									API->fsDraw();
 
-									display_nprintf (mlTop + 0, mlLeft, 0x1e, mlWidth, "\xda%*C\xc4\xbf", mlWidth - 2);
-									display_nprintf (mlTop + 1, mlLeft, 0x1e, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
-									display_nprintf (mlTop + 2, mlLeft, 0x1e, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
-									display_nprintf (mlTop + 3, mlLeft, 0x1e, mlWidth, "\xb3%.15o       Refreshing data from MusicBrainz Server%*C \xb3", mlWidth - 48);
-									display_nprintf (mlTop + 4, mlLeft, 0x1e, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
-									display_nprintf (mlTop + 5, mlLeft, 0x1e, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
-									display_nprintf (mlTop + 6, mlLeft, 0x1e, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
+									API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "MusicBrainz", 0, 0, 0);
+									mlWidth -= 2;
+									mlHeight -= 2;
+									mlTop++;
+									mlTop++;
+									API->console->DisplayPrintf (mlTop++, mlLeft, DIALOG_COLOR_FRAME_BACK | 0x07, mlWidth, "       Refreshing data from MusicBrainz Server");
 
 									API->console->FrameLock ();
 

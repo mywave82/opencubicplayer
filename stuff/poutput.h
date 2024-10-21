@@ -85,6 +85,10 @@ struct console_t
 	const struct consoleDriver_t *       Driver;
 
 	void (*DisplayPrintf) (uint16_t y, uint16_t x, uint8_t color, uint16_t width, const char *fmt, ...); /* display_nprintf() */
+#define DIALOG_COLOR_FRAME_FRONT 9
+#define DIALOG_COLOR_FRAME_BACK 0
+#define DIALOG_COLOR_FRAME ((DIALOG_COLOR_FRAME_FRONT) | (DIALOG_COLOR_FRAME_BACK << 4))
+	void (*DisplayFrame) (uint16_t y, uint16_t x, uint16_t height, uint16_t width, uint8_t color, const char *title, uint16_t dot, uint16_t hbar1, uint16_t hbar2); /* dot = 0, no dot, otherwize it says which line number after Y to place it at. If hbar1 and/or hbar2 are non-zero, those lines will be drawn with horizontal bars */
 
 	void (*WriteNum)        (uint16_t *buf, uint16_t ofs, uint8_t attr, unsigned long num, uint8_t radix, uint16_t len, int clip0/*=1*/);
 	void (*WriteString)     (uint16_t *buf, uint16_t ofs, uint8_t attr, const char *str, uint16_t len);

@@ -52,6 +52,9 @@
 #else
 # define PRINT(a, ...) do {} while(0)
 #endif
+#ifndef MAX
+#define MAX(a,b) ((a)>(b)?(a):(b))
+#endif
 
 static char *user_timidity_path = 0;
 static int   have_user_timidity = 0;
@@ -121,6 +124,7 @@ static void try_user (const struct DevInterfaceAPI_t *API, const char *filename)
 	} else {
 		PRINT ("Found user config via $HOME %s\n", filename);
 		API->dirdb->GetFullname_malloc (f->dirdb_ref, &user_timidity_path, 0);
+		have_user_timidity = 1;
 	}
 	f->unref (f);
 }
@@ -400,7 +404,7 @@ static void refresh_configfiles (const struct DevInterfaceAPI_t *API)
 
 static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI_t *API)
 {
-	int mlWidth = 75;
+	int mlWidth = MAX(75, API->console->TextWidth * 3 / 4);
 	int mlHeight = (API->console->TextHeight >= 35) ? 33 : 23;
 	int mlTop = (API->console->TextHeight - mlHeight) / 2 ;
 	int mlLeft = (API->console->TextWidth - mlWidth) / 2;
@@ -410,7 +414,6 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 	int dot;
 	int contentsel;
 	int contentheight = 6 + global_timidity_count + sf2_files_count + (!global_timidity_count) + (!sf2_files_count);
-	int s;
 #define LINES_NOT_AVAILABLE 5
 
 	half = (mlHeight - LINES_NOT_AVAILABLE) / 2;
@@ -428,96 +431,85 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 	if (contentheight <= (mlHeight - LINES_NOT_AVAILABLE))
 	{ /* all entries can fit */
 		skip = 0;
-		dot = -1;
+		dot = 0;
 	} else if (contentsel < half)
 	{ /* we are in the top part */
 		skip = 0;
-		dot = 0;
+		dot = 4;
 	} else if (contentsel >= (contentheight - half))
 	{ /* we are at the bottom part */
 		skip = contentheight - (mlHeight - LINES_NOT_AVAILABLE);
-		dot = mlHeight - LINES_NOT_AVAILABLE - 1;
+		dot = mlHeight - LINES_NOT_AVAILABLE - 1 + 4;
 	} else {
 		skip = contentsel - half;
-		dot = skip * (mlHeight - LINES_NOT_AVAILABLE) / (contentheight - (mlHeight - LINES_NOT_AVAILABLE));
+		dot = skip * (mlHeight - LINES_NOT_AVAILABLE) / (contentheight - (mlHeight - LINES_NOT_AVAILABLE)) + 4;
 	}
 
-	s = (mlWidth - 2 - 38) / 2; API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4 Select TiMidity++ configuration file %*C\xc4\xbf", s, mlWidth - 2 - 38 - s);
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Please select a new configuration file using the arrow keys and press%*C %0.9o\xb3", mlWidth - 72);
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%0.15o <ENTER>%0.7o when done, or %0.15o<ESC>%0.7o to cancel.%*C %.9o\xb3", mlWidth - 41);
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
+	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "Select TiMidity++ configuration file", dot, 3, 0);
+	mlWidth -= 2;
+	mlHeight -= 2;
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Please select a new configuration file using the arrow keys and press");
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x0f, mlWidth, " <ENTER>%0.7o when done, or %0.15o<ESC>%0.7o to cancel.");
 
-	for (mlLine = 4; (mlLine + 1) < mlHeight; mlLine++)
+	mlTop++; // 2: horizontal bar
+
+	for (mlLine = 4; (mlLine - 1) < mlHeight; mlLine++)
 	{
 		int masterindex = mlLine - 4 + skip;
 
-		API->console->Driver->DisplayChr  (mlTop, mlLeft,               0x09, '\xb3', 1);
-		API->console->Driver->DisplayChr  (mlTop, mlLeft + mlWidth - 1, 0x09, ((mlLine - 4) == dot) ? '\xdd' : '\xb3', 1);
-
 		if (masterindex == 0)
 		{
-			API->console->Driver->DisplayStr  (mlTop++, mlLeft + 1, 0x03, "System default", mlWidth - 2);
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x03, "System default", mlWidth);
 			continue;
 		}
 		if (masterindex == 1)
 		{
-			API->console->Driver->DisplayChr (mlTop, mlLeft + 1, (dsel==0)?0x8a:0x0a, ' ', 2);
 			if (have_default_timidity)
 			{
-				int pos = strlen (default_timidity_path) + 3;
-				API->console->Driver->DisplayStr (mlTop, mlLeft + 3, (dsel==0)?0x8a:0x0a, default_timidity_path, strlen (default_timidity_path));
 				if (have_user_timidity)
 				{
-					int len = (mlWidth - pos - 1) < 26 ? (mlWidth - pos - 1) : 26;
-					API->console->Driver->DisplayStr (mlTop, mlLeft + pos, (dsel==0)?0x87:0x07, " with user overrides from ", len);
-					pos += len;
-					if (pos < (mlWidth - 2))
-					{
-						API->console->Driver->DisplayStr_utf8 (mlTop, mlLeft + pos, (dsel==0)?0x8f:0x0f, user_timidity_path, mlWidth - pos - 1);
-					}
+					API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==0)?0x8a:0x0a, mlWidth, " %S %.7owith user overrides from %.15o%S", default_timidity_path, user_timidity_path);
 				} else {
-					API->console->Driver->DisplayStr (mlTop, mlLeft + pos, (dsel==0)?0x87:0x07, " (with no user overrides)", mlWidth - 1 - pos);
+					API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==0)?0x8a:0x0a, mlWidth, " %S %.7o(with no user overrides)", default_timidity_path);
 				}
 			} else {
-				API->console->Driver->DisplayStr (mlTop, mlLeft + 1, (dsel==0)?0x8c:0x0c, " No global configuration file found", mlWidth - 2);
+				API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==0)?0x8c:0x0c, mlWidth, " No global configuration file found");
 			}
 			mlTop++;
 			continue;
 		}
 		if (masterindex == 3)
 		{
-			API->console->Driver->DisplayStr  (mlTop++, mlLeft + 1, 0x03, "Global configuration files:", mlWidth - 2);
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x03, "Global configuration files:", mlWidth);
 			continue;
 		}
 		if ((masterindex == 4) && (!global_timidity_count))
 		{
-			API->console->Driver->DisplayStr  (mlTop++, mlLeft + 1, 0x0c, " No configuration files found", mlWidth - 2);
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x0c, " No configuration files found", mlWidth);
 			continue;
 		}
 		if ((masterindex >= 4) && (masterindex < (global_timidity_count + 4)))
 		{
-			API->console->DisplayPrintf (mlTop++, mlLeft + 1, (dsel==(masterindex - 4 + 1))?0x8f:0x0f, mlWidth - 2, " %.*S", mlWidth - 3, global_timidity_path[masterindex - 4]);
+			API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==(masterindex - 4 + 1))?0x8f:0x0f, mlWidth, " %.*S", mlWidth - 1, global_timidity_path[masterindex - 4]);
 			continue;
 		}
 		if (masterindex == (global_timidity_count + 5))
 		{
-			API->console->Driver->DisplayStr  (mlTop++, mlLeft + 1,           0x03, "Global SF2 files:", mlWidth - 2);
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x03, " Global SF2 files:", mlWidth);
 			continue;
 		}
 		if ((masterindex == (global_timidity_count + 6)) && (!sf2_files_count))
 		{
-			API->console->Driver->DisplayStr  (mlTop++, mlLeft + 1,           0x0c, " No soundfonts found", mlWidth - 2);
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x0c, " No soundfonts found", mlWidth);
 			continue;
 		}
 		if ((masterindex >= (global_timidity_count + 6)) && (masterindex < (global_timidity_count + sf2_files_count + 6)))
 		{
-			API->console->DisplayPrintf (mlTop++, mlLeft + 1, (dsel==(masterindex - 6 + 1))?0x8f:0x0f, mlWidth - 2, " %.*S", mlWidth - 3, sf2_files_path[masterindex - global_timidity_count - 6]);
+			API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==(masterindex - 6 + 1))?0x8f:0x0f, mlWidth, " %.*S", mlWidth - 1, sf2_files_path[masterindex - global_timidity_count - 6]);
 			continue;
 		}
-		API->console->Driver->DisplayVoid (mlTop++, mlLeft + 1, mlWidth - 2);
+		mlTop++;
 	}
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
 }
 
 static void ConfigDrawItems (const int lineno, int xpos, const int width, const char **list, const int listlength, const int selected, const int active, const struct DevInterfaceAPI_t *API)
@@ -591,7 +583,7 @@ static int DefaultDelay;
 static int DefaultChorus;
 static void timidityConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 {
-	int large, s;
+	int large;
 	int mlWidth, mlHeight, mlTop, mlLeft;
 	const char *configfile = API->configAPI->GetProfileString ("timidity", "configfile", "");
 	const char *reverbs[] = {"disable", "original", "global-original", "freeverb", "global-freeverb"};
@@ -608,124 +600,108 @@ static void timidityConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API
 		mlHeight = 35;
 	} else {
 		large = 0;
-		mlHeight = 24;
+		mlHeight = 23;
 	}
 
 	mlWidth = 70;
 	mlTop = (API->console->TextHeight - mlHeight) / 2;
 	mlLeft = (API->console->TextWidth - mlWidth) / 2;
 
-	s = (mlWidth - 2 - 26) / 2; API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4 TiMidity++ configuration %*C\xc4\xbf", s, mlWidth - 2 - 26 - s);
+	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "TiMidity++ configuration", 0, (!!large) + 2 + (!!large), 0);
+	mlWidth -= 2;
+	mlHeight -= 2;
 
-	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) mlTop++;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Navigate with arrows and hit %.15o<ESC>%.7o to save and exit.%*C %.9o\xb3", mlWidth - 55);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Navigate with arrows and hit %.15o<ESC>%.7o to save and exit.");
 
-	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) mlTop++;
 
-	API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
+	mlTop++; // 1 or 3: horizontal bar
 
-	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) mlTop++;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 1. TiMdity+ Configfile/Soundfont: %.15o<ENTER>%.7o to change%*C %.9o\xb3", mlWidth - 53 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 1. TiMdity+ Configfile/Soundfont: %.15o<ENTER>%.7o to change");
 
 	if (!configfile[0])
 	{
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    (Global default)%*C %.9o\xb3", mlWidth - 21 - 1);
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    %*.7oSelect another file%0.7o%*C %.9o\xb3", (EditPos==0)?8:0, mlWidth - 23 - 2);
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, "    (Global default)");
+		API->console->DisplayPrintf (mlTop++, mlLeft, (EditPos==0)?0x87:0x07, mlWidth, "    Select another file");
 	} else {
 		if ((strlen(configfile) > 4) && !strcmp (configfile + strlen (configfile) - 4, ".sf2"))
 		{
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    (SF2 sound font)%*C %.9o\xb3", mlWidth - 21 - 1);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, "    (SF2 sound font)");
 		} else {
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.3o    (Specific config file)%*C %0.9o\xb3", mlWidth - 27 - 1);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, "    (Specific config file)");
 		}
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o    %*o%*S%0.9o\xb3", (EditPos==0)?8:0, mlWidth - 6, configfile);
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "    %*o%*S%0.9o ",(EditPos==0)?8:0, mlWidth - 5, configfile);
 	}
 
-	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) mlTop++;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 2. Default Reverb Mode:%*C %.9o\xb3", mlWidth - 25 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 2. Default Reverb Mode:");
 
-	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) mlTop++;
 
-	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, mlWidth, "\xb3%.7o   ");
-	ConfigDrawItems (mlTop, mlLeft + 4, mlWidth - 4 - 1, reverbs, 5, DefaultReverbMode, EditPos==1, API);
-	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawItems (mlTop++, mlLeft + 3, mlWidth - 3, reverbs, 5, DefaultReverbMode, EditPos==1, API);
 
-	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) mlTop++;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 3. Default Reverb Level:%*C %.9o\xb3", mlWidth - 26 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 3. Default Reverb Level:");
 
-	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) mlTop++;
 
-	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
-	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultReverbLevel, 127, EditPos==2, API);
-	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawBar (mlTop++, mlLeft + 4, mlWidth - 4, DefaultReverbLevel, 127, EditPos==2, API);
 
-	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) mlTop++;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 4. Default Scale Room:%*C %.9o\xb3", mlWidth - 24 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 4. Default Scale Room:");
 
-	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) mlTop++;
 
-	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
-	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultScaleRoom, 1000, EditPos==3, API);
-	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawBar (mlTop++, mlLeft + 4, mlWidth - 4, DefaultScaleRoom, 1000, EditPos==3, API);
 
-	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) mlTop++;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 5. Default Offset Room:%*C %.9o\xb3", mlWidth - 25 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 5. Default Offset Room:");
 
-	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) mlTop++;
 
-	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
-	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultOffsetRoom, 1000, EditPos==4, API);
-	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawBar (mlTop++, mlLeft + 4, mlWidth - 4, DefaultOffsetRoom, 1000, EditPos==4, API);
 
-	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) mlTop++;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 6. Default Predelay Factor:%*C %.9o\xb3", mlWidth - 29 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 6. Default Predelay Factor:");
 
-	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) mlTop++;
 
-	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
-	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultPredelayFactor, 1000, EditPos==5, API);
-	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawBar (mlTop++, mlLeft + 4, mlWidth - 4, DefaultPredelayFactor, 1000, EditPos==5, API);
 
-	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) mlTop++;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 7. Default Delay Mode:%*C %.9o\xb3", mlWidth - 24 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 7. Default Delay Mode:");
 
-	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) mlTop++;
 
-	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, mlWidth, "\xb3%.7o   ");
-	ConfigDrawItems (mlTop, mlLeft + 4, mlWidth - 4 - 1, effect_lr_modes, 4, DefaultDelayMode, EditPos==6, API);
-	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawItems (mlTop++, mlLeft + 3, mlWidth - 3, effect_lr_modes, 4, DefaultDelayMode, EditPos==6, API);
 
-	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) mlTop++;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 8. Default Delay (ms):%*C %.9o\xb3", mlWidth - 24 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 8. Default Delay (ms):");
 
-	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) mlTop++;
 
-	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, 5, "\xb3%.7o    ");
-	ConfigDrawBar (mlTop, mlLeft + 5, mlWidth - 5 - 1, DefaultDelay, 1000, EditPos==7, API);
-	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawBar (mlTop++, mlLeft + 4, mlWidth - 4, DefaultDelay, 1000, EditPos==7, API);
 
-	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large) mlTop++;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o 9. Default Chorus:%*C %.9o\xb3", mlWidth - 20 - 1);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 9. Default Chorus:");
 
-	if (large >= 2) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	if (large >= 2) mlTop++;
 
-	API->console->DisplayPrintf (mlTop, mlLeft, 0x09, mlWidth, "\xb3%.7o   ");
-	ConfigDrawItems (mlTop, mlLeft + 4, mlWidth - 4 - 1, disable_enable, 2, DefaultChorus, EditPos==8, API);
-	API->console->Driver->DisplayChr (mlTop++, mlLeft + mlWidth - 1, 0x09, '\xb3', 1);
+	ConfigDrawItems (mlTop++, mlLeft + 3, mlWidth - 3, disable_enable, 2, DefaultChorus, EditPos==8, API);
 
-	if (large) API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
+	if (large) mlTop++;
 }
 
 static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API)

@@ -110,48 +110,49 @@ static void oplConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 	mlTop = (API->console->TextHeight - mlHeight) / 2;
 	mlLeft = (API->console->TextWidth - mlWidth) / 2;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%18C\xc4 AdPlug configuration %18C\xc4\xbf");
+	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "AdPlug configuration", 0, 4, 13);
+	mlHeight -= 2;
+	mlWidth  -= 2;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	mlTop++;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Navigate with arrows and hit %.15o<ESC>%.7o to save and exit.%*C %.9o\xb3", mlWidth - 55);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Navigate with arrows and hit %.15o<ESC>%.7o to save and exit.");
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth-2);
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	mlTop++;
+	mlTop++; // 4: horizontal bar
+	mlTop++;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Selected emulator:%0.9o%*C \xb3", mlWidth - 21);
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o   %*.*o1. Ken  %0.9o%*C \xb3", EditPos==0?8:0, EditPos==0?7:7, mlWidth - 13);
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o   %*.*o2. Nuked%0.9o%*C \xb3", EditPos==1?8:0, EditPos==1?7:7, mlWidth - 13);
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o   %*.*o3. Satoh%0.9o%*C \xb3", EditPos==2?8:0, EditPos==2?7:7, mlWidth - 13);
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o   %*.*o4. Woody%0.9o%*C \xb3", EditPos==3?8:0, EditPos==3?7:7, mlWidth - 13);
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o   %*.*o5. RetroWave OPL3 [Express]  %.15o<ENTER>%.7o to configure%0.9o%*C \xb3", EditPos==4?8:0, EditPos==3?7:7, mlWidth - 54);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Selected emulator:");
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "   %*.*o1. Ken  %0.9o%", EditPos==0?8:0, EditPos==0?7:7);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "   %*.*o2. Nuked%0.9o%", EditPos==1?8:0, EditPos==1?7:7);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "   %*.*o3. Satoh%0.9o%", EditPos==2?8:0, EditPos==2?7:7);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "   %*.*o4. Woody%0.9o%", EditPos==3?8:0, EditPos==3?7:7);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "   %*.*o5. RetroWave OPL3 [Express]  %.15o<ENTER>%.7o to configure", EditPos==4?8:0, EditPos==3?7:7);
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth-2);
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	mlTop++;
+	mlTop++; // 13: horizontal bar
+	mlTop++;
 
 	switch (EditPos)
 	{
 		case 0:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Ken is a dual OPL2 emulator based on Ken Silverman       %.9o\xb3");
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o OPL2 emulator.                                           %.9o\xb3"); break;
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Ken is a dual OPL2 emulator based on Ken Silverman       ");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " OPL2 emulator.                                           "); break;
 		case 1:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Nuked is a bit-perfect OPL3 emulator made by Nuke.YKT    %.9o\xb3");
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o based on die shots.                                      %.9o\xb3"); break;
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Nuked is a bit-perfect OPL3 emulator made by Nuke.YKT    ");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " based on die shots.                                      "); break;
 		case 2:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Satoh is a dual OPL2 emulator based on code by Tatsuyuki %.9o\xb3");
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Satoh by the MAME Team.                                  %.9o\xb3"); break;
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Satoh is a dual OPL2 emulator based on code by Tatsuyuki ");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Satoh by the MAME Team.                                  "); break;
 		case 3:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Woody is an OPL3 emulator by the DOSBox Team. It is a    %.9o\xb3");
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o further development of Ken Silverman OPL2 emulator.      %.9o\xb3"); break;
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Woody is an OPL3 emulator by the DOSBox Team. It is a    ");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " further development of Ken Silverman OPL2 emulator.      "); break;
 		case 4:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o RetroWave OPL3 [Express] are external USB devices with   %.9o\xb3");
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o real OPL3 hardware by SudoMaker.                         %.9o\xb3"); break;
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " RetroWave OPL3 [Express] are external USB devices with   ");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " real OPL3 hardware by SudoMaker.                         "); break;
 	}
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
+	mlTop++;
 }
 
 #if 0
@@ -255,25 +256,23 @@ static void oplRetroTestDraw (const struct DevInterfaceAPI_t *API)
 	mlTop = (API->console->TextHeight - mlHeight) / 2;
 	mlLeft = (API->console->TextWidth - mlWidth) / 2;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%8C\xc4 AdPlug => RetroWave configuration => Test %7C\xc4\xbf");
+	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "AdPlug => RetroWave configuration => Test", 0, 7, 0);
+	mlHeight -= 2;
+	mlWidth  -= 2;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+	mlTop++;
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Attempting to make a test sound on the RetroWave");
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " OPL3 [Express] device.");
+	mlTop++;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Attempting to make a test sound on the RetroWave         %.9o\xb3");
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o OPL3 [Express] device.                                   %.9o\xb3");
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Stop test by pressing %.15o<t>%.7o, %.15o<ENTER>%.7o or %.15o<ESC>%.7o.             %.9o\xb3");
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth-2);
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Stop test by pressing %.15o<t>%.7o, %.15o<ENTER>%.7o or %.15o<ESC>%.7o.");
+	mlTop++;
+	mlTop++; // 7: horizontal line
 
 	for (i = 0; i < TESTLINES; i++)
 	{
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%.*S%.9o\xb3", mlWidth - 2, oplRetroTestLineBuffers[i]);
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "%.S", oplRetroTestLineBuffers[i]);
 	}
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
 }
 
 static int oplRetroTestRun (const struct DevInterfaceAPI_t *API)
@@ -385,12 +384,11 @@ static void oplRetroDraw (const struct DevInterfaceAPI_t *API, int esel, int *st
 		}
 	}
 
-	mlHeight = 19;
+#define HEIGHT 8
+	mlHeight = 11 + HEIGHT;
 	mlWidth = 60;
 	mlTop = (API->console->TextHeight - mlHeight) / 2;
 	mlLeft = (API->console->TextWidth - mlWidth) / 2;
-
-#define HEIGHT (mlHeight - 11)
 
 	contentheight = oplRetroDeviceEntries + 2;
 	half = HEIGHT / 2;
@@ -398,111 +396,105 @@ static void oplRetroDraw (const struct DevInterfaceAPI_t *API, int esel, int *st
 	if (contentheight <= HEIGHT)
 	{ /* all entries can fit */
 		skip = 0;
-		dot = -1;
+		dot = 0;
 	} else if (esel < half)
 	{ /* we are in the top part */
 		skip = 0;
-		dot = 0;
+		dot = 6;
 	} else if (esel >= (contentheight - half))
 	{ /* we are at the bottom part */
 		skip = contentheight - HEIGHT;
-		dot = HEIGHT - 1;
+		dot = HEIGHT - 1 + 6;
 	} else {
 		skip = esel - half;
-		dot = skip * HEIGHT / (contentheight - HEIGHT);
+		dot = skip * HEIGHT / (contentheight - HEIGHT) + 6;
 	}
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%12C\xc4 AdPlug => RetroWave configuration %11C\xc4\xbf");
+	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "AdPlug => RetroWave configuration", dot, 5, 5 + HEIGHT);
+	mlWidth -= 2;
+	mlHeight -= 2;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Select RetroWave device by using arrow keys, hit %.15o<ESC>   %.9o\xb3");
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o when satisfied. Press %.15o<t>%0.7o to test any given device.      %.9o\xb3");
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth-2);
+	mlTop++;
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Select RetroWave device by using arrow keys, hit %.15o<ESC>");
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " when satisfied. Press %.15o<t>%0.7o to test any given device.");
+	mlTop++;
+	mlTop++; // 5: horizontal line
 
 	for (i = skip - 2, d = 0; (i < oplRetroDeviceEntries) && (d < HEIGHT); i++, d++)
 	{
 		if (i == -2)
 		{
-		      API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 %*.2oauto%0.9o%*C %c", (esel==0)?8:0, mlWidth - 7, (dot == d) ? '\xdd' : '\xb3');
+		      API->console->DisplayPrintf (mlTop++, mlLeft, 0x02, mlWidth, " %*.2oauto%0.9o", (esel==0)?8:0);
 		} else if (i == -1)
 		{
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 %.7oCustom: %*.7o%.*S%0.9o %c", (esel==1)?8:0, mlWidth - 12, oplRetroCustomDevice, (dot == d) ? '\xdd' : '\xb3');
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Custom: %*.7o%.*S%0.9o ", (esel==1)?8:0, mlWidth - 10, oplRetroCustomDevice);
 		} else {
 #ifdef _WIN32
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.*o%c%*.7o%.s %s%0.9o%*C %c",
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "%.*o%c%*.7o%s %s%0.9o ",
 				oplRetroDeviceEntry[i].verified ?  10 :   0,
 				oplRetroDeviceEntry[i].verified ? '+' : ' ',
 				(esel==(i+2))?8:0,
 				oplRetroDeviceEntry[i].device,
-				oplRetroDeviceEntry[i].refname,
-				MAX(60 - strlen(oplRetroDeviceEntry[i].device) - 4 - strlen(oplRetroDeviceEntry[i].refname), 0),
-				(dot == d) ? '\xdd' : '\xb3');
+				oplRetroDeviceEntry[i].refname);
 #else
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.*o%c%*.7o%.s%0.9o%*C %c",
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "%.*o%c%*.7o%s%0.9o ",
 				(oplRetroDeviceEntry[i].grouperror == 1) ? 12  : oplRetroDeviceEntry[i].verified ?  10 :   0,
 				(oplRetroDeviceEntry[i].grouperror == 1) ? '!' : oplRetroDeviceEntry[i].verified ? '+' : ' ',
 				(esel==(i+2))?8:0,
-				oplRetroDeviceEntry[i].device,
-				MAX(60 - 3 - strlen(oplRetroDeviceEntry[i].device), 0),
-				(dot == d) ? '\xdd' : '\xb3');
+				oplRetroDeviceEntry[i].device);
 #endif
 		}
 	}
 
 	while (d < HEIGHT)
 	{
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2);
+		mlTop++;
 		d++;
 	}
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth-2);
+	mlTop++; // 5 + HEIGHT: horizontal line
 
 	if (esel == 0)
 	{
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Automatic use the first possible device.                 %.9o\xb3");
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%*C %.9o\xb3", mlWidth - 2);
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%*C %.9o\xb3", mlWidth - 2);
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Automatic use the first possible device.");
+		mlTop++;
+		mlTop++;
 	} else if (esel == 1)
 	{
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Press %.15o<ENTER>%.7o to edit the custom device string.          %.9o\xb3");
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%*C %.9o\xb3", mlWidth - 2);
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%*C %.9o\xb3", mlWidth - 2);
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Press %.15o<ENTER>%.7o to edit the custom device string.");
+		mlTop++;
+		mlTop++;
 #ifndef _WIN32
 	} else if (oplRetroDeviceEntry[esel-2].grouperror == 1)
 	{
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Permission error, try ro run                             %.9o\xb3");
-		API->console->DisplayPrintf (mlTop,   mlLeft, 0x09, mlWidth - 1, "\xb3%.15o sudo adduser %S %S", username, oplRetroDeviceEntry[esel-2].groupname);
-		API->console->DisplayPrintf (mlTop++, mlLeft + mlWidth - 1, 0x09, 1, "\xb3");
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o logout and login again for change to take effect         %.9o\xb3");
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Permission error, try ro run");
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x0f, mlWidth, " sudo adduser %S %S", username, oplRetroDeviceEntry[esel-2].groupname);
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " logout and login again for change to take effect.");
 #endif
 	} else if (oplRetroDeviceEntry[esel-2].verified)
 	{
 		switch (oplRetroDeviceEntry[esel-2].verified)
 		{
 			case VerifiedAs_RetroWaveOPL3:
-				API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Detected as a RetroWave OPL3 Express device.             %.9o\xb3"); break;
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Detected as a RetroWave OPL3 Express device."); break;
 			case VIDPID_Possible_RetroWaveOPL3:
-				API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Detected as a possible RetroWave OPL3 Express device.    %.9o\xb3"); break;
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Detected as a possible RetroWave OPL3 Express device."); break;
 			default:
 			case VIDPID_Possible_PotatoPiSTM32:
 			case VIDPID_Possible_PotatoPiPIC24:
-				API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Detected as a possible PotatoPi + RetroWave OPL3 device. %.9o\xb3"); break;
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Detected as a possible PotatoPi + RetroWave OPL3 device."); break;
 		}
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Press %.15o<t>%.7o to test.                                       %.9o\xb3");
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%*C %.9o\xb3", mlWidth - 2);
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Press %.15o<t>%.7o to test.");
+		mlTop++;
 	} else {
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o This could potentialy a be RetroWave OPL3 [Express]      %.9o\xb3");
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o device, unable to verify. Press %.15o<t>%.7o to test.             %.9o\xb3");
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%*C %.9o\xb3", mlWidth - 2);
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " This could potentialy a be RetroWave OPL3 [Express]");
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " device, unable to verify. Press %.15o<t>%.7o to test.");
+		mlTop++;
 	}
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
 
 	if (*state == 2) // edit custom
 	{
-		if (API->console->EditStringUTF8z (mlTop - 12, mlLeft + 10, mlWidth - 12, sizeof (oplRetroCustomDevice), oplRetroCustomDevice) <= 0)
+		if (API->console->EditStringUTF8z (mlTop - 11, mlLeft + 9, mlWidth - 10, sizeof (oplRetroCustomDevice), oplRetroCustomDevice) <= 0)
 		{
 			*state = 1; // normal
 		}

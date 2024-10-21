@@ -221,7 +221,7 @@ static void alsaPluginClose (struct PluginCloseAPI_t *API)
 	API->plrUnregisterDriver (&plrALSA);
 }
 
-static void alsaSetupDrawList (const int mlLeft, const int mlTop, const int mlWidth, const int mlHeight, const char *title, struct AlsaConfigDeviceList_t *list, const struct DevInterfaceAPI_t *API)
+static void alsaSetupDrawList (const int mlTop, const int mlLeft, const int mlHeight, const int mlWidth, const char *title, struct AlsaConfigDeviceList_t *list, const struct DevInterfaceAPI_t *API)
 {
 	int i;
 	int scroll = 0;
@@ -239,90 +239,97 @@ static void alsaSetupDrawList (const int mlLeft, const int mlTop, const int mlWi
 		}
 	}
 
-	API->console->DisplayPrintf (mlTop + 1, mlLeft, 0x09, mlWidth, "\xb3    \xda\xc4 %s %*C\xc4\xbf    \xb3", title, 63 - strlen (title));
+	API->console->DisplayPrintf (mlTop + 0, mlLeft, 0x09, mlWidth, "    \xda\xc4 %s %*C\xc4\xbf    ", title, 63 - strlen (title));
 	for (i=0; i < 12; i++)
 	{
-		API->console->DisplayPrintf (mlTop + 2 + i, mlLeft, 0x09, mlWidth, "\xb3    \xb3%*.*o% 66s%0.9o\xb3    \xb3",
+		API->console->DisplayPrintf (mlTop + 1 + i, mlLeft, 0x09, mlWidth, "    \xb3%*.*o% 66s%0.9o\xb3    ",
 				(i + scroll == list->preselected) ?  8 : 0,
 				(i + scroll == 0) ? 10 : 15,
 				((i + scroll) >= list->fill) ? "" : list->entries[i + scroll].name);
 	}
-	API->console->DisplayPrintf (mlTop + 14, mlLeft, 0x09, mlWidth, "\xb3    \xc0%8C\xc4 Use arrow keys and select with enter or cancel with ESC \xc4\xd9    \xb3");
-	API->console->DisplayPrintf (mlTop + 15, mlLeft, 0x09, mlWidth, "\xb3    %0.7o% 72s%0.9o\xb3", list->entries[list->preselected].desc1 ? list->entries[list->preselected].desc1 : "(no description)");
-	API->console->DisplayPrintf (mlTop + 16, mlLeft, 0x09, mlWidth, "\xb3    %0.7o% 72s%0.9o\xb3", list->entries[list->preselected].desc2 ? list->entries[list->preselected].desc2 : "");
+	API->console->DisplayPrintf (mlTop + 13, mlLeft, 0x09, mlWidth, "    \xc0%8C\xc4 Use arrow keys and select with enter or cancel with ESC \xc4\xd9    ");
+	API->console->DisplayPrintf (mlTop + 14, mlLeft, 0x07, mlWidth, "    % 72s", list->entries[list->preselected].desc1 ? list->entries[list->preselected].desc1 : "(no description)");
+	API->console->DisplayPrintf (mlTop + 15, mlLeft, 0x07, mlWidth, "    % 72s", list->entries[list->preselected].desc2 ? list->entries[list->preselected].desc2 : "");
 }
 
-static void alsaSetupDraw (const int mlLeft, const int mlTop, const int mlWidth, const int mlHeight, enum alsaConfigDraw_Mode_t *alsaConfigDraw_Mode, struct AlsaConfigDeviceList_t *pcmlist, struct AlsaConfigDeviceList_t *mixerlist, const struct DevInterfaceAPI_t *API)
+static void alsaSetupDraw (int mlTop, int mlLeft, int mlHeight, int mlWidth, enum alsaConfigDraw_Mode_t *alsaConfigDraw_Mode, struct AlsaConfigDeviceList_t *pcmlist, struct AlsaConfigDeviceList_t *mixerlist, const struct DevInterfaceAPI_t *API)
 {
-	API->console->DisplayPrintf (mlTop +  0, mlLeft, 0x09, mlWidth, "\xda%28C\xc4 ALSA configuration %28C\xc4\xbf");
+	uint16_t hbar1;
+	if (!((*alsaConfigDraw_Mode == ACDM_AUDIO_DEVICE_OPEN) &&
+              (*alsaConfigDraw_Mode == ACDM_MIXER_DEVICE_OPEN)) )
+	{
+		hbar1 = 2;
+	} else {
+		hbar1 = 0;
+	}
+	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "ALSA configuration", 0, hbar1, 0);
+	mlWidth-=2;
+	mlHeight-=2;
 
 	if (*alsaConfigDraw_Mode == ACDM_AUDIO_DEVICE_OPEN)
 	{
-		alsaSetupDrawList (mlLeft, mlTop, mlWidth, mlHeight, "Select audio device", pcmlist, API);
+		alsaSetupDrawList (mlTop, mlLeft, mlHeight, mlWidth, "Select audio device", pcmlist, API);
 
 	} else if (*alsaConfigDraw_Mode == ACDM_MIXER_DEVICE_OPEN)
 	{
-		alsaSetupDrawList (mlLeft, mlTop, mlWidth, mlHeight, "Select mixer device", mixerlist, API);
+		alsaSetupDrawList (mlTop, mlLeft, mlHeight, mlWidth, "Select mixer device", mixerlist, API);
 	} else {
-		API->console->DisplayPrintf (mlTop + 1, mlLeft, 0x09, mlWidth, "\xb3%.7o%.15o  Navigate with %.15o<\x18>%.7o,%.15o<\x19>%.7o and %.15o<ENTER>%.7o; hit %.15o<ESC>%.7o to save and exit.            %.9o\xb3");
-		API->console->DisplayPrintf (mlTop + 2, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
-		//API->console->DisplayPrintf (mlTop +  2, mlLeft, 0x09, mlWidth, "\xb3%76C \xb3");
-		API->console->DisplayPrintf (mlTop +  3, mlLeft, 0x09, mlWidth, "\xb3%0.7o Audio device:%62C %0.9o\xb3");
+		API->console->DisplayPrintf (mlTop + 0, mlLeft, 0x07, mlWidth, "  Navigate with %.15o<\x18>%.7o,%.15o<\x19>%.7o and %.15o<ENTER>%.7o; hit %.15o<ESC>%.7o to save and exit.");
+		// mlTop + 1 == hbar1...
+		API->console->DisplayPrintf (mlTop +  2, mlLeft, 0x07, mlWidth, " Audio device:");
 		/* TODO draw selected item */
-		API->console->DisplayPrintf (mlTop +  4, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %*.15o[% 66s]%0.9o    \xb3",
+		API->console->DisplayPrintf (mlTop +  3, mlLeft, 0x07, mlWidth, "    %*.15o[% 66s]%0.9o    ",
 			*alsaConfigDraw_Mode==ACDM_AUDIO_DEVICE_SELECTED ?  8 : 0,
 			pcmlist->entries[pcmlist->selected].name);
 		if (!pcmlist->selected) /* custom */
 		{
 			if (*alsaConfigDraw_Mode==ACDM_AUDIO_DEVICE_CUSTOM_EDIT)
 			{
-				API->console->DisplayPrintf (mlTop +  5, mlLeft,               0x09, 5, "\xb3    ");
-				API->console->DisplayPrintf (mlTop +  5, mlLeft + mlWidth - 5, 0x09, 5, "    \xb3");
+				API->console->DisplayPrintf (mlTop +  4, mlLeft,               0x09, 5, "    ");
+				API->console->DisplayPrintf (mlTop +  4, mlLeft + mlWidth - 5, 0x09, 5, "    ");
 				/* we delay the EditStringUTF8z(), since it will trigger keyboard input + framelock */
 			} else {
-				API->console->DisplayPrintf (mlTop +  5, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %*.15o%.68S%0.9o    \xb3",
+				API->console->DisplayPrintf (mlTop +  4, mlLeft, 0x07, mlWidth, "    %*.15o%.68S%0.9o    ",
 					*alsaConfigDraw_Mode==ACDM_AUDIO_DEVICE_CUSTOM_SELECTED ?  8 : 0,
 					pcmlist->custom);
 			}
 		} else {
-			API->console->DisplayPrintf (mlTop +  5, mlLeft, 0x09, mlWidth, "\xb3    -%71C \xb3");
+			API->console->DisplayPrintf (mlTop +  4, mlLeft, 0x09, mlWidth, "    -%71C ");
 		}
-		API->console->DisplayPrintf (mlTop +  6, mlLeft, 0x09, mlWidth, "\xb3%0.7o Description:%63C %0.9o\xb3");
-		API->console->DisplayPrintf (mlTop +  7, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %0.7o% 72s%0.9o\xb3", pcmlist->entries[pcmlist->selected].desc1 ? pcmlist->entries[pcmlist->selected].desc1 : "(no description)");
-		API->console->DisplayPrintf (mlTop +  8, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %0.7o% 72s%0.9o\xb3", pcmlist->entries[pcmlist->selected].desc2 ? pcmlist->entries[pcmlist->selected].desc2 : "");
+		API->console->DisplayPrintf (mlTop +  5, mlLeft, 0x07, mlWidth, " Description:");
+		API->console->DisplayPrintf (mlTop +  6, mlLeft, 0x07, mlWidth, "    % 72s", pcmlist->entries[pcmlist->selected].desc1 ? pcmlist->entries[pcmlist->selected].desc1 : "(no description)");
+		API->console->DisplayPrintf (mlTop +  7, mlLeft, 0x07, mlWidth, "    % 72s", pcmlist->entries[pcmlist->selected].desc2 ? pcmlist->entries[pcmlist->selected].desc2 : "");
 
-		API->console->DisplayPrintf (mlTop +  9, mlLeft, 0x09, mlWidth, "\xb3%76C \xb3");
-		API->console->DisplayPrintf (mlTop + 10, mlLeft, 0x09, mlWidth, "\xb3%76C \xb3");
-		API->console->DisplayPrintf (mlTop + 11, mlLeft, 0x09, mlWidth, "\xb3%0.7o Mixer device (volume control):%45C %0.9o\xb3");
-		API->console->DisplayPrintf (mlTop + 12, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %*.15o[% 66s]%0.9o    \xb3",
+		//API->console->DisplayPrintf (mlTop +  8, mlLeft, 0x07, mlWidth, "%76C \xb3");
+		//API->console->DisplayPrintf (mlTop +  9, mlLeft, 0x07, mlWidth, "%76C \xb3");
+		API->console->DisplayPrintf (mlTop + 10, mlLeft, 0x07, mlWidth, " Mixer device (volume control):");
+		API->console->DisplayPrintf (mlTop + 11, mlLeft, 0x07, mlWidth, "    %*.15o[% 66s]%0.9o    ",
 			*alsaConfigDraw_Mode==ACDM_MIXER_DEVICE_SELECTED ?  8 : 0,
 			mixerlist->entries[mixerlist->selected].name);
 		if (!mixerlist->selected) /* custom */
 		{
 			if (*alsaConfigDraw_Mode==ACDM_MIXER_DEVICE_CUSTOM_EDIT)
 			{
-				API->console->DisplayPrintf (mlTop + 13, mlLeft,               0x09, 5, "\xb3    ");
-				API->console->DisplayPrintf (mlTop + 13, mlLeft + mlWidth - 5, 0x09, 5, "    \xb3");
+				//API->console->DisplayPrintf (mlTop + 12, mlLeft,               0x09, 5, "    ");
+				//API->console->DisplayPrintf (mlTop + 12, mlLeft + mlWidth - 5, 0x09, 5, "    ");
 				/* we delay the EditStringUTF8z(), since it will trigger keyboard input + framelock */
 			} else {
-				API->console->DisplayPrintf (mlTop + 13, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %*.15o%.68S%0.9o    \xb3",
+				API->console->DisplayPrintf (mlTop + 12, mlLeft, 0x07, mlWidth, "    %*.15o%.68S%0.9o    ",
 					*alsaConfigDraw_Mode==ACDM_MIXER_DEVICE_CUSTOM_SELECTED ?  8 : 0,
 					mixerlist->custom);
 			}
 		} else {
-			API->console->DisplayPrintf (mlTop + 13, mlLeft, 0x09, mlWidth, "\xb3    -%71C \xb3");
+			API->console->DisplayPrintf (mlTop + 12, mlLeft, 0x09, mlWidth, "    -%71C ");
 		}
-		API->console->DisplayPrintf (mlTop + 14, mlLeft, 0x09, mlWidth, "\xb3%0.7o Description:%63C %0.9o\xb3");
-		API->console->DisplayPrintf (mlTop + 15, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %0.7o% 72s%0.9o\xb3", mixerlist->entries[mixerlist->selected].desc1 ? mixerlist->entries[mixerlist->selected].desc1 : "(no description)");
-		API->console->DisplayPrintf (mlTop + 16, mlLeft, 0x09, mlWidth, "\xb3%0.7o    %0.7o% 72s%0.9o\xb3", mixerlist->entries[mixerlist->selected].desc2 ? mixerlist->entries[mixerlist->selected].desc2 : "");
-		//API->console->DisplayPrintf (mlTop + 17, mlLeft, 0x09, mlWidth, "\xb3%76C \xb3");
+		API->console->DisplayPrintf (mlTop + 13, mlLeft, 0x07, mlWidth, " Description:%63C ");
+		API->console->DisplayPrintf (mlTop + 14, mlLeft, 0x07, mlWidth, "    % 72s", mixerlist->entries[mixerlist->selected].desc1 ? mixerlist->entries[mixerlist->selected].desc1 : "(no description)");
+		API->console->DisplayPrintf (mlTop + 15, mlLeft, 0x07, mlWidth, "    % 72s", mixerlist->entries[mixerlist->selected].desc2 ? mixerlist->entries[mixerlist->selected].desc2 : "");
 	}
-	API->console->DisplayPrintf (mlTop + 17, mlLeft, 0x09, mlWidth, "\xc0%76C\xc4\xd9");
 
 	if (*alsaConfigDraw_Mode==ACDM_AUDIO_DEVICE_CUSTOM_EDIT)
 	{
 #warning UTF-8 the way to go?
-		if (API->console->EditStringUTF8z (mlTop + 5, mlLeft + 5, 68, sizeof (pcmlist->custom), pcmlist->custom) <= 0)
+		if (API->console->EditStringUTF8z (mlTop + 4, mlLeft + 4, 68, sizeof (pcmlist->custom), pcmlist->custom) <= 0)
 		{
 			*alsaConfigDraw_Mode = ACDM_AUDIO_DEVICE_CUSTOM_SELECTED;
 		}
@@ -330,7 +337,7 @@ static void alsaSetupDraw (const int mlLeft, const int mlTop, const int mlWidth,
 	if (*alsaConfigDraw_Mode==ACDM_MIXER_DEVICE_CUSTOM_EDIT)
 	{
 #warning UTF-8 the way to go?
-		if (API->console->EditStringUTF8z (mlTop + 13, mlLeft + 5, 68, sizeof (mixerlist->custom), mixerlist->custom) <= 0)
+		if (API->console->EditStringUTF8z (mlTop + 12, mlLeft + 4, 68, sizeof (mixerlist->custom), mixerlist->custom) <= 0)
 		{
 			*alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_CUSTOM_SELECTED;
 		}
@@ -402,7 +409,7 @@ static void alsaSetupRun (void **token, const struct DevInterfaceAPI_t *API)
 		int mlLeft = (API->console->TextWidth - mlWidth) / 2;
 
 		API->fsDraw();
-		alsaSetupDraw (mlLeft, mlTop, mlWidth, mlHeight, &alsaConfigDraw_Mode, &pcmlist, &mixerlist, API);
+		alsaSetupDraw (mlTop, mlLeft, mlHeight, mlWidth, &alsaConfigDraw_Mode, &pcmlist, &mixerlist, API);
 		if ((alsaConfigDraw_Mode == ACDM_AUDIO_DEVICE_CUSTOM_EDIT) ||
 		    (alsaConfigDraw_Mode == ACDM_MIXER_DEVICE_CUSTOM_EDIT))
 		{
