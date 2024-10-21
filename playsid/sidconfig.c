@@ -116,11 +116,10 @@ static void ConfigDrawItems (const int lineno, int xpos, const int width, const 
 	API->console->Driver->DisplayVoid (lineno, xpos, width - xpos + origxpos);
 }
 
-static void ConfigDrawMenuItems (const int lineno, int xpos, const int width, const int dot, const char *item, const char **list, const int listlength, const int selected, const int active, const struct DevInterfaceAPI_t *API)
+static void ConfigDrawMenuItems (const int lineno, int xpos, const int width, const char *item, const char **list, const int listlength, const int selected, const int active, const struct DevInterfaceAPI_t *API)
 {
-	API->console->DisplayPrintf (lineno, xpos, 0x09, 23, "\xb3%.7o %s:", item);
-	ConfigDrawItems (lineno, xpos + 23, width - 24, list, listlength, selected, active, API);
-	API->console->Driver->DisplayChr (lineno, xpos + width - 1, 0x09, (lineno == dot) ? '\xdd' : '\xb3', 1);
+	API->console->DisplayPrintf (lineno, xpos, 0x07, 22, " %s:", item);
+	ConfigDrawItems (lineno, xpos + 23, width - 23, list, listlength, selected, active, API);
 }
 
 static void ConfigDrawBar (const int lineno, int xpos, int width, int scale, const char *suffix, int minlevel, int maxlevel, int level, const int active, const struct DevInterfaceAPI_t *API)
@@ -185,21 +184,19 @@ static void ConfigDrawBar (const int lineno, int xpos, int width, int scale, con
 	API->console->DisplayPrintf (lineno, xpos, (active)?0x07:0x08, width, "%10s%-7s [%*C.#%*C.] %-6s", prefix, min, p1, p2, max);
 }
 
-static void ConfigDrawMenuBar (const int lineno, int xpos, int width, const int dot, const char *item, int scale, const char *suffix, int minlevel, int maxlevel, int level, const int active, const struct DevInterfaceAPI_t *API)
+static void ConfigDrawMenuBar (const int lineno, int xpos, int width, const char *item, int scale, const char *suffix, int minlevel, int maxlevel, int level, const int active, const struct DevInterfaceAPI_t *API)
 {
-	API->console->DisplayPrintf (lineno, xpos, 0x09, 23, "\xb3%.7o %s:", item);
-	ConfigDrawBar (lineno, xpos + 23, width - 24, scale, suffix, minlevel, maxlevel, level, active, API);
-	API->console->Driver->DisplayChr (lineno, xpos + width - 1, 0x09, (lineno == dot) ? '\xdd' : '\xb3', 1);
+	API->console->DisplayPrintf (lineno, xpos, 0x07, 23, " %s:", item);
+	ConfigDrawBar (lineno, xpos + 23, width - 23, scale, suffix, minlevel, maxlevel, level, active, API);
 }
 
-static void ConfigDrawMenuRom (const int lineno, int xpos, int width, const int dot, const char *item, int active, const char *path, const struct DevInterfaceAPI_t *API)
+static void ConfigDrawMenuRom (const int lineno, int xpos, int width, const char *item, int active, const char *path, const struct DevInterfaceAPI_t *API)
 {
-	API->console->DisplayPrintf (lineno, xpos, 0x09, width, "\xb3%.7o %20s %.*o%*S%.9o%c",
+	API->console->DisplayPrintf (lineno, xpos, 0x07, width, " %20s %.*o%*S",
 		item,
 		active?0x0f:0x08,
-		width - 24,
-		path,
-		(lineno == dot) ? '\xdd' : '\xb3');
+		width - 23,
+		path);
 }
 
 struct hash_pairs_t
@@ -289,11 +286,9 @@ static void ConfigDrawHashInfo (const int lineno, int xpos, int width, const cha
 	API->console->Driver->DisplayStr (lineno, xpos, CERR, "Unknown ROM file", width); return;
 }
 
-static void ConfigDrawHashMenuInfo (const int lineno, int xpos, int width, const int dot, const char *hash_8192, const char *hash_4096, int expect,  const struct DevInterfaceAPI_t *API)
+static void ConfigDrawHashMenuInfo (const int lineno, int xpos, int width, const char *hash_8192, const char *hash_4096, int expect,  const struct DevInterfaceAPI_t *API)
 {
-	API->console->DisplayPrintf (lineno, xpos, 0x09, 25, "\xb3%.7o");
-	ConfigDrawHashInfo (lineno, xpos + 25, width - 26, hash_8192, hash_4096, expect, API);
-	API->console->Driver->DisplayChr (lineno, xpos + width - 1, 0x09, (lineno == dot) ? '\xdd' : '\xb3', 1);
+	ConfigDrawHashInfo (lineno, xpos + 24, width - 24, hash_8192, hash_4096, expect, API);
 }
 
 #if 0
@@ -332,15 +327,14 @@ static void sidConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 	const int LINES_NOT_AVAILABLE = LINES_NOT_AVAILABLE_START + LINES_NOT_AVAILABLE_STOP;
 	const int maxcontentheight = 19;
 	      int contentheight = MIN(maxcontentheight, MAX(API->console->TextHeight - 1 - LINES_NOT_AVAILABLE, LINES_NOT_AVAILABLE + 1));
-	const int mlHeight = contentheight + LINES_NOT_AVAILABLE;
-	int mlTop, mlLeft, mlWidth;
+	      int mlHeight = contentheight + LINES_NOT_AVAILABLE;
+	      int mlTop, mlLeft, mlWidth;
 	const char *offon[] = {"off", "on"};
 	const char *emulators[] = {"resid", "residfp"};
 	const char *C64models[] = {"PAL", "NTSC", "OLD-NTSC", "DREAN", "PAL-M"};
 	const char *SIDmodels[] = {"MOS6581", "MOS8580"};
 	const char *CIAmodels[] = {"MOS6526", "MOS6526W4485", "MOS8521"};
 	const char *combinedwaveforms[] = {"Average", "Weak", "Strong" };
-	int s;
 
 	const int Pos = EditPos + ((EditPos > 13) ? (EditPos - 13) * 2 : 0); /* 3 last lines count double speed */
 	int half;
@@ -355,29 +349,26 @@ static void sidConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 	} else if (Pos < half)
 	{ /* we are in the top part */
 		skip = 0;
-		dot = 0;
+		dot = 3;
 	} else if (Pos >= (maxcontentheight - half))
 	{ /* we are at the bottom part */
 		skip = maxcontentheight - contentheight;
-		dot = contentheight - 1;
+		dot = contentheight - 1 + 3;
 	} else {
 		skip = Pos - half;
-		dot = skip * (contentheight) / (maxcontentheight - (contentheight));
+		dot = skip * (contentheight) / (maxcontentheight - (contentheight)) + 3;
 	}
 
 	mlWidth = MIN (78 + (API->console->TextWidth - 80) * 2 / 3, 120);
 	mlTop = MAX(1,(API->console->TextHeight - mlHeight) / 2);
 	mlLeft = (API->console->TextWidth - mlWidth) / 2;
 
-	if (dot >= 0)
-	{
-		dot += mlTop + 3;
-	}
+	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "libsidplayfp configuration", dot, 2, mlHeight - 4);
+	mlHeight -= 2;
+	mlWidth  -= 2;
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x0f, mlWidth, " Navigate with %.15o<\x18>%.7o,%.15o<\x19>%.7o,%.15o<\x1a>%.7o,%.15o<\x1b>%.7o and %.15o<ENTER>%.7o; hit %.15o<ESC>%.7o to save and exit.");
 
-	s = (mlWidth - 2 - 28) / 2; API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4 libsidplayfp configuration %*C\xc4\xbf", s, mlWidth - 2 - 28 - s);
-	s = (mlWidth - 2 - 70) / 2; API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%.15o%*C Navigate with %.15o<\x18>%.7o,%.15o<\x19>%.7o,%.15o<\x1a>%.7o,%.15o<\x1b>%.7o and %.15o<ENTER>%.7o; hit %.15o<ESC>%.7o to save and exit.%*C %.9o\xb3", s, mlWidth - 2 - 70 - s);
-
-	API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
+	mlTop++; // 2: horizontal bar
 
 #undef _A
 #undef _B
@@ -391,102 +382,102 @@ if (skip)                   \
   contentheight--;          \
 }
 
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, dot, " 1: emulator", emulators, 2, config_emulator, EditPos==0, API);                   _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, dot, " 2: default C64", C64models, 5, config_defaultC64, EditPos==1, API);              _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, dot, " 3: force C64 model", offon, 2, config_forceC64, EditPos==2, API);                _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, dot, " 4: default SID", SIDmodels, 2, config_defaultSID, EditPos==3, API);              _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, dot, " 5: force SID", offon, 2, config_forceSID, EditPos==4, API);                      _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, dot, " 6: CIA", CIAmodels, 3, config_CIA, EditPos==5, API);                             _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, dot, " 7: filter", offon, 2, config_filter, EditPos==6, API);                           _B
-	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, dot, " 8: filterbias", 10, "mV", -5000, 5000, config_filterbias, EditPos==7, API);      _B
-	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, dot, " 9: filtercurve6581", 100, "", 0, 100, config_filtercurve6581, EditPos==8, API);  _B
-	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, dot, "10: filterrange6581", 100, "", 0, 100, config_filterrange6581, EditPos==9, API);  _B
-	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, dot, "11: filtercurve8580", 100, "", 0, 100, config_filtercurve8580, EditPos==10, API); _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, dot, "12: CWS", combinedwaveforms, 3, config_combinedwaveforms, EditPos==11, API);      _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, dot, "13: digiboost", offon, 2, config_digiboost, EditPos==12, API);                    _B
-	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, dot, "14: kernal.rom:", EditPos==13, config_kernal, API);                               _B
-	_A ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, dot, entry_kernal.hash_8192, entry_kernal.hash_4096, 0, API);                           _B
-	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, dot, "15: basic.rom:", EditPos==14, config_basic, API);                                 _B
-	_A ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, dot, entry_basic.hash_8192, entry_basic.hash_4096, 1, API);                             _B
-	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, dot, "16: chargen.rom", EditPos==15, config_chargen, API);                              _B
-	_A ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, dot, entry_chargen.hash_8192, entry_chargen.hash_4096, 2, API);                         _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 1: emulator", emulators, 2, config_emulator, EditPos==0, API);                   _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 2: default C64", C64models, 5, config_defaultC64, EditPos==1, API);              _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 3: force C64 model", offon, 2, config_forceC64, EditPos==2, API);                _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 4: default SID", SIDmodels, 2, config_defaultSID, EditPos==3, API);              _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 5: force SID", offon, 2, config_forceSID, EditPos==4, API);                      _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 6: CIA", CIAmodels, 3, config_CIA, EditPos==5, API);                             _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 7: filter", offon, 2, config_filter, EditPos==6, API);                           _B
+	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, " 8: filterbias", 10, "mV", -5000, 5000, config_filterbias, EditPos==7, API);      _B
+	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, " 9: filtercurve6581", 100, "", 0, 100, config_filtercurve6581, EditPos==8, API);  _B
+	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, "10: filterrange6581", 100, "", 0, 100, config_filterrange6581, EditPos==9, API);  _B
+	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, "11: filtercurve8580", 100, "", 0, 100, config_filtercurve8580, EditPos==10, API); _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, "12: CWS", combinedwaveforms, 3, config_combinedwaveforms, EditPos==11, API);      _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, "13: digiboost", offon, 2, config_digiboost, EditPos==12, API);                    _B
+	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, "14: kernal.rom:", EditPos==13, config_kernal, API);                               _B
+	_A ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, entry_kernal.hash_8192, entry_kernal.hash_4096, 0, API);                           _B
+	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, "15: basic.rom:", EditPos==14, config_basic, API);                                 _B
+	_A ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, entry_basic.hash_8192, entry_basic.hash_4096, 1, API);                             _B
+	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, "16: chargen.rom", EditPos==15, config_chargen, API);                              _B
+	_A ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, entry_chargen.hash_8192, entry_chargen.hash_4096, 2, API);                         _B
 
 #undef _A
 #undef _B
 
-	API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
+	mlTop++; // mlHeight - 4: Horizontal bar
+
 	switch (EditPos)
 	{
 		case 0:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o resid   = standard integer emulator - fastest.%*C %.9o\xb3", mlWidth - 49);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o residfp = floating point emulator - better quality but slower.%*C %.9o\xb3", mlWidth - 65);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " resid   = standard integer emulator - fastest.");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " residfp = floating point emulator - better quality but slower.");
 			break;
 		case 1:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o For SID files that does not specify C64 model.%*C %.9o\xb3", mlWidth - 49);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%*C %.9o\xb3", mlWidth - 2);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " For SID files that does not specify C64 model.");
+			mlTop++;
 			break;
 		case 2:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Override C64 model specified in SID files (if specified).%*C %.9o\xb3", mlWidth - 60);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%*C %.9o\xb3", mlWidth - 2);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Override C64 model specified in SID files (if specified).");
+			mlTop++;
 			break;
 		case 3:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o For SID files that does not specify SID model.%*C %.9o\xb3", mlWidth - 49);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%*C %.9o\xb3", mlWidth - 2);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " For SID files that does not specify SID model.");
+			mlTop++;
 			break;
 		case 4:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Override SID model specified in SID files (if specified).%*C %.9o\xb3", mlWidth - 60);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%*C %.9o\xb3", mlWidth - 2);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Override SID model specified in SID files (if specified).");
+			mlTop++;
 			break;
 		case 5:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Specify which CIA chip to emulate. MOS6526 is the classic model where%*C %.9o\xb3", mlWidth - 72);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o MOS6526W4485 is a specific batch. MOS8521 is the modern chip model.%*C %.9o\xb3", mlWidth - 70);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Specify which CIA chip to emulate. MOS6526 is the classic model where");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " MOS6526W4485 is a specific batch. MOS8521 is the modern chip model.");
 			break;
 		case 6:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Enable post-processing filtering.%*C %.9o\xb3", mlWidth - 36);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%*C %.9o\xb3", mlWidth - 2);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Enable post-processing filtering.");
+			mlTop++;
 			break;
 		case 7:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Only used by \"resid\".%*C %.9o\xb3", mlWidth - 24);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Default is 0.0mV%*C %.9o\xb3", mlWidth - 19);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"resid\".");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Default is 0.0mV");
 			break;
 		case 8:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Only used by \"residfp\". Value to use if SID is MOS6581.%*C %.9o\xb3", mlWidth - 58);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Default is 0.5%*C %.9o\xb3", mlWidth - 17);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"residfp\". Value to use if SID is MOS6581.");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Default is 0.5");
 			break;
 		case 9:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Only used by \"residfp\". MOS6581 only: 0=\"bright\", 1=\"dark\".%*C %.9o\xb3", mlWidth - 62);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Default is 0.5%*C %.9o\xb3", mlWidth - 17);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"residfp\". MOS6581 only: 0=\"bright\", 1=\"dark\".");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Default is 0.5%");
 			break;
 		case 10:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Only used by \"residfp\". Value to use if SID is MOS8580.%*C %.9o\xb3", mlWidth - 58);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Default is 0.5%*C %.9o\xb3", mlWidth - 17);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"residfp\". Value to use if SID is MOS8580.");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Default is 0.5");
 			break;
 		case 11:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Only used by \"residfp\". Combined waveforms strength.%*C %.9o\xb3", mlWidth - 55);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Default is average.%*C %.9o\xb3", mlWidth - 22);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"residfp\". Combined waveforms strength.");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Default is average.");
 			break;
 		case 12:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o Digi-Boost is a hardware feature only available on MOS8580, where the%*C %.9o\xb3", mlWidth - 72);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o digital playback would be boosted.%*C %.9o\xb3", mlWidth - 37);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Digi-Boost is a hardware feature only available on MOS8580, where the");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " digital playback would be boosted.");
 			break;
 		case 13:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o KERNEL.ROM images can be found online. Some SID files requires this file%*C %.9o\xb3", mlWidth - 75);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o in order to play correctly.%*C %.9o\xb3", mlWidth - 30);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " KERNEL.ROM images can be found online. Some SID files requires this file");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " in order to play correctly.");
 			break;
 		case 14:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o BASIC.ROM images can be found online. Some SID files requires this file%*C %.9o\xb3", mlWidth - 74);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o in order to play correctly.%*C %.9o\xb3", mlWidth - 30);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " BASIC.ROM images can be found online. Some SID files requires this file");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " in order to play correctly.");
 			break;
 		case 15:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o CHARGEN.ROM images can be found online. Some SID files requires this file%*C %.9o\xb3", mlWidth - 76);
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o in order to play correctly.%*C %.9o\xb3", mlWidth - 30);
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " CHARGEN.ROM images can be found online. Some SID files requires this file");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " in order to play correctly.");
 			break;
 		default: /* should not be reachable */
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%76C \xb3");
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%76C \xb3");
+			mlTop++;
+			mlTop++;
 			break;
 	}
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
 }
 
 static int emulator_to_int (const char *src)
@@ -729,11 +720,10 @@ static void sidDrawDir (const int esel, const int expect, const struct DevInterf
 	int half;
 	int skip;
 	int dot;
-	int s;
 	const char *title;
 
-	const int mlHeight = 24;
 	const int LINES_NOT_AVAILABLE = 4;
+	int mlHeight = 24;
 	int mlTop = (API->console->TextHeight - mlHeight) / 2;
 	int mlWidth = MIN (78 + (API->console->TextWidth - 80) * 2 / 3, 120);
 	int mlLeft = (API->console->TextWidth - mlWidth) / 2;
@@ -769,52 +759,51 @@ static void sidDrawDir (const int esel, const int expect, const struct DevInterf
 	if (contentheight <= (mlHeight - LINES_NOT_AVAILABLE))
 	{ /* all entries can fit */
 		skip = 0;
-		dot = -1;
+		dot = 0;
 	} else if (esel < half)
 	{ /* we are in the top part */
 		skip = 0;
-		dot = 0;
+		dot = 3;
 	} else if (esel >= (contentheight - half))
 	{ /* we are at the bottom part */
 		skip = contentheight - (mlHeight - LINES_NOT_AVAILABLE);
-		dot = mlHeight - LINES_NOT_AVAILABLE - 1;
+		dot = mlHeight - LINES_NOT_AVAILABLE - 1 + 3;
 	} else {
 		skip = esel - half;
-		dot = skip * (mlHeight - LINES_NOT_AVAILABLE) / (contentheight - (mlHeight - LINES_NOT_AVAILABLE));
+		dot = skip * (mlHeight - LINES_NOT_AVAILABLE) / (contentheight - (mlHeight - LINES_NOT_AVAILABLE)) + 3;
 	}
 
-	s = (mlWidth - 2 - strlen (title) - 2) / 2; API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda%*C\xc4 %s %*C\xc4\xbf", s, title, mlWidth - 2 - strlen (title) - 2 - s);
+	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, title, dot, 2, 0);
+	mlHeight -= 2;
+	mlWidth  -= 2;
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o%*S%.9o\xb3", mlWidth - 2, entries_location ? entries_location : "");
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "%*S", mlWidth, entries_location ? entries_location : "");
 
-	API->console->DisplayPrintf        (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
+	mlTop++; // 2: horizontal bar
 
-	for (i = 0; i < (mlHeight-LINES_NOT_AVAILABLE); i++)
+	for (i = 0; i < (mlHeight - 2); i++)
 	{
 		int masterindex = skip + i;
 		if (masterindex >= entries_count)
 		{
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*C %c", mlWidth - 2, (i==dot)?'\xdd':'\xb3');
+			mlTop++;
 		} else if (entries_data[masterindex].isdir)
 		{
 			if (entries_data[masterindex].isparent)
 			{
-				API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*.*o..%*C %0.9o%c", (masterindex==esel)?0x6:0x0, (masterindex==esel)?0x1:0x1, mlWidth - 4, (i==dot)?'\xdd':'\xb3');
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "%*.*o..%0.7o ", (masterindex==esel)?0x6:0x0, (masterindex==esel)?0x1:0x1);
 			} else {
 				const char *dirname;
 				API->dirdb->GetName_internalstr (entries_data[masterindex].dirdb_ref, &dirname);
-				API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%*.*o%*S%0.9o%c", (masterindex==esel)?0x6:0x0, (masterindex==esel)?0x1:0x1, mlWidth - 2, dirname, (i==dot)?'\xdd':'\xb3');
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "%*.*o%*S%0.7o ", (masterindex==esel)?0x6:0x0, (masterindex==esel)?0x1:0x1, mlWidth - 2, dirname);
 			}
 		} else {
 			const char *filename;
 			API->dirdb->GetName_internalstr (entries_data[masterindex].dirdb_ref, &filename);
-			API->console->DisplayPrintf (mlTop,   mlLeft,                0x09, mlWidth - 43, "\xb3%*.*o%*S%0.9o%c", (masterindex==esel)?0x6:0x0, (masterindex==esel)?0x0:0x7, mlWidth - 2 - 42, filename);
-			ConfigDrawHashInfo          (mlTop,   mlLeft + mlWidth - 43,                 42, entries_data[masterindex].hash_8192, entries_data[masterindex].hash_4096, expect, API);
-			API->console->DisplayPrintf (mlTop++, mlLeft + mlWidth -  1, 0x09,            1, "%c", (i==dot)?'\xdd':'\xb3');
+			API->console->DisplayPrintf (mlTop,   mlLeft,                0x07, mlWidth - 42, "%*.*o%*S%0.9o=", (masterindex==esel)?0x6:0x0, (masterindex==esel)?0x0:0x7, mlWidth - 43, filename);
+			ConfigDrawHashInfo          (mlTop++, mlLeft + mlWidth - 42,                 42, entries_data[masterindex].hash_8192, entries_data[masterindex].hash_4096, expect, API);
 		}
 	}
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
 }
 
 static void entries_clear (const struct DevInterfaceAPI_t *API)

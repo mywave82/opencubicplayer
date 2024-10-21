@@ -688,6 +688,37 @@ after_dot:
 	va_end(ap);
 }
 
+static void display_frame (uint16_t y, uint16_t x, uint16_t h, uint16_t w, uint8_t color, const char *title, uint16_t dot, uint16_t hbar1, uint16_t hbar2)
+{
+	size_t len = strlen (title);
+	int left;
+	int right;
+
+	if (len > (w - 4))
+	{
+		len = w - 4;
+	}
+	left = (w - 4 - len) / 2;
+	right = w - 4 - len - left;
+
+	/* dot = 0, no dot, otherwize it says which line number after Y to place it at */
+	display_nprintf (y++, x, color, w, "\xda%*C\xc4 %*s %*C\xc4\xbf", left, len, title, right); h--; dot--; hbar1--; hbar2--;
+	while (h > 1)
+	{
+		if ((!hbar1) || (!hbar2))
+		{
+			display_nprintf (y++, x, color, w, "\xc3%*C\xc4\xb4", w - 2);
+		} else {
+			display_nprintf (y++, x, color, w, "\xb3%*C %c", w - 2, dot ? '\xb3': '\xdd');
+		}
+		h--;
+		dot--;
+		hbar1--;
+		hbar2--;
+	}
+	display_nprintf (y++, x, color, w, "\xc0%*C\xc4\xd9", w - 2); h--;
+}
+
 static void writenum (uint16_t *buf, uint16_t ofs, uint8_t attr, unsigned long num, uint8_t radix, uint16_t len, int clip0)
 {
 	char convbuf[20];
@@ -733,6 +764,7 @@ struct console_t Console =
 {
 	&dummyConsoleDriver,
 	display_nprintf,
+	display_frame,
 	writenum,
 	writestring,
 	writestringattr,

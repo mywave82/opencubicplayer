@@ -90,7 +90,7 @@ deviwave.o: deviwave.c \
 	../stuff/err.h \
 	../stuff/imsrtns.h \
 	../stuff/poutput.h
-	$(CC) deviwave.c -c -o $@ -c
+	$(CC) deviwave.c -o $@ -c
 
 mchasm.o: mchasm.c mchasm.h \
 	../config.h \

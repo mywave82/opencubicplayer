@@ -392,7 +392,7 @@ static void deviwaveLateClose (void)
 	mcpDriverListNone = -1;
 }
 
-static void setup_devw_draw (const char *title, int dsel)
+static void setup_devw_draw (const struct DevInterfaceAPI_t *API, const char *title, int dsel)
 {
 	unsigned int mlHeight;
 	unsigned int mlTop;
@@ -422,39 +422,37 @@ static void setup_devw_draw (const char *title, int dsel)
 	if (mcpDriverListEntries <= fit)
 	{ /* all entries can fit */
 		skip = 0;
-		dot = -1;
+		dot = 0;
 	} else if (dsel < half)
 	{ /* we are in the top part */
 		skip = 0;
-		dot = 0;
+		dot = 3;
 	} else if (dsel >= (mcpDriverListEntries - half))
 	{ /* we are at the bottom part */
 		skip = mcpDriverListEntries - fit;
-		dot = fit - 1;
+		dot = fit + 2;
 	} else {
 		skip = dsel - half;
-		dot = skip * (fit) / (mcpDriverListEntries - (fit));
+		dot = skip * (fit) / (mcpDriverListEntries - (fit)) + 3;
 	}
 
+	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, title, dot, 2, mlHeight - 4);
+	mlWidth -= 2;
+	mlHeight -= 2;
+
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Available wavetable drivers, and their priority in the autodection:");
+
+	mlTop++; // 2: horizontal bar
+
+	for (i = 2; i < (mlHeight-3); i++)
 	{
-		int CacheLen = strlen (title);
-		int Skip = (mlWidth - CacheLen - 2) / 2;
-		display_nprintf (mlTop, mlLeft, 0x09, mlWidth, "\xda%*C\xc4 %s %*C\xc4\xbf", Skip - 1, title, mlWidth - Skip - 3 - CacheLen); /* +----- title ------+ */
-	}
-
-	display_nprintf (mlTop + 1, mlLeft, 0x09, mlWidth, "\xb3%0.7o Available audio drivers, and their priority in the autodection%*C %0.9o\xb3", mlWidth - 65);
-
-	display_nprintf (mlTop + 2,  mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2); /* |            | */
-
-	for (i = 3; i < (mlHeight-3); i++)
-	{
-		int index = i - 3 + skip;
+		int index = i - 2 + skip;
 		int color;
 		const char *msg;
 
 		if (index >= mcpDriverListEntries)
 		{
-			display_nprintf (mlTop + i, mlLeft, 0x09, mlWidth, "\xb3%.*C \xb3", mlWidth - 2);
+			mlTop++;
 			continue;
 		}
 
@@ -479,65 +477,52 @@ static void setup_devw_draw (const char *title, int dsel)
 			msg = "";
 		}
 
-		display_nprintf (mlTop + i, mlLeft, 0x09, mlWidth, "\xb3%*.*o%-.3d %.*o%.8s: %s %.*o%.18s   %0.9o%c",
-			(dsel == index)?7:0,
-			(dsel == index)?0:7,
+		API->console->DisplayPrintf (mlTop++, mlLeft,
+			(((dsel == index)?7:0) << 4) |
+			 ((dsel == index)?0:7),
+			mlWidth, "%-.3d %.*o%.8s: %s %.*o%.18s",
 			index + 1,
 			(dsel == index)?0:3,
 			mcpDriverList[index].name,
 			dots(mcpDriverList[index].driver?mcpDriverList[index].driver->description:""),
 			color,
-			msg,
-			((i-3) == dot) ? '\xdd':'\xb3'
+			msg
 		);
 	}
 
-	display_nprintf (mlTop + mlHeight - 4, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2); /* +---------------+ */
-	display_nprintf (mlTop + mlHeight - 3, mlLeft, 0x09, mlWidth,
-		"\xb3%0.7o "
-		"%0.15o<\x18>%0.7o/%0.15o<\x19>%0.7o: Navigate  "
+	mlTop++; // Horizontal bar
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x0f, mlWidth,
+		" <\x18>%0.7o/%0.15o<\x19>%0.7o: Navigate  "
 		"%0.15o<+>%0.7o/%0.15o<->%0.7o: Change priority  "
-		"<ESC>%0.7o close dialog  "
-		"%0.9o  \xb3"
+		"%0.15o<ESC>%0.7o close dialog"
 	);
 
 	if ((dsel >= mcpDriverListEntries) || (mcpDriver && (mcpDriverList[dsel].driver == mcpDriver)))
 	{
-		display_nprintf (mlTop + mlHeight - 2,  mlLeft, 0x09, mlWidth, "\xb3%*C \xb3", mlWidth - 2); /* |            | */
+		mlTop++;
 	} else if ((!mcpDriverList[dsel].driver) && (!mcpDriverList[dsel].disabled))
 	{
-		display_nprintf (mlTop + mlHeight - 2, mlLeft, 0x09, mlWidth,
-			"\xb3%0.7o "
-			"%0.15o<d>%0.7o: disable driver  "
-			"%0.15o<DEL>%0.7o: delete entry  "
-			"%0.9o                         \xb3"
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x0f, mlWidth,
+			" <d>%0.7o: disable driver  "
+			"%0.15o<DEL>%0.7o: delete entry"
 		);
 	} else if ((!mcpDriverList[dsel].driver) && (mcpDriverList[dsel].disabled))
 	{
-		display_nprintf (mlTop + mlHeight - 2, mlLeft, 0x09, mlWidth,
-			"\xb3%0.7o "
-			"%0.15o<e>%0.7o: enable driver  "
-			"%0.15o<DEL>%0.7o: delete entry  "
-			"%0.9o                          \xb3"
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x0f, mlWidth,
+			" <e>%0.7o: enable driver  "
+			"%0.15o<DEL>%0.7o: delete entry"
 		);
 	} else if (mcpDriverList[dsel].disabled)
 	{
-		display_nprintf (mlTop + mlHeight - 2, mlLeft, 0x09, mlWidth,
-			"\xb3%0.7o "
-			"%0.15o<e>%0.7o: enable driver"
-			"                       "
-			"%0.9o                          \xb3"
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x0f, mlWidth,
+			" <e>%0.7o: enable driver"
 		);
 	} else {
-		display_nprintf (mlTop + mlHeight - 2, mlLeft, 0x09, mlWidth,
-			"\xb3%0.7o "
-			"%0.15o<ENTER>%0.7o: activate driver  "
-			"%0.15o<d>%0.7o: disable driver  "
-			"%0.9o                    \xb3"
+		API->console->DisplayPrintf (mlTop++, mlLeft, 0x0f, mlWidth,
+			" <ENTER>%0.7o: activate driver  "
+			"%0.15o<d>%0.7o: disable driver"
 		);
 	}
-
-	display_nprintf (mlTop + mlHeight - 1,  mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2); /* +---------------+ */
 }
 
 static void devw_save_devices (const struct DevInterfaceAPI_t *API)
@@ -571,7 +556,7 @@ static void setup_devw_run (void **token, const struct DevInterfaceAPI_t *API)
 	while (1)
 	{
 		API->fsDraw();
-		setup_devw_draw("Wavetable plugins", dsel);
+		setup_devw_draw (API, "Wavetable plugins", dsel);
 		while (API->console->KeyboardHit())
 		{
 			int key = API->console->KeyboardGetChar();
