@@ -41,40 +41,40 @@ static void modland_com_mirror_Draw (
 *     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX      *
 *                                                                        *
 **************************************************************************/
-	const int mlHeight = 12 + NUM_MIRRORS;
-	const int mlWidth = 74;
+	int mlHeight = 12 + NUM_MIRRORS;
+	int mlWidth = 74;
 
 	int mlTop = (plScrHeight - mlHeight) / 2;
 	int mlLeft = (plScrWidth - mlWidth) / 2;
 	int i;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda" "%22C\xc4" " modland.com: select mirror " "%22C\xc4" "\xbf");
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%0.7o" " Select a mirror with %.15o<UP>%.7o, %.15o<DOWN>%.7o and %.15o<SPACE>%.7o.%.9o" "%*C " "\xb3", mlWidth - 49);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%0.7o" " Edit custom with %.15o<ENTER>%.7o. Exit dialog with %.15o<ESC>%.7o.%.9o" "%*C " "\xb3", mlWidth - 52);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "modland.com: select mirror", 0, 5, 0);
+	mlWidth  -= 2;
+	mlHeight -= 2;
+	mlTop++;
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "Select a mirror with %.15o<UP>%.7o, %.15o<DOWN>%.7o and %.15o<SPACE>%.7o.");
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Edit custom with %.15o<ENTER>%.7o. Exit dialog with %.15o<ESC>%.7o.");
+	mlTop++;
+	mlTop++; // 5: horizontal line
+	mlTop++;
 	for (i=0; i < NUM_MIRRORS; i++)
 	{
 		char mirror_padded[63];
 		snprintf (mirror_padded, sizeof (mirror_padded), "%s%s",
 			(!strncasecmp(modland_com_official_mirror[i], "ftp:", 4)) ? "  " : (!strncasecmp(modland_com_official_mirror[i], "http:", 5)) ? " " : "",
 			modland_com_official_mirror[i]);
-		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "(%.2o%c%.9o) " "%*.*o" "%*s" "%0.9o     \xb3",
+		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "%*s" "%0.7o ",
 			(i==origselected) ? '*' : ' ',
 			(i==selected) ? 7 : 0,
 			(i==selected) ? 1 : 3,
 			62, mirror_padded);
 	}
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%.7o" "   custom: " "%*C " "%.9o" "\xb3",
-			mlWidth - 13);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "   custom: ");
 
 	if (editmirrorquit)
 	{
-		console->DisplayPrintf (mlTop, mlLeft, 0x09, 6, "\xb3 " "(%.2o%c%.9o) ",
+		console->DisplayPrintf (mlTop, mlLeft, 0x09, 6, " (%.2o%c%.9o) ",
 			(origselected==NUM_MIRRORS) ? '*' : ' ');
-		console->DisplayPrintf (mlTop, mlLeft+mlWidth-6, 0x09, 6, "     \xb3");
 		switch (console->EditStringASCII(mlTop++, mlLeft + 6, mlWidth - 12, mirrorcustom))
 		{
 			case -1:
@@ -86,16 +86,15 @@ static void modland_com_mirror_Draw (
 				break;
 		}
 	} else {
-		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "(%.2o%c%.9o) " "%*.*o" "%*s" "%0.9o     " "\xb3",
+		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " " "(%.2o%c%.9o) " "%*.*o" "%*s" "%0.7o ",
 			(origselected==NUM_MIRRORS) ? '*' : ' ',
 			(selected == NUM_MIRRORS) ? 7 : 0,
 			(selected == NUM_MIRRORS) ? 1 : 3,
-			mlWidth - 12,
+			mlWidth - 10,
 			*mirrorcustom);
 	}
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
+	mlTop++;
 }
 
 static void modland_com_mirror_Save (const struct DevInterfaceAPI_t *API, int selected)

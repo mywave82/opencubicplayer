@@ -50,8 +50,8 @@ static void modland_com_initialize_Draw (
 	int cancel, int ok
 )
 {
-	const int mlHeight = 15;
-	const int mlWidth = 74;
+	int mlHeight = 15;
+	int mlWidth  = 74;
 
 	const char *download_string[3];
 	int         download_length[3];
@@ -59,11 +59,13 @@ static void modland_com_initialize_Draw (
 	int mlTop = (plScrHeight - mlHeight) / 2;
 	int mlLeft = (plScrWidth - mlWidth) / 2;
 
-	display_nprintf (mlTop + 0, mlLeft, 0x09, mlWidth, "\xda" "%24C\xc4" " modland.com: initialize " "%23C\xc4" "\xbf");
+	console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "modland.com: initialize", 0, 0, 0);
+	mlHeight -= 2;
+	mlWidth -= 2;
 
-	display_nprintf (mlTop + 1, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	mlTop++;
 
-	display_nprintf (mlTop + 2, mlLeft, 0x09, mlWidth, "\xb3 %.7o[" "%.*o" "%c" "%.7o" "] Download allmods.zip metafile." "%37C %.9o" "\xb3",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " [" "%.*o" "%c" "%.7o" "] Download allmods.zip metafile.",
 		download==1 ? /* WHITE */ 15 : download==2 ? /* GREEN */ 10 : /* RED */ 12,
 		download==1 ? '*'            : download==2 ? 'v'            : download==3 ? 'x' : ' ');
 
@@ -71,16 +73,16 @@ static void modland_com_initialize_Draw (
 	{
 		char temp[70];
 		snprintf (temp, sizeof (temp), "Downloaded %dKB", (download_size + 512 )/ 1024);
-		display_nprintf (mlTop + 3, mlLeft, 0x09, mlWidth, "\xb3" "%.2o" "     %67s" "%.9o" "\xb3", temp);
-		display_nprintf (mlTop + 4, mlLeft, 0x09, mlWidth, "\xb3"        "%72C "            "\xb3");
-		display_nprintf (mlTop + 5, mlLeft, 0x09, mlWidth, "\xb3"        "%72C "            "\xb3");
+		console->DisplayPrintf (mlTop++, mlLeft, 0x02, mlWidth, "     %67s", temp);
+		mlTop++;
+		mlTop++;
 	} else if (download == 2)
 	{
 		char temp[70];
 		snprintf (temp, sizeof (temp), "Successfully downloaded %dKB of data, datestamped %04d-%02d-%02d", (download_size + 512 )/ 1024, year, month, day);
-		display_nprintf (mlTop + 3, mlLeft, 0x09, mlWidth, "\xb3" "%.2o" "     %67s" "%.9o" "\xb3", temp);
-		display_nprintf (mlTop + 4, mlLeft, 0x09, mlWidth, "\xb3"        "%72C "            "\xb3");
-		display_nprintf (mlTop + 5, mlLeft, 0x09, mlWidth, "\xb3"        "%72C "            "\xb3");
+		console->DisplayPrintf (mlTop++, mlLeft, 0x02, mlWidth, "     %67s" "%.9o", temp);
+		mlTop++;
+		mlTop++;
 	} else if (download == 3)
 	{
 		const char *temp = download_message ? download_message : "";
@@ -111,50 +113,46 @@ static void modland_com_initialize_Draw (
 			}
 		}
 
-		display_nprintf (mlTop + 3, mlLeft, 0x09, mlWidth, "\xb3" "%.4o" "     %67.*s" "%.9o" "\xb3", download_length[0], download_string[0]);
-		display_nprintf (mlTop + 4, mlLeft, 0x09, mlWidth, "\xb3" "%.4o" "     %67.*s" "%.9o" "\xb3", download_length[1], download_string[1]);
-		display_nprintf (mlTop + 5, mlLeft, 0x09, mlWidth, "\xb3" "%.4o" "     %67.*s" "%.9o" "\xb3", download_length[2], download_string[2]);
+		console->DisplayPrintf (mlTop++, mlLeft, 0x04, mlWidth, "     %67.*s", download_length[0], download_string[0]);
+		console->DisplayPrintf (mlTop++, mlLeft, 0x04, mlWidth, "     %67.*s", download_length[1], download_string[1]);
+		console->DisplayPrintf (mlTop++, mlLeft, 0x04, mlWidth, "     %67.*s", download_length[2], download_string[2]);
 	} else {
-		display_nprintf (mlTop + 3, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
-		display_nprintf (mlTop + 4, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
-		display_nprintf (mlTop + 5, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+		mlTop++;
+		mlTop++;
+		mlTop++;
 	}
 
-	display_nprintf (mlTop + 6, mlLeft, 0x09, mlWidth, "\xb3 %.7o[" "%.*o" "%c" "%.7o" "] Parsing allmods.txt inside allmods.zip." "%28C %.9o" "\xb3",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " [" "%.*o" "%c" "%.7o" "] Parsing allmods.txt inside allmods.zip.",
 		parsing==1 ? /* WHITE */ 15 : parsing==2 ? /* GREEN */ 10 : /* RED */ 12,
 		parsing==1 ? '*'            : parsing==2 ? 'v'            : parsing==3 ? 'x' : ' ');
 
 	if ((parsing == 2) || (parsing == 1))
 	{
-		char temp[70];
-		snprintf (temp, sizeof (temp), "Located %d file-entries in %d directories.", parsing_files, parsing_directories);
-		display_nprintf (mlTop + 7, mlLeft, 0x09, mlWidth, "\xb3" "%.2o" "     %67s" "%.9o" "\xb3", temp);
-
-		snprintf (temp, sizeof (temp), "%d invalid entries.", parsing_invalid);
-		display_nprintf (mlTop + 8, mlLeft, 0x09, mlWidth, "\xb3" "%.*o" "     %67s" "%.9o" "\xb3", parsing_invalid ? 4 : 2, temp);
+		console->DisplayPrintf (mlTop++, mlLeft, 0x02, mlWidth, "     Located %d file-entries in %d directories.", parsing_files, parsing_directories);
+		console->DisplayPrintf (mlTop++, mlLeft, parsing_invalid ? 0x04:0x02, mlWidth, "     %d invalid entries.", parsing_invalid);
 	} else if (parsing == 3)
 	{
-		display_nprintf (mlTop + 7, mlLeft, 0x09, mlWidth, "\xb3" "%.2o" "     %67s" "%.9o" "\xb3", parsing_message);
-		display_nprintf (mlTop + 8, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+		console->DisplayPrintf (mlTop++, mlLeft, 0x02, mlWidth, "     %67s", parsing_message);
+		mlTop++;
 	} else {
-		display_nprintf (mlTop + 7, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
-		display_nprintf (mlTop + 8, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+		mlTop++;
+		mlTop++;
 	}
 
-	display_nprintf (mlTop + 9, mlLeft, 0x09, mlWidth, "\xb3 %.7o[" "%.*o" "%c" "%.7o" "] Save cache to disk." "%48C %.9o" "\xb3",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " [" "%.*o" "%c" "%.7o" "] Save cache to disk.",
 		save==1 ? /* WHITE */ 15 : save==2 ? /* GREEN */ 10 : /* RED */ 12,
 		save==1 ? '*'            : save==2 ? 'v'            : save==3 ? 'x' : ' ');
 
 	if (save == 3)
 	{
-		display_nprintf (mlTop + 10, mlLeft, 0x09, mlWidth, "\xb3" "%.2o" "     %67s" "%.9o" "\xb3", save_message);
+		console->DisplayPrintf (mlTop++, mlLeft, 0x02, mlWidth, "     %67s", save_message);
 	} else {
-		display_nprintf (mlTop + 10, mlLeft, 0x09, mlWidth, "\xb3"        "%72C "            "\xb3");
+		mlTop++;
 	}
 
-	display_nprintf (mlTop + 11, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	mlTop++;
 
-	display_nprintf (mlTop + 12, mlLeft, 0x09, mlWidth, "\xb3" "%20C " "%*.*o" "%s" "%0.7o" "%16C ""%*.*o" "%s" "%0.9o" "%20C " "\xb3",
+	console->DisplayPrintf (mlTop++, mlLeft+20, 0x07, mlWidth, "%*.*o" "%s" "%0.7o" "%16C ""%*.*o" "%s" "%0.7o ",
 		(cancel == 2) ? 7 : 0,
 		(cancel == 2) ? 0 : 1,
 		cancel ? "< CANCEL >" : "          ",
@@ -162,9 +160,7 @@ static void modland_com_initialize_Draw (
 		(ok == 2) ? 0 : 1,
 		ok ? "< OK >" : "      ");
 
-	display_nprintf (mlTop + 13, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
-
-	display_nprintf (mlTop + 14, mlLeft, 0x09, mlWidth, "\xc0" "%72C\xc4" "\xd9");
+	mlTop++;
 }
 
 static void modland_com_initialize_Draw_Until_Enter_Or_Exit (

@@ -35,61 +35,65 @@ static void modland_com_cachedir_Draw (
 *   XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX   *
 *                                                                        *
 **************************************************************************/
-	const int mlHeight = 23;
-	const int mlWidth = 74;
-
+	int mlHeight = 23;
+	int mlWidth = 74;
 	int mlTop = (plScrHeight - mlHeight) / 2;
 	int mlLeft = (plScrWidth - mlWidth) / 2;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda" "%21C\xc4" " modland.com: select cachedir " "%21C\xc4" "\xbf");
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%0.7o" " Select a cachedir with %.15o<UP>%.7o, %.15o<DOWN>%.7o and %.15o<SPACE>%.7o.%.9o" "%*C " "\xb3", mlWidth - 51);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%0.7o" " Edit custom with %.15o<ENTER>%.7o. Exit dialog with %.15o<ESC>%.7o.%.9o" "%*C " "\xb3", mlWidth - 52);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc3%*C\xc4\xb4", mlWidth - 2);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "modland.com: select cachedir ", 0, 5, 0);
+	mlHeight -= 2;
+	mlWidth -= 2;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "(%.2o%c%.9o) " "%*.*o" "$OCPDATAHOME/modland.com" " %0.7o(default)%.9o%33C \xb3",
+	mlTop++;
+
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Select a cachedir with %.15o<UP>%.7o, %.15o<DOWN>%.7o and %.15o<SPACE>%.7o.");
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Edit custom with %.15o<ENTER>%.7o. Exit dialog with %.15o<ESC>%.7o.");
+
+	mlTop++;
+
+	mlTop++; // 5: horizontal line
+
+	mlTop++;
+
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$OCPDATAHOME/modland.com" " %0.7o(default)",
 		(0==origselected) ? '*' : ' ',
 		(0==selected) ? 7 : 0,
 		(0==selected) ? 1 : 3);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "    %.7o=> %64S" "%.9o\xb3", ocpdatahome_modland_com);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %64S", ocpdatahome_modland_com);
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "(%.2o%c%.9o) " "%*.*o" "$HOME/modland.com" "%.9o%50C \xb3",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$HOME/modland.com",
 		(1==origselected) ? '*' : ' ',
 		(1==selected) ? 7 : 0,
 		(1==selected) ? 1 : 3);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "    %.7o=> %64S" "%.9o\xb3", home_modland_com);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %64S", home_modland_com);
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "(%.2o%c%.9o) " "%*.*o" "$OCPDATA/modland.com" " %0.7o(might not be writable)%.9o%23C \xb3",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$OCPDATA/modland.com" " %0.7o(might not be writable)",
 		(2==origselected) ? '*' : ' ',
 		(2==selected) ? 7 : 0,
 		(2==selected) ? 1 : 3);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "    %.7o=> %64S" "%.9o\xb3", home_modland_com);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %64S", home_modland_com);
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "(%.2o%c%.9o) " "%*.*o" "$TEMP/modland.com" " %0.7o(might not be system uniqe and writable)%.9o%9C \xb3",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$TEMP/modland.com" " %0.7o(might not be system uniqe and writable)",
 		(3==origselected) ? '*' : ' ',
 		(3==selected) ? 7 : 0,
 		(3==selected) ? 1 : 3);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "    %.7o=> %64S" "%.9o\xb3", temp_modland_com);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %64S", temp_modland_com);
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "%.7o" "custom: " "%*C " "%.9o" "\xb3",
-		mlWidth - 11);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " custom:");
 
 	if (editcacheconfigquit)
 	{
-		console->DisplayPrintf (mlTop, mlLeft, 0x09, 6, "\xb3 " "(%.2o%c%.9o) ",
+		console->DisplayPrintf (mlTop, mlLeft, 0x09, 4, " (%.2o%c%.9o)",
 			(4==origselected) ? '*' : ' ');
-		console->DisplayPrintf (mlTop, mlLeft+mlWidth-6, 0x09, 6, "     \xb3");
-		switch (console->EditStringUTF8(mlTop++, mlLeft + 6, mlWidth - 12, cacheconfigcustom))
+		switch (console->EditStringUTF8(mlTop++, mlLeft + 6, mlWidth - 10, cacheconfigcustom))
 		{
 			case -1:
 			case 0:
@@ -100,16 +104,15 @@ static void modland_com_cachedir_Draw (
 				break;
 		}
 	} else {
-		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "(%.2o%c%.9o) " "%*.*o" "%*S" "%0.9o     " "\xb3",
+		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "%*S" "%0.9o ",
 			(4==origselected) ? '*' : ' ',
 			(4==selected) ? 7 : 0,
 			(4==selected) ? 1 : 3,
-			mlWidth - 12,
+			mlWidth - 10,
 			*cacheconfigcustom);
 	}
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "    %.7o=> %64s" "%.9o\xb3", custom_modland_com);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %64s", custom_modland_com);
 }
 
 static char *modland_com_resolve_cachedir3 (const char *src)

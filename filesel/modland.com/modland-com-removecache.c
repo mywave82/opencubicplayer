@@ -39,52 +39,51 @@ static void modland_com_wipecache_Draw (
 	const int display_recycle
 )
 {
-	const int mlHeight = 13;
-	const int mlWidth = 74;
+	int mlHeight = 13;
+	int mlWidth = 74;
 
 	int mlTop = (plScrHeight - mlHeight) / 2;
 	int mlLeft = (plScrWidth - mlWidth) / 2;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda" "%18C\xc4" " modland.com: wipe/remove cachedir " "%19C\xc4" "\xbf");
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "modland.com: wipe/remove cachedir", 0, 0, 0);
+	mlWidth -= 2;
+	mlHeight -= 2;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "%.3o" "%71S" "%.9o\xb3", configured_path);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " " %.7o=> %67S" "%.9o\xb3", resolved_path);
+	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, " %71S", configured_path);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "  => %67S", resolved_path);
 
-	console->DisplayPrintf (mlTop  , mlLeft, 0x09, mlWidth-1, "\xb3 " "%.3o" "%"PRIuFAST32 "%.7o" " directories", directories_n);
-	console->DisplayPrintf (mlTop++, mlLeft+73, 0x09, 1, "\xb3");
+	mlTop++;
 
-	console->DisplayPrintf (mlTop  , mlLeft, 0x09, mlWidth, "\xb3 " "%.3o" "%"PRIuFAST32 "%.7o" " files", files_n);
-	console->DisplayPrintf (mlTop++, mlLeft+73, 0x09, 1, "\xb3");
+	console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, " %"PRIuFAST32 "%.7o" " directories", directories_n);
+
+	console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, " %"PRIuFAST32 "%.7o" " files", files_n);
 
 	if (datasize >= 4194304)
 	{
-		console->DisplayPrintf (mlTop  , mlLeft, 0x09, mlWidth, "\xb3 " "%.3o" "%"PRIu64 "%.7o" " MBytes", datasize >> 20);
+		console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, " %"PRIu64 "%.7o" " MBytes", datasize >> 20);
 	} else if (datasize >= 65536)
 	{
-		console->DisplayPrintf (mlTop  , mlLeft, 0x09, mlWidth, "\xb3 " "%.3o" "%"PRIu64 "%.7o" " KBytes", datasize >> 10);
+		console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, " %"PRIu64 "%.7o" " KBytes", datasize >> 10);
 	} else {
-		console->DisplayPrintf (mlTop  , mlLeft, 0x09, mlWidth, "\xb3 " "%.3o" "%"PRIu64 "%.7o" " Bytes", datasize);
+		console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, " %"PRIu64 "%.7o" " Bytes", datasize);
 	}
-
-	console->DisplayPrintf (mlTop++, mlLeft+73, 0x09, 1, "\xb3");
 
 	if (stillcounting)
 	{
-		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%.7o" " (and still counting)" "%.9o" "%51C " "\xb3");
+		console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " (and still counting)");
 	} else {
-		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+		mlTop++;
 	}
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	mlTop++;
 
 	if (stillcounting)
 	{
-		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "      " "%.8o"  "< REMOVE DIRECTORY >"         "    "         "< MOVE TO RECYCLE BIN >"         "    "         "< ABORT >" "%.9o"  "      " "\xb3");
+		console->DisplayPrintf (mlTop++, mlLeft, 0x08, mlWidth, "      "         "< REMOVE DIRECTORY >"         "    "         "< MOVE TO RECYCLE BIN >"         "    "         "< ABORT >");
 	} else {
-		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "      " "%*.*o" "< REMOVE DIRECTORY >" "%0.7o" "    " "%*.*o" "< MOVE TO RECYCLE BIN >" "%0.7o" "    " "%*.*o" "< ABORT >" "%0.9o" "      " "\xb3",
+		console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "      " "%*.*o" "< REMOVE DIRECTORY >" "%0.7o" "    " "%*.*o" "< MOVE TO RECYCLE BIN >" "%0.7o" "    " "%*.*o" "< ABORT >" "%0.7o" " ",
 			(selected == 0) ? 7 : 0,
 			(selected == 0) ? 1 : 3,
 			(selected == 1) ? 7 : (display_recycle ? 0 : 0),
@@ -94,8 +93,7 @@ static void modland_com_wipecache_Draw (
 		);
 	}
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
+	mlTop++;
 }
 
 static void modland_com_dowipecache_Draw (
@@ -111,55 +109,55 @@ static void modland_com_dowipecache_Draw (
 	const int stillremoving
 )
 {
-	const int mlHeight = 13;
-	const int mlWidth = 74;
+	int mlHeight = 13;
+	int mlWidth = 74;
 
 	int mlTop = (plScrHeight - mlHeight) / 2;
 	int mlLeft = (plScrWidth - mlWidth) / 2;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xda" "%16C\xc4" " modland.com: wiping/removing cachedir " "%17C\xc4" "\xbf");
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "modland.com: wiping/removing cachedir", 0, 0, 0);
+	mlHeight -= 2;
+	mlWidth -= 2;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " "%.3o" "%71S" "%.9o\xb3", configured_path);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3 " " %.7o=> %67S" "%.9o\xb3", resolved_path);
+	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, " %71S", configured_path);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "  %.7o=> %67S", resolved_path);
+
+	mlTop++;
 
 	if (directories_failed_n)
 	{
-		console->DisplayPrintf (mlTop  , mlLeft, 0x09, mlWidth-1, "\xb3 " "%.3o" "%"PRIuFAST32 "%.7o" " of " "%.3o" "%"PRIuFAST32 "%.7o" " directories (%"PRIuFAST32" failed)", directories_n, directories_target_n, directories_failed_n);
+		console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, " %"PRIuFAST32 "%.7o" " of " "%.3o" "%"PRIuFAST32 "%.7o" " directories (%"PRIuFAST32" failed)", directories_n, directories_target_n, directories_failed_n);
 	} else {
-		console->DisplayPrintf (mlTop  , mlLeft, 0x09, mlWidth-1, "\xb3 " "%.3o" "%"PRIuFAST32 "%.7o" " of " "%.3o" "%"PRIuFAST32 "%.7o" " directories", directories_n, directories_target_n);
+		console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, " %"PRIuFAST32 "%.7o" " of " "%.3o" "%"PRIuFAST32 "%.7o" " directories", directories_n, directories_target_n);
 	}
-	console->DisplayPrintf (mlTop++, mlLeft+73, 0x09, 1, "\xb3");
 
 	if (files_failed_n)
 	{
-		console->DisplayPrintf (mlTop  , mlLeft, 0x09, mlWidth, "\xb3 " "%.3o" "%"PRIuFAST32 "%.7o" " of ""%.3o" "%"PRIuFAST32 "%.7o" " files (%"PRIuFAST32" failed)", files_n, files_target_n, files_failed_n);
+		console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, " %"PRIuFAST32 "%.7o" " of ""%.3o" "%"PRIuFAST32 "%.7o" " files (%"PRIuFAST32" failed)", files_n, files_target_n, files_failed_n);
 	} else {
-		console->DisplayPrintf (mlTop  , mlLeft, 0x09, mlWidth, "\xb3 " "%.3o" "%"PRIuFAST32 "%.7o" " of ""%.3o" "%"PRIuFAST32 "%.7o" " files", files_n, files_target_n);
+		console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, " %"PRIuFAST32 "%.7o" " of ""%.3o" "%"PRIuFAST32 "%.7o" " files", files_n, files_target_n);
 	}
-	console->DisplayPrintf (mlTop++, mlLeft+73, 0x09, 1, "\xb3");
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	mlTop++;
 
 	if (stillremoving)
 	{
-		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+		mlTop++;
 	} else {
-		console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3%.7o" " Finished%0.9o%63C " "\xb3");
+		console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Finished");
 	}
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
+	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%10C " "%*.*o" "[ ABORT ]" "%0.9o" "%37C " "%*.*o" "[ OK ]" "%0.9o" "%10C " "\xb3",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "%10C " "%*.*o" "[ ABORT ]" "%0.9o" "%37C " "%*.*o" "[ OK ]" "%0.7o ",
 		stillremoving ? 7 : 0,
 		stillremoving ? 1 : 8,
 		stillremoving ? 0 : 7,
 		stillremoving ? 8 : 1);
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xb3" "%72C " "\xb3");
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, "\xc0%*C\xc4\xd9", mlWidth - 2);
+	mlTop++;
 }
 
 /* actual delete the data */
