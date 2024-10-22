@@ -152,7 +152,7 @@ static void modland_com_initialize_Draw (
 
 	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft+20, 0x07, mlWidth, "%*.*o" "%s" "%0.7o" "%16C ""%*.*o" "%s" "%0.7o ",
+	console->DisplayPrintf (mlTop++, mlLeft+20, 0x07, mlWidth - 20, "%*.*o" "%s" "%0.7o" "%16C ""%*.*o" "%s" "%0.7o ",
 		(cancel == 2) ? 7 : 0,
 		(cancel == 2) ? 0 : 1,
 		cancel ? "< CANCEL >" : "          ",

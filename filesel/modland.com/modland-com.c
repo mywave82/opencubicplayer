@@ -450,8 +450,7 @@ static int modland_com_add_data_fileentry (struct modland_com_initialize_t *s, c
 		return -1;
 	}
 
-
-	if (modland_com.database.fileentries_n <= modland_com.database.fileentries_size)
+	if (modland_com.database.fileentries_n >= modland_com.database.fileentries_size)
 	{
 		struct modland_com_fileentry_t *tmp = realloc (modland_com.database.fileentries, (modland_com.database.fileentries_size + 4096) * sizeof (struct modland_com_fileentry_t));
 		if (!tmp)
