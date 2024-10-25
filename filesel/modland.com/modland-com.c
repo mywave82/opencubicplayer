@@ -308,6 +308,7 @@ static int modland_com_sort_file (void)
 static int modland_com_addparent (unsigned int offset, const int length)
 {
 	char *str = malloc (length + 1);
+	char *temp;
 	unsigned int i;
 
 	if (!str)
@@ -324,8 +325,9 @@ static int modland_com_addparent (unsigned int offset, const int length)
 		return -1;
 	}
 
+	temp = modland_filename_strdup (str); /* We have to allocate the string, before we insert it into the list; since allocating the string might need a string-realloc from the string cache */
 	memmove (&modland_com.database.direntries[offset+1], &modland_com.database.direntries[offset], (modland_com.database.direntries_n - offset) * sizeof (modland_com.database.direntries[0]));
-	modland_com.database.direntries[offset] = modland_filename_strdup (str);
+	modland_com.database.direntries[offset] = temp;
 	free (str);
 	modland_com.database.direntries_n++;
 
