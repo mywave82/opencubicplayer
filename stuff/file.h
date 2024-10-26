@@ -18,7 +18,8 @@ void osfile_setpos (struct osfile_t *f, uint64_t pos);
 
 void osfile_truncate_at (struct osfile_t *f, uint64_t pos);
 
-void osfile_purge_readaheadcache (struct osfile_t *f);
+void osfile_purge_readahead_cache (struct osfile_t *f);
+int64_t osfile_purge_writeback_cache (struct osfile_t *f);
 
 int64_t osfile_write (struct osfile_t *f, const void *data, uint64_t size); /* returns < 0 on error (also for partial writes) */
 

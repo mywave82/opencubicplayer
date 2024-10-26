@@ -40,7 +40,8 @@ struct osfile_t
 	char *pathname;
 	uint64_t pos; /* user-space */
 	uint64_t realpos; /* kernel-space */
-	struct osfile_cacheline_t cache;
+	struct osfile_cacheline_t readahead_cache;
+	struct osfile_cacheline_t writeback_cache;
 };
 
 struct osfile_t *osfile_open_readwrite (const char *pathname, int dolock, int mustcreate)
@@ -247,19 +248,136 @@ uint64_t osfile_getfilesize (struct osfile_t *f)
 #endif
 }
 
+int64_t osfile_purge_writeback_cache (struct osfile_t *f)
+{
+	int64_t retval = 0;
+#ifndef _WIN32
+	ssize_t res;
+#endif
+	if (!f)
+	{
+		return -1;
+	}
+
+#ifdef _WIN32
+	if (f->realpos != f->writeback_cache.offset)
+	{
+		LARGE_INTEGER newpos;
+		newpos.QuadPart = (uint64_t)f->writeback_cache.offset;
+		if (!SetFilePointerEx (f->h, newpos, 0, FILE_BEGIN))
+		{
+			char *lpMsgBuf = NULL;
+			if (FormatMessage (
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				FORMAT_MESSAGE_FROM_SYSTEM     |
+				FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+				NULL,                                      /* lpSource */
+				GetLastError(),                            /* dwMessageId */
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+				(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+				0,                                         /* nSize */
+				NULL                                       /* Arguments */
+			))
+			{
+				fprintf(stderr, "Failed to SetFilePointerEx(%s): %s", f->pathname, lpMsgBuf);
+				LocalFree (lpMsgBuf);
+			}
+			return -1;
+		}
+		f->realpos = f->writeback_cache.offset;
+	}
+
+	{
+		DWORD NumberOfBytesWritten = 0;
+		BOOL Result;
+
+		Result = WriteFile (f->h, f->writeback_cache.data, f->writeback_cache.fill, &NumberOfBytesWritten, 0);
+		if ((!Result) || (NumberOfBytesWritten != f->writeback_cache.fill))
+		{
+			char *lpMsgBuf = NULL;
+			if (FormatMessage (
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				FORMAT_MESSAGE_FROM_SYSTEM     |
+				FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+				NULL,                                      /* lpSource */
+				GetLastError(),                            /* dwMessageId */
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+				(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+				0,                                         /* nSize */
+				NULL                                       /* Arguments */
+			))
+			{
+				fprintf(stderr, "Failed to write %lu bytes into %s: %s", (unsigned long int)f->writeback_cache.fill, f->pathname, lpMsgBuf);
+				LocalFree (lpMsgBuf);
+			}
+			f->realpos += NumberOfBytesWritten;
+			return -1;
+		}
+	}
+#else
+	if (f->realpos != f->writeback_cache.offset)
+	{
+		if (lseek (f->fd, f->writeback_cache.offset, SEEK_SET) == (off_t) -1)
+		{
+			fprintf (stderr, "Failed to lseek %s: %s\n", f->pathname, strerror (errno));
+			return -1;
+		}
+		f->realpos = f->writeback_cache.offset;
+	}
+
+	while (f->writeback_cache.fill)
+	{
+		res = write (f->fd, f->writeback_cache.data, f->writeback_cache.fill);
+		if (res <= 0) /* write should never return zero, so might aswell add it here */
+		{
+			if ((errno == EAGAIN) || (errno == EINTR))
+			{
+				continue;
+			}
+			fprintf (stderr, "Failed to write %lu bytes into %s: %s\n", (unsigned long int)f->writeback_cache.fill, f->pathname, strerror (errno));
+			return -1;
+		}
+		if (res < f->writeback_cache.fill)
+		{
+			fprintf (stderr, "Partial write %lu of %lu bytes into %s\n", (unsigned long int)res, (unsigned long int)f->writeback_cache.fill, f->pathname);
+			memmove (f->writeback_cache.data, f->writeback_cache.data + res, f->writeback_cache.fill - res);
+			f->realpos += res;
+			f->writeback_cache.offset += res;
+			f->writeback_cache.fill -= res;
+
+			return -1;
+		}
+		break;
+	}
+#endif
+	retval += f->writeback_cache.fill;
+	f->realpos += f->writeback_cache.fill;
+	f->writeback_cache.offset += f->writeback_cache.fill;
+	f->writeback_cache.fill = 0;
+
+	return retval;
+}
+
 void osfile_close (struct osfile_t *f)
 {
 	if (!f)
 	{
 		return;
 	}
+
+	if (f->writeback_cache.fill)
+	{
+		osfile_purge_writeback_cache (f);
+	}
+
 #ifdef _WIN32
 	CloseHandle (f->h);
 #else
 	close (f->fd);
 #endif
 	free (f->pathname);
-	free (f->cache.data);
+	free (f->readahead_cache.data);
+	free (f->writeback_cache.data);
 	free (f);
 }
 
@@ -275,6 +393,10 @@ void osfile_setpos (struct osfile_t *f, uint64_t pos)
 
 void osfile_truncate_at (struct osfile_t *f, uint64_t pos)
 {
+	if (f->writeback_cache.fill)
+	{
+		osfile_purge_writeback_cache (f);
+	}
 #ifdef _WIN32
 	LARGE_INTEGER newpos;
 	newpos.QuadPart = (uint64_t)pos;
@@ -327,162 +449,130 @@ void osfile_truncate_at (struct osfile_t *f, uint64_t pos)
 #endif
 }
 
-void osfile_purge_readaheadcache (struct osfile_t *f)
+void osfile_purge_readahead_cache (struct osfile_t *f)
 {
 	if (!f)
 	{
 		return;
 	}
-	free (f->cache.data);
-	f->cache.data = 0;
-	f->cache.size = 0;
-	f->cache.fill = 0;
-	f->cache.offset = 0;
+	f->readahead_cache.fill = 0;
+	f->readahead_cache.offset = 0;
+}
+
+static int osfile_allocate_writeback_cache (struct osfile_t *f)
+{
+	if (!f)
+	{
+		return -1;
+	}
+	if (f->writeback_cache.data)
+	{
+		return 0;
+	}
+	f->writeback_cache.size = 256 * 1024;
+	f->writeback_cache.data = malloc (f->writeback_cache.size);
+	if (!f->writeback_cache.data)
+	{
+		fprintf (stderr, "osfile_allocate_writeback_cache: malloc() failed\n");
+		f->writeback_cache.size = 0;
+		return -1;
+	}
+	f->writeback_cache.fill = 0;
+	f->writeback_cache.offset = 0;
+	return 0;
 }
 
 int64_t osfile_write (struct osfile_t *f, const void *data, uint64_t size)
 {
-#ifdef _WIN32
 	int64_t retval = 0;
 	if (!f)
 	{
 		return -1;
 	}
-	if (f->cache.data)
+	if (!f->writeback_cache.data)
 	{
-		osfile_purge_readaheadcache (f);
-	}
-	if (f->realpos != f->pos)
-	{
-		LARGE_INTEGER newpos;
-		newpos.QuadPart = (uint64_t)f->pos;
-		if (!SetFilePointerEx (f->h, newpos, 0, FILE_BEGIN))
+		if (osfile_allocate_writeback_cache (f))
 		{
-			char *lpMsgBuf = NULL;
-			if (FormatMessage (
-				FORMAT_MESSAGE_ALLOCATE_BUFFER |
-				FORMAT_MESSAGE_FROM_SYSTEM     |
-				FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
-				NULL,                                      /* lpSource */
-				GetLastError(),                            /* dwMessageId */
-				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
-				(LPSTR) &lpMsgBuf,                         /* lpBuffer */
-				0,                                         /* nSize */
-				NULL                                       /* Arguments */
-			))
-			{
-				fprintf(stderr, "Failed to SetFilePointerEx(%s): %s", f->pathname, lpMsgBuf);
-				LocalFree (lpMsgBuf);
-			}
 			return -1;
 		}
-		f->realpos = f->pos;
 	}
-
+	if (f->readahead_cache.fill)
 	{
-		DWORD NumberOfBytesWritten = 0;
-		BOOL Result;
-
-		Result = WriteFile (f->h, data, size, &NumberOfBytesWritten, 0);
-		if ((!Result) || (NumberOfBytesWritten != size))
-		{
-			char *lpMsgBuf = NULL;
-			if (FormatMessage (
-				FORMAT_MESSAGE_ALLOCATE_BUFFER |
-				FORMAT_MESSAGE_FROM_SYSTEM     |
-				FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
-				NULL,                                      /* lpSource */
-				GetLastError(),                            /* dwMessageId */
-				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
-				(LPSTR) &lpMsgBuf,                         /* lpBuffer */
-				0,                                         /* nSize */
-				NULL                                       /* Arguments */
-			))
-			{
-				fprintf(stderr, "Failed to write %lu bytes into %s: %s", (unsigned long int)size, f->pathname, lpMsgBuf);
-				LocalFree (lpMsgBuf);
-			}
-			f->realpos += NumberOfBytesWritten;
-			return -1;
-		}
-		f->pos += size;
-		f->realpos += size;
-		data += size;
-		size -= size;
-		retval += size;
-	}
-	return retval;
-#else
-	int64_t retval = 0;
-	ssize_t res;
-	if (!f)
-	{
-		return -1;
-	}
-	if (f->cache.data)
-	{
-		osfile_purge_readaheadcache (f);
-	}
-	if (f->realpos != f->pos)
-	{
-		if (lseek (f->fd, f->pos, SEEK_SET) == (off_t) -1)
-		{
-			fprintf (stderr, "Failed to lseek %s: %s\n", f->pathname, strerror (errno));
-			return -1;
-		}
-		f->realpos = f->pos;
+		osfile_purge_readahead_cache (f);
 	}
 
 	while (size)
 	{
-		res = write (f->fd, data, size);
-		if (res <= 0) /* write should never return zero, so might aswell add it here */
+		uint64_t chunk;
+		uint64_t available = f->writeback_cache.size - f->writeback_cache.fill;
+		if (size > available)
 		{
-			if ((errno == EAGAIN) || (errno == EINTR))
-			{
-				continue;
-			}
-			fprintf (stderr, "Failed to write %lu bytes into %s: %s\n", (unsigned long int)size, f->pathname, strerror (errno));
-			return -1;
+			chunk = available;
+		} else {
+			chunk = size;
 		}
-		f->pos += res;
-		f->realpos += res;
-		data += res;
-		size -= res;
-		retval += res;
+		if ((!f->writeback_cache.fill) || /* empty */
+		    ((f->writeback_cache.offset + f->writeback_cache.fill) == f->pos)) /* we can append */
+		{
+			if (!f->writeback_cache.fill)
+			{
+				f->writeback_cache.offset = f->pos;
+			}
+
+			memcpy (f->writeback_cache.data + f->writeback_cache.fill, data, chunk);
+			f->writeback_cache.fill += chunk;
+
+			data += chunk;
+			size -= chunk;
+			f->pos += chunk;
+			retval += chunk;
+		} else {
+			/* we could implement support for seek back + write support, but only OCP use-case is to skip only so we stick to the most simple solution: purge the cache */
+			if (osfile_purge_writeback_cache (f) < 0)
+			{
+				return -1;
+			}
+		}
+
+		if (f->writeback_cache.fill >= f->writeback_cache.size)
+		{
+			if (osfile_purge_writeback_cache (f) < 0)
+			{
+				return -1;
+			}
+		}
 	}
 	return retval;
-#endif
 }
 
-static int osfile_allocate_readaheadcache (struct osfile_t *f)
+static int osfile_allocate_readahead_cache (struct osfile_t *f)
 {
 	if (!f)
 	{
 		return -1;
 	}
-	if (f->cache.data)
+	if (f->readahead_cache.data)
 	{
 		return 0;
 	}
-	f->cache.size = 256 * 1024;
-	f->cache.data = malloc (f->cache.size);
-	if (!f->cache.data)
+	f->readahead_cache.size = 256 * 1024;
+	f->readahead_cache.data = malloc (f->readahead_cache.size);
+	if (!f->readahead_cache.data)
 	{
-		fprintf (stderr, "osfile_allocate_readaheadcache: malloc() failed\n");
-		f->cache.size = 0;
+		fprintf (stderr, "osfile_allocate_readahead_cache: malloc() failed\n");
+		f->readahead_cache.size = 0;
 		return -1;
 	}
-	f->cache.fill = 0;
-	f->cache.offset = 0;
+	f->readahead_cache.fill = 0;
+	f->readahead_cache.offset = 0;
 	return 0;
 }
 
-static int osfile_fill_cache (struct osfile_t *f)
+static int osfile_fill_readahead_cache (struct osfile_t *f)
 {
 #ifdef _WIN32
-	size_t need = f->cache.size - f->cache.fill;
-	off_t targetpos = f->cache.offset + f->cache.fill;
+	size_t need = f->readahead_cache.size - f->readahead_cache.fill;
+	off_t targetpos = f->readahead_cache.offset + f->readahead_cache.fill;
 
 	if (f->realpos != targetpos)
 	{
@@ -513,7 +603,7 @@ static int osfile_fill_cache (struct osfile_t *f)
 
 	{
 		DWORD NumberOfBytesRead = 0;
-		if (!ReadFile (f->h, f->cache.data + f->cache.fill, need, &NumberOfBytesRead, 0))
+		if (!ReadFile (f->h, f->readahead_cache.data + f->readahead_cache.fill, need, &NumberOfBytesRead, 0))
 		{
 			char *lpMsgBuf = NULL;
 			if (FormatMessage (
@@ -533,14 +623,14 @@ static int osfile_fill_cache (struct osfile_t *f)
 			}
 			return -1;
 		}
-		f->cache.fill += NumberOfBytesRead;
+		f->readahead_cache.fill += NumberOfBytesRead;
 		f->realpos += NumberOfBytesRead;
 		return 0;
 	}
 #else
 	int res;
-	size_t need = f->cache.size - f->cache.fill;
-	off_t targetpos = f->cache.offset + f->cache.fill;
+	size_t need = f->readahead_cache.size - f->readahead_cache.fill;
+	off_t targetpos = f->readahead_cache.offset + f->readahead_cache.fill;
 
 	if (f->realpos != targetpos)
 	{
@@ -554,7 +644,7 @@ static int osfile_fill_cache (struct osfile_t *f)
 
 	while (1)
 	{
-		res = read (f->fd, f->cache.data + f->cache.fill, need);
+		res = read (f->fd, f->readahead_cache.data + f->readahead_cache.fill, need);
 		if (res < 0)
 		{
 			if ((errno == EAGAIN) || (errno == EINTR))
@@ -568,7 +658,7 @@ static int osfile_fill_cache (struct osfile_t *f)
 		{
 			return 0; /* no more data to read - EOF */
 		}
-		f->cache.fill += res;
+		f->readahead_cache.fill += res;
 		f->realpos += res;
 		return 0;
 	}
@@ -582,31 +672,35 @@ int64_t osfile_read (struct osfile_t *f, void *data, uint64_t size) /* returns n
 	{
 		return -1;
 	}
-	if (!f->cache.data)
+	if (!f->readahead_cache.data)
 	{
-		if (osfile_allocate_readaheadcache (f))
+		if (osfile_allocate_readahead_cache (f))
 		{
 			return -1;
 		}
+	}
+	if (f->writeback_cache.fill)
+	{
+		osfile_purge_writeback_cache (f);
 	}
 	while (size)
 	{
 		uint64_t available;
 		uint64_t reloffset;
 
-		if ( (f->pos < f->cache.offset) || /* position header is behind real-position - reset cache content */
-		     ((f->cache.offset + f->cache.fill) <= f->pos) ) /* cache-ends before real-position, content in cache is useless */
+		if ( (f->pos < f->readahead_cache.offset) || /* position header is behind real-position - reset cache content */
+		     ((f->readahead_cache.offset + f->readahead_cache.fill) <= f->pos) ) /* cache-ends before real-position, content in cache is useless */
 		{
-			f->cache.offset = f->pos;
-			f->cache.fill = 0;
-			if (osfile_fill_cache (f))
+			f->readahead_cache.offset = f->pos;
+			f->readahead_cache.fill = 0;
+			if (osfile_fill_readahead_cache (f))
 			{
 				return -1;
 			}
 		}
 
-		reloffset = f->pos - f->cache.offset;
-		available = f->cache.fill - reloffset;
+		reloffset = f->pos - f->readahead_cache.offset;
+		available = f->readahead_cache.fill - reloffset;
 		if (!available) // EOF
 		{
 			return retval;
@@ -615,7 +709,7 @@ int64_t osfile_read (struct osfile_t *f, void *data, uint64_t size) /* returns n
 		{
 			available = size;
 		}
-		memcpy (data, f->cache.data + reloffset, available);
+		memcpy (data, f->readahead_cache.data + reloffset, available);
 		f->pos += available;
 		data += available;
 		size -= available;
@@ -1048,6 +1142,7 @@ void osdir_size_cancel (struct osdir_size_t *r)
 	r->internal = 0;
 }
 
+#ifndef CFDATAHOMEDIR_OVERRIDE /* Do not include this code when making unit-tests */
 int osdir_trash_available (const char *path)
 {
 	struct stat st1, st2;
@@ -1325,5 +1420,6 @@ void osdir_delete_cancel (struct osdir_delete_t *r)
 	}
 	r->internal = 0;
 }
+#endif
 
 #endif

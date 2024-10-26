@@ -325,7 +325,7 @@ int dirdbInit (const struct configAPI_t *configAPI)
 	dumpdirdb();
 #endif
 
-	osfile_purge_readaheadcache (dirdbFile);
+	osfile_purge_readahead_cache (dirdbFile);
 
 	fprintf(stderr, "Done\n");
 	return 1;
@@ -348,7 +348,7 @@ unload:
 		dirdbData[i].next = dirdbFreeChild;
 		dirdbFreeChild = i;
 	}
-	osfile_purge_readaheadcache (dirdbFile);
+	osfile_purge_readahead_cache (dirdbFile);
 	return retval;
 }
 

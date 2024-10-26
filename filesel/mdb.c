@@ -695,7 +695,7 @@ int mdbInit (const struct configAPI_t *configAPI)
 
 	mdbCleanSlate = 0;
 
-	osfile_purge_readaheadcache (mdbFile);
+	osfile_purge_readahead_cache (mdbFile);
 
 	fprintf(stderr, "Done\n");
 	return 1;
