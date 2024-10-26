@@ -27,12 +27,16 @@ void theRenderProc(void *userdata, Uint8 *stream, int len)
 
 	PRINT("%s(,,%d)\n", __FUNCTION__, len);
 
-	SDL_LockAudio();
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_LockAudioDevice (status);
+#else
+	SDL_LockAudio ();
+#endif
 
 #if SDL_VERSION_ATLEAST(2,0,18)
-	lastCallbackTime = SDL_GetTicks64();
+	lastCallbackTime = SDL_GetTicks64 ();
 #else
-	lastCallbackTime = SDL_GetTicks();
+	lastCallbackTime = SDL_GetTicks ();
 #endif
 
 	plrDriverAPI->ringbufferAPI->get_tail_samples (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
@@ -73,7 +77,11 @@ void theRenderProc(void *userdata, Uint8 *stream, int len)
 		lastLength += length2 >> 2 /* stereo + bit16 */;
 	}
 
-	SDL_UnlockAudio();
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_UnlockAudioDevice (status);
+#else
+	SDL_UnlockAudio ();
+#endif
 
 	if (len)
 	{
@@ -89,7 +97,11 @@ static unsigned int devpSDLIdle (void)
 
 	PRINT("%s()\n", __FUNCTION__);
 
-	SDL_LockAudio();
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_LockAudioDevice (status);
+#else
+	SDL_LockAudio ();
+#endif
 
 /* START: this magic updates the tail by time, causing events in the ringbuffer to be fired if needed and audio-visuals to be more responsive */
 	{
@@ -105,9 +117,9 @@ static unsigned int devpSDLIdle (void)
 		plrDriverAPI->ringbufferAPI->get_tail_samples (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
 
 #if SDL_VERSION_ATLEAST(2,0,18)
-		curTime = SDL_GetTicks64();
+		curTime = SDL_GetTicks64 ();
 #else
-		curTime = SDL_GetTicks();
+		curTime = SDL_GetTicks ();
 #endif
 		expect_consume = devpSDLRate * (curTime - lastCallbackTime) / 1000;
 		expect_left = (signed int)lastLength - expect_consume;
@@ -139,7 +151,11 @@ static unsigned int devpSDLIdle (void)
 		devpSDLPauseSamples += (length1 + length2) >> 2; /* stereo + 16bit */
 	}
 
-	SDL_UnlockAudio();
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_UnlockAudioDevice (status);
+#else
+	SDL_UnlockAudio ();
+#endif
 
 	RetVal = length1 + length2;
 
@@ -156,9 +172,19 @@ static void devpSDLPeekBuffer (void **buf1, unsigned int *buf1length, void **buf
 
 	devpSDLIdle (); /* update the tail */
 
-	SDL_LockAudio();
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_LockAudioDevice (status);
+#else
+	SDL_LockAudio ();
+#endif
+
 	plrDriverAPI->ringbufferAPI->get_tailandprocessing_samples (devpSDLRingBuffer, &pos1, &length1, &pos2, &length2);
-	SDL_UnlockAudio();
+
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_UnlockAudioDevice (status);
+#else
+	SDL_UnlockAudio ();
+#endif
 
 	if (length1)
 	{
@@ -215,16 +241,16 @@ static int devpSDLPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 	desired.userdata = NULL;
 
 #if SDL_VERSION_ATLEAST(2,0,18)
-	lastCallbackTime = SDL_GetTicks64();
+	lastCallbackTime = SDL_GetTicks64 ();
 #else
-	lastCallbackTime = SDL_GetTicks();
+	lastCallbackTime = SDL_GetTicks ();
 #endif
 	lastLength = 0;
 
 #if SDL_VERSION_ATLEAST(2,0,0)
-	status=SDL_OpenAudioDevice(NULL, 0, &desired, &obtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_SAMPLES_CHANGE);
+	status=SDL_OpenAudioDevice (NULL, 0, &desired, &obtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_SAMPLES_CHANGE);
 #else
-	status=SDL_OpenAudio(&desired, &obtained);
+	status=SDL_OpenAudio (&desired, &obtained);
 #endif
 	if (status < 0)
 	{
@@ -253,13 +279,23 @@ static int devpSDLPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 	}
 	if (!(devpSDLBuffer=calloc (buflength, 4)))
 	{
-		SDL_CloseAudio();
+#if SDL_VERSION_ATLEAST(2,0,0)
+		SDL_CloseAudioDevice (status);
+		status=-1;
+#else
+		SDL_CloseAudio ();
+#endif
 		return 0;
 	}
 
 	if (!(devpSDLRingBuffer = plrDriverAPI->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, buflength)))
 	{
-		SDL_CloseAudio();
+#if SDL_VERSION_ATLEAST(2,0,0)
+		SDL_CloseAudioDevice (status);
+		status=-1;
+#else
+		SDL_CloseAudio ();
+#endif
 		free (devpSDLBuffer); devpSDLBuffer = 0;
 		return 0;
 	}
@@ -270,9 +306,9 @@ static int devpSDLPlay (uint32_t *rate, enum plrRequestFormat *format, struct oc
 
 #warning This needs to delay until we have received the first commit
 #if SDL_VERSION_ATLEAST(2,0,0)
-	SDL_PauseAudioDevice(status, 0);
+	SDL_PauseAudioDevice (status, 0);
 #else
-	SDL_PauseAudio(0);
+	SDL_PauseAudio (0);
 #endif
 	return 1;
 }
@@ -284,11 +320,19 @@ static void devpSDLGetBuffer (void **buf, unsigned int *samples)
 
 	PRINT("%s()\n", __FUNCTION__);
 
-	SDL_LockAudio();
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_LockAudioDevice (status);
+#else
+	SDL_LockAudio ();
+#endif
 
 	plrDriverAPI->ringbufferAPI->get_head_samples (devpSDLRingBuffer, &pos1, &length1, 0, 0);
 
-	SDL_UnlockAudio();
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_UnlockAudioDevice (status);
+#else
+	SDL_UnlockAudio ();
+#endif
 
 	*samples = length1;
 	*buf = devpSDLBuffer + (pos1<<2); /* stereo + bit16 */
@@ -302,17 +346,38 @@ static uint32_t devpSDLGetRate (void)
 static void devpSDLOnBufferCallback (int samplesuntil, void (*callback)(void *arg, int samples_ago), void *arg)
 {
 	assert (devpSDLRingBuffer);
+
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_LockAudioDevice (status);
+#else
+	SDL_LockAudio ();
+#endif
+
 	plrDriverAPI->ringbufferAPI->add_tail_callback_samples (devpSDLRingBuffer, samplesuntil, callback, arg);
+
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_UnlockAudioDevice (status);
+#else
+	SDL_UnlockAudio ();
+#endif
 }
 
 static void devpSDLCommitBuffer (unsigned int samples)
 {
 	PRINT("%s(%u)\n", __FUNCTION__, samples);
-	SDL_LockAudio();
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_LockAudioDevice (status);
+#else
+	SDL_LockAudio ();
+#endif
 
 	plrDriverAPI->ringbufferAPI->head_add_samples (devpSDLRingBuffer, samples);
 
-	SDL_UnlockAudio();
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_UnlockAudioDevice (status);
+#else
+	SDL_UnlockAudio ();
+#endif
 }
 
 static void devpSDLPause (int pause)
@@ -327,12 +392,13 @@ static void devpSDLStop (struct cpifaceSessionAPI_t *cpifaceSession)
 	/* TODO, forceflush */
 
 #if SDL_VERSION_ATLEAST(2,0,0)
-	SDL_PauseAudioDevice(status, 1);
+	SDL_PauseAudioDevice (status, 1);
+	SDL_CloseAudioDevice (status);
+	status=-1;
 #else
-	SDL_PauseAudio(1);
+	SDL_PauseAudio (1);
+	SDL_CloseAudio ();
 #endif
-
-	SDL_CloseAudio();
 
 	free(devpSDLBuffer); devpSDLBuffer=0;
 	if (devpSDLRingBuffer)
@@ -347,7 +413,19 @@ static void devpSDLStop (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static void devpSDLGetStats (uint64_t *committed, uint64_t *processed)
 {
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_LockAudioDevice (status);
+#else
+	SDL_LockAudio ();
+#endif
+
 	plrDriverAPI->ringbufferAPI->get_stats (devpSDLRingBuffer, committed, processed);
+
+#if SDL_VERSION_ATLEAST(2,0,0)
+	SDL_UnlockAudioDevice (status);
+#else
+	SDL_UnlockAudio ();
+#endif
 }
 
 static const struct plrDevAPI_t devpSDL = {
@@ -368,7 +446,7 @@ static const struct plrDevAPI_t devpSDL = {
 static void sdlClose (const struct plrDriver_t *driver)
 {
 	PRINT("%s()\n", __FUNCTION__);
-	SDL_QuitSubSystem(SDL_INIT_AUDIO);
+	SDL_QuitSubSystem (SDL_INIT_AUDIO);
 }
 
 static int sdlDetect (const struct plrDriver_t *driver)
