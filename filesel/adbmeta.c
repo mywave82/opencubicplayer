@@ -332,7 +332,7 @@ int adbMetaInit (const struct configAPI_t *configAPI)
 
 	retval = adbMetaInit_ParseFd (adbMetaFile);
 
-	osfile_purge_readaheadcache (adbMetaFile);
+	osfile_purge_readahead_cache (adbMetaFile);
 
 	fprintf (stderr, "Done\n");
 
