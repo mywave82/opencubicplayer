@@ -202,7 +202,7 @@ static void timidity_apply_EventDelayed (struct cpifaceSessionAPI_t *cpifaceSess
 				{
 					if (channelstat[event->v2].note[i] == event->v3)
 					{
-						PRINT ("RESTART ch=%ld note=%ld\n", event->v2, event->v3);
+						PRINT ("RESTART ch=%"PRIdPTR" note=%"PRIdPTR"\n", event->v2, event->v3);
 						channelstat[event->v2].vol[i] = event->v4;
 						channelstat[event->v2].opt[i] = 1; /* no idea */
 						return; /* already playing? */
@@ -218,7 +218,7 @@ static void timidity_apply_EventDelayed (struct cpifaceSessionAPI_t *cpifaceSess
 				{
 					if (channelstat[event->v2].note[i] > event->v3)
 					{ /* INSERT */
-						PRINT ("INSERT ch=%ld note=%ld\n", event->v2, event->v3);
+						PRINT ("INSERT ch=%"PRIdPTR" note=%"PRIdPTR"\n", event->v2, event->v3);
 						memmove (channelstat[event->v2].note + i + 1, channelstat[event->v2].note + i, channelstat[event->v2].notenum - i);
 						memmove (channelstat[event->v2].vol + i + 1, channelstat[event->v2].vol + i, channelstat[event->v2].notenum - i);
 						memmove (channelstat[event->v2].opt + i + 1, channelstat[event->v2].opt + i, channelstat[event->v2].notenum - i);
@@ -232,7 +232,7 @@ static void timidity_apply_EventDelayed (struct cpifaceSessionAPI_t *cpifaceSess
 				}
 
 				/* APPEND */
-				PRINT ("APPEND ch=%ld note=%ld\n", event->v2, event->v3);
+				PRINT ("APPEND ch=%"PRIdPTR" note=%"PRIdPTR"\n", event->v2, event->v3);
 				channelstat[event->v2].note[channelstat[event->v2].notenum] = event->v3;
 				channelstat[event->v2].vol[channelstat[event->v2].notenum] = event->v4;
 				channelstat[event->v2].opt[channelstat[event->v2].notenum] = 1; /* no idea */
@@ -257,7 +257,7 @@ static void timidity_apply_EventDelayed (struct cpifaceSessionAPI_t *cpifaceSess
 				{
 					if (channelstat[event->v2].note[i] == event->v3)
 					{ /* REMOVE */
-						PRINT ("REMOVE ch=%ld note=%ld\n", event->v2, event->v3);
+						PRINT ("REMOVE ch=%"PRIdPTR" note=%"PRIdPTR"\n", event->v2, event->v3);
 						memmove (channelstat[event->v2].note + i, channelstat[event->v2].note + i + 1, channelstat[event->v2].notenum - i - 1);
 						memmove (channelstat[event->v2].vol + i, channelstat[event->v2].vol + i + 1, channelstat[event->v2].notenum - i - 1);
 						memmove (channelstat[event->v2].opt + i, channelstat[event->v2].opt + i + 1, channelstat[event->v2].notenum - i - 1);
@@ -265,7 +265,7 @@ static void timidity_apply_EventDelayed (struct cpifaceSessionAPI_t *cpifaceSess
 						return;
 					}
 				}
-				PRINT ("NOT FOUND REMOVE ch=%ld note=%ld\n", event->v2, event->v3);
+				PRINT ("NOT FOUND REMOVE ch=%"PRIdPTR" note=%"PRIdPTR"\n", event->v2, event->v3);
 			}
 			return;
 
@@ -602,76 +602,76 @@ static void ocp_ctl_event(CtlEvent *event)
 			PRINT ("ctl->event (event=CTLE_NOW_LOADING, v1=\"%s\")\n", (char *)event->v1);
 			break;
 		case CTLE_LOADING_DONE:
-			PRINT ("ctl->event (event=CTLE_LOADING_DONE, v1=%ld %s)\n", event->v1, (event->v1<0)?"error":(event->v1>0)?"terminated":"success");
+			PRINT ("ctl->event (event=CTLE_LOADING_DONE, v1=%"PRIdPTR" %s)\n", event->v1, (event->v1<0)?"error":(event->v1>0)?"terminated":"success");
 			break;
 		case CTLE_PLAY_START:
-			PRINT ("ctl->event (event=CTLE_PLAY_START, v1=%ld samples)\n", event->v1);
+			PRINT ("ctl->event (event=CTLE_PLAY_START, v1=%"PRIdPTR" samples)\n", event->v1);
 			break;
 		case CTLE_PLAY_END:
 			PRINT ("ctl->event (event=CTLE_PLAY_END)\n");
 			break;
 		case CTLE_CURRENT_TIME:
-			PRINT ("ctl->event (event=CTLE_CURRENT_TIME, v1=%ld seconds, v2=%ld voices)\n", event->v1, event->v2);
+			PRINT ("ctl->event (event=CTLE_CURRENT_TIME, v1=%"PRIdPTR"seconds, v2=%"PRIdPTR" voices)\n", event->v1, event->v2);
 			break;
 		case CTLE_NOTE:
-			PRINT ("ctl->event (event=CTLE_NOTE, v1=%ld status, v2=%ld ch, v3=%ld note, v4=%ld velocity)\n", event->v1, event->v2, event->v3, event->v4);
+			PRINT ("ctl->event (event=CTLE_NOTE, v1=%"PRIdPTR" status, v2=%"PRIdPTR" ch, v3=%"PRIdPTR" note, v4=%"PRIdPTR" velocity)\n", event->v1, event->v2, event->v3, event->v4);
 			break;
 		case CTLE_MASTER_VOLUME:
-			PRINT ("ctl->event (event=CTLE_MASTER_VOLUME, v1=%ld amp %%)\n", event->v1);
+			PRINT ("ctl->event (event=CTLE_MASTER_VOLUME, v1=%"PRIdPTR" amp %%)\n", event->v1);
 			break;
 		case CTLE_METRONOME:
-			PRINT ("ctl->event (event=CTLE_METRONOME, v1=%ld measure, v2=%ld beat)\n", event->v1, event->v2);
+			PRINT ("ctl->event (event=CTLE_METRONOME, v1=%"PRIdPTR" measure, v2=%"PRIdPTR" beat)\n", event->v1, event->v2);
 			break;
 		case CTLE_KEYSIG:
-			PRINT ("ctl->event (event=CTLE_KEYSIG, v1=%ld key sig)\n", event->v1);
+			PRINT ("ctl->event (event=CTLE_KEYSIG, v1=%"PRIdPTR" key sig)\n", event->v1);
 			break;
 		case CTLE_KEY_OFFSET:
-			PRINT ("ctl->event (event=CTLE_KEY_OFFSET, v1=%ld key offset)\n", event->v1);
+			PRINT ("ctl->event (event=CTLE_KEY_OFFSET, v1=%"PRIdPTR" key offset)\n", event->v1);
 			break;
 		case CTLE_TEMPO:
-			PRINT ("ctl->event (event=CTLE_TEMPO, v1=%ld tempo)\n", event->v1);
+			PRINT ("ctl->event (event=CTLE_TEMPO, v1=%"PRIdPTR" tempo)\n", event->v1);
 			break;
 		case CTLE_TIME_RATIO:
-			PRINT ("ctl->event (event=CTLE_TIME_RATIO, v1=%ld time ratio %%)\n", event->v1);
+			PRINT ("ctl->event (event=CTLE_TIME_RATIO, v1=%"PRIdPTR" time ratio %%)\n", event->v1);
 			break;
 		case CTLE_TEMPER_KEYSIG:
-			PRINT ("ctl->event (event=CTLE_TEMPER_KEYSIG, v1=%ld tuning key sig)\n", event->v1);
+			PRINT ("ctl->event (event=CTLE_TEMPER_KEYSIG, v1=%"PRIdPTR" tuning key sig)\n", event->v1);
 			break;
 		case CTLE_TEMPER_TYPE:
-			PRINT ("ctl->event (event=CTLE_TEMPER_TYPE, v1=%ld ch, v2=%ld tuning type)\n", event->v1, event->v2);
+			PRINT ("ctl->event (event=CTLE_TEMPER_TYPE, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" tuning type)\n", event->v1, event->v2);
 			break;
 		case CTLE_MUTE:
-			PRINT ("ctl->event (event=CTLE_MUTE, v1=%ld ch, v2=%ld is_mute)\n", event->v1, event->v2);
+			PRINT ("ctl->event (event=CTLE_MUTE, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" is_mute)\n", event->v1, event->v2);
 			break;
 		case CTLE_PROGRAM:
-			PRINT ("ctl->event (event=CTLE_PROGRAM, v1=%ld ch, v2=%ld prog, v3=name \"%s\", v4=%ld bank %dmsb.%dlsb)\n", event->v1, event->v2, (char *)event->v3, event->v4, (int)(event->v4>>8), (int)(event->v4&0xff));
+			PRINT ("ctl->event (event=CTLE_PROGRAM, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" prog, v3=name \"%s\", v4=%"PRIdPTR" bank %dmsb.%dlsb)\n", event->v1, event->v2, (char *)event->v3, event->v4, (intptr_t)(event->v4>>8), (intptr_t)(event->v4&0xff));
 			break;
 		case CTLE_VOLUME:
-			PRINT ("ctl->event (event=CTLE_VOLUME, v1=%ld ch, v2=%ld value)\n", event->v1, event->v2);
+			PRINT ("ctl->event (event=CTLE_VOLUME, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" value)\n", event->v1, event->v2);
 			break;
 		case CTLE_EXPRESSION:
-			PRINT ("ctl->event (event=CTLE_EXPRESSION, v1=%ld ch, v2=%ld value)\n", event->v1, event->v2);
+			PRINT ("ctl->event (event=CTLE_EXPRESSION, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" value)\n", event->v1, event->v2);
 			break;
 		case CTLE_PANNING:
-			PRINT ("ctl->event (event=CTLE_PANNING, v1=%ld ch, v2=%ld value)\n", event->v1, event->v2);
+			PRINT ("ctl->event (event=CTLE_PANNING, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" value)\n", event->v1, event->v2);
 			break;
 		case CTLE_SUSTAIN:
-			PRINT ("ctl->event (event=CTLE_SUSTAIN, v1=%ld ch, v2=%ld value)\n", event->v1, event->v2);
+			PRINT ("ctl->event (event=CTLE_SUSTAIN, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" value)\n", event->v1, event->v2);
 			break;
 		case CTLE_PITCH_BEND:
-			PRINT ("ctl->event (event=CTLE_PITCH_BEND, v1=%ld ch, v2=%ld value)\n", event->v1, event->v2);
+			PRINT ("ctl->event (event=CTLE_PITCH_BEND, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" value)\n", event->v1, event->v2);
 			break;
 		case CTLE_MOD_WHEEL:
-			PRINT ("ctl->event (event=CTLE_MOD_WHEEL, v1=%ld ch, v2=%ld value)\n", event->v1, event->v2);
+			PRINT ("ctl->event (event=CTLE_MOD_WHEEL, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" value)\n", event->v1, event->v2);
 			break;
 		case CTLE_CHORUS_EFFECT:
-			PRINT ("ctl->event (event=CTLE_CHORUS_EFFECT, v1=%ld ch, v2=%ld value)\n", event->v1, event->v2);
+			PRINT ("ctl->event (event=CTLE_CHORUS_EFFECT, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" value)\n", event->v1, event->v2);
 			break;
 		case CTLE_REVERB_EFFECT:
-			PRINT ("ctl->event (event=CTLE_REVERB_EFFECT, v1=%ld ch, v2=%ld value)\n", event->v1, event->v2);
+			PRINT ("ctl->event (event=CTLE_REVERB_EFFECT, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" value)\n", event->v1, event->v2);
 			break;
 		case CTLE_LYRIC:
-			PRINT ("ctl->event (event=CTLE_LYRIC, v1=%ld lyric-ID)\n", event->v1);
+			PRINT ("ctl->event (event=CTLE_LYRIC, v1=%"PRIdPTR" lyric-ID)\n", event->v1);
 			break;
 		case CTLE_REFRESH:
 			PRINT ("ctl->event (event=CTLE_REFRESH)\n");
@@ -689,21 +689,21 @@ static void ocp_ctl_event(CtlEvent *event)
 				{
 					_PRINT ("%s%lf", i?",":"", v1[i]);
 				}
-				_PRINT ("], v2=%ld len)\n", event->v2);
+				_PRINT ("], v2=%"PRIdPTR" len)\n", event->v2);
 			}
 #endif
 			break;
 		case CTLE_PAUSE:
-			PRINT ("ctl->event (event=CTLE_PAUSE, v1=%ld on/off, v2=%ld time of pause)\n", event->v1, event->v2);
+			PRINT ("ctl->event (event=CTLE_PAUSE, v1=%"PRIdPTR" on/off, v2=%"PRIdPTR" time of pause)\n", event->v1, event->v2);
 			break;
 		case CTLE_GSLCD:
-			PRINT ("ctl->event (event=CTLE_GSLCD, v1=%ld ?)\n", event->v1);
+			PRINT ("ctl->event (event=CTLE_GSLCD, v1=%"PRIdPTR" ?)\n", event->v1);
 			break;
 		case CTLE_MAXVOICES:
-			PRINT ("ctl->event (event=CTLE_MAXVOICES, v1=%ld voices)\n", event->v1);
+			PRINT ("ctl->event (event=CTLE_MAXVOICES, v1=%"PRIdPTR" voices)\n", event->v1);
 			break;
 		case CTLE_DRUMPART:
-			PRINT ("ctl->event (event=CTLE_DRUMPART, v1=%ld ch, v2=%ld is_drum)\n", event->v1, event->v2);
+			PRINT ("ctl->event (event=CTLE_DRUMPART, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" is_drum)\n", event->v1, event->v2);
 			break;
 		default:
 			PRINT ("ctl->event (event=%d unknown)\n", event->type);
@@ -919,9 +919,11 @@ PlayMode *play_mode_list[2] = {&ocp_playmode, 0}, *target_play_mode = &ocp_playm
 
 ControlMode *ctl_list[2] = {&ocp_ctl, 0}, *ctl = &ocp_ctl;
 
-static void emulate_main_start(struct timiditycontext_t *c, struct cpifaceSessionAPI_t *cpifaceSession)
+static int emulate_main_start(struct timiditycontext_t *c, struct cpifaceSessionAPI_t *cpifaceSession)
 {
+	int expect_post_to_fail = 0;
 	const char *configfile;
+
 	c->free_instruments_afterwards = 1;
 
 #ifdef SUPPORT_SOCKET
@@ -945,6 +947,7 @@ static void emulate_main_start(struct timiditycontext_t *c, struct cpifaceSessio
 		{
 			/* add_soundfont lacks constification of filename */
 			add_soundfont (&tc, (char *)configfile, -1, -1, -1, -1);
+			expect_post_to_fail = 1;
 			goto ready;
 		} else {
 			/* read_config_file lacks constification of filename */
@@ -983,12 +986,13 @@ static void emulate_main_start(struct timiditycontext_t *c, struct cpifaceSessio
 		{
 		c->got_a_configuration = 1;
 		} else {
-			cpifaceSession->cpiDebug (cpifaceSession, "[TiMidity++ MID] Warning: Unable to find global timidity.cfg file");
+			cpifaceSession->cpiDebug (cpifaceSession, "[TiMidity++ MID] Warning: Unable to find global timidity.cfg file\n");
 		}
 
 		if (read_user_config_file(cpifaceSession))
 		{
-			cpifaceSession->cpiDebug (cpifaceSession, "[TiMidity++ MID] Error: Syntax error in ~/.timidity.cfg");
+			cpifaceSession->cpiDebug (cpifaceSession, "[TiMidity++ MID] Error: Syntax error in ~/.timidity.cfg\n");
+			return -1;
 		}
 	}
 
@@ -996,10 +1000,14 @@ ready:
 	/* we need any emulated configuration, perform them now... */
 	if (timidity_post_load_configuration (&tc))
 	{
-		cpifaceSession->cpiDebug (cpifaceSession, "[TiMidity++ MID] post-load config failed\n");
+		if (!expect_post_to_fail)
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[TiMidity++ MID] post-load config failed\n");
+		}
 	}
 
 	timidity_init_player (&tc);
+	return 0;
 }
 
 static void emulate_main_end(struct timiditycontext_t *c)
@@ -1296,7 +1304,7 @@ static int emulate_play_event (struct timiditycontext_t *c, MidiEvent *ev)
 
 		PRINT ("emulate_play_event, needed=%d canfit=%d -- ", needed, canfit);
 
-		if ((canfit <= 0) || (gmibuffree <= (audio_buffer_size*2)))
+		if ((canfit <= 0) || (gmibuffree < (audio_buffer_size*2)))
 		{
 			_PRINT ("short exit.. we want more buffer to be free\n");
 			return RC_ASYNC_HACK;
@@ -1330,7 +1338,7 @@ static int emulate_play_midi_iterate(struct timiditycontext_t *c)
 
 	for(;;)
 	{
-		if (gmibuffree > (audio_buffer_size*2))
+		if (gmibuffree >= (audio_buffer_size*2))
 		{
 #define c (&tc)
 			int32_t cet = MIDI_EVENT_TIME (tc.current_event);
@@ -1667,8 +1675,7 @@ static void timidityIdler(struct cpifaceSessionAPI_t *cpifaceSession, struct tim
 	{
 		if (gmi_eof)
 			break;
-
-		if (gmibuffree > (audio_buffer_size*2))
+		if (gmibuffree >= (audio_buffer_size*2))
 		{
 			rc = emulate_play_midi_file_iterate (cpifaceSession, &tc, current_path, &timidity_main_session);
 			if (rc == RC_ASYNC_HACK)
@@ -2144,7 +2151,10 @@ OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t b
 	}
 	ocp_playmode.rate = gmiRate;
 
-	emulate_main_start(&tc, cpifaceSession);
+	if (emulate_main_start(&tc, cpifaceSession))
+	{
+		return errGen;
+	}
 	voll=256;
 	volr=256;
 	pan=64;
@@ -2154,7 +2164,7 @@ OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t b
 
 	gmibuffree=1;
 #define c (&tc)
-	while ((gmibuffree < (gmiRate/8+1)) && (gmibuffree < (audio_buffer_size*3)))
+	while ((gmibuffree < (gmiRate/8+1)) || (gmibuffree <= (audio_buffer_size*3)))
 	{
 		gmibuffree<<=1;
 	}
