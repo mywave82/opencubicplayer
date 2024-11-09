@@ -148,7 +148,10 @@ static void modland_com_setup_Run (void **token, const struct DevInterfaceAPI_t 
 						{
 							API->fsForceNextRescan();
 							modland_com_database_clear ();
-							modland_com_filedb_save ();
+							if (!modland_com_filedb_save_start ())
+							{
+								while (modland_com_filedb_save_iterate () == 1);
+							}
 							break;
 						}
 

@@ -239,5 +239,5 @@
 
 [modland.com]
   mirror=https://ftp.modland.com
-  cachedir=$OCPDATAHOME/modland.com/ ; Can be prefixed with ~ $OCPDATAHOME $OCPDATA or $TEMP
+  cachedir=$OCPDATAHOME@DIRSEPARATOR@modland.com@DIRSEPARATOR@ ; Can be prefixed with ~ $OCPDATAHOME $OCPDATA or $TEMP
   showrelevantdirectoriesonly=1

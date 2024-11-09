@@ -1,3 +1,7 @@
+#ifndef MAX
+#define MAX(a,b) ((a)>(b)?(a):(b))
+#endif
+
 static void modland_com_cachedir_Draw (
 	struct console_t *console,
 	const int origselected,
@@ -23,7 +27,7 @@ static void modland_com_cachedir_Draw (
 *   => /home/stian/.local/share/ocp/modland.com                          *
 *                                                                        *
 * ( ) $HOME/modland.com                                                  *
-*   => /tmp/modland.com                                                  *
+*   => /home/stian/tmp/modland.com                                       *
 *                                                                        *
 * ( ) $OCPDATA/modland.com (might not be writable)                       *
 *   => /usr/local/share/ocp/modland.com                                  *
@@ -36,7 +40,7 @@ static void modland_com_cachedir_Draw (
 *                                                                        *
 **************************************************************************/
 	int mlHeight = 23;
-	int mlWidth = 74;
+	int mlWidth = MAX(74, plScrWidth - 30);
 	int mlTop = (plScrHeight - mlHeight) / 2;
 	int mlLeft = (plScrWidth - mlWidth) / 2;
 
@@ -55,35 +59,35 @@ static void modland_com_cachedir_Draw (
 
 	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$OCPDATAHOME/modland.com" " %0.7o(default)",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$OCPDATAHOME/modland.com" "%0.7o (default)",
 		(0==origselected) ? '*' : ' ',
 		(0==selected) ? 7 : 0,
 		(0==selected) ? 1 : 3);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %64S", ocpdatahome_modland_com);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %*S", mlWidth - 8, ocpdatahome_modland_com);
 
 	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$HOME/modland.com",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$HOME/modland.com%0.7o",
 		(1==origselected) ? '*' : ' ',
 		(1==selected) ? 7 : 0,
 		(1==selected) ? 1 : 3);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %64S", home_modland_com);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %*S", mlWidth - 8, home_modland_com);
 
 	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$OCPDATA/modland.com" " %0.7o(might not be writable)",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$OCPDATA/modland.com" "%0.7o (might not be writable)",
 		(2==origselected) ? '*' : ' ',
 		(2==selected) ? 7 : 0,
 		(2==selected) ? 1 : 3);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %64S", home_modland_com);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %*S", mlWidth - 8, ocpdata_modland_com);
 
 	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$TEMP/modland.com" " %0.7o(might not be system uniqe and writable)",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$TEMP/modland.com" "%0.7o (might not be system uniqe and writable)",
 		(3==origselected) ? '*' : ' ',
 		(3==selected) ? 7 : 0,
 		(3==selected) ? 1 : 3);
-	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %64S", temp_modland_com);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %*S", mlWidth - 8, temp_modland_com);
 
 	mlTop++;
 
@@ -93,7 +97,7 @@ static void modland_com_cachedir_Draw (
 	{
 		console->DisplayPrintf (mlTop, mlLeft, 0x09, 4, " (%.2o%c%.9o)",
 			(4==origselected) ? '*' : ' ');
-		switch (console->EditStringUTF8(mlTop++, mlLeft + 6, mlWidth - 10, cacheconfigcustom))
+		switch (console->EditStringUTF8(mlTop++, mlLeft + 5, mlWidth - 10, cacheconfigcustom))
 		{
 			case -1:
 			case 0:
@@ -112,7 +116,7 @@ static void modland_com_cachedir_Draw (
 			*cacheconfigcustom);
 	}
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %64s", custom_modland_com);
+	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %*s", mlWidth - 8, custom_modland_com);
 }
 
 static char *modland_com_resolve_cachedir3 (const char *src)

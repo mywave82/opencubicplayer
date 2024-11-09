@@ -209,6 +209,9 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 	struct ocpfile_t *allmods_txt_file;
 	struct ocpfilehandle_t *allmods_txt;
 	struct textfile_t *allmods_txt_textfile;
+	int save_complete = 0;
+	const char *save_message = 0;
+	char save_message_buffer[50];
 
 	struct modland_com_initialize_t s;
 
@@ -454,16 +457,64 @@ static void modland_com_initialize_Run (void **token, const struct DevInterfaceA
 		download_request_free (download_allmods_zip);
 		download_allmods_zip = 0;
 		return;
-
 	}
 
-	modland_com_filedb_save();
+	if (modland_com_filedb_save_start())
+	{
+		save_complete = 2;
+		save_message = "Failed to initialize saving";
+	}
+
+	while (!save_complete)
+	{
+		if (API->console->PollFrameLock())
+		{
+			API->fsDraw();
+
+			save_message = save_message_buffer;
+			snprintf (save_message_buffer, sizeof (save_message_buffer), "Written %lu of %lu file names", (unsigned long)(modland_com_filedb_save_f + 1), (unsigned long)(modland_com.database.fileentries_n));
+
+			modland_com_initialize_Draw (API->console, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
+			                                           1, 0, modland_com.database.fileentries_n, modland_com.database.direntries_n, s.invalid_entries,
+			                                           save_complete + 1, save_message,
+			                                           2, 0);
+			while (API->console->KeyboardHit())
+			{
+				int key = API->console->KeyboardGetChar();
+
+				switch (key)
+				{
+					case KEY_EXIT:
+					case KEY_ESC:
+					case _KEY_ENTER:
+						modland_com_filedb_save_abort();
+						save_complete = 2;
+						save_message = "Save aborted";
+						return;
+				}
+			}
+		}
+		switch (modland_com_filedb_save_iterate())
+		{
+			default:
+			case -1:
+				save_message = "Writing data failed";
+				save_complete = 2;
+				break;
+			case 0:
+				save_message = "Completed successfully";
+				save_complete = 1;
+				break;
+			case 1:
+				break;
+		}
+	}
 
 	/* we are finished */
 
 	modland_com_initialize_Draw_Until_Enter_Or_Exit (API, 2, 0, download_allmods_zip->ContentLength, download_allmods_zip->Year, download_allmods_zip->Month, download_allmods_zip->Day,
 	                                                 2, 0, modland_com.database.fileentries_n, modland_com.database.direntries_n, s.invalid_entries,
-	                                                 2, 0);
+	                                                 save_complete + 1, save_message);
 	download_request_free (download_allmods_zip);
 	download_allmods_zip = 0;
 }

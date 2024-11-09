@@ -698,6 +698,7 @@ skipdir:
 				next++;
 				if (next >= modland_com.database.direntries_n)
 				{
+					next = UINT_MAX;
 					break;
 				}
 				if ((strncmp (modland_com.database.direntries[iter->diroffset], modland_com.database.direntries[next], len)) || (modland_com.database.direntries[next][len] != '/'))

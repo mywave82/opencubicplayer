@@ -12,14 +12,20 @@ struct __attribute__((packed)) modland_com_filedb_header_t
 };
 static const char dbsig[60] = "Cubic Player modland.com Cache Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 
-static void modland_com_filedb_save (void)
+static unsigned int modland_com_filedb_save_d;
+static unsigned int modland_com_filedb_save_f;
+
+#define d modland_com_filedb_save_d
+#define f modland_com_filedb_save_f
+
+
+static int modland_com_filedb_save_start (void)
 {
 	struct modland_com_filedb_header_t header;
-	unsigned int d, f;
 
 	if (!modland_com_filedb_File)
 	{
-		return;
+		return -1;
 	}
 	osfile_setpos (modland_com_filedb_File, 0);
 	memcpy (header.sig, dbsig, 60);
@@ -29,10 +35,30 @@ static void modland_com_filedb_save (void)
 	header.day      = modland_com.database.day;
 	if (osfile_write (modland_com_filedb_File, &header, sizeof(header)) < 0)
 	{
-		return;
+		return -1;
 	}
 
-	for (d=0, f=0; (d<modland_com.database.direntries_n) && (f<modland_com.database.fileentries_n); d++)
+	d = 0;
+	f = 0;
+
+	return 0;
+}
+
+static void modland_com_filedb_save_abort (void)
+{
+	osfile_purge_writeback_cache (modland_com_filedb_File);
+	osfile_setpos (modland_com_filedb_File, 0);
+	osfile_truncate_at (modland_com_filedb_File, 0);
+}
+
+/* return values:
+ * -1: error
+ *  0: success
+ *  1: call again
+ */
+static int modland_com_filedb_save_iterate (void)
+{
+	for (;(d<modland_com.database.direntries_n) && (f<modland_com.database.fileentries_n); d++)
 	{
 		unsigned int f2;
 		uint8_t b3[3];
@@ -49,7 +75,7 @@ static void modland_com_filedb_save (void)
 		if ((osfile_write (modland_com_filedb_File, b3, 3) < 0) ||
 		    (osfile_write (modland_com_filedb_File, modland_com.database.direntries[d], b3[2]) < 0))
 		{
-			return;
+			return -1;
 		}
 		for (f2=f; (f2<modland_com.database.fileentries_n) && (modland_com.database.fileentries[f2].dirindex == d); f2++)
 		{
@@ -64,10 +90,11 @@ static void modland_com_filedb_save (void)
 			    (osfile_write (modland_com_filedb_File, b1, 1) < 0) ||
 			    (osfile_write (modland_com_filedb_File, modland_com.database.fileentries[f2].name, b1[0]) < 0))
 			{
-				return;
+				return -1;
 			}
 		}
 		f=f2;
+		return 1;
 	}
 
 	{
@@ -76,12 +103,16 @@ static void modland_com_filedb_save (void)
 		b2[1] = 0;
 		if (osfile_write (modland_com_filedb_File, b2, 2) < 0)
 		{
-			return;
+			return -1;
 		}
 	}
 
 	osfile_truncate_at (modland_com_filedb_File, osfile_getpos (modland_com_filedb_File));
+	return 0;
 }
+
+#undef d
+#undef f
 
 static void modland_com_filedb_close (void)
 {

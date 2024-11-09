@@ -51,7 +51,7 @@ AC_SUBST(DESKTOP_FILE_INSTALL)
 AC_SUBST(UPDATE_DESKTOP_DATABASE)
 
 AC_C_BIGENDIAN
-
+AC_SUBST(DIRSEPARATOR)
 AC_SUBST(SHARED_FLAGS)
 AC_SUBST(LIB_SUFFIX)
 AC_SUBST(EXE_SUFFIX)
@@ -59,6 +59,7 @@ AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(HAIKU)
 AC_SUBST(WINDOWS)
 AC_SUBST(WINDRES)
+DIRSEPARATOR="/"
 target=`$CC -dumpmachine`
 AS_CASE([$target],
 	[*-darwin*],[
@@ -78,6 +79,7 @@ AS_CASE([$target],
 	],
 	[*-mingw*],[
 		WINDOWS=1
+		DIRSEPARATOR=\\
 		SHARED_FLAGS="-shared -pthread" # clock_gettime() is provided via -pthread when using mingw
 		LIB_SUFFIX=.dll
 		EXE_SUFFIX=.exe
