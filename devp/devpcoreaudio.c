@@ -343,7 +343,6 @@ static void devpCoreAudioOnBufferCallback (int samplesuntil, void (*callback)(vo
 	debug_printf ("devpCoreAudioOnBufferCallback: EXIT\n");
 }
 
-
 static void devpCoreAudioCommitBuffer (unsigned int samples)
 {
 	debug_printf ("devpCoreAudioCommitBuffer: ENTER\n");
@@ -479,7 +478,11 @@ static int devpCoreAudioPlay (uint32_t *rate, enum plrRequestFormat *format, str
 
 static void devpCoreAudioGetStats (uint64_t *committed, uint64_t *processed)
 {
+	pthread_mutex_lock(&mutex);
+
 	plrDriverAPI->ringbufferAPI->get_stats (devpCoreAudioRingBuffer, committed, processed);
+
+	pthread_mutex_unlock(&mutex);
 }
 
 static const struct plrDevAPI_t devpCoreAudio = {
