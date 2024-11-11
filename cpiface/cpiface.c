@@ -696,7 +696,12 @@ static void GString_pos_render (const void *inputa, const void *inputb, const vo
 		case 4: displaystr (lineno, *x, 0x09, "position:", 9); (*x) += 9; break;
 	}
 
-	snprintf (b, 4, "%3d", (int)((*pos) * 100 / (*filesize)));
+	if ((*filesize)==0)
+	{
+		snprintf (b, 4, "NUL");
+	} else {
+		snprintf (b, 4, "%3d", (int)((*pos) * 100 / (*filesize)));
+	}
 	displaystr (lineno, *x, 0x0f,   b, 3); (*x)+=3;
 	displaychr (lineno, *x, 0x07, '%', 1); (*x)+=1;
 
