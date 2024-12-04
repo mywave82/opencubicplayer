@@ -344,7 +344,7 @@ static int Z_ocpfilehandle_read (struct ocpfilehandle_t *_s, void *dst, int len)
 
 			dirdbGetName_internalstr (s->compressedfilehandle->dirdb_ref, &filename);
 
-			DEBUG_PRINT ("[Z filehandle_read EOF] adbMetaAdd(%s, %"PRId64", Z, [%02x %02x %02x %02x %02x %02x %02x %02x] %"PRIu64"\n", filename, compressedfile_size, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5], buffer[6], buffer[7], filesize);
+			DEBUG_PRINT ("[Z filehandle_read EOF] adbMetaAdd(%s, %"PRIu64", Z, [%02x %02x %02x %02x %02x %02x %02x %02x] %"PRIu64"\n", filename, compressedfile_size, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5], buffer[6], buffer[7], filesize);
 			adbMetaAdd (filename, compressedfile_size, "Z", buffer, 8);
 		}
 	}
@@ -451,7 +451,7 @@ static uint64_t Z_ocpfile_filesize (struct ocpfile_t *_s)
 		compressedfile_size = s->compressedfile->filesize (s->compressedfile);
 
 		uint8_t *metadata = 0;
-		size_t metadatasize = 0;
+		uint32_t metadatasize = 0;
 
 		if ((compressedfile_size < 12) || (compressedfile_size == FILESIZE_ERROR) || (compressedfile_size == FILESIZE_STREAM))
 		{
@@ -475,9 +475,11 @@ static uint64_t Z_ocpfile_filesize (struct ocpfile_t *_s)
 				                           ((uint64_t)(metadata[0]));
 				free (metadata);
 
-				DEBUG_PRINT ("[Z ocpfile_filesize]: got metadatasize=0x%08lx %02x %02x %02x %02x %02x %02x %02x %02x => %"PRIu64"\n", metadatasize, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5], metadata[6], metadata[7], s->uncompressed_filesize);
+				DEBUG_PRINT ("[Z ocpfile_filesize]: got metadatasize=0x%08"PRIu32" %02x %02x %02x %02x %02x %02x %02x %02x => %"PRIu64"\n", metadatasize, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5], metadata[6], metadata[7], s->uncompressed_filesize);
 
 				return s->uncompressed_filesize;
+			} else {
+				DEBUG_PRINT ("[Z ocpfile_filesize]: got metadatasize=0x%08"PRIu32", unexpected size\n", metadatasize);
 			}
 			free (metadata); /* wrong size???... */
 			metadata = 0;
@@ -746,7 +748,7 @@ static struct ocpdir_t *Z_check_steal (struct ocpfile_t *s, const uint32_t dirdb
 	if (s->filesize_ready (s))
 	{
 		unsigned char *metadata = 0;
-		size_t metadatasize = 0;
+		uint32_t metadatasize = 0;
 		const char *filename = 0;
 
 		dirdbGetName_internalstr (retval->child.compressedfile->dirdb_ref, &filename);
@@ -765,8 +767,9 @@ static struct ocpdir_t *Z_check_steal (struct ocpfile_t *s, const uint32_t dirdb
 				                                      ((uint64_t)(metadata[1]) << 8) |
 				                                      ((uint64_t)(metadata[0]));
 
-				DEBUG_PRINT ("[Z Z_check_steal]: got metadatasize=0x%08lx %02x %02x %02x %02x %02x %02x %02x %02x => %"PRIu64"\n", metadatasize, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5], metadata[6], metadata[7], retval->child.uncompressed_filesize);
-
+				DEBUG_PRINT ("[Z Z_check_steal]: got metadatasize=0x%08"PRIu32" %02x %02x %02x %02x %02x %02x %02x %02x => %"PRIu64"\n", metadatasize, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5], metadata[6], metadata[7], retval->child.uncompressed_filesize);
+			} else {
+				DEBUG_PRINT ("[Z ocpfile_filesize]: got metadatasize=0x%08"PRIu32", unexpected size\n", metadatasize);
 			}
 			free (metadata);
 			metadata = 0;

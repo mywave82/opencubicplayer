@@ -734,7 +734,7 @@ const struct adbMetaEntry_t test_many_insert[7] = {
 	for (i=0; i < 7; i++)
 	{
 		unsigned char *data = (unsigned char *)"b";
-		size_t datasize = 1;
+		uint32_t datasize = 1;
 		adbMetaGet (test_many_insert[i].filename,
 		            test_many_insert[i].filesize,
 		            test_many_insert[i].SIG,
@@ -758,7 +758,7 @@ const struct adbMetaEntry_t test_many_insert[7] = {
 
 	{
 		unsigned char *data = (unsigned char *)"a";
-		size_t datasize = 1;
+		uint32_t datasize = 1;
 		adbMetaGet (test_many_insert[0].filename,
 		            14,
 		            test_many_insert[0].SIG,

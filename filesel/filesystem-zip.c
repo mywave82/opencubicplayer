@@ -207,7 +207,7 @@ static uint32_t zip_instance_add (struct zip_instance_t *self,
                                   const uint32_t         DiskNumber,
                                   const uint64_t         OffsetLocalHeader);
 
-static void zip_instance_decode_blob (struct zip_instance_t *self, uint8_t *blob, size_t blobsize)
+static void zip_instance_decode_blob (struct zip_instance_t *self, uint8_t *blob, uint32_t blobsize)
 {
 	uint8_t *eos;
 
@@ -294,7 +294,7 @@ static void zip_instance_decode_blob (struct zip_instance_t *self, uint8_t *blob
 	zip_translate_complete (self);
 }
 
-static void zip_instance_encode_blob (struct zip_instance_t *self, uint8_t **blob, size_t *blobfill)
+static void zip_instance_encode_blob (struct zip_instance_t *self, uint8_t **blob, uint32_t *blobfill)
 {
 	uint32_t counter;
 	uint32_t blobsize = 0;
@@ -1022,7 +1022,7 @@ start_central_directory_record:
 
 	{
 		uint8_t *metadata = 0;
-		size_t metadatasize = 0;
+		uint32_t metadatasize = 0;
 		const char *filename = 0;
 
 		zip_instance_encode_blob (self, &metadata, &metadatasize);
@@ -1111,7 +1111,7 @@ static struct ocpdir_t *zip_check (const struct ocpdirdecompressor_t *self, stru
 	{
 		const char *filename = 0;
 		uint8_t *metadata = 0;
-		size_t metadatasize = 0;
+		uint32_t metadatasize = 0;
 
 		dirdbGetName_internalstr (iter->archive_file->dirdb_ref, &filename);
 		if (!adbMetaGet (filename, iter->archive_file->filesize (iter->archive_file), "ZIP", &metadata, &metadatasize))
@@ -2441,7 +2441,7 @@ static void zip_set_byuser_string (struct ocpdir_t *_self, const char *byuser)
 	/* update adbMeta */
 	{
 		uint8_t *metadata = 0;
-		size_t metadatasize = 0;
+		uint32_t metadatasize = 0;
 		const char *filename = 0;
 
 		zip_instance_encode_blob (self->owner, &metadata, &metadatasize);

@@ -94,7 +94,7 @@ static int               ocpdir_search_readdir_iterate (ocpdirhandle_pt);
 static struct ocpdir_t  *ocpdir_search_readdir_dir  (struct ocpdir_t *self, uint32_t dirdb_ref);
 static struct ocpfile_t *ocpdir_search_readdir_file (struct ocpdir_t *self, uint32_t dirdb_ref);
 
-static void medialib_decode_blob (uint8_t *blob, size_t blobsize)
+static void medialib_decode_blob (uint8_t *blob, uint32_t blobsize)
 {
 	uint8_t *eos;
 
@@ -126,7 +126,7 @@ static void medialib_decode_blob (uint8_t *blob, size_t blobsize)
 	}
 }
 
-static void medialib_encode_blob (uint8_t **blob, size_t *blobsize)
+static void medialib_encode_blob (uint8_t **blob, uint32_t *blobsize)
 {
 	int i;
 	char *ptr;
@@ -159,7 +159,7 @@ static void medialib_encode_blob (uint8_t **blob, size_t *blobsize)
 static void mlFlushBlob (void)
 {
 	uint8_t *data = 0;
-	size_t datasize = 0;
+	uint32_t datasize = 0;
 	medialib_encode_blob (&data, &datasize);
 	if (datasize)
 	{
@@ -186,7 +186,7 @@ static int mlint (const struct configAPI_t *configAPI)
 {
 	struct ocpdir_t *r;
 	unsigned char *data = 0;
-	size_t datasize = 0;
+	uint32_t datasize = 0;
 
 	medialib_root = ocpdir_mem_alloc (0, "medialib:");
 	if (!medialib_root)

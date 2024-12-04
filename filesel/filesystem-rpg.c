@@ -132,7 +132,7 @@ static uint32_t rpg_instance_add_file (struct rpg_instance_t *self,
                                        const uint64_t  fileoffset);
 
 /* in the blob, we will switch / into \0 temporary as we parse them */
-static void rpg_instance_decode_blob (struct rpg_instance_t *self, uint8_t *blob, size_t blobsize)
+static void rpg_instance_decode_blob (struct rpg_instance_t *self, uint8_t *blob, uint32_t blobsize)
 {
 	uint8_t *eos;
 
@@ -178,7 +178,7 @@ static void rpg_instance_decode_blob (struct rpg_instance_t *self, uint8_t *blob
 	}
 }
 
-static void rpg_instance_encode_blob (struct rpg_instance_t *self, uint8_t **blob, size_t *blobfill)
+static void rpg_instance_encode_blob (struct rpg_instance_t *self, uint8_t **blob, uint32_t *blobfill)
 {
 	uint32_t counter;
 	uint32_t blobsize = 0;
@@ -380,7 +380,7 @@ struct ocpdir_t *rpg_check (const struct ocpdirdecompressor_t *self, struct ocpf
 	{
 		const char *filename = 0;
 		uint8_t *metadata = 0;
-		size_t metadatasize = 0;
+		uint32_t metadatasize = 0;
 
 		dirdbGetName_internalstr (iter->archive_file->dirdb_ref, &filename);
 		if (!adbMetaGet (filename, iter->archive_file->filesize (iter->archive_file), "RPG", &metadata, &metadatasize))
@@ -611,7 +611,7 @@ static int rpg_dir_readdir_iterate (ocpdirhandle_pt _self)
 		{
 			const char *filename;
 			uint8_t *metadata = 0;
-			size_t metadatasize = 0;
+			uint32_t metadatasize = 0;
 finished:
 			self->dir->owner->ready = 1;
 			rpg_instance_encode_blob (self->dir->owner, &metadata, &metadatasize);

@@ -236,10 +236,10 @@ fillmore:
 		           ((uint_fast64_t)data[offset+6] << 8) |
 		           ((uint_fast64_t)data[offset+7]);
 		offset += 8;
-		datasize = ((uint_fast64_t)data[offset+0] << 24) |
-		           ((uint_fast64_t)data[offset+1] << 16) |
-		           ((uint_fast64_t)data[offset+2] << 8) |
-		           ((uint_fast64_t)data[offset+3]);
+		datasize = ((uint_fast32_t)data[offset+0] << 24) |
+		           ((uint_fast32_t)data[offset+1] << 16) |
+		           ((uint_fast32_t)data[offset+2] << 8) |
+		           ((uint_fast32_t)data[offset+3]);
 		offset += 4;
 
 		if (offset + datasize > fill)
@@ -400,7 +400,7 @@ void adbMetaClose (void)
 	}
 }
 
-static uint32_t adbMetaBinarySearchFilesize (const size_t filesize)
+static uint32_t adbMetaBinarySearchFilesize (const uint32_t filesize)
 {
 	uint_fast32_t searchbase = 0, searchlen = adbMetaCount;
 
@@ -459,14 +459,14 @@ static uint32_t adbMetaBinarySearchFilesize (const size_t filesize)
 	return searchbase;
 }
 
-int adbMetaAdd (const char *filename, const size_t filesize, const char *SIG, const unsigned char *data, const size_t datasize)
+int adbMetaAdd (const char *filename, const uint64_t filesize, const char *SIG, const unsigned char *data, const uint32_t datasize)
 {
 	uint_fast32_t searchindex = adbMetaBinarySearchFilesize (filesize);
 	int_fast32_t search;
 	struct adbMetaEntry_t *temp;
 
 #ifdef ADBMETA_DEBUG
-	fprintf (stderr, "adbMetaAdd (\"%s\", %"PRId64", \"%s\", %p, %ld)\n", filename, filesize, SIG, data, datasize);
+	fprintf (stderr, "adbMetaAdd (\"%s\", %"PRIu64", \"%s\", 0x%p, %"PRIu32")\n", filename, filesize, SIG, data, datasize);
 #endif
 
 	if (searchindex == adbMetaCount)
@@ -545,13 +545,13 @@ DoInsert:
 	return 0;
 }
 
-int adbMetaRemove (const char *filename, const size_t filesize, const char *SIG)
+int adbMetaRemove (const char *filename, const uint64_t filesize, const char *SIG)
 {
 	uint_fast32_t searchindex = adbMetaBinarySearchFilesize (filesize);
 	int_fast32_t search;
 
 #ifdef ADBMETA_DEBUG
-	fprintf (stderr, "adbMetaRemove (\"%s\", %ld, \"%s\")\n", filename, filesize, SIG);
+	fprintf (stderr, "adbMetaRemove (\"%s\", %"PRIu64", \"%s\")\n", filename, filesize, SIG);
 #endif
 
 	if (searchindex == adbMetaCount)
@@ -591,13 +591,13 @@ int adbMetaRemove (const char *filename, const size_t filesize, const char *SIG)
 	return 1; /* not found */
 }
 
-int adbMetaGet (const char *filename, const size_t filesize, const char *SIG, unsigned char **data, size_t *datasize)
+int adbMetaGet (const char *filename, const uint64_t filesize, const char *SIG, unsigned char **data, uint32_t *datasize)
 {
 	uint_fast32_t searchindex = adbMetaBinarySearchFilesize (filesize);
 	int_fast32_t search;
 
 #ifdef ADBMETA_DEBUG
-	fprintf (stderr, "adbMetaGet (\"%s\", %"PRId64", \"%s\") ", filename, filesize, SIG);
+	fprintf (stderr, "adbMetaGet (\"%s\", %"PRIu64", \"%s\") ", filename, filesize, SIG);
 #endif
 
 	*data = 0;
@@ -649,7 +649,7 @@ int adbMetaGet (const char *filename, const size_t filesize, const char *SIG, un
 		*datasize = adbMetaEntries[search]->datasize;
 
 #ifdef ADBMETA_DEBUG
-		fprintf (stderr, " => %p %ld\n", *data, *datasize);
+		fprintf (stderr, " => %p %"PRIu32"\n", *data, *datasize);
 #endif
 		return 0;
 	}

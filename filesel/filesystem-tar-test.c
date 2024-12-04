@@ -2134,10 +2134,10 @@ void register_dirdecompressor(const struct ocpdirdecompressor_t *odd)
 }
 
 static char          *adbmeta_filename;
-static size_t         adbmeta_filesize;
+static uint64_t       adbmeta_filesize;
 static char          *adbmeta_SIG;
 static unsigned char *adbmeta_data;
-static size_t         adbmeta_datasize;
+static uint32_t       adbmeta_datasize;
 
 void adbMetaClear(void)
 {
@@ -2151,7 +2151,7 @@ void adbMetaClear(void)
 	adbmeta_datasize = 0;
 }
 
-int adbMetaAdd (const char *filename, const size_t filesize, const char *SIG, const unsigned char  *data, const size_t  datasize)
+int adbMetaAdd (const char *filename, const uint64_t filesize, const char *SIG, const unsigned char  *data, const uint32_t  datasize)
 {
 	adbMetaClear ();
 	adbmeta_filename = strdup (filename);
@@ -2164,7 +2164,7 @@ int adbMetaAdd (const char *filename, const size_t filesize, const char *SIG, co
 	return 0;
 }
 
-int adbMetaGet (const char *filename, const size_t filesize, const char *SIG,       unsigned char **data,       size_t *datasize)
+int adbMetaGet (const char *filename, const uint64_t filesize, const char *SIG,       unsigned char **data,       uint32_t *datasize)
 {
 	if (!adbmeta_filename)
 	{

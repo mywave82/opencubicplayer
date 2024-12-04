@@ -162,7 +162,7 @@ static uint32_t pak_instance_add (struct pak_instance_t *self,
                                   const uint32_t  fileoffset);
 
 /* in the blob, we will switch / into \0 temporary as we parse them */
-static void pak_instance_decode_blob (struct pak_instance_t *self, uint8_t *blob, size_t blobsize)
+static void pak_instance_decode_blob (struct pak_instance_t *self, uint8_t *blob, uint32_t blobsize)
 {
 
 	uint8_t *eos;
@@ -218,7 +218,7 @@ static void pak_instance_decode_blob (struct pak_instance_t *self, uint8_t *blob
 #endif
 }
 
-static void pak_instance_encode_blob (struct pak_instance_t *self, uint8_t **blob, size_t *blobfill)
+static void pak_instance_encode_blob (struct pak_instance_t *self, uint8_t **blob, uint32_t *blobfill)
 {
 	uint32_t counter;
 	uint32_t blobsize = 0;
@@ -607,7 +607,7 @@ struct ocpdir_t *pak_check (const struct ocpdirdecompressor_t *self, struct ocpf
 	{
 		const char *filename = 0;
 		uint8_t *metadata = 0;
-		size_t metadatasize = 0;
+		uint32_t metadatasize = 0;
 
 		dirdbGetName_internalstr (iter->archive_file->dirdb_ref, &filename);
 		if (!adbMetaGet (filename, iter->archive_file->filesize (iter->archive_file), "PAK", &metadata, &metadatasize))
@@ -632,7 +632,7 @@ struct ocpdir_t *pak_check (const struct ocpdirdecompressor_t *self, struct ocpf
 		if (iter->file_fill)
 		{
 			uint8_t *metadata = 0;
-			size_t metadatasize = 0;
+			uint32_t metadatasize = 0;
 			const char *filename = 0;
 
 			pak_instance_encode_blob (iter, &metadata, &metadatasize);
@@ -1177,10 +1177,10 @@ static void pak_translate_complete (struct pak_instance_t *self)
 static void pak_translate (struct pak_instance_t *self, char *src, char **buffer, int *buffersize)
 {
 	char *temp;
-	size_t srclen;
+	uint32_t srclen;
 
 	char *dst = *buffer;
-	size_t dstlen = *buffersize;
+	uint32_t dstlen = *buffersize;
 
 	DEBUG_PRINT ("pak_translate %s =>", src);
 
@@ -1278,7 +1278,7 @@ static void pak_set_byuser_string (struct ocpdir_t *_self, const char *byuser)
 	/* update adbMeta */
 	{
 		uint8_t *metadata = 0;
-		size_t metadatasize = 0;
+		uint32_t metadatasize = 0;
 		const char *filename = 0;
 
 		pak_instance_encode_blob (self->owner, &metadata, &metadatasize);
