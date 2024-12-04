@@ -453,8 +453,8 @@ OCP_INTERNAL int xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, stru
 			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] warning, Panning loop end point (%d) >= Number of panning points (%d), truncating\n", ins2.ploope, ins2.pnum);
 			ins2.ploope=ins2.pnum-1;
 		}
-		for (k=0;k<12;k++)
-			for (j=0;j<2;j++)
+		for (k=0;k<2;k++)
+			for (j=0;j<12;j++)
 			{
 				ins2.venv[j][k] = uint16_little (ins2.venv[j][k]);
 				ins2.penv[j][k] = uint16_little (ins2.penv[j][k]);
