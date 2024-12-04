@@ -41,7 +41,9 @@
 #include "pfilesel.h"
 #include "stuff/cp437.h"
 #include "stuff/compat.h"
+#ifndef CFDATAHOMEDIR_OVERRIDE
 #include "stuff/file.h"
+#endif
 #include "stuff/imsrtns.h"
 #include "stuff/latin1.h"
 

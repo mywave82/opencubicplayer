@@ -21,36 +21,33 @@
 #ifdef lseek
 # undef lseek
 #endif
-#ifdef flock
-# undef flock
-#endif
-#define read mdb_test_read
-#define write mdb_test_write
-#define open mdb_test_open
-#define close mdb_test_close
-#define lseek mdb_test_lseek
-#define flock mdb_test_flock
+#define osfile int
+#define osfile_read mdb_test_read
+#define osfile_write mdb_test_write
+#define osfile_open_readwrite mdb_test_open
+#define osfile_close mdb_test_close
+#define osfile_setpos mdb_test_lseek
+#define osfile_purge_readahead_cache(x)
 
-static ssize_t mdb_test_read (int fd, void *buf, size_t size);
-static ssize_t mdb_test_write (int fd, const void *buf, size_t size);
-static int mdb_test_open(const char *pathname, int flags, ...);
-static off_t mdb_test_lseek (int fd, off_t offset, int whence);
-static int mdb_test_close (int fd);
-static int mdb_test_flock (int fd, int operation);
+static ssize_t mdb_test_read (int *fd, void *buf, size_t size);
+static ssize_t mdb_test_write (int *fd, const void *buf, size_t size);
+static int *mdb_test_open(const char *pathname, int dolock, int mustcreate);
+static off_t mdb_test_lseek (int *fd, off_t offset);
+static int mdb_test_close (int *fd);
+
+int fd_3 = 3;
 
 #define CFDATAHOMEDIR_OVERRIDE "/foo/home/ocp/.ocp/"
 #include "mdb.c"
 #include "../stuff/compat.c"
-#include "../stuff/file.c"
 
 int fsWriteModInfo = 1;
 
-static ssize_t (*mdb_test_read_hook) (int fd, void *buf, size_t size) = 0;
-static ssize_t (*mdb_test_write_hook) (int fd, const void *buf, size_t size) = 0;
-static int (*mdb_test_open_hook) (const char *pathname, int flags, mode_t mode) = 0;
-static off_t (*mdb_test_lseek_hook) (int fd, off_t offset, int whence) = 0;
-static int (*mdb_test_close_hook) (int fd) = 0;
-static int (*mdb_test_flock_hook) (int fd, int operation) = 0;
+static ssize_t (*mdb_test_read_hook) (int *fd, void *buf, size_t size) = 0;
+static ssize_t (*mdb_test_write_hook) (int *fd, const void *buf, size_t size) = 0;
+static int *(*mdb_test_open_hook) (const char *pathname, int dolock, int mustcreate) = 0;
+static off_t (*mdb_test_lseek_hook) (int *fd, off_t offset) = 0;
+static int (*mdb_test_close_hook) (int *fd) = 0;
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -77,56 +74,41 @@ void cp437_f_to_utf8_z(const char *src, size_t srclen, char *dst, size_t dstlen)
 
 const struct dirdbAPI_t dirdbAPI;
 
-static ssize_t mdb_test_read (int fd, void *buf, size_t size)
+static ssize_t mdb_test_read (int *fd, void *buf, size_t size)
 {
 	if (mdb_test_read_hook) return mdb_test_read_hook (fd, buf, size);
 	fprintf (stderr, ANSI_COLOR_RED "Unexepected read() call\n" ANSI_COLOR_RESET);
 	_exit(1);
 }
 
-static ssize_t mdb_test_write (int fd, const void *buf, size_t size)
+static ssize_t mdb_test_write (int *fd, const void *buf, size_t size)
 {
 	if (mdb_test_write_hook) return mdb_test_write_hook (fd, buf, size);
 	fprintf (stderr, ANSI_COLOR_RED "Unexepected write() call\n" ANSI_COLOR_RESET);
 	_exit(1);
 }
 
-static int mdb_test_open (const char *pathname, int flags, ...)
+static int *mdb_test_open (const char *pathname, int dolock, int mustcreate)
 {
 	if (mdb_test_open_hook)
 	{
-		mode_t mode = 0;
-		if (flags & O_CREAT)
-		{
-			va_list ap;
-			va_start (ap, flags);
-			mode = va_arg (ap, mode_t);
-			va_end (ap);
-		}
-		return mdb_test_open_hook (pathname, flags, mode);
+		return mdb_test_open_hook (pathname, dolock, mustcreate);
 	}
 	fprintf (stderr, ANSI_COLOR_RED "Unexepected open() call\n" ANSI_COLOR_RESET);
 	_exit(1);
 }
 
-static off_t mdb_test_lseek (int fd, off_t offset, int whence)
+static off_t mdb_test_lseek (int *fd, off_t offset)
 {
-	if (mdb_test_lseek_hook) return mdb_test_lseek_hook (fd, offset, whence);
+	if (mdb_test_lseek_hook) return mdb_test_lseek_hook (fd, offset);
 	fprintf (stderr, ANSI_COLOR_RED "Unexepected lseek() call\n" ANSI_COLOR_RESET);
 	_exit(1);
 }
 
-static int mdb_test_close (int fd)
+static int mdb_test_close (int *fd)
 {
 	if (mdb_test_close_hook) return mdb_test_close_hook (fd);
 	fprintf (stderr, ANSI_COLOR_RED "Unexepected close() call\n" ANSI_COLOR_RESET);
-	_exit(1);
-}
-
-static int mdb_test_flock (int fd, int operation)
-{
-	if (mdb_test_flock_hook) return mdb_test_flock_hook (fd, operation);
-	fprintf (stderr, ANSI_COLOR_RED "Unexepected flock() call\n" ANSI_COLOR_RESET);
 	_exit(1);
 }
 
@@ -1247,10 +1229,10 @@ MDB_USED|MDB_STRING_TERMINATION,'A','l','b','u','m',' ','4',  0,  0,  0,0,0,0,0,
 int mdb_basic_mdbInit_src_pos;
 int mdb_basic_mdbInit_src_isopen;
 
-ssize_t mdb_basic_mdbInit_read (int fd, void *buf, size_t size)
+ssize_t mdb_basic_mdbInit_read (int *fd, void *buf, size_t size)
 {
 	ssize_t res;
-	if (!mdb_basic_mdbInit_src_isopen || (fd != 3))
+	if (!mdb_basic_mdbInit_src_isopen || (fd != &fd_3))
 	{
 		errno = EBADF;
 		return -1;
@@ -1271,19 +1253,19 @@ ssize_t mdb_basic_mdbInit_read (int fd, void *buf, size_t size)
 	return res;
 }
 
-int mdb_basic_mdbInit_open (const char *pathname, int flags, mode_t mode)
+int *mdb_basic_mdbInit_open (const char *pathname, int dolock, int mustcreate)
 {
 	/* TODO, verify flags and mode.. */
 
 	mdb_basic_mdbInit_src_isopen++;
 
-	return 3;
+	return &fd_3;
 }
 
 
-int mdb_basic_mdbInit_close (int fd)
+int mdb_basic_mdbInit_close (int *fd)
 {
-	if (!mdb_basic_mdbInit_src_isopen || (fd != 3))
+	if (!mdb_basic_mdbInit_src_isopen || (fd != &fd_3))
 	{
 		errno = EBADF;
 		return -1;
@@ -1292,54 +1274,21 @@ int mdb_basic_mdbInit_close (int fd)
 	return 0;
 }
 
-off_t mdb_basic_mdbInit_lseek (int fd, off_t offset, int whence)
+off_t mdb_basic_mdbInit_lseek (int *fd, off_t offset)
 {
-	if (!mdb_basic_mdbInit_src_isopen || (fd != 3))
+	if (!mdb_basic_mdbInit_src_isopen || (fd != &fd_3))
 	{
 		errno = EBADF;
 		return -1;
 	}
 
-	switch (whence)
+	if (offset < 0)
 	{
-		case SEEK_SET:
-			if (offset < 0)
-			{
-				errno = EINVAL;
-				return (off_t) -1;
-			}
-			mdb_basic_mdbInit_src_pos = offset;
-			return mdb_basic_mdbInit_src_pos;
-		case SEEK_CUR:
-			if ((mdb_basic_mdbInit_src_pos + offset) < 0)
-			{
-				errno = EINVAL;
-				return (off_t) -1;
-			}
-			mdb_basic_mdbInit_src_pos += offset;
-			return mdb_basic_mdbInit_src_pos;
-		case SEEK_END:
-			if (((ssize_t)(sizeof (mdb_basic_mdbInit_src)) + offset) < 0)
-			{
-				errno = EINVAL;
-				return (off_t) -1;
-			}
-			mdb_basic_mdbInit_src_pos = (ssize_t)(sizeof (mdb_basic_mdbInit_src)) + offset;
-			return mdb_basic_mdbInit_src_pos;
-		default:
-			errno = EINVAL;
-			return (off_t) -1;
+		errno = EINVAL;
+		return (off_t) -1;
 	}
-}
-
-int mdb_basic_mdbInit_flock (int fd, int operation)
-{
-	if (!mdb_basic_mdbInit_src_isopen || (fd != 3))
-	{
-		errno = EBADF;
-		return -1;
-	}
-	return 0;
+	mdb_basic_mdbInit_src_pos = offset;
+	return mdb_basic_mdbInit_src_pos;
 }
 
 void mdb_basic_mdbInit_prepare (void)
@@ -1363,7 +1312,6 @@ void mdb_basic_mdbInit_prepare (void)
 	mdb_test_open_hook = mdb_basic_mdbInit_open;
 	mdb_test_lseek_hook = mdb_basic_mdbInit_lseek;
 	mdb_test_close_hook = mdb_basic_mdbInit_close;
-	mdb_test_flock_hook = mdb_basic_mdbInit_flock;
 }
 
 void mdb_basic_mdbInit_finalize (void)
@@ -1477,10 +1425,10 @@ int mdb_basic_mdbUpdate_isopen;
 int mdb_basic_mdbUpdate_writeready;
 int mdb_basic_mdbUpdate_writeerrors;
 
-ssize_t mdb_basic_mdbUpdate_read (int fd, void *buf, size_t size)
+ssize_t mdb_basic_mdbUpdate_read (int *fd, void *buf, size_t size)
 {
 	ssize_t res;
-	if (!mdb_basic_mdbUpdate_isopen || (fd != 3))
+	if (!mdb_basic_mdbUpdate_isopen || (fd != &fd_3))
 	{
 		errno = EBADF;
 		return -1;
@@ -1501,9 +1449,9 @@ ssize_t mdb_basic_mdbUpdate_read (int fd, void *buf, size_t size)
 	return res;
 }
 
-ssize_t mdb_basic_mdbUpdate_write (int fd, const void *buf, size_t size)
+ssize_t mdb_basic_mdbUpdate_write (int *fd, const void *buf, size_t size)
 {
-	if (!mdb_basic_mdbUpdate_isopen || (fd != 3))
+	if (!mdb_basic_mdbUpdate_isopen || (fd != &fd_3))
 	{
 		errno = EBADF;
 		return -1;
@@ -1537,19 +1485,19 @@ ssize_t mdb_basic_mdbUpdate_write (int fd, const void *buf, size_t size)
 	return size;
 }
 
-int mdb_basic_mdbUpdate_open (const char *pathname, int flags, mode_t mode)
+int *mdb_basic_mdbUpdate_open (const char *pathname, int dolock, int mustcreate)
 {
 	/* TODO, verify flags and mode.. */
 
 	mdb_basic_mdbUpdate_isopen++;
 
-	return 3;
+	return &fd_3;
 }
 
 
-int mdb_basic_mdbUpdate_close (int fd)
+int mdb_basic_mdbUpdate_close (int *fd)
 {
-	if (!mdb_basic_mdbUpdate_isopen || (fd != 3))
+	if (!mdb_basic_mdbUpdate_isopen || (fd != &fd_3))
 	{
 		errno = EBADF;
 		return -1;
@@ -1558,54 +1506,21 @@ int mdb_basic_mdbUpdate_close (int fd)
 	return 0;
 }
 
-off_t mdb_basic_mdbUpdate_lseek (int fd, off_t offset, int whence)
+off_t mdb_basic_mdbUpdate_lseek (int *fd, off_t offset)
 {
-	if (!mdb_basic_mdbUpdate_isopen || (fd != 3))
+	if (!mdb_basic_mdbUpdate_isopen || (fd != &fd_3))
 	{
 		errno = EBADF;
 		return -1;
 	}
 
-	switch (whence)
+	if (offset < 0)
 	{
-		case SEEK_SET:
-			if (offset < 0)
-			{
-				errno = EINVAL;
-				return (off_t) -1;
-			}
-			mdb_basic_mdbUpdate_pos = offset;
-			return mdb_basic_mdbUpdate_pos;
-		case SEEK_CUR:
-			if ((mdb_basic_mdbUpdate_pos + offset) < 0)
-			{
-				errno = EINVAL;
-				return (off_t) -1;
-			}
-			mdb_basic_mdbUpdate_pos += offset;
-			return mdb_basic_mdbUpdate_pos;
-		case SEEK_END:
-			if (((ssize_t)mdb_basic_mdbUpdate_size + offset) < 0)
-			{
-				errno = EINVAL;
-				return (off_t) -1;
-			}
-			mdb_basic_mdbUpdate_pos = (ssize_t)mdb_basic_mdbUpdate_size + offset;
-			return mdb_basic_mdbUpdate_pos;
-		default:
-			errno = EINVAL;
-			return (off_t) -1;
+		errno = EINVAL;
+		return (off_t) -1;
 	}
-}
-
-int mdb_basic_mdbUpdate_flock (int fd, int operation)
-{
-	if (!mdb_basic_mdbUpdate_isopen || (fd != 3))
-	{
-		errno = EBADF;
-		return -1;
-	}
-	return 0;
+	mdb_basic_mdbUpdate_pos = offset;
+	return mdb_basic_mdbUpdate_pos;
 }
 
 void mdb_basic_mdbUpdate_prepare (void)
@@ -1634,7 +1549,6 @@ void mdb_basic_mdbUpdate_prepare (void)
 	mdb_test_open_hook = mdb_basic_mdbUpdate_open;
 	mdb_test_lseek_hook = mdb_basic_mdbUpdate_lseek;
 	mdb_test_close_hook = mdb_basic_mdbUpdate_close;
-	mdb_test_flock_hook = mdb_basic_mdbUpdate_flock;
 }
 
 void mdb_basic_mdbUpdate_finalize (void)
@@ -1728,7 +1642,14 @@ int mdb_basic_mdbUpdate (void)
 
 	if (memcmp (mdb_basic_mdbUpdate_data + 29 * 64, mdb_basic_mdbUpdate_added, sizeof (mdb_basic_mdbUpdate_added)))
 	{
+		int i;
 		fprintf (stderr, ANSI_COLOR_RED " [data flushed to disk does not match expected data]");
+		fprintf (stderr, ANSI_COLOR_RESET "\nexpected:");
+		for (i=0; i<sizeof (mdb_basic_mdbUpdate_added); i++)
+			fprintf (stderr, " %02x", ((uint8_t *)mdb_basic_mdbUpdate_added)[i]);
+		fprintf (stderr, ANSI_COLOR_RESET "\nactual  :");
+		for (i=0; i<sizeof (mdb_basic_mdbUpdate_added); i++)
+			fprintf (stderr, " %02x", ((uint8_t *)(mdb_basic_mdbUpdate_data + 29 * 64))[i]);
 		e++;
 	}
 	if (*(uint32_t *)(mdb_basic_mdbUpdate_data + 60) < 31)
