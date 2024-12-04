@@ -29,6 +29,7 @@ struct scanlist_t
 	int entries;
 	int size;
 	int abort;
+	struct ocpfilehandle_t *retain; /* hack to keep one file open in archives, to ensure they remain open while scanning their content */
 };
 
 static void mlScanDraw(const char *title, struct scanlist_t *token)
@@ -193,7 +194,7 @@ static void mlScan_file (void *_token, struct ocpfile_t *file)
 	mdbref = mdbGetModuleReference2 (file->dirdb_ref, file->filesize(file));
 	if (!mdbInfoIsAvailable (mdbref))
 	{
-		mdbScan(file, mdbref);
+		mdbScan(file, mdbref, token->retain ? 0 : &token->retain);
 	}
 	dirdbMakeMdbRef(file->dirdb_ref, mdbref);
 
@@ -231,6 +232,11 @@ static int mlScan(struct ocpdir_t *dir)
 	if (!handle)
 	{
 		free (token.path);
+		if (token.retain)
+		{
+			token.retain->unref (token.retain);
+			token.retain = 0;
+		}
 		return 0;
 	}
 	while (dir->readdir_iterate (handle) && (!token.abort))
@@ -249,5 +255,12 @@ static int mlScan(struct ocpdir_t *dir)
 	free (token.files);
 
 	free (token.path);
+
+	if (token.retain)
+	{
+		token.retain->unref (token.retain);
+		token.retain = 0;
+	}
+
 	return token.abort;
 }

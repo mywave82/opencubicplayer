@@ -185,7 +185,7 @@ void modlist_append_drive (struct modlist *modlist, struct dmDrive *drive)
 	modlist_append (modlist, &entry);
 }
 
-void modlist_append_file (struct modlist *modlist, struct ocpfile_t *file, int ismod, int prescanhint)
+void modlist_append_file (struct modlist *modlist, struct ocpfile_t *file, int ismod, int prescanhint, struct ocpfilehandle_t **retain)
 {
 	struct modlistentry entry = {{0}};
 	const char *childpath = 0;
@@ -216,7 +216,7 @@ void modlist_append_file (struct modlist *modlist, struct ocpfile_t *file, int i
 	{
 		if (prescanhint && (!mdbInfoIsAvailable(entry.mdb_ref)))
 		{
-			mdbScan (file, entry.mdb_ref);
+			mdbScan (file, entry.mdb_ref, retain);
 			entry.flags |= MODLIST_FLAG_SCANNED;
 		}
 	}

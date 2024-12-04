@@ -133,6 +133,8 @@ struct fsReadDir_token_t
 
 	int             cancel_recursive;
 	char           *parent_displaydir;
+
+	struct ocpfilehandle_t *fileretain; /* hack to keep one file open in archives, to ensure they remain open while scanning their content */
 };
 
 static void fsReadDir_file (void *_token, struct ocpfile_t *file)
@@ -172,11 +174,6 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 				{
 					unsigned int mlTop=plScrHeight/2-2;
 					unsigned int i;
-					char *oldparent_displaydir;
-
-					/* store the callers directory - we might be running recursive */
-					oldparent_displaydir = token->parent_displaydir;
-					token->parent_displaydir = 0;
 
 					/* draw a box and information to the display... resize of the display will not be gracefull during a directory scan */
 					displayvoid(mlTop+1, 5, plScrWidth-10);
@@ -202,13 +199,17 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 						displaystr(mlTop+4, plScrWidth-5, 0x04, "\xd9", 1);
 					}
 					displaystr (mlTop + 1, 5, 0x09, "Scanning content of the given file. Press space to cancel", plScrWidth - 10);
-					dirdbGetFullname_malloc (dir->dirdb_ref, &token->parent_displaydir, DIRDB_FULLNAME_ENDSLASH);
-					displaystr_utf8_overflowleft (mlTop + 3, 5, 0x0a, token->parent_displaydir, plScrWidth - 10);
-
-
 					{ /* do the actual scan */
-						ocpdirhandle_pt dh = dir->readflatdir_start (dir, fsReadDir_file, token); /* recycle the same token... */
-						while (dir->readdir_iterate (dh) && (!token->cancel_recursive))
+						struct fsReadDir_token_t innertoken = *token;
+
+						innertoken.parent_displaydir = 0;
+						innertoken.fileretain = 0;
+
+						dirdbGetFullname_malloc (dir->dirdb_ref, &innertoken.parent_displaydir, DIRDB_FULLNAME_ENDSLASH);
+						displaystr_utf8_overflowleft (mlTop + 3, 5, 0x0a, innertoken.parent_displaydir, plScrWidth - 10);
+
+						ocpdirhandle_pt dh = dir->readflatdir_start (dir, fsReadDir_file, &innertoken);
+						while (dir->readdir_iterate (dh) && (!innertoken.cancel_recursive))
 						{
 							if (poll_framelock())
 							{
@@ -217,7 +218,7 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 									int key = Console.KeyboardGetChar();
 									if ((key == ' ') || (key == KEY_EXIT))
 									{
-										token->cancel_recursive = 1;
+										innertoken.cancel_recursive = 1;
 									}
 									if (key == VIRT_KEY_RESIZE)
 									{
@@ -227,11 +228,18 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 								}
 							}
 						}
+
+					  free (innertoken.parent_displaydir);
+						if (innertoken.fileretain)
+						{
+							innertoken.fileretain->unref (innertoken.fileretain);
+							innertoken.fileretain = 0;
+						}
+						token->cancel_recursive |= innertoken.cancel_recursive;
 						dir->readdir_cancel (dh);
 					}
 
 					/* undo the filename displayed */
-					free (token->parent_displaydir); token->parent_displaydir = oldparent_displaydir;
 					if (token->parent_displaydir)
 					{
 						displaystr_utf8_overflowleft (mlTop + 3, 5, 0x0a, token->parent_displaydir, plScrWidth - 10);
@@ -284,7 +292,7 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 	if (ismod ||   // always include if file is an actual module
 	    (fsShowAllFiles && (!(token->opt & RD_ISMODONLY)))) // force include if  fsShowAllFiles  is true, except if RD_ISMODONLY
 	{
-		modlist_append_file (token->ml, file, ismod, file->compression >= COMPRESSION_SOLID && (file->compression < COMPRESSION_REMOTE)); /* modlist_append() will do refcount on the file */
+		modlist_append_file (token->ml, file, ismod, file->compression >= COMPRESSION_SOLID && (file->compression < COMPRESSION_REMOTE), token->fileretain ? 0 : &token->fileretain); /* modlist_append() will do refcount on the file */
 	}
 out:
 	free (curext);
@@ -342,6 +350,7 @@ int fsReadDir (struct modlist *ml, struct ocpdir_t *dir, const char *mask, unsig
 	token.mask = (char *)mask;
 #endif
 	token.opt = opt & ~(RD_SUBSORT);
+	token.fileretain = 0;
 
 	if ((opt & RD_PUTRSUBS) && dir->readflatdir_start)
 	{
@@ -355,6 +364,11 @@ int fsReadDir (struct modlist *ml, struct ocpdir_t *dir, const char *mask, unsig
 #ifndef FNM_CASEFOLD
 		free (token.mask);
 #endif
+		if (token.fileretain)
+		{
+			token.fileretain->unref (token.fileretain);
+			token.fileretain = 0;
+		}
 		return 0;
 	}
 	while (dir->readdir_iterate (dh))
@@ -377,6 +391,11 @@ int fsReadDir (struct modlist *ml, struct ocpdir_t *dir, const char *mask, unsig
 #ifndef FNM_CASEFOLD
 	free (token.mask);
 #endif
+	if (token.fileretain)
+	{
+		token.fileretain->unref (token.fileretain);
+		token.fileretain = 0;
+	}
 
 	if (opt & RD_SUBSORT)
 	{
@@ -520,7 +539,7 @@ static void addfiles_file (void *token, struct ocpfile_t *file)
 	}
 	if (fsIsModule(curext))
 	{
-		modlist_append_file (playlist, file, 1, 0); /* modlist_append calls file->ref (file); for us */
+		modlist_append_file (playlist, file, 1, 0, 0); /* modlist_append calls file->ref (file); for us */
 	}
 	free (curext);
 }
@@ -3299,7 +3318,7 @@ superbreak:
 			int poll = 1;
 			if ((m->file && (m->file->compression < COMPRESSION_REMOTE) && (m->flags & MODLIST_FLAG_ISMOD)) && (!mdbInfoIsAvailable(m->mdb_ref)) && (!(m->flags&MODLIST_FLAG_SCANNED)))
 			{
-				mdbScan(m->file, m->mdb_ref);
+				mdbScan(m->file, m->mdb_ref, 0);
 				m->flags |= MODLIST_FLAG_SCANNED;
 			}
 
@@ -3312,7 +3331,7 @@ superbreak:
 					{
 						if (!mdbInfoIsAvailable(scanm->mdb_ref))
 						{
-							mdbScan(scanm->file, scanm->mdb_ref);
+							mdbScan(scanm->file, scanm->mdb_ref, 0);
 							scanm->flags |= MODLIST_FLAG_SCANNED;
 
 							if (poll_framelock())
@@ -3333,7 +3352,7 @@ superbreak:
 					{
 						if (!mdbInfoIsAvailable(scanm->mdb_ref))
 						{
-							mdbScan(scanm->file, scanm->mdb_ref);
+							mdbScan(scanm->file, scanm->mdb_ref, 0);
 							scanm->flags |= MODLIST_FLAG_SCANNED;
 
 							if (poll_framelock())
@@ -3470,7 +3489,7 @@ superbreak:
 						mdbEditBuf.modtype.integer.i = mtUnRead;
 						if (!mdbWriteModuleInfo(m->mdb_ref, &mdbEditBuf))
 							return -1;
-						mdbScan(m->file, m->mdb_ref);
+						mdbScan(m->file, m->mdb_ref, 0);
 						m->flags |= MODLIST_FLAG_SCANNED;
 					}
 					break;
@@ -3539,7 +3558,7 @@ superbreak:
 					/* We delay mdbScan for remote files until this stage */
 					if (m && m->file && (m->file->compression >= COMPRESSION_REMOTE) && !(m->flags & MODLIST_FLAG_SCANNED))
 					{
-						mdbScan (m->file, m->mdb_ref);
+						mdbScan (m->file, m->mdb_ref, 0);
 						m->flags |= MODLIST_FLAG_SCANNED;
 					}
 					if (win)

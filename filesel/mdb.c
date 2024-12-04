@@ -493,7 +493,8 @@ int mdbWriteModuleInfo (uint32_t mdb_ref, struct moduleinfostruct *m)
 	return !retval;
 }
 
-void mdbScan (struct ocpfile_t *file, uint32_t mdb_ref)
+/* if retain is non-zero, do not unref filehandle, but pass it to caller when done */
+void mdbScan (struct ocpfile_t *file, uint32_t mdb_ref, struct ocpfilehandle_t **retain)
 {
 	DEBUG_PRINT ("mdbScan(file=%p, mdb_ref=0x%08"PRIx32")\n", file, mdb_ref);
 	assert (mdb_ref > 0);
@@ -519,7 +520,12 @@ void mdbScan (struct ocpfile_t *file, uint32_t mdb_ref)
 		}
 		mdbGetModuleInfo(&mdbEditBuf, mdb_ref);
 		mdbReadInfo(&mdbEditBuf, f);
-		f->unref (f);
+		if (retain)
+		{
+			*retain = f;
+		} else {
+			f->unref (f);
+		}
 		mdbWriteModuleInfo(mdb_ref, &mdbEditBuf);
 	}
 }
