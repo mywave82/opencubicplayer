@@ -370,7 +370,7 @@ static const char *known_root_directories[] =
 	// "Voodoo Supreme Synthesizer",
 	// "Wally Beben",
 	// "Westwood SND",
-	// " WonderSwan",
+	// "WonderSwan",
 	"X-Tracker",                         /* DMF */
 	"YM",                                /* YM */
 	// "YMST",                           /* <- Furher development of YM fileformat, unable to find documentation. UADE can play these via YM-2149 / MYST */
@@ -451,30 +451,35 @@ static ocpdirhandle_pt modland_com_ocpdir_readdir_start_common (struct ocpdir_t 
 		iter->isroot = !strcasecmp (self->dirname, "");
 		iter->isadlib = !strcasecmp (self->dirname, "Ad Lib");
 
-		while (1)
-		{
-			unsigned long distance = stop - start;
-			unsigned long half;
-
-			if ((distance <= 1) ||
-			    (!strcmp (modland_com.database.direntries[start], self->dirname)))
+		if (!strcmp (modland_com.database.direntries[start], self->dirname))
+		{ /* we only need to strcmp the start entry once, after this start can only be transfered from "half", which is strcompared */
+			iter->direxact = start;
+		} else {
+			while (1)
 			{
-				if (!strcmp (modland_com.database.direntries[start], self->dirname))
+				unsigned long distance = stop - start;
+				unsigned long half;
+				int res;
+
+				if (distance <= 1) /* we can't have a direct hit, since entry does not match start which is the only possible entry in the list */
 				{
-					iter->direxact = start;
-				} else {
 					iter->direxact = UINT_MAX;
+					break;
 				}
-				break;
-			}
 
-			half = (stop - start) / 2 + start;
+				half = (stop - start) / 2 + start;
 
-			if (strcmp (modland_com.database.direntries[half], self->dirname) > 0)
-			{
-				stop = half;
-			} else {
-				start = half;
+				res = modland_com_dir_strcmp (modland_com.database.direntries[half], self->dirname);
+				if (!res)
+				{
+					iter->direxact = half;
+					break;
+				} else if (res > 0)
+				{
+					stop = half;
+				} else {
+					start = half;
+				}
 			}
 		}
 	} else {
@@ -579,8 +584,7 @@ static int modland_com_ocpdir_readdir_iterate (ocpdirhandle_pt v)
 	if ((!iter->sentdevs) &&
 	    (!iter->dirnamelength))
 	{
-		iter->callback_file (iter->token, modland_com.initialize);
-		iter->callback_file (iter->token, modland_com.setup);
+		iter->callback_file (iter->token, modland_com.modland_com_setup);
 		iter->sentdevs = 1;
 	}
 

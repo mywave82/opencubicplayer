@@ -65,13 +65,9 @@ struct modland_com_t
 	char *mirror;
 	char *mirrorcustom;
 	struct dmDrive *drive;
-#if 0
-	struct ocpdir_mem_t *root;
-#else
 	struct ocpdir_t *root;
-#endif
-	struct ocpfile_t *initialize;
-	struct ocpfile_t *setup;
+	struct ocpfile_t *modland_com_setup;
+	struct ocpfile_t *setup_modland_com;
 
 	struct modland_com_database_t database;
 
@@ -200,14 +196,8 @@ static int modland_com_last_or_new_dir (const char *dir)
 	return modland_com.database.direntries_n++;
 }
 
-static int modland_com_sort_dir_helper(const void *__a, const void *__b)
+static int modland_com_dir_strcmp (const char *a, const char *b)
 {
-	const unsigned int *_a = __a;
-	const unsigned int *_b = __b;
-
-	const char *a = modland_com.database.direntries[*_a];
-	const char *b = modland_com.database.direntries[*_b];
-
 	while (1)
 	{
 		if (*a == *b)
@@ -217,16 +207,28 @@ static int modland_com_sort_dir_helper(const void *__a, const void *__b)
 			b++;
 			continue;
 		}
-		if (*a == '/') return -1;
-		if (*b == '/') return 1;
 
 		if (!*a) return -1;
 		if (!*b) return 1;
+
+		if (*a == '/') return -1;
+		if (*b == '/') return 1;
 
 		if (*a > *b) return 1;
 
 		return -1;
 	}
+}
+
+static int modland_com_sort_dir_helper(const void *__a, const void *__b)
+{
+	const unsigned int *_a = __a;
+	const unsigned int *_b = __b;
+
+	const char *a = modland_com.database.direntries[*_a];
+	const char *b = modland_com.database.direntries[*_b];
+
+	return modland_com_dir_strcmp (a, b);
 }
 
 static int modland_com_sort_dir (void)
@@ -552,9 +554,9 @@ static char *modland_com_strdup_slash(const char *src)
 #include "modland-com-setup.c"
 
 
-static int modland_com_init (const struct configAPI_t *configAPI)
+static int modland_com_init (struct PluginInitAPI_t *API)
 {
-	modland_com.cacheconfig = strdup (configAPI->GetProfileString ("modland.com", "cachedir",
+	modland_com.cacheconfig = strdup (API->configAPI->GetProfileString ("modland.com", "cachedir",
 #ifdef _WIN32
 		"$OCPHOMEDATA\\modland.com\\"
 #else
@@ -566,25 +568,25 @@ static int modland_com_init (const struct configAPI_t *configAPI)
 		return errAllocMem;
 	}
 
-	modland_com.cachepath = modland_com_resolve_cachedir (configAPI, modland_com.cacheconfig);
+	modland_com.cachepath = modland_com_resolve_cachedir (API->configAPI, modland_com.cacheconfig);
 	if (!modland_com.cachepath)
 	{
 		return errAllocMem;
 	}
 
-	modland_com.cacheconfigcustom = strdup (configAPI->GetProfileString ("modland.com", "cachedircustom", modland_com.cacheconfig));
+	modland_com.cacheconfigcustom = strdup (API->configAPI->GetProfileString ("modland.com", "cachedircustom", modland_com.cacheconfig));
 	if (!modland_com.cacheconfigcustom)
 	{
 		return errAllocMem;
 	}
 
-	modland_com.cachepathcustom = modland_com_resolve_cachedir (configAPI, modland_com.cacheconfigcustom);
+	modland_com.cachepathcustom = modland_com_resolve_cachedir (API->configAPI, modland_com.cacheconfigcustom);
 	if (!modland_com.cachepathcustom)
 	{
 		return errAllocMem;
 	}
 
-	modland_com.showrelevantdirectoriesonly = configAPI->GetProfileBool ("modland.com", "showrelevantdirectoriesonly", 1, 1);
+	modland_com.showrelevantdirectoriesonly = API->configAPI->GetProfileBool ("modland.com", "showrelevantdirectoriesonly", 1, 1);
 
 	modland_com.root = modland_com_init_root ();
 	modland_com.drive = RegisterDrive("modland.com:", modland_com.root, modland_com.root);
@@ -594,26 +596,12 @@ static int modland_com_init (const struct configAPI_t *configAPI)
 		return errAllocMem;
 	}
 
-	modland_com_filedb_load (configAPI);
+	modland_com_filedb_load (API->configAPI);
 	fprintf (stderr, "Sort CPMDLAND.DAT data ..");
 	modland_com_sort ();
 	fprintf (stderr, "Done\n");
 
-#warning if modland_com_filedb_load() fails, fails create this, and remove if download is successfull
-	modland_com.initialize = dev_file_create (
-		modland_com.root, /* parent-dir */
-		"initialize.dev",
-		"Download metadatabase from modland.com",
-		"",
-		0, /* token */
-		0, /* Init */
-		modland_com_initialize_Run,
-		0, /* Close */
-		0  /* Destructor */
-	);
-
-#warning make a copy in setup: too
-	modland_com.setup = dev_file_create (
+	modland_com.modland_com_setup = dev_file_create (
 		modland_com.root, /* parent-dir */
 		"setup.dev",
 		"setup modland.com: drive",
@@ -625,15 +613,28 @@ static int modland_com_init (const struct configAPI_t *configAPI)
 		0  /* Destructor */
 	);
 
+	modland_com.setup_modland_com = dev_file_create (
+		API->dmSetup->basedir, /* parent-dir */
+		"modland.com.dev",
+		"setup modland.com: drive",
+		"",
+		0, /* token */
+		0, /* Init */
+		modland_com_setup_Run,
+		0, /* Close */
+		0  /* Destructor */
+	);
+	API->filesystem_setup_register_file (modland_com.setup_modland_com);
+
 	{
-		const char *temp = configAPI->GetProfileString ("modland.com", "mirror", "https://modland.com/");
+		const char *temp = API->configAPI->GetProfileString ("modland.com", "mirror", "https://modland.com/");
 		modland_com.mirror = modland_com_strdup_slash (temp);
 		if (!modland_com.mirror)
 		{
 			return errAllocMem;
 		}
 
-		temp = configAPI->GetProfileString ("modland.com", "mirrorcustom", modland_com.mirror);
+		temp = API->configAPI->GetProfileString ("modland.com", "mirrorcustom", modland_com.mirror);
 		modland_com.mirrorcustom = modland_com_strdup_slash (temp);
 		if (!modland_com.mirrorcustom)
 		{
@@ -644,22 +645,23 @@ static int modland_com_init (const struct configAPI_t *configAPI)
 	return errOk;
 }
 
-static void modland_com_done (void)
+static void modland_com_done (struct PluginCloseAPI_t *API)
 {
 	modland_com_filedb_close ();
 
 	modland_com_database_clear();
 
-	if (modland_com.initialize)
+	if (modland_com.setup_modland_com)
 	{
-		modland_com.initialize->unref (modland_com.initialize);
-		modland_com.initialize = 0;
+		API->filesystem_setup_unregister_file (modland_com.setup_modland_com);
+		modland_com.setup_modland_com->unref (modland_com.setup_modland_com);
+		modland_com.setup_modland_com = 0;
 	}
 
-	if (modland_com.setup)
+	if (modland_com.modland_com_setup)
 	{
-		modland_com.setup->unref (modland_com.setup);
-		modland_com.setup = 0;
+		modland_com.modland_com_setup->unref (modland_com.modland_com_setup);
+		modland_com.modland_com_setup = 0;
 	}
 
 	if (modland_com.root)
@@ -693,4 +695,4 @@ static void modland_com_done (void)
 	modland_com.mirrorcustom = 0;
 }
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "modland-com", .desc = "OpenCP virtual modland.com filebrowser (c) 2024 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 60, .Init = modland_com_init, .Close = modland_com_done};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "modland-com", .desc = "OpenCP virtual modland.com filebrowser (c) 2024 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 60, .PluginInit = modland_com_init, .PluginClose = modland_com_done};

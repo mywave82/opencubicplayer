@@ -373,9 +373,8 @@ displaymenu:
 						quit = 1;
 					} else if (selected == 1)
 					{
-						osdir_trash_perform (modland_com.cachepath);
+						osdir_trash_perform (modland_com.cachepath); /* we ignore errors..... */
 						quit = 1;
-#warning detect error......
 					} else if (selected == 2)
 					{
 						quit = 1;
