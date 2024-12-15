@@ -519,7 +519,7 @@ static int wuerfelKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 	return 0;
 }
 
-static void wuerfelSetMode(void)
+static void wuerfelSetMode(struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	plLoadWuerfel();
 	plPrepareWuerfel();

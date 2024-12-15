@@ -2029,7 +2029,7 @@ void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 void cpiResetScreen(void)
 {
 	if (curmode)
-		curmode->SetMode();
+		curmode->SetMode(&cpifaceSessionAPI.Public);
 }
 
 static void cpiChangeMode(struct cpimoderegstruct *m)
@@ -2050,7 +2050,7 @@ again:
 		}
 	}
 
-	curmode->SetMode();
+	curmode->SetMode(&cpifaceSessionAPI.Public);
 }
 
 void cpiGetMode(char *hand)
@@ -2409,7 +2409,7 @@ static void plmpOpenScreen (void)
 		curmode=&cpiModeText;
 	if (!curmode->Event (&cpifaceSessionAPI.Public, cpievOpen))
 		curmode=&cpiModeText;
-	curmode->SetMode();
+	curmode->SetMode(&cpifaceSessionAPI.Public);
 }
 
 
@@ -2562,7 +2562,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 		plInKeyboardHelp = cpiKeyHelpDisplay();
 		if (!plInKeyboardHelp)
 		{
-			curmode->SetMode(); /* force complete redraw */
+			curmode->SetMode(&cpifaceSessionAPI.Public); /* force complete redraw */
 		} else {
 			framelock();
 		}
@@ -2627,7 +2627,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 				fsSetup();
 				plSetTextMode(fsScrType);
 				fsScrType=plScrType;
-				curmode->SetMode();
+				curmode->SetMode(&cpifaceSessionAPI.Public);
 				break;
 			#if 0
 			TODO plLoopPatterns

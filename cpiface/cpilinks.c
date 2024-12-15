@@ -163,7 +163,7 @@ static void hlpDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 	plDisplayHelp (cpifaceSession);
 }
 
-static void hlpSetMode()
+static void hlpSetMode(struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpiSetTextMode(fsScrType);
 	plWinHeight=plScrHeight-6;

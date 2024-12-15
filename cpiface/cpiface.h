@@ -68,7 +68,7 @@ extern int cpiKeyHelpDisplay(void); /* recall until it returns zero. This functi
 struct cpimoderegstruct
 {
   char handle[9];
-  void (*SetMode)();
+  void (*SetMode)(struct cpifaceSessionAPI_t *cpifaceSession);
   void (*Draw)(struct cpifaceSessionAPI_t *cpifaceSession);
   int (*IProcessKey)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t);
   int (*AProcessKey)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t);

@@ -111,7 +111,7 @@ static void msgDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 	plDisplayMessage (cpifaceSession);
 }
 
-static void msgSetMode(void)
+static void msgSetMode(struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpiSetTextMode(0);
 	plWinFirstLine=6;
