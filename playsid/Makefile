@@ -76,7 +76,7 @@ LIBSIDPLAYOBJECTS=libsidplayfp-builders-resid-builder-resid-builder.o \
 all: $(TARGETS) $(DUMPSID)
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) libsidplayfp-git/src/sidtune/sidplayer1.bin sidplayfp-git/libsidplayfp/src/sidtune/sidplayer2.bin dumpsid$(EXE_SUFFIX) \
+	rm -f *.o *$(LIB_SUFFIX) libsidplayfp-git/src/sidtune/sidplayer1.bin libsidplayfp-git/libsidplayfp/src/sidtune/sidplayer2.bin libsidplayfp-git/src/psiddrv.bin dumpsid$(EXE_SUFFIX) \
 	libsidplayfp-git/src/builders/resid-builder/resid/wave6581__ST.h \
 	libsidplayfp-git/src/builders/resid-builder/resid/wave6581_P_T.h \
 	libsidplayfp-git/src/builders/resid-builder/resid/wave6581_PS_.h \
@@ -273,7 +273,8 @@ libsidplayfp-player.o: \
 	libsidplayfp-git/src/player.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-psiddrv.o: \
-	libsidplayfp-git/src/psiddrv.cpp
+	libsidplayfp-git/src/psiddrv.cpp \
+	libsidplayfp-git/src/psiddrv.bin
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-reloc65.o: \
 	libsidplayfp-git/src/reloc65.cpp
@@ -313,6 +314,9 @@ libsidplayfp-git/src/sidtune/sidplayer1.bin: \
 	$(XA) -R -G $< -o - | $(HEXDUMP) -v -e '1/1 "0x%02X,\n"' > $@
 libsidplayfp-git/src/sidtune/sidplayer2.bin: \
 	libsidplayfp-git/src/sidtune/sidplayer2.a65
+	$(XA) -R -G $< -o - | $(HEXDUMP) -v -e '1/1 "0x%02X,\n"' > $@
+libsidplayfp-git/src/psiddrv.bin: \
+	libsidplayfp-git/src/psiddrv.a65
 	$(XA) -R -G $< -o - | $(HEXDUMP) -v -e '1/1 "0x%02X,\n"' > $@
 libsidplayfp-sidtune-MUS.o: \
 	libsidplayfp-git/src/sidtune/MUS.cpp \

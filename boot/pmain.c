@@ -1033,8 +1033,8 @@ static int init_modules(int argc, char *argv[])
 		{
 			fprintf(stderr, "ocp.ini update (0.2.107) add [libsidplayfp] filterrange6581=0.5\n");
 			cfSetProfileString  ("libsidplayfp", "filterrange6581", "0.5");
-			fprintf(stderr, "ocp.ini update (0.2.107) add [libsidplayfp] combinedwaveforms=Average\n");
-			cfSetProfileString  ("libsidplayfp", "combinedwaveforms", "Average");
+			fprintf(stderr, "ocp.ini update (0.2.107) add [libsidplayfp] combinedwaveforms=Strong\n");
+			cfSetProfileString  ("libsidplayfp", "combinedwaveforms", "Strong");
 		}
 
 		if (epoch < 20240510)

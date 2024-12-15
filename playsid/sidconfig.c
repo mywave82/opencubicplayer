@@ -1075,7 +1075,7 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 	config_filtercurve6581 = float100x_to_int (API->configAPI->GetProfileString ("libsidplayfp", "filtercurve6581", "0.5"));
 	config_filterrange6581 = float100x_to_int (API->configAPI->GetProfileString ("libsidplayfp", "filterrange6581", "0.5"));
 	config_filtercurve8580 = float100x_to_int (API->configAPI->GetProfileString ("libsidplayfp", "filtercurve8580", "0.5"));
-	config_combinedwaveforms = CWS_to_int     (API->configAPI->GetProfileString ("libsidplayfp", "combinedwaveforms", "Average"));
+	config_combinedwaveforms = CWS_to_int     (API->configAPI->GetProfileString ("libsidplayfp", "combinedwaveforms", "Strong"));
 	config_digiboost =                         API->configAPI->GetProfileBool   ("libsidplayfp", "digiboost",       0, 0);
 	config_kernal = strdup                    (API->configAPI->GetProfileString ("libsidplayfp", "kernal",          "KERNEL.ROM"));
 	config_basic = strdup                     (API->configAPI->GetProfileString ("libsidplayfp", "basic",           "BASIC.ROM"));

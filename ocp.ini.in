@@ -131,9 +131,9 @@
 ; filtercurve8580=0.5  Controls the filter curve for the MOS8580 SID model if emulator=residfp.
 ;                      Ranges from 0.0 (light) to 1.0 (dark), the default value is 0.5.
   filtercurve8580=0.5
-; combinedwaveforms=Average  Controls the strength of the combined waveforms. Options are
+; combinedwaveforms=Strong   Controls the strength of the combined waveforms. Options are
 ;                            Average, Weak and Strong, default value is Average
-  combinedwaveforms=Average
+  combinedwaveforms=Strong
 ; digiboost=on/off  Enable digiboost for MOS8580 SID model.
   digiboost=off
 ; kernal, basic and chargen makes it possible to specify path to ROM images, that the C64

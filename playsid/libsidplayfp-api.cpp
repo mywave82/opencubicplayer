@@ -78,15 +78,15 @@ namespace libsidplayfp
 	{
 		switch (model)
 		{
-			case MOS656X::MOS6567R56A:
+			case MOS656X::model_t::MOS6567R56A:
 				return "MOS6567R56A NTSC-M (old)";
-			case MOS656X::MOS6567R8:
+			case MOS656X::model_t::MOS6567R8:
 				return "MOS6567R8 NTSC-M";
-			case MOS656X::MOS6569:
+			case MOS656X::model_t::MOS6569:
 				return "MOS6569 PAL-B";
-			case MOS656X::MOS6572:
+			case MOS656X::model_t::MOS6572:
 				return "MOS6572 PAL-N";
-			case MOS656X::MOS6573:
+			case MOS656X::model_t::MOS6573:
 				return "MOS6573 PAL-M";
 			default:
 				return "MOS65xx ??";
@@ -429,7 +429,9 @@ namespace libsidplayfp
 			return false;
 		} else {
 			/* set up SID filter. HardSID just ignores call with def. */
-			m_engCfg.sidEmulation->filter(m_filter.enabled);
+			sidplayer.filter(0, m_filter.enabled);
+			sidplayer.filter(1, m_filter.enabled);
+			sidplayer.filter(2, m_filter.enabled);
 		}
 
 		return true;
@@ -541,7 +543,9 @@ namespace libsidplayfp
 	void ConsolePlayer::SetFilter(bool enable)
 	{
 		const SidConfig &config = sidplayer.config ();
-		config.sidEmulation->filter (enable);
+		sidplayer.filter(0, enable);
+		sidplayer.filter(1, enable);
+		sidplayer.filter(2, enable);
 	}
 
 	void ConsolePlayer::SetBias(double bias)
