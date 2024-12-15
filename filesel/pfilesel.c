@@ -3573,8 +3573,11 @@ superbreak:
 					/* We delay mdbScan for remote files until this stage */
 					if (m && m->file && (m->file->compression >= COMPRESSION_REMOTE) && !(m->flags & MODLIST_FLAG_SCANNED))
 					{
-						mdbScan (m->file, m->mdb_ref, 0);
-						m->flags |= MODLIST_FLAG_SCANNED;
+						if (m->mdb_ref != UINT32_MAX) /* just in-case fsShowAllFiles added this file */
+						{
+							mdbScan (m->file, m->mdb_ref, 0);
+							m->flags |= MODLIST_FLAG_SCANNED;
+						}
 					}
 					if (win)
 					{
