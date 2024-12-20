@@ -108,6 +108,7 @@ static struct ocpfilehandle_t *ancient_filehandle_srcbuffer (char *compressionme
 struct ocpfilehandle_t *ancient_filehandle (char *compressionmethod, int compressionmethod_len, struct ocpfilehandle_t *s)
 {
 	uint32_t magic;
+	uint32_t footer = 0;
 
 	s->seek_set (s, 0);
 	if (ocpfilehandle_read_uint32_be (s, &magic))
@@ -129,6 +130,17 @@ struct ocpfilehandle_t *ancient_filehandle (char *compressionmethod, int compres
 		{
 			goto isancient;
 		}
+	}
+
+	if (s->filesize_ready(s) && (s->filesize(s) < 0x10000) && (s->filesize(s) > 4))
+	{
+		s->seek_set (s, s->filesize(s) - 4);
+		if (ocpfilehandle_read_uint32_be (s, &footer))
+		{
+			s->seek_set (s, 0);
+			return 0;
+		}
+		s->seek_set (s, 0);
 	}
 
 	if (((magic & 0xffffff00U)==FourCC("BZh\0") && (magic & 0xffU) >= '1' && (magic & 0xffU) <= '9') ||
@@ -187,7 +199,13 @@ struct ocpfilehandle_t *ancient_filehandle (char *compressionmethod, int compres
 	    (magic == FourCC("RVV!")) ||                   /* Hoi AGA Remix,                    will be added in v2.2.0 src/PPDecompressor.cpp */
 	    (magic == FourCC("...\001")) ||                /* Total Carnage,                    will be added in v2.2.0 src/RNCDecompressor.cpp */
 	    (magic == FourCC("Vice")) ||                   /*                                   will be added in v2.2.0 src/VicXDecompressor.cpp */
-	    (magic == FourCC("Vic2"))                      /*                                   will be added in v2.2.0 src/VicXDecompressor.cpp */
+	    (magic == FourCC("Vic2")) ||                   /*                                   will be added in v2.2.0 src/VicXDecompressor.cpp */
+	    (footer== FourCC("Ice!")) ||                   /* ICE version 0                         will be added in v2.3.0 src/IceXDecompressor.cpp */
+	    (magic == FourCC("Ice!")) ||                   /* ICE version 1                         will be added in v2.3.0 src/IceXDecompressor.cpp */
+	    (magic == FourCC("TMM!")) ||                   /* ICE version 1, Demo Numb/Movement,    will be added in v2.3.0 src/IceXDecompressor.cpp */
+	    (magic == FourCC("TSM!")) ||                   /* ICE version 1, Lots of Amiga games,   will be added in v2.3.0 src/IceXDecompressor.cpp */
+	    (magic == FourCC("SHE!")) ||                   /* ICE version 1, Demo Overload2/JetSet, will be added in v2.3.0 src/IceXDecompressor.cpp */
+	    (magic == FourCC("ICE!"))                      /* ICE version 2                         will be added in v2.3.0 src/IceXDecompressor.cpp */
 	   )
 	{
 isancient:
