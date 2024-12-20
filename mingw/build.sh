@@ -7,6 +7,8 @@ set -e
 if ! test -f ./configure || test $# != 1; then echo "Please execute from the main project directory like this:"; echo "mingw/build.sh x86_64-w64-mingw32    (or i686-w64-mingw32 for a 32bit build)"; exit 1; fi
 if test "$1" != "x86_64-w64-mingw32" && test "$1" != "i686-w64-mingw32"; then echo "only supported targets are x86_64-w64-mingw32 and i686-w64-mingw32. $1 given"; exit 1; fi
 
+. mingw/versionsconf.sh
+
 test -f ./Makefile && make clean || true
 
 sudo apt-get install mingw-w64-tools mingw-w64 libz-mingw-w64-dev nasm cmake
@@ -72,10 +74,10 @@ do_cmake () {
 #cd ..
 
 ########## BZIP2 ##########
-wget https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz -O bzip2-1.0.8.tar.gz
-rm -Rf bzip2-1.0.8
-tar xfz bzip2-1.0.8.tar.gz
-cd bzip2-1.0.8
+rm -Rf bzip2-*
+wget https://sourceware.org/pub/bzip2/bzip2-$BZIP2_VERSION.tar.gz -O bzip2-$BZIP2_VERSION.tar.gz
+tar xfz bzip2-$BZIP2_VERSION.tar.gz
+cd bzip2-$BZIP2_VERSION
 cat <<EOF > Makefile.mingw32
 CC=$host-gcc
 CFLAGS=-fpic -fPIC -DWIN32 -MD -O2 -D_FILE_OFFSET_BITS=64 -DBZ_EXPORT
@@ -152,10 +154,10 @@ EOF
  cd ..
 
 ########## MAD ##########
-wget https://sourceforge.net/projects/mad/files/libmad/0.15.1b/libmad-0.15.1b.tar.gz/download -O libmad-0.15.1b.tar.gz
-rm -Rf libmad-0.15.1b
-tar xfz libmad-0.15.1b.tar.gz
-cd libmad-0.15.1b
+rm -Rf libmad-*
+wget https://sourceforge.net/projects/mad/files/libmad/$LIBMAD_VERSION/libmad-$LIBMAD_VERSION.tar.gz/download -O libmad-$LIBMAD_VERSION.tar.gz
+tar xfz libmad-$LIBMAD_VERSION.tar.gz
+cd libmad-$LIBMAD_VERSION
 patch -p 1 << EOF
 diff -u libmad-0.15.1b/configure.ac libmad-0.15.1b-new/configure.ac
 --- libmad-0.15.1b/configure.ac	2004-01-23 10:41:32.000000000 +0100
@@ -196,37 +198,37 @@ make all install
 cd ..
 
 ########## LIBJPEG-TURBO ##########
-wget https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.0.3/libjpeg-turbo-3.0.3.tar.gz -O libjpeg-turbo-3.0.3.tar.gz
-rm -Rf libjpeg-turbo-3.0.3
-tar xfz libjpeg-turbo-3.0.3.tar.gz
-cd libjpeg-turbo-3.0.3
+rm -Rf libjpeg-turbo-*
+wget https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/$LIBJPEGTURBO_VERSION/libjpeg-turbo-$LIBJPEGTURBO_VERSION.tar.gz -O libjpeg-turbo-$LIBJPEGTURBO_VERSION.tar.gz
+tar xfz libjpeg-turbo-$LIBJPEGTURBO_VERSION.tar.gz
+cd libjpeg-turbo-$LIBJPEGTURBO_VERSION
 do_cmake -DENABLE_SHARED=TRUE
 cd ..
 
 ########## LIBPNG ##########
-wget https://download.sourceforge.net/libpng/libpng-1.6.43.tar.gz -O libpng-1.6.43.tar.gz
-rm -Rf libpng-1.6.43
-tar xfz libpng-1.6.43.tar.gz
-cd libpng-1.6.43
+rm -Rf libpng-*
+wget https://download.sourceforge.net/libpng/libpng-$LIBPNG_VERSION.tar.gz -O libpng-$LIBPNG_VERSION.tar.gz
+tar xfz libpng-$LIBPNG_VERSION.tar.gz
+cd libpng-$LIBPNG_VERSION
 #cmake does not use pkg-config for zlib?????
 do_cmake -DZLIB_ROOT=/usr/$host/
 cd ..
 
 ########## LIBOGG ##########
-wget https://downloads.xiph.org/releases/ogg/libogg-1.3.5.tar.gz -O libogg-1.3.5.tar.gz
-rm -Rf libogg-1.3.5/
-tar xfz libogg-1.3.5.tar.gz
-cd libogg-1.3.5/
+rm -Rf libogg-*
+wget https://downloads.xiph.org/releases/ogg/libogg-$LIBOGG_VERSION.tar.gz -O libogg-$LIBOGG_VERSION.tar.gz
+tar xfz libogg-$LIBOGG_VERSION.tar.gz
+cd libogg-$LIBOGG_VERSION
 do_cmake
 cd ..
 # Bug in build-system, missmatch with dll filename, and internal name
 mv -f $prefix/bin/libogg.dll $prefix/bin/ogg.dll
 
 ########## VORBIS ##########
-wget https://downloads.xiph.org/releases/vorbis/libvorbis-1.3.7.tar.gz -O libvorbis-1.3.7.tar.gz
-rm -Rf libvorbis-1.3.7
-tar xfz libvorbis-1.3.7.tar.gz
-cd libvorbis-1.3.7
+rm -Rf libvorbis-*
+wget https://downloads.xiph.org/releases/vorbis/libvorbis-$LIBVORBIS_VERSION.tar.gz -O libvorbis-$LIBVORBIS_VERSION.tar.gz
+tar xfz libvorbis-$LIBVORBIS_VERSION.tar.gz
+cd libvorbis-$LIBVORBIS_VERSION
 patch -p1 << EOF
 diff -ur libvorbis-1.3.7/win32/vorbis.def libvorbis-1.3.7-new/win32/vorbis.def
 --- libvorbis-1.3.7/win32/vorbis.def	2020-03-23 16:04:43.000000000 +0100
@@ -269,60 +271,66 @@ mv -f $prefix/bin/libvorbisfile.dll $prefix/bin/vorbisfile.dll
 mv -f $prefix/bin/libvorbis.dll $prefix/bin/vorbis.dll
 
 ########## FLAC ##########
-wget https://ftp.osuosl.org/pub/xiph/releases/flac/flac-1.4.3.tar.xz -O flac-1.4.3.tar.xz
-rm -Rf flac-1.4.3
-tar xfJ flac-1.4.3.tar.xz
-cd flac-1.4.3
+rm -Rf flac-*
+wget https://ftp.osuosl.org/pub/xiph/releases/flac/flac-$FLAC_VERSION.tar.xz -O flac-$FLAC_VERSION.tar.xz
+tar xfJ flac-$FLAC_VERSION.tar.xz
+cd flac-$FLAC_VERSION
 do_cmake -D_OGG_LIBRARY_DIRS=$prefix/lib
 cd ..
 
 ########## SDL2 ##########
-wget https://github.com/libsdl-org/SDL/releases/download/release-2.30.7/SDL2-devel-2.30.7-mingw.tar.gz -O SDL2-devel-2.30.7-mingw.tar.gz
-rm -Rf SDL2-2.30.7
-tar xfz SDL2-devel-2.30.7-mingw.tar.gz
-cd SDL2-2.30.7
+rm -Rf SDL2-*
+wget https://github.com/libsdl-org/SDL/releases/download/release-$SDL2_VERSION/SDL2-devel-$SDL2_VERSION-mingw.tar.gz -O SDL2-devel-$SDL2_VERSION-mingw.tar.gz
+tar xfz SDL2-devel-$SDL2_VERSION-mingw.tar.gz
+cd SDL2-$SDL2_VERSION
 cp $host/* $prefix -R
 prefix2=`echo $prefix|sed -e 's/\//\\\\\//'g`
-sed -e "s/^prefix=.*/prefix=$prefix2/" -i $prefix/lib/pkgconfig/sdl2.pc
+sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/bin/sdl2-config
+sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/lib/libSDL2.la
+sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/lib/libSDL2main.la
+sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/lib/libSDL2_test.la
+sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/lib/pkgconfig/sdl2.pc
+sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/lib/cmake/SDL2/sdl2-config.cmake
 cd ..
 
-if test "$host" == "i686-w64-mingw32"; then
 ########## BROTLI ##########, only needed for 32bit, unsure why
-  wget https://github.com/google/brotli/archive/refs/tags/v1.1.0.tar.gz -O brotli-1.1.0.tar.gz
-  rm -Rf brotli-1.1.0
-  tar xfz brotli-1.1.0.tar.gz
-  cd brotli-1.1.0
+rm -Rf brotli-*
+if test "$host" == "i686-w64-mingw32"; then
+  wget https://github.com/google/brotli/archive/refs/tags/v$BROTLI_VERSION.tar.gz -O brotli-$BROTLI_VERSION.tar.gz
+  tar xfz brotli-$BROTLI_VERSION.tar.gz
+  cd brotli-$BROTLI_VERSION
   do_cmake -DCMAKE_CXX_FLAGS=-Wa,-mbig-obj
   cd ..
 fi
 
 ########## HARFBUZZ #########
-wget https://github.com/harfbuzz/harfbuzz/releases/download/9.0.0/harfbuzz-9.0.0.tar.xz -O harfbuzz-9.0.0.tar.xz
-rm -Rf harfbuzz-9.0.0
-tar xfJ harfbuzz-9.0.0.tar.xz
-cd harfbuzz-9.0.0
+rm -Rf harfbuzz-*
+wget https://github.com/harfbuzz/harfbuzz/releases/download/$HARFBUZZ_VERSION/harfbuzz-$HARFBUZZ_VERSION.tar.xz -O harfbuzz-$HARFBUZZ_VERSION.tar.xz
+tar xfJ harfbuzz-$HARFBUZZ_VERSION.tar.xz
+cd harfbuzz-$HARFBUZZ_VERSION
 do_cmake -DCMAKE_CXX_FLAGS=-Wa,-mbig-obj
 cd ..
 
 ########## FREETYPE2 ##########
-wget https://sourceforge.net/projects/freetype/files/freetype2/2.13.3/freetype-2.13.3.tar.gz/download -O freetype-2.13.3.tar.gz
-rm -Rf freetype-2.13.3
-tar xfz freetype-2.13.3.tar.gz
-cd freetype-2.13.3
+rm -Rf freetype-*
+wget https://sourceforge.net/projects/freetype/files/freetype2/$FREETYPE2_VERSION/freetype-$FREETYPE2_VERSION.tar.gz/download -O freetype-$FREETYPE2_VERSION.tar.gz
+tar xfz freetype-$FREETYPE2_VERSION.tar.gz
+cd freetype-$FREETYPE2_VERSION
 do_cmake -DZLIB_ROOT=/usr/$host/ \
          -DFT_DISABLE_BZIP2=TRUE
 cd ..
 
 ########## LIBDISCID ##########
-wget http://ftp.eu.metabrainz.org/pub/musicbrainz/libdiscid/libdiscid-0.6.4-win.zip -O libdiscid-0.6.4-win.zip
-rm -Rf libdiscid-0.6.4-win
-unzip libdiscid-0.6.4-win.zip
+rm -Rf libdiscid-*
+#wget http://ftp.eu.metabrainz.org/pub/musicbrainz/libdiscid/libdiscid-$LIBDISCID_VERSION-win.zip -O libdiscid-$LIBDISCID_VERSION-win.zip
+wget https://github.com/metabrainz/libdiscid/releases/download/v$LIBDISCID_VERSION/libdiscid-$LIBDISCID_VERSION-win.zip -O libdiscid-$LIBDISCID_VERSION-win.zip
+unzip libdiscid-$LIBDISCID_VERSION-win.zip
 if test "$host" == "i686-w64-mingw32"; then
-  cp -r libdiscid-0.6.4-win/Win32/* $prefix/lib
+  cp -r libdiscid-$LIBDISCID_VERSION-win/Win32/* $prefix/lib
 else
-  cp -r libdiscid-0.6.4-win/x64/* $prefix/lib
+  cp -r libdiscid-$LIBDISCID_VERSION-win/x64/* $prefix/lib
 fi
-cp -r libdiscid-0.6.4-win/include/discid $prefix/include
+cp -r libdiscid-$LIBDISCID_VERSION-win/include/discid $prefix/include
 cat <<EOF > $prefix/lib/pkgconfig/libdiscid.pc
 prefix=
 exec_prefix=
@@ -339,10 +347,10 @@ Cflags:
 EOF
 
 ########## cJSON ##########
-wget https://github.com/DaveGamble/cJSON/archive/refs/tags/v1.7.18.tar.gz -O cJSON-1.7.18.tar.gz
-rm -Rf cJSON-1.7.18
-tar xfz cJSON-1.7.18.tar.gz
-cd cJSON-1.7.18
+rm -Rf cJSON-*
+wget https://github.com/DaveGamble/cJSON/archive/refs/tags/v$CJSON_VERSION.tar.gz -O cJSON-$CJSON_VERSION.tar.gz
+tar xfz cJSON-$CJSON_VERSION.tar.gz
+cd cJSON-$CJSON_VERSION
 patch -p 1 <<EOF
 diff -u cJSON-1.7.15-orig/cJSON.c cJSON-1.7.15/cJSON.c
 --- cJSON-1.7.15-orig/cJSON.c	2021-08-25 13:15:09.000000000 +0200
@@ -390,10 +398,10 @@ do_cmake
 cd ..
 
 ########## ancient ##########
-wget https://github.com/temisu/ancient/archive/refs/tags/v2.2.0.tar.gz -O ancient-2.2.0.tar.gz
-rm -Rf ancient-2.2.0
-tar xfz ancient-2.2.0.tar.gz
-cd ancient-2.2.0
+rm -Rf ancient-*
+wget https://github.com/temisu/ancient/archive/refs/tags/v$ANCIENT_VERSION.tar.gz -O ancient-$ANCIENT_VERSION.tar.gz
+tar xfz ancient-$ANCIENT_VERSION.tar.gz
+cd ancient-$ANCIENT_VERSION
 mkdir -p m4
 wget 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_cxx_compile_stdcxx.m4' -O m4/ax_cxx_compile_stdcxx.m4
 wget 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_check_compile_flag.m4' -O m4/ax_check_compile_flag.m4
@@ -408,27 +416,28 @@ make all install
 cd ..
 
 ########## libiconv ##########
-wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.17.tar.gz -O libiconv-1.17.tar.gz
-rm -Rf libiconv-1.17
-tar xfz libiconv-1.17.tar.gz
-cd libiconv-1.17
+rm -Rf libiconv-*
+wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-$LIBICONV_VERSION.tar.gz -O libiconv-$LIBICONV_VERSION.tar.gz
+tar xfz libiconv-$LIBICONV_VERSION.tar.gz
+cd libiconv-$LIBICONV_VERSION
 ./configure --host $host --prefix=$prefix
 make all install
 cd ..
 
 ########## game-music-emulator ##########
-wget https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-0.6.3.tar.gz -O game-music-emu-0.6.3.tar.gz
+rm -Rf game-music-emu-*
+wget https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz -O game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz
 # Future releases will be here https://github.com/libgme/game-music-emu/tags
-rm -Rf game-music-emu-0.6.3
-tar xfz game-music-emu-0.6.3.tar.gz
-cd game-music-emu-0.6.3
+tar xfz game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz
+cd game-music-emu-$GAMEMUSICEMU_VERSION
 do_cmake -DENABLE_UBSAN=off
 cd ..
 
 ######### unifont ##########
-wget https://unifoundry.com/pub/unifont/unifont-16.0.01/font-builds/unifont-16.0.01.otf       -O unifont-16.0.01.otf
-wget https://unifoundry.com/pub/unifont/unifont-16.0.01/font-builds/unifont_csur-16.0.01.otf  -O unifont_csur-16.0.01.otf
-wget https://unifoundry.com/pub/unifont/unifont-16.0.01/font-builds/unifont_upper-16.0.01.otf -O unifont_upper-16.0.01.otf
+rm -Rf unifont-* unifont_*-*
+wget https://unifoundry.com/pub/unifont/unifont-$UNIFONT_VERSION/font-builds/unifont-$UNIFONT_VERSION.otf       -O unifont-$UNIFONT_VERSION.otf
+wget https://unifoundry.com/pub/unifont/unifont-$UNIFONT_VERSION/font-builds/unifont_csur-$UNIFONT_VERSION.otf  -O unifont_csur-$UNIFONT_VERSION.otf
+wget https://unifoundry.com/pub/unifont/unifont-$UNIFONT_VERSION/font-builds/unifont_upper-$UNIFONT_VERSION.otf -O unifont_upper-$UNIFONT_VERSION.otf
 
 cd ..
 ./configure \
@@ -486,7 +495,7 @@ else
      $install
 fi
 mkdir -p $install/data
-cp $host-src/unifont-16.0.01.otf       $install/data/unifont.otf
-cp $host-src/unifont_csur-16.0.01.otf  $install/data/unifont_csur.otf
-cp $host-src/unifont_upper-16.0.01.otf $install/data/unifont_upper.otf
+cp $host-src/unifont-$UNIFONT_VERSION.otf       $install/data/unifont.otf
+cp $host-src/unifont_csur-$UNIFONT_VERSION.otf  $install/data/unifont_csur.otf
+cp $host-src/unifont_upper-$UNIFONT_VERSION.otf $install/data/unifont_upper.otf
 $host-strip $install/*.dll $install/*.exe $install/autoload/*.dll
