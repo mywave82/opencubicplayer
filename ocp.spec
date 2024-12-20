@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 0.2.107
+%define version 3.0.0
 
 Name: %{name}
 Version: %{version}
@@ -33,30 +33,34 @@ frontend, with some few optional features in graphical. Plays modules, sids,
 wave and mp3
 
 %changelog
- Changes from version 0.2.106 to 0.2.107:
+ Changes from version 0.2.109 to 3.0.0:
 
- * libsidplayfp:
-   * Make it possible to tune parameters in real-time.
-   * Update libsidplayfp to the latest master.
-   * Plugin had an extra dirdbUnref() that should not be there.
- * adplug:
-   * Update adplug to latest master.
-   * Scrolling the channel viewer could crash the player due to read of out-of-bound memory.
-   * The wrapper OPL class OCP uses had some minor problems:
-     * In OPL3 mode, if a channel was in 4-OP mode, the second half would always muted.
-     * In OPL3 mode, if a channel was in 4-OP mode, you could mute the second half of the channel (in addition to the problem mentioned above).
-     * When a channel is going in/out of 4-OP mode, mute was not consistent.
- * Refactor and use file-caching.
- * Add compression hint to the fie API, solid files should be scanned directly.
- * Differentiate unread (files not scanned) and files were the file content turned out to be unknown. Speeds up the file browser, especially if there are archives present.
- * mingw:
-   * Latest version of packages OCP depends on.
-   * Enable optimization (needed for static inline functions to work as expected).
-   * Location of ocp.ini did not match the actual install.
- * ISO/TOC - Audio CDs could be unable to play after being looked up in the online discid-database.
- * Update libancient filter to match upto libancient master (needs matching support from host operating system for them to work).
- * Add support for *.RPG archive file from "Official Hamster Republic Role Playing Game Construction Engine", and *.BAM that in game data files as stored as *.1 *.2 *.3 etc.
- * Potential hang-bug in UDF (CDROM DVD image files) parser.
+ * Update external libraries for mingw build to latest versions.
+ * Add more magic numbers for up and comming version of ancient (decompression library for solid files).
+ * SetMode() did not have paremeters defined in the prototype, not all users had parameters defined. Caused crashes one some combination of mode changes.
+ * Update to latest version of libsidplayfp
+ * Update to latest version of adplug
+ * Add modland.com support directly from the file browser using a local copy of the file-list provided by modland.com.
+ * Speed up filebrowser if an earlier scanned .tar.gz now has unscanned modules. The archive is not persistent open due to caching.
+ * XM files would smash the stack on big-endian due to to loops had counter-limits in reverse order in endian-reversal code.
+ * MacOS/CoreAudio: Add missing mutex locking in two API functions.
+ * SDL/SDL2 audio: Add missing mutex locking in two API functions.
+ * SDL2 audio: Use SDL_LockAudioDevice, SDL_UnlockAudioDevice and SDL_CloseAudioDevice SDL 2.x functions instead of legacy 1.x functions.
+ * Do not attempt to divide by zero, if a song is reported as zero long.
+ * Logic for buffersize in playtimidity (MIDI files) was not working as expected, especially on Windows.
+ * If a file was unable to be accessed, pressing ENTER on it would cause a NULL-pointer dereference (Problem introduced in v0.2.102, adding support for ancient)
+ * Attempting to load a defective S3M file could trigger two different issues. Do not cal mcpSet(), since we have not initialized the mcp device yet, and the que variable was no reset on to NULL after free causing a double free in this special use case.
+ * When adding a directory-tree to the playlist, group the files by their owning directory, and sort each group of files alphabetically (strcasecmp).
+ * Detect Sidplayer files as playable.
+ * modland.com stores "Atari Digi-Mix" as *.mix instead of *.ym, so add that file-extension.
+ * Add FEST as a valid 4-channel signature
+ * Add "Atari STe/Falcon, Octalyser" CD61 and CD81 signatures
+ * Add "M&K!" as a valid MOD signature. These files are likely "His Master's Noise"
+ * Add support for Atari Falcon, Digital Tracker (MOD) files.
+ * Avoid double free(), could occure if trying to load an invalid MOD file
+ * Adjust MIME database, multiple of the magic searches were too aggressive.
+ * detecting .BAM files with .[0-9][0-9][0-9] filenames
+ * Remove adplugdb->wipe() call, it is not for freeing memory
 
 %prep
 %setup -q -n %{name}-%{version}
