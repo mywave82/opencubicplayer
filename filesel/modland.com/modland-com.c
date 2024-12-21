@@ -505,44 +505,51 @@ static int modland_com_add_data_line (struct modland_com_initialize_t *s, const 
 	return modland_com_add_data_fileentry (s, dir, last + 1, filesize);
 }
 
-static char *modland_com_strdup_slash(const char *src)
+static char *modland_com_strdup_slash_common(const char *src, char slash)
 {
 	char *retval;
-	char *e;
 	size_t len;
 
 	if (!src)
 	{
-		fprintf (stderr, "modland_com_strdup_slash(src): src is NULL\n");
+		fprintf (stderr, "modland_com_strdup_slash_common(src): src is NULL\n");
 		return 0;
 	}
-	e = strrchr (src,
-#ifdef _WIN32
-		'\\'
-#else
-		'/'
-#endif
-	);
-
-	if (e && e[1])
+	len = strlen (src);
+	if (len)
 	{
-		e = 0;
+		if  ( ( src[ len - 1 ] == '\\' ) || ( src[ len - 1] == '/' ) )
+		{
+			len--;
+		}
 	}
-	len = strlen(src) + !e + 1;
-	retval = malloc (len);
+
+	retval = malloc (len + 2);
 	if (!retval)
 	{
-		fprintf (stderr, "modland_com_strdup_slash(): malloc() failed\n");
+		fprintf (stderr, "modland_com_strdup_slash_common(): malloc() failed\n");
+		return 0;
 	}
-	snprintf (retval, len, "%s%s", src, !e ?
-#ifdef _WIN32
-		"\\"
-#else
-		"/"
-#endif
-		: "");
+
+	snprintf (retval, len + 2, "%.*s%c", (int)len, src, slash);
+
 	return retval;
 }
+
+static char *modland_com_strdup_slash_url (const char *src)
+{
+	return modland_com_strdup_slash_common (src, '/');
+}
+
+static char *modland_com_strdup_slash_filesystem (const char *src)
+{
+#ifdef _WIN32
+	return modland_com_strdup_slash_common (src, '\\');
+#else
+	return modland_com_strdup_slash_common (src, '/');
+#endif
+}
+
 #include "modland-com-cachedir.c"
 #include "modland-com-filehandle.c"
 #include "modland-com-file.c"
@@ -628,14 +635,14 @@ static int modland_com_init (struct PluginInitAPI_t *API)
 
 	{
 		const char *temp = API->configAPI->GetProfileString ("modland.com", "mirror", "https://modland.com/");
-		modland_com.mirror = modland_com_strdup_slash (temp);
+		modland_com.mirror = modland_com_strdup_slash_url (temp);
 		if (!modland_com.mirror)
 		{
 			return errAllocMem;
 		}
 
 		temp = API->configAPI->GetProfileString ("modland.com", "mirrorcustom", modland_com.mirror);
-		modland_com.mirrorcustom = modland_com_strdup_slash (temp);
+		modland_com.mirrorcustom = modland_com_strdup_slash_url (temp);
 		if (!modland_com.mirrorcustom)
 		{
 			return errAllocMem;

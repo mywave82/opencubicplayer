@@ -102,12 +102,12 @@ static void modland_com_mirror_Save (const struct DevInterfaceAPI_t *API, int se
 	if (selected < NUM_MIRRORS)
 	{
 		free (modland_com.mirror);
-		modland_com.mirror = modland_com_strdup_slash (modland_com_official_mirror[selected]);
+		modland_com.mirror = modland_com_strdup_slash_url (modland_com_official_mirror[selected]);
 	} else {
 		char *t = modland_com.mirrorcustom;
 		free (modland_com.mirror);
-		modland_com.mirror = modland_com_strdup_slash (t);
-		modland_com.mirrorcustom = modland_com_strdup_slash (t);
+		modland_com.mirror = modland_com_strdup_slash_url (t);
+		modland_com.mirrorcustom = modland_com_strdup_slash_url (t);
 		free (t);
 	}
 

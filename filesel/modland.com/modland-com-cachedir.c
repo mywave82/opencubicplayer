@@ -204,17 +204,17 @@ static void modland_com_cachedir_Save (const struct DevInterfaceAPI_t *API, int 
 	free (modland_com.cacheconfig);
 	switch (selected)
 	{
-		case 0: modland_com.cacheconfig = modland_com_strdup_slash ("$OCPDATAHOME/modland.com/"); break;
-		case 1: modland_com.cacheconfig = modland_com_strdup_slash ("$HOME/modland.com/"); break;
-		case 2: modland_com.cacheconfig = modland_com_strdup_slash ("$OCPDATA/modland.com/"); break;
-		case 3: modland_com.cacheconfig = modland_com_strdup_slash ("$TEMP/modland.com/"); break;
+		case 0: modland_com.cacheconfig = modland_com_strdup_slash_filesystem ("$OCPDATAHOME/modland.com/"); break;
+		case 1: modland_com.cacheconfig = modland_com_strdup_slash_filesystem ("$HOME/modland.com/"); break;
+		case 2: modland_com.cacheconfig = modland_com_strdup_slash_filesystem ("$OCPDATA/modland.com/"); break;
+		case 3: modland_com.cacheconfig = modland_com_strdup_slash_filesystem ("$TEMP/modland.com/"); break;
 
 		default:
 		case 4:
 		{
 			char *t = modland_com.cacheconfigcustom;
-			modland_com.cacheconfig = modland_com_strdup_slash (t);
-			modland_com.cacheconfigcustom = modland_com_strdup_slash (t);
+			modland_com.cacheconfig = modland_com_strdup_slash_filesystem (t);
+			modland_com.cacheconfigcustom = modland_com_strdup_slash_filesystem (t);
 			free (t);
 
 			free (*custom_modland_com);
