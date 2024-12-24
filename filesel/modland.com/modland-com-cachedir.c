@@ -2,6 +2,14 @@
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #endif
 
+#undef DIRSEPARATOR
+#ifdef _WIN32
+# define DIRSEPARATOR "\\"
+#else
+# define DIRSEPARATOR "/"
+#endif
+
+
 static void modland_com_cachedir_Draw (
 	struct console_t *console,
 	const int origselected,
@@ -59,7 +67,7 @@ static void modland_com_cachedir_Draw (
 
 	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$OCPDATAHOME/modland.com" "%0.7o (default)",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$OCPDATAHOME" DIRSEPARATOR "modland.com" "%0.7o (default)",
 		(0==origselected) ? '*' : ' ',
 		(0==selected) ? 7 : 0,
 		(0==selected) ? 1 : 3);
@@ -67,7 +75,7 @@ static void modland_com_cachedir_Draw (
 
 	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$HOME/modland.com%0.7o",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$HOME" DIRSEPARATOR "modland.com%0.7o",
 		(1==origselected) ? '*' : ' ',
 		(1==selected) ? 7 : 0,
 		(1==selected) ? 1 : 3);
@@ -75,7 +83,7 @@ static void modland_com_cachedir_Draw (
 
 	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$OCPDATA/modland.com" "%0.7o (might not be writable)",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$OCPDATA" DIRSEPARATOR "modland.com" "%0.7o (might not be writable)",
 		(2==origselected) ? '*' : ' ',
 		(2==selected) ? 7 : 0,
 		(2==selected) ? 1 : 3);
@@ -83,7 +91,7 @@ static void modland_com_cachedir_Draw (
 
 	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$TEMP/modland.com" "%0.7o (might not be system uniqe and writable)",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "TEMP" DIRSEPARATOR "modland.com" "%0.7o (might not be system uniqe and writable)",
 		(3==origselected) ? '*' : ' ',
 		(3==selected) ? 7 : 0,
 		(3==selected) ? 1 : 3);
@@ -204,10 +212,10 @@ static void modland_com_cachedir_Save (const struct DevInterfaceAPI_t *API, int 
 	free (modland_com.cacheconfig);
 	switch (selected)
 	{
-		case 0: modland_com.cacheconfig = modland_com_strdup_slash_filesystem ("$OCPDATAHOME/modland.com/"); break;
-		case 1: modland_com.cacheconfig = modland_com_strdup_slash_filesystem ("$HOME/modland.com/"); break;
-		case 2: modland_com.cacheconfig = modland_com_strdup_slash_filesystem ("$OCPDATA/modland.com/"); break;
-		case 3: modland_com.cacheconfig = modland_com_strdup_slash_filesystem ("$TEMP/modland.com/"); break;
+		case 0: modland_com.cacheconfig = modland_com_strdup_slash_filesystem ("$OCPDATAHOME" DIRSEPARATOR "modland.com"); break;
+		case 1: modland_com.cacheconfig = modland_com_strdup_slash_filesystem ("$HOME" DIRSEPARATOR "modland.com"); break;
+		case 2: modland_com.cacheconfig = modland_com_strdup_slash_filesystem ("$OCPDATA" DIRSEPARATOR "modland.com/"); break;
+		case 3: modland_com.cacheconfig = modland_com_strdup_slash_filesystem ("$TEMP" DIRSEPARATOR "modland.com/"); break;
 
 		default:
 		case 4:
@@ -250,28 +258,28 @@ static void modland_com_cachedir_Run (const struct DevInterfaceAPI_t *API)
 
 	if (((!strncmp (modland_com.cacheconfig, "~\\", 2)) ||
 	     (!strncmp (modland_com.cacheconfig, "~/" , 2))) &&
-            (!strcmp (modland_com.cacheconfig + 2, "modland.com")))
+            (!strcmp (modland_com.cacheconfig + 2, "modland.com" DIRSEPARATOR)))
 	{
 		selected = 1;
 	} else if (((!strncmp (modland_com.cacheconfig, "$HOME\\", 6)) ||
 	            (!strncmp (modland_com.cacheconfig, "$HOME/" , 6))) &&
-                   (!strcmp (modland_com.cacheconfig + 6, "modland.com/")))
+                   (!strcmp (modland_com.cacheconfig + 6, "modland.com" DIRSEPARATOR)))
 	{
 		selected = 1;
 
 	} else if (((!strncmp (modland_com.cacheconfig, "$OCPDATAHOME\\", 13)) ||
 	            (!strncmp (modland_com.cacheconfig, "$OCPDATAHOME/", 13))) &&
-                   (!strcmp (modland_com.cacheconfig + 13, "modland.com/")))
+                   (!strcmp (modland_com.cacheconfig + 13, "modland.com" DIRSEPARATOR)))
 	{
 		selected = 0;
 	} else if (((!strncmp (modland_com.cacheconfig, "$OCPDATA\\", 9)) ||
 	            (!strncmp (modland_com.cacheconfig, "$OCPDATA/", 9))) &&
-                   (!strcmp (modland_com.cacheconfig + 9, "modland.com/")))
+                   (!strcmp (modland_com.cacheconfig + 9, "modland.com" DIRSEPARATOR)))
 	{
 		selected = 2;
 	} else if (((!strncmp (modland_com.cacheconfig, "$TEMP\\", 6)) ||
 	            (!strncmp (modland_com.cacheconfig, "$TEMP/", 6))) &&
-                   (!strcmp (modland_com.cacheconfig + 9, "modland.com/")))
+                   (!strcmp (modland_com.cacheconfig + 6, "modland.com" DIRSEPARATOR)))
 	{
 		selected = 3;
 	} else {
