@@ -10,6 +10,21 @@ void getext_malloc (const char *src, char **ext);
 extern int splitpath4_malloc(const char *src, char **drive, char **path, char **file, char **ext); /* returns non-zero on errors */
 extern int splitpath_malloc(const char *src, char **drive, char **path, char **filename); /* returns non-zero on errors */
 
+#ifndef HAVE_MEMRCHR
+static inline void *memrchr(const void *s, int c, size_t n)
+{
+	char c2 = c;
+	char *s2 = (char *)s + n - 1;
+	while (n--)
+	{
+		if (*s2 == c2) return s2;
+		s2--;
+	}
+
+	return 0;
+}
+#endif
+
 #ifndef HAVE_STRUPR
 #include <ctype.h>
 static inline char *strupr(char *src)

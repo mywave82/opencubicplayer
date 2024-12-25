@@ -267,6 +267,7 @@ AC_LINK_IFELSE(
 )
 
 AC_CHECK_FUNCS([memmem])
+AC_CHECK_FUNCS([memrchr])
 AC_CHECK_FUNCS([getopt])
 AC_CHECK_FUNCS([getpwuid])
 AC_CHECK_FUNCS([popen])

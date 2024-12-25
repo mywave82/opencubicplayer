@@ -241,6 +241,8 @@
 
 #undef HAVE_MEMMEM
 
+#undef HAVE_MEMRCHR
+
 #undef HAVE_QSORT
 
 #undef HAVE_STRUPR
