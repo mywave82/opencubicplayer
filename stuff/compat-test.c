@@ -1,9 +1,14 @@
 #include "config.h"
 #include "types.h"
 
+#undef HAVE_MEMRCHR
+#define memrchr ocp_memrchr
+
 #include "compat.h"
 
 #include "compat.c"
+
+#undef memrchr
 
 #include <string.h>
 #include <unistd.h>
@@ -276,6 +281,32 @@ static int test_splitpath42 (void)
 	return failed;
 }
 
+int test_memrchr (const char *s, const char c, size_t n, const char *e, const char *d)
+{
+	char *r = ocp_memrchr (s, c, n);
+	printf("%s: %s\n", d, (r != e) ? "failed" : "ok");
+	return r != e;
+}
+
+int do_test_memchr (void)
+{
+	const char *ooo = "ooo";
+	const char *ofo = "ofo";
+
+	const char *oooo = "oooo";
+	const char *foobarfoo = "foobarfoo";
+
+	int retval = 0;
+	retval |= test_memrchr ("foo", 'a', 3, 0, "memrchr(\"foo\", 'a', 3) => NULL");
+	retval |= test_memrchr (ooo+1, 'o', 0, 0, "memrchr(\"ooo\" + 1, 'o', 0) => NULL");
+	retval |= test_memrchr (ooo+1, 'o', 1, ooo+1, "memrchr(\"ooo\" + 1, 'o') => \"ooo\" + 1");
+	retval |= test_memrchr (ofo+1, 'o', 1, 0, "memrchr(\"ofo\" + 1, 'o') => NULL");
+	retval |= test_memrchr (oooo+1, 'o', 2, oooo+2, "memrchr(\"oooo\" + 1, 'o') => \"oooo\" + 2");
+	retval |= test_memrchr (foobarfoo, 'r', 9, foobarfoo + 5, "memrchr(\"foobarfoo\", 'r') => \"rfoo\"");
+
+	return retval;
+}
+
 int main(int argc, char *argv[])
 {
 	int retval = 0;
@@ -283,6 +314,8 @@ int main(int argc, char *argv[])
 	retval |= test_splitpath41 ();
 
 	retval |= test_splitpath42 ();
+
+	retval |= do_test_memchr ();
 
 	if (retval)
 	{

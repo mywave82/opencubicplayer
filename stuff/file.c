@@ -20,6 +20,7 @@
 #include "types.h"
 
 #include "boot/psetting.h"
+#include "stuff/compat.h"
 #include "stuff/file.h"
 
 struct osfile_cacheline_t

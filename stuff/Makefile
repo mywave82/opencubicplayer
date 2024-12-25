@@ -51,6 +51,7 @@ file.o: file.c \
 	../config.h \
 	../types.h \
 	../boot/psetting.h \
+	../stuff/compat.h \
 	../stuff/file.h
 	$(CC) $< -o $@ -c
 
