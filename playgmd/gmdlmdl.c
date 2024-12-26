@@ -382,8 +382,8 @@ OCP_INTERNAL int LoadMDL (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		return errFileRead;
 	}
 
-	trackends=malloc(sizeof(uint8_t *)*ntracks+1);
-	trackptrs=malloc(sizeof(uint8_t *)*ntracks+1);
+	trackends=malloc(sizeof(uint8_t *)*(ntracks+1));
+	trackptrs=malloc(sizeof(uint8_t *)*(ntracks+1));
 	trackbuf=malloc(sizeof(uint8_t)*(blklen-2-2*ntracks));
 
 	patdata=malloc(sizeof(uint8_t)*m->channum*256*6);
