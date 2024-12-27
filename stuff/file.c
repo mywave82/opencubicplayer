@@ -327,7 +327,9 @@ int64_t osfile_purge_writeback_cache (struct osfile_t *f)
 
 	while (f->writeback_cache.fill)
 	{
+		errno = 0;
 		res = write (f->fd, f->writeback_cache.data, f->writeback_cache.fill);
+		fprintf (stderr, "DEBUG: osfile_purge_writeback_cache() sent %d to write, returned %d, errno %d\n", (int)f->writeback_cache.fill, (int)res, errno);
 		if (res <= 0) /* write should never return zero, so might aswell add it here */
 		{
 			if ((errno == EAGAIN) || (errno == EINTR))
@@ -365,11 +367,14 @@ void osfile_close (struct osfile_t *f)
 		return;
 	}
 
+
 	if (f->writeback_cache.fill)
 	{
+		fprintf (stderr, "DEBUG: osfile_close: about to osfile_purge_writeback_cache\n");
 		osfile_purge_writeback_cache (f);
 	}
 
+	fprintf (stderr, "DEBUG: osfile_close: about to actually close\n");
 #ifdef _WIN32
 	CloseHandle (f->h);
 #else

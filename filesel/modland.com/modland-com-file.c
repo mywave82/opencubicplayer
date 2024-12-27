@@ -217,8 +217,11 @@ static int curl_download_magic (const char *targetfilename, const char *sourcepa
 	while ((fill = temp_filehandle->read (temp_filehandle, buffer, sizeof (buffer))))
 	{
 		osfile_write (target, buffer, fill);
+		fprintf (stderr, "DEBUG: curl_download_magic: sent %d to osfile_write\n", fill);
 	}
+	fprintf (stderr, "DEBUG: curl_download_magic:  about to osfile_close()\n");
 	osfile_close (target);
+	fprintf (stderr, "DEBUG: curl_download_magic: osfile_close() finished\n");
 	target = 0;
 
 	temp_filehandle->unref (temp_filehandle);
@@ -278,6 +281,7 @@ static struct ocpfilehandle_t *modland_com_ocpfile_open (struct ocpfile_t *_f)
 			free (cachefilename);
 			return 0;
 		}
+		fprintf (stderr, "DEBUG: modland_com_ocpfile_open, curl_download_magic complete\n");
 		h->handle = modland_com_ocpfile_tryopen (cachefilename, f->filesize);
 		if (!h->handle)
 		{

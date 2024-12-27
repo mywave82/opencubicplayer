@@ -229,8 +229,12 @@ static int download_parse_header_textfile (struct download_request_t *req, struc
 
 	int fresh_request = 1;
 
+	fprintf (stderr, "DEBUG: download_parse_header_textfile: fetch the first line\n");
+
 	while ((line = textfile_fgets (textfile)))
 	{	/* header can contain multiple header sequences, we want the last one */
+
+		fprintf (stderr, "DEBUG: download_parse_header_textfile: got line \"%s\"\n", line);
 
 		if (!strlen (line))
 		{
@@ -282,7 +286,10 @@ static int download_parse_header_textfile (struct download_request_t *req, struc
 		{
 			req->ContentLength = strtoul (line + 16, 0, 10);
 		}
+		fprintf (stderr, "DEBUG: download_parse_header_textfile: fetch the next line\n");
 	}
+
+	fprintf (stderr, "DEBUG: download_parse_header_textfile: complete, httpcode=%d\n", (int)req->httpcode);
 
 	switch (req->httpcode)
 	{
@@ -315,6 +322,9 @@ static int download_parse_header (struct download_request_t *req)
 	int retval;
 
 	filehandle = download_request_resolve (req, req->tempheader_filename);
+
+	fprintf (stderr, "DEBUG: download_parse_header: got a filehandle\n");
+
 	if (!filehandle)
 	{
 		req->errmsg = "Unable to open file";
@@ -331,7 +341,11 @@ static int download_parse_header (struct download_request_t *req)
 		return -1;
 	}
 
+	fprintf (stderr, "DEBUG: download_parse_header: got a textfilehandle\n");
+
 	retval = download_parse_header_textfile (req, textfile);
+
+	fprintf (stderr, "DEBUG: download_parse_header: stop textfilehandle\n");
 
 	textfile_stop (textfile);
 	textfile = 0;
@@ -351,6 +365,8 @@ int download_request_iterate (struct download_request_t *req)
 	a = ocpPipeProcess_read_stdout (req->pipehandle, req->stdoutbin, sizeof (req->stdoutbin));
 	b = ocpPipeProcess_read_stderr (req->pipehandle, req->stderrbin, sizeof (req->stderrbin));
 
+	fprintf (stderr, "DEBUG: download_request_iterate a=%d b=%d\n", a, b);
+
 	if ((a >= 0) || (b >= 0))
 	{
 		struct stat st;
@@ -363,6 +379,8 @@ int download_request_iterate (struct download_request_t *req)
 
 	req->errcode = ocpPipeProcess_destroy (req->pipehandle);
 	req->pipehandle = 0;
+
+	fprintf (stderr, "DEBUG: download_request_iterate req->errcode=0x%08lx\n", (unsigned long)req->errcode);
 
 	if (req->errcode)
 	{
@@ -471,6 +489,8 @@ int download_request_iterate (struct download_request_t *req)
 		return 0;
 	}
 
+	fprintf (stderr, "DEBUG: download_request_iterate complete\n");
+
 	return 0;
 }
 
@@ -520,6 +540,7 @@ static void download_wrap_ocpfilehandle_ref (struct ocpfilehandle_t *_f)
 static void download_wrap_ocpfilehandle_unref (struct ocpfilehandle_t *_f)
 {
 	struct download_wrap_ocpfilehandle_t *f = (struct download_wrap_ocpfilehandle_t *)_f;
+	fprintf (stderr, "DEBUG: download_wrap_ocpfilehandle_unref\n");
 	if (!(--f->head.refcount))
 	{
 		f->head.origin->unref (f->head.origin);
@@ -561,7 +582,9 @@ static int download_wrap_ocpfilehandle_error (struct ocpfilehandle_t *_f)
 static int download_wrap_ocpfilehandle_read (struct ocpfilehandle_t *_f, void *dst, int len)
 {
 	struct download_wrap_ocpfilehandle_t *f = (struct download_wrap_ocpfilehandle_t *)_f;
-	return f->filehandle->read (f->filehandle, dst, len);
+	int retval = f->filehandle->read (f->filehandle, dst, len);
+	fprintf (stderr, "DEBUG: download_wrap_ocpfilehandle_read => f->filehandle->read (len=%d) => %d\n", len, retval);
+	return retval;
 }
 static int download_wrap_ocpfilehandle_ioctl (struct ocpfilehandle_t *_f, const char *cmd, void *ptr)
 {
@@ -645,6 +668,7 @@ struct ocpfilehandle_t *download_request_getfilehandle (struct download_request_
 	{
 		return 0;
 	}
+	fprintf (stderr, "DEBUG: download_request_getfilehandle => \"%s\"\n", req->tempdata_filename);
 	return download_request_resolve (req, req->tempdata_filename);
 }
 
