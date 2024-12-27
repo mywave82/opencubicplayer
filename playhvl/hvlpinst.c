@@ -31,9 +31,10 @@
 
 static void hvlDisplayIns40 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
-	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
+	char col = plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
+
 	cpifaceSession->console->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
-	cpifaceSession->console->WriteNum    (buf, 1, col, n+1, 16, 2, 0);
+	cpifaceSession->console->WriteNum    (buf, 1, col, n, 16, 2, 0);
 	cpifaceSession->console->WriteString (buf, 5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name, 35);
 }
 
@@ -42,7 +43,7 @@ static void hvlDisplayIns33 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 
 	cpifaceSession->console->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
-	cpifaceSession->console->WriteNum    (buf, 1, col, n+1, 16, 2, 0);
+	cpifaceSession->console->WriteNum    (buf, 1, col, n, 16, 2, 0);
 	cpifaceSession->console->WriteString (buf, 5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name, 28);
 }
 
@@ -50,19 +51,17 @@ static void hvlDisplayIns52 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_
 {
 	char col=plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	cpifaceSession->console->WriteString (buf, 0, col, (!plInstMode&&plInstUsed[n])?"    \xfe##: ":"     ##: ", 9);
-	cpifaceSession->console->WriteNum    (buf, 5, col, n+1, 16, 2, 0);
+	cpifaceSession->console->WriteNum    (buf, 5, col, n, 16, 2, 0);
 	cpifaceSession->console->WriteString (buf, 9, col, compoMode?"#":ht->ht_Instruments[n].ins_Name, 43);
 }
 
 static void hvlDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
-	char col;
-
+	char col = plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	cpifaceSession->console->WriteString (buf,  0, 0, "", 80);
 
-	col = plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 	cpifaceSession->console->WriteString (buf,  0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
-	cpifaceSession->console->WriteNum    (buf,  1, col, n+1,                                        16, 2, 0);
+	cpifaceSession->console->WriteNum    (buf,  1, col, n,                                          16, 2, 0);
 	cpifaceSession->console->WriteString (buf,  5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name,     50);
 	cpifaceSession->console->WriteNum    (buf, 56, col, ht->ht_Instruments[n].ins_Volume,           10, 3, 0);
 	cpifaceSession->console->WriteNum    (buf, 63, col, ht->ht_Instruments[n].ins_WaveLength,       10, 3, 0);
@@ -73,14 +72,12 @@ static void hvlDisplayIns80 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_
 
 static void hvlDisplayIns132 (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int n, int plInstMode, int compoMode)
 {
-	char col;
+	char col = plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
 
 	cpifaceSession->console->WriteString (buf,  0, 0, "", 132);
 
-	col = plInstMode?0x07:"\x08\x08\x0B\x0A"[(unsigned)plInstUsed[n]];
-
 	cpifaceSession->console->WriteString (buf,   0, col, (!plInstMode&&plInstUsed[n])?"\xfe##: ":" ##: ", 5);
-	cpifaceSession->console->WriteNum    (buf,   1, col, n+1, 16, 2, 0);
+	cpifaceSession->console->WriteNum    (buf,   1, col, n, 16, 2, 0);
 	cpifaceSession->console->WriteString (buf,   5, col, compoMode?"#":ht->ht_Instruments[n].ins_Name,     58);
 
 	cpifaceSession->console->WriteNum    (buf,  64, col, ht->ht_Instruments[n].ins_Volume,           10, 3, 0);
@@ -114,19 +111,19 @@ static void hvlDisplayIns (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	switch (width)
 	{
 		case cpiInstWidth_33:
-			hvlDisplayIns33 (cpifaceSession, buf, n, plInstMode, compoMode);
+			hvlDisplayIns33 (cpifaceSession, buf, n + 1, plInstMode, compoMode);
 			break;
 		case cpiInstWidth_40:
-			hvlDisplayIns40 (cpifaceSession, buf, n, plInstMode, compoMode);
+			hvlDisplayIns40 (cpifaceSession, buf, n + 1, plInstMode, compoMode);
 			break;
 		case cpiInstWidth_52:
-			hvlDisplayIns52 (cpifaceSession, buf, n, plInstMode, compoMode);
+			hvlDisplayIns52 (cpifaceSession, buf, n + 1, plInstMode, compoMode);
 			break;
 		case cpiInstWidth_80:
-			hvlDisplayIns80 (cpifaceSession, buf, n, plInstMode, compoMode);
+			hvlDisplayIns80 (cpifaceSession, buf, n + 1, plInstMode, compoMode);
 			break;
 		case cpiInstWidth_132:
-			hvlDisplayIns132 (cpifaceSession, buf, n, plInstMode, compoMode);
+			hvlDisplayIns132 (cpifaceSession, buf, n + 1, plInstMode, compoMode);
 			break;
 	}
 }

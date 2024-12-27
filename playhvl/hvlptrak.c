@@ -224,7 +224,7 @@ static void hvl_getgcmd (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *b
 	int i;
 	struct hvl_step *Step;
 
-	for (i=0; i < MAX_CHANNELS; i++)
+	for (i=0; i < ht->ht_Channels; i++)
 	{
 		Step = ht->ht_Tracks [ ht->ht_Positions [ curPosition ] .pos_Track [ i ]  ] + curRow;
 		_hvl_getgcmd (cpifaceSession, buf, &n, Step->stp_FX, Step->stp_FXParam);

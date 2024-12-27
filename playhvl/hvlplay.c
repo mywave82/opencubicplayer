@@ -250,7 +250,7 @@ OCP_INTERNAL void hvlIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 		{
 			struct hvl_voice *voice = ht->ht_Voices + j;
 			struct hvl_step *Step = ht->ht_Tracks[ht->ht_Positions[ht->ht_PosNr].pos_Track[voice->vc_VoiceNum]] + ht->ht_NoteNr;
-			if (ht->ht_Voices[j].vc_Instrument)
+			if (voice->vc_Instrument)
 			{
 				if (voice->vc_Instrument->ins_Name[0])
 				{
@@ -629,6 +629,7 @@ OCP_INTERNAL int hvlOpenPlayer (const uint8_t *mem, size_t memlen, struct ocpfil
 		return errPlay;
 	}
 
+	memset (ChanInfo, 0, sizeof (ChanInfo));
 	hvl_InitReplayer ();
 
 	hvlRate=0;

@@ -169,7 +169,6 @@ static int hvlReadMemInfo_hvl(struct moduleinfostruct *m, const char *_buf, size
 
 static int hvlReadMemInfo(struct moduleinfostruct *m, const char *buf, size_t len, const struct mdbReadInfoAPI_t *API)
 {
-
 	if (len >= 4)
 	{
 		if( ( buf[0] == 'T' ) &&
@@ -221,7 +220,7 @@ static int hvlReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 	filelen = fp->filesize(fp);
 
 	/* hvlReadMemInfo already had the full file at the first pass */
-	if (filelen == len)
+	if (m->modtype.integer.i == MODULETYPE("HVL"))
 	{
 		return 0;
 	}
