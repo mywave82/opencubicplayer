@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include "types.h"
@@ -62,8 +63,6 @@ void *ocpPipeProcess_create (const char * const commandLine[])
 	{
 		close (fdout[1]);
 		close (fderr[1]);
-		fcntl (fdout[0], F_SETFD, FD_CLOEXEC);
-		fcntl (fderr[0], F_SETFD, FD_CLOEXEC);
 		return process;
 	}
 
@@ -107,13 +106,23 @@ int ocpPipeProcess_destroy (void *_process)
 
 	while (process->pid >= 0)
 	{
-		if (waitpid (process->pid, &retval, WNOHANG) != process->pid)
+		pid_t retval = waitpid (process->pid, &retval, WNOHANG);
+		if (retval == process->pid)
 		{
-			usleep(10000);
-			continue;
+			break;
 		}
-		process->pid = -1;
+		if (retval < 0)
+		{
+			if ((errno != EAGAIN) &&
+			    (errno != EINTR))
+			{
+				fprintf (stderr, "waitpid() failed: %s\n", strerror (errno));
+				break;
+			}
+		}
+		usleep(10000);
 	}
+	process->pid = -1;
 	free (process);
 	return retval;
 }
