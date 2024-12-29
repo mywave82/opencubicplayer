@@ -23,15 +23,15 @@ ifeq (HAVE_SYS_TYPES_H,1)
 LIBADPLUG_CXXFLAGS+=" -DHAVE_SYS_TYPES_H=1"
 endif
 LIBADPLUG_TARGETS=\
-	adplug_a2m.o         adplug_a2m-v2.o   adplug_adl.o      adplug_adlibemu.o adplug_adplug.o      adplug_adtrack.o     adplug_amd.o         adplug_analopl.o     adplug_bam.o         \
-	adplug_bmf.o         adplug_cff.o      adplug_cmf.o      adplug_coktel.o   adplug_composer.o    adplug_cmfmcsop.o    adplug_d00.o         adplug_database.o    adplug_depack.o      \
-	adplug_dfm.o         adplug_diskopl.o  adplug_dmo.o      adplug_dro2.o     adplug_dro.o         adplug_dtm.o         adplug_emuopl.o      adplug_flash.o       adplug_fmc.o         \
-	adplug_fprovide.o    adplug_got.o      adplug_herad.o    adplug_hsc.o      adplug_hsp.o         adplug_hybrid.o      adplug_hyp.o         adplug_imf.o         adplug_jbm.o         \
-	adplug_ksm.o         adplug_lds.o      adplug_mad.o      adplug_mdi.o      adplug_mid.o         adplug_mkj.o         adplug_msc.o         adplug_mtk.o         adplug_mtr.o         \
-	adplug_mus.o         adplug_nemuopl.o  adplug_pis.o      adplug_player.o   adplug_players.o     adplug_protrack.o    adplug_psi.o         adplug_rad2.o        adplug_rat.o         \
-	adplug_raw.o         adplug_realopl.o  adplug_rix.o      adplug_rol.o      adplug_s3m.o         adplug_sa2.o         adplug_sixdepack.o   adplug_sng.o         adplug_sop.o         \
-	adplug_surroundopl.o adplug_temuopl.o  adplug_u6m.o      adplug_unlzss.o   adplug_unlzh.o       adplug_unlzw.o       adplug_vgm.o         adplug_woodyopl.o    adplug_xad.o         \
-	adplug_xsm.o         adplug_debug.o    adplug_fmopl.o    adplug_nukedopl.o
+	adplug_a2m.o         adplug_a2m-v2.o      adplug_adl.o         adplug_adlibemu.o    adplug_adplug.o      adplug_adtrack.o     adplug_amd.o         adplug_analopl.o     adplug_bam.o         \
+	adplug_bmf.o         adplug_cff.o         adplug_cmf.o         adplug_coktel.o      adplug_composer.o    adplug_cmfmcsop.o    adplug_d00.o         adplug_database.o    adplug_debug.o       \
+	adplug_depack.o      adplug_dfm.o         adplug_diskopl.o     adplug_dmo.o         adplug_dro2.o        adplug_dro.o         adplug_dtm.o         adplug_emuopl.o      adplug_flash.o       \
+	adplug_fmc.o         adplug_fmopl.o       adplug_fprovide.o    adplug_got.o         adplug_herad.o       adplug_hsc.o         adplug_hsp.o         adplug_hybrid.o      adplug_hyp.o         \
+	adplug_imf.o         adplug_jbm.o         adplug_ksm.o         adplug_lds.o         adplug_mad.o         adplug_mdi.o         adplug_mid.o         adplug_mkj.o         adplug_msc.o         \
+	adplug_mtk.o         adplug_mtr.o         adplug_mus.o         adplug_nemuopl.o     adplug_nukedopl.o    adplug_pis.o         adplug_player.o      adplug_players.o     adplug_plx.o         \
+	adplug_protrack.o    adplug_psi.o         adplug_rad2.o        adplug_rat.o         adplug_raw.o         adplug_realopl.o     adplug_rix.o         adplug_rol.o         adplug_s3m.o         \
+	adplug_sa2.o         adplug_sixdepack.o   adplug_sng.o         adplug_sop.o         adplug_surroundopl.o adplug_temuopl.o     adplug_u6m.o         adplug_unlzss.o      adplug_unlzh.o       \
+	adplug_unlzw.o       adplug_vgm.o         adplug_woodyopl.o    adplug_xad.o         adplug_xsm.o
 #adplugdb_adplugdb.o
 
 LIBBINIO_CXXFLAGS=$(ADPLUG_CXXFLAGS)
@@ -412,6 +412,10 @@ adplug_player.o: \
 
 adplug_players.o: \
 	adplug-git/src/players.cpp
+	$(ADPLUG_CXX) $(LIBADPLUG_CXXFLAGS) $^ -o $@ -c
+
+adplug_plx.o: \
+	adplug-git/src/plx.cpp
 	$(ADPLUG_CXX) $(LIBADPLUG_CXXFLAGS) $^ -o $@ -c
 
 adplug_protrack.o: \

@@ -33,7 +33,7 @@ static const char *known_adlib_directories[] =
 	"Martin Fernandez", /* These are actually Apogee IMF files */
 	"Master Tracker",
 	"Mlat Adlib Tracker",
-	// "Palladix",
+	"Palladix",
 	// "Pixel Painters FMF",
 	// "Pixel Painters FTF",
 	"Raw OPL Capture",
