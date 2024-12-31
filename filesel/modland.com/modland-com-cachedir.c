@@ -91,7 +91,7 @@ static void modland_com_cachedir_Draw (
 
 	mlTop++;
 
-	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "TEMP" DIRSEPARATOR "modland.com" "%0.7o (might not be system uniqe and writable)",
+	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$TEMP" DIRSEPARATOR "modland.com" "%0.7o (might not be system uniqe and writable)",
 		(3==origselected) ? '*' : ' ',
 		(3==selected) ? 7 : 0,
 		(3==selected) ? 1 : 3);
