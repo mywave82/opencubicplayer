@@ -1012,13 +1012,13 @@ static int init_modules(int argc, char *argv[])
 
 		if (epoch < 20240510)
 		{
-			fprintf (stderr, "ocp.ini update (0.2.110) add [modland.com] mirror=https://ftp.modland.com\n");
+			fprintf (stderr, "ocp.ini update (3.0.0) add [modland.com] mirror=https://ftp.modland.com\n");
 #ifdef _WIN32
-			fprintf (stderr, "ocp.ini update (0.2.110) add [modland.com] cachedir=$OCPDATAHOME\\modland.com\\\n");
+			fprintf (stderr, "ocp.ini update (3.0.0) add [modland.com] cachedir=$OCPDATAHOME\\modland.com\\\n");
 #else
-			fprintf (stderr, "ocp.ini update (0.2.110) add [modland.com] cachedir=$OCPDATAHOME/modland.com/\n");
+			fprintf (stderr, "ocp.ini update (3.0.0) add [modland.com] cachedir=$OCPDATAHOME/modland.com/\n");
 #endif
-			fprintf (stderr, "ocp.ini update (0.2.110) add [modland.com] showrelevantdirectoriesonly=1\n");
+			fprintf (stderr, "ocp.ini update (3.0.0) add [modland.com] showrelevantdirectoriesonly=1\n");
 
 			cfSetProfileString ("modland.com", "mirror", "https://ftp.modland.com");
 #ifdef _WIN32
@@ -1031,9 +1031,9 @@ static int init_modules(int argc, char *argv[])
 
 		if (epoch < 20240510)
 		{
-			fprintf(stderr, "ocp.ini update (0.2.107) add [libsidplayfp] filterrange6581=0.5\n");
+			fprintf(stderr, "ocp.ini update (0.2.107, revised in 3.0.0) add [libsidplayfp] filterrange6581=0.5\n");
 			cfSetProfileString  ("libsidplayfp", "filterrange6581", "0.5");
-			fprintf(stderr, "ocp.ini update (0.2.107) add [libsidplayfp] combinedwaveforms=Strong\n");
+			fprintf(stderr, "ocp.ini update (0.2.107, revised in 3.0.0) add [libsidplayfp] combinedwaveforms=Strong\n");
 			cfSetProfileString  ("libsidplayfp", "combinedwaveforms", "Strong");
 		}
 
