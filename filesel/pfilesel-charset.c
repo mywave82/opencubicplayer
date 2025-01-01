@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2020-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2020-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Charset editor for the the File selector ][ (used by .ZIP file handler and others)
  *

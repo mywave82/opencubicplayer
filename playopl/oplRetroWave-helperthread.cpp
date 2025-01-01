@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2005-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

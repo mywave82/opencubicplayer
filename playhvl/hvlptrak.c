@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2019-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2019-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * HVLPlay track/pattern display routines
  *

@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2007-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2007-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Small test application for testing the FLAC API.
  *

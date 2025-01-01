@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2024 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2024-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Game Music Emulator Play interface routines
  *
@@ -170,4 +170,4 @@ static void gmePluginClose (struct PluginCloseAPI_t *API)
 }
 
 OCP_INTERNAL const struct cpifaceplayerstruct gmePlayer = {"[Game Music Emulator plugin]", gmeOpenFile, gmeCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playgme", .desc = "OpenCP GME Player (c) 2024 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = gmePluginInit, .PluginClose = gmePluginClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playgme", .desc = "OpenCP GME Player (c) 2024-'25 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = gmePluginInit, .PluginClose = gmePluginClose};

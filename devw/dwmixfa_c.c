@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2011-'24 Jindřich Makovička <makovick@gmail.com>
+ * copyright (c) 2011-'25 Jindřich Makovička <makovick@gmail.com>
  *
  * C routines for FPU mixer
  *

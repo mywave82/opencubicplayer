@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2022-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2022-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Glue logic for fetching and caching data from MusicBrainz
  * online music database (CDROM).

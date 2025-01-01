@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Player device for WAV output
  *
@@ -488,4 +488,4 @@ static const struct plrDriver_t plrDiskWriter =
 	dwClose
 };
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "devpdisk", .desc = "OpenCP Player Device: Disk Writer (c) 1994-'24 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = diskWriterPluginInit, .PluginClose = diskWriterPluginClose};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "devpdisk", .desc = "OpenCP Player Device: Disk Writer (c) 1994-'25 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = diskWriterPluginInit, .PluginClose = diskWriterPluginClose};

@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * The little program that loads up the basic libs and starts main. It can also
  * start up the gdb debugger on fatal signals.

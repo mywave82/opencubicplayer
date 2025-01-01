@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2005-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Timidity front-end interface
  *
@@ -196,4 +196,4 @@ static void timidityPluginClose (struct PluginCloseAPI_t *API)
 }
 
 OCP_INTERNAL const struct cpifaceplayerstruct timidityPlayer = {"[TiMidity++ MIDI plugin]", timidityOpenFile, timidityCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playtimidity", .desc = "OpenCP TiMidity++ Player (c) 2016-'24 TiMidity++ team & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit=timidityPluginInit, .PluginClose=timidityPluginClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playtimidity", .desc = "OpenCP TiMidity++ Player (c) 2016-'25 TiMidity++ team & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit=timidityPluginInit, .PluginClose=timidityPluginClose};

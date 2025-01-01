@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2005-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * OPLPlay - Player for AdPlug - Replayer for many OPL2/OPL3 audio file formats.
  *

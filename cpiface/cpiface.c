@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * CPIface main interface code
  *
@@ -2886,5 +2886,5 @@ static interfaceReturnEnum plmpCallBack(void)
 
 static struct interfacestruct plOpenCP = {plmpOpenFile, plmpCallBack, plmpCloseFile, "plOpenCP", NULL};
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "cpiface", .desc = "OpenCP Interface (c) 1994-'24 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 35, .Init = plmpInit, .LateInit = plmpLateInit, .PreClose = plmpPreClose, .Close = plmpClose};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "cpiface", .desc = "OpenCP Interface (c) 1994-'25 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 35, .Init = plmpInit, .LateInit = plmpLateInit, .PreClose = plmpPreClose, .Close = plmpClose};
 /* OpenCP Module Player */

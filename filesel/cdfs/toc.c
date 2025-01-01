@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2022-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2022-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Parsing of .TOC files, describing the layout of a CDROM image.
  *

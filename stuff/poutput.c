@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Routines for screen output
  *
@@ -59,7 +59,7 @@ void make_title (const char *part, int escapewarning)
 	char prebuf[32];
 	char buf[CONSOLE_MAX_X];
 	const char *title = "Open Cubic Player v" VERSION;
-	const char *copyright = "(c) 1994-'24 Stian Skjelstad";
+	const char *copyright = "(c) 1994-'25 Stian Skjelstad";
 
 	int spacem = plScrWidth - 2 - strlen (title) - strlen (copyright) - 2 - strlen (part);
 	int space1 = spacem / 2;

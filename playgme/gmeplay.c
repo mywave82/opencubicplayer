@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2024 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2024-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Game Music Emulator Play playback routines
  *

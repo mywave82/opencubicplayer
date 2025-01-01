@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2020-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2020-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Utility for dumping the content of a MOD file
  *

@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Wavetable devices system
  *
@@ -676,7 +676,7 @@ static void setup_devw_run (void **token, const struct DevInterfaceAPI_t *API)
 DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo =
 {
 	.name = "mcpbase",
-	.desc = "OpenCP Wavetable Devices System (c) 1994-'24 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad",
+	.desc = "OpenCP Wavetable Devices System (c) 1994-'25 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad",
 	.ver = DLLVERSION,
 	.PreInit = deviwavePreInit,
 	.LateInit = deviwaveLateInit,

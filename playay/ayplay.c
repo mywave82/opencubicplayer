@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * Copyright (C) 2001-'05 Russell Marks and Ian Collier.
- * copyright (c) 2005-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * This file is based on "aylet" main.c, but is VERY modified.
  *

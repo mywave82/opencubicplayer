@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2020-'24 Stian Skjelstad <stian.skjelestad@gmail.com>
+ * copyright (c) 2020-'25 Stian Skjelstad <stian.skjelestad@gmail.com>
  *
  * UTF-8 encode/decode functions
  *

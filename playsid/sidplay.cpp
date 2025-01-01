@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2011-'24 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2011-'25 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
  *
  * SIDPlay - SID file player based on Michael Schwendt's SIDPlay routines
  *

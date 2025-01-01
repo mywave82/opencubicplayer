@@ -1,6 +1,6 @@
 // OpenCP Module Player
 // copyright (c) 1994-'98 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
-// copyright (c) 2022-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+// copyright (c) 2022-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
 
 // this shall somewhen become a cool reverb/compressor/EQ audio plug-in
 // but i didnt have any time for it yet ;)
@@ -456,7 +456,7 @@ static void fReverbPluginClose (struct PluginCloseAPI_t *API)
 	API->mcpUnregisterPostProcFP (&fReverb);
 }
 
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "freverb", .desc = "OpenCP floating point reverb (c) 1994-'24 Fabian Giesen, Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 99, .PluginInit = fReverbPluginInit, .PluginClose = fReverbPluginClose};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "freverb", .desc = "OpenCP floating point reverb (c) 1994-'25 Fabian Giesen, Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 99, .PluginInit = fReverbPluginInit, .PluginClose = fReverbPluginClose};
 
 /*
 

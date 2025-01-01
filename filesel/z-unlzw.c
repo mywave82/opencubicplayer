@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2021-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2021-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Code is partially based on unlzw implementation from gzip 1.6. That code
  * again was directly derived from the public domain 'compress' written by

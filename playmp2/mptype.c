@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2007-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2007-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * MPPlay file type detection routines for fileselector
  *

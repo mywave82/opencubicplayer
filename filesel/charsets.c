@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2020-'24 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2020-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * A database of charsets (used for translation of filenames in .ZIP files and similiar)
  *
