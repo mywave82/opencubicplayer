@@ -96,7 +96,7 @@ static void modland_com_mirror_Draw (
 	{
 		console->DisplayPrintf (mlTop, mlLeft, 0x09, 6, " (%.2o%c%.9o) ",
 			(origselected==NUM_MIRRORS) ? '*' : ' ');
-		switch (console->EditStringASCII(mlTop++, mlLeft + 6, mlWidth - 12, mirrorcustom))
+		switch (console->EditStringASCII(mlTop++, mlLeft + 5, mlWidth - 10, mirrorcustom))
 		{
 			case -1:
 			case 0:
