@@ -290,6 +290,11 @@ static int OggPicGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpit
 			OggPicFontSizeX =  8;
 			OggPicFontSizeY = 16;
 			break;
+		case _16x32:
+			q->hgtmax = 1 + (OggPicMaxHeight + 31) / 32;
+			OggPicFontSizeX = 16;
+			OggPicFontSizeY = 32;
+			break;
 	}
 
 	switch (OggPicActive)

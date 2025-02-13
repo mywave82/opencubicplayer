@@ -6,7 +6,8 @@
 typedef enum {
 	_8x8 = 0,
 	_8x16 = 1,
-	_FONT_MAX = 1
+	_16x32 = 2,
+	_FONT_MAX = 2
 } FontSizeEnum;
 
 struct FontSizeInfo_t

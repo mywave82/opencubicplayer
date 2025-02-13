@@ -40,6 +40,8 @@ void swtext_displaycharattr_single8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8
 void swtext_displaycharattr_double8x8(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr);
 void swtext_displaycharattr_single8x16(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr);
 void swtext_displaycharattr_double8x16(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr);
+void swtext_displaycharattr_single16x32(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr);
+void swtext_displaycharattr_double16x32(uint16_t y, uint16_t x, uint8_t *cp, uint8_t attr);
 
 
 #endif

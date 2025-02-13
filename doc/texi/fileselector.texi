@@ -174,7 +174,7 @@ the settings can be flushed into @file{ocp.ini}. The following list
 will explain every option:
 @multitable @columnfractions .1 .9
 @item 1 @tab @emph{screen mode:} This is output-driver specific. Most common you
-can adjust the font-size here between sizes like 8x8 or 8x16.
+can adjust the font-size here between sizes like 8x8, 8x16 and 16x32.
 @item 2 @tab @emph{scramble module list order:} if this options is enabled the
 files inside the playlist will be played in random order. Otherwise the
 order shown in the fileselector from top to bottom will be used.

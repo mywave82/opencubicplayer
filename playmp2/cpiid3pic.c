@@ -341,6 +341,11 @@ static int ID3PicGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpit
 			ID3PicFontSizeX =  8;
 			ID3PicFontSizeY = 16;
 			break;
+		case _16x32:
+			q->hgtmax = 1 + (ID3PicMaxHeight + 31) / 32;
+			ID3PicFontSizeX = 16;
+			ID3PicFontSizeY = 32;
+			break;
 	}
 
 	switch (ID3PicActive)

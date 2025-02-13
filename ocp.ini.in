@@ -1,5 +1,5 @@
 [version]
-  epoch=20240510
+  epoch=20250213
 
 [general]
 ;link=
@@ -65,7 +65,7 @@
   channeltype=2           ; 0=none, 1=short, 2=long, 3=side (only in >132 column modes)
   uselfb=yes              ; disable use of VESA 2.0
   fps=20
-  fontsize=1              ; if screentype=8: 0=8x8, 1=8x16
+  fontsize=1              ; if screentype=8: 0=8x8, 1=8x16, 2=16x32
   winwidth=1024           ; if screentype=8
   winheight=768           ; if screentype=8
 

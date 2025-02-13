@@ -430,6 +430,11 @@ static void WindowResized_Textmode(unsigned int width, unsigned int height)
 
 	Console.CurrentFont = x11_CurrentFontWanted;
 
+	if (Console.CurrentFont >= _16x32)
+	{
+		if ( ( Console.GraphBytesPerLine < ( 16 * 80 ) ) || ( Console.GraphLines < ( 32 * 25 ) ) )
+			Console.CurrentFont = _8x16;
+	}
 	if (Console.CurrentFont >= _8x16)
 	{
 		if ( ( Console.GraphBytesPerLine < ( 8 * 80 ) ) || ( Console.GraphLines < ( 16 * 25 ) ) )
@@ -446,6 +451,10 @@ static void WindowResized_Textmode(unsigned int width, unsigned int height)
 		case _8x16:
 			Console.TextWidth = Console.GraphBytesPerLine / 8;
 			Console.TextHeight = Console.GraphLines / 16;
+			break;
+		case _16x32:
+			Console.TextWidth = Console.GraphBytesPerLine / 16;
+			Console.TextHeight = Console.GraphLines / 32;
 			break;
 	}
 	plScrRowBytes = Console.TextWidth * 2;
@@ -603,6 +612,12 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 	switch (FontSize)
 	{
 		/* find the min value, if screen is too small, force smaller font */
+		case _16x32:
+			Textmode_SizeHints.min_width = 16 * 80;
+			Textmode_SizeHints.min_height = 32 * 25;
+			if ( (Textmode_SizeHints.min_width <= Textmode_SizeHints.max_width) && (Textmode_SizeHints.min_height <= Textmode_SizeHints.max_height) )
+				break;
+			FontSize = _8x16; /* drop through */
 		case _8x16:
 			Textmode_SizeHints.min_width = 8 * 80;
 			Textmode_SizeHints.min_height = 16 * 25;
@@ -684,6 +699,10 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 		case _8x16:
 			Console.TextWidth = Console.GraphBytesPerLine / 8;
 			Console.TextHeight = Console.GraphLines / 16;
+			break;
+		case _16x32:
+			Console.TextWidth = Console.GraphBytesPerLine / 16;
+			Console.TextHeight = Console.GraphLines / 32;
 			break;
 	}
 	plScrRowBytes = Console.TextWidth * 2;
@@ -832,6 +851,10 @@ static void x11_common_event_loop(void)
 						case _8x16:
 							x &= ~7;
 							y &= ~15;
+							break;
+						case _16x32:
+							x &= ~15;
+							y &= ~31;
 							break;
 					}
 					fprintf(stderr, "TEREWRWR\n");
@@ -1479,8 +1502,9 @@ static void x11_SetTextMode (unsigned char x)
 	if (x>=8)
 	{
 		x=8;
-		Console.TextHeight = Textmode_Window_Height / (x11_CurrentFontWanted == _8x16 ? 16 : 8);
-		Console.TextWidth = Textmode_Window_Width / 8;
+		Console.TextHeight = Textmode_Window_Height / (x11_CurrentFontWanted == _16x32 ) ? 32 : (x11_CurrentFontWanted == _8x16) ? 16 : 8;
+		Console.TextWidth = Textmode_Window_Width / (x11_CurrentFontWanted == _16x32 ? 16 : 8);
+;
 		Console.GraphBytesPerLine = Textmode_Window_Width;
 		Console.GraphLines = Textmode_Window_Height;
 	} else {
@@ -1504,7 +1528,7 @@ static void x11_SetTextMode (unsigned char x)
 		create_window();
 	}
 
-	TextModeSetState(x11_CurrentFontWanted /* modes[x].bigfont ? _8x16 : _8x8 */, do_fullscreen);
+	TextModeSetState(x11_CurrentFontWanted, do_fullscreen);
 
 	___push_key(VIRT_KEY_RESIZE);
 
@@ -1891,6 +1915,9 @@ static void RefreshScreenGraph(void)
 	} else if (Console.CurrentFont == _8x16)
 	{
 		fontengine_8x16_iterate ();
+	} else if (Console.CurrentFont == _16x32)
+	{
+		fontengine_16x32_iterate ();
 	}
 }
 
@@ -2181,7 +2208,7 @@ static const char *x11_GetDisplayTextModeName (void)
 {
 	static char mode[32];
 	snprintf(mode, sizeof(mode), "res(%dx%d), font(%s)%s", Console.TextWidth, Console.TextHeight,
-		x11_CurrentFontWanted == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
+		x11_CurrentFontWanted == _8x8 ? "8x8" : x11_CurrentFontWanted == _8x16 ? "8x16" : "16x32", do_fullscreen?" fullscreen":"");
 	return mode;
 }
 
@@ -2197,6 +2224,7 @@ static void x11_DisplaySetupTextMode (void)
 		swtext_displaystr_cp437 (1, 0, 0x07, "1:  font-size:", 14);
 		swtext_displaystr_cp437 (1, 15, Console.CurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
 		swtext_displaystr_cp437 (1, 19, Console.CurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
+		swtext_displaystr_cp437 (1, 24, Console.CurrentFont == _16x32 ? 0x0f : 0x07, "16x32", 5);
 /*
 		swtext_displaystr_cp437 (2, 0, 0x07, "2:  fullscreen: ", 16);
 		swtext_displaystr_cp437 (3, 0, 0x07, "3:  resolution in fullscreen:", 29);
@@ -2215,7 +2243,7 @@ static void x11_DisplaySetupTextMode (void)
 		{
 			case '1':
 				/* we can assume that we are in text-mode if we are here */
-				x11_CurrentFontWanted = (x11_CurrentFontWanted == _8x8)?_8x16 : _8x8;
+				x11_CurrentFontWanted = (x11_CurrentFontWanted == _8x8) ? _8x16 : (x11_CurrentFontWanted == _8x16) ? _16x32 : _8x8;
 				TextModeSetState (x11_CurrentFontWanted, do_fullscreen);
 				x11_CurrentFontWanted = Console.CurrentFont;
 				cfSetProfileInt(cfScreenSec, "fontsize", Console.CurrentFont, 10);
@@ -2290,6 +2318,7 @@ int x11_init(int use_explicit)
 		default:
 		case _8x8: x11_CurrentFontWanted = _8x8; break;
 		case _8x16: x11_CurrentFontWanted = _8x16; break;
+		case _16x32: x11_CurrentFontWanted = _16x32; break;
 	}
 
 	if (x11_connect())

@@ -2,6 +2,8 @@ TOPDIR=../
 include $(TOPDIR)Rules.make
 include Makefile-static
 
+.PHONY: all clean install pfonts-update
+
 ifeq ($(STATIC_CORE),1)
 all: $(stuff_libocp_so) $(sets_so) $(poutput_so)
 else
@@ -18,7 +20,7 @@ sets$(LIB_SUFFIX): $(sets_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) compat-test$(EXE_SUFFIX)
+	rm -f *.o *$(LIB_SUFFIX) compat-test$(EXE_SUFFIX) pfonts-update
 
 ifeq ($(STATIC_CORE),1)
 install:
@@ -236,10 +238,20 @@ compat.o: compat.c \
 	compat.h
 	$(CC) compat.c -o $@ -c
 
+pfonts-update: pfonts-update.c
+	$(CC_FOR_BUILD) $^ -o $@
+
+update-font16x32.inc.c:
+	$(MAKE)	pfonts-update
+	mv font16x32.inc.c temp.c
+	cat temp.c | ./pfonts-update > font16x32.inc.c
+	rm temp.c
+
 pfonts.o: pfonts.c \
 	../config.h \
 	../types.h \
-	pfonts.h
+	pfonts.h \
+	font16x32.inc.c
 	$(CC) pfonts.c -o $@ -c
 
 framelock.o: framelock.c framelock.h \

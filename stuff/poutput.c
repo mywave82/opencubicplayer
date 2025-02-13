@@ -51,7 +51,8 @@ unsigned char plpalette[256];
 const struct FontSizeInfo_t FontSizeInfo[] =
 {
 	{8, 8},
-	{8, 16}
+	{8, 16},
+	{16, 32}
 };
 
 void make_title (const char *part, int escapewarning)

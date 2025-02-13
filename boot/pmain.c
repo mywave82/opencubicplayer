@@ -1032,14 +1032,20 @@ static int init_modules(int argc, char *argv[])
 		if (epoch < 20240510)
 		{
 			fprintf(stderr, "ocp.ini update (0.2.107, revised in 3.0.0) add [libsidplayfp] filterrange6581=0.5\n");
-			cfSetProfileString  ("libsidplayfp", "filterrange6581", "0.5");
+			cfSetProfileString ("libsidplayfp", "filterrange6581", "0.5");
 			fprintf(stderr, "ocp.ini update (0.2.107, revised in 3.0.0) add [libsidplayfp] combinedwaveforms=Strong\n");
-			cfSetProfileString  ("libsidplayfp", "combinedwaveforms", "Strong");
+			cfSetProfileString ("libsidplayfp", "combinedwaveforms", "Strong");
 		}
 
-		if (epoch < 20240510)
+		if (epoch < 20250213)
 		{
-			cfSetProfileInt("version", "epoch", 20240510, 10);
+			fprintf(stderr, "ocp.ini update (3.1.0), updated comment for fontsize, adding 2=16x32\n");
+			cfSetProfileComment ("screen", "fontsize", "; if screentype=8: 0=8x8, 1=8x16, 2=16x32");
+		}
+
+		if (epoch < 20250213)
+		{
+			cfSetProfileInt("version", "epoch", 20250213, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -1050,14 +1056,14 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20240510)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20250213)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20240510\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20250213\033[0m\n\n");
 			sleep(5);
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20240510\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20250213\n\n");
 		}
 	}
 

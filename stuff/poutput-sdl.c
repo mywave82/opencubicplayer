@@ -171,6 +171,9 @@ again:
 	{
 		switch (Console.CurrentFont)
 		{
+			case _16x32:
+				Console.CurrentFont = _8x16;
+				break;
 			case _8x16:
 				Console.CurrentFont = _8x8;
 				break;
@@ -438,6 +441,8 @@ static void sdl_DisplaySetupTextMode(void)
 		swtext_displaystr_cp437(1, 0, 0x07, "1:  font-size:", 14);
 		swtext_displaystr_cp437(1, 15, Console.CurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
 		swtext_displaystr_cp437(1, 19, Console.CurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
+		swtext_displaystr_cp437(1, 24, Console.CurrentFont == _16x32 ? 0x0f : 0x07, "16x32", 5);
+
 /*
 		swtext_displaystr_cp437(2, 0, 0x07, "2:  fullscreen: ", 16);
 		swtext_displaystr_cp437(3, 0, 0x07, "3:  resolution in fullscreen:", 29);*/
@@ -454,7 +459,7 @@ static void sdl_DisplaySetupTextMode(void)
 		{
 			case '1':
 				/* we can assume that we are in text-mode if we are here */
-				sdl_CurrentFontWanted = Console.CurrentFont = (Console.CurrentFont == _8x8)?_8x16:_8x8;
+				sdl_CurrentFontWanted = Console.CurrentFont = (Console.CurrentFont == _8x8) ? _8x16 : (Console.CurrentFont == _8x16) ? _16x32 : _8x8;
 				set_state_textmode(do_fullscreen, Console.GraphBytesPerLine, Console.GraphLines);
 				cfSetProfileInt(cfScreenSec, "fontsize", Console.CurrentFont, 10);
 				break;
@@ -468,7 +473,7 @@ static const char *sdl_GetDisplayTextModeName(void)
 {
 	static char mode[48];
 	snprintf(mode, sizeof(mode), "res(%dx%d), font(%s)%s", Console.TextWidth, Console.TextHeight,
-		Console.CurrentFont == _8x8 ? "8x8" : "8x16", do_fullscreen?" fullscreen":"");
+		Console.CurrentFont == _8x8 ? "8x8" : Console.CurrentFont == _8x16 ? "8x16" : "16x32", do_fullscreen?" fullscreen":"");
 	return mode;
 }
 
@@ -1078,6 +1083,9 @@ static void RefreshScreenGraph(void)
 	} else if (Console.CurrentFont == _8x16)
 	{
 		fontengine_8x16_iterate ();
+	} else if (Console.CurrentFont == _16x32)
+	{
+		fontengine_16x32_iterate ();
 	}
 }
 
@@ -1467,7 +1475,7 @@ int sdl_init(void)
 	sdl_CurrentFontWanted = Console.CurrentFont = cfGetProfileInt(cfScreenSec, "fontsize", _8x16, 10);
 	if (Console.CurrentFont > _FONT_MAX)
 	{
-		Console.CurrentFont = _8x16;
+		Console.CurrentFont = _16x32;
 	}
 	last_text_width  = Console.GraphBytesPerLine = saturate(cfGetProfileInt(cfScreenSec, "winwidth",  1280, 10), 640, 16384);
 	last_text_height = Console.GraphLines        = saturate(cfGetProfileInt(cfScreenSec, "winheight", 1024, 10), 400, 16384);

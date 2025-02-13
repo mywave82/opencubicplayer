@@ -81,6 +81,7 @@ cpifontdebug.o: cpifontdebug.c \
 	../boot/console.h \
 	../boot/plinkman.h \
 	../filesel/pfilesel.h \
+	../stuff/cp437.h \
 	../stuff/err.h \
 	../stuff/poutput.h \
 	../stuff/poutput-fontengine.h \

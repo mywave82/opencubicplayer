@@ -294,6 +294,11 @@ static int FlacPicGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cpi
 			FlacPicFontSizeX =  8;
 			FlacPicFontSizeY = 16;
 			break;
+		case _16x32:
+			q->hgtmax = 1 + (FlacPicMaxHeight + 31) / 32;
+			FlacPicFontSizeX = 16;
+			FlacPicFontSizeY = 32;
+			break;
 	}
 
 	switch (FlacPicActive)
