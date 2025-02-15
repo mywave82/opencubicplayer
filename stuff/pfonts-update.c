@@ -9,7 +9,7 @@ static unsigned char hex(unsigned char i)
 	return "0123456789abcdef"[i];
 }
 
-static void patch(char *line)
+static void patch16x32(char *line)
 {
 	int f = 0;
 	unsigned char h1=0, h2=0;
@@ -55,12 +55,46 @@ static void patch(char *line)
 	matched++;
 }
 
+static void patch8x16(char *line)
+{
+	int f = 0;
+	unsigned char h1=0;
+
+	if ((strlen(line) != 23) && (strlen(line) != 24)) return;
+	if (line[0] != '\t') return;
+	if ((line[1] != ' ') && (line[1]!='{')) return;
+	if (line[2] != '/') return;
+	if (line[3] != '*') return;
+	if (line[4] != '"') return;
+	if (line[5] == ' ') {} else if (line[5] == '#') {h1 |= 0x80;} else return;
+	if (line[6] == ' ') {} else if (line[6] == '#') {h1 |= 0x40;} else return;
+	if (line[7] == ' ') {} else if (line[7] == '#') {h1 |= 0x20;} else return;
+	if (line[8] == ' ') {} else if (line[8] == '#') {h1 |= 0x10;} else return;
+	if (line[9] == ' ') {} else if (line[9] == '#') {h1 |= 0x08;} else return;
+	if (line[10] == ' ') {} else if (line[10] == '#') {h1 |= 0x04;} else return;
+	if (line[11] == ' ') {} else if (line[11] == '#') {h1 |= 0x02;} else return;
+	if (line[12] == ' ') {} else if (line[12] == '#') {h1 |= 0x01;} else return;
+	if (line[13] != '"') return;
+	if (line[14] != '*') return;
+	if (line[15] != '/') return;
+	if (line[16] != ' ') return;
+	if (line[17] != '0') return;
+	if (line[18] != 'x') return;
+
+	if (line[19] != hex(h1 >> 4)) { line[19] = hex(h1 >> 4); f=1; }
+	if (line[20] != hex(h1 & 15)) { line[20] = hex(h1 & 15); f=1; }
+
+	fixed += f;
+	matched++;
+}
+
 int main (int argc, char *argv[])
 {
 	char line[256];
 	while (fgets(line, sizeof (line), stdin))
 	{
-		patch (line);
+		patch16x32 (line);
+		patch8x16 (line);
 		fputs (line, stdout);
 	}
 	fflush (stdout);
